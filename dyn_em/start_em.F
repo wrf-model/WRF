@@ -52,7 +52,6 @@
 #    include <em_data_calls.inc>
 #endif
 
-
    CALL get_ijk_from_grid (  grid ,                   &
                              ids, ide, jds, jde, kds, kde,    &
                              ims, ime, jms, jme, kms, kme,    &
@@ -90,7 +89,7 @@
    IF (config_flags%specified) THEN
 !
 ! Arrays for specified boundary conditions
-!
+
 
      DO loop = spec_zone + 1, spec_zone + relax_zone
        fcx(loop) = 0.1 / dt * (spec_zone + relax_zone - loop) / (relax_zone - 1)
@@ -111,7 +110,6 @@
      dtbc = 0.
 
    ENDIF
-
 
    IF(.not.config_flags%restart)THEN
 
@@ -230,7 +228,7 @@
                       ACSNOM,IVGTYP,ISLTYP, SFCEVP,SMOIS,     &
                       SH2O, SNOWH, SMFR3D,                    &
                       DX,DY,F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY, &
-                      allowed_to_read,                        &
+                      allowed_to_read, moved ,                &
                       ids, ide, jds, jde, kds, kde,           &
                       ims, ime, jms, jme, kms, kme,           &
                       grid%i_start(ij), grid%i_end(ij), grid%j_start(ij), grid%j_end(ij), kts, kte           )
@@ -247,7 +245,6 @@
 #endif
 
    END IF
-
 
 !
 !
@@ -312,8 +309,6 @@
 !  chem_2                        x
 
 !--------------------------------------------------------------
-
-
 
 
 #ifdef DM_PARALLEL
@@ -470,7 +465,6 @@
                          ims , ime , jms , jme , kms , kme ,        &
                          its , ite , jts , jte , kts , kte ,        &
                          its , ite , jts , jte , kts , kte )
-
 
    IF (num_moist > 0) THEN
 

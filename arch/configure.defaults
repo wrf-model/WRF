@@ -4,6 +4,7 @@
 FC		=	f90
 LD		=	f90
 CC              =       cc
+SCC		=	$(CC)
 RWORDSIZE       =       4
 FCBASEOPTS      =       -freeform -I. -w
 FCFLAGS		=	$(FCBASEOPTS)
@@ -31,7 +32,7 @@ CC_TOOLS        =       $(CC)
 #### because the SGI Fortran compiler complains about long source lines.      ####
 SED_FTN = sed -f ../arch/no_file_line.sed
 
-externals : CONFIGURE_WRFIO_NF wrfio_int module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -44,6 +45,10 @@ wrfio_nf :
 wrfio_int : 
 	( cd ../external/io_int ; \
           make CC="$(CC)" FC="f90 $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" all )
+
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; \
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" FC="f90 $(FCDEBUG) $(FCFLAGS) -w" RANLIB="$(RANLIB)" CPP="$(CPP)" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -86,6 +91,7 @@ module_initialize_real.o module_dm.o  start_domain.o :
 
 FC		=	f90
 CC              =       cc
+SCC		=	$(CC)
 FCBASEOPTS      =       -freeform -I. -w
 FCFLAGS		=	-freeform -I. -w
 CFLAGS		=
@@ -113,7 +119,7 @@ CC_TOOLS        =       $(CC)
 #### because the SGI Fortran compiler complains about long source lines.      ####
 SED_FTN = sed -f ../arch/no_file_line.sed
 
-externals : CONFIGURE_WRFIO_NF wrfio_int module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -166,6 +172,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 FC              =       f90
 LD              =       f90
 CC              =       cc
+SCC		=	$(CC)
 CFLAGS          =       -64
 FCOPTIM         =       -O3
 FCDEBUG         =       # -g
@@ -200,7 +207,7 @@ CC_TOOLS        =       $(CC)
 #### because the SGI Fortran compiler complains about long source lines.      ####
 SED_FTN = sed -f ../arch/no_file_line.sed
 
-externals : CONFIGURE_WRFIO_NF wrfio_int module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -214,7 +221,7 @@ wrfio_int :
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" FC="f90 $(FCDEBUG) $(FCFLAGS) -w" RANLIB="$(RANLIB)" CPP="$(CPP)" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" FC="f90 $(FCDEBUG) $(FCFLAGS) -w" RANLIB="$(RANLIB)" CPP="$(CPP)" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -257,6 +264,7 @@ module_initialize_real.o module_dm.o  start_domain.o :
 FC              =       f90 -n32 -mips4 -w
 LD              =       f90 -n32 -mips4 -w
 CC              =       cc
+SCC		=	$(CC)
 CFLAGS          =       -n32 -mips4
 FCBASEOPTS      =       -freeform -I. -w
 FCFLAGS         =       -freeform -I. -O3 -OPT:roundoff=3:IEEE_arithmetic=3 -OPT:fold_arith_limit=2001
@@ -285,7 +293,7 @@ CC_TOOLS        =       $(CC)
 #### because the SGI Fortran compiler complains about long source lines.      ####
 SED_FTN = sed -f ../arch/no_file_line.sed
 
-externals : CONFIGURE_WRFIO_NF wrfio_int module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -340,6 +348,7 @@ OMPCPP          =       -D_OPENMP
 FC              =       f90
 LD              =       f90
 CC              =       cc
+SCC		=	$(CC)
 CFLAGS          =       -64
 FCOPTIM         =       -O3
 FCDEBUG         =       # -g
@@ -374,7 +383,7 @@ CC_TOOLS        =       $(CC)
 #### because the SGI Fortran compiler complains about long source lines.      ####
 SED_FTN = sed -f ../arch/no_file_line.sed
 
-externals : CONFIGURE_WRFIO_NF wrfio_int module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -388,7 +397,7 @@ wrfio_int :
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" FC="f90 $(FCDEBUG) $(FCFLAGS) -w" RANLIB="$(RANLIB)" CPP="$(CPP)" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" FC="f90 $(FCDEBUG) $(FCFLAGS) -w" RANLIB="$(RANLIB)" CPP="$(CPP)" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -439,6 +448,7 @@ OMPCPP          =       #-D_OPENMP
 FC              =       f90
 LD              =       f90
 CC              =       cc
+SCC		=	$(CC)
 CFLAGS          =       -w -64 -mips4 -DWRF_RSL_IO -DMAXDOM_MAKE=$(MAX_DOMAINS) \
                         -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL/RSL -DDM_PARALLEL
 FCDEBUG         =       # -g
@@ -473,7 +483,7 @@ CC_TOOLS        =       $(CC)
 #### because the SGI Fortran compiler complains about long source lines.      ####
 SED_FTN = sed -f ../arch/no_file_line.sed
 
-externals : CONFIGURE_WRFIO_NF ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -497,7 +507,7 @@ wrfio_int :
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" FC="f90 $(FCDEBUG) $(FCFLAGS) -w" RANLIB="$(RANLIB)" CPP="$(CPP)" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" FC="f90 $(FCDEBUG) $(FCFLAGS) -w" RANLIB="$(RANLIB)" CPP="$(CPP)" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -545,6 +555,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 FC              =       f95
 LD              =       f95
 CC              =       cc
+SCC		=	$(CC)
 CFLAGS          =
 FCOPTIM		=	-O2 # -O4 -xlibmopt
 FCDEBUG		=	#-g
@@ -583,7 +594,7 @@ CC_TOOLS        =       $(CC)
 #### usually due to cpp translating __FILE__ to a full pathname.              ####
 SED_FTN = sed -f ../arch/no_file_line.sed
 
-externals : CONFIGURE_WRFIO_NF wrfio_int module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -597,7 +608,7 @@ wrfio_int :
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" FC="$(FC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP)" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" FC="$(FC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP)" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -664,6 +675,7 @@ OMPCPP          =
 FC              =       f95
 LD              =       f95
 CC              =       cc
+SCC		=	$(CC)
 ARCHFLAGS       =       -DNETCDF -DYYY -DINTIO \
                         -DDM_PARALLEL -DRSL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
@@ -705,7 +717,7 @@ CC_TOOLS        =       $(CC)
 #### usually due to cpp translating __FILE__ to a full pathname.              ####
 SED_FTN = sed -f ../arch/no_file_line.sed
 
-externals : CONFIGURE_WRFIO_NF ../external/RSL/RSL/librsl.a gen_comms.c wrfio_int module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a gen_comms.c wrfio_int module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -726,7 +738,7 @@ wrfio_int :
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" FC="$(FC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP)" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" FC="$(FC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP)" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -786,6 +798,7 @@ OMPCPP          =       -D_OPENMP
 FC              =       f95
 LD              =       f95
 CC              =       cc
+SCC		=	$(CC)
 CFLAGS          =
 FCOPTIM		=	-O3 -xlibmopt
 FCDEBUG		=	#-g
@@ -824,7 +837,7 @@ CC_TOOLS        =       $(CC)
 #### usually due to cpp translating __FILE__ to a full pathname.              ####
 SED_FTN = sed -f ../arch/no_file_line.sed
 
-externals : CONFIGURE_WRFIO_NF wrfio_int module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -838,7 +851,7 @@ wrfio_int :
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" FC="$(FC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP)" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" FC="$(FC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP)" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -890,6 +903,7 @@ OMPCPP          =       -D_OPENMP
 FC              =       f95
 LD              =       f95
 CC              =       cc
+SCC		=	$(CC)
 ARCHFLAGS       =       -DNETCDF -DYYY -DINTIO \
                         -DDM_PARALLEL -DRSL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
@@ -931,7 +945,7 @@ CC_TOOLS        =       $(CC)
 #### usually due to cpp translating __FILE__ to a full pathname.              ####
 SED_FTN = sed -f ../arch/no_file_line.sed
 
-externals : CONFIGURE_WRFIO_NF ../external/RSL/RSL/librsl.a gen_comms.c wrfio_int module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a gen_comms.c wrfio_int module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -952,7 +966,7 @@ wrfio_int :
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" FC="$(FC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP)" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" FC="$(FC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP)" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -998,6 +1012,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 FC              =       xlf90_r
 LD              =       xlf90_r
 CC              =       cc_r
+SCC		=	$(CC)
 RWORDSIZE       =       4
 CFLAGS          =       -DNOUNDERSCORE
 FCOPTIM         =       -O2 -qarch=auto
@@ -1028,7 +1043,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_int module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -1042,7 +1057,7 @@ wrfio_int :
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -qarch=auto -qzerosize" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -1107,6 +1122,7 @@ OMPCPP          =       -D_OPENMP
 FC              =       xlf90_r
 LD              =       xlf90_r
 CC              =       cc_r
+SCC		=	$(CC)
 RWORDSIZE       =       4
 CFLAGS          =       -DNOUNDERSCORE
 FCOPTIM         =       -O2 -qarch=auto
@@ -1136,7 +1152,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
 
-externals : CONFIGURE_WRFIO_NF wrfio_int module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -1150,7 +1166,7 @@ wrfio_int :
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -qarch=auto -qzerosize" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -1209,7 +1225,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL_LITE/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; cat ../external/RSL_LITE/gen_comms.c >> ../tools/gen_comms.c )
@@ -1229,7 +1245,7 @@ wrfio_int :
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -1315,7 +1331,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; cat ../external/RSL/gen_comms.c >> ../tools/gen_comms.c )
@@ -1335,7 +1351,7 @@ wrfio_int :
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -1421,7 +1437,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF CONFIGURE_WRFIO_PHDF5 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 CONFIGURE_WRFIO_PHDF5 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; cat ../external/RSL/gen_comms.c >> ../tools/gen_comms.c )
@@ -1444,7 +1460,7 @@ wrfio_int :
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -1530,7 +1546,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF CONFIGURE_WRFIO_PHDF5 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 CONFIGURE_WRFIO_PHDF5 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL_LITE/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; cat ../external/RSL_LITE/gen_comms.c >> ../tools/gen_comms.c )
@@ -1553,7 +1569,7 @@ wrfio_int :
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -1641,7 +1657,7 @@ NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 MAX_PROC        =       1024
 
-externals : CONFIGURE_WRFIO_NF ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; cat ../external/RSL/gen_comms.c >> ../tools/gen_comms.c )
@@ -1661,7 +1677,7 @@ wrfio_int :
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -1761,7 +1777,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; cat ../external/RSL/gen_comms.c >> ../tools/gen_comms.c )
@@ -1781,7 +1797,7 @@ wrfio_int :
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -1874,7 +1890,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF ../external/RSL/RSL/librsl.a wrfio_int wrfio_mcel gen_comms.c module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int wrfio_mcel gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( cat ../tools/gen_comms_warning ../external/RSL/gen_comms.c > ../tools/gen_comms.c )
@@ -1895,7 +1911,7 @@ wrfio_int :
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -2009,7 +2025,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F wrfio_esmf
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F wrfio_esmf
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; cat ../external/RSL/gen_comms.c >> ../tools/gen_comms.c )
@@ -2029,7 +2045,7 @@ wrfio_int :
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 wrfio_esmf : 
 	( cd $(ESMF_IO_DIR) ; \
@@ -2137,7 +2153,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F wrfio_esmf
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F wrfio_esmf
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; cat ../external/RSL/gen_comms.c >> ../tools/gen_comms.c )
@@ -2157,7 +2173,7 @@ wrfio_int :
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 wrfio_esmf : 
 	( cd $(ESMF_IO_DIR) ; \
@@ -2211,6 +2227,7 @@ OMPCPP          =
 FC              =       f90
 LD              =       f90
 CC              =       cc
+SCC		=	$(CC)
 RWORDSIZE       =       4
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DYYY -DINTIO \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
@@ -2241,7 +2258,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_int module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -2263,7 +2280,7 @@ wrfio_int :
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -2318,6 +2335,7 @@ OMPCPP          =
 FC              =       f90
 LD              =       f90
 CC              =       cc
+SCC		=	$(CC)
 RWORDSIZE       =       4
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DNETCDF -DYYY -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL -DRSL \
@@ -2352,7 +2370,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF ../external/RSL/RSL/librsl.a gen_comms.c wrfio_int module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a gen_comms.c wrfio_int module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -2379,7 +2397,7 @@ wrfio_int :
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -2435,6 +2453,7 @@ OMPCPP          =       -D_OPENMP
 FC              =       f90
 LD              =       f90
 CC              =       cc
+SCC		=	$(CC)
 RWORDSIZE       =       4
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DYYY -DINTIO \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
@@ -2465,7 +2484,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_int module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -2487,7 +2506,7 @@ wrfio_int :
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -2542,6 +2561,7 @@ OMPCPP          =       -D_OPENMP
 FC              =       f90
 LD              =       f90
 CC              =       cc
+SCC		=	$(CC)
 RWORDSIZE       =       4
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DNETCDF -DYYY -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL -DRSL \
@@ -2576,7 +2596,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF ../external/RSL/RSL/librsl.a gen_comms.c wrfio_int module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a gen_comms.c wrfio_int module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -2603,7 +2623,7 @@ wrfio_int :
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -2660,6 +2680,7 @@ OMPCPP          =
 FC              =       mpif90
 LD              =       mpif90
 CC              =       mpicc
+SCC		=	cc
 RWORDSIZE       =       4
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DNETCDF -DYYY -DINTIO \
                         -DDM_PARALLEL -DRSL_LITE \
@@ -2694,7 +2715,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_int ../external/RSL_LITE/librsl_lite.a gen_comms.c module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int ../external/RSL_LITE/librsl_lite.a gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL_LITE/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -2721,7 +2742,7 @@ wrfio_int :
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -2780,6 +2801,7 @@ OMPCPP          =
 FC              =       mpif90
 LD              =       mpif90
 CC              =       mpicc
+SCC		=	cc
 RWORDSIZE       =       4
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DYYY -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL -DRSL \
@@ -2814,7 +2836,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_int ../external/RSL/RSL/librsl.a gen_comms.c module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int ../external/RSL/RSL/librsl.a gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -2841,7 +2863,7 @@ wrfio_int :
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -2900,6 +2922,7 @@ OMPCPP          =       -D_OPENMP
 FC              =       mpif90
 LD              =       mpif90
 CC              =       mpicc
+SCC		=	cc
 RWORDSIZE       =       4
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DYYY -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL -DRSL \
@@ -2934,7 +2957,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_int ../external/RSL/RSL/librsl.a gen_comms.c module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int ../external/RSL/RSL/librsl.a gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -2961,7 +2984,7 @@ wrfio_int :
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -3020,6 +3043,7 @@ OMPCPP          =       -D_OPENMP
 FC              =       f90
 LD              =       f90
 CC              =       cc
+SCC		=	$(CC)
 RWORDSIZE       =       4
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DYYY -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL -DRSL \
@@ -3054,7 +3078,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_int ../external/RSL/RSL/librsl.a gen_comms.c module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int ../external/RSL/RSL/librsl.a gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -3081,7 +3105,7 @@ wrfio_int :
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -3137,6 +3161,7 @@ OMPCPP          =
 FC              =       mpif90
 LD              =       mpif90
 CC              =       mpicc
+SCC		=	cc
 RWORDSIZE       =       4
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DYYY -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL -DRSL \
@@ -3171,7 +3196,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_int ../external/RSL/RSL/librsl.a gen_comms.c module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int ../external/RSL/RSL/librsl.a gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -3198,7 +3223,7 @@ wrfio_int :
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -3254,6 +3279,7 @@ OMPCPP          =
 FC              =       mpif90
 LD              =       mpif90 -f90=cxx
 CC              =       mpicc
+SCC		=	cc
 RWORDSIZE       =       4
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DYYY -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL -DRSL -DFLOATSAFE \
@@ -3293,7 +3319,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_int ../external/RSL/RSL/librsl.a wrfio_mcel gen_comms.c module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int ../external/RSL/RSL/librsl.a wrfio_mcel gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -3320,7 +3346,7 @@ wrfio_int :
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -3382,6 +3408,7 @@ OMPCPP          =
 FC              =       echo # mpif90
 LD              =       echo # mpif90
 CC              =       echo # mpicc
+SCC		=	echo # cc
 RWORDSIZE       =       4
 ARCHFLAGS       =       -DAUTODOC_BUILD CONFIGURE_NETCDF_FLAG -DYYY -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL="'<b>DM_PARALLEL</b>'" -DRSL="'<b>RSL</b>'" \
@@ -3415,7 +3442,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_int ../external/RSL/RSL/librsl.a gen_comms.c module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int ../external/RSL/RSL/librsl.a gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -3438,7 +3465,7 @@ wrfio_int :
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -3483,6 +3510,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 FC              =       fort
 LD              =       fort
 CC              =       cc
+SCC		=	$(CC)
 RWORDSIZE       =       4
 CFLAGS          =       -DF2CSTYLE 
 FCOPTIM         =       -fast -O4
@@ -3512,7 +3540,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_int module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; \
@@ -3531,7 +3559,7 @@ wrfio_int :
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCBASENOINL) -w" \
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCBASENOINL) -w" \
           TRADFLAG="-traditional" )
 
 esmf_time : 
@@ -3573,6 +3601,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 FC              =       fort
 LD              =       fort
 CC              =       cc
+SCC		=	$(CC)
 RWORDSIZE       =       4
 CFLAGS          =       -DF2CSTYLE 
 FCOPTIM         =       -fast -O4
@@ -3602,7 +3631,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_int module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -3621,7 +3650,7 @@ wrfio_int :
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCBASENOINL) -w" \
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCBASENOINL) -w" \
           TRADFLAG="-traditional" )
 
 esmf_time : 
@@ -3665,6 +3694,7 @@ MAX_PROC        =       1024
 FC              =       mpif90
 LD              =       mpif90
 CC              =       mpicc
+SCC		=	cc
 RWORDSIZE       =       4
 CFLAGS          =       -DDM_PARALLEL -DWRF_RSL_IO -DF2CSTYLE \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) \
@@ -3698,7 +3728,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -3723,7 +3753,7 @@ wrfio_int :
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCBASENOINL) -w" \
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCBASENOINL) -w" \
           TRADFLAG="-traditional" )
 
 esmf_time : 
@@ -3770,6 +3800,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 FC              =       frt
 LD              =       frt
 CC              =       vcc
+SCC		=	$(CC)
 RWORDSIZE       =       4
 CFLAGS          =
 FCFLAGS         =       -Free -X9 -Am
@@ -3794,7 +3825,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
 
-externals : CONFIGURE_WRFIO_NF  module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1  module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -3807,6 +3838,7 @@ wrfio_nf :
 #
 FC		=	f90
 CC              =       cc
+SCC		=	$(CC)
 RWORDSIZE       =       8
 CFLAGS          =
 FCFLAGS		=	-f free -N 255 -I.
@@ -3830,7 +3862,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
 
-externals : CONFIGURE_WRFIO_NF  esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1  esmf_time
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
 
 wrfio_nf : 
@@ -3847,6 +3879,7 @@ solve_interface.o : solve_interface.F
 FC              =       pgf90
 LD              =       pgf90
 CC              =       gcc
+SCC		=	$(CC)
 RWORDSIZE       =       4
 SFC             =       $(FC)
 CFLAGS          =
@@ -3878,7 +3911,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
 
-externals : CONFIGURE_WRFIO_NF wrfio_int module_dm.F esmf_time wrfio_grib1
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -3891,7 +3924,7 @@ wrfio_nf :
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -3945,6 +3978,7 @@ MAX_PROC        =       1024
 FC              =       pgf90
 LD              =       pgf90
 CC              =       gcc
+SCC		=	$(CC)
 SFC             =       pgf90
 RWORDSIZE       =       4
 FCOPTIM		=	-fast
@@ -3978,7 +4012,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time wrfio_grib1
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -3997,7 +4031,7 @@ wrfio_nf :
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -4052,6 +4086,7 @@ OMPCPP          =       -D_OPENMP
 FC              =       pgf90
 LD              =       pgf90
 CC              =       gcc
+SCC		=	$(CC)
 SFC             =       $(FC)
 CFLAGS          =
 FCOPTIM		=	-fast
@@ -4083,7 +4118,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
 
-externals : CONFIGURE_WRFIO_NF wrfio_int module_dm.F esmf_time wrfio_grib1
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -4096,7 +4131,7 @@ wrfio_nf :
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -4154,6 +4189,7 @@ MAX_PROC        =       1024
 FC              =       pgf90
 LD              =       pgf90
 CC              =       gcc
+SCC		=	$(CC)
 SFC             =       pgf90
 RWORDSIZE       =       4
 FCOPTIM		=	-fast
@@ -4187,7 +4223,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time wrfio_grib1
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -4210,7 +4246,7 @@ wrfio_int :
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -4265,6 +4301,7 @@ MAX_PROC        =       1024
 FC              =       mpif90 -f90=pgf90
 LD              =       mpif90 -f90=pgf90
 CC              =       mpicc -cc=gcc
+SCC		=	gcc
 SFC             =       pgf90
 RWORDSIZE       =       4
 CFLAGS          =       -DDM_PARALLEL -DWRF_RSL_IO \
@@ -4298,7 +4335,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time wrfio_grib1
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -4317,7 +4354,7 @@ wrfio_nf :
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -4371,6 +4408,7 @@ MAX_PROC        =       1024
 FC              =       mpif90 -f90=pgf90
 LD              =       mpif90 -f90=pgf90
 CC              =       mpicc -cc=gcc
+SCC		=	gcc
 SFC             =       pgf90
 RWORDSIZE       =       4
 CFLAGS          =       -DDM_PARALLEL \
@@ -4405,7 +4443,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time wrfio_grib1
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL_LITE/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -4424,7 +4462,7 @@ wrfio_nf :
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -4481,6 +4519,7 @@ MAX_PROC = 2000
 FC = mpif90
 LD = mpif90
 CC = mpicc
+SCC = cc
 SFC = efc
 RWORDSIZE       =       4
 CFLAGS = -DDM_PARALLEL -DWRF_RSL_IO -w \
@@ -4518,8 +4557,7 @@ RANLIB = ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       ecc
 
-externals : CONFIGURE_WRFIO_NF ../external/RSL/RSL/librsl.a \
-            wrfio_int gen_comms.c module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -4632,8 +4670,7 @@ RANLIB = ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
 
-externals : CONFIGURE_WRFIO_NF ../external/RSL/RSL/librsl.a \
-            wrfio_int gen_comms.c module_dm.F esmf_time wrfio_grib1
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -4710,6 +4747,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 FC              =       pgf90
 LD              =       pgf90
 CC              =       gcc
+SCC		=	$(CC)
 SFC             =       $(FC)
 RWORDSIZE       =       4
 CFLAGS          =
@@ -4741,7 +4779,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
 
-externals : CONFIGURE_WRFIO_NF wrfio_int module_dm.F esmf_time wrfio_grib1
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -4756,7 +4794,7 @@ wrfio_nf :  io_flags
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
 
 wrfio_int :  io_flags
 	( cd ../external/io_int ; \
@@ -4812,6 +4850,7 @@ MAX_PROC        =       1024
 FC              =       mpif90
 LD              =       mpif90
 CC              =       mpicc
+SCC		=	gcc
 SFC             =       pgf90
 RWORDSIZE       =       4
 CFLAGS          =       -DDM_PARALLEL -DWRF_RSL_IO \
@@ -4845,7 +4884,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time wrfio_grib1
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -4870,7 +4909,7 @@ wrfio_int :  io_flags
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -4922,6 +4961,7 @@ MAX_PROC        =       1024
 FC              =       mpif90
 LD              =       mpif90
 CC              =       mpicc
+SCC		=	gcc
 SFC             =       pgf90
 RWORDSIZE       =       4
 CFLAGS          =       -DDM_PARALLEL \
@@ -4955,7 +4995,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time wrfio_grib1
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL_LITE/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -4976,7 +5016,7 @@ wrfio_nf :  io_flags
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
 
 wrfio_int : io_flags
 	( cd ../external/io_int ; \
@@ -5036,6 +5076,7 @@ MAX_PROC   = 2000
 FC         = mpif90
 LD         = mpif90
 CC         = mpicc
+SCC        = gcc
 SFC        = efc
 RWORDSIZE       =       4
 CFLAGS     = -DDM_PARALLEL -w -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) \
@@ -5071,8 +5112,7 @@ RANLIB = ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       ecc
 
-externals : CONFIGURE_WRFIO_NF ../external/RSL_LITE/librsl_lite.a \
-            wrfio_int gen_comms.c module_dm.F esmf_time wrfio_grib1
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL_LITE/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -5092,7 +5132,7 @@ module_dm.F : ../external/RSL_LITE/module_dm.F
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -5154,6 +5194,7 @@ MAX_PROC = 256
 FC = efc -I.. -I/usr/local/vmi/mpich/include
 LD = efc
 CC = ecc -I. -I/usr/local/vmi/mpich/include
+SCC		=	$(CC)
 SFC = efc
 RWORDSIZE       =       4
 CFLAGS = -DDM_PARALLEL -DWRF_RSL_IO \
@@ -5185,7 +5226,7 @@ RANLIB = ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       ecc
 
-externals : CONFIGURE_WRFIO_NF ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time io_grib1
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time io_grib1
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -5204,7 +5245,7 @@ wrfio_nf :
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -5266,6 +5307,7 @@ MAX_PROC = 256
 FC = efc -I.. -I/usr/local/vmi/mpich/include
 LD = efc
 CC = ecc -I. -I/usr/local/vmi/mpich/include
+SCC		=	$(CC)
 SFC = efc
 RWORDSIZE       =       4
 CFLAGS = -DDM_PARALLEL -I../external/RSL_LITE \
@@ -5297,7 +5339,7 @@ RANLIB = ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       ecc
 
-externals : CONFIGURE_WRFIO_NF ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL_LITE/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -5364,6 +5406,7 @@ OMP             =
 OMPCPP          =
 FC		=	ifort
 CC              =       icc
+SCC		=	$(CC)
 SFC		=	$(FC)
 RWORDSIZE       =       4
 FCBASEOPTS      =       -w -FR -cm -I. -Vaxlib -convert big_endian -mp
@@ -5392,7 +5435,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
 
-externals : CONFIGURE_WRFIO_NF wrfio_int module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -5404,7 +5447,7 @@ wrfio_nf :
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCFLAGS) -w")
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCFLAGS) -w")
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -5471,6 +5514,7 @@ MAX_PROC        =       1024
 FC              =       ifort
 LD              =       ifort
 CC              =       icc
+SCC		=	$(CC)
 SFC             =       ifort
 RWORDSIZE       =       4
 FCOPTIM		=	-O3 -xW
@@ -5502,7 +5546,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       gcc
 
-externals : CONFIGURE_WRFIO_NF ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -5521,7 +5565,7 @@ wrfio_nf :
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCFLAGS) -w")
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCFLAGS) -w")
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -5579,6 +5623,7 @@ OMPCPP          =       -D_OPENMP
 FC              =       ifort
 LD              =       ifort
 CC              =       gcc
+SCC		=	$(CC)
 SFC             =       $(FC)
 RWORDSIZE       =       4
 CFLAGS          =
@@ -5609,7 +5654,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
 
-externals : CONFIGURE_WRFIO_NF wrfio_int module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -5622,7 +5667,7 @@ wrfio_nf :
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCFLAGS) -w")
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCFLAGS) -w")
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -5681,6 +5726,7 @@ MAX_PROC        =       1024
 FC              =       ifort
 LD              =       ifort
 CC              =       icc
+SCC		=	$(CC)
 SFC             =       ifort
 RWORDSIZE       =       4
 FCOPTIM		=	-O3 -xW
@@ -5712,7 +5758,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       gcc
 
-externals : CONFIGURE_WRFIO_NF ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -5731,7 +5777,7 @@ wrfio_nf :
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCFLAGS) -w")
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCFLAGS) -w")
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -5791,6 +5837,7 @@ MAX_PROC        =       1024
 FC              =       mpif90 -f90=ifort
 LD              =       mpif90 -f90=ifort
 CC              =       mpicc -cc=icc
+SCC		=	icc
 SFC             =       ifort
 RWORDSIZE       =       4
 FCOPTIM		=	-O3 -xW
@@ -5822,7 +5869,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       gcc
 
-externals : CONFIGURE_WRFIO_NF ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -5841,7 +5888,7 @@ wrfio_nf :
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCFLAGS) -w")
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCFLAGS) -w")
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -5916,6 +5963,7 @@ RUNTIME_SYSTEM	=	sx
 MPP_TARGET	=	$(RUNTIME_SYSTEM)
 FC		=	f90
 CC		=	cc
+SCC		=	$(CC)
 LD		=	$(FC)
 RWORDSIZE       =       8
 ARCHFLAGS	=	-DNETCDF -DINTIO -DWRF_RSL_IO -DIWORDSIZE=8 -DDWORDSIZE=8 -DRWORDSIZE=8 -DLWORDSIZE=8 -DTRIEDNTRUE -DONLY_WRFMODEL_IO -DLIMIT_ARGS -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
@@ -5965,7 +6013,7 @@ FLIC_MACROS = LMvpp.m4
 VECTOR = 1
 
 
-externals : wrfio_nf wrfio_int  esmf_time  module_dm.F
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int  esmf_time  module_dm.F
 	( /sbin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
 	  cat ../external/RSL/gen_comms.c >> ../tools/gen_comms.c )
 
@@ -6053,6 +6101,7 @@ MPI_HOME          = /usr
 FC                = ifort -I..
 LD                = ifort
 CC                = icc -I.
+SCC		=	$(CC)
 CC_TOOLS          = cc
 SFC               = ifort
 RWORDSIZE         = 4
@@ -6094,7 +6143,7 @@ M4                = m4
 RANLIB            = ranlib
 NETCDFPATH	  = CONFIGURE_NETCDF_PATH
 
-externals : CONFIGURE_WRFIO_NF ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -6120,7 +6169,7 @@ wrfio_int :
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" TRADFLAG="-traditional" \
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" TRADFLAG="-traditional" \
           FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" )
 
 esmf_time : 
@@ -6188,6 +6237,7 @@ MPI_HOME          = /usr
 FC                = ifort -I..
 LD                = ifort
 CC                = icc -I.
+SCC		=	$(CC)
 CC_TOOLS          = cc
 SFC               = ifort
 RWORDSIZE         = 4
@@ -6228,7 +6278,7 @@ M4                = m4
 RANLIB            = ranlib
 NETCDFPATH	  = CONFIGURE_NETCDF_PATH
 
-externals : CONFIGURE_WRFIO_NF ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL_LITE/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -6253,7 +6303,7 @@ wrfio_int :
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" TRADFLAG="-traditional" \
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" TRADFLAG="-traditional" \
           FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
 
 esmf_time : 
@@ -6311,6 +6361,7 @@ INCLUDE           = ../external/io_netcdf/
 FC                = ifort -I..
 LD                = ifort
 CC                = icc -I.
+SCC		=	$(CC)
 CC_TOOLS          = cc
 SFC               = ifort
 RWORDSIZE         = 4
@@ -6348,7 +6399,7 @@ M4                = m4
 RANLIB            = ranlib
 NETCDFPATH	  = CONFIGURE_NETCDF_PATH
 
-externals : CONFIGURE_WRFIO_NF wrfio_int module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; \
@@ -6370,7 +6421,7 @@ wrfio_int :
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" TRADFLAG="-traditional" \
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" TRADFLAG="-traditional" \
           FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
 
 esmf_time : 
@@ -6422,6 +6473,7 @@ INCLUDE           = ../external/io_netcdf/
 FC                = ifort -I..
 LD                = ifort
 CC                = icc -I.
+SCC		=	$(CC)
 CC_TOOLS          = cc
 SFC               = ifort
 RWORDSIZE         = 4
@@ -6459,7 +6511,7 @@ M4                = m4
 RANLIB            = ranlib
 NETCDFPATH	  = CONFIGURE_NETCDF_PATH
 
-externals : CONFIGURE_WRFIO_NF wrfio_int module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; \
@@ -6481,7 +6533,7 @@ wrfio_int :
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" TRADFLAG="-traditional" \
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" TRADFLAG="-traditional" \
           FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
 
 esmf_time : 
@@ -6532,6 +6584,7 @@ DMPARALLEL      =       1
 FC              =       ftn
 LD              =       ftn
 CC              =       cc
+SCC		=	$(CC)
 
 #### Override default sed command and script for Fortran source files ####
 #### This sed script converts !$OMP directives to !csd$ directives ####
@@ -6588,7 +6641,7 @@ M4              =       m4 -B10000
 RANLIB          =       echo
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 
-externals : CONFIGURE_WRFIO_NF ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL_LITE/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; cat ../external/RSL_LITE/gen_comms.c >> ../tools/gen_comms.c )
@@ -6669,6 +6722,7 @@ DMPARALLEL      =       1
 FC              =       ftn
 LD              =       ftn
 CC              =       cc
+SCC		=	$(CC)
 
 ## Use these for X1 cross compiler to build Registry
 ##X1_CROSS_COMP = "gcc"
@@ -6719,7 +6773,7 @@ M4              =       m4 -B10000
 RANLIB          =       echo
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 
-externals : CONFIGURE_WRFIO_NF ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL_LITE/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; cat ../external/RSL_LITE/gen_comms.c >> ../tools/gen_comms.c )
@@ -6795,6 +6849,7 @@ OMPCPP          =
 FC              =       f90
 LD              =       f90
 CC              =       cc
+SCC		=	$(CC)
 ARCHFLAGS       =       CONFIGURE_NETCDF_FLAG -DINTIO -DTRIEDNTRUE -DLIMIT_ARGS -DFLOATSAFE \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 
 CFLAGS          =       $(ARCHFLAGS) +DS2.0a -DNOUNDERSCORE
@@ -6821,7 +6876,7 @@ RANLIB          =       echo
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_int module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -6880,6 +6935,7 @@ OMPCPP          =
 FC              =       f90
 LD              =       f90
 CC              =       cc
+SCC		=	$(CC)
 ARCHFLAGS       =       CONFIGURE_NETCDF_FLAG -DWRF_RSL_IO -DRSL -DINTIO -DTRIEDNTRUE -DLIMIT_ARGS \
                         -DDM_PARALLEL -DFLOATSAFE -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
 			-DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -DSTUBMPI
@@ -6908,7 +6964,7 @@ RANLIB          =       echo
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF ../external/RSL/RSL/librsl.a gen_comms.c wrfio_int module_dm.F esmf_time 
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a gen_comms.c wrfio_int module_dm.F esmf_time 
 
 gen_comms.c : ../external/RSL/gen_comms.c
 		( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -6974,6 +7030,7 @@ OMPCPP          =
 FC              =       f90
 LD              =       f90
 CC              =       cc
+SCC		=	$(CC)
 ARCHFLAGS       =       CONFIGURE_NETCDF_FLAG -DINTIO -DTRIEDNTRUE -DLIMIT_ARGS -DFLOATSAFE \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 
 CFLAGS          =       $(ARCHFLAGS) +DSitanium2 -DNOUNDERSCORE
@@ -7000,7 +7057,7 @@ RANLIB          =       echo
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_int module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -7058,6 +7115,7 @@ OMPCPP          =
 FC              =       f90
 LD              =       f90
 CC              =       cc
+SCC		=	$(CC)
 ARCHFLAGS       =       CONFIGURE_NETCDF_FLAG -DWRF_RSL_IO -DRSL -DINTIO -DTRIEDNTRUE -DLIMIT_ARGS -DFLOATSAFE \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DSTUBMPI
 CFLAGS          =       $(ARCHFLAGS) +DSitanium2 -DNOUNDERSCORE -I../external/RSL/RSL
@@ -7084,7 +7142,7 @@ RANLIB          =       echo
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_int module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -7142,6 +7200,7 @@ OMPCPP          =       -D_OPENMP
 FC              =       f90
 LD              =       f90
 CC              =       cc
+SCC		=	$(CC)
 ARCHFLAGS       =       CONFIGURE_NETCDF_FLAG -DINTIO -DTRIEDNTRUE -DLIMIT_ARGS -DFLOATSAFE \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 
 CFLAGS          =       $(ARCHFLAGS) +DS2.0a -DNOUNDERSCORE
@@ -7168,7 +7227,7 @@ RANLIB          =       echo
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_int module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -7228,6 +7287,7 @@ OMPCPP          =
 FC              =       mpif90
 LD              =       mpif90
 CC              =       mpicc
+SCC		=	cc
 ARCHFLAGS       =       CONFIGURE_NETCDF_FLAG -DINTIO -DWRF_RSL_IO -DTRIEDNTRUE -DLIMIT_ARGS -DFLOATSAFE \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4  -DDM_PARALLEL -DRSL \
 			-DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
@@ -7255,7 +7315,7 @@ RANLIB          =       echo
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_int ../external/RSL/RSL/librsl.a gen_comms.c module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int ../external/RSL/RSL/librsl.a gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -7326,6 +7386,7 @@ OMPCPP          =
 FC              =       mpif90
 LD              =       mpif90
 CC              =       mpicc
+SCC		=	cc
 ARCHFLAGS       =       CONFIGURE_NETCDF_FLAG -DINTIO -DWRF_RSL_IO -DTRIEDNTRUE -DLIMIT_ARGS -DFLOATSAFE \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4  -DDM_PARALLEL -DRSL \
 			-DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
@@ -7353,7 +7414,7 @@ RANLIB          =       echo
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_int ../external/RSL/RSL/librsl.a gen_comms.c module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int ../external/RSL/RSL/librsl.a gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -7426,6 +7487,7 @@ FC              =       xlf90_r
 LD              =       xlf90_r
 #CC              =       xlc_r
 CC              =       cc
+SCC		=	$(CC)
 CFLAGS          =       -DNOUNDERSCORE -DLANDREAD_STUB
 FCOPTIM         =       -O3 -qarch=auto #-qfloat=nomaf
 FCDEBUG         =       # -qnoopt -qfullpath
@@ -7459,7 +7521,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_int module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -7473,7 +7535,7 @@ wrfio_int :
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -qarch=auto -qzerosize" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -7546,6 +7608,7 @@ OMPCPP          =       -D_OPENMP
 FC              =       xlf90_r
 LD              =       xlf90_r
 CC              =       cc
+SCC		=	$(CC)
 CFLAGS          =       -DNOUNDERSCORE -DLANDREAD_STUB
 FCOPTIM         =       -O2 -qarch=auto -qunroll=yes #-qfloat=nomaf
 FCDEBUG         =       # -qnoopt -qfullpath
@@ -7575,7 +7638,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
 
-externals : CONFIGURE_WRFIO_NF wrfio_int module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -7589,7 +7652,7 @@ wrfio_int :
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -qarch=auto -qzerosize" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \

@@ -124,7 +124,10 @@ MPE_Log_event( 15, s, "sten begin" ) ;
 fprintf(stderr,"debug called RSL_EXCH_STENCIL %d\n",s ) ;
 #endif
 
-  sten = (stencil_desc_t *) sh_descriptors[ s ] ;
+  if ((sten = (stencil_desc_t *) sh_descriptors[ s ]) == NULL )
+  {
+    RSL_TEST_ERR(1,"invalid or unspecified stencil descriptor" ) ;
+  }
 
   /* if stencil has not been compiled, compile it now! */
   if ( sten->compiled[d] == 0 )

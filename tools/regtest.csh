@@ -1478,7 +1478,7 @@ EOF
 				endif
 
 				# WRF output quilt servers are only tested for MPI configuration.  
-				# Currenlty, only one WRF output quilt server is used.  
+				# Currently, only one WRF output quilt server is used.  
 
 				if ( $QUILT == TRUE ) then
 					if ( $compopt == $COMPOPTS[3] ) then
@@ -1568,6 +1568,21 @@ banner 16
 				if ( $CHEM == TRUE ) then
 					sed -e 's/ chem_in_opt *= *[0-9]*/ chem_in_opt = 0/g' namelist.input >! namelist.input.temp
 					mv namelist.input.temp namelist.input
+
+					# WRF output quilt servers are only tested for MPI configuration.  
+					# Currently, only one WRF output quilt server is used.  
+	
+					if ( $QUILT == TRUE ) then
+						if ( $compopt == $COMPOPTS[3] ) then
+							#	For now, test only one group of one output quilt servers.  
+							sed -e 's/ nio_tasks_per_group *= *[0-9][0-9]*/ nio_tasks_per_group = 1/g' \
+							    -e 's/ nio_groups *= *[0-9][0-9]*/ nio_groups = 1/g' \
+							namelist.input >! namelist.input.temp
+							mv -f namelist.input.temp namelist.input
+							echo "Building namelist.input.$core.${phys_option}.$compopt with one I/O quilt server enabled."
+							echo "NOTE  one I/O quilt server enabled for $core physics $phys_option parallel $compopt..." >>! ${DEF_DIR}/wrftest.output
+						endif
+					endif
 				endif
 
 				if      ( $compopt == $COMPOPTS[1] ) then
@@ -1746,69 +1761,86 @@ banner 20
 #set ans = "$<"
 #DAVE###################################################
 
-                        # run on 1 and then on Num_Procs processors
-                        foreach n ( 1 $Num_Procs )
+			#	Run on 1 and then on Num_Procs processors
+
+			foreach n ( 1 $Num_Procs )
 #DAVE###################################################
 echo running nmm on $n procs
 banner 21
 #set ans = "$<"
 #DAVE###################################################
-			if ( `uname` == AIX ) then
-				set RUNCOMMAND = $MPIRUNCOMMAND
-			else
-				set RUNCOMMAND = `echo $MPIRUNCOMMAND | sed "s/$Num_Procs/$n/"`
-			endif
+				if ( `uname` == AIX ) then
+					set RUNCOMMAND = $MPIRUNCOMMAND
+				else
+					set RUNCOMMAND = `echo $MPIRUNCOMMAND | sed "s/$Num_Procs/$n/"`
+				endif
+	
+				# WRF output quilt servers are only tested for MPI configuration.  
+				# Currently, only one WRF output quilt server is used.  
+		
+				if ( ( $QUILT == TRUE ) && ( $n = $Num_Procs ) ) then
+					if ( $compopt == $COMPOPTS[3] ) then
+						#	For now, test only one group of one output quilt servers.  
+						sed -e 's/ nio_tasks_per_group *= *[0-9][0-9]*/ nio_tasks_per_group = 1/g' \
+						    -e 's/ nio_groups *= *[0-9][0-9]*/ nio_groups = 1/g' \
+						namelist.input >! namelist.input.temp
+						mv -f namelist.input.temp namelist.input
+						echo "Building namelist.input.$core.${phys_option}.$compopt with one I/O quilt server enabled."
+						echo "NOTE  one I/O quilt server enabled for $core physics $phys_option parallel $compopt..." >>! ${DEF_DIR}/wrftest.output
+					endif
+				endif
 
-                         # NMM can fail on spurious fp exceptions that don't affect soln. Retry if necessary.
-                         set tries=0
-                         while ( $tries < 2 )
+				#	NMM can fail on spurious fp exceptions that don't affect soln. Retry if necessary.
+
+				set tries=0
+				while ( $tries < 2 )
 #DAVE###################################################
 echo try attempt $tries allowed to be less than 2
 banner 22
 #set ans = "$<"
 #DAVE###################################################
-                          @ tries = $tries + 1
-                          $RUNCOMMAND ../../main/wrf_${core}.exe.$compopt $MPIRUNCOMMANDPOST
-                          mv rsl.error.0000 print.out.wrf_${core}_Phys=${phys_option}_Parallel=${compopt}.exe_${n}p
-			  grep "SUCCESS COMPLETE" print.out.wrf_${core}_Phys=${phys_option}_Parallel=${compopt}.exe_${n}p
-			  set success = $status
-                          if ( ( -e wrfout_d01_${filetag} ) && ( $success == 0 ) ) then
-				if      ( $IO_FORM_NAME[$IO_FORM] == io_netcdf ) then
-					ncdump -h wrfout_d01_${filetag} | grep Time | grep UNLIMITED | grep currently | grep -q 2
-					set ok = $status
-				else if ( $IO_FORM_NAME[$IO_FORM] == io_grib1  ) then
-#					set joe_times = `../../external/io_grib1/wgrib -s -4yr wrfout_d01_${filetag} |  grep -v ":anl:" | wc -l`
-#					if ( $joe_times >= 100 ) then
-					set joe_times = `../../external/io_grib1/wgrib -s -4yr wrfout_d01_${filetag} |  grep "UGRD:10 m" | wc -l`
-					if ( $joe_times == 2 ) then
-						set ok = 0
+					@ tries = $tries + 1
+					$RUNCOMMAND ../../main/wrf_${core}.exe.$compopt $MPIRUNCOMMANDPOST
+					mv rsl.error.0000 print.out.wrf_${core}_Phys=${phys_option}_Parallel=${compopt}.exe_${n}p
+					grep "SUCCESS COMPLETE" print.out.wrf_${core}_Phys=${phys_option}_Parallel=${compopt}.exe_${n}p
+					set success = $status
+					if ( ( -e wrfout_d01_${filetag} ) && ( $success == 0 ) ) then
+						if      ( $IO_FORM_NAME[$IO_FORM] == io_netcdf ) then
+							ncdump -h wrfout_d01_${filetag} | grep Time | grep UNLIMITED | grep currently | grep -q 2
+							set ok = $status
+						else if ( $IO_FORM_NAME[$IO_FORM] == io_grib1  ) then
+#							set joe_times = `../../external/io_grib1/wgrib -s -4yr wrfout_d01_${filetag} |  grep -v ":anl:" | wc -l`
+#							if ( $joe_times >= 100 ) then
+							set joe_times = `../../external/io_grib1/wgrib -s -4yr wrfout_d01_${filetag} |  grep "UGRD:10 m" | wc -l`
+							if ( $joe_times == 2 ) then
+								set ok = 0
+							else
+								set ok = 1
+							endif
+						endif
+						if ( $ok == 0 ) then
+							echo "SUMMARY generate FCST  for $core physics $phys_option parallel $compopt $esmf_lib_str PASS" >>! ${DEF_DIR}/wrftest.output
+							echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
+							set tries=2  # success, bail from loop
+						else
+							echo "SUMMARY generate FCST  for $core physics $phys_option parallel $compopt $esmf_lib_str FAIL" >>! ${DEF_DIR}/wrftest.output
+							$MAIL -s "WRF FAIL FCST $ARCH[1] " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
+							if ( $tries == 2 ) exit ( 5 )
+						endif
 					else
-						set ok = 1
+						echo "SUMMARY generate FCST  for $core physics $phys_option parallel $compopt $esmf_lib_str FAIL" >>! ${DEF_DIR}/wrftest.output
+						$MAIL -s "WRF FAIL FCST $ARCH[1] " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
+						if ( $tries == 2 ) exit ( 6 )
 					endif
-				endif
-                                if ( $ok == 0 ) then
-                                       echo "SUMMARY generate FCST  for $core physics $phys_option parallel $compopt $esmf_lib_str PASS" >>! ${DEF_DIR}/wrftest.output
-                                       echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
-                                       set tries=2  # success, bail from loop
-                                else
-                                       echo "SUMMARY generate FCST  for $core physics $phys_option parallel $compopt $esmf_lib_str FAIL" >>! ${DEF_DIR}/wrftest.output
-                                       $MAIL -s "WRF FAIL FCST $ARCH[1] " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
-                                       if ( $tries == 2 ) exit ( 5 )
-                                endif
-                           else
-                                echo "SUMMARY generate FCST  for $core physics $phys_option parallel $compopt $esmf_lib_str FAIL" >>! ${DEF_DIR}/wrftest.output
-                                $MAIL -s "WRF FAIL FCST $ARCH[1] " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
-                                if ( $tries == 2 ) exit ( 6 )
-                           endif
-			   mv wrfout_d01_${filetag} $TMPDIR/wrfout_d01_${filetag}.${core}.${phys_option}.${compopt}_${n}p
+					mv wrfout_d01_${filetag} $TMPDIR/wrfout_d01_${filetag}.${core}.${phys_option}.${compopt}_${n}p
 #DAVE###################################################
 echo did nmm fcst
 ls -ls $TMPDIR/wrfout_d01_${filetag}.${core}.${phys_option}.${compopt}_${n}p
 banner 23
 #set ans = "$<"
 #DAVE###################################################
-                         end
-                        end
+				end
+			end
 
                         popd
 
@@ -1919,6 +1951,21 @@ banner 25
 						    -e '/^ non_hydrostatic/d' -e '/^ epssm/r ./phys_nh' 					\
 						    -e '/^ max_dom/d' -e '/^ time_step_fract_den/r ./dom_ideal'					\
 						./namelist.input.template >! namelist.input
+					endif
+				endif
+
+				# WRF output quilt servers are only tested for MPI configuration.  
+				# Currently, only one WRF output quilt server is used.  
+
+				if ( $QUILT == TRUE ) then
+					if ( $compopt == $COMPOPTS[3] ) then
+						#	For now, test only one group of one output quilt servers.  
+						sed -e 's/ nio_tasks_per_group *= *[0-9][0-9]*/ nio_tasks_per_group = 1/g' \
+						    -e 's/ nio_groups *= *[0-9][0-9]*/ nio_groups = 1/g' \
+						namelist.input >! namelist.input.temp
+						mv -f namelist.input.temp namelist.input
+						echo "Building namelist.input.$core.${phys_option}.$compopt with one I/O quilt server enabled."
+						echo "NOTE  one I/O quilt server enabled for $core physics $phys_option parallel $compopt..." >>! ${DEF_DIR}/wrftest.output
 					endif
 				endif
 #DAVE###################################################

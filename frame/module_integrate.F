@@ -283,10 +283,6 @@ RECURSIVE SUBROUTINE integrate ( grid )
               IF ( ASSOCIATED( grid_ptr%nests(kid)%ptr ) ) THEN
                 ! Recursive -- advance nests from previous time level to this time level.
                 CALL wrf_debug( 100 , 'module_integrate: calling med_nest_force ' )
-
-#ifdef MOVE_NESTS
-                CALL med_nest_move ( grid_ptr , grid_ptr%nests(kid)%ptr )
-#endif
                 CALL med_nest_force ( grid_ptr , grid_ptr%nests(kid)%ptr , config_flags )
                 CALL wrf_debug( 100 , 'module_integrate: back from med_nest_force ' )
                 grid_ptr%nests(kid)%ptr%start_subtime = grid%current_time - grid%step_time
@@ -296,6 +292,9 @@ RECURSIVE SUBROUTINE integrate ( grid )
                 CALL wrf_debug( 100 , 'module_integrate: calling med_nest_feedback ' )
                 CALL med_nest_feedback ( grid_ptr , grid_ptr%nests(kid)%ptr , config_flags )
                 CALL wrf_debug( 100 , 'module_integrate: back from med_nest_feedback ' )
+#ifdef MOVE_NESTS
+                CALL med_nest_move ( grid_ptr , grid_ptr%nests(kid)%ptr )
+#endif
               END IF
             END DO
             grid_ptr => grid_ptr%sibling

@@ -131,7 +131,7 @@ write(0,*)"write field : okay_to_write ",okay_to_write( DataHandle )
         DEALLOCATE(itemp)
       ELSE IF ( FieldType .EQ. WRF_DOUBLE ) THEN
         ALLOCATE(dtemp(ips:ipe,jps:jpe))
-        CALL copy_field_to_dtemp ( Field, dtemp, ips, ipe, jps, jpe, ims, ime, jms, jme )
+        CALL copy_field_to_cache_d2d ( Field, dtemp, ips, ipe, jps, jpe, ims, ime, jms, jme )
         CALL storeData( open_file_descriptors(1,DataHandle), TRIM(Varname), &
                         dtemp, &
                         data_time, data_time,  &
@@ -139,7 +139,7 @@ write(0,*)"write field : okay_to_write ",okay_to_write( DataHandle )
         DEALLOCATE(dtemp)
       ELSE IF ( FieldType .EQ. WRF_REAL ) THEN
         ALLOCATE(temp(ips:ipe,jps:jpe))
-        CALL copy_field_to_temp ( Field, temp, ips, ipe, jps, jpe, ims, ime, jms, jme )
+        CALL copy_field_to_cache_r2r ( Field, temp, ips, ipe, jps, jpe, ims, ime, jms, jme )
         CALL storeData( open_file_descriptors(1,DataHandle), TRIM(Varname), &
                         temp, &
                         data_time, data_time,  &
@@ -158,36 +158,37 @@ write(0,*)"write field : okay_to_write ",okay_to_write( DataHandle )
         DEALLOCATE(xlat)
       ENDIF
       ALLOCATE(xlat(ips:ipe,jps:jpe))
-      CALL copy_field_to_cache ( FieldType , Field, xlat, ips, ipe, jps, jpe, ims, ime, jms, jme )
+      IF      ( FieldType .EQ. WRF_REAL ) THEN
+        CALL copy_field_to_cache_r2d ( Field, xlat, ips, ipe, jps, jpe, ims, ime, jms, jme )
+      ELSE IF (FieldType .EQ. WRF_DOUBLE ) THEN
+        CALL copy_field_to_cache_d2d ( Field, xlat, ips, ipe, jps, jpe, ims, ime, jms, jme )
+      ENDIF
     ELSE IF ( TRIM(VarName) .EQ. TRIM(LON_R(DataHandle)) ) THEN
       IF ( ALLOCATED(xlong) ) THEN
         DEALLOCATE(xlong)
       ENDIF
       ALLOCATE(xlong(ips:ipe,jps:jpe))
-      CALL copy_field_to_cache ( FieldType , Field, xlong, ips, ipe, jps, jpe, ims, ime, jms, jme )
+      IF      ( FieldType .EQ. WRF_REAL ) THEN
+        CALL copy_field_to_cache_r2d ( Field, xlong, ips, ipe, jps, jpe, ims, ime, jms, jme )
+      ELSE IF (FieldType .EQ. WRF_DOUBLE ) THEN
+        CALL copy_field_to_cache_d2d ( Field, xlong, ips, ipe, jps, jpe, ims, ime, jms, jme )
+      ENDIF
     ELSE IF ( TRIM(VarName) .EQ. TRIM(LANDMASK_I(DataHandle)) ) THEN
 write(0,*)'write_field: ALLOCATED(mask)', ALLOCATED(mask)
       IF ( ALLOCATED(mask) ) THEN
         DEALLOCATE(mask)
       ENDIF
-write(0,*)'write_field: ALLOCATING MASK'
       ALLOCATE(mask(ips:ipe,jps:jpe))
       IF ( FieldType .EQ. WRF_INTEGER ) THEN
-write(0,*)'write_field: INTEGER calling copy_field_to_cache'
-        CALL copy_field_to_cache ( FieldType , Field, mask, ips, ipe, jps, jpe, ims, ime, jms, jme )
-write(0,*)'write_field: INTEGER back from copy_field_to_cache'
+        CALL copy_field_to_cache_int ( Field, mask, ips, ipe, jps, jpe, ims, ime, jms, jme )
       ELSE IF ( FieldType .EQ. WRF_REAL ) THEN
         ALLOCATE(rmask(ips:ipe,jps:jpe))
-write(0,*)'write_field: REAL calling copy_field_to_cache'
-        CALL copy_field_to_cache ( FieldType , Field, rmask, ips, ipe, jps, jpe, ims, ime, jms, jme )
-write(0,*)'write_field: REAL back from copy_field_to_cache'
+        CALL copy_field_to_cache_r2r ( Field, rmask, ips, ipe, jps, jpe, ims, ime, jms, jme )
         mask = NINT( rmask )
         DEALLOCATE(rmask)
       ELSE IF (FieldType .EQ. WRF_DOUBLE ) THEN
         ALLOCATE(dmask(ips:ipe,jps:jpe))
-write(0,*)'write_field: DOUBLE calling copy_field_to_cache'
-        CALL copy_field_to_cache ( FieldType , Field, dmask, ips, ipe, jps, jpe, ims, ime, jms, jme )
-write(0,*)'write_field: DOUBLE back from copy_field_to_cache'
+        CALL copy_field_to_cache_d2d ( Field, rmask, ips, ipe, jps, jpe, ims, ime, jms, jme )
         mask = NINT( dmask )
         DEALLOCATE(dmask)
       ENDIF

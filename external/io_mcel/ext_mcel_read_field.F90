@@ -40,6 +40,7 @@ SUBROUTINE ext_mcel_read_field ( DataHandle , DateStr , VarName , Field , FieldT
   doubleprecision, allocatable, dimension(:,:) :: dtemp
   integer gSize(2)
   INTEGER, EXTERNAL :: cast_to_int
+integer myproc
 
   character*132 mess
   integer ips,ipe,jps,jpe
@@ -130,28 +131,37 @@ write(0,*)'ext_mcel_read_field tr setglobalstart ', TRIM(VarName), mcel_mystart
           DEALLOCATE(xlat)
         ENDIF
         ALLOCATE(xlat(ips:ipe,jps:jpe))
-        CALL copy_field_to_cache ( FieldType , Field, xlat, ips, ipe, jps, jpe, ims, ime, jms, jme )
+        IF      ( FieldType .EQ. WRF_REAL ) THEN
+          CALL copy_field_to_cache_r2d ( Field, xlat, ips, ipe, jps, jpe, ims, ime, jms, jme )
+        ELSE IF ( FieldType .EQ. WRF_DOUBLE ) THEN
+          CALL copy_field_to_cache_d2d ( Field, xlat, ips, ipe, jps, jpe, ims, ime, jms, jme )
+        ENDIF
+
       ELSE IF ( TRIM(VarName) .EQ. TRIM(LON_R(DataHandle)) ) THEN
         IF ( ALLOCATED(xlong) ) THEN
           DEALLOCATE(xlong)
         ENDIF
         ALLOCATE(xlong(ips:ipe,jps:jpe))
-        CALL copy_field_to_cache ( FieldType , Field, xlong, ips, ipe, jps, jpe, ims, ime, jms, jme )
+        IF      ( FieldType .EQ. WRF_REAL ) THEN
+          CALL copy_field_to_cache_r2d ( Field, xlong, ips, ipe, jps, jpe, ims, ime, jms, jme )
+        ELSE IF ( FieldType .EQ. WRF_DOUBLE ) THEN
+          CALL copy_field_to_cache_d2d ( Field, xlong, ips, ipe, jps, jpe, ims, ime, jms, jme )
+        ENDIF
       ELSE IF ( TRIM(VarName) .EQ. TRIM(LANDMASK_I(DataHandle)) ) THEN
         IF ( ALLOCATED(mask) ) THEN
           DEALLOCATE(mask)
         ENDIF
         ALLOCATE(mask(ips:ipe,jps:jpe))
         IF ( FieldType .EQ. WRF_INTEGER ) THEN
-          CALL copy_field_to_cache ( FieldType , Field, mask, ips, ipe, jps, jpe, ims, ime, jms, jme )
+          CALL copy_field_to_cache_int ( Field, mask, ips, ipe, jps, jpe, ims, ime, jms, jme )
         ELSE IF ( FieldType .EQ. WRF_REAL ) THEN
           ALLOCATE(rmask(ips:ipe,jps:jpe))
-          CALL copy_field_to_cache ( FieldType , Field, rmask, ips, ipe, jps, jpe, ims, ime, jms, jme )
+          CALL copy_field_to_cache_r2r ( Field, rmask, ips, ipe, jps, jpe, ims, ime, jms, jme )
           mask = NINT( rmask )
           DEALLOCATE(rmask)
         ELSE IF (FieldType .EQ. WRF_DOUBLE ) THEN
           ALLOCATE(dmask(ips:ipe,jps:jpe))
-          CALL copy_field_to_cache ( FieldType , Field, dmask, ips, ipe, jps, jpe, ims, ime, jms, jme )
+          CALL copy_field_to_cache_d2d ( Field, dmask, ips, ipe, jps, jpe, ims, ime, jms, jme )
           mask = NINT( dmask )
           DEALLOCATE(dmask)
         ENDIF
@@ -164,11 +174,11 @@ write(0,*)'ext_mcel_read_field tr setSize ', TRIM(VarName), gSize
           CALL setSize ( open_file_descriptors(2,DataHandle), gSize, ierr )
           IF ( ierr .NE. 0 ) CALL wrf_error_fatal("ext_mcel_write_field: setSize")
         ENDIF
-write(0,*)'ext_mcel_read_field tr addSources ', TRIM(VarName)
+write(0,*)'ext_mcel_read_field tr addSources ', TRIM(VarName), mcel_type
         CALL addSources ( open_file_descriptors(1,DataHandle), MCEL_SERVER,  &
   &       TRIM(VarName),1, mcel_type, ierr )
         IF ( ierr .NE. 0 ) CALL wrf_error_fatal("ext_mcel_write_field: addSources")
-write(0,*)'ext_mcel_read_field tr addOutputs ', TRIM(VarName)
+write(0,*)'ext_mcel_read_field tr addOutputs ', TRIM(VarName), mcel_type
         CALL addOutputs ( open_file_descriptors(1,DataHandle),   &
   &       TRIM(VarName),1, mcel_type, ierr )
 ! add this field to the list that we know something about
@@ -190,6 +200,21 @@ write(0,*)'ext_mcel_read_field LANDMASK_I ', Trim(LANDMASK_I(DataHandle))
       IF ( .NOT. mcel_finalized( DataHandle ) ) THEN
         IF ( ALLOCATED( xlat ) .AND. ALLOCATED( xlong ) ) THEN
 write(0,*)'ext_mcel_read_field ok setlocationsXY ', Trim(VarName)
+
+!call wrf_get_myproc(myproc)
+!write(90+myproc,*)ipe-ips+1,jpe-jps+1,' xlong in read_field before setMask'
+!do j=jps,jpe
+!do i=ips,ipe
+!write(90+myproc,*)xlong(i,j)
+!enddo
+!enddo
+!write(90+myproc,*)ipe-ips+1,jpe-jps+1,' xlat in read_field before setMask'
+!do j=jps,jpe
+!do i=ips,ipe
+!write(90+myproc,*)xlat(i,j)
+!enddo
+!enddo
+
           CALL setLocationsXY( open_file_descriptors(2,DataHandle), xlong, xlat, ierr )
           IF ( ierr .NE. 0 ) CALL wrf_error_fatal( "ext_mcel_open_read_field: setLocationsXY" )
         ELSE IF ( deltax .gt. 0. .and. deltay .gt. 0. .and. originx .gt. 0. .and. originy .gt. 0. ) THEN
@@ -203,7 +228,16 @@ write(0,*)'ext_mcel_read_field ok setlocationsXY ', Trim(VarName)
           CALL wrf_error_fatal( "ext_mcel_read_field:noLocationsXY or dx/dy")
         ENDIF
         IF ( ALLOCATED(mask) ) THEN
-write(0,*)'ext_mcel_read_field ok setMask ', Trim(VarName)
+
+!write(0,*)'ext_mcel_read_field ok setMask ', Trim(VarName)
+!call wrf_get_myproc(myproc)
+!write(90+myproc,*)ipe-ips+1,jpe-jps+1,' mask in read_field before setMask'
+!do j=jps,jpe
+!do i=ips,ipe
+!write(90+myproc,*)mask(i,j)
+!enddo
+!enddo
+
           CALL setMask ( open_file_descriptors(2,DataHandle) , mask, ierr )
           IF ( ierr .NE. 0 ) CALL wrf_error_fatal("ext_mcel_read_field: setMask")
         ENDIF
@@ -245,11 +279,25 @@ write(0,*)'INDEX( TRIM( ListOfFields(DataHandle) ), TRIM( VarName ) )', INDEX( T
         ALLOCATE(temp(ips:ipe,jps:jpe))
 write(0,*)'ext_mcel_read_field opened_for_update(DataHandle) ',opened_for_update(DataHandle)
         IF ( opened_for_update(DataHandle) ) THEN
-          CALL copy_field_to_temp ( Field, temp, ips, ipe, jps, jpe, ims, ime, jms, jme )
+          CALL copy_field_to_cache_r2r ( Field, temp, ips, ipe, jps, jpe, ims, ime, jms, jme )
+!call wrf_get_myproc(myproc)
+!write(90+myproc,*)ipe-ips+1,jpe-jps+1,' temp in read_field before getData'
+!do j=jps,jpe
+!do i=ips,ipe
+!write(90+myproc,*)temp(i,j)
+!enddo
+!enddo
           call getData(open_file_descriptors(1,DataHandle),TRIM(VarName),temp,                 &
             data_time,data_time,MCEL_TIMECENT_POINT,usemask(DataHandle),                       &
             MCEL_FETCHPOLICY_KEEPBLOCK,ierr)
-write(0,*)'ext_mcel_read_field ok getData returns ',ierr, Trim(VarName)
+!write(90+myproc,*)ipe-ips+1,jpe-jps+1,' temp in read_field after getData'
+!do j=jps,jpe
+!do i=ips,ipe
+!write(90+myproc,*)temp(i,j)
+!enddo
+!enddo
+!write(0,*)'ext_mcel_read_field ok getData returns ',ierr, Trim(VarName)
+
         ELSE
 ! the difference is there is no KEEP in the FETCHPOLICY
 write(0,*)'ext_mcel_read_field ok getData ', Trim(VarName)
@@ -258,14 +306,14 @@ write(0,*)'ext_mcel_read_field ok getData ', Trim(VarName)
             MCEL_FETCHPOLICY_BLOCK,ierr)
 write(0,*)'ext_mcel_read_field ok getData returns ',ierr, Trim(VarName)
         ENDIF
-        CALL copy_field_to_temp ( Field, temp, ips, ipe, jps, jpe, ims, ime, jms, jme )
+        CALL copy_cache_to_field_r2r ( temp, Field, ips, ipe, jps, jpe, ims, ime, jms, jme )
         DEALLOCATE(temp)
       ELSE IF ( FieldType .EQ. WRF_DOUBLE ) THEN
 
         ALLOCATE(dtemp(ips:ipe,jps:jpe))
 write(0,*)'ext_mcel_read_field opened_for_update(DataHandle) ',opened_for_update(DataHandle)
         IF ( opened_for_update(DataHandle) ) THEN
-          CALL copy_field_to_dtemp ( Field, dtemp, ips, ipe, jps, jpe, ims, ime, jms, jme )
+          CALL copy_field_to_cache_d2d ( Field, dtemp, ips, ipe, jps, jpe, ims, ime, jms, jme )
 write(0,*)'ext_mcel_read_field ok getData returns ',ierr, Trim(VarName)
           call getData(open_file_descriptors(1,DataHandle),TRIM(VarName),dtemp,                 &
             data_time,data_time,MCEL_TIMECENT_POINT,usemask(DataHandle),                       &
@@ -278,7 +326,7 @@ write(0,*)'ext_mcel_read_field ok getData ', Trim(VarName)
             MCEL_FETCHPOLICY_BLOCK,ierr)
 write(0,*)'ext_mcel_read_field ok getData returns ',ierr, Trim(VarName)
         ENDIF
-        CALL copy_dtemp_to_field ( dtemp, Field, ips, ipe, jps, jpe, ims, ime, jms, jme )
+        CALL copy_cache_to_field_d2d ( dtemp, Field, ips, ipe, jps, jpe, ims, ime, jms, jme )
 
         DEALLOCATE(dtemp)
 

@@ -123,6 +123,134 @@ END SUBROUTINE get_value
 
 END MODULE module_ext_mcel
 
+ SUBROUTINE copy_field_to_cache_r2r ( Field, cache, ips, ipe, jps, jpe, ims, ime, jms, jme )
+   USE module_ext_mcel
+   INTEGER FieldType, ips, ipe, jps, jpe, ims, ime, jms, jme
+   INTEGER idex, i, j
+   REAL             Field(*)
+   REAL             cache(ips:ipe,jps:jpe)
+   DO j = jps, jpe
+     DO i = ips, ipe
+        idex = i+ips-ims + (j+jps-jms-1)*(ime-ims+1)
+        cache(i,j) = Field( idex )
+     ENDDO
+   ENDDO
+ END SUBROUTINE copy_field_to_cache_r2r
+
+ SUBROUTINE copy_field_to_cache_r2d ( Field, cache, ips, ipe, jps, jpe, ims, ime, jms, jme )
+   USE module_ext_mcel
+   INTEGER FieldType, ips, ipe, jps, jpe, ims, ime, jms, jme
+   INTEGER idex, i, j
+   REAL             Field(*)
+   DOUBLE PRECISION cache(ips:ipe,jps:jpe)
+   DO j = jps, jpe
+     DO i = ips, ipe
+        idex = i+ips-ims + (j+jps-jms-1)*(ime-ims+1)
+        cache(i,j) = Field( idex )
+     ENDDO
+   ENDDO
+ END SUBROUTINE copy_field_to_cache_r2d
+
+ SUBROUTINE copy_field_to_cache_d2r ( Field, cache, ips, ipe, jps, jpe, ims, ime, jms, jme )
+   USE module_ext_mcel
+   INTEGER FieldType, ips, ipe, jps, jpe, ims, ime, jms, jme
+   INTEGER idex, i, j
+   DOUBLE PRECISION Field(*) 
+   REAL             cache(ips:ipe,jps:jpe)
+   DO j = jps, jpe
+     DO i = ips, ipe
+        idex = i+ips-ims + (j+jps-jms-1)*(ime-ims+1)
+        cache(i,j) = Field( idex )
+     ENDDO
+   ENDDO
+ END SUBROUTINE copy_field_to_cache_d2r
+
+ SUBROUTINE copy_field_to_cache_d2d ( Field, cache, ips, ipe, jps, jpe, ims, ime, jms, jme )
+   USE module_ext_mcel
+   INTEGER FieldType, ips, ipe, jps, jpe, ims, ime, jms, jme
+   INTEGER idex, i, j
+   DOUBLE PRECISION Field(*) 
+   DOUBLE PRECISION cache(ips:ipe,jps:jpe)
+   DO j = jps, jpe
+     DO i = ips, ipe
+        idex = i+ips-ims + (j+jps-jms-1)*(ime-ims+1)
+        cache(i,j) = Field( idex )
+     ENDDO
+   ENDDO
+ END SUBROUTINE copy_field_to_cache_d2d
+
+ SUBROUTINE copy_field_to_cache_int ( Field, cache, ips, ipe, jps, jpe, ims, ime, jms, jme )
+   USE module_ext_mcel
+   INTEGER FieldType, ips, ipe, jps, jpe, ims, ime, jms, jme
+   INTEGER idex, i, j
+   INTEGER Field(*)
+   INTEGER cache(ips:ipe,jps:jpe)
+   DO j = jps, jpe
+     DO i = ips, ipe
+        idex = i+ips-ims + (j+jps-jms-1)*(ime-ims+1)
+        cache(i,j) = Field( idex )
+     ENDDO
+   ENDDO
+ END SUBROUTINE copy_field_to_cache_int
+
+ SUBROUTINE copy_cache_to_field_r2r ( cache, Field, ips, ipe, jps, jpe, ims, ime, jms, jme )
+   USE module_ext_mcel
+   INTEGER FieldType, ips, ipe, jps, jpe, ims, ime, jms, jme
+   INTEGER idex, i, j
+   REAL            cache(ips:ipe,jps:jpe)
+   REAL            Field(*)
+   DO j = jps, jpe
+     DO i = ips, ipe
+        idex = i+ips-ims + (j+jps-jms-1)*(ime-ims+1)
+        Field( idex ) = cache(i,j)
+     ENDDO
+   ENDDO
+ END SUBROUTINE copy_cache_to_field_r2r
+
+ SUBROUTINE copy_cache_to_field_r2d ( cache, Field, ips, ipe, jps, jpe, ims, ime, jms, jme )
+   USE module_ext_mcel
+   INTEGER FieldType, ips, ipe, jps, jpe, ims, ime, jms, jme
+   INTEGER idex, i, j
+   REAL             cache(ips:ipe,jps:jpe)
+   DOUBLEPRECISION  Field(*)
+   DO j = jps, jpe
+     DO i = ips, ipe
+        idex = i+ips-ims + (j+jps-jms-1)*(ime-ims+1)
+        Field( idex ) = cache(i,j)
+     ENDDO
+   ENDDO
+ END SUBROUTINE copy_cache_to_field_r2d
+
+ SUBROUTINE copy_cache_to_field_d2r ( cache, Field, ips, ipe, jps, jpe, ims, ime, jms, jme )
+   USE module_ext_mcel
+   INTEGER FieldType, ips, ipe, jps, jpe, ims, ime, jms, jme
+   INTEGER idex, i, j
+   DOUBLEPRECISION  cache(ips:ipe,jps:jpe)
+   REAL             Field(*)
+   DO j = jps, jpe
+     DO i = ips, ipe
+        idex = i+ips-ims + (j+jps-jms-1)*(ime-ims+1)
+        Field( idex ) = cache(i,j)
+     ENDDO
+   ENDDO
+ END SUBROUTINE copy_cache_to_field_d2r
+
+ SUBROUTINE copy_cache_to_field_d2d ( cache, Field, ips, ipe, jps, jpe, ims, ime, jms, jme )
+   USE module_ext_mcel
+   INTEGER FieldType, ips, ipe, jps, jpe, ims, ime, jms, jme
+   INTEGER idex, i, j
+   DOUBLEPRECISION  cache(ips:ipe,jps:jpe)
+   DOUBLEPRECISION  Field(*)
+   DO j = jps, jpe
+     DO i = ips, ipe
+        idex = i+ips-ims + (j+jps-jms-1)*(ime-ims+1)
+        Field( idex ) = cache(i,j)
+     ENDDO
+   ENDDO
+ END SUBROUTINE copy_cache_to_field_d2d
+
+!--------------
+
 SUBROUTINE ext_mcel_ioinit( Status )
   USE module_ext_mcel
   IMPLICIT NONE
@@ -1067,173 +1195,3 @@ INTEGER FUNCTION cast_to_int( a )
   RETURN
 END FUNCTION cast_to_int
 
- SUBROUTINE copy_field_to_cache ( FieldType , Field, cache, ips, ipe, jps, jpe, ims, ime, jms, jme )
-   USE module_ext_mcel
-   INTEGER FieldType, ips, ipe, jps, jpe, ims, ime, jms, jme
-   REAL Field(*)
-   REAL cache(*)
-   IF ( FieldType .EQ. WRF_REAL ) THEN
-     CALL copy_field_to_cache_real( Field, cache, ips, ipe, jps, jpe, ims, ime, jms, jme )
-   ENDIF
-   IF ( FieldType .EQ. WRF_DOUBLE ) THEN
-     CALL copy_field_to_cache_double( Field, cache, ips, ipe, jps, jpe, ims, ime, jms, jme )
-   ENDIF
-   IF ( FieldType .EQ. WRF_INTEGER ) THEN
-     CALL copy_field_to_cache_integer( Field, cache, ips, ipe, jps, jpe, ims, ime, jms, jme )
-   ENDIF
- END SUBROUTINE copy_field_to_cache
-
- SUBROUTINE copy_field_to_cache_real ( Field, cache, ips, ipe, jps, jpe, ims, ime, jms, jme )
-   USE module_ext_mcel
-   INTEGER FieldType, ips, ipe, jps, jpe, ims, ime, jms, jme
-   INTEGER idex, i, j
-   REAL Field(*)
-   DOUBLEPRECISION cache(ips:ipe,jps:jpe)
-   DO j = jps, jpe
-     DO i = ips, ipe
-        idex = i+ips-ims + (j+jps-jms-1)*(ime-ims+1)
-        cache(i,j) = Field( idex )
-     ENDDO
-   ENDDO
- END SUBROUTINE copy_field_to_cache_real
-
- SUBROUTINE copy_field_to_cache_double ( Field, cache, ips, ipe, jps, jpe, ims, ime, jms, jme )
-   USE module_ext_mcel
-   INTEGER FieldType, ips, ipe, jps, jpe, ims, ime, jms, jme
-   INTEGER idex, i, j
-   DOUBLEPRECISION Field(*)
-   DOUBLEPRECISION cache(ips:ipe,jps:jpe)
-   DO j = jps, jpe
-     DO i = ips, ipe
-        idex = i+ips-ims + (j+jps-jms-1)*(ime-ims+1)
-        cache(i,j) = Field( idex )
-     ENDDO
-   ENDDO
- END SUBROUTINE copy_field_to_cache_double
-
- SUBROUTINE copy_field_to_cache_integer ( Field, cache, ips, ipe, jps, jpe, ims, ime, jms, jme )
-   USE module_ext_mcel
-   INTEGER FieldType, ips, ipe, jps, jpe, ims, ime, jms, jme
-   INTEGER idex, i, j
-   INTEGER Field(*)
-   INTEGER cache(ips:ipe,jps:jpe)
-   DO j = jps, jpe
-     DO i = ips, ipe
-        idex = i+ips-ims + (j+jps-jms-1)*(ime-ims+1)
-        cache(i,j) = Field( idex )
-     ENDDO
-   ENDDO
- END SUBROUTINE copy_field_to_cache_integer
-
- SUBROUTINE copy_cache_to_field ( cache, FieldType , Field, ips, ipe, jps, jpe, ims, ime, jms, jme )
-   USE module_ext_mcel
-   INTEGER FieldType, ips, ipe, jps, jpe, ims, ime, jms, jme
-   REAL Field(*)
-   REAL cache(*)
-   IF ( FieldType .EQ. WRF_REAL ) THEN
-     CALL copy_cache_to_field_real( cache, Field, ips, ipe, jps, jpe, ims, ime, jms, jme )
-   ENDIF
-   IF ( FieldType .EQ. WRF_DOUBLE ) THEN
-     CALL copy_cache_to_field_double( cache, Field, ips, ipe, jps, jpe, ims, ime, jms, jme )
-   ENDIF
-   IF ( FieldType .EQ. WRF_INTEGER ) THEN
-     CALL copy_cache_to_field_integer( cache, Field, ips, ipe, jps, jpe, ims, ime, jms, jme )
-   ENDIF
- END SUBROUTINE copy_cache_to_field
-
- SUBROUTINE copy_cache_to_field_real ( cache, Field, ips, ipe, jps, jpe, ims, ime, jms, jme )
-   USE module_ext_mcel
-   INTEGER FieldType, ips, ipe, jps, jpe, ims, ime, jms, jme
-   INTEGER idex, i, j
-   REAL Field(*)
-   DOUBLEPRECISION cache(ips:ipe,jps:jpe)
-   DO j = jps, jpe
-     DO i = ips, ipe
-        idex = i+ips-ims + (j+jps-jms-1)*(ime-ims+1)
-        Field( idex ) = cache(i,j)
-     ENDDO
-   ENDDO
- END SUBROUTINE copy_cache_to_field_real
- SUBROUTINE copy_cache_to_field_double ( cache, Field, ips, ipe, jps, jpe, ims, ime, jms, jme )
-   USE module_ext_mcel
-   INTEGER FieldType, ips, ipe, jps, jpe, ims, ime, jms, jme
-   INTEGER idex, i, j
-   DOUBLEPRECISION Field(*)
-   DOUBLEPRECISION cache(ips:ipe,jps:jpe)
-   DO j = jps, jpe
-     DO i = ips, ipe
-        idex = i+ips-ims + (j+jps-jms-1)*(ime-ims+1)
-        Field( idex ) = cache(i,j)
-     ENDDO
-   ENDDO
- END SUBROUTINE copy_cache_to_field_double
-
- SUBROUTINE copy_cache_to_field_integer ( cache, Field, ips, ipe, jps, jpe, ims, ime, jms, jme )
-   USE module_ext_mcel
-   INTEGER FieldType, ips, ipe, jps, jpe, ims, ime, jms, jme
-   INTEGER idex, i, j
-   INTEGER Field(*)
-   INTEGER cache(ips:ipe,jps:jpe)
-   DO j = jps, jpe
-     DO i = ips, ipe
-        idex = i+ips-ims + (j+jps-jms-1)*(ime-ims+1)
-        Field( idex ) = cache(i,j)
-     ENDDO
-   ENDDO
- END SUBROUTINE copy_cache_to_field_integer
-
- SUBROUTINE copy_dtemp_to_field  ( dtemp, Field, ips, ipe, jps, jpe, ims, ime, jms, jme )
-    IMPLICIT NONE
-    INTEGER ips, ipe, jps, jpe, ims, ime, jms, jme
-    INTEGER idex, i, j
-    DOUBLE PRECISION Field(*)
-    DOUBLE PRECISION dtemp( ips:ipe, jps:jpe)
-    DO j = jps, jpe
-      DO i = ips, ipe
-        idex = i+ips-ims + (j+jps-jms-1)*(ime-ims+1)
-        Field( idex ) = dtemp(i,j) 
-      ENDDO
-    ENDDO
- END SUBROUTINE copy_dtemp_to_field
-
- SUBROUTINE copy_field_to_dtemp  ( Field, dtemp, ips, ipe, jps, jpe, ims, ime, jms, jme )
-    IMPLICIT NONE
-    INTEGER ips, ipe, jps, jpe, ims, ime, jms, jme
-    INTEGER idex, i, j
-    DOUBLE PRECISION Field(*)
-    DOUBLE PRECISION dtemp( ips:ipe, jps:jpe)
-    DO j = jps, jpe
-      DO i = ips, ipe
-        idex = i+ips-ims + (j+jps-jms-1)*(ime-ims+1)
-        dtemp(i,j) = Field( idex )
-      ENDDO
-    ENDDO
- END SUBROUTINE copy_field_to_dtemp
-
- SUBROUTINE copy_temp_to_field  ( temp, Field, ips, ipe, jps, jpe, ims, ime, jms, jme )
-    IMPLICIT NONE
-    INTEGER ips, ipe, jps, jpe, ims, ime, jms, jme
-    INTEGER idex, i, j
-    REAL Field(*)
-    REAL temp( ips:ipe, jps:jpe)
-    DO j = jps, jpe
-      DO i = ips, ipe
-        idex = i+ips-ims + (j+jps-jms-1)*(ime-ims+1)
-        Field( idex ) = temp(i,j) 
-      ENDDO
-    ENDDO
- END SUBROUTINE copy_temp_to_field
-
- SUBROUTINE copy_field_to_temp  ( Field, temp, ips, ipe, jps, jpe, ims, ime, jms, jme )
-    IMPLICIT NONE
-    INTEGER ips, ipe, jps, jpe, ims, ime, jms, jme
-    INTEGER idex, i, j
-    REAL Field(*)
-    REAL temp( ips:ipe, jps:jpe)
-    DO j = jps, jpe
-      DO i = ips, ipe
-        idex = i+ips-ims + (j+jps-jms-1)*(ime-ims+1)
-        temp(i,j) = Field( idex )
-      ENDDO
-    ENDDO
- END SUBROUTINE copy_field_to_temp

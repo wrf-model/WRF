@@ -62,6 +62,7 @@
  ifsnow                              = 0,
  icloud                              = 1,
  num_soil_layers                     = 4,
+ mp_zero_out                         = 0,
  /
 
  &dynamics

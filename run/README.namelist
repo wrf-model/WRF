@@ -127,6 +127,17 @@ Additional ones when running 3DVAR:
                                      = 98, NCEP 3-class simple ice scheme (to be removed)
                                      = 99, NCEP 5-class scheme (to be removed)
 
+ For non-zero mp_physics options, to keep Qv .GE. 0, and to set the other moisture
+ fields .LT. a critcal value to zero
+
+ mp_zero_out                         = 0,      ; no action taken, no adjustment to any moist field
+                                     = 1,      ; except for Qv, all other moist arrays are set to zero
+                                               ; if they fall below a critical value
+                                     = 2,      ; Qv is .GE. 0, all other moist arrays are set to zero
+                                               ; if they fall below a critical value
+ mp_zero_out_thresh                  = 1.e-8   ; critical value for moist array threshold, below which
+                                               ; moist arrays (except for Qv) are set to zero (kg/kg)
+
  ra_lw_physics (max_dom)             longwave radiation option
                                      = 0, no longwave radiation
                                      = 1, rrtm scheme
@@ -230,6 +241,9 @@ Additional ones when running 3DVAR:
  w_damping                           = 0,       ; vertical velocity damping flag (for operational use)
                                                   0 = without damping
                                                   1 = with    damping
+ base_temp                           = 290.,    ; real-data, em ONLY, base sea-level temp (K)
+ base_pres                           = 10^5     ; real-data, em ONLY, base sea-level pres (Pa), DO NOT CHANGE
+ base_lapse                          = 50.,     ; real-data, em ONLY, lapse rate (K), DO NOT CHANGE
  zdamp (max_dom)                     = 5000.,	; damping depth (m) from model top
  dampcoef (max_dom)                  = 0.,	; damping coefficient (dampcoef <= 0.2, <=0.1 for 3D cases)
  khdif (max_dom)                     = 0,	; horizontal diffusion constant (m^2/s)

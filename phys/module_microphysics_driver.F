@@ -192,7 +192,7 @@ SUBROUTINE microphysics_driver(th_phy, moist_new, moist_old, w,        &
  
 ! LOCAL  VAR
 
-   INTEGER :: i,j,k,its,ite,jts,jte,ij,sz
+   INTEGER :: i,j,k,its,ite,jts,jte,ij,sz,n
 
 !---------------------------------------------------------------------
 !  check for microphysics type.  We need a clean way to 
@@ -363,6 +363,49 @@ SUBROUTINE microphysics_driver(th_phy, moist_new, moist_old, w,        &
 
       END SELECT micro_select 
 
+         ! Zero out small condensate values  FSL-BLS-12-JUL-2004
+
+         IF ( config_flags%mp_zero_out .EQ. 0 ) THEN
+            !  do nothing
+         ELSE IF ( config_flags%mp_zero_out .EQ. 1 ) THEN
+            !  All of the "moist" fields, except for vapor, that are below a critical
+            !  threshold are set to zero.
+            CALL wrf_debug ( 100 , 'zero out small condensates, vapor not included')
+            DO n = PARAM_FIRST_SCALAR,n_moist
+               IF ( n .NE. P_QV ) THEN
+                  DO j = jms, jme
+                  DO k = kms, kme
+                  DO i = ims, ime
+                     IF ( moist_new(i,k,j,n) .LT. config_flags%mp_zero_out_thresh )  moist_new(i,k,j,n) =0.
+                  ENDDO
+                  ENDDO
+                  ENDDO
+               END IF
+            ENDDO
+         ELSE IF ( config_flags%mp_zero_out .EQ. 2 ) then
+            !  All of the non-Qv "moist" fields that are below a critical threshold are set to 
+            !  zero.  The vapor is constrained to be non-negative.
+            CALL wrf_debug ( 100 , 'zero out small condensates, zero out negative vapor')
+            DO n = PARAM_FIRST_SCALAR,n_moist
+               IF ( n .NE. P_QV ) THEN
+                  DO j = jms, jme
+                  DO k = kms, kme
+                  DO i = ims, ime
+                     IF ( moist_new(i,k,j,n) .LT. config_flags%mp_zero_out_thresh )  moist_new(i,k,j,n) =0.
+                  ENDDO
+                  ENDDO
+                  ENDDO
+               ELSE IF ( n .EQ. P_QV ) THEN
+                  DO j = jms, jme
+                  DO k = kms, kme
+                  DO i = ims, ime
+                     moist_new(i,k,j,n) = MAX ( moist_new(i,k,j,n) , 0. )
+                  ENDDO
+                  ENDDO
+                  ENDDO
+               END IF
+            ENDDO
+         END IF
    ELSE
 
       WRITE( wrf_err_message , * ) 'The microphysics option does not exist: mp_physics = ', config_flags%mp_physics

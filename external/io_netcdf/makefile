@@ -12,14 +12,18 @@ AR      = ar
 
 .SUFFIXES:      .F90 .f .o .code
 
-all : libwrfio_nf.a 
+all : flags_only libwrfio_nf.a 
+
+flags_only: wrf_io_flags.h
 
 libwrfio_nf.a:		$(OBJS) $(CODE)
 			/bin/rm -f libwrfio_nf.a
 			$(AR) cr libwrfio_nf.a $(OBJSL)
 
-wrf_io.o:               wrf_io.F90 $(CODE)
+wrf_io_flags.h:
 			sed -e '1,/BEGINIOFLAGS/d' -e '/ENDIOFLAGS/,$$d' wrf_io.F90 > wrf_io_flags.h
+
+wrf_io.o:               wrf_io.F90 $(CODE)
 			$(CPP1) wrf_io.F90 | $(M4) - > wrf_io.f
 			$(FC) $(FFLAGS) -c wrf_io.f
 

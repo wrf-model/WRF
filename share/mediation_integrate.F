@@ -246,6 +246,9 @@ integer myproc
      CALL model_to_grid_config_rec ( nest%id , model_config_rec , nest_config_flags )
 
      IF ( nest_config_flags%input_from_file ) THEN
+        WRITE(message,FMT='(A,I2,A)') '*** Initializing nest domain #',nest%id,&
+                                      ' from an input file. ***'
+        CALL wrf_debug ( 0 , message )
 ! store horizontally interpolated terrain in temp location
        CALL  store_terrain ( nest%ht_fine , nest%ht , &
                              ids , ide , jds , jde , 1   , 1   , &
@@ -276,6 +279,11 @@ integer myproc
                              ids , ide , jds , jde , kds , kde , &
                              ims , ime , jms , jme , kms , kme , &
                              ips , ipe , jps , jpe , kps , kpe )
+    ELSE
+        WRITE(message,FMT='(A,I2,A,I2,A)') '*** Initializing nest domain #',nest%id,&
+                                      ' by horizontally interpolating parent domain #' ,parent%id, &
+                                      '. ***'
+        CALL wrf_debug ( 0 , message )
     END IF
 
 ! feedback, mostly for this new terrain, but it is the safe thing to do

@@ -616,10 +616,8 @@ SUBROUTINE wrf_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo, &
             LocFilename = FileName
         ENDIF
 
-write(0,*)'calling ext_ncd_open_for_read '
         CALL ext_ncd_open_for_read ( LocFilename , Comm_compute, Comm_io, SysDepInfo, &
                                      Hndl , Status )
-write(0,*)'back from ext_ncd_open_for_read '
       ENDIF
       IF ( .NOT. multi_files(io_form) ) THEN
         CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )

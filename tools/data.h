@@ -105,6 +105,7 @@ EXTERN int sw_move  ;
 EXTERN int sw_all_x_staggered ;
 EXTERN int sw_all_y_staggered ;
 EXTERN int sw_dm_serial_in_only ;
+EXTERN int sw_ifort_kludge ;
 EXTERN char sw_commpath[NAMELEN] ;
 
 EXTERN node_t * Type ;

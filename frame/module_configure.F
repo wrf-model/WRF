@@ -265,9 +265,25 @@ CONTAINS
      END DO
    END SUBROUTINE init_module_configure
 
-#include <get_nl_config.inc>
+! When the compiler has Intel Inside (TM) (that is, ifort), the large
+! number of nl_get and nl_set routines inside the module causes the
+! compiler to never finish with this routine. For ifort, move the
+! routines outside the module. Note, the registry generates a 
+! USE module_configure for all the nl_get and nl_set routines
+! if IFORT_KLUDGE is in effect.
+#ifdef IFORT_KLUDGE
 
 END MODULE module_configure
+
+# include <get_nl_config.inc>
+
+#else
+
+# include <get_nl_config.inc>
+
+END MODULE module_configure
+
+#endif
 
 ! Special (outside registry)
 SUBROUTINE nl_get_mminlu ( idum , retval )

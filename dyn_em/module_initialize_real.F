@@ -88,6 +88,7 @@ CONTAINS
       !  Local domain indices and counters.
 
       INTEGER :: num_veg_cat , num_soil_top_cat , num_soil_bot_cat
+      INTEGER :: loop , num_seaice_changes
 
       INTEGER                             ::                       &
                                      ids, ide, jds, jde, kds, kde, &
@@ -224,6 +225,77 @@ integer::oops1,oops2
           CASE (RUCLSMSCHEME)
 
        END SELECT fix_bottom_level_for_temp
+
+      !  For sf_surface_physics = 1, 5-layer model, we need to take care of
+      !  the sea ice issue.  The slab routine assumes that there is a soil
+      !  temperature when there is seaice.  So, if this is a slab run, and 
+      !  if there are any seaice points, we need to 
+      !      1) set the TMN to 271.4, frozen sea water
+      !      2) set the point to a land value, category for ice
+      !      3) though soil is not used, set it to a non-water point
+      !         so the if tests don't try to reset the land value to make
+      !         things consistent
+      !      4) set landmask and xland to a land point
+      !      5) set fractional values of land and soil to ice and *some* land value
+
+      fix_seaice_for_slab : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
+
+         CASE (SLABSCHEME)
+               num_veg_cat      = SIZE ( landusef , DIM=2 )
+               num_soil_top_cat = SIZE ( soilctop , DIM=2 )
+               num_soil_bot_cat = SIZE ( soilcbot , DIM=2 )
+               num_seaice_changes = 0 
+               CALL nl_get_seaice_threshold ( grid%id , seaice_threshold ) 
+               DO j = jts , MIN(jde-1,jte)
+                  DO i = its , MIN(ide-1,ite)
+                     IF ( xice(i,j) .GT. 200.0 ) THEN
+                        xice(i,j) = 0.
+                        num_seaice_changes = num_seaice_changes + 1
+                     END IF
+                  END DO
+               END DO
+               IF ( num_seaice_changes .GT. 0 ) THEN
+                  print *,'Total number of FLAG sea ice locations removed = ', num_seaice_changes
+               END IF
+               num_seaice_changes = 0 
+               DO j = jts , MIN(jde-1,jte)
+                  DO i = its , MIN(ide-1,ite)
+                     IF ( ( xice(i,j) .GE. 0.5 ) .OR. &
+                          ( ( landmask(i,j) .LT. 0.5 ) .AND. ( tsk(i,j) .LT. seaice_threshold ) ) ) THEN
+                        xice(i,j) = 1.
+                        num_seaice_changes = num_seaice_changes + 1
+                        tmn(i,j) = 271.4
+                        CALL nl_get_isice ( grid%id , ivgtyp(i,j) )
+                        vegcat(i,j)=ivgtyp(i,j)
+                        lu_index(i,j)=ivgtyp(i,j)
+                        landmask(i,j)=1.
+                        xland(i,j)=1.
+                        DO loop=1,num_veg_cat
+                           landusef(i,loop,j)=0.
+                        END DO
+                        landusef(i,ivgtyp(i,j),j)=1.
+                        isltyp(i,j) = 8
+                        soilcat(i,j)=isltyp(i,j)
+                        DO loop=1,num_soil_top_cat
+                           soilctop(i,loop,j)=0
+                        END DO
+                        DO loop=1,num_soil_bot_cat
+                           soilcbot(i,loop,j)=0
+                        END DO
+                        soilctop(i,isltyp(i,j),j)=1.
+                        soilcbot(i,isltyp(i,j),j)=1.
+                     END IF
+                  END DO
+               END DO
+               IF ( num_seaice_changes .GT. 0 ) THEN
+                  print *,'Total number of sea ice location changes = ', num_seaice_changes
+               END IF
+
+          CASE (LSMSCHEME)
+
+          CASE (RUCLSMSCHEME)
+
+       END SELECT fix_seaice_for_slab
 
       !  surface_input_source=1 => use data from static file (fractional category as input)
       !  surface_input_source=2 => use data from grib file (dominant category as input)
@@ -477,30 +549,34 @@ endif
       !  We allow the vertical coordinate to *accidently* come in upside down.  We want
       !  the first full level to be the ground surface.
 
+        !Check whether ZNW (full level) data are truly full levels. If not, we need to adjust them
+        !to be full levels.
+        !in this test, we check if znw(1) is neither 0 nor 1 (within a tolerance of 10**-5)
+        IF (((znw(1).LT.(1-1.E-5)).OR.(znw(1).GT.(1+1.E-5))).AND. &
+                ((znw(1).LT.(0-1.E-5)).OR.(znw(1).GT.(0+1.E-5)))) THEN
+                print *,'Your ZNW input values are probably half-levels. '
+                print *,ZNW
+                print *,'WRF expects ZNW values to be full levels. '
+                print *,'Adjusting now to full levels...'
+        !We want to ignore the first value if it's negative
+                IF (znw(1).LT.0) THEN
+                        znw(1)=0
+                ENDIF
+                DO k=2,kde
+                        znw(k)=2*znw(k)-znw(k-1)
+                END DO
+        ENDIF
 
-	!Check whether ZNW (full level) data are truly full levels. If not, we need to adjust them
-	!to be full levels. 
-	!in this test, we check if znw(1) is neither 0 nor 1 (within a tolerance of 10**-5)
-	IF (((znw(1).LT.(1-1.E-5)).OR.(znw(1).GT.(1+1.E-5))).AND. &
-		((znw(1).LT.(0-1.E-5)).OR.(znw(1).GT.(0+1.E-5)))) THEN
-		print *,'Your ZNW input values are probably half-levels. WRF expects ZNW values to be full levels. Adjusting now to full levels...'
-	!We want to ignore the first value if it's negative
-		IF (znw(1).LT.0) THEN
-			znw(1)=0
-		ENDIF
-		DO k=2,kde
-			znw(k)=2*znw(k)-znw(k-1)
-		END DO
-	ENDIF
-
-	!let's check our changes
-	IF (((znw(1).LT.(1-1.E-5)).OR.(znw(1).GT.(1+1.E-5))).AND. &
-		((znw(1).LT.(0-1.E-5)).OR.(znw(1).GT.(0+1.E-5)))) THEN
-			print *,'The input ZNW height values were half-levels or erroneous. Attempts to treat the values as half-levels and change them to valid full levels failed.' 
-	CALL wrf_error_fatal("bad ZNW values from input files")
-	ELSE
-		print *,'...adjusted. ZNW array now contains full eta level values. '
-	ENDIF
+        !let's check our changes
+        IF (((znw(1).LT.(1-1.E-5)).OR.(znw(1).GT.(1+1.E-5))).AND. &
+                ((znw(1).LT.(0-1.E-5)).OR.(znw(1).GT.(0+1.E-5)))) THEN
+           print *,'The input ZNW height values were half-levels or erroneous. '
+           print *,'Attempts to treat the values as half-levels and change them '
+           print *,'to valid full levels failed.'
+        CALL wrf_error_fatal("bad ZNW values from input files")
+        ELSE
+                print *,'...adjusted. ZNW array now contains full eta level values. '
+        ENDIF
 
 
       IF ( znw(1) .LT. znw(kde) ) THEN

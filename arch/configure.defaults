@@ -3043,82 +3043,6 @@ solve_interface.o : solve_interface.F
 	$(FC) -c -O 0 $(FCFLAGS) $*.f
 
 ###########################################################
-#ARCH Settings for PC Linux x86_64 (IA64 and Opteron), PGI compiler 5.2 or higher  (Single-threaded, no nesting)
-# Note: requires pgi compiler version 5.2 or higher due to one-pass ipa
-# remove -Mipa=fast if using older version.  (Thanks: Dave Barker, AMD, July 2004).
-#
-FC              =       pgf90
-CC              =       gcc
-SFC             =       $(FC)
-CFLAGS          =
-FCOPTIM		=	-fastsse -Mipa=fast
-FCDEBUG		=	
-FCBASEOPTS      =       -byteswapio -Ktrap=fp -Mfree $(FCDEBUG)
-FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
-ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DIWORDSIZE=4 -DRWORDSIZE=4 -DLWORDSIZE=8 \
-                         CONFIGURE_NETCDF_FLAG \
-                        -DTRIEDNTRUE -DONLY_WRFMODEL_IO
-INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io_int \
-                        -I../frame -I../share -I../phys -I../inc
-EXTRAMODULES    =       
-PERL            =       perl
-REGISTRY        =       Registry
-LIB             =       CONFIGURE_NETCDF_LIB_PATH \
-                        -L../external/io_grib1 -lio_grib1 \
-			../frame/module_internal_header_util.o ../frame/pack_utils.o ../../setmxcsr.o
-LDFLAGS         =
-CPP             =       /lib/cpp
-CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -DPGF90 -traditional
-AR              =       ar ru
-M4              =       m4
-RANLIB          =       ranlib
-
-externals : CONFIGURE_WRFIO_NF wrfio_int
-	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
-
-wrfio_nf : 
-	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH FC=$(FC) TRADFLAG="-traditional" \
-          FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include' ; \
-          /bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc )
-
-wrfio_int : 
-	( cd ../external/io_int ; \
-          make CC=$(CC) FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" \
-          TRADFLAG="-traditional" all diffwrf )
-
-# compile these without high optimization to speed compile
-solve_interface.o : solve_interface.F
-module_io_mm5.o : module_io_mm5.F
-module_si_io.o : module_si_io.F
-module_io_wrf.o : module_io_wrf.F
-module_domain.o : module_domain.F
-module_start.o : module_start.F
-module_initialize.o : module_initialize.F
-module_initialize_b_wave.o : module_initialize_b_wave.F
-module_initialize_hill2d_x.o : module_initialize_hill2d_x.F
-module_initialize_quarter_ss.o : module_initialize_quarter_ss.F
-module_initialize_squall2d_x.o : module_initialize_squall2d_x.F
-module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
-module_initialize_real.o : module_initialize_real.F
-module_dm.o : module_dm.F
-start_domain.o : start_domain.F
-
-solve_interface.o                                              \
-module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
-module_start.o module_initialize.o module_initialize_b_wave.o  \
-module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
-module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
-module_initialize_real.o module_dm.o start_domain.o :
-	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
-	$(RM) $*.b
-	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
-
-###########################################################
-
-###########################################################
 #ARCH    PC Linux i486 i586 i686, PGI compiler  (Single-threaded, no nesting)
 #
 FC              =       pgf90
@@ -3722,6 +3646,309 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCNOOPTS) $(MODULE_DIRS) $*.f
+
+
+###########################################################
+#ARCH    PC Linux x86_64 (IA64 and Opteron), PGI compiler 5.2 or higher  (Single-threaded, no nesting)
+#        Note that for 5.1.x comment out -Mpia=fast
+#
+FC              =       pgf90
+LD              =       pgf90
+CC              =       gcc
+SFC             =       $(FC)
+CFLAGS          =
+FCOPTIM		=	-fastsse #-Mipa=fast
+FCDEBUG		=	#-g
+FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree $(FCDEBUG)
+FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
+ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
+                         CONFIGURE_NETCDF_FLAG \
+                        -DTRIEDNTRUE   \
+			-DLIMIT_ARGS
+INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
+                        -I../frame -I../share -I../phys -I../inc
+EXTRAMODULES    =       
+PERL            =       perl
+REGISTRY        =       Registry
+LIB             =       CONFIGURE_NETCDF_LIB_PATH \
+                        -L../external/io_grib1 -lio_grib1 \
+			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
+LDFLAGS         =
+CPP             =       /lib/cpp -C -P
+POUND_DEF	=	-DPGF90 -traditional $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
+CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) $(POUND_DEF)
+AR              =       ar ru
+M4              =       m4
+RANLIB          =       ranlib
+NETCDFPATH	=	CONFIGURE_NETCDF_PATH
+CC_TOOLS        =       $(CC)
+
+externals : CONFIGURE_WRFIO_NF wrfio_int module_dm.F esmf_time
+
+module_dm.F :
+	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
+
+io_flags:
+	( cd ../external/io_netcdf ; make flags_only ; /bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc )
+
+wrfio_nf :  io_flags
+	( cd ../external/io_netcdf ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC=$(FC) TRADFLAG="-traditional" \
+          FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' )
+
+wrfio_grib1 : io_flags
+	( cd ../external/io_grib1 ; make CPP="$(CPP)" FC="$(FC) -I. $(FCDEBUG) $(FCBASEOPTS) -w"\
+	  TRADFLAG="-traditional")
+
+wrfio_int :  io_flags
+	( cd ../external/io_int ; \
+          make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" \
+          TRADFLAG="-traditional" all )
+
+esmf_time : 
+	( cd ../external/esmf_time_f90 ; \
+	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+# compile these without high optimization to speed compile
+solve_interface.o : solve_interface.F
+module_io_mm5.o : module_io_mm5.F
+module_si_io.o : module_si_io.F
+module_io_wrf.o : module_io_wrf.F
+module_domain.o : module_domain.F
+module_start.o : module_start.F
+module_initialize.o : module_initialize.F
+module_initialize_b_wave.o : module_initialize_b_wave.F
+module_initialize_hill2d_x.o : module_initialize_hill2d_x.F
+module_initialize_quarter_ss.o : module_initialize_quarter_ss.F
+module_initialize_squall2d_x.o : module_initialize_squall2d_x.F
+module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
+module_initialize_real.o : module_initialize_real.F
+module_dm.o : module_dm.F
+start_domain.o : start_domain.F
+mediation_integrate.o : mediation_integrate.F
+
+solve_interface.o                                              \
+module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
+module_start.o module_initialize.o module_initialize_b_wave.o  \
+module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
+module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
+mediation_integrate.o \
+module_initialize_real.o module_dm.o start_domain.o :
+	$(RM) $@
+	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(RM) $*.b
+	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
+
+###########################################################
+#ARCH    PC Linux x86_64 (IA64 and Opteron), PGI compiler 5.2 or higher    (RSL, MPICH, RSL IO, support nesting)
+#        Note that for 5.1.x comment out -Mpia=fast
+#
+DMPARALLEL      =       1
+MAX_PROC        =       1024
+FC              =       mpif90
+LD              =       mpif90
+CC              =       mpicc
+SFC             =       pgf90
+CFLAGS          =       -DDM_PARALLEL -DWRF_RSL_IO \
+                        -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL/RSL
+FCOPTIM         =       -fastsse #-Mipa=fast
+FCDEBUG		=	#-g
+FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree $(FCDEBUG)
+FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
+ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DYYY -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
+                        -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
+                        -DTRIEDNTRUE   \
+			-DLIMIT_ARGS
+INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
+                        -I../external -I../frame -I../share -I../phys -I../inc
+EXTRAMODULES    =       
+PERL            =       perl
+REGISTRY        =       Registry
+LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
+                        -L../external/io_grib1 -lio_grib1 \
+			-L../external/io_int -lwrfio_int \
+			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
+LDFLAGS         =       -byteswapio
+CPP             =       /lib/cpp -C -P
+POUND_DEF	=	-DNO_RRTM_PHYSICS  -DPGF90 -traditional $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
+CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL/RSL -C -P `cat ../inc/dm_comm_cpp_flags` $(POUND_DEF)
+AR              =       ar ru
+M4              =       m4
+RANLIB          =       ranlib
+NETCDFPATH	=	CONFIGURE_NETCDF_PATH
+CC_TOOLS        =       cc
+
+externals : CONFIGURE_WRFIO_NF ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
+
+gen_comms.c : ../external/RSL/gen_comms.c
+	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
+          cat ../external/RSL/gen_comms.c >> ../tools/gen_comms.c )
+
+module_dm.F : ../external/RSL/module_dm.F
+	( /bin/cp module_dm_warning module_dm.F ; cat ../external/RSL/module_dm.F >> module_dm.F )
+
+io_flags:
+	( cd ../external/io_netcdf ; make flags_only ; \
+	  /bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
+	  /bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 )
+
+wrfio_nf :  io_flags
+	( cd ../external/io_netcdf ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC=$(FC) TRADFLAG="-traditional" \
+	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' )
+
+wrfio_int :  io_flags
+	( cd ../external/io_int ; \
+          make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
+
+wrfio_grib1 : io_flags
+	( cd ../external/io_grib1 ; \
+          make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
+
+esmf_time : 
+	( cd ../external/esmf_time_f90 ; \
+	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+../external/RSL/RSL/librsl.a :
+	( cd ../external/RSL/RSL ; make CC=mpicc FC='mpif90 -byteswapio' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST linux )
+
+# compile these without high optimization to speed compile
+solve_interface.o : solve_interface.F
+module_io_mm5.o : module_io_mm5.F
+module_si_io.o : module_si_io.F
+module_io_wrf.o : module_io_wrf.F
+module_domain.o : module_domain.F
+module_start.o : module_start.F
+module_initialize.o : module_initialize.F
+module_initialize_b_wave.o : module_initialize_b_wave.F
+module_initialize_hill2d_x.o : module_initialize_hill2d_x.F
+module_initialize_quarter_ss.o : module_initialize_quarter_ss.F
+module_initialize_squall2d_x.o : module_initialize_squall2d_x.F
+module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
+module_initialize_real.o : module_initialize_real.F
+module_dm.o : module_dm.F
+start_domain.o : start_domain.F
+mediation_integrate.o : mediation_integrate.F
+
+solve_interface.o                                              \
+module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
+module_start.o module_initialize.o module_initialize_b_wave.o  \
+module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
+module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
+mediation_integrate.o \
+module_initialize_real.o module_dm.o start_domain.o :
+	$(RM) $@
+	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(RM) $*.b
+	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
+
+
+###########################################################
+#ARCH    PC Linux x86_64 (IA64 and Opteron), PGI compiler 5.2 or higher    (RSL_LITE, MPICH, No nesting, No periodic LBCs)
+#        Note that for 5.1.x comment out -Mpia=fast
+#
+DMPARALLEL      =       1
+MAX_PROC        =       1024
+FC              =       mpif90
+LD              =       mpif90
+CC              =       mpicc
+SFC             =       pgf90
+CFLAGS          =       -DDM_PARALLEL \
+                        -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL_LITE
+FCOPTIM         =       -fastsse #-Mipa=fast
+FCDEBUG		=	#-g
+FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree $(FCDEBUG)
+FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
+ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DYYY -DINTIO -DDM_PARALLEL \
+                        -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
+                        -DTRIEDNTRUE   \
+			-DLIMIT_ARGS
+INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
+                        -I../external -I../frame -I../share -I../phys -I../inc
+EXTRAMODULES    =       
+PERL            =       perl
+REGISTRY        =       Registry
+LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL_LITE -lrsl_lite \
+                        -L../external/io_grib1 -lio_grib1 \
+			-L../external/io_int -lwrfio_int \
+			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
+LDFLAGS         =       -byteswapio
+CPP             =       /lib/cpp -C -P
+POUND_DEF	=	-DNO_RRTM_PHYSICS  -DPGF90 -traditional $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
+CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL_LITE -C -P `cat ../inc/dm_comm_cpp_flags` $(POUND_DEF)
+AR              =       ar ru
+M4              =       m4
+RANLIB          =       ranlib
+NETCDFPATH	=	CONFIGURE_NETCDF_PATH
+CC_TOOLS        =       cc
+
+externals : CONFIGURE_WRFIO_NF ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
+
+gen_comms.c : ../external/RSL_LITE/gen_comms.c
+	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
+          cat ../external/RSL_LITE/gen_comms.c >> ../tools/gen_comms.c )
+
+module_dm.F : ../external/RSL_LITE/module_dm.F
+	( /bin/cp module_dm_warning module_dm.F ; cat ../external/RSL_LITE/module_dm.F >> module_dm.F )
+
+io_flags:
+	( cd ../external/io_netcdf ; make flags_only ; \
+	  /bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
+	  /bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 )
+
+wrfio_nf :  io_flags
+	( cd ../external/io_netcdf ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC=$(FC) TRADFLAG="-traditional" \
+	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' )
+
+wrfio_grib1 : io_flags
+	( cd ../external/io_grib1 ; make CPP="$(CPP)" FC="$(FC) -I. $(FCDEBUG) $(FCBASEOPTS) -w"\
+	  TRADFLAG="-traditional")
+
+wrfio_int : io_flags
+	( cd ../external/io_int ; \
+          make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
+
+esmf_time : 
+	( cd ../external/esmf_time_f90 ; \
+	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+../external/RSL_LITE/librsl_lite.a :
+	( cd ../external/RSL_LITE ; make CC=mpicc FC='mpif90 -byteswapio' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
+
+# compile these without high optimization to speed compile
+solve_interface.o : solve_interface.F
+module_io_mm5.o : module_io_mm5.F
+module_si_io.o : module_si_io.F
+module_io_wrf.o : module_io_wrf.F
+module_domain.o : module_domain.F
+module_start.o : module_start.F
+module_initialize.o : module_initialize.F
+module_initialize_b_wave.o : module_initialize_b_wave.F
+module_initialize_hill2d_x.o : module_initialize_hill2d_x.F
+module_initialize_quarter_ss.o : module_initialize_quarter_ss.F
+module_initialize_squall2d_x.o : module_initialize_squall2d_x.F
+module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
+module_initialize_real.o : module_initialize_real.F
+module_dm.o : module_dm.F
+start_domain.o : start_domain.F
+mediation_integrate.o : mediation_integrate.F
+
+solve_interface.o                                              \
+module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
+module_start.o module_initialize.o module_initialize_b_wave.o  \
+module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
+module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
+mediation_integrate.o \
+module_initialize_real.o module_dm.o start_domain.o :
+	$(RM) $@
+	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(RM) $*.b
+	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
+
 
 ###########################################################
 #ARCH    Intel Itanium2 ia64 madison Linux  (e.g. mpp2 at PNNL) , efc71 compiler (RSL_LITE, MPICH, no nesting )

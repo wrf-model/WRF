@@ -14,6 +14,14 @@
 # @ ja_report		= yes
 # @ queue
 
+# QSUB -q ded_4             # submit to 4 proc
+# QSUB -l mpp_p=4           # request 4 processors
+# QSUB -lT  21600           # max. job time limit is 6 h
+# QSUB -lF 250Mw            # max. job file size limit is 250 Megawords
+# QSUB -eo                  # merge error and output into one file
+# QSUB -o  reg.out          # output file name
+# QSUB                      # there are no further QSUB commands
+
 #PBS -V -A acb
 #PBS -lnodes=4:comp -l walltime=40000
 
@@ -52,7 +60,7 @@ set clrm = 0          # compile local run mmmtmp, for using clsroom cluster and 
 #	If this is a batch job (NCAR's IBMs or FSL's Intel and Alpha), we need to muck with the "input"
 #	parameters a bit.
 
-if      ( `uname` == AIX ) then
+if      ( ( `uname` == AIX ) || ( `hostname` == tempest ) ) then
 	set argv = ( -here )
 	set argv = ( -ftp )
         set argv = ( -D today )
@@ -87,7 +95,7 @@ else if ( (`hostname | cut -c 1-6` == joshua ) || \
           ( `hostname` == maple ) || (`hostname | cut -c 1-7` == service ) ) then
 	set WRFREGDATAEM = /users/gill/WRF-data-EM
 	set WRFREGDATANMM = /users/gill/WRF-data-NMM
-else if ( `hostname | cut -c 1-2` == bs ) then
+else if ( ( `hostname | cut -c 1-2` == bs ) || ( `hostname` == tempest ) ) then
 	set WRFREGDATAEM = /mmm/users/gill/WRF-data-EM
 	set WRFREGDATANMM = /mmm/users/gill/WRF-data-NMM
 else
@@ -192,6 +200,13 @@ else if ( $NESTED == TRUE ) then
 	echo NESTED option is only valid on DEC, Linux, or AIX machines
 	exit ( 1 ) 
 endif
+
+#	The default floating point precision is either 4 bytes or 8 bytes.
+#	We assume that it is 4 (or the default for the architecture) unless 
+#	REAL8 = TRUE is specified here.
+
+set REAL8 = TRUE
+set REAL8 = FALSE
 
 #	Are we shooting for a bit-for-bit run (serial vs OpenMP, serial vs MPI), or not?
 #	If you want to do a performance-only run, the forecasts are still short, but you
@@ -900,6 +915,23 @@ EOF
 	echo "OS version info: " >>! version_info
 	uname -a >>&! version_info
 	echo " " >>! version_info
+else if ( `hostname` == tempest ) then
+	set DEF_DIR	= /ptmp/${user}/wrf_regtest.${QSUB_REQID}
+	if ( ! -d $DEF_DIR ) mkdir $DEF_DIR
+	set TMPDIR		= .
+	set MAIL		= /bin/mail
+	set COMPOPTS		= ( 1 2 3 )
+	set Num_Procs		= 4
+	set OPENMP		= $Num_Procs
+	set Mach		= `pwd`/machfile
+	set ZAP_OPENMP		= TRUE
+	set MPIRUNCOMMAND       = ( mpirun -np $Num_Procs )
+	echo "Compiler version info: " >! version_info
+	f90 -version >>&! version_info
+	echo " " >>! version_info
+	echo "OS version info: " >>! version_info
+	uname -a >>&! version_info
+	echo " " >>! version_info
 else if ( ( $ARCH[1] == Linux ) && ( `hostname` == jacaranda ) ) then
 	set DEF_DIR		= /data1/$USER/`hostname`
 	set TMPDIR		= .
@@ -1141,6 +1173,10 @@ else if ( $REG_TYPE == OPTIMIZED ) then
 	echo "No inter-comparisons are made. " >>! ${DEF_DIR}/wrftest.output
 	echo " " >>! ${DEF_DIR}/wrftest.output
 endif
+if ( $REAL8 == TRUE ) then
+	echo "Floating point precision is 8-bytes" >>! ${DEF_DIR}/wrftest.output
+	echo " " >>! ${DEF_DIR}/wrftest.output
+endif
 if ( $CHEM == TRUE ) then
 	echo "WRF_CHEM tests run for em_real core only, no other cores run" >>! ${DEF_DIR}/wrftest.output
 	echo " " >>! ${DEF_DIR}/wrftest.output
@@ -1328,6 +1364,13 @@ banner 7
 
 		if ( ( $NESTED == TRUE ) && ( $core == em_real ) ) then
 			sed -e '/^ARCHFLAGS/s/=/=	-DMOVE_NESTS/' ./configure.wrf >! foo ; /bin/mv foo configure.wrf
+		endif
+
+		#	The configure.wrf file needs to be adjusted as to whether we are requesting real*4 or real*8
+		#	as the default floating precision.
+
+		if ( ( $REAL8 == TRUE ) && ( $core == em_real ) ) then
+			sed -e 's/^RWORDSIZE *= *[0-9]/RWORDSIZE = 8/' ./configure.wrf >! foo ; /bin/mv foo configure.wrf
 		endif
 
 #DAVE###################################################

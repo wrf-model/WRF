@@ -159,7 +159,7 @@ while ( <ARCH_PREAMBLE> ) { print CONFIGURE_WRF } ;
 close ARCH_PREAMBLE ;
 printf CONFIGURE_WRF "# Settings for %s", $optstr[$optchoice] ;
 print CONFIGURE_WRF @machopts  ;
-open ARCH_POSTAMBLE, "< arch/postamble" or die "cannot open arch/preamble" ;
+open ARCH_POSTAMBLE, "< arch/postamble" or die "cannot open arch/postamble" ;
 while ( <ARCH_POSTAMBLE> ) { print CONFIGURE_WRF } ;
 close ARCH_POSTAMBLE ;
 close CONFIGURE_WRF ;

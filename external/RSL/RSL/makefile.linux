@@ -16,7 +16,7 @@ LIB =
 
 .SUFFIXES: .o .c .F
 
-CFLAGS = -I$(IDIR) -DMPI -DRSL_SYNCIO -Dlinux -O
+CFLAGS = -I$(IDIR) -DMPI -DRSL_SYNCIO -Dlinux -DSWAPBYTES -O
 FFLAGS = -O
 
 warning :

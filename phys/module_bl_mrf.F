@@ -371,8 +371,8 @@ CONTAINS
                                                         UTNP,VTNP
 !
       REAL,    DIMENSION( its:ite )             ::     QIXSV,RHOX, &
-                                                           GOVRTH, & 
-                                                            THXSV, &
+                                                     WSPD1,GOVRTH, & 
+                                                       PBL0,THXSV, &
                                                         UXSV,VXSV, &             
                                                        QXSV,QCXSV, & 
                                                      QGH,TGDSA,PS
@@ -380,7 +380,7 @@ CONTAINS
       INTEGER                                   ::   ILXM,JLXM,KL, &
                                                    KLM,KLP1,KLPBL
 !
-      INTEGER, DIMENSION( its:ite )             ::           KPBL
+      INTEGER, DIMENSION( its:ite )             ::     KPBL,KPBL0
 !
       REAL,    DIMENSION( its:ite, kts:kte )    ::      SCR3,SCR4
 !
@@ -740,7 +740,7 @@ CONTAINS
   330 CONTINUE                   
 !                                                                                
       DO 420 I=its,ite
-        WSPD(I)=SQRT(UX(I,KL)*UX(I,KL)+VX(I,KL)*VX(I,KL))+1.E-9                  
+        WSPD1(I)=SQRT(UX(I,KL)*UX(I,KL)+VX(I,KL)*VX(I,KL))+1.E-9                  
   420 CONTINUE                                                                   
 !                                                                                
 !---- COMPUTE VERTICAL DIFFUSION                                                 
@@ -758,6 +758,8 @@ CONTAINS
         WSCALE(I)=0.                                                             
         KPBL(I)=KL                                                               
         PBL(I)=ZQ(I,KL)                                                        
+        KPBL0(I)=KL                                                    
+        PBL0(I)=ZQ(I,KL)                                              
         PBLFLG(I)=.TRUE.                                                         
         SFCFLG(I)=.TRUE.                                                         
         IF(BR(I).GT.0.0)SFCFLG(I)=.FALSE.                                        
@@ -881,6 +883,44 @@ CONTAINS
           IF(KPBL(I).LE.1)PBLFLG(I)=.FALSE.                                      
         ENDIF                                                                    
       ENDDO                                                                      
+!                                                                                
+!     DIAGNOSTIC PBL HEIGHT WITH BRCR EFFECTIVELY ZERO (PBL0)                    
+!                                                                                
+      DO I=its,ite
+        IF(PBLFLG(I))THEN                                                        
+          STABLE(I)=.FALSE.                                                      
+          BRUP(I)=BR(I)                                                          
+        ENDIF                                                                    
+      ENDDO                                                                      
+      DO K=KLM,KLPBL,-1                                                          
+        DO I=its,ite
+          IF(.NOT.STABLE(I).AND.PBLFLG(I))THEN                                   
+            BRDN(I)=BRUP(I)                                                      
+            SPDK2=MAX((UX(I,K)**2+VX(I,K)**2),1.)                                
+            BRUP(I)=(THVX(I,K)-THERMAL(I))*(G*ZA(I,K)/THVX(I,KL))/SPDK2          
+            KPBL0(I)=K                                                           
+            STABLE(I)=BRUP(I).GT.0.0                                             
+          ENDIF                                                                  
+                                                                                 
+        ENDDO                                                                    
+      ENDDO                                                                      
+!                                                                                
+      DO I=its,ite
+        IF(PBLFLG(I))THEN                                                        
+          K=KPBL0(I)                                                             
+          IF(BRDN(I).GE.0.0)THEN                                                 
+            BRINT=0.                                                             
+          ELSEIF(BRUP(I).LE.0.0)THEN                                             
+            BRINT=1.                                                             
+          ELSE                                                                   
+            BRINT=(0.0-BRDN(I))/(BRUP(I)-BRDN(I))                                
+          ENDIF                                                                  
+          PBL0(I)=ZA(I,K+1)+BRINT*(ZA(I,K)-ZA(I,K+1))                            
+          IF(PBL0(I).LT.ZQ(I,KPBL0(I)+1))KPBL0(I)=KPBL0(I)+1                     
+          IF(KPBL0(I).LE.1)PBLFLG(I)=.FALSE.                                     
+        ENDIF                                                                    
+      ENDDO                                                                      
+
 !                                                                                
 !     COMPUTE DIFFUSION COEFFICIENTS BELOW PBL                                   
 !                                                                                
@@ -1024,8 +1064,10 @@ CONTAINS
  
       DO I=its,ite
         AD(I,1)=1.                                                               
-        A1(I,1)=UX(I,KL)-UX(I,KL)/WSPD(I)*UST(I)*UST(I)/ZQ(I,KL)*DT4         
-        A2(I,1)=VX(I,KL)-VX(I,KL)/WSPD(I)*UST(I)*UST(I)/ZQ(I,KL)*DT4         
+        A1(I,1)=UX(I,KL)-UX(I,KL)/WSPD1(I)*UST(I)*UST(I)/ZQ(I,KL)  &
+                *DT4*(WSPD1(I)/WSPD(I))**2                            
+        A2(I,1)=VX(I,KL)-VX(I,KL)/WSPD1(I)*UST(I)*UST(I)/ZQ(I,KL)  &
+                *DT4*(WSPD1(I)/WSPD(I))**2                          
       ENDDO                                                                      
 !                                                                                
       DO K=kte,kts+1,-1
@@ -1193,8 +1235,11 @@ CONTAINS
 ! KPBL IS NEEDED FOR THE FDDA, AND SINCE THERE IS NO LONGER JUST ONE             
 ! LARGE "J LOOP" IT MUST BE STORED AS (I,J)...                                   
 !                                                                                
+! USE NEW DIAGNOSED PBL DEPTH (CALCULATED WITH brcr=0.0)
+! PBL IS USED FOR OUTPUT AND NEXT-TIME-STEP BELJAARS CALC IN SFCLAY
       DO 950 I=its,ite
-        KPBL1D(I)=KPBL(I)                                                      
+        KPBL1D(I)=KPBL0(I)                                                      
+        PBL(I)=PBL0(I)
   950 CONTINUE                                                                   
 
    END SUBROUTINE MRF2D

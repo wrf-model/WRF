@@ -52,7 +52,7 @@ MODULE module_mp_wsm6
 CONTAINS
 !===================================================================
 !
-  SUBROUTINE wsm6(th, q, qc, qr, qi, qs, qg,                    &
+  SUBROUTINE wsm6(th, q, qc, qr, qi, qs, qg,                       &
                      w, den, pii, p, delz, rain, rainncv,          &
                      delt,g, cpd, cpv, rd, rv, t0c,                &
                      ep1, ep2, qmin,                               &
@@ -141,7 +141,7 @@ CONTAINS
             qrs(i,k,3) = qg(i,k,j)
          ENDDO
          ENDDO
-         CALL wsm62D(t, q(ims,kms,j), qci, qrs,                 &
+         CALL wsm62D(t, q(ims,kms,j), qci, qrs,                    &
                      w(ims,kms,j), den(ims,kms,j),                 &
                      p(ims,kms,j), delz(ims,kms,j), rain(ims,j),   &
                      rainncv(ims,j),delt,g, cpd, cpv, rd, rv, t0c, &
@@ -166,7 +166,7 @@ CONTAINS
   END SUBROUTINE wsm6
 !===================================================================
 !
-  SUBROUTINE wsm62D(t, q, qci, qrs, w, den, p, delz, rain,      &
+  SUBROUTINE wsm62D(t, q, qci, qrs, w, den, p, delz, rain,         &
                      rainncv,delt,g, cpd, cpv, rd, rv, t0c,        &
                      ep1, ep2, qmin,                               &
                      XLS, XLV0, XLF0, den0, denr,                  &
@@ -242,7 +242,7 @@ CONTAINS
             coeres, supsat, dtcld, xmi, eacrs, satdt,             &
             qimax, diameter, xni0, roqi0,                         &
             fallsum, xlwork2, factor, source, value,              &
-            xlf, pfrzdtc, pfrzdtr, alpha2, delta2, delta3
+            xlf, pfrzdtc, pfrzdtr, supice, alpha2, delta2, delta3
   REAL  :: holdc, holdci
   INTEGER :: i, j, k, mstepmax,                                   &
             iprt, latd, lond, loop, loops, ifsat, n
@@ -736,9 +736,9 @@ CONTAINS
 ! cold rain processes
 !
 ! - follows the revised ice microphysics processes in HDC
-! - the processes same as in RH83 and RH84  and LFO behave 
+! - the processes same as in RH83 and RH84  and LFO behave
 !   following ice crystal hapits defined in HDC, inclduing
-!   intercept parameter for snow (n0s), ice crystal number 
+!   intercept parameter for snow (n0s), ice crystal number
 !   concentration (ni), ice nuclei number concentration
 !   (n0i), ice diameter (d)
 !
@@ -892,16 +892,16 @@ CONTAINS
 ! pisd: Deposition/Sublimation rate of ice [HDC 9]
 !       (T<T0: V->I or I->V)
 !-------------------------------------------------------------
-            if(qci(i,k,2).gt.0.) then
-              if(ifsat.ne.1) pisd(i,k) = 4.*diameter*xni(i,k)           &
-                                        *(rh(i,k,2)-1.)/work1(i,k,2)
+            if(qci(i,k,2).gt.0.and.ifsat.ne.1) then
+              pisd(i,k) = 4.*diameter*xni(i,k)*(rh(i,k,2)-1.)/work1(i,k,2)
+              supice = satdt-pres(i,k,1)
               if(pisd(i,k).lt.0.) then
-                pisd(i,k) = max(pisd(i,k),satdt/2)
+                pisd(i,k) = max(max(pisd(i,k),satdt/2),supice)
                 pisd(i,k) = max(pisd(i,k),-qci(i,k,2)/dtcld)
               else
-                pisd(i,k) = min(pisd(i,k),satdt/2)
+                pisd(i,k) = min(min(pisd(i,k),satdt/2),supice)
               endif
-              if(abs(pisd(i,k)).gt.abs(satdt)) ifsat = 1
+              if(abs(pres(i,k,1)+pisd(i,k)).ge.abs(satdt)) ifsat = 1
             endif
 !-------------------------------------------------------------
 ! pres2: deposition/sublimation rate of snow [HDC 14]
@@ -912,13 +912,15 @@ CONTAINS
               pres(i,k,2) = (rh(i,k,2)-1.)*n0sfac(i,k)*(precs1          &
                            *rslope2(i,k,2)+precs2*work2(i,k)            &
                            *coeres)/work1(i,k,2)
+              supice = satdt-pres(i,k,1)-pisd(i,k)
               if(pres(i,k,2).lt.0.) then
                 pres(i,k,2) = max(pres(i,k,2),-qrs(i,k,2)/dtcld)
-                pres(i,k,2) = max(pres(i,k,2),satdt/2)
+                pres(i,k,2) = max(max(pres(i,k,2),satdt/2),supice)
               else
-                pres(i,k,2) = min(pres(i,k,2),satdt/2)
+                pres(i,k,2) = min(min(pres(i,k,2),satdt/2),supice)
               endif
-              if(abs(pisd(i,k)+pres(i,k,2)).ge.abs(satdt)) ifsat = 1
+              if(abs(pres(i,k,1)+pisd(i,k)+pres(i,k,2)).ge.abs(satdt))  &
+                ifsat = 1
             endif
 !-------------------------------------------------------------
 ! pres3: deposition/sublimation rate of graupel [LFO 46]
@@ -928,25 +930,27 @@ CONTAINS
               coeres = rslope2(i,k,3)*sqrt(rslope(i,k,3)*rslopeb(i,k,3))
               pres(i,k,3) = (rh(i,k,2)-1.)*(precg1*rslope2(i,k,3)       &
                               +precg2*work2(i,k)*coeres)/work1(i,k,2)
+              supice = satdt-pres(i,k,1)-pisd(i,k)-pres(i,k,2)
               if(pres(i,k,3).lt.0.) then
                 pres(i,k,3) = max(pres(i,k,3),-qrs(i,k,3)/dtcld)
-                pres(i,k,3) = max(pres(i,k,3),satdt/2)
+                pres(i,k,3) = max(max(pres(i,k,3),satdt/2),supice)
               else
-                pres(i,k,3) = 0.
+                pres(i,k,3) = min(min(pres(i,k,3),satdt/2),supice)
               endif
-              if(abs(pisd(i,k)+pres(i,k,2)+pres(i,k,3)).ge.abs(satdt))  &
-              ifsat = 1
+              if(abs(pres(i,k,1)+pisd(i,k)+pres(i,k,2)+pres(i,k,3)).ge. &
+                abs(satdt)) ifsat = 1
             endif
 !-------------------------------------------------------------
 ! pgen: generation(nucleation) of ice from vapor [HDC 7-8]
 !       (T<T0: V->I)
 !-------------------------------------------------------------
             if(supsat.gt.0.and.ifsat.ne.1) then
+              supice = satdt-pres(i,k,1)-pisd(i,k)-pres(i,k,2)-pres(i,k,3)
               xni0 = 1.e3*exp(0.1*supcol)
               roqi0 = 4.92e-11*xni0**1.33
               pgen(i,k) = max(0.,(roqi0/den(i,k)-max(qci(i,k,2),0.))    &
                          /dtcld)
-              pgen(i,k) = min(pgen(i,k),satdt)
+              pgen(i,k) = min(min(pgen(i,k),satdt),supice)
             endif
 !
 !-------------------------------------------------------------

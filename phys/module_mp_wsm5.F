@@ -47,7 +47,7 @@ MODULE module_mp_wsm5
 CONTAINS
 !===================================================================
 !
-  SUBROUTINE wsm5(th, q, qc, qr, qi, qs,                        &
+  SUBROUTINE wsm5(th, q, qc, qr, qi, qs,                           &
                      w, den, pii, p, delz, rain, rainncv,          &
                      delt,g, cpd, cpv, rd, rv, t0c,                &
                      ep1, ep2, qmin,                               &
@@ -129,7 +129,7 @@ CONTAINS
             qrs(i,k,2) = qs(i,k,j)
          ENDDO
          ENDDO
-         CALL wsm52D(t, q(ims,kms,j), qci, qrs,                 &
+         CALL wsm52D(t, q(ims,kms,j), qci, qrs,                    &
                      w(ims,kms,j), den(ims,kms,j),                 &
                      p(ims,kms,j), delz(ims,kms,j), rain(ims,j),   &
                      rainncv(ims,j),delt,g, cpd, cpv, rd, rv, t0c, &
@@ -153,7 +153,7 @@ CONTAINS
   END SUBROUTINE wsm5
 !===================================================================
 !
-  SUBROUTINE wsm52D(t, q, qci, qrs, w, den, p, delz, rain,      &
+  SUBROUTINE wsm52D(t, q, qci, qrs, w, den, p, delz, rain,         &
                      rainncv,delt,g, cpd, cpv, rd, rv, t0c,        &
                      ep1, ep2, qmin,                               &
                      XLS, XLV0, XLF0, den0, denr,                  &
@@ -226,7 +226,7 @@ CONTAINS
             coeres, supsat, dtcld, xmi, eacrs, satdt,             &
             qimax, diameter, xni0, roqi0,                         &
             fallsum, xlwork2, factor, source, value,              &
-            xlf, pfrzdtc, pfrzdtr
+            xlf, pfrzdtc, pfrzdtr, supice
   REAL  :: holdc, holdci
   INTEGER :: i, j, k, mstepmax,                                   &
             iprt, latd, lond, loop, loops, ifsat, n
@@ -234,7 +234,6 @@ CONTAINS
 ! Temporaries used for inlining fpvs function
   REAL  :: dldti, xb, xai, tr, xbi, xa, hvap, cvap, hsub, dldt, ttp
 #endif
-
 
 !
 !=================================================================
@@ -326,7 +325,6 @@ CONTAINS
 #endif
       do k = kts, kte
         do i = its, ite
-
 #ifdef INL
           tr=ttp/t(i,k)
           qs(i,k,1)=psat*(tr**xa)*exp(xb*(1.-tr))
@@ -336,7 +334,6 @@ CONTAINS
           qs(i,k,1) = ep2 * qs(i,k,1) / (p(i,k) - qs(i,k,1))
           qs(i,k,1) = max(qs(i,k,1),qmin)
           rh(i,k,1) = max(q(i,k) / qs(i,k,1),qmin)
-
 #ifdef INL
           tr=ttp/t(i,k)
           if(t(i,k).lt.ttp) then
@@ -350,7 +347,6 @@ CONTAINS
           qs(i,k,2) = ep2 * qs(i,k,2) / (p(i,k) - qs(i,k,2))
           qs(i,k,2) = max(qs(i,k,2),qmin)
           rh(i,k,2) = max(q(i,k) / qs(i,k,2),qmin)
-
         enddo
       enddo
 !
@@ -731,18 +727,18 @@ CONTAINS
 ! pisd: Deposition/Sublimation rate of ice [HDC 9]
 !       (T<T0: V->I or I->V)
 !-------------------------------------------------------------
-            if(qci(i,k,2).gt.0.) then
+            if(qci(i,k,2).gt.0.and.ifsat.ne.1) then
               xmi = den(i,k)*qci(i,k,2)/xni(i,k)
               diameter = dicon * sqrt(xmi)
-              if(ifsat.ne.1) pisd(i,k) = 4.*diameter*xni(i,k)           &
-                                        *(rh(i,k,2)-1.)/work1(i,k,2)
+              pisd(i,k) = 4.*diameter*xni(i,k)*(rh(i,k,2)-1.)/work1(i,k,2)
+              supice = satdt-pres(i,k,1)
               if(pisd(i,k).lt.0.) then
-                pisd(i,k) = max(pisd(i,k),satdt/2)
+                pisd(i,k) = max(max(pisd(i,k),satdt/2),supice)
                 pisd(i,k) = max(pisd(i,k),-qci(i,k,2)/dtcld)
               else
-                pisd(i,k) = min(pisd(i,k),satdt/2)
+                pisd(i,k) = min(min(pisd(i,k),satdt/2),supice)
               endif
-              if(abs(pisd(i,k)).gt.abs(satdt)) ifsat = 1
+              if(abs(pres(i,k,1)+pisd(i,k)).ge.abs(satdt)) ifsat = 1
             endif
           endif
 !-------------------------------------------------------------
@@ -751,16 +747,18 @@ CONTAINS
 !-------------------------------------------------------------
           if(qrs(i,k,2).gt.0..and.ifsat.ne.1) then
             coeres = rslope2(i,k,2)*sqrt(rslope(i,k,2)*rslopeb(i,k,2))
-            if(ifsat.ne.1) pres(i,k,2) = (rh(i,k,2)-1.)*n0sfac(i,k)     &
-                                        *(precs1*rslope2(i,k,2)+precs2  &
-                                        *work2(i,k)*coeres)/work1(i,k,2)
+            pres(i,k,2) = (rh(i,k,2)-1.)*n0sfac(i,k)                    &
+                         *(precs1*rslope2(i,k,2)+precs2                 &
+                         *work2(i,k)*coeres)/work1(i,k,2)
+            supice = satdt-pres(i,k,1)-pisd(i,k)
             if(pres(i,k,2).lt.0.) then
               pres(i,k,2) = max(pres(i,k,2),-qrs(i,k,2)/dtcld)
-              pres(i,k,2) = max(pres(i,k,2),satdt/2)
+              pres(i,k,2) = max(max(pres(i,k,2),satdt/2),supice)
             else
-              pres(i,k,2) = min(pres(i,k,2),satdt/2)
+              pres(i,k,2) = min(min(pres(i,k,2),satdt/2),supice)
             endif
-            if(abs(pisd(i,k)+pres(i,k,2)).ge.abs(satdt)) ifsat = 1
+            if(abs(pres(i,k,1)+pisd(i,k)+pres(i,k,2)).ge.abs(satdt))    &
+              ifsat = 1
           endif
 !-------------------------------------------------------------
 ! pgen: generation(nucleation) of ice from vapor [HDC 7-8]
@@ -768,11 +766,12 @@ CONTAINS
 !-------------------------------------------------------------
           if(supcol.gt.0) then
             if(supsat.gt.0.and.ifsat.ne.1) then
+              supice = satdt-pres(i,k,1)-pisd(i,k)-pres(i,k,2)
               xni0 = 1.e3*exp(0.1*supcol)
               roqi0 = 4.92e-11*xni0**1.33
               pgen(i,k) = max(0.,(roqi0/den(i,k)-max(qci(i,k,2),0.))    &
                          /dtcld)
-              pgen(i,k) = min(pgen(i,k),satdt)
+              pgen(i,k) = min(min(pgen(i,k),satdt),supice)
             endif
 !
 !-------------------------------------------------------------

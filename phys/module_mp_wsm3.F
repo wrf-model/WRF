@@ -42,7 +42,7 @@ MODULE module_mp_wsm3
 CONTAINS
 !===================================================================
 !
-  SUBROUTINE wsm3(th, q, qci, qrs,                              &
+  SUBROUTINE wsm3(th, q, qci, qrs,                                 &
                      w, den, pii, p, delz, rain, rainncv,          &
                      delt,g, cpd, cpv, rd, rv, t0c,                &
                      ep1, ep2, qmin,                               &
@@ -118,7 +118,7 @@ CONTAINS
             t(i,k)=th(i,k,j)*pii(i,k,j)
          ENDDO
          ENDDO
-         CALL wsm32D(t, q(ims,kms,j), qci(ims,kms,j),           &
+         CALL wsm32D(t, q(ims,kms,j), qci(ims,kms,j),              &
                      qrs(ims,kms,j),w(ims,kms,j), den(ims,kms,j),  &
                      p(ims,kms,j), delz(ims,kms,j), rain(ims,j),   &
                      rainncv(ims,j),delt,g, cpd, cpv, rd, rv, t0c, &
@@ -138,7 +138,7 @@ CONTAINS
   END SUBROUTINE wsm3
 !===================================================================
 !
-  SUBROUTINE wsm32D(t, q, qci, qrs,w, den, p, delz, rain,       &
+  SUBROUTINE wsm32D(t, q, qci, qrs,w, den, p, delz, rain,          &
                      rainncv,delt,g, cpd, cpv, rd, rv, t0c,        &
                      ep1, ep2, qmin,                               &
                      XLS, XLV0, XLF0, den0, denr,                  &
@@ -204,11 +204,10 @@ CONTAINS
             qdt, pvt, qik, delq, facq, qrsci, frzmlt,             &
             snomlt, hold, holdrs, facqci, supcol, coeres,         &
             supsat, dtcld, xmi, qciik, delqci, eacrs, satdt,      &
-            qimax, diameter, xni0, roqi0
+            qimax, diameter, xni0, roqi0, supice
   REAL  :: holdc, holdci
   INTEGER :: i, j, k, mstepmax,                                   &
             iprt, latd, lond, loop, loops, ifsat, kk, n
-!
 
 #ifdef INL
 ! Temporaries used for inlining fpvs function
@@ -216,7 +215,7 @@ CONTAINS
 #endif
 
 
-
+!
 !=================================================================
 !   compute internal functions
 !
@@ -666,8 +665,7 @@ CONTAINS
             if(qci(i,k).gt.0.) then
               xmi = den(i,k)*qci(i,k)/xni(i,k)
               diameter = dicon * sqrt(xmi)
-              pisd(i,k) = 4.*diameter*xni(i,k)*(rh(i,k)-1.)              &
-                        /work1(i,k)
+              pisd(i,k) = 4.*diameter*xni(i,k)*(rh(i,k)-1.)/work1(i,k)
               if(pisd(i,k).lt.0.) then
                 pisd(i,k) = max(pisd(i,k),satdt/2)
                 pisd(i,k) = max(pisd(i,k),-qci(i,k)/dtcld)
@@ -684,11 +682,12 @@ CONTAINS
               coeres = rslope2(i,k)*sqrt(rslope(i,k)*rslopeb(i,k))
               pres(i,k) = (rh(i,k)-1.)*n0sfac(i,k)*(precs1*rslope2(i,k)   &
                         +precs2*work2(i,k)*coeres)/work1(i,k)
+              supice = satdt-pisd(i,k)
               if(pres(i,k).lt.0.) then
                 pres(i,k) = max(pres(i,k),-qrs(i,k)/dtcld)
-                pres(i,k) = max(pres(i,k),satdt/2)
+                pres(i,k) = max(max(pres(i,k),satdt/2),supice)
               else
-                pres(i,k) = min(pres(i,k),satdt/2)
+                pres(i,k) = min(min(pres(i,k),satdt/2),supice)
               endif
               if(abs(pisd(i,k)+pres(i,k)).ge.abs(satdt)) ifsat = 1
             endif
@@ -697,10 +696,11 @@ CONTAINS
 !       (T<T0: V->I)
 !-------------------------------------------------------------
             if(supsat.gt.0.and.ifsat.ne.1) then
+              supice = satdt-pisd(i,k)-pres(i,k)
               xni0 = 1.e3*exp(0.1*supcol)
               roqi0 = 4.92e-11*xni0**1.33
               pgen(i,k) = max(0.,(roqi0/den(i,k)-max(qci(i,k),0.))/dtcld)
-              pgen(i,k) = min(pgen(i,k),satdt)
+              pgen(i,k) = min(min(pgen(i,k),satdt),supice)
             endif
 !-------------------------------------------------------------
 ! paut2: conversion(aggregation) of ice to snow [HDC 12]

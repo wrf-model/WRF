@@ -1428,7 +1428,6 @@ SUBROUTINE ext_yyy_put_dom_ti_real ( DataHandle,Element,   Data, Count,  &
   INTEGER ,       INTENT(OUT) :: Status
   REAL dummy
 
-  print *,'Element: ',Element,Data(1)
   if (Element .eq. 'DX') then
      dx = Data(1)/1000.
   endif

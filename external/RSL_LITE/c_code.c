@@ -5,39 +5,6 @@
 
 #define STANDARD_OUTPUT 1
 
-#ifndef CRAY
-# ifdef NOUNDERSCORE
-#      define RSL_LITE_ERROR_DUP1 rsl_error_dup1
-#      define BYTE_BCAST byte_bcast
-#      define RSL_LITE_INIT_EXCH rsl_lite_init_exch
-#      define RSL_LITE_EXCH_Y rsl_lite_exch_y
-#      define RSL_LITE_EXCH_X rsl_lite_exch_x
-#      define RSL_LITE_PACK  rsl_lite_pack
-#      define RSL_INTERNAL_MILLICLOCK rsl_internal_milliclock
-#      define RSL_INTERNAL_MICROCLOCK rsl_internal_microclock
-# else
-#   ifdef F2CSTYLE
-#      define RSL_LITE_ERROR_DUP1 rsl_error_dup1__
-#      define BYTE_BCAST byte_bcast__
-#      define RSL_LITE_INIT_EXCH rsl_lite_init_exch__
-#      define RSL_LITE_EXCH_Y rsl_lite_exch_y__
-#      define RSL_LITE_EXCH_X rsl_lite_exch_x__
-#      define RSL_LITE_PACK  rsl_lite_pack__
-#      define RSL_INTERNAL_MILLICLOCK rsl_internal_milliclock__
-#      define RSL_INTERNAL_MICROCLOCK rsl_internal_microclock__
-#   else
-#      define RSL_LITE_ERROR_DUP1 rsl_error_dup1_
-#      define BYTE_BCAST byte_bcast_
-#      define RSL_LITE_INIT_EXCH rsl_lite_init_exch_
-#      define RSL_LITE_EXCH_Y rsl_lite_exch_y_
-#      define RSL_LITE_EXCH_X rsl_lite_exch_x_
-#      define RSL_LITE_PACK  rsl_lite_pack_
-#      define RSL_INTERNAL_MILLICLOCK rsl_internal_milliclock_
-#      define RSL_INTERNAL_MICROCLOCK rsl_internal_microclock_
-#   endif
-# endif
-#endif
-
 #include "mpi.h"
 #include "rsl_lite.h"
 

@@ -114,32 +114,32 @@ RSL_MON_BCAST ( buf, nbytes0 )
   RSL_TEST_ERR( buf == NULL, "NULL pointer" ) ;
   RSL_TEST_ERR( nbytes < 0 , "Invalid (negative) number of bytes" ) ;
 
+#if 0
+/* Replaced this with an MPI_Bcast (below), 3/3/00 */
   RSL_C_IAMMONITOR ( &retval ) ;
 
-  if ( retval == 1 ) 			/* monitor code */
+  if ( retval == 1 )                    /* monitor code */
   {
-    for ( P = 0 ; P < rsl_nproc_all ; P++ )	/* 95/02/22 */
+    for ( P = 0 ; P < rsl_nproc_all ; P++ )     /* 95/02/22 */
     {
       if ( rsl_c_comp2phys_proc(P) != rsl_myproc )  /* not me */
       {
-	       mdest = rsl_c_comp2phys_proc (P) ;
+               mdest = rsl_c_comp2phys_proc (P) ;
         mlen  = nbytes ;
         mtype = MTYPE_FROMTO( MSG_MON_BCAST, rsl_myproc, mdest ) ;
-#if 0
-fprintf(stderr,"rsl_mon_bcast: send %d to %d\n",mlen,mdest) ;
-#endif
-	       RSL_SEND( buf, mlen, mtype, mdest ) ;
-#if 0
-fprintf(stderr,"rsl_mon_bcast: done with %d\n",mdest) ;
-#endif
+               RSL_SEND( buf, mlen, mtype, mdest ) ;
       }
     }
   }
-  else					/* other nodes */
+  else                                  /* other nodes */
   {
     mfrom = RSL_C_MONITOR_PROC () ;
     mlen  = nbytes ;
     mtype  = MTYPE_FROMTO( MSG_MON_BCAST, mfrom, rsl_myproc ) ;
     RSL_RECV( buf, mlen, mtype ) ;
   }
+#else
+  MPI_Bcast( buf, nbytes, MPI_BYTE, 0, MPI_COMM_WORLD ) ;
+#endif
+
 }

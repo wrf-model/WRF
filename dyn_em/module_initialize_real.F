@@ -115,6 +115,12 @@ CONTAINS
 
 integer::oops1,oops2
 
+#ifdef DEREF_KLUDGE
+      INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
+#endif
+
+#include "deref_kludge.h"
+
 #define COPY_IN
 #include <em_scalar_derefs.inc>
 #ifdef DM_PARALLEL
@@ -822,6 +828,12 @@ endif
                                      its, ite, jts, jte, kts, kte, &
                                      ips, ipe, jps, jpe, kps, kpe, &
                                      i, j, k
+
+#ifdef DEREF_KLUDGE
+      INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
+#endif
+
+#include "deref_kludge.h"
 
 #define COPY_IN
 #include <em_scalar_derefs.inc>

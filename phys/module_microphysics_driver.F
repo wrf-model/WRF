@@ -373,9 +373,9 @@ SUBROUTINE microphysics_driver(th_phy, moist_new, moist_old, w,        &
             CALL wrf_debug ( 100 , 'zero out small condensates, vapor not included')
             DO n = PARAM_FIRST_SCALAR,n_moist
                IF ( n .NE. P_QV ) THEN
-                  DO j = jms, jme
-                  DO k = kms, kme
-                  DO i = ims, ime
+                  DO j = jts, jte
+                  DO k = kts, kte
+                  DO i = its, ite
                      IF ( moist_new(i,k,j,n) .LT. config_flags%mp_zero_out_thresh )  moist_new(i,k,j,n) =0.
                   ENDDO
                   ENDDO
@@ -388,17 +388,17 @@ SUBROUTINE microphysics_driver(th_phy, moist_new, moist_old, w,        &
             CALL wrf_debug ( 100 , 'zero out small condensates, zero out negative vapor')
             DO n = PARAM_FIRST_SCALAR,n_moist
                IF ( n .NE. P_QV ) THEN
-                  DO j = jms, jme
-                  DO k = kms, kme
-                  DO i = ims, ime
+                  DO j = jts, jte
+                  DO k = kts, kte
+                  DO i = its, ite
                      IF ( moist_new(i,k,j,n) .LT. config_flags%mp_zero_out_thresh )  moist_new(i,k,j,n) =0.
                   ENDDO
                   ENDDO
                   ENDDO
                ELSE IF ( n .EQ. P_QV ) THEN
-                  DO j = jms, jme
-                  DO k = kms, kme
-                  DO i = ims, ime
+                  DO j = jts, jte
+                  DO k = kts, kte
+                  DO i = its, ite
                      moist_new(i,k,j,n) = MAX ( moist_new(i,k,j,n) , 0. )
                   ENDDO
                   ENDDO

@@ -118,7 +118,9 @@ static check_local_pts_period( d, m, n, hm, hn, min_gh, maj_gh, fldspec )
   Pmaj_gh = domain[INDEX_2( (hn+maj_gh<0)?0:((hn+maj_gh>nfldlen-1)?nfldlen-1:hn+maj_gh) , (hm<0)?0:((hm>mfldlen-1)?mfldlen-1:hm       ),mlen )  ].P ;
 
 /* Pthis is the processor on which sits the on-domain point being replicated */
-  Pthis = domain[INDEX_2(n,m,mlen)].P ;
+  Pthis = RSL_INVALID ;
+  if ( n >= 0 && n < dinfo->len_n && m >= 0 && m < dinfo->len_m )
+     Pthis = domain[INDEX_2(n,m,mlen)].P ;
 
 /* SENDS -- if the point to be replicated sits on my processsor, and the off-domain point being filled
    in sits on the "other" processor, record a send that includes the coordinates of the point being

@@ -641,6 +641,9 @@ SUBROUTINE Setup_Timekeeping ( grid )
                                                      rc=rc )
 
    CALL ESMF_ClockAddAlarm( grid%domain_clock, grid%alarms( AUXINPUT1_ALARM ), rc=rc )
+   IF ( interval .NE. run_length + one_minute .AND. begin_time .EQ. zero_time ) THEN
+     CALL ESMF_AlarmTurnOn( grid%alarms( AUXINPUT1_ALARM ),  rc=rc )
+   ENDIF
 
 ! AUXINPUT2_ INTERVAL
 ! auxinput2_interval is left there (and means minutes) for consistency, but
@@ -695,6 +698,9 @@ SUBROUTINE Setup_Timekeeping ( grid )
                                                      rc=rc )
 
    CALL ESMF_ClockAddAlarm( grid%domain_clock, grid%alarms( AUXINPUT2_ALARM ), rc=rc )
+   IF ( interval .NE. run_length + one_minute .AND. begin_time .EQ. zero_time ) THEN
+     CALL ESMF_AlarmTurnOn( grid%alarms( AUXINPUT2_ALARM ),  rc=rc )
+   ENDIF
 
 ! AUXINPUT3_ INTERVAL
 ! auxinput3_interval is left there (and means minutes) for consistency, but
@@ -749,6 +755,9 @@ SUBROUTINE Setup_Timekeeping ( grid )
                                                      rc=rc )
 
    CALL ESMF_ClockAddAlarm( grid%domain_clock, grid%alarms( AUXINPUT3_ALARM ), rc=rc )
+   IF ( interval .NE. run_length + one_minute .AND. begin_time .EQ. zero_time ) THEN
+     CALL ESMF_AlarmTurnOn( grid%alarms( AUXINPUT3_ALARM ),  rc=rc )
+   ENDIF
 
 ! AUXINPUT4_ INTERVAL
 ! auxinput4_interval is left there (and means minutes) for consistency, but
@@ -803,6 +812,9 @@ SUBROUTINE Setup_Timekeeping ( grid )
                                                      rc=rc )
 
    CALL ESMF_ClockAddAlarm( grid%domain_clock, grid%alarms( AUXINPUT4_ALARM ), rc=rc )
+   IF ( interval .NE. run_length + one_minute .AND. begin_time .EQ. zero_time ) THEN
+     CALL ESMF_AlarmTurnOn( grid%alarms( AUXINPUT4_ALARM ),  rc=rc )
+   ENDIF
 
 ! AUXINPUT5_ INTERVAL
 ! auxinput5_interval is left there (and means minutes) for consistency, but
@@ -857,6 +869,9 @@ SUBROUTINE Setup_Timekeeping ( grid )
                                                      rc=rc )
 
    CALL ESMF_ClockAddAlarm( grid%domain_clock, grid%alarms( AUXINPUT5_ALARM ), rc=rc )
+   IF ( interval .NE. run_length + one_minute .AND. begin_time .EQ. zero_time ) THEN
+     CALL ESMF_AlarmTurnOn( grid%alarms( AUXINPUT5_ALARM ),  rc=rc )
+   ENDIF
 
    CALL ESMF_AlarmSet( grid%alarms( BOUNDARY_ALARM ), RingTime=grid%start_time ,     &
                                                      rc=rc )

@@ -1,4 +1,11 @@
 #define WSM3_OPTIM
+#if (RWORDSIZE == DWORDSIZE)
+#  define VREC(A,B,C) vrec(A,B,C)
+#  define VSQRT(A,B,C) vsqrt(A,B,C)
+#else
+#  define VREC(A,B,C) vsrec(A,B,C)
+#  define VSQRT(A,B,C) vssqrt(A,B,C)
+#endif
 MODULE module_mp_wsm3
 !
 !
@@ -306,11 +313,11 @@ CONTAINS
 !
 #ifdef WSM3_OPTIM
       do k = kts, kte
-        CALL vsrec( tvec1(its), den(its,k), ite-its+1 )
+        CALL VREC( tvec1(its), den(its,k), ite-its+1 )
         do i = its, ite
           tvec1(i) = tvec1(i)*den0
         enddo
-        CALL vssqrt( denfac(its,k), tvec1(its), ite-its+1 )
+        CALL VSQRT( denfac(its,k), tvec1(its), ite-its+1 )
       enddo
 #else
       do k = kts, kte

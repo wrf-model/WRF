@@ -395,7 +395,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
 
      ! theta advection only:
 
-         CALL set_tend( RTHFTEN, t_tend,                 &
+         CALL set_tend( RTHFTEN, t_tend, msft,           &
                         ids, ide, jds, jde, kds, kde,    &
                         ims, ime, jms, jme, kms, kme,    &
                         its, ite, jts, jte, kts, kte     )
@@ -898,7 +898,7 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,    &
 
     IF( config_flags%cu_physics == GDSCHEME .and. moist_step .and. ( im == P_QV) ) THEN
 
-        CALL set_tend( RQVFTEN, advect_tend,           &
+        CALL set_tend( RQVFTEN, advect_tend, msft,     &
                        ids, ide, jds, jde, kds, kde,   &
                        ims, ime, jms, jme, kms, kme,   &
                        its, ite, jts, jte, kts, kte      )

@@ -90,6 +90,21 @@ CONTAINS
             END IF
 
          CASE ( LSMSCHEME ) 
+            num_seaice_changes = 0
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  IF ( landmask(i,j) .GT. 0.5 ) THEN
+                     if (xice(i,j).gt.0) num_seaice_changes = num_seaice_changes + 1
+                     xice(i,j) = 0.
+                  END IF
+               END DO
+            END DO
+            IF ( num_seaice_changes .GT. 0 ) THEN
+               WRITE ( message , FMT='(A,I6)' ) &
+               'Total pre number of land location changes (seaice set to zero) = ', num_seaice_changes
+               CALL wrf_debug ( 0 , message )
+            END IF
+
          CASE ( RUCLSMSCHEME ) 
 
       END SELECT fix_seaice
@@ -199,6 +214,8 @@ CONTAINS
                         smois(i,loop,j) = 1.0
                         sh2o(i,loop,j)  = 0.0
                      END DO
+                  ELSE IF ( xice(i,j) .LT. 0.5 ) THEN
+                     xice(i,j) = 0.
                   END IF
                END DO
             END DO

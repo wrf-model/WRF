@@ -37,6 +37,11 @@ convert_nmm : convert_nmm.o
 	$(RANLIB) libwrflib.a
 	$(FC) -o convert_nmm.exe $(LDFLAGS) convert_nmm.o libwrflib.a $(LIB)
 
+real_nmm : real_nmm.o
+        ( cd ../dyn_nmm ;  $(MAKE) module_initialize_real.o )
+	$(RANLIB) libwrflib.a
+	$(FC) -o real_nmm.exe $(LDFLAGS) real_nmm.o ../dyn_nmm/module_initialize_real.o ../share/module_optional_si_input.o ../share/input_wrf.o ../share/module_io_domain.o libwrflib.a $(LIB)
+
 module_initialize :
 	( cd ../dyn_$(SOLVER) ;  $(MAKE) module_initialize_$(IDEAL_CASE).o )
 

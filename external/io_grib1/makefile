@@ -14,7 +14,11 @@ CPPFLAGS = -C -P
 
 .SUFFIXES:      .F90 .F .f .c .o
 
-all : libio_grib1.a
+all : libio_grib1.a wgrib_exe
+
+wgrib_exe :
+	( cd WGRIB ; make "CC=$(CC)" )
+	ln -s WGRIB/wgrib .
 
 libio_grib1.a:		$(OBJS)
 			/bin/rm -f libio_grib1.a
@@ -90,6 +94,8 @@ superclean: clean
 
 clean:  
 			/bin/rm -f  *.f *.o *.mod
+			( cd WGRIB ; make clean )
+			/bin/rm wgrib
 
 .c.o:
 	$(CC) -c $(CFLAGS) $*.c

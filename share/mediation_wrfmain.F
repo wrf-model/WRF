@@ -35,9 +35,10 @@ SUBROUTINE med_initialdata_input ( grid , config_flags )
 
   ! Interface 
    INTERFACE
-     SUBROUTINE start_domain ( grid )  ! comes from module_start in appropriate dyn_ directory
+     SUBROUTINE start_domain ( grid , allowed_to_read )  ! comes from module_start in appropriate dyn_ directory
        USE module_domain
        TYPE (domain) grid
+       LOGICAL, INTENT(IN) :: allowed_to_read 
      END SUBROUTINE start_domain
    END INTERFACE
 
@@ -80,7 +81,11 @@ SUBROUTINE med_initialdata_input ( grid , config_flags )
         where ( grid%nest_pos .gt. 0 ) grid%nest_pos = grid%nest_pos + 500.  ! make a cliff
 #endif
      ENDIF
-     CALL start_domain ( grid )
+     grid%imask_nostag = 1
+     grid%imask_xstag = 1
+     grid%imask_ystag = 1
+     grid%imask_xystag = 1
+     CALL start_domain ( grid , .TRUE. )
    ELSE
      CALL ESMF_ClockGetCurrTime( grid%domain_clock, CurrTime=CurrTime, rc=ierr )
      CALL ESMF_TimeGetString( CurrTime, timestr, rc=ierr )
@@ -95,7 +100,11 @@ SUBROUTINE med_initialdata_input ( grid , config_flags )
      ENDIF
      CALL input_restart ( fid,   grid , config_flags , ierr )
      CALL close_dataset ( fid , config_flags , "DATASET=RESTART" )
-     CALL start_domain ( grid )
+     grid%imask_nostag = 1
+     grid%imask_xstag = 1
+     grid%imask_ystag = 1
+     grid%imask_xystag = 1
+     CALL start_domain ( grid , .TRUE. )
    ENDIF
 
    RETURN

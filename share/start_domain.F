@@ -1,15 +1,16 @@
 !WRF:MEDIATION_LAYER:ADT_BARRIER
 !
 
-SUBROUTINE start_domain ( grid )
+SUBROUTINE start_domain ( grid , allowed_to_read )
 
    USE module_domain
    USE module_configure
 
    IMPLICIT NONE
 
-   !  Input data.
+   !  Input Arguments.
    TYPE (domain)          :: grid
+   LOGICAL, INTENT(IN)    :: allowed_to_read
    !  Local data.
    INTEGER                :: dyn_opt
    INTEGER :: idum1, idum2
@@ -28,7 +29,7 @@ SUBROUTINE start_domain ( grid )
 
 #if (EM_CORE == 1)
    ELSE IF (      dyn_opt .eq. DYN_EM ) THEN
-     CALL start_domain_em( grid, &
+     CALL start_domain_em( grid, allowed_to_read , &
 !
 # include <em_actual_args.inc>
 !
@@ -36,7 +37,7 @@ SUBROUTINE start_domain ( grid )
 #endif
 #if (NMM_CORE == 1)
    ELSE IF (      dyn_opt .eq. DYN_NMM ) THEN
-     CALL start_domain_nmm( grid, &
+     CALL start_domain_nmm( grid, allowed_to_read , &
 !
 # include <nmm_actual_args.inc>
 !
@@ -44,7 +45,7 @@ SUBROUTINE start_domain ( grid )
 #endif
 #if (COAMPS_CORE == 1)
    ELSE IF (      dyn_opt .eq. DYN_COAMPS ) THEN
-     CALL start_domain_coamps( grid, &
+     CALL start_domain_coamps( grid, allowed_to_read , &
 !
 # include <coamps_actual_args.inc>
 !

@@ -140,6 +140,6 @@ mediation_interp_domain.o: ../frame/module_domain.o ../frame/module_configure.o 
 			../frame/module_timing.o
 
 set_timekeeping.o: ../frame/module_domain.o ../frame/module_configure.o \
-			../external/esmf_time_f90/ESMF_Mod.o \
+			../external/esmf_time_f90/ESMF_Mod.o
 
 # DO NOT DELETE

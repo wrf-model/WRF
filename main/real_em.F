@@ -89,7 +89,7 @@ real::t1,t2
    CALL initial_config
 #endif
 
-   CALL rconfig_get_debug_level ( 1, debug_level )
+   CALL nl_get_debug_level ( 1, debug_level )
    CALL set_wrf_debug_level ( debug_level )
 
    CALL  wrf_message ( program_name )
@@ -210,7 +210,7 @@ real::t1,t2
    current_date = start_date
    print*,'line 211: start_date=',start_date,'  current_date=',current_date
 
-   CALL rconfig_set_bdyfrq ( grid%id , REAL(model_config_rec%interval_seconds) )
+   CALL nl_set_bdyfrq ( grid%id , REAL(model_config_rec%interval_seconds) )
 
    !!!!!!!  Loop over each time period to process.
 
@@ -227,9 +227,9 @@ real::t1,t2
         print *,'configflags%julyr, %julday, %gmt:',config_flags%julyr, config_flags%julday, config_flags%gmt
       !  Now that the specific Julian info is available, save these in the model config record.
 
-      CALL rconfig_set_gmt (grid%id, config_flags%gmt)
-      CALL rconfig_set_julyr (grid%id, config_flags%julyr)
-      CALL rconfig_set_julday (grid%id, config_flags%julday)
+      CALL nl_set_gmt (grid%id, config_flags%gmt)
+      CALL nl_set_julyr (grid%id, config_flags%julyr)
+      CALL nl_set_julday (grid%id, config_flags%julday)
 
       !  Open the wrfinput file.
 

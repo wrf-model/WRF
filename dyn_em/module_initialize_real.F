@@ -44,7 +44,7 @@ CONTAINS
 
 #include "deref_kludge.h"
 
-      CALL rconfig_get_dyn_opt ( 1, dyn_opt )
+      CALL nl_get_dyn_opt ( 1, dyn_opt )
       
       CALL set_scalar_indices_from_config ( head_grid%id , idum1, idum2 )
 
@@ -713,9 +713,9 @@ endif
       IMPLICIT NONE
       !  For the real-data-cases only.
       REAL , INTENT(OUT) :: p00 , t00 , a
-      CALL rconfig_get_base_pres  ( 1 , p00 )
-      CALL rconfig_get_base_temp  ( 1 , t00 )
-      CALL rconfig_get_base_lapse ( 1 , a   )
+      CALL nl_get_base_pres  ( 1 , p00 )
+      CALL nl_get_base_temp  ( 1 , t00 )
+      CALL nl_get_base_lapse ( 1 , a   )
    END SUBROUTINE const_module_initialize
 
 !-------------------------------------------------------------------

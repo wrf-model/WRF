@@ -44,7 +44,7 @@
                               ims, ime, jms, jme, kms, kme,    &
                               ips, ipe, jps, jpe, kps, kpe    )
 
-    call rconfig_get_dyn_opt ( 1 , dyn_opt                       )
+    call nl_get_dyn_opt ( 1 , dyn_opt                       )
 
     ! note that the string current_date comes in through use association
     ! of module_io_wrf

@@ -62,7 +62,10 @@ CONTAINS
 ! config_reads.inc		read statements for each namelist record
 ! config_assigns.inc	assign each variable to field in module_config_rec
 ! </pre>
-! 
+!
+!NOTE: generated subroutines from Registry file rconfig entries are renamed nl_
+! instead of rconfig_ due to length limits for subroutine names.
+!
 ! Note for version WRF 2.0: there is code here to force all domains to
 ! have the same mp_physics setting. This is because different mp_physics
 ! packages have different numbers of tracers but the nest forcing and
@@ -233,6 +236,10 @@ CONTAINS
 ! grid_config_rec_type are generate from the rconfig entries in the
 ! Registry file and included by this routine from the file
 ! inc/config_assigns.inc.
+!
+!NOTE: generated subroutines from Registry file rconfig entries are renamed nl_
+! instead of rconfig_ due to length limits for subroutine names.
+!
 ! 
 ! <!DESCRIPTION>
 #undef SOURCE_RECORD
@@ -263,20 +270,20 @@ CONTAINS
 END MODULE module_configure
 
 ! Special (outside registry)
-SUBROUTINE rconfig_get_mminlu ( idum , retval )
+SUBROUTINE nl_get_mminlu ( idum , retval )
   USE module_configure
   CHARACTER(LEN=4)  :: retval
   INTEGER idum
   retval(1:4) = mminlu(1:4)   ! mminlu is defined in module_configure
   RETURN
-END SUBROUTINE rconfig_get_mminlu
-SUBROUTINE rconfig_set_mminlu ( idum, inval )
+END SUBROUTINE nl_get_mminlu
+SUBROUTINE nl_set_mminlu ( idum, inval )
   USE module_configure
   CHARACTER(LEN=4) :: inval
   INTEGER idum
   mminlu(1:4) = inval(1:4)    ! mminlu is defined in module_configure
   RETURN
-END SUBROUTINE rconfig_set_mminlu
+END SUBROUTINE nl_set_mminlu
 
 
 SUBROUTINE set_scalar_indices_from_config ( idomain , dummy2, dummy1 )

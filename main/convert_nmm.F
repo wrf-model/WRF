@@ -101,7 +101,7 @@ PROGRAM convert_nmm
    CALL initial_config
 #endif
 
-   CALL rconfig_get_debug_level ( 1, debug_level )
+   CALL nl_get_debug_level ( 1, debug_level )
    CALL set_wrf_debug_level ( debug_level )
 
    CALL  wrf_message ( program_name )
@@ -188,7 +188,7 @@ print *,'init_typ  =',model_config_rec%real_data_init_type
    start_date = start_date_char // '.0000'
    current_date = start_date
    bdyfrq = interval_seconds
-   CALL rconfig_set_bdyfrq ( grid%id , bdyfrq )
+   CALL nl_set_bdyfrq ( grid%id , bdyfrq )
    CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
 
 
@@ -236,7 +236,7 @@ print *,'init_typ  =',model_config_rec%real_data_init_type
      CALL ESMF_TimeGetString( grid%current_time, message, rc=rc)
      write(0,*)Trim(message)
      bdyfrq = interval_seconds
-     CALL rconfig_set_bdyfrq ( grid%id , bdyfrq )
+     CALL nl_set_bdyfrq ( grid%id , bdyfrq )
 
      IF ( ierr .NE. 0 ) THEN
        CALL wrf_error_fatal( 'real: error opening wrfbdy for writing' )

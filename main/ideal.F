@@ -69,7 +69,7 @@ PROGRAM ideal
 #else
    CALL initial_config
 #endif
-   CALL rconfig_get_debug_level ( 1, debug_level )
+   CALL nl_get_debug_level ( 1, debug_level )
    CALL set_wrf_debug_level ( debug_level )
 
    CALL  wrf_message ( program_name )

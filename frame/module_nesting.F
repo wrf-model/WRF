@@ -30,17 +30,17 @@ CONTAINS
       nestid = 0
       kid = 0
       nests_to_open = .false.
-      CALL rconfig_get_max_dom( 1, max_dom )
+      CALL nl_get_max_dom( 1, max_dom )
       DO nestid = 2, max_dom
         IF ( .NOT. active_domain( nestid ) ) THEN
-          CALL rconfig_get_parent_id( nestid, parent_id )  ! from namelist
+          CALL nl_get_parent_id( nestid, parent_id )  ! from namelist
           IF ( parent_id .EQ. parent%id ) THEN
-            CALL rconfig_get_start_year(nestid,s_yr)   ; CALL rconfig_get_end_year(nestid,e_yr)
-            CALL rconfig_get_start_month(nestid,s_mm)  ; CALL rconfig_get_end_month(nestid,e_mm)
-            CALL rconfig_get_start_day(nestid,s_dd)    ; CALL rconfig_get_end_day(nestid,e_dd)
-            CALL rconfig_get_start_hour(nestid,s_h)    ; CALL rconfig_get_end_hour(nestid,e_h)
-            CALL rconfig_get_start_minute(nestid,s_m)  ; CALL rconfig_get_end_minute(nestid,e_m)
-            CALL rconfig_get_start_second(nestid,s_s)  ; CALL rconfig_get_end_second(nestid,e_s)
+            CALL nl_get_start_year(nestid,s_yr)   ; CALL nl_get_end_year(nestid,e_yr)
+            CALL nl_get_start_month(nestid,s_mm)  ; CALL nl_get_end_month(nestid,e_mm)
+            CALL nl_get_start_day(nestid,s_dd)    ; CALL nl_get_end_day(nestid,e_dd)
+            CALL nl_get_start_hour(nestid,s_h)    ; CALL nl_get_end_hour(nestid,e_h)
+            CALL nl_get_start_minute(nestid,s_m)  ; CALL nl_get_end_minute(nestid,e_m)
+            CALL nl_get_start_second(nestid,s_s)  ; CALL nl_get_end_second(nestid,e_s)
             CALL ESMF_TimeSet( nest_start,YR=s_yr,MM=s_mm,DD=s_dd,H=s_h,M=s_m,S=s_s,rc=rc)
             CALL ESMF_TimeSet( nest_stop,YR=e_yr,MM=e_mm,DD=e_dd,H=e_h,M=e_m,S=e_s,rc=rc)
             IF ( nest_start .LE. head_grid%current_time .AND. &

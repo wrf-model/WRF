@@ -142,7 +142,7 @@ integer :: ii
 
    !  And here is an instance of using the information in the NAMELIST.  
 
-   CALL rconfig_get_debug_level ( 1, debug_level )
+   CALL nl_get_debug_level ( 1, debug_level )
    CALL set_wrf_debug_level ( debug_level )
 
    !  Allocated and configure the mother domain.  Since we are in the nesting down
@@ -331,7 +331,7 @@ print *,'file date/time = ',date_string,'     desired date = ',current_date_char
 
          !  Generate an output file from this program, which will be an input file to WRF.
 
-         CALL rconfig_set_bdyfrq ( nested_grid%id , new_bdy_frq )
+         CALL nl_set_bdyfrq ( nested_grid%id , new_bdy_frq )
          config_flags%bdyfrq = new_bdy_frq
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -594,9 +594,9 @@ print *,'current_date = ',current_date
          !  current_date string.
 
          CALL geth_julgmt ( julyr , julday , gmt)
-         CALL rconfig_set_julyr  ( nested_grid%id , julyr  )
-         CALL rconfig_set_julday ( nested_grid%id , julday )
-         CALL rconfig_set_gmt    ( nested_grid%id , gmt    )
+         CALL nl_set_julyr  ( nested_grid%id , julyr  )
+         CALL nl_set_julday ( nested_grid%id , julday )
+         CALL nl_set_gmt    ( nested_grid%id , gmt    )
          CALL wrf_put_dom_ti_real    ( fido , 'GMT' , gmt , 1 , ierr ) 
          CALL wrf_put_dom_ti_integer ( fido , 'JULYR' , julyr , 1 , ierr ) 
          CALL wrf_put_dom_ti_integer ( fido , 'JULDAY' , julday , 1 , ierr ) 
@@ -746,9 +746,9 @@ print *,'gmt=',gmt
       CALL geth_newdate ( temp19 , temp24b(1:19) , (time_loop-2) * model_config_rec%interval_seconds )
       current_date = temp19 //  '.0000'
       CALL geth_julgmt ( julyr , julday , gmt)
-      CALL rconfig_set_julyr  ( nested_grid%id , julyr  )
-      CALL rconfig_set_julday ( nested_grid%id , julday )
-      CALL rconfig_set_gmt    ( nested_grid%id , gmt    )
+      CALL nl_set_julyr  ( nested_grid%id , julyr  )
+      CALL nl_set_julday ( nested_grid%id , julday )
+      CALL nl_set_gmt    ( nested_grid%id , gmt    )
       CALL wrf_put_dom_ti_real    ( fidb , 'GMT' , gmt , 1 , ierr ) 
       CALL wrf_put_dom_ti_integer ( fidb , 'JULYR' , julyr , 1 , ierr ) 
       CALL wrf_put_dom_ti_integer ( fidb , 'JULDAY' , julday , 1 , ierr ) 
@@ -894,9 +894,9 @@ print *,'bdy time = ',time_loop-1,'  bdy date = ',current_date,' ',start_date
       CALL geth_newdate ( temp19 , temp24b(1:19) , (time_loop-2) * model_config_rec%interval_seconds )
       current_date = temp19 //  '.0000'
       CALL geth_julgmt ( julyr , julday , gmt)
-      CALL rconfig_set_julyr  ( nested_grid%id , julyr  )
-      CALL rconfig_set_julday ( nested_grid%id , julday )
-      CALL rconfig_set_gmt    ( nested_grid%id , gmt    )
+      CALL nl_set_julyr  ( nested_grid%id , julyr  )
+      CALL nl_set_julday ( nested_grid%id , julday )
+      CALL nl_set_gmt    ( nested_grid%id , gmt    )
       CALL wrf_put_dom_ti_real    ( fidb , 'GMT' , gmt , 1 , ierr ) 
       CALL wrf_put_dom_ti_integer ( fidb , 'JULYR' , julyr , 1 , ierr ) 
       CALL wrf_put_dom_ti_integer ( fidb , 'JULDAY' , julday , 1 , ierr ) 

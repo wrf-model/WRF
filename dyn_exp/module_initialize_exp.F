@@ -136,7 +136,7 @@ CONTAINS
 
 #include "deref_kludge.h"
 
-   CALL rconfig_get_dyn_opt( 1, dyn_opt )
+   CALL nl_get_dyn_opt( 1, dyn_opt )
    
    CALL set_scalar_indices_from_config ( head_grid%id , idum1, idum2 )
 

@@ -427,7 +427,7 @@ CONTAINS
 
    INTEGER spec_bdy_width
 
-   CALL rconfig_get_spec_bdy_width( 1, spec_bdy_width )
+   CALL nl_get_spec_bdy_width( 1, spec_bdy_width )
 
 #ifndef DM_PARALLEL
 
@@ -617,57 +617,57 @@ CONTAINS
       data_ordering : SELECT CASE ( model_data_order )
         CASE  ( DATA_ORDER_XYZ )
 
-          CALL rconfig_get_s_we( domain_id , sd1 )
-          CALL rconfig_get_e_we( domain_id , ed1 )
-          CALL rconfig_get_s_sn( domain_id , sd2 )
-          CALL rconfig_get_e_sn( domain_id , ed2 )
-          CALL rconfig_get_s_vert( domain_id , sd3 )
-          CALL rconfig_get_e_vert( domain_id , ed3 )
+          CALL nl_get_s_we( domain_id , sd1 )
+          CALL nl_get_e_we( domain_id , ed1 )
+          CALL nl_get_s_sn( domain_id , sd2 )
+          CALL nl_get_e_sn( domain_id , ed2 )
+          CALL nl_get_s_vert( domain_id , sd3 )
+          CALL nl_get_e_vert( domain_id , ed3 )
 
         CASE  ( DATA_ORDER_YXZ )
 
-          CALL rconfig_get_s_sn( domain_id , sd1 )
-          CALL rconfig_get_e_sn( domain_id , ed1 )
-          CALL rconfig_get_s_we( domain_id , sd2 )
-          CALL rconfig_get_e_we( domain_id , ed2 )
-          CALL rconfig_get_s_vert( domain_id , sd3 )
-          CALL rconfig_get_e_vert( domain_id , ed3 )
+          CALL nl_get_s_sn( domain_id , sd1 )
+          CALL nl_get_e_sn( domain_id , ed1 )
+          CALL nl_get_s_we( domain_id , sd2 )
+          CALL nl_get_e_we( domain_id , ed2 )
+          CALL nl_get_s_vert( domain_id , sd3 )
+          CALL nl_get_e_vert( domain_id , ed3 )
 
         CASE  ( DATA_ORDER_ZXY )
 
-          CALL rconfig_get_s_vert( domain_id , sd1 )
-          CALL rconfig_get_e_vert( domain_id , ed1 )
-          CALL rconfig_get_s_we( domain_id , sd2 )
-          CALL rconfig_get_e_we( domain_id , ed2 )
-          CALL rconfig_get_s_sn( domain_id , sd3 )
-          CALL rconfig_get_e_sn( domain_id , ed3 )
+          CALL nl_get_s_vert( domain_id , sd1 )
+          CALL nl_get_e_vert( domain_id , ed1 )
+          CALL nl_get_s_we( domain_id , sd2 )
+          CALL nl_get_e_we( domain_id , ed2 )
+          CALL nl_get_s_sn( domain_id , sd3 )
+          CALL nl_get_e_sn( domain_id , ed3 )
 
         CASE  ( DATA_ORDER_ZYX )
 
-          CALL rconfig_get_s_vert( domain_id , sd1 )
-          CALL rconfig_get_e_vert( domain_id , ed1 )
-          CALL rconfig_get_s_sn( domain_id , sd2 )
-          CALL rconfig_get_e_sn( domain_id , ed2 )
-          CALL rconfig_get_s_we( domain_id , sd3 )
-          CALL rconfig_get_e_we( domain_id , ed3 )
+          CALL nl_get_s_vert( domain_id , sd1 )
+          CALL nl_get_e_vert( domain_id , ed1 )
+          CALL nl_get_s_sn( domain_id , sd2 )
+          CALL nl_get_e_sn( domain_id , ed2 )
+          CALL nl_get_s_we( domain_id , sd3 )
+          CALL nl_get_e_we( domain_id , ed3 )
 
         CASE  ( DATA_ORDER_XZY )
 
-          CALL rconfig_get_s_we( domain_id , sd1 )
-          CALL rconfig_get_e_we( domain_id , ed1 )
-          CALL rconfig_get_s_vert( domain_id , sd2 )
-          CALL rconfig_get_e_vert( domain_id , ed2 )
-          CALL rconfig_get_s_sn( domain_id , sd3 )
-          CALL rconfig_get_e_sn( domain_id , ed3 )
+          CALL nl_get_s_we( domain_id , sd1 )
+          CALL nl_get_e_we( domain_id , ed1 )
+          CALL nl_get_s_vert( domain_id , sd2 )
+          CALL nl_get_e_vert( domain_id , ed2 )
+          CALL nl_get_s_sn( domain_id , sd3 )
+          CALL nl_get_e_sn( domain_id , ed3 )
 
         CASE  ( DATA_ORDER_YZX )
 
-          CALL rconfig_get_s_sn( domain_id , sd1 )
-          CALL rconfig_get_e_sn( domain_id , ed1 )
-          CALL rconfig_get_s_vert( domain_id , sd2 )
-          CALL rconfig_get_e_vert( domain_id , ed2 )
-          CALL rconfig_get_s_we( domain_id , sd3 )
-          CALL rconfig_get_e_we( domain_id , ed3 )
+          CALL nl_get_s_sn( domain_id , sd1 )
+          CALL nl_get_e_sn( domain_id , ed1 )
+          CALL nl_get_s_vert( domain_id , sd2 )
+          CALL nl_get_e_vert( domain_id , ed2 )
+          CALL nl_get_s_we( domain_id , sd3 )
+          CALL nl_get_e_we( domain_id , ed3 )
 
       END SELECT data_ordering
 
@@ -943,8 +943,8 @@ CONTAINS
       CALL get_initial_data_value ( initial_data_value )
 #endif
 
-      CALL rconfig_get_dyn_opt( 1, dyn_opt )
-      CALL rconfig_get_spec_bdy_width( 1, spec_bdy_width )
+      CALL nl_get_dyn_opt( 1, dyn_opt )
+      CALL nl_get_spec_bdy_width( 1, spec_bdy_width )
 
       CALL set_scalar_indices_from_config( id , idum1 , idum2 )
 

@@ -51,7 +51,7 @@ SUBROUTINE wrf_restartin ( fid , grid , config_flags , switch , ierr )
                               ims, ime, jms, jme, kms, kme,    &
                               ips, ipe, jps, jpe, kps, kpe    )
 
-    CALL rconfig_get_dyn_opt ( 1 , dyn_opt )
+    CALL nl_get_dyn_opt ( 1 , dyn_opt )
 
 #include <wrf_restartin.inc>
     IF ( grid%id .GT. 1 ) THEN

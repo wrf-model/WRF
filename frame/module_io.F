@@ -98,35 +98,35 @@ SUBROUTINE wrf_open_for_write_begin( FileName , Comm_compute, Comm_io, SysDepInf
 
   CALL get_value_from_pairs ( "DATASET" , SysDepInfo , DataSet )
   IF      ( DataSet .eq. 'RESTART' ) THEN
-    CALL rconfig_get_io_form_restart( 1, io_form )
+    CALL nl_get_io_form_restart( 1, io_form )
   ELSE IF ( DataSet .eq. 'INPUT' ) THEN
-    CALL rconfig_get_io_form_input( 1, io_form )
+    CALL nl_get_io_form_input( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXINPUT1' ) THEN
-    CALL rconfig_get_io_form_auxinput1( 1, io_form )
+    CALL nl_get_io_form_auxinput1( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXINPUT2' ) THEN
-    CALL rconfig_get_io_form_auxinput2( 1, io_form )
+    CALL nl_get_io_form_auxinput2( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXINPUT3' ) THEN
-    CALL rconfig_get_io_form_auxinput3( 1, io_form )
+    CALL nl_get_io_form_auxinput3( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXINPUT4' ) THEN
-    CALL rconfig_get_io_form_auxinput4( 1, io_form )
+    CALL nl_get_io_form_auxinput4( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXINPUT5' ) THEN
-    CALL rconfig_get_io_form_auxinput5( 1, io_form )
+    CALL nl_get_io_form_auxinput5( 1, io_form )
   ELSE IF ( DataSet .eq. 'HISTORY' ) THEN
-    CALL rconfig_get_io_form_history( 1, io_form )
+    CALL nl_get_io_form_history( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXHIST1' ) THEN
-    CALL rconfig_get_io_form_auxhist1( 1, io_form )
+    CALL nl_get_io_form_auxhist1( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXHIST2' ) THEN
-    CALL rconfig_get_io_form_auxhist2( 1, io_form )
+    CALL nl_get_io_form_auxhist2( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXHIST3' ) THEN
-    CALL rconfig_get_io_form_auxhist3( 1, io_form )
+    CALL nl_get_io_form_auxhist3( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXHIST4' ) THEN
-    CALL rconfig_get_io_form_auxhist4( 1, io_form )
+    CALL nl_get_io_form_auxhist4( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXHIST5' ) THEN
-    CALL rconfig_get_io_form_auxhist5( 1, io_form )
+    CALL nl_get_io_form_auxhist5( 1, io_form )
   ELSE IF ( DataSet .eq. 'BOUNDARY' ) THEN
-    CALL rconfig_get_io_form_boundary( 1, io_form )
+    CALL nl_get_io_form_boundary( 1, io_form )
   ELSE  ! default if nothing is set in SysDepInfo; use history
-    CALL rconfig_get_io_form_history( 1, io_form )
+    CALL nl_get_io_form_history( 1, io_form )
   ENDIF
 
   Status = 0
@@ -339,35 +339,35 @@ SUBROUTINE wrf_open_for_read_begin( FileName , Comm_compute, Comm_io, SysDepInfo
 
   CALL get_value_from_pairs ( "DATASET" , SysDepInfo , DataSet )
   IF      ( DataSet .eq. 'RESTART' ) THEN
-    CALL rconfig_get_io_form_restart( 1, io_form )
+    CALL nl_get_io_form_restart( 1, io_form )
   ELSE IF ( DataSet .eq. 'INPUT' ) THEN
-    CALL rconfig_get_io_form_input( 1, io_form )
+    CALL nl_get_io_form_input( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXINPUT1' ) THEN
-    CALL rconfig_get_io_form_auxinput1( 1, io_form )
+    CALL nl_get_io_form_auxinput1( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXINPUT2' ) THEN
-    CALL rconfig_get_io_form_auxinput2( 1, io_form )
+    CALL nl_get_io_form_auxinput2( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXINPUT3' ) THEN
-    CALL rconfig_get_io_form_auxinput3( 1, io_form )
+    CALL nl_get_io_form_auxinput3( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXINPUT4' ) THEN
-    CALL rconfig_get_io_form_auxinput4( 1, io_form )
+    CALL nl_get_io_form_auxinput4( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXINPUT5' ) THEN
-    CALL rconfig_get_io_form_auxinput5( 1, io_form )
+    CALL nl_get_io_form_auxinput5( 1, io_form )
   ELSE IF ( DataSet .eq. 'HISTORY' ) THEN
-    CALL rconfig_get_io_form_history( 1, io_form )
+    CALL nl_get_io_form_history( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXHIST1' ) THEN
-    CALL rconfig_get_io_form_auxhist1( 1, io_form )
+    CALL nl_get_io_form_auxhist1( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXHIST2' ) THEN
-    CALL rconfig_get_io_form_auxhist2( 1, io_form )
+    CALL nl_get_io_form_auxhist2( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXHIST3' ) THEN
-    CALL rconfig_get_io_form_auxhist3( 1, io_form )
+    CALL nl_get_io_form_auxhist3( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXHIST4' ) THEN
-    CALL rconfig_get_io_form_auxhist4( 1, io_form )
+    CALL nl_get_io_form_auxhist4( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXHIST5' ) THEN
-    CALL rconfig_get_io_form_auxhist5( 1, io_form )
+    CALL nl_get_io_form_auxhist5( 1, io_form )
   ELSE IF ( DataSet .eq. 'BOUNDARY' ) THEN
-    CALL rconfig_get_io_form_boundary( 1, io_form )
+    CALL nl_get_io_form_boundary( 1, io_form )
   ELSE  ! default if nothing is set in SysDepInfo; use history
-    CALL rconfig_get_io_form_history( 1, io_form )
+    CALL nl_get_io_form_history( 1, io_form )
   ENDIF
 
   Status = 0
@@ -513,35 +513,35 @@ SUBROUTINE wrf_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo, &
 
   CALL get_value_from_pairs ( "DATASET" , SysDepInfo , DataSet )
   IF      ( DataSet .eq. 'RESTART' ) THEN
-    CALL rconfig_get_io_form_restart( 1, io_form )
+    CALL nl_get_io_form_restart( 1, io_form )
   ELSE IF ( DataSet .eq. 'INPUT' ) THEN
-    CALL rconfig_get_io_form_input( 1, io_form )
+    CALL nl_get_io_form_input( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXINPUT1' ) THEN
-    CALL rconfig_get_io_form_auxinput1( 1, io_form )
+    CALL nl_get_io_form_auxinput1( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXINPUT2' ) THEN
-    CALL rconfig_get_io_form_auxinput2( 1, io_form )
+    CALL nl_get_io_form_auxinput2( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXINPUT3' ) THEN
-    CALL rconfig_get_io_form_auxinput3( 1, io_form )
+    CALL nl_get_io_form_auxinput3( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXINPUT4' ) THEN
-    CALL rconfig_get_io_form_auxinput4( 1, io_form )
+    CALL nl_get_io_form_auxinput4( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXINPUT5' ) THEN
-    CALL rconfig_get_io_form_auxinput5( 1, io_form )
+    CALL nl_get_io_form_auxinput5( 1, io_form )
   ELSE IF ( DataSet .eq. 'HISTORY' ) THEN
-    CALL rconfig_get_io_form_history( 1, io_form )
+    CALL nl_get_io_form_history( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXHIST1' ) THEN
-    CALL rconfig_get_io_form_auxhist1( 1, io_form )
+    CALL nl_get_io_form_auxhist1( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXHIST2' ) THEN
-    CALL rconfig_get_io_form_auxhist2( 1, io_form )
+    CALL nl_get_io_form_auxhist2( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXHIST3' ) THEN
-    CALL rconfig_get_io_form_auxhist3( 1, io_form )
+    CALL nl_get_io_form_auxhist3( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXHIST4' ) THEN
-    CALL rconfig_get_io_form_auxhist4( 1, io_form )
+    CALL nl_get_io_form_auxhist4( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXHIST5' ) THEN
-    CALL rconfig_get_io_form_auxhist5( 1, io_form )
+    CALL nl_get_io_form_auxhist5( 1, io_form )
   ELSE IF ( DataSet .eq. 'BOUNDARY' ) THEN
-    CALL rconfig_get_io_form_boundary( 1, io_form )
+    CALL nl_get_io_form_boundary( 1, io_form )
   ELSE  ! default if nothing is set in SysDepInfo; use history
-    CALL rconfig_get_io_form_history( 1, io_form )
+    CALL nl_get_io_form_history( 1, io_form )
   ENDIF
 
   Hndl = -1

@@ -203,7 +203,7 @@ endif
 
 #	The default floating point precision is either 4 bytes or 8 bytes.
 #	We assume that it is 4 (or the default for the architecture) unless 
-#	REAL8 = TRUE is specified here.
+#	REAL8 is set to TRUE.
 
 set REAL8 = TRUE
 set REAL8 = FALSE
@@ -345,15 +345,22 @@ set IO_FORM_WHICH =( IO     IO        IO       IO       O        )
 #	to zap all idealized runs.
 
 if      ( $NESTED == TRUE ) then
-	set CORES = (  em_real em_b_wave em_quarter_ss          )
+	set CORES = ( em_real em_b_wave em_quarter_ss          )
 else if ( $NESTED != TRUE ) then
-	set CORES = (  em_real em_b_wave em_quarter_ss nmm_real )
+	set CORES = ( em_real em_b_wave em_quarter_ss nmm_real )
 	if ( $RSL_LITE == TRUE ) then
-		set CORES = (  em_real nmm_real )
+		set CORES = ( em_real nmm_real )
 	endif
 	if ( $CHEM == TRUE ) then
-		set CORES = (  em_real )
+		set CORES = ( em_real )
 	endif
+endif
+
+#	The b_wave case has binary input (4-byte only), the nmm
+#	core has raw MPI calls, skip them if we are doing real*8 floats
+
+if      ( $REAL8 == TRUE ) then
+	set CORES = ( em_real em_quarter_ss )
 endif
 
 if ( $CHEM != TRUE ) then
@@ -919,7 +926,7 @@ else if ( `hostname` == tempest ) then
 	set DEF_DIR	= /ptmp/${user}/wrf_regtest.${QSUB_REQID}
 	if ( ! -d $DEF_DIR ) mkdir $DEF_DIR
 	set TMPDIR		= .
-	set MAIL		= /bin/mail
+	set MAIL		= /usr/sbin/Mail
 	set COMPOPTS		= ( 1 2 3 )
 	set Num_Procs		= 4
 	set OPENMP		= $Num_Procs

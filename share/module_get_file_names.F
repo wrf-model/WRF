@@ -15,6 +15,7 @@ CONTAINS
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
    SUBROUTINE unix_ls ( root , id )
+      USE module_dm
 
       IMPLICIT NONE
      
@@ -22,8 +23,10 @@ CONTAINS
       INTEGER , INTENT(IN) :: id
 
       CHARACTER (LEN=132) :: command
-      INTEGER :: ierr , loop , loslen 
+      INTEGER :: ierr , loop , loslen , strlen
       LOGICAL :: unix_access_ok
+      LOGICAL, EXTERNAL :: wrf_dm_on_monitor
+      
 
       !  This is to make sure that we successfully use one of the available methods
       !  for getting at a UNIX command.  This is an initialized flag.
@@ -31,6 +34,8 @@ CONTAINS
       unix_access_ok = .FALSE.
 
       !  Build a UNIX command, and "ls", of all of the files mnatching the "root*" prefix.
+
+monitor_only_code : IF ( wrf_dm_on_monitor() ) THEN
 
       loslen = LEN ( command )
       CALL all_spaces ( command , loslen ) 
@@ -102,6 +107,15 @@ print *,TRIM(eligible_file_name(loop))
       CALL SYSTEM ( '/bin/rm -f .foo'  )
       CALL SYSTEM ( '/bin/rm -f .foo1' )
 #endif
+
+   ENDIF monitor_only_code
+
+   CALL wrf_dm_bcast_integer ( number_of_eligible_files, 1 )
+   DO loop = 1 , number_of_eligible_files
+      strlen = LEN( TRIM( eligible_file_name(loop) ) )
+      CALL wrf_dm_bcast_integer ( strlen , 1 )
+      CALL wrf_dm_bcast_string ( eligible_file_name(loop) , strlen  )
+   ENDDO
 
    END SUBROUTINE unix_ls
 

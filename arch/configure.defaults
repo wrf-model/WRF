@@ -19,7 +19,7 @@ PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =	../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 AR              =       ar ru
-M4              =       m4 -B8000
+M4              =       m4 -B10000
 RANLIB          =       echo
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
@@ -100,7 +100,7 @@ PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =	../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 AR              =       ar ru
-M4              =       m4 -B8000
+M4              =       m4 -B10000
 RANLIB          =       echo
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
@@ -185,7 +185,7 @@ CPP             =       /lib/cpp -C -P
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) $(COREDEFS) $(POUND_DEF)
 AR              =       ar ru
-M4              =       m4 -B8000
+M4              =       m4 -B10000
 RANLIB          =       echo
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
@@ -265,7 +265,7 @@ REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 AR              =       ar ru
-M4              =       m4 -B8000
+M4              =       m4 -B10000
 LDFLAGS         =
 CPP             =       /lib/cpp -C -P
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -356,7 +356,7 @@ CPP             =       /lib/cpp -C -P
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) $(OMPCPP) $(COREDEFS) $(POUND_DEF)
 AR              =       ar ru
-M4              =       m4 -B8000
+M4              =       m4 -B10000
 RANLIB          =       echo
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
@@ -454,7 +454,7 @@ CPP		=	/lib/cpp
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
 CPPFLAGS	=	-I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL/RSL -C -P `cat ../inc/dm_comm_cpp_flags` $(OMPCPP) $(COREDEFS) $(POUND_DEF)
 AR              =       ar ru
-M4              =       m4 -B8000
+M4              =       m4 -B10000
 RANLIB          =       echo
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
@@ -562,7 +562,7 @@ CPP             =       /usr/ccs/lib/cpp -C -P
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) $(COREDEFS) $(POUND_DEF)
 AR              =       ar ru
-M4              =       m4 -B8000
+M4              =       m4 -B10000
 RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
@@ -683,7 +683,7 @@ POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL/RSL -C -P `cat ../inc/dm_comm_cpp_flags` $(OMPCPP) $(COREDEFS) $(POUND_DEF)
 MAX_PROC        =       1
 AR              =       ar ru
-M4              =       m4 -B 8000
+M4              =       m4 -B 10000
 RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
@@ -801,7 +801,7 @@ CPP             =       /usr/ccs/lib/cpp -C -P
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) $(OMPCPP) $(COREDEFS) $(POUND_DEF)
 AR              =       ar ru
-M4              =       m4 -B8000
+M4              =       m4 -B10000
 RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
@@ -907,7 +907,7 @@ POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL/RSL -C -P `cat ../inc/dm_comm_cpp_flags` $(OMPCPP) $(COREDEFS) $(POUND_DEF)
 MAX_PROC        =       1
 AR              =       ar ru
-M4              =       m4 -B 8000
+M4              =       m4 -B 10000
 RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
@@ -1008,7 +1008,7 @@ CPP             =       /lib/cpp -C -P
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) $(COREDEFS) $(POUND_DEF)
 AR              =       ar ru
-M4              =       m4 -B 8000
+M4              =       m4 -B 10000
 RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
@@ -1112,7 +1112,7 @@ CPP             =       /lib/cpp -C -P
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) $(OMPCPP) $(COREDEFS) $(POUND_DEF)
 AR              =       ar ru
-M4              =       m4 -B 8000
+M4              =       m4 -B 10000
 RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
@@ -1183,7 +1183,7 @@ POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_
 CPPFLAGS	=	-I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL_LITE `cat ../inc/dm_comm_cpp_flags` $(COREDEFS) $(POUND_DEF)
 MAX_PROC        =       1024
 AR              =       ar ru
-M4              =       m4 -B 8000
+M4              =       m4 -B 10000
 RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
@@ -1285,7 +1285,7 @@ POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_
 CPPFLAGS	=	-I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL/RSL `cat ../inc/dm_comm_cpp_flags` $(COREDEFS) $(POUND_DEF)
 MAX_PROC        =       1024
 AR              =       ar ru
-M4              =       m4 -B 8000
+M4              =       m4 -B 10000
 RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
@@ -1387,7 +1387,7 @@ POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_
 CPPFLAGS	=	-I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL/RSL `cat ../inc/dm_comm_cpp_flags` $(COREDEFS) $(POUND_DEF)
 MAX_PROC        =       1024
 AR              =       ar ru
-M4              =       m4 -B 8000
+M4              =       m4 -B 10000
 RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
@@ -1492,7 +1492,7 @@ POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_
 CPPFLAGS	=	-I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL_LITE `cat ../inc/dm_comm_cpp_flags` $(COREDEFS) $(POUND_DEF)
 MAX_PROC        =       1024
 AR              =       ar ru
-M4              =       m4 -B 8000
+M4              =       m4 -B 10000
 RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
@@ -1598,7 +1598,7 @@ CPP		=	/lib/cpp
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
 CPPFLAGS	=	-I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL/RSL `cat ../inc/dm_comm_cpp_flags` $(OMPCPP) $(COREDEFS) $(POUND_DEF)
 AR              =       ar ru
-M4              =       m4 -B 8000
+M4              =       m4 -B 10000
 RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
@@ -1715,7 +1715,7 @@ POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_
 CPPFLAGS	=	-I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL/RSL `cat ../inc/dm_comm_cpp_flags` $(COREDEFS) $(POUND_DEF)
 MAX_PROC        =       1024
 AR              =       ar ru
-M4              =       m4 -B 8000
+M4              =       m4 -B 10000
 RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
@@ -1824,7 +1824,7 @@ POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_
 CPPFLAGS	=	-I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL/RSL `cat ../inc/dm_comm_cpp_flags` $(COREDEFS) $(POUND_DEF)
 MAX_PROC        =       1024
 AR              =       ar ru
-M4              =       m4 -B 8000
+M4              =       m4 -B 10000
 RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
@@ -1931,7 +1931,7 @@ CPP             =       /usr/bin/cpp -C -P
 POUND_DEF	=	-DDEC_ALPHA -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) $(OMPCPP) $(COREDEFS) $(POUND_DEF)
 AR              =       ar ru
-M4              =       m4 -B 8000
+M4              =       m4 -B 10000
 RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
@@ -2025,7 +2025,7 @@ POUND_DEF	=	-DDEC_ALPHA -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL/RSL -C -P `cat ../inc/dm_comm_cpp_flags` $(OMPCPP) $(COREDEFS) $(POUND_DEF)
 MAX_PROC        =       1
 AR              =       ar ru
-M4              =       m4 -B 8000
+M4              =       m4 -B 10000
 RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
@@ -2121,7 +2121,7 @@ CPP             =       /usr/bin/cpp -C -P
 POUND_DEF	=	-DDEC_ALPHA -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) $(OMPCPP) $(COREDEFS) $(POUND_DEF)
 AR              =       ar ru
-M4              =       m4 -B 8000
+M4              =       m4 -B 10000
 RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
@@ -2215,7 +2215,7 @@ POUND_DEF	=	-DDEC_ALPHA -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL/RSL -C -P `cat ../inc/dm_comm_cpp_flags` $(OMPCPP) $(COREDEFS) $(POUND_DEF)
 MAX_PROC        =       1
 AR              =       ar ru
-M4              =       m4 -B 8000
+M4              =       m4 -B 10000
 RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
@@ -2316,7 +2316,7 @@ POUND_DEF	=	-DDEC_ALPHA -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL_LITE -C -P $(OMPCPP) $(COREDEFS) $(POUND_DEF)
 MAX_PROC        =       1024
 AR              =       ar ru
-M4              =       m4 -B 8000
+M4              =       m4 -B 10000
 RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
@@ -2421,7 +2421,7 @@ POUND_DEF	=	-DDEC_ALPHA -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL/RSL -C -P `cat ../inc/dm_comm_cpp_flags` $(OMPCPP) $(COREDEFS) $(POUND_DEF)
 MAX_PROC        =       1024
 AR              =       ar ru
-M4              =       m4 -B 8000
+M4              =       m4 -B 10000
 RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
@@ -2528,7 +2528,7 @@ POUND_DEF	=	-DDEC_ALPHA -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL/RSL -C -P `cat ../inc/dm_comm_cpp_flags` $(OMPCPP) $(COREDEFS) $(POUND_DEF)
 MAX_PROC        =       1024
 AR              =       ar ru
-M4              =       m4 -B 8000
+M4              =       m4 -B 10000
 RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
@@ -2642,7 +2642,7 @@ POUND_DEF	=	-DDEC_ALPHA -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL/RSL -C -P `cat ../inc/dm_comm_cpp_flags` $(OMPCPP) $(COREDEFS) $(POUND_DEF)
 MAX_PROC        =       1024
 AR              =       ar ru
-M4              =       m4 -B 8000
+M4              =       m4 -B 10000
 RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
@@ -2747,7 +2747,7 @@ POUND_DEF	=	-DDEC_ALPHA -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL/RSL -C -P `cat ../inc/dm_comm_cpp_flags` $(OMPCPP) $(COREDEFS) $(POUND_DEF)
 MAX_PROC        =       1024
 AR              =       ar ru
-M4              =       m4 -B 8000
+M4              =       m4 -B 10000
 RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
@@ -2849,7 +2849,7 @@ POUND_DEF	=	-DDEC_ALPHA -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL/RSL -C -P `cat ../inc/dm_comm_cpp_flags` $(OMPCPP) $(COREDEFS) $(POUND_DEF)
 MAX_PROC        =       1024
 AR              =       ar ru
-M4              =       m4 -B 8000
+M4              =       m4 -B 10000
 RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
@@ -2957,7 +2957,7 @@ POUND_DEF	=	-DDEC_ALPHA -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL/RSL -C -P `cat ../inc/dm_comm_cpp_flags` $(OMPCPP) $(COREDEFS) $(POUND_DEF)
 MAX_PROC        =       1024
 AR              =       ar ru
-M4              =       m4 -B 8000
+M4              =       m4 -B 10000
 RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
@@ -3065,7 +3065,7 @@ POUND_DEF	=	-DDEC_ALPHA -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL/RSL -C -P `cat ../inc/dm_comm_cpp_flags` $(OMPCPP) $(COREDEFS) $(POUND_DEF)
 MAX_PROC        =       1024
 AR              =       ar ru
-M4              =       m4 -B 8000
+M4              =       m4 -B 10000
 RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
@@ -4994,7 +4994,7 @@ REGISTRY        =       Registry
 LIB             =	CONFIGURE_NETCDF_LIB_PATH ../frame/module_internal_header_util.o ../frame/pack_utils.o \
                         -L../external/esmf_time_f90 -lesmf_time 
 AR              =       ar ru
-M4              =       m4 -B8000
+M4              =       m4 -B10000
 RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
@@ -5553,7 +5553,7 @@ CAT = cat
 CUT = cut
 EXPAND = expand
 AR = ar ru
-M4 = m4 -B8000
+M4 = m4 -B10000
 RANLIB = ar ru     
 NETCDFPATH = /usr/local/netcdf/current
 CC_TOOLS        =       $(CC)
@@ -6172,7 +6172,7 @@ POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_
 CPPFLAGS	=	-I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL_LITE `cat ../inc/dm_comm_cpp_flags` $(COREDEFS) $(POUND_DEF)
 
 AR              =       ar ru
-M4              =       m4 -B8000
+M4              =       m4 -B10000
 RANLIB          =       echo
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 
@@ -6301,7 +6301,7 @@ POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_
 CPPFLAGS	=	-I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL_LITE `cat ../inc/dm_comm_cpp_flags` $(COREDEFS) $(POUND_DEF)
 
 AR              =       ar ru
-M4              =       m4 -B8000
+M4              =       m4 -B10000
 RANLIB          =       echo
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 
@@ -7031,7 +7031,7 @@ CPP             =       /usr/bin/cpp  -C -P -xassembler-with-cpp
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) $(COREDEFS) $(POUND_DEF) 
 AR              =       ar ru
-M4              =       m4 -B 8000
+M4              =       m4 -B 10000
 RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
@@ -7139,7 +7139,7 @@ CPP             =        /usr/bin/cpp -C -P -xassembler-with-cpp
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) $(OMPCPP) $(COREDEFS) $(POUND_DEF)
 AR              =       ar ru
-M4              =       m4 -B 8000
+M4              =       m4 -B 10000
 RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)

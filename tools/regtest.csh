@@ -87,7 +87,7 @@ else if ( (`hostname | cut -c 1-6` == joshua ) || \
           ( `hostname` == maple ) || (`hostname | cut -c 1-7` == service ) ) then
 	set WRFREGDATAEM = /users/gill/WRF-data-EM
 	set WRFREGDATANMM = /users/gill/WRF-data-NMM
-else if ( ( `hostname | cut -c 1-2` == bs ) || ( `hostname | cut -c 1-2` == bf ) ) then
+else if ( `hostname | cut -c 1-2` == bs ) then
 	set WRFREGDATAEM = /mmm/users/gill/WRF-data-EM
 	set WRFREGDATANMM = /mmm/users/gill/WRF-data-NMM
 else
@@ -210,6 +210,14 @@ set dataset = jan00
 set thedataem = ${WRFREGDATAEM}/${dataset}
 set thedatanmm = $WRFREGDATANMM
 
+#	For non-nested runs, the distributed memory option RSL_LITE may be selected
+
+if ( $NESTED != TRUE ) then
+	set RSL_LITE = TRUE
+	set RSL_LITE = FALSE
+else if ( $NESTED == TRUE ) then
+	set RSL_LITE = FALSE
+endif
 
 #	A separately installed version of the latest ESMF library (NOT the 
 #	ESMF library included in the WRF tarfile) can be tested by setting 
@@ -240,7 +248,7 @@ set QUILT = TRUE
 set QUILT = FALSE
 
 if ( $QUILT == TRUE ) then
-	if ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` == bs ) || ( `hostname | cut -c 1-2` == bf ) ) ) then
+	if ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` == bs ) ) ) then
 		echo "One WRF output quilt server will be used for some tests"
 	else if ( ( `uname` == OSF1 ) && ( `hostname | cut -c 1-4` == duku ) ) then
 		echo "One WRF output quilt server will be used for some tests"
@@ -249,7 +257,6 @@ if ( $QUILT == TRUE ) then
 		exit ( 3 ) 
 	endif
 endif
-
 
 #	Baseline data sets can be generated and archived or compared against.  
 #       - To generate and archive, set GENERATE_BASELINE to a pathname that can 
@@ -287,15 +294,19 @@ if ( $COMPARE_BASELINE != FALSE ) then
 	endif
 endif
 
-
-
 #	If we are doing nested runs, we are usually trying that non-MPI-but-using-RSL
-#	option.  That is not going to work with NMM due to needing MPI.
+#	option.  That is not going to work with NMM due to needing MPI.  If this is
+#	a non-nested run and an RSL_LITE run, we cannot do any periodic bc runs.  That 
+#	means no b_wave cases at all, and fewer quarter_ss cases.  It is therefore easier
+#	to zap all idealized runs.
 
 if      ( $NESTED == TRUE ) then
 	set CORES = (  em_real em_b_wave em_quarter_ss          )
 else if ( $NESTED != TRUE ) then
 	set CORES = (  em_real em_b_wave em_quarter_ss nmm_real )
+	if ( $RSL_LITE == TRUE ) then
+		set CORES = (  em_real nmm_real )
+	endif
 endif
 
 set PHYSOPTS =	( 1 2 3 )
@@ -626,45 +637,7 @@ set SERIALRUNCOMMAND	=
 set OMPRUNCOMMAND	= 
 
 touch version_info
-if      ( ( $ARCH[1] == AIX ) && ( `hostname | cut -c 1-2` == bf ) ) then
-	set DEF_DIR             = $home
-	set TMPDIR              = /ptmp/$user
-	# keep stuff out of $HOME and /ptmp/$USER
-	# this allows multiple regressions tests to run simultaneously
-	# extend this to other machines later
-	if ( ! $?LOADL_JOB_NAME ) then
-		echo "${0}: ERROR::  This batch script must be submitted via"
-		echo "${0}:          LoadLeveler on an AIX machine\!"
-	else
-		set job_id              = `echo ${LOADL_JOB_NAME} | cut -f2 -d'.'`
-		set DEF_DIR             = /ptmp/$user/wrf_regression.${job_id}
-		set TMPDIR              = $DEF_DIR
-		if ( -d $DEF_DIR ) then
-			echo "${0}: ERROR::  Directory ${DEF_DIR} exists, please remove it"
-			exit ( 1 ) 
-		else
-			mkdir -p $DEF_DIR
-			echo "See directory ${DEF_DIR}/ for wrftest.output and other test results"
-		endif
-		set CUR_DIR = ${LOADL_STEP_INITDIR}
-	endif
-	if ( ! -d $TMPDIR ) mkdir $TMPDIR
-	set MAIL                = /usr/bin/mailx
-	set COMPOPTS            = ( 1 2 4 )
-	set Num_Procs		= 4
-	set OPENMP 		= $Num_Procs
-        setenv MP_PROCS  $Num_Procs
-        setenv MP_RMPOOL 1
-	set MPIRUNCOMMAND       =  poe 
-	set ZAP_OPENMP		= FALSE
-	echo "Compiler version info: " >! version_info
-	pmrinfo | grep "FORTRAN:" >>&! version_info
-	echo " " >>! version_info
-	echo "OS version info: " >>! version_info
-	pmrinfo | grep "AIX:" >>&! version_info
-	echo " " >>! version_info
-	setenv MP_SHARED_MEMORY yes
-else if ( ( $ARCH[1] == AIX ) && ( `hostname | cut -c 1-2` == bs ) ) then
+if ( ( $ARCH[1] == AIX ) && ( `hostname | cut -c 1-2` == bs ) ) then
 	set DEF_DIR             = $home
 	set TMPDIR              = /ptmp/$user
 	# keep stuff out of $HOME and /ptmp/$USER
@@ -692,31 +665,15 @@ else if ( ( $ARCH[1] == AIX ) && ( `hostname | cut -c 1-2` == bs ) ) then
 		set COMPOPTS    = ( 1 2 10 )
 	else if ( $ESMF_LIB != TRUE ) then
 		set COMPOPTS    = ( 1 2 4 )
+		if ( ( $RSL_LITE == TRUE ) && ( $NESTED != TRUE ) ) then
+			set COMPOPTS	= ( 1 2 3 )
+		endif
 	endif
 	set Num_Procs		= 4
 	set OPENMP 		= $Num_Procs
         setenv MP_PROCS  $Num_Procs
         setenv MP_RMPOOL 1
 	set MPIRUNCOMMAND       =  poe 
-	set ZAP_OPENMP		= FALSE
-	echo "Compiler version info: " >! version_info
-	pmrinfo | grep "FORTRAN:" >>&! version_info
-	echo " " >>! version_info
-	echo "OS version info: " >>! version_info
-	pmrinfo | grep "AIX:" >>&! version_info
-	echo " " >>! version_info
-	setenv MP_SHARED_MEMORY yes
-else if ( ( $ARCH[1] == AIX ) && ( `hostname | cut -c 1-2` == bb ) ) then
-	set DEF_DIR             = $home
-	set TMPDIR              = /ptmp/$user
-	if ( ! -d $TMPDIR ) mkdir $TMPDIR
-	set MAIL                = /usr/bin/mailx
-	set COMPOPTS            = ( 1 2 4 )
-	set Num_Procs		= 4
-	set OPENMP 		= $Num_Procs
-        setenv MP_PROCS  $Num_Procs
-        setenv MP_RMPOOL 1
-	set MPIRUNCOMMAND       = poe
 	set ZAP_OPENMP		= FALSE
 	echo "Compiler version info: " >! version_info
 	pmrinfo | grep "FORTRAN:" >>&! version_info
@@ -738,6 +695,9 @@ else if ( $ARCH[1] == OSF1 && $clrm == 0 ) then
 		set COMPOPTS	= ( 2 4 6 )
 	else if ( $NESTED != TRUE ) then
 		set COMPOPTS	= ( 1 3 6 )
+	endif
+	if ( ( $RSL_LITE == TRUE ) && ( $NESTED != TRUE ) ) then
+		set COMPOPTS	= ( 1 3 5 )
 	endif
 	set Num_Procs		= 4
 	set OPENMP 		= $Num_Procs
@@ -767,6 +727,9 @@ else if ( $ARCH[1] == OSF1 && $clrm == 1 ) then
 	else if ( $NESTED != TRUE ) then
 		set COMPOPTS	= ( 1 3 6 )
 	endif
+	if ( ( $RSL_LITE == TRUE ) && ( $NESTED != TRUE ) ) then
+		set COMPOPTS	= ( 1 3 5 )
+	endif
 	set Num_Procs		= 4
 	set OPENMP 		= 0
 	set ZAP_OPENMP		= TRUE
@@ -784,97 +747,6 @@ EOF
 	echo "OS version info: " >>! version_info
 	uname -a >>&! version_info
 	echo " " >>! version_info
-else if ( ( $ARCH[1] == Linux ) && ( `hostname` == jacaranda ) ) then
-	set DEF_DIR		= /data1/$USER/`hostname`
-	set TMPDIR		= .
-	set MAIL		= /bin/mail
-	set COMPOPTS		= ( 2 4 3 )
-	set Num_Procs		= 4
-	set OPENMP		= 2
-	set MPIRUNCOMMAND	= ( mpirun -np $Num_Procs )
-	set ZAP_OPENMP		= TRUE
-	echo "Compiler version info: " >! version_info
-	ifort -V | grep Intel >>! version_info
-	ifort -V | grep Version >>! version_info
-	echo " " >>! version_info
-	echo "OS version info: " >>! version_info
-	uname -a >>&! version_info
-	echo " " >>! version_info
-else if ( ( $ARCH[1] == Linux ) && ( `hostname` == master ) ) then
-	set DEF_DIR		= /big6/gill/DO_NOT_REMOVE_DIR
-	set TMPDIR		= .
-	set MAIL		= /bin/mail
-	set COMPOPTS		= ( 1 3 5 )
-	set Num_Procs		= 4
-	set OPENMP		= 2
-	set MPIRUNCOMMAND	= ( mpirun -np $Num_Procs )
-	set ZAP_OPENMP		= TRUE
-	echo "Compiler version info: " >! version_info
-	pgf90 -V >>&! version_info
-	echo " " >>! version_info
-	echo "OS version info: " >>! version_info
-	uname -a >>&! version_info
-	echo " " >>! version_info
-else if ( ( $ARCH[1] == Linux ) && ( `hostname` == atc-c1 ) ) then
-	if ( $user == gill Da) then
-		set DEF_DIR	= /data/bourgeoi/DAVE
-	else
-		set DEF_DIR	= /data/$user
-	endif
-	set TMPDIR              = .
-	set MAIL		= /bin/mail
-	set COMPOPTS		= ( 1 3 5 )
-	set Num_Procs		= 4
-	set OPENMP 		= 2
-	set MPIRUNCOMMAND 	= ( mpirun -np $Num_Procs )
-	set ZAP_OPENMP		= FALSE
-	echo "Compiler version info: " >! version_info
-	pgf90 -V >>&! version_info
-	echo " " >>! version_info
-	echo "OS version info: " >>! version_info
-	uname -a >>&! version_info
-	echo " " >>! version_info
-	setenv NETCDF /data/bourgeoi/netcdf
-else if ( ( $ARCH[1] == Linux ) && ( `hostname` == kola ) ) then
-	set DEF_DIR		= /kola2/$user
-	set TMPDIR              = .
-	set MAIL		= /bin/mail
-	set COMPOPTS		= ( 1 3 5 )
-	set Num_Procs		= 2
-	set OPENMP 		= $Num_Procs
-	cat >! machfile << EOF
-kola
-kola
-EOF
-	set Mach = `pwd`/machfile
-	set MPIRUNCOMMAND 	= ( mpirun -np $Num_Procs -machinefile $Mach )
-	set ZAP_OPENMP		= FALSE
-	echo "Compiler version info: " >! version_info
-	pgf90 -V >>&! version_info
-	echo " " >>! version_info
-	echo "OS version info: " >>! version_info
-	uname -a >>&! version_info
-	echo " " >>! version_info
-else if ( ( $ARCH[1] == Linux ) && ( `hostname` == she ) ) then
-	set DEF_DIR		= /she/users/$user
-	set TMPDIR		= .
-	set MAIL		= /bin/mail
-	set COMPOPTS		= ( 1 3 5 )
-	set Num_Procs		= 2
-	set OPENMP		= $Num_Procs
-	cat >! machfile << EOF
-she
-she
-EOF
-	set Mach		= `pwd`/machfile
-	set ZAP_OPENMP		= FALSE
-	set MPIRUNCOMMAND       = ( mpirun -np $Num_Procs -machinefile $Mach )
-	echo "Compiler version info: " >! version_info
-	pgf90 -V >>&! version_info
-	echo " " >>! version_info
-	echo "OS version info: " >>! version_info
-	uname -a >>&! version_info
-	echo " " >>! version_info
 else if ( ( $ARCH[1] == Linux ) && ( `hostname` == bay-mmm ) ) then
 	set DEF_DIR	= /mmmtmp/${user}/`hostname`
 	if ( ! -d $DEF_DIR ) mkdir $DEF_DIR
@@ -884,6 +756,9 @@ else if ( ( $ARCH[1] == Linux ) && ( `hostname` == bay-mmm ) ) then
 		set COMPOPTS	= ( 2 4 5 )
 	else
 		set COMPOPTS	= ( 1 3 5 )
+	endif
+	if ( ( $RSL_LITE == TRUE ) && ( $NESTED != TRUE ) ) then
+		set COMPOPTS	= ( 1 3 6 )
 	endif
 	set Num_Procs		= 2
 	set OPENMP		= $Num_Procs
@@ -914,7 +789,14 @@ else if ( ( $ARCH[1] == Linux ) && ( `hostname` == loquat ) ) then
 		echo "See directory ${DEF_DIR}/ for wrftest.output and other test results"
 	endif
 	set MAIL		= /bin/mail
-	set COMPOPTS		= ( 1 3 5 )
+	if ( $NESTED == TRUE ) then
+		set COMPOPTS	= ( 2 4 5 )
+	else
+		set COMPOPTS	= ( 1 3 5 )
+	endif
+	if ( ( $RSL_LITE == TRUE ) && ( $NESTED != TRUE ) ) then
+		set COMPOPTS	= ( 1 3 6 )
+	endif
 	set Num_Procs		= 2
 	set OPENMP		= $Num_Procs
 	cat >! machfile << EOF
@@ -926,6 +808,37 @@ EOF
 	set Mach		= `pwd`/machfile
 	set ZAP_OPENMP		= FALSE
 	set MPIRUNCOMMAND       = ( mpirun -np $Num_Procs -machinefile $Mach )
+	echo "Compiler version info: " >! version_info
+	pgf90 -V >>&! version_info
+	echo " " >>! version_info
+	echo "OS version info: " >>! version_info
+	uname -a >>&! version_info
+	echo " " >>! version_info
+else if ( ( $ARCH[1] == Linux ) && ( `hostname` == jacaranda ) ) then
+	set DEF_DIR		= /data1/$USER/`hostname`
+	set TMPDIR		= .
+	set MAIL		= /bin/mail
+	set COMPOPTS		= ( 2 4 3 )
+	set Num_Procs		= 4
+	set OPENMP		= 2
+	set MPIRUNCOMMAND	= ( mpirun -np $Num_Procs )
+	set ZAP_OPENMP		= TRUE
+	echo "Compiler version info: " >! version_info
+	ifort -V | grep Intel >>! version_info
+	ifort -V | grep Version >>! version_info
+	echo " " >>! version_info
+	echo "OS version info: " >>! version_info
+	uname -a >>&! version_info
+	echo " " >>! version_info
+else if ( ( $ARCH[1] == Linux ) && ( `hostname` == master ) ) then
+	set DEF_DIR		= /big6/gill/DO_NOT_REMOVE_DIR
+	set TMPDIR		= .
+	set MAIL		= /bin/mail
+	set COMPOPTS		= ( 1 3 5 )
+	set Num_Procs		= 4
+	set OPENMP		= 2
+	set MPIRUNCOMMAND	= ( mpirun -np $Num_Procs )
+	set ZAP_OPENMP		= TRUE
 	echo "Compiler version info: " >! version_info
 	pgf90 -V >>&! version_info
 	echo " " >>! version_info
@@ -963,37 +876,26 @@ else if ( ( $ARCH[1] == Linux ) && ( `hostname | cut -d. -f2-` == fsl.noaa.gov )
 	uname -a >>&! version_info
 	echo " " >>! version_info
 	setenv NETCDF /usr/local/netcdf-3.4
-else if ( ( $ARCH[1] == IRIX64 ) && ( `hostname` == dataproc ) ) then
-	set DEF_DIR		= /ptmp/$user
+else if ( ( $ARCH[1] == Linux ) && ( `hostname` == kola ) ) then
+	set DEF_DIR		= /kola2/$user
 	set TMPDIR              = .
-	set MAIL		= /usr/sbin/mailx
-	set COMPOPTS		= ( 1 2 3 )
-	set Num_Procs		= 4
-	set OPENMP		= $Num_Procs
-	set MPIRUNCOMMAND	= ( mpirun -np $Num_Procs )
+	set MAIL		= /bin/mail
+	set COMPOPTS		= ( 1 3 5 )
+	set Num_Procs		= 2
+	set OPENMP 		= $Num_Procs
+	cat >! machfile << EOF
+kola
+kola
+EOF
+	set Mach = `pwd`/machfile
+	set MPIRUNCOMMAND 	= ( mpirun -np $Num_Procs -machinefile $Mach )
 	set ZAP_OPENMP		= FALSE
 	echo "Compiler version info: " >! version_info
-	f90 -version >>&! version_info
+	pgf90 -V >>&! version_info
 	echo " " >>! version_info
 	echo "OS version info: " >>! version_info
 	uname -a >>&! version_info
 	echo " " >>! version_info
-else if ( ( $ARCH[1] == IRIX64 ) && ( `hostname` == gs2 ) ) then
-	set DEF_DIR		= /fer2/${user}/DAVE
-	set TMPDIR              = .
-	set MAIL		= /usr/sbin/mailx
-	set COMPOPTS		= ( 1 2 3 )
-	set Num_Procs		= 4
-	set OPENMP		= $Num_Procs
-	set MPIRUNCOMMAND	= ( mpirun -np $Num_Procs )
-	echo "Compiler version info: " >! version_info
-	set ZAP_OPENMP		= FALSE
-	f90 -version >>&! version_info
-	echo " " >>! version_info
-	echo "OS version info: " >>! version_info
-	uname -a >>&! version_info
-	echo " " >>! version_info
-	setenv NETCDF /disk2/people3/wesley/netcdf_Dave_WRF_64
 else
 	echo "Unrecognized architecture for regression test"  >! error_message
 	echo `uname`                                          >> error_message

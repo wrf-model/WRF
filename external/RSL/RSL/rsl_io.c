@@ -1143,12 +1143,12 @@ RSL_IO_SHUTDOWN ()
    array onto the patch of the output array, communicating as necessary.
    code assumes (for now) anyway, that each patch is disjoint on each side. */
 
-RSL_REMAP_ARRAY ( inbuf, ndim, type,
+RSL_REMAP_ARRAY ( inbuf, ndim_p, type_p,
                           is_dimd, ie_dimd, 
                           is_dimp, ie_dimp, is_dimm, ie_dimm,
                   outbuf, os_dimp, oe_dimp, os_dimm, oe_dimm )
   char inbuf[], outbuf[] ;
-  int ndim, type ;
+  int_p ndim_p, type_p ;
   int is_dimd[], is_dimp[], is_dimm[], os_dimp[], os_dimm[] ;
   int ie_dimd[], ie_dimp[], ie_dimm[], oe_dimp[], oe_dimm[] ;
 {
@@ -1169,7 +1169,11 @@ RSL_REMAP_ARRAY ( inbuf, ndim, type,
   int          ds0, ds1 ;
   int          de0, de1 ;
   int i,j,k,l,curs,dex,w ;
+  int ndim, type ;
   MPI_Status Stat ;
+
+  ndim = *ndim_p ;
+  type = *type_p ;
 
   MPI_Allgather( is_dimp, 3, MPI_INT, group_i[STRT][PCH], 3, MPI_INT, rsl_mpi_communicator )  ;
   MPI_Allgather( is_dimm, 3, MPI_INT, group_i[STRT][MEM], 3, MPI_INT, rsl_mpi_communicator )  ;
@@ -1253,7 +1257,7 @@ RSL_REMAP_ARRAY ( inbuf, ndim, type,
                     +(k-is_dimm[2])*(ie_dimm[0]-is_dimm[0]+1)*(ie_dimm[1]-is_dimm[1]+1))  ;
               sndbuf[curs++] = inbuf[l+dex] ;
             }
-       MPI_SEND( sndbuf, curs, MPI_CHAR, P, 5225, rsl_mpi_communicator ) ;
+       MPI_Send( sndbuf, curs, MPI_CHAR, P, 5225, rsl_mpi_communicator ) ;
     }
   }
 
@@ -1269,9 +1273,9 @@ RSL_REMAP_ARRAY ( inbuf, ndim, type,
           for ( l = 0 ; l < elemsize(type) ; l++ )
 	  {
             dex = elemsize(type)*
-                  ((i-is_dimm[0])
-                  +(j-is_dimm[1])*(ie_dimm[0]-is_dimm[0]+1)
-                  +(k-is_dimm[2])*(ie_dimm[0]-is_dimm[0]+1)*(ie_dimm[1]-is_dimm[1]+1))  ;
+                  ((i-os_dimm[0])
+                  +(j-os_dimm[1])*(oe_dimm[0]-os_dimm[0]+1)
+                  +(k-os_dimm[2])*(oe_dimm[0]-os_dimm[0]+1)*(oe_dimm[1]-os_dimm[1]+1))  ;
             outbuf[l+dex] = rcvbuf[curs++] ;
 	  }
   }

@@ -223,7 +223,8 @@ Additional ones when running 3DVAR:
                                                       Note: option 2 and 3 are not recommended for DX > 2 km
                                                   4 = horizontal Smagorinsky first order closure
                                                       (recommended for real-data case when grid distance < 10 km)
- damp_opt                            = 0,	; upper level damping flag
+ damp_opt                            = 0,	; upper level damping flag (do not use it for real-data case
+                                                      until further notice)
                                                   0 = without damping
                                                   1 = with    damping
  w_damping                           = 0,       ; vertical velocity damping flag (for operational use)
@@ -231,7 +232,6 @@ Additional ones when running 3DVAR:
                                                   1 = with    damping
  zdamp (max_dom)                     = 5000.,	; damping depth (m) from model top
  dampcoef (max_dom)                  = 0.,	; damping coefficient (dampcoef <= 0.2)
-                                                  may set it <= 0.15 for real data if needed
  khdif (max_dom)                     = 0,	; horizontal diffusion constant (m^2/s)
  kvdif (max_dom)                     = 0,	; vertical diffusion constant (m^2/s)
  smdiv (max_dom)                     = 0.1,	; divergence damping (0.1 is typical)

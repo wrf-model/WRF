@@ -997,7 +997,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 #
 FC              =       xlf90_r
 LD              =       xlf90_r
-CC              =       xlc_r
+CC              =       cc_r
 RWORDSIZE       =       4
 CFLAGS          =       -DNOUNDERSCORE
 FCOPTIM         =       -O2 -qarch=auto
@@ -1106,7 +1106,7 @@ OMP             =       -qsmp=noauto
 OMPCPP          =       -D_OPENMP
 FC              =       xlf90_r
 LD              =       xlf90_r
-CC              =       xlc_r
+CC              =       cc_r
 RWORDSIZE       =       4
 CFLAGS          =       -DNOUNDERSCORE
 FCOPTIM         =       -O2 -qarch=auto
@@ -1606,7 +1606,7 @@ DMPARALLEL      =       1
 OMP             =       -qsmp=noauto
 OMPCPP          =       -D_OPENMP
 SFC		=	xlf90_r
-SCC             =       xlc_r
+SCC             =       cc_r
 FC		=	mpxlf90_r
 LD		=	mpxlf90_r
 CC              =       mpcc_r
@@ -1726,7 +1726,7 @@ mediation_force_domain.o start_domain.o :
 #
 DMPARALLEL      =       1
 SFC             =       xlf90_r
-SCC             =       xlc_r
+SCC             =       cc_r
 FC              =       mpxlf90_r
 LD              =       mpxlf90_r
 CC              =       mpcc_r
@@ -1832,7 +1832,7 @@ convert_nmm.o    :
 #
 DMPARALLEL      =       1
 SFC             =       xlf90_r
-SCC             =       xlc_r
+SCC             =       cc_r
 FC              =       mpxlf90_r
 LD              =       mpCC_r
 CC              =       mpcc_r
@@ -1953,7 +1953,7 @@ convert_nmm.o :
 #
 DMPARALLEL      =       1
 SFC             =       xlf90_r
-SCC             =       xlc_r
+SCC             =       cc_r
 FC              =       mpxlf90_r
 LD              =       mpxlf90_r
 CC              =       mpcc_r
@@ -2080,7 +2080,7 @@ convert_nmm.o    :
 #
 DMPARALLEL      =       1
 SFC             =       xlf90_r
-SCC             =       xlc_r
+SCC             =       cc_r
 FC              =       mpxlf90_r
 LD              =       mpxlf90_r
 CC              =       mpcc_r

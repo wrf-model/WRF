@@ -4,6 +4,29 @@ MODULE module_internal_header_util
 ! Subroutines defined in this module are used to generate (put together) and get (take apart) 
 ! data headers stored in the form of integer vectors.
 ! 
+! Data headers serve two purposes:  
+!   - Provide a package-independent metadata storage and retrieval mechanism 
+!     for I/O packages that do not support native metadata.  
+!   - Provide a mechanism for communicating I/O commands from compute 
+!     processes to quilt processes when I/O quilt servers are enabled.  
+! 
+! Within a data header, character strings are stored one character per integer.  
+! The number of characters is stored immediately before the first character of 
+! each string.
+!
+! In an I/O package that does not support native metadata, routines 
+! int_gen_*_header() are called to pack information into data headers that 
+! are then written to files.  Routines int_get_*_header() are called to 
+! extract information from a data headers after they have been read from a 
+! file.  
+!
+! When I/O quilt server processes are used, routines int_gen_*_header() 
+! are called by compute processes to pack information into data headers 
+! (commands) that are then sent to the I/O quilt servers.  Routines 
+! int_get_*_header() are called by I/O quilt servers to extract 
+! information from data headers (commands) received from the compute 
+! processes.  
+!
 !</DESCRIPTION>
 
 INTERFACE int_get_ti_header
@@ -18,6 +41,8 @@ END INTERFACE
 INTERFACE int_gen_td_header
    MODULE PROCEDURE int_gen_td_header_integer, int_gen_td_header_real
 END INTERFACE
+
+PRIVATE :: int_pack_string, int_unpack_string
 
 CONTAINS
 !!!!!!!!!!!!! header manipulation routines !!!!!!!!!!!!!!!
@@ -44,6 +69,56 @@ SUBROUTINE int_gen_write_field_header ( hdrbuf, hdrbufsize, itypesize, ftypesize
                                         PatchStart , PatchEnd )
   IMPLICIT NONE
 !<DESCRIPTION>
+!<PRE>
+! Items and their starting locations within a "write field" data header.  
+! Assume that the data header is stored in integer vector "hdrbuf":  
+!  hdrbuf(1) = hdrbufsize
+!  hdrbuf(2) = headerTag
+!  hdrbuf(3) = ftypesize
+!  hdrbuf(4) = DataHandle
+!  hdrbuf(5) = LEN(TRIM(DateStr))
+!  hdrbuf(6:5+n1) = DateStr                                          ! n1 = LEN(TRIM(DateStr)) + 1
+!  hdrbuf(6+n1) = LEN(TRIM(VarName))
+!  hdrbuf(7+n1:6+n1+n2) = VarName                                    ! n2 = LEN(TRIM(VarName)) + 1
+!  hdrbuf(7+n1+n2) = FieldType
+!  hdrbuf(8+n1+n2) = LEN(TRIM(MemoryOrder))
+!  hdrbuf(9+n1+n2:8+n1+n2+n3) = MemoryOrder                          ! n3 = LEN(TRIM(MemoryOrder)) + 1
+!  hdrbuf(9+n1+n2+n3) = LEN(TRIM(Stagger))
+!  hdrbuf(9+n1+n2+n3:8+n1+n2+n3+n4) = Stagger                        ! n4 = LEN(TRIM(Stagger)) + 1
+!  hdrbuf(9+n1+n2+n3+n4) = LEN(TRIM(DimNames(1)))
+!  hdrbuf(9+n1+n2+n3+n4:8+n1+n2+n3+n4+n5) = DimNames(1)              ! n5 = LEN(TRIM(DimNames(1))) + 1
+!  hdrbuf(9+n1+n2+n3+n4+n5) = LEN(TRIM(DimNames(2)))
+!  hdrbuf(9+n1+n2+n3+n4+n5:8+n1+n2+n3+n4+n5+n6) = DimNames(2)        ! n6 = LEN(TRIM(DimNames(2))) + 1
+!  hdrbuf(9+n1+n2+n3+n4+n5+n6) = LEN(TRIM(DimNames(3)))
+!  hdrbuf(9+n1+n2+n3+n4+n5+n6:8+n1+n2+n3+n4+n5+n6+n7) = DimNames(3)  ! n7 = LEN(TRIM(DimNames(3))) + 1
+!  hdrbuf(9+n1+n2+n3+n4+n5+n6+n7) = DomainStart(1)
+!  hdrbuf(10+n1+n2+n3+n4+n5+n6+n7) = DomainStart(2)
+!  hdrbuf(11+n1+n2+n3+n4+n5+n6+n7) = DomainStart(3)
+!  hdrbuf(12+n1+n2+n3+n4+n5+n6+n7) = DomainEnd(1)
+!  hdrbuf(13+n1+n2+n3+n4+n5+n6+n7) = DomainEnd(2)
+!  hdrbuf(14+n1+n2+n3+n4+n5+n6+n7) = DomainEnd(3)
+!  hdrbuf(15+n1+n2+n3+n4+n5+n6+n7) = PatchStart(1)
+!  hdrbuf(16+n1+n2+n3+n4+n5+n6+n7) = PatchStart(2)
+!  hdrbuf(17+n1+n2+n3+n4+n5+n6+n7) = PatchStart(3)
+!  hdrbuf(18+n1+n2+n3+n4+n5+n6+n7) = PatchEnd(1)
+!  hdrbuf(19+n1+n2+n3+n4+n5+n6+n7) = PatchEnd(2)
+!  hdrbuf(20+n1+n2+n3+n4+n5+n6+n7) = PatchEnd(3)
+!  hdrbuf(21+n1+n2+n3+n4+n5+n6+n7) = DomainDesc
+!
+! Further details for some items:  
+!  hdrbufsize:  Size of this data header in bytes.  
+!  headerTag:   "Header tag" that tells the I/O quilt servers what kind of 
+!               header this is.  For a "write field" header it must be set to 
+!               int_field.  See file intio_tags.h for a complete list of 
+!               these tags.  
+!  ftypesize:   Size of field data type in bytes.  
+!  DataHandle:  Descriptor for an open data set.  
+!  DomainDesc:  Additional argument that may be used by some packages as a 
+!               package-specific domain descriptor.  
+!  Other items are described in detail in the "WRF I/O and Model Coupling API 
+!  Specification".  
+!
+!</PRE>
 !</DESCRIPTION>
   INCLUDE 'intio_tags.h'
   INTEGER,       INTENT(INOUT)  ::  hdrbuf(*)
@@ -109,6 +184,10 @@ SUBROUTINE int_get_write_field_header ( hdrbuf, hdrbufsize, itypesize, ftypesize
                                         MemoryStart , MemoryEnd ,                                    &
                                         PatchStart , PatchEnd )
 !<DESCRIPTION>
+!<PRE>
+! See documentation block in int_gen_write_field_header() for 
+! a description of a "write field" header.  
+!</PRE>
 !</DESCRIPTION>
   IMPLICIT NONE
   INCLUDE 'intio_tags.h'
@@ -174,6 +253,31 @@ SUBROUTINE int_gen_ofr_header( hdrbuf, hdrbufsize, itypesize, &
                                 FileName, SysDepInfo, DataHandle )
   IMPLICIT NONE
 !<DESCRIPTION>
+!<PRE>
+! Items and their starting locations within a "open for read" data header.  
+! Assume that the data header is stored in integer vector "hdrbuf":  
+!  hdrbuf(1) = hdrbufsize
+!  hdrbuf(2) = headerTag
+!  hdrbuf(3) = DataHandle
+!  hdrbuf(4) = LEN(TRIM(FileName))
+!  hdrbuf(5:4+n1) = FileName             ! n1 = LEN(TRIM(FileName)) + 1
+!  hdrbuf(5+n1) = LEN(TRIM(SysDepInfo))
+!  hdrbuf(6+n1:5+n1+n2) = SysDepInfo     ! n2 = LEN(TRIM(SysDepInfo)) + 1
+!
+! Further details for some items:  
+!  hdrbufsize:  Size of this data header in bytes.  
+!  headerTag:   "Header tag" that tells the I/O quilt servers what kind of 
+!               header this is.  For an "open for read" header it must be set to 
+!               int_open_for_read.  See file intio_tags.h for a complete list of 
+!               these tags.  
+!  DataHandle:  Descriptor for an open data set.  
+!  FileName:    File name.  
+!  SysDepInfo:  System dependent information used for optional additional 
+!               I/O control information.  
+!  Other items are described in detail in the "WRF I/O and Model Coupling API 
+!  Specification".  
+!
+!</PRE>
 !</DESCRIPTION>
   INCLUDE 'intio_tags.h'
   INTEGER,       INTENT(INOUT) ::  hdrbuf(*)
@@ -202,6 +306,10 @@ SUBROUTINE int_get_ofr_header( hdrbuf, hdrbufsize, itypesize, &
                                 FileName, SysDepInfo, DataHandle )
   IMPLICIT NONE
 !<DESCRIPTION>
+!<PRE>
+! See documentation block in int_gen_ofr_header() for 
+! a description of a "open for read" header.  
+!</PRE>
 !</DESCRIPTION>
   INCLUDE 'intio_tags.h'
   INTEGER,       INTENT(INOUT) ::  hdrbuf(*)
@@ -231,6 +339,33 @@ SUBROUTINE int_gen_ofwb_header( hdrbuf, hdrbufsize, itypesize, &
                                 FileName, SysDepInfo, io_form, DataHandle )
   IMPLICIT NONE
 !<DESCRIPTION>
+!<PRE>
+! Items and their starting locations within a "open for write begin" data 
+! header.  Assume that the data header is stored in integer vector "hdrbuf":  
+!  hdrbuf(1) = hdrbufsize
+!  hdrbuf(2) = headerTag
+!  hdrbuf(3) = DataHandle
+!  hdrbuf(4) = io_form
+!  hdrbuf(5) = LEN(TRIM(FileName))
+!  hdrbuf(6:5+n1) = FileName             ! n1 = LEN(TRIM(FileName)) + 1
+!  hdrbuf(6+n1) = LEN(TRIM(SysDepInfo))
+!  hdrbuf(7+n1:6+n1+n2) = SysDepInfo     ! n2 = LEN(TRIM(SysDepInfo)) + 1
+!
+! Further details for some items:  
+!  hdrbufsize:  Size of this data header in bytes.  
+!  headerTag:   "Header tag" that tells the I/O quilt servers what kind of 
+!               header this is.  For an "open for write begin" header it must be set to 
+!               int_open_for_write_begin.  See file intio_tags.h for a complete list of 
+!               these tags.  
+!  DataHandle:  Descriptor for an open data set.  
+!  io_form:     I/O format for this file (netCDF, etc.).  
+!  FileName:    File name.  
+!  SysDepInfo:  System dependent information used for optional additional 
+!               I/O control information.  
+!  Other items are described in detail in the "WRF I/O and Model Coupling API 
+!  Specification".  
+!
+!</PRE>
 !</DESCRIPTION>
   INCLUDE 'intio_tags.h'
   INTEGER,       INTENT(INOUT) :: hdrbuf(*)
@@ -265,6 +400,10 @@ SUBROUTINE int_get_ofwb_header( hdrbuf, hdrbufsize, itypesize, &
                                 FileName, SysDepInfo, io_form, DataHandle )
   IMPLICIT NONE
 !<DESCRIPTION>
+!<PRE>
+! See documentation block in int_gen_ofwb_header() for 
+! a description of a "open for write begin" header.  
+!</PRE>
 !</DESCRIPTION>
   INCLUDE 'intio_tags.h'
   INTEGER,       INTENT(INOUT)  :: hdrbuf(*)
@@ -306,6 +445,24 @@ SUBROUTINE int_gen_handle_header( hdrbuf, hdrbufsize, itypesize, &
                                 DataHandle , code )
   IMPLICIT NONE
 !<DESCRIPTION>
+!<PRE>
+! Items and their starting locations within a "generic handle" data header.  
+! Several types of data headers contain only a DataHandle and a header tag 
+! (I/O command).  This routine is used for all of them.  Assume that 
+! the data header is stored in integer vector "hdrbuf":  
+!  hdrbuf(1) = hdrbufsize
+!  hdrbuf(2) = headerTag
+!  hdrbuf(3) = DataHandle
+!
+! Further details for some items:  
+!  hdrbufsize:  Size of this data header in bytes.  
+!  headerTag:   "Header tag" that tells the I/O quilt servers what kind of 
+!               header this is.  For a "generic handle" header there are 
+!               several possible values.  In this routine, dummy argument 
+!               "code" is used as headerTag.  
+!  DataHandle:  Descriptor for an open data set.  
+!
+!</PRE>
 !</DESCRIPTION>
   INCLUDE 'intio_tags.h'
   INTEGER, INTENT(INOUT) ::  hdrbuf(*)
@@ -328,6 +485,10 @@ SUBROUTINE int_get_handle_header( hdrbuf, hdrbufsize, itypesize, &
                                 DataHandle , code )
   IMPLICIT NONE
 !<DESCRIPTION>
+!<PRE>
+! See documentation block in int_gen_handle_header() for 
+! a description of a "generic handle" header.  
+!</PRE>
 !</DESCRIPTION>
   INCLUDE 'intio_tags.h'
   INTEGER, INTENT(INOUT) ::  hdrbuf(*)
@@ -350,6 +511,34 @@ SUBROUTINE int_gen_ti_header_integer( hdrbuf, hdrbufsize, itypesize, typesize, &
                                       DataHandle, Element, Data, Count, code )
   IMPLICIT NONE
 !<DESCRIPTION>
+!<PRE>
+! Items and their starting locations within a "time-independent integer" 
+! data header.  Assume that the data header is stored in integer vector 
+! "hdrbuf":  
+!  hdrbuf(1) = hdrbufsize
+!  hdrbuf(2) = headerTag
+!  hdrbuf(3) = DataHandle
+!  hdrbuf(4) = typesize
+!  hdrbuf(5) = Count
+!  hdrbuf(6:6+n1) = Data              ! n1 = (Count * typesize / itypesize) + 1
+!  hdrbuf(7+n1) = LEN(TRIM(Element))
+!  hdrbuf(8+n1:7+n1+n2) = Element     ! n2 = LEN(TRIM(Element)) + 1
+!
+! Further details for some items:  
+!  hdrbufsize:  Size of this data header in bytes.  
+!  headerTag:   "Header tag" that tells the I/O quilt servers what kind of 
+!               header this is.  For an "time-independent integer" header it must be 
+!               set to int_dom_ti_integer.  See file intio_tags.h for a complete 
+!               list of these tags.  
+!  DataHandle:  Descriptor for an open data set.  
+!  typesize:    Size in bytes of each element of Data.  
+!  Count:       Number of elements in Data.  
+!  Data:        Data to write to file.  
+!  Element:     Name of the data.  
+!  Other items are described in detail in the "WRF I/O and Model Coupling API 
+!  Specification".  
+!
+!</PRE>
 !</DESCRIPTION>
   INCLUDE 'intio_tags.h'
   INTEGER, INTENT(INOUT)       ::  hdrbuf(*)
@@ -375,6 +564,9 @@ SUBROUTINE int_gen_ti_header_real( hdrbuf, hdrbufsize, itypesize, typesize, &
                                    DataHandle, Element, Data, Count, code )
   IMPLICIT NONE
 !<DESCRIPTION>
+!<PRE>
+! Same as int_gen_ti_header_integer except that Data has type REAL.  
+!</PRE>
 !</DESCRIPTION>
   INCLUDE 'intio_tags.h'
   INTEGER, INTENT(INOUT)       ::  hdrbuf(*)
@@ -400,6 +592,10 @@ SUBROUTINE int_get_ti_header_integer( hdrbuf, hdrbufsize, itypesize, typesize, &
                               DataHandle, Element, Data, Count, code )
   IMPLICIT NONE
 !<DESCRIPTION>
+!<PRE>
+! Same as int_gen_ti_header_integer except that Data is read from 
+! the file.  
+!</PRE>
 !</DESCRIPTION>
   INCLUDE 'intio_tags.h'
   INTEGER, INTENT(INOUT)       ::  hdrbuf(*)
@@ -425,6 +621,10 @@ SUBROUTINE int_get_ti_header_real( hdrbuf, hdrbufsize, itypesize, typesize, &
                               DataHandle, Element, Data, Count, code )
   IMPLICIT NONE
 !<DESCRIPTION>
+!<PRE>
+! Same as int_gen_ti_header_real except that Data is read from 
+! the file.  
+!</PRE>
 !</DESCRIPTION>
   INCLUDE 'intio_tags.h'
   INTEGER, INTENT(INOUT)       ::  hdrbuf(*)
@@ -452,6 +652,36 @@ SUBROUTINE int_gen_ti_header_char( hdrbuf, hdrbufsize, itypesize, &
                               DataHandle, Element, VarName, Data, code )
   IMPLICIT NONE
 !<DESCRIPTION>
+!<PRE>
+! Items and their starting locations within a "time-independent string" 
+! data header.  Assume that the data header is stored in integer vector 
+! "hdrbuf":  
+!  hdrbuf(1) = hdrbufsize
+!  hdrbuf(2) = headerTag
+!  hdrbuf(3) = DataHandle
+!  hdrbuf(4) = typesize
+!  hdrbuf(5) = LEN(TRIM(Element))
+!  hdrbuf(6:5+n1) = Element                ! n1 = LEN(TRIM(Element)) + 1
+!  hdrbuf(6+n1) = LEN(TRIM(Data))
+!  hdrbuf(7+n1:6+n1+n2) = Data             ! n2 = LEN(TRIM(Data)) + 1
+!  hdrbuf(7+n1+n2) = LEN(TRIM(VarName))
+!  hdrbuf(8+n1+n2:7+n1+n2+n3) = VarName    ! n3 = LEN(TRIM(VarName)) + 1
+!
+! Further details for some items:  
+!  hdrbufsize:  Size of this data header in bytes.  
+!  headerTag:   "Header tag" that tells the I/O quilt servers what kind of 
+!               header this is.  For an "time-independent string" header it must be 
+!               set to int_dom_ti_char.  See file intio_tags.h for a complete 
+!               list of these tags.  
+!  DataHandle:  Descriptor for an open data set.  
+!  typesize:    1 (size in bytes of a single CHARACTER).  
+!  Element:     Name of the data.  
+!  Data:        Data to write to file.  
+!  VarName:     Redundant, will be removed.  
+!  Other items are described in detail in the "WRF I/O and Model Coupling API 
+!  Specification".  
+!
+!</PRE>
 !</DESCRIPTION>
   INCLUDE 'intio_tags.h'
   INTEGER, INTENT(INOUT)       ::  hdrbuf(*)
@@ -479,6 +709,10 @@ SUBROUTINE int_get_ti_header_char( hdrbuf, hdrbufsize, itypesize, &
                               DataHandle, Element, VarName, Data, code )
   IMPLICIT NONE
 !<DESCRIPTION>
+!<PRE>
+! Same as int_gen_ti_header_char except that Data is read from 
+! the file.  
+!</PRE>
 !</DESCRIPTION>
   INCLUDE 'intio_tags.h'
   INTEGER, INTENT(INOUT)       ::  hdrbuf(*)
@@ -509,6 +743,35 @@ SUBROUTINE int_gen_td_header_char( hdrbuf, hdrbufsize, itypesize, &
                               DataHandle, DateStr, Element, Data, code )
   IMPLICIT NONE
 !<DESCRIPTION>
+!<PRE>
+! Items and their starting locations within a "time-dependent string" 
+! data header.  Assume that the data header is stored in integer vector 
+! "hdrbuf":  
+!  hdrbuf(1) = hdrbufsize
+!  hdrbuf(2) = headerTag
+!  hdrbuf(3) = DataHandle
+!  hdrbuf(4) = typesize
+!  hdrbuf(5) = LEN(TRIM(Element))
+!  hdrbuf(6:5+n1) = Element            ! n1 = LEN(TRIM(Element)) + 1
+!  hdrbuf(6+n1) = LEN(TRIM(DateStr))
+!  hdrbuf(7+n1:6+n1+n2) = DateStr      ! n2 = LEN(TRIM(DateStr)) + 1
+!  hdrbuf(7+n1+n2) = LEN(TRIM(Data))
+!  hdrbuf(8+n1+n2:7+n1+n2+n3) = Data   ! n3 = LEN(TRIM(Data)) + 1
+!
+! Further details for some items:  
+!  hdrbufsize:  Size of this data header in bytes.  
+!  headerTag:   "Header tag" that tells the I/O quilt servers what kind of 
+!               header this is.  For an "time-dependent string" header it must be 
+!               set to int_dom_td_char.  See file intio_tags.h for a complete 
+!               list of these tags.  
+!  DataHandle:  Descriptor for an open data set.  
+!  typesize:    1 (size in bytes of a single CHARACTER).  
+!  Element:     Name of the data.  
+!  Data:        Data to write to file.  
+!  Other items are described in detail in the "WRF I/O and Model Coupling API 
+!  Specification".  
+!
+!</PRE>
 !</DESCRIPTION>
   INCLUDE 'intio_tags.h'
   INTEGER, INTENT(INOUT)       ::  hdrbuf(*)
@@ -517,11 +780,12 @@ SUBROUTINE int_gen_td_header_char( hdrbuf, hdrbufsize, itypesize, &
   CHARACTER*(*), INTENT(INOUT) ::  DateStr, Element, Data
   INTEGER, INTENT(IN)          ::  DataHandle, code
 !Local
-  INTEGER i, n, Count
+  INTEGER i, n, DummyCount, DummyData
 !
+  DummyCount = 0
 
   CALL int_gen_ti_header_c ( hdrbuf, hdrbufsize, itypesize, 1, &
-                           DataHandle, Data, Count, code )
+                           DataHandle, DummyData, DummyCount, code )
   i = hdrbufsize/itypesize + 1 ;
   CALL int_pack_string ( Element, hdrbuf( i ), n ) ; i = i + n
   CALL int_pack_string ( DateStr, hdrbuf( i ), n ) ; i = i + n
@@ -535,6 +799,10 @@ SUBROUTINE int_get_td_header_char( hdrbuf, hdrbufsize, itypesize, &
                               DataHandle, DateStr, Element, Data, code )
   IMPLICIT NONE
 !<DESCRIPTION>
+!<PRE>
+! Same as int_gen_td_header_char except that Data is read from 
+! the file.  
+!</PRE>
 !</DESCRIPTION>
   INCLUDE 'intio_tags.h'
   INTEGER, INTENT(INOUT)       ::  hdrbuf(*)
@@ -560,6 +828,36 @@ SUBROUTINE int_gen_td_header_integer( hdrbuf, hdrbufsize, itypesize, typesize, &
                                       DataHandle, DateStr, Element, Data, Count, code )
   IMPLICIT NONE
 !<DESCRIPTION>
+!<PRE>
+! Items and their starting locations within a "time-dependent integer" 
+! data header.  Assume that the data header is stored in integer vector 
+! "hdrbuf":  
+!  hdrbuf(1) = hdrbufsize
+!  hdrbuf(2) = headerTag
+!  hdrbuf(3) = DataHandle
+!  hdrbuf(4) = typesize
+!  hdrbuf(5) = Count
+!  hdrbuf(6:6+n1) = Data              ! n1 = (Count * typesize / itypesize) + 1
+!  hdrbuf(7+n1) = LEN(TRIM(DateStr))
+!  hdrbuf(8+n1:7+n1+n2) = DateStr      ! n2 = LEN(TRIM(DateStr)) + 1
+!  hdrbuf(8+n1+n2) = LEN(TRIM(Element))
+!  hdrbuf(9+n1+n2:8+n1+n2+n3) = Element   ! n3 = LEN(TRIM(Element)) + 1
+!
+! Further details for some items:  
+!  hdrbufsize:  Size of this data header in bytes.  
+!  headerTag:   "Header tag" that tells the I/O quilt servers what kind of 
+!               header this is.  For an "time-dependent integer" header it must be 
+!               set to int_dom_td_integer.  See file intio_tags.h for a complete 
+!               list of these tags.  
+!  DataHandle:  Descriptor for an open data set.  
+!  typesize:    1 (size in bytes of a single CHARACTER).  
+!  Element:     Name of the data.  
+!  Count:       Number of elements in Data.  
+!  Data:        Data to write to file.  
+!  Other items are described in detail in the "WRF I/O and Model Coupling API 
+!  Specification".  
+!
+!</PRE>
 !</DESCRIPTION>
   INCLUDE 'intio_tags.h'
   INTEGER, INTENT(INOUT)       ::  hdrbuf(*)
@@ -586,6 +884,9 @@ SUBROUTINE int_gen_td_header_real( hdrbuf, hdrbufsize, itypesize, typesize, &
                                    DataHandle, DateStr, Element, Data, Count, code )
   IMPLICIT NONE
 !<DESCRIPTION>
+!<PRE>
+! Same as int_gen_td_header_integer except that Data has type REAL.  
+!</PRE>
 !</DESCRIPTION>
   INCLUDE 'intio_tags.h'
   INTEGER, INTENT(INOUT)       ::  hdrbuf(*)
@@ -612,6 +913,10 @@ SUBROUTINE int_get_td_header_integer( hdrbuf, hdrbufsize, itypesize, typesize, &
                               DataHandle, DateStr, Element, Data, Count, code )
   IMPLICIT NONE
 !<DESCRIPTION>
+!<PRE>
+! Same as int_gen_td_header_integer except that Data is read from 
+! the file.  
+!</PRE>
 !</DESCRIPTION>
   INCLUDE 'intio_tags.h'
   INTEGER, INTENT(INOUT)       ::  hdrbuf(*)
@@ -637,6 +942,10 @@ SUBROUTINE int_get_td_header_real( hdrbuf, hdrbufsize, itypesize, typesize, &
                               DataHandle, DateStr, Element, Data, Count, code )
   IMPLICIT NONE
 !<DESCRIPTION>
+!<PRE>
+! Same as int_gen_td_header_real except that Data is read from 
+! the file.  
+!</PRE>
 !</DESCRIPTION>
   INCLUDE 'intio_tags.h'
   INTEGER, INTENT(INOUT)       ::  hdrbuf(*)
@@ -663,6 +972,21 @@ END SUBROUTINE int_get_td_header_real
 SUBROUTINE int_gen_noop_header ( hdrbuf, hdrbufsize, itypesize )
   IMPLICIT NONE
 !<DESCRIPTION>
+!<PRE>
+! Items and their starting locations within a "no-operation" 
+! data header.  Assume that the data header is stored in integer vector 
+! "hdrbuf":  
+!  hdrbuf(1) = hdrbufsize
+!  hdrbuf(2) = headerTag
+!
+! Further details for some items:  
+!  hdrbufsize:  Size of this data header in bytes.  
+!  headerTag:   "Header tag" that tells the I/O quilt servers what kind of 
+!               header this is.  For an "no-operation" header it must be 
+!               set to int_noop.  See file intio_tags.h for a complete 
+!               list of these tags.  
+!
+!</PRE>
 !</DESCRIPTION>
   INCLUDE 'intio_tags.h'
   INTEGER, INTENT(INOUT) ::  hdrbuf(*)
@@ -682,6 +1006,10 @@ END SUBROUTINE int_gen_noop_header
 SUBROUTINE int_get_noop_header( hdrbuf, hdrbufsize, itypesize )
   IMPLICIT NONE
 !<DESCRIPTION>
+!<PRE>
+! See documentation block in int_gen_noop_header() for 
+! a description of a "no-operation" header.  
+!</PRE>
 !</DESCRIPTION>
   INCLUDE 'intio_tags.h'
   INTEGER, INTENT(INOUT) ::  hdrbuf(*)
@@ -703,6 +1031,10 @@ END SUBROUTINE int_get_noop_header
 SUBROUTINE int_pack_string ( str, buf, n )
   IMPLICIT NONE
 !<DESCRIPTION>
+!<PRE>
+! This routine is used to store a string as a sequence of integers.  
+! The first integer is the string length.  
+!</PRE>
 !</DESCRIPTION>
   CHARACTER*(*), INTENT(IN)          :: str
   INTEGER, INTENT(OUT)               :: n    ! on return, N is the number of ints stored in buf
@@ -723,6 +1055,10 @@ END SUBROUTINE int_pack_string
 SUBROUTINE int_unpack_string ( str, buf, n )
   IMPLICIT NONE
 !<DESCRIPTION>
+!<PRE>
+! This routine is used to extract a string from a sequence of integers.  
+! The first integer is the string length.  
+!</PRE>
 !</DESCRIPTION>
   CHARACTER*(*), INTENT(OUT)        :: str
   INTEGER, INTENT(OUT)              :: n       ! on return, N is the number of ints copied from buf

@@ -384,6 +384,11 @@ SUBROUTINE Setup_Timekeeping ( grid )
 
    CALL ESMF_ClockAddAlarm( grid%domain_clock, grid%alarms( AUXHIST1_ALARM ), rc=rc )
 
+   IF ( interval .NE. run_length + one_minute .AND. begin_time .EQ. zero_time ) THEN
+     CALL ESMF_AlarmTurnOn( grid%alarms( AUXHIST1_ALARM ),  rc=rc )
+   ENDIF
+
+
 ! AUXHIST2_ INTERVAL
 ! auxhist2_interval is left there (and means minutes) for consistency, but
 ! auxhist2_interval_m will take precedence if specified
@@ -437,6 +442,10 @@ SUBROUTINE Setup_Timekeeping ( grid )
                                                      rc=rc )
 
    CALL ESMF_ClockAddAlarm( grid%domain_clock, grid%alarms( AUXHIST2_ALARM ), rc=rc )
+
+   IF ( interval .NE. run_length + one_minute .AND. begin_time .EQ. zero_time ) THEN
+     CALL ESMF_AlarmTurnOn( grid%alarms( AUXHIST2_ALARM ),  rc=rc )
+   ENDIF
 
 ! AUXHIST3_ INTERVAL
 ! auxhist3_interval is left there (and means minutes) for consistency, but
@@ -492,6 +501,10 @@ SUBROUTINE Setup_Timekeeping ( grid )
 
    CALL ESMF_ClockAddAlarm( grid%domain_clock, grid%alarms( AUXHIST3_ALARM ), rc=rc )
 
+   IF ( interval .NE. run_length + one_minute .AND. begin_time .EQ. zero_time ) THEN
+     CALL ESMF_AlarmTurnOn( grid%alarms( AUXHIST3_ALARM ),  rc=rc )
+   ENDIF
+
 ! AUXHIST4_ INTERVAL
 ! auxhist4_interval is left there (and means minutes) for consistency, but
 ! auxhist4_interval_m will take precedence if specified
@@ -545,6 +558,10 @@ SUBROUTINE Setup_Timekeeping ( grid )
                                                      rc=rc )
 
    CALL ESMF_ClockAddAlarm( grid%domain_clock, grid%alarms( AUXHIST4_ALARM ), rc=rc )
+
+   IF ( interval .NE. run_length + one_minute .AND. begin_time .EQ. zero_time ) THEN
+     CALL ESMF_AlarmTurnOn( grid%alarms( AUXHIST4_ALARM ),  rc=rc )
+   ENDIF
 
 ! AUXHIST5_ INTERVAL
 ! auxhist5_interval is left there (and means minutes) for consistency, but
@@ -600,6 +617,10 @@ SUBROUTINE Setup_Timekeeping ( grid )
 
    CALL ESMF_ClockAddAlarm( grid%domain_clock, grid%alarms( AUXHIST5_ALARM ), rc=rc )
 
+   IF ( interval .NE. run_length + one_minute .AND. begin_time .EQ. zero_time ) THEN
+     CALL ESMF_AlarmTurnOn( grid%alarms( AUXHIST5_ALARM ),  rc=rc )
+   ENDIF
+
 ! AUXINPUT1_ INTERVAL
 ! auxinput1_interval is left there (and means minutes) for consistency, but
 ! auxinput1_interval_m will take precedence if specified
@@ -653,6 +674,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
                                                      rc=rc )
 
    CALL ESMF_ClockAddAlarm( grid%domain_clock, grid%alarms( AUXINPUT1_ALARM ), rc=rc )
+
    IF ( interval .NE. run_length + one_minute .AND. begin_time .EQ. zero_time ) THEN
      CALL ESMF_AlarmTurnOn( grid%alarms( AUXINPUT1_ALARM ),  rc=rc )
    ENDIF
@@ -710,6 +732,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
                                                      rc=rc )
 
    CALL ESMF_ClockAddAlarm( grid%domain_clock, grid%alarms( AUXINPUT2_ALARM ), rc=rc )
+
    IF ( interval .NE. run_length + one_minute .AND. begin_time .EQ. zero_time ) THEN
      CALL ESMF_AlarmTurnOn( grid%alarms( AUXINPUT2_ALARM ),  rc=rc )
    ENDIF

@@ -24,6 +24,12 @@ MODULE module_dm
       wrf_dm_sum_real = inval
    END FUNCTION wrf_dm_sum_real
 
+   INTEGER FUNCTION wrf_dm_sum_integer ( inval )
+      IMPLICIT NONE
+      INTEGER inval
+      wrf_dm_sum_real = inval
+   INTEGER FUNCTION wrf_dm_sum_integer
+
    SUBROUTINE wrf_dm_maxval ( val, idex, jdex )
       IMPLICIT NONE
       REAL val

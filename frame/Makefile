@@ -24,6 +24,7 @@ MODULES =       module_driver_constants.o  \
 
 OBJS    =       wrf_num_bytes_between.o    \
                 wrf_shutdown.o             \
+                libmassv.o                 \
                 collect_on_comm.o
 
 #compile as a .o but do not link into the main library

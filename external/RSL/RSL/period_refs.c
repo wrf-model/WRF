@@ -125,7 +125,7 @@ period_refs( pack_table, pack_table_size, pack_table_nbytes, collapse )
       i++ ;
 
   *pack_table_size = i ;
-#if 1
+#ifdef RSL_INTERNAL_MILLICLOCK
 fprintf(stderr,"debug 2 pack_table_size = %d, msec=%d\n",i,te-ts) ;
 #endif
 

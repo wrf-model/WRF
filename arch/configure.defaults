@@ -6526,7 +6526,7 @@ FC              =       f90
 LD              =       f90
 CC              =       cc
 ARCHFLAGS       =       CONFIGURE_NETCDF_FLAG -DWRF_RSL_IO -DRSL -DINTIO -DTRIEDNTRUE -DLIMIT_ARGS -DFLOATSAFE \
-                        -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 
+                        -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DSTUBMPI
 CFLAGS          =       $(ARCHFLAGS) +DSitanium2 -DNOUNDERSCORE -I../external/RSL/RSL
 FCOPTIM         =       +O3 +DSitanium2 +Odataprefetch +Olibcalls +DO11.23 +noppu \
 			+save +fastallocatable +Ofltacc +extend_source +source=free +FPD

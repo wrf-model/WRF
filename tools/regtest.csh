@@ -74,6 +74,9 @@ endif
 if      ( ( `hostname` == master ) || (`hostname | cut -c 1-4` == node ) ) then
 	set WRFREGDATAEM = /big/users/gill/WRF-data-EM
 	set WRFREGDATANMM = /big/users/gill/WRF-data-NMM
+else if   ( `hostname` == jacaranda ) then
+	set WRFREGDATAEM = /jacaranda/users/gill/WRF-data-EM
+	set WRFREGDATANMM = /jacaranda/users/gill/WRF-data-NMM
 else if   ( `hostname` == duku ) then
 	set WRFREGDATAEM = /duku/users/gill/WRF-data-EM
 	set WRFREGDATANMM = /duku/users/gill/WRF-data-NMM
@@ -654,6 +657,22 @@ EOF
 	set MPIRUNCOMMAND 	= ( mpirun -np $Num_Procs -machinefile $Mach )
 	echo "Compiler version info: " >! version_info
 	f90 -version >>&! version_info
+	echo " " >>! version_info
+	echo "OS version info: " >>! version_info
+	uname -a >>&! version_info
+	echo " " >>! version_info
+else if ( ( $ARCH[1] == Linux ) && ( `hostname` == jacaranda ) ) then
+	set DEF_DIR		= /data1/$USER/`hostname`
+	set TMPDIR		= .
+	set MAIL		= /bin/mail
+	set COMPOPTS		= ( 2 4 3 )
+	set Num_Procs		= 4
+	set OPENMP		= 2
+	set MPIRUNCOMMAND	= ( mpirun -np $Num_Procs )
+	set ZAP_OPENMP		= TRUE
+	echo "Compiler version info: " >! version_info
+	ifort -V | grep Intel >>! version_info
+	ifort -V | grep Version >>! version_info
 	echo " " >>! version_info
 	echo "OS version info: " >>! version_info
 	uname -a >>&! version_info

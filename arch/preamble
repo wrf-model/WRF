@@ -18,7 +18,7 @@ LIBINCLUDE      =       .
 #### Note to add a core, this has to be added to.
 
 COREDEFS = -DEM_CORE=$(WRF_EM_CORE) \
-           -DNMM_CORE=$(WRF_NMM_CORE) -DNMM_MAX_DIM=1250 \
+           -DNMM_CORE=$(WRF_NMM_CORE) -DNMM_MAX_DIM=2600 \
 	   -DCOAMPS_CORE=$(WRF_COAMPS_CORE) \
            -DEXP_CORE=$(WRF_EXP_CORE)
 

@@ -211,7 +211,11 @@ integer myproc
    IF ( .not. config_flags%restart ) THEN
 
 ! initialize nest with interpolated data from the parent
-     nest%imask = 1
+     nest%imask_nostag = 1
+     nest%imask_xstag = 1
+     nest%imask_ystag = 1
+     nest%imask_xystag = 1
+
      CALL med_interp_domain( parent, nest )
 
 !  De-reference dimension information stored in the grid data structure.
@@ -446,8 +450,15 @@ integer myproc
    px = isign(parent_grid_ratio,disp_x)
    py = isign(parent_grid_ratio,disp_y)
 
-   imask = 1
-   imask(ips:ipe,jps:jpe) = 0
+   imask_nostag = 1
+   imask_xstag = 1
+   imask_ystag = 1
+   imask_xystag = 1
+
+   imask_nostag(ips:min(ide-1,ipe),jps:min(jde-1,jpe)) = 0
+   imask_xstag(ips:ipe,jps:min(jde-1,jpe)) = 0
+   imask_ystag(ips:min(ide-1,ipe),jps:jpe) = 0
+   imask_xystag(ips:ipe,jps:jpe) = 0
 
 #if 1
 
@@ -495,6 +506,11 @@ SUBROUTINE med_nest_force ( parent , nest , config_flags )
      END SUBROUTINE med_interp_domain
    END INTERFACE
 
+! initialize nest with interpolated data from the parent
+   nest%imask_nostag = 1
+   nest%imask_xstag = 1
+   nest%imask_ystag = 1
+   nest%imask_xystag = 1
    CALL med_force_domain( parent, nest )
 
 ! might also have calls here to do input from a file into the nest

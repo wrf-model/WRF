@@ -31,6 +31,23 @@ while ( $i <= $n )
 
   compile em_real >>& testomatic.log
 
+  if ( ( -e main/wrf.exe ) && ( -e main/real.exe ) && ( -e main/ndown.exe ) ) then
+    if ( ( -x main/wrf.exe ) && ( -x main/real.exe ) && ( -x main/ndown.exe ) ) then
+
+      echo "$i -------------- build ok  ---------------" >>& testomatic.log
+
+    else
+
+      echo "$i -------------- build, not exec  --------" >>& testomatic.log
+    
+    endif
+
+  else
+
+    echo "$i -------------- broken build  -----------" >>& testomatic.log
+
+  endif
+
   @ i += 1
 
 end

@@ -377,7 +377,7 @@ SUBROUTINE med_nest_move ( parent, nest )
    TYPE(domain) , POINTER                     :: parent, nest, grid
    INTEGER dx, dy       ! number of parent domain points to move
   ! Local 
-   INTEGER i, j, parent_grid_ratio
+   INTEGER i, j, p, parent_grid_ratio
    INTEGER px, py       ! number and direction of nd points to move
    INTEGER                         :: ids , ide , jds , jde , kds , kde , &
                                       ims , ime , jms , jme , kms , kme , &
@@ -466,6 +466,30 @@ SUBROUTINE med_nest_move ( parent, nest )
    nest%moved = .true.
    CALL start_domain ( nest )
    nest%moved = .false.
+
+! copy time level 2 to time level 1 in new regions of multi-time level fields
+! this should be registry generated.
+   do k = kms,kme
+     where ( nest%imask_xstag  .EQ. 1 ) nest%em_u_1(:,k,:)   = nest%em_u_2(:,k,:)
+     where ( nest%imask_ystag  .EQ. 1 ) nest%em_v_1(:,k,:)   = nest%em_v_2(:,k,:)
+     where ( nest%imask_nostag .EQ. 1 ) nest%em_t_1(:,k,:)   = nest%em_t_2(:,k,:)
+     where ( nest%imask_nostag .EQ. 1 ) nest%em_w_1(:,k,:)   = nest%em_w_2(:,k,:)
+     where ( nest%imask_nostag .EQ. 1 ) nest%em_ph_1(:,k,:)  = nest%em_ph_2(:,k,:)
+     where ( nest%imask_nostag .EQ. 1 ) nest%em_tp_1(:,k,:)  = nest%em_tp_2(:,k,:)
+     where ( nest%imask_nostag .EQ. 1 ) nest%em_tke_1(:,k,:) = nest%em_tke_2(:,k,:)
+   enddo
+   do p = PARAM_FIRST_SCALAR , num_moist
+     do k = kms,kme
+       where ( nest%imask_nostag .EQ. 1 ) nest%moist_1(:,k,:,p) = nest%moist_2(:,k,:,p)
+     enddo
+   enddo
+   do p = PARAM_FIRST_SCALAR , num_chem
+     do k = kms,kme
+       where ( nest%imask_nostag .EQ. 1 ) nest%chem_1(:,k,:,p) = nest%chem_2(:,k,:,p)
+     enddo
+   enddo
+   where ( nest%imask_nostag .EQ. 1 ) nest%em_mu_1(:,:)  = nest%em_mu_2(:,:)
+!
 
 #ifdef MOVE_NESTS
    parent%nest_pos = parent%ht

@@ -2563,7 +2563,9 @@ subroutine ext_ncd_read_field(DataHandle,DateStr,Var,Field,FieldType,Comm,  &
     endif
     if(StoredDim /= NDim+1) then
       Status = WRF_ERR_FATAL_BAD_VARIABLE_DIM
-      write(msg,*) 'Fatal error BAD VARIABLE DIMENSION in ',__FILE__,', line', __LINE__
+      write(msg,*) 'Fatal error BAD VARIABLE DIMENSION in ext_ncd_read_field ',TRIM(Var),TRIM(DateStr)
+      call wrf_debug ( FATAL , msg)
+      write(msg,*) '  StoredDim ', StoredDim, ' .NE. NDim+1 ', NDim+1
       call wrf_debug ( FATAL , msg)
       return
     endif

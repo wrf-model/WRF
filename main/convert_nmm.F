@@ -230,7 +230,9 @@ print *,'init_typ  =',model_config_rec%real_data_init_type
 
    nbdy_frames = NINT(( tend_from_file - tstart_from_file) )
    DO bdy_frame = 2,nbdy_frames
+
      write(0,*)'BDY FRAME ', BDY_FRAME
+     write(*,*)'BDY FRAME ', BDY_FRAME
      CALL ESMF_TimeGetString( grid%current_time, message, rc=rc)
      write(0,*)Trim(message)
      bdyfrq = interval_seconds

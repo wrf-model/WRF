@@ -32,7 +32,7 @@
 # defined as an integer and with only one entry in the rconfig table. Or
 # a constant can be specified.  The coordinate axis for the dimension is
 # either X, Y, Z, or C (for "not a spatial dimension").  The Dimname is
-# the desriptive name of the dimension that will be included in the
+# the descriptive name of the dimension that will be included in the
 # metadata in data sets.  Note that the b, f, and t modifiers that appear
 # as the last characters of dimension strings used # in state and # i1
 # registry definitions are not dimensions and do not need to be declared
@@ -166,17 +166,19 @@ state    real   pb             ikj     dyn_em      1         -      rhdu      "p
 #                                               
 # Other dyn                                             
 #                                               
-i1       real   advect_tend    ikj     dyn_em       1         -                                          
-i1       real   alpha          ikj     dyn_em       1         -                                                  
-i1       real   a              ikj     dyn_em       1         -                                                  
-i1       real   gamma          ikj     dyn_em       1         -                                                  
-i1       real    c2a            ikj     dyn_em      1         -     -
-i1       real    rho            ikj     dyn_em      1         -     -
-i1       real    phm            ikj     dyn_em      1         -     -
-i1       real    cqu            ikj     dyn_em      1         -     -
-i1       real    cqv            ikj     dyn_em      1         -     -
-i1       real    cqw            ikj     dyn_em      1         -     -
-i1       real    pm1            ikj     dyn_em      1         -     -
+i1       real   advect_tend    ikj     dyn_em      1         -                                          
+i1       real   alpha          ikj     dyn_em      1         -                                                  
+i1       real   a              ikj     dyn_em      1         -                                                  
+i1       real   gamma          ikj     dyn_em      1         -                                                  
+i1       real   c2a            ikj     dyn_em      1         -     -
+i1       real   rho            ikj     dyn_em      1         -     -
+i1       real   phm            ikj     dyn_em      1         -     -
+i1       real   cqu            ikj     dyn_em      1         -     -
+i1       real   cqv            ikj     dyn_em      1         -     -
+i1       real   cqw            ikj     dyn_em      1         -     -
+i1       real   pm1            ikj     dyn_em      1         -     -
+i1       real   sr             ij      dyn_em      1         -     -   # dummy array for microphysics driver
+
 state    real    fnm            k       dyn_em      1         -     irh       "fnm"  "upper weight for vertical stretching"  ""
 state    real    fnp            k       dyn_em      1         -     irh       "fnp"  "lower weight for vertical stretching"  ""
 state    real    rdnw           k       dyn_em      1         -     irh       "rdnw"  "inverse dn values on full (w) levels"   ""
@@ -399,11 +401,6 @@ state  integer  IFNDSOILW        -      misc        1         -     i         "F
 # RUC LSM
 state    real   SMFR3D           ilj    misc        1         Z      r        "SMFR3D"               "SOIL ICE" ""
 state    real   KEEPFR3DFLAG     ilj    misc        1         Z      r        "KEEPFR3DFLAG          "FLAG - 1. FROZEN SOIL YES, 0 - NO"             ""
-
-# Additional for NMM LSM
-state    real   POTEVP           ij     misc        1         -     i       "POTEVP" "POTENTIAL EVAPORATION" "W m-2"
-state    real   SNOPCX           ij     misc        1         -     i       "SNOPCX" "snow phase change heat flux" "W m-2"
-state    real   SOILTB           ij     misc        1         -     i       "SOILTB" "BOTTOM SOIL TEMP" "K"
 
 # MRF PBL variables***25Aug 2002*****
 i1      real   PSIM           ij     misc        1         -     -         "PSIM"                "SIMILARITY FUNCTION FOR MOMENTUM"     ""

@@ -75,7 +75,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
    REAL :: dt_rk, dts_rk, dtm, wmax
    LOGICAL :: leapfrog
 
-#include <bench_solve_em_def.inc>
+#include <bench_solve_em_def.h>
 
 #define COPY_IN
 #include <em_scalar_derefs.inc>
@@ -119,7 +119,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
 !</pre>
 !</DESCRIPTION>
 
-#include <bench_solve_em_init.inc>
+#include <bench_solve_em_init.h>
 
 !
 !  set leapfrog or runge-kutta solver (2nd or 3rd order)
@@ -2516,7 +2516,7 @@ BENCH_END(bc_2d_tim)
 
    CALL wrf_debug ( 200 , ' call end of solve_em' )
 
-#include <bench_solve_em_end.inc>
+#include <bench_solve_em_end.h>
 
 #define COPY_OUT
 #include <em_scalar_derefs.inc>

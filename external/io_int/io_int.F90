@@ -622,7 +622,10 @@ SUBROUTINE ext_int_get_dom_ti_real ( DataHandle,Element,   Data, Count, Outcount
               keepgoing = .false. ;  Status = 0
             ENDIF
           ELSE IF ( .NOT. ( code .EQ. int_dom_ti_integer .OR. code .EQ. int_dom_ti_logical .OR. &
-                            code .EQ. int_dom_ti_char    .OR. code .EQ. int_dom_ti_double         ) ) THEN
+                            code .EQ. int_dom_ti_char    .OR. code .EQ. int_dom_ti_double  .OR. &
+                            code .EQ. int_dom_td_integer .OR. code .EQ. int_dom_td_logical .OR. &
+                            code .EQ. int_dom_td_char    .OR. code .EQ. int_dom_td_double  .OR. &
+                            code .EQ. int_dom_td_real                                  ) ) THEN
             BACKSPACE ( unit=DataHandle )
             keepgoing = .false. ; Status = 2
           ENDIF
@@ -722,8 +725,12 @@ SUBROUTINE ext_int_get_dom_ti_integer ( DataHandle,Element,   Data, Count, Outco
               ENDIF
               keepgoing = .false. ;  Status = 0
             ENDIF
-          ELSE IF ( .NOT. ( code .EQ. int_dom_ti_real .OR. code .EQ. int_dom_ti_logical .OR. &
-                            code .EQ. int_dom_ti_char .OR. code .EQ. int_dom_ti_double         ) ) THEN
+
+          ELSE IF ( .NOT. ( code .EQ. int_dom_ti_real    .OR.   code .EQ. int_dom_ti_logical .OR. &
+                            code .EQ. int_dom_ti_char    .OR.   code .EQ. int_dom_ti_double  .OR. &
+                            code .EQ. int_dom_td_real    .OR.   code .EQ. int_dom_td_logical .OR. &
+                            code .EQ. int_dom_td_char    .OR.   code .EQ. int_dom_td_double  .OR. &
+                            code .EQ. int_dom_td_integer )                                           ) THEN
             BACKSPACE ( unit=DataHandle )
             keepgoing = .false. ; Status = 1
           ENDIF
@@ -820,7 +827,10 @@ SUBROUTINE ext_int_get_dom_ti_char ( DataHandle,Element,   Data,  Status )
               keepgoing = .false. ;  Status = 0
             ENDIF
           ELSE IF ( .NOT. ( code .EQ. int_dom_ti_real    .OR. code .EQ. int_dom_ti_logical .OR. &
-                            code .EQ. int_dom_ti_integer .OR. code .EQ. int_dom_ti_double         ) ) THEN
+                            code .EQ. int_dom_ti_integer .OR. code .EQ. int_dom_ti_double  .OR. &
+                            code .EQ. int_dom_td_real    .OR. code .EQ. int_dom_td_logical .OR. &
+                            code .EQ. int_dom_td_integer .OR. code .EQ. int_dom_td_double  .OR. &
+                            code .EQ. int_dom_td_char                                             ) ) THEN
             BACKSPACE ( unit=DataHandle )
             keepgoing = .false. ; Status = 1
           ENDIF

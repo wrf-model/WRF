@@ -1259,9 +1259,10 @@ RSL_WRITE_MM5V3_SM_HEADER( unit_p,ndim_p,
 # endif
   icurs += rwordsize ;
 #else
-  { float x ;
-    x = (double)*xtime_p ;
-    bcopy( &x  , &(wbuf[icurs]), rwordsize/2 ) ;  
+  { float x ; double y ;
+    bcopy( xtime_p, &y, rwordsize ) ;
+    x = y ;
+    bcopy( &x  , &(wbuf[icurs]), rwordsize/2 ) ;
   }
 # ifdef SWAPBYTES
   rsl_swapbytes( &(wbuf[icurs]), rwordsize/2, 1 ) ;

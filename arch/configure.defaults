@@ -385,6 +385,9 @@ module_initialize_real.o module_dm.o  start_domain.o :
 
 ###########################################################
 #ARCH	SGI O2K DM IRIX64             (RSL, SGI-MPI, allows nesting)
+#
+# Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#
 
 DMPARALLEL      =       1
 MAX_PROC        =       1024
@@ -599,6 +602,9 @@ mediation_force_domain.o module_dm.o start_domain.o :
 
 ###########################################################
 #ARCH	Sun  SunOS      (single-threaded, nesting using RSL and no MPI)
+#
+# Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#
 #
 DM_PARALLEL     =       1
 OMP             =       
@@ -818,6 +824,9 @@ module_initialize_real.o module_dm.o start_domain.o :
 
 ###########################################################
 #ARCH	Sun  SunOS SM   (OpenMP, nesting using RSL and no MPI)
+#
+# Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#
 #
 DM_PARALLEL     =       1
 OMP		=	-mp=openmp -explicitpar -stackvar
@@ -1929,6 +1938,9 @@ module_initialize_real.o module_dm.o start_domain.o :
 ###########################################################
 #ARCH       Compaq OSF1 alpha          (single-threaded, nesting using RSL without MPI )
 #
+# Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#
+#
 DM_PARALLEL     =       1
 OMP             =       
 OMPCPP          =       
@@ -2111,6 +2123,9 @@ module_initialize_real.o module_dm.o start_domain.o :
 
 ###########################################################
 #ARCH       Compaq OSF1 alpha SM       (OpenMP, nesting using RSL without MPI )
+#
+# Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#
 #
 DM_PARALLEL     =       1
 OMP             =       -omp
@@ -2311,6 +2326,9 @@ module_initialize_real.o module_dm.o start_domain.o :
 ###########################################################
 #ARCH       Compaq OSF1 alpha DM       (RSL, MPICH, allows nesting)
 #
+# Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#
+#
 DMPARALLEL      =       1
 OMP             =
 OMPCPP          =
@@ -2411,6 +2429,9 @@ module_initialize_real.o module_dm.o start_domain.o :
 ###########################################################
 #ARCH       Compaq OSF1 alpha DM/SM    (RSL, MPICH, OpenMP, allows nesting)
 #
+# Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#
+#
 DMPARALLEL      =       1
 OMP             =       -omp
 OMPCPP          =       -D_OPENMP
@@ -2510,6 +2531,9 @@ module_initialize_real.o module_dm.o start_domain.o :
 
 ###########################################################
 #ARCH       Compaq OSF1 alpha DM/SM    (RSL, DECMPI, OpenMP, allows nesting)
+#
+# Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#
 #
 DMPARALLEL      =       1
 OMP             =       -omp
@@ -2707,6 +2731,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
+
 ###########################################################
 #ARCH       Compaq OSF1 alpha DM       (RSL, MPICH, RSL IO, MCEL EXPERIMENTAL)
 #
@@ -3313,8 +3338,8 @@ wrfio_nf :
           /bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc )
 
 wrfio_grib1 :
-	( cd ../external/io_grib1 ; make CPP="$(CPP)" FC="$(FC) -I. $(FCDEBUG) $(FCBASEOPTS) -w"\
-	  TRADFLAG="-traditional")
+	( cd ../external/io_grib1 ; \
+          make CC="$(CC)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -3358,6 +3383,8 @@ module_initialize_real.o module_dm.o start_domain.o :
 
 ###########################################################
 #ARCH    PC Linux i486 i586 i686, PGI compiler  (single threaded, supports nesting using RSL without MPI)
+#
+# Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #
 DMPARALLEL      =       1
 MAX_PROC        =       1024
@@ -3412,8 +3439,8 @@ wrfio_nf :
 	/bin/cp wrf_io_flags.h ../io_quilt )
 
 wrfio_grib1 :
-	( cd ../external/io_grib1 ; make CPP="$(CPP)" FC="$(FC) -I. $(FCDEBUG) $(FCBASEOPTS) -I. -w"\
-	  TRADFLAG="-traditional")
+	( cd ../external/io_grib1 ; \
+          make CC="$(CC)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -3506,8 +3533,8 @@ wrfio_nf :
           /bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc )
 
 wrfio_grib1 :
-	( cd ../external/io_grib1 ; make CPP="$(CPP)" FC="$(FC) -I. $(FCDEBUG) $(FCBASEOPTS) -w"\
-	  TRADFLAG="-traditional")
+	( cd ../external/io_grib1 ; \
+          make CC="$(CC)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -3552,6 +3579,9 @@ module_initialize_real.o module_dm.o start_domain.o :
 
 ###########################################################
 #ARCH    PC Linux i486 i586 i686, PGI compiler  SM-Parallel (OpenMP, supports nesting using RSL without MPI)
+#
+# Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#
 #
 OMP             =       -mp
 OMPCPP          =       -D_OPENMP
@@ -3607,17 +3637,13 @@ wrfio_nf :
 	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
 	/bin/cp wrf_io_flags.h ../io_quilt )
 
-wrfio_grib1 :
-	( cd ../external/io_grib1 ; make CPP="$(CPP)" FC="$(FC) -I. $(FCDEBUG) $(FCBASEOPTS) -I. -w"\
-	  TRADFLAG="-traditional")
-
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
 
-wrfio_grib1 : 
+wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -3661,6 +3687,9 @@ module_initialize_real.o module_dm.o start_domain.o :
 
 ###########################################################
 #ARCH    PC Linux i486 i586 i686, PGI compiler  DM-Parallel (RSL, MPICH, RSL IO, support nesting)
+#
+# Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#
 #
 DMPARALLEL      =       1
 MAX_PROC        =       1024
@@ -3715,8 +3744,8 @@ wrfio_nf :
 	/bin/cp wrf_io_flags.h ../io_quilt )
 
 wrfio_grib1 :
-	( cd ../external/io_grib1 ; make CPP="$(CPP)" FC="$(FC) -I. $(FCDEBUG) $(FCBASEOPTS) -I. -w"\
-	  TRADFLAG="-traditional")
+	( cd ../external/io_grib1 ; \
+          make CC="$(CC)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -3817,8 +3846,8 @@ wrfio_nf :
 	/bin/cp wrf_io_flags.h ../io_quilt )
 
 wrfio_grib1 :
-	( cd ../external/io_grib1 ; make CPP="$(CPP)" FC="$(FC) -I. $(FCDEBUG) $(FCBASEOPTS) -w"\
-	  TRADFLAG="-traditional")
+	( cd ../external/io_grib1 ; \
+          make CC="$(CC)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -4129,9 +4158,9 @@ wrfio_nf :  io_flags
           make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC=$(FC) TRADFLAG="-traditional" \
           FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' )
 
-wrfio_grib1 : io_flags
-	( cd ../external/io_grib1 ; make CPP="$(CPP)" FC="$(FC) -I. $(FCDEBUG) $(FCBASEOPTS) -w"\
-	  TRADFLAG="-traditional")
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; \
+          make CC="$(CC)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
 
 wrfio_int :  io_flags
 	( cd ../external/io_int ; \
@@ -4175,6 +4204,9 @@ module_initialize_real.o module_dm.o start_domain.o :
 
 ###########################################################
 #ARCH    PC Linux x86_64 (IA64 and Opteron), PGI compiler 5.2 or higher    (RSL, MPICH, RSL IO, support nesting)
+#
+# Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#
 #        Note that for 5.1.x comment out -Mpia=fast
 #
 DMPARALLEL      =       1
@@ -4235,9 +4267,9 @@ wrfio_int :  io_flags
 	( cd ../external/io_int ; \
           make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
 
-wrfio_grib1 : io_flags
+wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -4336,9 +4368,9 @@ wrfio_nf :  io_flags
           make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC=$(FC) TRADFLAG="-traditional" \
 	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' )
 
-wrfio_grib1 : io_flags
-	( cd ../external/io_grib1 ; make CPP="$(CPP)" FC="$(FC) -I. $(FCDEBUG) $(FCBASEOPTS) -w"\
-	  TRADFLAG="-traditional")
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; \
+          make CC="$(CC)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
 
 wrfio_int : io_flags
 	( cd ../external/io_int ; \
@@ -4730,10 +4762,13 @@ module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
 
 wrfio_nf : 
-	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC) -FR -I. -w" ; /bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc )
+	( cd ../external/io_netcdf ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(SFC) -FR -I. -w" ; \
+          /bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc )
 
 wrfio_grib1 : 
-	( cd ../external/io_grib1 ; make CPP="$(CPP)" FC="$(FC) -I. $(FCDEBUG) $(FCFLAGS) -w")
+	( cd ../external/io_grib1 ; \
+          make CC="$(CC)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCFLAGS) -w")
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -4834,7 +4869,8 @@ wrfio_nf :
           /bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc )
 
 wrfio_grib1 : 
-	( cd ../external/io_grib1 ; make CPP="$(CPP)" FC="$(FC) -I. $(FCDEBUG) $(FCFLAGS) -w")
+	( cd ../external/io_grib1 ; \
+          make CC="$(CC)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCFLAGS) -w")
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -4932,7 +4968,8 @@ wrfio_nf :
 	/bin/cp wrf_io_flags.h ../io_quilt )
 
 wrfio_grib1 : 
-	( cd ../external/io_grib1 ; make CPP="$(CPP)" FC="$(FC) -I. $(FCDEBUG) $(FCFLAGS) -w")
+	( cd ../external/io_grib1 ; \
+          make CC="$(CC)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCFLAGS) -w")
 
 wrfio_int : 
 	( cd ../external/io_int ; \

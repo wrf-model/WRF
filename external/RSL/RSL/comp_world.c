@@ -300,7 +300,7 @@ RSL_GET_RUN_INFOP ( d_p, p_p, maxrun_p, nl_p, nrunj_p, nruni_p,
   }
 
 /*****************/
-  if ( p <=2 )
+  if ( p <= MAX_RUNPAD )
   {
   for ( i = 0 ; i < MAX_RUNPAD-p ; i++ )
   {
@@ -436,6 +436,8 @@ RSL_REG_RUN_INFOP( d_p, p_p, maxrun_p, nl_p,
  ;
     RSL_TEST_ERR( 1,  mess ) ;
   }
+  RSL_TEST_ERR( ((! sw_allow_dynpad) && p > 4),
+   "Invalid to call RSL_REG_RUN_INFOP with p > 4 if RSL_ALLOW_DYNPAD has not been called.\n") ;
   RSL_TEST_ERR( domain_info[d].valid != RSL_VALID,
      "rsl_init_nextcell: invalid domain") ;
   if ( domain_info[d].decomposed != 1 )
@@ -495,6 +497,93 @@ RSL_REG_RUN_INFOP( d_p, p_p, maxrun_p, nl_p,
       ie[i]=domain_info[d].is[p][WHICH_RUN] + cnt ;  /* yes -> is */
       cnt++ ;
     }
+  }
+}
+
+RSL_DYNPAD_7    ( d_p, maxrun_p, nl_p,
+		  is, ie,
+		  js, je,
+		  idif_p, jdif_p )
+  int_p
+    d_p          /* (I) RSL domain descriptor (input) */
+   ,maxrun_p     /* (I) Number of elements in array arguments to this routine */
+   ,nl_p         /* (O) Nest level of the domain */
+   ,is          /* 2d arrays -- first index is array elements, second is runpad from 0..6 */
+   ,ie
+   ,js
+   ,je
+   ,idif_p
+   ,jdif_p ;
+{
+  int d, i, j, p, cnt ;
+  d = *d_p ;
+
+  RSL_TEST_ERR( d < 0 || d >= RSL_MAXDOMAINS,
+     "rsl_get_run_info: bad domain") ;
+  RSL_TEST_ERR( domain_info[d].valid != RSL_VALID,
+     "rsl_init_nextcell: invalid domain") ;
+  RSL_TEST_ERR( ! sw_allow_dynpad, "RSL_DYNPAD_7 cannot be used unless RSL_ALLOW_DYNPAD has been called") ; 
+  if ( domain_info[d].decomposed != 1 )
+  {
+    default_decomposition( d_p,
+                           &(domain_info[*d_p].loc_m),
+                           &(domain_info[*d_p].loc_n) ) ;
+  }
+  RSL_TEST_ERR( domain_info[*d_p].len_n > *maxrun_p,
+    "domain_info[*d_p].len_n > *maxrun_p") ;
+  RSL_TEST_ERR( domain_info[*d_p].len_m > *maxrun_p,
+    "domain_info[*d_p].len_m > *maxrun_p") ;
+
+  *nl_p = domain_info[d].nest_level ;
+  *idif_p = domain_info[d].idif ;
+  *jdif_p = domain_info[d].jdif ;
+
+  for ( p = 0 ; p <= 6 ; p++ )
+  {
+
+#define WHICH_RUN 0
+/* in following code, note assumptions on order of traversal,
+   contiguity of points, and rectangularity of partitions */
+  /** js, je **/
+  for ( j=0, cnt=0 ; j < domain_info[*d_p].len_n ; j++ )
+  {
+    if ( j+1 < domain_info[d].js2[p][WHICH_RUN]-*jdif_p )
+    {
+      js[j+*maxrun_p*p]=domain_info[d].js2[p][WHICH_RUN] ;
+      je[j+*maxrun_p*p]=-9999999 ;
+    }
+    else if ( j+1 > domain_info[d].je2[p][WHICH_RUN]-*jdif_p )
+    {
+      js[j+*maxrun_p*p]=9999999 ;
+      je[j+*maxrun_p*p]=domain_info[d].je2[p][WHICH_RUN] ;
+    }
+    else
+    {
+      js[j+*maxrun_p*p]=domain_info[d].js2[p][WHICH_RUN] + cnt ;
+      je[j+*maxrun_p*p]=domain_info[d].js2[p][WHICH_RUN] + cnt ;  /* yes -> js2 */
+      cnt++ ;
+    }
+  }
+  /** is, ie **/
+  for ( i=0, cnt=0 ; i < domain_info[*d_p].len_m ; i++ )
+  {
+    if ( i+1 < domain_info[d].is[p][WHICH_RUN]-*idif_p )
+    {
+      is[i+*maxrun_p*p]=domain_info[d].is[p][WHICH_RUN] ;
+      ie[i+*maxrun_p*p]=-9999999 ;
+    }
+    else if ( i+1 > domain_info[d].ie[p][WHICH_RUN]-*idif_p )
+    {
+      is[i+*maxrun_p*p]=9999999 ;
+      ie[i+*maxrun_p*p]=domain_info[d].ie[p][WHICH_RUN] ;
+    }
+    else
+    {
+      is[i+*maxrun_p*p]=domain_info[d].is[p][WHICH_RUN] + cnt ;
+      ie[i+*maxrun_p*p]=domain_info[d].is[p][WHICH_RUN] + cnt ;  /* yes -> is */
+      cnt++ ;
+    }
+  }
   }
 }
 

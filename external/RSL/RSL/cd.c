@@ -292,7 +292,14 @@ rsl_default_decomp( w1, w2, info_p, m_p, n_p, py_p, px_p )
 
   for ( i = 0 ; i < *n_p * *m_p ; i++ )
     w2[i] = w1[i] ;
-  decomp_region_2( w2, *m_p, *n_p, *py_p, *px_p ) ;
+  if ( regular_decomp )
+  {
+    patchmap( w2, *m_p, *n_p, *py_p, *px_p ) ;
+  }
+  else
+  {
+    decomp_region_2( w2, *m_p, *n_p, *py_p, *px_p ) ;
+  }
   return(0) ;
 }
 #else

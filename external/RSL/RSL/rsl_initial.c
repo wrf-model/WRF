@@ -126,6 +126,7 @@ RSL_INITIALIZE ()
   io_seq_compute = 1 ;  /* OBS */
 
   regular_decomp = 0 ;
+  sw_allow_dynpad = 0 ;
 
 
 

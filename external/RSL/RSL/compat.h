@@ -190,6 +190,7 @@
 #   define RSL_GET_RUN_INFO       rsl_get_run_info_
 #   define RSL_GET_RUN_INFOP      rsl_get_run_infop_
 #   define RSL_REG_RUN_INFOP      rsl_reg_run_infop_
+#   define RSL_DYNPAD_7           rsl_dynpad_7_
 
 #   define RSL_CHILD_INFO         rsl_child_info_
 #   define RSL_CHILD_INFO1        rsl_child_info1_
@@ -227,6 +228,7 @@
 #   define VRCOPY   vrcopy_
 
 #   define RSL_SET_REGULAR_DECOMP  rsl_set_regular_decomp_
+#   define RSL_ALLOW_DYNPAD  rsl_allow_dynpad_
 
 #  else
 
@@ -348,6 +350,7 @@
 #   define RSL_GET_RUN_INFO       rsl_get_run_info
 #   define RSL_GET_RUN_INFOP      rsl_get_run_infop
 #   define RSL_REG_RUN_INFOP      rsl_reg_run_infop
+#   define RSL_DYNPAD_7           rsl_dynpad_7
 
 #   define RSL_CHILD_INFO         rsl_child_info
 #   define RSL_CHILD_INFO1        rsl_child_info1
@@ -385,6 +388,7 @@
 #   define VRCOPY   vrcopy
 
 #   define RSL_SET_REGULAR_DECOMP  rsl_set_regular_decomp
+#   define RSL_ALLOW_DYNPAD  rsl_allow_dynpad
 
 #  endif
 #endif

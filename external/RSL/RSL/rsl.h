@@ -106,8 +106,8 @@
 #define NLOW (RSL_NLOW-1)
 #define NHIGH (RSL_NHIGH-1)
 
-#define MAX_RUNPAD  2
-#define MAX_KINDPAD 4
+#define MAX_RUNPAD  6
+#define MAX_KINDPAD 8
 /* break ties in boundary classification */
 #define M_WINS      0                   /* FORTRAN */
 #define N_WINS      1                   /* FORTRAN */
@@ -526,6 +526,7 @@ EXTERN int rsl_debug_flg ;	/* set by rsl_debug */
 EXTERN int old_offsets ;	/* used in rsl_new_decomp.c */
 
 EXTERN int regular_decomp ;
+EXTERN int sw_allow_dynpad ;
 
 /* rsl macros */
 

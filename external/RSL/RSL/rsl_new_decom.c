@@ -109,7 +109,8 @@ rsl_new_decomposition( d_p, mloc_p, nloc_p )
   int nrun, eff_n, dex ;
   rsl_list_t *rp ;
 
-  extern rsl_4pt(), rsl_8pt(), rsl_12pt(), rsl_24pt(), count_neighbors() ;
+  extern rsl_4pt(), rsl_8pt(), rsl_12pt(), rsl_24pt(), rsl_48pt(),
+         rsl_80pt(), rsl_120pt(), rsl_168pt(), count_neighbors() ;
 #if ( ALLOW_RSL_168PT == 1 )
   extern rsl_168pt() ;
 #endif
@@ -433,19 +434,47 @@ rsl_new_decomposition( d_p, mloc_p, nloc_p )
               switch ( p )
               {
               case 1 :
-                rsl_8pt( d, m, mlen, n, nlen, count_neighbors ) ;
+                rsl_8pt( d, m, mlen, n, nlen, count_neighbors ) ;   
                 break ;
               case 2 :
-                rsl_24pt( d, m, mlen, n, nlen, count_neighbors ) ;
+                rsl_24pt( d, m, mlen, n, nlen, count_neighbors ) ;  
                 break ;
-              case 3 :
+	      case 3 :
+		if ( sw_allow_dynpad )
+		{
+                  rsl_48pt( d, m, mlen, n, nlen, count_neighbors ) ;
+		}
+		else
+		{
+                  rsl_2ptm( d, m, mlen, n, nlen, count_neighbors ) ; /* 1 extra ns */
+		}
+                break ;
+	      case 4 :
+		if ( sw_allow_dynpad )
+		{
+                  rsl_80pt( d, m, mlen, n, nlen, count_neighbors ) ;
+		}
+		else
+		{
+                  rsl_4ptm( d, m, mlen, n, nlen, count_neighbors ) ; /* 2 extra ns */
+		}
+                break ;
+	      case 5 :
+                rsl_120pt( d, m, mlen, n, nlen, count_neighbors ) ;
+                break ;
+	      case 6 :
+                rsl_168pt( d, m, mlen, n, nlen, count_neighbors ) ; 
+                break ;
+	      /* special cases */
+              case 7 :
                 rsl_2ptm( d, m, mlen, n, nlen, count_neighbors ) ; /* 1 extra ns */
                 break ;
-              case 4 :
+              case 8 :
                 rsl_4ptm( d, m, mlen, n, nlen, count_neighbors ) ; /* 2 extra ns */
                 break ;
               default :
-                RSL_TEST_ERR(1,"internal error") ; 
+                sprintf(mess,"internal error p=%d\n",p) ;
+                RSL_TEST_ERR(1,mess) ; 
               }
             }
           }
@@ -618,3 +647,7 @@ rsl_new_decomposition( d_p, mloc_p, nloc_p )
   }
 }
 
+RSL_ALLOW_DYNPAD ()
+{
+  sw_allow_dynpad = 1 ;
+}

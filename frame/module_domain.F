@@ -138,6 +138,79 @@ MODULE module_domain
    
 CONTAINS
 
+   SUBROUTINE adjust_domain_dims_for_move( grid , dx, dy )
+    IMPLICIT NONE
+
+    TYPE( domain ), INTENT (INOUT)  :: grid
+    INTEGER, INTENT(IN) ::  dx, dy
+
+    data_ordering : SELECT CASE ( model_data_order )
+       CASE  ( DATA_ORDER_XYZ )
+            grid%sm31  =             grid%sm31 + dx
+            grid%em31  =             grid%em31 + dx
+            grid%sm32  =             grid%sm32 + dy
+            grid%em32  =             grid%em32 + dy
+            grid%sp31  =             grid%sp31 + dx
+            grid%ep31  =             grid%ep31 + dx
+            grid%sp32  =             grid%sp32 + dy
+            grid%ep32  =             grid%ep32 + dy
+
+       CASE  ( DATA_ORDER_YXZ )
+            grid%sm31  =             grid%sm31 + dy
+            grid%em31  =             grid%em31 + dy
+            grid%sm32  =             grid%sm32 + dx
+            grid%em32  =             grid%em32 + dx
+            grid%sp31  =             grid%sp31 + dy
+            grid%ep31  =             grid%ep31 + dy
+            grid%sp32  =             grid%sp32 + dx
+            grid%ep32  =             grid%ep32 + dx
+
+       CASE  ( DATA_ORDER_ZXY )
+            grid%sm32  =             grid%sm32 + dx
+            grid%em32  =             grid%em32 + dx
+            grid%sm33  =             grid%sm33 + dy
+            grid%em33  =             grid%em33 + dy
+            grid%sp32  =             grid%sp32 + dx
+            grid%ep32  =             grid%ep32 + dx
+            grid%sp33  =             grid%sp33 + dy
+            grid%ep33  =             grid%ep33 + dy
+
+       CASE  ( DATA_ORDER_ZYX )
+            grid%sm32  =             grid%sm32 + dy
+            grid%em32  =             grid%em32 + dy
+            grid%sm33  =             grid%sm33 + dx
+            grid%em33  =             grid%em33 + dx
+            grid%sp32  =             grid%sp32 + dy
+            grid%ep32  =             grid%ep32 + dy
+            grid%sp33  =             grid%sp33 + dx
+            grid%ep33  =             grid%ep33 + dx
+
+       CASE  ( DATA_ORDER_XZY )
+            grid%sm31  =             grid%sm31 + dx
+            grid%em31  =             grid%em31 + dx
+            grid%sm33  =             grid%sm33 + dy
+            grid%em33  =             grid%em33 + dy
+            grid%sp31  =             grid%sp31 + dx
+            grid%ep31  =             grid%ep31 + dx
+            grid%sp33  =             grid%sp33 + dy
+            grid%ep33  =             grid%ep33 + dy
+
+       CASE  ( DATA_ORDER_YZX )
+            grid%sm31  =             grid%sm31 + dy
+            grid%em31  =             grid%em31 + dy
+            grid%sm33  =             grid%sm33 + dx
+            grid%em33  =             grid%em33 + dx
+            grid%sp31  =             grid%sp31 + dy
+            grid%ep31  =             grid%ep31 + dy
+            grid%sp33  =             grid%sp33 + dx
+            grid%ep33  =             grid%ep33 + dx
+
+    END SELECT data_ordering
+    RETURN
+
+   END SUBROUTINE adjust_domain_dims_for_move
+
+
    SUBROUTINE get_ijk_from_grid (  grid ,                   &
                            ids, ide, jds, jde, kds, kde,    &
                            ims, ime, jms, jme, kms, kme,    &

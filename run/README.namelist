@@ -105,7 +105,6 @@ Additional ones when running 3DVAR:
  parent_time_step_ratio (max_dom)    = 1,       ; parent-to-nest time step ratio; it can be different
                                                   from the parent_grid_ratio
  feedback                            = 1,       ; feedback from nest to its parent domain; 0 = no feedback
-                                                  works only if the parent_grid_ratio is odd
  smooth_option                       = 0        ; smoothing option for parent domain, used only with feedback
                                                   option on. 0: no smoothing; 1: 1-2-1 smoothing; 2: smoothing-desmoothing
 

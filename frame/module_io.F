@@ -44,6 +44,9 @@ SUBROUTINE wrf_ioinit( Status )
 #ifdef PHDF5
   CALL ext_phdf5_ioinit(SysDepInfo, Status )
 #endif
+#ifdef MCELIO
+  CALL ext_mcel_ioinit(SysDepInfo, Status )
+#endif
 #ifdef YYY
   CALL ext_yyy_ioinit(SysDepInfo, Status )
 #endif

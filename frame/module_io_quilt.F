@@ -192,9 +192,14 @@ MODULE module_ext_quilt
 #ifdef NETCDF
       CALL ext_ncd_ioinit( SysDepInfo, ierr)
 #endif
-
+#ifdef PHDF5
+  CALL ext_phdf5_ioinit( SysDepInfo, ierr)
+#endif
+#ifdef MCELIO
+  CALL ext_mcel_ioinit( SysDepInfo, ierr)
+#endif
 #ifdef YYY
-      CALL ext_yyy_ioinit(ierr)
+      CALL ext_yyy_ioinit( SysDepInfo, ierr)
 #endif
 
       okay_to_commit = .false.

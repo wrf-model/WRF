@@ -1,0 +1,772 @@
+-1:250:2:200
+0:var0:undefined::
+1:PRES:Pressure [Pa]:P,PSFC:1
+2:PRMSL:Pressure reduced to MSL [Pa]::
+3:PTEND:Pressure tendency [Pa/s]::
+4:PVORT:Pot. vorticity [km^2/kg/s]::
+5:ICAHT:ICAO Standard Atmosphere Reference Height [M]::
+6:GP:Geopotential [m^2/s^2]:PHP:1
+7:HGT:Geopotential height [gpm]::
+8:DIST:Geometric height [m]:HGT:1
+9:HSTDV:Std dev of height [m]::
+10:TOZNE:Total ozone [Dobson]::
+11:TMP:Temp. [K]:T2,TSK:1
+12:VTMP:Virtual temp. [K]::
+13:POT:Potential temp. [K]:TH2,THZ0,T:1
+14:EPOT:Pseudo-adiabatic pot. temp. [K]::
+15:TMAX:Max. temp. [K]::
+16:TMIN:Min. temp. [K]::
+17:DPT:Dew point temp. [K]::
+18:DEPR:Dew point depression [K]::
+19:LAPR:Lapse rate [K/m]::
+20:VIS:Visibility [m]::
+21:RDSP1:Radar spectra (1) [non-dim]::
+22:RDSP2:Radar spectra (2) [non-dim]::
+23:RDSP3:Radar spectra (3) [non-dim]::
+24:PLI:Parcel lifted index (to 500 hPa) [K]::
+25:TMPA:Temp. anomaly [K]::
+26:PRESA:Pressure anomaly [Pa]::
+27:GPA:Geopotential height anomaly [gpm]::
+28:WVSP1:Wave spectra (1) [non-dim]::
+29:WVSP2:Wave spectra (2) [non-dim]::
+30:WVSP3:Wave spectra (3) [non-dim]::
+31:WDIR:Wind direction [deg]::
+32:WIND:Wind speed [m/s]::
+33:UGRD:u wind [m/s]:U,U10,UZ0:1
+34:VGRD:v wind [m/s]:V,V10,VZ0:1
+35:STRM:Stream function [m^2/s]::
+36:VPOT:Velocity potential [m^2/s]::
+37:MNTSF:Montgomery stream function [m^2/s^2]::
+38:SGCVV:Sigma coord. vertical velocity [/s]:WW:3
+39:VVEL:Pressure vertical velocity [Pa/s]::
+40:DZDT:Geometric vertical velocity [m/s]:W:3
+41:ABSV:Absolute vorticity [/s]::
+42:ABSD:Absolute divergence [/s]::
+43:RELV:Relative vorticity [/s]::
+44:RELD:Relative divergence [/s]::
+45:VUCSH:Vertical u shear [/s]::
+46:VVCSH:Vertical v shear [/s]::
+47:DIRC:Direction of current [deg]::
+48:SPC:Speed of current [m/s]::
+49:UOGRD:u of current [m/s]::
+50:VOGRD:v of current [m/s]::
+51:SPFH:Specific humidity [kg/kg]:QZ0,QSFC:5
+52:RH:Relative humidity [%]::
+53:MIXR:Humidity mixing ratio [kg/kg]:QVAPOR,Q2:5
+54:PWAT:Precipitable water [kg/m^2]::
+55:VAPP:Vapor pressure [Pa]::
+56:SATD:Saturation deficit [Pa]::
+57:EVP:Evaporation [kg/m^2]:SFCEVP:3
+58:CICE:Cloud Ice [kg/m^2]::
+59:PRATE:Precipitation rate [kg/m^2/s]::
+60:TSTM:Thunderstorm probability [%]::
+61:APCP:Total precipitation [kg/m^2]::
+62:NCPCP:Large scale precipitation [kg/m^2]:NCPCP:2
+63:ACPCP:Convective precipitation [kg/m^2]:,ACPCP:2
+64:SRWEQ:Snowfall rate water equiv. [kg/m^2/s]::
+65:WEASD:Accum. snow [kg/m^2]:WEASD:2
+66:SNOD:Snow depth [m]:SNOWH:4
+67:MIXHT:Mixed layer depth [m]::
+68:TTHDP:Transient thermocline depth [m]::
+69:MTHD:Main thermocline depth [m]::
+70:MTHA:Main thermocline anomaly [m]::
+71:TCDC:Total cloud cover [%]::
+72:CDCON:Convective cloud cover [%]::
+73:LCDC:Low level cloud cover [%]::
+74:MCDC:Mid level cloud cover [%]::
+75:HCDC:High level cloud cover [%]::
+76:CWAT:Cloud water [kg/m^2]::
+77:BLI:Best lifted index (to 500 hPa) [K]::
+78:SNOC:Convective snow [kg/m^2]::
+79:SNOL:Large scale snow [kg/m^2]::
+80:WTMP:Water temp. [K]:SST:1
+81:LAND:Land cover (land=1;sea=0) [fraction]:XLAND,LANDMASK:0
+82:DSLM:Deviation of sea level from mean [m]::
+83:SFCR:Surface roughness [m]::
+84:ALBDO:Albedo [%]::
+85:TSOIL:Soil temp. [K]:TSLB:2
+86:SOILM:Soil moisture content [kg/m^2]:SMSTOT:2
+87:VEG:Vegetation [%]:VEGFRA:2
+88:SALTY:Salinity [kg/kg]::
+89:DEN:Density [kg/m^3]::
+90:WATR:Water runoff [kg/m^2]::
+91:ICEC:Ice concentration (ice=1;no ice=0) [fraction]:XICE:0
+92:ICETK:Ice thickness [m]::
+93:DICED:Direction of ice drift [deg]::
+94:SICED:Speed of ice drift [m/s]::
+95:UICE:u of ice drift [m/s]::
+96:VICE:v of ice drift [m/s]::
+97:ICEG:Ice growth rate [m/s]::
+98:ICED:Ice divergence [/s]::
+99:SNOM:Snow melt [kg/m^2]::
+100:HTSGW:Sig height of wind waves and swell [m]::
+101:WVDIR:Direction of wind waves [deg]::
+102:WVHGT:Sig height of wind waves [m]::
+103:WVPER:Mean period of wind waves [s]::
+104:SWDIR:Direction of swell waves [deg]::
+105:SWELL:Sig height of swell waves [m]::
+106:SWPER:Mean period of swell waves [s]::
+107:DIRPW:Primary wave direction [deg]::
+108:PERPW:Primary wave mean period [s]::
+109:DIRSW:Secondary wave direction [deg]::
+110:PERSW:Secondary wave mean period [s]::
+111:NSWRS:Net short wave (surface) [W/m^2]::
+112:NLWRS:Net long wave (surface) [W/m^2]::
+113:NSWRT:Net short wave (top) [W/m^2]::
+114:NLWRT:Net long wave (top) [W/m^2]::
+115:LWAVR:Long wave [W/m^2]::
+116:SWAVR:Short wave [W/m^2]::
+117:GRAD:Global radiation [W/m^2]::
+118:BRTMP:Brightness temperature [K]::
+119:LWRAD:Radiance with respect to wave no. [W/m/sr]::
+120:SWRAD:Radiance with respect ot wave len. [W/m^3/sr]::
+121:LHTFL:Latent heat flux [W/m^2]:LH:1
+122:SHTFL:Sensible heat flux [W/m^2]::
+123:BLYDP:Boundary layer dissipation [W/m^2]::
+124:UFLX:Zonal momentum flux [N/m^2]::
+125:VFLX:Meridional momentum flux [N/m^2]::
+126:WMIXE:Wind mixing energy [J]::
+127:IMGD:Image data []::
+128:MSLSA:Mean sea level pressure (Std Atm) [Pa]::
+129:MSLMA:Mean sea level pressure (MAPS) [Pa]::
+130:MSLET:Mean sea level pressure (ETA model) [Pa]::
+131:LFTX:Surface lifted index [K]::
+132:4LFTX:Best (4-layer) lifted index [K]::
+133:KX:K index [K]::
+134:LU_INDEX:Land Use Category:LU_INDEX:0
+135:GP_BASE:Base-state geopotential [m^2/s^2]:PHB:1
+136:GP_PERT:Perturbation geopotential [m^2/s^2]:PH:1
+137:CFN:CFN from WRF [?]:CFN:3
+138:CFN:CFN1 from WRF [?]:CFN1:3
+139:MU_BASE:Base-state dry air mass in column [Pa]:MUB:1
+140:MU_PERT:Perturbation dry air mass in column [Pa]:MU:1
+141:MU_INIT:Initial dry air mass in column [Pa]:MU0:1
+142:P_BASE:Base-state pressure [Pa]:PB:1
+143:DN:DN values [dimensionless]:DN,DNW:3
+144:SOILW:Volumetric soil moisture [fraction]:SMOIS:2
+145:PEVPR:Potential evaporation rate [W/m^2]::
+146:RDN:Inverse DN values [dimensionless]:RDN,RDNW:3
+147:FNP:Lower weight for vertical stretching [dimensionless]:FNP:3
+148:FNM:Upper weight for vertical stretching [dimensionless]:FNM:3
+149:ZN:Eta values [dimensionless]:ZNU,ZNW:4
+150:ZETATOP:ZETA at model top [dimensionless]:ZETATOP:3
+151:PTOP:Pressure at model top [Pa]:P_TOP:2
+152:TIMESTEP:Timestep number:ITIMESTEP:0
+153:CLWMR:Cloud water [kg/kg]:QCLOUD:8
+154:O3MR:Ozone mixing ratio [kg/kg]::
+155:GFLUX:Ground heat flux [W/m^2]:GRDFLX,HFX:1
+156:RAINBL:Acc. precip. over Boundary Layer time step [kg/m^2]:RAINBL:2
+157:CAPE:Convective Avail. Pot. Energy [J/kg]::
+158:TKE:Turbulent kinetic energy [J/kg]:TKE,TKE_MYJ:2
+159:CONDP:Lifted parcel condensation pressure [Pa]::
+160:SOILL:Liquid volumetric soil moisture (non-frozen) [fraction]:SH2O:4
+161:CSDSF:Clear sky downward solar flux [W/m^2]::
+162:CSULF:Clear sky upward long wave flux [W/m^2]::
+163:CSDLF:Clear sky downward long wave flux [W/m^2]::
+164:CFNSF:Cloud forcing net solar flux [W/m^2]::
+165:CFNLF:Cloud forcing net long wave flux [W/m^2]::
+166:VBDSF:Visible beam downward solar flux [W/m^2]::
+167:VDDSF:Visible diffuse downward solar flux [W/m^2]::
+168:NBDSF:Near IR beam downward solar flux [W/m^2]::
+169:NDDSF:Near IR diffuse downward solar flux [W/m^2]::
+170:RWMR:Rain water mixing ratio [kg/kg]:QRAIN:5
+171:SNMR:Snow mixing ratio [kg/kg]:QSNOW:5
+172:RESM:Time weight constant for small steps:RESM:3
+173:RDX:Inverse X Grid Length [1/km]:RDX:5
+174:RDX:Inverse Y Grid Length [1/km]:RDY:5
+175:MLYNO:Model layer number (from bottom up) [non-dim]::
+176:NLAT:Latitude (-90 to +90) [deg]:XLAT:4
+177:ELON:East longitude (0-360) [deg]:XLONG:4
+178:ICMR:Ice mixing ratio [kg/kg]:QICE:5
+179:GRMR:Graupel mixing ratio:QGRAUP:5
+180:MAPFAC:Map Scale Factor [dimensionless]:MAPFAC_M,MAPFAC_U,MAPFAC_V:7
+181:ZS:Depth of soil layer (midpoint) [m]:ZS:3
+182:DZS:Thickness of soil layer [m]:DZS:3
+183:SINALPHA:Local sine of map rotation:SINALPHA:4
+184:COSALPHA:Local cosine of map rotation:COSALPHA:4
+185:TURB:Turbulence SIGMET/AIRMET [non-dim]::
+186:EPSTS:EPSTS in WRF [?]:EPSTS:3
+187:LTNG:Lightning [non-dim]::
+188:AKMS:Surface Exchange for Momentum [m/s]:AKMS:3
+189:VPTMP:Virtual pot. temp. [K]::
+190:HLCY:Storm relative helicity [m^2/s^2]::
+191:PROB:Prob. from ensemble [non-dim]::
+192:PROBN:Prob. from ensemble norm. to clim. expect. [non-dim]::
+193:POP:Prob. of precipitation [%]::
+194:CPOFP:Prob. of frozen precipitation [%]::
+195:CPOZP:Prob. of freezing precipitation [%]::
+196:USTM:u-component of storm motion [m/s]::
+197:VSTM:v-component of storm motion [m/s]::
+198:NCIP:No. concen. ice particles::
+199:EVBS:Direct evaporation from bare soil [W/m^2]::
+200:EVCW:Canopy water evaporation [W/m^2]::
+201:ICWAT:Ice-free water surface [%]::
+202:ACSNOW:Accumulated Snow [cm]:ACSNOW:2
+203:ACSNOM:Accumulated Melted Snow [cm]:ACSNOM:2
+204:DSWRF:Downward short wave flux [W/m^2]:SWDOWN,GSW:1
+205:DLWRF:Downward long wave flux [W/m^2]:GLW:1
+206:UVI:Ultra violet index (1 hour centered at solar noon) [J/m^2]::
+207:MSTAV:Moisture availability [%]:SMSTAV:1
+208:SFEXC:Exchange coefficient [(kg/m^3)(m/s)]:SFCEXC,AKHS:5
+209:MIXLY:No. of mixed layers next to surface [integer]::
+210:TRANS:Transpiration [W/m^2]::
+211:USWRF:Upward short wave flux [W/m^2]::
+212:ULWRF:Upward long wave flux [W/m^2]::
+213:CDLYR:Non-convective cloud [%]::
+214:GustPot:Gust Speed Potential [m/s]::
+215:GustSpd:Gust Speed [m/s]::
+216:LtngPot:Lightning Potential [1/m2/s]::
+217:LtngFR:Lightning Flash Rate [1/m2/s]::
+218:HailPot:Hail Size Potential [mm]::
+219:HailSize:Hail Size [mm]::
+220:ConvMask:Convetive Mask [fraction]::
+221:HPBL:Planetary boundary layer height [m]:PBLH:1
+222:5WAVH:5-wave geopotential height [gpm]::
+223:CNWAT:Plant canopy surface water [kg/m^2]:CANWAT:2
+224:SOTYP:Soil type (Zobler) [0..9]:ISLTYP:0
+225:VGTYP:Vegetation type (as in SiB) [0..13]:IVGTYP:0
+226:BMIXL:Blackadar's mixing length scale [m]::
+227:CSLAT:Coriolis sine latitude term:F:6
+228:CCLAT:Coriolis cosine latitude term:E:6
+229:CF1:Second-order extrapolation constant 1:CF1:5
+230:CF2:Second-order extrapolation constant 2:CF2:5
+231:CF3:Second-order extrapolation constant 3:CF3:5
+232:DTRF:Downward total radiation flux [W/m^2]::
+233:UTRF:Upward total radiation flux [W/m^2]::
+234:BGRUN:Baseflow-groundwater runoff [kg/m^2]:UDROFF:2
+235:SSRUN:Storm surface runoff [kg/m^2]:SFROFF:
+236:SNOW:Snow Water Equivalent [kg/m^2]:SNOW:2
+237:O3TOT:Total ozone [kg/m^2]::
+238:SNOWC:Snow cover [%]:SNOWC:0
+239:SNOT:Snow temp. [K]::
+240:QFX:Upward moisture flux [kg/(m^s)]:QFX:3
+241:CGustSpd:Convective Gust Speed [m/s]::
+242:SGustSpd:Shear Gust Speed [m/s]::
+243:HCCT:Geopotential height of convective cloud top [m]::
+244:Zdowndft:Height above ground of origin of downdraft [m]::
+245:DCAPE:Downward Convective Available Potential Energy [J/kg]::
+246:MaxUpdft:Maximum updraft velocity [m/s]::
+247:NPRATE:Non-convective Precip Rate[kg/m^2/s]:RAINNCV:7
+248:CPRATE:Convective Precip Rate[kg/m^2/s]:RAINCV:7 
+249:TMN:Ground Reservoir Temperature [K]:TMN:2
+250:SWHR:Solar radiative heating [K/s]::
+251:LWHR:Longwave radiative heating [K/s]::
+252:PSTAR:psfc - 100 [Pa]::
+253:TNCPCP:Total Large scale precipitation [kg/m^2]:RAINNC:2
+254:TACPCP:Total Convective precipitation [kg/m^2]:RAINC:2
+255:var255:undefined::
+-1:7:-1:129
+0:var0:undefined
+1:PRES:Pressure [Pa]
+2:PRMSL:Pressure reduced to MSL [Pa]
+3:PTEND:Pressure tendency [Pa/s]
+4:PVORT:Pot. vorticity [km^2/kg/s]
+5:ICAHT:ICAO Standard Atmosphere Reference Height [M]
+6:GP:Geopotential [m^2/s^2]
+7:HGT:Geopotential height [gpm]
+8:DIST:Geometric height [m]
+9:HSTDV:Std dev of height [m]
+10:TOZNE:Total ozone [Dobson]
+11:TMP:Temp. [K]
+12:VTMP:Virtual temp. [K]
+13:POT:Potential temp. [K]
+14:EPOT:Pseudo-adiabatic pot. temp. [K]
+15:TMAX:Max. temp. [K]
+16:TMIN:Min. temp. [K]
+17:DPT:Dew point temp. [K]
+18:DEPR:Dew point depression [K]
+19:LAPR:Lapse rate [K/m]
+20:VIS:Visibility [m]
+21:RDSP1:Radar spectra (1) [non-dim]
+22:RDSP2:Radar spectra (2) [non-dim]
+23:RDSP3:Radar spectra (3) [non-dim]
+24:PLI:Parcel lifted index (to 500 hPa) [K]
+25:TMPA:Temp. anomaly [K]
+26:PRESA:Pressure anomaly [Pa]
+27:GPA:Geopotential height anomaly [gpm]
+28:WVSP1:Wave spectra (1) [non-dim]
+29:WVSP2:Wave spectra (2) [non-dim]
+30:WVSP3:Wave spectra (3) [non-dim]
+31:WDIR:Wind direction [deg]
+32:WIND:Wind speed [m/s]
+33:UGRD:u wind [m/s]
+34:VGRD:v wind [m/s]
+35:STRM:Stream function [m^2/s]
+36:VPOT:Velocity potential [m^2/s]
+37:MNTSF:Montgomery stream function [m^2/s^2]
+38:SGCVV:Sigma coord. vertical velocity [/s]
+39:VVEL:Pressure vertical velocity [Pa/s]
+40:DZDT:Geometric vertical velocity [m/s]
+41:ABSV:Absolute vorticity [/s]
+42:ABSD:Absolute divergence [/s]
+43:RELV:Relative vorticity [/s]
+44:RELD:Relative divergence [/s]
+45:VUCSH:Vertical u shear [/s]
+46:VVCSH:Vertical v shear [/s]
+47:DIRC:Direction of current [deg]
+48:SPC:Speed of current [m/s]
+49:UOGRD:u of current [m/s]
+50:VOGRD:v of current [m/s]
+51:SPFH:Specific humidity [kg/kg]
+52:RH:Relative humidity [%]
+53:MIXR:Humidity mixing ratio [kg/kg]
+54:PWAT:Precipitable water [kg/m^2]
+55:VAPP:Vapor pressure [Pa]
+56:SATD:Saturation deficit [Pa]
+57:EVP:Evaporation [kg/m^2]
+58:CICE:Cloud Ice [kg/m^2]
+59:PRATE:Precipitation rate [kg/m^2/s]
+60:TSTM:Thunderstorm probability [%]
+61:APCP:Total precipitation [kg/m^2]
+62:NCPCP:Large scale precipitation [kg/m^2]
+63:ACPCP:Convective precipitation [kg/m^2]
+64:SRWEQ:Snowfall rate water equiv. [kg/m^2/s]
+65:WEASD:Accum. snow [kg/m^2]
+66:SNOD:Snow depth [m]
+67:MIXHT:Mixed layer depth [m]
+68:TTHDP:Transient thermocline depth [m]
+69:MTHD:Main thermocline depth [m]
+70:MTHA:Main thermocline anomaly [m]
+71:TCDC:Total cloud cover [%]
+72:CDCON:Convective cloud cover [%]
+73:LCDC:Low level cloud cover [%]
+74:MCDC:Mid level cloud cover [%]
+75:HCDC:High level cloud cover [%]
+76:CWAT:Cloud water [kg/m^2]
+77:BLI:Best lifted index (to 500 hPa) [K]
+78:SNOC:Convective snow [kg/m^2]
+79:SNOL:Large scale snow [kg/m^2]
+80:WTMP:Water temp. [K]
+81:LAND:Land cover (land=1;sea=0) [fraction]
+82:DSLM:Deviation of sea level from mean [m]
+83:SFCR:Surface roughness [m]
+84:ALBDO:Albedo [%]
+85:TSOIL:Soil temp. [K]
+86:SOILM:Soil moisture content [kg/m^2]
+87:VEG:Vegetation [%]
+88:SALTY:Salinity [kg/kg]
+89:DEN:Density [kg/m^3]
+90:WATR:Water runoff [kg/m^2]
+91:ICEC:Ice concentration (ice=1;no ice=0) [fraction]
+92:ICETK:Ice thickness [m]
+93:DICED:Direction of ice drift [deg]
+94:SICED:Speed of ice drift [m/s]
+95:UICE:u of ice drift [m/s]
+96:VICE:v of ice drift [m/s]
+97:ICEG:Ice growth rate [m/s]
+98:ICED:Ice divergence [/s]
+99:SNOM:Snow melt [kg/m^2]
+100:HTSGW:Sig height of wind waves and swell [m]
+101:WVDIR:Direction of wind waves [deg]
+102:WVHGT:Sig height of wind waves [m]
+103:WVPER:Mean period of wind waves [s]
+104:SWDIR:Direction of swell waves [deg]
+105:SWELL:Sig height of swell waves [m]
+106:SWPER:Mean period of swell waves [s]
+107:DIRPW:Primary wave direction [deg]
+108:PERPW:Primary wave mean period [s]
+109:DIRSW:Secondary wave direction [deg]
+110:PERSW:Secondary wave mean period [s]
+111:NSWRS:Net short wave (surface) [W/m^2]
+112:NLWRS:Net long wave (surface) [W/m^2]
+113:NSWRT:Net short wave (top) [W/m^2]
+114:NLWRT:Net long wave (top) [W/m^2]
+115:LWAVR:Long wave [W/m^2]
+116:SWAVR:Short wave [W/m^2]
+117:GRAD:Global radiation [W/m^2]
+118:BRTMP:Brightness temperature [K]
+119:LWRAD:Radiance with respect to wave no. [W/m/sr]
+120:SWRAD:Radiance with respect ot wave len. [W/m^3/sr]
+121:LHTFL:Latent heat flux [W/m^2]
+122:SHTFL:Sensible heat flux [W/m^2]
+123:BLYDP:Boundary layer dissipation [W/m^2]
+124:UFLX:Zonal momentum flux [N/m^2]
+125:VFLX:Meridional momentum flux [N/m^2]
+126:WMIXE:Wind mixing energy [J]
+127:IMGD:Image data []
+128:PAOT:Probability anomaly of temp [%]
+129:PAOP:Probability anomaly of precip [%]
+130:var130:undefined
+131:FRAIN:Rain fraction of total liquid water []
+132:FICE:Ice fraction of total condensate []
+133:FRIME:Rime factor []
+134:CUEFI:Convective cloud efficiency []
+135:TCOND:Total condensate [kg/kg]
+136:TCOLW:Total column cloud water [kg/m/m]
+137:TCOLI:Total column cloud ice [kg/m/m]
+138:TCOLR:Total column rain [kg/m/m]
+139:TCOLS:Total column snow [kg/m/m]
+140:TCOLC:Total column condensate [kg/m/m]
+141:PLPL:Pressure of level from which parcel was lifted [Pa]
+142:HLPL:Height of level from which parcel was lifted [Pa]
+143:var143:undefined
+144:var144:undefined
+145:var145:undefined
+146:var146:undefined
+147:var147:undefined
+148:var148:undefined
+149:var149:undefined
+150:var150:undefined
+151:var151:undefined
+152:var152:undefined
+153:var153:undefined
+154:var154:undefined
+155:var155:undefined
+156:var156:undefined
+157:var157:undefined
+158:var158:undefined
+159:var159:undefined
+160:var160:undefined
+161:var161:undefined
+162:var162:undefined
+163:var163:undefined
+164:var164:undefined
+165:var165:undefined
+166:var166:undefined
+167:var167:undefined
+168:var168:undefined
+169:var169:undefined
+170:ELRDI:Ellrod Index
+171:TSEC:Seconds prior to initial reference time [sec]
+172:var172:undefined
+173:var173:undefined
+174:var174:undefined
+175:var175:undefined
+176:var176:undefined
+177:var177:undefined
+178:var178:undefined
+179:var179:undefined
+180:OZCON:Ozone concentration [ppb]
+181:OZCAT:Categorical ozone concentration [?]
+182:KH:vertical heat eddy diffusivity [m^2/s]
+183:var183:undefined
+184:var184:undefined
+185:var185:undefined
+186:var186:undefined
+187:var187:undefined
+188:var188:undefined
+189:var189:undefined
+190:var190:undefined
+191:var191:undefined
+192:var192:undefined
+193:var193:undefined
+194:var194:undefined
+195:var195:undefined
+196:var196:undefined
+197:var197:undefined
+198:var198:undefined
+199:var199:undefined
+200:var200:undefined
+201:var201:undefined
+202:var202:undefined
+203:var203:undefined
+204:var204:undefined
+205:var205:undefined
+206:var206:undefined
+207:var207:undefined
+208:var208:undefined
+209:var209:undefined
+210:var210:undefined
+211:var211:undefined
+212:var212:undefined
+213:var213:undefined
+214:var214:undefined
+215:var215:undefined
+216:var216:undefined
+217:var217:undefined
+218:var218:undefined
+219:var219:undefined
+220:var220:undefined
+221:var221:undefined
+222:var222:undefined
+223:var223:undefined
+224:var224:undefined
+225:var225:undefined
+226:var226:undefined
+227:var227:undefined
+228:var228:undefined
+229:var229:undefined
+230:var230:undefined
+231:var231:undefined
+232:var232:undefined
+233:var233:undefined
+234:var234:undefined
+235:var235:undefined
+236:var236:undefined
+237:var237:undefined
+238:var238:undefined
+239:var239:undefined
+240:var240:undefined
+241:var241:undefined
+242:var242:undefined
+243:var243:undefined
+244:var244:undefined
+245:var245:undefined
+246:var246:undefined
+247:var247:undefined
+248:var248:undefined
+249:var249:undefined
+250:var250:undefined
+251:var251:undefined
+252:var252:undefined
+253:var253:undefined
+254:var254:undefined
+255:var255:undefined
+-1:7:-1:130
+0:var0:undefined
+1:PRES:Pressure [Pa]
+2:PRMSL:Pressure reduced to MSL [Pa]
+3:PTEND:Pressure tendency [Pa/s]
+4:PVORT:Pot. vorticity [km^2/kg/s]
+5:ICAHT:ICAO Standard Atmosphere Reference Height [M]
+6:GP:Geopotential [m^2/s^2]
+7:HGT:Geopotential height [gpm]
+8:DIST:Geometric height [m]
+9:HSTDV:Std dev of height [m]
+10:TOZNE:Total ozone [Dobson]
+11:TMP:Temp. [K]
+12:VTMP:Virtual temp. [K]
+13:POT:Potential temp. [K]
+14:EPOT:Pseudo-adiabatic pot. temp. [K]
+15:TMAX:Max. temp. [K]
+16:TMIN:Min. temp. [K]
+17:DPT:Dew point temp. [K]
+18:DEPR:Dew point depression [K]
+19:LAPR:Lapse rate [K/m]
+20:VIS:Visibility [m]
+21:RDSP1:Radar spectra (1) [non-dim]
+22:RDSP2:Radar spectra (2) [non-dim]
+23:RDSP3:Radar spectra (3) [non-dim]
+24:PLI:Parcel lifted index (to 500 hPa) [K]
+25:TMPA:Temp. anomaly [K]
+26:PRESA:Pressure anomaly [Pa]
+27:GPA:Geopotential height anomaly [gpm]
+28:WVSP1:Wave spectra (1) [non-dim]
+29:WVSP2:Wave spectra (2) [non-dim]
+30:WVSP3:Wave spectra (3) [non-dim]
+31:WDIR:Wind direction [deg]
+32:WIND:Wind speed [m/s]
+33:UGRD:u wind [m/s]
+34:VGRD:v wind [m/s]
+35:STRM:Stream function [m^2/s]
+36:VPOT:Velocity potential [m^2/s]
+37:MNTSF:Montgomery stream function [m^2/s^2]
+38:SGCVV:Sigma coord. vertical velocity [/s]
+39:VVEL:Pressure vertical velocity [Pa/s]
+40:DZDT:Geometric vertical velocity [m/s]
+41:ABSV:Absolute vorticity [/s]
+42:ABSD:Absolute divergence [/s]
+43:RELV:Relative vorticity [/s]
+44:RELD:Relative divergence [/s]
+45:VUCSH:Vertical u shear [/s]
+46:VVCSH:Vertical v shear [/s]
+47:DIRC:Direction of current [deg]
+48:SPC:Speed of current [m/s]
+49:UOGRD:u of current [m/s]
+50:VOGRD:v of current [m/s]
+51:SPFH:Specific humidity [kg/kg]
+52:RH:Relative humidity [%]
+53:MIXR:Humidity mixing ratio [kg/kg]
+54:PWAT:Precipitable water [kg/m^2]
+55:VAPP:Vapor pressure [Pa]
+56:SATD:Saturation deficit [Pa]
+57:EVP:Evaporation [kg/m^2]
+58:CICE:Cloud Ice [kg/m^2]
+59:PRATE:Precipitation rate [kg/m^2/s]
+60:TSTM:Thunderstorm probability [%]
+61:APCP:Total precipitation [kg/m^2]
+62:NCPCP:Large scale precipitation [kg/m^2]
+63:ACPCP:Convective precipitation [kg/m^2]
+64:SRWEQ:Snowfall rate water equiv. [kg/m^2/s]
+65:WEASD:Accum. snow [kg/m^2]
+66:SNOD:Snow depth [m]
+67:MIXHT:Mixed layer depth [m]
+68:TTHDP:Transient thermocline depth [m]
+69:MTHD:Main thermocline depth [m]
+70:MTHA:Main thermocline anomaly [m]
+71:TCDC:Total cloud cover [%]
+72:CDCON:Convective cloud cover [%]
+73:LCDC:Low level cloud cover [%]
+74:MCDC:Mid level cloud cover [%]
+75:HCDC:High level cloud cover [%]
+76:CWAT:Cloud water [kg/m^2]
+77:BLI:Best lifted index (to 500 hPa) [K]
+78:SNOC:Convective snow [kg/m^2]
+79:SNOL:Large scale snow [kg/m^2]
+80:WTMP:Water temp. [K]
+81:LAND:Land cover (land=1;sea=0) [fraction]
+82:DSLM:Deviation of sea level from mean [m]
+83:SFCR:Surface roughness [m]
+84:ALBDO:Albedo [%]
+85:TSOIL:Soil temp. [K]
+86:SOILM:Soil moisture content [kg/m^2]
+87:VEG:Vegetation [%]
+88:SALTY:Salinity [kg/kg]
+89:DEN:Density [kg/m^3]
+90:WATR:Water runoff [kg/m^2]
+91:ICEC:Ice concentration (ice=1;no ice=0) [fraction]
+92:ICETK:Ice thickness [m]
+93:DICED:Direction of ice drift [deg]
+94:SICED:Speed of ice drift [m/s]
+95:UICE:u of ice drift [m/s]
+96:VICE:v of ice drift [m/s]
+97:ICEG:Ice growth rate [m/s]
+98:ICED:Ice divergence [/s]
+99:SNOM:Snow melt [kg/m^2]
+100:HTSGW:Sig height of wind waves and swell [m]
+101:WVDIR:Direction of wind waves [deg]
+102:WVHGT:Sig height of wind waves [m]
+103:WVPER:Mean period of wind waves [s]
+104:SWDIR:Direction of swell waves [deg]
+105:SWELL:Sig height of swell waves [m]
+106:SWPER:Mean period of swell waves [s]
+107:DIRPW:Primary wave direction [deg]
+108:PERPW:Primary wave mean period [s]
+109:DIRSW:Secondary wave direction [deg]
+110:PERSW:Secondary wave mean period [s]
+111:NSWRS:Net short wave (surface) [W/m^2]
+112:NLWRS:Net long wave (surface) [W/m^2]
+113:NSWRT:Net short wave (top) [W/m^2]
+114:NLWRT:Net long wave (top) [W/m^2]
+115:LWAVR:Long wave [W/m^2]
+116:SWAVR:Short wave [W/m^2]
+117:GRAD:Global radiation [W/m^2]
+118:BRTMP:Brightness temperature [K]
+119:LWRAD:Radiance with respect to wave no. [W/m/sr]
+120:SWRAD:Radiance with respect ot wave len. [W/m^3/sr]
+121:LHTFL:Latent heat flux [W/m^2]
+122:SHTFL:Sensible heat flux [W/m^2]
+123:BLYDP:Boundary layer dissipation [W/m^2]
+124:UFLX:Zonal momentum flux [N/m^2]
+125:VFLX:Meridional momentum flux [N/m^2]
+126:WMIXE:Wind mixing energy [J]
+127:IMGD:Image data []
+128:var128:undefined
+129:var129:undefined
+130:var130:undefined
+131:var131:undefined
+132:var132:undefined
+133:var133:undefined
+134:var134:undefined
+135:var135:undefined
+136:var136:undefined
+137:var137:undefined
+138:var138:undefined
+139:var139:undefined
+140:var140:undefined
+141:var141:undefined
+142:var142:undefined
+143:var143:undefined
+143:CSNOW:Categorical snow [yes=1;no=0]
+144:SOILW:Volumetric soil moisture (frozen + liquid) [fraction]
+145:PEVPR:Potential evaporation rate [W/m^2]
+146:VEGT:Vegetation canopy temperature [K]
+147:BARET:Bare soil surface skin temperature [K]
+148:AVSFT:Average surface skin temperature [K]
+149:RADT:Effective radiative skin temperature [K]
+150:SSTOR:Surface water storage [Kg/m^2]
+151:LSOIL:Liquid soil moisture content (non-frozen) [Kg/m^2]
+152:EWATR:Open water evaporation (standing water) [W/m^2]
+153:var153:undefined
+154:var154:undefined
+155:GFLUX:Ground Heat Flux [W/m^2]
+156:CIN:Convective inhibition [J/Kg]
+157:CAPE:Convective available potential energy [J/Kg]
+158:TKE:Turbulent Kinetic Energy [J/Kg]
+159:MXSALB:Maximum snow albedo [%]
+160:SOILL:Liquid volumetric soil moisture (non-frozen) [fraction]
+161:ASNOW:Frozen precipitation (e.g. snowfall) [Kg/m^2]
+162:ARAIN:Liquid precipitation (rainfall) [Kg/m^2]
+163:GWREC:Groundwater recharge [Kg/m^2]
+164:QREC:Flood plain recharge [Kg/m^2]
+165:SNOWT:Snow temperature, depth-avg [K]
+166:VBDSF:Visible beam downward solar flux [W/m^2]
+167:VDDSF:Visible diffuse downward solar flux [W/m^2]
+168:NBDSF:Near IR beam downward solar flux [W/m^2]
+169:NDDSF:Near IR diffuse downward solar flux [W/m^2]
+170:SNFALB:Snow-free albedo [%]
+171:RLYRS:Number of soil layers in root zone [non-dim]
+172:MFLX:Momentum flux [N/m^2]
+173:var173:undefined
+174:var174:undefined
+175:var175:undefined
+176:NLAT:Latitude (-90 to +90) [deg]
+177:ELON:East longitude (0-360) [deg]
+178:var178:undefined
+179:ACOND:Aerodynamic conductance [m/s]
+180:SNOAG:Snow age [s]
+181:CCOND:Canopy conductance [m/s]
+182:LAI:Leaf area index (0-9) [non-dim]
+183:SFCRH:Roughness length for heat [m]
+184:SALBD:Snow albedo (over snow cover area only) [%]
+185:var185:undefined
+186:var186:undefined
+187:NDVI:Normalized Difference Vegetation Index []
+188:DRIP:Canopy drip [Kg/m^2]
+189:var189:undefined
+190:var190:undefined
+191:var191:undefined
+192:var192:undefined
+193:var193:undefined
+194:var194:undefined
+195:var195:undefined
+196:var196:undefined
+197:var197:undefined
+198:SBSNO:Sublimation (evaporation from snow) [W/m^2]
+199:EVBS:Direct evaporation from bare soil [W/m^2]
+200:EVCW:Canopy water evaporation [W/m^2]
+201:var201:undefined
+202:var202:undefined
+203:RSMIN:Minimal stomatal resistance [s/m]
+204:DSWRF:Downward shortwave radiation flux [W/m^2]
+205:DLWRF:Downward longwave radiation flux [W/m^2]
+206:var206:undefined
+207:MSTAV:Moisture availability [%]
+208:SFEXC:Exchange coefficient [(Kg/m^3)(m/s)]
+209:var209:undefined
+210:TRANS:Transpiration [W/m^2]
+211:USWRF:Upward short wave radiation flux [W/m^2]
+212:ULWRF:Upward long wave radiation flux [W/m^2]
+213:var213:undefined
+214:var214:undefined
+215:var215:undefined
+216:var216:undefined
+217:var217:undefined
+218:var218:undefined
+219:WILT:Wilting point [fraction]
+220:FLDCP:Field Capacity [fraction]
+221:var221:undefined
+222:SLTYP:Surface slope type [Index]
+223:CNWAT:Plant canopy surface water [Kg/m^2]
+224:SOTYP:Soil type [Index]
+225:VGTYP:Vegetation type [Index]
+226:BMIXL:Blackadars mixing length scale [m]
+227:AMIXL:Asymptotic mixing length scale [m]
+228:PEVAP:Potential evaporation [Kg/m^2]
+229:SNOHF:Snow phase-change heat flux [W/m^2]
+230:SMREF:Transpiration stress-onset (soil moisture) [fraction]
+231:SMDRY:Direct evaporation cease (soil moisture) [fraction]
+232:var232:undefined
+233:var233:undefined
+234:BGRUN:Subsurface runoff (baseflow) [Kg/m^2]
+235:SSRUN:Surface runoff (non-infiltrating) [Kg/m^2]
+236:var236:undefined
+237:var237:undefined
+238:SNOWC:Snow cover [%]
+239:SNOT:Snow temperature [K]
+240:POROS:Soil porosity [fraction]
+241:var241:undefined
+242:var242:undefined
+243:var243:undefined
+244:var244:undefined
+245:var245:undefined
+246:RCS:Solar parameter in canopy conductance [fraction]
+247:RCT:Temperature parameter in canopy conductance [fraction]
+248:RCQ:Humidity parameter in canopy conductance [fraction]
+249:RCSOL:Soil moisture parameter in canopy conductance [fraction]
+250:var250:undefined
+251:var251:undefined
+252:CD:Surface drag coefficient [non-dim]
+253:FRICV:Surface friction velocity [m/s]
+254:RI:Richardson number [non-dim]
+255:var255:undefined

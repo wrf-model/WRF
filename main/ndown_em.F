@@ -454,7 +454,10 @@ print *,'nested_grid%epsts     =', parent_grid%epsts
 
       !  Do the horizontal interpolation.
 
-      nested_grid%imask = 1
+      nested_grid%imask_nostag = 1
+      nested_grid%imask_xstag = 1
+      nested_grid%imask_ystag = 1
+      nested_grid%imask_xystag = 1
       CALL med_interp_domain ( head_grid , nested_grid )
       nested_grid%ht_int = nested_grid%ht
 

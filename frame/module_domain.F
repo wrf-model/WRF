@@ -989,7 +989,10 @@ CONTAINS
       num_bytes_allocated = 0 
 
 
-      IF      ( .FALSE. )           THEN
+      IF ( dyn_opt == DYN_NODYN ) THEN
+
+        CALL wrf_message ( 'DYNAMICS OPTION: dynamics disabled ' )
+# include <nodyn_allocs.inc>
 
 #if (EM_CORE == 1)
       ELSE IF ( dyn_opt == DYN_EM ) THEN
@@ -1006,18 +1009,14 @@ CONTAINS
         CALL wrf_message ( 'DYNAMICS OPTION: coamps dyncore' )
 # include <coamps_allocs.inc>
 #endif
-
-!### 13. Edit frame/module_domain.F to add case for DYN_EXP to
-!### alloc_space_field.  (This is a bug;
-!### one should never have to edit the framework code; will fix this in
-!### coming versions).  Same goes for share/start_domain.F, although this
-!### is not a framework routine.
 #if (EXP_CORE==1)
       ELSE IF ( dyn_opt == DYN_EXP ) THEN
         CALL wrf_message ( 'DYNAMICS OPTION: experimental dyncore' )
 # include <exp_allocs.inc>
 #endif
+
       ELSE
+      
         WRITE( wrf_err_message , * )'Invalid specification of dynamics: dyn_opt = ',dyn_opt
         CALL wrf_error_fatal ( TRIM ( wrf_err_message ) )
       ENDIF

@@ -28,7 +28,7 @@ SUBROUTINE start_domain ( grid , allowed_to_read )
   
    CALL set_scalar_indices_from_config ( head_grid%id , idum1, idum2 )
 
-   IF ( .FALSE.                  ) THEN
+   IF (      dyn_opt .eq. DYN_NODYN ) THEN
 
 #if ((EM_CORE == 1) && (DA_CORE != 1))
    ELSE IF (      dyn_opt .eq. DYN_EM ) THEN

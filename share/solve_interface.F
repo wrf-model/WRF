@@ -43,7 +43,9 @@ SUBROUTINE solve_interface ( grid )
 
 #include "deref_kludge.h"
 
-   IF ( .FALSE.                         ) THEN
+   IF ( config_flags%dyn_opt == DYN_NODYN  ) THEN
+
+     CALL wrf_debug( 1 , "solve_interface: dynamics disabled\n" )
 
 #if (EM_CORE == 1 && DA_CORE != 1)
    ELSE IF ( config_flags%dyn_opt == DYN_EM  ) THEN

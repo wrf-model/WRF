@@ -1327,7 +1327,7 @@ SUBROUTINE med_latbound_in ( grid , config_flags )
 
    CALL wrf_debug ( 1 , 'in med_latbound_in' )
 
-   IF ( grid%id .EQ. 1 .AND. config_flags%specified ) THEN
+   IF ( grid%id .EQ. 1 .AND. config_flags%specified .AND. config_flags%io_form_boundary .GT. 0 ) THEN
 
      IF ( ( lbc_read_time( grid%current_time ) ) .AND. &
           ( grid%current_time + grid%step_time .GE. grid%stop_time ) .AND. &

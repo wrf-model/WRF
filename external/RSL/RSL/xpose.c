@@ -294,8 +294,8 @@ fprintf(stderr,"debug sending %d bytes to %d, xpose=%d\n", curs, mdest, x ) ;
           else
             base = pr->base ;
 #if 0
-fprintf(stderr,"unpack base %08x, n %3d, stride %3d, f90_index %d, xpose=%d\n",
-  base,pr->n,pr->stride,pr->f90_table_index,x) ;
+fprintf(stderr,"unpack base %08x, n %3d, nelems %d, stride %3d, f90_index %d, xpose=%d\n",
+  base,pr->n,pr->nelems,pr->stride,pr->f90_table_index,x) ;
 #endif
           for ( j = 0 ; j < pr->nelems ; j++ )
           {
@@ -309,11 +309,11 @@ zloc_mz = 2 ;
 for ( iii = 0 ; iii < pr->n ; iii+=4 )
 {
 x = ((pr->offset + j * pr->stride + iii))/4 ;
-fprintf(stderr," <<< %d i %2d j %2d k %2d %f\n",
+fprintf(stderr," <<< %d i %2d k %2d j %2d %f\n",
                x ,
                x % mloc_mz ,
-               (x % (mloc_mz*nloc_mz))/mloc_mz  ,
-               (x / (mloc_mz*nloc_mz)) ,
+               (x % (mloc_mz*zloc_mz))/mloc_mz  ,
+               (x / (mloc_mz*zloc_mz)) ,
                *((float *)((char *)(base) + pr->offset + j * pr->stride + iii))) ;
 }}
 #endif
@@ -526,8 +526,8 @@ fprintf(stderr,"debug sending %d bytes to %d, xpose=%d\n", curs, mdest, x ) ;
           else
             base = pr->base ;
 #if 0
-fprintf(stderr,"unpack base %08x, n %3d, stride %3d, f90_index %d, xpose=%d\n",
-  base,pr->n,pr->stride,pr->f90_table_index,x) ;
+fprintf(stderr,"unpack base %08x, n %3d, nelems %d, stride %3d, f90_index %d, xpose=%d\n",
+  base,pr->n,pr->nelems,pr->stride,pr->f90_table_index,x) ;
 #endif
           for ( j = 0 ; j < pr->nelems ; j++ )
           {
@@ -541,11 +541,11 @@ zloc_mz = 2 ;
 for ( iii = 0 ; iii < pr->n ; iii+=4 )
 {
 x = ((pr->offset + j * pr->stride + iii))/4 ;
-fprintf(stderr," <<< %d i %2d j %2d k %2d %f\n",
+fprintf(stderr," <<< %d i %2d k %2d j %2d %f\n",
                x ,
                x % mloc_mz ,
-               (x % (mloc_mz*nloc_mz))/mloc_mz  ,
-               (x / (mloc_mz*nloc_mz)) ,
+               (x % (mloc_mz*zloc_mz))/mloc_mz  ,
+               (x / (mloc_mz*zloc_mz)) ,
                *((float *)((char *)(base) + pr->offset + j * pr->stride + iii))) ;
 }}
 #endif

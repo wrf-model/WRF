@@ -512,6 +512,7 @@ struct packrec_struct {
   int nelems ;		/* number of elements */
   int stride ;		/* number of bytes between each element */
   int f90_table_index ;
+  int endstop ;
   int valid ;
 } ;
 typedef struct packrec_struct packrec_t ;

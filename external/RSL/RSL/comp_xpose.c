@@ -184,23 +184,28 @@ if (1)fprintf(stderr,"s_p_r^: P %2d prevP %2d recvP %2d ipack %d i %2d j %2d k %
 #endif
                         store_process_refs( base, fld->f90_table_index, (i+js*t0+k*t1)*elemsz, elemsz,
                                                   je-js+1 ,
-                                                  t0*elemsz) ;
+                                                  -t0*elemsz) ;
                         break ;
                       case MINEW_MAJNS_K_3D :             /* <MM> eg: u(j,i,k) */
                         t0 = fld->llen[0] ; t1 = fld->llen[1]*t0 ;
                         store_process_refs( base, fld->f90_table_index, (js+i*t0+k*t1)*elemsz, (je-js+1)*elemsz,
                                                   1 ,
-                                                  elemsz) ;
+                                                  -elemsz) ;
                         break ;
                       case K_MIDNS_MAJEW_3D :             /* <MM> eg: u(k,i,j) */
                         t0 = fld->llen[0] ; t1 = fld->llen[1]*t0 ;
                         store_process_refs( base, fld->f90_table_index, (k+i*t0+js*t1)*elemsz, elemsz,
-                                                  je-js+1, t1*elemsz) ;
+                                                  je-js+1, 
+						  -t1*elemsz) ;
                         break ;
                       case MINNS_K_MAJEW_3D :             /* <MM> eg: u(i,k,j) */
                         t0 = fld->llen[0] ; t1 = fld->llen[1]*t0 ;
+#if 0
+if (1)fprintf(stderr,"s_p_r^: P %2d prevP %2d recvP %2d ipack %d i %2d j %2d k %2d ig %2d jg %2d t0 %3d t1 %3d js %2d je %2d je-js+1 %3d\n",P,prevP,recvP,ipack,i,j,k,ig,jg,t0,t1,js,je,je-js+1) ;
+#endif
                         store_process_refs( base, fld->f90_table_index, (i+k*t0+js*t1)*elemsz, elemsz,
-                                                  je-js+1, t1*elemsz) ;
+                                                  je-js+1,
+						  -t1*elemsz) ;  /* don't need to suppress packing optimization on MN grid because of pads */
                         break ;
                       default:
                         RSL_TEST_ERR(1,"new pack comp: strategy not supported" ) ;
@@ -305,23 +310,29 @@ P,prevP,recvP,ipack,i,j,k,ig,jg,t0,t1,js,je,je-js+1) ;
 #endif
                         store_process_refs( base, fld->f90_table_index, (i+js*t0+k*t1)*elemsz, elemsz,
                                                   je-js+1 ,
-                                                  t0*elemsz) ;
+                                                  -t0*elemsz) ;
                         break ;
                       case MINEW_MAJNS_K_3D :             /* <MM> eg: u(j,i,k) */
                         t0 = fld->llen[0] ; t1 = fld->llen[1]*t0 ;
                         store_process_refs( base, fld->f90_table_index, (js+i*t0+k*t1)*elemsz, (je-js+1)*elemsz,
                                                   1 ,
-                                                  elemsz) ;
+                                                  -elemsz) ;
                         break ;
                       case K_MIDNS_MAJEW_3D :             /* <MM> eg: u(k,i,j) */
                         t0 = fld->llen[0] ; t1 = fld->llen[1]*t0 ;
                         store_process_refs( base, fld->f90_table_index, (k+i*t0+js*t1)*elemsz, elemsz,
-                                                  je-js+1, t1*elemsz) ;
+                                                  je-js+1, 
+						  -t1*elemsz) ;
                         break ;
                       case MINNS_K_MAJEW_3D :             /* <MM> eg: u(i,k,j) */
                         t0 = fld->llen[0] ; t1 = fld->llen[1]*t0 ;
+#if 0
+if (1)fprintf(stderr,"s_p_rv: P %2d prevP %2d recvP %2d ipack %d i %2d j %2d k %2d ig %2d jg %2d t0 %3d t1 %3d js %2d je %2d je-js+1 %3d ofst %3d\n",
+P,prevP,recvP,ipack,i,j,k,ig,jg,t0,t1,js,je,je-js+1, (i+k*t0+js*t1)*elemsz) ;
+#endif
                         store_process_refs( base, fld->f90_table_index, (i+k*t0+js*t1)*elemsz, elemsz,
-                                                  je-js+1, t1*elemsz) ;
+                                                  je-js+1, 
+						  -t1*elemsz) ;   /* negative stride suppresses some unpacking collapses */
                         break ;
                       default:
                         RSL_TEST_ERR(1,"new pack comp: strategy not supported" ) ;
@@ -428,25 +439,28 @@ if (1)fprintf(stderr,"s_p_r^: P %2d prevP %2d recvP %2d ipack %d i %2d j %2d k %
 #endif
                         store_process_refs( base, fld->f90_table_index, (is+j*t0+k*t1)*elemsz, (ie-is+1)*elemsz,
                                                   1 ,
-                                                  elemsz) ;
+                                                  -elemsz) ;
                         break ;
                       case MINEW_MAJNS_K_3D :             /* <MM> eg: u(j,i,k) */
                         t0 = fld->llen[0] ; t1 = fld->llen[1]*t0 ;
                         store_process_refs( base, fld->f90_table_index, (j+is*t0+k*t1)*elemsz, elemsz,
                                                   (ie-is+1) ,
-                                                  t0*elemsz) ;
+                                                  -t0*elemsz) ;
                         break ;
                       case K_MIDNS_MAJEW_3D :             /* <MM> eg: u(k,i,j) */
                         t0 = fld->llen[0] ; t1 = fld->llen[1]*t0 ;
                         store_process_refs( base, fld->f90_table_index, (k+is*t0+j*t1)*elemsz, elemsz,
                                                   ie-is+1,
-                                                  t0*elemsz) ;
+                                                  -t0*elemsz) ;
                         break ;
                       case MINNS_K_MAJEW_3D :             /* <MM> eg: u(i,k,j) */
                         t0 = fld->llen[0] ; t1 = fld->llen[1]*t0 ;
+#if 0
+if (1)fprintf(stderr,"s_p_r^: P %2d prevP %2d recvP %2d ipack %d i %2d j %2d k %2d ig %2d jg %2d t0 %3d t1 %3d is %2d ie %2d ie-is+1 %3d\n",P,prevP,recvP,ipack,i,j,k,ig,jg,t0,t1,is,ie,ie-is+1) ;
+#endif
                         store_process_refs( base, fld->f90_table_index, (is+k*t0+j*t1)*elemsz, (ie-is+1)*elemsz,
                                                   1,
-						  elemsz) ;
+						  -elemsz) ;   /* negative stride suppresses some packing optimzation in process_refs */
                         break ;
                       default:
                         RSL_TEST_ERR(1,"new pack comp: strategy not supported" ) ;
@@ -542,25 +556,29 @@ P,prevP,recvP,ipack,i,j,k,ig,jg,t0,t1,is,ie,ie-is+1) ;
 #endif
                         store_process_refs( base, fld->f90_table_index, (is+j*t0+k*t1)*elemsz, (ie-is+1)*elemsz,
                                                   1 ,
-                                                  elemsz) ;
+                                                  -elemsz) ;
                         break ;
                       case MINEW_MAJNS_K_3D :             /* <MM> eg: u(j,i,k) */
                         t0 = fld->llen[0] ; t1 = fld->llen[1]*t0 ;
                         store_process_refs( base, fld->f90_table_index, (j+is*t0+k*t1)*elemsz, elemsz,
                                                   ie-is+1 ,
-                                                  t0*elemsz) ;
+                                                  -t0*elemsz) ;
                         break ;
                       case K_MIDNS_MAJEW_3D :             /* <MM> eg: u(k,i,j) */
                         t0 = fld->llen[0] ; t1 = fld->llen[1]*t0 ;
                         store_process_refs( base, fld->f90_table_index, (k+is*t0+j*t1)*elemsz, elemsz,
                                                   ie-is+1,
-						  t0*elemsz) ;
+						  -t0*elemsz) ;
                         break ;
                       case MINNS_K_MAJEW_3D :             /* <MM> eg: u(i,k,j) */
                         t0 = fld->llen[0] ; t1 = fld->llen[1]*t0 ;
+#if 0
+if (1)fprintf(stderr,"s_p_rv: P %2d prevP %2d recvP %2d ipack %d i %2d j %2d k %2d ig %2d jg %2d t0 %3d t1 %3d is %2d ie %2d ie-is+1 %3d\n",
+P,prevP,recvP,ipack,i,j,k,ig,jg,t0,t1,is,ie,ie-is+1) ;
+#endif
                         store_process_refs( base, fld->f90_table_index, (is+k*t0+j*t1)*elemsz, (ie-is+1)*elemsz,
                                                   1,
-						  elemsz) ;
+						  -elemsz) ;  /* negative stride suppresses some unpacking optimization in process_refs */
                         break ;
                       default:
                         RSL_TEST_ERR(1,"new pack comp: strategy not supported" ) ;
@@ -667,25 +685,28 @@ if (1)fprintf(stderr,"s_p_r^: P %2d prevP %2d recvP %2d ipack %d i %2d j %2d k %
 #endif
                         store_process_refs( base, fld->f90_table_index, (i+j*t0+ks*t1)*elemsz, elemsz,
                                                   ke-ks+1 ,
-                                                  t1*elemsz) ;
+                                                  -t1*elemsz) ;
                         break ;
                       case MINEW_MAJNS_K_3D :             /* <MM> eg: u(j,i,k) */
                         t0 = fld->llen[0] ; t1 = fld->llen[1]*t0 ;
                         store_process_refs( base, fld->f90_table_index, (j+i*t0+ks*t1)*elemsz, elemsz,
                                                   ke-ks+1 ,
-                                                  t1*elemsz) ;
+                                                  -t1*elemsz) ;
                         break ;
                       case K_MIDNS_MAJEW_3D :             /* <MM> eg: u(k,i,j) */
                         t0 = fld->llen[0] ; t1 = fld->llen[1]*t0 ;
                         store_process_refs( base, fld->f90_table_index, (ks+i*t0+j*t1)*elemsz, (ke-ks+1)*elemsz,
                                                   1, 
-						  elemsz) ;
+						  -elemsz) ;
                         break ;
                       case MINNS_K_MAJEW_3D :             /* <MM> eg: u(i,k,j) */
                         t0 = fld->llen[0] ; t1 = fld->llen[1]*t0 ;
+#if 0
+if (1)fprintf(stderr,"s_p_r^: P %2d prevP %2d recvP %2d ipack %d i %2d j %2d k %2d ig %2d jg %2d t0 %3d t1 %3d ks %2d ke %2d ke-ks+1 %3d\n",P,prevP,recvP,ipack,i,j,k,ig,jg,t0,t1,ks,ke,ke-ks+1) ;
+#endif
                         store_process_refs( base, fld->f90_table_index, (i+ks*t0+j*t1)*elemsz, elemsz,
                                                   ke-ks+1,
-						  t0*elemsz) ;
+						  -t0*elemsz) ;  /* negative stride suppresses some packing optimizationin process_refs */
                         break ;
                       default:
                         RSL_TEST_ERR(1,"new pack comp: strategy not supported" ) ;
@@ -781,25 +802,29 @@ P,prevP,recvP,ipack,i,j,k,ig,jg,t0,t1,ks,ke,ke-ks+1) ;
 #endif
                         store_process_refs( base, fld->f90_table_index, (i+j*t0+ks*t1)*elemsz, elemsz,
                                                   ke-ks+1 ,
-                                                  t1*elemsz) ;
+                                                  -t1*elemsz) ;
                         break ;
                       case MINEW_MAJNS_K_3D :             /* <MM> eg: u(j,i,k) */
                         t0 = fld->llen[0] ; t1 = fld->llen[1]*t0 ;
                         store_process_refs( base, fld->f90_table_index, (j+i*t0+ks*t1)*elemsz, elemsz,
                                                   ke-ks+1 ,
-                                                  t1*elemsz) ;
+                                                  -t1*elemsz) ;
                         break ;
                       case K_MIDNS_MAJEW_3D :             /* <MM> eg: u(k,i,j) */
                         t0 = fld->llen[0] ; t1 = fld->llen[1]*t0 ;
                         store_process_refs( base, fld->f90_table_index, (ks+i*t0+j*t1)*elemsz, (ke-ks+1)*elemsz,
                                                   1, 
-						  elemsz) ;
+						  -elemsz) ;
                         break ;
                       case MINNS_K_MAJEW_3D :             /* <MM> eg: u(i,k,j) */
                         t0 = fld->llen[0] ; t1 = fld->llen[1]*t0 ;
+#if 0
+if (1)fprintf(stderr,"s_p_rv: P %2d prevP %2d recvP %2d ipack %d i %2d j %2d k %2d ig %2d jg %2d t0 %3d t1 %3d ks %2d ke %2d ke-ks+1 %3d\n",
+P,prevP,recvP,ipack,i,j,k,ig,jg,t0,t1,ks,ke,ke-ks+1) ;
+#endif
                         store_process_refs( base, fld->f90_table_index, (i+ks*t0+j*t1)*elemsz, elemsz,
                                                   ke-ks+1,
-						  t0*elemsz) ;
+						  -t0*elemsz) ;   /* don't need to suppress optimizations unpacking onto MN grid because of pads */
                         break ;
                       default:
                         RSL_TEST_ERR(1,"new pack comp: strategy not supported" ) ;

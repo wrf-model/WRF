@@ -72,6 +72,8 @@ fprintf(stderr," stride %5d\n",stride) ;
 #endif
 
   newrec = RSL_MALLOC( packrec_t, 1 ) ;
+  newrec->endstop = 0 ;
+  if ( stride < 0 ) { newrec->endstop = 1 ; stride = -stride ; }
   newrec->base = base ;
   newrec->f90_table_index = f90_table_index ;
   newrec->offset = offset ;
@@ -218,7 +220,7 @@ lp = *lst ; x = lp->data ; if ( ! (x->valid ) ) RSL_TEST_ERR(1,"internal error: 
         {
           if ((x->stride == y->stride) &&
               (x->nelems == y->nelems) &&
-	      ((x->offset + x->n ) == y->offset))
+	      ((x->offset + x->n ) == y->offset) && ! x->endstop )
           {
 	    {
               y->valid = 0 ;

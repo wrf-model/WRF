@@ -131,7 +131,11 @@ rsl_period_pt( dir, d, min, minlen, minstag, maj, majlen, majstag, fld, bdyw, f 
     {
       if ( majstag )
       {
-        /* YS edge of domain goes to YE edge + 1 */
+        /* Dot point at YS (index 0) replicated to last dot point in domain before XE boundary, (majlen-1) */
+        if ( maj == 0        && min >=0 && min < minlen+minstag ) { (*f)( d, min-1, maj, min-1,    majlen-0, -1, 0, fld ) ;
+                                                                    (*f)( d, min  , maj, min  ,    majlen-0,  0, 0, fld ) ;
+                                                                    (*f)( d, min+1, maj, min+1,    majlen-0,  1, 0, fld ) ; }
+        /* Dot point at YS+1 (index 1) replicated to first dot point in YE boundary, (majlen) */
         if ( maj == 1        && min >=0 && min < minlen+minstag ) { (*f)( d, min-1, maj, min-1,    majlen+1, -1, 0, fld ) ;
                                                                     (*f)( d, min  , maj, min  ,    majlen+1,  0, 0, fld ) ;
                                                                     (*f)( d, min+1, maj, min+1,    majlen+1,  1, 0, fld ) ; }
@@ -158,7 +162,10 @@ rsl_period_pt( dir, d, min, minlen, minstag, maj, majlen, majstag, fld, bdyw, f 
     {
       if ( minstag )
       {
-        /* XS edge of domain goes to XE edge + 1 */
+        /* Dot point at XS (index 0) replicated to last dot point in domain before XE boundary, (minlen-1) */
+        if ( min == 0        && maj >=0 && maj < majlen+majstag ) { (*f)( d, min, maj-1, minlen-0, maj-1,    0, -1, fld ) ;
+                                                                    (*f)( d, min, maj  , minlen-0, maj  ,    0,  0, fld ) ;
+                                                                    (*f)( d, min, maj+1, minlen-0, maj+1,    0,  1, fld ) ; }
         if ( min == 1        && maj >=0 && maj < majlen+majstag ) { (*f)( d, min, maj-1, minlen+1, maj-1,    0, -1, fld ) ;
                                                                     (*f)( d, min, maj  , minlen+1, maj  ,    0,  0, fld ) ;
                                                                     (*f)( d, min, maj+1, minlen+1, maj+1,    0,  1, fld ) ; }
@@ -187,7 +194,10 @@ rsl_period_pt( dir, d, min, minlen, minstag, maj, majlen, majstag, fld, bdyw, f 
     {
       if ( majstag )
       {
-/**/    if ( maj == 0        && min >=0 && min < minlen+minstag ) { (*f)( d, min-2, maj, min-2,  majlen+1, -2, 0, fld ) ;
+/**/    if ( maj == 0        && min >=0 && min < minlen+minstag ) { (*f)( d, min-2, maj, min-2,  majlen-0, -2, 0, fld ) ;
+                                                                    (*f)( d, min,   maj, min,    majlen-0,  0, 0, fld ) ;
+                                                                    (*f)( d, min+2, maj, min+2,  majlen-0,  2, 0, fld ) ; }
+        if ( maj == 1        && min >=0 && min < minlen+minstag ) { (*f)( d, min-2, maj, min-2,  majlen+1, -2, 0, fld ) ;
                                                                     (*f)( d, min,   maj, min,    majlen+1,  0, 0, fld ) ;
                                                                     (*f)( d, min+2, maj, min+2,  majlen+1,  2, 0, fld ) ; }
         if ( maj == 2        && min >=0 && min < minlen+minstag ) { (*f)( d, min-2, maj, min-2,  majlen+2, -2, 0, fld ) ;
@@ -220,6 +230,9 @@ rsl_period_pt( dir, d, min, minlen, minstag, maj, majlen, majstag, fld, bdyw, f 
     {
       if ( minstag )
       {
+/**/    if ( min == 0        && maj >=0 && maj < majlen+majstag ) { (*f)( d, min, maj-2, minlen-0, maj-2,    0, -2, fld ) ;
+                                                                    (*f)( d, min, maj,   minlen-0, maj,      0,  0, fld ) ;
+                                                                    (*f)( d, min, maj+2, minlen-0, maj+2,    0,  2, fld ) ; }
 /**/    if ( min == 1        && maj >=0 && maj < majlen+majstag ) { (*f)( d, min, maj-2, minlen+1, maj-2,    0, -2, fld ) ;
                                                                     (*f)( d, min, maj,   minlen+1, maj,      0,  0, fld ) ;
                                                                     (*f)( d, min, maj+2, minlen+1, maj+2,    0,  2, fld ) ; }
@@ -258,15 +271,18 @@ rsl_period_pt( dir, d, min, minlen, minstag, maj, majlen, majstag, fld, bdyw, f 
     {
       if ( majstag )
       {
-        if ( maj == 3        && min >=0 && min < minlen+minstag ) { (*f)( d, min, maj, min,      majlen+3, -3, 0, fld ) ;
-                                                                    (*f)( d, min, maj, min,      majlen+3,  0, 0, fld ) ;
-                                                                    (*f)( d, min, maj, min,      majlen+3,  3, 0, fld ) ; }
-        if ( maj == 2        && min >=0 && min < minlen+minstag ) { (*f)( d, min, maj, min,      majlen+2, -3, 0, fld ) ;
-                                                                    (*f)( d, min, maj, min,      majlen+2,  0, 0, fld ) ;
-                                                                    (*f)( d, min, maj, min,      majlen+2,  3, 0, fld ) ; }
+        if ( maj == 0        && min >=0 && min < minlen+minstag ) { (*f)( d, min, maj, min,      majlen-0, -3, 0, fld ) ;
+                                                                    (*f)( d, min, maj, min,      majlen-0,  0, 0, fld ) ;
+                                                                    (*f)( d, min, maj, min,      majlen-0,  3, 0, fld ) ; }
         if ( maj == 1        && min >=0 && min < minlen+minstag ) { (*f)( d, min, maj, min,      majlen+1, -3, 0, fld ) ;
                                                                     (*f)( d, min, maj, min,      majlen+1,  0, 0, fld ) ;
                                                                     (*f)( d, min, maj, min,      majlen+1,  3, 0, fld ) ; }
+        if ( maj == 2        && min >=0 && min < minlen+minstag ) { (*f)( d, min, maj, min,      majlen+2, -3, 0, fld ) ;
+                                                                    (*f)( d, min, maj, min,      majlen+2,  0, 0, fld ) ;
+                                                                    (*f)( d, min, maj, min,      majlen+2,  3, 0, fld ) ; }
+        if ( maj == 3        && min >=0 && min < minlen+minstag ) { (*f)( d, min, maj, min,      majlen+3, -3, 0, fld ) ;
+                                                                    (*f)( d, min, maj, min,      majlen+3,  0, 0, fld ) ;
+                                                                    (*f)( d, min, maj, min,      majlen+3,  3, 0, fld ) ; }
         if ( maj == majlen-3 && min >=0 && min < minlen+minstag ) { (*f)( d, min, maj, min,      -3,       -3, 0, fld ) ;
                                                                     (*f)( d, min, maj, min,      -3,        0, 0, fld ) ;
                                                                     (*f)( d, min, maj, min,      -3,        3, 0, fld ) ; }
@@ -280,15 +296,15 @@ rsl_period_pt( dir, d, min, minlen, minstag, maj, majlen, majstag, fld, bdyw, f 
       }
       else
       {
-        if ( maj == 2        && min >=0 && min < minlen+minstag ) { (*f)( d, min, maj, min,      majlen+2, -3, 0, fld ) ;
-                                                                    (*f)( d, min, maj, min,      majlen+2,  0, 0, fld ) ;
-                                                                    (*f)( d, min, maj, min,      majlen+2,  3, 0, fld ) ; }
-        if ( maj == 1        && min >=0 && min < minlen+minstag ) { (*f)( d, min, maj, min,      majlen+1, -3, 0, fld ) ;
-                                                                    (*f)( d, min, maj, min,      majlen+1,  0, 0, fld ) ;
-                                                                    (*f)( d, min, maj, min,      majlen+1,  3, 0, fld ) ; }
         if ( maj == 0        && min >=0 && min < minlen+minstag ) { (*f)( d, min, maj, min,      majlen+0, -3, 0, fld ) ;
                                                                     (*f)( d, min, maj, min,      majlen+0,  0, 0, fld ) ;
                                                                     (*f)( d, min, maj, min,      majlen+0,  3, 0, fld ) ; }
+        if ( maj == 1        && min >=0 && min < minlen+minstag ) { (*f)( d, min, maj, min,      majlen+1, -3, 0, fld ) ;
+                                                                    (*f)( d, min, maj, min,      majlen+1,  0, 0, fld ) ;
+                                                                    (*f)( d, min, maj, min,      majlen+1,  3, 0, fld ) ; }
+        if ( maj == 2        && min >=0 && min < minlen+minstag ) { (*f)( d, min, maj, min,      majlen+2, -3, 0, fld ) ;
+                                                                    (*f)( d, min, maj, min,      majlen+2,  0, 0, fld ) ;
+                                                                    (*f)( d, min, maj, min,      majlen+2,  3, 0, fld ) ; }
         if ( maj == majlen-3 && min >=0 && min < minlen+minstag ) { (*f)( d, min, maj, min,      -3,       -3, 0, fld ) ;
                                                                     (*f)( d, min, maj, min,      -3,        0, 0, fld ) ;
                                                                     (*f)( d, min, maj, min,      -3,        3, 0, fld ) ; }
@@ -304,15 +320,18 @@ rsl_period_pt( dir, d, min, minlen, minstag, maj, majlen, majstag, fld, bdyw, f 
     {
       if ( minstag )
       {
-        if ( min == 3        && maj >=0 && maj < majlen+majstag ) { (*f)( d, min, maj, minlen+3, maj,      0, -3, fld ) ;
-                                                                    (*f)( d, min, maj, minlen+3, maj,      0,  0, fld ) ;
-                                                                    (*f)( d, min, maj, minlen+3, maj,      0,  3, fld ) ; }
-        if ( min == 2        && maj >=0 && maj < majlen+majstag ) { (*f)( d, min, maj, minlen+2, maj,      0, -3, fld ) ;
-                                                                    (*f)( d, min, maj, minlen+2, maj,      0,  0, fld ) ;
-                                                                    (*f)( d, min, maj, minlen+2, maj,      0,  3, fld ) ; }
+        if ( min == 0        && maj >=0 && maj < majlen+majstag ) { (*f)( d, min, maj, minlen-0, maj,      0, -3, fld ) ;
+                                                                    (*f)( d, min, maj, minlen-0, maj,      0,  0, fld ) ;
+                                                                    (*f)( d, min, maj, minlen-0, maj,      0,  3, fld ) ; }
         if ( min == 1        && maj >=0 && maj < majlen+majstag ) { (*f)( d, min, maj, minlen+1, maj,      0, -3, fld ) ;
                                                                     (*f)( d, min, maj, minlen+1, maj,      0,  0, fld ) ;
                                                                     (*f)( d, min, maj, minlen+1, maj,      0,  3, fld ) ; }
+        if ( min == 2        && maj >=0 && maj < majlen+majstag ) { (*f)( d, min, maj, minlen+2, maj,      0, -3, fld ) ;
+                                                                    (*f)( d, min, maj, minlen+2, maj,      0,  0, fld ) ;
+                                                                    (*f)( d, min, maj, minlen+2, maj,      0,  3, fld ) ; }
+        if ( min == 3        && maj >=0 && maj < majlen+majstag ) { (*f)( d, min, maj, minlen+3, maj,      0, -3, fld ) ;
+                                                                    (*f)( d, min, maj, minlen+3, maj,      0,  0, fld ) ;
+                                                                    (*f)( d, min, maj, minlen+3, maj,      0,  3, fld ) ; }
         if ( min == minlen-3 && maj >=0 && maj < majlen+majstag ) { (*f)( d, min, maj, -3,       maj,      0, -3, fld ) ;
                                                                     (*f)( d, min, maj, -3,       maj,      0,  0, fld ) ;
                                                                     (*f)( d, min, maj, -3,       maj,      0,  3, fld ) ; }
@@ -325,15 +344,15 @@ rsl_period_pt( dir, d, min, minlen, minstag, maj, majlen, majstag, fld, bdyw, f 
       }
       else
       {
-        if ( min == 2        && maj >=0 && maj < majlen+majstag ) { (*f)( d, min, maj, minlen+2, maj,      0, -3, fld ) ;
-                                                                    (*f)( d, min, maj, minlen+2, maj,      0,  0, fld ) ;
-                                                                    (*f)( d, min, maj, minlen+2, maj,      0,  3, fld ) ; }
-        if ( min == 1        && maj >=0 && maj < majlen+majstag ) { (*f)( d, min, maj, minlen+1, maj,      0, -3, fld ) ;
-                                                                    (*f)( d, min, maj, minlen+1, maj,      0,  0, fld ) ;
-                                                                    (*f)( d, min, maj, minlen+1, maj,      0,  3, fld ) ; }
         if ( min == 0        && maj >=0 && maj < majlen+majstag ) { (*f)( d, min, maj, minlen+0, maj,      0, -3, fld ) ;
                                                                     (*f)( d, min, maj, minlen+0, maj,      0,  0, fld ) ;
                                                                     (*f)( d, min, maj, minlen+0, maj,      0,  3, fld ) ; }
+        if ( min == 1        && maj >=0 && maj < majlen+majstag ) { (*f)( d, min, maj, minlen+1, maj,      0, -3, fld ) ;
+                                                                    (*f)( d, min, maj, minlen+1, maj,      0,  0, fld ) ;
+                                                                    (*f)( d, min, maj, minlen+1, maj,      0,  3, fld ) ; }
+        if ( min == 2        && maj >=0 && maj < majlen+majstag ) { (*f)( d, min, maj, minlen+2, maj,      0, -3, fld ) ;
+                                                                    (*f)( d, min, maj, minlen+2, maj,      0,  0, fld ) ;
+                                                                    (*f)( d, min, maj, minlen+2, maj,      0,  3, fld ) ; }
         if ( min == minlen-3 && maj >=0 && maj < majlen+majstag ) { (*f)( d, min, maj, -3,       maj,      0, -3, fld ) ;
                                                                     (*f)( d, min, maj, -3,       maj,      0,  0, fld ) ;
                                                                     (*f)( d, min, maj, -3,       maj,      0,  3, fld ) ; }

@@ -227,9 +227,9 @@ RSL_READ ( unit_p, iotag_p, base, d_p, type_p, glen, llen  )
 
   d = *d_p ;
   RSL_TEST_ERR( d < 0 || d >= RSL_MAXDOMAINS,
-     "rsl_init_nextcell: bad domain") ;
+     "rsl_read: bad domain") ;
   RSL_TEST_ERR( domain_info[d].valid != RSL_VALID,
-     "rsl_init_nextcell: invalid domain") ;
+     "rsl_read: invalid domain") ;
   if ( domain_info[d].decomposed != 1 )
   {
     default_decomposition( d_p,
@@ -669,9 +669,9 @@ RSL_WRITE ( unit_p, iotag_p, base, d_p, type_p, glen, llen  )
 
   d = *d_p ;
   RSL_TEST_ERR( d < 0 || d >= RSL_MAXDOMAINS,
-     "rsl_init_nextcell: bad domain") ;
+     "rsl_write: bad domain") ;
   RSL_TEST_ERR( domain_info[d].valid != RSL_VALID,
-     "rsl_init_nextcell: invalid domain") ;
+     "rsl_write: invalid domain") ;
   if ( domain_info[d].decomposed != 1 )
   {
     default_decomposition( d_p,

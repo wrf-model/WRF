@@ -140,6 +140,7 @@ int WRITE_GRIB(char *varname, float *level1, float *level2, int *vert_unit,
       fprintf(stdout,\
 	      "Skipping %s, Could not find parameter for %s in gribmap.txt\n",\
 	      varname2,varname2);
+      return ;
     }
   center = grib_table_info->center;
   subcenter = grib_table_info->subcenter;

@@ -123,6 +123,12 @@ CONTAINS
    LOGICAL :: moisture_init
    LOGICAL :: stretch_grid, dry_sounding
 
+#ifdef DEREF_KLUDGE
+   INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
+#endif
+
+#include "deref_kludge.h"
+
 #define COPY_IN
 #include <em_scalar_derefs.inc>
 #ifdef DM_PARALLEL

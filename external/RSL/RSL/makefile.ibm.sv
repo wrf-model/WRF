@@ -3,7 +3,7 @@
 # MPI message passing primitives on the IBM SP[12] and nets of wkstations
 
 include makefile.core
-OBJ = $(CORE_OBJ) rsl_mpi_compat.o mpi_init_f.o debug.o
+OBJ = $(CORE_OBJ) rsl_mpi_compat.o mpi_init_f.o debug.o vicopy.o
 HDR = $(CORE_HDR)
 TAR = $(CORE_TAR)
 

@@ -582,29 +582,3 @@ RSL_SOCKWRITE ( unit_p, iotag_p, base, d_p, type_p, glen, llen  )
   }
 }
 
-/* from bob olson, 9/30/94 */
-
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h>
-#include <stdio.h>
-#include <signal.h>
-#include <errno.h>
-#include <netinet/tcp.h>
-
-static setup_socket(s)
-  int s ;
-{
-  int on = 1;
-
-#ifdef TCP_RFC1323
-  if (setsockopt(s,IPPROTO_TCP,TCP_RFC1323,&on,sizeof(on)) < 0)
-    perror("setsockopt RFC1323");
-#endif
-  if (setsockopt(s,IPPROTO_TCP,TCP_NODELAY,&on,sizeof(on)) < 0)
-    perror("setsockopt NODELAY");
-  if (setsockopt(s,SOL_SOCKET,SO_REUSEADDR,&on,sizeof(on)) < 0)
-    perror("setsockopt REUSEADDR");
-}
-

@@ -2,7 +2,7 @@
       integer a(*), b(*)
       integer c
       do i = 1, c
-	b(i) = a(i)
+        b(i) = a(i)
       enddo
       return
       end
@@ -11,16 +11,16 @@
       real a(*), b(*)
       integer c
       do i = 1, c
-	b(i) = a(i)
+        b(i) = a(i)
       enddo
       return
       end
 
       subroutine vbcopy( a, b, c )
-      integer*1 a(*), b(*)
+      byte a(*), b(*)
       integer c
       do i = 1, c
-	b(i) = a(i)
+        b(i) = a(i)
       enddo
       return
       end
@@ -29,16 +29,16 @@
       integer a(*)
       integer c
       do i = 1, c
-	a(i) = 0
+        a(i) = 0
       enddo
       return
       end
 
       subroutine vbzero( a, c )
-      integer*1 a(*)
+      byte a(*)
       integer c
       do i = 1, c
-	a(i) = 0
+        a(i) = 0
       enddo
       return
       end

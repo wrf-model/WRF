@@ -157,7 +157,7 @@ EF_PROTECT_FREE = 1 ;
        }
      }
    }
-#if !(defined(vpp)||defined(vpp2))
+#if !(defined(vpp)||defined(vpp2)) || defined(sx)
    if ( s > 0 )
      bzero( retval, s2 ) ;	/* return zero'd storage always */
 #else

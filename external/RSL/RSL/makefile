@@ -156,6 +156,9 @@ sunmpi :
 linux :
 	$(MAKE) -f makefile.linux LINUX_MPIHOME=$(LINUX_MPIHOME) $(MAKE_OPTS) all
 
+sx :
+	$(MAKE) -f makefile.sx $(MAKE_OPTS) all
+
 stub :
 	@ if [ -f LAST_MADE ] ; then /bin/mv -f LAST_MADE LAST_MADE.bak ; fi
 	@ echo Last made as: make stub > LAST_MADE

@@ -1,26 +1,24 @@
 
 # this is a makefile for RSL that maps the package down to the
-# MPI message passing primitives on the DEC Alpha
+# MPI message passing primitives on the NEC SX-5
 
 include makefile.core
-OBJ = $(CORE_OBJ) rsl_mpi_compat.o mpi_init_f.o debug.o fort_doubleread.o fort_doublewrite.o rsl_error_dup.o fort_bdyin_dbl.o vicopy.o
+OBJ = $(CORE_OBJ) rsl_mpi_compat.o mpi_init_f.o debug.o fort_doubleread.o fort_doublewrite.o rsl_error_dup.o fort_bdyin_dbl.o vicopy_sx.o
 HDR = $(CORE_HDR)
 TAR = $(CORE_TAR)
 
-### When compiling RSL with MM5, the CC macro is defined by the call to make
-### from MM5/Makefile.  Don't define it here.
-# for compiling with MPICH
-#CC = mpicc
-# for compiling with DEC's version of MPI
-#CC = cc
-#FC = f77
+CC = cc
+FC = f90
+
+#MPIHOME=
+#IDIR=
 
 LIB = 
 
 .SUFFIXES: .o .c .F
 
-CFLAGS = -DMPI -DSWAPBYTES -O $(UNDERSCORE)
-FFLAGS  = -align dcommons -convert big_endian -O
+CFLAGS = -DMPI -h float0 -I../../../include -Dvpp -Dsx -DRSL_SYNCIO
+FFLAGS = -float0
 
 warning :
 	@ echo 'This makefile is not a top level makefile'
@@ -37,7 +35,7 @@ rsl.inc : $(HDR) rsl.inc_base
 
 librsl.a : $(OBJ)
 	ar cr librsl.a $(OBJ)
-	ranlib librsl.a
+#	ranlib librsl.a
 
 .c.o :
 	$(CC) -c $(CFLAGS) $(CONFIG_OPTS) $<

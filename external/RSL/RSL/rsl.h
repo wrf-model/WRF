@@ -710,6 +710,8 @@ rsl_index_t id_domain(), id_jdex(), id_idex() ;
 #define bcopy(a,b,c) vbcopy_C(a,b,c)
 #endif
 
+void * rsl_malloc(), * malloc()  ;
+
 
 #endif   /* nothing after this line */
 

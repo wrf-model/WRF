@@ -3,7 +3,7 @@
 # IBM SP without message passing at all (must run single proc)
 
 include makefile.core
-OBJ = $(CORE_OBJ) debug.o
+OBJ = $(CORE_OBJ) debug.o vicopy.o
 HDR = $(CORE_HDR)
 TAR = $(CORE_TAR)
 

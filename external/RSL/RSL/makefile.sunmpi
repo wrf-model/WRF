@@ -5,7 +5,7 @@
 .SUFFIXES: .F .o .c
 
 include makefile.core
-OBJ = $(CORE_OBJ) rsl_mpi_compat.o debug.o fort_doubleread.o fort_doublewrite.o fort_bdyin_dbl.o mpi_init_f.o rsl_error_dup.o
+OBJ = $(CORE_OBJ) rsl_mpi_compat.o debug.o fort_doubleread.o fort_doublewrite.o fort_bdyin_dbl.o mpi_init_f.o rsl_error_dup.o vicopy.o
 HDR = $(CORE_HDR)
 TAR = $(CORE_TAR)
 

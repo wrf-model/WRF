@@ -13,7 +13,7 @@ LIBS = $(LIB_PATH) $(LIB_LIST)
 ##### end stuff from Gropp #####
 
 include makefile.core
-OBJ = $(CORE_OBJ) rsl_mpi_compat.o mpi_init_f.o
+OBJ = $(CORE_OBJ) rsl_mpi_compat.o mpi_init_f.o vicopy.o
 HDR = $(CORE_HDR)
 TAR = $(CORE_TAR)
 

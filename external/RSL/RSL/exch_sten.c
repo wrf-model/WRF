@@ -180,10 +180,12 @@ fprintf(stderr,"pack   base %lu, f90_index %d, sten=%d\n",base,pr->f90_table_ind
       {
 
 #if 0
+if ( rsl_debug_flg ) {
 fprintf(stderr,"pck %08x, buf %08x, curs %5d, n %5d, off %5d, j %5d, s %5d\n",
 (char *)(base) + pr->offset + j * pr->stride,
 &(pbuf[curs]), curs, pr->n,
 pr->offset, j, pr->stride ) ;
+}
 #endif
 
         bcopy((char *)(base) + pr->offset + j * pr->stride,

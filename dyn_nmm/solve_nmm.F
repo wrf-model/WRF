@@ -1,15 +1,3 @@
-#define IDBG 62
-#define JDBG 62
-#define KDBG 1
-
-#define ALLOC_BOCOH
-#define ALLOC_BOCOV
-#define ALLOW_TURBL
-#define ALLOW_CLTENT
-#define ALLOW_CUCNVC
-#define ALLOW_GSMDRIVE
-#define ALLOW_RADIATION
-
 !NCEP_MESO:MEDIATION_LAYER:SOLVER
 !
 !***********************************************************************
@@ -106,8 +94,6 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
       SIGMA=1 
       HYDRO=.FALSE.
       IHRST=GRID%GMT
-
-!	write(0,*) 'set IHRST to : ', IHRST
 
       IJDS=MIN(IDS, JDS)
       IJDE=MAX(IDE, JDE)
@@ -234,7 +220,7 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
       LAST_TIME=grid%stop_time.EQ.grid%current_time+grid%step_time
 
 !      CALL ESMF_TimeGetString( grid%current_time, message, rc=rc )
-       WRITE(0,*)' SOLVE_NMM CALLED: TIMESTEP IS ',NTSD
+!      WRITE(0,*)' SOLVE_NMM CALLED: TIMESTEP IS ',NTSD
 !      WRITE(message,*)' SOLVE_NMM CALLED: TIMESTEP IS ',NTSD           &
 !               ,' FCST TIME IS',TRIM(message)
 !      CALL wrf_message( message )
@@ -321,10 +307,6 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
      &         ,ITS,ITE,JTS,JTE,KTS,KTE)
       adve_tim=adve_tim+timef()-btimx
 
-write(0,*)'after ADVE T ',T(IDBG,KDBG,JDBG)
-write(0,*)'after ADVE U ',U(IDBG,KDBG,JDBG)
-write(0,*)'after ADVE V ',V(IDBG,KDBG,JDBG)
-
       CALL wrf_debug ( 100 , 'nmm: out of adve' )
 
 !-----------------------------------------------------------------------
@@ -348,9 +330,6 @@ write(0,*)'after ADVE V ',V(IDBG,KDBG,JDBG)
      &         ,IMS,IME,JMS,JME,KMS,KME                                 &
      &         ,ITS,ITE,JTS,JTE,KTS,KTE)
       vtoa_tim=vtoa_tim+timef()-btimx
-write(0,*)'after VTOA T ',T(IDBG,KDBG,JDBG)
-write(0,*)'after VTOA U ',U(IDBG,KDBG,JDBG)
-write(0,*)'after VTOA V ',V(IDBG,KDBG,JDBG)
 
       CALL wrf_debug ( 100 , 'nmm: out of vtoa' )
 
@@ -370,10 +349,6 @@ write(0,*)'after VTOA V ',V(IDBG,KDBG,JDBG)
      &         ,IDS,IDF,JDS,JDF,KDS,KDE                                 &
      &         ,IMS,IME,JMS,JME,KMS,KME                                 &
      &         ,ITS,ITE,JTS,JTE,KTS,KTE)
-
-write(0,*)'after VADZ T ',T(IDBG,KDBG,JDBG)
-write(0,*)'after VADZ U ',U(IDBG,KDBG,JDBG)
-write(0,*)'after VADZ V ',V(IDBG,KDBG,JDBG)
 
       vadz_tim=vadz_tim+timef()-btimx
 
@@ -431,10 +406,6 @@ write(0,*)'after VADZ V ',V(IDBG,KDBG,JDBG)
      &        ,IMS,IME,JMS,JME,KMS,KME                                  &
      &        ,ITS,ITE,JTS,JTE,KTS,KTE)
       eps_tim=eps_tim+timef()-btimx
-
-write(0,*)'after EPS T ',T(IDBG,KDBG,JDBG)
-write(0,*)'after EPS U ',U(IDBG,KDBG,JDBG)
-write(0,*)'after EPS V ',V(IDBG,KDBG,JDBG)
 
       CALL wrf_debug ( 100 , 'nmm: out of eps' )
 !
@@ -498,7 +469,6 @@ write(0,*)'after EPS V ',V(IDBG,KDBG,JDBG)
 !***  RADIATION
 !----------------------------------------------------------------------
 !
-#ifdef ALLOW_RADIATION
       IF(MOD(NTSD,NRADS).EQ.0.OR.MOD(NTSD,NRADL).EQ.0)THEN
 
         btimx=timef()
@@ -521,13 +491,6 @@ write(0,*)'after EPS V ',V(IDBG,KDBG,JDBG)
      &                ,ITS,ITE,JTS,JTE,KTS,KTE)
         radiation_tim=radiation_tim+timef()-btimx
       ENDIF
-#else
-  write(0,*)'SOLVE_NMM: RADIATION COMMENTED OUT'
-#endif
-
-write(0,*)'after RADIATION T ',T(IDBG,KDBG,JDBG)
-write(0,*)'after RADIATION U ',U(IDBG,KDBG,JDBG)
-write(0,*)'after RADIATION V ',V(IDBG,KDBG,JDBG)
 
 !
 !----------------------------------------------------------------------
@@ -543,12 +506,6 @@ write(0,*)'after RADIATION V ',V(IDBG,KDBG,JDBG)
      &           ,ITS,ITE,JTS,JTE,KTS,KTE)
       rdtemp_tim=rdtemp_tim+timef()-btimx
 
-
-write(0,*)'after RDTEMP T ',T(IDBG,KDBG,JDBG)
-write(0,*)'after RDTEMP U ',U(IDBG,KDBG,JDBG)
-write(0,*)'after RDTEMP V ',V(IDBG,KDBG,JDBG)
-
-
 !
 !----------------------------------------------------------------------
 !***  TURBULENT PROCESSES 
@@ -556,9 +513,6 @@ write(0,*)'after RDTEMP V ',V(IDBG,KDBG,JDBG)
 !
       IF(MOD(NTSD,NPHS).EQ.0)THEN
         btimx=timef()
-
-#ifdef ALLOW_TURBL
-write(0,*)'before TURBL PSFC ',PSFC(IDBG,JDBG)
 
         CALL TURBL(GRID                                                &
      &            ,NTSD,DT,NPHS,RESTRT                                 &
@@ -588,14 +542,6 @@ write(0,*)'before TURBL PSFC ',PSFC(IDBG,JDBG)
      &            ,IMS,IME,JMS,JME,KMS,KME                             &
      &            ,ITS,ITE,JTS,JTE,KTS,KTE)
         turbl_tim=turbl_tim+timef()-btimx
-write(0,*)'after TURBL T ',T(IDBG,KDBG,JDBG)
-write(0,*)'after TURBL U ',U(IDBG,KDBG,JDBG)
-write(0,*)'after TURBL V ',V(IDBG,KDBG,JDBG)
-
-#else
-   write(0,*)'SOLVE_NMM : TURBL COMMENTED OUT '
-#endif
-
 
 !----------------------------------------------------------------------
 !*** STORE ORIGINAL TEMPERATURE ARRAY
@@ -612,21 +558,13 @@ write(0,*)'after TURBL V ',V(IDBG,KDBG,JDBG)
 
         btimx=timef()
  
-#ifdef ALLOW_CLTENT
         CALL CLTEND(ICLTEND,NPHS,T,T_OLD,T_ADJ                         &
                    ,IDS,IDF,JDS,JDF,KDS,KDE                            &
                    ,IMS,IME,JMS,JME,KMS,KME                            &
                    ,ITS,ITE,JTS,JTE,KTS,KTE)
-write(0,*)'after CLTEND T ',T(IDBG,KDBG,JDBG)
-write(0,*)'after CLTEND U ',U(IDBG,KDBG,JDBG)
-write(0,*)'after CLTEND V ',V(IDBG,KDBG,JDBG)
 
         cltend_tim=cltend_tim+timef()-btimx
         CALL wrf_debug ( 100 , 'nmm: out of cltend' )
-#else
-write(0,*)' CLTEND COMMENTED OUT'
-#endif
-
       ENDIF
 !
 !----------------------------------------------------------------------
@@ -641,8 +579,6 @@ write(0,*)' CLTEND COMMENTED OUT'
         exch_tim=exch_tim+timef()-btimx
       ENDIF
       btimx=timef()
-#ifdef ALLOW_CUCNVC
-	if (NCNVC .ne. 999) then
       CALL CUCNVC(grid                                                 &
      &           ,NTSD,DT,NCNVC,GPS,RESTRT,HYDRO                       &
 !    &           ,CLDEFI,LMH,MOIST,N_MOIST,ENSDIM                      &
@@ -657,26 +593,14 @@ write(0,*)' CLTEND COMMENTED OUT'
      &           ,IDS,IDF,JDS,JDF,KDS,KDE                              &
      &           ,IMS,IME,JMS,JME,KMS,KME                              &
      &           ,ITS,ITE,JTS,JTE,KTS,KTE)
-write(0,*)'after CUCNVC T ',T(IDBG,KDBG,JDBG)
-write(0,*)'after CUCNVC U ',U(IDBG,KDBG,JDBG)
-write(0,*)'after CUCNVC V ',V(IDBG,KDBG,JDBG)
 
       cucnvc_tim=cucnvc_tim+timef()-btimx
-	else
-	write(0,*) 'skipped CUCNVC'
-	endif
-write(0,*)'SOLVE_NMM : after CUNVC : ', PD(1,3),PD(10,10)
-#else
-write(0,*)'SOLVE_NMM : CUCNVC COMMENTED OUT'
-#endif
 !----------------------------------------------------------------------
 !***  GRIDSCALE MICROPHYSICS (CONDENSATION & PRECIPITATION)
 !----------------------------------------------------------------------
 !
       IF(MOD(NTSD,NPHS).EQ.0)THEN
         btimx=timef()
-#ifdef ALLOW_GSMDRIVE
-!       CALL GSMDRIVE(NTSD,DT,NPHS,MOIST,N_MOIST                       &
         CALL GSMDRIVE(NTSD,DT,NPHS,N_MOIST                             &
      &               ,DX_NMM(ITS,JC),DY,LMH,SM,HBM2,FIS                &
      &               ,DETA1,DETA2,AETA1,AETA2,ETA1,ETA2                &
@@ -687,14 +611,8 @@ write(0,*)'SOLVE_NMM : CUCNVC COMMENTED OUT'
      &               ,IDS,IDF,JDS,JDF,KDS,KDE                          &
      &               ,IMS,IME,JMS,JME,KMS,KME                          &
      &               ,ITS,ITE,JTS,JTE,KTS,KTE)
-write(0,*)'after GSMDRIVE T ',T(IDBG,KDBG,JDBG)
-write(0,*)'after GSMDRIVE U ',U(IDBG,KDBG,JDBG)
-write(0,*)'after GSMDRIVE V ',V(IDBG,KDBG,JDBG)
 
       gsmdrive_tim=gsmdrive_tim+timef()-btimx
-#else
-  write(0,*)' GSMDRIVE COMMENTED OUT'
-#endif
 !----------------------------------------------------------------------
 !***  CALCULATE TEMP TENDENCIES AND RESTORE ORIGINAL TEMPS
 !----------------------------------------------------------------------
@@ -704,20 +622,10 @@ write(0,*)'after GSMDRIVE V ',V(IDBG,KDBG,JDBG)
 
         btimx=timef()
 
-#ifdef ALLOW_CLTENT
-
         CALL CLTEND(ICLTEND,NPHS,T,T_OLD,T_ADJ                         &
      &             ,IDS,IDF,JDS,JDF,KDS,KDE                            &
      &             ,IMS,IME,JMS,JME,KMS,KME                            &
      &             ,ITS,ITE,JTS,JTE,KTS,KTE)
-
-#else
- write(0,*)' SOLVE_NMM : CLTEND 2 COMMENTED OUT '
-#endif
-
-write(0,*)'after CLTEND 2 T ',T(IDBG,KDBG,JDBG)
-write(0,*)'after CLTEND 2 U ',U(IDBG,KDBG,JDBG)
-write(0,*)'after CLTEND 2 V ',V(IDBG,KDBG,JDBG)
 
         cltend_tim=cltend_tim+timef()-btimx
         CALL wrf_debug ( 100 , 'nmm: out of cltend' )
@@ -732,18 +640,12 @@ write(0,*)'after CLTEND 2 V ',V(IDBG,KDBG,JDBG)
 
       btimx=timef()
 
-#ifdef ALLOW_CLTENT
-
       CALL CLTEND(ICLTEND,NPHS,T,T_OLD,T_ADJ                           &
      &           ,IDS,IDF,JDS,JDF,KDS,KDE                              &
      &           ,IMS,IME,JMS,JME,KMS,KME                              &
      &           ,ITS,ITE,JTS,JTE,KTS,KTE)
       cltend_tim=cltend_tim+timef()-btimx
       CALL wrf_debug ( 100 , 'nmm: out of cltend' )
-
-#else
- write(0,*)' SOLVE_NMM : CLTEND 3 COMMENTED OUT '
-#endif
 !
 !----------------------------------------------------------------------
 !***  LATERAL DIFFUSION
@@ -769,10 +671,6 @@ write(0,*)'after CLTEND 2 V ',V(IDBG,KDBG,JDBG)
       hdiff_tim=hdiff_tim+timef()-btimx
       CALL wrf_debug ( 100 , 'nmm: out of hdiff' )
 
-write(0,*)'after HDIFF T ',T(IDBG,KDBG,JDBG)
-write(0,*)'after HDIFF U ',U(IDBG,KDBG,JDBG)
-write(0,*)'after HDIFF V ',V(IDBG,KDBG,JDBG)
-
 !
 !----------------------------------------------------------------------
 !***  UPDATING BOUNDARY VALUES AT HEIGHT POINTS
@@ -788,7 +686,6 @@ write(0,*)'after HDIFF V ',V(IDBG,KDBG,JDBG)
 
       btimx=timef()
 
-#ifdef ALLOW_BOCOH
       CALL BOCOH(NTSD,DT,NEST,NUNIT_NBC,NBOCO,LAST_TIME,TSPH           &
      &          ,LB,ETA1,ETA2,PDTOP,PT,RES,HTM                         &
      &          ,PD_B,T_B,Q_B,U_B,V_B,Q2_B,CWM_B                       &
@@ -803,9 +700,6 @@ write(0,*)'after HDIFF V ',V(IDBG,KDBG,JDBG)
 !
 
       CALL wrf_debug ( 100 , 'nmm: out of bocoh' )
-#else
-  write(0,*)' SOLVE_NMM: BOCOH COMMENTED OUT'
-#endif
 !
 !----------------------------------------------------------------------
 !***  IS IT TIME FOR A CHECK POINT ON THE MODEL HISTORY FILE?
@@ -840,10 +734,6 @@ write(0,*)'after HDIFF V ',V(IDBG,KDBG,JDBG)
      &          ,ITS,ITE,JTS,JTE,KTS,KTE)
       pfdht_tim=pfdht_tim+timef()-btimx
 
-write(0,*)'after PFDHT T ',T(IDBG,KDBG,JDBG)
-write(0,*)'after PFDHT U ',U(IDBG,KDBG,JDBG)
-write(0,*)'after PFDHT V ',V(IDBG,KDBG,JDBG)
-
 !
 !----------------------------------------------------------------------
 !***  DIVERGENCE DAMPING
@@ -864,9 +754,6 @@ write(0,*)'after PFDHT V ',V(IDBG,KDBG,JDBG)
      &          ,IMS,IME,JMS,JME,KMS,KME                               &
      &          ,ITS,ITE,JTS,JTE,KTS,KTE)
       ddamp_tim=ddamp_tim+timef()-btimx
-write(0,*)'after DDAMP T ',T(IDBG,KDBG,JDBG)
-write(0,*)'after DDAMP U ',U(IDBG,KDBG,JDBG)
-write(0,*)'after DDAMP V ',V(IDBG,KDBG,JDBG)
       CALL wrf_debug ( 100 , 'nmm: out of ddamp' )
 !----------------------------------------------------------------------
 !----------------------------------------------------------------------
@@ -894,7 +781,6 @@ write(0,*)'after DDAMP V ',V(IDBG,KDBG,JDBG)
       CALL wrf_debug ( 100 , 'nmm: in bocov' )
 
       btimx=timef()
-#ifdef ALLOW_BOCOV
       CALL BOCOV(NTSD,DT,LB,VTM,U_B,V_B,U_BT,V_BT                      &
      &          ,U,V                                                   &
      &          ,IJDS,IJDE,SPEC_BDY_WIDTH                              &
@@ -902,13 +788,11 @@ write(0,*)'after DDAMP V ',V(IDBG,KDBG,JDBG)
      &          ,IDS,IDF,JDS,JDF,KDS,KDE                               &
      &          ,IMS,IME,JMS,JME,KMS,KME                               &
      &          ,ITS,ITE,JTS,JTE,KTS,KTE )
-#else
-  write(0,*)'SOLVE_NMM : BOCOV COMMENTED OUT '
-#endif
       bocov_tim=bocov_tim+timef()-btimx
         CALL wrf_debug ( 100 , 'nmm: out of bocov' )
       solve_tim=solve_tim+timef()-btim
 !----------------------------------------------------------------------
+#if 0
       sum_tim=pdte_tim+adve_tim+vtoa_tim+vadz_tim+hadz_tim+eps_tim     &
      &       +vad2_tim+had2_tim+radiation_tim+rdtemp_tim+turbl_tim     &
      &       +cltend_tim+cucnvc_tim+gsmdrive_tim+hdiff_tim             &
@@ -937,10 +821,7 @@ write(0,*)'after DDAMP V ',V(IDBG,KDBG,JDBG)
       write(0,*)' bocov_tim=',bocov_tim*1.e-3,' pct=',bocov_tim/sum_tim*100.
       write(0,*)' exch_tim=',exch_tim*1.e-3,' pct=',exch_tim/sum_tim*100.
       endif
-
-write(0,*)'after DDAMP T ',T(IDBG,KDBG,JDBG)
-write(0,*)'after DDAMP U ',U(IDBG,KDBG,JDBG)
-write(0,*)'after DDAMP V ',V(IDBG,KDBG,JDBG)
+#endif
 
 #define COPY_OUT
 #include <nmm_scalar_derefs.inc>

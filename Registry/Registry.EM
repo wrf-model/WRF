@@ -477,6 +477,15 @@ state   real    qv_base        k       misc         1         -     ir        "q
 state   real    z_base         k       misc         1         -     ir        "z_base"                "BASE STATE HEIGHT IN IDEALIZED CASES"         ""      
 state   real    u_frame        -       misc         1         -     ir        "u_frame"               "FRAME X WIND"         "m s-1"      
 state   real    v_frame        -       misc         1         -     ir        "v_frame"               "FRAME Y WIND"         "m s-1"      
+# p_top appears as metadata between SI and real but as a state variable in real and WRF
+# since it is a scalar and a constant, it makes sense to have it as metadata -- there
+# are, however, probably post-processing programs that expect to see it as an I/O record
+# another problem: share/input_wrf tries to read this as metadata (fine for real reading
+# SI, but with model reading real output, it generates a warning when debug is > 0 in
+# namelist and causes repeated questions from users.  A third problem is the potential
+# collision between a metadata name and a field record in the I/O data
+# resolve this how?  Have the real program throw a switch to tell the code to get it
+# from the metadata?  Otherwise it's a field?
 state   real    p_top          -       misc         -         -     irh       "p_top"                 "PRESSURE TOP OF THE MODEL"  "Pa"
                                                 
 # Other physics variables

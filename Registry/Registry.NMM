@@ -359,6 +359,20 @@ state integer iup_adv   ij   dyn_nmm     1    -    -
 
 #                                               
 #                                               
+# Mask for moving nest interpolations
+state    integer imask_nostag         ij      misc     -
+state    integer imask_xstag          ij      misc     X
+state    integer imask_ystag          ij      misc     Y
+state    integer imask_xystag         ij      misc     XY
+#                                               
+#                                               
+#                                               
+#                                               
+#                                               
+#                                               
+
+#                                               
+#                                               
 # Vertical Vel                                          
 #                                               
 # Other dyn                                             

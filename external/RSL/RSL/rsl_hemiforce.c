@@ -462,16 +462,19 @@ RSL_POINT_ON_PROC ( d_p, ig_p, jg_p, retval_p )
   int d ;
   int kiddex ;
   int P ;
+  int ig, jg ;
 
   rsl_domain_info_t * info ;
   rsl_point_t       * domain ;
+  ig = *ig_p - 1 ;
+  jg = *jg_p - 1 ;
 
   d = *d_p ;
   RSL_TEST_ERR( d < 0 || d > RSL_MAXDOMAINS,
     "rsl_ready_bcast: bad 'this hemi' descriptor" ) ;
   info = &( domain_info[d]) ;
   domain = info->domain ;
-  kiddex = INDEX_2(*jg_p,*ig_p,info->len_m ) ;
+  kiddex = INDEX_2(jg,ig,info->len_m ) ;
   P = domain[ kiddex ].P ;
   *retval_p = 0 ;
   if ( P == rsl_myproc ) *retval_p = 1 ;

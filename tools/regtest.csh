@@ -1810,14 +1810,8 @@ banner 22
 							ncdump -h wrfout_d01_${filetag} | grep Time | grep UNLIMITED | grep currently | grep -q 2
 							set ok = $status
 						else if ( $IO_FORM_NAME[$IO_FORM] == io_grib1  ) then
-#							set joe_times = `../../external/io_grib1/wgrib -s -4yr wrfout_d01_${filetag} |  grep -v ":anl:" | wc -l`
-#							if ( $joe_times >= 100 ) then
-							set joe_times = `../../external/io_grib1/wgrib -s -4yr wrfout_d01_${filetag} |  grep "UGRD:10 m" | wc -l`
-							if ( $joe_times == 2 ) then
-								set ok = 0
-							else
-								set ok = 1
-							endif
+							../../external/io_grib1/wgrib -s -4yr wrfout_d01_${filetag} |  grep "UGRD:10 m above gnd:3600 sec fcst"
+							set ok = $status
 						endif
 						if ( $ok == 0 ) then
 							echo "SUMMARY generate FCST  for $core physics $phys_option parallel $compopt $esmf_lib_str PASS" >>! ${DEF_DIR}/wrftest.output

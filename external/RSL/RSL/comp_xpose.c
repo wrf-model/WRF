@@ -97,11 +97,11 @@ rsl_compile_xpose( d_p, x_p )
   zlen = domain_info[d].len_z ;
 
   RSL_TEST_ERR( x <= 0 || x > RSL_MAXDESCRIPTORS,
-        "rsl_compile_xpose: bad period descriptor" ) ;
+        "rsl_compile_xpose: bad xpose descriptor" ) ;
   RSL_TEST_ERR((xp = (xpose_desc_t *)xp_descriptors[x]) == NULL,
         "rsl_compile_xpose: null xpose descriptor" ) ;
   RSL_TEST_ERR( xp->tag != XPOSE_DESC,
-        "rsl_compile_xpose: bad period descriptor" ) ;
+        "rsl_compile_xpose: bad xpose descriptor" ) ;
   RSL_TEST_ERR( xp->compiled[d] != 0,
         "rsl_compile_xpose: xpose has already been compiled for this domain") ;
 

@@ -68,7 +68,7 @@ state real x ikj dyn_exp 2 - ih "TOYVAR"
 #
 # pdb is only 2d but registry doesn't support 2d bdy arrays right now...
 #definitions for NMM slab arrays
-dimspec    q      -     constant=1000             c  # a little crude right now
+dimspec    q      -     constant=1250             c  # a little crude right now
 dimspec    v      -     constant=1             c  # a little crude right now
 
 state  real    pd_b     ijb    dyn_nmm     1      -      b    "PDB"
@@ -89,260 +89,236 @@ state  real   cwm_bt    ikjb    dyn_nmm     1      -      b    "CWMT"
 #
 # module_LOOPS
 #
-state integer  lmh      ij     dyn_nmm     1      -      ih
-state integer  lmv      ij     dyn_nmm     1      -      ih
+state integer  lmh      ij     dyn_nmm     1      -      irh
+state integer  lmv      ij     dyn_nmm     1      -      irh
 #
 # module_MASKS
 #
-state  real   hbm2      ij     dyn_nmm     1      -      ih
-state  real   hbm3      ij     dyn_nmm     1      -      ih
-state  real   vbm2      ij     dyn_nmm     1      -      ih
-state  real   vbm3      ij     dyn_nmm     1      -      ih
-state  real   sm        ij     dyn_nmm     1      -      ih
-state  real   sice      ij     dyn_nmm     1      -      ih
-state  real   htm       ikj    dyn_nmm     1      -      ih
-state  real   vtm       ikj    dyn_nmm     1      -      ih
+state  real   hbm2      ij     dyn_nmm     1      -      irh
+state  real   hbm3      ij     dyn_nmm     1      -      irh
+state  real   vbm2      ij     dyn_nmm     1      -      irh
+state  real   vbm3      ij     dyn_nmm     1      -      irh
+state  real   sm        ij     dyn_nmm     1      -      i01rh
+state  real   sice      ij     dyn_nmm     1      -      irh
+state  real   htm       ikj    dyn_nmm     1      -      i01rh
+state  real   vtm       ikj    dyn_nmm     1      -      i01rh
 #
 # module_VRBLS
 #
-state  real   pd        ij     dyn_nmm     1      -      ih
-state  real   fis       ij     dyn_nmm     1      -      ih
-state  real   res       ij     dyn_nmm     1      -      ih
-state  real   t         ikj    dyn_nmm     1      -      ih     "T"
-state  real   q         ikj    dyn_nmm     1      -      ih     "Q"
-state  real   u         ikj    dyn_nmm     1      -      ih     "U"
-state  real   v         ikj    dyn_nmm     1      -      ih     "V"
-state  real   told      ikj    dyn_nmm     1      -      -
-state  real   uold      ikj    dyn_nmm     1      -      -
-state  real   vold      ikj    dyn_nmm     1      -      -
+state  real   pd        ij     dyn_nmm     1      -      i01rh
+state  real   fis       ij     dyn_nmm     1      -      i01rh
+state  real   res       ij     dyn_nmm     1      -      irh
+state  real   t         ikj    dyn_nmm     1      -      i01rh   "T"
+state  real   q         ikj    dyn_nmm     1      -      i01rh   "Q"
+state  real   u         ikj    dyn_nmm     1      -      i01rh   "U"
+state  real   v         ikj    dyn_nmm     1      -      i01rh   "V"
+state  real   told      ikj    dyn_nmm     1      -      r
+state  real   uold      ikj    dyn_nmm     1      -      r
+state  real   vold      ikj    dyn_nmm     1      -      r
 #
 # module_DYNAM
 #
-state  real   dx_nmm    ij     dyn_nmm     1      -      ih
-state  real   wpdar     ij     dyn_nmm     1      -      ih
-state  real   cpgfu     ij     dyn_nmm     1      -      ih
-state  real   curv      ij     dyn_nmm     1      -      ih
-state  real   fcp       ij     dyn_nmm     1      -      ih
-state  real   fdiv      ij     dyn_nmm     1      -      ih
-state  real   f         ij     dyn_nmm     1      -      ih
-state  real   fad       ij     dyn_nmm     1      -      ih
-state  real   ddmpu     ij     dyn_nmm     1      -      ih
-state  real   ddmpv     ij     dyn_nmm     1      -      ih
-state  real   deta      k      dyn_nmm     1      -      i
-state  real   rdeta     k      dyn_nmm     1      -      i
-state  real   aeta      k      dyn_nmm     1      -      i
-state  real   f4q2      k      dyn_nmm     1      -      i
-state  real   etax      k      dyn_nmm     1      -      i
-state  real   dfl       k      dyn_nmm     1      Z      i
-state  real   deta1     k      dyn_nmm     1      -      i
-state  real   aeta1     k      dyn_nmm     1      -      i
-state  real   eta1      k      dyn_nmm     1      Z      i
-state  real   deta2     k      dyn_nmm     1      -      i
-state  real   aeta2     k      dyn_nmm     1      -      i
-state  real   eta2      k      dyn_nmm     1      Z      i
-state  real   em        q      dyn_nmm     1      -      i
-state  real   emt       q      dyn_nmm     1      -      i
-state  real   adt       ikj    dyn_nmm     1      -      i
-state  real   adu       ikj    dyn_nmm     1      -      i
-state  real   adv       ikj    dyn_nmm     1      -      i
-state  real   em_loc    q      dyn_nmm     1      -      -
-state  real   emt_loc   q      dyn_nmm     1      -      -
-state  real   dy_nmm    -      dyn_nmm     -      -      i
-state  real   cpgfv     -      dyn_nmm     -      -      i
-state  real   en        -      dyn_nmm     -      -      i
-state  real   ent       -      dyn_nmm     -      -      i
-state  real   f4d       -      dyn_nmm     -      -      i
-state  real   f4q       -      dyn_nmm     -      -      i
-state  real   ef4t      -      dyn_nmm     -      -      i
+state  real   dx_nmm    ij     dyn_nmm     1      -      irh
+state  real   wpdar     ij     dyn_nmm     1      -      ir
+state  real   cpgfu     ij     dyn_nmm     1      -      ir
+state  real   curv      ij     dyn_nmm     1      -      ir
+state  real   fcp       ij     dyn_nmm     1      -      ir
+state  real   fdiv      ij     dyn_nmm     1      -      ir
+state  real   f         ij     dyn_nmm     1      -      ir
+state  real   fad       ij     dyn_nmm     1      -      ir
+state  real   ddmpu     ij     dyn_nmm     1      -      ir
+state  real   ddmpv     ij     dyn_nmm     1      -      ir
+state  real   deta      k      dyn_nmm     1      -      i01r
+state  real   rdeta     k      dyn_nmm     1      -      ir
+state  real   aeta      k      dyn_nmm     1      -      i01r
+state  real   f4q2      k      dyn_nmm     1      -      ir
+state  real   etax      k      dyn_nmm     1      -      i01r
+state  real   dfl       k      dyn_nmm     1      Z      i01r
+state  real   deta1     k      dyn_nmm     1      -      i01r
+state  real   aeta1     k      dyn_nmm     1      -      i01r
+state  real   eta1      k      dyn_nmm     1      Z      i01r
+state  real   deta2     k      dyn_nmm     1      -      i01r
+state  real   aeta2     k      dyn_nmm     1      -      i01r
+state  real   eta2      k      dyn_nmm     1      Z      i01r
+state  real   em        q      dyn_nmm     1      -      ir
+state  real   emt       q      dyn_nmm     1      -      ir
+state  real   adt       ikj    dyn_nmm     1      -      -
+state  real   adu       ikj    dyn_nmm     1      -      -
+state  real   adv       ikj    dyn_nmm     1      -      -
+state  real   em_loc    q      dyn_nmm     1      -      r
+state  real   emt_loc   q      dyn_nmm     1      -      r
+state  real   dy_nmm    -      dyn_nmm     -      -      ir
+state  real   cpgfv     -      dyn_nmm     -      -      ir
+state  real   en        -      dyn_nmm     -      -      ir
+state  real   ent       -      dyn_nmm     -      -      ir
+state  real   f4d       -      dyn_nmm     -      -      ir
+state  real   f4q       -      dyn_nmm     -      -      ir
+state  real   ef4t      -      dyn_nmm     -      -      ir
 state  logical upstrm   -      dyn_nmm     -      -      -
-state  real   dlmd      -      dyn_nmm     -      -      i
-state  real   dphd      -      dyn_nmm     -      -      i
-state  real   pdtop     -      dyn_nmm     -      -      i
-state  real   pt        -      dyn_nmm     -      -      ih
+state  real   dlmd      -      dyn_nmm     -      -      ir
+state  real   dphd      -      dyn_nmm     -      -      ir
+state  real   pdtop     -      dyn_nmm     -      -      i01rh
+state  real   pt        -      dyn_nmm     -      -      i01rh
 #
 # module_CONTIN
 #
-state  real   pdsl      ij     dyn_nmm     1      -      i
-state  real   pdslo     ij     dyn_nmm     1      -      i
-state  real   psdt      ij     dyn_nmm     1      -      i
-state  real   div       ikj    dyn_nmm     1      -      i
-state  real   few       ikj    dyn_nmm     1      -      i
-state  real   fne       ikj    dyn_nmm     1      -      i
-state  real   fns       ikj    dyn_nmm     1      -      i
-state  real   fse       ikj    dyn_nmm     1      -      i
-state  real   omgalf    ikj    dyn_nmm     1      -      i
-state  real   petdt     ikj    dyn_nmm     1      -      i
-state  real   rtop      ikj    dyn_nmm     1      -      i
+state  real   pdsl      ij     dyn_nmm     1      -      -
+state  real   pdslo     ij     dyn_nmm     1      -      -
+state  real   psdt      ij     dyn_nmm     1      -      r
+state  real   div       ikj    dyn_nmm     1      -      r
+state  real   few       ikj    dyn_nmm     1      -      -
+state  real   fne       ikj    dyn_nmm     1      -      -
+state  real   fns       ikj    dyn_nmm     1      -      -
+state  real   fse       ikj    dyn_nmm     1      -      -
+state  real   omgalf    ikj    dyn_nmm     1      -      r
+state  real   petdt     ikj    dyn_nmm     1      -      -
+state  real   rtop      ikj    dyn_nmm     1      -      -
 #
 # module_PVRBLS
 #
-state integer lpbl      ij    dyn_nmm   1    -     i
-state  real   ustar     ij    dyn_nmm   1    -     i
-state  real   z0        ij    dyn_nmm   1    -     i
-state  real   z0base        ij    dyn_nmm   1    -     i
-#jw state  real   uz0       ij    dyn_nmm   1    -     i
-#jw state  real   vz0       ij    dyn_nmm   1    -     i
-#jw state  real   thz0      ij    dyn_nmm   1    -     i
-#jw state  real   qz0       ij    dyn_nmm   1    -     i
-state  real   ths       ij    dyn_nmm   1    -     ih
-state  real   qs        ij    dyn_nmm   1    -     i
-#jw state  real   akhs      ij    dyn_nmm   1    -     i
-#jw state  real   akms      ij    dyn_nmm   1    -     i
-state  real   twbs      ij    dyn_nmm   1    -     i
-state  real   qwbs      ij    dyn_nmm   1    -     i
-state  real   prec      ij    dyn_nmm   1    -     i
-state  real   aprec     ij    dyn_nmm   1    -     ih
-state  real   acprec    ij    dyn_nmm   1    -     ih
-state  real   cuprec    ij    dyn_nmm   1    -     ih
-state  real   accliq    ij    dyn_nmm   1    -     i
-state  real   sno       ij    dyn_nmm   1    -     i
-state  real   si        ij    dyn_nmm   1    -     i
-state  real   cldefi    ij    dyn_nmm   1    -     i
-state  real   deep      ij    dyn_nmm   1    -     i
-state  real   rf        ij    dyn_nmm   1    -     i
-state  real   th10      ij    dyn_nmm   1    -     i
-state  real   q10       ij    dyn_nmm   1    -     i
-#jw state  real   u10       ij    dyn_nmm   1    -     i
-#jw state  real   v10       ij    dyn_nmm   1    -     i
-state  real   pshltr    ij    dyn_nmm   1    -     i
-state  real   tshltr    ij    dyn_nmm   1    -     ih
-state  real   qshltr    ij    dyn_nmm   1    -     ih
-state  real   q2        ikj    dyn_nmm   1    -     i
-state  real   t_adj     ikj   dyn_nmm   1    -     i
-state  real   t_old     ikj   dyn_nmm   1    -     i
-state  real   zero_3d   ikj   dyn_nmm   1    -     i
+state integer lpbl      ij    dyn_nmm   1    -     ir
+state  real   ustar     ij    dyn_nmm   1    -     ir
+state  real   z0        ij    dyn_nmm   1    -     irh
+state  real   z0base    ij    dyn_nmm   1    -     ir
+state  real   ths       ij    dyn_nmm   1    -     irh
+state  real   qs        ij    dyn_nmm   1    -     ir
+state  real   twbs      ij    dyn_nmm   1    -     ir
+state  real   qwbs      ij    dyn_nmm   1    -     ir
+state  real   prec      ij    dyn_nmm   1    -     rh
+state  real   aprec     ij    dyn_nmm   1    -     rh
+state  real   acprec    ij    dyn_nmm   1    -     rh
+state  real   cuprec    ij    dyn_nmm   1    -     rh
+state  real   accliq    ij    dyn_nmm   1    -     r
+state  real   sno       ij    dyn_nmm   1    -     ir
+state  real   si        ij    dyn_nmm   1    -     ir
+state  real   cldefi    ij    dyn_nmm   1    -     r
+state  real   deep      ij    dyn_nmm   1    -     r
+state  real   rf        ij    dyn_nmm   1    -     r
+state  real   th10      ij    dyn_nmm   1    -     ir
+state  real   q10       ij    dyn_nmm   1    -     ir
+state  real   pshltr    ij    dyn_nmm   1    -     irh
+state  real   tshltr    ij    dyn_nmm   1    -     irh
+state  real   qshltr    ij    dyn_nmm   1    -     irh
+state  real   q2        ikj    dyn_nmm   1    -     ir
+state  real   t_adj     ikj   dyn_nmm   1    -     r
+state  real   t_old     ikj   dyn_nmm   1    -     r
+state  real   zero_3d   ikj   dyn_nmm   1    -     r
 state  real   W0AVG     ikj   dyn_nmm   1    -     r        "W0AVG" "AVERAGE VERTICAL VELOCITY FOR KF CUMULUS SCHEME"         "m s-1"
 #
 # module_PHYS
 #
-state  real   albase    ij    dyn_nmm   1    -     ih
-state  real   albedo    ij    dyn_nmm   1    -     i
-state  real   cnvbot    ij    dyn_nmm   1    -     i
-state  real   cnvtop    ij    dyn_nmm   1    -     i
-state  real   czen      ij    dyn_nmm   1    -     i
-state  real   czmean    ij    dyn_nmm   1    -     i
-state  real   epsr      ij    dyn_nmm   1    -     ih
-state  real   gffc      ij    dyn_nmm   1    -     ih
-state  real   glat      ij    dyn_nmm   1    -     ih
-state  real   glon      ij    dyn_nmm   1    -     ih
+state  real   albase    ij    dyn_nmm   1    -     i01rh
+state  real   albedo    ij    dyn_nmm   1    -     ir
+state  real   cnvbot    ij    dyn_nmm   1    -     irh
+state  real   cnvtop    ij    dyn_nmm   1    -     irh
+state  real   czen      ij    dyn_nmm   1    -     ir
+state  real   czmean    ij    dyn_nmm   1    -     ir
+state  real   epsr      ij    dyn_nmm   1    -     ir
+state  real   gffc      ij    dyn_nmm   1    -     ir
+state  real   glat      ij    dyn_nmm   1    -     i01rh
+state  real   glon      ij    dyn_nmm   1    -     i01rh
 state  real   NMM_TSK   ij    dyn_nmm   1    -    i01r     "TSK"
 #jw state  real   hbot      ij    dyn_nmm   1    -     i
-state  real   hdac      ij    dyn_nmm   1    -     ih
-state  real   hdacv     ij    dyn_nmm   1    -     ih
-#jw state  real   htop      ij    dyn_nmm   1    -     i
-state  real   mxsnal    ij    dyn_nmm   1    -     ih
-state  real   radin     ij    dyn_nmm   1    -     i
-state  real   radot     ij    dyn_nmm   1    -     i
-state  real   sigt4     ij    dyn_nmm   1    -     i
-state  real   tg        ij    dyn_nmm   1    -     ih
-#state  real   aeta      k     dyn_nmm   1    -     i
-#state  real   tlmax     ij    dyn_nmm   1    -     i
-#state  real   tlmin     ij    dyn_nmm   1    -     i
-# already defined above
-#state  real   deta      k     dyn_nmm   1    -     i
-state  real   dfrlg     k     dyn_nmm   1    -     i
-state integer lvl       ij    dyn_nmm   1    -     i
+state  real   hdac      ij    dyn_nmm   1    -     ir
+state  real   hdacv     ij    dyn_nmm   1    -     ir
+state  real   mxsnal    ij    dyn_nmm   1    -     i01r
+state  real   radin     ij    dyn_nmm   1    -     -
+state  real   radot     ij    dyn_nmm   1    -     -
+state  real   sigt4     ij    dyn_nmm   1    -     -
+state  real   tg        ij    dyn_nmm   1    -     i01rh "TGROUND"  # changed data name from SOILTB to avoid conflict
+state integer lvl       ij    dyn_nmm   1    -     ir
 #
 # module_CLDWTR.F
 #
-state  real   cwm       ikj   dyn_nmm   1    -     ih
-state  real   f_ice     ikj   dyn_nmm   1    -     i
-state  real   f_rain    ikj   dyn_nmm   1    -     i
-state  real   f_rimef   ikj   dyn_nmm   1    -     i
-state  real   sr        ij    dyn_nmm   1    -     i
-state  real   u00       ij    dyn_nmm   1    -     i
-state  real   cfrach    ij    dyn_nmm   1    -     i
-state  real   cfracl    ij    dyn_nmm   1    -     i
-state  real   cfracm    ij    dyn_nmm   1    -     i
-state integer lc        ij    dyn_nmm   1    -     i
-state integer ul        k     dyn_nmm   1    -     i
+state  real   cwm       ikj   dyn_nmm   1    -     rh
+state  real   f_ice     ikj   dyn_nmm   1    -     rh
+state  real   f_rain    ikj   dyn_nmm   1    -     r
+state  real   f_rimef   ikj   dyn_nmm   1    -     -
+state  real   sr        ij    dyn_nmm   1    -     ir
+state  real   u00       ij    dyn_nmm   1    -     ir
+state  real   cfrach    ij    dyn_nmm   1    -     h
+state  real   cfracl    ij    dyn_nmm   1    -     h
+state  real   cfracm    ij    dyn_nmm   1    -     h
+state integer lc        ij    dyn_nmm   1    -     ir
+state integer ul        k     dyn_nmm   1    -     ir
 state logical micro_start        -     dyn_nmm   -    -     -
 #
 # module_SOIL.F
 #
-state integer islope    ij    dyn_nmm   1    -     ih
-#jw state integer isltyp    ij    dyn_nmm   1    -     i
-#jw state integer ivgtyp    ij    dyn_nmm   1    -     i
-state  real   dzsoil    k     dyn_nmm   1    -     i
-state  real   rtdpth    k     dyn_nmm   1    -     i
-state  real   sldpth    k     dyn_nmm   1    -     i
-state  real   cmc       ij    dyn_nmm   1    -     i
-state  real   grnflx    ij    dyn_nmm   1    -     i
-state  real   pctsno    ij    dyn_nmm   1    -     i
-#jw state  real   sfcexc    ij    dyn_nmm   1    -     i
-#jw state  real   smstav    ij    dyn_nmm   1    -     i
-#jw state  real   smstot    ij    dyn_nmm   1    -     i
-state  real   soiltb    ij    dyn_nmm   1    -     i
-#state  real   vegfrc    ij    dyn_nmm   1    -     ih   # replaced with generic VEGFRA below
-state  real   shdmin    ij    dyn_nmm   1    -     i
-state  real   shdmax    ij    dyn_nmm   1    -     i
-state  real   sh2o      ilj   dyn_nmm   1    Z     i
-state  real   smc       ilj   dyn_nmm   1    Z     i
-state  real   stc       ilj   dyn_nmm   1    Z     i
+state integer islope    ij    dyn_nmm   1    -     i01rh
+state  real   dzsoil    k     dyn_nmm   1    -     ir
+state  real   rtdpth    k     dyn_nmm   1    -     i01r
+state  real   sldpth    k     dyn_nmm   1    -     i01r
+state  real   cmc       ij    dyn_nmm   1    -     i01r
+state  real   grnflx    ij    dyn_nmm   1    -     ir
+state  real   pctsno    ij    dyn_nmm   1    -     ir
+state  real   soiltb    ij    dyn_nmm   1    -     i01r
+state  real   shdmin    ij    dyn_nmm   1    -     -
+state  real   shdmax    ij    dyn_nmm   1    -     -
+state  real   sh2o      ilj   dyn_nmm   1    Z     irh
+state  real   smc       ilj   dyn_nmm   1    Z     irh
+state  real   stc       ilj   dyn_nmm   1    Z     irh
 #
 # module_NHYDRO.F
 #
 state logical hydro     -     dyn_nmm   -    -     -
-state  real   dwdtmn    ij    dyn_nmm   1    -     i
-state  real   dwdtmx    ij    dyn_nmm   1    -     i
-state  real   dwdt      ikj   dyn_nmm   1    -     i
-state  real   pdwdt     ikj   dyn_nmm   1    -     i
-state  real   pint      ikj   dyn_nmm   1    Z     ih
+state  real   dwdtmn    ij    dyn_nmm   1    -     -
+state  real   dwdtmx    ij    dyn_nmm   1    -     -
+state  real   dwdt      ikj   dyn_nmm   1    -     r
+state  real   pdwdt     ikj   dyn_nmm   1    -     r
+state  real   pint      ikj   dyn_nmm   1    Z     rh
 # are not these z staggered (z and w?)
-state  real   w         ikj   dyn_nmm   1    Z     h
-state  real   z         ikj   dyn_nmm   1    -     i
+state  real   w         ikj   dyn_nmm   1    Z     rh
+state  real   z         ikj   dyn_nmm   1    -     -
 #
 # module_ACCUM.F
 #
-state  real   acfrcv    ij    dyn_nmm     1    -    i
-state  real   acfrst    ij    dyn_nmm     1    -    i
-#jw state  real   acsnow    ij    dyn_nmm     1    -    i
-#jw state  real   acsnom    ij    dyn_nmm     1    -    i
-state  real   ssroff    ij    dyn_nmm     1    -    i
-state  real   bgroff    ij    dyn_nmm     1    -    i
-state  real   rlwin     ij    dyn_nmm     1    -    i
-state  real   rlwout    ij    dyn_nmm     1    -    i
-state  real   rlwtoa    ij    dyn_nmm     1    -    i
-state  real   alwin     ij    dyn_nmm     1    -    i
-state  real   alwout    ij    dyn_nmm     1    -    i
-state  real   alwtoa    ij    dyn_nmm     1    -    i
-state  real   totswdn   ij    dyn_nmm     1    -    i
-state  real   totlwdn   ij    dyn_nmm     1    -    i
-state  real   rswin     ij    dyn_nmm     1    -    i
-state  real   rswout    ij    dyn_nmm     1    -    i
-state  real   rswtoa    ij    dyn_nmm     1    -    i
-state  real   aswin     ij    dyn_nmm     1    -    i
-state  real   aswout    ij    dyn_nmm     1    -    i
-state  real   aswtoa    ij    dyn_nmm     1    -    i
-state  real   sfcshx    ij    dyn_nmm     1    -    i
-state  real   sfclhx    ij    dyn_nmm     1    -    i
-state  real   subshx    ij    dyn_nmm     1    -    i
-state  real   snopcx    ij    dyn_nmm     1    -    i
-state  real   sfcuvx    ij    dyn_nmm     1    -    i
-#jw state  real   sfcevp    ij    dyn_nmm     1    -    i
-state  real   potevp    ij    dyn_nmm     1    -    i
-state  real   potflx    ij    dyn_nmm     1    -    i
-state  real   tlmin     ij    dyn_nmm     1    -    i
-state  real   tlmax     ij    dyn_nmm     1    -    i
-state  real   rlwtt     ikj   dyn_nmm     1    -    i
-state  real   rswtt     ikj   dyn_nmm     1    -    i
-state  real   tcucn     ikj   dyn_nmm     1    -    i
-state  real   train     ikj   dyn_nmm     1    -    i
-state integer ncfrcv    ij    dyn_nmm     1    -    i
-state integer ncfrst    ij    dyn_nmm     1    -    i
-state integer nclod     -     dyn_nmm     -    -    i
-state integer nheat     -     dyn_nmm     -    -    i
-state integer nrdlw     -     dyn_nmm     -    -    i
-state integer nrdsw     -     dyn_nmm     -    -    i
-state integer nsrfc     -     dyn_nmm     -    -    i
-state  real   avrain    -     dyn_nmm     -    -    i
-state  real   avcnvc    -     dyn_nmm     -    -    i
-state  real   aratim    -     dyn_nmm     -    -    i
-state  real   acutim    -     dyn_nmm     -    -    i
-state  real   ardlw     -     dyn_nmm     -    -    i
-state  real   ardsw     -     dyn_nmm     -    -    i
-state  real   asrfc     -     dyn_nmm     -    -    i
-state  real   aphtim    -     dyn_nmm     -    -    i
+state  real   acfrcv    ij    dyn_nmm     1    -    -
+state  real   acfrst    ij    dyn_nmm     1    -    -
+state  real   ssroff    ij    dyn_nmm     1    -    -
+state  real   bgroff    ij    dyn_nmm     1    -    -
+state  real   rlwin     ij    dyn_nmm     1    -    h
+state  real   rlwout    ij    dyn_nmm     1    -    -
+state  real   rlwtoa    ij    dyn_nmm     1    -    -
+state  real   alwin     ij    dyn_nmm     1    -    h
+state  real   alwout    ij    dyn_nmm     1    -    -
+state  real   alwtoa    ij    dyn_nmm     1    -    -
+state  real   totswdn   ij    dyn_nmm     1    -    -
+state  real   totlwdn   ij    dyn_nmm     1    -    -
+state  real   rswin     ij    dyn_nmm     1    -    -
+state  real   rswout    ij    dyn_nmm     1    -    -
+state  real   rswtoa    ij    dyn_nmm     1    -    -
+state  real   aswin     ij    dyn_nmm     1    -    -
+state  real   aswout    ij    dyn_nmm     1    -    -
+state  real   aswtoa    ij    dyn_nmm     1    -    -
+state  real   sfcshx    ij    dyn_nmm     1    -    -
+state  real   sfclhx    ij    dyn_nmm     1    -    -
+state  real   subshx    ij    dyn_nmm     1    -    -
+state  real   snopcx    ij    dyn_nmm     1    -    -
+state  real   sfcuvx    ij    dyn_nmm     1    -    -
+state  real   potevp    ij    dyn_nmm     1    -    -
+state  real   potflx    ij    dyn_nmm     1    -    -
+state  real   tlmin     ij    dyn_nmm     1    -    -
+state  real   tlmax     ij    dyn_nmm     1    -    -
+state  real   rlwtt     ikj   dyn_nmm     1    -    r
+state  real   rswtt     ikj   dyn_nmm     1    -    r
+state  real   tcucn     ikj   dyn_nmm     1    -    -
+state  real   train     ikj   dyn_nmm     1    -    -
+state integer ncfrcv    ij    dyn_nmm     1    -    ir
+state integer ncfrst    ij    dyn_nmm     1    -    ir
+state integer nclod     -     dyn_nmm     -    -    ir
+state integer nheat     -     dyn_nmm     -    -    ir
+state integer nrdlw     -     dyn_nmm     -    -    ir
+state integer nrdsw     -     dyn_nmm     -    -    ir
+state integer nsrfc     -     dyn_nmm     -    -    ir
+state  real   avrain    -     dyn_nmm     -    -    ir
+state  real   avcnvc    -     dyn_nmm     -    -    ir
+state  real   aratim    -     dyn_nmm     -    -    ir
+state  real   acutim    -     dyn_nmm     -    -    ir
+state  real   ardlw     -     dyn_nmm     -    -    irh
+state  real   ardsw     -     dyn_nmm     -    -    ir
+state  real   asrfc     -     dyn_nmm     -    -    ir
+state  real   aphtim    -     dyn_nmm     -    -    ir
 #
 # module_INDX.F
 #
@@ -370,28 +346,12 @@ state integer iup_v     ij   dyn_nmm     1    -    -
 state integer iup_adh   ij   dyn_nmm     1    -    -
 state integer iup_adv   ij   dyn_nmm     1    -    -
 
-## these appear to be namelist variables, maybe should make such?
-## right now they're set in eta namelists and read in by convert_nmm prog
-## and read into wrf from the output of convert_nmm
-#state integer idtad     -   dyn_nmm      -    -    i
-#state integer nsoil     -   dyn_nmm      -    -    i
-#state integer nradl     -   dyn_nmm      -    -    i
-#state integer nrads     -   dyn_nmm      -    -    i
-#state integer nphs      -   dyn_nmm      -    -    i
-#state integer ncnvc     -   dyn_nmm      -    -    i
-#state integer sigma     -   dyn_nmm      -    -    i
-
-
-
-
-
 #                                               
 # table entries are of the form                                         
 #<Table> <Type> <Sym>         <Dims>   <Use>   <NumTLev> <Stagger> <IO>     <DNAME>             <DESCRIP>     <UNITS>   
 #
 # Variables for slt dynamics                                            
 #
-
 
 #                                               
 # Variables for Eulerian height coordinate model                                           
@@ -490,12 +450,12 @@ state   real   soilcbot            isj   misc          1     Z     i1      "SOIL
 # dry code will will still link properly)                                               
 #                                               
 state   real    -              ikjft   moist       1         -     -    -                                       
-state   real    qv             ikjft   moist       1         -     -       "QVAPOR"           "Water vapor mixing ratio"      "kg kg-1"
-state   real    qc             ikjft   moist       1         -     -       "QCLOUD"           "Cloud water mixing ratio"      "kg kg-1"
-state   real    qr             ikjft   moist       1         -     -       "QRAIN"            "Rain water mixing ratio"       "kg kg-1"
-state   real    qi             ikjft   moist       1         -     -       "QICE"             "Ice mixing ratio"              "kg kg-1"
-state   real    qs             ikjft   moist       1         -     -       "QSNOW"            "Snow mixing ratio"             "kg kg-1"
-state   real    qg             ikjft   moist       1         -     -       "QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
+state   real    qv             ikjft   moist       1         -     r       "QVAPOR"           "Water vapor mixing ratio"      "kg kg-1"
+state   real    qc             ikjft   moist       1         -     r       "QCLOUD"           "Cloud water mixing ratio"      "kg kg-1"
+state   real    qr             ikjft   moist       1         -     r       "QRAIN"            "Rain water mixing ratio"       "kg kg-1"
+state   real    qi             ikjft   moist       1         -     r       "QICE"             "Ice mixing ratio"              "kg kg-1"
+state   real    qs             ikjft   moist       1         -     rh      "QSNOW"            "Snow mixing ratio"             "kg kg-1"
+state   real    qg             ikjft   moist       1         -     rh      "QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
 #                                               
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -567,14 +527,14 @@ state    real   dtbc            -       misc     -         -      ir       "dtbc
 state    real   TH2              ij     misc        1         -     irh       "TH2"                  "POT TEMP at 2 M" ""
 state    real   U10              ij     misc        1         -     irh       "U10"                  "U at 10 M"         " "
 state    real   V10              ij     misc        1         -     irh       "V10"                  "V at 10 M"         " "
-state    real   XICE             ij     misc        1         -     ir        "XICE"                 "SEA ICE"         ""
+state    real   XICE             ij     misc        1         -     i01r      "XICE"                 "SEA ICE"         ""
 state    real   SMSTAV           ij     misc        1         -     irh       "SMSTAV"               "MOISTURE VARIBILITY" ""
 state    real   SMSTOT           ij     misc        1         -     i       "SMSTOT"               "TOTAL SOIL MOISTURE" ""
 state    real   SFCRUNOFF        ij     misc        1         -     irh       "SFROFF"               "SURFACE RUNOFF" ""
 state    real   UDRUNOFF         ij     misc        1         -     irh       "UDROFF"               "UNDERGROUND RUNOFF" ""
 state  integer  IVGTYP           ij     misc        1         -     irh       "IVGTYP"               "VEGETATION TYPE" ""
 state  integer  ISLTYP           ij     misc        1         -     irh       "ISLTYP"               "SOIL TYPE"         " "
-state    real   VEGFRA           ij     misc        1         -     irh       "VEGFRA"               "VEGETATION FRACTION" ""
+state    real   VEGFRA           ij     misc        1         -     i01rh       "VEGFRA"               "VEGETATION FRACTION" ""
 state    real   SFCEVP           ij     misc        1         -     i       "SFCEVP"               "SURFACE EVAPORATION" ""
 state    real   GRDFLX           ij     misc        1         -     i       "GRDFLX"               "GROUND HEAT FLUX" ""
 state    real   ALBBCK           ij     misc        1         -     i012r   "ALBBCK"          "BACKGROUND ALBEDO"        "NA"
@@ -583,8 +543,8 @@ state    real   ACSNOW           ij     misc        1         -     irh       "A
 state    real   ACSNOM           ij     misc        1         -     irh       "ACSNOM"               "ACCUMULATED MELTED SNOW"         ""
 state    real   SNOW             ij     misc        1         -     irh       "SNOW"                 "SNOW WATER EQUIVALENT"         ""
 state    real   CANWAT           ij     misc        1         -     irh       "CANWAT"               "CANOPY WATER" ""
-state    real   SST              ij     misc        1         -     irh       "SST"                  "SEA SURFACE TEMPERATURE" "K"
-state    real   WEASD            ij     misc        1         -     irh       "WEASD"                "WATER EQUIVALENT OF ACCUMULATED SNOW" ""
+state    real   SST              ij     misc        1         -     i01rh       "SST"                  "SEA SURFACE TEMPERATURE" "K"
+state    real   WEASD            ij     misc        1         -     i01rh       "WEASD"                "WATER EQUIVALENT OF ACCUMULATED SNOW" ""
 state    real  ZNT              ij      misc        1         -     ir        "ZNT"                   "TIME-VARYING ROUGHNESS LENGTH"
 state    real  MOL              ij      misc        1         -     ir        "MOL"                   "Q* IN SIMILARITY THEORY"                      "kg kg{-1}"
 
@@ -633,8 +593,6 @@ state    real   SMFR3D           ilj    misc        1         Z      rh       "S
 
 
 #################################################################
-                                                
-                                                
 #                                               
                                                 
 state   integer number_at_same_level    -        -          -         -     -        "number_at_same_level"  ""         ""      
@@ -1196,12 +1154,12 @@ package   kfscheme       cu_physics==99              -             -
 # only need to specify these once; not for every io_form* variable
 package   io_intio    io_form_restart==1                     -             -
 package   io_netcdf   io_form_restart==2                     -             -
+
 # Four placeholders for additional packages (we can go beyond zzz 
 # but that will entail modifying frame/module_io.F and frame/md_calls.m4)
 # Please note these are placeholders; HDF has not been implemented yet.
 package   io_hdf      io_form_restart==3                     -             -
 package   io_phdf5    io_form_restart==4                     -             -
-#package   io_xxx      io_form_restart==4                     -             -
 package   io_yyy      io_form_restart==5                     -             -
 package   io_zzz      io_form_restart==6                     -             -
                                                 
@@ -1271,13 +1229,4 @@ halo      HALO_NMM_L  dyn_nmm 8:pd,t,q,cwm,q2
 
 halo      HALO_NMM_TURBL_A  dyn_nmm 8:uz0h,vz0h,hbm2
 halo      HALO_NMM_TURBL_B  dyn_nmm 8:dudt,dvdt
-
-##### test definition for 3DVAR
-#typedef dim_type integer ix 
-#typedef dim_type integer jx 
-#typedef xb_type dim_type dim
-#typedef xb_type real  u  ikj  -   2   X   -  "U"   "X WIND COMPONENT"   "m s(-1)"      
-#typedef xb_type real  v  ikj  -   2   X   -  "V"   "Y WIND COMPONENT"   "m s(-1)"      
-#state xb_type xb - dyn_eh
-#i1    xb_type xx -
 

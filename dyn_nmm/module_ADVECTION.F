@@ -33,9 +33,9 @@
       CONTAINS
 !
 #ifdef OPTIM_ADVE
-# include "adve_optim.inc"
+# include "adve_optim.h"
 #else
-# include "adve_orig.inc"
+# include "adve_orig.h"
 #endif
 !
 !***********************************************************************

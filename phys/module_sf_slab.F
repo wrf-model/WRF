@@ -166,6 +166,11 @@ CONTAINS
          P1D(i) =P3D(i,1,j)
       ENDDO
 
+! the indices to the PSFC argument in the following call look
+! wrong; however, it is correct to call with its (and not ims)
+! because of the way PSFC is defined in SLAB1D. Whether *that*
+! is a good idea or not, this commenter cannot comment. JM
+
       CALL SLAB1D(J,T1D,QV1D,P1D,FLHC(ims,j),FLQC(ims,j),       &
            PSFC(its,j),XLAND(ims,j),TMN(ims,j),HFX(ims,j),      &
            QFX(ims,j),TSK(ims,j),QSFC(ims,j),CHKLOWQ(ims,j),    &

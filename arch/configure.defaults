@@ -522,6 +522,12 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
 
+#### Override default sed command and script for Fortran source files         ####
+#### This sed script does not pass __FILE__ and __LINE__ to wrf_error_fatal() ####
+#### because the Sun Fortran compiler complains about long source lines,      ####
+#### usually due to cpp translating __FILE__ to a full pathname.              ####
+SED_FTN = sed -f ../arch/no_file_line.sed
+
 externals : CONFIGURE_WRFIO_NF wrfio_int module_dm.F esmf_time
 
 module_dm.F :
@@ -633,6 +639,12 @@ M4              =       m4 -B 8000
 RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
+
+#### Override default sed command and script for Fortran source files         ####
+#### This sed script does not pass __FILE__ and __LINE__ to wrf_error_fatal() ####
+#### because the Sun Fortran compiler complains about long source lines,      ####
+#### usually due to cpp translating __FILE__ to a full pathname.              ####
+SED_FTN = sed -f ../arch/no_file_line.sed
 
 externals : CONFIGURE_WRFIO_NF ../external/RSL/RSL/librsl.a gen_comms.c wrfio_int module_dm.F esmf_time
 
@@ -746,6 +758,12 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
 
+#### Override default sed command and script for Fortran source files         ####
+#### This sed script does not pass __FILE__ and __LINE__ to wrf_error_fatal() ####
+#### because the Sun Fortran compiler complains about long source lines,      ####
+#### usually due to cpp translating __FILE__ to a full pathname.              ####
+SED_FTN = sed -f ../arch/no_file_line.sed
+
 externals : CONFIGURE_WRFIO_NF wrfio_int module_dm.F esmf_time
 
 module_dm.F :
@@ -840,6 +858,12 @@ M4              =       m4 -B 8000
 RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
+
+#### Override default sed command and script for Fortran source files         ####
+#### This sed script does not pass __FILE__ and __LINE__ to wrf_error_fatal() ####
+#### because the Sun Fortran compiler complains about long source lines,      ####
+#### usually due to cpp translating __FILE__ to a full pathname.              ####
+SED_FTN = sed -f ../arch/no_file_line.sed
 
 externals : CONFIGURE_WRFIO_NF ../external/RSL/RSL/librsl.a gen_comms.c wrfio_int module_dm.F esmf_time
 

@@ -124,6 +124,10 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
    CHARACTER * 80         :: rstname , timestr
    CHARACTER * 256        :: message
    TYPE(ESMF_Time)        :: CurrTime
+   INTEGER                :: save_itimestep ! This is a kludge, correct fix will 
+                                            ! involve integrating the time-step
+                                            ! counting into the ESMF time manager.
+                                            ! JM 20040604
 integer myproc
 
    INTERFACE
@@ -238,7 +242,11 @@ integer myproc
 ! set some other initial fields, fill out halos, base fields; re-do parent due
 ! to new terrain elevation from feedback
     CALL start_domain ( nest )
+! kludge: 20040604
+    save_itimestep = parent%itimestep
     CALL start_domain ( parent )
+    parent%itimestep = save_itimestep
+! end of kludge: 20040604
 
   ELSE
 

@@ -2,7 +2,6 @@
   INTEGER, PARAMETER ::  int_open_for_write_begin	=  	     20
   INTEGER, PARAMETER ::  int_open_for_write_commit	=  	     30
   INTEGER, PARAMETER ::  int_open_for_read 		=  	     40
-  INTEGER, PARAMETER ::  int_intio_nextrec 		=  	     50
   INTEGER, PARAMETER ::  int_inquire_opened 		=  	     60
   INTEGER, PARAMETER ::  int_inquire_filename 		=  	     70
   INTEGER, PARAMETER ::  int_iosync 			=  	     80

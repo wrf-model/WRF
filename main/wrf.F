@@ -136,7 +136,7 @@ PROGRAM wrf
 
    CALL nl_get_max_dom( 1, max_dom )
    IF ( max_dom > 1 ) THEN
-#if ( ! defined(DM_PARALLEL) &&  ( ! defined(STUBMPI)
+#if ( ! defined(DM_PARALLEL) &&  ( ! defined(STUBMPI) )
    CALL wrf_error_fatal( 'nesting requires either an MPI build or &
                          &use of the -DSTUBMPI option' ) 
 #endif

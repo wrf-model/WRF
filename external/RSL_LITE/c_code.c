@@ -47,8 +47,12 @@ RSL_LITE_ERROR_DUP1 ( int *me )
 
 }
 
-BYTE_BCAST ( char * buf, int * size, int * comm )
+BYTE_BCAST ( char * buf, int * size, int * Fcomm )
 {
+    MPI_Comm *comm, dummy_comm ;
+
+    comm = &dummy_comm ;
+    *comm = MPI_Comm_f2c( *Fcomm ) ;
 #ifdef crayx1
     if (*size % sizeof(int) == 0) {
        MPI_Bcast ( buf, *size/sizeof(int), MPI_INT, 0, *comm ) ;
@@ -628,12 +632,15 @@ fprintf(stderr,"X pack left nbytes = %d RANGE = %d\n",nbytes, RANGE(  jps-shw, j
 static MPI_Request yp_recv, ym_recv, yp_send, ym_send ;
 static MPI_Request xp_recv, xm_recv, xp_send, xm_send ;
 
-RSL_LITE_EXCH_Y ( int * comm0, int *me0, int * np0 , int * np_x0 , int * np_y0 )
+RSL_LITE_EXCH_Y ( int * Fcomm0, int *me0, int * np0 , int * np_x0 , int * np_y0 )
 {
-  int comm, me, np, np_x, np_y ;
+  int me, np, np_x, np_y ;
   int yp, ym, xp, xm, ierr ;
   MPI_Status stat ;
+  MPI_Comm comm, *comm0, dummy_comm ;
 
+  comm0 = &dummy_comm ;
+  *comm0 = MPI_Comm_f2c( *Fcomm0 ) ;
 #if 1
   comm = *comm0 ; me = *me0 ; np = *np0 ; np_x = *np_x0 ; np_y = *np_y0 ;
   if ( np_y > 1 ) {
@@ -661,12 +668,15 @@ fprintf(stderr,"RSL_LITE_EXCH_Y disabled\n") ;
 #endif
 }
 
-RSL_LITE_EXCH_X ( int * comm0, int *me0, int * np0 , int * np_x0 , int * np_y0 )
+RSL_LITE_EXCH_X ( int * Fcomm0, int *me0, int * np0 , int * np_x0 , int * np_y0 )
 {
-  int comm, me, np, np_x, np_y ;
+  int me, np, np_x, np_y ;
   int yp, ym, xp, xm ;
   MPI_Status stat ;
+  MPI_Comm comm, *comm0, dummy_comm ;
 
+  comm0 = &dummy_comm ;
+  *comm0 = MPI_Comm_f2c( *Fcomm0 ) ;
 #if 1
   comm = *comm0 ; me = *me0 ; np = *np0 ; np_x = *np_x0 ; np_y = *np_y0 ;
   if ( np_x > 1 ) {

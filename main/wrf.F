@@ -74,7 +74,7 @@ PROGRAM wrf
 !
 !</DESCRIPTION>
 
-   program_name = "WRF V2.0.3 MODEL"
+   program_name = "WRF V2.0.3.1 MODEL"
 
    !  Get the NAMELIST data for input.
 

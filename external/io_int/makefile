@@ -20,8 +20,8 @@ libwrfio_int.a:		$(OBJS)
 			$(RANLIB) libwrfio_int.a
 
 io_int.o:               io_int.F90
-			$(CPP1) -I../io_quilt io_int.F90 | $(M4) - > io_int.f
-			$(FC) $(FFLAGS) -I../io_quilt -I../../inc -c io_int.f
+			$(CPP1) -I.. io_int.F90 | $(M4) - > io_int.f
+			$(FC) $(FFLAGS) -I.. -I../../inc -c io_int.f
 
 diffwrf:                diffwrf.F ../../frame/pack_utils.o ../../frame/internal_header_util.o ../../frame/module_machine.o libwrfio_int.a
 			if [ -f ../../frame/pack_utils.o ] ; then \

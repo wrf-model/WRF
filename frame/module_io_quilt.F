@@ -489,14 +489,14 @@ MODULE module_ext_quilt
 #ifdef NETCDF
                     CASE ( IO_NETCDF   )
                       CALL ext_ncd_inquire_filename( handle(DataHandle), fname, fstat, Status )
-                      IF ( fstat .EQ. WRF_FILE_OPENED_AND_COMMITTED .OR. fstat .EQ. WRF_FILE_OPENED_NOT_COMMITTED ) THEN
+                      IF ( fstat .EQ. WRF_FILE_OPENED_FOR_WRITE .OR. fstat .EQ. WRF_FILE_OPENED_NOT_COMMITTED ) THEN
                         CALL ext_ncd_ioclose(handle(DataHandle),Status)
                       ENDIF
 #endif
 #ifdef INTIO
                     CASE ( IO_INTIO   )
                       CALL ext_int_inquire_filename( handle(DataHandle), fname, fstat, Status )
-                      IF ( fstat .EQ. WRF_FILE_OPENED_AND_COMMITTED .OR. fstat .EQ. WRF_FILE_OPENED_NOT_COMMITTED ) THEN
+                      IF ( fstat .EQ. WRF_FILE_OPENED_FOR_WRITE .OR. fstat .EQ. WRF_FILE_OPENED_NOT_COMMITTED ) THEN
                         CALL ext_int_ioclose(handle(DataHandle),Status)
                       ENDIF
 #endif
@@ -874,7 +874,7 @@ SUBROUTINE ext_quilt_inquire_opened ( DataHandle, FileName , FileStatus, Status 
   IF ( DataHandle .GE. 1 .AND. DataHandle .LE. int_num_handles ) THEN
     IF ( int_handle_in_use( DataHandle ) ) THEN
       IF ( okay_to_write( DataHandle ) ) THEN
-        FileStatus = WRF_FILE_OPENED_AND_COMMITTED
+        FileStatus = WRF_FILE_OPENED_FOR_WRITE
       ENDIF
     ENDIF
   ENDIF
@@ -899,7 +899,7 @@ SUBROUTINE ext_quilt_inquire_filename ( DataHandle, FileName , FileStatus, Statu
   IF ( DataHandle .GE. 1 .AND. DataHandle .LE. int_num_handles ) THEN
     IF ( int_handle_in_use( DataHandle ) ) THEN
       IF ( okay_to_write( DataHandle ) ) THEN
-        FileStatus = WRF_FILE_OPENED_AND_COMMITTED
+        FileStatus = WRF_FILE_OPENED_FOR_WRITE
       ELSE
         FileStatus = WRF_FILE_OPENED_NOT_COMMITTED
       ENDIF

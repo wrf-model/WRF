@@ -1,6 +1,6 @@
 #makefile to build io_mcel that does binary i/o
 
-OBJSL   = io_mcel.o 
+OBJSL   = io_mcel.o ext_mcel_open_for_read.o ext_mcel_open_for_write.o ext_mcel_read_field.o ext_mcel_write_field.o
 OBJS    = $(OBJSL)
 OPTS    =
 FFLAGS  =  $(OPTS) -w -g
@@ -19,10 +19,17 @@ libwrfio_mcel.a:		$(OBJS)
 			$(AR) cr libwrfio_mcel.a $(OBJSL)
 			$(RANLIB) libwrfio_mcel.a
 
-io_mcel.o:               io_mcel.F90
-			$(CPP) io_mcel.F90 | $(M4) - > io_mcel.f
-			$(FC) $(FFLAGS) -I../../inc -c io_mcel.f
+.F90.o:
+			$(CPP) $*.F90 | $(M4) - > $*.f
+			$(FC) $(FFLAGS) -I../../inc -c $*.f
 
 superclean:
 			/bin/rm -f *.f *.o libwrfio_mcel.a
+
+# DEPENDENCIES : only dependencies after this line (don't remove the word DEPENDENCIES)
+
+ext_mcel_open_for_read.o : io_mcel.o
+ext_mcel_open_for_write.o : io_mcel.o
+ext_mcel_read_field.o : io_mcel.o
+ext_mcel_write_field.o : io_mcel.o
 

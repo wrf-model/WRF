@@ -200,8 +200,13 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL get_history_interval_s( grid%id, history_interval_s )
    history_interval_m = max( history_interval, history_interval_m ) 
 
-   CALL ESMF_TimeIntervalSet( interval, MO=history_interval_mo, D=history_interval_d, &
-                                        H=history_interval_h, M=history_interval_m, S=history_interval_s, rc=rc )
+   IF ( MAX( history_interval_mo, history_interval_d,   &
+             history_interval_h, history_interval_m , history_interval_s   ) .GT. 0 ) THEN
+     CALL ESMF_TimeIntervalSet( interval, MO=history_interval_mo, D=history_interval_d, &
+                                          H=history_interval_h, M=history_interval_m, S=history_interval_s, rc=rc )
+   ELSE
+     interval = run_length + one_minute
+   ENDIF
 
    CALL get_history_begin_y( grid%id, history_begin_y )
    CALL get_history_begin_mo( grid%id, history_begin_mo )
@@ -251,8 +256,13 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL get_restart_interval_m( restart_interval_m )
    CALL get_restart_interval_s( restart_interval_s )
    restart_interval_m = max( restart_interval, restart_interval_m ) 
-   CALL ESMF_TimeIntervalSet( interval, MO=restart_interval_mo, D=restart_interval_d, &
+   IF ( MAX( restart_interval_mo, restart_interval_d,   &
+             restart_interval_h, restart_interval_m , restart_interval_s   ) .GT. 0 ) THEN
+     CALL ESMF_TimeIntervalSet( interval, MO=restart_interval_mo, D=restart_interval_d, &
                                         H=restart_interval_h, M=restart_interval_m, S=restart_interval_s, rc=rc )
+   ELSE
+     interval = run_length + one_minute
+   ENDIF
    CALL ESMF_AlarmSet( grid%alarms( RESTART_ALARM ), RingInterval=interval, rc=rc )
    CALL ESMF_ClockAddAlarm( grid%domain_clock, grid%alarms( RESTART_ALARM ), rc=rc )
 
@@ -265,8 +275,13 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL get_inputout_interval_s( grid%id, inputout_interval_s )
    inputout_interval_m = max( inputout_interval, inputout_interval_m )
 
-   CALL ESMF_TimeIntervalSet( interval, MO=inputout_interval_mo, D=inputout_interval_d, &
+   IF ( MAX( inputout_interval_mo, inputout_interval_d,   &
+             inputout_interval_h, inputout_interval_m , inputout_interval_s   ) .GT. 0 ) THEN
+     CALL ESMF_TimeIntervalSet( interval, MO=inputout_interval_mo, D=inputout_interval_d, &
                                         H=inputout_interval_h, M=inputout_interval_m, S=inputout_interval_s, rc=rc )
+   ELSE
+     interval = run_length + one_minute
+   ENDIF
 
    CALL get_inputout_begin_y( grid%id, inputout_begin_y )
    CALL get_inputout_begin_mo( grid%id, inputout_begin_mo )
@@ -314,8 +329,13 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL get_auxhist1_interval_s( grid%id, auxhist1_interval_s )
    auxhist1_interval_m = max( auxhist1_interval, auxhist1_interval_m )
 
-   CALL ESMF_TimeIntervalSet( interval, MO=auxhist1_interval_mo, D=auxhist1_interval_d, &
+   IF ( MAX( auxhist1_interval_mo, auxhist1_interval_d,   &
+             auxhist1_interval_h, auxhist1_interval_m , auxhist1_interval_s   ) .GT. 0 ) THEN
+     CALL ESMF_TimeIntervalSet( interval, MO=auxhist1_interval_mo, D=auxhist1_interval_d, &
                                         H=auxhist1_interval_h, M=auxhist1_interval_m, S=auxhist1_interval_s, rc=rc )
+   ELSE
+     interval = run_length + one_minute
+   ENDIF
 
    CALL get_auxhist1_begin_y( grid%id, auxhist1_begin_y )
    CALL get_auxhist1_begin_mo( grid%id, auxhist1_begin_mo )
@@ -363,8 +383,13 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL get_auxhist2_interval_s( grid%id, auxhist2_interval_s )
    auxhist2_interval_m = max( auxhist2_interval, auxhist2_interval_m )
 
-   CALL ESMF_TimeIntervalSet( interval, MO=auxhist2_interval_mo, D=auxhist2_interval_d, &
+   IF ( MAX( auxhist2_interval_mo, auxhist2_interval_d,   &
+             auxhist2_interval_h, auxhist2_interval_m , auxhist2_interval_s   ) .GT. 0 ) THEN
+     CALL ESMF_TimeIntervalSet( interval, MO=auxhist2_interval_mo, D=auxhist2_interval_d, &
                                         H=auxhist2_interval_h, M=auxhist2_interval_m, S=auxhist2_interval_s, rc=rc )
+   ELSE
+     interval = run_length + one_minute
+   ENDIF
 
    CALL get_auxhist2_begin_y( grid%id, auxhist2_begin_y )
    CALL get_auxhist2_begin_mo( grid%id, auxhist2_begin_mo )
@@ -412,8 +437,13 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL get_auxhist3_interval_s( grid%id, auxhist3_interval_s )
    auxhist3_interval_m = max( auxhist3_interval, auxhist3_interval_m )
 
-   CALL ESMF_TimeIntervalSet( interval, MO=auxhist3_interval_mo, D=auxhist3_interval_d, &
+   IF ( MAX( auxhist3_interval_mo, auxhist3_interval_d,   &
+             auxhist3_interval_h, auxhist3_interval_m , auxhist3_interval_s   ) .GT. 0 ) THEN
+     CALL ESMF_TimeIntervalSet( interval, MO=auxhist3_interval_mo, D=auxhist3_interval_d, &
                                         H=auxhist3_interval_h, M=auxhist3_interval_m, S=auxhist3_interval_s, rc=rc )
+   ELSE
+     interval = run_length + one_minute
+   ENDIF
 
    CALL get_auxhist3_begin_y( grid%id, auxhist3_begin_y )
    CALL get_auxhist3_begin_mo( grid%id, auxhist3_begin_mo )
@@ -461,8 +491,13 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL get_auxhist4_interval_s( grid%id, auxhist4_interval_s )
    auxhist4_interval_m = max( auxhist4_interval, auxhist4_interval_m )
 
-   CALL ESMF_TimeIntervalSet( interval, MO=auxhist4_interval_mo, D=auxhist4_interval_d, &
+   IF ( MAX( auxhist4_interval_mo, auxhist4_interval_d,   &
+             auxhist4_interval_h, auxhist4_interval_m , auxhist4_interval_s   ) .GT. 0 ) THEN
+     CALL ESMF_TimeIntervalSet( interval, MO=auxhist4_interval_mo, D=auxhist4_interval_d, &
                                         H=auxhist4_interval_h, M=auxhist4_interval_m, S=auxhist4_interval_s, rc=rc )
+   ELSE
+     interval = run_length + one_minute
+   ENDIF
 
    CALL get_auxhist4_begin_y( grid%id, auxhist4_begin_y )
    CALL get_auxhist4_begin_mo( grid%id, auxhist4_begin_mo )
@@ -510,8 +545,13 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL get_auxhist5_interval_s( grid%id, auxhist5_interval_s )
    auxhist5_interval_m = max( auxhist5_interval, auxhist5_interval_m )
 
-   CALL ESMF_TimeIntervalSet( interval, MO=auxhist5_interval_mo, D=auxhist5_interval_d, &
+   IF ( MAX( auxhist5_interval_mo, auxhist5_interval_d,   &
+             auxhist5_interval_h, auxhist5_interval_m , auxhist5_interval_s   ) .GT. 0 ) THEN
+     CALL ESMF_TimeIntervalSet( interval, MO=auxhist5_interval_mo, D=auxhist5_interval_d, &
                                         H=auxhist5_interval_h, M=auxhist5_interval_m, S=auxhist5_interval_s, rc=rc )
+   ELSE
+     interval = run_length + one_minute
+   ENDIF
 
    CALL get_auxhist5_begin_y( grid%id, auxhist5_begin_y )
    CALL get_auxhist5_begin_mo( grid%id, auxhist5_begin_mo )
@@ -559,8 +599,13 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL get_auxinput1_interval_s( grid%id, auxinput1_interval_s )
    auxinput1_interval_m = max( auxinput1_interval, auxinput1_interval_m )
 
-   CALL ESMF_TimeIntervalSet( interval, MO=auxinput1_interval_mo, D=auxinput1_interval_d, &
+   IF ( MAX( auxinput1_interval_mo, auxinput1_interval_d,   &
+             auxinput1_interval_h, auxinput1_interval_m , auxinput1_interval_s   ) .GT. 0 ) THEN
+     CALL ESMF_TimeIntervalSet( interval, MO=auxinput1_interval_mo, D=auxinput1_interval_d, &
                                         H=auxinput1_interval_h, M=auxinput1_interval_m, S=auxinput1_interval_s, rc=rc )
+   ELSE
+     interval = run_length + one_minute
+   ENDIF
 
    CALL get_auxinput1_begin_y( grid%id, auxinput1_begin_y )
    CALL get_auxinput1_begin_mo( grid%id, auxinput1_begin_mo )
@@ -608,8 +653,13 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL get_auxinput2_interval_s( grid%id, auxinput2_interval_s )
    auxinput2_interval_m = max( auxinput2_interval, auxinput2_interval_m )
 
-   CALL ESMF_TimeIntervalSet( interval, MO=auxinput2_interval_mo, D=auxinput2_interval_d, &
+   IF ( MAX( auxinput2_interval_mo, auxinput2_interval_d,   &
+             auxinput2_interval_h, auxinput2_interval_m , auxinput2_interval_s   ) .GT. 0 ) THEN
+     CALL ESMF_TimeIntervalSet( interval, MO=auxinput2_interval_mo, D=auxinput2_interval_d, &
                                         H=auxinput2_interval_h, M=auxinput2_interval_m, S=auxinput2_interval_s, rc=rc )
+   ELSE
+     interval = run_length + one_minute
+   ENDIF
 
    CALL get_auxinput2_begin_y( grid%id, auxinput2_begin_y )
    CALL get_auxinput2_begin_mo( grid%id, auxinput2_begin_mo )
@@ -657,8 +707,13 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL get_auxinput3_interval_s( grid%id, auxinput3_interval_s )
    auxinput3_interval_m = max( auxinput3_interval, auxinput3_interval_m )
 
-   CALL ESMF_TimeIntervalSet( interval, MO=auxinput3_interval_mo, D=auxinput3_interval_d, &
+   IF ( MAX( auxinput3_interval_mo, auxinput3_interval_d,   &
+             auxinput3_interval_h, auxinput3_interval_m , auxinput3_interval_s   ) .GT. 0 ) THEN
+     CALL ESMF_TimeIntervalSet( interval, MO=auxinput3_interval_mo, D=auxinput3_interval_d, &
                                         H=auxinput3_interval_h, M=auxinput3_interval_m, S=auxinput3_interval_s, rc=rc )
+   ELSE
+     interval = run_length + one_minute
+   ENDIF
 
    CALL get_auxinput3_begin_y( grid%id, auxinput3_begin_y )
    CALL get_auxinput3_begin_mo( grid%id, auxinput3_begin_mo )
@@ -706,8 +761,13 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL get_auxinput4_interval_s( grid%id, auxinput4_interval_s )
    auxinput4_interval_m = max( auxinput4_interval, auxinput4_interval_m )
 
-   CALL ESMF_TimeIntervalSet( interval, MO=auxinput4_interval_mo, D=auxinput4_interval_d, &
+   IF ( MAX( auxinput4_interval_mo, auxinput4_interval_d,   &
+             auxinput4_interval_h, auxinput4_interval_m , auxinput4_interval_s   ) .GT. 0 ) THEN
+     CALL ESMF_TimeIntervalSet( interval, MO=auxinput4_interval_mo, D=auxinput4_interval_d, &
                                         H=auxinput4_interval_h, M=auxinput4_interval_m, S=auxinput4_interval_s, rc=rc )
+   ELSE
+     interval = run_length + one_minute
+   ENDIF
 
    CALL get_auxinput4_begin_y( grid%id, auxinput4_begin_y )
    CALL get_auxinput4_begin_mo( grid%id, auxinput4_begin_mo )
@@ -755,8 +815,13 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL get_auxinput5_interval_s( grid%id, auxinput5_interval_s )
    auxinput5_interval_m = max( auxinput5_interval, auxinput5_interval_m )
 
-   CALL ESMF_TimeIntervalSet( interval, MO=auxinput5_interval_mo, D=auxinput5_interval_d, &
+   IF ( MAX( auxinput5_interval_mo, auxinput5_interval_d,   &
+             auxinput5_interval_h, auxinput5_interval_m , auxinput5_interval_s   ) .GT. 0 ) THEN
+     CALL ESMF_TimeIntervalSet( interval, MO=auxinput5_interval_mo, D=auxinput5_interval_d, &
                                         H=auxinput5_interval_h, M=auxinput5_interval_m, S=auxinput5_interval_s, rc=rc )
+   ELSE
+     interval = run_length + one_minute
+   ENDIF
 
    CALL get_auxinput5_begin_y( grid%id, auxinput5_begin_y )
    CALL get_auxinput5_begin_mo( grid%id, auxinput5_begin_mo )

@@ -68,7 +68,7 @@
     write(msg,*) &
 'Warning DRYRUN READ in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__
     call wrf_debug ( WARN , msg)
-  elseif(DH%FileStatus == WRF_FILE_OPENED_AND_COMMITTED) then
+  elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_WRITE) then
     Status = WRF_WARN_READ_WONLY_FILE   
     write(msg,*) &
 'Warning READ WRITE ONLY FILE in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__ 

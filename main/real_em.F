@@ -234,7 +234,7 @@ real::t1,t2
          CALL       wrf_debug ( 100 , 'med_sidata_input: calling open_r_dataset for wrf_real_input_em' )
          CALL construct_filename2( si_inpname , 'wrf_real_input_em' , grid%id , 2 , current_date_char )
       END IF
-      CALL open_r_dataset ( idsi, TRIM(si_inpname) , grid , config_flags , "DATASET=INPUT", ierr )
+      CALL open_r_dataset ( idsi, TRIM(si_inpname) , grid , config_flags , "DATASET=AUXINPUT1", ierr )
       IF ( ( ierr .NE. 0 ) .AND. ( grid%dyn_opt .EQ. dyn_em ) ) THEN
         CALL wrf_error_fatal( 'error opening ' // TRIM(si_inpname) // ' for input; bad date in namelist or file not in directory' )
       ENDIF
@@ -426,7 +426,6 @@ print *,'spec_bdy_width, interval_seconds, loop=',spec_bdy_width , interval_seco
          CALL wrf_error_fatal( 'real: error opening wrfinput for writing' )
       ENDIF
 !     CALL calc_current_date ( grid%id , 0. )
-      grid%write_metadata = .true.
       CALL output_model_input ( id1, grid , config_flags , ierr )
       CALL close_dataset ( id1 , config_flags , "DATASET=INPUT" )
 
@@ -490,10 +489,7 @@ print *,'spec_bdy_width, interval_seconds, loop=',spec_bdy_width , interval_seco
          IF ( ierr .NE. 0 ) THEN
                CALL wrf_error_fatal( 'real: error opening wrfbdy for writing' )
          ENDIF
-         grid%write_metadata = .true.
       ELSE
-! what's this do?
-         grid%write_metadata = .false.
          CALL ESMF_ClockAdvance( grid%domain_clock, rc=rc )
       END IF
 
@@ -584,7 +580,6 @@ print *,'LBC valid between these times ',current_date, ' ',start_date
 !     IF ( ierr .NE. 0 ) THEN
 !       CALL wrf_error_fatal( 'real: error opening wrfinput'//loop_char//' for writing' )
 !     ENDIF
-!     grid%write_metadata = .true.
 
 !     CALL calc_current_date ( grid%id , 0. )
 !     CALL output_model_input ( id1, grid , config_flags , ierr )

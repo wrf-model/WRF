@@ -131,26 +131,21 @@ SUBROUTINE med_initialdata_output ( grid , config_flags )
    CALL init_domain (  grid )
    CALL calc_current_date ( grid%id, 0.)
 
-   grid%write_metadata = .false.
    CALL construct_filename1 ( inpname , 'wrfinput' , grid%id , 2 )
    CALL open_w_dataset ( id, TRIM(inpname) , grid , config_flags , output_model_input , "DATASET=INPUT", ierr )
    IF ( ierr .NE. 0 ) THEN
      WRITE (wrf_err_message,*)'ideal: error opening wrfinput for writing ',ierr
      CALL wrf_error_fatal( wrf_err_message )
    ENDIF
-   grid%write_metadata = .true.
-   grid%write_metadata = .true.
    CALL output_model_input ( id, grid , config_flags , ierr )
    CALL close_dataset ( id , config_flags, "DATASET=INPUT" )
 
-   grid%write_metadata = .false.
    CALL construct_filename1 ( bdyname , 'wrfbdy' , grid%id , 2 )
    CALL open_w_dataset ( id, TRIM(bdyname) , grid , config_flags , output_boundary , "DATASET=BOUNDARY", ierr )
    IF ( ierr .NE. 0 ) THEN
      WRITE (wrf_err_message,*)'ideal: error opening wrfbdy for writing ',ierr
      CALL wrf_error_fatal( wrf_err_message )
    ENDIF
-   grid%write_metadata = .true.
    CALL output_boundary ( id, grid , config_flags , ierr )
    CALL close_dataset ( id , config_flags , "DATASET=BOUNDARY" )
 

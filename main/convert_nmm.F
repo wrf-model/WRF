@@ -208,10 +208,8 @@ print *,'init_typ  =',model_config_rec%real_data_init_type
 
    grid%input_from_file = .false.
 
-   grid%write_metadata = .false.
    CALL construct_filename1( inpname , 'wrfinput' , grid%id , 2 )
    CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_model_input , "DATASET=INPUT", ierr )
-   grid%write_metadata = .true.
    IF ( ierr .NE. 0 ) THEN
      CALL wrf_error_fatal( 'real: error opening wrfinput for writing' )
    ENDIF
@@ -220,7 +218,6 @@ print *,'init_typ  =',model_config_rec%real_data_init_type
 
    CALL geth_newdate ( current_date_char, current_date, 3600 )
    current_date = current_date_char // '.0000'
-   grid%write_metadata = .true.
    CALL output_model_input ( id1, grid , config_flags , ierr )
 
    CALL close_dataset ( id1 , config_flags , "DATASET=INPUT" )
@@ -228,10 +225,8 @@ print *,'init_typ  =',model_config_rec%real_data_init_type
    current_date = current_date_char
    current_date = current_date_char // '.0000'
 
-   grid%write_metadata = .false.
    CALL construct_filename1( bdyname , 'wrfbdy' , grid%id , 2 )
    CALL open_w_dataset ( id, TRIM(bdyname) , grid , config_flags , output_boundary , "DATASET=BOUNDARY", ierr )
-   grid%write_metadata = .true.
 
    nbdy_frames = NINT(( tend_from_file - tstart_from_file) )
    DO bdy_frame = 2,nbdy_frames

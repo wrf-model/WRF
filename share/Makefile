@@ -26,6 +26,10 @@ OBJS    = 		\
         init_modules.o                  \
         set_timekeeping.o               \
         interp_fcn.o sint.o             \
+        input_wrf.o                     \
+        output_wrf.o                    \
+        wrf_ext_write_field.o           \
+        wrf_ext_read_field.o            \
         wrf_inputout.o        		\
         wrf_auxinput1out.o		\
         wrf_auxinput2out.o		\
@@ -103,6 +107,22 @@ module_io_wrf.o: module_date_time.o module_bc_time_utilities.o \
 		../frame/module_state_description.o ../frame/module_configure.o \
 		../frame/module_io.o ../frame/module_timing.o \
 		../external/esmf_time_f90/ESMF_Mod.o
+
+output_wrf.o:   ../frame/module_io.o ../frame/module_wrf_error.o \
+                ../frame/module_domain.o ../frame/module_state_description.o \
+                ../frame/module_configure.o module_io_wrf.o  \
+		../external/esmf_time_f90/ESMF_Mod.o
+
+input_wrf.o:    ../frame/module_io.o ../frame/module_wrf_error.o \
+                ../frame/module_domain.o ../frame/module_state_description.o \
+                ../frame/module_configure.o module_io_wrf.o  \
+		../external/esmf_time_f90/ESMF_Mod.o
+
+wrf_ext_write_field.o : ../frame/module_io.o ../frame/module_wrf_error.o \
+                ../frame/module_domain.o ../frame/module_timing.o
+
+wrf_ext_read_field.o : ../frame/module_io.o ../frame/module_wrf_error.o \
+                ../frame/module_domain.o ../frame/module_timing.o
 
 module_date_time.o: ../frame/module_wrf_error.o
 

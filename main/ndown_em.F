@@ -225,7 +225,7 @@ integer :: ii
    !  Open the input data (wrfout_d01_xxxxxx) for reading.
    
    CALL wrf_debug          ( 100 , 'ndown_em main: calling open_r_dataset for ' // TRIM(eligible_file_name(file_counter)) )
-   CALL open_r_dataset     ( fid, TRIM(eligible_file_name(file_counter)) , head_grid , config_flags , "DATASET=INPUT", ierr )
+   CALL open_r_dataset     ( fid, TRIM(eligible_file_name(file_counter)) , head_grid , config_flags , "DATASET=AUXINPUT1", ierr )
    IF ( ierr .NE. 0 ) THEN
       WRITE( wrf_err_message , FMT='(A,A,A,I8)' ) 'program ndown: error opening ',TRIM(eligible_file_name(file_counter)), &
                                                   ' for reading ierr=',ierr
@@ -571,7 +571,6 @@ print *,'current_date = ',current_date
 
          !  Output the first time period of the data.
    
-         nested_grid%write_metadata = .TRUE.
          CALL output_model_input ( fido , nested_grid , config_flags , ierr )
 
          CALL wrf_put_dom_ti_integer ( fido , 'MAP_PROJ' , map_proj , 1 , ierr ) 
@@ -723,8 +722,6 @@ print *,'gmt=',gmt
    
             !  Generate an output file from this program, which will be an input file to WRF.
 
-            nested_grid%write_metadata = .TRUE.
-   
             CALL wrf_debug          ( 100 , 'ndown_em main: calling open_w_dataset for wrfbdy' )
             CALL construct_filename1( bdyname , 'wrfbdy' , nested_grid%id , 2 )
             CALL open_w_dataset     ( fidb, TRIM(bdyname) , nested_grid , config_flags , output_boundary , &
@@ -733,10 +730,6 @@ print *,'gmt=',gmt
                WRITE( wrf_err_message , FMT='(A,A,A,I8)' ) 'program ndown: error opening ',TRIM(bdyname),' for reading ierr=',ierr
                CALL WRF_ERROR_FATAL ( wrf_err_message )
             ENDIF
-
-         ELSE
-
-            nested_grid%write_metadata = .FALSE.
 
          END IF
 
@@ -877,8 +870,6 @@ print *,'bdy time = ',time_loop-1,'  bdy date = ',current_date,' ',start_date
    
             !  Generate an output file from this program, which will be an input file to WRF.
 
-            nested_grid%write_metadata = .TRUE.
-   
             CALL wrf_debug          ( 100 , 'ndown_em main: calling open_w_dataset for wrfbdy' )
             CALL construct_filename1( bdyname , 'wrfbdy' , nested_grid%id , 2 )
             CALL open_w_dataset     ( fidb, TRIM(bdyname) , nested_grid , config_flags , output_boundary , &
@@ -887,10 +878,6 @@ print *,'bdy time = ',time_loop-1,'  bdy date = ',current_date,' ',start_date
                WRITE( wrf_err_message , FMT='(A,A,A,I8)' ) 'program ndown: error opening ',TRIM(bdyname),' for reading ierr=',ierr
                CALL WRF_ERROR_FATAL ( wrf_err_message )
             ENDIF
-
-         ELSE
-
-            nested_grid%write_metadata = .FALSE.
 
          END IF
 

@@ -194,9 +194,9 @@ SUBROUTINE ext_int_inquire_opened ( DataHandle, FileName , FileStatus, Status )
   FileStatus = WRF_FILE_NOT_OPENED
   IF ( DataHandle .GE. 1 .AND. DataHandle .LE. int_num_handles ) THEN
     IF      ( int_handle_in_use( DataHandle ) .AND. okay_to_write( DataHandle ) ) THEN
-      FileStatus = WRF_FILE_OPENED_AND_COMMITTED
+      FileStatus = WRF_FILE_OPENED_FOR_WRITE
     ELSE IF ( int_handle_in_use( DataHandle ) .AND. .NOT. okay_to_write( DataHandle ) ) THEN
-      FileStatus = WRF_FILE_OPENED_NOT_COMMITTED
+      FileStatus = WRF_FILE_OPENED_FOR_WRITE
     ENDIF
   ENDIF
   Status = 0
@@ -221,7 +221,7 @@ SUBROUTINE ext_int_inquire_filename ( DataHandle, FileName , FileStatus, Status 
       CALL int_get_ofr_header( open_file_descriptors(1,DataHandle), hdrbufsize, itypesize, &
                                FileName,SysDepInfo,DataHandle )
       IF ( okay_to_write( DataHandle ) ) THEN
-        FileStatus = WRF_FILE_OPENED_AND_COMMITTED
+        FileStatus = WRF_FILE_OPENED_FOR_WRITE
       ELSE
         FileStatus = WRF_FILE_OPENED_NOT_COMMITTED
       ENDIF

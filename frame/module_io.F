@@ -6,7 +6,7 @@ MODULE module_io
 
   LOGICAL :: is_inited = .FALSE.
   INTEGER :: wrf_io_handles(1000), how_opened(1000) 
-  LOGICAL :: for_output(1000)
+  LOGICAL :: for_output(1000), first_operation(1000)
 
 ! WRF-specific package independent interface to package-dependent WRF specific
 ! I/O packages.
@@ -229,6 +229,7 @@ SUBROUTINE wrf_open_for_write_commit( DataHandle , Status )
 
   Status = 0
   CALL get_handle ( Hndl, io_form , for_out, DataHandle )
+  CALL set_first_operation( DataHandle )
   IF ( Hndl .GT. -1 ) THEN
     IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
       SELECT CASE ( use_package(io_form) )
@@ -283,6 +284,181 @@ SUBROUTINE wrf_open_for_write_commit( DataHandle , Status )
   ENDIF
   RETURN
 END SUBROUTINE wrf_open_for_write_commit
+
+!--- open_for_read_begin
+
+SUBROUTINE wrf_open_for_read_begin( FileName , Comm_compute, Comm_io, SysDepInfo, &
+                                     DataHandle , Status )
+  USE module_state_description
+  IMPLICIT NONE
+#include <wrf_io_flags.h>
+  CHARACTER*(*) :: FileName
+  INTEGER ,       INTENT(IN)  :: Comm_compute , Comm_io
+  CHARACTER*(*) :: SysDepInfo
+  INTEGER ,       INTENT(OUT) :: DataHandle
+  INTEGER ,       INTENT(OUT) :: Status
+  
+  CHARACTER*128               :: DataSet
+  INTEGER                     :: io_form
+  INTEGER                     :: Hndl
+  INTEGER, EXTERNAL           :: use_package
+  LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+
+  CHARACTER*128     :: LocFilename   ! for appending the process ID if necessary
+  INTEGER     myproc
+  CHARACTER*128     :: mess
+
+  CALL wrf_debug( DEBUG_LVL, 'module_io.F: in wrf_open_for_read_begin' )
+
+  CALL get_value_from_pairs ( "DATASET" , SysDepInfo , DataSet )
+  IF      ( DataSet .eq. 'RESTART' ) THEN
+    CALL get_io_form_restart( io_form )
+  ELSE IF ( DataSet .eq. 'INPUT' ) THEN
+    CALL get_io_form_input( io_form )
+  ELSE IF ( DataSet .eq. 'AUXINPUT1' ) THEN
+    CALL get_io_form_auxinput1( io_form )
+  ELSE IF ( DataSet .eq. 'AUXINPUT2' ) THEN
+    CALL get_io_form_auxinput2( io_form )
+  ELSE IF ( DataSet .eq. 'AUXINPUT3' ) THEN
+    CALL get_io_form_auxinput3( io_form )
+  ELSE IF ( DataSet .eq. 'AUXINPUT4' ) THEN
+    CALL get_io_form_auxinput4( io_form )
+  ELSE IF ( DataSet .eq. 'AUXINPUT5' ) THEN
+    CALL get_io_form_auxinput5( io_form )
+  ELSE IF ( DataSet .eq. 'HISTORY' ) THEN
+    CALL get_io_form_history( io_form )
+  ELSE IF ( DataSet .eq. 'AUXHIST1' ) THEN
+    CALL get_io_form_auxhist1( io_form )
+  ELSE IF ( DataSet .eq. 'AUXHIST2' ) THEN
+    CALL get_io_form_auxhist2( io_form )
+  ELSE IF ( DataSet .eq. 'AUXHIST3' ) THEN
+    CALL get_io_form_auxhist3( io_form )
+  ELSE IF ( DataSet .eq. 'AUXHIST4' ) THEN
+    CALL get_io_form_auxhist4( io_form )
+  ELSE IF ( DataSet .eq. 'AUXHIST5' ) THEN
+    CALL get_io_form_auxhist5( io_form )
+  ELSE IF ( DataSet .eq. 'BOUNDARY' ) THEN
+    CALL get_io_form_boundary( io_form )
+  ELSE  ! default if nothing is set in SysDepInfo; use history
+    CALL get_io_form_history( io_form )
+  ENDIF
+
+  Status = 0
+  Hndl = -1
+  IF ( .NOT. use_output_servers() ) THEN
+    SELECT CASE ( use_package(io_form) )
+#ifdef NETCDF
+      CASE ( IO_NETCDF   )
+#endif
+#ifdef HDF
+      CASE ( IO_HDF   )
+        CALL ext_hdf_open_for_read_begin ( FileName , Comm_compute, Comm_io, SysDepInfo, &
+                                            Hndl , Status )
+#endif
+#ifdef XXX
+      CASE ( IO_XXX   )
+        CALL ext_xxx_open_for_read_begin ( FileName , Comm_compute, Comm_io, SysDepInfo, &
+                                            Hndl , Status )
+#endif
+#ifdef YYY
+      CASE ( IO_YYY   )
+        CALL ext_yyy_open_for_read_begin ( FileName , Comm_compute, Comm_io, SysDepInfo, &
+                                            Hndl , Status )
+#endif
+#ifdef ZZZ
+      CASE ( IO_ZZZ   )
+        CALL ext_zzz_open_for_read_begin ( FileName , Comm_compute, Comm_io, SysDepInfo, &
+                                            Hndl , Status )
+#endif
+#ifdef MCELIO
+      CASE ( IO_MCEL )
+        IF ( wrf_dm_on_monitor() ) THEN
+          CALL ext_mcel_open_for_read_begin ( FileName , Comm_compute, Comm_io, SysDepInfo, &
+                                               Hndl , Status )
+        ENDIF
+        CALL wrf_dm_bcast_bytes( Hndl, IWORDSIZE )
+        CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
+#endif
+#ifdef INTIO
+      CASE ( IO_INTIO   )
+#endif
+      CASE DEFAULT
+        IF ( io_form .NE. 0 ) THEN
+          WRITE(mess,*)'Tried to open ',FileName,' reading: no valid io_form (',io_form,')'
+          CALL wrf_message(mess)
+        ENDIF
+        Status = WRF_FILE_NOT_OPENED
+    END SELECT
+  ELSE
+    Status = 0
+  ENDIF
+  CALL add_new_handle( Hndl, io_form, .TRUE., DataHandle )
+END SUBROUTINE wrf_open_for_read_begin
+
+!--- open_for_read_commit
+
+SUBROUTINE wrf_open_for_read_commit( DataHandle , Status )
+  USE module_state_description
+  IMPLICIT NONE
+  INTEGER ,       INTENT(IN ) :: DataHandle
+  INTEGER ,       INTENT(OUT) :: Status
+ 
+  CHARACTER (128)             :: DataSet
+  INTEGER                     :: io_form
+  INTEGER                     :: Hndl
+  LOGICAL                     :: for_out
+  INTEGER, EXTERNAL           :: use_package
+  LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+#include <wrf_io_flags.h>
+
+  CALL wrf_debug( DEBUG_LVL, 'module_io.F: in wrf_open_for_read_commit' )
+
+  Status = 0
+  CALL get_handle ( Hndl, io_form , for_out, DataHandle )
+  CALL set_first_operation( DataHandle )
+  IF ( Hndl .GT. -1 ) THEN
+    IF ( .NOT. (for_out .AND. use_output_servers()) ) THEN
+      SELECT CASE ( use_package(io_form) )
+#ifdef NETCDF
+        CASE ( IO_NETCDF   )
+#endif
+#ifdef MCELIO
+        CASE ( IO_MCEL   )
+          IF ( wrf_dm_on_monitor() ) THEN
+            CALL ext_mcel_open_for_read_commit ( Hndl , Status )
+          ENDIF
+          CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
+#endif
+#ifdef HDF
+      CASE ( IO_HDF   )
+        CALL ext_hdf_open_for_read_commit ( Hndl , Status )
+#endif
+#ifdef XXX
+      CASE ( IO_XXX   )
+        CALL ext_xxx_open_for_read_commit ( Hndl , Status )
+#endif
+#ifdef YYY
+      CASE ( IO_YYY   )
+        CALL ext_yyy_open_for_read_commit ( Hndl , Status )
+#endif
+#ifdef ZZZ
+      CASE ( IO_ZZZ   )
+        CALL ext_zzz_open_for_read_commit ( Hndl , Status )
+#endif
+#ifdef INTIO
+      CASE ( IO_INTIO   )
+#endif
+        CASE DEFAULT
+          Status = 0
+      END SELECT
+    ELSE
+      Status = 0
+    ENDIF
+  ELSE
+    Status = WRF_FILE_NOT_OPENED
+  ENDIF
+  RETURN
+END SUBROUTINE wrf_open_for_read_commit
 
 !--- open_for_read 
 
@@ -350,8 +526,10 @@ SUBROUTINE wrf_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo, &
             LocFilename = FileName
         ENDIF
 
+write(0,*)'calling ext_ncd_open_for_read '
         CALL ext_ncd_open_for_read ( LocFilename , Comm_compute, Comm_io, SysDepInfo, &
                                      Hndl , Status )
+write(0,*)'back from ext_ncd_open_for_read '
       ENDIF
       IF ( .NOT. multi_files(io_form) ) THEN
         CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
@@ -1019,6 +1197,9 @@ SUBROUTINE wrf_read_field ( DataHandle , DateStr , VarName , Field , FieldType ,
 #ifdef NETCDF
   EXTERNAL     ext_ncd_read_field
 #endif
+#ifdef MCELIO
+  EXTERNAL     ext_mcel_read_field
+#endif
 #ifdef INTIO
   EXTERNAL     ext_int_read_field
 #endif
@@ -1036,8 +1217,11 @@ SUBROUTINE wrf_read_field ( DataHandle , DateStr , VarName , Field , FieldType ,
 
   Status = 0
   CALL get_handle ( Hndl, io_form , for_out, DataHandle )
+  CALL reset_first_operation( DataHandle )
   IF ( Hndl .GT. -1 ) THEN
-    IF ( .NOT. use_input_servers() ) THEN
+    IF ( .NOT. io_form .GT. 0 ) THEN
+      Status = 0 
+    ELSE IF ( .NOT. use_input_servers() ) THEN
       SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
         CASE ( IO_NETCDF   )
@@ -1057,6 +1241,16 @@ SUBROUTINE wrf_read_field ( DataHandle , DateStr , VarName , Field , FieldType ,
           CALL ext_phdf5_read_field   (                   &
                                      Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
                                      DomainDesc , MemoryOrder , Stagger , DimNames ,              &
+                                     DomainStart , DomainEnd ,                                    &
+                                     MemoryStart , MemoryEnd ,                                    &
+                                     PatchStart , PatchEnd ,                                      &
+                                     Status )
+#endif
+#ifdef MCELIO
+        CASE ( IO_MCEL   )
+          CALL collect_fld_and_call_pkg ( ext_mcel_read_field, multi_files(io_form),                  &
+                                     Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
+                                     DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
                                      DomainStart , DomainEnd ,                                    &
                                      MemoryStart , MemoryEnd ,                                    &
                                      PatchStart , PatchEnd ,                                      &
@@ -1169,6 +1363,7 @@ SUBROUTINE wrf_write_field ( DataHandle , DateStr , VarName , Field , FieldType 
 
   Status = 0
   CALL get_handle ( Hndl, io_form , for_out, DataHandle )
+  CALL reset_first_operation ( DataHandle )
   IF ( Hndl .GT. -1 ) THEN
     IF ( multi_files( io_form ) .OR. .NOT. use_output_servers() ) THEN
       SELECT CASE ( use_package( io_form ) )
@@ -1369,6 +1564,7 @@ SUBROUTINE add_new_handle( Hndl, Hopened, for_out, DataHandle )
       wrf_io_handles(i) = Hndl
       how_opened(i)     = Hopened
       for_output(DataHandle) = for_out
+      first_operation(DataHandle) = .TRUE.
       EXIT
     ENDIF
   ENDDO
@@ -1398,6 +1594,42 @@ SUBROUTINE get_handle ( Hndl, Hopened, for_out, DataHandle )
   ENDIF
   RETURN
 END SUBROUTINE get_handle
+
+SUBROUTINE set_first_operation( DataHandle )
+  IMPLICIT NONE
+  INTEGER, INTENT(IN)    :: DataHandle
+  IF ( .NOT. is_inited ) THEN
+    CALL wrf_error_fatal( 'module_io.F: get_handle: not initialized' )
+  ENDIF
+  IF ( DataHandle .GE. 1 .AND. DataHandle .LE. 1000 ) THEN
+    first_operation(DataHandle) = .TRUE.
+  ENDIF
+  RETURN
+END SUBROUTINE set_first_operation
+
+SUBROUTINE reset_first_operation( DataHandle )
+  IMPLICIT NONE
+  INTEGER, INTENT(IN)    :: DataHandle
+  IF ( .NOT. is_inited ) THEN
+    CALL wrf_error_fatal( 'module_io.F: get_handle: not initialized' )
+  ENDIF
+  IF ( DataHandle .GE. 1 .AND. DataHandle .LE. 1000 ) THEN
+    first_operation(DataHandle) = .FALSE.
+  ENDIF
+  RETURN
+END SUBROUTINE reset_first_operation
+
+LOGICAL FUNCTION is_first_operation( DataHandle )
+  IMPLICIT NONE
+  INTEGER, INTENT(IN)    :: DataHandle
+  IF ( .NOT. is_inited ) THEN
+    CALL wrf_error_fatal( 'module_io.F: get_handle: not initialized' )
+  ENDIF
+  IF ( DataHandle .GE. 1 .AND. DataHandle .LE. 1000 ) THEN
+    is_first_operation = first_operation(DataHandle)
+  ENDIF
+  RETURN
+END FUNCTION is_first_operation
 
 ! Trash a handle and return to pool
 SUBROUTINE free_handle ( DataHandle )

@@ -72,7 +72,7 @@
     write(msg,*) &
 'Warning WRITE READ ONLY FILE in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__ 
     call wrf_debug ( WARN , msg)
-  elseif(DH%FileStatus == WRF_FILE_OPENED_AND_COMMITTED) then
+  elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_WRITE) then
     Status = WRF_WARN_MD_AFTER_OPEN  
     write(msg,*) &
 'Warning WRITE METADATA AFTER OPEN in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__

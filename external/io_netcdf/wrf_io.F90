@@ -53,7 +53,7 @@ module wrf_data
 !BEGINIOFLAGS
       integer, parameter  :: WRF_FILE_NOT_OPENED                  = 100
       integer, parameter  :: WRF_FILE_OPENED_NOT_COMMITTED        = 101
-      integer, parameter  :: WRF_FILE_OPENED_AND_COMMITTED        = 102
+      integer, parameter  :: WRF_FILE_OPENED_FOR_WRITE            = 102
       integer, parameter  :: WRF_FILE_OPENED_FOR_READ             = 103
       integer, parameter  :: WRF_REAL                             = 104
       integer, parameter  :: WRF_DOUBLE               = 105
@@ -683,10 +683,7 @@ end subroutine reorder
   
 end module ext_ncd_support_routines
 
-!stub
-!begins training phase; opens a file for reading or coupler datastream for recv messages
-!must be paired with call to ext_ncd_open_for_read_commit
-subroutine ext_ncd_open_for_read_begin(DatasetName, Comm1, Comm2, SysDepInfo, DataHandle, Status)
+subroutine ext_ncd_open_for_read(DatasetName, Comm1, Comm2, SysDepInfo, DataHandle, Status)
   use wrf_data
   use ext_ncd_support_routines
   implicit none
@@ -697,12 +694,45 @@ subroutine ext_ncd_open_for_read_begin(DatasetName, Comm1, Comm2, SysDepInfo, Da
   character *(*), INTENT(IN)   :: SysDepInfo
   integer       , INTENT(OUT)  :: DataHandle
   integer       , INTENT(OUT)  :: Status
-  Status = WRF_WARN_NOOP
   DataHandle = 0   ! dummy setting to quiet warning message
+write(0,*)'ext_ncd_open_for_read calling ext_ncd_open_for_read_begin'
+  CALL ext_ncd_open_for_read_begin( DatasetName, Comm1, Comm2, SysDepInfo, DataHandle, Status )
+write(0,*)'ext_ncd_open_for_read calling ext_ncd_open_for_read_commit', DataHandle, Status
+  CALL ext_ncd_open_for_read_commit( DataHandle, Status )
+write(0,*)'ext_ncd_open_for_read back from ext_ncd_open_for_read_commit', DataHandle, Status
   return
-end subroutine ext_ncd_open_for_read_begin
+end subroutine ext_ncd_open_for_read
 
-subroutine ext_ncd_open_for_read( FileName, Comm, IOComm, SysDepInfo, DataHandle, Status)
+!ends training phase; switches internal flag to enable input
+!must be paired with call to ext_ncd_open_for_read_begin
+subroutine ext_ncd_open_for_read_commit(DataHandle, Status)
+  use wrf_data
+  use ext_ncd_support_routines
+  implicit none
+  include 'wrf_status_codes.h'
+  include 'netcdf.inc'
+  integer, intent(in) :: DataHandle
+  integer, intent(out) :: Status
+  type(wrf_data_handle) ,pointer         :: DH
+
+  if(WrfIOnotInitialized) then
+    Status = WRF_IO_NOT_INITIALIZED
+    write(msg,*) 'ext_ncd_ioinit was not called ',__FILE__,', line', __LINE__
+    call wrf_debug ( FATAL , msg)
+    return
+  endif
+  call GetDH(DataHandle,DH,Status)
+  if(Status /= WRF_NO_ERR) then
+    write(msg,*) 'Warning Status = ',Status,' in ',__FILE__,', line', __LINE__
+    call wrf_debug ( WARN , TRIM(msg))
+    return
+  endif
+  DH%FileStatus      = WRF_FILE_OPENED_FOR_READ
+  Status = WRF_NO_ERR
+  return
+end subroutine ext_ncd_open_for_read_commit
+
+subroutine ext_ncd_open_for_read_begin( FileName, Comm, IOComm, SysDepInfo, DataHandle, Status)
   use wrf_data
   use ext_ncd_support_routines
   implicit none
@@ -826,15 +856,14 @@ subroutine ext_ncd_open_for_read( FileName, Comm, IOComm, SysDepInfo, DataHandle
   enddo
   DH%NumVars         = NumVars
   DH%NumberTimes     = VLen(2)
-  DH%FileStatus      = WRF_FILE_OPENED_FOR_READ
+  DH%FileStatus      = WRF_FILE_OPENED_NOT_COMMITTED
   DH%FileName        = FileName
   DH%CurrentVariable = 0
   DH%CurrentTime     = 0
   DH%TimesVarID      = VarID
   DH%TimeIndex       = 0
   return
-end subroutine ext_ncd_open_for_read
-
+end subroutine ext_ncd_open_for_read_begin
 
 subroutine ext_ncd_open_for_update( FileName, Comm, IOComm, SysDepInfo, DataHandle, Status)
   use wrf_data
@@ -969,20 +998,6 @@ subroutine ext_ncd_open_for_update( FileName, Comm, IOComm, SysDepInfo, DataHand
   return
 end subroutine ext_ncd_open_for_update
 
-!stub
-!ends training phase; switches internal flag to enable input
-!must be paired with call to ext_ncd_open_for_read_begin
-subroutine ext_ncd_open_for_read_commit(DataHandle, Status)
-  use wrf_data
-  use ext_ncd_support_routines
-  implicit none
-  include 'wrf_status_codes.h'
-  include 'netcdf.inc'
-  integer, intent(in) :: DataHandle
-  integer, intent(out) :: Status
-  Status = WRF_WARN_NOOP
-  return
-end subroutine ext_ncd_open_for_read_commit
 
 SUBROUTINE ext_ncd_open_for_write_begin(FileName,Comm,IOComm,SysDepInfo,DataHandle,Status)
   use wrf_data
@@ -1111,7 +1126,7 @@ SUBROUTINE ext_ncd_open_for_write_commit(DataHandle, Status)
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
-  DH%FileStatus  = WRF_FILE_OPENED_AND_COMMITTED
+  DH%FileStatus  = WRF_FILE_OPENED_FOR_WRITE
   return
 end subroutine ext_ncd_open_for_write_commit
 
@@ -1140,7 +1155,7 @@ subroutine ext_ncd_ioclose(DataHandle, Status)
     Status = WRF_WARN_DRYRUN_CLOSE
     write(msg,*) 'Warning TRY TO CLOSE DRYRUN in ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg))
-  elseif(DH%FileStatus == WRF_FILE_OPENED_AND_COMMITTED) then
+  elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_WRITE) then
     continue    
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_READ) then
     continue
@@ -1188,7 +1203,7 @@ subroutine ext_ncd_iosync( DataHandle, Status)
     Status = WRF_WARN_FILE_NOT_COMMITTED
     write(msg,*) 'Warning FILE NOT COMMITTED in ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg))
-  elseif(DH%FileStatus == WRF_FILE_OPENED_AND_COMMITTED) then
+  elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_WRITE) then
     continue
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_READ) then
     continue
@@ -1235,7 +1250,7 @@ subroutine ext_ncd_redef( DataHandle, Status)
     Status = WRF_WARN_FILE_NOT_COMMITTED
     write(msg,*) 'Warning FILE NOT COMMITTED in ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg))
-  elseif(DH%FileStatus == WRF_FILE_OPENED_AND_COMMITTED) then
+  elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_WRITE) then
     continue
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_READ) then
     Status = WRF_WARN_FILE_OPEN_FOR_READ
@@ -1283,7 +1298,7 @@ subroutine ext_ncd_enddef( DataHandle, Status)
     Status = WRF_WARN_FILE_NOT_COMMITTED
     write(msg,*) 'Warning FILE NOT COMMITTED in ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg))
-  elseif(DH%FileStatus == WRF_FILE_OPENED_AND_COMMITTED) then
+  elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_WRITE) then
     continue
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_READ) then
     Status = WRF_WARN_FILE_OPEN_FOR_READ
@@ -1302,7 +1317,7 @@ subroutine ext_ncd_enddef( DataHandle, Status)
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
-  DH%FileStatus  = WRF_FILE_OPENED_AND_COMMITTED
+  DH%FileStatus  = WRF_FILE_OPENED_FOR_WRITE
   return
 end subroutine ext_ncd_enddef
 
@@ -2317,7 +2332,7 @@ subroutine ext_ncd_write_field(DataHandle,DateStr,Var,Field,FieldType,Comm, &
       call wrf_debug ( WARN , TRIM(msg))
       return
     endif
-  elseif(DH%FileStatus == WRF_FILE_OPENED_AND_COMMITTED .OR. DH%FileStatus == WRF_FILE_OPENED_FOR_UPDATE) then
+  elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_WRITE .OR. DH%FileStatus == WRF_FILE_OPENED_FOR_UPDATE) then
     do NVar=1,DH%NumVars
       if(DH%VarNames(NVar) == VarName) then
         exit
@@ -2464,10 +2479,13 @@ subroutine ext_ncd_read_field(DataHandle,DateStr,Var,Field,FieldType,Comm,  &
     write(msg,*) 'Warning FILE NOT OPENED in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( WARN , TRIM(msg))
   elseif(DH%FileStatus == WRF_FILE_OPENED_NOT_COMMITTED) then
-    Status = WRF_WARN_DRYRUN_READ
-    write(msg,*) 'Warning DRYRUN READ in ',__FILE__,', line', __LINE__ 
-    call wrf_debug ( WARN , TRIM(msg))
-  elseif(DH%FileStatus == WRF_FILE_OPENED_AND_COMMITTED) then
+! jm it is okay to have a dry run read. means read is called between ofrb and ofrc. Just return.
+!    Status = WRF_WARN_DRYRUN_READ
+!    write(msg,*) 'Warning DRYRUN READ in ',__FILE__,', line', __LINE__ 
+!    call wrf_debug ( WARN , TRIM(msg))
+    Status = WRF_NO_ERR
+    RETURN
+  elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_WRITE) then
     Status = WRF_WARN_READ_WONLY_FILE
     write(msg,*) 'Warning READ WRITE ONLY FILE in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( WARN , TRIM(msg))
@@ -2696,7 +2714,7 @@ subroutine ext_ncd_set_time(DataHandle, DateStr, Status)
     Status = WRF_WARN_FILE_NOT_COMMITTED
     write(msg,*) 'Warning FILE NOT COMMITTED in ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg))
-  elseif(DH%FileStatus == WRF_FILE_OPENED_AND_COMMITTED) then
+  elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_WRITE) then
     Status = WRF_WARN_READ_WONLY_FILE
     write(msg,*) 'Warning READ WRITE ONLY FILE in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( WARN , TRIM(msg))
@@ -2745,7 +2763,7 @@ subroutine ext_ncd_get_next_time(DataHandle, DateStr, Status)
     Status = WRF_WARN_DRYRUN_READ
     write(msg,*) 'Warning DRYRUN READ in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( WARN , TRIM(msg))
-  elseif(DH%FileStatus == WRF_FILE_OPENED_AND_COMMITTED) then
+  elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_WRITE) then
     Status = WRF_WARN_READ_WONLY_FILE
     write(msg,*) 'Warning READ WRITE ONLY FILE in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( WARN , TRIM(msg))
@@ -2790,7 +2808,7 @@ subroutine ext_ncd_get_previous_time(DataHandle, DateStr, Status)
     Status = WRF_WARN_DRYRUN_READ
     write(msg,*) 'Warning DRYRUN READ in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( WARN , TRIM(msg))
-  elseif(DH%FileStatus == WRF_FILE_OPENED_AND_COMMITTED) then
+  elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_WRITE) then
     Status = WRF_WARN_READ_WONLY_FILE
     write(msg,*) 'Warning READ WRITE ONLY FILE in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( WARN , TRIM(msg))
@@ -2836,7 +2854,7 @@ subroutine ext_ncd_get_next_var(DataHandle, VarName, Status)
     Status = WRF_WARN_DRYRUN_READ
     write(msg,*) 'Warning DRYRUN READ in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( WARN , TRIM(msg))
-  elseif(DH%FileStatus == WRF_FILE_OPENED_AND_COMMITTED) then
+  elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_WRITE) then
     Status = WRF_WARN_READ_WONLY_FILE
     write(msg,*) 'Warning READ WRITE ONLY FILE in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( WARN , TRIM(msg))
@@ -2908,7 +2926,7 @@ subroutine ext_ncd_get_var_info(DataHandle,Name,NDim,MemoryOrder,Stagger,DomainS
     write(msg,*) 'Warning DRYRUN READ in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( WARN , TRIM(msg))
     return
-  elseif(DH%FileStatus == WRF_FILE_OPENED_AND_COMMITTED) then
+  elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_WRITE) then
     Status = WRF_WARN_READ_WONLY_FILE
     write(msg,*) 'Warning READ WRITE ONLY FILE in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( WARN , TRIM(msg))

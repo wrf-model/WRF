@@ -146,7 +146,7 @@
       call wrf_debug ( WARN , msg)
       return
     endif
-  elseif(DH%FileStatus == WRF_FILE_OPENED_AND_COMMITTED) then
+  elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_WRITE) then
     do NVar=1,MaxVars
       if(DH%MDVarNames(NVar) == Name) then
         exit

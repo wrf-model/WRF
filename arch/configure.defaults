@@ -697,7 +697,7 @@ FCBASEOPTS	=	-fnonstd -free -xpp=cpp $(FCDEBUG) $(OMP) -w
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../inc \
-			-M../external/io_netcdf -M../external/io_int \
+			-M../external/io_netcdf -M../external/io_int -M../external/esmf_time_f90 \
 			-M../frame -M../share -M../phys -M../inc \
 			-M../dyn_em 
 EXTRAMODULES    =       
@@ -788,7 +788,7 @@ FCOPTIM         =       -O3 -xlibmopt
 FCDEBUG         =       # -g
 FCBASEOPTS      =       -fnonstd -free -xpp=cpp $(FCDEBUG) -w
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
-INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
+INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../inc \
                         -M../external/io_netcdf -M../external/io_int -M../external/esmf_time_f90 \
                         -M../frame -M../share -M../phys -M../inc \

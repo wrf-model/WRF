@@ -587,3 +587,84 @@ RSL_DYNPAD_7    ( d_p, maxrun_p, nl_p,
   }
 }
 
+RSL_REG_PATCHINFO_MN ( d_p ,
+                       sp1  , ep1  , sp2  , ep2 ,  sp3  , ep3   )
+  int_p d_p ;
+  int_p sp1  , ep1  , sp2  , ep2 ,  sp3  , ep3 ;
+{
+  int d, i, j, k ;
+  d = *d_p ;
+  RSL_TEST_ERR( d < 0 || d >= RSL_MAXDOMAINS, "rsl_get_run_info: bad domain" ) ;
+  *sp1 = -1 ; *ep1 = -1 ;
+  *sp2 = -1 ; *ep2 = -1 ;
+  for ( j = 0 ; j < domain_info[d].len_n ; j++ )
+  {
+    for ( i = 0 ; i < domain_info[d].len_m ; i++ )
+    {
+      if ( rsl_c_comp2phys_proc(domain_info[d].domain[INDEX_2(j,i,domain_info[d].len_m)].P)==rsl_myproc)
+      {
+	if ( *sp1 < 0 ) *sp1 = i + 1 ;
+	*ep1 = i + 1 ;
+	if ( *sp2 < 0 ) *sp2 = j + 1 ;
+	*ep2 = j + 1 ;
+      }
+    }
+  }
+  *sp3 = 1 ;
+  *ep3 = domain_info[d].len_z ;
+}
+
+RSL_REG_PATCHINFO_MZ ( d_p ,
+                       sp1  , ep1  , sp2  , ep2 ,  sp3  , ep3   )
+  int_p d_p ;
+  int_p sp1  , ep1  , sp2  , ep2 ,  sp3  , ep3 ;
+{
+  int d, i, j, k ;
+  d = *d_p ;
+  RSL_TEST_ERR( d < 0 || d >= RSL_MAXDOMAINS, "rsl_get_run_info: bad domain" ) ;
+  *sp1 = -1 ; *ep1 = -1 ;
+  *sp3 = -1 ; *ep3 = -1 ;
+  for ( k = 0 ; k < domain_info[d].len_z ; k++ )
+  {
+    for ( i = 0 ; i < domain_info[d].len_m ; i++ )
+    {
+      if ( rsl_c_comp2phys_proc(domain_info[d].domain_mz[INDEX_2(k,i,domain_info[d].len_m)].P)==rsl_myproc)
+      {
+        if ( *sp1 < 0 ) *sp1 = i + 1 ;
+        *ep1 = i + 1 ;
+        if ( *sp3 < 0 ) *sp3 = k + 1 ;
+        *ep3 = k + 1 ;
+      }
+    }
+  }
+  *sp2 = 1 ;
+  *ep2 = domain_info[d].len_n ;
+}
+
+RSL_REG_PATCHINFO_NZ ( d_p ,
+                       sp1  , ep1  , sp2  , ep2 ,  sp3  , ep3   )
+  int_p d_p ;
+  int_p sp1  , ep1  , sp2  , ep2 ,  sp3  , ep3 ;
+{
+  int d, i, j, k ;
+  d = *d_p ;
+  RSL_TEST_ERR( d < 0 || d >= RSL_MAXDOMAINS, "rsl_get_run_info: bad domain" ) ;
+  *sp2 = -1 ; *ep2 = -1 ;
+  *sp3 = -1 ; *ep3 = -1 ;
+  for ( k = 0 ; k < domain_info[d].len_z ; k++ )
+  {
+    for ( j = 0 ; j < domain_info[d].len_n ; j++ )
+    {
+      if ( rsl_c_comp2phys_proc(domain_info[d].domain_nz[INDEX_2(k,j,domain_info[d].len_n)].P)==rsl_myproc)
+      {
+        if ( *sp2 < 0 ) *sp2 = j + 1 ;
+        *ep2 = j + 1 ;
+        if ( *sp3 < 0 ) *sp3 = k + 1 ;
+        *ep3 = k + 1 ;
+      }
+    }
+  }
+  *sp1 = 1 ;
+  *ep1 = domain_info[d].len_m ;
+}
+

@@ -1,4 +1,4 @@
-!/***************************************************************************
+!***************************************************************************
 !* The HDF5 WRF IO module was written by the the HDF Group at NCSA, the     *
 !* National Center for Supercomputing Applications.                         *
 !*     HDF Group                                                            *
@@ -48,7 +48,7 @@ contains
     type(wrf_phdf5_data_handle),pointer           :: DH
 
     character(Len = MaxTimeSLen)                  :: tname
-    character(Len = 256)                          :: tgroupname
+    character(Len = 512)                          :: tgroupname
     integer(hid_t)                                :: tgroup_id
 
     call GetDH(DataHandle,DH,Status)
@@ -343,7 +343,7 @@ subroutine create_h5filetype(dtype_id,Status)
      return
   endif
 
-  type_size = 80
+  type_size = 256
 
   call h5tset_size_f(dtstr_id,type_size,hdf5err)
   if(hdf5err.lt.0) then 
@@ -618,7 +618,7 @@ subroutine setup_wrtd_dataset(DataHandle,DataSetName,dtypeid,countmd,&
   type(wrf_phdf5_data_handle),pointer           :: DH
 
   character(Len = MaxTimeSLen)                 :: tname
-  character(Len = 256)                         :: tgroupname                           
+  character(Len = 512)                         :: tgroupname                           
   integer                                       :: hdf5err
 
 
@@ -664,10 +664,22 @@ subroutine setup_wrtd_dataset(DataHandle,DataSetName,dtypeid,countmd,&
   ! obtain the absolute name of the group where the dataset is located
   call numtochar(TimeIndex,tname)
   tgroupname = 'TIME_STAMP_'//tname
-  call h5gopen_f(DH%GroupID,tgroupname,tgroupid,hdf5err)
+  if(DH%TgroupIDs(TimeIndex) /= -1) then
+    tgroupid = DH%TgroupIDs(TimeIndex) 
+!  call h5gopen_f(DH%GroupID,tgroupname,tgroupid,hdf5err)
+  else 
+   call h5gcreate_f(DH%GroupID,tgroupname,tgroupid,hdf5err)
+   if(hdf5err.lt.0) then                                            
+     Status =  WRF_HDF5_ERR_GROUP                  
+     write(msg,*) 'Warning Status = ',Status,' in ',__FILE__,', line', __LINE__     
+     call wrf_debug(WARN,msg)
+     return                                                                               
+   endif          
+   DH%TgroupIDs(TimeIndex) = tgroupid
+  endif
 
   ! create dataset
-  call h5dcreate_f(tgroupid,DatasetName,H5T_NATIVE_REAL,fspace_id,&
+  call h5dcreate_f(tgroupid,DatasetName,dtypeid,fspace_id,&
        dsetid,hdf5err)
   if(hdf5err.lt.0) then
      Status =  WRF_HDF5_ERR_DATASET_CREATE 
@@ -793,7 +805,7 @@ subroutine setup_rdtd_dataset(DataHandle,DataSetName,mtypeid,TimeIndex,&
   integer                                       :: hdf5err
 
   character(Len = MaxTimeSLen)                 :: tname
-  character(Len = 256)                         :: tgroupname      
+  character(Len = 512)                         :: tgroupname      
   ! get datahandle
   call GetDH(DataHandle,DH,Status)
   if(Status /= WRF_NO_ERR) then

@@ -603,8 +603,8 @@ subroutine ext_phdf5_open_for_read(FileName,Comm,iocomm,SysDepInfo,DataHandle,St
   integer                                      :: submembers
   integer                                      :: tmembers
   integer                                      :: ObjType
-  character(len= 80)                           :: ObjName
-  character(len= 80)                           :: GroupName
+  character(len= 256)                           :: ObjName
+  character(len= 256)                           :: GroupName
 
   integer                                      :: i,j
   integer(hsize_t), dimension(7)               :: data_dims
@@ -616,7 +616,7 @@ subroutine ext_phdf5_open_for_read(FileName,Comm,iocomm,SysDepInfo,DataHandle,St
   integer                                      :: hdf5err
   integer                                      :: info,mpi_size,mpi_rank  
   character(Len = MaxTimeSLen)                 :: tname
-  character(Len = 256)                         :: tgroupname
+  character(Len = 512)                         :: tgroupname
 
 
   ! Allocating the data handle
@@ -947,7 +947,7 @@ subroutine ext_phdf5_read_field(DataHandle,DateStr,Var,Field,FieldType,Comm,  &
   integer                                      :: hdf5err
 
   character(Len = MaxTimeSLen)                 :: tname
-  character(Len = 256)                         :: tgroupname
+  character(Len = 512)                         :: tgroupname
 
 
   ! FOR PARALLEL IO
@@ -1259,7 +1259,7 @@ SUBROUTINE ext_phdf5_open_for_write_begin(FileName,Comm,IOComm,SysDepInfo,DataHa
   integer                                     :: stat
   character (7)                               :: Buffer
   integer                                     :: VDimIDs(2)
-  character(Len = 256)                        :: groupname
+  character(Len = 512)                        :: groupname
 
   ! For parallel IO
   integer(hid_t)                              :: plist_id
@@ -1319,6 +1319,7 @@ SUBROUTINE ext_phdf5_open_for_write_begin(FileName,Comm,IOComm,SysDepInfo,DataHa
 
   ! group name information is stored at SysDepInfo 
   groupname = "/"//SysDepInfo
+!  write(*,*) "groupname ",groupname
   call h5gcreate_f(file5_id,groupname,g_id,hdferr)
   if(hdferr .lt. 0) then
      Status = WRF_HDF5_ERR_GROUP
@@ -1412,7 +1413,7 @@ subroutine ext_phdf5_write_field(DataHandle,DateStr,Var,Field,FieldType,&
   integer      ,dimension(NVarDims)              :: Length
   integer      ,dimension(NVarDims)              :: DomLength
   integer      ,dimension(NVarDims+1)            :: DimRank
-  character(80),dimension(NVarDims)              :: RODimNames
+  character(256),dimension(NVarDims)              :: RODimNames
   integer      ,dimension(NVarDims)              :: StoredStart
   integer      ,dimension(:,:,:,:),allocatable   :: XField
   integer      ,dimension(:,:,:,:),allocatable   :: BUFFER! for logical field
@@ -1424,7 +1425,7 @@ subroutine ext_phdf5_write_field(DataHandle,DateStr,Var,Field,FieldType,&
   integer                                        :: l1,l2,m1,m2,n1,n2
   integer(hid_t)                                 :: XType
   integer                                        :: di
-  character (80)                                 :: NullName
+  character (256)                                 :: NullName
   integer                                        :: TimeIndex
   integer ,dimension(NVarDims+1)                 :: temprank
   logical                                        :: NotFound
@@ -1852,7 +1853,7 @@ subroutine ext_phdf5_get_var_info(DataHandle,Name,NDim,MemoryOrder,Stagger,Domai
   integer                               :: XType
 
   character(Len =MaxTimeSLen)           :: tname
-  character(Len = 256)                  :: tgroupname
+  character(Len = 512)                  :: tgroupname
   integer(hid_t)                        :: tgroupid
   integer(hid_t)                        :: dsetid
   integer(hid_t)                        :: dspaceid
@@ -2334,7 +2335,7 @@ subroutine ext_phdf5_put_dom_td_char(DataHandle,Element,DateStr,Data,Status)
 
   call ext_phdf5_put_var_td_char(DataHandle,Element,DateStr,&
        'E_X_T_D_O_M_A_I_N_M_E_T_A_DATA_',&
-       Data,1,Status)
+       Data,Status)
   return
 
 end subroutine ext_phdf5_put_dom_td_char
@@ -2431,7 +2432,7 @@ subroutine ext_phdf5_put_var_td_real(DataHandle,Element,DateStr,Var,Data,Count,S
   character*(*)         ,intent(in)             :: Element
   character*(*)         ,intent(in)             :: DateStr
   character*(*)         ,intent(in)             :: Var
-  character(len = 80)                           :: DataSetName
+  character(len = 256)                           :: DataSetName
   real                  ,intent(in)             :: Data(*)
   integer               ,intent(in)             :: Count
   integer               ,intent(out)            :: Status
@@ -2493,7 +2494,7 @@ subroutine ext_phdf5_put_var_td_real(DataHandle,Element,DateStr,Var,Data,Count,S
      call h5dclose_f(dset_id,hdf5err)
      call h5sclose_f(dspaceid,hdf5err)
      call h5sclose_f(fspaceid,hdf5err)
-     call h5gclose_f(tgroupid,hdf5err)
+!     call h5gclose_f(tgroupid,hdf5err)
   endif
   return
 end subroutine ext_phdf5_put_var_td_real
@@ -2509,7 +2510,7 @@ subroutine ext_phdf5_put_var_td_double(DataHandle,Element,DateStr,Var,Data,Count
   character*(*)         ,intent(in)             :: Element
   character*(*)         ,intent(in)             :: DateStr
   character*(*)         ,intent(in)             :: Var
-  character(len = 80)                           :: DataSetName
+  character(len = 256)                           :: DataSetName
   real*8                ,intent(in)             :: Data(*)
   integer               ,intent(in)             :: Count
   integer               ,intent(out)            :: Status
@@ -2569,7 +2570,7 @@ subroutine ext_phdf5_put_var_td_double(DataHandle,Element,DateStr,Var,Data,Count
      call h5dclose_f(dset_id,hdf5err)
      call h5sclose_f(dspaceid,hdf5err)
      call h5sclose_f(fspaceid,hdf5err)
-     call h5gclose_f(tgroupid,hdf5err)
+!     call h5gclose_f(tgroupid,hdf5err)
 
   endif
   return
@@ -2587,7 +2588,7 @@ subroutine ext_phdf5_put_var_td_integer(DataHandle,Element,DateStr,Var,Data,Coun
   character*(*)         ,intent(in)             :: Element
   character*(*)         ,intent(in)             :: DateStr
   character*(*)         ,intent(in)             :: Var
-  character(len = 80)                           :: DataSetName
+  character(len = 256)                           :: DataSetName
   integer               ,intent(in)             :: Data(*)
   integer               ,intent(in)             :: Count
   integer               ,intent(out)            :: Status
@@ -2648,7 +2649,7 @@ subroutine ext_phdf5_put_var_td_integer(DataHandle,Element,DateStr,Var,Data,Coun
      call h5dclose_f(dset_id,hdf5err)
      call h5sclose_f(dspaceid,hdf5err)
      call h5sclose_f(fspaceid,hdf5err)
-     call h5gclose_f(tgroupid,hdf5err)
+!     call h5gclose_f(tgroupid,hdf5err)
 
   endif
   return
@@ -2667,7 +2668,7 @@ subroutine ext_phdf5_put_var_td_logical(DataHandle,Element,DateStr,Var,Data,Coun
   character*(*)         ,intent(in)             :: Element
   character*(*)         ,intent(in)             :: DateStr
   character*(*)         ,intent(in)             :: Var
-  character(len = 80)                           :: DataSetName
+  character(len = 256)                           :: DataSetName
   logical               ,intent(in)             :: Data(*)
   integer ,dimension(:),allocatable             :: Buffer              
   integer               ,intent(in)             :: Count
@@ -2736,7 +2737,7 @@ subroutine ext_phdf5_put_var_td_logical(DataHandle,Element,DateStr,Var,Data,Coun
      call h5dclose_f(dset_id,hdf5err)
      call h5sclose_f(dspaceid,hdf5err)
      call h5sclose_f(fspaceid,hdf5err)
-     call h5gclose_f(tgroupid,hdf5err)
+!     call h5gclose_f(tgroupid,hdf5err)
      deallocate(Buffer)
   endif
   return 
@@ -2754,7 +2755,7 @@ subroutine ext_phdf5_put_var_td_char(DataHandle,Element,DateStr,Var,Data,Status)
   character*(*)         ,intent(in)             :: Element
   character*(*)         ,intent(in)             :: DateStr
   character*(*)         ,intent(in)             :: Var
-  character(len = 80)                           :: DataSetName
+  character(len = 256)                           :: DataSetName
   character*(*)         ,intent(in)             :: Data
   integer               ,intent(out)            :: Status
   type(wrf_phdf5_data_handle),pointer           :: DH
@@ -2763,7 +2764,7 @@ subroutine ext_phdf5_put_var_td_char(DataHandle,Element,DateStr,Var,Data,Status)
   integer(hid_t)                                :: dspaceid
   integer(hid_t)                                :: fspaceid
   integer(hid_t)                                :: tgroupid
-  integer(hsize_t),dimension(2)                 :: dims              
+  integer(hsize_t),dimension(1)                 :: dims              
   integer                                       :: hdf5err
   integer                                       :: i
 
@@ -2788,8 +2789,7 @@ subroutine ext_phdf5_put_var_td_char(DataHandle,Element,DateStr,Var,Data,Status)
 
   if(DH%FileStatus == WRF_FILE_OPENED_AND_COMMITTED) then
 
-     dims(1) = Count
-     dims(2) = 1
+     dims(1) = 1
 
      ! Get the time index
      call GetAttrTimeIndex('write',DataHandle,DateStr,TimeIndex,Status)
@@ -2812,7 +2812,6 @@ subroutine ext_phdf5_put_var_td_char(DataHandle,Element,DateStr,Var,Data,Status)
      if(Status /= WRF_NO_ERR) then
         return
      endif
-
      call setup_wrtd_dataset(DataHandle,DataSetName,str_id, &
           count,dset_id,dspaceid,        &
           fspaceid,tgroupid,TimeIndex,Status)
@@ -2840,7 +2839,7 @@ subroutine ext_phdf5_put_var_td_char(DataHandle,Element,DateStr,Var,Data,Status)
      call h5dclose_f(dset_id,hdf5err)
      call h5sclose_f(dspaceid,hdf5err)
      call h5sclose_f(fspaceid,hdf5err)
-     call h5gclose_f(tgroupid,hdf5err)
+!     call h5gclose_f(tgroupid,hdf5err)
 
   endif
   return
@@ -2859,7 +2858,7 @@ subroutine ext_phdf5_get_var_td_real(DataHandle,Element,DateStr,Var,Data,Count,O
   character*(*)         ,intent(in)             :: Element
   character*(*)         ,intent(in)             :: DateStr
   character*(*)         ,intent(in)             :: Var
-  character(len =80)                            :: DataSetName
+  character(len =256)                            :: DataSetName
   real                  ,intent(out)            :: Data(*)
   integer               ,intent(in)             :: Count
   integer               ,intent(out)            :: OutCount
@@ -2891,6 +2890,7 @@ subroutine ext_phdf5_get_var_td_real(DataHandle,Element,DateStr,Var,Data,Count,O
   if(DH%FileStatus == WRF_FILE_OPENED_FOR_READ) then
 
      ! get the time-dependent attribute name
+     
      call GetName(Element,Var,DataSetName,Status)
 
      ! get time index of the time-dependent attribute
@@ -2940,7 +2940,7 @@ subroutine ext_phdf5_get_var_td_double(DataHandle,Element,DateStr,Var,Data,&
   character*(*)         ,intent(in)             :: Element
   character*(*)         ,intent(in)             :: DateStr
   character*(*)         ,intent(in)             :: Var
-  character(len =80)                            :: DataSetName
+  character(len =256)                            :: DataSetName
   real*8                ,intent(out)            :: Data(*)
   integer               ,intent(in)             :: Count
   integer              ,intent(out)            :: OutCount
@@ -3022,7 +3022,7 @@ subroutine ext_phdf5_get_var_td_integer(DataHandle,Element,DateStr,Var,Data,&
   character*(*)         ,intent(in)             :: Element
   character*(*)         ,intent(in)             :: DateStr
   character*(*)         ,intent(in)             :: Var
-  character(len =80)                            :: DataSetName
+  character(len =256)                            :: DataSetName
   integer               ,intent(out)             :: Data(*)
   integer               ,intent(in)             :: Count
   INTEGER    		,intent(out)            :: OutCount
@@ -3101,7 +3101,7 @@ subroutine ext_phdf5_get_var_td_logical(DataHandle,Element,DateStr,Var,Data,&
   character*(*)         ,intent(in)             :: Element
   character*(*)         ,intent(in)             :: DateStr
   character*(*)         ,intent(in)             :: Var
-  character(len =80)                            :: DataSetName
+  character(len =256)                            :: DataSetName
   logical               ,intent(out)            :: Data(*)
   integer,         dimension(:),allocatable     :: Buffer   
   integer               ,intent(in)             :: Count
@@ -3184,7 +3184,7 @@ subroutine ext_phdf5_get_var_td_char(DataHandle,Element,DateStr,Var,Data,Status)
   character*(*)         ,intent(in)             :: Element
   character*(*)         ,intent(in)             :: DateStr
   character*(*)         ,intent(in)             :: Var
-  character(len =80)                            :: DataSetName
+  character(len =256)                            :: DataSetName
   character*(*)         ,intent(out)             :: Data
   integer                                       :: Count
   integer                                       :: OutCount
@@ -4441,7 +4441,7 @@ subroutine retrieve_table(DataHandle,Status)
   implicit none
   include 'wrf_status_codes.h'   
 
-  character*80,dimension(MaxTabDims)    :: dim_name
+  character*256,dimension(MaxTabDims)    :: dim_name
   integer,dimension(:),allocatable      :: length
   integer,dimension(:),allocatable      :: unlimited
   integer, intent(in)                   :: DataHandle
@@ -4511,7 +4511,7 @@ subroutine retrieve_table(DataHandle,Status)
      return
   endif
 
-  string_size = 80
+  string_size = 256
   call h5tset_size_f(dtstr_id,string_size,hdf5err)
   if(hdf5err.lt.0) then 
      Status =  WRF_HDF5_ERR_DATATYPE
@@ -4639,12 +4639,9 @@ subroutine retrieve_table(DataHandle,Status)
   endif
 
   ! Store the information to the table array
-  write(*,*) "storing the table infor"
   do i =1,table_size
      DH%DIMTABLE(i)%dim_name = dim_name(i)
-     write(*,*)" dim_name",dim_name(i)
      DH%DIMTABLE(i)%length   = length(i)
-     write(*,*) "length(",i,")",length(i)
      DH%DIMTABLE(i)%unlimited = unlimited(i)
   enddo
 
@@ -4730,7 +4727,7 @@ subroutine store_table(DataHandle,table_length,Status)
   integer(size_t)                                :: type_sizes
   integer(size_t)                                :: type_sizei
   integer(size_t)                                :: offset
-  character*80      ,dimension(MaxTabDims)       :: dim_name
+  character*256      ,dimension(MaxTabDims)       :: dim_name
   integer           ,dimension(:),allocatable    :: length
   integer           ,dimension(:),allocatable    :: unlimited
   integer(hid_t)                                 :: dspace_id
@@ -4779,7 +4776,7 @@ subroutine store_table(DataHandle,table_length,Status)
   enddo
 
   do i=1,table_length
-     do j=1,80
+     do j=1,256
         dim_name(i)(j:j)=DH%DIMTABLE(i)%dim_name(j:j)
      enddo
   enddo
@@ -4818,7 +4815,7 @@ subroutine store_table(DataHandle,table_length,Status)
      return
   endif
 
-  type_size = 80
+  type_size = 256
 
      call h5tset_size_f(dtstr_id, type_size,hdf5err)
      if(hdf5err.lt.0) then 

@@ -38,7 +38,7 @@ module wrf_phdf5_data
   integer                , parameter      :: NO_DIM           = 0
   integer                , parameter      :: NVarDims         = 4
   integer                , parameter      :: NMDVarDims       = 2
-  integer                , parameter      :: CompDsetSize     = 64512 ! set to 63K
+  integer                , parameter      :: CompDsetSize     = 64256 ! set to 63K
   character (8)          , parameter      :: NO_NAME          = 'NULL'
   character(4)           , parameter      :: hdf5_true        ='TRUE'
   character(5)           , parameter      :: hdf5_false       ='FALSE'
@@ -62,19 +62,21 @@ module wrf_phdf5_data
 
   ! derived data type for dimensional table
   type :: dim_scale
-     character (len = 80) :: dim_name
+     character (len = 256) :: dim_name
      integer              :: length
      integer              :: unlimited
   end type dim_scale
 
   type :: wrf_phdf5_data_handle
-     character (80)                        :: FileName
+     character (256)                        :: FileName
      integer                               :: FileStatus
      integer                               :: Comm
      integer(hid_t)                        :: FileID
      integer(hid_t)                        :: GroupID
      integer(hid_t)                        :: DimGroupID
      integer(hid_t)                        :: EnumID
+     character (256)                       :: GroupName 
+     character (256)                       :: DimGroupName 
      logical                               :: Free
      logical                               :: Write
      character (5)                         :: TimesName
@@ -95,7 +97,7 @@ module wrf_phdf5_data
      integer       , dimension(NVarDims)   :: Dimension
      !     integer               , pointer       :: MDDsetIDs(:)
      integer               , pointer       :: MDVarDimLens(:)
-     character (80)        , pointer       :: MDVarNames(:)
+     character (256)        , pointer       :: MDVarNames(:)
      integer(hid_t)        , pointer       :: TgroupIDs(:)
      integer(hid_t)        , pointer       :: DsetIDs(:)
      integer(hid_t)        , pointer       :: MDDsetIDs(:)
@@ -130,7 +132,7 @@ CONTAINS
     integer                           :: j
     integer                           :: stat
     integer(hid_t)                    :: enum_type  
-    !    character (80)                    :: NullName
+    !    character (256)                    :: NullName
 
     !    NullName = char(0)
 
@@ -453,7 +455,7 @@ subroutine GetDataTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
   integer                                    :: hdf5err
 
   integer(hid_t)                             :: group_id
-  character(Len = 256)                       :: groupname
+  character(Len = 512)                       :: groupname
 
   ! for debug
 
@@ -525,14 +527,29 @@ subroutine GetDataTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
      ! create group id for different time stamp
      call numtochar(TimeIndex,tname)
      groupname = 'TIME_STAMP_'//tname
-     call h5gcreate_f(DH%groupid,groupname,group_id,hdf5err)
-
-     DH%Tgroupids(TimeIndex) = group_id
-     if(hdf5err .lt. 0) then
+!     call h5gn_members_f(DH%GroupID,DH%GroupName,nmembers,hdf5err)
+!     do i = 0, nmembers - 1
+!        call h5gget_obj_info_idx_f(DH%GroupID,DH%GroupName,i,ObjName, ObjType, &
+!                                   hdf5err)
+        
+!        if(ObjName(1:17) == groupname) then
+!          call h5gopen_f(DH%GroupID,groupname,tgroupid,hdf5err)
+!          exit
+!        endif
+!     enddo 
+           
+     if(DH%Tgroupids(TimeIndex) == -1) then 
+       call h5gcreate_f(DH%groupid,groupname,group_id,hdf5err)
+       if(hdf5err .lt. 0) then
         Status = WRF_HDF5_ERR_GROUP
         write(msg,*) 'Warning Status = ',Status,' in ',__FILE__,', line', __LINE__
         call wrf_debug ( WARN , msg) 
         return
+       endif
+       DH%Tgroupids(TimeIndex) = group_id
+     else
+!        call h5gopen_f(DH%groupid,groupname,group_id,
+       group_id = DH%Tgroupids(TimeIndex) 
      endif
 
      call h5screate_simple_f(1,dims,dspace_id,hdf5err,dims)
@@ -693,6 +710,12 @@ subroutine GetAttrTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
   integer(hid_t)                             :: str_id    ! string ID
   integer                                    :: hdf5err
 
+  integer(size_t)                            :: datelen_size
+  integer(hid_t)                             :: group_id
+  character(Len = 512)                       :: groupname
+
+  ! suppose the output will not exceed 100,0000 timesteps. 
+  character(Len = MaxTimeSLen)               :: tname  
 
   !  DH => WrfDataHandles(DataHandle), don't know why NetCDF doesn't use GetDH
   call GetDH(DataHandle,DH,Status)
@@ -740,6 +763,107 @@ subroutine GetAttrTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
      endif
      DH%TimeIndex        = TimeIndex
      DH%Times(TimeIndex) = DateStr
+
+     !    From NetCDF implementation, keep it in case it can be used.
+     !     VStart(1) = 1
+     !     VStart(2) = TimeIndex
+     !     VCount(1) = DateStrLen
+     !     VCount(2) = 1
+
+     ! create memory dataspace id and file dataspace id
+     dims(1)   = 1
+     count(1)  = 1
+     offset(1) = TimeIndex -1
+     sizes(1)  = TimeIndex
+
+     ! create group id for different time stamp
+     call numtochar(TimeIndex,tname)
+     groupname = 'TIME_STAMP_'//tname
+           
+     if(DH%Tgroupids(TimeIndex) == -1) then 
+       call h5gcreate_f(DH%groupid,groupname,group_id,hdf5err)
+       if(hdf5err .lt. 0) then
+        Status = WRF_HDF5_ERR_GROUP
+        write(msg,*) 'Warning Status = ',Status,' in ',__FILE__,', line', __LINE__
+        call wrf_debug ( WARN , msg) 
+        return
+       endif
+       DH%Tgroupids(TimeIndex) = group_id
+     else
+!        call h5gopen_f(DH%groupid,groupname,group_id,
+       group_id = DH%Tgroupids(TimeIndex) 
+     endif
+
+     call h5screate_simple_f(1,dims,dspace_id,hdf5err,dims)
+     if(hdf5err.lt.0) then
+        Status =  WRF_HDF5_ERR_DATASPACE
+        write(msg,*) 'Warning Status = ',Status,' in ',__FILE__,', line', __LINE__
+        call wrf_debug ( WARN , msg) 
+        return
+     endif
+
+
+     ! create HDF5 string handler for time 
+     if(TimeIndex == 1) then
+        call h5tcopy_f(H5T_NATIVE_CHARACTER, str_id, hdf5err)
+        if(hdf5err.lt.0) then 
+           Status =  WRF_HDF5_ERR_DATATYPE
+           write(msg,*) 'Warning Status = ',Status,' in ',__FILE__,', line', __LINE__
+           call wrf_debug ( WARN , msg) 
+           return
+        endif
+
+        datelen_size = DateStrLen
+        call h5tset_size_f(str_id,datelen_size,hdf5err)
+        if(hdf5err.lt.0) then 
+           Status =  WRF_HDF5_ERR_DATATYPE
+           write(msg,*) 'Warning Status = ',Status,' in ',__FILE__,', line', __LINE__
+           call wrf_debug ( WARN , msg) 
+           return
+        endif
+     else 
+        str_id = DH%str_id
+     endif
+
+     call h5dcreate_f(group_id,DH%TimesName,str_id,dspace_id,&
+          DH%TimesID, hdf5err)
+     if(hdf5err.lt.0) then
+        Status =  WRF_HDF5_ERR_DATASET_CREATE
+        write(msg,*) 'Warning Status = ',Status,' in ',__FILE__,', line', __LINE__
+        call wrf_debug ( WARN , msg) 
+        return
+     endif
+
+
+     ! write the data in memory space to file space
+     CALL h5dwrite_f(DH%TimesID,str_id,DateStr,dims,hdf5err,dspace_id,dspace_id)
+     if(hdf5err.lt.0) then
+        Status =  WRF_HDF5_ERR_DATASET_WRITE
+        write(msg,*) 'Warning Status = ',Status,' in ',__FILE__,', line', __LINE__
+        call wrf_debug ( WARN , msg) 
+        return
+     endif
+
+     if(TimeIndex == 1) then
+        DH%str_id = str_id
+     endif
+
+
+     call h5sclose_f(dspace_id,hdf5err)
+     if(hdf5err.lt.0) then
+        Status =  WRF_HDF5_ERR_DATASPACE
+        write(msg,*) 'Warning Status = ',Status,' in ',__FILE__,', line', __LINE__
+        call wrf_debug ( WARN , msg) 
+        return
+     endif
+
+     call h5dclose_f(DH%TimesID,hdf5err)
+     if(hdf5err.lt.0) then
+        Status = WRF_HDF5_ERR_DATASET_GENERAL
+        write(msg,*) 'Warning Status = ',Status,' in ',__FILE__,', line', __LINE__
+        call wrf_debug ( WARN , msg) 
+        return
+     endif
 
   else
      ! This is for IO read
@@ -875,7 +999,7 @@ subroutine ExtOrderStr(MemoryOrder,Vector,ROVector,Status)
   include 'wrf_status_codes.h'
   character*(*)                    ,intent(in)    :: MemoryOrder
   character*(*),dimension(*)       ,intent(in)    :: Vector
-  character(80),dimension(NVarDims),intent(out)   :: ROVector
+  character(256),dimension(NVarDims),intent(out)   :: ROVector
   integer                          ,intent(out)   :: Status
   integer                                         :: NDim
   character*3                                     :: MemOrd

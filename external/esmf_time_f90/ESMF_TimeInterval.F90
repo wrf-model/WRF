@@ -651,7 +651,6 @@
              timeinterval%basetime%S / 3600 , &
              mod( timeinterval%basetime%S / 60 , 60 ), &
              mod( timeinterval%basetime%S  , 60 )
-write(0,*)'** timeinterval%basetime%S ',timeinterval%basetime%S,' ',timeinterval%basetime%Sn,' / ',timeinterval%basetime%Sd
 
 
       rc = ESMF_SUCCESS

@@ -243,8 +243,6 @@ fprintf(stderr,"resset prevP to %d\n",prevP) ;
 
 /* unpacking loop */
 
-fprintf(stderr,"comp_xpose: unpacking loop\n") ;
-
     ipack = 1 ;
     for ( procrec = xp->procs[d][XPOSE_MN_MZ] ; procrec != NULL ; procrec = procrec->next )
     {
@@ -664,7 +662,7 @@ if ( k==0) fprintf(stderr,"P %d sendP %d prevP %d ks %d ke %d\n",P,sendP,prevP, 
                     {
                       case MINNS_MAJEW_K_3D :             /* <MM> eg: ua(i,j,k) */
                         t0 = fld->llen[0] ; t1 = fld->llen[1]*t0 ;
-#if 1
+#if 0
 if (1)fprintf(stderr,"s_p_r^: P %2d prevP %2d recvP %2d ipack %d i %2d j %2d k %2d ig %2d jg %2d t0 %3d t1 %3d ks %2d ke %2d ke-ks+1 %3d\n",P,prevP,recvP,ipack,i,j,k,ig,jg,t0,t1,ks,ke,ke-ks+1) ;
 #endif
                         store_process_refs( base, fld->f90_table_index, (i+j*t0+ks*t1)*elemsz, elemsz,
@@ -717,7 +715,7 @@ fprintf(stderr,"resset prevP to %d\n",prevP) ;
                       &(procrec->pack_table_size),
                       &(procrec->pack_table_nbytes), 1 ) ;
 
-#if 1
+#if 0
         fprintf(stderr,"pack P = %3d:\n",procrec->P ) ;
         show_pack_table( procrec->pack_table,
                          procrec->pack_table_size,
@@ -777,7 +775,7 @@ sendP,prevP,P,recvP,rsl_myproc) ;
                     {
                       case MINNS_MAJEW_K_3D :             /* <MM> eg: ua(i,j,k) */
                         t0 = fld->llen[0] ; t1 = fld->llen[1]*t0 ;
-#if 1
+#if 0
 if (1)fprintf(stderr,"s_p_rv: P %2d prevP %2d recvP %2d ipack %d i %2d j %2d k %2d ig %2d jg %2d t0 %3d t1 %3d ks %2d ke %2d ke-ks+1 %3d\n",
 P,prevP,recvP,ipack,i,j,k,ig,jg,t0,t1,ks,ke,ke-ks+1) ;
 #endif
@@ -829,7 +827,7 @@ fprintf(stderr,"resset prevP to %d\n",prevP) ;
         process_refs( &(procrec->unpack_table),
                       &(procrec->unpack_table_size),
                       &(procrec->unpack_table_nbytes), 1 ) ;
-#if 1
+#if 0
         fprintf(stderr,"unpack P = %3d:\n",procrec->P ) ;
         show_pack_table( procrec->unpack_table,
                          procrec->unpack_table_size,

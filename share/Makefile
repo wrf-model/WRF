@@ -126,7 +126,7 @@ wrf_ext_read_field.o : ../frame/module_io.o ../frame/module_wrf_error.o \
 
 module_date_time.o: ../frame/module_wrf_error.o ../frame/module_configure.o
 
-module_soil_pre.o: module_date_time.o
+module_soil_pre.o: module_date_time.o ../frame/module_state_description.o
 
 module_optional_si_input.o: module_io_wrf.o module_io_domain.o \
 		../frame/module_domain.o ../frame/module_configure.o

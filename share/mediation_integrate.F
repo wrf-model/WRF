@@ -459,11 +459,13 @@ SUBROUTINE med_nest_move ( parent, nest )
    END INTERFACE
 
 #ifdef DEREF_KLUDGE
+   ! see <a href="www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm">here</a>
    INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
    INTEGER     :: sm31x, em31x, sm32x, em32x, sm33x, em33x
    INTEGER     :: sm31y, em31y, sm32y, em32y, sm33y, em33y
 #endif
 
+  ! set grid pointer for code in deref_kludge (if used)
   grid => nest
 #include "deref_kludge.h"
 

@@ -426,8 +426,8 @@ module_initialize_real.o module_dm.o  start_domain.o :
 
 DMPARALLEL      =       1
 MAX_PROC        =       1024
-OMP             =       -mp
-OMPCPP          =       -D_OPENMP
+OMP             =       #-mp
+OMPCPP          =       #-D_OPENMP
 FC              =       f90
 LD              =       f90
 CC              =       cc

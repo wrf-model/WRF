@@ -1,3 +1,5 @@
+#define KLUDGE_20000821
+
 /***********************************************************************
      
                               COPYRIGHT
@@ -91,6 +93,10 @@ RSL_TO_OH_INFO ( t_p, o_p, msize_p, seed_p,
   int kiddex ;
   int P ;
   rsl_hemi_rec_t * q ;
+#ifdef KLUDGE_20000821
+  rsl_hemi_rec_t * qnuke ;
+  rsl_hemi_rec_t * prev ;
+#endif
   int p, p1 ;
   int globalhemiPlist[RSL_MAXPROC][RSL_MAXPROC], work[RSL_MAXPROC][RSL_MAXPROC] ;
 
@@ -117,6 +123,15 @@ RSL_TO_OH_INFO ( t_p, o_p, msize_p, seed_p,
       s_oig = 0 ; s_ojg = 0 ;
       for ( p = 0 ; p < RSL_MAXPROC ; p++ )
       {
+#ifdef KLUDGE_20000821
+        for ( q = s_tinfo->other_hemi_procbufs[p], prev = NULL ; q ; )
+        {
+           if ( q->data ) RSL_FREE( q->data ) ;
+           qnuke = q ;
+           q = q->next ;
+           RSL_FREE( qnuke ) ;
+        }
+#endif
 	s_tinfo->other_hemi_procbufs[p] = NULL ;
 	s_tinfo->hemi_sendPlist[p] = 0 ;
         for ( p1 = 0 ; p1 < RSL_MAXPROC ; p1++ )
@@ -135,7 +150,9 @@ RSL_TO_OH_INFO ( t_p, o_p, msize_p, seed_p,
         if ( s_ojg >= s_oinfo->len_n )
         {
 	  *retval_p = 0 ;
+#ifndef KLUDGE_20000821
 	  s_tinfo->other_hemi_proclist_built = 1 ; /* FIX 20000818 JM */
+ #endif
 
 /* collapse the list and keep only entries that have data associated */
 /* also fill entries for processors I must send to, indicating the number 
@@ -213,11 +230,12 @@ RSL_TO_OH_INFO ( t_p, o_p, msize_p, seed_p,
     int * x ;
     if ( *seed_p )
     {
-      s_p = 0 ;
+      s_p = -1 ;
       s_q = NULL ;
     }
     if ( s_q == NULL )
     {
+      s_p++ ;
       while ( s_tinfo->other_hemi_procbufs[s_p] == NULL ) s_p++ ;
       if ( s_p >= rsl_nproc_all )
       {
@@ -261,6 +279,11 @@ RSL_TO_OH_MSG ( nbuf_p, buf )
   {
     s_q1->data = RSL_MALLOC( char, s_msize ) ;
     s_q1->curs = 0 ;
+  }
+  if ( s_q1->curs+nbuf >= s_msize )
+  {
+    sprintf(mess,"RSL_TO_OH_MSG: store of %d bytes would overflow %d sized buffer.\n",nbuf,s_msize ) ;
+    RSL_TEST_ERR(1,mess) ;
   }
   bcopy( buf, &(s_q1->data[s_q1->curs]), nbuf ) ;
   s_q1->curs += nbuf ;
@@ -468,7 +491,6 @@ RSL_POINT_ON_PROC ( d_p, ig_p, jg_p, retval_p )
   rsl_point_t       * domain ;
   ig = *ig_p - 1 ;
   jg = *jg_p - 1 ;
-
 
   d = *d_p ;
   RSL_TEST_ERR( d < 0 || d > RSL_MAXDOMAINS,

@@ -1168,8 +1168,8 @@ RSL_REMAP_ARRAY ( inbuf, ndim_p, type_p,
   int          pe0[RSL_MAXPROC], pe1[RSL_MAXPROC] ;
   int          ds0, ds1 ;
   int          de0, de1 ;
-  int i,j,k,l,curs,dex,w ;
-  int ndim, type ;
+  int i,j,k,l,curs,dex,w, outer ;
+  int ndim, type, mtag ;
   MPI_Status Stat ;
 
   ndim = *ndim_p ;
@@ -1213,10 +1213,13 @@ RSL_REMAP_ARRAY ( inbuf, ndim_p, type_p,
     }
     if ( good )
     {
-      msglen = (pe1[outstanding]-ps1[outstanding]+1)*(pe0[outstanding]-ps0[outstanding]+1)*elemsize(type) ;
+      msglen = (oe_dimp[2]-os_dimp[2]+1)*(pe1[outstanding]-ps1[outstanding]+1)*(pe0[outstanding]-ps0[outstanding]+1)*elemsize(type) ;
       rcvbuf = (char *) buffer_for_proc(P, msglen, RSL_RECVBUF) ;
+      mtag = MTYPE_FROMTO( MSG_READ_RESPONSE, P, rsl_myproc ) ;
+
       MPI_Irecv( rcvbuf , msglen, MPI_CHAR, P, 
-                 5225, rsl_mpi_communicator, &reqlist[outstanding++] ) ;  /* posted receive */
+                 mtag , rsl_mpi_communicator, &reqlist[outstanding] ) ;  /* posted receive */
+      outstanding++ ;
     }
   }
   /* loop over possible receivers so we can pack and send stuff */
@@ -1243,7 +1246,7 @@ RSL_REMAP_ARRAY ( inbuf, ndim_p, type_p,
     if ( good )
     {
       /* pack and send */
-      msglen = (de1-ds1+1)*(de0-ds0+1)*elemsize(type) ;
+      msglen = (oe_dimp[2]-os_dimp[2]+1)*(de1-ds1+1)*(de0-ds0+1)*elemsize(type) ;
       sndbuf = (char *) buffer_for_proc(P, msglen, RSL_SENDBUF) ;
       curs = 0 ;
       for ( k = is_dimm[2] ; k <= ie_dimm[2] ; k++ )
@@ -1257,11 +1260,15 @@ RSL_REMAP_ARRAY ( inbuf, ndim_p, type_p,
                     +(k-is_dimm[2])*(ie_dimm[0]-is_dimm[0]+1)*(ie_dimm[1]-is_dimm[1]+1))  ;
               sndbuf[curs++] = inbuf[l+dex] ;
             }
-       MPI_Send( sndbuf, curs, MPI_CHAR, P, 5225, rsl_mpi_communicator ) ;
+       mtag = MTYPE_FROMTO( MSG_READ_RESPONSE, rsl_myproc, P ) ;
+#if 0
+fprintf(stderr,"MPI_Send to %d %d\n",P,msglen) ;
+#endif
+       MPI_Send( sndbuf, msglen, MPI_CHAR, P, mtag, rsl_mpi_communicator ) ;
     }
   }
 
-  for ( i = 0 ; i < outstanding ; i++ )
+  for ( outer = 0 ; outer < outstanding ; outer++ )
   {
     MPI_Waitany ( outstanding, reqlist, &w, &Stat ) ;
     P = Stat.MPI_SOURCE ;

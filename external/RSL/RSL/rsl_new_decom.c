@@ -76,14 +76,15 @@ count_neighbors( d, m, n, hm, hn, pt, ipt )
   domain = dinfo->domain ;
   mlen = dinfo->len_m ;
 
-  if ( (domain[INDEX_2(n,m,mlen)].info_1 == 0) 
-	&& (domain[INDEX_2(n,m,mlen)].P != RSL_INVALID) /* 970216 */
+  if ( (domain[INDEX_2(n,m,mlen)].info_1 == 0)
+        && (domain[INDEX_2(n,m,mlen)].P != RSL_INVALID) /* 970216 */
         && (domain[INDEX_2(n,m,mlen)].P != count_neighbors_myproc ) )
   {
     domain[INDEX_2(n,m,mlen)].info_1 = 1 ;    /* mark as counted */
     count_neighbors_count++ ;           /* increment counter */
   }
 }
+
 
 /* note that this has been changed to an internal routine that
    is callable for a single domain at a time */
@@ -119,7 +120,6 @@ rsl_new_decomposition( d_p, mloc_p, nloc_p )
   d = *d_p ;
 
   dinfo = &(domain_info[d]) ;
-
 
 /* 20010228 */
 
@@ -242,7 +242,6 @@ rsl_new_decomposition( d_p, mloc_p, nloc_p )
     }
   }
 
-
   /* work out the sizes of the local memory requirements for the domain */
   /* for now, this information is just passed back to the caller; at some
      point we could optionally allocate the domains, here or elsewhere
@@ -291,6 +290,7 @@ rsl_new_decomposition( d_p, mloc_p, nloc_p )
     dinfo->loc_m = *mloc_p ;
     dinfo->loc_n = *nloc_p ;
   }
+
 
 #ifndef vpp
   dinfo->ilocaloffset = firsti-rsl_padarea ;
@@ -458,6 +458,7 @@ rsl_new_decomposition( d_p, mloc_p, nloc_p )
     int n, nlen ;
     int ilocaloffset, jlocaloffset ;
     int first ;
+    int square ;
 
     for ( p =  0 ; p <= MAX_KINDPAD ; p++ )
     {
@@ -489,9 +490,26 @@ rsl_new_decomposition( d_p, mloc_p, nloc_p )
                 rsl_8pt( d, m, mlen, n, nlen, count_neighbors ) ;   
                 break ;
               case 2 :
+#ifdef INLINE_COUNTS
+                square = 2 ;
+                /* note fall through */
+#else
                 rsl_24pt( d, m, mlen, n, nlen, count_neighbors ) ;  
                 break ;
+#endif
 	      case 3 :
+#ifdef INLINE_COUNTS
+                if ( sw_allow_dynpad )
+                {
+                  square = 3 ;
+                  /* note fall through */
+                }
+                else
+                {
+                  rsl_2ptm( d, m, mlen, n, nlen, count_neighbors ) ; /* 1 extra ns */
+                  break ;
+                }
+#else
 		if ( sw_allow_dynpad )
 		{
                   rsl_48pt( d, m, mlen, n, nlen, count_neighbors ) ;
@@ -501,7 +519,20 @@ rsl_new_decomposition( d_p, mloc_p, nloc_p )
                   rsl_2ptm( d, m, mlen, n, nlen, count_neighbors ) ; /* 1 extra ns */
 		}
                 break ;
+#endif
 	      case 4 :
+#ifdef INLINE_COUNTS
+		if ( sw_allow_dynpad )
+		{
+                  square = 4 ;
+                  /* note fall through */
+		}
+		else
+		{
+                  rsl_4ptm( d, m, mlen, n, nlen, count_neighbors ) ; /* 2 extra ns */
+                  break ;
+		}
+#else
 		if ( sw_allow_dynpad )
 		{
                   rsl_80pt( d, m, mlen, n, nlen, count_neighbors ) ;
@@ -511,11 +542,60 @@ rsl_new_decomposition( d_p, mloc_p, nloc_p )
                   rsl_4ptm( d, m, mlen, n, nlen, count_neighbors ) ; /* 2 extra ns */
 		}
                 break ;
+#endif
 	      case 5 :
+#ifdef INLINE_COUNTS
+                /* note fall through */
+                square = 5 ;
+#else
                 rsl_120pt( d, m, mlen, n, nlen, count_neighbors ) ;
                 break ;
+#endif
 	      case 6 :
+#ifdef INLINE_COUNTS
+                square = 6 ;
+{
+/* this code comes from pt.c, rsl_168pt */
+  rsl_index_t min = m ;
+  rsl_dimlen_t minlen = mlen ;
+  rsl_index_t maj = n ;
+  rsl_dimlen_t majlen = nlen ;
+
+  rsl_index_t i, j ;
+
+  for ( i = -square ; i <= square ; i++ )
+  {
+    for ( j = -square ; j <= square ; j++ )
+    {
+      if ( min+i >= 0 && min+i < minlen &&
+             maj+j >= 0 && maj+j < majlen )
+      {
+
+# ifdef INLINE_COUNTS
+/* this code is count_neighbors, above, in this file */
+{
+  rsl_index_t m=min+i, n=maj+j ;        /* this point */
+  rsl_index_t hm=min, hn=maj ;      /* home point (whose stencil I'm on)  */
+
+  if ( (domain[INDEX_2(n,m,mlen)].info_1 == 0)
+        && (domain[INDEX_2(n,m,mlen)].P != RSL_INVALID) /* 970216 */
+        && (domain[INDEX_2(n,m,mlen)].P != count_neighbors_myproc ) )
+  {
+    domain[INDEX_2(n,m,mlen)].info_1 = 1 ;    /* mark as counted */
+    count_neighbors_count++ ;           /* increment counter */
+  }
+}
+# else
+        (*f)(d,min+i,maj+j,min,maj,pts168[k],ipts168[k]) ;
+# endif
+      }
+    }
+  }
+}
+
+#else
                 rsl_168pt( d, m, mlen, n, nlen, count_neighbors ) ; 
+#endif
                 break ;
 	      /* special cases */
               case 7 :

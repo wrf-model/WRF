@@ -1325,6 +1325,41 @@ work_out_bdy( dom, mmax, nmax )
 /* this second section works out the distances to each of the four boundaries
    but does not take corners into account */
 
+#ifdef NO_RAGGED
+
+/* DOT GRID */
+  for ( j = 0 ; j < nmax ; j++ )
+  {
+    for ( i = 0 ; i < mmax ; i++ )
+    {
+      p = &(dom[INDEX_2(j,i,mmax)]) ;
+      if ( p->valid == RSL_VALID && p->trimmed == 0 )
+      {
+        p->dist_mlow  = (i)+1 ;
+        p->dist_mhigh = (mmax-i) ;
+        p->dist_nlow  = (j)+1 ;
+        p->dist_nhigh = (nmax-j) ;
+      }
+    }
+  }
+/* CROSS GRID */
+  for ( j = 0 ; j < nmax ; j++ )
+  {
+    for ( i = 0 ; i < mmax ; i++ )
+    {
+      p = &(dom[INDEX_2(j,i,mmax)]) ;
+      if ( p->valid == RSL_VALID && p->trimmed == 0 && p->cross == 1 )
+      {
+        p->dist_mlow_x  = (i)+1  ;              /* make 1 based for fortran */
+        p->dist_mhigh_x = (mmax-i) ;
+        p->dist_nlow_x  = (j)+1  ;
+        p->dist_nhigh_x = (nmax-j) ;
+      }
+    }
+  }
+
+#else
+
 /* DOT GRID */
   /* work out boundary info -- this is a little tricky (and time consuming)
      because we have to allow for irregularly shaped nests */
@@ -1412,6 +1447,7 @@ work_out_bdy( dom, mmax, nmax )
       }
     }
   }
+#endif
 }
 
 #if COMMENTED_OUT

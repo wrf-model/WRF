@@ -27,7 +27,7 @@ SUBROUTINE start_domain ( grid , allowed_to_read )
 
    IF ( .FALSE.                  ) THEN
 
-#if (EM_CORE == 1)
+#if ((EM_CORE == 1) && (DA_CORE != 1))
    ELSE IF (      dyn_opt .eq. DYN_EM ) THEN
      CALL start_domain_em( grid, allowed_to_read , &
 !

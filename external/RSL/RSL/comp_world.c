@@ -407,7 +407,7 @@ RSL_GET_RUN_INFOP ( d_p, p_p, maxrun_p, nl_p, nrunj_p, nruni_p,
 /*****************/
 }
 
-RSL_REG_RUN_INFOP( d_p, p_p, maxrun_p, nl_p,
+RSL_REG_RUN_INFOP ( d_p, p_p, maxrun_p, nl_p,
 		  is, ie,
 		  js, je,
 		  idif_p, jdif_p )

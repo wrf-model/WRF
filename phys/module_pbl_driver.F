@@ -352,7 +352,7 @@ CONTAINS
                moist(ims,kms,jms,P_QV),moist(ims,kms,jms,P_QC),     &
                moist(ims,kms,jms,P_QI),p_phy,pi_phy,                &
                RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN,RQIBLTEN, &
-               CP,G,RCP,R_d,ROVG,P_QI,PARAM_FIRST_SCALAR,           &
+               CP,G,RCP,R_d,ROVG,                                   &
                dz8w,z,XLV,R_v,PSFC,                                 &
                ZNT,UST,ZOL,HOL,PBLH,REGIME,PSIM,PSIH,               &
                XLAND,HFX,QFX,TSKOLD,GZ1OZ0,WSPD,BR,                 &

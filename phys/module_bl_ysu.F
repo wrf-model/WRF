@@ -9,8 +9,8 @@ contains
 !
    subroutine ysu(u3d,v3d,th3d,t3d,qv3d,qc3d,qi3d,p3d,pi3d,        &
                   rublten,rvblten,rthblten,                        &
-                  rqvblten,rqcblten,rqiblten,                      &
-                  cp,g,rovcp,rd,rovg,p_qi,p_first_scalar,          &
+                  rqvblten,rqcblten,rqiblten,          		   &
+                  cp,g,rovcp,rd,rovg,                              &
                   dz8w,z,xlv,rv,psfc,                              &
                   znt,ust,zol,hol,hpbl,regime,psim,psih,           &
                   xland,hfx,qfx,tsk,gz1oz0,wspd,br,                &
@@ -24,54 +24,54 @@ contains
 !-------------------------------------------------------------------
 !-- u3d         3d u-velocity interpolated to theta points (m/s)
 !-- v3d         3d v-velocity interpolated to theta points (m/s)
-!-- th3d        3d potential temperature (k)
+!-- th3d	3d potential temperature (k)
 !-- t3d         temperature (k)
 !-- qv3d        3d water vapor mixing ratio (kg/kg)
 !-- qc3d        3d cloud mixing ratio (kg/kg)
-!-- qi3d        3d ice mixing ratio (kg/kg)
+!-- qi3d        3d ice mixing ratio (kg/kg)   
+!               (note: if P_QI<PARAM_FIRST_SCALAR this should be zero filled)
 !-- p3d         3d pressure (pa)
-!-- pi3d        3d exner function (dimensionless)
-!-- rr3d        3d dry air density (kg/m^3)
-!-- rublten     rho_du tendency due to
-!               pbl parameterization (kg/m^3 . m/s)
-!-- rvblten     rho_dv tendency due to
-!               pbl parameterization (kg/m^3 . m/s)
-!-- rthblten    rho_dtheta_m tendency due to
-!               pbl parameterization (kg/m^3 . k)
-!-- rqvblten    rho_dqv tendency due to
-!               pbl parameterization (kg/m^3 . kg/kg)
-!-- rqcblten    rho_dqc tendency due to
-!               pbl parameterization (kg/m^3 . kg/kg)
-!-- rqiblten    rho_dqi tendency due to
-!               pbl parameterization (kg/m^3 . kg/kg)
+!-- pi3d	3d exner function (dimensionless)
+!-- rr3d	3d dry air density (kg/m^3)
+!-- rublten     u tendency due to
+!               pbl parameterization (m/s/s)
+!-- rvblten     v tendency due to
+!               pbl parameterization (m/s/s)
+!-- rthblten    theta tendency due to
+!               pbl parameterization (K/s)
+!-- rqvblten    qv tendency due to
+!               pbl parameterization (kg/kg/s)
+!-- rqcblten    qc tendency due to
+!               pbl parameterization (kg/kg/s)
+!-- rqiblten    qi tendency due to
+!               pbl parameterization (kg/kg/s)
 !-- cp          heat capacity at constant pressure for dry air (j/kg/k)
 !-- g           acceleration due to gravity (m/s^2)
 !-- rovcp       r/cp
 !-- rd          gas constant for dry air (j/kg/k)
-!-- rovg        r/g
-!-- p_qi        species index for cloud ice
-!-- dz8w        dz between full levels (m)
-!-- z           height above sea level (m)
+!-- rovg 	r/g
+!-- dz8w	dz between full levels (m)
+!-- z		height above sea level (m)
 !-- xlv         latent heat of vaporization (j/kg)
-!-- rv          gas constant for water vapor (j/kg/k)
+!-- rv 		gas constant for water vapor (j/kg/k)
 !-- psfc        pressure at the surface (pa)
-!-- znt         roughness length (m)
-!-- ust         u* in similarity theory (m/s)
-!-- zol         z/l height over monin-obukhov length
-!-- hol         pbl height over monin-obukhov length
-!-- hpbl        pbl height (m)
-!-- regime      flag indicating pbl regime (stable, unstable, etc.)
+!-- znt		roughness length (m)
+!-- ust		u* in similarity theory (m/s)
+!-- zol		z/l height over monin-obukhov length
+!-- hol		pbl height over monin-obukhov length
+!-- hpbl	pbl height (m)
+!-- regime	flag indicating pbl regime (stable, unstable, etc.)
 !-- psim        similarity stability function for momentum
 !-- psih        similarity stability function for heat
-!-- xland       land mask (1 for land, 2 for water)
-!-- hfx         upward heat flux at the surface (w/m^2)
-!-- qfx         upward moisture flux at the surface (kg/m^2/s)
-!-- tsk         surface temperature (k)
+!-- xland	land mask (1 for land, 2 for water)
+!-- hfx		upward heat flux at the surface (w/m^2)
+!-- qfx		upward moisture flux at the surface (kg/m^2/s)
+!-- tsk		surface temperature (k)
 !-- gz1oz0      log(z/z0) where z0 is roughness length
 !-- wspd        wind speed at lowest model level (m/s)
 !-- br          bulk richardson number in surface layer
-!-- dt          time step (s)
-!-- dtmin       time step (minute)
+!-- dt		time step (s)
+!-- dtmin	time step (minute)
 !-- rvovrd      r_v divided by r_d (dimensionless)
 !-- svp1        constant for saturation vapor pressure (kpa)
 !-- svp2        constant for saturation vapor pressure (dimensionless)
@@ -104,52 +104,51 @@ contains
 !
       integer,  intent(in   )   ::      ids,ide, jds,jde, kds,kde, &
                                         ims,ime, jms,jme, kms,kme, &
-                                        its,ite, jts,jte, kts,kte, &
-                                        p_qi,p_first_scalar
+                                        its,ite, jts,jte, kts,kte
 !
       real,     intent(in   )   ::      dt,dtmin,cp,g,rovcp,       &
-                                        rovg,rd,xlv,rv
+				        rovg,rd,xlv,rv
 !
       real,     intent(in )     ::     svp1,svp2,svp3,svpt0
       real,     intent(in )     ::     ep1,ep2,karman,eomeg,stbolt
 !
       real,     dimension( ims:ime, kms:kme, jms:jme )           , &
                 intent(in   )   ::                           qv3d, &
-                                                             qc3d, &
-                                                             qi3d, &
-                                                              p3d, &
-                                                             pi3d, &
-                                                             th3d, &
-                                                              t3d, &
-                                                             dz8w, &
-                                                                z
+							     qc3d, &
+ 		 				             qi3d, &
+							      p3d, &
+							     pi3d, &
+							     th3d, &
+							      t3d, &
+							     dz8w, &
+							        z
 !
       real,     dimension( ims:ime, kms:kme, jms:jme )           , &
                 intent(inout)   ::                        rublten, &
-                                                          rvblten, &
-                                                         rthblten, &
-                                                         rqvblten, &
-                                                         rqcblten, &
-                                                         rqiblten
+							  rvblten, &
+							 rthblten, &
+							 rqvblten, &
+							 rqcblten, &
+							 rqiblten
 !
       real,     dimension( ims:ime, jms:jme )                    , &
                 intent(in   )   ::                          xland, &
-                                                              hfx, &
-                                                              qfx, &
-                                                             psim, &
-                                                             psih, &
-                                                           gz1oz0, &
-                                                               br, &
+           			                              hfx, &
+           					              qfx, &
+     					                     psim, &
+           					             psih, &
+							   gz1oz0, &
+							       br, &
                                                              psfc, &
                                                               tsk
 !
       real,     dimension( ims:ime, jms:jme )                    , &
                 intent(inout)   ::                            hol, &
-                                                              ust, &
-                                                             hpbl, &
+							      ust, &
+							     hpbl, &
                                                               znt, &
-                                                           regime, &
-                                                             wspd, &
+						           regime, &
+						             wspd, &
                                                               zol
 !
      real,     dimension( ims:ime, kms:kme, jms:jme )            , &
@@ -167,7 +166,7 @@ contains
                p3d(ims,kms,j),rublten(ims,kms,j),rvblten(ims,kms,j),&
                rthblten(ims,kms,j),rqvblten(ims,kms,j),             &
                rqcblten(ims,kms,j),rqiblten(ims,kms,j),             &
-               cp,g,rovcp,rd,rovg,p_first_scalar,p_qi,              &
+               cp,g,rovcp,rd,rovg,                                  &
                dz8w(ims,kms,j),z(ims,kms,j),xlv,rv,                 &
                psfc(ims,j),znt(ims,j),ust(ims,j),zol(ims,j),        &
                hol(ims,j),hpbl(ims,j),regime(ims,j),psim(ims,j),    &
@@ -191,8 +190,8 @@ contains
 !
    subroutine ysu2d(j,ux,vx,tx,qx,qcx,qix,p2d,                     &
                   utnp,vtnp,ttnp,                                  &
-                  qtnp,qctnp,qitnp,                                &
-                  cp,g,rovcp,rd,rovg,p_qi,p_first_scalar,          &
+                  qtnp,qctnp,qitnp,             		   &
+                  cp,g,rovcp,rd,rovg,                              &
                   dz8w2d,z2d,xlv,rv,psfcpa,                        &
                   znt,ust,zol,hol,hpbl,regime,psim,psih,           &
                   xland,hfx,qfx,tsk,gz1oz0,wspd,br,                &
@@ -259,11 +258,10 @@ contains
 !
       integer,  intent(in   )   ::      ids,ide, jds,jde, kds,kde, &
                                         ims,ime, jms,jme, kms,kme, &
-                                        its,ite, jts,jte, kts,kte, &
-                                        p_qi,p_first_scalar,j
+                                        its,ite, jts,jte, kts,kte, j
 !
       real,     intent(in   )   ::      dt,dtmin,cp,g,rovcp,       &
-                                        rovg,rd,xlv,rv
+				        rovg,rd,xlv,rv
 !
       real,     intent(in )     ::     svp1,svp2,svp3,svpt0
       real,     intent(in )     ::     ep1,ep2,karman,eomeg,stbolt
@@ -275,35 +273,35 @@ contains
       real,     dimension( ims:ime, kms:kme )                    , &
                 intent(in   )   ::                             tx, &
                                                                qx, &
-                                                              qcx, &
-                                                              qix, &
-                                                              p2d
+						  	      qcx, &
+ 		 				              qix, &
+							      p2d
 !
       real,     dimension( ims:ime, kms:kme )                    , &
                 intent(inout)   ::                           utnp, &
-                                                             vtnp, &
-                                                             ttnp, &
-                                                             qtnp, &
-                                                            qctnp, &
-                                                            qitnp
+							     vtnp, &
+							     ttnp, &
+							     qtnp, &
+							    qctnp, &
+							    qitnp
 !
       real,     dimension( ims:ime )                             , &
                 intent(inout)   ::                            hol, &
-                                                              ust, &
-                                                             hpbl, &
+							      ust, &
+							     hpbl, &
                                                               znt, &
-                                                           regime
+						           regime
       real,     dimension( ims:ime )                             , &
                 intent(in   )   ::                          xland, &
-                                                              hfx, &
-                                                              qfx
+           			                              hfx, &
+           					              qfx
 !
       real,     dimension( ims:ime ), intent(inout)   ::     wspd
       real,     dimension( ims:ime ), intent(in  )    ::       br
 !
 
       real,     dimension( ims:ime ), intent(in   )   ::     psim, &
-                                                             psih
+           					             psih
       real,     dimension( ims:ime ), intent(in   )   ::   gz1oz0
 
 !
@@ -320,43 +318,43 @@ contains
 !
       real,     dimension( its:ite, kts:kte+1 ) ::             zq
 !
-      real,     dimension( its:ite, kts:kte )   ::                 &
-                                                         thx,thvx, &
-                                                          dzq,dza, &
-                                                               za, &
-                                                          uxs,vxs, &
-                                                         thxs,qxs, &
-                                                        qcxs,qixs
+      real,     dimension( its:ite, kts:kte )   ::     		   &
+                  				         thx,thvx, &
+                  				          dzq,dza, &
+						               za, &
+						          uxs,vxs, &
+							 thxs,qxs, &
+                   				        qcxs,qixs
 !
       real,    dimension( its:ite )             ::     qixsv,rhox, &
-                                                           govrth, &
-                                                            thxsv, &
-                                                        uxsv,vxsv, &
-                                                       qxsv,qcxsv, &
-                                                     qgh,tgdsa,ps
+       				                           govrth, &
+   						            thxsv, &
+							uxsv,vxsv, &
+                  			               qxsv,qcxsv, &
+                  			             qgh,tgdsa,ps
 !
       real,    dimension( its:ite )             ::                 &
                                                       zl1,thermal, &
-                                                     wscale,hgamt, &
+						     wscale,hgamt, &
                                                        hgamq,brdn, &
-                                                        brup,phim, &
-                                                         phih,cpm, &
-                                                      dusfc,dvsfc, &
-                                                      dtsfc,dqsfc, &
+                 				        brup,phim, &
+						         phih,cpm, &
+					              dusfc,dvsfc, &
+						      dtsfc,dqsfc, &
                                                        thgb,prpbl, &
                                                             wspd1
 !
       real,    dimension( its:ite, kts:kte )    ::      xkzm,xkzh, &
-                                                            a1,a2, &
+							    f1,f2, &
                                                             ad,au, &
                                                                al, &
                                                              zfac, &
                                                              scr4
-      real,    dimension( its:ite, kts:kte, ncloud)  ::        a3
+      real,    dimension( its:ite, kts:kte, ncloud)  ::        f3
 !
       logical, dimension( its:ite )             ::         pblflg, &
-                                                           sfcflg, &
-                                                           stable
+					                   sfcflg, &
+							   stable
 !
       integer ::  n,i,k,l,nzol,imvdif,ic
       integer ::  klpbl
@@ -369,7 +367,7 @@ contains
       real    ::  dt2,rdt,spdk2,fm,fh,hol1,gamfac,vpert,prnum
       real    ::  xkzo,ss,ri,qmean,tmean,alph,chi,zk,rl2,dk,sri
       real    ::  brint,dtodsd,rdz,dsdzt,dsdzq,dsdz2,ttend,qtend
-      real    ::  utend,vtend,qctend,qitend,tgc,dtodsu
+      real    ::  utend,vtend,qctend,qitend,tgc,dtodsu,govrthv
 !
       real, dimension( its:ite, kts:kte )     ::         wscalek, &
                                                      xkzml,xkzhl, &
@@ -689,7 +687,7 @@ contains
         endif
       enddo
 !
-!     estimate the entrainemnt parameters
+!     estimate the entrainment parameters
 !
       do i = its,ite
         if(pblflg(i)) then
@@ -787,7 +785,8 @@ contains
             ss = ((ux(i,k+1)-ux(i,k))*(ux(i,k+1)-ux(i,k))+(vx(i,k+1)- &
                vx(i,k))*(vx(i,k+1)-vx(i,k)))/(dza(i,k+1)*dza(i,k+1))+ &
                1.e-9
-            ri = govrth(i)*(thvx(i,k+1)-thvx(i,k))/(ss*dza(i,k+1))
+            govrthv = g/(0.5*(thvx(i,k+1)+thvx(i,k)))
+            ri = govrthv*(thvx(i,k+1)-thvx(i,k))/(ss*dza(i,k+1))
             if(imvdif.eq.1)then
               if((qcx(i,k)+qix(i,k)).gt.0.01e-3.and.(qcx(i,k+1)+      &
                 qix(i,k+1)).gt.0.01e-3)then
@@ -832,31 +831,31 @@ contains
           au(i,k) = 0.
           al(i,k) = 0.
           ad(i,k) = 0.
-          a1(i,k) = 0.
+          f1(i,k) = 0.
         enddo
       enddo
 !
       do ic = 1,ncloud
         do i = its,ite
           do k = kts,kte
-            a3(i,k,ic) = 0.
+            f3(i,k,ic) = 0.
           enddo
         enddo
       enddo
 !
       do i = its,ite
         ad(i,1) = 1.
-        a1(i,1) = tx(i,1)+hfx(i)/(rhox(i)*cpm(i))/zq(i,2)*dt2
-        a3(i,1,1) = qx(i,1)+qfx(i)/(rhox(i))/zq(i,2)*dt2
+        f1(i,1) = thx(i,1)+hfx(i)/(rhox(i)*cpm(i))/zq(i,2)*dt2
+        f3(i,1,1) = qx(i,1)+qfx(i)/(rhox(i))/zq(i,2)*dt2
       enddo
 !
       if(ncloud.ge.2) then
         do ic = 2,ncloud
           do i = its,ite
             if(ic.eq.2) then
-              a3(i,1,ic) = qcx(i,1)
+              f3(i,1,ic) = qcx(i,1)
             elseif(ic.eq.3) then
-              a3(i,1,ic) = qix(i,1)
+              f3(i,1,ic) = qix(i,1)
             endif
           enddo
         enddo
@@ -868,30 +867,30 @@ contains
           dtodsu = dt2/dz8w2d(i,k+1)
           rdz = 1./dza(i,k+1)
           if(pblflg(i).and.k.lt.kpbl(i)) then
-            dsdzt = xkzh(i,k)*(g/cp-hgamt(i)/hpbl(i) &
+            dsdzt = xkzh(i,k)*(-hgamt(i)/hpbl(i) &
                    -hfxpbl(i)*zfacent(i,k)/xkzh(i,k))
             dsdzq = xkzh(i,k)*(-hgamq(i)/hpbl(i) &
                    -qfxpbl(i)*zfacent(i,k)/xkzh(i,k))
-            a3(i,k,1) = a3(i,k,1)+dtodsd*dsdzq
-            a3(i,k+1,1) = qx(i,k+1)-dtodsu*dsdzq
+            f1(i,k)   = f1(i,k)+dtodsd*dsdzt
+            f1(i,k+1) = thx(i,k+1)-dtodsu*dsdzt
+            f3(i,k,1) = f3(i,k,1)+dtodsd*dsdzq
+            f3(i,k+1,1) = qx(i,k+1)-dtodsu*dsdzq
           elseif(pblflg(i).and.k.ge.kpbl(i).and.entfac(i,k).lt.4.6) then
             xkzh(i,k) = -bfxpbl(i)*dza(i,kpbl(i)+1)*exp(-entfac(i,k))/dthvx(i)
             xkzh(i,k) = sqrt(xkzh(i,k)*xkzhl(i,k))
             xkzh(i,k) = min(xkzh(i,k),xkzmax)
             xkzh(i,k) = max(xkzh(i,k),xkzmin)
-            dsdzt = xkzh(i,k)*(g/cp)
-            a3(i,k+1,1) = qx(i,k+1)
+            f1(i,k+1) = thx(i,k+1)
+            f3(i,k+1,1) = qx(i,k+1)
           else
-            dsdzt = xkzh(i,k)*(g/cp)
-            a3(i,k+1,1) = qx(i,k+1)
+            f1(i,k+1) = thx(i,k+1)
+            f3(i,k+1,1) = qx(i,k+1)
           endif
           dsdz2 = xkzh(i,k)*rdz
           au(i,k)   = -dtodsd*dsdz2
           al(i,k)   = -dtodsu*dsdz2
           ad(i,k)   = ad(i,k)-au(i,k)
           ad(i,k+1) = 1.-al(i,k)
-          a1(i,k)   = a1(i,k)+dtodsd*dsdzt
-          a1(i,k+1) = tx(i,k+1)-dtodsu*dsdzt
         enddo
       enddo
 !
@@ -900,9 +899,9 @@ contains
           do k = kts,kte-1
             do i = its,ite
               if(ic.eq.2) then
-                a3(i,k+1,ic) = qcx(i,k+1)
+                f3(i,k+1,ic) = qcx(i,k+1)
               elseif(ic.eq.3) then
-                a3(i,k+1,ic) = qix(i,k+1)
+                f3(i,k+1,ic) = qix(i,k+1)
               endif
             enddo
           enddo
@@ -911,15 +910,15 @@ contains
 !
 !     solve tridiagonal problem for heat and moisture, and clouds
 !
-      call tridin(al,ad,au,a1,a3,au,a1,a3,                 &
-                  its,ite,kts,kte,ncloud                   )
+      call tridin(al,ad,au,f1,f3,au,f1,f3,                 &
+		  its,ite,kts,kte,ncloud                   )
 !
 !     recover tendencies of heat and moisture
 !
       do k = kte,kts,-1
         do i = its,ite
-          ttend = (a1(i,k)-tx(i,k))*rdt
-          qtend = (a3(i,k,1)-qx(i,k))*rdt
+          ttend = (f1(i,k)-thx(i,k))*rdt*(tx(i,k)/thx(i,k))
+          qtend = (f3(i,k,1)-qx(i,k))*rdt
           ttnp(i,k) = ttnp(i,k)+ttend
           qtnp(i,k) = qtnp(i,k)+qtend
         enddo
@@ -930,10 +929,10 @@ contains
           do k = kte,kts,-1
             do i = its,ite
               if(ic.eq.2) then
-                qctend = (a3(i,k,ic)-qcx(i,k))*rdt
+                qctend = (f3(i,k,ic)-qcx(i,k))*rdt
                 qctnp(i,k) = qctnp(i,k)+qctend
               elseif(ic.eq.3) then
-                qitend = (a3(i,k,ic)-qix(i,k))*rdt
+                qitend = (f3(i,k,ic)-qix(i,k))*rdt
                 qitnp(i,k) = qitnp(i,k)+qitend
               endif
             enddo
@@ -948,16 +947,16 @@ contains
          au(i,k) = 0.
          al(i,k) = 0.
          ad(i,k) = 0.
-         a1(i,k) = 0.
-         a2(i,k) = 0.
+         f1(i,k) = 0.
+         f2(i,k) = 0.
       enddo
       enddo
 !
       do i = its,ite
         ad(i,1) = 1.
-        a1(i,1) = ux(i,1)-ux(i,1)/wspd1(i)*ust(i)*ust(i)/zq(i,2)*dt2 &
+        f1(i,1) = ux(i,1)-ux(i,1)/wspd1(i)*ust(i)*ust(i)/zq(i,2)*dt2 &
                           *(wspd1(i)/wspd(i))**2
-        a2(i,1) = vx(i,1)-vx(i,1)/wspd1(i)*ust(i)*ust(i)/zq(i,2)*dt2 &
+        f2(i,1) = vx(i,1)-vx(i,1)/wspd1(i)*ust(i)*ust(i)/zq(i,2)*dt2 &
                           *(wspd1(i)/wspd(i))**2
       enddo
 !
@@ -971,20 +970,20 @@ contains
                  -ufxpbl(i)*zfacent(i,k)/xkzm(i,k))
           dsdzv=xkzm(i,k)*(-hgamv(i)/hpbl(i) &
                  -vfxpbl(i)*zfacent(i,k)/xkzm(i,k))
-          a1(i,k)   = a1(i,k)+dtodsd*dsdzu
-          a1(i,k+1) = ux(i,k+1)-dtodsu*dsdzu
-          a2(i,k)   = a2(i,k)+dtodsd*dsdzv
-          a2(i,k+1) = vx(i,k+1)-dtodsu*dsdzv
+          f1(i,k)   = f1(i,k)+dtodsd*dsdzu
+          f1(i,k+1) = ux(i,k+1)-dtodsu*dsdzu
+          f2(i,k)   = f2(i,k)+dtodsd*dsdzv
+          f2(i,k+1) = vx(i,k+1)-dtodsu*dsdzv
         elseif(pblflg(i).and.k.ge.kpbl(i).and.entfac(i,k).lt.4.6) then
           xkzm(i,k) = prpbl(i)*xkzh(i,k)
           xkzm(i,k) = sqrt(xkzm(i,k)*xkzml(i,k))
           xkzm(i,k)=min(xkzm(i,k),xkzmax)
           xkzm(i,k)=max(xkzm(i,k),xkzmin)
-          a1(i,k+1)=ux(i,k+1)
-          a2(i,k+1)=vx(i,k+1)
+          f1(i,k+1)=ux(i,k+1)
+          f2(i,k+1)=vx(i,k+1)
         else
-          a1(i,k+1) = ux(i,k+1)
-          a2(i,k+1) = vx(i,k+1)
+          f1(i,k+1) = ux(i,k+1)
+          f2(i,k+1) = vx(i,k+1)
         endif
           dsdz2 = xkzm(i,k)*rdz
           au(i,k)   = -dtodsd*dsdz2
@@ -996,15 +995,15 @@ contains
 !
 !     solve tridiagonal problem for momentum
 !
-      call tridin(al,ad,au,a1,a2,au,a1,a2,                 &
-                  its,ite,kts,kte,1                         )
+      call tridin(al,ad,au,f1,f2,au,f1,f2,                 &
+		  its,ite,kts,kte,1                         )
 !
 !     recover tendencies of momentum
 !
       do k = kte,kts,-1
         do i = its,ite
-          utend = (a1(i,k)-ux(i,k))*rdt
-          vtend = (a2(i,k)-vx(i,k))*rdt
+          utend = (f1(i,k)-ux(i,k))*rdt
+          vtend = (f2(i,k)-vx(i,k))*rdt
           utnp(i,k) = utnp(i,k)+utend
           vtnp(i,k) = vtnp(i,k)+vtend
         enddo
@@ -1018,8 +1017,8 @@ contains
 !
    end subroutine ysu2d
 !
-   subroutine tridin(cl,cm,cu,r1,r2,au,a1,a2,                   &
-                     its,ite,kts,kte,nt                         )
+   subroutine tridin(cl,cm,cu,r1,r2,au,f1,f2,                   &
+                     its,ite,kts,kte,nt			        )
 !----------------------------------------------------------------
    implicit none
 !----------------------------------------------------------------
@@ -1031,16 +1030,16 @@ contains
 !
    real, dimension( its:ite, kts:kte )                        , &
          intent(in   )  ::                                  cm, &
-                                                            r1
+							    r1
    real, dimension( its:ite, kts:kte,nt )                     , &
          intent(in   )  ::                                  r2
 !
    real, dimension( its:ite, kts:kte )                        , &
          intent(inout)  ::                                  au, &
-                                                            cu, &
-                                                            a1
+							    cu, &
+							    f1
    real, dimension( its:ite, kts:kte,nt )                     , &
-         intent(inout)  ::                                  a2
+         intent(inout)  ::                                  f2
 !
    real    :: fk
    integer :: i,k,l,n,it
@@ -1053,48 +1052,48 @@ contains
    do i = its,l
      fk = 1./cm(i,1)
      au(i,1) = fk*cu(i,1)
-     a1(i,1) = fk*r1(i,1)
+     f1(i,1) = fk*r1(i,1)
    enddo
    do it = 1,nt
      do i = its,l
        fk = 1./cm(i,1)
-       a2(i,1,it) = fk*r2(i,1,it)
+       f2(i,1,it) = fk*r2(i,1,it)
      enddo
    enddo
    do k = kts+1,n-1
      do i = its,l
        fk = 1./(cm(i,k)-cl(i,k)*au(i,k-1))
        au(i,k) = fk*cu(i,k)
-       a1(i,k) = fk*(r1(i,k)-cl(i,k)*a1(i,k-1))
+       f1(i,k) = fk*(r1(i,k)-cl(i,k)*f1(i,k-1))
      enddo
    enddo
    do it = 1,nt
    do k = kts+1,n-1
      do i = its,l
        fk = 1./(cm(i,k)-cl(i,k)*au(i,k-1))
-       a2(i,k,it) = fk*(r2(i,k,it)-cl(i,k)*a2(i,k-1,it))
+       f2(i,k,it) = fk*(r2(i,k,it)-cl(i,k)*f2(i,k-1,it))
      enddo
    enddo
    enddo
    do i = its,l
      fk = 1./(cm(i,n)-cl(i,n)*au(i,n-1))
-     a1(i,n) = fk*(r1(i,n)-cl(i,n)*a1(i,n-1))
+     f1(i,n) = fk*(r1(i,n)-cl(i,n)*f1(i,n-1))
    enddo
    do it = 1,nt
    do i = its,l
      fk = 1./(cm(i,n)-cl(i,n)*au(i,n-1))
-     a2(i,n,it) = fk*(r2(i,n,it)-cl(i,n)*a2(i,n-1,it))
+     f2(i,n,it) = fk*(r2(i,n,it)-cl(i,n)*f2(i,n-1,it))
    enddo
    enddo
    do k = n-1,kts,-1
      do i = its,l
-       a1(i,k) = a1(i,k)-au(i,k)*a1(i,k+1)
+       f1(i,k) = f1(i,k)-au(i,k)*f1(i,k+1)
      enddo
    enddo
    do it = 1,nt
    do k = n-1,kts,-1
      do i = its,l
-       a2(i,k,it) = a2(i,k,it)-au(i,k)*a2(i,k+1,it)
+       f2(i,k,it) = f2(i,k,it)-au(i,k)*f2(i,k+1,it)
      enddo
    enddo
    enddo

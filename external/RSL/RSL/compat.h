@@ -76,6 +76,7 @@
 #    ifdef F2CSTYLE
 
 #   define RSL_INITIALIZE		rsl_initialize__
+#   define RSL_INITIALIZE1		rsl_initialize1__
 #   define RSL_SHUTDOWN		rsl_shutdown__
 #   define RSL_MESH		rsl_mesh__
 #   define RSL_MOTHER_DOMAIN	rsl_mother_domain__
@@ -216,6 +217,7 @@
 #   define RSL_OLD_OFFSETS        rsl_old_offsets__
 
 #   define RSL_ERROR_DUP          rsl_error_dup__
+#   define RSL_ERROR_DUP1          rsl_error_dup1__
 
 #   define RSL_OUTPUT_BUFFER_WRITE rsl_output_buffer_write__
 #   define RSL_OUTPUT_BUFFER_YES   rsl_output_buffer_yes__
@@ -257,11 +259,15 @@
 #   define RSL_REG_PATCHINFO_MZ  rsl_reg_patchinfo_mz__
 #   define RSL_REG_PATCHINFO_NZ  rsl_reg_patchinfo_nz__
 
+#   define COLLECT_ON_COMM  collect_on_comm__
+#   define INT_PACK_DATA  int_pack_data__
+
 #    else
 
 /********************************************* UNDERSCORE *****/
 
 #   define RSL_INITIALIZE		rsl_initialize_
+#   define RSL_INITIALIZE1		rsl_initialize1_
 #   define RSL_SHUTDOWN		rsl_shutdown_
 #   define RSL_MESH		rsl_mesh_
 #   define RSL_MOTHER_DOMAIN	rsl_mother_domain_
@@ -402,6 +408,7 @@
 #   define RSL_OLD_OFFSETS        rsl_old_offsets_
 
 #   define RSL_ERROR_DUP          rsl_error_dup_
+#   define RSL_ERROR_DUP1          rsl_error_dup1_
 
 #   define RSL_OUTPUT_BUFFER_WRITE rsl_output_buffer_write_
 #   define RSL_OUTPUT_BUFFER_YES   rsl_output_buffer_yes_
@@ -444,6 +451,9 @@
 #   define RSL_REG_PATCHINFO_MZ  rsl_reg_patchinfo_mz_
 #   define RSL_REG_PATCHINFO_NZ  rsl_reg_patchinfo_nz_
 
+#   define COLLECT_ON_COMM  collect_on_comm_
+#   define INT_PACK_DATA  int_pack_data_
+
 #    endif
 
 #  else
@@ -451,6 +461,7 @@
 /********************************************* NOUNDERSCORE ***/
 
 #   define RSL_INITIALIZE		rsl_initialize
+#   define RSL_INITIALIZE1		rsl_initialize1
 #   define RSL_SHUTDOWN		rsl_shutdown
 #   define RSL_MESH		rsl_mesh
 #   define RSL_MOTHER_DOMAIN	rsl_mother_domain
@@ -590,6 +601,7 @@
 #   define RSL_OLD_OFFSETS        rsl_old_offsets
 
 #   define RSL_ERROR_DUP          rsl_error_dup
+#   define RSL_ERROR_DUP1          rsl_error_dup1
 
 #   define RSL_OUTPUT_BUFFER_WRITE rsl_output_buffer_write
 #   define RSL_OUTPUT_BUFFER_YES   rsl_output_buffer_yes
@@ -631,6 +643,9 @@
 #   define RSL_REG_PATCHINFO_MN  rsl_reg_patchinfo_mn
 #   define RSL_REG_PATCHINFO_MZ  rsl_reg_patchinfo_mz
 #   define RSL_REG_PATCHINFO_NZ  rsl_reg_patchinfo_nz
+
+#   define COLLECT_ON_COMM  collect_on_comm
+#   define INT_PACK_DATA  int_pack_data
 
 
 #  endif

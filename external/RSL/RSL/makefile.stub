@@ -18,15 +18,15 @@ LIB =
 #CC = cc
 #FC = xlf
 # SUN
-CFLAGS = -DSTUBS -g
+#CFLAGS = -DSTUBS -g
 #CC = cc
 #FC = f77 -w
 
 
-FFLAGS = -O
+#FFLAGS = -O
 #ucomment for alpha
-CFLAGS = -DSTUBS -DSWAPBYTES -O
-FFLAGS = -O -convert big_endian
+#CFLAGS = -DSTUBS -DSWAPBYTES -O
+#FFLAGS = -O -convert big_endian
 
 warning :
 	@ echo 'This makefile is not a top level makefile'

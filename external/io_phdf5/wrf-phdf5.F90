@@ -75,7 +75,7 @@ subroutine HDF5IOWRITE(DataHandle,Comm,DateStr,Length,DomainStart,DomainEnd &
   integer(hid_t)                              :: h5_atypeid    ! for fieldtype,memorder attribute
   integer(hid_t)                              :: h5_aspaceid   ! for fieldtype,memorder  
   integer(hid_t)                              :: h5_attrid     ! for fieldtype,memorder
-  integer, dimension(7)                       :: adata_dims
+  integer(hsize_t), dimension(7)              :: adata_dims
   integer                                     :: routine_atype
 
 
@@ -1780,6 +1780,53 @@ subroutine ext_phdf5_get_next_time(DataHandle, DateStr, Status)
   endif
   return
 end subroutine ext_phdf5_get_next_time
+
+! get_previous_time routine
+subroutine ext_phdf5_get_previous_time(DataHandle, DateStr, Status)
+  use wrf_phdf5_data
+  use ext_phdf5_support_routines
+  use HDF5
+  implicit none
+  include 'wrf_status_codes.h'
+
+  integer               ,intent(in)          :: DataHandle
+  character*(*)         ,intent(out)         :: DateStr
+  integer               ,intent(out)         :: Status
+  type(wrf_phdf5_data_handle) ,pointer        :: DH
+
+  call GetDH(DataHandle,DH,Status)
+  if(Status /= WRF_NO_ERR) then
+     write(msg,*) 'Warning Status = ',Status,' in ',__FILE__,', line', __LINE__
+     call wrf_debug ( WARN , msg)
+     return
+  endif
+
+  if(DH%FileStatus == WRF_FILE_NOT_OPENED) then
+     Status = WRF_HDF5_ERR_FILE_NOT_OPENED
+     write(msg,*) 'Warning FILE NOT OPENED in ',__FILE__,', line', __LINE__ 
+     call wrf_debug ( WARN , msg)
+  elseif(DH%FileStatus == WRF_FILE_OPENED_NOT_COMMITTED) then
+     Status = WRF_HDF5_ERR_DRYRUN_READ
+     write(msg,*) 'Warning DRYRUN READ in ',__FILE__,', line', __LINE__ 
+     call wrf_debug ( WARN , msg)
+  elseif(DH%FileStatus == WRF_FILE_OPENED_AND_COMMITTED) then
+     Status = WRF_HDF5_ERR_READ_WONLY_FILE
+     write(msg,*) 'Warning READ WRITE ONLY FILE in ',__FILE__,', line', __LINE__ 
+     call wrf_debug ( WARN , msg)
+  elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_READ) then
+     if(DH%CurrentTime.GT.0) then
+       DH%CurrentTime = DH%CurrentTime - 1
+     endif
+     DateStr            = DH%Times(DH%CurrentTime)
+     DH%CurrentVariable = 0
+     Status = WRF_NO_ERR
+  else
+     Status = WRF_HDF5_ERR_BAD_FILE_STATUS
+     write(msg,*) 'Fatal error BAD FILE STATUS in ',__FILE__,', line', __LINE__ 
+     call wrf_debug ( FATAL , msg)
+  endif
+  return
+end subroutine ext_phdf5_get_previous_time
 
 subroutine ext_phdf5_get_var_info(DataHandle,Name,NDim,MemoryOrder,Stagger,DomainStart,DomainEnd,WrfType,Status)
 
@@ -3516,7 +3563,7 @@ subroutine ext_phdf5_put_dom_ti_real(DataHandle,Element,Data,Count,Status)
   integer(hid_t)                        :: h5_atypeid
   integer(hid_t)                        :: h5_aspaceid
   integer(hid_t)                        :: h5_attrid
-  integer, dimension(7)                 :: adata_dims
+  integer(hsize_t), dimension(7)        :: adata_dims
   character*3                           :: routine_type
   integer                               :: routine_atype
   integer                               :: str_flag = 0 ! not a string type
@@ -3586,7 +3633,7 @@ subroutine ext_phdf5_put_dom_ti_integer(DataHandle,Element,Data,Count,Status)
   integer(hid_t)                        :: h5_atypeid
   integer(hid_t)                        :: h5_aspaceid
   integer(hid_t)                        :: h5_attrid
-  integer, dimension(7)                 :: adata_dims
+  integer(hsize_t), dimension(7)        :: adata_dims
   character*3                           :: routine_type
   integer                               :: routine_atype
   integer                               :: str_flag = 0 ! not a string type
@@ -3656,7 +3703,7 @@ subroutine ext_phdf5_put_dom_ti_double(DataHandle,Element,Data,Count,Status)
   integer(hid_t)                        :: h5_atypeid
   integer(hid_t)                        :: h5_aspaceid
   integer(hid_t)                        :: h5_attrid
-  integer, dimension(7)                 :: adata_dims
+  integer(hsize_t), dimension(7)        :: adata_dims
 
   character*3                           :: routine_type
   integer                               :: routine_atype
@@ -3730,7 +3777,7 @@ subroutine ext_phdf5_put_dom_ti_logical(DataHandle,Element,Data,Count,Status)
   integer(hid_t)                         :: h5_atypeid
   integer(hid_t)                         :: h5_aspaceid
   integer(hid_t)                         :: h5_attrid
-  integer, dimension(7)                  :: adata_dims
+  integer(hsize_t), dimension(7)         :: adata_dims
 
   character*3                            :: routine_type
   integer                                :: routine_atype
@@ -3817,7 +3864,7 @@ subroutine ext_phdf5_put_dom_ti_char(DataHandle,Element,Data,Status)
   integer(hid_t)                        :: h5_atypeid
   integer(hid_t)                        :: h5_aspaceid
   integer(hid_t)                        :: h5_attrid
-  integer, dimension(7)                 :: adata_dims
+  integer(hsize_t), dimension(7)        :: adata_dims
   character*3                           :: routine_type
   integer                               :: routine_atype
   integer                               :: str_flag = 1 ! is a string type
@@ -3914,7 +3961,7 @@ subroutine ext_phdf5_put_var_ti_real(DataHandle,Element,Var,Data,Count,Status)
   integer(hid_t)                        :: h5_atypeid
   integer(hid_t)                        :: h5_aspaceid
   integer(hid_t)                        :: h5_attrid
-  integer, dimension(7)                 :: adata_dims
+  integer(hsize_t), dimension(7)        :: adata_dims
   character*3                           :: routine_type
   integer                               :: routine_atype
   integer                               :: str_flag = 0 ! not a string type
@@ -4003,7 +4050,7 @@ subroutine ext_phdf5_put_var_ti_double(DataHandle,Element,Var,Data,Count,Status)
   integer(hid_t)                        :: h5_atypeid
   integer(hid_t)                        :: h5_aspaceid
   integer(hid_t)                        :: h5_attrid
-  integer, dimension(7)                 :: adata_dims
+  integer(hsize_t), dimension(7)        :: adata_dims
 
   character*3                           :: routine_type
   integer                               :: routine_atype
@@ -4093,7 +4140,7 @@ subroutine ext_phdf5_put_var_ti_integer(DataHandle,Element,Var,Data,Count,Status
   integer(hid_t)                        :: h5_atypeid
   integer(hid_t)                        :: h5_aspaceid
   integer(hid_t)                        :: h5_attrid
-  integer, dimension(7)                 :: adata_dims
+  integer(hsize_t), dimension(7)        :: adata_dims
 
   character*3                           :: routine_type
   integer                               :: routine_atype
@@ -4187,7 +4234,7 @@ subroutine ext_phdf5_put_var_ti_logical(DataHandle,Element,Var,Data,Count,Status
   integer(hid_t)                        :: h5_atypeid
   integer(hid_t)                        :: h5_aspaceid
   integer(hid_t)                        :: h5_attrid
-  integer, dimension(7)                 :: adata_dims
+  integer(hsize_t), dimension(7)        :: adata_dims
 
   character*3                           :: routine_type
   integer                               :: routine_atype
@@ -4289,7 +4336,7 @@ subroutine ext_phdf5_put_var_ti_char(DataHandle,Element,Var,Data,Status)
   integer(hid_t)                        :: h5_atypeid
   integer(hid_t)                        :: h5_aspaceid
   integer(hid_t)                        :: h5_attrid
-  integer, dimension(7)                 :: adata_dims
+  integer(hsize_t), dimension(7)        :: adata_dims
 
   character*3                           :: routine_type
   integer                               :: routine_atype
@@ -4409,7 +4456,7 @@ subroutine retrieve_table(DataHandle,Status)
   integer(size_t)                       :: offset
   integer                               :: table_length
   integer(size_t)                       :: string_size
-  integer    ,dimension(7)              :: data_dims
+  integer(hsize_t),dimension(7)         :: data_dims
   integer(hsize_t)                      :: table_size
   integer                               :: i
   integer                               :: hdf5err
@@ -4688,7 +4735,7 @@ subroutine store_table(DataHandle,table_length,Status)
   integer(hid_t)                                 :: dspace_id
   integer(hsize_t)  ,dimension(1)                :: table_dims
   integer                                        :: table_rank
-  integer          ,dimension(7)                 :: data_dims
+  integer(hsize_t) ,dimension(7)                 :: data_dims
   integer                                        :: i,j
   integer                                        :: hdf5err
 
@@ -5130,7 +5177,7 @@ subroutine write_hdf5_attributes(DataHandle,MemoryOrder,WrfDType,DimRank,&
   integer(hid_t)                              :: h5_atypeid    ! for fieldtype,memorder attribute
   integer(hid_t)                              :: h5_aspaceid   ! for fieldtype,memorder  
   integer(hid_t)                              :: h5_attrid     ! for fieldtype,memorder
-  integer, dimension(7)                       :: adata_dims
+  integer(hsize_t), dimension(7)              :: adata_dims
   integer                                     :: routine_atype
   integer,          dimension(:),allocatable  :: dimrank_data
   integer                                     :: hdf5err

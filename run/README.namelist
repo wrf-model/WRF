@@ -48,6 +48,7 @@ Description of namelist variables
  io_form_initial                     = 2,       ; 2 = netCDF
  io_form_boundary                    = 2,       ; netCDF format
                                      = 4,       ; PHD5 format
+                                     = 5,       ; GRIB1 format
  debug_level                         = 0, 	; 50,100,200,300 values give increasing prints
 
 Other output options:

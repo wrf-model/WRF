@@ -899,8 +899,6 @@ rsl_spawn_nest ( nest_p, par_p, maskid_p,
   mtrim = *mtrim_p ;
   ntrim = *ntrim_p ;
 
-  fprintf(stderr,"rsl_spawn_nest: mtrim, ntrim %d %d\n",mtrim,ntrim ) ;
-
   RSL_TEST_ERR( par < 0 || par >= RSL_MAXDOMAINS,
              "spawn_nest: bad parent domain index") ;
   RSL_TEST_ERR( !domain_info[par].valid == RSL_VALID,

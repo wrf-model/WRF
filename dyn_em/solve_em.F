@@ -1102,7 +1102,7 @@ BENCH_START(small_step_prep_tim)
       CALL calc_coef_w( a,alpha,gamma,                    &
                         mut, cqw,                         &
                         rdn, rdnw, c2a,                   &
-                        dts, g, epssm,                    &
+                        dts_rk, g, epssm,                 &
                         ids, ide, jds, jde, kds, kde,     &
                         ims, ime, jms, jme, kms, kme,     &
                         grid%i_start(ij), grid%i_end(ij), &
@@ -1256,7 +1256,7 @@ BENCH_START(advance_uv_tim)
                            p, pb,                            &
                            ph_2, php, alt, al, mu_2,         &
                            muu, cqu, muv, cqv, mudf,         &
-                           rdx, rdy, dts,                    &
+                           rdx, rdy, dts_rk,                 &
                            cf1, cf2, cf3, fnm, fnp,          &
                            emdiv,                            &
                            rdnw, config_flags,spec_zone,     &
@@ -1323,7 +1323,7 @@ BENCH_START(advance_mu_t_tim)
                            mudf, ru_m, rv_m, ww_m,            &
                            t_2, t_save, t_2save, t_tend,      &
                            mu_tend,                           &
-                           rdx, rdy, dts, epssm,              &
+                           rdx, rdy, dts_rk, epssm,           &
                            dnw, fnm, fnp, rdnw,               &
                            msfu, msfv, msft,                  &
                            iteration, config_flags,           &
@@ -1400,7 +1400,7 @@ BENCH_START(advance_w_tim)
                           ph_2, ph_save, phb, ph_tend,      &
                           ht, c2a, cqw, alt, alb,           &
                           a, alpha, gamma,                  &
-                          rdx, rdy, dts, t0, epssm,         &
+                          rdx, rdy, dts_rk, t0, epssm,      &
                           dnw, fnm, fnp, rdnw, rdn,         &
                           cf1, cf2, cf3, msft,              &
                           config_flags,                     &

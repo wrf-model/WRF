@@ -35,7 +35,9 @@ CONTAINS
    USE module_sf_myjsfc
    USE module_sf_noahlsm
    USE module_sf_ruclsm
+#if ( NMM_CORE == 1 )
    USE module_sf_lsm_nmm
+#endif
 
    USE module_sf_slab
 !

@@ -156,6 +156,9 @@ vpp :
 sunmpi :
 	$(MAKE) -f makefile.sunmpi $(MAKE_OPTS) all
 
+altix :
+	$(MAKE) -f makefile.altix $(MAKE_OPTS) all
+
 linux :
 	$(MAKE) -f makefile.linux LINUX_MPIHOME=$(LINUX_MPIHOME) $(MAKE_OPTS) all
 

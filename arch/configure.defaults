@@ -6126,10 +6126,6 @@ FC              =       ftn
 LD              =       ftn
 CC              =       cc
 
-#### Override default sed command and script for Fortran source files ####
-#### This sed script converts !$OMP directives to !csd$ directives ####
-SED_FTN = sed -f ../arch/cray_csd.sed
-
 ## Use these for X1 cross compiler to build Registry
 ##X1_CROSS_COMP = "gcc"
 ##X1_CROSS_CFLG = ""

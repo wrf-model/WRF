@@ -709,14 +709,13 @@ endif
 !---------------------------------------------------------------------
 
    SUBROUTINE const_module_initialize ( p00 , t00 , a ) 
+      USE module_configure
       IMPLICIT NONE
-      REAL , PARAMETER :: sea_level_pressure_base    = 100000.
-      REAL , PARAMETER :: sea_level_temperature_base =    290.
-      REAL , PARAMETER :: temp_diff_1000_to_300_mb   =     50.
+      !  For the real-data-cases only.
       REAL , INTENT(OUT) :: p00 , t00 , a
-      p00 = sea_level_pressure_base
-      t00 = sea_level_temperature_base
-      a   = temp_diff_1000_to_300_mb
+      CALL rconfig_get_base_pres  ( 1 , p00 )
+      CALL rconfig_get_base_temp  ( 1 , t00 )
+      CALL rconfig_get_base_lapse ( 1 , a   )
    END SUBROUTINE const_module_initialize
 
 !-------------------------------------------------------------------

@@ -75,11 +75,14 @@ gen_alloc2 ( FILE * fp , char * structname , char * corename , node_t * node )
 
        fprintf(fp, "  IF ( setinitval ) %s%s=", structname , fname);
        if( p->type != NULL  &&   (!strcmp( p->type->name , "real" ) 
-                               || !strcmp( p->type->name , "doubleprecision") ) )   
+                               || !strcmp( p->type->name , "doubleprecision") ) )   {
        /* if a real */
          fprintf(fp, "initial_data_value\n");
-       else
+       } else if ( !strcmp( p->type->name , "logical" ) ) {
+         fprintf(fp, ".FALSE.\n");
+       } else if ( !strcmp( p->type->name , "integer" ) ) {
          fprintf(fp, "0\n");
+       }
 
       }
     }
@@ -87,7 +90,8 @@ gen_alloc2 ( FILE * fp , char * structname , char * corename , node_t * node )
     {
       if ( p->type->type_type == SIMPLE && p->ndims == 0 &&
                ((!strncmp("dyn_",p->use,4)&&!strcmp(corename,p->use+4)) || strncmp("dyn_",p->use,4)) &&
-               (!strcmp(p->type->name,"integer") ||
+               (!strcmp(p->type->name,"integer") || 
+                        !strcmp(p->type->name,"logical") || 
                         !strcmp(p->type->name,"real") ||
                         !strcmp(p->type->name,"doubleprecision"))
               )
@@ -102,14 +106,19 @@ gen_alloc2 ( FILE * fp , char * structname , char * corename , node_t * node )
             strcpy(fname,field_name(t4,p,(p->ntl>1)?tag:0)) ;
           }
           if( !strcmp( p->type->name , "real" ) || 
-              !strcmp( p->type->name , "doubleprecision" )  )   /* if a real */
+              !strcmp( p->type->name , "doubleprecision" )  ) { /* if a real */
             fprintf(fp, "IF ( setinitval ) %s%s=initial_data_value\n",
                         structname ,
                         fname ) ;
-	  else
+	  } else if ( !strcmp( p->type->name , "integer" ) ) {
             fprintf(fp, "IF ( setinitval ) %s%s=0\n",
                         structname ,
                         fname ) ;
+          } else if ( !strcmp( p->type->name , "logical" ) ) {
+            fprintf(fp, "IF ( setinitval ) %s%s=.FALSE.\n",
+                        structname ,
+                        fname ) ;
+          }
       }
       else if ( p->type->type_type == DERIVED )
       {

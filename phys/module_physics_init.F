@@ -370,19 +370,25 @@ integer myproc
 ! Local
    CHARACTER*4 LUTYPE
    CHARACTER*80 :: message
-   INTEGER  :: ISICE, LUCATS, LUSEAS
    INTEGER  :: landuse_unit, LS, LC, LI, LUN, NSN
-   INTEGER  :: i, j, itf, jtf, is, isn
+   INTEGER  :: i, j, itf, jtf, is
    INTEGER , PARAMETER :: max_cats = 100 , max_seas = 12 
    INTEGER , PARAMETER :: OPEN_OK = 0
    INTEGER :: ierr
-   REAL, DIMENSION( max_cats, max_seas ) :: ALBD, SLMO, SFEM, SFZ0, THERIN, SFHC
-   REAL, DIMENSION( max_cats )     :: SCFX
+! save these fields in case nest moves or has to be reinitialized
+! and this routine is called with allowed_to_read set to false
+! note that by saving these, we're locking in the same landuse for
+! the duration of a run; possible implications for long climate runs
+   INTEGER , SAVE :: ISICE, LUCATS, LUSEAS, ISN
+   REAL    , SAVE , DIMENSION( max_cats, max_seas ) :: ALBD, SLMO, SFEM, SFZ0, THERIN, SFHC
+   REAL    , SAVE , DIMENSION( max_cats )     :: SCFX
    LOGICAL :: FOUND_LU
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
 
 !---------------------------------------------------------------------
-      CALL wrf_debug( 100 , 'top of landuse_init' )
+   CALL wrf_debug( 100 , 'top of landuse_init' )
+
+   FOUND_LU = .TRUE.
    IF ( allowed_to_read ) THEN
       landuse_unit = 29
       IF ( wrf_dm_on_monitor() ) THEN
@@ -413,7 +419,7 @@ integer myproc
         ISICE=3
       ENDIF
       PRINT *, 'INPUT LANDUSE = ',MMINLU
-        FOUND_LU = .FALSE.
+      FOUND_LU = .FALSE.
  1999   CONTINUE                                                      
       if ( wrf_dm_on_monitor() ) then
         READ (landuse_unit,2000,END=2001)LUTYPE                                
@@ -477,8 +483,9 @@ integer myproc
       DO j = jts, jtf
         DO i = its, itf
           IS=nint(lu_index(i,j))
-          IF(IS.LT.0.OR.IS.GT.LUN)THEN                                        
-            WRITE ( wrf_err_message , * ) 'module_start: landuse_init: ERROR: LANDUSE OUTSIDE RANGE =',IS,' AT ',I,J
+          ! only do this check on read-in data
+          IF(IS.LT.0.OR.IS.GT.LUN.AND.allowed_to_read)THEN                                        
+            WRITE ( wrf_err_message , * ) 'ERROR: LANDUSE OUTSIDE RANGE =',IS,' AT ',I,J,' LUN= ',LUN
             CALL wrf_error_fatal ( TRIM ( wrf_err_message ) )
           ENDIF                                                            
 !   SET NO-DATA POINTS (IS=0) TO WATER                                    
@@ -515,6 +522,7 @@ integer myproc
       CLOSE (landuse_unit)
     endif
     CALL wrf_debug( 100 , 'returning from of landuse_init' )
+
     RETURN
         
    END SUBROUTINE landuse_init 

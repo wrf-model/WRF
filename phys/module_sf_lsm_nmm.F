@@ -22,7 +22,7 @@ CONTAINS
      &               ALBSF,TMN,XLAND,XICE,QZ0,                          &
      &               TH2,Q2,SNOWC,CHS2,QSFC,TBOT,CHKLOWQ,RAINBL,        &
      &               NUM_SOIL_LAYERS,DT,DZS,ITIMESTEP,                  &
-     &               SMOIS,TSLB,SNOW,CANWAT,CPM,ROVCP,                  &  !STEMP
+     &               SMOIS,TSLB,SNOW,CANWAT,CPM,ROVCP,SR,               & 
      &               ALB,SNOALB,SMLIQ,SNOWH,                            &
      &               IDS,IDE, JDS,JDE, KDS,KDE,                         &
      &               IMS,IME, JMS,JME, KMS,KME,                         &
@@ -56,6 +56,7 @@ CONTAINS
 !-- EMISS       surface emissivity (between 0 and 1)
 !-- DELTSM      time step (second)
 !-- ROVCP       R/CP
+!-- SR          fraction of frozen precip (0.0 to 1.0)
 !-- XLV         latent heat of melting (J/kg)
 !-- DTMIN       time step (minute)
 !-- IFSNOW      ifsnow=1 for snow-cover effects
@@ -145,7 +146,8 @@ CONTAINS
                                                                 VEGFRA, &
                                                                    GSW, &
                                                                    GLW, &     
-                                                                   QZ0
+                                                                   QZ0, &
+                                                                    SR    
 
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) ::       QV3D, &
                                                                  P8W3D, &
@@ -211,7 +213,7 @@ CONTAINS
                     ALBSF,TMN,XLAND,XICE,QZ0,                           &
                     TH2,Q2,SNOWC,CHS2(IMS,J),QSFC,TBOT,CHKLOWQ,         &
                     NUM_SOIL_LAYERS,DT,DZS,ITIMESTEP,                   &
-                    SMOIS,TSLB,SNOW,CANWAT,CPM(IMS,J),ROVCP,            &  !STEMP
+                    SMOIS,TSLB,SNOW,CANWAT,CPM(IMS,J),ROVCP,SR,         & 
                     ALB,SNOALB,SMLIQ,SNOWH,                             &
                     IMS,IME,JMS,JME,KMS,KME,                            &
                     ITS,ITE,JTS,JTE,KTS,KTE                            ) 
@@ -229,7 +231,7 @@ CONTAINS
                      ALBSF,TMN,XLAND,XICE,QZ0,                         &
                      TH2,Q2,SNOWC,CHS2,QSFC,TBOT,CHKLOWQ,              &
                      NUM_SOIL_LAYERS,DT,DZS,ITIMESTEP,                 &
-                     SMOIS,TSLB,SNOW,CANWAT,CPM,ROVCP,                 &  !STEMP
+                     SMOIS,TSLB,SNOW,CANWAT,CPM,ROVCP,SR,              & 
                      ALB,SNOALB,SMLIQ,SNOWH,                           &
                      IMS,IME,JMS,JME,KMS,KME,                          &
                      ITS,ITE,JTS,JTE,KTS,KTE                           ) 
@@ -319,7 +321,8 @@ CONTAINS
                                                               VEGFRA, &
                                                                  GSW, &
                                                                  GLW, &
-                                                                 QZ0
+                                                                 QZ0, &
+                                                                  SR
 
    REAL,    DIMENSION( ims:ime, jms:jme )                           , &
             INTENT(INOUT)    ::                                   Q2, &
@@ -363,7 +366,7 @@ CONTAINS
             SFCPRS,PRCP,Q2K,DQSDTK,SATFLG,TBOTK,CHK,VGFRCK,T1K,LWDN,  &
             CMCK,Q2M,SNODPK,PLFLX,HFLX,GFLX,RNOF1K,                   &
             RNOF2K,Q1K,SMELTK,SOILQW,SOILQM,T2K,PRESK,CHFF,STIMESTEP, &
-            ALB1D,SNOALB1D,SNOWH1D,ALBSF1D,                           &
+            ALB1D,SNOALB1D,SNOWH1D,ALBSF1D,SOLNET,FFROZP,             &
             DUM1,DUM2,DUM3,DUM4,DUM5,DUM6,DUM7
 
     INTEGER :: I,K,NS,ICE,IVGTPK,ISLTPK,ISPTPK,NOOUT,NSOIL,LZ
@@ -425,25 +428,25 @@ CONTAINS
 !
 !***  CHECK FOR SATURATION AT THE LOWEST MODEL LEVEL                    
 !
-        q2k=qv(i)
-!       IF((Q2K.GE.Q2SAT*TRESH))THEN                                  
-          IF((Q2K.GE.Q2SAT*TRESH).AND.Q2K.LT.QZ0(I,J))THEN                                  
-            SATFLG=0.                                                   
-            CHKLOWQ(I,J)=0.
-          ELSE                                                          
-            SATFLG=1.0                                                  
-            CHKLOWQ(I,J)=1.
-          ENDIF                                                         
+        Q2K=QV(I)
+        APES=(1.E5/PSFC(I))**CAPA
 !
-          TBOT(I,J)=273.16
+        IF((Q2K.GE.Q2SAT*TRESH).AND.Q2K.LT.QZ0(I,J))THEN                                  
+          SATFLG=0.                                                   
+          CHKLOWQ(I,J)=0.
+        ELSE                                                          
+          SATFLG=1.0                                                  
+          CHKLOWQ(I,J)=1.
+        ENDIF                                                         
+!
+        TBOT(I,J)=273.16
 !***                                                                    
 !***  LOADING AND UNLOADING MM5/LSM LAND SOIL VARIABLES                 
 !***                                                                    
         IF((XLAND(I,J)-1.5).GE.0.)THEN                                  
 !*** Water                                                              
-!CC     Q2SAT=PQ0/SFCPRS*EXP(A2*(TGDSA(I)-A3)/(TGDSA(I)-A4))            
-          HFX(I,J)=CHFF*(TGDSA(I)-TH(I))                         
-          QFX(I,J)=RHO(I)*CHS(I)*(Q2SAT-QV(I))                      
+          HFX(I,J)=HFX(I,J)/APES
+          QFX(I,J)=QFX(I,J)*SATFLG
           SFCEVP(I,J)=SFCEVP(I,J)+QFX(I,J)*DT                       
         ELSE                                                            
 !*** LAND OR SEA-ICE                                                    
@@ -458,21 +461,21 @@ CONTAINS
           Z=ZA(I)                                                    
 !          FK=GSW(I,J)+GLW(I,J)                                          
           LWDN=GLW(I,J)
-
-
-!tst
-	if (I .ge. 198 .and. I .le. 202 .and. J .ge. 486 .and. J .le. 494) then
-	endif
-!tst
-
-!         SOLDN=GSW(I,J)
-          SOLDN=GSW(I,J)/(1.-ALB(I,J))                                  
+!
+!***  GSW is net downward shortwave
+!
+          SOLNET=GSW(I,J)
+!
+!***  Simple use of albedo to determine total incoming solar shortwave SOLDN
+!***  (no solar zenith angle correction)
+!
+          SOLDN=SOLNET/(1.-ALB(I,J))                                  
+!
           ALBSF1D=ALBSF(I,J)
           SNOALB1D=SNOALB(I,J)
           SFCTMP=T(I)                                               
 !!!       SFCTH2=SFCTMP+(0.0097545*Z)                                   
           APELM=(1.E5/SFCPRS)**CAPA
-          APES=(1.E5/PSFC(I))**CAPA
           SFCTH2=SFCTMP*APELM
           SFCTH2=SFCTH2/APES
           PRCP=PREC(I)                                                  
@@ -505,8 +508,10 @@ CONTAINS
           SNODPK=SNOW(I,J)*0.001                                        
           SNOWH1D=SNOWH(I,J)*0.001                                        
 !                                                                       
-
-
+!*** fraction of frozen precip
+!                                                                       
+          FFROZP=SR(I,J)
+!
           DO 70 NS=1,NSOIL                                              
             SMOIS1D(NS)=SMOIS(I,NS,J)                                       
             SMLIQ1D(NS)=SMLIQ(I,NS,J)                                       
@@ -536,9 +541,9 @@ CONTAINS
 !     O    SOILQW,SOILQM,DUM1,DUM2,DUM3,DUM4)
 !-----------------------------------------------------------------------
         CALL SFLX                                                       &
-          (ICE,DT,Z,NSOIL,DZS,                                          &
-          LWDN,SOLDN,SFCPRS,PRCP,SFCTMP,SFCTH2,Q2K,DUM5,Q2SAT,DQSDTK,   &
-          IVGTPK,ISLTPK,ISPTPK,                                         &
+          (FFROZP,ICE,DT,Z,NSOIL,DZS,                                   &
+          LWDN,SOLDN,SOLNET,SFCPRS,PRCP,SFCTMP,SFCTH2,Q2K,DUM5,Q2SAT,   &
+          DQSDTK,IVGTPK,ISLTPK,ISPTPK,                                  &
           VGFRCK,DUM6,TBOTK,ALBSF1D,SNOALB1D,                           &
           CMCK,T1K,STEMP1D,SMOIS1D,SMLIQ1D,SNOWH1D,SNODPK,ALB1D,CHK,DUM7, &
           PLFLX,ELFLX(I,J),HFLX,GFLX,RNOF1K,RNOF2K,Q1K,SMELTK,          &
@@ -563,7 +568,7 @@ CONTAINS
 !       IF(SNOB(I,J).GT.0..OR.SICE(I,J).GT.0.)THEN                      
 !         QFC1(I,J)=QFC1(I,J)*RLIVWV                                    
 !       ENDIF                                                           
-          IF(T(I).LE.T0)THEN                                        
+          IF(FFROZP.GT.0.5)THEN
             ACSNOW(I,J)=ACSNOW(I,J)+PREC(I)*DT                     
           ENDIF                                                         
           IF(SNOW(I,J).GT.0.)THEN                                       
@@ -662,9 +667,9 @@ CONTAINS
 !-----------------------------------------------------------------------
 
       SUBROUTINE SFLX (                                                 &
-       ICE,DT,Z,NSOIL,SLDPTH,                                           &
-       LWDN,SOLDN,SFCPRS,PRCP,SFCTMP,TH2,Q2,SFCSPD,Q2SAT,DQSDT2,        &
-       VEGTYP,SOILTYP,SLOPETYP,                                         &
+       FFROZP,ICE,DT,Z,NSOIL,SLDPTH,                                    &
+       LWDN,SOLDN,SOLNET,SFCPRS,PRCP,SFCTMP,TH2,Q2,SFCSPD,Q2SAT,        &
+       DQSDT2,VEGTYP,SOILTYP,SLOPETYP,                                  &
        SHDFAC,PTU,TBOT,ALB,SNOALB,                                      &
        CMC,T1,STC,SMC,SH2O,SNOWH,SNEQV,ALBEDO,CH,CM,                    &
        ETP,ETA,H,S,RUNOFF1,RUNOFF2,Q1,SNMAX,                            &
@@ -921,6 +926,7 @@ CONTAINS
       REAL SNOALB
       REAL STC(NSOIL)
       REAL SOLDN
+      REAL SOLNET
       REAL SNMAX
       REAL SOILM
       REAL SOILW
@@ -940,6 +946,7 @@ CONTAINS
       REAL ZBOT
       REAL Z0
       REAL ZSOIL(NSOLD)
+      REAL FFROZP
 
       CHARACTER(LEN=4) :: veg_def
 
@@ -1107,7 +1114,9 @@ CONTAINS
 !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 
       IF ( PRCP .GT. 0.0 ) THEN
-        IF ( SFCTMP .LE. TFREEZ ) THEN
+!***  Snow defined when fraction of frozen precip (FFROZP) > 0.5, passed
+!***  in from model microphysics.
+        IF (FFROZP .GT. 0.5) THEN
           SNOWNG = .TRUE.
         ELSE
           IF ( T1 .LE. TFREEZ ) FRZGRA = .TRUE.
@@ -1254,7 +1263,7 @@ CONTAINS
 !  CALCULATE TOTAL DOWNWARD RADIATION (SOLAR PLUS LONGWAVE)
 !  NEEDED IN PENMAN EP SUBROUTINE THAT FOLLOWS
           
-          F = SOLDN*(1.0-ALBEDO) + LWDN
+          F = SOLNET + LWDN
 
 ! ----------------------------------------------------------------------
 !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
@@ -3235,16 +3244,17 @@ CONTAINS
          END IF
 
          DO I = 1, DEFINED_SOIL
-            SATDW(I)  = BB(I)*SATDK(I)*(SATPSI(I)/MAXSMC(I))
-            F11(I)    = ALOG10(SATPSI(I)) + BB(I)*ALOG10(MAXSMC(I)) + 2.0
-            REFSMC1   = MAXSMC(I)*(5.79E-9/SATDK(I))  &
-                                          **(1.0/(2.0*BB(I)+3.0))
-            REFSMC(I) = REFSMC1 + (MAXSMC(I)-REFSMC1) / 3.0
-            WLTSMC1   = MAXSMC(I) * (200.0/SATPSI(I))**(-1.0/BB(I))
-            WLTSMC(I) = WLTSMC1 - 0.5 * WLTSMC1
+!           if(abs(satdk(i))<=1.e-7.or.abs(satpsi(i))<=1.e-7)cycle
+!           SATDW(I)  = BB(I)*SATDK(I)*(SATPSI(I)/MAXSMC(I))
+!           F11(I)    = ALOG10(SATPSI(I)) + BB(I)*ALOG10(MAXSMC(I)) + 2.0
+!           REFSMC1   = MAXSMC(I)*(5.79E-9/SATDK(I))  &
+!                                         **(1.0/(2.0*BB(I)+3.0))
+!           REFSMC(I) = REFSMC1 + (MAXSMC(I)-REFSMC1) / 3.0
+!           WLTSMC1   = MAXSMC(I) * (200.0/SATPSI(I))**(-1.0/BB(I))
+!           WLTSMC(I) = WLTSMC1 - 0.5 * WLTSMC1
 ! Current version DRYSMC values that equate to WLTSMC
 ! Future version could let DRYSMC be independently set via namelist
-            DRYSMC(I) = WLTSMC(I)
+!           DRYSMC(I) = WLTSMC(I)
          END DO
 
 !     END IF

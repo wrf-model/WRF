@@ -34,6 +34,7 @@ CONTAINS
    USE module_bl_myjpbl
    USE module_bl_ysu
    USE module_bl_mrf
+   USE module_bl_gfs
 
    !  This driver calls subroutines for the PBL parameterizations.
    !
@@ -378,9 +379,23 @@ CONTAINS
                ims,ime, jms,jme, kms,kme,                           &
                i_start(ij),i_end(ij),j_start(ij),j_end(ij),kts,kte  )
 
+      CASE (GFSSCHEME)
+        CALL wrf_debug(100,'in GFS')
+           CALL BL_GFS(u_phytmp,v_phytmp,th_phy,t_phy,              &
+               moist(ims,kms,jms,P_QV),moist(ims,kms,jms,P_QC),     &
+               moist(ims,kms,jms,P_QI),p_phy,pi_phy,                &
+               RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN,RQIBLTEN, &
+               CP,G,RCP,R_d,ROVG,P_QI,PARAM_FIRST_SCALAR,           &
+               dz8w,z,PSFC,                                         &
+               UST,PBLH,PSIM,PSIH,                                  &
+               HFX,QFX,TSKOLD,GZ1OZ0,WSPD,BR,                       &
+               DTBL,KPBL,EP_1,KARMAN,                               &
+               ids,ide, jds,jde, kds,kde,                           &
+               ims,ime, jms,jme, kms,kme,                           &
+               i_start(ij),i_end(ij),j_start(ij),j_end(ij),kts,kte  )
+
       CASE (MYJPBLSCHEME)
         CALL wrf_debug(100,'in MYJPBL')
-
              CALL MYJPBL(DT,STEPBL,ht,dz8w,                           &
                p_phy,p8w,th_phy,t_phy,pi_phy,                       &
                moist(ims,kms,jms,P_QV),moist(ims,kms,jms,P_QC),     &
@@ -406,7 +421,6 @@ CONTAINS
    !$OMP END PARALLEL DO
 
    ENDIF
-
 !
    END SUBROUTINE pbl_driver
 END MODULE module_pbl_driver

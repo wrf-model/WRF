@@ -31,6 +31,7 @@ CONTAINS
    USE module_cu_bmj
    USE module_cu_kfeta
    USE module_cu_gd
+   USE module_cu_sas
 
    !  This driver calls subroutines for the cumulus parameterizations.
    !
@@ -341,6 +342,19 @@ CONTAINS
                ids,ide, jds,jde, kds,kde,                       &
                ims,ime, jms,jme, kms,kme,                       &
                its,ite, jts,jte, kts,kte                        )
+     CASE (SASSCHEME)
+                                                                                                                                           
+          CALL wrf_debug(100,'in cu_sas')
+            CALL CU_SAS(DT,itimestep,STEPCU,                      &
+                 RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,             &
+                 RAINCV,HTOP,HBOT,u_phy,v_phy,w,t_phy,            &
+                 moist(ims,kms,jms,P_QV),moist(ims,kms,jms,P_QC), &
+                 moist(ims,kms,jms,P_QI),pi_phy,rho_phy,          &
+                 dz8w,p_phy,p8w,XLAND,CU_ACT_FLAG,                &
+                 P_QC,P_QI,PARAM_FIRST_SCALAR,                    &
+                 ids,ide, jds,jde, kds,kde,                       &
+                 ims,ime, jms,jme, kms,kme,                       &
+                 its,ite, jts,jte, kts,kte                        )
 
      CASE DEFAULT 
 

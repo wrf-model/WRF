@@ -244,7 +244,9 @@ integer myproc
        EMISS(i,j)=0.85
        THC(i,j)=THINLD
        ZNT(i,j)=ZZLND
+#if  ! ( NMM_CORE == 1 ) 
        Z0(i,j)=ZZLND
+#endif
        MAVAIL(i,j)=XMAVA
      ELSE
        ALBBCK(i,j)=0.08
@@ -252,7 +254,9 @@ integer myproc
        EMISS(i,j)=0.98
        THC(i,j)=THINLD
        ZNT(i,j)=ZZWTR
+#if  ! ( NMM_CORE == 1 ) 
        Z0(i,j)=ZZWTR
+#endif
        MAVAIL(i,j)=1.0 
      ENDIF
    ENDDO
@@ -306,7 +310,11 @@ integer myproc
                 SMSTOT, SFCRUNOFF,UDRUNOFF,ACSNOW,ACSNOM,       &
                 IVGTYP,ISLTYP,SMOIS,SMFR3D,                     &
                 SNOWH,SH2O,FNDSOILW, FNDSNOWH,                  &
+#if (NMM_CORE == 1)
+                Z0,XLAND,XICE,                                  &
+#else
                 ZNT,XLAND,XICE,                                 &
+#endif
                 SFCEVP,GRDFLX,                                  &
                 allowed_to_read ,                                   &
                 ids, ide, jds, jde, kds, kde,                   &
@@ -634,7 +642,8 @@ integer myproc
                 SMSTOT, SFCRUNOFF,UDRUNOFF,ACSNOW,ACSNOM,       &
                 IVGTYP,ISLTYP,SMOIS,SMFR3D,                     &
                 SNOWH,SH2O,FNDSOILW, FNDSNOWH,                  &
-                ZNT,XLAND,XICE,                                 &
+!               ZNT,XLAND,XICE,                                 &
+                Z0,XLAND,XICE,                                  &
                 SFCEVP,GRDFLX,                                  &
                 allowed_to_read,                                &
                 ids, ide, jds, jde, kds, kde,                   &
@@ -645,6 +654,7 @@ integer myproc
    USE module_sf_slab
    USE module_bl_ysu
    USE module_bl_mrf
+   USE module_bl_gfs
    USE module_sf_myjsfc
    USE module_sf_noahlsm
    USE module_sf_ruclsm
@@ -688,7 +698,11 @@ integer myproc
                                                         SFCEVP, &
                                                         GRDFLX, &
                                                            UST, &
+#if ( NMM_CORE == 1 )
+                                                            Z0, &
+#else
                                                            ZNT, &
+#endif
                                                          XLAND, &
                                                          XICE
 
@@ -730,7 +744,11 @@ integer myproc
            CALL sfclayinit( allowed_to_read )
            isfc = 1
       CASE (MYJSFCSCHEME)
-           CALL myjsfcinit(LOWLYR,UST,ZNT,XLAND,XICE,          &
+#if ( NMM_CORE == 1 )
+           CALL myjsfcinit(LOWLYR,UST,Z0,XLAND,XICE,           &
+#else
+           CALL myjsfcinit(LOWLYR,UST,ZNT,XLAND,XICE,           &
+#endif
                          IVGTYP,restart,                       &
                          allowed_to_read ,                     &
                          ids, ide, jds, jde, kds, kde,         &
@@ -818,6 +836,17 @@ integer myproc
                         ids, ide, jds, jde, kds, kde,         &
                         ims, ime, jms, jme, kms, kme,         &
                         its, ite, jts, jte, kts, kte          )
+      CASE (GFSSCHEME)
+           if(isfc .ne. 1)CALL wrf_error_fatal &
+            ( 'module_physics_init: use sfclay scheme for this pbl option' )
+           CALL gfsinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,    &
+                        RQCBLTEN,RQIBLTEN,P_QI,               &
+                        PARAM_FIRST_SCALAR,                   &
+                        restart,                              &
+                        allowed_to_read ,                     &
+                        ids, ide, jds, jde, kds, kde,         &
+                        ims, ime, jms, jme, kms, kme,         &
+                        its, ite, jts, jte, kts, kte          )
       CASE (MYJPBLSCHEME)
            if(isfc .ne. 2)CALL wrf_error_fatal &
             ( 'module_physics_init: use myjsfc scheme for this pbl option' )
@@ -850,6 +879,7 @@ integer myproc
    USE module_cu_kfeta
    USE MODULE_CU_BMJ
    USE module_cu_gd
+   USE module_cu_sas
 !------------------------------------------------------------------
    IMPLICIT NONE
 !------------------------------------------------------------------
@@ -946,6 +976,13 @@ integer myproc
                       RTHFTEN, RQVFTEN,                           &
                       APR_GR,APR_W,APR_MC,APR_ST,APR_AS,          &
                       APR_CAPMA,APR_CAPME,APR_CAPMI,              &
+                      allowed_to_read ,                           &
+                      ids, ide, jds, jde, kds, kde,               &
+                      ims, ime, jms, jme, kms, kme,               &
+                      its, ite, jts, jte, kts, kte                )
+     CASE (SASSCHEME)
+          CALL sasinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,       &
+                      restart,P_QC,P_QI,PARAM_FIRST_SCALAR,       &
                       allowed_to_read ,                           &
                       ids, ide, jds, jde, kds, kde,               &
                       ims, ime, jms, jme, kms, kme,               &

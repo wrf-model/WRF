@@ -269,7 +269,6 @@
       TNE=0.
       TSE=0.
 !
-
       PDSL = 0.
       OMGALF = 0.
       DIV = 0.
@@ -283,21 +282,10 @@
       ELSE
         DO J=MYJS_P4,MYJE_P4
         DO I=MYIS_P4,MYIE_P4
-          FILO(I,J)=0.0
           PDSL(I,J)=RES(I,J)*PD(I,J)
         ENDDO
         ENDDO
       ENDIF
-!
-      DO J=MYJS_P4,MYJE_P4
-        DO K=KTS,KTE
-        DO I=MYIS_P4,MYIE_P4
-          OMGALF(I,K,J)=0.
-          DIV(I,K,J)=0.
-        ENDDO
-        ENDDO
-      ENDDO
-
 !
 !----------------------------------------------------------------------
 !***

@@ -683,7 +683,7 @@ esmf_time :
 solve_interface.o : solve_interface.F
 	$(RM) $@
 	$(CPP) -I../inc $(CPPFLAGS) $*.F > $*.f
-	$(FC) -c $(FCBASEOPTS) -I. $(MODULE_DIRS) $*.f
+	$(FC) -c $(FCBASEOPTS) -I. $(PROMOTION) $(MODULE_DIRS) $*.f
 
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
@@ -947,7 +947,7 @@ esmf_time :
 solve_interface.o : solve_interface.F
 	$(RM) $@
 	$(CPP) -I../inc $(CPPFLAGS) $*.F > $*.f
-	$(FC) -c $(FCBASEOPTS) -I. $(MODULE_DIRS) $*.f
+	$(FC) -c $(FCBASEOPTS) -I. $(PROMOTION) $(MODULE_DIRS) $*.f
 
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
@@ -1172,7 +1172,7 @@ esmf_time :
 solve_interface.o : solve_interface.F
 	$(RM) $@
 	$(CPP) -I../inc $(CPPFLAGS) $*.F > $*.f
-	$(FC) -c -qfree=f90 -qspillsize=32767 -I. $(MODULE_DIRS) $*.f
+	$(FC) -c -qfree=f90 -qspillsize=32767 -I. $(PROMOTION) $(MODULE_DIRS) $*.f
 
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
@@ -1834,7 +1834,7 @@ esmf_time :
 solve_interface.o : solve_interface.F
 	$(RM) $@
 	$(CPP) -I../inc $(CPPFLAGS) $*.F > $*.f
-	$(FC) -c -qfree=f90 -qspillsize=32767 -I. $(MODULE_DIRS) $*.f
+	$(FC) -c -qfree=f90 -qspillsize=32767 -I. $(PROMOTION) $(MODULE_DIRS) $*.f
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; make MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST sp2 )
@@ -8230,7 +8230,7 @@ solve_interface.o : solve_interface.F
 	$(RM) $@
 	mv $*.F $*.F90
 	$(CPP) -I../inc $(CPPFLAGS) $*.F90 > $*.f
-	$(FC) -c -qfree=f90 -qspillsize=32767 -I. $(MODULE_DIRS) $*.f
+	$(FC) -c -qfree=f90 -qspillsize=32767 -I. $(PROMOTION) $(MODULE_DIRS) $*.f
 	mv $*.F90 $*.F
 
 # compile these without high optimization to speed compile

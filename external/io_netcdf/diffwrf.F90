@@ -251,26 +251,21 @@ else
       call ext_ncd_get_var_info (dh2,VarName,ndim2,ordering2,staggering2,start_index2,end_index2, WrfType2, ierr )
       IF ( ierr /= 0 ) THEN
         write(*,*)'Big difference: ',VarName,' not found in ',flnm2
-	GOTO 1234
+        GOTO 1234
       ENDIF
       IF ( ndim /= ndim2 ) THEN
         write(*,*)'Big difference: Number of dimensions for ',Varname,' differs in ',flnm2,'(',ndim,') /= (',ndim2
-	GOTO 1234
+        GOTO 1234
       ENDIF
-!      IF ( ordering /= ordering2 ) THEN
-!       write(*,*)'Big difference: Ordering of dimensions for ',Varname,' differs in ',flnm2,'(',ordering,') /= (',ordering2
-!      ENDIF
       IF ( WrfType /= WrfType2 ) THEN
         write(*,*)'Big difference: The types do not match'
-	GOTO 1234
+        GOTO 1234
       ENDIF
       if( WrfType == WRF_REAL) then
         DO i = 1, ndim
           IF ( end_index(i) /= end_index2(i) ) THEN
             write(*,*)'Big difference: dim ',i,' lengths differ for ',Varname,' differ in ',flnm2
-!            write(*,*)'   ',flnm,'  ',end_index(i)
-!            write(*,*)'   ',flnm2,'  ',end_index2(i)
-	    GOTO 1234
+            GOTO 1234
           ENDIF
         ENDDO
         DO i = ndim+1,3
@@ -351,39 +346,19 @@ else
               ENDIF
             ENDDO
           ENDDO
-!          IF ( IKDIFFS .NE. 0 ) THEN
-!            EFOUND = .TRUE.
-!!            PRINT*,'LEVEL ',K,' WITH ',IKDIFFS,' DIFFS'
-!              write(88,*)end_index(2),end_index(1),' ',trim(varname),' LEVEL ',K,' TIME ',TRIM(Datestr)
-!              write(98,*)end_index(2),end_index(1),' ',trim(varname),' LEVEL ',K,' TIME ',TRIM(Datestr)
-!              DO I = 1,end_index(1)
-!                DO J = 1,end_index(2)
-!                  WRITE(88,*)data(I,J,K,1)
-!                  WRITE(98,*)data2(I,J,K,1)
-!                ENDDO
-!              ENDDO
-!!               write(88,*)end_index(2)-cross,end_index(1)-cross,' ',name,' LEVEL ',K,' TIME ',TRIM(Datestr)
-!!               write(98,*)end_index(2)-cross,end_index(1)-cross,' ',name,' LEVEL ',K,' TIME ',TRIM(Datestr)
-!!               DO I = 1,end_index(1)-cross
-!!                 DO J = 1,end_index(2)-cross
-!!                   WRITE(88,*)data(I,J,K,1)
-!!                   WRITE(98,*)data2(I,J,K,1)
-!!                 ENDDO
-!!               ENDDO
-!            ENDIF
          ENDIF
         enddo
         rms = sqrt ( sum1 / dble( n ) )
-	IF ( sum2 .GT. 0.0d0 ) THEN
-	  serr = sqrt ( sum1 / sum2 )
-	ELSE
-	  serr = sqrt ( sum1 )
-	ENDIF
-	IF ( diff2 .GT. 0.0d0 ) THEN
-	  perr = diff1/diff2
-	ELSE
-	  perr = diff1
-	ENDIF
+        IF ( sum2 .GT. 0.0d0 ) THEN
+          serr = sqrt ( sum1 / sum2 )
+        ELSE
+          serr = sqrt ( sum1 )
+        ENDIF
+        IF ( diff2 .GT. 0.0d0 ) THEN
+          perr = diff1/diff2
+        ELSE
+          perr = diff1
+        ENDIF
            
         IF (IFDIFFS .NE. 0 ) THEN
            ! create the fort.88 and fort.98 files because regression scripts will

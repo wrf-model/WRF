@@ -481,3 +481,28 @@ RSL_POINT_ON_PROC ( d_p, ig_p, jg_p, retval_p )
   return ;
 }
 
+/* given a global point, return the processor number */
+RSL_PROC_FOR_POINT ( d_p, ig_p, jg_p, retval_p )
+  int_p d_p, ig_p, jg_p, retval_p ;
+{
+  int d ;
+  int kiddex ;
+  int P ;
+  int ig, jg ;
+
+  rsl_domain_info_t * info ;
+  rsl_point_t       * domain ;
+  ig = *ig_p - 1 ;
+  jg = *jg_p - 1 ;
+
+  d = *d_p ;
+  RSL_TEST_ERR( d < 0 || d > RSL_MAXDOMAINS,
+    "rsl_point_on_proc: bad descriptor" ) ;
+  info = &( domain_info[d]) ;
+  domain = info->domain ;
+  kiddex = INDEX_2(jg,ig,info->len_m ) ;
+  *retval_p = domain[ kiddex ].P ;
+  return ;
+}
+
+

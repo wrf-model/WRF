@@ -1220,6 +1220,15 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
                                grid%j_start(ij), grid%j_end(ij),         &
                                1    , 1             )
 
+           CALL spec_bdyupdate(muts, mu_tend, dts_rk,      &
+                               'm'         , config_flags, &
+                               spec_zone,                  &
+                               ids,ide, jds,jde, 1  ,1  ,  & ! domain dims
+                               ims,ime, jms,jme, 1  ,1  ,  & ! memory dims
+                               ips,ipe, jps,jpe, 1  ,1  ,  & ! patch  dims
+                               grid%i_start(ij), grid%i_end(ij),         &
+                               grid%j_start(ij), grid%j_end(ij),         &
+                               1    , 1             )
          ENDIF
 
          ! sumflux accumulates the time-averged mass flux

@@ -131,13 +131,13 @@ write(0,*)'ext_mcel_read_field tr setglobalstart ', TRIM(VarName), mcel_mystart
         ENDIF
         ALLOCATE(xlat(ips:ipe,jps:jpe))
         CALL copy_field_to_cache ( FieldType , Field, xlat, ips, ipe, jps, jpe, ims, ime, jms, jme )
-      ELSE IF ( TRIM(VarName) .EQ. TRIM(LON_R) ) THEN
+      ELSE IF ( TRIM(VarName) .EQ. TRIM(LON_R(DataHandle)) ) THEN
         IF ( ALLOCATED(xlong) ) THEN
           DEALLOCATE(xlong)
         ENDIF
         ALLOCATE(xlong(ips:ipe,jps:jpe))
         CALL copy_field_to_cache ( FieldType , Field, xlong, ips, ipe, jps, jpe, ims, ime, jms, jme )
-      ELSE IF ( TRIM(VarName) .EQ. TRIM(LANDMASK_I) ) THEN
+      ELSE IF ( TRIM(VarName) .EQ. TRIM(LANDMASK_I(DataHandle)) ) THEN
         IF ( ALLOCATED(mask) ) THEN
           DEALLOCATE(mask)
         ENDIF

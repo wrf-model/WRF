@@ -194,7 +194,8 @@ CONTAINS
    REAL FUNCTION wrf_dm_max_real ( inval )
       IMPLICIT NONE
       INCLUDE 'mpif.h'
-      REAL inval, retval, ierr
+      REAL inval, retval
+      INTEGER ierr
       CALL mpi_allreduce ( inval, retval , 1, MPI_REAL, MPI_MAX, local_communicator, ierr )
       wrf_dm_max_real = retval
    END FUNCTION wrf_dm_max_real
@@ -202,7 +203,8 @@ CONTAINS
    REAL FUNCTION wrf_dm_min_real ( inval )
       IMPLICIT NONE
       INCLUDE 'mpif.h'
-      REAL inval, retval, ierr
+      REAL inval, retval
+      INTEGER ierr
       CALL mpi_allreduce ( inval, retval , 1, MPI_REAL, MPI_MIN, local_communicator, ierr )
       wrf_dm_min_real = retval
    END FUNCTION wrf_dm_min_real
@@ -210,10 +212,20 @@ CONTAINS
    REAL FUNCTION wrf_dm_sum_real ( inval )
       IMPLICIT NONE
       INCLUDE 'mpif.h'
-      REAL inval, retval, ierr
+      REAL inval, retval
+      INTEGER ierr
       CALL mpi_allreduce ( inval, retval , 1, MPI_REAL, MPI_SUM, local_communicator, ierr )
       wrf_dm_sum_real = retval
    END FUNCTION wrf_dm_sum_real
+
+   INTEGER FUNCTION wrf_dm_sum_integer ( inval )
+      IMPLICIT NONE
+      INCLUDE 'mpif.h'
+      INTEGER inval, retval
+      INTEGER ierr
+      CALL mpi_allreduce ( inval, retval , 1, MPI_INTEGER, MPI_SUM, local_communicator, ierr )
+      wrf_dm_sum_real = retval
+   END FUNCTION wrf_dm_sum_integer
 
    SUBROUTINE wrf_dm_maxval_real ( val, idex, jdex )
       IMPLICIT NONE

@@ -188,6 +188,9 @@ rsl_new_decomposition( d_p, mloc_p, nloc_p )
   case RSL_8PT   : pt = rsl_8pt  ; break ;
   case RSL_12PT  : pt = rsl_12pt ; break ;
   case RSL_24PT  : pt = rsl_24pt ; break ;
+  case RSL_48PT  : pt = rsl_48pt ; break ;
+  case RSL_80PT  : pt = rsl_80pt ; break ;
+  case RSL_120PT  : pt = rsl_120pt ; break ;
 #if ( ALLOW_RSL_168PT == 1 )
   case RSL_168PT  : pt = rsl_168pt ; break ;
 #endif

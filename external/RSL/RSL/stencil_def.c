@@ -217,6 +217,8 @@ RSL_DESCRIBE_STENCIL ( d_p, sh_p, maskid_p, messages )
   case RSL_12PT : sten->f[d].ptfcn = rsl_12pt ; sten->npts[d] = 12 ; break ;
   case RSL_24PT : sten->f[d].ptfcn = rsl_24pt ; sten->npts[d] = 24 ; break ;
   case RSL_48PT : sten->f[d].ptfcn = rsl_48pt ; sten->npts[d] = 48 ; break ;
+  case RSL_80PT : sten->f[d].ptfcn = rsl_80pt ; sten->npts[d] = 80 ; break ;
+  case RSL_120PT : sten->f[d].ptfcn = rsl_120pt ; sten->npts[d] = 120 ; break ;
 #if ( ALLOW_RSL_168PT == 1 )
   case RSL_168PT : sten->f[d].ptfcn = rsl_168pt ; sten->npts[d] = 168 ; break ;
   default : RSL_TEST_ERR( 1, 

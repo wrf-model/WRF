@@ -248,10 +248,10 @@ state   logical patched        -        -          -         -     -         "pa
 #state   logical input_from_file        -        -          -         -     -         "input_from_file"         ""         ""    
 
 # Mask for moving nest interpolations
-state    integer imask_nostag         ij      misc     -
-state    integer imask_xstag          ij      misc     X
-state    integer imask_ystag          ij      misc     Y
-state    integer imask_xystag         ij      misc     XY 
+state    integer imask_nostag         ij      misc     1     -
+state    integer imask_xstag          ij      misc     1     X
+state    integer imask_ystag          ij      misc     1     Y
+state    integer imask_xystag         ij      misc     1     XY 
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Scalar (4D) arrays

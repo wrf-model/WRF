@@ -56,7 +56,9 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 C
 
       subroutine mpi_init_f( ierr )
+      write(0,*)'CALLING MPI INIT'
       call mpi_init(ierr)
+      write(0,*)'BACK FROM  MPI INIT IERR = ',IERR
       return
       end
 

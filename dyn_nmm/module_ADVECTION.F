@@ -30,6 +30,13 @@
       REAL :: CONSERVE_MIN=0.9,CONSERVE_MAX=1.1
 !
 !----------------------------------------------------------------------
+!
+!***  For Crank_Nicholson check only.
+!
+      INTEGER :: ITEST=10,JTEST=10
+      REAL :: ADTP,ADUP,ADVP,TTLO,TTUP,TULO,TUUP,TVLO,TVUP
+!
+!----------------------------------------------------------------------
       CONTAINS
 !
 #ifdef OPTIM_ADVE

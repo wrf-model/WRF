@@ -5,9 +5,6 @@ MAKE    =       make -i -r
 MV	=	/bin/mv
 RM      =       /bin/rm -f
 
-# this will be overridden if WRF_CHEM is set to 1 in the configure.wrf file
-WRF_CHEM = 0
-
 include ./configure.wrf
 
 EM_MODULE_DIR = -I../dyn_em

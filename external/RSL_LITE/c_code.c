@@ -8,6 +8,7 @@
 #include "mpi.h"
 #include "rsl_lite.h"
 
+
 RSL_LITE_ERROR_DUP1 ( int *me )
 {
     int newfd ;
@@ -163,6 +164,10 @@ RSL_LITE_PACK ( char * buf , int * shw0 , int * typesize0 , int * xy0 , int * pu
 /* need to adapt for other memory orders */
 
 #define RANGE(S1,E1,S2,E2,S3,E3,S4,E4) (((E1)-(S1)+1)*((E2)-(S2)+1)*((E3)-(S3)+1)*((E4)-(S4)+1))
+#define IMAX(A) (((A)>ids)?(A):ids)
+#define IMIN(A) (((A)<ide)?(A):ide)
+#define JMAX(A) (((A)>jds)?(A):jds)
+#define JMIN(A) (((A)<jde)?(A):jde)
 
   da_buf = ( pu == 0 ) ? RSL_SENDBUF : RSL_RECVBUF ;
 
@@ -172,9 +177,6 @@ RSL_LITE_PACK ( char * buf , int * shw0 , int * typesize0 , int * xy0 , int * pu
       p = buffer_for_proc( yp , 0 , da_buf ) ;
       if ( pu == 0 ) {
         nbytes = buffer_size_for_proc( yp, da_buf ) ;
-#if 0
-fprintf(stderr,"Y pack up nbytes = %d RANGE = %d  ",nbytes, RANGE( jpe-shw+1, jpe, kps, kpe, ips-shw, ipe+shw, 1, typesize ) ) ;
-#endif
 	if ( yp_curs + RANGE( jpe-shw+1, jpe, kps, kpe, ips-shw, ipe+shw, 1, typesize ) > nbytes ) {
 	  fprintf(stderr,"memory overwrite in rsl_lite_pack, Y pack up, %d > %d\n",
 	      yp_curs + RANGE( jpe-shw+1, jpe, kps, kpe, ips-shw, ipe+shw, 1, typesize ), nbytes ) ;
@@ -182,25 +184,26 @@ fprintf(stderr,"Y pack up nbytes = %d RANGE = %d  ",nbytes, RANGE( jpe-shw+1, jp
         }
 	if ( typesize == sizeof(int) ) {
 #ifdef crayx1
-	  i4 = ips-shw ;
+/* PETER -- CHECK THIS AND UPDATE TO USE IMAX AND IMIN MACROS */
+        i4 = ips-shw ;
           i_offset = ipe+shw+1-i4;
           i3=0;
           for ( j = jpe-shw+1 ; j <= jpe ; j++ ) {
-	    pi = (int *)(p+yp_curs) ;
+          pi = (int *)(p+yp_curs) ;
 #pragma concurrent
 #pragma preferstream
             for ( k = kps ; k <= kpe ; k++ ) {
               i3 = i_offset*k;
-	      qi = (int *)((buf + typesize*( (i4-ims) + (ime-ims+1)*(
+            qi = (int *)((buf + typesize*( (i4-ims) + (ime-ims+1)*(
                                              (k-kms) + (j-jms)*(kme-kms+1))))) ;
 #pragma concurrent
 #pragma prefervector
               for ( i = i4, i2=0; i <= ipe+shw ; i++ ) {
                 pi[i3++] = qi[i2++];
-	      }
-	    }
+            }
+          }
             yp_curs += (i_offset*(kpe+1))*typesize;
-	  }
+        }
 #else
           for ( j = jpe-shw+1 ; j <= jpe ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
@@ -208,7 +211,7 @@ fprintf(stderr,"Y pack up nbytes = %d RANGE = %d  ",nbytes, RANGE( jpe-shw+1, jp
               i = ips-shw ;
               qi = (int *)((buf + typesize*( (i-ims) + (ime-ims+1)*(
                                              (k-kms) + (j-jms)*(kme-kms+1))))) ;
-              for ( i = ips-shw ; i <= ipe+shw ; i++ ) {
+              for ( i = IMAX(ips-shw) ; i <= IMIN(ipe+shw) ; i++ ) {
                 *pi++ = *qi++ ;
               }
               yp_curs += (i-(ips-shw))*typesize ;
@@ -219,7 +222,7 @@ fprintf(stderr,"Y pack up nbytes = %d RANGE = %d  ",nbytes, RANGE( jpe-shw+1, jp
 	else {
           for ( j = jpe-shw+1 ; j <= jpe ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
-              for ( i = ips-shw ; i <= ipe+shw ; i++ ) {
+              for ( i = IMAX(ips-shw) ; i <= IMIN(ipe+shw) ; i++ ) {
                 for ( t = 0 ; t < typesize ; t++ ) {
                   *(p+yp_curs) = 
                                  *(buf + t + typesize*(
@@ -231,30 +234,28 @@ fprintf(stderr,"Y pack up nbytes = %d RANGE = %d  ",nbytes, RANGE( jpe-shw+1, jp
             }
           }
         }
-#if 0
-fprintf(stderr,"P yp_curs = %d\n",yp_curs) ;
-#endif
       } else {
 	if ( typesize == sizeof(int) ) {
 #ifdef crayx1
-	  i4 = ips-shw ;
+/* PETER -- CHECK THIS AND UPDATE TO USE IMAX AND IMIN MACROS */
+        i4 = ips-shw ;
           i_offset = ipe+shw+1-i4;
           for ( j = jpe+1 ; j <= jpe+shw ; j++ ) {
-	    pi = (int *)(p+yp_curs) ;
+          pi = (int *)(p+yp_curs) ;
 #pragma concurrent
 #pragma perferstream
             for ( k = kps ; k <= kpe ; k++ ) {
               i3 = i_offset*k;
-	      qi = (int *)((buf + typesize*( (i4-ims) + (ime-ims+1)*(
+            qi = (int *)((buf + typesize*( (i4-ims) + (ime-ims+1)*(
                                              (k-kms) + (j-jms)*(kme-kms+1))))) ;
 #pragma concurrent
 #pragma prefervector
               for ( i = i4, i2=0; i <= ipe+shw ; i++ ) {
                 qi[i2++] = pi[i3++];
-	      }
-	    }
+            }
+          }
             yp_curs += (i_offset*(kpe+1))*typesize;
-	  }
+        }
 #else
           for ( j = jpe+1 ; j <= jpe+shw ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
@@ -262,7 +263,7 @@ fprintf(stderr,"P yp_curs = %d\n",yp_curs) ;
               i = ips-shw ;
               qi = (int *)((buf + typesize*( (i-ims) + (ime-ims+1)*(
                                              (k-kms) + (j-jms)*(kme-kms+1))))) ;
-              for ( i = ips-shw ; i <= ipe+shw ; i++ ) {
+              for ( i = IMAX(ips-shw) ; i <= IMIN(ipe+shw) ; i++ ) {
                 *qi++ = *pi++ ;
               }
               yp_curs += (i-(ips-shw))*typesize ;
@@ -273,7 +274,7 @@ fprintf(stderr,"P yp_curs = %d\n",yp_curs) ;
 	else {
           for ( j = jpe+1 ; j <= jpe+shw ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
-              for ( i = ips-shw ; i <= ipe+shw ; i++ ) {
+              for ( i = IMAX(ips-shw) ; i <= IMIN(ipe+shw) ; i++ ) {
                 for ( t = 0 ; t < typesize ; t++ ) {
                                  *(buf + t + typesize*(
                                         (i-ims) + (ime-ims+1)*(
@@ -285,18 +286,12 @@ fprintf(stderr,"P yp_curs = %d\n",yp_curs) ;
             }
           }
 	}
-#if 0
-fprintf(stderr,"U yp_curs = %d\n",yp_curs) ;
-#endif
       }
     }
     if ( ym >= 0 && ym < np ) {
       p = buffer_for_proc( ym , 0 , da_buf ) ;
       if ( pu == 0 ) {
         nbytes = buffer_size_for_proc( ym, da_buf ) ;
-#if 0
-fprintf(stderr,"Y pack dn nbytes = %d RANGE = %d  ",nbytes, RANGE( jps, jps+shw-1, kps, kpe, ips-shw, ipe+shw, 1, typesize )) ;
-#endif
 	if ( ym_curs + RANGE( jps, jps+shw-1, kps, kpe, ips-shw, ipe+shw, 1, typesize ) > nbytes ) {
 	  fprintf(stderr,"memory overwrite in rsl_lite_pack, Y pack dn, %d > %d\n",
 	      ym_curs + RANGE( jps, jps+shw-1, kps, kpe, ips-shw, ipe+shw, 1, typesize ), nbytes ) ;
@@ -304,24 +299,25 @@ fprintf(stderr,"Y pack dn nbytes = %d RANGE = %d  ",nbytes, RANGE( jps, jps+shw-
         }
 	if ( typesize == sizeof(int) ) {
 #ifdef crayx1
-	  i4 = ips-shw ;
+/* PETER -- CHECK THIS AND UPDATE TO USE IMAX AND IMIN MACROS */
+        i4 = ips-shw ;
           i_offset = ipe+shw+1-i4;
           for ( j = jps ; j <= jps+shw-1 ; j++ ) {
-	    pi = (int *)(p+ym_curs) ;
+          pi = (int *)(p+ym_curs) ;
 #pragma concurrent
 #pragma perferstream
             for ( k = kps ; k <= kpe ; k++ ) {
               i3 = i_offset*k;
-	      qi = (int *)((buf + typesize*( (i4-ims) + (ime-ims+1)*(
+            qi = (int *)((buf + typesize*( (i4-ims) + (ime-ims+1)*(
                                              (k-kms) + (j-jms)*(kme-kms+1))))) ;
 #pragma concurrent
 #pragma perfervector
               for ( i = i4, i2=0 ; i <= ipe+shw ; i++) {
                 pi[i3++] = qi[i2++];
-	      }
-	    }
+            }
+          }
             ym_curs += (i_offset*(kpe+1))*typesize;
-	  }
+        }
 #else
           for ( j = jps ; j <= jps+shw-1 ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
@@ -329,7 +325,7 @@ fprintf(stderr,"Y pack dn nbytes = %d RANGE = %d  ",nbytes, RANGE( jps, jps+shw-
               i = ips-shw ;
               qi = (int *)((buf + typesize*( (i-ims) + (ime-ims+1)*(
                                              (k-kms) + (j-jms)*(kme-kms+1))))) ;
-              for ( i = ips-shw ; i <= ipe+shw ; i++ ) {
+              for ( i = IMAX(ips-shw) ; i <= IMIN(ipe+shw) ; i++ ) {
                 *pi++ = *qi++ ;
               }
               ym_curs += (i-(ips-shw))*typesize ;
@@ -340,7 +336,7 @@ fprintf(stderr,"Y pack dn nbytes = %d RANGE = %d  ",nbytes, RANGE( jps, jps+shw-
 	else {
           for ( j = jps ; j <= jps+shw-1 ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
-              for ( i = ips-shw ; i <= ipe+shw ; i++ ) {
+              for ( i = IMAX(ips-shw) ; i <= IMIN(ipe+shw) ; i++ ) {
                 for ( t = 0 ; t < typesize ; t++ ) {
                   *(p+ym_curs) = 
                                  *(buf + t + typesize*(
@@ -352,31 +348,29 @@ fprintf(stderr,"Y pack dn nbytes = %d RANGE = %d  ",nbytes, RANGE( jps, jps+shw-
             }
           }
 	}
-#if 0
-fprintf(stderr,"P ym_curs = %d\n",ym_curs) ;
-#endif
       } else {
 	if ( typesize == sizeof(int) ) {
 #ifdef crayx1
-	  i4 = ips-shw ;
+/* PETER -- CHECK THIS AND UPDATE TO USE IMAX AND IMIN MACROS */
+        i4 = ips-shw ;
           i_offset = ipe+shw+1-i4;
           for ( j = jps-shw ; j <= jps-1 ; j++ ) {
-	    pi = (int *)(p+ym_curs) ;
+          pi = (int *)(p+ym_curs) ;
 #pragma concurrent
 #pragma perferstream
             for ( k = kps ; k <= kpe ; k++ ) {
               i3 =i_offset*k;
-	      qi = (int *)((buf + typesize*( (i4-ims) + (ime-ims+1)*(
+            qi = (int *)((buf + typesize*( (i4-ims) + (ime-ims+1)*(
                                              (k-kms) + (j-jms)*(kme-kms+1))))) ;
               i2=0;
 #pragma concurrent
 #pragma prefervector
               for ( i = i4; i <= ipe+shw ; i++ ) {
                 qi[i2++] = pi[i3++];
-	      }
-	    }
+            }
+          }
           ym_curs += (i_offset*(kpe+1))*typesize;
-	  }
+        }
 #else
          for ( j = jps-shw ; j <= jps-1 ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
@@ -384,7 +378,7 @@ fprintf(stderr,"P ym_curs = %d\n",ym_curs) ;
               i = ips-shw ;
               qi = (int *)((buf + typesize*( (i-ims) + (ime-ims+1)*(
                                              (k-kms) + (j-jms)*(kme-kms+1))))) ;
-              for ( i = ips-shw ; i <= ipe+shw ; i++ ) {
+              for ( i = IMAX(ips-shw) ; i <= IMIN(ipe+shw) ; i++ ) {
                 *qi++ = *pi++ ;
               }
               ym_curs += (i-(ips-shw))*typesize ;
@@ -395,7 +389,7 @@ fprintf(stderr,"P ym_curs = %d\n",ym_curs) ;
 	else {
           for ( j = jps-shw ; j <= jps-1 ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
-              for ( i = ips-shw ; i <= ipe+shw ; i++ ) {
+              for ( i = IMAX(ips-shw) ; i <= IMIN(ipe+shw) ; i++ ) {
                 for ( t = 0 ; t < typesize ; t++ ) {
                                  *(buf + t + typesize*(
                                         (i-ims) + (ime-ims+1)*(
@@ -409,9 +403,6 @@ fprintf(stderr,"P ym_curs = %d\n",ym_curs) ;
         }
       }
     }
-#if 0
-fprintf(stderr,"U ym_curs = %d\n",ym_curs) ;
-#endif
   }
 
   if ( np_x > 1 && xy == 1 ) {
@@ -420,9 +411,6 @@ fprintf(stderr,"U ym_curs = %d\n",ym_curs) ;
       p = buffer_for_proc( xp , 0 , da_buf ) ;
       if ( pu == 0 ) {
         nbytes = buffer_size_for_proc( xp, da_buf ) ;
-#if 0
-fprintf(stderr,"X pack right nbytes = %d RANGE = %d\n",nbytes, RANGE(  jps-shw, jpe+shw, kps, kpe, ipe-shw+1, ipe, 1, typesize ) ) ;
-#endif
         if ( xp_curs + RANGE( jps-shw, jpe+shw, kps, kpe, ipe-shw+1, ipe, 1, typesize ) > nbytes ) {
 	  fprintf(stderr,"memory overwrite in rsl_lite_pack, X pack right, %d > %d\n",
 	      xp_curs + RANGE( jps-shw, jpe+shw, kps, kpe, ipe-shw+1, ipe, 1, typesize ), nbytes ) ;
@@ -433,7 +421,7 @@ fprintf(stderr,"X pack right nbytes = %d RANGE = %d\n",nbytes, RANGE(  jps-shw, 
           pi = (int *)(p+xp_curs) ;
           i3=0;
 #pragma concurrent
-          for ( j = jps-shw ; j <= jpe+shw ; j++ ) {
+          for ( j = JMAX(jps-shw) ; j <= JMIN(jpe+shw) ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
               qi = (int *)((buf + typesize*( (ipe-shw+1-ims) + (ime-ims+1)*(
                                             (k-kms) + (j-jms)*(kme-kms+1))))) ;
@@ -444,7 +432,7 @@ fprintf(stderr,"X pack right nbytes = %d RANGE = %d\n",nbytes, RANGE(  jps-shw, 
           }
           xp_curs += i3*typesize;
 #else
-          for ( j = jps-shw ; j <= jpe+shw ; j++ ) {
+          for ( j = JMAX(jps-shw) ; j <= JMIN(jpe+shw) ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
 	      pi = (int *)(p+xp_curs) ;
 	      i = ipe-shw+1 ;
@@ -459,7 +447,7 @@ fprintf(stderr,"X pack right nbytes = %d RANGE = %d\n",nbytes, RANGE(  jps-shw, 
 #endif
 	}
 	else {
-          for ( j = jps-shw ; j <= jpe+shw ; j++ ) {
+          for ( j = JMAX(jps-shw) ; j <= JMIN(jpe+shw) ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
               for ( i = ipe-shw+1 ; i <= ipe ; i++ ) {
                 for ( t = 0 ; t < typesize ; t++ ) {
@@ -479,7 +467,7 @@ fprintf(stderr,"X pack right nbytes = %d RANGE = %d\n",nbytes, RANGE(  jps-shw, 
           pi = (int *)(p+xp_curs) ;
           i3=0;
 #pragma concurrent
-          for ( j = jps-shw ; j <= jpe+shw ; j++ ) {
+          for ( j = JMAX(jps-shw) ; j <= JMIN(jpe+shw) ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
               qi = (int *)((buf + typesize*( (ipe-ims+1) + (ime-ims+1)*(
                                             (k-kms) + (j-jms)*(kme-kms+1))))) ;
@@ -490,7 +478,7 @@ fprintf(stderr,"X pack right nbytes = %d RANGE = %d\n",nbytes, RANGE(  jps-shw, 
           }
           xp_curs += i3*typesize;
 #else
-          for ( j = jps-shw ; j <= jpe+shw ; j++ ) {
+          for ( j = JMAX(jps-shw) ; j <= JMIN(jpe+shw) ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
 	      pi = (int *)(p+xp_curs) ;
 	      i = ipe+1 ;
@@ -505,7 +493,7 @@ fprintf(stderr,"X pack right nbytes = %d RANGE = %d\n",nbytes, RANGE(  jps-shw, 
 #endif
 	}
 	else {
-          for ( j = jps-shw ; j <= jpe+shw ; j++ ) {
+          for ( j = JMAX(jps-shw) ; j <= JMIN(jpe+shw) ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
               for ( i = ipe+1 ; i <= ipe+shw ; i++ ) {
                 for ( t = 0 ; t < typesize ; t++ ) {
@@ -525,9 +513,6 @@ fprintf(stderr,"X pack right nbytes = %d RANGE = %d\n",nbytes, RANGE(  jps-shw, 
       p = buffer_for_proc( xm , 0 , da_buf ) ;
       if ( pu == 0 ) {
         nbytes = buffer_size_for_proc( xm, da_buf ) ;
-#if 0
-fprintf(stderr,"X pack left nbytes = %d RANGE = %d\n",nbytes, RANGE(  jps-shw, jpe+shw, kps, kpe, ips, ips+shw-1, 1, typesize )  ) ;
-#endif
         if ( xm_curs + RANGE( jps-shw, jpe+shw, kps, kpe, ips, ips+shw-1, 1, typesize ) > nbytes ) {
 	  fprintf(stderr,"memory overwrite in rsl_lite_pack, X left , %d > %d\n",
 	      xm_curs + RANGE( jps-shw, jpe+shw, kps, kpe, ips, ips+shw-1, 1, typesize ), nbytes ) ;
@@ -538,7 +523,7 @@ fprintf(stderr,"X pack left nbytes = %d RANGE = %d\n",nbytes, RANGE(  jps-shw, j
           pi = (int *)(p+xm_curs) ;
           i3=0;
 #pragma concurrent
-          for ( j = jps-shw ; j <= jpe+shw ; j++ ) {
+          for ( j = JMAX(jps-shw) ; j <= JMIN(jpe+shw) ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
               qi = (int *)((buf + typesize*( (ips-ims) + (ime-ims+1)*(
                                             (k-kms) + (j-jms)*(kme-kms+1))))) ;
@@ -549,7 +534,7 @@ fprintf(stderr,"X pack left nbytes = %d RANGE = %d\n",nbytes, RANGE(  jps-shw, j
           }
           xm_curs += i3*typesize;
 #else
-          for ( j = jps-shw ; j <= jpe+shw ; j++ ) {
+          for ( j = JMAX(jps-shw) ; j <= JMIN(jpe+shw) ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
 	      pi = (int *)(p+xm_curs) ;
 	      i = ips ;
@@ -564,7 +549,7 @@ fprintf(stderr,"X pack left nbytes = %d RANGE = %d\n",nbytes, RANGE(  jps-shw, j
 #endif
 	}
 	else {
-          for ( j = jps-shw ; j <= jpe+shw ; j++ ) {
+          for ( j = JMAX(jps-shw) ; j <= JMIN(jpe+shw) ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
               for ( i = ips ; i <= ips+shw-1 ; i++ ) {
                 for ( t = 0 ; t < typesize ; t++ ) {
@@ -584,7 +569,7 @@ fprintf(stderr,"X pack left nbytes = %d RANGE = %d\n",nbytes, RANGE(  jps-shw, j
           pi = (int *)(p+xm_curs) ;
           i3=0;
 #pragma concurrent
-          for ( j = jps-shw ; j <= jpe+shw ; j++ ) {
+          for ( j = JMAX(jps-shw) ; j <= JMIN(jpe+shw) ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
               qi = (int *)((buf + typesize*( (ips-shw-ims) + (ime-ims+1)*(
                                             (k-kms) + (j-jms)*(kme-kms+1))))) ;
@@ -595,7 +580,7 @@ fprintf(stderr,"X pack left nbytes = %d RANGE = %d\n",nbytes, RANGE(  jps-shw, j
           }
           xm_curs += i3*typesize;
 #else
-          for ( j = jps-shw ; j <= jpe+shw ; j++ ) {
+          for ( j = JMAX(jps-shw) ; j <= JMIN(jpe+shw) ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
 	      pi = (int *)(p+xm_curs) ;
 	      i = ips-shw ;
@@ -610,7 +595,7 @@ fprintf(stderr,"X pack left nbytes = %d RANGE = %d\n",nbytes, RANGE(  jps-shw, j
 #endif
 	}
 	else {
-          for ( j = jps-shw ; j <= jpe+shw ; j++ ) {
+          for ( j = JMAX(jps-shw) ; j <= JMIN(jpe+shw) ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
               for ( i = ips-shw ; i < ips ; i++ ) {
                 for ( t = 0 ; t < typesize ; t++ ) {

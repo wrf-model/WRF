@@ -314,7 +314,7 @@ if ( $COMPARE_BASELINE != FALSE ) then
 	endif
 endif
 
-#	Set the input/output format type (currently 2 or 5 OK).
+#	Set the input/output format type (currently 1, 2 or 5 OK).
 #	Binary		NetCDF				PHDF, IBM	GriB, history only
 #	1		2		3		4		5
 

@@ -55,6 +55,7 @@ set OLD_TEXT = ( "NESTED = FALSE"		\
                  "ESMF_LIB = FALSE"		\
                  "QUILT = FALSE"		\
                  "IO_FORM = 2"			\
+                 "IO_FORM = 2"			\
                )
 
 set NEW_TEXT = ( "NESTED = FALSE"		\
@@ -64,6 +65,7 @@ set NEW_TEXT = ( "NESTED = FALSE"		\
                  "RSL_LITE = TRUE"		\
                  "ESMF_LIB = TRUE"		\
                  "QUILT = TRUE"			\
+                 "IO_FORM = 1"			\
                  "IO_FORM = 5"			\
                )
 
@@ -76,6 +78,7 @@ set NAME     = ( "Standard"			\
                  "RSL_LITE"			\
                  "ESMF_Library"			\
                  "Quilting"			\
+                 "Binary_IO"			\
                  "GriB1_Output"			\
                )
 
@@ -93,12 +96,13 @@ set TOAST    = ( "NONE"				\
                  "ONLY_AIX"			\
                  "NONE"				\
                  "NONE"				\
+                 "NONE"				\
                )
 
 #	We need the regtest.csh file, badly.
 
 if ( ! -e regtest.csh ) then
-	echo, we need regtest.csh in this dir
+	echo we need regtest.csh in this dir
 	echo "supply-ez vous, s'il vous plait"
 	exit ( 1 )
 endif

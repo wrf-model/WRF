@@ -100,7 +100,7 @@ PROGRAM ideal
    CALL med_initialdata_output( head_grid , config_flags )
 
    CALL       wrf_debug (   0 , 'wrf: SUCCESS COMPLETE IDEAL INIT' )
-
+   CALL med_shutdown_io ( head_grid , config_flags )
    CALL wrf_shutdown
 
 END PROGRAM ideal
@@ -117,7 +117,7 @@ SUBROUTINE med_initialdata_output ( grid , config_flags )
 
   ! Arguments
    TYPE(domain)  , POINTER                    :: grid
-   TYPE (grid_config_rec_type) , INTENT(INOUT)   :: config_flags
+   TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
   ! Local
    INTEGER                :: time_step_begin_restart
    INTEGER                :: fid , ierr , id
@@ -130,7 +130,6 @@ SUBROUTINE med_initialdata_output ( grid , config_flags )
    grid%input_from_file = .false.
    CALL init_domain (  grid )
    CALL calc_current_date ( grid%id, 0.)
-   CALL model_to_grid_config_rec ( 1 , model_config_rec , config_flags )
 
    CALL construct_filename1 ( inpname , 'wrfinput' , grid%id , 2 )
    CALL open_w_dataset ( id, TRIM(inpname) , grid , config_flags , output_model_input , "DATASET=INPUT", ierr )
@@ -141,8 +140,9 @@ SUBROUTINE med_initialdata_output ( grid , config_flags )
    CALL output_model_input ( id, grid , config_flags , ierr )
    CALL close_dataset ( id , config_flags, "DATASET=INPUT" )
 
-   if ( config_flags%specified ) THEN
 
+   IF ( config_flags%specified ) THEN
+ 
      CALL construct_filename1 ( bdyname , 'wrfbdy' , grid%id , 2 )
      CALL open_w_dataset ( id, TRIM(bdyname) , grid , config_flags , output_boundary , "DATASET=BOUNDARY", ierr )
      IF ( ierr .NE. 0 ) THEN
@@ -151,8 +151,9 @@ SUBROUTINE med_initialdata_output ( grid , config_flags )
      ENDIF
      CALL output_boundary ( id, grid , config_flags , ierr )
      CALL close_dataset ( id , config_flags , "DATASET=BOUNDARY" )
-
+ 
    ENDIF
 
    RETURN
 END SUBROUTINE med_initialdata_output
+

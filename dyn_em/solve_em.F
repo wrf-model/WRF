@@ -75,6 +75,8 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
    REAL :: dt_rk, dts_rk, dtm, wmax
    LOGICAL :: leapfrog
 
+#include <bench_solve_em_def.inc>
+
 #define COPY_IN
 #include <em_scalar_derefs.inc>
 #ifdef DM_PARALLEL
@@ -116,6 +118,8 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
 ! A more detailed description of these sections follows.
 !</pre>
 !</DESCRIPTION>
+
+#include <bench_solve_em_init.inc>
 
 !
 !  set leapfrog or runge-kutta solver (2nd or 3rd order)
@@ -238,6 +242,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
 !
    CALL wrf_debug ( 200 , ' call rk_step_prep ' )
 
+BENCH_START(step_prep_tim)
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij )
 
@@ -259,6 +264,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
                            k_start, k_end                   )
 
    END DO
+BENCH_END(step_prep_tim)
 
 #ifdef DM_PARALLEL
 !-----------------------------------------------------------------------
@@ -303,6 +309,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
 
 !   CALL set_tiles ( grid , ids , ide , jds , jde , ips-1 , ipe+1 , jps-1 , jpe+1 )
 
+BENCH_START(set_phys_bc_tim)
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij )
 
@@ -328,12 +335,14 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
                                k_start, k_end                )
 
    END DO
+BENCH_END(set_phys_bc_tim)
 
     rk_step_is_one : IF (rk_step == 1) THEN ! only need to initialize diffusion tendencies
 
  ! initialize all tendencies to zero in order to update physics
  ! tendencies first (separate from dry dynamics).
  
+BENCH_START(init_zero_tend_tim)
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
 
@@ -351,6 +360,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
                                   k_start, k_end                   )
 
      END DO
+BENCH_END(init_zero_tend_tim)
 
 #ifdef DM_PARALLEL
 #     include "HALO_EM_PHYS_A.inc"
@@ -372,7 +382,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
 !</DESCRIPTION>
 
 
-
+BENCH_START(phy_prep_tim)
       !$OMP PARALLEL DO   &
       !$OMP PRIVATE ( ij )
       DO ij = 1 , grid%num_tiles
@@ -397,6 +407,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
                          grid%j_start(ij), grid%j_end(ij),       &
                          k_start, k_end                         )
       ENDDO
+BENCH_END(phy_prep_tim)
 
 !  physics to implement
 
@@ -406,6 +417,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
 ! radiation
 
          CALL wrf_debug ( 200 , ' call radiation_driver' )
+BENCH_START(rad_driver_tim)
          CALL radiation_driver(itimestep,dt,                         &
                     RTHRATENLW,RTHRATENSW,RTHRATEN,GLW,GSW,          &
                     SWDOWN,                                          &
@@ -426,11 +438,14 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
                     grid%i_start, min(grid%i_end, ide-1),            &
                     grid%j_start, min(grid%j_end, jde-1),            &
                     k_start    , min(k_end,kde-1) , grid%num_tiles   )
+BENCH_END(rad_driver_tim)
 
 
 
 !********* Surface driver
 ! surface
+
+BENCH_START(surf_driver_tim)
 
       CALL wrf_debug ( 200 , ' call surface_driver' )
       CALL surface_driver(                                          &
@@ -455,11 +470,13 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
      &          ,grid%i_start, min(grid%i_end, ide-1)                 &
      &          ,grid%j_start, min(grid%j_end, jde-1)                 &
      &          ,k_start    , min(k_end,kde-1) , grid%num_tiles       )
+BENCH_END(surf_driver_tim)
 
 !*********
 ! pbl
 
       CALL wrf_debug ( 200 , ' call pbl_driver' )
+BENCH_START(pbl_driver_tim)
       CALL pbl_driver(itimestep,dt,u_frame,v_frame                    &
      &           ,RUBLTEN,RVBLTEN,RTHBLTEN                            &
      &           ,RQVBLTEN,RQCBLTEN,RQIBLTEN                          &
@@ -479,11 +496,13 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
      &           ,grid%i_start, min(grid%i_end,ide-1)                 &
      &           ,grid%j_start, min(grid%j_end,jde-1)                 &
      &           ,k_start    , min(k_end,kde-1) , grid%num_tiles  )
+BENCH_END(pbl_driver_tim)
 
 ! cumulus para.
 
           CALL wrf_debug ( 200 , ' call cumulus_driver' )
 
+BENCH_START(cu_driver_tim)
          CALL cumulus_driver(itimestep,dt,DX,num_3d_m,                 &
                      RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,              &
                      RQICUTEN,RQSCUTEN,RAINC,RAINCV,NCA,               &
@@ -503,9 +522,11 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
                      grid%i_start, min(grid%i_end, ide-1),             &
                      grid%j_start, min(grid%j_end, jde-1),             &
                      k_start    , min(k_end,kde-1) , grid%num_tiles    )
+BENCH_END(cu_driver_tim)
 
 ! calculate_phy_tend
 
+BENCH_START(cal_phy_tend)
       !$OMP PARALLEL DO   &
       !$OMP PRIVATE ( ij )
 
@@ -525,11 +546,13 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
                      k_start    , min(k_end,kde-1)                     )
 
       ENDDO
+BENCH_END(cal_phy_tend)
 
 ! tke diffusion
 
      IF(diff_opt .eq. 2 .OR. diff_opt .eq. 1) THEN
 
+BENCH_START(comp_diff_metrics_tim)
        !$OMP PARALLEL DO   &
        !$OMP PRIVATE ( ij )
 
@@ -544,11 +567,13 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
                                       grid%j_start(ij), grid%j_end(ij),      &
                                       k_start    , k_end                    )
        ENDDO
+BENCH_END(comp_diff_metrics_tim)
 
 #ifdef DM_PARALLEL
 #  include "PERIOD_BDY_EM_A1.inc"
 #endif
 
+BENCH_START(tke_diff_bc_tim)
        DO ij = 1 , grid%num_tiles
 
           CALL wrf_debug ( 200 , ' call bc for diffusion_metrics ' )
@@ -589,10 +614,13 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
                                   k_start    , k_end                 )
 
        ENDDO
+BENCH_END(tke_diff_bc_tim)
 
 #ifdef DM_PARALLEL
 #     include "HALO_EM_TKE_C.inc"
 #endif
+
+BENCH_START(deform_div_tim)
 
        !$OMP PARALLEL DO   &
        !$OMP PRIVATE ( ij )
@@ -612,6 +640,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
                                     grid%j_start(ij), grid%j_end(ij),    &
                                     k_start    , k_end                  )
        ENDDO
+BENCH_END(deform_div_tim)
 
 
 #ifdef DM_PARALLEL
@@ -621,6 +650,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
 
 ! calculate tke, kmh, and kmv
 
+BENCH_START(calc_tke_tim)
        !$OMP PARALLEL DO   &
        !$OMP PRIVATE ( ij )
 
@@ -643,6 +673,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
                                 grid%j_start(ij), grid%j_end(ij),            &
                                 k_start    , k_end                          )
        ENDDO
+BENCH_END(calc_tke_tim)
 
 #ifdef DM_PARALLEL
 #     include "HALO_EM_TKE_E.inc"
@@ -655,6 +686,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
 #      include "PERIOD_BDY_EM_CHEM.inc"
 #endif
 
+BENCH_START(phy_bc_tim)
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
 
@@ -673,6 +705,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
                             grid%j_start(ij), grid%j_end(ij),                      &
                             k_start    , k_end                           )
      ENDDO
+BENCH_END(phy_bc_tim)
 
 #ifdef DM_PARALLEL
 !-----------------------------------------------------------------------
@@ -719,6 +752,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
       ENDIF
 #endif
 
+BENCH_START(update_phy_ten_tim)
       !$OMP PARALLEL DO   &
       !$OMP PRIVATE ( ij )
 
@@ -737,9 +771,11 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
                           k_start, k_end                               )
 
       END DO
+BENCH_END(update_phy_ten_tim)
 
      IF( diff_opt .eq. 2 .and. km_opt .eq. 2 ) THEN
 
+BENCH_START(tke_rhs_tim)
        !$OMP PARALLEL DO   &
        !$OMP PRIVATE ( ij )
 
@@ -759,6 +795,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
                           k_start    , k_end                         )
 
        ENDDO
+BENCH_END(tke_rhs_tim)
 
      ENDIF
 
@@ -769,6 +806,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
 
        IF (bl_pbl_physics .eq. 0) THEN
 
+BENCH_START(vert_diff_tim)
          !$OMP PARALLEL DO   &
          !$OMP PRIVATE ( ij )
          DO ij = 1 , grid%num_tiles
@@ -791,9 +829,11 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
                                       k_start    , k_end                        )
 
          ENDDO
+BENCH_END(vert_diff_tim)
 
        ENDIF
 !
+BENCH_START(hor_diff_tim)
        !$OMP PARALLEL DO   &
        !$OMP PRIVATE ( ij )
        DO ij = 1 , grid%num_tiles
@@ -818,11 +858,13 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
                                       grid%j_start(ij), grid%j_end(ij),      &
                                       k_start    , k_end                    )
        ENDDO
+BENCH_END(hor_diff_tim)
 
      ENDIF
 
      END IF rk_step_is_one
 
+BENCH_START(rk_tend_tim)
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij )
    DO ij = 1 , grid%num_tiles
@@ -851,7 +893,9 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
                          grid%j_start(ij), grid%j_end(ij),                &
                          k_start, k_end                                  )
    END DO
+BENCH_END(rk_tend_tim)
 
+BENCH_START(relax_bdy_dry_tim)
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij )
    DO ij = 1 , grid%num_tiles
@@ -910,6 +954,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
      ENDIF
 
    END DO
+BENCH_END(relax_bdy_dry_tim)
 
 !<DESCRIPTION>
 !<pre>
@@ -935,6 +980,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
 !</pre>
 !</DESCRIPTION>
 
+BENCH_START(small_step_prep_tim)
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij )
 
@@ -988,6 +1034,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
 
 
    ENDDO
+BENCH_END(small_step_prep_tim)
 
 
 #ifdef DM_PARALLEL
@@ -1025,6 +1072,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
 #      include "PERIOD_BDY_EM_B.inc"
 #endif
 
+BENCH_START(set_phys_bc2_tim)
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij )
 
@@ -1108,6 +1156,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
                                  grid%j_start(ij), grid%j_end(ij) )
 
     END DO
+BENCH_END(set_phys_bc2_tim)
 
    small_steps : DO iteration = 1 , number_of_small_timesteps
 
@@ -1117,11 +1166,13 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
 #      include "PERIOD_BDY_EM_B.inc"
 #endif
 
+
       !$OMP PARALLEL DO   &
       !$OMP PRIVATE ( ij )
 
       DO ij = 1 , grid%num_tiles
 
+BENCH_START(advance_uv_tim)
          CALL advance_uv ( u_2, ru_tend, v_2, rv_tend,       &
                            p, pb,                            &
                            ph_2, php, alt, al, mu_2,         &
@@ -1136,7 +1187,9 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
                            grid%i_start(ij), grid%i_end(ij), &
                            grid%j_start(ij), grid%j_end(ij), &
                            k_start    , k_end               )
+BENCH_END(advance_uv_tim)
 
+BENCH_START(spec_bdy_uv_tim)
          IF( config_flags%specified .or. config_flags%nested ) THEN
            CALL spec_bdyupdate(u_2, ru_tend, dts_rk,      &
                                'u'         , config_flags, &
@@ -1159,6 +1212,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
                                k_start    , k_end             )
 
          ENDIF
+BENCH_END(spec_bdy_uv_tim)
 
       END DO
 
@@ -1183,6 +1237,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
 
         !  advance the mass in the column, theta, and calculate ww
 
+BENCH_START(advance_mu_t_tim)
         CALL advance_mu_t( ww, ww1, u_2, u_save, v_2, v_save, &
                            mu_2, mut, muave, muts, muu, muv,  &
                            mudf, ru_m, rv_m, ww_m,            &
@@ -1197,7 +1252,9 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
                            grid%i_start(ij), grid%i_end(ij),  &
                            grid%j_start(ij), grid%j_end(ij),  &
                            k_start    , k_end                )
+BENCH_END(advance_mu_t_tim)
 
+BENCH_START(spec_bdy_t_tim)
          IF( config_flags%specified .or. config_flags%nested ) THEN
 
            CALL spec_bdyupdate(t_2, t_tend, dts_rk,      &
@@ -1230,12 +1287,14 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
                                grid%j_start(ij), grid%j_end(ij),         &
                                1    , 1             )
          ENDIF
+BENCH_END(spec_bdy_t_tim)
 
          ! sumflux accumulates the time-averged mass flux
          ! (time averaged over the acoustic steps) for use
          ! in the scalar advection (flux divergence).  Using
          ! time averaged values gives us exact scalar conservation.
 
+BENCH_START(sumflux_tim)
          CALL sumflux ( u_2, v_2, ww,                         &
                         u_save, v_save, ww1,                  &
                         muu, muv,                             &
@@ -1247,11 +1306,13 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
                         grid%i_start(ij), grid%i_end(ij),     &
                         grid%j_start(ij), grid%j_end(ij),     &
                         k_start    , k_end                   )
+BENCH_END(sumflux_tim)
 
          ! small (acoustic) step for the vertical momentum,
          ! density and coupled potential temperature.
 
 
+BENCH_START(advance_w_tim)
         IF ( non_hydrostatic ) THEN
           CALL advance_w( w_2, rw_tend, ww, u_2, v_2,       &
                           mu_2, mut, muave, muts,           &
@@ -1269,9 +1330,11 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
                           grid%j_start(ij), grid%j_end(ij), &
                           k_start    , k_end               )
         ENDIF
+BENCH_END(advance_w_tim)
 
         IF( config_flags%specified .or. config_flags%nested ) THEN
 
+BENCH_START(spec_bdynhyd_tim)
            IF (non_hydrostatic)  THEN
              CALL spec_bdyupdate_ph( ph_save, ph_2, ph_tend, mu_tend, muts, dts_rk, &
                                      'h'         , config_flags, &
@@ -1304,8 +1367,10 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
                                        k_start    , k_end             )
              ENDIF
           ENDIF
+BENCH_END(spec_bdynhyd_tim)
         ENDIF
 
+BENCH_START(cald_p_rho_tim)
         CALL calc_p_rho( al, p, ph_2,                      &
                          alt, t_2, t_save, c2a, pm1,       &
                          mu_2, muts, znu, t0,              &
@@ -1316,6 +1381,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
                          grid%i_start(ij), grid%i_end(ij), &
                          grid%j_start(ij), grid%j_end(ij), &
                          k_start    , k_end               )
+BENCH_END(cald_p_rho_tim)
 
    ENDDO
 
@@ -1341,6 +1407,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
 #      include "PERIOD_BDY_EM_B3.inc"
 #endif
 
+BENCH_START(phys_bc_tim)
       !$OMP PARALLEL DO   &
       !$OMP PRIVATE ( ij )
 
@@ -1394,6 +1461,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
                                  grid%j_start(ij), grid%j_end(ij) )
 
       END DO
+BENCH_END(phys_bc_tim)
 
    END DO small_steps
 
@@ -1408,6 +1476,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
       ! full perturbation variables.
       ! first get updated mu at u and v points
 
+BENCH_START(calc_mu_uv_tim)
       CALL calc_mu_uv_1 ( config_flags,                     &
                           muts, muus, muvs,                 &
                           ids, ide, jds, jde, kds, kde,     &
@@ -1415,7 +1484,8 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
                           grid%i_start(ij), grid%i_end(ij), &
                           grid%j_start(ij), grid%j_end(ij), &
                           k_start    , k_end               )
-
+BENCH_END(calc_mu_uv_tim)
+BENCH_START(small_step_finish_tim)
       CALL small_step_finish( u_2, u_1, v_2, v_1, w_2, w_1,     &
                               t_2, t_1, ph_2, ph_1, ww, ww1,    &
                               mu_2, mu_1,                       &
@@ -1428,6 +1498,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
                               grid%i_start(ij), grid%i_end(ij), &
                               grid%j_start(ij), grid%j_end(ij), &
                               k_start    , k_end               )
+BENCH_END(small_step_finish_tim)
 
    END DO
 
@@ -1469,6 +1540,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
 
        CALL wrf_debug ( 200 , ' call rk_scalar_tend' )
 
+BENCH_START(rk_scalar_tend_tim)
        CALL rk_scalar_tend (  im, im, config_flags,             &
                               rk_step, dt_rk,                   &
                               ru_m, rv_m, ww_m,                 &
@@ -1487,7 +1559,9 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
                               grid%i_start(ij), grid%i_end(ij), &
                               grid%j_start(ij), grid%j_end(ij), &
                               k_start    , k_end               )
+BENCH_END(rk_scalar_tend_tim)
 
+BENCH_START(rlx_bdy_scalar_tim)
      IF( (config_flags%specified .or. config_flags%nested) .and. rk_step == 1 ) THEN 
 
        IF(im .eq. P_QV)THEN
@@ -1655,6 +1729,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
 
      ENDIF ! b.c test for moist nested boundary condition
 
+BENCH_END(rlx_bdy_scalar_tim)
 
    ENDDO moist_tile_loop_1
 
@@ -1665,6 +1740,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
 
        CALL wrf_debug ( 200 , ' call rk_update_scalar' )
 
+BENCH_START(update_scal_tim)
        CALL rk_update_scalar( im, im,                           &
                               moist_1(ims,kms,jms,im),          &
                               moist_2(ims,kms,jms,im),          &
@@ -1678,7 +1754,9 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
                               grid%i_start(ij), grid%i_end(ij), &
                               grid%j_start(ij), grid%j_end(ij), &
                               k_start    , k_end               )
+BENCH_END(update_scal_tim)
 
+BENCH_START(flow_depbdy_tim)
        IF( config_flags%specified ) THEN
          IF(im .ne. P_QV)THEN
            CALL flow_dep_bdy  (  moist_2(ims,kms,jms,im),                     &
@@ -1692,7 +1770,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
                                k_start, k_end                               )
          ENDIF
        ENDIF
-
+BENCH_END(flow_depbdy_tim)
 
    ENDDO moist_tile_loop_2
 
@@ -1700,6 +1778,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
 
  ENDIF moist_scalar_advance
 
+BENCH_START(tke_adv_tim)
  TKE_advance: IF (km_opt .eq. 2) then
 
 #ifdef DM_PARALLEL
@@ -1783,6 +1862,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
    ENDDO tke_tile_loop_2
 
    END IF TKE_advance
+BENCH_END(tke_adv_tim)
 
 !  next the chemical species
 
@@ -1864,6 +1944,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
    !$OMP PRIVATE ( ij )
    DO ij = 1 , grid%num_tiles
 
+BENCH_START(calc_p_rho_tim)
      CALL calc_p_rho_phi( moist_2, num_3d_m,                &
                           al, alb, mu_2, muts,              &
                           ph_2, p, pb, t_2,                 &
@@ -1874,8 +1955,10 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
                           grid%i_start(ij), grid%i_end(ij), &
                           grid%j_start(ij), grid%j_end(ij), &
                           k_start    , k_end               )
+BENCH_END(calc_p_rho_tim)
 
-     IF (.not. non_hydrostatic)                               &
+BENCH_START(diag_w_tim)
+     IF (.not. non_hydrostatic) THEN
      CALL diagnose_w( ph_tend, ph_2, ph_1, w_2, muts, dt_rk,  &
                       u_2, v_2, ht,                           &
                       cf1, cf2, cf3, rdx, rdy, msft,          &
@@ -1884,7 +1967,8 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
                       grid%i_start(ij), grid%i_end(ij),       &
                       grid%j_start(ij), grid%j_end(ij),       &
                       k_start    , k_end                     )
-
+     ENDIF
+BENCH_END(diag_w_tim)
 
    ENDDO
 
@@ -1936,6 +2020,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
 #  include "PERIOD_BDY_EM_CHEM2.inc"
 #endif
 
+BENCH_START(bc_end_tim)
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij )
 
@@ -1996,6 +2081,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
       END IF
 
     END DO tile_bc_loop_1
+BENCH_END(bc_end_tim)
 
 
 #ifdef DM_PARALLEL
@@ -2071,6 +2157,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
 
    DO ij = 1 , grid%num_tiles
 
+BENCH_START(advance_ppt_tim)
       CALL wrf_debug ( 200 , ' call advance_ppt' )
       CALL advance_ppt(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN, &
                      RQICUTEN,RQSCUTEN,RAINC,RAINCV,NCA,    &
@@ -2080,6 +2167,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
                      grid%i_start(ij), grid%i_end(ij),      &
                      grid%j_start(ij), grid%j_end(ij),      &
                      k_start    , k_end                    )
+BENCH_END(advance_ppt_tim)
 
    ENDDO
 
@@ -2116,7 +2204,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
        jte = min(grid%j_end(ij),jde-1-sz)
 
        CALL wrf_debug ( 200 , ' call moist_physics_prep' )
-
+BENCH_START(moist_physics_prep_tim)
        CALL moist_physics_prep_em( t_2, t_1, t0, rho,                &
                                    al, alb, p, p8w, p0, pb,          &
                                    ph_2, phb, pi_phy, p_phy,         &
@@ -2127,10 +2215,12 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
                                    ims, ime, jms, jme, kms, kme,     &
                                    its, ite, jts, jte,               &
                                    k_start    , k_end               )
+BENCH_END(moist_physics_prep_tim)
    END DO scalar_tile_loop_1a
 
        CALL wrf_debug ( 200 , ' call microphysics_driver' )
 
+BENCH_START(micro_driver_tim)
        sr = 0.
        CALL microphysics_driver(t_2,moist_2, moist_1, w_2,                  &
                                 rho, pi_phy, p_phy, RAINNC, RAINNCV,        &
@@ -2145,8 +2235,10 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
                                 grid%i_start, min(grid%i_end, ide-1),       &
                                 grid%j_start, min(grid%j_end, jde-1),       &
                                 k_start    , min(k_end,kde-1) , grid%num_tiles )
+BENCH_END(micro_driver_tim)
 
        CALL wrf_debug ( 200 , ' call moist_physics_finish' )
+BENCH_START(moist_phys_end_tim)
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij, its, ite, jts, jte )
 
@@ -2185,6 +2277,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
                         k_start    , k_end                     )
 
    END DO scalar_tile_loop_1b
+BENCH_END(moist_phys_end_tim)
 
   ENDIF
 
@@ -2210,6 +2303,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
 
     DO ij = 1 , grid%num_tiles
 
+BENCH_START(time_filt_tim)
       call time_filter( u_1, u_2, u_save,                 &
                         v_1, v_2, v_save,                 &
                         w_1, w_2, w_save,                 &
@@ -2222,6 +2316,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
                         grid%i_start(ij), grid%i_end(ij), &
                         grid%j_start(ij), grid%j_end(ij), &
                         k_start    , k_end               )
+BENCH_END(time_filt_tim)
 
     ENDDO
 
@@ -2296,6 +2391,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij )
 
+BENCH_START(bc_2d_tim)
    tile_bc_loop_2: DO ij = 1 , grid%num_tiles
 
      CALL wrf_debug ( 200 , ' call set_phys_bc_dry_2' )
@@ -2366,6 +2462,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
      END DO chem_species_bdy_loop_2
 
    END DO tile_bc_loop_2
+BENCH_END(bc_2d_tim)
 
    IF( config_flags%specified .or. config_flags%nested ) THEN 
      dtbc = dtbc + dt
@@ -2418,6 +2515,8 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
 #endif
 
    CALL wrf_debug ( 200 , ' call end of solve_em' )
+
+#include <bench_solve_em_end.inc>
 
 #define COPY_OUT
 #include <em_scalar_derefs.inc>

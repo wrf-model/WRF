@@ -399,8 +399,51 @@ SUBROUTINE microphysics_driver(th_phy, moist_new, moist_old, w,        &
                   DO j = jts, jte
                   DO k = kts, kte
                   DO i = its, ite
+                  ENDDO
+                  ENDDO
+                  ENDDO
+               END IF
+            ENDDO
+         END IF
+
+         ! Make sure that the boundary is .GE. 0 if the mp_zero_out option is selected (1 or 2)
+         ! Just do the outer row/col, no interior points.
+
+         IF ( config_flags%mp_zero_out .NE. 0 ) THEN
+            DO n = PARAM_FIRST_SCALAR,n_moist
+               !  bottom row
+               j = jds
+               IF ( ( j .GE. j_start(ij) ) .AND. ( j .LE. MIN( j_end(ij) , jde-1) ) ) THEN
+                  DO k = kts, kte
+                  DO i = i_start(ij) , MIN ( i_end(ij) , ide-1 )
                      moist_new(i,k,j,n) = MAX ( moist_new(i,k,j,n) , 0. )
                   ENDDO
+                  ENDDO
+               END IF
+               !  top row
+               j = jde-1
+               IF ( ( j .GE. j_start(ij) ) .AND. ( j .LE. MIN( j_end(ij) , jde-1) ) ) THEN
+                  DO k = kts, kte
+                  DO i = i_start(ij) , MIN ( i_end(ij) , ide-1 )
+                     moist_new(i,k,j,n) = MAX ( moist_new(i,k,j,n) , 0. )
+                  ENDDO
+                  ENDDO
+               END IF
+               !  left column
+               i = ids
+               IF ( ( i .GE. i_start(ij) ) .AND. ( i .LE. MIN( i_end(ij) , ide-1) ) ) THEN
+                  DO j = j_start(ij) , MIN ( j_end(ij) , jde-1 )
+                  DO k = kts, kte
+                     moist_new(i,k,j,n) = MAX ( moist_new(i,k,j,n) , 0. )
+                  ENDDO
+                  ENDDO
+               END IF
+               !  right column
+               i = ide-1
+               IF ( ( i .GE. i_start(ij) ) .AND. ( i .LE. MIN( i_end(ij) , ide-1) ) ) THEN
+                  DO j = j_start(ij) , MIN ( j_end(ij) , jde-1 )
+                  DO k = kts, kte
+                     moist_new(i,k,j,n) = MAX ( moist_new(i,k,j,n) , 0. )
                   ENDDO
                   ENDDO
                END IF

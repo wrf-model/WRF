@@ -190,10 +190,7 @@ manclean :
 	/bin/rm -fr man
 	cd docs ; make manclean
 
-clean :
-	/bin/rm -f *.o
-
-super : 
+superclean : 
 	/bin/rm -f *.o librsl.a rsl.inc
 
 ###

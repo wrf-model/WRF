@@ -992,7 +992,6 @@ rsl_ready_bcast( d_p, n_p, msize_p )
     rsl_comp_bcast( d_p, n_p ) ;
     if ( s_ninfo->bcast_Xlist != NULL )
     {
-      fprintf(stderr,"calling destroy_list\n") ;
       destroy_list( &(s_ninfo->bcast_Xlist), destroy_par_info ) ;
     }
     s_ninfo->bcast_Xlist = NULL ;

@@ -695,13 +695,10 @@ subroutine ext_ncd_open_for_read(DatasetName, Comm1, Comm2, SysDepInfo, DataHand
   integer       , INTENT(OUT)  :: DataHandle
   integer       , INTENT(OUT)  :: Status
   DataHandle = 0   ! dummy setting to quiet warning message
-write(0,*)'ext_ncd_open_for_read calling ext_ncd_open_for_read_begin'
   CALL ext_ncd_open_for_read_begin( DatasetName, Comm1, Comm2, SysDepInfo, DataHandle, Status )
-write(0,*)'ext_ncd_open_for_read calling ext_ncd_open_for_read_commit', DataHandle, Status
   IF ( Status .EQ. WRF_NO_ERR ) THEN
     CALL ext_ncd_open_for_read_commit( DataHandle, Status )
   ENDIF
-write(0,*)'ext_ncd_open_for_read back from ext_ncd_open_for_read_commit', DataHandle, Status
   return
 end subroutine ext_ncd_open_for_read
 

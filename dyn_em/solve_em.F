@@ -1575,6 +1575,8 @@ BENCH_START(small_step_finish_tim)
                               u_save, v_save, w_save,           &
                               t_save, ph_save, mu_save,         &
                               msfu, msfv, msft,                 &
+                              h_diabatic,                       &
+                              number_of_small_timesteps,dts_rk, &
                               ids, ide, jds, jde, kds, kde,     &
                               ims, ime, jms, jme, kms, kme,     &
                               grid%i_start(ij), grid%i_end(ij), &

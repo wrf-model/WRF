@@ -4373,7 +4373,6 @@ END SUBROUTINE phy_prep
      DO k = k_start, k_end
      DO i = i_start, i_end
 
-       t_new(i,k,j) = t_new(i,k,j)-h_diabatic(i,k,j)*dt
        h_diabatic(i,k,j) = t_new(i,k,j)
        t_new(i,k,j) = t_new(i,k,j) + t0
        t_old(i,k,j) = t_old(i,k,j) + t0

@@ -202,7 +202,9 @@ RSL_TO_OH_INFO ( t_p, o_p, msize_p, seed_p,
       q = RSL_MALLOC( rsl_hemi_rec_t, 1 ) ;
       q->next = s_tinfo->other_hemi_procbufs[P] ;
     }
+#ifdef DEBUGGAL
 fprintf(stderr,">>>> %d %d \n",s_oig, s_oig) ;
+#endif
     q->oig = s_oig ;
     q->ojg = s_ojg ;
     q->data = NULL ;
@@ -263,11 +265,13 @@ RSL_TO_OH_MSG ( nbuf_p, buf )
     s_q1->data = RSL_MALLOC( char, s_msize ) ;
     s_q1->curs = 0 ;
   }
+#ifdef DEBUGGAL
 {
 int *dp ;
 dp = (int*) buf ;
 fprintf(stderr,"RSL_TO_OH_MSG: %d %d %d\n",s_oig,s_ojg,*dp) ;
 }
+#endif
   bcopy( buf, &(s_q1->data[s_q1->curs]), nbuf ) ;
   s_q1->curs += nbuf ;
 }
@@ -298,7 +302,9 @@ RSL_FORCE_HEMI ()
       msglen = s_msize * s_tinfo->hemi_recvPlist[P] + 3*sizeof(int) ;
       recvbuf = buffer_for_proc( P, msglen,  RSL_RECVBUF ) ;
       mtag = MTYPE_FROMTO( MSG_FROM_PARENT, P, rsl_myproc ) ;
+#ifdef DEBUGGAL
 fprintf(stderr,"Posting receive on tag %d\n",mtag ) ;
+#endif
       RSL_RECVBEGIN( recvbuf, msglen, mtag ) ;
       s_tinfo->hemi_recv_tags[P] = mtag ; /* store tag */
     }
@@ -308,7 +314,9 @@ fprintf(stderr,"Posting receive on tag %d\n",mtag ) ;
 
   for ( P = 0 ; P < rsl_nproc_all ; P++ )
   {
+#ifdef DEBUGGAL
 fprintf(stderr,"s_tinfo->hemi_sendPlist[P] %d\n",s_tinfo->hemi_sendPlist[P]) ;
+#endif
     if ( s_tinfo->hemi_sendPlist[P] > 0 )
     {
       int curs ;
@@ -320,11 +328,13 @@ fprintf(stderr,"s_tinfo->hemi_sendPlist[P] %d\n",s_tinfo->hemi_sendPlist[P]) ;
       curs = 0 ;
       for ( q = s_tinfo->other_hemi_procbufs[P] ; q ; q = q->next )
       {
+#ifdef DEBUGGAL
 {
 int *dp ;
 dp = (int *) q->data ;
 fprintf(stderr,"> curs %d, msglen %d msize %d (%d %d) data %d\n", curs, msglen, s_msize, q->oig, q->ojg, *dp ) ;
 }
+#endif
         bcopy( &(q->oig), &(sendbuf[curs]), sizeof(int)) ; curs += sizeof(int) ;
         bcopy( &(q->ojg), &(sendbuf[curs]), sizeof(int)) ; curs += sizeof(int) ;
         bcopy( &(q->curs), &(sendbuf[curs]), sizeof(int)) ; curs += sizeof(int) ;
@@ -333,7 +343,9 @@ fprintf(stderr,"> curs %d, msglen %d msize %d (%d %d) data %d\n", curs, msglen, 
       endofdata = RSL_INVALID ;
       bcopy( &endofdata, &(sendbuf[curs]), sizeof(int)) ; curs += sizeof(int) ;
       mtag = MTYPE_FROMTO( MSG_FROM_PARENT, rsl_myproc, P ) ;
+#ifdef DEBUGGAL
 fprintf(stderr,"sending sendbuf to %d, curs = %d\n",P,curs) ;
+#endif
       RSL_SEND( sendbuf, curs, mtag, P ) ;
     }
   }
@@ -359,7 +371,9 @@ RSL_FROM_TH_INFO ( seed_p, oig_p, ojg_p, retval_p )
 {
   int mtag ;
 
+#ifdef DEBUGGAL
 fprintf(stderr,"RSL_FROM_TH_INFO seed = %d, s_endofdata %d\n",*seed_p,s_endofdata) ;
+#endif
 
   if ( *seed_p == 1 )
   {
@@ -376,25 +390,35 @@ nextproc:
     if ( s_p >= rsl_nproc_all )
     {
       *retval_p = 0 ;
+#ifdef DEBUGGAL
 fprintf(stderr,"EARLY RETURN retval = 0\n") ;
+#endif
       return ;          /* EARLY RETURN */
     }
     mtag = s_tinfo->hemi_recv_tags[s_p] ;
+#ifdef DEBUGGAL
 fprintf(stderr,"Waiting for receive on tag %d\n",mtag ) ;
+#endif
     RSL_RECVEND ( mtag ) ;
+#ifdef DEBUGGAL
 fprintf(stderr,"got receive\n") ;
+#endif
     s_recvbuf = buffer_for_proc( s_p, 0, RSL_RECVBUF ) ;
     s_p++ ;
     s_curs = 0 ;
     s_endofdata = 0 ;
   }
 
+#ifdef DEBUGGAL
 fprintf(stderr,"before bcopy  %d, s_recvbuf %08x\n",s_curs, s_recvbuf) ;
+#endif
 
   bcopy ( &(s_recvbuf[s_curs]), oig_p, sizeof(int) ) ; s_curs += sizeof(int) ;
   if ( *oig_p == RSL_INVALID )
   {
+#ifdef DEBUGGAL
 fprintf(stderr,"hit end of data for s_p %d, %d\n", s_p, *oig_p ) ;
+#endif
     s_endofdata = 1 ;
     goto nextproc ;
   }
@@ -402,11 +426,15 @@ fprintf(stderr,"hit end of data for s_p %d, %d\n", s_p, *oig_p ) ;
   bcopy ( &(s_recvbuf[s_curs]), &s_ndata, sizeof(int) ) ; s_curs += sizeof(int) ;
   bcopy ( &(s_recvbuf[s_curs]), s_pointbuf, s_ndata ) ; s_curs += s_ndata ;
   s_remaining = s_ndata ;
+#ifdef DEBUGGAL
 fprintf(stderr,"s_remaining = %d\n",s_remaining) ;
+#endif
 
   (*oig_p) ++ ;
   (*ojg_p) ++ ;
+#ifdef DEBUGGAL
 fprintf(stderr,"RETURN oig ojg %d %d\n", *oig_p, *ojg_p ) ;
+#endif
   *retval_p = 1 ;
   return ;
 }

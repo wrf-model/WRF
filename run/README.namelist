@@ -208,7 +208,9 @@ Additional ones when running 3DVAR:
                                                   These are recommended numbers. If you would like to use
                                                   any other number, consult the code, know what you are doing.
  seaice_threshold                    = 271      ; tsk < seaice_threshold, if water point and 5-layer slab
-                                                ; scheme, set to land point and permanent ice 
+                                                ; scheme, set to land point and permanent ice; if water point
+                                                ; and Noah scheme, set to land point, permanent ice, set temps
+                                                ; from 3 m to surface, and set smois and sh2o
 
 
  &dynamics

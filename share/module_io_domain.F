@@ -29,7 +29,7 @@ CONTAINS
                             id ,                        &
                             ierr )
    RETURN
-  END SUBROUTINE
+  END SUBROUTINE open_r_dataset
 
   SUBROUTINE open_w_dataset ( id , fname , grid , config_flags , outsub , sysdepinfo, ierr )
    TYPE (domain)             :: grid

@@ -17,8 +17,8 @@ LIB =
 
 .SUFFIXES: .o .c .F
 
-CFLAGS = -w -I$(IDIR) -DMPI -DO2K -O
-FFLAGS = -w -O
+CFLAGS = -w -I$(IDIR) -DMPI -DO2K -O2
+FFLAGS = -w -O2
 
 warning :
 	@ echo 'This makefile is not a top level makefile'

@@ -21,7 +21,6 @@ CORE_OBJ = set_padarea.o set_f_padarea.o domain_def.o within_nest.o  \
       rsl_bcast.o rsl_bcast_f.o rsl_merge.o rsl_merge_f.o \
       rsl_order.o rsl_move.o rsl_debug.o rsl_mon_bcast.o rsl_fopen_f.o \
       rsl_fclose_f.o \
-      rsl_socket.o \
       comp_slabs.o comp_slabs_f.o destroy_list.o comp_world.o \
       cd.o rsl.o default_decomposition.o rsl_child_info.o get_bdy_info.o \
       rsl_remap_state.o patchmap.o boundary_safe.o fill_boundary.o \

@@ -399,6 +399,7 @@ SUBROUTINE microphysics_driver(th_phy, moist_new, moist_old, w,        &
                   DO j = jts, jte
                   DO k = kts, kte
                   DO i = its, ite
+                     moist_new(i,k,j,n) = MAX ( moist_new(i,k,j,n) , 0. )
                   ENDDO
                   ENDDO
                   ENDDO

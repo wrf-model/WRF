@@ -16,7 +16,6 @@
 
 #PBS -V -A acb
 #PBS -lnodes=4:comp -l walltime=40000
-#newline
 
 if ( ( `uname` == Linux ) && ( `hostname | cut -d. -f2-` == fsl.noaa.gov ) ) then
 	source /usr/local/bin/setup-mpi.csh

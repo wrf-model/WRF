@@ -9,7 +9,7 @@
 #define COMPARE(A,B) ( ! strncmp ( A , B , strlen( B ) ) )
 #define COMPARE2(A,B) ( ! strcmp ( A , B ) )
 #define INLINELEN (4*8192)
-#define VARLEN 128
+#define VARLEN 256
 #define MAXRECORDS 8192
 
 int recno = 1 ;
@@ -64,8 +64,13 @@ callgraph ( char * root , int indent , int cut )
             COMPARE( root , "wrf_message" ) ||  COMPARE( root , "wrf_error" )
                                                                       )  return ;
   thisrec = recno++ ;
+#if 0
+  sprintf(tempbuf,"db[%4d] = new dbRecord( %%s, \"%s\", \"../../WRFV2/tools/code_dbase/%s.html\", %d )\n",
+          thisrec,  root, root, indent ) ;
+#else
   sprintf(tempbuf,"db[%4d] = new dbRecord( %%s, \"%s\", \"%s.html\", %d )\n",
           thisrec,  root, root, indent ) ;
+#endif
 
   if (( CALLEES = fopen( fname , "r" )) == NULL ) return ;
 

@@ -215,6 +215,11 @@
 
    CALL wrf_debug ( 100 , 'module_start: start_domain_rk: After call to phy_init' )
 
+#ifdef MCELIO
+   LU_MASK = 0.
+   WHERE ( LU_INDEX .EQ. 16 ) LU_MASK = 1.
+#endif
+
    END IF
 
 !

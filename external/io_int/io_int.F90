@@ -20,6 +20,12 @@ MODULE module_ext_internal
 ! or when open-for-write or open-for-read are committed.  It is set 
 ! to .FALSE. when the first field is read or written.  
   LOGICAL, DIMENSION(int_num_handles) :: first_operation
+! TBH:  file_status is checked by routines that call the WRF IOAPI.  It is not 
+! TBH:  yet cleanly integrated with okay_for_io, int_handle_in_use, 
+! TBH:  okay_to_commit.  Fix this later...  
+  INTEGER, DIMENSION(int_num_handles) :: file_status
+! TBH:  This flag goes along with file_status and is set as early as possible.  
+  LOGICAL, DIMENSION(int_num_handles) :: file_read_only
   CHARACTER*128, DIMENSION(int_num_handles) :: CurrentDateInFile
   REAL, POINTER    :: int_local_output_buffer(:)
   INTEGER          :: int_local_output_cursor
@@ -42,6 +48,7 @@ MODULE module_ext_internal
     END FUNCTION int_valid_handle
 
     SUBROUTINE int_get_fresh_handle( retval )
+      include 'wrf_io_flags.h'
       INTEGER i, retval
       retval = -1
 ! dont use first 8 handles
@@ -57,6 +64,7 @@ MODULE module_ext_internal
       ENDIF
       int_handle_in_use(i) = .TRUE.
       first_operation(i) = .TRUE.
+      file_status(i) = WRF_FILE_NOT_OPENED
       NULLIFY ( int_local_output_buffer )
     END SUBROUTINE int_get_fresh_handle
 
@@ -77,7 +85,7 @@ MODULE module_ext_internal
 LOGICAL FUNCTION int_ok_to_put_dom_ti( DataHandle )
     include 'wrf_io_flags.h'
     INTEGER, INTENT(IN) :: DataHandle 
-    CHARACTER*80 :: fname
+    CHARACTER*256 :: fname
     INTEGER :: filestate
     INTEGER :: Status
     LOGICAL :: dryrun, first_output, retval
@@ -87,7 +95,12 @@ LOGICAL FUNCTION int_ok_to_put_dom_ti( DataHandle )
     ELSE
       dryrun       = ( filestate .EQ. WRF_FILE_OPENED_NOT_COMMITTED )
       first_output = int_is_first_operation( DataHandle )
-      retval = .NOT. dryrun .AND. first_output
+      ! Note that we want to REPLICATE time-independent domain metadata in the 
+      ! output files so the metadata is available during reads.  Fortran 
+      ! unformatted I/O must be sequential because we don't have fixed record 
+      ! lengths.  
+      ! retval = .NOT. dryrun .AND. first_output
+      retval = .NOT. dryrun
     ENDIF
     int_ok_to_put_dom_ti = retval
     RETURN
@@ -99,7 +112,7 @@ END FUNCTION int_ok_to_put_dom_ti
 LOGICAL FUNCTION int_ok_to_get_dom_ti( DataHandle )
     include 'wrf_io_flags.h'
     INTEGER, INTENT(IN) :: DataHandle 
-    CHARACTER*80 :: fname
+    CHARACTER*256 :: fname
     INTEGER :: filestate
     INTEGER :: Status
     LOGICAL :: dryrun, retval
@@ -164,6 +177,7 @@ SUBROUTINE ext_int_open_for_write_begin( FileName , Comm_compute, Comm_io, SysDe
   USE module_ext_internal
   IMPLICIT NONE
   INCLUDE 'intio_tags.h'
+  INCLUDE 'wrf_io_flags.h'
   CHARACTER*(*) :: FileName
   INTEGER ,       INTENT(IN)  :: Comm_compute , Comm_io
   CHARACTER*(*) :: SysDepInfo
@@ -173,16 +187,21 @@ SUBROUTINE ext_int_open_for_write_begin( FileName , Comm_compute, Comm_io, SysDe
   LOGICAL, EXTERNAL :: wrf_dm_on_monitor
   REAL dummy
   INTEGER io_form
+  CHARACTER*256 :: fname
 
   CALL int_get_fresh_handle(i)
   okay_for_io(i) = .false.
   DataHandle = i
 
   io_form = 100 ! dummy value
+  fname = TRIM(FileName)
   CALL int_gen_ofwb_header( open_file_descriptors(1,i), hdrbufsize, itypesize, &
-                            FileName,SysDepInfo,io_form,DataHandle )
+                            fname,SysDepInfo,io_form,DataHandle )
 
   OPEN ( unit=DataHandle, file=TRIM(FileName), form='unformatted', iostat=Status )
+
+  file_status(DataHandle) = WRF_FILE_OPENED_NOT_COMMITTED
+  file_read_only(DataHandle) = .FALSE.
 
   Status = 0
   RETURN  
@@ -193,6 +212,7 @@ SUBROUTINE ext_int_open_for_write_commit( DataHandle , Status )
   USE module_ext_internal
   IMPLICIT NONE
   INCLUDE 'intio_tags.h'
+  INCLUDE 'wrf_io_flags.h'
   INTEGER ,       INTENT(IN ) :: DataHandle
   INTEGER ,       INTENT(OUT) :: Status
   REAL dummy
@@ -204,6 +224,8 @@ SUBROUTINE ext_int_open_for_write_commit( DataHandle , Status )
   ENDIF
 
   first_operation( DataHandle ) = .TRUE.
+  file_status(DataHandle) = WRF_FILE_OPENED_FOR_WRITE
+
   Status = 0
 
   RETURN  
@@ -214,22 +236,27 @@ SUBROUTINE ext_int_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo,
                                DataHandle , Status )
   USE module_ext_internal
   IMPLICIT NONE
+  INCLUDE 'wrf_io_flags.h'
   CHARACTER*(*) :: FileName
   INTEGER ,       INTENT(IN)  :: Comm_compute , Comm_io
   CHARACTER*(*) :: SysDepInfo
   INTEGER ,       INTENT(OUT) :: DataHandle
   INTEGER ,       INTENT(OUT) :: Status
   INTEGER i
+  CHARACTER*256 :: fname
 
   CALL int_get_fresh_handle(i)
   DataHandle = i
   CurrentDateInFile(i) = ""
+  fname = TRIM(FileName)
 
   CALL int_gen_ofr_header( open_file_descriptors(1,i), hdrbufsize, itypesize, &
-                            FileName,SysDepInfo,DataHandle )
+                            fname,SysDepInfo,DataHandle )
 
   OPEN ( unit=DataHandle, status="old", file=TRIM(FileName), form='unformatted', iostat=Status )
-  okay_for_io(i) = .true.
+  okay_for_io(DataHandle) = .true.
+  file_status(DataHandle) = WRF_FILE_OPENED_FOR_READ
+  file_read_only(DataHandle) = .TRUE.
 
   RETURN  
 END SUBROUTINE ext_int_open_for_read
@@ -243,17 +270,15 @@ SUBROUTINE ext_int_inquire_opened ( DataHandle, FileName , FileStatus, Status )
   CHARACTER*(*) :: FileName
   INTEGER ,       INTENT(OUT) :: FileStatus
   INTEGER ,       INTENT(OUT) :: Status
+  CHARACTER*256 :: fname
 
   Status = 0
 
-  FileStatus = WRF_FILE_NOT_OPENED
-  IF ( DataHandle .GE. 1 .AND. DataHandle .LE. int_num_handles ) THEN
-    IF      ( int_handle_in_use( DataHandle ) .AND. okay_for_io( DataHandle ) ) THEN
-      FileStatus = WRF_FILE_OPENED_FOR_WRITE
-    ELSE IF ( int_handle_in_use( DataHandle ) .AND. .NOT. okay_for_io( DataHandle ) ) THEN
-      FileStatus = WRF_FILE_OPENED_FOR_WRITE
-    ENDIF
+  CALL ext_int_inquire_filename ( DataHandle, fname, FileStatus, Status )
+  IF ( fname /= TRIM(FileName) ) THEN
+    FileStatus = WRF_FILE_NOT_OPENED
   ENDIF
+
   Status = 0
   
   RETURN
@@ -270,18 +295,24 @@ SUBROUTINE ext_int_inquire_filename ( DataHandle, FileName , FileStatus, Status 
   INTEGER ,       INTENT(OUT) :: Status
   CHARACTER *4096   SysDepInfo
   INTEGER locDataHandle
+  CHARACTER*256 :: fname
+  INTEGER io_form
   Status = 0
   SysDepInfo = ""
   FileStatus = WRF_FILE_NOT_OPENED
+  FileName = ""
   IF ( int_valid_handle( DataHandle ) ) THEN
     IF ( int_handle_in_use( DataHandle ) ) THEN
-      CALL int_get_ofr_header( open_file_descriptors(1,DataHandle), hdrbufsize, itypesize, &
-                               FileName,SysDepInfo,locDataHandle )
-      IF ( okay_for_io( DataHandle ) ) THEN
-        FileStatus = WRF_FILE_OPENED_FOR_WRITE
+      ! Note that the formats for these headers differ.  
+      IF ( file_read_only(DataHandle) ) THEN
+        CALL int_get_ofr_header( open_file_descriptors(1,DataHandle), hdrbufsize, itypesize, &
+                                 fname,SysDepInfo,locDataHandle )
       ELSE
-        FileStatus = WRF_FILE_OPENED_NOT_COMMITTED
+        CALL int_get_ofwb_header( open_file_descriptors(1,DataHandle), hdrbufsize, itypesize, &
+                                  fname,SysDepInfo,io_form,locDataHandle )
       ENDIF
+      FileName = TRIM(fname)
+      FileStatus = file_status(DataHandle)
     ENDIF
   ENDIF
   Status = 0
@@ -626,6 +657,7 @@ SUBROUTINE ext_int_get_dom_ti_real ( DataHandle,Element,   Data, Count, Outcount
   CHARACTER*132                :: locElement, mess
   LOGICAL keepgoing
 
+  Status = 0
   IF ( int_valid_handle( DataHandle ) ) THEN
     IF ( int_handle_in_use( DataHandle ) ) THEN
      ! Do nothing unless it is time to read time-independent domain metadata.
@@ -737,6 +769,7 @@ SUBROUTINE ext_int_get_dom_ti_integer ( DataHandle,Element,   Data, Count, Outco
   CHARACTER*132   locElement, mess
   LOGICAL keepgoing
 
+  Status = 0
   IF ( int_valid_handle( DataHandle ) ) THEN
     IF ( int_handle_in_use( DataHandle ) ) THEN
      ! Do nothing unless it is time to read time-independent domain metadata.
@@ -847,6 +880,7 @@ SUBROUTINE ext_int_get_dom_ti_char ( DataHandle,Element,   Data,  Status )
   INTEGER locDataHandle
   LOGICAL keepgoing
 
+  Status = 0
   IF ( int_valid_handle( DataHandle ) ) THEN
     IF ( int_handle_in_use( DataHandle ) ) THEN
      ! Do nothing unless it is time to read time-independent domain metadata.

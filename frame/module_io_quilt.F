@@ -85,8 +85,6 @@ MODULE module_ext_quilt
       INTEGER, DIMENSION(ntasks)  :: icolor
       CHARACTER*128 mess
 
-#ifndef STUBMPI
-
       n_groups = n_groups_arg
       IF ( n_groups .LT. 1 ) n_groups = 1
 
@@ -138,6 +136,10 @@ MODULE module_ext_quilt
       ENDDO
 ! ... and add the io servers as the last task in each group
       DO j = 1, n_groups
+        ! TBH:  each I/O group will contain only one I/O server
+        DO i = ncompute_tasks+1,ntasks
+          icolor(i) = MPI_UNDEFINED
+        ENDDO
         ii = 0
         DO i = ncompute_tasks+(j-1)*nio+1,ncompute_tasks+j*nio
           icolor(i) = ii
@@ -154,7 +156,6 @@ MODULE module_ext_quilt
         j = i / nio + 1
         mpi_comm_io_groups(1) = mpi_comm_io_groups(j)
       ENDIF
-#endif
 
     END SUBROUTINE setup_quilt_servers
 
@@ -196,8 +197,6 @@ MODULE module_ext_quilt
       CALL ext_yyy_ioinit(ierr)
 #endif
 
-#ifndef STUBMPI
-
       okay_to_commit = .false.
       ishuttag = 202020
       ninbuf = 0
@@ -211,7 +210,9 @@ MODULE module_ext_quilt
         CALL wrf_error_fatal("external/RSL/module_dm.F: quilt: type size <= 0 invalid")
       ENDIF
 ! infinite loop until shutdown message received
+#ifndef crayx1
       CALL mpi_irecv( ishutdown, 1, MPI_INTEGER, 0, ishuttag, MPI_COMM_WORLD, ishuthand, ierr )
+#endif
       DO WHILE (.TRUE.)
 
         ! wait for info from compute tasks in the I/O group that we're ready to rock
@@ -226,7 +227,7 @@ MODULE module_ext_quilt
           CALL ext_ncd_ioexit( Status )
 #endif
 #ifdef YYY
-          CALL ext_yyy_ioinit(ierr)
+          CALL ext_yyy_ioexit(ierr)
 #endif
           CALL wrf_message ( 'obufsize .LT. 0' )
           CALL mpi_finalize(ierr)
@@ -775,7 +776,6 @@ MODULE module_ext_quilt
       DEALLOCATE( obuf )
 
       END DO
-#endif
 
     END SUBROUTINE quilt
 

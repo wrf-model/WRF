@@ -66,17 +66,23 @@ SUBROUTINE wrf_message2( str )
   write(0,*) str
 END SUBROUTINE wrf_message2
 
-SUBROUTINE wrf_error_fatal( str )
+SUBROUTINE wrf_error_fatal( file_str, line, str )
   USE module_wrf_error
   IMPLICIT NONE
+  CHARACTER*(*) file_str
+  INTEGER , INTENT (IN) :: line
   CHARACTER*(*) str
+  CHARACTER*256 :: line_str
   
+  write(line_str,'(i6)') line
 #if defined( DM_PARALLEL ) && ! defined( STUBMPI )
   CALL wrf_message( '-------------- FATAL CALLED ---------------' )
+  CALL wrf_message( 'FATAL CALLED FROM FILE:  '//file_str//'  LINE:  '//TRIM(line_str) )
   CALL wrf_message( str )
   CALL wrf_message( '-------------------------------------------' )
 #else
   CALL wrf_message2( '-------------- FATAL CALLED ---------------' )
+  CALL wrf_message( 'FATAL CALLED FROM FILE:  '//file_str//'  LINE:  '//TRIM(line_str) )
   CALL wrf_message2( str )
   CALL wrf_message2( '-------------------------------------------' )
 #endif

@@ -1138,3 +1138,142 @@ RSL_IO_SHUTDOWN ()
   return ;
 }
 
+/* this is collective over all processors, but not every processor will
+   necessarily have data at input or output. Map the patch from the input 
+   array onto the patch of the output array, communicating as necessary.
+   code assumes (for now) anyway, that each patch is disjoint on each side. */
+
+RSL_REMAP_ARRAY ( inbuf, ndim, type,
+                          is_dimd, ie_dimd, 
+                          is_dimp, ie_dimp, is_dimm, ie_dimm,
+                  outbuf, os_dimp, oe_dimp, os_dimm, oe_dimm )
+  char inbuf[], outbuf[] ;
+  int ndim, type ;
+  int is_dimd[], is_dimp[], is_dimm[], os_dimp[], os_dimm[] ;
+  int ie_dimd[], ie_dimp[], ie_dimm[], oe_dimp[], oe_dimm[] ;
+{
+#define STRT 0
+#define ENDD 1
+#define PCH  0
+#define MEM  1
+#define DOM  2
+  int group_i[2][3][RSL_MAXPROC][3] ;
+  int group_o[2][3][RSL_MAXPROC][3] ;
+  MPI_Request reqlist[RSL_MAXPROC] ;
+  int rsl_mpi_communicator=MPI_COMM_WORLD ;
+  char * rcvbuf, *sndbuf ;
+  int outstanding = 0 ; 
+  int msglen ;
+  int P, good, ps0[RSL_MAXPROC], ps1[RSL_MAXPROC] ;
+  int          pe0[RSL_MAXPROC], pe1[RSL_MAXPROC] ;
+  int          ds0, ds1 ;
+  int          de0, de1 ;
+  int i,j,k,l,curs,dex,w ;
+  MPI_Status Stat ;
+
+  MPI_Allgather( is_dimp, 3, MPI_INT, group_i[STRT][PCH], 3, MPI_INT, rsl_mpi_communicator )  ;
+  MPI_Allgather( is_dimm, 3, MPI_INT, group_i[STRT][MEM], 3, MPI_INT, rsl_mpi_communicator )  ;
+  MPI_Allgather( is_dimd, 3, MPI_INT, group_i[STRT][DOM], 3, MPI_INT, rsl_mpi_communicator )  ;
+  MPI_Allgather( ie_dimp, 3, MPI_INT, group_i[ENDD][PCH], 3, MPI_INT, rsl_mpi_communicator )  ;
+  MPI_Allgather( ie_dimm, 3, MPI_INT, group_i[ENDD][MEM], 3, MPI_INT, rsl_mpi_communicator )  ;
+  MPI_Allgather( ie_dimd, 3, MPI_INT, group_i[ENDD][DOM], 3, MPI_INT, rsl_mpi_communicator )  ;
+
+  MPI_Allgather( os_dimp, 3, MPI_INT, group_o[STRT][PCH], 3, MPI_INT, rsl_mpi_communicator )  ;
+  MPI_Allgather( os_dimm, 3, MPI_INT, group_o[STRT][MEM], 3, MPI_INT, rsl_mpi_communicator )  ;
+  MPI_Allgather( oe_dimp, 3, MPI_INT, group_o[ENDD][PCH], 3, MPI_INT, rsl_mpi_communicator )  ;
+  MPI_Allgather( oe_dimm, 3, MPI_INT, group_o[ENDD][MEM], 3, MPI_INT, rsl_mpi_communicator )  ;
+
+/* now everybody knows about everybody, figure out what I need from where */
+/* assume ijk for now */
+
+  /* loop over possible senders so we can post receives */
+  /* is any point I need on P? */
+  for ( P = 0 ; P < rsl_nproc_all ; P++ )
+  {
+    good = 0 ;
+    /* cases where there definitely are not... */
+    if ( os_dimp[0] > group_i[ENDD][PCH][P][0] || oe_dimp[0] < group_i[STRT][PCH][P][0] )
+    { }
+    else
+    {
+      ps0[outstanding] = ( os_dimp[0] < group_i[STRT][PCH][P][0] )? group_i[STRT][PCH][P][0] : os_dimp[0] ;
+      pe0[outstanding] = ( oe_dimp[0] > group_i[ENDD][PCH][P][0] )? group_i[ENDD][PCH][P][0] : oe_dimp[0] ;
+      if ( os_dimp[1] > group_i[ENDD][PCH][P][1] || oe_dimp[1] < group_i[STRT][PCH][P][1] )
+      { }
+      else
+      {
+        ps1[outstanding] = ( os_dimp[1] < group_i[STRT][PCH][P][1] )? group_i[STRT][PCH][P][1] : os_dimp[1] ;
+        pe1[outstanding] = ( oe_dimp[1] > group_i[ENDD][PCH][P][1] )? group_i[ENDD][PCH][P][1] : oe_dimp[1] ;
+        good = 1 ;
+      }
+    }
+    if ( good )
+    {
+      msglen = (pe1[outstanding]-ps1[outstanding]+1)*(pe0[outstanding]-ps0[outstanding]+1)*elemsize(type) ;
+      rcvbuf = (char *) buffer_for_proc(P, msglen, RSL_RECVBUF) ;
+      MPI_Irecv( rcvbuf , msglen, MPI_CHAR, P, 
+                 5225, rsl_mpi_communicator, &reqlist[outstanding++] ) ;  /* posted receive */
+    }
+  }
+  /* loop over possible receivers so we can pack and send stuff */
+  /* are points I have needed by P */
+  for ( P = 0 ; P < rsl_nproc_all ; P++ )
+  {
+    good = 0 ;
+    /* cases where they definitely are not */
+    if ( is_dimp[0] > group_o[ENDD][PCH][P][0] || ie_dimp[0] < group_o[STRT][PCH][P][0] )
+    { }
+    else
+    {
+      ds0 = ( is_dimp[0] < group_o[STRT][PCH][P][0] )? group_o[STRT][PCH][P][0] : is_dimp[0] ;
+      de0 = ( ie_dimp[0] > group_o[ENDD][PCH][P][0] )? group_o[ENDD][PCH][P][0] : ie_dimp[0] ;
+      if ( is_dimp[1] > group_o[ENDD][PCH][P][1] || ie_dimp[1] < group_o[STRT][PCH][P][1] )
+      { }
+      else
+      {
+        ds1 = ( is_dimp[1] < group_o[STRT][PCH][P][1] )? group_o[STRT][PCH][P][1] : is_dimp[1] ;
+        de1 = ( ie_dimp[1] > group_o[ENDD][PCH][P][1] )? group_o[ENDD][PCH][P][1] : ie_dimp[1] ;
+        good = 1 ;
+      }
+    }
+    if ( good )
+    {
+      /* pack and send */
+      msglen = (de1-ds1+1)*(de0-ds0+1)*elemsize(type) ;
+      sndbuf = (char *) buffer_for_proc(P, msglen, RSL_SENDBUF) ;
+      curs = 0 ;
+      for ( k = is_dimm[2] ; k <= ie_dimm[2] ; k++ )
+        for ( j = ds1 ; j <= de1 ; j++ )
+          for ( i = ds0 ; i <= de0 ; i++ )
+            for ( l = 0 ; l < elemsize(type) ; l++ )
+            {
+              dex = elemsize(type)*
+                    ((i-is_dimm[0])
+                    +(j-is_dimm[1])*(ie_dimm[0]-is_dimm[0]+1)
+                    +(k-is_dimm[2])*(ie_dimm[0]-is_dimm[0]+1)*(ie_dimm[1]-is_dimm[1]+1))  ;
+              sndbuf[curs++] = inbuf[l+dex] ;
+            }
+       MPI_SEND( sndbuf, curs, MPI_CHAR, P, 5225, rsl_mpi_communicator ) ;
+    }
+  }
+
+  for ( i = 0 ; i < outstanding ; i++ )
+  {
+    MPI_Waitany ( outstanding, reqlist, &w, &Stat ) ;
+    P = Stat.MPI_SOURCE ;
+    rcvbuf = (char *) buffer_for_proc(P, 0, RSL_RECVBUF) ;
+    curs = 0 ;
+    for ( k = os_dimm[2] ; k <= oe_dimm[2] ; k++ )
+      for ( j = ps1[w] ; j <= pe1[w] ; j++ )
+        for ( i = ps0[w] ; i <= pe0[w] ; i++ )
+          for ( l = 0 ; l < elemsize(type) ; l++ )
+	  {
+            dex = elemsize(type)*
+                  ((i-is_dimm[0])
+                  +(j-is_dimm[1])*(ie_dimm[0]-is_dimm[0]+1)
+                  +(k-is_dimm[2])*(ie_dimm[0]-is_dimm[0]+1)*(ie_dimm[1]-is_dimm[1]+1))  ;
+            outbuf[l+dex] = rcvbuf[curs++] ;
+	  }
+  }
+}
+

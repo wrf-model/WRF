@@ -266,6 +266,7 @@
 
 #   define GET_NEXT_DOMAIN_DESCRIPTOR get_next_domain_descriptor__
 #   define RSL_GET_GLEN rsl_get_glen__
+#   define RSL_REMAP_ARRAY rsl_remap_array__
 
 #    else
 
@@ -463,6 +464,7 @@
 
 #   define GET_NEXT_DOMAIN_DESCRIPTOR get_next_domain_descriptor_
 #   define RSL_GET_GLEN rsl_get_glen_
+#   define RSL_REMAP_ARRAY rsl_remap_array_
 
 #    endif
 
@@ -661,6 +663,7 @@
 
 #   define GET_NEXT_DOMAIN_DESCRIPTOR get_next_domain_descriptor
 #   define RSL_GET_GLEN rsl_get_glen
+#   define RSL_REMAP_ARRAY rsl_remap_array
 
 #  endif
 #endif

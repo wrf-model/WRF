@@ -46,9 +46,6 @@ wrf_num_bytes_between.o :
 clean:
 	@ echo 'use the clean script'
 
-#module_state_description.F : ../Registry/$(REGISTRY)
-#		( cd .. ; ./clean ; $(PERL) -Itools tools/use_registry $(ARCHFLAGS) Registry/$(REGISTRY) )
-
 module_state_description.F : ../Registry/$(REGISTRY)
 		( cd .. ; tools/registry $(ARCHFLAGS) Registry/$(REGISTRY) )
 

@@ -1245,7 +1245,10 @@ halo      HALO_EM_CHEM_E_3 dyn_em 24:chem_1,chem_2
 halo      HALO_EM_CHEM_E_5 dyn_em 48:chem_1,chem_2
 
 halo      HALO_EM_COUPLE_A   dyn_em 24:mub,mu_1,mu_2
+period    PERIOD_EM_COUPLE_A dyn_em 2:mub,mu_1,mu_2
 halo      HALO_EM_COUPLE_B   dyn_em 48:ph_1,ph_2,w_1,w_2,t_1,t_2,u_1,u_2,v_1,v_2,\
+                                       moist_1,moist_2,chem_1,chem_2
+period    PERIOD_EM_COUPLE_B dyn_em 3:ph_1,ph_2,w_1,w_2,t_1,t_2,u_1,u_2,v_1,v_2,\
                                        moist_1,moist_2,chem_1,chem_2
 
 # For moving nests

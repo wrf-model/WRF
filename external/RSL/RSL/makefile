@@ -63,10 +63,10 @@
 ###################################################
 
 # largest number of domains
-MAX_DOMAINS  = 10
+MAX_DOMAINS  = 5
 
 # largest number of processors
-MAX_PROC     = 128
+MAX_PROC     = 256
 
 ###################################################
 # Install time constants

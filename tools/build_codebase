@@ -35,6 +35,7 @@ if ( ! -f frame/module_state_description.f ) then
   exit(99)
 endif
 set dirs=( dyn_em frame main phys share )
+#set dirs=( dyn_nmm frame main phys share )
 #set dirs=( phys )
 #set dirs=( main )
 foreach d ( $dirs )

@@ -7426,7 +7426,7 @@ FC              =       xlf90_r
 LD              =       xlf90_r
 #CC              =       xlc_r
 CC              =       cc
-CFLAGS          =       -DNOUNDERSCORE
+CFLAGS          =       -DNOUNDERSCORE -DLANDREAD_STUB
 FCOPTIM         =       -O3 -qarch=auto #-qfloat=nomaf
 FCDEBUG         =       # -qnoopt -qfullpath
 FCBASEOPTS      =       -qsave $(FCDEBUG) -qmaxmem=32767 -w 
@@ -7437,8 +7437,8 @@ EXTRAMODULES    =
 RWORDSIZE       = 4
 ARCHFLAGS       =       -DYYY -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
                         CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   \
-			-DLIMIT_ARGS -DNO_NAMELIST_PRINT
-#			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DNATIVE_MASSV
+			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DLANDREAD_STUB
+#			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DNATIVE_MASSV 
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 #LIB             =       CONFIGURE_NETCDF_LIB_PATH -lmass -lmassv 
@@ -7546,7 +7546,7 @@ OMPCPP          =       -D_OPENMP
 FC              =       xlf90_r
 LD              =       xlf90_r
 CC              =       cc
-CFLAGS          =       -DNOUNDERSCORE
+CFLAGS          =       -DNOUNDERSCORE -DLANDREAD_STUB
 FCOPTIM         =       -O2 -qarch=auto -qunroll=yes #-qfloat=nomaf
 FCDEBUG         =       # -qnoopt -qfullpath
 FCBASEOPTS      =       -w -qsave $(FCDEBUG) -qmaxmem=32767 #-qflttrap=zerodivide:invalid:enable -qsigtrap
@@ -7557,7 +7557,7 @@ EXTRAMODULES    =
 RWORDSIZE       = 4
 ARCHFLAGS       =       -DYYY -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
                         CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   \
-			-DLIMIT_ARGS -DNO_NAMELIST_PRINT
+			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DLANDREAD_STUB
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -lxlsmp \

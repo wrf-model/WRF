@@ -59,11 +59,9 @@ CONTAINS
 
    SUBROUTINE wrf_dm_initialize
       INCLUDE 'mpif.h'
-      INTEGER :: local_comm, ierr, max_dom
+      INTEGER :: local_comm, ierr
       CALL wrf_get_dm_communicator ( local_comm )
       CALL mpi_comm_size( local_comm, ntasks, ierr )
-      CALL nl_get_max_dom ( 1, max_dom )
-      IF ( max_dom .NE. 1 ) CALL wrf_error_fatal( 'Nesting is not allowed with RSL_LITE; set max_dom to 1 in namelist.input' )
       CALL nl_get_nproc_x ( 1, ntasks_x )
       CALL nl_get_nproc_y ( 1, ntasks_y )
 
@@ -98,7 +96,7 @@ CONTAINS
       RETURN
    END SUBROUTINE wrf_dm_initialize
 
-   SUBROUTINE patch_domain_rsl_lite( id  , &
+   SUBROUTINE patch_domain_rsl_lite( id  , parent, parent_id, &
                                 sd1 , ed1 , sp1 , ep1 , sm1 , em1 ,        &
                                 sd2 , ed2 , sp2 , ep2 , sm2 , em2 ,        &
                                 sd3 , ed3 , sp3 , ep3 , sm3 , em3 ,        &
@@ -111,13 +109,35 @@ CONTAINS
       INTEGER, INTENT(IN)   :: sd1 , ed1 , sd2 , ed2 , sd3 , ed3 , bdx , bdy
       INTEGER, INTENT(OUT)  :: sp1 , ep1 , sp2 , ep2 , sp3 , ep3 , &
                                sm1 , em1 , sm2 , em2 , sm3 , em3
-      INTEGER, INTENT(IN)   :: id
+      INTEGER, INTENT(IN)   :: id, parent_id
+      TYPE(domain),POINTER  :: parent
+
 ! Local variables
       INTEGER               :: ids, ide, jds, jde, kds, kde
       INTEGER               :: ims, ime, jms, jme, kms, kme
       INTEGER               :: ips, ipe, jps, jpe, kps, kpe
 
+      INTEGER               :: c_sd1 , c_ed1 , c_sd2 , c_ed2 , c_sd3 , c_ed3
+      INTEGER               :: c_sp1 , c_ep1 , c_sp2 , c_ep2 , c_sp3 , c_ep3 , &
+                               c_sm1 , c_em1 , c_sm2 , c_em2 , c_sm3 , c_em3
+      INTEGER               :: c_sp1x , c_ep1x , c_sp2x , c_ep2x , c_sp3x , c_ep3x , &
+                               c_sm1x , c_em1x , c_sm2x , c_em2x , c_sm3x , c_em3x
+      INTEGER               :: c_sp1y , c_ep1y , c_sp2y , c_ep2y , c_sp3y , c_ep3y , &
+                               c_sm1y , c_em1y , c_sm2y , c_em2y , c_sm3y , c_em3y
+
+      INTEGER               :: c_ids, c_ide, c_jds, c_jde, c_kds, c_kde
+      INTEGER               :: c_ims, c_ime, c_jms, c_jme, c_kms, c_kme
+      INTEGER               :: c_ips, c_ipe, c_jps, c_jpe, c_kps, c_kpe
+
       INTEGER               :: idim , jdim , kdim , i, rem , a, b
+
+      INTEGER               :: parent_grid_ratio, i_parent_start, j_parent_start
+      INTEGER               :: shw
+      INTEGER               :: idim_cd, jdim_cd
+
+      TYPE(domain), POINTER :: intermediate_grid
+      TYPE(domain), POINTER  :: nest_grid
+
 
       SELECT CASE ( model_data_order )
          ! need to finish other cases
@@ -139,34 +159,11 @@ CONTAINS
             kds = sd3 ; kde = ed3 
       END SELECT
 
-      idim = ide-ids+1
-      jdim = jde-jds+1
-      kdim = kde-kds+1
 
-      rem = mod(idim,ntasks_x)
-      a = ( idim / ntasks_x + 1 ) * min( rem, mytask_x )
-      b = ( idim / ntasks_x     ) * max( 0, mytask_x - rem )
-      ips = max( 1, a + b + 1 )
-      a = ( idim / ntasks_x + 1 ) * min( rem, mytask_x+1 )
-      b = ( idim / ntasks_x     ) * max( 0, mytask_x+1 - rem )
-      ipe = a + b
-
-      rem = mod(jdim,ntasks_y)
-      a = ( jdim / ntasks_y + 1 ) * min( rem, mytask_y )
-      b = ( jdim / ntasks_y     ) * max( 0, mytask_y - rem )
-      jps = max( 1, a + b + 1 )
-      a = ( jdim / ntasks_y + 1 ) * min( rem, mytask_y+1 )
-      b = ( jdim / ntasks_y     ) * max( 0, mytask_y+1 - rem )
-      jpe = a + b
-
-      kps = 1
-      kpe = kdim
-      ims = max( ips - max_halo_width, ids - bdx ) 
-      ime = min( ipe + max_halo_width, ide + bdx )
-      jms = max( jps - max_halo_width, jds - bdy )
-      jme = min( jpe + max_halo_width, jde + bdy )
-      kms = 1
-      kme = kdim
+      CALL compute_memory_dims_rsl_lite ( 0 , bdx, bdy,   &
+                   ids, ide, jds, jde, kds, kde, &
+                   ims, ime, jms, jme, kms, kme, &
+                   ips, ipe, jps, jpe, kps, kpe )
 
       SELECT CASE ( model_data_order )
          ! need to finish other cases
@@ -188,8 +185,209 @@ CONTAINS
             sp3 = kps ; ep3 = kpe ; sm3 = kms ; em3 = kme
       END SELECT
 
+
+      IF ( id .GT. 1 ) THEN
+
+         CALL nl_get_shw( id, shw )
+         CALL nl_get_i_parent_start( id , i_parent_start )
+         CALL nl_get_j_parent_start( id , j_parent_start )
+         CALL nl_get_parent_grid_ratio( id, parent_grid_ratio )
+
+write(0,*)' shw , i_parent_start , j_parent_start , parent_grid_ratio ',shw , i_parent_start , j_parent_start , parent_grid_ratio
+
+         SELECT CASE ( model_data_order )
+            ! need to finish other cases
+            CASE ( DATA_ORDER_ZXY )
+               idim = ed2-sd2+1
+               jdim = ed3-sd3+1
+               kdim = ed1-sd1+1
+            CASE ( DATA_ORDER_XYZ )
+               idim = ed1-sd1+1
+               jdim = ed2-sd2+1
+               kdim = ed3-sd3+1
+            CASE ( DATA_ORDER_XZY )
+               idim = ed1-sd1+1
+               jdim = ed3-sd3+1
+               kdim = ed2-sd2+1
+            CASE ( DATA_ORDER_YXZ)
+               idim = ed2-sd2+1
+               jdim = ed1-sd1+1
+               kdim = ed3-sd3+1
+         END SELECT
+
+         idim_cd = idim / parent_grid_ratio + 1 + 2*shw + 1
+         jdim_cd = jdim / parent_grid_ratio + 1 + 2*shw + 1
+
+         c_ids = i_parent_start-shw ; c_ide = c_ids + idim_cd - 1
+         c_jds = j_parent_start-shw ; c_jde = c_jds + jdim_cd - 1
+         c_kds = sd2                ; c_kde = ed2                   ! IKJ ONLY
+
+         ! we want the intermediate domain to be decomposed the
+         ! the same as the underlying nest. So try this:
+
+         CALL compute_memory_dims_rsl_lite ( shw, bdx, bdy,  &
+                      c_ids, c_ide, c_jds, c_jde, c_kds, c_kde, &
+                      c_ims, c_ime, c_jms, c_jme, c_kms, c_kme, &
+                      c_ips, c_ipe, c_jps, c_jpe, c_kps, c_kpe )
+
+      SELECT CASE ( model_data_order )
+         ! need to finish other cases
+         CASE ( DATA_ORDER_ZXY )
+            c_sd2 = c_ids ; c_ed2 = c_ide ; c_sp2 = c_ips ; c_ep2 = c_ipe ; c_sm2 = c_ims ; c_em2 = c_ime
+            c_sd3 = c_jds ; c_ed3 = c_jde ; c_sp3 = c_jps ; c_ep3 = c_jpe ; c_sm3 = c_jms ; c_em3 = c_jme
+            c_sd1 = c_kds ; c_ed1 = c_kde ; c_sp1 = c_kps ; c_ep1 = c_kpe ; c_sm1 = c_kms ; c_em1 = c_kme
+         CASE ( DATA_ORDER_XYZ )
+            c_sd1 = c_ids ; c_ed1 = c_ide ; c_sp1 = c_ips ; c_ep1 = c_ipe ; c_sm1 = c_ims ; c_em1 = c_ime
+            c_sd2 = c_jds ; c_ed2 = c_jde ; c_sp2 = c_jps ; c_ep2 = c_jpe ; c_sm2 = c_jms ; c_em2 = c_jme
+            c_sd3 = c_kds ; c_ed3 = c_kde ; c_sp3 = c_kps ; c_ep3 = c_kpe ; c_sm3 = c_kms ; c_em3 = c_kme
+         CASE ( DATA_ORDER_XZY )
+            c_sd1 = c_ids ; c_ed1 = c_ide ; c_sp1 = c_ips ; c_ep1 = c_ipe ; c_sm1 = c_ims ; c_em1 = c_ime
+            c_sd3 = c_jds ; c_ed3 = c_jde ; c_sp3 = c_jps ; c_ep3 = c_jpe ; c_sm3 = c_jms ; c_em3 = c_jme
+            c_sd2 = c_kds ; c_ed2 = c_kde ; c_sp2 = c_kps ; c_ep2 = c_kpe ; c_sm2 = c_kms ; c_em2 = c_kme
+         CASE ( DATA_ORDER_YXZ)
+            c_sd2 = c_ids ; c_ed2 = c_ide ; c_sp2 = c_ips ; c_ep2 = c_ipe ; c_sm2 = c_ims ; c_em2 = c_ime
+            c_sd1 = c_jds ; c_ed1 = c_jde ; c_sp1 = c_jps ; c_ep1 = c_jpe ; c_sm1 = c_jms ; c_em1 = c_jme
+            c_sd3 = c_kds ; c_ed3 = c_kde ; c_sp3 = c_kps ; c_ep3 = c_kpe ; c_sm3 = c_kms ; c_em3 = c_kme
+      END SELECT
+
+
+write(0,*)'after compute_memory_dims_rsl_lite ( shw '
+write(0,*)'c_ids,c_ide,c_jds,c_jde,c_',c_ids,c_ide,c_jds,c_jde
+write(0,*)'c_ims,c_ime,c_jms,c_jme,c_',c_ims,c_ime,c_jms,c_jme
+write(0,*)'c_ips,c_ipe,c_jps,c_jpe,c_',c_ips,c_ipe,c_jps,c_jpe
+
+#if 0
+         ! global dims are same as CD
+         ! good for IKJ only
+         c_sd1 = parent%sd31       ; c_ed1 = parent%ed31
+         c_sd2 = parent%sd32       ; c_ed2 = parent%ed32
+         c_sd3 = parent%sd33       ; c_ed3 = parent%ed33
+#endif
+
+         ALLOCATE ( intermediate_grid )
+         ALLOCATE ( intermediate_grid%parents( max_parents ) )
+         ALLOCATE ( intermediate_grid%nests( max_nests ) )
+
+         NULLIFY( intermediate_grid%sibling )
+         DO i = 1, max_nests
+            NULLIFY( intermediate_grid%nests(i)%ptr )
+         ENDDO
+         NULLIFY  (intermediate_grid%next)
+         NULLIFY  (intermediate_grid%same_level)
+         NULLIFY  (intermediate_grid%i_start)
+         NULLIFY  (intermediate_grid%j_start)
+         NULLIFY  (intermediate_grid%i_end)
+         NULLIFY  (intermediate_grid%j_end)
+         intermediate_grid%id = id
+         intermediate_grid%num_nests = 0
+         intermediate_grid%num_siblings = 0
+         intermediate_grid%num_parents = 1
+         intermediate_grid%max_tiles   = 0
+         intermediate_grid%num_tiles_spec   = 0
+write(0,*)'calling find_grid_by_id ',id
+         CALL find_grid_by_id ( id, head_grid, nest_grid )
+write(0,*)'  nest_grid%id ', nest_grid%id
+
+         nest_grid%intermediate_grid => intermediate_grid  ! nest grid now has a pointer to this baby
+write(0,*)'  nest_grid%intermediate_grid%id ', nest_grid%intermediate_grid%id
+         intermediate_grid%parents(1)%ptr => nest_grid     ! the intermediate grid considers nest its parent
+         intermediate_grid%num_parents = 1
+
+         c_sm1x = 1 ; c_em1x = 1 ; c_sm2x = 1 ; c_em2x = 1 ; c_sm3x = 1 ; c_em3x = 1
+         c_sm1y = 1 ; c_em1y = 1 ; c_sm2y = 1 ; c_em2y = 1 ; c_sm3y = 1 ; c_em3y = 1
+         ! allocate space for the intermediate domain
+         CALL alloc_space_field ( intermediate_grid, id , .TRUE.,  &   ! use same id as nest
+                               c_sd1, c_ed1, c_sd2, c_ed2, c_sd3, c_ed3,       &
+                               c_sm1,  c_em1,  c_sm2,  c_em2,  c_sm3,  c_em3,  &
+                               c_sm1x, c_em1x, c_sm2x, c_em2x, c_sm3x, c_em3x, &   ! x-xpose
+                               c_sm1y, c_em1y, c_sm2y, c_em2y, c_sm3y, c_em3y  )   ! y-xpose
+write(0,*)'2  nest_grid%intermediate_grid%id ', nest_grid%intermediate_grid%id
+         intermediate_grid%sd31                            =   c_sd1
+         intermediate_grid%ed31                            =   c_ed1
+         intermediate_grid%sp31                            = c_sp1
+         intermediate_grid%ep31                            = c_ep1
+         intermediate_grid%sm31                            = c_sm1
+         intermediate_grid%em31                            = c_em1
+         intermediate_grid%sd32                            =   c_sd2
+         intermediate_grid%ed32                            =   c_ed2
+         intermediate_grid%sp32                            = c_sp2
+         intermediate_grid%ep32                            = c_ep2
+         intermediate_grid%sm32                            = c_sm2
+         intermediate_grid%em32                            = c_em2
+         intermediate_grid%sd33                            =   c_sd3
+         intermediate_grid%ed33                            =   c_ed3
+         intermediate_grid%sp33                            = c_sp3
+         intermediate_grid%ep33                            = c_ep3
+         intermediate_grid%sm33                            = c_sm3
+         intermediate_grid%em33                            = c_em3
+
+         CALL med_add_config_info_to_grid ( intermediate_grid )
+
+         intermediate_grid%dx = parent%dx
+         intermediate_grid%dy = parent%dy
+         intermediate_grid%dt = parent%dt
+      ENDIF
+
       RETURN
   END SUBROUTINE patch_domain_rsl_lite
+
+  SUBROUTINE compute_memory_dims_rsl_lite  (      &
+                   shw , bdx, bdy ,              &
+                   ids, ide, jds, jde, kds, kde, &
+                   ims, ime, jms, jme, kms, kme, &
+                   ips, ipe, jps, jpe, kps, kpe )
+
+        INTEGER, INTENT(IN)    ::  shw, bdx, bdy
+        INTEGER, INTENT(IN)    ::  ids, ide, jds, jde, kds, kde
+        INTEGER, INTENT(OUT)    ::  ips, ipe, jps, jpe, kps, kpe
+        INTEGER, INTENT(OUT)    ::  ims, ime, jms, jme, kms, kme
+
+        INTEGER idim, jdim, kdim, rem, a, b
+
+        idim = ide-ids+1 - (2*shw)
+        jdim = jde-jds+1 - (2*shw)
+        kdim = kde-kds+1
+
+        rem = mod(idim,ntasks_x)
+        a = ( idim / ntasks_x + 1 ) * min( rem, mytask_x )
+        b = ( idim / ntasks_x     ) * max( 0, mytask_x - rem )
+        ips = max( 1, a + b + 1 ) + shw + ids-1
+        a = ( idim / ntasks_x + 1 ) * min( rem, mytask_x+1 )
+        b = ( idim / ntasks_x     ) * max( 0, mytask_x+1 - rem )
+        ipe = a + b + shw + ids-1
+
+        rem = mod(jdim,ntasks_y)
+        a = ( jdim / ntasks_y + 1 ) * min( rem, mytask_y )
+        b = ( jdim / ntasks_y     ) * max( 0, mytask_y - rem )
+        jps = max( 1, a + b + 1 ) + shw  + jds-1
+        a = ( jdim / ntasks_y + 1 ) * min( rem, mytask_y+1 )
+        b = ( jdim / ntasks_y     ) * max( 0, mytask_y+1 - rem )
+        jpe = a + b + shw + jds-1
+
+        kps = 1
+        kpe = kdim
+        ims = max( ips - max(shw,max_halo_width), ids - bdx )
+        ime = min( ipe + max(shw,max_halo_width), ide + bdx )
+        jms = max( jps - max(shw,max_halo_width), jds - bdy )
+        jme = min( jpe + max(shw,max_halo_width), jde + bdy )
+        kms = 1
+        kme = kdim
+
+! extend the patch dimensions out shw along edges of domain
+        IF ( mytask_x .EQ. 0 ) THEN
+           ips = ips - shw
+        ENDIF
+        IF ( mytask_x .EQ. ntasks_x-1 ) THEN
+           ipe = ipe + shw
+        ENDIF
+        IF ( mytask_y .EQ. 0 ) THEN
+           jps = jps - shw
+        ENDIF
+        IF ( mytask_y .EQ. ntasks_y-1 ) THEN
+           jpe = jpe + shw
+        ENDIF
+
+  END SUBROUTINE compute_memory_dims_rsl_lite
 
    REAL FUNCTION wrf_dm_max_real ( inval )
       IMPLICIT NONE
@@ -348,7 +546,8 @@ SUBROUTINE wrf_dm_patch_domain ( id  , domdesc , parent_id , parent_domdesc , &
                             sm1y , em1y , sm2y , em2y , sm3y , em3y
    INTEGER, INTENT(INOUT):: id  , domdesc , parent_id , parent_domdesc
 
-   TYPE(domain), POINTER :: parent, grid_ptr
+   TYPE(domain), POINTER :: parent
+   TYPE(domain), POINTER :: grid_ptr
 
    ! this is necessary because we cannot pass parent directly into 
    ! wrf_dm_patch_domain because creating the correct interface definitions
@@ -359,7 +558,7 @@ SUBROUTINE wrf_dm_patch_domain ( id  , domdesc , parent_id , parent_domdesc , &
    grid_ptr => head_grid
    CALL find_grid_by_id( parent_id , grid_ptr , parent )
 
-   CALL patch_domain_rsl_lite ( id  , & 
+   CALL patch_domain_rsl_lite ( id  , parent, parent_id , &
                            sd1 , ed1 , sp1 , ep1 , sm1 , em1 , & 
                            sd2 , ed2 , sp2 , ep2 , sm2 , em2 , &
                            sd3 , ed3 , sp3 , ep3 , sm3 , em3 , &
@@ -1448,8 +1647,78 @@ END
       INTEGER       ::          nids, nide, njds, njde, nkds, nkde,    &
                                 nims, nime, njms, njme, nkms, nkme,    &
                                 nips, nipe, njps, njpe, nkps, nkpe
+
+      INTEGER icoord, jcoord, idim_cd, jdim_cd
+      INTEGER local_comm, myproc, nproc
+
+      CALL wrf_get_dm_communicator ( local_comm )
+
+      CALL wrf_get_myproc( myproc )
+
+      CALL wrf_get_nproc( nproc )
+
+
+#define COPY_IN
+#include <em_scalar_derefs.inc>
+!
+      CALL get_ijk_from_grid (  grid ,                   &
+                                cids, cide, cjds, cjde, ckds, ckde,    &
+                                cims, cime, cjms, cjme, ckms, ckme,    &
+                                cips, cipe, cjps, cjpe, ckps, ckpe    )
+      CALL get_ijk_from_grid (  intermediate_grid ,              &
+                                nids, nide, njds, njde, nkds, nkde,    &
+                                nims, nime, njms, njme, nkms, nkme,    &
+                                nips, nipe, njps, njpe, nkps, nkpe    )
+
+
+      CALL nl_get_i_parent_start ( intermediate_grid%id, i_parent_start )
+      CALL nl_get_j_parent_start ( intermediate_grid%id, j_parent_start )
+      CALL nl_get_shw            ( intermediate_grid%id, shw )
+      icoord =    i_parent_start - shw
+      jcoord =    j_parent_start - shw
+      idim_cd = nide - nids + 1
+      jdim_cd = njde - njds + 1
+
+write(0,*)'i_parent_start - shw ',i_parent_start -shw
+write(0,*)' id ', intermediate_grid%id
+write(0,*)' sd31 ', intermediate_grid%sd31
+write(0,*)' ed31 ', intermediate_grid%ed31
+write(0,*)' cids, cide, cjds, cjde, ',cids, cide, cjds, cjde
+write(0,*)' cims, cime, cjms, cjme, ',cims, cime, cjms, cjme
+write(0,*)' cips, cipe, cjps, cjpe, ',cips, cipe, cjps, cjpe
+write(0,*)' nids, nide, njds, njde, ',nids, nide, njds, njde
+write(0,*)' nims, nime, njms, njme, ',nims, nime, njms, njme
+write(0,*)' nips, nipe, njps, njpe, ',nips, nipe, njps, njpe
+
+write(0,*) grid%sm31,grid%em31,grid%sm33,grid%em33
+write(0,*) cips, cipe, cjps, cjpe
+
+      nlev  = ckde - ckds + 1
+
+write(30+myproc,*)cipe-cips+1,cjpe-cjps+1
+do j = cjps, cjpe
+do i = cips, cipe
+write(30+myproc,*)t_2(i,1,j)
+enddo
+enddo
+
+write(0,*)'before em_nest_interpdown_pack'
+
+#  include "em_nest_interpdown_pack.inc"
+
+write(0,*)'after em_nest_interpdown_pack'
+
+      CALL rsl_lite_bcast_msgs( myproc, nproc, local_comm )
+
+write(0,*)'after rsl_lite_bcast_msgs'
+
+
+#define COPY_OUT
+#include <em_scalar_derefs.inc>
       RETURN
    END SUBROUTINE interp_domain_em_part1
+
+!------------------------------------------------------------------
 
    SUBROUTINE interp_domain_em_part2 ( grid, ngrid, config_flags ,  &
 !
@@ -1474,6 +1743,58 @@ END
       INTEGER       ::          nids, nide, njds, njde, nkds, nkde,    &
                                 nims, nime, njms, njme, nkms, nkme,    &
                                 nips, nipe, njps, njpe, nkps, nkpe
+      INTEGER myproc
+      INTEGER local_comm, ierr
+
+#ifdef DEREF_KLUDGE
+   INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
+#endif
+#include "deref_kludge.h"
+
+#define COPY_IN
+#include <em_scalar_derefs.inc>
+#ifdef DM_PARALLEL
+#    define REGISTER_I1
+#      include <em_data_calls.inc>
+#endif
+      CALL get_ijk_from_grid (  grid ,                   &
+                                cids, cide, cjds, cjde, ckds, ckde,    &
+                                cims, cime, cjms, cjme, ckms, ckme,    &
+                                cips, cipe, cjps, cjpe, ckps, ckpe    )
+      CALL get_ijk_from_grid (  ngrid ,              &
+                                nids, nide, njds, njde, nkds, nkde,    &
+                                nims, nime, njms, njme, nkms, nkme,    &
+                                nips, nipe, njps, njpe, nkps, nkpe    )
+
+      nlev  = ckde - ckds + 1 
+
+
+      CALL wrf_get_dm_communicator ( local_comm )
+
+write(0,*)'before interpdown unpack '
+#  include "em_nest_interpdown_unpack.inc"
+write(0,*)'after interpdown unpack '
+
+call wrf_get_myproc( myproc )
+write(40+myproc,*)cime-cims+1,cjme-cjms+1
+do j = cjms, cjme
+do i = cims, cime
+write(40+myproc,*)t_2(i,1,j)
+enddo
+enddo
+
+write(0,*)'before halo interp down '
+#include "HALO_EM_INTERP_DOWN.inc"
+      ! code here to interpolate the data into the nested domain
+write(0,*)'after halo interp down '
+
+write(0,*)'before halo interp interp '
+#  include "em_nest_interpdown_interp.inc"
+write(0,*)'after halo interp interp '
+
+#define COPY_OUT
+#include <em_scalar_derefs.inc>
+
       RETURN
    END SUBROUTINE interp_domain_em_part2
 

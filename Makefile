@@ -31,12 +31,12 @@ deflt :
 
 configcheck:
 	@if [ "$(A2DCASE)" -a "$(DMPARALLEL)" ] ; then \
- 	 echo "------------------------------------------------------------------------------" ; \
- 	 echo "WRF CONFIGURATION ERROR                                                       " ; \
- 	 echo "The $(A2DCASE) case cannot be used on distributed memory parallel systems." ; \
+	 echo "------------------------------------------------------------------------------" ; \
+	 echo "WRF CONFIGURATION ERROR                                                       " ; \
+	 echo "The $(A2DCASE) case cannot be used on distributed memory parallel systems." ; \
 	 echo "Only 3D WRF cases will run on these systems." ; \
- 	 echo "Please chose a different case or rerun configure and chose a different option."  ; \
- 	 echo "------------------------------------------------------------------------------" ; \
+	 echo "Please chose a different case or rerun configure and chose a different option."  ; \
+	 echo "------------------------------------------------------------------------------" ; \
          exit 2 ; \
 	fi
 
@@ -172,7 +172,8 @@ framework :
 	@ echo '--------------------------------------'
 #	( cd frame ; $(MAKE) framework )
 	( cd frame ; $(MAKE) framework; \
-   	cd ../external/io_netcdf ; make NETCDFPATH="$(NETCDFPATH)" FC="$(FC) $(FCBASEOPTS)" CPP="$(CPP)" diffwrf; \
+	cd ../external/io_netcdf ; make NETCDFPATH="$(NETCDFPATH)" FC="$(FC) $(FCBASEOPTS)" CPP="$(CPP)" diffwrf; \
+	cd ../io_grib1 ; make FC="$(FC) -I. $(FCBASEOPTS)" CC="$(CC)" CFLAGS="$(CFLAGS)" CPP="$(CPP)"; \
 	cd ../io_int ; $(MAKE) FC="$(FC) $(FCBASEOPTS)" CPP="$(CPP)" diffwrf ; cd ../../frame )
 
 shared :

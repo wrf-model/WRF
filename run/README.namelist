@@ -79,6 +79,7 @@ Additional ones when running 3DVAR:
 
  &domains
  time_step                           = 60,	; time step for integration in integer seconds
+                                                  recommend 6*dx (in km) for typical real-data cases
  time_step_fract_num                 = 0,	; numerator for fractional time step 
  time_step_fract_den                 = 1,	; denominator for fractional time step 
                                                   Example, if you want to use 60.3 sec as your time step,
@@ -163,7 +164,7 @@ Namelist variables for controling the prototype moving nest:
                                      = 99, GFDL (Eta) longwave (semi-supported)
 
  radt (max_dom)                      = 30,	; minutes between radiation physics calls
-                                                  reduce it if grid distance is finer
+                                           recommend 1 min per km of dx (e.g. 10 for 10 km)
 
  sf_sfclay_physics (max_dom)         surface-layer option (old bl_sfclay_physics option)
                                      = 0, no surface-layer
@@ -277,7 +278,8 @@ Namelist variables for controling the prototype moving nest:
  v_sca_adv_order (max_dom)           = 3,       ; vertical scalar advection order
  time_step_sound (max_dom)           = 4 /	; number of sound steps per time-step
                                                   (if using a time_step much larger than 6*dx (in km),
-                                                  increase number of sound steps)
+                                                  proportionally increase number of sound steps - also
+                                                  best to use even numbers)
 
 
  &bc_control

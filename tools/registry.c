@@ -23,6 +23,7 @@ main( int argc, char *argv[], char *env[] )
   sw_limit_args             = 0 ; /* usually set -- except for GRAPS */
   sw_dm_parallel            = 0 ;
   sw_all_x_staggered       = 0 ;
+  sw_move                  = 0 ;
   sw_all_y_staggered       = 0 ;
   sw_dm_serial_in_only      = 0 ; /* input and bdy data set is distributed by node 0, 
                                      other data streams are written to file per process */
@@ -40,6 +41,9 @@ main( int argc, char *argv[], char *env[] )
       }
       if (!strcmp(*argv,"-DLIMIT_ARGS")) {
         sw_limit_args = 1 ;
+      }
+      if (!strcmp(*argv,"-DMOVE_NESTS")) {
+        sw_move = 1 ;
       }
       if (!strcmp(*argv,"-DD3VAR_IRY_KLUDGE")) {
         sw_3dvar_iry_kludge = 1 ;

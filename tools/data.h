@@ -101,6 +101,7 @@ EXTERN int sw_3dvar_iry_kludge ;
 EXTERN int sw_distrib_io_layer ;
 EXTERN int sw_limit_args ;
 EXTERN int sw_dm_parallel  ;
+EXTERN int sw_move  ;
 EXTERN int sw_all_x_staggered ;
 EXTERN int sw_all_y_staggered ;
 EXTERN int sw_dm_serial_in_only ;

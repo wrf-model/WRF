@@ -184,7 +184,7 @@ MODULE module_ext_quilt
       CHARACTER (len=80) :: DateStr , Element, VarName, MemoryOrder , Stagger , DimNames(3), FileName, SysDepInfo, mess
       INTEGER, EXTERNAL :: use_package
       LOGICAL           :: stored_write_record, retval
-      INTEGER iii, vid
+      INTEGER iii, jjj, vid
 
 !
 
@@ -220,6 +220,7 @@ MODULE module_ext_quilt
         CALL MPI_Reduce( ninbuf, obufsize, 1, MPI_INTEGER,  &
                          MPI_SUM, mytask_io_group,          &
                          mpi_comm_io_groups(1), ierr )
+!write(0,*)'ninbuf ',ninbuf,' obufsize ', obufsize
         IF ( obufsize .LT. 0 ) THEN
 #ifdef NETCDF
           CALL ext_ncd_ioexit( Status )
@@ -235,7 +236,13 @@ MODULE module_ext_quilt
         ! so we need to pare this down, since the buffer is "real" (but not
         ! necessarily)
 
+!write(0,*)'allocating obuf: ',(obufsize+1)/inttypesize
         ALLOCATE( obuf( (obufsize+1)/inttypesize ) )
+
+!call mpi_comm_size( mpi_comm_io_groups(1), iii, ierr )
+!write(0,*)'mpi_comm_size mpi_comm_io_groups() ',iii
+!call mpi_comm_rank( mpi_comm_io_groups(1), iii, ierr )
+!write(0,*)'mpi_comm_rank mpi_comm_io_groups() ',iii
 
         ! let's roll; get the data from the compute procs and put in obuf
         CALL collect_on_comm( mpi_comm_io_groups(1),        &
@@ -243,8 +250,10 @@ MODULE module_ext_quilt
                               dummy, 0,                     &
                               obuf, obufsize )
 
+!write(0,*)'calling init_store_piece_of_field'
         CALL init_store_piece_of_field
         CALL mpi_type_size ( MPI_INTEGER , itypesize , ierr )
+!write(0,*)'mpi_type_size returns ', itypesize
 ! calculate the size of the buffer required for each field
         vid = 0
         icurs = inttypesize
@@ -260,15 +269,18 @@ MODULE module_ext_quilt
               chunksize = (PatchEnd(1)-PatchStart(1)+1)*(PatchEnd(2)-PatchStart(2)+1)* &
                           (PatchEnd(3)-PatchStart(3)+1)*ftypesize
 
+!write(0,*) 'X-1', hdrbufsize, get_hdr_tag( obuf ( icurs / inttypesize ) ) , get_hdr_rec_size( obuf ( icurs / inttypesize ) ), TRIM(VarName)
               call add_to_bufsize_for_field( VarName, hdrbufsize )
               icurs = icurs + hdrbufsize
               IF ( DomainDesc .NE. 333933 ) THEN   ! magic number
+!write(0,*) 'X-1a', chunksize, TRIM(VarName)
                 call add_to_bufsize_for_field( VarName, chunksize )
                 icurs = icurs + chunksize
               ENDIF
             CASE DEFAULT
               hdrbufsize = obuf(icurs/inttypesize)
               write(VarName,'(I5.5)')vid 
+!write(0,*) 'X-2', hdrbufsize, get_hdr_tag( obuf ( icurs / inttypesize ) ) , get_hdr_rec_size( obuf ( icurs / inttypesize ) ), TRIM(VarName)
               call add_to_bufsize_for_field( VarName, hdrbufsize )
               icurs = icurs + hdrbufsize
               vid = vid+1
@@ -278,6 +290,7 @@ MODULE module_ext_quilt
         vid = 0
         icurs = inttypesize
         DO WHILE ( icurs .lt. obufsize )
+!write(0,*) 'A icurs ', icurs, ' obufsize ', obufsize
           SELECT CASE ( get_hdr_tag( obuf ( icurs / inttypesize ) ) )
             CASE ( int_field )
               CALL int_get_write_field_header ( obuf(icurs/inttypesize), hdrbufsize, itypesize, ftypesize,  &
@@ -290,8 +303,10 @@ MODULE module_ext_quilt
                           (PatchEnd(3)-PatchStart(3)+1)*ftypesize
 
               call store_piece_of_field( obuf(icurs/inttypesize), VarName, hdrbufsize )
+!write(0,*) 'A-1', hdrbufsize, get_hdr_tag( obuf ( icurs / inttypesize ) ) , get_hdr_rec_size( obuf ( icurs / inttypesize ) ), TRIM(VarName)
               icurs = icurs + hdrbufsize
               IF ( DomainDesc .NE. 333933 ) THEN   ! magic number
+!write(0,*) 'A-1a', chunksize, TRIM(VarName)
                 call store_piece_of_field( obuf(icurs/inttypesize), VarName, chunksize )
                 icurs = icurs + chunksize
               ENDIF
@@ -299,29 +314,47 @@ MODULE module_ext_quilt
               hdrbufsize = obuf(icurs/inttypesize)
               write(VarName,'(I5.5)')vid 
               call store_piece_of_field( obuf(icurs/inttypesize), VarName, hdrbufsize )
+!write(0,*) 'A-2', hdrbufsize, get_hdr_tag( obuf ( icurs / inttypesize ) ) , get_hdr_rec_size( obuf ( icurs / inttypesize ) ), TRIM(VarName)
               icurs = icurs + hdrbufsize
               vid = vid+1
           END SELECT
         ENDDO
 
+!call mpi_comm_size( mpi_comm_local, iii, ierr )
+!write(0,*)'mpi_comm_size mpi_comm_local ',iii
+!call mpi_comm_rank( mpi_comm_local, iii, ierr )
+!write(0,*)'mpi_comm_rank mpi_comm_local ',iii
+
+!write(0,*)'calling init_retrieve_pieces_of_field '
         CALL init_retrieve_pieces_of_field
         CALL retrieve_pieces_of_field ( obuf , VarName, obufsize, sz, retval )
+!write(0,*)'calling first retrieve_pieces_of_field ',TRIM(VarName),obufsize,sz,retval
         CALL MPI_Reduce( sz, bigbufsize, 1, MPI_INTEGER,  &
                          MPI_SUM, ntasks_local_group-1,         &
                          mpi_comm_local, ierr )
+!write(0,*)'after MPI_Reduce ',sz, bigbufsize
 
         DO WHILE ( retval )
 
+!write(0,*)' VarName ',TRIM(VarName),' sz ',sz,' bigbufsize ',bigbufsize
+
           IF ( mytask_local .EQ. ntasks_local_group-1 ) THEN
+!write(0,*)'allocating bufbuf ', (bigbufsize+1)/inttypesize
             ALLOCATE( bigbuf( (bigbufsize+1)/inttypesize ) )
           ENDIF
 
+!write(0,*)'before collect_on_comm tag,size ',Trim(VarName),get_hdr_tag(obuf),get_hdr_rec_size(obuf)
           CALL collect_on_comm( mpi_comm_local,                    &
                                 onebyte,                           &
                                 obuf, sz,  &
                                 bigbuf, bigbufsize )
-
+!write(0,*)'after collect_on_comm ', sz, bigbufsize
           IF ( mytask_local .EQ. ntasks_local_group-1 ) THEN
+!jjj = 4
+!do iii = 1, ntasks_local_group
+!  write(0,*)'i,j,tag,size ', iii, jjj, get_hdr_tag(bigbuf(jjj/4)),get_hdr_rec_size(bigbuf(jjj/4))
+!  jjj = jjj + get_hdr_rec_size(bigbuf(jjj/4))
+!enddo
 
             icurs = inttypesize  ! icurs is a byte counter, but buffer is integer
 
@@ -330,12 +363,16 @@ MODULE module_ext_quilt
             DO WHILE ( icurs .lt. bigbufsize )
               CALL mpi_type_size ( MPI_INTEGER , itypesize , ierr )
 
+!write(0,*)'B tag,size ',icurs,get_hdr_tag( bigbuf(icurs/inttypesize) ),get_hdr_rec_size( bigbuf(icurs/inttypesize) )
+!write(0,*)'   inttypesize ',inttypesize,' itypesize ',itypesize,' icurs/inttypesize ',icurs/inttypesize
               SELECT CASE ( get_hdr_tag( bigbuf(icurs/inttypesize) ) )
                 CASE ( int_noop )
+!write(0,*)' int_noop '
                   CALL int_get_noop_header( bigbuf(icurs/inttypesize), hdrbufsize, itypesize )
                   icurs = icurs + hdrbufsize
 
                 CASE ( int_dom_td_real )
+!write(0,*)' int_dom_td_real '
                   CALL mpi_type_size( MPI_REAL, ftypesize, ierr )
                   ALLOCATE( RData( bigbuf(icurs/inttypesize + 4 ) ) )      ! 5 is the count of data items for this record ; defined in collect_on_comm.c
                   CALL int_get_td_header( bigbuf(icurs/inttypesize:), hdrbufsize, inttypesize, ftypesize, &
@@ -361,6 +398,7 @@ MODULE module_ext_quilt
 
                   DEALLOCATE( RData )
                 CASE ( int_dom_ti_real )
+!write(0,*)' int_dom_ti_real '
                   CALL mpi_type_size( MPI_REAL, ftypesize, ierr )
                   ALLOCATE( RData( bigbuf(icurs/inttypesize + 4 ) ) )      ! 5 is the count of data items for this record ; defined in collect_on_comm.c
                   CALL int_get_ti_header( bigbuf(icurs/inttypesize:), hdrbufsize, inttypesize, ftypesize, &
@@ -371,6 +409,7 @@ MODULE module_ext_quilt
 #ifdef NETCDF
                     CASE ( IO_NETCDF   )
                       CALL ext_ncd_put_dom_ti_real( handle(DataHandle),TRIM(Element), RData, Count, Status )
+!write(0,*)'ext_ncd_put_dom_ti_real ',handle(DataHandle),TRIM(Element),RData,Status
 #endif
 #ifdef INTIO
                     CASE ( IO_INTIO   )
@@ -387,6 +426,7 @@ MODULE module_ext_quilt
                   DEALLOCATE( RData )
 
                 CASE ( int_dom_td_integer )
+!write(0,*)' int_dom_td_integer '
                   CALL mpi_type_size( MPI_INTEGER, ftypesize, ierr )
                   ALLOCATE( RData( bigbuf(icurs/inttypesize + 4 ) ) )      ! 5 is the count of data items for this record ; defined in collect_on_comm.c
                   CALL int_get_td_header( bigbuf(icurs/inttypesize:), hdrbufsize, inttypesize, ftypesize, &
@@ -413,6 +453,7 @@ MODULE module_ext_quilt
                   DEALLOCATE( RData )
 
                 CASE ( int_dom_ti_integer )
+!write(0,*)' int_dom_ti_integer '
 
                   CALL mpi_type_size( MPI_INTEGER, ftypesize, ierr )
                   ALLOCATE( IData( bigbuf(icurs/inttypesize + 4 ) ) )      ! 5 is the count of data items for this record ; defined in collect_on_comm.c
@@ -423,6 +464,7 @@ MODULE module_ext_quilt
 #ifdef NETCDF
                     CASE ( IO_NETCDF   )
                       CALL ext_ncd_put_dom_ti_integer( handle(DataHandle),TRIM(Element), IData, Count, Status )
+!write(0,*)'ext_ncd_put_dom_ti_integer ',handle(DataHandle),TRIM(Element),IData,Status
 #endif
 #ifdef INTIO
                     CASE ( IO_INTIO   )
@@ -440,6 +482,7 @@ MODULE module_ext_quilt
                   DEALLOCATE( IData)
  
                 CASE ( int_set_time )
+!write(0,*)' int_set_time '
                   CALL int_get_ti_header_char( bigbuf(icurs/inttypesize), hdrbufsize, inttypesize, &
                                                DataHandle, Element, VarName, CData, code )
                   SELECT CASE (use_package(io_form(DataHandle)))
@@ -454,6 +497,7 @@ MODULE module_ext_quilt
                   icurs = icurs + hdrbufsize
 
                 CASE ( int_dom_ti_char )
+!write(0,*)' int_dom_ti_char '
                   CALL int_get_ti_header_char( bigbuf(icurs/inttypesize), hdrbufsize, inttypesize, &
                                                DataHandle, Element, VarName, CData, code )
 
@@ -477,6 +521,7 @@ MODULE module_ext_quilt
                   icurs = icurs + hdrbufsize
 
                 CASE ( int_var_ti_char )
+!write(0,*)' int_var_ti_char '
                   CALL int_get_ti_header_char( bigbuf(icurs/inttypesize), hdrbufsize, inttypesize, &
                                                DataHandle, Element, VarName, CData, code )
 
@@ -500,6 +545,7 @@ MODULE module_ext_quilt
                   icurs = icurs + hdrbufsize
 
                 CASE ( int_ioexit )
+!write(0,*)' int_ioexit '
 
                   SELECT CASE (use_package(io_form(DataHandle)))
 #ifdef NETCDF
@@ -518,6 +564,7 @@ MODULE module_ext_quilt
                   CALL mpi_finalize(ierr)
                   CALL wrf_error_fatal ( 'exiting IO' )
                 CASE ( int_ioclose )
+!write(0,*)' int_ioclose '
                   CALL int_get_handle_header( bigbuf(icurs/inttypesize), hdrbufsize, itypesize, &
                                               DataHandle , code )
                   icurs = icurs + hdrbufsize
@@ -552,7 +599,13 @@ MODULE module_ext_quilt
 
                   CALL int_get_ofwb_header( bigbuf(icurs/inttypesize), hdrbufsize, itypesize, &
                                             FileName,SysDepInfo,io_form_arg,DataHandle )
+
+!write(0,*)' int_open_for_write_begin inttypesize ',inttypesize,' itypesize ',itypesize
+!write(0,*)' int_open_for_write_begin icurs ', icurs, hdrbufsize
+!write(0,*)' int_open_for_write_begin FileName ',TRIM(FileName) 
+!write(0,*)' int_open_for_write_begin SysDepInfo ',TRIM(SysDepInfo) 
                   icurs = icurs + hdrbufsize
+!write(0,*)' int_open_for_write_begin new icurs,tag,size ', icurs, get_hdr_tag( bigbuf(icurs/inttypesize) ),get_hdr_rec_size( bigbuf(icurs/inttypesize) )
                 
                   io_form(DataHandle) = io_form_arg
 
@@ -560,14 +613,15 @@ MODULE module_ext_quilt
 #ifdef NETCDF
                     CASE ( IO_NETCDF   )
                       CALL ext_ncd_open_for_write_begin(FileName,Comm,IOComm,SysDepInfo,handle(DataHandle),Status)
+!write(0,*)'ext_ncd_open_for_write_begin ',Trim(FileName),DataHandle,handle(DataHandle),Status
 #endif
 #ifdef INTIO
                     CASE ( IO_INTIO   )
                       CALL ext_int_open_for_write_begin(FileName,Comm,IOComm,SysDepInfo,handle(DataHandle),Status)
 #endif
 #ifdef YYY
-                 CASE ( IO_YYY )
-                    CALL ext_yyy_open_for_write_begin(FileName,Comm,IOComm,SysDepInfo,handle(DataHandle),Status)
+                    CASE ( IO_YYY )
+                       CALL ext_yyy_open_for_write_begin(FileName,Comm,IOComm,SysDepInfo,handle(DataHandle),Status)
 #endif
                     CASE DEFAULT
                       Status = 0
@@ -579,10 +633,12 @@ MODULE module_ext_quilt
 
                   CALL int_get_handle_header( bigbuf(icurs/inttypesize), hdrbufsize, itypesize, &
                                               DataHandle , code )
+!write(0,*)' int_open_for_write_commit icurs ', icurs, hdrbufsize
                   icurs = icurs + hdrbufsize
                   okay_to_commit(DataHandle) = .true.
 
                 CASE ( int_field )
+!write(0,*)' int_field '
                   CALL mpi_type_size( MPI_INTEGER, ftypesize, ierr )
                   CALL int_get_write_field_header ( bigbuf(icurs/inttypesize), hdrbufsize, itypesize, ftypesize,  &
                                                     DataHandle , DateStr , VarName , Dummy , FieldType , Comm , IOComm, &
@@ -646,6 +702,7 @@ MODULE module_ext_quilt
                     END SELECT
                   ENDIF
                 CASE ( int_iosync )
+!write(0,*)' int_iosync '
                   CALL int_get_handle_header( bigbuf(icurs/inttypesize), hdrbufsize, itypesize, &
                                             DataHandle , code )
                   icurs = icurs + hdrbufsize
@@ -657,16 +714,22 @@ MODULE module_ext_quilt
             ENDDO
 
             IF (stored_write_record) THEN
+!write(0,*)'calling write_outbuf ',DataHandle
               CALL write_outbuf ( handle(DataHandle), use_package(io_form(DataHandle))) 
+!write(0,*)'back from write_outbuf ',DataHandle
             ENDIF
+
             IF (okay_to_commit(DataHandle)) THEN
 
               SELECT CASE (use_package(io_form(DataHandle)))
 #ifdef NETCDF
                 CASE ( IO_NETCDF   )
                   CALL ext_ncd_inquire_filename( handle(DataHandle), fname, fstat, Status )
+!write(0,*)'preparing to commit ', DataHandle, fstat, fstat .EQ. WRF_FILE_OPENED_NOT_COMMITTED
                   IF ( fstat .EQ. WRF_FILE_OPENED_NOT_COMMITTED ) THEN
+!write(0,*)'calling ext_ncd_open_for_write_commit ', handle(DataHandle), DataHandle
                     CALL ext_ncd_open_for_write_commit(handle(DataHandle),Status)
+!write(0,*)'back from ext_ncd_open_for_write_commit ', Status
                     okay_to_write(DataHandle) = .true.
                   ENDIF
 #endif
@@ -697,9 +760,11 @@ MODULE module_ext_quilt
         ENDIF
 
         CALL retrieve_pieces_of_field ( obuf , VarName, obufsize, sz, retval )
+!write(0,*)'calling next retrieve_pieces_of_field ',trim(VarName),obufsize,sz,retval
         CALL MPI_Reduce( sz, bigbufsize, 1, MPI_INTEGER,  &
                          MPI_SUM, ntasks_local_group-1,         &
                          mpi_comm_local, ierr )
+!write(0,*)'after MPI_Reduce ',sz, bigbufsize
       END DO
 
       DEALLOCATE( obuf )
@@ -817,6 +882,9 @@ SUBROUTINE ext_quilt_open_for_write_begin( FileName , Comm_compute, Comm_io, Sys
   CALL int_get_fresh_handle(i)
   okay_to_write(i) = .false.
   DataHandle = i
+
+  locFileName = FileName
+  locSysDepInfo = SysDepInfo
 
   CALL MPI_TYPE_SIZE( MPI_INTEGER, itypesize, ierr )
   IF ( wrf_dm_on_monitor() ) THEN
@@ -1266,6 +1334,7 @@ SUBROUTINE ext_quilt_put_dom_ti_real ( DataHandle,Element,   Data, Count,  Statu
 !
   CALL wrf_debug ( DEBUG_LVL, 'in ext_quilt_put_dom_ti_real' ) 
   CALL MPI_TYPE_SIZE( MPI_INTEGER, itypesize, ierr )
+  locElement = Element
 
   IF ( DataHandle .GE. 1 .AND. DataHandle .LE. int_num_handles ) THEN
     IF ( int_handle_in_use( DataHandle ) ) THEN
@@ -1354,6 +1423,8 @@ SUBROUTINE ext_quilt_put_dom_ti_integer ( DataHandle,Element,   Data, Count,  St
   INTEGER i, typesize, itypesize, tasks_in_group, ierr, comm_io_group
   REAL dummy
 !
+
+  locElement = Element
 
   CALL wrf_debug ( DEBUG_LVL, 'in ext_quilt_put_dom_ti_integer' ) 
 

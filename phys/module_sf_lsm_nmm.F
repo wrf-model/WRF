@@ -8,6 +8,7 @@ USE MODULE_MODEL_CONSTANTS
   REAL, SAVE    :: SCFX(30)
 
   INTEGER, SAVE :: ISEASON
+  CHARACTER*256 :: errmess
  
 CONTAINS
 
@@ -446,7 +447,6 @@ CONTAINS
 !*** LAND OR SEA-ICE                                                    
 !ATEC          ICE=INT(XICE(I,J)+0.3)                                   
           IF (XICE(I,J) .GT. 0.5) THEN                                  
-!	write(0,*) 'ICE is 1 at : ', I,J
              ICE=1                                                      
           ELSE                                                          
              ICE=0                                                      
@@ -460,7 +460,6 @@ CONTAINS
 
 !tst
 	if (I .ge. 198 .and. I .le. 202 .and. J .ge. 486 .and. J .le. 494) then
-!	write(0,*) 'I,J,LWDN: ', I,J,LWDN
 	endif
 !tst
 
@@ -504,11 +503,14 @@ CONTAINS
           SNODPK=SNOW(I,J)*0.001                                        
           SNOWH1D=SNOWH(I,J)*0.001                                        
 !                                                                       
+
+
           DO 70 NS=1,NSOIL                                              
             SMOIS1D(NS)=SMOIS(I,NS,J)                                       
             SMLIQ1D(NS)=SMLIQ(I,NS,J)                                       
             STEMP1D(NS)=TSLB(I,NS,J)                                          !STEMP
    70     CONTINUE                                                      
+
 !                                                                       
 !        print*,'BF SFLX','ISLTPK',ISLTPK,'IVGTPK=',IVGTPK,'SMOIS1D',&
 !              SMOIS1D,'STEMP1',STEMP1D,'VGFRCK',VGFRCK
@@ -549,7 +551,8 @@ CONTAINS
 !mp
 	if (abs(SMSTAV(I,J)) .lt. 3.5) then
 	else
-	write(0,*) 'bad SMSTAV: ', I,J,SMSTAV(I,J)
+	write(errmess,*) 'bad SMSTAV: ', I,J,SMSTAV(I,J)
+        CALL wrf_message( errmess )
 	endif
 !mp	
 
@@ -957,7 +960,8 @@ CONTAINS
 
 !tst
 	if (SH2O(1) .lt. 0) then
-	write(0,*) 'negative SH2O coming INTO SFLX... ', SH2O(1),SMC(1)
+	write(errmess,*) 'negative SH2O coming INTO SFLX... ', SH2O(1),SMC(1)
+        CALL wrf_message( errmess )
 	endif
 !tst
 
@@ -1015,8 +1019,10 @@ CONTAINS
 	if ( abs(SMCWLT) .lt. 1.5) then
 !okay
 	else
-	write(0,*) 'BAD SMCWLT from REDPRM_USGS: ', SMCWLT
-	write(0,*) 'BAD VEGTYP,SOILTYP:: ', VEGTYP,SOILTYP
+	write(errmess,*) 'BAD SMCWLT from REDPRM_USGS: ', SMCWLT
+        CALL wrf_message(errmess)
+	write(errmess,*) 'BAD VEGTYP,SOILTYP:: ', VEGTYP,SOILTYP
+        CALL wrf_message(errmess)
 	endif
 	
         endif
@@ -1301,7 +1307,8 @@ CONTAINS
         ELSE
 
 	if (SH2O(1) .lt. 0) then
-	write(0,*) 'calling SNOPAC with negative SH2O: ', SH2O(1)
+	write(errmess,*) 'calling SNOPAC with negative SH2O: ', SH2O(1)
+        CALL wrf_message(errmess)
 	endif
 
           CALL SNOPAC ( ETP,ETA,PRCP,PRCP1,SNOWNG,SMC,SMCMAX,SMCWLT,  &
@@ -2708,16 +2715,13 @@ CONTAINS
 !        WRITE(*,NML=SOIL_VEG)
 !        LFIRST = .FALSE.
          IF (DEFINED_SOIL .GT. MAX_SOILTYP) THEN
-            WRITE(*,*) 'Warning: DEFINED_SOIL too large in namelist'
-            STOP 222
+            CALL wrf_error_fatal('Warning: DEFINED_SOIL too large in namelist') 
          END IF
          IF (DEFINED_VEG .GT. MAX_VEGTYP) THEN
-            WRITE(*,*) 'Warning: DEFINED_VEG too large in namelist'
-            STOP 222
+            CALL wrf_error_fatal('Warning: DEFINED_VEG too large in namelist')
          END IF
          IF (DEFINED_SLOPE .GT. MAX_SLOPETYP) THEN
-            WRITE(*,*) 'Warning: DEFINED_SLOPE too large in namelist'
-            STOP 222
+            CALL wrf_error_fatal('Warning: DEFINED_SLOPE too large in namelist' )
          END IF
 
          DO I = 1, DEFINED_SOIL
@@ -2736,16 +2740,13 @@ CONTAINS
 !     END IF
 
       IF (SOILTYP .GT. DEFINED_SOIL) THEN
-         WRITE(*,*) 'Warning: too many soil types'
-         STOP 333
+         CALL wrf_error_fatal(  'Warning: too many soil types' )
       END IF
       IF (VEGTYP .GT. DEFINED_VEG) THEN
-         WRITE(*,*) 'Warning: too many veg types'
-         STOP 333
+         CALL wrf_error_fatal(  'Warning: too many veg types' )
       END IF
       IF (SLOPETYP .GT. DEFINED_SLOPE) THEN
-         WRITE(*,*) 'Warning: too many slope types'
-         STOP 333
+         CALL wrf_error_fatal(  'Warning: too many slope types' )
       END IF
 
 !  SET-UP UNIVERSAL PARAMETERS 
@@ -2793,9 +2794,7 @@ CONTAINS
       IF(VEGTYP .EQ. BARE) SHDFAC = 0.0
 
       IF (NROOT .GT. NSOIL) THEN
-         WRITE(*,*) 'Warning: too many root layers'
-         WRITE(*,*) 'nroot=',nroot,' nsoil=',nsoil
-         STOP 333
+         CALL wrf_error_fatal ( 'Warning: too many root layers' )
       END IF
 
 !  CALCULATE ROOT DISTRIBUTION
@@ -3224,16 +3223,13 @@ CONTAINS
 !        WRITE(*,NML=SOIL_VEG)
 !        LFIRST = .FALSE.
          IF (DEFINED_SOIL .GT. MAX_SOILTYP) THEN
-            WRITE(*,*) 'Warning: DEFINED_SOIL too large in namelist'
-            STOP 222
+            CALL wrf_error_fatal( 'Warning: DEFINED_SOIL too large in namelist' )
          END IF
          IF (DEFINED_VEG .GT. MAX_VEGTYP) THEN
-            WRITE(*,*) 'Warning: DEFINED_VEG too large in namelist'
-            STOP 222
+            CALL wrf_error_fatal( 'Warning: DEFINED_VEG too large in namelist')
          END IF
          IF (DEFINED_SLOPE .GT. MAX_SLOPETYP) THEN
-            WRITE(*,*) 'Warning: DEFINED_SLOPE too large in namelist'
-            STOP 222
+            CALL wrf_error_fatal( 'Warning: DEFINED_SLOPE too large in namelist')
          END IF
 
          DO I = 1, DEFINED_SOIL
@@ -3252,16 +3248,13 @@ CONTAINS
 !     END IF
 
       IF (SOILTYP .GT. DEFINED_SOIL) THEN
-         WRITE(*,*) 'Warning: too many soil types'
-         STOP 333
+         CALL wrf_error_fatal( 'Warning: to many soil types' )
       END IF
       IF (VEGTYP .GT. DEFINED_VEG) THEN
-         WRITE(*,*) 'Warning: too many veg types'
-         STOP 333
+         CALL wrf_error_fatal( 'Warning: to many veg types' )
       END IF
       IF (SLOPETYP .GT. DEFINED_SLOPE) THEN
-         WRITE(*,*) 'Warning: too many slope types'
-         STOP 333
+         CALL wrf_error_fatal( 'Warning: to many slope types' )
       END IF
 
 !  SET-UP UNIVERSAL PARAMETERS
@@ -3309,9 +3302,7 @@ CONTAINS
       IF(VEGTYP .EQ. BARE) SHDFAC = 0.0
 
       IF (NROOT .GT. NSOIL) THEN
-         WRITE(*,*) 'Warning: too many root layers'
-         WRITE(*,*) 'nroot=',nroot,' nsoil=',nsoil
-         STOP 333
+         CALL wrf_error_fatal( 'Warning: too many root layers') 
       END IF
 
 !  CALCULATE ROOT DISTRIBUTION

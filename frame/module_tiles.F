@@ -12,7 +12,7 @@ MODULE module_tiles
 CONTAINS
 
 ! CPP macro for error checking
-#define ERROR_TEST(A,O,B) IF( A O B )THEN;WRITE(mess,'("set_tiles:",3A4)')'A','O','B';CALL WRF_ERROR_FATAL(mess);ENDIF
+#define ERROR_TEST(A,O,B) IF( A O B )THEN;WRITE(mess,'(3A4)')'A','O','B';CALL WRF_ERROR_FATAL(mess);ENDIF
 
 ! this version is used to compute only on a boundary of some width
 ! The ids, ide, jds, and jde arguments specify the edge of the boundary (a way of

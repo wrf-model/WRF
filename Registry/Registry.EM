@@ -245,7 +245,10 @@ state   logical patched        -        -          -         -     -         "pa
 #state   logical input_from_file        -        -          -         -     -         "input_from_file"         ""         ""    
 
 # Mask for moving nest interpolations
-state    integer imask         ij        misc     XY
+state    integer imask_nostag         ij      misc     -
+state    integer imask_xstag          ij      misc     X
+state    integer imask_ystag          ij      misc     Y
+state    integer imask_xystag         ij      misc     XY 
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Scalar (4D) arrays
@@ -1178,8 +1181,8 @@ halo      HALO_EM_COUPLE_B   dyn_em 48:ph_1,ph_2,w_1,w_2,t_1,t_2,u_1,u_2,v_1,v_2
                                        moist_1,moist_2,chem_1,chem_2
 
 # For moving nests
-halo      em_shift_halo_y  dyn_em 48:imask,u_2,v_2,t_2
-halo      em_shift_halo_x  dyn_em 48:imask,u_2,v_2,t_2
+halo      em_shift_halo_y  dyn_em 48:imask_nostag,imask_xstag,imask_ystag,imask_xystag,u_2,v_2,t_2
+halo      em_shift_halo_x  dyn_em 48:imask_nostag,imask_xstag,imask_ystag,imask_xystag,u_2,v_2,t_2
 
 # Periodic Boundary Communications
 

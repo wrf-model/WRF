@@ -19,8 +19,8 @@ LIB =
 
 .SUFFIXES: .o .c .F
 
-CFLAGS = -DMPI -DSWAPBYTES -g #-O
-FFLAGS  = -align dcommons -convert big_endian -g
+CFLAGS = -DMPI -DSWAPBYTES -O
+FFLAGS  = -align dcommons -convert big_endian -O
 
 warning :
 	@ echo 'This makefile is not a top level makefile'

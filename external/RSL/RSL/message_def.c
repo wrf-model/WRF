@@ -431,7 +431,12 @@ get_index_for_base ( base )
 {
   int i ;
   for ( i = 1 ; i < base_table_size ; i++ )
-  { if ( base == f90_base_table[ i ].base ) return( i ) ; }
+  { 
+    if ( base == f90_base_table[ i ].base )
+    {
+      return( i ) ;
+    }
+  }
   return(0) ;
 }
 

@@ -1,9 +1,208 @@
 MODULE module_soil_pre
 
    USE module_date_time
+   USE module_state_description
 
 CONTAINS
 
+   SUBROUTINE adjust_for_seaice_pre ( xice , landmask , tsk , ivgtyp , vegcat , lu_index , &
+                                      xland , landusef , isltyp , soilcat , soilctop , &
+                                      soilcbot , tmn , &
+                                      seaice_threshold , &
+                                      num_veg_cat , num_soil_top_cat , num_soil_bot_cat , &
+                                      iswater , isice , &
+                                      scheme , &
+                                      ids , ide , jds , jde , kds , kde , &
+                                      ims , ime , jms , jme , kms , kme , &
+                                      its , ite , jts , jte , kts , kte )
+
+      IMPLICIT NONE
+
+      INTEGER , INTENT(IN) :: ids , ide , jds , jde , kds , kde , &
+                              ims , ime , jms , jme , kms , kme , &
+                              its , ite , jts , jte , kts , kte , &
+                              iswater , isice 
+      INTEGER , INTENT(IN) :: num_veg_cat , num_soil_top_cat , num_soil_bot_cat , scheme
+
+      REAL , DIMENSION(ims:ime,1:num_veg_cat,jms:jme) , INTENT(INOUT):: landusef
+      REAL , DIMENSION(ims:ime,1:num_soil_top_cat,jms:jme) , INTENT(INOUT):: soilctop
+      REAL , DIMENSION(ims:ime,1:num_soil_bot_cat,jms:jme) , INTENT(INOUT):: soilcbot
+      INTEGER , DIMENSION(ims:ime,jms:jme), INTENT(OUT) :: isltyp , ivgtyp
+      REAL , DIMENSION(ims:ime,jms:jme) , INTENT(INOUT) :: landmask , xice , tsk , lu_index , &
+                                                           vegcat, xland , soilcat , tmn
+      REAL , INTENT(IN) :: seaice_threshold
+
+      INTEGER :: i , j , num_seaice_changes , loop
+      CHARACTER (LEN=132) :: message
+      
+      fix_seaice : SELECT CASE ( scheme ) 
+ 
+         CASE ( SLABSCHEME ) 
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  IF ( xice(i,j) .GT. 200.0 ) THEN
+                     xice(i,j) = 0.
+                     num_seaice_changes = num_seaice_changes + 1
+                  END IF
+               END DO
+            END DO
+            IF ( num_seaice_changes .GT. 0 ) THEN
+               WRITE ( message , FMT='(A,I6)' ) &
+               'Total pre number of sea ice locations removed (due to FLAG values) = ', &
+               num_seaice_changes
+               CALL wrf_debug ( 0 , message )  
+            END IF
+            num_seaice_changes = 0
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  IF ( ( xice(i,j) .GE. 0.5 ) .OR. &
+                       ( ( landmask(i,j) .LT. 0.5 ) .AND. ( tsk(i,j) .LT. seaice_threshold ) ) ) THEN
+                     xice(i,j) = 1.
+                     num_seaice_changes = num_seaice_changes + 1
+                     tmn(i,j) = 271.4
+                     vegcat(i,j)=isice
+                     lu_index(i,j)=ivgtyp(i,j)
+                     landmask(i,j)=1.
+                     xland(i,j)=1.
+                     DO loop=1,num_veg_cat
+                        landusef(i,loop,j)=0.
+                     END DO
+                     landusef(i,ivgtyp(i,j),j)=1.
+
+                     isltyp(i,j) = 16
+                     soilcat(i,j)=isltyp(i,j)
+                     DO loop=1,num_soil_top_cat
+                        soilctop(i,loop,j)=0
+                     END DO
+                     DO loop=1,num_soil_bot_cat
+                        soilcbot(i,loop,j)=0
+                     END DO
+                     soilctop(i,isltyp(i,j),j)=1.
+                     soilcbot(i,isltyp(i,j),j)=1.
+                  END IF
+               END DO
+            END DO
+            IF ( num_seaice_changes .GT. 0 ) THEN
+               WRITE ( message , FMT='(A,I6)' ) &
+               'Total pre number of sea ice location changes (water to land) = ', num_seaice_changes
+               CALL wrf_debug ( 0 , message )  
+            END IF
+
+         CASE ( LSMSCHEME ) 
+         CASE ( RUCLSMSCHEME ) 
+
+      END SELECT fix_seaice
+
+   END SUBROUTINE adjust_for_seaice_pre
+
+   SUBROUTINE adjust_for_seaice_post ( xice , landmask , tsk , ivgtyp , vegcat , lu_index , &
+                                      xland , landusef , isltyp , soilcat , soilctop , &
+                                      soilcbot , tmn , &
+                                      tslb , smois , sh2o , &
+                                      seaice_threshold , &
+                                      num_veg_cat , num_soil_top_cat , num_soil_bot_cat , &
+                                      num_soil_layers , &
+                                      iswater , isice , &
+                                      scheme , &
+                                      ids , ide , jds , jde , kds , kde , &
+                                      ims , ime , jms , jme , kms , kme , &
+                                      its , ite , jts , jte , kts , kte )
+
+      IMPLICIT NONE
+
+      INTEGER , INTENT(IN) :: ids , ide , jds , jde , kds , kde , &
+                              ims , ime , jms , jme , kms , kme , &
+                              its , ite , jts , jte , kts , kte , &
+                              iswater , isice 
+      INTEGER , INTENT(IN) :: num_veg_cat , num_soil_top_cat , num_soil_bot_cat , scheme
+      INTEGER , INTENT(IN) :: num_soil_layers
+
+      REAL , DIMENSION(ims:ime,1:num_veg_cat,jms:jme) , INTENT(INOUT):: landusef
+      REAL , DIMENSION(ims:ime,1:num_soil_top_cat,jms:jme) , INTENT(INOUT):: soilctop
+      REAL , DIMENSION(ims:ime,1:num_soil_bot_cat,jms:jme) , INTENT(INOUT):: soilcbot
+      REAL , DIMENSION(ims:ime,1:num_soil_layers,jms:jme) , INTENT(INOUT):: tslb , smois , sh2o
+      INTEGER , DIMENSION(ims:ime,jms:jme), INTENT(OUT) :: isltyp , ivgtyp
+      REAL , DIMENSION(ims:ime,jms:jme) , INTENT(INOUT) :: landmask , xice , tsk , lu_index , &
+                                                           vegcat, xland , soilcat , tmn
+      REAL , INTENT(IN) :: seaice_threshold
+      REAL :: total_depth , mid_point_depth
+
+      INTEGER :: i , j , num_seaice_changes , loop
+      CHARACTER (LEN=132) :: message
+      
+      fix_seaice : SELECT CASE ( scheme ) 
+ 
+         CASE ( SLABSCHEME ) 
+
+         CASE ( LSMSCHEME ) 
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  IF ( xice(i,j) .GT. 200.0 ) THEN
+                     xice(i,j) = 0.
+                     num_seaice_changes = num_seaice_changes + 1
+                  END IF
+               END DO
+            END DO
+            IF ( num_seaice_changes .GT. 0 ) THEN
+               WRITE ( message , FMT='(A,I6)' ) &
+               'Total post number of sea ice locations removed (due to FLAG values) = ', &
+               num_seaice_changes
+               CALL wrf_debug ( 0 , message )  
+            END IF
+            num_seaice_changes = 0
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  IF ( ( xice(i,j) .GE. 0.5 ) .OR. &
+                       ( ( landmask(i,j) .LT. 0.5 ) .AND. ( tsk(i,j) .LT. seaice_threshold ) ) ) THEN
+                     xice(i,j) = 1.
+                     num_seaice_changes = num_seaice_changes + 1
+                     tmn(i,j) = 271.16
+                     vegcat(i,j)=isice
+                     lu_index(i,j)=ivgtyp(i,j)
+                     landmask(i,j)=1.
+                     xland(i,j)=1.
+                     DO loop=1,num_veg_cat
+                        landusef(i,loop,j)=0.
+                     END DO
+                     landusef(i,ivgtyp(i,j),j)=1.
+
+                     isltyp(i,j) = 16
+                     soilcat(i,j)=isltyp(i,j)
+                     DO loop=1,num_soil_top_cat
+                        soilctop(i,loop,j)=0
+                     END DO
+                     DO loop=1,num_soil_bot_cat
+                        soilcbot(i,loop,j)=0
+                     END DO
+                     soilctop(i,isltyp(i,j),j)=1.
+                     soilcbot(i,isltyp(i,j),j)=1.
+
+                     total_depth = 3. ! ice is 3 m deep, num_soil_layers equispaced layers
+                     DO loop = 1,num_soil_layers
+                        mid_point_depth=(total_depth/num_soil_layers)/2. + &
+                                        (loop-1)*(total_depth/num_soil_layers)
+                        tslb(i,loop,j) = ( (total_depth-mid_point_depth)*tsk(i,j) + &
+                                            mid_point_depth*tmn(i,j) ) / total_depth
+                     END DO
+
+                     DO loop=1,num_soil_layers
+                        smois(i,loop,j) = 1.0
+                        sh2o(i,loop,j)  = 0.0
+                     END DO
+                  END IF
+               END DO
+            END DO
+            IF ( num_seaice_changes .GT. 0 ) THEN
+               WRITE ( message , FMT='(A,I6)' ) &
+               'Total post number of sea ice location changes (water to land) = ', num_seaice_changes
+               CALL wrf_debug ( 0 , message )  
+            END IF
+
+         CASE ( RUCLSMSCHEME ) 
+
+      END SELECT fix_seaice
+
+   END SUBROUTINE adjust_for_seaice_post
 
    SUBROUTINE process_percent_cat_new ( landmask ,  &
                                 landuse_frac , soil_top_cat , soil_bot_cat , &
@@ -32,6 +231,7 @@ CONTAINS
 
       INTEGER , PARAMETER :: iswater_soil = 14
       INTEGER :: iforce
+      CHARACTER (LEN=132) :: message
 
       !  Sanity check on the 50/50 points
 
@@ -122,9 +322,15 @@ endif
                END DO
                IF ( dominant_value .LT. 0.01 ) THEN
                   iforce = iforce + 1
-print *,'based on landuse, changing soil to land at point ',i,j
-print '(16(i3,1x))',1, 2, 3, 4, 5, 6, 7, 8, 9, 10,11,12, 13, 14, 15, 16
-print '(16(i3,1x))',nint(soil_top_cat(i,:,j)*100)
+                  WRITE ( message , FMT = '(A,I4,I4)' ) &
+                  'based on landuse, changing soil to land at point ',i,j
+                  CALL wrf_debug(1,message)
+                  WRITE ( message , FMT = '(16(i3,1x))' ) &
+                  1, 2, 3, 4, 5, 6, 7, 8, 9, 10,11,12, 13, 14, 15, 16
+                  CALL wrf_debug(1,message)
+                  WRITE ( message , FMT = '(16(i3,1x))' ) &
+                  nint(soil_top_cat(i,:,j)*100)
+                  CALL wrf_debug(1,message)
                   dominant_index = 8
                END IF
             ELSE
@@ -135,7 +341,10 @@ print '(16(i3,1x))',nint(soil_top_cat(i,:,j)*100)
       END DO
 
 if(iforce.ne.0)then
-print *,'forcing artificial silty clay loam at ',iforce,' points, out of ',(MIN(ide-1,ite)-its+1)*(MIN(jde-1,jte)-jts+1)
+WRITE(message,FMT='(A,I4,A,I6)' ) &
+'forcing artificial silty clay loam at ',iforce,' points, out of ',&
+(MIN(ide-1,ite)-its+1)*(MIN(jde-1,jte)-jts+1)
+CALL wrf_debug(0,message)
 endif
 
    END SUBROUTINE process_percent_cat_new
@@ -334,7 +543,7 @@ endif
                IF      ( ( soil_elev_min_val .LT. -1000 ) .AND. ( landmask(i,j) .LT. 0.5 ) ) THEN
                   CYCLE
                ELSE IF ( ( soil_elev_min_val .LT. -1000 ) .AND. ( landmask(i,j) .GT. 0.5 ) ) THEN
-print *,'no soil temperature elevation adjustment, soil height too small = ',toposoil(i,j)
+!print *,'no soil temperature elevation adjustment, soil height too small = ',toposoil(i,j)
 cycle
                   CALL wrf_error_fatal ( 'TOPOSOIL values have large negative values < -1000 m, unrealistic.' )
                ENDIF

@@ -280,7 +280,7 @@ gen_periods ( char * dirname )
                   sprintf(post,")") ;
                   sprintf(indices, "%s",index_with_firstelem("(","",tmp3,q,post)) ;
                 } else {
-                  strcmp(indices,"") ;
+                  strcpy(indices,"") ;
                 }
                 
                 fprintf(fp,"  CALL rsl_build_message ( msg, RSL_REAL_F90 , &\n%s%s , %d , decomp%s , glen%s , llen%s )\n", 

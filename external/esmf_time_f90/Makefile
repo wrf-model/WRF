@@ -10,7 +10,7 @@ RANLIB	= echo
 
 OBJS = ESMF_Alarm.o ESMF_BaseTime.o ESMF_Clock.o ESMF_Time.o \
         Meat.o ESMF_Base.o ESMF_Calendar.o ESMF_Fraction.o   \
-        ESMF_TimeInterval.o ESMF_Mod.o
+        ESMF_TimeInterval.o ESMF_Stubs.o ESMF_Mod.o
 
 libesmf_time.a : $(OBJS)
 	$(AR) ru libesmf_time.a $(OBJS)
@@ -39,7 +39,10 @@ ESMF_Fraction.o : ESMF_BaseTime.o
 ESMF_TimeInterval.o : ESMF_BaseTime.o ESMF_Calendar.o ESMF_Fraction.o
 ESMF_Mod.o : ESMF_Alarm.o ESMF_BaseTime.o ESMF_Clock.o ESMF_Time.o \
         ESMF_Base.o ESMF_Calendar.o ESMF_Fraction.o    \
-        ESMF_TimeInterval.o
+        ESMF_TimeInterval.o Meat.o ESMF_Stubs.o
 Meat.o : ESMF_Alarm.o ESMF_BaseTime.o ESMF_Clock.o ESMF_Time.o \
         ESMF_Base.o ESMF_Calendar.o ESMF_Fraction.o    \
         ESMF_TimeInterval.o
+ESMF_Stubs.o : ESMF_Base.o ESMF_Calendar.o \
+        ESMF_Alarm.o ESMF_Clock.o ESMF_TimeInterval.o ESMF_Time.o
+

@@ -58,24 +58,7 @@ PROGRAM ideal
    !  Get the NAMELIST data for input.
 
    CALL init_modules(1)   ! Phase 1 returns after MPI_INIT() (if it is called)
-#ifdef WRF_ESMF_MOD
    CALL ESMF_Initialize( defaultCalendar=ESMF_CAL_GREGORIAN, rc=rc )
-   ! TBH:  Note that IDEAL does not set up ESMF clocks.  We need 
-   ! TBH:  explicit replacements for old default initializations...  
-   CALL ESMF_TimeSet(grid%start_time, YY=1, MM=1, DD=1, H=0, M=0, S=0, rc=rc)
-   grid%stop_time    = grid%start_time
-   grid%current_time = grid%start_time
-   ! TBH:  Bogus default value...  
-   CALL ESMF_TimeIntervalSet(grid%step_time, S=180, rc=rc)
-   grid%domain_clock = ESMF_ClockCreate( TimeStep= grid%step_time,  &
-                                         StartTime=grid%start_time, &
-                                         StopTime= grid%stop_time,  &
-                                         rc=rc)
-   CALL wrf_check_error( ESMF_SUCCESS, rc, &
-                         'grid%domain_clock = ESMF_ClockCreate() FAILED', &
-                         __FILE__ , &
-                         __LINE__  )
-#endif
    CALL init_modules(2)   ! Phase 2 resumes after MPI_INIT() (if it is called)
 
 #ifdef DM_PARALLEL
@@ -104,6 +87,24 @@ PROGRAM ideal
                                      parent     = null_domain ,        &
                                      kid        = -1                   )
 
+#ifdef WRF_ESMF_MOD
+   ! TBH:  Note that IDEAL does not set up ESMF clocks.  We need 
+   ! TBH:  explicit replacements for old default initializations...  
+   CALL ESMF_TimeSet(grid%start_time, YY=1, MM=1, DD=1, H=0, M=0, S=0, rc=rc)
+   grid%stop_time    = grid%start_time
+   grid%current_time = grid%start_time
+   ! TBH:  Bogus default value...  
+   CALL ESMF_TimeIntervalSet(grid%step_time, S=180, rc=rc)
+   grid%domain_clock = ESMF_ClockCreate( TimeStep= grid%step_time,  &
+                                         StartTime=grid%start_time, &
+                                         StopTime= grid%stop_time,  &
+                                         rc=rc)
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'grid%domain_clock = ESMF_ClockCreate() FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
+#endif
+
    CALL       wrf_debug ( 100 , 'wrf: calling model_to_grid_config_rec ' )
    CALL model_to_grid_config_rec ( head_grid%id , model_config_rec , config_flags )
    CALL       wrf_debug ( 100 , 'wrf: calling set_scalar_indices_from_config ' )
@@ -123,9 +124,7 @@ PROGRAM ideal
    CALL med_shutdown_io ( head_grid , config_flags )
    CALL wrf_shutdown
 
-#ifdef WRF_ESMF_MOD
    CALL ESMF_Finalize( rc=rc )
-#endif
 
 END PROGRAM ideal
 

@@ -173,9 +173,9 @@
       clock%AdvanceCount = 0
       ALLOCATE(clock%AlarmList(MAX_ALARMS))
       DO i = 1, MAX_ALARMS
-	alarm = clock%AlarmList(i)
-	alarm%Enabled = .FALSE.
-	clock%AlarmList(i) = alarm
+         alarm = clock%AlarmList(i)
+         alarm%Enabled = .FALSE.
+         clock%AlarmList(i) = alarm
       ENDDO
     
       end subroutine ESMF_ClockSetOLD
@@ -751,6 +751,10 @@
 !EOP
 
 !      call c_ESMC_ClockGetAlarmList(clock, AlarmList, rc)
+      ! This HACK is for compatibility with ESMF 2.0.1+
+      IF ( ASSOCIATED( AlarmList) ) THEN
+         DEALLOCATE( AlarmList )
+      ENDIF
       AlarmList => clock%AlarmList
       rc = ESMF_SUCCESS
       

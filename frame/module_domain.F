@@ -50,9 +50,9 @@ MODULE module_domain
                          AUXINPUT4_ALARM=10, AUXINPUT5_ALARM=11,                  &
                          RESTART_ALARM=12, BOUNDARY_ALARM=13, INPUTOUT_ALARM=14,  &  ! for outputing input (e.g. for 3dvar)
                          ALARM_SUBTIME=15,                                        &
-                         MAX_WRF_ALARMS=20  ! ESMF 2.0.1 allows user to dimension alarm lists.
-                                            ! MAX_WRF_ALARMS must be big enough to include 
-                                            ! all of the above alarms.  
+                         MAX_WRF_ALARMS=20  ! ESMF 2.0.1+ requires user to dimension alarm 
+                                            ! lists.  MAX_WRF_ALARMS must be big enough 
+                                            ! to include all of the above alarms.  
 
 #include <state_subtypes.inc>
 
@@ -119,11 +119,7 @@ MODULE module_domain
       Type(ESMF_Time)                                     :: this_bdy_time, next_bdy_time
       Type(ESMF_Time)                                     :: this_emi_time, next_emi_time
       Type(ESMF_TimeInterval) :: step_time
-#ifdef WRF_ESMF_MOD
-      Type(ESMF_Alarm) :: alarms(MAX_WRF_ALARMS)
-#else
       Type(ESMF_Alarm), pointer :: alarms(:)
-#endif
 
    END TYPE domain
 
@@ -744,9 +740,7 @@ CONTAINS
       NULLIFY  (new_grid%j_start)
       NULLIFY  (new_grid%i_end)
       NULLIFY  (new_grid%j_end)
-#ifndef WRF_ESMF_MOD
-      NULLIFY  (new_grid%alarms)    ! allocate and initialize in setup_timekeeping
-#endif
+      ALLOCATE( new_grid%alarms( MAX_WRF_ALARMS ) )    ! initialize in setup_timekeeping
 
       ! set up the pointers that represent the nest hierarchy
       ! set this up *prior* to calling the patching or allocation

@@ -67,15 +67,6 @@ PROGRAM convert_nmm
    INTEGER ::   end_year ,   end_month ,   end_day ,   end_hour ,   end_minute ,   end_second
    INTEGER :: interval_seconds , real_data_init_type
    INTEGER :: time_loop_max , time_loop
-! TBH:  ESMF HACK:  The ESMF 2.0.1 implementation of ESMF_ClockValidate()
-! TBH:  returns an error code if currTime == stopTime !!  Earl will fix
-! TBH:  this in a later ESMF release.  Once ESMF is fixed, remove the following
-! TBH:  hack.
-#ifdef WRF_ESMF_MOD
-   TYPE(ESMF_Time) :: stop_time_hack
-   TYPE(ESMF_TimeInterval) :: one_day
-#endif
-! TBH:  END ESMF HACK
 
    CHARACTER (LEN=80) :: inpname , bdyname
 
@@ -97,9 +88,7 @@ PROGRAM convert_nmm
 #endif
 
    CALL init_modules(1)   ! Phase 1 returns after MPI_INIT() (if it is called)
-#ifdef WRF_ESMF_MOD
    CALL ESMF_Initialize( defaultCalendar=ESMF_CAL_GREGORIAN, rc=rc )
-#endif
    CALL init_modules(2)   ! Phase 2 resumes after MPI_INIT() (if it is called)
 
 #ifdef DM_PARALLEL
@@ -173,19 +162,7 @@ print *,'init_typ  =',model_config_rec%real_data_init_type
 
    !  Override stop time with value computed above.
    CALL wrf_atotime( end_date_char, grid%stop_time )
-! TBH:  ESMF HACK:  The ESMF 2.0.1 implementation of ESMF_ClockValidate() ! TBH:  returns an error code if currTime == stopTime !!  Earl will fix
-! TBH:  this in a later ESMF release.  Once ESMF is fixed, remove the following
-! TBH:  hack.
-#ifdef WRF_ESMF_MOD
-   CALL ESMF_TimeIntervalSet ( one_day, D=1, rc=rc )
-   stop_time_hack = grid%stop_time + one_day
-   CALL ESMF_ClockSet ( grid%domain_clock , StopTime=stop_time_hack, rc=rc )
-#else
-! TBH:  END ESMF HACK
    CALL ESMF_ClockSet ( grid%domain_clock , StopTime=grid%stop_time, rc=rc )
-! TBH:  ESMF HACK
-#endif
-! TBH:  END ESMF HACK
    CALL wrf_check_error( ESMF_SUCCESS, rc, &
                          'ESMF_ClockSet(grid%domain_clock) FAILED', &
                          __FILE__ , &
@@ -282,7 +259,9 @@ print *,'init_typ  =',model_config_rec%real_data_init_type
      current_date = next_date_char // '.0000'
 
      CALL output_boundary ( id, grid , config_flags , ierr )
-     CALL ESMF_ClockAdvance( grid%domain_clock, rc=rc )
+     IF ( .NOT. ESMF_ClockIsStopTime(grid%domain_clock ,rc=rc) ) THEN
+        CALL ESMF_ClockAdvance( grid%domain_clock, rc=rc )
+     ENDIF
 
      ntsd = (bdy_frame-1)*(3600./dt_from_file)
      CALL med_read_nmm_bdy ( grid, config_flags, ntsd, dt_from_file, tstart_from_file, tend_from_file, &
@@ -298,8 +277,6 @@ print *,'init_typ  =',model_config_rec%real_data_init_type
 
    CALL wrf_shutdown
 
-#ifdef WRF_ESMF_MOD
    CALL ESMF_Finalize( rc=rc )
-#endif
 
 END PROGRAM convert_nmm

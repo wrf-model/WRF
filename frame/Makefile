@@ -20,7 +20,6 @@ MODULES =       module_driver_constants.o  \
                 module_io.o                \
                 module_dm.o                \
                 module_quilt_outbuf_ops.o  \
-                module_wrf_esmf_super.o    \
                 module_io_quilt.o
 
 OBJS    =       wrf_num_bytes_between.o    \
@@ -120,17 +119,6 @@ module_timing.o: \
 
 module_wrf_error.o: \
 		wrf_shutdown.o \
-		$(ESMF_MOD_DEPENDENCE)
-
-module_wrf_setservices.o: module_wrf_esmf_super.o
-
-module_wrf_esmf_super.o: module_machine.o \
-		module_domain.o \
-		module_integrate.o \
-		module_driver_constants.o \
-		module_configure.o \
-		module_timing.o \
-		module_wrf_error.o \
 		$(ESMF_MOD_DEPENDENCE)
 
 # DO NOT DELETE

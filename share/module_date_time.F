@@ -815,20 +815,6 @@ END MODULE module_date_time
         clockinvalid = .FALSE.
         IF (rc /= ESMF_SUCCESS) THEN
           clockinvalid = .TRUE.
-! TBH:  ESMF HACK:  The ESMF 2.0.1 implementation of ESMF_ClockValidate() 
-! TBH:  returns an error code if currTime == stopTime !!  Earl will fix 
-! TBH:  this in a later ESMF release.  Once ESMF is fixed, remove the following 
-! TBH:  hack.  
-#ifdef WRF_ESMF_MOD
-          CALL ESMF_ClockGet( clock, CurrTime=currTime, StartTime=startTime, &
-                                     StopTime=stopTime, rc=rc )
-          IF ( (rc == ESMC_RC_OBJ_WRONGSTATE) .AND. &
-               (currTime >= startTime)        .AND. &
-               (currTime <= stopTime) ) THEN
-            clockinvalid = .FALSE.
-          ENDIF
-#endif
-! TBH:  END ESMF HACK
         ENDIF
         IF ( clockinvalid ) THEN
           WRITE (mess,*) TRIM(pre_str),'  ERROR:  clock is invalid, rc = ',rc

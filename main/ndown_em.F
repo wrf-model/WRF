@@ -95,15 +95,6 @@ character(len=24) :: start_date_hold
    CHARACTER (LEN=80)      :: message
 integer :: ii
    TYPE(ESMF_TimeInterval) :: time_interval
-! TBH:  ESMF HACK:  The ESMF 2.0.1 implementation of ESMF_ClockValidate()
-! TBH:  returns an error code if currTime == stopTime !!  Earl will fix
-! TBH:  this in a later ESMF release.  Once ESMF is fixed, remove the following
-! TBH:  hack.
-#ifdef WRF_ESMF_MOD
-   TYPE(ESMF_Time) :: stop_time_hack
-   TYPE(ESMF_TimeInterval) :: one_day
-#endif
-! TBH:  END ESMF HACK
 
    !  Interface block for routine that passes pointers and needs to know that they
    !  are receiving pointers.
@@ -137,9 +128,7 @@ integer :: ii
    !  chemistry indices, etc.
 
    CALL init_modules(1)   ! Phase 1 returns after MPI_INIT() (if it is called)
-#ifdef WRF_ESMF_MOD
    CALL ESMF_Initialize( defaultCalendar=ESMF_CAL_GREGORIAN, rc=rc )
-#endif
    CALL init_modules(2)   ! Phase 2 resumes after MPI_INIT() (if it is called)
 
    !  Get the NAMELIST data.  This is handled in the initial_config routine.  All of the
@@ -224,20 +213,7 @@ integer :: ii
 
    !  Override stop time with value computed above.
    CALL wrf_atotime( end_date_char, parent_grid%stop_time )
-! TBH:  ESMF HACK:  The ESMF 2.0.1 implementation of ESMF_ClockValidate()
-! TBH:  returns an error code if currTime == stopTime !!  Earl will fix
-! TBH:  this in a later ESMF release.  Once ESMF is fixed, remove the following
-! TBH:  hack.
-#ifdef WRF_ESMF_MOD
-   CALL ESMF_TimeIntervalSet ( one_day, D=1, rc=rc )
-   stop_time_hack = parent_grid%stop_time + one_day
-   CALL ESMF_ClockSet ( parent_grid%domain_clock , StopTime=stop_time_hack, rc=rc )
-#else
-! TBH:  END ESMF HACK
    CALL ESMF_ClockSet ( parent_grid%domain_clock , StopTime=parent_grid%stop_time, rc=rc )
-! TBH:  ESMF HACK
-#endif
-! TBH:  END ESMF HACK
    CALL wrf_check_error( ESMF_SUCCESS, rc, &
                          'ESMF_ClockSet(parent_grid%domain_clock) FAILED', &
                          __FILE__ , &
@@ -365,27 +341,11 @@ print *,'file date/time = ',date_string,'     desired date = ',current_date_char
          CALL Setup_Timekeeping ( nested_grid )
          CALL ESMF_TimeIntervalSet ( time_interval , S=model_config_rec%interval_seconds, rc=rc )
          CALL wrf_atotime( current_date(1:19), nested_grid%current_time )
-! TBH:  ESMF HACK:  The ESMF 2.0.1 implementation of ESMF_ClockValidate()
-! TBH:  returns an error code if currTime == stopTime !!  Earl will fix
-! TBH:  this in a later ESMF release.  Once ESMF is fixed, remove the following
-! TBH:  hack.
-#ifdef WRF_ESMF_MOD
-         CALL ESMF_TimeIntervalSet ( one_day, D=1, rc=rc )
-         stop_time_hack = nested_grid%stop_time + one_day
-         CALL ESMF_ClockSet( nested_grid%domain_clock, timeStep=time_interval,            &
-                                                       currTime=nested_grid%current_time, &
-                                                       StopTime=stop_time_hack, &
-                                                       rc=rc )
-#else
-! TBH:  END ESMF HACK
          ! Strictly speaking, nest stop time should come from model_config_rec...  
          CALL ESMF_ClockSet( nested_grid%domain_clock, timeStep=time_interval,            &
                                                        currTime=nested_grid%current_time, &
                                                        StopTime=parent_grid%stop_time, &
                                                        rc=rc )
-! TBH:  ESMF HACK
-#endif
-! TBH:  END ESMF HACK
          CALL wrf_check_error( ESMF_SUCCESS, rc, &
                                'ESMF_ClockSet(nested_grid%domain_clock) FAILED', &
                                __FILE__ , &
@@ -1026,9 +986,7 @@ print *,'bdy time = ',time_loop-1,'  bdy date = ',current_date,' ',start_date
 
    CALL wrf_shutdown
 
-#ifdef WRF_ESMF_MOD
    CALL ESMF_Finalize( rc=rc )
-#endif
 
 END PROGRAM ndown_em
 

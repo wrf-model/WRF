@@ -62,7 +62,7 @@ convert_nmm.o: \
 	../frame/module_configure.o \
 	../frame/module_timing.o \
 	../frame/module_dm.o \
-	../frame/module_wrf_esmf_super.o \
+	../share/module_wrf_esmf_super.o \
 	../share/module_bc.o \
 	../share/module_io_domain.o \
 	$(ESMF_MOD_DEPENDENCE) $(EXTRAMODULES)
@@ -74,7 +74,7 @@ ideal.o: \
 	../frame/module_configure.o \
 	../frame/module_timing.o \
 	../frame/module_dm.o \
-	../frame/module_wrf_esmf_super.o \
+	../share/module_wrf_esmf_super.o \
 	../share/module_io_domain.o \
 	../dyn_$(SOLVER)/$(CASE_MODULE) \
 	$(ESMF_MOD_DEPENDENCE) $(EXTRAMODULES)
@@ -86,7 +86,7 @@ ndown_em.o: \
 	../frame/module_configure.o \
 	../frame/module_timing.o \
 	../frame/module_dm.o \
-	../frame/module_wrf_esmf_super.o \
+	../share/module_wrf_esmf_super.o \
 	../frame/module_wrf_error.o \
 	../frame/module_integrate.o \
 	../share/module_bc.o \
@@ -105,7 +105,7 @@ real_em.o: \
 	../frame/module_configure.o \
 	../frame/module_timing.o \
 	../frame/module_dm.o \
-	../frame/module_wrf_esmf_super.o \
+	../share/module_wrf_esmf_super.o \
 	../dyn_em/module_si_io_em.o \
 	../dyn_em/module_big_step_utilities_em.o \
 	../share/module_io_domain.o \
@@ -125,7 +125,7 @@ wrf.o: \
 	../frame/module_timing.o \
 	../frame/module_wrf_error.o \
 	../frame/module_dm.o \
-	../frame/module_wrf_esmf_super.o \
+	../share/module_wrf_esmf_super.o \
 	$(ESMF_MOD_DEPENDENCE) $(EXTRAMODULES)
 
 # DO NOT DELETE

@@ -78,9 +78,7 @@ real::t1,t2
 
    CALL       wrf_debug ( 100 , 'real_em: calling init_modules ' )
    CALL init_modules(1)   ! Phase 1 returns after MPI_INIT() (if it is called)
-#ifdef WRF_ESMF_MOD
    CALL ESMF_Initialize( defaultCalendar=ESMF_CAL_GREGORIAN, rc=rc )
-#endif
    CALL init_modules(2)   ! Phase 2 resumes after MPI_INIT() (if it is called)
 
    !  The configuration switches mostly come from the NAMELIST input.
@@ -159,9 +157,7 @@ real::t1,t2
 
    CALL wrf_shutdown
 
-#ifdef WRF_ESMF_MOD
    CALL ESMF_Finalize( rc=rc )
-#endif
 
 END PROGRAM real_data
 
@@ -208,16 +204,11 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
    INTEGER :: time_loop_max , loop, rc
    INTEGER :: julyr , julday 
    REAL :: gmt
-! TBH:  ESMF HACK:  The ESMF 2.0.1 implementation of ESMF_ClockValidate()
-! TBH:  returns an error code if currTime == stopTime !!  Earl will fix
-! TBH:  this in a later ESMF release.  Once ESMF is fixed, remove the following
-! TBH:  hack.
-#ifdef WRF_ESMF_MOD
-   TYPE(ESMF_Time) :: stop_time_hack
-   TYPE(ESMF_TimeInterval) :: one_day
-#endif
-! TBH:  END ESMF HACK
 real::t1,t2
+! TBH:  BEGIN stopTime HACK
+   TYPE(ESMF_TimeInterval) :: bogus_timeinterval
+   TYPE(ESMF_Time) :: bogus_stoptime
+! TBH:  END stopTime HACK
 
    grid%input_from_file = .true.
    grid%input_from_file = .false.
@@ -240,20 +231,14 @@ real::t1,t2
 
    !  Override stop time with value computed above.  
    CALL wrf_atotime( end_date_char, grid%stop_time )
-! TBH:  ESMF HACK:  The ESMF 2.0.1 implementation of ESMF_ClockValidate()
-! TBH:  returns an error code if currTime == stopTime !!  Earl will fix
-! TBH:  this in a later ESMF release.  Once ESMF is fixed, remove the following
-! TBH:  hack.
-#ifdef WRF_ESMF_MOD
-   CALL ESMF_TimeIntervalSet ( one_day, D=1, rc=rc )
-   stop_time_hack = grid%stop_time + one_day
-   CALL ESMF_ClockSet ( grid%domain_clock , StopTime=stop_time_hack, rc=rc )
-#else
-! TBH:  END ESMF HACK
-   CALL ESMF_ClockSet ( grid%domain_clock , StopTime=grid%stop_time, rc=rc )
-! TBH:  ESMF HACK
-#endif
-! TBH:  END ESMF HACK
+! TBH:  BEGIN stopTime HACK
+! TBH:  Stop time is not being handled correctly by real_em.F.  Until it is 
+! TBH:  fixed, this workaround will at least keep things from crashing...  
+   CALL ESMF_TimeIntervalSet ( bogus_timeinterval , D=100, rc=rc )
+   bogus_stoptime = grid%stop_time + bogus_timeinterval
+   CALL ESMF_ClockSet ( grid%domain_clock , StopTime=bogus_stoptime, rc=rc )
+! TBH:  END stopTime HACK
+!   CALL ESMF_ClockSet ( grid%domain_clock , StopTime=grid%stop_time, rc=rc )
    CALL wrf_check_error( ESMF_SUCCESS, rc, &
                          'ESMF_ClockSet(grid%domain_clock) FAILED', &
                          __FILE__ , &
@@ -600,9 +585,11 @@ print *,'spec_bdy_width, interval_seconds, loop=',spec_bdy_width , interval_seco
                CALL wrf_error_fatal( 'real: error opening wrfbdy for writing' )
          ENDIF
       ELSE
-         CALL ESMF_ClockAdvance( grid%domain_clock, rc=rc )
-         CALL wrf_clockprint ( 150, grid%domain_clock, &
-                               'DEBUG assemble_output:  grid%domain_clock after ClockAdvance,' )
+         IF ( .NOT. ESMF_ClockIsStopTime(grid%domain_clock ,rc=rc) ) THEN
+            CALL ESMF_ClockAdvance( grid%domain_clock, rc=rc )
+            CALL wrf_clockprint ( 150, grid%domain_clock, &
+                                  'DEBUG assemble_output:  grid%domain_clock after ClockAdvance,' )
+         ENDIF
       END IF
 
 

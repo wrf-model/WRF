@@ -113,7 +113,7 @@ period_refs( pack_table, pack_table_size, pack_table_nbytes, collapse )
 
 #if 0
 /* NOTE THAT THE BUBBLE SORT HAS BEEN REMOVED! */
-  rsl_bubble( list_head, compare_period_sort, 0 ) ;
+  rsl_sort( &list_head, compare_period_sort, 0 ) ;
 #endif
 
 #ifdef RSL_INTERNAL_MILLICLOCK

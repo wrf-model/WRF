@@ -202,12 +202,10 @@ RECURSIVE SUBROUTINE integrate ( grid )
      END SUBROUTINE med_nest_force
 
 #ifdef MOVE_NESTS
-     SUBROUTINE med_nest_move ( parent , grid , move_x, move_y, config_flags )
+     SUBROUTINE med_nest_move ( parent , grid )
        USE module_domain
        USE module_configure
        TYPE (domain), POINTER ::  grid , parent
-       INTEGER move_x, move_y
-       TYPE (grid_config_rec_type) config_flags
      END SUBROUTINE med_nest_move
 #endif
 
@@ -287,7 +285,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
                 CALL wrf_debug( 100 , 'module_integrate: calling med_nest_force ' )
 
 #ifdef MOVE_NESTS
-                CALL med_nest_move ( grid_ptr , grid_ptr%nests(kid)%ptr , 1, 1, config_flags )
+                CALL med_nest_move ( grid_ptr , grid_ptr%nests(kid)%ptr )
 #endif
                 CALL med_nest_force ( grid_ptr , grid_ptr%nests(kid)%ptr , config_flags )
                 CALL wrf_debug( 100 , 'module_integrate: back from med_nest_force ' )

@@ -12,7 +12,7 @@ SUBROUTINE solve_interface ( grid )
    IMPLICIT NONE
 
    INTERFACE
-#if (EM_CORE == 1)
+#if (EM_CORE == 1 && DA_CORE != 1)
 # include  <solve_em.int>
 #endif
 #if (NMM_CORE == 1)
@@ -33,6 +33,8 @@ SUBROUTINE solve_interface ( grid )
 
 #ifdef DEREF_KLUDGE
    INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
+   INTEGER     :: sm31x, em31x, sm32x, em32x, sm33x, em33x
+   INTEGER     :: sm31y, em31y, sm32y, em32y, sm33y, em33y
 #endif
 
    CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
@@ -42,7 +44,7 @@ SUBROUTINE solve_interface ( grid )
 
    IF ( .FALSE.                         ) THEN
 
-#if (EM_CORE == 1)
+#if (EM_CORE == 1 && DA_CORE != 1)
    ELSE IF ( config_flags%dyn_opt == DYN_EM  ) THEN
      CALL solve_em  ( grid , config_flags , &
 !

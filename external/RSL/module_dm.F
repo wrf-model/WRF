@@ -67,6 +67,9 @@ MODULE module_dm
    INTERFACE wrf_dm_maxval
      MODULE PROCEDURE wrf_dm_maxval_real , wrf_dm_maxval_integer, wrf_dm_maxval_doubleprecision
    END INTERFACE
+
+#define TRUE_RSL_REAL     RSL_REAL
+#define TRUE_RSL_REAL_F90 RSL_REAL_F90
 #else
    INTERFACE add_msg_xpose
      MODULE PROCEDURE add_msg_xpose_real, add_msg_xpose_integer
@@ -95,10 +98,10 @@ MODULE module_dm
    INTERFACE wrf_dm_maxval
      MODULE PROCEDURE wrf_dm_maxval_real , wrf_dm_maxval_integer
    END INTERFACE
-#endif
 
-#define TRUE_RSL_REAL     RSL_REAL
-#define TRUE_RSL_REAL_F90 RSL_REAL_F90
+#define TRUE_RSL_REAL     RSL_DOUBLE
+#define TRUE_RSL_REAL_F90 RSL_DOUBLE_F90
+#endif
 
 CONTAINS
 
@@ -3413,6 +3416,8 @@ SUBROUTINE wrf_dm_define_comms ( grid )
 
 #ifdef DEREF_KLUDGE
    INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
+   INTEGER     :: sm31x, em31x, sm32x, em32x, sm33x, em33x
+   INTEGER     :: sm31y, em31y, sm32y, em32y, sm33y, em33y
 #endif
 
 #include "deref_kludge.h"
@@ -4002,6 +4007,8 @@ END
 
 #ifdef DEREF_KLUDGE
    INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
+   INTEGER     :: sm31x, em31x, sm32x, em32x, sm33x, em33x
+   INTEGER     :: sm31y, em31y, sm32y, em32y, sm33y, em33y
 #endif
 #include "deref_kludge.h"
 
@@ -4111,6 +4118,8 @@ END
 
 #ifdef DEREF_KLUDGE
    INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
+   INTEGER     :: sm31x, em31x, sm32x, em32x, sm33x, em33x
+   INTEGER     :: sm31y, em31y, sm32y, em32y, sm33y, em33y
 #endif
 #include "deref_kludge.h"
 
@@ -4170,6 +4179,8 @@ END
 
 #ifdef DEREF_KLUDGE
    INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
+   INTEGER     :: sm31x, em31x, sm32x, em32x, sm33x, em33x
+   INTEGER     :: sm31y, em31y, sm32y, em32y, sm33y, em33y
 #endif
 #include "deref_kludge.h"
 
@@ -4232,6 +4243,8 @@ END
 
 #ifdef DEREF_KLUDGE
    INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
+   INTEGER     :: sm31x, em31x, sm32x, em32x, sm33x, em33x
+   INTEGER     :: sm31y, em31y, sm32y, em32y, sm33y, em33y
 #endif
 
 #include "deref_kludge.h"
@@ -4308,6 +4321,8 @@ END
 
 #ifdef DEREF_KLUDGE
    INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
+   INTEGER     :: sm31x, em31x, sm32x, em32x, sm33x, em33x
+   INTEGER     :: sm31y, em31y, sm32y, em32y, sm33y, em33y
 #endif
 #include "deref_kludge.h"
 

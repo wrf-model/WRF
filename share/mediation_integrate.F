@@ -391,8 +391,8 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
      CALL wrf_timetoa ( CurrTime, timestr )
      CALL construct_filename2a ( rstname , config_flags%rst_inname , nest%id , 2 , timestr )
 
-     WRITE(message,*)'opening ',TRIM(rstname),' for reading'
-     CALL wrf_debug ( 1 , message )
+     WRITE(message,*)'RESTART: nest, opening ',TRIM(rstname),' for reading'
+     CALL wrf_message ( message )
      CALL open_r_dataset ( fid , TRIM(rstname) , nest , config_flags , "DATASET=RESTART", ierr )
      IF ( ierr .NE. 0 ) THEN
        WRITE( message , '("program wrf: error opening ",A32," for reading")') TRIM(rstname)

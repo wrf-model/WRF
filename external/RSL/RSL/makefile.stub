@@ -1,0 +1,58 @@
+
+# this is a makefile for RSL that maps the package down to the
+# IBM SP without message passing at all (must run single proc)
+
+include makefile.core
+OBJ = $(CORE_OBJ) debug.o
+HDR = $(CORE_HDR)
+TAR = $(CORE_TAR)
+
+.SUFFIXES: .F .o .c
+
+
+
+LIB = 
+
+# IBM
+#CFLAGS = -DNOUNDERSCORE -DSTUBS -g
+#CC = cc
+#FC = xlf
+# SUN
+CFLAGS = -DSTUBS -g
+CC = cc
+FC = f77 -w
+
+
+FFLAGS = -g
+#ucomment for alpha
+FFLAGS = -g -convert big_endian
+
+warning :
+	@ echo 'This makefile is not a top level makefile'
+	@ echo 'and is not intended for direct use.  Please'
+	@ echo 'type "make" by itself for assistance.'
+
+all : rsl.inc librsl.a
+
+rsl.inc : $(HDR) rsl.inc_base
+	cat $(HDR) | sed $(SED_LINE) |\
+	grep '^#.*define.*\/\* FORTRAN \*\/' | \
+	awk '{printf("      integer %s\n      parameter(%s=%s)\n",$$2,$$2,$$3)}' | \
+	cat rsl.inc_base - > rsl.inc
+
+librsl.a : $(OBJ)
+	ar cr librsl.a $(OBJ)
+	ranlib librsl.a
+
+.c.o :
+	$(CC) -c $(CFLAGS) $(CONFIG_OPTS) $<
+
+.F.o :
+	$(FC) -c $(FFLAGS) $<
+
+clean :
+	/bin/rm -f *.o
+
+###
+
+$(OBJ) : $(HDR)

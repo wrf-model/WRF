@@ -1,0 +1,19 @@
+#!/bin/csh
+
+# for IBM
+
+#setenv F90 "mpxlf -qfixed=132 -qnosave "
+#setenv RSLLIB RSL/librsl.a
+
+# for Alpha
+
+set echo
+
+setenv F90 "mpif90 -g -extend_source"
+#setenv F90 "f90 -g -extend_source"
+setenv RSLLIB ./librsl.a
+
+/lib/cpp -C -P rsltest.F > rsltest.f
+$F90 -c rsltest.f
+$F90 -o tst rsltest.o $RSLLIB
+

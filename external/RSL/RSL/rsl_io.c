@@ -1,0 +1,776 @@
+/***********************************************************************
+     
+                              COPYRIGHT
+     
+     The following is a notice of limited availability of the code and 
+     Government license and disclaimer which must be included in the 
+     prologue of the code and in all source listings of the code.
+     
+     Copyright notice
+       (c) 1977  University of Chicago
+     
+     Permission is hereby granted to use, reproduce, prepare 
+     derivative works, and to redistribute to others at no charge.  If 
+     you distribute a copy or copies of the Software, or you modify a 
+     copy or copies of the Software or any portion of it, thus forming 
+     a work based on the Software and make and/or distribute copies of 
+     such work, you must meet the following conditions:
+     
+          a) If you make a copy of the Software (modified or verbatim) 
+             it must include the copyright notice and Government       
+             license and disclaimer.
+     
+          b) You must cause the modified Software to carry prominent   
+             notices stating that you changed specified portions of    
+             the Software.
+     
+     This software was authored by:
+     
+     Argonne National Laboratory
+     J. Michalakes: (630) 252-6646; email: michalak@mcs.anl.gov
+     Mathematics and Computer Science Division
+     Argonne National Laboratory, Argonne, IL  60439
+     
+     ARGONNE NATIONAL LABORATORY (ANL), WITH FACILITIES IN THE STATES 
+     OF ILLINOIS AND IDAHO, IS OWNED BY THE UNITED STATES GOVERNMENT, 
+     AND OPERATED BY THE UNIVERSITY OF CHICAGO UNDER PROVISION OF A 
+     CONTRACT WITH THE DEPARTMENT OF ENERGY.
+     
+                      GOVERNMENT LICENSE AND DISCLAIMER
+     
+     This computer code material was prepared, in part, as an account 
+     of work sponsored by an agency of the United States Government.
+     The Government is granted for itself and others acting on its 
+     behalf a paid-up, nonexclusive, irrevocable worldwide license in 
+     this data to reproduce, prepare derivative works, distribute 
+     copies to the public, perform publicly and display publicly, and 
+     to permit others to do so.  NEITHER THE UNITED STATES GOVERNMENT 
+     NOR ANY AGENCY THEREOF, NOR THE UNIVERSITY OF CHICAGO, NOR ANY OF 
+     THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR 
+     ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY, 
+     COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, 
+     PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD 
+     NOT INFRINGE PRIVATELY OWNED RIGHTS.
+
+***************************************************************************/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include "rsl.h"
+
+/*@
+  RSL_CLOSE - close a fortran unit
+
+  Synopsis:
+  RSL_CLOSE ( unit )
+  integer unit
+
+  Input parameters:
+. unit - unit number
+
+  Notes:
+  Used to close down a fortran unit number.  At present, RSL does
+  not provide a way of opening a named file, so RSL_CLOSE does
+  no do much except flush the identifier.
+
+@*/
+RSL_CLOSE ( unit_p )
+  int_p unit_p ;
+{
+/* this was added 7/27/94 to the monitor-less version.  It won't
+   work, as is, in the monitor/compute version. */
+  int i_am_monitor ;
+
+  RSL_C_IAMMONITOR ( &i_am_monitor ) ;
+  if ( i_am_monitor )
+  {
+    FORT_CLOSE ( unit_p ) ;
+  }
+}
+
+int io_debug = 0 ;
+
+enable_rsl_debug() { io_debug = 1 ; }
+disable_rsl_debug() { io_debug = 0 ; }
+
+/*@
+  RSL_READ - read and distribute an array from a file or memory.
+
+  Notes:
+  Used to read in one record from an unformatted (binary) Fortran
+  file or from a globally dimensioned data structure in the memory
+  of the monitor processor (see RSL_IAMMONITOR).  The record should
+  contain an undecomposed two- or three-dimensional array.  As a result
+  of the read, the record is distributed according to the decomposition
+  in effect for the domain whose RSL descriptor is given as argument
+  Arg4.
+
+
+  The layout of the
+  array in memory is specified by Arg2, which may be
+
+  Verbatim:
+$     IO2D_IJ,
+$     IO2D_JI,
+$     IO3D_IJK, or
+$     IO3D_JIK
+BREAKTHEEXAMPLECODE
+
+  for reads from a file, or
+
+  Verbatim:
+$     IO2D_IJ_INTERNAL,
+$     IO2D_JI_INTERNAL,
+$     IO3D_IJK_INTERNAL, or
+$     IO3D_JIK_INTERNAL
+BREAKTHEEXAMPLECODE
+
+  for reads from the memory of the monitor processor.  The constants
+  are defined in the header file rsl.inc.
+
+
+  Internal reads are useful 
+  for distributing the results
+  from global calculations performed on the monitor node.
+  Although this is not a scalable technique --- communication from
+  the monitor processor becomes a bottleneck --- it is often practical
+  and much simpler to implement for operations that are performed
+  only once during initialization, or infrequently.
+
+  For internal reads, instead of a unit number,
+  the first argument is the global (undecomposed)
+  data structure from which the data is to be read and distributed.
+  The data must actually populated the data structure only on the
+  monitor processor (the other processors treat the first argument
+  as a dummy).  The monitor distributes the data and, on return
+  from the read, the local (decomposed) portion of the array 
+  is returned as Arg3 on each processor.
+
+  IO2D_IJ specifies a two-dimensional array
+  whose minor dimension is M.  IO3D_JI specifies a two-dimensional array
+  whose minor dimension is N.  (This is as
+  as specified in the call to the routine that created or spawned
+  the domain; e.g., RSL_MOTHER_DOMAIN).
+
+  The type argument specifies the data type of an array element and
+  may be one of
+  Verbatim:
+$     RSL_REAL,
+$     RSL_DOUBLE,
+$     RSL_COMPLEX,
+$     RSL_INTEGER, or
+$     RSL_CHARACTER.  
+BREAKTHEEXAMPLECODE
+
+  The Arg6 array should contain the global (undecomposed) size of
+  each dimension in order from minor to major.  The first element of
+  glen is the size of the minor dimension.  The Arg7 array should
+  contain the size of each dimension as statically declared on the
+  processor.
+
+  Example:
+$ C Example 1, reading from a file
+$ C
+$    #include "rsl.inc"
+$       real ua(mix,mjx,mkx)
+$       integer glen(3), llen(3)
+$       glen(1) = il
+$       glen(2) = jl
+$       glen(3) = mkx
+$       llen(1) = mix
+$       llen(2) = mjx
+$       llen(3) = mkx
+$ C
+$       call rsl_read( 10, IO3D_IJK, ua, did,
+$     +               RSL_REAL, glen, llen )
+$ C
+BREAKTHEEXAMPLECODE
+
+  In the example a three-dimensional field, ua, is read in
+  from Fortran unit 10 on 
+  domain DID.
+  GLEN(1) and GLEN(2) are set to the global sizes of the two
+  horizontal dimensions.
+  LLEN(1) and LLEN(2) are set to the
+  static sizes of the local array (mix, mjx, and mkx are 
+  Fortran parameters).
+
+  See also:
+  RSL_WRITE
+
+@*/
+RSL_READ ( unit_p, iotag_p, base, d_p, type_p, glen, llen  )
+  int_p
+    unit_p              /* (I) Fortran I/O unit number. */
+   ,iotag_p ;           /* (I) RSL I/O code. */
+  char *
+    base ;              /* (O) Buffer. */
+  int_p
+    d_p                 /* (I) RSL domain descriptor */
+   ,type_p ;            /* (I) RSL data type code. */
+  int
+    glen[]              /* (I) Global dimension information. */
+   ,llen[] ;            /* (I) Local dimension information. */
+{
+  rsl_read_req_t request ;
+  rsl_read_resp_t resp ;
+  rsl_processor_t me ;
+  int cursor, mdest, mtag, msglen, dim, d ;
+  int mlen, nlen ;
+  unsigned long ig, jg, min, maj, ioffset, joffset, tlen, k ;
+  void *dex ;
+  char *pbuf ;
+  int i_am_monitor ;
+  rsl_point_t *domain ;
+  int iotag ;
+
+
+  d = *d_p ;
+  RSL_TEST_ERR( d < 0 || d >= RSL_MAXDOMAINS,
+     "rsl_init_nextcell: bad domain") ;
+  RSL_TEST_ERR( domain_info[d].valid != RSL_VALID,
+     "rsl_init_nextcell: invalid domain") ;
+  if ( domain_info[d].decomposed != 1 )
+  {
+    default_decomposition( d_p,
+                           &(domain_info[*d_p].loc_m),
+                           &(domain_info[*d_p].loc_n) ) ;
+  }
+  mlen = domain_info[d].len_m ;
+  nlen = domain_info[d].len_n ;
+  domain = domain_info[d].domain ;
+  iotag = *iotag_p ;
+
+  RSL_C_IAMMONITOR( &i_am_monitor ) ;
+  me = rsl_c_phys2comp_proc( rsl_myproc ) ;
+  ioffset = domain_info[*d_p].ilocaloffset ;
+  joffset = domain_info[*d_p].jlocaloffset ;
+  tlen = elemsize( *type_p ) ;
+
+  switch( iotag )
+  {
+  case IO2D_IJ_INTERNAL :
+    iotag = IO2D_IJ ;
+    request.internal = 1 ;
+    break ;
+  case IO2D_JI_INTERNAL :
+    iotag = IO2D_JI ;
+    request.internal = 1 ;
+    break ;
+  case IO3D_IJK_INTERNAL :
+    iotag = IO3D_IJK ;
+    request.internal = 1 ;
+    break ;
+  case IO3D_JIK_INTERNAL :
+    iotag = IO3D_JIK ;
+    request.internal = 1 ;
+    break ;
+  default :
+    request.internal = 0 ;
+    break ;
+  }
+
+  request.request_type = RSL_READ_REQUEST ;
+  request.request_mode = MSG_IO_FORTRAN ;
+  request.myproc = rsl_myproc ;
+  request.base = base ;
+  request.domain = *d_p ;
+  request.unit = *unit_p ;
+  request.unit_p = unit_p ;
+  request.type = *type_p ;
+  request.iotag = iotag ;
+  request.sequence = io_seq_compute++ ;
+
+  switch( iotag )
+  {
+  case IO2D_IJ :
+    request.ndim = 2 ;
+    break ;
+  case IO2D_JI :
+    request.ndim = 2 ;
+    break ;
+  case IO3D_IJK :
+    RSL_TEST_ERR(glen[2] > llen[2],
+       "rsl_write: global len of K dim is greater than local len") ;
+    request.ndim = 3 ;
+    break ;
+  case IO3D_JIK :
+    RSL_TEST_ERR(glen[2] > llen[2],
+       "rsl_write: global len of K dim is greater than local len") ;
+    request.ndim = 3 ;
+    break ;
+  default:
+    RSL_TEST_ERR(1,"rsl_read: unknown data tag") ;
+  }
+
+  for ( dim = 0 ; dim < request.ndim ; dim++ )
+  {
+    request.glen[dim] = glen[dim] ;
+    request.llen[dim] = llen[dim] ;
+  }
+
+  pbuf = NULL ;
+  if ( i_am_monitor )
+  {
+    /* note ! this routine allocates pbuf */
+    handle_read_request( &request, &resp, &pbuf ) ;
+  }
+  else
+  {
+    mdest = RSL_C_MONITOR_PROC () ;
+    mtag = MTYPE_FROMTO( MSG_READ_RESPONSE, mdest, rsl_myproc ) ;
+    msglen = sizeof(resp) ;
+    RSL_RECV( &resp, msglen, mtag ) ;
+
+    pbuf = RSL_MALLOC( char, resp.tofollow ) ;
+    msglen = resp.tofollow ;
+    RSL_RECV( pbuf, msglen, mtag ) ;
+  }
+
+  if ( pbuf != NULL ) 
+  {
+  /* we do it this way to ensure that we unpack in the same
+     order that the data were packed on the monitor */
+  cursor = 0 ;
+  for ( jg = 0 ; jg < nlen ; jg++ )
+  {
+    for ( ig = 0 ; ig < mlen ; ig++ )
+    {
+      if ( me == domain[INDEX_2(jg,ig,mlen)].P )
+      {
+        switch( iotag )
+        {
+        case IO2D_IJ :
+          min = ig - ioffset ;
+          maj = jg - joffset ;
+          dex = base+tlen*(min+maj*llen[0]) ;
+          bcopy(&(pbuf[cursor]),dex,tlen) ;
+          cursor += tlen ;
+          break ;
+        case IO2D_JI :
+          min = jg - joffset ;
+          maj = ig - ioffset ;
+          dex = base+tlen*(min+maj*llen[0]) ;
+          bcopy(&(pbuf[cursor]),dex,tlen) ;
+          cursor += tlen ;
+          break ;
+        case IO3D_IJK :
+          min = ig - ioffset ;
+          maj = jg - joffset ;
+          for ( k = 0 ; k < glen[2] ; k++ )
+          {
+            dex = base+tlen*(min+llen[0]*(maj+k*llen[1])) ;
+            bcopy(&(pbuf[cursor]),dex,tlen) ;
+            cursor += tlen ;
+          }
+          break ;
+        case IO3D_JIK :
+          min = jg - joffset ;
+          maj = ig - ioffset ;
+          for ( k = 0 ; k < glen[2] ; k++ )
+          {
+            dex = base+tlen*(min+llen[0]*(maj+k*llen[1])) ;
+            bcopy(&(pbuf[cursor]),dex,tlen) ;
+            cursor += tlen ;
+          }
+          break ;
+        }
+      }
+    }
+  }
+
+  RSL_FREE( pbuf ) ;
+  }
+}
+
+/************/
+
+/*@
+  RSL_WRITE - Collect and write a distributed array to a file or memory.
+
+  Notes:
+  Used to write one record to an unformatted (binary) Fortran
+  file or to a globally dimensioned data structure in the memory
+  of the monitor processor (see RSL_IAMMONITOR).  After the write,
+  the record will
+  contain an undecomposed two- or three-dimensional array.
+
+  The layout of the
+  array to be written is specified by Arg2, which may be
+
+  Verbatim:
+$     IO2D_IJ,
+$     IO2D_JI,
+$     IO3D_IJK, or
+$     IO3D_JIK
+BREAKTHEEXAMPLECODE
+
+  for writes to a file, or
+
+  Verbatim:
+$     IO2D_IJ_INTERNAL,
+$     IO2D_JI_INTERNAL,
+$     IO3D_IJK_INTERNAL, or
+$     IO3D_JIK_INTERNAL
+BREAKTHEEXAMPLECODE
+
+  for writes to the memory of the monitor processor.  The constants
+  are defined in the header file rsl.inc.
+  
+  For internal writes, instead of a unit number,
+  the first argument is the global (undecomposed)
+  data structure into which the distributed data is written.
+  All processors send their portion of the distributed array
+  to the monitor processor.  On that processor, the write 
+  returns with the global data structure.
+
+  Internal writes are useful for collecting distributed data onto
+  one processor to perform global operations (RSL_READ may then
+  be used to redistribute the results with an internal read, or
+  if the operation is a reduction, the result can be broadcast
+  using RSL_MON_BCAST).
+  Although this is not a scalable technique --- communication to
+  the monitor processor becomes a bottleneck --- it is often practical
+  and much simpler to implement for operations that are performed
+  only once during initialization, or infrequently (see Example 2 below).
+     
+  IO2D_IJ specifies a two-dimensional array
+  whose minor dimension is M.  IO3D_JI specifies a two-dimensional array
+  whose minor dimension is N.  (This is as
+  as specified in the call to the routine that created or spawned
+  the domain; e.g., RSL_MOTHER_DOMAIN).
+
+  The type argument specifies the data type of an array element and
+  may be one of
+  Verbatim:
+$     RSL_REAL,
+$     RSL_DOUBLE,
+$     RSL_COMPLEX,
+$     RSL_INTEGER, or
+$     RSL_CHARACTER.  
+BREAKTHEEXAMPLECODE
+
+  The Arg6 array should contain the global (undecomposed) size of
+  each dimension in order from minor to major.  The first element of
+  glen is the size of the minor dimension.  The Arg7 array should
+  contain the size of each dimension as statically declared on the
+  processor.
+
+  Example:
+
+$ C
+$ C Example 1, writing a distributed array to unit 11.
+$ C
+$    #include "rsl.inc"
+$       real ua(mix,mjx,mkx)
+$       integer glen(3), llen(3)
+$       glen(1) = il
+$       glen(2) = jl
+$       glen(3) = mkx
+$       llen(1) = mix
+$       llen(2) = mjx
+$       llen(3) = mkx
+$       call rsl_write( 11, IO3D_IJK, ua, domains(inest),
+$     +                 RSL_REAL, glen, llen )
+$ C
+$ C Example 2, part of a global initialization in MM90.
+$ C
+$       ALLOCATE( ASTORE_G(IL,JL) )
+$       ...
+$       CALL RSL_WRITE(ASTORE_G, IO2D_IJ_INTERNAL,
+$     +                ASTORE,DID,RSL_REAL,GLEN,LLEN)
+$       ...
+$       CALL RSL_IAMMONITOR(RETVAL)
+$       IF(RETVAL.EQ.1)THEN
+$         DO J=1,JL
+$           DO I=1,IL
+$             ATOT=ATOT+ASTORE_G(I,J)
+$           ENDDO
+$       ENDDO
+$         NPTS=IL*JL
+$         ABAR=ATOT/NPTS
+$       ENDIF
+$       CALL RSL_MON_BCAST(  ABAR,    WORDSIZE )
+BREAKTHEEXAMPLECODE
+
+  In the example a three-dimensional field, ua, is written to
+  Fortran unit 11 from
+  domain DID.
+  GLEN(1) and GLEN(2) are set to the global sizes of the two
+  horizontal dimensions.
+  LLEN(1) and LLEN(2) are set to the
+  static sizes of the local array (mix, mjx, and mkx are
+  Fortran parameters).
+
+  In example two, a reduction is used to compute an average
+  that will be used to initialize a calculation in a weather
+  model.  RSL_WRITE is used to write into the globally dimensioned
+  array ASTORE_G; RSL_IAMMONITOR is used to limit the calculation
+  to the monitor processor; RSL_MON_BCAST is used to broadcast
+  back the result.
+
+
+  See also:
+  RSL_READ
+
+@*/
+RSL_WRITE ( unit_p, iotag_p, base, d_p, type_p, glen, llen  )
+  int_p
+    unit_p              /* (I) Fortran unit number. */
+   ,iotag_p ;           /* (I) RSL I/O code. */
+  char *
+    base ;              /* (I) Buffer. */
+  int_p
+    d_p                 /* (I) RSL domain descriptor */
+   ,type_p ;            /* (I) RSL data type code. */
+  int
+    glen[]              /* (I) Global dimension information. */
+   ,llen[] ;            /* (I) Local dimension information. */
+{
+  rsl_read_req_t request ;
+  rsl_read_resp_t resp ;
+  rsl_processor_t me ;
+  int cursor, mdest, mtag, msglen, dim, d ;
+  int mlen, nlen ;
+  int minelems, majelems ;
+  unsigned long ig, jg, min, maj, ioffset, joffset, tlen, k ;
+  void *dex ;
+  char *pbuf ;
+  int i_am_monitor ;
+  int psize, nelem, typelen, nbytes, columnelems  ;
+  rsl_point_t *domain ;
+  int iotag ;
+
+  d = *d_p ;
+  RSL_TEST_ERR( d < 0 || d >= RSL_MAXDOMAINS,
+     "rsl_init_nextcell: bad domain") ;
+  RSL_TEST_ERR( domain_info[d].valid != RSL_VALID,
+     "rsl_init_nextcell: invalid domain") ;
+  if ( domain_info[d].decomposed != 1 )
+  {
+    default_decomposition( d_p,
+                           &(domain_info[*d_p].loc_m),
+                           &(domain_info[*d_p].loc_n) ) ;
+  }
+  mlen = domain_info[d].len_m ;
+  nlen = domain_info[d].len_n ;
+  domain = domain_info[d].domain ;
+  iotag = *iotag_p ;
+
+  RSL_C_IAMMONITOR( &i_am_monitor ) ;
+
+  me = rsl_c_phys2comp_proc( rsl_myproc ) ;
+  ioffset = domain_info[*d_p].ilocaloffset ;
+  joffset = domain_info[*d_p].jlocaloffset ;
+  tlen = elemsize( *type_p ) ;
+
+  switch( iotag )
+  {
+  case IO2D_IJ_INTERNAL :
+    iotag = IO2D_IJ ;
+    request.internal = 1 ;
+    break ;
+  case IO2D_JI_INTERNAL :
+    iotag = IO2D_JI ;
+    request.internal = 1 ;
+    break ;
+  case IO3D_IJK_INTERNAL :
+    iotag = IO3D_IJK ;
+    request.internal = 1 ;
+    break ;
+  case IO3D_JIK_INTERNAL :
+    iotag = IO3D_JIK ;
+    request.internal = 1 ;
+    break ;
+  default :
+    request.internal = 0 ;
+    break ;
+  }
+
+  request.request_type = RSL_WRITE_REQUEST ;
+  request.request_mode = MSG_IO_FORTRAN ;
+  request.myproc = rsl_myproc ;
+  request.base = base ;
+  request.domain = *d_p ;
+  request.unit = *unit_p ;
+  request.unit_p = unit_p ;
+  request.type = *type_p ;
+  request.iotag = iotag ;
+  request.sequence = io_seq_compute++ ;
+
+  switch( iotag )
+  {
+  case IO2D_IJ :
+    request.ndim = 2 ;
+    break ;
+  case IO2D_JI :
+    request.ndim = 2 ;
+    break ;
+  case IO3D_IJK :
+    request.ndim = 3 ;
+    RSL_TEST_ERR(glen[2] > llen[2],
+       "rsl_write: global len of K dim is greater than local len") ;
+    break ;
+  case IO3D_JIK :
+    RSL_TEST_ERR(glen[2] > llen[2],
+       "rsl_write: global len of K dim is greater than local len") ;
+    request.ndim = 3 ;
+    break ;
+  default:
+    RSL_TEST_ERR(1,"rsl_write: unknown data tag") ;
+  }
+  for ( dim = 0 ; dim < request.ndim ; dim++ )
+  {
+    request.glen[dim] = glen[dim] ;
+    request.llen[dim] = llen[dim] ;
+  }
+
+  /* figure out size of buffer needed */
+  nelem = 1 ;
+  for  ( dim = 0 ; dim < request.ndim ; dim++ )
+  {
+    nelem *= request.glen[dim] ;
+  }
+  typelen = elemsize( request.type ) ;
+  nbytes = nelem * typelen ;
+
+  switch ( request.iotag )
+  {
+  case IO2D_IJ :
+    columnelems = 1 ;
+    minelems = request.glen[0] ;
+    majelems = request.glen[1] ;
+    break ;
+  case IO2D_JI :
+    columnelems = 1 ;
+    minelems = request.glen[1] ;
+    majelems = request.glen[0] ;
+    break ;
+  case IO3D_IJK :
+    columnelems = request.glen[2] ;
+    minelems = request.glen[0] ;
+    majelems = request.glen[1] ;
+    break ;
+  case IO3D_JIK :
+    columnelems = request.glen[2] ;
+    minelems = request.glen[1] ;
+    majelems = request.glen[0] ;
+    break ;
+  default:
+    RSL_TEST_ERR(1,"handle_write_request: unknown data tag") ;
+  }
+
+  /*  figure out size for this processor */
+  pbuf = NULL ;
+  psize = 0 ;
+
+  RSL_TEST_ERR( majelems <= 0, "Major dim spec on write is zero or less.") ;
+  RSL_TEST_ERR( minelems <= 0, "Minor dim spec on write is zero or less.") ;
+  if ( majelems > domain_info[request.domain].len_n )
+  { sprintf(mess,"Major dim spec on write (%d) greater than global domain definition in that dimension (%d)\n",majelems,domain_info[request.domain].len_n) ;
+    RSL_TEST_ERR(1,mess) ; }
+  if ( minelems > domain_info[request.domain].len_m )
+  { sprintf(mess,"Minor dim spec on write (%d) greater than global domain definition in that dimension (%d)\n",minelems,domain_info[request.domain].len_m) ;
+    RSL_TEST_ERR(1,mess) ; }
+
+  for ( jg = 0 ; jg < majelems ; jg++ )
+  {
+    for ( ig = 0 ; ig < minelems ; ig++ )
+    {
+      if ( me == domain[INDEX_2(jg,ig,mlen)].P )
+        psize += columnelems * typelen ;
+    }
+  }
+
+  pbuf = RSL_MALLOC( char, psize ) ;
+
+  cursor = 0 ;
+  for ( jg = 0 ; jg < majelems ; jg++ )
+  {
+    for ( ig = 0 ; ig < minelems ; ig++ )
+    {
+      if ( me == domain[INDEX_2(jg,ig,mlen)].P )
+      {
+        switch( iotag )
+        {
+        case IO2D_IJ :
+          min = ig - ioffset ;
+          maj = jg - joffset ;
+          dex = base+tlen*(min+maj*llen[0]) ;
+          bcopy(dex,&(pbuf[cursor]),tlen) ;
+          cursor += tlen ;
+          break ;
+        case IO2D_JI :
+          min = jg - joffset ;
+          maj = ig - ioffset ;
+          dex = base+tlen*(min+maj*llen[0]) ;
+          bcopy(dex,&(pbuf[cursor]),tlen) ;
+          cursor += tlen ;
+          break ;
+        case IO3D_IJK :
+          min = ig - ioffset ;
+          maj = jg - joffset ;
+          for ( k = 0 ; k < glen[2] ; k++ )
+          {
+            dex = base+tlen*(min+llen[0]*(maj+k*llen[1])) ;
+            bcopy(dex,&(pbuf[cursor]),tlen) ;
+            cursor += tlen ;
+          }
+          break ;
+        case IO3D_JIK :
+          min = jg - joffset ;
+          maj = ig - ioffset ;
+          for ( k = 0 ; k < glen[2] ; k++ )
+          {
+            dex = base+tlen*(min+llen[0]*(maj+k*llen[1])) ;
+            bcopy(dex,&(pbuf[cursor]),tlen) ;
+            cursor += tlen ;
+          }
+          break ;
+        }
+      }
+    }
+  }
+
+  if ( pbuf != NULL )
+  {
+  if ( i_am_monitor )
+  {
+    handle_write_request( &request, nelem, psize, pbuf ) ;
+  }
+  else
+  {
+#ifdef RSL_SYNCIO
+    mdest = RSL_C_MONITOR_PROC () ;
+    msglen = 1 ;
+    mtag = MTYPE_FROMTO( MSG_WRITE_COMPUTE_RESPONSE, mdest, rsl_myproc ) ;
+    RSL_RECV( pbuf, msglen, mtag ) ;
+#endif
+    mdest = RSL_C_MONITOR_PROC () ;
+    msglen = psize ;
+    mtag = MTYPE_FROMTO( MSG_WRITE_COMPUTE_RESPONSE, rsl_myproc, mdest ) ;
+    RSL_SEND( pbuf, msglen, mtag, mdest ) ;
+  }
+
+  RSL_FREE( pbuf ) ;
+  }
+}
+
+
+
+RSL_IO_SHUTDOWN ()
+{ 
+  rsl_read_req_t request ;
+  int mdest, mtag, msglen ;
+
+  request.request_type = RSL_SHUTDOWN_REQUEST ;
+  request.sequence = io_seq_compute++ ;
+  mdest = RSL_C_MONITOR_PROC () ;
+  mtag = MSG_MONITOR_REQUEST ;
+  msglen = sizeof( request ) ;
+
+  RSL_SEND( &request, msglen, mtag, mdest ) ;
+
+  return ;
+}
+

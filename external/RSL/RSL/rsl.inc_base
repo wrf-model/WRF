@@ -1,0 +1,20 @@
+      integer rsl_phys2comp, rsl_comp2phys
+      logical rsl_iamcompute, rsl_iammonitor, rsl_nextcell
+      external rsl_iamcompute, rsl_iammonitor, rsl_nextcell
+      external rsl_phys2comp, rsl_comp2phys
+
+      integer rsl_nproc_all
+      integer rsl_nproc
+      integer rsl_myproc
+      integer rsl_nproc_min
+      integer rsl_nproc_maj
+      integer rsl_ndomains
+      integer rsl_padarea
+      common /rslsysXx/ rsl_nproc_all
+      common /rslsysXx/ rsl_nproc
+      common /rslsysXx/ rsl_myproc
+      common /rslsysXx/ rsl_nproc_min
+      common /rslsysXx/ rsl_nproc_maj
+      common /rslsysXx/ rsl_ndomains
+      common /rslsysXx/ rsl_padarea
+

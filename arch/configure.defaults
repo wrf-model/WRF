@@ -6642,8 +6642,8 @@ LIB             =       -L../external/io_netcdf -lwrfio_nf CONFIGURE_NETCDF_LIB_
 			../frame/module_internal_header_util.o ../frame/pack_utils.o \
 			-L../external/esmf_time_f90 -lesmf_time -lmalloc
 
-LDFLAGS         =       -Ogen_private_callee -p../external/io_netcdf -p../external/io_int -p../frame \
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
+LDFLAGS         =       -Ogen_private_callee -p../external/io_netcdf -p../external/io_int -p../frame \
                         -p../frame -I ../frame -p../share -p../phys -p../inc \
                         -p../dyn_em -p../dyn_eh -p../dyn_exp 
 
@@ -6774,8 +6774,8 @@ LIB             =       -L../external/io_netcdf -lwrfio_nf CONFIGURE_NETCDF_LIB_
 			../frame/module_internal_header_util.o ../frame/pack_utils.o \
 			-L../external/esmf_time_f90 -lesmf_time -lmalloc
 
-LDFLAGS         =       -Ossp -p../external/io_netcdf -p../external/io_int -p../frame \
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
+LDFLAGS         =       -Ossp -p../external/io_netcdf -p../external/io_int -p../frame \
                         -p../frame -I ../frame -p../share -p../phys -p../inc \
                         -p../dyn_em -p../dyn_eh -p../dyn_exp 
 

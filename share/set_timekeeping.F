@@ -210,7 +210,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL nl_get_history_interval_h( grid%id, history_interval_h )
    CALL nl_get_history_interval_m( grid%id, history_interval_m )
    CALL nl_get_history_interval_s( grid%id, history_interval_s )
-   history_interval_m = max( history_interval, history_interval_m ) 
+   IF ( history_interval_m .EQ. 0 ) history_interval_m = history_interval
 
    IF ( MAX( history_interval_mo, history_interval_d,   &
              history_interval_h, history_interval_m , history_interval_s   ) .GT. 0 ) THEN
@@ -267,7 +267,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL nl_get_restart_interval_h( 1, restart_interval_h )
    CALL nl_get_restart_interval_m( 1, restart_interval_m )
    CALL nl_get_restart_interval_s( 1, restart_interval_s )
-   restart_interval_m = max( restart_interval, restart_interval_m ) 
+   IF ( restart_interval_m .EQ. 0 ) restart_interval_m = restart_interval
    IF ( MAX( restart_interval_mo, restart_interval_d,   &
              restart_interval_h, restart_interval_m , restart_interval_s   ) .GT. 0 ) THEN
      CALL ESMF_TimeIntervalSet( interval, MO=restart_interval_mo, D=restart_interval_d, &
@@ -285,7 +285,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL nl_get_inputout_interval_h( grid%id, inputout_interval_h )
    CALL nl_get_inputout_interval_m( grid%id, inputout_interval_m )
    CALL nl_get_inputout_interval_s( grid%id, inputout_interval_s )
-   inputout_interval_m = max( inputout_interval, inputout_interval_m )
+   IF ( inputout_interval_m .EQ. 0 ) inputout_interval_m = inputout_interval
 
    IF ( MAX( inputout_interval_mo, inputout_interval_d,   &
              inputout_interval_h, inputout_interval_m , inputout_interval_s   ) .GT. 0 ) THEN
@@ -339,7 +339,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL nl_get_auxhist1_interval_h( grid%id, auxhist1_interval_h )
    CALL nl_get_auxhist1_interval_m( grid%id, auxhist1_interval_m )
    CALL nl_get_auxhist1_interval_s( grid%id, auxhist1_interval_s )
-   auxhist1_interval_m = max( auxhist1_interval, auxhist1_interval_m )
+   IF ( auxhist1_interval_m .EQ. 0 ) auxhist1_interval_m = auxhist1_interval
 
    IF ( MAX( auxhist1_interval_mo, auxhist1_interval_d,   &
              auxhist1_interval_h, auxhist1_interval_m , auxhist1_interval_s   ) .GT. 0 ) THEN
@@ -398,7 +398,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL nl_get_auxhist2_interval_h( grid%id, auxhist2_interval_h )
    CALL nl_get_auxhist2_interval_m( grid%id, auxhist2_interval_m )
    CALL nl_get_auxhist2_interval_s( grid%id, auxhist2_interval_s )
-   auxhist2_interval_m = max( auxhist2_interval, auxhist2_interval_m )
+   IF ( auxhist2_interval_m .EQ. 0) auxhist2_interval_m = auxhist2_interval
 
    IF ( MAX( auxhist2_interval_mo, auxhist2_interval_d,   &
              auxhist2_interval_h, auxhist2_interval_m , auxhist2_interval_s   ) .GT. 0 ) THEN
@@ -456,7 +456,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL nl_get_auxhist3_interval_h( grid%id, auxhist3_interval_h )
    CALL nl_get_auxhist3_interval_m( grid%id, auxhist3_interval_m )
    CALL nl_get_auxhist3_interval_s( grid%id, auxhist3_interval_s )
-   auxhist3_interval_m = max( auxhist3_interval, auxhist3_interval_m )
+   IF ( auxhist3_interval_m .EQ. 0 ) auxhist3_interval_m = auxhist3_interval
 
    IF ( MAX( auxhist3_interval_mo, auxhist3_interval_d,   &
              auxhist3_interval_h, auxhist3_interval_m , auxhist3_interval_s   ) .GT. 0 ) THEN
@@ -514,7 +514,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL nl_get_auxhist4_interval_h( grid%id, auxhist4_interval_h )
    CALL nl_get_auxhist4_interval_m( grid%id, auxhist4_interval_m )
    CALL nl_get_auxhist4_interval_s( grid%id, auxhist4_interval_s )
-   auxhist4_interval_m = max( auxhist4_interval, auxhist4_interval_m )
+   IF ( auxhist4_interval_m .EQ. 0 ) auxhist4_interval_m = auxhist4_interval
 
    IF ( MAX( auxhist4_interval_mo, auxhist4_interval_d,   &
              auxhist4_interval_h, auxhist4_interval_m , auxhist4_interval_s   ) .GT. 0 ) THEN
@@ -572,7 +572,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL nl_get_auxhist5_interval_h( grid%id, auxhist5_interval_h )
    CALL nl_get_auxhist5_interval_m( grid%id, auxhist5_interval_m )
    CALL nl_get_auxhist5_interval_s( grid%id, auxhist5_interval_s )
-   auxhist5_interval_m = max( auxhist5_interval, auxhist5_interval_m )
+   IF ( auxhist5_interval_m .EQ. 0 ) auxhist5_interval_m = auxhist5_interval
 
    IF ( MAX( auxhist5_interval_mo, auxhist5_interval_d,   &
              auxhist5_interval_h, auxhist5_interval_m , auxhist5_interval_s   ) .GT. 0 ) THEN
@@ -630,7 +630,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL nl_get_auxinput1_interval_h( grid%id, auxinput1_interval_h )
    CALL nl_get_auxinput1_interval_m( grid%id, auxinput1_interval_m )
    CALL nl_get_auxinput1_interval_s( grid%id, auxinput1_interval_s )
-   auxinput1_interval_m = max( auxinput1_interval, auxinput1_interval_m )
+   IF ( auxinput1_interval_m .EQ. 0 ) auxinput1_interval_m = auxinput1_interval
 
    IF ( MAX( auxinput1_interval_mo, auxinput1_interval_d,   &
              auxinput1_interval_h, auxinput1_interval_m , auxinput1_interval_s   ) .GT. 0 ) THEN
@@ -688,7 +688,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL nl_get_auxinput2_interval_h( grid%id, auxinput2_interval_h )
    CALL nl_get_auxinput2_interval_m( grid%id, auxinput2_interval_m )
    CALL nl_get_auxinput2_interval_s( grid%id, auxinput2_interval_s )
-   auxinput2_interval_m = max( auxinput2_interval, auxinput2_interval_m )
+   IF ( auxinput2_interval_m .EQ. 0 ) auxinput2_interval_m = auxinput2_interval
 
    IF ( MAX( auxinput2_interval_mo, auxinput2_interval_d,   &
              auxinput2_interval_h, auxinput2_interval_m , auxinput2_interval_s   ) .GT. 0 ) THEN
@@ -746,7 +746,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL nl_get_auxinput3_interval_h( grid%id, auxinput3_interval_h )
    CALL nl_get_auxinput3_interval_m( grid%id, auxinput3_interval_m )
    CALL nl_get_auxinput3_interval_s( grid%id, auxinput3_interval_s )
-   auxinput3_interval_m = max( auxinput3_interval, auxinput3_interval_m )
+   IF ( auxinput3_interval_m .EQ. 0 ) auxinput3_interval_m = auxinput3_interval
 
    IF ( MAX( auxinput3_interval_mo, auxinput3_interval_d,   &
              auxinput3_interval_h, auxinput3_interval_m , auxinput3_interval_s   ) .GT. 0 ) THEN
@@ -803,7 +803,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL nl_get_auxinput4_interval_h( grid%id, auxinput4_interval_h )
    CALL nl_get_auxinput4_interval_m( grid%id, auxinput4_interval_m )
    CALL nl_get_auxinput4_interval_s( grid%id, auxinput4_interval_s )
-   auxinput4_interval_m = max( auxinput4_interval, auxinput4_interval_m )
+   IF ( auxinput4_interval_m .EQ. 0 ) auxinput4_interval_m = auxinput4_interval
 
    IF ( MAX( auxinput4_interval_mo, auxinput4_interval_d,   &
              auxinput4_interval_h, auxinput4_interval_m , auxinput4_interval_s   ) .GT. 0 ) THEN
@@ -860,7 +860,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL nl_get_auxinput5_interval_h( grid%id, auxinput5_interval_h )
    CALL nl_get_auxinput5_interval_m( grid%id, auxinput5_interval_m )
    CALL nl_get_auxinput5_interval_s( grid%id, auxinput5_interval_s )
-   auxinput5_interval_m = max( auxinput5_interval, auxinput5_interval_m )
+   IF ( auxinput5_interval_m .EQ. 0 ) auxinput5_interval_m = auxinput5_interval
 
    IF ( MAX( auxinput5_interval_mo, auxinput5_interval_d,   &
              auxinput5_interval_h, auxinput5_interval_m , auxinput5_interval_s   ) .GT. 0 ) THEN

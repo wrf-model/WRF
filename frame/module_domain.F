@@ -141,7 +141,7 @@ CONTAINS
    SUBROUTINE adjust_domain_dims_for_move( grid , dx, dy )
     IMPLICIT NONE
 
-    TYPE( domain ), INTENT (INOUT)  :: grid
+    TYPE( domain ), POINTER, INTENT (INOUT)  :: grid
     INTEGER, INTENT(IN) ::  dx, dy
 
     data_ordering : SELECT CASE ( model_data_order )
@@ -206,6 +206,16 @@ CONTAINS
             grid%ep33  =             grid%ep33 + dx
 
     END SELECT data_ordering
+
+    CALL dealloc_space_field ( grid )
+
+    CALL alloc_space_field ( grid, grid%id , .FALSE. ,          &
+                             grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &
+                             grid%sm31,  grid%em31,  grid%sm32,  grid%em32,  grid%sm33,  grid%em33, &
+                             grid%sm31x, grid%em31x, grid%sm32x, grid%em32x, grid%sm33x, grid%em33x, &   ! x-xpose
+                             grid%sm31y, grid%em31y, grid%sm32y, grid%em32y, grid%sm33y, grid%em33y  &   ! y-xpose
+      )
+
     RETURN
 
    END SUBROUTINE adjust_domain_dims_for_move
@@ -745,7 +755,7 @@ CONTAINS
       new_grid%max_tiles   = 0
       new_grid%num_tiles_spec   = 0
 
-      CALL alloc_space_field ( new_grid, domain_id ,                   &
+      CALL alloc_space_field ( new_grid, domain_id , .TRUE. ,          &
                                sd1, ed1, sd2, ed2, sd3, ed3, &
                                sm1,  em1,  sm2,  em2,  sm3,  em3, &
                                sm1x, em1x, sm2x, em2x, sm3x, em3x, &   ! x-xpose
@@ -906,7 +916,7 @@ CONTAINS
 !  below this top-level of data allocation and management (in the solve routine
 !  and below).
 
-   SUBROUTINE alloc_space_field ( grid,   id,                         &
+   SUBROUTINE alloc_space_field ( grid,   id, setinitval ,            &
                                   sd31, ed31, sd32, ed32, sd33, ed33, &
                                   sm31 , em31 , sm32 , em32 , sm33 , em33 , &
                                   sm31x, em31x, sm32x, em32x, sm33x, em33x, &
@@ -921,6 +931,7 @@ CONTAINS
 
       TYPE(domain)               , POINTER          :: grid
       INTEGER , INTENT(IN)            :: id
+      LOGICAL , INTENT(IN)            :: setinitval
       INTEGER , INTENT(IN)            :: sd31, ed31, sd32, ed32, sd33, ed33
       INTEGER , INTENT(IN)            :: sm31, em31, sm32, em32, sm33, em33
       INTEGER , INTENT(IN)            :: sm31x, em31x, sm32x, em32x, sm33x, em33x
@@ -1055,7 +1066,32 @@ CONTAINS
 
       !  Local data.
 
-      INTEGER                             :: loop
+      INTEGER                             :: dyn_opt, ierr
+
+      CALL nl_get_dyn_opt( 1, dyn_opt )
+
+      IF      ( .FALSE. )           THEN
+
+#if (EM_CORE == 1)
+      ELSE IF ( dyn_opt == DYN_EM ) THEN
+# include <em_deallocs.inc>
+#endif
+#if (NMM_CORE == 1)
+      ELSE IF ( dyn_opt == DYN_NMM ) THEN
+# include <nmm_deallocs.inc>
+#endif
+#if (COAMPS_CORE == 1)
+      ELSE IF ( dyn_opt == DYN_COAMPS ) THEN
+# include <coamps_deallocs.inc>
+#endif
+#if (EXP_CORE==1)
+      ELSE IF ( dyn_opt == DYN_EXP ) THEN
+# include <exp_deallocs.inc>
+#endif
+      ELSE
+        WRITE( wrf_err_message , * )'dealloc_space_field: Invalid specification of dynamics: dyn_opt = ',dyn_opt
+        CALL wrf_error_fatal ( TRIM ( wrf_err_message ) )
+      ENDIF
 
    END SUBROUTINE dealloc_space_field
 

@@ -466,7 +466,7 @@ CONTAINS
                      ims,ime, jms,jme, kms,kme,                    &
              i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
 
-#if ( WRF_NMM_CORE == 1 )
+#if ( NMM_CORE == 1 )
      CASE (NMMLSMSCHEME)
          IF ( config_flags%dyn_opt .EQ. DYN_NMM ) THEN
            CALL wrf_debug(100,'in NMM LSM')

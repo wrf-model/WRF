@@ -2926,7 +2926,8 @@ messages(120)=  s5e5
 
    REAL FUNCTION wrf_dm_max_real ( inval )
       IMPLICIT NONE
-      REAL inval, retval, ierr
+      REAL inval, retval
+      INTEGER ierr
 ! <DESCRIPTION>
 ! Collective operation. Each processor calls passing a local value; on return
 ! all processors are passed back the maximum of all values passed.
@@ -2943,7 +2944,8 @@ messages(120)=  s5e5
 
    REAL FUNCTION wrf_dm_min_real ( inval )
       IMPLICIT NONE
-      REAL inval, retval, ierr
+      REAL inval, retval
+      INTEGER ierr
 ! <DESCRIPTION>
 ! Collective operation. Each processor calls passing a local value; on return
 ! all processors are passed back the minumum of all values passed.
@@ -2960,7 +2962,8 @@ messages(120)=  s5e5
 
    REAL FUNCTION wrf_dm_sum_real ( inval )
       IMPLICIT NONE
-      REAL inval, retval, ierr
+      INTEGER ierr
+      REAL inval, retval
 ! <DESCRIPTION>
 ! Collective operation. Each processor calls passing a local value; on return
 ! all processors are passed back the sum of all values passed.
@@ -2974,6 +2977,24 @@ messages(120)=  s5e5
       wrf_dm_sum_real = inval
 #endif
    END FUNCTION wrf_dm_sum_real
+
+   INTEGER FUNCTION wrf_dm_sum_integer ( inval )
+      IMPLICIT NONE
+      INTEGER inval, retval, ierr
+! <DESCRIPTION>
+! Collective operation. Each processor calls passing a local value; on return
+! all processors are passed back the sum of all values passed.
+!
+! </DESCRIPTION>
+#ifndef STUBMPI
+      INCLUDE 'mpif.h'
+      CALL mpi_allreduce ( inval, retval , 1, MPI_INTEGER, MPI_SUM, mpi_comm_local, ierr )
+      wrf_dm_sum_integer = retval
+#else
+      wrf_dm_sum_integer = inval
+#endif
+   END FUNCTION wrf_dm_sum_integer
+
 
    SUBROUTINE wrf_dm_maxval_real ( val, idex, jdex )
       IMPLICIT NONE

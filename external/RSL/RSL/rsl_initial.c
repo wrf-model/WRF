@@ -101,14 +101,12 @@ BREAKTHEEXAMPLECODE
 @*/
 RSL_INITIALIZE ()
 {
-fprintf(stderr,"RSL_INITIALIZE\n") ;
   rsl_mpi_communicator = MPI_COMM_WORLD ;
   rsl_initialize_internal() ;
 }
 
 RSL_INITIALIZE1 ( MPI_Comm * comm )
 {
-fprintf(stderr,"RSL_INITIALIZE1\n") ;
   rsl_mpi_communicator = *comm ;
   rsl_initialize_internal() ;
 }

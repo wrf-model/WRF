@@ -337,8 +337,10 @@ CONTAINS
   ENDDO
   ENDDO
 
-  write(6,*) ' ptop is ',p_top
-  write(6,*) ' base state mub(1,1), p_surf is ',mub(1,1),mub(1,1)+p_top
+  IF ( wrf_dm_on_monitor() ) THEN
+    write(6,*) ' ptop is ',p_top
+    write(6,*) ' base state mub(1,1), p_surf is ',mub(1,1),mub(1,1)+p_top
+  ENDIF
 
 !  calculate full state for each column - this includes moisture.
 

@@ -2,6 +2,7 @@
 !NCEP_MESO:MODEL_LAYER: INERTIAL GRAVITY WAVE ADJUSTMENT
 !
 
+#include "nmm_loop_basemacros.h"
 #include "nmm_loop_macros.h"
 
 !-----------------------------------------------------------------------
@@ -130,28 +131,28 @@
       INTEGER :: I,J,K
 
                              REAL                                       &
-     & FILO  (its-5:ite+5,jts-5:jts+5),fim   (its-5:ite+5,jts-5:jts+5)  &
-     &,RDPD  (its-5:ite+5,jts-5:jts+5)                                  &
-     &,ADPDX (its-5:ite+5,jts-5:jts+5),RDPDX (its-5:ite+5,jts-5:jts+5)  &
-     &,ADPDY (its-5:ite+5,jts-5:jts+5),RDPDY (its-5:ite+5,jts-5:jts+5)  &
-     &,ADPDNE(its-5:ite+5,jts-5:jts+5),ADPDSE(its-5:ite+5,jts-5:jts+5)  &
-     &,UDY   (its-5:ite+5,jts-5:jts+5),VDX   (its-5:ite+5,jts-5:jts+5)  &
-     &,PEW   (its-5:ite+5,jts-5:jts+5),PNS   (its-5:ite+5,jts-5:jts+5)  &
-     &,PCEW  (its-5:ite+5,jts-5:jts+5),PCNS  (its-5:ite+5,jts-5:jts+5)  &
-     &,DPFEW (its-5:ite+5,jts-5:jts+5),DPFNS (its-5:ite+5,jts-5:jts+5)  &
-     &,TNS   (its-5:ite+5,jts-5:jts+5)                                  &
-     &,HM    (its-5:ite+5,jts-5:jts+5)
+     & FILO  (its-5:ite+5,jts-5:jte+5),fim   (its-5:ite+5,jts-5:jte+5)  &
+     &,RDPD  (its-5:ite+5,jts-5:jte+5)                                  &
+     &,ADPDX (its-5:ite+5,jts-5:jte+5),RDPDX (its-5:ite+5,jts-5:jte+5)  &
+     &,ADPDY (its-5:ite+5,jts-5:jte+5),RDPDY (its-5:ite+5,jts-5:jte+5)  &
+     &,ADPDNE(its-5:ite+5,jts-5:jte+5),ADPDSE(its-5:ite+5,jts-5:jte+5)  &
+     &,UDY   (its-5:ite+5,jts-5:jte+5),VDX   (its-5:ite+5,jts-5:jte+5)  &
+     &,PEW   (its-5:ite+5,jts-5:jte+5),PNS   (its-5:ite+5,jts-5:jte+5)  &
+     &,PCEW  (its-5:ite+5,jts-5:jte+5),PCNS  (its-5:ite+5,jts-5:jte+5)  &
+     &,DPFEW (its-5:ite+5,jts-5:jte+5),DPFNS (its-5:ite+5,jts-5:jte+5)  &
+     &,TNS   (its-5:ite+5,jts-5:jte+5)                                  &
+     &,HM    (its-5:ite+5,jts-5:jte+5)
 !
                              REAL                                       &
-     & DPDE  (its-5:ite+5,jts-5:jts+5)                                  &
-     &,APEL  (its-5:ite+5,jts-5:jts+5),PCXC  (its-5:ite+5,jts-5:jts+5)  &
-     &,DFDZ  (its-5:ite+5,jts-5:jts+5)                                  &
-     &,TEW   (its-5:ite+5,jts-5:jts+5)                                  &
-     &,TNE   (its-5:ite+5,jts-5:jts+5),TSE   (its-5:ite+5,jts-5:jts+5)  &
-     &,PNE   (its-5:ite+5,jts-5:jts+5),PSE   (its-5:ite+5,jts-5:jts+5)  &
-     &,CNE   (its-5:ite+5,jts-5:jts+5),CSE   (its-5:ite+5,jts-5:jts+5)  &
-     &,PPNE  (its-5:ite+5,jts-5:jts+5),PPSE  (its-5:ite+5,jts-5:jts+5)  &
-     &,PCNE  (its-5:ite+5,jts-5:jts+5),PCSE  (its-5:ite+5,jts-5:jts+5)
+     & DPDE  (its-5:ite+5,jts-5:jte+5)                                  &
+     &,APEL  (its-5:ite+5,jts-5:jte+5),PCXC  (its-5:ite+5,jts-5:jte+5)  &
+     &,DFDZ  (its-5:ite+5,jts-5:jte+5)                                  &
+     &,TEW   (its-5:ite+5,jts-5:jte+5)                                  &
+     &,TNE   (its-5:ite+5,jts-5:jte+5),TSE   (its-5:ite+5,jts-5:jte+5)  &
+     &,PNE   (its-5:ite+5,jts-5:jte+5),PSE   (its-5:ite+5,jts-5:jte+5)  &
+     &,CNE   (its-5:ite+5,jts-5:jte+5),CSE   (its-5:ite+5,jts-5:jte+5)  &
+     &,PPNE  (its-5:ite+5,jts-5:jte+5),PPSE  (its-5:ite+5,jts-5:jte+5)  &
+     &,PCNE  (its-5:ite+5,jts-5:jte+5),PCSE  (its-5:ite+5,jts-5:jte+5)
 
       REAL apelp,rtopp,dfi,fiupp,dpnek,dpsek,dcnek,dcsek
       REAL dpfnek,dpfsek,vm,pvnek,pvsek
@@ -210,15 +211,20 @@
 !      call hpm_start('PFDHT')
 ! zero out temporaries.
 
-      FILO=0.
-      FIM=0.
-      TEW=0.
-      APEL=0.;DFDZ=0.;DPDE=0.
-      CNE=0.;PCNE=0.;PNE=0.;PPNE=0.
-      CSE=0.;PCSE=0.;PPSE=0.;PSE=0.
-      PCXC=0.;TNS=0.;UDY=0.;VDX=0.
-      TNE=0.
-      TSE=0.
+#ifdef DEC_ALPHA
+FILO    =   0.  ;   FIM     =   0.  ;   RDPD    =   0.  ;
+ADPDX   =   0.  ;   RDPDX   =   0.  ;   ADPDY   =   0.  ;
+RDPDY   =   0.  ;   ADPDNE  =   0.  ;   ADPDSE  =   0.  ;
+UDY     =   0.  ;   VDX     =   0.  ;   PEW     =   0.  ;
+PNS     =   0.  ;   PCEW    =   0.  ;   PCNS    =   0.  ;
+DPFEW   =   0.  ;   DPFNS   =   0.  ;   TNS     =   0.  ;
+HM      =   0.  ;   DPDE    =   0.  ;   APEL    =   0.  ;
+PCXC    =   0.  ;   DFDZ    =   0.  ;   TEW     =   0.  ;
+TNE     =   0.  ;   TSE     =   0.  ;   PNE     =   0.  ;
+PSE     =   0.  ;   CNE     =   0.  ;   CSE     =   0.  ;
+PPNE    =   0.  ;   PPSE    =   0.  ;   PCNE    =   0.  ;
+PCSE    =   0.  ;
+#endif
 !
       PDSL = 0.
       OMGALF = 0.
@@ -227,20 +233,19 @@
       IF(SIGMA)THEN
 !$omp parallel do
 !zj 4 changed to 5
-        DO 50 J=MYJS_P4,MYJE_P4
-        DO 50 I=MYIS_P4,MYIE_P4
+        DO 50 J=MYJS_P5,MYJE_P5
+        DO 50 I=MYIS_P5,MYIE_P5
         FILO(I,J)=FIS(I,J)
         PDSL(I,J)=PD(I,J)
    50   CONTINUE
       ELSE
 !$omp parallel do
-        DO 100 J=MYJS_P4,MYJE_P4
-        DO 100 I=MYIS_P4,MYIE_P4
+        DO 100 J=MYJS_P5,MYJE_P5
+        DO 100 I=MYIS_P5,MYIE_P5
         PDSL(I,J)=RES(I,J)*PD(I,J)
   100   CONTINUE
       ENDIF
 !
-
 !-------------------- MAIN VERTICAL INTEGRATION LOOP -------------------
 !$omp parallel do
 !$omp& private(adpdne,adpdse,adpdx,adpdy,
@@ -248,7 +253,10 @@
 !$omp&         dpfns,dpfsek,dpnek,few,fne,fns,fse,hm,
 !$omp&         pcew,pcne,pcns,pcse,pcxc,pew,pne,pns,ppne,ppse,
 !$omp&         pse,pvnek,pvsek,rdpd,rdpdx,rdpdy,tew,tne,tns,tse,
-!$omp&         udy,vdx,vm)
+!$omp&         udy,vdx,vm,
+!$omp&         i,j,k,
+!$omp&         apelp,rtopp,dfi,fiupp,dpnek,dpsek,dcnek,dcsek
+!$omp&         dpfnek,dpfsek,vm,pvnek,pvsek)
 !-----------------------------------------------------------------------
                              do 400 k=kts,kte
 !-----------------------------------------------------------------------
@@ -257,7 +265,7 @@
 !
       HM(I,J)=HTM(i,k,j)*HBM2(I,J)
 !
-      apelp=(pint(i,k+1,j)+pint(i,k,j))*0.5
+      apelp=(pint(i,k,j)+pint(i,k+1,j))*0.5
       rtopp=(q(i,k,j)*0.608-cwm(i,k,j)+1.)*t(i,k,j)*r_d/apelp
       dfi=rtopp*(deta1(k)*pdtop+deta2(k)*pdsl(i,j))
 !
@@ -296,7 +304,7 @@
       DO 240 I=MYIS_P3,MYIE_P3
       ADPDNE(I,J)=DPDE(I+IHE(J),J+1)+DPDE(I,J)
       PNE(I,J)=(FIM (I+IHE(J),J+1)-FIM (I,J))                           &
-     &        *(DWDT(I+IHE(J),J+1,K)+DWDT(i,k,j))
+     &        *(DWDT(I+IHE(J),K,J+1)+DWDT(i,k,j))
       PPNE(I,J)=PNE(I,J)*ADPDNE(I,J)
       CNE(I,J)=(DFDZ(I+IHE(J),J+1)+DFDZ(I,J))*2.                        &
               *(APEL(I+IHE(J),J+1)-APEL(I,J))

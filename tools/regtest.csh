@@ -1434,7 +1434,7 @@ banner 7
 		#	The configure.wrf file needs to be adjusted as to whether we are requesting real*4 or real*8
 		#	as the default floating precision.
 
-		if ( ( $REAL8 == TRUE ) && ( $core == em_real ) ) then
+		if ( $REAL8 == TRUE ) then
 			sed -e 's/^RWORDSIZE *= *[0-9]/RWORDSIZE = 8/' ./configure.wrf >! foo ; /bin/mv foo configure.wrf
 		endif
 

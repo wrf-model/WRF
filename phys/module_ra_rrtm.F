@@ -1796,7 +1796,7 @@ CONTAINS
                                                             QS1D, &
                                                             QG1D
 !
-    REAL   ::                                   TSFC,GLW0,EMISS0
+    REAL   ::                                   TSFC,GLW0,EMISS0,FP
 !
     INTEGER:: i,j,K,NK
 
@@ -1813,8 +1813,15 @@ CONTAINS
 ! NEED HYDROSTATIC PRESSURE HERE (MONOTONIC CHANGE WITH HEIGHT)
 ! PHYD REPLACES P8W, PHYDMID REPLACES P3D
          PHYD(kts) = p8w(I,kts,J)
+! first guess
          DO K = KTS,KTE
             PHYD(K+1) = PHYD(K) - G*RHO3D(I,K,J)*DZ8W(I,K,J)
+         ENDDO
+! correction factor FP to match p8w(I,kts,J)-p8w(I,kte,J)
+         FP = (p8w(I,kts,J)-p8w(I,kte,J))/(PHYD(KTS)-PHYD(KTE))
+! final pass
+         DO K = KTS,KTE
+            PHYD(K+1) = PHYD(K) - G*RHO3D(I,K,J)*DZ8W(I,K,J)*FP
             PHYDMID(K)= 0.5*(PHYD(K)+PHYD(K+1))
          ENDDO
 

@@ -1,4 +1,4 @@
-!#define WSM3_OPTIM
+#define WSM3_OPTIM
 MODULE module_mp_wsm3
 !
 !
@@ -491,10 +491,11 @@ CONTAINS
         do i = its, ite
           if(t(i,k).lt.t0c.and.qci(i,k).gt.0.) then
             xmi = den(i,k)*qci(i,k)/xni(i,k)
-            diameter  = dicon * sqrt(xmi)
 #ifdef WSM3_OPTIM
+            diameter  = max(dicon * sqrt(xmi), 1.e-25)
             work1c(i,k) = 1.49e4*PWR(diameter,1.31)
 #else
+            diameter  = dicon * sqrt(xmi)
             work1c(i,k) = 1.49e4*diameter**1.31
 #endif
           else

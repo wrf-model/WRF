@@ -280,6 +280,7 @@ gen_wrf_io2 ( FILE * fp , char * fname, char * structname , node_t * node , int 
       if ( p->io_mask & BOUNDARY && (io_mask & BOUNDARY) )
       {
         int ibdy ;
+        int idx ;
         char *bdytag, *xdomainend, *ydomainend, *zdomainend ;
         char *ds1,*de1,*ds2,*de2,*ds3,*de3,*ms1,*me1,*ms2,*me2,*ms3,*me3,*ps1,*pe1,*ps2,*pe2,*ps3,*pe3 ;
 
@@ -294,9 +295,10 @@ gen_wrf_io2 ( FILE * fp , char * fname, char * structname , node_t * node , int 
         ms3 = "1" ; me3 = "config_flags%spec_bdy_width" ;
         ps3 = "1" ; pe3 = "config_flags%spec_bdy_width" ;
 
+
         if (( dimnode = get_dimnode_for_coord( p , COORD_Z )) != NULL )
          { if ( p->stag_z ) { sprintf( dimname[1] ,"%s_stag", dimnode->dim_data_name) ; } 
-           else             { strcpy( dimname[1], dimnode->dim_data_name) ; }
+           else             { strcpy(  dimname[1], dimnode->dim_data_name) ; }
            if ( p->stag_z ) { zdomainend = "kde" ; } 
            else             { zdomainend = "(kde-1)" ; }
            ds2 = "kds" ; de2 = zdomainend ;
@@ -304,7 +306,7 @@ gen_wrf_io2 ( FILE * fp , char * fname, char * structname , node_t * node , int 
            ps2 = "kds" ; pe2 = zdomainend ;
          }
         else
-         { strcpy(dimname[1],"") ; 
+         { strcpy(dimname[1],"one_element") ; 
            ds2 = "1" ; de2 = "1" ;
            ms2 = "1" ; me2 = "1" ;
            ps2 = "1" ; pe2 = "1" ;
@@ -328,13 +330,14 @@ gen_wrf_io2 ( FILE * fp , char * fname, char * structname , node_t * node , int 
           if ( ibdy == 1 || ibdy == 2 ) { 
             if (( dimnode = get_dimnode_for_coord( p , COORD_Y )) != NULL )
             {
+              idx = get_index_for_coord( p , COORD_Y  ) ;
               if ( p->stag_y ) { ydomainend = "jde" ; } else { ydomainend = "(jde-1)" ; }
               ds1 = "1" ; de1 = ydomainend ;
               ms1 = "1" ; me1 = "MAX( ide , jde )" ;
               if        ( sw_io == GEN_INPUT ) {
                 ps1 = "1" ; pe1 = ydomainend ;
               } else if ( sw_io == GEN_OUTPUT ) {
-                ps1 = pdim[dimnode->dim_order-1][0] ; pe1 = pdim[dimnode->dim_order-1][1] ;
+                ps1 = pdim[idx][0] ; pe1 = pdim[idx][1] ;
               }
               if ( p->stag_y ) { sprintf( dimname[0] ,"%s_stag", dimnode->dim_data_name) ; }
               else                   { strcpy( dimname[0], dimnode->dim_data_name) ; }
@@ -343,13 +346,14 @@ gen_wrf_io2 ( FILE * fp , char * fname, char * structname , node_t * node , int 
           if ( ibdy == 3 || ibdy == 4 ) {
             if (( dimnode = get_dimnode_for_coord( p , COORD_X )) != NULL )
             {
+              idx = get_index_for_coord( p , COORD_X  ) ;
               if ( p->stag_x ) { xdomainend = "ide" ; } else { xdomainend = "(ide-1)" ; }
               ds1 = "1" ; de1 = xdomainend ;
               ms1 = "1" ; me1 = "MAX( ide , jde )" ;
               if        ( sw_io == GEN_INPUT ) {
                 ps1 = "1" ; pe1 = xdomainend ;
               } else if ( sw_io == GEN_OUTPUT ) {
-                ps1 = pdim[dimnode->dim_order-1][0] ; pe1 = pdim[dimnode->dim_order-1][1] ;
+                ps1 = pdim[idx][0] ; pe1 = pdim[idx][1] ;
               }
               if ( p->stag_x ) { sprintf( dimname[0] ,"%s_stag", dimnode->dim_data_name) ; }
               else             { strcpy( dimname[0], dimnode->dim_data_name) ; }

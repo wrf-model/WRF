@@ -2801,7 +2801,7 @@ SUBROUTINE call_pkg_and_dist_logical  (  fcn, update_arg ,                      
   INTEGER                       ,INTENT(INOUT)   :: Status
   logical globbuf ( (DomainEnd(1)-DomainStart(1)+2)*(DomainEnd(2)-DomainStart(2)+2)*(DomainEnd(3)-DomainStart(3)+2) )
 
-  globbuf = 0
+  globbuf = .false.
 
   CALL call_pkg_and_dist_generic (   fcn, globbuf , update_arg ,                                  &
                                      Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &

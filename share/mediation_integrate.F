@@ -1060,11 +1060,11 @@ SUBROUTINE med_auxhist_out ( grid , stream, config_flags )
      CASE ( 2 )
        CALL output_aux_hist2 ( grid%auxhist2_oid, grid , config_flags , ierr )
      CASE ( 3 )
-       CALL output_aux_hist2 ( grid%auxhist3_oid, grid , config_flags , ierr )
+       CALL output_aux_hist3 ( grid%auxhist3_oid, grid , config_flags , ierr )
      CASE ( 4 )
-       CALL output_aux_hist2 ( grid%auxhist4_oid, grid , config_flags , ierr )
+       CALL output_aux_hist4 ( grid%auxhist4_oid, grid , config_flags , ierr )
      CASE ( 5 )
-       CALL output_aux_hist2 ( grid%auxhist5_oid, grid , config_flags , ierr )
+       CALL output_aux_hist5 ( grid%auxhist5_oid, grid , config_flags , ierr )
    END SELECT
    RETURN
 END SUBROUTINE med_auxhist_out

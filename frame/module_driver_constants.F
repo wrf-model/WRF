@@ -38,6 +38,10 @@ MODULE module_driver_constants
 
    INTEGER , PARAMETER :: max_domains     =   ( MAX_DOMAINS_F - 1 ) / 2 + 1
 
+   !  The maximum number of nest move specifications allowed in a namelist
+
+   INTEGER , PARAMETER :: max_moves       =   30
+
    !  2. Following related to driver leve data structures for DM_PARALLEL communications
 
 #ifdef DM_PARALLEL

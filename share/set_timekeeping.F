@@ -141,47 +141,47 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL ESMF_TimeIntervalSet ( zero_time, rc=rc )
    CALL ESMF_TimeIntervalSet ( one_minute, M=1, rc=rc )
 
-   CALL rconfig_get_start_year(grid%id,start_year)
-   CALL rconfig_get_start_month(grid%id,start_month)
-   CALL rconfig_get_start_day(grid%id,start_day)
-   CALL rconfig_get_start_hour(grid%id,start_hour)
-   CALL rconfig_get_start_minute(grid%id,start_minute)
-   CALL rconfig_get_start_second(grid%id,start_second)
+   CALL nl_get_start_year(grid%id,start_year)
+   CALL nl_get_start_month(grid%id,start_month)
+   CALL nl_get_start_day(grid%id,start_day)
+   CALL nl_get_start_hour(grid%id,start_hour)
+   CALL nl_get_start_minute(grid%id,start_minute)
+   CALL nl_get_start_second(grid%id,start_second)
    CALL ESMF_TimeSet(grid%start_time, YR=start_year, MM=start_month, DD=start_day, &
                                       H=start_hour, M=start_minute, S=start_second )
-   CALL rconfig_get_run_days(1,run_days)
-   CALL rconfig_get_run_hours(1,run_hours)
-   CALL rconfig_get_run_minutes(1,run_minutes)
-   CALL rconfig_get_run_seconds(1,run_seconds)
+   CALL nl_get_run_days(1,run_days)
+   CALL nl_get_run_hours(1,run_hours)
+   CALL nl_get_run_minutes(1,run_minutes)
+   CALL nl_get_run_seconds(1,run_seconds)
 
    IF ( grid%id .EQ. head_grid%id .AND. &
         ( run_days .gt. 0 .or. run_hours .gt. 0 .or. run_minutes .gt. 0 .or. run_seconds .gt. 0 )) THEN
      CALL ESMF_TimeIntervalSet ( run_length , D=run_days, H=run_hours, M=run_minutes, S=run_seconds, rc=rc )
      grid%stop_time = grid%start_time + run_length
    ELSE
-     CALL rconfig_get_end_year(grid%id,end_year)
-     CALL rconfig_get_end_month(grid%id,end_month)
-     CALL rconfig_get_end_day(grid%id,end_day)
-     CALL rconfig_get_end_hour(grid%id,end_hour)
-     CALL rconfig_get_end_minute(grid%id,end_minute)
-     CALL rconfig_get_end_second(grid%id,end_second)
+     CALL nl_get_end_year(grid%id,end_year)
+     CALL nl_get_end_month(grid%id,end_month)
+     CALL nl_get_end_day(grid%id,end_day)
+     CALL nl_get_end_hour(grid%id,end_hour)
+     CALL nl_get_end_minute(grid%id,end_minute)
+     CALL nl_get_end_second(grid%id,end_second)
      CALL ESMF_TimeSet(grid%stop_time, YR=end_year, MM=end_month, DD=end_day, &
                                        H=end_hour, M=end_minute, S=end_second )
      run_length = grid%stop_time - grid%start_time
    ENDIF
 
    IF ( grid%id .EQ. head_grid%id ) THEN
-      CALL rconfig_get_time_step ( 1, time_step )
-      CALL rconfig_get_time_step_fract_num( 1, time_step_fract_num )
-      CALL rconfig_get_time_step_fract_den( 1, time_step_fract_den )
+      CALL nl_get_time_step ( 1, time_step )
+      CALL nl_get_time_step_fract_num( 1, time_step_fract_num )
+      CALL nl_get_time_step_fract_den( 1, time_step_fract_den )
       dt = real(time_step) + real(time_step_fract_num) / real(time_step_fract_den)
-      CALL rconfig_set_dt( grid%id, dt )
+      CALL nl_set_dt( grid%id, dt )
       grid%dt = dt
       CALL ESMF_TimeIntervalSet(grid%step_time, S=time_step, Sn=time_step_fract_num, Sd=time_step_fract_den, rc=rc)
    ELSE
       grid%step_time = grid%parents(1)%ptr%step_time / grid%parent_time_step_ratio
       grid%dt = grid%parents(1)%ptr%dt / grid%parent_time_step_ratio
-      CALL rconfig_set_dt( grid%id, grid%dt )
+      CALL nl_set_dt( grid%id, grid%dt )
    ENDIF
 
    CALL ESMF_ClockSet( grid%domain_clock,TimeStep=grid%step_time,StartTime=grid%start_time,  &
@@ -192,12 +192,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
 ! history_interval is left there (and means minutes) for consistency, but 
 ! history_interval_m will take precedence if specified
 
-   CALL rconfig_get_history_interval( grid%id, history_interval )   ! same as minutes
-   CALL rconfig_get_history_interval_mo( grid%id, history_interval_mo )
-   CALL rconfig_get_history_interval_d( grid%id, history_interval_d )
-   CALL rconfig_get_history_interval_h( grid%id, history_interval_h )
-   CALL rconfig_get_history_interval_m( grid%id, history_interval_m )
-   CALL rconfig_get_history_interval_s( grid%id, history_interval_s )
+   CALL nl_get_history_interval( grid%id, history_interval )   ! same as minutes
+   CALL nl_get_history_interval_mo( grid%id, history_interval_mo )
+   CALL nl_get_history_interval_d( grid%id, history_interval_d )
+   CALL nl_get_history_interval_h( grid%id, history_interval_h )
+   CALL nl_get_history_interval_m( grid%id, history_interval_m )
+   CALL nl_get_history_interval_s( grid%id, history_interval_s )
    history_interval_m = max( history_interval, history_interval_m ) 
 
    IF ( MAX( history_interval_mo, history_interval_d,   &
@@ -208,12 +208,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
      interval = run_length + one_minute
    ENDIF
 
-   CALL rconfig_get_history_begin_y( grid%id, history_begin_y )
-   CALL rconfig_get_history_begin_mo( grid%id, history_begin_mo )
-   CALL rconfig_get_history_begin_d( grid%id, history_begin_d )
-   CALL rconfig_get_history_begin_h( grid%id, history_begin_h )
-   CALL rconfig_get_history_begin_m( grid%id, history_begin_m )
-   CALL rconfig_get_history_begin_s( grid%id, history_begin_s )
+   CALL nl_get_history_begin_y( grid%id, history_begin_y )
+   CALL nl_get_history_begin_mo( grid%id, history_begin_mo )
+   CALL nl_get_history_begin_d( grid%id, history_begin_d )
+   CALL nl_get_history_begin_h( grid%id, history_begin_h )
+   CALL nl_get_history_begin_m( grid%id, history_begin_m )
+   CALL nl_get_history_begin_s( grid%id, history_begin_s )
    IF ( MAX( history_begin_y, history_begin_mo, history_begin_d,   &
              history_begin_h, history_begin_m , history_begin_s   ) .GT. 0 ) THEN
       CALL ESMF_TimeIntervalSet( begin_time , MO=history_begin_mo, D=history_begin_d, &
@@ -222,12 +222,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
       begin_time = zero_time
    ENDIF
 
-   CALL rconfig_get_history_end_y( grid%id, history_end_y )
-   CALL rconfig_get_history_end_mo( grid%id, history_end_mo )
-   CALL rconfig_get_history_end_d( grid%id, history_end_d )
-   CALL rconfig_get_history_end_h( grid%id, history_end_h )
-   CALL rconfig_get_history_end_m( grid%id, history_end_m )
-   CALL rconfig_get_history_end_s( grid%id, history_end_s )
+   CALL nl_get_history_end_y( grid%id, history_end_y )
+   CALL nl_get_history_end_mo( grid%id, history_end_mo )
+   CALL nl_get_history_end_d( grid%id, history_end_d )
+   CALL nl_get_history_end_h( grid%id, history_end_h )
+   CALL nl_get_history_end_m( grid%id, history_end_m )
+   CALL nl_get_history_end_s( grid%id, history_end_s )
    IF ( MAX( history_end_y, history_end_mo, history_end_d,   &
              history_end_h, history_end_m , history_end_s   ) .GT. 0 ) THEN
       CALL ESMF_TimeIntervalSet( end_time , MO=history_end_mo, D=history_end_d, &
@@ -249,12 +249,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
 ! RESTART INTERVAL
 ! restart_interval is left there (and means minutes) for consistency, but
 ! restart_interval_m will take precedence if specified
-   CALL rconfig_get_restart_interval( 1, restart_interval )   ! same as minutes
-   CALL rconfig_get_restart_interval_mo( 1, restart_interval_mo )
-   CALL rconfig_get_restart_interval_d( 1, restart_interval_d )
-   CALL rconfig_get_restart_interval_h( 1, restart_interval_h )
-   CALL rconfig_get_restart_interval_m( 1, restart_interval_m )
-   CALL rconfig_get_restart_interval_s( 1, restart_interval_s )
+   CALL nl_get_restart_interval( 1, restart_interval )   ! same as minutes
+   CALL nl_get_restart_interval_mo( 1, restart_interval_mo )
+   CALL nl_get_restart_interval_d( 1, restart_interval_d )
+   CALL nl_get_restart_interval_h( 1, restart_interval_h )
+   CALL nl_get_restart_interval_m( 1, restart_interval_m )
+   CALL nl_get_restart_interval_s( 1, restart_interval_s )
    restart_interval_m = max( restart_interval, restart_interval_m ) 
    IF ( MAX( restart_interval_mo, restart_interval_d,   &
              restart_interval_h, restart_interval_m , restart_interval_s   ) .GT. 0 ) THEN
@@ -267,12 +267,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL ESMF_ClockAddAlarm( grid%domain_clock, grid%alarms( RESTART_ALARM ), rc=rc )
 
 ! INPUTOUT INTERVAL
-   CALL rconfig_get_inputout_interval( grid%id, inputout_interval )   ! same as minutes
-   CALL rconfig_get_inputout_interval_mo( grid%id, inputout_interval_mo )
-   CALL rconfig_get_inputout_interval_d( grid%id, inputout_interval_d )
-   CALL rconfig_get_inputout_interval_h( grid%id, inputout_interval_h )
-   CALL rconfig_get_inputout_interval_m( grid%id, inputout_interval_m )
-   CALL rconfig_get_inputout_interval_s( grid%id, inputout_interval_s )
+   CALL nl_get_inputout_interval( grid%id, inputout_interval )   ! same as minutes
+   CALL nl_get_inputout_interval_mo( grid%id, inputout_interval_mo )
+   CALL nl_get_inputout_interval_d( grid%id, inputout_interval_d )
+   CALL nl_get_inputout_interval_h( grid%id, inputout_interval_h )
+   CALL nl_get_inputout_interval_m( grid%id, inputout_interval_m )
+   CALL nl_get_inputout_interval_s( grid%id, inputout_interval_s )
    inputout_interval_m = max( inputout_interval, inputout_interval_m )
 
    IF ( MAX( inputout_interval_mo, inputout_interval_d,   &
@@ -283,12 +283,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
      interval = run_length + one_minute
    ENDIF
 
-   CALL rconfig_get_inputout_begin_y( grid%id, inputout_begin_y )
-   CALL rconfig_get_inputout_begin_mo( grid%id, inputout_begin_mo )
-   CALL rconfig_get_inputout_begin_d( grid%id, inputout_begin_d )
-   CALL rconfig_get_inputout_begin_h( grid%id, inputout_begin_h )
-   CALL rconfig_get_inputout_begin_m( grid%id, inputout_begin_m )
-   CALL rconfig_get_inputout_begin_s( grid%id, inputout_begin_s )
+   CALL nl_get_inputout_begin_y( grid%id, inputout_begin_y )
+   CALL nl_get_inputout_begin_mo( grid%id, inputout_begin_mo )
+   CALL nl_get_inputout_begin_d( grid%id, inputout_begin_d )
+   CALL nl_get_inputout_begin_h( grid%id, inputout_begin_h )
+   CALL nl_get_inputout_begin_m( grid%id, inputout_begin_m )
+   CALL nl_get_inputout_begin_s( grid%id, inputout_begin_s )
    IF ( MAX( inputout_begin_y, inputout_begin_mo, inputout_begin_d,   &
              inputout_begin_h, inputout_begin_m , inputout_begin_s   ) .GT. 0 ) THEN
       CALL ESMF_TimeIntervalSet( begin_time , MO=inputout_begin_mo, D=inputout_begin_d, &
@@ -297,12 +297,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
       begin_time = zero_time
    ENDIF
 
-   CALL rconfig_get_inputout_end_y( grid%id, inputout_end_y )
-   CALL rconfig_get_inputout_end_mo( grid%id, inputout_end_mo )
-   CALL rconfig_get_inputout_end_d( grid%id, inputout_end_d )
-   CALL rconfig_get_inputout_end_h( grid%id, inputout_end_h )
-   CALL rconfig_get_inputout_end_m( grid%id, inputout_end_m )
-   CALL rconfig_get_inputout_end_s( grid%id, inputout_end_s )
+   CALL nl_get_inputout_end_y( grid%id, inputout_end_y )
+   CALL nl_get_inputout_end_mo( grid%id, inputout_end_mo )
+   CALL nl_get_inputout_end_d( grid%id, inputout_end_d )
+   CALL nl_get_inputout_end_h( grid%id, inputout_end_h )
+   CALL nl_get_inputout_end_m( grid%id, inputout_end_m )
+   CALL nl_get_inputout_end_s( grid%id, inputout_end_s )
    IF ( MAX( inputout_end_y, inputout_end_mo, inputout_end_d,   &
              inputout_end_h, inputout_end_m , inputout_end_s   ) .GT. 0 ) THEN
       CALL ESMF_TimeIntervalSet( end_time , MO=inputout_end_mo, D=inputout_end_d, &
@@ -321,12 +321,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
 ! AUXHIST1 INTERVAL
 ! auxhist1_interval is left there (and means minutes) for consistency, but
 ! auxhist1_interval_m will take precedence if specified
-   CALL rconfig_get_auxhist1_interval( grid%id, auxhist1_interval )   ! same as minutes
-   CALL rconfig_get_auxhist1_interval_mo( grid%id, auxhist1_interval_mo )
-   CALL rconfig_get_auxhist1_interval_d( grid%id, auxhist1_interval_d )
-   CALL rconfig_get_auxhist1_interval_h( grid%id, auxhist1_interval_h )
-   CALL rconfig_get_auxhist1_interval_m( grid%id, auxhist1_interval_m )
-   CALL rconfig_get_auxhist1_interval_s( grid%id, auxhist1_interval_s )
+   CALL nl_get_auxhist1_interval( grid%id, auxhist1_interval )   ! same as minutes
+   CALL nl_get_auxhist1_interval_mo( grid%id, auxhist1_interval_mo )
+   CALL nl_get_auxhist1_interval_d( grid%id, auxhist1_interval_d )
+   CALL nl_get_auxhist1_interval_h( grid%id, auxhist1_interval_h )
+   CALL nl_get_auxhist1_interval_m( grid%id, auxhist1_interval_m )
+   CALL nl_get_auxhist1_interval_s( grid%id, auxhist1_interval_s )
    auxhist1_interval_m = max( auxhist1_interval, auxhist1_interval_m )
 
    IF ( MAX( auxhist1_interval_mo, auxhist1_interval_d,   &
@@ -337,12 +337,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
      interval = run_length + one_minute
    ENDIF
 
-   CALL rconfig_get_auxhist1_begin_y( grid%id, auxhist1_begin_y )
-   CALL rconfig_get_auxhist1_begin_mo( grid%id, auxhist1_begin_mo )
-   CALL rconfig_get_auxhist1_begin_d( grid%id, auxhist1_begin_d )
-   CALL rconfig_get_auxhist1_begin_h( grid%id, auxhist1_begin_h )
-   CALL rconfig_get_auxhist1_begin_m( grid%id, auxhist1_begin_m )
-   CALL rconfig_get_auxhist1_begin_s( grid%id, auxhist1_begin_s )
+   CALL nl_get_auxhist1_begin_y( grid%id, auxhist1_begin_y )
+   CALL nl_get_auxhist1_begin_mo( grid%id, auxhist1_begin_mo )
+   CALL nl_get_auxhist1_begin_d( grid%id, auxhist1_begin_d )
+   CALL nl_get_auxhist1_begin_h( grid%id, auxhist1_begin_h )
+   CALL nl_get_auxhist1_begin_m( grid%id, auxhist1_begin_m )
+   CALL nl_get_auxhist1_begin_s( grid%id, auxhist1_begin_s )
    IF ( MAX( auxhist1_begin_y, auxhist1_begin_mo, auxhist1_begin_d,   &
              auxhist1_begin_h, auxhist1_begin_m , auxhist1_begin_s   ) .GT. 0 ) THEN
       CALL ESMF_TimeIntervalSet( begin_time , MO=auxhist1_begin_mo, D=auxhist1_begin_d, &
@@ -351,12 +351,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
       begin_time = zero_time
    ENDIF
 
-   CALL rconfig_get_auxhist1_end_y( grid%id, auxhist1_end_y )
-   CALL rconfig_get_auxhist1_end_mo( grid%id, auxhist1_end_mo )
-   CALL rconfig_get_auxhist1_end_d( grid%id, auxhist1_end_d )
-   CALL rconfig_get_auxhist1_end_h( grid%id, auxhist1_end_h )
-   CALL rconfig_get_auxhist1_end_m( grid%id, auxhist1_end_m )
-   CALL rconfig_get_auxhist1_end_s( grid%id, auxhist1_end_s )
+   CALL nl_get_auxhist1_end_y( grid%id, auxhist1_end_y )
+   CALL nl_get_auxhist1_end_mo( grid%id, auxhist1_end_mo )
+   CALL nl_get_auxhist1_end_d( grid%id, auxhist1_end_d )
+   CALL nl_get_auxhist1_end_h( grid%id, auxhist1_end_h )
+   CALL nl_get_auxhist1_end_m( grid%id, auxhist1_end_m )
+   CALL nl_get_auxhist1_end_s( grid%id, auxhist1_end_s )
    IF ( MAX( auxhist1_end_y, auxhist1_end_mo, auxhist1_end_d,   &
              auxhist1_end_h, auxhist1_end_m , auxhist1_end_s   ) .GT. 0 ) THEN
       CALL ESMF_TimeIntervalSet( end_time , MO=auxhist1_end_mo, D=auxhist1_end_d, &
@@ -375,12 +375,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
 ! AUXHIST2_ INTERVAL
 ! auxhist2_interval is left there (and means minutes) for consistency, but
 ! auxhist2_interval_m will take precedence if specified
-   CALL rconfig_get_auxhist2_interval( grid%id, auxhist2_interval )   ! same as minutes
-   CALL rconfig_get_auxhist2_interval_mo( grid%id, auxhist2_interval_mo )
-   CALL rconfig_get_auxhist2_interval_d( grid%id, auxhist2_interval_d )
-   CALL rconfig_get_auxhist2_interval_h( grid%id, auxhist2_interval_h )
-   CALL rconfig_get_auxhist2_interval_m( grid%id, auxhist2_interval_m )
-   CALL rconfig_get_auxhist2_interval_s( grid%id, auxhist2_interval_s )
+   CALL nl_get_auxhist2_interval( grid%id, auxhist2_interval )   ! same as minutes
+   CALL nl_get_auxhist2_interval_mo( grid%id, auxhist2_interval_mo )
+   CALL nl_get_auxhist2_interval_d( grid%id, auxhist2_interval_d )
+   CALL nl_get_auxhist2_interval_h( grid%id, auxhist2_interval_h )
+   CALL nl_get_auxhist2_interval_m( grid%id, auxhist2_interval_m )
+   CALL nl_get_auxhist2_interval_s( grid%id, auxhist2_interval_s )
    auxhist2_interval_m = max( auxhist2_interval, auxhist2_interval_m )
 
    IF ( MAX( auxhist2_interval_mo, auxhist2_interval_d,   &
@@ -391,12 +391,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
      interval = run_length + one_minute
    ENDIF
 
-   CALL rconfig_get_auxhist2_begin_y( grid%id, auxhist2_begin_y )
-   CALL rconfig_get_auxhist2_begin_mo( grid%id, auxhist2_begin_mo )
-   CALL rconfig_get_auxhist2_begin_d( grid%id, auxhist2_begin_d )
-   CALL rconfig_get_auxhist2_begin_h( grid%id, auxhist2_begin_h )
-   CALL rconfig_get_auxhist2_begin_m( grid%id, auxhist2_begin_m )
-   CALL rconfig_get_auxhist2_begin_s( grid%id, auxhist2_begin_s )
+   CALL nl_get_auxhist2_begin_y( grid%id, auxhist2_begin_y )
+   CALL nl_get_auxhist2_begin_mo( grid%id, auxhist2_begin_mo )
+   CALL nl_get_auxhist2_begin_d( grid%id, auxhist2_begin_d )
+   CALL nl_get_auxhist2_begin_h( grid%id, auxhist2_begin_h )
+   CALL nl_get_auxhist2_begin_m( grid%id, auxhist2_begin_m )
+   CALL nl_get_auxhist2_begin_s( grid%id, auxhist2_begin_s )
    IF ( MAX( auxhist2_begin_y, auxhist2_begin_mo, auxhist2_begin_d,   &
              auxhist2_begin_h, auxhist2_begin_m , auxhist2_begin_s   ) .GT. 0 ) THEN
       CALL ESMF_TimeIntervalSet( begin_time , MO=auxhist2_begin_mo, D=auxhist2_begin_d, &
@@ -405,12 +405,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
       begin_time = zero_time
    ENDIF
 
-   CALL rconfig_get_auxhist2_end_y( grid%id, auxhist2_end_y )
-   CALL rconfig_get_auxhist2_end_mo( grid%id, auxhist2_end_mo )
-   CALL rconfig_get_auxhist2_end_d( grid%id, auxhist2_end_d )
-   CALL rconfig_get_auxhist2_end_h( grid%id, auxhist2_end_h )
-   CALL rconfig_get_auxhist2_end_m( grid%id, auxhist2_end_m )
-   CALL rconfig_get_auxhist2_end_s( grid%id, auxhist2_end_s )
+   CALL nl_get_auxhist2_end_y( grid%id, auxhist2_end_y )
+   CALL nl_get_auxhist2_end_mo( grid%id, auxhist2_end_mo )
+   CALL nl_get_auxhist2_end_d( grid%id, auxhist2_end_d )
+   CALL nl_get_auxhist2_end_h( grid%id, auxhist2_end_h )
+   CALL nl_get_auxhist2_end_m( grid%id, auxhist2_end_m )
+   CALL nl_get_auxhist2_end_s( grid%id, auxhist2_end_s )
    IF ( MAX( auxhist2_end_y, auxhist2_end_mo, auxhist2_end_d,   &
              auxhist2_end_h, auxhist2_end_m , auxhist2_end_s   ) .GT. 0 ) THEN
       CALL ESMF_TimeIntervalSet( end_time , MO=auxhist2_end_mo, D=auxhist2_end_d, &
@@ -429,12 +429,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
 ! AUXHIST3_ INTERVAL
 ! auxhist3_interval is left there (and means minutes) for consistency, but
 ! auxhist3_interval_m will take precedence if specified
-   CALL rconfig_get_auxhist3_interval( grid%id, auxhist3_interval )   ! same as minutes
-   CALL rconfig_get_auxhist3_interval_mo( grid%id, auxhist3_interval_mo )
-   CALL rconfig_get_auxhist3_interval_d( grid%id, auxhist3_interval_d )
-   CALL rconfig_get_auxhist3_interval_h( grid%id, auxhist3_interval_h )
-   CALL rconfig_get_auxhist3_interval_m( grid%id, auxhist3_interval_m )
-   CALL rconfig_get_auxhist3_interval_s( grid%id, auxhist3_interval_s )
+   CALL nl_get_auxhist3_interval( grid%id, auxhist3_interval )   ! same as minutes
+   CALL nl_get_auxhist3_interval_mo( grid%id, auxhist3_interval_mo )
+   CALL nl_get_auxhist3_interval_d( grid%id, auxhist3_interval_d )
+   CALL nl_get_auxhist3_interval_h( grid%id, auxhist3_interval_h )
+   CALL nl_get_auxhist3_interval_m( grid%id, auxhist3_interval_m )
+   CALL nl_get_auxhist3_interval_s( grid%id, auxhist3_interval_s )
    auxhist3_interval_m = max( auxhist3_interval, auxhist3_interval_m )
 
    IF ( MAX( auxhist3_interval_mo, auxhist3_interval_d,   &
@@ -445,12 +445,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
      interval = run_length + one_minute
    ENDIF
 
-   CALL rconfig_get_auxhist3_begin_y( grid%id, auxhist3_begin_y )
-   CALL rconfig_get_auxhist3_begin_mo( grid%id, auxhist3_begin_mo )
-   CALL rconfig_get_auxhist3_begin_d( grid%id, auxhist3_begin_d )
-   CALL rconfig_get_auxhist3_begin_h( grid%id, auxhist3_begin_h )
-   CALL rconfig_get_auxhist3_begin_m( grid%id, auxhist3_begin_m )
-   CALL rconfig_get_auxhist3_begin_s( grid%id, auxhist3_begin_s )
+   CALL nl_get_auxhist3_begin_y( grid%id, auxhist3_begin_y )
+   CALL nl_get_auxhist3_begin_mo( grid%id, auxhist3_begin_mo )
+   CALL nl_get_auxhist3_begin_d( grid%id, auxhist3_begin_d )
+   CALL nl_get_auxhist3_begin_h( grid%id, auxhist3_begin_h )
+   CALL nl_get_auxhist3_begin_m( grid%id, auxhist3_begin_m )
+   CALL nl_get_auxhist3_begin_s( grid%id, auxhist3_begin_s )
    IF ( MAX( auxhist3_begin_y, auxhist3_begin_mo, auxhist3_begin_d,   &
              auxhist3_begin_h, auxhist3_begin_m , auxhist3_begin_s   ) .GT. 0 ) THEN
       CALL ESMF_TimeIntervalSet( begin_time , MO=auxhist3_begin_mo, D=auxhist3_begin_d, &
@@ -459,12 +459,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
       begin_time = zero_time
    ENDIF
 
-   CALL rconfig_get_auxhist3_end_y( grid%id, auxhist3_end_y )
-   CALL rconfig_get_auxhist3_end_mo( grid%id, auxhist3_end_mo )
-   CALL rconfig_get_auxhist3_end_d( grid%id, auxhist3_end_d )
-   CALL rconfig_get_auxhist3_end_h( grid%id, auxhist3_end_h )
-   CALL rconfig_get_auxhist3_end_m( grid%id, auxhist3_end_m )
-   CALL rconfig_get_auxhist3_end_s( grid%id, auxhist3_end_s )
+   CALL nl_get_auxhist3_end_y( grid%id, auxhist3_end_y )
+   CALL nl_get_auxhist3_end_mo( grid%id, auxhist3_end_mo )
+   CALL nl_get_auxhist3_end_d( grid%id, auxhist3_end_d )
+   CALL nl_get_auxhist3_end_h( grid%id, auxhist3_end_h )
+   CALL nl_get_auxhist3_end_m( grid%id, auxhist3_end_m )
+   CALL nl_get_auxhist3_end_s( grid%id, auxhist3_end_s )
    IF ( MAX( auxhist3_end_y, auxhist3_end_mo, auxhist3_end_d,   &
              auxhist3_end_h, auxhist3_end_m , auxhist3_end_s   ) .GT. 0 ) THEN
       CALL ESMF_TimeIntervalSet( end_time , MO=auxhist3_end_mo, D=auxhist3_end_d, &
@@ -483,12 +483,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
 ! AUXHIST4_ INTERVAL
 ! auxhist4_interval is left there (and means minutes) for consistency, but
 ! auxhist4_interval_m will take precedence if specified
-   CALL rconfig_get_auxhist4_interval( grid%id, auxhist4_interval )   ! same as minutes
-   CALL rconfig_get_auxhist4_interval_mo( grid%id, auxhist4_interval_mo )
-   CALL rconfig_get_auxhist4_interval_d( grid%id, auxhist4_interval_d )
-   CALL rconfig_get_auxhist4_interval_h( grid%id, auxhist4_interval_h )
-   CALL rconfig_get_auxhist4_interval_m( grid%id, auxhist4_interval_m )
-   CALL rconfig_get_auxhist4_interval_s( grid%id, auxhist4_interval_s )
+   CALL nl_get_auxhist4_interval( grid%id, auxhist4_interval )   ! same as minutes
+   CALL nl_get_auxhist4_interval_mo( grid%id, auxhist4_interval_mo )
+   CALL nl_get_auxhist4_interval_d( grid%id, auxhist4_interval_d )
+   CALL nl_get_auxhist4_interval_h( grid%id, auxhist4_interval_h )
+   CALL nl_get_auxhist4_interval_m( grid%id, auxhist4_interval_m )
+   CALL nl_get_auxhist4_interval_s( grid%id, auxhist4_interval_s )
    auxhist4_interval_m = max( auxhist4_interval, auxhist4_interval_m )
 
    IF ( MAX( auxhist4_interval_mo, auxhist4_interval_d,   &
@@ -499,12 +499,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
      interval = run_length + one_minute
    ENDIF
 
-   CALL rconfig_get_auxhist4_begin_y( grid%id, auxhist4_begin_y )
-   CALL rconfig_get_auxhist4_begin_mo( grid%id, auxhist4_begin_mo )
-   CALL rconfig_get_auxhist4_begin_d( grid%id, auxhist4_begin_d )
-   CALL rconfig_get_auxhist4_begin_h( grid%id, auxhist4_begin_h )
-   CALL rconfig_get_auxhist4_begin_m( grid%id, auxhist4_begin_m )
-   CALL rconfig_get_auxhist4_begin_s( grid%id, auxhist4_begin_s )
+   CALL nl_get_auxhist4_begin_y( grid%id, auxhist4_begin_y )
+   CALL nl_get_auxhist4_begin_mo( grid%id, auxhist4_begin_mo )
+   CALL nl_get_auxhist4_begin_d( grid%id, auxhist4_begin_d )
+   CALL nl_get_auxhist4_begin_h( grid%id, auxhist4_begin_h )
+   CALL nl_get_auxhist4_begin_m( grid%id, auxhist4_begin_m )
+   CALL nl_get_auxhist4_begin_s( grid%id, auxhist4_begin_s )
    IF ( MAX( auxhist4_begin_y, auxhist4_begin_mo, auxhist4_begin_d,   &
              auxhist4_begin_h, auxhist4_begin_m , auxhist4_begin_s   ) .GT. 0 ) THEN
       CALL ESMF_TimeIntervalSet( begin_time , MO=auxhist4_begin_mo, D=auxhist4_begin_d, &
@@ -513,12 +513,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
       begin_time = zero_time
    ENDIF
 
-   CALL rconfig_get_auxhist4_end_y( grid%id, auxhist4_end_y )
-   CALL rconfig_get_auxhist4_end_mo( grid%id, auxhist4_end_mo )
-   CALL rconfig_get_auxhist4_end_d( grid%id, auxhist4_end_d )
-   CALL rconfig_get_auxhist4_end_h( grid%id, auxhist4_end_h )
-   CALL rconfig_get_auxhist4_end_m( grid%id, auxhist4_end_m )
-   CALL rconfig_get_auxhist4_end_s( grid%id, auxhist4_end_s )
+   CALL nl_get_auxhist4_end_y( grid%id, auxhist4_end_y )
+   CALL nl_get_auxhist4_end_mo( grid%id, auxhist4_end_mo )
+   CALL nl_get_auxhist4_end_d( grid%id, auxhist4_end_d )
+   CALL nl_get_auxhist4_end_h( grid%id, auxhist4_end_h )
+   CALL nl_get_auxhist4_end_m( grid%id, auxhist4_end_m )
+   CALL nl_get_auxhist4_end_s( grid%id, auxhist4_end_s )
    IF ( MAX( auxhist4_end_y, auxhist4_end_mo, auxhist4_end_d,   &
              auxhist4_end_h, auxhist4_end_m , auxhist4_end_s   ) .GT. 0 ) THEN
       CALL ESMF_TimeIntervalSet( end_time , MO=auxhist4_end_mo, D=auxhist4_end_d, &
@@ -537,12 +537,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
 ! AUXHIST5_ INTERVAL
 ! auxhist5_interval is left there (and means minutes) for consistency, but
 ! auxhist5_interval_m will take precedence if specified
-   CALL rconfig_get_auxhist5_interval( grid%id, auxhist5_interval )   ! same as minutes
-   CALL rconfig_get_auxhist5_interval_mo( grid%id, auxhist5_interval_mo )
-   CALL rconfig_get_auxhist5_interval_d( grid%id, auxhist5_interval_d )
-   CALL rconfig_get_auxhist5_interval_h( grid%id, auxhist5_interval_h )
-   CALL rconfig_get_auxhist5_interval_m( grid%id, auxhist5_interval_m )
-   CALL rconfig_get_auxhist5_interval_s( grid%id, auxhist5_interval_s )
+   CALL nl_get_auxhist5_interval( grid%id, auxhist5_interval )   ! same as minutes
+   CALL nl_get_auxhist5_interval_mo( grid%id, auxhist5_interval_mo )
+   CALL nl_get_auxhist5_interval_d( grid%id, auxhist5_interval_d )
+   CALL nl_get_auxhist5_interval_h( grid%id, auxhist5_interval_h )
+   CALL nl_get_auxhist5_interval_m( grid%id, auxhist5_interval_m )
+   CALL nl_get_auxhist5_interval_s( grid%id, auxhist5_interval_s )
    auxhist5_interval_m = max( auxhist5_interval, auxhist5_interval_m )
 
    IF ( MAX( auxhist5_interval_mo, auxhist5_interval_d,   &
@@ -553,12 +553,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
      interval = run_length + one_minute
    ENDIF
 
-   CALL rconfig_get_auxhist5_begin_y( grid%id, auxhist5_begin_y )
-   CALL rconfig_get_auxhist5_begin_mo( grid%id, auxhist5_begin_mo )
-   CALL rconfig_get_auxhist5_begin_d( grid%id, auxhist5_begin_d )
-   CALL rconfig_get_auxhist5_begin_h( grid%id, auxhist5_begin_h )
-   CALL rconfig_get_auxhist5_begin_m( grid%id, auxhist5_begin_m )
-   CALL rconfig_get_auxhist5_begin_s( grid%id, auxhist5_begin_s )
+   CALL nl_get_auxhist5_begin_y( grid%id, auxhist5_begin_y )
+   CALL nl_get_auxhist5_begin_mo( grid%id, auxhist5_begin_mo )
+   CALL nl_get_auxhist5_begin_d( grid%id, auxhist5_begin_d )
+   CALL nl_get_auxhist5_begin_h( grid%id, auxhist5_begin_h )
+   CALL nl_get_auxhist5_begin_m( grid%id, auxhist5_begin_m )
+   CALL nl_get_auxhist5_begin_s( grid%id, auxhist5_begin_s )
    IF ( MAX( auxhist5_begin_y, auxhist5_begin_mo, auxhist5_begin_d,   &
              auxhist5_begin_h, auxhist5_begin_m , auxhist5_begin_s   ) .GT. 0 ) THEN
       CALL ESMF_TimeIntervalSet( begin_time , MO=auxhist5_begin_mo, D=auxhist5_begin_d, &
@@ -567,12 +567,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
       begin_time = zero_time
    ENDIF
 
-   CALL rconfig_get_auxhist5_end_y( grid%id, auxhist5_end_y )
-   CALL rconfig_get_auxhist5_end_mo( grid%id, auxhist5_end_mo )
-   CALL rconfig_get_auxhist5_end_d( grid%id, auxhist5_end_d )
-   CALL rconfig_get_auxhist5_end_h( grid%id, auxhist5_end_h )
-   CALL rconfig_get_auxhist5_end_m( grid%id, auxhist5_end_m )
-   CALL rconfig_get_auxhist5_end_s( grid%id, auxhist5_end_s )
+   CALL nl_get_auxhist5_end_y( grid%id, auxhist5_end_y )
+   CALL nl_get_auxhist5_end_mo( grid%id, auxhist5_end_mo )
+   CALL nl_get_auxhist5_end_d( grid%id, auxhist5_end_d )
+   CALL nl_get_auxhist5_end_h( grid%id, auxhist5_end_h )
+   CALL nl_get_auxhist5_end_m( grid%id, auxhist5_end_m )
+   CALL nl_get_auxhist5_end_s( grid%id, auxhist5_end_s )
    IF ( MAX( auxhist5_end_y, auxhist5_end_mo, auxhist5_end_d,   &
              auxhist5_end_h, auxhist5_end_m , auxhist5_end_s   ) .GT. 0 ) THEN
       CALL ESMF_TimeIntervalSet( end_time , MO=auxhist5_end_mo, D=auxhist5_end_d, &
@@ -591,12 +591,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
 ! AUXINPUT1_ INTERVAL
 ! auxinput1_interval is left there (and means minutes) for consistency, but
 ! auxinput1_interval_m will take precedence if specified
-   CALL rconfig_get_auxinput1_interval( grid%id, auxinput1_interval )   ! same as minutes
-   CALL rconfig_get_auxinput1_interval_mo( grid%id, auxinput1_interval_mo )
-   CALL rconfig_get_auxinput1_interval_d( grid%id, auxinput1_interval_d )
-   CALL rconfig_get_auxinput1_interval_h( grid%id, auxinput1_interval_h )
-   CALL rconfig_get_auxinput1_interval_m( grid%id, auxinput1_interval_m )
-   CALL rconfig_get_auxinput1_interval_s( grid%id, auxinput1_interval_s )
+   CALL nl_get_auxinput1_interval( grid%id, auxinput1_interval )   ! same as minutes
+   CALL nl_get_auxinput1_interval_mo( grid%id, auxinput1_interval_mo )
+   CALL nl_get_auxinput1_interval_d( grid%id, auxinput1_interval_d )
+   CALL nl_get_auxinput1_interval_h( grid%id, auxinput1_interval_h )
+   CALL nl_get_auxinput1_interval_m( grid%id, auxinput1_interval_m )
+   CALL nl_get_auxinput1_interval_s( grid%id, auxinput1_interval_s )
    auxinput1_interval_m = max( auxinput1_interval, auxinput1_interval_m )
 
    IF ( MAX( auxinput1_interval_mo, auxinput1_interval_d,   &
@@ -607,12 +607,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
      interval = run_length + one_minute
    ENDIF
 
-   CALL rconfig_get_auxinput1_begin_y( grid%id, auxinput1_begin_y )
-   CALL rconfig_get_auxinput1_begin_mo( grid%id, auxinput1_begin_mo )
-   CALL rconfig_get_auxinput1_begin_d( grid%id, auxinput1_begin_d )
-   CALL rconfig_get_auxinput1_begin_h( grid%id, auxinput1_begin_h )
-   CALL rconfig_get_auxinput1_begin_m( grid%id, auxinput1_begin_m )
-   CALL rconfig_get_auxinput1_begin_s( grid%id, auxinput1_begin_s )
+   CALL nl_get_auxinput1_begin_y( grid%id, auxinput1_begin_y )
+   CALL nl_get_auxinput1_begin_mo( grid%id, auxinput1_begin_mo )
+   CALL nl_get_auxinput1_begin_d( grid%id, auxinput1_begin_d )
+   CALL nl_get_auxinput1_begin_h( grid%id, auxinput1_begin_h )
+   CALL nl_get_auxinput1_begin_m( grid%id, auxinput1_begin_m )
+   CALL nl_get_auxinput1_begin_s( grid%id, auxinput1_begin_s )
    IF ( MAX( auxinput1_begin_y, auxinput1_begin_mo, auxinput1_begin_d,   &
              auxinput1_begin_h, auxinput1_begin_m , auxinput1_begin_s   ) .GT. 0 ) THEN
       CALL ESMF_TimeIntervalSet( begin_time , MO=auxinput1_begin_mo, D=auxinput1_begin_d, &
@@ -621,12 +621,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
       begin_time = zero_time
    ENDIF
 
-   CALL rconfig_get_auxinput1_end_y( grid%id, auxinput1_end_y )
-   CALL rconfig_get_auxinput1_end_mo( grid%id, auxinput1_end_mo )
-   CALL rconfig_get_auxinput1_end_d( grid%id, auxinput1_end_d )
-   CALL rconfig_get_auxinput1_end_h( grid%id, auxinput1_end_h )
-   CALL rconfig_get_auxinput1_end_m( grid%id, auxinput1_end_m )
-   CALL rconfig_get_auxinput1_end_s( grid%id, auxinput1_end_s )
+   CALL nl_get_auxinput1_end_y( grid%id, auxinput1_end_y )
+   CALL nl_get_auxinput1_end_mo( grid%id, auxinput1_end_mo )
+   CALL nl_get_auxinput1_end_d( grid%id, auxinput1_end_d )
+   CALL nl_get_auxinput1_end_h( grid%id, auxinput1_end_h )
+   CALL nl_get_auxinput1_end_m( grid%id, auxinput1_end_m )
+   CALL nl_get_auxinput1_end_s( grid%id, auxinput1_end_s )
    IF ( MAX( auxinput1_end_y, auxinput1_end_mo, auxinput1_end_d,   &
              auxinput1_end_h, auxinput1_end_m , auxinput1_end_s   ) .GT. 0 ) THEN
       CALL ESMF_TimeIntervalSet( end_time , MO=auxinput1_end_mo, D=auxinput1_end_d, &
@@ -648,12 +648,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
 ! AUXINPUT2_ INTERVAL
 ! auxinput2_interval is left there (and means minutes) for consistency, but
 ! auxinput2_interval_m will take precedence if specified
-   CALL rconfig_get_auxinput2_interval( grid%id, auxinput2_interval )   ! same as minutes
-   CALL rconfig_get_auxinput2_interval_mo( grid%id, auxinput2_interval_mo )
-   CALL rconfig_get_auxinput2_interval_d( grid%id, auxinput2_interval_d )
-   CALL rconfig_get_auxinput2_interval_h( grid%id, auxinput2_interval_h )
-   CALL rconfig_get_auxinput2_interval_m( grid%id, auxinput2_interval_m )
-   CALL rconfig_get_auxinput2_interval_s( grid%id, auxinput2_interval_s )
+   CALL nl_get_auxinput2_interval( grid%id, auxinput2_interval )   ! same as minutes
+   CALL nl_get_auxinput2_interval_mo( grid%id, auxinput2_interval_mo )
+   CALL nl_get_auxinput2_interval_d( grid%id, auxinput2_interval_d )
+   CALL nl_get_auxinput2_interval_h( grid%id, auxinput2_interval_h )
+   CALL nl_get_auxinput2_interval_m( grid%id, auxinput2_interval_m )
+   CALL nl_get_auxinput2_interval_s( grid%id, auxinput2_interval_s )
    auxinput2_interval_m = max( auxinput2_interval, auxinput2_interval_m )
 
    IF ( MAX( auxinput2_interval_mo, auxinput2_interval_d,   &
@@ -664,12 +664,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
      interval = run_length + one_minute
    ENDIF
 
-   CALL rconfig_get_auxinput2_begin_y( grid%id, auxinput2_begin_y )
-   CALL rconfig_get_auxinput2_begin_mo( grid%id, auxinput2_begin_mo )
-   CALL rconfig_get_auxinput2_begin_d( grid%id, auxinput2_begin_d )
-   CALL rconfig_get_auxinput2_begin_h( grid%id, auxinput2_begin_h )
-   CALL rconfig_get_auxinput2_begin_m( grid%id, auxinput2_begin_m )
-   CALL rconfig_get_auxinput2_begin_s( grid%id, auxinput2_begin_s )
+   CALL nl_get_auxinput2_begin_y( grid%id, auxinput2_begin_y )
+   CALL nl_get_auxinput2_begin_mo( grid%id, auxinput2_begin_mo )
+   CALL nl_get_auxinput2_begin_d( grid%id, auxinput2_begin_d )
+   CALL nl_get_auxinput2_begin_h( grid%id, auxinput2_begin_h )
+   CALL nl_get_auxinput2_begin_m( grid%id, auxinput2_begin_m )
+   CALL nl_get_auxinput2_begin_s( grid%id, auxinput2_begin_s )
    IF ( MAX( auxinput2_begin_y, auxinput2_begin_mo, auxinput2_begin_d,   &
              auxinput2_begin_h, auxinput2_begin_m , auxinput2_begin_s   ) .GT. 0 ) THEN
       CALL ESMF_TimeIntervalSet( begin_time , MO=auxinput2_begin_mo, D=auxinput2_begin_d, &
@@ -678,12 +678,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
       begin_time = zero_time
    ENDIF
 
-   CALL rconfig_get_auxinput2_end_y( grid%id, auxinput2_end_y )
-   CALL rconfig_get_auxinput2_end_mo( grid%id, auxinput2_end_mo )
-   CALL rconfig_get_auxinput2_end_d( grid%id, auxinput2_end_d )
-   CALL rconfig_get_auxinput2_end_h( grid%id, auxinput2_end_h )
-   CALL rconfig_get_auxinput2_end_m( grid%id, auxinput2_end_m )
-   CALL rconfig_get_auxinput2_end_s( grid%id, auxinput2_end_s )
+   CALL nl_get_auxinput2_end_y( grid%id, auxinput2_end_y )
+   CALL nl_get_auxinput2_end_mo( grid%id, auxinput2_end_mo )
+   CALL nl_get_auxinput2_end_d( grid%id, auxinput2_end_d )
+   CALL nl_get_auxinput2_end_h( grid%id, auxinput2_end_h )
+   CALL nl_get_auxinput2_end_m( grid%id, auxinput2_end_m )
+   CALL nl_get_auxinput2_end_s( grid%id, auxinput2_end_s )
    IF ( MAX( auxinput2_end_y, auxinput2_end_mo, auxinput2_end_d,   &
              auxinput2_end_h, auxinput2_end_m , auxinput2_end_s   ) .GT. 0 ) THEN
       CALL ESMF_TimeIntervalSet( end_time , MO=auxinput2_end_mo, D=auxinput2_end_d, &
@@ -705,12 +705,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
 ! AUXINPUT3_ INTERVAL
 ! auxinput3_interval is left there (and means minutes) for consistency, but
 ! auxinput3_interval_m will take precedence if specified
-   CALL rconfig_get_auxinput3_interval( grid%id, auxinput3_interval )   ! same as minutes
-   CALL rconfig_get_auxinput3_interval_mo( grid%id, auxinput3_interval_mo )
-   CALL rconfig_get_auxinput3_interval_d( grid%id, auxinput3_interval_d )
-   CALL rconfig_get_auxinput3_interval_h( grid%id, auxinput3_interval_h )
-   CALL rconfig_get_auxinput3_interval_m( grid%id, auxinput3_interval_m )
-   CALL rconfig_get_auxinput3_interval_s( grid%id, auxinput3_interval_s )
+   CALL nl_get_auxinput3_interval( grid%id, auxinput3_interval )   ! same as minutes
+   CALL nl_get_auxinput3_interval_mo( grid%id, auxinput3_interval_mo )
+   CALL nl_get_auxinput3_interval_d( grid%id, auxinput3_interval_d )
+   CALL nl_get_auxinput3_interval_h( grid%id, auxinput3_interval_h )
+   CALL nl_get_auxinput3_interval_m( grid%id, auxinput3_interval_m )
+   CALL nl_get_auxinput3_interval_s( grid%id, auxinput3_interval_s )
    auxinput3_interval_m = max( auxinput3_interval, auxinput3_interval_m )
 
    IF ( MAX( auxinput3_interval_mo, auxinput3_interval_d,   &
@@ -721,12 +721,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
      interval = run_length + one_minute
    ENDIF
 
-   CALL rconfig_get_auxinput3_begin_y( grid%id, auxinput3_begin_y )
-   CALL rconfig_get_auxinput3_begin_mo( grid%id, auxinput3_begin_mo )
-   CALL rconfig_get_auxinput3_begin_d( grid%id, auxinput3_begin_d )
-   CALL rconfig_get_auxinput3_begin_h( grid%id, auxinput3_begin_h )
-   CALL rconfig_get_auxinput3_begin_m( grid%id, auxinput3_begin_m )
-   CALL rconfig_get_auxinput3_begin_s( grid%id, auxinput3_begin_s )
+   CALL nl_get_auxinput3_begin_y( grid%id, auxinput3_begin_y )
+   CALL nl_get_auxinput3_begin_mo( grid%id, auxinput3_begin_mo )
+   CALL nl_get_auxinput3_begin_d( grid%id, auxinput3_begin_d )
+   CALL nl_get_auxinput3_begin_h( grid%id, auxinput3_begin_h )
+   CALL nl_get_auxinput3_begin_m( grid%id, auxinput3_begin_m )
+   CALL nl_get_auxinput3_begin_s( grid%id, auxinput3_begin_s )
    IF ( MAX( auxinput3_begin_y, auxinput3_begin_mo, auxinput3_begin_d,   &
              auxinput3_begin_h, auxinput3_begin_m , auxinput3_begin_s   ) .GT. 0 ) THEN
       CALL ESMF_TimeIntervalSet( begin_time , MO=auxinput3_begin_mo, D=auxinput3_begin_d, &
@@ -735,12 +735,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
       begin_time = zero_time
    ENDIF
 
-   CALL rconfig_get_auxinput3_end_y( grid%id, auxinput3_end_y )
-   CALL rconfig_get_auxinput3_end_mo( grid%id, auxinput3_end_mo )
-   CALL rconfig_get_auxinput3_end_d( grid%id, auxinput3_end_d )
-   CALL rconfig_get_auxinput3_end_h( grid%id, auxinput3_end_h )
-   CALL rconfig_get_auxinput3_end_m( grid%id, auxinput3_end_m )
-   CALL rconfig_get_auxinput3_end_s( grid%id, auxinput3_end_s )
+   CALL nl_get_auxinput3_end_y( grid%id, auxinput3_end_y )
+   CALL nl_get_auxinput3_end_mo( grid%id, auxinput3_end_mo )
+   CALL nl_get_auxinput3_end_d( grid%id, auxinput3_end_d )
+   CALL nl_get_auxinput3_end_h( grid%id, auxinput3_end_h )
+   CALL nl_get_auxinput3_end_m( grid%id, auxinput3_end_m )
+   CALL nl_get_auxinput3_end_s( grid%id, auxinput3_end_s )
    IF ( MAX( auxinput3_end_y, auxinput3_end_mo, auxinput3_end_d,   &
              auxinput3_end_h, auxinput3_end_m , auxinput3_end_s   ) .GT. 0 ) THEN
       CALL ESMF_TimeIntervalSet( end_time , MO=auxinput3_end_mo, D=auxinput3_end_d, &
@@ -762,12 +762,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
 ! AUXINPUT4_ INTERVAL
 ! auxinput4_interval is left there (and means minutes) for consistency, but
 ! auxinput4_interval_m will take precedence if specified
-   CALL rconfig_get_auxinput4_interval( grid%id, auxinput4_interval )   ! same as minutes
-   CALL rconfig_get_auxinput4_interval_mo( grid%id, auxinput4_interval_mo )
-   CALL rconfig_get_auxinput4_interval_d( grid%id, auxinput4_interval_d )
-   CALL rconfig_get_auxinput4_interval_h( grid%id, auxinput4_interval_h )
-   CALL rconfig_get_auxinput4_interval_m( grid%id, auxinput4_interval_m )
-   CALL rconfig_get_auxinput4_interval_s( grid%id, auxinput4_interval_s )
+   CALL nl_get_auxinput4_interval( grid%id, auxinput4_interval )   ! same as minutes
+   CALL nl_get_auxinput4_interval_mo( grid%id, auxinput4_interval_mo )
+   CALL nl_get_auxinput4_interval_d( grid%id, auxinput4_interval_d )
+   CALL nl_get_auxinput4_interval_h( grid%id, auxinput4_interval_h )
+   CALL nl_get_auxinput4_interval_m( grid%id, auxinput4_interval_m )
+   CALL nl_get_auxinput4_interval_s( grid%id, auxinput4_interval_s )
    auxinput4_interval_m = max( auxinput4_interval, auxinput4_interval_m )
 
    IF ( MAX( auxinput4_interval_mo, auxinput4_interval_d,   &
@@ -778,12 +778,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
      interval = run_length + one_minute
    ENDIF
 
-   CALL rconfig_get_auxinput4_begin_y( grid%id, auxinput4_begin_y )
-   CALL rconfig_get_auxinput4_begin_mo( grid%id, auxinput4_begin_mo )
-   CALL rconfig_get_auxinput4_begin_d( grid%id, auxinput4_begin_d )
-   CALL rconfig_get_auxinput4_begin_h( grid%id, auxinput4_begin_h )
-   CALL rconfig_get_auxinput4_begin_m( grid%id, auxinput4_begin_m )
-   CALL rconfig_get_auxinput4_begin_s( grid%id, auxinput4_begin_s )
+   CALL nl_get_auxinput4_begin_y( grid%id, auxinput4_begin_y )
+   CALL nl_get_auxinput4_begin_mo( grid%id, auxinput4_begin_mo )
+   CALL nl_get_auxinput4_begin_d( grid%id, auxinput4_begin_d )
+   CALL nl_get_auxinput4_begin_h( grid%id, auxinput4_begin_h )
+   CALL nl_get_auxinput4_begin_m( grid%id, auxinput4_begin_m )
+   CALL nl_get_auxinput4_begin_s( grid%id, auxinput4_begin_s )
    IF ( MAX( auxinput4_begin_y, auxinput4_begin_mo, auxinput4_begin_d,   &
              auxinput4_begin_h, auxinput4_begin_m , auxinput4_begin_s   ) .GT. 0 ) THEN
       CALL ESMF_TimeIntervalSet( begin_time , MO=auxinput4_begin_mo, D=auxinput4_begin_d, &
@@ -792,12 +792,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
       begin_time = zero_time
    ENDIF
 
-   CALL rconfig_get_auxinput4_end_y( grid%id, auxinput4_end_y )
-   CALL rconfig_get_auxinput4_end_mo( grid%id, auxinput4_end_mo )
-   CALL rconfig_get_auxinput4_end_d( grid%id, auxinput4_end_d )
-   CALL rconfig_get_auxinput4_end_h( grid%id, auxinput4_end_h )
-   CALL rconfig_get_auxinput4_end_m( grid%id, auxinput4_end_m )
-   CALL rconfig_get_auxinput4_end_s( grid%id, auxinput4_end_s )
+   CALL nl_get_auxinput4_end_y( grid%id, auxinput4_end_y )
+   CALL nl_get_auxinput4_end_mo( grid%id, auxinput4_end_mo )
+   CALL nl_get_auxinput4_end_d( grid%id, auxinput4_end_d )
+   CALL nl_get_auxinput4_end_h( grid%id, auxinput4_end_h )
+   CALL nl_get_auxinput4_end_m( grid%id, auxinput4_end_m )
+   CALL nl_get_auxinput4_end_s( grid%id, auxinput4_end_s )
    IF ( MAX( auxinput4_end_y, auxinput4_end_mo, auxinput4_end_d,   &
              auxinput4_end_h, auxinput4_end_m , auxinput4_end_s   ) .GT. 0 ) THEN
       CALL ESMF_TimeIntervalSet( end_time , MO=auxinput4_end_mo, D=auxinput4_end_d, &
@@ -819,12 +819,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
 ! AUXINPUT5_ INTERVAL
 ! auxinput5_interval is left there (and means minutes) for consistency, but
 ! auxinput5_interval_m will take precedence if specified
-   CALL rconfig_get_auxinput5_interval( grid%id, auxinput5_interval )   ! same as minutes
-   CALL rconfig_get_auxinput5_interval_mo( grid%id, auxinput5_interval_mo )
-   CALL rconfig_get_auxinput5_interval_d( grid%id, auxinput5_interval_d )
-   CALL rconfig_get_auxinput5_interval_h( grid%id, auxinput5_interval_h )
-   CALL rconfig_get_auxinput5_interval_m( grid%id, auxinput5_interval_m )
-   CALL rconfig_get_auxinput5_interval_s( grid%id, auxinput5_interval_s )
+   CALL nl_get_auxinput5_interval( grid%id, auxinput5_interval )   ! same as minutes
+   CALL nl_get_auxinput5_interval_mo( grid%id, auxinput5_interval_mo )
+   CALL nl_get_auxinput5_interval_d( grid%id, auxinput5_interval_d )
+   CALL nl_get_auxinput5_interval_h( grid%id, auxinput5_interval_h )
+   CALL nl_get_auxinput5_interval_m( grid%id, auxinput5_interval_m )
+   CALL nl_get_auxinput5_interval_s( grid%id, auxinput5_interval_s )
    auxinput5_interval_m = max( auxinput5_interval, auxinput5_interval_m )
 
    IF ( MAX( auxinput5_interval_mo, auxinput5_interval_d,   &
@@ -835,12 +835,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
      interval = run_length + one_minute
    ENDIF
 
-   CALL rconfig_get_auxinput5_begin_y( grid%id, auxinput5_begin_y )
-   CALL rconfig_get_auxinput5_begin_mo( grid%id, auxinput5_begin_mo )
-   CALL rconfig_get_auxinput5_begin_d( grid%id, auxinput5_begin_d )
-   CALL rconfig_get_auxinput5_begin_h( grid%id, auxinput5_begin_h )
-   CALL rconfig_get_auxinput5_begin_m( grid%id, auxinput5_begin_m )
-   CALL rconfig_get_auxinput5_begin_s( grid%id, auxinput5_begin_s )
+   CALL nl_get_auxinput5_begin_y( grid%id, auxinput5_begin_y )
+   CALL nl_get_auxinput5_begin_mo( grid%id, auxinput5_begin_mo )
+   CALL nl_get_auxinput5_begin_d( grid%id, auxinput5_begin_d )
+   CALL nl_get_auxinput5_begin_h( grid%id, auxinput5_begin_h )
+   CALL nl_get_auxinput5_begin_m( grid%id, auxinput5_begin_m )
+   CALL nl_get_auxinput5_begin_s( grid%id, auxinput5_begin_s )
    IF ( MAX( auxinput5_begin_y, auxinput5_begin_mo, auxinput5_begin_d,   &
              auxinput5_begin_h, auxinput5_begin_m , auxinput5_begin_s   ) .GT. 0 ) THEN
       CALL ESMF_TimeIntervalSet( begin_time , MO=auxinput5_begin_mo, D=auxinput5_begin_d, &
@@ -849,12 +849,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
       begin_time = zero_time
    ENDIF
 
-   CALL rconfig_get_auxinput5_end_y( grid%id, auxinput5_end_y )
-   CALL rconfig_get_auxinput5_end_mo( grid%id, auxinput5_end_mo )
-   CALL rconfig_get_auxinput5_end_d( grid%id, auxinput5_end_d )
-   CALL rconfig_get_auxinput5_end_h( grid%id, auxinput5_end_h )
-   CALL rconfig_get_auxinput5_end_m( grid%id, auxinput5_end_m )
-   CALL rconfig_get_auxinput5_end_s( grid%id, auxinput5_end_s )
+   CALL nl_get_auxinput5_end_y( grid%id, auxinput5_end_y )
+   CALL nl_get_auxinput5_end_mo( grid%id, auxinput5_end_mo )
+   CALL nl_get_auxinput5_end_d( grid%id, auxinput5_end_d )
+   CALL nl_get_auxinput5_end_h( grid%id, auxinput5_end_h )
+   CALL nl_get_auxinput5_end_m( grid%id, auxinput5_end_m )
+   CALL nl_get_auxinput5_end_s( grid%id, auxinput5_end_s )
    IF ( MAX( auxinput5_end_y, auxinput5_end_mo, auxinput5_end_d,   &
              auxinput5_end_h, auxinput5_end_m , auxinput5_end_s   ) .GT. 0 ) THEN
       CALL ESMF_TimeIntervalSet( end_time , MO=auxinput5_end_mo, D=auxinput5_end_d, &

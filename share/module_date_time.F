@@ -61,9 +61,9 @@ CONTAINS
    REAL :: gmt
 
     xtime = time/60.
-    CALL rconfig_get_gmt (id, gmt)
-    CALL rconfig_get_julyr (id, julyr)
-    CALL rconfig_get_julday (id, julday)
+    CALL nl_get_gmt (id, gmt)
+    CALL nl_get_julyr (id, julyr)
+    CALL nl_get_julday (id, julday)
     idt        = 86400*(julday-1)+nint(3600*gmt)
     write (mess,*) 'calc_current_date called: time = ',time,' idt = ',idt
     CALL wrf_debug(300,mess)

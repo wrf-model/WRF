@@ -452,9 +452,9 @@ SUBROUTINE med_nest_move ( parent, nest )
    py = grid%parent_grid_ratio*dy
 
    grid%i_parent_start = grid%i_parent_start + px / grid%parent_grid_ratio 
-   CALL rconfig_set_i_parent_start( grid%id, grid%i_parent_start )
+   CALL nl_set_i_parent_start( grid%id, grid%i_parent_start )
    grid%j_parent_start = grid%j_parent_start + py / grid%parent_grid_ratio
-   CALL rconfig_set_j_parent_start( grid%id, grid%j_parent_start )
+   CALL nl_set_j_parent_start( grid%id, grid%j_parent_start )
 
    CALL med_interp_domain( parent, nest )
 
@@ -487,21 +487,21 @@ LOGICAL FUNCTION time_for_move ( grid , move_cd_x, move_cd_y )
    TIME_FOR_MOVE = .FALSE.
    CALL ESMF_ClockGetCurrTime( grid%domain_clock, CurrTime=ct, rc=rc )
    CALL ESMF_ClockGetStartTime( grid%domain_clock, StartTime=st, rc=rc )
-   CALL rconfig_get_num_moves( 1, num_moves )
+   CALL nl_get_num_moves( 1, num_moves )
    IF ( num_moves .GT. max_moves ) THEN
      WRITE(mess,*)'mediation_integrate: time_for_move: num_moves (',num_moves,') .GT. max_moves (',max_moves,')'
      CALL wrf_error_fatal( TRIM(mess) )
    ENDIF
    DO I = 1, num_moves
-     CALL rconfig_get_move_id( i, move_id )
+     CALL nl_get_move_id( i, move_id )
      IF ( move_id .EQ. grid%id ) THEN
-       CALL rconfig_get_move_interval( i, move_interval )
+       CALL nl_get_move_interval( i, move_interval )
        IF ( move_interval .LT. 999999999 ) THEN
          CALL ESMF_TimeIntervalSet ( ti, M=move_interval, rc=rc )
          IF ( ct .GE. grid%start_time + ti ) THEN
-           CALL rconfig_get_move_cd_x ( i, move_cd_x )
-           CALL rconfig_get_move_cd_y ( i, move_cd_y )
-           CALL rconfig_set_move_interval ( i, 999999999 )
+           CALL nl_get_move_cd_x ( i, move_cd_x )
+           CALL nl_get_move_cd_y ( i, move_cd_y )
+           CALL nl_set_move_interval ( i, 999999999 )
            TIME_FOR_MOVE = .TRUE.
            EXIT
          ENDIF

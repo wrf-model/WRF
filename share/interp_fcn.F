@@ -679,7 +679,7 @@
 
      nijds = min(nids, njds)
      nijde = max(nide, njde)
-     CALL rconfig_get_spec_bdy_width( 1, spec_bdy_width )
+     CALL nl_get_spec_bdy_width( 1, spec_bdy_width )
 
      CALL bdy_interp1( cfld,                                 &  ! CD field
                            cids, cide, ckds, ckde, cjds, cjde,   &
@@ -781,8 +781,8 @@
      ! from the CD tile. 
 
 #ifdef MM5_SINT
-     CALL rconfig_get_spec_zone( 1, spec_zone )
-     CALL rconfig_get_relax_zone( 1, relax_zone )
+     CALL nl_get_spec_zone( 1, spec_zone )
+     CALL nl_get_relax_zone( 1, relax_zone )
      sz = MIN(MAX( spec_zone, relax_zone ),spec_bdy_width)
 
      nfx = nri * nrj
@@ -1100,7 +1100,7 @@
    
       !  Find out what the water value is.
    
-      CALL rconfig_get_iswater(1,iswater)
+      CALL nl_get_iswater(1,iswater)
 
       !  Right now, only mass point locations permitted.
    
@@ -1304,7 +1304,7 @@
    
       !  Find out what the water value is.
    
-      CALL rconfig_get_iswater(1,iswater)
+      CALL nl_get_iswater(1,iswater)
 
       !  Right now, only mass point locations permitted.
    
@@ -1490,15 +1490,15 @@
 
       !  If there is no feedback, there can be no smoothing.
 
-      CALL rconfig_get_feedback       ( 1, feedback  )
+      CALL nl_get_feedback       ( 1, feedback  )
       IF ( feedback == 0 ) RETURN
-      CALL rconfig_get_spec_zone ( 1, spec_zone )
+      CALL nl_get_spec_zone ( 1, spec_zone )
 
       !  These are the 2d smoothers used on the fedback data.  These filters
       !  are run on the coarse grid data (after the nested info has been
       !  fedback).  Only the area of the nest in the coarse grid is filtered.
 
-      CALL rconfig_get_smooth_option  ( 1, smooth_option  )
+      CALL nl_get_smooth_option  ( 1, smooth_option  )
 
       IF      ( smooth_option == 0 ) THEN
 ! no op

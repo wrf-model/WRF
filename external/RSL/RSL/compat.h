@@ -229,6 +229,12 @@
 
 #   define RSL_RESET_STAGING   rsl_reset_staging__
 
+#   define RSL_TO_OH_INFO    rsl_to_oh_info__
+#   define RSL_TO_OH_MSG     rsl_to_oh_msg__
+#   define RSL_FROM_TH_INFO  rsl_from_th_info__
+#   define RSL_FROM_TH_MSG   rsl_from_th_msg__
+#   define RSL_FORCE_HEMI    rsl_force_hemi__
+
 #   define VRCOPY   vrcopy_
 
 #   define RSL_SET_REGULAR_DECOMP  rsl_set_regular_decomp__
@@ -391,6 +397,12 @@
 #   define RSL_END_REGISTER_F90     rsl_end_register_f90_
 
 #   define RSL_RESET_STAGING   rsl_reset_staging_
+
+#   define RSL_TO_OH_INFO    rsl_to_oh_info_
+#   define RSL_TO_OH_MSG     rsl_to_oh_msg_
+#   define RSL_FROM_TH_INFO  rsl_from_th_info_
+#   define RSL_FROM_TH_MSG   rsl_from_th_msg_
+#   define RSL_FORCE_HEMI    rsl_force_hemi_
 
 #   define VRCOPY   vrcopy_
 
@@ -555,6 +567,12 @@
 #   define RSL_END_REGISTER_F90     rsl_end_register_f90
 
 #   define RSL_RESET_STAGING   rsl_reset_staging
+
+#   define RSL_TO_OH_INFO    rsl_to_oh_info
+#   define RSL_TO_OH_MSG     rsl_to_oh_msg
+#   define RSL_FROM_TH_INFO  rsl_from_th_info
+#   define RSL_FROM_TH_MSG   rsl_from_th_msg
+#   define RSL_FORCE_HEMI    rsl_force_hemi
 
 #   define VRCOPY   vrcopy
 

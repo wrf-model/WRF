@@ -595,6 +595,9 @@ rsl_c_spawn_regnest( n_p, d_p, maskid_p,
   }
 
   RSL_TEST_ERR( d < 0 || d >= RSL_MAXDOMAINS, "invalid domain index") ;
+fprintf(stderr,"im %d jm %d ime %d jme %d\n",im,jm,ime,jme) ;
+fprintf(stderr,"domain_info[d].len_m %d \n",domain_info[d].len_m) ;
+fprintf(stderr,"domain_info[d].len_n %d \n",domain_info[d].len_n) ;
   RSL_TEST_ERR( im < 0 || im >= domain_info[d].len_m || 
                 jm < 0 || jm >= domain_info[d].len_n || 
                 ime < 0 || ime>= domain_info[d].len_m || 

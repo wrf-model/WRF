@@ -27,7 +27,8 @@ CORE_OBJ = set_padarea.o set_f_padarea.o domain_def.o within_nest.o  \
       rsl_remap_state.o patchmap.o boundary_safe.o fill_boundary.o \
       process_refs.o rsl_error_dup.o \
       fort_doubleread.o  fort_doublewrite.o fort_bdyin_dbl.o \
-      comp_period.o exch_period.o period_def.o period_refs.o
+      comp_period.o exch_period.o period_def.o period_refs.o \
+      rsl_hemiforce.o
 
 CORE_HDR = rsl.h  rsl_comm.h compat.h
 

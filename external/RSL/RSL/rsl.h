@@ -343,6 +343,14 @@ typedef struct rsl_point {
   rsl_child_info_t *children_p ;
 } rsl_point_t ;
 
+typedef struct rsl_hemi_rec {
+  int oig , ojg ;
+  int nbytes ;
+  int curs ;
+  char * data ;
+  struct rsl_hemi_rec * next ;
+} rsl_hemi_rec_t ;
+
 typedef struct rsl_domain_info {
   int valid ;
   int decomposed ;
@@ -432,6 +440,13 @@ typedef struct rsl_domain_info {
   int Nmerge_send_Plist ;
 
   rsl_list_t *merge_Xlist ;
+
+
+  int other_hemi_proclist_built ;
+  rsl_hemi_rec_t * other_hemi_procbufs[RSL_MAXPROC] ;
+  int hemi_sendPlist[RSL_MAXPROC] ;
+  int hemi_recvPlist[RSL_MAXPROC] ;
+  int hemi_recv_tags[RSL_MAXPROC] ;
 
   int is_write, is_read, ie_write, ie_read ;
   int js_write, js_read, je_write, je_read ;

@@ -1,5 +1,6 @@
 SUBROUTINE init_domain_constants_em ( parent , nest )
    USE module_domain
+   USE module_configure
    IMPLICIT NONE
    TYPE(domain)  :: parent , nest
 
@@ -26,30 +27,30 @@ SUBROUTINE init_domain_constants_em ( parent , nest )
    nest%julyr   = parent%julyr
    nest%julday  = parent%julday
 
-   CALL get_mminlu ( char_junk(1:4) )
-   CALL get_iswater (1, iswater )
-   CALL get_cen_lat ( 1 , cen_lat )
-   CALL get_cen_lon ( 1 , cen_lon )
-   CALL get_truelat1 ( 1 , truelat1 )
-   CALL get_truelat2 ( 1 , truelat2 )
-   CALL get_moad_cen_lat ( 1 , moad_cen_lat )
-   CALL get_stand_lon ( 1 , stand_lon )
-   CALL get_map_proj ( 1 , map_proj )
-   CALL get_gmt ( 1 , gmt)
-   CALL get_julyr ( 1 , julyr)
-   CALL get_julday ( 1 , julday)
+   CALL rconfig_get_mminlu ( 1,char_junk(1:4) )
+   CALL rconfig_get_iswater (1, iswater )
+   CALL rconfig_get_cen_lat ( 1 , cen_lat )
+   CALL rconfig_get_cen_lon ( 1 , cen_lon )
+   CALL rconfig_get_truelat1 ( 1 , truelat1 )
+   CALL rconfig_get_truelat2 ( 1 , truelat2 )
+   CALL rconfig_get_moad_cen_lat ( 1 , moad_cen_lat )
+   CALL rconfig_get_stand_lon ( 1 , stand_lon )
+   CALL rconfig_get_map_proj ( 1 , map_proj )
+   CALL rconfig_get_gmt ( 1 , gmt)
+   CALL rconfig_get_julyr ( 1 , julyr)
+   CALL rconfig_get_julday ( 1 , julday)
    IF ( nest%id .NE. 1 ) THEN
-     CALL set_gmt (nest%id, gmt)
-     CALL set_julyr (nest%id, julyr)
-     CALL set_julday (nest%id, julday)
-     CALL set_iswater (nest%id, iswater )
-     CALL set_cen_lat ( nest%id , cen_lat )
-     CALL set_cen_lon ( nest%id , cen_lon )
-     CALL set_truelat1 ( nest%id , truelat1 )
-     CALL set_truelat2 ( nest%id , truelat2 )
-     CALL set_moad_cen_lat ( nest%id , moad_cen_lat )
-     CALL set_stand_lon ( nest%id , stand_lon )
-     CALL set_map_proj ( nest%id , map_proj )
+     CALL rconfig_set_gmt (nest%id, gmt)
+     CALL rconfig_set_julyr (nest%id, julyr)
+     CALL rconfig_set_julday (nest%id, julday)
+     CALL rconfig_set_iswater (nest%id, iswater )
+     CALL rconfig_set_cen_lat ( nest%id , cen_lat )
+     CALL rconfig_set_cen_lon ( nest%id , cen_lon )
+     CALL rconfig_set_truelat1 ( nest%id , truelat1 )
+     CALL rconfig_set_truelat2 ( nest%id , truelat2 )
+     CALL rconfig_set_moad_cen_lat ( nest%id , moad_cen_lat )
+     CALL rconfig_set_stand_lon ( nest%id , stand_lon )
+     CALL rconfig_set_map_proj ( nest%id , map_proj )
    END IF
    nest%gmt     = gmt 
    nest%julday  = julday
@@ -89,6 +90,7 @@ SUBROUTINE blend_terrain ( ter_interpolated , ter_input , &
                            ims , ime , jms , jme , kms , kme , & 
                            ips , ipe , jps , jpe , kps , kpe )
 
+   USE module_configure
    IMPLICIT NONE
 
    INTEGER , INTENT(IN)                       :: ids , ide , jds , jde , kds , kde , & 
@@ -104,7 +106,7 @@ SUBROUTINE blend_terrain ( ter_interpolated , ter_input , &
    !  parent elevation for the first spec_zone row/columns, so we need
    !  to get that value.
 
-   CALL get_spec_zone ( spec_zone) 
+   CALL rconfig_get_spec_zone ( 1, spec_zone) 
 
    !  Initialize temp values to the nest ter elevation.  This fills in the values
    !  that will not be modified below.  

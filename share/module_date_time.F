@@ -3,6 +3,7 @@
 MODULE module_date_time
 
   USE module_wrf_error
+  USE module_configure
 
   CHARACTER* 24 ::   start_date = '                        '
   CHARACTER* 24 ::   current_date
@@ -60,9 +61,9 @@ CONTAINS
    REAL :: gmt
 
     xtime = time/60.
-    CALL get_gmt (id, gmt)
-    CALL get_julyr (id, julyr)
-    CALL get_julday (id, julday)
+    CALL rconfig_get_gmt (id, gmt)
+    CALL rconfig_get_julyr (id, julyr)
+    CALL rconfig_get_julday (id, julday)
     idt        = 86400*(julday-1)+nint(3600*gmt)
     write (mess,*) 'calc_current_date called: time = ',time,' idt = ',idt
     CALL wrf_debug(300,mess)

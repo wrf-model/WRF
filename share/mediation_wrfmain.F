@@ -50,7 +50,7 @@ SUBROUTINE med_initialdata_input ( grid , config_flags )
    TYPE(ESMF_Time)        :: CurrTime
 
 
-   CALL get_restart( restart )
+   CALL rconfig_get_restart( 1, restart )
    IF ( .NOT. restart ) THEN
      !  Initialize the mother domain.
      CALL start_timing

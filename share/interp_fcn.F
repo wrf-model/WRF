@@ -18,6 +18,7 @@
                            ipos, jpos,                           &  ! Position of lower left of nest in CD
                            nri, nrj                             )   ! nest ratios
      USE module_timing
+     USE module_configure
      IMPLICIT NONE
 
 
@@ -166,6 +167,7 @@
                            xstag, ystag,                         &  ! staggering of field
                            ipos, jpos,                           &  ! Position of lower left of nest in CD
                            nri, nrj                             )   ! nest ratios
+     USE module_configure
      IMPLICIT NONE
 
 
@@ -487,6 +489,7 @@
                            xstag, ystag,                         &  ! staggering of field
                            ipos, jpos,                           &  ! Position of lower left of nest in CD
                            nri, nrj                             )   ! nest ratios
+     USE module_configure
      USE module_wrf_error
      IMPLICIT NONE
 
@@ -566,6 +569,7 @@
                            xstag, ystag,                         &  ! staggering of field
                            ipos, jpos,                           &  ! Position of lower left of nest in CD
                            nri, nrj                             )   ! nest ratios
+     USE module_configure
      USE module_wrf_error
      IMPLICIT NONE
 
@@ -648,6 +652,7 @@
                            cbdy, nbdy,                           &
                            cbdy_t, nbdy_t                        &
                            )   ! boundary arrays
+     USE module_configure
      IMPLICIT NONE
 
      INTEGER, INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
@@ -674,7 +679,7 @@
 
      nijds = min(nids, njds)
      nijde = max(nide, njde)
-     CALL get_spec_bdy_width( spec_bdy_width )
+     CALL rconfig_get_spec_bdy_width( 1, spec_bdy_width )
 
      CALL bdy_interp1( cfld,                                 &  ! CD field
                            cids, cide, ckds, ckde, cjds, cjde,   &
@@ -717,6 +722,7 @@
                            cbdy_t, bdy_t                         &
                                         )
 
+     USE module_configure
      use module_state_description
      IMPLICIT NONE
 
@@ -775,8 +781,8 @@
      ! from the CD tile. 
 
 #ifdef MM5_SINT
-     CALL get_spec_zone( spec_zone )
-     CALL get_relax_zone( relax_zone )
+     CALL rconfig_get_spec_zone( 1, spec_zone )
+     CALL rconfig_get_relax_zone( 1, relax_zone )
      sz = MIN(MAX( spec_zone, relax_zone ),spec_bdy_width)
 
      nfx = nri * nrj
@@ -936,6 +942,7 @@
                            xstag, ystag,                         &  ! staggering of field
                            ipos, jpos,                           &  ! Position of lower left of nest in CD
                            nri, nrj                             )   ! nest ratios
+     USE module_configure
      IMPLICIT NONE
 
 
@@ -996,6 +1003,7 @@
                            xstag, ystag,                         &  ! staggering of field
                            ipos, jpos,                           &  ! Position of lower left of nest in CD
                            nri, nrj                             )   ! nest ratios
+     USE module_configure
      IMPLICIT NONE
 
 
@@ -1058,6 +1066,7 @@
                            nri, nrj,                             &  ! nest ratios
                            clu, nlu                              )
 
+      USE module_configure
       USE module_wrf_error
 
       IMPLICIT NONE
@@ -1091,7 +1100,7 @@
    
       !  Find out what the water value is.
    
-      CALL get_iswater(1,iswater)
+      CALL rconfig_get_iswater(1,iswater)
 
       !  Right now, only mass point locations permitted.
    
@@ -1262,6 +1271,7 @@
                            nri, nrj,                             &  ! nest ratios
                            clu, nlu                              )
 
+      USE module_configure
       USE module_wrf_error
 
       IMPLICIT NONE
@@ -1294,7 +1304,7 @@
    
       !  Find out what the water value is.
    
-      CALL get_iswater(1,iswater)
+      CALL rconfig_get_iswater(1,iswater)
 
       !  Right now, only mass point locations permitted.
    
@@ -1462,6 +1472,7 @@
                       nri, nrj                              &
                       )
  
+      USE module_configure
       IMPLICIT NONE
    
       INTEGER, INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
@@ -1479,15 +1490,15 @@
 
       !  If there is no feedback, there can be no smoothing.
 
-      CALL get_feedback       ( feedback  )
+      CALL rconfig_get_feedback       ( 1, feedback  )
       IF ( feedback == 0 ) RETURN
-      CALL get_spec_zone ( spec_zone )
+      CALL rconfig_get_spec_zone ( 1, spec_zone )
 
       !  These are the 2d smoothers used on the fedback data.  These filters
       !  are run on the coarse grid data (after the nested info has been
       !  fedback).  Only the area of the nest in the coarse grid is filtered.
 
-      CALL get_smooth_option  ( smooth_option  )
+      CALL rconfig_get_smooth_option  ( 1, smooth_option  )
 
       IF      ( smooth_option == 0 ) THEN
 ! no op
@@ -1531,6 +1542,7 @@
                       ipos, jpos                            &  ! Position of lower left of nest in 
                       )
    
+      USE module_configure
       IMPLICIT NONE
    
       INTEGER, INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
@@ -1603,6 +1615,7 @@
                       ipos, jpos                            &  ! Position of lower left of nest in 
                       )
    
+      USE module_configure
       IMPLICIT NONE
    
       INTEGER, INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &

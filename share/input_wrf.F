@@ -93,8 +93,7 @@ write(0,*)'input_wrf dryrun = ',dryrun,' filestate ',filestate
 
 #endif
 
-! added 020402 for W. Skamarock. JM
-    CALL get_dyn_opt( dyn_opt )
+    CALL rconfig_get_dyn_opt( 1, dyn_opt )
     CALL wrf_get_dom_ti_integer ( fid, 'DYN_OPT', itmp, 1, icnt, ierr )
     IF ( itmp .NE. dyn_opt .AND. switch .EQ. model_input_only ) THEN
       WRITE(wrf_err_message,*)'input_wrf: dyn_opt in file ',itmp,' NE namelist ',dyn_opt
@@ -104,65 +103,75 @@ write(0,*)'input_wrf dryrun = ',dryrun,' filestate ',filestate
     CALL wrf_get_dom_ti_real ( fid , 'CEN_LAT' ,  config_flags%cen_lat , 1 , icnt , ierr )
     WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_real for CEN_LAT returns ',config_flags%cen_lat
     CALL wrf_debug ( 300 , wrf_err_message )
-    CALL set_cen_lat ( grid%id , config_flags%cen_lat )
+    CALL rconfig_set_cen_lat ( grid%id , config_flags%cen_lat )
 
     CALL wrf_get_dom_ti_real ( fid , 'CEN_LON' ,  config_flags%cen_lon , 1 , icnt , ierr )
     WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_real for CEN_LON returns ',config_flags%cen_lon
     CALL wrf_debug ( 300 , wrf_err_message )
-    CALL set_cen_lon ( grid%id , config_flags%cen_lon )
+    CALL rconfig_set_cen_lon ( grid%id , config_flags%cen_lon )
 
     CALL wrf_get_dom_ti_real ( fid , 'TRUELAT1' ,  config_flags%truelat1 , 1 , icnt , ierr )
     WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_real for TRUELAT1 returns ',config_flags%truelat1
     CALL wrf_debug ( 300 , wrf_err_message )
-    CALL set_truelat1 ( grid%id , config_flags%truelat1 )
+    CALL rconfig_set_truelat1 ( grid%id , config_flags%truelat1 )
 
     CALL wrf_get_dom_ti_real ( fid , 'TRUELAT2' ,  config_flags%truelat2 , 1 , icnt , ierr )
     WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_real for TRUELAT2 returns ',config_flags%truelat2
     CALL wrf_debug ( 300 , wrf_err_message )
-    CALL set_truelat2 ( grid%id , config_flags%truelat2 )
+    CALL rconfig_set_truelat2 ( grid%id , config_flags%truelat2 )
 
     CALL wrf_get_dom_ti_real ( fid , 'MOAD_CEN_LAT' ,  config_flags%moad_cen_lat , 1 , icnt , ierr )
     WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_real for MOAD_CEN_LAT returns ',config_flags%moad_cen_lat
     CALL wrf_debug ( 300 , wrf_err_message )
-    CALL set_moad_cen_lat ( grid%id , config_flags%moad_cen_lat )
+    CALL rconfig_set_moad_cen_lat ( grid%id , config_flags%moad_cen_lat )
 
     CALL wrf_get_dom_ti_real ( fid , 'STAND_LON' ,  config_flags%stand_lon , 1 , icnt , ierr )
     WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_real for STAND_LON returns ',config_flags%stand_lon
     CALL wrf_debug ( 300 , wrf_err_message )
-    CALL set_stand_lon ( grid%id , config_flags%stand_lon )
+    CALL rconfig_set_stand_lon ( grid%id , config_flags%stand_lon )
 
-#if (EM_CORE == 1)
-    CALL wrf_get_dom_ti_real ( fid , 'P_TOP' ,  grid%p_top , 1 , icnt , ierr )
-    WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_real for P_TOP returns ',grid%p_top
-    CALL wrf_debug ( 300 , wrf_err_message )
+#if ( NMM_CORE != 1 )
+! program_name is defined in module_domain and set in the main program for whatever application
+! is using subroutine input_wrf (that is, the subroutine you are looking at here). Data files
+! written by SI have P_TOP as a metadata item; the real program and wrf model have it as a 
+! state variable. This test is to supress non-fatal but confusing messages from the model complaining
+! that P_TOP cannot be read from the metadata for this dataset.  JM 20040905
+!
+! Note, P_TOP is not defined in the NMM core.
+
+    IF ( program_name(1:7) .EQ. "REAL_EM" ) THEN
+      CALL wrf_get_dom_ti_real ( fid , 'P_TOP' ,  grid%p_top , 1 , icnt , ierr )
+      WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_real for P_TOP returns ',grid%p_top
+      CALL wrf_debug ( 300 , wrf_err_message )
+    ENDIF
 #endif
 
     IF ( switch .NE. boundary_only ) THEN
       CALL wrf_get_dom_ti_real ( fid , 'GMT' ,  config_flags%gmt , 1 , icnt , ierr )
       WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_real for GMT returns ',config_flags%gmt
       CALL wrf_debug ( 300 , wrf_err_message )
-      CALL set_gmt ( grid%id , config_flags%gmt )
+      CALL rconfig_set_gmt ( grid%id , config_flags%gmt )
 
       CALL wrf_get_dom_ti_integer ( fid , 'JULYR' ,  config_flags%julyr , 1 , icnt , ierr )
       WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_integer for JULYR returns ',config_flags%julyr
       CALL wrf_debug ( 300 , wrf_err_message )
-      CALL set_julyr ( grid%id , config_flags%julyr )
+      CALL rconfig_set_julyr ( grid%id , config_flags%julyr )
 
       CALL wrf_get_dom_ti_integer ( fid , 'JULDAY' ,  config_flags%julday , 1 , icnt , ierr )
       WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_integer for JULDAY returns ',config_flags%julday
       CALL wrf_debug ( 300 , wrf_err_message )
-      CALL set_julday ( grid%id , config_flags%julday )
+      CALL rconfig_set_julday ( grid%id , config_flags%julday )
     ENDIF
 
     CALL wrf_get_dom_ti_integer ( fid , 'MAP_PROJ' ,  config_flags%map_proj , 1 , icnt , ierr )
     WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_integer for MAP_PROJ returns ',config_flags%map_proj
     CALL wrf_debug ( 300 , wrf_err_message )
-    CALL set_map_proj ( grid%id , config_flags%map_proj )
+    CALL rconfig_set_map_proj ( grid%id , config_flags%map_proj )
 
     CALL wrf_get_dom_ti_char ( fid , 'MMINLU', mminlu , ierr )
     WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_char for MMINLU returns ',mminlu(1:4)
     CALL wrf_debug ( 300 , wrf_err_message )
-    CALL set_mminlu ( mminlu(1:4) )
+    CALL rconfig_set_mminlu ( 1, mminlu(1:4) )
 
     CALL wrf_get_dom_ti_integer ( fid , 'ISWATER' ,  config_flags%iswater , 1 , icnt , ierr )
     WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_integer for ISWATER returns ',config_flags%iswater
@@ -174,7 +183,7 @@ write(0,*)'input_wrf dryrun = ',dryrun,' filestate ',filestate
               config_flags%iswater = 16 
          ENDIF
     ENDIF
-    CALL set_iswater ( grid%id , config_flags%iswater )
+    CALL rconfig_set_iswater ( grid%id , config_flags%iswater )
 
     CALL wrf_get_dom_ti_integer ( fid , 'ISICE' ,  config_flags%isice , 1 , icnt , ierr )
     WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_integer for ISICE returns ',config_flags%isice
@@ -186,7 +195,7 @@ write(0,*)'input_wrf dryrun = ',dryrun,' filestate ',filestate
               config_flags%isice = 24
          ENDIF
     ENDIF
-    CALL set_isice ( grid%id , config_flags%isice )
+    CALL rconfig_set_isice ( grid%id , config_flags%isice )
 
     CALL wrf_get_dom_ti_integer ( fid , 'ISURBAN' ,  config_flags%isurban , 1 , icnt , ierr )
     WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_integer for ISURBAN returns ',config_flags%isurban
@@ -198,7 +207,7 @@ write(0,*)'input_wrf dryrun = ',dryrun,' filestate ',filestate
               config_flags%isurban = 1
          ENDIF
     ENDIF
-    CALL set_isurban ( grid%id , config_flags%isurban )
+    CALL rconfig_set_isurban ( grid%id , config_flags%isurban )
 
     CALL wrf_get_dom_ti_integer ( fid , 'ISOILWATER' ,  config_flags%isoilwater , 1 , icnt , ierr )
     WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_integer for ISOILWATER returns ',config_flags%isoilwater
@@ -206,7 +215,7 @@ write(0,*)'input_wrf dryrun = ',dryrun,' filestate ',filestate
     IF ( ierr .NE. 0 ) THEN
          config_flags%isoilwater = 14
     ENDIF
-    CALL set_isoilwater ( grid%id , config_flags%isoilwater )
+    CALL rconfig_set_isoilwater ( grid%id , config_flags%isoilwater )
 
     ENDIF check_if_dryrun 
 

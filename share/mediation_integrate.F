@@ -398,9 +398,9 @@ SUBROUTINE med_nest_move ( parent, nest, dx, dy, config_flags )
    px = isign(grid%parent_grid_ratio,dx)
    py = isign(grid%parent_grid_ratio,dy)
    grid%i_parent_start = grid%i_parent_start + px / grid%parent_grid_ratio 
-   CALL set_i_parent_start( grid%id, grid%i_parent_start )
+   CALL rconfig_set_i_parent_start( grid%id, grid%i_parent_start )
    grid%j_parent_start = grid%j_parent_start + py / grid%parent_grid_ratio
-   CALL set_j_parent_start( grid%id, grid%j_parent_start )
+   CALL rconfig_set_j_parent_start( grid%id, grid%j_parent_start )
 
    CALL start_domain ( nest )
 

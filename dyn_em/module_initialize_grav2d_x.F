@@ -56,7 +56,7 @@ CONTAINS
 
 #include "deref_kludge.h"
 
-   CALL get_dyn_opt( dyn_opt )
+   CALL rconfig_get_dyn_opt( 1, dyn_opt )
    
    CALL set_scalar_indices_from_config ( head_grid%id , idum1, idum2 )
 
@@ -209,15 +209,15 @@ CONTAINS
    CALL wrf_dm_bcast_bytes( jcm , IWORDSIZE )
 #endif
 
-    CALL set_mminlu('    ')
-    CALL set_iswater(1,0)
-    CALL set_cen_lat(1,40.)
-    CALL set_cen_lon(1,-105.)
-    CALL set_truelat1(1,0.)
-    CALL set_truelat2(1,0.)
-    CALL set_moad_cen_lat (1,0.)
-    CALL set_stand_lon (1,0.)
-    CALL set_map_proj(1,0)
+    CALL rconfig_set_mminlu(1, '    ')
+    CALL rconfig_set_iswater(1,0)
+    CALL rconfig_set_cen_lat(1,40.)
+    CALL rconfig_set_cen_lon(1,-105.)
+    CALL rconfig_set_truelat1(1,0.)
+    CALL rconfig_set_truelat2(1,0.)
+    CALL rconfig_set_moad_cen_lat (1,0.)
+    CALL rconfig_set_stand_lon (1,0.)
+    CALL rconfig_set_map_proj(1,0)
 
 
 !  here we initialize data we currently is not initialized 

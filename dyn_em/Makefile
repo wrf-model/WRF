@@ -166,7 +166,8 @@ module_initialize_squall2d_y.o : \
 		module_init_utilities.o
 
 nest_init_utils.o: \
-		../frame/module_domain.o
+		../frame/module_domain.o \
+		../frame/module_configure.o
 
 start_em.o: module_bc_em.o \
 		../frame/module_domain.o \

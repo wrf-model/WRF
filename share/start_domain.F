@@ -4,6 +4,7 @@
 SUBROUTINE start_domain ( grid )
 
    USE module_domain
+   USE module_configure
 
    IMPLICIT NONE
 
@@ -19,7 +20,7 @@ SUBROUTINE start_domain ( grid )
 
 #include "deref_kludge.h"
 
-   CALL get_dyn_opt( dyn_opt )
+   CALL rconfig_get_dyn_opt( 1, dyn_opt )
   
    CALL set_scalar_indices_from_config ( head_grid%id , idum1, idum2 )
 

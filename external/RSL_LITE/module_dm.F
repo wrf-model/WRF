@@ -7,7 +7,11 @@ MODULE module_dm
    USE module_state_description
    USE module_wrf_error
 
+#if ( NMM_CORE == 1 ) || defined( WRF_CHEM ) 
+   INTEGER, PARAMETER :: max_halo_width = 6
+#else
    INTEGER, PARAMETER :: max_halo_width = 4
+#endif
 
    INTEGER ntasks, ntasks_y, ntasks_x, mytask, mytask_x, mytask_y
    INTEGER local_communicator, local_iocommunicator
@@ -598,7 +602,7 @@ SUBROUTINE wrf_get_nprocx( nprocx )
   USE module_dm
   IMPLICIT NONE
   INTEGER nprocx
-  nprocx = mytask_x
+  nprocx = ntasks_x
   RETURN
 END SUBROUTINE wrf_get_nprocx
 
@@ -606,7 +610,7 @@ SUBROUTINE wrf_get_nprocy( nprocy )
   USE module_dm
   IMPLICIT NONE
   INTEGER nprocy
-  nprocy = mytask_y
+  nprocy = ntasks_y
   RETURN
 END SUBROUTINE wrf_get_nprocy
 

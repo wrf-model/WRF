@@ -1,3 +1,6 @@
+!
+!WRF:MEDIATION_LAYER:NESTING
+!
 SUBROUTINE med_force_domain ( parent_grid , nested_grid )
    USE module_domain
    USE module_configure
@@ -85,9 +88,9 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
 ! ----------------------------------------------------------
 ! Executable code
 ! ----------------------------------------------------------
-! ------------------------------------------------------
+! ----------------------------------------------------------
 !    Forcing calls for EM CORE.
-! ------------------------------------------------------
+! ----------------------------------------------------------
 #if (EM_CORE == 1 && defined( DM_PARALLEL ))
    CALL model_to_grid_config_rec ( nested_grid%id , model_config_rec , config_flags )
    IF ( config_flags%dyn_opt == DYN_EM ) THEN
@@ -172,7 +175,7 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
 # if (NMM_CORE == 1)
 # endif
 ! ------------------------------------------------------
-!    End of Interpolation calls for NMM.
+!    End of Forcing calls for NMM.
 ! ------------------------------------------------------
 ! ------------------------------------------------------
 ! ------------------------------------------------------

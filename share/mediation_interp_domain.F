@@ -1,5 +1,6 @@
-!#define ONEWAY
-
+!
+!WRF:MEDIATION_LAYER:NESTING
+!
 SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
    USE module_domain
    USE module_configure
@@ -71,18 +72,14 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
 ! ----------------------------------------------------------
 ! Executable code
 ! ----------------------------------------------------------
-
-! set config_flags to reflect the run-time config data for the nested domain
-   CALL model_to_grid_config_rec ( nested_grid%id , model_config_rec , config_flags )
-
 ! ----------------------------------------------------------
 !    Interpolation calls for EM CORE.  The called 
 !    routines below are supplied by module_dm.F
 !    from the external communications package (e.g. RSL)
 ! ----------------------------------------------------------
 #if (EM_CORE == 1 && defined( DM_PARALLEL ))
+  CALL model_to_grid_config_rec ( nested_grid%id , model_config_rec , config_flags )
   IF ( config_flags%dyn_opt == DYN_EM ) THEN
-!   point the grid at the parent for this phase of the interpolation
     grid => parent_grid
 #   include "deref_kludge.h"
     CALL interp_domain_em_part1 ( grid , nested_grid%intermediate_grid, config_flags ,  &
@@ -99,7 +96,6 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
                                 )
   ENDIF
 #endif
-
 ! ------------------------------------------------------
 !    End of Interpolation calls for EM CORE.
 ! ------------------------------------------------------
@@ -121,9 +117,7 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
 ! ------------------------------------------------------
 !    End of Interpolation calls for COAMPS.
 ! ------------------------------------------------------
-
    RETURN
-
 END SUBROUTINE med_interp_domain
 
 

@@ -144,7 +144,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH       SGI 64 bit machine IRIX64     (single-threaded, no neseting)
+#ARCH       SGI 64 bit machine IRIX64     (single-threaded, no nesting)
 
 FC              =       f90
 LD              =       f90

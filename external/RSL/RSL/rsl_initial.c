@@ -325,3 +325,12 @@ RSL_GET_COMMUNICATOR ( communicator )
 #endif
 }
 
+RSL_SET_COMMUNICATOR ( communicator )
+  int_p  communicator ;  /* (O) return value with communicator from underlying mp layer (mpi probably) */
+{
+#ifdef MPI
+  rsl_mpi_communicator = *communicator ;
+#endif
+}
+
+

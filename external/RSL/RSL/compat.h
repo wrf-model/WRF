@@ -247,6 +247,7 @@
 #   define RSL_SET_REGULAR_DECOMP  rsl_set_regular_decomp__
 #   define RSL_ALLOW_DYNPAD  rsl_allow_dynpad__
 #   define RSL_GET_COMMUNICATOR    rsl_get_communicator__
+#   define RSL_SET_COMMUNICATOR    rsl_set_communicator__
 
 #   define RSL_XPOSE_MN_MZ     rsl_xpose_mn_mz__
 #   define RSL_XPOSE_MZ_MN     rsl_xpose_mz_mn__
@@ -439,6 +440,7 @@
 #   define RSL_ALLOW_DYNPAD  rsl_allow_dynpad_
 
 #   define RSL_GET_COMMUNICATOR    rsl_get_communicator_
+#   define RSL_SET_COMMUNICATOR    rsl_set_communicator_
 
 #   define RSL_XPOSE_MN_MZ     rsl_xpose_mn_mz_
 #   define RSL_XPOSE_MZ_MN     rsl_xpose_mz_mn_
@@ -632,6 +634,7 @@
 #   define RSL_ALLOW_DYNPAD  rsl_allow_dynpad
 
 #   define RSL_GET_COMMUNICATOR    rsl_get_communicator
+#   define RSL_SET_COMMUNICATOR    rsl_set_communicator
 
 #   define RSL_XPOSE_MN_MZ     rsl_xpose_mn_mz
 #   define RSL_XPOSE_MZ_MN     rsl_xpose_mz_mn

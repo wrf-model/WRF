@@ -107,7 +107,20 @@ Additional ones when running 3DVAR:
  feedback                            = 1,       ; feedback from nest to its parent domain; 0 = no feedback
  smooth_option                       = 0        ; smoothing option for parent domain, used only with feedback
                                                   option on. 0: no smoothing; 1: 1-2-1 smoothing; 2: smoothing-desmoothing
-
+                                     
+Namelist variables for controling the prototype moving nest: 
+                   Note moving nest needs to be activated at the compile time by adding -DMOVE_NEST 
+                   to the ARCHFLAGS. The maximum number of moves, max_moves, is set to 50 
+                   but can be modified in source code file frame/module_driver_constants.F.
+ num_moves                           = 4        ; total number of moves
+ move_id                             = 2,2,2,2, ; a list of nest domain id's, one per move
+ move_interval                       = 60,120,150,180,   ; time in minutes since the start of this domain
+ move_cd_x                           = 1,1,0,-1,; the number of parent domain grid cells to move in i direction
+ move_cd_y                           = 1,0,-1,1,; the number of parent domain grid cells to move in j direction
+                                                  positive is to move in increasing i and j direction, and 
+                                                  negative is to move in decreasing i and j direction.
+                                                  0 means no move. The limitation now is to move only 1 grid cell
+                                                  at each move.
 
  &physics
 

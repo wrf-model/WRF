@@ -91,8 +91,8 @@ SUBROUTINE med_initialdata_input ( grid , config_flags )
      CALL wrf_timetoa ( CurrTime, timestr )
      CALL construct_filename2a ( rstname , config_flags%rst_inname , grid%id , 2 , timestr )
 
-     WRITE(message,*)'opening ',TRIM(rstname),' for reading'
-     CALL wrf_debug ( 1 , message )
+     WRITE(message,*)'RESTART run: opening ',TRIM(rstname),' for reading'
+     CALL wrf_message (  message )
      CALL open_r_dataset ( fid , TRIM(rstname) , grid , config_flags , "DATASET=RESTART", ierr )
      IF ( ierr .NE. 0 ) THEN
        WRITE( message , '("program wrf: error opening ",A32," for reading")') TRIM(rstname)

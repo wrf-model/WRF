@@ -68,18 +68,18 @@ static rsl_procrec_t *procrec ;       /* set in compile_period */
 static int send_accum ;
 static int recv_accum ;
 
-static check_local_pts_period( d, m, n, hm, hn, ibdy, jbdy, fldspec )
+static check_local_pts_period( d, m, n, hm, hn, min_gh, maj_gh, fldspec )
   rsl_index_t d ;               /* domain index */
   rsl_index_t m, n ;            /* this point */
   rsl_index_t hm, hn ;          /* home point (whose period I'm on)  */
-  rsl_index_t ibdy ;            /* distance onto m bdy */
-  rsl_index_t jbdy ;            /* distance onto n bdy */
+  rsl_index_t min_gh ;        /* direction and amount to make sure minor ghost region is updated */
+  rsl_index_t maj_gh ;        /* direction and amount to make sure major ghost region is updated */
   rsl_fldspec_t *fldspec ;
 {
   int mlen ;                    /* length of minor domain dimension */
   rsl_fldspec_t *fp, *fpm, *prev, *new ;
   int message, found ;
-  rsl_processor_t  P , Pthis ;
+  rsl_processor_t  P , Pthis , Pmin_gh , Pmaj_gh ;
   rsl_point_id_t id ;
   rsl_ptrec_t *ptrec, *recv_ptrec ;
   int recv_npts ;       /* dummy */
@@ -113,22 +113,25 @@ static check_local_pts_period( d, m, n, hm, hn, ibdy, jbdy, fldspec )
   }
 
 /* P is the processor on which sits the off-domain point being filled in */
-  P     = domain[INDEX_2((hn<0)?0:((hn>nfldlen-1)?nfldlen-1:hn), (hm<0)?0:((hm>mfldlen-1)?mfldlen-1:hm),mlen )].P ;
+  P     = domain[INDEX_2( (hn<0)?0:((hn>nfldlen-1)?nfldlen-1:hn) , (hm<0)?0:((hm>mfldlen-1)?mfldlen-1:hm),mlen )  ].P ;
+  Pmin_gh = domain[INDEX_2( (hn       <0)?0:((hn       >nfldlen-1)?nfldlen-1:hn       ) , (hm+min_gh<0)?0:((hm+min_gh>mfldlen-1)?mfldlen-1:hm+min_gh),mlen )  ].P ;
+  Pmaj_gh = domain[INDEX_2( (hn+maj_gh<0)?0:((hn+maj_gh>nfldlen-1)?nfldlen-1:hn+maj_gh) , (hm       <0)?0:((hm       >mfldlen-1)?mfldlen-1:hm       ),mlen )  ].P ;
 
-/* Pthis is the processor on which site the on-domain point being replicated */
+/* Pthis is the processor on which sits the on-domain point being replicated */
   Pthis = domain[INDEX_2(n,m,mlen)].P ;
-/*
-  Pthis = domain[INDEX_2((n<0)?0:((n>nfldlen-1)?nfldlen-1:n), (m<0)?0:((m>mfldlen-1)?mfldlen-1:m),mlen )].P ;
-*/
 
 /* SENDS -- if the point to be replicated sits on my processsor, and the off-domain point being filled
    in sits on the "other" processor, record a send that includes the coordinates of the point being
    replicated for the packing mechanism.  */
 
-  if ( rsl_c_comp2phys_proc ( Pthis ) == rsl_myproc  && P == procrec->P )
+#if 1
+  if ( rsl_c_comp2phys_proc ( Pthis ) == rsl_myproc  && ( P == procrec->P || Pmin_gh == procrec->P || Pmaj_gh == procrec->P ) )
+#else
+  if ( rsl_c_comp2phys_proc ( Pthis ) == rsl_myproc  &&  P == procrec->P )
+#endif
   {
 #if 0
-fprintf(stderr,"send: %d %d P = %d , Pthis = %d , procrec->P %d , m %d , n %d , hm %d , hn %d\n", mfldlen, nfldlen,  P, Pthis, procrec->P, m,n,hm,hn ) ;
+fprintf(stderr,"send: %d %d P = %d , Pthis = %d , procrec->P %d , m %d , n %d , hm %d , hn %d , min_gh %d , maj_gh %d \n", mfldlen, nfldlen,  P, Pthis, procrec->P, m,n,hm,hn,min_gh,maj_gh ) ;
 #endif
     found = 0 ;
 /* always create a new record; searching and trying to reuse records will throw
@@ -176,11 +179,15 @@ fprintf(stderr,"send: %d %d P = %d , Pthis = %d , procrec->P %d , m %d , n %d , 
    this with the on-domain point is the "other" processor, generate a receive, recording the
    coordinates of the off-domain point for the upacking mechanism.  */
 
+#if 1
+  if ( ( rsl_c_comp2phys_proc ( P ) == rsl_myproc || rsl_c_comp2phys_proc ( Pmaj_gh ) == rsl_myproc || rsl_c_comp2phys_proc ( Pmin_gh ) == rsl_myproc ) && Pthis == procrec->P )
+#else
   if ( rsl_c_comp2phys_proc ( P ) == rsl_myproc && Pthis == procrec->P )
+#endif
   {
 
 #if 0
-fprintf(stderr,"recv: %d %d P = %d , Pthis = %d , procrec->P %d , m %d , n %d , hm %d , hn %d\n", mfldlen, nfldlen, P, Pthis, procrec->P, m,n,hm,hn ) ;
+fprintf(stderr,"recv: %d %d P = %d , Pthis = %d , procrec->P %d , m %d , n %d , hm %d , hn %d , min_gh %d , maj_gh %d\n", mfldlen, nfldlen, P, Pthis, procrec->P, m,n,hm,hn,min_gh,maj_gh ) ;
 #endif
 
 /* 2.1.1.1.1 */
@@ -241,7 +248,7 @@ rsl_compile_period( d_p, s_p )
   rsl_dimlen_t mlen, nlen ;
   rsl_fldspec_t * fld ;
   message_desc_t *msg ;
-  int m, n ;
+  int m, n, dir ;
   rsl_processor_t P, Plist[RSL_MAXPROC] ;
   int check_local_pts_period() ;
 
@@ -276,6 +283,8 @@ rsl_compile_period( d_p, s_p )
                            &(domain_info[*d_p].loc_n) ) ;
   }
 
+for ( dir = 0 ; dir < 2 ; dir++ )
+{
   for ( P = 0 ; P < rsl_nproc_all ; P++ )
   {
     procrec = RSL_MALLOC( rsl_procrec_t, 1 ) ;
@@ -299,17 +308,17 @@ rsl_compile_period( d_p, s_p )
            switch ( fld->strategy )
            {
            case MINNS_MAJEW_2D :
-             rsl_period_pt( d, m, fld->glen[0], n, fld->glen[1], fld, sd->bdyw[d], check_local_pts_period ) ; break ;
+             rsl_period_pt( dir, d, m, fld->glen[0], fld->stag[0], n, fld->glen[1], fld->stag[1], fld, sd->bdyw[d], check_local_pts_period ) ; break ;
            case MINEW_MAJNS_2D :
-             rsl_period_pt( d, m, fld->glen[1], n, fld->glen[0], fld, sd->bdyw[d], check_local_pts_period ) ; break ;
+             rsl_period_pt( dir, d, m, fld->glen[1], fld->stag[1], n, fld->glen[0], fld->stag[0], fld, sd->bdyw[d], check_local_pts_period ) ; break ;
            case MINNS_MAJEW_K_3D :
-             rsl_period_pt( d, m, fld->glen[0], n, fld->glen[1], fld, sd->bdyw[d], check_local_pts_period ) ; break ;
+             rsl_period_pt( dir, d, m, fld->glen[0], fld->stag[0], n, fld->glen[1], fld->stag[1], fld, sd->bdyw[d], check_local_pts_period ) ; break ;
            case MINEW_MAJNS_K_3D :
-             rsl_period_pt( d, m, fld->glen[1], n, fld->glen[0], fld, sd->bdyw[d], check_local_pts_period ) ; break ;
+             rsl_period_pt( dir, d, m, fld->glen[1], fld->stag[1], n, fld->glen[0], fld->stag[0], fld, sd->bdyw[d], check_local_pts_period ) ; break ;
            case K_MIDNS_MAJEW_3D :
-             rsl_period_pt( d, m, fld->glen[1], n, fld->glen[2], fld, sd->bdyw[d], check_local_pts_period ) ; break ;
+             rsl_period_pt( dir, d, m, fld->glen[1], fld->stag[1], n, fld->glen[2], fld->stag[2], fld, sd->bdyw[d], check_local_pts_period ) ; break ;
            case MINNS_K_MAJEW_3D :
-             rsl_period_pt( d, m, fld->glen[0], n, fld->glen[2], fld, sd->bdyw[d], check_local_pts_period ) ; break ;
+             rsl_period_pt( dir, d, m, fld->glen[0], fld->stag[0], n, fld->glen[2], fld->stag[2], fld, sd->bdyw[d], check_local_pts_period ) ; break ;
            default :
               RSL_TEST_ERR(1,"unsupported strategy") ;
            }
@@ -322,8 +331,8 @@ rsl_compile_period( d_p, s_p )
 
     if ( send_accum != 0 || recv_accum != 0 )
     {
-      procrec->next = sd->procs[d] ;
-      sd->procs[d] = procrec ;
+      procrec->next = sd->procs[dir][d] ;
+      sd->procs[dir][d] = procrec ;
     }
     else
     {
@@ -341,7 +350,7 @@ rsl_compile_period( d_p, s_p )
     rsl_fldspec_t * fld ;
     
     per = (period_desc_t *) pr_descriptors[ s ] ;
-    for ( procrec = per->procs[d] ; procrec != NULL ; procrec = procrec->next )
+    for ( procrec = per->procs[dir][d] ; procrec != NULL ; procrec = procrec->next )
     {
       init_period_refs() ;
       for ( lp = procrec->point_list ; lp != NULL ; lp = lp->next )
@@ -432,7 +441,7 @@ fprintf(stderr,"-=-=-=-=-=-=-\n") ;
     rsl_fldspec_t * fld ;
     
     per = (period_desc_t *) pr_descriptors[ s ] ;
-    for ( procrec = per->procs[d] ; procrec != NULL ; procrec = procrec->next )
+    for ( procrec = per->procs[dir][d] ; procrec != NULL ; procrec = procrec->next )
     {
       init_period_refs() ;
       for ( lp = procrec->recv_point_list ; lp != NULL ; lp = lp->next )
@@ -496,5 +505,6 @@ fprintf(stderr,"unpack  P = %d  i j ig jg    %3d %3d %3d %3d, base %08x\n",procr
                     &(procrec->unpack_table_nbytes) , 0 ) ;
     }
   }
+}
 }
 

@@ -139,7 +139,9 @@ RSL_MON_BCAST ( buf, nbytes0 )
     RSL_RECV( buf, mlen, mtype ) ;
   }
 #else
+#  ifndef STUBS
   MPI_Bcast( buf, nbytes, MPI_BYTE, 0, MPI_COMM_WORLD ) ;
+#  endif
 #endif
 
 }

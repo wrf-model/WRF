@@ -205,11 +205,9 @@ real::t1,t2
 
    !  Here we define the initial time to process, for later use by the code.
    
-   print*,'line 207: start_date_char=',start_date_char,'  current_date_char=',current_date_char
    current_date_char = start_date_char
    start_date = start_date_char // '.0000'
    current_date = start_date
-   print*,'line 211: start_date=',start_date,'  current_date=',current_date
 
    CALL nl_set_bdyfrq ( grid%id , REAL(model_config_rec%interval_seconds) )
 

@@ -44,6 +44,7 @@ esmf_time :
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
+module_configure.o : module_configure.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -60,6 +61,7 @@ module_dm.o : module_dm.F
 start_domain.o : start_domain.F
 
 solve_interface.o                                              \
+module_configure.o                                             \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
@@ -116,6 +118,7 @@ esmf_time :
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
+module_configure.o : module_configure.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -132,6 +135,7 @@ module_dm.o : module_dm.F
 start_domain.o : start_domain.F
 
 solve_interface.o                                              \
+module_configure.o                                             \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
@@ -198,6 +202,7 @@ esmf_time :
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
+module_configure.o : module_configure.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -214,6 +219,7 @@ module_dm.o : module_dm.F
 start_domain.o : start_domain.F
 
 solve_interface.o                                              \
+module_configure.o                                             \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
@@ -271,6 +277,7 @@ esmf_time :
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
+module_configure.o : module_configure.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -287,6 +294,7 @@ module_dm.o : module_dm.F
 start_domain.o : start_domain.F
 
 solve_interface.o                                              \
+module_configure.o                                             \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
@@ -355,6 +363,7 @@ esmf_time :
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
+module_configure.o : module_configure.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -371,6 +380,7 @@ module_dm.o : module_dm.F
 start_domain.o : start_domain.F
 
 solve_interface.o                                              \
+module_configure.o                                             \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
@@ -461,6 +471,7 @@ esmf_time :
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
+module_configure.o : module_configure.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -477,6 +488,7 @@ module_dm.o : module_dm.F
 start_domain.o : start_domain.F
 
 solve_interface.o                                              \
+module_configure.o                                             \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
@@ -810,11 +822,13 @@ module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
 module_initialize_real.o : module_initialize_real.F
 module_dm.o : module_dm.F
 start_domain.o : start_domain.F
+module_configure.o : module_configure.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
+module_configure.o                                             \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -921,11 +935,13 @@ module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
 module_initialize_real.o : module_initialize_real.F
 module_dm.o : module_dm.F
 start_domain.o : start_domain.F
+module_configure.o : module_configure.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
+module_configure.o                                             \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -1011,6 +1027,7 @@ mediation_interp_domain.o : mediation_interp_domain.F
 mediation_force_domain.o : mediation_force_domain.F
 mediation_feedback_domain.o : mediation_feedback_domain.F
 convert_nmm.o : convert_nmm.F
+module_configure.o : module_configure.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -1018,6 +1035,7 @@ module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o \
 mediation_interp_domain.o \
+module_configure.o                                             \
 convert_nmm.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -1609,6 +1627,7 @@ mediation_interp_domain.o : mediation_interp_domain.F
 mediation_force_domain.o : mediation_force_domain.F
 mediation_feedback_domain.o : mediation_feedback_domain.F
 convert_nmm.o : convert_nmm.F
+module_configure.o : module_configure.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -1616,6 +1635,7 @@ module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o start_domain.o \
 convert_nmm.o \
+module_configure.o                                             \
 mediation_interp_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -1923,11 +1943,13 @@ module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
 module_initialize_real.o : module_initialize_real.F
 module_dm.o : module_dm.F
 start_domain.o : start_domain.F
+module_configure.o : module_configure.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
+module_configure.o                                             \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -2025,11 +2047,13 @@ module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
 module_initialize_real.o : module_initialize_real.F
 module_dm.o : module_dm.F
 start_domain.o : start_domain.F
+module_configure.o : module_configure.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
+module_configure.o                                             \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -2109,11 +2133,13 @@ module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
 module_initialize_real.o : module_initialize_real.F
 module_dm.o : module_dm.F
 start_domain.o : start_domain.F
+module_configure.o : module_configure.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
+module_configure.o                                             \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -2211,11 +2237,13 @@ module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
 module_initialize_real.o : module_initialize_real.F
 module_dm.o : module_dm.F
 start_domain.o : start_domain.F
+module_configure.o : module_configure.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
+module_configure.o                                             \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -2311,11 +2339,13 @@ module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
 module_initialize_real.o : module_initialize_real.F
 module_dm.o : module_dm.F
 start_domain.o : start_domain.F
+module_configure.o : module_configure.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
+module_configure.o                                             \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -2414,11 +2444,13 @@ module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
 module_initialize_real.o : module_initialize_real.F
 module_dm.o : module_dm.F
 start_domain.o : start_domain.F
+module_configure.o : module_configure.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
+module_configure.o                                             \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -2517,11 +2549,13 @@ module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
 module_initialize_real.o : module_initialize_real.F
 module_dm.o : module_dm.F
 start_domain.o : start_domain.F
+module_configure.o : module_configure.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
+module_configure.o                                             \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -2620,11 +2654,13 @@ module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
 module_initialize_real.o : module_initialize_real.F
 module_dm.o : module_dm.F
 start_domain.o : start_domain.F
+module_configure.o : module_configure.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
+module_configure.o                                             \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -2720,11 +2756,13 @@ module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
 module_initialize_real.o : module_initialize_real.F
 module_dm.o : module_dm.F
 start_domain.o : start_domain.F
+module_configure.o : module_configure.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
+module_configure.o                                             \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -2831,11 +2869,13 @@ module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
 module_initialize_real.o : module_initialize_real.F
 module_dm.o : module_dm.F
 start_domain.o : start_domain.F
+module_configure.o : module_configure.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
+module_configure.o                                             \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -2932,11 +2972,13 @@ module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
 module_initialize_real.o : module_initialize_real.F
 module_dm.o : module_dm.F
 start_domain.o : start_domain.F
+module_configure.o : module_configure.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
+module_configure.o                                             \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -3018,11 +3060,13 @@ module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
 module_initialize_real.o : module_initialize_real.F
 module_dm.o : module_dm.F
 start_domain.o : start_domain.F
+module_configure.o : module_configure.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
+module_configure.o                                             \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -3104,11 +3148,13 @@ module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
 module_initialize_real.o : module_initialize_real.F
 module_dm.o : module_dm.F
 start_domain.o : start_domain.F
+module_configure.o : module_configure.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
+module_configure.o                                             \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -3207,11 +3253,13 @@ module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
 module_initialize_real.o : module_initialize_real.F
 module_dm.o : module_dm.F
 start_domain.o : start_domain.F
+module_configure.o : module_configure.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
+module_configure.o                                             \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -3317,8 +3365,8 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH \
                         -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =
-CPP             =       /lib/cpp -C -P
-POUND_DEF	=	-traditional $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
+CPP             =       /lib/cpp -C -P -traditional
+POUND_DEF	=	$(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) $(POUND_DEF)
 AR              =       ar ru
 M4              =       m4
@@ -3367,6 +3415,7 @@ module_initialize_real.o : module_initialize_real.F
 module_dm.o : module_dm.F
 start_domain.o : start_domain.F
 mediation_integrate.o : mediation_integrate.F
+module_configure.o : module_configure.F
 
 solve_interface.o                                              \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
@@ -3374,6 +3423,7 @@ module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 mediation_integrate.o \
+module_configure.o                                             \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -3412,8 +3462,8 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
 			-L../external/io_int -lwrfio_int \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =       -byteswapio
-CPP             =       /lib/cpp -C -P
-POUND_DEF	=	-DNO_RRTM_PHYSICS  -traditional $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
+CPP             =       /lib/cpp -C -P -traditional
+POUND_DEF	=	-DNO_RRTM_PHYSICS  $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL/RSL -C -P `cat ../inc/dm_comm_cpp_flags` $(POUND_DEF)
 AR              =       ar ru
 M4              =       m4
@@ -3470,12 +3520,14 @@ module_initialize_real.o : module_initialize_real.F
 module_dm.o : module_dm.F
 start_domain.o : start_domain.F
 mediation_integrate.o : mediation_integrate.F
+module_configure.o : module_configure.F
 
 solve_interface.o                                              \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
+module_configure.o                                             \
 mediation_integrate.o \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
@@ -3512,7 +3564,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH \
                         -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =	$(FCFLAGS) $(OMP)
-CPP             =       /lib/cpp -C -P
+CPP             =       /lib/cpp -C -P -traditional
 POUND_DEF	=	$(OMPCPP) -traditional $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) $(POUND_DEF)
 AR              =       ar ru
@@ -3562,12 +3614,14 @@ module_initialize_real.o : module_initialize_real.F
 module_dm.o : module_dm.F
 start_domain.o : start_domain.F
 mediation_integrate.o : mediation_integrate.F
+module_configure.o : module_configure.F
 
 solve_interface.o                                              \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
+module_configure.o                                             \
 mediation_integrate.o \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
@@ -3611,7 +3665,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
 			-L../external/io_int -lwrfio_int \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =       $(FCFLAGS) $(OMP)
-CPP             =       /lib/cpp -C -P
+CPP             =       /lib/cpp -C -P -traditional
 POUND_DEF	=	-DNO_RRTM_PHYSICS  $(OMPCPP) -traditional $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL/RSL -C -P `cat ../inc/dm_comm_cpp_flags` $(POUND_DEF)
 AR              =       ar ru
@@ -3669,12 +3723,14 @@ module_initialize_real.o : module_initialize_real.F
 module_dm.o : module_dm.F
 start_domain.o : start_domain.F
 mediation_integrate.o : mediation_integrate.F
+module_configure.o : module_configure.F
 
 solve_interface.o                                              \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
+module_configure.o                                             \
 mediation_integrate.o \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
@@ -3717,7 +3773,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
 			-L../external/io_int -lwrfio_int \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =       -byteswapio
-CPP             =       /lib/cpp -C -P
+CPP             =       /lib/cpp -C -P -traditional
 POUND_DEF	=	-DNO_RRTM_PHYSICS  -traditional $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL/RSL -C -P `cat ../inc/dm_comm_cpp_flags` $(POUND_DEF)
 AR              =       ar ru
@@ -3775,12 +3831,14 @@ module_initialize_real.o : module_initialize_real.F
 module_dm.o : module_dm.F
 start_domain.o : start_domain.F
 mediation_integrate.o : mediation_integrate.F
+module_configure.o : module_configure.F
 
 solve_interface.o                                              \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
+module_configure.o                                             \
 mediation_integrate.o \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
@@ -3819,7 +3877,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL_LITE -lrsl_l
 			-L../external/io_int -lwrfio_int \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =       -byteswapio
-CPP             =       /lib/cpp -C -P
+CPP             =       /lib/cpp -C -P -traditional
 POUND_DEF	=	-DNO_RRTM_PHYSICS  -traditional $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL_LITE -C -P `cat ../inc/dm_comm_cpp_flags` $(POUND_DEF)
 AR              =       ar ru
@@ -3877,12 +3935,14 @@ module_initialize_real.o : module_initialize_real.F
 module_dm.o : module_dm.F
 start_domain.o : start_domain.F
 mediation_integrate.o : mediation_integrate.F
+module_configure.o : module_configure.F
 
 solve_interface.o                                              \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
+module_configure.o                                             \
 mediation_integrate.o \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
@@ -3984,12 +4044,14 @@ module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
 module_initialize_real.o : module_initialize_real.F
 module_dm.o : module_dm.F
 start_domain.o : start_domain.F
+module_configure.o : module_configure.F
 
 solve_interface.o \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o \
+module_configure.o                                             \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -4026,7 +4088,7 @@ FCNOOPTS = -O0 $(FCDEBUG) -FR -I$(INCLUDE) -w -cm
 FCFLAGS = $(FCOPTIM) $(FCBASEOPTS) $(OMP) -size_lp64 
 ARCHFLAGS = -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
             -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
-            -DTRIEDNTRUE -DLIMIT_ARGS -DSTUBMPI
+            -DTRIEDNTRUE -DLIMIT_ARGS -DSTUBMPI -DIFORT_KLUDGE
 INCLUDE_MODULES = ../main -I../external/io_int -I../external/esmf_time_f90 \
                   -I../external -I../frame -I../share -I../phys -I../inc
 EXTRAMODULES = 
@@ -4099,6 +4161,7 @@ mediation_feedback_domain.o : mediation_feedback_domain.F
 mediation_integrate.o : mediation_integrate.F
 module_dm.o : module_dm.F
 start_domain.o : start_domain.F
+module_configure.o : module_configure.F
 
 solve_interface.o \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
@@ -4109,6 +4172,7 @@ mediation_interp_domain.o  \
 mediation_force_domain.o  \
 mediation_feedback_domain.o  \
 mediation_integrate.o \
+module_configure.o                                             \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -4143,7 +4207,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH \
                         -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =
-CPP             =       /lib/cpp -C -P
+CPP             =       /lib/cpp -C -P -traditional
 POUND_DEF	=	-traditional $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) $(POUND_DEF)
 AR              =       ar ru
@@ -4195,6 +4259,7 @@ module_initialize_real.o : module_initialize_real.F
 module_dm.o : module_dm.F
 start_domain.o : start_domain.F
 mediation_integrate.o : mediation_integrate.F
+module_configure.o : module_configure.F
 
 solve_interface.o                                              \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
@@ -4202,6 +4267,7 @@ module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 mediation_integrate.o \
+module_configure.o                                             \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -4242,7 +4308,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
 			-L../external/io_int -lwrfio_int \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =       -byteswapio
-CPP             =       /lib/cpp -C -P
+CPP             =       /lib/cpp -C -P -traditional
 POUND_DEF	=	-DNO_RRTM_PHYSICS  -traditional $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL/RSL -C -P `cat ../inc/dm_comm_cpp_flags` $(POUND_DEF)
 AR              =       ar ru
@@ -4302,6 +4368,7 @@ module_initialize_real.o : module_initialize_real.F
 module_dm.o : module_dm.F
 start_domain.o : start_domain.F
 mediation_integrate.o : mediation_integrate.F
+module_configure.o : module_configure.F
 
 solve_interface.o                                              \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
@@ -4309,6 +4376,7 @@ module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 mediation_integrate.o \
+module_configure.o                                             \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -4347,7 +4415,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL_LITE -lrsl_l
 			-L../external/io_int -lwrfio_int \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =       -byteswapio
-CPP             =       /lib/cpp -C -P
+CPP             =       /lib/cpp -C -P -traditional
 POUND_DEF	=	-DNO_RRTM_PHYSICS  -traditional $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL_LITE -C -P `cat ../inc/dm_comm_cpp_flags` $(POUND_DEF)
 AR              =       ar ru
@@ -4407,6 +4475,7 @@ module_initialize_real.o : module_initialize_real.F
 module_dm.o : module_dm.F
 start_domain.o : start_domain.F
 mediation_integrate.o : mediation_integrate.F
+module_configure.o : module_configure.F
 
 solve_interface.o                                              \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
@@ -4414,6 +4483,7 @@ module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 mediation_integrate.o \
+module_configure.o                                             \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -4457,7 +4527,7 @@ LIB = -L../external/io_netcdf -lwrfio_nf $(OMP) -LCONFIGURE_NETCDF_PATH/lib -lne
       ../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time \
       -lmpifarg -lmpi -lelan -lintrins -lPEPCF90 -limf -lguide -lunwind -lpthread -L/opt/mlib/lib/linux -lveclib8
 LDFLAGS = $(OMP)
-CPP        = /lib/cpp -traditional -C -P
+CPP        = /lib/cpp -traditional -C -P -traditional
 POUND_DEF  = -DNO_RRTM_PHYSICS -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) \
              -DMAX_DOMAINS_F=$(MAX_DOMAINS)
 CPPFLAGS   = -I$(LIBINCLUDE) $(ARCHFLAGS) $(COREDEFS) $(OMPCPP) -I$(INCLUDE) \
@@ -4515,12 +4585,14 @@ module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
 module_initialize_real.o : module_initialize_real.F
 module_dm.o : module_dm.F
 start_domain.o : start_domain.F
+module_configure.o : module_configure.F
 
 solve_interface.o \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o \
+module_configure.o                                             \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -4565,7 +4637,7 @@ LIB = -Vaxlib -L../external/io_netcdf -lwrfio_nf $(OMP) -L/u/ncsa/straka/AUGUST.
 -L../external/io_int -lwrfio_int \
 ../frame/module_internal_header_util.o ../frame/pack_utils.o -L/usr/local/vmi/mpich/lib/ecc6 -lmpich -lfmpich -lvmi -ldl -lpthread -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS = $(OMP)
-CPP = /lib/cpp -C -P
+CPP = /lib/cpp -C -P -traditional
 POUND_DEF = -DNO_RRTM_PHYSICS  -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
 CPPFLAGS = -traditional -I$(LIBINCLUDE) -C -P $(COREDEFS) $(ARCHFLAGS) $(OMPCPP) -I$(INCLUDE) -I../external/RSL/RSL -C -P `cat ../inc/dm_comm_cpp_flags` $(POUND_DEF) $(COREDEFS)
 AR = ar ru
@@ -4624,12 +4696,14 @@ module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
 module_initialize_real.o : module_initialize_real.F
 module_dm.o : module_dm.F
 start_domain.o : start_domain.F
+module_configure.o : module_configure.F
 
 solve_interface.o \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o \
+module_configure.o                                             \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -4669,7 +4743,7 @@ LIB = -Vaxlib -L../external/io_netcdf -lwrfio_nf $(OMP) -L/u/ncsa/straka/AUGUST.
 -L../external/io_int -lwrfio_int \
 ../frame/module_internal_header_util.o ../frame/pack_utils.o -L/usr/local/vmi/mpich/lib/ecc6 -lmpich -lfmpich -lvmi -ldl -lpthread -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS = $(OMP)
-CPP = /lib/cpp -C -P
+CPP = /lib/cpp -C -P -traditional
 POUND_DEF = -DNO_RRTM_PHYSICS  -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
 CPPFLAGS = -traditional -I$(LIBINCLUDE) -C -P $(COREDEFS) $(ARCHFLAGS) $(OMPCPP) -I$(INCLUDE) -I../external/RSL_LITE -C -P `cat ../inc/dm_comm_cpp_flags` $(POUND_DEF) $(COREDEFS)
 AR = ar ru
@@ -4723,12 +4797,14 @@ module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
 module_initialize_real.o : module_initialize_real.F
 module_dm.o : module_dm.F
 start_domain.o : start_domain.F
+module_configure.o : module_configure.F
 
 solve_interface.o \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o \
+module_configure.o                                             \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -4746,12 +4822,12 @@ SFC		=	$(FC)
 FCBASEOPTS      =       -w -FR -cm -w -I. -Vaxlib
 FCOPTIM		=	-O2
 FCFLAGS		=	$(FCOPTIM) $(FCBASEOPTS) $(OMP)
-CFLAGS		=
+CFLAGS		=       -w
 EXTRAMODULES    =       
 INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
                         -I../external -I../frame -I../share -I../phys -I../inc
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DLIMIT_ARGS -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 \
-                        -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE
+                        -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE -DIFORT_KLUDGE
 LD		=	$(FC)
 LDFLAGS		=	$(FCFLAGS) $(OMP)
 CPP		=	/lib/cpp -traditional
@@ -4760,7 +4836,7 @@ POUND_DEF	=	$(OMPCPP) $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE \
 CPPFLAGS	=	-I$(LIBINCLUDE) -C -P $(ARCHFLAGS) $(POUND_DEF)
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
-LIB             =	CONFIGURE_NETCDF_LIB_PATH ../frame/internal_header_util.o ../frame/pack_utils.o \
+LIB             =	CONFIGURE_NETCDF_LIB_PATH ../frame/module_internal_header_util.o ../frame/pack_utils.o \
                         -L../external/esmf_time_f90 -lesmf_time 
 AR              =       ar ru
 M4              =       m4 -B8000
@@ -4855,7 +4931,7 @@ FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DYYY -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
                         -DTRIEDNTRUE   \
-			-DLIMIT_ARGS -DSTUBMPI
+			-DLIMIT_ARGS -DSTUBMPI -DIFORT_KLUDGE
 INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
                         -I../external -I../frame -I../share -I../phys -I../inc
 EXTRAMODULES    =       
@@ -4905,7 +4981,7 @@ esmf_time :
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; \
-          make CC="$(CC)" FC="$(FC)" CFLAGS="-DSTUBS" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST stub )
+          make CC="$(CC)" FC="$(FC)" CFLAGS="-DSTUBS $(CFLAGS)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST stub )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -4924,12 +5000,14 @@ module_initialize_real.o : module_initialize_real.F
 module_dm.o : module_dm.F
 start_domain.o : start_domain.F
 mediation_integrate.o : mediation_integrate.F
+module_configure.o : module_configure.F
 
 solve_interface.o                                              \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
+module_configure.o                                             \
 mediation_integrate.o \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
@@ -4955,7 +5033,7 @@ FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
                          CONFIGURE_NETCDF_FLAG \
                         -DTRIEDNTRUE   \
-			-DLIMIT_ARGS
+			-DLIMIT_ARGS -DIFORT_KLUDGE
 INCLUDE_MODULES =       -I ../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../inc
 EXTRAMODULES    =       
@@ -5015,12 +5093,14 @@ module_initialize_real.o : module_initialize_real.F
 module_dm.o : module_dm.F
 start_domain.o : start_domain.F
 mediation_integrate.o : mediation_integrate.F
+module_configure.o : module_configure.F
 
 solve_interface.o                                              \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
+module_configure.o                                             \
 mediation_integrate.o \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
@@ -5052,7 +5132,7 @@ FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DYYY -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
                         -DTRIEDNTRUE   \
-			-DLIMIT_ARGS -DSTUBMPI
+			-DLIMIT_ARGS -DSTUBMPI -DIFORT_KLUDGE
 INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
                         -I../external -I../frame -I../share -I../phys -I../inc
 EXTRAMODULES    =       
@@ -5102,7 +5182,7 @@ esmf_time :
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; \
-          make CC="$(CC)" FC="$(FC)" CFLAGS="-DSTUBS" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST stub )
+          make CC="$(CC)" FC="$(FC)" CFLAGS="-DSTUBS $(CFLAGS)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST stub )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -5121,8 +5201,10 @@ module_initialize_real.o : module_initialize_real.F
 module_dm.o : module_dm.F
 start_domain.o : start_domain.F
 mediation_integrate.o : mediation_integrate.F
+module_configure.o : module_configure.F
 
 solve_interface.o                                              \
+module_configure.o                                             \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
@@ -5156,7 +5238,7 @@ FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DYYY -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
                         -DTRIEDNTRUE   \
-			-DLIMIT_ARGS
+			-DLIMIT_ARGS -DIFORT_KLUDGE
 INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
                         -I../external -I../frame -I../share -I../phys -I../inc
 EXTRAMODULES    =       
@@ -5205,7 +5287,7 @@ esmf_time :
 	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL/RSL/librsl.a :
-	( cd ../external/RSL/RSL ; make CC="$(CC)" FC="$(FC)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST linux )
+	( cd ../external/RSL/RSL ; make CC="$(CC)" CFLAGS="$(CFLAGS)" FC="$(FC)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST linux )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -5224,8 +5306,10 @@ module_initialize_real.o : module_initialize_real.F
 module_dm.o : module_dm.F
 start_domain.o : start_domain.F
 mediation_integrate.o : mediation_integrate.F
+module_configure.o : module_configure.F
 
 solve_interface.o                                              \
+module_configure.o                                             \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
@@ -5360,8 +5444,10 @@ module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
 module_initialize_real.o : module_initialize_real.F
 module_dm.o : module_dm.F
 start_domain.o : start_domain.F
+module_configure.o : module_configure.F
    
 solve_interface.o                                              \
+module_configure.o                                             \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
@@ -5407,7 +5493,7 @@ FCBASEOPTS        = -w -ip -tpp2 -ftz -FR -convert big_endian $(FCDEBUG) \
 FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 ARCHFLAGS         = -DYYY -DINTIO -DWRF_RSL_IO -DRSL  -DDM_PARALLEL -DIWORDSIZE=4 \
                     -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
-                    -DTRIEDNTRUE -DLIMIT_ARGS
+                    -DTRIEDNTRUE -DLIMIT_ARGS -DIFORT_KLUDGE
 # -DONLY_WRFMODEL_IO
 INCLUDE_MODULES   = -I../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
                     -I../external -I../frame -I../share -I../phys -I../inc
@@ -5609,8 +5695,10 @@ module_io_wrf.o : module_io_wrf.F
 module_domain.o : module_domain.F
 start_domain.o : start_domain.F
 mediation_force_domain.o : mediation_force_domain.F
+module_configure.o : module_configure.F
 
 mediation_integrate.o mediation_interp_domain.o mediation_feedback_domain.o \
+module_configure.o                                              \
 wrf_auxinput1out.o wrf_histout.o wrf_restartout.o wrf_inputin.o \
 wrf_auxinput1in.o wrf_histin.o wrf_restartin.o module_initialize_real.o \
 module_domain.o module_io_wrf.o start_domain.o solve_interface.o \
@@ -5718,8 +5806,10 @@ module_io_wrf.o : module_io_wrf.F
 module_domain.o : module_domain.F
 start_domain.o : start_domain.F
 mediation_force_domain.o : mediation_force_domain.F
+module_configure.o : module_configure.F
 
 mediation_integrate.o mediation_interp_domain.o mediation_feedback_domain.o \
+module_configure.o                                              \
 wrf_auxinput1out.o wrf_histout.o wrf_restartout.o wrf_inputin.o \
 wrf_auxinput1in.o wrf_histin.o wrf_restartin.o module_initialize_real.o \
 module_domain.o module_io_wrf.o start_domain.o solve_interface.o \
@@ -5825,8 +5915,10 @@ module_io_wrf.o : module_io_wrf.F
 module_domain.o : module_domain.F
 start_domain.o : start_domain.F
 mediation_force_domain.o : mediation_force_domain.F
+module_configure.o : module_configure.F
 
 mediation_integrate.o mediation_interp_domain.o mediation_feedback_domain.o \
+module_configure.o                                              \
 wrf_auxinput1out.o wrf_histout.o wrf_restartout.o wrf_inputin.o \
 wrf_auxinput1in.o wrf_histin.o wrf_restartin.o module_initialize_real.o \
 module_domain.o module_io_wrf.o start_domain.o solve_interface.o \
@@ -6127,7 +6219,7 @@ EXTRAMODULES    =
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int \
-			../frame/internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
+			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =       $(FCOPTIM) $(OMP)
 CPP             =        /lib/cpp
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -6173,8 +6265,10 @@ module_initialize_real.o : module_initialize_real.F
 module_dm.o : module_dm.F
 mediation_integrate.o : mediation_integrate.F
 start_domain.o : start_domain.F
+module_configure.o : module_configure.F
 
 solve_interface.o                                              \
+module_configure.o                                              \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
@@ -6210,7 +6304,7 @@ EXTRAMODULES    =
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL/ -lrsl -L../external/io_int -lwrfio_int \
-			../frame/internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
+			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =       $(FCOPTIM) $(OMP)
 CPP             =        /lib/cpp
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -6265,8 +6359,10 @@ module_initialize_real.o : module_initialize_real.F
 module_dm.o : module_dm.F
 mediation_integrate.o : mediation_integrate.F
 start_domain.o : start_domain.F
+module_configure.o : module_configure.F
 
 solve_interface.o                                              \
+module_configure.o                                              \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
@@ -6300,7 +6396,7 @@ EXTRAMODULES    =
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int \
-			../frame/internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
+			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =       $(FCOPTIM) $(OMP)
 CPP             =        /lib/cpp
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -6346,8 +6442,10 @@ module_initialize_real.o : module_initialize_real.F
 module_dm.o : module_dm.F
 mediation_integrate.o : mediation_integrate.F
 start_domain.o : start_domain.F
+module_configure.o : module_configure.F
 
 solve_interface.o                                              \
+module_configure.o                                              \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
@@ -6381,7 +6479,7 @@ EXTRAMODULES    =
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int \
-			../frame/internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
+			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =       $(FCOPTIM) $(OMP)
 CPP             =        /lib/cpp
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -6427,8 +6525,10 @@ module_initialize_real.o : module_initialize_real.F
 module_dm.o : module_dm.F
 mediation_integrate.o : mediation_integrate.F
 start_domain.o : start_domain.F
+module_configure.o : module_configure.F
 
 solve_interface.o                                              \
+module_configure.o                                              \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
@@ -6462,7 +6562,7 @@ EXTRAMODULES    =
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int \
-			../frame/internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
+			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =       $(FCOPTIM) $(OMP)
 CPP             =        /lib/cpp
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -6508,8 +6608,10 @@ module_initialize_real.o : module_initialize_real.F
 module_dm.o : module_dm.F
 mediation_integrate.o : mediation_integrate.F
 start_domain.o : start_domain.F
+module_configure.o : module_configure.F
 
 solve_interface.o                                              \
+module_configure.o                                              \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
@@ -6546,7 +6648,7 @@ EXTRAMODULES    =
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int -L../external/RSL/RSL -lrsl \
-			../frame/internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
+			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =       $(FCOPTIM) $(OMP)
 CPP             =        /lib/cpp -C -P
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -6604,8 +6706,10 @@ module_initialize_real.o : module_initialize_real.F
 module_dm.o : module_dm.F
 mediation_integrate.o : mediation_integrate.F
 start_domain.o : start_domain.F
+module_configure.o : module_configure.F
 
 solve_interface.o \
+module_configure.o                                              \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o \
@@ -6641,7 +6745,7 @@ EXTRAMODULES    =
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int -L../external/RSL/RSL -lrsl \
-			../frame/internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
+			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =       $(FCOPTIM) $(OMP)
 CPP             =        /lib/cpp -C -P
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -6699,8 +6803,10 @@ module_initialize_real.o : module_initialize_real.F
 module_dm.o : module_dm.F
 mediation_integrate.o : mediation_integrate.F
 start_domain.o : start_domain.F
+module_configure.o : module_configure.F
 
 solve_interface.o \
+module_configure.o                                              \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o \

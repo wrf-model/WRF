@@ -6880,13 +6880,17 @@ module_initialize_real.o module_dm.o mediation_integrate.o start_domain.o :
 
 ###########################################################
 #ARCH Darwin		(single-threaded, no nesting)
+#     
+#     Using -qfloat=nomaf option can result in identical results with
+#           non-optimized and optimized results (suggested by Fovell of UCLA)
+#           One may turn on by uncommenting it in FCOPTIM line
 #
 FC              =       xlf90_r
 LD              =       xlf90_r
 #CC              =       xlc_r
 CC              =       cc
 CFLAGS          =       -DNOUNDERSCORE
-FCOPTIM         =       -O3 -qarch=auto
+FCOPTIM         =       -O3 -qarch=auto #-qfloat=nomaf
 FCDEBUG         =       # -qnoopt -qfullpath
 FCBASEOPTS      =       -qsave $(FCDEBUG) -qmaxmem=32767 -w 
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
@@ -6987,6 +6991,10 @@ mediation_force_domain.o start_domain.o :
 
 ###########################################################
 #ARCH Darwin		(OpenMP, no nesting)
+#     
+#     Using -qfloat=nomaf option can result in identical results with
+#           non-optimized and optimized results (suggested by Fovell of UCLA)
+#           One may turn on by uncommenting it in FCOPTIM line
 #
 OMP             =       -qsmp=noauto
 OMPCPP          =       -D_OPENMP
@@ -6994,7 +7002,7 @@ FC              =       xlf90_r
 LD              =       xlf90_r
 CC              =       cc
 CFLAGS          =       -DNOUNDERSCORE
-FCOPTIM         =       -O2 -qarch=auto -qunroll=yes
+FCOPTIM         =       -O2 -qarch=auto -qunroll=yes #-qfloat=nomaf
 FCDEBUG         =       # -qnoopt -qfullpath
 FCBASEOPTS      =       -w -qsave $(FCDEBUG) -qmaxmem=32767 #-qflttrap=zerodivide:invalid:enable -qsigtrap
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)

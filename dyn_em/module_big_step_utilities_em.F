@@ -2138,7 +2138,7 @@ SUBROUTINE w_damp( rw_tend, ww, w, mut, rdnw, dt,     &
    REAL, DIMENSION( kms:kme ), INTENT(IN   ) :: rdnw
 
    REAL, INTENT(IN)    :: dt
-   REAL                :: cfl
+   REAL                :: cfl, cf_n, cf_d
 
    INTEGER :: itf, jtf, i, j, k
 
@@ -2160,8 +2160,16 @@ SUBROUTINE w_damp( rw_tend, ww, w, mut, rdnw, dt,     &
 
      DO k = 2, kde-1
      DO i = its,itf
+#if 0
         cfl = abs(ww(i,k,j)/mut(i,j)*rdnw(k)*dt)
         if(cfl .gt. w_beta)then
+#else
+! restructure to get rid of divide
+        cf_n = abs(ww(i,k,j))
+        cf_d = abs(mut(i,j)*rdnw(k)*dt)
+        if(cf_n .gt. cf_d*w_beta )then
+#endif
+
            print *,i,j,k,'cfl,w,d(eta)=',cfl,w(i,k,j),-1./rdnw(k)
            rw_tend(i,k,j) = rw_tend(i,k,j)-sign(1.,w(i,k,j))*w_alpha*(cfl-w_beta)*mut(i,j)
         endif

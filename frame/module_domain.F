@@ -125,6 +125,9 @@ MODULE module_domain
 
    END TYPE domain
 
+!  added for 3dvar code, WCS, 5 June 2002; Wei Huang, 3 November 2004
+#include <state_subtypes.inc>
+
    !  Now that a "domain" TYPE exists, we can use it to store a few pointers
    !  to this type.  These are primarily for use in traversing the linked list.
    !  The "head_grid" is always the pointer to the first domain that is

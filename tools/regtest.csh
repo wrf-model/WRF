@@ -1,7 +1,7 @@
 #!/bin/csh
 # @ job_type		= parallel
 # @ environment		= COPY_ALL;MP_EUILIB=us
-# @ job_name		= regtest
+# @ job_name		= regtest.$(jobid)
 # @ output		= regtest_out
 # @ error		= regtest_err
 # @ network.MPI		= csss,shared,us
@@ -62,8 +62,8 @@ if      ( `uname` == AIX ) then
 else if ( ( `uname` == Linux ) && ( `hostname | cut -d. -f2-` == fsl.noaa.gov ) && ( $user == jacquesm ) ) then
 	set argv = ( -env )
 else if ( ( `uname` == Linux ) && ( `hostname | cut -d. -f2-` == fsl.noaa.gov ) && ( $user == weiwang ) ) then
-	set WRFREGFILE = /p16/ncarwrf/WRF_REG_FILES/wrf.tar
-	set WRFREGDATA = /p16/ncarwrf/WRF_REG_FILES/data.tar.gz
+	set WRFREGFILE = /p31/ncarwrf/WRF_REG_FILES/wrf.tar
+	set WRFREGDATA = /p31/ncarwrf/WRF_REG_FILES/data.tar.gz
 	set argv = ( -env )
 else if ( ( `uname` == OSF1 ) && ( `hostname` == maple ) && ( $user == michalak ) ) then
         set clrm=1
@@ -209,6 +209,64 @@ set dataset = jan00
 
 set thedataem = ${WRFREGDATAEM}/${dataset}
 set thedatanmm = $WRFREGDATANMM
+
+
+#	A single WRF output "quilt" server can be tested by setting "QUILT"  to 
+#       "TRUE" below.  At the moment, testing of I/O quilt servers is not supported 
+#       on all machines.  
+
+set QUILT = TRUE
+set QUILT = FALSE
+
+if ( $QUILT == TRUE ) then
+	if ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` == bs ) || ( `hostname | cut -c 1-2` == bf ) ) ) then
+		echo "One WRF output quilt server will be used for some tests"
+	else if ( ( `uname` == OSF1 ) && ( `hostname | cut -c 1-4` == duku ) ) then
+		echo "One WRF output quilt server will be used for some tests"
+	else
+		echo "WRF output quilt servers are not tested on this mahchine"
+		exit ( 3 ) 
+	endif
+endif
+
+
+#	Baseline data sets can be generated and archived or compared against.  
+#       - To generate and archive, set GENERATE_BASELINE to a pathname that can 
+#         be created by this script via "mkdir -p $GENERATE_BASELINE".  This 
+#         directory must not already exist.  
+#         Set GENERATE_BASELINE = FALSE to avoid baseline generation.  
+#       - To compare with a previously archived baseline, set COMPARE_BASELINE 
+#         to an existing directory that contains an archived baseline.  
+#         Set COMPARE_BASELINE = FALSE to avoid baseline comparison.  
+set GENERATE_BASELINE = FALSE
+set COMPARE_BASELINE = FALSE
+
+#	Baseline generation and comparison are only done when BIT4BIT is set.  
+if ( $GENERATE_BASELINE != FALSE ) then
+	if ( $REG_TYPE != BIT4BIT ) then
+		echo "ERROR:  Baseline generation can only be done during BIT4BIT tests."
+		exit ( 3 ) 
+	endif
+	if ( -d $GENERATE_BASELINE ) then
+		echo "ERROR:  Baseline directory ${GENERATE_BASELINE} already exists."
+		exit ( 3 ) 
+	else
+		# Archive serial output file to baseline
+		mkdir -p $GENERATE_BASELINE || ( echo "ERROR:  cannot mkdir ${GENERATE_BASELINE}"; exit 3 )
+	endif
+endif
+if ( $COMPARE_BASELINE != FALSE ) then
+	if ( $REG_TYPE != BIT4BIT ) then
+		echo "Baseline comparison can only be done during BIT4BIT tests."
+		exit ( 3 ) 
+	endif
+	if ( ! -d $COMPARE_BASELINE ) then
+		echo "${0}: ERROR:  Baseline directory ${COMPARE_BASELINE} does not exist"
+		exit ( 3 ) 
+	endif
+endif
+
+
 
 #	If we are doing nested runs, we are usually trying that non-MPI-but-using-RSL
 #	option.  That is not going to work with NMM due to needing MPI.
@@ -550,6 +608,25 @@ touch version_info
 if      ( ( $ARCH[1] == AIX ) && ( `hostname | cut -c 1-2` == bf ) ) then
 	set DEF_DIR             = $home
 	set TMPDIR              = /ptmp/$user
+	# keep stuff out of $HOME and /ptmp/$USER
+	# this allows multiple regressions tests to run simultaneously
+	# extend this to other machines later
+	if ( ! $?LOADL_JOB_NAME ) then
+		echo "${0}: ERROR::  This batch script must be submitted via"
+		echo "${0}:          LoadLeveler on an AIX machine\!"
+	else
+		set job_id              = `echo ${LOADL_JOB_NAME} | cut -f2 -d'.'`
+		set DEF_DIR             = /ptmp/$user/wrf_regression.${job_id}
+		set TMPDIR              = $DEF_DIR
+		if ( -d $DEF_DIR ) then
+			echo "${0}: ERROR::  Directory ${DEF_DIR} exists, please remove it"
+			exit ( 1 ) 
+		else
+			mkdir -p $DEF_DIR
+			echo "See directory ${DEF_DIR}/ for wrftest.output and other test results"
+		endif
+		set CUR_DIR = ${LOADL_STEP_INITDIR}
+	endif
 	if ( ! -d $TMPDIR ) mkdir $TMPDIR
 	set MAIL                = /usr/bin/mailx
 	set COMPOPTS            = ( 1 2 4 )
@@ -569,6 +646,25 @@ if      ( ( $ARCH[1] == AIX ) && ( `hostname | cut -c 1-2` == bf ) ) then
 else if ( ( $ARCH[1] == AIX ) && ( `hostname | cut -c 1-2` == bs ) ) then
 	set DEF_DIR             = $home
 	set TMPDIR              = /ptmp/$user
+	# keep stuff out of $HOME and /ptmp/$USER
+	# this allows multiple regressions tests to run simultaneously
+	# extend this to other machines later
+	if ( ! $?LOADL_JOB_NAME ) then
+		echo "${0}: ERROR::  This batch script must be submitted via"
+		echo "${0}:          LoadLeveler on an AIX machine\!"
+	else
+		set job_id              = `echo ${LOADL_JOB_NAME} | cut -f2 -d'.'`
+		set DEF_DIR             = /ptmp/$user/wrf_regression.${job_id}
+		set TMPDIR              = $DEF_DIR
+		if ( -d $DEF_DIR ) then
+			echo "${0}: ERROR::  Directory ${DEF_DIR} exists, please remove it"
+			exit ( 1 ) 
+		else
+			mkdir -p $DEF_DIR
+			echo "See directory ${DEF_DIR}/ for wrftest.output and other test results"
+		endif
+		set CUR_DIR = ${LOADL_STEP_INITDIR}
+	endif
 	if ( ! -d $TMPDIR ) mkdir $TMPDIR
 	set MAIL                = /usr/bin/mailx
 	set COMPOPTS            = ( 1 2 4 )
@@ -781,6 +877,36 @@ EOF
 	echo "OS version info: " >>! version_info
 	uname -a >>&! version_info
 	echo " " >>! version_info
+else if ( ( $ARCH[1] == Linux ) && ( `hostname` == loquat ) ) then
+	set job_id              = $$
+	set DEF_DIR             = /loquat2/$user/wrf_regression.${job_id}
+	set TMPDIR              = $DEF_DIR
+	if ( -d $DEF_DIR ) then
+		echo "${0}: ERROR::  Directory ${DEF_DIR} exists, please remove it"
+		exit ( 1 ) 
+	else
+		mkdir -p $DEF_DIR
+		echo "See directory ${DEF_DIR}/ for wrftest.output and other test results"
+	endif
+	set MAIL		= /bin/mail
+	set COMPOPTS		= ( 1 3 5 )
+	set Num_Procs		= 2
+	set OPENMP		= $Num_Procs
+	cat >! machfile << EOF
+`hostname`
+`hostname`
+`hostname`
+`hostname`
+EOF
+	set Mach		= `pwd`/machfile
+	set ZAP_OPENMP		= FALSE
+	set MPIRUNCOMMAND       = ( mpirun -np $Num_Procs -machinefile $Mach )
+	echo "Compiler version info: " >! version_info
+	pgf90 -V >>&! version_info
+	echo " " >>! version_info
+	echo "OS version info: " >>! version_info
+	uname -a >>&! version_info
+	echo " " >>! version_info
 else if ( ( $ARCH[1] == Linux ) && ( `hostname | cut -d. -f2-` == fsl.noaa.gov ) && ( $user == jacquesm ) ) then
 	set DEF_DIR		= /p10/acb/users/${user}/wrfReg
 	set TMPDIR              = .
@@ -797,7 +923,7 @@ else if ( ( $ARCH[1] == Linux ) && ( `hostname | cut -d. -f2-` == fsl.noaa.gov )
 	uname -a >>&! version_info
 	echo " " >>! version_info
 else if ( ( $ARCH[1] == Linux ) && ( `hostname | cut -d. -f2-` == fsl.noaa.gov ) && ( $user == weiwang ) ) then
-	set DEF_DIR		= /p16/ncarwrf
+	set DEF_DIR		= /p31/ncarwrf
 	set TMPDIR              = .
 	set MAIL		= /usr/bin/Mail
 	set COMPOPTS		= ( 1 3 5 )
@@ -956,6 +1082,12 @@ echo "Number of MPI    processes to use: $Num_Procs" >>! ${DEF_DIR}/wrftest.outp
 set name = ( `grep ^${user}: /etc/passwd | cut -d: -f5` ) 
 echo "Test conducted by $name" >>! ${DEF_DIR}/wrftest.output
 echo " " >>! ${DEF_DIR}/wrftest.output
+echo "Test run from directory ${CUR_DIR}" >>! ${DEF_DIR}/wrftest.output
+echo " " >>! ${DEF_DIR}/wrftest.output
+if ( $?LOADL_JOB_NAME ) then
+	echo "Loadlever job name = ${LOADL_JOB_NAME}" >>! ${DEF_DIR}/wrftest.output
+	echo " " >>! ${DEF_DIR}/wrftest.output
+endif
 echo "Real data case for EM is from $dataset " >>! ${DEF_DIR}/wrftest.output
 echo " " >>! ${DEF_DIR}/wrftest.output
 echo "The em real and ideal forecasts will be nested: $NESTED " >>! ${DEF_DIR}/wrftest.output
@@ -968,6 +1100,21 @@ else if ( $REG_TYPE == OPTIMIZED ) then
 	echo "No inter-comparisons are made. " >>! ${DEF_DIR}/wrftest.output
 	echo " " >>! ${DEF_DIR}/wrftest.output
 endif
+if ( $QUILT == TRUE ) then
+	echo "One WRF output quilt server will be used for some tests" >>! ${DEF_DIR}/wrftest.output
+	echo " " >>! ${DEF_DIR}/wrftest.output
+endif
+if ( $GENERATE_BASELINE != FALSE ) then
+	echo "WRF output will be archived in baseline directory ${GENERATE_BASELINE} for some tests" >>! \
+	     ${DEF_DIR}/wrftest.output
+	echo " " >>! ${DEF_DIR}/wrftest.output
+endif
+if ( $COMPARE_BASELINE != FALSE ) then
+	echo "WRF output will be compared with files in baseline directory ${COMPARE_BASELINE} for some tests" >>! \
+	     ${DEF_DIR}/wrftest.output
+	echo " " >>! ${DEF_DIR}/wrftest.output
+endif
+
 cat ${CUR_DIR}/version_info >>! ${DEF_DIR}/wrftest.output
 
 #	There are three WRF em executables to be considered that can run in threaded and
@@ -1230,6 +1377,19 @@ EOF
 				    -e 's/ run_hours *= [0-9][0-9]*/ run_hours = 0/g' \
 				    -e 's/ run_minutes *= [0-9][0-9]*/ run_minutes = 0/g' \
 				namelist.input.temp >! namelist.input
+				# WRF output quilt servers are only tested for MPI configuration.  
+				# Currenlty, only one WRF output quilt server is used.  
+				if ( $QUILT == TRUE ) then
+					if ( $compopt == $COMPOPTS[3] ) then
+						#	For now, test only one group of one output quilt servers.  
+						sed -e 's/ nio_tasks_per_group *= *[0-9][0-9]*/ nio_tasks_per_group = 1/g' \
+						    -e 's/ nio_groups *= *[0-9][0-9]*/ nio_groups = 1/g' \
+						namelist.input >! namelist.input.temp
+						mv -f namelist.input.temp namelist.input
+						echo "Building namelist.input.$core.${phys_option}.$compopt with one I/O quilt server enabled."
+						echo "NOTE  one I/O quilt server enabled for $core physics $phys_option parallel $compopt..." >>! ${DEF_DIR}/wrftest.output
+					endif
+				endif
 
 				/bin/cp namelist.input $TMPDIR/namelist.input.$core.${phys_option}.$compopt
 #DAVE###################################################
@@ -1914,6 +2074,97 @@ banner 29
 				popd
 	
 			endif
+
+			# Generate and archive baseline or compare against baseline
+			# Get nmm_real working later...  (just different output file names)
+			if ( $core != nmm_real ) then
+				if ( $GENERATE_BASELINE != FALSE ) then
+					if ( ! -d $GENERATE_BASELINE ) then
+						echo "ERROR:  Baseline directory ${GENERATE_BASELINE} does not exist" >>! \
+						     ${DEF_DIR}/wrftest.output
+						exit ( 10 ) 
+					else
+						# Archive serial output file to baseline
+						pushd ${DEF_DIR}/regression_test/WRFV2/test/$core
+						set basefilenm = wrfout_d01_${filetag}.${core}.${phys_option}
+						set basefile = ${GENERATE_BASELINE}/${basefilenm}
+						set outfile = $TMPDIR/${basefilenm}.$COMPOPTS[1]
+						if ( -e $outfile ) then
+							cp $outfile $basefile || \
+							  ( echo "ERROR:  cannot copy ${outfile} to ${basefile}" >>! \
+							   ${DEF_DIR}/wrftest.output; exit 10 )
+						else
+							echo "ERROR:  Cannot archive baseline, file $outfile does not exist" >>! \
+							     ${DEF_DIR}/wrftest.output
+					echo "SUMMARY baseline archived in ${GENERATE_BASELINE} for $core physics $phys_option  FAIL" >>! \
+							     ${DEF_DIR}/wrftest.output
+							echo "-------------------------------------------------------------" >> \
+							     ${DEF_DIR}/wrftest.output
+							exit ( 10 ) 
+						endif
+					echo "SUMMARY baseline archived in ${GENERATE_BASELINE} for $core physics $phys_option  PASS" >>! \
+						     ${DEF_DIR}/wrftest.output
+						echo "-------------------------------------------------------------" >> \
+						     ${DEF_DIR}/wrftest.output
+						popd
+					endif
+				endif
+				if ( $COMPARE_BASELINE != FALSE ) then
+					if ( ! -d $COMPARE_BASELINE ) then
+						echo "${0}: ERROR::  Baseline directory ${COMPARE_BASELINE} does not exist" >>! \
+						     ${DEF_DIR}/wrftest.output
+						exit ( 10 ) 
+					else
+						# Compare against baseline output file
+						set basefilenm = wrfout_d01_${filetag}.${core}.${phys_option}
+						set basefile = ${COMPARE_BASELINE}/${basefilenm}
+						set DIFFWRF = ${DEF_DIR}/regression_test/WRFV2/external/io_netcdf/diffwrf
+						set testdir = ${DEF_DIR}/regression_test/WRFV2/test/$core
+						pushd ${testdir}
+						foreach compopt ( $COMPOPTS )
+							set cmpfile = $TMPDIR/${basefilenm}.$compopt
+							rm fort.88 fort.98 >& /dev/null
+							if ( ( -e ${basefile} ) && ( -e ${cmpfile} ) ) then
+								#	Are the files the same size?  If not, then only the initial times
+								#	will be compared.  That means, on a failure to run a forecast, the
+								#	diffwrf will give a pass.  We need to root out this evil.
+								set foob = ( ` \ls -ls ${basefile} `)
+								set fooc = ( ` \ls -ls ${cmpfile} `)
+								set sizeb = $foob[6]
+								set sizec = $fooc[6]
+								if ( $sizeb == $sizec ) then
+									$DIFFWRF ${basefile} ${cmpfile} >& /dev/null
+									if ( -e fort.88 ) then
+			echo "FAIL:  Baseline comparison, file ${cmpfile} did not match ${basefile} according to diffwrf" >>! \
+										${DEF_DIR}/wrftest.output
+									endif
+								else
+									touch fort.88 fort.98
+			echo "FAIL:  Baseline comparison, files ${cmpfile} and ${basefile} have different sizes" >>! \
+									${DEF_DIR}/wrftest.output
+								endif
+							else
+			echo "FAIL:  Baseline comparison, either ${cmpfile} or ${basefile} does not exist" >>! \
+									${DEF_DIR}/wrftest.output
+								touch fort.88 fort.98
+							endif
+							if ( ! -e fort.88 ) then
+			echo "SUMMARY compare vs baseline ${COMPARE_BASELINE} for $core physics $phys_option compopt $compopt  PASS" >>! \
+								     ${DEF_DIR}/wrftest.output
+								echo "-------------------------------------------------------------" >> \
+								     ${DEF_DIR}/wrftest.output
+							else
+			echo "SUMMARY compare vs baseline ${COMPARE_BASELINE} for $core physics $phys_option compopt $compopt  FAIL" >>! \
+								     ${DEF_DIR}/wrftest.output
+								echo "-------------------------------------------------------------" >> \
+								     ${DEF_DIR}/wrftest.output
+							endif
+						end
+						popd
+					endif
+				endif
+			endif
+			# End of generate and archive baseline or compare against baseline
 
 		endif
 

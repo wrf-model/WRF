@@ -70,10 +70,10 @@ EOF
 
 		if ( `uname` == AIX ) then
 			llsubmit reg.foo.$count.$NAME[$count] >&! llsub.out
-			sleep 10 ; llq -u $USER >&! llq.report
 			set ok = 0
 			set in_already = 0
 			while ( $ok == 0 )
+				sleep 10 ; llq -u $USER >&! llq.report
 				grep `cat llsub.out | grep '"bs1' | cut -d\" -f2` llq.report >& /dev/null
 				set ok = $status
 				if ( ( $ok == 0 ) && ( $in_already == 0 ) ) then

@@ -24,6 +24,11 @@ RANLIB          =       echo
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
 
+#### Override default sed command and script for Fortran source files         ####
+#### This sed script does not pass __FILE__ and __LINE__ to wrf_error_fatal() ####
+#### because the SGI Fortran compiler complains about long source lines.      ####
+SED_FTN = sed -f ../arch/no_file_line.sed
+
 externals : CONFIGURE_WRFIO_NF wrfio_int module_dm.F esmf_time
 
 module_dm.F :
@@ -99,6 +104,11 @@ M4              =       m4 -B8000
 RANLIB          =       echo
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
+
+#### Override default sed command and script for Fortran source files         ####
+#### This sed script does not pass __FILE__ and __LINE__ to wrf_error_fatal() ####
+#### because the SGI Fortran compiler complains about long source lines.      ####
+SED_FTN = sed -f ../arch/no_file_line.sed
 
 externals : CONFIGURE_WRFIO_NF wrfio_int module_dm.F esmf_time
 
@@ -180,6 +190,11 @@ RANLIB          =       echo
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
 
+#### Override default sed command and script for Fortran source files         ####
+#### This sed script does not pass __FILE__ and __LINE__ to wrf_error_fatal() ####
+#### because the SGI Fortran compiler complains about long source lines.      ####
+SED_FTN = sed -f ../arch/no_file_line.sed
+
 externals : CONFIGURE_WRFIO_NF wrfio_int module_dm.F esmf_time
 
 module_dm.F :
@@ -258,6 +273,11 @@ CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -C -P $(COREDEFS) $(P
 RANLIB          =       echo
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
+
+#### Override default sed command and script for Fortran source files         ####
+#### This sed script does not pass __FILE__ and __LINE__ to wrf_error_fatal() ####
+#### because the SGI Fortran compiler complains about long source lines.      ####
+SED_FTN = sed -f ../arch/no_file_line.sed
 
 externals : CONFIGURE_WRFIO_NF wrfio_int module_dm.F esmf_time
 
@@ -340,6 +360,11 @@ M4              =       m4 -B8000
 RANLIB          =       echo
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
+
+#### Override default sed command and script for Fortran source files         ####
+#### This sed script does not pass __FILE__ and __LINE__ to wrf_error_fatal() ####
+#### because the SGI Fortran compiler complains about long source lines.      ####
+SED_FTN = sed -f ../arch/no_file_line.sed
 
 externals : CONFIGURE_WRFIO_NF wrfio_int module_dm.F esmf_time
 
@@ -433,6 +458,11 @@ M4              =       m4 -B8000
 RANLIB          =       echo
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
+
+#### Override default sed command and script for Fortran source files         ####
+#### This sed script does not pass __FILE__ and __LINE__ to wrf_error_fatal() ####
+#### because the SGI Fortran compiler complains about long source lines.      ####
+SED_FTN = sed -f ../arch/no_file_line.sed
 
 externals : CONFIGURE_WRFIO_NF ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
 

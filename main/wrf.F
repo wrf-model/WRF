@@ -165,7 +165,7 @@ PROGRAM wrf
 
 !<DESCRIPTION>
 ! The head grid is initialized with read-in data through the call to <a
-! href=med_initialdata_input.html>med_initialdata_input</a?>, which is
+! href=med_initialdata_input.html>med_initialdata_input</a>, which is
 ! passed the pointer head_grid and a locally declared configuration data
 ! structure, config_flags, that is set by a call to <a
 ! href=model_to_grid_config_rec.html>model_to_grid_config_rec</a>.  It is

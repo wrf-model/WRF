@@ -785,24 +785,6 @@
    !$OMP PRIVATE ( i,j,k,ni,nj,ni1,nj1,ci,cj,ip,jp,nk,ck,nf,icmask,psca,psca1 )
      DO k = ckts, ckte
 
-!!!!!!!!!!!#define OLDWAY
-#ifdef OLDWAY
-        icmask = .FALSE.
-        DO nf = 1,nfx
-           DO j = cjms,cjme
-              nj = (j-jpos) * nrj + 2   ! j point on nest
-              DO i = cims,cime
-                ni = (i-ipos) * nri + 2   ! i point on nest
-                if ( ni .ge. nits-1 .and. ni .le. nite+1 .and. nj .ge. njts-1 .and. nj .le. njte+1 ) then
-                  if ( imask(ni,nj) .eq. 1 ) then
-                    icmask( i, j ) = .TRUE.
-                  endif
-                endif
-                psca(i,j,nf) = cfld(i,k,j)
-              ENDDO
-           ENDDO
-        ENDDO
-#else
         DO nf = 1,nfx
            DO j = cjms,cjme
               nj = (j-jpos) * nrj + 2   ! j point on nest
@@ -812,18 +794,6 @@
               ENDDO
            ENDDO
         ENDDO
-#endif
-
-
-#ifdef OLDWAY
-! tile dims in this call to sint are 1-over to account for the fact
-! that the number of cells on the nest local subdomain is not 
-! necessarily a multiple of the nest ratio in a given dim.
-! this could be a little less ham-handed.
-        CALL sint( psca,                     &
-                   cims, cime, cjms, cjme, icmask,  &
-                   cits-1, cite+1, cjts-1, cjte+1, nrj*nri, xstag, ystag )
-#else
 ! hopefully less ham handed but still correct and more efficient
 ! SOUTH BDY
                IF   ( njts .ge. njds .and. njts .le. njds + sz - 1  ) THEN
@@ -865,7 +835,6 @@
           n2ci(MAX(nits,nide-sz)), n2ci(MIN(nite,nide-1)), n2cj(njts), n2cj(njte), nrj*nri, xstag, ystag )
                  ENDIF
                ENDIF
-#endif
 
         DO nj1 = njts, njte+joff
            cj = jpos + (nj1-1) / nrj     ! j coord of CD point 
@@ -887,41 +856,6 @@
 !compute dv/dt and store in bdy_t
 !afterwards store the new value of v at t into bdy
 
-#ifdef OLDWAY
-               IF   ( ni .ge. nids .and. ni .lt. nids + spec_bdy_width ) THEN
-                 bdy_t( nj,k,ni, P_XSB ) = rdt*(psca(ci+shw,cj+shw,ip+1+(jp)*nri)-nfld(ni,k,nj))
-                 bdy( nj,k,ni, P_XSB ) = psca(ci+shw,cj+shw,ip+1+(jp)*nri )
-               ENDIF
-
-               IF   ( nj .ge. njds .and. nj .lt. njds + spec_bdy_width ) THEN
-                 bdy_t( ni,k,nj, P_YSB ) = rdt*(psca(ci+shw,cj+shw,ip+1+(jp)*nri)-nfld(ni,k,nj))
-                 bdy( ni,k,nj, P_YSB ) = psca(ci+shw,cj+shw,ip+1+(jp)*nri )
-               ENDIF
-
-               IF ( xstag ) THEN
-                 IF   ( ni .le. nide .and. ni .ge. nide - spec_bdy_width + 1 ) THEN
-                   bdy_t( nj,k,nide-ni+1, P_XEB ) = rdt*(psca(ci+shw,cj+shw,ip+1+(jp)*nri)-nfld(ni,k,nj))
-                   bdy( nj,k,nide-ni+1, P_XEB ) = psca(ci+shw,cj+shw,ip+1+(jp)*nri )
-                 ENDIF
-               ELSE
-                 IF   ( ni .le. nide-1 .and. ni .ge. nide - spec_bdy_width ) THEN
-                   bdy_t( nj,k,nide-ni, P_XEB ) = rdt*(psca(ci+shw,cj+shw,ip+1+(jp)*nri)-nfld(ni,k,nj))
-                   bdy( nj,k,nide-ni, P_XEB ) = psca(ci+shw,cj+shw,ip+1+(jp)*nri )
-                 ENDIF
-               ENDIF
-
-               IF ( ystag ) THEN
-                 IF   ( nj .le. njde .and. nj .ge. njde - spec_bdy_width + 1 ) THEN
-                   bdy_t(ni,k,njde-nj+1,P_YEB ) = rdt*(psca(ci+shw,cj+shw,ip+1+(jp)*nri)-nfld(ni,k,nj))
-                   bdy( ni,k,njde-nj+1,P_YEB ) = psca(ci+shw,cj+shw,ip+1+(jp)*nri )
-                 ENDIF
-               ELSE
-                 IF   ( nj .le. njde-1 .and. nj .ge. njde - spec_bdy_width ) THEN
-                   bdy_t(ni,k,njde-nj,P_YEB ) = rdt*(psca(ci+shw,cj+shw,ip+1+(jp)*nri)-nfld(ni,k,nj))
-                   bdy( ni,k,njde-nj,P_YEB ) = psca(ci+shw,cj+shw,ip+1+(jp)*nri )
-                 ENDIF
-               ENDIF
-#else
                IF   ( ni .ge. nids .and. ni .lt. nids + sz ) THEN
                  bdy_t( nj,k,ni, P_XSB ) = rdt*(psca(ci+shw,cj+shw,ip+1+(jp)*nri)-nfld(ni,k,nj))
                  bdy( nj,k,ni, P_XSB ) = psca(ci+shw,cj+shw,ip+1+(jp)*nri )
@@ -955,7 +889,6 @@
                    bdy( ni,k,njde-nj,P_YEB ) = psca(ci+shw,cj+shw,ip+1+(jp)*nri )
                  ENDIF
                ENDIF
-#endif
 
            ENDDO
         ENDDO

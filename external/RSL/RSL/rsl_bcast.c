@@ -1180,7 +1180,11 @@ cwrap_fbcast ( pd, nd, msize, mf, pf, upf )
 # ifdef T3D
 CWRAP_FBCAST ( pd, nd, msize, mf, pf, upf )
 # else
+#   ifdef F2CSTYLE
+cwrap_fbcast__( pd, nd, msize, mf, pf, upf )
+#   else
 cwrap_fbcast_( pd, nd, msize, mf, pf, upf )
+#   endif
 # endif
 #endif
   int *pd, *nd, *msize ;
@@ -1194,7 +1198,11 @@ cwrap_fbcast_( pd, nd, msize, mf, pf, upf )
 # ifdef T3D
   RSL_F_BCAST_CHLD ( pd, nd, msize, buf, mf, pf, upf ) ;
 # else
+#   ifdef F2CSTYLE
+  rsl_f_bcast_chld__( pd, nd, msize, buf, mf, pf, upf ) ;
+#   else
   rsl_f_bcast_chld_( pd, nd, msize, buf, mf, pf, upf ) ;
+#   endif
 # endif
 #endif
   RSL_FREE( buf ) ;
@@ -1206,7 +1214,11 @@ cwrap_fmerge ( pd, nd, msize, mf, pf, upf )
 # ifdef T3D
 CWRAP_FMERGE ( pd, nd, msize, mf, pf, upf )
 # else
+#   ifdef F2CSTYLE
+cwrap_fmerge__( pd, nd, msize, mf, pf, upf )
+#   else
 cwrap_fmerge_( pd, nd, msize, mf, pf, upf )
+#   endif
 # endif
 #endif
   int *pd, *nd, *msize ;
@@ -1220,7 +1232,11 @@ cwrap_fmerge_( pd, nd, msize, mf, pf, upf )
 # ifdef T3D
   RSL_F_MERGE_CHLD ( pd, nd, msize, buf, mf, pf, upf ) ;
 # else
+#   ifdef F2CSTYLE
+  rsl_f_merge_chld__( pd, nd, msize, buf, mf, pf, upf ) ;
+#   else
   rsl_f_merge_chld_( pd, nd, msize, buf, mf, pf, upf ) ;
+#   endif
 # endif
 #endif
   RSL_FREE( buf ) ;

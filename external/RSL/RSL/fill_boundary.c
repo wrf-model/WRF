@@ -109,7 +109,11 @@ static int in ;
 #ifdef NOUNDERSCORE
 fill_bdy( bdy, dbdy, mmax, nmax, rot, invalid, ntag, stag, etag, wtag )
 #else
+# ifdef F2CSTYLE
+fill_bdy__( bdy, dbdy, mmax, nmax, rot, invalid, ntag, stag, etag, wtag )
+# else
 fill_bdy_( bdy, dbdy, mmax, nmax, rot, invalid, ntag, stag, etag, wtag )
+# endif
 #endif
   int * bdy ;     /* boundary associations, on entry contains invalid entries */
   int * dbdy ;    /* distances to boundaries, may be unitialized */

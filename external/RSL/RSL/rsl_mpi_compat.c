@@ -104,7 +104,11 @@ void rslMPIInit()
   MPI_INIT_F ( &dummy ) ;  /* call to fortran wrapper */
 #else
   xargc = iargc_()+1;
-  mpi_init_( &dummy ) ;    /* this was changed to single underscore for MM5v3.2, 19990921 JM */
+#  ifdef F2CSTYLE
+  mpi_init__( &dummy ) ;
+#  else
+  mpi_init_( &dummy ) ;
+#  endif
 #endif
 
 #ifdef FATAL_ERRORS

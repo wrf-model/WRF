@@ -13,13 +13,13 @@ TAR = $(CORE_TAR)
 #CC = mpicc
 # for compiling with DEC's version of MPI
 #CC = cc
-FC = f77
+#FC = f77
 
 LIB = 
 
 .SUFFIXES: .o .c .F
 
-CFLAGS = -DMPI -DSWAPBYTES -O
+CFLAGS = -DMPI -DSWAPBYTES -O $(UNDERSCORE)
 FFLAGS  = -align dcommons -convert big_endian -O
 
 warning :
@@ -38,9 +38,6 @@ rsl.inc : $(HDR) rsl.inc_base
 librsl.a : $(OBJ)
 	ar cr librsl.a $(OBJ)
 	ranlib librsl.a
-
-decomp.o :
-	$(CC) -c $(CFLAGS) $(CONFIG_OPTS) -DDEFINE_GLOBAL $<
 
 .c.o :
 	$(CC) -c $(CFLAGS) $(CONFIG_OPTS) $<

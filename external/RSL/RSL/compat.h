@@ -71,6 +71,173 @@
 #ifndef T3D
 
 #  ifndef NOUNDERSCORE
+
+/********************************************* F2CSTYLE *****/
+#    ifdef F2CSTYLE
+
+#   define RSL_INITIALIZE		rsl_initialize__
+#   define RSL_SHUTDOWN		rsl_shutdown__
+#   define RSL_MESH		rsl_mesh__
+#   define RSL_MOTHER_DOMAIN	rsl_mother_domain__
+#   define RSL_SPAWN_REGULAR_NEST	rsl_spawn_regular_nest__
+#   define RSL_SPAWN_REGULAR_NEST1	rsl_spawn_regular_nest1__
+#   define RSL_SPAWN_IRREG_NEST   rsl_spawn_irreg_nest__
+#   define RSL_GET_BDY_LPT        rsl_get_bdy_lpt__
+#   define RSL_GET_BDY_LARRAY     rsl_get_bdy_larray__
+#   define RSL_GET_BDY_LARRAY2     rsl_get_bdy_larray2__
+#   define RSL_GET_BDY_GPT        rsl_get_bdy_gpt__
+#   define RSL_GET_BDY_GARRAY     rsl_get_bdy_garray__
+#   define RSL_GET_BDY4_LPT       rsl_get_bdy4_lpt__
+#   define RSL_GET_BDY4_LARRAY    rsl_get_bdy4_larray__
+#   define RSL_GET_BDY4_GPT       rsl_get_bdy4_gpt__
+#   define RSL_GET_BDY4_GARRAY    rsl_get_bdy4_garray__
+#   define RSL_PATCH_DECOMPOSE	rsl_patch_decompose__
+#   define RSL_FDECOMPOSE	        rsl_fdecompose__
+#   define RSL_FCN_REMAP    	rsl_fcn_remap__
+#   define RSL_FCN_DECOMPOSE	rsl_fcn_decompose__
+#   define RSL_NEW_DECOMPOSITION	rsl_new_decomposition__
+#   define RSL_IAMMONITOR         rsl_iammonitor__
+#   define RSL_C_IAMMONITOR       rsl_c_iammonitor__
+#   define RSL_IAMCOMPUTE         rsl_iamcompute__
+#   define RSL_C_IAMCOMPUTE       rsl_c_iamcompute__
+#   define RSL_PHYS2COMP_C	rsl_phys2comp_c__
+#   define RSL_COMP2PHYS_C	rsl_comp2phys_c__
+#   define RSL_CREATE_STENCIL	rsl_create_stencil__
+#   define RSL_CREATE_MESSAGE     rsl_create_message__
+#   define RSL_BUILD_MESSAGE      rsl_build_message__
+#   define RSL_BLANK_MESSAGE      rsl_blank_message__
+#   define RSL_DESCRIBE_STENCIL   rsl_describe_stencil__
+#   define RSL_EXCH_STENCIL       rsl_exch_stencil__
+#   define RSL_COMPILE_STENCIL    rsl_compile_stencil__
+#   define RSL_INIT_NEXTCELL      rsl_init_nextcell__
+#   define RSL_INIT_GHOST         rsl_init_ghost__
+#   define RSL_C_NEXTCELL         rsl_c_nextcell__
+#   define RSL_READ               rsl_read__
+#   define RSL_WRITE              rsl_write__
+#   define RSL_IOSERVE            rsl_ioserve__
+#   define RSL_IO_SHUTDOWN        rsl_io_shutdown__
+#   define RSL_INIT_FORTRAN       rsl_init_fortran__
+#   define RSL_CLOSE              rsl_close__
+#   define SHOW_DOMAIN_DECOMP     show_domain_decomp__
+#   define GET_DOMAIN_DECOMP      get_domain_decomp__
+#   define SHOW_STEN_DIAGS        show_sten_diags__
+#   define SHOW_MESSAGE           show_message__
+#   define SHOW_STENCIL           show_stencil__
+
+#   define RSL_CREATE_PERIOD    rsl_create_period__
+#   define RSL_DESCRIBE_PERIOD   rsl_describe_period__
+#   define RSL_EXCH_PERIOD       rsl_exch_period__
+#   define RSL_COMPILE_PERIOD    rsl_compile_period__
+
+#   define FORT_COMPLEXREAD 	fort_complexread__
+#   define FORT_INTREAD 		fort_intread__
+#   define FORT_CHARACTERREAD 	fort_characterread__
+#   define FORT_DOUBLEREAD 	fort_doubleread__
+#   define FORT_REALREAD 		fort_realread__
+#   define FORT_COMPLEXWRITE 	fort_complexwrite__
+#   define FORT_INTWRITE 		fort_intwrite__
+#   define FORT_CHARACTERWRITE 	fort_characterwrite__
+#   define FORT_DOUBLEWRITE 	fort_doublewrite__
+#   define FORT_REALWRITE 	fort_realwrite__
+#   define FORT_CLOSE          	fort_close__
+
+#   define RSL_MM_BDY_IN          rsl_mm_bdy_in__
+#   define RSL_MM_DIST_BDY        rsl_mm_dist_bdy__
+#   define RSL_READ_REPL          rsl_read_repl__
+#   define RSL_READ_REPLW         rsl_read_replw__
+#   define FORT_BDYIN_REAL        fort_bdyin_real__
+#   define FORT_BDYIN_DBL         fort_bdyin_dbl__
+
+#   define RSL_F_SET_PADAREA      rsl_f_set_padarea__
+#   define RSL_SET_PADAREA        rsl_set_padarea__
+
+#   define RSL_TO_CHILD_INFO      rsl_to_child_info__
+#   define RSL_TO_CHILD_MSG       rsl_to_child_msg__
+#   define RSL_BCAST_MSGS         rsl_bcast_msgs__
+#   define RSL_FROM_PARENT_INFO   rsl_from_parent_info__
+#   define RSL_FROM_PARENT_MSG    rsl_from_parent_msg__
+
+#   define RSL_TO_PARENT_INFO     rsl_to_parent_info__
+#   define RSL_TO_PARENT_MSG      rsl_to_parent_msg__
+#   define RSL_MERGE_MSGS         rsl_merge_msgs__
+#   define RSL_FROM_CHILD_INFO    rsl_from_child_info__
+#   define RSL_FROM_CHILD_MSG     rsl_from_child_msg__
+
+#   define RSL_WITHIN_NESTED_BOUNDARY  rsl_within_nested_boundary__
+#   define RSL_WITHIN_NESTED_BETA  rsl_within_nested_beta__
+
+#   define RSL_NL                 rsl_nl__
+
+
+#   define RSL_FUNIT_CLOSE        rsl_funit_close__
+#   define RSL_ORDER              rsl_order__
+
+#   define RSL_DEBUG		rsl_debug__
+
+#   define RSL_MON_BCAST		rsl_mon_bcast__
+
+#  ifdef MPI
+#   define MPI_INIT_F             mpi_init_f__
+#  endif
+
+/* socket stuff */
+#   define RSL_SOCKOPEN           rsl_sockopen__
+#   define RSL_SOCKWRITE          rsl_sockwrite__
+#   define RSL_SOCKREAD           rsl_sockread_		/* not yet */
+#   define RSL_SOCKCLOSE          rsl_sockclose__
+
+/* slab stuff added 1/9/95 */
+#   define RSL_INIT_NEXTISLAB     rsl_init_nextislab__
+#   define RSL_C_NEXTISLAB        rsl_c_nextislab__
+
+#   define RSL_COMPUTE            rsl_compute__
+#   define RSL_GET_RUN_INFO       rsl_get_run_info__
+#   define RSL_GET_RUN_INFOP      rsl_get_run_infop__
+#   define RSL_REG_RUN_INFOP      rsl_reg_run_infop__
+#   define RSL_DYNPAD_7           rsl_dynpad_7__
+
+#   define RSL_CHILD_INFO         rsl_child_info__
+#   define RSL_CHILD_INFO1        rsl_child_info1__
+
+#   define RSL_REMAP_STATE        rsl_remap_state__
+#   define RSL_DESCRIBE_STATE     rsl_describe_state__
+
+#   define RSL_PATCH_DECOMP       rsl_patch_decomp__
+#   define SET_DEF_DECOMP_FCN     set_def_decomp_fcn__
+#   define SET_DEF_DECOMP_INFO     set_def_decomp_info__
+
+#   define BOUNDARY_SAFE		boundary_safe__
+
+#   define RSL_BDY_TIEBRK		rsl_bdy_tiebrk__
+
+#   define RSL_OLD_OFFSETS        rsl_old_offsets__
+
+#   define RSL_ERROR_DUP          rsl_error_dup__
+
+#   define RSL_OUTPUT_BUFFER_WRITE rsl_output_buffer_write__
+#   define RSL_OUTPUT_BUFFER_YES   rsl_output_buffer_yes__
+#   define RSL_OUTPUT_BUFFER_NO   rsl_output_buffer_no__
+#   define RSL_IO_NODE_YES        rsl_io_node_yes__
+#   define RSL_IO_NODE_NO         rsl_io_node_no__
+#   define RSL_WRITE_MM5V3_SM_HEADER rsl_write_mm5v3_sm_header__
+#   define RSL_WRITE_MM5V3_BIG_HEADER rsl_write_mm5v3_big_header__
+#   define RSL_WRITE_1D_DATA     rsl_write_1d_data__
+
+#   define RSL_REGISTER_F90     rsl_register_f90__
+#   define RSL_START_REGISTER_F90     rsl_start_register_f90__
+#   define RSL_END_REGISTER_F90     rsl_end_register_f90__
+
+#   define RSL_RESET_STAGING   rsl_reset_staging__
+
+#   define VRCOPY   vrcopy_
+
+#   define RSL_SET_REGULAR_DECOMP  rsl_set_regular_decomp__
+#   define RSL_ALLOW_DYNPAD  rsl_allow_dynpad__
+
+#    else
+
+/********************************************* UNDERSCORE *****/
+
 #   define RSL_INITIALIZE		rsl_initialize_
 #   define RSL_SHUTDOWN		rsl_shutdown_
 #   define RSL_MESH		rsl_mesh_
@@ -230,7 +397,11 @@
 #   define RSL_SET_REGULAR_DECOMP  rsl_set_regular_decomp_
 #   define RSL_ALLOW_DYNPAD  rsl_allow_dynpad_
 
+#    endif
+
 #  else
+
+/********************************************* NOUNDERSCORE ***/
 
 #   define RSL_INITIALIZE		rsl_initialize
 #   define RSL_SHUTDOWN		rsl_shutdown

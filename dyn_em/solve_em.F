@@ -596,25 +596,48 @@ BENCH_END(pbl_driver_tim)
           CALL wrf_debug ( 200 , ' call cumulus_driver' )
 
 BENCH_START(cu_driver_tim)
-         CALL cumulus_driver(itimestep,dt,DX,num_3d_m,                 &
-                     RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,              &
-                     RQICUTEN,RQSCUTEN,RAINC,RAINCV,NCA,               &
-                     RTHRATEN,RTHBLTEN,RQVBLTEN,                       &
-                     RTHFTEN,RQVFTEN,                                  &
-                     u_phy,v_phy,th_phy,t_phy,w_2,moist_2,             &
-                     dz8w,p8w,p_phy,pi_phy,config_flags,               &
-                     W0AVG,rho,STEPCU,                                 &
-                     CLDEFI,LOWLYR,XLAND,CU_ACT_FLAG,warm_rain,        &
-                     apr_gr,apr_w,apr_mc,apr_st,apr_as,apr_capma,      &
-                     apr_capme,apr_capmi,                              &
-                     HTOP,HBOT,KPBL,                                   &
-                     MASS_FLUX,XF_ENS,PR_ENS,ht,                       & ! for Grell-Devenyi
-                     ensdim,maxiens,maxens,maxens2,maxens3,            &
-                     ids,ide, jds,jde, kds,kde,                        &
-                     ims,ime, jms,jme, kms,kme,                        &
-                     grid%i_start, min(grid%i_end, ide-1),             &
-                     grid%j_start, min(grid%j_end, jde-1),             &
-                     k_start    , min(k_end,kde-1) , grid%num_tiles    )
+         CALL cumulus_driver(                                          &
+                 ! Order dependent args: domain, mem, tile dims
+                     ids,ide, jds,jde, kds,kde                         &
+                   , ims,ime, jms,jme, kms,kme                         &
+                   , grid%i_start, min(grid%i_end, ide-1)              &
+                   , grid%j_start, min(grid%j_end, jde-1)              &
+                   , k_start  , min(k_end,kde-1) , grid%num_tiles      &
+                 ! Prognostic variables
+                   , U=u_phy   ,V=v_phy   ,TH=th_phy  ,T=t_phy         &
+                   , W=w_2     ,P=p_phy   ,PI=pi_phy  ,RHO=rho         &
+                 ! Other arguments
+                   , ITIMESTEP=itimestep ,DT=dt      ,DX=dx            &
+                   , RAINC=rainc   ,RAINCV=raincv   ,NCA=nca           &
+                   , HTOP=htop     ,HBOT=hbot       ,KPBL=kpbl         &
+                   , DZ8W=dz8w     ,P8W=p8w                            &
+                   , W0AVG=w0avg   ,STEPCU=stepcu                      &
+                   , CLDEFI=cldefi ,LOWLYR=lowlyr ,XLAND=xland         &
+                   , APR_GR=apr_gr ,APR_W=apr_w   ,APR_MC=apr_mc       &
+                   , APR_ST=apr_st ,APR_AS=apr_as ,APR_CAPMA=apr_capma &
+                   , APR_CAPME=apr_capme          ,APR_CAPMI=apr_capmi &
+                   , MASS_FLUX=mass_flux          ,XF_ENS=xf_ens       &
+                   , PR_ENS=pr_ens ,HT=ht                              &
+                   , ENSDIM=ensdim ,MAXIENS=maxiens ,MAXENS=maxens     &
+                   , MAXENS2=maxens2                ,MAXENS3=maxens3   &
+                   , CU_ACT_FLAG=cu_act_flag   ,WARM_RAIN=warm_rain    &
+                 ! Selection flag
+                   , CU_PHYSICS=config_flags%cu_physics                &
+                 ! Moisture tendency arguments
+                   , RQVCUTEN=rqvcuten , RQCCUTEN=rqccuten             &
+                   , RQRCUTEN=rqrcuten , RQVBLTEN=rqvblten             &
+                   , RQVFTEN=rqvften                                   &
+                 ! Other tendency arguments
+                   , RTHRATEN=rthraten , RTHBLTEN=rthblten             &
+                   , RTHCUTEN=rthcuten , RTHFTEN=rthften               &
+                 ! Moisture tracer arguments
+                   , QV_CURR=moist_2(ims,kms,jms,P_QV), F_QV=F_QV      &
+                   , QC_CURR=moist_2(ims,kms,jms,P_QC), F_QC=F_QC      &
+                   , QR_CURR=moist_2(ims,kms,jms,P_QR), F_QR=F_QR      &
+                   , QI_CURR=moist_2(ims,kms,jms,P_QI), F_QI=F_QI      &
+                   , QS_CURR=moist_2(ims,kms,jms,P_QS), F_QS=F_QS      &
+                   , QG_CURR=moist_2(ims,kms,jms,P_QG), F_QG=F_QG      &
+                                                                       )
 BENCH_END(cu_driver_tim)
 
 ! calculate_phy_tend

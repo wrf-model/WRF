@@ -789,6 +789,74 @@ SUBROUTINE wrf_get_next_time ( DataHandle, DateStr, Status )
   RETURN
 END SUBROUTINE wrf_get_next_time
 
+!--- get_previous_time (not defined for IntIO )
+
+SUBROUTINE wrf_get_previous_time ( DataHandle, DateStr, Status )
+  USE module_state_description
+  IMPLICIT NONE
+  INTEGER ,       INTENT(IN)  :: DataHandle
+  CHARACTER*(*) :: DateStr
+  INTEGER ,       INTENT(OUT) :: Status
+#include <wrf_status_codes.h>
+
+  INTEGER, EXTERNAL           :: use_package
+  LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+  INTEGER io_form , Hndl, len_of_str
+  LOGICAL                     :: for_out
+
+  CALL wrf_debug( DEBUG_LVL, 'module_io.F: in wrf_get_previous_time' )
+
+  Status = 0
+  CALL get_handle ( Hndl, io_form , for_out, DataHandle )
+  IF ( Hndl .GT. -1 ) THEN
+    IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+      SELECT CASE ( use_package(io_form) )
+#ifdef NETCDF
+        CASE ( IO_NETCDF   )
+          IF ( multi_files(io_form) .OR.  wrf_dm_on_monitor() ) CALL ext_ncd_get_previous_time( Hndl, DateStr, Status )
+          IF ( .NOT. multi_files(io_form) ) THEN
+            CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
+            len_of_str = LEN(DateStr)
+            CALL wrf_dm_bcast_bytes( len_of_str, IWORDSIZE )
+            CALL wrf_dm_bcast_string ( DateStr , len_of_str )
+          ENDIF
+#endif
+#ifdef PHDF5
+        CASE ( IO_PHDF5   )
+          CALL ext_phdf5_get_previous_time( Hndl, DateStr, Status )
+#endif
+#ifdef HDF
+        CASE ( IO_HDF   )
+          CALL ext_hdf_get_previous_time( Hndl, DateStr, Status )
+#endif
+#ifdef XXX
+        CASE ( IO_XXX   )
+          CALL ext_xxx_get_previous_time( Hndl, DateStr, Status )
+#endif
+#ifdef YYY
+        CASE ( IO_YYY   )
+          CALL ext_yyy_get_previous_time( Hndl, DateStr, Status )
+#endif
+#ifdef ZZZ
+        CASE ( IO_ZZZ   )
+          CALL ext_zzz_get_previous_time( Hndl, DateStr, Status )
+#endif
+#ifdef INTIO
+#endif
+        CASE DEFAULT
+          Status = 0
+      END SELECT
+    ELSE IF ( io_form .GT. 0 .AND. for_out .AND. use_output_servers() ) THEN
+      CALL ext_quilt_get_previous_time( Hndl, DateStr, Status )
+    ELSE
+      Status = 0
+    ENDIF
+  ELSE
+    Status = WRF_ERR_FATAL_BAD_FILE_STATUS
+  ENDIF
+  RETURN
+END SUBROUTINE wrf_get_previous_time
+
 !--- set_time
 
 SUBROUTINE wrf_set_time ( DataHandle, DateStr, Status )

@@ -2899,12 +2899,12 @@ solve_interface.o : solve_interface.F
 ###########################################################
 #ARCH Settings for PC Linux x86_64 (IA64 and Opteron), PGI compiler 5.2 or higher  (Single-threaded)
 # Note: requires pgi compiler version 5.2 or higher due to one-pass ipa
-# remove -Mipa=fast if using older version.
+# remove -Mipa=fast if using older version.  (Thanks, Dave Barker, AMD, July 2004).
 #
 FC              =       pgf90
 CC              =       gcc
 SFC             =       $(FC)
-CFLAGS          =       -g
+CFLAGS          =
 FCOPTIM		=	-fastsse -Mipa=fast
 FCDEBUG		=	
 FCBASEOPTS      =       -byteswapio -Ktrap=fp -Mfree $(FCDEBUG)

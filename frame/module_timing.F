@@ -53,7 +53,7 @@ CONTAINS
       count_int2(cn) = count_int2(cn) - count_int1(cn)
       elapsed_seconds = REAL(count_int2(cn)) / REAL(count_rate_int2(cn))
       elapsed_seconds_total = elapsed_seconds_total + elapsed_seconds
-!      PRINT '(A,A,A,F10.5,A)' ,'Timing for ',TRIM(string),': ',elapsed_seconds,' elapsed seconds.'
+
       WRITE(6,'(A,A,A,F10.5,A)') 'Timing for ',TRIM(string),': ',elapsed_seconds,' elapsed seconds.'
 #if defined(DM_PARALLEL) && ! defined(STUBMPI)
       WRITE(0,'(A,A,A,F10.5,A)') 'Timing for ',TRIM(string),': ',elapsed_seconds,' elapsed seconds.'

@@ -57,7 +57,7 @@ solve_nmm.o:   module_BC_NMM.o module_PHYS.o \
                module_IGWAVE_ADJUST.o module_ADVECTION.o  \
                module_NONHY_DYNAM.o module_DIFFUSION_NMM.o    \
                module_BNDRY_COND.o \
-               module_CTLBLK.o
+               module_CTLBLK.o TURBL.o
 
 module_ADVECTION.o: ../share/module_MPP.o module_INDX.o
 

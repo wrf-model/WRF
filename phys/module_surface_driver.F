@@ -399,6 +399,10 @@ CONTAINS
      sfclay_select: SELECT CASE(config_flags%sf_sfclay_physics)
 
      CASE (SFCLAYSCHEME)
+#if (NMM_CORE != 1)
+! DX varies spatially in NMM, therefore, SFCLAY cannot be called
+! because it takes a scalar DX. NMM passes in a dummy value for this
+! scalar.  NEEDS FURTHER ATTENTION. JM 20050215
        CALL wrf_debug( 100, 'in SFCLAY' )
          CALL SFCLAY(u_phytmp,v_phytmp,t_phy,moist(ims,kms,jms,P_QV),&
                p_phy,dz8w,CP,G,RCP,R_d,XLV,PSFC,CHS,CHS2,CQS2,CPM, &
@@ -410,6 +414,9 @@ CONTAINS
                ids,ide, jds,jde, kds,kde,                          &
                ims,ime, jms,jme, kms,kme,                          &
                i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
+#else
+        CALL wrf_error_fatal('SFCLAY cannot be used with NMM')
+#endif
       CASE (MYJSFCSCHEME)
 
           CALL wrf_debug(100,'in MYJSFC')

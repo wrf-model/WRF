@@ -1,11 +1,13 @@
 !NCEP_MESO:MODEL_LAYER: PHYSICS
 !
+MODULE module_TURBL
+CONTAINS
 !***********************************************************************
       SUBROUTINE TURBL(GRID                                             &
      &                ,NTSD,DT,NPHS,RESTRT                              &
      &                ,N_MOIST,NSOIL,SLDPTH,DZSOIL                      &
      &                ,DETA1,DETA2,AETA1,AETA2,ETA1,ETA2,PDTOP,PT       &
-     &                ,SM,LMH,HTM,VTM,HBM2,VBM2,DX,DFRLG                &
+     &                ,SM,LMH,HTM,VTM,HBM2,VBM2,DX_ARRAY,DFRLG          &
      &                ,CZEN,CZMEAN,SIGT4,RLWIN,RSWIN,RADOT              &
      &                ,PD,RES,PINT,T,Q,CWM,F_ICE,F_RAIN,Q2,U,V          &
      &                ,THS,SST,PREC,SNO,ZERO_3D                         &
@@ -85,10 +87,12 @@
 !
       INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: ISLTYP,IVGTYP    &
      &                                                ,LMH
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN)    ::                  &
+                                                       DX_ARRAY
 !
       INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: LPBL
 !
-      REAL,INTENT(IN) :: DT,DX,PDTOP,PT
+      REAL,INTENT(IN) :: DT,PDTOP,PT
 !
       REAL,INTENT(INOUT) :: APHTIM,ARDSW,ARDLW,ASRFC
 !
@@ -184,6 +188,8 @@
      &       ,THBOT
 !
       REAL :: TRESH=0.95
+!
+      REAL :: DX
 !
       REAL,DIMENSION(IMS:IME,JMS:JME) :: EXNSFC,FACTRS,ONE,PLM,Q2X      &
      &                                  ,RAIN,RAINBL                    &
@@ -492,6 +498,7 @@
       PSIH = 0.
       PSIM = 0.
       SFCEVPX = 0.
+      DX = 0. ! DUMMY VALUE, NMM DOES NOT CALL SURFACE OR BL PHYS THAT NEEDS DX
 
       CALL SURFACE_DRIVER(                                              &
      &           ACSNOM,ACSNOW,AKHS,AKMS,ALBEDO,BR,CMC,ZERO_2D          &
@@ -847,3 +854,4 @@
       END SUBROUTINE TURBL
 !
 !-----------------------------------------------------------------------
+END MODULE module_TURBL

@@ -25,6 +25,7 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
       USE MODULE_BNDRY_COND,		ONLY: BOCOH, BOCOV
       USE MODULE_EXT_INTERNAL
       USE MODULE_TILES
+      USE MODULE_TURBL
 !     integer :: npes
 !     integer :: MPI_COMM_COMP
 !-----------------------------------------------------------------------

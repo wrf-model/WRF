@@ -873,7 +873,7 @@ LD              =       xlf90_r
 CC              =       xlc_r
 CFLAGS          =       -DNOUNDERSCORE
 FCOPTIM         =       -O2 -qarch=auto
-FCDEBUG         =       # -g -qfullpath
+FCDEBUG         =       # -qnoopt -qfullpath
 FCBASEOPTS      =       -qspill=20000 $(FCDEBUG) -qmaxmem=32767 -w #-qflttrap=zerodivide:invalid:enable -qsigtrap
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
@@ -971,7 +971,7 @@ LD              =       xlf90_r
 CC              =       xlc_r
 CFLAGS          =       -DNOUNDERSCORE
 FCOPTIM         =       -O2 -qarch=auto
-FCDEBUG         =       # -g -qfullpath
+FCDEBUG         =       # -qnoopt -qfullpath
 FCBASEOPTS      =       -w -qspill=20000 $(FCDEBUG) -qmaxmem=32767 #-qflttrap=zerodivide:invalid:enable -qsigtrap
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
@@ -1036,7 +1036,7 @@ CC              =       mpcc_r
 CFLAGS          =       -O3 -DNOUNDERSCORE  -I../external/RSL_LITE -DDM_PARALLEL \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
 FCOPTIM         =       -O2 -qarch=auto
-FCDEBUG         =       # -g -qfullpath -O0
+FCDEBUG         =       # -qnoopt -qfullpath
 FCBASEOPTS      =       -w -qspill=20000 $(FCDEBUG) -qmaxmem=32767 #-qflttrap=zerodivide:invalid:enable -qsigtrap
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
@@ -1133,7 +1133,7 @@ CC              =       mpcc_r
 CFLAGS          =       -DNOUNDERSCORE -DWRF_RSL_IO  -I../external/RSL/RSL -DDM_PARALLEL  \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
 FCOPTIM         =       -O2 -qarch=auto
-FCDEBUG         =       # -g -qfullpath
+FCDEBUG         =       # -qnoopt -qfullpath
 FCBASEOPTS      =       -w -qspill=20000 $(FCDEBUG) -qmaxmem=32767 #-qflttrap=zerodivide:invalid:enable -qsigtrap
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
@@ -1230,7 +1230,7 @@ CC              =       mpcc_r
 CFLAGS          =       -DNOUNDERSCORE -DWRF_RSL_IO  -I../external/RSL/RSL -DDM_PARALLEL  \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
 FCOPTIM         =       -O2 -qarch=auto 
-FCDEBUG         =       # -g -qfullpath
+FCDEBUG         =       # -qnoopt -qfullpath
 FCBASEOPTS      =       -w -qspill=20000 $(FCDEBUG) -qmaxmem=-1 #-qflttrap=zerodivide:invalid:enable -qsigtrap
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 INCLUDE_MODULES =       -I../external/io_netcdf  -I../external/io_phdf5 -I../external/io_int  -I../external/esmf_time_f90 \
@@ -1330,7 +1330,7 @@ CC              =       mpcc_r
 CFLAGS          =       -DNOUNDERSCORE  -I../external/RSL_LITE -DDM_PARALLEL  \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
 FCOPTIM         =       -O2 -qarch=auto 
-FCDEBUG         =       # -g -qfullpath
+FCDEBUG         =       # -qnoopt -qfullpath
 FCBASEOPTS      =       -w -qspill=20000 $(FCDEBUG) -qmaxmem=-1 #-qflttrap=zerodivide:invalid:enable -qsigtrap
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 INCLUDE_MODULES =       -I../external/io_netcdf  -I../external/io_phdf5 -I../external/io_int  -I../external/esmf_time_f90 \
@@ -1432,7 +1432,7 @@ CC              =       mpcc_r
 CFLAGS          =       -DNOUNDERSCORE -DWRF_RSL_IO  -I../external/RSL/RSL -DDM_PARALLEL  \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
 FCOPTIM         =       -O2 -qarch=auto
-FCDEBUG         =       # -g -qfullpath
+FCDEBUG         =       # -qnoopt -qfullpath
 FCBASEOPTS      =       -w -qspill=20000 $(FCDEBUG) -qmaxmem=32767 #-qflttrap=zerodivide:invalid:enable -qsigtrap
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
@@ -1542,7 +1542,7 @@ MCELHOME        =       /home/bluesky/bettenc/disttest
 CFLAGS          =       -DNOUNDERSCORE -DWRF_RSL_IO  -I../external/RSL/RSL -DDM_PARALLEL  \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
 FCOPTIM         =       -O2 -qarch=auto
-FCDEBUG         =       # -g -qfullpath
+FCDEBUG         =       # -qnoopt -qfullpath
 FCBASEOPTS      =       -w -qspill=20000 $(FCDEBUG) -qmaxmem=32767 #-qflttrap=zerodivide:invalid:enable -qsigtrap
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \

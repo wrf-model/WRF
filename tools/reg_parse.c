@@ -303,7 +303,8 @@ reg_parse( FILE * infile )
 	  {
 	    if ( prev  == 'i' )
 	    {
-	      field_struct->input = field_struct->input % 10 ;  /* turn off setting from 'h' */
+              field_struct->io_mask &= ! INPUT ;                /* turn off setting from 'i' */
+	      field_struct->input = field_struct->input % 10 ;  /* turn off setting from 'i' */
 	      if ( x == '0' ) field_struct->input = 1 ;
 	      if ( x == '1' ) field_struct->auxinput1 = 1 ;
 	      if ( x == '2' ) field_struct->auxinput2 = 1 ;
@@ -313,6 +314,7 @@ reg_parse( FILE * infile )
 	    }
 	    if ( prev  == 'h' )
 	    {
+              field_struct->io_mask &= ! HISTORY ;                  /* turn off setting from 'h' */
 	      field_struct->history = field_struct->history % 10 ;  /* turn off setting from 'h' */
 	      if ( x == '0' ) field_struct->history = 1 ;
 	      if ( x == '1' ) field_struct->auxhist1 = 1 ;

@@ -282,19 +282,6 @@ SUBROUTINE ext_mcel_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo
 END SUBROUTINE ext_mcel_open_for_read
 
 
-!--- intio_nextrec  (INT_IO only)
-SUBROUTINE ext_mcel_intio_nextrec ( DataHandle , NextRec , Status )
-  USE module_ext_mcel
-  IMPLICIT NONE
-  INTEGER , INTENT(IN)  :: DataHandle
-  INTEGER               :: NextRec
-  INTEGER               :: Status
-
-  Status = WRF_WARN_NOTSUPPORTED
-
-  RETURN  
-END SUBROUTINE ext_mcel_intio_nextrec
-
 !--- inquire_opened
 SUBROUTINE ext_mcel_inquire_opened ( DataHandle, FileName , FileStatus, Status )
   USE module_ext_mcel

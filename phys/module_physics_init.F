@@ -188,7 +188,7 @@ integer myproc
      CALL ESMF_ClockGetCurrTime( grid%domain_clock, grid%current_time, rc=rc )
      CALL ESMF_TimeGetDayOfYear( grid%current_time, julday, rc=rc)
      CALL ESMF_TimeGet( grid%current_time, YR=julyr, H=hr, M=min, S=sec, MS=ms, rc=rc)
-     gmt=hr+min*60.+sec*3600.+ms/1000
+     gmt=hr+real(min)/60.+real(sec)/3600.+real(ms)/(1000*3600)
    ELSE
      restart = .true.
      CALL nl_get_julyr (id, julyr)

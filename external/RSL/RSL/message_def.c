@@ -331,8 +331,8 @@ RSL_BUILD_MESSAGE ( mh_p, t_p, base, ndim_p, decomp, glen, llen )
     if ( decomp[dim] == RSL_NOTDECOMPOSED && glen[dim] != llen[dim] )
     {
        sprintf(errmess,
-"rsl_build_message: mesg %d: dim %d is RSL_NOTDECOMPOSED so glen must eq llen",
-       mh, dim+1 ) ;
+"rsl_build_message: mesg %d: dim %d is RSL_NOTDECOMPOSED so glen(%d)=%d must eq llen(%d)=%d",
+       mh, dim+1, dim, glen[dim], dim, llen[dim] ) ;
        RSL_TEST_WRN( 1, errmess ) ;
     }
     fld->glen[dim] = glen[dim] ;
@@ -365,6 +365,10 @@ RSL_BUILD_MESSAGE ( mh_p, t_p, base, ndim_p, decomp, glen, llen )
 	      decomp[1] == RSL_NORTHSOUTH &&
 	      decomp[2] == RSL_EASTWEST )
       fld->strategy = K_MIDNS_MAJEW_3D ;
+    else if ( decomp[0] == RSL_NORTHSOUTH &&
+	      decomp[1] == RSL_NOTDECOMPOSED &&
+	      decomp[2] == RSL_EASTWEST )
+      fld->strategy = MINNS_K_MAJEW_3D ;
     else
       RSL_TEST_ERR(1,"rsl_build_message: unsupported decomposition strategy for 3d message") ;
     break ;

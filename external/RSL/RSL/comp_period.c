@@ -106,6 +106,8 @@ static check_local_pts_period( d, m, n, hm, hn, ibdy, jbdy, fldspec )
       mfldlen = fldspec->glen[1] ; nfldlen = fldspec->glen[0] ; break ;
     case K_MIDNS_MAJEW_3D :
       mfldlen = fldspec->glen[1] ; nfldlen = fldspec->glen[2] ; break ;
+    case MINNS_K_MAJEW_3D :
+      mfldlen = fldspec->glen[0] ; nfldlen = fldspec->glen[2] ; break ;
     default :
       RSL_TEST_ERR(1,"unsupported strategy") ;
   }
@@ -306,6 +308,8 @@ rsl_compile_period( d_p, s_p )
              rsl_period_pt( d, m, fld->glen[1], n, fld->glen[0], fld, sd->bdyw[d], check_local_pts_period ) ; break ;
            case K_MIDNS_MAJEW_3D :
              rsl_period_pt( d, m, fld->glen[1], n, fld->glen[2], fld, sd->bdyw[d], check_local_pts_period ) ; break ;
+           case MINNS_K_MAJEW_3D :
+             rsl_period_pt( d, m, fld->glen[0], n, fld->glen[2], fld, sd->bdyw[d], check_local_pts_period ) ; break ;
            default :
               RSL_TEST_ERR(1,"unsupported strategy") ;
            }
@@ -369,21 +373,38 @@ fprintf(stderr,"pack  P=%d  i j ig jg    %3d %3d %3d %3d, base %08x\n",procrec->
               t0 = fld->llen[0] ;
               store_period_refs( base, fld->f90_table_index , (j+i*t0)*elemsz, elemsz, 1, elemsz) ;
               break ;
+
+
+
             case MINNS_MAJEW_K_3D :             /* <MM> eg: ua(i,j,k) */
               t0 = fld->llen[0] ; t1 = fld->llen[1]*t0 ;
-              store_period_refs( base, fld->f90_table_index , (i+j*t0)*elemsz, elemsz,
-                                         fld->llen[2],
-                                         t1*elemsz) ;
+              store_period_refs( base, fld->f90_table_index , 
+                                         (i+j*t0)*elemsz,     /* offset */
+                                         elemsz,              /* n      */
+                                         fld->llen[2],        /* nelems */
+                                         t1*elemsz) ;         /* stride */
               break ;
+
             case MINEW_MAJNS_K_3D :             /* <MM> eg: u(j,i,k) */
               t0 = fld->llen[0] ; t1 = fld->llen[1]*t0 ;
-              store_period_refs( base, fld->f90_table_index , (j+i*t0)*elemsz, elemsz,
-                                         fld->llen[2],
-                                         t1*elemsz) ;
+              store_period_refs( base, fld->f90_table_index ,
+                                         (j+i*t0)*elemsz,     /* offset */
+                                         elemsz,              /* n      */
+                                         fld->llen[2],        /* nelems */
+                                         t1*elemsz) ;         /* stride */
               break ;
+
             case K_MIDNS_MAJEW_3D :             /* <MM> eg: u(k,i,j) */
               t0 = fld->llen[0] ; t1 = fld->llen[1]*t0 ;
+                                                             /* offset               n      nelems   stride */
+                                                             /*   |                  |         |      |     */
+                                                             /*   v                  v         v      v     */
               store_period_refs( base, fld->f90_table_index , (i*t0+j*t1)*elemsz, elemsz * t0, 1, elemsz) ;
+              break ;
+
+            case MINNS_K_MAJEW_3D :             /* <MM> eg: u(i,k,j) */
+              t0 = fld->llen[0] ; t1 = fld->llen[1]*t0 ;
+              store_period_refs( base, fld->f90_table_index , (i+j*t1)*elemsz, elemsz, fld->llen[1], t0*elemsz) ;
               break ;
             default:
               RSL_TEST_ERR(1,"new pack comp: strategy not supported" ) ;
@@ -458,6 +479,10 @@ fprintf(stderr,"unpack  P = %d  i j ig jg    %3d %3d %3d %3d, base %08x\n",procr
             case K_MIDNS_MAJEW_3D :             /* <MM> eg: u(k,i,j) */
               t0 = fld->llen[0] ; t1 = fld->llen[1]*t0 ;
               store_period_refs( base, fld->f90_table_index , (i*t0+j*t1)*elemsz, elemsz * t0, 1, elemsz) ;
+              break ;
+            case MINNS_K_MAJEW_3D :             /* <MM> eg: u(i,k,j) */
+              t0 = fld->llen[0] ; t1 = fld->llen[1]*t0 ;
+              store_period_refs( base, fld->f90_table_index , (i+j*t1)*elemsz, elemsz, fld->llen[1], t0*elemsz) ;
               break ;
             default:
               RSL_TEST_ERR(1,"new pack comp: strategy not supported" ) ;

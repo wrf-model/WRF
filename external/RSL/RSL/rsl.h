@@ -191,6 +191,7 @@ show config:  ---See also the makefile---
 #define MINNS_MAJEW_K_3D 2
 #define MINEW_MAJNS_K_3D 3
 #define K_MIDNS_MAJEW_3D 4
+#define MINNS_K_MAJEW_3D 5
 
 /* io strategies */
 
@@ -203,6 +204,7 @@ show config:  ---See also the makefile---
 #define IO2D     4		/* FORTRAN */
 #define IO3D     5		/* FORTRAN */
 #define IO3D_KIJ 6              /* FORTRAN */
+#define IO3D_IKJ 7              /* FORTRAN */
 
 #define IO2D_IJ_RAW  10		/* FORTRAN */
 #define IO2D_JI_RAW  11		/* FORTRAN */
@@ -218,11 +220,13 @@ show config:  ---See also the makefile---
 #define IO2D_JI_INTERNAL  25	/* FORTRAN */
 #define IO3D_IJK_INTERNAL 26	/* FORTRAN */
 #define IO3D_JIK_INTERNAL 27	/* FORTRAN */
+#define IO3D_KIJ_INTERNAL 28	/* FORTRAN */
+#define IO3D_IKJ_INTERNAL 29	/* FORTRAN */
 
-#define IO2D_IJ_88  28	/* FORTRAN */
-#define IO2D_JI_88  29	/* FORTRAN */
-#define IO3D_IJK_88 30	/* FORTRAN */
-#define IO3D_JIK_88 31	/* FORTRAN */
+#define IO2D_IJ_88  30	/* FORTRAN */
+#define IO2D_JI_88  31	/* FORTRAN */
+#define IO3D_IJK_88 32	/* FORTRAN */
+#define IO3D_JIK_88 33	/* FORTRAN */
 
 #define RSL_MAXDIM 3
 
@@ -430,6 +434,7 @@ typedef struct rsl_domain_info {
   int Nbcast_send_Plist ;
 
   rsl_list_t *bcast_Xlist ;
+
 
   rsl_processor_t merge_recv_Pnpts[RSL_MAXPROC] ;
   rsl_processor_t merge_recv_Plist[RSL_MAXPROC] ;

@@ -477,6 +477,10 @@ rsl_compile_stencil( d_p, s_p )
 	      t0 = fld->llen[0] ; t1 = fld->llen[1]*t0 ;
 	      store_process_refs( base, fld->f90_table_index, (i*t0+j*t1)*elemsz, elemsz * t0, 1, elemsz) ;
 	      break ;
+	    case MINNS_K_MAJEW_3D :		/* <MM> eg: u(i,k,j) */
+	      t0 = fld->llen[0] ; t1 = fld->llen[1]*t0 ;
+	      store_process_refs( base, fld->f90_table_index, (i+j*t1)*elemsz, elemsz, fld->llen[1], t0*elemsz) ;
+	      break ;
 	    default:
 	      RSL_TEST_ERR(1,"new pack comp: strategy not supported" ) ;
 	      break ;
@@ -550,6 +554,10 @@ rsl_compile_stencil( d_p, s_p )
             case K_MIDNS_MAJEW_3D :             /* <MM> eg: u(k,i,j) */
               t0 = fld->llen[0] ; t1 = fld->llen[1]*t0 ;
               store_process_refs( base, fld->f90_table_index, (i*t0+j*t1)*elemsz, elemsz * t0, 1, elemsz) ;
+              break ;
+            case MINNS_K_MAJEW_3D :             /* <MM> eg: u(i,k,j) */
+              t0 = fld->llen[0] ; t1 = fld->llen[1]*t0 ;
+              store_process_refs( base, fld->f90_table_index, (i+j*t1)*elemsz, elemsz, fld->llen[1], t0*elemsz) ;
               break ;
             default:
               RSL_TEST_ERR(1,"new pack comp: strategy not supported" ) ;

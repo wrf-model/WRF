@@ -2880,7 +2880,8 @@ PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =       $(ARCHFLAGS)
 FCOPTIM         =       -fast -O4
 FCDEBUG         =       # -g
-FCBASEOPTS      =       -w -convert big_endian -automatic -cpp -free -I. -arch host $(FCDEBUG)
+FCREAL8OMP	=	-align records -align dcommons -granularity quadword
+FCBASEOPTS      =       -w -convert big_endian -automatic -cpp -free -I. -arch host $(FCDEBUG) $(FCREAL8OMP)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../chem -I../inc
@@ -2908,7 +2909,7 @@ module_dm.F :
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -2923,7 +2924,7 @@ wrfio_int :
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w " )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -2991,7 +2992,8 @@ PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =       $(ARCHFLAGS) -I../external/RSL/RSL
 FCOPTIM         =       -fast -O4
 FCDEBUG         =       # -g
-FCBASEOPTS      =       -w -convert big_endian -automatic -cpp -free -I. -arch host $(FCDEBUG)
+FCREAL8OMP	=	-align records -align dcommons -granularity quadword
+FCBASEOPTS      =       -w -convert big_endian -automatic -cpp -free -I. -arch host $(FCDEBUG) $(FCREAL8OMP)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../chem -I../inc
@@ -3026,7 +3028,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -3037,11 +3039,11 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="f90 $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="f90 $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w " )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -3049,7 +3051,7 @@ esmf_time :
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; \
-	  make CC="$(CC)" CFLAGS='-DSTUBS -DSWAPBYTES -O' FC="$(FC)" FFLAGS='-O -convert big_endian' \
+	  make CC="$(CC)" CFLAGS='-DSTUBS -DSWAPBYTES -O' FC="$(FC)" FFLAGS="-O -convert big_endian $(FCREAL8OMP)" \
                MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST stub )
 
 # compile these without high optimization to speed compile
@@ -3355,7 +3357,8 @@ PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =       $(ARCHFLAGS) -I../external/RSL/RSL
 FCOPTIM         =       -fast -O4
 FCDEBUG         =       # -g
-FCBASEOPTS      =       -w -convert big_endian -automatic -cpp -free -I. -arch host $(FCDEBUG)
+FCREAL8OMP	=	-align records -align dcommons -granularity quadword
+FCBASEOPTS      =       -w -convert big_endian -automatic -cpp -free -I. -arch host $(FCDEBUG) $(FCREAL8OMP)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../chem -I../inc
@@ -3390,7 +3393,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -3401,11 +3404,11 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w " )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -3413,7 +3416,7 @@ esmf_time :
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; \
-          make CC="$(CC)" FC="$(FC)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST alpha )
+          make CC="$(CC)" FC="$(FC) $(FCREAL8OMP)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST alpha )
 
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
@@ -3477,7 +3480,8 @@ PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =       $(ARCHFLAGS) -I../external/RSL/RSL
 FCOPTIM         =       -fast -O4
 FCDEBUG         =       # -g
-FCBASEOPTS      =       -w -convert big_endian -automatic -cpp -free -I. -arch host $(FCDEBUG)
+FCREAL8OMP	=	-align records -align dcommons -granularity quadword
+FCBASEOPTS      =       -w -convert big_endian -automatic -cpp -free -I. -arch host $(FCDEBUG) $(FCREAL8OMP)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../chem -I../inc
@@ -3512,7 +3516,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -3523,11 +3527,11 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="f90 $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="f90 $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w " )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -3535,7 +3539,7 @@ esmf_time :
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; \
-          make CC=cc FC=f90 MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST alpha )
+          make CC=cc FC="$(SFC) $(FCREAL8OMP)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST alpha )
 
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
@@ -5145,7 +5149,7 @@ SCC = $(CC)
 SFC = ifort
 RWORDSIZE       =       4
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
-PROMOTION	=	-realsize $(RSIZEBITS)
+PROMOTION	=	-real_size $(RSIZEBITS)
 CFLAGS = -DDM_PARALLEL -DWRF_RSL_IO -cm -w \
          -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL/RSL -size_lp64
 FCOPTIM = -O2 -ftz
@@ -5958,7 +5962,7 @@ SCC		=	$(CC)
 SFC		=	$(FC)
 RWORDSIZE       =       4
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
-PROMOTION	=	-realsize $(RSIZEBITS)
+PROMOTION	=	-real_size $(RSIZEBITS)
 FCDEBUG         =       # -g
 FCBASEOPTS      =       -w -FR -cm -I. -Vaxlib -convert big_endian -mp
 FCOPTIM		=	-O2
@@ -6075,7 +6079,7 @@ SCC		=	$(CC)
 SFC             =       ifort
 RWORDSIZE       =       4
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
-PROMOTION	=	-realsize $(RSIZEBITS)
+PROMOTION	=	-real_size $(RSIZEBITS)
 FCOPTIM		=	-O3 -xW
 FCDEBUG		=	#-g
 FCBASEOPTS      =       -FR -cm -w -I. $(FCDEBUG) -convert big_endian -mp
@@ -6190,7 +6194,7 @@ SCC		=	$(CC)
 SFC             =       $(FC)
 RWORDSIZE       =       4
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
-PROMOTION	=	-realsize $(RSIZEBITS)
+PROMOTION	=	-real_size $(RSIZEBITS)
 CFLAGS          =
 FCOPTIM		=	-O3 -xW
 FCDEBUG		=	#-g
@@ -6301,7 +6305,7 @@ SCC		=	$(CC)
 SFC             =       ifort
 RWORDSIZE       =       4
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
-PROMOTION	=	-realsize $(RSIZEBITS)
+PROMOTION	=	-real_size $(RSIZEBITS)
 FCOPTIM		=	-O3 -xW
 FCDEBUG		=	#-g
 FCBASEOPTS      =       -FR -cm -w -I. $(FCDEBUG) -convert big_endian -mp
@@ -6418,7 +6422,7 @@ SCC		=	icc
 SFC             =       ifort
 RWORDSIZE       =       4
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
-PROMOTION	=	-realsize $(RSIZEBITS)
+PROMOTION	=	-real_size $(RSIZEBITS)
 FCOPTIM		=	-O3 -xW
 FCDEBUG		=	#-g
 FCBASEOPTS      =       -FR -cm -w -I. $(FCDEBUG) -convert big_endian -mp
@@ -6698,7 +6702,7 @@ CC_TOOLS          = cc
 SFC               = ifort
 RWORDSIZE         = 4
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
-PROMOTION	=	-realsize $(RSIZEBITS)
+PROMOTION	=	-real_size $(RSIZEBITS)
 CFLAGS            = -w -O3 -ip -tpp2 -c -ftz -no-gcc -DDM_PARALLEL -DWRF_RSL_IO \
                     -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL/RSL
 FCOPTIM           = -O3
@@ -6840,7 +6844,7 @@ CC_TOOLS          = cc
 SFC               = ifort
 RWORDSIZE         = 4
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
-PROMOTION	=	-realsize $(RSIZEBITS)
+PROMOTION	=	-real_size $(RSIZEBITS)
 CFLAGS            = -w -O3 -ip -tpp2 -c -ftz -DDM_PARALLEL -I../external/RSL_LITE \
                     -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
 FCOPTIM           = -O3
@@ -6969,7 +6973,7 @@ CC_TOOLS          = cc
 SFC               = ifort
 RWORDSIZE         = 4
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
-PROMOTION	=	-realsize $(RSIZEBITS)
+PROMOTION	=	-real_size $(RSIZEBITS)
 CFLAGS            = -w -O3 -ip -tpp2 -c -ftz 
 FCOPTIM           = -O3
 FCDEBUG           = # -g
@@ -7086,7 +7090,7 @@ CC_TOOLS          = cc
 SFC               = ifort
 RWORDSIZE         = 4
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
-PROMOTION	=	-realsize $(RSIZEBITS)
+PROMOTION	=	-real_size $(RSIZEBITS)
 CFLAGS            = -w -O3 -ip -tpp2 -c -ftz 
 FCOPTIM           = -O3
 FCDEBUG           = # -g

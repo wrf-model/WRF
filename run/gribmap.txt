@@ -52,7 +52,7 @@
 50:VOGRD:v of current [m/s]::
 51:SPFH:Specific humidity [kg/kg]:QZ0,QSFC:5
 52:RH:Relative humidity [%]::
-53:MIXR:Humidity mixing ratio [kg/kg]:QVAPOR,Q2:5
+53:MIXR:Humidity mixing ratio [kg/kg]:QVAPOR,Q2:9
 54:PWAT:Precipitable water [kg/m^2]::
 55:VAPP:Vapor pressure [Pa]::
 56:SATD:Saturation deficit [Pa]::

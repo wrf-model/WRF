@@ -999,7 +999,7 @@ CONTAINS
 !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 !C
         veg_def='9999'
-        call rconfig_get_mminlu(1,veg_def)
+        call nl_get_mminlu(1,veg_def)
 
         if (veg_def .ne. 'USGS') then
         CALL REDPRM(VEGTYP,SOILTYP, SLOPETYP,                         &

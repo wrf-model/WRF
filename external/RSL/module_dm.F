@@ -194,8 +194,8 @@ CONTAINS
 ! 
 ! </DESCRIPTION>
       CALL RSL_SET_REGULAR_DECOMP
-      CALL rconfig_get_nproc_x ( 1, nproc_ln )
-      CALL rconfig_get_nproc_y ( 1, nproc_lt )
+      CALL nl_get_nproc_x ( 1, nproc_ln )
+      CALL nl_get_nproc_y ( 1, nproc_lt )
 ! check if user has specified in the namelist
       IF ( nproc_ln .GT. 0 .OR. nproc_lt .GT. 0 ) THEN
         ! if only nproc_ln is specified then make it 1-d decomp in i
@@ -2451,10 +2451,10 @@ messages(120)=  s5e5
 ! </DESCRIPTION>
 
 
-         CALL rconfig_get_shw( id, shw )
-         CALL rconfig_get_i_parent_start( id , i_parent_start )
-         CALL rconfig_get_j_parent_start( id , j_parent_start )
-         CALL rconfig_get_parent_grid_ratio( id, parent_grid_ratio )
+         CALL nl_get_shw( id, shw )
+         CALL nl_get_i_parent_start( id , i_parent_start )
+         CALL nl_get_j_parent_start( id , j_parent_start )
+         CALL nl_get_parent_grid_ratio( id, parent_grid_ratio )
 
          info(1) = idim               ! nest i dimension for intermediate mapping
          info(2) = jdim               ! nest j dimension for intermediate mapping
@@ -3405,7 +3405,7 @@ SUBROUTINE wrf_dm_define_comms ( grid )
 
 #include "deref_kludge.h"
 
-   CALL rconfig_get_dyn_opt( 1, dyn_opt )
+   CALL nl_get_dyn_opt( 1, dyn_opt )
 
    CALL set_scalar_indices_from_config ( grid%id , idum1 , idum2 )
 

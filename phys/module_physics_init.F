@@ -188,9 +188,9 @@ CONTAINS
      gmt=hr+min*60.+sec*3600.+ms/1000
    ELSE
      restart = .true.
-     CALL rconfig_get_julyr (id, julyr)
-     CALL rconfig_get_julday (id, julday)
-     CALL rconfig_get_gmt (id, gmt)
+     CALL nl_get_julyr (id, julyr)
+     CALL nl_get_julday (id, julday)
+     CALL nl_get_gmt (id, gmt)
    END IF
 
    ZZLND=0.1
@@ -198,11 +198,11 @@ CONTAINS
    THINLD=0.04
    ALBLND=0.2
    XMAVA=0.3
-   CALL rconfig_get_cen_lat(id,cen_lat)
-   CALL wrf_debug(100,'calling rconfig_get_iswater, rconfig_get_mminlu_loc')
-   CALL rconfig_get_iswater(id,iswater)
-   CALL rconfig_get_mminlu( 1, mminlu_loc )
-   CALL wrf_debug(100,'after rconfig_get_iswater, rconfig_get_mminlu_loc')
+   CALL nl_get_cen_lat(id,cen_lat)
+   CALL wrf_debug(100,'calling nl_get_iswater, nl_get_mminlu_loc')
+   CALL nl_get_iswater(id,iswater)
+   CALL nl_get_mminlu( 1, mminlu_loc )
+   CALL wrf_debug(100,'after nl_get_iswater, nl_get_mminlu_loc')
 
   IF(.not.restart)THEN
 !-- initialize common variables
@@ -544,8 +544,8 @@ CONTAINS
                            ims, ime, jms, jme, kms, kme,    &
                            its, ite, jts, jte, kts, kte     )
         CASE (GFDLLWSCHEME)
-             CALL rconfig_get_start_month(grid%id,month)
-             CALL rconfig_get_start_day(grid%id,iday)
+             CALL nl_get_start_month(grid%id,month)
+             CALL nl_get_start_day(grid%id,iday)
              CALL gfdletainit(sfull,shalf,pptop,JULYR,MONTH,IDAY,GMT,&
                            kds, kde, kms, kme, kts, kte     )
              etalw = .true.
@@ -568,8 +568,8 @@ CONTAINS
 
         CASE (GFDLSWSCHEME)
              IF(.not.etalw)THEN
-             CALL rconfig_get_start_month(grid%id,month)
-             CALL rconfig_get_start_day(grid%id,iday)
+             CALL nl_get_start_month(grid%id,month)
+             CALL nl_get_start_day(grid%id,iday)
              CALL gfdletainit(sfull,shalf,pptop,JULYR,MONTH,IDAY,GMT,&
                            kds, kde, kms, kme, kts, kte     )
              ENDIF

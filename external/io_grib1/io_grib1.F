@@ -48,11 +48,12 @@ module data_info
 end module data_info
 
 
-subroutine ext_yyy_ioinit(Status)
+subroutine ext_yyy_ioinit(SysDepInfo,Status)
 
   USE data_info
   implicit none
   include 'wrf_status_codes.h'
+  CHARACTER*(*), INTENT(IN) :: SysDepInfo
   integer ,intent(out) :: Status
   integer :: i
 

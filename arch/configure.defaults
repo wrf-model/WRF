@@ -6877,6 +6877,191 @@ module_initialize_real.o module_dm.o mediation_integrate.o start_domain.o :
 	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCFLAGS) $(MODULE_DIRS) $*.f
-###########################################################
-#ARCH  NULL
 
+###########################################################
+#ARCH Darwin		(single-threaded, no nesting)
+#
+FC              =       xlf90_r
+LD              =       xlf90_r
+#CC              =       xlc_r
+CC              =       cc
+CFLAGS          =       -DNOUNDERSCORE
+FCOPTIM         =       -O2 -qarch=auto
+FCDEBUG         =       # -qnoopt -qfullpath
+FCBASEOPTS      =       -qsave $(FCDEBUG) -qmaxmem=32767 -w 
+FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
+INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
+                        -I../frame -I../share -I../phys -I../inc
+EXTRAMODULES    =       
+ARCHFLAGS       =       -DYYY -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
+                        CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   \
+			-DLIMIT_ARGS -DNO_NAMELIST_PRINT
+#			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DNATIVE_MASSV
+PERL            =       CONFIGURE_PERL_PATH
+REGISTRY        =       Registry
+#LIB             =       CONFIGURE_NETCDF_LIB_PATH -lmass -lmassv 
+LIB             =       CONFIGURE_NETCDF_LIB_PATH \
+                        -L../external/io_int -lwrfio_int \
+                        -L../external/io_grib1 -lio_grib1 \
+			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
+
+LDFLAGS         =	 -Wl,-stack_size,10000000 
+#CPP             =       /opt/ibmcmp/xlf/8.1/exe/cpp -C -P
+CPP             =       /usr/bin/cpp  -C -P -xassembler-with-cpp
+POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
+CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) $(COREDEFS) $(POUND_DEF) 
+AR              =       ar ru
+M4              =       m4 -B 8000
+RANLIB          =       ranlib
+NETCDFPATH	=	CONFIGURE_NETCDF_PATH
+CC_TOOLS        =       cc
+
+externals : CONFIGURE_WRFIO_NF wrfio_int module_dm.F esmf_time
+
+module_dm.F :
+	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
+
+wrfio_nf : 
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -qarch=auto -qzerosize" ; /bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc )
+
+wrfio_int : 
+	( cd ../external/io_int ; \
+          make CC="$(CC)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; \
+          make CC="$(CC)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -qarch=auto -qzerosize" )
+
+esmf_time : 
+	( cd ../external/esmf_time_f90 ; \
+	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+solve_interface.o : solve_interface.F
+	$(RM) $@
+	$(CPP) -I../inc $(CPPFLAGS) $*.F > $*.f
+	$(FC) -c -qfree=f90 -qspillsize=32767 -I. $(MODULE_DIRS) $*.f
+
+# compile these without high optimization to speed compile
+module_io_mm5.o : module_io_mm5.F
+module_si_io.o : module_si_io.F
+module_io_wrf.o : module_io_wrf.F
+module_domain.o : module_domain.F
+module_start.o : module_start.F
+module_initialize.o : module_initialize.F
+module_initialize_b_wave.o : module_initialize_b_wave.F
+module_initialize_hill2d_x.o : module_initialize_hill2d_x.F
+module_initialize_quarter_ss.o : module_initialize_quarter_ss.F
+module_initialize_squall2d_x.o : module_initialize_squall2d_x.F
+module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
+module_initialize_real.o : module_initialize_real.F
+module_dm.o : module_dm.F
+start_domain.o : start_domain.F
+mediation_interp_domain.o : mediation_interp_domain.F
+mediation_force_domain.o : mediation_force_domain.F
+mediation_feedback_domain.o : mediation_feedback_domain.F
+convert_nmm.o : convert_nmm.F
+module_configure.o : module_configure.F
+
+module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
+module_start.o module_initialize.o module_initialize_b_wave.o  \
+module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
+module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
+module_initialize_real.o module_dm.o \
+mediation_interp_domain.o \
+module_configure.o                                             \
+convert_nmm.o :
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b 
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(RM) $*.b
+	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
+
+# to prevent having to call our service representative
+mediation_feedback_domain.o \
+mediation_force_domain.o start_domain.o :
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(RM) $*.b
+	$(FC) -c -g $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt $*.f
+
+###########################################################
+#ARCH Darwin		(OpenMP, no nesting)
+#
+OMP             =       -qsmp=noauto
+OMPCPP          =       -D_OPENMP
+FC              =       xlf90_r
+LD              =       xlf90_r
+CC              =       cc
+CFLAGS          =       -DNOUNDERSCORE
+FCOPTIM         =       -O2 -qarch=auto -qunroll=yes
+FCDEBUG         =       # -qnoopt -qfullpath
+FCBASEOPTS      =       -w -qsave $(FCDEBUG) -qmaxmem=32767 #-qflttrap=zerodivide:invalid:enable -qsigtrap
+FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
+INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
+                        -I../frame -I../share -I../phys -I../inc
+EXTRAMODULES    =       
+ARCHFLAGS       =       -DYYY -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
+                        CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   \
+			-DLIMIT_ARGS -DNO_NAMELIST_PRINT
+PERL            =       CONFIGURE_PERL_PATH
+REGISTRY        =       Registry
+LIB             =       CONFIGURE_NETCDF_LIB_PATH -lxlsmp \
+                        -L../external/io_int -lwrfio_int \
+                        -L../external/io_grib1 -lio_grib1 \
+			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
+LDFLAGS         =	$(OMP) -Wl,-stack_size,10000000 
+CPP             =        /usr/bin/cpp -C -P -xassembler-with-cpp
+POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
+CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) $(OMPCPP) $(COREDEFS) $(POUND_DEF)
+AR              =       ar ru
+M4              =       m4 -B 8000
+RANLIB          =       ranlib
+NETCDFPATH	=	CONFIGURE_NETCDF_PATH
+CC_TOOLS        =       $(CC)
+
+externals : CONFIGURE_WRFIO_NF wrfio_int module_dm.F esmf_time
+
+module_dm.F :
+	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
+
+wrfio_nf : 
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -qarch=auto -qzerosize" ; /bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc )
+
+wrfio_int : 
+	( cd ../external/io_int ; \
+          make CC="$(CC)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; \
+          make CC="$(CC)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -qarch=auto -qzerosize" )
+
+esmf_time : 
+	( cd ../external/esmf_time_f90 ; \
+	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+
+module_configure.o : module_configure.F
+module_domain.o   : module_domain.F
+module_sm.o 	: module_sm.F
+module_tiles.o	: module_tiles.F
+solve_em.o	: solve_em.F
+solve_exp.o	: solve_exp.F
+convert_nmm.o   : convert_nmm.F
+
+module_configure.o module_sm.o module_tiles.o solve_em.o solve_exp.o convert_nmm.o :
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b 
+	$(CPP) -I../inc $(CPPFLAGS) $(OMPCPP) $*.b  > $*.f
+	$(RM) $*.b
+	$(FC) -c -g $(OMP) $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt -qnohot $*.f
+
+module_domain.o :
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b 
+	$(CPP) -I../inc $(CPPFLAGS) $(OMPCPP) $*.b  > $*.f
+	$(RM) $*.b
+	$(FC) -c -g $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt -qnohot $*.f
+
+##################################################################
+#ARCH  NULL

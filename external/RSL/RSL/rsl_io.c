@@ -1158,11 +1158,15 @@ RSL_REMAP_ARRAY ( inbuf, ndim_p, type_p,
   int is_dimd[], is_dimp[], is_dimm[], os_dimp[], os_dimm[] ;
   int ie_dimd[], ie_dimp[], ie_dimm[], oe_dimp[], oe_dimm[] ;
 {
+
+#ifndef STUBS
+
 #define STRT 0
 #define ENDD 1
 #define PCH  0
 #define MEM  1
 #define DOM  2
+
   int group_i[2][3][RSL_MAXPROC][3] ;
   int group_o[2][3][RSL_MAXPROC][3] ;
   MPI_Request reqlist[RSL_MAXPROC] ;
@@ -1292,5 +1296,8 @@ fprintf(stderr,"MPI_Send to %d %d\n",P,msglen) ;
             outbuf[l+dex] = rcvbuf[curs++] ;
 	  }
   }
+#else
+  RSL_TEST_ERR (1,"RSL_REMAP_ARRAY STUBBED") ; 
+#endif
 }
 

@@ -100,6 +100,7 @@ RSL_TO_OH_INFO ( t_p, o_p, msize_p, seed_p,
   int p, p1 ;
   int globalhemiPlist[RSL_MAXPROC][RSL_MAXPROC], work[RSL_MAXPROC][RSL_MAXPROC] ;
 
+#ifndef STUBS
   s_msize = *msize_p ;
   s_t = *t_p ;
   s_o = *o_p ;
@@ -252,6 +253,9 @@ RSL_TO_OH_INFO ( t_p, o_p, msize_p, seed_p,
   *oig_p = s_oig + 1 ;  /* C to Fortran */
   *ojg_p = s_ojg + 1 ;  /* C to Fortran */
   *retval_p = 1 ;
+#else
+   RSL_TEST_ERR( 1, "RSL_TO_OH_INFO STUBBED" ) ;
+#endif
   return ;
 }
 

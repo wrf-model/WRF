@@ -102,19 +102,28 @@ BREAKTHEEXAMPLECODE
 RSL_INITIALIZE ()
 {
   int s, o ;
+#ifndef STUBS
   rslMPIInit() ;
   rsl_mpi_communicator = MPI_COMM_WORLD ;
+#endif
   rsl_initialize_internal() ;
   s = 1 ; o = 0 ;
   RSL_DEBUG( &s , &o ) ;
   
 }
 
+#ifndef STUBS
 RSL_INITIALIZE1 ( MPI_Comm * comm )
 {
   rsl_mpi_communicator = *comm ;
   rsl_initialize_internal() ;
 }
+#else
+RSL_INITIALIZE1 ( int * comm )
+{
+  rsl_initialize_internal() ;
+}
+#endif
 
 rsl_initialize_internal()
 {
@@ -137,13 +146,15 @@ rsl_initialize_internal()
   rsl_ndomains = 0 ;
   old_offsets = 0 ;
 
-/*  RSL_OPEN0( rsl_nproc_all, rsl_myproc ) ; */
-/*  RSL_WHO ( rsl_nproc_all, rsl_myproc ) ;  */
-
+#ifndef STUBS
   rslMPIInit() ;
 
   MPI_Comm_size( rsl_mpi_communicator , &rsl_nproc_all ) ;
   MPI_Comm_rank( rsl_mpi_communicator , &rsl_myproc ) ;
+#else
+  rsl_nproc_all = 1 ;
+  rsl_myproc = 0 ;
+#endif
 
 /* John's patented brain substitute ; 5/3/2002 */
   if ( rsl_nproc_all > RSL_MAXPROC )

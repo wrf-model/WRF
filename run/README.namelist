@@ -94,8 +94,8 @@ Additional ones when running 3DVAR:
  dx (max_dom)                        = 10000,	; grid length in x direction, unit in meters
  dy (max_dom)                        = 10000,	; grid length in y direction, unit in meters
  ztop (max_dom)                      = 19000.	; used in mass model for idealized cases
- grid_id (max_dom)                   = 1,	; domain identifier (leave as is)
- level (max_dom)                     = 1,	; nesting level (leave as is)
+ grid_id (max_dom)                   = 1,	; domain identifier
+ level (max_dom)                     = 1,	; nesting level
  parent_id (max_dom)                 = 0,       ; id of the parent domain
  i_parent_start (max_dom)            = 0,       ; starting LLC I-indices from the parent domain
  j_parent_start (max_dom)            = 0,       ; starting LLC J-indices from the parent domain

@@ -42,6 +42,7 @@
 
    REAL :: qvf1, qvf2, qvf
    REAL :: MPDT
+   LOGICAL :: first_trip_for_this_domain
 
 #define COPY_IN
 #include <em_scalar_derefs.inc>
@@ -64,10 +65,20 @@
 
    CALL boundary_condition_check( config_flags, bdyzone, error, grid%id )
 
+!kludge - need to stop CG from resetting precip and phys tendencies to zero
+!         when we are in here due to a nest being spawned, we want to still
+!         recompute the base state, but that is about it
+   !  This is temporary and will need to be changed when itimestep is removed.
+
+   IF ( itimestep .EQ. 0 ) THEN
+      first_trip_for_this_domain = .TRUE.
+   ELSE
+      first_trip_for_this_domain = .FALSE.
+   END IF
+
    IF ( .not. restart ) THEN 
        itimestep=0
    ENDIF
-
 
    
    IF (config_flags%specified) THEN
@@ -97,12 +108,13 @@
 
    IF(.not.config_flags%restart)THEN
 
+!  if this is for a nested domain, the defined/interpolated fields are the _2
+
+     IF ( first_trip_for_this_domain ) THEN
+
 ! data that is expected to be zero must be explicitly initialized as such
      h_diabatic = 0.
 
-!  if this is for a nested domain, the defined/interpolated fields are the _2
-
-     IF ( grid%id .NE. 1 ) THEN
        DO j = jts,min(jte,jde-1)
        DO k = kts,kte-1
        DO i = its, min(ite,ide-1)
@@ -161,6 +173,7 @@
 
    ENDIF
 
+   IF ( first_trip_for_this_domain) THEN
 
    CALL wrf_debug ( 100 , 'module_start: start_domain_rk: Before call to phy_init' )
 
@@ -201,6 +214,8 @@
 !                     SH2O, SNOWH, FNDSOILW, FNDSNOWH,        &  ! correct one
 
    CALL wrf_debug ( 100 , 'module_start: start_domain_rk: After call to phy_init' )
+
+   END IF
 
 !
 !
@@ -310,7 +325,6 @@
                            its , ite , jts , jte , &
                            its , ite , jts , jte   )
 
-   IF(.not.config_flags%restart)THEN
    CALL set_w_surface(  config_flags,                                      &
                         w_1, ht, u_1, v_1, cf1, cf2, cf3, rdx, rdy, msft,  &
                         ids, ide, jds, jde, kds, kde,                      &
@@ -323,7 +337,6 @@
                         ips, ipe, jps, jpe, kps, kpe,                      &
                         its, ite, jts, jte, kts, kte,                      &
                         ims, ime, jms, jme, kms, kme                      )
-   ENDIF
 
 ! finished setting kinematic condition for w at the surface
 

@@ -174,13 +174,18 @@ rsl_period_pt( dir, d, min, minlen, minstag, maj, majlen, majstag, fld, bdyw, f 
     {
       if ( majstag )
       {
-        if ( maj == 2        && min >=0 && min < minlen+minstag ) { (*f)( d, min, maj, min,      majlen+2, -2, 0, fld ) ;
-                                                                    (*f)( d, min, maj, min,      majlen+2,  0, 0, fld ) ;
-                                                                    (*f)( d, min, maj, min,      majlen+2,  2, 0, fld ) ; }
-        if ( maj == majlen-2 && min >=0 && min < minlen+minstag ) { (*f)( d, min, maj, min,      -2,       -2, 0, fld ) ;
-                                                                    (*f)( d, min, maj, min,      -2,        0, 0, fld ) ;
-                                                                    (*f)( d, min, maj, min,      -2,        2, 0, fld ) ; }
-       
+/**/    if ( maj == 0        && min >=0 && min < minlen+minstag ) { (*f)( d, min-2, maj, min-2,  majlen+1, -2, 0, fld ) ;
+                                                                    (*f)( d, min,   maj, min,    majlen+1,  0, 0, fld ) ;
+                                                                    (*f)( d, min+2, maj, min+2,  majlen+1,  2, 0, fld ) ; }
+        if ( maj == 2        && min >=0 && min < minlen+minstag ) { (*f)( d, min-2, maj, min-2,  majlen+2, -2, 0, fld ) ;
+                                                                    (*f)( d, min,   maj, min,    majlen+2,  0, 0, fld ) ;
+                                                                    (*f)( d, min+2, maj, min+2,  majlen+2,  2, 0, fld ) ; }
+        if ( maj == majlen-2 && min >=0 && min < minlen+minstag ) { (*f)( d, min-2, maj, min-2,  -2,       -2, 0, fld ) ;
+                                                                    (*f)( d, min,   maj, min,    -2,        0, 0, fld ) ;
+                                                                    (*f)( d, min+2, maj, min+2,  -2,        2, 0, fld ) ; }
+/**/    if ( maj == majlen-1 && min >=0 && min < minlen+minstag ) { (*f)( d, min-2, maj, min-2,  -1,       -2, 0, fld ) ;
+                                                                    (*f)( d, min,   maj, min,    -1,        0, 0, fld ) ;
+                                                                    (*f)( d, min+2, maj, min+2,  -1,        2, 0, fld ) ; }
       }
       else
       {

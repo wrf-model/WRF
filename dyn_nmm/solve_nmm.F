@@ -124,7 +124,7 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
       KTS=KPS
       KTE=MIN(KPE,KDF)
 !-----------------------------------------------------------------------
-      if(ntsd.eq.0)then
+!      if(ntsd.eq.0)then
         solve_tim=0.
         exch_tim=0.
         pdte_tim=0.
@@ -146,7 +146,7 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
         pfdht_tim=0.
         ddamp_tim=0.
         bocov_tim=0.
-      endif
+!      endif
 !-----------------------------------------------------------------------
       N_MOIST = NUM_MOIST
 !

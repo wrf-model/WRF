@@ -64,6 +64,9 @@
 #include <netdb.h>
 #include <stdio.h>
 #include <sys/uio.h>
+#ifdef T3D
+#include <fortran.h>
+#endif
 
        static int first_time_through = 1 ;
 
@@ -679,7 +682,15 @@ send_to_output_device( req, wbuf, nelem )
         FORT_COMPLEXWRITE ( &(req->unit), wbuf, &nelem ) ;
         break ;
       case RSL_CHARACTER :
+#ifndef T3D
         FORT_CHARACTERWRITE ( &(req->unit), wbuf, &nelem ) ;
+#else
+        {
+          _fcd x ;
+          x = _cptofcd( wbuf, nelem ) ;
+          FORT_CHARACTERWRITE ( &(req->unit), x, &nelem ) ;
+        }
+#endif
         break ;
       default :
         RSL_TEST_WRN(1,"write operation not implemented for this data type") ;
@@ -914,12 +925,21 @@ RSL_WRITE_MM5V3_SM_HEADER( unit_p,ndim_p,
   int_p  iwordsize_p ;
   char * xtime_p ;
   int_p  rwordsize_p ;
+#ifndef T3D
   char * staggering_p     ;  int_p nstaggering_p   ;
   char * ordering_p       ;  int_p nordering_p      ;
   char * current_date_p   ;  int_p ncurrent_date_p  ;
   char * name_p           ;  int_p nname_p          ;
   char * units_p          ;  int_p nunits_p         ;
   char * description_p    ;  int_p ndescription_p   ;
+#else
+  _fcd staggering_p     ;  int_p nstaggering_p   ;
+  _fcd ordering_p       ;  int_p nordering_p      ;
+  _fcd current_date_p   ;  int_p ncurrent_date_p  ;
+  _fcd name_p           ;  int_p nname_p          ;
+  _fcd units_p          ;  int_p nunits_p         ;
+  _fcd description_p    ;  int_p ndescription_p   ;
+#endif
 {
   rsl_write_req_t req ;
   int nelem ;
@@ -937,7 +957,11 @@ RSL_WRITE_MM5V3_SM_HEADER( unit_p,ndim_p,
   rwordsize = *rwordsize_p ;
   nstringbytes =  *nstaggering_p+ *nordering_p+ *ncurrent_date_p
                 + *nname_p+ *nunits_p+ *ndescription_p ;
+#ifndef T3D
   nelem = 9 * iwordsize + 1 * rwordsize + nstringbytes ;
+#else
+  nelem = 9 * iwordsize/2 + 1 * rwordsize/2 + nstringbytes ;
+#endif
 
   req.internal     = 0 ;
   req.request_type = RSL_WRITE_REQUEST ;
@@ -950,6 +974,7 @@ RSL_WRITE_MM5V3_SM_HEADER( unit_p,ndim_p,
   wbuf       = RSL_MALLOC( char, nelem ) ;
 
   icurs = 0 ;
+#ifndef T3D
   bcopy( ndim_p, &(wbuf[icurs]), iwordsize ) ;   icurs += iwordsize ;
   bcopy( s1_p  , &(wbuf[icurs]), iwordsize ) ;   icurs += iwordsize ;
   bcopy( s2_p  , &(wbuf[icurs]), iwordsize ) ;   icurs += iwordsize ;
@@ -959,16 +984,44 @@ RSL_WRITE_MM5V3_SM_HEADER( unit_p,ndim_p,
   bcopy( e2_p  , &(wbuf[icurs]), iwordsize ) ;   icurs += iwordsize ;
   bcopy( e3_p  , &(wbuf[icurs]), iwordsize ) ;   icurs += iwordsize ;
   bcopy( e4_p  , &(wbuf[icurs]), iwordsize ) ;   icurs += iwordsize ;
-
-#ifdef SWAPBYTES
+# ifdef SWAPBYTES
   rsl_swapbytes( wbuf, iwordsize, 9 ) ;
+# endif
+#else
+  { short i ;
+    i = *ndim_p ; bcopy( &i, &(wbuf[icurs]), iwordsize/2 ) ;   icurs += iwordsize/2 ;
+    i = *s1_p   ; bcopy( &i, &(wbuf[icurs]), iwordsize/2 ) ;   icurs += iwordsize/2 ;
+    i = *s2_p   ; bcopy( &i, &(wbuf[icurs]), iwordsize/2 ) ;   icurs += iwordsize/2 ;
+    i = *s3_p   ; bcopy( &i, &(wbuf[icurs]), iwordsize/2 ) ;   icurs += iwordsize/2 ;
+    i = *s4_p   ; bcopy( &i, &(wbuf[icurs]), iwordsize/2 ) ;   icurs += iwordsize/2 ;
+    i = *e1_p   ; bcopy( &i, &(wbuf[icurs]), iwordsize/2 ) ;   icurs += iwordsize/2 ;
+    i = *e2_p   ; bcopy( &i, &(wbuf[icurs]), iwordsize/2 ) ;   icurs += iwordsize/2 ;
+    i = *e3_p   ; bcopy( &i, &(wbuf[icurs]), iwordsize/2 ) ;   icurs += iwordsize/2 ;
+    i = *e4_p   ; bcopy( &i, &(wbuf[icurs]), iwordsize/2 ) ;   icurs += iwordsize/2 ;
+  }
+# ifdef SWAPBYTES
+  rsl_swapbytes( wbuf, iwordsize/2, 9 ) ;
+# endif
 #endif
-  bcopy( xtime_p  , &(wbuf[icurs]), rwordsize ) ;  
-#ifdef SWAPBYTES
-  rsl_swapbytes( &(wbuf[icurs]), rwordsize, 1 ) ;
-#endif
-  icurs += rwordsize ;
 
+#ifndef T3D
+  bcopy( xtime_p  , &(wbuf[icurs]), rwordsize ) ;  
+# ifdef SWAPBYTES
+  rsl_swapbytes( &(wbuf[icurs]), rwordsize, 1 ) ;
+# endif
+  icurs += rwordsize ;
+#else
+  { float x ;
+    x = (double)*xtime_p ;
+    bcopy( &x  , &(wbuf[icurs]), rwordsize/2 ) ;  
+  }
+# ifdef SWAPBYTES
+  rsl_swapbytes( &(wbuf[icurs]), rwordsize/2, 1 ) ;
+# endif
+  icurs += rwordsize/2 ;
+#endif
+
+#ifndef T3D
   bcopy( staggering_p   , &(wbuf[icurs]),
                                  *nstaggering_p ) ;          icurs += *nstaggering_p ;
   bcopy( ordering_p     , &(wbuf[icurs]),
@@ -981,6 +1034,20 @@ RSL_WRITE_MM5V3_SM_HEADER( unit_p,ndim_p,
                                  *nunits_p    ) ;            icurs += *nunits_p   ;
   bcopy( description_p  , &(wbuf[icurs]),
                                  *ndescription_p    ) ;      icurs += *ndescription_p   ;
+#else
+  bcopy( _fcdtocp( staggering_p )  , &(wbuf[icurs]),
+                                 *nstaggering_p ) ;          icurs += *nstaggering_p ;
+  bcopy( _fcdtocp( ordering_p )    , &(wbuf[icurs]),
+                                 *nordering_p    ) ;         icurs += *nordering_p   ;
+  bcopy( _fcdtocp( current_date_p ), &(wbuf[icurs]),
+                                 *ncurrent_date_p    ) ;     icurs += *ncurrent_date_p   ;
+  bcopy( _fcdtocp( name_p )        , &(wbuf[icurs]),
+                                 *nname_p    ) ;             icurs += *nname_p   ;
+  bcopy( _fcdtocp( units_p )       , &(wbuf[icurs]),
+                                 *nunits_p    ) ;            icurs += *nunits_p   ;
+  bcopy( _fcdtocp( description_p ) , &(wbuf[icurs]),
+                                 *ndescription_p    ) ;      icurs += *ndescription_p   ;
+#endif
 
   if ( rsl_buffer_output && ! req.internal )
   {
@@ -1066,8 +1133,13 @@ RSL_WRITE_MM5V3_BIG_HEADER( unit_p,
   int_p  unit_p ;
   char * ibuf             ;  int_p nibuf_p   ;
   char * rbuf             ;  int_p nrbuf_p   ;
+#ifndef T3D
   char * cb1              ;  int_p ncb1_p    ;
   char * cb2              ;  int_p ncb2_p    ;
+#else
+  _fcd   cb1              ;  int_p ncb1_p    ;
+  _fcd   cb2              ;  int_p ncb2_p    ;
+#endif
   int_p  iwordsize_p ;
   int_p  rwordsize_p ;
 {
@@ -1086,9 +1158,15 @@ RSL_WRITE_MM5V3_BIG_HEADER( unit_p,
   iwordsize = *iwordsize_p ;
   rwordsize = *rwordsize_p ;
 
+#ifndef T3D
   nelem = *nibuf_p * iwordsize + 
           *nrbuf_p * rwordsize +
 	  *ncb1_p + *ncb2_p ;
+#else
+  nelem = *nibuf_p * iwordsize /2 + 
+          *nrbuf_p * rwordsize /2 +
+	  *ncb1_p + *ncb2_p ;
+#endif
           
   req.internal     = 0 ;
   req.request_type = RSL_WRITE_REQUEST ;
@@ -1101,19 +1179,49 @@ RSL_WRITE_MM5V3_BIG_HEADER( unit_p,
   wbuf       = RSL_MALLOC( char, nelem ) ;
 
   icurs = 0 ;
+#ifdef SWAPBYTES
+  rsl_swapbytes( ibuf, iwordsize, *nibuf_p ) ;
+#endif
+#ifndef T3D
   bcopy( ibuf  , &(wbuf[icurs]), *nibuf_p * iwordsize ) ;
-#ifdef SWAPBYTES
-    rsl_swapbytes( ibuf, iwordsize, *nibuf_p ) ;
+  icurs += *nibuf_p * iwordsize ;
+#else
+  { long *p ; short *q ; int i ;
+    p = (long *) ibuf ;
+    q = (short *) ibuf ;
+    for ( i = 0 ; i < *nibuf_p ; i++ )
+    {
+      *q = *p ; q++ ; p++ ;
+    }
+  }
+  bcopy( ibuf  , &(wbuf[icurs]), *nibuf_p * iwordsize /2 ) ;
+  icurs += *nibuf_p * iwordsize / 2 ;
 #endif
-    icurs += *nibuf_p * iwordsize ;
+#ifdef SWAPBYTES
+  rsl_swapbytes( rbuf, rwordsize, *nrbuf_p ) ;
+#endif
+#ifndef T3D
   bcopy( rbuf  , &(wbuf[icurs]), *nrbuf_p * rwordsize ) ;
-#ifdef SWAPBYTES
-    rsl_swapbytes( rbuf, rwordsize, *nrbuf_p ) ;
+  icurs += *nrbuf_p * rwordsize ;
+#else
+  { double *p ; float *q ; int i ;
+    p = (double *) rbuf ;
+    q = (float *) rbuf ;
+    for ( i = 0 ; i < *nrbuf_p ; i++ )
+    {
+      *q = *p ; q++ ; p++ ;
+    }
+  }
+  bcopy( rbuf  , &(wbuf[icurs]), *nrbuf_p * rwordsize /2 ) ;
+  icurs += *nrbuf_p * rwordsize / 2 ;
 #endif
-    icurs += *nrbuf_p * rwordsize ;
+#ifndef T3D
   bcopy( cb1   , &(wbuf[icurs]), *ncb1_p   ) ;   icurs += *ncb1_p ;
   bcopy( cb2   , &(wbuf[icurs]), *ncb2_p   ) ;   icurs += *ncb2_p ;
-
+#else
+  bcopy( _fcdtocp( cb1 ), &(wbuf[icurs]), *ncb1_p   ) ;   icurs += *ncb1_p ;
+  bcopy( _fcdtocp( cb2 ), &(wbuf[icurs]), *ncb2_p   ) ;   icurs += *ncb2_p ;
+#endif
   if ( rsl_buffer_output && ! req.internal )
   {
     if ( write_buffer_head == NULL && write_buffer_tail == NULL )
@@ -1135,6 +1243,5 @@ RSL_WRITE_MM5V3_BIG_HEADER( unit_p,
   {
     send_to_output_device( &req, wbuf, nelem ) ;
   }
-
   RSL_FREE( wbuf ) ;
 }

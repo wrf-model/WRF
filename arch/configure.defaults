@@ -2180,8 +2180,8 @@ module_initialize_real.o module_dm.o start_domain.o :
 #ARCH       Compaq OSF1 alpha DM/SM    (RSL, MPICH, OpenMP, allows nesting)
 #
 DMPARALLEL      =       1
-OMP             =
-OMPCPP          =
+OMP             =       -omp
+OMPCPP          =       -D_OPENMP
 FC              =       mpif90
 LD              =       mpif90
 CC              =       mpicc

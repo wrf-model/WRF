@@ -10,7 +10,7 @@
 			   int   *iyyn,
 			   int   *jxxn);
 
-//int    nint(const double x);
+/* int    nint(const double x); */
 double aint(const double x);
 double anint(const double x);
 float  tsGetValue(const double aix, const double aiy);

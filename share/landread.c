@@ -39,13 +39,13 @@ int GET_TERRAIN (        float *adx,
 
 typedef struct
 {
-  // Filenames.
+  /* Filenames. */
   char  fn[MAXTOPOFILES][MAXLEN];
 
-  // Grid spacings in km.
+  /* Grid spacings in km. */
   float dx[MAXTOPOFILES];
 
-  // Number of entries.
+  /* Number of entries. */
   int num;
 } TsFileInfo;
 
@@ -68,15 +68,17 @@ static int    ntiles;
 static int    wrapx;
 static int    wrapy;
 
-// File information.
+/* File information. */
 static XDR  *xdrs;
 static FILE *fp;
 
-//int nint(const double x)
-//{
-//  if ( x > 0.0 ) { return( (int)(x + 0.5) ) ; }
-//  return((int)(x - 0.5));
-//}
+#if 0
+ int nint(const double x)
+{
+  if ( x > 0.0 ) { return( (int)(x + 0.5) ) ; }
+  return((int)(x - 0.5));
+}
+#endif
 
 double aint(const double x)
 {
@@ -137,7 +139,7 @@ static int areEqual(const double v1, const double v2)
 
 static int setWrapAroundFlags(void)
 {
-  // Compute the end gridpoint location in x.
+  /* Compute the end gridpoint location in x. */
   double lon1  = lon0 + dlon*(globalNx);
   double lon2  = lon0 + dlon*(globalNx-1);
   double lat1  = lat0 + dlat*(globalNy);
@@ -148,26 +150,26 @@ static int setWrapAroundFlags(void)
   wrapx = 0;
   if (areEqual(lon0n, lon1n))
     {
-      // Here the first and last indices in x are one grid interval
-      // apart.
+      /* Here the first and last indices in x are one grid interval
+         apart. */
       wrapx = 1;
     }
   else if (areEqual(lon0n, lon2n))
     {
-      // Here the first and last indices in x are coincident.
+      /* Here the first and last indices in x are coincident. */
       wrapx = 2;
     }
 
   wrapy = 0;
   if (areEqual(lat0, -90.0))
     {
-      // Here the first and last indices in x are one grid interval
-      // apart.
+      /* Here the first and last indices in x are one grid interval
+         apart. */
       wrapy += 1;
     }
   if (areEqual(lat1, 90.0))
     {
-      // Here the first and last indices in x are coincident.
+      /* Here the first and last indices in x are coincident. */
       wrapy += 2;
     }
 
@@ -187,7 +189,7 @@ float tsGetValueInt(const int aix, const int aiy)
   int iy = aiy;
   int ix = aix;
 
-  // Perform bounds checking.
+  /* Perform bounds checking. */
   if (iy < 0)
     {
       return(f);
@@ -250,8 +252,8 @@ float tsGetValueInt(const int aix, const int aiy)
   off_t loc = ll_numHeaderBytes + ll_tileNx*ll_tileNy*sizeof(float)*tn +
     ll_gn*sizeof(float);
 
-  // Seek to the proper location in the file and get the data value.
-  // fseeko64(fp, loc, SEEK_SET);
+  /* Seek to the proper location in the file and get the data value. */
+  /* fseeko64(fp, loc, SEEK_SET); */
   fseek(fp, loc, SEEK_SET);
   xdr_float(xdrs, (float *) &f);
 
@@ -265,7 +267,7 @@ float tsGetValue(const double ix, const double iy)
   int i1 = (int)(ceil(ix));
   int j1 = (int)(ceil(iy));
   
-  // Interpolate linearly to (oiloc, ojloc).
+  /* Interpolate linearly to (oiloc, ojloc). */
   float v0 = tsGetValueInt(i0,j0);
   float v1 = tsGetValueInt(i0,j1);
   float v2 = tsGetValueInt(i1,j0);
@@ -319,7 +321,7 @@ int tsInitTileSet(const char *fn)
   xdrs = 0;
   fp   = 0;
 
-  // fp = (FILE *) fopen64(fn, "r");
+  /* fp = (FILE *) fopen64(fn, "r"); */
   if (( fp = (FILE *) fopen(fn, "r")) == NULL ) {
     fprintf(stderr,"tsInitTileSet: cannot open %s\n",fn) ;
     exit(2) ;
@@ -384,7 +386,7 @@ int GET_TERRAIN (        float *adx,
   tsfOcean.num = 0;
   tsfLU.num    = 0;
 
-  // Read in the list of topography/land use filenames.
+  /* Read in the list of topography/land use filenames. */
   {
     FILE *fp = fopen("landFilenames", "r");
 
@@ -422,10 +424,10 @@ int GET_TERRAIN (        float *adx,
     fclose(fp);
   }
 
-  // First get the terrain from GTOPO30.
+  /* First get the terrain from GTOPO30. */
   {
-    // Use the data with the largest spacing less than the grid
-    // spacing specified in the argument list.
+    /* Use the data with the largest spacing less than the grid
+       spacing specified in the argument list. */
     float maxdx = 0.0;
     char fn[MAXLEN];
     int first = 1;
@@ -465,10 +467,10 @@ fprintf(stderr,"%d %d file %f adx %f max %f\n",i,first,tsfTopo.dx[i],*adx , maxd
   }
 
 #ifdef TERRAIN_AND_LANDUSE
-  // Next get the terrain from TBASE.
+  /* Next get the terrain from TBASE. */
   {
-    // Use the data with the largest spacing less than the grid
-    // spacing specified in the argument list.
+    /* Use the data with the largest spacing less than the grid
+       spacing specified in the argument list. */
     float maxdx = 0.0;
     char fn[MAXLEN];
     int first = 1;
@@ -509,10 +511,10 @@ fprintf(stderr,"%d %d file %f adx %f max %f\n",i,first,tsfTopo.dx[i],*adx , maxd
     tsCloseTileSet();
   }
 
-  // Next get the land use.
+  /* Next get the land use. */
   {
-    // Use the data with the largest spacing less than the grid
-    // spacing specified in the argument list.
+    /* Use the data with the largest spacing less than the grid
+       spacing specified in the argument list. */
     float maxdx = 0.0;
     char fn[MAXLEN];
     int first = 1;
@@ -546,7 +548,7 @@ fprintf(stderr,"%d %d file %f adx %f max %f\n",i,first,tsfTopo.dx[i],*adx , maxd
 	    int iy = nint(fiy);
 	    float tv = tsGetValueInt(ix, iy);
 
-            // Set out-of-range values to water.
+            /* Set out-of-range values to water. */
             if (tv < 0.9 || tv > 24.1) tv = 16.0;
 
 	    landuse[*mix*j + i] = tv;
@@ -571,7 +573,7 @@ int get_bathymetry_(const float &tadx,
 		    const float &mindepth,
 		    const float &zlimww3)
 {
-  // Set grid resolution to .1 km to get highest resolution data possible.
+  /* Set grid resolution to .1 km to get highest resolution data possible. */
   float adx = 0.1;
 
   TsFileInfo tsfOcean;
@@ -580,7 +582,7 @@ int get_bathymetry_(const float &tadx,
   tsfOcean.num = 0;
   tsfLU.num    = 0;
 
-  // Read in the list of topography/land use filenames.
+  /* Read in the list of topography/land use filenames. */
   {
     FILE *fp = fopen("landFilenames", "r");
 
@@ -612,9 +614,9 @@ int get_bathymetry_(const float &tadx,
     fclose(fp);
   }
 
-  // Get the water depth from TBASE.
+  /* Get the water depth from TBASE. */
   {
-    // Use the data with highest resolution possible.
+    /* Use the data with highest resolution possible. */
     float maxdx = 0.0;
     char fn[MAXLEN];
     int first = 1;
@@ -659,10 +661,10 @@ int get_bathymetry_(const float &tadx,
     tsCloseTileSet();
   }
 
-  // Next get the land use.
+  /* Next get the land use. */
   {
-    // Use the data with the largest spacing less than the grid
-    // spacing specified in the argument list.
+    /* Use the data with the largest spacing less than the grid
+       spacing specified in the argument list. */
     float maxdx = 0.0;
     char fn[MAXLEN];
     int first = 1;
@@ -696,12 +698,12 @@ int get_bathymetry_(const float &tadx,
 	    int iy = nint(fiy);
 	    float tv = tsGetValueInt(ix, iy);
 
-            // Set out-of-range values to water.
+            /* Set out-of-range values to water. */
             if (tv < 0.9 || tv > 24.1) tv = 16.0;
 
 	    if (fabs(tv - 16.0) < 0.1)
 	      {
-		// Water.
+		/* Water. */
 		if (1)
 		  {
 		    if (depth[mix*j + i] < mindepth) depth[mix*j + i] = mindepth;
@@ -710,8 +712,8 @@ int get_bathymetry_(const float &tadx,
 		  {
 		    if (depth[mix*j + i] < -zlimww3)
 		      {
-			// Water depth below zlimww3, so turn this point
-			// into land.
+			/* Water depth below zlimww3, so turn this point 
+			   into land. */
 			depth[mix*j + i] = -0.1;		    
 		      }
 		    else if (depth[mix*j + i] < mindepth)
@@ -722,7 +724,7 @@ int get_bathymetry_(const float &tadx,
 	      }
 	    else
 	      {
-		// Land. Set depth to 0.0.
+		/* Land. Set depth to 0.0. */
 		depth[mix*j + i] = 0.0;
 	      }
 	  }

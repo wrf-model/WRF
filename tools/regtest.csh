@@ -1042,7 +1042,7 @@ banner 7
 		echo $compopt | ./configure
 	
 		#	Decide whether this a bit-for-bit run or an fully optimized run.  We are just
-		#	tinkering with the configure.user file optimization here.
+		#	tinkering with the configure.wrf file optimization here.
 
 		if ( $REG_TYPE == BIT4BIT ) then
 			if ( `uname` == AIX ) then

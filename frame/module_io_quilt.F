@@ -1100,6 +1100,17 @@ SUBROUTINE ext_quilt_get_next_time ( DataHandle, DateStr, Status )
   RETURN
 END SUBROUTINE ext_quilt_get_next_time
 
+!--- get_previous_time (not defined for IntIO )
+SUBROUTINE ext_quilt_get_previous_time ( DataHandle, DateStr, Status )
+#if defined( DM_PARALLEL ) && ! defined (STUBMPI)
+  IMPLICIT NONE
+  INTEGER ,       INTENT(IN)  :: DataHandle
+  CHARACTER*(*)               :: DateStr
+  INTEGER                     :: Status
+#endif
+  RETURN
+END SUBROUTINE ext_quilt_get_previous_time
+
 !--- put_dom_ti_char
 SUBROUTINE ext_quilt_set_time ( DataHandle, Data,  Status )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )

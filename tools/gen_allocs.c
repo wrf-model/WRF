@@ -73,7 +73,7 @@ gen_alloc2 ( FILE * fp , char * structname , char * corename , node_t * node )
 
        fprintf(fp, "ALLOCATE(%s%s%s,STAT=ierr)\n if (ierr.ne.0) then\n CALL wrf_error_fatal ( &\n'frame/module_domain.f: Failed to allocate %s%s%s. ')\n endif\n", structname, fname,dimension_with_ranges( "", "(", t2, p, post, "model_config_rec%"), structname, fname,dimension_with_ranges( "", "(", t2, p, post, "model_config_rec%")); 
 
-       fprintf(fp, "  IF ( setinitval .EQ. 1 .OR. setinitval .EQ. 2 ) %s%s=", structname , fname);
+       fprintf(fp, "  IF ( setinitval .EQ. 1 .OR. setinitval .EQ. 3 ) %s%s=", structname , fname);
        if( p->type != NULL  &&   (!strcmp( p->type->name , "real" ) 
                                || !strcmp( p->type->name , "doubleprecision") ) )   {
        /* if a real */
@@ -107,15 +107,15 @@ gen_alloc2 ( FILE * fp , char * structname , char * corename , node_t * node )
           }
           if( !strcmp( p->type->name , "real" ) || 
               !strcmp( p->type->name , "doubleprecision" )  ) { /* if a real */
-            fprintf(fp, "IF ( setinitval .EQ. 2 ) %s%s=initial_data_value\n",
+            fprintf(fp, "IF ( setinitval .EQ. 3 ) %s%s=initial_data_value\n",
                         structname ,
                         fname ) ;
 	  } else if ( !strcmp( p->type->name , "integer" ) ) {
-            fprintf(fp, "IF ( setinitval .EQ. 2 ) %s%s=0\n",
+            fprintf(fp, "IF ( setinitval .EQ. 3 ) %s%s=0\n",
                         structname ,
                         fname ) ;
           } else if ( !strcmp( p->type->name , "logical" ) ) {
-            fprintf(fp, "IF ( setinitval .EQ. 2 ) %s%s=.FALSE.\n",
+            fprintf(fp, "IF ( setinitval .EQ. 3 ) %s%s=.FALSE.\n",
                         structname ,
                         fname ) ;
           }

@@ -782,7 +782,7 @@ CONTAINS
       new_grid%max_tiles   = 0
       new_grid%num_tiles_spec   = 0
 
-      CALL alloc_space_field ( new_grid, domain_id , 2 ,           &
+      CALL alloc_space_field ( new_grid, domain_id , 3 ,           &
                                sd1, ed1, sd2, ed2, sd3, ed3,       &
                                sm1,  em1,  sm2,  em2,  sm3,  em3,  &
                                sm1x, em1x, sm2x, em2x, sm3x, em3x, &   ! x-xpose
@@ -958,7 +958,7 @@ CONTAINS
 
       TYPE(domain)               , POINTER          :: grid
       INTEGER , INTENT(IN)            :: id
-      INTEGER , INTENT(IN)            :: setinitval   ! 2 = everything, 1 = arrays only, 0 = none
+      INTEGER , INTENT(IN)            :: setinitval   ! 3 = everything, 1 = arrays only, 0 = none
       INTEGER , INTENT(IN)            :: sd31, ed31, sd32, ed32, sd33, ed33
       INTEGER , INTENT(IN)            :: sm31, em31, sm32, em32, sm33, em33
       INTEGER , INTENT(IN)            :: sm31x, em31x, sm32x, em32x, sm33x, em33x

@@ -126,7 +126,7 @@ foreach a ( $argv )
 			ping -c 1 maple.mmm.ucar.edu
 			exit 2
 		endif
-		setenv CVSROOT maple.mmm.ucar.edu:/data3/mp/mesouser/WRF
+		setenv CVSROOT maple.mmm.ucar.edu:/data3/mp/wrfhelp/WRF
 		
 		set acquire_from = "cvs"
 		set thedate = $argv[2]

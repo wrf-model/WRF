@@ -357,9 +357,13 @@ else if ( $NESTED != TRUE ) then
 endif
 
 #	The b_wave case has binary input (4-byte only), the nmm
-#	core has raw MPI calls, skip them if we are doing real*8 floats
+#	core has raw MPI calls, skip them if we are doing real*8 floats.
+#	Bump up the OMP stack size for real*8 on OSF1 architectures.
 
 if      ( $REAL8 == TRUE ) then
+	if ( `uname` == OSF1 ) then
+		setenv MP_STACK_SIZE 64000000
+	endif
 	set CORES = ( em_real em_quarter_ss )
 endif
 

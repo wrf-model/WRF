@@ -491,11 +491,6 @@ SUBROUTINE med_nest_move ( parent, nest )
      where ( nest%imask_nostag .EQ. 1 ) nest%em_mu_1(:,:)  = nest%em_mu_2(:,:)
 !
 
-#ifdef MOVE_NESTS
-!     parent%nest_pos = parent%ht
-!     where ( parent%nest_pos .gt. 0 ) parent%nest_pos = parent%nest_pos + 500.  ! make a cliff
-#endif
-
    ENDIF check_for_move
 
 #endif

@@ -315,7 +315,7 @@ RSL_BUILD_MESSAGE ( mh_p, t_p, base, ndim_p, decomp, glen, llen )
   fld->elemsz = elemsize( t ) ;
   if ( t >= 100 )
   {
-    if ( ! (fld->f90_table_index = get_index_for_base( base )) )
+    if ( ! (fld->f90_table_index == get_index_for_base( base )) )
     { RSL_TEST_ERR(1,"Use of unregistered f90 typed variable") ; }
     fld->base = (void *)((fld->f90_table_index-1) * F90_MAX_FLD_SIZE_IN_BYTES + 1) ; /* don't allow base of 0 */
   }

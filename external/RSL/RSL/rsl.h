@@ -432,6 +432,9 @@ typedef struct rsl_domain_info {
 
   rsl_list_t *merge_Xlist ;
 
+  int is_write, is_read, ie_write, ie_read ;
+  int js_write, js_read, je_write, je_read ;
+
 } rsl_domain_info_t ;
 
 
@@ -521,6 +524,8 @@ EXTERN char * rsl_noprobe ;  /* set from environment */
 
 EXTERN int rsl_debug_flg ;	/* set by rsl_debug */
 EXTERN int old_offsets ;	/* used in rsl_new_decomp.c */
+
+EXTERN int regular_decomp ;
 
 /* rsl macros */
 

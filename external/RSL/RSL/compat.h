@@ -226,6 +226,8 @@
 
 #   define VRCOPY   vrcopy_
 
+#   define RSL_SET_REGULAR_DECOMP  rsl_set_regular_decomp_
+
 #  else
 
 #   define RSL_INITIALIZE		rsl_initialize
@@ -381,6 +383,8 @@
 #   define RSL_RESET_STAGING   rsl_reset_staging
 
 #   define VRCOPY   vrcopy
+
+#   define RSL_SET_REGULAR_DECOMP  rsl_set_regular_decomp
 
 #  endif
 #endif

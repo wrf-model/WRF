@@ -86,6 +86,10 @@ typedef struct rsl_read_req {
   int specialc ;		/* extra information */
   int glen[RSL_MAXDIM] ;
   int llen[RSL_MAXDIM] ;
+  short is_write, ie_write ;
+  short js_write, je_write ;
+  short is_read , ie_read  ;
+  short js_read , je_read  ;
 } rsl_read_req_t ;
 
 typedef rsl_read_req_t rsl_write_req_t ;

@@ -312,6 +312,7 @@ i++ ;
 }
 #endif
 
+  dummy = 0 ;
   rsl_bubble( list_head, compare_primary, dummy ) ;
 
   /* figure the number of entries */

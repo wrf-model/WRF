@@ -125,6 +125,8 @@ RSL_INITIALIZE ()
   io_seq_monitor = 0 ;  /* OBS */
   io_seq_compute = 1 ;  /* OBS */
 
+  regular_decomp = 0 ;
+
 
 
   RSL_INIT_FORTRAN ( &rsl_nproc_all, &rsl_nproc, &rsl_myproc,
@@ -165,6 +167,15 @@ RSL_INITIALIZE ()
         domain_info[d].ig2n[p] = NULL ;
       }
     }
+    domain_info[d].is_write = RSL_INVALID ;
+    domain_info[d].ie_write = RSL_INVALID ;
+    domain_info[d].js_write = RSL_INVALID ;
+    domain_info[d].je_write = RSL_INVALID ;
+    domain_info[d].is_read = RSL_INVALID ;
+    domain_info[d].ie_read = RSL_INVALID ;
+    domain_info[d].js_read = RSL_INVALID ;
+    domain_info[d].je_read = RSL_INVALID ;
+
   }
 
   /* set up default decomposition fuctions */
@@ -274,5 +285,10 @@ RSL_MESH (nproc_m_p, nproc_n_p )
 RSL_OLD_OFFSETS ()
 {
   old_offsets = 1 ;
+}
+
+RSL_SET_REGULAR_DECOMP ()
+{
+  regular_decomp = 1 ;
 }
 

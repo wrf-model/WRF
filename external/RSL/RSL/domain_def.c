@@ -1331,6 +1331,7 @@ work_out_bdy( dom, mmax, nmax )
   }
 }
 
+#if COMMENTED_OUT
 RSL_DEACTIVATE_DOMAIN ( d_p )
   int_p d_p ;
 {
@@ -1377,6 +1378,7 @@ RSL_DEACTIVATE_DOMAIN ( d_p )
   domain_info[d].stencurs = 0 ;
 
 }
+#endif
 
 
 /* this returns the first unused domain descriptor; it checks

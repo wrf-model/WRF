@@ -153,7 +153,9 @@ GET_DOMAIN_DECOMP ( d_p, wk, nwk_p )
 
   if ( domain_info[d].decomposed != 1 )
   {
-    fprintf(fp,"not decomposed at this point in program") ;
+#if 0
+    fprintf(stderr,"not decomposed at this point in program") ;
+#endif
     return ;
   }
   m = domain_info[d].len_m ;

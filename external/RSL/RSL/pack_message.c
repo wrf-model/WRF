@@ -119,7 +119,14 @@ if ( xfp == NULL )
   for ( fld = msg->fldspecs ; fld != NULL ;  fld = fld->next )
   {
     elemsz = fld->elemsz ;
-    base = fld->base ;
+    if ( fld->type >= 100 )
+    {
+      base = (void *)get_base_for_index( fld->f90_table_index ) ;
+    }
+    else
+    {
+      base = fld->base ;
+    }
     switch (fld->strategy)
     {
     case MINNS_MAJEW_2D :		/* <MM> eg: psa(i,j) */
@@ -139,6 +146,7 @@ if ( xfp == NULL )
       case sizeof(int) :
 	stride = t1 ;
         ipd = (int *)(&buf[cursor]) ;
+fprintf(stderr,"pack_message base %lu\n",base) ;
 	ips = (int *)(base + (i + j*t0)*elemsz) ;
 	/* ipd must be aligned on 4 byte boundary on some machines
 	   for this to work -- a symptom of it not working would be
@@ -282,7 +290,14 @@ if ( xfp == NULL )
   for ( fld = msg->fldspecs ; fld != NULL ;  fld = fld->next )
   {
     elemsz = fld->elemsz ;
-    base = fld->base ;
+    if ( fld->type >= 100 )
+    {
+      base = (void *)get_base_for_index( fld->f90_table_index ) ;
+    }
+    else
+    {
+      base = fld->base ;
+    }
     switch (fld->strategy)
     {
     case MINNS_MAJEW_2D :		/* <MM> eg: psa(i,j) */

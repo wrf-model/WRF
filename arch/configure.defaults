@@ -7,6 +7,7 @@ LD		=	f90
 CC              =       cc
 SCC		=	$(CC)
 RWORDSIZE       =       4
+FCDEBUG         =       # -g
 FCBASEOPTS      =       -freeform -I. -w
 FCFLAGS		=	$(FCBASEOPTS)
 CFLAGS		=
@@ -45,7 +46,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" SFC="$(SFC)" FC="f90 $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" all )
+          make CC="$(CC)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="f90 $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
@@ -94,6 +95,7 @@ FC		=	f90
 SFC		=	$(FC)
 CC              =       cc
 SCC		=	$(CC)
+FCDEBUG         =       # -g
 FCBASEOPTS      =       -freeform -I. -w
 FCFLAGS		=	-freeform -I. -w
 CFLAGS		=
@@ -131,7 +133,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" SFC="$(SFC)" FC="f90 $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" all )
+          make CC="$(CC)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="f90 $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -220,7 +222,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" SFC="$(SFC)" FC="f90 $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" all )
+          make CC="$(CC)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="f90 $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
@@ -270,6 +272,7 @@ LD              =       f90 -n32 -mips4 -w
 CC              =       cc
 SCC		=	$(CC)
 CFLAGS          =       -n32 -mips4
+FCDEBUG         =       # -g
 FCBASEOPTS      =       -freeform -I. -w
 FCFLAGS         =       -freeform -I. -O3 -OPT:roundoff=3:IEEE_arithmetic=3 -OPT:fold_arith_limit=2001
 ARCHFLAGS       =       -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
@@ -307,7 +310,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" SFC="$(SFC)" FC="f90 $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" all )
+          make CC="$(CC)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="f90 $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -398,7 +401,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" SFC="$(SFC)" FC="f90 $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" all )
+          make CC="$(CC)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="f90 $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
@@ -509,7 +512,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" SFC="$(SFC)" FC="f90 $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" all )
+          make CC="$(CC)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="f90 $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
@@ -611,7 +614,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" SFC="$(SFC)" FC="$(FC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP)" all )
+          make CC="$(CC)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP)" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
@@ -742,7 +745,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" SFC="$(SFC)" FC="$(FC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP)" all )
+          make CC="$(CC)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP)" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
@@ -856,7 +859,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="$(FC) $(FCBASEOPTS)" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(FCBASEOPTS)" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
@@ -972,7 +975,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="f90 $(FCDEBUG) -cpp -free" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="f90 $(FCDEBUG) -cpp -free" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
@@ -1064,7 +1067,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="$(FC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(FCDEBUG) -qarch=auto -qzerosize" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
@@ -1174,7 +1177,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="$(FC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(FCDEBUG) -qarch=auto -qzerosize" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
@@ -1261,7 +1264,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
@@ -1367,7 +1370,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
@@ -1476,7 +1479,7 @@ wrfio_phdf5 :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
@@ -1585,7 +1588,7 @@ wrfio_phdf5 :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
@@ -1693,7 +1696,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
@@ -1820,7 +1823,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
@@ -1934,7 +1937,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
@@ -2068,7 +2071,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
@@ -2196,7 +2199,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
@@ -2302,7 +2305,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
@@ -2412,7 +2415,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
@@ -2533,7 +2536,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="f90 $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="f90 $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
@@ -2651,7 +2654,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="f90 $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="f90 $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
@@ -2761,7 +2764,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="f90 $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="f90 $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
@@ -2879,7 +2882,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="f90 $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="f90 $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
@@ -2999,7 +3002,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
@@ -3121,7 +3124,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
@@ -3243,7 +3246,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
@@ -3365,7 +3368,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="f90 $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="f90 $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
@@ -3484,7 +3487,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
@@ -3608,7 +3611,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
@@ -3728,7 +3731,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
@@ -3822,7 +3825,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="$(FC) $(FCDEBUG) $(FCBASENOINL) -w" \
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(FCDEBUG) $(FCBASENOINL) -w" \
           TRADFLAG="-traditional" all )
 
 wrfio_grib1 : 
@@ -3914,7 +3917,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="$(FC) $(FCDEBUG) $(FCBASENOINL) -w" \
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(FCDEBUG) $(FCBASENOINL) -w" \
           TRADFLAG="-traditional" all )
 
 wrfio_grib1 : 
@@ -4018,7 +4021,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="$(FC) $(FCDEBUG) $(FCBASENOINL) -w" \
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(FCDEBUG) $(FCBASENOINL) -w" \
           TRADFLAG="-traditional" all )
 
 wrfio_grib1 : 
@@ -4076,6 +4079,7 @@ RWORDSIZE       =       4
 CFLAGS          =
 FCFLAGS         =       -Free -X9 -Am
 FCFLAGS         =       -Free -X9 -Sw -Wv,-Of,-te,-ilfunc,-noalias,-m3,-P255 -Oe,-P -Kfast -Am
+FCDEBUG         =       # -g
 FCBASEOPTS      =       $(FCFLAGS)
 EXTRAMODULES    =       
 ARCHFLAGS       = CONFIGURE_NETCDF_FLAG -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4  -DTRIEDNTRUE   \
@@ -4114,6 +4118,7 @@ SCC		=	$(CC)
 RWORDSIZE       =       8
 CFLAGS          =
 FCFLAGS		=	-f free -N 255 -I.
+FCDEBUG         =       # -g
 FCBASEOPTS	=	$(FCFLAGS)
 EXTRAMODULES    =       
 ARCHFLAGS       =       -DCRAY CONFIGURE_NETCDF_FLAG -DIWORDSIZE=8 -DDWORDSIZE=8 -DRWORDSIZE=8 -DLWORDSIZE=8 -DTRIEDNTRUE   \
@@ -4200,7 +4205,7 @@ wrfio_grib1 :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" \
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" \
           TRADFLAG="-traditional" all )
 
 esmf_time : 
@@ -4307,7 +4312,7 @@ wrfio_grib1 :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -4407,7 +4412,7 @@ wrfio_grib1 :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" \
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" \
           TRADFLAG="-traditional" all )
 
 esmf_time : 
@@ -4514,7 +4519,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
@@ -4630,7 +4635,7 @@ wrfio_grib1 :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -4738,7 +4743,7 @@ wrfio_grib1 :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -4849,7 +4854,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="$(FC) $(FCDEBUG) $(FCFLAGS) -w" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(FCDEBUG) $(FCFLAGS) -w" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -4962,7 +4967,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="$(FC) $(FCDEBUG) $(FCFLAGS) -w" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(FCDEBUG) $(FCFLAGS) -w" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -5070,7 +5075,7 @@ wrfio_grib1 :
 
 wrfio_int :  io_flags
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" \
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" \
           TRADFLAG="-traditional" all )
 
 esmf_time : 
@@ -5177,7 +5182,7 @@ wrfio_nf :  io_flags
 
 wrfio_int :  io_flags
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
@@ -5292,7 +5297,7 @@ wrfio_grib1 :
 
 wrfio_int : io_flags
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -5408,7 +5413,7 @@ wrfio_grib1 :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="$(FC) $(FCDEBUG) $(FCFLAGS) -w" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(FCDEBUG) $(FCFLAGS) -w" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -5521,7 +5526,7 @@ wrfio_grib1 :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="efc -Vaxlib -I/usr/local/vmi/mpich/include $(FCDEBUG) $(FCFLAGS) -w" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="efc -Vaxlib -I/usr/local/vmi/mpich/include $(FCDEBUG) $(FCFLAGS) -w" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -5630,7 +5635,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="efc -Vaxlib -I/usr/local/vmi/mpich/include $(FCDEBUG) $(FCFLAGS) -w" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="efc -Vaxlib -I/usr/local/vmi/mpich/include $(FCDEBUG) $(FCFLAGS) -w" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -5681,6 +5686,7 @@ CC              =       icc
 SCC		=	$(CC)
 SFC		=	$(FC)
 RWORDSIZE       =       4
+FCDEBUG         =       # -g
 FCBASEOPTS      =       -w -FR -cm -I. -Vaxlib -convert big_endian -mp
 FCOPTIM		=	-O2
 FCFLAGS		=	$(FCOPTIM) $(FCBASEOPTS) $(OMP)
@@ -5723,7 +5729,7 @@ wrfio_grib1 :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="$(FC) $(FCDEBUG) $(FCFLAGS) -w" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(FCDEBUG) $(FCFLAGS) -w" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -5841,7 +5847,7 @@ wrfio_grib1 :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -5943,7 +5949,7 @@ wrfio_grib1 :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" \
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" \
           TRADFLAG="-traditional" all )
 
 esmf_time : 
@@ -6053,7 +6059,7 @@ wrfio_grib1 :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -6164,7 +6170,7 @@ wrfio_grib1 :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -6249,6 +6255,7 @@ FCFLAGS		=	-w -Ep -C ssafe \
 			-sx6 -USX -ew -D$(RUNTIME_SYSTEM) -I$(LIBINCLUDE) -I../inc -f4 
 		#	-Wf"-init stack=zero heap=zero" 
 		#         -Wf"-L transform fmtlist summary stdout" -g
+FCDEBUG         =       # -g
 FCBASEOPTS	=	$(FCFLAGS) -w
 
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  \
@@ -6302,7 +6309,7 @@ wrfio_nf :
 
 wrfio_int :
 	( cd ../external/io_int ; \
-	  make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="$(FC) $(FCFLAGS)" all )
+	  make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(FCFLAGS)" all )
 
 esmf_time :
 	( cd ../external/esmf_time_f90 ;\
@@ -6438,7 +6445,7 @@ wrfio_nf :
 wrfio_int : 
 	( cd ../external/io_int ; \
           make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" TRADFLAG="-traditional" \
-          SFC="$(SFC)" FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
+          SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
@@ -6572,7 +6579,7 @@ wrfio_nf :
 wrfio_int : 
 	( cd ../external/io_int ; \
           make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" TRADFLAG="-traditional" \
-          SFC="$(SFC)" FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
+          SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
@@ -6690,7 +6697,7 @@ wrfio_nf :
 wrfio_int : 
 	( cd ../external/io_int ; \
           make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" TRADFLAG="-traditional" \
-          SFC="$(SFC)" FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
+          SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
@@ -6802,7 +6809,7 @@ wrfio_nf :
 wrfio_int : 
 	( cd ../external/io_int ; \
           make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" TRADFLAG="-traditional" \
-          SFC="$(SFC)" FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
+          SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
@@ -6872,6 +6879,7 @@ X1_CROSS_COMP = "cc"
 X1_CROSS_CFLG = "-hcommand"
 CC_TOOLS        = 	$(X1_CROSS_COMP) $(X1_CROSS_CFLG)
 
+FCDEBUG         =       # -g
 FCBASEOPTS      =       -f free -N 255 -I. -Oscalar1 -Ovector0 -Ostream0 -x omp
 FCFLAGS         =       -f free -N 255  -I. -Ofp3 -O3 -x omp -Ogen_private_callee
 FCFLAGS2        =       -f free -N 255  -I. -Ofp2 -O1 -x omp -Ogen_private_callee
@@ -6931,7 +6939,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP) -Dcrayx1" SFC="$(SFC)" FC="$(FC) -f free -N 255" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP) -Dcrayx1" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) -f free -N 255" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -7007,6 +7015,7 @@ X1_CROSS_COMP = "cc"
 X1_CROSS_CFLG = "-hcommand"
 CC_TOOLS        = 	$(X1_CROSS_COMP) $(X1_CROSS_CFLG)
 
+FCDEBUG         =       # -g
 FCBASEOPTS      =       -f free -N 255 -I. -Oscalar1 -Ovector0 -Ostream0 -x csd -Ossp
 FCFLAGS         =       -f free -N 255  -I. -Ofp3 -O3 -x csd -Ossp
 FCFLAGS2        =       -f free -N 255  -I. -Oipa1 -Ofp2 -x csd -O3 -Ossp
@@ -7064,7 +7073,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP) -Dcrayx1" SFC="$(SFC)" FC="$(FC) -f free -N 255 -Ossp" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP) -Dcrayx1" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) -f free -N 255 -Ossp" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -7164,7 +7173,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="f90 $(FCDEBUG) $(FCFLAGS) -I../../inc " all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="f90 $(FCDEBUG) $(FCFLAGS) -I../../inc " all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -7257,7 +7266,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="f90 $(FCDEBUG) $(FCFLAGS) -I../../inc " all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="f90 $(FCDEBUG) $(FCFLAGS) -I../../inc " all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -7347,7 +7356,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="f90 $(FCDEBUG) $(FCFLAGS) -I../../inc " all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="f90 $(FCDEBUG) $(FCFLAGS) -I../../inc " all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -7433,7 +7442,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="f90 $(FCDEBUG) $(FCFLAGS) -I../../inc " all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="f90 $(FCDEBUG) $(FCFLAGS) -I../../inc " all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -7519,7 +7528,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="f90 $(FCDEBUG) $(FCFLAGS) -I../../inc " all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="f90 $(FCDEBUG) $(FCFLAGS) -I../../inc " all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -7615,7 +7624,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-	make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="$(FC) $(FCDEBUG) $(FCFLAGS) -I../../inc " all )
+	make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(FCDEBUG) $(FCFLAGS) -I../../inc " all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -7715,7 +7724,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-	make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="$(FC) $(FCDEBUG) $(FCFLAGS) -I../../inc " all )
+	make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(FCDEBUG) $(FCFLAGS) -I../../inc " all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -7814,7 +7823,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="$(FC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(FCDEBUG) -qarch=auto -qzerosize" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
@@ -7932,7 +7941,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC)" FC="$(FC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(FCDEBUG) -qarch=auto -qzerosize" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \

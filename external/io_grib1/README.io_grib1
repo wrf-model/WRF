@@ -5,6 +5,9 @@ Author: Todd Hutchinson
         thutchinson@wsi.com
 
 5 August 2004
+8 February 2005 - Updated by Todd Hutchinson.  Section V was updated to 
+                  clarify the description of the decimal scale factor field 
+                  in the gribmap file.
 
 I. Introduction
 
@@ -75,13 +78,23 @@ V. Details
                     in the WRF Registry.
           "DECSCL" is the decimal scale factor.  It is the number of digits
                     to the right of the decimal point that will be saved in
-                    the data.
+                    the output data.  This number may be less than zero, in 
+                    which case, the precision of data will be truncated the 
+                    specified number of digits to the left of the decimal 
+                    point. (i.e., -2 indicates that only digits greater than 
+                    the tens column will be saved).
       Example:
            1:PRES:Pressure [Pa]:P,PSFC:1
-          In this example, GRIB parameter 1, abbreviated PRES, is 
-             pressure in pascals.  WRF variables P and PSFC (as listed in the
-             WRF Registry) will be encoded as PRES.  The data will have
-             one decimal of precision, i.e., 100000.1 Pa.
+             In this example, GRIB parameter 1, abbreviated PRES, is 
+                pressure in pascals.  WRF variables P and PSFC (as listed in
+                the WRF Registry) will be encoded as PRES.  The data will have
+                one decimals of precision, i.e., 101323.1 Pa.
+           62:NCPCP:Large scale precipitation [kg/m^2]:NCPCP:2
+             In this example, GRIB parameter 62, abbreviated NCPCP, is 
+                Large-scale precipitation.  The WRF variables NCPCP (as listed 
+                in the WRF Registry) will be encoded as NCPCP.  The data will 
+                have two decimals of precision, i.e., 1.23 kg/m^2 (i.e., 
+                1.23 mm).
 
       Note:
           For GRIB encoding, parameters 1-127 are the standard parameters

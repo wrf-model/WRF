@@ -1677,7 +1677,8 @@ SUBROUTINE med_read_wrf_chem_bioemiss ( grid , config_flags )
            CALL wrf_error_fatal( TRIM( message ) )
         ENDIF
 
-         WRITE(message,*)'mediation_integrate: med_read_wrf_chem_bioemissions: Read biogenic emissions at time ',TRIM(current_date_char)
+         WRITE(message,*)'mediation_integrate: med_read_wrf_chem_bioemissions: Read biogenic emissions at time ',&
+         TRIM(current_date_char)
          CALL wrf_message( TRIM(message) )
 
          CALL wrf_debug (100 , 'mediation_integrate: calling input_aux_model_input4' )

@@ -1,13 +1,25 @@
-!/****************************************************************************
-!* NCSA HDF								    *
-!*     *
-!* National Center for Supercomputing Applications			    *
-!* University of Illinois at Urbana-Champaign				    *
-!* 605 E. Springfield, Champaign IL 61820				    *
-!*									    *
-!* For conditions of distribution and use, see the accompanying		    *
-!* hdf/COPYING file.							    *
-!*									    *
+!/***************************************************************************
+!* The HDF5 WRF IO module was written by the the HDF Group at NCSA, the     *
+!* National Center for Supercomputing Applications.                         *
+!*     HDF Group                                                            *
+!*     National Center for Supercomputing Applications                      *
+!*     University of Illinois at Urbana-Champaign                           *
+!*     605 E. Springfield, Champaign IL 61820                               *
+!*     http://hdf.ncsa.uiuc.edu/                                            *
+!*                                                                          *
+!* Copyright 2004 by the Board of Trustees, University of Illinois,         *
+!*                                                                          *
+!* Redistribution or use of this IO module, with or without modification,   *
+!* is permitted for any purpose, including commercial  purposes.            *
+!*                                                                          *
+!* This software is an unsupported prototype.  Use at your own risk.        *
+!*     http://hdf.ncsa.uiuc.edu/apps/WRF-ROMS                               *
+!*                                                                          *
+!* This work was funded by the MEAD expedition at the National Center       *
+!* for Supercomputing Applications, NCSA.  For more information see:        *
+!*     http://www.ncsa.uiuc.edu/expeditions/MEAD                            *
+!*                                                                          *
+!*                                                                          *
 !****************************************************************************/
 
 

@@ -1068,13 +1068,17 @@ SUBROUTINE med_latbound_in ( grid , config_flags )
 
 #include <wrf_io_flags.h>
 
+write(0,*)'in med_latbound_in '
+
    IF ( grid%id .EQ. 1 .AND. config_flags%specified ) THEN
 
      IF ( ( lbc_read_time( grid%current_time ) ) .AND. &
-          ( grid%current_time + grid%step_time .GE. grid%stop_time ) ) THEN
+          ( grid%current_time + grid%step_time .GE. grid%stop_time ) .AND. &
+          ( grid%current_time .NE. grid%start_time ) ) THEN
        CALL wrf_debug( 100 , 'med_latbound_in: Skipping attempt to read lateral boundary file during last time step ' )
 
      ELSE IF ( ESMF_AlarmIsRinging( grid%alarms( BOUNDARY_ALARM ), rc=rc ) ) THEN
+write(0,*)'in med_latbound_in preparing to read'
        CALL ESMF_AlarmTurnOff( grid%alarms( BOUNDARY_ALARM ), rc=rc )
        IF ( wrf_dm_on_monitor() ) CALL start_timing
 

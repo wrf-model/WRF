@@ -642,7 +642,7 @@ integer myproc
                 SMSTOT, SFCRUNOFF,UDRUNOFF,ACSNOW,ACSNOM,       &
                 IVGTYP,ISLTYP,SMOIS,SMFR3D,                     &
                 SNOWH,SH2O,FNDSOILW, FNDSNOWH,                  &
-#if  ( WRF_NMM_CORE == 1 )
+#if  ( NMM_CORE == 1 )
                 Z0,XLAND,XICE,                                  &
 #else
                 ZNT,XLAND,XICE,                                 &

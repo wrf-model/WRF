@@ -43,6 +43,13 @@ PROGRAM real_data
    INTEGER :: ijds , ijde , spec_bdy_width
    INTEGER :: i , j , k , idts
 
+#ifdef DEREF_KLUDGE
+!  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
+   INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
+   INTEGER     :: sm31x, em31x, sm32x, em32x, sm33x, em33x
+   INTEGER     :: sm31y, em31y, sm32y, em32y, sm33y, em33y
+#endif
+
    CHARACTER (LEN=80)     :: message
 
    INTEGER :: start_year , start_month , start_day 
@@ -61,8 +68,9 @@ PROGRAM real_data
      END SUBROUTINE Setup_Timekeeping
    END INTERFACE
 
-
    !  Define the name of this program (program_name defined in module_domain)
+
+#include "deref_kludge.h"
 
    program_name = "REAL_NMM V2.0 PREPROCESSOR"
 
@@ -203,6 +211,16 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
 
    REAL :: gmt
    REAL :: t1,t2
+
+#ifdef DEREF_KLUDGE
+!  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
+   INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
+   INTEGER     :: sm31x, em31x, sm32x, em32x, sm33x, em33x
+   INTEGER     :: sm31y, em31y, sm32y, em32y, sm33y, em33y
+#endif
+
+#include "deref_kludge.h"
+
 
    grid%input_from_file = .true.
    grid%input_from_file = .false.
@@ -498,6 +516,16 @@ character *24 :: temp24 , temp24b
                                                 cwmbdy3dtemp2 , qbdy3dtemp2, &
                                                 q2bdy3dtemp2, pdbdy2dtemp2
    REAL :: t1,t2
+
+#ifdef DEREF_KLUDGE
+!  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
+   INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
+   INTEGER     :: sm31x, em31x, sm32x, em32x, sm33x, em33x
+   INTEGER     :: sm31y, em31y, sm32y, em32y, sm33y, em33y
+#endif
+
+#include "deref_kludge.h"
+
 
    !  Various sizes that we need to be concerned about.
 

@@ -39,17 +39,13 @@ CONTAINS
       INTEGER :: idum1, idum2
 
 #ifdef DEREF_KLUDGE
-      INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
+!  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
+   INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
+   INTEGER     :: sm31x, em31x, sm32x, em32x, sm33x, em33x
+   INTEGER     :: sm31y, em31y, sm32y, em32y, sm33y, em33y
 #endif
 
-#ifdef DEREF_KLUDGE
-      sm31             = grid%sm31
-      em31             = grid%em31
-      sm32             = grid%sm32
-      em32             = grid%em32
-      sm33             = grid%sm33
-      em33             = grid%em33
-#endif
+#include "deref_kludge.h"
 
       CALL nl_get_dyn_opt ( head_grid%id, dyn_opt )
       
@@ -170,6 +166,15 @@ CONTAINS
         REAL, PARAMETER:: THL=210.
         REAL, PARAMETER:: PLQ=70000.
 	REAL, PARAMETER:: ERAD=6371200.
+
+#ifdef DEREF_KLUDGE
+!  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
+   INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
+   INTEGER     :: sm31x, em31x, sm32x, em32x, sm33x, em33x
+   INTEGER     :: sm31y, em31y, sm32y, em32y, sm33y, em33y
+#endif
+
+#include "deref_kludge.h"
 
         if (ALLOCATED(ADUM2D)) DEALLOCATE(ADUM2D)
 

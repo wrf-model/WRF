@@ -63,6 +63,14 @@ SUBROUTINE med_read_nmm ( grid , config_flags , ntsd, dt_from_file, tstart_from_
    REAL :: dt_from_file
    REAL :: tstart_from_file, tend_from_file
    real :: dtx
+#ifdef DEREF_KLUDGE
+!  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
+   INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
+   INTEGER     :: sm31x, em31x, sm32x, em32x, sm33x, em33x
+   INTEGER     :: sm31y, em31y, sm32y, em32y, sm33y, em33y
+#endif
+
+
 
 
 !**********************************************************************
@@ -88,6 +96,7 @@ SUBROUTINE med_read_nmm ( grid , config_flags , ntsd, dt_from_file, tstart_from_
 !----------------------------------------------------------------------
 !**********************************************************************
 !----------------------------------------------------------------------
+#include "deref_kludge.h"
 #define COPY_IN
 #include <nmm_scalar_derefs.inc>
 #ifdef DM_PARALLEL

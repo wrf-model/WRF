@@ -124,6 +124,7 @@ SUBROUTINE med_initialdata_output ( grid , config_flags )
    CHARACTER (LEN=80)      :: rstname
    CHARACTER (LEN=80)      :: message
    CHARACTER (LEN=80)      :: inpname , bdyname
+   LOGICAL, EXTERNAL      :: wrf_dm_on_monitor
 
    !  Initialize the mother domain.
 
@@ -151,6 +152,13 @@ SUBROUTINE med_initialdata_output ( grid , config_flags )
      ENDIF
      CALL output_boundary ( id, grid , config_flags , ierr )
      CALL close_dataset ( id , config_flags , "DATASET=BOUNDARY" )
+
+   ELSE
+
+     ! Create a zero length wrfbdy file so regression scripts are happy
+     IF ( wrf_dm_on_monitor() ) THEN
+       CALL system ( 'touch wrfbdy_d01' )
+     ENDIF
  
    ENDIF
 

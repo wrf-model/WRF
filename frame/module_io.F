@@ -1288,7 +1288,7 @@ SUBROUTINE wrf_read_field ( DataHandle , DateStr , VarName , Field , FieldType ,
 #ifdef NETCDF
         CASE ( IO_NETCDF   )
 
-          CALL call_pkg_and_dist   ( ext_ncd_read_field, multi_files(io_form),                  &
+          CALL call_pkg_and_dist   ( ext_ncd_read_field, multi_files(io_form), .false. ,        &
                                      Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
                                      DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
                                      DomainStart , DomainEnd ,                                    &
@@ -1310,7 +1310,7 @@ SUBROUTINE wrf_read_field ( DataHandle , DateStr , VarName , Field , FieldType ,
 #endif
 #ifdef MCELIO
         CASE ( IO_MCEL   )
-          CALL collect_fld_and_call_pkg ( ext_mcel_read_field, multi_files(io_form),                  &
+          CALL call_pkg_and_dist   ( ext_mcel_read_field, multi_files(io_form), .true. ,         &
                                      Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
                                      DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
                                      DomainStart , DomainEnd ,                                    &
@@ -1320,7 +1320,7 @@ SUBROUTINE wrf_read_field ( DataHandle , DateStr , VarName , Field , FieldType ,
 #endif
 #ifdef HDF
         CASE ( IO_HDF )
-          CALL call_pkg_and_dist   ( ext_hdf_read_field, multi_files(io_form),                  &
+          CALL call_pkg_and_dist   ( ext_hdf_read_field, multi_files(io_form),  .false.,        &
                                      Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
                                      DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
                                      DomainStart , DomainEnd ,                                    &
@@ -1330,7 +1330,7 @@ SUBROUTINE wrf_read_field ( DataHandle , DateStr , VarName , Field , FieldType ,
 #endif
 #ifdef XXX
         CASE ( IO_XXX )
-          CALL call_pkg_and_dist   ( ext_xxx_read_field, multi_files(io_form),                  &
+          CALL call_pkg_and_dist   ( ext_xxx_read_field, multi_files(io_form), .false.,         &
                                      Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
                                      DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
                                      DomainStart , DomainEnd ,                                    &
@@ -1340,7 +1340,7 @@ SUBROUTINE wrf_read_field ( DataHandle , DateStr , VarName , Field , FieldType ,
 #endif
 #ifdef YYY
         CASE ( IO_YYY )
-          CALL call_pkg_and_dist   ( ext_yyy_read_field, multi_files(io_form),                  &
+          CALL call_pkg_and_dist   ( ext_yyy_read_field, multi_files(io_form), .false.,         &
                                      Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
                                      DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
                                      DomainStart , DomainEnd ,                                    &
@@ -1350,7 +1350,7 @@ SUBROUTINE wrf_read_field ( DataHandle , DateStr , VarName , Field , FieldType ,
 #endif
 #ifdef INTIO
         CASE ( IO_INTIO )
-          CALL call_pkg_and_dist   ( ext_int_read_field, multi_files(io_form),                  &
+          CALL call_pkg_and_dist   ( ext_int_read_field, multi_files(io_form), .false.,         &
                                      Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
                                      DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
                                      DomainStart , DomainEnd ,                                    &
@@ -2289,7 +2289,7 @@ END SUBROUTINE collect_generic_and_call_pkg
 
 !!!  Routines that call an I/O function and then distribute or replicate the result
 
-SUBROUTINE call_pkg_and_dist (       fcn, donotdist_arg,                                       &
+SUBROUTINE call_pkg_and_dist (       fcn, donotdist_arg, update_arg,                           &
                                      Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
                                      DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
                                      DomainStart , DomainEnd ,                                    &
@@ -2299,7 +2299,7 @@ SUBROUTINE call_pkg_and_dist (       fcn, donotdist_arg,                        
   IMPLICIT NONE
   include 'wrf_io_flags.h'
   EXTERNAL fcn
-  LOGICAL,        INTENT(IN)    :: donotdist_arg
+  LOGICAL,        INTENT(IN)    :: donotdist_arg, update_arg  ! update means collect old field update it and dist
   INTEGER ,       INTENT(IN)    :: Hndl
   CHARACTER*(*) :: DateStr
   CHARACTER*(*) :: VarName
@@ -2333,7 +2333,7 @@ SUBROUTINE call_pkg_and_dist (       fcn, donotdist_arg,                        
 
   ELSE IF ((FieldType .EQ. WRF_DOUBLE)  .OR. (FieldType .EQ. WRF_REAL)) THEN
 
-     CALL call_pkg_and_dist_real ( fcn,                                        &
+     CALL call_pkg_and_dist_real ( fcn, update_arg,                            &
                Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
                DomainDesc , MemoryOrder , Stagger , DimNames ,              &
                DomainStart , DomainEnd ,                                    &
@@ -2343,7 +2343,7 @@ SUBROUTINE call_pkg_and_dist (       fcn, donotdist_arg,                        
 
   ELSE IF ( FieldType .EQ. WRF_INTEGER ) THEN
 
-     CALL call_pkg_and_dist_int ( fcn,                                        &
+     CALL call_pkg_and_dist_int ( fcn, update_arg,                            &
                Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
                DomainDesc , MemoryOrder , Stagger , DimNames ,              &
                DomainStart , DomainEnd ,                                    &
@@ -2355,7 +2355,7 @@ SUBROUTINE call_pkg_and_dist (       fcn, donotdist_arg,                        
   RETURN
 END SUBROUTINE call_pkg_and_dist
 
-SUBROUTINE call_pkg_and_dist_real (  fcn,                                                         &
+SUBROUTINE call_pkg_and_dist_real (  fcn, update_arg,                                             &
                                      Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
                                      DomainDesc , MemoryOrder , Stagger , DimNames ,              &
                                      DomainStart , DomainEnd ,                                    &
@@ -2365,6 +2365,7 @@ SUBROUTINE call_pkg_and_dist_real (  fcn,                                       
   IMPLICIT NONE
   EXTERNAL fcn
   INTEGER ,       INTENT(IN)    :: Hndl
+  LOGICAL ,       INTENT(IN)    :: update_arg
   CHARACTER*(*) :: DateStr
   CHARACTER*(*) :: VarName
   REAL    ,       INTENT(INOUT)    :: Field(*)
@@ -2382,7 +2383,7 @@ SUBROUTINE call_pkg_and_dist_real (  fcn,                                       
   REAL globbuf ( (DomainEnd(1)-DomainStart(1)+2)*(DomainEnd(2)-DomainStart(2)+2)*(DomainEnd(3)-DomainStart(3)+2) )
 
   globbuf = 0.
-  CALL call_pkg_and_dist_generic (   fcn, globbuf ,                                               &
+  CALL call_pkg_and_dist_generic (   fcn, globbuf , update_arg,                                    &
                                      Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
                                      DomainDesc , MemoryOrder , Stagger , DimNames ,              &
                                      DomainStart , DomainEnd ,                                    &
@@ -2392,7 +2393,7 @@ SUBROUTINE call_pkg_and_dist_real (  fcn,                                       
   RETURN
 END SUBROUTINE call_pkg_and_dist_real
 
-SUBROUTINE call_pkg_and_dist_int  (  fcn,                                                         &
+SUBROUTINE call_pkg_and_dist_int  (  fcn, update_arg ,                                            &
                                      Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
                                      DomainDesc , MemoryOrder , Stagger , DimNames ,              &
                                      DomainStart , DomainEnd ,                                    &
@@ -2402,6 +2403,7 @@ SUBROUTINE call_pkg_and_dist_int  (  fcn,                                       
   IMPLICIT NONE
   EXTERNAL fcn
   INTEGER ,       INTENT(IN)    :: Hndl
+  LOGICAL ,       INTENT(IN)    :: update_arg
   CHARACTER*(*) :: DateStr
   CHARACTER*(*) :: VarName
   REAL    ,       INTENT(INOUT)    :: Field(*)
@@ -2420,7 +2422,7 @@ SUBROUTINE call_pkg_and_dist_int  (  fcn,                                       
 
   globbuf = 0
 
-  CALL call_pkg_and_dist_generic (   fcn, globbuf ,                                               &
+  CALL call_pkg_and_dist_generic (   fcn, globbuf , update_arg ,                                  &
                                      Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
                                      DomainDesc , MemoryOrder , Stagger , DimNames ,              &
                                      DomainStart , DomainEnd ,                                    &
@@ -2430,7 +2432,7 @@ SUBROUTINE call_pkg_and_dist_int  (  fcn,                                       
   RETURN
 END SUBROUTINE call_pkg_and_dist_int
 
-SUBROUTINE call_pkg_and_dist_generic (   fcn, globbuf ,                                               &
+SUBROUTINE call_pkg_and_dist_generic (   fcn, globbuf , update_arg ,                                  &
                                      Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
                                      DomainDesc , MemoryOrder , Stagger , DimNames ,              &
                                      DomainStart , DomainEnd ,                                    &
@@ -2444,6 +2446,7 @@ SUBROUTINE call_pkg_and_dist_generic (   fcn, globbuf ,                         
   EXTERNAL fcn
   REAL, DIMENSION(*) ::  globbuf
   INTEGER ,       INTENT(IN)    :: Hndl
+  LOGICAL ,       INTENT(IN)    :: update_arg
   CHARACTER*(*) :: DateStr
   CHARACTER*(*) :: VarName
   REAL                           :: Field(*)
@@ -2520,6 +2523,26 @@ SUBROUTINE call_pkg_and_dist_generic (   fcn, globbuf ,                         
   END SELECT
 
   IF ( distributed_field ) THEN
+
+! added 8/2004 for interfaces, like MCEL, that want the old values so they can be updated
+    IF ( update_arg ) THEN
+      SELECT CASE (TRIM(MemOrd))
+        CASE (  'xzy','zxy','xyz','yxz','xy','yx' )
+          IF ( FieldType .EQ. WRF_DOUBLE .OR. FieldType .EQ. WRF_REAL ) THEN
+            CALL wrf_patch_to_global_real ( Field  , globbuf , DomainDesc, Stagger, MemOrd ,             &
+               DomainStart(1), DomainEnd(1), DomainStart(2), DomainEnd(2), DomainStart(3), DomainEnd(3), &
+               MemoryStart(1), MemoryEnd(1), MemoryStart(2), MemoryEnd(2), MemoryStart(3), MemoryEnd(3), &
+               PatchStart(1) , PatchEnd(1) , PatchStart(2) , PatchEnd(2) , PatchStart(3) , PatchEnd(3) )
+          ELSE IF ( FieldType .EQ. WRF_INTEGER ) THEN
+            CALL wrf_patch_to_global_integer ( Field  , globbuf , DomainDesc, Stagger, MemOrd ,             &
+               DomainStart(1), DomainEnd(1), DomainStart(2), DomainEnd(2), DomainStart(3), DomainEnd(3), &
+               MemoryStart(1), MemoryEnd(1), MemoryStart(2), MemoryEnd(2), MemoryStart(3), MemoryEnd(3), &
+               PatchStart(1) , PatchEnd(1) , PatchStart(2) , PatchEnd(2) , PatchStart(3) , PatchEnd(3) )
+          ENDIF
+        CASE DEFAULT
+      END SELECT
+    ENDIF
+
     IF ( wrf_dm_on_monitor()) THEN
       CALL fcn ( Hndl , DateStr , VarName , globbuf , FieldType , Comm , IOComm , &
                  DomainDesc , MemoryOrder , Stagger , DimNames ,                  &

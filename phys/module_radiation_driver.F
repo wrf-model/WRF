@@ -348,8 +348,11 @@ CONTAINS
                    ims,ime, jms,jme, kms,kme,              &
                    its,ite, jts,jte, kts,kte               )
 
+!pjj/cray  Cray X1 cannot print from threaded region
+#ifndef crayx1
    WRITE(wrf_err_message,*)'SOLCON=',SOLCON,DECLIN,XTIME
    CALL wrf_debug(50,wrf_err_message)
+#endif
 
    lwrad_select: SELECT CASE(config_flags%ra_lw_physics)
 
@@ -500,6 +503,7 @@ CONTAINS
    ENDIF
 
       ENDDO
+      !$OMP END PARALLEL DO
 
    ENDIF
 
@@ -554,10 +558,13 @@ CONTAINS
           COS(2*RJUL)+0.000077*SIN(2*RJUL)
    SOLCON=1370.*ECCFAC
    
+!pjj/cray  Cray X1 cannot print from threaded region
+#ifndef crayx1
    write(wrf_err_message,10)DECDEG,SOLCON
 10 FORMAT(1X,'*** SOLAR DECLINATION ANGLE = ',F6.2,' DEGREES.',     &
         ' SOLAR CONSTANT = ',F8.2,' W/M**2 ***')
    CALL wrf_debug (50, wrf_err_message)
+#endif
 
    END SUBROUTINE radconst
 

@@ -339,7 +339,7 @@ CONTAINS
       ENDDO
 
    ENDDO
-
+   !$OMP END PARALLEL DO
 !
   !$OMP PARALLEL DO   &
   !$OMP PRIVATE ( ij, i,j,k )
@@ -403,7 +403,7 @@ CONTAINS
    END SELECT pbl_select
 
    ENDDO
-
+   !$OMP END PARALLEL DO
 
    ENDIF
 

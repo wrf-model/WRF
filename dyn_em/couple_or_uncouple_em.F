@@ -245,6 +245,7 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple, &
      ENDDO
 
    ENDDO   ! j loop
+   !$OMP END PARALLEL DO
 
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( i,j,k )
@@ -255,6 +256,7 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple, &
      ENDDO
      ENDDO
    ENDDO
+   !$OMP END PARALLEL DO
 
 #ifdef DM_PARALLEL
 # include "HALO_EM_COUPLE_B.inc"

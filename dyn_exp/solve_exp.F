@@ -120,6 +120,7 @@ USE module_exp
                               grid%j_start(ij), grid%j_end(ij),    &
                               k_start, k_end                       )
      END DO
+     !$OMP END PARALLEL DO
 
 ! Update x_1 for next go 'round
 
@@ -134,6 +135,7 @@ USE module_exp
                               grid%j_start(ij), grid%j_end(ij),    &
                               k_start, k_end                       )
      END DO
+     !$OMP END PARALLEL DO
 
 #define COPY_OUT
 #include <exp_scalar_derefs.inc>

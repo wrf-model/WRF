@@ -264,6 +264,7 @@ BENCH_START(step_prep_tim)
                            k_start, k_end                   )
 
    END DO
+   !$OMP END PARALLEL DO
 BENCH_END(step_prep_tim)
 
 #ifdef DM_PARALLEL
@@ -335,6 +336,7 @@ BENCH_START(set_phys_bc_tim)
                                k_start, k_end                )
 
    END DO
+   !$OMP END PARALLEL DO
 BENCH_END(set_phys_bc_tim)
 
     rk_step_is_one : IF (rk_step == 1) THEN ! only need to initialize diffusion tendencies
@@ -360,6 +362,7 @@ BENCH_START(init_zero_tend_tim)
                                   k_start, k_end                   )
 
      END DO
+   !$OMP END PARALLEL DO
 BENCH_END(init_zero_tend_tim)
 
 #ifdef DM_PARALLEL
@@ -407,6 +410,7 @@ BENCH_START(phy_prep_tim)
                          grid%j_start(ij), grid%j_end(ij),       &
                          k_start, k_end                         )
       ENDDO
+      !$OMP END PARALLEL DO
 BENCH_END(phy_prep_tim)
 
 !  physics to implement
@@ -546,6 +550,7 @@ BENCH_START(cal_phy_tend)
                      k_start    , min(k_end,kde-1)                     )
 
       ENDDO
+      !$OMP END PARALLEL DO
 BENCH_END(cal_phy_tend)
 
 ! tke diffusion
@@ -567,6 +572,7 @@ BENCH_START(comp_diff_metrics_tim)
                                       grid%j_start(ij), grid%j_end(ij),      &
                                       k_start    , k_end                    )
        ENDDO
+       !$OMP END PARALLEL DO
 BENCH_END(comp_diff_metrics_tim)
 
 #ifdef DM_PARALLEL
@@ -640,6 +646,7 @@ BENCH_START(deform_div_tim)
                                     grid%j_start(ij), grid%j_end(ij),    &
                                     k_start    , k_end                  )
        ENDDO
+       !$OMP END PARALLEL DO
 BENCH_END(deform_div_tim)
 
 
@@ -673,6 +680,7 @@ BENCH_START(calc_tke_tim)
                                 grid%j_start(ij), grid%j_end(ij),            &
                                 k_start    , k_end                          )
        ENDDO
+       !$OMP END PARALLEL DO
 BENCH_END(calc_tke_tim)
 
 #ifdef DM_PARALLEL
@@ -705,6 +713,7 @@ BENCH_START(phy_bc_tim)
                             grid%j_start(ij), grid%j_end(ij),                      &
                             k_start    , k_end                           )
      ENDDO
+     !$OMP END PARALLEL DO
 BENCH_END(phy_bc_tim)
 
 #ifdef DM_PARALLEL
@@ -771,6 +780,7 @@ BENCH_START(update_phy_ten_tim)
                           k_start, k_end                               )
 
       END DO
+      !$OMP END PARALLEL DO
 BENCH_END(update_phy_ten_tim)
 
      IF( diff_opt .eq. 2 .and. km_opt .eq. 2 ) THEN
@@ -795,6 +805,7 @@ BENCH_START(tke_rhs_tim)
                           k_start    , k_end                         )
 
        ENDDO
+       !$OMP END PARALLEL DO
 BENCH_END(tke_rhs_tim)
 
      ENDIF
@@ -829,6 +840,7 @@ BENCH_START(vert_diff_tim)
                                       k_start    , k_end                        )
 
          ENDDO
+         !$OMP END PARALLEL DO
 BENCH_END(vert_diff_tim)
 
        ENDIF
@@ -858,6 +870,7 @@ BENCH_START(hor_diff_tim)
                                       grid%j_start(ij), grid%j_end(ij),      &
                                       k_start    , k_end                    )
        ENDDO
+       !$OMP END PARALLEL DO
 BENCH_END(hor_diff_tim)
 
      ENDIF
@@ -893,6 +906,7 @@ BENCH_START(rk_tend_tim)
                          grid%j_start(ij), grid%j_end(ij),                &
                          k_start, k_end                                  )
    END DO
+   !$OMP END PARALLEL DO
 BENCH_END(rk_tend_tim)
 
 BENCH_START(relax_bdy_dry_tim)
@@ -954,6 +968,7 @@ BENCH_START(relax_bdy_dry_tim)
      ENDIF
 
    END DO
+   !$OMP END PARALLEL DO
 BENCH_END(relax_bdy_dry_tim)
 
 !<DESCRIPTION>
@@ -1034,6 +1049,7 @@ BENCH_START(small_step_prep_tim)
 
 
    ENDDO
+   !$OMP END PARALLEL DO
 BENCH_END(small_step_prep_tim)
 
 
@@ -1156,6 +1172,7 @@ BENCH_START(set_phys_bc2_tim)
                                  grid%j_start(ij), grid%j_end(ij) )
 
     END DO
+    !$OMP END PARALLEL DO
 BENCH_END(set_phys_bc2_tim)
 
    small_steps : DO iteration = 1 , number_of_small_timesteps
@@ -1215,6 +1232,7 @@ BENCH_START(spec_bdy_uv_tim)
 BENCH_END(spec_bdy_uv_tim)
 
       END DO
+      !$OMP END PARALLEL DO
 
 #ifdef DM_PARALLEL
 !
@@ -1384,6 +1402,7 @@ BENCH_START(cald_p_rho_tim)
 BENCH_END(cald_p_rho_tim)
 
    ENDDO
+   !$OMP END PARALLEL DO
 
 #ifdef DM_PARALLEL
 !
@@ -1461,6 +1480,7 @@ BENCH_START(phys_bc_tim)
                                  grid%j_start(ij), grid%j_end(ij) )
 
       END DO
+      !$OMP END PARALLEL DO
 BENCH_END(phys_bc_tim)
 
    END DO small_steps
@@ -1501,6 +1521,7 @@ BENCH_START(small_step_finish_tim)
 BENCH_END(small_step_finish_tim)
 
    END DO
+   !$OMP END PARALLEL DO
 
 #ifdef DM_PARALLEL
 !
@@ -1732,6 +1753,7 @@ BENCH_START(rlx_bdy_scalar_tim)
 BENCH_END(rlx_bdy_scalar_tim)
 
    ENDDO moist_tile_loop_1
+   !$OMP END PARALLEL DO
 
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij )
@@ -1773,6 +1795,7 @@ BENCH_START(flow_depbdy_tim)
 BENCH_END(flow_depbdy_tim)
 
    ENDDO moist_tile_loop_2
+   !$OMP END PARALLEL DO
 
    ENDDO moist_variable_loop
 
@@ -1818,6 +1841,7 @@ BENCH_START(tke_adv_tim)
                            k_start    , k_end               )
 
    ENDDO tke_tile_loop_1
+   !$OMP END PARALLEL DO
 
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij )
@@ -1860,6 +1884,7 @@ BENCH_START(tke_adv_tim)
                               k_start, k_end                               )
      ENDIF
    ENDDO tke_tile_loop_2
+   !$OMP END PARALLEL DO
 
    END IF TKE_advance
 BENCH_END(tke_adv_tim)
@@ -1896,6 +1921,7 @@ BENCH_END(tke_adv_tim)
                              k_start    , k_end               )
 
    ENDDO chem_tile_loop_1
+   !$OMP END PARALLEL DO
 
 
    !$OMP PARALLEL DO   &
@@ -1933,6 +1959,7 @@ BENCH_END(tke_adv_tim)
 
 
    ENDDO chem_tile_loop_2
+   !$OMP END PARALLEL DO
 
    ENDDO chem_variable_loop
 
@@ -1971,6 +1998,7 @@ BENCH_START(diag_w_tim)
 BENCH_END(diag_w_tim)
 
    ENDDO
+   !$OMP END PARALLEL DO
 
 !  Reset the boundary conditions if there is another corrector step.
 !  (rk_step < rk_order), else we'll handle it at the end of everything
@@ -2081,6 +2109,7 @@ BENCH_START(bc_end_tim)
       END IF
 
     END DO tile_bc_loop_1
+   !$OMP END PARALLEL DO
 BENCH_END(bc_end_tim)
 
 
@@ -2170,6 +2199,7 @@ BENCH_START(advance_ppt_tim)
 BENCH_END(advance_ppt_tim)
 
    ENDDO
+   !$OMP END PARALLEL DO
 
 !<DESCRIPTION>
 !<pre>
@@ -2217,6 +2247,7 @@ BENCH_START(moist_physics_prep_tim)
                                    k_start    , k_end               )
 BENCH_END(moist_physics_prep_tim)
    END DO scalar_tile_loop_1a
+   !$OMP END PARALLEL DO
 
        CALL wrf_debug ( 200 , ' call microphysics_driver' )
 
@@ -2277,6 +2308,7 @@ BENCH_START(moist_phys_end_tim)
                         k_start    , k_end                     )
 
    END DO scalar_tile_loop_1b
+   !$OMP END PARALLEL DO
 BENCH_END(moist_phys_end_tim)
 
   ENDIF
@@ -2319,6 +2351,7 @@ BENCH_START(time_filt_tim)
 BENCH_END(time_filt_tim)
 
     ENDDO
+   !$OMP END PARALLEL DO
 
     END IF
 
@@ -2388,10 +2421,10 @@ BENCH_END(time_filt_tim)
 
 !  now set physical b.c on a patch
 
+BENCH_START(bc_2d_tim)
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij )
 
-BENCH_START(bc_2d_tim)
    tile_bc_loop_2: DO ij = 1 , grid%num_tiles
 
      CALL wrf_debug ( 200 , ' call set_phys_bc_dry_2' )
@@ -2462,6 +2495,7 @@ BENCH_START(bc_2d_tim)
      END DO chem_species_bdy_loop_2
 
    END DO tile_bc_loop_2
+   !$OMP END PARALLEL DO
 BENCH_END(bc_2d_tim)
 
    IF( config_flags%specified .or. config_flags%nested ) THEN 

@@ -1,4 +1,4 @@
-!WRF:MODEL_LAYER:PHYSICS
+!WRF:MEDIATION_LAYER:PHYSICS
 !
 MODULE module_microphysics_driver
 CONTAINS
@@ -207,7 +207,7 @@ SUBROUTINE microphysics_driver(th_phy, moist_new, moist_old, w,        &
    ENDIF
 
    !$OMP PARALLEL DO   &
-   !$OMP PRIVATE ( ij, its, ite, jts, jte, i,j,k )
+   !$OMP PRIVATE ( ij, its, ite, jts, jte, i,j,k,n )
 
    DO ij = 1 , num_tiles
 
@@ -414,6 +414,7 @@ SUBROUTINE microphysics_driver(th_phy, moist_new, moist_old, w,        &
    ENDIF
 
    ENDDO
+   !$OMP END PARALLEL DO
 
    CALL wrf_debug ( 200 , 'microphysics_driver: returning from' )
 

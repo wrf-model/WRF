@@ -352,6 +352,7 @@ CONTAINS
     ENDDO
     ENDDO
   ENDDO
+  !$OMP END PARALLEL DO
 
   IF (itimestep .eq. 1 .or. mod(itimestep,STEPBL) .eq. 0) THEN
 
@@ -387,7 +388,7 @@ CONTAINS
        ENDDO
        ENDDO
      ENDDO
-
+     !$OMP END PARALLEL DO
 
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij, i, j, k )
@@ -431,6 +432,7 @@ CONTAINS
 
      END SELECT sfclay_select
      ENDDO
+     !$OMP END PARALLEL DO
 
      IF (ISFFLX.EQ.0 ) GOTO 430
      !$OMP PARALLEL DO   &
@@ -561,6 +563,7 @@ CONTAINS
 
      END SELECT sfc_select
      ENDDO
+     !$OMP END PARALLEL DO
 
  430 CONTINUE
 
@@ -576,6 +579,7 @@ CONTAINS
        ENDDO
        ENDDO
      ENDDO
+     !$OMP END PARALLEL DO
 
    ENDIF
 

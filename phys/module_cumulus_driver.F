@@ -1,4 +1,4 @@
-!WRF:MODEL_LAYER:PHYSICS
+!WRF:MEDIATION_LAYER:PHYSICS
 !
 
 MODULE module_cumulus_driver
@@ -350,6 +350,7 @@ CONTAINS
    END SELECT cps_select
 
       ENDDO
+      !$OMP END PARALLEL DO
 
    END SUBROUTINE cumulus_driver
 

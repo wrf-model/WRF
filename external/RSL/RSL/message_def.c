@@ -431,7 +431,7 @@ get_base_for_index ( dex )
     sprintf(mess, "bad index %d into f90_base_table.  base_table_size %d\n", dex, base_table_size ) ;
     RSL_TEST_ERR( 1, mess ) ;
   }
-  return( f90_base_table[dex].base ) ;
+  return( (void *) f90_base_table[dex].base ) ;
 }
 
 get_index_for_base ( base )

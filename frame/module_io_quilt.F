@@ -1091,10 +1091,17 @@ SUBROUTINE ext_quilt_iosync ( DataHandle, Status )
 
 
     ! send data to the i/o processor
+#ifdef DEREF_KLUDGE
+    CALL collect_on_comm( comm_io_group,            &
+                          onebyte,                       &
+                          int_local_output_buffer(1), locsize , &
+                          dummy, 0 )
+#else
     CALL collect_on_comm( comm_io_group,            &
                           onebyte,                       &
                           int_local_output_buffer, locsize , &
                           dummy, 0 )
+#endif
 
 
     int_local_output_cursor = 1
@@ -2157,10 +2164,19 @@ SUBROUTINE ext_quilt_write_field ( DataHandle , DateStr , VarName , Field , Fiel
                              MemoryStart , MemoryEnd ,                                    &
                              PatchStart , PatchEnd )
 
+#ifdef DEREF_KLUDGE
+    CALL int_pack_data ( hdrbuf , hdrbufsize , int_local_output_buffer(1), int_local_output_cursor )
+#else
     CALL int_pack_data ( hdrbuf , hdrbufsize , int_local_output_buffer, int_local_output_cursor )
+#endif
 
+#ifdef DEREF_KLUDGE
+    CALL int_pack_data ( Field(PatchStart(1):PatchEnd(1),PatchStart(2):PatchEnd(2),PatchStart(3):PatchEnd(3) ), &
+                                  locsize * typesize , int_local_output_buffer(1), int_local_output_cursor )
+#else
     CALL int_pack_data ( Field(PatchStart(1):PatchEnd(1),PatchStart(2):PatchEnd(2),PatchStart(3):PatchEnd(3) ), &
                                   locsize * typesize , int_local_output_buffer, int_local_output_cursor )
+#endif
 
   ENDIF
   Status = 0

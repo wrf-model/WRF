@@ -40,7 +40,7 @@ MODULE module_driver_constants
 
    !  The maximum number of nest move specifications allowed in a namelist
 
-   INTEGER , PARAMETER :: max_moves       =   30
+   INTEGER , PARAMETER :: max_moves       =   50
 
    !  2. Following related to driver leve data structures for DM_PARALLEL communications
 

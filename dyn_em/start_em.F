@@ -80,7 +80,7 @@
        itimestep=0
    ENDIF
 
-   IF ( restart ) THEN 
+   IF ( restart .or. moved ) THEN 
        first_trip_for_this_domain = .TRUE.
    ENDIF
    
@@ -145,7 +145,7 @@
      ENDDO
      ENDDO
      ENDDO
-      
+
      DO j = jts,min(jte,jde-1)
 
        k = kte-1

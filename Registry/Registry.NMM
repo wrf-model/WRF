@@ -62,17 +62,27 @@ state real x ikj dyn_exp 2 - ih "TOYVAR"
 # used by the script use_registry to generate module_state_descript.F                                           
 # and other files.  Also see documentation in use_registry.                                             
 #
+# It is reauired that LU_INDEX appears before any variable that is
+# interpolated with a mask, as lu_index supplies that mask.
+#
+state    real  LU_INDEX         ij      misc        1         -     irh01d=(interp_fcnm)u=(copy_fcnm)   "LU_INDEX"              "LAND USE CATEGORY"         ""
+state    real  LU_MASK          ij      misc        1         -     i3h1     "LU_MASK"              "0 land 1 water"         ""
+################################################################################
+################################################################################
+
 # Variables for nmm dynamics                                            
 #
 # module_BC
 #
 # pdb is only 2d but registry doesn't support 2d bdy arrays right now...
 #definitions for NMM slab arrays
-dimspec    q      -     constant=1250             c  # a little crude right now
+dimspec    q      -     constant=2600             c  # a little crude right now
 dimspec    v      -     constant=1             c  # a little crude right now
 
-state  real    pd_b     ijb    dyn_nmm     1      -      b    "PDB"
-state  real    pd_bt    ijb    dyn_nmm     1      -      b    "PDBT"
+#state  real    pd_b     ijb    dyn_nmm     1      -      b    "PDB"
+#state  real    pd_bt    ijb    dyn_nmm     1      -      b    "PDBT"
+state  real    pd_b     ivjb    dyn_nmm     1      -      b    "PDB"
+state  real    pd_bt    ivjb    dyn_nmm     1      -      b    "PDBT"
 state  real    t_b      ikjb    dyn_nmm     1      -      b    "TB"
 state  real    t_bt     ikjb    dyn_nmm     1      -      b    "TBT"
 state  real    q_b      ikjb    dyn_nmm     1      -      b    "QB"
@@ -100,8 +110,8 @@ state  real   vbm2      ij     dyn_nmm     1      -      irh
 state  real   vbm3      ij     dyn_nmm     1      -      irh
 state  real   sm        ij     dyn_nmm     1      -      i01rh
 state  real   sice      ij     dyn_nmm     1      -      irh
-state  real   htm       ikj    dyn_nmm     1      -      i01rh
-state  real   vtm       ikj    dyn_nmm     1      -      i01rh
+state  real   htm       ikj    dyn_nmm     1      -      rh
+state  real   vtm       ikj    dyn_nmm     1      -      rh
 #
 # module_VRBLS
 #
@@ -136,10 +146,10 @@ state  real   etax      k      dyn_nmm     1      -      i01r
 state  real   dfl       k      dyn_nmm     1      Z      i01r
 state  real   deta1     k      dyn_nmm     1      -      i01r
 state  real   aeta1     k      dyn_nmm     1      -      i01r
-state  real   eta1      k      dyn_nmm     1      Z      i01r
+state  real   eta1      k      dyn_nmm     1      -      i01r
 state  real   deta2     k      dyn_nmm     1      -      i01r
 state  real   aeta2     k      dyn_nmm     1      -      i01r
-state  real   eta2      k      dyn_nmm     1      Z      i01r
+state  real   eta2      k      dyn_nmm     1      -      i01r
 state  real   em        q      dyn_nmm     1      -      ir
 state  real   emt       q      dyn_nmm     1      -      ir
 state  real   adt       ikj    dyn_nmm     1      -      -
@@ -176,30 +186,31 @@ state  real   rtop      ikj    dyn_nmm     1      -      -
 #
 # module_PVRBLS
 #
+state real  pblh        ij    dyn_nmm   1    -     rh       "PBLH"                  "PBL HEIGHT"         "m"
 state integer lpbl      ij    dyn_nmm   1    -     ir
-state  real   ustar     ij    dyn_nmm   1    -     ir
-state  real   z0        ij    dyn_nmm   1    -     irh
+state  real   ustar     ij    dyn_nmm   1    -     irh
+state  real   z0        ij    dyn_nmm   1    -     i01rh
 state  real   z0base    ij    dyn_nmm   1    -     ir
 state  real   ths       ij    dyn_nmm   1    -     irh
 state  real   qs        ij    dyn_nmm   1    -     ir
-state  real   twbs      ij    dyn_nmm   1    -     ir
-state  real   qwbs      ij    dyn_nmm   1    -     ir
+state  real   twbs      ij    dyn_nmm   1    -     irh
+state  real   qwbs      ij    dyn_nmm   1    -     irh
 state  real   prec      ij    dyn_nmm   1    -     rh
 state  real   aprec     ij    dyn_nmm   1    -     rh
 state  real   acprec    ij    dyn_nmm   1    -     rh
 state  real   cuprec    ij    dyn_nmm   1    -     rh
 state  real   accliq    ij    dyn_nmm   1    -     r
-state  real   sno       ij    dyn_nmm   1    -     ir
-state  real   si        ij    dyn_nmm   1    -     ir
-state  real   cldefi    ij    dyn_nmm   1    -     r
+state  real   sno       ij    dyn_nmm   1    -     irh
+state  real   si        ij    dyn_nmm   1    -     irh
+state  real   cldefi    ij    dyn_nmm   1    -     rh
 state  real   deep      ij    dyn_nmm   1    -     r
 state  real   rf        ij    dyn_nmm   1    -     r
-state  real   th10      ij    dyn_nmm   1    -     ir
-state  real   q10       ij    dyn_nmm   1    -     ir
+state  real   th10      ij    dyn_nmm   1    -     irh
+state  real   q10       ij    dyn_nmm   1    -     irh
 state  real   pshltr    ij    dyn_nmm   1    -     irh
 state  real   tshltr    ij    dyn_nmm   1    -     irh
 state  real   qshltr    ij    dyn_nmm   1    -     irh
-state  real   q2        ikj    dyn_nmm   1    -     ir
+state  real   q2        ikj   dyn_nmm   1    -     irh   "Q2"
 state  real   t_adj     ikj   dyn_nmm   1    -     r
 state  real   t_old     ikj   dyn_nmm   1    -     r
 state  real   zero_3d   ikj   dyn_nmm   1    -     r
@@ -208,33 +219,33 @@ state  real   W0AVG     ikj   dyn_nmm   1    -     r        "W0AVG" "AVERAGE VER
 # module_PHYS
 #
 state  real   albase    ij    dyn_nmm   1    -     i01rh
-state  real   albedo    ij    dyn_nmm   1    -     ir
+state  real   albedo    ij    dyn_nmm   1    -     irh
 state  real   cnvbot    ij    dyn_nmm   1    -     irh
 state  real   cnvtop    ij    dyn_nmm   1    -     irh
-state  real   czen      ij    dyn_nmm   1    -     ir
-state  real   czmean    ij    dyn_nmm   1    -     ir
+state  real   czen      ij    dyn_nmm   1    -     irh
+state  real   czmean    ij    dyn_nmm   1    -     irh
 state  real   epsr      ij    dyn_nmm   1    -     ir
 state  real   gffc      ij    dyn_nmm   1    -     ir
 state  real   glat      ij    dyn_nmm   1    -     i01rh
 state  real   glon      ij    dyn_nmm   1    -     i01rh
 state  real   NMM_TSK   ij    dyn_nmm   1    -    i01r     "TSK"
-#jw state  real   hbot      ij    dyn_nmm   1    -     i
 state  real   hdac      ij    dyn_nmm   1    -     ir
 state  real   hdacv     ij    dyn_nmm   1    -     ir
 state  real   mxsnal    ij    dyn_nmm   1    -     i01r
 state  real   radin     ij    dyn_nmm   1    -     -
-state  real   radot     ij    dyn_nmm   1    -     -
-state  real   sigt4     ij    dyn_nmm   1    -     -
+state  real   radot     ij    dyn_nmm   1    -     h
+state  real   sigt4     ij    dyn_nmm   1    -     h
 state  real   tg        ij    dyn_nmm   1    -     i01rh "TGROUND"  # changed data name from SOILTB to avoid conflict
+state  real   dfrlg     k     dyn_nmm   1    Z     i01r
 state integer lvl       ij    dyn_nmm   1    -     ir
 #
 # module_CLDWTR.F
 #
 state  real   cwm       ikj   dyn_nmm   1    -     rh
 state  real   f_ice     ikj   dyn_nmm   1    -     rh
-state  real   f_rain    ikj   dyn_nmm   1    -     r
-state  real   f_rimef   ikj   dyn_nmm   1    -     -
-state  real   sr        ij    dyn_nmm   1    -     ir
+state  real   f_rain    ikj   dyn_nmm   1    -     rh
+state  real   f_rimef   ikj   dyn_nmm   1    -     rh
+state  real   sr        ij    dyn_nmm   1    -     irh
 state  real   u00       ij    dyn_nmm   1    -     ir
 state  real   cfrach    ij    dyn_nmm   1    -     h
 state  real   cfracl    ij    dyn_nmm   1    -     h
@@ -248,11 +259,12 @@ state logical micro_start        -     dyn_nmm   -    -     -
 state integer islope    ij    dyn_nmm   1    -     i01rh
 state  real   dzsoil    k     dyn_nmm   1    -     ir
 state  real   rtdpth    k     dyn_nmm   1    -     i01r
-state  real   sldpth    k     dyn_nmm   1    -     i01r
-state  real   cmc       ij    dyn_nmm   1    -     i01r
-state  real   grnflx    ij    dyn_nmm   1    -     ir
-state  real   pctsno    ij    dyn_nmm   1    -     ir
-state  real   soiltb    ij    dyn_nmm   1    -     i01r
+state  real   sldpth    k     dyn_nmm   1    -     i01rh
+state  real   cmc       ij    dyn_nmm   1    -     i01rh
+state  real   grnflx    ij    dyn_nmm   1    -     irh
+state  real   pctsno    ij    dyn_nmm   1    -     irh
+state  real   soiltb    ij    dyn_nmm   1    -     i01rh
+state  real   vegfrc    ij    dyn_nmm   1    -     i01rh
 state  real   shdmin    ij    dyn_nmm   1    -     -
 state  real   shdmax    ij    dyn_nmm   1    -     -
 state  real   sh2o      ilj   dyn_nmm   1    Z     irh
@@ -267,57 +279,58 @@ state  real   dwdtmx    ij    dyn_nmm   1    -     -
 state  real   dwdt      ikj   dyn_nmm   1    -     r
 state  real   pdwdt     ikj   dyn_nmm   1    -     r
 state  real   pint      ikj   dyn_nmm   1    Z     rh
-# are not these z staggered (z and w?)
 state  real   w         ikj   dyn_nmm   1    Z     rh
 state  real   z         ikj   dyn_nmm   1    Z     -
 #
 # module_ACCUM.F
 #
-state  real   acfrcv    ij    dyn_nmm     1    -    -
-state  real   acfrst    ij    dyn_nmm     1    -    -
-state  real   ssroff    ij    dyn_nmm     1    -    -
-state  real   bgroff    ij    dyn_nmm     1    -    -
+state  real   acfrcv    ij    dyn_nmm     1    -    h
+state  real   acfrst    ij    dyn_nmm     1    -    h
+state  real   ssroff    ij    dyn_nmm     1    -    h
+state  real   bgroff    ij    dyn_nmm     1    -    h
 state  real   rlwin     ij    dyn_nmm     1    -    h
 state  real   rlwout    ij    dyn_nmm     1    -    -
 state  real   rlwtoa    ij    dyn_nmm     1    -    -
 state  real   alwin     ij    dyn_nmm     1    -    h
-state  real   alwout    ij    dyn_nmm     1    -    -
-state  real   alwtoa    ij    dyn_nmm     1    -    -
+state  real   alwout    ij    dyn_nmm     1    -    h
+state  real   alwtoa    ij    dyn_nmm     1    -    h
 state  real   totswdn   ij    dyn_nmm     1    -    -
 state  real   totlwdn   ij    dyn_nmm     1    -    -
-state  real   rswin     ij    dyn_nmm     1    -    -
-state  real   rswout    ij    dyn_nmm     1    -    -
+state  real   rswin     ij    dyn_nmm     1    -    h
+state  real   rswout    ij    dyn_nmm     1    -    h
 state  real   rswtoa    ij    dyn_nmm     1    -    -
-state  real   aswin     ij    dyn_nmm     1    -    -
-state  real   aswout    ij    dyn_nmm     1    -    -
-state  real   aswtoa    ij    dyn_nmm     1    -    -
-state  real   sfcshx    ij    dyn_nmm     1    -    -
-state  real   sfclhx    ij    dyn_nmm     1    -    -
-state  real   subshx    ij    dyn_nmm     1    -    -
-state  real   snopcx    ij    dyn_nmm     1    -    -
-state  real   sfcuvx    ij    dyn_nmm     1    -    -
-state  real   potevp    ij    dyn_nmm     1    -    -
+state  real   aswin     ij    dyn_nmm     1    -    h
+state  real   aswout    ij    dyn_nmm     1    -    h
+state  real   aswtoa    ij    dyn_nmm     1    -    h
+state  real   sfcshx    ij    dyn_nmm     1    -    h
+state  real   sfclhx    ij    dyn_nmm     1    -    h
+state  real   subshx    ij    dyn_nmm     1    -    h
+state  real   snopcx    ij    dyn_nmm     1    -    h
+state  real   sfcuvx    ij    dyn_nmm     1    -    h
+state  real   potevp    ij    dyn_nmm     1    -    h
 state  real   potflx    ij    dyn_nmm     1    -    -
 state  real   tlmin     ij    dyn_nmm     1    -    -
 state  real   tlmax     ij    dyn_nmm     1    -    -
-state  real   rlwtt     ikj   dyn_nmm     1    -    r
-state  real   rswtt     ikj   dyn_nmm     1    -    r
-state  real   tcucn     ikj   dyn_nmm     1    -    -
-state  real   train     ikj   dyn_nmm     1    -    -
-state integer ncfrcv    ij    dyn_nmm     1    -    ir
-state integer ncfrst    ij    dyn_nmm     1    -    ir
-state integer nclod     -     dyn_nmm     -    -    ir
-state integer nheat     -     dyn_nmm     -    -    ir
-state integer nrdlw     -     dyn_nmm     -    -    ir
-state integer nrdsw     -     dyn_nmm     -    -    ir
-state integer nsrfc     -     dyn_nmm     -    -    ir
-state  real   avrain    -     dyn_nmm     -    -    ir
-state  real   avcnvc    -     dyn_nmm     -    -    ir
+state  real   rlwtt     ikj   dyn_nmm     1    -    h
+state  real   rswtt     ikj   dyn_nmm     1    -    h
+state  real   tcucn     ikj   dyn_nmm     1    -    h
+state  real   train     ikj   dyn_nmm     1    -    h
+state integer ncfrcv    ij    dyn_nmm     1    -    irh
+state integer ncfrst    ij    dyn_nmm     1    -    irh
+state integer nphs0     -     dyn_nmm     -    -    rh
+state integer nprec     -     dyn_nmm     -    -    irh
+state integer nclod     -     dyn_nmm     -    -    irh
+state integer nheat     -     dyn_nmm     -    -    irh
+state integer nrdlw     -     dyn_nmm     -    -    irh
+state integer nrdsw     -     dyn_nmm     -    -    irh
+state integer nsrfc     -     dyn_nmm     -    -    irh
+state  real   avrain    -     dyn_nmm     -    -    irh
+state  real   avcnvc    -     dyn_nmm     -    -    irh
 state  real   aratim    -     dyn_nmm     -    -    ir
 state  real   acutim    -     dyn_nmm     -    -    ir
 state  real   ardlw     -     dyn_nmm     -    -    irh
-state  real   ardsw     -     dyn_nmm     -    -    ir
-state  real   asrfc     -     dyn_nmm     -    -    ir
+state  real   ardsw     -     dyn_nmm     -    -    irh
+state  real   asrfc     -     dyn_nmm     -    -    irh
 state  real   aphtim    -     dyn_nmm     -    -    ir
 #
 # module_INDX.F
@@ -327,7 +340,7 @@ state integer ihw       j    dyn_nmm     1    -    -
 state integer ive       j    dyn_nmm     1    -    -
 state integer ivw       j    dyn_nmm     1    -    -
 state integer irad      i    dyn_nmm     1    -    -
-#definitions for NMM slab arrays
+#definitions for NMM east-west orientation on E grid
 state integer iheg      q    dyn_nmm     1    -    -
 state integer ihwg      q    dyn_nmm     1    -    -
 state integer iveg      q    dyn_nmm     1    -    -
@@ -347,61 +360,16 @@ state integer iup_adh   ij   dyn_nmm     1    -    -
 state integer iup_adv   ij   dyn_nmm     1    -    -
 state integer imicrogram -   misc        -    -    r   "imicrogram"  "flag 0/1 0=mixratio, 1=mcrograms/m3"  ""
 
-
 #                                               
 # table entries are of the form                                         
 #<Table> <Type> <Sym>         <Dims>   <Use>   <NumTLev> <Stagger> <IO>     <DNAME>             <DESCRIP>     <UNITS>   
 #
-# Variables for slt dynamics                                            
-#
-
-#                                               
-# Variables for Eulerian height coordinate model                                           
-#                                               
-
-#                                               
-#                                               
 # Mask for moving nest interpolations
 state    integer imask_nostag         ij      misc     -
 state    integer imask_xstag          ij      misc     X
 state    integer imask_ystag          ij      misc     Y
 state    integer imask_xystag         ij      misc     XY
 #                                               
-#                                               
-#                                               
-#                                               
-#                                               
-#                                               
-
-#                                               
-#                                               
-# Vertical Vel                                          
-#                                               
-# Other dyn                                             
-#                                               
-#                                               
-#                                               
-#                                               
-#                                               
-#                                               
-                                                
-                                                
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------
-#                                               
-# Variables for Eulerian mass coordinate dynamics                                            
-#                                               
-#                                               
-#                                               
-# Vertical Vel                                          
-#                                               
-# Other dyn                                             
-#                                               
-#
-#                                               
-
-
-
-
 #---------------------------------------------------------------------------------------------------------------------------------
 # SI - start variables from netCDF format from Standard Initialization, most eventually for use in LSM schemes
 #---------------------------------------------------------------------------------------------------------------------------------
@@ -500,7 +468,7 @@ state   real    -              ikjft   chem        2         -     -    -
 
 # lsm State Variables
 
-state    real   SMOIS            ilj     -          1         Z     irh       "SMOIS"                "SOIL MOISTURE" ""
+state    real   SMOIS            ilj     -          1         Z     rh       "SMOIS"                "SOIL MOISTURE" ""
 
 # MYJ PBL variables
 
@@ -545,16 +513,16 @@ state    real   U10              ij     misc        1         -     irh       "U
 state    real   V10              ij     misc        1         -     irh       "V10"                  "V at 10 M"         " "
 state    real   XICE             ij     misc        1         -     i01r      "XICE"                 "SEA ICE"         ""
 state    real   SMSTAV           ij     misc        1         -     irh       "SMSTAV"               "MOISTURE VARIBILITY" ""
-state    real   SMSTOT           ij     misc        1         -     i       "SMSTOT"               "TOTAL SOIL MOISTURE" ""
-state    real   SFCRUNOFF        ij     misc        1         -     irh       "SFROFF"               "SURFACE RUNOFF" ""
-state    real   UDRUNOFF         ij     misc        1         -     irh       "UDROFF"               "UNDERGROUND RUNOFF" ""
+state    real   SMSTOT           ij     misc        1         -     irh     "SMSTOT"               "TOTAL SOIL MOISTURE" ""
+state    real   SFCRUNOFF        ij     misc        1         -     rh       "SFROFF"               "SURFACE RUNOFF" ""
+state    real   UDRUNOFF         ij     misc        1         -     rh       "UDROFF"               "UNDERGROUND RUNOFF" ""
 state  integer  IVGTYP           ij     misc        1         -     irh       "IVGTYP"               "VEGETATION TYPE" ""
 state  integer  ISLTYP           ij     misc        1         -     irh       "ISLTYP"               "SOIL TYPE"         " "
 state    real   VEGFRA           ij     misc        1         -     i01rh       "VEGFRA"               "VEGETATION FRACTION" ""
-state    real   SFCEVP           ij     misc        1         -     i       "SFCEVP"               "SURFACE EVAPORATION" ""
-state    real   GRDFLX           ij     misc        1         -     i       "GRDFLX"               "GROUND HEAT FLUX" ""
+state    real   SFCEVP           ij     misc        1         -     irh     "SFCEVP"               "SURFACE EVAPORATION" ""
+state    real   GRDFLX           ij     misc        1         -     irh     "GRDFLX"               "GROUND HEAT FLUX" ""
 state    real   ALBBCK           ij     misc        1         -     i012r   "ALBBCK"          "BACKGROUND ALBEDO"        "NA"
-state    real   SFCEXC           ij     misc        1         -     i       "SFCEXC "              "SURFACE EXCHANGE COEFFICIENT"         ""
+state    real   SFCEXC           ij     misc        1         -     irh     "SFCEXC "              "SURFACE EXCHANGE COEFFICIENT"         ""
 state    real   ACSNOW           ij     misc        1         -     irh       "ACSNOW"               "ACCUMULATED SNOW" ""
 state    real   ACSNOM           ij     misc        1         -     irh       "ACSNOM"               "ACCUMULATED MELTED SNOW"         ""
 state    real   SNOW             ij     misc        1         -     irh       "SNOW"                 "SNOW WATER EQUIVALENT"         ""
@@ -565,8 +533,8 @@ state    real  ZNT              ij      misc        1         -     ir        "Z
 state    real  MOL              ij      misc        1         -     ir        "MOL"                   "T* IN SIMILARITY THEORY"                      "K"
 
 
-state    real   tke_myj        ikj     misc        1         -     irh       "tke_myj"               "TKE FROM MELLOR-YAMADA-JANJIC      "m2 s-2"
-state    real   EXCH_H          ikj     misc        1         -     r          "EXCH_H"               "EXCHANGE COEFFICIENTS "
+state    real   tke_myj         ikj     misc        1         -     rh        "tke_myj"               "TKE FROM MELLOR-YAMADA-JANJIC      "m2 s-2"
+state    real   EXCH_H         ikj     misc        1         -     rh         "EXCH_H"               "EXCHANGE COEFFICIENTS "
 state   real   THZ0             ij     misc        1         -     irh       "THZ0"                  "POTENTIAL TEMPERATURE AT ZNT"                 "K"
 state   real   QZ0              ij     misc        1         -     irh       "QZ0"                   "SPECIFIC HUMIDITY AT ZNT"                     "kg kg-1"
 state   real   UZ0              ij     misc        1         -     irh       "UZ0"                   "U WIND COMPONENT AT ZNT"                      "m s-1"
@@ -585,9 +553,13 @@ i1      real   TSHLTR           ij     misc        1         -     -         "TS
 i1      real   QSHLTR           ij     misc        1         -     -         "QSHLTR"                "SHELTER SPECIFIC HUMIDITY FROM MYJ"           "kg kg-1"
 i1      real   TH10             ij     misc        1         -     -         "TH10"                  "10-M THETA FROM MYJ"                          "K"        
 i1      real   Q10              ij     misc        1         -     -         "Q10"                   "10-M SPECIFIC HUMIDITY FROM MYJ"              "kg kg-1"
-state    real    HTOP            ij     misc        1         -     ir        "HTOP"                 "TOP OF CONVECTION LELVEL"         ""
-state    real    HBOT            ij     misc        1         -     ir        "HBOT"                 "BOT OF CONVECTION LELVEL"         ""
-state    REAL      CUPPT         ij     misc        1         -     ir        "CUPPT"                "ACCUMULATED CONVECTIVE RAIN SINC LAST CALL TO THE RADIATION"         ""
+state    real    HTOP            ij     misc        1         -     irh       "HTOP"                 "TOP OF CONVECTION LEVEL"         ""
+state    real    HBOT            ij     misc        1         -     irh       "HBOT"                 "BOT OF CONVECTION LEVEL"         ""
+state    real    HTOPD           ij     misc        1         -     rh        "HTOPD"                "TOP DEEP CONVECTION LEVEL"         ""
+state    real    HBOTD           ij     misc        1         -     rh        "HBOTD"                "BOT DEEP CONVECTION LEVEL"         ""
+state    real    HTOPS           ij     misc        1         -     rh        "HTOPS"                "TOP SHALLOW CONVECTION LEVEL"         ""
+state    real    HBOTS           ij     misc        1         -     rh        "HBOTS"                "BOT SHALLOW CONVECTION LEVEL"         ""
+state    REAL      CUPPT         ij     misc        1         -     rh        "CUPPT"                "ACCUMULATED CONVECTIVE RAIN SINCE LAST CALL TO THE RADIATION"         ""
 state    real    F_ICE_PHY       ikj    misc        1         -      r        "F_ICE_PHY"            "FRACTION OF ICE"         ""
 state    real    F_RAIN_PHY      ikj    misc        1         -      r        "F_RAIN_PHY"           "FRACTION OF RAIN "         ""
 state    real    F_RIMEF_PHY     ikj    misc        1         -      r        "F_RIMEF_PHY"          "MASS RATIO OF RIMED ICE "         ""
@@ -664,7 +636,6 @@ rconfig   integer end_minute              namelist,time_control		max_domains    
 rconfig   integer end_second              namelist,time_control		max_domains      00    irh   "end_second"            "2 DIGIT SECOND OF THE MINUTE OF END OF MODEL, 0-59" "SECONDS"
 rconfig   integer interval_seconds        namelist,time_control		1             43200    irh   "interval_seconds"      "SECONDS BETWEEN ANALYSIS AND BOUNDARY PERIODS" "SECONDS"
 rconfig   logical input_from_file         namelist,time_control		max_domains    .false. irh    "input_from_file"      "T/F INPUT FOR THIS DOMAIN FROM A SEPARATE INPUT FILE"  ""
-rconfig   logical input_from_hires        namelist,time_control		max_domains    .false. irh    "input_from_hires"      "T/F INPUT FOR THIS DOMAIN FROM USGS HI RES TERRAIN"  ""
 rconfig   integer history_interval        namelist,time_control		max_domains    0       h     "history_interval"       ""      "MINUTES"
 rconfig   integer frames_per_outfile      namelist,time_control		max_domains    10      h     "frames_per_outfile"            ""      ""
 rconfig   logical restart                 namelist,time_control		1             .false. h    "restart"              ""      ""
@@ -1023,6 +994,11 @@ rconfig   integer nproc_x                 namelist,domains	1             -1     
 rconfig   integer nproc_y		  namelist,domains	1             -1       -      "nproc_y"              "-1 means not set"      ""
 rconfig   integer irand                   namelist,domains	1             0       -      "irand"           ""      ""
 rconfig   real    dt                      derived              max_domains    2.      h     "dt"        "TEMPORAL RESOLUTION"      "SECONDS"
+rconfig   integer   num_moves       namelist,domains    1                0
+rconfig   integer   move_id         namelist,domains    max_moves        0
+rconfig   integer   move_interval   namelist,domains    max_moves        999999999
+rconfig   integer   move_cd_x       namelist,domains    max_moves        0
+rconfig   integer   move_cd_y       namelist,domains    max_moves        0
 
 # Physics
 rconfig   integer     mp_physics          namelist,physics	max_domains    0       rh       "mp_physics"            ""      ""
@@ -1051,14 +1027,15 @@ rconfig   integer num_land_cat            namelist,physics	1            24      
 rconfig   integer num_soil_cat            namelist,physics	1            16       -      "num_soil_cat"                  ""      ""
 rconfig   integer mp_zero_out             namelist,physics	1             0       -      "mp_zero_out"  "microphysics fields set to zero  0=no action taken, 1=all fields but Qv, 2=all fields including Qv"      "flag"
 rconfig   real mp_zero_out_thresh         namelist,physics	1          1.e-8      -      "mp_zero_out_thresh"  "minimum threshold for non-Qv moist fields, below are set to zero"  "kg/kg"
+rconfig   real    seaice_threshold        namelist,physics      1            271       h    "seaice_threshold"  "tsk below which which water points are set to sea ice for slab scheme"   "K"
 
 # nmm variables
 rconfig   integer idtad                   namelist,physics     max_domains    2       irh    "nmm input 1"
 rconfig   integer nsoil                   namelist,physics     max_domains    4       irh    "nmm input 2"
-rconfig   integer nphs                    namelist,physics     max_domains   12       irh    "nmm input 3"
-rconfig   integer ncnvc                   namelist,physics     max_domains    4       irh    "nmm input 4"
-rconfig   integer nrads                   namelist,physics     max_domains  180       irh    "nmm input 5"
-rconfig   integer nradl                   namelist,physics     max_domains  180       irh    "nmm input 6"
+rconfig   integer nphs                    namelist,physics     max_domains   10       irh    "nmm input 3"
+rconfig   integer ncnvc                   namelist,physics     max_domains   10       irh    "nmm input 4"
+rconfig   integer nrads                   namelist,physics     max_domains  200       irh    "nmm input 5"
+rconfig   integer nradl                   namelist,physics     max_domains  200       irh    "nmm input 6"
 rconfig   integer sigma                   namelist,physics     max_domains    1       irh    "nmm input 7"
 
 # Dynamics
@@ -1072,6 +1049,10 @@ rconfig   integer diff_opt                namelist,dynamics	1             1     
 rconfig   integer km_opt                  namelist,dynamics	1             1       irh    "km_opt"                ""      ""
 rconfig   integer damp_opt                namelist,dynamics	1             1       irh    "damp_opt"              ""      ""
 rconfig   real    zdamp                   namelist,dynamics	max_domains    5000.   h    "zdamp"         ""      ""
+rconfig   real    base_pres               namelist,dynamics     1          100000.     h    "base_pres"  "Base state pressure - do not change (10^5 Pa), real only"      "Pa"
+rconfig   real    base_temp               namelist,dynamics     1             290.     h    "base_temp"  "Base state sea level temperature, real
+only"      "K"
+rconfig   real    base_lapse              namelist,dynamics     1              50.     h    "base_lapse" "Base state temperature difference between base pres and 1/e of atm depth - do not change, real only"      "K"
 rconfig   real    dampcoef                namelist,dynamics     max_domains    0.2     h    "dampcoef"              ""      ""
 rconfig   real    khdif                   namelist,dynamics	max_domains    0       h    "khdif"         ""      ""
 rconfig   real    kvdif                   namelist,dynamics	max_domains    0       h    "kvdif"         ""      ""
@@ -1126,15 +1107,14 @@ rconfig   integer isurban                 derived                  max_domains  
 rconfig   integer isoilwater              derived                  max_domains    0       -        "isoilwater"           "land use index of water for soil"        "index category"
 rconfig   integer map_proj                derived                  max_domains    0       -        "map_proj"             "domain map projection"      "0=none, 1=Lambert, 2=polar, 3=Mercator"
 
-
 #
 # Single dummy declaration to define a nodyn dyn option
-state integer nodyn_dummy - dyn_nodyn -  -  -  "" "" ""      
+state integer nodyn_dummy - dyn_nodyn -  -  -  "" "" ""
 
 #key      package       associated                package          associated 4d scalars
 #         name          namelist choice           state vars
 
-package   dyn_nodyn    dyn_opt==0                   -             -
+package   dyn_nodyn     dyn_opt==0                   -             -
 package   dyn_nmm       dyn_opt==4                   -             -
 
 
@@ -1148,7 +1128,7 @@ package   kesslerscheme mp_physics==1                -             moist:qv,qc,q
 package   linscheme     mp_physics==2                -             moist:qv,qc,qr,qi,qs,qg
 package   wsm3scheme    mp_physics==3                -             moist:qv,qc,qr
 package   wsm5scheme    mp_physics==4                -             moist:qv,qc,qr,qi,qs
-package   etampnew      mp_physics==5                -             moist:qv,qc
+package   etampnew      mp_physics==5                -             moist:qv,qc,qr,qi
 package   wsm6scheme    mp_physics==6                -             moist:qv,qc,qr,qi,qs,qg
 package   ncepcloud3    mp_physics==98               -             moist:qv,qc,qr
 package   ncepcloud5    mp_physics==99               -             moist:qv,qc,qr,qi,qs
@@ -1169,11 +1149,13 @@ package   ruclsmscheme   sf_surface_physics==3       -             -
 package   nmmlsmscheme   sf_surface_physics==99      -             -
 package   ysuscheme      bl_pbl_physics==1           -             -
 package   myjpblscheme   bl_pbl_physics==2           -             -
+package   gfsscheme      bl_pbl_physics==3           -             -
 package   mrfscheme      bl_pbl_physics==99          -             -
 
 package   kfetascheme    cu_physics==1               -             -
 package   bmjscheme      cu_physics==2               -             -
 package   gdscheme       cu_physics==3               -             -
+package   sasscheme      cu_physics==4               -             -
 package   kfscheme       cu_physics==99              -             -
                                                 
 # only need to specify these once; not for every io_form* variable
@@ -1206,8 +1188,8 @@ halo HALO_NMM_INIT_8	dyn_nmm 120:GLON,EPSR,TG
 halo HALO_NMM_INIT_9	dyn_nmm 120:GFFC,SST,ALBASE
 #halo HALO_NMM_INIT_10	dyn_nmm 120:HDAC,HDACV,IVGTYP
 halo HALO_NMM_INIT_10	dyn_nmm 120:HDAC,HDACV
-#halo HALO_NMM_INIT_11	dyn_nmm 120:ISLTYP,ISLOPE,VEGFRA
-halo HALO_NMM_INIT_11	dyn_nmm 120:VEGFRA
+#halo HALO_NMM_INIT_11	dyn_nmm 120:ISLTYP,ISLOPE,VEGFRC
+halo HALO_NMM_INIT_11	dyn_nmm 120:VEGFRC
 halo HALO_NMM_INIT_12	dyn_nmm 120:OMGALF,PD,RES
 halo HALO_NMM_INIT_13	dyn_nmm 120:FIS,T,U
 halo HALO_NMM_INIT_14	dyn_nmm 120:V,Q,Q2

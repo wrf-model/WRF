@@ -83,7 +83,10 @@ if ( "$tail" eq ".f" ) {
    else { close EXISTNCE ; }
 }
 
-print "<b> Defined in: </b> <a href=\"../../$refer_to\"> $refer_to </a> <p> <p>\n" ;
+#print "<b> Defined in: </b> <a href=\"../../$refer_to\"> $refer_to </a> <p> <p>\n" ;
+# have it point to the wrf code browser instead
+$rout1_uc = uc $rout1 ;
+print "<b> Defined in: </b> <a href=\"../../../wrfbrowser/html_code/${refer_to}.html#$rout1_uc\"> $refer_to </a> <p> <p>\n" ;
 
 if ( open (DESC, "< ${routfile}_descrip" ) ) {
   print "<b> Description: </b><p>\n" ;
@@ -118,7 +121,8 @@ while ( <ROUT> ) {
     open P,"/bin/ls */*.F | grep -w $t[1] |" ;
     while( <P> ) {
       chop ;
-      printf("(<a href=\"../../%s\">%s</a>)\n", $_, $_ ) ;
+#      printf("(<a href=\"../../%s\">%s</a>)\n", $_, $_ ) ;
+      printf("(<a href=\"../../../wrfbrowser/html_code/%s.html#%s\">%s</a>)\n", $_, uc $t[1], $_ ) ;
     }
     close P ;
   }

@@ -33,9 +33,9 @@ subinfo_calls ( char *rout, int indent )
   char fname[VARLEN], fname2[VARLEN], sf[VARLEN] ;
   char u0[VARLEN] , u1[VARLEN] , u2[VARLEN] ;
   char v0[VARLEN] , v1[VARLEN] , v2[VARLEN] ;
+  char u0_upper[VARLEN] ;
 
-  if ( COMPARE( rout, "get_" ) ||
-       COMPARE( rout, "add_" ) ||
+  if ( COMPARE( rout, "add_msg_" ) ||
        COMPARE( rout, "wrf_error" ) ||
        COMPARE( rout, "wrf_debug" ) ||
        COMPARE( rout, "wrf_message" ) ||
@@ -63,7 +63,12 @@ subinfo_calls ( char *rout, int indent )
         printf( "&nbsp " ) ;
       }
       switch_little_big_f( sf ) ;
+#if 0
       printf("<a href=\"%s.html\">%s</a> (<a href=\"../../%s\">%s</a>)<br>\n", u0, u0, sf, sf )  ;
+#else
+      strcpy( u0_upper, u0 ) ; upper_case_str( u0_upper ) ;
+      printf("<a href=\"%s.html\">%s</a> (<a href=\"../../../wrfbrowser/html_code/%s.html#%s\">%s</a>)<br>\n", u0, u0, sf, u0_upper,sf )  ;
+#endif
       /* RECURSION */
       if ( ! COMPARE2( u0 , levels[ indent+1 ] ) ) {
         strcpy( levels[ indent+1 ], u0 ) ;

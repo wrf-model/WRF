@@ -118,7 +118,7 @@ for (var i = 1; i <= db.length; i++) {
 	if (currIndent == 0 || currIndent <= prevIndentDisplayed || (showMyDaughter == 1 && (currIndent - prevIndentDisplayed == 1))) {
 		newOutline += pad(currIndent)
 		newOutline += "<A HREF=\"javascript:history.go(0)\" onMouseOver=\"window.parent.status=\'" + theGIFStatus + "\';return true;\" onClick=\"toggle(" + i + ")\"><IMG SRC=\"" + theGIF + "\" HEIGHT=11 WIDTH=11 BORDER=0></A>"		
-		newOutline += " <A HREF=\"" + db[i].URL + "\" TARGET=\"Frame2\" onMouseOver=\"window.parent.status=\'View " + db[i].display + "...\';return true;\">" + db[i].display + "</A><BR>"
+		newOutline += " <A HREF=\"" + db[i].URL + "\" TARGET=\"bottom_target\" onMouseOver=\"window.parent.status=\'View " + db[i].display + "...\';return true;\">" + db[i].display + "</A><BR>"
 		prevIndentDisplayed = currIndent
 		showMyDaughter = expanded
 	}

@@ -93,6 +93,27 @@ LOGICAL FUNCTION int_ok_to_put_dom_ti( DataHandle )
     RETURN
 END FUNCTION int_ok_to_put_dom_ti
 
+! Returns .TRUE. iff it is OK to read time-independent domain metadata from the 
+! file referenced by DataHandle.  If DataHandle is invalid, .FALSE. is 
+! returned.  
+LOGICAL FUNCTION int_ok_to_get_dom_ti( DataHandle )
+    include 'wrf_io_flags.h'
+    INTEGER, INTENT(IN) :: DataHandle 
+    CHARACTER*80 :: fname
+    INTEGER :: filestate
+    INTEGER :: Status
+    LOGICAL :: dryrun, retval
+    call ext_int_inquire_filename( DataHandle, fname, filestate, Status )
+    IF ( Status /= 0 ) THEN
+      retval = .FALSE.
+    ELSE
+      dryrun       = ( filestate .EQ. WRF_FILE_OPENED_NOT_COMMITTED )
+      retval = .NOT. dryrun
+    ENDIF
+    int_ok_to_get_dom_ti = retval
+    RETURN
+END FUNCTION int_ok_to_get_dom_ti
+
 ! Returns .TRUE. iff nothing has been read from or written to the file 
 ! referenced by DataHandle.  If DataHandle is invalid, .FALSE. is returned.  
 LOGICAL FUNCTION int_is_first_operation( DataHandle )
@@ -607,6 +628,8 @@ SUBROUTINE ext_int_get_dom_ti_real ( DataHandle,Element,   Data, Count, Outcount
 
   IF ( int_valid_handle( DataHandle ) ) THEN
     IF ( int_handle_in_use( DataHandle ) ) THEN
+     ! Do nothing unless it is time to read time-independent domain metadata.
+     IF ( int_ok_to_get_dom_ti( DataHandle ) ) THEN
       keepgoing = .true.
       DO WHILE ( keepgoing ) 
         READ( unit=DataHandle , iostat = istat ) hdrbuf
@@ -633,6 +656,7 @@ SUBROUTINE ext_int_get_dom_ti_real ( DataHandle,Element,   Data, Count, Outcount
           keepgoing = .false. ; Status = 1
         ENDIF
       ENDDO
+     ENDIF
     ENDIF
   ENDIF
 RETURN
@@ -667,6 +691,7 @@ END SUBROUTINE ext_int_put_dom_ti_real
 
 !--- get_dom_ti_double
 SUBROUTINE ext_int_get_dom_ti_double ( DataHandle,Element,   Data, Count, Outcount, Status )
+  USE module_ext_internal
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -674,7 +699,10 @@ SUBROUTINE ext_int_get_dom_ti_double ( DataHandle,Element,   Data, Count, Outcou
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_message('ext_int_get_dom_ti_double not supported yet')
+  ! Do nothing unless it is time to read time-independent domain metadata.
+  IF ( int_ok_to_get_dom_ti( DataHandle ) ) THEN
+    CALL wrf_message('ext_int_get_dom_ti_double not supported yet')
+  ENDIF
 RETURN
 END SUBROUTINE ext_int_get_dom_ti_double 
 
@@ -711,6 +739,8 @@ SUBROUTINE ext_int_get_dom_ti_integer ( DataHandle,Element,   Data, Count, Outco
 
   IF ( int_valid_handle( DataHandle ) ) THEN
     IF ( int_handle_in_use( DataHandle ) ) THEN
+     ! Do nothing unless it is time to read time-independent domain metadata.
+     IF ( int_ok_to_get_dom_ti( DataHandle ) ) THEN
       keepgoing = .true.
       DO WHILE ( keepgoing )
         READ( unit=DataHandle , iostat = istat ) hdrbuf
@@ -738,6 +768,7 @@ SUBROUTINE ext_int_get_dom_ti_integer ( DataHandle,Element,   Data, Count, Outco
           keepgoing = .false. ; Status = 1
         ENDIF
       ENDDO
+     ENDIF
     ENDIF
   ENDIF
 RETURN
@@ -771,6 +802,7 @@ END SUBROUTINE ext_int_put_dom_ti_integer
 
 !--- get_dom_ti_logical
 SUBROUTINE ext_int_get_dom_ti_logical ( DataHandle,Element,   Data, Count, Outcount, Status )
+  USE module_ext_internal
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -778,7 +810,10 @@ SUBROUTINE ext_int_get_dom_ti_logical ( DataHandle,Element,   Data, Count, Outco
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_message('ext_int_get_dom_ti_logical not supported yet')
+  ! Do nothing unless it is time to read time-independent domain metadata.
+  IF ( int_ok_to_get_dom_ti( DataHandle ) ) THEN
+    CALL wrf_message('ext_int_get_dom_ti_logical not supported yet')
+  ENDIF
 RETURN
 END SUBROUTINE ext_int_get_dom_ti_logical 
 
@@ -814,6 +849,8 @@ SUBROUTINE ext_int_get_dom_ti_char ( DataHandle,Element,   Data,  Status )
 
   IF ( int_valid_handle( DataHandle ) ) THEN
     IF ( int_handle_in_use( DataHandle ) ) THEN
+     ! Do nothing unless it is time to read time-independent domain metadata.
+     IF ( int_ok_to_get_dom_ti( DataHandle ) ) THEN
       keepgoing = .true.
       DO WHILE ( keepgoing )
         READ( unit=DataHandle , iostat = istat ) hdrbuf
@@ -838,6 +875,7 @@ SUBROUTINE ext_int_get_dom_ti_char ( DataHandle,Element,   Data,  Status )
           keepgoing = .false. ; Status = 1
         ENDIF
       ENDDO
+     ENDIF
     ENDIF
   ENDIF
 RETURN

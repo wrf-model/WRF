@@ -707,6 +707,31 @@ LOGICAL FUNCTION ncd_ok_to_put_dom_ti( DataHandle )
     RETURN
 END FUNCTION ncd_ok_to_put_dom_ti
 
+! Returns .TRUE. iff it is OK to read time-independent domain metadata from the 
+! file referenced by DataHandle.  If DataHandle is invalid, .FALSE. is 
+! returned.  
+LOGICAL FUNCTION ncd_ok_to_get_dom_ti( DataHandle )
+    USE wrf_data
+    include 'wrf_status_codes.h'
+    INTEGER, INTENT(IN) :: DataHandle 
+    CHARACTER*80 :: fname
+    INTEGER :: filestate
+    INTEGER :: Status
+    LOGICAL :: dryrun, retval
+    call ext_ncd_inquire_filename( DataHandle, fname, filestate, Status )
+    IF ( Status /= WRF_NO_ERR ) THEN
+      write(msg,*) 'Warning Status = ',Status,' in ',__FILE__, &
+                   ', line', __LINE__
+      call wrf_debug ( WARN , TRIM(msg) )
+      retval = .FALSE.
+    ELSE
+      dryrun       = ( filestate .EQ. WRF_FILE_OPENED_NOT_COMMITTED )
+      retval = .NOT. dryrun
+    ENDIF
+    ncd_ok_to_get_dom_ti = retval
+    RETURN
+END FUNCTION ncd_ok_to_get_dom_ti
+
 ! Returns .TRUE. iff nothing has been read from or written to the file 
 ! referenced by DataHandle.  If DataHandle is invalid, .FALSE. is returned.  
 LOGICAL FUNCTION ncd_is_first_operation( DataHandle )

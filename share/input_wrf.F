@@ -47,13 +47,16 @@
     CHARACTER*80  fname
     LOGICAL dryrun
     INTEGER idt
-    INTEGER itmp, dyn_opt, filestate, ierr3
+    INTEGER dyn_opt_tmp, dyn_opt, filestate, ierr3
     INTEGER :: ide_compare , jde_compare , kde_compare
     REAL , DIMENSION(16) :: lats16 , lons16
 
 !<DESCRIPTION>
 !
 ! Core wrf input routine for all input data streams. Part of mediation layer.
+! 
+! Note that WRF IOAPI routines wrf_get_dom_ti_*() do not return values during 
+! training reads (dryrun).  
 ! 
 !</DESCRIPTION>
 
@@ -63,16 +66,6 @@
                               ids, ide, jds, jde, kds, kde,    &
                               ims, ime, jms, jme, kms, kme,    &
                               ips, ipe, jps, jpe, kps, kpe    )
-
-    CALL wrf_inquire_filename ( fid , fname , filestate , ierr )
-    IF ( ierr /= 0 ) THEN
-      WRITE(wrf_err_message,*)'module_io_wrf: output_wrf: wrf_inquire_filename Status = ',ierr
-      CALL wrf_error_fatal( wrf_err_message )
-    ENDIF
-
-    dryrun        = ( filestate .EQ. WRF_FILE_OPENED_NOT_COMMITTED )
-
-    check_if_dryrun : IF ( .NOT. dryrun ) THEN
 
 #if (EM_CORE == 1)
 
@@ -84,23 +77,12 @@
     CALL wrf_get_dom_ti_integer ( fid , 'BOTTOM-TOP_GRID_DIMENSION' ,   kde_compare , 1 , icnt , ierr3 ) ; ierr = max( ierr, ierr3 )
     IF ( ierr3 .NE. 0 ) CALL wrf_error_fatal( 'wrf_get_dom_ti_integer getting dimension information from dataset' )
 
-! do the check only for the model initial data input stream
-    IF ( ( ide .NE. ide_compare    ) .OR. &
-         ( kde .NE. kde_compare    ) .OR. &
-         ( jde .NE. jde_compare    ) ) THEN
-      WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  namelist ide,jde,kde=',ide,jde,kde,&
-                              '; input data ide,jde,kde=',ide_compare , jde_compare , kde_compare
-      CALL wrf_error_fatal( wrf_err_message )
-    ENDIF
+    ! do the check later (see check_if_dryrun below)
 
 #endif
 
     CALL nl_get_dyn_opt( 1, dyn_opt )
-    CALL wrf_get_dom_ti_integer ( fid, 'DYN_OPT', itmp, 1, icnt, ierr )
-    IF ( itmp .NE. dyn_opt .AND. switch .EQ. model_input_only ) THEN
-      WRITE(wrf_err_message,*)'input_wrf: dyn_opt in file ',itmp,' NE namelist ',dyn_opt
-      CALL wrf_error_fatal( wrf_err_message )
-    ENDIF
+    CALL wrf_get_dom_ti_integer ( fid, 'DYN_OPT', dyn_opt_tmp, 1, icnt, ierr )
 
     CALL wrf_get_dom_ti_real ( fid , 'CEN_LAT' ,  config_flags%cen_lat , 1 , icnt , ierr )
     WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_real for CEN_LAT returns ',config_flags%cen_lat
@@ -262,6 +244,36 @@
          config_flags%isoilwater = 14
     ENDIF
     CALL nl_set_isoilwater ( grid%id , config_flags%isoilwater )
+
+! If this was not a training read (dry run) check for erroneous values.  
+    CALL wrf_inquire_filename ( fid , fname , filestate , ierr )
+    IF ( ierr /= 0 ) THEN
+      WRITE(wrf_err_message,*)'module_io_wrf: output_wrf: wrf_inquire_filename Status = ',ierr
+      CALL wrf_error_fatal( wrf_err_message )
+    ENDIF
+
+    dryrun        = ( filestate .EQ. WRF_FILE_OPENED_NOT_COMMITTED )
+
+    check_if_dryrun : IF ( .NOT. dryrun ) THEN
+
+#if (EM_CORE == 1)
+
+    !  Test to make sure that the input data is the right size.
+! do the check only for the model initial data input stream
+    IF ( ( ide .NE. ide_compare    ) .OR. &
+         ( kde .NE. kde_compare    ) .OR. &
+         ( jde .NE. jde_compare    ) ) THEN
+      WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  namelist ide,jde,kde=',ide,jde,kde,&
+                              '; input data ide,jde,kde=',ide_compare , jde_compare , kde_compare
+      CALL wrf_error_fatal( wrf_err_message )
+    ENDIF
+
+#endif
+
+    IF ( dyn_opt_tmp .NE. dyn_opt .AND. switch .EQ. model_input_only ) THEN
+      WRITE(wrf_err_message,*)'input_wrf: dyn_opt in file ',dyn_opt_tmp,' NE namelist ',dyn_opt
+      CALL wrf_error_fatal( wrf_err_message )
+    ENDIF
 
     ENDIF check_if_dryrun 
 

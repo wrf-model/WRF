@@ -2005,6 +2005,12 @@ subroutine ext_phdf5_get_dom_ti_real(DataHandle,Element,Data,Count,OutCount,Stat
   integer(hsize_t), dimension(7)        :: h5_dims
   integer                               :: hdf5err
 
+  ! Do nothing unless it is time to read time-independent domain metadata.
+  IF ( .NOT. phdf5_ok_to_get_dom_ti( DataHandle ) ) THEN
+    Status = WRF_NO_ERR
+    return
+  ENDIF
+
   attr_type = H5T_NATIVE_REAL
 
   call get_attrid(DataHandle,Element,h5_attrid,Status)
@@ -2067,6 +2073,12 @@ subroutine ext_phdf5_get_dom_ti_double(DataHandle,Element,Data,Count,OutCount,St
   integer(hid_t)                        :: attr_type 
   integer(hsize_t), dimension(7)        :: h5_dims
 
+  ! Do nothing unless it is time to read time-independent domain metadata.
+  IF ( .NOT. phdf5_ok_to_get_dom_ti( DataHandle ) ) THEN
+    Status = WRF_NO_ERR
+    return
+  ENDIF
+
   attr_type = H5T_NATIVE_DOUBLE
   call get_attrid(DataHandle,Element,h5_attrid,Status)
   if(Status /= WRF_NO_ERR) then
@@ -2120,6 +2132,12 @@ subroutine ext_phdf5_get_dom_ti_integer(DataHandle,Element,Data,Count,OutCount,S
   integer(hid_t)                        :: attr_type 
   integer(hsize_t), dimension(7)        :: h5_dims
   integer                               :: hdf5err
+
+  ! Do nothing unless it is time to read time-independent domain metadata.
+  IF ( .NOT. phdf5_ok_to_get_dom_ti( DataHandle ) ) THEN
+    Status = WRF_NO_ERR
+    return
+  ENDIF
 
   attr_type = H5T_NATIVE_INTEGER
 
@@ -2185,6 +2203,12 @@ subroutine ext_phdf5_get_dom_ti_logical(DataHandle,Element,Data,Count,OutCount,S
      return
   endif
 
+  ! Do nothing unless it is time to read time-independent domain metadata.
+  IF ( .NOT. phdf5_ok_to_get_dom_ti( DataHandle ) ) THEN
+    Status = WRF_NO_ERR
+    return
+  ENDIF
+
   attr_type = DH%EnumID
   call get_attrid(DataHandle,Element,h5_attrid,Status)
   if(Status /= WRF_NO_ERR) then
@@ -2243,6 +2267,12 @@ subroutine ext_phdf5_get_dom_ti_char(DataHandle,Element,Data,Status)
   integer(hid_t)                        :: attr_type 
   integer(hsize_t), dimension(7)        :: h5_dims
   integer                               :: hdf5err
+
+  ! Do nothing unless it is time to read time-independent domain metadata.
+  IF ( .NOT. phdf5_ok_to_get_dom_ti( DataHandle ) ) THEN
+    Status = WRF_NO_ERR
+    return
+  ENDIF
 
   attr_type = H5T_NATIVE_CHARACTER
 

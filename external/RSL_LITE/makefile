@@ -1,4 +1,4 @@
-OBJSL   = c_code.o buf_for_proc.o rsl_malloc.o
+OBJSL   = c_code.o buf_for_proc.o rsl_malloc.o rsl_bcast.o task_for_point.o
 OBJS    = $(OBJSL)
 OPTS    =
 FFLAGS  =  $(OPTS) -w

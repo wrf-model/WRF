@@ -1,0 +1,33 @@
+#!/bin/csh -f
+
+set nonomatch
+
+
+foreach dir ( frame share dyn_em dyn_exp dyn_nmm phys main tools )
+( cd $dir ; echo $dir ; /bin/rm -f core wrf *.f *.exe *.kmo *.mod *.o *.inc *.F90 *.a \
+                      db_* Warnings module_state_description.F module_dm.F gmeta \
+                      wrfdata whatiread rsl.* show_domain* )
+end
+
+( cd tools/CodeBase ; make clean )
+
+( cd inc ; /bin/rm -f *.inc namelist.default )
+
+
+if ( "$1" == '-a' ) then
+  if ( -f configure.wrf ) then
+    /bin/cp configure.wrf configure.wrf.backup
+    /bin/rm -f configure.wrf
+  endif
+  if ( -f Registry/Registry ) then
+    /bin/cp Registry/Registry Registry/Registry.backup
+    /bin/rm -f Registry/Registry
+  endif
+  /bin/rm -fr ./netcdf_links
+  /bin/rm -fr tools/code_dbase
+  ( cd external ; make -i superclean )
+  ( cd tools ; /bin/rm -f registry gen_comms.c )
+  ( cd inc; /bin/rm -f dm_comm_cpp_flags wrf_io_flags.h wrf_status_codes.h )
+  ( cd run ; /bin/rm -f gm* out* fort* ideal* )
+  ( cd test/exp_real ; /bin/rm -f gm* out* fort* real* )
+endif

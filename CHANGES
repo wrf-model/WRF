@@ -1,0 +1,208 @@
+
+CHANGES for V1.3 (March 20, 2003):
+
+This release contains a few important bug fixes for WRF.
+
+- Correct two problems with specified boundary condition option: one
+  in real, and one in wrf. The one in real is associated with a dimension
+  error with height field. This causes fields in several upper
+  levels of the model to have unmatched values between interior and 
+  boundary. The problem in wrf is associated with a missing map scale
+  factor. This could actually cause model blowups if the map scale
+  factor is relatively larger (or smaller) than 1.
+
+- Correct more problems with em TKE option (diff_opt = 2 and km_opt = 2).
+  The option is now working in MPI, but not with periodic boundary
+  condition option.
+
+- Correct several bugs in model physics:
+
+  * Correct the blowup problem on Linux machine when new KF scheme 
+    (cu_physics = 1) is used.
+
+  * A bug fix for soil temperature adjustment due to the elevation difference
+    between the source model and WRF model. Previously the soil temp was
+    not adjusted.
+
+  * A small correction for saturation qvs calculation in NCEP microphysics 
+    schemes: mp_physics = 3 and 4.
+
+  * A correction for accounting for melting in NCEP 3-class scheme: mp_physics = 3.
+
+  * Account for cloud evaporation in Lin scheme: mp_physics = 2. This correction
+    has a general effect of reducing surface precipitation.
+
+  * A bug fix for the new KF scheme (cu_physics = 1) that will allow 
+    the updraft area to be dependent on grid box size.
+
+  * Bug fixes for Julian day calculation in GFDL radiation scheme (ra_lw_physics, 
+    ra_sw_physics = 99). 
+
+  * Remove vertical limit on PBL height.
+
+  * Minor correction to deformation in 3D Smagorinsky scheme.
+
+- Changes in physics:
+
+  * 2 m temperature added to the output.
+
+  * Modified the way 2 m temperature/moisture and 10 m winds are estimated
+    in stable regime.
+
+  * Add a new first order horizontal Smagorinsky diffusion option: diff_opt = 1, km_opt = 4. 
+    This option does not have a background value and depends on flow structure only.
+    It may be used for horizontal grid sizes much greater than the vertical grid size.
+
+- Other changes in the code:
+
+  * Some fixes for running LSM option for idealized cases (more needed).
+
+  * Code changes in preparation for a 6-layer (RUC) LSM.
+
+  * Input/output file name change in preparation for nesting: 
+
+    wrfinput         --> wrfinput_d01
+    wrfbdy           --> wrfbdy_d01
+    wrfout_01_000000 --> wrfout_d01_000000
+    wrfrst_01_000000 --> wrfrst_d01_000000
+
+  * Efficiency modification in module_small_step_em.F - this speeds up the
+    code by about 5%.
+
+  * Changes in compile options for IBM, and Sun.
+
+----------------------------------
+
+CHANGES for V1.2.1 (May 22, 2002):
+
+- Correct several problems that existed in the April 24 V1.2 release:
+
+  * b_wave cases for both mass and height models (boundary condition)
+  * TKE and Smagorinsky (diff_opt=2, km_opt=2 and 3) option for MPI mass model
+  * upper absorbing layer (diff_opt=2, damp_opt = 1) for mass model
+  * more robust extrapolation of pressure at top for physics in mass model
+
+- Moved physics tendency subroutines from dynamics sub-directories
+  to phys/ directory. This removed many duplicated subroutines from
+  dynamic modules, and made the code cleaner.
+
+- Many unused subroutines were removed from module_big_step_utilities_em.F
+
+- Allow maximum domain dimensions in MPI to be over 2000 in each
+  horizontal direction.
+
+- Modified mass hill2d_x case to be like height hill2d_x case.
+
+----------------------------------
+
+CHANGES for V1.2 (April 24, 2002):
+
+- A major update in WRF V1.2 is the inclusion of the mass-coordinate
+  dynamic framework (namelist option dyn_opt = 2). This new dynamic core
+  solves different sets of governing equations, has different prognostic
+  variables in the dry dynamics and uses a different upper boundary condition.
+
+- All physics interfaces are modified to accomodate the mass and height
+  models so that the same physics module can be used for both dynamic cores.
+
+- Several new physics options are added to the model:
+  * Cumulus: new Kain-Fritsch (with shallow convection)
+  * PBL: Mellor-Yamada-Janjic (Eta) TKE PBL
+  * Surface: OSU land-surface model
+  * microphysics: Eta Ferrier 2-class scheme
+
+- Ice sedimentation is added to the following microphysics schemes: 
+  NCEP cloud3 (simple ice), NCEP cloud5 (mixed phase scheme with snow and
+  ice), and Lin scheme.
+
+- A number of changes in the tubulence parameterization are implemented
+  (See the WRF Working Group 1 home page (Information) for details):
+  * The mixing length formulation in the eddy viscosity
+    calculation is changed to l = (dx*dy*dz)**(1/3). This is
+    active with diff_opt = 2 and km_opt = 2,3.
+  * For the Smagorinsky formulation, c_k = .25 (changed
+    from a hardwired c_k = 0.1 ). This is active with diff_opt =
+    2 and km_opt = 3.
+  * For the 1.5 order TKE closure, c_s = .25 (changed from a
+    hardwired value of c_s = 0.1 ), and c_e = .93 (changed from a
+    hardwired stability-dependent c_e). These are active with
+    diff_opt = 2 and km_opt = 2.
+  * c_k and c_s are model parameters that can be changed
+    in the directory share/module_model_constants.F.
+
+- wrfinput file for real-data cases at times other than the model initial
+  time is no longer generated. The prefix for input files to program
+  real from WRF SI has been changed from 'wrf_input' to 'real_input_em'
+  for mass model, and to 'real_input_eh' for height model.
+
+- The number of variables in the input and output files have been reduced
+  to a minimum set. More can be added by a user with simple changes in Registry.
+
+- Quilted I/O option to improve MPI application.
+
+- Machine-native (or internal) I/O for specific application only.
+
+============================
+
+CHANGES for V1.1 (May 2001):
+
+- A major change in WRFV1 versus WRFMODEL is the rearrangement
+  of the directory structure. The src directory has been replaced
+  with several directories containing modules sorted by
+  function. This is in anticipation of multiple dynamical cores.
+  The letters "eh" now appear in relation to functions specific to
+  the existing Eulerian Height-based dynamical core. For instance
+  compile b_wave now becomes compile eh_b_wave, and its directory
+  is now test/eh_b_wave.
+
+- I/O option 1 removed (io_form=1). This was the Fortran binary option.
+
+- dyn_opt definitions changed. Now dyn_opt=1 gives Runge Kutta and 
+  rk_ord=2,3 gives order.
+
+- NCEP cloud5 scheme added (mixed phase scheme with snow and ice).
+  Select this with mp_physics = 4.
+
+- Precipitation calculation in microphysics option 2 (Lin et al. 
+  scheme) is corrected to account for total precipitation. 
+
+- Slab surface option correction to avoid using undefined ground 
+  temperature over water to prevent occasional blow-ups.
+
+- Kain-Fritsch cumulus correction to allow restarts. NCA is now 
+  declared real.
+
+- Correction to Betts-Miller-Janjic scheme to prevent use of 
+  negative water vapor value.
+
+- Goddard shortwave correction to prevent out-of-bounds in ozone 
+  climo table.
+
+- Prevent use of uninitialized values when MRF PBL is called 
+  without all moist variables, such as when there is no cloud 
+  ice in the microphysics.
+
+- Cumulus and radiation schemes are made aware of whether there 
+  is ice in microphysics.
+
+- Precipitation totals are not reset to zero at restart.
+
+- Restarts: restart runs were resetting physics tendencies and 
+  total precipitation to zero. This is corrected.
+
+- real.exe no longer sets XLAND. This is only done in wrf.exe.
+
+- Several variables are removed from history file. The file size
+  is smaller now. 
+
+- wrfbdycheck file is no longer generated during the run.
+
+- Now model stops if it encounters error reading boundary file.
+
+- Correction to diffusion option 2: incorrect staggering of 
+  zx and zy led to asymmetry in results over symmetric topography. 
+  No problem without topography. 
+
+- Correction to open radiative conditions: Advection had 
+  an asymmetry error at open boundaries. 
+

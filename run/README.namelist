@@ -1,0 +1,285 @@
+Description of namelist variables
+---------------------------------
+
+ Note: variables followed by (max_dom) indicate that this variable needs to
+       be defined for the nests when max_dom > 1.
+
+ &time_control
+ run_days                            = 1,	; run time in days
+ run_hours                           = 0,	; run time in hours
+                                                  Note: if it is more than 1 day, one may use both run_days and run_hours
+                                                  or just run_hours. e.g. if the total run length is 36 hrs, you may
+                                                  set run_days = 1, and run_hours = 12, or run_days = 0, and run_hours = 36
+ run_minutes                         = 0,	; run time in minutes
+ run_seconds                         = 0,	; run time in seconds
+ start_year (max_dom)                = 2001,	; four digit year of starting time
+ start_month (max_dom)               = 06,	; two digit month of starting time
+ start_day (max_dom)                 = 11,	; two digit day of starting time
+ start_hour (max_dom)                = 12,	; two digit hour of starting time
+ start_minute (max_dom)              = 00,	; two digit minute of starting time
+ start_second (max_dom)              = 00,	; two digit second of starting time
+                                                  Note: the start time is used to name the first wrfout file.
+                                                  It also controls the start time for nest domains, and the time to restart
+ end_year (max_dom)                  = 2001,	; four digit year of ending time
+ end_month (max_dom)                 = 06,	; two digit month of ending time
+ end_day (max_dom)                   = 12,	; two digit day of ending time
+ end_hour (max_dom)                  = 12,	; two digit hour of ending time
+ end_minute (max_dom)                = 00,	; two digit minute of ending time
+ end_second (max_dom)                = 00,	; two digit second of ending time
+                                                  It also controls when the nest domain integrations end
+                                                  All start and end times are used by real.exe.
+
+                                                  Note that one may use either run_days/run_hours etc. or 
+                                                  end_year/month/day/hour etc. to control the length of 
+                                                  model integration. But run_days/run_hours
+                                                  takes precedence over the end times. 
+                                                  Program real.exe uses start and end times only.
+
+ interval_seconds                    = 10800,	; time interval between incoming real data, which will be the interval
+                                                  between the lateral boundary condition file
+ input_from_file (max_dom)           = T,       ; whether nested run will have input files for domains other than 1
+ history_interval (max_dom)          = 60,  	; history output file interval in minutes
+ frames_per_outfile (max_dom)        = 1, 	; output times per history output file, used to split output files 
+                                                  into smaller pieces
+ restart                             = F,	; whether this run is a restart run
+ restart_interval		     = 1440,	; restart output file interval in minutes
+ io_form_history                     = 2,       ; 2 = netCDF 
+ io_form_restart                     = 2,       ; 2 = netCDF 
+ io_form_initial                     = 2,       ; 2 = netCDF
+ io_form_boundary                    = 2,       ; netCDF format
+                                     = 4,       ; PHD5 format
+ debug_level                         = 0, 	; 50,100,200,300 values give increasing prints
+
+Other output options:
+
+ auxhist2_outname                    = "rainfall" ; file name for extra output; if not specified,
+                                                  auxhist2_d<domain>_<date> will be used
+                                                  also note that to write variables in output other
+                                                  than the history file requires Registry.EM file change
+ auxhist2_interval                   = 10,      ; interval in minutes
+ io_form_auxhist2                    = 2,       ; output in netCDF
+
+Additional ones when running 3DVAR:
+
+ write_input                         = t,       ; write input-formatted data as output
+ inputout_interval                   = 180,     ; interval in minutes when writing input-formatted data 
+ input_outname                       = wrf_3dvar_input_d<domain>_<date> ; you may change the output file name
+ inputout_begin_y                    = 0
+ inputout_begin_mo                   = 0
+ inputout_begin_d                    = 0
+ inputout_begin_h                    = 3
+ inputout_begin_s                    = 0
+ inputout_end_y                      = 0
+ inputout_end_mo                     = 0
+ inputout_end_d                      = 0
+ inputout_end_h                      = 12
+ inputout_end_s                      = 0        ; the above shows that the input-formatted data are output
+                                                  starting from hour 3 to hour 12 in 180 min interval.
+
+ &domains
+ time_step                           = 60,	; time step for integration in integer seconds
+ time_step_fract_num                 = 0,	; numerator for fractional time step 
+ time_step_fract_den                 = 1,	; denominator for fractional time step 
+                                                  Example, if you want to use 60.3 sec as your time step,
+                                                  set time_step = 60, time_step_fract_num = 3, and 
+                                                  time_step_fract_den = 10
+ max_dom                             = 1,	; number of domains - set it to > 1 if it is a nested run
+ s_we (max_dom)                      = 1,	; start index in x (west-east) direction (leave as is)
+ e_we (max_dom)                      = 91,	; end index in x (west-east) direction
+ s_sn (max_dom)                      = 1,	; start index in y (south-north) direction (leave as is)
+ e_sn (max_dom)                      = 82,	; end index in y (south-north) direction
+ s_vert (max_dom)                    = 1,	; start index in z (vertical) direction (leave as is)
+ e_vert (max_dom)                    = 28,	; end index in z (vertical) direction
+                                                  vertical dimensions need to be the same for all nests
+ dx (max_dom)                        = 10000,	; grid length in x direction, unit in meters
+ dy (max_dom)                        = 10000,	; grid length in y direction, unit in meters
+ ztop (max_dom)                      = 19000.	; used in mass model for idealized cases
+ grid_id (max_dom)                   = 1,	; domain identifier (leave as is)
+ level (max_dom)                     = 1,	; nesting level (leave as is)
+ parent_id (max_dom)                 = 0,       ; id of the parent domain
+ i_parent_start (max_dom)            = 0,       ; starting LLC I-indices from the parent domain
+ j_parent_start (max_dom)            = 0,       ; starting LLC J-indices from the parent domain
+ parent_grid_ratio (max_dom)         = 1,       ; parent-to-nest domain grid size ratio: for real-data cases
+                                                  the ratio has to be odd; for idealized cases,
+                                                  the ratio can be even if feedback is set to 0.
+ parent_time_step_ratio (max_dom)    = 1,       ; parent-to-nest time step ratio; it can be different
+                                                  from the parent_grid_ratio
+ feedback                            = 1,       ; feedback from nest to its parent domain; 0 = no feedback
+                                                  works only if the parent_grid_ratio is odd
+ smooth_option                       = 0        ; smoothing option for parent domain, used only with feedback
+                                                  option on. 0: no smoothing; 1: 1-2-1 smoothing; 2: smoothing-desmoothing
+
+
+ &physics
+
+ Note: even the physics options can be different in different nest domains, 
+       caution must be used as what options are sensible to use
+
+ chem_opt                            = 0,       ; chemistry option - not yet available
+ mp_physics (max_dom)                microphysics option
+                                     = 0, no microphysics
+                                     = 1, Kessler scheme
+                                     = 2, Lin et al. scheme
+                                     = 3, WSM 3-class simple ice scheme
+                                     = 4, WSM 5-class scheme
+                                     = 5, Ferrier (new Eta) microphysics
+                                     = 6, WSM 6-class graupel scheme
+                                     = 98, NCEP 3-class simple ice scheme (to be removed)
+                                     = 99, NCEP 5-class scheme (to be removed)
+
+ ra_lw_physics (max_dom)             longwave radiation option
+                                     = 0, no longwave radiation
+                                     = 1, rrtm scheme
+                                     = 99, GFDL (Eta) longwave (semi-supported)
+
+ ra_sw_physics (max_dom)             shortwave radiation option
+                                     = 0, no shortwave radiation
+                                     = 1, Dudhia scheme
+                                     = 2, Goddard short wave
+                                     = 99, GFDL (Eta) longwave (semi-supported)
+
+ radt (max_dom)                      = 30,	; minutes between radiation physics calls
+                                                  reduce it if grid distance is finer
+
+ sf_sfclay_physics (max_dom)         surface-layer option (old bl_sfclay_physics option)
+                                     = 0, no surface-layer
+                                     = 1, Monin-Obukhov scheme
+                                     = 2, Monin-Obukhov (Janjic Eta) scheme
+
+ sf_surface_physics (max_dom)        land-surface option (old bl_surface_physics option)
+                                     = 0, no surface temp prediction
+                                     = 1, thermal diffusion scheme
+                                     = 2, Noah land-surface model
+                                     = 3, RUC land-surface model
+
+ bl_pbl_physics (max_dom)            boundary-layer option
+                                     = 0, no boundary-layer 
+                                     = 1, YSU scheme
+                                     = 2, Mellor-Yamada-Janjic (Eta) TKE scheme
+                                     = 99, MRF scheme (to be removed)
+
+ bldt (max_dom)                      = 0,       ; minutes between boundary-layer physics calls
+
+ cu_physics (max_dom)                cumulus option
+                                     = 0, no cumulus
+                                     = 1, Kain-Fritsch (new Eta) scheme
+                                     = 2, Betts-Miller-Janjic scheme
+                                     = 3, Grell-Devenyi ensemble scheme
+                                     = 99, previous Kain-Fritsch scheme
+
+ cudt                                = 0,       ; minutes between cumulus physics calls
+
+ isfflx                              = 1,	; heat and moisture fluxes from the surface
+                                                  (only works for sf_sfclay_physics = 1)
+                                                  1 = with fluxes from the surface
+                                                  0 = no flux from the surface
+ ifsnow                              = 0,	; snow-cover effects
+                                                  (only works for sf_surface_physics = 1)
+                                                  1 = with snow-cover effect
+                                                  0 = without snow-cover effect
+ icloud                              = 1,	; cloud effect to the optical depth in radiation
+                                                  (only works for ra_sw_physics = 1 and ra_lw_physics = 1)
+                                                  1 = with cloud effect
+                                                  0 = without cloud effect
+ surface_input_source                = 1,	; where landuse and soil category data come from:
+                                                  1 = SI/gridgen
+                                                  2 = GRIB data from another model (only possible
+                                                      (VEGCAT/SOILCAT are in wrf_real_input_em files from SI)
+ num_soil_layers                     = 5,	; number of soil layers in land surface model
+                                                  = 5: thermal diffusion scheme
+                                                  = 4: Noah landsurface model
+                                                  = 6: RUC landsurface model
+
+ maxiens                             = 1,       ; Grell-Devenyi only
+ maxens                              = 3,       ; G-D only
+ maxens2                             = 3,       ; G-D only
+ maxens3                             = 16       ; G-D only
+ ensdim                              = 144      ; G-D only
+                                                  These are recommended numbers. If you would like to use
+                                                  any other number, consult the code, know what you are doing.
+
+
+ &dynamics
+ dyn_opt                             = 2,	; dynamical core option: advanced research WRF core (Eulerian mass)
+ rk_ord                              = 3,	; time-integration scheme option:
+                                                  2 = Runge-Kutta 2nd order
+                                                  3 = Runge-Kutta 3rd order
+ diff_opt                            = 0,	; turbulence and mixing option:
+                                                  0 = no turbulence or explicit
+                                                      spatial numerical filters (km_opt IS IGNORED).
+                                                  1 = evaluates 2nd order
+                                                      diffusion term on coordinate surfaces.
+                                                      uses kvdif for vertical diff unless PBL option
+                                                      is used. may be used with km_opt = 1 and 4.
+                                                      (= 1, recommended for real-data case when grid distance < 10 km)
+                                                  2 = evaluates mixing terms in
+                                                      physical space (stress form) (x,y,z).
+                                                      turbulence parameterization is chosen
+                                                      by specifying km_opt.
+ km_opt                              = 1,	; eddy coefficient option
+                                                  1 = constant (use khdif kvdif)
+                                                  2 = 1.5 order TKE closure (3D)
+                                                  3 = Smagorinsky first order closure (3D)
+                                                      Note: option 2 and 3 are not recommended for DX > 2 km
+                                                  4 = horizontal Smagorinsky first order closure
+                                                      (recommended for real-data case when grid distance < 10 km)
+ damp_opt                            = 0,	; upper level damping flag
+                                                  0 = without damping
+                                                  1 = with    damping
+ w_damping                           = 0,       ; vertical velocity damping flag (for operational use)
+                                                  0 = without damping
+                                                  1 = with    damping
+ zdamp (max_dom)                     = 5000.,	; damping depth (m) from model top
+ dampcoef (max_dom)                  = 0.,	; damping coefficient (dampcoef <= 0.2)
+                                                  may set it <= 0.15 for real data if needed
+ khdif (max_dom)                     = 0,	; horizontal diffusion constant (m^2/s)
+ kvdif (max_dom)                     = 0,	; vertical diffusion constant (m^2/s)
+ smdiv (max_dom)                     = 0.1,	; divergence damping (0.1 is typical)
+ emdiv (max_dom)                     = 0.01,	; external-mode filter coef for mass coordinate model
+                                                  (0.01 is typical for real-data cases)
+ epssm (max_dom)                     = .1,	; time off-centering for vertical sound waves
+ non_hydrostatic (max_dom)           = .true.,	; whether running the model in hydrostatic or non-hydro mode
+ h_mom_adv_order (max_dom)           = 5,       ; horizontal momentum advection order (5=5th, etc.)
+ v_mom_adv_order (max_dom)           = 3,       ; vertical momentum advection order
+ h_sca_adv_order (max_dom)           = 5,       ; horizontal scalar advection order
+ v_sca_adv_order (max_dom)           = 3,       ; vertical scalar advection order
+ time_step_sound (max_dom)           = 4 /	; number of sound steps per time-step
+                                                  (if using a time_step much larger than 6*dx (in km),
+                                                  increase number of sound steps)
+
+
+ &bc_control
+ spec_bdy_width                      = 5,       ; total number of rows for specified boundary value nudging
+ spec_zone                           = 1,       ; number of points in specified zone (spec b.c. option)
+ relax_zone                          = 4,       ; number of points in relaxation zone (spec b.c. option)
+ specified (max_dom)                 = .false., ; specified boundary conditions (inactive)
+                                                  the above 4 are used for real-data runs
+
+ periodic_x (max_dom)                = .false., ; periodic boundary conditions in x direction
+ symmetric_xs (max_dom)              = .false., ; symmetric boundary conditions at x start (west)
+ symmetric_xe (max_dom)              = .false., ; symmetric boundary conditions at x end (east)
+ open_xs (max_dom)                   = .false., ; open boundary conditions at x start (west)
+ open_xe (max_dom)                   = .false., ; open boundary conditions at x end (east)
+ periodic_y (max_dom)                = .false., ; periodic boundary conditions in y direction
+ symmetric_ys (max_dom)              = .false., ; symmetric boundary conditions at y start (south)
+ symmetric_ye (max_dom)              = .false., ; symmetric boundary conditions at y end (north)
+ open_ys (max_dom)                   = .false., ; open boundary conditions at y start (south)
+ open_ye (max_dom)                   = .false., ; open boundary conditions at y end (north)
+ nested (max_dom)                    = .false., ; nested boundary conditions (inactive)
+
+
+ &namelist_quilt    This namelist record controls asynchronized I/O for MPI applications. 
+
+ nio_tasks_per_group                 = 0,        default value is 0: no quilting; > 0 quilting I/O
+ nio_groups                          = 1,        default 1, don't change
+
+
+ miscelleneous in &domains:
+ tile_sz_x                           = 0,	; number of points in tile x direction
+ tile_sz_y                           = 0,	; number of points in tile y direction
+						  can be determined automatically
+ numtiles                            = 1,	; number of tiles per patch (alternative to above two items)
+ nproc_x                             = -1,      ; number of processors in x for decomposition
+ nproc_y                             = -1,      ; number of processors in y for decomposition
+                                                  -1: code will do automatic decomposition
+                                                  >1: for both: will be used for decomposition

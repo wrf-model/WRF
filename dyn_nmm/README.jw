@@ -1,0 +1,9 @@
+The code has been modified plenty to get it compiled and linked.  As is,
+it will only run serially and without physics.  There is a makefile for
+compiling with the physics routines that came with this core, but there are
+several files that are distant cousins of files also found in the "phys"
+subdirectory.  So either these files must be renamed or some time taken to
+get the different versions to agree.  It is also worth noting that Tom Black
+of NCEP has been working on newer versions of some of the physics routines
+and his work should be included before much effort is put into the physics
+files that are here.

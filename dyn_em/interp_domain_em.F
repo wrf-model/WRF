@@ -1,0 +1,59 @@
+#ifdef DM_PARALLEL
+
+subroutine dummy_interp_em
+! these routines will be provided the module_dm from the appropriate external package
+! this dummy routine is just here for compilers that complain if they do not see 
+! some fortran
+end
+
+#else
+SUBROUTINE interp_domain_em_part1 ( grid, ngrid, config_flags ,  &
+!
+#include "em_dummy_args.inc"
+!
+                 )
+         USE module_domain
+         USE module_configure
+         TYPE(domain), POINTER :: grid , ngrid
+#include <em_dummy_decl.inc>
+
+      INTEGER nlev
+      INTEGER i,j,pig,pjg,cm,cn,nig,njg,k
+      TYPE (grid_config_rec_type)            :: config_flags
+      INTEGER       ::          cids, cide, cjds, cjde, ckds, ckde,    &
+                                cims, cime, cjms, cjme, ckms, ckme,    &
+                                cips, cipe, cjps, cjpe, ckps, ckpe
+      INTEGER       ::          nids, nide, njds, njde, nkds, nkde,    &
+                                nims, nime, njms, njme, nkms, nkme,    &
+                                nips, nipe, njps, njpe, nkps, nkpe
+
+#define COPY_IN
+#include <em_scalar_derefs.inc>
+
+      CALL get_ijk_from_grid (  grid ,                   &
+                                cids, cide, cjds, cjde, ckds, ckde,    &
+                                cims, cime, cjms, cjme, ckms, ckme,    &
+                                cips, cipe, cjps, cjpe, ckps, ckpe    )
+      CALL get_ijk_from_grid (  ngrid ,              &
+                                nids, nide, njds, njde, nkds, nkde,    &
+                                nims, nime, njms, njme, nkms, nkme,    &
+                                nips, nipe, njps, njpe, nkps, nkpe    )
+
+      nlev  = ckde - ckds + 1
+
+      ! code here to interpolate the data into the nested domain
+#  include "em_nest_interpdown_interp.inc"
+
+#define COPY_OUT
+#include <em_scalar_derefs.inc>
+      RETURN
+
+END SUBROUTINE interp_domain_em_part1
+
+! Stub ... not used in serial code
+SUBROUTINE interp_domain_em_part2
+END SUBROUTINE interp_domain_em_part2
+
+#endif
+
+

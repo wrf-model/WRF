@@ -1,0 +1,71 @@
+#
+
+LN      =       ln -sf
+MAKE    =       make -i -r
+RM      =       rm -f
+
+
+MODULES =                 		\
+        module_ADVECTION.o         	\
+        module_BC_NMM.o         	\
+        module_BNDRY_COND.o         	\
+        module_CLDWTR.o         	\
+        module_CTLBLK.o         	\
+	module_CU_BMJ.o			\
+        module_DIFFUSION.o         	\
+        module_IGWAVE_ADJUST.o         	\
+        module_MP_ETANEW.o             	\
+        module_NONHY_DYNAM.o         	\
+        module_PHYS.o         		\
+	module_RA_GFDLETA.o		\
+        module_TIMERS.o         	\
+        module_MPPINIT.o        	\
+        module_MPP.o              	\
+        module_NMM_CONSTANTS.o          \
+        module_INDX.o                   \
+        module_TIMERS.o                 \
+        module_ZEROX.o                  \
+	$(CASE_MODULE)
+
+# possible CASE_MODULE settings
+#	module_initialize_nmm.o        
+
+OBJS    = 		          	\
+	CLTEND.o			\
+	CUCNVC.o			\
+	CUMULUS_DRIVER.o		\
+	GSMDRIVE.o			\
+	MICROPHYSICS_DRIVER.o		\
+	RADIATION.o			\
+	RADIATION_DRIVER.o		\
+	RDTEMP.o			\
+	start_domain_nmm.o  		\
+	solve_nmm.o              
+
+LIBTARGET    =  dyn_nmm
+TARGETDIR    =  ./
+$(LIBTARGET) :  $(MODULES) $(OBJS)
+		$(AR) ../main/libwrflib.a $(MODULES) $(OBJS)
+
+include ../configure.wrf
+
+clean:
+	@ echo 'use the clean script'
+
+# DEPENDENCIES : only dependencies after this line (don't remove the word DEPENDENCIES)
+
+solve_nmm.o:   module_MPP.o module_BC_NMM.o module_PHYS.o \
+               module_IGWAVE_ADJUST.o module_ADVECTION.o  \
+               module_NONHY_DYNAM.o module_DIFFUSION.o    \
+               module_BNDRY_COND.o module_TIMERS.o module_NMM_CONSTANTS.o \
+               module_CTLBLK.o
+
+module_ADVECTION.o: module_MPP.o module_NMM_CONSTANTS.o module_INDX.o
+
+module_MPPINIT.o: module_MPP.o module_NMM_CONSTANTS.o
+
+module_DIFFUSION.o: module_MPP.o module_NMM_CONSTANTS.o module_INDX.o
+
+module_IGWAVE_ADJUST.o: module_MPP.o module_NMM_CONSTANTS.o module_INDX.o module_ZEROX.o module_TIMERS.o
+
+CUCNVC.o:  module_NMM_CONSTANTS.o

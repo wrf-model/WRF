@@ -1,0 +1,18 @@
+
+SUBROUTINE start_domain_em      ( grid ,    &
+!
+#include <em_dummy_args.inc>
+!
+                 )
+
+   USE module_domain
+   USE module_driver_constants
+
+   !  Input data.
+   TYPE(domain) , INTENT(INOUT)         :: grid
+
+#include <em_dummy_decl.inc>
+
+
+END SUBROUTINE start_domain_em
+

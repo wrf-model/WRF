@@ -1,0 +1,339 @@
+WRF API:
+
+Element is an character string describing the metadata requested (it will
+be defined by the SI group in conjunction with the ??? group) Case will be
+folded to upper case and trailing blanks will be trimmed. Embedded blanks
+will be ignored unless the lower level runtime system has heartburn about
+embedded blanks in metadata names. Counts are omitted for character type
+metadata, if we want to force a size in the metadata (or truncate on a get)
+we can have a count (length) of the character argument passed in
+(otherwise, I will use the implicit argument that is passed in Fortran by
+convention).
+
+Dates are 19 characters long yyyy-mm-dd_hh:mm:ss
+Variable names are 31 characters long
+
+Type codes 
+
+  WRF_REAL                                 Real type code
+  WRF_REAL8                                Real*8 type code
+  WRF_INTEGER                              Integer type code
+  WRF_LOGICAL                              Logical type code
+
+Informational status codes returned by EXT_INQUIRE_OPENED
+
+  WRF_FILE_NOT_OPENED                      Not opened
+  WRF_FILE_OPENED_NOT_COMMITTED            Opened for writing but not committed
+  WRF_FILE_OPENED_AND_COMMITTED            Opened for writing and committed
+  WRF_FILE_OPENED_FOR_READ                 Opened for reading
+
+Non Fatal Status codes:
+
+  WRF_NO_ERR                               No error
+  WRF_ERR_WARN_FILE_NF                     File not found (or incomplete)
+  WRF_ERR_WARN_MD_NF                       Metadata not found
+  WRF_ERR_WARN_TIME_NF                     Timestamp not found
+  WRF_ERR_WARN_TIME_EOF                    No more time stamps
+  WRF_ERR_WARN_VAR_NF                      Variable not found
+  WRF_ERR_WARN_VAR_EOF                     No more variables for the current time
+  WRF_ERR_WARN_MORE_DATA_IN_FILE           More data available than requested
+  WRF_ERR_WARN_DATE_LT_LAST_DATE           New date less than previous date
+  WRF_ERR_WARN_TOO_MANY_FILES              Too many files requested
+  WRF_ERR_WARN_TYPE_MISMATCH               Data type mismatch
+  WRF_ERR_WARN_LENGTH_LESS_THAN_1          Requested length <= 0
+  WRF_ERR_WARN_WRITE_RONLY_FILE            Attempt to write read only file
+  WRF_ERR_WARN_READ_WONLY_FILE             Attempt to read write only file
+  WRF_ERR_WARN_NETCDF                      NetCDF error
+  WRF_ERR_WARN_FILE_NOT_OPENED             Attempt to access unopened file
+  WRF_ERR_WARN_DATESTR_ERROR               Badly formatted date string
+  WRF_ERR_WARN_DRYRUN_READ                 Attempt at read during a dry run
+  WRF_ERR_WARN_ZERO_LENGTH_GET             Attempt to get zero words
+  WRF_ERR_WARN_ZERO_LENGTH_PUT             Attempt to put zero words
+  WRF_ERR_WARN_2DRYRUNS_1VARIABLE          Attempt to do 2 dry runs for 1 variable
+  WRF_ERR_WARN_DATA_TYPE_NOT_FOUND         Data type not found
+  WRF_ERR_WARN_READ_PAST_EOF               Attempt to read past EOF
+  WRF_ERR_WARN_BAD_DATA_HANDLE             Bad data handle
+  WRF_ERR_WARN_WRTLEN_NE_DRRUNLEN          Write length not equal dry run length
+  WRF_ERR_WARN_DRYRUN_CLOSE                Attempt to close file during a dry run
+  WRF_ERR_WARN_DATESTR_BAD_LENGTH          Date string not 19 characters in length
+  WRF_ERR_WARN_ZERO_LENGTH_READ            Attempt to read zero words
+  WRF_ERR_WARN_TOO_MANY_DIMS               More dimensions requested than dry run
+  WRF_ERR_WARN_TOO_MANY_VARIABLES          Too many variables requested
+  WRF_ERR_WARN_COUNT_TOO_LONG              Attempt to read too much data
+  WRF_ERR_WARN_DIMENSION_ERROR             Input dimensions inconsistemt             
+  WRF_ERR_WARN_BAD_MEMORYORDER             Input MemoryOrder not recognized
+  WRF_ERR_WARN_DIMNAME_REDEFINED           A dimension name with 2 different lengths
+  WRF_ERR_WARN_MD_AFTER_OPEN               Attempt to write metadata after open commit
+  WRF_ERR_WARN_CHARSTR_GT_LENDATA          Requested string > than provided storage
+
+Fatal Status codes:
+
+  WRF_ERR_FATAL_ALLOCATION_ERROR           Allocation error
+  WRF_ERR_FATAL_DEALLOCATION_ERR           Deallocation error
+  WRF_ERR_FATAL_BAD_FILE_STATUS            Bad file status
+  WRF_ERR_FATAL_BAD_VARIABLE_DIM           Variable on disk not 3-D
+  WRF_ERR_FATAL_MDVAR__NOT_1D              Metadata variable on disk not 1-D
+  WRF_ERR_FATAL_TOO_MANY_TIMES             Hard coded time dimension too small
+
+
+MemoryOrder is a character string that indicates the MEMORY order of the
+MODEL.  The runtime system will know the ordering on disk and transform to
+the memory order if necessary. The following values are supported.
+
+    Full arrays    One D (column)    Non-decomposed   Boundary   Boundary
+     -----------    ------------      --------------   --------  --------
+      "XYZ"            "Z"                "C"           "XSZ"      "XS"
+      "XZY"                                             "XEZ"      "XE"
+      "ZXY"         Scalars                             "YSZ"      "YS"
+      "XY"          ------------                        "YEZ"      "YE"
+      "YX"             "0" (zero)
+
+Each character of MemoryOrder can either be upper case (as shown) or lower
+case.  Upper case means that the data represented by that character is
+stored in ascending order (for example: 1,N) and Lower case means that the
+data is stored in decending order (for example: N,1,-1).
+
+WRF I/O routines:
+
+EXT_INIT(Status)
+INTEGER      , INTENT (OUT) :: Status
+
+EXT_EXIT(Status)
+INTEGER      , INTENT (OUT) :: Status
+
+EXT_OPEN_FOR_WRITE_BEGIN(FileName,Comm,SysDepInfo,DataHandle,Status)
+CHARACTER*(*), INTENT (IN)  :: FileName
+INTEGER      , INTENT (IN)  :: Comm
+CHARACTER*(*), INTENT (IN)  :: SysDepInfo
+INTEGER      , INTENT (OUT) :: DataHandle
+INTEGER      , INTENT (OUT) :: Status
+
+EXT_OPEN_FOR_WRITE_COMMIT(DataHandle, Status)
+INTEGER          , INTENT (IN)  :: DataHandle
+INTEGER          , INTENT (OUT) :: Status
+
+EXT_OPEN_DATASET_FOR_READ(FileName, Comm, SysDepInfo, DataHandle, Status)
+CHARACTER*(*), INTENT (IN)  :: FileName
+INTEGER      , INTENT (IN)  :: Comm
+CHARACTER*(*), INTENT (IN)  :: SysDepInfo
+INTEGER      , INTENT (OUT) :: DataHandle
+INTEGER      , INTENT (OUT) :: Status
+
+EXT_INQUIRE_OPENED( DataHandle, FileName , FileStatus, Status)
+INTEGER      , INTENT (IN)  :: DataHandle
+CHARACTER*(*), INTENT (IN)  :: FileName
+INTEGER      , INTENT (OUT) :: FileStatus
+INTEGER      , INTENT (OUT) :: Status
+
+EXT_CLOSE (DataHandle, Status)
+INTEGER, INTENT (IN)  :: DataHandle
+INTEGER, INTENT (OUT) :: Status
+
+EXT_SYNC (DataHandle, Status)
+INTEGER, INTENT (IN)  :: DataHandle
+INTEGER, INTENT (OUT) :: Status
+
+EXT_GET_NEXT_TIME (DataHandle, DateStr, Status)
+INTEGER          , INTENT (IN)  :: DataHandle
+CHARACTER(LEN=19), INTENT (OUT) :: DateStr
+INTEGER          , INTENT (OUT) :: Status
+
+EXT_SET_TIME (DataHandle, DateStr, Status)     ! Implicitly sets variable
+INTEGER          , INTENT (IN)  :: DataHandle  ! to "first" variable
+CHARACTER(LEN=19), INTENT (IN)  :: DateStr
+INTEGER          , INTENT (OUT) :: Status
+
+EXT_GET_NEXT_VAR (DataHandle, VarName, Status)
+INTEGER          , INTENT (IN)  :: DataHandle
+CHARACTER(LEN=31), INTENT (OUT) :: VarName
+INTEGER          , INTENT (OUT) :: Status
+
+!!!!!!!<type>=REAL,INTEGER,REAL8,LOGICAL
+!!!!!!!<type_spec>=REAL,INTEGER,REAL*8,LOGICAL
+EXT_GET_GLB_MD_<type> (DataHandle, Element, Data, Count, OutCount, Status)
+INTEGER      , INTENT (IN)  :: DataHandle
+CHARACTER*(*), INTENT (IN)  :: Element
+<type_spec>  , INTENT (OUT) :: Data(*)
+INTEGER      , INTENT (IN)  :: Count
+INTEGER      , INTENT (OUT) :: OutCount
+INTEGER      , INTENT (OUT) :: Status
+
+EXT_GET_GLB_MD_CHAR (DataHandle, Element, Data, Status)
+INTEGER      , INTENT (IN)  :: DataHandle
+CHARACTER*(*), INTENT (IN)  :: Element
+CHARACTER*(*), INTENT (OUT) :: Data
+INTEGER      , INTENT (OUT) :: Status
+
+!!!!!!!<type>=REAL,INTEGER,REAL8,LOGICAL
+!!!!!!!<type_spec>=REAL,INTEGER,REAL*8,LOGICAL
+EXT_PUT_GLB_MD_<type> (DataHandle, Element, Data, Count, Status)
+INTEGER      , INTENT (IN)  :: DataHandle
+CHARACTER*(*), INTENT (IN)  :: Element
+<type_spec>  , INTENT (IN)  :: Data(*)
+INTEGER      , INTENT (IN)  :: Count
+INTEGER      , INTENT (OUT) :: Status
+
+EXT_PUT_GLB_MD_CHAR (DataHandle, Element, Data, Status)
+INTEGER      , INTENT (IN)  :: DataHandle
+CHARACTER*(*), INTENT (IN)  :: Element
+CHARACTER*(*), INTENT (IN)  :: Data
+INTEGER      , INTENT (OUT) :: Status
+
+!!!!!!!<type>=REAL,INTEGER,REAL8,LOGICAL
+!!!!!!!<type_spec>=REAL,INTEGER,REAL*8,LOGICAL
+EXT_GET_DOM_MD_<type> (DataHandle,Element,DateStr,Data,Count,OutCount,Status)
+INTEGER          , INTENT (IN)  :: DataHandle
+CHARACTER*(*)    , INTENT (IN)  :: Element
+CHARACTER(LEN=19), INTENT (IN)  :: DateStr
+<type_spec>      , INTENT (OUT) :: Data(*)
+INTEGER          , INTENT (IN)  :: Count
+INTEGER          , INTENT (OUT) :: OutCount
+INTEGER          , INTENT (OUT) :: Status
+
+EXT_GET_DOM_MD_CHAR (DataHandle, Element, DateStr, Data, Status)
+INTEGER          , INTENT (IN)  :: DataHandle
+CHARACTER*(*)    , INTENT (IN)  :: Element
+CHARACTER(LEN=19), INTENT (IN)  :: DateStr
+CHARACTER*(*)    , INTENT (OUT) :: Data
+INTEGER          , INTENT (OUT) :: Status
+
+!!!!!!!<type>=REAL,INTEGER,REAL8,LOG
+!!!!!!!<type_spec>=REAL,INTEGER,REAL*8,LOGICAL
+EXT_PUT_DOM_MD_<type> (DataHandle, Element, DateStr, Data, Count, Status)
+INTEGER          , INTENT (IN)  :: DataHandle
+CHARACTER*(*)    , INTENT (IN)  :: Element
+CHARACTER(LEN=19), INTENT (IN)  :: DateStr
+<type_spec>      , INTENT (IN)  :: Data(*)
+INTEGER          , INTENT (IN)  :: Count
+INTEGER          , INTENT (OUT) :: Status
+
+EXT_PUT_DOM_MD_CHAR (DataHandle, Element, DateStr, Data, Status)
+INTEGER          , INTENT (IN)  :: DataHandle
+CHARACTER*(*)    , INTENT (IN)  :: Element
+CHARACTER(LEN=19), INTENT (IN)  :: DateStr
+CHARACTER*(*)    , INTENT (IN)  :: Data
+INTEGER          , INTENT (OUT) :: Status
+
+!!!!!!!<type>=REAL,INTEGER,REAL8,LOG
+!!!!!!!<type_spec>=REAL,INTEGER,REAL*8,LOGICAL
+EXT_GET_VAR_MD_<type> (DataHandle,Element,Varname,Data,Count,OutCount,Status)
+INTEGER          , INTENT (IN)  :: DataHandle
+CHARACTER*(*)    , INTENT (IN)  :: Element
+CHARACTER(LEN=31), INTENT (IN)  :: VarName
+<type_spec>      , INTENT (OUT) :: Data(*)
+INTEGER          , INTENT (IN)  :: Count
+INTEGER          , INTENT (OUT) :: OutCount
+INTEGER          , INTENT (OUT) :: Status
+
+EXT_GET_VAR_MD_CHAR (DataHandle,Element,Varname,Data, Status)
+INTEGER          , INTENT (IN)  :: DataHandle
+CHARACTER*(*)    , INTENT (IN)  :: Element
+CHARACTER(LEN=31), INTENT (IN)  :: VarName
+CHARACTER*(*)    , INTENT (OUT) :: Data
+INTEGER          , INTENT (OUT) :: Status
+
+!!!!!!!<type>=REAL,INTEGER,REAL8,LOG
+!!!!!!!<type_spec>=REAL,INTEGER,REAL*8,LOGICAL
+EXT_GET_VARTIME_MD_<type> (DataHandle,Element,DateStr,Varname,Data,Count,OutCount,Status)
+INTEGER          , INTENT (IN)  :: DataHandle
+CHARACTER*(*)    , INTENT (IN)  :: Element
+CHARACTER(LEN=19), INTENT (IN)  :: DateStr
+CHARACTER(LEN=31), INTENT (IN)  :: VarName
+<type_spec>      , INTENT (OUT) :: Data(*)
+INTEGER          , INTENT (IN)  :: Count
+INTEGER          , INTENT (OUT) :: OutCount
+INTEGER          , INTENT (OUT) :: Status
+
+EXT_GET_VARTIME_MD_CHAR (DataHandle,Element,DateStr,Varname,Data, Status)
+INTEGER          , INTENT (IN)  :: DataHandle
+CHARACTER*(*)    , INTENT (IN)  :: Element
+CHARACTER(LEN=19), INTENT (IN)  :: DateStr
+CHARACTER(LEN=31), INTENT (IN)  :: VarName
+CHARACTER*(*)    , INTENT (OUT) :: Data
+INTEGER          , INTENT (OUT) :: Status
+
+!!!!!!!<type>=REAL,INTEGER,REAL8,LOGICAL
+!!!!!!!<type_spec>=REAL,INTEGER,REAL*8,LOGICAL
+EXT_PUT_VAR_MD_<type> (DataHandle,Element,Varname,Data, Count, Status)
+INTEGER          , INTENT (IN)  :: DataHandle
+CHARACTER*(*)    , INTENT (IN)  :: Element
+CHARACTER(LEN=31), INTENT (IN)  :: VarName
+<type_spec>      , INTENT (IN)  :: Data(*)
+INTEGER          , INTENT (IN)  :: Count
+INTEGER          , INTENT (OUT) :: Status
+
+EXT_PUT_VAR_MD_CHAR (DataHandle,Element,Varname,Data, Status)
+INTEGER          , INTENT (IN)  :: DataHandle
+CHARACTER*(*)    , INTENT (IN)  :: Element
+CHARACTER(LEN=31), INTENT (IN)  :: VarName
+CHARACTER*(*)    , INTENT (IN)  :: Data
+INTEGER          , INTENT (OUT) :: Status
+
+!!!!!!!<type>=REAL,INTEGER,REAL8,LOGICAL
+!!!!!!!<type_spec>=REAL,INTEGER,REAL*8,LOGICAL
+EXT_PUT_VARTIME_MD_<type> (DataHandle,Element,DateStr,Varname,Data, Count, Status)
+INTEGER          , INTENT (IN)  :: DataHandle
+CHARACTER*(*)    , INTENT (IN)  :: Element
+CHARACTER(LEN=19), INTENT (IN)  :: DateStr
+CHARACTER(LEN=31), INTENT (IN)  :: VarName
+<type_spec>      , INTENT (IN)  :: Data(*)
+INTEGER          , INTENT (IN)  :: Count
+INTEGER          , INTENT (OUT) :: Status
+
+EXT_PUT_VARTIME_MD_CHAR (DataHandle,Element,DateStr,Varname,Data, Status)
+INTEGER          , INTENT (IN)  :: DataHandle
+CHARACTER*(*)    , INTENT (IN)  :: Element
+CHARACTER(LEN=19), INTENT (IN)  :: DateStr
+CHARACTER(LEN=31), INTENT (IN)  :: VarName
+CHARACTER*(*)    , INTENT (IN)  :: Data
+INTEGER          , INTENT (OUT) :: Status
+
+EXT_READ_FIELD (DataHandle, DateStr, VarName, Field, FieldType, Comm,
+ DomainDesc, MemoryOrder, DimNames,
+ DomainStart, DomainEnd, MemoryStart, MemoryEnd, PatchStart, PatchEnd, Status)
+INTEGER                   , INTENT (IN)    :: DataHandle
+CHARACTER(LEN=19)         , INTENT (IN)    :: DateStr
+CHARACTER(LEN=31)         , INTENT (IN)    :: VarName
+INTEGER                   , INTENT (OUT)   :: Field ! (Using an implicit interface)
+INTEGER                   , INTENT (IN)    :: FieldType !WRF_REAL,WRF_REAL8,
+                                                        !WRF_INTEGER,WRF_LOGICAL
+INTEGER                   , INTENT (INOUT) :: Comm
+INTEGER                   , INTENT (IN)    :: DomainDesc
+CHARACTER*(*)             , INTENT (IN)    :: MemoryOrder  
+CHARACTER*(*),DIMENSION(3), INTENT (IN)    :: DimNames
+INTEGER      ,DIMENSION(3), INTENT (IN)    :: DomainStart, DomainEnd
+INTEGER      ,DIMENSION(3), INTENT (IN)    :: MemoryStart, MemoryEnd
+INTEGER      ,DIMENSION(3), INTENT (IN)    :: PatchStart,  PatchEnd
+INTEGER                   , INTENT (OUT)   :: Status
+
+EXT_WRITE_FIELD (DataHandle, DateStr, VarName, Field, FieldType, Comm,
+ DomainDesc, MemoryOrder, DimNames,,
+ DomainStart, DomainEnd, MemoryStart, MemoryEnd, PatchStart, PatchEnd, Status)
+INTEGER                   , INTENT (IN)    :: DataHandle
+CHARACTER(LEN=19)         , INTENT (IN)    :: DateStr
+CHARACTER(LEN=31)         , INTENT (IN)    :: VarName
+INTEGER                   , INTENT (IN)    :: Field ! (Using an implicit interface)
+INTEGER                   , INTENT (IN)    :: FieldType !WRF_REAL,WRF_REAL8,
+                                                        !WRF_INTEGER,WRF_LOGICAL
+INTEGER                   , INTENT (INOUT) :: Comm
+INTEGER                   , INTENT (IN)    :: DomainDesc
+CHARACTER*(*)             , INTENT (IN)    :: MemoryOrder  
+CHARACTER*(*),DIMENSION(3), INTENT (IN)    :: DimNames
+INTEGER      ,DIMENSION(3), INTENT (IN)    :: DomainStart, DomainEnd
+INTEGER      ,DIMENSION(3), INTENT (IN)    :: MemoryStart, MemoryEnd
+INTEGER      ,DIMENSION(3), INTENT (IN)    :: PatchStart,  PatchEnd
+INTEGER                   , INTENT (OUT)   :: Status
+
+EXT_INQUIRE_FILENAME( DataHandle, FileName,  FileStatus, Status )
+INTEGER               ,INTENT(IN)     :: DataHandle
+CHARACTER*(*)         ,INTENT(OUT)    :: FileName
+INTEGER               ,INTENT(OUT)    :: FileStatus
+INTEGER               ,INTENT(OUT)    :: Status
+
+EXT_GET_VAR_INFO(DataHandle,Name,NDim,MemoryOrder,DomainStart,DomainEnd,Status)
+INTEGER               ,INTENT(IN)     :: DataHandle
+CHARACTER*(*)         ,INTENT(IN)     :: Name
+INTEGER               ,INTENT(OUT)    :: NDim
+CHARACTER*(*)         ,INTENT(OUT)    :: MemoryOrder
+INTEGER ,DIMENSION(*) ,INTENT(OUT)    :: DomainStart, DomainEnd
+INTEGER               ,INTENT(OUT)    :: Status

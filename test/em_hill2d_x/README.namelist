@@ -1,0 +1,218 @@
+
+For more description of the namelist variables, please see
+http://www.mmm.ucar.edu/wrf/users/wrf-namelist.html.
+
+Description of namelist variables
+---------------------------------
+
+ &namelist_01
+ time_step_max                       = 1,     number of time steps to run
+ max_dom                             = 1,     number of domains (leave as is)
+ dyn_opt                             = 1,     dynamical core option:
+                                                 1 = Eulerian height coordinate
+                                                 2 = Eulerian mass coordinate
+                                                 3 = Semi-Lagrangian (not yet implemented)
+ rk_ord                              = 3,     time-integration scheme option:
+                                                 2 = Runge-Kutta 2nd order
+                                                 3 = Runge-Kutta 3rd order
+ diff_opt                            = 1,     turbulence and mixing option:
+                                                 0 = no turbulence or explicit
+                                                     spatial numerical filters (km_opt IS IGNORED).
+                                                 1 = old diffusion scheme, evaluates 2nd order 
+                                                     diffusion term on coordinate surfaces 
+                                                     (uses khdiv and kvdif, km_opt IS IGNORED).
+                                                 2 = new diffusion scheme, 
+                                                     evaluates mixing terms in 
+                                                     physical space (stress form) (x,y,z).
+                                                     turbulence parameterization is chosen 
+                                                     by specifying km_opt.
+ km_opt                              = 1,     eddy coefficient option
+                                                 1 = constant (use khdiv kvdif)
+                                                 2 = 1.5 order TKE closure
+                                                 3 = Smagorinsky first order closure
+ damp_opt                            = 1,     upper level damping flag
+                                                 0 = without damping
+                                                 1 = with    damping
+ ISFFLX                              = 1,     heat and moisture fluxes from the surface
+					         1 = with fluxes from the surface
+					         0 = no flux from the surface
+ IFSNOW                              = 0,     snow-cover effects
+ 						 1 = with snow-cover effect
+ 						 0 = without snow-cover effect
+ ICLOUD                              = 1,     cloud effect to the optical depth in radiation
+					 	 1 = with cloud effect
+					 	 0 = without cloud effect
+ num_soil_layers                     = 5,     number of soil layers in land surface model
+ spec_bdy_width                      = 5,     nummber of rows for specified boundary value nudging
+ spec_zone                           = 1,     number of points in specified zone (spec b.c. option)
+ relax_zone                          = 4,     number of points in relaxation zone (spec b.c. option)
+ tile_sz_x                           = 0,     number of points in tile x direction
+ tile_sz_y                           = 0,     number of points in tile y direction
+ numtiles                            = 1,     number of tiles per patch (alternative to above two items)
+ debug_level                         = 0/     50,100,200,300 values give increasing prints
+
+
+ &namelist_02
+ grid_id                             = 1,    domain identifier (leave as is)
+ level                               = 1,    domain level (leave as is)
+ s_we                                = 1,    start index in x (west-east) direction
+ e_we                                = 32,   end index in x (west-east) direction
+ s_sn                                = 1,    start index in y (south-north) direction
+ e_sn                                = 32,   end index in y (south-north) direction
+ s_vert                              = 1,    start index in z (vertical) direction
+ e_vert                              = 31,   end index in z (vertical) direction
+ time_step_count_start               = 0,    start time-step (leave as is)
+ time_step_count_end                 = 10,   end time-step (this is inactive)
+ time_step_count_output              = 10,   time-steps between history outputs
+ frames_per_outfile                  = 10,   output times per history output file
+ time_step_count_restart             = 10,   time-steps between restart outputs
+ time_step_begin_restart             = 0,    time-step of restart beginning (0=not a restart)
+ time_step_sound                     = 10,   number of sound steps per time-step
+ mother_id                           = 0,    mother domain id (this is inactive)
+ i_mother_start                      = 1,    start x position in mother domain (inactive)
+ j_mother_start                      = 1,    start y position in mother domain (inactive)
+ i_mother_end                        = 1,    end x position in mother domain (inactive)
+ j_mother_end                        = 1,    end y position in mother domain (inactive)
+ mother_grid_ratio                   = 1,    nest refinement ratio relative to mother (inactive)
+ mother_time_step_ratio              = 1,    nest time-step ratio relative to mother (inactive)
+ moad_grid_ratio                     = 1,    nest refinement ratio relative to outermost grid (inactive)
+ moad_time_step_ratio                = 1/    nest time-step ratio relative to outermost grid (inactive)
+
+ &namelist_03
+ dx                                  = 200,  grid length in x direction
+ dy                                  = 200,  grid length in y direction
+ dt                                  = 2.,   time-step for advection
+ ztop                                = 20000., the height of the model top
+ zdamp                               = 5000.,  damping depth from model top
+ dampcoef                            = 0.2,  damping coefficient (dampcoef <= 0.25)
+ smdiv                               = 0,    divergence damping (0.1 is typical)
+ emdiv                               = 0,    external-mode filter coef for mass coordinate model
+                                             (0.01 is typical for real-data cases)
+ epssm                               = .1,   time off-centering for vertical sound waves
+ khdif                               = 0,    horizontal diffusion constant (m^2/s)
+ kvdif                               = 0,    vertical diffusion constant (m^2/s)
+ mix_cr_len                          = 200,  the critical value of the mixing length for
+                                             isotropic and anisotropic diffusion
+ radt                                = 0,    minutes between radiation physics calls
+ bldt                                = 0,    minutes between boundary-layer physics calls
+ cudt                                = 0,    minutes between cumulus physics calls
+ julyr                               = 0,    Julian Year for model start
+ julday                              = 1,    Julian Day for model start
+ gmt                                 = 0./   GMT time for model start
+
+ &namelist_04
+ periodic_x                          = .false.,  periodic boundary conditions in x direction
+ symmetric_xs                        = .false.,  symmetric boundary conditions at x start (west)
+ symmetric_xe                        = .false.,  symmetric boundary conditions at x end (east)
+ open_xs                             = .false.,  open boundary conditions at x start (west)
+ open_xe                             = .false.,  open boundary conditions at x end (east)
+ periodic_y                          = .false.,  periodic boundary conditions in y direction
+ symmetric_ys                        = .false.,  symmetric boundary conditions at y start (south)
+ symmetric_ye                        = .false.,  symmetric boundary conditions at y end (north)
+ open_ys                             = .false.,  open boundary conditions at y start (south)
+ open_ye                             = .false.,  open boundary conditions at y end (north)
+ nested                              = .false.,  nested boundary conditions (inactive)
+ specified                           = .false.,  specified boundary conditions (inactive)
+ top_radiation                       = .false.,  upper radiative boundary conditions (inactive)
+ chem_opt                            = 0,        chemistry option 
+
+ mp_physics                          microphysics option
+                                     = 0, no microphysics
+                                     = 1, Kessler scheme
+                                     = 2, Lin et al. scheme
+                                     = 3, NCEP 3-class simple ice scheme
+                                     = 4, NCEP 5-class scheme
+                                     = 5, Ferrier (new Eta) microphysics
+                                     = 99, Zhao-Carr (old Eta) microphysics (semi-supported)
+
+ ra_lw_physics                       longwave radiation option
+                                     = 0, no longwave radiation
+                                     = 1, rrtm scheme
+                                     = 99, GFDL (Eta) longwave (semi-supported)*
+                                          *remove -DTRIEDNTRUE from compile flags to compile
+
+ ra_sw_physics                       shortwave radiation option
+                                     = 0, no shortwave radiation
+                                     = 1, Dudhia scheme
+                                     = 2, Goddard short wave
+                                     = 99, GFDL (Eta) longwave (semi-supported)*
+                                          *remove -DTRIEDNTRUE from compile flags to compile
+
+ bl_sfclay_physics                   surface-layer option
+                                     = 0, no surface-layer
+                                     = 1, Monin-Obukhov scheme
+                                     = 2, Monin-Obukhov (Janjic Eta) scheme
+
+ bl_surface_physics                  land-surface option
+                                     = 0, no land-surface
+                                     = 1, thermal diffusion scheme
+                                     = 2, OSU land-surface model
+
+ bl_pbl_physics                      boundary-layer option
+                                     = 0, no boundary-layer 
+                                     = 1, mrf scheme
+                                     = 2, Mellor-Yamada-Janjic (Eta) TKE scheme
+
+ cu_physics                          cumulus option
+                                     = 0, no cumulus
+                                     = 1, Kain-Fritsch (new Eta) scheme
+                                     = 2, Betts-Miller-Janjic scheme
+                                     = 99, previous Kain-Fritsch scheme
+
+ h_mom_adv_order                     = 5, horizontal momentum advection order (5=5th, etc.)
+ v_mom_adv_order                     = 3, vertical momentum advection order
+ h_sca_adv_order                     = 5, horizontal scalar advection order
+ v_sca_adv_order                     = 3, vertical scalar advection order
+
+ io_form_history                     = 2,
+ io_form_restart                     = 2,
+ io_form_initial                     = 2,
+ io_form_boundary                    = 2  
+                                     = 1, (not active)
+                                     = 2, NetCDF format
+
+
+
+
+ &namelist_05       This entire namelist record is used if and only if the input data is from the
+                    real.exe pre-processor.  When the input data comes from one of the ideal.exe
+                    pre-processors, this namelist record is essentially ignored.  Most of the time
+                    for real data cases, the starting and ending minutes and seconds should be left
+                    as 0.  For the seconds-per-day challenged: 3 h interval = 10800 s, 
+                    6 h = 21600 s, 12 h = 43200 s.
+
+ start_year                          = 2000,     four digit year of starting time in pre-processor
+
+ start_month                         = 11,       two digit (01-12) month of starting time in pre-procesor
+
+ start_day                           = 20,       two digit (01-31) day of starting time in pre-processor
+
+ start_hour                          = 12,       two digit (00-23) hour of starting time in pre-processor
+
+ start_minute                        = 00,       two digit (00-59) minute of starting time in pre-processor
+
+ start_second                        = 00,       two digit (00-59) second of starting time in pre-processor
+
+ end_year                            = 2000,     four digit year of ending time in pre-processor
+
+ end_month                           = 11,       two digit (01-12) month of ending time in pre-procesor
+
+ end_day                             = 21,       two digit (01-31) day of ending time in pre-processor
+
+ end_hour                            = 00,       two digit (00-23) hour of ending time in pre-processor
+
+ end_minute                          = 00,       two digit (00-59) minute of ending time in pre-processor
+
+ end_second                          = 00,       two digit (00-59) second of ending time in pre-processor
+
+ interval_seconds                    = 43200,    time interval in seconds between analsyis (and boundary) times
+
+ real_data_init_type                 which type of real input:
+                                     = 1, WRF SI
+                                     = 2, MM5 data
+                                     = 3, user written routine read_generic in module_si_io.F
+
+ &namelist_quilt    This namelist record controls asynchronized I/O for MPI applications. 
+
+ nio_tasks_per_group                 = 0,        default value is 0: no quilting; > 0 quiling I/O
+ nio_groups                          = 1,        default 1, don't change

@@ -1,4 +1,10 @@
 MODULE module_quilt_outbuf_ops
+!<DESCRIPTION>
+!<PRE>
+! This module contains routines and data structures used by the I/O quilt 
+! servers to assemble fields ("quilting") and write them to disk.  
+!</PRE>
+!</DESCRIPTION>
   INTEGER, PARAMETER :: tabsize = 1000
   INTEGER            :: num_entries
 
@@ -11,18 +17,16 @@ MODULE module_quilt_outbuf_ops
     INTEGER, POINTER, DIMENSION(:,:,:) :: iptr
   END TYPE outrec
 
-  TYPE cacherec
-    CHARACTER*80                       :: VarName
-    INTEGER                            :: icurs, FieldType
-    INTEGER, POINTER, DIMENSION(:) :: iptr
-    REAL   , POINTER, DIMENSION(:) :: rptr
-  END TYPE cacherec
-
   TYPE(outrec), DIMENSION(tabsize) :: outbuf_table
-  TYPE(cacherec), DIMENSION(tabsize) :: cache_table
+
 CONTAINS
 
   SUBROUTINE init_outbuf
+!<DESCRIPTION>
+!<PRE>
+! This routine re-initializes module data structures.  
+!</PRE>
+!</DESCRIPTION>
     IMPLICIT NONE
     INTEGER i
     DO i = 1, tabsize
@@ -40,20 +44,17 @@ CONTAINS
     num_entries = 0
   END SUBROUTINE init_outbuf
 
-  SUBROUTINE init_field_cache
-    IMPLICIT NONE
-    INTEGER i
-    DO i = 1, tabsize
-      cache_table(i)%VarName = ""
-      cache_table(i)%icurs = 0
-      cache_table(i)%FieldType = 0
-      NULLIFY( cache_table(i)%iptr )
-      NULLIFY( cache_table(i)%rptr )
-    ENDDO
-    num_entries = 0
-  END SUBROUTINE init_field_cache
 
   SUBROUTINE write_outbuf ( DataHandle , io_form_arg )
+!<DESCRIPTION>
+!<PRE>
+! This routine writes all of the records stored in outbuf_table to the 
+! file referenced by DataHandle using format specified by io_form_arg.  
+! This routine calls the package-specific I/O routines to accomplish 
+! the write.  
+! It then re-initializes module data structures.  
+!</PRE>
+!</DESCRIPTION>
     USE module_state_description
     IMPLICIT NONE
     INCLUDE 'wrf_io_flags.h'
@@ -218,6 +219,20 @@ END MODULE module_quilt_outbuf_ops
                                     DomainStart , DomainEnd , &
                                     MemoryStart , MemoryEnd , &
                                     PatchStart , PatchEnd )
+!<DESCRIPTION>
+!<PRE>
+! This routine does the "output quilting".  
+!
+! It stores a patch in the appropriate location in a domain-sized array 
+! within an element of the outbuf_table data structure.  DateStr, VarName, and 
+! MemoryOrder are used to uniquely identify which element of outbuf_table is 
+! associated with this array.  If no element is associated, then this routine 
+! first assigns an unused element and allocates space within that element for 
+! the globally-sized array.  This routine also stores DateStr, VarName, 
+! FieldType, MemoryOrder, Stagger, DimNames, DomainStart, and DomainEnd within 
+! the same element of outbuf.  
+!</PRE>
+!</DESCRIPTION>
     USE module_quilt_outbuf_ops
     IMPLICIT NONE
     INCLUDE 'wrf_io_flags.h'
@@ -231,19 +246,20 @@ END MODULE module_quilt_outbuf_ops
     INTEGER               :: l,m,n,ii,jj
     LOGICAL               :: found
 
-    ! Fine the VarName if it's in the buffer already
+    ! Find the VarName if it's in the buffer already
     ii = 1
     found = .false.
     DO WHILE ( .NOT. found .AND. ii .LE. num_entries )
+      !TBH:  need to test other attributes too!  
       IF ( TRIM(VarName) .EQ. TRIM(outbuf_table(ii)%VarName) ) THEN
         IF ( TRIM(DateStr) .EQ. TRIM(outbuf_table(ii)%DateStr) ) THEN
           IF ( TRIM(MemoryOrder) .EQ. TRIM(outbuf_table(ii)%MemoryOrder) ) THEN
             found = .true.
           ELSE
-            CALL wrf_error_fatal("external/io_quilt/module_quilt_outbuf_ops.F: store_patch_in_outbuf: memory order disagreement")
+            CALL wrf_error_fatal("store_patch_in_outbuf: memory order disagreement")
           ENDIF
         ELSE
-          CALL wrf_error_fatal("external/io_quilt/module_quilt_outbuf_ops.F: store_patch_in_outbuf: multiple dates in buffer")
+          CALL wrf_error_fatal("store_patch_in_outbuf: multiple dates in buffer")
         ENDIF
       ELSE
         ii = ii + 1
@@ -258,7 +274,7 @@ END MODULE module_quilt_outbuf_ops
         ALLOCATE( outbuf_table(num_entries)%iptr(DomainStart(1):DomainEnd(1), &
                                                  DomainStart(2):DomainEnd(2),DomainStart(3):DomainEnd(3)) )
       ELSE
-        write(mess,*)"external/io_quilt/module_quilt_outbuf_ops.F: store_patch_in_outbuf: unsupported type ", FieldType
+        write(mess,*)"store_patch_in_outbuf: unsupported type ", FieldType
         CALL wrf_error_fatal(mess)
       ENDIF
       outbuf_table(num_entries)%VarName = TRIM(VarName)
@@ -301,8 +317,16 @@ END MODULE module_quilt_outbuf_ops
 
 !call add_to_bufsize_for_field( VarName, hdrbufsize+chunksize )
 
-! wrapper for C routine
   SUBROUTINE add_to_bufsize_for_field( VarName, Nbytes )
+!<DESCRIPTION>
+!<PRE>
+! This routine is a wrapper for C routine add_to_bufsize_for_field_c() that 
+! is used to accumulate buffer sizes.  Buffer size Nbytes is added to the 
+! curent buffer size for the buffer named VarName.  Any buffer space 
+! associated with VarName is freed.  If a buffer named VarName does not exist, 
+! a new one is assigned and its size is set to Nbytes.  
+!</PRE>
+!</DESCRIPTION>
     USE module_quilt_outbuf_ops
     IMPLICIT NONE
     CHARACTER*(*)    , INTENT(IN) :: VarName
@@ -319,8 +343,16 @@ END MODULE module_quilt_outbuf_ops
     RETURN
   END SUBROUTINE add_to_bufsize_for_field
   
-! wrapper for C routine
   SUBROUTINE store_piece_of_field( inbuf, VarName, Nbytes )
+!<DESCRIPTION>
+!<PRE>
+! This routine is a wrapper for C routine store_piece_of_field_c() that 
+! is used to store pieces of a field in an internal buffer.  Nbytes bytes of 
+! buffer inbuf are appended to the end of the internal buffer named VarName.  
+! An error occurs if either an internal buffer named VarName does not exist or 
+! if there are fewer than Nbytes bytes left in the internal buffer.  
+!</PRE>
+!</DESCRIPTION>
     USE module_quilt_outbuf_ops
     IMPLICIT NONE
     INTEGER ,                INTENT(IN) :: Nbytes
@@ -336,12 +368,24 @@ END MODULE module_quilt_outbuf_ops
       VarNameAsInts( i ) = ICHAR( VarName(i-1:i-1) )
     ENDDO
     CALL store_piece_of_field_c ( inbuf, VarNameAsInts, Nbytes, ierr )
-    IF ( ierr .NE. 0 ) CALL wrf_error_fatal ( "frame/module_quilt_outbuf_ops.F: store_piece_of_field" )
+    IF ( ierr .NE. 0 ) CALL wrf_error_fatal ( "store_piece_of_field" )
     RETURN
   END SUBROUTINE store_piece_of_field
 
-! wrapper for C routine
   SUBROUTINE retrieve_pieces_of_field( outbuf, VarName, obufsz, Nbytes_tot, lret )
+!<DESCRIPTION>
+!<PRE>
+! This routine is a wrapper for C routine retrieve_pieces_of_field_c() that 
+! is used to extract the entire contents (i.e. all previously stored pieces of 
+! fields) of the next internal buffer.  The name associated with this internal 
+! buffer is returned in VarName.  The number of bytes read is returned in 
+! Nbytes_tot.  Bytes are stored in outbuf whose size (in bytes) is obufsz.  
+! If there are more than obufsz bytes left in the next internal buffer, then 
+! only obufsz bytes are returned and the rest are discarded (probably an error 
+! in the making!).  The internal buffer is then freed.  Flag lret is set to 
+! .TRUE. iff there are more fields left to extract.  
+!</PRE>
+!</DESCRIPTION>
     USE module_quilt_outbuf_ops
     IMPLICIT NONE
     INTEGER ,                INTENT(IN) :: obufsz

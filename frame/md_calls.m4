@@ -13,6 +13,18 @@ define( md_call_2,
 `!--- $1_$2_$6_$3$4
 
 SUBROUTINE wrf_$1_$2_$6_$3$4_$5 ( DataHandle,Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, ifelse($4,char,,`Count, ifelse($1,get,`Outcount,')') Status )
+!<DESCRIPTION>
+!<PRE>
+!
+! ifelse($1,get,`Attempt to read',`Write') ifelse($4,char,,ifelse($5,arr,`Count words of '))time ifelse($6,ti,`in')dependent
+! ifelse($2,var,`attribute "Element" of variable "Varname"',`domain metadata named "Element"') ifelse($6,td,`valid at time DateStr') 
+! ifelse($1,get,`from',`to') the open dataset described by DataHandle.  
+! ifelse($2,var,`Attribute',`Metadata') of type $3$4 ifelse($2,var,`is',`are')
+! ifelse($1,put,`copied from',`stored in') ifelse($4,char,`string',ifelse($5,arr,`array',`scalar')) Data.
+! ifelse($4,char,,ifelse($5,arr,ifelse($1,get,`Actual number of words read is returned in OutCount.')))
+!
+!</PRE>
+!</DESCRIPTION>
 USE module_state_description
 IMPLICIT NONE
 INTEGER ,       INTENT(IN)  :: DataHandle
@@ -47,11 +59,6 @@ CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
   IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
     SELECT CASE ( use_package( io_form ) )
-#ifdef INTERNAL_IO
-      CASE ( IO_INTERNAL )
-        CALL int_$1_$2_$6_$3$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
-                              ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )
-#endif
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
         IF ( multi_files(io_form) .OR.  wrf_dm_on_monitor() ) THEN
@@ -74,11 +81,6 @@ IF ( Hndl .GT. -1 ) THEN
 #ifdef PHDF5
       CASE ( IO_PHDF5   )
         CALL ext_phdf5_$1_$2_$6_$3$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
-                              ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )
-#endif
-#ifdef HDF
-      CASE ( IO_HDF   )
-        CALL ext_hdf_$1_$2_$6_$3$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
                               ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )
 #endif
 #ifdef XXX

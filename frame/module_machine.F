@@ -159,6 +159,14 @@ SUBROUTINE wrf_sizeof_real( retval )
   RETURN
 END SUBROUTINE wrf_sizeof_real
 
+SUBROUTINE wrf_sizeof_doubleprecision( retval )
+  IMPLICIT NONE
+  INTEGER retval
+! DWORDSIZE is defined by CPP
+  retval = DWORDSIZE
+  RETURN
+END SUBROUTINE wrf_sizeof_doubleprecision
+
 SUBROUTINE wrf_sizeof_logical( retval )
   IMPLICIT NONE
   INTEGER retval

@@ -55,23 +55,44 @@ SUBROUTINE wrf_ioinit( Status )
   IMPLICIT NONE
   INTEGER, INTENT(INOUT) :: Status
 !Local
-  CHARACTER(len=80) :: SysDepInfo,inquiry,result
+  CHARACTER(len=80) :: SysDepInfo
+  INTEGER :: ierr(7), minerr, maxerr
 !
   Status = 0
+  ierr = 0
+  SysDepInfo = " "
   CALL wrf_debug( DEBUG_LVL, 'module_io.F: in wrf_ioinit' )
   CALL init_io_handles    ! defined below
 #ifdef NETCDF
-  CALL ext_ncd_ioinit( SysDepInfo, Status )
+  CALL ext_ncd_ioinit(   SysDepInfo, ierr(1) )
+#endif
+#ifdef INTIO
+  CALL ext_int_ioinit(   SysDepInfo, ierr(2) )
 #endif
 #ifdef PHDF5
-  CALL ext_phdf5_ioinit(SysDepInfo, Status )
+  CALL ext_phdf5_ioinit( SysDepInfo, ierr(3) )
 #endif
 #ifdef MCELIO
-  CALL ext_mcel_ioinit(SysDepInfo, Status )
+  CALL ext_mcel_ioinit(  SysDepInfo, ierr(4) )
+#endif
+#ifdef XXX
+  CALL ext_xxx_ioinit(   SysDepInfo, ierr(5) )
 #endif
 #ifdef YYY
-  CALL ext_yyy_ioinit(SysDepInfo, Status )
+  CALL ext_yyy_ioinit(   SysDepInfo, ierr(6) )
 #endif
+#ifdef ZZZ
+  CALL ext_zzz_ioinit(   SysDepInfo, ierr(7) )
+#endif
+  minerr = MINVAL(ierr)
+  maxerr = MAXVAL(ierr)
+  IF ( minerr < 0 ) THEN
+    Status = minerr
+  ELSE IF ( maxerr > 0 ) THEN
+    Status = maxerr
+  ELSE
+    Status = 0
+  ENDIF
 END SUBROUTINE wrf_ioinit
 
 !--- ioexit
@@ -79,26 +100,49 @@ END SUBROUTINE wrf_ioinit
 SUBROUTINE wrf_ioexit( Status )
 !<DESCRIPTION>
 !<PRE>
-! Shut down the WRF I/O s
+! Shut down the WRF I/O system.  
 !</PRE>
 !</DESCRIPTION>
   IMPLICIT NONE
   INTEGER, INTENT(INOUT) :: Status
 !Local
   LOGICAL, EXTERNAL :: use_output_servers
+  INTEGER :: ierr(8), minerr, maxerr
 !
   Status = 0
+  ierr = 0
   CALL wrf_debug( DEBUG_LVL, 'module_io.F: in wrf_ioexit' )
 #ifdef NETCDF
-  CALL ext_ncd_ioexit( Status )
+  CALL ext_ncd_ioexit(  ierr(1) )
+#endif
+#ifdef INTIO
+  CALL ext_int_ioexit(  ierr(2) )
 #endif
 #ifdef PHDF5
-  CALL ext_phdf5_ioexit(Status)
+  CALL ext_phdf5_ioexit(ierr(3) )
+#endif
+#ifdef MCELIO
+  CALL ext_mcel_ioexit( ierr(4) )
+#endif
+#ifdef XXX
+  CALL ext_xxx_ioexit(  ierr(5) )
 #endif
 #ifdef YYY
-  CALL ext_yyy_ioexit(Status)
+  CALL ext_yyy_ioexit(  ierr(6) )
 #endif
-  IF ( use_output_servers() ) CALL wrf_quilt_ioexit( Status )
+#ifdef ZZZ
+  CALL ext_zzz_ioexit(  ierr(7) )
+#endif
+  IF ( use_output_servers() ) CALL wrf_quilt_ioexit( ierr(8) )
+  minerr = MINVAL(ierr)
+  maxerr = MAXVAL(ierr)
+  IF ( minerr < 0 ) THEN
+    Status = minerr
+  ELSE IF ( maxerr > 0 ) THEN
+    Status = maxerr
+  ELSE
+    Status = 0
+  ENDIF
 END SUBROUTINE wrf_ioexit
 
 !--- open_for_write_begin
@@ -107,7 +151,8 @@ SUBROUTINE wrf_open_for_write_begin( FileName , Comm_compute, Comm_io, SysDepInf
                                      DataHandle , Status )
 !<DESCRIPTION>
 !<PRE>
-! Begin data definition phase for the WRF dataset FileName.  
+! Begin data definition ("training") phase for writing to WRF dataset 
+! FileName.  
 !</PRE>
 !</DESCRIPTION>
   USE module_state_description
@@ -184,11 +229,6 @@ SUBROUTINE wrf_open_for_write_begin( FileName , Comm_compute, Comm_io, SysDepInf
           CALL wrf_dm_bcast_bytes( Hndl, IWORDSIZE )
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
-#endif
-#ifdef HDF
-      CASE ( IO_HDF   )
-        CALL ext_hdf_open_for_write_begin ( FileName , Comm_compute, Comm_io, SysDepInfo, &
-                                            Hndl , Status )
 #endif
 #ifdef PHDF5
       CASE (IO_PHDF5  )
@@ -272,9 +312,9 @@ END SUBROUTINE wrf_open_for_write_begin
 SUBROUTINE wrf_open_for_write_commit( DataHandle , Status )
 !<DESCRIPTION>
 !<PRE>
-! This routine switches an internal flag to enable output. The call to 
-! wrf_open_for_write_commit() must be paired with a call to 
-! wrf_open_for_write_begin().
+! This routine switches an internal flag to enable output for the data set 
+! referenced by DataHandle. The call to wrf_open_for_write_commit() must be 
+! paired with a call to wrf_open_for_write_begin().
 !</PRE>
 !</DESCRIPTION>
   USE module_state_description
@@ -311,10 +351,6 @@ SUBROUTINE wrf_open_for_write_commit( DataHandle , Status )
             CALL ext_mcel_open_for_write_commit ( Hndl , Status )
           ENDIF
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
-#endif
-#ifdef HDF
-      CASE ( IO_HDF   )
-        CALL ext_hdf_open_for_write_commit ( Hndl , Status )
 #endif
 #ifdef PHDF5
       CASE ( IO_PHDF5  )
@@ -359,7 +395,8 @@ SUBROUTINE wrf_open_for_read_begin( FileName , Comm_compute, Comm_io, SysDepInfo
                                      DataHandle , Status )
 !<DESCRIPTION>
 !<PRE>
-! Begin "training" phase for WRF dataset FileName.  
+! Begin data definition ("training") phase for reading from WRF dataset 
+! FileName.  
 !</PRE>
 !</DESCRIPTION>
   USE module_state_description
@@ -424,11 +461,6 @@ SUBROUTINE wrf_open_for_read_begin( FileName , Comm_compute, Comm_io, SysDepInfo
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
 #endif
-#ifdef HDF
-      CASE ( IO_HDF   )
-        CALL ext_hdf_open_for_read_begin ( FileName , Comm_compute, Comm_io, SysDepInfo, &
-                                            Hndl , Status )
-#endif
 #ifdef XXX
       CASE ( IO_XXX   )
         CALL ext_xxx_open_for_read_begin ( FileName , Comm_compute, Comm_io, SysDepInfo, &
@@ -448,7 +480,7 @@ SUBROUTINE wrf_open_for_read_begin( FileName , Comm_compute, Comm_io, SysDepInfo
       CASE ( IO_MCEL )
         IF ( wrf_dm_on_monitor() ) THEN
           
-        WRITE(fhand,'("filter_",i-3)')filtno
+        WRITE(fhand,'(a,i0)')"filter_",filtno
         filtno = filtno + 1
 tstr = TRIM(SysDepInfo) // ',' // 'READ_MODE=UPDATE,LAT_R=XLAT,LON_R=XLONG,LANDMASK_I=LU_MASK,FILTER_HANDLE=' // TRIM(fhand)
           CALL ext_mcel_open_for_read_begin ( FileName , Comm_compute, Comm_io, tstr, &
@@ -513,10 +545,6 @@ SUBROUTINE wrf_open_for_read_commit( DataHandle , Status )
             CALL ext_mcel_open_for_read_commit ( Hndl , Status )
           ENDIF
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
-#endif
-#ifdef HDF
-      CASE ( IO_HDF   )
-        CALL ext_hdf_open_for_read_commit ( Hndl , Status )
 #endif
 #ifdef XXX
       CASE ( IO_XXX   )
@@ -629,11 +657,6 @@ SUBROUTINE wrf_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo, &
       CALL ext_phdf5_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo, &
                                Hndl , Status )
 #endif
-#ifdef HDF
-    CASE ( IO_HDF   )
-      CALL ext_hdf_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo, &
-                               Hndl , Status )
-#endif
 #ifdef XXX
     CASE ( IO_XXX   )
       CALL ext_xxx_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo, &
@@ -725,10 +748,6 @@ SUBROUTINE wrf_inquire_opened ( DataHandle, FileName , FileStatus, Status )
       CASE ( IO_PHDF5   )
           CALL ext_phdf5_inquire_opened ( Hndl, FileName , FileStatus, Status )
 #endif
-#ifdef HDF
-      CASE ( IO_HDF   )
-          CALL ext_hdf_inquire_opened ( Hndl, FileName , FileStatus, Status )
-#endif
 #ifdef XXX
       CASE ( IO_XXX   )
           CALL ext_xxx_inquire_opened ( Hndl, FileName , FileStatus, Status )
@@ -802,10 +821,6 @@ SUBROUTINE wrf_inquire_filename ( DataHandle, FileName , FileStatus, Status )
         CASE ( IO_PHDF5   )
           CALL ext_phdf5_inquire_filename ( Hndl, FileName , FileStatus, Status )
 #endif
-#ifdef HDF
-        CASE ( IO_HDF   )
-          CALL ext_hdf_inquire_filename ( Hndl, FileName , FileStatus, Status )
-#endif
 #ifdef XXX
         CASE ( IO_XXX   )
           CALL ext_xxx_inquire_filename ( Hndl, FileName , FileStatus, Status )
@@ -869,10 +884,6 @@ SUBROUTINE wrf_iosync ( DataHandle, Status )
         CASE ( IO_NETCDF   )
           IF ( multi_files(io_form) .OR. wrf_dm_on_monitor() ) CALL ext_ncd_iosync( Hndl, Status )
           CALL wrf_dm_bcast_bytes( Status    , IWORDSIZE )
-#endif
-#ifdef HDF
-        CASE ( IO_HDF   )
-          CALL ext_hdf_iosync( Hndl, Status )
 #endif
 #ifdef XXX
         CASE ( IO_XXX   )
@@ -939,10 +950,6 @@ SUBROUTINE wrf_ioclose ( DataHandle, Status )
 #ifdef PHDF5
         CASE ( IO_PHDF5  )
           CALL ext_phdf5_ioclose( Hndl, Status )
-#endif
-#ifdef HDF
-        CASE ( IO_HDF   )
-          CALL ext_ncd_ioclose( Hndl, Status )
 #endif
 #ifdef XXX
         CASE ( IO_XXX   )
@@ -1021,10 +1028,6 @@ SUBROUTINE wrf_get_next_time ( DataHandle, DateStr, Status )
 #ifdef PHDF5
         CASE ( IO_PHDF5   )
           CALL ext_phdf5_get_next_time( Hndl, DateStr, Status )
-#endif
-#ifdef HDF
-        CASE ( IO_HDF   )
-          CALL ext_hdf_get_next_time( Hndl, DateStr, Status )
 #endif
 #ifdef XXX
         CASE ( IO_XXX   )
@@ -1109,10 +1112,6 @@ SUBROUTINE wrf_get_previous_time ( DataHandle, DateStr, Status )
         CASE ( IO_PHDF5   )
           CALL ext_phdf5_get_previous_time( Hndl, DateStr, Status )
 #endif
-#ifdef HDF
-        CASE ( IO_HDF   )
-          CALL ext_hdf_get_previous_time( Hndl, DateStr, Status )
-#endif
 #ifdef XXX
         CASE ( IO_XXX   )
           CALL ext_xxx_get_previous_time( Hndl, DateStr, Status )
@@ -1183,10 +1182,6 @@ SUBROUTINE wrf_set_time ( DataHandle, DateStr, Status )
         CASE ( IO_PHDF5  )
           CALL ext_phdf5_set_time( Hndl, DateStr, Status )
 #endif
-#ifdef HDF
-        CASE ( IO_HDF   )
-          CALL ext_hdf_set_time( Hndl, DateStr, Status )
-#endif
 #ifdef XXX
         CASE ( IO_XXX   )
           CALL ext_xxx_set_time( Hndl, DateStr, Status )
@@ -1251,10 +1246,6 @@ SUBROUTINE wrf_get_next_var ( DataHandle, VarName, Status )
         CASE ( IO_NETCDF   )
           IF ( multi_files(io_form) .OR.  wrf_dm_on_monitor() ) CALL ext_ncd_get_next_var( Hndl, VarName, Status )
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
-#endif
-#ifdef HDF
-        CASE ( IO_HDF   )
-          CALL ext_hdf_get_next_var( Hndl, VarName, Status )
 #endif
 #ifdef XXX
         CASE ( IO_XXX   )
@@ -1324,13 +1315,6 @@ SUBROUTINE wrf_get_var_info ( DataHandle , VarName , NDim , MemoryOrder , Stagge
 #ifdef NETCDF
         CASE ( IO_NETCDF   )
           CALL ext_ncd_get_var_info ( Hndl , VarName , NDim ,            &
-                                      MemoryOrder , Stagger ,                  &
-                                      DomainStart , DomainEnd ,                &
-                                      Status )
-#endif
-#ifdef HDF
-        CASE ( IO_HDF )
-          CALL ext_hdf_get_var_info ( Hndl , VarName , NDim ,            &
                                       MemoryOrder , Stagger ,                  &
                                       DomainStart , DomainEnd ,                &
                                       Status )
@@ -1412,8 +1396,20 @@ SUBROUTINE add_new_handle( Hndl, Hopened, for_out, DataHandle )
   LOGICAL, INTENT(IN)     :: for_out
   INTEGER, INTENT(OUT)    :: DataHandle
   INTEGER i
+  INTEGER, EXTERNAL       :: use_package
+  LOGICAL, EXTERNAL       :: multi_files
   IF ( .NOT. is_inited ) THEN
     CALL wrf_error_fatal( 'add_new_handle: not initialized' )
+  ENDIF
+  IF ( multi_files( Hopened ) ) THEN
+    SELECT CASE ( use_package( Hopened ) )
+      CASE ( IO_PHDF5  )
+        CALL wrf_error_fatal( 'add_new_handle:  multiple output files not supported for PHDF5' )
+#ifdef MCELIO
+      CASE ( IO_MCEL   )
+        CALL wrf_error_fatal( 'add_new_handle:  multiple output files not supported for MCEL' )
+#endif
+    END SELECT
   ENDIF
   DataHandle = -1
   DO i = 1, MAX_WRF_IO_HANDLE
@@ -1551,7 +1547,7 @@ END MODULE module_io
 
 !<DESCRIPTION>
 !<PRE>
-! Remaining routines in this file are defined outside of module module_io to 
+! Remaining routines in this file are defined outside of the module to 
 ! defeat arg/param type checking.  
 !</PRE>
 !</DESCRIPTION>
@@ -1661,9 +1657,6 @@ SUBROUTINE wrf_read_field1 ( DataHandle , DateStr , VarName , Field , FieldType 
 #ifdef INTIO
   EXTERNAL     ext_int_read_field
 #endif
-#ifdef HDF
-  EXTERNAL ext_hdf_read_field
-#endif
 #ifdef XXX
   EXTERNAL ext_xxx_read_field
 #endif
@@ -1707,16 +1700,6 @@ SUBROUTINE wrf_read_field1 ( DataHandle , DateStr , VarName , Field , FieldType 
 #ifdef MCELIO
         CASE ( IO_MCEL   )
           CALL call_pkg_and_dist   ( ext_mcel_read_field, multi_files(io_form), .true. ,         &
-                                     Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
-                                     DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
-                                     DomainStart , DomainEnd ,                                    &
-                                     MemoryStart , MemoryEnd ,                                    &
-                                     PatchStart , PatchEnd ,                                      &
-                                     Status )
-#endif
-#ifdef HDF
-        CASE ( IO_HDF )
-          CALL call_pkg_and_dist   ( ext_hdf_read_field, multi_files(io_form),  .false.,        &
                                      Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
                                      DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
                                      DomainStart , DomainEnd ,                                    &
@@ -1875,9 +1858,6 @@ SUBROUTINE wrf_write_field1 ( DataHandle , DateStr , VarName , Field , FieldType
 #ifdef INTIO
   EXTERNAL     ext_int_write_field
 #endif
-#ifdef HDF
-  EXTERNAL ext_hdf_write_field
-#endif
 #ifdef XXX
   EXTERNAL ext_xxx_write_field
 #endif
@@ -1919,16 +1899,6 @@ SUBROUTINE wrf_write_field1 ( DataHandle , DateStr , VarName , Field , FieldType
           CALL ext_phdf5_write_field(                  &
                                      Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
                                      DomainDesc , MemoryOrder , Stagger , DimNames ,              &
-                                     DomainStart , DomainEnd ,                                    &
-                                     MemoryStart , MemoryEnd ,                                    &
-                                     PatchStart , PatchEnd ,                                      &
-                                     Status )
-#endif
-#ifdef HDF
-        CASE ( IO_HDF )
-          CALL collect_fld_and_call_pkg ( ext_hdf_write_field, multi_files(io_form),                  &
-                                     Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
-                                     DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
                                      DomainStart , DomainEnd ,                                    &
                                      MemoryStart , MemoryEnd ,                                    &
                                      PatchStart , PatchEnd ,                                      &
@@ -2047,7 +2017,7 @@ LOGICAL FUNCTION multi_files ( io_form )
 ! Returns .TRUE. iff io_form is a multi-file format.  A multi-file format 
 ! results in one file for each compute process and can be used with any 
 ! I/O package.  A multi-file dataset can only be read by the same number 
-! of processes that were used to write it.  This feature can be useful for 
+! of tasks that were used to write it.  This feature can be useful for 
 ! speeding up restarts on machines that support efficient parallel I/O.  
 ! Multi-file formats cannot be used with I/O quilt servers.  
 !</PRE>
@@ -2788,7 +2758,7 @@ SUBROUTINE call_pkg_and_dist (       fcn, donotdist_arg, update_arg,            
 !<DESCRIPTION>
 !<PRE>
 ! The call_pkg_and_dist* routines call an I/O function to read a field and then 
-! distribute or replicate the field across compute processes.  
+! distribute or replicate the field across compute tasks.  
 ! This routine handle cases where distribution/replication can be skipped and 
 ! deals with different data types for Field.
 !</PRE>
@@ -2882,7 +2852,7 @@ SUBROUTINE call_pkg_and_dist_real (  fcn, update_arg,                           
 !<DESCRIPTION>
 !<PRE>
 ! The call_pkg_and_dist* routines call an I/O function to read a field and then 
-! distribute or replicate the field across compute processes.  
+! distribute or replicate the field across compute tasks.  
 ! The sole purpose of this wrapper is to allocate a big real buffer and
 ! pass it down to call_pkg_and_dist_generic() to do the actual work.
 !</PRE>
@@ -2929,7 +2899,7 @@ SUBROUTINE call_pkg_and_dist_double  (  fcn, update_arg ,                       
 !<DESCRIPTION>
 !<PRE>
 ! The call_pkg_and_dist* routines call an I/O function to read a field and then 
-! distribute or replicate the field across compute processes.  
+! distribute or replicate the field across compute tasks.  
 ! The sole purpose of this wrapper is to allocate a big double precision buffer 
 ! and pass it down to call_pkg_and_dist_generic() to do the actual work.
 !</PRE>
@@ -2977,7 +2947,7 @@ SUBROUTINE call_pkg_and_dist_int  (  fcn, update_arg ,                          
 !<DESCRIPTION>
 !<PRE>
 ! The call_pkg_and_dist* routines call an I/O function to read a field and then 
-! distribute or replicate the field across compute processes.  
+! distribute or replicate the field across compute tasks.  
 ! The sole purpose of this wrapper is to allocate a big integer buffer and 
 ! pass it down to call_pkg_and_dist_generic() to do the actual work.
 !</PRE>
@@ -3025,7 +2995,7 @@ SUBROUTINE call_pkg_and_dist_logical  (  fcn, update_arg ,                      
 !<DESCRIPTION>
 !<PRE>
 ! The call_pkg_and_dist* routines call an I/O function to read a field and then 
-! distribute or replicate the field across compute processes.  
+! distribute or replicate the field across compute tasks.  
 ! The sole purpose of this wrapper is to allocate a big logical buffer and 
 ! pass it down to call_pkg_and_dist_generic() to do the actual work.
 !</PRE>
@@ -3073,7 +3043,7 @@ SUBROUTINE call_pkg_and_dist_generic (   fcn, globbuf , update_arg ,            
 !<DESCRIPTION>
 !<PRE>
 ! The call_pkg_and_dist* routines call an I/O function to read a field and then 
-! distribute or replicate the field across compute processes.  
+! distribute or replicate the field across compute tasks.  
 ! This routine calls I/O function fcn to read the field from disk and then calls 
 ! the distributed memory communication routines that distribute or replicate the 
 ! array.  

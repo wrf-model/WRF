@@ -9,7 +9,7 @@ MODULE module_internal_header_util
 !   - Provide a package-independent metadata storage and retrieval mechanism 
 !     for I/O packages that do not support native metadata.  
 !   - Provide a mechanism for communicating I/O commands from compute 
-!     processes to quilt processes when I/O quilt servers are enabled.  
+!     tasks to quilt tasks when I/O quilt servers are enabled.  
 ! 
 ! Within a data header, character strings are stored one character per integer.  
 ! The number of characters is stored immediately before the first character of 
@@ -21,12 +21,12 @@ MODULE module_internal_header_util
 ! extract information from a data headers after they have been read from a 
 ! file.  
 !
-! When I/O quilt server processes are used, routines int_gen_*_header() 
-! are called by compute processes to pack information into data headers 
+! When I/O quilt server tasks are used, routines int_gen_*_header() 
+! are called by compute tasks to pack information into data headers 
 ! (commands) that are then sent to the I/O quilt servers.  Routines 
 ! int_get_*_header() are called by I/O quilt servers to extract 
 ! information from data headers (commands) received from the compute 
-! processes.  
+! tasks.  
 !
 !</PRE>
 !</DESCRIPTION>
@@ -69,7 +69,6 @@ SUBROUTINE int_gen_write_field_header ( hdrbuf, hdrbufsize, itypesize, ftypesize
                                         DomainStart , DomainEnd ,                                    &
                                         MemoryStart , MemoryEnd ,                                    &
                                         PatchStart , PatchEnd )
-  IMPLICIT NONE
 !<DESCRIPTION>
 !<PRE>
 ! Items and their starting locations within a "write field" data header.  
@@ -122,6 +121,7 @@ SUBROUTINE int_gen_write_field_header ( hdrbuf, hdrbufsize, itypesize, ftypesize
 !
 !</PRE>
 !</DESCRIPTION>
+  IMPLICIT NONE
   INCLUDE 'intio_tags.h'
   INTEGER,       INTENT(INOUT)  ::  hdrbuf(*)
   INTEGER,       INTENT(INOUT)  ::  hdrbufsize
@@ -253,7 +253,6 @@ END SUBROUTINE int_get_write_field_header
 !generate open for read header
 SUBROUTINE int_gen_ofr_header( hdrbuf, hdrbufsize, itypesize, &
                                 FileName, SysDepInfo, DataHandle )
-  IMPLICIT NONE
 !<DESCRIPTION>
 !<PRE>
 ! Items and their starting locations within a "open for read" data header.  
@@ -281,6 +280,7 @@ SUBROUTINE int_gen_ofr_header( hdrbuf, hdrbufsize, itypesize, &
 !
 !</PRE>
 !</DESCRIPTION>
+  IMPLICIT NONE
   INCLUDE 'intio_tags.h'
   INTEGER,       INTENT(INOUT) ::  hdrbuf(*)
   INTEGER,       INTENT(OUT)   ::  hdrbufsize
@@ -306,13 +306,13 @@ END SUBROUTINE int_gen_ofr_header
 !get open for read header
 SUBROUTINE int_get_ofr_header( hdrbuf, hdrbufsize, itypesize, &
                                 FileName, SysDepInfo, DataHandle )
-  IMPLICIT NONE
 !<DESCRIPTION>
 !<PRE>
 ! See documentation block in int_gen_ofr_header() for 
 ! a description of a "open for read" header.  
 !</PRE>
 !</DESCRIPTION>
+  IMPLICIT NONE
   INCLUDE 'intio_tags.h'
   INTEGER,       INTENT(INOUT) ::  hdrbuf(*)
   INTEGER,       INTENT(OUT)   ::  hdrbufsize
@@ -339,7 +339,6 @@ END SUBROUTINE int_get_ofr_header
 !generate open for write begin header
 SUBROUTINE int_gen_ofwb_header( hdrbuf, hdrbufsize, itypesize, &
                                 FileName, SysDepInfo, io_form, DataHandle )
-  IMPLICIT NONE
 !<DESCRIPTION>
 !<PRE>
 ! Items and their starting locations within a "open for write begin" data 
@@ -369,6 +368,7 @@ SUBROUTINE int_gen_ofwb_header( hdrbuf, hdrbufsize, itypesize, &
 !
 !</PRE>
 !</DESCRIPTION>
+  IMPLICIT NONE
   INCLUDE 'intio_tags.h'
   INTEGER,       INTENT(INOUT) :: hdrbuf(*)
   INTEGER,       INTENT(OUT)   :: hdrbufsize
@@ -400,13 +400,13 @@ END SUBROUTINE int_gen_ofwb_header
 !get open for write begin header
 SUBROUTINE int_get_ofwb_header( hdrbuf, hdrbufsize, itypesize, &
                                 FileName, SysDepInfo, io_form, DataHandle )
-  IMPLICIT NONE
 !<DESCRIPTION>
 !<PRE>
 ! See documentation block in int_gen_ofwb_header() for 
 ! a description of a "open for write begin" header.  
 !</PRE>
 !</DESCRIPTION>
+  IMPLICIT NONE
   INCLUDE 'intio_tags.h'
   INTEGER,       INTENT(INOUT)  :: hdrbuf(*)
   INTEGER,       INTENT(OUT)    :: hdrbufsize
@@ -445,7 +445,6 @@ END SUBROUTINE int_get_ofwb_header
 
 SUBROUTINE int_gen_handle_header( hdrbuf, hdrbufsize, itypesize, &
                                 DataHandle , code )
-  IMPLICIT NONE
 !<DESCRIPTION>
 !<PRE>
 ! Items and their starting locations within a "generic handle" data header.  
@@ -466,6 +465,7 @@ SUBROUTINE int_gen_handle_header( hdrbuf, hdrbufsize, itypesize, &
 !
 !</PRE>
 !</DESCRIPTION>
+  IMPLICIT NONE
   INCLUDE 'intio_tags.h'
   INTEGER, INTENT(INOUT) ::  hdrbuf(*)
   INTEGER, INTENT(OUT)   ::  hdrbufsize
@@ -485,13 +485,13 @@ END SUBROUTINE int_gen_handle_header
 
 SUBROUTINE int_get_handle_header( hdrbuf, hdrbufsize, itypesize, &
                                 DataHandle , code )
-  IMPLICIT NONE
 !<DESCRIPTION>
 !<PRE>
 ! See documentation block in int_gen_handle_header() for 
 ! a description of a "generic handle" header.  
 !</PRE>
 !</DESCRIPTION>
+  IMPLICIT NONE
   INCLUDE 'intio_tags.h'
   INTEGER, INTENT(INOUT) ::  hdrbuf(*)
   INTEGER, INTENT(OUT)   ::  hdrbufsize
@@ -511,7 +511,6 @@ END SUBROUTINE int_get_handle_header
 
 SUBROUTINE int_gen_ti_header_integer( hdrbuf, hdrbufsize, itypesize, typesize, &
                                       DataHandle, Element, Data, Count, code )
-  IMPLICIT NONE
 !<DESCRIPTION>
 !<PRE>
 ! Items and their starting locations within a "time-independent integer" 
@@ -542,6 +541,7 @@ SUBROUTINE int_gen_ti_header_integer( hdrbuf, hdrbufsize, itypesize, typesize, &
 !
 !</PRE>
 !</DESCRIPTION>
+  IMPLICIT NONE
   INCLUDE 'intio_tags.h'
   INTEGER, INTENT(INOUT)       ::  hdrbuf(*)
   INTEGER, INTENT(OUT)         ::  hdrbufsize
@@ -564,12 +564,12 @@ END SUBROUTINE int_gen_ti_header_integer
 
 SUBROUTINE int_gen_ti_header_real( hdrbuf, hdrbufsize, itypesize, typesize, &
                                    DataHandle, Element, Data, Count, code )
-  IMPLICIT NONE
 !<DESCRIPTION>
 !<PRE>
 ! Same as int_gen_ti_header_integer except that Data has type REAL.  
 !</PRE>
 !</DESCRIPTION>
+  IMPLICIT NONE
   INCLUDE 'intio_tags.h'
   INTEGER, INTENT(INOUT)       ::  hdrbuf(*)
   INTEGER, INTENT(OUT)         ::  hdrbufsize
@@ -592,13 +592,13 @@ END SUBROUTINE int_gen_ti_header_real
 
 SUBROUTINE int_get_ti_header_integer( hdrbuf, hdrbufsize, itypesize, typesize, &
                               DataHandle, Element, Data, Count, code )
-  IMPLICIT NONE
 !<DESCRIPTION>
 !<PRE>
 ! Same as int_gen_ti_header_integer except that Data is read from 
 ! the file.  
 !</PRE>
 !</DESCRIPTION>
+  IMPLICIT NONE
   INCLUDE 'intio_tags.h'
   INTEGER, INTENT(INOUT)       ::  hdrbuf(*)
   INTEGER, INTENT(OUT)         ::  hdrbufsize
@@ -621,13 +621,13 @@ END SUBROUTINE int_get_ti_header_integer
 
 SUBROUTINE int_get_ti_header_real( hdrbuf, hdrbufsize, itypesize, typesize, &
                               DataHandle, Element, Data, Count, code )
-  IMPLICIT NONE
 !<DESCRIPTION>
 !<PRE>
 ! Same as int_gen_ti_header_real except that Data is read from 
 ! the file.  
 !</PRE>
 !</DESCRIPTION>
+  IMPLICIT NONE
   INCLUDE 'intio_tags.h'
   INTEGER, INTENT(INOUT)       ::  hdrbuf(*)
   INTEGER, INTENT(OUT)         ::  hdrbufsize
@@ -652,7 +652,6 @@ END SUBROUTINE int_get_ti_header_real
 
 SUBROUTINE int_gen_ti_header_char( hdrbuf, hdrbufsize, itypesize, &
                               DataHandle, Element, VarName, Data, code )
-  IMPLICIT NONE
 !<DESCRIPTION>
 !<PRE>
 ! Items and their starting locations within a "time-independent string" 
@@ -679,12 +678,14 @@ SUBROUTINE int_gen_ti_header_char( hdrbuf, hdrbufsize, itypesize, &
 !  typesize:    1 (size in bytes of a single CHARACTER).  
 !  Element:     Name of the data.  
 !  Data:        Data to write to file.  
-!  VarName:     Redundant, will be removed.  
+!  VarName:     Variable name.  Used for *_<get|put>_var_ti_char but not for 
+!               *_<get|put>_dom_ti_char.  
 !  Other items are described in detail in the "WRF I/O and Model Coupling API 
 !  Specification".  
 !
 !</PRE>
 !</DESCRIPTION>
+  IMPLICIT NONE
   INCLUDE 'intio_tags.h'
   INTEGER, INTENT(INOUT)       ::  hdrbuf(*)
   INTEGER, INTENT(OUT)         ::  hdrbufsize
@@ -709,13 +710,13 @@ END SUBROUTINE int_gen_ti_header_char
 
 SUBROUTINE int_get_ti_header_char( hdrbuf, hdrbufsize, itypesize, &
                               DataHandle, Element, VarName, Data, code )
-  IMPLICIT NONE
 !<DESCRIPTION>
 !<PRE>
 ! Same as int_gen_ti_header_char except that Data is read from 
 ! the file.  
 !</PRE>
 !</DESCRIPTION>
+  IMPLICIT NONE
   INCLUDE 'intio_tags.h'
   INTEGER, INTENT(INOUT)       ::  hdrbuf(*)
   INTEGER, INTENT(OUT)         ::  hdrbufsize
@@ -743,7 +744,6 @@ END SUBROUTINE int_get_ti_header_char
 
 SUBROUTINE int_gen_td_header_char( hdrbuf, hdrbufsize, itypesize, &
                               DataHandle, DateStr, Element, Data, code )
-  IMPLICIT NONE
 !<DESCRIPTION>
 !<PRE>
 ! Items and their starting locations within a "time-dependent string" 
@@ -775,6 +775,7 @@ SUBROUTINE int_gen_td_header_char( hdrbuf, hdrbufsize, itypesize, &
 !
 !</PRE>
 !</DESCRIPTION>
+  IMPLICIT NONE
   INCLUDE 'intio_tags.h'
   INTEGER, INTENT(INOUT)       ::  hdrbuf(*)
   INTEGER, INTENT(OUT)         ::  hdrbufsize
@@ -799,13 +800,13 @@ END SUBROUTINE int_gen_td_header_char
 
 SUBROUTINE int_get_td_header_char( hdrbuf, hdrbufsize, itypesize, &
                               DataHandle, DateStr, Element, Data, code )
-  IMPLICIT NONE
 !<DESCRIPTION>
 !<PRE>
 ! Same as int_gen_td_header_char except that Data is read from 
 ! the file.  
 !</PRE>
 !</DESCRIPTION>
+  IMPLICIT NONE
   INCLUDE 'intio_tags.h'
   INTEGER, INTENT(INOUT)       ::  hdrbuf(*)
   INTEGER, INTENT(OUT)         ::  hdrbufsize
@@ -828,7 +829,6 @@ END SUBROUTINE int_get_td_header_char
 
 SUBROUTINE int_gen_td_header_integer( hdrbuf, hdrbufsize, itypesize, typesize, &
                                       DataHandle, DateStr, Element, Data, Count, code )
-  IMPLICIT NONE
 !<DESCRIPTION>
 !<PRE>
 ! Items and their starting locations within a "time-dependent integer" 
@@ -861,6 +861,7 @@ SUBROUTINE int_gen_td_header_integer( hdrbuf, hdrbufsize, itypesize, typesize, &
 !
 !</PRE>
 !</DESCRIPTION>
+  IMPLICIT NONE
   INCLUDE 'intio_tags.h'
   INTEGER, INTENT(INOUT)       ::  hdrbuf(*)
   INTEGER, INTENT(OUT)         ::  hdrbufsize
@@ -884,12 +885,12 @@ END SUBROUTINE int_gen_td_header_integer
 
 SUBROUTINE int_gen_td_header_real( hdrbuf, hdrbufsize, itypesize, typesize, &
                                    DataHandle, DateStr, Element, Data, Count, code )
-  IMPLICIT NONE
 !<DESCRIPTION>
 !<PRE>
 ! Same as int_gen_td_header_integer except that Data has type REAL.  
 !</PRE>
 !</DESCRIPTION>
+  IMPLICIT NONE
   INCLUDE 'intio_tags.h'
   INTEGER, INTENT(INOUT)       ::  hdrbuf(*)
   INTEGER, INTENT(OUT)         ::  hdrbufsize
@@ -913,13 +914,13 @@ END SUBROUTINE int_gen_td_header_real
 
 SUBROUTINE int_get_td_header_integer( hdrbuf, hdrbufsize, itypesize, typesize, &
                               DataHandle, DateStr, Element, Data, Count, code )
-  IMPLICIT NONE
 !<DESCRIPTION>
 !<PRE>
 ! Same as int_gen_td_header_integer except that Data is read from 
 ! the file.  
 !</PRE>
 !</DESCRIPTION>
+  IMPLICIT NONE
   INCLUDE 'intio_tags.h'
   INTEGER, INTENT(INOUT)       ::  hdrbuf(*)
   INTEGER, INTENT(OUT)         ::  hdrbufsize
@@ -942,13 +943,13 @@ END SUBROUTINE int_get_td_header_integer
 
 SUBROUTINE int_get_td_header_real( hdrbuf, hdrbufsize, itypesize, typesize, &
                               DataHandle, DateStr, Element, Data, Count, code )
-  IMPLICIT NONE
 !<DESCRIPTION>
 !<PRE>
 ! Same as int_gen_td_header_real except that Data is read from 
 ! the file.  
 !</PRE>
 !</DESCRIPTION>
+  IMPLICIT NONE
   INCLUDE 'intio_tags.h'
   INTEGER, INTENT(INOUT)       ::  hdrbuf(*)
   INTEGER, INTENT(OUT)         ::  hdrbufsize
@@ -1006,13 +1007,13 @@ SUBROUTINE int_gen_noop_header ( hdrbuf, hdrbufsize, itypesize )
 END SUBROUTINE int_gen_noop_header
 
 SUBROUTINE int_get_noop_header( hdrbuf, hdrbufsize, itypesize )
-  IMPLICIT NONE
 !<DESCRIPTION>
 !<PRE>
 ! See documentation block in int_gen_noop_header() for 
 ! a description of a "no-operation" header.  
 !</PRE>
 !</DESCRIPTION>
+  IMPLICIT NONE
   INCLUDE 'intio_tags.h'
   INTEGER, INTENT(INOUT) ::  hdrbuf(*)
   INTEGER, INTENT(OUT)   ::  hdrbufsize

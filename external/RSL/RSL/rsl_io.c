@@ -724,6 +724,12 @@ RSL_WRITE ( unit_p, iotag_p, base, d_p, type_p, glen, llen  )
   ie_write = &( domain_info[d].ie_write ) ;
   je_write = &( domain_info[d].je_write ) ;
 
+/* reset and recompute each time; otherwise smaller fields will truncate bigger fields later on . JM 20030417.  */
+  *is_write = RSL_INVALID ;
+  *ie_write = RSL_INVALID ;
+  *js_write = RSL_INVALID ;
+  *je_write = RSL_INVALID ;
+
   iotag = *iotag_p ;
 
   RSL_C_IAMMONITOR( &i_am_monitor ) ;

@@ -208,7 +208,6 @@
 
 #   define RSL_PATCH_DECOMP       rsl_patch_decomp__
 #   define SET_DEF_DECOMP_FCN     set_def_decomp_fcn__
-#   define SET_DEF_DECOMP_FCN1     set_def_decomp_fcn1__
 #   define SET_DEF_DECOMP_INFO     set_def_decomp_info__
 
 #   define BOUNDARY_SAFE		boundary_safe__
@@ -263,8 +262,6 @@
 
 #   define COLLECT_ON_COMM  collect_on_comm__
 #   define INT_PACK_DATA  int_pack_data__
-
-#   define GET_NEXT_DOMAIN_DESCRIPTOR get_next_domain_descriptor__
 
 #    else
 
@@ -403,7 +400,6 @@
 
 #   define RSL_PATCH_DECOMP       rsl_patch_decomp_
 #   define SET_DEF_DECOMP_FCN     set_def_decomp_fcn_
-#   define SET_DEF_DECOMP_FCN1     set_def_decomp_fcn1_
 #   define SET_DEF_DECOMP_INFO     set_def_decomp_info_
 
 #   define BOUNDARY_SAFE		boundary_safe_
@@ -459,8 +455,6 @@
 
 #   define COLLECT_ON_COMM  collect_on_comm_
 #   define INT_PACK_DATA  int_pack_data_
-
-#   define GET_NEXT_DOMAIN_DESCRIPTOR get_next_domain_descriptor_
 
 #    endif
 
@@ -600,7 +594,6 @@
 
 #   define RSL_PATCH_DECOMP       rsl_patch_decomp
 #   define SET_DEF_DECOMP_FCN     set_def_decomp_fcn
-#   define SET_DEF_DECOMP_FCN1     set_def_decomp_fcn1
 #   define SET_DEF_DECOMP_INFO     set_def_decomp_info
 
 #   define BOUNDARY_SAFE		boundary_safe
@@ -657,7 +650,6 @@
 #   define COLLECT_ON_COMM  collect_on_comm
 #   define INT_PACK_DATA  int_pack_data
 
-#   define GET_NEXT_DOMAIN_DESCRIPTOR get_next_domain_descriptor
 
 #  endif
 #endif

@@ -367,7 +367,6 @@ RSL_FDECOMPOSE (d_p,fcn,py_p,px_p,info_p,mloc_p,nloc_p,zloc_p,
 	    }
 	  }
 	}
-#if 0
 	/* added 4/21/95 -- there should never be a point without an
 	   associated mother id at this point in the program */
 	else 
@@ -380,7 +379,6 @@ RSL_FDECOMPOSE (d_p,fcn,py_p,px_p,info_p,mloc_p,nloc_p,zloc_p,
 	    RSL_TEST_ERR(1,mess)
 	  }
 	}
-#endif
 
         /* this bit informs the children associated with this point
            that the processor allocation for this point has set */

@@ -139,7 +139,7 @@ RSL_MOTHER_DOMAIN ( domain_p, maskid_p, mlen_p, nlen_p, mloc_p, nloc_p )
   mmax = *mlen_p ;
   nmax = *nlen_p ;
   zmax = 1 ;  /* trivial */
-  GET_NEXT_DOMAIN_DESCRIPTOR ( &d ) ; ;
+  d = 0 ;
   *domain_p = d ;
 
   RSL_TEST_ERR( domain_info[d].valid == RSL_VALID,
@@ -218,7 +218,7 @@ RSL_MOTHER_DOMAIN3D( domain_p, maskid_p, mlen_p, nlen_p, zlen_p,
   mmax = *mlen_p ;
   nmax = *nlen_p ;
   zmax = *zlen_p ;
-  GET_NEXT_DOMAIN_DESCRIPTOR ( &d ) ;
+  d = 0 ;
   *domain_p = d ;
 
   RSL_TEST_ERR( domain_info[d].valid == RSL_VALID,
@@ -997,7 +997,7 @@ rsl_spawn_nest ( nest_p, par_p, maskid_p,
   *mlen_p = mmax_nes - mtrim ;
 
 /* create the nest */
-  GET_NEXT_DOMAIN_DESCRIPTOR ( &nest ) ;
+  nest = get_new_domain_descriptor() ;
   *nest_p = nest ;
   domain_info[nest].nest_level = domain_info[par].nest_level + 1 ;
   rsl_ndomains++ ;
@@ -1468,12 +1468,8 @@ RSL_DEACTIVATE_DOMAIN ( d_p )
    for unusededness by seeing if the domain pointed to is valid 
    or not.  If it's not, it's unused.  That's the only checking
    that this thing does. */
-/* this can also be used to find out what the next descriptor
-   will be -- so it shouldn't, by itself, change the state of 
-   the domain descriptor as a result of being called */
 
-GET_NEXT_DOMAIN_DESCRIPTOR ( d_p )
-  int_p d_p ;
+get_new_domain_descriptor()
 {
   int d ;
 
@@ -1485,7 +1481,7 @@ GET_NEXT_DOMAIN_DESCRIPTOR ( d_p )
     }
   }
   RSL_TEST_ERR( d == RSL_MAXDOMAINS, "Out of domains." ) ;
-  *d_p = d ;
+  return(d) ;
 }
 
 

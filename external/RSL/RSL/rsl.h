@@ -202,6 +202,7 @@ show config:  ---See also the makefile---
 #define IO3D_JIK 3		/* FORTRAN */
 #define IO2D     4		/* FORTRAN */
 #define IO3D     5		/* FORTRAN */
+#define IO3D_KIJ 6              /* FORTRAN */
 
 #define IO2D_IJ_RAW  10		/* FORTRAN */
 #define IO2D_JI_RAW  11		/* FORTRAN */

@@ -220,6 +220,11 @@ handle_read_request( req, resp_me, pbuf_me )
     minelems = req->glen[1] ;
     majelems = req->glen[0] ;
     break ;
+  case IO3D_KIJ :
+    columnelems = req->glen[0] ;
+    minelems = req->glen[1] ;
+    majelems = req->glen[2] ;
+    break ;
   default:
     RSL_TEST_ERR(1,"handle_read_request: unknown data tag") ;
   }
@@ -293,6 +298,15 @@ handle_read_request( req, resp_me, pbuf_me )
             for ( k = 0 ; k < req->glen[2] ; k++ )
             {
               bcopy(&(rbuf[typelen*(jg+req->glen[0]*(ig+k*req->glen[1]))]),
+                    &(pbuf[cursor]),
+                    typelen) ;
+              cursor += typelen ;
+            }
+            break ;
+          case IO3D_KIJ :
+            for ( k = 0 ; k < req->glen[0] ; k++ )
+            {
+              bcopy(&(rbuf[typelen*(jg+req->glen[1]*(ig+k*req->glen[2]))]),
                     &(pbuf[cursor]),
                     typelen) ;
               cursor += typelen ;
@@ -373,6 +387,18 @@ handle_read_request( req, resp_me, pbuf_me )
               for ( k = 0 ; k < req->glen[2] ; k++ )
               {
                 bcopy(&(rbuf[typelen*(jg+req->glen[0]*(ig+k*req->glen[1]))]),
+                      &(pbuf[cursor]),
+                      typelen) ;
+                cursor += typelen ;
+              }
+            }
+            break ;
+          case IO3D_KIJ :
+            for ( ig = 0 ; ig < mlen ; ig++ )
+            {
+              for ( k = 0 ; k < req->glen[0] ; k++ )
+              {
+                bcopy(&(rbuf[typelen*(jg+req->glen[1]*(ig+k*req->glen[2]))]),
                       &(pbuf[cursor]),
                       typelen) ;
                 cursor += typelen ;
@@ -481,6 +507,11 @@ handle_write_request( req, nelem, psize_me, pbuf_me )
     columnelems = req->glen[2] ;
     minelems = req->glen[1] ;
     majelems = req->glen[0] ;
+    break ;
+  case IO3D_KIJ :
+    columnelems = req->glen[0] ;
+    minelems = req->glen[1] ;
+    majelems = req->glen[2] ;
     break ;
   default:
     RSL_TEST_ERR(1,"handle_write_request: unknown data tag") ;
@@ -629,6 +660,18 @@ handle_write_request( req, nelem, psize_me, pbuf_me )
               }
             }
             break ;
+          case IO3D_KIJ :
+            for ( k = 0 ; k < req->glen[0] ; k++ )
+            {
+              for ( ig = is_write ; ig <= is_write ; ig++ )
+              {
+                bcopy(&(pbuf[cursor]),
+                      &(wbuf[typelen*(jg+req->glen[1]*(ig+k*req->glen[2]))]),
+                      typelen) ;
+                cursor += typelen ;
+              }
+            }
+            break ;
         }
       }
     }
@@ -680,6 +723,15 @@ handle_write_request( req, nelem, psize_me, pbuf_me )
               {
                 bcopy(&(pbuf[cursor]),
                       &(wbuf[typelen*(jg+req->glen[0]*(ig+k*req->glen[1]))]),
+                      typelen) ;
+                cursor += typelen ;
+              }
+              break ;
+            case IO3D_KIJ :
+              for ( k = 0 ; k < req->glen[0] ; k++ )
+              {
+                bcopy(&(pbuf[cursor]),
+                      &(wbuf[typelen*(jg+req->glen[1]*(ig+k*req->glen[2]))]),
                       typelen) ;
                 cursor += typelen ;
               }
@@ -838,6 +890,11 @@ send_to_output_device( req, wbuf, nelem )
     columnelems = req->glen[2] ;
     minelems = req->glen[1] ;
     majelems = req->glen[0] ;
+    break ;
+  case IO3D_KIJ :
+    columnelems = req->glen[0] ;
+    minelems = req->glen[1] ;
+    majelems = req->glen[2] ;
     break ;
   case IO_REPL :
     break ;

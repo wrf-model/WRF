@@ -8,7 +8,7 @@ HDR = $(CORE_HDR)
 TAR = $(CORE_TAR)
 
 CC = cc -n32 -mips4
-FC = f77 -n32 -mips4
+FC = f90 -n32 -mips4
 
 MPIHOME=/usr
 IDIR=$(MPIHOME)/include

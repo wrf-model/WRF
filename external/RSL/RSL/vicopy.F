@@ -17,7 +17,7 @@
       end
 
       subroutine vbcopy( a, b, c )
-      byte a(*), b(*)
+      integer*1 a(*), b(*)
       integer c
       do i = 1, c
 	b(i) = a(i)
@@ -35,7 +35,7 @@
       end
 
       subroutine vbzero( a, c )
-      byte a(*)
+      integer*1 a(*)
       integer c
       do i = 1, c
 	a(i) = 0

@@ -307,6 +307,13 @@ RSL_READ ( unit_p, iotag_p, base, d_p, type_p, glen, llen  )
     minelems = request.glen[1] ;
     majelems = request.glen[0] ;
     break ;
+  case IO3D_KIJ :
+    RSL_TEST_ERR(glen[0] > llen[0],
+       "rsl_write: global len of K dim is greater than local len") ;
+    request.ndim = 3 ;
+    minelems = request.glen[1] ;
+    majelems = request.glen[2] ;
+    break ;
   default:
     RSL_TEST_ERR(1,"rsl_read: unknown data tag") ;
   }
@@ -379,6 +386,16 @@ RSL_READ ( unit_p, iotag_p, base, d_p, type_p, glen, llen  )
           for ( k = 0 ; k < glen[2] ; k++ )
           {
             dex = base+tlen*(min+llen[0]*(maj+k*llen[1])) ;
+            bcopy(&(pbuf[cursor]),dex,tlen) ;
+            cursor += tlen ;
+          }
+          break ;
+        case IO3D_KIJ :
+          min = jg - joffset ;
+          maj = ig - ioffset ;
+          for ( k = 0 ; k < glen[0] ; k++ )
+          {
+            dex = base+tlen*(min+llen[1]*(maj+k*llen[2])) ;
             bcopy(&(pbuf[cursor]),dex,tlen) ;
             cursor += tlen ;
           }
@@ -460,6 +477,19 @@ RSL_READ ( unit_p, iotag_p, base, d_p, type_p, glen, llen  )
             for ( k = 0 ; k < glen[2] ; k++ )
             {
               dex = base+tlen*(min+llen[0]*(maj+k*llen[1])) ;
+              bcopy(&(pbuf[cursor]),dex,tlen) ;
+              cursor += tlen ;
+            }
+          }
+          break ;
+        case IO3D_KIJ :
+          for ( ig = 0 ; ig < mlen ; ig++ )
+          {
+            min = jg - joffset ;
+            maj = ig - ioffset ;
+            for ( k = 0 ; k < glen[0] ; k++ )
+            {
+              dex = base+tlen*(min+llen[1]*(maj+k*llen[2])) ;
               bcopy(&(pbuf[cursor]),dex,tlen) ;
               cursor += tlen ;
             }
@@ -717,6 +747,11 @@ RSL_WRITE ( unit_p, iotag_p, base, d_p, type_p, glen, llen  )
        "rsl_write: global len of K dim is greater than local len") ;
     request.ndim = 3 ;
     break ;
+  case IO3D_KIJ :
+    RSL_TEST_ERR(glen[0] > llen[0],
+       "rsl_write: global len of K dim is greater than local len") ;
+    request.ndim = 3 ;
+    break ;
   default:
     RSL_TEST_ERR(1,"rsl_write: unknown data tag") ;
   }
@@ -756,6 +791,11 @@ RSL_WRITE ( unit_p, iotag_p, base, d_p, type_p, glen, llen  )
     columnelems = request.glen[2] ;
     minelems = request.glen[1] ;
     majelems = request.glen[0] ;
+    break ;
+  case IO3D_KIJ :
+    columnelems = request.glen[0] ;
+    minelems = request.glen[1] ;
+    majelems = request.glen[2] ;
     break ;
   default:
     RSL_TEST_ERR(1,"handle_write_request: unknown data tag") ;
@@ -901,6 +941,19 @@ RSL_WRITE ( unit_p, iotag_p, base, d_p, type_p, glen, llen  )
             }
 	  }
           break ;
+        case IO3D_KIJ :
+          for ( ig = *is_write ; ig <= *ie_write ; ig++ )
+          {
+            min = jg - joffset ;
+            maj = ig - ioffset ;
+            for ( k = 0 ; k < glen[0] ; k++ )
+            {
+              dex = base+tlen*(min+llen[1]*(maj+k*llen[2])) ;
+              bcopy(dex,&(pbuf[cursor]),tlen) ;
+              cursor += tlen ;
+            }
+          }
+          break ;
         }
     }
   }
@@ -944,6 +997,16 @@ RSL_WRITE ( unit_p, iotag_p, base, d_p, type_p, glen, llen  )
             for ( k = 0 ; k < glen[2] ; k++ )
             {
               dex = base+tlen*(min+llen[0]*(maj+k*llen[1])) ;
+              bcopy(dex,&(pbuf[cursor]),tlen) ;
+              cursor += tlen ;
+            }
+            break ;
+          case IO3D_KIJ :
+            min = jg - joffset ;
+            maj = ig - ioffset ;
+            for ( k = 0 ; k < glen[0] ; k++ )
+            {
+              dex = base+tlen*(min+llen[1]*(maj+k*llen[2])) ;
               bcopy(dex,&(pbuf[cursor]),tlen) ;
               cursor += tlen ;
             }

@@ -165,13 +165,6 @@ static int compare_primary( lp1, lp2, dummy )
 {
   rsl_list_t *a, *b ;
   packrec_t *x, *y ;
-#if 0
-  if ( lp1 != NULL && lp2 != NULL )
-    if ((a=(rsl_list_t*)lp1->data) != NULL && (b=(rsl_list_t*)lp2->data) != NULL )
-      if ((x=(packrec_t*)a->data) != NULL && (y=(packrec_t*)b->data) != NULL )
-        if (x->base > y->base) return(1) ;
-  return(0) ;
-#else
   if ( lp1 != NULL && lp2 != NULL )
   {
     if ((x=(packrec_t*)lp1->data) != NULL && (y=(packrec_t*)lp2->data) != NULL )
@@ -187,7 +180,6 @@ static int compare_primary( lp1, lp2, dummy )
   else
     RSL_TEST_ERR(1, "compare_primary 1" ) ;
   return(0) ;
-#endif
 }
 
 static int compare_secondary( a, b, dummy )

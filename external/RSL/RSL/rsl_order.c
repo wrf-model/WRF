@@ -123,9 +123,6 @@ showlist( l, s )
   }
 }
 
-#define QUICKSORT
-#ifdef QUICKSORT
-
 rsl_sort( list, compare, up )
   rsl_list_t **list ;
   int (*compare)() ;
@@ -242,98 +239,7 @@ rsl_quicksort_merge( retlist, a , b, compare, up, n )
   *retlist = newlist ;
 }
 
-#else
-rsl_sort( list_p, compare, up )
-  rsl_list_t **list ;
-  int (*compare)() ;
-  int up ;
-{
-  rsl_list_t *lp, *prev, *list ;
-  int swap, pass, iclock, nelems, swaps ;
-  void * data ;
 
-  list = *list_p ;
-
-  fprintf(stderr,"rsl_sort: lenlist(list) = %d\n", lenlist(list) ) ; 
-
-  pass = 0 ;
-  swap = 1 ;
-  swaps = 0 ;
-  nelems = 0 ;
-  while ( swap )
-  {
-    swap = 0 ;
-    for ( lp = list ; lp != NULL ; lp = lp->next )
-    {
-      if ( pass == 0 )
-      {
-#if 0
-	if ( up == 99 ) fprintf(stderr," offset %10d \n",
-			  ((packrec_t*)(lp->data))->offset ) ;
-#endif
-        nelems++ ;
-      }
-    }
-    for ( lp = list ; lp != NULL ; lp = lp->next )
-    {
-      if ( lp != list ) 
-      {
-	if( (*compare)(prev->data,lp->data,up) )
-	{
-	  data = prev->data ;
-	  prev->data = lp->data ;
-	  lp->data = data ;
-	  swap = 1 ;
-          swaps++ ;
-	}
-      }
-      prev = lp ;
-    }
-    pass++ ;
-  }
-}
-#endif
-
-#if 0
-/* return 1 if points should be swapped */
-/* sort is stable */
-int
-compare( p, c, up )
-  rsl_point_t *p, *c ;
-  int up ; /* left to right index (lowest = 1), if negative descending sort */
-{
-  int p1, c1, retval ;
-  int desc = 0 ;
-
-  if ( up < 0 )
-  {
-    up = -up ;		/* descending sort */
-    desc = 1 ;
-  }
-  switch( up )
-  {
-  case 1 :
-    p1 = ID_IDEX(p->id) ;
-    c1 = ID_IDEX(c->id) ;
-    if ( desc )
-      retval = ( p1 < c1 )?1:0 ;
-    else
-      retval = ( p1 > c1 )?1:0 ;
-    break ;
-  case 2 :
-    p1 = ID_JDEX(p->id) ;
-    c1 = ID_JDEX(c->id) ;
-    if ( desc )
-      retval = ( p1 < c1 )?1:0 ;
-    else
-      retval = ( p1 > c1 )?1:0 ;
-    break ;
-  default :
-    RSL_TEST_ERR(1,"compare: no such index") ;
-  }
-  return(retval) ;
-}
-#endif
 
 /* OBSOLETE */
 bubble( list, up )

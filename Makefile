@@ -206,7 +206,7 @@ framework :
 	cd ../external/io_netcdf ; make NETCDFPATH="$(NETCDFPATH)" FC="$(FC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP)" diffwrf; \
 	cd ../io_grib1/WGRIB ; make clean ; \
 	cd .. ; rm wgrib ; make FC="$(FC) -I. $(FCBASEOPTS)" CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)"; \
-	cd ../io_int ; $(MAKE) FC="$(FC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP)" diffwrf ; cd ../../frame )
+	cd ../io_int ; $(MAKE) SFC="$(SFC)" FC="$(FC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP)" diffwrf ; cd ../../frame )
 
 shared :
 	@ echo '--------------------------------------'

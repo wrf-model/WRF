@@ -451,7 +451,7 @@ RSL_END_REGISTER_F90 ()
 RSL_START_REGISTER_F90 ()
 {
   base_table_cursor = 1 ;
-  f90_base_table[ 0 ].virt_base = BASE_TABLE_PADDING ;
+  f90_base_table[ 0 ].virt_base = (char *) BASE_TABLE_PADDING ;
   f90_base_table[ 0 ].size_in_bytes = 0 ;
 }
 

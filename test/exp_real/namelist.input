@@ -58,7 +58,7 @@
  dy                                  = 90000,
  ztop                                = 17558.2
  zdamp                               = 5000.,
- dampcoef                            = 0.2,
+ dampcoef                            = 0.01,
  non_hydrostatic                     = .true.,
  smdiv                               = 0.1,
  emdiv                               = 0.01,

@@ -84,7 +84,7 @@
  damp_opt                            = 0,
  base_temp                           = 290.
  zdamp                               = 5000.,  5000.,  5000.,
- dampcoef                            = 0.2,    0.2,    0.2
+ dampcoef                            = 0.01,   0.01,   0.01
  khdif                               = 0,      0,      0,
  kvdif                               = 0,      0,      0,
  smdiv                               = 0.1,    0.1,    0.1,

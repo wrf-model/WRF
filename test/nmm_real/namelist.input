@@ -72,7 +72,7 @@
  km_opt                              = 1,
  damp_opt                            = 1,
  zdamp                               = 5000.,
- dampcoef                            = 0.2,
+ dampcoef                            = 0.01,
  khdif                               = 0,
  kvdif                               = 0,
  mix_cr_len			     = 200.,

@@ -264,8 +264,9 @@ John
 #ifdef MPI
 
 #    include "mpi.h"
+/* EXTERN is defined in rsl.h */
 
-MPI_Comm rsl_mpi_communicator ;
+EXTERN MPI_Comm rsl_mpi_communicator ;
 
 #    ifdef __MPI_COMPAT__
        MPI_Status mpi_status ;

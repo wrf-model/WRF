@@ -742,8 +742,8 @@ gen_datacalls1 ( FILE * fp , char * corename , char * structname , int mask , no
               sprintf(tmp2, "(grid%%em31-grid%%sm31+1)*(grid%%em32-grid%%sm32+1)*(grid%%em33-grid%%sm33+1)*%cWORDSIZE",tc) ;
               if ( p->ntl > 1 ) fprintf(fp," IF(1+%d.LE.num_%s)CALL rsl_register_f90_base_and_size ( %s%s_%d %s , &\n %s  )\n",
                                              member_number,p->name,structname,p->name,i,tmp,tmp2) ;
-              else              fprintf(fp," CALL rsl_register_f90_base_and_size ( %s%s %s, &\n %s )\n",
-                                                           structname,p->name,tmp,tmp2) ;
+              else              fprintf(fp," IF(1+%d.LE.num_%s)CALL rsl_register_f90_base_and_size ( %s%s %s, &\n %s )\n",
+                                             member_number,p->name,structname,p->name,tmp,tmp2) ;
               member_number++ ;
             }
           }

@@ -239,6 +239,7 @@ Additional ones when running 3DVAR:
                                                   (0.01 is typical for real-data cases)
  epssm (max_dom)                     = .1,	; time off-centering for vertical sound waves
  non_hydrostatic (max_dom)           = .true.,	; whether running the model in hydrostatic or non-hydro mode
+ pert_coriolis (max_dom)             = .false.,	; Coriolis only acts on wind perturbation (idealized)
  h_mom_adv_order (max_dom)           = 5,       ; horizontal momentum advection order (5=5th, etc.)
  v_mom_adv_order (max_dom)           = 3,       ; vertical momentum advection order
  h_sca_adv_order (max_dom)           = 5,       ; horizontal scalar advection order

@@ -2569,7 +2569,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
 
 ###########################################################
-#ARCH       Alpha Linux alpha DM  (single-threaded)
+#ARCH       Alpha Linux alpha DM  (single-threaded, no nesting)
 #
 FC              =       fort
 LD              =       fort
@@ -2649,7 +2649,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(FCBASENOINL) $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH       Alpha Linux alpha SM  (DOES NOT WORK ON JET!)
+#ARCH       Alpha Linux alpha SM  (DOES NOT WORK ON JET! No nesting)
 #
 FC              =       fort
 LD              =       fort
@@ -2729,7 +2729,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(FCBASENOINL) $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH       Alpha Linux alpha DM  (RSL, MPICH, RSL IO)
+#ARCH       Alpha Linux alpha DM  (RSL, MPICH, RSL IO, support nesting)
 #
 DMPARALLEL      =       1
 MAX_PROC        =       1024
@@ -2897,7 +2897,7 @@ solve_interface.o : solve_interface.F
 	$(FC) -c -O 0 $(FCFLAGS) $*.f
 
 ###########################################################
-#ARCH Settings for PC Linux x86_64 (IA64 and Opteron), PGI compiler 5.2 or higher  (Single-threaded)
+#ARCH Settings for PC Linux x86_64 (IA64 and Opteron), PGI compiler 5.2 or higher  (Single-threaded, no nesting)
 # Note: requires pgi compiler version 5.2 or higher due to one-pass ipa
 # remove -Mipa=fast if using older version.  (Thanks: Dave Barker, AMD, July 2004).
 #
@@ -2972,7 +2972,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 ###########################################################
 
 ###########################################################
-#ARCH    PC Linux i486 i586 i686, PGI compiler  (Single-threaded)
+#ARCH    PC Linux i486 i586 i686, PGI compiler  (Single-threaded, no nesting)
 #
 FC              =       pgf90
 LD              =       pgf90
@@ -3056,7 +3056,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH   PC Linux i486 i586 i686, PGI compiler  (OpenMP)
+#ARCH   PC Linux i486 i586 i686, PGI compiler  (OpenMP, no nesting)
 #
 OMP             =       -mp
 OMPCPP          =       -D_OPENMP
@@ -3142,7 +3142,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH    PC Linux i486 i586 i686, PGI compiler  (RSL, MPICH, RSL IO)
+#ARCH    PC Linux i486 i586 i686, PGI compiler  (RSL, MPICH, RSL IO, support nesting)
 #
 DMPARALLEL      =       1
 MAX_PROC        =       1024
@@ -3239,7 +3239,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 
 
 ###########################################################
-#ARCH     PC Linux i486 i586 i686, PGI compiler  (RSL_LITE, MPICH, Experimental)
+#ARCH     PC Linux i486 i586 i686, PGI compiler  (RSL_LITE, MPICH, Experimental, No nesting)
 #
 DMPARALLEL      =       1
 MAX_PROC        =       1024
@@ -3656,7 +3656,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(FCNOOPTS) $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH titan.ncsa.uiuc.edu specific Intel Itanium2 ia64 mckinley Linux, efc compiler (RSL, VMI, RSL IO)
+#ARCH titan.ncsa.uiuc.edu specific Intel Itanium2 ia64 mckinley Linux, efc compiler (RSL, VMI, RSL IO, allows nesting) 
 #
 # Consider 'setenv F_UFMTENDIAN big' in your run scripts for big-endian output
 # Note hard-coded paths to Mark Straka's accounts and ecc6 libs
@@ -3761,7 +3761,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH titan.ncsa.uiuc.edu specific Intel Itanium2 ia64 mckinley Linux, efc compiler (RSL_LITE, VMI)
+#ARCH titan.ncsa.uiuc.edu specific Intel Itanium2 ia64 mckinley Linux, efc compiler (RSL_LITE, VMI, no nesting)
 #
 # Consider 'setenv F_UFMTENDIAN big' in your run scripts for big-endian output
 # Note hard-coded paths to Mark Straka's accounts and ecc6 libs
@@ -3859,7 +3859,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH Intel xeon i686 ia32 Xeon Linux, ifc compiler (single-threaded)
+#ARCH Intel xeon i686 ia32 Xeon Linux, ifc compiler (single-threaded, no nesting)
 FC		=	ifort
 CC              =       icc
 FCBASEOPTS      =       -w -FR -cm -w -I.
@@ -4077,7 +4077,7 @@ module_initialize_real.o module_dm.o  start_domain.o :
 	$(FC) -c $(FCFLAGS) $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH   SGI Altix, Intel Itanium2 ia64 Linux, ifort compiler (RSL, SGI MPI, RSL IO, Black-Belt opts)
+#ARCH   SGI Altix, Intel Itanium2 ia64 Linux, ifort compiler (RSL, SGI MPI, RSL IO, Black-Belt opts, allows nesting)
 #
 #  'setenv F_UFMTENDIAN big' in run scripts not necessary
 #  since -convert big_endian is in FCBASEOPTS

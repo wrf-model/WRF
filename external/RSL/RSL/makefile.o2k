@@ -7,8 +7,8 @@ OBJ = $(CORE_OBJ) rsl_mpi_compat.o mpi_init_f.o debug.o fort_doubleread.o fort_d
 HDR = $(CORE_HDR)
 TAR = $(CORE_TAR)
 
-CC = cc -n32 -mips4
-FC = f90 -n32 -mips4
+CC = cc -64 -mips4
+FC = f90 -64 -mips4
 
 MPIHOME=/usr
 IDIR=$(MPIHOME)/include

@@ -98,7 +98,6 @@
 ! necessarily a multiple of the nest ratio in a given dim.
 ! this could be a little less ham-handed.
 
-! need to modify sint so it respects mask and saves computation
 !call start_timing
 
         CALL sint( psca,                     &
@@ -765,6 +764,7 @@
      INTEGER sz
      INTEGER n2ci,n
      INTEGER n2cj
+
 ! statement functions for converting a nest index to coarse
      n2ci(n) = (n+ipos*nri-1)/nri
      n2cj(n) = (n+jpos*nrj-1)/nrj
@@ -772,7 +772,6 @@
      rdt = 1.D0/cdt
 
      shw = 0
-
 
      ioff = 0 ; joff = 0
      IF ( xstag ) ioff = (nri-1)/2
@@ -802,44 +801,46 @@
            ENDDO
         ENDDO
 ! hopefully less ham handed but still correct and more efficient
+! sintb ignores icmask so it does not matter that icmask is not set
+!
 ! SOUTH BDY
                IF   ( njts .ge. njds .and. njts .le. njds + sz - 1  ) THEN
         CALL sintb( psca1, psca,                     &
           cims, cime, cjms, cjme, icmask,  &
-          n2ci(nits), n2ci(nite), n2cj(MAX(njts,njds)), n2cj(MIN(njte,njds+sz-1)), nrj*nri, xstag, ystag )
+          n2ci(nits)-1, n2ci(nite)+1, n2cj(MAX(njts,njds)), n2cj(MIN(njte,njds+sz-1)), nrj*nri, xstag, ystag )
                ENDIF
 ! NORTH BDY
                IF ( ystag ) THEN
                  IF   ( njte .le. njde .and. njte .ge. njde - sz + 1 ) THEN
         CALL sintb( psca1, psca,                     &
           cims, cime, cjms, cjme, icmask,  &
-          n2ci(nits), n2ci(nite), n2cj(MAX(njts,njde-sz+1)), n2cj(MIN(njte,njde)), nrj*nri, xstag, ystag )
+          n2ci(nits)-1, n2ci(nite)+1, n2cj(MAX(njts,njde-sz+1)), n2cj(MIN(njte,njde)), nrj*nri, xstag, ystag )
                  ENDIF
                ELSE
                  IF   ( njte .le. njde .and. njte .ge. njde - sz ) THEN
         CALL sintb( psca1, psca,                     &
           cims, cime, cjms, cjme, icmask,  &
-          n2ci(nits), n2ci(nite), n2cj(MAX(njts,njde-sz)), n2cj(MIN(njte,njde-1)), nrj*nri, xstag, ystag )
+          n2ci(nits)-1, n2ci(nite)+1, n2cj(MAX(njts,njde-sz)), n2cj(MIN(njte,njde-1)), nrj*nri, xstag, ystag )
                  ENDIF
                ENDIF
 ! WEST BDY
                IF   ( nits .ge. nids .and. nits .le. nids + sz - 1 ) THEN
         CALL sintb( psca1, psca,                     &
           cims, cime, cjms, cjme, icmask,  &
-          n2ci(MAX(nits,nids)), n2ci(MIN(nite,nids+sz-1)), n2cj(njts), n2cj(njte), nrj*nri, xstag, ystag )
+          n2ci(MAX(nits,nids)), n2ci(MIN(nite,nids+sz-1)), n2cj(njts)-1, n2cj(njte)+1, nrj*nri, xstag, ystag )
                ENDIF
 ! EAST BDY
                IF ( xstag ) THEN
                  IF   ( nite .le. nide .and. nite .ge. nide - sz + 1 ) THEN
         CALL sintb( psca1, psca,                     &
           cims, cime, cjms, cjme, icmask,  &
-          n2ci(MAX(nits,nide-sz+1)), n2ci(MIN(nite,nide)), n2cj(njts), n2cj(njte), nrj*nri, xstag, ystag )
+          n2ci(MAX(nits,nide-sz+1)), n2ci(MIN(nite,nide)), n2cj(njts)-1, n2cj(njte)+1, nrj*nri, xstag, ystag )
                  ENDIF
                ELSE
                  IF   ( nite .le. nide .and. nite .ge. nide - sz ) THEN
         CALL sintb( psca1, psca,                     &
           cims, cime, cjms, cjme, icmask,  &
-          n2ci(MAX(nits,nide-sz)), n2ci(MIN(nite,nide-1)), n2cj(njts), n2cj(njte), nrj*nri, xstag, ystag )
+          n2ci(MAX(nits,nide-sz)), n2ci(MIN(nite,nide-1)), n2cj(njts)-1, n2cj(njte)+1, nrj*nri, xstag, ystag )
                  ENDIF
                ENDIF
 

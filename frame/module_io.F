@@ -7,6 +7,7 @@ MODULE module_io
   LOGICAL :: is_inited = .FALSE.
   INTEGER :: wrf_io_handles(1000), how_opened(1000) 
   LOGICAL :: for_output(1000), first_operation(1000)
+  INTEGER :: filtno = 0
 
 ! WRF-specific package independent interface to package-dependent WRF specific
 ! I/O packages.
@@ -83,6 +84,7 @@ SUBROUTINE wrf_open_for_write_begin( FileName , Comm_compute, Comm_io, SysDepInf
   CHARACTER*128     :: LocFilename   ! for appending the process ID if necessary
   INTEGER           :: myproc
   CHARACTER*128     :: mess
+  CHARACTER*1028    :: tstr
 
   CALL wrf_debug( DEBUG_LVL, 'module_io.F: in wrf_open_for_write_begin' )
 
@@ -168,6 +170,7 @@ SUBROUTINE wrf_open_for_write_begin( FileName , Comm_compute, Comm_io, SysDepInf
 #ifdef MCELIO
       CASE ( IO_MCEL )
         IF ( wrf_dm_on_monitor() ) THEN
+          tstr = TRIM(SysDepInfo) // ',' // 'LAT_R=XLAT,LON_R=XLONG,LANDMASK_I=LU_MASK'
           CALL ext_mcel_open_for_write_begin ( FileName , Comm_compute, Comm_io, SysDepInfo, &
                                                Hndl , Status )
         ENDIF
@@ -306,7 +309,8 @@ SUBROUTINE wrf_open_for_read_begin( FileName , Comm_compute, Comm_io, SysDepInfo
 
   CHARACTER*128     :: LocFilename   ! for appending the process ID if necessary
   INTEGER     myproc
-  CHARACTER*128     :: mess
+  CHARACTER*128     :: mess, fhand
+  CHARACTER*1028    :: tstr
 
   CALL wrf_debug( DEBUG_LVL, 'module_io.F: in wrf_open_for_read_begin' )
 
@@ -373,7 +377,11 @@ SUBROUTINE wrf_open_for_read_begin( FileName , Comm_compute, Comm_io, SysDepInfo
 #ifdef MCELIO
       CASE ( IO_MCEL )
         IF ( wrf_dm_on_monitor() ) THEN
-          CALL ext_mcel_open_for_read_begin ( FileName , Comm_compute, Comm_io, SysDepInfo, &
+          
+        WRITE(fhand,'("filter_",i-3)')filtno
+        filtno = filtno + 1
+tstr = TRIM(SysDepInfo) // ',' // 'READ_MODE=UPDATE,LAT_R=XLAT,LON_R=XLONG,LANDMASK_I=LU_MASK,FILTER_HANDLE=' // TRIM(fhand)
+          CALL ext_mcel_open_for_read_begin ( FileName , Comm_compute, Comm_io, tstr, &
                                                Hndl , Status )
         ENDIF
         CALL wrf_dm_bcast_bytes( Hndl, IWORDSIZE )

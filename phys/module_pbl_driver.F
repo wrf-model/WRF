@@ -300,7 +300,7 @@ CONTAINS
 ! SAVE OLD VALUES
 
    !$OMP PARALLEL DO   &
-   !$OMP PRIVATE ( ij )
+   !$OMP PRIVATE ( ij,i,j,k )
    DO ij = 1 , num_tiles
       DO j=j_start(ij),j_end(ij)
       DO i=i_start(ij),i_end(ij)
@@ -341,7 +341,7 @@ CONTAINS
 
 !
   !$OMP PARALLEL DO   &
-  !$OMP PRIVATE ( ij )
+  !$OMP PRIVATE ( ij, i,j,k )
   DO ij = 1 , num_tiles
    pbl_select: SELECT CASE(config_flags%bl_pbl_physics)
 

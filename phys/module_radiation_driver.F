@@ -301,14 +301,13 @@ CONTAINS
 
 !---------------
       !$OMP PARALLEL DO   &
-      !$OMP PRIVATE ( ij ,its,ite,jts,jte)
+      !$OMP PRIVATE ( ij ,i,j,k,its,ite,jts,jte)
 
       DO ij = 1 , num_tiles
         its = i_start(ij)
         ite = i_end(ij)
         jts = j_start(ij)
         jte = j_end(ij)
-
 
 ! initialize data
 
@@ -329,6 +328,7 @@ CONTAINS
    ENDDO
    ENDDO
    ENDDO
+
 !---------------
 ! Calculate constant for short wave radiation
 
@@ -393,7 +393,6 @@ CONTAINS
              CALL wrf_error_fatal ( wrf_err_message )
            
    END SELECT lwrad_select    
-
 
    IF (config_flags%ra_lw_physics .gt. 0 ) THEN
       DO j=jts,jte

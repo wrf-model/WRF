@@ -266,7 +266,7 @@ CONTAINS
 
 ! SET START AND END POINTS FOR TILES
       !$OMP PARALLEL DO   &
-      !$OMP PRIVATE ( ij ,its,ite,jts,jte)
+      !$OMP PRIVATE ( ij ,its,ite,jts,jte, i,j,k)
 
       DO ij = 1 , num_tiles
         its = i_start(ij)

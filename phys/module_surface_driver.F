@@ -333,7 +333,7 @@ CONTAINS
 ! RAINBL in mm (Accumulation between PBL calls)
 
   !$OMP PARALLEL DO   &
-  !$OMP PRIVATE ( ij )
+  !$OMP PRIVATE ( ij, i, j, k )
   DO ij = 1 , num_tiles
     DO j=j_start(ij),j_end(ij)
     DO i=i_start(ij),i_end(ij)
@@ -359,7 +359,7 @@ CONTAINS
 
 
      !$OMP PARALLEL DO   &
-     !$OMP PRIVATE ( ij )
+     !$OMP PRIVATE ( ij, i, j, k )
      DO ij = 1 , num_tiles
        DO j=j_start(ij),j_end(ij)
        DO i=i_start(ij),i_end(ij)
@@ -379,7 +379,7 @@ CONTAINS
 
 
      !$OMP PARALLEL DO   &
-     !$OMP PRIVATE ( ij )
+     !$OMP PRIVATE ( ij, i, j, k )
      DO ij = 1 , num_tiles
      sfclay_select: SELECT CASE(config_flags%sf_sfclay_physics)
 
@@ -423,7 +423,7 @@ CONTAINS
 
      IF (ISFFLX.EQ.0 ) GOTO 430
      !$OMP PARALLEL DO   &
-     !$OMP PRIVATE ( ij )
+     !$OMP PRIVATE ( ij, i, j, k )
      DO ij = 1 , num_tiles
 
      sfc_select: SELECT CASE(config_flags%sf_surface_physics)
@@ -545,7 +545,7 @@ CONTAINS
 ! Reset RAINBL in mm (Accumulation between PBL calls)
 
      !$OMP PARALLEL DO   &
-     !$OMP PRIVATE ( ij )
+     !$OMP PRIVATE ( ij, i, j, k )
      DO ij = 1 , num_tiles
        DO j=j_start(ij),j_end(ij)
        DO i=i_start(ij),i_end(ij)

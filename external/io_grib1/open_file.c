@@ -21,7 +21,7 @@
 /* 
  * Fortran-callable function to open/close files
  */
-int open_file_(char *filename, int *outfd, int *ierr, int strlen) 
+int OPEN_FILE (char *filename, int *outfd, int *ierr, int strlen) 
 {
   char filename2[1000];
   strncpy(filename2,filename,strlen);
@@ -41,13 +41,13 @@ int open_file_(char *filename, int *outfd, int *ierr, int strlen)
     }
 }
 
-int close_file_(int *fd)
+int CLOSE_FILE (int *fd)
 {
   close(*fd);
   return 0;
 }
 
-int flush_file_(int *fd)
+int FLUSH_FILE (int *fd)
 {
   fsync(*fd);
   return 0;

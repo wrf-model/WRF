@@ -38,11 +38,14 @@
 #ifndef CRAY
 # ifdef NOUNDERSCORE
 #      define WRITE_GRIB write_grib
+#      define GET_GRIB_PARAM get_grib_param
 # else
 #   ifdef F2CSTYLE
 #      define WRITE_GRIB  write_grib__
+#      define GET_GRIB_PARAM get_grib_param__
 #   else
 #      define WRITE_GRIB  write_grib_
+#      define GET_GRIB_PARAM get_grib_param_
 #   endif
 # endif
 #endif
@@ -131,7 +134,7 @@ int WRITE_GRIB(char *varname, float *level1, float *level2, int *vert_unit,
     }
 
   /* Read the grib parameter table */
-  get_grib_param_(grib_table_info, varname2, &table_index);
+  GET_GRIB_PARAM (grib_table_info, varname2, &table_index);
   if (table_index < 0) 
     {
       fprintf(stdout,\

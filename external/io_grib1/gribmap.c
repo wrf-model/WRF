@@ -39,7 +39,7 @@ int main()
   strcpy(filename,"gribmap.txt");
   read_gribmap_(filename,&grib_table_info,&ret);
 
-  get_grib_param_(&grib_table_info, "TSK", &index);
+  GET_GRIB_PARAM (&grib_table_info, "TSK", &index);
   fprintf(stderr,"got index: %d\n",index);
 }
 #endif
@@ -51,7 +51,7 @@ int main()
  *
  ******************************************************************************/
 
-int READ_GRIBMAP(char *filename, Grib_Table_Info *grib_table_info, int *ret)
+int READ_GRIBMAP (char *filename, Grib_Table_Info *grib_table_info, int *ret)
 {
 
   FILE *mapptr;
@@ -148,7 +148,7 @@ int READ_GRIBMAP(char *filename, Grib_Table_Info *grib_table_info, int *ret)
  *
  ******************************************************************************/
 
-int GET_GRIB_PARAM(Grib_Table_Info *grib_table_info, char *varname, int *index)
+int GET_GRIB_PARAM (Grib_Table_Info *grib_table_info, char *varname, int *index)
 {
   int idx;
   int prm_idx;
@@ -175,7 +175,7 @@ int GET_GRIB_PARAM(Grib_Table_Info *grib_table_info, char *varname, int *index)
  *
  ******************************************************************************/
 
-int GET_GRIB_STRUCT_SIZE(int *size)
+int GET_GRIB_STRUCT_SIZE (int *size)
 {
   *size = sizeof(Grib_Table_Info);
   return *size;

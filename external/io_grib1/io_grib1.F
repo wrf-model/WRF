@@ -38,13 +38,13 @@ module data_info
      INTEGER :: fcst_secs_rainnc = 0
      REAL, DIMENSION(:,:), POINTER :: rainc, rainnc
   END TYPE prevdata
-  TYPE (prevdata), DIMENSION(500) :: lastdata
+  TYPE (prevdata), DIMENSION(500), SAVE :: lastdata
   TYPE :: prestype
      REAL, DIMENSION(:,:,:), POINTER :: vals
      LOGICAL :: newtime = .false.
      CHARACTER*120 :: lastDateStr = ''
   END TYPE prestype
-  TYPE (prestype), DIMENSION(500) :: pressure
+  TYPE (prestype), DIMENSION(500), SAVE :: pressure
 end module data_info
 
 

@@ -59,7 +59,6 @@ C
       logical iflag
       call mpi_initialized( iflag, ierr )
       ierr = 0 
-       write(0,*)'mpi_init_f ',iflag
       if ( .NOT. iflag ) then
          call mpi_init(ierr)
       endif

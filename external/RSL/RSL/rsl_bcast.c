@@ -1,4 +1,4 @@
-#define LEARN_BCAST
+/* #define LEARN_BCAST /*
 /***********************************************************************
      
                               COPYRIGHT

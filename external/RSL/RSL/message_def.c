@@ -332,7 +332,7 @@ RSL_BUILD_MESSAGE ( mh_p, t_p, base, ndim_p, decomp, glen, llen )
     {
        sprintf(errmess,
 "rsl_build_message: mesg %d: dim %d is RSL_NOTDECOMPOSED so glen(%d)=%d must eq llen(%d)=%d",
-       mh, dim+1, dim, glen[dim], dim, llen[dim] ) ;
+       mh, dim+1, dim+1, glen[dim], dim+1, llen[dim] ) ;
        RSL_TEST_WRN( 1, errmess ) ;
     }
     fld->glen[dim] = glen[dim] ;

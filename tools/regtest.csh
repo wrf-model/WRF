@@ -186,10 +186,10 @@ set start = ( `date` )
 set NESTED = TRUE
 set NESTED = FALSE
 
-if ( ( $NESTED == TRUE ) && ( ( `uname` == OSF1 ) || ( `uname` == Linux ) ) ) then
+if ( ( $NESTED == TRUE ) && ( ( `uname` == OSF1 ) || ( `uname` == Linux ) || ( `uname` == AIX ) ) ) then
 	echo DOING a NESTED TEST
 else if ( $NESTED == TRUE ) then
-	echo NESTED option is only valid on DEC or Linux machines
+	echo NESTED option is only valid on DEC, Linux, or AIX machines
 	exit ( 1 ) 
 endif
 
@@ -734,13 +734,14 @@ if ( ( $ARCH[1] == AIX ) && ( `hostname | cut -c 1-2` == bs ) ) then
 	endif
 	if ( ! -d $TMPDIR ) mkdir $TMPDIR
 	set MAIL                = /usr/bin/mailx
-	if      ( $ESMF_LIB == TRUE ) then
+	if        ( $NESTED == TRUE )                                                     then
+		set COMPOPTS	= ( 12 13 4 )
+	else if ( ( $NESTED != TRUE ) && ( $ESMF_LIB == TRUE ) )                          then
 		set COMPOPTS    = ( 1 2 10 )
-	else if ( $ESMF_LIB != TRUE ) then
+	else if ( ( $NESTED != TRUE ) && ( $ESMF_LIB != TRUE ) && ( $RSL_LITE == TRUE ) ) then
+		set COMPOPTS	= ( 1 2 3 )
+	else if ( ( $NESTED != TRUE ) && ( $ESMF_LIB != TRUE ) && ( $RSL_LITE != TRUE ) ) then
 		set COMPOPTS    = ( 1 2 4 )
-		if ( ( $RSL_LITE == TRUE ) && ( $NESTED != TRUE ) ) then
-			set COMPOPTS	= ( 1 2 3 )
-		endif
 	endif
 	set Num_Procs		= 4
 	set OPENMP 		= $Num_Procs
@@ -768,13 +769,12 @@ else if ( $ARCH[1] == OSF1 && $clrm == 0 ) then
 	endif
 	set TMPDIR              = .
 	set MAIL		= /usr/bin/mailx
-	if      ( $NESTED == TRUE ) then
+	if        ( $NESTED == TRUE )                            then
 		set COMPOPTS	= ( 2 4 6 )
-	else if ( $NESTED != TRUE ) then
-		set COMPOPTS	= ( 1 3 6 )
-	endif
-	if ( ( $RSL_LITE == TRUE ) && ( $NESTED != TRUE ) ) then
+	else if ( ( $NESTED != TRUE ) && ( $RSL_LITE == TRUE ) ) then
 		set COMPOPTS	= ( 1 3 5 )
+	else if ( ( $NESTED != TRUE ) && ( $RSL_LITE != TRUE ) ) then
+		set COMPOPTS	= ( 1 3 6 )
 	endif
 	set Num_Procs		= 4
 	set OPENMP 		= $Num_Procs
@@ -803,13 +803,12 @@ else if ( $ARCH[1] == OSF1 && $clrm == 1 ) then
 	set DEF_DIR		= /`hostname | cut -d. -f1`/$user
 	set TMPDIR		= /mmmtmp/$user
 	set MAIL		= /usr/bin/mailx
-	if      ( $NESTED == TRUE ) then
+	if        ( $NESTED == TRUE )                            then
 		set COMPOPTS	= ( 2 4 6 )
-	else if ( $NESTED != TRUE ) then
-		set COMPOPTS	= ( 1 3 6 )
-	endif
-	if ( ( $RSL_LITE == TRUE ) && ( $NESTED != TRUE ) ) then
+	else if ( ( $NESTED != TRUE ) && ( $RSL_LITE == TRUE ) ) then
 		set COMPOPTS	= ( 1 3 5 )
+	else if ( ( $NESTED != TRUE ) && ( $RSL_LITE != TRUE ) ) then
+		set COMPOPTS	= ( 1 3 6 )
 	endif
 	set Num_Procs		= 4
 	set OPENMP 		= 0
@@ -833,13 +832,12 @@ else if ( ( $ARCH[1] == Linux ) && ( `hostname` == bay-mmm ) ) then
 	if ( ! -d $DEF_DIR ) mkdir $DEF_DIR
 	set TMPDIR		= .
 	set MAIL		= /bin/mail
-	if ( $NESTED == TRUE ) then
+	if        ( $NESTED == TRUE )                            then
 		set COMPOPTS	= ( 2 4 5 )
-	else
-		set COMPOPTS	= ( 1 3 5 )
-	endif
-	if ( ( $RSL_LITE == TRUE ) && ( $NESTED != TRUE ) ) then
+	else if ( ( $NESTED != TRUE ) && ( $RSL_LITE == TRUE ) ) then
 		set COMPOPTS	= ( 1 3 6 )
+	else if ( ( $NESTED != TRUE ) && ( $RSL_LITE != TRUE ) ) then
+		set COMPOPTS	= ( 1 3 5 )
 	endif
 	set Num_Procs		= 2
 	set OPENMP		= $Num_Procs
@@ -874,13 +872,12 @@ else if ( ( $ARCH[1] == Linux ) && ( `hostname` == loquat ) ) then
 		echo "See directory ${DEF_DIR}/ for wrftest.output and other test results"
 	endif
 	set MAIL		= /bin/mail
-	if ( $NESTED == TRUE ) then
+	if        ( $NESTED == TRUE )                            then
 		set COMPOPTS	= ( 2 4 5 )
-	else
-		set COMPOPTS	= ( 1 3 5 )
-	endif
-	if ( ( $RSL_LITE == TRUE ) && ( $NESTED != TRUE ) ) then
+	else if ( ( $NESTED != TRUE ) && ( $RSL_LITE == TRUE ) ) then
 		set COMPOPTS	= ( 1 3 6 )
+	else if ( ( $NESTED != TRUE ) && ( $RSL_LITE != TRUE ) ) then
+		set COMPOPTS	= ( 1 3 5 )
 	endif
 	set Num_Procs		= 2
 	set OPENMP		= $Num_Procs
@@ -923,13 +920,12 @@ else if ( ( $ARCH[1] == Linux ) && ( `hostname` == master ) ) then
 	set DEF_DIR		= /big6/gill/DO_NOT_REMOVE_DIR
 	set TMPDIR		= .
 	set MAIL		= /bin/mail
-	if ( $NESTED == TRUE ) then
+	if        ( $NESTED == TRUE )                            then
 		set COMPOPTS	= ( 2 4 5 )
-	else
-		set COMPOPTS	= ( 1 3 5 )
-	endif
-	if ( ( $RSL_LITE == TRUE ) && ( $NESTED != TRUE ) ) then
+	else if ( ( $NESTED != TRUE ) && ( $RSL_LITE == TRUE ) ) then
 		set COMPOPTS	= ( 1 3 6 )
+	else if ( ( $NESTED != TRUE ) && ( $RSL_LITE != TRUE ) ) then
+		set COMPOPTS	= ( 1 3 5 )
 	endif
 	set Num_Procs		= 4
 	set OPENMP		= 2
@@ -988,13 +984,12 @@ else if ( ( $ARCH[1] == Linux ) && ( `hostname` == kola ) ) then
 	set DEF_DIR		= /kola2/$user
 	set TMPDIR              = .
 	set MAIL		= /bin/mail
-	if ( $NESTED == TRUE ) then
+	if        ( $NESTED == TRUE )                            then
 		set COMPOPTS	= ( 2 4 5 )
-	else
-		set COMPOPTS	= ( 1 3 5 )
-	endif
-	if ( ( $RSL_LITE == TRUE ) && ( $NESTED != TRUE ) ) then
+	else if ( ( $NESTED != TRUE ) && ( $RSL_LITE == TRUE ) ) then
 		set COMPOPTS	= ( 1 3 6 )
+	else if ( ( $NESTED != TRUE ) && ( $RSL_LITE != TRUE ) ) then
+		set COMPOPTS	= ( 1 3 5 )
 	endif
 	set Num_Procs		= 2
 	set OPENMP		= $Num_Procs
@@ -1805,6 +1800,7 @@ banner 22
 					mv rsl.error.0000 print.out.wrf_${core}_Phys=${phys_option}_Parallel=${compopt}.exe_${n}p
 					grep "SUCCESS COMPLETE" print.out.wrf_${core}_Phys=${phys_option}_Parallel=${compopt}.exe_${n}p
 					set success = $status
+					set ok = $status
 					if ( ( -e wrfout_d01_${filetag} ) && ( $success == 0 ) ) then
 						if      ( $IO_FORM_NAME[$IO_FORM] == io_netcdf ) then
 							ncdump -h wrfout_d01_${filetag} | grep Time | grep UNLIMITED | grep currently | grep -q 2
@@ -2150,9 +2146,25 @@ banner 29
 	
 	                        #       1p vs baseline output from 20031015
 	
-	                        rm fort.88 fort.98 >& /dev/null
 	                        if ( ( -e $TMPDIR/wrfout_d01_${filetag}.${core}.${phys_option}.$COMPOPTS[3]_1p ) && \
 	                             ( -e wrfout_d01_2003-04-17_00:00:00.nmm_baseline ) ) then
+	                                set foo1 = ( ` \ls -ls $TMPDIR/wrfout_d01_${filetag}.${core}.${phys_option}.$COMPOPTS[3]_1p `)
+	                                set foo2 = ( ` \ls -lsL wrfout_d01_2003-04-17_00:00:00.nmm_baseline `)
+	                                set size1 = $foo1[6]
+	                                set size2 = $foo2[6]
+	                                if ( $size1 == $size2 ) then
+	                                        set RIGHT_SIZE = TRUE
+	                                else
+	                                        set RIGHT_SIZE = FALSE
+	                                endif
+	                        else
+	                                set RIGHT_SIZE = FALSE
+	                        endif
+
+	                        rm fort.88 fort.98 >& /dev/null
+	                        if ( ( -e $TMPDIR/wrfout_d01_${filetag}.${core}.${phys_option}.$COMPOPTS[3]_1p ) && \
+	                             ( -e wrfout_d01_2003-04-17_00:00:00.nmm_baseline ) && \
+	                             ( $RIGHT_SIZE == TRUE ) ) then
 	                                $DIFFWRF $TMPDIR/wrfout_d01_${filetag}.${core}.${phys_option}.$COMPOPTS[3]_1p \
 	                                         wrfout_d01_2003-04-17_00:00:00.nmm_baseline >& /dev/null
 	                        else

@@ -270,6 +270,7 @@
       SWNETDN =0.
       SWDOWN =0.
       CALL RADIATION_DRIVER(NTSD,DT                                     &
+     &                     ,ZERO_3D,ZERO_3D                             & !aer_dry, aer_water
      &                     ,THRATENLW,THRATENSW,THRATEN                 &
      &                     ,GLW,SWNETDN,SWDOWN                          &
      &                     ,XLAT,XLON,ALBEDO,ZERO_3D,EPSR               &

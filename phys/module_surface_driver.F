@@ -7,7 +7,7 @@ CONTAINS
      &           ACSNOM,ACSNOW,AKHS,AKMS,ALBEDO,BR,CANWAT,CAPG        &
      &          ,CHKLOWQ,CONFIG_FLAGS,DT,DX,DZ8W,DZS,EMISS,GLW        &
      &          ,GRDFLX,GSW,GZ1OZ0,HFX,HOL,HT,IFSNOW,ISFFLX           &
-     &          ,ISLTYP,ITIMESTEP,IVGTYP,LOWLYR,MAVAIL,MOIST,MOL      &
+     &          ,ISLTYP,ITIMESTEP,IVGTYP,LOWLYR,MAVAIL,MOIST,MOL,RMOL &
      &          ,NUM_SOIL_LAYERS,N_MOIST,P8W,PBLH,PI_PHY,PSHLTR,PSIH  &
      &          ,PSIM,P_PHY,Q10,Q2,QFX,QSFC,QSHLTR,QZ0,RAINBL         &
      &          ,RAINCV,RAINNCV,REGIME,RHO,SFCEVP,SFCEXC,SFCRUNOFF    &
@@ -227,6 +227,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   HFX
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   HOL
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   MOL
+   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   RMOL
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   PBLH
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   Q2
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   QFX
@@ -402,7 +403,7 @@ CONTAINS
          CALL SFCLAY(u_phytmp,v_phytmp,t_phy,moist(ims,kms,jms,P_QV),&
                p_phy,dz8w,CP,G,RCP,R_d,XLV,PSFC,CHS,CHS2,CQS2,CPM, &
                ZNTOLD,USTOLD,PBLH,MAVAIL,ZOL,MOL,REGIME,PSIM,PSIH, &
-               XLAND,HFX,QFX,LH,TSK,FLHC,FLQC,QGH,QSFC,            &
+               XLAND,HFX,QFX,LH,TSK,FLHC,FLQC,QGH,QSFC,RMOL,       &
                U10,V10,TH2,T2,Q2,                                  &
                GZ1OZ0,WSPD,BR,ISFFLX,DX,                           &
                SVP1,SVP2,SVP3,SVPT0,EP_1,EP_2,KARMAN,EOMEG,STBOLT, &
@@ -419,7 +420,7 @@ CONTAINS
               TSK,QSFC,THZ0,QZ0,UZ0,VZ0,                           &
               LOWLYR,                                              &
               XLAND,                                               &
-              UST,ZNT,PBLH,MAVAIL,                                 &
+              UST,ZNT,PBLH,MAVAIL,RMOL,                            &
               AKHS,AKMS,                                           &
               CHS,CHS2,CQS2,HFX,QFX,LH,FLHC,FLQC,QGH,CPM,CT,       &
               U10,V10,TSHLTR,TH10,QSHLTR,Q10,PSHLTR,               &
@@ -477,7 +478,7 @@ CONTAINS
            CALL wrf_debug(100,'in NMM LSM')
            CALL nmmlsm(dz8w,moist(ims,kms,jms,P_QV),p8w,rho,       &
                 t_phy,th_phy,TSK,CHS,                           &
-                HFX,QFX,QGH,GSW,GLW,LH,                         &
+                HFX,QFX,QGH,GSW,GLW,LH,RMOL,                    &
                 SMSTAV,SMSTOT,SFCRUNOFF,                        &
                 UDRUNOFF,IVGTYP,ISLTYP,VEGFRA,SFCEVP,POTEVP,    &
                 GRDFLX,SFCEXC,ACSNOW,ACSNOM,SNOPCX,             &

@@ -14,7 +14,7 @@ CONTAINS
    SUBROUTINE SFCLAY(U3D,V3D,T3D,QV3D,P3D,dz8w,                    &
                      CP,G,ROVCP,R,XLV,PSFC,CHS,CHS2,CQS2,CPM,      &
                      ZNT,UST,PBLH,MAVAIL,ZOL,MOL,REGIME,PSIM,PSIH, &
-                     XLAND,HFX,QFX,LH,TSK,FLHC,FLQC,QGH,QSFC,      &
+                     XLAND,HFX,QFX,LH,TSK,FLHC,FLQC,QGH,QSFC,RMOL, &
                      U10,V10,TH2,T2,Q2,                            &
                      GZ1OZ0,WSPD,BR,ISFFLX,DX,                     &
                      SVP1,SVP2,SVP3,SVPT0,EP1,EP2,                 &
@@ -127,7 +127,7 @@ CONTAINS
                                                               HFX, &
                                                               QFX, &
                                                                LH, &
-                                                              MOL
+                                                          MOL,RMOL
 !m the following 5 are change to memory size
 !
       REAL,     DIMENSION( ims:ime, jms:jme )                    , &
@@ -188,7 +188,7 @@ CONTAINS
 
         CALL SFCLAY1D(J,U1D,V1D,T1D,QV1D,P1D,dz8w1d,               &
                 CP,G,ROVCP,R,XLV,PSFC(ims,j),CHS(ims,j),CHS2(ims,j),&
-                CQS2(ims,j),CPM(ims,j),PBLH(ims,j),                &
+                CQS2(ims,j),CPM(ims,j),PBLH(ims,j), RMOL(ims,j),   &
                 ZNT(ims,j),UST(ims,j),MAVAIL(ims,j),ZOL(ims,j),    &
                 MOL(ims,j),REGIME(ims,j),PSIM(ims,j),PSIH(ims,j),  &
                 XLAND(ims,j),HFX(ims,j),QFX(ims,j),TSK(ims,j),     &
@@ -208,7 +208,7 @@ CONTAINS
 
 !-------------------------------------------------------------------
    SUBROUTINE SFCLAY1D(J,UX,VX,T1D,QV1D,P1D,dz8w1d,                &
-                     CP,G,ROVCP,R,XLV,PSFCPA,CHS,CHS2,CQS2,CPM,PBLH, &
+                     CP,G,ROVCP,R,XLV,PSFCPA,CHS,CHS2,CQS2,CPM,PBLH,RMOL, &
                      ZNT,UST,MAVAIL,ZOL,MOL,REGIME,PSIM,PSIH,      &
                      XLAND,HFX,QFX,TSK,                            &
                      U10,V10,TH2,T2,Q2,FLHC,FLQC,QGH,              &
@@ -247,7 +247,7 @@ CONTAINS
                 INTENT(INOUT)               ::             REGIME, &
                                                               HFX, &
                                                               QFX, &
-                                                              MOL
+                                                         MOL,RMOL
 !m the following 5 are changed to memory size---
 !
       REAL,     DIMENSION( ims:ime )                             , &

@@ -112,6 +112,7 @@ MODULE module_domain
       Type(ESMF_Time)                                     :: start_time, stop_time, current_time
       Type(ESMF_Time)                                     :: start_subtime, stop_subtime
       Type(ESMF_Time)                                     :: this_bdy_time, next_bdy_time
+      Type(ESMF_Time)                                     :: this_emi_time, next_emi_time
       Type(ESMF_TimeInterval) :: step_time
       Type(ESMF_Alarm), pointer :: alarms(:)
 

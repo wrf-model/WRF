@@ -130,7 +130,7 @@ USE MODULE_MODEL_CONSTANTS
                        ,PMID,PINT,TH,T,EXNER,QV,CWM,U,V,RHO            &
                        ,TSK,QSFC,CHKLOWQ,THZ0,QZ0,UZ0,VZ0              &
                        ,LOWLYR,XLAND,SICE,SNOW                         &
-                       ,TKE_MYJ,USTAR,ZNT,PBLH,KPBL,CT                 &
+                       ,TKE_MYJ,EXCH_H,USTAR,ZNT,PBLH,KPBL,CT          &
                        ,AKHS,AKMS,ELFLX                                &
                        ,RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN     &
                        ,IDS,IDE,JDS,JDE,KDS,KDE                        &
@@ -176,7 +176,7 @@ USE MODULE_MODEL_CONSTANTS
                                                       ,UZ0,VZ0,ZNT
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME)                          &
-          ,INTENT(INOUT) ::                    TKE_MYJ
+          ,INTENT(INOUT) ::                    TKE_MYJ,EXCH_H
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: CHKLOWQ,ELFLX
 !
@@ -344,8 +344,10 @@ USE MODULE_MODEL_CONSTANTS
                      ,ITS,ITE,JTS,JTE,KTS,KTE)
 !
           DO K=KTS,KTE-1
+            KFLIP=KTE+1-K
             AKH(I,K,J)=AKHK(K)
             AKM(I,K,J)=AKMK(K)
+            if(k.gt.kts)EXCH_H(I,K,J)=AKHK(KFLIP)
           ENDDO
 !
 !----------------------------------------------------------------------
@@ -1273,7 +1275,7 @@ USE MODULE_MODEL_CONSTANTS
 !
 !=======================================================================
       SUBROUTINE MYJPBLINIT(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,          &
-     &                      TKE_MYJ,RESTART,allowed_to_read,            &
+     &                      TKE_MYJ,EXCH_H,RESTART,allowed_to_read,     &
      &                      IDS,IDE,JDS,JDE,KDS,KDE,                    &
      &                      IMS,IME,JMS,JME,KMS,KME,                    &
      &                      ITS,ITE,JTS,JTE,KTS,KTE                 )
@@ -1289,7 +1291,7 @@ USE MODULE_MODEL_CONSTANTS
      &                                                         RVBLTEN, &
      &                                                        RTHBLTEN, &
      &                                                        RQVBLTEN, &
-     &                                                         TKE_MYJ
+     &                                                  EXCH_H,TKE_MYJ
       INTEGER :: I,J,K,ITF,JTF,KTF
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
@@ -1297,7 +1299,6 @@ USE MODULE_MODEL_CONSTANTS
       JTF=MIN0(JTE,JDE-1)
       KTF=MIN0(KTE,KDE-1)
       ITF=MIN0(ITE,IDE-1)
-
       IF(.NOT.RESTART)THEN
         DO J=JTS,JTF
         DO K=KTS,KTF
@@ -1307,6 +1308,7 @@ USE MODULE_MODEL_CONSTANTS
           RVBLTEN(I,K,J)=0.
           RTHBLTEN(I,K,J)=0.
           RQVBLTEN(I,K,J)=0.
+          EXCH_H(i,k,j)=0.
         ENDDO
         ENDDO
         ENDDO

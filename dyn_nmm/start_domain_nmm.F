@@ -1721,7 +1721,7 @@
      &             ,CLDFRA,GLW,GSW,EMISS,LU_INDEX                       &
      &             ,XLAT,XLONG,ALBEDO,ALBBCK,GMT,JULYR,JULDAY           &
      &             ,TMN,XLAND,ZNT,Z0,USTAR,MOL,PBLH,TKE_MYJ             &
-     &             ,THC,SNOWC,MAVAIL,HFX,QFX,RAINBL                     &
+     &             ,EXCH_H,THC,SNOWC,MAVAIL,HFX,QFX,RAINBL                     &
      &             ,TSLB,ZS,DZS,num_soil_layers,warm_rain               &
      &             ,APR_GR,APR_W,APR_MC,APR_ST,APR_AS                   &
      &             ,APR_CAPMA,APR_CAPME,APR_CAPMI                       &

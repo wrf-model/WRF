@@ -49,6 +49,23 @@ SUBROUTINE solve_interface ( grid )
 # include <em_actual_args.inc>
 !
                )
+
+# ifdef WRF_CHEM
+   IF ( config_flags%chem_opt == RADM2  ) THEN
+     CALL chem_driver  ( grid , config_flags , &
+!
+# include <em_actual_args.inc>
+!
+               )
+   ENDIF
+   IF ( config_flags%chem_opt == RADM2SORG ) THEN
+     CALL chem_driver  ( grid , config_flags , &
+!
+# include <em_actual_args.inc>
+!
+               )
+   ENDIF
+# endif
 #endif
 #if (NMM_CORE == 1)
    ELSE IF ( config_flags%dyn_opt == DYN_NMM  ) THEN

@@ -7,7 +7,7 @@ CONTAINS
 
 ! !INTERFACE:
    SUBROUTINE radiation_driver (itimestep,dt,                            &
-                         RTHRATENLW,RTHRATENSW,RTHRATEN,                 &
+                       AER_DRY,AER_WATER,RTHRATENLW,RTHRATENSW,RTHRATEN, &
                          GLW,GSW,SWDOWN,XLAT,XLONG,ALBEDO,CLDFRA,EMISS,  &
                          rho_phy,moist,n_moist,                          &
                          p8w,p_phy,Pb,pi_phy,dz8w,t_phy,t8w,GMT,         &
@@ -235,8 +235,9 @@ CONTAINS
                                                              t8w, &
                                                          rho_phy, &
                                                        F_ICE_PHY, &
-                                                      F_RAIN_PHY
-
+                                                      F_RAIN_PHY, &
+                                                         aer_dry, &
+                                                       aer_water
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          INTENT(INOUT) ::                                 CLDFRA
 !
@@ -420,7 +421,7 @@ CONTAINS
         CASE (SWRADSCHEME)
              CALL wrf_debug(100, 'CALL swrad')
              CALL SWRAD(dt,RTHRATEN,GSW,XLAT,XLONG,ALBEDO,         &
-                     rho_phy,t_phy,                                &
+                     aer_dry,aer_water,rho_phy,t_phy,              &
                      moist(ims,kms,jms,P_QV),                      &
                      moist(ims,kms,jms,P_QC),                      &
                      moist(ims,kms,jms,P_QR),                      &

@@ -15,7 +15,7 @@ CONTAINS
 !-----------------------------------------------------------------------
       SUBROUTINE NMMLSM(DZ8W,QV3D,P8W3D,RHO3D,                          &
      &               T3D,TH3D,TSK,CHS,                                  &
-     &               HFX,QFX,QGH,GSW,GLW,ELFLX,                         &
+     &               HFX,QFX,QGH,GSW,GLW,ELFLX,RMOL,                    & ! added for WRF CHEM
      &               SMSTAV,SMSTOT,SFCRUNOFF,                           &
      &               UDRUNOFF,IVGTYP,ISLTYP,VEGFRA,SFCEVP,POTEVP,       &
      &               GRDFLX,SFCEXC,ACSNOW,ACSNOM,SNOPCX,                &
@@ -166,6 +166,8 @@ CONTAINS
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) ::           CHKLOWQ, &
                                                                  ELFLX
+! added for WRF-CHEM, 20041205, JM -- not used in this routine as yet
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) ::            RMOL
 
 ! LOCAL VARS
 

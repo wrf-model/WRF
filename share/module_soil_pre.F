@@ -229,6 +229,13 @@ CONTAINS
       INTEGER :: i , j , l , ll, dominant_index
       REAL :: dominant_value
 
+#ifdef WRF_CHEM
+!      REAL :: lwthresh = .99
+      REAL :: lwthresh = .50
+#else
+      REAL :: lwthresh = .50
+#endif
+
       INTEGER , PARAMETER :: iswater_soil = 14
       INTEGER :: iforce
       CHARACTER (LEN=132) :: message
@@ -238,13 +245,13 @@ CONTAINS
       DO j = jts , MIN(jde-1,jte)
          DO i = its , MIN(ide-1,ite)
             dominant_value = landuse_frac(i,iswater,j)
-            IF ( dominant_value .EQ. 0.50 ) THEN
+            IF ( dominant_value .EQ. lwthresh ) THEN
                DO l = 1 , num_veg_cat
                   IF ( l .EQ. iswater ) CYCLE
-                  IF ( landuse_frac(i,l,j) .EQ. 0.50 ) THEN
+                  IF ( landuse_frac(i,l,j) .EQ. lwthresh ) THEN
                      PRINT *,i,j,' water and category ',l,' both at 50%, landmask is ',landmask(i,j)
-                     landuse_frac(i,l,j) = 0.49 
-                     landuse_frac(i,iswater,j) = 0.51
+                     landuse_frac(i,l,j) = lwthresh - .01
+                     landuse_frac(i,iswater,j) = 1. - (lwthresh + 0.01)
                   END IF
                END DO
             END IF
@@ -265,37 +272,37 @@ CONTAINS
                   dominant_index = l
                END IF
             END DO
-            IF ( landuse_frac(i,iswater,j) .GT. 0.5 ) THEN
+            IF ( landuse_frac(i,iswater,j) .GT. lwthresh ) THEN
                dominant_value = landuse_frac(i,iswater,j)
                dominant_index = iswater
 #if 0
 si needs to beef up consistency checks before we can use this part
-            ELSE IF ( ( landuse_frac(i,iswater,j) .EQ. 0.5 ) .AND. &
-                      ( dominant_value .EQ. 0.5 ) ) THEN
+            ELSE IF ( ( landuse_frac(i,iswater,j) .EQ. lwthresh) .AND. &
+                      ( dominant_value .EQ. lwthresh) ) THEN
                ! no op
 #else
-ELSEIF((landuse_frac(i,iswater,j).EQ.0.5).AND.(dominant_value.EQ.0.5).and.(dominant_index.LT.iswater))THEN
+ELSEIF((landuse_frac(i,iswater,j).EQ.lwthresh).AND.(dominant_value.EQ.lwthresh).and.(dominant_index.LT.iswater))THEN
 print *,'temporary SI landmask fix'
 ! no op
-ELSEIF((landuse_frac(i,iswater,j).EQ.0.5).AND.(dominant_value.EQ.0.5).and.(dominant_index.GT.iswater))THEN
+ELSEIF((landuse_frac(i,iswater,j).EQ.lwthresh).AND.(dominant_value.EQ.lwthresh).and.(dominant_index.GT.iswater))THEN
 print *,'temporary SI landmask fix'
 dominant_value = landuse_frac(i,iswater,j)
 dominant_index = iswater
 #endif
-            ELSE IF ( ( landuse_frac(i,iswater,j) .EQ. 0.5 ) .AND. &
-                      ( dominant_value .LT. 0.5 ) ) THEN
+            ELSE IF ( ( landuse_frac(i,iswater,j) .EQ. lwthresh ) .AND. &
+                      ( dominant_value .LT. lwthresh ) ) THEN
                dominant_value = landuse_frac(i,iswater,j)
                dominant_index = iswater
             END IF
             IF      ( dominant_index .EQ. iswater ) THEN
-if(landmask(i,j).gt.0.5) then
+if(landmask(i,j).gt.lwthresh) then
 print *,'changing to water at point ',i,j
 print '(24(i3,1x))',1, 2, 3, 4, 5, 6, 7, 8, 9, 10,11,12, 13, 14, 15, 16, 17,18,19,20,21, 22, 23,24
 print '(24(i3,1x))',nint(landuse_frac(i,:,j)*100)
 endif
                landmask(i,j) = 0
             ELSE IF ( dominant_index .NE. iswater ) THEN
-if(landmask(i,j).lt.0.5) then
+if(landmask(i,j).lt.lwthresh) then
 print *,'changing to land at point ',i,j
 print '(24(i3,1x))',1, 2, 3, 4, 5, 6, 7, 8, 9, 10,11,12, 13, 14, 15, 16, 17,18,19,20,21, 22, 23,24
 print '(24(i3,1x))',nint(landuse_frac(i,:,j)*100)
@@ -313,7 +320,7 @@ endif
          DO j = jts , MIN(jde-1,jte)
             dominant_value = soil_top_cat(i,1,j)
             dominant_index = 1
-            IF ( landmask(i,j) .GT. 0.5 ) THEN
+            IF ( landmask(i,j) .GT. lwthresh ) THEN
                DO l = 2 , num_soil_top_cat
                   IF ( ( l .NE. iswater_soil ) .AND. ( soil_top_cat(i,l,j) .GT. dominant_value ) ) THEN
                      dominant_value = soil_top_cat(i,l,j)

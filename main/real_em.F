@@ -9,6 +9,10 @@ PROGRAM real_data
    USE module_driver_constants
    USE module_configure
    USE module_timing
+#ifdef WRF_CHEM
+   USE module_input_chem_data
+   USE module_input_chem_bioemiss
+#endif
    USE esmf_mod
 #ifdef DM_PARALLEL
    USE module_dm
@@ -153,6 +157,10 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
    USE module_bc_time_utilities
    USE module_initialize
    USE module_optional_si_input
+#ifdef WRF_CHEM
+   USE module_input_chem_data
+   USE module_input_chem_bioemiss
+#endif
 
    USE module_date_time
 
@@ -268,6 +276,45 @@ real::t1,t2
 
 !     CALL start_domain ( grid , .TRUE. )
 
+#ifdef WRF_CHEM
+      IF ( loop == 1 ) THEN
+         IF( grid%chem_opt .NE. 0 ) then
+           ! Read the chemistry data from a previous wrf forecast (wrfout file)
+            IF(grid%chem_in_opt == 1 ) THEN
+              message = 'INITIALIZING CHEMISTRY WITH OLD SIMULATION'
+              CALL  wrf_message ( message )
+
+              CALL input_ext_chem_file( grid )
+
+
+              message = 'READING BEIS3.11 EMISSIONS DATA'
+              CALL  wrf_message ( message )
+ 
+              CALL med_read_wrf_chem_bioemiss ( grid , config_flags)
+!             CALL input_ext_chem_beis3_file ( grid )
+!
+           ELSEIF(grid%chem_in_opt == 0)then
+              ! Generate chemistry data from a idealized vertical profile
+              message = 'STARTING WITH BACKGROUND CHEMISTRY '
+              CALL  wrf_message ( message )
+
+              CALL input_chem_profile ( grid )
+
+
+              message = 'READING BEIS3.11 EMISSIONS DATA'
+              CALL  wrf_message ( message )
+
+              CALL med_read_wrf_chem_bioemiss ( grid , config_flags)
+!             CALL input_ext_chem_beis3_file ( grid )
+
+           ELSE
+             message = 'RUNNING WITHOUT CHEMISTRY INITIALIZATION'
+             CALL  wrf_message ( message )
+           ENDIF
+         ENDIF
+      ENDIF
+#endif
+
       CALL assemble_output ( grid , config_flags , loop , time_loop_max )
 
       !  Here we define the next time that we are going to process.
@@ -279,8 +326,8 @@ real::t1,t2
 if (loop.ne.time_loop_max )then
 print *,'set esmf clock to ',current_date(1:19)
 endif
-
    END DO
+
 END SUBROUTINE med_sidata_input
 
 SUBROUTINE compute_si_start_and_end (  &
@@ -586,10 +633,8 @@ print *,'LBC valid between these times ',current_date, ' ',start_date
 !     CALL calc_current_date ( grid%id , 0. )
 !     CALL output_model_input ( id1, grid , config_flags , ierr )
 !     CALL close_dataset ( id1 , config_flags , "DATASET=INPUT" )
-
       !  Is this or is this not the last time time?  We can remove some unnecessary
       !  stores if it is not.
-
       IF     ( loop .LT. time_loop_max ) THEN
 
          !  We need to save the 3d data to compute a difference during the next loop.  Couple the

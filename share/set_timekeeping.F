@@ -188,6 +188,18 @@ SUBROUTINE Setup_Timekeeping ( grid )
                                          StopTime=grid%stop_time,rc=rc)
    CALL ESMF_ClockGetAlarmList( grid%domain_clock, grid%alarms, rc )
 
+#ifdef WRF_CHEM
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! add for wrf_chem emiss input
+   CALL ESMF_TimeIntervalSet( interval , H=1, rc=rc )
+   CALL ESMF_AlarmSet( grid%alarms( AUXINPUT5_ALARM ), RingInterval=interval, rc=rc )
+   CALL ESMF_ClockAddAlarm( grid%domain_clock, grid%alarms( AUXINPUT5_ALARM ), rc=rc )
+   CALL ESMF_AlarmEnable( grid%alarms( AUXINPUT5_ALARM ), rc=rc )
+   CALL ESMF_AlarmTurnOn( grid%alarms( AUXINPUT5_ALARM ), rc=rc )
+! end for wrf chem emiss input
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#endif
+
 ! HISTORY INTERVAL
 ! history_interval is left there (and means minutes) for consistency, but 
 ! history_interval_m will take precedence if specified
@@ -869,15 +881,26 @@ SUBROUTINE Setup_Timekeeping ( grid )
                                                      rc=rc )
 
    CALL ESMF_ClockAddAlarm( grid%domain_clock, grid%alarms( AUXINPUT5_ALARM ), rc=rc )
+#ifndef WRF_CHEM
    IF ( interval .NE. run_length + one_minute .AND. begin_time .EQ. zero_time ) THEN
      CALL ESMF_AlarmTurnOn( grid%alarms( AUXINPUT5_ALARM ),  rc=rc )
    ENDIF
+#endif
 
    CALL ESMF_AlarmSet( grid%alarms( BOUNDARY_ALARM ), RingTime=grid%start_time ,     &
                                                      rc=rc )
    CALL ESMF_AlarmEnable( grid%alarms( BOUNDARY_ALARM ), rc=rc )
    CALL ESMF_ClockAddAlarm( grid%domain_clock, grid%alarms( BOUNDARY_ALARM ), rc=rc )
    CALL ESMF_AlarmTurnOn( grid%alarms( BOUNDARY_ALARM ), rc=rc )
+
+#ifdef WRF_CHEM
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! add for wrf_chem emiss input
+   CALL ESMF_AlarmEnable( grid%alarms( AUXINPUT5_ALARM ), rc=rc )
+   CALL ESMF_AlarmTurnOn( grid%alarms( AUXINPUT5_ALARM ), rc=rc )
+! end for wrf chem emiss input
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#endif
 
 
 END SUBROUTINE Setup_Timekeeping

@@ -490,7 +490,7 @@
      &          ,CHKLOWQ,CONFIG_FLAGS,DT,DX,DZ,SLDPTH,ZERO_2D           &
      &          ,RLW_DN_SFC,GRNFLX,RSW_DN_SFC,GZ1OZ0,TWBS,ZERO_2D       &
      &          ,SFCZ,IDUMMY,ISFFLX,ISLTYP,NTSD,IVGTYP,LOWLYR           &
-     &          ,ONE,WATER,ZERO_2D,NSOIL,N_MOIST,P8W,PBLH               &
+     &          ,ONE,WATER,ZERO_2D,ZERO_2D,NSOIL,N_MOIST,P8W,PBLH       & ! added ZERO_2D for RMOL, JM
      &          ,PI_PHY,PSHLTR,PSIH,PSIM,P_PHY,Q10,Q2X,QWBS,QS,QSHLTR   &
      &          ,QZ0,RAINBL,RAIN,ZERO_2D,ZERO_2D,RR,SFCEVPX             &
      &          ,SFCEXC,SSROFF,SMC,SMSTAV,SMSTOT,MXSNAL,SNOW,SNOWC      &
@@ -534,7 +534,7 @@
      &               ,TWBS,QWBS,ZERO_2D,GRNFLX                          &
      &               ,U_PHY,V_PHY,TH_PHY,RR,WATER                       &
      &               ,P_PHY,PI_PHY,P8W,T_PHY,DZ,Z                       &
-     &               ,TKE,AKHS,AKMS                                     &
+     &               ,TKE,ZERO_3D,AKHS,AKMS                             & ! ZERO_3D for EXCH_H
      &               ,THZ0,QZ0,UZ0H,VZ0H,QS,LOWLYR                      &
      &               ,PSIM,PSIH,GZ1OZ0,WSPD,BR,CHKLOWQ                  &
      &               ,CONFIG_FLAGS,DX,N_MOIST                           &

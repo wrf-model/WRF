@@ -89,10 +89,31 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
      CALL med_auxinput4_in ( grid , config_flags )
      CALL ESMF_AlarmTurnOff( grid%alarms( AUXINPUT4_ALARM ), rc=rc )
    ENDIF
+
+! this needs to be looked at again so we can get rid of the special
+! handling of AUXINPUT5 but for now...
+
+#ifdef WRF_CHEM
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! add for wrf_chem emiss input
+! - Get chemistry data
+  IF( config_flags%chem_opt > 0 ) THEN
+   IF( ESMF_AlarmIsRinging( grid%alarms( AUXINPUT5_ALARM ), rc=rc ) ) THEN
+    print *,' CALL med_read_wrf_chem_emiss '
+     CALL med_read_wrf_chem_emiss ( grid , config_flags )
+     CALL ESMF_AlarmTurnOff( grid%alarms( AUXINPUT5_ALARM ), rc=rc )
+    print *,' back from CALL med_read_wrf_chem_emiss '
+
+   ENDIF
+! end for wrf chem emiss input
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  ELSE
    IF( ESMF_AlarmIsRinging( grid%alarms( AUXINPUT5_ALARM ), rc=rc ) ) THEN
      CALL med_auxinput5_in ( grid , config_flags )
      CALL ESMF_AlarmTurnOff( grid%alarms( AUXINPUT5_ALARM ), rc=rc )
    ENDIF
+  ENDIF
+#endif
 
 ! - RESTART OUTPUT
    IF( ESMF_AlarmIsRinging( grid%alarms( RESTART_ALARM ), rc=rc ) ) THEN
@@ -901,6 +922,8 @@ SUBROUTINE med_history_out ( grid , config_flags )
    RETURN
 END SUBROUTINE med_history_out
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 SUBROUTINE med_auxhist1_out ( grid , config_flags )
    USE module_domain
    USE module_configure
@@ -951,13 +974,15 @@ SUBROUTINE med_auxhist5_out ( grid , config_flags )
    RETURN
 END SUBROUTINE med_auxhist5_out
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 SUBROUTINE med_auxhist_out ( grid , stream, config_flags )
   ! Driver layer
    USE module_domain
    USE module_io_domain
-  ! Model layer
    USE module_configure
    USE module_bc_time_utilities
+
    USE ESMF_Mod
 
    IMPLICIT NONE
@@ -1200,7 +1225,6 @@ SUBROUTINE med_filter_out ( grid , config_flags )
    TYPE(domain)                               :: grid
    TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
 
-  ! Local
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
    CHARACTER*80                           :: rstname , outname
    INTEGER                                :: fid , rid
@@ -1356,4 +1380,4 @@ SUBROUTINE med_setup_step ( grid , config_flags )
    RETURN
 
 END SUBROUTINE med_setup_step
-
+ 

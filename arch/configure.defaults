@@ -9,7 +9,7 @@ FCFLAGS		=	$(FCBASEOPTS)
 CFLAGS		=
 EXTRAMODULES    =       
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
-                        -I../frame -I../share -I../phys -I../inc
+                        -I../frame -I../share -I../phys -I../chem -I../inc
 ARCHFLAGS       =       -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   -DLIMIT_ARGS
 LDFLAGS		=
 CPP		=	/lib/cpp -C -P
@@ -88,7 +88,7 @@ FCBASEOPTS      =       -freeform -I. -w
 FCFLAGS		=	-freeform -I. -w
 CFLAGS		=
 EXTRAMODULES    =       
-INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int -I../frame -I../share -I../phys \
+INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int -I../frame -I../share -I../phys -I../chem  \
                        	-I../external/esmf_time_f90 -I../inc
 ARCHFLAGS       =       -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
                         -DTRIEDNTRUE   -DINTIO -DLIMIT_ARGS
@@ -169,7 +169,7 @@ FCDEBUG         =       # -g
 FCBASEOPTS      =       -freeform -I. -64 -cpp -OPT:Olimit=5269 $(FCDEBUG) -w
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
-                        -I../frame -I../share -I../phys -I../inc
+                        -I../frame -I../share -I../phys -I../chem -I../inc
 EXTRAMODULES    =
 ARCHFLAGS       =       -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
                         CONFIGURE_NETCDF_FLAG \
@@ -259,7 +259,7 @@ ARCHFLAGS       =       -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 
                         -DINTIO -DTRIEDNTRUE   -DLIMIT_ARGS
 EXTRAMODULES    =       
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int -I../frame -I../share \
-                        -I../phys -I../inc -I../external/esmf_time_f90
+                        -I../phys -I../chem -I../inc -I../external/esmf_time_f90
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH \
@@ -340,7 +340,7 @@ FCDEBUG         =       # -g
 FCBASEOPTS      =       -freeform -I. -64 -cpp -OPT:Olimit=5269 $(FCDEBUG) -w
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
-                        -I../frame -I../share -I../phys -I../inc
+                        -I../frame -I../share -I../phys -I../chem -I../inc
 EXTRAMODULES    =
 ARCHFLAGS       =       -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
                         CONFIGURE_NETCDF_FLAG \
@@ -442,7 +442,7 @@ ARCHFLAGS       =       -DINTIO -DYYY -DWRF_RSL_IO -DRSL -DDM_PARALLEL -DIWORDSI
                         -DTRIEDNTRUE   -DLIMIT_ARGS
 EXTRAMODULES    =       
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int -I../frame -I../external/esmf_time_f90 \
-                        -I../share -I../phys -I../inc
+                        -I../share -I../phys -I../chem -I../inc
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int \
@@ -991,7 +991,7 @@ FCDEBUG         =       # -qnoopt -qfullpath
 FCBASEOPTS      =       -qspill=20000 $(FCDEBUG) -qmaxmem=32767 -w #-qflttrap=zerodivide:invalid:enable -qsigtrap
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
-                        -I../frame -I../share -I../phys -I../inc
+                        -I../frame -I../share -I../phys -I../chem -I../inc
 EXTRAMODULES    =       
 ARCHFLAGS       =       -DYYY -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
                         CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   \
@@ -1096,7 +1096,7 @@ FCDEBUG         =       # -qnoopt -qfullpath
 FCBASEOPTS      =       -w -qspill=20000 $(FCDEBUG) -qmaxmem=32767 #-qflttrap=zerodivide:invalid:enable -qsigtrap
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
-                        -I../frame -I../share -I../phys -I../inc
+                        -I../frame -I../share -I../phys -I../chem -I../inc
 EXTRAMODULES    =       
 ARCHFLAGS       =       -DYYY -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
                         CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   \
@@ -1166,7 +1166,7 @@ FCDEBUG         =       # -qnoopt -qfullpath
 FCBASEOPTS      =       -w -qspill=20000 $(FCDEBUG) -qmaxmem=32767 #-qflttrap=zerodivide:invalid:enable -qsigtrap
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
-                        -I../frame -I../share -I../phys -I../inc
+                        -I../frame -I../share -I../phys -I../chem -I../inc
 EXTRAMODULES    =       
 ARCHFLAGS       =       -DRSL_LITE -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 \
                         -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   -DYYY -DINTIO \
@@ -1268,7 +1268,7 @@ FCDEBUG         =       # -qnoopt -qfullpath
 FCBASEOPTS      =       -w -qspill=20000 $(FCDEBUG) -qmaxmem=32767 #-qflttrap=zerodivide:invalid:enable -qsigtrap
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
-                        -I../frame -I../share -I../phys -I../inc
+                        -I../frame -I../share -I../phys -I../chem -I../inc
 EXTRAMODULES    =       
 ARCHFLAGS       =       -DWRF_RSL_IO -DRSL -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 \
                         -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   -DYYY -DINTIO \
@@ -1370,7 +1370,7 @@ FCDEBUG         =       # -qnoopt -qfullpath
 FCBASEOPTS      =       -w -qspill=20000 $(FCDEBUG) -qmaxmem=-1 #-qflttrap=zerodivide:invalid:enable -qsigtrap
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 INCLUDE_MODULES =       -I../external/io_netcdf  -I../external/io_phdf5 -I../external/io_int  -I../external/esmf_time_f90 \
-                        -I../frame -I../share -I../phys -I../inc
+                        -I../frame -I../share -I../phys -I../chem -I../inc
 EXTRAMODULES    =       
 ARCHFLAGS       =       -DWRF_RSL_IO -DRSL -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 \
                         -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG CONFIGURE_PHDF5_FLAG -DTRIEDNTRUE   -DYYY -DINTIO \
@@ -1582,7 +1582,7 @@ FCDEBUG         =       # -qnoopt -qfullpath
 FCBASEOPTS      =       -w -qspill=20000 $(FCDEBUG) -qmaxmem=32767 #-qflttrap=zerodivide:invalid:enable -qsigtrap
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
-                        -I../frame -I../share -I../phys -I../inc
+                        -I../frame -I../share -I../phys -I../chem -I../inc
 EXTRAMODULES    =       
 ARCHFLAGS       =       -DYYY -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 \
                         -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   \
@@ -1801,7 +1801,7 @@ FCDEBUG         =       # -qnoopt -qfullpath
 FCBASEOPTS      =       -w -qspill=20000 $(FCDEBUG) -qmaxmem=32767 #-qflttrap=zerodivide:invalid:enable -qsigtrap
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
-                        -I../frame -I../share -I../phys -I../inc
+                        -I../frame -I../share -I../phys -I../chem -I../inc
 EXTRAMODULES    =       
 ARCHFLAGS       =       -DWRF_RSL_IO -DRSL -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 \
                         -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   -DYYY -DINTIO -DMCELIO -DLIMIT_ARGS \
@@ -1919,7 +1919,7 @@ FCDEBUG         =       # -g
 FCBASEOPTS      =       -w -convert big_endian -automatic -cpp -free -I. -arch host $(FCDEBUG)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
-                        -I../frame -I../share -I../phys -I../inc
+                        -I../frame -I../share -I../phys -I../chem -I../inc
 EXTRAMODULES    =       
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
@@ -2011,7 +2011,7 @@ FCDEBUG         =       # -g
 FCBASEOPTS      =       -w -convert big_endian -automatic -cpp -free -I. -arch host $(FCDEBUG)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
-                        -I../frame -I../share -I../phys -I../inc
+                        -I../frame -I../share -I../phys -I../chem -I../inc
 EXTRAMODULES    =       
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
@@ -2109,7 +2109,7 @@ FCDEBUG         =       # -g
 FCBASEOPTS      =       -w -convert big_endian -automatic -cpp -free -I. -arch host $(FCDEBUG)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
-                        -I../frame -I../share -I../phys -I../inc
+                        -I../frame -I../share -I../phys -I../chem -I../inc
 EXTRAMODULES    =       
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
@@ -2201,7 +2201,7 @@ FCDEBUG         =       # -g
 FCBASEOPTS      =       -w -convert big_endian -automatic -cpp -free -I. -arch host $(FCDEBUG)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
-                        -I../frame -I../share -I../phys -I../inc
+                        -I../frame -I../share -I../phys -I../chem -I../inc
 EXTRAMODULES    =       
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
@@ -2302,7 +2302,7 @@ FCDEBUG         =       #-g
 FCBASEOPTS      =       -w -convert big_endian -automatic -cpp -free -I. -arch host $(FCDEBUG)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
-                        -I../frame -I../share -I../phys -I../inc
+                        -I../frame -I../share -I../phys -I../chem -I../inc
 EXTRAMODULES    =       
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
@@ -2407,7 +2407,7 @@ FCDEBUG         =       # -g
 FCBASEOPTS      =       -w -convert big_endian -automatic -cpp -free -I. -arch host $(FCDEBUG)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
-                        -I../frame -I../share -I../phys -I../inc
+                        -I../frame -I../share -I../phys -I../chem -I../inc
 EXTRAMODULES    =       
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
@@ -2512,7 +2512,7 @@ FCDEBUG         =       # -g
 FCBASEOPTS      =       -w -convert big_endian -automatic -cpp -free -I. -arch host $(FCDEBUG)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
-                        -I../frame -I../share -I../phys -I../inc
+                        -I../frame -I../share -I../phys -I../chem -I../inc
 EXTRAMODULES    =       
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
@@ -2617,7 +2617,7 @@ FCDEBUG         =       # -g
 FCBASEOPTS      =       -w -convert big_endian -automatic -cpp -free -I. -arch host $(FCDEBUG)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
-                        -I../frame -I../share -I../phys -I../inc
+                        -I../frame -I../share -I../phys -I../chem -I../inc
 EXTRAMODULES    =       
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
@@ -2820,7 +2820,7 @@ FCDEBUG         =       # -g
 FCBASEOPTS      =       -w -convert big_endian -automatic -cpp -free -I. -arch host $(FCDEBUG)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
-                        -I../frame -I../share -I../phys -I../inc
+                        -I../frame -I../share -I../phys -I../chem -I../inc
 EXTRAMODULES    =       
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
@@ -3032,7 +3032,7 @@ FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 ARCHFLAGS       =       -DYYY -DINTIO -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
                         CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE  
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
-                        -I../frame -I../share -I../phys -I../inc
+                        -I../frame -I../share -I../phys -I../chem -I../inc
 EXTRAMODULES    =       
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
@@ -3120,7 +3120,7 @@ FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 ARCHFLAGS       =       -DYYY -DINTIO -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
                         CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE  
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
-                        -I../frame -I../share -I../phys -I../inc
+                        -I../frame -I../share -I../phys -I../chem -I../inc
 EXTRAMODULES    =       
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
@@ -3213,7 +3213,7 @@ ARCHFLAGS       =       -DYYY -DINTIO -DWRF_RSL_IO -DDEREF_KLUDGE -DIO_DEREF_KLU
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
                         CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE  
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
-                        -I../frame -I../share -I../phys -I../inc
+                        -I../frame -I../share -I../phys -I../chem -I../inc
 EXTRAMODULES    =       
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
@@ -3381,14 +3381,14 @@ CFLAGS          =
 FCOPTIM		=	-fast
 FCDEBUG		=	#-g
 #FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree -tp p6 $(FCDEBUG)
-FCBASEOPTS      =       -w -byteswapio -Mfree -tp p6 $(FCDEBUG)
+FCBASEOPTS      =       -w -byteswapio -Mfree -tp p6 $(FCDEBUG) # -Mlfs
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
                          CONFIGURE_NETCDF_FLAG \
                         -DTRIEDNTRUE   \
 			-DLIMIT_ARGS
 INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
-                        -I../frame -I../share -I../phys -I../inc
+                        -I../frame -I../share -I../phys -I../chem -I../inc
 EXTRAMODULES    =       
 PERL            =       perl
 REGISTRY        =       Registry
@@ -3476,7 +3476,7 @@ SFC             =       pgf90
 FCOPTIM		=	-fast
 FCDEBUG		=	#-g
 #FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree -tp p6 $(FCDEBUG)
-FCBASEOPTS      =       -w -byteswapio -Mfree -tp p6 $(FCDEBUG)
+FCBASEOPTS      =       -w -byteswapio -Mfree -tp p6 $(FCDEBUG) # -Mlfs
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DYYY -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
@@ -3582,14 +3582,14 @@ CFLAGS          =
 FCOPTIM		=	-fast
 FCDEBUG		=	#-g
 #FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree -tp p6 $(FCDEBUG)
-FCBASEOPTS      =       -w -byteswapio -Mfree -tp p6 $(FCDEBUG)
+FCBASEOPTS      =       -w -byteswapio -Mfree -tp p6 $(FCDEBUG) # -Mlfs
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
                          CONFIGURE_NETCDF_FLAG \
                         -DTRIEDNTRUE   \
 			-DLIMIT_ARGS
 INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
-                        -I../frame -I../share -I../phys -I../inc
+                        -I../frame -I../share -I../phys -I../chem -I../inc
 EXTRAMODULES    =       
 PERL            =       perl
 REGISTRY        =       Registry
@@ -3681,7 +3681,7 @@ SFC             =       pgf90
 FCOPTIM		=	-fast
 FCDEBUG		=	#-g
 #FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree -tp p6 $(FCDEBUG)
-FCBASEOPTS      =       -w -byteswapio -Mfree -tp p6 $(FCDEBUG)
+FCBASEOPTS      =       -w -byteswapio -Mfree -tp p6 $(FCDEBUG) # -Mlfs
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DYYY -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
@@ -3792,14 +3792,14 @@ CFLAGS          =       -DDM_PARALLEL -DWRF_RSL_IO \
 FCOPTIM		=	-fast
 FCDEBUG		=	#-g
 #FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree -tp p6 $(FCDEBUG)
-FCBASEOPTS      =       -w -byteswapio -Mfree -tp p6 $(FCDEBUG)
+FCBASEOPTS      =       -w -byteswapio -Mfree -tp p6 $(FCDEBUG) # -Mlfs
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DYYY -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
                         -DTRIEDNTRUE   \
 			-DLIMIT_ARGS
 INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
-                        -I../external -I../frame -I../share -I../phys -I../inc
+                        -I../external -I../frame -I../share -I../phys -I../chem -I../inc
 EXTRAMODULES    =       
 PERL            =       perl
 REGISTRY        =       Registry
@@ -3882,7 +3882,6 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $*.b
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
 
-
 ###########################################################
 #ARCH     PC Linux i486 i586 i686, PGI compiler  DM-Parallel (RSL_LITE, MPICH, No nesting)
 #
@@ -3894,17 +3893,18 @@ CC              =       mpicc -cc=gcc
 SFC             =       pgf90
 CFLAGS          =       -DDM_PARALLEL \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL_LITE
+#FCOPTIM		=	-fastsse 
 FCOPTIM		=	-fast
 FCDEBUG		=	#-g
 #FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree -tp p6 $(FCDEBUG)
-FCBASEOPTS      =       -w -byteswapio -Mfree -tp p6 $(FCDEBUG)
+FCBASEOPTS      =       -w -byteswapio -Mfree -tp p6 $(FCDEBUG) # -Mlfs
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DYYY -DINTIO -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
                         -DTRIEDNTRUE   \
 			-DLIMIT_ARGS
 INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
-                        -I../external -I../frame -I../share -I../phys -I../inc
+                        -I../external -I../frame -I../share -I../phys -I../chem -I../inc
 EXTRAMODULES    =       
 PERL            =       perl
 REGISTRY        =       Registry
@@ -4011,7 +4011,7 @@ ARCHFLAGS = -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
             -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
             -DTRIEDNTRUE -DLIMIT_ARGS 
 INCLUDE_MODULES = ../main -I../external/io_int -I../external/esmf_time_f90 \
-                  -I../external -I../frame -I../share -I../phys -I../inc \
+                  -I../external -I../frame -I../share -I../phys -I../chem -I../inc \
                   -I/usr/lib/mpi/mpi_intel/include
 EXTRAMODULES = 
 PERL = perl
@@ -4772,7 +4772,7 @@ ARCHFLAGS = -DRSL_LITE -DDM_PARALLEL \
 -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
 -DTRIEDNTRUE  
 INCLUDE_MODULES = ../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
--I../external -I../frame -I../share -I../phys -I../inc
+-I../external -I../frame -I../share -I../phys -I../chem -I../inc
 EXTRAMODULES =
 PERL = perl
 REGISTRY = Registry
@@ -5413,7 +5413,7 @@ FCFLAGS		=	-w -Ep -C ssafe \
 FCBASEOPTS	=	$(FCFLAGS) -w
 
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  \
-                        -I../external/esmf_time_f90 -I../frame -I../share -I../phys -I../inc
+                        -I../external/esmf_time_f90 -I../frame -I../share -I../phys -I../chem -I../inc
 EXTRAMODULES    =       
 PERL            =       perl
 REGISTRY        =       Registry
@@ -5684,7 +5684,7 @@ ARCHFLAGS         = -DYYY -DINTIO -DRSL_LITE -DDM_PARALLEL \
                     -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
                     -DTRIEDNTRUE -DONLY_WRFMODEL_IO
 INCLUDE_MODULES   = -I../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
-                    -I../external -I../frame -I../share -I../phys -I../inc
+                    -I../external -I../frame -I../share -I../phys -I../chem -I../inc
 EXTRAMODULES      =
 PERL              = perl
 REGISTRY          = Registry

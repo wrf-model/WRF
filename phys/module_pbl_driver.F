@@ -14,7 +14,7 @@ CONTAINS
                   GRDFLX,                                         &
                   u_phy,v_phy,th_phy,rho,moist,                   &
                   p_phy,pi_phy,p8w,t_phy,dz8w,z,                  &
-                  TKE_MYJ,AKHS,AKMS,                              &
+                  TKE_MYJ,EXCH_H,AKHS,AKMS,                       &
                   THZ0,QZ0,UZ0,VZ0,QSFC,                          &
                   LOWLYR,                                         &
                   PSIM,PSIH,GZ1OZ0, WSPD,BR,CHKLOWQ,              &  !m  26 Aug 2002
@@ -248,7 +248,7 @@ CONTAINS
                                                         RQVBLTEN, &
                                                         RQCBLTEN, &
                                                         RQIBLTEN, &
-                                                          TKE_MYJ
+                                                  EXCH_H,TKE_MYJ
 
    REAL ,                             INTENT(IN   )  ::  u_frame, &
                                                          v_frame
@@ -388,7 +388,7 @@ CONTAINS
                TSK,QSFC,CHKLOWQ,THZ0,QZ0,UZ0,VZ0,                   &
                LOWLYR,                                              &
                XLAND,XICE,SNOW,                                     &
-               TKE_MYJ,UST,ZNT,PBLH,KPBL,CT,                        &
+               TKE_MYJ,EXCH_H,UST,ZNT,PBLH,KPBL,CT,                 &
                AKHS,AKMS,LH,                                        &
                RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN,          &
                ids,ide, jds,jde, kds,kde,                           &

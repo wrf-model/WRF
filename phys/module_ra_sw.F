@@ -6,7 +6,8 @@ CONTAINS
 
 !------------------------------------------------------------------
    SUBROUTINE SWRAD(dt,RTHRATEN,GSW,XLAT,XLONG,ALBEDO,            &
-                    rho_phy,T3D,QV3D,QC3D,QR3D,                   &
+                    aer_dry,aer_water,                            &
+   		    rho_phy,T3D,QV3D,QC3D,QR3D,                   &
                     QI3D,QS3D,QG3D,P3D,pi3D,dz8w,GMT,             &
                     R,CP,G,JULDAY,                                &
                     XTIME,DECLIN,SOLCON,                          &
@@ -32,6 +33,7 @@ CONTAINS
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          INTENT(IN    ) ::                                   P3D, &
+                                               aer_dry,aer_water, &
                                                             pi3D, &
                                                              T3D, &
                                                             QV3D, &
@@ -76,6 +78,7 @@ CONTAINS
    REAL::      XLAT0,XLONG0,ALB0,GSW0
 !
    INTEGER :: i,j,K,NK
+   real :: aer_dry1(kts:kte),aer_water1(kts:kte)
 
 !------------------------------------------------------------------
    j_loop: DO J=jts,jte
@@ -97,6 +100,8 @@ CONTAINS
 
             T1D(K)=T3D(I,NK,J)
             P1D(K)=P3D(I,NK,J)
+            aer_dry1(k)=aer_dry(i,nk,j)
+            aer_water1(k)=aer_water(i,nk,j)
             RHO01D(K)=rho_phy(I,NK,J)
             DZ(K)=dz8w(I,NK,J)
          ENDDO
@@ -169,7 +174,7 @@ CONTAINS
                      T1D,QV1D,QC1D,QR1D,QI1D,QS1D,QG1D,P1D,      &
                      XTIME,GMT,RHO01D,DZ,                        &
                      R,CP,G,DECLIN,SOLCON,                       &
-                     RADFRQ,ICLOUD,DEGRAD,                       &
+                     RADFRQ,ICLOUD,DEGRAD,aer_dry1,aer_water1,   &
                      kts,kte                                     )
 
          GSW(I,J)=GSW0
@@ -185,11 +190,11 @@ CONTAINS
 
 !------------------------------------------------------------------
    SUBROUTINE SWPARA(TTEN,GSW,XLAT,XLONG,ALBEDO,                  &
-                     T,QV,QC,QR,QI,QS,QG,P,                       &
-                     XTIME, GMT, RHO0, DZ,                        &
-                     R,CP,G,DECLIN,SOLCON,                        &
-                     RADFRQ,ICLOUD,DEGRAD,                        &
-                     kts,kte                                      )
+                     T,QV,QC,QR,QI,QS,QG,P,            		  &
+                     XTIME, GMT, RHO0, DZ,             		  &
+                     R,CP,G,DECLIN,SOLCON,             		  &
+                     RADFRQ,ICLOUD,DEGRAD,aer_dry1,aer_water1,    &
+                     kts,kte                            	  )
 !------------------------------------------------------------------
 !     TO CALCULATE SHORT-WAVE ABSORPTION AND SCATTERING IN CLEAR
 !     AIR AND REFLECTION AND ABSORPTION IN CLOUD LAYERS (STEPHENS,
@@ -226,9 +231,10 @@ CONTAINS
    REAL, DIMENSION( kts:kte+1 ) ::                         SDOWN
 
    REAL, DIMENSION( kts:kte )   ::                          XLWP, &
-                                                            XATP, &
-                                                            XWVP, &
-                                                              RO
+						            XATP, &
+						            XWVP, &
+                                             aer_dry1,aer_water1, &
+						              RO
 !
    REAL, DIMENSION( 4, 5 ) ::                             ALBTAB, &
                                                           ABSTAB
@@ -252,7 +258,8 @@ CONTAINS
       DATA XMUVAL/0.,0.2,0.5,1.0/
 
       GSW=0.0
- 
+      bext340=5.E-6
+      bexth2o=5.E-6
       SOLTOP=SOLCON
       XT24=AMOD(XTIME+RADFRQ*0.5,1440.)
       TLOCTM=GMT+XT24/60.+XLONG/15.
@@ -301,6 +308,9 @@ CONTAINS
       DABS=0.
       DSCLD=0.
 !
+! CONTRIBUTION DUE TO AEROSOLS (FOR CHEMISTRY)
+      DABSA=0.
+!
       DO 200 K=kts,kte
          WW=WW+XLWP(K)
          UV=UV+XWVP(K)
@@ -314,8 +324,11 @@ CONTAINS
          TOTABS=2.9*UGCM/((1.+141.5*UGCM)**0.635+5.925*UGCM)
 !     APPROXIMATE RAYLEIGH + AEROSOL SCATTERING
          XSCA=1.E-5*XATP(K)/XMU
+!         XSCA=(1.E-5*XATP(K)+aer_dry1(K)*bext340+aer_water1(K)*bexth2o)/XMU   
 !     LAYER VAPOR ABSORPTION DONE FIRST
-         XABS=(TOTABS-OLDABS)*(SDOWN(1)-DSCLD-DSCA)/SDOWN(K)
+         XABS=(TOTABS-OLDABS)*(SDOWN(1)-DSCLD-DSCA-DABSA)/SDOWN(K)
+!rs   AEROSOL ABSORB (would be elemental carbon). So far XABSA = 0.
+         XABSA=0.
          IF(XABS.LT.0.)XABS=0.
 !
          ALW=ALOG10(WGM+1.)
@@ -352,6 +365,7 @@ CONTAINS
          DSCLD=DSCLD+(XALB+XABSC)*SDOWN(K)*0.01
          DSCA=DSCA+XSCA*SDOWN(K)
          DABS=DABS+XABS*SDOWN(K)
+         DABSA=DABSA+XABSA*SDOWN(K)
          OLDALB=ALBA
          OLDABC=ABSC
 !     LAYER TRANSMISSIVITY
@@ -365,7 +379,7 @@ CONTAINS
            TRANS0=1.
          ENDIF
          SDOWN(K+1)=AMAX1(1.E-9,SDOWN(K)*TRANS0*0.01)
-         TTEN(K)=SDOWN(K)*(XABSC+XABS*100.)*0.01/( &
+         TTEN(K)=SDOWN(K)*(XABSC+XABS*100.+XABSA*100.)*0.01/( &
                  RO(K)*CP*DZ(K))
   200   CONTINUE
 !

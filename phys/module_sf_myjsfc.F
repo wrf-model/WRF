@@ -123,7 +123,7 @@ CONTAINS
                        ,PMID,PINT,TH,T,QV,QC,U,V,Q2                    &
                        ,TSK,QSFC,THZ0,QZ0,UZ0,VZ0                      &
                        ,LOWLYR,XLAND                                   &
-                       ,USTAR,ZNT,PBLH,MAVAIL                          &
+                       ,USTAR,ZNT,PBLH,MAVAIL,RMOL                     &
                        ,AKHS,AKMS                                      &
                        ,CHS,CHS2,CQS2,HFX,QFX,FLX_LH,FLHC,FLQC         &
                        ,QGH,CPM,CT                                     &
@@ -164,7 +164,7 @@ CONTAINS
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: QZ0,THZ0        &
                                                       ,USTAR,UZ0,VZ0   &
-                                                      ,ZNT
+                                                      ,ZNT,RMOL
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: FLHC,FLQC         &
                                                     ,QGH,CPM           &
@@ -381,7 +381,7 @@ CONTAINS
 !
           CALL SFCDIF(NTSD,SEAMASK,THSK(I,J),QSFC(I,J),PSFC            &
                      ,UZ0(I,J),VZ0(I,J),TZ0,THZ0(I,J),QZ0(I,J)         &
-                     ,USTAR(I,J),ZNT(I,J),CT(I,J)                      &
+                     ,USTAR(I,J),ZNT(I,J),CT(I,J),RMOL(I,J)            &
                      ,AKMS(I,J),AKHS(I,J),PBLH(I,J),MAVAIL(I,J)        &
                      ,CHS(I,J),CHS2(I,J),CQS2(I,J)                     &
                      ,HFX(I,J),QFX(I,J),FLX_LH(I,J)                    &
@@ -427,7 +427,7 @@ CONTAINS
 !----------------------------------------------------------------------
       SUBROUTINE SFCDIF(NTSD,SEAMASK,THS,QS,PSFC                       &
                        ,UZ0,VZ0,TZ0,THZ0,QZ0                           &
-                       ,USTAR,Z0,CT,AKMS,AKHS,PBLH,WETM                &
+                       ,USTAR,Z0,CT,RLMO,AKMS,AKHS,PBLH,WETM           &
                        ,CHS,CHS2,CQS2,HFX,QFX,FLX_LH,FLHC,FLQC,QGH,CPM &
                        ,ULOW,VLOW,TLOW,THLOW,THELOW,QLOW,CWMLOW        &
                        ,ZSL,PLOW                                       &

@@ -14,6 +14,7 @@ PROGRAM ndown_em
 
    USE module_timing
    USE module_wrf_error
+
 #ifdef DM_PARALLEL
    USE module_dm
 #endif
@@ -23,7 +24,13 @@ PROGRAM ndown_em
    USE module_bc
    USE module_big_step_utilities_em
    USE module_get_file_names
+#ifdef WRF_CHEM
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! for chemistry
+   USE module_input_chem_data
+   USE module_input_chem_bioemiss
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#endif
 
    IMPLICIT NONE
 
@@ -386,6 +393,12 @@ nested_grid%epsts     = parent_grid%epsts
 print *,'nested_grid%cfn       =', parent_grid%cfn 
 print *,'nested_grid%cfn1      =', parent_grid%cfn1
 print *,'nested_grid%epsts     =', parent_grid%epsts
+
+#ifdef WRF_CHEM
+nested_grid%chem_opt    = parent_grid%chem_opt
+nested_grid%chem_in_opt = parent_grid%chem_in_opt
+#endif
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    
          CALL wrf_debug          ( 100 , 'ndown_em main: calling open_w_dataset for wrfinput' )
@@ -568,9 +581,32 @@ print *,'nested_grid%epsts     =', parent_grid%epsts
 
          !  Set the time info.
 
-print *,'current_date = ',current_date
+         print *,'current_date = ',current_date
          CALL atotime( current_date(1:19), nested_grid%current_time )
          CALL ESMF_ClockSetCurrTime(nested_grid%domain_clock, nested_grid%current_time, rc)
+!
+! SEP     Put in chemistry data
+!
+#ifdef WRF_CHEM
+         IF( nested_grid%chem_opt .NE. 0 ) then
+            IF( nested_grid%chem_in_opt .EQ. 0 ) then
+             ! Read the chemistry data from a previous wrf forecast (wrfout file)
+              ! Generate chemistry data from a idealized vertical profile
+              message = 'STARTING WITH BACKGROUND CHEMISTRY '
+              CALL  wrf_message ( message )
+
+              CALL input_chem_profile ( nested_grid )
+
+              message = 'READING BEIS3.11 EMISSIONS DATA'
+              CALL  wrf_message ( message )
+
+              CALL med_read_wrf_chem_bioemiss ( nested_grid , config_flags)
+            ELSE
+              message = 'RUNNING WITHOUT CHEMISTRY INITIALIZATION'
+              CALL  wrf_message ( message )
+            ENDIF
+         ENDIF
+#endif
 
          !  Output the first time period of the data.
    

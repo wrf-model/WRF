@@ -25,7 +25,6 @@
 
    USE module_model_constants
    IMPLICIT NONE
-
    !  Input data.
    TYPE (domain)          :: grid
    LOGICAL , INTENT(IN)   :: allowed_to_read
@@ -40,7 +39,7 @@
                                   ims, ime, jms, jme, kms, kme, &
                                   ips, ipe, jps, jpe, kps, kpe, &
                                   its, ite, jts, jte, kts, kte, &
-                                  i, j, k, ij, loop, error
+                                  ij,i,j,k,ii,jj,kk,loop,error,l
 
    REAL :: qvf1, qvf2, qvf
    REAL :: MPDT
@@ -51,7 +50,6 @@
 #ifdef DM_PARALLEL
 #    include <em_data_calls.inc>
 #endif
-
    CALL get_ijk_from_grid (  grid ,                   &
                              ids, ide, jds, jde, kds, kde,    &
                              ims, ime, jms, jme, kms, kme,    &
@@ -217,9 +215,9 @@
                       MASS_FLUX,                              &
                       RTHFTEN, RQVFTEN,                       &
                       CLDFRA,GLW,GSW,EMISS,LU_INDEX,          &
-                      XLAT,XLONG,ALBEDO,ALBBCK,GMT,JULYR,JULDAY,&
-                      TMN,XLAND,ZNT,Z0, UST,MOL,PBLH,TKE_MYJ, &
-                      THC,SNOWC,MAVAIL,HFX,QFX,RAINBL,        &
+                      XLAT,XLONG,ALBEDO,ALBBCK,GMT,JULYR,JULDAY,     &
+                      TMN,XLAND,ZNT,Z0,UST,MOL,PBLH,TKE_MYJ,     &
+                      EXCH_H,THC,SNOWC,MAVAIL,HFX,QFX,RAINBL, &
                       TSLB,ZS,DZS,num_soil_layers,warm_rain,  &
                       APR_GR,APR_W,APR_MC,APR_ST,APR_AS,      &
                       APR_CAPMA,APR_CAPME,APR_CAPMI,          &
@@ -486,6 +484,39 @@
    ENDIF
 
    IF (num_chem >= PARAM_FIRST_SCALAR ) THEN
+#ifdef WRF_CHEM
+         CALL chem_init (grid%id,chem_2,dt,bioemdt,photdt,chemdt,           &
+                         stepbioe,stepphot,stepchem,                        &
+                         ph_2,phb,g,aerwrf,config_flags,                    &
+                         alt,t_1,pb,p,t0,p1000mb,rcp,                       &
+                         aer_dry,aer_water,chem_in_opt,                     &
+                                 ids , ide , jds , jde , kds , kde ,        &
+                                 ims , ime , jms , jme , kms , kme ,        &
+                                 its , ite , jts , jte , kts , kte          )
+        chem_1=chem_2
+!
+! calculate initial pm
+!
+        print *,'calculating initial pm'
+        do j=jts,jte
+        jj=min(jde-1,j)
+        do k=kts,kte
+        kk=min(kde-1,k)
+        do i=its,ite
+        ii=min(ide-1,i)
+
+          pm2_5(i,k,j)=0.
+          do l=p_so4aj,p_p25i
+             pm2_5(i,k,j)=pm2_5(i,k,j)+chem_2(ii,kk,jj,l)
+          enddo
+          pm10(i,k,j)= pm2_5(i,k,j)                      &
+                      +chem_2(ii,kk,jj,p_antha)             &
+                      +chem_2(ii,kk,jj,p_soila)             &
+                      +chem_2(ii,kk,jj,p_seas)
+        enddo
+        enddo
+        enddo
+#endif
 
 ! use of (:,:,:,loop) not efficient on DEC, but (ims,kms,jms,loop) not portable to SGI/Cray
 

@@ -31,6 +31,9 @@ SUBROUTINE solve_em ( grid , config_flags , &
    USE module_cumulus_driver
    USE module_microphysics_driver
    USE module_pbl_driver
+#ifdef WRF_CHEM
+   USE module_input_chem_data
+#endif
 
    IMPLICIT NONE
 
@@ -74,6 +77,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
    INTEGER :: rk_order, iwmax, jwmax, kwmax
    REAL :: dt_rk, dts_rk, dtm, wmax
    LOGICAL :: leapfrog
+   INTEGER :: l,kte,kk
 
 #include <bench_solve_em_def.h>
 
@@ -173,6 +177,56 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
 !</pre>
 !</DESCRIPTION>
 !**********************************************************************
+
+#ifdef WRF_CHEM
+!
+!    prepare chem aerosols for advection before communication
+!    so far only for RADM2/SORGAM choice
+!
+
+      if(itimestep.le.2.or.mod(itimestep+1,stepchem).eq.0)then
+
+   kte=min(k_end,kde-1)
+   if ( p_so4aj >= PARAM_FIRST_SCALAR ) then
+   !$OMP PARALLEL DO   &
+   !$OMP PRIVATE ( ij ,its,ite,jts,jte,kte)
+   DO ij = 1 , grid%num_tiles
+       its = max(grid%i_start(ij),ids)
+       ite = min(grid%i_end(ij),ide-1)
+       jts = max(grid%j_start(ij),jds)
+       jte = min(grid%j_end(ij),jde-1)
+      do l=p_so4aj,num_chem
+      do j=jts,jte
+      do k=k_start,kte+1 
+      kk=min(k,kde-1)
+      do i=its,ite
+        chem_1(i,k,j,l)=chem_1(i,kk,j,l)*alt(i,kk,j)
+        chem_2(i,k,j,l)=chem_2(i,kk,j,l)*alt(i,kk,j)
+      enddo
+      enddo
+      enddo
+      enddo
+    enddo
+    endif
+    endif
+# ifdef DM_PARALLEL
+   if ( num_chem >= PARAM_FIRST_SCALAR ) then
+!-----------------------------------------------------------------------
+! see above
+!--------------------------------------------------------------
+     CALL wrf_debug ( 200 , ' call HALO_RK_CHEM' )
+     IF      ( h_mom_adv_order <= 4 ) THEN
+#      include "HALO_EM_CHEM_E_3.inc"
+     ELSE IF ( h_mom_adv_order <= 6 ) THEN
+#      include "HALO_EM_CHEM_E_5.inc"
+     ELSE
+       WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',h_mom_adv_order
+       CALL wrf_error_fatal(TRIM(wrf_err_message))
+     ENDIF
+   endif
+# endif
+!--------------------------------------------------------------
+#endif
 
  rk_order = config_flags%rk_ord
  leapfrog = .false.
@@ -411,6 +465,7 @@ BENCH_START(phy_prep_tim)
                          k_start, k_end                         )
       ENDDO
       !$OMP END PARALLEL DO
+
 BENCH_END(phy_prep_tim)
 
 !  physics to implement
@@ -422,7 +477,7 @@ BENCH_END(phy_prep_tim)
 
          CALL wrf_debug ( 200 , ' call radiation_driver' )
 BENCH_START(rad_driver_tim)
-         CALL radiation_driver(itimestep,dt,                         &
+         CALL radiation_driver(itimestep,dt,AER_DRY,AER_WATER,       &
                     RTHRATENLW,RTHRATENSW,RTHRATEN,GLW,GSW,          &
                     SWDOWN,                                          &
                     XLAT,XLONG,ALBEDO,CLDFRA,EMISS,                  &
@@ -456,7 +511,7 @@ BENCH_START(surf_driver_tim)
      &           ACSNOM,ACSNOW,AKHS,AKMS,ALBEDO,BR,CANWAT,CAPG        &
      &          ,CHKLOWQ,CONFIG_FLAGS,DT,DX,DZ8W,DZS,EMISS,GLW        &
      &          ,GRDFLX,GSW,GZ1OZ0,HFX,HOL,HT,IFSNOW,ISFFLX           &
-     &          ,ISLTYP,ITIMESTEP,IVGTYP,LOWLYR,MAVAIL,MOIST_2,MOL    &
+     &          ,ISLTYP,ITIMESTEP,IVGTYP,LOWLYR,MAVAIL,MOIST_2,MOL,RMOL&
      &          ,NUM_SOIL_LAYERS,NUM_3D_M,P8W,PBLH,PI_PHY,PSHLTR,PSIH &
      &          ,PSIM,P_PHY,Q10,Q2,QFX,QSFC,QSHLTR,QZ0,RAINBL         &
      &          ,RAINCV,RAINNCV,REGIME,RHO,SFCEVP,SFCEXC,SFCRUNOFF    &
@@ -489,7 +544,7 @@ BENCH_START(pbl_driver_tim)
      &           ,HFX,QFX,REGIME,GRDFLX                               &
      &           ,u_phy,v_phy,th_phy,rho,moist_2                      &
      &           ,p_phy,pi_phy,p8w,t_phy,dz8w,z                       &
-     &           ,TKE_MYJ,AKHS,AKMS                                   &
+     &           ,TKE_MYJ,EXCH_H,AKHS,AKMS                            &
      &           ,THZ0,QZ0,UZ0,VZ0,QSFC,LOWLYR                        &
      &           ,PSIM, PSIH, GZ1OZ0, WSPD, BR, CHKLOWQ               &
      &           ,config_flags,DX,num_3d_m                            &
@@ -934,6 +989,7 @@ BENCH_START(relax_bdy_dry_tim)
                             grid%i_start(ij), grid%i_end(ij),            &
                             grid%j_start(ij), grid%j_end(ij),            &
                             k_start, k_end                              )
+
 
      ENDIF
 
@@ -1946,6 +2002,8 @@ BENCH_END(tke_adv_tim)
 
 
        IF( config_flags%specified ) THEN
+! come back to this and figure out why two different routines are needed. JM 20041203
+#ifndef WRF_CHEM
            CALL flow_dep_bdy  ( chem_2(ims,kms,jms,ic),     &
                                 ru_m, rv_m, config_flags,   &
                                 spec_zone,                  &
@@ -1955,6 +2013,18 @@ BENCH_END(tke_adv_tim)
                                 grid%i_start(ij), grid%i_end(ij),  &
                                 grid%j_start(ij), grid%j_end(ij),  &
                                 k_start, k_end                    )
+#else
+           CALL flow_dep_bdy_chem( chem_2(ims,kms,jms,ic),z,&
+                                ru_m, rv_m, config_flags,alt,   &
+                                t_1,pb,p,t0,p1000mb,rcp,ph_2,phb,g, &
+                                spec_zone,ic,               &
+                                ids,ide, jds,jde, kds,kde,  & ! domain dims
+                                ims,ime, jms,jme, kms,kme,  & ! memory dims
+                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+                                grid%i_start(ij), grid%i_end(ij),  &
+                                grid%j_start(ij), grid%j_end(ij),  &
+                                k_start, k_end                    )
+#endif
        ENDIF
 
 
@@ -2319,7 +2389,9 @@ BENCH_END(moist_phys_end_tim)
 
      IF ( num_3d_c >= PARAM_FIRST_SCALAR ) then
 
-!  tiled chemistry here
+!
+!  tiled chemistry not here, it is called from solve_interface, and found in chem_driver
+!
 
      END IF
 
@@ -2483,7 +2555,7 @@ BENCH_START(bc_2d_tim)
                                ips, ipe, jps, jpe, kps, kpe,            &
                                grid%i_start(ij), grid%i_end(ij),                  &
                                grid%j_start(ij), grid%j_end(ij),                  &
-                               k_start    , k_end-1                    )
+                               k_start    , k_end                    )
        CALL set_physical_bc3d( chem_2(ims,kms,jms,ic) , 'p', config_flags,  &
                                ids, ide, jds, jde, kds, kde,            &
                                ims, ime, jms, jme, kms, kme,            &

@@ -25,6 +25,14 @@ $(SOLVER)_real : module_initialize real_$(SOLVER).o ndown_$(SOLVER).o
 	$(LD) -o real.exe $(LDFLAGS) real_$(SOLVER).o ../dyn_$(SOLVER)/module_initialize_$(IDEAL_CASE).o libwrflib.a $(LIB)
 	$(LD) -o ndown.exe $(LDFLAGS) ndown_$(SOLVER).o  ../dyn_$(SOLVER)/module_initialize_$(IDEAL_CASE).o libwrflib.a $(LIB)
 
+convert_bioemiss : convert_bioemiss.o
+	$(RANLIB) libwrflib.a
+	$(FC) -o convert_bioemiss.exe $(LDFLAGS) convert_bioemiss.o libwrflib.a $(LIB)
+
+convert_emiss : convert_emiss.o
+	$(RANLIB) libwrflib.a
+	$(FC) -o convert_emiss.exe $(LDFLAGS) convert_emiss.o libwrflib.a $(LIB)
+
 convert_nmm : convert_nmm.o
 	$(RANLIB) libwrflib.a
 	$(FC) -o convert_nmm.exe $(LDFLAGS) convert_nmm.o libwrflib.a $(LIB)
@@ -100,6 +108,9 @@ real_em.o: \
 	../share/module_optional_si_input.o \
 	../share/module_bc_time_utilities.o \
 	../external/esmf_time_f90/ESMF_Mod.o 
+#	../chem/module_input_chem_data.o \
+#	../chem/module_input_chem_bioemiss.o \
+
 wrf.o: \
 	../frame/module_machine.o \
 	../frame/module_domain.o \

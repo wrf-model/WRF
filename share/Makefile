@@ -159,6 +159,11 @@ mediation_integrate.o: ../frame/module_domain.o ../frame/module_configure.o \
 mediation_interp_domain.o: ../frame/module_domain.o ../frame/module_configure.o \
 			../frame/module_timing.o
 
+#mediation_conv_emissions.o: ../frame/module_domain.o ../frame/module_configure.o \
+#			../external/esmf_time_f90/ESMF_Mod.o \
+#			module_date_time.o module_bc_time_utilities.o \
+#			module_io_domain.o
+
 set_timekeeping.o: ../frame/module_domain.o ../frame/module_configure.o \
 			../external/esmf_time_f90/ESMF_Mod.o
 

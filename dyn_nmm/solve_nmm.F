@@ -443,7 +443,6 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
         exch_tim=exch_tim+timef()-btimx
 
         CALL wrf_debug ( 100 , 'nmm: in had2' )
-
         btimx=timef()
 
         CALL HAD2(                                                     &
@@ -473,6 +472,8 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
 
         btimx=timef()
 	
+         
+        CALL wrf_debug ( 100 , 'solve_nmm: calling radiation ' )
         CALL RADIATION(NTSD,DT,JULDAY,JULYR,IHRST,NPHS,GLAT,GLON       &
      &                ,NRADS,NRADL                                     &
      &                ,DETA1,DETA2,AETA1,AETA2,ETA1,ETA2,PDTOP,PT      &
@@ -490,6 +491,7 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
      &                ,IMS,IME,JMS,JME,KMS,KME                         &
      &                ,ITS,ITE,JTS,JTE,KTS,KTE)
         radiation_tim=radiation_tim+timef()-btimx
+        CALL wrf_debug ( 100 , 'solve_nmm: back from radiation ' )
       ENDIF
 
 !
@@ -499,12 +501,14 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
 !
       btimx=timef()
 
+      CALL wrf_debug ( 100 , 'solve_nmm: calling rdtemp ' )
       CALL RDTEMP(NTSD,DT,JULDAY,JULYR,IHRST,GLAT,GLON                 &
      &           ,CZEN,CZMEAN,T,RSWTT,RLWTT,HTM,HBM2                   &
      &           ,IDS,IDF,JDS,JDF,KDS,KDE                              &
      &           ,IMS,IME,JMS,JME,KMS,KME                              &
      &           ,ITS,ITE,JTS,JTE,KTS,KTE)
       rdtemp_tim=rdtemp_tim+timef()-btimx
+      CALL wrf_debug ( 100 , 'solve_nmm: back from rdtemp ' )
 
 !
 !----------------------------------------------------------------------
@@ -514,6 +518,7 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
       IF(MOD(NTSD,NPHS).EQ.0)THEN
         btimx=timef()
 
+        CALL wrf_debug ( 100 , 'solve_nmm: calling turbl ' )
         CALL TURBL(GRID                                                &
      &            ,NTSD,DT,NPHS,RESTRT                                 &
      &            ,N_MOIST,NUM_SOIL_LAYERS,SLDPTH,DZSOIL               &
@@ -542,6 +547,7 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
      &            ,IMS,IME,JMS,JME,KMS,KME                             &
      &            ,ITS,ITE,JTS,JTE,KTS,KTE)
         turbl_tim=turbl_tim+timef()-btimx
+        CALL wrf_debug ( 100 , 'solve_nmm: back from turbl ' )
 
 !----------------------------------------------------------------------
 !*** STORE ORIGINAL TEMPERATURE ARRAY
@@ -579,6 +585,7 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
         exch_tim=exch_tim+timef()-btimx
       ENDIF
       btimx=timef()
+      CALL wrf_debug ( 100 , 'solve_nmm: calling cucnvc' )
       CALL CUCNVC(grid                                                 &
      &           ,NTSD,DT,NCNVC,GPS,RESTRT,HYDRO                       &
 !    &           ,CLDEFI,LMH,MOIST,N_MOIST,ENSDIM                      &
@@ -593,8 +600,8 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
      &           ,IDS,IDF,JDS,JDF,KDS,KDE                              &
      &           ,IMS,IME,JMS,JME,KMS,KME                              &
      &           ,ITS,ITE,JTS,JTE,KTS,KTE)
-
       cucnvc_tim=cucnvc_tim+timef()-btimx
+      CALL wrf_debug ( 100 , 'solve_nmm: back from cucnvc' )
 !----------------------------------------------------------------------
 !***  GRIDSCALE MICROPHYSICS (CONDENSATION & PRECIPITATION)
 !----------------------------------------------------------------------
@@ -733,6 +740,7 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
      &          ,IMS,IME,JMS,JME,KMS,KME                               &
      &          ,ITS,ITE,JTS,JTE,KTS,KTE)
       pfdht_tim=pfdht_tim+timef()-btimx
+      CALL wrf_debug ( 100 , 'nmm: out of pfdht' )
 
 !
 !----------------------------------------------------------------------

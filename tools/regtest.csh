@@ -250,6 +250,7 @@ if ( $ESMF_LIB == TRUE ) then
 		echo "A separately installed version of the latest ESMF library"
 		echo "(NOT the ESMF library included in the WRF tarfile) will"
 		echo "be used for some tests"
+		setenv OBJECT_MODE 32
 	else
 		echo "Only the ESMF library included in the WRF tarfile is"
 		echo "tested on this machine"

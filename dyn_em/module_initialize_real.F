@@ -481,8 +481,8 @@ endif
 	!Check whether ZNW (full level) data are truly full levels. If not, we need to adjust them
 	!to be full levels. 
 	!in this test, we check if znw(1) is neither 0 nor 1 (within a tolerance of 10**-5)
-	IF (((znw(1).LT.(1-10**-5)).OR.(znw(1).GT.(1+10**-5))).AND. &
-		((znw(1).LT.(0-10**-5)).OR.(znw(1).GT.(0+10**-5)))) THEN
+	IF (((znw(1).LT.(1-1.E-5)).OR.(znw(1).GT.(1+1.E-5))).AND. &
+		((znw(1).LT.(0-1.E-5)).OR.(znw(1).GT.(0+1.E-5)))) THEN
 		print *,'Your ZNW input values are probably half-levels. WRF expects ZNW values to be full levels. Adjusting now to full levels...'
 	!We want to ignore the first value if it's negative
 		IF (znw(1).LT.0) THEN
@@ -494,8 +494,8 @@ endif
 	ENDIF
 
 	!let's check our changes
-	IF (((znw(1).LT.(1-10**-5)).OR.(znw(1).GT.(1+10**-5))).AND. &
-		((znw(1).LT.(0-10**-5)).OR.(znw(1).GT.(0+10**-5)))) THEN
+	IF (((znw(1).LT.(1-1.E-5)).OR.(znw(1).GT.(1+1.E-5))).AND. &
+		((znw(1).LT.(0-1.E-5)).OR.(znw(1).GT.(0+1.E-5)))) THEN
 			print *,'The input ZNW height values were half-levels or erroneous. Attempts to treat the values as half-levels and change them to valid full levels failed.' 
 	CALL wrf_error_fatal("bad ZNW values from input files")
 	ELSE

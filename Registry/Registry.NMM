@@ -644,8 +644,6 @@ state   logical tiled          -        -          -         -     -         "ti
 state   logical patched        -        -          -         -     -         "patched"               ""         ""      
 # indicates whether to read input from file or generate                                         
 #state   logical input_from_file        -        -          -         -     -         "input_from_file"         ""         ""    
-state   logical write_metadata        -        -          -         -     -          "write_metadata"         ""         ""     
-                                                
 ######                                          
 #                                               
 # Variables that are set at run-time to control configuration  (namelist-settable)                                              

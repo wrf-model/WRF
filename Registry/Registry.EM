@@ -239,7 +239,6 @@ state   logical tiled          -        -          -         -     -         "ti
 state   logical patched        -        -          -         -     -         "patched"               ""         ""      
 # indicates whether to read input from file or generate                                         
 #state   logical input_from_file        -        -          -         -     -         "input_from_file"         ""         ""    
-state   logical write_metadata        -        -          -         -     -          "write_metadata"         ""         ""     
 
 # Mask for moving nest interpolations
 state    integer imask         ij        misc     XY
@@ -648,6 +647,17 @@ rconfig   character  auxhist3_inname   namelist,time_control		1  "auxhist3_d<dom
 rconfig   character  auxhist4_inname   namelist,time_control		1  "auxhist4_d<domain>_<date>"   -     "name of auxhist5 infile" ""      ""
 rconfig   character  auxhist5_inname   namelist,time_control		1  "auxhist5_d<domain>_<date>"   -     "name of auxhist6 infile" ""      ""
 
+rconfig   character  auxinput1_outname  namelist,time_control            1  "auxinput1_d<domain>_<date>"   -     "name of auxinput1 outfile" ""      ""
+rconfig   character  auxinput2_outname  namelist,time_control            1  "auxinput2_d<domain>_<date>"   -     "name of auxinput2 outfile" ""      ""
+rconfig   character  auxinput3_outname  namelist,time_control            1  "auxinput3_d<domain>_<date>"   -     "name of auxinput3 outfile" ""      ""
+rconfig   character  auxinput4_outname  namelist,time_control            1  "auxinput4_d<domain>_<date>"   -     "name of auxinput4 outfile" ""      ""
+rconfig   character  auxinput5_outname  namelist,time_control            1  "auxinput5_d<domain>_<date>"   -     "name of auxinput5 outfile" ""      ""
+
+rconfig   character  auxinput1_inname   namelist,time_control            1  "auxinput1_d<domain>"   -     "name of auxinput1 infile" ""      ""
+rconfig   character  auxinput2_inname   namelist,time_control            1  "auxinput2_d<domain>"   -     "name of auxinput3 infile" ""      ""
+rconfig   character  auxinput3_inname   namelist,time_control            1  "auxinput3_d<domain>"   -     "name of auxinput4 infile" ""      ""
+rconfig   character  auxinput4_inname   namelist,time_control            1  "auxinput4_d<domain>"   -     "name of auxinput5 infile" ""      ""
+rconfig   character  auxinput5_inname   namelist,time_control            1  "auxinput5_d<domain>"   -     "name of auxinput6 infile" ""      ""
 
 rconfig   integer history_interval_mo     namelist,time_control		max_domains    0       h     "history_interval_mo"       ""      "MONTHS"
 rconfig   integer history_interval_d      namelist,time_control		max_domains    0       h     "history_interval_d"       ""      "DAYS"
@@ -914,16 +924,16 @@ rconfig integer auxinput5_end_h      namelist,time_control     max_domains    0 
 rconfig integer auxinput5_end_m      namelist,time_control     max_domains    0    h  "auxinput5_end_m"       ""      "MINUTES"
 rconfig integer auxinput5_end_s      namelist,time_control     max_domains    0    h  "auxinput5_end_s"       ""      "SECONDS"
 
-rconfig   integer     io_form_auxinput1   namelist,time_control		1              0       h        "io_form_auxinput1"                 ""      ""
-rconfig   integer     io_form_auxinput2   namelist,time_control		1              0       h        "io_form_auxinput2"                 ""      ""
-rconfig   integer     io_form_auxinput3   namelist,time_control		1              0       h        "io_form_auxinput3"                 ""      ""
-rconfig   integer     io_form_auxinput4   namelist,time_control		1              0       h        "io_form_auxinput4"                 ""      ""
-rconfig   integer     io_form_auxinput5   namelist,time_control		1              0       h        "io_form_auxinput5"                 ""      ""
-rconfig   integer     io_form_auxhist1    namelist,time_control		1              0       h        "io_form_auxhist1"               ""      ""
-rconfig   integer     io_form_auxhist2    namelist,time_control		1              0       h        "io_form_auxhist2"               ""      ""
-rconfig   integer     io_form_auxhist3    namelist,time_control		1              0       h        "io_form_auxhist3"               ""      ""
-rconfig   integer     io_form_auxhist4    namelist,time_control		1              0       h        "io_form_auxhist4"               ""      ""
-rconfig   integer     io_form_auxhist5    namelist,time_control		1              0       h        "io_form_auxhist5"               ""      ""
+rconfig   integer     io_form_auxinput1   namelist,time_control		1              2       h        "io_form_auxinput1"                 ""      ""
+rconfig   integer     io_form_auxinput2   namelist,time_control		1              2       h        "io_form_auxinput2"                 ""      ""
+rconfig   integer     io_form_auxinput3   namelist,time_control		1              2       h        "io_form_auxinput3"                 ""      ""
+rconfig   integer     io_form_auxinput4   namelist,time_control		1              2       h        "io_form_auxinput4"                 ""      ""
+rconfig   integer     io_form_auxinput5   namelist,time_control		1              2       h        "io_form_auxinput5"                 ""      ""
+rconfig   integer     io_form_auxhist1    namelist,time_control		1              2       h        "io_form_auxhist1"               ""      ""
+rconfig   integer     io_form_auxhist2    namelist,time_control		1              2       h        "io_form_auxhist2"               ""      ""
+rconfig   integer     io_form_auxhist3    namelist,time_control		1              2       h        "io_form_auxhist3"               ""      ""
+rconfig   integer     io_form_auxhist4    namelist,time_control		1              2       h        "io_form_auxhist4"               ""      ""
+rconfig   integer     io_form_auxhist5    namelist,time_control		1              2       h        "io_form_auxhist5"               ""      ""
 
 rconfig   integer JULYR                   namelist,time_control		max_domains    0       h    "JULYR"                 ""      ""
 rconfig   integer JULDAY                  namelist,time_control		max_domains    1       h    "JULDAY"                ""      ""

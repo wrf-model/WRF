@@ -52,7 +52,7 @@ CONTAINS
                          ACSNOM,IVGTYP,ISLTYP, SFCEVP, SMOIS,    &
                          SH2O, SNOWH, SMFR3D,                    &  ! temporary
                          DX,DY,F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY, &
-                         allowed_to_read,                        &
+                         allowed_to_read, moved,                 &
                          ids, ide, jds, jde, kds, kde,           &
                          ims, ime, jms, jme, kms, kme,           &
                          its, ite, jts, jte, kts, kte           )
@@ -158,7 +158,7 @@ CONTAINS
 !mp
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::   &
              F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY
-   LOGICAL,  INTENT(IN)  :: allowed_to_read
+   LOGICAL,  INTENT(IN)  :: allowed_to_read, moved
 
 ! Local data
 
@@ -172,6 +172,7 @@ CONTAINS
    INTEGER :: i, j, itf, jtf
    LOGICAL :: restart
    INTEGER :: hr, min, sec, ms, rc
+integer myproc
 
 !-----------------------------------------------------------------
 
@@ -209,6 +210,7 @@ CONTAINS
   IF(.not.restart)THEN
 !-- initialize common variables
 
+   IF ( .NOT. moved ) THEN
    DO j=jts,jtf
    DO i=its,itf
       XLAND(i,j)=1.
@@ -223,6 +225,7 @@ CONTAINS
       RAINNCV(i,j)=0.
    ENDDO
    ENDDO
+   ENDIF
 
 !
    DO j=jts,jtf

@@ -138,10 +138,8 @@ show config:  ---See also the makefile---
 #define RSL_MAXCHILDREN (RSL_IRAX*RSL_IRAX)
 #define RSL_MAXKIDS RSL_MAXCHILDREN
 #define RSL_MAXDESCRIPTORS  2048
-/* settings below will allow for max of about 200 200x200x50 4 byte fields */
-#define F90_MAX_FLD_SIZE_IN_BYTES 5000000
-#define MAX_BASE_TABLE_ENTRIES ( 2147483647 / F90_MAX_FLD_SIZE_IN_BYTES )
-
+/* settings below will allow for 20000 fields */
+#define MAX_BASE_TABLE_ENTRIES 20000
 
 #if (ALLOW_RSL_168PT == 1)
 #  define RSL_MAXSTEN    168              /* MAX NUMBER OF STENCIL PTS */
@@ -280,6 +278,7 @@ typedef struct rsl_fldspec {
   void                  * base ;
   rsl_tag_t             ndim ;
   rsl_tag_t             elemsz ;
+  rsl_tag_t             memsize ;
   rsl_tag_t             type ;
   int                   f90_table_index ;
   rsl_tag_t             strategy ;

@@ -3574,7 +3574,6 @@ END
        RETURN
    END SUBROUTINE wrf_patch_to_global_real 
 
-#ifndef PEDANTIC
    SUBROUTINE wrf_patch_to_global_double (buf,globbuf,domdesc,stagger,ordering,&
                                        DS1,DE1,DS2,DE2,DS3,DE3,&
                                        MS1,ME1,MS2,ME2,MS3,ME3,&
@@ -3601,7 +3600,6 @@ END
 
        RETURN
    END SUBROUTINE wrf_patch_to_global_double
-#endif
 
 
    SUBROUTINE wrf_patch_to_global_integer (buf,globbuf,domdesc,stagger,ordering,&
@@ -3785,7 +3783,6 @@ END
        RETURN
     END SUBROUTINE wrf_global_to_patch_real
 
-#ifndef PEDANTIC
     SUBROUTINE wrf_global_to_patch_double (globbuf,buf,domdesc,stagger,ordering,&
                                        DS1,DE1,DS2,DE2,DS3,DE3,&
                                        MS1,ME1,MS2,ME2,MS3,ME3,&
@@ -3811,7 +3808,6 @@ END
                                        PS1,PE1,PS2,PE2,PS3,PE3 )
        RETURN
     END SUBROUTINE wrf_global_to_patch_double
-#endif
 
 
     SUBROUTINE wrf_global_to_patch_integer (globbuf,buf,domdesc,stagger,ordering,&

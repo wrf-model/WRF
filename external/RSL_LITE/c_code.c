@@ -76,7 +76,15 @@ RSL_LITE_ERROR_DUP1 ( int *me )
 
 BYTE_BCAST ( char * buf, int * size, int * comm )
 {
+#ifdef crayx1
+    if (*size % sizeof(int) == 0) {
+       MPI_Bcast ( buf, *size/sizeof(int), MPI_INT, 0, *comm ) ;
+    } else {
+       MPI_Bcast ( buf, *size, MPI_BYTE, 0, *comm ) ;
+    }
+#else
     MPI_Bcast ( buf, *size, MPI_BYTE, 0, *comm ) ;
+#endif
 }
 
 int yp_curs, ym_curs, xp_curs, xm_curs ;
@@ -158,6 +166,9 @@ RSL_LITE_PACK ( char * buf , int * shw0 , int * typesize0 , int * xy0 , int * pu
   int xy ;   /* y = 0 , x = 1 */
   int pu ;   /* pack = 0 , unpack = 1 */
   register int i, j, k, t ;
+#ifdef crayx1
+  register int i2,i3,i4,i_offset;
+#endif
   char *p ;
   int da_buf ;
   int yp, ym, xp, xm ;
@@ -193,18 +204,40 @@ fprintf(stderr,"Y pack up nbytes = %d RANGE = %d  ",nbytes, RANGE( jpe-shw+1, jp
 	  MPI_Abort(MPI_COMM_WORLD, ierr) ;
         }
 	if ( typesize == sizeof(int) ) {
+#ifdef crayx1
+	  i4 = ips-shw ;
+          i_offset = ipe+shw+1-i4;
+          i3=0;
+          for ( j = jpe-shw+1 ; j <= jpe ; j++ ) {
+	    pi = (int *)(p+yp_curs) ;
+#pragma concurrent
+#pragma preferstream
+            for ( k = kps ; k <= kpe ; k++ ) {
+              i3 = i_offset*k;
+	      qi = (int *)((buf + typesize*( (i4-ims) + (ime-ims+1)*(
+                                             (k-kms) + (j-jms)*(kme-kms+1))))) ;
+#pragma concurrent
+#pragma prefervector
+              for ( i = i4, i2=0; i <= ipe+shw ; i++ ) {
+                pi[i3++] = qi[i2++];
+	      }
+	    }
+            yp_curs += (i_offset*(kpe+1))*typesize;
+	  }
+#else
           for ( j = jpe-shw+1 ; j <= jpe ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
-	      pi = (int *)(p+yp_curs) ;
-	      i = ips-shw ;
-	      qi = (int *)((buf + typesize*( (i-ims) + (ime-ims+1)*(
+              pi = (int *)(p+yp_curs) ;
+              i = ips-shw ;
+              qi = (int *)((buf + typesize*( (i-ims) + (ime-ims+1)*(
                                              (k-kms) + (j-jms)*(kme-kms+1))))) ;
               for ( i = ips-shw ; i <= ipe+shw ; i++ ) {
-	        *pi++ = *qi++ ;
-	      }
-	      yp_curs += (i-(ips-shw))*typesize ;
-	    }
-	  }
+                *pi++ = *qi++ ;
+              }
+              yp_curs += (i-(ips-shw))*typesize ;
+            }
+          }
+#endif
 	}
 	else {
           for ( j = jpe-shw+1 ; j <= jpe ; j++ ) {
@@ -226,18 +259,39 @@ fprintf(stderr,"P yp_curs = %d\n",yp_curs) ;
 #endif
       } else {
 	if ( typesize == sizeof(int) ) {
+#ifdef crayx1
+	  i4 = ips-shw ;
+          i_offset = ipe+shw+1-i4;
+          for ( j = jpe+1 ; j <= jpe+shw ; j++ ) {
+	    pi = (int *)(p+yp_curs) ;
+#pragma concurrent
+#pragma perferstream
+            for ( k = kps ; k <= kpe ; k++ ) {
+              i3 = i_offset*k;
+	      qi = (int *)((buf + typesize*( (i4-ims) + (ime-ims+1)*(
+                                             (k-kms) + (j-jms)*(kme-kms+1))))) ;
+#pragma concurrent
+#pragma prefervector
+              for ( i = i4, i2=0; i <= ipe+shw ; i++ ) {
+                qi[i2++] = pi[i3++];
+	      }
+	    }
+            yp_curs += (i_offset*(kpe+1))*typesize;
+	  }
+#else
           for ( j = jpe+1 ; j <= jpe+shw ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
-	      pi = (int *)(p+yp_curs) ;
-	      i = ips-shw ;
-	      qi = (int *)((buf + typesize*( (i-ims) + (ime-ims+1)*(
+              pi = (int *)(p+yp_curs) ;
+              i = ips-shw ;
+              qi = (int *)((buf + typesize*( (i-ims) + (ime-ims+1)*(
                                              (k-kms) + (j-jms)*(kme-kms+1))))) ;
               for ( i = ips-shw ; i <= ipe+shw ; i++ ) {
-	        *qi++ = *pi++ ;
-	      }
-	      yp_curs += (i-(ips-shw))*typesize ;
-	    }
-	  }
+                *qi++ = *pi++ ;
+              }
+              yp_curs += (i-(ips-shw))*typesize ;
+            }
+          }
+#endif
 	}
 	else {
           for ( j = jpe+1 ; j <= jpe+shw ; j++ ) {
@@ -272,18 +326,39 @@ fprintf(stderr,"Y pack dn nbytes = %d RANGE = %d  ",nbytes, RANGE( jps, jps+shw-
 	  MPI_Abort(MPI_COMM_WORLD, ierr) ;
         }
 	if ( typesize == sizeof(int) ) {
+#ifdef crayx1
+	  i4 = ips-shw ;
+          i_offset = ipe+shw+1-i4;
+          for ( j = jps ; j <= jps+shw-1 ; j++ ) {
+	    pi = (int *)(p+ym_curs) ;
+#pragma concurrent
+#pragma perferstream
+            for ( k = kps ; k <= kpe ; k++ ) {
+              i3 = i_offset*k;
+	      qi = (int *)((buf + typesize*( (i4-ims) + (ime-ims+1)*(
+                                             (k-kms) + (j-jms)*(kme-kms+1))))) ;
+#pragma concurrent
+#pragma perfervector
+              for ( i = i4, i2=0 ; i <= ipe+shw ; i++) {
+                pi[i3++] = qi[i2++];
+	      }
+	    }
+            ym_curs += (i_offset*(kpe+1))*typesize;
+	  }
+#else
           for ( j = jps ; j <= jps+shw-1 ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
-	      pi = (int *)(p+ym_curs) ;
-	      i = ips-shw ;
-	      qi = (int *)((buf + typesize*( (i-ims) + (ime-ims+1)*(
+              pi = (int *)(p+ym_curs) ;
+              i = ips-shw ;
+              qi = (int *)((buf + typesize*( (i-ims) + (ime-ims+1)*(
                                              (k-kms) + (j-jms)*(kme-kms+1))))) ;
               for ( i = ips-shw ; i <= ipe+shw ; i++ ) {
-	        *pi++ = *qi++ ;
-	      }
-	      ym_curs += (i-(ips-shw))*typesize ;
-	    }
-	  }
+                *pi++ = *qi++ ;
+              }
+              ym_curs += (i-(ips-shw))*typesize ;
+            }
+          }
+#endif
 	}
 	else {
           for ( j = jps ; j <= jps+shw-1 ; j++ ) {
@@ -305,18 +380,40 @@ fprintf(stderr,"P ym_curs = %d\n",ym_curs) ;
 #endif
       } else {
 	if ( typesize == sizeof(int) ) {
+#ifdef crayx1
+	  i4 = ips-shw ;
+          i_offset = ipe+shw+1-i4;
           for ( j = jps-shw ; j <= jps-1 ; j++ ) {
+	    pi = (int *)(p+ym_curs) ;
+#pragma concurrent
+#pragma perferstream
             for ( k = kps ; k <= kpe ; k++ ) {
-	      pi = (int *)(p+ym_curs) ;
-	      i = ips-shw ;
-	      qi = (int *)((buf + typesize*( (i-ims) + (ime-ims+1)*(
+              i3 =i_offset*k;
+	      qi = (int *)((buf + typesize*( (i4-ims) + (ime-ims+1)*(
+                                             (k-kms) + (j-jms)*(kme-kms+1))))) ;
+              i2=0;
+#pragma concurrent
+#pragma prefervector
+              for ( i = i4; i <= ipe+shw ; i++ ) {
+                qi[i2++] = pi[i3++];
+	      }
+	    }
+          ym_curs += (i_offset*(kpe+1))*typesize;
+	  }
+#else
+         for ( j = jps-shw ; j <= jps-1 ; j++ ) {
+            for ( k = kps ; k <= kpe ; k++ ) {
+              pi = (int *)(p+ym_curs) ;
+              i = ips-shw ;
+              qi = (int *)((buf + typesize*( (i-ims) + (ime-ims+1)*(
                                              (k-kms) + (j-jms)*(kme-kms+1))))) ;
               for ( i = ips-shw ; i <= ipe+shw ; i++ ) {
-	        *qi++ = *pi++ ;
-	      }
-	      ym_curs += (i-(ips-shw))*typesize ;
-	    }
-	  }
+                *qi++ = *pi++ ;
+              }
+              ym_curs += (i-(ips-shw))*typesize ;
+            }
+          }
+#endif
 	}
 	else {
           for ( j = jps-shw ; j <= jps-1 ; j++ ) {
@@ -355,6 +452,21 @@ fprintf(stderr,"X pack right nbytes = %d RANGE = %d\n",nbytes, RANGE(  jps-shw, 
 	  MPI_Abort(MPI_COMM_WORLD, ierr) ;
         }
 	if ( typesize == sizeof(int) ) {
+#ifdef crayx1
+          pi = (int *)(p+xp_curs) ;
+          i3=0;
+#pragma concurrent
+          for ( j = jps-shw ; j <= jpe+shw ; j++ ) {
+            for ( k = kps ; k <= kpe ; k++ ) {
+              qi = (int *)((buf + typesize*( (ipe-shw+1-ims) + (ime-ims+1)*(
+                                            (k-kms) + (j-jms)*(kme-kms+1))))) ;
+              for ( i = ipe-shw+1, i2=0 ; i <= ipe ; i++ ) {
+                pi[i3++] = qi[i2++];
+              }
+            }
+          }
+          xp_curs += i3*typesize;
+#else
           for ( j = jps-shw ; j <= jpe+shw ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
 	      pi = (int *)(p+xp_curs) ;
@@ -367,6 +479,7 @@ fprintf(stderr,"X pack right nbytes = %d RANGE = %d\n",nbytes, RANGE(  jps-shw, 
 	      xp_curs += shw*typesize ;
 	    }
 	  }
+#endif
 	}
 	else {
           for ( j = jps-shw ; j <= jpe+shw ; j++ ) {
@@ -385,6 +498,21 @@ fprintf(stderr,"X pack right nbytes = %d RANGE = %d\n",nbytes, RANGE(  jps-shw, 
 	}
       } else {
 	if ( typesize == sizeof(int) ) {
+#ifdef crayx1
+          pi = (int *)(p+xp_curs) ;
+          i3=0;
+#pragma concurrent
+          for ( j = jps-shw ; j <= jpe+shw ; j++ ) {
+            for ( k = kps ; k <= kpe ; k++ ) {
+              qi = (int *)((buf + typesize*( (ipe-ims+1) + (ime-ims+1)*(
+                                            (k-kms) + (j-jms)*(kme-kms+1))))) ;
+              for ( i = ipe+1, i2=0 ; i <= ipe+shw ; i++ ) {
+                qi[i2++] = pi[i3++];
+              }
+            }
+          }
+          xp_curs += i3*typesize;
+#else
           for ( j = jps-shw ; j <= jpe+shw ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
 	      pi = (int *)(p+xp_curs) ;
@@ -397,6 +525,7 @@ fprintf(stderr,"X pack right nbytes = %d RANGE = %d\n",nbytes, RANGE(  jps-shw, 
 	      xp_curs += shw*typesize ;
 	    }
 	  }
+#endif
 	}
 	else {
           for ( j = jps-shw ; j <= jpe+shw ; j++ ) {
@@ -428,6 +557,21 @@ fprintf(stderr,"X pack left nbytes = %d RANGE = %d\n",nbytes, RANGE(  jps-shw, j
 	  MPI_Abort(MPI_COMM_WORLD, ierr) ;
         }
 	if ( typesize == sizeof(int) ) {
+#ifdef crayx1
+          pi = (int *)(p+xm_curs) ;
+          i3=0;
+#pragma concurrent
+          for ( j = jps-shw ; j <= jpe+shw ; j++ ) {
+            for ( k = kps ; k <= kpe ; k++ ) {
+              qi = (int *)((buf + typesize*( (ips-ims) + (ime-ims+1)*(
+                                            (k-kms) + (j-jms)*(kme-kms+1))))) ;
+              for ( i = ips, i2=0 ; i <= ips+shw-1 ; i++ ) {
+                pi[i3++] = qi[i2++];
+              }
+            }
+          }
+          xm_curs += i3*typesize;
+#else
           for ( j = jps-shw ; j <= jpe+shw ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
 	      pi = (int *)(p+xm_curs) ;
@@ -440,6 +584,7 @@ fprintf(stderr,"X pack left nbytes = %d RANGE = %d\n",nbytes, RANGE(  jps-shw, j
 	      xm_curs += shw*typesize ;
 	    }
 	  }
+#endif
 	}
 	else {
           for ( j = jps-shw ; j <= jpe+shw ; j++ ) {
@@ -458,6 +603,21 @@ fprintf(stderr,"X pack left nbytes = %d RANGE = %d\n",nbytes, RANGE(  jps-shw, j
         }
       } else {
 	if ( typesize == sizeof(int) ) {
+#ifdef crayx1
+          pi = (int *)(p+xm_curs) ;
+          i3=0;
+#pragma concurrent
+          for ( j = jps-shw ; j <= jpe+shw ; j++ ) {
+            for ( k = kps ; k <= kpe ; k++ ) {
+              qi = (int *)((buf + typesize*( (ips-shw-ims) + (ime-ims+1)*(
+                                            (k-kms) + (j-jms)*(kme-kms+1))))) ;
+              for ( i = ips-shw, i2=0 ; i < ips ; i++ ) {
+                qi[i2++] = pi[i3++];
+              }
+            }
+          }
+          xm_curs += i3*typesize;
+#else
           for ( j = jps-shw ; j <= jpe+shw ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
 	      pi = (int *)(p+xm_curs) ;
@@ -470,6 +630,7 @@ fprintf(stderr,"X pack left nbytes = %d RANGE = %d\n",nbytes, RANGE(  jps-shw, j
 	      xm_curs += shw*typesize ;
 	    }
 	  }
+#endif
 	}
 	else {
           for ( j = jps-shw ; j <= jpe+shw ; j++ ) {

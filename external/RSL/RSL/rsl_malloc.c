@@ -193,28 +193,15 @@ EF_PROTECT_FREE = 1 ;
    return(retval) ;
 }
 
-extern int errno ;
-
 rsl_free( p )
    char * p ;
 {
-   errno = 0 ;
-
    if ( p == zero_length_storage ) return ;    /* fix from ANU */
-
-
 #ifdef PADIT
    BASE_FREE ( p-512 ) ;
 #else
    BASE_FREE ( p ) ;
 #endif
-   if ( errno )
-   {
-     sprintf(mess,
-"rsl_free failed for pointer %08x\n",p) ;
-     perror(mess) ;
-     RSL_FATAL(2) ;
-   }
    p = NULL ;
 }
 

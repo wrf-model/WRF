@@ -75,7 +75,9 @@ SUBROUTINE solve_em ( grid , config_flags , &
    INTEGER :: l,kte,kk
 
 ! These are used if -DDEREF_KLUDGE is compiled
-   INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
+   INTEGER     :: sm31  , em31  , sm32  , em32  , sm33  , em33
+   INTEGER     :: sm31x , em31x , sm32x , em32x , sm33x , em33x
+   INTEGER     :: sm31y , em31y , sm32y , em32y , sm33y , em33y
 
 ! Define benchmarking timers if -DBENCH is compiled
 #include <bench_solve_em_def.h>

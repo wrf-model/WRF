@@ -424,76 +424,76 @@ SUBROUTINE med_nest_move ( parent, nest )
 
    check_for_move: IF ( time_for_move ( nest , dx, dy ) ) THEN
 
-   IF ( dx .gt. 1 .or. dy .gt. 1 ) THEN
-     CALL wrf_error_fatal( 'med_nest_move' )
-   ENDIF
+     IF ( dx .gt. 1 .or. dy .gt. 1 ) THEN
+       CALL wrf_error_fatal( 'med_nest_move' )
+     ENDIF
 
 
-   CALL get_ijk_from_grid (  grid ,                   &
-                             ids, ide, jds, jde, kds, kde,    &
-                             ims, ime, jms, jme, kms, kme,    &
-                             ips, ipe, jps, jpe, kps, kpe    )
+     CALL get_ijk_from_grid (  grid ,                   &
+                               ids, ide, jds, jde, kds, kde,    &
+                               ims, ime, jms, jme, kms, kme,    &
+                               ips, ipe, jps, jpe, kps, kpe    )
 
 #ifdef RSL
 ! tell RSL about the move; this needs to be moved into external directory
-   CALL rsl_move_nest ( parent%domdesc, nest%intermediate_grid%domdesc, dx, dy )
-   CALL adjust_domain_dims_for_move( nest%intermediate_grid , dx, dy )
+     CALL rsl_move_nest ( parent%domdesc, nest%intermediate_grid%domdesc, dx, dy )
+     CALL adjust_domain_dims_for_move( nest%intermediate_grid , dx, dy )
 #endif
 
-   CALL get_ijk_from_grid (  grid ,                   &
-                             ids, ide, jds, jde, kds, kde,    &
-                             ims, ime, jms, jme, kms, kme,    &
-                             ips, ipe, jps, jpe, kps, kpe    )
+     CALL get_ijk_from_grid (  grid ,                   &
+                               ids, ide, jds, jde, kds, kde,    &
+                               ims, ime, jms, jme, kms, kme,    &
+                               ips, ipe, jps, jpe, kps, kpe    )
 
-   grid => nest 
+     grid => nest 
 
-   CALL shift_domain_em( grid, dx, dy,  &
+     CALL shift_domain_em( grid, dx, dy,  &
 !
 # include <em_actual_args.inc>
 !
-                       )
+                         )
 
-   px = grid%parent_grid_ratio*dx
-   py = grid%parent_grid_ratio*dy
+     px = grid%parent_grid_ratio*dx
+     py = grid%parent_grid_ratio*dy
 
-   grid%i_parent_start = grid%i_parent_start + px / grid%parent_grid_ratio 
-   CALL nl_set_i_parent_start( grid%id, grid%i_parent_start )
-   grid%j_parent_start = grid%j_parent_start + py / grid%parent_grid_ratio
-   CALL nl_set_j_parent_start( grid%id, grid%j_parent_start )
+     grid%i_parent_start = grid%i_parent_start + px / grid%parent_grid_ratio 
+     CALL nl_set_i_parent_start( grid%id, grid%i_parent_start )
+     grid%j_parent_start = grid%j_parent_start + py / grid%parent_grid_ratio
+     CALL nl_set_j_parent_start( grid%id, grid%j_parent_start )
 
-   CALL med_interp_domain( parent, nest )
+     CALL med_interp_domain( parent, nest )
 
-   nest%moved = .true.
-   CALL start_domain ( nest )
-   nest%moved = .false.
+     nest%moved = .true.
+     CALL start_domain ( nest )
+     nest%moved = .false.
 
 ! copy time level 2 to time level 1 in new regions of multi-time level fields
 ! this should be registry generated.
-   do k = kms,kme
-     where ( nest%imask_xstag  .EQ. 1 ) nest%em_u_1(:,k,:)   = nest%em_u_2(:,k,:)
-     where ( nest%imask_ystag  .EQ. 1 ) nest%em_v_1(:,k,:)   = nest%em_v_2(:,k,:)
-     where ( nest%imask_nostag .EQ. 1 ) nest%em_t_1(:,k,:)   = nest%em_t_2(:,k,:)
-     where ( nest%imask_nostag .EQ. 1 ) nest%em_w_1(:,k,:)   = nest%em_w_2(:,k,:)
-     where ( nest%imask_nostag .EQ. 1 ) nest%em_ph_1(:,k,:)  = nest%em_ph_2(:,k,:)
-     where ( nest%imask_nostag .EQ. 1 ) nest%em_tp_1(:,k,:)  = nest%em_tp_2(:,k,:)
-     where ( nest%imask_nostag .EQ. 1 ) nest%em_tke_1(:,k,:) = nest%em_tke_2(:,k,:)
-   enddo
-   do p = PARAM_FIRST_SCALAR , num_moist
      do k = kms,kme
-       where ( nest%imask_nostag .EQ. 1 ) nest%moist_1(:,k,:,p) = nest%moist_2(:,k,:,p)
+       where ( nest%imask_xstag  .EQ. 1 ) nest%em_u_1(:,k,:)   = nest%em_u_2(:,k,:)
+       where ( nest%imask_ystag  .EQ. 1 ) nest%em_v_1(:,k,:)   = nest%em_v_2(:,k,:)
+       where ( nest%imask_nostag .EQ. 1 ) nest%em_t_1(:,k,:)   = nest%em_t_2(:,k,:)
+       where ( nest%imask_nostag .EQ. 1 ) nest%em_w_1(:,k,:)   = nest%em_w_2(:,k,:)
+       where ( nest%imask_nostag .EQ. 1 ) nest%em_ph_1(:,k,:)  = nest%em_ph_2(:,k,:)
+       where ( nest%imask_nostag .EQ. 1 ) nest%em_tp_1(:,k,:)  = nest%em_tp_2(:,k,:)
+       where ( nest%imask_nostag .EQ. 1 ) nest%em_tke_1(:,k,:) = nest%em_tke_2(:,k,:)
      enddo
-   enddo
-   do p = PARAM_FIRST_SCALAR , num_chem
-     do k = kms,kme
-       where ( nest%imask_nostag .EQ. 1 ) nest%chem_1(:,k,:,p) = nest%chem_2(:,k,:,p)
+     do p = PARAM_FIRST_SCALAR , num_moist
+       do k = kms,kme
+         where ( nest%imask_nostag .EQ. 1 ) nest%moist_1(:,k,:,p) = nest%moist_2(:,k,:,p)
+       enddo
      enddo
-   enddo
-   where ( nest%imask_nostag .EQ. 1 ) nest%em_mu_1(:,:)  = nest%em_mu_2(:,:)
+     do p = PARAM_FIRST_SCALAR , num_chem
+       do k = kms,kme
+         where ( nest%imask_nostag .EQ. 1 ) nest%chem_1(:,k,:,p) = nest%chem_2(:,k,:,p)
+       enddo
+     enddo
+     where ( nest%imask_nostag .EQ. 1 ) nest%em_mu_1(:,:)  = nest%em_mu_2(:,:)
 !
 
 #ifdef MOVE_NESTS
-   parent%nest_pos = parent%ht
-   where ( parent%nest_pos .gt. 0 ) parent%nest_pos = parent%nest_pos + 500.  ! make a cliff
+!     parent%nest_pos = parent%ht
+!     where ( parent%nest_pos .gt. 0 ) parent%nest_pos = parent%nest_pos + 500.  ! make a cliff
 #endif
 
    ENDIF check_for_move
@@ -671,14 +671,18 @@ SUBROUTINE med_nest_feedback ( parent , nest , config_flags )
   ! Model layer
   ! External
    USE esmf_mod
-
    IMPLICIT NONE
+
 
   ! Arguments
    TYPE(domain) , POINTER                     :: parent, nest
    TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
   ! Local
    INTEGER                                    :: idum1 , idum2 , fid, rc
+   INTEGER                         :: ids , ide , jds , jde , kds , kde , &
+                                      ims , ime , jms , jme , kms , kme , &
+                                      ips , ipe , jps , jpe , kps , kpe
+   INTEGER i,j
 
    INTERFACE
      SUBROUTINE med_feedback_domain ( parent , nest )
@@ -692,7 +696,19 @@ SUBROUTINE med_nest_feedback ( parent , nest , config_flags )
          config_flags%feedback .NE. 0 ) THEN
       CALL med_feedback_domain( parent, nest )
 #ifdef MOVE_NESTS
-      WHERE ( parent%nest_pos .EQ. 9021000. ) parent%nest_pos = parent%ht*1.5 + 1000.
+      CALL get_ijk_from_grid (  parent ,                         &
+                                ids, ide, jds, jde, kds, kde,    &
+                                ims, ime, jms, jme, kms, kme,    &
+                                ips, ipe, jps, jpe, kps, kpe    )
+      DO j = jps, MIN(jpe,jde-1)
+      DO i = ips, MIN(ipe,ide-1)
+        IF      ( parent%nest_pos(i,j) .EQ. 9021000. ) THEN
+          parent%nest_pos(i,j) = parent%ht(i,j)*1.5 + 1000.
+        ELSE IF ( parent%ht(i,j) .NE. 0. ) THEN
+          parent%nest_pos(i,j) = parent%ht(i,j) + 500.
+        ENDIF
+      ENDDO
+      ENDDO
 #endif
     END IF
 

@@ -888,7 +888,7 @@ use esmf_timemod
             IF ( alarm%RingIntervalSet ) THEN
 	       PRED3 = ( alarm%PrevRingTime + alarm%RingInterval <= clock%CurrTime )
 	    ENDIF
-           
+
             IF (                                                                           &
                  ( .NOT.  ( pred1                                                   ))     &
                    .AND.                                                                   &
@@ -899,7 +899,7 @@ use esmf_timemod
                  )                                                                         &
                ) THEN
                alarm%Ringing = .TRUE.
-               alarm%PrevRingTime = alarm%PrevRingTime + alarm%RingInterval
+               IF ( PRED3) alarm%PrevRingTime = alarm%PrevRingTime + alarm%RingInterval
                IF ( PRESENT( RingingAlarmList ) .AND. PRESENT ( NumRingingAlarms ) ) THEN
                  NumRingingAlarms = NumRingingAlarms + 1
                  RingingAlarmList( NumRingingAlarms ) = alarm

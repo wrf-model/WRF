@@ -98,7 +98,6 @@ SUBROUTINE med_read_nmm ( grid , config_flags , ntsd, dt_from_file, tstart_from_
    REWIND NUNIT_PARMETA
    READ(NUNIT_PARMETA,PARMNMM)
    NSOIL=4
-      write(0,*)' assigned nsoil=',nsoil
    CALL wrf_debug ( 100 , 'nmm: read global dimensions file' )
 
 ! temporarily produce array limits here
@@ -127,7 +126,6 @@ SUBROUTINE med_read_nmm ( grid , config_flags , ntsd, dt_from_file, tstart_from_
 
 !----------------------------------------------------------------------
 ! read constants file
-      write(0,*)' before allocates and nhb nsoil=',nsoil
    ALLOCATE(TEMP1(1:NSOIL),STAT=I)
    ALLOCATE(ITEMP(IDS:IDE,JDS:JDE),STAT=I)
    ALLOCATE(TEMP(IDS:IDE,JDS:JDE),STAT=I)
@@ -144,7 +142,6 @@ SUBROUTINE med_read_nmm ( grid , config_flags , ntsd, dt_from_file, tstart_from_
 !----------------------------------------------------------------------
 !
    READ(NUNIT_NHB) NFCST,NUNIT_NBC,LISTB,DT,IDTAD,SIGMA
-      write(0,*)' read_nmm sigma=',sigma
    dt_from_file = dt
    WRITE( mess, * ) 'NFCST = ',NFCST,'  DT  = ',DT
    WRITE( 0, * ) 'NFCST = ',NFCST,'  DT  = ',DT,' NHB=',NUNIT_NHB 
@@ -623,6 +620,11 @@ ENTRY med_read_nmm_bdy ( grid , config_flags , ntsd , dt_from_file, tstart_from_
      )
 !!!!!!!!!!!!!!!!!!!!!!!!!!
 
+#define COPY_IN
+#include <nmm_scalar_derefs.inc>
+#ifdef DM_PARALLEL
+#    include <nmm_data_calls.inc>
+#endif
 
 
 !----------------------------------------------------------------------

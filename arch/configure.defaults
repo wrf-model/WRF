@@ -3459,7 +3459,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 
 
 ###########################################################
-#ARCH   PC Linux i486 i586 i686, PGI compiler  (OpenMP, no nesting)
+#ARCH   PC Linux i486 i586 i686, PGI compiler  SM-Parallel (OpenMP, no nesting)
 #
 OMP             =       -mp
 OMPCPP          =       -D_OPENMP
@@ -3551,7 +3551,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 
 
 ###########################################################
-#ARCH    PC Linux i486 i586 i686, PGI compiler  (OpenMP, supports nesting using RSL without MPI)
+#ARCH    PC Linux i486 i586 i686, PGI compiler  SM-Parallel (OpenMP, supports nesting using RSL without MPI)
 #
 OMP             =       -mp
 OMPCPP          =       -D_OPENMP
@@ -3660,7 +3660,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 
 
 ###########################################################
-#ARCH    PC Linux i486 i586 i686, PGI compiler  (RSL, MPICH, RSL IO, support nesting)
+#ARCH    PC Linux i486 i586 i686, PGI compiler  DM-Parallel (RSL, MPICH, RSL IO, support nesting)
 #
 DMPARALLEL      =       1
 MAX_PROC        =       1024
@@ -3762,7 +3762,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 
 
 ###########################################################
-#ARCH     PC Linux i486 i586 i686, PGI compiler  (RSL_LITE, MPICH, Experimental, No nesting)
+#ARCH     PC Linux i486 i586 i686, PGI compiler  DM-Parallel (RSL_LITE, MPICH, No nesting)
 #
 DMPARALLEL      =       1
 MAX_PROC        =       1024

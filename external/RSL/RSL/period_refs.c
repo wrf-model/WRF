@@ -69,9 +69,8 @@ store_period_refs( base, f90_table_index , offset, n, nelems, stride )
   lp1->data = newrec ;
 }
 
-#ifdef RSL_INTERNAL_MILLICLOCK
 #include <sys/time.h>
-rsl_internal_milliclock_()
+RSL_INTERNAL_MILLICLOCK ()
 {
     struct timeval tb ;
     struct timezone tzp ;
@@ -84,7 +83,19 @@ rsl_internal_milliclock_()
     msecs = 1000 * isec + usec / 1000 ;
     return(msecs) ;
 }
-#endif
+RSL_INTERNAL_MICROCLOCK ()
+{
+    struct timeval tb ;
+    struct timezone tzp ;
+    int isec ;  /* seconds */
+    int usec ;  /* microseconds */
+    int msecs ;
+    gettimeofday( &tb, &tzp ) ;
+    isec = tb.tv_sec ;
+    usec = tb.tv_usec ;
+    msecs = 1000000 * isec + usec ;
+    return(msecs) ;
+}
 
 period_refs( pack_table, pack_table_size, pack_table_nbytes, collapse )
   packrec_t ** pack_table ;
@@ -99,36 +110,11 @@ period_refs( pack_table, pack_table_size, pack_table_nbytes, collapse )
   int i, nbytes ;
   int compare_period_sort() ;
 
-#ifdef RSL_INTERNAL_MILLICLOCK
- int ts, te ;
-
-  for ( i = 0, lp = list_head ; lp ; lp = lp->next )
-      i++ ;
-#endif
-
-
-#ifdef RSL_INTERNAL_MILLICLOCK
- ts = rsl_internal_milliclock_() ;
-#endif
-
-#if 0
-/* NOTE THAT THE BUBBLE SORT HAS BEEN REMOVED! */
-  rsl_sort( &list_head, compare_period_sort, 0 ) ;
-#endif
-
-#ifdef RSL_INTERNAL_MILLICLOCK
- te = rsl_internal_milliclock_() ;
-#endif
-
   /* figure the number of entries */
   for ( i = 0, lp = list_head ; lp ; lp = lp->next )
       i++ ;
 
   *pack_table_size = i ;
-#ifdef RSL_INTERNAL_MILLICLOCK
-fprintf(stderr,"debug 2 pack_table_size = %d, msec=%d\n",i,te-ts) ;
-#endif
-
 
   /* now allocate and populate the table */
   *pack_table = RSL_MALLOC( packrec_t, *pack_table_size ) ;

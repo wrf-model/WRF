@@ -270,6 +270,9 @@
 #   define RSL_REMAP_ARRAY rsl_remap_array__
 #   define RSL_MOVE_NEST rsl_move_nest__
 
+#   define RSL_INTERNAL_MILLICLOCK rsl_internal_milliclock__
+#   define RSL_INTERNAL_MICROCLOCK rsl_internal_microclock__
+
 #    else
 
 /********************************************* UNDERSCORE *****/
@@ -469,6 +472,9 @@
 #   define RSL_GET_GLEN rsl_get_glen_
 #   define RSL_REMAP_ARRAY rsl_remap_array_
 #   define RSL_MOVE_NEST rsl_move_nest_
+
+#   define RSL_INTERNAL_MILLICLOCK rsl_internal_milliclock_
+#   define RSL_INTERNAL_MICROCLOCK rsl_internal_microclock_
 
 #    endif
 
@@ -670,6 +676,9 @@
 #   define RSL_GET_GLEN rsl_get_glen
 #   define RSL_REMAP_ARRAY rsl_remap_array
 #   define RSL_MOVE_NEST rsl_move_nest
+
+#   define RSL_INTERNAL_MILLICLOCK rsl_internal_milliclock
+#   define RSL_INTERNAL_MICROCLOCK rsl_internal_microclock
 
 #  endif
 #endif

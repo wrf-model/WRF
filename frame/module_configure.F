@@ -245,7 +245,7 @@ CONTAINS
 ! instead of rconfig_ due to length limits for subroutine names.
 !
 ! 
-! <!DESCRIPTION>
+! </DESCRIPTION>
 #undef SOURCE_RECORD
 #undef SOURCE_REC_DEX
 #undef DEST_RECORD

@@ -113,7 +113,7 @@ IF ( Hndl .GT. -1 ) THEN
       CASE DEFAULT
     END SELECT
   ELSE IF ( for_out .AND. use_output_servers() ) THEN
-    CALL ext_quilt_$1_$2_$6_$3$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
+    CALL wrf_quilt_$1_$2_$6_$3$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
                           ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )
   ELSE
     Status = 0

@@ -4,7 +4,7 @@
 !#define mpi_x_comm_size(i,j,k)  Mpi_Comm_Size ( i,j,k ) ; write(0,*) __LINE__
 #define mpi_x_comm_size(i,j,k)  Mpi_Comm_Size ( i,j,k )
 
-MODULE module_ext_quilt
+MODULE module_wrf_quilt
   USE module_internal_header_util
 
   INTEGER, PARAMETER :: int_num_handles = 99
@@ -821,7 +821,7 @@ MODULE module_ext_quilt
 #endif
 
     !--- ioinit
-    SUBROUTINE init_module_ext_quilt
+    SUBROUTINE init_module_wrf_quilt
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
       IMPLICIT NONE
       INCLUDE 'mpif.h'
@@ -877,35 +877,35 @@ MODULE module_ext_quilt
        ENDIF
 #endif
       RETURN
-    END SUBROUTINE init_module_ext_quilt
-END MODULE module_ext_quilt
+    END SUBROUTINE init_module_wrf_quilt
+END MODULE module_wrf_quilt
 
 ! Call this in programs that you never want to be quilting (e.g. real)
-! Must call before call to init_module_ext_quilt
+! Must call before call to init_module_wrf_quilt
 !
 SUBROUTINE disable_quilting
-  USE module_ext_quilt
+  USE module_wrf_quilt
   disable_quilt = .TRUE.
   RETURN
 END SUBROUTINE disable_quilting
 
 LOGICAL FUNCTION  use_output_servers()
-  USE module_ext_quilt
+  USE module_wrf_quilt
   use_output_servers = quilting_enabled
   RETURN
 END FUNCTION use_output_servers
 
 LOGICAL FUNCTION  use_input_servers()
-  USE module_ext_quilt
+  USE module_wrf_quilt
   use_input_servers = .FALSE.
   RETURN
 END FUNCTION use_input_servers
 
 !--- open_for_write_begin
-SUBROUTINE ext_quilt_open_for_write_begin( FileName , Comm_compute, Comm_io, SysDepInfo, &
+SUBROUTINE wrf_quilt_open_for_write_begin( FileName , Comm_compute, Comm_io, SysDepInfo, &
                                      DataHandle , io_form_arg, Status )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
-  USE module_ext_quilt
+  USE module_wrf_quilt
   IMPLICIT NONE
   INCLUDE 'mpif.h'
   INCLUDE 'intio_tags.h'
@@ -921,7 +921,7 @@ SUBROUTINE ext_quilt_open_for_write_begin( FileName , Comm_compute, Comm_io, Sys
   LOGICAL, EXTERNAL :: wrf_dm_on_monitor
   REAL dummy
 
-  CALL wrf_debug ( DEBUG_LVL, 'in ext_quilt_open_for_write_begin' ) 
+  CALL wrf_debug ( DEBUG_LVL, 'in wrf_quilt_open_for_write_begin' ) 
   CALL int_get_fresh_handle(i)
   okay_to_write(i) = .false.
   DataHandle = i
@@ -959,12 +959,12 @@ SUBROUTINE ext_quilt_open_for_write_begin( FileName , Comm_compute, Comm_io, Sys
 
 #endif
   RETURN  
-END SUBROUTINE ext_quilt_open_for_write_begin
+END SUBROUTINE wrf_quilt_open_for_write_begin
 
 !--- open_for_write_commit
-SUBROUTINE ext_quilt_open_for_write_commit( DataHandle , Status )
+SUBROUTINE wrf_quilt_open_for_write_commit( DataHandle , Status )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
-  USE module_ext_quilt
+  USE module_wrf_quilt
   IMPLICIT NONE
   INCLUDE 'mpif.h'
   INCLUDE 'intio_tags.h'
@@ -973,7 +973,7 @@ SUBROUTINE ext_quilt_open_for_write_commit( DataHandle , Status )
   INTEGER i, typesize, itypesize, tasks_in_group, ierr, comm_io_group
   REAL dummy
 
-  CALL wrf_debug ( DEBUG_LVL, 'in ext_quilt_open_for_write_commit' ) 
+  CALL wrf_debug ( DEBUG_LVL, 'in wrf_quilt_open_for_write_commit' ) 
   IF ( DataHandle .GE. 1 .AND. DataHandle .LE. int_num_handles ) THEN
     IF ( int_handle_in_use( DataHandle ) ) THEN
       okay_to_write( DataHandle ) = .true.
@@ -1005,10 +1005,10 @@ SUBROUTINE ext_quilt_open_for_write_commit( DataHandle , Status )
 
 #endif
   RETURN  
-END SUBROUTINE ext_quilt_open_for_write_commit
+END SUBROUTINE wrf_quilt_open_for_write_commit
 
 !--- open_for_read 
-SUBROUTINE ext_quilt_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo, &
+SUBROUTINE wrf_quilt_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo, &
                                DataHandle , Status )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   IMPLICIT NONE
@@ -1018,29 +1018,18 @@ SUBROUTINE ext_quilt_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInf
   INTEGER ,       INTENT(OUT) :: DataHandle
   INTEGER ,       INTENT(OUT) :: Status
 
-  CALL wrf_debug ( DEBUG_LVL, 'in ext_quilt_open_for_read' ) 
+  CALL wrf_debug ( DEBUG_LVL, 'in wrf_quilt_open_for_read' ) 
   DataHandle = -1
   Status = -1
-  CALL wrf_error_fatal ( "frame/module_io_quilt.F: ext_quilt_open_for_read not yet supported" )
+  CALL wrf_error_fatal ( "frame/module_io_quilt.F: wrf_quilt_open_for_read not yet supported" )
 #endif
   RETURN  
-END SUBROUTINE ext_quilt_open_for_read
-
-!--- intio_nextrec  (INT_IO only)
-SUBROUTINE ext_quilt_intio_nextrec ( DataHandle , NextRec , Status )
-#if defined( DM_PARALLEL ) && !defined( STUBMPI )
-  IMPLICIT NONE
-  INTEGER , INTENT(IN)  :: DataHandle
-  INTEGER               :: NextRec
-  INTEGER               :: Status
-#endif
-  RETURN  
-END SUBROUTINE ext_quilt_intio_nextrec
+END SUBROUTINE wrf_quilt_open_for_read
 
 !--- inquire_opened
-SUBROUTINE ext_quilt_inquire_opened ( DataHandle, FileName , FileStatus, Status )
+SUBROUTINE wrf_quilt_inquire_opened ( DataHandle, FileName , FileStatus, Status )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
-  USE module_ext_quilt
+  USE module_wrf_quilt
   IMPLICIT NONE
   include 'wrf_io_flags.h'
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -1050,7 +1039,7 @@ SUBROUTINE ext_quilt_inquire_opened ( DataHandle, FileName , FileStatus, Status 
 
   Status = 0
 
-  CALL wrf_debug ( DEBUG_LVL, 'in ext_quilt_inquire_opened' ) 
+  CALL wrf_debug ( DEBUG_LVL, 'in wrf_quilt_inquire_opened' ) 
   IF ( DataHandle .GE. 1 .AND. DataHandle .LE. int_num_handles ) THEN
     IF ( int_handle_in_use( DataHandle ) ) THEN
       IF ( okay_to_write( DataHandle ) ) THEN
@@ -1062,19 +1051,19 @@ SUBROUTINE ext_quilt_inquire_opened ( DataHandle, FileName , FileStatus, Status 
   
 #endif
   RETURN
-END SUBROUTINE ext_quilt_inquire_opened
+END SUBROUTINE wrf_quilt_inquire_opened
 
 !--- inquire_filename
-SUBROUTINE ext_quilt_inquire_filename ( DataHandle, FileName , FileStatus, Status )
+SUBROUTINE wrf_quilt_inquire_filename ( DataHandle, FileName , FileStatus, Status )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
-  USE module_ext_quilt
+  USE module_wrf_quilt
   IMPLICIT NONE
   include 'wrf_io_flags.h'
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER *(*), INTENT(OUT) :: FileName
   INTEGER ,       INTENT(OUT) :: FileStatus
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_debug ( DEBUG_LVL, 'in ext_quilt_inquire_filename' ) 
+  CALL wrf_debug ( DEBUG_LVL, 'in wrf_quilt_inquire_filename' ) 
   Status = 0
   IF ( DataHandle .GE. 1 .AND. DataHandle .LE. int_num_handles ) THEN
     IF ( int_handle_in_use( DataHandle ) ) THEN
@@ -1093,12 +1082,12 @@ SUBROUTINE ext_quilt_inquire_filename ( DataHandle, FileName , FileStatus, Statu
   ENDIF
 #endif
   RETURN
-END SUBROUTINE ext_quilt_inquire_filename
+END SUBROUTINE wrf_quilt_inquire_filename
 
 !--- sync
-SUBROUTINE ext_quilt_iosync ( DataHandle, Status )
+SUBROUTINE wrf_quilt_iosync ( DataHandle, Status )
 #if  defined( DM_PARALLEL ) && ! defined (STUBMPI) 
-  USE module_ext_quilt
+  USE module_wrf_quilt
   IMPLICIT NONE
   include "mpif.h"
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -1107,7 +1096,7 @@ SUBROUTINE ext_quilt_iosync ( DataHandle, Status )
   INTEGER locsize , typesize, inttypesize
   INTEGER ierr, tasks_in_group, comm_io_group, dummy, i
 
-  CALL wrf_debug ( DEBUG_LVL, 'in ext_quilt_iosync' ) 
+  CALL wrf_debug ( DEBUG_LVL, 'in wrf_quilt_iosync' ) 
 
   IF ( associated ( int_local_output_buffer ) ) THEN
 
@@ -1115,7 +1104,7 @@ SUBROUTINE ext_quilt_iosync ( DataHandle, Status )
     CALL get_mpi_comm_io_groups( comm_io_group , iserver )
     CALL MPI_TYPE_SIZE( MPI_REAL, typesize, ierr )
     IF ( typesize <= 0 ) THEN
-      CALL wrf_error_fatal("frame/module_io_quilt.F: ext_quilt_iosync : type size <= 0 invalid")
+      CALL wrf_error_fatal("frame/module_io_quilt.F: wrf_quilt_iosync : type size <= 0 invalid")
     ENDIF
 
     CALL mpi_x_comm_size( comm_io_group , tasks_in_group , ierr )
@@ -1147,17 +1136,17 @@ SUBROUTINE ext_quilt_iosync ( DataHandle, Status )
     DEALLOCATE ( int_local_output_buffer )
     NULLIFY ( int_local_output_buffer )
   ELSE
-    CALL wrf_message ("frame/module_io_quilt.F: ext_quilt_iosync: no buffer allocated")
+    CALL wrf_message ("frame/module_io_quilt.F: wrf_quilt_iosync: no buffer allocated")
   ENDIF
   Status = 0
 #endif
   RETURN
-END SUBROUTINE ext_quilt_iosync
+END SUBROUTINE wrf_quilt_iosync
 
 !--- close
-SUBROUTINE ext_quilt_ioclose ( DataHandle, Status )
+SUBROUTINE wrf_quilt_ioclose ( DataHandle, Status )
 #if defined( DM_PARALLEL ) && ! defined( STUBMPI) 
-  USE module_ext_quilt
+  USE module_wrf_quilt
   IMPLICIT NONE
   INCLUDE 'mpif.h'
   INCLUDE 'intio_tags.h'
@@ -1167,7 +1156,7 @@ SUBROUTINE ext_quilt_ioclose ( DataHandle, Status )
   LOGICAL, EXTERNAL :: wrf_dm_on_monitor
   REAL dummy
 
-  CALL wrf_debug ( DEBUG_LVL, 'in ext_quilt_ioclose' ) 
+  CALL wrf_debug ( DEBUG_LVL, 'in wrf_quilt_ioclose' ) 
   CALL MPI_TYPE_SIZE( MPI_INTEGER, itypesize, ierr )
 
   IF ( wrf_dm_on_monitor() ) THEN
@@ -1208,12 +1197,12 @@ SUBROUTINE ext_quilt_ioclose ( DataHandle, Status )
 
 #endif
   RETURN
-END SUBROUTINE ext_quilt_ioclose
+END SUBROUTINE wrf_quilt_ioclose
 
 !--- ioexit
-SUBROUTINE ext_quilt_ioexit( Status )
+SUBROUTINE wrf_quilt_ioexit( Status )
 #if defined( DM_PARALLEL ) && ! defined (STUBMPI ) 
-  USE module_ext_quilt
+  USE module_wrf_quilt
   IMPLICIT NONE
   INCLUDE 'mpif.h'
   INCLUDE 'intio_tags.h'
@@ -1223,7 +1212,7 @@ SUBROUTINE ext_quilt_ioexit( Status )
   LOGICAL, EXTERNAL :: wrf_dm_on_monitor
   REAL dummy
 
-  CALL wrf_debug ( DEBUG_LVL, 'in ext_quilt_ioexit' ) 
+  CALL wrf_debug ( DEBUG_LVL, 'in wrf_quilt_ioexit' ) 
   CALL MPI_TYPE_SIZE( MPI_INTEGER, itypesize, ierr )
 
   IF ( wrf_dm_on_monitor() ) THEN
@@ -1253,7 +1242,7 @@ END SUBROUTINE
 
 SUBROUTINE server_io_exit( Status )
 #if defined( DM_PARALLEL ) && ! defined( STUBMPI )
-  USE module_ext_quilt
+  USE module_wrf_quilt
   IMPLICIT NONE
   INCLUDE 'mpif.h'
 !
@@ -1277,7 +1266,7 @@ SUBROUTINE server_io_exit( Status )
 END SUBROUTINE
 
 !--- get_next_time (not defined for IntIO )
-SUBROUTINE ext_quilt_get_next_time ( DataHandle, DateStr, Status )
+SUBROUTINE wrf_quilt_get_next_time ( DataHandle, DateStr, Status )
 #if defined( DM_PARALLEL ) && ! defined (STUBMPI) 
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -1285,10 +1274,10 @@ SUBROUTINE ext_quilt_get_next_time ( DataHandle, DateStr, Status )
   INTEGER                     :: Status
 #endif
   RETURN
-END SUBROUTINE ext_quilt_get_next_time
+END SUBROUTINE wrf_quilt_get_next_time
 
 !--- get_previous_time (not defined for IntIO )
-SUBROUTINE ext_quilt_get_previous_time ( DataHandle, DateStr, Status )
+SUBROUTINE wrf_quilt_get_previous_time ( DataHandle, DateStr, Status )
 #if defined( DM_PARALLEL ) && ! defined (STUBMPI)
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -1296,12 +1285,12 @@ SUBROUTINE ext_quilt_get_previous_time ( DataHandle, DateStr, Status )
   INTEGER                     :: Status
 #endif
   RETURN
-END SUBROUTINE ext_quilt_get_previous_time
+END SUBROUTINE wrf_quilt_get_previous_time
 
 !--- put_dom_ti_char
-SUBROUTINE ext_quilt_set_time ( DataHandle, Data,  Status )
+SUBROUTINE wrf_quilt_set_time ( DataHandle, Data,  Status )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
-  USE module_ext_quilt
+  USE module_wrf_quilt
   IMPLICIT NONE
   INCLUDE 'mpif.h'
   INCLUDE 'intio_tags.h'
@@ -1312,7 +1301,7 @@ SUBROUTINE ext_quilt_set_time ( DataHandle, Data,  Status )
   REAL dummy
   INTEGER                 :: Count
 !
-  CALL wrf_debug ( DEBUG_LVL, 'in ext_quilt_set_time' )
+  CALL wrf_debug ( DEBUG_LVL, 'in wrf_quilt_set_time' )
 
   IF ( DataHandle .GE. 1 .AND. DataHandle .LE. int_num_handles ) THEN
     IF ( int_handle_in_use( DataHandle ) ) THEN
@@ -1337,10 +1326,10 @@ SUBROUTINE ext_quilt_set_time ( DataHandle, Data,  Status )
 
 #endif
 RETURN
-END SUBROUTINE ext_quilt_set_time
+END SUBROUTINE wrf_quilt_set_time
 
 !--- get_next_var  (not defined for IntIO)
-SUBROUTINE ext_quilt_get_next_var ( DataHandle, VarName, Status )
+SUBROUTINE wrf_quilt_get_next_var ( DataHandle, VarName, Status )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -1348,10 +1337,10 @@ SUBROUTINE ext_quilt_get_next_var ( DataHandle, VarName, Status )
   INTEGER                     :: Status
 #endif
   RETURN
-END SUBROUTINE ext_quilt_get_next_var
+END SUBROUTINE wrf_quilt_get_next_var
 
 !--- get_dom_ti_real
-SUBROUTINE ext_quilt_get_dom_ti_real ( DataHandle,Element,   Data, Count, Outcount, Status )
+SUBROUTINE wrf_quilt_get_dom_ti_real ( DataHandle,Element,   Data, Count, Outcount, Status )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -1360,15 +1349,15 @@ SUBROUTINE ext_quilt_get_dom_ti_real ( DataHandle,Element,   Data, Count, Outcou
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER                     :: Outcount
   INTEGER                     :: Status
-  CALL wrf_message('ext_quilt_get_dom_ti_real not supported yet')
+  CALL wrf_message('wrf_quilt_get_dom_ti_real not supported yet')
 #endif
 RETURN
-END SUBROUTINE ext_quilt_get_dom_ti_real 
+END SUBROUTINE wrf_quilt_get_dom_ti_real 
 
 !--- put_dom_ti_real
-SUBROUTINE ext_quilt_put_dom_ti_real ( DataHandle,Element,   Data, Count,  Status )
+SUBROUTINE wrf_quilt_put_dom_ti_real ( DataHandle,Element,   Data, Count,  Status )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
-  USE module_ext_quilt
+  USE module_wrf_quilt
   IMPLICIT NONE
   INCLUDE 'mpif.h'
   INCLUDE 'intio_tags.h'
@@ -1382,7 +1371,7 @@ SUBROUTINE ext_quilt_put_dom_ti_real ( DataHandle,Element,   Data, Count,  Statu
   INTEGER i, typesize, itypesize, tasks_in_group, ierr, comm_io_group
   REAL dummy
 !
-  CALL wrf_debug ( DEBUG_LVL, 'in ext_quilt_put_dom_ti_real' ) 
+  CALL wrf_debug ( DEBUG_LVL, 'in wrf_quilt_put_dom_ti_real' ) 
   CALL MPI_TYPE_SIZE( MPI_INTEGER, itypesize, ierr )
   locElement = Element
 
@@ -1410,10 +1399,10 @@ SUBROUTINE ext_quilt_put_dom_ti_real ( DataHandle,Element,   Data, Count,  Statu
   Status = 0
 #endif
 RETURN
-END SUBROUTINE ext_quilt_put_dom_ti_real 
+END SUBROUTINE wrf_quilt_put_dom_ti_real 
 
 !--- get_dom_ti_double
-SUBROUTINE ext_quilt_get_dom_ti_double ( DataHandle,Element,   Data, Count, Outcount, Status )
+SUBROUTINE wrf_quilt_get_dom_ti_double ( DataHandle,Element,   Data, Count, Outcount, Status )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -1422,13 +1411,13 @@ SUBROUTINE ext_quilt_get_dom_ti_double ( DataHandle,Element,   Data, Count, Outc
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER                     :: OutCount
   INTEGER                     :: Status
-  CALL wrf_message('ext_quilt_get_dom_ti_double not supported yet')
+  CALL wrf_message('wrf_quilt_get_dom_ti_double not supported yet')
 #endif
 RETURN
-END SUBROUTINE ext_quilt_get_dom_ti_double 
+END SUBROUTINE wrf_quilt_get_dom_ti_double 
 
 !--- put_dom_ti_double
-SUBROUTINE ext_quilt_put_dom_ti_double ( DataHandle,Element,   Data, Count,  Status )
+SUBROUTINE wrf_quilt_put_dom_ti_double ( DataHandle,Element,   Data, Count,  Status )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -1436,13 +1425,13 @@ SUBROUTINE ext_quilt_put_dom_ti_double ( DataHandle,Element,   Data, Count,  Sta
   real*8 ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER                     :: Status
-  CALL wrf_message('ext_quilt_put_dom_ti_double not supported yet')
+  CALL wrf_message('wrf_quilt_put_dom_ti_double not supported yet')
 #endif
 RETURN
-END SUBROUTINE ext_quilt_put_dom_ti_double 
+END SUBROUTINE wrf_quilt_put_dom_ti_double 
 
 !--- get_dom_ti_integer
-SUBROUTINE ext_quilt_get_dom_ti_integer ( DataHandle,Element,   Data, Count, Outcount, Status )
+SUBROUTINE wrf_quilt_get_dom_ti_integer ( DataHandle,Element,   Data, Count, Outcount, Status )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -1451,15 +1440,15 @@ SUBROUTINE ext_quilt_get_dom_ti_integer ( DataHandle,Element,   Data, Count, Out
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER                      :: OutCount
   INTEGER                     :: Status
-  CALL wrf_message('ext_quilt_get_dom_ti_integer not supported yet')
+  CALL wrf_message('wrf_quilt_get_dom_ti_integer not supported yet')
 #endif
 RETURN
-END SUBROUTINE ext_quilt_get_dom_ti_integer 
+END SUBROUTINE wrf_quilt_get_dom_ti_integer 
 
 !--- put_dom_ti_integer
-SUBROUTINE ext_quilt_put_dom_ti_integer ( DataHandle,Element,   Data, Count,  Status )
+SUBROUTINE wrf_quilt_put_dom_ti_integer ( DataHandle,Element,   Data, Count,  Status )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
-  USE module_ext_quilt
+  USE module_wrf_quilt
   IMPLICIT NONE
   INCLUDE 'mpif.h'
   INCLUDE 'intio_tags.h'
@@ -1476,7 +1465,7 @@ SUBROUTINE ext_quilt_put_dom_ti_integer ( DataHandle,Element,   Data, Count,  St
 
   locElement = Element
 
-  CALL wrf_debug ( DEBUG_LVL, 'in ext_quilt_put_dom_ti_integer' ) 
+  CALL wrf_debug ( DEBUG_LVL, 'in wrf_quilt_put_dom_ti_integer' ) 
 
   IF ( DataHandle .GE. 1 .AND. DataHandle .LE. int_num_handles ) THEN
     IF ( int_handle_in_use( DataHandle ) ) THEN
@@ -1498,14 +1487,14 @@ SUBROUTINE ext_quilt_put_dom_ti_integer ( DataHandle,Element,   Data, Count,  St
                             dummy, 0 )
     ENDIF
   ENDIF
-  CALL wrf_debug ( DEBUG_LVL, 'returning from ext_quilt_put_dom_ti_integer' ) 
+  CALL wrf_debug ( DEBUG_LVL, 'returning from wrf_quilt_put_dom_ti_integer' ) 
 
 #endif
 RETURN
-END SUBROUTINE ext_quilt_put_dom_ti_integer 
+END SUBROUTINE wrf_quilt_put_dom_ti_integer 
 
 !--- get_dom_ti_logical
-SUBROUTINE ext_quilt_get_dom_ti_logical ( DataHandle,Element,   Data, Count, Outcount, Status )
+SUBROUTINE wrf_quilt_get_dom_ti_logical ( DataHandle,Element,   Data, Count, Outcount, Status )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -1514,13 +1503,13 @@ SUBROUTINE ext_quilt_get_dom_ti_logical ( DataHandle,Element,   Data, Count, Out
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER                      :: OutCount
   INTEGER                     :: Status
-  CALL wrf_message('ext_quilt_get_dom_ti_logical not supported yet')
+  CALL wrf_message('wrf_quilt_get_dom_ti_logical not supported yet')
 #endif
 RETURN
-END SUBROUTINE ext_quilt_get_dom_ti_logical 
+END SUBROUTINE wrf_quilt_get_dom_ti_logical 
 
 !--- put_dom_ti_logical
-SUBROUTINE ext_quilt_put_dom_ti_logical ( DataHandle,Element,   Data, Count,  Status )
+SUBROUTINE wrf_quilt_put_dom_ti_logical ( DataHandle,Element,   Data, Count,  Status )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -1528,28 +1517,28 @@ SUBROUTINE ext_quilt_put_dom_ti_logical ( DataHandle,Element,   Data, Count,  St
   logical ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER                     :: Status
-  CALL wrf_message('ext_quilt_put_dom_ti_logical not supported yet')
+  CALL wrf_message('wrf_quilt_put_dom_ti_logical not supported yet')
 #endif
 RETURN
-END SUBROUTINE ext_quilt_put_dom_ti_logical 
+END SUBROUTINE wrf_quilt_put_dom_ti_logical 
 
 !--- get_dom_ti_char
-SUBROUTINE ext_quilt_get_dom_ti_char ( DataHandle,Element,   Data,  Status )
+SUBROUTINE wrf_quilt_get_dom_ti_char ( DataHandle,Element,   Data,  Status )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
   CHARACTER*(*)               :: Data
   INTEGER                     :: Status
-  CALL wrf_message('ext_quilt_get_dom_ti_char not supported yet')
+  CALL wrf_message('wrf_quilt_get_dom_ti_char not supported yet')
 #endif
 RETURN
-END SUBROUTINE ext_quilt_get_dom_ti_char 
+END SUBROUTINE wrf_quilt_get_dom_ti_char 
 
 !--- put_dom_ti_char
-SUBROUTINE ext_quilt_put_dom_ti_char ( DataHandle, Element,  Data,  Status )
+SUBROUTINE wrf_quilt_put_dom_ti_char ( DataHandle, Element,  Data,  Status )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
-  USE module_ext_quilt
+  USE module_wrf_quilt
   IMPLICIT NONE
   INCLUDE 'mpif.h'
   INCLUDE 'intio_tags.h'
@@ -1561,7 +1550,7 @@ SUBROUTINE ext_quilt_put_dom_ti_char ( DataHandle, Element,  Data,  Status )
   REAL dummy
   INTEGER                 :: Count
 !
-  CALL wrf_debug ( DEBUG_LVL, 'in ext_quilt_put_dom_ti_char' ) 
+  CALL wrf_debug ( DEBUG_LVL, 'in wrf_quilt_put_dom_ti_char' ) 
 
   IF ( DataHandle .GE. 1 .AND. DataHandle .LE. int_num_handles ) THEN
     IF ( int_handle_in_use( DataHandle ) ) THEN
@@ -1586,10 +1575,10 @@ SUBROUTINE ext_quilt_put_dom_ti_char ( DataHandle, Element,  Data,  Status )
 
 #endif
 RETURN
-END SUBROUTINE ext_quilt_put_dom_ti_char 
+END SUBROUTINE wrf_quilt_put_dom_ti_char 
 
 !--- get_dom_td_real
-SUBROUTINE ext_quilt_get_dom_td_real ( DataHandle,Element, DateStr,  Data, Count, Outcount, Status )
+SUBROUTINE wrf_quilt_get_dom_td_real ( DataHandle,Element, DateStr,  Data, Count, Outcount, Status )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -1601,10 +1590,10 @@ SUBROUTINE ext_quilt_get_dom_td_real ( DataHandle,Element, DateStr,  Data, Count
   INTEGER                     :: Status
 #endif
 RETURN
-END SUBROUTINE ext_quilt_get_dom_td_real 
+END SUBROUTINE wrf_quilt_get_dom_td_real 
 
 !--- put_dom_td_real
-SUBROUTINE ext_quilt_put_dom_td_real ( DataHandle,Element, DateStr,  Data, Count,  Status )
+SUBROUTINE wrf_quilt_put_dom_td_real ( DataHandle,Element, DateStr,  Data, Count,  Status )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -1615,10 +1604,10 @@ SUBROUTINE ext_quilt_put_dom_td_real ( DataHandle,Element, DateStr,  Data, Count
   INTEGER                     :: Status
 #endif
 RETURN
-END SUBROUTINE ext_quilt_put_dom_td_real 
+END SUBROUTINE wrf_quilt_put_dom_td_real 
 
 !--- get_dom_td_double
-SUBROUTINE ext_quilt_get_dom_td_double ( DataHandle,Element, DateStr,  Data, Count, Outcount, Status )
+SUBROUTINE wrf_quilt_get_dom_td_double ( DataHandle,Element, DateStr,  Data, Count, Outcount, Status )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -1630,10 +1619,10 @@ SUBROUTINE ext_quilt_get_dom_td_double ( DataHandle,Element, DateStr,  Data, Cou
   INTEGER                     :: Status
 #endif
 RETURN
-END SUBROUTINE ext_quilt_get_dom_td_double 
+END SUBROUTINE wrf_quilt_get_dom_td_double 
 
 !--- put_dom_td_double
-SUBROUTINE ext_quilt_put_dom_td_double ( DataHandle,Element, DateStr,  Data, Count,  Status )
+SUBROUTINE wrf_quilt_put_dom_td_double ( DataHandle,Element, DateStr,  Data, Count,  Status )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -1644,10 +1633,10 @@ SUBROUTINE ext_quilt_put_dom_td_double ( DataHandle,Element, DateStr,  Data, Cou
   INTEGER                     :: Status
 #endif
 RETURN
-END SUBROUTINE ext_quilt_put_dom_td_double 
+END SUBROUTINE wrf_quilt_put_dom_td_double 
 
 !--- get_dom_td_integer
-SUBROUTINE ext_quilt_get_dom_td_integer ( DataHandle,Element, DateStr,  Data, Count, Outcount, Status )
+SUBROUTINE wrf_quilt_get_dom_td_integer ( DataHandle,Element, DateStr,  Data, Count, Outcount, Status )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -1659,10 +1648,10 @@ SUBROUTINE ext_quilt_get_dom_td_integer ( DataHandle,Element, DateStr,  Data, Co
   INTEGER                     :: Status
 #endif
 RETURN
-END SUBROUTINE ext_quilt_get_dom_td_integer 
+END SUBROUTINE wrf_quilt_get_dom_td_integer 
 
 !--- put_dom_td_integer
-SUBROUTINE ext_quilt_put_dom_td_integer ( DataHandle,Element, DateStr,  Data, Count,  Status )
+SUBROUTINE wrf_quilt_put_dom_td_integer ( DataHandle,Element, DateStr,  Data, Count,  Status )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -1673,10 +1662,10 @@ SUBROUTINE ext_quilt_put_dom_td_integer ( DataHandle,Element, DateStr,  Data, Co
   INTEGER                     :: Status
 #endif
 RETURN
-END SUBROUTINE ext_quilt_put_dom_td_integer 
+END SUBROUTINE wrf_quilt_put_dom_td_integer 
 
 !--- get_dom_td_logical
-SUBROUTINE ext_quilt_get_dom_td_logical ( DataHandle,Element, DateStr,  Data, Count, Outcount, Status )
+SUBROUTINE wrf_quilt_get_dom_td_logical ( DataHandle,Element, DateStr,  Data, Count, Outcount, Status )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -1688,10 +1677,10 @@ SUBROUTINE ext_quilt_get_dom_td_logical ( DataHandle,Element, DateStr,  Data, Co
   INTEGER                     :: Status
 #endif
 RETURN
-END SUBROUTINE ext_quilt_get_dom_td_logical 
+END SUBROUTINE wrf_quilt_get_dom_td_logical 
 
 !--- put_dom_td_logical
-SUBROUTINE ext_quilt_put_dom_td_logical ( DataHandle,Element, DateStr,  Data, Count,  Status )
+SUBROUTINE wrf_quilt_put_dom_td_logical ( DataHandle,Element, DateStr,  Data, Count,  Status )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -1702,10 +1691,10 @@ SUBROUTINE ext_quilt_put_dom_td_logical ( DataHandle,Element, DateStr,  Data, Co
   INTEGER                     :: Status
 #endif
 RETURN
-END SUBROUTINE ext_quilt_put_dom_td_logical 
+END SUBROUTINE wrf_quilt_put_dom_td_logical 
 
 !--- get_dom_td_char
-SUBROUTINE ext_quilt_get_dom_td_char ( DataHandle,Element, DateStr,  Data,  Status )
+SUBROUTINE wrf_quilt_get_dom_td_char ( DataHandle,Element, DateStr,  Data,  Status )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -1715,10 +1704,10 @@ SUBROUTINE ext_quilt_get_dom_td_char ( DataHandle,Element, DateStr,  Data,  Stat
   INTEGER                     :: Status
 #endif
 RETURN
-END SUBROUTINE ext_quilt_get_dom_td_char 
+END SUBROUTINE wrf_quilt_get_dom_td_char 
 
 !--- put_dom_td_char
-SUBROUTINE ext_quilt_put_dom_td_char ( DataHandle,Element, DateStr,  Data,  Status )
+SUBROUTINE wrf_quilt_put_dom_td_char ( DataHandle,Element, DateStr,  Data,  Status )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -1728,10 +1717,10 @@ SUBROUTINE ext_quilt_put_dom_td_char ( DataHandle,Element, DateStr,  Data,  Stat
   INTEGER                          :: Status
 #endif
 RETURN
-END SUBROUTINE ext_quilt_put_dom_td_char 
+END SUBROUTINE wrf_quilt_put_dom_td_char 
 
 !--- get_var_ti_real
-SUBROUTINE ext_quilt_get_var_ti_real ( DataHandle,Element,  Varname, Data, Count, Outcount, Status )
+SUBROUTINE wrf_quilt_get_var_ti_real ( DataHandle,Element,  Varname, Data, Count, Outcount, Status )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -1743,10 +1732,10 @@ SUBROUTINE ext_quilt_get_var_ti_real ( DataHandle,Element,  Varname, Data, Count
   INTEGER                     :: Status
 #endif
 RETURN
-END SUBROUTINE ext_quilt_get_var_ti_real 
+END SUBROUTINE wrf_quilt_get_var_ti_real 
 
 !--- put_var_ti_real
-SUBROUTINE ext_quilt_put_var_ti_real ( DataHandle,Element,  Varname, Data, Count,  Status )
+SUBROUTINE wrf_quilt_put_var_ti_real ( DataHandle,Element,  Varname, Data, Count,  Status )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -1757,10 +1746,10 @@ SUBROUTINE ext_quilt_put_var_ti_real ( DataHandle,Element,  Varname, Data, Count
   INTEGER                     :: Status
 #endif
 RETURN
-END SUBROUTINE ext_quilt_put_var_ti_real 
+END SUBROUTINE wrf_quilt_put_var_ti_real 
 
 !--- get_var_ti_double
-SUBROUTINE ext_quilt_get_var_ti_double ( DataHandle,Element,  Varname, Data, Count, Outcount, Status )
+SUBROUTINE wrf_quilt_get_var_ti_double ( DataHandle,Element,  Varname, Data, Count, Outcount, Status )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -1772,10 +1761,10 @@ SUBROUTINE ext_quilt_get_var_ti_double ( DataHandle,Element,  Varname, Data, Cou
   INTEGER                     :: Status
 #endif
 RETURN
-END SUBROUTINE ext_quilt_get_var_ti_double 
+END SUBROUTINE wrf_quilt_get_var_ti_double 
 
 !--- put_var_ti_double
-SUBROUTINE ext_quilt_put_var_ti_double ( DataHandle,Element,  Varname, Data, Count,  Status )
+SUBROUTINE wrf_quilt_put_var_ti_double ( DataHandle,Element,  Varname, Data, Count,  Status )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -1786,10 +1775,10 @@ SUBROUTINE ext_quilt_put_var_ti_double ( DataHandle,Element,  Varname, Data, Cou
   INTEGER                     :: Status
 #endif
 RETURN
-END SUBROUTINE ext_quilt_put_var_ti_double 
+END SUBROUTINE wrf_quilt_put_var_ti_double 
 
 !--- get_var_ti_integer
-SUBROUTINE ext_quilt_get_var_ti_integer ( DataHandle,Element,  Varname, Data, Count, Outcount, Status )
+SUBROUTINE wrf_quilt_get_var_ti_integer ( DataHandle,Element,  Varname, Data, Count, Outcount, Status )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -1801,10 +1790,10 @@ SUBROUTINE ext_quilt_get_var_ti_integer ( DataHandle,Element,  Varname, Data, Co
   INTEGER                     :: Status
 #endif
 RETURN
-END SUBROUTINE ext_quilt_get_var_ti_integer 
+END SUBROUTINE wrf_quilt_get_var_ti_integer 
 
 !--- put_var_ti_integer
-SUBROUTINE ext_quilt_put_var_ti_integer ( DataHandle,Element,  Varname, Data, Count,  Status )
+SUBROUTINE wrf_quilt_put_var_ti_integer ( DataHandle,Element,  Varname, Data, Count,  Status )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -1815,10 +1804,10 @@ SUBROUTINE ext_quilt_put_var_ti_integer ( DataHandle,Element,  Varname, Data, Co
   INTEGER                     :: Status
 #endif
 RETURN
-END SUBROUTINE ext_quilt_put_var_ti_integer 
+END SUBROUTINE wrf_quilt_put_var_ti_integer 
 
 !--- get_var_ti_logical
-SUBROUTINE ext_quilt_get_var_ti_logical ( DataHandle,Element,  Varname, Data, Count, Outcount, Status )
+SUBROUTINE wrf_quilt_get_var_ti_logical ( DataHandle,Element,  Varname, Data, Count, Outcount, Status )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -1830,10 +1819,10 @@ SUBROUTINE ext_quilt_get_var_ti_logical ( DataHandle,Element,  Varname, Data, Co
   INTEGER                     :: Status
 #endif
 RETURN
-END SUBROUTINE ext_quilt_get_var_ti_logical 
+END SUBROUTINE wrf_quilt_get_var_ti_logical 
 
 !--- put_var_ti_logical
-SUBROUTINE ext_quilt_put_var_ti_logical ( DataHandle,Element,  Varname, Data, Count,  Status )
+SUBROUTINE wrf_quilt_put_var_ti_logical ( DataHandle,Element,  Varname, Data, Count,  Status )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -1844,10 +1833,10 @@ SUBROUTINE ext_quilt_put_var_ti_logical ( DataHandle,Element,  Varname, Data, Co
   INTEGER                     :: Status
 #endif
 RETURN
-END SUBROUTINE ext_quilt_put_var_ti_logical 
+END SUBROUTINE wrf_quilt_put_var_ti_logical 
 
 !--- get_var_ti_char
-SUBROUTINE ext_quilt_get_var_ti_char ( DataHandle,Element,  Varname, Data,  Status )
+SUBROUTINE wrf_quilt_get_var_ti_char ( DataHandle,Element,  Varname, Data,  Status )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -1857,13 +1846,13 @@ SUBROUTINE ext_quilt_get_var_ti_char ( DataHandle,Element,  Varname, Data,  Stat
   INTEGER                     :: Status
 #endif
 RETURN
-END SUBROUTINE ext_quilt_get_var_ti_char 
+END SUBROUTINE wrf_quilt_get_var_ti_char 
 
 !--- put_var_ti_char
-SUBROUTINE ext_quilt_put_var_ti_char ( DataHandle,Element,  Varname, Data,  Status )
+SUBROUTINE wrf_quilt_put_var_ti_char ( DataHandle,Element,  Varname, Data,  Status )
 
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
-  USE module_ext_quilt
+  USE module_wrf_quilt
   IMPLICIT NONE
   INCLUDE 'mpif.h'
   INCLUDE 'intio_tags.h'
@@ -1877,7 +1866,7 @@ SUBROUTINE ext_quilt_put_var_ti_char ( DataHandle,Element,  Varname, Data,  Stat
   INTEGER                 :: Count
 !
 
-  CALL wrf_debug ( DEBUG_LVL, 'in ext_quilt_put_var_ti_char' ) 
+  CALL wrf_debug ( DEBUG_LVL, 'in wrf_quilt_put_var_ti_char' ) 
 
   IF ( DataHandle .GE. 1 .AND. DataHandle .LE. int_num_handles ) THEN
     IF ( int_handle_in_use( DataHandle ) ) THEN
@@ -1902,10 +1891,10 @@ SUBROUTINE ext_quilt_put_var_ti_char ( DataHandle,Element,  Varname, Data,  Stat
 
 #endif
 RETURN
-END SUBROUTINE ext_quilt_put_var_ti_char 
+END SUBROUTINE wrf_quilt_put_var_ti_char 
 
 !--- get_var_td_real
-SUBROUTINE ext_quilt_get_var_td_real ( DataHandle,Element,  DateStr,Varname, Data, Count, Outcount, Status )
+SUBROUTINE wrf_quilt_get_var_td_real ( DataHandle,Element,  DateStr,Varname, Data, Count, Outcount, Status )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -1918,10 +1907,10 @@ SUBROUTINE ext_quilt_get_var_td_real ( DataHandle,Element,  DateStr,Varname, Dat
   INTEGER                     :: Status
 #endif
 RETURN
-END SUBROUTINE ext_quilt_get_var_td_real 
+END SUBROUTINE wrf_quilt_get_var_td_real 
 
 !--- put_var_td_real
-SUBROUTINE ext_quilt_put_var_td_real ( DataHandle,Element,  DateStr,Varname, Data, Count,  Status )
+SUBROUTINE wrf_quilt_put_var_td_real ( DataHandle,Element,  DateStr,Varname, Data, Count,  Status )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -1933,10 +1922,10 @@ SUBROUTINE ext_quilt_put_var_td_real ( DataHandle,Element,  DateStr,Varname, Dat
   INTEGER                     :: Status
 #endif
 RETURN
-END SUBROUTINE ext_quilt_put_var_td_real 
+END SUBROUTINE wrf_quilt_put_var_td_real 
 
 !--- get_var_td_double
-SUBROUTINE ext_quilt_get_var_td_double ( DataHandle,Element,  DateStr,Varname, Data, Count, Outcount, Status )
+SUBROUTINE wrf_quilt_get_var_td_double ( DataHandle,Element,  DateStr,Varname, Data, Count, Outcount, Status )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -1949,10 +1938,10 @@ SUBROUTINE ext_quilt_get_var_td_double ( DataHandle,Element,  DateStr,Varname, D
   INTEGER                     :: Status
 #endif
 RETURN
-END SUBROUTINE ext_quilt_get_var_td_double 
+END SUBROUTINE wrf_quilt_get_var_td_double 
 
 !--- put_var_td_double
-SUBROUTINE ext_quilt_put_var_td_double ( DataHandle,Element,  DateStr,Varname, Data, Count,  Status )
+SUBROUTINE wrf_quilt_put_var_td_double ( DataHandle,Element,  DateStr,Varname, Data, Count,  Status )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -1964,10 +1953,10 @@ SUBROUTINE ext_quilt_put_var_td_double ( DataHandle,Element,  DateStr,Varname, D
   INTEGER                     :: Status
 #endif
 RETURN
-END SUBROUTINE ext_quilt_put_var_td_double 
+END SUBROUTINE wrf_quilt_put_var_td_double 
 
 !--- get_var_td_integer
-SUBROUTINE ext_quilt_get_var_td_integer ( DataHandle,Element,  DateStr,Varname, Data, Count, Outcount,Status)
+SUBROUTINE wrf_quilt_get_var_td_integer ( DataHandle,Element,  DateStr,Varname, Data, Count, Outcount,Status)
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -1980,10 +1969,10 @@ SUBROUTINE ext_quilt_get_var_td_integer ( DataHandle,Element,  DateStr,Varname, 
   INTEGER                     :: Status
 #endif
 RETURN
-END SUBROUTINE ext_quilt_get_var_td_integer 
+END SUBROUTINE wrf_quilt_get_var_td_integer 
 
 !--- put_var_td_integer
-SUBROUTINE ext_quilt_put_var_td_integer ( DataHandle,Element,  DateStr,Varname, Data, Count,  Status )
+SUBROUTINE wrf_quilt_put_var_td_integer ( DataHandle,Element,  DateStr,Varname, Data, Count,  Status )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -1995,10 +1984,10 @@ SUBROUTINE ext_quilt_put_var_td_integer ( DataHandle,Element,  DateStr,Varname, 
   INTEGER                     :: Status
 #endif
 RETURN
-END SUBROUTINE ext_quilt_put_var_td_integer 
+END SUBROUTINE wrf_quilt_put_var_td_integer 
 
 !--- get_var_td_logical
-SUBROUTINE ext_quilt_get_var_td_logical ( DataHandle,Element,  DateStr,Varname, Data, Count, Outcount, Status )
+SUBROUTINE wrf_quilt_get_var_td_logical ( DataHandle,Element,  DateStr,Varname, Data, Count, Outcount, Status )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -2011,10 +2000,10 @@ SUBROUTINE ext_quilt_get_var_td_logical ( DataHandle,Element,  DateStr,Varname, 
   INTEGER                     :: Status
 #endif
 RETURN
-END SUBROUTINE ext_quilt_get_var_td_logical 
+END SUBROUTINE wrf_quilt_get_var_td_logical 
 
 !--- put_var_td_logical
-SUBROUTINE ext_quilt_put_var_td_logical ( DataHandle,Element,  DateStr,Varname, Data, Count,  Status )
+SUBROUTINE wrf_quilt_put_var_td_logical ( DataHandle,Element,  DateStr,Varname, Data, Count,  Status )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -2026,10 +2015,10 @@ SUBROUTINE ext_quilt_put_var_td_logical ( DataHandle,Element,  DateStr,Varname, 
   INTEGER                     :: Status
 #endif
 RETURN
-END SUBROUTINE ext_quilt_put_var_td_logical 
+END SUBROUTINE wrf_quilt_put_var_td_logical 
 
 !--- get_var_td_char
-SUBROUTINE ext_quilt_get_var_td_char ( DataHandle,Element,  DateStr,Varname, Data,  Status )
+SUBROUTINE wrf_quilt_get_var_td_char ( DataHandle,Element,  DateStr,Varname, Data,  Status )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -2040,10 +2029,10 @@ SUBROUTINE ext_quilt_get_var_td_char ( DataHandle,Element,  DateStr,Varname, Dat
   INTEGER                     :: Status
 #endif
 RETURN
-END SUBROUTINE ext_quilt_get_var_td_char 
+END SUBROUTINE wrf_quilt_get_var_td_char 
 
 !--- put_var_td_char
-SUBROUTINE ext_quilt_put_var_td_char ( DataHandle,Element,  DateStr,Varname, Data,  Status )
+SUBROUTINE wrf_quilt_put_var_td_char ( DataHandle,Element,  DateStr,Varname, Data,  Status )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -2054,10 +2043,10 @@ SUBROUTINE ext_quilt_put_var_td_char ( DataHandle,Element,  DateStr,Varname, Dat
   INTEGER                    :: Status
 #endif
 RETURN
-END SUBROUTINE ext_quilt_put_var_td_char 
+END SUBROUTINE wrf_quilt_put_var_td_char 
 
 !--- read_field
-SUBROUTINE ext_quilt_read_field ( DataHandle , DateStr , VarName , Field , FieldType , Comm , IOComm, &
+SUBROUTINE wrf_quilt_read_field ( DataHandle , DateStr , VarName , Field , FieldType , Comm , IOComm, &
                             DomainDesc , MemoryOrder , Stagger , DimNames ,              &
                             DomainStart , DomainEnd ,                                    &
                             MemoryStart , MemoryEnd ,                                    &
@@ -2083,10 +2072,10 @@ SUBROUTINE ext_quilt_read_field ( DataHandle , DateStr , VarName , Field , Field
   Status = 0
 #endif
 RETURN
-END SUBROUTINE ext_quilt_read_field
+END SUBROUTINE wrf_quilt_read_field
 
 !--- write_field
-SUBROUTINE ext_quilt_write_field ( DataHandle , DateStr , VarName , Field , FieldType , Comm , IOComm,  &
+SUBROUTINE wrf_quilt_write_field ( DataHandle , DateStr , VarName , Field , FieldType , Comm , IOComm,  &
                              DomainDesc , MemoryOrder , Stagger , DimNames ,              &
                              DomainStart , DomainEnd ,                                    &
                              MemoryStart , MemoryEnd ,                                    &
@@ -2094,7 +2083,7 @@ SUBROUTINE ext_quilt_write_field ( DataHandle , DateStr , VarName , Field , Fiel
                              Status )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   USE module_state_description
-  USE module_ext_quilt
+  USE module_wrf_quilt
   IMPLICIT NONE
   include 'mpif.h'
   include 'wrf_io_flags.h'
@@ -2124,13 +2113,13 @@ SUBROUTINE ext_quilt_write_field ( DataHandle , DateStr , VarName , Field , Fiel
   LOGICAL, EXTERNAL :: wrf_dm_on_monitor
   INTEGER, EXTERNAL :: use_package
 
-  CALL wrf_debug ( DEBUG_LVL, 'in ext_quilt_write_field' ) 
+  CALL wrf_debug ( DEBUG_LVL, 'in wrf_quilt_write_field' ) 
 
   IF ( .NOT. (DataHandle .GE. 1 .AND. DataHandle .LE. int_num_handles) ) THEN
-    CALL wrf_error_fatal("frame/module_io_quilt.F: ext_quilt_write_field: invalid data handle" )
+    CALL wrf_error_fatal("frame/module_io_quilt.F: wrf_quilt_write_field: invalid data handle" )
   ENDIF
   IF ( .NOT. int_handle_in_use( DataHandle ) ) THEN
-    CALL wrf_error_fatal("frame/module_io_quilt.F: ext_quilt_write_field: DataHandle not opened" )
+    CALL wrf_error_fatal("frame/module_io_quilt.F: wrf_quilt_write_field: DataHandle not opened" )
   ENDIF
 
   locsize = (PatchEnd(1)-PatchStart(1)+1)* &
@@ -2221,10 +2210,10 @@ SUBROUTINE ext_quilt_write_field ( DataHandle , DateStr , VarName , Field , Fiel
 
 #endif
   RETURN
-END SUBROUTINE ext_quilt_write_field
+END SUBROUTINE wrf_quilt_write_field
 
 !--- get_var_info  (not implemented for IntIO)
-SUBROUTINE ext_quilt_get_var_info ( DataHandle , VarName , NDim , MemoryOrder , Stagger , &
+SUBROUTINE wrf_quilt_get_var_info ( DataHandle , VarName , NDim , MemoryOrder , Stagger , &
                               DomainStart , DomainEnd , Status )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   IMPLICIT NONE
@@ -2237,11 +2226,11 @@ SUBROUTINE ext_quilt_get_var_info ( DataHandle , VarName , NDim , MemoryOrder , 
   integer                               :: Status
 #endif
 RETURN
-END SUBROUTINE ext_quilt_get_var_info
+END SUBROUTINE wrf_quilt_get_var_info
 
 SUBROUTINE get_mpi_comm_io_groups( retval, i )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
-      USE module_ext_quilt
+      USE module_wrf_quilt
       IMPLICIT NONE
       INTEGER, INTENT(IN ) :: i
       INTEGER, INTENT(OUT) :: retval
@@ -2252,7 +2241,7 @@ END SUBROUTINE get_mpi_comm_io_groups
 
 SUBROUTINE get_nio_tasks_in_group( retval )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
-      USE module_ext_quilt
+      USE module_wrf_quilt
       IMPLICIT NONE
       INTEGER, INTENT(OUT) :: retval
       retval = nio_tasks_in_group

@@ -62,15 +62,6 @@ SUBROUTINE ext_xxx_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo,
   RETURN  
 END SUBROUTINE ext_xxx_open_for_read
 
-!--- intio_nextrec  (INT_IO only)
-SUBROUTINE ext_xxx_intio_nextrec ( DataHandle , NextRec , Status )
-  IMPLICIT NONE
-  INTEGER , INTENT(IN)  :: DataHandle
-  INTEGER               :: NextRec
-  INTEGER               :: Status
-  RETURN  
-END SUBROUTINE ext_xxx_intio_nextrec
-
 !--- inquire_opened
 SUBROUTINE ext_xxx_inquire_opened ( DataHandle, FileName , FileStatus, Status )
   IMPLICIT NONE

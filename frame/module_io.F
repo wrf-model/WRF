@@ -3,33 +3,55 @@
 #define DEBUG_LVL 500
 
 MODULE module_io
+!<DESCRIPTION>
+!<PRE>
+! WRF-specific package-independent interface to package-dependent WRF-specific
+! I/O packages.
+!
+! These routines have the same names as those specified in the WRF I/O API 
+! except that:
+! - Routines defined in this file and called by users of this module have 
+!   the "wrf_" prefix.  
+! - Routines defined in the I/O packages and called from routines in this 
+!   file have the "ext_" prefix.  
+! - Routines called from routines in this file to initiate communication 
+!   with I/O quilt servers have the "wrf_quilt_" prefix.  
+!
+! See http://www.mmm.ucar.edu/wrf/WG2/software_2.0/IOAPI.doc for the latest 
+! version of the WRF I/O API.  This document includes detailed descriptions 
+! of subroutines and their arguments that are not duplicated in this file.  
+!
+! We wish to be able to link to different packages depending on whether
+! the I/O is restart, initial, history, or boundary.  
+!</PRE>
+!</DESCRIPTION>
 
   USE module_configure
 
   LOGICAL :: is_inited = .FALSE.
-  INTEGER :: wrf_io_handles(1000), how_opened(1000) 
-  LOGICAL :: for_output(1000), first_operation(1000)
+  INTEGER, PARAMETER, PRIVATE :: MAX_WRF_IO_HANDLE = 1000
+  INTEGER :: wrf_io_handles(MAX_WRF_IO_HANDLE), how_opened(MAX_WRF_IO_HANDLE) 
+  LOGICAL :: for_output(MAX_WRF_IO_HANDLE), first_operation(MAX_WRF_IO_HANDLE)
   INTEGER :: filtno = 0
 
-! WRF-specific package independent interface to package-dependent WRF specific
-! I/O packages.
-
-! These routines have the same names as those specified in the I/O API except that:
-! Subroutines in this routine have the wrf_ prefix
-! Subroutines in the packages have the ext_ prefix or int_ prefixes
-
-! We wish to be able to link to different packages depending on whether
-! the I/O is restart, initial, history, or boundary
-
+!<DESCRIPTION>
+!<PRE>
 !
 ! include the file generated from md_calls.m4 using the m4 preprocessor
 ! note that this file also includes the CONTAINS declaration for the module
 !
+!</PRE>
+!</DESCRIPTION>
 #include <md_calls.inc>
 
 !--- ioinit
 
 SUBROUTINE wrf_ioinit( Status )
+!<DESCRIPTION>
+!<PRE>
+! Initialize the WRF I/O system.
+!</PRE>
+!</DESCRIPTION>
   IMPLICIT NONE
   INTEGER, INTENT(INOUT) :: Status
 !Local
@@ -55,6 +77,11 @@ END SUBROUTINE wrf_ioinit
 !--- ioexit
 
 SUBROUTINE wrf_ioexit( Status )
+!<DESCRIPTION>
+!<PRE>
+! Shut down the WRF I/O s
+!</PRE>
+!</DESCRIPTION>
   IMPLICIT NONE
   INTEGER, INTENT(INOUT) :: Status
 !Local
@@ -71,13 +98,18 @@ SUBROUTINE wrf_ioexit( Status )
 #ifdef YYY
   CALL ext_yyy_ioexit(Status)
 #endif
-  IF ( use_output_servers() ) CALL ext_quilt_ioexit( Status )
+  IF ( use_output_servers() ) CALL wrf_quilt_ioexit( Status )
 END SUBROUTINE wrf_ioexit
 
 !--- open_for_write_begin
 
 SUBROUTINE wrf_open_for_write_begin( FileName , Comm_compute, Comm_io, SysDepInfo, &
                                      DataHandle , Status )
+!<DESCRIPTION>
+!<PRE>
+! Begin data definition phase for the WRF dataset FileName.  
+!</PRE>
+!</DESCRIPTION>
   USE module_state_description
   IMPLICIT NONE
 #include <wrf_io_flags.h>
@@ -226,7 +258,7 @@ SUBROUTINE wrf_open_for_write_begin( FileName , Comm_compute, Comm_io, SysDepInf
     END SELECT
   ELSE IF ( use_output_servers() ) THEN
     IF ( io_form .GT. 0 ) THEN
-      CALL ext_quilt_open_for_write_begin ( FileName , Comm_compute, Comm_io, SysDepInfo, &
+      CALL wrf_quilt_open_for_write_begin ( FileName , Comm_compute, Comm_io, SysDepInfo, &
                                             Hndl , io_form, Status )
     ENDIF
   ELSE
@@ -238,6 +270,13 @@ END SUBROUTINE wrf_open_for_write_begin
 !--- open_for_write_commit
 
 SUBROUTINE wrf_open_for_write_commit( DataHandle , Status )
+!<DESCRIPTION>
+!<PRE>
+! This routine switches an internal flag to enable output. The call to 
+! wrf_open_for_write_commit() must be paired with a call to 
+! wrf_open_for_write_begin().
+!</PRE>
+!</DESCRIPTION>
   USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN ) :: DataHandle
@@ -304,7 +343,7 @@ SUBROUTINE wrf_open_for_write_commit( DataHandle , Status )
           Status = 0
       END SELECT
     ELSE IF ( io_form .GT. 0 .AND. for_out .AND. use_output_servers() ) THEN
-      CALL ext_quilt_open_for_write_commit ( Hndl , Status )
+      CALL wrf_quilt_open_for_write_commit ( Hndl , Status )
     ELSE
       Status = 0
     ENDIF
@@ -318,6 +357,11 @@ END SUBROUTINE wrf_open_for_write_commit
 
 SUBROUTINE wrf_open_for_read_begin( FileName , Comm_compute, Comm_io, SysDepInfo, &
                                      DataHandle , Status )
+!<DESCRIPTION>
+!<PRE>
+! Begin "training" phase for WRF dataset FileName.  
+!</PRE>
+!</DESCRIPTION>
   USE module_state_description
   IMPLICIT NONE
 #include <wrf_io_flags.h>
@@ -432,6 +476,13 @@ END SUBROUTINE wrf_open_for_read_begin
 !--- open_for_read_commit
 
 SUBROUTINE wrf_open_for_read_commit( DataHandle , Status )
+!<DESCRIPTION>
+!<PRE>
+! End "training" phase for WRF dataset FileName.  The call to 
+! wrf_open_for_read_commit() must be paired with a call to 
+! wrf_open_for_read_begin().
+!</PRE>
+!</DESCRIPTION>
   USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN ) :: DataHandle
@@ -498,6 +549,11 @@ END SUBROUTINE wrf_open_for_read_commit
 
 SUBROUTINE wrf_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo, &
                                DataHandle , Status )
+!<DESCRIPTION>
+!<PRE>
+! Opens a WRF dataset for reading.  
+!</PRE>
+!</DESCRIPTION>
   USE module_state_description
   IMPLICIT NONE
   CHARACTER*(*) :: FileName
@@ -632,46 +688,14 @@ write(0,*)'back from ext_ncd_open_for_read '
   RETURN  
 END SUBROUTINE wrf_open_for_read
 
-!--- intio_nextrec  (INT_IO only)
-SUBROUTINE wrf_intio_nextrec ( DataHandle , NextRec , Status )
-  USE module_state_description
-  IMPLICIT NONE
-  INTEGER , INTENT(IN)  :: DataHandle
-  INTEGER               :: NextRec
-  INTEGER               :: Status
-  INTEGER io_form , Hndl
-  LOGICAL for_out
-  LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
-  INTEGER, EXTERNAL           :: use_package
-#include <wrf_io_flags.h>
-
-  CALL wrf_debug( DEBUG_LVL, 'module_io.F: in wrf_intio_nextrec' )
-
-  Status = 0
-  CALL get_handle ( Hndl, io_form , for_out, DataHandle )
-  IF ( Hndl .GT. -1 ) THEN
-! Note that this function is only defined for internal I/O
-      SELECT CASE ( use_package(io_form) )
-#ifdef INTIO_NOTYET
-        CASE ( IO_INTIO )
-          IF ( multi_files(io_form) .OR.  wrf_dm_on_monitor() ) THEN
-            CALL int_intio_nextrec ( Hndl , NextRec , Status )
-          ENDIF
-          IF ( .NOT. multi_files(io_form) ) CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
-          Status = 0
-#endif
-        CASE DEFAULT
-          Status = 0
-      END SELECT
-  ELSE
-    Status = 0
-  ENDIF
-  RETURN  
-END SUBROUTINE wrf_intio_nextrec
-
 !--- inquire_opened
 
 SUBROUTINE wrf_inquire_opened ( DataHandle, FileName , FileStatus, Status )
+!<DESCRIPTION>
+!<PRE>
+! Inquire if the dataset referenced by DataHandle is open.  
+!</PRE>
+!</DESCRIPTION>
   USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -732,7 +756,7 @@ SUBROUTINE wrf_inquire_opened ( DataHandle, FileName , FileStatus, Status )
           Status = 0
       END SELECT
     ELSE IF ( io_form .GT. 0 .AND. for_out .AND. use_output_servers() ) THEN
-      CALL ext_quilt_inquire_opened ( Hndl, FileName , FileStatus, Status )
+      CALL wrf_quilt_inquire_opened ( Hndl, FileName , FileStatus, Status )
     ENDIF
   ELSE
     FileStatus = WRF_FILE_NOT_OPENED
@@ -745,6 +769,11 @@ END SUBROUTINE wrf_inquire_opened
 
 
 SUBROUTINE wrf_inquire_filename ( DataHandle, FileName , FileStatus, Status )
+!<DESCRIPTION>
+!<PRE>
+! Returns the Filename and FileStatus associated with DataHandle.  
+!</PRE>
+!</DESCRIPTION>
   USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -803,7 +832,7 @@ SUBROUTINE wrf_inquire_filename ( DataHandle, FileName , FileStatus, Status )
           Status = 0
       END SELECT
     ELSE IF ( io_form .GT. 0 .AND. for_out .AND. use_output_servers() ) THEN
-      CALL ext_quilt_inquire_filename ( Hndl, FileName , FileStatus, Status )
+      CALL wrf_quilt_inquire_filename ( Hndl, FileName , FileStatus, Status )
     ENDIF
   ELSE
     FileName = ""
@@ -815,6 +844,11 @@ END SUBROUTINE wrf_inquire_filename
 !--- sync
 
 SUBROUTINE wrf_iosync ( DataHandle, Status )
+!<DESCRIPTION>
+!<PRE>
+! Synchronize the disk copy of a dataset with memory buffers.  
+!</PRE>
+!</DESCRIPTION>
   USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -864,7 +898,7 @@ SUBROUTINE wrf_iosync ( DataHandle, Status )
           Status = 0
       END SELECT
     ELSE IF ( io_form .GT. 0 .AND. for_out .AND. use_output_servers() ) THEN
-      CALL ext_quilt_iosync( Hndl, Status )
+      CALL wrf_quilt_iosync( Hndl, Status )
     ELSE
       Status = 0
     ENDIF
@@ -877,6 +911,11 @@ END SUBROUTINE wrf_iosync
 !--- close
 
 SUBROUTINE wrf_ioclose ( DataHandle, Status )
+!<DESCRIPTION>
+!<PRE>
+! Close the dataset referenced by DataHandle.  
+!</PRE>
+!</DESCRIPTION>
   USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -933,7 +972,7 @@ SUBROUTINE wrf_ioclose ( DataHandle, Status )
           Status = 0
       END SELECT
     ELSE IF ( io_form .GT. 0 .AND. for_out .AND. use_output_servers() ) THEN
-      CALL ext_quilt_ioclose( Hndl, Status )
+      CALL wrf_quilt_ioclose( Hndl, Status )
     ELSE
       Status = 0
     ENDIF
@@ -947,6 +986,11 @@ END SUBROUTINE wrf_ioclose
 !--- get_next_time (not defined for IntIO )
 
 SUBROUTINE wrf_get_next_time ( DataHandle, DateStr, Status )
+!<DESCRIPTION>
+!<PRE>
+! Returns the next time stamp.  
+!</PRE>
+!</DESCRIPTION>
   USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -1016,7 +1060,7 @@ SUBROUTINE wrf_get_next_time ( DataHandle, DateStr, Status )
           Status = 0
       END SELECT
     ELSE IF ( io_form .GT. 0 .AND. for_out .AND. use_output_servers() ) THEN
-      CALL ext_quilt_get_next_time( Hndl, DateStr, Status )
+      CALL wrf_quilt_get_next_time( Hndl, DateStr, Status )
     ELSE
       Status = 0
     ENDIF
@@ -1029,6 +1073,11 @@ END SUBROUTINE wrf_get_next_time
 !--- get_previous_time (not defined for IntIO )
 
 SUBROUTINE wrf_get_previous_time ( DataHandle, DateStr, Status )
+!<DESCRIPTION>
+!<PRE>
+! Returns the previous time stamp.  
+!</PRE>
+!</DESCRIPTION>
   USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -1090,7 +1139,7 @@ SUBROUTINE wrf_get_previous_time ( DataHandle, DateStr, Status )
           Status = 0
       END SELECT
     ELSE IF ( io_form .GT. 0 .AND. for_out .AND. use_output_servers() ) THEN
-      CALL ext_quilt_get_previous_time( Hndl, DateStr, Status )
+      CALL wrf_quilt_get_previous_time( Hndl, DateStr, Status )
     ELSE
       Status = 0
     ENDIF
@@ -1103,6 +1152,11 @@ END SUBROUTINE wrf_get_previous_time
 !--- set_time
 
 SUBROUTINE wrf_set_time ( DataHandle, DateStr, Status )
+!<DESCRIPTION>
+!<PRE>
+! Sets the time stamp.  
+!</PRE>
+!</DESCRIPTION>
   USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -1157,7 +1211,7 @@ SUBROUTINE wrf_set_time ( DataHandle, DateStr, Status )
           Status = 0
       END SELECT
     ELSE IF ( io_form .GT. 0 .AND. for_out .AND. use_output_servers() ) THEN
-      CALL ext_quilt_set_time( Hndl, DateStr, Status )
+      CALL wrf_quilt_set_time( Hndl, DateStr, Status )
     ELSE
       Status = 0
     ENDIF
@@ -1170,6 +1224,12 @@ END SUBROUTINE wrf_set_time
 !--- get_next_var  (not defined for IntIO)
 
 SUBROUTINE wrf_get_next_var ( DataHandle, VarName, Status )
+!<DESCRIPTION>
+!<PRE>
+! On reading, this routine returns the name of the next variable in the 
+! current time frame.  
+!</PRE>
+!</DESCRIPTION>
   USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -1220,7 +1280,7 @@ SUBROUTINE wrf_get_next_var ( DataHandle, VarName, Status )
           Status = 0
       END SELECT
     ELSE IF ( io_form .GT. 0 .AND. for_out .AND. use_output_servers() ) THEN
-      CALL ext_quilt_get_next_var( Hndl, VarName, Status )
+      CALL wrf_quilt_get_next_var( Hndl, VarName, Status )
     ELSE
       Status = 0
     ENDIF
@@ -1235,6 +1295,12 @@ END SUBROUTINE wrf_get_next_var
 
 SUBROUTINE wrf_get_var_info ( DataHandle , VarName , NDim , MemoryOrder , Stagger , &
                               DomainStart , DomainEnd , Status )
+!<DESCRIPTION>
+!<PRE>
+! This routine applies only to a dataset that is open for read.  It returns 
+! information about a variable.  
+!</PRE>
+!</DESCRIPTION>
   USE module_state_description
   IMPLICIT NONE
   INTEGER               ,INTENT(IN)     :: DataHandle
@@ -1296,7 +1362,7 @@ SUBROUTINE wrf_get_var_info ( DataHandle , VarName , NDim , MemoryOrder , Stagge
           Status = 0
       END SELECT
     ELSE IF ( io_form .GT. 0 .AND. for_out .AND. use_output_servers() ) THEN
-      CALL ext_quilt_get_var_info ( Hndl , VarName , NDim ,            &
+      CALL wrf_quilt_get_var_info ( Hndl , VarName , NDim ,            &
                                     MemoryOrder , Stagger ,                  &
                                     DomainStart , DomainEnd ,                &
                                     Status )
@@ -1316,10 +1382,15 @@ END SUBROUTINE wrf_get_var_info
 
 
 SUBROUTINE init_io_handles()
+!<DESCRIPTION>
+!<PRE>
+! Initialize all I/O handles.  
+!</PRE>
+!</DESCRIPTION>
   IMPLICIT NONE
   INTEGER i
   IF ( .NOT. is_inited ) THEN
-    DO i = 1, 1000
+    DO i = 1, MAX_WRF_IO_HANDLE
       wrf_io_handles(i) = -999319
     ENDDO
     is_inited = .TRUE.
@@ -1327,8 +1398,16 @@ SUBROUTINE init_io_handles()
   RETURN
 END SUBROUTINE init_io_handles
 
-! Stash the package specific handle and return a WRF handle
 SUBROUTINE add_new_handle( Hndl, Hopened, for_out, DataHandle )
+!<DESCRIPTION>
+!<PRE>
+! Stash the package-specific I/O handle (Hndl) and return a WRF I/O handle 
+! (DataHandle).  
+! File format ID is passed in via Hopened.  
+! for_out will be .TRUE. if this routine was called from an 
+! open-for-read/write-begin operation and .FALSE. otherwise.  
+!</PRE>
+!</DESCRIPTION>
   IMPLICIT NONE
   INTEGER, INTENT(IN)     :: Hndl
   INTEGER, INTENT(IN)     :: Hopened
@@ -1339,7 +1418,7 @@ SUBROUTINE add_new_handle( Hndl, Hopened, for_out, DataHandle )
     CALL wrf_error_fatal( 'add_new_handle: not initialized' )
   ENDIF
   DataHandle = -1
-  DO i = 1, 1000
+  DO i = 1, MAX_WRF_IO_HANDLE
     IF ( wrf_io_handles(i) .EQ. -999319 ) THEN
       DataHandle = i 
       wrf_io_handles(i) = Hndl
@@ -1356,6 +1435,16 @@ SUBROUTINE add_new_handle( Hndl, Hopened, for_out, DataHandle )
 END SUBROUTINE add_new_handle
 
 SUBROUTINE get_handle ( Hndl, Hopened, for_out, DataHandle )
+!<DESCRIPTION>
+!<PRE>
+! Return the package-specific handle (Hndl) from a WRF handle 
+! (DataHandle).  
+! Return file format ID via Hopened.  
+! Also, for_out will be set to .TRUE. if the file was opened 
+! with an open-for-read/write-begin operation and .FALSE. 
+! otherwise.  
+!</PRE>
+!</DESCRIPTION>
   IMPLICIT NONE
   INTEGER, INTENT(OUT)     :: Hndl
   INTEGER, INTENT(OUT)     :: Hopened
@@ -1366,7 +1455,7 @@ SUBROUTINE get_handle ( Hndl, Hopened, for_out, DataHandle )
   IF ( .NOT. is_inited ) THEN
     CALL wrf_error_fatal( 'module_io.F: get_handle: not initialized' )
   ENDIF
-  IF ( DataHandle .GE. 1 .AND. DataHandle .LE. 1000 ) THEN
+  IF ( DataHandle .GE. 1 .AND. DataHandle .LE. MAX_WRF_IO_HANDLE ) THEN
     Hndl = wrf_io_handles(DataHandle)
     Hopened = how_opened(DataHandle)
     for_out = for_output(DataHandle)
@@ -1377,50 +1466,72 @@ SUBROUTINE get_handle ( Hndl, Hopened, for_out, DataHandle )
 END SUBROUTINE get_handle
 
 SUBROUTINE set_first_operation( DataHandle )
+!<DESCRIPTION>
+!<PRE>
+! Sets internal flag to indicate that the first read or write has not yet 
+! happened for the dataset referenced by DataHandle.  
+!</PRE>
+!</DESCRIPTION>
   IMPLICIT NONE
   INTEGER, INTENT(IN)    :: DataHandle
   IF ( .NOT. is_inited ) THEN
     CALL wrf_error_fatal( 'module_io.F: get_handle: not initialized' )
   ENDIF
-  IF ( DataHandle .GE. 1 .AND. DataHandle .LE. 1000 ) THEN
+  IF ( DataHandle .GE. 1 .AND. DataHandle .LE. MAX_WRF_IO_HANDLE ) THEN
     first_operation(DataHandle) = .TRUE.
   ENDIF
   RETURN
 END SUBROUTINE set_first_operation
 
 SUBROUTINE reset_first_operation( DataHandle )
+!<DESCRIPTION>
+!<PRE>
+! Resets internal flag to indicate that the first read or write has already 
+! happened for the dataset referenced by DataHandle.  
+!</PRE>
+!</DESCRIPTION>
   IMPLICIT NONE
   INTEGER, INTENT(IN)    :: DataHandle
   IF ( .NOT. is_inited ) THEN
     CALL wrf_error_fatal( 'module_io.F: get_handle: not initialized' )
   ENDIF
-  IF ( DataHandle .GE. 1 .AND. DataHandle .LE. 1000 ) THEN
+  IF ( DataHandle .GE. 1 .AND. DataHandle .LE. MAX_WRF_IO_HANDLE ) THEN
     first_operation(DataHandle) = .FALSE.
   ENDIF
   RETURN
 END SUBROUTINE reset_first_operation
 
 LOGICAL FUNCTION is_first_operation( DataHandle )
+!<DESCRIPTION>
+!<PRE>
+! Returns .TRUE. the first read or write has not yet happened for the dataset 
+! referenced by DataHandle.  
+!</PRE>
+!</DESCRIPTION>
   IMPLICIT NONE
   INTEGER, INTENT(IN)    :: DataHandle
   IF ( .NOT. is_inited ) THEN
     CALL wrf_error_fatal( 'module_io.F: get_handle: not initialized' )
   ENDIF
-  IF ( DataHandle .GE. 1 .AND. DataHandle .LE. 1000 ) THEN
+  IF ( DataHandle .GE. 1 .AND. DataHandle .LE. MAX_WRF_IO_HANDLE ) THEN
     is_first_operation = first_operation(DataHandle)
   ENDIF
   RETURN
 END FUNCTION is_first_operation
 
-! Trash a handle and return to pool
 SUBROUTINE free_handle ( DataHandle )
+!<DESCRIPTION>
+!<PRE>
+! Trash a handle and return to "unused" pool.  
+!</PRE>
+!</DESCRIPTION>
   IMPLICIT NONE
   INTEGER, INTENT(IN)    :: DataHandle
   INTEGER i
   IF ( .NOT. is_inited ) THEN
     CALL wrf_error_fatal( 'free_handle: not initialized' )
   ENDIF
-  IF ( DataHandle .GE. 1 .AND. DataHandle .LE. 1000 ) THEN
+  IF ( DataHandle .GE. 1 .AND. DataHandle .LE. MAX_WRF_IO_HANDLE ) THEN
     wrf_io_handles(DataHandle) = -999319
   ENDIF
   RETURN
@@ -1429,12 +1540,23 @@ END SUBROUTINE free_handle
 !--------------------------------------------------------------
 
 SUBROUTINE init_module_io
+!<DESCRIPTION>
+!<PRE>
+! Initialize this module.  Must be called before any other operations are 
+! attempted.  
+!</PRE>
+!</DESCRIPTION>
   CALL init_io_handles
 END SUBROUTINE init_module_io
 END MODULE module_io
 
 
-! defined outside of module to defeat arg/param type checking
+!<DESCRIPTION>
+!<PRE>
+! Remaining routines in this file are defined outside of module module_io to 
+! defeat arg/param type checking.  
+!</PRE>
+!</DESCRIPTION>
 SUBROUTINE wrf_read_field ( DataHandle , DateStr , VarName , Field , FieldType ,         &
                             Comm       , IOComm  ,                                       &
                             DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
@@ -1442,9 +1564,13 @@ SUBROUTINE wrf_read_field ( DataHandle , DateStr , VarName , Field , FieldType ,
                             MemoryStart , MemoryEnd ,                                    &
                             PatchStart , PatchEnd ,                                      &
                             Status )
-! <DESCRIPTION>
-! Wrapper for ensuring uniform treatment of logicals across platforms by converting to integer before writing
-! </DESCRIPTION>
+!<DESCRIPTION>
+!<PRE>
+! Read the variable named VarName from the dataset pointed to by DataHandle.
+! This routine is a wrapper that ensures uniform treatment of logicals across 
+! platforms by reading as integer and then converting to logical.  
+!</PRE>
+!</DESCRIPTION>
   USE module_state_description
   USE module_configure
   IMPLICIT NONE
@@ -1497,6 +1623,12 @@ SUBROUTINE wrf_read_field1 ( DataHandle , DateStr , VarName , Field , FieldType 
                             MemoryStart , MemoryEnd ,                                    &
                             PatchStart , PatchEnd ,                                      &
                             Status )
+!<DESCRIPTION>
+!<PRE>
+! Read the variable named VarName from the dataset pointed to by DataHandle.
+! Calls ext_pkg_read_field() via call_pkg_and_dist().  
+!</PRE>
+!</DESCRIPTION>
   USE module_state_description
   USE module_configure
   USE module_io
@@ -1643,9 +1775,13 @@ SUBROUTINE wrf_write_field ( DataHandle , DateStr , VarName , Field , FieldType 
                              MemoryStart , MemoryEnd ,                                    &
                              PatchStart , PatchEnd ,                                      &
                              Status )
-! <DESCRIPTION>
-! Wrapper for ensuring uniform treatment of logicals across platforms by converting to integer before writing
-! </DESCRIPTION>
+!<DESCRIPTION>
+!<PRE>
+! Write the variable named VarName to the dataset pointed to by DataHandle.
+! This routine is a wrapper that ensures uniform treatment of logicals across 
+! platforms by converting to integer before writing.  
+!</PRE>
+!</DESCRIPTION>
   USE module_state_description
   USE module_configure
   IMPLICIT NONE
@@ -1700,6 +1836,12 @@ SUBROUTINE wrf_write_field1 ( DataHandle , DateStr , VarName , Field , FieldType
                              MemoryStart , MemoryEnd ,                                    &
                              PatchStart , PatchEnd ,                                      &
                              Status )
+!<DESCRIPTION>
+!<PRE>
+! Write the variable named VarName to the dataset pointed to by DataHandle.
+! Calls ext_pkg_write_field() via collect_fld_and_call_pkg().  
+!</PRE>
+!</DESCRIPTION>
 
   USE module_state_description
   USE module_configure
@@ -1829,7 +1971,7 @@ SUBROUTINE wrf_write_field1 ( DataHandle , DateStr , VarName , Field , FieldType
       END SELECT
     ELSE IF ( use_output_servers() ) THEN
       IF ( io_form .GT. 0 ) THEN
-      CALL ext_quilt_write_field ( Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
+      CALL wrf_quilt_write_field ( Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
                                    DomainDesc , MemoryOrder , Stagger , DimNames ,              &
                                    DomainStart , DomainEnd ,                                    &
                                    MemoryStart , MemoryEnd ,                                    &
@@ -1843,10 +1985,14 @@ SUBROUTINE wrf_write_field1 ( DataHandle , DateStr , VarName , Field , FieldType
   RETURN
 END SUBROUTINE wrf_write_field1
 
+SUBROUTINE get_value_from_pairs ( varname , str , retval )
+!<DESCRIPTION>
+!<PRE>
 ! parse comma separated list of VARIABLE=VALUE strings and return the
 ! value for the matching variable if such exists, otherwise return
 ! the empty string
-SUBROUTINE get_value_from_pairs ( varname , str , retval )
+!</PRE>
+!</DESCRIPTION>
   IMPLICIT NONE
   CHARACTER*(*) ::    varname
   CHARACTER*(*) ::    str
@@ -1898,6 +2044,16 @@ SUBROUTINE get_value_from_pairs ( varname , str , retval )
 END SUBROUTINE get_value_from_pairs
 
 LOGICAL FUNCTION multi_files ( io_form )
+!<DESCRIPTION>
+!<PRE>
+! Returns .TRUE. iff io_form is a multi-file format.  A multi-file format 
+! results in one file for each compute process and can be used with any 
+! I/O package.  A multi-file dataset can only be read by the same number 
+! of processes that were used to write it.  This feature can be useful for 
+! speeding up restarts on machines that support efficient parallel I/O.  
+! Multi-file formats cannot be used with I/O quilt servers.  
+!</PRE>
+!</DESCRIPTION>
   IMPLICIT NONE
   INTEGER, INTENT(IN) :: io_form
 #ifdef DM_PARALLEL
@@ -1908,14 +2064,16 @@ LOGICAL FUNCTION multi_files ( io_form )
 END FUNCTION multi_files
 
 INTEGER FUNCTION use_package ( io_form )
+!<DESCRIPTION>
+!<PRE>
+! Returns the ID of the external I/O package referenced by io_form.  
+!</PRE>
+!</DESCRIPTION>
   IMPLICIT NONE
   INTEGER, INTENT(IN) :: io_form
   use_package = MOD( io_form, 100 )
 END FUNCTION use_package
 
-!!!  Routines that collect a distributed array onto one processor and then call
-!!!  an I/O function to write the result (or in the case of replicated data
-!!!  simply write monitor node's copy of the data)
 
 SUBROUTINE collect_fld_and_call_pkg (    fcn, donotcollect_arg,                                       &
                                      Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
@@ -1924,6 +2082,15 @@ SUBROUTINE collect_fld_and_call_pkg (    fcn, donotcollect_arg,                 
                                      MemoryStart , MemoryEnd ,                                    &
                                      PatchStart , PatchEnd ,                                      &
                                      Status )
+!<DESCRIPTION>
+!<PRE>
+! The collect_*_and_call_pkg routines collect a distributed array onto one 
+! processor and then call an I/O function to write the result (or in the 
+! case of replicated data simply write monitor node's copy of the data)
+! This routine handle cases where collection can be skipped and deals with 
+! different data types for Field.  
+!</PRE>
+!</DESCRIPTION>
   IMPLICIT NONE
   include 'wrf_io_flags.h'
   EXTERNAL fcn
@@ -2004,7 +2171,6 @@ SUBROUTINE collect_fld_and_call_pkg (    fcn, donotcollect_arg,                 
   RETURN
 END SUBROUTINE collect_fld_and_call_pkg
 
-! sole purpose of this wrapper is to allocate a big real buffer
 SUBROUTINE collect_real_and_call_pkg (   fcn,                                                     &
                                      Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
                                      DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,    &
@@ -2012,6 +2178,15 @@ SUBROUTINE collect_real_and_call_pkg (   fcn,                                   
                                      MemoryStart , MemoryEnd ,                                    &
                                      PatchStart , PatchEnd ,                                      &
                                      Status )
+!<DESCRIPTION>
+!<PRE>
+! The collect_*_and_call_pkg routines collect a distributed array onto one 
+! processor and then call an I/O function to write the result (or in the 
+! case of replicated data simply write monitor node's copy of the data)
+! The sole purpose of this wrapper is to allocate a big real buffer and 
+! pass it down to collect_generic_and_call_pkg() to do the actual work.  
+!</PRE>
+!</DESCRIPTION>
   USE module_state_description
   USE module_driver_constants
   IMPLICIT NONE
@@ -2045,7 +2220,6 @@ SUBROUTINE collect_real_and_call_pkg (   fcn,                                   
 
 END SUBROUTINE collect_real_and_call_pkg
 
-! sole purpose of this wrapper is to allocate a big integer buffer
 SUBROUTINE collect_int_and_call_pkg (   fcn,                                                     &
                                      Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
                                      DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,    &
@@ -2053,6 +2227,15 @@ SUBROUTINE collect_int_and_call_pkg (   fcn,                                    
                                      MemoryStart , MemoryEnd ,                                    &
                                      PatchStart , PatchEnd ,                                      &
                                      Status )
+!<DESCRIPTION>
+!<PRE>
+! The collect_*_and_call_pkg routines collect a distributed array onto one 
+! processor and then call an I/O function to write the result (or in the 
+! case of replicated data simply write monitor node's copy of the data)
+! The sole purpose of this wrapper is to allocate a big integer buffer and 
+! pass it down to collect_generic_and_call_pkg() to do the actual work.  
+!</PRE>
+!</DESCRIPTION>
   USE module_state_description
   USE module_driver_constants
   IMPLICIT NONE
@@ -2086,7 +2269,6 @@ SUBROUTINE collect_int_and_call_pkg (   fcn,                                    
 
 END SUBROUTINE collect_int_and_call_pkg
 
-! sole purpose of this wrapper is to allocate a big double buffer
 SUBROUTINE collect_double_and_call_pkg (   fcn,                                                     &
                                      Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
                                      DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,    &
@@ -2094,6 +2276,16 @@ SUBROUTINE collect_double_and_call_pkg (   fcn,                                 
                                      MemoryStart , MemoryEnd ,                                    &
                                      PatchStart , PatchEnd ,                                      &
                                      Status )
+!<DESCRIPTION>
+!<PRE>
+! The collect_*_and_call_pkg routines collect a distributed array onto one 
+! processor and then call an I/O function to write the result (or in the 
+! case of replicated data simply write monitor node's copy of the data)
+! The sole purpose of this wrapper is to allocate a big double precision 
+! buffer and pass it down to collect_generic_and_call_pkg() to do the 
+! actual work.  
+!</PRE>
+!</DESCRIPTION>
   USE module_state_description
   USE module_driver_constants
   IMPLICIT NONE
@@ -2127,7 +2319,6 @@ SUBROUTINE collect_double_and_call_pkg (   fcn,                                 
 
 END SUBROUTINE collect_double_and_call_pkg
 
-! sole purpose of this wrapper is to allocate a big logical buffer
 SUBROUTINE collect_logical_and_call_pkg (   fcn,                                                     &
                                      Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
                                      DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,    &
@@ -2135,6 +2326,15 @@ SUBROUTINE collect_logical_and_call_pkg (   fcn,                                
                                      MemoryStart , MemoryEnd ,                                    &
                                      PatchStart , PatchEnd ,                                      &
                                      Status )
+!<DESCRIPTION>
+!<PRE>
+! The collect_*_and_call_pkg routines collect a distributed array onto one 
+! processor and then call an I/O function to write the result (or in the 
+! case of replicated data simply write monitor node's copy of the data)
+! The sole purpose of this wrapper is to allocate a big logical buffer 
+! and pass it down to collect_generic_and_call_pkg() to do the actual work.  
+!</PRE>
+!</DESCRIPTION>
   USE module_state_description
   USE module_driver_constants
   IMPLICIT NONE
@@ -2176,6 +2376,15 @@ SUBROUTINE collect_generic_and_call_pkg ( fcn, globbuf,                         
                                      MemoryStart , MemoryEnd ,                                    &
                                      PatchStart , PatchEnd ,                                      &
                                      Status )
+!<DESCRIPTION>
+!<PRE>
+! The collect_*_and_call_pkg routines collect a distributed array onto one 
+! processor and then call an I/O function to write the result (or in the 
+! case of replicated data simply write monitor node's copy of the data)
+! This routine calls the distributed memory communication routines that 
+! collect the array and then calls I/O function fcn to write it to disk.  
+!</PRE>
+!</DESCRIPTION>
   USE module_state_description
   USE module_driver_constants
   IMPLICIT NONE
@@ -2570,7 +2779,6 @@ include "mpif.h"
   RETURN
 END SUBROUTINE collect_generic_and_call_pkg
 
-!!!  Routines that call an I/O function and then distribute or replicate the result
 
 SUBROUTINE call_pkg_and_dist (       fcn, donotdist_arg, update_arg,                           &
                                      Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
@@ -2579,6 +2787,14 @@ SUBROUTINE call_pkg_and_dist (       fcn, donotdist_arg, update_arg,            
                                      MemoryStart , MemoryEnd ,                                    &
                                      PatchStart , PatchEnd ,                                      &
                                      Status )
+!<DESCRIPTION>
+!<PRE>
+! The call_pkg_and_dist* routines call an I/O function to read a field and then 
+! distribute or replicate the field across compute processes.  
+! This routine handle cases where distribution/replication can be skipped and 
+! deals with different data types for Field.
+!</PRE>
+!</DESCRIPTION>
   IMPLICIT NONE
   include 'wrf_io_flags.h'
   EXTERNAL fcn
@@ -2665,6 +2881,14 @@ SUBROUTINE call_pkg_and_dist_real (  fcn, update_arg,                           
                                      MemoryStart , MemoryEnd ,                                    &
                                      PatchStart , PatchEnd ,                                      &
                                      Status )
+!<DESCRIPTION>
+!<PRE>
+! The call_pkg_and_dist* routines call an I/O function to read a field and then 
+! distribute or replicate the field across compute processes.  
+! The sole purpose of this wrapper is to allocate a big real buffer and
+! pass it down to call_pkg_and_dist_generic() to do the actual work.
+!</PRE>
+!</DESCRIPTION>
   IMPLICIT NONE
   EXTERNAL fcn
   INTEGER ,       INTENT(IN)    :: Hndl
@@ -2704,6 +2928,14 @@ SUBROUTINE call_pkg_and_dist_double  (  fcn, update_arg ,                       
                                      MemoryStart , MemoryEnd ,                                    &
                                      PatchStart , PatchEnd ,                                      &
                                      Status )
+!<DESCRIPTION>
+!<PRE>
+! The call_pkg_and_dist* routines call an I/O function to read a field and then 
+! distribute or replicate the field across compute processes.  
+! The sole purpose of this wrapper is to allocate a big double precision buffer 
+! and pass it down to call_pkg_and_dist_generic() to do the actual work.
+!</PRE>
+!</DESCRIPTION>
   IMPLICIT NONE
   EXTERNAL fcn
   INTEGER ,       INTENT(IN)    :: Hndl
@@ -2744,6 +2976,14 @@ SUBROUTINE call_pkg_and_dist_int  (  fcn, update_arg ,                          
                                      MemoryStart , MemoryEnd ,                                    &
                                      PatchStart , PatchEnd ,                                      &
                                      Status )
+!<DESCRIPTION>
+!<PRE>
+! The call_pkg_and_dist* routines call an I/O function to read a field and then 
+! distribute or replicate the field across compute processes.  
+! The sole purpose of this wrapper is to allocate a big integer buffer and 
+! pass it down to call_pkg_and_dist_generic() to do the actual work.
+!</PRE>
+!</DESCRIPTION>
   IMPLICIT NONE
   EXTERNAL fcn
   INTEGER ,       INTENT(IN)    :: Hndl
@@ -2784,6 +3024,14 @@ SUBROUTINE call_pkg_and_dist_logical  (  fcn, update_arg ,                      
                                      MemoryStart , MemoryEnd ,                                    &
                                      PatchStart , PatchEnd ,                                      &
                                      Status )
+!<DESCRIPTION>
+!<PRE>
+! The call_pkg_and_dist* routines call an I/O function to read a field and then 
+! distribute or replicate the field across compute processes.  
+! The sole purpose of this wrapper is to allocate a big logical buffer and 
+! pass it down to call_pkg_and_dist_generic() to do the actual work.
+!</PRE>
+!</DESCRIPTION>
   IMPLICIT NONE
   EXTERNAL fcn
   INTEGER ,       INTENT(IN)    :: Hndl
@@ -2824,6 +3072,15 @@ SUBROUTINE call_pkg_and_dist_generic (   fcn, globbuf , update_arg ,            
                                      PatchStart , PatchEnd ,                                      &
                                      Status )
 
+!<DESCRIPTION>
+!<PRE>
+! The call_pkg_and_dist* routines call an I/O function to read a field and then 
+! distribute or replicate the field across compute processes.  
+! This routine calls I/O function fcn to read the field from disk and then calls 
+! the distributed memory communication routines that distribute or replicate the 
+! array.  
+!</PRE>
+!</DESCRIPTION>
   USE module_driver_constants
   IMPLICIT NONE
 #include <wrf_io_flags.h>
@@ -3041,6 +3298,11 @@ END SUBROUTINE call_pkg_and_dist_generic
 
 ! stole these routines from io_netcdf external package; changed names to avoid collisions
 SUBROUTINE dim_from_memorder(MemoryOrder,NDim)
+!<DESCRIPTION>
+!<PRE>
+! Decodes array ranks from memory order.  
+!</PRE>
+!</DESCRIPTION>
   CHARACTER*(*) ,INTENT(IN)  :: MemoryOrder
   INTEGER       ,INTENT(OUT) :: NDim
 !Local
@@ -3062,6 +3324,11 @@ SUBROUTINE dim_from_memorder(MemoryOrder,NDim)
 END SUBROUTINE dim_from_memorder
 
 SUBROUTINE lower_case(MemoryOrder,MemOrd)
+!<DESCRIPTION>
+!<PRE>
+! Translates upper-case characters to lower-case.  
+!</PRE>
+!</DESCRIPTION>
   CHARACTER*(*) ,INTENT(IN)  :: MemoryOrder
   CHARACTER*(*) ,INTENT(OUT) :: MemOrd
 !Local
@@ -3080,6 +3347,11 @@ SUBROUTINE lower_case(MemoryOrder,MemOrd)
 END SUBROUTINE Lower_Case
 
 LOGICAL FUNCTION has_char( str, c )
+!<DESCRIPTION>
+!<PRE>
+! Returns .TRUE. iff string str contains character c.  Ignores character case.  
+!</PRE>
+!</DESCRIPTION>
   IMPLICIT NONE
   CHARACTER*(*) str
   CHARACTER c, d

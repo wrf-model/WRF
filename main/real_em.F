@@ -205,10 +205,6 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
    INTEGER :: julyr , julday 
    REAL :: gmt
 real::t1,t2
-! TBH:  BEGIN stopTime HACK
-   TYPE(ESMF_TimeInterval) :: bogus_timeinterval
-   TYPE(ESMF_Time) :: bogus_stoptime
-! TBH:  END stopTime HACK
 
    grid%input_from_file = .true.
    grid%input_from_file = .false.
@@ -231,16 +227,15 @@ real::t1,t2
 
    !  Override stop time with value computed above.  
    CALL wrf_atotime( end_date_char, grid%stop_time )
-! TBH:  BEGIN stopTime HACK
-! TBH:  Stop time is not being handled correctly by real_em.F.  Until it is 
-! TBH:  fixed, this workaround will at least keep things from crashing...  
-   CALL ESMF_TimeIntervalSet ( bogus_timeinterval , D=100, rc=rc )
-   bogus_stoptime = grid%stop_time + bogus_timeinterval
-   CALL ESMF_ClockSet ( grid%domain_clock , StopTime=bogus_stoptime, rc=rc )
-! TBH:  END stopTime HACK
-!   CALL ESMF_ClockSet ( grid%domain_clock , StopTime=grid%stop_time, rc=rc )
+   CALL ESMF_ClockSet ( grid%domain_clock , StopTime=grid%stop_time, rc=rc )
    CALL wrf_check_error( ESMF_SUCCESS, rc, &
                          'ESMF_ClockSet(grid%domain_clock) FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
+   ! TBH:  for now, turn off stop time and let it run data-driven
+   CALL ESMF_ClockStopTimeDisable( grid%domain_clock, rc=rc ) 
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'ESMF_ClockStopTimeDisable(grid%domain_clock) FAILED', &
                          __FILE__ , &
                          __LINE__  )
    CALL wrf_clockprint ( 150, grid%domain_clock, &

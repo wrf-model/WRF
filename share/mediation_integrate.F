@@ -1438,8 +1438,8 @@ SUBROUTINE med_read_wrf_chem_emiss ( grid , config_flags )
 
     IF ( grid%id .EQ. 1 ) THEN
 
-      CALL ESMF_ClockGet( grid%domain_clock, grid%current_time, rc=ierr )
-      CALL ESMF_TimeGetString( grid%current_time, current_date_char, rc=ierr )
+      CALL ESMF_ClockGet( grid%domain_clock, CurrTime=grid%current_time, rc=ierr )
+      CALL wrf_timetoa ( grid%current_time, current_date_char )
 
       time = float(grid%itimestep) * grid%dt
       tupdate = mod( time, (12. * 3600.) )
@@ -1549,8 +1549,8 @@ SUBROUTINE med_read_wrf_chem_bioemiss ( grid , config_flags )
 #include <wrf_io_flags.h>
     IF ( grid%id .EQ. 1 ) THEN
 
-      CALL ESMF_ClockGet( grid%domain_clock, grid%current_time, rc=ierr )
-      CALL ESMF_TimeGetString( grid%current_time, current_date_char, rc=ierr )
+      CALL ESMF_ClockGet( grid%domain_clock, CurrTime=grid%current_time, rc=ierr )
+      CALL wrf_timetoa ( grid%current_time, current_date_char )
 
 !     IF( grid%current_time + grid%step_time .GE. grid%stop_time ) then
 !       return

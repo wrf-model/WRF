@@ -747,16 +747,10 @@ END MODULE module_date_time
         ms = 0
       ENDIF
       CALL ESMF_TimeSet( time, YY=yr, MM=mm, DD=dd, H=h, M=m, S=s, MS=ms, rc=rc )
-! TBH:  Wrapping the call to wrf_check_error() in this IF statement is a 
-! TBH:  hack that avoids spurious errors for ideal.exe where timers are 
-! TBH:  not really used yet.  
-!      CALL get_wrf_debug_level( debug_level )
-!      IF ( 150 .LE. debug_level ) THEN
       CALL wrf_check_error( ESMF_SUCCESS, rc, &
                             'ESMF_TimeSet() in wrf_atotime() FAILED', &
                             __FILE__ , &
                             __LINE__  )
-!      ENDIF
 33 FORMAT (I4.4,1x,I2.2,1x,I2.2,1x,I2.2,1x,I2.2,1x,I2.2)
 34 FORMAT (I4.4,1x,I2.2,1x,I2.2,1x,I2.2,1x,I2.2,1x,I2.2,1x,I4.4)
       RETURN
@@ -774,16 +768,10 @@ END MODULE module_date_time
       INTEGER rc, debug_level
       CHARACTER (LEN=256) :: mess
       CALL ESMF_TimeGet( time, timeString=str, rc=rc )
-! TBH:  Wrapping the call to wrf_check_error() in this IF statement is a 
-! TBH:  hack that avoids spurious errors for ideal.exe where timers are 
-! TBH:  not really used yet.  
-!      CALL get_wrf_debug_level( debug_level )
-!      IF ( 150 .LE. debug_level ) THEN
       CALL wrf_check_error( ESMF_SUCCESS, rc, &
                             'ESMF_TimeGet() in wrf_timetoa() FAILED', &
                             __FILE__ , &
                             __LINE__  )
-!      ENDIF
       ! change ESMF 'T' to WRF '_' -- variant of ISO 8601
       str(11:11) = '_'
       WRITE (mess,*) 'DEBUG wrf_timetoa():  returning with str = [',TRIM(str),']'

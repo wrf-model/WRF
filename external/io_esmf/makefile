@@ -11,7 +11,7 @@ RANLIB	= echo
 # TBH:  Now we can roll in our own stuff along with ESMF_Mod if desired.  
 OBJS = ESMF_Indirection.o ESMF_Mod_Wrapper.o
 
-TARGET = libesmfwrapper.a
+TARGET = libwrfio_esmf.a
 
 $(TARGET) : $(OBJS)
 	$(AR) ru $(TARGET) $(OBJS)

@@ -1978,12 +1978,12 @@ ESMF_MODULES    =       $(ESMF_DIR)/mod/mod$(ESMF_PATH_TAIL)
 ESMF_LIB        =       $(ESMF_DIR)/lib/lib$(ESMF_PATH_TAIL)
 ESMF_LIB_FLAGS  =       -L$(ESMF_LIB) -lesmf -brtl -lC
 # end ESMF paths
-# path to WRF wrapper for ESMF
-ESMF_WRAPPER_DIR =      ../external/esmf_wrapper
-INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I$(ESMF_WRAPPER_DIR) \
+# path to WRF IOAPI external package for ESMF
+ESMF_IO_DIR     =      ../external/io_esmf
+INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I$(ESMF_IO_DIR) \
                         -I../frame -I../share -I../phys -I../chem -I../inc -I$(ESMF_MODULES)
 # Override default ESMF dependence since embedded ESMF time manager is not used.
-ESMF_MOD_DEPENDENCE =   $(ESMF_WRAPPER_DIR)/ESMF_Mod_Wrapper.o
+ESMF_MOD_DEPENDENCE =   $(ESMF_IO_DIR)/ESMF_Mod_Wrapper.o
 EXTRAMODULES    =       ../share/module_wrf_setservices.o
 
 # TBH:  NOTE:  Get rid of "-DWRF_ESMF_MOD" below once wrf_esmf_mod is no longer needed
@@ -1996,7 +1996,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl -l
                         -L../external/io_int -lwrfio_int  \
                         -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o \
-			-L$(ESMF_WRAPPER_DIR) -lesmfwrapper $(ESMF_LIB_FLAGS)
+			-L$(ESMF_IO_DIR) -lwrfio_esmf $(ESMF_LIB_FLAGS)
 LDFLAGS         =	-bmaxstack:256000000 -bmaxdata:2048000000
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP		=	/lib/cpp
@@ -2009,7 +2009,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmfwrapper
+externals : CONFIGURE_WRFIO_NF ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F wrfio_esmf
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; cat ../external/RSL/gen_comms.c >> ../tools/gen_comms.c )
@@ -2031,8 +2031,8 @@ wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
           make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
 
-esmfwrapper : 
-	( cd $(ESMF_WRAPPER_DIR) ; \
+wrfio_esmf : 
+	( cd $(ESMF_IO_DIR) ; \
 	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS) -I$(ESMF_MODULES)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF) " )
 
 ../external/RSL/RSL/librsl.a :
@@ -2105,12 +2105,12 @@ ESMF_MODULES    =       $(ESMF_DIR)/mod/mod$(ESMF_PATH_TAIL)
 ESMF_LIB        =       $(ESMF_DIR)/lib/lib$(ESMF_PATH_TAIL)
 ESMF_LIB_FLAGS  =       -L$(ESMF_LIB) -lesmf -brtl -lC
 # end ESMF paths
-# path to WRF wrapper for ESMF
-ESMF_WRAPPER_DIR =      ../external/esmf_wrapper
-INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I$(ESMF_WRAPPER_DIR) \
+# path to WRF IOAPI external package for ESMF
+ESMF_IO_DIR     =      ../external/io_esmf
+INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I$(ESMF_IO_DIR) \
                         -I../frame -I../share -I../phys -I../chem -I../inc -I$(ESMF_MODULES)
 # Override default ESMF dependence since embedded ESMF time manager is not used.
-ESMF_MOD_DEPENDENCE =   $(ESMF_WRAPPER_DIR)/ESMF_Mod_Wrapper.o
+ESMF_MOD_DEPENDENCE =   $(ESMF_IO_DIR)/ESMF_Mod_Wrapper.o
 EXTRAMODULES    =       ../share/module_wrf_setservices.o
 
 # TBH:  NOTE:  Get rid of "-DWRF_ESMF_MOD" below once wrf_esmf_mod is no longer needed
@@ -2124,7 +2124,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl -l
                         -L../external/io_int -lwrfio_int  \
                         -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o \
-			-L$(ESMF_WRAPPER_DIR) -lesmfwrapper $(ESMF_LIB_FLAGS)
+			-L$(ESMF_IO_DIR) -lwrfio_esmf $(ESMF_LIB_FLAGS)
 LDFLAGS         =	-bmaxstack:256000000 -bmaxdata:2048000000
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP		=	/lib/cpp
@@ -2137,7 +2137,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmfwrapper
+externals : CONFIGURE_WRFIO_NF ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F wrfio_esmf
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; cat ../external/RSL/gen_comms.c >> ../tools/gen_comms.c )
@@ -2159,8 +2159,8 @@ wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
           make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
 
-esmfwrapper : 
-	( cd $(ESMF_WRAPPER_DIR) ; \
+wrfio_esmf : 
+	( cd $(ESMF_IO_DIR) ; \
 	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS) -I$(ESMF_MODULES)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF) " )
 
 ../external/RSL/RSL/librsl.a :

@@ -21,9 +21,11 @@ MODULE module_wrf_setservices
 
 CONTAINS
 
+
    SUBROUTINE wrf_register(gcomp, rc)
      TYPE(ESMF_GridComp), INTENT(INOUT) :: gcomp
      INTEGER, INTENT(OUT) :: rc
+     INTEGER :: finalrc
 !
 !<DESCRIPTION>
 !     WRF_register - Externally visible registration routine
@@ -39,15 +41,32 @@ CONTAINS
 !                       otherwise ESMF_FAILURE.
 !</DESCRIPTION>
 
+     finalrc = ESMF_SUCCESS
      ! Register the callback routines.
-
      call ESMF_GridCompSetEntryPoint(gcomp, ESMF_SETINIT, &
                                      wrf_init, ESMF_SINGLEPHASE, rc)
+     IF ( rc /= ESMF_SUCCESS) THEN
+        ! TBH:  replace "print"
+        print *,'ERROR:  ESMF_GridCompSetEntryPoint(wrf_init) failed with rc = ',rc
+        finalrc = rc
+     ENDIF
      call ESMF_GridCompSetEntryPoint(gcomp, ESMF_SETRUN, &
                                      wrf_run, ESMF_SINGLEPHASE, rc)
+     IF ( rc /= ESMF_SUCCESS) THEN
+        ! TBH:  replace "print"
+        print *,'ERROR:  ESMF_GridCompSetEntryPoint(wrf_run) failed with rc = ',rc
+        finalrc = rc
+     ENDIF
      call ESMF_GridCompSetEntryPoint(gcomp, ESMF_SETFINAL, &
                                      wrf_finalize, ESMF_SINGLEPHASE, rc)
+     IF ( rc /= ESMF_SUCCESS) THEN
+        ! TBH:  replace "print"
+        print *,'ERROR:  ESMF_GridCompSetEntryPoint(wrf_finalize) failed with rc = ',rc
+        finalrc = rc
+     ENDIF
      print *, "WRF-ESMF:  Registered Initialize, Run, and Finalize routines"
+
+     rc = finalrc
 
    END SUBROUTINE wrf_register
 

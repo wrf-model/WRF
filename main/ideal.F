@@ -88,12 +88,12 @@ PROGRAM ideal
                                      kid        = -1                   )
 
 #ifdef WRF_ESMF_MOD
-   ! TBH:  Note that IDEAL does not set up ESMF clocks.  We need 
-   ! TBH:  explicit replacements for old default initializations...  
+   ! TBH:  Note that historically, IDEAL did not set up ESMF clocks.  These 
+   ! TBH:  are explicit replacements for old default initializations...  
    CALL ESMF_TimeSet(grid%start_time, YY=1, MM=1, DD=1, H=0, M=0, S=0, rc=rc)
    grid%stop_time    = grid%start_time
    grid%current_time = grid%start_time
-   ! TBH:  Bogus default value...  
+   ! TBH:  Bogus time step value -- clock is never advanced...  
    CALL ESMF_TimeIntervalSet(grid%step_time, S=180, rc=rc)
    grid%domain_clock = ESMF_ClockCreate( TimeStep= grid%step_time,  &
                                          StartTime=grid%start_time, &

@@ -259,7 +259,6 @@ integer :: ii
 
    file_counter = 1
    need_new_file = .FALSE.
-   CALL init_module_get_file_names
    CALL unix_ls ( 'wrfout' , parent_grid%id )
 
    !  Open the input data (wrfout_d01_xxxxxx) for reading.

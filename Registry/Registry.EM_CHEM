@@ -188,19 +188,19 @@ i1       real   sr             ij      dyn_em      1         -     -   # dummy a
 
 state    real    fnm            k       dyn_em      1         -     irh       "fnm"  "upper weight for vertical stretching"  ""
 state    real    fnp            k       dyn_em      1         -     irh       "fnp"  "lower weight for vertical stretching"  ""
-state    real    rdnw           k       dyn_em      1         -     irh       "rdnw"  "inverse dn values on full (w) levels"   ""
-state    real    rdn            k       dyn_em      1         -     irh       "rdn"  "dn values on half (mass) levels"   ""
-state    real    dnw            k       dyn_em      1         -     irh       "dnw" "dn values on full (w) levels"   ""
-state    real    dn             k       dyn_em      1         -     irh       "dn " "dn values on half (mass) levels"   ""
+state    real    rdnw           k       dyn_em      1         -     irh       "rdnw"  "inverse d(eta) values between full (w) levels"   ""
+state    real    rdn            k       dyn_em      1         -     irh       "rdn"  "inverse d(eta) values between half (mass) levels"   ""
+state    real    dnw            k       dyn_em      1         -     irh       "dnw" "d(eta) values between full (w) levels"   ""
+state    real    dn             k       dyn_em      1         -     irh       "dn " "d(eta) values between half (mass) levels"   ""
 state    real    znu            k       dyn_em      1         -     irh       "znu"  "eta values on half (mass) levels"  ""
 state    real    znw            k       dyn_em      1         Z     i01rh     "znw"  "eta values on full (w) levels"  ""
 state    real    t_base         k       dyn_em      1         -     ir        "t_base"               "BASE STATET T IN IDEALIZED CASES"         "K"      
 state    real    z              ikj     dyn_em      1         Z     -         " " " " " "
 i1       real    mu_3d          ikj     dyn_em      1         -                                          
 i1       real    z_at_w         ikj     dyn_em      1         Z 
-state    real    cfn            -       misc      -         -     irh       "cfn"    ""  ""
-state    real    cfn1           -       misc      -         -     irh       "cfn1"   ""  ""
-state    real    epsts          -       misc      -         -     irh       "epsts"  ""  ""
+state    real    cfn            -       misc      -         -     irh       "cfn"    "extrapolation constant"  ""
+state    real    cfn1           -       misc      -         -     irh       "cfn1"   "extrapolation constant"  ""
+state    real    epsts          -       misc      -         -     irh       "epsts"  "leapfrog time filter constant"  ""
 state    integer step_number    -       misc      -         -     ir        "step_number"  ""
 
 # 2m and 10m output diagnostics

@@ -200,10 +200,26 @@ endif
 set REG_TYPE = OPTIMIZED
 set REG_TYPE = BIT4BIT
 
-#	For the real data case, we can run either one of two data cases.
+#	Is this a WRF chem test?  
+
+if ( $NESTED != TRUE ) then
+	set CHEM = TRUE
+	set CHEM = FALSE
+endif
+if ( $CHEM == TRUE ) then
+	setenv WRF_CHEM 1
+else if ( $CHEM == FALSE ) then
+	setenv WRF_CHEM 0 
+endif
+
+#	For the real data case, we can run either one of two data cases.  If this is
+#	a chemistry run, we are forced to use that data.
 
 set dataset = jun01
 set dataset = jan00
+if ( $CHEM == TRUE ) then
+	set dataset = chem
+endif
 
 #	Yet another local variable to change the name of where the data is located.
 
@@ -307,9 +323,16 @@ else if ( $NESTED != TRUE ) then
 	if ( $RSL_LITE == TRUE ) then
 		set CORES = (  em_real nmm_real )
 	endif
+	if ( $CHEM == TRUE ) then
+		set CORES = (  em_real )
+	endif
 endif
 
-set PHYSOPTS =	( 1 2 3 )
+if ( $CHEM != TRUE ) then
+	set PHYSOPTS =	( 1 2 3 )
+else if ( $CHEM == TRUE ) then
+	set PHYSOPTS =	( 1 )
+endif
 
 #	This is an ugly kludge.  The MP=2 does not work with the ideal cases with the
 #	special DEC build options.
@@ -880,16 +903,23 @@ else if ( ( $ARCH[1] == Linux ) && ( `hostname` == kola ) ) then
 	set DEF_DIR		= /kola2/$user
 	set TMPDIR              = .
 	set MAIL		= /bin/mail
-	set COMPOPTS		= ( 1 3 5 )
+	if ( $NESTED == TRUE ) then
+		set COMPOPTS	= ( 2 4 5 )
+	else
+		set COMPOPTS	= ( 1 3 5 )
+	endif
+	if ( ( $RSL_LITE == TRUE ) && ( $NESTED != TRUE ) ) then
+		set COMPOPTS	= ( 1 3 6 )
+	endif
 	set Num_Procs		= 2
-	set OPENMP 		= $Num_Procs
+	set OPENMP		= $Num_Procs
 	cat >! machfile << EOF
-kola
-kola
+`hostname`
+`hostname`
 EOF
-	set Mach = `pwd`/machfile
-	set MPIRUNCOMMAND 	= ( mpirun -np $Num_Procs -machinefile $Mach )
+	set Mach		= `pwd`/machfile
 	set ZAP_OPENMP		= FALSE
+	set MPIRUNCOMMAND       = ( mpirun -np $Num_Procs -machinefile $Mach )
 	echo "Compiler version info: " >! version_info
 	pgf90 -V >>&! version_info
 	echo " " >>! version_info
@@ -1025,6 +1055,14 @@ if ( $REG_TYPE == BIT4BIT ) then
 else if ( $REG_TYPE == OPTIMIZED ) then
 	echo "This is a fully optimized regression test. " >>! ${DEF_DIR}/wrftest.output
 	echo "No inter-comparisons are made. " >>! ${DEF_DIR}/wrftest.output
+	echo " " >>! ${DEF_DIR}/wrftest.output
+endif
+if ( $CHEM == TRUE ) then
+	echo "WRF_CHEM tests run for em_real core only, no other cores run" >>! ${DEF_DIR}/wrftest.output
+	echo " " >>! ${DEF_DIR}/wrftest.output
+endif
+if ( $RSL_LITE == TRUE ) then
+	echo "Parallel DM portion using RSL_LITE build option" >>! ${DEF_DIR}/wrftest.output
 	echo " " >>! ${DEF_DIR}/wrftest.output
 endif
 if ( $ESMF_LIB == TRUE ) then
@@ -1289,40 +1327,49 @@ banner 12
 				#	Create the correct namelist.input file for real data cases.
 				#
 
-				cp ${CUR_DIR}/phys_real_${phys_option} phys_opt
-				cp ${CUR_DIR}/dom_real dom_real
-
-				set time_step = `awk ' /^ time_step /{ print $3 } ' namelist.input.$dataset | cut -d, -f1`
-
-				#	Wanna do more/less time steps on the real cases?  Easy. Those last two numbers
-				#	in the eqns are all you need.  Their product must be 60.  So, instead of 3 and 20,
-				#	(3 coarse grid timesteps), you could use 20 and 3 (20 coarse grid time steps).
-
-				if      ( $NESTED == TRUE ) then
-					@ run_seconds = $time_step * 3
-					@ history_interval = $time_step / 20
-				else if ( $NESTED != TRUE ) then
-					@ run_seconds = $time_step * 10
-					@ history_interval = $time_step / 6
-				endif
-				rm ed_in namelist.input.temp
-				cat >! ed_in << EOF
+				if ( $CHEM != TRUE ) then
+					cp ${CUR_DIR}/phys_real_${phys_option} phys_opt
+					cp ${CUR_DIR}/dom_real dom_real
+	
+					set time_step = `awk ' /^ time_step /{ print $3 } ' namelist.input.$dataset | cut -d, -f1`
+	
+					#	Wanna do more/less time steps on the real cases?  Easy. Those last two numbers
+					#	in the eqns are all you need.  Their product must be 60.  So, instead of 3 and 20,
+					#	(3 coarse grid timesteps), you could use 20 and 3 (20 coarse grid time steps).
+	
+					if      ( $NESTED == TRUE ) then
+						@ run_seconds = $time_step * 3
+						@ history_interval = $time_step / 20
+					else if ( $NESTED != TRUE ) then
+						@ run_seconds = $time_step * 10
+						@ history_interval = $time_step / 6
+					endif
+					rm ed_in namelist.input.temp
+					cat >! ed_in << EOF
 g/run_seconds/s/[0-9]/$run_seconds
 g/history_interval/s/[0-9][0-9][0-9]/$history_interval
 w namelist.input.temp
 q
 EOF
-				ed namelist.input.$dataset < ed_in
+					ed namelist.input.$dataset < ed_in
+	
+					sed -e '/^ mp_physics/,/ensdim/d' -e '/^ &physics/r ./phys_opt' \
+					    -e '/^ time_step /,/^ smooth_option/d' -e '/^ &domains/r ./dom_real' \
+					    -e 's/ frames_per_outfile *= [0-9][0-9]*/ frames_per_outfile = 200/g' \
+					    -e 's/ run_days *= [0-9][0-9]*/ run_days = 0/g' \
+					    -e 's/ run_hours *= [0-9][0-9]*/ run_hours = 0/g' \
+					    -e 's/ run_minutes *= [0-9][0-9]*/ run_minutes = 0/g' \
+					namelist.input.temp >! namelist.input
+				
+				#	The chem run has its own namelist, due to special input files
 
-				sed -e '/^ mp_physics/,/ensdim/d' -e '/^ &physics/r ./phys_opt' \
-				    -e '/^ time_step /,/^ smooth_option/d' -e '/^ &domains/r ./dom_real' \
-				    -e 's/ frames_per_outfile *= [0-9][0-9]*/ frames_per_outfile = 200/g' \
-				    -e 's/ run_days *= [0-9][0-9]*/ run_days = 0/g' \
-				    -e 's/ run_hours *= [0-9][0-9]*/ run_hours = 0/g' \
-				    -e 's/ run_minutes *= [0-9][0-9]*/ run_minutes = 0/g' \
-				namelist.input.temp >! namelist.input
+				else if ( $CHEM == TRUE ) then
+					cp namelist.input.$dataset namelist.input
+				endif
+
 				# WRF output quilt servers are only tested for MPI configuration.  
 				# Currenlty, only one WRF output quilt server is used.  
+
 				if ( $QUILT == TRUE ) then
 					if ( $compopt == $COMPOPTS[3] ) then
 						#	For now, test only one group of one output quilt servers.  
@@ -1401,6 +1448,15 @@ banner 16
 				#	Run the forecast for this core, physics package and parallel option
 
 				rm $TMPDIR/wrfout_d01_${filetag}.${core}.${phys_option}.$compopt >& /dev/null
+				
+				#	The chem run has its own namelist, due to special input files, and it changes between
+				#	the IC generation and the forecast parts.  Just edit the existing one since the
+				#	quilt mods would have already been added.
+
+				if ( $CHEM == TRUE ) then
+					sed -e 's/ chem_in_opt *= *[0-9]*/ chem_in_opt = 0/g' namelist.input >! namelist.input.temp
+					mv namelist.input.temp namelist.input
+				endif
 
 				if      ( $compopt == $COMPOPTS[1] ) then
 					setenv OMP_NUM_THREADS 1

@@ -205,6 +205,8 @@ set REG_TYPE = BIT4BIT
 if ( $NESTED != TRUE ) then
 	set CHEM = TRUE
 	set CHEM = FALSE
+else if ( $NESTED == TRUE ) then
+	set CHEM = FALSE
 endif
 if ( $CHEM == TRUE ) then
 	setenv WRF_CHEM 1
@@ -373,6 +375,11 @@ cat >! dom_real << EOF
  parent_time_step_ratio              = 1,     3,     3,
  feedback                            = 1,
  smooth_option                       = 0
+ num_moves                           = 3
+ move_id                             = 2 , 2 , 2
+ move_interval                       = 3 , 6 , 9
+ move_cd_x                           = 1 , 1 , 1
+ move_cd_y                           = 1 , 1 , 1
 EOF
 else if ( $dataset == jun01 ) then
 cat >! dom_real << EOF
@@ -397,6 +404,11 @@ cat >! dom_real << EOF
  parent_time_step_ratio              = 1,     3,     3,
  feedback                            = 1,
  smooth_option                       = 0
+ num_moves                           = 3
+ move_id                             = 2 , 2 , 2
+ move_interval                       = 1 , 2 , 3
+ move_cd_x                           = 1 , 1 , 1
+ move_cd_y                           = 1 , 1 , 1
 EOF
 endif
 cat >! dom_ideal << EOF
@@ -1226,6 +1238,15 @@ banner 7
 				endif
 			endif
 		endif
+
+		#	We also need to modify the configure.wrf file based on whether or not there is
+		#	going to be nesting.  All regtest em_real nesting runs utilize a moving nest.  All of the
+		#	ARCHFLAGS macros need to have -DMOVE_NESTS added to the list of options. 
+
+		if ( ( $NESTED == TRUE ) && ( $core == em_real ) ) then
+			sed -e '/^ARCHFLAGS/s/=/=	-DMOVE_NESTS/' ./configure.wrf >! foo ; /bin/mv foo configure.wrf
+		endif
+
 #DAVE###################################################
 echo configure built with optim mods removed, ready to compile
 banner 8

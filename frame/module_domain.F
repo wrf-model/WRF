@@ -627,6 +627,7 @@ CONTAINS
       INTEGER                     :: i
       INTEGER                     :: parent_id , parent_domdesc , new_domdesc
       INTEGER                     :: bdyzone_x , bdyzone_y
+      INTEGER                     :: nx, ny
 
 
 ! This next step uses information that is listed in the registry as namelist_derived
@@ -643,6 +644,8 @@ CONTAINS
           CALL nl_get_e_sn( domain_id , ed2 )
           CALL nl_get_s_vert( domain_id , sd3 )
           CALL nl_get_e_vert( domain_id , ed3 )
+          nx = ed1-sd1+1
+          ny = ed2-sd2+1
 
         CASE  ( DATA_ORDER_YXZ )
 
@@ -652,6 +655,8 @@ CONTAINS
           CALL nl_get_e_we( domain_id , ed2 )
           CALL nl_get_s_vert( domain_id , sd3 )
           CALL nl_get_e_vert( domain_id , ed3 )
+          nx = ed2-sd2+1
+          ny = ed1-sd1+1
 
         CASE  ( DATA_ORDER_ZXY )
 
@@ -661,6 +666,8 @@ CONTAINS
           CALL nl_get_e_we( domain_id , ed2 )
           CALL nl_get_s_sn( domain_id , sd3 )
           CALL nl_get_e_sn( domain_id , ed3 )
+          nx = ed2-sd2+1
+          ny = ed3-sd3+1
 
         CASE  ( DATA_ORDER_ZYX )
 
@@ -670,6 +677,8 @@ CONTAINS
           CALL nl_get_e_sn( domain_id , ed2 )
           CALL nl_get_s_we( domain_id , sd3 )
           CALL nl_get_e_we( domain_id , ed3 )
+          nx = ed3-sd3+1
+          ny = ed2-sd2+1
 
         CASE  ( DATA_ORDER_XZY )
 
@@ -679,6 +688,8 @@ CONTAINS
           CALL nl_get_e_vert( domain_id , ed2 )
           CALL nl_get_s_sn( domain_id , sd3 )
           CALL nl_get_e_sn( domain_id , ed3 )
+          nx = ed1-sd1+1
+          ny = ed3-sd3+1
 
         CASE  ( DATA_ORDER_YZX )
 
@@ -688,15 +699,25 @@ CONTAINS
           CALL nl_get_e_vert( domain_id , ed2 )
           CALL nl_get_s_we( domain_id , sd3 )
           CALL nl_get_e_we( domain_id , ed3 )
+          nx = ed3-sd3+1
+          ny = ed1-sd1+1
 
       END SELECT data_ordering
 
+#ifdef RSL
+! Check domain size to be sure it is within RSLs limit
+      IF ( nx .GE. 1024 .OR. ny .GE. 1024 ) THEN
+        WRITE ( wrf_err_message , * ) 'domain too large for RSL. Use RSL_LITE or other comm package.'
+        CALL wrf_error_fatal ( TRIM ( wrf_err_message ) )
+      ENDIF
 
-      if ( num_time_levels > 3 ) then
-        WRITE ( wrf_err_message , * ) 'module_domain: alloc_and_configure_domain: Incorrect value for num_time_levels ', &
+#endif
+
+      IF ( num_time_levels > 3 ) THEN
+        WRITE ( wrf_err_message , * ) 'alloc_and_configure_domain: Incorrect value for num_time_levels ', &
                                        num_time_levels
         CALL wrf_error_fatal ( TRIM ( wrf_err_message ) )
-      endif
+      ENDIF
 
       IF (ASSOCIATED(parent)) THEN
         parent_id = parent%id

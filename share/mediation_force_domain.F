@@ -1,5 +1,3 @@
-!#define ONEWAY
-
 SUBROUTINE med_force_domain ( parent_grid , nested_grid )
    USE module_domain
    USE module_configure

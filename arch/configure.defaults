@@ -3322,7 +3322,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="mpif90 $(FCDEBUG) $(FCFLAGS) -w" all )
+          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCFLAGS) -w" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -3428,7 +3428,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="mpif90 $(FCDEBUG) $(FCFLAGS) -w" all )
+          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCFLAGS) -w" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -3541,7 +3541,7 @@ module_dm.F : ../external/RSL_LITE/module_dm.F
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="mpif90 $(FCDEBUG) $(FCFLAGS) -w" all )
+          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCFLAGS) -w" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \

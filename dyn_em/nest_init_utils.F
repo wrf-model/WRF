@@ -16,7 +16,7 @@ SUBROUTINE init_domain_constants_em ( parent , nest )
    nest%epsts   = parent%epsts
    nest%rdx     = 1./nest%dx
    nest%rdy     = 1./nest%dy
-   nest%dts     = nest%dt/float(nest%time_step_sound)
+!  nest%dts     = nest%dt/float(nest%time_step_sound)
    nest%dtseps  = parent%dtseps  ! used in height model only?
    nest%resm    = parent%resm    ! used in height model only?
    nest%zetatop = parent%zetatop ! used in height model only?

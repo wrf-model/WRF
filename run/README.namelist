@@ -276,7 +276,7 @@ Namelist variables for controling the prototype moving nest:
  v_mom_adv_order (max_dom)           = 3,       ; vertical momentum advection order
  h_sca_adv_order (max_dom)           = 5,       ; horizontal scalar advection order
  v_sca_adv_order (max_dom)           = 3,       ; vertical scalar advection order
- time_step_sound (max_dom)           = 4 /	; number of sound steps per time-step
+ time_step_sound (max_dom)           = 4 /	; number of sound steps per time-step (0=set automatically)
                                                   (if using a time_step much larger than 6*dx (in km),
                                                   proportionally increase number of sound steps - also
                                                   best to use even numbers)

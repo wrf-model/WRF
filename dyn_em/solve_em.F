@@ -257,6 +257,14 @@ SUBROUTINE solve_em ( grid , config_flags , &
 
  rk_order = config_flags%rk_ord
  leapfrog = .false.
+ IF (time_step_sound == 0) THEN
+! auto-set option
+! This function will give 4 for 6*dx and 6 for 10*dx and returns even numbers only
+   time_step_sound = max ( 2 * ( INT (300.*dt/dx-0.01) + 1 ), 4 )
+   WRITE(wrf_err_message,*)'dx, dt, time_step_sound=',dx,dt,time_step_sound
+   CALL wrf_debug ( 50 , wrf_err_message )
+ ENDIF
+
  dts = dt/float(time_step_sound)
 
  IF(rk_ord == 1) leapfrog = .true.

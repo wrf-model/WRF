@@ -130,7 +130,8 @@ CONTAINS
 !-- FLX2        freezing rain latent heat flux (W m-2)
 !-- FLX3        phase-change heat flux from snowmelt (W m-2)
 ! ----------------------------------------------------------------------
-!-- ACSNOW      snow melt (m) (water equivalent)
+!-- ACSNOM      snow melt (mm) (water equivalent)
+!-- ACSNOW      accumulated snow fall (mm) (water equivalent)
 ! ----------------------------------------------------------------------
 !-- RUNOFF1     surface runoff (m s-1), not infiltrating the surface
 !-- RUNOFF2     subsurface runoff (m s-1), drainage out bottom of last

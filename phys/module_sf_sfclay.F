@@ -42,7 +42,7 @@ CONTAINS
 !-- PBLH        PBL height from previous time (m)
 !-- MAVAIL      surface moisture availability (between 0 and 1)
 !-- ZOL         z/L height over Monin-Obukhov length
-!-- MOL         q* (similarity theory) (kg/kg)
+!-- MOL         T* (similarity theory) (K)
 !-- REGIME      flag indicating PBL regime (stable, unstable, etc.)
 !-- PSIM        similarity stability function for momentum
 !-- PSIH        similarity stability function for heat

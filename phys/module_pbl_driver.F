@@ -104,7 +104,7 @@ CONTAINS
 !-- ZNT           roughness length (m)
 !-- MAVAIL        surface moisture availability (between 0 and 1)
 !-- UST           u* in similarity theory (m/s)
-!-- MOL           q* (similarity theory) (kg/kg)
+!-- MOL           T* (similarity theory) (K)
 !-- HOL           PBL height over Monin-Obukhov length
 !-- PBLH          PBL height (m)
 !-- CAPG          heat capacity for soil (J/K/m^3)

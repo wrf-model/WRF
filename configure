@@ -107,8 +107,8 @@ if test -z "$NETCDF" ; then
 fi
 if  test -z "$NETCDF"  ; then
  
-  if [ `hostname | cut -c 1-2` = "bb" -o `hostname | cut -c 1-2` = "bf" -o `hostname | cut -c 1-2` = "bs" -o \
-       `hostname` = "dataproc" -o `hostname` = "ute" ] ; then
+  if [ `hostname | cut -c 1-2` = "bs" -o \
+       `hostname` = "tempest" -o `hostname` = "ute" ] ; then
     echo 'Compiling on an NCAR system with weird paths to NetCDF'
     echo 'Setting up a local NetCDF directory with symlinks'
     if ( test -d ./netcdf_links ) ; then

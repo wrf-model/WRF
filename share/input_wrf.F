@@ -85,7 +85,7 @@
     IF ( ( ide .NE. ide_compare    ) .OR. &
         ( kde .NE. kde_compare    ) .OR. &
         ( jde .NE. jde_compare    ) ) THEN
-      WRITE(wrf_err_message,*)'module_io_wrf.F: SIZE MISMATCH:  namelist ide,jde,kde=',ide,jde,kde,&
+      WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  namelist ide,jde,kde=',ide,jde,kde,&
                               '; input data ide,jde,kde=',ide_compare , jde_compare , kde_compare
       CALL wrf_error_fatal( wrf_err_message )
     ENDIF

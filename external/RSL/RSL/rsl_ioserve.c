@@ -157,6 +157,11 @@ handle_read_request( req, resp_me, pbuf_me )
   rsl_point_t *domain ;
   int nelem_alloc ;
 
+/* efficiency update from JM, 2002/05/24 */
+  int numpts[RSL_MAXPROC], maxnumpts, iii ;
+  int *iptlst, *jptlst, *ip1, *ip2  ;
+  double *dp1, *dp2 ;
+
 /* bug fix from AJB; rbuf needs to be as large as the
    domain size (with padding out to factor of 3 for nest
    dimensions) or may generate a seg-fault in bcopies below
@@ -255,6 +260,7 @@ handle_read_request( req, resp_me, pbuf_me )
   for ( i = 0 ; i < rsl_nproc_all ; i++ )       /* 95/02/22 */
   {
     psize[i] = 0 ;
+    numpts[i] = 0 ;
   }
   mlen = domain_info[req->domain].len_m ;
   nlen = domain_info[req->domain].len_n ;
@@ -263,9 +269,34 @@ handle_read_request( req, resp_me, pbuf_me )
   {
     for ( ig = 0 ; ig < mlen ; ig++ )
     {
-      psize[domain[INDEX_2(jg,ig,mlen)].P] += columnelems * typelen ;
+      P = domain[INDEX_2(jg,ig,mlen)].P ;       /* 2002/05/24 */
+      psize[P] += columnelems * typelen ;       /* 2002/05/24 */
+      if ( P >= 0 && P < rsl_nproc_all ) numpts[P]++ ;   /* 2002/05/24 */
     }
   }
+  maxnumpts = 0 ;                               /* 2002/05/24 */
+  for ( i = 0 ; i < rsl_nproc_all ; i++ )       /* 2002/05/24 */
+  {                                             /* 2002/05/24 */
+    if ( maxnumpts < numpts[i] ) maxnumpts = numpts[i] ; /* 2002/05/24 */
+  }                                             /* 2002/05/24 */
+
+  iptlst = RSL_MALLOC( int, rsl_nproc_all * maxnumpts ) ;      /* 2002/05/24 */
+  jptlst = RSL_MALLOC( int, rsl_nproc_all * maxnumpts ) ;      /* 2002/05/24 */
+  for ( i = 0 ; i < rsl_nproc_all ; i++ ) numpts[i] = 0 ;      /* 2002/05/24 */
+  for ( jg = 0 ; jg < nlen ; jg++ )                            /* 2002/05/24 */
+  {                                                            /* 2002/05/24 */
+   for ( ig = 0 ; ig < mlen ; ig++ )                           /* 2002/05/24 */
+    {                                                          /* 2002/05/24 */
+      P = domain[INDEX_2(jg,ig,mlen)].P ;                      /* 2002/05/24 */
+      if ( P >= 0 && P < rsl_nproc_all )                       /* 2002/05/24 */
+      {                                                        /* 2002/05/24 */
+        iptlst[INDEX_2(P,numpts[P],maxnumpts)] = ig ;          /* 2002/05/24 */
+        jptlst[INDEX_2(P,numpts[P],maxnumpts)] = jg ;          /* 2002/05/24 */
+        numpts[P]++ ;                                          /* 2002/05/24 */
+      }                                                        /* 2002/05/24 */
+    }                                                          /* 2002/05/24 */
+  }                                                            /* 2002/05/24 */
+
   for ( P = 0 ; P < rsl_nproc_all ; P++ )       /* 95/02/22 */
   {
     len = 0 ;
@@ -285,12 +316,153 @@ handle_read_request( req, resp_me, pbuf_me )
    will work for MM.  A more general approach will require modification. */
 
 #ifndef vpp
-    for ( jg = 0 ; jg < nlen ;  jg++ )
+if ( typelen == sizeof ( int ) ) {
+    for ( iii = 0 ; iii < numpts[P] ; iii++ )
     {
-      for ( ig = 0 ; ig < mlen ; ig++ )
-      {
-        if ( domain[INDEX_2(jg,ig,mlen)].P == P )
-        {
+      ig = iptlst[INDEX_2(P,iii,maxnumpts)] ;
+      jg = jptlst[INDEX_2(P,iii,maxnumpts)] ;
+          RSL_TEST_ERR( cursor >= len,
+   "something wrong with read request: check glen, llen arrays in call") ;
+          switch ( req->iotag )
+          {
+          case IO2D_IJ :
+            ip1 = (int *) &(rbuf[typelen*(ig+jg*req->glen[0])]) ;
+            ip2 = (int *) &(pbuf[cursor]) ;
+            *ip2 = *ip1 ;
+            cursor += typelen ;
+            break ;
+          case IO2D_JI :
+            ip1 = (int *) &(rbuf[typelen*(jg+ig*req->glen[0])]) ;
+            ip2 = (int *) &(pbuf[cursor]) ;
+            *ip2 = *ip1 ;
+            cursor += typelen ;
+            break ;
+          case IO3D_IJK :
+            k = 0 ;
+            ip1 = (int *) &(rbuf[typelen*(ig+req->glen[0]*(jg+k*req->glen[1]))]) ;
+            ip2 = (int *) &(pbuf[cursor]) ;
+            for ( k = 0 ; k < req->glen[2] ; k++ )
+            {
+              *ip2 = *ip1 ;
+              ip1 += req->glen[0] * req->glen[1] ;
+              ip2++ ;
+            }
+            cursor += typelen*req->glen[2]  ;
+            break ;
+          case IO3D_JIK :
+            k = 0 ;
+            ip1 = (int *) &(rbuf[typelen*(jg+req->glen[0]*(ig+k*req->glen[1]))]) ;
+            ip2 = (int *) &(pbuf[cursor]) ;
+            for ( k = 0 ; k < req->glen[2] ; k++ )
+            {
+              *ip2 = *ip1 ;
+              ip1 += req->glen[0] * req->glen[1] ;
+              ip2++ ;
+            }
+            cursor += typelen*req->glen[2]  ;
+            break ;
+          case IO3D_KIJ :
+            k = 0 ;
+            ip1 = (int *) &(rbuf[typelen*(k+req->glen[0]*(ig+jg*req->glen[1]))]) ;
+            ip2 = (int *) &(pbuf[cursor]) ;
+            for ( k = 0 ; k < req->glen[0] ; k++ )
+            {
+              *ip2 = *ip1 ;
+              ip1++ ;
+              ip2++ ;
+            }
+            cursor += typelen*req->glen[0] ;
+            break ;
+          case IO3D_IKJ :
+            k = 0 ;
+            ip1 = (int *) &(rbuf[typelen*(ig+req->glen[0]*(k+jg*req->glen[1]))]) ;
+            ip2 = (int *) &(pbuf[cursor]) ;
+            for ( k = 0 ; k < req->glen[1] ; k++ )
+            {
+              *ip2 = *ip1 ;
+              ip1 += req->glen[0] ;
+              ip2++ ;
+            }
+            cursor += typelen*req->glen[1] ;
+            break ;
+          }
+    }
+} else if ( typelen == sizeof ( double ) ) {
+    for ( iii = 0 ; iii < numpts[P] ; iii++ )
+    {
+      ig = iptlst[INDEX_2(P,iii,maxnumpts)] ;
+      jg = jptlst[INDEX_2(P,iii,maxnumpts)] ;
+          RSL_TEST_ERR( cursor >= len,
+   "something wrong with read request: check glen, llen arrays in call") ;
+          switch ( req->iotag )
+          {
+          case IO2D_IJ :
+            dp1 = (double *) &(rbuf[typelen*(ig+jg*req->glen[0])]) ;
+            dp2 = (double *) &(pbuf[cursor]) ;
+            *dp2 = *dp1 ;
+            cursor += typelen ;
+            break ;
+          case IO2D_JI :
+            dp1 = (double *) &(rbuf[typelen*(jg+ig*req->glen[0])]) ;
+            dp2 = (double *) &(pbuf[cursor]) ;
+            *dp2 = *dp1 ;
+            cursor += typelen ;
+            break ;
+          case IO3D_IJK :
+            k = 0 ;
+            dp1 = (double *) &(rbuf[typelen*(ig+req->glen[0]*(jg+k*req->glen[1]))]) ;
+            dp2 = (double *) &(pbuf[cursor]) ;
+            for ( k = 0 ; k < req->glen[2] ; k++ )
+            {
+              *dp2 = *dp1 ;
+              dp1 += req->glen[0] * req->glen[1] ;
+              dp2++ ;
+            }
+            cursor += typelen*req->glen[2]  ;
+            break ;
+          case IO3D_JIK :
+            k = 0 ;
+            dp1 = (double *) &(rbuf[typelen*(jg+req->glen[0]*(ig+k*req->glen[1]))]) ;
+            dp2 = (double *) &(pbuf[cursor]) ;
+            for ( k = 0 ; k < req->glen[2] ; k++ )
+            {
+              *dp2 = *dp1 ;
+              dp1 += req->glen[0] * req->glen[1] ;
+              dp2++ ;
+            }
+            cursor += typelen*req->glen[2]  ;
+            break ;
+          case IO3D_KIJ :
+            k = 0 ;
+            dp1 = (double *) &(rbuf[typelen*(k+req->glen[0]*(ig+jg*req->glen[1]))]) ;
+            dp2 = (double *) &(pbuf[cursor]) ;
+            for ( k = 0 ; k < req->glen[0] ; k++ )
+            {
+              *dp2 = *dp1 ;
+              dp1++ ;
+              dp2++ ;
+            }
+            cursor += typelen*req->glen[0] ;
+            break ;
+          case IO3D_IKJ :
+            k = 0 ;
+            dp1 = (double *) &(rbuf[typelen*(ig+req->glen[0]*(k+jg*req->glen[1]))]) ;
+            dp2 = (double *) &(pbuf[cursor]) ;
+            for ( k = 0 ; k < req->glen[1] ; k++ )
+            {
+              *dp2 = *dp1 ;
+              dp1 += req->glen[0] ;
+              dp2++ ;
+            }
+            cursor += typelen*req->glen[1] ;
+            break ;
+          }
+    }
+}else{
+    for ( iii = 0 ; iii < numpts[P] ; iii++ )
+    {
+      ig = iptlst[INDEX_2(P,iii,maxnumpts)] ;
+      jg = jptlst[INDEX_2(P,iii,maxnumpts)] ;
           RSL_TEST_ERR( cursor >= len,
    "something wrong with read request: check glen, llen arrays in call") ;
           switch ( req->iotag )
@@ -343,11 +515,9 @@ handle_read_request( req, resp_me, pbuf_me )
               cursor += typelen ;
             }
             break ;
-
           }
-        }
-      }
     }
+}
 #else
     for ( jg = 0 ; jg < nlen ;  jg++ )
     {
@@ -483,6 +653,8 @@ handle_read_request( req, resp_me, pbuf_me )
     }
   }
 
+  RSL_FREE (iptlst) ;   /* 20020524 */
+  RSL_FREE (jptlst) ;   /* 20020524 */
   RSL_FREE( rbuf ) ;
 }
 

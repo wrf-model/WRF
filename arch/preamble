@@ -35,5 +35,8 @@ CONFIG_BUF_LEN	=	8192
 #### Default sed command and script for Fortran source files ####
 SED_FTN = sed -f ../arch/standard.sed
 
+#### Default ESMF dependence for embedded ESMF time manager ####
+ESMF_MOD_DEPENDENCE = ../external/esmf_time_f90/ESMF_Mod.o
+
 #### Architecture specific settings ####
 

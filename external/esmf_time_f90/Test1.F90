@@ -1,5 +1,5 @@
   program ttest
-  USE esmf_mod
+  USE wrf_esmf_mod
 IMPLICIT NONE
   INTEGER rc, e, f 
   TYPE (ESMF_Time)         :: start, stop, current
@@ -13,14 +13,14 @@ IMPLICIT NONE
   CALL ESMF_CalendarSet(gregorianCalendar, ESMF_CAL_GREGORIAN, rc)
   PRINT*,rc,ESMF_SUCCESS
 
-!  CALL ESMF_TimeSet( start, YR=2002, MM=12, DD=31 , H=23, S=3599, Sn=7, Sd=3, cal=gregorianCalendar, rc=rc )
+!  CALL ESMF_TimeSet( start, YY=2002, MM=12, DD=31 , H=23, S=3599, Sn=7, Sd=3, cal=gregorianCalendar, rc=rc )
 !  CALL ESMF_TimeGetString( start, str, rc ) 
 !  s2 = str(1:10)//"_"//str(12:24)
 !  PRINT*,TRIM(s2)
 !  STOP
 
-  CALL ESMF_TimeSet( start, YR=2002, MM=12, DD=27 , H=3, Sn=3, Sd=6, cal=gregorianCalendar, rc=rc )
-  CALL ESMF_TimeSet( stop,  YR=2002, MM=12, DD=27 , H=3, Sn=2, Sd=5, cal=gregorianCalendar, rc=rc )
+  CALL ESMF_TimeSet( start, YY=2002, MM=12, DD=27 , H=3, Sn=3, Sd=6, cal=gregorianCalendar, rc=rc )
+  CALL ESMF_TimeSet( stop,  YY=2002, MM=12, DD=27 , H=3, Sn=2, Sd=5, cal=gregorianCalendar, rc=rc )
 
   print*,'eq',(start .eq. stop)
   print*,'lt',(start .lt. stop)
@@ -52,11 +52,11 @@ IMPLICIT NONE
     CALL ESMF_ClockGetAlarmList( clock, alarms, rc )
     IF ( ESMF_AlarmIsRinging(alarms(1),rc )) THEN
       write(0,*)' alarm 1 --------------------------------------'
-      CALL ESMF_AlarmTurnOff(alarms(1),rc )
+      CALL ESMF_AlarmRingerOff(alarms(1),rc )
     ENDIF
     IF ( ESMF_AlarmIsRinging(alarms(2),rc )) THEN
       write(0,*)' alarm 2 --------------------------------------'
-      CALL ESMF_AlarmTurnOff(alarms(2),rc )
+      CALL ESMF_AlarmRingerOff(alarms(2),rc )
     ENDIF
     CALL ESMF_TimeGetString( clock%CurrTime, str, rc ) 
     CALL ESMF_TimeGet(clock%CurrTime,MS=ms) 

@@ -347,12 +347,13 @@
 ! !IROUTINE: ESMF_TimeGet - Get value in user-specified units
 
 ! !INTERFACE:
-      subroutine ESMF_TimeGet(time, YR, YRl, MM, DD, D, Dl, H, M, S, Sl, MS, &
-                              US, NS, d_, h_, m_, s_, ms_, us_, ns_, Sn, Sd, rc)
+      subroutine ESMF_TimeGet(time, YY, YRl, MM, DD, D, Dl, H, M, S, Sl, MS, &
+                              US, NS, d_, h_, m_, s_, ms_, us_, ns_, Sn, Sd, &
+                              dayOfYear, timeString, rc)
 
 ! !ARGUMENTS:
       type(ESMF_Time), intent(in) :: time
-      integer, intent(out), optional :: YR
+      integer, intent(out), optional :: YY
       integer(ESMF_IKIND_I8), intent(out), optional :: YRl
       integer, intent(out), optional :: MM
       integer, intent(out), optional :: DD
@@ -374,7 +375,10 @@
       double precision, intent(out), optional :: ns_
       integer, intent(out), optional :: Sn
       integer, intent(out), optional :: Sd
+      integer, intent(out), optional :: dayOfYear
+      character (len=*), intent(out), optional :: timeString
       integer, intent(out), optional :: rc
+      integer :: ierr
 
 ! !DESCRIPTION:
 !     Get the value of the {\tt ESMF\_Time} in units specified by the user
@@ -391,7 +395,7 @@
 !     \begin{description}
 !     \item[time]
 !          The object instance to query
-!     \item[{[YR]}]
+!     \item[{[YY]}]
 !          Integer year CCYR (>= 32-bit)
 !     \item[{[YRl]}]
 !          Integer year CCYR (large, >= 64-bit)
@@ -444,8 +448,10 @@
 !EOP
 
 #ifdef F90_STANDALONE
-      IF ( PRESENT( YR ) ) THEN
-        YR = time%YR
+      ierr = ESMF_SUCCESS
+
+      IF ( PRESENT( YY ) ) THEN
+        YY = time%YR
       ENDIF
       IF ( PRESENT( MM ) ) THEN
         MM = time%MM
@@ -470,9 +476,15 @@
         Sd = time%basetime%Sd
         Sn = time%basetime%Sn
       ENDIF
+      IF ( PRESENT( dayOfYear ) ) THEN
+        CALL ESMF_TimeGetDayOfYear( time, dayOfYear, rc=ierr )
+      ENDIF
+      IF ( PRESENT( timeString ) ) THEN
+        CALL ESMF_TimeGetString( time, timeString, rc=ierr )
+      ENDIF
 
       IF ( PRESENT( rc ) ) THEN
-        rc = ESMF_SUCCESS
+        rc = ierr
       ENDIF
 #endif
 
@@ -483,13 +495,13 @@
 ! !IROUTINE: ESMF_TimeSet - Initialize via user-specified unit set
 
 ! !INTERFACE:
-      subroutine ESMF_TimeSet(time, YR, YRl, MM, DD, D, Dl, H, M, S, Sl, &
+      subroutine ESMF_TimeSet(time, YY, YRl, MM, DD, D, Dl, H, M, S, Sl, &
                               MS, US, NS, d_, h_, m_, s_, ms_, us_, ns_, &
                               Sn, Sd, cal, tz, rc)
 
 ! !ARGUMENTS:
       type(ESMF_Time), intent(out) :: time
-      integer, intent(in), optional :: YR
+      integer, intent(in), optional :: YY
       integer(ESMF_IKIND_I8), intent(in), optional :: YRl
       integer, intent(in), optional :: MM
       integer, intent(in), optional :: DD
@@ -530,7 +542,7 @@
 !     \begin{description}
 !     \item[time]
 !          The object instance to initialize
-!     \item[{[YR]}]
+!     \item[{[YY]}]
 !          Integer year CCYR (>= 32-bit)
 !     \item[{[YRl]}]
 !          Integer year CCYR (large, >= 64-bit)
@@ -589,8 +601,8 @@
 #ifdef F90_STANDALONE
       time%instant = .true.
       time%YR = 0
-      IF ( PRESENT( YR ) ) THEN
-	time%YR = YR
+      IF ( PRESENT( YY ) ) THEN
+	time%YR = YY
       ENDIF
       time%MM = 0
       IF ( PRESENT( MM ) ) THEN
@@ -1647,12 +1659,13 @@
 ! !IROUTINE:  ESMF_TimePrint - Print out a time instant's properties
 
 ! !INTERFACE:
-      subroutine ESMF_TimePrint(time, opts, rc)
+      subroutine ESMF_TimePrint(time, options, rc)
 
 ! !ARGUMENTS:
       type(ESMF_Time), intent(in) :: time
-      character (len=*), intent(in), optional :: opts
+      character (len=*), intent(in), optional :: options
       integer, intent(out), optional :: rc
+      character (len=256) :: timestr
 
 ! !DESCRIPTION:
 !     To support testing/debugging, print out a {\tt ESMF\_Time}'s
@@ -1662,7 +1675,7 @@
 !     \begin{description}
 !     \item[time]
 !          {\tt ESMF\_Time} instant to print out
-!     \item[{[opts]}]
+!     \item[{[options]}]
 !          Print options
 !     \item[{[rc]}]
 !          Return code; equals {\tt ESMF\_SUCCESS} if there are no errors.
@@ -1672,7 +1685,17 @@
 !     TMGn.n.n
 !EOP
    
-      call c_ESMC_TimePrint(time, opts, rc)
+      ! Quick hack to mimic ESMF 2.0.1
+      ! Really should check value of options...  
+      IF ( PRESENT( options ) ) THEN
+        CALL ESMF_TimeGet( time, timeString=timestr, rc=rc )
+        timestr(11:11) = 'T'     ! ISO 8601 compatibility hack for debugging
+        print *,' Time -----------------------------------'
+        print *,' ',TRIM(timestr)
+        print *,' end Time -------------------------------'
+        print *
+      ENDIF
+      call c_ESMC_TimePrint(time, options, rc)
 
       end subroutine ESMF_TimePrint
 

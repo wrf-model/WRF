@@ -62,9 +62,10 @@ convert_nmm.o: \
 	../frame/module_configure.o \
 	../frame/module_timing.o \
 	../frame/module_dm.o \
+	../frame/module_wrf_esmf_super.o \
 	../share/module_bc.o \
 	../share/module_io_domain.o \
-	../external/esmf_time_f90/ESMF_Mod.o 
+	$(ESMF_MOD_DEPENDENCE) $(EXTRAMODULES)
 
 ideal.o: \
 	../frame/module_machine.o \
@@ -73,8 +74,10 @@ ideal.o: \
 	../frame/module_configure.o \
 	../frame/module_timing.o \
 	../frame/module_dm.o \
+	../frame/module_wrf_esmf_super.o \
 	../share/module_io_domain.o \
-	../dyn_$(SOLVER)/$(CASE_MODULE)
+	../dyn_$(SOLVER)/$(CASE_MODULE) \
+	$(ESMF_MOD_DEPENDENCE) $(EXTRAMODULES)
 
 ndown_em.o: \
 	../frame/module_machine.o \
@@ -83,6 +86,7 @@ ndown_em.o: \
 	../frame/module_configure.o \
 	../frame/module_timing.o \
 	../frame/module_dm.o \
+	../frame/module_wrf_esmf_super.o \
 	../frame/module_wrf_error.o \
 	../frame/module_integrate.o \
 	../share/module_bc.o \
@@ -91,7 +95,7 @@ ndown_em.o: \
 	../share/module_soil_pre.o \
 	../dyn_em/module_initialize_real.o \
 	../dyn_em/module_big_step_utilities_em.o \
-	../external/esmf_time_f90/ESMF_Mod.o 
+	$(ESMF_MOD_DEPENDENCE) $(EXTRAMODULES)
 
 # this already built above :../dyn_em/module_initialize.real.o \
 real_em.o: \
@@ -101,13 +105,14 @@ real_em.o: \
 	../frame/module_configure.o \
 	../frame/module_timing.o \
 	../frame/module_dm.o \
+	../frame/module_wrf_esmf_super.o \
 	../dyn_em/module_si_io_em.o \
 	../dyn_em/module_big_step_utilities_em.o \
 	../share/module_io_domain.o \
 	../share/module_date_time.o \
 	../share/module_optional_si_input.o \
 	../share/module_bc_time_utilities.o \
-	../external/esmf_time_f90/ESMF_Mod.o 
+	$(ESMF_MOD_DEPENDENCE) $(EXTRAMODULES)
 #	../chem/module_input_chem_data.o \
 #	../chem/module_input_chem_bioemiss.o \
 
@@ -120,6 +125,7 @@ wrf.o: \
 	../frame/module_timing.o \
 	../frame/module_wrf_error.o \
 	../frame/module_dm.o \
-	../external/esmf_time_f90/ESMF_Mod.o 
+	../frame/module_wrf_esmf_super.o \
+	$(ESMF_MOD_DEPENDENCE) $(EXTRAMODULES)
 
 # DO NOT DELETE

@@ -8,7 +8,7 @@ MODULE module_nesting
    USE module_driver_constants
    USE module_domain
    USE module_configure
-   USE esmf_mod
+   USE WRF_ESMF_MOD
 
    LOGICAL, DIMENSION( max_domains )              :: active_domain
 
@@ -41,8 +41,8 @@ CONTAINS
             CALL nl_get_start_hour(nestid,s_h)    ; CALL nl_get_end_hour(nestid,e_h)
             CALL nl_get_start_minute(nestid,s_m)  ; CALL nl_get_end_minute(nestid,e_m)
             CALL nl_get_start_second(nestid,s_s)  ; CALL nl_get_end_second(nestid,e_s)
-            CALL ESMF_TimeSet( nest_start,YR=s_yr,MM=s_mm,DD=s_dd,H=s_h,M=s_m,S=s_s,rc=rc)
-            CALL ESMF_TimeSet( nest_stop,YR=e_yr,MM=e_mm,DD=e_dd,H=e_h,M=e_m,S=e_s,rc=rc)
+            CALL ESMF_TimeSet( nest_start,YY=s_yr,MM=s_mm,DD=s_dd,H=s_h,M=s_m,S=s_s,rc=rc)
+            CALL ESMF_TimeSet( nest_stop,YY=e_yr,MM=e_mm,DD=e_dd,H=e_h,M=e_m,S=e_s,rc=rc)
             IF ( nest_start .LE. head_grid%current_time .AND. &
                  nest_stop  .GT. head_grid%current_time ) THEN
               DO kid = 1 , max_nests

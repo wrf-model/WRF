@@ -10,7 +10,7 @@ PROGRAM convert_nmm
    USE module_bc
    USE module_configure
    USE module_timing
-   USE esmf_mod
+   USE WRF_ESMF_MOD
 #ifdef DM_PARALLEL
    USE module_dm
 #endif
@@ -67,6 +67,15 @@ PROGRAM convert_nmm
    INTEGER ::   end_year ,   end_month ,   end_day ,   end_hour ,   end_minute ,   end_second
    INTEGER :: interval_seconds , real_data_init_type
    INTEGER :: time_loop_max , time_loop
+! TBH:  ESMF HACK:  The ESMF 2.0.1 implementation of ESMF_ClockValidate()
+! TBH:  returns an error code if currTime == stopTime !!  Earl will fix
+! TBH:  this in a later ESMF release.  Once ESMF is fixed, remove the following
+! TBH:  hack.
+#ifdef WRF_ESMF_MOD
+   TYPE(ESMF_Time) :: stop_time_hack
+   TYPE(ESMF_TimeInterval) :: one_day
+#endif
+! TBH:  END ESMF HACK
 
    CHARACTER (LEN=80) :: inpname , bdyname
 
@@ -87,7 +96,11 @@ PROGRAM convert_nmm
    CALL disable_quilting
 #endif
 
-   CALL init_modules
+   CALL init_modules(1)   ! Phase 1 returns after MPI_INIT() (if it is called)
+#ifdef WRF_ESMF_MOD
+   CALL ESMF_Initialize( defaultCalendar=ESMF_CAL_GREGORIAN, rc=rc )
+#endif
+   CALL init_modules(2)   ! Phase 2 resumes after MPI_INIT() (if it is called)
 
 #ifdef DM_PARALLEL
    IF ( wrf_dm_on_monitor() ) THEN
@@ -119,9 +132,9 @@ PROGRAM convert_nmm
 
    CALL Setup_Timekeeping ( grid )
    CALL ESMF_TimeIntervalSet ( time_interval , S=model_config_rec%interval_seconds, rc=rc )
-   CALL ESMF_ClockSetTimeStep ( grid%domain_clock , time_interval , rc=rc )
-   CALL ESMF_ClockGetCurrTime ( grid%domain_clock, grid%current_time , rc=rc )
-   CALL ESMF_TimeGetString( grid%current_time, message, rc=rc)
+   CALL ESMF_ClockSet ( grid%domain_clock , timeStep=time_interval , rc=rc )
+   CALL ESMF_ClockGet ( grid%domain_clock, currTime=grid%current_time , rc=rc )
+   CALL wrf_timetoa ( grid%current_time, message )
    write(0,*)Trim(message)
 
    CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
@@ -157,6 +170,26 @@ print *,'init_typ  =',model_config_rec%real_data_init_type
            start_year,start_month,start_day,start_hour,start_minute,start_second
    WRITE (   end_date_char , FMT = '(I4.4,"-",I2.2,"-",I2.2,"_",I2.2,":",I2.2,":",I2.2)' ) &
              end_year,  end_month,  end_day,  end_hour,  end_minute,  end_second
+
+   !  Override stop time with value computed above.
+   CALL wrf_atotime( end_date_char, grid%stop_time )
+! TBH:  ESMF HACK:  The ESMF 2.0.1 implementation of ESMF_ClockValidate() ! TBH:  returns an error code if currTime == stopTime !!  Earl will fix
+! TBH:  this in a later ESMF release.  Once ESMF is fixed, remove the following
+! TBH:  hack.
+#ifdef WRF_ESMF_MOD
+   CALL ESMF_TimeIntervalSet ( one_day, D=1, rc=rc )
+   stop_time_hack = grid%stop_time + one_day
+   CALL ESMF_ClockSet ( grid%domain_clock , StopTime=stop_time_hack, rc=rc )
+#else
+! TBH:  END ESMF HACK
+   CALL ESMF_ClockSet ( grid%domain_clock , StopTime=grid%stop_time, rc=rc )
+! TBH:  ESMF HACK
+#endif
+! TBH:  END ESMF HACK
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'ESMF_ClockSet(grid%domain_clock) FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
 
    !  Figure out our loop count for the processing times.
 
@@ -233,7 +266,7 @@ print *,'init_typ  =',model_config_rec%real_data_init_type
 
      write(0,*)'BDY FRAME ', BDY_FRAME
      write(*,*)'BDY FRAME ', BDY_FRAME
-     CALL ESMF_TimeGetString( grid%current_time, message, rc=rc)
+     CALL wrf_timetoa ( grid%current_time, message )
      write(0,*)Trim(message)
      bdyfrq = interval_seconds
      CALL nl_set_bdyfrq ( grid%id , bdyfrq )
@@ -242,7 +275,7 @@ print *,'init_typ  =',model_config_rec%real_data_init_type
        CALL wrf_error_fatal( 'real: error opening wrfbdy for writing' )
      ENDIF
 
-     CALL ESMF_ClockGetCurrTime ( grid%domain_clock, grid%current_time , rc=rc )
+     CALL ESMF_ClockGet ( grid%domain_clock, currTime=grid%current_time , rc=rc )
 
      current_date_char = current_date(1:19)
      CALL geth_newdate ( next_date_char, current_date_char, 3600 )
@@ -264,5 +297,9 @@ print *,'init_typ  =',model_config_rec%real_data_init_type
 
 
    CALL wrf_shutdown
+
+#ifdef WRF_ESMF_MOD
+   CALL ESMF_Finalize( rc=rc )
+#endif
 
 END PROGRAM convert_nmm

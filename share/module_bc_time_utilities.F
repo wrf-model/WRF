@@ -2,7 +2,7 @@
 !
 
 MODULE module_bc_time_utilities
-  USE esmf_mod
+  USE WRF_ESMF_MOD
 
   Type(ESMF_Time), PRIVATE, SAVE :: time_to_read_again
 

@@ -211,6 +211,27 @@ set thedataem = ${WRFREGDATAEM}/${dataset}
 set thedatanmm = $WRFREGDATANMM
 
 
+#	A separately installed version of the latest ESMF library (NOT the 
+#	ESMF library included in the WRF tarfile) can be tested by setting 
+#	"ESMF_LIB" to "TRUE" below.  This test is not supported on all 
+#	machines.  
+
+set ESMF_LIB = TRUE
+set ESMF_LIB = FALSE
+
+if ( $ESMF_LIB == TRUE ) then
+	if ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` == bs ) ) ) then
+		echo "A separately installed version of the latest ESMF library"
+		echo "(NOT the ESMF library included in the WRF tarfile) will"
+		echo "be used for some tests"
+	else
+		echo "Only the ESMF library included in the WRF tarfile is"
+		echo "tested on this machine"
+		exit ( 3 ) 
+	endif
+endif
+
+
 #	A single WRF output "quilt" server can be tested by setting "QUILT"  to 
 #       "TRUE" below.  At the moment, testing of I/O quilt servers is not supported 
 #       on all machines.  
@@ -224,7 +245,7 @@ if ( $QUILT == TRUE ) then
 	else if ( ( `uname` == OSF1 ) && ( `hostname | cut -c 1-4` == duku ) ) then
 		echo "One WRF output quilt server will be used for some tests"
 	else
-		echo "WRF output quilt servers are not tested on this mahchine"
+		echo "WRF output quilt servers are not tested on this machine"
 		exit ( 3 ) 
 	endif
 endif
@@ -667,7 +688,11 @@ else if ( ( $ARCH[1] == AIX ) && ( `hostname | cut -c 1-2` == bs ) ) then
 	endif
 	if ( ! -d $TMPDIR ) mkdir $TMPDIR
 	set MAIL                = /usr/bin/mailx
-	set COMPOPTS            = ( 1 2 4 )
+	if      ( $ESMF_LIB == TRUE ) then
+		set COMPOPTS    = ( 1 2 10 )
+	else if ( $ESMF_LIB != TRUE ) then
+		set COMPOPTS    = ( 1 2 4 )
+	endif
 	set Num_Procs		= 4
 	set OPENMP 		= $Num_Procs
         setenv MP_PROCS  $Num_Procs
@@ -1100,6 +1125,12 @@ else if ( $REG_TYPE == OPTIMIZED ) then
 	echo "No inter-comparisons are made. " >>! ${DEF_DIR}/wrftest.output
 	echo " " >>! ${DEF_DIR}/wrftest.output
 endif
+if ( $ESMF_LIB == TRUE ) then
+	echo "A separately installed version of the latest ESMF library" >>! ${DEF_DIR}/wrftest.output
+	echo "(NOT the ESMF library included in the WRF tarfile) will" >>! ${DEF_DIR}/wrftest.output
+	echo "be used for some tests" >>! ${DEF_DIR}/wrftest.output
+	echo " " >>! ${DEF_DIR}/wrftest.output
+endif
 if ( $QUILT == TRUE ) then
 	echo "One WRF output quilt server will be used for some tests" >>! ${DEF_DIR}/wrftest.output
 	echo " " >>! ${DEF_DIR}/wrftest.output
@@ -1210,6 +1241,17 @@ banner 6
 		#	The WRF configuration file works with a single integer
 		#	input, which is the compiler option.  By convention, option $COMPOPTS[1] is
 		#	serial, $COMPOPTS[2] is OMP, and $COMPOPTS[3] is MPI.
+
+		#	Print info about use of separately installed ESMF library.  
+		set esmf_lib_str = " - - - - - - - - - - - - - "
+		if ( $ESMF_LIB == TRUE ) then
+			if ( $compopt == $COMPOPTS[3] ) then
+				echo "A separately installed version of the latest ESMF library" >>! ${DEF_DIR}/wrftest.output
+				echo "(NOT the ESMF library included in the WRF tarfile) is" >>! ${DEF_DIR}/wrftest.output
+				echo "being used for this test of $core parallel $compopt..." >>! ${DEF_DIR}/wrftest.output
+				set esmf_lib_str = "using separate ESMF library"
+			endif
+		endif
 	
 #DAVE###################################################
 echo start build mechanism
@@ -1265,11 +1307,11 @@ banner 9
                 if ( ! -x main/wrf.exe ) set ok = 1
 
 		if ( $ok != 0 ) then
-			echo "SUMMARY compilation    for $core           parallel $compopt FAIL" >>! ${DEF_DIR}/wrftest.output
+			echo "SUMMARY compilation    for $core           parallel $compopt $esmf_lib_str FAIL" >>! ${DEF_DIR}/wrftest.output
 			$MAIL -s "REGRESSION FAILURE $ARCH[1] " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
 			exit ( 3 )
 		else
-			echo "SUMMARY compilation    for $core           parallel $compopt PASS" >>! ${DEF_DIR}/wrftest.output
+			echo "SUMMARY compilation    for $core           parallel $compopt $esmf_lib_str PASS" >>! ${DEF_DIR}/wrftest.output
 			echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
 			mv main/wrf.exe main/wrf_${core}.exe.$compopt
 			if (  ( $core == em_real ) && ( $compopt == $COMPOPTS[1] ) ) then
@@ -1438,10 +1480,10 @@ banner 15
 					#	Did making the IC BC files work?
 
 					if ( ( -e wrfinput_d01 ) && ( -e wrfbdy_d01 ) && ( $success == 0 ) ) then
-						echo "SUMMARY generate IC/BC for $core physics $phys_option parallel $compopt PASS" >>! ${DEF_DIR}/wrftest.output
+						echo "SUMMARY generate IC/BC for $core physics $phys_option parallel $compopt $esmf_lib_str PASS" >>! ${DEF_DIR}/wrftest.output
 						echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
 					else
-						echo "SUMMARY generate IC/BC for $core physics $phys_option parallel $compopt FAIL" >>! ${DEF_DIR}/wrftest.output
+						echo "SUMMARY generate IC/BC for $core physics $phys_option parallel $compopt $esmf_lib_str FAIL" >>! ${DEF_DIR}/wrftest.output
 						$MAIL -s "WRF FAIL making IC/BC $ARCH[1] " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
 						exit ( 4 )
 					endif
@@ -1501,15 +1543,15 @@ banner 17
 					ncdump -h wrfout_d01_${filetag} | grep Time | grep UNLIMITED | grep currently | grep -q 2
 					set ok = $status
 					if ( $ok == 0 ) then
-						echo "SUMMARY generate FCST  for $core physics $phys_option parallel $compopt PASS" >>! ${DEF_DIR}/wrftest.output
+						echo "SUMMARY generate FCST  for $core physics $phys_option parallel $compopt $esmf_lib_str PASS" >>! ${DEF_DIR}/wrftest.output
 						echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
 					else
-						echo "SUMMARY generate FCST  for $core physics $phys_option parallel $compopt FAIL" >>! ${DEF_DIR}/wrftest.output
+						echo "SUMMARY generate FCST  for $core physics $phys_option parallel $compopt $esmf_lib_str FAIL" >>! ${DEF_DIR}/wrftest.output
 						$MAIL -s "WRF FAIL FCST $ARCH[1] " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
 						exit ( 5 )
 					endif
 				else
-					echo "SUMMARY generate FCST  for $core physics $phys_option parallel $compopt FAIL" >>! ${DEF_DIR}/wrftest.output
+					echo "SUMMARY generate FCST  for $core physics $phys_option parallel $compopt $esmf_lib_str FAIL" >>! ${DEF_DIR}/wrftest.output
 					$MAIL -s "WRF FAIL FCST $ARCH[1] " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
 					exit ( 6 )
 				endif
@@ -1647,16 +1689,16 @@ banner 22
                                 ncdump -h wrfout_d01_${filetag} | grep Time | grep UNLIMITED | grep currently | grep -q 2
                                 set ok = $status
                                 if ( $ok == 0 ) then
-                                       echo "SUMMARY generate FCST  for $core physics $phys_option parallel $compopt PASS" >>! ${DEF_DIR}/wrftest.output
+                                       echo "SUMMARY generate FCST  for $core physics $phys_option parallel $compopt $esmf_lib_str PASS" >>! ${DEF_DIR}/wrftest.output
                                        echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
                                        set tries=2  # success, bail from loop
                                 else
-                                       echo "SUMMARY generate FCST  for $core physics $phys_option parallel $compopt FAIL" >>! ${DEF_DIR}/wrftest.output
+                                       echo "SUMMARY generate FCST  for $core physics $phys_option parallel $compopt $esmf_lib_str FAIL" >>! ${DEF_DIR}/wrftest.output
                                        $MAIL -s "WRF FAIL FCST $ARCH[1] " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
                                        if ( $tries == 2 ) exit ( 5 )
                                 endif
                            else
-                                echo "SUMMARY generate FCST  for $core physics $phys_option parallel $compopt FAIL" >>! ${DEF_DIR}/wrftest.output
+                                echo "SUMMARY generate FCST  for $core physics $phys_option parallel $compopt $esmf_lib_str FAIL" >>! ${DEF_DIR}/wrftest.output
                                 $MAIL -s "WRF FAIL FCST $ARCH[1] " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
                                 if ( $tries == 2 ) exit ( 6 )
                            endif
@@ -1806,11 +1848,11 @@ banner 27
 
 					#	Did making the IC BC files work?
 
-					if ( ( -e wrfinput_d01 ) && ( -e wrfbdy_d01 ) && ( $success == 0 ) ) then
-						echo "SUMMARY generate IC/BC for $core physics $phys_option parallel $compopt PASS" >>! ${DEF_DIR}/wrftest.output
+					if ( ( -e wrfinput_d01 ) && ( $success == 0 ) ) then
+						echo "SUMMARY generate IC/BC for $core physics $phys_option parallel $compopt $esmf_lib_str PASS" >>! ${DEF_DIR}/wrftest.output
 						echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
 					else
-						echo "SUMMARY generate IC/BC for $core physics $phys_option parallel $compopt FAIL" >>! ${DEF_DIR}/wrftest.output
+						echo "SUMMARY generate IC/BC for $core physics $phys_option parallel $compopt $esmf_lib_str FAIL" >>! ${DEF_DIR}/wrftest.output
 						$MAIL -s "WRF FAIL making IC/BC $ARCH[1] " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
 						exit ( 7 )
 					endif
@@ -1863,15 +1905,15 @@ banner 28
 					ncdump -h wrfout_d01_${filetag} | grep Time | grep UNLIMITED | grep currently | grep -q 2
 					set ok = $status
 					if ( $ok == 0 ) then
-						echo "SUMMARY generate FCST  for $core physics $phys_option parallel $compopt PASS" >>! ${DEF_DIR}/wrftest.output
+						echo "SUMMARY generate FCST  for $core physics $phys_option parallel $compopt $esmf_lib_str PASS" >>! ${DEF_DIR}/wrftest.output
 						echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
 					else
-						echo "SUMMARY generate FCST  for $core physics $phys_option parallel $compopt FAIL" >>! ${DEF_DIR}/wrftest.output
+						echo "SUMMARY generate FCST  for $core physics $phys_option parallel $compopt $esmf_lib_str FAIL" >>! ${DEF_DIR}/wrftest.output
 						$MAIL -s "WRF FAIL FCST $ARCH[1] " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
 						exit ( 8 )
 					endif
 				else
-					echo "SUMMARY generate FCST  for $core physics $phys_option parallel $compopt FAIL" >>! ${DEF_DIR}/wrftest.output
+					echo "SUMMARY generate FCST  for $core physics $phys_option parallel $compopt $esmf_lib_str FAIL" >>! ${DEF_DIR}/wrftest.output
 					$MAIL -s "WRF FAIL FCST $ARCH[1] " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
 					exit ( 9 )
 				endif
@@ -1940,10 +1982,10 @@ banner 29
 	                                touch fort.88 fort.98
 	                        endif
 	                        if ( ! -e fort.88 ) then
-	                                echo "SUMMARY 1 vs $Num_Procs MPI  for $core physics $phys_option            PASS" >>! ${DEF_DIR}/wrftest.output
+	                                echo "SUMMARY 1 vs $Num_Procs MPI  for $core physics $phys_option $esmf_lib_str            PASS" >>! ${DEF_DIR}/wrftest.output
 	                                echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
 	                        else
-	                                echo "SUMMARY 1 vs $Num_Procs MPI  for $core physics $phys_option            FAIL" >>! ${DEF_DIR}/wrftest.output
+	                                echo "SUMMARY 1 vs $Num_Procs MPI  for $core physics $phys_option $esmf_lib_str            FAIL" >>! ${DEF_DIR}/wrftest.output
 	                                echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
 	                        endif
 	
@@ -1959,10 +2001,10 @@ banner 29
 	                                touch fort.88 fort.98
 	                        endif
 	                        if ( ! -e fort.88 ) then
-	                                echo "SUMMARY 1 vs 20031015 baseline output for $core physics $phys_option            PASS" >>! ${DEF_DIR}/wrftest.output
+	                                echo "SUMMARY 1 vs 20031015 baseline output for $core physics $phys_option $esmf_lib_str            PASS" >>! ${DEF_DIR}/wrftest.output
 	                                echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
 	                        else
-	                                echo "SUMMARY 1 vs 20031015 baseline output for $core physics $phys_option            FAIL" >>! ${DEF_DIR}/wrftest.output
+	                                echo "SUMMARY 1 vs 20031015 baseline output for $core physics $phys_option $esmf_lib_str            FAIL" >>! ${DEF_DIR}/wrftest.output
 	                                echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
 	                        endif
 	
@@ -2043,10 +2085,10 @@ banner 29
 					touch fort.88 fort.98
 				endif
 				if ( ! -e fort.88 ) then
-					echo "SUMMARY serial vs OMP  for $core physics $phys_option            PASS" >>! ${DEF_DIR}/wrftest.output
+					echo "SUMMARY serial vs OMP  for $core physics $phys_option $esmf_lib_str            PASS" >>! ${DEF_DIR}/wrftest.output
 					echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
 				else
-					echo "SUMMARY serial vs OMP  for $core physics $phys_option            FAIL" >>! ${DEF_DIR}/wrftest.output
+					echo "SUMMARY serial vs OMP  for $core physics $phys_option $esmf_lib_str            FAIL" >>! ${DEF_DIR}/wrftest.output
 					echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
 				endif
 	
@@ -2064,10 +2106,10 @@ banner 29
 					touch fort.88 fort.98
 				endif
 				if ( ! -e fort.88 ) then
-					echo "SUMMARY serial vs MPI  for $core physics $phys_option            PASS" >>! ${DEF_DIR}/wrftest.output
+					echo "SUMMARY serial vs MPI  for $core physics $phys_option $esmf_lib_str            PASS" >>! ${DEF_DIR}/wrftest.output
 					echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
 				else
-					echo "SUMMARY serial vs MPI  for $core physics $phys_option            FAIL" >>! ${DEF_DIR}/wrftest.output
+					echo "SUMMARY serial vs MPI  for $core physics $phys_option $esmf_lib_str            FAIL" >>! ${DEF_DIR}/wrftest.output
 					echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
 				endif
 		
@@ -2149,12 +2191,12 @@ banner 29
 								touch fort.88 fort.98
 							endif
 							if ( ! -e fort.88 ) then
-			echo "SUMMARY compare vs baseline ${COMPARE_BASELINE} for $core physics $phys_option compopt $compopt  PASS" >>! \
+			echo "SUMMARY compare vs baseline ${COMPARE_BASELINE} for $core physics $phys_option compopt $compopt $esmf_lib_str  PASS" >>! \
 								     ${DEF_DIR}/wrftest.output
 								echo "-------------------------------------------------------------" >> \
 								     ${DEF_DIR}/wrftest.output
 							else
-			echo "SUMMARY compare vs baseline ${COMPARE_BASELINE} for $core physics $phys_option compopt $compopt  FAIL" >>! \
+			echo "SUMMARY compare vs baseline ${COMPARE_BASELINE} for $core physics $phys_option compopt $compopt $esmf_lib_str  FAIL" >>! \
 								     ${DEF_DIR}/wrftest.output
 								echo "-------------------------------------------------------------" >> \
 								     ${DEF_DIR}/wrftest.output

@@ -82,6 +82,7 @@
 
 ! !PUBLIC MEMBER FUNCTIONS:
       public ESMF_AlarmSet
+      public ESMF_AlarmGet
       public ESMF_AlarmGetRingInterval
       public ESMF_AlarmSetRingInterval
       public ESMF_AlarmGetRingTime
@@ -92,8 +93,8 @@
       public ESMF_AlarmSetStopTime
       public ESMF_AlarmEnable
       public ESMF_AlarmDisable
-      public ESMF_AlarmTurnOn
-      public ESMF_AlarmTurnOff
+      public ESMF_AlarmRingerOn
+      public ESMF_AlarmRingerOff
       public ESMF_AlarmIsRinging
       public ESMF_AlarmCheckRingTime
  
@@ -344,6 +345,48 @@
 
 !------------------------------------------------------------------------------
 !BOP
+! !IROUTINE:  ESMF_AlarmGet - Get an alarm's parameters -- compatibility with ESMF 2.0.1
+!
+! !INTERFACE:
+      subroutine ESMF_AlarmGet(alarm, PrevRingTime, rc)
+
+! !ARGUMENTS:
+      type(ESMF_Alarm), intent(in) :: alarm
+      type(ESMF_Time), intent(out), optional :: PrevRingTime
+      integer, intent(out), optional :: rc
+      integer :: ierr
+
+! !DESCRIPTION:
+!     Get an {\tt ESMF\_Alarm}'s previous ring time
+!
+!     The arguments are:
+!     \begin{description}
+!     \item[alarm]
+!          The object instance to get the previous ring time
+!     \item[PrevRingTime]
+!          The {\tt ESMF\_Alarm}'s previous ring time
+!     \item[{[rc]}]
+!          Return code; equals {\tt ESMF\_SUCCESS} if there are no errors.
+!     \end{description}
+!
+! !REQUIREMENTS:
+!     TMG4.7, TMG4.8
+!EOP
+
+      ierr = ESMF_SUCCESS
+
+      IF ( PRESENT(PrevRingTime) ) THEN
+        CALL ESMF_AlarmGetPrevRingTime(alarm, PrevRingTime, rc=ierr)
+      ENDIF
+
+      IF ( PRESENT(rc) ) THEN
+        rc = ierr
+      ENDIF
+
+      end subroutine ESMF_AlarmGet
+
+!------------------------------------------------------------------------------
+!BOP
 ! !IROUTINE:  ESMF_AlarmGetPrevRingTime - Get an alarm's previous ring time
 !
 ! !INTERFACE:
@@ -544,11 +587,11 @@
 
 !------------------------------------------------------------------------------
 !BOP
-! !IROUTINE:  ESMF_AlarmTurnOn - Turn on an alarm
+! !IROUTINE:  ESMF_AlarmRingerOn - Turn on an alarm
 
 
 ! !INTERFACE:
-      subroutine ESMF_AlarmTurnOn(alarm, rc)
+      subroutine ESMF_AlarmRingerOn(alarm, rc)
 
 ! !ARGUMENTS:
       type(ESMF_Alarm), intent(out) :: alarm
@@ -578,14 +621,14 @@
         rc = ESMF_FAILURE
       ENDIF
 
-      end subroutine ESMF_AlarmTurnOn
+      end subroutine ESMF_AlarmRingerOn
 
 !------------------------------------------------------------------------------
 !BOP
-! !IROUTINE:  ESMF_AlarmTurnOff - Turn off an alarm
+! !IROUTINE:  ESMF_AlarmRingerOff - Turn off an alarm
 
 ! !INTERFACE:
-      subroutine ESMF_AlarmTurnOff(alarm, rc)
+      subroutine ESMF_AlarmRingerOff(alarm, rc)
 
 ! !ARGUMENTS:
       type(ESMF_Alarm), intent(out) :: alarm
@@ -615,7 +658,7 @@
         rc = ESMF_FAILURE
       ENDIF
 
-      end subroutine ESMF_AlarmTurnOff
+      end subroutine ESMF_AlarmRingerOff
 
 !------------------------------------------------------------------------------
 !BOP

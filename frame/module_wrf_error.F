@@ -50,20 +50,32 @@ END SUBROUTINE wrf_debug
 
 SUBROUTINE wrf_message( str )
   USE module_wrf_error
+#ifdef WRF_ESMF_LOGERR
+  USE ESMF_Mod
+#endif
   IMPLICIT NONE
   CHARACTER*(*) str
 #if defined( DM_PARALLEL ) && ! defined( STUBMPI) 
   write(0,*) str
 #endif
   print*, str
+#ifdef WRF_ESMF_LOGERR
+  CALL ESMF_LogWrite( str, ESMF_LOG_INFO )
+#endif
 END SUBROUTINE wrf_message
 
 ! intentionally write to stderr only
 SUBROUTINE wrf_message2( str )
   USE module_wrf_error
+#ifdef WRF_ESMF_LOGERR
+  USE ESMF_Mod
+#endif
   IMPLICIT NONE
   CHARACTER*(*) str
   write(0,*) str
+#ifdef WRF_ESMF_LOGERR
+  CALL ESMF_LogWrite( str, ESMF_LOG_INFO )
+#endif
 END SUBROUTINE wrf_message2
 
 SUBROUTINE wrf_error_fatal3( file_str, line, str )
@@ -101,4 +113,25 @@ SUBROUTINE wrf_error_fatal( str )
   CHARACTER*(*) str
   CALL wrf_error_fatal3 ( ' ', 0, str )
 END SUBROUTINE wrf_error_fatal
+
+! Check to see if expected value == actual value
+! If not, print message and exit.  
+SUBROUTINE wrf_check_error( expected, actual, str, file_str, line )
+  USE module_wrf_error
+  IMPLICIT NONE
+  INTEGER , INTENT (IN) :: expected
+  INTEGER , INTENT (IN) :: actual
+  CHARACTER*(*) str
+  CHARACTER*(*) file_str
+  INTEGER , INTENT (IN) :: line
+  CHARACTER (LEN=512)   :: rc_str
+  CHARACTER (LEN=512)   :: str_with_rc
+
+  IF ( expected .ne. actual ) THEN
+    WRITE (rc_str,*) '  Routine returned error code = ',actual
+    str_with_rc = TRIM(str // rc_str)
+    CALL wrf_error_fatal3 ( file_str, line, str_with_rc )
+  ENDIF
+END SUBROUTINE wrf_check_error
+
 

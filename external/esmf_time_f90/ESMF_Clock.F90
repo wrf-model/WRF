@@ -80,6 +80,8 @@
 !
 ! !PUBLIC MEMBER FUNCTIONS:
       public ESMF_ClockSet
+      public ESMF_ClockSetOLD
+      public ESMF_ClockGet
       public ESMF_ClockGetAdvanceCount
       public ESMF_ClockGetTimeStep
       public ESMF_ClockSetTimeStep
@@ -121,10 +123,10 @@
 !
 !------------------------------------------------------------------------------
 !BOP
-! !IROUTINE: ESMF_ClockSet - Initialize a clock
+! !IROUTINE: ESMF_ClockSetOLD - Initialize a clock
 
 ! !INTERFACE:
-      subroutine ESMF_ClockSet(clock, TimeStep, StartTime, StopTime, &
+      subroutine ESMF_ClockSetOLD(clock, TimeStep, StartTime, StopTime, &
                                RefTime, rc)
 
 ! !ARGUMENTS:
@@ -176,10 +178,125 @@
 	clock%AlarmList(i) = alarm
       ENDDO
     
+      end subroutine ESMF_ClockSetOLD
+
+
+! !IROUTINE: ESMF_ClockSet - Set clock properties -- for compatibility with ESMF 2.0.1
+
+! !INTERFACE:
+      subroutine ESMF_ClockSet(clock, TimeStep, StartTime, StopTime, &
+                               RefTime, CurrTime, rc)
+
+! !ARGUMENTS:
+      type(ESMF_Clock), intent(inout) :: clock
+      type(ESMF_TimeInterval), intent(in), optional :: TimeStep
+      type(ESMF_Time), intent(in), optional :: StartTime
+      type(ESMF_Time), intent(in), optional :: StopTime
+      type(ESMF_Time), intent(in), optional :: RefTime
+      type(ESMF_Time), intent(in), optional :: CurrTime
+      integer, intent(out), optional :: rc
+! Local
+      integer i, ierr
+      type (ESMF_Alarm) :: alarm
+    
+! !DESCRIPTION:
+!     Initialize an {\tt ESMF\_Clock}
+!     
+!     The arguments are:
+!     \begin{description}
+!     \item[clock]
+!          The object instance to initialize
+!     \item[{[TimeStep]}]
+!          The {\tt ESMF\_Clock}'s time step interval
+!     \item[StartTime]
+!          The {\tt ESMF\_Clock}'s starting time
+!     \item[StopTime]
+!          The {\tt ESMF\_Clock}'s stopping time
+!     \item[{[RefTime]}]
+!          The {\tt ESMF\_Clock}'s reference time
+!     \item[{[rc]}]
+!          Return code; equals {\tt ESMF\_SUCCESS} if there are no errors.
+!     \end{description}
+!     
+! !REQUIREMENTS:
+!     TMG3.1, TMG3.4.4
+!EOP
+      ierr = ESMF_SUCCESS
+      IF ( PRESENT(TimeStep) ) THEN
+        CALL ESMF_ClockSetTimeStep ( clock, TimeStep, rc=ierr )
+      ENDIF
+      IF ( PRESENT(RefTime) ) clock%RefTime = RefTime
+      IF ( PRESENT(StartTime) ) clock%StartTime = StartTime
+      IF ( PRESENT(StopTime) ) clock%StopTime = StopTime
+      IF ( PRESENT(CurrTime) ) THEN
+        CALL ESMF_ClockSetCurrTime(clock, CurrTime, rc=ierr)
+      ENDIF
+      IF ( PRESENT(rc) ) rc = ierr
+
       end subroutine ESMF_ClockSet
 
 !------------------------------------------------------------------------------
 !BOP
+! !IROUTINE: ESMF_ClockGet - Get clock properties -- for compatibility with ESMF 2.0.1
+
+! !INTERFACE:
+      subroutine ESMF_ClockGet(clock, StartTime, CurrTime, &
+                               AdvanceCount, StopTime, rc)
+
+! !ARGUMENTS:
+      type(ESMF_Clock), intent(in) :: clock
+      type(ESMF_Time), intent(out), optional :: StartTime
+      type(ESMF_Time), intent(out), optional :: CurrTime
+      type(ESMF_Time), intent(out), optional :: StopTime
+      integer, intent(out), optional :: AdvanceCount
+      integer, intent(out), optional :: rc
+      integer :: ierr
+      integer(ESMF_IKIND_I8) :: AdvanceCountLcl
+
+! !DESCRIPTION:
+!     Returns the number of times the {\tt ESMF\_Clock} has been advanced
+!     (time stepped)
+!
+!     The arguments are:
+!     \begin{description}
+!     \item[clock]
+!          The object instance to get the advance count from
+!     \item[StartTime]
+!          The start time
+!     \item[CurrTime]
+!          The current time
+!     \item[AdvanceCount]
+!          The number of times the {\tt ESMF\_Clock} has been advanced
+!     \item[{[rc]}]
+!          Return code; equals {\tt ESMF\_SUCCESS} if there are no errors.
+!     \end{description}
+
+! !REQUIREMENTS:
+!     TMG3.5.1
+!EOP
+      ierr = ESMF_SUCCESS
+
+      IF ( PRESENT (StartTime) ) THEN
+        CALL ESMF_ClockGetStartTime( clock, StartTime=StartTime, rc=ierr )
+      ENDIF
+      IF ( PRESENT (CurrTime) ) THEN
+        CALL ESMF_ClockGetCurrTime( clock , CurrTime, ierr )
+      ENDIF
+      IF ( PRESENT (StopTime) ) THEN
+        CALL ESMF_ClockGetStopTime( clock , StopTime, ierr )
+      ENDIF
+      IF ( PRESENT (AdvanceCount) ) THEN
+        CALL ESMF_ClockGetAdvanceCount(clock, AdvanceCountLcl, ierr)
+        AdvanceCount = AdvanceCountLcl
+      ENDIF
+
+      IF ( PRESENT (rc) ) THEN
+        rc = ierr
+      ENDIF
+    
+      end subroutine ESMF_ClockGet
+
+
 ! !IROUTINE: ESMF_ClockGetAdvanceCount - Get the clock's advance count
 
 ! !INTERFACE:
@@ -187,11 +304,7 @@
 
 ! !ARGUMENTS:
       type(ESMF_Clock), intent(in) :: clock
-#ifdef F90_STANDALONE
-      integer, intent(out) :: AdvanceCount
-#else
       integer(ESMF_IKIND_I8), intent(out) :: AdvanceCount
-#endif
       integer, intent(out) :: rc
 
 ! !DESCRIPTION:
@@ -392,6 +505,9 @@
 !EOP
 
       call c_ESMC_ClockGetStartTime(clock, StartTime, rc)
+
+      StartTime = clock%StartTime
+      rc = ESMF_SUCCESS
     
       end subroutine ESMF_ClockGetStartTime
 

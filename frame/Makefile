@@ -20,6 +20,7 @@ MODULES =       module_driver_constants.o  \
                 module_io.o                \
                 module_dm.o                \
                 module_quilt_outbuf_ops.o  \
+                module_wrf_esmf_super.o    \
                 module_io_quilt.o
 
 OBJS    =       wrf_num_bytes_between.o    \
@@ -35,8 +36,8 @@ include ../configure.wrf
 
 LIBTARGET    =  framework
 TARGETDIR    =  ./
-$(LIBTARGET) :  $(MODULES) $(OBJS) $(SPECIAL)
-		$(AR) ../main/libwrflib.a $(MODULES) $(OBJS)
+$(LIBTARGET) :  $(MODULES) $(EXTRAMODULES) $(OBJS) $(SPECIAL)
+		$(AR) ../main/libwrflib.a $(MODULES) $(EXTRAMODULES) $(OBJS)
 		$(RANLIB) ../main/libwrflib.a
 
 
@@ -74,7 +75,7 @@ module_domain.o: module_driver_constants.o \
 		module_machine.o  \
 		module_state_description.o \
                 module_wrf_error.o \
-		../external/esmf_time_f90/ESMF_Mod.o
+		$(ESMF_MOD_DEPENDENCE)
 
 module_driver_constants.o: \
 		module_state_description.o \
@@ -86,7 +87,7 @@ module_integrate.o: module_domain.o \
 		module_state_description.o \
 		module_nesting.o \
 		module_configure.o \
-		../external/esmf_time_f90/ESMF_Mod.o
+		$(ESMF_MOD_DEPENDENCE)
 
 module_io.o : md_calls.inc \
 		module_state_description.o \
@@ -102,7 +103,7 @@ module_machine.o: module_driver_constants.o
 module_nesting.o: module_machine.o \
 		module_driver_constants.o \
 		module_configure.o \
-		../external/esmf_time_f90/ESMF_Mod.o \
+		$(ESMF_MOD_DEPENDENCE) \
 		module_domain.o 
 
 module_quilt_outbuf_ops.o: module_state_description.o
@@ -117,6 +118,19 @@ module_timing.o: \
 		module_state_description.o \
                 module_wrf_error.o
 
-module_wrf_error.o: wrf_shutdown.o 
+module_wrf_error.o: \
+		wrf_shutdown.o \
+		$(ESMF_MOD_DEPENDENCE)
+
+module_wrf_setservices.o: module_wrf_esmf_super.o
+
+module_wrf_esmf_super.o: module_machine.o \
+		module_domain.o \
+		module_integrate.o \
+		module_driver_constants.o \
+		module_configure.o \
+		module_timing.o \
+		module_wrf_error.o \
+		$(ESMF_MOD_DEPENDENCE)
 
 # DO NOT DELETE

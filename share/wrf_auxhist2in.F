@@ -6,7 +6,7 @@ SUBROUTINE wrf_auxhist2in ( fid , grid , config_flags , switch , ierr )
     USE module_io_wrf
     USE module_date_time
     USE module_bc_time_utilities
-    USE esmf_mod
+    USE WRF_ESMF_MOD
     IMPLICIT NONE
 #include <wrf_io_flags.h>
 #include <wrf_status_codes.h>

@@ -441,7 +441,7 @@
 ! !IROUTINE: ESMF_TimeIntervalSet - Initialize via user-specified unit set
 
 ! !INTERFACE:
-      subroutine ESMF_TimeIntervalSet(timeinterval, YY, YYl, MO, MOl, D, Dl, &
+      subroutine ESMF_TimeIntervalSet(timeinterval, YY, YYl, MM, MOl, D, Dl, &
                                       H, M, S, Sl, MS, US, NS, &
                                       d_, h_, m_, s_, ms_, us_, ns_, &
                                       Sn, Sd, rc)
@@ -450,7 +450,7 @@
       type(ESMF_TimeInterval), intent(out) :: timeinterval
       integer, intent(in), optional :: YY
       integer(ESMF_IKIND_I8), intent(in), optional :: YYl
-      integer, intent(in), optional :: MO
+      integer, intent(in), optional :: MM
       integer(ESMF_IKIND_I8), intent(in), optional :: MOl
       integer, intent(in), optional :: D
       integer(ESMF_IKIND_I8), intent(in), optional :: Dl
@@ -491,7 +491,7 @@
 !          Integer number of interval years (>= 32-bit)
 !     \item[{[YYl]}]
 !          Integer number of interval years (large, >= 64-bit)
-!     \item[{[MO]}]
+!     \item[{[MM]}]
 !          Integer number of interval months (>= 32-bit)
 !     \item[{[MOl]}]
 !          Integer number of interval months (large, >= 64-bit)
@@ -540,7 +540,7 @@
 !EOP
 
       ! use optional args for any subset
-      call c_ESMC_TimeIntervalSet(timeinterval, YY, YYl, MO, MOl, D, Dl, &
+      call c_ESMC_TimeIntervalSet(timeinterval, YY, YYl, MM, MOl, D, Dl, &
                                   H, M, S, Sl, MS, US, NS, &
                                   d_, h_, m_, s_, ms_, us_, ns_, &
                                   Sn, Sd, rc)
@@ -552,8 +552,8 @@
         timeinterval%YR = YY
       ENDIF
       timeinterval%MM = 0
-      IF ( PRESENT( MO ) ) THEN
-        timeinterval%MM = MO
+      IF ( PRESENT( MM ) ) THEN
+        timeinterval%MM = MM
       ENDIF
 !
 !      timeinterval%basetime%S = 0

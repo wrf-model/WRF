@@ -9,7 +9,7 @@
     USE module_io_wrf
     USE module_date_time
     USE module_bc_time_utilities
-    USE esmf_mod
+    USE WRF_ESMF_MOD
     IMPLICIT NONE
 #include <wrf_io_flags.h>
 #include <wrf_status_codes.h>
@@ -300,13 +300,15 @@
       SELECT CASE ( switch )
         CASE ( model_input_only, aux_model_input1_only, aux_model_input2_only,       &
                aux_model_input3_only, aux_model_input4_only, aux_model_input5_only )
-            CALL atotime( current_date(1:19), time )
-            CALL ESMF_ClockGetCurrTime( grid%domain_clock, CurrTime=currtime, rc=ierr )
+            CALL wrf_atotime( current_date(1:19), time )
+            CALL ESMF_ClockGet( grid%domain_clock, CurrTime=currtime, rc=ierr )
+            CALL wrf_clockprint(150, grid%domain_clock, &
+                                'DEBUG input_wrf():  get currTime from grid%domain_clock,')
             IF ( time .NE. currtime ) THEN
-                CALL ESMF_TimeGetString( time, errmess , ierr )
+                CALL wrf_timetoa ( time, errmess )
                 WRITE( wrf_err_message , * )'Time in file: ',trim( errmess )
                 CALL wrf_message ( trim(wrf_err_message) )
-                CALL ESMF_TimeGetString( currtime, errmess , ierr )
+                CALL wrf_timetoa ( currtime, errmess )
                 WRITE( wrf_err_message , * )'Time on domain: ',trim( errmess )
                 CALL wrf_message ( trim(wrf_err_message) )
                 CALL wrf_message( "**WARNING** Time in input file not equal to time on domain **WARNING**" )
@@ -322,9 +324,9 @@
 ! 
     IF ( switch .EQ. boundary_only ) THEN
         CALL wrf_get_dom_td_char ( fid , 'THISBDYTIME' ,  current_date(1:19), this_datestr , ierr )
-        CALL atotime( this_datestr(1:19), grid%this_bdy_time )
+        CALL wrf_atotime( this_datestr(1:19), grid%this_bdy_time )
         CALL wrf_get_dom_td_char ( fid , 'NEXTBDYTIME' ,  current_date(1:19), next_datestr , ierr )
-        CALL atotime( next_datestr(1:19), grid%next_bdy_time )
+        CALL wrf_atotime( next_datestr(1:19), grid%next_bdy_time )
     ENDIF
 
 #if 1

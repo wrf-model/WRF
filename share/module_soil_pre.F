@@ -35,6 +35,7 @@ CONTAINS
       INTEGER :: i , j , num_seaice_changes , loop
       CHARACTER (LEN=132) :: message
       
+      num_seaice_changes = 0
       fix_seaice : SELECT CASE ( scheme ) 
  
          CASE ( SLABSCHEME ) 
@@ -130,6 +131,7 @@ CONTAINS
       INTEGER :: i , j , num_seaice_changes , loop
       CHARACTER (LEN=132) :: message
       
+      num_seaice_changes = 0
       fix_seaice : SELECT CASE ( scheme ) 
  
          CASE ( SLABSCHEME ) 

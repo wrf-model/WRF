@@ -231,10 +231,10 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
 !***  FIRST TIME THROUGH TOTAL_TIME_STEPS IS ZERO.
 !***  IT IS INCREMENTED IN SOLVE_INTERFACE.
 !***
-      CALL ESMF_ClockGetAdvanceCount(grid%domain_clock,NTSD,rc)
+      CALL ESMF_ClockGet(grid%domain_clock,advanceCount=NTSD,rc=rc)
       LAST_TIME=grid%stop_time.EQ.grid%current_time+grid%step_time
 
-!      CALL ESMF_TimeGetString( grid%current_time, message, rc=rc )
+!      CALL wrf_timetoa ( grid%current_time, message )
 !      WRITE(0,*)' SOLVE_NMM CALLED: TIMESTEP IS ',NTSD
 !      WRITE(message,*)' SOLVE_NMM CALLED: TIMESTEP IS ',NTSD           &
 !               ,' FCST TIME IS',TRIM(message)

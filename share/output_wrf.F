@@ -8,7 +8,7 @@
     USE module_state_description
     USE module_configure
 !    USE module_date_time
-    USE esmf_mod
+    USE WRF_ESMF_MOD
     IMPLICIT NONE
 #include <wrf_io_flags.h>
 #include <wrf_status_codes.h>
@@ -90,9 +90,12 @@
     CALL nl_get_stand_lon ( grid%id , stand_lon )
     CALL nl_get_map_proj ( grid%id , map_proj )
 
-    CALL ESMF_ClockGetCurrTime( grid%domain_clock, current_time, rc=rc )
-    CALL ESMF_TimeGetString( current_time, current_date, rc=rc )
-    WRITE ( wrf_err_message , * ) 'module_io_wrf: output_wrf: current_date=',current_date
+    CALL wrf_clockprint(150, grid%domain_clock, &
+                        'DEBUG output_wrf():  before call to ESMF_ClockGet,')
+    CALL ESMF_ClockGet( grid%domain_clock, currTime=current_time, rc=rc )
+    CALL wrf_timetoa ( current_time, current_date )
+    WRITE ( wrf_err_message , * ) 'output_wrf: begin, current_date=',current_date
+    CALL wrf_debug ( 300 , wrf_err_message )
 
       WRITE( message , * ) "OUTPUT FROM " , TRIM(program_name)
       CALL wrf_put_dom_ti_char ( fid , 'TITLE' , TRIM(message) , ierr )
@@ -256,7 +259,7 @@
     IF ( switch .EQ. boundary_only ) THEN
         CALL ESMF_TimeIntervalSet( bdy_increment, S=NINT(config_flags%bdyfrq),rc=rc)
         next_time = current_time + bdy_increment
-        CALL ESMF_TimeGetString( next_time, next_datestr, rc=rc )
+        CALL wrf_timetoa ( next_time, next_datestr )
         CALL wrf_put_dom_td_char ( fid , 'THISBDYTIME' ,  current_date(1:19), current_date(1:19), ierr )
         CALL wrf_put_dom_td_char ( fid , 'NEXTBDYTIME' ,  current_date(1:19), next_datestr(1:19), ierr )
     ENDIF

@@ -41,7 +41,7 @@
       USE MODULE_MPP
       USE MODULE_CU_BMJ
       USE MODULE_CUMULUS_DRIVER
-      USE esmf_mod
+      USE WRF_ESMF_MOD
 !-----------------------------------------------------------------------
 !
       IMPLICIT NONE
@@ -352,8 +352,8 @@
 !      MNTO=MOD(NTSD,N_TIMSTPS_OUTPUT)
 !
 !      IF(MNTO.GT.0.AND.MNTO.LE.NCNVC)THEN
-      CALL ESMF_ClockGetCurrTime( grid%domain_clock , CurrTime, rc )
-      CALL ESMF_AlarmGetPrevRingTime(grid%alarms( HISTORY_ALARM ), PrevRingTime, rc)
+      CALL ESMF_ClockGet( grid%domain_clock , currTime=CurrTime, rc=rc )
+      CALL ESMF_AlarmGet(grid%alarms( HISTORY_ALARM ), prevRingTime=PrevRingTime, rc=rc)
 
       IF ( CurrTime .EQ. PrevRingTime ) THEN
 write(0,*) 'CUCNVC: REINITIALIZING CNVTOP AND CNVBOT ARRAYS'

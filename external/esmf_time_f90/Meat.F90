@@ -696,29 +696,3 @@ SUBROUTINE print_a_timeinterval( time )
    return
 END SUBROUTINE print_a_timeinterval
 
-SUBROUTINE atotime ( str, time )
-   use ESMF_basemod
-   use ESMF_Timemod
-   type(ESMF_Time) time
-   character*(*) str
-   integer yr, mm, dd, h, m, s, ms
-   integer rc
-   if ( len( str ) .ge. 20 ) then
-     if ( str(20:20) .eq. '.' ) then
-       read(str,34) yr,mm,dd,h,m,s,ms
-       !  last four digits are ten-thousandths of a sec, convert to ms
-       ms=nint(real(ms)/10)
-     else
-       read(str,33) yr,mm,dd,h,m,s
-       ms = 0
-     endif
-   else
-     read(str,33) yr,mm,dd,h,m,s
-     ms = 0
-   endif
-   CALL ESMF_TimeSet( time, YR=yr, MM=mm, DD=dd, H=h, M=m, S=s, MS=ms, rc=rc )
-33 format (I4.4,1x,I2.2,1x,I2.2,1x,I2.2,1x,I2.2,1x,I2.2)
-34 format (I4.4,1x,I2.2,1x,I2.2,1x,I2.2,1x,I2.2,1x,I2.2,1x,I4.4)
-   return
-END SUBROUTINE atotime
-

@@ -1,12 +1,12 @@
 SUBROUTINE Setup_Timekeeping ( grid )
    USE module_domain
    USE module_configure
-   USE esmf_mod
+   USE WRF_ESMF_MOD
    IMPLICIT NONE
    TYPE(domain), POINTER :: grid
 ! Local
    TYPE(ESMF_TimeInterval) :: begin_time, end_time, zero_time, one_minute
-   TYPE(ESMF_TimeInterval) :: interval, run_length
+   TYPE(ESMF_TimeInterval) :: interval, run_length, chem_interval
    INTEGER :: start_year,start_month,start_day,start_hour,start_minute,start_second
    INTEGER :: end_year,end_month,end_day,end_hour,end_minute,end_second
 
@@ -139,7 +139,15 @@ SUBROUTINE Setup_Timekeeping ( grid )
    REAL    :: dt
 
    CALL ESMF_TimeIntervalSet ( zero_time, rc=rc )
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'ESMF_TimeIntervalSet(zero_time) FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
    CALL ESMF_TimeIntervalSet ( one_minute, M=1, rc=rc )
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'ESMF_TimeIntervalSet(one_minute) FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
 
    CALL nl_get_start_year(grid%id,start_year)
    CALL nl_get_start_month(grid%id,start_month)
@@ -147,8 +155,13 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL nl_get_start_hour(grid%id,start_hour)
    CALL nl_get_start_minute(grid%id,start_minute)
    CALL nl_get_start_second(grid%id,start_second)
-   CALL ESMF_TimeSet(grid%start_time, YR=start_year, MM=start_month, DD=start_day, &
-                                      H=start_hour, M=start_minute, S=start_second )
+   CALL ESMF_TimeSet(grid%start_time, YY=start_year, MM=start_month, DD=start_day, &
+                                      H=start_hour, M=start_minute, S=start_second,&
+                                      rc=rc)
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'ESMF_TimeSet(grid%start_time) FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
    CALL nl_get_run_days(1,run_days)
    CALL nl_get_run_hours(1,run_hours)
    CALL nl_get_run_minutes(1,run_minutes)
@@ -157,6 +170,10 @@ SUBROUTINE Setup_Timekeeping ( grid )
    IF ( grid%id .EQ. head_grid%id .AND. &
         ( run_days .gt. 0 .or. run_hours .gt. 0 .or. run_minutes .gt. 0 .or. run_seconds .gt. 0 )) THEN
      CALL ESMF_TimeIntervalSet ( run_length , D=run_days, H=run_hours, M=run_minutes, S=run_seconds, rc=rc )
+     CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                           'ESMF_TimeIntervalSet(run_length) FAILED', &
+                           __FILE__ , &
+                           __LINE__  )
      grid%stop_time = grid%start_time + run_length
    ELSE
      CALL nl_get_end_year(grid%id,end_year)
@@ -165,8 +182,13 @@ SUBROUTINE Setup_Timekeeping ( grid )
      CALL nl_get_end_hour(grid%id,end_hour)
      CALL nl_get_end_minute(grid%id,end_minute)
      CALL nl_get_end_second(grid%id,end_second)
-     CALL ESMF_TimeSet(grid%stop_time, YR=end_year, MM=end_month, DD=end_day, &
-                                       H=end_hour, M=end_minute, S=end_second )
+     CALL ESMF_TimeSet(grid%stop_time, YY=end_year, MM=end_month, DD=end_day, &
+                                       H=end_hour, M=end_minute, S=end_second,&
+                                       rc=rc )
+     CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                           'ESMF_TimeSet(grid%stop_time) FAILED', &
+                           __FILE__ , &
+                           __LINE__  )
      run_length = grid%stop_time - grid%start_time
    ENDIF
 
@@ -178,27 +200,40 @@ SUBROUTINE Setup_Timekeeping ( grid )
       CALL nl_set_dt( grid%id, dt )
       grid%dt = dt
       CALL ESMF_TimeIntervalSet(grid%step_time, S=time_step, Sn=time_step_fract_num, Sd=time_step_fract_den, rc=rc)
+      CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                            'ESMF_TimeIntervalSet(grid%step_time) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
    ELSE
       grid%step_time = grid%parents(1)%ptr%step_time / grid%parent_time_step_ratio
       grid%dt = grid%parents(1)%ptr%dt / grid%parent_time_step_ratio
       CALL nl_set_dt( grid%id, grid%dt )
    ENDIF
 
-   CALL ESMF_ClockSet( grid%domain_clock,TimeStep=grid%step_time,StartTime=grid%start_time,  &
+#ifdef WRF_ESMF_MOD
+   grid%domain_clock = ESMF_ClockCreate( TimeStep= grid%step_time,  &
+                                         StartTime=grid%start_time, &
+                                         StopTime= grid%stop_time,  &
+                                         rc=rc)
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'grid%domain_clock = ESMF_ClockCreate() FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
+#else
+   CALL ESMF_ClockSetOLD( grid%domain_clock,TimeStep=grid%step_time,StartTime=grid%start_time,  &
                                          StopTime=grid%stop_time,rc=rc)
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'ESMF_ClockSetOLD(grid%domain_clock) FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
    CALL ESMF_ClockGetAlarmList( grid%domain_clock, grid%alarms, rc )
-
-#ifdef WRF_CHEM
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! add for wrf_chem emiss input
-   CALL ESMF_TimeIntervalSet( interval , H=1, rc=rc )
-   CALL ESMF_AlarmSet( grid%alarms( AUXINPUT5_ALARM ), RingInterval=interval, rc=rc )
-   CALL ESMF_ClockAddAlarm( grid%domain_clock, grid%alarms( AUXINPUT5_ALARM ), rc=rc )
-   CALL ESMF_AlarmEnable( grid%alarms( AUXINPUT5_ALARM ), rc=rc )
-   CALL ESMF_AlarmTurnOn( grid%alarms( AUXINPUT5_ALARM ), rc=rc )
-! end for wrf chem emiss input
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'ESMF_ClockGetAlarmList(grid%domain_clock) FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
 #endif
+   CALL wrf_clockprint ( 150, grid%domain_clock, &
+                         'DEBUG setup_timekeeping():  grid%domain_clock after creation,' )
 
 ! HISTORY INTERVAL
 ! history_interval is left there (and means minutes) for consistency, but 
@@ -214,8 +249,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
 
    IF ( MAX( history_interval_mo, history_interval_d,   &
              history_interval_h, history_interval_m , history_interval_s   ) .GT. 0 ) THEN
-     CALL ESMF_TimeIntervalSet( interval, MO=history_interval_mo, D=history_interval_d, &
+     CALL ESMF_TimeIntervalSet( interval, MM=history_interval_mo, D=history_interval_d, &
                                           H=history_interval_h, M=history_interval_m, S=history_interval_s, rc=rc )
+     CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                           'ESMF_TimeIntervalSet(history_interval) FAILED', &
+                           __FILE__ , &
+                           __LINE__  )
    ELSE
      interval = run_length + one_minute
    ENDIF
@@ -228,8 +267,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL nl_get_history_begin_s( grid%id, history_begin_s )
    IF ( MAX( history_begin_y, history_begin_mo, history_begin_d,   &
              history_begin_h, history_begin_m , history_begin_s   ) .GT. 0 ) THEN
-      CALL ESMF_TimeIntervalSet( begin_time , MO=history_begin_mo, D=history_begin_d, &
+      CALL ESMF_TimeIntervalSet( begin_time , MM=history_begin_mo, D=history_begin_d, &
                                               H=history_begin_h, M=history_begin_m, S=history_begin_s, rc=rc )
+      CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                            'ESMF_TimeIntervalSet(history_begin) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
    ELSE
       begin_time = zero_time
    ENDIF
@@ -242,20 +285,49 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL nl_get_history_end_s( grid%id, history_end_s )
    IF ( MAX( history_end_y, history_end_mo, history_end_d,   &
              history_end_h, history_end_m , history_end_s   ) .GT. 0 ) THEN
-      CALL ESMF_TimeIntervalSet( end_time , MO=history_end_mo, D=history_end_d, &
+      CALL ESMF_TimeIntervalSet( end_time , MM=history_end_mo, D=history_end_d, &
                                      H=history_end_h, M=history_end_m, S=history_end_s, rc=rc )
+      CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                            'ESMF_TimeIntervalSet(history_end) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
    ELSE
       end_time = run_length + one_minute
    ENDIF
 
+#ifdef WRF_ESMF_MOD
+   grid%alarms( HISTORY_ALARM ) = ESMF_AlarmCreate( clock=grid%domain_clock,               &
+                                                    RingTime=grid%start_time + begin_time, &
+                                                    RingInterval=interval,                 &
+                                                    StopTime=grid%start_time + end_time,   &
+                                                    rc=rc )
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'HISTORY_ALARM = ESMF_AlarmCreate() FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
+#else
    CALL ESMF_AlarmSet( grid%alarms( HISTORY_ALARM ), RingTime=grid%start_time + begin_time,     &
                                                      RingInterval=interval,   &
                                                      StopTime=grid%start_time + end_time,   &
                                                      rc=rc )
-
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'ESMF_AlarmSet(HISTORY_ALARM) FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
    CALL ESMF_ClockAddAlarm( grid%domain_clock, grid%alarms( HISTORY_ALARM ), rc=rc )
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'ESMF_ClockAddAlarm(HISTORY_ALARM) FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
+#endif
 
-   IF ( begin_time .EQ. zero_time )   CALL ESMF_AlarmTurnOn( grid%alarms( HISTORY_ALARM ),  rc=rc )
+   IF ( begin_time .EQ. zero_time ) THEN
+      CALL ESMF_AlarmRingerOn( grid%alarms( HISTORY_ALARM ),  rc=rc )
+      CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                            'ESMF_AlarmRingerOn(HISTORY_ALARM) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
+   ENDIF
 
 
 ! RESTART INTERVAL
@@ -270,13 +342,35 @@ SUBROUTINE Setup_Timekeeping ( grid )
    IF ( restart_interval_m .EQ. 0 ) restart_interval_m = restart_interval
    IF ( MAX( restart_interval_mo, restart_interval_d,   &
              restart_interval_h, restart_interval_m , restart_interval_s   ) .GT. 0 ) THEN
-     CALL ESMF_TimeIntervalSet( interval, MO=restart_interval_mo, D=restart_interval_d, &
+     CALL ESMF_TimeIntervalSet( interval, MM=restart_interval_mo, D=restart_interval_d, &
                                         H=restart_interval_h, M=restart_interval_m, S=restart_interval_s, rc=rc )
+     CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                           'ESMF_TimeIntervalSet(restart_interval) FAILED', &
+                           __FILE__ , &
+                           __LINE__  )
    ELSE
      interval = run_length + one_minute
    ENDIF
+#ifdef WRF_ESMF_MOD
+   grid%alarms( RESTART_ALARM ) = ESMF_AlarmCreate( clock=grid%domain_clock, &
+                                                    RingInterval=interval,    &
+                                                    rc=rc )
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'RESTART_ALARM = ESMF_AlarmCreate() FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
+#else
    CALL ESMF_AlarmSet( grid%alarms( RESTART_ALARM ), RingInterval=interval, rc=rc )
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'ESMF_AlarmSet(RESTART_ALARM) FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
    CALL ESMF_ClockAddAlarm( grid%domain_clock, grid%alarms( RESTART_ALARM ), rc=rc )
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'ESMF_ClockAddAlarm(RESTART_ALARM) FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
+#endif
 
 ! INPUTOUT INTERVAL
    CALL nl_get_inputout_interval( grid%id, inputout_interval )   ! same as minutes
@@ -289,8 +383,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
 
    IF ( MAX( inputout_interval_mo, inputout_interval_d,   &
              inputout_interval_h, inputout_interval_m , inputout_interval_s   ) .GT. 0 ) THEN
-     CALL ESMF_TimeIntervalSet( interval, MO=inputout_interval_mo, D=inputout_interval_d, &
+     CALL ESMF_TimeIntervalSet( interval, MM=inputout_interval_mo, D=inputout_interval_d, &
                                         H=inputout_interval_h, M=inputout_interval_m, S=inputout_interval_s, rc=rc )
+     CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                           'ESMF_TimeIntervalSet(inputout_interval) FAILED', &
+                           __FILE__ , &
+                           __LINE__  )
    ELSE
      interval = run_length + one_minute
    ENDIF
@@ -303,8 +401,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL nl_get_inputout_begin_s( grid%id, inputout_begin_s )
    IF ( MAX( inputout_begin_y, inputout_begin_mo, inputout_begin_d,   &
              inputout_begin_h, inputout_begin_m , inputout_begin_s   ) .GT. 0 ) THEN
-      CALL ESMF_TimeIntervalSet( begin_time , MO=inputout_begin_mo, D=inputout_begin_d, &
+      CALL ESMF_TimeIntervalSet( begin_time , MM=inputout_begin_mo, D=inputout_begin_d, &
                                       H=inputout_begin_h, M=inputout_begin_m, S=inputout_begin_s, rc=rc )
+      CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                            'ESMF_TimeIntervalSet(inputout_begin) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
    ELSE
       begin_time = zero_time
    ENDIF
@@ -317,18 +419,42 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL nl_get_inputout_end_s( grid%id, inputout_end_s )
    IF ( MAX( inputout_end_y, inputout_end_mo, inputout_end_d,   &
              inputout_end_h, inputout_end_m , inputout_end_s   ) .GT. 0 ) THEN
-      CALL ESMF_TimeIntervalSet( end_time , MO=inputout_end_mo, D=inputout_end_d, &
+      CALL ESMF_TimeIntervalSet( end_time , MM=inputout_end_mo, D=inputout_end_d, &
                                      H=inputout_end_h, M=inputout_end_m, S=inputout_end_s, rc=rc )
+      CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                            'ESMF_TimeIntervalSet(inputout_end) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
    ELSE
       end_time = run_length + one_minute
    ENDIF
 
+#ifdef WRF_ESMF_MOD
+   grid%alarms( INPUTOUT_ALARM ) = ESMF_AlarmCreate( clock=grid%domain_clock,              &
+                                                     RingTime=grid%start_time + begin_time,&
+                                                     RingInterval=interval,                &
+                                                     StopTime=grid%start_time + end_time,  &
+                                                     rc=rc )
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'INPUTOUT_ALARM = ESMF_AlarmCreate() FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
+#else
    CALL ESMF_AlarmSet( grid%alarms( INPUTOUT_ALARM ), RingTime=grid%start_time + begin_time,     &
                                                       RingInterval=interval,   &
                                                       StopTime=grid%start_time + end_time,   &
                                                       rc=rc )
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'ESMF_AlarmSet(INPUTOUT_ALARM) FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
 
    CALL ESMF_ClockAddAlarm( grid%domain_clock, grid%alarms( INPUTOUT_ALARM ), rc=rc )
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'ESMF_ClockAddAlarm(INPUTOUT_ALARM) FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
+#endif
 
 ! AUXHIST1 INTERVAL
 ! auxhist1_interval is left there (and means minutes) for consistency, but
@@ -343,8 +469,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
 
    IF ( MAX( auxhist1_interval_mo, auxhist1_interval_d,   &
              auxhist1_interval_h, auxhist1_interval_m , auxhist1_interval_s   ) .GT. 0 ) THEN
-     CALL ESMF_TimeIntervalSet( interval, MO=auxhist1_interval_mo, D=auxhist1_interval_d, &
+     CALL ESMF_TimeIntervalSet( interval, MM=auxhist1_interval_mo, D=auxhist1_interval_d, &
                                         H=auxhist1_interval_h, M=auxhist1_interval_m, S=auxhist1_interval_s, rc=rc )
+     CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                           'ESMF_TimeIntervalSet(auxhist1_interval) FAILED', &
+                           __FILE__ , &
+                           __LINE__  )
    ELSE
      interval = run_length + one_minute
    ENDIF
@@ -357,8 +487,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL nl_get_auxhist1_begin_s( grid%id, auxhist1_begin_s )
    IF ( MAX( auxhist1_begin_y, auxhist1_begin_mo, auxhist1_begin_d,   &
              auxhist1_begin_h, auxhist1_begin_m , auxhist1_begin_s   ) .GT. 0 ) THEN
-      CALL ESMF_TimeIntervalSet( begin_time , MO=auxhist1_begin_mo, D=auxhist1_begin_d, &
+      CALL ESMF_TimeIntervalSet( begin_time , MM=auxhist1_begin_mo, D=auxhist1_begin_d, &
                                       H=auxhist1_begin_h, M=auxhist1_begin_m, S=auxhist1_begin_s, rc=rc )
+      CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                            'ESMF_TimeIntervalSet(auxhist1_begin) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
    ELSE
       begin_time = zero_time
    ENDIF
@@ -371,21 +505,44 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL nl_get_auxhist1_end_s( grid%id, auxhist1_end_s )
    IF ( MAX( auxhist1_end_y, auxhist1_end_mo, auxhist1_end_d,   &
              auxhist1_end_h, auxhist1_end_m , auxhist1_end_s   ) .GT. 0 ) THEN
-      CALL ESMF_TimeIntervalSet( end_time , MO=auxhist1_end_mo, D=auxhist1_end_d, &
+      CALL ESMF_TimeIntervalSet( end_time , MM=auxhist1_end_mo, D=auxhist1_end_d, &
                                      H=auxhist1_end_h, M=auxhist1_end_m, S=auxhist1_end_s, rc=rc )
+      CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                            'ESMF_TimeIntervalSet(auxhist1_end) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
    ELSE
       end_time = run_length + one_minute
    ENDIF
 
+#ifdef WRF_ESMF_MOD
+   grid%alarms( AUXHIST1_ALARM ) = ESMF_AlarmCreate( clock=grid%domain_clock,              &
+                                                     RingTime=grid%start_time + begin_time,&
+                                                     RingInterval=interval,                &
+                                                     StopTime=grid%start_time + end_time,  &
+                                                     rc=rc )
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'AUXHIST1_ALARM = ESMF_AlarmCreate() FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
+#else
    CALL ESMF_AlarmSet( grid%alarms( AUXHIST1_ALARM ), RingTime=grid%start_time + begin_time,     &
                                                      RingInterval=interval,   &
                                                      StopTime=grid%start_time + end_time,   &
                                                      rc=rc )
-
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'ESMF_AlarmSet(AUXHIST1_ALARM) FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
    CALL ESMF_ClockAddAlarm( grid%domain_clock, grid%alarms( AUXHIST1_ALARM ), rc=rc )
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'ESMF_ClockAddAlarm(AUXHIST1_ALARM) FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
+#endif
 
    IF ( interval .NE. run_length + one_minute .AND. begin_time .EQ. zero_time ) THEN
-     CALL ESMF_AlarmTurnOn( grid%alarms( AUXHIST1_ALARM ),  rc=rc )
+     CALL ESMF_AlarmRingerOn( grid%alarms( AUXHIST1_ALARM ),  rc=rc )
    ENDIF
 
 
@@ -402,8 +559,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
 
    IF ( MAX( auxhist2_interval_mo, auxhist2_interval_d,   &
              auxhist2_interval_h, auxhist2_interval_m , auxhist2_interval_s   ) .GT. 0 ) THEN
-     CALL ESMF_TimeIntervalSet( interval, MO=auxhist2_interval_mo, D=auxhist2_interval_d, &
+     CALL ESMF_TimeIntervalSet( interval, MM=auxhist2_interval_mo, D=auxhist2_interval_d, &
                                         H=auxhist2_interval_h, M=auxhist2_interval_m, S=auxhist2_interval_s, rc=rc )
+     CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                           'ESMF_TimeIntervalSet(auxhist2_interval) FAILED', &
+                           __FILE__ , &
+                           __LINE__  )
    ELSE
      interval = run_length + one_minute
    ENDIF
@@ -416,8 +577,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL nl_get_auxhist2_begin_s( grid%id, auxhist2_begin_s )
    IF ( MAX( auxhist2_begin_y, auxhist2_begin_mo, auxhist2_begin_d,   &
              auxhist2_begin_h, auxhist2_begin_m , auxhist2_begin_s   ) .GT. 0 ) THEN
-      CALL ESMF_TimeIntervalSet( begin_time , MO=auxhist2_begin_mo, D=auxhist2_begin_d, &
+      CALL ESMF_TimeIntervalSet( begin_time , MM=auxhist2_begin_mo, D=auxhist2_begin_d, &
                                       H=auxhist2_begin_h, M=auxhist2_begin_m, S=auxhist2_begin_s, rc=rc )
+      CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                            'ESMF_TimeIntervalSet(auxhist2_begin) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
    ELSE
       begin_time = zero_time
    ENDIF
@@ -430,21 +595,44 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL nl_get_auxhist2_end_s( grid%id, auxhist2_end_s )
    IF ( MAX( auxhist2_end_y, auxhist2_end_mo, auxhist2_end_d,   &
              auxhist2_end_h, auxhist2_end_m , auxhist2_end_s   ) .GT. 0 ) THEN
-      CALL ESMF_TimeIntervalSet( end_time , MO=auxhist2_end_mo, D=auxhist2_end_d, &
+      CALL ESMF_TimeIntervalSet( end_time , MM=auxhist2_end_mo, D=auxhist2_end_d, &
                                      H=auxhist2_end_h, M=auxhist2_end_m, S=auxhist2_end_s, rc=rc )
+      CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                            'ESMF_TimeIntervalSet(auxhist2_end) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
    ELSE
       end_time = run_length + one_minute
    ENDIF
 
+#ifdef WRF_ESMF_MOD
+   grid%alarms( AUXHIST2_ALARM ) = ESMF_AlarmCreate( clock=grid%domain_clock,              &
+                                                     RingTime=grid%start_time + begin_time,&
+                                                     RingInterval=interval,                &
+                                                     StopTime=grid%start_time + end_time,  &
+                                                     rc=rc )
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'AUXHIST2_ALARM = ESMF_AlarmCreate() FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
+#else
    CALL ESMF_AlarmSet( grid%alarms( AUXHIST2_ALARM ), RingTime=grid%start_time + begin_time,     &
                                                      RingInterval=interval,   &
                                                      StopTime=grid%start_time + end_time,   &
                                                      rc=rc )
-
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'ESMF_AlarmSet(AUXHIST2_ALARM) FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
    CALL ESMF_ClockAddAlarm( grid%domain_clock, grid%alarms( AUXHIST2_ALARM ), rc=rc )
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'ESMF_ClockAddAlarm(AUXHIST2_ALARM) FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
+#endif
 
    IF ( interval .NE. run_length + one_minute .AND. begin_time .EQ. zero_time ) THEN
-     CALL ESMF_AlarmTurnOn( grid%alarms( AUXHIST2_ALARM ),  rc=rc )
+     CALL ESMF_AlarmRingerOn( grid%alarms( AUXHIST2_ALARM ),  rc=rc )
    ENDIF
 
 ! AUXHIST3_ INTERVAL
@@ -460,8 +648,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
 
    IF ( MAX( auxhist3_interval_mo, auxhist3_interval_d,   &
              auxhist3_interval_h, auxhist3_interval_m , auxhist3_interval_s   ) .GT. 0 ) THEN
-     CALL ESMF_TimeIntervalSet( interval, MO=auxhist3_interval_mo, D=auxhist3_interval_d, &
+     CALL ESMF_TimeIntervalSet( interval, MM=auxhist3_interval_mo, D=auxhist3_interval_d, &
                                         H=auxhist3_interval_h, M=auxhist3_interval_m, S=auxhist3_interval_s, rc=rc )
+     CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                           'ESMF_TimeIntervalSet(auxhist3_interval) FAILED', &
+                           __FILE__ , &
+                           __LINE__  )
    ELSE
      interval = run_length + one_minute
    ENDIF
@@ -474,8 +666,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL nl_get_auxhist3_begin_s( grid%id, auxhist3_begin_s )
    IF ( MAX( auxhist3_begin_y, auxhist3_begin_mo, auxhist3_begin_d,   &
              auxhist3_begin_h, auxhist3_begin_m , auxhist3_begin_s   ) .GT. 0 ) THEN
-      CALL ESMF_TimeIntervalSet( begin_time , MO=auxhist3_begin_mo, D=auxhist3_begin_d, &
+      CALL ESMF_TimeIntervalSet( begin_time , MM=auxhist3_begin_mo, D=auxhist3_begin_d, &
                                       H=auxhist3_begin_h, M=auxhist3_begin_m, S=auxhist3_begin_s, rc=rc )
+      CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                            'ESMF_TimeIntervalSet(auxhist3_begin) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
    ELSE
       begin_time = zero_time
    ENDIF
@@ -488,21 +684,44 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL nl_get_auxhist3_end_s( grid%id, auxhist3_end_s )
    IF ( MAX( auxhist3_end_y, auxhist3_end_mo, auxhist3_end_d,   &
              auxhist3_end_h, auxhist3_end_m , auxhist3_end_s   ) .GT. 0 ) THEN
-      CALL ESMF_TimeIntervalSet( end_time , MO=auxhist3_end_mo, D=auxhist3_end_d, &
+      CALL ESMF_TimeIntervalSet( end_time , MM=auxhist3_end_mo, D=auxhist3_end_d, &
                                      H=auxhist3_end_h, M=auxhist3_end_m, S=auxhist3_end_s, rc=rc )
+      CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                            'ESMF_TimeIntervalSet(auxhist3_end) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
    ELSE
       end_time = run_length + one_minute
    ENDIF
 
+#ifdef WRF_ESMF_MOD
+   grid%alarms( AUXHIST3_ALARM ) = ESMF_AlarmCreate( clock=grid%domain_clock,              &
+                                                     RingTime=grid%start_time + begin_time,&
+                                                     RingInterval=interval,                &
+                                                     StopTime=grid%start_time + end_time,  &
+                                                     rc=rc )
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'AUXHIST3_ALARM = ESMF_AlarmCreate() FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
+#else
    CALL ESMF_AlarmSet( grid%alarms( AUXHIST3_ALARM ), RingTime=grid%start_time + begin_time,     &
                                                      RingInterval=interval,   &
                                                      StopTime=grid%start_time + end_time,   &
                                                      rc=rc )
-
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'ESMF_AlarmSet(AUXHIST3_ALARM) FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
    CALL ESMF_ClockAddAlarm( grid%domain_clock, grid%alarms( AUXHIST3_ALARM ), rc=rc )
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'ESMF_ClockAddAlarm(AUXHIST3_ALARM) FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
+#endif
 
    IF ( interval .NE. run_length + one_minute .AND. begin_time .EQ. zero_time ) THEN
-     CALL ESMF_AlarmTurnOn( grid%alarms( AUXHIST3_ALARM ),  rc=rc )
+     CALL ESMF_AlarmRingerOn( grid%alarms( AUXHIST3_ALARM ),  rc=rc )
    ENDIF
 
 ! AUXHIST4_ INTERVAL
@@ -518,8 +737,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
 
    IF ( MAX( auxhist4_interval_mo, auxhist4_interval_d,   &
              auxhist4_interval_h, auxhist4_interval_m , auxhist4_interval_s   ) .GT. 0 ) THEN
-     CALL ESMF_TimeIntervalSet( interval, MO=auxhist4_interval_mo, D=auxhist4_interval_d, &
+     CALL ESMF_TimeIntervalSet( interval, MM=auxhist4_interval_mo, D=auxhist4_interval_d, &
                                         H=auxhist4_interval_h, M=auxhist4_interval_m, S=auxhist4_interval_s, rc=rc )
+     CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                           'ESMF_TimeIntervalSet(auxhist4_interval) FAILED', &
+                           __FILE__ , &
+                           __LINE__  )
    ELSE
      interval = run_length + one_minute
    ENDIF
@@ -532,8 +755,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL nl_get_auxhist4_begin_s( grid%id, auxhist4_begin_s )
    IF ( MAX( auxhist4_begin_y, auxhist4_begin_mo, auxhist4_begin_d,   &
              auxhist4_begin_h, auxhist4_begin_m , auxhist4_begin_s   ) .GT. 0 ) THEN
-      CALL ESMF_TimeIntervalSet( begin_time , MO=auxhist4_begin_mo, D=auxhist4_begin_d, &
+      CALL ESMF_TimeIntervalSet( begin_time , MM=auxhist4_begin_mo, D=auxhist4_begin_d, &
                                       H=auxhist4_begin_h, M=auxhist4_begin_m, S=auxhist4_begin_s, rc=rc )
+      CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                            'ESMF_TimeIntervalSet(auxhist4_begin) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
    ELSE
       begin_time = zero_time
    ENDIF
@@ -546,21 +773,44 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL nl_get_auxhist4_end_s( grid%id, auxhist4_end_s )
    IF ( MAX( auxhist4_end_y, auxhist4_end_mo, auxhist4_end_d,   &
              auxhist4_end_h, auxhist4_end_m , auxhist4_end_s   ) .GT. 0 ) THEN
-      CALL ESMF_TimeIntervalSet( end_time , MO=auxhist4_end_mo, D=auxhist4_end_d, &
+      CALL ESMF_TimeIntervalSet( end_time , MM=auxhist4_end_mo, D=auxhist4_end_d, &
                                      H=auxhist4_end_h, M=auxhist4_end_m, S=auxhist4_end_s, rc=rc )
+      CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                            'ESMF_TimeIntervalSet(auxhist4_end) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
    ELSE
       end_time = run_length + one_minute
    ENDIF
 
+#ifdef WRF_ESMF_MOD
+   grid%alarms( AUXHIST4_ALARM ) = ESMF_AlarmCreate( clock=grid%domain_clock,              &
+                                                     RingTime=grid%start_time + begin_time,&
+                                                     RingInterval=interval,                &
+                                                     StopTime=grid%start_time + end_time,  &
+                                                     rc=rc )
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'AUXHIST4_ALARM = ESMF_AlarmCreate() FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
+#else
    CALL ESMF_AlarmSet( grid%alarms( AUXHIST4_ALARM ), RingTime=grid%start_time + begin_time,     &
                                                      RingInterval=interval,   &
                                                      StopTime=grid%start_time + end_time,   &
                                                      rc=rc )
-
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'ESMF_AlarmSet(AUXHIST4_ALARM) FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
    CALL ESMF_ClockAddAlarm( grid%domain_clock, grid%alarms( AUXHIST4_ALARM ), rc=rc )
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'ESMF_ClockAddAlarm(AUXHIST4_ALARM) FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
+#endif
 
    IF ( interval .NE. run_length + one_minute .AND. begin_time .EQ. zero_time ) THEN
-     CALL ESMF_AlarmTurnOn( grid%alarms( AUXHIST4_ALARM ),  rc=rc )
+     CALL ESMF_AlarmRingerOn( grid%alarms( AUXHIST4_ALARM ),  rc=rc )
    ENDIF
 
 ! AUXHIST5_ INTERVAL
@@ -576,8 +826,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
 
    IF ( MAX( auxhist5_interval_mo, auxhist5_interval_d,   &
              auxhist5_interval_h, auxhist5_interval_m , auxhist5_interval_s   ) .GT. 0 ) THEN
-     CALL ESMF_TimeIntervalSet( interval, MO=auxhist5_interval_mo, D=auxhist5_interval_d, &
+     CALL ESMF_TimeIntervalSet( interval, MM=auxhist5_interval_mo, D=auxhist5_interval_d, &
                                         H=auxhist5_interval_h, M=auxhist5_interval_m, S=auxhist5_interval_s, rc=rc )
+     CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                           'ESMF_TimeIntervalSet(auxhist5_interval) FAILED', &
+                           __FILE__ , &
+                           __LINE__  )
    ELSE
      interval = run_length + one_minute
    ENDIF
@@ -590,8 +844,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL nl_get_auxhist5_begin_s( grid%id, auxhist5_begin_s )
    IF ( MAX( auxhist5_begin_y, auxhist5_begin_mo, auxhist5_begin_d,   &
              auxhist5_begin_h, auxhist5_begin_m , auxhist5_begin_s   ) .GT. 0 ) THEN
-      CALL ESMF_TimeIntervalSet( begin_time , MO=auxhist5_begin_mo, D=auxhist5_begin_d, &
+      CALL ESMF_TimeIntervalSet( begin_time , MM=auxhist5_begin_mo, D=auxhist5_begin_d, &
                                       H=auxhist5_begin_h, M=auxhist5_begin_m, S=auxhist5_begin_s, rc=rc )
+      CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                            'ESMF_TimeIntervalSet(auxhist5_begin) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
    ELSE
       begin_time = zero_time
    ENDIF
@@ -604,21 +862,44 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL nl_get_auxhist5_end_s( grid%id, auxhist5_end_s )
    IF ( MAX( auxhist5_end_y, auxhist5_end_mo, auxhist5_end_d,   &
              auxhist5_end_h, auxhist5_end_m , auxhist5_end_s   ) .GT. 0 ) THEN
-      CALL ESMF_TimeIntervalSet( end_time , MO=auxhist5_end_mo, D=auxhist5_end_d, &
+      CALL ESMF_TimeIntervalSet( end_time , MM=auxhist5_end_mo, D=auxhist5_end_d, &
                                      H=auxhist5_end_h, M=auxhist5_end_m, S=auxhist5_end_s, rc=rc )
+      CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                            'ESMF_TimeIntervalSet(auxhist5_end) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
    ELSE
       end_time = run_length + one_minute
    ENDIF
 
+#ifdef WRF_ESMF_MOD
+   grid%alarms( AUXHIST5_ALARM ) = ESMF_AlarmCreate( clock=grid%domain_clock,              &
+                                                     RingTime=grid%start_time + begin_time,&
+                                                     RingInterval=interval,                &
+                                                     StopTime=grid%start_time + end_time,  &
+                                                     rc=rc )
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'AUXHIST5_ALARM = ESMF_AlarmCreate() FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
+#else
    CALL ESMF_AlarmSet( grid%alarms( AUXHIST5_ALARM ), RingTime=grid%start_time + begin_time,     &
                                                      RingInterval=interval,   &
                                                      StopTime=grid%start_time + end_time,   &
                                                      rc=rc )
-
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'ESMF_AlarmSet(AUXHIST5_ALARM) FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
    CALL ESMF_ClockAddAlarm( grid%domain_clock, grid%alarms( AUXHIST5_ALARM ), rc=rc )
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'ESMF_ClockAddAlarm(AUXHIST5_ALARM) FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
+#endif
 
    IF ( interval .NE. run_length + one_minute .AND. begin_time .EQ. zero_time ) THEN
-     CALL ESMF_AlarmTurnOn( grid%alarms( AUXHIST5_ALARM ),  rc=rc )
+     CALL ESMF_AlarmRingerOn( grid%alarms( AUXHIST5_ALARM ),  rc=rc )
    ENDIF
 
 ! AUXINPUT1_ INTERVAL
@@ -634,8 +915,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
 
    IF ( MAX( auxinput1_interval_mo, auxinput1_interval_d,   &
              auxinput1_interval_h, auxinput1_interval_m , auxinput1_interval_s   ) .GT. 0 ) THEN
-     CALL ESMF_TimeIntervalSet( interval, MO=auxinput1_interval_mo, D=auxinput1_interval_d, &
+     CALL ESMF_TimeIntervalSet( interval, MM=auxinput1_interval_mo, D=auxinput1_interval_d, &
                                         H=auxinput1_interval_h, M=auxinput1_interval_m, S=auxinput1_interval_s, rc=rc )
+     CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                           'ESMF_TimeIntervalSet(auxinput1_interval) FAILED', &
+                           __FILE__ , &
+                           __LINE__  )
    ELSE
      interval = run_length + one_minute
    ENDIF
@@ -648,8 +933,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL nl_get_auxinput1_begin_s( grid%id, auxinput1_begin_s )
    IF ( MAX( auxinput1_begin_y, auxinput1_begin_mo, auxinput1_begin_d,   &
              auxinput1_begin_h, auxinput1_begin_m , auxinput1_begin_s   ) .GT. 0 ) THEN
-      CALL ESMF_TimeIntervalSet( begin_time , MO=auxinput1_begin_mo, D=auxinput1_begin_d, &
+      CALL ESMF_TimeIntervalSet( begin_time , MM=auxinput1_begin_mo, D=auxinput1_begin_d, &
                                       H=auxinput1_begin_h, M=auxinput1_begin_m, S=auxinput1_begin_s, rc=rc )
+      CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                            'ESMF_TimeIntervalSet(auxinput1_begin) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
    ELSE
       begin_time = zero_time
    ENDIF
@@ -662,21 +951,47 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL nl_get_auxinput1_end_s( grid%id, auxinput1_end_s )
    IF ( MAX( auxinput1_end_y, auxinput1_end_mo, auxinput1_end_d,   &
              auxinput1_end_h, auxinput1_end_m , auxinput1_end_s   ) .GT. 0 ) THEN
-      CALL ESMF_TimeIntervalSet( end_time , MO=auxinput1_end_mo, D=auxinput1_end_d, &
+      CALL ESMF_TimeIntervalSet( end_time , MM=auxinput1_end_mo, D=auxinput1_end_d, &
                                      H=auxinput1_end_h, M=auxinput1_end_m, S=auxinput1_end_s, rc=rc )
+      CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                            'ESMF_TimeIntervalSet(auxinput1_end) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
    ELSE
       end_time = run_length + one_minute
    ENDIF
 
+#ifdef WRF_ESMF_MOD
+   grid%alarms( AUXINPUT1_ALARM ) = ESMF_AlarmCreate( clock=grid%domain_clock,              &
+                                                      RingTime=grid%start_time + begin_time,&
+                                                      RingInterval=interval,                &
+                                                      StopTime=grid%start_time + end_time,  &
+                                                      rc=rc )
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'AUXINPUT1_ALARM = ESMF_AlarmCreate() FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
+#else
    CALL ESMF_AlarmSet( grid%alarms( AUXINPUT1_ALARM ), RingTime=grid%start_time + begin_time,     &
                                                      RingInterval=interval,   &
                                                      StopTime=grid%start_time + end_time,   &
                                                      rc=rc )
-
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'ESMF_AlarmSet(AUXINPUT1_ALARM) FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
    CALL ESMF_ClockAddAlarm( grid%domain_clock, grid%alarms( AUXINPUT1_ALARM ), rc=rc )
-
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'ESMF_ClockAddAlarm(AUXINPUT1_ALARM) FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
+#endif
    IF ( interval .NE. run_length + one_minute .AND. begin_time .EQ. zero_time ) THEN
-     CALL ESMF_AlarmTurnOn( grid%alarms( AUXINPUT1_ALARM ),  rc=rc )
+     CALL ESMF_AlarmRingerOn( grid%alarms( AUXINPUT1_ALARM ),  rc=rc )
+     CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                           'ESMF_AlarmRingerOn(AUXINPUT1_ALARM) FAILED', &
+                           __FILE__ , &
+                           __LINE__  )
    ENDIF
 
 ! AUXINPUT2_ INTERVAL
@@ -692,8 +1007,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
 
    IF ( MAX( auxinput2_interval_mo, auxinput2_interval_d,   &
              auxinput2_interval_h, auxinput2_interval_m , auxinput2_interval_s   ) .GT. 0 ) THEN
-     CALL ESMF_TimeIntervalSet( interval, MO=auxinput2_interval_mo, D=auxinput2_interval_d, &
+     CALL ESMF_TimeIntervalSet( interval, MM=auxinput2_interval_mo, D=auxinput2_interval_d, &
                                         H=auxinput2_interval_h, M=auxinput2_interval_m, S=auxinput2_interval_s, rc=rc )
+     CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                           'ESMF_TimeIntervalSet(auxinput2_interval) FAILED', &
+                           __FILE__ , &
+                           __LINE__  )
    ELSE
      interval = run_length + one_minute
    ENDIF
@@ -706,8 +1025,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL nl_get_auxinput2_begin_s( grid%id, auxinput2_begin_s )
    IF ( MAX( auxinput2_begin_y, auxinput2_begin_mo, auxinput2_begin_d,   &
              auxinput2_begin_h, auxinput2_begin_m , auxinput2_begin_s   ) .GT. 0 ) THEN
-      CALL ESMF_TimeIntervalSet( begin_time , MO=auxinput2_begin_mo, D=auxinput2_begin_d, &
+      CALL ESMF_TimeIntervalSet( begin_time , MM=auxinput2_begin_mo, D=auxinput2_begin_d, &
                                       H=auxinput2_begin_h, M=auxinput2_begin_m, S=auxinput2_begin_s, rc=rc )
+      CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                            'ESMF_TimeIntervalSet(auxinput2_begin) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
    ELSE
       begin_time = zero_time
    ENDIF
@@ -720,21 +1043,47 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL nl_get_auxinput2_end_s( grid%id, auxinput2_end_s )
    IF ( MAX( auxinput2_end_y, auxinput2_end_mo, auxinput2_end_d,   &
              auxinput2_end_h, auxinput2_end_m , auxinput2_end_s   ) .GT. 0 ) THEN
-      CALL ESMF_TimeIntervalSet( end_time , MO=auxinput2_end_mo, D=auxinput2_end_d, &
+      CALL ESMF_TimeIntervalSet( end_time , MM=auxinput2_end_mo, D=auxinput2_end_d, &
                                      H=auxinput2_end_h, M=auxinput2_end_m, S=auxinput2_end_s, rc=rc )
+      CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                            'ESMF_TimeIntervalSet(auxinput2_end) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
    ELSE
       end_time = run_length + one_minute
    ENDIF
 
+#ifdef WRF_ESMF_MOD
+   grid%alarms( AUXINPUT2_ALARM ) = ESMF_AlarmCreate( clock=grid%domain_clock,              &
+                                                      RingTime=grid%start_time + begin_time,&
+                                                      RingInterval=interval,                &
+                                                      StopTime=grid%start_time + end_time,  &
+                                                      rc=rc )
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'AUXINPUT2_ALARM = ESMF_AlarmCreate() FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
+#else
    CALL ESMF_AlarmSet( grid%alarms( AUXINPUT2_ALARM ), RingTime=grid%start_time + begin_time,     &
                                                      RingInterval=interval,   &
                                                      StopTime=grid%start_time + end_time,   &
                                                      rc=rc )
-
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'ESMF_AlarmSet(AUXINPUT2_ALARM) FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
    CALL ESMF_ClockAddAlarm( grid%domain_clock, grid%alarms( AUXINPUT2_ALARM ), rc=rc )
-
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'ESMF_ClockAddAlarm(AUXINPUT2_ALARM) FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
+#endif
    IF ( interval .NE. run_length + one_minute .AND. begin_time .EQ. zero_time ) THEN
-     CALL ESMF_AlarmTurnOn( grid%alarms( AUXINPUT2_ALARM ),  rc=rc )
+     CALL ESMF_AlarmRingerOn( grid%alarms( AUXINPUT2_ALARM ),  rc=rc )
+     CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                           'ESMF_AlarmRingerOn(AUXINPUT2_ALARM) FAILED', &
+                           __FILE__ , &
+                           __LINE__  )
    ENDIF
 
 ! AUXINPUT3_ INTERVAL
@@ -750,8 +1099,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
 
    IF ( MAX( auxinput3_interval_mo, auxinput3_interval_d,   &
              auxinput3_interval_h, auxinput3_interval_m , auxinput3_interval_s   ) .GT. 0 ) THEN
-     CALL ESMF_TimeIntervalSet( interval, MO=auxinput3_interval_mo, D=auxinput3_interval_d, &
+     CALL ESMF_TimeIntervalSet( interval, MM=auxinput3_interval_mo, D=auxinput3_interval_d, &
                                         H=auxinput3_interval_h, M=auxinput3_interval_m, S=auxinput3_interval_s, rc=rc )
+     CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                           'ESMF_TimeIntervalSet(auxinput3_interval) FAILED', &
+                           __FILE__ , &
+                           __LINE__  )
    ELSE
      interval = run_length + one_minute
    ENDIF
@@ -764,8 +1117,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL nl_get_auxinput3_begin_s( grid%id, auxinput3_begin_s )
    IF ( MAX( auxinput3_begin_y, auxinput3_begin_mo, auxinput3_begin_d,   &
              auxinput3_begin_h, auxinput3_begin_m , auxinput3_begin_s   ) .GT. 0 ) THEN
-      CALL ESMF_TimeIntervalSet( begin_time , MO=auxinput3_begin_mo, D=auxinput3_begin_d, &
+      CALL ESMF_TimeIntervalSet( begin_time , MM=auxinput3_begin_mo, D=auxinput3_begin_d, &
                                       H=auxinput3_begin_h, M=auxinput3_begin_m, S=auxinput3_begin_s, rc=rc )
+      CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                            'ESMF_TimeIntervalSet(auxinput3_begin) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
    ELSE
       begin_time = zero_time
    ENDIF
@@ -778,20 +1135,47 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL nl_get_auxinput3_end_s( grid%id, auxinput3_end_s )
    IF ( MAX( auxinput3_end_y, auxinput3_end_mo, auxinput3_end_d,   &
              auxinput3_end_h, auxinput3_end_m , auxinput3_end_s   ) .GT. 0 ) THEN
-      CALL ESMF_TimeIntervalSet( end_time , MO=auxinput3_end_mo, D=auxinput3_end_d, &
+      CALL ESMF_TimeIntervalSet( end_time , MM=auxinput3_end_mo, D=auxinput3_end_d, &
                                      H=auxinput3_end_h, M=auxinput3_end_m, S=auxinput3_end_s, rc=rc )
+      CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                            'ESMF_TimeIntervalSet(auxinput3_end) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
    ELSE
       end_time = run_length + one_minute
    ENDIF
 
+#ifdef WRF_ESMF_MOD
+   grid%alarms( AUXINPUT3_ALARM ) = ESMF_AlarmCreate( clock=grid%domain_clock,              &
+                                                      RingTime=grid%start_time + begin_time,&
+                                                      RingInterval=interval,                &
+                                                      StopTime=grid%start_time + end_time,  &
+                                                      rc=rc )
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'AUXINPUT3_ALARM = ESMF_AlarmCreate() FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
+#else
    CALL ESMF_AlarmSet( grid%alarms( AUXINPUT3_ALARM ), RingTime=grid%start_time + begin_time,     &
                                                      RingInterval=interval,   &
                                                      StopTime=grid%start_time + end_time,   &
                                                      rc=rc )
-
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'ESMF_AlarmSet(AUXINPUT3_ALARM) FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
    CALL ESMF_ClockAddAlarm( grid%domain_clock, grid%alarms( AUXINPUT3_ALARM ), rc=rc )
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'ESMF_ClockAddAlarm(AUXINPUT3_ALARM) FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
+#endif
    IF ( interval .NE. run_length + one_minute .AND. begin_time .EQ. zero_time ) THEN
-     CALL ESMF_AlarmTurnOn( grid%alarms( AUXINPUT3_ALARM ),  rc=rc )
+     CALL ESMF_AlarmRingerOn( grid%alarms( AUXINPUT3_ALARM ),  rc=rc )
+     CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                           'ESMF_AlarmRingerOn(AUXINPUT3_ALARM) FAILED', &
+                           __FILE__ , &
+                           __LINE__  )
    ENDIF
 
 ! AUXINPUT4_ INTERVAL
@@ -807,8 +1191,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
 
    IF ( MAX( auxinput4_interval_mo, auxinput4_interval_d,   &
              auxinput4_interval_h, auxinput4_interval_m , auxinput4_interval_s   ) .GT. 0 ) THEN
-     CALL ESMF_TimeIntervalSet( interval, MO=auxinput4_interval_mo, D=auxinput4_interval_d, &
+     CALL ESMF_TimeIntervalSet( interval, MM=auxinput4_interval_mo, D=auxinput4_interval_d, &
                                         H=auxinput4_interval_h, M=auxinput4_interval_m, S=auxinput4_interval_s, rc=rc )
+     CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                           'ESMF_TimeIntervalSet(auxinput4_interval) FAILED', &
+                           __FILE__ , &
+                           __LINE__  )
    ELSE
      interval = run_length + one_minute
    ENDIF
@@ -821,8 +1209,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL nl_get_auxinput4_begin_s( grid%id, auxinput4_begin_s )
    IF ( MAX( auxinput4_begin_y, auxinput4_begin_mo, auxinput4_begin_d,   &
              auxinput4_begin_h, auxinput4_begin_m , auxinput4_begin_s   ) .GT. 0 ) THEN
-      CALL ESMF_TimeIntervalSet( begin_time , MO=auxinput4_begin_mo, D=auxinput4_begin_d, &
+      CALL ESMF_TimeIntervalSet( begin_time , MM=auxinput4_begin_mo, D=auxinput4_begin_d, &
                                       H=auxinput4_begin_h, M=auxinput4_begin_m, S=auxinput4_begin_s, rc=rc )
+      CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                            'ESMF_TimeIntervalSet(auxinput4_begin) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
    ELSE
       begin_time = zero_time
    ENDIF
@@ -835,20 +1227,47 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL nl_get_auxinput4_end_s( grid%id, auxinput4_end_s )
    IF ( MAX( auxinput4_end_y, auxinput4_end_mo, auxinput4_end_d,   &
              auxinput4_end_h, auxinput4_end_m , auxinput4_end_s   ) .GT. 0 ) THEN
-      CALL ESMF_TimeIntervalSet( end_time , MO=auxinput4_end_mo, D=auxinput4_end_d, &
+      CALL ESMF_TimeIntervalSet( end_time , MM=auxinput4_end_mo, D=auxinput4_end_d, &
                                      H=auxinput4_end_h, M=auxinput4_end_m, S=auxinput4_end_s, rc=rc )
+      CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                            'ESMF_TimeIntervalSet(auxinput4_end) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
    ELSE
       end_time = run_length + one_minute
    ENDIF
 
+#ifdef WRF_ESMF_MOD
+   grid%alarms( AUXINPUT4_ALARM ) = ESMF_AlarmCreate( clock=grid%domain_clock,              &
+                                                      RingTime=grid%start_time + begin_time,&
+                                                      RingInterval=interval,                &
+                                                      StopTime=grid%start_time + end_time,  &
+                                                      rc=rc )
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'AUXINPUT4_ALARM = ESMF_AlarmCreate() FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
+#else
    CALL ESMF_AlarmSet( grid%alarms( AUXINPUT4_ALARM ), RingTime=grid%start_time + begin_time,     &
                                                      RingInterval=interval,   &
                                                      StopTime=grid%start_time + end_time,   &
                                                      rc=rc )
-
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'ESMF_AlarmSet(AUXINPUT4_ALARM) FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
    CALL ESMF_ClockAddAlarm( grid%domain_clock, grid%alarms( AUXINPUT4_ALARM ), rc=rc )
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'ESMF_ClockAddAlarm(AUXINPUT4_ALARM) FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
+#endif
    IF ( interval .NE. run_length + one_minute .AND. begin_time .EQ. zero_time ) THEN
-     CALL ESMF_AlarmTurnOn( grid%alarms( AUXINPUT4_ALARM ),  rc=rc )
+     CALL ESMF_AlarmRingerOn( grid%alarms( AUXINPUT4_ALARM ),  rc=rc )
+     CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                           'ESMF_AlarmRingerOn(AUXINPUT4_ALARM) FAILED', &
+                           __FILE__ , &
+                           __LINE__  )
    ENDIF
 
 ! AUXINPUT5_ INTERVAL
@@ -864,8 +1283,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
 
    IF ( MAX( auxinput5_interval_mo, auxinput5_interval_d,   &
              auxinput5_interval_h, auxinput5_interval_m , auxinput5_interval_s   ) .GT. 0 ) THEN
-     CALL ESMF_TimeIntervalSet( interval, MO=auxinput5_interval_mo, D=auxinput5_interval_d, &
+     CALL ESMF_TimeIntervalSet( interval, MM=auxinput5_interval_mo, D=auxinput5_interval_d, &
                                         H=auxinput5_interval_h, M=auxinput5_interval_m, S=auxinput5_interval_s, rc=rc )
+     CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                           'ESMF_TimeIntervalSet(auxinput5_interval) FAILED', &
+                           __FILE__ , &
+                           __LINE__  )
    ELSE
      interval = run_length + one_minute
    ENDIF
@@ -878,8 +1301,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL nl_get_auxinput5_begin_s( grid%id, auxinput5_begin_s )
    IF ( MAX( auxinput5_begin_y, auxinput5_begin_mo, auxinput5_begin_d,   &
              auxinput5_begin_h, auxinput5_begin_m , auxinput5_begin_s   ) .GT. 0 ) THEN
-      CALL ESMF_TimeIntervalSet( begin_time , MO=auxinput5_begin_mo, D=auxinput5_begin_d, &
+      CALL ESMF_TimeIntervalSet( begin_time , MM=auxinput5_begin_mo, D=auxinput5_begin_d, &
                                       H=auxinput5_begin_h, M=auxinput5_begin_m, S=auxinput5_begin_s, rc=rc )
+      CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                            'ESMF_TimeIntervalSet(auxinput5_begin) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
    ELSE
       begin_time = zero_time
    ENDIF
@@ -892,35 +1319,104 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL nl_get_auxinput5_end_s( grid%id, auxinput5_end_s )
    IF ( MAX( auxinput5_end_y, auxinput5_end_mo, auxinput5_end_d,   &
              auxinput5_end_h, auxinput5_end_m , auxinput5_end_s   ) .GT. 0 ) THEN
-      CALL ESMF_TimeIntervalSet( end_time , MO=auxinput5_end_mo, D=auxinput5_end_d, &
+      CALL ESMF_TimeIntervalSet( end_time , MM=auxinput5_end_mo, D=auxinput5_end_d, &
                                      H=auxinput5_end_h, M=auxinput5_end_m, S=auxinput5_end_s, rc=rc )
+      CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                            'ESMF_TimeIntervalSet(auxinput5_end) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
    ELSE
       end_time = run_length + one_minute
    ENDIF
 
+#ifdef WRF_ESMF_MOD
+   grid%alarms( AUXINPUT5_ALARM ) = ESMF_AlarmCreate( clock=grid%domain_clock,              &
+                                                      RingTime=grid%start_time + begin_time,&
+                                                      RingInterval=interval,                &
+                                                      StopTime=grid%start_time + end_time,  &
+                                                      rc=rc )
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'AUXINPUT5_ALARM = ESMF_AlarmCreate() FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
+#else
+!TBH:  Should be OK to remove this #ifdef and the code it contains because 
+!TBH:  the following bit overwrites grid%alarms( AUXINPUT5_ALARM )...  
+!TBH:  In fact, by setting namelist values for auxinput5 correctly, it ought 
+!TBH:  to be possible to get rid of all WRF_CHEM bits...  
+#ifdef WRF_CHEM
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! add for wrf_chem emiss input
+   CALL ESMF_TimeIntervalSet( chem_interval , H=1, rc=rc )
+   CALL ESMF_AlarmSet( grid%alarms( AUXINPUT5_ALARM ), RingInterval=chem_interval, rc=rc )
+! end for wrf chem emiss input
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#endif
    CALL ESMF_AlarmSet( grid%alarms( AUXINPUT5_ALARM ), RingTime=grid%start_time + begin_time,     &
                                                      RingInterval=interval,   &
                                                      StopTime=grid%start_time + end_time,   &
                                                      rc=rc )
-
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'ESMF_AlarmSet(AUXINPUT5_ALARM) FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
    CALL ESMF_ClockAddAlarm( grid%domain_clock, grid%alarms( AUXINPUT5_ALARM ), rc=rc )
-#ifndef WRF_CHEM
-   IF ( interval .NE. run_length + one_minute .AND. begin_time .EQ. zero_time ) THEN
-     CALL ESMF_AlarmTurnOn( grid%alarms( AUXINPUT5_ALARM ),  rc=rc )
-   ENDIF
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'ESMF_ClockAddAlarm(AUXINPUT5_ALARM) FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
 #endif
 
+#ifndef WRF_CHEM
+   IF ( interval .NE. run_length + one_minute .AND. begin_time .EQ. zero_time ) THEN
+     CALL ESMF_AlarmRingerOn( grid%alarms( AUXINPUT5_ALARM ),  rc=rc )
+     CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                           'ESMF_AlarmRingerOn(AUXINPUT5_ALARM) FAILED', &
+                           __FILE__ , &
+                           __LINE__  )
+   ENDIF
+#else
+   CALL ESMF_AlarmEnable( grid%alarms( AUXINPUT5_ALARM ), rc=rc )
+   CALL ESMF_AlarmRingerOn( grid%alarms( AUXINPUT5_ALARM ), rc=rc )
+#endif
+
+#ifdef WRF_ESMF_MOD
+   grid%alarms( BOUNDARY_ALARM ) = ESMF_AlarmCreate( clock=grid%domain_clock,  &
+                                                     RingTime=grid%start_time, &
+                                                     rc=rc )
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'BOUNDARY_ALARM = ESMF_AlarmCreate() FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
+#else
    CALL ESMF_AlarmSet( grid%alarms( BOUNDARY_ALARM ), RingTime=grid%start_time ,     &
                                                      rc=rc )
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'ESMF_AlarmSet(BOUNDARY_ALARM) FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
    CALL ESMF_AlarmEnable( grid%alarms( BOUNDARY_ALARM ), rc=rc )
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'ESMF_AlarmEnable(BOUNDARY_ALARM) FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
    CALL ESMF_ClockAddAlarm( grid%domain_clock, grid%alarms( BOUNDARY_ALARM ), rc=rc )
-   CALL ESMF_AlarmTurnOn( grid%alarms( BOUNDARY_ALARM ), rc=rc )
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'ESMF_ClockAddAlarm(BOUNDARY_ALARM) FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
+#endif
+   CALL ESMF_AlarmRingerOn( grid%alarms( BOUNDARY_ALARM ), rc=rc )
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'ESMF_AlarmRingerOn(BOUNDARY_ALARM) FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
 
 #ifdef WRF_CHEM
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! add for wrf_chem emiss input
    CALL ESMF_AlarmEnable( grid%alarms( AUXINPUT5_ALARM ), rc=rc )
-   CALL ESMF_AlarmTurnOn( grid%alarms( AUXINPUT5_ALARM ), rc=rc )
+   CALL ESMF_AlarmRingerOn( grid%alarms( AUXINPUT5_ALARM ), rc=rc )
 ! end for wrf chem emiss input
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #endif

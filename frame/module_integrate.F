@@ -14,7 +14,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
    USE module_nesting
    USE module_configure
    USE module_timing
-   USE esmf_mod
+   USE WRF_ESMF_MOD
 
    IMPLICIT NONE
 
@@ -43,9 +43,11 @@ RECURSIVE SUBROUTINE integrate ( grid )
 ! (<a href="setup_timekeeping.html">setup_timekeeping</a>) at the time
 ! that the domain is initialized.
 ! The lower-level time library and the type declarations for the times
-! and time intervals used are defined in external/esmf_time_f90.  Note
-! that arithmetic and comparison is performed on these data types using
-! F90 operator overloading, also defined in that library.
+! and time intervals used are defined in external/esmf_time_f90, or, if 
+! WRF_ESMF_MOD is defined during build, a site-specific installation of the 
+! ESMF library is used.  Note that arithmetic and comparison is performed 
+! on these data types using F90 operator overloading, also defined in that 
+! library.
 ! 
 ! This routine is the lowest level of the WRF Driver Layer and for the most
 ! part the WRF routines that are called from here are in the topmost level
@@ -72,7 +74,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
 ! structures are defined in frame/module_configure.F.
 ! 
 ! 3. The current time of the domain is retrieved from the domain's clock
-! using ESMF_ClockGetCurrTime.  There is another call to ESMF_ClockGetCurrTime
+! using ESMF_ClockGet.  There is another call to ESMF_ClockGet
 ! inside the WHILE loop that follows.
 ! 
 ! 4. Iterate forward while the current time is less than the stop subtime.
@@ -106,7 +108,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
 ! 
 ! 4.f  Call <a href=solve_interface.html>solve_interface</a> which calls the solver that advance the domain 
 ! one time step, then advance the domain's clock by calling ESMF_ClockAdvance.  Upon advancing the clock,
-! the current time for the grid is updated by calling ESMF_ClockGetCurrTime. The enclosing WHILE loop around
+! the current time for the grid is updated by calling ESMF_ClockGet. The enclosing WHILE loop around
 ! this section is for handling other domains with which this domain may overlap.  It is not active in WRF 2.0 and
 ! only executes one trip.  
 ! 
@@ -168,7 +170,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
        TYPE (grid_config_rec_type) config_flags
      END SUBROUTINE med_calc_model_time
        ! mediation-supplied routine that gives mediation layer opportunity to 
-       ! perform I/O before the call ot the solve routine
+       ! perform I/O before the call to the solve routine
      SUBROUTINE med_before_solve_io ( grid , config_flags )
        USE module_domain
        USE module_configure
@@ -176,7 +178,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
        TYPE (grid_config_rec_type) config_flags
      END SUBROUTINE med_before_solve_io
        ! mediation-supplied routine that gives mediation layer opportunity to 
-       ! perform I/O after the call ot the solve routine
+       ! perform I/O after the call to the solve routine
      SUBROUTINE med_after_solve_io ( grid , config_flags )
        USE module_domain
        USE module_configure
@@ -246,7 +248,9 @@ RECURSIVE SUBROUTINE integrate ( grid )
 
    IF ( .NOT. ESMF_ClockIsStopTime(grid%domain_clock ,rc=rc) ) THEN
       CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
-      CALL ESMF_ClockGetCurrTime( grid%domain_clock, grid%current_time, rc=rc )
+      CALL ESMF_ClockGet( grid%domain_clock, currTime=grid%current_time, rc=rc )
+      CALL wrf_clockprint ( 150, grid%domain_clock, &
+                            'DEBUG:  top of integrate(),' )
       DO WHILE ( grid%current_time .LT. grid%stop_subtime )
          IF ( wrf_dm_on_monitor() ) THEN
            CALL start_timing
@@ -273,8 +277,16 @@ RECURSIVE SUBROUTINE integrate ( grid )
          DO WHILE ( ASSOCIATED( grid_ptr ) )
             CALL wrf_debug( 100 , 'module_integrate: calling solve interface ' )
             CALL solve_interface ( grid_ptr ) 
+            CALL wrf_clockprint ( 150, grid_ptr%domain_clock, &
+                                  'DEBUG integrate():  before ESMF_ClockAdvance,' )
             CALL ESMF_ClockAdvance( grid_ptr%domain_clock, rc=rc )
-            CALL ESMF_ClockGetCurrTime( grid_ptr%domain_clock, grid_ptr%current_time, rc=rc )
+            CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                                  'ESMF_ClockAdvance() FAILED', &
+                                  __FILE__ , &
+                                  __LINE__  )
+            CALL wrf_clockprint ( 150, grid_ptr%domain_clock, &
+                                  'DEBUG integrate():  after ESMF_ClockAdvance,' )
+            CALL ESMF_ClockGet( grid_ptr%domain_clock, currTime=grid_ptr%current_time, rc=rc )
             CALL wrf_debug( 100 , 'module_integrate: back from solve interface ' )
             grid_ptr => grid_ptr%sibling
          END DO
@@ -304,7 +316,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
          END DO
          !  Report on the timing for a single time step.
          IF ( wrf_dm_on_monitor() ) THEN
-           CALL ESMF_TimeGetString( grid%current_time, message2, rc=rc )
+           CALL wrf_timetoa ( grid%current_time, message2 )
            WRITE ( message , FMT = '("main: time ",A," on domain ",I3)' ) TRIM(message2), grid%id
            CALL end_timing ( TRIM(message) )
          END IF

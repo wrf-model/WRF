@@ -10,11 +10,10 @@ PROGRAM ndown_em
    USE module_driver_constants
    USE module_configure
    USE module_io_domain
-   USE esmf_mod
+   USE WRF_ESMF_MOD
 
    USE module_timing
    USE module_wrf_error
-
 #ifdef DM_PARALLEL
    USE module_dm
 #endif
@@ -96,6 +95,15 @@ character(len=24) :: start_date_hold
    CHARACTER (LEN=80)      :: message
 integer :: ii
    TYPE(ESMF_TimeInterval) :: time_interval
+! TBH:  ESMF HACK:  The ESMF 2.0.1 implementation of ESMF_ClockValidate()
+! TBH:  returns an error code if currTime == stopTime !!  Earl will fix
+! TBH:  this in a later ESMF release.  Once ESMF is fixed, remove the following
+! TBH:  hack.
+#ifdef WRF_ESMF_MOD
+   TYPE(ESMF_Time) :: stop_time_hack
+   TYPE(ESMF_TimeInterval) :: one_day
+#endif
+! TBH:  END ESMF HACK
 
    !  Interface block for routine that passes pointers and needs to know that they
    !  are receiving pointers.
@@ -128,7 +136,11 @@ integer :: ii
    !  REAL, setting the file handles to a pre-use value, defining moisture and 
    !  chemistry indices, etc.
 
-   CALL init_modules
+   CALL init_modules(1)   ! Phase 1 returns after MPI_INIT() (if it is called)
+#ifdef WRF_ESMF_MOD
+   CALL ESMF_Initialize( defaultCalendar=ESMF_CAL_GREGORIAN, rc=rc )
+#endif
+   CALL init_modules(2)   ! Phase 2 resumes after MPI_INIT() (if it is called)
 
    !  Get the NAMELIST data.  This is handled in the initial_config routine.  All of the
    !  NAMELIST input variables are assigned to the model_config_rec structure.  Below,
@@ -170,7 +182,7 @@ integer :: ii
 
    CALL Setup_Timekeeping ( parent_grid )
    CALL ESMF_TimeIntervalSet ( time_interval , S=model_config_rec%interval_seconds, rc=rc )
-   CALL ESMF_ClockSetTimeStep ( head_grid%domain_clock , time_interval , rc=rc )
+   CALL ESMF_ClockSet ( head_grid%domain_clock , timeStep=time_interval , rc=rc )
 
    CALL       wrf_debug ( 100 , 'ndown_em: calling model_to_grid_config_rec ' )
    CALL model_to_grid_config_rec ( parent_grid%id , model_config_rec , config_flags )
@@ -209,6 +221,27 @@ integer :: ii
            model_config_rec%  end_hour  (parent_grid%id) , &
            model_config_rec%  end_minute(parent_grid%id) , &
            model_config_rec%  end_second(parent_grid%id) 
+
+   !  Override stop time with value computed above.
+   CALL wrf_atotime( end_date_char, parent_grid%stop_time )
+! TBH:  ESMF HACK:  The ESMF 2.0.1 implementation of ESMF_ClockValidate()
+! TBH:  returns an error code if currTime == stopTime !!  Earl will fix
+! TBH:  this in a later ESMF release.  Once ESMF is fixed, remove the following
+! TBH:  hack.
+#ifdef WRF_ESMF_MOD
+   CALL ESMF_TimeIntervalSet ( one_day, D=1, rc=rc )
+   stop_time_hack = parent_grid%stop_time + one_day
+   CALL ESMF_ClockSet ( parent_grid%domain_clock , StopTime=stop_time_hack, rc=rc )
+#else
+! TBH:  END ESMF HACK
+   CALL ESMF_ClockSet ( parent_grid%domain_clock , StopTime=parent_grid%stop_time, rc=rc )
+! TBH:  ESMF HACK
+#endif
+! TBH:  END ESMF HACK
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'ESMF_ClockSet(parent_grid%domain_clock) FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
 
    CALL geth_idts ( end_date_char , start_date_char , total_time_sec ) 
 
@@ -251,8 +284,8 @@ print *,'-------->>>  Processing data: loop=',time_loop,'  date/time = ',date_st
       current_date      = date_string // '.0000'
       start_date        = date_string // '.0000'
 print *,'loopmax = ', time_loop_max, '   ending date = ',end_date_char
-      CALL atotime( current_date(1:19), parent_grid%current_time )
-      CALL ESMF_ClockSetCurrTime(parent_grid%domain_clock, parent_grid%current_time, rc)
+      CALL wrf_atotime( current_date(1:19), parent_grid%current_time )
+      CALL ESMF_ClockSet(parent_grid%domain_clock, currTime=parent_grid%current_time, rc=rc)
 
       !  Which times are in this file, and more importantly, are any of them the
       !  ones that we want?  We need to loop over times in each files, loop
@@ -332,9 +365,32 @@ print *,'file date/time = ',date_string,'     desired date = ',current_date_char
 
          CALL Setup_Timekeeping ( nested_grid )
          CALL ESMF_TimeIntervalSet ( time_interval , S=model_config_rec%interval_seconds, rc=rc )
-         CALL ESMF_ClockSetTimeStep ( nested_grid%domain_clock , time_interval , rc=rc )
-         CALL atotime( current_date(1:19), nested_grid%current_time )
-         CALL ESMF_ClockSetCurrTime(nested_grid%domain_clock, nested_grid%current_time, rc)
+         CALL wrf_atotime( current_date(1:19), nested_grid%current_time )
+! TBH:  ESMF HACK:  The ESMF 2.0.1 implementation of ESMF_ClockValidate()
+! TBH:  returns an error code if currTime == stopTime !!  Earl will fix
+! TBH:  this in a later ESMF release.  Once ESMF is fixed, remove the following
+! TBH:  hack.
+#ifdef WRF_ESMF_MOD
+         CALL ESMF_TimeIntervalSet ( one_day, D=1, rc=rc )
+         stop_time_hack = nested_grid%stop_time + one_day
+         CALL ESMF_ClockSet( nested_grid%domain_clock, timeStep=time_interval,            &
+                                                       currTime=nested_grid%current_time, &
+                                                       StopTime=stop_time_hack, &
+                                                       rc=rc )
+#else
+! TBH:  END ESMF HACK
+         ! Strictly speaking, nest stop time should come from model_config_rec...  
+         CALL ESMF_ClockSet( nested_grid%domain_clock, timeStep=time_interval,            &
+                                                       currTime=nested_grid%current_time, &
+                                                       StopTime=parent_grid%stop_time, &
+                                                       rc=rc )
+! TBH:  ESMF HACK
+#endif
+! TBH:  END ESMF HACK
+         CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                               'ESMF_ClockSet(nested_grid%domain_clock) FAILED', &
+                               __FILE__ , &
+                               __LINE__  )
 
          !  Generate an output file from this program, which will be an input file to WRF.
 
@@ -461,9 +517,10 @@ nested_grid%chem_in_opt = parent_grid%chem_in_opt
 
       END IF
 
-      CALL ESMF_ClockSetTimeStep ( nested_grid%domain_clock , time_interval , rc=rc )
-      CALL atotime( current_date(1:19), nested_grid%current_time )
-      CALL ESMF_ClockSetCurrTime(nested_grid%domain_clock, nested_grid%current_time, rc)
+      CALL wrf_atotime( current_date(1:19), nested_grid%current_time )
+      CALL ESMF_ClockSet( nested_grid%domain_clock, timeStep=time_interval,            &
+                                                    currTime=nested_grid%current_time, &
+                                                    rc=rc )
 
       !  Do the horizontal interpolation.
 
@@ -582,8 +639,8 @@ nested_grid%chem_in_opt = parent_grid%chem_in_opt
          !  Set the time info.
 
          print *,'current_date = ',current_date
-         CALL atotime( current_date(1:19), nested_grid%current_time )
-         CALL ESMF_ClockSetCurrTime(nested_grid%domain_clock, nested_grid%current_time, rc)
+         CALL wrf_atotime( current_date(1:19), nested_grid%current_time )
+         CALL ESMF_ClockSet(nested_grid%domain_clock, currTime=nested_grid%current_time, rc=rc)
 !
 ! SEP     Put in chemistry data
 !
@@ -774,8 +831,8 @@ print *,'gmt=',gmt
 
          !  Both pieces of the boundary data are now available to be written.
          
-      CALL atotime( current_date(1:19), nested_grid%current_time )
-      CALL ESMF_ClockSetCurrTime(nested_grid%domain_clock, nested_grid%current_time, rc)
+      CALL wrf_atotime( current_date(1:19), nested_grid%current_time )
+      CALL ESMF_ClockSet(nested_grid%domain_clock, currTime=nested_grid%current_time, rc=rc)
       temp24= current_date
       temp24b=start_date_hold
       start_date = start_date_hold
@@ -788,14 +845,14 @@ print *,'gmt=',gmt
       CALL wrf_put_dom_ti_real    ( fidb , 'GMT' , gmt , 1 , ierr ) 
       CALL wrf_put_dom_ti_integer ( fidb , 'JULYR' , julyr , 1 , ierr ) 
       CALL wrf_put_dom_ti_integer ( fidb , 'JULDAY' , julday , 1 , ierr ) 
-      CALL atotime( current_date(1:19), nested_grid%current_time )
-      CALL ESMF_ClockSetCurrTime(nested_grid%domain_clock, nested_grid%current_time, rc)
+      CALL wrf_atotime( current_date(1:19), nested_grid%current_time )
+      CALL ESMF_ClockSet(nested_grid%domain_clock, currTime=nested_grid%current_time, rc=rc)
 print *,'bdy time = ',time_loop-1,'  bdy date = ',current_date,' ',start_date
       CALL output_boundary ( fidb , nested_grid , config_flags , ierr )
       current_date = temp24
       start_date = temp24b
-      CALL atotime( current_date(1:19), nested_grid%current_time )
-      CALL ESMF_ClockSetCurrTime(nested_grid%domain_clock, nested_grid%current_time, rc)
+      CALL wrf_atotime( current_date(1:19), nested_grid%current_time )
+      CALL ESMF_ClockSet(nested_grid%domain_clock, currTime=nested_grid%current_time, rc=rc)
 
          IF ( time_loop .EQ. 2 ) THEN
             CALL wrf_put_dom_ti_real    ( fidb , 'BDYFRQ' , new_bdy_frq , 1 , ierr ) 
@@ -922,8 +979,8 @@ print *,'bdy time = ',time_loop-1,'  bdy date = ',current_date,' ',start_date
 
          !  Both pieces of the boundary data are now available to be written.
 
-      CALL atotime( current_date(1:19), nested_grid%current_time )
-      CALL ESMF_ClockSetCurrTime(nested_grid%domain_clock, nested_grid%current_time, rc)
+      CALL wrf_atotime( current_date(1:19), nested_grid%current_time )
+      CALL ESMF_ClockSet(nested_grid%domain_clock, currTime=nested_grid%current_time, rc=rc)
       temp24= current_date
       temp24b=start_date_hold
       start_date = start_date_hold
@@ -936,13 +993,13 @@ print *,'bdy time = ',time_loop-1,'  bdy date = ',current_date,' ',start_date
       CALL wrf_put_dom_ti_real    ( fidb , 'GMT' , gmt , 1 , ierr ) 
       CALL wrf_put_dom_ti_integer ( fidb , 'JULYR' , julyr , 1 , ierr ) 
       CALL wrf_put_dom_ti_integer ( fidb , 'JULDAY' , julday , 1 , ierr ) 
-      CALL atotime( current_date(1:19), nested_grid%current_time )
-      CALL ESMF_ClockSetCurrTime(nested_grid%domain_clock, nested_grid%current_time, rc)
+      CALL wrf_atotime( current_date(1:19), nested_grid%current_time )
+      CALL ESMF_ClockSet(nested_grid%domain_clock, currTime=nested_grid%current_time, rc=rc)
       CALL output_boundary ( fidb , nested_grid , config_flags , ierr )
       current_date = temp24
       start_date = temp24b
-      CALL atotime( current_date(1:19), nested_grid%current_time )
-      CALL ESMF_ClockSetCurrTime(nested_grid%domain_clock, nested_grid%current_time, rc)
+      CALL wrf_atotime( current_date(1:19), nested_grid%current_time )
+      CALL ESMF_ClockSet(nested_grid%domain_clock, currTime=nested_grid%current_time, rc=rc)
 
          IF ( time_loop .EQ. 2 ) THEN
             CALL wrf_put_dom_ti_real    ( fidb , 'BDYFRQ' , new_bdy_frq , 1 , ierr ) 
@@ -969,6 +1026,10 @@ print *,'bdy time = ',time_loop-1,'  bdy date = ',current_date,' ',start_date
    CALL wrf_debug ( 0 , 'ndown_em: SUCCESS COMPLETE NDOWN_EM INIT' )
 
    CALL wrf_shutdown
+
+#ifdef WRF_ESMF_MOD
+   CALL ESMF_Finalize( rc=rc )
+#endif
 
 END PROGRAM ndown_em
 

@@ -6,7 +6,7 @@
     USE module_domain
     USE module_state_description
     USE module_configure
-    USE esmf_mod
+    USE WRF_ESMF_MOD
     IMPLICIT NONE
 #include <wrf_io_flags.h>
 #include <wrf_status_codes.h>

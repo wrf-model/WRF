@@ -1,6 +1,6 @@
 !WRF:MEDIATION_LAYER
 !
-SUBROUTINE init_modules
+SUBROUTINE init_modules( phase )
  USE module_bc
  USE module_configure
  USE module_driver_constants
@@ -39,8 +39,18 @@ SUBROUTINE init_modules
 ! they try to call MPI_INIT).  If MPI is already initialized before the
 ! the quilting module is called, quilting will not work.
 ! 
+! The phase argument is used to allow other superstructures like ESMF to 
+! place their initialization calls following the WRF initialization call 
+! that calls MPI_INIT().  When used with ESMF, ESMF will call wrf_init() 
+! which in turn will call phase 2 of this routine.  Phase 1 will be called 
+! earlier.  
+!
 ! </DESCRIPTION>
 
+ INTEGER, INTENT(IN) :: phase    ! phase==1 means return after MPI_INIT()
+                                 ! phase==2 means resume after MPI_INIT()
+
+IF ( phase == 1 ) THEN
  CALL init_module_bc
  CALL init_module_configure
  CALL init_module_driver_constants
@@ -55,6 +65,7 @@ SUBROUTINE init_modules
  CALL init_module_wrf_quilt    !! this *must* be called before init_module_dm
  CALL init_module_dm
 #endif
+ELSE
  CALL init_module_nesting
  CALL init_module_timing
  CALL init_module_tiles
@@ -71,6 +82,7 @@ SUBROUTINE init_modules
 #if (COAMPS_CORE == 1)
  CALL init_modules_coamps
 #endif
+ENDIF
  
 END SUBROUTINE init_modules
 

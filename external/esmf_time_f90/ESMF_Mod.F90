@@ -1,4 +1,4 @@
-MODULE ESMF_MOD
+MODULE WRF_ESMF_MOD
    USE esmf_alarmmod
    USE esmf_basemod
    USE esmf_basetimemod
@@ -10,4 +10,4 @@ MODULE ESMF_MOD
    USE meat
 #include <ESMF_TimeMgr.inc>
    INTEGER, PARAMETER :: ESMF_MAX_ALARMS=MAX_ALARMS
-END MODULE ESMF_MOD
+END MODULE WRF_ESMF_MOD

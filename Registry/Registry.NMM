@@ -269,7 +269,7 @@ state  real   pdwdt     ikj   dyn_nmm   1    -     r
 state  real   pint      ikj   dyn_nmm   1    Z     rh
 # are not these z staggered (z and w?)
 state  real   w         ikj   dyn_nmm   1    Z     rh
-state  real   z         ikj   dyn_nmm   1    -     -
+state  real   z         ikj   dyn_nmm   1    Z     -
 #
 # module_ACCUM.F
 #
@@ -1224,7 +1224,7 @@ halo      HALO_NMM_G  dyn_nmm 24:u,v;24:z
 halo      HALO_NMM_H  dyn_nmm 24:w,lmh
 halo      HALO_NMM_I  dyn_nmm 48:q,q2,cwm                    
 halo      HALO_NMM_J  dyn_nmm 8:pd,uz0,vz0,t,q,cwm                    
-halo      HALO_NMM_K  dyn_nmm 8:q2;24:t,u,v,q          
+halo      HALO_NMM_K  dyn_nmm 8:q2;24:t,u,v,q,w,z
 halo      HALO_NMM_L  dyn_nmm 8:pd,t,q,cwm,q2                    
 
 halo      HALO_NMM_TURBL_A  dyn_nmm 8:uz0h,vz0h,hbm2

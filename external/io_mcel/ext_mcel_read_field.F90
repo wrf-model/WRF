@@ -73,6 +73,8 @@ SUBROUTINE ext_mcel_read_field ( DataHandle , DateStr , VarName , Field , FieldT
   ims = MemoryStart(1) ; ime = MemoryEnd(1)
   jms = MemoryStart(2) ; jme = MemoryEnd(2)
 
+write(0,*)'ext_mcel_read_field ',DataHandle, TRIM(DateStr), TRIM(VarName)
+
   inttypesize = itypesize
   realtypesize = rtypesize
   IF      ( FieldType .EQ. WRF_REAL ) THEN
@@ -92,6 +94,7 @@ write(0,*)' read_field: okay_to_read: ', DataHandle, okay_to_read(DataHandle)
 write(0,*)' read_field: opened_for_update: ', DataHandle, opened_for_update(DataHandle)
   if ( .not. okay_to_read( DataHandle ) )  then
     IF ( opened_for_update( DataHandle) ) THEN
+write(0,*)'ext_mcel_read_field tr calling ext_mcel_write_field ', TRIM(DateStr), TRIM(VarName)
       CALL ext_mcel_write_field ( DataHandle , DateStr , VarName , Field , FieldType , Comm , IOComm, &
                                   DomainDesc , MemoryOrder , Stagger , DimNames ,              &
                                   DomainStart , DomainEnd ,                                    &
@@ -102,13 +105,16 @@ write(0,*)' read_field: opened_for_update: ', DataHandle, opened_for_update(Data
            TRIM(VarName) .NE. TRIM(LANDMASK_I(DataHandle)) ) THEN
         ListOfFields(DataHandle) = TRIM(ListOfFields(DataHandle)) // ',' // TRIM(VarName)
       ENDIF
+write(0,*)'ext_mcel_read_field tr back from ext_mcel_write_field ', TRIM(DateStr), TRIM(VarName), ierr
     ELSE
 
 ! these will have been set in the call to open_for_read_begin from sysdepinfo
       IF ( mcel_npglobal .NE. -1 .AND. mcel_mystart .NE. -1 .AND.  &
            mcel_mnproc   .NE. -1 .AND. mcel_myproc  .NE. -1     ) THEN
+write(0,*)'ext_mcel_read_field tr setglobalsize ', TRIM(VarName), mcel_npglobal
         call setglobalsize(open_file_descriptors(2,DataHandle),mcel_npglobal,ierr)
         IF ( ierr .NE. 0 ) CALL wrf_error_fatal("ext_mcel_read_field: setglobalsize")
+write(0,*)'ext_mcel_read_field tr setglobalstart ', TRIM(VarName), mcel_mystart
         call setglobalstart(open_file_descriptors(2,DataHandle),mcel_mystart,ierr)
         IF ( ierr .NE. 0 ) CALL wrf_error_fatal("ext_mcel_read_field: setglobalstart")
 #if 0
@@ -125,13 +131,13 @@ write(0,*)' read_field: opened_for_update: ', DataHandle, opened_for_update(Data
         ENDIF
         ALLOCATE(xlat(ips:ipe,jps:jpe))
         CALL copy_field_to_cache ( FieldType , Field, xlat, ips, ipe, jps, jpe, ims, ime, jms, jme )
-      ELSE IF ( TRIM(VarName) .EQ. TRIM(LON_R(DataHandle)) ) THEN
+      ELSE IF ( TRIM(VarName) .EQ. TRIM(LON_R) ) THEN
         IF ( ALLOCATED(xlong) ) THEN
           DEALLOCATE(xlong)
         ENDIF
         ALLOCATE(xlong(ips:ipe,jps:jpe))
         CALL copy_field_to_cache ( FieldType , Field, xlong, ips, ipe, jps, jpe, ims, ime, jms, jme )
-      ELSE IF ( TRIM(VarName) .EQ. TRIM(LANDMASK_I(DataHandle)) ) THEN
+      ELSE IF ( TRIM(VarName) .EQ. TRIM(LANDMASK_I) ) THEN
         IF ( ALLOCATED(mask) ) THEN
           DEALLOCATE(mask)
         ENDIF
@@ -154,12 +160,15 @@ write(0,*)' read_field: opened_for_update: ', DataHandle, opened_for_update(Data
           mcel_grid_defined( DataHandle ) = .true.
           gSize(1) = ipe-ips+1
           gSize(2) = jpe-jps+1
+write(0,*)'ext_mcel_read_field tr setSize ', TRIM(VarName), gSize
           CALL setSize ( open_file_descriptors(2,DataHandle), gSize, ierr )
           IF ( ierr .NE. 0 ) CALL wrf_error_fatal("ext_mcel_write_field: setSize")
         ENDIF
+write(0,*)'ext_mcel_read_field tr addSources ', TRIM(VarName)
         CALL addSources ( open_file_descriptors(1,DataHandle), MCEL_SERVER,  &
   &       TRIM(VarName),1, mcel_type, ierr )
         IF ( ierr .NE. 0 ) CALL wrf_error_fatal("ext_mcel_write_field: addSources")
+write(0,*)'ext_mcel_read_field tr addOutputs ', TRIM(VarName)
         CALL addOutputs ( open_file_descriptors(1,DataHandle),   &
   &       TRIM(VarName),1, mcel_type, ierr )
 ! add this field to the list that we know something about
@@ -172,10 +181,15 @@ write(0,*)' read_field: opened_for_update: ', DataHandle, opened_for_update(Data
 !  else if ( okay_to_write( DataHandle ) .and. opened_for_update( DataHandle) )  then
   else if ( okay_to_read( DataHandle ) )  then
 
+write(0,*)'ext_mcel_read_field ok ', Trim(VarName)
+write(0,*)'ext_mcel_read_field LAT_R ', Trim(LAT_R(DataHandle))
+write(0,*)'ext_mcel_read_field LON_R ', Trim(LON_R(DataHandle))
+write(0,*)'ext_mcel_read_field LANDMASK_I ', Trim(LANDMASK_I(DataHandle))
     IF ( TRIM(VarName) .NE. TRIM(LAT_R(DataHandle)) .AND. TRIM(VarName) .NE. TRIM(LON_R(DataHandle)) .AND. &
          TRIM(VarName) .NE. TRIM(LANDMASK_I(DataHandle)) ) THEN
       IF ( .NOT. mcel_finalized( DataHandle ) ) THEN
         IF ( ALLOCATED( xlat ) .AND. ALLOCATED( xlong ) ) THEN
+write(0,*)'ext_mcel_read_field ok setlocationsXY ', Trim(VarName)
           CALL setLocationsXY( open_file_descriptors(2,DataHandle), xlong, xlat, ierr )
           IF ( ierr .NE. 0 ) CALL wrf_error_fatal( "ext_mcel_open_read_field: setLocationsXY" )
         ELSE IF ( deltax .gt. 0. .and. deltay .gt. 0. .and. originx .gt. 0. .and. originy .gt. 0. ) THEN
@@ -189,11 +203,14 @@ write(0,*)' read_field: opened_for_update: ', DataHandle, opened_for_update(Data
           CALL wrf_error_fatal( "ext_mcel_read_field:noLocationsXY or dx/dy")
         ENDIF
         IF ( ALLOCATED(mask) ) THEN
+write(0,*)'ext_mcel_read_field ok setMask ', Trim(VarName)
           CALL setMask ( open_file_descriptors(2,DataHandle) , mask, ierr )
           IF ( ierr .NE. 0 ) CALL wrf_error_fatal("ext_mcel_read_field: setMask")
         ENDIF
+write(0,*)'ext_mcel_read_field ok setoutputgrid ', Trim(VarName)
         CALL setoutputgrid ( open_file_descriptors(1,DataHandle), open_file_descriptors(2,DataHandle), ierr )
         IF ( ierr .NE. 0 ) CALL wrf_error_fatal("ext_mcel_read_field: setoutputgrid")
+write(0,*)'ext_mcel_read_field ok finalizefilters ', Trim(VarName)
         CALL finalizefilters ( open_file_descriptors(1,DataHandle), ierr )
         IF ( ierr .GT. 0 .and. ierr .ne. 3 ) THEN
            write(mess,*)'ext_mcel_open_for_read_field: finalizefilters ierr=',ierr
@@ -226,6 +243,7 @@ write(0,*)'INDEX( TRIM( ListOfFields(DataHandle) ), TRIM( VarName ) )', INDEX( T
 
       IF ( FieldType .EQ. WRF_REAL ) THEN
         ALLOCATE(temp(ips:ipe,jps:jpe))
+write(0,*)'ext_mcel_read_field opened_for_update(DataHandle) ',opened_for_update(DataHandle)
         IF ( opened_for_update(DataHandle) ) THEN
           CALL copy_field_to_temp ( Field, temp, ips, ipe, jps, jpe, ims, ime, jms, jme )
           call getData(open_file_descriptors(1,DataHandle),TRIM(VarName),temp,                 &
@@ -234,25 +252,31 @@ write(0,*)'INDEX( TRIM( ListOfFields(DataHandle) ), TRIM( VarName ) )', INDEX( T
 write(0,*)'ext_mcel_read_field ok getData returns ',ierr, Trim(VarName)
         ELSE
 ! the difference is there is no KEEP in the FETCHPOLICY
+write(0,*)'ext_mcel_read_field ok getData ', Trim(VarName)
           call getData(open_file_descriptors(1,DataHandle),TRIM(VarName),temp,                 &
             data_time,data_time,MCEL_TIMECENT_POINT,usemask(DataHandle),                      &
             MCEL_FETCHPOLICY_BLOCK,ierr)
+write(0,*)'ext_mcel_read_field ok getData returns ',ierr, Trim(VarName)
         ENDIF
         CALL copy_field_to_temp ( Field, temp, ips, ipe, jps, jpe, ims, ime, jms, jme )
         DEALLOCATE(temp)
       ELSE IF ( FieldType .EQ. WRF_DOUBLE ) THEN
 
         ALLOCATE(dtemp(ips:ipe,jps:jpe))
+write(0,*)'ext_mcel_read_field opened_for_update(DataHandle) ',opened_for_update(DataHandle)
         IF ( opened_for_update(DataHandle) ) THEN
           CALL copy_field_to_dtemp ( Field, dtemp, ips, ipe, jps, jpe, ims, ime, jms, jme )
+write(0,*)'ext_mcel_read_field ok getData returns ',ierr, Trim(VarName)
           call getData(open_file_descriptors(1,DataHandle),TRIM(VarName),dtemp,                 &
             data_time,data_time,MCEL_TIMECENT_POINT,usemask(DataHandle),                       &
             MCEL_FETCHPOLICY_KEEPBLOCK,ierr)
         ELSE
 ! the difference is there is no KEEP in the FETCHPOLICY
+write(0,*)'ext_mcel_read_field ok getData ', Trim(VarName)
           call getData(open_file_descriptors(1,DataHandle),TRIM(VarName),dtemp,                 &
             data_time,data_time,MCEL_TIMECENT_POINT,usemask(DataHandle),                      &
             MCEL_FETCHPOLICY_BLOCK,ierr)
+write(0,*)'ext_mcel_read_field ok getData returns ',ierr, Trim(VarName)
         ENDIF
         CALL copy_dtemp_to_field ( dtemp, Field, ips, ipe, jps, jpe, ims, ime, jms, jme )
 

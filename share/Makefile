@@ -162,4 +162,62 @@ mediation_interp_domain.o: ../frame/module_domain.o ../frame/module_configure.o 
 set_timekeeping.o: ../frame/module_domain.o ../frame/module_configure.o \
 			../external/esmf_time_f90/ESMF_Mod.o
 
+wrf_inputout.o                  : ../frame/module_domain.o \
+				../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o 
+wrf_auxinput1out.o              : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxinput2out.o              : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxinput3out.o              : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxinput4out.o              : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxinput5out.o              : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_histout.o                   : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxhist1out.o               : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxhist2out.o               : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxhist3out.o               : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxhist4out.o               : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxhist5out.o               : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_restartout.o                : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_bdyout.o                    : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_inputin.o                   : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxhist1in.o                : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxhist2in.o                : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxhist3in.o                : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxhist4in.o                : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxhist5in.o                : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxinput1in.o               : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxinput2in.o               : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxinput3in.o               : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxinput4in.o               : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxinput5in.o               : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_bdyin.o                     : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_histin.o                    : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_restartin.o                 : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+
+
 # DO NOT DELETE

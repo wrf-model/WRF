@@ -141,7 +141,7 @@ CONTAINS
    SUBROUTINE adjust_domain_dims_for_move( grid , dx, dy )
     IMPLICIT NONE
 
-    TYPE( domain ), POINTER, INTENT (INOUT)  :: grid
+    TYPE( domain ), POINTER   :: grid
     INTEGER, INTENT(IN) ::  dx, dy
 
     data_ordering : SELECT CASE ( model_data_order )

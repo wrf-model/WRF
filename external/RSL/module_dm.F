@@ -2598,7 +2598,7 @@ messages(120)=  s5e5
          c_sm1y = 1 ; c_em1y = 1 ; c_sm2y = 1 ; c_em2y = 1 ; c_sm3y = 1 ; c_em3y = 1
 
          ! allocate space for the intermediate domain
-         CALL alloc_space_field ( intermediate_grid, id ,          &   ! use same id as nest
+         CALL alloc_space_field ( intermediate_grid, id , .TRUE.,  &   ! use same id as nest
                                c_sd1, c_ed1, c_sd2, c_ed2, c_sd3, c_ed3,       &
                                c_sm1,  c_em1,  c_sm2,  c_em2,  c_sm3,  c_em3,  &
                                c_sm1x, c_em1x, c_sm2x, c_em2x, c_sm3x, c_em3x, &   ! x-xpose
@@ -4181,7 +4181,6 @@ END
       INTEGER       ::          nids, nide, njds, njde, nkds, nkde,    &
                                 nims, nime, njms, njme, nkms, nkme,    &
                                 nips, nipe, njps, njpe, nkps, nkpe
-
       INTERFACE 
           SUBROUTINE feedback_nest_prep ( grid, config_flags ,  &
 !

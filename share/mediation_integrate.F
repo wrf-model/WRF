@@ -1368,6 +1368,16 @@ SUBROUTINE med_setup_step ( grid , config_flags )
    USE module_configure
 
    IMPLICIT NONE
+<DESCRIPTION>
+!
+!The driver layer routine integrate() calls this mediation layer routine
+!prior to initiating a time step on the domain specified by the argument
+!grid.  This provides the model-layer contributor an opportunity to make
+!any pre-time-step initializations that pertain to a particular model
+!domain.  In WRF, this routine is used to call
+!set_scalar_indices_from_config for the specified domain.
+!
+</DESCRIPTION>
 
   ! Arguments
    TYPE(domain)                               :: grid

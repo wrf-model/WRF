@@ -253,6 +253,10 @@
 #   define RSL_XPOSE_NZ_MN     rsl_xpose_nz_mn__
 #   define RSL_XPOSE_MN_NZ     rsl_xpose_mn_nz__
 
+#   define RSL_REG_PATCHINFO_MN  rsl_reg_patchinfo_mn__
+#   define RSL_REG_PATCHINFO_MZ  rsl_reg_patchinfo_mz__
+#   define RSL_REG_PATCHINFO_NZ  rsl_reg_patchinfo_nz__
+
 #    else
 
 /********************************************* UNDERSCORE *****/
@@ -435,6 +439,10 @@
 #   define RSL_XPOSE_NZ_MZ     rsl_xpose_nz_mz_
 #   define RSL_XPOSE_NZ_MN     rsl_xpose_nz_mn_
 #   define RSL_XPOSE_MN_NZ     rsl_xpose_mn_nz_
+
+#   define RSL_REG_PATCHINFO_MN  rsl_reg_patchinfo_mn_
+#   define RSL_REG_PATCHINFO_MZ  rsl_reg_patchinfo_mz_
+#   define RSL_REG_PATCHINFO_NZ  rsl_reg_patchinfo_nz_
 
 #    endif
 
@@ -619,6 +627,11 @@
 #   define RSL_XPOSE_NZ_MZ     rsl_xpose_nz_mz
 #   define RSL_XPOSE_NZ_MN     rsl_xpose_nz_mn
 #   define RSL_XPOSE_MN_NZ     rsl_xpose_mn_nz
+
+#   define RSL_REG_PATCHINFO_MN  rsl_reg_patchinfo_mn
+#   define RSL_REG_PATCHINFO_MZ  rsl_reg_patchinfo_mz
+#   define RSL_REG_PATCHINFO_NZ  rsl_reg_patchinfo_nz
+
 
 #  endif
 #endif

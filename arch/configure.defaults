@@ -6279,7 +6279,7 @@ module_initialize_real.o module_dm.o mediation_integrate.o start_domain.o :
 	$(FC) -c $(FCFLAGS) $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH	HP-UX	Itanium2	32bit   (single-threaded, no nesting)
+#ARCH	HP-UX	Itanium2	(single-threaded, no nesting)
 #
 OMP             =       
 OMPCPP          =       
@@ -6360,7 +6360,7 @@ module_initialize_real.o module_dm.o mediation_integrate.o start_domain.o :
 	$(FC) -c $(FCFLAGS) $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH	HP-UX	Itanium2	32bit   (single-threaded, nesting using RSL without MPI)
+#ARCH	HP-UX	Itanium2	(single-threaded, nesting using RSL without MPI)
 #
 OMP             =       
 OMPCPP          =       

@@ -201,8 +201,9 @@ solve_em.o:     module_small_step_em.o \
 		../phys/module_cumulus_driver.o \
 		../phys/module_microphysics_driver.o \
 		../phys/module_pbl_driver.o \
-		../phys/module_physics_addtendc.o \
-		../chem/module_chem_utilities.o \
-		../chem/module_input_chem_data.o
+		../phys/module_physics_addtendc.o
+
+#		../chem/module_chem_utilities.o \
+#		../chem/module_input_chem_data.o
 
 # DO NOT DELETE

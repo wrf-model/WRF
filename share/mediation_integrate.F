@@ -688,6 +688,8 @@ SUBROUTINE med_history_out ( grid , config_flags )
 
      CALL open_w_dataset ( grid%oid, TRIM(outname), grid ,  &
                            config_flags , output_history , "DATASET=HISTORY", ierr )
+     WRITE ( message , '("med_history_out 1: back from opening ",A," for writing. ",I3)') TRIM ( outname ), ierr
+     CALL wrf_debug( 1, message )
      IF ( ierr .NE. 0 ) THEN
        CALL wrf_message( message )
      ENDIF

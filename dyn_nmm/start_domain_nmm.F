@@ -17,12 +17,8 @@
       USE MODULE_WRF_ERROR
       USE MODULE_MPP
       USE MODULE_CTLBLK
-      USE module_dm
+      USE MODULE_DM
 !
-      USE MODULE_PHYS
-!jm      USE MODULE_CLDWTR
-!jm      USE MODULE_SOIL
-!jm      USE MODULE_NHYDRO
       USE MODULE_IGWAVE_ADJUST,ONLY: PDTE, PFDHT, DDAMP
       USE MODULE_ADVECTION,    ONLY: ADVE, VAD2, HAD2
       USE MODULE_NONHY_DYNAM,  ONLY: VADZ, HADZ
@@ -30,9 +26,9 @@
       USE MODULE_BNDRY_COND,   ONLY: BOCOH, BOCOV
       USE MODULE_PHYSICS_INIT
       USE MODULE_RA_GFDLETA
-!!!!!tlb
-      USE module_ext_internal
-!!!!!tlb
+!
+      USE MODULE_EXT_INTERNAL
+!
 !----------------------------------------------------------------------
 !
       IMPLICIT NONE
@@ -75,11 +71,13 @@
       INTEGER :: ILPAD2,IRPAD2,JBPAD2,JTPAD2
       INTEGER :: ITS,ITE,JTS,JTE,KTS,KTE
 !
+      INTEGER,DIMENSION(3) :: LPTOP
+!
       REAL :: ADDL,APELM,APELMNW,APEM1,CAPA,CLOGES,DPLM,DZLM,EPS,ESE   &
      &       ,FAC1,FAC2,PDIF,PLM,PM1,PSFCK,PSS,PSUM,QLM,RANG,RCOS1      &
      &       ,RCOS2,RSIN1,SLPM,TERM1,THLM,TIME,TLM,TSFCK,ULM,VLM
 !
-!!!   REAL :: BLDT,CWML,EXNSFC,G_INV,PLYR,PSURF,ROG,SFCZ,THSIJ,TL
+!!!   REAL :: BLDT,CWML,EXNSFC,G_INV,PLYR,PSFC,ROG,SFCZ,THSIJ,TL
       REAL :: CWML,EXNSFC,G_INV,PLYR,PSURF,ROG,SFCZ,THSIJ,TL
       REAL :: TSTART,TEND,TPREC,THEAT,TCLOD,TRDSW,TRDLW,TSRFC
 
@@ -107,7 +105,7 @@
 !state    real   TSLB           ilj       dyn_em      1         Z     irh
 !state    real   ZS              l        dyn_em      -         Z     ir 
       REAL,ALLOCATABLE,DIMENSION(:) :: DZS,ZS
-      REAL,ALLOCATABLE,DIMENSION(:,:,:) :: CLDFRA &
+      REAL,ALLOCATABLE,DIMENSION(:,:,:) :: CLDFRA                       &
      &                                  ,RQCBLTEN,RQIBLTEN              &
      &                                  ,RQVBLTEN,RTHBLTEN              &
      &                                  ,RUBLTEN,RVBLTEN                &
@@ -116,14 +114,19 @@
      &                                  ,RTHRATEN                       &
      &                                  ,RTHRATENLW,RTHRATENSW          &
      &                                  ,TSLB
-      REAL,ALLOCATABLE,DIMENSION(:,:) :: EMISS,GLW,GSW,HFX   &
-     &                                  ,LU_INDEX,MAVAIL,NCA,PBLH       &
+      REAL,ALLOCATABLE,DIMENSION(:,:) :: EMISS,GLW,GSW,HFX              &
+     &                                  ,MAVAIL,NCA                     &
      &                                  ,QFX,RAINBL,RAINC,RAINNC        &
      &                                  ,RAINCV,RAINNCV                 &
      &                                  ,SNOWC,THC,TMN,TSFC             &
      &                                  ,XLAND,XLAT,XLONG
 
       REAL,ALLOCATABLE,DIMENSION(:,:) :: Z0_DUM
+!
+!!!   REAL,ALLOCATABLE,DIMENSION(:,:,:) :: W0AVG,ZINT,ZMID
+#if 0
+      REAL,ALLOCATABLE,DIMENSION(:,:,:) :: W0AVG
+#endif
       LOGICAL :: E_BDY,N_BDY,S_BDY,W_BDY,WARM_RAIN
       integer :: jam,retval
       character(20) :: seeout="hi08.t00z.nhbmeso"
@@ -134,20 +137,10 @@
       integer :: i_t=096,j_t=195,n_t=11
       integer :: i_u=49,j_u=475,n_u=07
       integer :: i_v=49,j_v=475,n_v=07
-! Used if -DDEREF_KLUDGE is compiled
-!  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
-      INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
-      INTEGER     :: sm31x, em31x, sm32x, em32x, sm33x, em33x
-      INTEGER     :: sm31y, em31y, sm32y, em32y, sm33y, em33y
-
-!----------------------
-! Executable statements
-!----------------------
 !
 !----------------------------------------------------------------------
 #define COPY_IN
 #include <nmm_scalar_derefs.inc>
-#include "deref_kludge.h"
 #ifdef DM_PARALLEL
 #    include <nmm_data_calls.inc>
 #endif
@@ -320,11 +313,6 @@
 #  include <HALO_NMM_INIT_39.inc>
 #endif
 
-!     if(mype.eq.n_t)then
-!       do ns=1,nsoil
-!         write(0,*)' enter START sh2o=',sh2o(i_t,ns,j_t)
-!       enddo
-!     endif
       DO J=MYJS_P4,MYJE_P4
         IHEG(J)=MOD(J+1,2)
         IHWG(J)=IHEG(J)-1
@@ -360,18 +348,11 @@
           rg=1./g
           ht=fis(i,j)*rg
 !!!       fisx=ht*g
-          fisx=max(fis(i,j),0.)
-          prodx=Z0(I,J)*Z0MAX
-!     if(mype.eq.n_t.and.i.eq.i_t.and.j.eq.j_t)then
-!       write(0,*)' INIT z0=',z0(i,j),' z0max=',z0max,' z0land=',z0land
-!       write(0,*)' z0sea=',z0sea,' fis=',ht*g,' fisx=',fisx
-!     endif
-          Z0(I,J)    =SM(I,J)*Z0SEA+(1.-SM(I,J))*                      &
-     &                (Z0(I,J)*Z0MAX+FISx    *FCM+Z0LAND)
+!          fisx=max(fis(i,j),0.)
+!          prodx=Z0(I,J)*Z0MAX
+!          Z0(I,J)    =SM(I,J)*Z0SEA+(1.-SM(I,J))*                      &
+!     &                (Z0(I,J)*Z0MAX+FISx    *FCM+Z0LAND)
 !!!  &                (prodx        +FISx    *FCM+Z0LAND)
-!     if(mype.eq.n_t.and.i.eq.i_t.and.j.eq.j_t)then
-!       write(0,*)' INIT z0=',z0(i,j)
-!     endif
           QS(I,J)    =0.
           AKMS(I,J)  =0.
           AKHS(I,J)  =0.
@@ -381,7 +362,11 @@
 !!!!          HTOP(I,J)  =REAL(LLMH)
 !!!!          HBOT(I,J)  =REAL(LLMH)
           HTOP(I,J)  =REAL(KTS)
+          HTOPD(I,J) =REAL(KTS)
+          HTOPS(I,J) =REAL(KTS)
           HBOT(I,J)  =REAL(KTE)
+          HBOTD(I,J) =REAL(KTE)
+          HBOTS(I,J) =REAL(KTE)
 !***
 !***  AT THIS POINT, WE MUST CALCULATE THE INITIAL POTENTIAL TEMPERATURE
 !***  OF THE SURFACE AND OF THE SUBGROUND.
@@ -422,6 +407,18 @@
           VZ0(I,J)=0.
 ! 
         ENDDO
+        ENDDO
+
+!***
+!***  INITIALIZE 3D MASKS
+!***
+        DO J=JFS,JFE
+          DO K=KPS,KPE
+          DO I=IFS,IFE
+            HTM(I,K,J)=1.
+            VTM(I,K,J)=1.
+          ENDDO
+          ENDDO
         ENDDO
 !***
 !***  INITIALIZE CLOUD FIELDS
@@ -523,9 +520,6 @@
 !----------------------------------------------------------------------
 !
         CALL wrf_message('INIT:  INITIALIZED ARRAYS FOR CLEAN START')
-!       IF(wrf_dm_on_monitor)THEN
-!          WRITE(LIST,*)'INIT:  INITIALIZED ARRAYS FOR CLEAN START'
-!        ENDIF
       ENDIF ! <--- (not restart)
 
 
@@ -723,9 +717,9 @@
 !***  RESTART INITIALIZING.  CHECK TO SEE IF WE NEED TO ZERO
 !***  ACCUMULATION ARRAYS.
 !----------------------------------------------------------------------
-      IF(RESTRT)THEN
 
       TSPH=3600./DT ! needed?
+      NPHS0=NPHS
 
 !!!!  How do we pass in this TSTART information in reality???
 
@@ -733,9 +727,9 @@
       TPREC=06.0
       THEAT=06.0
       TCLOD=06.0
-      TRDSW=06.0
-      TRDLW=06.0
-      TSRFC=06.0
+      TRDSW=03.0
+      TRDLW=03.0
+      TSRFC=03.0
 
       NSTART = INT(TSTART*TSPH+0.5)
 
@@ -752,6 +746,7 @@
       NRDLW  = INT(TRDLW *TSPH+0.5)
       NSRFC  = INT(TSRFC *TSPH+0.5)
 
+      IF(RESTRT)THEN
 !
 !***
 !***    AVERAGE CLOUD AMOUNT ARRAY
@@ -1223,13 +1218,6 @@
 !***
 !*** SET ZERO-VALUE FOR SOME OUTPUT DIAGNOSTIC ARRAYS
 !***
-!     if(mype.eq.n_t)then
-!       write(0,*)' nstart=',nstart,' sm=',sm(i_t,j_t) &
-!    &,           ' sice=',sice(i_t,j_t)
-!       do ns=1,nsoil
-!         write(0,*)' START sh2o=',sh2o(i_t,ns,j_t)
-!       enddo
-!     endif
       IF(NSTART.EQ.0)THEN
 !
         DO J=JFS,JFE
@@ -1413,12 +1401,6 @@
           TSHLTR(I,J)=0.2*THS(I,J)+0.8*THLM
 !mp          QSHLTR(I,J)=FAC2*QS(I,J)+FAC1*QLM
           QSHLTR(I,J)=0.2*QS(I,J)+0.8*QLM
-!     if(i.eq.10.and.j.eq.3)then
-!       write(0,12541)qshltr(i,j)
-!       write(0,12542)qs(i,j),qlm,fac1,fac2
-12541   format(' qshltr=',z8)
-12542   format(' qs=',z8,' qlm=',z8,' fac1=',z8,' fac2=',z8)
-!     endif
         ENDIF
 !***
 !***  NEED TO CONVERT TO THETA IF IS THE RESTART CASE
@@ -1483,6 +1465,7 @@
       write(0,*)' ifs=',ifs,' ife=',ife
       write(0,*)' jfs=',jfs,' jfe=',jfe
       write(0,*)' kps=',kps,' kpe=',kpe
+      write(0,*)' pdtop=',pdtop,' pt=',pt
         IF(.NOT.RESTRT.OR.NEST)THEN
       DO J=jfs,jfe
         DO K=KPS,KPE
@@ -1586,10 +1569,8 @@
       ALLOCATE(GSW(IMS:IME,JMS:JME),STAT=I)
       ALLOCATE(HFX(IMS:IME,JMS:JME),STAT=I)
       ALLOCATE(LOWLYR(IMS:IME,JMS:JME),STAT=I)
-      ALLOCATE(LU_INDEX(IMS:IME,JMS:JME),STAT=I)
       ALLOCATE(MAVAIL(IMS:IME,JMS:JME),STAT=I)
       ALLOCATE(NCA(IMS:IME,JMS:JME),STAT=I)
-      ALLOCATE(PBLH(IMS:IME,JMS:JME),STAT=I)
       ALLOCATE(QFX(IMS:IME,JMS:JME),STAT=I)
       ALLOCATE(RAINBL(IMS:IME,JMS:JME),STAT=I)
       ALLOCATE(RAINC(IMS:IME,JMS:JME),STAT=I)
@@ -1645,8 +1626,12 @@
       ALLOCATE(TSLB(IMS:IME,KMS:KME,JMS:JME),STAT=I)
 !state    real   ZS              l        dyn_em      -         Z     ir 
 
+#if 0
+      ALLOCATE(W0AVG(IMS:IME,KMS:KME,JMS:JME),STAT=I)
+#endif
 !-----------------------------------------------------------------------
 !jm added set of g_inv
+      write(0,*)' start nrads=',nrads,' nradl=',nradl,' nphs=',nphs,' ncnvc=',ncnvc
       G_INV=1./G
       ROG=R_D*G_INV
       RADT=NRADS/60.
@@ -1654,7 +1639,6 @@
       CUDT=NCNVC*DT/60.
       GSMDT=NPHS*DT/60.
 !
-      write(0,*)' kte=',kte
       DO J=MYJS,MYJE
       DO I=MYIS,MYIE
         SFCZ=FIS(I,J)*G_INV
@@ -1688,6 +1672,7 @@
 !***  NOTE: KTE=NUMBER OF LAYERS PLUS ONE
 !-----------------------------------------------------------------------
 !
+      write(0,*)' start_domain kte=',kte
       PDTOT=101325.-PT
       RPDTOT=1./PDTOT
       PDBOT=PDTOT-PDTOP
@@ -1707,6 +1692,12 @@
 
        LU_INDEX=IVGTYP
 
+      DO J=MYJS,MYJE
+      DO I=MYIS,MYIE
+	Z0_DUM(I,J)=Z0(I,J) ! hold topography component
+      ENDDO
+      ENDDO
+
       CALL PHY_INIT(GRID,GRID%ID,CONFIG_FLAGS,DT,sfull,smid             &
      &             ,PT,TSFC,RADT,BLDT,CUDT,GSMDT                        &
      &             ,RTHCUTEN, RQVCUTEN, RQRCUTEN                        &
@@ -1723,7 +1714,7 @@
      &             ,CLDFRA,GLW,GSW,EMISS,LU_INDEX                       &
      &             ,XLAT,XLONG,ALBEDO,ALBBCK,GMT,JULYR,JULDAY           &
      &             ,TMN,XLAND,ZNT,Z0,USTAR,MOL,PBLH,TKE_MYJ             &
-     &             ,EXCH_H,THC,SNOWC,MAVAIL,HFX,QFX,RAINBL                     &
+     &             ,EXCH_H,THC,SNOWC,MAVAIL,HFX,QFX,RAINBL              &
      &             ,TSLB,ZS,DZS,num_soil_layers,warm_rain               &
      &             ,APR_GR,APR_W,APR_MC,APR_ST,APR_AS                   &
      &             ,APR_CAPMA,APR_CAPME,APR_CAPMI                       &
@@ -1740,6 +1731,9 @@
 !
       DO J=JMS,JME
       DO I=IMS,IME
+	Z0(I,J)=Z0_DUM(I,J)+0.5*Z0(I,J) ! add 1/2 of veg Z0 component, 
+                                        ! expecting this code to be called
+                                        ! both by real and by the model.
         APREC(I,J)=RAINNC(I,J)*1.E-3
         CUPREC(I,J)=RAINCV(I,J)*1.E-3
       ENDDO
@@ -1754,10 +1748,8 @@
       DEALLOCATE(GSW)
       DEALLOCATE(HFX)
       DEALLOCATE(LOWLYR)
-      DEALLOCATE(LU_INDEX)
       DEALLOCATE(MAVAIL)
       DEALLOCATE(NCA)
-      DEALLOCATE(PBLH)
       DEALLOCATE(QFX)
       DEALLOCATE(RAINBL)
       DEALLOCATE(RAINC)
@@ -1943,11 +1935,6 @@
         INDX3_WRK(-2,KNT,6)=999
         INDX3_WRK(-3,KNT,6)=999
       ENDDO
-!     if(mype.eq.n_t)then
-!       do ns=1,nsoil
-!         write(0,*)' exit START sh2o=',sh2o(i_t,ns,j_t)
-!       enddo
-!     endif
 
 #ifdef DM_PARALLEL
 #  include <HALO_NMM_INIT_1.inc>

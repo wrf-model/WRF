@@ -1,19 +1,24 @@
+!-----------------------------------------------------------------------
 !
 !NCEP_MESO:MODEL_LAYER: HORIZONTAL DIFFUSION
 !
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
+!
+#include "nmm_loop_basemacros.h"
+#include "nmm_loop_macros.h"
+!
+!-----------------------------------------------------------------------
 !
       MODULE MODULE_DIFFUSION_NMM
 !
-!----------------------------------------------------------------------
-      USE MODULE_MPP
+!-----------------------------------------------------------------------
       USE MODULE_MODEL_CONSTANTS
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !
       LOGICAL :: SECOND=.TRUE.
       INTEGER :: KSMUD=1
 !
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !
       CONTAINS
 !
@@ -49,6 +54,7 @@
 !   02-08-29  MICHALAKES -
 !   02-09-06  WOLFE      -
 !   03-05-27  JANJIC     - ADDED SLOPE ADJUSTMENT
+!   04-11-18  BLACK      - THREADED
 !     
 ! USAGE: CALL HDIFF FROM SUBROUTINE SOLVE_RUNSTREAM
 !
@@ -69,12 +75,12 @@
 !   LANGUAGE: FORTRAN 90
 !   MACHINE : IBM SP
 !$$$  
-!**********************************************************************
-!----------------------------------------------------------------------
+!***********************************************************************
+!-----------------------------------------------------------------------
 !
       IMPLICIT NONE
 !
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !
       INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                     &
      &                     ,IMS,IME,JMS,JME,KMS,KME                     &
@@ -94,16 +100,20 @@
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) :: T,Q,Q2   &
      &                                                        ,U,V
 !
-      INTEGER, DIMENSION(jms:jme), INTENT(IN) :: IHE,IHW,IVE,IVW
+      INTEGER, DIMENSION(JMS:JME), INTENT(IN) :: IHE,IHW,IVE,IVW
 !
+!-----------------------------------------------------------------------
+!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !***  NMM_MAX_DIM is set in configure.wrf and must agree with
 !***  the value of dimspec q in the Registry/Registry.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!-----------------------------------------------------------------------
 !
-      INTEGER,DIMENSION(-3:3,NMM_MAX_DIM,0:6),INTENT(IN) :: indx3_wrk
+      INTEGER,DIMENSION(-3:3,NMM_MAX_DIM,0:6),INTENT(IN) :: INDX3_WRK
 !
       INTEGER,INTENT(IN) :: SIGMA
 !
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !
 !***  LOCAL VARIABLES
 !
@@ -134,55 +144,66 @@
       REAL,DIMENSION(ITS-5:ITE+5,KTS:KTE,-1:1) :: CKE,QDIF,Q2DIF        &
      &                                           ,TDIF,UDIF,VDIF
 !
-!----------------------------------------------------------------------
-!**********************************************************************
-!----------------------------------------------------------------------
-      MYIE    =MIN(IDE  ,ITE  )    
-!
-      MYIS1   =MAX(IDS+1,ITS  )
-      MYIE1   =MIN(IDE-1,ITE  )
-      MYJS2   =MAX(JDS+2,JTS  )
-      MYJE2   =MIN(JDE-2,JTE  )
-!
-      MYIS_P1 =MAX(IDS  ,ITS-1)
-      MYIE_P1 =MIN(IDE  ,ITE+1)
-!
-      MYIS1_P1=MAX(IDS+1,ITS-1)
-      MYIE1_P1=MIN(IDE-1,ITE+1)
+!-----------------------------------------------------------------------
+!***********************************************************************
+!-----------------------------------------------------------------------
 !
       JSTART=MYJS2
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !
       SLOPHC=SLOPHT*SQRT(2.)*0.5
       RDY=1./DY
 !
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !***
 !***  DIFFUSING Q2 AT GROUND LEVEL DOES NOT MATTER
 !***  BECAUSE USTAR2 IS RECALCULATED
 !***
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !***  MARCH NORTHWARD THROUGH THE SOUTHERNMOST SLABS TO BEGIN
 !***  FILLING THE MAIN WORKING ARRAYS WHICH ARE MULTI-DIMENSIONED
-!***  IN J BECAUSE THEY ARE DIFFERENCED OR AVERAGED IN J
-!----------------------------------------------------------------------
+!***  IN J BECAUSE THEY ARE DIFFERENCED OR AVERAGED IN J.
+!-----------------------------------------------------------------------
 !
-      DEF = 0.
-      TNE = 0.
-      QNE = 0.
-      Q2NE = 0.
-      HKNE = 0.
-      UNE = 0.
-      VNE = 0.
-      VKNE = 0.
-      TSE = 0.
-      QSE = 0.
-      Q2SE = 0.
-      HKSE = 0.
-      USE = 0.
-      VSE = 0.
-      VKSE = 0.
-
+      DO J=-2,2
+      DO K=KTS,KTE
+      DO I=ITS-5,ITE+5
+        DEF(I,K,J)=0.
+      ENDDO
+      ENDDO
+      ENDDO
+!
+      DO J=-2,1
+      DO K=KTS,KTE
+      DO I=ITS-5,ITE+5
+        TNE(I,K,J)=0.
+        QNE(I,K,J)=0.
+        Q2NE(I,K,J)=0.
+        HKNE(I,K,J)=0.
+        UNE(I,K,J)=0.
+        VNE(I,K,J)=0.
+        VKNE(I,K,J)=0.
+      ENDDO
+      ENDDO
+      ENDDO
+!
+      DO J=-2,1
+      DO K=KTS,KTE
+      DO I=ITS-5,ITE+5
+        TSE(I,K,J)=0.
+        QSE(I,K,J)=0.
+        Q2SE(I,K,J)=0.
+        HKSE(I,K,J)=0.
+        USE(I,K,J)=0.
+        VSE(I,K,J)=0.
+        VKSE(I,K,J)=0.
+      ENDDO
+      ENDDO
+      ENDDO
+!-----------------------------------------------------------------------
+!
+!$omp parallel do                                                       &
+!$omp& private(def_j,def1,def2,def3,def4,defsk,deftk,i,j,jj,k,q2l)
       DO J=-2,1
         JJ=JSTART+J
 !
@@ -194,33 +215,14 @@
           DEFSK=U(I,K,JJ+1)-U(I,K,JJ-1)                                 &
      &         +V(I+IHE(JJ),K,JJ)-V(I+IHW(JJ),K,JJ)
           Q2L=MAX(Q2(I,K,JJ),EPSQ2)
-
-!new
-	DEF1=W(I+IHW(JJ),K,JJ-1)-W(I,K,JJ)
-        DEF2=W(I+IHE(JJ),K,JJ-1)-W(I,K,JJ)
-        DEF3=W(I+IHW(JJ),K,JJ+1)-W(I,K,JJ)
-        DEF4=W(I+IHE(JJ),K,JJ+1)-W(I,K,JJ)
-
-
-!          DEFW= ( W(I+IHW(JJ),K,JJ-1) + W(I+IHE(JJ),K,JJ-1) + &
-!                  W(I+IHW(JJ),K,JJ+1) + W(I+IHE(JJ),K,JJ+1) - &
-!                4*W(I,K,JJ)) 
-!new
-
-          DEF_J=DEFTK*DEFTK+DEFSK*DEFSK+DEF1*DEF1+DEF2*DEF2+ &
-                DEF3*DEF3+DEF4*DEF4+SCQ2*Q2L
-!	if ( (DEF1*DEF1+DEF2*DEF2+DEF3*DEF3+DEF4*DEF4)/DEF_J .gt. 0.5) then
-!	write(0,*) 'DWDX term : DEFTK^2, DEFSK^2, DEFW^2, SCQ2, DEF_J:: ', &
-!         DEFTK**2., DEFSK**2., DEF1*DEF1+DEF2*DEF2+DEF3*DEF3+DEF4*DEF4, SCQ2*Q2L, DEF_J
-!	endif
-
-	IF ( DEF1*DEF1+DEF2*DEF2+DEF3*DEF3+DEF4*DEF4 .gt. 120. .and. &
-               (DEF1*DEF1+DEF2*DEF2+DEF3*DEF3+DEF4*DEF4)/DEF_J .gt. 0.5 ) THEN
-	write(0,*) 'BIG DWDX term: ', &
-            DEF1*DEF1+DEF2*DEF2+DEF3*DEF3+DEF4*DEF4,  'of total DEF_J: ',&
-            DEF_J
-	ENDIF
-
+!
+          DEF1=W(I+IHW(JJ),K,JJ-1)-W(I,K,JJ)
+          DEF2=W(I+IHE(JJ),K,JJ-1)-W(I,K,JJ)
+          DEF3=W(I+IHW(JJ),K,JJ+1)-W(I,K,JJ)
+          DEF4=W(I+IHE(JJ),K,JJ+1)-W(I,K,JJ)
+!
+          DEF_J=DEFTK*DEFTK+DEFSK*DEFSK+DEF1*DEF1+DEF2*DEF2+            &
+     &          DEF3*DEF3+DEF4*DEF4+SCQ2*Q2L
           DEF_J=SQRT(DEF_J+DEF_J)*HBM2(I,JJ)
           DEF_J=MAX(DEF_J,DEFC)
           DEF_J=MIN(DEF_J,DEFM)
@@ -230,28 +232,37 @@
         ENDDO
 !
       ENDDO
+!-----------------------------------------------------------------------
 !
+!$omp parallel do                                                       &
+!$omp& private(hkne_j,i,j,jj,k,slop,sne,vkne_j)
       DO J=-2,0
         JJ=JSTART+J
 !
+!-----------------------------------------------------------------------
 !***  SLOPE SWITCHES FOR MOISTURE
+!-----------------------------------------------------------------------
 !
-        IF(SIGMA.EQ.1)THEN
+        IF(SIGMA==1)THEN
           DO K=KTS,KTE
 !
+!-----------------------------------------------------------------------
 !***  PRESSURE DOMAIN
+!-----------------------------------------------------------------------
 !
-            IF(DETA1(K).GT.0)THEN
+            IF(DETA1(K)>0.)THEN
               DO I=MYIS_P1,MYIE1_P1
                 SNE(I,K)=1.
               ENDDO
 !
+!-----------------------------------------------------------------------
 !***  SIGMA DOMAIN
+!-----------------------------------------------------------------------
 !
             ELSE
               DO I=MYIS_P1,MYIE1_P1
                 SLOP=ABS((Z(I+IHE(JJ),K,JJ+1)-Z(I,K,JJ))*RDY)
-                IF(SLOP.LT.SLOPHC)THEN
+                IF(SLOP<SLOPHC)THEN
                   SNE(I,K)=1.
                 ELSE
                   SNE(I,K)=0.
@@ -281,28 +292,37 @@
         ENDDO
 !
       ENDDO
+!-----------------------------------------------------------------------
 !
+!$omp parallel do                                                       &
+!$omp& private(hkse_j,i,j,jj,k,slop,sse,vkse_j)
       DO J=-1,1
         JJ=JSTART+J
 !
+!-----------------------------------------------------------------------
 !***  SLOPE SWITCHES FOR MOISTURE
+!-----------------------------------------------------------------------
 !
-        IF(SIGMA.EQ.1)THEN
+        IF(SIGMA==1)THEN
           DO K=KTS,KTE
 !
+!-----------------------------------------------------------------------
 !***  PRESSURE DOMAIN
+!-----------------------------------------------------------------------
 !
-            IF(DETA1(K).GT.0)THEN
+            IF(DETA1(K)>0.)THEN
               DO I=MYIS_P1,MYIE1_P1
                 SSE(I,K)=1.
               ENDDO
 !
+!-----------------------------------------------------------------------
 !***  SIGMA DOMAIN
+!-----------------------------------------------------------------------
 !
             ELSE
               DO I=MYIS_P1,MYIE1_P1
                 SLOP=ABS((Z(I+IHE(JJ),K,JJ-1)-Z(I,K,JJ))*RDY)
-                IF(SLOP.LT.SLOPHC)THEN
+                IF(SLOP<SLOPHC)THEN
                   SSE(I,K)=1.
                 ELSE
                   SSE(I,K)=0.
@@ -331,7 +351,10 @@
         ENDDO
 !
       ENDDO
+!-----------------------------------------------------------------------
 !
+!$omp parallel do                                                       &
+!$omp& private(i,j,jj,k)
       DO J=-1,0
         JJ=JSTART+J
 !
@@ -358,19 +381,20 @@
 !
       ENDDO
 !
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !***  ITERATION LOOP
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !
       DO 600 KS=1,KSMUD
 !
       JKNT=0
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !***  MAIN VERTICAL INTEGRATION LOOP
-!----------------------------------------------------------------------
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
       main_integration : DO J=MYJS2,MYJE2
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !
 !***
 !***  SET THE 3RD INDEX IN THE WORKING ARRAYS (SEE SUBROUTINE INIT
@@ -400,16 +424,18 @@
       J4_00=INDX3_WRK(0,JKNT,4)
       J4_M1=INDX3_WRK(-1,JKNT,4)
 !
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !***  SLOPE SWITCHES FOR MOISTURE
-!----------------------------------------------------------------------
-      IF(SIGMA.EQ.1)THEN
+!-----------------------------------------------------------------------
+      IF(SIGMA==1)THEN
 !
+!$omp parallel do                                                       &
+!$omp& private(i,k,slop)
         DO K=KTS,KTE
 !
 !***  PRESSURE DOMAIN
 !
-          IF(DETA1(K).GT.0)THEN
+          IF(DETA1(K)>0.)THEN
             DO I=MYIS_P1,MYIE1_P1
               SNE(I,K)=1.
               SSE(I,K)=1.
@@ -420,14 +446,14 @@
           ELSE
             DO I=MYIS_P1,MYIE1_P1
               SLOP=ABS((Z(I+IHE(J+1),K,J+2)-Z(I,K,J+1))*RDY)
-              IF(SLOP.LT.SLOPHC)THEN
+              IF(SLOP<SLOPHC)THEN
                 SNE(I,K)=1.
               ELSE
                 SNE(I,K)=0.
               ENDIF
 !
               SLOP=ABS((Z(I+IHE(J+2),K,J+1)-Z(I,K,J+2))*RDY)
-              IF(SLOP.LT.SLOPHC)THEN
+              IF(SLOP<SLOPHC)THEN
                 SSE(I,K)=1.
               ELSE
                 SSE(I,K)=0.
@@ -437,10 +463,12 @@
 !
         ENDDO
       ENDIF
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !***  DEFORMATIONS
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !
+!$omp parallel do                                                       &
+!$omp& private(def_j,def1,def2,def3,def4,defsk,deftk,i,k,q2l,slop)
       DO K=KTS,KTE
       DO I=MYIS_P1,MYIE_P1
 !
@@ -448,16 +476,13 @@
      &       -V(I,K,J+3)+V(I,K,J+1)
         DEFSK=U(I,K,J+3)-U(I,K,J+1)                                     &
      &       +V(I+IHE(J+2),K,J+2)-V(I+IHW(J+2),K,J+2)
+        DEF1=W(I+IHW(J),K,J-1)-W(I,K,J)
+        DEF2=W(I+IHE(J),K,J-1)-W(I,K,J)
+        DEF3=W(I+IHW(J),K,J+1)-W(I,K,J)
+        DEF4=W(I+IHE(J),K,J+1)-W(I,K,J)
         Q2L=MAX(Q2(I,K,J+2),EPSQ2)
-!new
-        DEF1=W(I+IHW(J+2),K,J+1)-W(I,K,J+2)
-        DEF2=W(I+IHE(J+2),K,J+1)-W(I,K,J+2)
-        DEF3=W(I+IHW(J+2),K,J+3)-W(I,K,J+2)
-        DEF4=W(I+IHE(J+2),K,J+3)-W(I,K,J+2)
-!new
-        DEF_J=DEFTK*DEFTK+DEFSK*DEFSK+DEF1*DEF1+DEF2*DEF2+ &
-              DEF3*DEF3+DEF4*DEF4+SCQ2*Q2L
-
+        DEF_J=DEFTK*DEFTK+DEFSK*DEFSK+DEF1*DEF1+DEF2*DEF2               & 
+     &       +DEF3*DEF3+DEF4*DEF4+SCQ2*Q2L
         DEF_J=SQRT(DEF_J+DEF_J)*HBM2(I,J+2)
         DEF_J=MAX(DEF_J,DEFC)
         DEF_J=MIN(DEF_J,DEFM)
@@ -466,10 +491,12 @@
       ENDDO
       ENDDO
 !
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !***  DIAGONAL CONTRIBUTIONS
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !
+!$omp parallel do                                                       &
+!$omp& private(hkne_j,hkse_j,i,k,vkne_j,vkse_j)
       DO K=KTS,KTE
       DO I=MYIS_P1,MYIE1_P1
         HKNE_J=(DEF(I,K,J1_P1)+DEF(I+IHE(J+1),K,J1_P2))                 &
@@ -499,8 +526,10 @@
         VKSE(I,K,J3_P2)=VKSE_J
       ENDDO
       ENDDO
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !
+!$omp parallel do                                                       &
+!$omp& private(i,k)
       DO K=KTS,KTE
       DO I=MYIS_P1,MYIE
         TDIF (I,K,J4_P1)=(TNE (I,K,J2_P1)-TNE (I+IHW(J+1),K,J2_00)      &
@@ -522,11 +551,13 @@
       ENDDO
       ENDDO
 !
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !***  2ND ORDER DIFFUSION
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !
       IF(SECOND)THEN
+!$omp parallel do                                                       &
+!$omp& private(i,k)
         DO K=KTS,KTE
         DO I=MYIS1,MYIE1
           T(I,K,J)=T(I,K,J)+TDIF(I,K,J4_00)
@@ -537,19 +568,23 @@
         ENDDO
         ENDDO
 !
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
+!$omp parallel do                                                       &
+!$omp& private(i,k)
         DO K=KTS+1,KTE
         DO I=MYIS1,MYIE1
           Q2(I,K,J)=Q2(I,K,J)+Q2DIF(I,K,J4_00)*HTM(I,K-1,J)
         ENDDO
         ENDDO
 !
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !***  4TH ORDER DIAGONAL CONTRIBUTIONS
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !
       ELSE
 !
+!$omp parallel do                                                       &
+!$omp& private(hkne_j,hkse_j,i,k,vkne_j,vkse_j)
         DO K=KTS,KTE
         DO I=MYIS_P1,MYIE1
           HKNE_J=HKNE(I,K,J2_00)
@@ -583,7 +618,9 @@
         ENDDO
         ENDDO
 !
-        IF(J.EQ.MYJS2)THEN
+        IF(J==MYJS2)THEN
+!$omp parallel do                                                       &
+!$omp& private(hkne_j,hkse_j,i,k,vkne_j,vkse_j)
           DO K=KTS,KTE
           DO I=MYIS_P1,MYIE1
             HKNE_J=HKNE(I,K,J2_M1)
@@ -618,7 +655,7 @@
           ENDDO
         ENDIF
 !
-        IF(J.EQ.MYJE2)THEN
+        IF(J==MYJE2)THEN
 !
           DO K=KTS,KTE
           DO I=MYIS_P1,MYIE1
@@ -632,8 +669,10 @@
 !
         ENDIF
 !
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !
+!$omp parallel do                                                       &
+!$omp& private(i,k,utk,vtk)
         DO K=KTS,KTE
         DO I=MYIS1,MYIE1
           T(I,K,J)=T(I,K,J)-(TNE (I,K,J2_00)-TNE (I+IHW(J),K,J2_M1)     &
@@ -656,8 +695,10 @@
         ENDDO
         ENDDO
 !
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !
+!$omp parallel do                                                       &
+!$omp& private(i,k)
         DO K=KTS,KTE-1
         DO I=MYIS1,MYIE1
           Q2(I,K,J)=Q2(I,K,J)-(Q2NE(I,K,J2_00)-Q2NE(I+IHW(J),K,J2_M1)   &
@@ -666,17 +707,17 @@
         ENDDO
         ENDDO
 !
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
       ENDIF  ! End 4th order diffusion
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !
       ENDDO main_integration
 !
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !
   600 CONTINUE
 !
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
       END SUBROUTINE HDIFF
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
       END MODULE MODULE_DIFFUSION_NMM

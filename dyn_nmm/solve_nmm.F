@@ -1,47 +1,52 @@
+!-----------------------------------------------------------------------
+!
 !NCEP_MESO:MEDIATION_LAYER:SOLVER
 !
-!***********************************************************************
+!-----------------------------------------------------------------------
+#include "nmm_loop_basemacros.h"
+#include "nmm_loop_macros.h"
+!-----------------------------------------------------------------------
 !
-
-SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
-! Actual arguments generated from Registry
+      SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                           &
+!
 #include "nmm_dummy_args.inc"
 !
-     &              )
-
+     &           )
 !-----------------------------------------------------------------------
       USE MODULE_DOMAIN
       USE MODULE_CONFIGURE
       USE MODULE_MODEL_CONSTANTS
       USE MODULE_STATE_DESCRIPTION
       USE MODULE_CTLBLK
-      USE MODULE_MPP
       USE MODULE_DM
-      USE MODULE_PHYS
-      USE MODULE_IGWAVE_ADJUST,		ONLY: PDTE, PFDHT, DDAMP, VTOA
-      USE MODULE_ADVECTION,		ONLY: ADVE, VAD2, HAD2
-      USE MODULE_NONHY_DYNAM,		ONLY: EPS, VADZ, HADZ
+      USE MODULE_IGWAVE_ADJUST,		ONLY: PDTE,PFDHT,DDAMP,VTOA
+      USE MODULE_ADVECTION,		ONLY: ADVE,VAD2,HAD2
+      USE MODULE_NONHY_DYNAM,		ONLY: EPS,VADZ,HADZ
       USE MODULE_DIFFUSION_NMM, 	ONLY: HDIFF
-      USE MODULE_BNDRY_COND,		ONLY: BOCOH, BOCOV
+      USE MODULE_BNDRY_COND,		ONLY: BOCOH,BOCOV
+      USE MODULE_PHYSICS_CALLS
       USE MODULE_EXT_INTERNAL
-      USE MODULE_TILES
-      USE MODULE_TURBL
-!     integer :: npes
-!     integer :: MPI_COMM_COMP
 !-----------------------------------------------------------------------
 !
       IMPLICIT NONE
 !
 !-----------------------------------------------------------------------
+      INCLUDE "mpif.h"
+!-----------------------------------------------------------------------
 !
 !***  INPUT DATA
 !
+!-----------------------------------------------------------------------
+!
       TYPE(DOMAIN),TARGET :: GRID
 !
-!  Definitions of dummy arguments to this routine (Generated from Registry)
+!***  DEFINITIONS OF DUMMY ARGUMENTS TO THIS ROUTINE (GENERATED FROM REGISTRY)
+!----------------------------
 #include <nmm_dummy_decl.inc>
+!----------------------------
 !
-!  Structure that contains run-time configuration (namelist) data for domain
+!***  STRUCTURE THAT CONTAINS RUN-TIME CONFIGURATION (NAMELIST) DATA FOR DOMAIN
+!
       TYPE(GRID_CONFIG_REC_TYPE),INTENT(IN) :: CONFIG_FLAGS
 !
 !-----------------------------------------------------------------------
@@ -49,96 +54,112 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
 !***  LOCAL VARIABLES
 !
 !-----------------------------------------------------------------------
-      INTEGER :: IDS,IDE,JDS,JDE,KDS,KDE,                               &
-                 IMS,IME,JMS,JME,KMS,KME,                               & 
-                 IPS,IPE,JPS,JPE,KPS,KPE
+      INTEGER :: IDS,IDE,JDS,JDE,KDS,KDE                                &
+     &          ,IMS,IME,JMS,JME,KMS,KME                                & 
+     &          ,IPS,IPE,JPS,JPE,KPS,KPE                                &
+     &          ,ITS,ITE,JTS,JTE,KTS,KTE
 !
-      INTEGER :: ITS,ITE,JTS,JTE,KTS,KTE
-
-      INTEGER :: N_MOIST
-      INTEGER :: I,ICLTEND,J,JC,LB,k,ierr,mpi_comm_world,irtn
-      INTEGER :: IJDS,IJDE,IDF,JDF,KDF
-      INTEGER MYPROC
-      INTEGER RC
-      CHARACTER*80 :: message
+      INTEGER :: I,ICLTEND,IDF,IJDE,IJDS,IRTN,J,JC,JDF,K,KDF,LB,N_MOIST
+      INTEGER :: MPI_COMM_COMP,MYPE,MYPROC,NPES
+      INTEGER :: RC
+!
+      CHARACTER*80 :: MESSAGE
 !
       REAL :: GPS
-      REAL,DIMENSION(GRID%SM31:GRID%EM31,GRID%SM33:GRID%EM33) :: PBLH 
-
+!
       LOGICAL :: LAST_TIME
 !
+!-----------------------------------------------------------------------
+!***  TIMING VARIABLES
+!-----------------------------------------------------------------------
       real,save :: solve_tim,exch_tim,pdte_tim,adve_tim,vtoa_tim        &
      &,            vadz_tim,hadz_tim,eps_tim,vad2_tim,had2_tim          &
      &,            radiation_tim,rdtemp_tim,turbl_tim,cltend_tim        &
      &,            cucnvc_tim,gsmdrive_tim,hdiff_tim,bocoh_tim          &
-     &,            pfdht_tim,ddamp_tim,bocov_tim,sum_tim
+     &,            pfdht_tim,ddamp_tim,bocov_tim,uv_htov_tim,sum_tim
+      real,save :: exch_tim_max
       real :: btim,btimx
-      integer ij
-#ifdef DEREF_KLUDGE
-!  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
-      INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
-      INTEGER     :: sm31x, em31x, sm32x, em32x, sm33x, em33x
-      INTEGER     :: sm31y, em31y, sm32y, em32y, sm33y, em33y
-#endif
+      real :: et_max,this_tim
+      integer :: n_print_time
+!
 #ifdef RSL
       integer rsl_internal_microclock
-      external rsl_internal_microclock 
-#  define timef rsl_internal_microclock
+      external rsl_internal_microclock
+# define timef rsl_internal_microclock
 #else
       real*8 :: timef
-      timef() = 0.
+      timef()=0.
 #endif
 !-----------------------------------------------------------------------
-!***********************************************************************
+!
+#ifdef DEREF_KLUDGE
+! SEE http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
+      INTEGER :: SM31,EM31,SM32,EM32,SM33,EM33 
+      INTEGER :: SM31X,EM31X,SM32X,EM32X,SM33X,EM33X
+      INTEGER :: SM31Y,EM31Y,SM32Y,EM32Y,SM33Y,EM33Y
+#endif
+!
 !-----------------------------------------------------------------------
-
-
-! Limit the number of arguments if compiled with -DLIMIT_ARGS by copying 
-! scalar (non-array) arguments out of the grid data structure into locally
-! defined copies (defined in em_dummy_decl.inc, above, as they are if they
-! are arguments). An equivalent include of em_scalar_derefs.inc appears
-! at the end of the routine to copy back any chnaged non-array values.
-! The definition of COPY_IN or COPY_OUT before the include defines the
-! direction of the copy.  Nmm_scalar_derefs is generated from Registry.
+!
+! LIMIT THE NUMBER OF ARGUMENTS IF COMPILED WITH -DLIMIT_ARGS BY COPYING
+! SCALAR (NON-ARRAY) ARGUMENTS OUT OF THE GRID DATA STRUCTURE INTO LOCALLY
+! DEFINED COPIES (DEFINED IN EM_DUMMY_DECL.INC, ABOVE, AS THEY ARE IF THEY
+! ARE ARGUMENTS).  AN EQUIVALENT INCLUDE OF EM_SCALAR_DEREFS.INC APPEARS
+! AT THE END OF THE ROUTINE TO COPY BACK ANY CHNAGED NON-ARRAY VALUES.
+! THE DEFINITION OF COPY_IN OR COPY_OUT BEFORE THE INCLUDE DEFINES THE
+! DIRECTION OF THE COPY.  nmm_scalar_derefs IS GENERATED FROM REGISTRY.
+!
+!-----------------------------------------------------------------------
 #define COPY_IN
 #include <nmm_scalar_derefs.inc>
-
-! Trick problematic compilers into not performing copy-in/copy-out by adding
-! indices to array arguments in the CALL statements in this routine.
-! It has the effect of passing only the first element of the array, rather 
-! than the entire array.  See:  
+!-----------------------------------------------------------------------
+!
+! TRICK PROBLEMATIC COMPILERS INTO NOT PERFORMING COPY-IN/COPY-OUT BY ADDING
+! INDICES TO ARRAY ARGUMENTS IN THE CALL STATEMENTS IN THIS ROUTINE.
+! IT HAS THE EFFECT OF PASSING ONLY THE FIRST ELEMENT OF THE ARRAY, RATHER
+! THAN THE ENTIRE ARRAY.  SEE:
 ! http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
+!
+!-----------------------------------------------------------------------
 #include "deref_kludge.h"
-
-! Needed by some comm layers, e.g. RSL. If needed, nmm_data_calls.inc is
-! generated from the registry.  The definition of REGISTER_I1 allows
-! I1 data to be communicated in this routine if necessary.
+!-----------------------------------------------------------------------
+!
+! NEEDED BY SOME COMM LAYERS, E.G. RSL.  IF NEEDED, nmm_data_calls.inc IS
+! GENERATED FROM THE REGISTRY.  THE DEFINITION OF REGISTER_I1 ALLOWS
+! I1 DATA TO BE COMMUNICATED IN THIS ROUTINE IF NECESSARY.
+!
+!-----------------------------------------------------------------------
 #ifdef DM_PARALLEL
 #    define REGISTER_I1
 #    include <nmm_data_calls.inc>
 #endif
-
+!-----------------------------------------------------------------------
+!***********************************************************************
+!-----------------------------------------------------------------------
       CALL WRF_GET_MYPROC(MYPROC)
+!-----------------------------------------------------------------------
 !
-!  Obtain dimension information stored in the grid data structure.
-      CALL GET_IJK_FROM_GRID(grid,                                      &
-                             ids,ide,jds,jde,kds,kde,                   &
-                             ims,ime,jms,jme,kms,kme,                   &
-                             ips,ipe,jps,jpe,kps,kpe )
+!***  OBTAIN DIMENSION INFORMATION STORED IN THE GRID DATA STRUCTURE.
 !
-!  Compute these starting and stopping locations for each tile and number of tiles.
-!  See: http://www.mmm.ucar.edu/wrf/WG2/topics/settiles
-      CALL set_tiles ( grid , ids , ide , jds , jde , ips , ipe , jps , jpe )
+      CALL GET_IJK_FROM_GRID(GRID                                       &
+     &                      ,IDS,IDE,JDS,JDE,KDS,KDE                    &
+     &                      ,IMS,IME,JMS,JME,KMS,KME                    &
+     &                      ,IPS,IPE,JPS,JPE,KPS,KPE )
+!-----------------------------------------------------------------------
 !
-      CALL wrf_debug(100,"dyn_nmm/solve_nmm.F: warning SIGMA hard coded") 
+!***  COMPUTE THESE STARTING AND STOPPING LOCATIONS FOR EACH TILE AND
+!***  NUMBER OF TILES.
+!***  SEE: http://www.mmm.ucar.edu/wrf/WG2/topics/settiles
+!
+      CALL SET_TILES(GRID,IDS,IDE,JDS,JDE,IPS,IPE,JPS,JPE)
+!-----------------------------------------------------------------------
 !
       SIGMA=1 
       HYDRO=.FALSE.
       IHRST=GRID%GMT
-
-      IJDS=MIN(IDS, JDS)
-      IJDE=MAX(IDE, JDE)
-
+      IJDS=MIN(IDS,JDS)
+      IJDE=MAX(IDE,JDE)
+!
       IDF=IDE-1
       JDF=JDE-1
       KDF=KDE-1
@@ -147,14 +168,22 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
 !
 !***  FOR NOW SET CONTROLS FOR TILES TO PATCHES
 !
+!-----------------------------------------------------------------------
       ITS=IPS
       ITE=MIN(IPE,IDF)
       JTS=JPS
       JTE=MIN(JPE,JDF)
       KTS=KPS
       KTE=MIN(KPE,KDF)
+      if(ntsd==0)then
+        write(0,*)' its=',its,' ite=',ite
+        write(0,*)' jts=',jts,' jte=',jte
+        write(0,*)' kts=',kts,' kte=',kte
+      endif
 !-----------------------------------------------------------------------
-!      if(ntsd.eq.0)then
+!***  SET TIMING VARIABLES TO ZERO AT START OF FORECAST.
+!-----------------------------------------------------------------------
+      if(ntsd==0)then
         solve_tim=0.
         exch_tim=0.
         pdte_tim=0.
@@ -176,35 +205,11 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
         pfdht_tim=0.
         ddamp_tim=0.
         bocov_tim=0.
-!      endif
+        uv_htov_tim=0.
+        exch_tim_max=0.
+      endif
 !-----------------------------------------------------------------------
-      N_MOIST = NUM_MOIST
-!
-      MYIS1   =MAX(IDS+1,IPS  )
-      MYIE1   =MIN(IDF-1,IPE  )
-!
-      MYIS_P1 =MAX(IDS  ,IPS-1)
-      MYIE_P1 =MIN(IDF  ,IPE+1)
-      MYIS_P2 =MAX(IDS  ,IPS-2)
-!
-      MYIE_P2 =MIN(IDF  ,IPE+2)
-!
-      MYIS_P3 =MAX(IDS  ,IPS-3)
-      MYIE_P3 =MIN(IDF  ,IPE+3)
-      MYIS_P4 =MAX(IDS  ,IPS-4)
-      MYIE_P4 =MIN(IDF  ,IPE+4)
-      MYJS_P4 =MAX(JDS  ,JPS-4)
-      MYJE_P4 =MIN(JDF  ,JPE+4)
-      MYIS_P5 =MAX(IDS  ,IPS-5)
-      MYIE_P5 =MIN(IDF  ,IPE+5)
-      MYJS_P5 =MAX(JDS  ,JPS-5)
-      MYJE_P5 =MIN(JDF  ,JPE+5)
-      MYIS1_P1=MAX(IDS+1,IPS-1)
-      MYIE1_P1=MIN(IDF-1,IPE+1)
-      MYIS1_P2=MAX(IDS+1,IPS-2)
-      MYIE1_P2=MIN(IDF-1,IPE+2)
-      MYJS2_P2=MAX(JDS+2,JPS-2)
-      MYJE2_P2=MIN(JDF-2,JPE+2)
+      N_MOIST=NUM_MOIST
 !
       DO J=MYJS_P4,MYJE_P4
         IHEG(J)=MOD(J+1,2)
@@ -234,14 +239,6 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
       TSPH=3600./DT
 !-----------------------------------------------------------------------
 !
-      PBLH = 0.
-
-      DO J=JMS,JME
-      DO I=IMS,IME
-        PBLH(I,J)=-1.
-      ENDDO
-      ENDDO
-!
       NBOCO=0
 !-----------------------------------------------------------------------
 !***
@@ -257,30 +254,72 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
 !***  FIRST TIME THROUGH TOTAL_TIME_STEPS IS ZERO.
 !***  IT IS INCREMENTED IN SOLVE_INTERFACE.
 !***
-      CALL ESMF_ClockGet(grid%domain_clock,advanceCount=NTSD,rc=rc)
-      LAST_TIME=grid%stop_time.EQ.grid%current_time+grid%step_time
-
-!      CALL wrf_timetoa ( grid%current_time, message )
-!      WRITE(0,*)' SOLVE_NMM CALLED: TIMESTEP IS ',NTSD
-!      WRITE(message,*)' SOLVE_NMM CALLED: TIMESTEP IS ',NTSD           &
-!               ,' FCST TIME IS',TRIM(message)
-!      CALL wrf_message( message )
-
+      CALL ESMF_ClockGet(GRID%DOMAIN_CLOCK,ADVANCEcOUNT=NTSD,RC=RC)
+      LAST_TIME=GRID%STOP_TIME.EQ.GRID%CURRENT_TIME+GRID%STEP_TIME
+!
+!     if(ntsd>=400)then
+!       write(0,*)' last_time=',last_time
+!       CALL print_a_time( grid%stop_time )
+!       CALL print_a_time( grid%current_time )
+!       CALL print_a_timeinterval( grid%step_time )
+!     endif
+!
+!      CALL ESMF_TimeGetString(GRID%CURRENT_TIME,MESSAGE,RC=RC)
+!
+!-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
+      WRITE(0,125)NTSD,NTSD*DT/3600.
+  125 FORMAT(' SOLVE_NMM: TIMESTEP IS ',I5,'   TIME IS ',F7.3,' HOURS')
+!-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
+!      WRITE(MESSAGE,*)' SOLVE_NMM CALLED: TIMESTEP IS ',NTSD            &
+!     &         ,' FCST TIME IS',TRIM(message)
+!      CALL WRF_MESSAGE(MESSAGE)
+!-----------------------------------------------------------------------
       CALL WRF_GET_MYPROC(MYPE)
-      CALL WRF_GET_DM_COMMUNICATOR ( mpi_comm_world )
+      CALL WRF_GET_DM_COMMUNICATOR(MPI_COMM_COMP)
+      CALL WRF_GET_NPROC(NPES)
+!-----------------------------------------------------------------------
 !
       btim=timef()
 !
-      IF(NTSD.EQ.0)THEN
+!-----------------------------------------------------------------------
+!***  ZERO OUT ACCUMULATED QUANTITIES WHEN NEEDED.
+!-----------------------------------------------------------------------
+!
+      CALL BUCKETS(NTSD,NPREC,NSRFC,NRDSW,NRDLW,NHEAT,NPHS              &
+     &            ,ACPREC,CUPREC,ACSNOW,ACSNOM,SSROFF,BGROFF            &
+     &            ,SFCEVP,POTEVP,SFCSHX,SFCLHX,SUBSHX,SNOPCX            &
+     &            ,SFCUVX,POTFLX                                        &
+     &            ,ARDSW,ASWIN,ASWOUT,ASWTOA                            &
+     &            ,ARDLW,ALWIN,ALWOUT,ALWTOA                            &
+     &            ,AVCNVC,AVRAIN,TCUCN,TRAIN                            &
+     &            ,IDS,IDE,JDS,JDE,KDS,KDE                              &
+     &            ,IMS,IME,JMS,JME,KMS,KME                              &
+     &            ,ITS,ITE,JTS,JTE,KTS,KTE)
+!-----------------------------------------------------------------------
+!
+      IF(NTSD==0)THEN
         FIRST=.TRUE.
-      btimx=timef()
+!       call hpm_init()
+        btimx=timef()
+!
+!-----------------------------------------------------------------------
 #ifdef DM_PARALLEL
 #    include "HALO_NMM_A.inc"
 #endif
-      exch_tim=exch_tim+timef()-btimx
+!-----------------------------------------------------------------------
+!***  USE THE FOLLOWING VARIABLES TO KEEP TRACK OF EXCHANGE TIMES.
+!-----------------------------------------------------------------------
+        exch_tim=exch_tim+timef()-btimx
+        this_tim=timef()-btimx
+        call mpi_allreduce(this_tim,et_max,1,mpi_real,mpi_max           &
+     &                    ,mpi_comm_comp,irtn)
+        exch_tim_max=exch_tim_max+et_max
+!-----------------------------------------------------------------------
+!
         GO TO 2003
       ENDIF
-
 !
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
@@ -293,15 +332,19 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
 !-----------------------------------------------------------------------
 !
       btimx=timef()
+!-----------------
 #ifdef DM_PARALLEL
 #    include "HALO_NMM_D.inc"
 #endif
+!-----------------
       exch_tim=exch_tim+timef()-btimx
-
-      CALL wrf_debug ( 100 , 'nmm: in pdte' )
-
+      this_tim=timef()-btimx
+      call mpi_allreduce(this_tim,et_max,1,mpi_real,mpi_max             &
+     &                  ,mpi_comm_comp,irtn)
+      exch_tim_max=exch_tim_max+et_max
+!
       btimx=timef()
-
+!
       CALL PDTE(                                                        &
 #ifdef DM_PARALLEL
      &            GRID,                                                 &
@@ -314,24 +357,28 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
      &           ,IDS,IDF,JDS,JDF,KDS,KDE                               &
      &           ,IMS,IME,JMS,JME,KMS,KME                               &
      &           ,ITS,ITE,JTS,JTE,KTS,KTE)
+
       pdte_tim=pdte_tim+timef()-btimx
-      CALL wrf_debug ( 100 , 'nmm: out of pdte' )
 !
 !-----------------------------------------------------------------------
 !***  ADVECTION OF T, U, AND V
 !-----------------------------------------------------------------------
 !
       btimx=timef()
+!-----------------
 #ifdef DM_PARALLEL
 #    include "HALO_NMM_F.inc"
 #    include "HALO_NMM_F1.inc"
 #endif
+!-----------------
       exch_tim=exch_tim+timef()-btimx
-
-      CALL wrf_debug ( 100 , 'nmm: in adve' )
-
+      this_tim=timef()-btimx
+      call mpi_allreduce(this_tim,et_max,1,mpi_real,mpi_max             &
+     &                  ,mpi_comm_comp,irtn)
+      exch_tim_max=exch_tim_max+et_max
+!
       btimx=timef()
-
+!
       CALL ADVE(NTSD,DT,DETA1,DETA2,PDTOP                               &
      &         ,CURV,F,FAD,F4D,EM_LOC,EMT_LOC,EN,ENT,DX_NMM,DY_NMM      &
      &         ,HTM,HBM2,VTM,VBM2,LMH,LMV                               &
@@ -346,21 +393,24 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
      &         ,IDS,IDF,JDS,JDF,KDS,KDE                                 &
      &         ,IMS,IME,JMS,JME,KMS,KME                                 &
      &         ,ITS,ITE,JTS,JTE,KTS,KTE)
+!
       adve_tim=adve_tim+timef()-btimx
-
-      CALL wrf_debug ( 100 , 'nmm: out of adve' )
-
+!     if(ntsd<=21)then
+!       call twr(t,0,'t1',ntsd,mype,npes,mpi_comm_comp                  &
+!    &                ,ids,ide,jds,jde,kds,kde                         &
+!    &                ,ims,ime,jms,jme,kms,kme                         &
+!    &                ,its,ite,jts,jte,kts,kte)
+!     endif
+!
 !-----------------------------------------------------------------------
 !***  PRESSURE TENDENCY, ETA/SIGMADOT, VERTICAL PART OF OMEGA-ALPHA TERM
 !-----------------------------------------------------------------------
 !
-      CALL wrf_debug ( 100 , 'nmm: in vtoa' )
-
       btimx=timef()
-
+!
       CALL VTOA(                                                        &
 #ifdef DM_PARALLEL
-     &          grid,                                                   &
+     &          GRID,                                                   &
 #endif
      &          NTSD,DT,PT,ETA2                                         &
      &         ,HTM,HBM2,EF4T                                           &
@@ -370,18 +420,15 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
      &         ,IDS,IDF,JDS,JDF,KDS,KDE                                 &
      &         ,IMS,IME,JMS,JME,KMS,KME                                 &
      &         ,ITS,ITE,JTS,JTE,KTS,KTE)
+!
       vtoa_tim=vtoa_tim+timef()-btimx
-
-      CALL wrf_debug ( 100 , 'nmm: out of vtoa' )
-
+!
 !-----------------------------------------------------------------------
 !***  VERTICAL ADVECTION OF HEIGHT
 !-----------------------------------------------------------------------
 !
-      CALL wrf_debug ( 100 , 'nmm: in vadz' )
-
       btimx=timef()
-
+!
       CALL VADZ(NTSD,DT,FIS,SIGMA,DFL,HTM,HBM2                          &
      &         ,DETA1,DETA2,PDTOP                                       &
      &         ,PINT,PDSL,PDSLO,PETDT                                   &
@@ -392,23 +439,25 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
      &         ,ITS,ITE,JTS,JTE,KTS,KTE)
 
       vadz_tim=vadz_tim+timef()-btimx
-
-      CALL wrf_debug ( 100 , 'nmm: out of vadz' )
 !
 !-----------------------------------------------------------------------
 !***  HORIZONTAL ADVECTION OF HEIGHT
 !-----------------------------------------------------------------------
 !
       btimx=timef()
+!-----------------
 #ifdef DM_PARALLEL
 #    include "HALO_NMM_G.inc"
 #endif
+!-----------------
       exch_tim=exch_tim+timef()-btimx
-
-      CALL wrf_debug ( 100 , 'nmm: in hadz' )
-
+      this_tim=timef()-btimx
+      call mpi_allreduce(this_tim,et_max,1,mpi_real,mpi_max             &
+     &                  ,mpi_comm_comp,irtn)
+      exch_tim_max=exch_tim_max+et_max
+!
       btimx=timef()
-
+!
       CALL HADZ(NTSD,DT,HYDRO,HTM,HBM2,DETA1,DETA2,PDTOP                &
      &         ,DX_NMM,DY_NMM,FAD                                       &
      &         ,FEW,FNS,FNE,FSE                                         &
@@ -417,24 +466,27 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
      &         ,IDS,IDF,JDS,JDF,KDS,KDE                                 &
      &         ,IMS,IME,JMS,JME,KMS,KME                                 &
      &         ,ITS,ITE,JTS,JTE,KTS,KTE)
+!
       hadz_tim=hadz_tim+timef()-btimx
-
-      CALL wrf_debug ( 100 , 'nmm: out of hadz' )
 !
 !-----------------------------------------------------------------------
 !***  ADVECTION OF W
 !-----------------------------------------------------------------------
 !
       btimx=timef()
+!-----------------
 #ifdef DM_PARALLEL
 #    include "HALO_NMM_H.inc"
 #endif
+!-----------------
       exch_tim=exch_tim+timef()-btimx
-
-      CALL wrf_debug ( 100 , 'nmm: in eps' )
-
+      this_tim=timef()-btimx
+      call mpi_allreduce(this_tim,et_max,1,mpi_real,mpi_max             &
+     &                  ,mpi_comm_comp,irtn)
+      exch_tim_max=exch_tim_max+et_max
+!
       btimx=timef()
-
+!
       CALL EPS(NTSD,DT,HYDRO,DX_NMM,DY_NMM,FAD                          &
      &        ,DETA1,DETA2,PDTOP,PT                                     &
      &        ,HTM,HBM2,HBM3,LMH                                        &
@@ -446,17 +498,16 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
      &        ,IDS,IDF,JDS,JDF,KDS,KDE                                  &
      &        ,IMS,IME,JMS,JME,KMS,KME                                  &
      &        ,ITS,ITE,JTS,JTE,KTS,KTE)
+!
       eps_tim=eps_tim+timef()-btimx
-
-      CALL wrf_debug ( 100 , 'nmm: out of eps' )
 !
 !-----------------------------------------------------------------------
 !***  ADVECTION OF Q, TKE, AND CLOUD WATER
 !-----------------------------------------------------------------------
 !
-      IF(MOD(NTSD,IDTAD).EQ.0)THEN
-        CALL wrf_debug ( 100 , 'nmm: in vad2' )
+      IF(MOD(NTSD,IDTAD)==0)THEN
         btimx=timef()
+!
         CALL VAD2(NTSD,DT,IDTAD,DX_NMM,DY_NMM                           &
      &           ,AETA1,AETA2,DETA1,DETA2,PDSL,PDTOP                    &
      &           ,HBM2,LMH                                              &
@@ -468,27 +519,30 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
      &           ,IDS,IDF,JDS,JDF,KDS,KDE                               &
      &           ,IMS,IME,JMS,JME,KMS,KME                               &
      &           ,ITS,ITE,JTS,JTE,KTS,KTE)
+!
         vad2_tim=vad2_tim+timef()-btimx
-
-        CALL wrf_debug ( 100 , 'nmm: out of vad2' )
       ENDIF
 !
 !-----------------------------------------------------------------------
 !
-      IF(MOD(NTSD,IDTAD).EQ.0)THEN
-
+      IF(MOD(NTSD,IDTAD)==0)THEN
         btimx=timef()
+!-----------------
 #ifdef DM_PARALLEL
 #    include "HALO_NMM_I.inc"
 #endif
+!-----------------
         exch_tim=exch_tim+timef()-btimx
-
-        CALL wrf_debug ( 100 , 'nmm: in had2' )
+        this_tim=timef()-btimx
+        call mpi_allreduce(this_tim,et_max,1,mpi_real,mpi_max           &
+     &                    ,mpi_comm_comp,irtn)
+        exch_tim_max=exch_tim_max+et_max
+!
         btimx=timef()
-
+!
         CALL HAD2(                                                     &
 #if defined(DM_PARALLEL)
-     &            grid%domdesc,                                        &
+     &            GRID%DOMDESC,                                        &
 #endif
      &            NTSD,DT,IDTAD,DX_NMM,DY_NMM                          &
      &           ,AETA1,AETA2,DETA1,DETA2,PDSL,PDTOP                   &
@@ -501,77 +555,72 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
      &           ,IDS,IDF,JDS,JDF,KDS,KDE                              &
      &           ,IMS,IME,JMS,JME,KMS,KME                              &
      &           ,ITS,ITE,JTS,JTE,KTS,KTE)
+!
         had2_tim=had2_tim+timef()-btimx
-        CALL wrf_debug ( 100 , 'nmm: out of had2' )
       ENDIF
 !
 !----------------------------------------------------------------------
 !***  RADIATION
 !----------------------------------------------------------------------
 !
-      IF(MOD(NTSD,NRADS).EQ.0.OR.MOD(NTSD,NRADL).EQ.0)THEN
-
+      IF(MOD(NTSD,NRADS)==0.OR.MOD(NTSD,NRADL)==0)THEN
         btimx=timef()
-	
-         
-        CALL wrf_debug ( 100 , 'solve_nmm: calling radiation ' )
+!
         CALL RADIATION(NTSD,DT,JULDAY,JULYR,IHRST,NPHS,GLAT,GLON       &
      &                ,NRADS,NRADL                                     &
      &                ,DETA1,DETA2,AETA1,AETA2,ETA1,ETA2,PDTOP,PT      &
      &                ,PD,RES,PINT,T,Q,CWM,THS,ALBEDO,EPSR             &
      &                ,F_ICE,F_RAIN                                    &
-!    &                ,SM,HBM2,LMH,ZERO_3D,MOIST,N_MOIST,RESTRT        &
      &                ,SM,HBM2,LMH,ZERO_3D,N_MOIST,RESTRT              &
      &                ,RLWTT,RSWTT,RLWIN,RSWIN,RSWOUT                  &
      &                ,TOTSWDN,TOTLWDN,RLWTOA,RSWTOA,CZMEAN            &
      &                ,CFRACL,CFRACM,CFRACH,SIGT4                      &
      &                ,ACFRST,NCFRST,ACFRCV,NCFRCV                     &
-     &                ,CUPPT,VEGFRA,SNO,HTOP,HBOT                      &
-     &                ,CONFIG_FLAGS                                    &
+     &                ,CUPPT,VEGFRC,SNO                                &
+     &                ,HTOP,HBOT,HTOPD,HBOTD,HTOPS,HBOTS               &
+     &                ,GRID,CONFIG_FLAGS                               &
      &                ,IDS,IDF,JDS,JDF,KDS,KDE                         &
      &                ,IMS,IME,JMS,JME,KMS,KME                         &
      &                ,ITS,ITE,JTS,JTE,KTS,KTE)
+!
         radiation_tim=radiation_tim+timef()-btimx
-        CALL wrf_debug ( 100 , 'solve_nmm: back from radiation ' )
       ENDIF
-
 !
 !----------------------------------------------------------------------
 !***  APPLY TEMPERATURE TENDENCY DUE TO RADIATION
 !----------------------------------------------------------------------
 !
       btimx=timef()
-
-      CALL wrf_debug ( 100 , 'solve_nmm: calling rdtemp ' )
+!
       CALL RDTEMP(NTSD,DT,JULDAY,JULYR,IHRST,GLAT,GLON                 &
      &           ,CZEN,CZMEAN,T,RSWTT,RLWTT,HTM,HBM2                   &
      &           ,IDS,IDF,JDS,JDF,KDS,KDE                              &
      &           ,IMS,IME,JMS,JME,KMS,KME                              &
      &           ,ITS,ITE,JTS,JTE,KTS,KTE)
+!
       rdtemp_tim=rdtemp_tim+timef()-btimx
-      CALL wrf_debug ( 100 , 'solve_nmm: back from rdtemp ' )
-
 !
 !----------------------------------------------------------------------
 !***  TURBULENT PROCESSES 
 !----------------------------------------------------------------------
 !
-      IF(MOD(NTSD,NPHS).EQ.0)THEN
+      IF(MOD(NTSD,NPHS)==0)THEN
+!
         btimx=timef()
-
-        CALL wrf_debug ( 100 , 'solve_nmm: calling turbl ' )
-        CALL TURBL(GRID                                                &
-     &            ,NTSD,DT,NPHS,RESTRT                                 &
+!
+        CALL TURBL(NTSD,DT,NPHS,RESTRT                                 &
      &            ,N_MOIST,NUM_SOIL_LAYERS,SLDPTH,DZSOIL               &
      &            ,DETA1,DETA2,AETA1,AETA2,ETA1,ETA2,PDTOP,PT          &
-     &            ,SM,LMH,HTM,VTM,HBM2,VBM2,DX_NMM,DFL                 &
+!    &            ,SM,LMH,HTM,VTM,HBM2,VBM2,DX_NMM,DFL                 &
+     &            ,SM,LMH,HTM,VTM,HBM2,VBM2,DX_NMM,DFRLG               &
      &            ,CZEN,CZMEAN,SIGT4,TOTLWDN,TOTSWDN,RADOT             &
-     &            ,PD,RES,PINT,T,Q,CWM,F_ICE,F_RAIN,Q2,U,V             &
-     &            ,THS,SST,PREC,SNO,ZERO_3D                            &
-     &            ,FIS,Z0,Z0BASE,USTAR,PBLH,LPBL,AKHS,AKMS             &
+     &            ,PD,RES,PINT,T,Q,CWM,F_ICE,F_RAIN,SR                 &
+     &            ,Q2,U,V,THS,SST,PREC,SNO,ZERO_3D                     &
+     &            ,FIS,Z0,Z0BASE,USTAR,PBLH,LPBL                       &
+     &            ,EXCH_H,AKHS,AKMS                                    &
      &            ,THZ0,QZ0,UZ0,VZ0,QS                                 &
      &            ,STC,SMC,CMC,SMSTAV,SMSTOT,SSROFF,BGROFF             &
-     &            ,IVGTYP,ISLTYP,VEGFRA,SHDMIN,SHDMAX,GRNFLX           &
+     &            ,IVGTYP,ISLTYP,VEGFRC,SHDMIN,SHDMAX,GRNFLX           &
      &            ,SFCEXC,ACSNOW,ACSNOM,SNOPCX,SICE,TG,SOILTB          &
      &            ,ALBASE,MXSNAL,ALBEDO,SH2O,SI,EPSR                   &
      &            ,U10,V10,TH10,Q10,TSHLTR,QSHLTR,PSHLTR               &
@@ -580,103 +629,140 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
      &            ,APHTIM,ARDSW,ARDLW,ASRFC                            &
      &            ,RSWOUT,RSWTOA,RLWTOA                                &
      &            ,ASWIN,ASWOUT,ASWTOA,ALWIN,ALWOUT,ALWTOA             &
-     &            ,UZ0H,VZ0H,DUDT,DVDT                                 & !jm
-     &            ,PSFC                                                & !jm
-     &            ,CONFIG_FLAGS                                        &
+     &            ,UZ0H,VZ0H,DUDT,DVDT                                 & 
+     &            ,GRID,CONFIG_FLAGS                                   &
      &            ,IHE,IHW,IVE,IVW                                     &
      &            ,IDS,IDF,JDS,JDF,KDS,KDE                             &
      &            ,IMS,IME,JMS,JME,KMS,KME                             &
      &            ,ITS,ITE,JTS,JTE,KTS,KTE)
+!
         turbl_tim=turbl_tim+timef()-btimx
-        CALL wrf_debug ( 100 , 'solve_nmm: back from turbl ' )
-
+!
+        btimx=timef()
+!-----------------
+#ifdef DM_PARALLEL
+# include "HALO_NMM_TURBL_A.inc"
+#endif
+!-----------------
+#ifdef DM_PARALLEL
+# include "HALO_NMM_TURBL_B.inc"
+#endif
+!-----------------
+        exch_tim=exch_tim+timef()-btimx
+        this_tim=timef()-btimx
+        call mpi_allreduce(this_tim,et_max,1,mpi_real,mpi_max           &
+     &                    ,mpi_comm_comp,irtn)
+        exch_tim_max=exch_tim_max+et_max
+!
+!***  INTERPOLATE WINDS FROM H POINTS BACK TO V POINTS.
+!
+        btimx=timef()
+        CALL UV_H_TO_V(NTSD,DT,NPHS,UZ0H,VZ0H,UZ0,VZ0                   &
+     &                ,DUDT,DVDT,U,V,HBM2,VTM,IVE,IVW                   &
+     &                ,IDS,IDF,JDS,JDF,KDS,KDE                          &
+     &                ,IMS,IME,JMS,JME,KMS,KME                          &
+     &                ,ITS,ITE,JTS,JTE,KTS,KTE)
+        uv_htov_tim=uv_htov_tim+timef()-btimx
+!
 !----------------------------------------------------------------------
 !*** STORE ORIGINAL TEMPERATURE ARRAY
 !----------------------------------------------------------------------
-
+!
         btimx=timef()
+!-----------------
 #ifdef DM_PARALLEL
 #    include "HALO_NMM_J.inc"
 #endif
+!-----------------
         exch_tim=exch_tim+timef()-btimx
-
+        this_tim=timef()-btimx
+        call mpi_allreduce(this_tim,et_max,1,mpi_real,mpi_max           &
+     &                    ,mpi_comm_comp,irtn)
+        exch_tim_max=exch_tim_max+et_max
+!
         ICLTEND=-1
-        CALL wrf_debug ( 100 , 'nmm: in cltend' )
-
         btimx=timef()
- 
+! 
         CALL CLTEND(ICLTEND,NPHS,T,T_OLD,T_ADJ                         &
-                   ,IDS,IDF,JDS,JDF,KDS,KDE                            &
-                   ,IMS,IME,JMS,JME,KMS,KME                            &
-                   ,ITS,ITE,JTS,JTE,KTS,KTE)
-
+     &             ,IDS,IDF,JDS,JDF,KDS,KDE                            &
+     &             ,IMS,IME,JMS,JME,KMS,KME                            &
+     &             ,ITS,ITE,JTS,JTE,KTS,KTE)
+!
         cltend_tim=cltend_tim+timef()-btimx
-        CALL wrf_debug ( 100 , 'nmm: out of cltend' )
       ENDIF
 !
 !----------------------------------------------------------------------
 !***  CONVECTIVE PRECIPITATION
 !----------------------------------------------------------------------
-      IF(MOD(NTSD,NCNVC).EQ.0.AND.                                     &
+      IF(MOD(NTSD,NCNVC)==0.AND.                                       &
      &   CONFIG_FLAGS%CU_PHYSICS.EQ.KFETASCHEME)THEN
+!
         btimx=timef()
+!-----------------
 #ifdef DM_PARALLEL
 #    include "HALO_NMM_C.inc"
 #endif
+!-----------------
         exch_tim=exch_tim+timef()-btimx
+        this_tim=timef()-btimx
+        call mpi_allreduce(this_tim,et_max,1,mpi_real,mpi_max          &
+     &                    ,mpi_comm_comp,irtn)
+        exch_tim_max=exch_tim_max+et_max
       ENDIF
+!
       btimx=timef()
-      CALL wrf_debug ( 100 , 'solve_nmm: calling cucnvc' )
-      CALL CUCNVC(grid                                                 &
-     &           ,NTSD,DT,NCNVC,GPS,RESTRT,HYDRO                       &
-!    &           ,CLDEFI,LMH,MOIST,N_MOIST,ENSDIM                      &
-     &           ,CLDEFI,LMH,N_MOIST,ENSDIM                            &
-     &           ,DETA1,DETA2,AETA1,AETA2,ETA1,ETA2                    &
-     &           ,PDTOP,PT,PD,RES,PINT,T,Q,TCUCN                       &
-     &           ,OMGALF,U,V,VTM,W,Z,FIS,W0AVG                         &
-     &           ,PREC,ACPREC,CUPREC,CUPPT                             &
-     &           ,SM,HBM2,LPBL,HBOT,HTOP,CNVBOT,CNVTOP                 &
-     &           ,AVCNVC,ACUTIM,ZERO_3D,IHE,IHW                        &
-     &           ,CONFIG_FLAGS                                         &
-     &           ,IDS,IDF,JDS,JDF,KDS,KDE                              &
-     &           ,IMS,IME,JMS,JME,KMS,KME                              &
-     &           ,ITS,ITE,JTS,JTE,KTS,KTE)
-      cucnvc_tim=cucnvc_tim+timef()-btimx
-      CALL wrf_debug ( 100 , 'solve_nmm: back from cucnvc' )
+!
+      IF(NCNVC/=999)THEN
+        CALL CUCNVC(NTSD,DT,NCNVC,GPS,RESTRT,HYDRO                     &
+     &             ,CLDEFI,LMH,N_MOIST,ENSDIM                          &
+     &             ,DETA1,DETA2,AETA1,AETA2,ETA1,ETA2                  &
+     &             ,F_ICE,F_RAIN                                       &
+     &             ,PDTOP,PT,PD,RES,PINT,T,Q,CWM,TCUCN                 &
+     &             ,OMGALF,U,V,VTM,W,Z,FIS,W0AVG                       &
+     &             ,PREC,ACPREC,CUPREC,CUPPT                           &
+     &             ,SM,HBM2,LPBL,CNVBOT,CNVTOP                         &
+     &             ,HTOP,HBOT,HTOPD,HBOTD,HTOPS,HBOTS                  &
+     &             ,AVCNVC,ACUTIM,ZERO_3D,IHE,IHW                      &
+     &             ,GRID,CONFIG_FLAGS                                  &
+     &             ,IDS,IDF,JDS,JDF,KDS,KDE                            &
+     &             ,IMS,IME,JMS,JME,KMS,KME                            &
+     &             ,ITS,ITE,JTS,JTE,KTS,KTE)
+!
+        cucnvc_tim=cucnvc_tim+timef()-btimx
+      ENDIF
+!
 !----------------------------------------------------------------------
 !***  GRIDSCALE MICROPHYSICS (CONDENSATION & PRECIPITATION)
 !----------------------------------------------------------------------
 !
-      IF(MOD(NTSD,NPHS).EQ.0)THEN
+      IF(MOD(NTSD,NPHS)==0)THEN
         btimx=timef()
+!
         CALL GSMDRIVE(NTSD,DT,NPHS,N_MOIST                             &
      &               ,DX_NMM(ITS,JC),DY,LMH,SM,HBM2,FIS                &
      &               ,DETA1,DETA2,AETA1,AETA2,ETA1,ETA2                &
      &               ,PDTOP,PT,PD,RES,PINT,T,Q,CWM,TRAIN               &
      &               ,F_ICE,F_RAIN,F_RIMEF,SR                          &
-     &               ,PREC,ACPREC,ZERO_3D                              &
-     &               ,CONFIG_FLAGS                                     &
+     &               ,PREC,ACPREC,AVRAIN,ZERO_3D                       &
+     &               ,GRID,CONFIG_FLAGS                                &
      &               ,IDS,IDF,JDS,JDF,KDS,KDE                          &
      &               ,IMS,IME,JMS,JME,KMS,KME                          &
      &               ,ITS,ITE,JTS,JTE,KTS,KTE)
-
-      gsmdrive_tim=gsmdrive_tim+timef()-btimx
+!
+        gsmdrive_tim=gsmdrive_tim+timef()-btimx
 !----------------------------------------------------------------------
 !***  CALCULATE TEMP TENDENCIES AND RESTORE ORIGINAL TEMPS
 !----------------------------------------------------------------------
 !       btim=timef()
         ICLTEND=0
-        CALL wrf_debug ( 100 , 'nmm: in cltend' )
-
         btimx=timef()
-
+!
         CALL CLTEND(ICLTEND,NPHS,T,T_OLD,T_ADJ                         &
      &             ,IDS,IDF,JDS,JDF,KDS,KDE                            &
      &             ,IMS,IME,JMS,JME,KMS,KME                            &
      &             ,ITS,ITE,JTS,JTE,KTS,KTE)
-
+!
         cltend_tim=cltend_tim+timef()-btimx
-        CALL wrf_debug ( 100 , 'nmm: out of cltend' )
       ENDIF
 !
 !----------------------------------------------------------------------
@@ -684,31 +770,33 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
 !----------------------------------------------------------------------
 !
       ICLTEND=1
-      CALL wrf_debug ( 100 , 'nmm: in cltend' )
-
       btimx=timef()
-
+!
       CALL CLTEND(ICLTEND,NPHS,T,T_OLD,T_ADJ                           &
      &           ,IDS,IDF,JDS,JDF,KDS,KDE                              &
      &           ,IMS,IME,JMS,JME,KMS,KME                              &
      &           ,ITS,ITE,JTS,JTE,KTS,KTE)
+!
       cltend_tim=cltend_tim+timef()-btimx
-      CALL wrf_debug ( 100 , 'nmm: out of cltend' )
 !
 !----------------------------------------------------------------------
 !***  LATERAL DIFFUSION
 !----------------------------------------------------------------------
 !
       btimx=timef()
+!-----------------
 #ifdef DM_PARALLEL
 #    include "HALO_NMM_K.inc"
 #endif
+!-----------------
       exch_tim=exch_tim+timef()-btimx
-
-      CALL wrf_debug ( 100 , 'nmm: in hdiff' )
-
+      this_tim=timef()-btimx
+      call mpi_allreduce(this_tim,et_max,1,mpi_real,mpi_max             &
+     &                  ,mpi_comm_comp,irtn)
+      exch_tim_max=exch_tim_max+et_max
+!
       btimx=timef()
-
+!
       CALL HDIFF(NTSD,DT,FIS,DY_NMM,HDAC,HDACV                         &
      &          ,HTM,HBM2,VTM,DETA1,SIGMA                              &
      &          ,T,Q,U,V,Q2,Z,W                                        &
@@ -716,24 +804,27 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
      &          ,IDS,IDF,JDS,JDF,KDS,KDE                               &
      &          ,IMS,IME,JMS,JME,KMS,KME                               &
      &          ,ITS,ITE,JTS,JTE,KTS,KTE)
+!
       hdiff_tim=hdiff_tim+timef()-btimx
-      CALL wrf_debug ( 100 , 'nmm: out of hdiff' )
-
 !
 !----------------------------------------------------------------------
 !***  UPDATING BOUNDARY VALUES AT HEIGHT POINTS
 !----------------------------------------------------------------------
 !
-      CALL wrf_debug ( 100 , 'nmm: in bocoh' )
-
       btimx=timef()
+!-----------------
 #ifdef DM_PARALLEL
 #    include "HALO_NMM_L.inc"
 #endif
+!-----------------
       exch_tim=exch_tim+timef()-btimx
-
+      this_tim=timef()-btimx
+      call mpi_allreduce(this_tim,et_max,1,mpi_real,mpi_max             &
+     &                  ,mpi_comm_comp,irtn)
+      exch_tim_max=exch_tim_max+et_max
+!
       btimx=timef()
-
+!
       CALL BOCOH(NTSD,DT,NEST,NUNIT_NBC,NBOCO,LAST_TIME,TSPH           &
      &          ,LB,ETA1,ETA2,PDTOP,PT,RES,HTM                         &
      &          ,PD_B,T_B,Q_B,U_B,V_B,Q2_B,CWM_B                       &
@@ -744,32 +835,33 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
      &          ,IDS,IDF,JDS,JDF,KDS,KDE                               &
      &          ,IMS,IME,JMS,JME,KMS,KME                               &
      &          ,ITS,ITE,JTS,JTE,KTS,KTE)
-      bocoh_tim=bocoh_tim+timef()-btimx
 !
-
-      CALL wrf_debug ( 100 , 'nmm: out of bocoh' )
+      bocoh_tim=bocoh_tim+timef()-btimx
 !
 !----------------------------------------------------------------------
 !***  IS IT TIME FOR A CHECK POINT ON THE MODEL HISTORY FILE?
 !----------------------------------------------------------------------
 !
  2003 CONTINUE
-
 !
 !----------------------------------------------------------------------
 !***  PRESSURE GRD, CORIOLIS, DIVERGENCE, AND HORIZ PART OF OMEGA-ALPHA
 !----------------------------------------------------------------------
 !
       btimx=timef()
+!-----------------
 #ifdef DM_PARALLEL
 #    include "HALO_NMM_A.inc"
 #endif
+!-----------------
       exch_tim=exch_tim+timef()-btimx
-
-      CALL wrf_debug ( 100 , 'nmm: in pfdht' )
+      this_tim=timef()-btimx
+      call mpi_allreduce(this_tim,et_max,1,mpi_real,mpi_max             &
+     &                  ,mpi_comm_comp,irtn)
+      exch_tim_max=exch_tim_max+et_max
 !
       btimx=timef()
-
+!
       CALL PFDHT(NTSD,LAST_TIME,PT,DETA1,DETA2,PDTOP,RES,FIS           &
      &          ,HYDRO,SIGMA,FIRST,DX_NMM,DY_NMM                       &
      &          ,HTM,HBM2,VTM,VBM2,VBM3                                &
@@ -780,40 +872,51 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
      &          ,IDS,IDF,JDS,JDF,KDS,KDE                               &
      &          ,IMS,IME,JMS,JME,KMS,KME                               &
      &          ,ITS,ITE,JTS,JTE,KTS,KTE)
+!
       pfdht_tim=pfdht_tim+timef()-btimx
-      CALL wrf_debug ( 100 , 'nmm: out of pfdht' )
-
 !
 !----------------------------------------------------------------------
 !***  DIVERGENCE DAMPING
 !----------------------------------------------------------------------
 !
       btimx=timef()
+!-----------------
 #ifdef DM_PARALLEL
 #    include "HALO_NMM_B.inc"
 #endif
+!-----------------
       exch_tim=exch_tim+timef()-btimx
-
-      CALL wrf_debug ( 100 , 'nmm: in ddamp' )
+      this_tim=timef()-btimx
+      call mpi_allreduce(this_tim,et_max,1,mpi_real,mpi_max            &
+     &                  ,mpi_comm_comp,irtn)
+      exch_tim_max=exch_tim_max+et_max
+!
       btimx=timef()
+!
       CALL DDAMP(NTSD,DT,DETA1,DETA2,PDSL,PDTOP,DIV,HBM2,VTM           &
      &          ,T,U,V,DDMPU,DDMPV                                     &
      &          ,IHE,IHW,IVE,IVW,INDX3_WRK                             &
      &          ,IDS,IDF,JDS,JDF,KDS,KDE                               &
      &          ,IMS,IME,JMS,JME,KMS,KME                               &
      &          ,ITS,ITE,JTS,JTE,KTS,KTE)
+!
       ddamp_tim=ddamp_tim+timef()-btimx
-      CALL wrf_debug ( 100 , 'nmm: out of ddamp' )
 !----------------------------------------------------------------------
 !----------------------------------------------------------------------
 !
-      IF(FIRST.AND.NTSD.EQ.0)THEN
+      IF(FIRST.AND.NTSD==0)THEN
         FIRST=.FALSE.
-      btimx=timef()
+        btimx=timef()
+!-----------------
 #ifdef DM_PARALLEL
 #    include "HALO_NMM_A.inc"
 #endif
-      exch_tim=exch_tim+timef()-btimx
+!-----------------
+        exch_tim=exch_tim+timef()-btimx
+        this_tim=timef()-btimx
+        call mpi_allreduce(this_tim,et_max,1,mpi_real,mpi_max          &
+     &                    ,mpi_comm_comp,irtn)
+        exch_tim_max=exch_tim_max+et_max
         GO TO 2000
       ENDIF
 !
@@ -822,14 +925,19 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
 !----------------------------------------------------------------------
 !
       btimx=timef()
+!-----------------
 #ifdef DM_PARALLEL
 #    include "HALO_NMM_C.inc"
 #endif
+!-----------------
       exch_tim=exch_tim+timef()-btimx
-
-      CALL wrf_debug ( 100 , 'nmm: in bocov' )
-
+      this_tim=timef()-btimx
+      call mpi_allreduce(this_tim,et_max,1,mpi_real,mpi_max            &
+     &                  ,mpi_comm_comp,irtn)
+      exch_tim_max=exch_tim_max+et_max
+!
       btimx=timef()
+!
       CALL BOCOV(NTSD,DT,LB,VTM,U_B,V_B,U_BT,V_BT                      &
      &          ,U,V                                                   &
      &          ,IJDS,IJDE,SPEC_BDY_WIDTH                              &
@@ -837,41 +945,74 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
      &          ,IDS,IDF,JDS,JDF,KDS,KDE                               &
      &          ,IMS,IME,JMS,JME,KMS,KME                               &
      &          ,ITS,ITE,JTS,JTE,KTS,KTE )
+!
       bocov_tim=bocov_tim+timef()-btimx
-        CALL wrf_debug ( 100 , 'nmm: out of bocov' )
-      solve_tim=solve_tim+timef()-btim
+!
 !----------------------------------------------------------------------
-#if 0
+!***  COPY THE NMM VARIABLE Q2 TO THE WRF VARIABLE TKE_MYJ
+!----------------------------------------------------------------------
+!
+!     DO J=JTS,JTE
+!     DO K=KTS,KTE
+!     DO I=ITS,ITE
+!       TKE_MYJ(I,K,J)=0.5*Q2(I,K,J) !TKE is q squared over 2
+!     ENDDO
+!     ENDDO
+!     ENDDO
+!
+!----------------------------------------------------------------------
+!
+      solve_tim=solve_tim+timef()-btim
+!
+!----------------------------------------------------------------------
+!***  PRINT TIMING VARIABLES WHEN DESIRED.
+!----------------------------------------------------------------------
+!
       sum_tim=pdte_tim+adve_tim+vtoa_tim+vadz_tim+hadz_tim+eps_tim     &
      &       +vad2_tim+had2_tim+radiation_tim+rdtemp_tim+turbl_tim     &
      &       +cltend_tim+cucnvc_tim+gsmdrive_tim+hdiff_tim             &
-     &       +bocoh_tim+pfdht_tim+ddamp_tim+bocov_tim+exch_tim
-!     if(ntsd.ge.9000 .and. mod(ntsd,100) .eq. 0)then
-      write(0,*)' ntsd=',ntsd,' solve_tim=',solve_tim*1.e-3 &
-     &         ,' sum_tim=',sum_tim*1.e-3
-      write(0,*)' pdte_tim=',pdte_tim*1.e-3,' pct=',pdte_tim/sum_tim*100.
-      write(0,*)' adve_tim=',adve_tim*1.e-3,' pct=',adve_tim/sum_tim*100.
-      write(0,*)' vtoa_tim=',vtoa_tim*1.e-3,' pct=',vtoa_tim/sum_tim*100.
-      write(0,*)' vadz_tim=',vadz_tim*1.e-3,' pct=',vadz_tim/sum_tim*100.
-      write(0,*)' hadz_tim=',hadz_tim*1.e-3,' pct=',hadz_tim/sum_tim*100.
-      write(0,*)' eps_tim=',eps_tim*1.e-3,' pct=',eps_tim/sum_tim*100.
-      write(0,*)' vad2_tim=',vad2_tim*1.e-3,' pct=',vad2_tim/sum_tim*100.
-      write(0,*)' had2_tim=',had2_tim*1.e-3,' pct=',had2_tim/sum_tim*100.
-      write(0,*)' radiation_tim=',radiation_tim*1.e-3,' pct=',radiation_tim/sum_tim*100.
-      write(0,*)' rdtemp_tim=',rdtemp_tim*1.e-3,' pct=',rdtemp_tim/sum_tim*100.
-      write(0,*)' turbl_tim=',turbl_tim*1.e-3,' pct=',turbl_tim/sum_tim*100.
-      write(0,*)' cltend_tim=',cltend_tim*1.e-3,' pct=',cltend_tim/sum_tim*100.
-      write(0,*)' cucnvc_tim=',cucnvc_tim*1.e-3,' pct=',cucnvc_tim/sum_tim*100.
-      write(0,*)' gsmdrive_tim=',gsmdrive_tim*1.e-3,' pct=',gsmdrive_tim/sum_tim*100.
-      write(0,*)' hdiff_tim=',hdiff_tim*1.e-3,' pct=',hdiff_tim/sum_tim*100.
-      write(0,*)' bocoh_tim=',bocoh_tim*1.e-3,' pct=',bocoh_tim/sum_tim*100.
-      write(0,*)' pfdht_tim=',pfdht_tim*1.e-3,' pct=',pfdht_tim/sum_tim*100.
-      write(0,*)' ddamp_tim=',ddamp_tim*1.e-3,' pct=',ddamp_tim/sum_tim*100.
-      write(0,*)' bocov_tim=',bocov_tim*1.e-3,' pct=',bocov_tim/sum_tim*100.
-      write(0,*)' exch_tim=',exch_tim*1.e-3,' pct=',exch_tim/sum_tim*100.
-!      endif
-#endif
-
+     &       +bocoh_tim+pfdht_tim+ddamp_tim+bocov_tim+uv_htov_tim      &
+     &       +exch_tim
+!
+      n_print_time=nint(3600./dt)   ! Print timings once per hour
+!
+      if(mod(ntsd,n_print_time)==0)then
+        write(0,*)' ntsd=',ntsd,' solve_tim=',solve_tim*1.e-3          &
+     &           ,' sum_tim=',sum_tim*1.e-3
+        write(0,*)' pdte_tim=',pdte_tim*1.e-3,' pct=',pdte_tim/sum_tim*100.
+        write(0,*)' adve_tim=',adve_tim*1.e-3,' pct=',adve_tim/sum_tim*100.
+        write(0,*)' vtoa_tim=',vtoa_tim*1.e-3,' pct=',vtoa_tim/sum_tim*100.
+        write(0,*)' vadz_tim=',vadz_tim*1.e-3,' pct=',vadz_tim/sum_tim*100.
+        write(0,*)' hadz_tim=',hadz_tim*1.e-3,' pct=',hadz_tim/sum_tim*100.
+        write(0,*)' eps_tim=',eps_tim*1.e-3,' pct=',eps_tim/sum_tim*100.
+        write(0,*)' vad2_tim=',vad2_tim*1.e-3,' pct=',vad2_tim/sum_tim*100.
+        write(0,*)' had2_tim=',had2_tim*1.e-3,' pct=',had2_tim/sum_tim*100.
+        write(0,*)' radiation_tim=',radiation_tim*1.e-3,' pct=',radiation_tim/sum_tim*100.
+        write(0,*)' rdtemp_tim=',rdtemp_tim*1.e-3,' pct=',rdtemp_tim/sum_tim*100.
+        write(0,*)' turbl_tim=',turbl_tim*1.e-3,' pct=',turbl_tim/sum_tim*100.
+        write(0,*)' cltend_tim=',cltend_tim*1.e-3,' pct=',cltend_tim/sum_tim*100.
+        write(0,*)' cucnvc_tim=',cucnvc_tim*1.e-3,' pct=',cucnvc_tim/sum_tim*100.
+        write(0,*)' gsmdrive_tim=',gsmdrive_tim*1.e-3,' pct=',gsmdrive_tim/sum_tim*100.
+        write(0,*)' hdiff_tim=',hdiff_tim*1.e-3,' pct=',hdiff_tim/sum_tim*100.
+        write(0,*)' bocoh_tim=',bocoh_tim*1.e-3,' pct=',bocoh_tim/sum_tim*100.
+        write(0,*)' pfdht_tim=',pfdht_tim*1.e-3,' pct=',pfdht_tim/sum_tim*100.
+        write(0,*)' ddamp_tim=',ddamp_tim*1.e-3,' pct=',ddamp_tim/sum_tim*100.
+        write(0,*)' bocov_tim=',bocov_tim*1.e-3,' pct=',bocov_tim/sum_tim*100.
+        write(0,*)' uv_h_to_v_tim=',uv_htov_tim*1.e-3,' pct=',uv_htov_tim/sum_tim*100.
+        write(0,*)' exch_tim=',exch_tim*1.e-3,' pct=',exch_tim/sum_tim*100.
+        call time_stats(exch_tim,'exchange',ntsd,mype,npes,mpi_comm_comp)
+        write(0,*)' exch_tim_max=',exch_tim_max*1.e-3
+!
+        call field_stats(t,mype,mpi_comm_comp                          &
+     &                  ,ids,ide,jds,jde,kds,kde                       &
+     &                  ,ims,ime,jms,jme,kms,kme                       &
+     &                  ,its,ite,jts,jte,kts,kte)
+      endif
+!
+!     if(ntsd==1200)then
+!       call hpm_print()
+!     endif
+!     if(last_time)then
 #define COPY_OUT
 #include <nmm_scalar_derefs.inc>
 
@@ -885,18 +1026,19 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
 !----------------------------------------------------------------------
       END SUBROUTINE SOLVE_NMM
 !----------------------------------------------------------------------
+!**********************************************************************
 !----------------------------------------------------------------------
       SUBROUTINE TWR(ARRAY,KK,FIELD,NTSD,MYPE,NPES,MPI_COMM_COMP       &
      &              ,IDS,IDE,JDS,JDE,KDS,KDE                           &
      &              ,IMS,IME,JMS,JME,KMS,KME                           &
      &              ,ITS,ITE,JTS,JTE,KTS,KTE)
+!----------------------------------------------------------------------
 !**********************************************************************
       USE MODULE_EXT_INTERNAL
 !
+      INCLUDE "mpif.h"
 !----------------------------------------------------------------------
       IMPLICIT NONE
-!----------------------------------------------------------------------
-      INCLUDE "mpif.h"
 !----------------------------------------------------------------------
       INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                    &
      &                     ,IMS,IME,JMS,JME,KMS,KME                    &
@@ -926,26 +1068,26 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
 !**********************************************************************
 !----------------------------------------------------------------------
 !
-      IF(NTSD.LE.9)THEN
+      IF(NTSD<=9)THEN
         FMT='(I1.1)'
         NLEN=1
-      ELSEIF(NTSD.LE.99)THEN
+      ELSEIF(NTSD<=99)THEN
         FMT='(I2.2)'
         NLEN=2
-      ELSEIF(NTSD.LE.999)THEN
+      ELSEIF(NTSD<=999)THEN
         FMT='(I3.3)'
         NLEN=3
-      ELSEIF(NTSD.LE.9999)THEN
+      ELSEIF(NTSD<=9999)THEN
         FMT='(I4.4)'
         NLEN=4
-      ELSEIF(NTSD.LE.99999)THEN
+      ELSEIF(NTSD<=99999)THEN
         FMT='(I5.5)'
         NLEN=5
       ENDIF
       WRITE(TIMESTEP,FMT)NTSD
       FILENAME=FIELD//'_'//TIMESTEP(1:NLEN)
 !
-      IF(MYPE.EQ.0)THEN
+      IF(MYPE==0)THEN
         CALL INT_GET_FRESH_HANDLE(IUNIT)
         CLOSE(IUNIT)
         OPEN(UNIT=IUNIT,FILE=FILENAME,FORM='UNFORMATTED',IOSTAT=IER)
@@ -957,7 +1099,7 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
       DO 500 K=KDE-1,KDS,-1   !Write LM layers top down for checking
 !----------------------------------------------------------------------
 !
-      IF(MYPE.EQ.0)THEN
+      IF(MYPE==0)THEN
         DO J=JTS,JTE
         DO I=ITS,ITE
           TWRITE(I,J)=ARRAY(I,K,J)
@@ -1025,11 +1167,11 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
 !
       CALL MPI_BARRIER(MPI_COMM_COMP,IRTN)
 !
-      IF(MYPE.EQ.0)THEN
+      IF(MYPE==0)THEN
 !
         DO J=JDS,JDE-1
           IENDX=IDE-1
-          IF(MOD(J,2).EQ.0)IENDX=IENDX-1
+          IF(MOD(J,2)==0)IENDX=IENDX-1
           WRITE(IUNIT)(TWRITE(I,J),I=1,IENDX)
         ENDDO
 !
@@ -1038,7 +1180,448 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
 !----------------------------------------------------------------------
   500 CONTINUE
 !
-      IF(MYPE.EQ.0)CLOSE(IUNIT)
+      IF(MYPE==0)CLOSE(IUNIT)
 !----------------------------------------------------------------------
 !
       END SUBROUTINE TWR
+!----------------------------------------------------------------------
+!**********************************************************************
+!----------------------------------------------------------------------
+      SUBROUTINE EXIT(NAME,T,Q,U,V,Q2,NTSD,MYPE,MPI_COMM_COMP          &
+     &               ,IDS,IDE,JDS,JDE,KDS,KDE                          &
+     &               ,IMS,IME,JMS,JME,KMS,KME                          &
+     &               ,ITS,ITE,JTS,JTE,KTS,KTE)
+!----------------------------------------------------------------------
+!**********************************************************************
+      USE MODULE_EXT_INTERNAL
+!
+      INCLUDE "mpif.h"
+!----------------------------------------------------------------------
+      IMPLICIT NONE
+!----------------------------------------------------------------------
+      INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                    &
+     &                     ,IMS,IME,JMS,JME,KMS,KME                    &
+     &                     ,ITS,ITE,JTS,JTE,KTS,KTE                    &
+     &                     ,MYPE,MPI_COMM_COMP,NTSD      
+!
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: T,Q,U,V,Q2
+      CHARACTER(*),INTENT(IN) :: NAME
+!
+      INTEGER :: I,J,K,IEND,IERR,IRET
+      CHARACTER(256) :: ERRMESS
+      LOGICAL :: E_BDY,S_BDY
+!----------------------------------------------------------------------
+      IRET=0
+  100 FORMAT(' EXIT ',A,' AT NTSD=',I5)
+      IEND=ITE
+      S_BDY=(JTS==JDS)
+      E_BDY=(ITE==JDE)
+!
+      DO J=JTS,JTE
+      DO K=KTS,KTE
+      IF(E_BDY)IEND=ITE-1
+!
+      DO I=ITS,IEND
+        IF(T(I,K,J)>330..OR.T(I,K,J)<180..OR.T(I,K,J)/=T(I,K,J))THEN
+          WRITE(0,100)NAME,NTSD
+          WRITE(0,200)I,J,K,T(I,K,J),MYPE,NTSD
+  200     FORMAT(' BAD VALUE I=',I3,' J=',I3,' K=',I2,' T=',E12.5      &
+     &,          ' MYPE=',I3,' NTSD=',I5)
+          IRET=666
+          return
+!         WRITE(ERRMESS,205)NAME,T(I,K,J),I,K,J,MYPE
+  205     FORMAT(' EXIT ',A,' TEMPERATURE=',E12.5                      &
+     &,          ' AT (',I3,',',I2,',',I3,')',' MYPE=',I3)
+!         CALL WRF_ERROR_FATAL(ERRMESS)
+!         CALL MPI_ABORT(MPI_COMM_WORLD,1,IERR)
+        ELSEIF(Q(I,K,J)<-1.E-4.OR.Q(I,K,J)>30.E-3                      &
+     &         .OR.Q(I,K,J)/=Q(I,K,J))THEN
+          WRITE(0,100)NAME,NTSD
+          WRITE(0,300)I,J,K,Q(I,K,J),MYPE,NTSD
+  300     FORMAT(' BAD VALUE I=',I3,' J=',I3,' K=',I2,' Q=',E12.5      &
+     &,          ' MYPE=',I3,' NTSD=',I5)
+          IRET=666
+          return
+!         WRITE(ERRMESS,305)NAME,Q(I,K,J),I,K,J,MYPE
+  305     FORMAT(' EXIT ',A,' SPEC HUMIDITY=',E12.5                    &
+     &,          ' AT (',I3,',',I2,',',I3,')',' MYPE=',I3)
+!         CALL WRF_ERROR_FATAL(ERRMESS)
+!         CALL MPI_ABORT(MPI_COMM_WORLD,1,IERR)
+        ELSEIF(ABS(U(I,K,J))>125..OR.ABS(V(I,K,J))>125.                &
+     &         .OR.U(I,K,J)/=U(I,K,J).OR.V(I,K,J)/=V(I,K,J))THEN
+          WRITE(0,100)NAME,NTSD
+          WRITE(0,400)I,J,K,U(I,K,J),V(I,K,J),MYPE,NTSD
+  400     FORMAT(' BAD VALUE I=',I3,' J=',I3,' K=',I2,' U=',E12.5      &
+     &,          ' V=',E12.5,' MYPE=',I3,' NTSD=',I5)
+          IRET=666
+          return
+!         WRITE(ERRMESS,405)NAME,U(I,K,J),V(I,K,J),I,K,J,MYPE
+  405     FORMAT(' EXIT ',A,' U=',E12.5,' V=',E12.5                    &
+     &,          ' AT (',I3,',',I2,',',I3,')',' MYPE=',I3)
+!         CALL WRF_ERROR_FATAL(ERRMESS)
+!         CALL MPI_ABORT(MPI_COMM_WORLD,1,IERR)
+        ENDIF
+      ENDDO
+      ENDDO
+      ENDDO
+!----------------------------------------------------------------------
+      END SUBROUTINE EXIT
+!----------------------------------------------------------------------
+!**********************************************************************
+!----------------------------------------------------------------------
+      SUBROUTINE TIME_STATS(TIME_LCL,NAME,NTSD,MYPE,NPES,MPI_COMM_COMP)
+!----------------------------------------------------------------------
+!**********************************************************************
+      USE MODULE_EXT_INTERNAL
+!
+      INCLUDE "mpif.h"
+!----------------------------------------------------------------------
+      IMPLICIT NONE
+!----------------------------------------------------------------------
+      INTEGER,INTENT(IN) :: MPI_COMM_COMP,MYPE,NPES,NTSD
+      REAL,INTENT(IN) :: TIME_LCL
+!
+      CHARACTER(*),INTENT(IN) :: NAME
+!
+!*** LOCAL VARIABLES
+!
+      INTEGER,DIMENSION(MPI_STATUS_SIZE) :: JSTAT
+      INTEGER,DIMENSION(MPI_STATUS_SIZE,4) :: STATUS_ARRAY
+      INTEGER,ALLOCATABLE,DIMENSION(:) :: ID_PE,IPE_SORT
+!
+      INTEGER :: IPE,IPE_MAX,IPE_MEDIAN,IPE_MIN,IRECV,IRTN,ISEND       &
+     &          ,N,N_MEDIAN,NLEN
+!
+      REAL,ALLOCATABLE,DIMENSION(:) :: TIME,SORT_TIME
+      REAL,DIMENSION(2) :: REMOTE
+      REAL :: TIME_MAX,TIME_MEAN,TIME_MEDIAN,TIME_MIN
+!
+      CHARACTER(5) :: TIMESTEP
+      CHARACTER(6) :: FMT
+      CHARACTER(25) :: TITLE
+!----------------------------------------------------------------------
+!**********************************************************************
+!----------------------------------------------------------------------
+!
+      IF(NTSD<=9)THEN
+        FMT='(I1.1)'
+        NLEN=1
+      ELSEIF(NTSD<=99)THEN
+        FMT='(I2.2)'
+        NLEN=2
+      ELSEIF(NTSD<=999)THEN
+        FMT='(I3.3)'
+        NLEN=3
+      ELSEIF(NTSD<=9999)THEN
+        FMT='(I4.4)'
+        NLEN=4
+      ELSEIF(NTSD<=99999)THEN
+        FMT='(I5.5)'
+        NLEN=5
+      ENDIF
+      WRITE(TIMESTEP,FMT)NTSD
+      TITLE=NAME//'_'//TIMESTEP(1:NLEN)
+!
+!----------------------------------------------------------------------
+!
+      IF(MYPE==0)THEN
+        ALLOCATE(TIME(1:NPES))
+        ALLOCATE(SORT_TIME(1:NPES))
+        ALLOCATE(ID_PE(1:NPES))
+        ALLOCATE(IPE_SORT(1:NPES))
+!
+        TIME(1)=TIME_LCL
+        ID_PE(1)=MYPE
+!
+!***  COLLECT TIMES AND PE VALUES FROM OTHER PEs
+!
+        DO IPE=1,NPES-1
+          CALL MPI_RECV(REMOTE,2,MPI_REAL,IPE,IPE                      &
+     &                 ,MPI_COMM_COMP,JSTAT,IRECV)
+!
+          TIME(IPE+1)=REMOTE(1)
+          ID_PE(IPE+1)=NINT(REMOTE(2))
+        ENDDO
+!
+!***  NOW GET STATS.
+!***  FIRST THE MAX, MIN, AND MEAN TIMES.
+!
+        TIME_MEAN=0.
+        TIME_MAX=-1.
+        TIME_MIN=1.E10
+        IPE_MAX=-1
+        IPE_MIN=-1
+!
+        DO N=1,NPES
+          TIME_MEAN=TIME_MEAN+TIME(N)
+!
+          IF(TIME(N)>TIME_MAX)THEN
+            TIME_MAX=TIME(N)
+            IPE_MAX=ID_PE(N)
+          ENDIF
+!
+          IF(TIME(N)<TIME_MIN)THEN
+            TIME_MIN=TIME(N)
+            IPE_MIN=ID_PE(N)
+          ENDIF
+!
+        ENDDO
+!
+        TIME_MAX=TIME_MAX*1.E-3
+        TIME_MIN=TIME_MIN*1.E-3
+        TIME_MEAN=TIME_MEAN*1.E-3/REAL(NPES)
+!
+!***  THEN THE MEDIAN TIME.
+!
+        CALL SORT(TIME,NPES,SORT_TIME,IPE_SORT)
+        N_MEDIAN=(NPES+1)/2
+        TIME_MEDIAN=SORT_TIME(N_MEDIAN)*1.E-3
+        IPE_MEDIAN=IPE_SORT(N_MEDIAN)
+!
+!----------------------------------------------------------------------
+      ELSE
+!
+!***  SEND TIME AND PE VALUE TO PE0.
+!
+        REMOTE(1)=TIME_LCL
+        REMOTE(2)=REAL(MYPE)
+!
+        CALL MPI_SEND(REMOTE,2,MPI_REAL,0,MYPE,MPI_COMM_COMP,ISEND)
+!
+      ENDIF
+!----------------------------------------------------------------------
+!
+      CALL MPI_BARRIER(MPI_COMM_COMP,IRTN)
+!
+!***  WRITE RESULTS
+!
+      IF(MYPE==0)THEN
+        WRITE(0,100)TITLE
+        WRITE(0,105)TIME_MAX,IPE_MAX
+        WRITE(0,110)TIME_MIN,IPE_MIN
+        WRITE(0,115)TIME_MEDIAN,IPE_MEDIAN
+        WRITE(0,120)TIME_MEAN
+  100   FORMAT(' Time for ',A)
+  105   FORMAT(' Maximum=',G11.5,' for PE ',I2.2)
+  110   FORMAT(' Minimum=',G11.5,' for PE ',I2.2)
+  115   FORMAT(' Median =',G11.5,' for PE ',I2.2)
+  120   FORMAT(' Mean   =',G11.5)
+      ENDIF
+!----------------------------------------------------------------------
+!
+      END SUBROUTINE TIME_STATS
+!
+!----------------------------------------------------------------------
+!**********************************************************************
+!----------------------------------------------------------------------
+      SUBROUTINE SORT(DATA,NPES,DATA_SORTED,IPE_SORTED)
+!----------------------------------------------------------------------
+!***
+!***  SORT DATA FROM MULTIPLE PEs.  SEND BACK THE SORTED DATA ITEMS
+!***  ALONG WITH THE ASSOCIATED TASK IDs.
+!***
+!----------------------------------------------------------------------
+      IMPLICIT NONE
+!----------------------------------------------------------------------
+      INTEGER,INTENT(IN) :: NPES
+      REAL,DIMENSION(NPES),INTENT(IN) :: DATA
+!
+      INTEGER,DIMENSION(NPES),INTENT(OUT) :: IPE_SORTED
+      REAL,DIMENSION(NPES),INTENT(OUT) :: DATA_SORTED
+!----------------------------------------------------------------------
+      TYPE :: DATA_LINK
+        REAL :: VALUE
+        INTEGER :: IPE
+        TYPE(DATA_LINK),POINTER :: NEXT_VALUE
+      END TYPE
+!----------------------------------------------------------------------
+!
+!***  LOCAL VARIABLES
+!
+!----------------------------------------------------------------------
+      INTEGER :: ISTAT,N
+!
+      TYPE(DATA_LINK),POINTER :: HEAD,TAIL  ! Smallest, largest
+      TYPE(DATA_LINK),POINTER :: PTR_NEW    ! Each new value
+      TYPE(DATA_LINK),POINTER :: PTR1,PTR2  ! Working pointers
+!----------------------------------------------------------------------
+!**********************************************************************
+!----------------------------------------------------------------------
+      pe_loop: DO N=1,NPES
+        ALLOCATE(PTR_NEW,STAT=ISTAT)  ! Location for next data items
+        PTR_NEW%VALUE=DATA(N)
+        PTR_NEW%IPE=N-1
+!
+!----------------------------------------------------------------------
+!***  DETERMINE WHERE IN LIST TO INSERT VALUE.
+!***  FIRST THE INITIAL DATA VALUE.
+!----------------------------------------------------------------------
+!
+!       main: IF(.NOT.ASSOCIATED(HEAD))THEN
+        main: IF(N==1)THEN
+          HEAD=>PTR_NEW
+          TAIL=>HEAD
+          NULLIFY(PTR_NEW%NEXT_VALUE)
+!
+!----------------------------------------------------------------------
+!***  THE NEW VALUE IS LESS THAN THE SMALLEST VALUE ALREADY SORTED.
+!----------------------------------------------------------------------
+!
+        ELSE
+          check: IF(PTR_NEW%VALUE<HEAD%VALUE)THEN
+            PTR_NEW%NEXT_VALUE=>HEAD
+            HEAD=>PTR_NEW
+!
+!----------------------------------------------------------------------
+!***  THE NEW VALUE IS GREATER THAN THE LARGEST VALUE ALREADY SORTED.
+!----------------------------------------------------------------------
+!
+          ELSEIF(PTR_NEW%VALUE>=TAIL%VALUE)THEN
+            TAIL%NEXT_VALUE=>PTR_NEW  ! This is what connects the former
+                                      ! final value in the list to
+                                      ! the new value being appended.
+            TAIL=>PTR_NEW
+            NULLIFY(TAIL%NEXT_VALUE)
+!
+!----------------------------------------------------------------------
+!***  THE NEW VALUE IS IN BETWEEN VALUES ALREADY SORTED.
+!----------------------------------------------------------------------
+!
+          ELSE
+            PTR1=>HEAD
+            PTR2=>PTR1%NEXT_VALUE
+!
+            search: DO
+              IF((PTR_NEW%VALUE>=PTR1%VALUE).AND.                      &
+     &           (PTR_NEW%VALUE<PTR2%VALUE))THEN
+                PTR_NEW%NEXT_VALUE=>PTR2
+                PTR1%NEXT_VALUE=>PTR_NEW
+                EXIT search
+              ENDIF
+!
+              PTR1=>PTR2
+              PTR2=>PTR2%NEXT_VALUE
+            ENDDO search
+!
+          ENDIF check
+!
+        ENDIF main
+!
+      ENDDO pe_loop
+!
+!----------------------------------------------------------------------
+!***  COLLECT THE SORTED NUMBERS FROM THE LINKED LIST.
+!----------------------------------------------------------------------
+!
+      PTR1=>HEAD
+!
+      DO N=1,NPES
+!       IF(.NOT.ASSOCIATED(PTR_NEW))EXIT
+        DATA_SORTED(N)=PTR1%VALUE
+        IPE_SORTED(N)=PTR1%IPE
+        PTR1=>PTR1%NEXT_VALUE
+      ENDDO
+!
+      DEALLOCATE(PTR_NEW)
+      NULLIFY (HEAD,TAIL,PTR1,PTR2)
+!----------------------------------------------------------------------
+      END SUBROUTINE SORT
+!----------------------------------------------------------------------
+!**********************************************************************
+!----------------------------------------------------------------------
+      SUBROUTINE FIELD_STATS(FIELD,MYPE,MPI_COMM_COMP                  &
+     &                      ,IDS,IDE,JDS,JDE,KDS,KDE                   &
+     &                      ,IMS,IME,JMS,JME,KMS,KME                   &
+     &                      ,ITS,ITE,JTS,JTE,KTS,KTE)
+!----------------------------------------------------------------------
+!***
+!***  GENERATE STANDARD STATISTICS FOR THE DESIRED FIELD.
+!***
+!----------------------------------------------------------------------
+      INCLUDE "mpif.h"
+!----------------------------------------------------------------------
+      IMPLICIT NONE
+!----------------------------------------------------------------------
+!
+      INTEGER,INTENT(IN) :: MPI_COMM_COMP,MYPE
+      INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                    &
+     &                     ,IMS,IME,JMS,JME,KMS,KME                    &
+     &                     ,ITS,ITE,JTS,JTE,KTS,KTE
+!
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: FIELD
+!
+!----------------------------------------------------------------------
+!***  LOCAL
+!----------------------------------------------------------------------
+!
+      INTEGER,PARAMETER :: DOUBLE=SELECTED_REAL_KIND(15,300)
+!
+      INTEGER :: I,IEND,IRTN,I_BY_J,J,K,KFLIP
+!
+      REAL :: FIKJ,FMAXK,FMINK
+      REAL(KIND=DOUBLE) :: F_MEAN,POINTS,RMS,ST_DEV,SUMFK,SUMF2K
+      REAL,DIMENSION(KTS:KTE) :: FMAX,FMAX_0,FMIN,FMIN_0
+      REAL(KIND=DOUBLE),DIMENSION(KTS:KTE) :: SUMF,SUMF_0,SUMF2,SUMF2_0
+!----------------------------------------------------------------------
+!
+      I_BY_J=(IDE-IDS)*(JDE-JDS)-(JDE-JDS-1)/2  ! This assumes that
+                                                ! IDE AND JDE are each
+                                                ! one greater than the
+                                                ! true grid size.
+!
+      layer_loop:  DO K=KTS,KTE
+!
+        FMAXK=-1.E10
+        FMINK=1.E10
+        SUMFK=0.
+        SUMF2K=0.
+!
+        DO J=JTS,JTE
+          IEND=MIN(ITE,IDE-1)
+          IF(MOD(J,2)==0.AND.ITE==IDE-1)IEND=IEND-1
+          DO I=ITS,IEND
+            FIKJ=FIELD(I,K,J)
+            FMAXK=MAX(FMAXK,FIKJ)
+            FMINK=MIN(FMINK,FIKJ)
+            SUMFK=SUMFK+FIKJ
+            SUMF2K=SUMF2K+FIKJ*FIKJ
+          ENDDO
+        ENDDO
+!
+        FMAX(K)=FMAXK
+        FMIN(K)=FMINK
+        SUMF(K)=SUMFK
+        SUMF2(K)=SUMF2K
+!
+      ENDDO layer_loop
+!
+!----------------------------------------------------------------------
+!***  GLOBAL STATS
+!----------------------------------------------------------------------
+!
+      CALL MPI_REDUCE(SUMF,SUMF_0,KTE,MPI_REAL8,MPI_SUM,0              &
+     &               ,MPI_COMM_COMP,IRTN)
+      CALL MPI_REDUCE(SUMF2,SUMF2_0,KTE,MPI_REAL8,MPI_SUM,0            &
+     &               ,MPI_COMM_COMP,IRTN)
+      CALL MPI_REDUCE(FMAX,FMAX_0,KTE,MPI_REAL,MPI_MAX,0               &
+     &               ,MPI_COMM_COMP,IRTN)
+      CALL MPI_REDUCE(FMIN,FMIN_0,KTE,MPI_REAL,MPI_MIN,0               &
+     &               ,MPI_COMM_COMP,IRTN)
+!
+      IF(MYPE==0)THEN
+        POINTS=I_BY_J
+        DO K=KTE,KTS,-1
+          F_MEAN=SUMF_0(K)/POINTS
+          ST_DEV=SQRT((POINTS*SUMF2_0(K)-SUMF_0(K)*SUMF_0(K))/         &
+     &                (POINTS*(POINTS-1)))
+          RMS=SQRT(SUMF2_0(K)/POINTS)
+          KFLIP=KTE-K+1
+          WRITE(0,101)KFLIP,FMAX_0(KFLIP),FMIN_0(KFLIP)
+          WRITE(0,102)F_MEAN,ST_DEV,RMS
+  101     FORMAT(' LAYER=',I2,' MAX=',E13.6,' MIN=',E13.6)
+  102     FORMAT(9X,' MEAN=',E13.6,' STDEV=',E13.6,' RMS=',E13.6)
+        ENDDO
+      ENDIF
+!----------------------------------------------------------------------
+      END SUBROUTINE FIELD_STATS
+!----------------------------------------------------------------------

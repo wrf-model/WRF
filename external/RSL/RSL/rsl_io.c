@@ -348,6 +348,7 @@ RSL_READ ( unit_p, iotag_p, base, d_p, type_p, glen, llen  )
      order that the data were packed on the monitor */
   cursor = 0 ;
 #ifndef vpp
+
   for ( jg = 0 ; jg < nlen ; jg++ )
   {
     for ( ig = 0 ; ig < mlen ; ig++ )
@@ -391,11 +392,11 @@ RSL_READ ( unit_p, iotag_p, base, d_p, type_p, glen, llen  )
           }
           break ;
         case IO3D_KIJ :
-          min = jg - joffset ;
-          maj = ig - ioffset ;
+          min = ig - ioffset ;
+          maj = jg - joffset ;
           for ( k = 0 ; k < glen[0] ; k++ )
           {
-            dex = base+tlen*(min+llen[1]*(maj+k*llen[2])) ;
+            dex = base+tlen*(k+llen[0]*(min+maj*llen[1])) ;
             bcopy(&(pbuf[cursor]),dex,tlen) ;
             cursor += tlen ;
           }
@@ -485,11 +486,11 @@ RSL_READ ( unit_p, iotag_p, base, d_p, type_p, glen, llen  )
         case IO3D_KIJ :
           for ( ig = 0 ; ig < mlen ; ig++ )
           {
-            min = jg - joffset ;
-            maj = ig - ioffset ;
+            min = ig - ioffset ;
+            maj = jg - joffset ;
             for ( k = 0 ; k < glen[0] ; k++ )
             {
-              dex = base+tlen*(min+llen[1]*(maj+k*llen[2])) ;
+              dex = base+tlen*(k+llen[0]*(min+maj*llen[1])) ;
               bcopy(&(pbuf[cursor]),dex,tlen) ;
               cursor += tlen ;
             }
@@ -944,11 +945,11 @@ RSL_WRITE ( unit_p, iotag_p, base, d_p, type_p, glen, llen  )
         case IO3D_KIJ :
           for ( ig = *is_write ; ig <= *ie_write ; ig++ )
           {
-            min = jg - joffset ;
-            maj = ig - ioffset ;
+            min = ig - ioffset ;
+            maj = jg - joffset ;
             for ( k = 0 ; k < glen[0] ; k++ )
             {
-              dex = base+tlen*(min+llen[1]*(maj+k*llen[2])) ;
+              dex = base+tlen*(k+llen[0]*(min+maj*llen[1])) ;
               bcopy(dex,&(pbuf[cursor]),tlen) ;
               cursor += tlen ;
             }
@@ -1002,11 +1003,11 @@ RSL_WRITE ( unit_p, iotag_p, base, d_p, type_p, glen, llen  )
             }
             break ;
           case IO3D_KIJ :
-            min = jg - joffset ;
-            maj = ig - ioffset ;
+            min = ig - ioffset ;
+            maj = jg - joffset ;
             for ( k = 0 ; k < glen[0] ; k++ )
             {
-              dex = base+tlen*(min+llen[1]*(maj+k*llen[2])) ;
+              dex = base+tlen*(k+llen[0]*(min+maj*llen[1])) ;
               bcopy(dex,&(pbuf[cursor]),tlen) ;
               cursor += tlen ;
             }

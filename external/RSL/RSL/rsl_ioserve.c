@@ -306,7 +306,7 @@ handle_read_request( req, resp_me, pbuf_me )
           case IO3D_KIJ :
             for ( k = 0 ; k < req->glen[0] ; k++ )
             {
-              bcopy(&(rbuf[typelen*(jg+req->glen[1]*(ig+k*req->glen[2]))]),
+              bcopy(&(rbuf[typelen*(k+req->glen[0]*(ig+jg*req->glen[1]))]),
                     &(pbuf[cursor]),
                     typelen) ;
               cursor += typelen ;
@@ -398,7 +398,7 @@ handle_read_request( req, resp_me, pbuf_me )
             {
               for ( k = 0 ; k < req->glen[0] ; k++ )
               {
-                bcopy(&(rbuf[typelen*(jg+req->glen[1]*(ig+k*req->glen[2]))]),
+                bcopy(&(rbuf[typelen*(k+req->glen[0]*(ig+jg*req->glen[1]))]),
                       &(pbuf[cursor]),
                       typelen) ;
                 cursor += typelen ;
@@ -595,7 +595,7 @@ handle_write_request( req, nelem, psize_me, pbuf_me )
             }
             else
             {
-              for ( ig = is_write ; ig <= is_write ; ig++ )
+              for ( ig = is_write ; ig <= ie_write ; ig++ )
               {
                 bcopy(&(pbuf[cursor]),
                       &(wbuf[typelen*(ig+jg*req->glen[0])]),
@@ -608,7 +608,7 @@ handle_write_request( req, nelem, psize_me, pbuf_me )
           case IO2D_JI_RAW :
           case IO2D_JI_PORTAL :
           case IO2D_JI_88 :
-            for ( ig = is_write ; ig <= is_write ; ig++ )
+            for ( ig = is_write ; ig <= ie_write ; ig++ )
             {
               bcopy(&(pbuf[cursor]),
                     &(wbuf[typelen*(jg+ig*req->glen[0])]),
@@ -635,7 +635,7 @@ handle_write_request( req, nelem, psize_me, pbuf_me )
             {
               for ( k = 0 ; k < req->glen[2] ; k++ )   /* note reversal of i and k on vpp */
               {
-                for ( ig = is_write ; ig <= is_write ; ig++ )
+                for ( ig = is_write ; ig <= ie_write ; ig++ )
                 {
                   bcopy(&(pbuf[cursor]),
                         &(wbuf[typelen*(ig+req->glen[0]*(jg+k*req->glen[1]))]),
@@ -651,7 +651,7 @@ handle_write_request( req, nelem, psize_me, pbuf_me )
           case IO3D_JIK_88 :
             for ( k = 0 ; k < req->glen[2] ; k++ )
             {
-              for ( ig = is_write ; ig <= is_write ; ig++ )
+              for ( ig = is_write ; ig <= ie_write ; ig++ )
               {
                 bcopy(&(pbuf[cursor]),
                       &(wbuf[typelen*(jg+req->glen[0]*(ig+k*req->glen[1]))]),
@@ -661,12 +661,12 @@ handle_write_request( req, nelem, psize_me, pbuf_me )
             }
             break ;
           case IO3D_KIJ :
-            for ( k = 0 ; k < req->glen[0] ; k++ )
+            for ( ig = is_write ; ig <= ie_write ; ig++ )
             {
-              for ( ig = is_write ; ig <= is_write ; ig++ )
+              for ( k = 0 ; k < req->glen[0] ; k++ )
               {
                 bcopy(&(pbuf[cursor]),
-                      &(wbuf[typelen*(jg+req->glen[1]*(ig+k*req->glen[2]))]),
+                      &(wbuf[typelen*(k+req->glen[0]*(ig+jg*req->glen[1]))]),
                       typelen) ;
                 cursor += typelen ;
               }
@@ -731,7 +731,7 @@ handle_write_request( req, nelem, psize_me, pbuf_me )
               for ( k = 0 ; k < req->glen[0] ; k++ )
               {
                 bcopy(&(pbuf[cursor]),
-                      &(wbuf[typelen*(jg+req->glen[1]*(ig+k*req->glen[2]))]),
+                      &(wbuf[typelen*(k+req->glen[0]*(ig+jg*req->glen[1]))]),
                       typelen) ;
                 cursor += typelen ;
               }

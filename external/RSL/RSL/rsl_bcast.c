@@ -894,9 +894,9 @@ RSL_MOVE_NEST ( d_p, n_p,  mdisp_p, ndisp_p )
 
   for ( j = 0 ; j < dinfo->len_n ; j++ )
     for ( i = 0 ; i < dinfo->len_m ; i++ )
-       if (    i + mdisp >= 0 && i + mdisp < dinfo->len_m 
-            && j + ndisp >= 0 && j + ndisp < dinfo->len_n ) {
-         children_p[ INDEX_2( j, i, dinfo->len_m ) ] = dinfo->domain[ INDEX_2( j + ndisp , i + mdisp, dinfo->len_m ) ].children_p ;
+       if (    i - mdisp >= 0 && i - mdisp < dinfo->len_m 
+            && j - ndisp >= 0 && j - ndisp < dinfo->len_n ) {
+         children_p[ INDEX_2( j, i, dinfo->len_m ) ] = dinfo->domain[ INDEX_2( j - ndisp , i - mdisp, dinfo->len_m ) ].children_p ;
        }
 
   for ( j = 0 ; j < dinfo->len_n ; j++ )
@@ -918,10 +918,12 @@ RSL_MOVE_NEST ( d_p, n_p,  mdisp_p, ndisp_p )
   {
     for ( i = 0 ; i < ninfo->len_m ; i++ )
     {
-      nid = POINTID( nest, i, j ) ;
+      nid = POINTID( nest, j, i ) ;
       mother_id = ninfo->domain[ INDEX_2( j, i, ninfo->len_m ) ].mother_id ;
       mother_id = POINTID(parent, (ID_JDEX( mother_id )) + ndisp, (ID_IDEX( mother_id )) + mdisp ) ;
       ninfo->domain[ INDEX_2( j, i, ninfo->len_m ) ].mother_id = mother_id ;
+      ninfo->domain[ INDEX_2( j, i, ninfo->len_m ) ].mother_P = 
+                       dinfo->domain[ INDEX_2( ID_JDEX( mother_id ), ID_IDEX( mother_id ), dinfo->len_m ) ].P ;
       cm = ninfo->domain[ INDEX_2( j, i, ninfo->len_m ) ].which_kid_am_i_m ;
       cn = ninfo->domain[ INDEX_2( j, i, ninfo->len_m ) ].which_kid_am_i_n ;
       if ( dinfo->domain[ INDEX_2( ID_JDEX( mother_id ), ID_IDEX( mother_id ), dinfo->len_m ) ].children_p != NULL ) {

@@ -7,11 +7,10 @@ OBJ = $(CORE_OBJ) rsl_mpi_compat.o mpi_init_f.o debug.o fort_doubleread.o fort_d
 HDR = $(CORE_HDR)
 TAR = $(CORE_TAR)
 
-CC = gcc
-FC = pgf77 -byteswapio
+IDIR=$(LINUX_MPIHOME)/include
+CC = $(LINUX_MPIHOME)/bin/mpicc
+FC = $(LINUX_MPIHOME)/bin/mpif77 -byteswapio
 
-MPIHOME=/usr/local/mpi
-IDIR=$(MPIHOME)/include
 
 LIB = 
 

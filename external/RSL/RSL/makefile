@@ -154,7 +154,7 @@ sunmpi :
 	$(MAKE) -f makefile.sunmpi $(MAKE_OPTS) all
 
 linux :
-	$(MAKE) -f makefile.linux $(MAKE_OPTS) all
+	$(MAKE) -f makefile.linux LINUX_MPIHOME=$(LINUX_MPIHOME) $(MAKE_OPTS) all
 
 stub :
 	@ if [ -f LAST_MADE ] ; then /bin/mv -f LAST_MADE LAST_MADE.bak ; fi

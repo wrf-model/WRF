@@ -16,6 +16,10 @@ MODULE module_ext_internal
   INTEGER, PARAMETER :: int_num_handles = 99
   LOGICAL, DIMENSION(int_num_handles) :: okay_for_io, int_handle_in_use, okay_to_commit
   INTEGER, DIMENSION(int_num_handles) :: int_num_bytes_to_write
+! first_operation is set to .TRUE. when a new handle is allocated 
+! or when open-for-write or open-for-read are committed.  It is set 
+! to .FALSE. when the first field is read or written.  
+  LOGICAL, DIMENSION(int_num_handles) :: first_operation
   CHARACTER*128, DIMENSION(int_num_handles) :: CurrentDateInFile
   REAL, POINTER    :: int_local_output_buffer(:)
   INTEGER          :: int_local_output_cursor
@@ -52,6 +56,7 @@ MODULE module_ext_internal
         CALL wrf_error_fatal("external/io_quilt/io_int.F90: int_get_fresh_handle() can not")
       ENDIF
       int_handle_in_use(i) = .TRUE.
+      first_operation(i) = .TRUE.
       NULLIFY ( int_local_output_buffer )
     END SUBROUTINE int_get_fresh_handle
 
@@ -65,6 +70,43 @@ MODULE module_ext_internal
          last_next_var( i ) = ' '
       ENDDO
     END SUBROUTINE init_module_ext_internal
+
+! Returns .TRUE. iff it is OK to write time-independent domain metadata to the 
+! file referenced by DataHandle.  If DataHandle is invalid, .FALSE. is 
+! returned.  
+LOGICAL FUNCTION int_ok_to_put_dom_ti( DataHandle )
+    include 'wrf_io_flags.h'
+    INTEGER, INTENT(IN) :: DataHandle 
+    CHARACTER*80 :: fname
+    INTEGER :: filestate
+    INTEGER :: Status
+    LOGICAL :: dryrun, first_output, retval
+    call ext_int_inquire_filename( DataHandle, fname, filestate, Status )
+    IF ( Status /= 0 ) THEN
+      retval = .FALSE.
+    ELSE
+      dryrun       = ( filestate .EQ. WRF_FILE_OPENED_NOT_COMMITTED )
+      first_output = int_is_first_operation( DataHandle )
+      retval = .NOT. dryrun .AND. first_output
+    ENDIF
+    int_ok_to_put_dom_ti = retval
+    RETURN
+END FUNCTION int_ok_to_put_dom_ti
+
+! Returns .TRUE. iff nothing has been read from or written to the file 
+! referenced by DataHandle.  If DataHandle is invalid, .FALSE. is returned.  
+LOGICAL FUNCTION int_is_first_operation( DataHandle )
+    INTEGER, INTENT(IN) :: DataHandle 
+    LOGICAL :: retval
+    retval = .FALSE.
+    IF ( int_valid_handle ( DataHandle ) ) THEN
+      IF ( int_handle_in_use( DataHandle ) ) THEN
+        retval = first_operation( DataHandle )
+      ENDIF
+    ENDIF
+    int_is_first_operation = retval
+    RETURN
+END FUNCTION int_is_first_operation
 
 END MODULE module_ext_internal
 
@@ -140,6 +182,7 @@ SUBROUTINE ext_int_open_for_write_commit( DataHandle , Status )
     ENDIF
   ENDIF
 
+  first_operation( DataHandle ) = .TRUE.
   Status = 0
 
   RETURN  
@@ -607,9 +650,12 @@ SUBROUTINE ext_int_put_dom_ti_real ( DataHandle,Element,   Data, Count,  Status 
 
   IF ( int_valid_handle( DataHandle ) ) THEN
     IF ( int_handle_in_use( DataHandle ) ) THEN
-      CALL int_gen_ti_header( hdrbuf, hdrbufsize, itypesize, rtypesize, &
-                              DataHandle, Element, Data, Count, int_dom_ti_real )
-      WRITE( unit=DataHandle ) hdrbuf
+      ! Do nothing unless it is time to write time-independent domain metadata.
+      IF ( int_ok_to_put_dom_ti( DataHandle ) ) THEN
+        CALL int_gen_ti_header( hdrbuf, hdrbufsize, itypesize, rtypesize, &
+                                DataHandle, Element, Data, Count, int_dom_ti_real )
+        WRITE( unit=DataHandle ) hdrbuf
+      ENDIF
     ENDIF
   ENDIF
   Status = 0
@@ -631,13 +677,17 @@ END SUBROUTINE ext_int_get_dom_ti_double
 
 !--- put_dom_ti_double
 SUBROUTINE ext_int_put_dom_ti_double ( DataHandle,Element,   Data, Count,  Status )
+  USE module_ext_internal
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
   real*8 ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_message('ext_int_put_dom_ti_double not supported yet')
+  ! Do nothing unless it is time to write time-independent domain metadata.
+  IF ( int_ok_to_put_dom_ti( DataHandle ) ) THEN
+    CALL wrf_message('ext_int_put_dom_ti_double not supported yet')
+  ENDIF
 RETURN
 END SUBROUTINE ext_int_put_dom_ti_double 
 
@@ -700,9 +750,12 @@ SUBROUTINE ext_int_put_dom_ti_integer ( DataHandle,Element,   Data, Count,  Stat
 !
   IF ( int_valid_handle ( Datahandle ) ) THEN
     IF ( int_handle_in_use( DataHandle ) ) THEN
-      CALL int_gen_ti_header( hdrbuf, hdrbufsize, itypesize, itypesize, &
-                              DataHandle, Element, Data, Count, int_dom_ti_integer )
-      WRITE( unit=DataHandle ) hdrbuf 
+      ! Do nothing unless it is time to write time-independent domain metadata.
+      IF ( int_ok_to_put_dom_ti( DataHandle ) ) THEN
+        CALL int_gen_ti_header( hdrbuf, hdrbufsize, itypesize, itypesize, &
+                                DataHandle, Element, Data, Count, int_dom_ti_integer )
+        WRITE( unit=DataHandle ) hdrbuf 
+      ENDIF
     ENDIF
   ENDIF
   Status = 0
@@ -724,13 +777,17 @@ END SUBROUTINE ext_int_get_dom_ti_logical
 
 !--- put_dom_ti_logical
 SUBROUTINE ext_int_put_dom_ti_logical ( DataHandle,Element,   Data, Count,  Status )
+  USE module_ext_internal
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
   logical ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_message('ext_int_put_dom_ti_logical not supported yet')
+  ! Do nothing unless it is time to write time-independent domain metadata.
+  IF ( int_ok_to_put_dom_ti( DataHandle ) ) THEN
+    CALL wrf_message('ext_int_put_dom_ti_logical not supported yet')
+  ENDIF
 RETURN
 END SUBROUTINE ext_int_put_dom_ti_logical 
 
@@ -791,9 +848,12 @@ SUBROUTINE ext_int_put_dom_ti_char ( DataHandle, Element,  Data,  Status )
 
   IF ( int_valid_handle ( Datahandle ) ) THEN
     IF ( int_handle_in_use( DataHandle ) ) THEN
-      CALL int_gen_ti_header_char( hdrbuf, hdrbufsize, itypesize,  &
-                                   DataHandle, Element, "", Data, int_dom_ti_char )
-      WRITE( unit=DataHandle ) hdrbuf 
+      ! Do nothing unless it is time to write time-independent domain metadata.
+      IF ( int_ok_to_put_dom_ti( DataHandle ) ) THEN
+        CALL int_gen_ti_header_char( hdrbuf, hdrbufsize, itypesize,  &
+                                     DataHandle, Element, "", Data, int_dom_ti_char )
+        WRITE( unit=DataHandle ) hdrbuf 
+      ENDIF
     ENDIF
   ENDIF
   Status = 0
@@ -1340,6 +1400,7 @@ SUBROUTINE ext_int_read_field ( DataHandle , DateStr , VarName , Field , FieldTy
 
 7717 CONTINUE
 
+  first_operation( DataHandle ) = .FALSE.
   RETURN
 
 END SUBROUTINE ext_int_read_field
@@ -1413,6 +1474,7 @@ SUBROUTINE ext_int_write_field ( DataHandle , DateStr , VarName , Field , FieldT
       CALL ifieldwrite( DataHandle, Field, MemoryStart, MemoryEnd, PatchStart, PatchEnd )
     ENDIF
   ENDIF
+  first_operation( DataHandle ) = .FALSE.
   Status = 0
   RETURN
 END SUBROUTINE ext_int_write_field

@@ -106,6 +106,10 @@ module wrf_phdf5_data
      character (VarNameLen), pointer       :: VarNames(:)
      integer                               :: CurrentVariable  !Only used for read
      integer                               :: NumVars
+! first_operation is set to .TRUE. when a new handle is allocated
+! or when open-for-write or open-for-read are committed.  It is set
+! to .FALSE. when the first field is read or written.
+     logical                               :: first_operation
   end type wrf_phdf5_data_handle
   type(wrf_phdf5_data_handle),target        :: WrfDataHandles(WrfDataHandleMax)
 
@@ -275,6 +279,7 @@ CONTAINS
     DH%Free      =.false.
     DH%Comm      = Comm
     DH%Write     =.false.
+    DH%first_operation  = .TRUE.
     Status       = WRF_NO_ERR
   end subroutine allocHandle
 
@@ -342,6 +347,54 @@ CONTAINS
     Status = WRF_NO_ERR
     return
   end subroutine SetUp_EnumID
+
+! Returns .TRUE. iff it is OK to write time-independent domain metadata to the
+! file referenced by DataHandle.  If DataHandle is invalid, .FALSE. is
+! returned.
+LOGICAL FUNCTION phdf5_ok_to_put_dom_ti( DataHandle )
+    use wrf_phdf5_data
+    include 'wrf_status_codes.h'
+    INTEGER, INTENT(IN) :: DataHandle
+    CHARACTER*80 :: fname
+    INTEGER :: filestate
+    INTEGER :: Status
+    LOGICAL :: dryrun, first_output, retval
+    call ext_phdf5_inquire_filename( DataHandle, fname, filestate, Status )
+    IF ( Status /= WRF_NO_ERR ) THEN
+      write(msg,*) 'Warning Status = ',Status,' in ',__FILE__, &
+                   ', line', __LINE__
+      call wrf_debug ( WARN , TRIM(msg) )
+      retval = .FALSE.
+    ELSE
+      dryrun       = ( filestate .EQ. WRF_FILE_OPENED_NOT_COMMITTED )
+      first_output = phdf5_is_first_operation( DataHandle )
+      retval = .NOT. dryrun .AND. first_output
+    ENDIF
+    phdf5_ok_to_put_dom_ti = retval
+    RETURN
+END FUNCTION phdf5_ok_to_put_dom_ti
+                                                                                
+! Returns .TRUE. iff nothing has been read from or written to the file
+! referenced by DataHandle.  If DataHandle is invalid, .FALSE. is returned.
+LOGICAL FUNCTION phdf5_is_first_operation( DataHandle )
+    use wrf_phdf5_data
+    INCLUDE 'wrf_status_codes.h'
+    INTEGER, INTENT(IN) :: DataHandle
+    TYPE(wrf_phdf5_data_handle) ,POINTER :: DH
+    INTEGER :: Status
+    LOGICAL :: retval
+    CALL GetDH( DataHandle, DH, Status )
+    IF ( Status /= WRF_NO_ERR ) THEN
+      write(msg,*) 'Warning Status = ',Status,' in ',__FILE__, &
+                   ', line', __LINE__
+      call wrf_debug ( WARN , TRIM(msg) )
+      retval = .FALSE.
+    ELSE
+      retval = DH%first_operation
+    ENDIF
+    phdf5_is_first_operation = retval
+    RETURN
+END FUNCTION phdf5_is_first_operation
 
 end module ext_phdf5_support_routines
 

@@ -57,6 +57,8 @@
     call wrf_debug ( WARN , msg)
     return
   endif
+! Do nothing unless it is time to write time-independent domain metadata.  
+IF ( ncd_ok_to_put_dom_ti( DataHandle ) ) THEN
   if(DH%FileStatus == WRF_FILE_NOT_OPENED) then
     Status = WRF_WARN_FILE_NOT_OPENED  
     write(msg,*) &
@@ -158,4 +160,5 @@
 'Fatal error BAD FILE STATUS in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__ 
     call wrf_debug ( FATAL , msg)
   endif
+ENDIF
   return

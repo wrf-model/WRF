@@ -21,6 +21,10 @@ module data_info
   LOGICAL, DIMENSION(maxFileHandles) :: committed, opened, used
   CHARACTER*128, DIMENSION(maxFileHandles) :: DataFile
   CHARACTER*128, DIMENSION(maxFileHandles) :: FileFd
+! first_operation is set to .TRUE. when a new handle is allocated
+! or when open-for-write or open-for-read are committed.  It is set
+! to .FALSE. when the first field is read or written.
+  LOGICAL, DIMENSION(maxFileHandles) :: first_operation
   CHARACTER*24 :: StartDate
   REAL, DIMENSION(1000) :: half_eta, full_eta
   REAL, DIMENSION(100) :: soil_depth, soil_thickness
@@ -45,6 +49,49 @@ module data_info
      CHARACTER*120 :: lastDateStr
   END TYPE prestype
   TYPE (prestype), DIMENSION(500) :: pressure
+
+CONTAINS
+
+! Returns .TRUE. iff it is OK to write time-independent domain metadata to the
+! file referenced by DataHandle.  If DataHandle is invalid, .FALSE. is
+! returned.
+LOGICAL FUNCTION yyy_ok_to_put_dom_ti( DataHandle )
+    include 'wrf_io_flags.h'
+    INTEGER, INTENT(IN) :: DataHandle
+    CHARACTER*80 :: fname
+    INTEGER :: filestate
+    INTEGER :: Status
+    LOGICAL :: dryrun, first_output, retval
+    retval = .FALSE.
+    IF ((DataHandle .GE. firstFileHandle) .AND. &
+        (DataHandle .LE. maxFileHandles)) THEN
+      IF (used(DataHandle)) THEN
+        call ext_yyy_inquire_filename( DataHandle, fname, filestate, Status )
+        dryrun       = ( filestate .EQ. WRF_FILE_OPENED_NOT_COMMITTED )
+        first_output = yyy_is_first_operation( DataHandle )
+        retval = .NOT. dryrun .AND. first_output
+      ENDIF
+    ENDIF
+    yyy_ok_to_put_dom_ti = retval
+    RETURN
+END FUNCTION yyy_ok_to_put_dom_ti
+
+! Returns .TRUE. iff nothing has been read from or written to the file
+! referenced by DataHandle.  If DataHandle is invalid, .FALSE. is returned.
+LOGICAL FUNCTION yyy_is_first_operation( DataHandle )
+    INTEGER, INTENT(IN) :: DataHandle
+    LOGICAL :: retval
+    retval = .FALSE.
+    IF ((DataHandle .GE. firstFileHandle) .AND. &
+        (DataHandle .LE. maxFileHandles)) THEN
+      IF (used(DataHandle)) THEN
+        retval = first_operation( DataHandle )
+      ENDIF
+    ENDIF
+    yyy_is_first_operation = retval
+    RETURN
+END FUNCTION yyy_is_first_operation
+
 end module data_info
 
 
@@ -121,6 +168,13 @@ SUBROUTINE ext_yyy_open_for_read_commit( DataHandle , Status )
   INTEGER ,       INTENT(IN ) :: DataHandle
   INTEGER ,       INTENT(OUT) :: Status
 
+  IF ((DataHandle .GE. firstFileHandle) .AND. &
+      (DataHandle .LE. maxFileHandles)) THEN
+    IF (used(DataHandle)) THEN
+      first_operation( DataHandle ) = .TRUE.
+    ENDIF
+  ENDIF
+
   Status = WRF_NO_ERR
 
   RETURN
@@ -194,6 +248,7 @@ SUBROUTINE ext_yyy_open_for_write_commit( DataHandle , Status )
   IF ( opened( DataHandle ) ) THEN
     IF ( used( DataHandle ) ) THEN
       committed(DataHandle) = .true.
+      first_operation( DataHandle ) = .TRUE.
     ENDIF
   ENDIF
 
@@ -649,6 +704,7 @@ SUBROUTINE ext_yyy_write_field( DataHandle , DateStr , VarName , &
   deallocate(mold, STAT = istat)
   deallocate(tmpdata, STAT = istat)
 
+  first_operation( DataHandle ) = .FALSE.
   Status = WRF_NO_ERR
 
   RETURN
@@ -681,6 +737,7 @@ SUBROUTINE ext_yyy_read_field ( DataHandle , DateStr , VarName , Field , FieldTy
   REAL, DIMENSION(*)    :: Field
 
   CALL wrf_message('ext_yyy_read_field not supported yet')
+  first_operation( DataHandle ) = .FALSE.
   Status = WRF_NO_ERR
 
   RETURN
@@ -1429,30 +1486,33 @@ SUBROUTINE ext_yyy_put_dom_ti_real ( DataHandle,Element,   Data, Count,  &
   INTEGER ,       INTENT(OUT) :: Status
   REAL dummy
 
-  if (Element .eq. 'DX') then
-     dx = Data(1)/1000.
-  endif
-  if (Element .eq. 'DY') then
-     dy = Data(1)/1000.
-  endif
-  if (Element .eq. 'CEN_LAT') then
-     center_lat = Data(1)
-  endif
-  if (Element .eq. 'CEN_LON') then
-     center_lon = Data(1)
-  endif  
-  if (Element .eq. 'TRUELAT1') then
-     truelat1 = Data(1)
-  endif
-  if (Element .eq. 'TRUELAT2') then
-     truelat2 = Data(1)
-  endif
-  if (Element == 'STAND_LON') then
-     proj_central_lon = Data(1)
-  endif
-  if (Element == 'DT') then
-     timestep = Data(1)
-  endif
+  ! Do nothing unless it is time to write time-independent domain metadata.
+  IF ( yyy_ok_to_put_dom_ti( DataHandle ) ) THEN
+     if (Element .eq. 'DX') then
+        dx = Data(1)/1000.
+     endif
+     if (Element .eq. 'DY') then
+        dy = Data(1)/1000.
+     endif
+     if (Element .eq. 'CEN_LAT') then
+        center_lat = Data(1)
+     endif
+     if (Element .eq. 'CEN_LON') then
+        center_lon = Data(1)
+     endif  
+     if (Element .eq. 'TRUELAT1') then
+        truelat1 = Data(1)
+     endif
+     if (Element .eq. 'TRUELAT2') then
+        truelat2 = Data(1)
+     endif
+     if (Element == 'STAND_LON') then
+        proj_central_lon = Data(1)
+     endif
+     if (Element == 'DT') then
+        timestep = Data(1)
+     endif
+  ENDIF
 
   Status = WRF_NO_ERR  
 
@@ -1471,6 +1531,11 @@ SUBROUTINE ext_yyy_put_dom_ti_real8 ( DataHandle,Element,   Data, Count,  &
   real*8 ,        INTENT(IN)  :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
+
+  ! Do nothing unless it is time to write time-independent domain metadata.
+  IF ( yyy_ok_to_put_dom_ti( DataHandle ) ) THEN
+    CALL wrf_message('ext_yyy_put_dom_ti_real8 not supported yet')
+  ENDIF
 
   Status = WRF_NO_ERR
 
@@ -1491,9 +1556,12 @@ SUBROUTINE ext_yyy_put_dom_ti_integer ( DataHandle,Element,   Data, Count,  &
   INTEGER ,       INTENT(OUT) :: Status
   REAL dummy
 
-  if (Element == 'MAP_PROJ') then
-     projection = Data(1)
-  endif
+  ! Do nothing unless it is time to write time-independent domain metadata.
+  IF ( yyy_ok_to_put_dom_ti( DataHandle ) ) THEN
+     if (Element == 'MAP_PROJ') then
+        projection = Data(1)
+     endif
+  ENDIF
 
   Status = WRF_NO_ERR
 
@@ -1511,6 +1579,11 @@ SUBROUTINE ext_yyy_put_dom_ti_logical ( DataHandle,Element,   Data, Count,  &
   logical ,       INTENT(IN)  :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
+
+  ! Do nothing unless it is time to write time-independent domain metadata.
+  IF ( yyy_ok_to_put_dom_ti( DataHandle ) ) THEN
+    CALL wrf_message('ext_yyy_put_dom_ti_logical not supported yet')
+  ENDIF
 
   Status = WRF_NO_ERR
 
@@ -1530,9 +1603,12 @@ SUBROUTINE ext_yyy_put_dom_ti_char ( DataHandle,Element,   Data,  &
   INTEGER ,       INTENT(OUT) :: Status
   REAL dummy
 
-  if (Element .eq. 'START_DATE') then
-     StartDate = Data
-  endif
+  ! Do nothing unless it is time to write time-independent domain metadata.
+  IF ( yyy_ok_to_put_dom_ti( DataHandle ) ) THEN
+     if (Element .eq. 'START_DATE') then
+        StartDate = Data
+     endif
+  ENDIF
   Status = WRF_NO_ERR
 
   RETURN
@@ -1548,7 +1624,11 @@ SUBROUTINE ext_yyy_put_dom_ti_double ( DataHandle,Element,   Data, Count,  Statu
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
 
-  CALL wrf_message('ext_yyy_put_dom_ti_double not supported yet')
+  ! Do nothing unless it is time to write time-independent domain metadata.
+  IF ( yyy_ok_to_put_dom_ti( DataHandle ) ) THEN
+    CALL wrf_message('ext_yyy_put_dom_ti_double not supported yet')
+  ENDIF
+
   Status = WRF_NO_ERR  
 
 RETURN
@@ -1788,6 +1868,7 @@ SUBROUTINE get_new_handle(DataHandle)
      if (.NOT. used(i)) then
         DataHandle = i
         used(i) = .true.
+        first_operation(i) = .TRUE.
         exit
      endif
   enddo

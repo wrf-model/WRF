@@ -1231,6 +1231,8 @@ subroutine ext_phdf5_read_field(DataHandle,DateStr,Var,Field,FieldType,Comm,  &
      call wrf_debug ( FATAL , msg)
   endif
 
+  DH%first_operation  = .FALSE.
+
   return
 end subroutine ext_phdf5_read_field
 
@@ -1371,6 +1373,7 @@ SUBROUTINE ext_phdf5_open_for_write_commit(DataHandle, Status)
   endif
 
   DH%FileStatus  = WRF_FILE_OPENED_AND_COMMITTED
+  DH%first_operation  = .TRUE.
   return
 end subroutine ext_phdf5_open_for_write_commit
 
@@ -1664,6 +1667,8 @@ subroutine ext_phdf5_write_field(DataHandle,DateStr,Var,Field,FieldType,&
         return
      endif
   endif
+
+  DH%first_operation  = .FALSE.
 
   return 
 
@@ -3571,6 +3576,12 @@ subroutine ext_phdf5_put_dom_ti_real(DataHandle,Element,Data,Count,Status)
   integer(hid_t)                        :: hdf5err
   character(VarNameLen)                 :: var
 
+  ! Do nothing unless it is time to write time-independent domain metadata.
+  IF ( .NOT. phdf5_ok_to_put_dom_ti( DataHandle ) ) THEN
+    Status = WRF_NO_ERR
+    return
+  ENDIF
+
   var = 'DUMMY'
   routine_type = 'DOM'
   routine_atype = WRF_REAL
@@ -3640,6 +3651,12 @@ subroutine ext_phdf5_put_dom_ti_integer(DataHandle,Element,Data,Count,Status)
   integer                               :: str_flag = 0 ! not a string type
   integer(hid_t)                        :: hdf5err
   character(VarNameLen)                 :: var
+
+  ! Do nothing unless it is time to write time-independent domain metadata.
+  IF ( .NOT. phdf5_ok_to_put_dom_ti( DataHandle ) ) THEN
+    Status = WRF_NO_ERR
+    return
+  ENDIF
 
   var = 'DUMMY'
   routine_type = 'DOM'
@@ -3711,6 +3728,12 @@ subroutine ext_phdf5_put_dom_ti_double(DataHandle,Element,Data,Count,Status)
   integer                               :: str_flag = 0 ! not a string type
   integer(hid_t)                        :: hdf5err
   character(VarNameLen)                 :: var
+
+  ! Do nothing unless it is time to write time-independent domain metadata.
+  IF ( .NOT. phdf5_ok_to_put_dom_ti( DataHandle ) ) THEN
+    Status = WRF_NO_ERR
+    return
+  ENDIF
 
   var           = 'DUMMY'
   routine_type  = 'DOM'
@@ -3785,6 +3808,12 @@ subroutine ext_phdf5_put_dom_ti_logical(DataHandle,Element,Data,Count,Status)
   integer                                :: str_flag = 0 ! not a string type
   integer(hid_t)                         :: hdf5err
   character(VarNameLen)                  :: var
+
+  ! Do nothing unless it is time to write time-independent domain metadata.
+  IF ( .NOT. phdf5_ok_to_put_dom_ti( DataHandle ) ) THEN
+    Status = WRF_NO_ERR
+    return
+  ENDIF
 
   var           = 'DUMMY'
   routine_type  = 'DOM'
@@ -3873,6 +3902,12 @@ subroutine ext_phdf5_put_dom_ti_char(DataHandle,Element,Data,Status)
   integer                               :: len_str
   character(VarNameLen)                 :: var
   character(1)                          :: RepData =' '
+
+  ! Do nothing unless it is time to write time-independent domain metadata.
+  IF ( .NOT. phdf5_ok_to_put_dom_ti( DataHandle ) ) THEN
+    Status = WRF_NO_ERR
+    return
+  ENDIF
 
   Count = 1
   var = 'DUMMY'

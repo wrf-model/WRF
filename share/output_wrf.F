@@ -28,7 +28,7 @@
     INTEGER i,j
     INTEGER julyr, julday, idt, iswater , map_proj
     INTEGER filestate
-    LOGICAL dryrun, first_output, write_metadata
+    LOGICAL dryrun
     REAL    gmt, cen_lat, cen_lon, bdyfrq , truelat1 , truelat2 , moad_cen_lat , stand_lon
     INTEGER dyn_opt, diff_opt, km_opt, damp_opt,  &
             mp_physics, ra_lw_physics, ra_sw_physics, sf_sfclay_physics, &
@@ -53,12 +53,8 @@
     ENDIF
 
     dryrun       = ( filestate .EQ. WRF_FILE_OPENED_NOT_COMMITTED )
-    first_output = is_first_operation( fid )
-    write_metadata = .NOT. dryrun .AND. first_output
 
     WRITE(wrf_err_message,*)'output_wrf: dryrun = ',dryrun
-    CALL wrf_debug( 300 , wrf_err_message )
-    WRITE(wrf_err_message,*)'output_wrf: first_output = ',first_output
     CALL wrf_debug( 300 , wrf_err_message )
 
     CALL get_ijk_from_grid (  grid ,                        &
@@ -97,8 +93,6 @@
     CALL ESMF_ClockGetCurrTime( grid%domain_clock, current_time, rc=rc )
     CALL ESMF_TimeGetString( current_time, current_date, rc=rc )
     WRITE ( wrf_err_message , * ) 'module_io_wrf: output_wrf: current_date=',current_date
-
-    IF ( write_metadata ) THEN
 
       WRITE( message , * ) "OUTPUT FROM " , TRIM(program_name)
       CALL wrf_put_dom_ti_char ( fid , 'TITLE' , TRIM(message) , ierr )
@@ -258,7 +252,6 @@
       CALL wrf_put_dom_ti_integer ( fid , 'ISURBAN' ,  config_flags%isurban , 1 , ierr )
       CALL wrf_put_dom_ti_integer ( fid , 'ISOILWATER' ,  config_flags%isoilwater , 1 , ierr )
 
-    ENDIF
 
     IF ( switch .EQ. boundary_only ) THEN
         CALL ESMF_TimeIntervalSet( bdy_increment, S=NINT(config_flags%bdyfrq),rc=rc)

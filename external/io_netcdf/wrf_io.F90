@@ -95,6 +95,10 @@ module wrf_data
     character (VarNameLen), pointer       :: VarNames(:)
     integer                               :: CurrentVariable  !Only used for read
     integer                               :: NumVars
+! first_operation is set to .TRUE. when a new handle is allocated 
+! or when open-for-write or open-for-read are committed.  It is set 
+! to .FALSE. when the first field is read or written.  
+    logical                               :: first_operation
   end type wrf_data_handle
   type(wrf_data_handle),target            :: WrfDataHandles(WrfDataHandleMax)
 end module wrf_data
@@ -203,6 +207,7 @@ subroutine allocHandle(DataHandle,DH,Comm,Status)
   DH%Free      =.false.
   DH%Comm      = Comm
   DH%Write     =.false.
+  DH%first_operation  = .TRUE.
   Status = WRF_NO_ERR
 end subroutine allocHandle
 
@@ -676,6 +681,54 @@ subroutine reorder (MemoryOrder,MemO)
   return
 end subroutine reorder
   
+! Returns .TRUE. iff it is OK to write time-independent domain metadata to the 
+! file referenced by DataHandle.  If DataHandle is invalid, .FALSE. is 
+! returned.  
+LOGICAL FUNCTION ncd_ok_to_put_dom_ti( DataHandle )
+    USE wrf_data
+    include 'wrf_status_codes.h'
+    INTEGER, INTENT(IN) :: DataHandle 
+    CHARACTER*80 :: fname
+    INTEGER :: filestate
+    INTEGER :: Status
+    LOGICAL :: dryrun, first_output, retval
+    call ext_ncd_inquire_filename( DataHandle, fname, filestate, Status )
+    IF ( Status /= WRF_NO_ERR ) THEN
+      write(msg,*) 'Warning Status = ',Status,' in ',__FILE__, &
+                   ', line', __LINE__
+      call wrf_debug ( WARN , TRIM(msg) )
+      retval = .FALSE.
+    ELSE
+      dryrun       = ( filestate .EQ. WRF_FILE_OPENED_NOT_COMMITTED )
+      first_output = ncd_is_first_operation( DataHandle )
+      retval = .NOT. dryrun .AND. first_output
+    ENDIF
+    ncd_ok_to_put_dom_ti = retval
+    RETURN
+END FUNCTION ncd_ok_to_put_dom_ti
+
+! Returns .TRUE. iff nothing has been read from or written to the file 
+! referenced by DataHandle.  If DataHandle is invalid, .FALSE. is returned.  
+LOGICAL FUNCTION ncd_is_first_operation( DataHandle )
+    USE wrf_data
+    INCLUDE 'wrf_status_codes.h'
+    INTEGER, INTENT(IN) :: DataHandle 
+    TYPE(wrf_data_handle) ,POINTER :: DH
+    INTEGER :: Status
+    LOGICAL :: retval
+    CALL GetDH( DataHandle, DH, Status )
+    IF ( Status /= WRF_NO_ERR ) THEN
+      write(msg,*) 'Warning Status = ',Status,' in ',__FILE__, &
+                   ', line', __LINE__
+      call wrf_debug ( WARN , TRIM(msg) )
+      retval = .FALSE.
+    ELSE
+      retval = DH%first_operation
+    ENDIF
+    ncd_is_first_operation = retval
+    RETURN
+END FUNCTION ncd_is_first_operation
+
 end module ext_ncd_support_routines
 
 subroutine ext_ncd_open_for_read(DatasetName, Comm1, Comm2, SysDepInfo, DataHandle, Status)
@@ -722,6 +775,7 @@ subroutine ext_ncd_open_for_read_commit(DataHandle, Status)
     return
   endif
   DH%FileStatus      = WRF_FILE_OPENED_FOR_READ
+  DH%first_operation  = .TRUE.
   Status = WRF_NO_ERR
   return
 end subroutine ext_ncd_open_for_read_commit
@@ -1121,6 +1175,7 @@ SUBROUTINE ext_ncd_open_for_write_commit(DataHandle, Status)
     return
   endif
   DH%FileStatus  = WRF_FILE_OPENED_FOR_WRITE
+  DH%first_operation  = .TRUE.
   return
 end subroutine ext_ncd_open_for_write_commit
 
@@ -2391,6 +2446,7 @@ subroutine ext_ncd_write_field(DataHandle,DateStr,Var,Field,FieldType,Comm, &
     write(msg,*) 'Fatal error BAD FILE STATUS in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( FATAL , TRIM(msg))
   endif
+  DH%first_operation  = .FALSE.
   return
 end subroutine ext_ncd_write_field
 
@@ -2628,6 +2684,7 @@ subroutine ext_ncd_read_field(DataHandle,DateStr,Var,Field,FieldType,Comm,  &
     write(msg,*) 'Fatal error BAD FILE STATUS in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( FATAL , msg)
   endif
+  DH%first_operation  = .FALSE.
   return
 end subroutine ext_ncd_read_field
 

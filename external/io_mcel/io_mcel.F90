@@ -686,6 +686,7 @@ SUBROUTINE ext_mcel_put_dom_ti_char ( DataHandle, Element,  Data,  Status )
   REAL dummy
   INTEGER                 :: Count
 
+! TBH:  Not sure what this is doing here.  2004_11_15
   IF ( int_valid_handle ( Datahandle ) ) THEN
     IF ( int_handle_in_use( DataHandle ) ) THEN
       CALL int_gen_ti_header_char( hdrbuf, hdrbufsize, itypesize,  &

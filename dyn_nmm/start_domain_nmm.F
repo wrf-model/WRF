@@ -1730,7 +1730,7 @@
      &             ,ACSNOM,IVGTYP,ISLTYP,SFCEVP,SMOIS                   &
      &             ,SH2O, SNOWH, SMFR3D                                 &  ! temporary
      &             ,DX,DY,F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY              &
-     &             ,.TRUE.,.FALSE.,                                     &
+     &             ,.TRUE.,.FALSE.                                      &
      &             ,ids, ide, jds, jde, kds, kde                        &
      &             ,ims, ime, jms, jme, kms, kme                        &
      &             ,its, ite, jts, jte, kts, kte)

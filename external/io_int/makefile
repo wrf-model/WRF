@@ -8,6 +8,7 @@ LIBS    =
 CPP1    = $(CPP) $(TRADFLAG)
 M4      = m4 -Uinclude -Uindex -Ulen
 AR      = ar
+#RANLIB	= ranlib
 RANLIB  = echo
 
 .SUFFIXES:      .F90 .F .f .o .code

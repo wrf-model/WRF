@@ -9,6 +9,8 @@ LIBS    = -L$(NETCDFPATH)/lib -lnetcdf
 CPP1    = $(CPP) -C -P $(TRADFLAG)
 M4      = m4 -Uinclude -Uindex -Ulen
 AR      = ar
+#RANLIB	= ranlib
+RANLIB	= echo
 
 .SUFFIXES:      .F90 .f .o .code
 
@@ -19,6 +21,7 @@ flags_only: wrf_io_flags.h
 libwrfio_nf.a:		$(OBJS) $(CODE)
 			/bin/rm -f libwrfio_nf.a
 			$(AR) cr libwrfio_nf.a $(OBJSL)
+			$(RANLIB) libwrfio_nf.a
 
 wrf_io_flags.h:
 			sed -e '1,/BEGINIOFLAGS/d' -e '/ENDIOFLAGS/,$$d' wrf_io.F90 > wrf_io_flags.h

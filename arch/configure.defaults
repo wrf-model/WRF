@@ -6886,7 +6886,7 @@ LD              =       xlf90_r
 #CC              =       xlc_r
 CC              =       cc
 CFLAGS          =       -DNOUNDERSCORE
-FCOPTIM         =       -O2 -qarch=auto
+FCOPTIM         =       -O3 -qarch=auto
 FCDEBUG         =       # -qnoopt -qfullpath
 FCBASEOPTS      =       -qsave $(FCDEBUG) -qmaxmem=32767 -w 
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
@@ -6905,7 +6905,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH \
                         -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 
-LDFLAGS         =	 -Wl,-stack_size,10000000 
+LDFLAGS         =	 -Wl,-stack_size,10000000,-stack_addr,0xc0000000
 #CPP             =       /opt/ibmcmp/xlf/8.1/exe/cpp -C -P
 CPP             =       /usr/bin/cpp  -C -P -xassembler-with-cpp
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -7010,7 +7010,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -lxlsmp \
                         -L../external/io_int -lwrfio_int \
                         -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS         =	$(OMP) -Wl,-stack_size,10000000 
+LDFLAGS         =	$(OMP) -Wl,-stack_size,10000000,-stack_addr,0xc0000000 
 CPP             =        /usr/bin/cpp -C -P -xassembler-with-cpp
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) $(OMPCPP) $(COREDEFS) $(POUND_DEF)

@@ -10,6 +10,7 @@ OBJS    = $(OBJSL)
 LIBS    = 
 M4      = m4 -Uinclude -Uindex -Ulen
 AR      = ar
+#RANLIB	= ranlib
 RANLIB  = echo
 CPPFLAGS = -C -P
 

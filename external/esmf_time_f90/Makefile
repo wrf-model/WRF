@@ -5,6 +5,8 @@
 .SUFFIXES: .F90 .o
 
 AR = ar
+#RANLIB	= ranlib
+RANLIB	= echo
 
 OBJS = ESMF_Alarm.o ESMF_BaseTime.o ESMF_Clock.o ESMF_Time.o \
         Meat.o ESMF_Base.o ESMF_Calendar.o ESMF_Fraction.o   \
@@ -12,6 +14,7 @@ OBJS = ESMF_Alarm.o ESMF_BaseTime.o ESMF_Clock.o ESMF_Time.o \
 
 libesmf_time.a : $(OBJS)
 	$(AR) ru libesmf_time.a $(OBJS)
+	$(RANLIB) libesmf_time.a
 
 Test1 : Test1.F90 libesmf_time.a
 	$(FC) -c -g Test1.F90

@@ -624,7 +624,8 @@ RSL_WRITE ( unit_p, iotag_p, base, d_p, type_p, glen, llen  )
   int cursor, mdest, mtag, msglen, dim, d ;
   int mlen, nlen ;
   int minelems, majelems ;
-  unsigned long ig, jg, min, maj, ioffset, joffset, tlen, k ;
+  unsigned long min, maj, ioffset, joffset, tlen, k ;
+  int ig, jg ;
   void *dex ;
   char *pbuf ;
   int i_am_monitor ;
@@ -816,7 +817,15 @@ RSL_WRITE ( unit_p, iotag_p, base, d_p, type_p, glen, llen  )
     bcopy( js_write, &(pbuf[cursor]), sizeof(int) ) ; cursor += sizeof(int) ;
     bcopy( je_write, &(pbuf[cursor]), sizeof(int) ) ; cursor += sizeof(int) ;
 
-    in_write = *ie_write - *is_write + 1 ;
+    if ( *ie_write == -1 )
+    {
+      in_write = 0 ;
+    }
+    else
+    {
+      in_write = *ie_write - *is_write + 1 ;
+    }
+
     for ( jg = *js_write ; jg <= *je_write ; jg++ )
     {
         switch( iotag )

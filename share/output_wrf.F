@@ -46,14 +46,20 @@
     CHARACTER*40            :: next_datestr
     INTEGER :: start_year , start_month , start_day , start_hour , start_minute , start_second
 
+    CALL wrf_inquire_filename ( fid , fname , filestate , ierr )
+    IF ( ierr /= 0 ) THEN
+      WRITE(wrf_err_message,*)'module_io_wrf: output_wrf: wrf_inquire_filename Status = ',ierr
+      CALL wrf_error_fatal( wrf_err_message )
+    ENDIF
+
     dryrun       = ( filestate .EQ. WRF_FILE_OPENED_NOT_COMMITTED )
     first_output = is_first_operation( fid )
     write_metadata = .NOT. dryrun .AND. first_output
 
     WRITE(wrf_err_message,*)'output_wrf: dryrun = ',dryrun
-    CALL wrf_debug( 500 , wrf_err_message )
+    CALL wrf_debug( 300 , wrf_err_message )
     WRITE(wrf_err_message,*)'output_wrf: first_output = ',first_output
-    CALL wrf_debug( 500 , wrf_err_message )
+    CALL wrf_debug( 300 , wrf_err_message )
 
     CALL get_ijk_from_grid (  grid ,                        &
                               ids, ide, jds, jde, kds, kde,    &

@@ -63,6 +63,9 @@ MODULE module_dm
    INTERFACE add_msg_120pt
      MODULE PROCEDURE add_msg_120pt_real, add_msg_120pt_integer, add_msg_120pt_doubleprecision
    END INTERFACE
+   INTERFACE wrf_dm_maxval
+     MODULE PROCEDURE wrf_dm_maxval_real , wrf_dm_maxval_integer, wrf_dm_maxval_doubleprecision
+   END INTERFACE
 #else
    INTERFACE add_msg_xpose
      MODULE PROCEDURE add_msg_xpose_real, add_msg_xpose_integer
@@ -87,6 +90,9 @@ MODULE module_dm
    END INTERFACE
    INTERFACE add_msg_120pt
      MODULE PROCEDURE add_msg_120pt_real, add_msg_120pt_integer
+   END INTERFACE
+   INTERFACE wrf_dm_maxval
+     MODULE PROCEDURE wrf_dm_maxval_real , wrf_dm_maxval_integer
    END INTERFACE
 #endif
 
@@ -2974,7 +2980,7 @@ messages(120)=  s5e5
 #endif
    END FUNCTION wrf_dm_sum_real
 
-   SUBROUTINE wrf_dm_maxval ( val, idex, jdex )
+   SUBROUTINE wrf_dm_maxval_real ( val, idex, jdex )
       IMPLICIT NONE
       REAL val, val_all( rsl_nproc )
       INTEGER idex, jdex, ierr
@@ -3003,9 +3009,69 @@ messages(120)=  s5e5
         ENDIF
       ENDDO
 #endif
-   END SUBROUTINE wrf_dm_maxval
+   END SUBROUTINE wrf_dm_maxval_real
 
+   SUBROUTINE wrf_dm_maxval_doubleprecision ( val, idex, jdex )
+      IMPLICIT NONE
+      DOUBLE PRECISION val, val_all( rsl_nproc )
+      INTEGER idex, jdex, ierr
+      INTEGER dex(2)
+      INTEGER dex_all (2,rsl_nproc)
+! <DESCRIPTION>
+! Collective operation. Each processor calls passing a local value and its index; on return
+! all processors are passed back the maximum of all values passed and its index.
+!
+! </DESCRIPTION>
+      INTEGER i, comm
+#ifndef STUBMPI
+      INCLUDE 'mpif.h'
 
+      CALL wrf_get_dm_communicator ( comm )
+      dex(1) = idex ; dex(2) = jdex
+      CALL mpi_allgather ( dex, 2, MPI_INTEGER, dex_all , 2, MPI_INTEGER, comm, ierr )
+      CALL mpi_allgather ( val, 1, MPI_DOUBLE_PRECISION, val_all , 1, MPI_DOUBLE_PRECISION, comm, ierr )
+      val = val_all(1)
+      idex = dex_all(1,1) ; jdex = dex_all(2,1)
+      DO i = 2, rsl_nproc
+        IF ( val_all(i) .GT. val ) THEN
+           val = val_all(i)
+           idex = dex_all(1,i)
+           jdex = dex_all(2,i)
+        ENDIF
+      ENDDO
+#endif
+   END SUBROUTINE wrf_dm_maxval_doubleprecision
+
+   SUBROUTINE wrf_dm_maxval_integer ( val, idex, jdex )
+      IMPLICIT NONE
+      INTEGER val, val_all( rsl_nproc )
+      INTEGER idex, jdex, ierr
+      INTEGER dex(2)
+      INTEGER dex_all (2,rsl_nproc)
+! <DESCRIPTION>
+! Collective operation. Each processor calls passing a local value and its index; on return
+! all processors are passed back the maximum of all values passed and its index.
+!
+! </DESCRIPTION>
+      INTEGER i, comm
+#ifndef STUBMPI
+      INCLUDE 'mpif.h'
+
+      CALL wrf_get_dm_communicator ( comm )
+      dex(1) = idex ; dex(2) = jdex
+      CALL mpi_allgather ( dex, 2, MPI_INTEGER, dex_all , 2, MPI_INTEGER, comm, ierr )
+      CALL mpi_allgather ( val, 1, MPI_INTEGER, val_all , 1, MPI_INTEGER, comm, ierr )
+      val = val_all(1)
+      idex = dex_all(1,1) ; jdex = dex_all(2,1)
+      DO i = 2, rsl_nproc
+        IF ( val_all(i) .GT. val ) THEN
+           val = val_all(i)
+           idex = dex_all(1,i)
+           jdex = dex_all(2,i)
+        ENDIF
+      ENDDO
+#endif
+   END SUBROUTINE wrf_dm_maxval_integer
 
 END MODULE module_dm
 

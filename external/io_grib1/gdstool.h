@@ -149,6 +149,6 @@ enum g_tool {g_end, g_init, g_byte, g_2bytes, g_s2bytes,
 	g_byte,27,scan_s2n*64, \
         g_s3bytes,28,(int) (1000.0*(latin1+(latin1/abs(latin1))*0.0005)),\
         g_s3bytes,31,(int) (1000.0*(latin2+(latin2/abs(latin2))*0.0005)), \
-	g_s3bytes,34,0,g_s3bytes,37,0,g_byte,40,0,g_byte,41,0,g_end)
+	g_s3bytes,34,-90000,g_s3bytes,37,0,g_byte,40,0,g_byte,41,0,g_end)
 
 

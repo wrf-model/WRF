@@ -45,7 +45,6 @@ CONTAINS
 #ifdef DEREF_KLUDGE
    INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
 #endif
-
 #include "deref_kludge.h"
 
    CALL nl_get_dyn_opt( 1, dyn_opt )
@@ -124,9 +123,13 @@ CONTAINS
    REAL :: piov2, tp
    INTEGER :: icen, jcen
    real :: thtmp, ptmp, temp(3)
+#ifdef DEREF_KLUDGE
+   INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
+#endif
 
 #define COPY_IN
 #include <em_scalar_derefs.inc>
+#include "deref_kludge.h"
 #ifdef DM_PARALLEL
 #    include <em_data_calls.inc>
 #endif

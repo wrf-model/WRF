@@ -40,11 +40,15 @@
                                   ips, ipe, jps, jpe, kps, kpe, &
                                   its, ite, jts, jte, kts, kte, &
                                   ij,i,j,k,ii,jj,kk,loop,error,l
+#ifdef DEREF_KLUDGE
+   INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
+#endif
 
    REAL :: qvf1, qvf2, qvf
    REAL :: MPDT
    LOGICAL :: first_trip_for_this_domain
 
+#include "deref_kludge.h"
 #define COPY_IN
 #include <em_scalar_derefs.inc>
 #ifdef DM_PARALLEL

@@ -79,6 +79,11 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
    LOGICAL :: leapfrog
    INTEGER :: l,kte,kk
 
+#ifdef DEREF_KLUDGE
+   INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
+#endif
+#include "deref_kludge.h"
+
 #include <bench_solve_em_def.h>
 
 #define COPY_IN
@@ -145,6 +150,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
 
   num_3d_m        = num_moist
   num_3d_c        = num_chem
+
 
    !  Compute these starting and stopping locations for each tile and number of tiles.
 

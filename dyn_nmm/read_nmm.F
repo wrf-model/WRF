@@ -63,6 +63,9 @@ SUBROUTINE med_read_nmm ( grid , config_flags , ntsd, dt_from_file, tstart_from_
     ,X1P,Y1P,IXM,IYM
    INTEGER,SAVE :: NN, mype
    real,SAVE :: dtx
+#ifdef DEREF_KLUDGE
+   INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
+#endif
 
 
 !**********************************************************************
@@ -90,6 +93,7 @@ SUBROUTINE med_read_nmm ( grid , config_flags , ntsd, dt_from_file, tstart_from_
 !----------------------------------------------------------------------
 #define COPY_IN
 #include <nmm_scalar_derefs.inc>
+#include "deref_kludge.h"
 #ifdef DM_PARALLEL
 #    include <nmm_data_calls.inc>
 #endif

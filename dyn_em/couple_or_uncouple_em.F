@@ -47,6 +47,12 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple, &
 
    REAL, DIMENSION(grid%sm31:grid%em31,grid%sm33:grid%em33) :: mut_2, muut_2, muvt_2, muwt_2
 
+#ifdef DEREF_KLUDGE
+   INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
+#endif
+
+#include "deref_kludge.h"
+
 !  De-reference dimension information stored in the grid data structure.
 
   CALL get_ijk_from_grid (  grid ,                   &

@@ -52,6 +52,11 @@ USE module_exp
 ! storage for tendencies and decoupled state (generated from Registry)
 #include <exp_i1_decl.inc>
 
+#ifdef DEREF_KLUDGE
+   INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
+#endif
+#include "deref_kludge.h"
+
 #define COPY_IN
 #include <exp_scalar_derefs.inc>
 #ifdef DM_PARALLEL

@@ -616,13 +616,16 @@ SUBROUTINE shift_domain_em ( grid , disp_x, disp_y, &
                                       ims , ime , jms , jme , kms , kme , &
                                       ips , ipe , jps , jpe , kps , kpe
    TYPE (grid_config_rec_type)  :: config_flags
-
+#ifdef DEREF_KLUDGE
+   INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
+#endif
 
    !  Definitions of dummy arguments to solve
 #include <em_dummy_decl.inc>
 
 #define COPY_IN
 #include <em_scalar_derefs.inc>
+#include "deref_kludge.h"
 #ifdef DM_PARALLEL
 #      include <em_data_calls.inc>
 #endif

@@ -110,7 +110,7 @@ Additional ones when running 3DVAR:
                                                   option on. 0: no smoothing; 1: 1-2-1 smoothing; 2: smoothing-desmoothing
                                      
 Namelist variables for controling the prototype moving nest: 
-                   Note moving nest needs to be activated at the compile time by adding -DMOVE_NEST 
+                   Note moving nest needs to be activated at the compile time by adding -DMOVE_NESTS
                    to the ARCHFLAGS. The maximum number of moves, max_moves, is set to 50 
                    but can be modified in source code file frame/module_driver_constants.F.
  num_moves                           = 4        ; total number of moves

@@ -741,6 +741,7 @@ endif
                                      ids, ide, jds, jde, kds, kde, &
                                      ims, ime, jms, jme, kms, kme, &
                                      its, ite, jts, jte, kts, kte, &
+                                     ips, ipe, jps, jpe, kps, kpe, &
                                      i, j, k
 
 #define COPY_IN
@@ -914,6 +915,15 @@ endif
       END DO
 
       DEALLOCATE ( t_init_int ) 
+
+      ips = its ; ipe = ite ; jps = jts ; jpe = jte ; kps = kts ; kpe = kte
+#ifdef DM_PARALLEL
+#   include "HALO_EM_INIT_1.inc"
+#   include "HALO_EM_INIT_2.inc"
+#   include "HALO_EM_INIT_3.inc"
+#   include "HALO_EM_INIT_4.inc"
+#   include "HALO_EM_INIT_5.inc"
+#endif
    END SUBROUTINE rebalance
 
 !---------------------------------------------------------------------

@@ -1156,6 +1156,7 @@ package   io_netcdf   io_form_restart==2                     -             -
 package   io_hdf      io_form_restart==3                     -             -
 package   io_phdf5    io_form_restart==4                     -             -
 #package   io_xxx      io_form_restart==4                     -             -
+# yyy = grib output from WSI
 package   io_yyy      io_form_restart==5                     -             -
 package   io_zzz      io_form_restart==6                     -             -
 package   io_mcel     io_form_restart==7                     -             -

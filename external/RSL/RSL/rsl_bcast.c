@@ -858,6 +858,62 @@ post_receives_from_parent()
   }
 }
 
+rsl_move_nest_( d_p, n_p,  mdisp_p, ndisp_p )
+  int_p d_p, n_p, mdisp_p, ndisp_p ;
+{
+  int parent, intermed, nest, mdisp, ndisp ;
+  rsl_domain_info_t *dinfo, *ninfo ;
+  int i, j, cm, cn, irax_m, irax_n, nid ;
+  int mother_id ;
+
+  parent = *d_p    ; nest = *n_p      ;
+  mdisp = *mdisp_p ; ndisp = *ndisp_p ; 
+
+  RSL_TEST_ERR( parent < 0 || parent > RSL_MAXDOMAINS, "rsl_move_nest: bad parent domain descriptor" ) ;
+  RSL_TEST_ERR( nest < 0   || nest > RSL_MAXDOMAINS,   "rsl_move_nest: bad nested domain descriptor" ) ;
+  dinfo = &( domain_info[parent]) ;
+  ninfo = &( domain_info[nest]) ;
+  irax_m = ninfo->irax_m ;
+  irax_n = ninfo->irax_n ;
+
+  if ( dinfo->child_bcast_compiled[s_nst] != 1 ||
+       ninfo->parent_bcast_compiled != 1 )
+  {
+    rsl_comp_bcast( d_p, n_p ) ;
+  }
+
+  dinfo->child_bcast_compiled[nest] = 0 ;  /* invalidate broadcast */
+  ninfo->parent_bcast_compiled      = 0 ;  /* invalidate broadcast */
+
+  for ( j = 0 ; j < dinfo->len_n ; j++ )
+    for ( i = 0 ; i < dinfo->len_m ; i++ )
+      for ( cn = 0 ; cn < irax_n ; cn++ )
+        for ( cm = 0 ; cm < irax_m ; cm++ )
+          if ( dinfo->domain[ INDEX_2( j, i, dinfo->len_m ) ].children_p != NULL )
+            dinfo->domain[ INDEX_2( j, i, dinfo->len_m ) ].children_p->child[INDEX_2(cn,cm,irax_m)] = RSL_INVALID ;
+
+  for ( j = 0 ; j < ninfo->len_n ; j++ )
+  {
+    for ( i = 0 ; i < ninfo->len_m ; i++ )
+    {
+      nid = POINTID( nest, i, j ) ;
+      mother_id = ninfo->domain[ INDEX_2( j, i, ninfo->len_m ) ].mother_id ;
+      mother_id = POINTID(parent,ID_IDEX( mother_id ) + mdisp,ID_JDEX( mother_id ) + ndisp ) ;
+      ninfo->domain[ INDEX_2( j, i, ninfo->len_m ) ].mother_id = mother_id ;
+      cm = ninfo->domain[ INDEX_2( j, i, ninfo->len_m ) ].which_kid_am_i_m ;
+      cn = ninfo->domain[ INDEX_2( j, i, ninfo->len_m ) ].which_kid_am_i_n ;
+fprintf(stderr,"ni,nj,pi,pj,kid_i,kid_j %d %d %d %d %d %d\n",
+                                 i,j,
+                                 ID_IDEX( mother_id ),ID_JDEX( mother_id ),
+                                 cm,cn) ;
+      if ( dinfo->domain[ INDEX_2( ID_JDEX( mother_id ), ID_IDEX( mother_id ), dinfo->len_m ) ].children_p != NULL )
+        dinfo->domain[ INDEX_2( ID_JDEX( mother_id ), ID_IDEX( mother_id ), dinfo->len_m ) ].children_p->child[INDEX_2(cn,cm,irax_m)] = nid ;
+    }
+  }
+  ninfo->coord_m += mdisp ;
+  ninfo->coord_n += ndisp ;
+}
+
 rsl_ready_bcast( d_p, n_p, msize_p )
   int_p d_p, n_p, msize_p ;
 {

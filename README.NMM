@@ -76,6 +76,10 @@ to run the code.
 IMPORTANT FACTOIDS:
 -------------------
 
+Set NMM_MAX_DIM in configure.wrf to an integer larger than the
+largest dimension for the global domain.  Set q in the Registry
+to that value of NMM_MAX_DIM.
+
 The convert_nmm.exe job reads the nmm input files and produces the
 wrfinput_d01 and wrfbdy_d01 files. (These are in the WRF I/O format).
 You must rerun the convert job if you change the io_form variables.
@@ -93,11 +97,27 @@ call wrf_get_nprocy(nprocy), respectively.
 
 To compile without doing clean -a:
   cd external/RSL/RSL
-  make clean
+  make superclean
   rm *.a
-  cd ../../..
+  cd ../../
+  rm io_*/*.f io_*/*.o
+  cd ../
   clean
   
+To select your own layout of MPI tasks, go to external/RSL/module_dm.F.
+Edit subroutine MPASPECT following the DO M do-loop by harwiring minm to
+the number of tasks in the i direction and minn to the number of tasks
+in the j direction.  Then do a complete recompile as described in the
+previous paragraph.
+
+The quilt subroutine is in frame/module_io_quilt.F.  It does not first receive
+data from the compute tasks but rather only collects data from the various
+quilt tasks onto quilt task=total PE's minus 1.  This seems to be done beginning with a
+call to subroutine collect_on_comm (in frame/collect_on_comm.c).  Each quilt task
+provides data in local integer array obuf of size obufsize to the root and it is placed
+into global integer array bigbuf of size bigbufsize in the appropriate place via
+a counter (displace) in collect_on_com that it sent to MPI_GATHERV along with
+the data.
 --------------------------------------------------------------------------
 
 Roadmap through code:

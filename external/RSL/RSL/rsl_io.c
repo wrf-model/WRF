@@ -1170,7 +1170,7 @@ RSL_REMAP_ARRAY ( inbuf, ndim_p, type_p,
   int group_i[2][3][RSL_MAXPROC][3] ;
   int group_o[2][3][RSL_MAXPROC][3] ;
   MPI_Request reqlist[RSL_MAXPROC] ;
-  int rsl_mpi_communicator=MPI_COMM_WORLD ;
+  MPI_Comm rsl_mpi_communicator=MPI_COMM_WORLD ;
   char * rcvbuf, *sndbuf ;
   int outstanding = 0 ; 
   int msglen ;

@@ -826,6 +826,14 @@ rsl_index_t id_domain(), id_jdex(), id_idex() ;
 #define XPOSE_MN_NZ 2
 #define XPOSE_NZ_MN 2
 
+/* defines for MPI2 compat */
+
+#ifndef MPI2_SUPPORT
+typedef int MPI_Fint;
+#  define MPI_Comm_c2f(comm) (MPI_Fint)(comm)
+#  define MPI_Comm_f2c(comm) (MPI_Comm)(comm)
+#endif
+
 /* other includes */
 
 #include "rsl_comm.h"
@@ -842,6 +850,7 @@ rsl_index_t id_domain(), id_jdex(), id_idex() ;
 
 void * rsl_malloc(), * malloc()  ;
 void * get_base_for_index() ;
+
 
 
 #endif   /* nothing after this line */

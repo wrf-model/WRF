@@ -113,9 +113,9 @@ RSL_INITIALIZE ()
 }
 
 #ifndef STUBS
-RSL_INITIALIZE1 ( MPI_Comm * comm )
+RSL_INITIALIZE1 ( MPI_Fint * comm )
 {
-  rsl_mpi_communicator = *comm ;
+  rsl_mpi_communicator = MPI_Comm_f2c( *comm ) ;
   rsl_initialize_internal() ;
 }
 #else
@@ -342,7 +342,7 @@ RSL_GET_COMMUNICATOR ( communicator )
   int_p  communicator ;  /* (O) return value with communicator from underlying mp layer (mpi probably) */
 {
 #ifdef MPI
-  *communicator = rsl_mpi_communicator ;
+  *communicator = MPI_Comm_c2f( rsl_mpi_communicator ) ;
 #else
   *communicator = 0 ;
 #endif
@@ -352,7 +352,7 @@ RSL_SET_COMMUNICATOR ( communicator )
   int_p  communicator ;  /* (O) return value with communicator from underlying mp layer (mpi probably) */
 {
 #ifdef MPI
-  rsl_mpi_communicator = *communicator ;
+  rsl_mpi_communicator = MPI_Comm_f2c( *communicator ) ;
 #endif
 }
 

@@ -228,8 +228,8 @@ rsl_bubble( list, compare, up )
   int swap, pass, iclock, nelems, swaps ;
   void * data ;
 
-#if 0
-  iclock = milliclock() ;
+#ifdef RSL_INTERNAL_MILLICLOCK
+  iclock = rsl_internal_milliclock() ;
 #endif
   pass = 0 ;
   swap = 1 ;
@@ -266,8 +266,8 @@ rsl_bubble( list, compare, up )
     }
     pass++ ;
   }
-#if 0
-fprintf(stderr,"debug sort %6d elems %10d passes %10d swaps %12d millisecs\n",nelems,pass,swaps,milliclock()-iclock) ;
+#ifdef RSL_INTERNAL_MILLICLOCK
+fprintf(stderr,"debug sort %6d elems %10d passes %10d swaps %12d millisecs\n",nelems,pass,swaps,rsl_internal_milliclock()-iclock) ;
 #endif
 }
 #endif

@@ -1738,8 +1738,8 @@ endif
 					popd
 				endif
 
-				ln -sf /ptmp/gill/wrfinput_d01 .
-				ln -sf /ptmp/gill/wrfbdy_d01 .
+				ln -sf /ptmp/gill/IO_FORM=${IO_FORM}/wrfinput_d01 .
+				ln -sf /ptmp/gill/IO_FORM=${IO_FORM}/wrfbdy_d01 .
 			else
 				set RUNCOMMAND = `echo $MPIRUNCOMMAND | sed "s/$Num_Procs/1/"`
 				$RUNCOMMAND ../../main/convert_nmm.exe >&! print.out.convert_${core}_Phys $MPIRUNCOMMANDPOST

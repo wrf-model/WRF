@@ -70,7 +70,6 @@
     ENDIF
 
     dryrun        = ( filestate .EQ. WRF_FILE_OPENED_NOT_COMMITTED )
-write(0,*)'input_wrf dryrun = ',dryrun,' filestate ',filestate
 
     check_if_dryrun : IF ( .NOT. dryrun ) THEN
 

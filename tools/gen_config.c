@@ -102,7 +102,7 @@ gen_namelist_statements ( char * dirname )
           if ( p2 == NULL )
 	  {
 	    fprintf(stderr,
-	    "Warning: no namelist section specified for rconfig %s\n",p->name) ;
+	    "Warning: no namelist section specified for nl %s\n",p->name) ;
 	    continue ;
 	  }
 	  fprintf(fp,"NAMELIST /%s/ %s\n",p2,p->name) ;
@@ -140,7 +140,7 @@ gen_get_nl_config ( char * dirname )
     if ( p->node_kind & RCONFIG )
     {
       strcpy(howset,p->howset) ;
-      fprintf(fp,"SUBROUTINE rconfig_%s_%s ( id_id , %s )\n",gs,p->name, p->name) ;
+      fprintf(fp,"SUBROUTINE nl_%s_%s ( id_id , %s )\n",gs,p->name, p->name) ;
       /* fprintf(fp,"  USE module_configure\n") ; */
       fprintf(fp,"  %s , INTENT(%s) :: %s\n",p->type->name,intnt,p->name) ;
       fprintf(fp,"  INTEGER id_id\n") ;
@@ -149,17 +149,17 @@ gen_get_nl_config ( char * dirname )
       {
         if ( !strcmp( p->nentries, "1" )) {
           fprintf(fp,"  IF ( id_id .NE. 1 ) THEN\n") ;
-          fprintf(fp,"    call wrf_debug(1,'WARNING in rconfig_%s_%s: %s applies to all domains. First arg ignored.')\n",
+          fprintf(fp,"    call wrf_debug(1,'WARNING in nl_%s_%s: %s applies to all domains. First arg ignored.')\n",
                           gs,p->name, p->name ) ;
           fprintf(fp,"  ENDIF\n" ) ;
           fprintf(fp,"  %s = model_config_rec%%%s\n",p->name,p->name) ;
         } else {
           if        ( !strcmp( p->nentries, "max_domains" )) {
             fprintf(fp,"  IF ( id_id .LT. 1 .OR. id_id .GT. model_config_rec%%max_dom ) THEN\n") ;
-            fprintf(fp,"    WRITE(emess,*)'Rconfig_%s_%s: Out of range domain number: ',id_id\n",gs,p->name) ;
+            fprintf(fp,"    WRITE(emess,*)'nl_%s_%s: Out of range domain number: ',id_id\n",gs,p->name) ;
 	  } else if ( !strcmp( p->nentries, "max_moves" )) {
             fprintf(fp,"  IF ( id_id .LT. 1 .OR. id_id .GT. model_config_rec%%num_moves ) THEN\n") ;
-            fprintf(fp,"    WRITE(emess,*)'Rconfig_%s_%s: Out of range move number: ',id_id\n",gs,p->name) ;
+            fprintf(fp,"    WRITE(emess,*)'nl_%s_%s: Out of range move number: ',id_id\n",gs,p->name) ;
 	  } else {
 	    fprintf(stderr,"Registry WARNING: multi element rconfig entry must be either max_domains or max_moves\n") ;
 	  }
@@ -172,17 +172,17 @@ gen_get_nl_config ( char * dirname )
       {
         if ( !strcmp( p->nentries, "1" )) {
           fprintf(fp,"  IF ( id_id .NE. 1 ) THEN\n") ;
-          fprintf(fp,"    call wrf_debug(1,'WARNING in rconfig_%s_%s: %s applies to all domains. First arg ignored.')\n",
+          fprintf(fp,"    call wrf_debug(1,'WARNING in nl_%s_%s: %s applies to all domains. First arg ignored.')\n",
                           gs,p->name, p->name ) ;
           fprintf(fp,"  ENDIF\n" ) ;
           fprintf(fp,"  model_config_rec%%%s = %s \n",p->name,p->name) ;
         } else {
           if        ( !strcmp( p->nentries, "max_domains" )) {
             fprintf(fp,"  IF ( id_id .LT. 1 .OR. id_id .GT. model_config_rec%%max_dom ) THEN\n") ;
-            fprintf(fp,"    WRITE(emess,*)'Rconfig_%s_%s: Out of range domain number: ',id_id\n",gs,p->name) ;
+            fprintf(fp,"    WRITE(emess,*)'nl_%s_%s: Out of range domain number: ',id_id\n",gs,p->name) ;
 	  } else if ( !strcmp( p->nentries, "max_moves" )) {
             fprintf(fp,"  IF ( id_id .LT. 1 .OR. id_id .GT. model_config_rec%%num_moves ) THEN\n") ;
-            fprintf(fp,"    WRITE(emess,*)'Rconfig_%s_%s: Out of range move number: ',id_id\n",gs,p->name) ;
+            fprintf(fp,"    WRITE(emess,*)'nl_%s_%s: Out of range move number: ',id_id\n",gs,p->name) ;
 	  } else {
 	    fprintf(stderr,"Registry WARNING: multi element rconfig entry must be either max_domains or max_moves\n") ;
 	  }
@@ -192,7 +192,7 @@ gen_get_nl_config ( char * dirname )
         }
       }
       fprintf(fp,"  RETURN\n") ;
-      fprintf(fp,"END SUBROUTINE rconfig_%s_%s\n",gs,p->name ) ;
+      fprintf(fp,"END SUBROUTINE nl_%s_%s\n",gs,p->name ) ;
     }
   }
   }
@@ -278,7 +278,7 @@ gen_config_reads ( char * dirname )
         if ( p2 == NULL )
         {
           fprintf(stderr,
-          "Warning: no namelist section specified for rconfig %s\n",p->name) ;
+          "Warning: no namelist section specified for nl %s\n",p->name) ;
           continue ;
         }
 	if (sym_get( p2 ) == NULL)  /* not in table yet */

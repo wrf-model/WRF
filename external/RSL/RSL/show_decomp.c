@@ -65,6 +65,7 @@ static int show_domain_first = 1 ;
 SHOW_DOMAIN_DECOMP ( d_p )
   int_p d_p ;
 {
+#ifndef STUBS
   rsl_index_t d ;
   int Phist[RSL_MAXPROC] ;
   char fname[50] ;
@@ -146,6 +147,8 @@ SHOW_DOMAIN_DECOMP ( d_p )
 
   fclose(fp) ;
  }
+#endif
+  return(0) ;
 }
 
 
@@ -154,6 +157,7 @@ READ_DOMAIN_DECOMP ( d_p, wrk,  m, n )
   int * wrk ;
   int m, n ;
 {
+#ifndef STUBS
   int P ;
   int d ;
   char fname[50] ;
@@ -205,6 +209,7 @@ READ_DOMAIN_DECOMP ( d_p, wrk,  m, n )
   }
 
   fclose(fp) ;
+#endif
   return(0) ;
 }
 
@@ -214,6 +219,7 @@ GET_DOMAIN_DECOMP ( d_p, wk, nwk_p )
   int_p wk ;
   int_p nwk_p ;
 {
+#ifndef STUBS
   rsl_index_t d ;
   char fname[50] ;
   FILE * fp ;
@@ -239,14 +245,10 @@ GET_DOMAIN_DECOMP ( d_p, wk, nwk_p )
 
   if ( domain_info[d].decomposed != 1 )
   {
-#if 0
-    fprintf(stderr,"not decomposed at this point in program") ;
-#endif
     return ;
   }
   m = domain_info[d].len_m ;
 
-fprintf(stderr,"d %d m %d, n %d\n",d,domain_info[d].len_m,domain_info[d].len_n) ;
   for ( j = 0 ; j < domain_info[d].len_n ; j++ )
   {
     for ( i = 0 ; i < domain_info[d].len_m ; i++ )
@@ -254,4 +256,6 @@ fprintf(stderr,"d %d m %d, n %d\n",d,domain_info[d].len_m,domain_info[d].len_n) 
       wk[INDEX_2(j,i,m)] = domain_info[d].domain[INDEX_2(j,i,m)].P ;
     }
   }
+#endif
+  return(0) ;
 }

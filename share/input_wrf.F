@@ -47,7 +47,7 @@
     CHARACTER*80  fname
     LOGICAL dryrun
     INTEGER idt
-    INTEGER itmp, dyn_opt, filestate
+    INTEGER itmp, dyn_opt, filestate, ierr3
     INTEGER :: ide_compare , jde_compare , kde_compare
     REAL , DIMENSION(16) :: lats16 , lons16
 
@@ -78,14 +78,16 @@
 
     !  Test to make sure that the input data is the right size.
 
-    CALL wrf_get_dom_ti_integer ( fid , 'WEST-EAST_GRID_DIMENSION' ,    ide_compare , 1 , icnt , ierr )
-    CALL wrf_get_dom_ti_integer ( fid , 'SOUTH-NORTH_GRID_DIMENSION' ,  jde_compare , 1 , icnt , ierr )
-    CALL wrf_get_dom_ti_integer ( fid , 'BOTTOM-TOP_GRID_DIMENSION' ,   kde_compare , 1 , icnt , ierr )
+    ierr = 0
+    CALL wrf_get_dom_ti_integer ( fid , 'WEST-EAST_GRID_DIMENSION' ,    ide_compare , 1 , icnt , ierr3 ) ; ierr = max( ierr, ierr3 )
+    CALL wrf_get_dom_ti_integer ( fid , 'SOUTH-NORTH_GRID_DIMENSION' ,  jde_compare , 1 , icnt , ierr3 ) ; ierr = max( ierr, ierr3 )
+    CALL wrf_get_dom_ti_integer ( fid , 'BOTTOM-TOP_GRID_DIMENSION' ,   kde_compare , 1 , icnt , ierr3 ) ; ierr = max( ierr, ierr3 )
+    IF ( ierr3 .NE. 0 ) CALL wrf_error_fatal( 'wrf_get_dom_ti_integer getting dimension information from dataset' )
 
 ! do the check only for the model initial data input stream
     IF ( ( ide .NE. ide_compare    ) .OR. &
-        ( kde .NE. kde_compare    ) .OR. &
-        ( jde .NE. jde_compare    ) ) THEN
+         ( kde .NE. kde_compare    ) .OR. &
+         ( jde .NE. jde_compare    ) ) THEN
       WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  namelist ide,jde,kde=',ide,jde,kde,&
                               '; input data ide,jde,kde=',ide_compare , jde_compare , kde_compare
       CALL wrf_error_fatal( wrf_err_message )

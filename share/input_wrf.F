@@ -49,6 +49,7 @@
     INTEGER idt
     INTEGER itmp, dyn_opt, filestate
     INTEGER :: ide_compare , jde_compare , kde_compare
+    REAL , DIMENSION(16) :: lats16 , lons16
 
 !<DESCRIPTION>
 !
@@ -128,6 +129,50 @@
     WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_real for STAND_LON returns ',config_flags%stand_lon
     CALL wrf_debug ( 300 , wrf_err_message )
     CALL nl_set_stand_lon ( grid%id , config_flags%stand_lon )
+
+#if ( NMM_CORE != 1 )
+    IF ( program_name(1:7) .EQ. "REAL_EM" ) THEN
+    CALL wrf_get_dom_ti_real ( fid , 'corner_lats' ,  lats16 , 16 , icnt , ierr )
+    WRITE(wrf_err_message,FMT='(A,16f6.1)')'input_wrf: wrf_get_dom_ti_real for CORNER_LATS returns ',lats16
+    CALL wrf_debug ( 300 , wrf_err_message )
+    grid%em_lat_ll_t = lats16( 1)
+    grid%em_lat_ul_t = lats16( 2)
+    grid%em_lat_ur_t = lats16( 3)
+    grid%em_lat_lr_t = lats16( 4)
+    grid%em_lat_ll_u = lats16( 5)
+    grid%em_lat_ul_u = lats16( 6)
+    grid%em_lat_ur_u = lats16( 7)
+    grid%em_lat_lr_u = lats16( 8)
+    grid%em_lat_ll_v = lats16( 9)
+    grid%em_lat_ul_v = lats16(10)
+    grid%em_lat_ur_v = lats16(11)
+    grid%em_lat_lr_v = lats16(12)
+    grid%em_lat_ll_d = lats16(13)
+    grid%em_lat_ul_d = lats16(14)
+    grid%em_lat_ur_d = lats16(15)
+    grid%em_lat_lr_d = lats16(16)
+
+    CALL wrf_get_dom_ti_real ( fid , 'corner_lons' ,  lons16 , 16 , icnt , ierr )
+    WRITE(wrf_err_message,FMT='(A,16f6.1)')'input_wrf: wrf_get_dom_ti_real for CORNER_LONS returns ',lons16
+    CALL wrf_debug ( 300 , wrf_err_message )
+    grid%em_lon_ll_t = lons16( 1)
+    grid%em_lon_ul_t = lons16( 2)
+    grid%em_lon_ur_t = lons16( 3)
+    grid%em_lon_lr_t = lons16( 4)
+    grid%em_lon_ll_u = lons16( 5)
+    grid%em_lon_ul_u = lons16( 6)
+    grid%em_lon_ur_u = lons16( 7)
+    grid%em_lon_lr_u = lons16( 8)
+    grid%em_lon_ll_v = lons16( 9)
+    grid%em_lon_ul_v = lons16(10)
+    grid%em_lon_ur_v = lons16(11)
+    grid%em_lon_lr_v = lons16(12)
+    grid%em_lon_ll_d = lons16(13)
+    grid%em_lon_ul_d = lons16(14)
+    grid%em_lon_ur_d = lons16(15)
+    grid%em_lon_lr_d = lons16(16)
+    ENDIF
+#endif
 
 #if ( NMM_CORE != 1 )
 ! program_name is defined in module_domain and set in the main program for whatever application

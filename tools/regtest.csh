@@ -186,8 +186,10 @@ set start = ( `date` )
 set NESTED = TRUE
 set NESTED = FALSE
 
-if ( ( $NESTED == TRUE ) && ( `uname` != OSF1 ) ) then
-	echo NESTED option is only valid on DEC machines
+if ( ( $NESTED == TRUE ) && ( ( `uname` == OSF1 ) || ( `hostname` == bay-mmm ) ) ) then
+	echo DOING a NESTED TEST
+else if ( $NESTED == TRUE ) then
+	echo NESTED option is only valid on DEC machines or bay-mmm
 	exit ( 1 ) 
 endif
 
@@ -757,7 +759,11 @@ else if ( ( $ARCH[1] == Linux ) && ( `hostname` == bay-mmm ) ) then
 	if ( ! -d $DEF_DIR ) mkdir $DEF_DIR
 	set TMPDIR		= .
 	set MAIL		= /bin/mail
-	set COMPOPTS		= ( 1 3 5 )
+	if ( $NESTED == TRUE ) then
+		set COMPOPTS	= ( 2 4 5 )
+	else
+		set COMPOPTS	= ( 1 3 5 )
+	endif
 	set Num_Procs		= 2
 	set OPENMP		= $Num_Procs
 	cat >! machfile << EOF

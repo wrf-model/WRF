@@ -148,6 +148,67 @@ SHOW_DOMAIN_DECOMP ( d_p )
  }
 }
 
+
+READ_DOMAIN_DECOMP ( d_p, wrk,  m, n )
+  int_p d_p ;
+  int * wrk ;
+  int m, n ;
+{
+  int P ;
+  int d ;
+  char fname[50] ;
+  FILE * fp ;
+  rsl_index_t i, j, k ;
+  char * code ;
+  int i_am_monitor ;
+  int in_d, in_len_n, in_len_m ;
+
+  code = "r+" ;
+
+  d = *d_p ;
+
+  sprintf(fname,"read_domain_%04d",0) ;
+
+  if (( fp = fopen ( fname, code )) == NULL )
+  {
+     perror(fname) ;
+     return(1) ;
+  }
+
+  fscanf(fp,"domain=%d, len_n=%d, len_m=%d\n", 
+	     &in_d, &in_len_n, &in_len_m ) ;
+  fprintf(stderr,"READ_DOMAIN_DECOMP: domain=%d, len_n=%d, len_m=%d\n", in_d,in_len_n,in_len_m ) ;
+
+  if ( in_len_n != domain_info[d].len_n ) {
+    fprintf(stderr,"in_len_n != domain_info[d].len_n (%d != %d)\n",in_len_n,domain_info[d].len_n) ;
+    RSL_TEST_ERR(1,"" ) ;
+  }
+  if ( in_len_m != domain_info[d].len_m ) {
+    fprintf(stderr,"in_len_m != domain_info[d].len_m (%d != %d)\n",in_len_m,domain_info[d].len_m) ;
+    RSL_TEST_ERR(1,"" ) ;
+  }
+
+  for ( i = domain_info[d].len_m-1 ; i >= 0 ; i-- )
+  {
+    for ( j = 0 ; j < domain_info[d].len_n ; j++ )
+    {
+      fscanf(fp, "%2d ",&P) ;
+      wrk[INDEX_2(j,i,domain_info[d].len_m)] = P ;
+#if 0
+      fprintf(stderr,"%2d ",wrk[INDEX_2(j,i,domain_info[d].len_m)]) ;
+#endif
+    }
+    fscanf(fp,"\n") ;
+#if 0
+    fprintf(stderr,"\n") ;
+#endif
+  }
+
+  fclose(fp) ;
+  return(0) ;
+}
+
+
 GET_DOMAIN_DECOMP ( d_p, wk, nwk_p )
   int_p d_p ;
   int_p wk ;

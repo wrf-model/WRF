@@ -240,6 +240,7 @@
 
 #   define RSL_SET_REGULAR_DECOMP  rsl_set_regular_decomp__
 #   define RSL_ALLOW_DYNPAD  rsl_allow_dynpad__
+#   define RSL_GET_COMMUNICATOR    rsl_get_communicator__
 
 #    else
 
@@ -411,6 +412,8 @@
 #   define RSL_SET_REGULAR_DECOMP  rsl_set_regular_decomp_
 #   define RSL_ALLOW_DYNPAD  rsl_allow_dynpad_
 
+#   define RSL_GET_COMMUNICATOR    rsl_get_communicator_
+
 #    endif
 
 #  else
@@ -581,6 +584,8 @@
 
 #   define RSL_SET_REGULAR_DECOMP  rsl_set_regular_decomp
 #   define RSL_ALLOW_DYNPAD  rsl_allow_dynpad
+
+#   define RSL_GET_COMMUNICATOR    rsl_get_communicator
 
 #  endif
 #endif

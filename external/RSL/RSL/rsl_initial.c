@@ -293,3 +293,13 @@ RSL_SET_REGULAR_DECOMP ()
   regular_decomp = 1 ;
 }
 
+RSL_GET_COMMUNICATOR ( communicator )
+  int_p  communicator ;  /* (O) return value with communicator from underlying mp layer (mpi probably) */
+{
+#ifdef MPI
+  *communicator = MPI_COMM_WORLD ;
+#else
+  *communicator = 0 ;
+#endif
+}
+

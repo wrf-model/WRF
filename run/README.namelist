@@ -45,7 +45,7 @@ Description of namelist variables
  restart_interval		     = 1440,	; restart output file interval in minutes
  io_form_history                     = 2,       ; 2 = netCDF 
  io_form_restart                     = 2,       ; 2 = netCDF 
- io_form_initial                     = 2,       ; 2 = netCDF
+ io_form_input                       = 2,       ; 2 = netCDF
  io_form_boundary                    = 2,       ; netCDF format
                                      = 4,       ; PHD5 format
                                      = 5,       ; GRIB1 format

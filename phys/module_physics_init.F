@@ -404,6 +404,7 @@ integer myproc
         READ (landuse_unit,*)LUCATS,LUSEAS                                    
         FOUND_LU = LUTYPE.EQ.MMINLU
       endif
+      CALL wrf_dm_bcast_string(lutype, 4)
       CALL wrf_dm_bcast_bytes (lucats,  IWORDSIZE )
       CALL wrf_dm_bcast_bytes (luseas,  IWORDSIZE )
       CALL wrf_dm_bcast_bytes (found_lu,  LWORDSIZE )

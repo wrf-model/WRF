@@ -261,6 +261,7 @@ RSL_FDECOMPOSE (d_p,fcn,py_p,px_p,info_p,mloc_p,nloc_p,zloc_p,
     result = rsl_default_decomp( wrk1, wrk2, info_p, &m, &n, &py1, &px1 ) ;
   }
 
+
   if ( result )
   {
     if ( dinfo->decomposed )
@@ -291,6 +292,10 @@ RSL_FDECOMPOSE (d_p,fcn,py_p,px_p,info_p,mloc_p,nloc_p,zloc_p,
   }
 
   destroy_decomposition( d_p ) ;                /* no backing out now */
+
+#ifdef ENABLE_READ_DECOMP
+result = read_domain_decomp ( d, wrk2,  m, n ) ;  /* 20030505 */
+#endif
 
   for ( P = 0 ; P < RSL_MAXPROC ; P++ )
   {

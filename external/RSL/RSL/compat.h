@@ -233,6 +233,7 @@
 #   define RSL_WRITE_1D_DATA     rsl_write_1d_data__
 
 #   define RSL_REGISTER_F90     rsl_register_f90__
+#   define RSL_REGISTER_F90_BASE_AND_SIZE     rsl_register_f90_base_and_size__
 #   define RSL_START_REGISTER_F90     rsl_start_register_f90__
 #   define RSL_END_REGISTER_F90     rsl_end_register_f90__
 
@@ -438,6 +439,7 @@
 
 #   define RSL_REGISTER_F90     rsl_register_f90_
 #   define RSL_START_REGISTER_F90     rsl_start_register_f90_
+#   define RSL_REGISTER_F90_BASE_AND_SIZE     rsl_register_f90_base_and_size_
 #   define RSL_END_REGISTER_F90     rsl_end_register_f90_
 
 #   define RSL_RESET_STAGING   rsl_reset_staging_
@@ -644,6 +646,7 @@
 
 #   define RSL_REGISTER_F90     rsl_register_f90
 #   define RSL_START_REGISTER_F90     rsl_start_register_f90
+#   define RSL_REGISTER_F90_BASE_AND_SIZE     rsl_register_f90_base_and_size
 #   define RSL_END_REGISTER_F90     rsl_end_register_f90
 
 #   define RSL_RESET_STAGING   rsl_reset_staging

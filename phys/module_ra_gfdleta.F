@@ -9533,7 +9533,7 @@ CONTAINS
 !       do kk=1,6
 !         write(retval)(co2d1d(k,kk),k=1,60)
 !       enddo
-      DO K=1,LP1
+      DO K=1,L
         CDTM51(K)=CO2D1D(K,1)
         CO2M51(K)=CO2D1D(K,2)
         C2DM51(K)=CO2D1D(K,3)
@@ -9642,15 +9642,15 @@ CONTAINS
 
       RETURN
 9061 CONTINUE
-     WRITE( errmess , '(A38,I4)' ) 'module_ra_gfdleta: error reading tr49t85 on unit ',etarad_unit61
+     WRITE( errmess , '(A49,I4)' ) 'module_ra_gfdleta: error reading tr49t85 on unit ',etarad_unit61
      write(0,*)' IERROR=',IERROR
      CALL wrf_error_fatal(errmess)
 9062 CONTINUE
-     WRITE( errmess , '(A38,I4)' ) 'module_ra_gfdleta: error reading tr49t67 on unit ',etarad_unit62
+     WRITE( errmess , '(A49,I4)' ) 'module_ra_gfdleta: error reading tr49t67 on unit ',etarad_unit62
      write(0,*)' IERROR=',IERROR
      CALL wrf_error_fatal(errmess)
 9063 CONTINUE
-     WRITE( errmess , '(A38,I4)' ) 'module_ra_gfdleta: error reading tr67t85 on unit ',etarad_unit63
+     WRITE( errmess , '(A49,I4)' ) 'module_ra_gfdleta: error reading tr67t85 on unit ',etarad_unit63
      write(0,*)' IERROR=',IERROR
      CALL wrf_error_fatal(errmess)
       END SUBROUTINE CO2O3

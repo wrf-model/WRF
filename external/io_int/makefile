@@ -32,14 +32,14 @@ module_internal_header_util.o :
 			$(FC) $(FFLAGS) -I.. -I../../inc -c module_internal_header_util.f
 			
 
-diffwrf:                diffwrf.F ../../frame/pack_utils.o ../../frame/module_machine.o libwrfio_int.a
+diffwrf:                diffwrf.F ../../frame/pack_utils.o ../../frame/module_machine.o ../../frame/module_wrf_error.o libwrfio_int.a
 			if [ -f ../../frame/pack_utils.o ] ; then \
 			$(CPP1) diffwrf.F > diffwrf.f     ; \
 			$(FC) -c $(FFLAGS) diffwrf.f     ; \
 			$(FC) $(FFLAGS) $(LDFLAGS) -o diffwrf diffwrf.o $(OBJSL) \
-                              ../../frame/pack_utils.o ../../frame/module_internal_header_util.o ../../frame/module_machine.o ; fi
+                              ../../frame/pack_utils.o ../../frame/module_internal_header_util.o ../../frame/module_machine.o ../../frame/module_wrf_error.o ; fi
 
-../../frame/pack_utils.o ../../frame/internal_header_util.o ../../frame/module_machine.o :
+../../frame/pack_utils.o ../../frame/internal_header_util.o ../../frame/module_machine.o ../../frame/module_wrf_error.o :
 			@echo "Diffwrf will be built later on in this compile. No need to rerun compile. "
 
 superclean:

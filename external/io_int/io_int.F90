@@ -64,9 +64,10 @@ MODULE module_ext_internal
 
 END MODULE module_ext_internal
 
-SUBROUTINE ext_int_ioinit( Status )
+SUBROUTINE ext_int_ioinit( SysDepInfo, Status )
   USE module_ext_internal
   IMPLICIT NONE
+  CHARACTER*(*), INTENT(IN) :: SysDepInfo
   INTEGER Status
   CALL init_module_ext_internal
 END SUBROUTINE ext_int_ioinit

@@ -113,7 +113,7 @@ end module read_util_module
 
   levlim = -1
 
-  call ext_int_ioinit(Status)
+  call ext_int_ioinit(' ', Status)
 
   Justplot = .false.
 ! get arguments
@@ -397,19 +397,9 @@ logical function iveceq( a, b, n )
   return
 end function iveceq
 
-! routines to satisfy unresolved references when compiling without WRF
-subroutine wrf_error_fatal( str )
-character*(*) str
-write(0,*)'str'
-write(*,*)'str'
-stop
-end
 
-subroutine wrf_message( str )
-character*(*) str
-write(0,*)'str'
-write(*,*)'str'
-return
-end
-
+! stub for routine called by module_wrf_error (used by this implementation of IO api)
+SUBROUTINE wrf_abort
+  STOP
+END SUBROUTINE wrf_abort
 

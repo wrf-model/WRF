@@ -315,7 +315,7 @@ i++ ;
 #endif
 
   dummy = 0 ;
-  rsl_bubble( list_head, compare_primary, dummy ) ;
+  rsl_sort( &list_head, compare_primary, dummy ) ;
 
   /* figure the number of entries */
   for ( i = 0, lp = list_head ; lp ; lp = lp->next )
@@ -324,7 +324,7 @@ i++ ;
 
   for ( lp = list_head ; lp ; lp = lp->next )
   {
-    rsl_bubble( lp->data, compare_secondary, 99 ) ;
+    rsl_sort( &(lp->data), compare_secondary, 99 ) ;
 #if 1
     if ( collapse ) collapsetable( &(lp->data) ) ;
 #endif

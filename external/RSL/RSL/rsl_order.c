@@ -97,6 +97,15 @@ RSL_ORDER ( d_p, dir_p )
   }
 }
 
+lenlist( a )
+  rsl_list_t *a ;
+{
+  rsl_list_t *p ;
+  int i ;
+  for ( p = a, i = 0 ; p != NULL ; p = p->next ) i++  ;
+  return (i) ;
+}
+
 showlist( l, s )
   rsl_list_t * l ;
   char * s  ;
@@ -113,6 +122,226 @@ showlist( l, s )
     fprintf(stderr,"%s > %d %d\n",s,i,j) ;
   }
 }
+
+#define QUICKSORT
+#ifdef QUICKSORT
+
+rsl_sort( list, compare, up )
+  rsl_list_t **list ;
+  int (*compare)() ;
+  int up ;
+{
+#if 0
+  fprintf(stderr,"rsl_sort: lenlist(*list) = %d  %x\n", lenlist(*list), *list ) ; 
+#endif
+  rsl_sort1( list, compare, up ) ;
+}
+
+rsl_sort1( list, compare, up )
+  rsl_list_t **list ;
+  int (*compare)() ;
+  int up ;
+{
+  int n, np, nq ;
+  rsl_list_t *p, *q, *qnext ;
+
+  p = *list ; q = NULL ;
+
+  /* count items and q at list midpoint */
+  for ( n = 0, nq = 0 ; p != NULL ; p = p->next )
+  {
+    if ( n % 2 == 1 ) {
+      if ( q == NULL ) { q = *list ; }
+      else             { q = q->next ; }
+      nq++ ;
+    }
+    n++ ;
+  }
+  if ( n <= 1 ) return ;
+  np = n - nq ;  /* nq is length of first half; np is length of second half */
+
+  qnext = q->next ;
+  q->next = NULL ;
+  /* first half */
+  if ( nq > 1 )
+  {
+    rsl_sort1( list, compare, up ) ;
+  }
+  /* second half */
+  if ( np > 1 )
+  {
+    rsl_sort1( &qnext, compare, up ) ;
+  }
+  if ( n > 0 )
+  {
+    rsl_quicksort_merge ( list, *list, qnext, compare, up, n ) ;
+  }
+}
+
+rsl_quicksort_merge( retlist, a , b, compare, up, n )
+  rsl_list_t **retlist, *a , *b  ;
+  int (*compare)() ;
+  int up ;
+  int n ;
+{
+  rsl_list_t *newlist, *t, *p, *q ;
+  int i ;
+
+  p = b ; q = a ;
+  if ( q != NULL && p != NULL )
+  {
+    if ( (*compare)(q->data,p->data,up) )
+    {
+      newlist = p ;
+      p = p->next ;
+    }
+    else
+    {
+      newlist = q ;
+      q = q->next ;
+    }
+  }
+  else if ( p != NULL )
+  {
+    newlist = p ; p = p->next ;
+  }
+  else if ( q != NULL )
+  {
+    newlist = q ; q = q->next ;
+  }
+
+  t = newlist ;
+  for ( i = 1 ; i < n ; i++ )
+  {
+    if ( q != NULL && p != NULL )
+    {
+      if( (*compare)(q->data,p->data,up) )
+      {
+        t->next = p ;
+        p = p->next ;
+      }
+      else
+      {
+        t->next = q ;
+        q = q->next ;
+      }
+    }
+    else if ( q != NULL )
+    {
+      t->next = q ;
+      q = q->next ;
+    }
+    else if ( p != NULL )
+    {
+      t->next = p ;
+      p = p->next ;
+    }
+    t = t->next ;
+  }
+  t->next = NULL ;
+  *retlist = newlist ;
+}
+
+#else
+rsl_sort( list_p, compare, up )
+  rsl_list_t **list ;
+  int (*compare)() ;
+  int up ;
+{
+  rsl_list_t *lp, *prev, *list ;
+  int swap, pass, iclock, nelems, swaps ;
+  void * data ;
+
+  list = *list_p ;
+
+  fprintf(stderr,"rsl_sort: lenlist(list) = %d\n", lenlist(list) ) ; 
+
+#ifdef RSL_INTERNAL_MILLICLOCK
+  iclock = rsl_internal_milliclock() ;
+#endif
+  pass = 0 ;
+  swap = 1 ;
+  swaps = 0 ;
+  nelems = 0 ;
+  while ( swap )
+  {
+    swap = 0 ;
+    for ( lp = list ; lp != NULL ; lp = lp->next )
+    {
+      if ( pass == 0 )
+      {
+#if 0
+	if ( up == 99 ) fprintf(stderr," offset %10d \n",
+			  ((packrec_t*)(lp->data))->offset ) ;
+#endif
+        nelems++ ;
+      }
+    }
+    for ( lp = list ; lp != NULL ; lp = lp->next )
+    {
+      if ( lp != list ) 
+      {
+	if( (*compare)(prev->data,lp->data,up) )
+	{
+	  data = prev->data ;
+	  prev->data = lp->data ;
+	  lp->data = data ;
+	  swap = 1 ;
+          swaps++ ;
+	}
+      }
+      prev = lp ;
+    }
+    pass++ ;
+  }
+#ifdef RSL_INTERNAL_MILLICLOCK
+fprintf(stderr,"debug sort %6d elems %10d passes %10d swaps %12d millisecs\n",nelems,pass,swaps,rsl_internal_milliclock()-iclock) ;
+#endif
+}
+#endif
+
+#if 0
+/* return 1 if points should be swapped */
+/* sort is stable */
+int
+compare( p, c, up )
+  rsl_point_t *p, *c ;
+  int up ; /* left to right index (lowest = 1), if negative descending sort */
+{
+  int p1, c1, retval ;
+  int desc = 0 ;
+
+  if ( up < 0 )
+  {
+    up = -up ;		/* descending sort */
+    desc = 1 ;
+  }
+  switch( up )
+  {
+  case 1 :
+    p1 = ID_IDEX(p->id) ;
+    c1 = ID_IDEX(c->id) ;
+    if ( desc )
+      retval = ( p1 < c1 )?1:0 ;
+    else
+      retval = ( p1 > c1 )?1:0 ;
+    break ;
+  case 2 :
+    p1 = ID_JDEX(p->id) ;
+    c1 = ID_JDEX(c->id) ;
+    if ( desc )
+      retval = ( p1 < c1 )?1:0 ;
+    else
+      retval = ( p1 > c1 )?1:0 ;
+    break ;
+  default :
+    RSL_TEST_ERR(1,"compare: no such index") ;
+  }
+  return(retval) ;
+}
+#endif
+
+/* OBSOLETE */
 bubble( list, up )
   rsl_list_t *list ;
   int up ;
@@ -217,98 +446,3 @@ bubble( list, up )
 
   RSL_FREE(lst) ;
 }
-
-#if 1
-rsl_bubble( list, compare, up )
-  rsl_list_t *list ;
-  int (*compare)() ;
-  int up ;
-{
-  rsl_list_t *lp, *prev ;
-  int swap, pass, iclock, nelems, swaps ;
-  void * data ;
-
-#ifdef RSL_INTERNAL_MILLICLOCK
-  iclock = rsl_internal_milliclock() ;
-#endif
-  pass = 0 ;
-  swap = 1 ;
-  swaps = 0 ;
-  nelems = 0 ;
-  while ( swap )
-  {
-    swap = 0 ;
-    for ( lp = list ; lp != NULL ; lp = lp->next )
-    {
-      if ( pass == 0 )
-      {
-#if 0
-	if ( up == 99 ) fprintf(stderr," offset %10d \n",
-			  ((packrec_t*)(lp->data))->offset ) ;
-#endif
-        nelems++ ;
-      }
-    }
-    for ( lp = list ; lp != NULL ; lp = lp->next )
-    {
-      if ( lp != list ) 
-      {
-	if( (*compare)(prev->data,lp->data,up) )
-	{
-	  data = prev->data ;
-	  prev->data = lp->data ;
-	  lp->data = data ;
-	  swap = 1 ;
-          swaps++ ;
-	}
-      }
-      prev = lp ;
-    }
-    pass++ ;
-  }
-#ifdef RSL_INTERNAL_MILLICLOCK
-fprintf(stderr,"debug sort %6d elems %10d passes %10d swaps %12d millisecs\n",nelems,pass,swaps,rsl_internal_milliclock()-iclock) ;
-#endif
-}
-#endif
-
-#if 0
-/* return 1 if points should be swapped */
-/* sort is stable */
-int
-compare( p, c, up )
-  rsl_point_t *p, *c ;
-  int up ; /* left to right index (lowest = 1), if negative descending sort */
-{
-  int p1, c1, retval ;
-  int desc = 0 ;
-
-  if ( up < 0 )
-  {
-    up = -up ;		/* descending sort */
-    desc = 1 ;
-  }
-  switch( up )
-  {
-  case 1 :
-    p1 = ID_IDEX(p->id) ;
-    c1 = ID_IDEX(c->id) ;
-    if ( desc )
-      retval = ( p1 < c1 )?1:0 ;
-    else
-      retval = ( p1 > c1 )?1:0 ;
-    break ;
-  case 2 :
-    p1 = ID_JDEX(p->id) ;
-    c1 = ID_JDEX(c->id) ;
-    if ( desc )
-      retval = ( p1 < c1 )?1:0 ;
-    else
-      retval = ( p1 > c1 )?1:0 ;
-    break ;
-  default :
-    RSL_TEST_ERR(1,"compare: no such index") ;
-  }
-  return(retval) ;
-}
-#endif

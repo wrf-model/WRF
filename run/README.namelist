@@ -64,16 +64,18 @@ Additional ones when running 3DVAR:
 
  write_input                         = t,       ; write input-formatted data as output
  inputout_interval                   = 180,     ; interval in minutes when writing input-formatted data 
- input_outname                       = wrf_3dvar_input_d<domain>_<date> ; you may change the output file name
+ input_outname                       = 'wrf_3dvar_input_d<domain>_<date>' ; you may change the output file name
  inputout_begin_y                    = 0
  inputout_begin_mo                   = 0
  inputout_begin_d                    = 0
  inputout_begin_h                    = 3
+ inputout_begin_m                    = 0
  inputout_begin_s                    = 0
  inputout_end_y                      = 0
  inputout_end_mo                     = 0
  inputout_end_d                      = 0
  inputout_end_h                      = 12
+ inputout_end_m                      = 0
  inputout_end_s                      = 0        ; the above shows that the input-formatted data are output
                                                   starting from hour 3 to hour 12 in 180 min interval.
 

@@ -293,6 +293,7 @@ CONTAINS
   CALL wrf_dm_bcast_real( u , nl_max )
   CALL wrf_dm_bcast_real( v , nl_max )
   CALL wrf_dm_bcast_real( qv , nl_max )
+  CALL wrf_dm_bcast_integer ( nl_in , 1 ) 
 
   write(6,*) ' returned from reading sounding, nl_in is ',nl_in
 

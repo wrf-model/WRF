@@ -1216,7 +1216,7 @@ echo start build mechanism
 banner 7
 #set ans = "$<"
 #DAVE###################################################
-		./clean
+		./clean -a
 		echo $compopt | ./configure
 	
 		#	Decide whether this a bit-for-bit run or an fully optimized run.  We are just

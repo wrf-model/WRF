@@ -205,7 +205,7 @@ state    integer step_number    -       misc      -         -     ir        "ste
 state    real   Q2               ij     misc        1         -     irh       "Q2"                   "QV at 2 M"         "kg kg-1"
 state    real   T2               ij     misc        1         -     irh       "T2"                   "TEMP at 2 M"       "K"
 state    real   TH2              ij     misc        1         -     irh       "TH2"                  "POT TEMP at 2 M"   "K"
-state    real   PSFC             ij     misc        1         -      rh       "PSFC"                 "SFC PRESSURE"      "Pa"
+state    real   PSFC             ij     misc        1         -     irh       "PSFC"                 "SFC PRESSURE"      "Pa"
 
 # these next 2 are for the HFSoLE/PET demo; writing these to auxhist1 output over MCEL for coupling
 # with wave model, only if compiled with -DMCELIO, JM 2003/05/29

@@ -1,0 +1,32 @@
+#!/bin/csh
+
+if ( ${#argv} != 2 ) then
+	echo usage: diffwrf gribfile1 gribfile2
+	exit ( 1 )
+endif
+
+set file1 = $1
+set file2 = $2
+	
+if ( -e fort.88 ) rm fort.88 
+if ( -e fort.98 ) rm fort.98 
+
+if ( ( ! -e $file1 ) || ( ! -e $file2 ) ) then
+	touch fort.88
+	exit ( 0 ) 
+endif
+
+wgrib -s $file1 | wgrib -s -i -o outfile1 $file1 >& /dev/null
+wgrib -s $file2 | wgrib -s -i -o outfile2 $file2 >& /dev/null
+
+cmp outfile1 outfile2
+
+set ok = $status
+
+if ( $ok == 0 ) then
+	
+else
+	touch fort.88
+endif
+
+exit ( 0 ) 

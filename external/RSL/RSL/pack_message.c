@@ -146,7 +146,6 @@ if ( xfp == NULL )
       case sizeof(int) :
 	stride = t1 ;
         ipd = (int *)(&buf[cursor]) ;
-fprintf(stderr,"pack_message base %lu\n",base) ;
 	ips = (int *)(base + (i + j*t0)*elemsz) ;
 	/* ipd must be aligned on 4 byte boundary on some machines
 	   for this to work -- a symptom of it not working would be

@@ -66,13 +66,13 @@ CONTAINS
     CALL nl_get_julday (id, julday)
     idt        = 86400*(julday-1)+nint(3600*gmt)
     write (mess,*) 'calc_current_date called: time = ',time,' idt = ',idt
-    CALL wrf_debug(300,mess)
+    CALL wrf_debug(300,TRIM(mess))
     write (mess,*) 'calc_current_date called: gmt  = ',gmt
-    CALL wrf_debug(300,mess)
+    CALL wrf_debug(300,TRIM(mess))
     write (mess,*) 'calc_current_date called: julyr  = ',julyr
-    CALL wrf_debug(300,mess)
+    CALL wrf_debug(300,TRIM(mess))
     write (mess,*) 'calc_current_date called: julday = ',julday
-    CALL wrf_debug(300,mess)
+    CALL wrf_debug(300,TRIM(mess))
     base_date  = '0000-01-01_00:00:00.0000'
     write(base_date(1:4),'(I4.4)')julyr
     CALL geth_newdate (start_date(1:19), base_date(1:19), idt)
@@ -80,7 +80,7 @@ CONTAINS
     write (current_date(1:24),fmt=340)new_date
     340 format(a19, '.0000')
     write (mess,*) current_date,gmt,julday,julyr,'=current_date,gmt,julday,julyr: calc_current_date'
-    CALL wrf_debug(300,mess)
+    CALL wrf_debug(300,TRIM(mess))
    END SUBROUTINE calc_current_date
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -806,10 +806,10 @@ END MODULE module_date_time
         ENDIF
         IF ( clockinvalid ) THEN
           WRITE (mess,*) TRIM(pre_str),'  ERROR:  clock is invalid, rc = ',rc
-          CALL wrf_message(mess)
+          CALL wrf_message(TRIM(mess))
         ELSE
           WRITE (mess,*) TRIM(pre_str),'  clock is valid'
-          CALL wrf_message(mess)
+          CALL wrf_message(TRIM(mess))
         ENDIF
 
         CALL ESMF_ClockGet( clock, CurrTime=currTime, StartTime=startTime, &
@@ -818,17 +818,17 @@ END MODULE module_date_time
         CALL wrf_timetoa( startTime, startTime_str )
         CALL wrf_timetoa( stopTime, stopTime_str )
         WRITE (mess,*) TRIM(pre_str),'  clock start time = ',TRIM(startTime_str)
-        CALL wrf_message(mess)
+        CALL wrf_message(TRIM(mess))
         WRITE (mess,*) TRIM(pre_str),'  clock current time = ',TRIM(currTime_str)
-        CALL wrf_message(mess)
+        CALL wrf_message(TRIM(mess))
         WRITE (mess,*) TRIM(pre_str),'  clock stop time = ',TRIM(stopTime_str)
-        CALL wrf_message(mess)
+        CALL wrf_message(TRIM(mess))
         IF ( clockinvalid ) THEN
           WRITE (mess,*) TRIM(pre_str),'   BEGIN INVALID CLOCK { '
-          CALL wrf_message(mess)
+          CALL wrf_message(TRIM(mess))
           CALL ESMF_ClockPrint( clock, rc=rc )
           WRITE (mess,*) TRIM(pre_str),' } END INVALID CLOCK'
-          CALL wrf_message(mess)
+          CALL wrf_message(TRIM(mess))
         ENDIF
       ENDIF
       RETURN

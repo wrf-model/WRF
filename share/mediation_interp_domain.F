@@ -15,16 +15,18 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
    INTEGER     :: sm31y, em31y, sm32y, em32y, sm33y, em33y
 
 ! ----------------------------------------------------------
-! ------------------------------------------------------
+! ----------------------------------------------------------
 ! Interface blocks
-! ------------------------------------------------------
+! ----------------------------------------------------------
    INTERFACE
-! ------------------------------------------------------
+! ----------------------------------------------------------
 !    Interface definitions for EM CORE
+! ----------------------------------------------------------
+#if (EM_CORE == 1)
+! ----------------------------------------------------------
 !    These routines are supplied by module_dm.F from the 
 !    external communication package (e.g. external/RSL)
-! ------------------------------------------------------
-#if (EM_CORE == 1)
+! ----------------------------------------------------------
       SUBROUTINE interp_domain_em_part1 ( grid, intermediate_grid, config_flags ,  &
 !
 #        include "em_dummy_args.inc"
@@ -51,20 +53,20 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
 #        include <em_dummy_decl.inc>
       END SUBROUTINE interp_domain_em_part2
 #endif
-! ------------------------------------------------------
+! ----------------------------------------------------------
 !    Interface definitions for NMM (placeholder)
-! ------------------------------------------------------
+! ----------------------------------------------------------
 #if (NMM_CORE == 1)
 #endif
-! ------------------------------------------------------
+! ----------------------------------------------------------
 !    Interface definitions for COAMPS (placeholder)
 ! ----------------------------------------------------------
 #if (COAMPS_CORE == 1)
 #endif
    END INTERFACE
-! ------------------------------------------------------
+! ----------------------------------------------------------
 ! End of Interface blocks
-! ------------------------------------------------------
+! ----------------------------------------------------------
 ! ----------------------------------------------------------
 ! ----------------------------------------------------------
 ! Executable code
@@ -73,13 +75,12 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
 ! set config_flags to reflect the run-time config data for the nested domain
    CALL model_to_grid_config_rec ( nested_grid%id , model_config_rec , config_flags )
 
-! ------------------------------------------------------
+! ----------------------------------------------------------
 !    Interpolation calls for EM CORE.  The called 
 !    routines below are supplied by module_dm.F
 !    from the external communications package (e.g. RSL)
-! ------------------------------------------------------
-
-#if (EM_CORE == 1 && defined( DM_PARALLEL )
+! ----------------------------------------------------------
+#if (EM_CORE == 1 && defined( DM_PARALLEL ))
   IF ( config_flags%dyn_opt == DYN_EM ) THEN
 !   point the grid at the parent for this phase of the interpolation
     grid => parent_grid

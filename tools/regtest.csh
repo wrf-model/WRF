@@ -212,7 +212,6 @@ if      ( $NESTED == TRUE ) then
 	set CORES = (  em_real em_b_wave em_quarter_ss          )
 else if ( $NESTED != TRUE ) then
 	set CORES = (  em_real em_b_wave em_quarter_ss nmm_real )
-	set CORES = (  nmm_real )
 endif
 
 set PHYSOPTS =	( 1 2 3 )

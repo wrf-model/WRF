@@ -384,7 +384,7 @@ module_initialize_real.o module_dm.o  start_domain.o :
 
 
 ###########################################################
-#ARCH	SGI O2K DM IRIX64             (RSL, SGI-MPI, allows nesting)
+#ARCH	SGI O2K DM IRIX64     DM-Parallel        (RSL, SGI-MPI, allows nesting)
 #
 # Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #
@@ -1103,7 +1103,7 @@ module_sm.o module_tiles.o solve_em.o solve_exp.o convert_nmm.o :
 	$(FC) -c -g $(OMP) $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt $*.f
 
 ###########################################################
-#ARCH	AIX DM          (RSL_LITE, IBM-MPI, no nesting)
+#ARCH	AIX DM-Parallel          (RSL_LITE, IBM-MPI, no nesting)
 #
 DMPARALLEL      =       1
 SFC             =       xlf90_r
@@ -1205,7 +1205,7 @@ convert_nmm.o    :
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt $*.f
 
 ###########################################################
-#ARCH	AIX DM          (RSL, IBM-MPI, supports nesting)
+#ARCH	AIX DM-Parallel          (RSL, IBM-MPI, supports nesting)
 #
 DMPARALLEL      =       1
 SFC             =       xlf90_r
@@ -1307,7 +1307,7 @@ convert_nmm.o    :
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt $*.f
 
 ###########################################################
-#ARCH	AIX DM          (RSL, IBM-MPI, supports nesting )(PARALLEL HDF5)
+#ARCH	AIX DM-Parallel          (RSL, IBM-MPI, supports nesting )(PARALLEL HDF5)
 #
 DMPARALLEL      =       1
 SFC             =       xlf90_r
@@ -1412,7 +1412,7 @@ convert_nmm.o    :
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt $*.f
 
 ###########################################################
-#ARCH	AIX DM          (RSL_LITE, IBM-MPI, no nesting )(PARALLEL HDF5)
+#ARCH	AIX DM-Parallel          (RSL_LITE, IBM-MPI, no nesting )(PARALLEL HDF5)
 #
 DMPARALLEL      =       1
 SFC             =       xlf90_r
@@ -1517,7 +1517,7 @@ convert_nmm.o    :
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt $*.f
 
 ###########################################################
-#ARCH	AIX DM/SM       (RSL, IBM-MPI, OpenMP, supports nesting)
+#ARCH	AIX DM-Parallel/SM-Parallel       (RSL, IBM-MPI, OpenMP, supports nesting)
 #
 DMPARALLEL      =       1
 OMP             =       -qsmp=noauto
@@ -1633,7 +1633,7 @@ mediation_force_domain.o start_domain.o :
 	$(FC) -c -g $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt $*.f
 
 ###########################################################
-#ARCH	AIX DM          (RSL, IBM-MPI, supports nesting, MOVING NESTS, EXPERIMENTAL )
+#ARCH	AIX DM-Parallel          (RSL, IBM-MPI, supports nesting, MOVING NESTS, EXPERIMENTAL )
 #
 DMPARALLEL      =       1
 SFC             =       xlf90_r
@@ -1735,7 +1735,7 @@ convert_nmm.o    :
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt $*.f
 
 ###########################################################
-#ARCH	AIX DM          (RSL, IBM-MPI, MCEL)   May 2003, EXPERIMENTAL
+#ARCH	AIX DM-Parallel          (RSL, IBM-MPI, MCEL)   May 2003, EXPERIMENTAL
 #
 DMPARALLEL      =       1
 SFC             =       xlf90_r
@@ -2122,7 +2122,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
 
 ###########################################################
-#ARCH       Compaq OSF1 alpha SM       (OpenMP, nesting using RSL without MPI )
+#ARCH       Compaq OSF1 alpha SM-Parallel       (OpenMP, nesting using RSL without MPI )
 #
 # Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #
@@ -2224,7 +2224,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
 
 ###########################################################
-#ARCH     Compaq OSF1 alpha DM       (RSL_LITE, MPICH, no nesting)
+#ARCH     Compaq OSF1 alpha DM-Parallel       (RSL_LITE, MPICH, no nesting)
 #
 DMPARALLEL      =       1
 OMP             =
@@ -2324,7 +2324,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
 
 ###########################################################
-#ARCH       Compaq OSF1 alpha DM       (RSL, MPICH, allows nesting)
+#ARCH       Compaq OSF1 alpha DM-Parallel       (RSL, MPICH, allows nesting)
 #
 # Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #
@@ -2427,7 +2427,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
 
 ###########################################################
-#ARCH       Compaq OSF1 alpha DM/SM    (RSL, MPICH, OpenMP, allows nesting)
+#ARCH       Compaq OSF1 alpha DM-Parallel/SM-Parallel    (RSL, MPICH, OpenMP, allows nesting)
 #
 # Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #
@@ -2530,7 +2530,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
 
 ###########################################################
-#ARCH       Compaq OSF1 alpha DM/SM    (RSL, DECMPI, OpenMP, allows nesting)
+#ARCH       Compaq OSF1 alpha DM-Parallel/SM-Parallel    (RSL, DECMPI, OpenMP, allows nesting)
 #
 # Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #
@@ -2633,7 +2633,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
 
 ###########################################################
-#ARCH       Compaq OSF1 alpha DM       (RSL, MPICH, allows nesting, MOVING NESTS EXPERIMENTAL)
+#ARCH       Compaq OSF1 alpha DM-Parallel       (RSL, MPICH, allows nesting, MOVING NESTS EXPERIMENTAL)
 #
 DMPARALLEL      =       1
 OMP             =
@@ -2733,7 +2733,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
 
 ###########################################################
-#ARCH       Compaq OSF1 alpha DM       (RSL, MPICH, RSL IO, MCEL EXPERIMENTAL)
+#ARCH       Compaq OSF1 alpha DM-Parallel       (RSL, MPICH, RSL IO, MCEL EXPERIMENTAL)
 #
 DMPARALLEL      =       1
 OMP             =
@@ -3117,7 +3117,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(FCBASENOINL) $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH       Alpha Linux alpha DM  (RSL, MPICH, RSL IO, support nesting)
+#ARCH       Alpha Linux alpha DM-Parallel  (RSL, MPICH, RSL IO, support nesting)
 #
 DMPARALLEL      =       1
 MAX_PROC        =       1024
@@ -3318,7 +3318,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =
 CPP             =       /lib/cpp -C -P
-POUND_DEF	=	-DPGF90 -traditional $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
+POUND_DEF	=	-traditional $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) $(POUND_DEF)
 AR              =       ar ru
 M4              =       m4
@@ -3413,7 +3413,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =       -byteswapio
 CPP             =       /lib/cpp -C -P
-POUND_DEF	=	-DNO_RRTM_PHYSICS  -DPGF90 -traditional $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
+POUND_DEF	=	-DNO_RRTM_PHYSICS  -traditional $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL/RSL -C -P `cat ../inc/dm_comm_cpp_flags` $(POUND_DEF)
 AR              =       ar ru
 M4              =       m4
@@ -3513,7 +3513,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =	$(FCFLAGS) $(OMP)
 CPP             =       /lib/cpp -C -P
-POUND_DEF	=	-DPGF90 $(OMPCPP) -traditional $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
+POUND_DEF	=	$(OMPCPP) -traditional $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) $(POUND_DEF)
 AR              =       ar ru
 M4              =       m4
@@ -3612,7 +3612,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =       $(FCFLAGS) $(OMP)
 CPP             =       /lib/cpp -C -P
-POUND_DEF	=	-DNO_RRTM_PHYSICS  -DPGF90 $(OMPCPP) -traditional $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
+POUND_DEF	=	-DNO_RRTM_PHYSICS  $(OMPCPP) -traditional $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL/RSL -C -P `cat ../inc/dm_comm_cpp_flags` $(POUND_DEF)
 AR              =       ar ru
 M4              =       m4
@@ -3718,7 +3718,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =       -byteswapio
 CPP             =       /lib/cpp -C -P
-POUND_DEF	=	-DNO_RRTM_PHYSICS  -DPGF90 -traditional $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
+POUND_DEF	=	-DNO_RRTM_PHYSICS  -traditional $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL/RSL -C -P `cat ../inc/dm_comm_cpp_flags` $(POUND_DEF)
 AR              =       ar ru
 M4              =       m4
@@ -3820,7 +3820,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL_LITE -lrsl_l
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =       -byteswapio
 CPP             =       /lib/cpp -C -P
-POUND_DEF	=	-DNO_RRTM_PHYSICS  -DPGF90 -traditional $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
+POUND_DEF	=	-DNO_RRTM_PHYSICS  -traditional $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL_LITE -C -P `cat ../inc/dm_comm_cpp_flags` $(POUND_DEF)
 AR              =       ar ru
 M4              =       m4
@@ -3892,7 +3892,10 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH    Intel Itanium2 ia64 madison Linux (e.g. mpp2 at PNNL), efc71 compiler (RSL, MPICH, nesting)
+#ARCH    Intel Itanium2 ia64 madison Linux DM-Parallel (e.g. mpp2 at PNNL), efc71 compiler (RSL, MPICH, nesting)
+#
+# Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#
 #
 DMPARALLEL = 1
 MAX_PROC = 2000
@@ -4000,6 +4003,9 @@ module_initialize_real.o module_dm.o start_domain.o :
 #          Built this netcdf by first setenv FC efc and CPPFLAGS '-DNDEBUG -DpgiFortran'
 #          before typing configure and make and make install   20040506. JM
 #          Remember: setenv F_UFMTENDIAN big
+#
+# Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#
 #
 DMPARALLEL = 1
 MAX_PROC = 1
@@ -4137,7 +4143,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =
 CPP             =       /lib/cpp -C -P
-POUND_DEF	=	-DPGF90 -traditional $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
+POUND_DEF	=	-traditional $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) $(POUND_DEF)
 AR              =       ar ru
 M4              =       m4
@@ -4203,7 +4209,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH    PC Linux x86_64 (IA64 and Opteron), PGI compiler 5.2 or higher    (RSL, MPICH, RSL IO, support nesting)
+#ARCH    PC Linux IA64 and Opteron, PGI 5.2 or higher, DM-Parallel  (RSL, MPICH, RSL IO, support nesting)
 #
 # Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #
@@ -4236,7 +4242,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =       -byteswapio
 CPP             =       /lib/cpp -C -P
-POUND_DEF	=	-DNO_RRTM_PHYSICS  -DPGF90 -traditional $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
+POUND_DEF	=	-DNO_RRTM_PHYSICS  -traditional $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL/RSL -C -P `cat ../inc/dm_comm_cpp_flags` $(POUND_DEF)
 AR              =       ar ru
 M4              =       m4
@@ -4311,7 +4317,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 
 
 ###########################################################
-#ARCH    PC Linux x86_64 (IA64 and Opteron), PGI compiler 5.2 or higher    (RSL_LITE, MPICH, No nesting, No periodic LBCs)
+#ARCH    PC Linux IA64 and Opteron, PGI 5.2 or higher DM-Parallel   (RSL_LITE, MPICH, No nesting, No periodic LBCs)
 #        Note that for 5.1.x comment out -Mpia=fast
 #
 DMPARALLEL      =       1
@@ -4341,7 +4347,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL_LITE -lrsl_l
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =       -byteswapio
 CPP             =       /lib/cpp -C -P
-POUND_DEF	=	-DNO_RRTM_PHYSICS  -DPGF90 -traditional $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
+POUND_DEF	=	-DNO_RRTM_PHYSICS  -traditional $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL_LITE -C -P `cat ../inc/dm_comm_cpp_flags` $(POUND_DEF)
 AR              =       ar ru
 M4              =       m4
@@ -4416,7 +4422,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 
 
 ###########################################################
-#ARCH    Intel Itanium2 ia64 madison Linux  (e.g. mpp2 at PNNL) , efc71 compiler (RSL_LITE, MPICH, no nesting )
+#ARCH    Intel Itanium2 ia64 madison Linux  (e.g. mpp2 at PNNL) , efc71 compiler DM-Parallel (RSL_LITE, MPICH, no nesting )
 # Notes for running on PNNL cluster:
 # 
 # 1. source /home/oehmen/.mycshrc
@@ -4522,10 +4528,13 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(FCNOOPTS) $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH titan.ncsa.uiuc.edu specific Intel Itanium2 ia64 mckinley Linux, efc compiler (RSL, VMI, RSL IO, allows nesting) 
+#ARCH titan.ncsa.uiuc.edu specific Intel Itanium2 ia64 mckinley Linux, efc compiler DM-Parallel (RSL, VMI, RSL IO, allows nesting) 
 #
 # Consider 'setenv F_UFMTENDIAN big' in your run scripts for big-endian output
 # Note hard-coded paths to Mark Straka's accounts and ecc6 libs
+#
+# Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#
 #
 DMPARALLEL = 1
 #OMP = -openmp
@@ -4628,7 +4637,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH titan.ncsa.uiuc.edu specific Intel Itanium2 ia64 mckinley Linux, efc compiler (RSL_LITE, VMI, no nesting)
+#ARCH titan.ncsa.uiuc.edu specific Intel Itanium2 ia64 mckinley Linux, efc compiler DM-Parallel (RSL_LITE, VMI, no nesting)
 #
 # Consider 'setenv F_UFMTENDIAN big' in your run scripts for big-endian output
 # Note hard-coded paths to Mark Straka's accounts and ecc6 libs
@@ -4728,12 +4737,14 @@ module_initialize_real.o module_dm.o start_domain.o :
 
 ###########################################################
 #ARCH Intel xeon i686 ia32 Xeon Linux, ifc compiler (single-threaded, no nesting)
+OMP             =
+OMPCPP          =
 FC		=	ifort
 CC              =       icc
 SFC		=	$(FC)
 FCBASEOPTS      =       -w -FR -cm -w -I. -Vaxlib
 FCOPTIM		=	-O2
-FCFLAGS		=	$(FCOPTIM) $(FCBASEOPTS)
+FCFLAGS		=	$(FCOPTIM) $(FCBASEOPTS) $(OMP)
 CFLAGS		=
 EXTRAMODULES    =       
 INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
@@ -4741,9 +4752,9 @@ INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DLIMIT_ARGS -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 \
                         -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE
 LD		=	$(FC)
-LDFLAGS		=	$(FCFLAGS)
+LDFLAGS		=	$(FCFLAGS) $(OMP)
 CPP		=	/lib/cpp -traditional
-POUND_DEF	=	-DPGF90 $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE \
+POUND_DEF	=	$(OMPCPP) $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE \
                         -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
 CPPFLAGS	=	-I$(LIBINCLUDE) -C -P $(ARCHFLAGS) $(POUND_DEF)
 PERL            =       CONFIGURE_PERL_PATH
@@ -4822,6 +4833,112 @@ module_initialize_real.o module_dm.o  start_domain.o :
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
 
 ###########################################################
+#ARCH    Intel xeon i686 ia32 Xeon Linux, ifc compiler  (single threaded, supports nesting using RSL without MPI)
+#
+# Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#
+OMP             =
+OMPCPP          =
+DMPARALLEL      =       1
+MAX_PROC        =       1024
+FC              =       ${VENTURE}/mpich/ch_p4/bin/mpif90
+LD              =       ${VENTURE}/mpich/ch_p4/bin/mpif90
+CC              =       ${VENTURE}/mpich/ch_p4/bin/mpicc
+SFC             =       ifort
+CFLAGS          =       -w -DDM_PARALLEL -DWRF_RSL_IO \
+                        -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL/RSL
+FCOPTIM		=	-O3 -xW
+FCDEBUG		=	#-g
+FCBASEOPTS      =       -FR -cm -w -I. $(FCDEBUG)
+FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
+ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DYYY -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
+                        -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
+                        -DTRIEDNTRUE   \
+			-DLIMIT_ARGS -DSTUBMPI
+INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
+                        -I../external -I../frame -I../share -I../phys -I../inc
+EXTRAMODULES    =       
+PERL            =       perl
+REGISTRY        =       Registry
+LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
+			-L${VENTURE}/mpich/ch_p4/lib \
+			-L../external/io_int -lwrfio_int -L../external/io_grib1 -lio_grib1 \
+			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
+LDFLAGS         =       $(FCOPTIM) $(OMP)
+CPP             =       /lib/cpp -traditional
+POUND_DEF	=	-DNO_RRTM_PHYSICS $(OMPCPP) $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS) -DYYY
+CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL/RSL -C -P `cat ../inc/dm_comm_cpp_flags` $(POUND_DEF)
+AR              =       ar ru
+M4              =       m4
+RANLIB          =       ranlib
+NETCDFPATH	=	CONFIGURE_NETCDF_PATH
+CC_TOOLS        =       gcc
+
+externals : CONFIGURE_WRFIO_NF ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
+
+gen_comms.c : ../external/RSL/gen_comms.c
+	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
+          cat ../external/RSL/gen_comms.c >> ../tools/gen_comms.c )
+
+module_dm.F : ../external/RSL/module_dm.F
+	( /bin/cp module_dm_warning module_dm.F ; cat ../external/RSL/module_dm.F >> module_dm.F )
+
+wrfio_nf : 
+	( cd ../external/io_netcdf ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC=$(FC) TRADFLAG="-traditional" \
+	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
+	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
+	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
+	/bin/cp wrf_io_flags.h ../io_quilt )
+
+wrfio_grib1 : 
+	( cd ../external/io_grib1 ; \
+          make CC="$(CC)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCFLAGS) -w")
+
+wrfio_int : 
+	( cd ../external/io_int ; \
+          make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
+
+esmf_time : 
+	( cd ../external/esmf_time_f90 ; \
+	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+../external/RSL/RSL/librsl.a :
+	( cd ../external/RSL/RSL ; \
+          make CC=$(CC) FC=$(FC) CFLAGS="-DSTUBS" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST stub )
+
+# compile these without high optimization to speed compile
+solve_interface.o : solve_interface.F
+module_io_mm5.o : module_io_mm5.F
+module_si_io.o : module_si_io.F
+module_io_wrf.o : module_io_wrf.F
+module_domain.o : module_domain.F
+module_start.o : module_start.F
+module_initialize.o : module_initialize.F
+module_initialize_b_wave.o : module_initialize_b_wave.F
+module_initialize_hill2d_x.o : module_initialize_hill2d_x.F
+module_initialize_quarter_ss.o : module_initialize_quarter_ss.F
+module_initialize_squall2d_x.o : module_initialize_squall2d_x.F
+module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
+module_initialize_real.o : module_initialize_real.F
+module_dm.o : module_dm.F
+start_domain.o : start_domain.F
+mediation_integrate.o : mediation_integrate.F
+
+solve_interface.o                                              \
+module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
+module_start.o module_initialize.o module_initialize_b_wave.o  \
+module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
+module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
+mediation_integrate.o \
+module_initialize_real.o module_dm.o start_domain.o :
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b 
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(RM) $*.b
+	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
+
+###########################################################
 #ARCH   Intel xeon i686 ia32 Xeon Linux, ifc compiler (OpenMP)
 #
 OMP             =       -openmp -fpp -auto
@@ -4849,7 +4966,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time
 LDFLAGS         =	$(FCFLAGS) $(FCFLAGS) $(OMP)
 CPP             =       /lib/cpp -traditional
-POUND_DEF	=	-DPGF90 $(OMPCPP) $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS) -DYYY
+POUND_DEF	=	$(OMPCPP) $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS) -DYYY
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) $(POUND_DEF)
 AR              =       ar ru
 M4              =       m4
@@ -4913,7 +5030,117 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH    Intel xeon i686 ia32 Xeon Linux, ifc compiler  (RSL, MPICH, RSL IO, ch_p4)
+#ARCH    Intel xeon i686 ia32 Xeon Linux, ifc compiler SM-Parallel (OpenMP, supports nesting using RSL without MPI)
+#
+# Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#
+#
+OMP             =       -openmp -fpp -auto
+OMPCPP          =       -D_OPENMP
+DMPARALLEL      =       1
+MAX_PROC        =       1024
+FC              =       ${VENTURE}/mpich/ch_p4/bin/mpif90
+LD              =       ${VENTURE}/mpich/ch_p4/bin/mpif90
+CC              =       ${VENTURE}/mpich/ch_p4/bin/mpicc
+SFC             =       ifort
+CFLAGS          =       -w -DDM_PARALLEL -DWRF_RSL_IO \
+                        -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL/RSL
+FCOPTIM		=	-O3 -xW
+FCDEBUG		=	#-g
+FCBASEOPTS      =       -FR -cm -w -I. $(FCDEBUG)
+FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
+ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DYYY -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
+                        -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
+                        -DTRIEDNTRUE   \
+			-DLIMIT_ARGS -DSTUBMPI
+INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
+                        -I../external -I../frame -I../share -I../phys -I../inc
+EXTRAMODULES    =       
+PERL            =       perl
+REGISTRY        =       Registry
+LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
+			-L${VENTURE}/mpich/ch_p4/lib \
+			-L../external/io_int -lwrfio_int -L../external/io_grib1 -lio_grib1 \
+			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time $(OMP)
+LDFLAGS         =       $(FCOPTIM)
+CPP             =       /lib/cpp -traditional
+POUND_DEF	=	-DNO_RRTM_PHYSICS $(OMPCPP) $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS) -DYYY
+CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL/RSL -C -P `cat ../inc/dm_comm_cpp_flags` $(POUND_DEF)
+AR              =       ar ru
+M4              =       m4
+RANLIB          =       ranlib
+NETCDFPATH	=	CONFIGURE_NETCDF_PATH
+CC_TOOLS        =       gcc
+
+externals : CONFIGURE_WRFIO_NF ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
+
+gen_comms.c : ../external/RSL/gen_comms.c
+	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
+          cat ../external/RSL/gen_comms.c >> ../tools/gen_comms.c )
+
+module_dm.F : ../external/RSL/module_dm.F
+	( /bin/cp module_dm_warning module_dm.F ; cat ../external/RSL/module_dm.F >> module_dm.F )
+
+wrfio_nf : 
+	( cd ../external/io_netcdf ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC=$(FC) TRADFLAG="-traditional" \
+	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
+	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
+	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
+	/bin/cp wrf_io_flags.h ../io_quilt )
+
+wrfio_grib1 : 
+	( cd ../external/io_grib1 ; \
+          make CC="$(CC)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCFLAGS) -w")
+
+wrfio_int : 
+	( cd ../external/io_int ; \
+          make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
+
+esmf_time : 
+	( cd ../external/esmf_time_f90 ; \
+	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+../external/RSL/RSL/librsl.a :
+	( cd ../external/RSL/RSL ; \
+          make CC=$(CC) FC=$(FC) CFLAGS="-DSTUBS" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST stub )
+
+# compile these without high optimization to speed compile
+solve_interface.o : solve_interface.F
+module_io_mm5.o : module_io_mm5.F
+module_si_io.o : module_si_io.F
+module_io_wrf.o : module_io_wrf.F
+module_domain.o : module_domain.F
+module_start.o : module_start.F
+module_initialize.o : module_initialize.F
+module_initialize_b_wave.o : module_initialize_b_wave.F
+module_initialize_hill2d_x.o : module_initialize_hill2d_x.F
+module_initialize_quarter_ss.o : module_initialize_quarter_ss.F
+module_initialize_squall2d_x.o : module_initialize_squall2d_x.F
+module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
+module_initialize_real.o : module_initialize_real.F
+module_dm.o : module_dm.F
+start_domain.o : start_domain.F
+mediation_integrate.o : mediation_integrate.F
+
+solve_interface.o                                              \
+module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
+module_start.o module_initialize.o module_initialize_b_wave.o  \
+module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
+module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
+mediation_integrate.o \
+module_initialize_real.o module_dm.o start_domain.o :
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b 
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(RM) $*.b
+	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
+
+###########################################################
+#ARCH    Intel xeon i686 ia32 Xeon Linux, ifc compiler  DM-Parallel (RSL, MPICH, ch_p4, supports nesting)
+#
+# Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#
 #
 DMPARALLEL      =       1
 MAX_PROC        =       1024
@@ -4942,7 +5169,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =       $(FCOPTIM)
 CPP             =       /lib/cpp -traditional
-POUND_DEF	=	-DNO_RRTM_PHYSICS  -DPGF90 $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS) -DYYY
+POUND_DEF	=	-DNO_RRTM_PHYSICS  $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS) -DYYY
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL/RSL -C -P `cat ../inc/dm_comm_cpp_flags` $(POUND_DEF)
 AR              =       ar ru
 M4              =       m4
@@ -5014,7 +5241,10 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH    Intel xeon i686 ia32 Xeon Linux, ifc compiler  (RSL, MPICH, RSL IO, ch_gm)
+#ARCH    Intel xeon i686 ia32 Xeon Linux, ifc compiler DM-Parallel (RSL, MPICH, RSL IO, ch_gm)
+#
+# Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#
 #
 DMPARALLEL      =       1
 MAX_PROC        =       1024
@@ -5044,7 +5274,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =       $(FCOPTIM)
 CPP             =       /lib/cpp -traditional
-POUND_DEF	=	-DNO_RRTM_PHYSICS  -DPGF90 $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS) -DYYY
+POUND_DEF	=	-DNO_RRTM_PHYSICS  $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS) -DYYY
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL/RSL -C -P `cat ../inc/dm_comm_cpp_flags` $(POUND_DEF)
 AR              =       ar ru
 M4              =       m4
@@ -5251,13 +5481,16 @@ module_initialize_real.o module_dm.o  start_domain.o :
 	$(FC) -c $(FCFLAGS) $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH   SGI Altix, Intel Itanium2 ia64 Linux, ifort compiler (RSL, SGI MPI, RSL IO, Black-Belt opts, allows nesting)
+#ARCH   SGI Altix, Intel Itanium2 ia64 Linux, ifort compiler DM-Parallel (RSL, SGI MPI, Black-Belt opts, allows nesting)
 #
 #  'setenv F_UFMTENDIAN big' in run scripts not necessary
 #  since -convert big_endian is in FCBASEOPTS
 #  Change MPI_HOME if SGI's MPI is not in the default directories
 #
 # Contributed settings from Gerardo Cisneros, SGI
+#
+# Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#
 #
 DMPARALLEL        = 1
 INCLUDE           = ../external/io_netcdf/
@@ -5377,7 +5610,7 @@ mediation_force_domain.o:
 	$(FC) -c $(FCBASEOPTS) -O0 $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH   SGI Altix, Intel Itanium2 ia64 Linux, ifort compiler (RSL_LITE, VMI, SGI MPI, no nesting, Black-Belt opts)
+#ARCH   SGI Altix, Intel Itanium2 ia64 Linux, ifort compiler DM-Parallel (RSL_LITE, VMI, SGI MPI, no nesting, Black-Belt opts)
 #
 #  'setenv F_UFMTENDIAN big' in run scripts not necessary
 #  since -convert big_endian is in FCBASEOPTS
@@ -6396,7 +6629,7 @@ module_initialize_real.o module_dm.o mediation_integrate.o start_domain.o :
 	$(FC) -c $(FCFLAGS) $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH	HP-UX	PA8600		32bit	(RSL, MPICH, nesting)
+#ARCH	HP-UX	PA8600	 DM-Parallel	(RSL, MPICH, nesting)
 #
 DMPARALLEL	=	1
 MAX_PROC	=	1024
@@ -6491,7 +6724,7 @@ module_initialize_real.o module_dm.o mediation_integrate.o start_domain.o :
 	$(RM) $*.b
 	$(FC) -c $(FCFLAGS) $(MODULE_DIRS) $*.f
 ###########################################################
-#ARCH	HP-UX	Itanium2	32bit   (RSL, MPICH, nesting)
+#ARCH	HP-UX	Itanium2    DM-Parallel	(RSL, MPICH, nesting)
 #
 DMPARALLEL	=	1
 MAX_PROC	=	1024

@@ -2553,7 +2553,7 @@ esmf_time :
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; \
-          make CC=mpicc FC=$(FC) MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) alpha )
+          make CC=mpicc FC=$(FC) MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST alpha )
 
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F

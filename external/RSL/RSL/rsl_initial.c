@@ -141,6 +141,15 @@ rsl_initialize_internal()
   MPI_Comm_size( rsl_mpi_communicator , &rsl_nproc_all ) ;
   MPI_Comm_rank( rsl_mpi_communicator , &rsl_myproc ) ;
 
+/* John's patented brain substitute ; 5/3/2002 */
+  if ( rsl_nproc_all > RSL_MAXPROC )
+  {
+    sprintf(mess,"rsl_nproc_all (%d) > RSL_MAXPROC (%d). Recompile RSL with larger value.\n%s\n",rsl_nproc_all,RSL_MAXPROC,
+                 "(For WRF, change value of MAX_PROC in configure.wrf)"
+    ) ;
+    RSL_TEST_ERR( 1, mess ) ;
+  }
+
   rsl_nproc = rsl_nproc_all ; 	/* this may be reset by RSL_MESH */
   rsl_padarea = RSL_DEFAULT_PADAREA ;
   io_seq_monitor = 0 ;  /* OBS */

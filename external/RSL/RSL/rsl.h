@@ -650,10 +650,17 @@ rev: 95/02/15 -- jm.  Modified to drop the TO field (never used) and
 # define MTYPE_FROM(X)  (((X)>>10)&0x3ff)
 # define MTYPE_TO(X)    ((X)&0x3ff)
 #else
+# if 0
 /* T is ignored and not encoded in the message tag, Y has been shorted 1 bit */
 # define MTYPE_FROMTO(Y,F,T) (((((Y)&0x1f)<<10)|(((F)&0x3ff))) | 0 )
 # define MTYPE_TAG(X)   (((X)>>10)&0x1f)
 # define MTYPE_FROM(X)  ((X)&0x3ff)
+# else
+/* update May 2002, increase upper bound on processors to 4096 (12 bits)*/
+# define MTYPE_FROMTO(Y,F,T) (((((Y)&0x1f)<<12)|(((F)&0xfff))) | 0 )
+# define MTYPE_TAG(X)   (((X)>>12)&0x1f)
+# define MTYPE_FROM(X)  ((X)&0xfff)
+# endif
 #endif
 
 

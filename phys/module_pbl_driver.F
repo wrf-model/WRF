@@ -1,7 +1,3 @@
-#define IDBG 62
-#define JDBG 62
-#define KDBG 1
-
 !WRF:MEDIATION_LAYER:PHYSICS
 !
 

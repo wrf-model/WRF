@@ -1,7 +1,3 @@
-#define IDBG 62
-#define JDBG 62
-#define KDBG 1
-
 !WRF:MODEL_RA:RADIATION
 !
 MODULE MODULE_RA_GFDLETA

@@ -1018,13 +1018,13 @@ SUBROUTINE ext_ncd_open_for_write_begin(FileName,Comm,IOComm,SysDepInfo,DataHand
 
   if(WrfIOnotInitialized) then
     Status = WRF_IO_NOT_INITIALIZED 
-    write(msg,*) 'ext_ncd_ioinit was not called ',__FILE__,', line', __LINE__
+    write(msg,*) 'ext_ncd_open_for_write_begin: ext_ncd_ioinit was not called ',__FILE__,', line', __LINE__
     call wrf_debug ( FATAL , msg)
     return
   endif
   call allocHandle(DataHandle,DH,Comm,Status)
   if(Status /= WRF_NO_ERR) then
-    write(msg,*) 'Fatal ALLOCATION ERROR in ',__FILE__,', line', __LINE__
+    write(msg,*) 'Fatal ALLOCATION ERROR in ext_ncd_open_for_write_begin ',__FILE__,', line', __LINE__
     call wrf_debug ( FATAL , TRIM(msg))
     return
   endif
@@ -1033,7 +1033,7 @@ SUBROUTINE ext_ncd_open_for_write_begin(FileName,Comm,IOComm,SysDepInfo,DataHand
   stat = NF_CREATE(FileName, NF_CLOBBER, DH%NCID)
   call netcdf_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
-    write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__
+    write(msg,*) 'NetCDF error in ext_ncd_open_for_write_begin ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
@@ -1042,7 +1042,7 @@ SUBROUTINE ext_ncd_open_for_write_begin(FileName,Comm,IOComm,SysDepInfo,DataHand
   stat = NF_DEF_DIM(DH%NCID,DH%DimUnlimName,NF_UNLIMITED,DH%DimUnlimID)
   call netcdf_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
-    write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__
+    write(msg,*) 'NetCDF error in ext_ncd_open_for_write_begin ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
@@ -1057,7 +1057,7 @@ SUBROUTINE ext_ncd_open_for_write_begin(FileName,Comm,IOComm,SysDepInfo,DataHand
   stat = NF_DEF_DIM(DH%NCID,DH%DimNames(1),DateStrLen,DH%DimIDs(1))
   call netcdf_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
-    write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__
+    write(msg,*) 'NetCDF error in ext_ncd_open_for_write_begin ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
@@ -1066,7 +1066,7 @@ SUBROUTINE ext_ncd_open_for_write_begin(FileName,Comm,IOComm,SysDepInfo,DataHand
   stat = NF_DEF_VAR(DH%NCID,DH%TimesName,NF_CHAR,2,VDimIDs,DH%TimesVarID)
   call netcdf_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
-    write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__
+    write(msg,*) 'NetCDF error in ext_ncd_open_for_write_begin ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
@@ -1108,20 +1108,20 @@ SUBROUTINE ext_ncd_open_for_write_commit(DataHandle, Status)
 
   if(WrfIOnotInitialized) then
     Status = WRF_IO_NOT_INITIALIZED 
-    write(msg,*) 'ext_ncd_ioinit was not called ',__FILE__,', line', __LINE__
+    write(msg,*) 'ext_ncd_open_for_write_commit: ext_ncd_ioinit was not called ',__FILE__,', line', __LINE__
     call wrf_debug ( FATAL , msg)
     return
   endif
   call GetDH(DataHandle,DH,Status)
   if(Status /= WRF_NO_ERR) then
-    write(msg,*) 'Warning Status = ',Status,' in ',__FILE__,', line', __LINE__
+    write(msg,*) 'Warning Status = ',Status,' in ext_ncd_open_for_write_commit ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg)) 
     return
   endif
   stat = NF_ENDDEF(DH%NCID)
   call netcdf_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
-    write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__
+    write(msg,*) 'NetCDF error in ext_ncd_open_for_write_commit ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
@@ -1142,17 +1142,17 @@ subroutine ext_ncd_ioclose(DataHandle, Status)
 
   call GetDH(DataHandle,DH,Status)
   if(Status /= WRF_NO_ERR) then
-    write(msg,*) 'Warning Status = ',Status,' in ',__FILE__,', line', __LINE__
+    write(msg,*) 'Warning Status = ',Status,' in ext_ncd_ioclose ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
   if(DH%FileStatus == WRF_FILE_NOT_OPENED) then
     Status = WRF_WARN_FILE_NOT_OPENED
-    write(msg,*) 'Warning FILE NOT OPENED in ',__FILE__,', line', __LINE__
+    write(msg,*) 'Warning FILE NOT OPENED in ext_ncd_ioclose ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg))
   elseif(DH%FileStatus == WRF_FILE_OPENED_NOT_COMMITTED) then
     Status = WRF_WARN_DRYRUN_CLOSE
-    write(msg,*) 'Warning TRY TO CLOSE DRYRUN in ',__FILE__,', line', __LINE__
+    write(msg,*) 'Warning TRY TO CLOSE DRYRUN in ext_ncd_ioclose ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg))
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_WRITE) then
     continue    
@@ -1162,14 +1162,14 @@ subroutine ext_ncd_ioclose(DataHandle, Status)
     continue
   else
     Status = WRF_ERR_FATAL_BAD_FILE_STATUS
-    write(msg,*) 'Fatal error BAD FILE STATUS in ',__FILE__,', line', __LINE__
+    write(msg,*) 'Fatal error BAD FILE STATUS in ext_ncd_ioclose ',__FILE__,', line', __LINE__
     call wrf_debug ( FATAL , TRIM(msg))
     return
   endif
   stat = NF_CLOSE(DH%NCID)
   call netcdf_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
-    write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__
+    write(msg,*) 'NetCDF error in ext_ncd_ioclose ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
@@ -1190,17 +1190,17 @@ subroutine ext_ncd_iosync( DataHandle, Status)
 
   call GetDH(DataHandle,DH,Status)
   if(Status /= WRF_NO_ERR) then
-    write(msg,*) 'Warning Status = ',Status,' in ',__FILE__,', line', __LINE__
+    write(msg,*) 'Warning Status = ',Status,' in ext_ncd_iosync ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
   if(DH%FileStatus == WRF_FILE_NOT_OPENED) then
     Status = WRF_WARN_FILE_NOT_OPENED
-    write(msg,*) 'Warning FILE NOT OPENED in ',__FILE__,', line', __LINE__
+    write(msg,*) 'Warning FILE NOT OPENED in ext_ncd_iosync ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg))
   elseif(DH%FileStatus == WRF_FILE_OPENED_NOT_COMMITTED) then
     Status = WRF_WARN_FILE_NOT_COMMITTED
-    write(msg,*) 'Warning FILE NOT COMMITTED in ',__FILE__,', line', __LINE__
+    write(msg,*) 'Warning FILE NOT COMMITTED in ext_ncd_iosync ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg))
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_WRITE) then
     continue
@@ -1208,14 +1208,14 @@ subroutine ext_ncd_iosync( DataHandle, Status)
     continue
   else
     Status = WRF_ERR_FATAL_BAD_FILE_STATUS
-    write(msg,*) 'Fatal error BAD FILE STATUS in ',__FILE__,', line', __LINE__
+    write(msg,*) 'Fatal error BAD FILE STATUS in ext_ncd_iosync ',__FILE__,', line', __LINE__
     call wrf_debug ( FATAL , TRIM(msg))
     return
   endif
   stat = NF_SYNC(DH%NCID)
   call netcdf_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
-    write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__
+    write(msg,*) 'NetCDF error in ext_ncd_iosync ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif

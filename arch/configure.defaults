@@ -3693,9 +3693,9 @@ module_initialize_real.o module_dm.o start_domain.o :
 #
 DMPARALLEL      =       1
 MAX_PROC        =       1024
-FC              =       mpif90
-LD              =       mpif90
-CC              =       mpicc
+FC              =       mpif90 -f90=pgf90
+LD              =       mpif90 -f90=pgf90
+CC              =       mpicc -cc=gcc
 SFC             =       pgf90
 CFLAGS          =       -DDM_PARALLEL -DWRF_RSL_IO \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL/RSL
@@ -3737,7 +3737,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC=$(FC) TRADFLAG="-traditional" \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC)" TRADFLAG="-traditional" \
 	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
 	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
 	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
@@ -3756,7 +3756,7 @@ esmf_time :
 	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL/RSL/librsl.a :
-	( cd ../external/RSL/RSL ; make CC=mpicc FC='mpif90 -byteswapio' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST linux )
+	( cd ../external/RSL/RSL ; make CC="$(CC)" FC="$(FC) -byteswapio" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST linux )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -3795,9 +3795,9 @@ module_initialize_real.o module_dm.o start_domain.o :
 #
 DMPARALLEL      =       1
 MAX_PROC        =       1024
-FC              =       mpif90
-LD              =       mpif90
-CC              =       mpicc
+FC              =       mpif90 -f90=pgf90
+LD              =       mpif90 -f90=pgf90
+CC              =       mpicc -cc=gcc
 SFC             =       pgf90
 CFLAGS          =       -DDM_PARALLEL \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL_LITE
@@ -3839,7 +3839,7 @@ module_dm.F : ../external/RSL_LITE/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC=$(FC) TRADFLAG="-traditional" \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC)" TRADFLAG="-traditional" \
 	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
 	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
 	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
@@ -3851,14 +3851,14 @@ wrfio_grib1 :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL_LITE/librsl_lite.a :
-	( cd ../external/RSL_LITE ; make CC=mpicc FC='mpif90 -byteswapio' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
+	( cd ../external/RSL_LITE ; make CC="$(CC)" FC="$(FC) -byteswapio" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -3999,6 +3999,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 
 ###########################################################
 #ARCH      Intel Itanium2 ia64 Linux (eg. Jacaranda), ifort compiler (RSL, no-MPI, allows nesting)
+#
 #          On Jacaranda, setenv NETCDF /jacaranda/users/michalak/netcdf-3.5.1
 #          Built this netcdf by first setenv FC efc and CPPFLAGS '-DNDEBUG -DpgiFortran'
 #          before typing configure and make and make install   20040506. JM
@@ -4736,7 +4737,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH Intel xeon i686 ia32 Xeon Linux, ifc compiler (single-threaded, no nesting)
+#ARCH Intel xeon i686 ia32 Xeon Linux, ifort compiler (single-threaded, no nesting)
 OMP             =
 OMPCPP          =
 FC		=	ifort
@@ -4833,7 +4834,7 @@ module_initialize_real.o module_dm.o  start_domain.o :
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH    Intel xeon i686 ia32 Xeon Linux, ifc compiler  (single threaded, supports nesting using RSL without MPI)
+#ARCH    Intel xeon i686 ia32 Xeon Linux, ifort compiler  (single threaded, supports nesting using RSL without MPI)
 #
 # Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #
@@ -4841,9 +4842,9 @@ OMP             =
 OMPCPP          =
 DMPARALLEL      =       1
 MAX_PROC        =       1024
-FC              =       ${VENTURE}/mpich/ch_p4/bin/mpif90
-LD              =       ${VENTURE}/mpich/ch_p4/bin/mpif90
-CC              =       ${VENTURE}/mpich/ch_p4/bin/mpicc
+FC              =       ifort
+LD              =       ifort
+CC              =       icc
 SFC             =       ifort
 CFLAGS          =       -w -DDM_PARALLEL -DWRF_RSL_IO \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL/RSL
@@ -4861,7 +4862,6 @@ EXTRAMODULES    =
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
-			-L${VENTURE}/mpich/ch_p4/lib \
 			-L../external/io_int -lwrfio_int -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =       $(FCOPTIM) $(OMP)
@@ -4885,7 +4885,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC=$(FC) TRADFLAG="-traditional" \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC)" TRADFLAG="-traditional" \
 	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
 	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
 	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
@@ -4897,7 +4897,7 @@ wrfio_grib1 :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -4905,7 +4905,7 @@ esmf_time :
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; \
-          make CC=$(CC) FC=$(FC) CFLAGS="-DSTUBS" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST stub )
+          make CC="$(CC)" FC="$(FC)" CFLAGS="-DSTUBS" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST stub )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -4939,7 +4939,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH   Intel xeon i686 ia32 Xeon Linux, ifc compiler (OpenMP)
+#ARCH   Intel xeon i686 ia32 Xeon Linux, ifort compiler (OpenMP)
 #
 OMP             =       -openmp -fpp -auto
 OMPCPP          =       -D_OPENMP
@@ -5030,7 +5030,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH    Intel xeon i686 ia32 Xeon Linux, ifc compiler SM-Parallel (OpenMP, supports nesting using RSL without MPI)
+#ARCH    Intel xeon i686 ia32 Xeon Linux, ifort compiler SM-Parallel (OpenMP, supports nesting using RSL without MPI)
 #
 # Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #
@@ -5039,9 +5039,9 @@ OMP             =       -openmp -fpp -auto
 OMPCPP          =       -D_OPENMP
 DMPARALLEL      =       1
 MAX_PROC        =       1024
-FC              =       ${VENTURE}/mpich/ch_p4/bin/mpif90
-LD              =       ${VENTURE}/mpich/ch_p4/bin/mpif90
-CC              =       ${VENTURE}/mpich/ch_p4/bin/mpicc
+FC              =       ifort
+LD              =       ifort
+CC              =       icc
 SFC             =       ifort
 CFLAGS          =       -w -DDM_PARALLEL -DWRF_RSL_IO \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL/RSL
@@ -5059,7 +5059,6 @@ EXTRAMODULES    =
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
-			-L${VENTURE}/mpich/ch_p4/lib \
 			-L../external/io_int -lwrfio_int -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time $(OMP)
 LDFLAGS         =       $(FCOPTIM)
@@ -5083,7 +5082,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC=$(FC) TRADFLAG="-traditional" \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC)" TRADFLAG="-traditional" \
 	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
 	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
 	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
@@ -5095,7 +5094,7 @@ wrfio_grib1 :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -5103,7 +5102,7 @@ esmf_time :
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; \
-          make CC=$(CC) FC=$(FC) CFLAGS="-DSTUBS" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST stub )
+          make CC="$(CC)" FC="$(FC)" CFLAGS="-DSTUBS" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST stub )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -5137,16 +5136,16 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH    Intel xeon i686 ia32 Xeon Linux, ifc compiler  DM-Parallel (RSL, MPICH, ch_p4, supports nesting)
+#ARCH    Intel xeon i686 ia32 Xeon Linux, ifort compiler  DM-Parallel (RSL, MPICH, supports nesting)
 #
 # Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #
 #
 DMPARALLEL      =       1
 MAX_PROC        =       1024
-FC              =       ${VENTURE}/mpich/ch_p4/bin/mpif90
-LD              =       ${VENTURE}/mpich/ch_p4/bin/mpif90
-CC              =       ${VENTURE}/mpich/ch_p4/bin/mpicc
+FC              =       mpif90 -f90=ifort
+LD              =       mpif90 -f90=ifort
+CC              =       mpicc -cc=icc
 SFC             =       ifort
 CFLAGS          =       -w -DDM_PARALLEL -DWRF_RSL_IO \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL/RSL
@@ -5164,7 +5163,6 @@ EXTRAMODULES    =
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
-			-L${VENTURE}/mpich/ch_p4/lib \
 			-L../external/io_int -lwrfio_int -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =       $(FCOPTIM)
@@ -5188,7 +5186,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC=$(FC) TRADFLAG="-traditional" \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC)" TRADFLAG="-traditional" \
 	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
 	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
 	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
@@ -5200,119 +5198,14 @@ wrfio_grib1 :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL/RSL/librsl.a :
-	( cd ../external/RSL/RSL ; make CC=$(CC) FC=$(FC) MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST linux )
-
-# compile these without high optimization to speed compile
-solve_interface.o : solve_interface.F
-module_io_mm5.o : module_io_mm5.F
-module_si_io.o : module_si_io.F
-module_io_wrf.o : module_io_wrf.F
-module_domain.o : module_domain.F
-module_start.o : module_start.F
-module_initialize.o : module_initialize.F
-module_initialize_b_wave.o : module_initialize_b_wave.F
-module_initialize_hill2d_x.o : module_initialize_hill2d_x.F
-module_initialize_quarter_ss.o : module_initialize_quarter_ss.F
-module_initialize_squall2d_x.o : module_initialize_squall2d_x.F
-module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
-module_initialize_real.o : module_initialize_real.F
-module_dm.o : module_dm.F
-start_domain.o : start_domain.F
-mediation_integrate.o : mediation_integrate.F
-
-solve_interface.o                                              \
-module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
-module_start.o module_initialize.o module_initialize_b_wave.o  \
-module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
-module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
-mediation_integrate.o \
-module_initialize_real.o module_dm.o start_domain.o :
-	$(RM) $@
-	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
-	$(RM) $*.b
-	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
-
-###########################################################
-#ARCH    Intel xeon i686 ia32 Xeon Linux, ifc compiler DM-Parallel (RSL, MPICH, RSL IO, ch_gm)
-#
-# Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
-#
-#
-DMPARALLEL      =       1
-MAX_PROC        =       1024
-FC              =       ${VENTURE}/mpich/ch_gm/bin/mpif90
-LD              =       ${VENTURE}/mpich/ch_gm/bin/mpif90
-CC              =       ${VENTURE}/mpich/ch_gm/bin/mpicc
-SFC             =       ifort
-CFLAGS          =       -w -DDM_PARALLEL -DWRF_RSL_IO \
-                        -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL/RSL
-FCOPTIM		=	-O3 -xW
-FCDEBUG		=	#-g
-FCBASEOPTS      =       -FR -cm -w -I. $(FCDEBUG)
-FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
-ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DYYY -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
-                        -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
-                        -DTRIEDNTRUE   \
-			-DLIMIT_ARGS
-INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
-                        -I../external -I../frame -I../share -I../phys -I../inc
-EXTRAMODULES    =       
-PERL            =       perl
-REGISTRY        =       Registry
-LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
-			-L${VENTURE}/mpich/ch_gm/lib \
-			-L../external/io_int -lwrfio_int \
-                        -L../external/io_grib1 -lio_grib1 \
-			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS         =       $(FCOPTIM)
-CPP             =       /lib/cpp -traditional
-POUND_DEF	=	-DNO_RRTM_PHYSICS  $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS) -DYYY
-CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL/RSL -C -P `cat ../inc/dm_comm_cpp_flags` $(POUND_DEF)
-AR              =       ar ru
-M4              =       m4
-RANLIB          =       ranlib
-NETCDFPATH	=	CONFIGURE_NETCDF_PATH
-CC_TOOLS        =       gcc
-
-externals : CONFIGURE_WRFIO_NF ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
-
-gen_comms.c : ../external/RSL/gen_comms.c
-	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
-          cat ../external/RSL/gen_comms.c >> ../tools/gen_comms.c )
-
-module_dm.F : ../external/RSL/module_dm.F
-	( /bin/cp module_dm_warning module_dm.F ; cat ../external/RSL/module_dm.F >> module_dm.F )
-
-wrfio_nf : 
-	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC=$(FC) TRADFLAG="-traditional" \
-	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
-
-wrfio_int : 
-	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
-
-wrfio_grib1 : 
-	( cd ../external/io_grib1 ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
-
-esmf_time : 
-	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
-
-../external/RSL/RSL/librsl.a :
-	( cd ../external/RSL/RSL ; make CC=$(CC) FC=$(FC) MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST linux )
+	( cd ../external/RSL/RSL ; make CC="$(CC)" FC="$(FC)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST linux )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F

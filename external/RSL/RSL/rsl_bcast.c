@@ -865,6 +865,7 @@ RSL_MOVE_NEST ( d_p, n_p,  mdisp_p, ndisp_p )
   rsl_domain_info_t *dinfo, *ninfo ;
   int i, j, cm, cn, irax_m, irax_n, nid ;
   int mother_id ;
+  rsl_child_info_t ** children_p ;
 
   parent = *d_p    ; nest = *n_p      ;
   mdisp = *mdisp_p ; ndisp = *ndisp_p ; 
@@ -885,12 +886,33 @@ RSL_MOVE_NEST ( d_p, n_p,  mdisp_p, ndisp_p )
   dinfo->child_bcast_compiled[nest] = 0 ;  /* invalidate broadcast */
   ninfo->parent_bcast_compiled      = 0 ;  /* invalidate broadcast */
 
+  children_p = RSL_MALLOC( rsl_child_info_t *, dinfo->len_n * dinfo->len_m ) ;
+
+  for ( j = 0 ; j < dinfo->len_n ; j++ )
+    for ( i = 0 ; i < dinfo->len_m ; i++ )
+         children_p[ INDEX_2( j, i, dinfo->len_m ) ] = NULL ;
+
+  for ( j = 0 ; j < dinfo->len_n ; j++ )
+    for ( i = 0 ; i < dinfo->len_m ; i++ )
+       if (    i + mdisp >= 0 && i + mdisp < dinfo->len_m 
+            && j + ndisp >= 0 && j + ndisp < dinfo->len_n ) {
+         children_p[ INDEX_2( j, i, dinfo->len_m ) ] = dinfo->domain[ INDEX_2( j + ndisp , i + mdisp, dinfo->len_m ) ].children_p ;
+       }
+
+  for ( j = 0 ; j < dinfo->len_n ; j++ )
+    for ( i = 0 ; i < dinfo->len_m ; i++ )
+       dinfo->domain[ INDEX_2( j , i , dinfo->len_m ) ].children_p = children_p[ INDEX_2( j, i, dinfo->len_m ) ] ;
+
+  RSL_FREE( children_p ) ;
+
   for ( j = 0 ; j < dinfo->len_n ; j++ )
     for ( i = 0 ; i < dinfo->len_m ; i++ )
       for ( cn = 0 ; cn < irax_n ; cn++ )
         for ( cm = 0 ; cm < irax_m ; cm++ )
           if ( dinfo->domain[ INDEX_2( j, i, dinfo->len_m ) ].children_p != NULL )
+          {
             dinfo->domain[ INDEX_2( j, i, dinfo->len_m ) ].children_p->child[INDEX_2(cn,cm,irax_m)] = RSL_INVALID ;
+          }
 
   for ( j = 0 ; j < ninfo->len_n ; j++ )
   {
@@ -898,12 +920,13 @@ RSL_MOVE_NEST ( d_p, n_p,  mdisp_p, ndisp_p )
     {
       nid = POINTID( nest, i, j ) ;
       mother_id = ninfo->domain[ INDEX_2( j, i, ninfo->len_m ) ].mother_id ;
-      mother_id = POINTID(parent,ID_IDEX( mother_id ) + mdisp,ID_JDEX( mother_id ) + ndisp ) ;
+      mother_id = POINTID(parent, (ID_JDEX( mother_id )) + ndisp, (ID_IDEX( mother_id )) + mdisp ) ;
       ninfo->domain[ INDEX_2( j, i, ninfo->len_m ) ].mother_id = mother_id ;
       cm = ninfo->domain[ INDEX_2( j, i, ninfo->len_m ) ].which_kid_am_i_m ;
       cn = ninfo->domain[ INDEX_2( j, i, ninfo->len_m ) ].which_kid_am_i_n ;
-      if ( dinfo->domain[ INDEX_2( ID_JDEX( mother_id ), ID_IDEX( mother_id ), dinfo->len_m ) ].children_p != NULL )
+      if ( dinfo->domain[ INDEX_2( ID_JDEX( mother_id ), ID_IDEX( mother_id ), dinfo->len_m ) ].children_p != NULL ) {
         dinfo->domain[ INDEX_2( ID_JDEX( mother_id ), ID_IDEX( mother_id ), dinfo->len_m ) ].children_p->child[INDEX_2(cn,cm,irax_m)] = nid ;
+      }
     }
   }
   ninfo->coord_m += mdisp ;

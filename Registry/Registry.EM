@@ -149,6 +149,9 @@ i1       real   muave           ij     dyn_em      1          -
 i1       real   mu_save         ij     dyn_em      1          -     
 i1       real   mu_tend         ij     dyn_em      1          -     
 
+#diagnostic for looking at nest position in output. A mungy version of terrain height.
+state    real   nest_pos        ij     misc        1   -   hu=(mark_domain)  "NEST_POS"
+
 
 # TKE
 state    real   tke            ikj     dyn_em      2         -       r       "tke"          "TURBULENCE KINETIC ENERGY"     "m2 s-2"

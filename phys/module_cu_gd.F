@@ -6,30 +6,32 @@ MODULE module_cu_gd
 CONTAINS
 
 !-------------------------------------------------------------
-   SUBROUTINE GRELLDRV(DT,itimestep,DX,                         &
-              rho_phy,RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,      &
-              RAINCV,RTHFTEN,RQVFTEN,                           &
-              RTHRATEN,RTHBLTEN,RQVBLTEN,                       &
-              U,V,t_phy,W,q_phy,dz8w,p_phy,pi,                  &
-              XLV,CP,G,r_v,                                     &
-              P_QC,P_QI,P_QS,P_FIRST_SCALAR,STEPCU,             &
-              CU_ACT_FLAG,warm_rain,                            &
-              APR_GR,APR_W,APR_MC,APR_ST,APR_AS,                &
-              APR_CAPMA,APR_CAPME,APR_CAPMI,                    &
-              MASS_FLUX,XF_ENS,PR_ENS,HT,                       &
-              ensdim,maxiens,maxens,maxens2,maxens3,            &
-              ids,ide, jds,jde, kds,kde,                        &
-              ims,ime, jms,jme, kms,kme,                        &
-              its,ite, jts,jte, kts,kte                        )
+   SUBROUTINE GRELLDRV(                                         &
+               DT,itimestep,DX                                  &
+              ,rho,RAINCV                                       &
+              ,U,V,t,W,q,p,pi                                   &
+              ,dz8w,XLV,CP,G,r_v                                &
+              ,STEPCU                                           &
+              ,CU_ACT_FLAG,warm_rain                            &
+              ,APR_GR,APR_W,APR_MC,APR_ST,APR_AS                &
+              ,APR_CAPMA,APR_CAPME,APR_CAPMI                    &
+              ,MASS_FLUX,XF_ENS,PR_ENS,HT                       &
+              ,ensdim,maxiens,maxens,maxens2,maxens3            &
+              ,ids,ide, jds,jde, kds,kde                        &
+              ,ims,ime, jms,jme, kms,kme                        &
+              ,its,ite, jts,jte, kts,kte                        &
+              ,RQVCUTEN,RQCCUTEN,RQICUTEN                       &
+              ,RQVFTEN,RQVBLTEN                                 &
+              ,RTHFTEN,RTHCUTEN,RTHRATEN,RTHBLTEN               &
+              ,F_QV    ,F_QC    ,F_QR    ,F_QI    ,F_QS         &
+                                                                )
 !-------------------------------------------------------------
    IMPLICIT NONE
 !-------------------------------------------------------------
    INTEGER,      INTENT(IN   ) ::                               &
                                   ids,ide, jds,jde, kds,kde,    & 
                                   ims,ime, jms,jme, kms,kme,    & 
-                                  its,ite, jts,jte, kts,kte,    &
-                                  P_QC, P_QI, P_QS,             &
-                                  P_FIRST_SCALAR
+                                  its,ite, jts,jte, kts,kte
 
    integer, intent (in   )              ::                      &
                        ensdim,maxiens,maxens,maxens2,maxens3
@@ -46,32 +48,17 @@ CONTAINS
                                                           V,    &
                                                           W,    &
                                                          pi,    &
-                                                      t_phy,    &
-                                                      q_phy,    &
-                                                      p_phy,    &
+                                                          t,    &
+                                                          q,    &
+                                                          p,    &
                                                        dz8w,    &
-                                                    rho_phy
+                                                        rho
 
-   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),              &
-         INTENT(INOUT) ::                           RTHFTEN,    &
-                                                    RQVFTEN
-
-   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),              &
-         INTENT(IN   ) ::                                       &
-                                                   RTHRATEN,    &
-                                                   RTHBLTEN,    &
-                                                   RQVBLTEN
 
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN) ::   HT
 !
    REAL, INTENT(IN   ) :: DT, DX
 !
-   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),              &
-         INTENT(INOUT) ::                                       &
-                                                   RTHCUTEN,    &
-                                                   RQVCUTEN,    &
-                                                   RQCCUTEN,    &
-                                                   RQICUTEN
 
    REAL, DIMENSION( ims:ime , jms:jme ),                        &
          INTENT(INOUT) ::                 RAINCV, MASS_FLUX,    &
@@ -85,6 +72,43 @@ CONTAINS
 
    LOGICAL, DIMENSION( ims:ime , jms:jme ),                     &
          INTENT(INOUT) ::                       CU_ACT_FLAG
+
+!
+! Optionals
+!
+   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),              &
+         OPTIONAL,                                              &
+         INTENT(INOUT) ::                           RTHFTEN,    &
+                                                    RQVFTEN
+
+   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),              &
+         OPTIONAL,                                              &
+         INTENT(IN   ) ::                                       &
+                                                   RTHRATEN,    &
+                                                   RTHBLTEN,    &
+                                                   RQVBLTEN
+   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),              &
+         OPTIONAL,                                              &
+         INTENT(INOUT) ::                                       &
+                                                   RTHCUTEN,    &
+                                                   RQVCUTEN,    &
+                                                   RQCCUTEN,    &
+                                                   RQICUTEN
+!
+! Flags relating to the optional tendency arrays declared above
+! Models that carry the optional tendencies will provdide the
+! optional arguments at compile time; these flags all the model
+! to determine at run-time whether a particular tracer is in
+! use or not.
+!
+   LOGICAL, OPTIONAL ::                                      &
+                                                   F_QV      &
+                                                  ,F_QC      &
+                                                  ,F_QR      &
+                                                  ,F_QI      &
+                                                  ,F_QS
+
+
 
 ! LOCAL VARS
      real,    dimension ( ims:ime , jms:jme , 1:ensdim) ::      &
@@ -107,7 +131,7 @@ CONTAINS
 ! convection for this call only and at that particular gridpoint
 !
      real,    dimension (its:ite,kts:kte) ::                    &
-        T,TN,q,qo,PO,P,US,VS,omeg
+        T2d,TN,q2d,qo,PO,P2d,US,VS,omeg
      real, dimension (its:ite)            ::                    &
         Z1,PSUR,AAEQ,direction,mconv,cuten,umean,vmean,pmean
 
@@ -149,7 +173,7 @@ CONTAINS
      ENDDO
      ENDDO
      DO I=ITS,ITF
-         PSUR(I)=p_phy(I,1,J)*.01
+         PSUR(I)=p(I,1,J)*.01
          TER11(I)=HT(i,j)
          mconv(i)=0.
          aaeq(i)=0.
@@ -162,17 +186,17 @@ CONTAINS
      DO K=kts,ktf
      DO I=ITS,ITF
          omeg(i,k)=0.
-         po(i,k)=p_phy(i,k,j)*.01
-         P(I,K)=PO(i,k)
+         po(i,k)=p(i,k,j)*.01
+         P2d(I,K)=PO(i,k)
          US(I,K) =u(i,k,j)
          VS(I,K) =v(i,k,j)
-         T(I,K)=t_phy(i,k,j)
-         q(I,K)=q_phy(i,k,j)
-         omeg(I,K)= -g*rho_phy(i,k,j)*w(i,k,j)
-         TN(I,K)=t(i,k)+RTHFTEN(i,k,j)*dt
-         IF(TN(I,K).LT.200.)TN(I,K)=T(I,K)
-         QO(I,K)=q(i,k)+RQVFTEN(i,k,j)*dt
-         IF(Q(I,K).LT.1.E-08)Q(I,K)=1.E-08
+         T2d(I,K)=t(i,k,j)
+         q2d(I,K)=q(i,k,j)
+         omeg(I,K)= -g*rho(i,k,j)*w(i,k,j)
+         TN(I,K)=t2d(i,k)+RTHFTEN(i,k,j)*dt
+         IF(TN(I,K).LT.200.)TN(I,K)=T2d(I,K)
+         QO(I,K)=q2d(i,k)+RQVFTEN(i,k,j)*dt
+         IF(Q2d(I,K).LT.1.E-08)Q2d(I,K)=1.E-08
          IF(QO(I,K).LT.1.E-08)QO(I,K)=1.E-08
          OUTT(I,K)=0.
          OUTQ(I,K)=0.
@@ -183,8 +207,8 @@ CONTAINS
      ENDDO
       do k=  kts+1,ktf-1
       DO I = its,itf
-         if((p(i,1)-p(i,k)).gt.150.and.p(i,k).gt.300)then
-            dp=-.5*(p(i,k+1)-p(i,k-1))
+         if((p2d(i,1)-p2d(i,k)).gt.150.and.p2d(i,k).gt.300)then
+            dp=-.5*(p2d(i,k+1)-p2d(i,k-1))
             umean(i)=umean(i)+us(i,k)*dp
             vmean(i)=vmean(i)+vs(i,k)*dp
             pmean(i)=pmean(i)+dp
@@ -199,7 +223,7 @@ CONTAINS
       ENDDO
       DO K=kts,ktf-1
       DO I = its,itf
-        dq=(q(i,k+1)-q(i,k))
+        dq=(q2d(i,k+1)-q2d(i,k))
         mconv(i)=mconv(i)+omeg(i,k)*dq/g
       ENDDO
       ENDDO
@@ -215,8 +239,8 @@ CONTAINS
 !
 !---- CALL CUMULUS PARAMETERIZATION
 !
-      CALL CUP_enss(outqc,j,AAEQ,T,Q,TER11,TN,QO,PO,PRET,P,OUTT,  &
-           OUTQ,DT,PSUR,US,VS,tcrit,iens,                         &
+      CALL CUP_enss(outqc,j,AAEQ,T2d,Q2d,TER11,TN,QO,PO,PRET,     &
+           P2d,OUTT,OUTQ,DT,PSUR,US,VS,tcrit,iens,                &
            mconv,massfln,iact_old_gr,omeg,direction,MASS_FLUX,    &
            maxiens,maxens,maxens2,maxens3,ensdim,                 &
            APR_GR,APR_W,APR_MC,APR_ST,APR_AS,                     &
@@ -227,7 +251,7 @@ CONTAINS
            ims,ime, jms,jme, kms,kme,                             &
            its,ite, jts,jte, kts,kte                             )
 
-      CALL neg_check(dt,q,outq,outt,outqc,pret,its,ite,kts,kte,itf,ktf)
+      CALL neg_check(dt,q2d,outq,outt,outqc,pret,its,ite,kts,kte,itf,ktf)
 
             DO I=its,itf
               cuten(i)=0.
@@ -242,36 +266,37 @@ CONTAINS
             ENDDO
             DO K=kts,ktf
             DO I=its,itf
-!        if(i.eq.ipr.and.j.eq.jpr)then
-!           print *,'3',i,k,outt(i,k),outq(i,k),outqc(i,k),pret(i)
-!        endif
                RTHCUTEN(I,K,J)=outt(i,k)*cuten(i)/pi(i,k,j)
                RQVCUTEN(I,K,J)=outq(i,k)*cuten(i)
             ENDDO
             ENDDO
 
-            IF(P_QC .ge. P_FIRST_SCALAR)THEN
-              DO K=kts,ktf
-              DO I=its,itf
-                 RQCCUTEN(I,K,J)=outqc(I,K)*cuten(i)
-              ENDDO
-              ENDDO
+            IF(PRESENT(RQCCUTEN)) THEN
+              IF ( F_QC ) THEN
+                DO K=kts,ktf
+                DO I=its,itf
+                   RQCCUTEN(I,K,J)=outqc(I,K)*cuten(i)
+                ENDDO
+                ENDDO
+              ENDIF
             ENDIF
 
 !......     QSTEN STORES GRAUPEL TENDENCY IF IT EXISTS, OTHERISE SNOW (V2)     
 
-            IF(P_QI .ge. P_FIRST_SCALAR)THEN
-              DO K=kts,ktf
-              DO I=its,itf
-                 if(t(i,k).lt.258.)then
-                    RQICUTEN(I,K,J)=outqc(I,K)*cuten(i)
-                    RQCCUTEN(I,K,J)=0.
-                 else
-                    RQICUTEN(I,K,J)=0.
-                    RQCCUTEN(I,K,J)=outqc(I,K)*cuten(i)
-                 endif
-              ENDDO
-              ENDDO
+            IF(PRESENT(RQICUTEN).AND.PRESENT(RQCCUTEN))THEN
+              IF (F_QI) THEN
+                DO K=kts,ktf
+                DO I=its,itf
+                   if(t2d(i,k).lt.258.)then
+                      RQICUTEN(I,K,J)=outqc(I,K)*cuten(i)
+                      RQCCUTEN(I,K,J)=0.
+                   else
+                      RQICUTEN(I,K,J)=0.
+                      RQCCUTEN(I,K,J)=outqc(I,K)*cuten(i)
+                   endif
+                ENDDO
+                ENDDO
+              ENDIF
             ENDIF
 
 

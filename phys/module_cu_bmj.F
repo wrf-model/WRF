@@ -64,16 +64,19 @@
 CONTAINS
 !
 !-----------------------------------------------------------------------
-      SUBROUTINE BMJDRV(DT,ITIMESTEP,STEPCU                             &
-     &                 ,RTHCUTEN,RQVCUTEN                               &
+      SUBROUTINE BMJDRV(                                                &
+     &                  IDS,IDE,JDS,JDE,KDS,KDE                         &
+     &                 ,IMS,IME,JMS,JME,KMS,KME                         &
+     &                 ,ITS,ITE,JTS,JTE,KTS,KTE                         &
+     &                 ,DT,ITIMESTEP,STEPCU                             &
      &                 ,RAINCV,CUTOP,CUBOT,KPBL                         &
      &                 ,TH,T,QV                                         &
      &                 ,PINT,PMID,PI,RHO,DZ8W                           &
      &                 ,CP,R,ELWV,ELIV,G,TFRZ,D608                      &
      &                 ,CLDEFI,LOWLYR,XLAND,CU_ACT_FLAG                 &
-     &                 ,IDS,IDE,JDS,JDE,KDS,KDE                         &
-     &                 ,IMS,IME,JMS,JME,KMS,KME                         &
-     &                 ,ITS,ITE,JTS,JTE,KTS,KTE)
+                      ! optional
+     &                 ,RTHCUTEN, RQVCUTEN                              &
+     &                                                                  )
 !-----------------------------------------------------------------------
       IMPLICIT NONE
 !-----------------------------------------------------------------------
@@ -95,6 +98,7 @@ CONTAINS
      &                                                     ,RHO,T,TH
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME)                           &
+     &    ,OPTIONAL                                                     &
      &    ,INTENT(INOUT) ::                        RQVCUTEN,RTHCUTEN 
 ! 
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: CLDEFI,RAINCV
@@ -195,14 +199,16 @@ CONTAINS
 ! 
 !***  COMPUTE HEATING AND MOISTENING TENDENCIES
 !
-          DO K=KTS,KTE
-            KFLIP=KTE+1-K
-            RTHCUTEN(I,K,J)=DTDT(KFLIP)/PI(I,K,J)
+          IF ( PRESENT( RTHCUTEN ) .AND. PRESENT( RQVCUTEN )) THEN
+            DO K=KTS,KTE
+              KFLIP=KTE+1-K
+              RTHCUTEN(I,K,J)=DTDT(KFLIP)/PI(I,K,J)
 !
 !***  CONVERT FROM SPECIFIC HUMIDTY BACK TO MIXING RATIO
 !
-            RQVCUTEN(I,K,J)=DQDT(KFLIP)/(1.-QCOL(KFLIP))**2
-          ENDDO
+              RQVCUTEN(I,K,J)=DQDT(KFLIP)/(1.-QCOL(KFLIP))**2
+            ENDDO
+          ENDIF
 !
 !***  ALL UNITS IN BMJ SCHEME ARE MKS, THUS CONVERT PRECIP FROM METERS
 !***  TO MILLIMETERS PER STEP FOR OUTPUT.

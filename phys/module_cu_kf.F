@@ -10,25 +10,29 @@ MODULE module_cu_kf
 CONTAINS
 
 !-------------------------------------------------------------
-   SUBROUTINE KFCPS(DT,KTAU,DX,                              &
-              rho_phy,RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,   &
-              RQICUTEN,RQSCUTEN,RAINCV,NCA,                  &
-              U,V,TH,T,W,QV,dz8w,Pcps,pi,                    &
-              W0AVG,XLV0,XLV1,XLS0,XLS1,CP,R,G,EP1,          &
-              EP2,SVP1,SVP2,SVP3,SVPT0,                      &
-              P_QR,P_QI,P_QS,P_FIRST_SCALAR,STEPCU,          &
-              CU_ACT_FLAG,warm_rain,                         &
-              ids,ide, jds,jde, kds,kde,                     &
-              ims,ime, jms,jme, kms,kme,                     &
-              its,ite, jts,jte, kts,kte                      )
+   SUBROUTINE KFCPS(                                         &
+               ids,ide, jds,jde, kds,kde                     &
+              ,ims,ime, jms,jme, kms,kme                     &
+              ,its,ite, jts,jte, kts,kte                     &
+              ,DT,KTAU,DX                                    &
+              ,rho                                           &
+              ,RAINCV,NCA                                    &
+              ,U,V,TH,T,W,QV,dz8w,Pcps,pi                    &
+              ,W0AVG,XLV0,XLV1,XLS0,XLS1,CP,R,G,EP1          &
+              ,EP2,SVP1,SVP2,SVP3,SVPT0                      &
+              ,STEPCU,CU_ACT_FLAG,warm_rain                  &
+            ! optional arguments
+              ,F_QV    ,F_QC    ,F_QR    ,F_QI    ,F_QS      &
+              ,RQVCUTEN,RQCCUTEN,RQRCUTEN,RQICUTEN,RQSCUTEN  &
+              ,RTHCUTEN                                      &
+                                                             )
 !-------------------------------------------------------------
    IMPLICIT NONE
 !-------------------------------------------------------------
    INTEGER,      INTENT(IN   ) ::                            &
                                   ids,ide, jds,jde, kds,kde, & 
                                   ims,ime, jms,jme, kms,kme, & 
-                                  its,ite, jts,jte, kts,kte, &
-                                  P_QR,P_QI,P_QS,P_FIRST_SCALAR
+                                  its,ite, jts,jte, kts,kte
 
    INTEGER,      INTENT(IN   ) :: STEPCU
    LOGICAL,      INTENT(IN   ) :: warm_rain
@@ -45,31 +49,57 @@ CONTAINS
                                                           V, &
                                                           W, &
                                                          TH, &
-                                                          T, &
                                                          QV, &
+                                                          T, &
                                                        dz8w, &
                                                        Pcps, &
-                                                    rho_phy, &
+                                                        rho, &
                                                          pi
 !
    REAL,  INTENT(IN   ) :: DT, DX
-!
-   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),           &
-         INTENT(INOUT) ::                                    &
-                                                   RTHCUTEN, &
-                                                   RQVCUTEN, &
-                                                   RQCCUTEN, &
-                                                   RQRCUTEN, &
-                                                   RQICUTEN, &
-                                                   RQSCUTEN, &
-                                                      W0AVG 
 
    REAL, DIMENSION( ims:ime , jms:jme ),                     &
-          INTENT(INOUT) ::                           RAINCV, &
-                                                        NCA
+          INTENT(INOUT) ::                                   &
+                                                     RAINCV  &
+                                                    ,   NCA
+
+   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),           &
+          INTENT(INOUT) ::                                   &
+                                                      W0AVG
 
    LOGICAL, DIMENSION( ims:ime , jms:jme ),                  &
           INTENT(INOUT) :: CU_ACT_FLAG
+
+!
+! Optional arguments
+!
+
+   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),           &
+         OPTIONAL,                                           &
+         INTENT(INOUT) ::                                    &
+                                                   RTHCUTEN  &
+                                                  ,RQVCUTEN  &
+                                                  ,RQCCUTEN  &
+                                                  ,RQRCUTEN  &
+                                                  ,RQICUTEN  &
+                                                  ,RQSCUTEN
+
+!
+! Flags relating to the optional tendency arrays declared above
+! Models that carry the optional tendencies will provdide the
+! optional arguments at compile time; these flags all the model
+! to determine at run-time whether a particular tracer is in 
+! use or not. 
+!
+
+   LOGICAL, OPTIONAL ::                                      &
+                                                   F_QV      &
+                                                  ,F_QC      &
+                                                  ,F_QR      &
+                                                  ,F_QI      &
+                                                  ,F_QS
+
+
 
 ! LOCAL VARS
 
@@ -94,6 +124,9 @@ CONTAINS
    REAL    ::         TST,tv,PRS,RHOE,W0,SCR1,DXSQ,tmp,RTHCUMAX
 
    INTEGER :: i,j,k,NTST,ICLDCK
+
+   LOGICAL :: qi_flag , qs_flag
+
 !----------------------------------------------------------------------
 
 !--- CALL CUMULUS PARAMETERIZATION                                        
@@ -105,6 +138,10 @@ CONTAINS
 !...BECAUSE THE ORDERING IS REVERSED IN KFPARA...                         
 !                                                                           
    DXSQ=DX*DX
+   qi_flag = .FALSE.
+   qs_flag = .FALSE.
+   IF ( PRESENT( F_QI ) ) qi_flag = f_qi
+   IF ( PRESENT( F_QS ) ) qs_flag = f_qs
 
 !----------------------
    NTST=STEPCU
@@ -121,7 +158,7 @@ CONTAINS
    DO J = jts,jte  
       DO K=kts,kte
          DO I= its,ite
-            SCR1=-5.0E-4*G*rho_phy(I,K,J)*(w(I,K,J)+w(I,K+1,J))
+            SCR1=-5.0E-4*G*rho(I,K,J)*(w(I,K,J)+w(I,K+1,J))
             TV=T(I,K,J)*(1.+EP1*QV(I,K,J))
             RHOE=Pcps(I,K,J)/(R*TV)
             W0=-101.9368*SCR1/RHOE
@@ -164,7 +201,7 @@ CONTAINS
                U1D(K) =U(I,K,J)
                V1D(K) =V(I,K,J)
                T1D(K) =T(I,K,J)
-             RHO1D(K) =rho_phy(I,K,J)
+             RHO1D(K) =rho(I,K,J)
                QV1D(K)=QV(I,K,J)
                P1D(K) =Pcps(I,K,J)
                W0AVG1D(K) =W0AVG(I,K,J)
@@ -178,39 +215,44 @@ CONTAINS
                  XLV0,XLV1,XLS0,XLS1,CP,R,G,        &
                  EP2,SVP1,SVP2,SVP3,SVPT0,          &
                  DQDT,DQIDT,DQCDT,DQRDT,DQSDT,DTDT, &
-                 RAINCV,NCA,P_QI,P_QS,P_FIRST_SCALAR,&
-                 warm_rain,                         &
+                 RAINCV,NCA,                        &
+                 warm_rain,qi_flag,qs_flag,         &
                  ids,ide, jds,jde, kds,kde,         &        
                  ims,ime, jms,jme, kms,kme,         &
                  its,ite, jts,jte, kts,kte          )
  
-            DO K=kts,kte
-               RTHCUTEN(I,K,J)=DTDT(K)/pi(I,K,J)
-               RQVCUTEN(I,K,J)=DQDT(K)
-            ENDDO
+            IF ( PRESENT( RTHCUTEN ) .AND. PRESENT( RQVCUTEN ) ) THEN
+              DO K=kts,kte
+                 RTHCUTEN(I,K,J)=DTDT(K)/pi(I,K,J)
+                 RQVCUTEN(I,K,J)=DQDT(K)
+              ENDDO
+            ENDIF
 
-            IF(P_QR .ge. P_FIRST_SCALAR)THEN
-              DO K=kts,kte
-                 RQRCUTEN(I,K,J)=DQRDT(K)
-                 RQCCUTEN(I,K,J)=DQCDT(K)
-              ENDDO
-            ELSE
+            IF( PRESENT(RQRCUTEN) .AND. PRESENT(RQCCUTEN) .AND. &
+                PRESENT(F_QR)                                    ) THEN
+              IF ( F_QR            ) THEN
+                 DO K=kts,kte
+                    RQRCUTEN(I,K,J)=DQRDT(K)
+                    RQCCUTEN(I,K,J)=DQCDT(K)
+                 ENDDO
+               ELSE
 ! This is the case for Eta microphysics without 3d rain field
-              DO K=kts,kte
-                 RQRCUTEN(I,K,J)=0.
-                 RQCCUTEN(I,K,J)=DQRDT(K)+DQCDT(K)
-              ENDDO
+                 DO K=kts,kte
+                    RQRCUTEN(I,K,J)=0.
+                    RQCCUTEN(I,K,J)=DQRDT(K)+DQCDT(K)
+                 ENDDO
+              ENDIF
             ENDIF
 
 !......     QSTEN STORES GRAUPEL TENDENCY IF IT EXISTS, OTHERISE SNOW (V2)     
 
-            IF(P_QI .ge. P_FIRST_SCALAR)THEN
+            IF( PRESENT( RQICUTEN ) .AND. qi_flag )THEN
               DO K=kts,kte
                  RQICUTEN(I,K,J)=DQIDT(K)
               ENDDO
             ENDIF
 
-            IF(P_QS .ge. P_FIRST_SCALAR)THEN                                          
+            IF( PRESENT ( RQSCUTEN ) .AND. qs_flag )THEN
               DO K=kts,kte
                  RQSCUTEN(I,K,J)=DQSDT(K)
               ENDDO
@@ -231,8 +273,8 @@ CONTAINS
                       XLV0,XLV1,XLS0,XLS1,CP,R,G,          &
                       EP2,SVP1,SVP2,SVP3,SVPT0,            &
                       DQDT,DQIDT,DQCDT,DQRDT,DQSDT,DTDT,   &
-                      RAINCV,NCA,P_QI,P_QS,P_FIRST_SCALAR, &
-                      warm_rain,                           &
+                      RAINCV,NCA,                          &
+                      warm_rain,qi_flag,qs_flag,           &
                       ids,ide, jds,jde, kds,kde,           & 
                       ims,ime, jms,jme, kms,kme,           &
                       its,ite, jts,jte, kts,kte            )
@@ -242,8 +284,9 @@ CONTAINS
       INTEGER, INTENT(IN   ) :: ids,ide, jds,jde, kds,kde, &
                                 ims,ime, jms,jme, kms,kme, &
                                 its,ite, jts,jte, kts,kte, &
-                                I,J,P_QI,P_QS,P_FIRST_SCALAR
+                                I,J
       LOGICAL, INTENT(IN   ) :: warm_rain
+      LOGICAL           :: qi_flag, qs_flag
 
 !
       REAL, DIMENSION( kts:kte ),                          &
@@ -273,7 +316,6 @@ CONTAINS
       REAL, DIMENSION( ims:ime , jms:jme ),                &
             INTENT(INOUT) ::                       RAINCV, &
                                                       NCA
-
 !
 !...DEFINE LOCAL VARIABLES...                                
 !                                                            
@@ -1837,7 +1879,7 @@ CONTAINS
 !           DQRDT(K)=0.                                         
 !           DQSDT(K)=0.                                        
 !         ELSE                                                     
-            IF(P_QI .lt. P_FIRST_SCALAR .and. warm_rain)THEN                                          
+            IF(.NOT. qi_flag .and. warm_rain)THEN                                          
 !                                                                         
 !...IF ICE PHASE IS NOT ALLOWED, MELT ALL FROZEN HYDROMETEORS...         
 !                                                                       
@@ -1847,7 +1889,7 @@ CONTAINS
               DQIDT(K)=0.                                      
               DQRDT(K)=(QRG(K)+QSG(K)-QR0(K)-QS0(K))/TIMEC    
               DQSDT(K)=0.                                    
-            ELSEIF(P_QI .lt. P_FIRST_SCALAR .and. .not. warm_rain)THEN                                          
+            ELSEIF(.NOT. qi_flag .and. .not. warm_rain)THEN                                          
 !                                                                      
 !...IF ICE PHASE IS ALLOWED, BUT MIXED PHASE IS NOT, MELT FROZEN HYDROME   
 !...BELOW THE MELTING LEVEL, FREEZE LIQUID WATER ABOVE THE MELTING LEVEL  
@@ -1862,7 +1904,7 @@ CONTAINS
               DQIDT(K)=0.                                             
               DQRDT(K)=(QRG(K)+QSG(K)-QR0(K)-QS0(K))/TIMEC           
               DQSDT(K)=0.                                           
-            ELSEIF(P_QI .ge. P_FIRST_SCALAR) THEN
+            ELSEIF(qi_flag) THEN
 !                                                                           
 !...IF MIXED PHASE HYDROMETEORS ARE ALLOWED, FEED BACK CONVECTIVE          
 !...TENDENCY OF HYDROMETEORS DIRECTLY...                                  
@@ -1870,7 +1912,7 @@ CONTAINS
               DQCDT(K)=(QLG(K)-QL0(K))/TIMEC                       
               DQIDT(K)=(QIG(K)-QI0(K))/TIMEC                      
               DQRDT(K)=(QRG(K)-QR0(K))/TIMEC                     
-              IF (P_QS .ge. P_FIRST_SCALAR) THEN
+              IF (qs_flag ) THEN
                  DQSDT(K)=(QSG(K)-QS0(K))/TIMEC                    
               ELSE
                  DQIDT(K)=DQIDT(K)+(QSG(K)-QS0(K))/TIMEC

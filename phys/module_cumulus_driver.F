@@ -3,27 +3,48 @@
 
 MODULE module_cumulus_driver
 CONTAINS
-   SUBROUTINE cumulus_driver(itimestep,dt,DX,n_moist,                 &
-                     RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,             &
-                     RQICUTEN,RQSCUTEN,RAINC,RAINCV,NCA,              &
-                     RTHRATEN,RTHBLTEN,RQVBLTEN,                      &
-                     RTHFTEN,RQVFTEN,                                 &
-                     u_phy,v_phy,th_phy,t_phy,w,moist,                &
-                     dz8w,p8w,p_phy,pi_phy,                           &
-                     config_flags,W0AVG,rho_phy,STEPCU,               &
-                     CLDEFI,LOWLYR,XLAND,CU_ACT_FLAG,warm_rain,       &
-                     apr_gr,apr_w,apr_mc,apr_st,apr_as,apr_capma,     &
-                     apr_capme,apr_capmi,                             &
-                     HTOP,HBOT,KPBL,                                  &  
-                     MASS_FLUX,XF_ENS,PR_ENS,ht,                      &
-                     ensdim,maxiens,maxens,maxens2,maxens3,           &
-                     ids,ide, jds,jde, kds,kde,                       &
-                     ims,ime, jms,jme, kms,kme,                       &
-                     i_start,i_end,j_start,j_end,kts,kte,num_tiles    )
+   SUBROUTINE cumulus_driver(                                         &
+                 ! Order dependent args for domain, mem, and tile dims
+                      ids,ide, jds,jde, kds,kde                       &
+                     ,ims,ime, jms,jme, kms,kme                       &
+                     ,i_start,i_end,j_start,j_end,kts,kte,num_tiles   &
+                 ! Order independent args (use VAR= in call)
+                 ! --Prognostic
+                     ,u,v,th,t,w                                      &
+                     ,p,pi,rho                                        &
+                 ! --Other arguments
+                     ,itimestep,dt,dx                                 &
+                     ,rainc,raincv,nca                                &
+                     ,dz8w,p8w                                        &
+                     ,w0avg,stepcu                                    &
+                     ,cldefi,lowlyr,xland,cu_act_flag,warm_rain       &
+                     ,htop,hbot,kpbl,ht                               &  
+                     ,ensdim,maxiens,maxens,maxens2,maxens3           &
+                 ! Package selection variable
+                     ,cu_physics                                      &
+                 ! Optional moisture tracers 
+                     ,qv_curr, qc_curr, qr_curr                       &
+                     ,qi_curr, qs_curr, qg_curr                       & 
+                     ,qv_prev, qc_prev, qr_prev                       & 
+                     ,qi_prev, qs_prev, qg_prev                       &
+                 ! Optional arguments for GD scheme
+                     ,apr_gr,apr_w,apr_mc,apr_st,apr_as,apr_capma     &
+                     ,apr_capme,apr_capmi                             &
+                     ,mass_flux,xf_ens,pr_ens                         &
+                 ! Optional moisture and other tendencies
+                     ,rqvcuten,rqccuten,rqrcuten                      &
+                     ,rqicuten,rqscuten,rqgcuten                      &
+                     ,rqvblten,rqvften                                &
+                     ,rthcuten,rthraten,rthblten,rthften              &
+                 ! Optional moisture tracer flags 
+                     ,f_qv,f_qc,f_qr                                  &
+                     ,f_qi,f_qs,f_qg                                  &
+                                                                      )
 !----------------------------------------------------------------------
-   USE module_configure
-   USE module_state_description
    USE module_model_constants
+   USE module_state_description, ONLY:     KFSCHEME,BMJSCHEME         &
+                                          ,KFETASCHEME,GDSCHEME       &
+                                          ,SASSCHEME
 
 ! *** add new modules of schemes here
 
@@ -81,7 +102,6 @@ CONTAINS
 !-- DT            time step (second)
 !-- itimestep     number of time step (integer)   
 !-- DX            horizontal space interval (m)
-!-- n_moist       number of moisture species
 !-- rr            dry air density (kg/m^3)
 !
 !-- RTHCUTEN      Theta tendency due to 
@@ -122,9 +142,8 @@ CONTAINS
 !-- PR_ENS
 !-- warm_rain
 !-- CU_ACT_FLAG
-!-- config_flags  
 !-- W0AVG         average vertical velocity, (for KF scheme) (m/s)
-!-- rho_phy       density (kg/m^3)
+!-- rho           density (kg/m^3)
 !-- CLDEFI        precipitation efficiency (for BMJ scheme) (dimensionless)
 !-- STEPCU        # of fundamental timesteps between convection calls
 !-- XLAND         land-sea mask (1.0 for land; 2.0 for water)
@@ -145,12 +164,6 @@ CONTAINS
 !-- EP_1          constant for virtual temperature 
 !                 (R_v/R_d - 1) (dimensionless)
 !-- pi_phy        the exner function, (p/p0)**(R/Cp) (none unit)
-!-- P_QV          species index for water vapor
-!-- P_QC          species index for cloud water
-!-- P_QR          species index for rain water
-!-- P_QI          species index for cloud ice
-!-- P_QS          species index for snow
-!-- P_QG          species index for graupel
 !-- ids           start index for i in domain
 !-- ide           end index for i in domain
 !-- jds           start index for j in domain
@@ -178,19 +191,18 @@ CONTAINS
 !
 !======================================================================
 
-   TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-
    INTEGER,      INTENT(IN   )    ::                             &
                                       ids,ide, jds,jde, kds,kde, &
                                       ims,ime, jms,jme, kms,kme, &
                                                         kts,kte, &
-                                      n_moist, itimestep, num_tiles
+                                      itimestep, num_tiles
    INTEGER, DIMENSION(num_tiles), INTENT(IN) ::                       &
      &           i_start,i_end,j_start,j_end
 
    INTEGER,      INTENT(IN   )    ::                             &
                            ensdim,maxiens,maxens,maxens2,maxens3
 
+   INTEGER,      INTENT(IN   )    ::   cu_physics
    INTEGER,      INTENT(IN   )    ::   STEPCU
    LOGICAL,      INTENT(IN   )    ::   warm_rain
 
@@ -198,61 +210,87 @@ CONTAINS
            INTENT(IN ) ::                                LOWLYR
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
-         INTENT(IN ) ::                                    dz8w, &
-                                                            p8w, &
-                                                          p_phy, &
-                                                         pi_phy, &
-                                                          u_phy, &
-                                                          v_phy, &
-                                                         th_phy, &
-                                                          t_phy, &
-                                                        rho_phy, &
-                                                              w
-!
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, n_moist ),        &
-         INTENT(IN ) ::                                   moist
+         INTENT(IN ) ::                                          &
+                                                           dz8w  &
+                                                      ,     p8w  &
+                                                      ,       p  &
+                                                      ,      pi  &
+                                                      ,       u  &
+                                                      ,       v  &
+                                                      ,      th  &
+                                                      ,       t  &
+                                                      ,     rho  &
+                                                      ,       w
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
-         INTENT(INOUT)  ::                              RTHFTEN, &
-                                                        RQVFTEN
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
-         INTENT(IN   )  ::                             RTHRATEN, &
-                                                       RTHBLTEN, &
-                                                       RQVBLTEN
-
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
-         INTENT(INOUT)  ::                             RTHCUTEN, &
-                                                       RQVCUTEN, &
-                                                       RQCCUTEN, &
-                                                       RQRCUTEN, &
-                                                       RQICUTEN, &
-                                                       RQSCUTEN, &
+         INTENT(INOUT)  ::                                       &
                                                           W0AVG
 
-   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN) ::   HT,XLAND
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN) ::           &
+                                                       HT,XLAND
 
    REAL, DIMENSION( ims:ime , jms:jme ),                         &
-          INTENT(INOUT) ::                                RAINC, &
-                                                         RAINCV, &
-                                                            NCA, & 
-                                                      MASS_FLUX, & 
-                                                         CLDEFI 
+          INTENT(INOUT) ::                                RAINC  &
+                                                    ,    RAINCV  &
+                                                    ,       NCA  & 
+                                                    ,      HTOP  & 
+                                                    ,      HBOT  &
+                                                    ,    CLDEFI 
  
-   REAL, DIMENSION( ims:ime , jms:jme ),                         &
-                    INTENT(INOUT) ::                        HTOP,& 
-               apr_gr,apr_w,apr_mc,apr_st,apr_as,apr_capma,      &
-               apr_capme,apr_capmi,                              &
-                                                           HBOT 
+
    INTEGER, DIMENSION( ims:ime , jms:jme ),                      &
                     INTENT(IN) ::                          KPBL
 
-   REAL, DIMENSION( ims:ime , jms:jme , 1:ensdim ),              &
-          INTENT(INOUT) ::                       XF_ENS, PR_ENS
 
    LOGICAL, DIMENSION( ims:ime , jms:jme ),                      &
           INTENT(INOUT) :: CU_ACT_FLAG
 
    REAL,  INTENT(IN   ) :: DT, DX
+
+!
+! optional arguments
+!
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
+         OPTIONAL, INTENT(INOUT) ::                              &
+                      ! optional moisture tracers
+                      ! 2 time levels; if only one then use CURR
+                      qv_curr, qc_curr, qr_curr                  &
+                     ,qi_curr, qs_curr, qg_curr                  & 
+                     ,qv_prev, qc_prev, qr_prev                  & 
+                     ,qi_prev, qs_prev, qg_prev                  &
+                      ! optional moisture and other tendencies
+                     ,rqvcuten,rqccuten,rqrcuten                 &
+                     ,rqicuten,rqscuten,rqgcuten                 &
+                     ,rqvblten,rqvften                           &
+                     ,rthraten,rthblten                          &
+                     ,rthften,rthcuten
+
+   REAL, DIMENSION( ims:ime , jms:jme ),                         &
+                    OPTIONAL,                                    &
+                    INTENT(INOUT) ::                             &
+                apr_gr,apr_w,apr_mc,apr_st,apr_as,apr_capma      &
+               ,apr_capme,apr_capmi                              &
+                                                    , MASS_FLUX
+
+   REAL, DIMENSION( ims:ime , jms:jme , 1:ensdim ),              &
+          OPTIONAL,                                              &
+          INTENT(INOUT) ::                       XF_ENS, PR_ENS
+
+!
+! Flags relating to the optional tendency arrays declared above
+! Models that carry the optional tendencies will provdide the
+! optional arguments at compile time; these flags all the model
+! to determine at run-time whether a particular tracer is in
+! use or not.
+!
+   LOGICAL, INTENT(IN), OPTIONAL ::                             &
+                                                      f_qv      &
+                                                     ,f_qc      &
+                                                     ,f_qr      &
+                                                     ,f_qi      &
+                                                     ,f_qs      &
+                                                     ,f_qg
+
 
 ! LOCAL  VAR
 
@@ -260,7 +298,7 @@ CONTAINS
 
 !-----------------------------------------------------------------
 
-   IF (config_flags%cu_physics .eq. 0) return
+   IF (cu_physics .eq. 0) return
 
 ! DON'T JUDGE TIME STEP HERE, SINCE KF NEEDS ACCUMULATED W FIELD.
 ! DO IT INSIDE THE INDIVIDUAL CUMULUS SCHEME
@@ -276,89 +314,133 @@ CONTAINS
         jte = j_end(ij)
 
 
-   cps_select: SELECT CASE(config_flags%cu_physics)
+   cps_select: SELECT CASE(cu_physics)
 
      CASE (KFSCHEME)
           CALL wrf_debug(100,'in kfcps')
-          CALL KFCPS(DT,itimestep,DX,                           &
-               rho_phy,RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,     &
-               RQICUTEN,RQSCUTEN,RAINCV,NCA,                    &
-               u_phy,v_phy,th_phy,t_phy,w,                      &
-               moist(ims,kms,jms,P_QV),                         &
-               dz8w,p_phy,pi_phy,                               &
-               W0AVG,XLV0,XLV1,XLS0,XLS1,CP,R_d,G,EP_1,         &            
-               EP_2,SVP1,SVP2,SVP3,SVPT0,                       &
-               P_QR,P_QI,P_QS,PARAM_FIRST_SCALAR,STEPCU,        &
-               CU_ACT_FLAG,warm_rain,                           & 
-               ids,ide, jds,jde, kds,kde,                       &
-               ims,ime, jms,jme, kms,kme,                       &
-               its,ite, jts,jte, kts,kte                        )
+
+          CALL KFCPS(                                           &
+              ! order independent arguments
+                DT=dt ,KTAU=itimestep ,DX=dx ,RHO=rho           &
+               ,U=u ,V=v ,TH=th ,T=t ,W=w                       &
+               ,PCPS=p ,PI=pi                                   &
+               ,XLV0=xlv0 ,XLV1=xlv1 ,XLS0=xls0 ,XLS1=xls1      &
+               ,RAINCV=raincv ,NCA=nca                          &
+               ,DZ8W=dz8w                                       &
+               ,W0AVG=w0avg                                     &
+               ,CP=cp ,R=r_d ,G=g ,EP1=ep_1 ,EP2=ep_2           &
+               ,SVP1=svp1 ,SVP2=svp2 ,SVP3=svp3 ,SVPT0=svpt0    &
+               ,STEPCU=stepcu                                   &
+               ,CU_ACT_FLAG=cu_act_flag                         &
+               ,WARM_RAIN=warm_rain                             &
+               ,QV=qv_curr                                      &
+               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
+               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
+               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
+              ! optionals
+               ,RTHCUTEN=rthcuten ,RQVCUTEN=rqvcuten            &
+               ,RQCCUTEN=rqccuten ,RQRCUTEN=rqrcuten            &
+               ,RQICUTEN=rqicuten ,RQSCUTEN=rqscuten            &
+               ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                   &
+               ,F_QI=f_qi,F_QS=f_qs                             &
+                                                                )
+
      CASE (BMJSCHEME)
           CALL wrf_debug(100,'in bmj_cps')
-            CALL BMJDRV(DT,itimestep,STEPCU,                      &
-                 RTHCUTEN,RQVCUTEN,                               &
-                 RAINCV,HTOP,HBOT,KPBL,                           &
-                 th_phy,t_phy,                                    &
-                 moist(ims,kms,jms,P_QV),                         &
-                 p8w,p_phy,pi_phy,rho_phy,dz8w,                   &
-! added xls (from module_model_constants) in merging NCEP version of BMJ CU 20040706, JM
-! this appears as the additional dummy argument ELIV in the routine itself  20040706, JM
-                 CP,R_d,XLV,XLS,g,SVPT0,EP_1,                     &
-                 CLDEFI,LOWLYR,XLAND,CU_ACT_FLAG,                 &
-                 ids,ide, jds,jde, kds,kde,                       &
-                 ims,ime, jms,jme, kms,kme,                       &
-                 its,ite, jts,jte, kts,kte                        )
+          CALL BMJDRV(                                          &
+                TH=th,T=T ,RAINCV=raincv, RHO=rho               &
+               ,DT=dt ,ITIMESTEP=itimestep ,STEPCU=stepcu       &
+               ,CUTOP=htop, CUBOT=hbot, KPBL=kpbl               &
+               ,DZ8W=dz8w ,PINT=p8w, PMID=p, PI=pi              &
+               ,CP=cp ,R=r_d ,ELWV=xlv ,ELIV=xls ,G=g           &
+               ,TFRZ=svpt0 ,D608=ep_1 ,CLDEFI=cldefi            &
+               ,LOWLYR=lowlyr ,XLAND=xland                      &
+               ,CU_ACT_FLAG=cu_act_flag                         &
+               ,QV=qv_curr                                      &
+               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
+               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
+               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
+              ! optionals
+               ,RTHCUTEN=rthcuten ,RQVCUTEN=rqvcuten            &
+                                                                )
+
      CASE (KFETASCHEME)
           CALL wrf_debug(100,'in kf_eta_cps')
-          CALL KF_ETA_CPS(DT,itimestep,DX,                      &
-               rho_phy,RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,     &
-               RQICUTEN,RQSCUTEN,RAINCV,NCA,                    &
-               u_phy,v_phy,th_phy,t_phy,w,                      &
-               moist(ims,kms,jms,P_QV),                         &
-               dz8w,p_phy,pi_phy,                               &
-               W0AVG,XLV0,XLV1,XLS0,XLS1,CP,R_d,G,EP_1,         &
-               EP_2,SVP1,SVP2,SVP3,SVPT0,                       &
-               P_QR,P_QI,P_QS,PARAM_FIRST_SCALAR,STEPCU,        &
-               CU_ACT_FLAG,warm_rain,HTOP,HBOT,                 &
-               ids,ide, jds,jde, kds,kde,                       &
-               ims,ime, jms,jme, kms,kme,                       &
-               its,ite, jts,jte, kts,kte                        )
+          CALL KF_ETA_CPS(                                      &
+                U=u ,V=v ,TH=th ,T=t ,W=w ,RHO=rho              &
+               ,RAINCV=raincv, NCA=nca ,DZ8W=dz8w               &
+               ,PCPS=p, PI=pi ,W0AVG=W0AVG                      &
+               ,CUTOP=HTOP,CUBOT=HBOT                           &
+               ,XLV0=XLV0 ,XLV1=XLV1 ,XLS0=XLS0 ,XLS1=XLS1      &
+               ,CP=CP ,R=R_d ,G=G ,EP1=EP_1 ,EP2=EP_2           &
+               ,SVP1=SVP1 ,SVP2=SVP2 ,SVP3=SVP3 ,SVPT0=SVPT0    &
+               ,DT=dt ,KTAU=itimestep ,DX=dx                    &
+               ,STEPCU=stepcu                                   &
+               ,CU_ACT_FLAG=cu_act_flag ,warm_rain=warm_rain    &
+               ,QV=qv_curr                                      &
+               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
+               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
+               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
+              ! optionals
+               ,RTHCUTEN=rthcuten                               &
+               ,RQVCUTEN=rqvcuten ,RQCCUTEN=rqccuten            &
+               ,RQRCUTEN=rqrcuten ,RQICUTEN=rqicuten            &
+               ,RQSCUTEN=rqscuten                               &
+               ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                   &
+               ,F_QI=f_qi,F_QS=f_qs                             &
+                                                                )
+
      CASE (GDSCHEME)
           CALL wrf_debug(100,'in grelldrv')
-          CALL GRELLDRV(DT,itimestep,DX,                        &
-               rho_phy,RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,     &
-               RAINCV,RTHFTEN,RQVFTEN,                          &
-               RTHRATEN,RTHBLTEN,RQVBLTEN,                      &
-               u_phy,v_phy,t_phy,w,                             &
-               moist(ims,kms,jms,P_QV),                         &
-               dz8w,p_phy,pi_phy,                               &
-               XLV0,CP,G,R_v,                                   &
-               P_QC,P_QI,P_QS,PARAM_FIRST_SCALAR,STEPCU,        &
-               CU_ACT_FLAG,warm_rain,                           &
-               apr_gr,apr_w,apr_mc,apr_st,apr_as,apr_capma,     &
-               apr_capme,apr_capmi,                             &
-               MASS_FLUX,XF_ENS,PR_ENS,ht,                      &
-               ensdim,maxiens,maxens,maxens2,maxens3,           &
-               ids,ide, jds,jde, kds,kde,                       &
-               ims,ime, jms,jme, kms,kme,                       &
-               its,ite, jts,jte, kts,kte                        )
+          CALL GRELLDRV(                                        &
+                DT=dt, ITIMESTEP=itimestep, DX=dx               &
+               ,U=u,V=v,T=t,W=w ,RHO=rho                        &
+               ,P=p,PI=pi ,Q=qv_curr ,RAINCV=raincv             &
+               ,DZ8W=dz8w ,XLV=xlv0,CP=cp,G=g,R_V=r_v           &
+               ,APR_GR=apr_gr,APR_W=apr_w,APR_MC=apr_mc         &
+               ,APR_ST=apr_st,APR_AS=apr_as                     &
+               ,APR_CAPMA=apr_capma,APR_CAPME=apr_capme         &
+               ,APR_CAPMI=apr_capmi,MASS_FLUX=mass_flux         &
+               ,XF_ENS=xf_ens,PR_ENS=pr_ens,HT=ht               &
+               ,ENSDIM=ensdim,MAXIENS=maxiens,MAXENS=maxens     &
+               ,MAXENS2=maxens2,MAXENS3=maxens3                 &
+               ,STEPCU=STEPCU                                   &
+               ,CU_ACT_FLAG=CU_ACT_FLAG,warm_rain=warm_rain     &
+               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
+               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
+               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
+              ! optionals
+               ,RTHCUTEN=RTHCUTEN ,RTHFTEN=RTHFTEN              & 
+               ,RTHRATEN=RTHRATEN,RTHBLTEN=RTHBLTEN             &
+               ,RQVCUTEN=RQVCUTEN,RQCCUTEN=RQCCUTEN             &
+               ,RQICUTEN=RQICUTEN ,RQVFTEN=RQVFTEN              &
+               ,RQVBLTEN=RQVBLTEN                               &
+               ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                   &
+               ,F_QI=f_qi,F_QS=f_qs                             &
+                                                                )
      CASE (SASSCHEME)
                                                                                                                                            
           CALL wrf_debug(100,'in cu_sas')
-            CALL CU_SAS(DT,itimestep,STEPCU,                      &
-                 RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,             &
-                 RAINCV,HTOP,HBOT,u_phy,v_phy,w,t_phy,            &
-                 moist(ims,kms,jms,P_QV),moist(ims,kms,jms,P_QC), &
-                 moist(ims,kms,jms,P_QI),pi_phy,rho_phy,          &
-                 dz8w,p_phy,p8w,XLAND,CU_ACT_FLAG,                &
-                 P_QC,P_QI,PARAM_FIRST_SCALAR,                    &
-                 ids,ide, jds,jde, kds,kde,                       &
-                 ims,ime, jms,jme, kms,kme,                       &
-                 its,ite, jts,jte, kts,kte                        )
+            CALL CU_SAS(                                        &
+                DT=dt,ITIMESTEP=itimestep,STEPCU=STEPCU         &
+               ,RAINCV=RAINCV,HTOP=HTOP,HBOT=HBOT               &
+               ,U3D=u,V3D=v,W=w,T3D=t,PI3D=pi,RHO3D=rho         &
+               ,QV3D=QV_CURR,QC3D=QC_CURR,QI3D=QI_CURR          &
+               ,DZ8W=dz8w,PCPS=p,P8W=p8w,XLAND=XLAND            &
+               ,CU_ACT_FLAG=CU_ACT_FLAG                         &
+               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
+               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
+               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
+              ! optionals
+               ,RTHCUTEN=RTHCUTEN,RQVCUTEN=RQVCUTEN             &
+               ,RQCCUTEN=RQCCUTEN,RQICUTEN=RQICUTEN             &
+               ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                   &
+               ,F_QI=f_qi,F_QS=f_qs                             &
+                                                                )
 
      CASE DEFAULT 
 
-         WRITE( wrf_err_message , * ) 'The cumulus option does not exist: cu_physics = ', config_flags%cu_physics
+         WRITE( wrf_err_message , * ) 'The cumulus option does not exist: cu_physics = ', cu_physics
          CALL wrf_error_fatal ( wrf_err_message )
 
    END SELECT cps_select

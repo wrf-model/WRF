@@ -4,15 +4,17 @@ MODULE module_cu_sas
 CONTAINS
 
 !-----------------------------------------------------------------
-      SUBROUTINE CU_SAS(DT,ITIMESTEP,STEPCU,                    &
-                 RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,           &
-                 RAINCV,HTOP,HBOT,                              &
-                 U3D,V3D,W,T3D,QV3D,QC3D,QI3D,PI3D,RHO3D,       &
-                 DZ8W,PCPS,P8W,XLAND,CU_ACT_FLAG,               &
-                 P_QC,P_QI,P_FIRST_SCALAR,                      & 
-                 ids,ide, jds,jde, kds,kde,                     &
-                 ims,ime, jms,jme, kms,kme,                     &
-                 its,ite, jts,jte, kts,kte                      )
+      SUBROUTINE CU_SAS(                                        &
+                 DT,ITIMESTEP,STEPCU                            &
+                ,RAINCV,HTOP,HBOT                               &
+                ,U3D,V3D,W,T3D,QV3D,QC3D,QI3D,PI3D,RHO3D        &
+                ,DZ8W,PCPS,P8W,XLAND,CU_ACT_FLAG                &
+                ,ids,ide, jds,jde, kds,kde                      &
+                ,ims,ime, jms,jme, kms,kme                      &
+                ,its,ite, jts,jte, kts,kte                      &
+                ,F_QV    ,F_QC    ,F_QR    ,F_QI    ,F_QS       &
+                ,RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN            &
+                                                                )
 
 !-------------------------------------------------------------------
       USE MODULE_GFS_CONSTANTS, ONLY:kind_phys, g=>con_g,rd=>con_rd, gpvs
@@ -91,19 +93,11 @@ CONTAINS
                                         ims,ime, jms,jme, kms,kme,      &
                                         its,ite, jts,jte, kts,kte,      &
                                         ITIMESTEP,                      &
-                                        P_FIRST_SCALAR,                 &
-                                        P_QC,                           &
-                                        P_QI,                           &
                                         STEPCU
 
       REAL,    INTENT(IN) ::                                            &
                                         DT
 
-      REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) ::      &
-                                        RQCCUTEN,                       &
-                                        RQICUTEN,                       &
-                                        RQVCUTEN,                       &
-                                        RTHCUTEN
 
       REAL,    DIMENSION(ims:ime, jms:jme), INTENT(IN) ::               &
                                         XLAND
@@ -132,6 +126,29 @@ CONTAINS
                                         U3D,                            &
                                         V3D,                            &
                                         W
+
+!--------------------------- OPTIONAL VARS ----------------------------
+
+      REAL, DIMENSION(ims:ime, kms:kme, jms:jme),                       &
+               OPTIONAL, INTENT(INOUT) ::                               &
+                                        RQCCUTEN,                       &
+                                        RQICUTEN,                       &
+                                        RQVCUTEN,                       &
+                                        RTHCUTEN
+
+!
+! Flags relating to the optional tendency arrays declared above
+! Models that carry the optional tendencies will provdide the
+! optional arguments at compile time; these flags all the model
+! to determine at run-time whether a particular tracer is in
+! use or not.
+!
+   LOGICAL, OPTIONAL ::                                      &
+                                                   F_QV      &
+                                                  ,F_QC      &
+                                                  ,F_QR      &
+                                                  ,F_QI      &
+                                                  ,F_QS
 
 
 !--------------------------- LOCAL VARS ------------------------------
@@ -296,20 +313,24 @@ CONTAINS
         ENDDO
       ENDDO
 
-      IF(P_QC .ge. P_FIRST_SCALAR)THEN
-        DO K=KTS,KTE
-          DO I=ITS,ITE
-            RQCCUTEN(I,K,J)=(QL(I,K,2)-QC3D(I,K,J))*RDELT
+      IF(PRESENT(RQCCUTEN))THEN
+        IF ( F_QC ) THEN
+          DO K=KTS,KTE
+            DO I=ITS,ITE
+              RQCCUTEN(I,K,J)=(QL(I,K,2)-QC3D(I,K,J))*RDELT
+            ENDDO
           ENDDO
-        ENDDO
+        ENDIF
       ENDIF
 
-      IF(P_QI .ge. P_FIRST_SCALAR)THEN
-        DO K=KTS,KTE
-          DO I=ITS,ITE
-            RQICUTEN(I,K,J)=(QL(I,K,1)-QI3D(I,K,J))*RDELT
+      IF(PRESENT(RQICUTEN))THEN
+        IF ( F_QI ) THEN
+          DO K=KTS,KTE
+            DO I=ITS,ITE
+              RQICUTEN(I,K,J)=(QL(I,K,1)-QI3D(I,K,J))*RDELT
+            ENDDO
           ENDDO
-        ENDDO
+        ENDIF
       ENDIF
 
    ENDDO

@@ -287,7 +287,7 @@ gen_dealloc2 ( FILE * fp , char * structname , char * corename , node_t * node )
       else if ( p->type->type_type == DERIVED )
       {
         sprintf(x,"%s%s%%",structname,p->name ) ;
-        gen_alloc2(fp,x, corename, p->type) ;
+        gen_dealloc2(fp,x, corename, p->type) ;
       }
     }
   }

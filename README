@@ -121,9 +121,10 @@ What is in WRF V2?
 - Two-way nesting:
   * multiple domains and multiple nest levels
   * supports integer nest grid ratio
-  * if feedback is on, the grid ratio needs to be odd;
-    if feedback is off, then the grid ratio can be odd or even.
+  * feedback option for both odd and even nest grid ratios (since 2.0.3)
   * smoothing options
+
+- One-way nesting (since 2.0.2)
 
 - Physics options:
   * microphysics (Kessler/ WRF Single Moment 3, 5 and 6 class / Lin et al./
@@ -169,8 +170,9 @@ What is in WRF V2?
 	 PGI and Intel compilers supported
       Alpha Linux (NOAA/FSL Jet system)
       Sun Solaris (single threaded and SMP)
+      Cray X1
+      HP-UX
       Other ports under development:
-         Cray X1
          NEC SX/6
          Fujitsu VPP 5000
   * RSL_LITE: optional new communication layer, scalable to very

@@ -223,6 +223,10 @@ em_core :
 	@ echo '--------------------------------------'
 	( cd dyn_em ; $(MAKE) )
 
+# rule used by configure to test if this will compile with MPI 2 calls MPI_Comm_f2c and _c2f
+mpi2_test :
+	@ cd tools ; /bin/rm -f mpi2_test ; $(CC) -o mpi2_test mpi2_test.c ; cd ..
+
 
 ### 3.b.  sub-rule to build the expimental core
 

@@ -299,3 +299,20 @@ if test -n "$PERL" ; then
    $PERL arch/Config.pl -perl=$PERL -netcdf=$NETCDF -phdf5=$PHDF5 -os=$os -mach=$mach -ldflags=$ldflags \
    -compileflags=$compileflags
 fi
+
+# new feb 2005.  test whether MPI-2
+if test -e configure.wrf ; then
+  grep 'DMPARALLEL .*=.*1' configure.wrf >1 /dev/null
+  if  $status  ; then
+    echo testing for MPI_Comm_f2c and MPI_Comm_c2f 
+    /bin/rm -f tools/mpi2_test
+    make mpi2_test
+    if test -x tools/mpi2_test ; then
+      echo "  " MPI_Comm_f2c and MPI_Comm_c2f are supported
+      sed '/^CC .*=/s/$/ -DMPI2_SUPPORT/' configure.wrf > xx$$ ; /bin/mv xx$$ configure.wrf
+    else
+      echo "  " MPI_Comm_f2c and MPI_Comm_c2f are not supported
+    fi
+  fi
+fi
+

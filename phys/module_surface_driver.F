@@ -352,6 +352,7 @@ CONTAINS
     DO j=j_start(ij),j_end(ij)
     DO i=i_start(ij),i_end(ij)
        RAINBL(i,j) = RAINBL(i,j) + RAINCV(i,j) + RAINNCV(i,j) 
+       RAINBL(i,j) = MAX (RAINBL(i,j), 0.0) 
     ENDDO
     ENDDO
   ENDDO

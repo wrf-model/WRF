@@ -474,6 +474,7 @@ gen_shift (  char * dirname )
   char fname[NAMELEN], vname[NAMELEN] ;
   char indices[NAMELEN], post[NAMELEN], tmp3[NAMELEN] ;
   int zdex ;
+int said_it = 0 ;
 
   for ( direction = directions ; *direction != NULL ; direction++ )
   {
@@ -494,6 +495,11 @@ gen_shift (  char * dirname )
 
     for ( p = Domain.fields ; p != NULL ; p = p->next )
     {
+if ( !strcmp( p->name , "xf_ens" ) || !strcmp( p->name,"pr_ens" ) )  {
+  if ( sw_move && ! said_it ) { fprintf(stderr,"Info only - not an error: Moving nests not implemented for Grell Ens. Cumulus\n") ;
+  said_it = 1 ; }
+  continue ;
+}
       if (( p->node_kind & (FIELD | FOURD) ) && p->ndims >= 2 && ! p->boundary_array &&
 	  ((!strncmp(p->use,"dyn_",4) && !strcmp(corename,p->use+4)) || strncmp(p->use,"dyn_",4)))
       {
@@ -571,6 +577,9 @@ gen_shift (  char * dirname )
 
     for ( p = Domain.fields ; p != NULL ; p = p->next )
     {
+if ( !strcmp( p->name , "xf_ens" ) || !strcmp( p->name,"pr_ens" ) )  {
+  continue ;
+}
       if (( p->node_kind & (FIELD | FOURD) ) && p->ndims >= 2 && ! p->boundary_array &&
 	  ((!strncmp(p->use,"dyn_",4) && !strcmp(corename,p->use+4)) || strncmp(p->use,"dyn_",4)))
       {

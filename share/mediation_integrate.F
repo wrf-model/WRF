@@ -363,14 +363,13 @@ SUBROUTINE init_domain_constants ( parent , nest )
 END SUBROUTINE init_domain_constants
 
 #ifdef MOVE_NESTS
-SUBROUTINE med_nest_move ( parent, nest, dx, dy, config_flags )
+SUBROUTINE med_nest_move ( parent, nest )
   ! Driver layer
    USE module_domain
    USE module_timing
    USE module_configure
    USE module_io_domain
    TYPE(domain) , POINTER                     :: parent, nest, grid
-   TYPE (grid_config_rec_type)                :: config_flags
    INTEGER dx, dy       ! number of parent domain points to move
   ! Local 
    INTEGER i, j, parent_grid_ratio
@@ -386,7 +385,7 @@ SUBROUTINE med_nest_move ( parent, nest, dx, dy, config_flags )
         USE module_domain
         TYPE(domain) , POINTER                 :: parent , nest
      END SUBROUTINE med_interp_domain
-     SUBROUTINE shift_domain_em ( grid, disp_x, disp_y, config_flags, &
+     SUBROUTINE shift_domain_em ( grid, disp_x, disp_y,  &
 !
 # include <em_dummy_args.inc>
 !
@@ -397,9 +396,14 @@ SUBROUTINE med_nest_move ( parent, nest, dx, dy, config_flags )
         IMPLICIT NONE
         INTEGER disp_x, disp_y
         TYPE(domain) , POINTER                 :: grid
-        TYPE (grid_config_rec_type)                :: config_flags
 #include <em_dummy_decl.inc>
      END SUBROUTINE shift_domain_em
+     LOGICAL FUNCTION TIME_FOR_MOVE ( grid , dx , dy )
+        USE module_domain
+        USE esmf_mod
+        TYPE(domain) , POINTER    :: grid
+        INTEGER, INTENT(OUT)      :: dx , dy
+     END FUNCTION TIME_FOR_MOVE
    END INTERFACE
 
 #ifdef DEREF_KLUDGE
@@ -412,6 +416,8 @@ SUBROUTINE med_nest_move ( parent, nest, dx, dy, config_flags )
 #include "deref_kludge.h"
 
 ! mask should be defined in nest domain
+
+   check_for_move: IF ( time_for_move ( nest , dx, dy ) ) THEN
 
    IF ( dx .gt. 1 .or. dy .gt. 1 ) THEN
      CALL wrf_error_fatal( 'med_nest_move' )
@@ -426,6 +432,7 @@ SUBROUTINE med_nest_move ( parent, nest, dx, dy, config_flags )
 #ifdef RSL
 ! tell RSL about the move; this needs to be moved into external directory
    CALL rsl_move_nest ( parent%domdesc, nest%intermediate_grid%domdesc, dx, dy )
+   CALL adjust_domain_dims_for_move( nest%intermediate_grid , dx, dy )
 #endif
 
    CALL get_ijk_from_grid (  grid ,                   &
@@ -435,31 +442,81 @@ SUBROUTINE med_nest_move ( parent, nest, dx, dy, config_flags )
 
    grid => nest 
 
-   CALL shift_domain_em( grid, dx, dy, config_flags,  &
+   CALL shift_domain_em( grid, dx, dy,  &
 !
 # include <em_actual_args.inc>
 !
                        )
 
-   CALL med_interp_domain( parent, nest )
+   px = grid%parent_grid_ratio*dx
+   py = grid%parent_grid_ratio*dy
 
-   px = isign(grid%parent_grid_ratio,dx)
-   py = isign(grid%parent_grid_ratio,dy)
    grid%i_parent_start = grid%i_parent_start + px / grid%parent_grid_ratio 
    CALL rconfig_set_i_parent_start( grid%id, grid%i_parent_start )
    grid%j_parent_start = grid%j_parent_start + py / grid%parent_grid_ratio
    CALL rconfig_set_j_parent_start( grid%id, grid%j_parent_start )
 
+   CALL med_interp_domain( parent, nest )
+
+   nest%moved = .true.
    CALL start_domain ( nest )
+   nest%moved = .false.
+
+   ENDIF check_for_move
 
 #endif
 
 END SUBROUTINE med_nest_move
+
+LOGICAL FUNCTION time_for_move ( grid , move_cd_x, move_cd_y )
+  ! Driver layer
+   USE module_domain
+   USE module_configure
+   USE esmf_mod
+   IMPLICIT NONE
+! arguments
+   TYPE(domain) , POINTER    :: grid
+   INTEGER, INTENT(OUT)      :: move_cd_x , move_cd_y
+! local
+   INTEGER  i, num_moves, rc
+   INTEGER  move_interval , move_id
+   TYPE(ESMF_Time) :: ct, st
+   TYPE(ESMF_TimeInterval) :: ti
+   CHARACTER*256 mess
+
+   TIME_FOR_MOVE = .FALSE.
+   CALL ESMF_ClockGetCurrTime( grid%domain_clock, CurrTime=ct, rc=rc )
+   CALL ESMF_ClockGetStartTime( grid%domain_clock, StartTime=st, rc=rc )
+   CALL rconfig_get_num_moves( 1, num_moves )
+   IF ( num_moves .GT. max_moves ) THEN
+     WRITE(mess,*)'mediation_integrate: time_for_move: num_moves (',num_moves,') .GT. max_moves (',max_moves,')'
+     CALL wrf_error_fatal( TRIM(mess) )
+   ENDIF
+   DO I = 1, num_moves
+     CALL rconfig_get_move_id( i, move_id )
+     IF ( move_id .EQ. grid%id ) THEN
+       CALL rconfig_get_move_interval( i, move_interval )
+       IF ( move_interval .LT. 999999999 ) THEN
+         CALL ESMF_TimeIntervalSet ( ti, M=move_interval, rc=rc )
+         IF ( ct .GE. grid%start_time + ti ) THEN
+           CALL rconfig_get_move_cd_x ( i, move_cd_x )
+           CALL rconfig_get_move_cd_y ( i, move_cd_y )
+           CALL rconfig_set_move_interval ( i, 999999999 )
+           TIME_FOR_MOVE = .TRUE.
+           EXIT
+         ENDIF
+       ENDIF
+     ENDIF
+   ENDDO
+   RETURN
+
+END FUNCTION time_for_move
+
 #endif
 
 #if ( EM_CORE == 1 && defined(DM_PARALLEL) && MOVE_NESTS )
 
-SUBROUTINE shift_domain_em ( grid , disp_x, disp_y, config_flags, &
+SUBROUTINE shift_domain_em ( grid , disp_x, disp_y, &
 !
 # include <em_dummy_args.inc>
 !
@@ -470,16 +527,16 @@ SUBROUTINE shift_domain_em ( grid , disp_x, disp_y, config_flags, &
    USE module_dm
    USE module_timing
    IMPLICIT NONE
+  ! Arguments
    INTEGER disp_x, disp_y       ! number of parent domain points to move
+   TYPE(domain) , POINTER                     :: grid
   ! Local 
-integer myproc
-   INTEGER i, j
+   INTEGER i, j, ii
    INTEGER px, py       ! number and direction of nd points to move
    INTEGER                         :: ids , ide , jds , jde , kds , kde , &
                                       ims , ime , jms , jme , kms , kme , &
                                       ips , ipe , jps , jpe , kps , kpe
-   TYPE(domain) , POINTER                     :: grid
-   TYPE (grid_config_rec_type)                :: config_flags
+   TYPE (grid_config_rec_type)  :: config_flags
 
 
    !  Definitions of dummy arguments to solve
@@ -490,6 +547,8 @@ integer myproc
 #ifdef DM_PARALLEL
 #      include <em_data_calls.inc>
 #endif
+
+   CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
 
    CALL get_ijk_from_grid (  grid ,                   &
                              ids, ide, jds, jde, kds, kde,    &
@@ -512,12 +571,12 @@ integer myproc
 #if 1
 
 ! shift the nest domain in x
-   do i = 1,abs(disp_x)
+   do ii = 1,abs(disp_x)
 #include <em_shift_halo_x.inc>
    enddo
 
 ! shift the nest domain in y
-   do i = 1,abs(disp_y)
+   do ii = 1,abs(disp_y)
 #include <em_shift_halo_y.inc>
    enddo
 
@@ -529,7 +588,7 @@ integer myproc
 END SUBROUTINE shift_domain_em
 #endif
 
-SUBROUTINE med_nest_force ( parent , nest , config_flags )
+SUBROUTINE med_nest_force ( parent , nest )
   ! Driver layer
    USE module_domain
    USE module_timing
@@ -542,7 +601,6 @@ SUBROUTINE med_nest_force ( parent , nest , config_flags )
 
   ! Arguments
    TYPE(domain) , POINTER                     :: parent, nest
-   TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
   ! Local
    INTEGER                                    :: idum1 , idum2 , fid, rc
 
@@ -595,7 +653,7 @@ SUBROUTINE med_nest_feedback ( parent , nest , config_flags )
      END SUBROUTINE med_feedback_domain
    END INTERFACE
 
-! feedback nest with interpolated data from the parent
+! feedback nest to the parent
     IF ( .NOT. ESMF_ClockIsStopTime(nest%domain_clock ,rc=rc) .AND. &
          config_flags%feedback .NE. 0 ) THEN
       CALL med_feedback_domain( parent, nest )

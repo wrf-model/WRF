@@ -23,8 +23,8 @@ libio_grib1.a:		$(OBJS)
 			$(RANLIB) libio_grib1.a
 
 io_grib1.o:     io_grib1.F 
-	$(CPP) $(CPPFLAGS) -I../io_quilt -I../../main io_grib1.F | $(M4) - > io_grib1.f
-	$(FC) $(FCFLAGS) -I../io_quilt -I../../main -I../../inc -c io_grib1.f
+	$(CPP) $(CPPFLAGS) -I../../main io_grib1.F | $(M4) - > io_grib1.f
+	$(FC) $(FCFLAGS) -I../../main -I../../inc -c io_grib1.f
 
 pdstool.o: pdstool.c pdstool.h
 

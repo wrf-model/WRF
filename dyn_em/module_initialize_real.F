@@ -218,84 +218,33 @@ integer::oops1,oops2
                      tmn(i,j) = soilt020(i,j)
                   END DO
                END DO
-             END IF
+            END IF
 
-          CASE (LSMSCHEME)
+         CASE (LSMSCHEME)
 
-          CASE (RUCLSMSCHEME)
+         CASE (RUCLSMSCHEME)
 
-       END SELECT fix_bottom_level_for_temp
+      END SELECT fix_bottom_level_for_temp
 
-      !  For sf_surface_physics = 1, 5-layer model, we need to take care of
-      !  the sea ice issue.  The slab routine assumes that there is a soil
-      !  temperature when there is seaice.  So, if this is a slab run, and 
-      !  if there are any seaice points, we need to 
-      !      1) set the TMN to 271.4, frozen sea water
-      !      2) set the point to a land value, category for ice
-      !      3) though soil is not used, set it to a non-water point
-      !         so the if tests don't try to reset the land value to make
-      !         things consistent
-      !      4) set landmask and xland to a land point
-      !      5) set fractional values of land and soil to ice and *some* land value
+      !  Adjustments for the seaice field PRIOR to the TSLB computations.  This is
+      !  is for the 5-layer scheme.
 
-      fix_seaice_for_slab : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
-
-         CASE (SLABSCHEME)
-               num_veg_cat      = SIZE ( landusef , DIM=2 )
-               num_soil_top_cat = SIZE ( soilctop , DIM=2 )
-               num_soil_bot_cat = SIZE ( soilcbot , DIM=2 )
-               num_seaice_changes = 0 
-               CALL nl_get_seaice_threshold ( grid%id , seaice_threshold ) 
-               DO j = jts , MIN(jde-1,jte)
-                  DO i = its , MIN(ide-1,ite)
-                     IF ( xice(i,j) .GT. 200.0 ) THEN
-                        xice(i,j) = 0.
-                        num_seaice_changes = num_seaice_changes + 1
-                     END IF
-                  END DO
-               END DO
-               IF ( num_seaice_changes .GT. 0 ) THEN
-                  print *,'Total number of FLAG sea ice locations removed = ', num_seaice_changes
-               END IF
-               num_seaice_changes = 0 
-               DO j = jts , MIN(jde-1,jte)
-                  DO i = its , MIN(ide-1,ite)
-                     IF ( ( xice(i,j) .GE. 0.5 ) .OR. &
-                          ( ( landmask(i,j) .LT. 0.5 ) .AND. ( tsk(i,j) .LT. seaice_threshold ) ) ) THEN
-                        xice(i,j) = 1.
-                        num_seaice_changes = num_seaice_changes + 1
-                        tmn(i,j) = 271.4
-                        CALL nl_get_isice ( grid%id , ivgtyp(i,j) )
-                        vegcat(i,j)=ivgtyp(i,j)
-                        lu_index(i,j)=ivgtyp(i,j)
-                        landmask(i,j)=1.
-                        xland(i,j)=1.
-                        DO loop=1,num_veg_cat
-                           landusef(i,loop,j)=0.
-                        END DO
-                        landusef(i,ivgtyp(i,j),j)=1.
-                        isltyp(i,j) = 8
-                        soilcat(i,j)=isltyp(i,j)
-                        DO loop=1,num_soil_top_cat
-                           soilctop(i,loop,j)=0
-                        END DO
-                        DO loop=1,num_soil_bot_cat
-                           soilcbot(i,loop,j)=0
-                        END DO
-                        soilctop(i,isltyp(i,j),j)=1.
-                        soilcbot(i,isltyp(i,j),j)=1.
-                     END IF
-                  END DO
-               END DO
-               IF ( num_seaice_changes .GT. 0 ) THEN
-                  print *,'Total number of sea ice location changes = ', num_seaice_changes
-               END IF
-
-          CASE (LSMSCHEME)
-
-          CASE (RUCLSMSCHEME)
-
-       END SELECT fix_seaice_for_slab
+      num_veg_cat      = SIZE ( landusef , DIM=2 )
+      num_soil_top_cat = SIZE ( soilctop , DIM=2 )
+      num_soil_bot_cat = SIZE ( soilcbot , DIM=2 )
+      CALL nl_get_seaice_threshold ( grid%id , seaice_threshold ) 
+      CALL nl_get_isice ( grid%id , isice )
+      CALL nl_get_iswater ( grid%id , iswater )
+      CALL adjust_for_seaice_pre ( xice , landmask , tsk , ivgtyp , vegcat , lu_index , &
+                                   xland , landusef , isltyp , soilcat , soilctop , &
+                                   soilcbot , tmn , &
+                                   seaice_threshold , &
+                                   num_veg_cat , num_soil_top_cat , num_soil_bot_cat , &
+                                   iswater , isice , &
+                                   model_config_rec%sf_surface_physics(grid%id) , & 
+                                   ids , ide , jds , jde , kds , kde , & 
+                                   ims , ime , jms , jme , kms , kme , & 
+                                   its , ite , jts , jte , kts , kte ) 
 
       !  surface_input_source=1 => use data from static file (fractional category as input)
       !  surface_input_source=2 => use data from grib file (dominant category as input)
@@ -502,6 +451,28 @@ integer::oops1,oops2
             END IF
          END DO
       END DO
+
+      !  Adjustments for the seaice field AFTER the TSLB computations.  This is
+      !  is for the Noah LSM scheme.
+
+      num_veg_cat      = SIZE ( landusef , DIM=2 )
+      num_soil_top_cat = SIZE ( soilctop , DIM=2 )
+      num_soil_bot_cat = SIZE ( soilcbot , DIM=2 )
+      CALL nl_get_seaice_threshold ( grid%id , seaice_threshold ) 
+      CALL nl_get_isice ( grid%id , isice )
+      CALL nl_get_iswater ( grid%id , iswater )
+      CALL adjust_for_seaice_post ( xice , landmask , tsk , ivgtyp , vegcat , lu_index , &
+                                    xland , landusef , isltyp , soilcat , soilctop , &
+                                    soilcbot , tmn , &
+                                    tslb , smois , sh2o , &
+                                    seaice_threshold , &
+                                    num_veg_cat , num_soil_top_cat , num_soil_bot_cat , &
+                                    model_config_rec%num_soil_layers , &
+                                    iswater , isice , &
+                                    model_config_rec%sf_surface_physics(grid%id) , & 
+                                    ids , ide , jds , jde , kds , kde , & 
+                                    ims , ime , jms , jme , kms , kme , & 
+                                    its , ite , jts , jte , kts , kte ) 
 
       !  Let us make sure (again) that the landmask and the veg/soil categories match.
 

@@ -94,7 +94,7 @@ enable_rsl_debug() { io_debug = 1 ; }
 disable_rsl_debug() { io_debug = 0 ; }
 
 /*@
-  RSL_READ - read and distribute an array from a file or memory.
+  
 
   Notes:
   Used to read in one record from an unformatted (binary) Fortran
@@ -216,7 +216,7 @@ RSL_READ ( unit_p, iotag_p, base, d_p, type_p, glen, llen  )
   rsl_read_resp_t resp ;
   rsl_processor_t me ;
   int cursor, mdest, mtag, msglen, dim, d ;
-  int mlen, nlen ;
+  int mlen, nlen, minelems, majelems ;
   unsigned long ig, jg, min, maj, ioffset, joffset, tlen, k ;
   void *dex ;
   char *pbuf ;
@@ -285,19 +285,27 @@ RSL_READ ( unit_p, iotag_p, base, d_p, type_p, glen, llen  )
   {
   case IO2D_IJ :
     request.ndim = 2 ;
+    minelems = request.glen[0] ;
+    majelems = request.glen[1] ;
     break ;
   case IO2D_JI :
     request.ndim = 2 ;
+    minelems = request.glen[1] ;
+    majelems = request.glen[0] ;
     break ;
   case IO3D_IJK :
     RSL_TEST_ERR(glen[2] > llen[2],
        "rsl_write: global len of K dim is greater than local len") ;
     request.ndim = 3 ;
+    minelems = request.glen[0] ;
+    majelems = request.glen[1] ;
     break ;
   case IO3D_JIK :
     RSL_TEST_ERR(glen[2] > llen[2],
        "rsl_write: global len of K dim is greater than local len") ;
     request.ndim = 3 ;
+    minelems = request.glen[1] ;
+    majelems = request.glen[0] ;
     break ;
   default:
     RSL_TEST_ERR(1,"rsl_read: unknown data tag") ;
@@ -332,6 +340,7 @@ RSL_READ ( unit_p, iotag_p, base, d_p, type_p, glen, llen  )
   /* we do it this way to ensure that we unpack in the same
      order that the data were packed on the monitor */
   cursor = 0 ;
+#ifndef vpp
   for ( jg = 0 ; jg < nlen ; jg++ )
   {
     for ( ig = 0 ; ig < mlen ; ig++ )
@@ -378,6 +387,88 @@ RSL_READ ( unit_p, iotag_p, base, d_p, type_p, glen, llen  )
       }
     }
   }
+#else
+/* assumes 1 d decomp in j only */
+  for ( jg = 0 ; jg < nlen ; jg++ )
+  {
+    if ( me == domain[INDEX_2(jg,0,mlen)].P )
+    {
+        switch( iotag )
+        {
+        case IO2D_IJ :
+          if ( request.type == RSL_REAL )
+          {
+            min = 0 - ioffset ;
+            maj = jg - joffset ;
+            dex = base+tlen*(min+maj*llen[0]) ;
+            VRCOPY (&(pbuf[cursor]),dex,&mlen) ;
+            cursor += tlen*mlen ;
+          }
+          else
+          {
+            for ( ig = 0 ; ig < mlen ; ig++ )
+            {
+              min = ig - ioffset ;
+              maj = jg - joffset ;
+              dex = base+tlen*(min+maj*llen[0]) ;
+              bcopy(&(pbuf[cursor]),dex,tlen) ;
+              cursor += tlen ;
+            }
+          }
+          break ;
+        case IO2D_JI :
+          for ( ig = 0 ; ig < mlen ; ig++ )
+          {
+            min = jg - joffset ;
+            maj = ig - ioffset ;
+            dex = base+tlen*(min+maj*llen[0]) ;
+            bcopy(&(pbuf[cursor]),dex,tlen) ;
+            cursor += tlen ;
+          }
+          break ;
+        case IO3D_IJK :
+          maj = jg - joffset ;
+          if ( request.type == RSL_REAL )
+          {
+            for ( k = 0 ; k < glen[2] ; k++ )                 /* note reversal of k and i packing order for vpp */
+            {
+              min = 0 - ioffset ;
+              dex = base+tlen*(min+llen[0]*(maj+k*llen[1])) ;
+              VRCOPY ( &(pbuf[cursor]),dex,&mlen) ;
+              cursor += tlen*mlen ;
+            }
+          }
+          else
+          {
+            for ( k = 0 ; k < glen[2] ; k++ )                 /* note reversal of k and i packing order for vpp */
+            {
+              for ( ig = 0 ; ig < mlen ; ig++ )
+              {
+                min = ig - ioffset ;
+                dex = base+tlen*(min+llen[0]*(maj+k*llen[1])) ;
+                bcopy(&(pbuf[cursor]),dex,tlen) ;
+                cursor += tlen ;
+              }
+            }
+          }
+          break ;
+        case IO3D_JIK :
+          for ( ig = 0 ; ig < mlen ; ig++ )
+          {
+            min = jg - joffset ;
+            maj = ig - ioffset ;
+            for ( k = 0 ; k < glen[2] ; k++ )
+            {
+              dex = base+tlen*(min+llen[0]*(maj+k*llen[1])) ;
+              bcopy(&(pbuf[cursor]),dex,tlen) ;
+              cursor += tlen ;
+            }
+          }
+          break ;
+        }
+    }
+  }
+#endif
 
   RSL_FREE( pbuf ) ;
   }

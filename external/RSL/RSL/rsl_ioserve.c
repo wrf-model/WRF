@@ -149,7 +149,7 @@ handle_read_request( req, resp_me, pbuf_me )
   int columnelems, nbytes, typelen, len, cursor  ;
   int P ;
   int msglen, mtag, mdest ;
-  int mlen, nlen ;
+  int mlen, nlen, minelems, majelems ;
   rsl_read_resp_t resp ;
   int psize[ RSL_MAXPROC ] ;    /* size of messages to each processor */
   char * rbuf ;
@@ -202,15 +202,23 @@ handle_read_request( req, resp_me, pbuf_me )
   {
   case IO2D_IJ :
     columnelems = 1 ;
+    minelems = req->glen[0] ;
+    majelems = req->glen[1] ;
     break ;
   case IO2D_JI :
     columnelems = 1 ;
+    minelems = req->glen[1] ;
+    majelems = req->glen[0] ;
     break ;
   case IO3D_IJK :
     columnelems = req->glen[2] ;
+    minelems = req->glen[0] ;
+    majelems = req->glen[1] ;
     break ;
   case IO3D_JIK :
     columnelems = req->glen[2] ;
+    minelems = req->glen[1] ;
+    majelems = req->glen[0] ;
     break ;
   default:
     RSL_TEST_ERR(1,"handle_read_request: unknown data tag") ;
@@ -249,6 +257,7 @@ handle_read_request( req, resp_me, pbuf_me )
    data structure be used in this way as indices into the data.  This
    will work for MM.  A more general approach will require modification. */
 
+#ifndef vpp
     for ( jg = 0 ; jg < nlen ;  jg++ )
     {
       for ( ig = 0 ; ig < mlen ; ig++ )
@@ -293,6 +302,87 @@ handle_read_request( req, resp_me, pbuf_me )
         }
       }
     }
+#else
+    for ( jg = 0 ; jg < nlen ;  jg++ )
+    {
+      if ( domain[INDEX_2(jg,0,mlen)].P == P )
+      {
+          switch ( req->iotag )
+          {
+          case IO2D_IJ :
+            if ( req->type == RSL_REAL )
+            {
+              ig = 0 ;
+              VRCOPY (&(rbuf[typelen*(ig+jg*req->glen[0])]),
+                      &(pbuf[cursor]),
+                      &mlen) ;
+              cursor += typelen*mlen ;
+            }
+            else
+            {
+              for ( ig = 0 ; ig < mlen ; ig++ )
+              {
+                bcopy(&(rbuf[typelen*(ig+jg*req->glen[0])]),
+                      &(pbuf[cursor]),
+                      typelen) ;
+                cursor += typelen ;
+              }
+            }
+            break ;
+          case IO2D_JI :
+            if ( req->type == RSL_REAL )
+            {
+              for ( ig = 0 ; ig < mlen ; ig++ )
+              {
+                bcopy(&(rbuf[typelen*(jg+ig*req->glen[0])]),
+                      &(pbuf[cursor]),
+                      typelen) ;
+                cursor += typelen ;
+	      }
+            }
+            break ;
+          case IO3D_IJK :
+            if ( req->type == RSL_REAL )
+            {
+              ig = 0 ;
+              for ( k = 0 ; k < req->glen[2] ; k++ )
+              {
+                VRCOPY (&(rbuf[typelen*(ig+req->glen[0]*(jg+k*req->glen[1]))]),
+                        &(pbuf[cursor]),
+                        &mlen) ;
+                cursor += typelen*mlen ;
+              }
+            }
+            else
+            {
+              for ( k = 0 ; k < req->glen[2] ; k++ )
+              {
+                for ( ig = 0 ; ig < mlen ; ig++ )
+                {
+                  bcopy(&(rbuf[typelen*(ig+req->glen[0]*(jg+k*req->glen[1]))]),
+                        &(pbuf[cursor]),
+                        typelen) ;
+                  cursor += typelen ;
+                }
+              }
+            }
+            break ;
+          case IO3D_JIK :
+            for ( ig = 0 ; ig < mlen ; ig++ )
+            {
+              for ( k = 0 ; k < req->glen[2] ; k++ )
+              {
+                bcopy(&(rbuf[typelen*(jg+req->glen[0]*(ig+k*req->glen[1]))]),
+                      &(pbuf[cursor]),
+                      typelen) ;
+                cursor += typelen ;
+              }
+	    }
+            break ;
+        }
+      }
+    }
+#endif
     mdest = rsl_c_comp2phys_proc( P ) ;
     mtag = MTYPE_FROMTO( MSG_READ_RESPONSE, rsl_myproc, mdest ) ;
     msglen = sizeof( resp ) ;

@@ -422,7 +422,7 @@ RSL_START_REGISTER_F90 ()
   base_table_cursor = 1 ;
 }
 
-unsigned long
+void *
 get_base_for_index ( dex )
   int dex ;
 {

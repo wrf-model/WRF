@@ -797,6 +797,7 @@ rsl_index_t id_domain(), id_jdex(), id_idex() ;
 #endif
 
 void * rsl_malloc(), * malloc()  ;
+void * get_base_for_index() ;
 
 
 #endif   /* nothing after this line */

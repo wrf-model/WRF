@@ -101,9 +101,13 @@ BREAKTHEEXAMPLECODE
 @*/
 RSL_INITIALIZE ()
 {
+  int s, o ;
   rslMPIInit() ;
   rsl_mpi_communicator = MPI_COMM_WORLD ;
   rsl_initialize_internal() ;
+  s = 1 ; o = 0 ;
+  RSL_DEBUG( &s , &o ) ;
+  
 }
 
 RSL_INITIALIZE1 ( MPI_Comm * comm )

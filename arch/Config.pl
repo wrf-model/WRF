@@ -8,6 +8,7 @@
 $sw_perl_path = perl ;
 $sw_netcdf_path = "" ;
 $sw_phdf5_path=""; 
+$sw_ldflags=""; 
 $sw_os = "ARCH" ;           # ARCH will match any
 $sw_mach = "ARCH" ;         # ARCH will match any
 
@@ -33,9 +34,15 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
   {
     $sw_mach = substr( $ARGV[0], 6 ) ;
   }
+  if ( substr( $ARGV[0], 1, 8 ) eq "ldflags=" )
+  {
+    $sw_ldflags = substr( $ARGV[0], 9 ) ;
+# multiple options separated by spaces are passed in from sh script
+# separated by ! instead. Replace with spaces here.
+    $sw_ldflags =~ s/!/ /g ;
+  }
   shift @ARGV ;
  }
-
 
 # parse the configure.wrf file
 
@@ -92,6 +99,7 @@ while ( <CONFIGURE_DEFAULTS> )
     $_ =~ s/CONFIGURE_PERL_PATH/$sw_perl_path/g ;
     $_ =~ s/CONFIGURE_NETCDF_PATH/$sw_netcdf_path/g ;
     $_ =~ s/CONFIGURE_PHDF5_PATH/$sw_phdf5_path/g ;
+    $_ =~ s/CONFIGURE_LDFLAGS/$sw_ldflags/g ;
     if ( $sw_netcdf_path ) 
       { $_ =~ s/CONFIGURE_WRFIO_NF/wrfio_nf/g ;
 	$_ =~ s:CONFIGURE_NETCDF_FLAG:-DNETCDF: ;

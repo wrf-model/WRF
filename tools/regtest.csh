@@ -1778,7 +1778,7 @@ banner 21
 				# WRF output quilt servers are only tested for MPI configuration.  
 				# Currently, only one WRF output quilt server is used.  
 		
-				if ( ( $QUILT == TRUE ) && ( $n = $Num_Procs ) ) then
+				if ( ( $QUILT == TRUE ) && ( $n == $Num_Procs ) ) then
 					if ( $compopt == $COMPOPTS[3] ) then
 						#	For now, test only one group of one output quilt servers.  
 						sed -e 's/ nio_tasks_per_group *= *[0-9][0-9]*/ nio_tasks_per_group = 1/g' \

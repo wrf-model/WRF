@@ -12,7 +12,7 @@ CONTAINS
 
 !-------------------------------------------------------------------
    SUBROUTINE SFCLAY(U3D,V3D,T3D,QV3D,P3D,dz8w,                    &
-                     CP,G,ROVCP,R,XLV,PSFC,CHS,CHS2,CPM,           &
+                     CP,G,ROVCP,R,XLV,PSFC,CHS,CHS2,CQS2,CPM,      &
                      ZNT,UST,PBLH,MAVAIL,ZOL,MOL,REGIME,PSIM,PSIH, &
                      XLAND,HFX,QFX,LH,TSK,FLHC,FLQC,QGH,QSFC,      &
                      U10,V10,TH2,T2,Q2,                            &
@@ -147,6 +147,7 @@ CONTAINS
                                                               UST, &
                                                               CPM, &
                                                              CHS2, &
+                                                             CQS2, &
                                                               CHS
 
       REAL,     DIMENSION( ims:ime, jms:jme )                    , &
@@ -187,7 +188,7 @@ CONTAINS
 
         CALL SFCLAY1D(J,U1D,V1D,T1D,QV1D,P1D,dz8w1d,               &
                 CP,G,ROVCP,R,XLV,PSFC(ims,j),CHS(ims,j),CHS2(ims,j),&
-                CPM(ims,j),PBLH(ims,j),                            &
+                CQS2(ims,j),CPM(ims,j),PBLH(ims,j),                &
                 ZNT(ims,j),UST(ims,j),MAVAIL(ims,j),ZOL(ims,j),    &
                 MOL(ims,j),REGIME(ims,j),PSIM(ims,j),PSIH(ims,j),  &
                 XLAND(ims,j),HFX(ims,j),QFX(ims,j),TSK(ims,j),     &
@@ -207,7 +208,7 @@ CONTAINS
 
 !-------------------------------------------------------------------
    SUBROUTINE SFCLAY1D(J,UX,VX,T1D,QV1D,P1D,dz8w1d,                &
-                     CP,G,ROVCP,R,XLV,PSFCPA,CHS,CHS2,CPM,PBLH,    &
+                     CP,G,ROVCP,R,XLV,PSFCPA,CHS,CHS2,CQS2,CPM,PBLH, &
                      ZNT,UST,MAVAIL,ZOL,MOL,REGIME,PSIM,PSIH,      &
                      XLAND,HFX,QFX,TSK,                            &
                      U10,V10,TH2,T2,Q2,FLHC,FLQC,QGH,              &
@@ -259,6 +260,7 @@ CONTAINS
                                                               UST, &
                                                               CPM, &
                                                              CHS2, &
+                                                             CQS2, &
                                                               CHS
 
       REAL,     DIMENSION( ims:ime )                             , &
@@ -674,8 +676,9 @@ CONTAINS
 !        PSIM2(I)=-10.*GZ2OZ0(I)
 !        PSIM2(I)=AMAX1(PSIM2(I),-10.)
 !        PSIH2(I)=PSIM2(I)
-         CHS2(I)=UST(I)*KARMAN/(ALOG(KARMAN*UST(I)*2.0  &
+         CQS2(I)=UST(I)*KARMAN/(ALOG(KARMAN*UST(I)*2.0  &
                /XKA+2.0/ZL)-PSIH2(I))
+         CHS2(I)=UST(I)*KARMAN/(GZ2OZ0(I)-PSIH2(I))
       ENDDO
                                                                         
   410 CONTINUE                                                                   

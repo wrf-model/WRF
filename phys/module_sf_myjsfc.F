@@ -123,7 +123,7 @@ CONTAINS
                        ,LOWLYR,XLAND                                   &
                        ,USTAR,ZNT,PBLH,MAVAIL                          &
                        ,AKHS,AKMS                                      &
-                       ,CHS,CHS2,HFX,QFX,LH,FLHC,FLQC,QGH,CPM,CT       &
+                       ,CHS,CHS2,CQS2,HFX,QFX,LH,FLHC,FLQC,QGH,CPM,CT  &
                        ,U10,V10,TSHLTR,TH10,QSHLTR,Q10,PSHLTR          &
                        ,IDS,IDE,JDS,JDE,KDS,KDE                        &
                        ,IMS,IME,JMS,JME,KMS,KME                        &
@@ -165,7 +165,7 @@ CONTAINS
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: FLHC,FLQC         &
                                                     ,QGH,CPM           &
-                                                    ,CHS,CHS2,CT
+                                                    ,CHS,CHS2,CQS2,CT
 !----------------------------------------------------------------------
 !***
 !***  LOCAL VARIABLES
@@ -381,7 +381,8 @@ CONTAINS
                      ,UZ0(I,J),VZ0(I,J),TZ0,THZ0(I,J),QZ0(I,J)         &
                      ,USTAR(I,J),ZNT(I,J),CT(I,J)                      &
                      ,AKMS(I,J),AKHS(I,J),PBLH(I,J),MAVAIL(I,J)        &
-                     ,CHS(I,J),CHS2(I,J),HFX(I,J),QFX(I,J),LH(I,J)     &
+                     ,CHS(I,J),CHS2(I,J),CQS2(I,J)                     &
+                     ,HFX(I,J),QFX(I,J),LH(I,J)                        &
                      ,FLHC(I,J),FLQC(I,J),QGH(I,J),CPM(I,J)            &
                      ,ULOW,VLOW,TLOW,THLOW,THELOW,QLOW,CWMLOW          &
                      ,ZSL,PLOW                                         &
@@ -425,7 +426,7 @@ CONTAINS
       SUBROUTINE SFCDIF(NTSD,SEAMASK,THS,QS,PSFC                       &
                        ,UZ0,VZ0,TZ0,THZ0,QZ0                           &
                        ,USTAR,Z0,CT,AKMS,AKHS,PBLH,WETM                &
-                       ,CHS,CHS2,HFX,QFX,LH,FLHC,FLQC,QGH,CPM             &
+                       ,CHS,CHS2,CQS2,HFX,QFX,LH,FLHC,FLQC,QGH,CPM     &
                        ,ULOW,VLOW,TLOW,THLOW,THELOW,QLOW,CWMLOW        &
                        ,ZSL,PLOW                                       &
                        ,U10,V10,TH02,TH10,Q02,Q10,PSHLTR               &
@@ -451,7 +452,7 @@ CONTAINS
       REAL,INTENT(IN) :: CWMLOW,PBLH,PLOW,QLOW,PSFC,SEAMASK            &
                         ,THELOW,THLOW,THS,TLOW,TZ0,ULOW,VLOW,WETM,ZSL
 !
-      REAL,INTENT(OUT) :: CHS,CHS2,HFX,QFX,LH,FLHC,FLQC,PSHLTR         &
+      REAL,INTENT(OUT) :: CHS,CHS2,CQS2,HFX,QFX,LH,FLHC,FLQC,PSHLTR    &
                          ,QGH,CPM,CT,Q02,Q10,TH02,TH10,U10,V10
       REAL,INTENT(INOUT) :: AKHS,AKMS,QZ0,THZ0,USTAR,UZ0,VZ0,Z0,QS
 !----------------------------------------------------------------------
@@ -949,6 +950,7 @@ CONTAINS
       RLOW=PLOW/(R_D*TLOW)
       CHS=AKHS
       CHS2=AKHS02
+      CQS2=AKHS02
       HFX=-RLOW*CP*HSFLX
       QFX=-RLOW*HLFLX
       LH=XLV*QFX

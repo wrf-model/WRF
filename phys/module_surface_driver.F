@@ -318,7 +318,8 @@ CONTAINS
                                                              QGH, &
                                                              CHS, &
                                                              CPM, &
-                                                            CHS2
+                                                            CHS2, &
+                                                            CQS2
 
    REAL    :: DTMIN,DTBL
 !
@@ -386,7 +387,7 @@ CONTAINS
      CASE (SFCLAYSCHEME)
        CALL wrf_debug( 100, 'in SFCLAY' )
          CALL SFCLAY(u_phytmp,v_phytmp,t_phy,moist(ims,kms,jms,P_QV),&
-               p_phy,dz8w,CP,G,RCP,R_d,XLV,PSFC,CHS,CHS2,CPM,      &
+               p_phy,dz8w,CP,G,RCP,R_d,XLV,PSFC,CHS,CHS2,CQS2,CPM, &
                ZNTOLD,USTOLD,PBLH,MAVAIL,ZOL,MOL,REGIME,PSIM,PSIH, &
                XLAND,HFX,QFX,LH,TSK,FLHC,FLQC,QGH,QSFC,            &
                U10,V10,TH2,T2,Q2,                                  &
@@ -407,7 +408,7 @@ CONTAINS
               XLAND,                                               &
               UST,ZNT,PBLH,MAVAIL,                                 &
               AKHS,AKMS,                                           &
-              CHS,CHS2,HFX,QFX,LH,FLHC,FLQC,QGH,CPM,CT,            &
+              CHS,CHS2,CQS2,HFX,QFX,LH,FLHC,FLQC,QGH,CPM,CT,       &
               U10,V10,TSHLTR,TH10,QSHLTR,Q10,PSHLTR,               &
               ids,ide, jds,jde, kds,kde,                           &
               ims,ime, jms,jme, kms,kme,                           &
@@ -431,6 +432,12 @@ CONTAINS
      CASE (SLABSCHEME)
     
 
+           DO j=j_start(ij),j_end(ij)
+           DO i=i_start(ij),i_end(ij)
+!          CQS2 ACCOUNTS FOR MAVAIL FOR SFCDIAGS 2M Q
+              CQS2(I,J)= CQS2(I,J)*MAVAIL(I,J)
+           ENDDO
+           ENDDO
         CALL wrf_debug(100,'in SLAB')
           CALL SLAB(t_phy,moist(ims,kms,jms,P_QV),p_phy,FLHC,FLQC,  &
              PSFC,XLAND,TMN,HFX,QFX,LH,TSK,QSFC,CHKLOWQ,          &
@@ -442,8 +449,9 @@ CONTAINS
              ims,ime, jms,jme, kms,kme,                           &
              i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
 
+
         CALL wrf_debug(100,'in SFCDIAGS')
-          CALL SFCDIAGS(HFX,QFX,TSK,QSFC,CHS2,T2,TH2,Q2,              &
+          CALL SFCDIAGS(HFX,QFX,TSK,QSFC,CHS2,CQS2,T2,TH2,Q2,      &
                      PSFC,CP,R_d,RCP,                              &
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
@@ -460,7 +468,7 @@ CONTAINS
                 UDRUNOFF,IVGTYP,ISLTYP,VEGFRA,SFCEVP,POTEVP,    &
                 GRDFLX,SFCEXC,ACSNOW,ACSNOM,SNOPCX,             &
                 ALBBCK,TMN,XLAND,XICE,QZ0,                      &
-                th2,q2,SNOWC,CHS2,QSFC,SOILTB,CHKLOWQ,RAINBL,   &
+                th2,q2,SNOWC,CQS2,QSFC,SOILTB,CHKLOWQ,RAINBL,   &
                 num_soil_layers,DTBL,DZS,itimestep,             &
                 SMOIS,TSLB,SNOW,CANWAT,CPM,RCP,                 &    
                 ALBEDO,SNOALB,SH2O,SNOWH,                       &
@@ -493,11 +501,11 @@ CONTAINS
            ENDDO
          
 
-         CALL SFCDIAGS(HFX,QFX,TSK,QSFC,CHS2,T2,TH2,Q2,              &
+          CALL SFCDIAGS(HFX,QFX,TSK,QSFC,CQS2,CQS2,T2,TH2,Q2,      &
                      PSFC,CP,R_d,RCP,                              &
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
-                     i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
+             i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
 !------------------------------------------------------------------
 
      CASE (RUCLSMSCHEME)
@@ -525,11 +533,11 @@ CONTAINS
            ENDDO
            ENDDO
 
-         CALL SFCDIAGS(HFX,QFX,TSK,QSFC,CHS2,T2,TH2,Q2,     &
-              PSFC,CP,R_d,RCP,                              &
-              ids,ide, jds,jde, kds,kde,                    &
-              ims,ime, jms,jme, kms,kme,                    &
-              i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
+          CALL SFCDIAGS(HFX,QFX,TSK,QSFC,CHS2,CQS2,T2,TH2,Q2,      &
+                     PSFC,CP,R_d,RCP,                              &
+                     ids,ide, jds,jde, kds,kde,                    &
+                     ims,ime, jms,jme, kms,kme,                    &
+             i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
 
      CASE DEFAULT
 

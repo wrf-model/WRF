@@ -4,7 +4,7 @@ MODULE module_sf_sfcdiags
 
 CONTAINS
 
-   SUBROUTINE SFCDIAGS(HFX,QFX,TSK,QSFC,CHS2,T2,TH2,Q2,            &
+   SUBROUTINE SFCDIAGS(HFX,QFX,TSK,QSFC,CHS2,CQS2,T2,TH2,Q2,       &
                      PSFC,CP,R_d,ROVCP,                            &
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
@@ -26,7 +26,8 @@ CONTAINS
                                                               T2
       REAL,     DIMENSION( ims:ime, jms:jme )                    , &
                 INTENT(IN)                  ::               PSFC, &
-                                                             CHS2
+                                                             CHS2, &
+                                                             CQS2
       REAL,     INTENT(IN   )               ::       CP,R_d,ROVCP
 ! LOCAL VARS
       INTEGER ::  I,J
@@ -35,7 +36,7 @@ CONTAINS
       DO J=jts,jte
         DO I=its,ite
           RHO = PSFC(I,J)/(R_d * TSK(I,J))
-          Q2(I,J) = QSFC(I,J) - QFX(I,J)/(RHO*CHS2(I,J))
+          Q2(I,J) = QSFC(I,J) - QFX(I,J)/(RHO*CQS2(I,J))
           T2(I,J) = TSK(I,J) - HFX(I,J)/(RHO*CP*CHS2(I,J))
           TH2(I,J) = T2(I,J)*(1.E5/PSFC(I,J))**ROVCP
         ENDDO

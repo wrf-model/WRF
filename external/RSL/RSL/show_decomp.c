@@ -71,7 +71,12 @@ SHOW_DOMAIN_DECOMP ( d_p )
   FILE * fp ;
   rsl_index_t i, j ;
   char * code ;
+  int i_am_monitor ;
 
+  RSL_C_IAMMONITOR ( &i_am_monitor ) ;
+
+ if ( i_am_monitor )
+ {
   d = *d_p ;
 
   RSL_TEST_ERR(d < 0 || d >= RSL_MAXDOMAINS,
@@ -121,6 +126,7 @@ SHOW_DOMAIN_DECOMP ( d_p )
     fprintf(fp,"%5d  %7d\n",i,Phist[i]) ;
   }
   fclose(fp) ;
+ }
 }
 
 GET_DOMAIN_DECOMP ( d_p, wk, nwk_p )

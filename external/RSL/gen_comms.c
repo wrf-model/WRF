@@ -593,14 +593,14 @@ gen_shift (  char * dirname )
                     if ( !strcmp( *direction, "x" ) )
                     {
                       fprintf(fp,
-   "  if ( P_%s .GT. 1 ) %s ( ips:ipe,:,jps:jpe,P_%s) = %s (ips+px:ipe+px,:,jps:jpe,P_%s)\n",
-                       member->name, vname, member->name, vname, member->name ) ;
+   "  if ( P_%s .GT. 1 ) %s ( ips:min(ide%s,ipe),:,jps:jpe,P_%s) = %s (ips+px:min(ide%s,ipe)+px,:,jps:jpe,P_%s)\n",
+                       member->name, vname, member->stag_x?"":"-1", member->name, vname, member->stag_x?"":"-1", member->name ) ;
                     }
                     else
                     {
                       fprintf(fp,
-   "  if ( P_%s .GT. 1 ) %s ( ips:ipe,:,jps:jpe,P_%s) = %s (ips:ipe,:,jps+py:jpe+py,P_%s)\n",
-                       member->name, vname, member->name, vname, member->name ) ;
+   "  if ( P_%s .GT. 1 ) %s ( ips:ipe,:,jps:min(jde%s,jpe),P_%s) = %s (ips:ipe,:,jps+py:min(jde%s,jpe)+py,P_%s)\n",
+                       member->name, vname, member->stag_y?"":"-1", member->name, vname, member->stag_y?"":"-1", member->name ) ;
                     }
                   }
                 }
@@ -617,11 +617,11 @@ gen_shift (  char * dirname )
 	      if ( p->ndims == 3 ) vdim = ":," ;
               if ( !strcmp( *direction, "x" ) )
               {
-                fprintf(fp,"%s (ips:ipe,%sjps:jpe) = %s (ips+px:ipe+px,%sjps:jpe)\n", vname, vdim, vname, vdim ) ;
+                fprintf(fp,"%s (ips:min(ide%s,ipe),%sjps:jpe) = %s (ips+px:min(ide%s,ipe)+px,%sjps:jpe)\n", vname,  p->stag_x?"":"-1", vdim, vname, p->stag_x?"":"-1", vdim ) ;
               }
               else
 	      {
-                fprintf(fp,"%s (ips:ipe,%sjps:jpe) = %s (ips:ipe,%sjps+py:jpe+py)\n", vname, vdim, vname, vdim ) ;
+                fprintf(fp,"%s (ips:ipe,%sjps:min(jde%s,jpe)) = %s (ips:ipe,%sjps+py:min(jde%s,jpe)+py)\n", vname, vdim,  p->stag_y?"":"-1", vname, vdim, p->stag_y?"":"-1" ) ;
               }
             }
 	  }

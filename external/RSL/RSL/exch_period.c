@@ -105,12 +105,10 @@ RSL_EXCH_PERIOD ( d_p, s_p, dir_p )
   if      ( *dir_p == RSL_M )
   {
     dir = 0 ;
-fprintf(stderr,"RSL_EXCH_PERIOD FOR RSL_M\n" );
   }
   else if ( *dir_p == RSL_N )
   {
     dir = 1 ;
-fprintf(stderr,"RSL_EXCH_PERIOD FOR RSL_N\n" );
   }
   else
   {

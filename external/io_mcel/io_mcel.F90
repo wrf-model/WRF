@@ -217,14 +217,14 @@ SUBROUTINE ext_mcel_inquire_filename ( DataHandle, FileName , FileStatus, Status
         ELSE
            FileStatus = WRF_FILE_OPENED_NOT_COMMITTED
         ENDIF
-      ELSE IF ( opened_for_write( 
-
-! STOPPED HERE
- 
-      IF ( okay_to_write( DataHandle ) .OR. okay_to_read( DataHandle ) ) THEN
-        FileStatus = WRF_FILE_OPENED_AND_COMMITTED
+      ELSE IF ( opened_for_write( DataHandle ) ) THEN
+        IF ( okay_to_write( DataHandle ) ) THEN
+           FileStatus = WRF_FILE_OPENED_FOR_WRITE
+        ELSE
+           FileStatus = WRF_FILE_OPENED_NOT_COMMITTED
+        ENDIF
       ELSE
-        FileStatus = WRF_FILE_OPENED_NOT_COMMITTED
+        FileStatus = WRF_FILE_NOT_OPENED
       ENDIF
     ENDIF
   ENDIF

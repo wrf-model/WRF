@@ -1,3 +1,26 @@
+/* Jan. 2005.
+
+   A utility that converts unformatted binary real data files
+   to unformatted binary double precision data files.
+
+   Compile as 
+
+        cc -o four2eight four2eight.c
+
+   If you are running this on a little-endian platform
+   compile with -DSWAP like so:
+
+        cc -o four2eight -DSWAP four2eight.c
+
+   Use as 
+
+        four2eight < RRTM_DATA > RRTM_DATA_DBL  (for example)
+
+   JM
+
+*/
+
+
 #include <stdio.h>
 
 main()

@@ -60,11 +60,11 @@ else
   if ( ! $?WRF_CHEM )        setenv WRF_CHEM 0
 
   set overwrite=0
-  if ($WRF_EM_CORE == 1 && WRF_NMM_CORE == 1 ) then
+  if ($WRF_EM_CORE == 1 && $WRF_NMM_CORE == 1 ) then
     echo "Cannot compile both EM and NMM cores in same executable yet."
     exit 2
   endif
-  if ($WRF_EM_CORE == 0 && WRF_NMM_CORE == 0 ) then
+  if ($WRF_EM_CORE == 0 && $WRF_NMM_CORE == 0 ) then
     echo "Cannot compile because both EM and NMM cores are set to 0."
     exit 2
   endif

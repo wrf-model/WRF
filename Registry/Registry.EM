@@ -1032,6 +1032,7 @@ rconfig   integer num_land_cat            namelist,physics	1            24      
 rconfig   integer num_soil_cat            namelist,physics	1            16       -      "num_soil_cat"                  ""      ""
 rconfig   integer mp_zero_out             namelist,physics	1             0       -      "mp_zero_out"  "microphysics fields set to zero  0=no action taken, 1=all fields but Qv, 2=all fields including Qv"      "flag"
 rconfig   real mp_zero_out_thresh         namelist,physics	1          1.e-8      -      "mp_zero_out_thresh"  "minimum threshold for non-Qv moist fields, below are set to zero"  "kg/kg"
+rconfig   real    seaice_threshold        namelist,physics	1            271       h    "seaice_threshold"  "tsk below which which water points are set to sea ice for slab scheme"   "K"
 
 
 # Dynamics

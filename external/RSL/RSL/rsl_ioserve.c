@@ -155,15 +155,32 @@ handle_read_request( req, resp_me, pbuf_me )
   char * rbuf ;
   char *pbuf ;
   rsl_point_t *domain ;
+  int nelem_alloc ;
 
-  /* figure out size of buffer needed */
+/* bug fix from AJB; rbuf needs to be as large as the
+   domain size (with padding out to factor of 3 for nest
+   dimensions) or may generate a seg-fault in bcopies below
+   in loop that runs over the mlen/nlen dimensions
+*/
+  /* figure out size of read buffer needed (includes padding) */
+  nelem_alloc = domain_info[req->domain].len_m * domain_info[req->domain].len_n ;
+  switch ( req->iotag )
+  {
+  case IO2D_IJ  : break ;
+  case IO2D_JI  : break ;
+  case IO3D_IJK : nelem_alloc *= req->glen[2] ; break ;
+  case IO3D_JIK : nelem_alloc *= req->glen[2] ; break ;
+  case IO3D_KIJ : nelem_alloc *= req->glen[0] ; break ;
+  case IO3D_IKJ : nelem_alloc *= req->glen[1] ; break ;
+  }
+  /* figure out number of elements to read into read buffer */
   nelem = 1 ;
   for  ( dim = 0 ; dim < req->ndim ; dim++ )
   {
-    nelem *= req->glen[dim] ;
+    nelem *= req->glen[dim] ; 
   }
   typelen = elemsize( req->type ) ;
-  nbytes = nelem * typelen ;
+  nbytes = nelem_alloc * typelen ;
 
   rbuf = RSL_MALLOC( char, nbytes ) ;  
 
@@ -467,7 +484,6 @@ handle_read_request( req, resp_me, pbuf_me )
   }
 
   RSL_FREE( rbuf ) ;
-  return(0) ;
 }
 
 static int wrt_sock_err = 0 ;
@@ -834,7 +850,6 @@ handle_write_request( req, nelem, psize_me, pbuf_me )
     send_to_output_device( req, wbuf, nelem ) ;
   }
   RSL_FREE( wbuf ) ;
-  return(0) ;
 }
 
 

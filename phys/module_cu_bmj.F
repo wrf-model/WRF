@@ -255,7 +255,6 @@ CONTAINS
 !***  DEFINE LOCAL VARIABLES
 !-----------------------------------------------------------------------
 !                                                            
-      REAL :: FPRS
       REAL,DIMENSION(KTS:KTE) :: APEK,APESK,EL,FPK                      &
                                 ,PK,PSK,QK,QREFK,QSATK                  &
                                 ,THERK,THEVRF,THSK                      &

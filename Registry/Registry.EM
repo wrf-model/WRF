@@ -479,7 +479,7 @@ state   real    ht_int         ij      misc         1         -     -          "
 state   real    ht_input       ij      misc         1         -     -          "HGT_INPUT"        "Terrain Height from FG Input File"   "m"
 
 state   real    TSK            ij      misc         1         -     i012rhdu=(copy_fcnm)    "TSK"                   "SURFACE SKIN TEMPERATURE"                  "K"
-                                                
+state   real    TSK_SAVE       ij      misc         1         -     -         "TSK_SAVE" "SURFACE SKIN TEMPERATURE, EXTRA COPY FOR SEA ICE TESTS in REAL"       "K"
 state   real    u_base         k       misc         1         -     ir        "u_base"                "BASE STATE X WIND IN IDEALIZED CASES"         ""      
 state   real    v_base         k       misc         1         -     ir        "v_base"                "BASE STATE Y WIND IN IDEALIZED CASES"         ""      
 state   real    qv_base        k       misc         1         -     ir        "qv_base"               "BASE STATE QV IN IDEALIZED CASES"         ""      

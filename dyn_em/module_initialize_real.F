@@ -191,6 +191,15 @@ integer::oops1,oops2
 
       real_data_init_type = model_config_rec%real_data_init_type
 
+      !  Save the TSK field for later use in the sea ice surface temperature
+      !  for the Noah LSM scheme.
+
+       DO j = jts, MIN(jte,jde-1)
+         DO i = its, MIN(ite,ide-1)
+            tsk_save(i,j) = tsk(i,j)
+         END DO
+      END DO
+
       !  Take the data from the input file and store it in the variables that
       !  use the WRF naming and ordering conventions.
 
@@ -474,9 +483,9 @@ integer::oops1,oops2
       CALL nl_get_seaice_threshold ( grid%id , seaice_threshold ) 
       CALL nl_get_isice ( grid%id , isice )
       CALL nl_get_iswater ( grid%id , iswater )
-      CALL adjust_for_seaice_post ( xice , landmask , tsk , ivgtyp , vegcat , lu_index , &
+      CALL adjust_for_seaice_post ( xice , landmask , tsk , tsk_save , ivgtyp , vegcat , lu_index , &
                                     xland , landusef , isltyp , soilcat , soilctop , &
-                                    soilcbot , tmn , &
+                                    soilcbot , tmn , vegfra , &
                                     tslb , smois , sh2o , &
                                     seaice_threshold , &
                                     num_veg_cat , num_soil_top_cat , num_soil_bot_cat , &

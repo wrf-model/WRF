@@ -96,9 +96,9 @@ CONTAINS
 
    END SUBROUTINE adjust_for_seaice_pre
 
-   SUBROUTINE adjust_for_seaice_post ( xice , landmask , tsk , ivgtyp , vegcat , lu_index , &
+   SUBROUTINE adjust_for_seaice_post ( xice , landmask , tsk_old , tsk , ivgtyp , vegcat , lu_index , &
                                       xland , landusef , isltyp , soilcat , soilctop , &
-                                      soilcbot , tmn , &
+                                      soilcbot , tmn , vegfra , &
                                       tslb , smois , sh2o , &
                                       seaice_threshold , &
                                       num_veg_cat , num_soil_top_cat , num_soil_bot_cat , &
@@ -124,7 +124,8 @@ CONTAINS
       REAL , DIMENSION(ims:ime,1:num_soil_layers,jms:jme) , INTENT(INOUT):: tslb , smois , sh2o
       INTEGER , DIMENSION(ims:ime,jms:jme), INTENT(OUT) :: isltyp , ivgtyp
       REAL , DIMENSION(ims:ime,jms:jme) , INTENT(INOUT) :: landmask , xice , tsk , lu_index , &
-                                                           vegcat, xland , soilcat , tmn
+                                                           vegcat, xland , soilcat , tmn , &
+                                                           tsk_old , vegfra
       REAL , INTENT(IN) :: seaice_threshold
       REAL :: total_depth , mid_point_depth
 
@@ -154,19 +155,26 @@ CONTAINS
             num_seaice_changes = 0
             DO j = jts , MIN(jde-1,jte)
                DO i = its , MIN(ide-1,ite)
-                  IF ( ( xice(i,j) .GE. 0.5 ) .OR. &
+                  IF ( ( tsk(i,j) .LT. 200 ) .OR. ( tsk(i,j) .GT. 350 ) ) THEN
+                     print *,'TSK woes in seaice post, i,j=',i,j,'  tsk = ',tsk(i,j)
+                     CALL wrf_error_fatal ( 'TSK is unrealistic, problems for seaice post')
+                  ELSE IF ( ( xice(i,j) .GE. 0.5 ) .OR. &
                        ( ( landmask(i,j) .LT. 0.5 ) .AND. ( tsk(i,j) .LT. seaice_threshold ) ) ) THEN
                      xice(i,j) = 1.
                      num_seaice_changes = num_seaice_changes + 1
                      tmn(i,j) = 271.16
                      vegcat(i,j)=isice
-                     lu_index(i,j)=ivgtyp(i,j)
+                     ivgtyp(i,j)=isice
+                     lu_index(i,j)=isice
                      landmask(i,j)=1.
                      xland(i,j)=1.
+                     vegfra(i,j)=0.
                      DO loop=1,num_veg_cat
                         landusef(i,loop,j)=0.
                      END DO
                      landusef(i,ivgtyp(i,j),j)=1.
+
+                     tsk_old(i,j) = tsk(i,j)
 
                      isltyp(i,j) = 16
                      soilcat(i,j)=isltyp(i,j)

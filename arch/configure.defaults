@@ -1073,6 +1073,7 @@ mediation_force_domain.o : mediation_force_domain.F
 mediation_feedback_domain.o : mediation_feedback_domain.F
 convert_nmm.o : convert_nmm.F
 module_configure.o : module_configure.F
+solve_interface.o : solve_interface.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -1081,6 +1082,7 @@ module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o \
 mediation_interp_domain.o \
 module_configure.o                                             \
+solve_interface.o                                              \
 convert_nmm.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -1255,6 +1257,7 @@ mediation_interp_domain.o : mediation_interp_domain.F
 mediation_force_domain.o : mediation_force_domain.F
 mediation_feedback_domain.o : mediation_feedback_domain.F
 convert_nmm.o : convert_nmm.F
+solve_interface.o : solve_interface.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -1264,6 +1267,7 @@ module_initialize_real.o module_dm.o start_domain.o \
 mediation_force_domain.o \
 mediation_interp_domain.o \
 mediation_feedback_domain.o \
+solve_interface.o                                              \
 convert_nmm.o    :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -1359,6 +1363,7 @@ mediation_interp_domain.o : mediation_interp_domain.F
 mediation_force_domain.o : mediation_force_domain.F
 mediation_feedback_domain.o : mediation_feedback_domain.F
 convert_nmm.o : convert_nmm.F
+solve_interface.o : solve_interface.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -1368,6 +1373,7 @@ module_initialize_real.o module_dm.o start_domain.o \
 mediation_force_domain.o \
 mediation_interp_domain.o \
 mediation_feedback_domain.o \
+solve_interface.o                                              \
 convert_nmm.o    :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -1466,6 +1472,7 @@ mediation_interp_domain.o : mediation_interp_domain.F
 mediation_force_domain.o : mediation_force_domain.F
 mediation_feedback_domain.o : mediation_feedback_domain.F
 convert_nmm.o : convert_nmm.F
+solve_interface.o : solve_interface.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -1475,6 +1482,7 @@ module_initialize_real.o module_dm.o start_domain.o \
 mediation_force_domain.o \
 mediation_interp_domain.o \
 mediation_feedback_domain.o \
+solve_interface.o                                              \
 convert_nmm.o    :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -1573,6 +1581,7 @@ mediation_interp_domain.o : mediation_interp_domain.F
 mediation_force_domain.o : mediation_force_domain.F
 mediation_feedback_domain.o : mediation_feedback_domain.F
 convert_nmm.o : convert_nmm.F
+solve_interface.o : solve_interface.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -1582,6 +1591,7 @@ module_initialize_real.o module_dm.o start_domain.o \
 mediation_force_domain.o \
 mediation_interp_domain.o \
 mediation_feedback_domain.o \
+solve_interface.o                                              \
 convert_nmm.o    :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -1685,6 +1695,7 @@ mediation_force_domain.o : mediation_force_domain.F
 mediation_feedback_domain.o : mediation_feedback_domain.F
 convert_nmm.o : convert_nmm.F
 module_configure.o : module_configure.F
+solve_interface.o : solve_interface.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -1693,6 +1704,7 @@ module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o start_domain.o \
 convert_nmm.o \
 module_configure.o                                             \
+solve_interface.o                                              \
 mediation_interp_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -1797,6 +1809,7 @@ mediation_interp_domain.o : mediation_interp_domain.F
 mediation_force_domain.o : mediation_force_domain.F
 mediation_feedback_domain.o : mediation_feedback_domain.F
 convert_nmm.o : convert_nmm.F
+solve_interface.o : solve_interface.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -1806,6 +1819,7 @@ module_initialize_real.o module_dm.o start_domain.o \
 mediation_force_domain.o \
 mediation_interp_domain.o \
 mediation_feedback_domain.o \
+solve_interface.o                                              \
 convert_nmm.o    :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -1916,6 +1930,7 @@ mediation_interp_domain.o : mediation_interp_domain.F
 mediation_force_domain.o : mediation_force_domain.F
 mediation_feedback_domain.o : mediation_feedback_domain.F
 convert_nmm.o : convert_nmm.F
+solve_interface.o : solve_interface.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -1925,6 +1940,7 @@ module_initialize_real.o module_dm.o start_domain.o \
 mediation_force_domain.o \
 mediation_interp_domain.o \
 mediation_feedback_domain.o \
+solve_interface.o                                              \
 convert_nmm.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -2041,6 +2057,7 @@ mediation_interp_domain.o : mediation_interp_domain.F
 mediation_force_domain.o : mediation_force_domain.F
 mediation_feedback_domain.o : mediation_feedback_domain.F
 convert_nmm.o : convert_nmm.F
+solve_interface.o : solve_interface.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -2050,6 +2067,7 @@ module_initialize_real.o module_dm.o start_domain.o \
 mediation_force_domain.o \
 mediation_interp_domain.o \
 mediation_feedback_domain.o \
+solve_interface.o                                              \
 convert_nmm.o    :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -2167,6 +2185,7 @@ mediation_interp_domain.o : mediation_interp_domain.F
 mediation_force_domain.o : mediation_force_domain.F
 mediation_feedback_domain.o : mediation_feedback_domain.F
 convert_nmm.o : convert_nmm.F
+solve_interface.o : solve_interface.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -2176,6 +2195,7 @@ module_initialize_real.o module_dm.o start_domain.o \
 mediation_force_domain.o \
 mediation_interp_domain.o \
 mediation_feedback_domain.o \
+solve_interface.o                                              \
 convert_nmm.o    :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 

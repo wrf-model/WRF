@@ -134,9 +134,6 @@ fprintf(stderr,"debug called RSL_EXCH_PERIOD %d\n",s ) ;
 
   /* post receives */
   /* iterate over procrecs for domain and post buffers */
-#ifdef RSL_INTERNAL_MILLICLOCK
-  ts = rsl_internal_milliclock_() ;
-#endif
 
   tqp = 0 ;
   for ( procrec = per->procs[dir][d] ; procrec != NULL ; procrec = procrec->next )
@@ -169,18 +166,11 @@ fprintf(stderr,"debug posting async recv for %d bytes from %d\n", procrec->unpac
     }
   }
   nprocs = tqp ;
-#ifdef RSL_INTERNAL_MILLICLOCK
-  te = rsl_internal_milliclock_() ;
-  fprintf(stderr,"exch_period 1: msec = %d\n", te-ts) ;
-#endif
 
   /* pack buffers and issue sends */
 
   for ( procrec = per->procs[dir][d] ; procrec != NULL ; procrec = procrec->next )
   {
-#ifdef RSL_INTERNAL_MILLICLOCK
-  ts = rsl_internal_milliclock_() ;
-#endif
     pbuf=buffer_for_proc(procrec->P, procrec->pack_table_nbytes, RSL_SENDBUF) ;
     pr = procrec->pack_table ;
     for ( curs = 0, i = 0 ; i < procrec->pack_table_size ; i++, pr++ )
@@ -203,11 +193,6 @@ pr->offset, j, pr->stride ) ;
         curs += pr->n ;
       }
     }
-#ifdef RSL_INTERNAL_MILLICLOCK
-  te = rsl_internal_milliclock_() ;
-  fprintf(stderr,"exch_period 2: msec = %d, P %d, curs %d , pr tab siz %d \n", te-ts, procrec->P, curs, procrec->pack_table_size ) ;
-  ts = rsl_internal_milliclock_() ;
-#endif
     if ( curs > 0 )
     {
       mdest = rsl_c_comp2phys_proc (procrec->P) ;
@@ -242,16 +227,8 @@ fprintf(stderr,"debug sending %d bytes to %d\n", curs, mdest ) ;
     {
       RSL_TEST_ERR(1,"internal error") ;
     }
-#ifdef RSL_INTERNAL_MILLICLOCK
- te = rsl_internal_milliclock_() ;
- fprintf(stderr,"exch_period 2a: msec = %d, P %d, curs %d , pr tab siz %d \n", te-ts, procrec->P, curs, procrec->pack_table_size ) ;
- ts = rsl_internal_milliclock_() ;
-#endif
   }
 
-#ifdef RSL_INTERNAL_MILLICLOCK
- ts = rsl_internal_milliclock_() ;
-#endif
 
   /* wait on receives and unpack messages as they come in */
   ndone = 0 ;
@@ -323,11 +300,6 @@ fprintf(stderr,"debug got message from %d and unpacked %d bytes\n", Pque[tqp], c
   }
 #ifdef UPSHOT
 MPE_Log_event( 16, s, "per end" ) ;
-#endif
-
-#ifdef RSL_INTERNAL_MILLICLOCK
- te = rsl_internal_milliclock_() ;
- fprintf(stderr,"exch_period 3: msec = %d\n", te-ts) ;
 #endif
 
 }

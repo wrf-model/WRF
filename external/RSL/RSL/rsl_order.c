@@ -256,9 +256,6 @@ rsl_sort( list_p, compare, up )
 
   fprintf(stderr,"rsl_sort: lenlist(list) = %d\n", lenlist(list) ) ; 
 
-#ifdef RSL_INTERNAL_MILLICLOCK
-  iclock = rsl_internal_milliclock() ;
-#endif
   pass = 0 ;
   swap = 1 ;
   swaps = 0 ;
@@ -294,9 +291,6 @@ rsl_sort( list_p, compare, up )
     }
     pass++ ;
   }
-#ifdef RSL_INTERNAL_MILLICLOCK
-fprintf(stderr,"debug sort %6d elems %10d passes %10d swaps %12d millisecs\n",nelems,pass,swaps,rsl_internal_milliclock()-iclock) ;
-#endif
 }
 #endif
 

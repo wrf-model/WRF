@@ -711,7 +711,11 @@ if ( ( $ARCH[1] == AIX ) && ( `hostname | cut -c 1-2` == bs ) ) then
         setenv MP_PROCS  $Num_Procs
         setenv MP_RMPOOL 1
 	set MPIRUNCOMMAND       =  poe 
-	set ZAP_OPENMP		= FALSE
+	if ( $CHEM == TRUE ) then
+		set ZAP_OPENMP		= TRUE
+	else if ( $CHEM == FALSE ) then
+		set ZAP_OPENMP		= FALSE
+	endif
 	echo "Compiler version info: " >! version_info
 	pmrinfo | grep "FORTRAN:" >>&! version_info
 	echo " " >>! version_info
@@ -748,7 +752,11 @@ EOF
 	set SERIALRUNCOMMAND	= 
 	set OMPRUNCOMMAND	= 
 	set MPIRUNCOMMAND 	= ( /usr/local/mpich/bin/mpirun -np $Num_Procs -machinefile $Mach )
-	set ZAP_OPENMP		= FALSE
+	if ( $CHEM == TRUE ) then
+		set ZAP_OPENMP		= TRUE
+	else if ( $CHEM == FALSE ) then
+		set ZAP_OPENMP		= FALSE
+	endif
 	echo "Compiler version info: " >! version_info
 	f90 -version >>&! version_info
 	echo " " >>! version_info
@@ -806,7 +814,11 @@ else if ( ( $ARCH[1] == Linux ) && ( `hostname` == bay-mmm ) ) then
 `hostname`
 EOF
 	set Mach		= `pwd`/machfile
-	set ZAP_OPENMP		= FALSE
+	if ( $CHEM == TRUE ) then
+		set ZAP_OPENMP		= TRUE
+	else if ( $CHEM == FALSE ) then
+		set ZAP_OPENMP		= FALSE
+	endif
 	set MPIRUNCOMMAND       = ( mpirun -np $Num_Procs -machinefile $Mach )
 	echo "Compiler version info: " >! version_info
 	pgf90 -V >>&! version_info
@@ -843,7 +855,11 @@ else if ( ( $ARCH[1] == Linux ) && ( `hostname` == loquat ) ) then
 `hostname`
 EOF
 	set Mach		= `pwd`/machfile
-	set ZAP_OPENMP		= FALSE
+	if ( $CHEM == TRUE ) then
+		set ZAP_OPENMP		= TRUE
+	else if ( $CHEM == FALSE ) then
+		set ZAP_OPENMP		= FALSE
+	endif
 	set MPIRUNCOMMAND       = ( mpirun -np $Num_Procs -machinefile $Mach )
 	echo "Compiler version info: " >! version_info
 	pgf90 -V >>&! version_info
@@ -932,7 +948,11 @@ else if ( ( $ARCH[1] == Linux ) && ( `hostname` == kola ) ) then
 `hostname`
 EOF
 	set Mach		= `pwd`/machfile
-	set ZAP_OPENMP		= FALSE
+	if ( $CHEM == TRUE ) then
+		set ZAP_OPENMP		= TRUE
+	else if ( $CHEM == FALSE ) then
+		set ZAP_OPENMP		= FALSE
+	endif
 	set MPIRUNCOMMAND       = ( mpirun -np $Num_Procs -machinefile $Mach )
 	echo "Compiler version info: " >! version_info
 	pgf90 -V >>&! version_info

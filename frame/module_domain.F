@@ -85,6 +85,9 @@ MODULE module_domain
       INTEGER      , DIMENSION( max_parents )             :: child_of_parent
       INTEGER      , DIMENSION( max_nests )               :: active
 
+      INTEGER      , DIMENSION(0:5)                       :: nframes          ! frames per outfile for history 
+                                                                              ! streams (0 is main history)                  
+
       TYPE(domain) , POINTER                              :: next
       TYPE(domain) , POINTER                              :: same_level
 
@@ -781,6 +784,7 @@ CONTAINS
       new_grid%num_parents = 0
       new_grid%max_tiles   = 0
       new_grid%num_tiles_spec   = 0
+      new_grid%nframes   = 0         ! initialize the number of frames per file (array assignment)
 
       CALL alloc_space_field ( new_grid, domain_id , 3 ,           &
                                sd1, ed1, sd2, ed2, sd3, ed3,       &

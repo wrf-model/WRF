@@ -32,5 +32,8 @@ MAX_DOMAINS	=	21
 
 CONFIG_BUF_LEN	=	8192
 
+#### Default sed command and script for Fortran source files ####
+SED_FTN = sed -f ../arch/standard.sed
+
 #### Architecture specific settings ####
 

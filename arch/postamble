@@ -16,14 +16,14 @@ RM	= 	rm -f
 
 .F.o:
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCFLAGS) $(MODULE_DIRS) $*.f
 
 .F.f:
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $@
 	$(RM) $*.b
 

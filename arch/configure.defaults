@@ -66,7 +66,7 @@ module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o  start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
@@ -138,7 +138,7 @@ module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
@@ -220,7 +220,7 @@ module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o  start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
@@ -293,7 +293,7 @@ module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
@@ -377,7 +377,7 @@ module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o  start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
@@ -401,7 +401,7 @@ FCBASEOPTS	=	-freeform -I. -64 -mips4 -w $(FCDEBUG) -w
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 ARCHFLAGS       =       -DINTIO -DYYY -DWRF_RSL_IO -DRSL -DDM_PARALLEL -DIWORDSIZE=4 \
                         -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
-                        -DTRIEDNTRUE   -DLIMIT_ARGS -DPEDANTIC
+                        -DTRIEDNTRUE   -DLIMIT_ARGS
 EXTRAMODULES    =       
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int -I../frame -I../external/esmf_time_f90 \
                         -I../share -I../phys -I../inc
@@ -480,7 +480,7 @@ module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
@@ -586,7 +586,7 @@ module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o mediation_interp_domain.o \
 mediation_force_domain.o module_dm.o start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
@@ -605,7 +605,7 @@ ARCHFLAGS       =       -DNETCDF -DYYY -DINTIO \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
                         -DTRIEDNTRUE   \
                         -DLIMIT_ARGS -DFLOATSAFE \
-                        -DSTUBMPI -DPEDANTIC
+                        -DSTUBMPI
 CFLAGS          =       $(ARCHFLAGS) -I../external/RSL/RSL
 FCOPTIM         =       -O2 # -O4 -xlibmopt
 FCDEBUG         =       # -g
@@ -702,7 +702,7 @@ module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
@@ -793,7 +793,7 @@ module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
@@ -812,7 +812,7 @@ ARCHFLAGS       =       -DNETCDF -DYYY -DINTIO \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
                         -DTRIEDNTRUE   \
                         -DLIMIT_ARGS -DFLOATSAFE \
-                        -DSTUBMPI -DPEDANTIC
+                        -DSTUBMPI
 CFLAGS          =       $(ARCHFLAGS) -I../external/RSL/RSL
 FCOPTIM         =       -O3 -xlibmopt
 FCDEBUG         =       # -g
@@ -895,7 +895,7 @@ module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
@@ -987,7 +987,7 @@ module_initialize_real.o module_dm.o \
 mediation_interp_domain.o \
 convert_nmm.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
@@ -996,7 +996,7 @@ convert_nmm.o :
 mediation_feedback_domain.o \
 mediation_force_domain.o start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b
+	$(SED_FTN) $*.F > $*.b
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c -g $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt $*.f
@@ -1064,7 +1064,7 @@ convert_nmm.o   : convert_nmm.F
 
 module_sm.o module_tiles.o solve_em.o solve_exp.o convert_nmm.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $(OMPCPP) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c -g $(OMP) $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt $*.f
@@ -1166,7 +1166,7 @@ mediation_interp_domain.o \
 mediation_feedback_domain.o \
 convert_nmm.o    :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt $*.f
@@ -1268,7 +1268,7 @@ mediation_interp_domain.o \
 mediation_feedback_domain.o \
 convert_nmm.o    :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt $*.f
@@ -1373,7 +1373,7 @@ mediation_interp_domain.o \
 mediation_feedback_domain.o \
 convert_nmm.o    :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt $*.f
@@ -1478,7 +1478,7 @@ mediation_interp_domain.o \
 mediation_feedback_domain.o \
 convert_nmm.o    :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt $*.f
@@ -1585,7 +1585,7 @@ module_initialize_real.o module_dm.o start_domain.o \
 convert_nmm.o \
 mediation_interp_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt $*.f
@@ -1594,7 +1594,7 @@ mediation_interp_domain.o :
 mediation_feedback_domain.o \
 mediation_force_domain.o start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b
+	$(SED_FTN) $*.F > $*.b
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c -g $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt $*.f
@@ -1696,7 +1696,7 @@ mediation_interp_domain.o \
 mediation_feedback_domain.o \
 convert_nmm.o    :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt $*.f
@@ -1813,7 +1813,7 @@ mediation_interp_domain.o \
 mediation_feedback_domain.o \
 convert_nmm.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt $*.f
@@ -1897,7 +1897,7 @@ module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
@@ -1996,7 +1996,7 @@ module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
@@ -2080,7 +2080,7 @@ module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
@@ -2179,7 +2179,7 @@ module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
@@ -2279,7 +2279,7 @@ module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
@@ -2379,7 +2379,7 @@ module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
@@ -2479,7 +2479,7 @@ module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
@@ -2579,7 +2579,7 @@ module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
@@ -2679,7 +2679,7 @@ module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
@@ -2789,7 +2789,7 @@ module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
@@ -2890,7 +2890,7 @@ module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
@@ -2976,7 +2976,7 @@ module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASENOINL) $(MODULE_DIRS) $*.f
@@ -3062,7 +3062,7 @@ module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASENOINL) $(MODULE_DIRS) $*.f
@@ -3165,7 +3165,7 @@ module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASENOINL) $(MODULE_DIRS) $*.f
@@ -3212,7 +3212,7 @@ wrfio_nf :
 FC		=	f90
 CC              =       cc
 CFLAGS          =
-FCFLAGS		=	-f free -I.
+FCFLAGS		=	-f free -N 255 -I.
 FCBASEOPTS	=	$(FCFLAGS)
 EXTRAMODULES    =       
 ARCHFLAGS       =       -DCRAY CONFIGURE_NETCDF_FLAG -DIWORDSIZE=8 -DDWORDSIZE=8 -DRWORDSIZE=8 -DLWORDSIZE=8 -DTRIEDNTRUE   \
@@ -3327,7 +3327,7 @@ module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 mediation_integrate.o \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
@@ -3418,7 +3418,7 @@ module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 mediation_integrate.o \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
@@ -3523,7 +3523,7 @@ module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 mediation_integrate.o \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
@@ -3625,7 +3625,7 @@ module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 mediation_integrate.o \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
@@ -3728,7 +3728,7 @@ module_initialize_hill2d_x.o module_initialize_quarter_ss.o \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCNOOPTS) $(MODULE_DIRS) $*.f
@@ -3843,7 +3843,7 @@ mediation_feedback_domain.o  \
 mediation_integrate.o \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCNOOPTS) $(MODULE_DIRS) $*.f
@@ -3936,7 +3936,7 @@ module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 mediation_integrate.o \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
@@ -4040,7 +4040,7 @@ module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 mediation_integrate.o \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
@@ -4145,7 +4145,7 @@ module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 mediation_integrate.o \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
@@ -4252,7 +4252,7 @@ module_initialize_hill2d_x.o module_initialize_quarter_ss.o \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCNOOPTS) $(MODULE_DIRS) $*.f
@@ -4358,7 +4358,7 @@ module_initialize_hill2d_x.o module_initialize_quarter_ss.o \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
@@ -4457,7 +4457,7 @@ module_initialize_hill2d_x.o module_initialize_quarter_ss.o \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
@@ -4549,7 +4549,7 @@ module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o  start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
@@ -4579,7 +4579,7 @@ PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH \
                         -L../external/io_grib1 -lio_grib1 \
-			../frame/internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time
+			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time
 LDFLAGS         =	$(FCFLAGS) $(FCFLAGS) $(OMP)
 CPP             =       /lib/cpp -traditional
 POUND_DEF	=	-DPGF90 $(OMPCPP) $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS) -DYYY
@@ -4639,7 +4639,7 @@ module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 mediation_integrate.o \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
@@ -4671,7 +4671,7 @@ REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
 			-L${VENTURE}/mpich/ch_p4/lib \
 			-L../external/io_int -lwrfio_int -L../external/io_grib1 -lio_grib1 \
-			../frame/internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
+			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =       $(FCOPTIM)
 CPP             =       /lib/cpp -traditional
 POUND_DEF	=	-DNO_RRTM_PHYSICS  -DPGF90 $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS) -DYYY
@@ -4739,7 +4739,7 @@ module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 mediation_integrate.o \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
@@ -4772,7 +4772,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
 			-L${VENTURE}/mpich/ch_gm/lib \
 			-L../external/io_int -lwrfio_int \
                         -L../external/io_grib1 -lio_grib1 \
-			../frame/internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
+			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =       $(FCOPTIM)
 CPP             =       /lib/cpp -traditional
 POUND_DEF	=	-DNO_RRTM_PHYSICS  -DPGF90 $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS) -DYYY
@@ -4841,7 +4841,7 @@ module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 mediation_integrate.o \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
@@ -4976,7 +4976,7 @@ module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o  start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b
+	$(SED_FTN) $*.F > $*.b
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCFLAGS) $(MODULE_DIRS) $*.f
@@ -5102,7 +5102,7 @@ wrf_auxinput1in.o wrf_histin.o wrf_restartin.o module_initialize_real.o \
 module_domain.o module_dm.o module_io_wrf.o start_domain.o solve_interface.o \
 mediation_force_domain.o:
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b
+	$(SED_FTN) $*.F > $*.b
 	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASEOPTS) -O0 $(MODULE_DIRS) $*.f
@@ -5221,22 +5221,28 @@ wrf_auxinput1in.o wrf_histin.o wrf_restartin.o module_initialize_real.o \
 module_domain.o module_io_wrf.o start_domain.o solve_interface.o \
 mediation_force_domain.o:
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b
+	$(SED_FTN) $*.F > $*.b
 	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASEOPTS) -O0 $(MODULE_DIRS) $*.f
 
 
 ###########################################################
-#ARCH   UNICOS/mp  machine crayx1
+#ARCH   UNICOS/mp  machine crayx1 (RSL_LITE, MPI, MSP mode)
 
 #
-#  Cray X1 (RSL_LITE, MPI)
+#  Cray X1 (RSL_LITE, MPI, MSP mode)
+#  For CSD mode set numtiles=4 in &domains section
+#  in namelist.input for best MSP efficiency.
 #
 DMPARALLEL      =       1
 FC              =       ftn
 LD              =       ftn
 CC              =       cc
+
+#### Override default sed command and script for Fortran source files ####
+#### This sed script converts !$OMP directives to !csd$ directives ####
+SED_FTN = sed -f ../arch/cray_csd.sed
 
 ## Use these for X1 cross compiler to build Registry
 ##X1_CROSS_COMP = "gcc"
@@ -5246,10 +5252,13 @@ X1_CROSS_COMP = "cc"
 X1_CROSS_CFLG = "-hcommand"
 CC_TOOLS        = 	$(X1_CROSS_COMP) $(X1_CROSS_CFLG)
 
-FCBASEOPTS      =       -f free -I. -Oscalar1 -Ovector0 -Ostream0 -x omp
-FCFLAGS         =       -f free  -I.  -Ofp3 -O3 -x omp 
+FCBASEOPTS      =       -f free -N 255 -I. -Oscalar1 -Ovector0 -Ostream0 -x omp
+FCFLAGS         =       -f free -N 255  -I. -Ofp3 -O3 -x omp -Ogen_private_callee
+FCFLAGS2        =       -f free -N 255  -I. -Ofp2 -O1 -x omp -Ogen_private_callee
+# MSP (non-CSD mode)
+#FCFLAGS2        =       -f free -N 255  -I. -Ofp3 -x omp,csd -Ostream1 -Ovector3 
 CFLAGS          =       -I../external/RSL_LITE -DMAXDOM_MAKE=$(MAX_DOMAINS) \
-                        -DMAXPROC_MAKE=$(MAX_PROC) -DDM_PARALLEL -UCRAY -Dcrayx1 
+                        -DMAXPROC_MAKE=$(MAX_PROC) -DDM_PARALLEL -UCRAY -Dcrayx1 -h gen_private_callee
 
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../inc \
@@ -5259,7 +5268,7 @@ INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../exter
 EXTRAMODULES    =       
 ARCHFLAGS       =       -DRSL_LITE -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 \
                         -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE  -DINTIO \
-			-DLIMIT_ARGS -DONLY_WRFMODEL_IO -Dxrayx1 -DPEDANTIC
+			-DLIMIT_ARGS -DONLY_WRFMODEL_IO -Dcrayx1
 
 PERL            =       perl
 REGISTRY        =       Registry
@@ -5271,7 +5280,7 @@ LIB             =       -L../external/io_netcdf -lwrfio_nf CONFIGURE_NETCDF_LIB_
 			../frame/module_internal_header_util.o ../frame/pack_utils.o \
 			-L../external/esmf_time_f90 -lesmf_time -lmalloc
 
-LDFLAGS         =       -p../external/io_netcdf -p../external/io_int -p../frame \
+LDFLAGS         =       -Ogen_private_callee -p../external/io_netcdf -p../external/io_int -p../frame \
                         -p../frame -I ../frame -p../share -p../phys -p../inc \
                         -p../dyn_em -p../dyn_eh -p../dyn_exp 
 
@@ -5293,18 +5302,18 @@ module_dm.F : ../external/RSL_LITE/module_dm.F
 	( /bin/cp module_dm_warning module_dm.F ; cat ../external/RSL_LITE/module_dm.F >> module_dm.F )
 
 wrfio_nf : 
-	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP) -DCRAYX1" FC="$(FC) -f free " ; \
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP) -Dcrayx1" FC="$(FC) -f free -N 255 " ; \
 	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
 	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
 	/bin/cp wrf_io_flags.h ../io_quilt )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCFLAGS)" all )
+          make CC=$(CC) CPP="$(CPP) -Dcrayx1" FC="$(FC) -f free -N 255" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) -f free" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(FCDEBUG) -f free -N 255" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL_LITE/librsl_lite.a :
 	( cd ../external/RSL_LITE ; make CFLAGS="$(CFLAGS)" CC=$(CC) MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
@@ -5336,10 +5345,154 @@ mediation_interp_domain.o \
 mediation_force_domain.o \
 convert_nmm.o    :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS)  $*.f
+
+# compile at intermediate opt
+# for MSP (non-CSD) mode
+#module_bc.o: module_bc.F
+#module_bc.o:
+# for MSP (CSD) mode
+module_sf_slab.o: module_sf_slab.F
+module_sf_slab.o:
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(RM) $*.b
+	$(FC) -c $(FCFLAGS2) $(MODULE_DIRS)  $*.f
+
+
+###########################################################
+#ARCH   UNICOS/mp  machine crayx1 (RSL_LITE, MPI, OpenMP)
+
+#
+#  Cray X1 (RSL_LITE, MPI, OpenMP)
+#
+DMPARALLEL      =       1
+FC              =       ftn
+LD              =       ftn
+CC              =       cc
+
+#### Override default sed command and script for Fortran source files ####
+#### This sed script converts !$OMP directives to !csd$ directives ####
+SED_FTN = sed -f ../arch/cray_csd.sed
+
+## Use these for X1 cross compiler to build Registry
+##X1_CROSS_COMP = "gcc"
+##X1_CROSS_CFLG = ""
+## Use these for X1 native (trigger) compiler
+X1_CROSS_COMP = "cc"
+X1_CROSS_CFLG = "-hcommand"
+CC_TOOLS        = 	$(X1_CROSS_COMP) $(X1_CROSS_CFLG)
+
+FCBASEOPTS      =       -f free -N 255 -I. -Oscalar1 -Ovector0 -Ostream0 -x csd -Ossp
+FCFLAGS         =       -f free -N 255  -I. -Ofp3 -O3 -x csd -Ossp
+FCFLAGS2        =       -f free -N 255  -I. -Oipa1 -Ofp2 -x csd -O3 -Ossp
+CFLAGS          =       -I../external/RSL_LITE -DMAXDOM_MAKE=$(MAX_DOMAINS) \
+                        -DMAXPROC_MAKE=$(MAX_PROC) -DDM_PARALLEL -UCRAY -Dcrayx1 -h ssp
+
+INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
+                        -I../frame -I../share -I../phys -I../inc \
+			-p../external/io_netcdf -p../external/io_int -p../frame \
+                        -p../frame -I ../frame -p../share -p../phys -p../inc \
+                        -p../dyn_em -p../dyn_eh -p../dyn_exp -p ../external/esmf_time_f90
+EXTRAMODULES    =       
+ARCHFLAGS       =       -D_OPENMP -DRSL_LITE -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 \
+                        -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE  -DINTIO \
+			-DLIMIT_ARGS -DONLY_WRFMODEL_IO -Dcrayx1
+
+PERL            =       perl
+REGISTRY        =       Registry
+
+LIB             =       -L../external/io_netcdf -lwrfio_nf CONFIGURE_NETCDF_LIB_PATH \
+			-L../external/RSL_LITE -lrsl_lite \
+                        -L../external/io_int -lwrfio_int  \
+                        -L../external/io_grib1 -lio_grib1 \
+			../frame/module_internal_header_util.o ../frame/pack_utils.o \
+			-L../external/esmf_time_f90 -lesmf_time -lmalloc
+
+LDFLAGS         =       -Ossp -p../external/io_netcdf -p../external/io_int -p../frame \
+                        -p../frame -I ../frame -p../share -p../phys -p../inc \
+                        -p../dyn_em -p../dyn_eh -p../dyn_exp 
+
+CPP		=	cpp -C -P 
+POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS) # -DNO_NAMELIST_PRINT
+CPPFLAGS	=	-I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL_LITE `cat ../inc/dm_comm_cpp_flags` $(COREDEFS) $(POUND_DEF)
+
+AR              =       ar ru
+M4              =       m4 -B8000
+RANLIB          =       echo
+NETCDFPATH	=	CONFIGURE_NETCDF_PATH
+
+externals : CONFIGURE_WRFIO_NF ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
+
+gen_comms.c : ../external/RSL_LITE/gen_comms.c
+	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; cat ../external/RSL_LITE/gen_comms.c >> ../tools/gen_comms.c )
+
+module_dm.F : ../external/RSL_LITE/module_dm.F
+	( /bin/cp module_dm_warning module_dm.F ; cat ../external/RSL_LITE/module_dm.F >> module_dm.F )
+
+wrfio_nf : 
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP) -Dcrayx1" FC="$(FC) -f free -N 255 -Ossp" ; \
+	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
+	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
+	/bin/cp wrf_io_flags.h ../io_quilt )
+
+wrfio_int : 
+	( cd ../external/io_int ; \
+          make CC=$(CC) CPP="$(CPP) -Dcrayx1" FC="$(FC) -f free -N 255 -Ossp" all )
+
+esmf_time : 
+	( cd ../external/esmf_time_f90 ; \
+	  make FC="$(FC) $(FCDEBUG) -f free -N 255 -Ossp" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+../external/RSL_LITE/librsl_lite.a :
+	( cd ../external/RSL_LITE ; make CFLAGS="$(CFLAGS)" CC=$(CC) MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
+
+# compile these without high optimization
+module_io_mm5.o : module_io_mm5.F
+module_si_io.o : module_si_io.F
+module_domain.o : module_domain.F
+module_start.o : module_start.F
+module_initialize.o : module_initialize.F
+module_initialize_b_wave.o : module_initialize_b_wave.F
+module_initialize_hill2d_x.o : module_initialize_hill2d_x.F
+module_initialize_quarter_ss.o : module_initialize_quarter_ss.F
+module_initialize_squall2d_x.o : module_initialize_squall2d_x.F
+module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
+module_dm.o : module_dm.F
+start_domain.o : start_domain.F
+mediation_interp_domain.o : mediation_interp_domain.F
+mediation_force_domain.o : mediation_force_domain.F
+convert_nmm.o : convert_nmm.F
+
+module_io_mm5.o module_si_io.o module_domain.o \
+module_start.o module_initialize.o module_initialize_b_wave.o  \
+module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
+module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
+module_initialize_real.o module_dm.o start_domain.o \
+mediation_interp_domain.o \
+mediation_force_domain.o \
+convert_nmm.o    :
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b 
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(RM) $*.b
+	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS)  $*.f
+
+# compile at intermediate opt
+module_pbl_driver.o: module_pbl_driver.F
+solve_em.o: solve_em.F
+
+solve_em.o \
+module_pbl_driver.o :
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(RM) $*.b
+	$(FC) -c $(FCFLAGS2) $(MODULE_DIRS)  $*.f
 
 ###########################################################
 #ARCH	HP-UX	PA8600	32bit   (single-threaded, no nesting)
@@ -5417,7 +5570,7 @@ module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o mediation_integrate.o start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCFLAGS) $(MODULE_DIRS) $*.f
@@ -5509,7 +5662,7 @@ module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o mediation_integrate.o start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCFLAGS) $(MODULE_DIRS) $*.f
@@ -5590,7 +5743,7 @@ module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o mediation_integrate.o start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCFLAGS) $(MODULE_DIRS) $*.f
@@ -5671,7 +5824,7 @@ module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o mediation_integrate.o start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCFLAGS) $(MODULE_DIRS) $*.f
@@ -5752,7 +5905,7 @@ module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o mediation_integrate.o start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCFLAGS) $(MODULE_DIRS) $*.f
@@ -5848,7 +6001,7 @@ module_initialize_hill2d_x.o module_initialize_quarter_ss.o \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o \
 module_initialize_real.o module_dm.o mediation_integrate.o start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCFLAGS) $(MODULE_DIRS) $*.f
@@ -5943,9 +6096,10 @@ module_initialize_hill2d_x.o module_initialize_quarter_ss.o \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o \
 module_initialize_real.o module_dm.o mediation_integrate.o start_domain.o :
 	$(RM) $@
-	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCFLAGS) $(MODULE_DIRS) $*.f
 ###########################################################
 #ARCH  NULL
+

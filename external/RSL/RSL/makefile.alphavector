@@ -1,0 +1,60 @@
+#version of RSL makefile used for testing vector option on local compaq hosts
+
+# this is a makefile for RSL that maps the package down to the
+# MPI message passing primitives on the DEC Alpha
+
+include makefile.core
+OBJ = $(CORE_OBJ) rsl_mpi_compat.o mpi_init_f.o debug.o fort_doubleread.o fort_doublewrite.o rsl_error_dup.o fort_bdyin_dbl.o vicopy.o
+HDR = $(CORE_HDR)
+TAR = $(CORE_TAR)
+
+### When compiling RSL with MM5, the CC macro is defined by the call to make
+### from MM5/Makefile.  Don't define it here.
+# for compiling with MPICH
+#CC = mpicc
+# for compiling with DEC's version of MPI
+#CC = cc
+#FC = f77
+
+LIB = 
+
+.SUFFIXES: .o .c .F
+
+CFLAGS = -DMPI -DSWAPBYTES -Dvpp -Dalphavector -O $(UNDERSCORE)
+FFLAGS  = -align dcommons -convert big_endian -O
+CFLAGS = -DMPI -DSWAPBYTES -Dvpp -Dalphavector -g $(UNDERSCORE)
+FFLAGS  = -align dcommons -convert big_endian -g
+
+warning :
+	@ echo 'This makefile is not a top level makefile'
+	@ echo 'and is not intended for direct use.  Please'
+	@ echo 'type "make" by itself for assistance.'
+
+all : rsl.inc librsl.a
+
+rsl.inc : $(HDR) rsl.inc_base
+	cat $(HDR) | sed $(SED_LINE) |\
+	grep '^#.*define.*\/\* FORTRAN \*\/' | \
+	awk '{printf("      integer %s\n      parameter(%s=%s)\n",$$2,$$2,$$3)}' | \
+	cat rsl.inc_base - > rsl.inc
+
+librsl.a : $(OBJ)
+	ar cr librsl.a $(OBJ)
+	ranlib librsl.a
+
+.c.o :
+	$(CC) -c $(CFLAGS) $(CONFIG_OPTS) $<
+
+.F.o :
+	$(FC) -c $(FFLAGS) $<
+
+clean :
+	/bin/rm -f *.o
+
+###
+
+$(OBJ) : $(HDR)
+
+vicopy.o : vicopy.F
+	$(FC) -c $(FVFLAGS) $<
+

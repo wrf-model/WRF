@@ -147,6 +147,9 @@ hp :
 alpha :
 	$(MAKE) -f makefile.alpha $(MAKE_OPTS) all
 
+alphavector :
+	$(MAKE) -f makefile.alphavector $(MAKE_OPTS) all
+
 vpp :
 	$(MAKE) -f makefile.vpp $(MAKE_OPTS) all
 

@@ -281,9 +281,21 @@ if [ "$os" = "AIX" ] ; then
       fi
 fi
 
-# Found perl, so proceed with configuration
-if test -n "$PERL" ; then
-   $PERL arch/Config.pl -perl=$PERL -netcdf=$NETCDF -phdf5=$PHDF5 -os=$os -mach=$mach -ldflags=$ldflags
+# compile options that come from the environment, such as chemistry
+# the "!" is removed by Config.pl
+if [ -n "$WRF_CHEM" ] ; then
+  if [ $WRF_CHEM = 1 ] ; then
+    echo building WRF with chemistry option
+    compileflags="${compileflags}!-DWRF_CHEM"
+  else
+    compileflags=" "
+  fi
+else
+  compileflags=" "
 fi
 
-
+# Found perl, so proceed with configuration
+if test -n "$PERL" ; then
+   $PERL arch/Config.pl -perl=$PERL -netcdf=$NETCDF -phdf5=$PHDF5 -os=$os -mach=$mach -ldflags=$ldflags \
+   -compileflags=$compileflags
+fi

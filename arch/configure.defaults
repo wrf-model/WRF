@@ -935,7 +935,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" CPP="$(CPP)" FC="f90 $(FCDEBUG) -convert big_endian -automatic -cpp -free" all )
+          make CC="$(CC)" CPP="$(CPP)" FC="f90 $(FCDEBUG) -automatic -cpp -free" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
@@ -4119,7 +4119,7 @@ CFLAGS = -DDM_PARALLEL -DWRF_RSL_IO -cm -w \
          -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL/RSL -size_lp64
 FCOPTIM = -O2 -ftz
 FCDEBUG = #-g
-FCBASEOPTS = $(FCDEBUG) -w -FR -I$(INCLUDE) -w -cm 
+FCBASEOPTS = $(FCDEBUG) -w -FR -I$(INCLUDE) -cm 
 FCNOOPTS = -O0 $(FCDEBUG) -FR -I$(INCLUDE) -w -cm 
 FCFLAGS = $(FCOPTIM) $(FCBASEOPTS) $(OMP) -size_lp64 
 ARCHFLAGS = -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
@@ -4549,7 +4549,7 @@ CFLAGS     = -DDM_PARALLEL -w -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_
              -I../external/RSL_LITE -size_lp64 -I/usr/lib/mpi/mpi_intel/include
 FCOPTIM = -O2 -ftz
 FCDEBUG = #-g
-FCBASEOPTS = $(FCDEBUG) -w -FR -I$(INCLUDE) -w -cm 
+FCBASEOPTS = $(FCDEBUG) -w -FR -I$(INCLUDE) -cm 
 FCNOOPTS = -O0 $(FCDEBUG) -FR -I$(INCLUDE) -w -cm 
 FCFLAGS = $(FCOPTIM) $(FCBASEOPTS) $(OMP) -size_lp64 
 ARCHFLAGS = -DDM_PARALLEL \
@@ -4661,7 +4661,7 @@ CFLAGS = -DDM_PARALLEL -DWRF_RSL_IO \
 -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL/RSL -size_lp64
 FCOPTIM = -O3 -ftz
 FCDEBUG = #-g
-FCBASEOPTS = $(FCDEBUG) -w -FR -I$(INCLUDE) -I. -w -cm
+FCBASEOPTS = $(FCDEBUG) -w -FR -I$(INCLUDE) -I. -cm
 FCFLAGS = $(FCOPTIM) $(FCBASEOPTS) $(OMP) -size_lp64
 ARCHFLAGS = -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
 -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
@@ -4767,7 +4767,7 @@ CFLAGS = -DDM_PARALLEL -I../external/RSL_LITE \
 -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -size_lp64
 FCOPTIM = -O3 -ftz
 FCDEBUG = #-g
-FCBASEOPTS = $(FCDEBUG) -w -FR -I$(INCLUDE) -I. -w -cm
+FCBASEOPTS = $(FCDEBUG) -w -FR -I$(INCLUDE) -I. -cm
 FCFLAGS = $(FCOPTIM) $(FCBASEOPTS) $(OMP) -size_lp64
 ARCHFLAGS = -DRSL_LITE -DDM_PARALLEL \
 -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
@@ -4853,6 +4853,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 
 ###########################################################
 #ARCH Intel xeon i686 ia32 Xeon Linux, ifort compiler (single-threaded, no nesting)
+#
 OMP             =
 OMPCPP          =
 FC		=	ifort

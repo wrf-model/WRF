@@ -1,3 +1,19 @@
+MODULE module_internal_header_util
+
+INTERFACE int_get_ti_header
+   MODULE PROCEDURE int_get_ti_header_integer, int_get_ti_header_real
+END INTERFACE
+INTERFACE int_gen_ti_header
+   MODULE PROCEDURE int_gen_ti_header_integer, int_gen_ti_header_real
+END INTERFACE
+INTERFACE int_get_td_header
+   MODULE PROCEDURE int_get_td_header_integer, int_get_td_header_real
+END INTERFACE
+INTERFACE int_gen_td_header
+   MODULE PROCEDURE int_gen_td_header_integer, int_gen_td_header_real
+END INTERFACE
+
+CONTAINS
 !!!!!!!!!!!!! header manipulation routines !!!!!!!!!!!!!!!
 
 INTEGER FUNCTION get_hdr_tag( hdrbuf )
@@ -19,9 +35,9 @@ SUBROUTINE int_gen_write_field_header ( hdrbuf, hdrbufsize, itypesize, ftypesize
   INTEGER,       INTENT(INOUT)  ::  hdrbufsize
   INTEGER,       INTENT(INOUT)  ::  itypesize, ftypesize
   INTEGER ,      INTENT(IN)     :: DataHandle
-  CHARACTER*(*), INTENT(INOUT)  :: DateStr
-  CHARACTER*(*), INTENT(INOUT)  :: VarName
-  INTEGER                       :: Dummy
+  CHARACTER*(*), INTENT(IN)  :: DateStr
+  CHARACTER*(*), INTENT(IN)  :: VarName
+  REAL, DIMENSION(*)            :: Dummy
   INTEGER                       ,intent(in)    :: FieldType
   INTEGER                       ,intent(inout) :: Comm
   INTEGER                       ,intent(inout) :: IOComm
@@ -34,6 +50,7 @@ SUBROUTINE int_gen_write_field_header ( hdrbuf, hdrbufsize, itypesize, ftypesize
   INTEGER ,dimension(*)         ,intent(in)    :: PatchStart,  PatchEnd
 
   INTEGER i, n
+
 
   hdrbuf(1) = 0 ! deferred -- this will be length of header
   hdrbuf(2) = int_field
@@ -84,7 +101,7 @@ SUBROUTINE int_get_write_field_header ( hdrbuf, hdrbufsize, itypesize, ftypesize
   INTEGER ,      INTENT(OUT)    :: DataHandle
   CHARACTER*(*), INTENT(INOUT)  :: DateStr
   CHARACTER*(*), INTENT(INOUT)  :: VarName
-  INTEGER                       :: Dummy
+  REAL, DIMENSION(*)            :: Dummy
   INTEGER                                       :: FieldType
   INTEGER                                       :: Comm
   INTEGER                                       :: IOComm
@@ -147,14 +164,15 @@ SUBROUTINE int_gen_ofr_header( hdrbuf, hdrbufsize, itypesize, &
   CHARACTER*(*), INTENT(INOUT) :: FileName
   CHARACTER*(*), INTENT(INOUT) :: SysDepInfo
 !Local
-  INTEGER i, n
+  INTEGER i, n, i1
 !
   hdrbuf(1) = 0  !deferred
   hdrbuf(2) = int_open_for_read
   i = 3
   hdrbuf(i) = DataHandle     ; i = i+1
-  call int_pack_string( FileName, hdrbuf(i), n )   ; i = i + n
-  call int_pack_string( SysDepInfo, hdrbuf(i), n ) ; i = i + n
+
+  call int_pack_string( TRIM(FileName), hdrbuf(i), n )   ; i = i + n
+  call int_pack_string( TRIM(SysDepInfo), hdrbuf(i), n ) ; i = i + n
   hdrbufsize = (i-1) * itypesize  ! return the number in bytes
   hdrbuf(1) = hdrbufsize
   RETURN
@@ -283,16 +301,16 @@ END SUBROUTINE int_get_handle_header
 
 !!!!!!!!!!!!
 
-SUBROUTINE int_gen_ti_header( hdrbuf, hdrbufsize, itypesize, typesize, &
-                              DataHandle, Element, Data, Count, code )
+SUBROUTINE int_gen_ti_header_integer( hdrbuf, hdrbufsize, itypesize, typesize, &
+                                      DataHandle, Element, Data, Count, code )
   IMPLICIT NONE
   INCLUDE 'intio_tags.h'
   INTEGER, INTENT(INOUT)       ::  hdrbuf(*)
   INTEGER, INTENT(OUT)         ::  hdrbufsize
   INTEGER, INTENT(IN)          ::  itypesize, typesize
   CHARACTER*(*), INTENT(INOUT) ::  Element
-  INTEGER, INTENT(IN)          ::  Data, Count
-  INTEGER, INTENT(IN)          ::  DataHandle, code
+  INTEGER, INTENT(IN)          ::  Data(*)
+  INTEGER, INTENT(IN)          ::  DataHandle, Count, code
 !Local
   INTEGER i, n
 !
@@ -303,9 +321,31 @@ SUBROUTINE int_gen_ti_header( hdrbuf, hdrbufsize, itypesize, typesize, &
   hdrbufsize = n * itypesize + hdrbufsize ! return the number in bytes
   hdrbuf(1) = hdrbufsize
   RETURN
-END SUBROUTINE int_gen_ti_header
+END SUBROUTINE int_gen_ti_header_integer
 
-SUBROUTINE int_get_ti_header( hdrbuf, hdrbufsize, itypesize, typesize, &
+SUBROUTINE int_gen_ti_header_real( hdrbuf, hdrbufsize, itypesize, typesize, &
+                                   DataHandle, Element, Data, Count, code )
+  IMPLICIT NONE
+  INCLUDE 'intio_tags.h'
+  INTEGER, INTENT(INOUT)       ::  hdrbuf(*)
+  INTEGER, INTENT(OUT)         ::  hdrbufsize
+  INTEGER, INTENT(IN)          ::  itypesize, typesize
+  CHARACTER*(*), INTENT(INOUT) ::  Element
+  REAL, INTENT(IN)             ::  Data(*)
+  INTEGER, INTENT(IN)          ::  DataHandle, Count, code
+!Local
+  INTEGER i, n
+!
+  CALL int_gen_ti_header_c ( hdrbuf, hdrbufsize, itypesize, typesize, &
+                             DataHandle, Data, Count, code )
+  i = hdrbufsize/itypesize + 1 ;
+  CALL int_pack_string ( Element, hdrbuf( i ), n ) ; i = i + n
+  hdrbufsize = n * itypesize + hdrbufsize ! return the number in bytes
+  hdrbuf(1) = hdrbufsize
+  RETURN
+END SUBROUTINE int_gen_ti_header_real
+
+SUBROUTINE int_get_ti_header_integer( hdrbuf, hdrbufsize, itypesize, typesize, &
                               DataHandle, Element, Data, Count, code )
   IMPLICIT NONE
   INCLUDE 'intio_tags.h'
@@ -313,8 +353,8 @@ SUBROUTINE int_get_ti_header( hdrbuf, hdrbufsize, itypesize, typesize, &
   INTEGER, INTENT(OUT)         ::  hdrbufsize
   INTEGER, INTENT(IN)          ::  itypesize, typesize
   CHARACTER*(*), INTENT(INOUT) ::  Element
-  INTEGER, INTENT(OUT)         ::  Data, Count
-  INTEGER, INTENT(OUT)         ::  DataHandle, code
+  INTEGER, INTENT(OUT)         ::  Data(*)
+  INTEGER, INTENT(OUT)         ::  DataHandle, Count, code
 !Local
   INTEGER i, n
 !
@@ -325,7 +365,29 @@ SUBROUTINE int_get_ti_header( hdrbuf, hdrbufsize, itypesize, typesize, &
   CALL int_unpack_string ( Element, hdrbuf( n/itypesize + 1 ), n ) ;
   hdrbufsize = hdrbuf(1)
   RETURN
-END SUBROUTINE int_get_ti_header
+END SUBROUTINE int_get_ti_header_integer
+
+SUBROUTINE int_get_ti_header_real( hdrbuf, hdrbufsize, itypesize, typesize, &
+                              DataHandle, Element, Data, Count, code )
+  IMPLICIT NONE
+  INCLUDE 'intio_tags.h'
+  INTEGER, INTENT(INOUT)       ::  hdrbuf(*)
+  INTEGER, INTENT(OUT)         ::  hdrbufsize
+  INTEGER, INTENT(IN)          ::  itypesize, typesize
+  CHARACTER*(*), INTENT(INOUT) ::  Element
+  REAL, INTENT(OUT)            ::  Data(*)
+  INTEGER, INTENT(OUT)         ::  DataHandle, Count, code
+!Local
+  INTEGER i, n
+!
+
+  CALL int_get_ti_header_c ( hdrbuf, hdrbufsize, n, itypesize, typesize, &
+                           DataHandle, Data, Count, code )
+  i = 1
+  CALL int_unpack_string ( Element, hdrbuf( n/itypesize + 1 ), n ) ;
+  hdrbufsize = hdrbuf(1)
+  RETURN
+END SUBROUTINE int_get_ti_header_real
 
 !!!!!!!!!!!!
 
@@ -336,7 +398,7 @@ SUBROUTINE int_gen_ti_header_char( hdrbuf, hdrbufsize, itypesize, &
   INTEGER, INTENT(INOUT)       ::  hdrbuf(*)
   INTEGER, INTENT(OUT)         ::  hdrbufsize
   INTEGER, INTENT(IN)          ::  itypesize
-  CHARACTER*(*), INTENT(INOUT) :: Element, Data, VarName
+  CHARACTER*(*), INTENT(IN)    :: Element, Data, VarName
   INTEGER, INTENT(IN)          ::  DataHandle, code
 !Local
   INTEGER                      ::  DummyData
@@ -382,16 +444,63 @@ END SUBROUTINE int_get_ti_header_char
 
 !!!!!!!!!!!!
 
-SUBROUTINE int_gen_td_header( hdrbuf, hdrbufsize, itypesize, typesize, &
-                              DataHandle, DateStr, Element, Data, Count, code )
+SUBROUTINE int_gen_td_header_char( hdrbuf, hdrbufsize, itypesize, &
+                              DataHandle, DateStr, Element, Data, code )
+  IMPLICIT NONE
+  INCLUDE 'intio_tags.h'
+  INTEGER, INTENT(INOUT)       ::  hdrbuf(*)
+  INTEGER, INTENT(OUT)         ::  hdrbufsize
+  INTEGER, INTENT(IN)          ::  itypesize
+  CHARACTER*(*), INTENT(INOUT) ::  DateStr, Element, Data
+  INTEGER, INTENT(IN)          ::  DataHandle, code
+!Local
+  INTEGER i, n, Count
+!
+
+  CALL int_gen_ti_header_c ( hdrbuf, hdrbufsize, itypesize, 1, &
+                           DataHandle, Data, Count, code )
+  i = hdrbufsize/itypesize + 1 ;
+  CALL int_pack_string ( Element, hdrbuf( i ), n ) ; i = i + n
+  CALL int_pack_string ( DateStr, hdrbuf( i ), n ) ; i = i + n
+  CALL int_pack_string ( Data   , hdrbuf( i ), n ) ; i = i + n
+  hdrbufsize = (i-1) * itypesize + hdrbufsize ! return the number in bytes
+  hdrbuf(1) = hdrbufsize
+  RETURN
+END SUBROUTINE int_gen_td_header_char
+
+SUBROUTINE int_get_td_header_char( hdrbuf, hdrbufsize, itypesize, &
+                              DataHandle, DateStr, Element, Data, code )
+  IMPLICIT NONE
+  INCLUDE 'intio_tags.h'
+  INTEGER, INTENT(INOUT)       ::  hdrbuf(*)
+  INTEGER, INTENT(OUT)         ::  hdrbufsize
+  INTEGER, INTENT(IN)          ::  itypesize
+  CHARACTER*(*), INTENT(INOUT) ::  DateStr, Element, Data
+  INTEGER, INTENT(OUT)         ::  DataHandle, code
+!Local
+  INTEGER i, n, Count, typesize
+!
+
+  CALL int_get_ti_header_c ( hdrbuf, hdrbufsize, n, itypesize, typesize, &
+                           DataHandle, Data, Count, code )
+  i = n/itypesize + 1 ;
+  CALL int_unpack_string ( Element, hdrbuf( i ), n ) ; i = i + n ;
+  CALL int_unpack_string ( DateStr, hdrbuf( i ), n ) ; i = i + n ;
+  CALL int_unpack_string ( Data   , hdrbuf( i ), n ) ; i = i + n ;
+  hdrbufsize = hdrbuf(1)
+  RETURN
+END SUBROUTINE int_get_td_header_char
+
+SUBROUTINE int_gen_td_header_integer( hdrbuf, hdrbufsize, itypesize, typesize, &
+                                      DataHandle, DateStr, Element, Data, Count, code )
   IMPLICIT NONE
   INCLUDE 'intio_tags.h'
   INTEGER, INTENT(INOUT)       ::  hdrbuf(*)
   INTEGER, INTENT(OUT)         ::  hdrbufsize
   INTEGER, INTENT(IN)          ::  itypesize, typesize
   CHARACTER*(*), INTENT(INOUT) ::  DateStr, Element
-  INTEGER, INTENT(IN)          ::  Data, Count
-  INTEGER, INTENT(IN)          ::  DataHandle, code
+  INTEGER, INTENT(IN)          ::  Data(*)
+  INTEGER, INTENT(IN)          ::  DataHandle, Count, code
 !Local
   INTEGER i, n
 !
@@ -404,9 +513,33 @@ SUBROUTINE int_gen_td_header( hdrbuf, hdrbufsize, itypesize, typesize, &
   hdrbufsize = (i-1) * itypesize + hdrbufsize ! return the number in bytes
   hdrbuf(1) = hdrbufsize
   RETURN
-END SUBROUTINE int_gen_td_header
+END SUBROUTINE int_gen_td_header_integer
 
-SUBROUTINE int_get_td_header( hdrbuf, hdrbufsize, itypesize, typesize, &
+SUBROUTINE int_gen_td_header_real( hdrbuf, hdrbufsize, itypesize, typesize, &
+                                   DataHandle, DateStr, Element, Data, Count, code )
+  IMPLICIT NONE
+  INCLUDE 'intio_tags.h'
+  INTEGER, INTENT(INOUT)       ::  hdrbuf(*)
+  INTEGER, INTENT(OUT)         ::  hdrbufsize
+  INTEGER, INTENT(IN)          ::  itypesize, typesize
+  CHARACTER*(*), INTENT(INOUT) ::  DateStr, Element
+  REAL, INTENT(IN)             ::  Data(*)
+  INTEGER, INTENT(IN)          ::  DataHandle, Count, code
+!Local
+  INTEGER i, n
+!
+
+  CALL int_gen_ti_header_c ( hdrbuf, hdrbufsize, itypesize, typesize, &
+                           DataHandle, Data, Count, code )
+  i = hdrbufsize/itypesize + 1 ;
+  CALL int_pack_string ( DateStr, hdrbuf( i ), n ) ; i = i + n
+  CALL int_pack_string ( Element, hdrbuf( i ), n ) ; i = i + n
+  hdrbufsize = (i-1) * itypesize + hdrbufsize ! return the number in bytes
+  hdrbuf(1) = hdrbufsize
+  RETURN
+END SUBROUTINE int_gen_td_header_real
+
+SUBROUTINE int_get_td_header_integer( hdrbuf, hdrbufsize, itypesize, typesize, &
                               DataHandle, DateStr, Element, Data, Count, code )
   IMPLICIT NONE
   INCLUDE 'intio_tags.h'
@@ -414,8 +547,8 @@ SUBROUTINE int_get_td_header( hdrbuf, hdrbufsize, itypesize, typesize, &
   INTEGER, INTENT(OUT)         ::  hdrbufsize
   INTEGER, INTENT(IN)          ::  itypesize, typesize
   CHARACTER*(*), INTENT(INOUT) ::  DateStr, Element
-  INTEGER, INTENT(OUT)         ::  Data, Count
-  INTEGER, INTENT(OUT)         ::  DataHandle, code
+  INTEGER, INTENT(OUT)         ::  Data(*)
+  INTEGER, INTENT(OUT)         ::  DataHandle, Count, code
 !Local
   INTEGER i, n
 !
@@ -427,7 +560,30 @@ SUBROUTINE int_get_td_header( hdrbuf, hdrbufsize, itypesize, typesize, &
   CALL int_unpack_string ( Element, hdrbuf( i ), n ) ; i = i + n ;
   hdrbufsize = hdrbuf(1)
   RETURN
-END SUBROUTINE int_get_td_header
+END SUBROUTINE int_get_td_header_integer
+
+SUBROUTINE int_get_td_header_real( hdrbuf, hdrbufsize, itypesize, typesize, &
+                              DataHandle, DateStr, Element, Data, Count, code )
+  IMPLICIT NONE
+  INCLUDE 'intio_tags.h'
+  INTEGER, INTENT(INOUT)       ::  hdrbuf(*)
+  INTEGER, INTENT(OUT)         ::  hdrbufsize
+  INTEGER, INTENT(IN)          ::  itypesize, typesize
+  CHARACTER*(*), INTENT(INOUT) ::  DateStr, Element
+  REAL , INTENT(OUT)           ::  Data(*)
+  INTEGER, INTENT(OUT)         ::  DataHandle, Count, code
+!Local
+  INTEGER i, n
+!
+
+  CALL int_get_ti_header_c ( hdrbuf, hdrbufsize, n, itypesize, typesize, &
+                           DataHandle, Data, Count, code )
+  i = n/itypesize + 1 ;
+  CALL int_unpack_string ( DateStr, hdrbuf( i ), n ) ; i = i + n ;
+  CALL int_unpack_string ( Element, hdrbuf( i ), n ) ; i = i + n ;
+  hdrbufsize = hdrbuf(1)
+  RETURN
+END SUBROUTINE int_get_td_header_real
 
 !!!!!!!!!!!!!!
 
@@ -469,7 +625,7 @@ END SUBROUTINE int_get_noop_header
 ! first int is length of string to follow then string encodes as ints
 SUBROUTINE int_pack_string ( str, buf, n )
   IMPLICIT NONE
-  CHARACTER*(*), INTENT(INOUT)       :: str
+  CHARACTER*(*), INTENT(IN)          :: str
   INTEGER, INTENT(OUT)               :: n    ! on return, N is the number of ints stored in buf
   INTEGER, INTENT(OUT), DIMENSION(*) :: buf
 !Local
@@ -487,7 +643,7 @@ END SUBROUTINE int_pack_string
 
 SUBROUTINE int_unpack_string ( str, buf, n )
   IMPLICIT NONE
-  CHARACTER*(*), INTENT(INOUT)      :: str
+  CHARACTER*(*), INTENT(OUT)        :: str
   INTEGER, INTENT(OUT)              :: n       ! on return, N is the number of ints copied from buf
   INTEGER, INTENT(IN), DIMENSION(*) :: buf
 !Local
@@ -502,4 +658,5 @@ SUBROUTINE int_unpack_string ( str, buf, n )
   n = strlen + 1
 END SUBROUTINE int_unpack_string
 
+END MODULE module_internal_header_util
 

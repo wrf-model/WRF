@@ -5,6 +5,8 @@
 #define mpi_x_comm_size(i,j,k)  Mpi_Comm_Size ( i,j,k )
 
 MODULE module_ext_quilt
+  USE module_internal_header_util
+
   INTEGER, PARAMETER :: int_num_handles = 99
   LOGICAL, DIMENSION(int_num_handles) :: okay_to_write, int_handle_in_use, okay_to_commit
   INTEGER, DIMENSION(int_num_handles) :: int_num_bytes_to_write, io_form
@@ -169,7 +171,7 @@ MODULE module_ext_quilt
       INTEGER mytask_io_group
       INTEGER   :: nout_set = 0
       INTEGER   :: obufsize, bigbufsize, inttypesize, chunksize, sz
-      REAL      :: dummy
+      REAL, DIMENSION(1)      :: dummy
       INTEGER, ALLOCATABLE, DIMENSION(:) :: obuf, bigbuf
       REAL,    ALLOCATABLE, DIMENSION(:) :: RDATA
       INTEGER, ALLOCATABLE, DIMENSION(:) :: IDATA
@@ -181,7 +183,6 @@ MODULE module_ext_quilt
       INTEGER :: dummybuf(1)
       CHARACTER (len=80) :: DateStr , Element, VarName, MemoryOrder , Stagger , DimNames(3), FileName, SysDepInfo, mess
       INTEGER, EXTERNAL :: use_package
-      INTEGER, EXTERNAL :: get_hdr_tag
       LOGICAL           :: stored_write_record, retval
       INTEGER iii, vid
 
@@ -330,7 +331,7 @@ MODULE module_ext_quilt
                 CASE ( int_dom_td_real )
                   CALL mpi_type_size( MPI_REAL, ftypesize, ierr )
                   ALLOCATE( RData( bigbuf(icurs/inttypesize + 4 ) ) )      ! 5 is the count of data items for this record ; defined in collect_on_comm.c
-                  CALL int_get_td_header( bigbuf(icurs/inttypesize), hdrbufsize, inttypesize, ftypesize, &
+                  CALL int_get_td_header( bigbuf(icurs/inttypesize:), hdrbufsize, inttypesize, ftypesize, &
                                           DataHandle, DateStr, Element, RData, Count, code )
                   icurs = icurs + hdrbufsize
 
@@ -351,7 +352,7 @@ MODULE module_ext_quilt
                 CASE ( int_dom_ti_real )
                   CALL mpi_type_size( MPI_REAL, ftypesize, ierr )
                   ALLOCATE( RData( bigbuf(icurs/inttypesize + 4 ) ) )      ! 5 is the count of data items for this record ; defined in collect_on_comm.c
-                  CALL int_get_ti_header( bigbuf(icurs/inttypesize), hdrbufsize, inttypesize, ftypesize, &
+                  CALL int_get_ti_header( bigbuf(icurs/inttypesize:), hdrbufsize, inttypesize, ftypesize, &
                                           DataHandle, Element, RData, Count, code )
                   icurs = icurs + hdrbufsize
 
@@ -373,7 +374,7 @@ MODULE module_ext_quilt
                 CASE ( int_dom_td_integer )
                   CALL mpi_type_size( MPI_INTEGER, ftypesize, ierr )
                   ALLOCATE( RData( bigbuf(icurs/inttypesize + 4 ) ) )      ! 5 is the count of data items for this record ; defined in collect_on_comm.c
-                  CALL int_get_td_header( bigbuf(icurs/inttypesize), hdrbufsize, inttypesize, ftypesize, &
+                  CALL int_get_td_header( bigbuf(icurs/inttypesize:), hdrbufsize, inttypesize, ftypesize, &
                                           DataHandle, DateStr, Element, IData, Count, code )
                   icurs = icurs + hdrbufsize
 
@@ -396,7 +397,7 @@ MODULE module_ext_quilt
 
                   CALL mpi_type_size( MPI_INTEGER, ftypesize, ierr )
                   ALLOCATE( IData( bigbuf(icurs/inttypesize + 4 ) ) )      ! 5 is the count of data items for this record ; defined in collect_on_comm.c
-                  CALL int_get_ti_header( bigbuf(icurs/inttypesize), hdrbufsize, inttypesize, ftypesize, &
+                  CALL int_get_ti_header( bigbuf(icurs/inttypesize:), hdrbufsize, inttypesize, ftypesize, &
                                           DataHandle, Element, IData, Count, code )
                   icurs = icurs + hdrbufsize
                   SELECT CASE (use_package(io_form(DataHandle)))
@@ -740,6 +741,8 @@ SUBROUTINE ext_quilt_open_for_write_begin( FileName , Comm_compute, Comm_io, Sys
   INTEGER ,       INTENT(OUT) :: DataHandle
   INTEGER ,       INTENT(IN)  :: io_form_arg
   INTEGER ,       INTENT(OUT) :: Status
+! Local
+  CHARACTER*132   :: locFileName, locSysDepInfo
   INTEGER i, typesize, itypesize, tasks_in_group, ierr, comm_io_group
   LOGICAL, EXTERNAL :: wrf_dm_on_monitor
   REAL dummy
@@ -752,7 +755,7 @@ SUBROUTINE ext_quilt_open_for_write_begin( FileName , Comm_compute, Comm_io, Sys
   CALL MPI_TYPE_SIZE( MPI_INTEGER, itypesize, ierr )
   IF ( wrf_dm_on_monitor() ) THEN
     CALL int_gen_ofwb_header( hdrbuf, hdrbufsize, itypesize, &
-                            FileName,SysDepInfo,io_form_arg,DataHandle )
+                            locFileName,locSysDepInfo,io_form_arg,DataHandle )
   ELSE
     CALL int_gen_noop_header( hdrbuf, hdrbufsize, itypesize )
   ENDIF
@@ -1190,6 +1193,8 @@ SUBROUTINE ext_quilt_put_dom_ti_real ( DataHandle,Element,   Data, Count,  Statu
   real ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER                     :: Status
+!Local
+  CHARACTER*132   :: locElement
   INTEGER i, typesize, itypesize, tasks_in_group, ierr, comm_io_group
   REAL dummy
 !
@@ -1201,7 +1206,7 @@ SUBROUTINE ext_quilt_put_dom_ti_real ( DataHandle,Element,   Data, Count,  Statu
       CALL MPI_TYPE_SIZE( MPI_INTEGER, itypesize, ierr )
       CALL MPI_TYPE_SIZE( MPI_REAL, typesize, ierr )
       CALL int_gen_ti_header( hdrbuf, hdrbufsize, itypesize, typesize, &
-                              DataHandle, Element, Data, Count, int_dom_ti_real )
+                              DataHandle, locElement, Data, Count, int_dom_ti_real )
       iserver = 1 ! only one server group for now
       CALL get_mpi_comm_io_groups( comm_io_group , iserver )
       CALL mpi_x_comm_size( comm_io_group , tasks_in_group , ierr )
@@ -1278,6 +1283,8 @@ SUBROUTINE ext_quilt_put_dom_ti_integer ( DataHandle,Element,   Data, Count,  St
   INTEGER ,       INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER                     :: Status
+! Local
+  CHARACTER*132   :: locElement
   INTEGER i, typesize, itypesize, tasks_in_group, ierr, comm_io_group
   REAL dummy
 !
@@ -1289,7 +1296,7 @@ SUBROUTINE ext_quilt_put_dom_ti_integer ( DataHandle,Element,   Data, Count,  St
       CALL MPI_TYPE_SIZE( MPI_INTEGER, itypesize, ierr )
       CALL MPI_TYPE_SIZE( MPI_INTEGER, typesize, ierr )
       CALL int_gen_ti_header( hdrbuf, hdrbufsize, itypesize, typesize, &
-                              DataHandle, Element, Data, Count, int_dom_ti_integer )
+                              DataHandle, locElement, Data, Count, int_dom_ti_integer )
       iserver = 1 ! only one server group for now
       CALL get_mpi_comm_io_groups( comm_io_group , iserver )
       CALL mpi_x_comm_size( comm_io_group , tasks_in_group , ierr )

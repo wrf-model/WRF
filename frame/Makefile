@@ -28,7 +28,7 @@ OBJS    =       wrf_num_bytes_between.o    \
                 collect_on_comm.o
 
 #compile as a .o but do not link into the main library
-SPECIAL =       internal_header_util.o pack_utils.o
+SPECIAL =       module_internal_header_util.o pack_utils.o
    
 
 include ../configure.wrf
@@ -96,6 +96,7 @@ module_io.o : md_calls.inc \
 		module_driver_constants.o 
 
 module_io_quilt.o: module_state_description.o \
+		module_internal_header_util.o \
 		module_quilt_outbuf_ops.o 
 
 module_machine.o: module_driver_constants.o

@@ -1368,7 +1368,7 @@ SUBROUTINE med_setup_step ( grid , config_flags )
    USE module_configure
 
    IMPLICIT NONE
-<DESCRIPTION>
+!<DESCRIPTION>
 !
 !The driver layer routine integrate() calls this mediation layer routine
 !prior to initiating a time step on the domain specified by the argument
@@ -1377,7 +1377,7 @@ SUBROUTINE med_setup_step ( grid , config_flags )
 !domain.  In WRF, this routine is used to call
 !set_scalar_indices_from_config for the specified domain.
 !
-</DESCRIPTION>
+!</DESCRIPTION>
 
   ! Arguments
    TYPE(domain)                               :: grid

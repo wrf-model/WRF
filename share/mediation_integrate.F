@@ -470,12 +470,12 @@ SUBROUTINE med_nest_move ( parent, nest )
         TYPE(domain) , POINTER                 :: grid
 #include <em_dummy_decl.inc>
      END SUBROUTINE shift_domain_em
-     LOGICAL FUNCTION TIME_FOR_MOVE ( grid , dx , dy )
+     LOGICAL FUNCTION time_for_move ( parent , nest , dx , dy )
         USE module_domain
         USE WRF_ESMF_MOD
-        TYPE(domain) , POINTER    :: grid
+        TYPE(domain) , POINTER    :: parent , nest
         INTEGER, INTENT(OUT)      :: dx , dy
-     END FUNCTION TIME_FOR_MOVE
+     END FUNCTION time_for_move
    END INTERFACE
 
 #ifdef DEREF_KLUDGE
@@ -491,11 +491,12 @@ SUBROUTINE med_nest_move ( parent, nest )
 
 ! mask should be defined in nest domain
 
-   check_for_move: IF ( time_for_move ( nest , dx, dy ) ) THEN
+   check_for_move: IF ( time_for_move ( parent , nest , dx, dy ) ) THEN
 
      IF ( dx .gt. 1 .or. dy .gt. 1 ) THEN
        CALL wrf_error_fatal( 'med_nest_move' )
      ENDIF
+write(0,*)' moving ',grid%id,dx,dy
 
 
      CALL get_ijk_from_grid (  grid ,                   &
@@ -567,14 +568,14 @@ SUBROUTINE med_nest_move ( parent, nest )
 
 END SUBROUTINE med_nest_move
 
-LOGICAL FUNCTION time_for_move ( grid , move_cd_x, move_cd_y )
+LOGICAL FUNCTION time_for_move2 ( parent , grid , move_cd_x, move_cd_y )
   ! Driver layer
    USE module_domain
    USE module_configure
    USE WRF_ESMF_MOD
    IMPLICIT NONE
 ! arguments
-   TYPE(domain) , POINTER    :: grid
+   TYPE(domain) , POINTER    :: parent, grid
    INTEGER, INTENT(OUT)      :: move_cd_x , move_cd_y
 ! local
    INTEGER  i, num_moves, rc
@@ -583,11 +584,11 @@ LOGICAL FUNCTION time_for_move ( grid , move_cd_x, move_cd_y )
    TYPE(ESMF_TimeInterval) :: ti
    CHARACTER*256 mess
 
-   TIME_FOR_MOVE = .FALSE.
+   time_for_move2 = .FALSE.
    CALL ESMF_ClockGet( grid%domain_clock, CurrTime=ct, StartTime=st, rc=rc )
    CALL nl_get_num_moves( 1, num_moves )
    IF ( num_moves .GT. max_moves ) THEN
-     WRITE(mess,*)'mediation_integrate: time_for_move: num_moves (',num_moves,') .GT. max_moves (',max_moves,')'
+     WRITE(mess,*)'time_for_moves2: num_moves (',num_moves,') .GT. max_moves (',max_moves,')'
      CALL wrf_error_fatal( TRIM(mess) )
    ENDIF
    DO I = 1, num_moves
@@ -600,12 +601,97 @@ LOGICAL FUNCTION time_for_move ( grid , move_cd_x, move_cd_y )
            CALL nl_get_move_cd_x ( i, move_cd_x )
            CALL nl_get_move_cd_y ( i, move_cd_y )
            CALL nl_set_move_interval ( i, 999999999 )
-           TIME_FOR_MOVE = .TRUE.
+           time_for_move2 = .TRUE.
            EXIT
          ENDIF
        ENDIF
      ENDIF
    ENDDO
+   RETURN
+END FUNCTION time_for_move2
+
+LOGICAL FUNCTION time_for_move ( parent , grid , move_cd_x, move_cd_y )
+   USE module_domain
+   USE module_configure
+   USE WRF_ESMF_MOD
+   IMPLICIT NONE
+! arguments
+   TYPE(domain) , POINTER    :: parent, grid
+   INTEGER, INTENT(OUT)      :: move_cd_x , move_cd_y
+! local
+   INTEGER     :: coral_dist, kid
+   INTEGER     :: dw, de, ds, dn, pgr
+   INTEGER     :: cids, cide, cjds, cjde, ckds, ckde, &
+                  cims, cime, cjms, cjme, ckms, ckme, &
+                  cips, cipe, cjps, cjpe, ckps, ckpe, &
+                  nids, nide, njds, njde, nkds, nkde, &
+                  nims, nime, njms, njme, nkms, nkme, &
+                  nips, nipe, njps, njpe, nkps, nkpe
+! interface
+   INTERFACE
+     LOGICAL FUNCTION time_for_move2 ( parent , nest , dx , dy )
+        USE module_domain
+        USE WRF_ESMF_MOD
+        TYPE(domain) , POINTER    :: parent , nest
+        INTEGER, INTENT(OUT)      :: dx , dy
+     END FUNCTION time_for_move2
+   END INTERFACE
+! executable
+! 
+! Simplifying assumption: domains in moving nest simulations have only 
+! one parent and only one child.
+   IF   ( grid%num_nests .GT. 1 ) THEN
+     CALL wrf_error_fatal ( 'domains in moving nest simulations can have only 1 nest' )
+   ENDIF
+   kid = 1
+!
+! find out if this is the innermost nest (will not have kids)
+   IF   ( grid%num_nests .EQ. 0 ) THEN
+     ! code that executes on innermost nest
+     time_for_move = time_for_move2 ( parent , grid , move_cd_x, move_cd_y )
+   ELSE
+     ! code that executes on parent to see if parent needs to move
+     ! get closest number of cells we'll allow nest edge to approach parent bdy
+     CALL nl_get_coral_dist ( grid%id , coral_dist )
+     ! get dims
+     CALL get_ijk_from_grid (  grid%nests(kid)%ptr ,               &
+                               nids, nide, njds, njde, nkds, nkde, &
+                               nims, nime, njms, njme, nkms, nkme, &
+                               nips, nipe, njps, njpe, nkps, nkpe  )
+     CALL get_ijk_from_grid (  grid ,                              &
+                               cids, cide, cjds, cjde, ckds, ckde, &
+                               cims, cime, cjms, cjme, ckms, ckme, &
+                               cips, cipe, cjps, cjpe, ckps, ckpe  )
+     CALL nl_get_parent_grid_ratio ( grid%nests(kid)%ptr%id , pgr )
+     ! perform measurements...
+     !  from western boundary
+     dw = grid%nests(kid)%ptr%i_parent_start - 1
+     !  from southern boundary
+     ds = grid%nests(kid)%ptr%j_parent_start - 1
+     !  from eastern boundary
+     de = cide - ( grid%nests(kid)%ptr%i_parent_start + (nide-nids+1)/pgr )
+     !  from northern boundary
+     dn = cjde - ( grid%nests(kid)%ptr%j_parent_start + (njde-njds+1)/pgr )
+
+     ! move this domain (the parent containing the moving nest)
+     ! in a direction that reestablishes the distance from 
+     ! the boundary.
+     move_cd_x = 0
+     move_cd_y = 0
+     if ( dw .LT. coral_dist ) move_cd_x = move_cd_x - 1
+     if ( de .LT. coral_dist ) move_cd_x = move_cd_x + 1
+     if ( ds .LT. coral_dist ) move_cd_y = move_cd_y - 1
+     if ( dn .LT. coral_dist ) move_cd_y = move_cd_y + 1
+
+     time_for_move = ( move_cd_x .NE. 0 ) .OR. ( move_cd_y .NE. 0 )
+
+     IF ( time_for_move .AND. grid%id .EQ. 1 ) THEN
+       CALL wrf_message( 'DANGER: Nest has moved too close to boundary of outermost domain.' )
+       time_for_move = .FALSE.
+     ENDIF 
+
+   ENDIF
+
    RETURN
 
 END FUNCTION time_for_move

@@ -882,9 +882,17 @@ RSL_MOVE_NEST ( d_p, n_p,  mdisp_p, ndisp_p )
   {
     rsl_comp_bcast( d_p, n_p ) ;
   }
-
   dinfo->child_bcast_compiled[nest] = 0 ;  /* invalidate broadcast */
   ninfo->parent_bcast_compiled      = 0 ;  /* invalidate broadcast */
+
+
+  if ( dinfo->child_merge_compiled[s_nst] != 1 ||
+       ninfo->parent_merge_compiled != 1 )
+  {
+    rsl_comp_merge( d_p, n_p ) ;
+  }
+  dinfo->child_merge_compiled[nest] = 0 ;  /* invalidate merge */
+  ninfo->parent_merge_compiled      = 0 ;  /* invalidate merge */
 
   children_p = RSL_MALLOC( rsl_child_info_t *, dinfo->len_n * dinfo->len_m ) ;
 

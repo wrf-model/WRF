@@ -5514,6 +5514,14 @@ module_initialize_real.o module_dm.o  start_domain.o :
 #  since -convert big_endian is in FCBASEOPTS
 #  Change MPI_HOME if SGI's MPI is not in the default directories
 #
+#  Process pinning should be used -- set the environment
+#  variable MPI_DSM_DISTRIBUTE on a dedicated system, when
+#  running through the cpuset command, or when using a batch
+#  scheduler that has dynamic cpuset support enabled.  In
+#  other cases, if specific processors are known to be free,
+#  the environment variable MPI_DSM_CPULIST may be used
+#  (details in 'man mpi').
+#
 # Contributed settings from Gerardo Cisneros, SGI
 #
 # Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
@@ -5529,7 +5537,7 @@ LD                = ifort
 CC                = icc -I.
 CC_TOOLS          = cc
 SFC               = ifort
-CFLAGS            = -w -O3 -ip -tpp2 -c -ftz -DDM_PARALLEL -DWRF_RSL_IO \
+CFLAGS            = -w -O3 -ip -tpp2 -c -ftz -no-gcc -DDM_PARALLEL -DWRF_RSL_IO \
                     -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL/RSL
 FCOPTIM           = -O3
 FCDEBUG           = # -g
@@ -5642,6 +5650,14 @@ mediation_force_domain.o:
 #  'setenv F_UFMTENDIAN big' in run scripts not necessary
 #  since -convert big_endian is in FCBASEOPTS
 #  Change MPI_HOME if SGI's MPI is not in the default directories
+#
+#  Process pinning should be used -- set the environment
+#  variable MPI_DSM_DISTRIBUTE on a dedicated system, when
+#  running through the cpuset command, or when using a batch
+#  scheduler that has dynamic cpuset support enabled.  In
+#  other cases, if specific processors are known to be free,
+#  the environment variable MPI_DSM_CPULIST may be used
+#  (details in 'man mpi').
 #
 # Contributed settings from Gerardo Cisneros, SGI
 #

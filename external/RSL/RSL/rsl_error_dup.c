@@ -127,3 +127,43 @@ RSL_ERROR_DUP ()
 
 }
 
+RSL_ERROR_DUP1 ( int *me )
+{
+    int newfd ;
+    char filename[256] ;
+
+/* redirect standard out*/
+    sprintf(filename,"rsl.out.%04d",*me) ;
+    if ((newfd = open( filename, O_CREAT | O_WRONLY, 0666 )) < 0 )
+    {
+        perror("error_dup: cannot open rsl.out.nnnn") ;
+        fprintf(stderr,"...sending error to standard error and continuing.\n") ;
+        return ;
+    }
+    if( dup2( newfd, STANDARD_OUTPUT ) < 0 )
+    {
+        perror("error_dup: dup2 fails to change output descriptor") ;
+        fprintf(stderr,"...sending error to standard error and continuing.\n") ;
+        close(newfd) ;
+        return ;
+    }
+
+/* redirect standard error */
+    sprintf(filename,"rsl.error.%04d",*me) ;
+    if ((newfd = open( filename, O_CREAT | O_WRONLY, 0666 )) < 0 )
+    {
+        perror("error_dup: cannot open rsl.error.log") ;
+        fprintf(stderr,"...sending error to standard error and continuing.\n") ;
+        return ;
+    }
+    if( dup2( newfd, STANDARD_ERROR ) < 0 )
+    {
+        perror("error_dup: dup2 fails to change error descriptor") ;
+        fprintf(stderr,"...sending error to standard error and continuing.\n") ;
+        close(newfd) ;
+        return ;
+    }
+
+}
+
+

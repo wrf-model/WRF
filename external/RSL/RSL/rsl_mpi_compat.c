@@ -132,8 +132,8 @@ void rslMPIInit()
 long rslMPIWho( numproc, myproc )
   int * numproc, * myproc ;
 {
-  MPI_Comm_rank( MPI_COMM_WORLD, myproc ) ;
-  MPI_Comm_size( MPI_COMM_WORLD, numproc ) ;
+  MPI_Comm_rank( rsl_mpi_communicator, myproc ) ;
+  MPI_Comm_size( rsl_mpi_communicator, numproc ) ;
   return( 0L ) ;
 }
 
@@ -228,7 +228,7 @@ void rslMPIISend (buff, mlen, tag, dest)
               MPI_BYTE,
               dest,
               tag,
-              MPI_COMM_WORLD,
+              rsl_mpi_communicator,
               &waitHandle); 
 
    rslMPISaveWaitH (tag, &waitHandle);
@@ -254,7 +254,7 @@ void rslMPIIRecv (buff, mlen, tag)
               MPI_BYTE,
               MPI_ANY_SOURCE,
               tag,
-              MPI_COMM_WORLD,
+              rsl_mpi_communicator,
               &waitHandle);
 
    rslMPISaveWaitH (tag, &waitHandle);

@@ -175,7 +175,7 @@ RSL_TO_OH_INFO ( t_p, o_p, msize_p, seed_p,
 	  /* mpi all to all communication to share matrix of senders/receivers */
 	  MPI_Gather( s_tinfo->hemi_sendPlist, RSL_MAXPROC, MPI_INT,
                       globalhemiPlist, RSL_MAXPROC, MPI_INT, 
-                      0, MPI_COMM_WORLD ) ;
+                      0, rsl_mpi_communicator ) ;
 	  /* transpose */
 	  for ( p = 0 ; p < RSL_MAXPROC ; p++ )
 	    for ( p1 = 0 ; p1 < RSL_MAXPROC ; p1++ )
@@ -185,7 +185,7 @@ RSL_TO_OH_INFO ( t_p, o_p, msize_p, seed_p,
 	      globalhemiPlist[p][p1] = work[p][p1] ;
 	  MPI_Scatter( globalhemiPlist, RSL_MAXPROC, MPI_INT, 
                        s_tinfo->hemi_recvPlist, RSL_MAXPROC, MPI_INT,
-                       0, MPI_COMM_WORLD ) ;
+                       0, rsl_mpi_communicator ) ;
 
 	  return ;       /* EARLY RETURN */
         }

@@ -265,6 +265,8 @@ John
 
 #    include "mpi.h"
 
+MPI_Comm rsl_mpi_communicator ;
+
 #    ifdef __MPI_COMPAT__
        MPI_Status mpi_status ;
 #    else
@@ -277,10 +279,10 @@ John
 
 # define RSL_RECV(A,B,C)  \
 { \
-MPI_Recv(A,B,MPI_BYTE,MPI_ANY_SOURCE,C,MPI_COMM_WORLD,&mpi_status) ; \
+MPI_Recv(A,B,MPI_BYTE,MPI_ANY_SOURCE,C,rsl_mpi_communicator,&mpi_status) ; \
 }
 
-# define RSL_SEND(A,B,C,D)      MPI_Send(A,B,MPI_BYTE,D,C,MPI_COMM_WORLD)
+# define RSL_SEND(A,B,C,D)      MPI_Send(A,B,MPI_BYTE,D,C,rsl_mpi_communicator)
 # define RSL_RECVBEGIN(A,B,C)   rslMPIIRecv ( A, B, C )
 # define RSL_SENDBEGIN(A,B,C,D) rslMPIISend ( A, B, C, D )
 # define RSL_RECVEND(A)         rslMPIWait ( A )

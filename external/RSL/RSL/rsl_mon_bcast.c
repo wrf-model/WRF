@@ -140,7 +140,7 @@ RSL_MON_BCAST ( buf, nbytes0 )
   }
 #else
 #  ifndef STUBS
-  MPI_Bcast( buf, nbytes, MPI_BYTE, 0, MPI_COMM_WORLD ) ;
+  MPI_Bcast( buf, nbytes, MPI_BYTE, 0, rsl_mpi_communicator ) ;
 #  endif
 #endif
 

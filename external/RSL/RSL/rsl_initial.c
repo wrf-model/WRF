@@ -101,6 +101,20 @@ BREAKTHEEXAMPLECODE
 @*/
 RSL_INITIALIZE ()
 {
+fprintf(stderr,"RSL_INITIALIZE\n") ;
+  rsl_mpi_communicator = MPI_COMM_WORLD ;
+  rsl_initialize_internal() ;
+}
+
+RSL_INITIALIZE1 ( MPI_Comm * comm )
+{
+fprintf(stderr,"RSL_INITIALIZE1\n") ;
+  rsl_mpi_communicator = *comm ;
+  rsl_initialize_internal() ;
+}
+
+rsl_initialize_internal()
+{
   char name[256] ;
   int d ;
   int i ;
@@ -120,8 +134,13 @@ RSL_INITIALIZE ()
   rsl_ndomains = 0 ;
   old_offsets = 0 ;
 
-  RSL_OPEN0( rsl_nproc_all, rsl_myproc ) ;
-  RSL_WHO ( rsl_nproc_all, rsl_myproc ) ;
+/*  RSL_OPEN0( rsl_nproc_all, rsl_myproc ) ; */
+/*  RSL_WHO ( rsl_nproc_all, rsl_myproc ) ;  */
+
+  rslMPIInit() ;
+
+  MPI_Comm_size( rsl_mpi_communicator , &rsl_nproc_all ) ;
+  MPI_Comm_rank( rsl_mpi_communicator , &rsl_myproc ) ;
 
   rsl_nproc = rsl_nproc_all ; 	/* this may be reset by RSL_MESH */
   rsl_padarea = RSL_DEFAULT_PADAREA ;
@@ -300,7 +319,7 @@ RSL_GET_COMMUNICATOR ( communicator )
   int_p  communicator ;  /* (O) return value with communicator from underlying mp layer (mpi probably) */
 {
 #ifdef MPI
-  *communicator = MPI_COMM_WORLD ;
+  *communicator = rsl_mpi_communicator ;
 #else
   *communicator = 0 ;
 #endif

@@ -234,23 +234,38 @@ else
   echo "PHDF5 not set in environment. Will configure WRF for use without."
 fi
 
-
-# if the uname command exists, give it a shot and see if
-# we can narrow the choices; otherwise, spam 'em
-os="ARCH"
-mach="ARCH"
-type uname > /dev/null
-if [ $? -eq 0 ] ; then
-  os=`uname`
-  if [ "$os" = "AIX" -o "$os" = "IRIX" -o "$os" = "IRIX64" -o "$os" = "SunOS" ] ; then
-    mach="ARCH"
-  else
-  if [ "$os" = "OSF1" -o "$os" = "Linux" -o "UNIX_System_V" ] ; then
-    mach=`uname -m`
-  else
-    os="ARCH"
-    mach="ARCH"
+# Users who are cross-compiling can set environment variable 
+# $WRF_OS to override the value normally obtained from `uname`.  
+# If $WRF_OS is set, then $WRF_MACH can also be set to override 
+# the value normally obtained from `uname -m`.  If $WRF_OS is 
+# set and $WRF_MACH is not set, then $WRF_MACH defaults to "ARCH".  
+# If $WRF_OS is not set then $WRF_MACH is ignored.  
+if [ -n "$WRF_OS" ] ; then
+  echo "${0}:  WRF operating system set to \"${WRF_OS}\" via environment variable \$WRF_OS"
+  os=$WRF_OS
+  mach="ARCH"
+  if [ -n "$WRF_MACH" ] ; then
+    echo "${0}:  WRF machine set to \"${WRF_MACH}\" via environment variable \$WRF_MACH"
+    mach=$WRF_MACH
   fi
+else
+  # if the uname command exists, give it a shot and see if
+  # we can narrow the choices; otherwise, spam 'em
+  os="ARCH"
+  mach="ARCH"
+  type uname > /dev/null
+  if [ $? -eq 0 ] ; then
+    os=`uname`
+    if [ "$os" = "AIX" -o "$os" = "IRIX" -o "$os" = "IRIX64" -o "$os" = "SunOS" ] ; then
+      mach="ARCH"
+    else
+      if [ "$os" = "OSF1" -o "$os" = "Linux" -o "$os" = "UNICOS/mp" -o "$os" = "UNIX_System_V" ] ; then
+        mach=`uname -m`
+      else
+        os="ARCH"
+        mach="ARCH"
+      fi
+    fi
   fi
 fi
 

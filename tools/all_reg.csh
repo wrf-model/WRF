@@ -56,6 +56,7 @@ set OLD_TEXT = ( "NESTED = FALSE"		\
                  "QUILT = FALSE"		\
                  "IO_FORM = 2"			\
                  "IO_FORM = 2"			\
+                 "REAL8 = FALSE"		\
                )
 
 set NEW_TEXT = ( "NESTED = FALSE"		\
@@ -67,6 +68,7 @@ set NEW_TEXT = ( "NESTED = FALSE"		\
                  "QUILT = TRUE"			\
                  "IO_FORM = 1"			\
                  "IO_FORM = 5"			\
+                 "REAL8 = TRUE"			\
                )
 
 #	For clarity, what these tests do, must be a single string.
@@ -80,6 +82,7 @@ set NAME     = ( "Standard"			\
                  "Quilting"			\
                  "Binary_IO"			\
                  "GriB1_Output"			\
+                 "REAL*8_Floats"		\
                )
 
 #	Any exceptions to where they can run?  NONE means no 
@@ -94,6 +97,7 @@ set TOAST    = ( "NONE"				\
                  "NONE"				\
                  "NONE"				\
                  "ONLY_AIX"			\
+                 "NONE"				\
                  "NONE"				\
                  "NONE"				\
                  "NONE"				\

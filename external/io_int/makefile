@@ -19,16 +19,25 @@ libwrfio_int.a:		$(OBJS)
 			$(AR) cr libwrfio_int.a $(OBJSL)
 			$(RANLIB) libwrfio_int.a
 
-io_int.o:               io_int.F90
+io_int.o:               io_int.F90 module_internal_header_util.o
 			$(CPP1) -I.. io_int.F90 | $(M4) - > io_int.f
 			$(FC) $(FFLAGS) -I.. -I../../inc -c io_int.f
+			/bin/rm module_internal_header_util.o
 
-diffwrf:                diffwrf.F ../../frame/pack_utils.o ../../frame/internal_header_util.o ../../frame/module_machine.o libwrfio_int.a
+# this is just so we can get the .mod file, it will be recompiled in frame again as part of WRF frmwk
+
+module_internal_header_util.o :
+			/bin/cp ../../frame/module_internal_header_util.F .
+			$(CPP1) -I.. module_internal_header_util.F > module_internal_header_util.f
+			$(FC) $(FFLAGS) -I.. -I../../inc -c module_internal_header_util.f
+			
+
+diffwrf:                diffwrf.F ../../frame/pack_utils.o ../../frame/module_machine.o libwrfio_int.a
 			if [ -f ../../frame/pack_utils.o ] ; then \
 			$(CPP1) diffwrf.F > diffwrf.f     ; \
 			$(FC) -c $(FFLAGS) diffwrf.f     ; \
 			$(FC) $(FFLAGS) $(LDFLAGS) -o diffwrf diffwrf.o $(OBJSL) \
-                              ../../frame/pack_utils.o ../../frame/internal_header_util.o ../../frame/module_machine.o ; fi
+                              ../../frame/pack_utils.o ../../frame/module_internal_header_util.o ../../frame/module_machine.o ; fi
 
 ../../frame/pack_utils.o ../../frame/internal_header_util.o ../../frame/module_machine.o :
 			@echo "Diffwrf will be built later on in this compile. No need to rerun compile. "

@@ -1538,6 +1538,7 @@ SCC             =       xlc_r
 FC              =       mpxlf90_r
 LD              =       mpCC_r
 CC              =       mpcc_r
+MCELHOME        =       /home/bluesky/bettenc/disttest
 CFLAGS          =       -DNOUNDERSCORE -DWRF_RSL_IO  -I../external/RSL/RSL -DDM_PARALLEL  \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
 FCOPTIM         =       -O2 -qarch=auto
@@ -1551,12 +1552,11 @@ ARCHFLAGS       =       -DWRF_RSL_IO -DRSL -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSI
                         -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   -DINTIO -DMCELIO -DLIMIT_ARGS -DNO_NAMELIST_PRINT
 PERL            =       perl
 REGISTRY        =       Registry
-#only tested on blackforest so far, May 2003, JM
 LIB             =       CONFIGURE_NETCDF_LIB_PATH \
                         -L../external/RSL/RSL -lrsl -lmass -lxlsmp \
                         -L../external/io_mcel -lwrfio_mcel  \
--L/home/blackforest/bettenc/MCELSystem/MCEL -lMCEL  \
--L/home/blackforest/bettenc/lib -lomniORB4  \
+-L$(MCELHOME)/MCELSystem/MCEL -lMCEL  \
+-L$(MCELHOME)/lib -lomniORB4  \
 -lomnithread -lomniDynamic4  -lnetcdf_c++ -lnetcdf  -lxlf90 -lxlopt  \
                         -lxlf -lxlomp_ser -lm -lc -lpthread \
                         -L../external/io_int -lwrfio_int  \
@@ -1598,7 +1598,7 @@ esmf_time :
 wrfio_mcel : 
 	( cd ../external/io_mcel ; \
           make CC=$(CC) FC="$(SFC) $(FCDEBUG) -I../io_netcdf -I../../frame -I../../share \
-               -I/home/blackforest/bettenc/MCELSystem/MCEL -qfree=f90" all )
+               -I$(MCELHOME)/MCELSystem/MCEL -qfree=f90" all )
 
 
 ../external/RSL/RSL/librsl.a :

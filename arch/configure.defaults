@@ -4,6 +4,7 @@
 FC		=	f90
 LD		=	f90
 CC              =       cc
+RWORDSIZE       =       4
 FCBASEOPTS      =       -freeform -I. -w
 FCFLAGS		=	$(FCBASEOPTS)
 CFLAGS		=
@@ -168,6 +169,7 @@ CC              =       cc
 CFLAGS          =       -64
 FCOPTIM         =       -O3
 FCDEBUG         =       # -g
+RWORDSIZE       =       4
 FCBASEOPTS      =       -freeform -I. -64 -cpp -OPT:Olimit=5269 $(FCDEBUG) -w
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
@@ -341,6 +343,7 @@ CC              =       cc
 CFLAGS          =       -64
 FCOPTIM         =       -O3
 FCDEBUG         =       # -g
+RWORDSIZE       =       4
 FCBASEOPTS      =       -freeform -I. -64 -cpp -OPT:Olimit=5269 $(FCDEBUG) -w
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
@@ -995,6 +998,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 FC              =       xlf90_r
 LD              =       xlf90_r
 CC              =       xlc_r
+RWORDSIZE       =       4
 CFLAGS          =       -DNOUNDERSCORE
 FCOPTIM         =       -O2 -qarch=auto
 FCDEBUG         =       # -qnoopt -qfullpath
@@ -1101,6 +1105,7 @@ OMPCPP          =       -D_OPENMP
 FC              =       xlf90_r
 LD              =       xlf90_r
 CC              =       xlc_r
+RWORDSIZE       =       4
 CFLAGS          =       -DNOUNDERSCORE
 FCOPTIM         =       -O2 -qarch=auto
 FCDEBUG         =       # -qnoopt -qfullpath
@@ -3348,6 +3353,7 @@ OMPCPP          =
 FC              =       echo # mpif90
 LD              =       echo # mpif90
 CC              =       echo # mpicc
+RWORDSIZE       =       4
 ARCHFLAGS       =       -DAUTODOC_BUILD CONFIGURE_NETCDF_FLAG -DYYY -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL="'<b>DM_PARALLEL</b>'" -DRSL="'<b>RSL</b>'" \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
@@ -3448,6 +3454,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 FC              =       fort
 LD              =       fort
 CC              =       cc
+RWORDSIZE       =       4
 CFLAGS          =       -DF2CSTYLE 
 FCOPTIM         =       -fast -O4
 FCDEBUG         =       # -g
@@ -3537,6 +3544,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 FC              =       fort
 LD              =       fort
 CC              =       cc
+RWORDSIZE       =       4
 CFLAGS          =       -DF2CSTYLE 
 FCOPTIM         =       -fast -O4
 FCDEBUG         =       # -g
@@ -3628,6 +3636,7 @@ MAX_PROC        =       1024
 FC              =       mpif90
 LD              =       mpif90
 CC              =       mpicc
+RWORDSIZE       =       4
 CFLAGS          =       -DDM_PARALLEL -DWRF_RSL_IO -DF2CSTYLE \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) \
                         -I../external/RSL/RSL
@@ -3732,6 +3741,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 FC              =       frt
 LD              =       frt
 CC              =       vcc
+RWORDSIZE       =       4
 CFLAGS          =
 FCFLAGS         =       -Free -X9 -Am
 FCFLAGS         =       -Free -X9 -Sw -Wv,-Of,-te,-ilfunc,-noalias,-m3,-P255 -Oe,-P -Kfast -Am
@@ -3768,6 +3778,7 @@ wrfio_nf :
 #
 FC		=	f90
 CC              =       cc
+RWORDSIZE       =       8
 CFLAGS          =
 FCFLAGS		=	-f free -N 255 -I.
 FCBASEOPTS	=	$(FCFLAGS)
@@ -3807,6 +3818,7 @@ solve_interface.o : solve_interface.F
 FC              =       pgf90
 LD              =       pgf90
 CC              =       gcc
+RWORDSIZE       =       4
 SFC             =       $(FC)
 CFLAGS          =
 FCOPTIM		=	-fast
@@ -3905,6 +3917,7 @@ FC              =       pgf90
 LD              =       pgf90
 CC              =       gcc
 SFC             =       pgf90
+RWORDSIZE       =       4
 FCOPTIM		=	-fast
 FCDEBUG		=	#-g
 #FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree -tp p6 $(FCDEBUG)
@@ -4013,6 +4026,7 @@ CC              =       gcc
 SFC             =       $(FC)
 CFLAGS          =
 FCOPTIM		=	-fast
+RWORDSIZE       =       4
 FCDEBUG		=	#-g
 #FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree -tp p6 $(FCDEBUG)
 FCBASEOPTS      =       -w -byteswapio -Mfree -tp p6 $(FCDEBUG) # -Mlfs
@@ -4112,6 +4126,7 @@ FC              =       pgf90
 LD              =       pgf90
 CC              =       gcc
 SFC             =       pgf90
+RWORDSIZE       =       4
 FCOPTIM		=	-fast
 FCDEBUG		=	#-g
 #FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree -tp p6 $(FCDEBUG)
@@ -4222,6 +4237,7 @@ FC              =       mpif90 -f90=pgf90
 LD              =       mpif90 -f90=pgf90
 CC              =       mpicc -cc=gcc
 SFC             =       pgf90
+RWORDSIZE       =       4
 CFLAGS          =       -DDM_PARALLEL -DWRF_RSL_IO \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL/RSL
 FCOPTIM		=	-fast
@@ -4327,6 +4343,7 @@ FC              =       mpif90 -f90=pgf90
 LD              =       mpif90 -f90=pgf90
 CC              =       mpicc -cc=gcc
 SFC             =       pgf90
+RWORDSIZE       =       4
 CFLAGS          =       -DDM_PARALLEL \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL_LITE
 #FCOPTIM		=	-fastsse 
@@ -4436,6 +4453,7 @@ FC = mpif90
 LD = mpif90
 CC = mpicc
 SFC = efc
+RWORDSIZE       =       4
 CFLAGS = -DDM_PARALLEL -DWRF_RSL_IO -w \
          -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL/RSL -size_lp64 \
          -I/usr/lib/mpi/mpi_intel/include
@@ -4552,6 +4570,7 @@ FC = ifort
 LD = ifort
 CC = cc
 SFC = ifort
+RWORDSIZE       =       4
 CFLAGS = -DDM_PARALLEL -DWRF_RSL_IO -cm -w \
          -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL/RSL -size_lp64
 FCOPTIM = -O2 -ftz
@@ -4663,6 +4682,7 @@ FC              =       pgf90
 LD              =       pgf90
 CC              =       gcc
 SFC             =       $(FC)
+RWORDSIZE       =       4
 CFLAGS          =
 FCOPTIM		=	-fastsse #-Mipa=fast
 FCDEBUG		=	#-g
@@ -4764,6 +4784,7 @@ FC              =       mpif90
 LD              =       mpif90
 CC              =       mpicc
 SFC             =       pgf90
+RWORDSIZE       =       4
 CFLAGS          =       -DDM_PARALLEL -DWRF_RSL_IO \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL/RSL
 FCOPTIM         =       -fastsse #-Mipa=fast
@@ -4873,6 +4894,7 @@ FC              =       mpif90
 LD              =       mpif90
 CC              =       mpicc
 SFC             =       pgf90
+RWORDSIZE       =       4
 CFLAGS          =       -DDM_PARALLEL \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL_LITE
 FCOPTIM         =       -fastsse #-Mipa=fast
@@ -4986,6 +5008,7 @@ FC         = mpif90
 LD         = mpif90
 CC         = mpicc
 SFC        = efc
+RWORDSIZE       =       4
 CFLAGS     = -DDM_PARALLEL -w -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) \
              -I../external/RSL_LITE -size_lp64 -I/usr/lib/mpi/mpi_intel/include
 FCOPTIM = -O2 -ftz
@@ -5099,6 +5122,7 @@ FC = efc -I.. -I/usr/local/vmi/mpich/include
 LD = efc
 CC = ecc -I. -I/usr/local/vmi/mpich/include
 SFC = efc
+RWORDSIZE       =       4
 CFLAGS = -DDM_PARALLEL -DWRF_RSL_IO \
 -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL/RSL -size_lp64
 FCOPTIM = -O3 -ftz
@@ -5206,6 +5230,7 @@ FC = efc -I.. -I/usr/local/vmi/mpich/include
 LD = efc
 CC = ecc -I. -I/usr/local/vmi/mpich/include
 SFC = efc
+RWORDSIZE       =       4
 CFLAGS = -DDM_PARALLEL -I../external/RSL_LITE \
 -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -size_lp64
 FCOPTIM = -O3 -ftz
@@ -5303,6 +5328,7 @@ OMPCPP          =
 FC		=	ifort
 CC              =       icc
 SFC		=	$(FC)
+RWORDSIZE       =       4
 FCBASEOPTS      =       -w -FR -cm -I. -Vaxlib -convert big_endian -mp
 FCOPTIM		=	-O2
 FCFLAGS		=	$(FCOPTIM) $(FCBASEOPTS) $(OMP)
@@ -5409,6 +5435,7 @@ FC              =       ifort
 LD              =       ifort
 CC              =       icc
 SFC             =       ifort
+RWORDSIZE       =       4
 FCOPTIM		=	-O3 -xW
 FCDEBUG		=	#-g
 FCBASEOPTS      =       -FR -cm -w -I. $(FCDEBUG) -convert big_endian -mp
@@ -5516,6 +5543,7 @@ FC              =       ifort
 LD              =       ifort
 CC              =       gcc
 SFC             =       $(FC)
+RWORDSIZE       =       4
 CFLAGS          =
 FCOPTIM		=	-O3 -xW
 FCDEBUG		=	#-g
@@ -5617,6 +5645,7 @@ FC              =       ifort
 LD              =       ifort
 CC              =       icc
 SFC             =       ifort
+RWORDSIZE       =       4
 FCOPTIM		=	-O3 -xW
 FCDEBUG		=	#-g
 FCBASEOPTS      =       -FR -cm -w -I. $(FCDEBUG) -convert big_endian -mp
@@ -5726,6 +5755,7 @@ FC              =       mpif90 -f90=ifort
 LD              =       mpif90 -f90=ifort
 CC              =       mpicc -cc=icc
 SFC             =       ifort
+RWORDSIZE       =       4
 FCOPTIM		=	-O3 -xW
 FCDEBUG		=	#-g
 FCBASEOPTS      =       -FR -cm -w -I. $(FCDEBUG) -convert big_endian -mp
@@ -5850,6 +5880,7 @@ MPP_TARGET	=	$(RUNTIME_SYSTEM)
 FC		=	f90
 CC		=	cc
 LD		=	$(FC)
+RWORDSIZE       =       8
 ARCHFLAGS	=	-DNETCDF -DINTIO -DWRF_RSL_IO -DIWORDSIZE=8 -DDWORDSIZE=8 -DRWORDSIZE=8 -DLWORDSIZE=8 -DTRIEDNTRUE -DONLY_WRFMODEL_IO -DLIMIT_ARGS -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
 		##for DM compilation	-DDM_PARALLEL -DRSL 
 
@@ -5987,6 +6018,7 @@ LD                = ifort
 CC                = icc -I.
 CC_TOOLS          = cc
 SFC               = ifort
+RWORDSIZE         = 4
 CFLAGS            = -w -O3 -ip -tpp2 -c -ftz -no-gcc -DDM_PARALLEL -DWRF_RSL_IO \
                     -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL/RSL
 FCOPTIM           = -O3
@@ -6121,6 +6153,7 @@ LD                = ifort
 CC                = icc -I.
 CC_TOOLS          = cc
 SFC               = ifort
+RWORDSIZE         = 4
 CFLAGS            = -w -O3 -ip -tpp2 -c -ftz -DDM_PARALLEL -I../external/RSL_LITE \
                     -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
 FCOPTIM           = -O3
@@ -6243,6 +6276,7 @@ LD                = ifort
 CC                = icc -I.
 CC_TOOLS          = cc
 SFC               = ifort
+RWORDSIZE         = 4
 CFLAGS            = -w -O3 -ip -tpp2 -c -ftz 
 FCOPTIM           = -O3
 FCDEBUG           = # -g
@@ -6353,6 +6387,7 @@ LD                = ifort
 CC                = icc -I.
 CC_TOOLS          = cc
 SFC               = ifort
+RWORDSIZE         = 4
 CFLAGS            = -w -O3 -ip -tpp2 -c -ftz 
 FCOPTIM           = -O3
 FCDEBUG           = # -g
@@ -6487,6 +6522,7 @@ INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../exter
                         -p../frame -I ../frame -p../share -p../phys -p../inc \
                         -p../dyn_em -p../dyn_eh -p../dyn_exp -p ../external/esmf_time_f90
 EXTRAMODULES    =       
+RWORDSIZE         = 4
 ARCHFLAGS       =       -DRSL_LITE -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 \
                         -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE  -DINTIO \
 			-DLIMIT_ARGS -DONLY_WRFMODEL_IO -Dcrayx1
@@ -6617,6 +6653,7 @@ INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../exter
                         -p../frame -I ../frame -p../share -p../phys -p../inc \
                         -p../dyn_em -p../dyn_eh -p../dyn_exp -p ../external/esmf_time_f90
 EXTRAMODULES    =       
+RWORDSIZE       = 4
 ARCHFLAGS       =       -D_OPENMP -DRSL_LITE -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 \
                         -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE  -DINTIO \
 			-DLIMIT_ARGS -DONLY_WRFMODEL_IO -Dcrayx1
@@ -7360,6 +7397,7 @@ FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../inc
 EXTRAMODULES    =       
+RWORDSIZE       = 4
 ARCHFLAGS       =       -DYYY -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
                         CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   \
 			-DLIMIT_ARGS -DNO_NAMELIST_PRINT
@@ -7473,6 +7511,7 @@ FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../inc
 EXTRAMODULES    =       
+RWORDSIZE       = 4
 ARCHFLAGS       =       -DYYY -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
                         CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   \
 			-DLIMIT_ARGS -DNO_NAMELIST_PRINT

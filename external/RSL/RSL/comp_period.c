@@ -113,9 +113,9 @@ static check_local_pts_period( d, m, n, hm, hn, min_gh, maj_gh, fldspec )
   }
 
 /* P is the processor on which sits the off-domain point being filled in */
-  P     = domain[INDEX_2( (hn<0)?0:((hn>nfldlen-1)?nfldlen-1:hn) , (hm<0)?0:((hm>mfldlen-1)?mfldlen-1:hm),mlen )  ].P ;
-  Pmin_gh = domain[INDEX_2( (hn       <0)?0:((hn       >nfldlen-1)?nfldlen-1:hn       ) , (hm+min_gh<0)?0:((hm+min_gh>mfldlen-1)?mfldlen-1:hm+min_gh),mlen )  ].P ;
-  Pmaj_gh = domain[INDEX_2( (hn+maj_gh<0)?0:((hn+maj_gh>nfldlen-1)?nfldlen-1:hn+maj_gh) , (hm       <0)?0:((hm       >mfldlen-1)?mfldlen-1:hm       ),mlen )  ].P ;
+  P       = domain[INDEX_2( (hn<0)?0:((hn>nfldlen-1)?nfldlen-1:hn) , (hm<0)?0:((hm>mfldlen-1)?mfldlen-1:hm),mlen )  ].P ;
+  Pmin_gh = domain[INDEX_2( (hn<0)?0:((hn>nfldlen-1)?nfldlen-1:hn) , (hm+min_gh<0)?0:((hm+min_gh>mfldlen-1)?mfldlen-1:hm+min_gh),mlen )  ].P ;
+  Pmaj_gh = domain[INDEX_2( (hn+maj_gh<0)?0:((hn+maj_gh>nfldlen-1)?nfldlen-1:hn+maj_gh) , (hm<0)?0:((hm>mfldlen-1)?mfldlen-1:hm       ),mlen )  ].P ;
 
 /* Pthis is the processor on which sits the on-domain point being replicated */
   Pthis = domain[INDEX_2(n,m,mlen)].P ;
@@ -125,7 +125,9 @@ static check_local_pts_period( d, m, n, hm, hn, min_gh, maj_gh, fldspec )
    replicated for the packing mechanism.  */
 
 #if 1
-  if ( rsl_c_comp2phys_proc ( Pthis ) == rsl_myproc  && ( P == procrec->P || Pmin_gh == procrec->P || Pmaj_gh == procrec->P ) )
+  if (   rsl_c_comp2phys_proc ( Pthis ) == rsl_myproc  && 
+       ( P == procrec->P || Pmin_gh == procrec->P || Pmaj_gh == procrec->P ) &&
+         rsl_c_comp2phys_proc ( procrec->P ) != rsl_myproc )   /* if the other processor is me don't bother */
 #else
   if ( rsl_c_comp2phys_proc ( Pthis ) == rsl_myproc  &&  P == procrec->P )
 #endif
@@ -180,7 +182,9 @@ fprintf(stderr,"send: %d %d P = %d , Pthis = %d , procrec->P %d , m %d , n %d , 
    coordinates of the off-domain point for the upacking mechanism.  */
 
 #if 1
-  if ( ( rsl_c_comp2phys_proc ( P ) == rsl_myproc || rsl_c_comp2phys_proc ( Pmaj_gh ) == rsl_myproc || rsl_c_comp2phys_proc ( Pmin_gh ) == rsl_myproc ) && Pthis == procrec->P )
+  if ( ( rsl_c_comp2phys_proc ( P ) == rsl_myproc || rsl_c_comp2phys_proc ( Pmaj_gh ) == rsl_myproc || rsl_c_comp2phys_proc ( Pmin_gh ) == rsl_myproc ) && 
+         Pthis == procrec->P && 
+         rsl_c_comp2phys_proc ( Pthis ) != rsl_myproc )   /* if the other processor is me don't bother */
 #else
   if ( rsl_c_comp2phys_proc ( P ) == rsl_myproc && Pthis == procrec->P )
 #endif

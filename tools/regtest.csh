@@ -267,7 +267,10 @@ set QUILT = FALSE
 if ( $QUILT == TRUE ) then
 	if ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` == bs ) ) ) then
 		echo "One WRF output quilt server will be used for some tests"
-	else if ( ( `uname` == OSF1 ) && ( `hostname | cut -c 1-4` == duku ) ) then
+	else if ( ( `uname` == OSF1 ) && \
+		  ( ( `hostname` == duku    ) || \
+		    ( `hostname` == joshua1 ) || \
+		    ( `hostname` == joshua3 ) ) ) then
 		echo "One WRF output quilt server will be used for some tests"
 	else
 		echo "WRF output quilt servers are not tested on this machine"

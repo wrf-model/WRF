@@ -2500,18 +2500,12 @@ include "mpif.h"
              (MemOrd .eq. 'xez' .AND. bdy_mask( P_XEB ))       ) THEN
           my_displ = PatchStart(1)-1
           my_count = PatchEnd(1)-PatchStart(1)+1
-          recv_count = 1
-          root_proc = 0
-          send_count = 1
-          itype = MPI_INTEGER
-          CALL mpi_gather( my_displ, send_count, itype, displs, recv_count, itype, root_proc, communicator, ierr )
-          CALL mpi_gather( my_count, send_count, itype, counts, recv_count, itype, root_proc, communicator, ierr )
         ELSE
           my_displ = 0
           my_count = 0
-          CALL mpi_gather( my_displ, 1, MPI_INTEGER, displs, 1, MPI_INTEGER, 0, communicator, ierr )
-          CALL mpi_gather( my_count, 1, MPI_INTEGER, counts, 1, MPI_INTEGER, 0, communicator, ierr )
         ENDIF
+        CALL mpi_gather( my_displ, 1, MPI_INTEGER, displs, 1, MPI_INTEGER, 0, communicator, ierr )
+        CALL mpi_gather( my_count, 1, MPI_INTEGER, counts, 1, MPI_INTEGER, 0, communicator, ierr )
         do i = DomainStart(3),DomainEnd(3)    ! bdy_width
         do k = DomainStart(2),DomainEnd(2)    ! levels
            lx   = MemoryEnd(1)-MemoryStart(1)+1
@@ -2541,6 +2535,7 @@ include "mpif.h"
                              ierr )
 
            ELSE IF ( FieldType .EQ. WRF_INTEGER ) THEN
+
              CALL wrf_gatherv_integer ( Field, PatchStart(1)+idx , &
                              my_count ,                       &    ! sendcount
                              globbuf, 1+idx2 ,                &    ! recvbuf
@@ -2566,18 +2561,12 @@ include "mpif.h"
              (MemOrd .eq. 'xe' .AND. bdy_mask( P_XEB ))       ) THEN
           my_displ = PatchStart(1)-1
           my_count = PatchEnd(1)-PatchStart(1)+1
-          recv_count = 1
-          root_proc = 0
-          send_count = 1
-          itype = MPI_INTEGER
-          CALL mpi_gather( my_displ, send_count, itype, displs, recv_count, itype, root_proc, communicator, ierr )
-          CALL mpi_gather( my_count, send_count, itype, counts, recv_count, itype, root_proc, communicator, ierr )
         ELSE
           my_displ = 0
           my_count = 0
-          CALL mpi_gather( my_displ, 1, MPI_INTEGER, displs, 1, MPI_INTEGER, 0, communicator, ierr )
-          CALL mpi_gather( my_count, 1, MPI_INTEGER, counts, 1, MPI_INTEGER, 0, communicator, ierr )
         ENDIF
+        CALL mpi_gather( my_displ, 1, MPI_INTEGER, displs, 1, MPI_INTEGER, 0, communicator, ierr )
+        CALL mpi_gather( my_count, 1, MPI_INTEGER, counts, 1, MPI_INTEGER, 0, communicator, ierr )
         do i = DomainStart(2),DomainEnd(2)    ! bdy_width
            lx   = MemoryEnd(1)-MemoryStart(1)+1
            idx  = lx*(i-1)
@@ -2606,6 +2595,7 @@ include "mpif.h"
                              ierr )
 
            ELSE IF ( FieldType .EQ. WRF_INTEGER ) THEN
+
              CALL wrf_gatherv_integer ( Field, PatchStart(1)+idx , &
                              my_count ,                       &    ! sendcount
                              globbuf, 1+idx2 ,                &    ! recvbuf
@@ -2632,18 +2622,12 @@ include "mpif.h"
              (MemOrd .eq. 'yez' .AND. bdy_mask( P_YEB ))       ) THEN
           my_displ = PatchStart(1)-1
           my_count = PatchEnd(1)-PatchStart(1)+1
-          recv_count = 1
-          root_proc = 0
-          send_count = 1
-          itype = MPI_INTEGER
-          CALL mpi_gather( my_displ, send_count, itype, displs, recv_count, itype, root_proc, communicator, ierr )
-          CALL mpi_gather( my_count, send_count, itype, counts, recv_count, itype, root_proc, communicator, ierr )
         ELSE
           my_displ = 0
           my_count = 0
-          CALL mpi_gather( my_displ, 1, MPI_INTEGER, displs, 1, MPI_INTEGER, 0, communicator, ierr )
-          CALL mpi_gather( my_count, 1, MPI_INTEGER, counts, 1, MPI_INTEGER, 0, communicator, ierr )
         ENDIF
+        CALL mpi_gather( my_displ, 1, MPI_INTEGER, displs, 1, MPI_INTEGER, 0, communicator, ierr )
+        CALL mpi_gather( my_count, 1, MPI_INTEGER, counts, 1, MPI_INTEGER, 0, communicator, ierr )
         do j = DomainStart(3),DomainEnd(3)    ! bdy_width
         do k = DomainStart(2),DomainEnd(2)    ! levels
            lx   = MemoryEnd(1)-MemoryStart(1)+1
@@ -2700,18 +2684,12 @@ include "mpif.h"
              (MemOrd .eq. 'ye' .AND. bdy_mask( P_YEB ))       ) THEN
           my_displ = PatchStart(1)-1
           my_count = PatchEnd(1)-PatchStart(1)+1
-          recv_count = 1
-          root_proc = 0
-          send_count = 1
-          itype = MPI_INTEGER
-          CALL mpi_gather( my_displ, send_count, itype, displs, recv_count, itype, root_proc, communicator, ierr )
-          CALL mpi_gather( my_count, send_count, itype, counts, recv_count, itype, root_proc, communicator, ierr )
         ELSE
           my_displ = 0
           my_count = 0
-          CALL mpi_gather( my_displ, 1, MPI_INTEGER, displs, 1, MPI_INTEGER, 0, communicator, ierr )
-          CALL mpi_gather( my_count, 1, MPI_INTEGER, counts, 1, MPI_INTEGER, 0, communicator, ierr )
         ENDIF
+        CALL mpi_gather( my_displ, 1, MPI_INTEGER, displs, 1, MPI_INTEGER, 0, communicator, ierr )
+        CALL mpi_gather( my_count, 1, MPI_INTEGER, counts, 1, MPI_INTEGER, 0, communicator, ierr )
         do j = DomainStart(2),DomainEnd(2)    ! bdy_width
            lx   = MemoryEnd(1)-MemoryStart(1)+1
            idx  = lx*(j-1)

@@ -611,6 +611,7 @@ SUBROUTINE med_read_nmm ( grid , config_flags , ntsd, dt_from_file, tstart_from_
    enddo
    CALL wrf_debug ( 100 , 'nmm: read initial conditions file' )
 
+   goto 333
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!
 ENTRY med_read_nmm_bdy ( grid , config_flags , ntsd , dt_from_file, tstart_from_file, tend_from_file, &
@@ -625,6 +626,8 @@ ENTRY med_read_nmm_bdy ( grid , config_flags , ntsd , dt_from_file, tstart_from_
 #ifdef DM_PARALLEL
 #    include <nmm_data_calls.inc>
 #endif
+
+   333 continue
 
 
 !----------------------------------------------------------------------

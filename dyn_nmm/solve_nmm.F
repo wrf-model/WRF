@@ -811,7 +811,7 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
         CALL wrf_debug ( 100 , 'nmm: out of bocov' )
       solve_tim=solve_tim+timef()-btim
 !----------------------------------------------------------------------
-#if 1
+#if 0
       sum_tim=pdte_tim+adve_tim+vtoa_tim+vadz_tim+hadz_tim+eps_tim     &
      &       +vad2_tim+had2_tim+radiation_tim+rdtemp_tim+turbl_tim     &
      &       +cltend_tim+cucnvc_tim+gsmdrive_tim+hdiff_tim             &

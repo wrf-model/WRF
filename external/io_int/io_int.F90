@@ -27,7 +27,7 @@ MODULE module_ext_internal
   INTEGER, DIMENSION(int_num_handles)       :: handle
   INTEGER, DIMENSION(512, int_num_handles)  :: open_file_descriptors
 
-  CHARACTER*132 last_next_var 
+  CHARACTER*132 last_next_var( int_num_handles )
 
   CONTAINS
 
@@ -58,8 +58,12 @@ MODULE module_ext_internal
     !--- ioinit
     SUBROUTINE init_module_ext_internal
       IMPLICIT NONE
+      INTEGER i
       CALL wrf_sizeof_integer( itypesize )
       CALL wrf_sizeof_real   ( rtypesize )
+      DO i = 1, int_num_handles
+         last_next_var( i ) = ' '
+      ENDDO
     END SUBROUTINE init_module_ext_internal
 
 END MODULE module_ext_internal
@@ -444,7 +448,7 @@ SUBROUTINE ext_int_get_var_info ( DataHandle , VarName , NDim , MemoryOrder , St
 RETURN
 END SUBROUTINE ext_int_get_var_info
 
-!--- get_next_var  (not defined for IntIO)
+!--- get_next_var
 SUBROUTINE ext_int_get_next_var ( DataHandle, VarName, Status )
   USE module_ext_internal
   IMPLICIT NONE
@@ -517,13 +521,13 @@ real    rdata(128)
         IF (TRIM(locDateStr) .NE. TRIM(CurrentDateInFile(DataHandle))) THEN
           Status = WRF_WARN_VAR_EOF !-6 ! signal past last var in time frame
           BACKSPACE ( unit=DataHandle )
-          last_next_var = ""
+          last_next_var( DataHandle )  = ""
           GOTO 7717
         ELSE
           VarName = TRIM(locVarName)
-          IF ( last_next_var .NE. VarName ) THEN
+          IF ( last_next_var( DataHandle )  .NE. VarName ) THEN
             BACKSPACE ( unit=DataHandle )
-            last_next_var = VarName
+            last_next_var( DataHandle )  = VarName
           ELSE
             READ( unit=DataHandle, iostat=istat )
             GOTO 7727

@@ -57,7 +57,7 @@ contains
      write(*,'(8x, "-v     : Print extra info")')
      write(*,'(8x, "v3file : MM5v3 file name to read.")')
      write(*,'(8x, "-h     : print this help message and exit.",/)')
-     call wrf_error_fatal ( 'usage' )
+     stop
    end subroutine help
 end module read_util_module
 
@@ -78,18 +78,19 @@ end module read_util_module
 
   integer :: flag, flag2
   integer :: iunit, iunit2
-  integer :: WrfType
+  integer :: WrfType, WrfType2
 
   integer :: i,j,k
   integer :: levlim
   integer :: cross
   integer :: ndim, ndim2
   real :: time, time2
-  real :: a, b
+  real*8 :: a, b
+  real*8 :: sum1, sum2, diff1, diff2, serr, perr, rms
   integer, dimension(4) :: start_index, end_index, start_index2, end_index2
   integer , Dimension(3) :: MemS,MemE,PatS,PatE
   character (len= 4) :: staggering,   staggering2
-  character (len= 4) :: ordering,     ordering2, ord
+  character (len= 3) :: ordering,     ordering2, ord
   character (len=24) :: start_date,   start_date2
   character (len=24) :: current_date, current_date2
   character (len=31) :: name,         name2,  tmpname
@@ -123,7 +124,7 @@ end module read_util_module
     ierr = 0
     call ext_int_open_for_read( trim(flnm), 0, 0, "", dh1, Status)
     if ( Status /= 0 ) then 
-      print*,'error opening ',flnm, ' Status = ', Status ; call wrf_error_fatal ( 'error opening '// flnm )
+      print*,'error opening ',flnm, ' Status = ', Status ; stop
     endif
     call ext_int_open_for_read( trim(flnm2), 0, 0, "", dh2, Status)
     if ( Status /= 0 ) go to 923
@@ -144,7 +145,7 @@ end module read_util_module
   endif
   else
      print*,'Usage: command file1 file2'
-     call wrf_error_fatal ( 'Usage: command file1 file2' )
+     stop
   endif
 
 print*,'Just plot ',Justplot
@@ -163,6 +164,10 @@ if ( Justplot ) then
       start_index = 1
       end_index = 1
       call ext_int_get_var_info (dh1,VarName,ndim,ordering,staggering,start_index,end_index, WrfType, ierr )
+      if(WrfType /= WRF_REAL .AND. WrfType /= WRF_DOUBLE) then
+        call ext_int_get_next_var (dh1, VarName, Status_next_var)
+        cycle
+      endif
 
       write(*,'(A9,1x,I1,3(1x,I3),1x,A,1x,A)')&
                VarName, ndim, end_index(1), end_index(2), end_index(3), &
@@ -223,15 +228,10 @@ if ( Justplot ) then
         deallocate(data)
       endif
       call ext_int_get_next_var (dh1, VarName, Status_next_var)
-!print*,'  ext_int_get_next_var Status = ',Status_next_time
     enddo
     call ext_int_get_next_time(dh1, DateStr, Status_next_time)
-!print*,'ext_int_get_next_time Status = ',Status_next_time, DateStr
-!    Status_next_time = 0
   enddo
 else
-  print*,'Diffing not implemented in this version of diffwrf yet'
-  call wrf_error_fatal ( 'Diffing not implemented in this version of diffwrf yet' )
   print*,'Diffing ',trim(flnm),' ',trim(flnm2)
 
   call ext_int_get_next_time(dh1, DateStr, Status_next_time)
@@ -245,130 +245,157 @@ else
   ENDIF
 
   DO WHILE ( Status_next_time .eq. 0 .AND. Status_next_time2 .eq. 0 )
-    write(*,*)'Next Time ',TRIM(Datestr)
+!write(*,*)'Next Time ',TRIM(Datestr)
+    print 76
     call ext_int_get_next_var (dh1, VarName, Status_next_var)
+    call ext_int_get_next_var (dh2, VarName, Status_next_var)
     DO WHILE ( Status_next_var .eq. 0 )
-!    write(*,*)'Next Var |',TRIM(VarName),'|'
+
+!write(*,*)'Next Var |',TRIM(VarName),'|'
 
       start_index = 1
       end_index = 1
       call ext_int_get_var_info (dh1,VarName,ndim,ordering,staggering,start_index,end_index, WrfType, ierr )
-      call ext_int_get_var_info (dh2,VarName,ndim2,ordering2,staggering2,start_index2,end_index2, WrfType, ierr )
+      call ext_int_get_var_info (dh2,VarName,ndim2,ordering2,staggering2,start_index2,end_index2, WrfType2, ierr2 )
+
+!write(*,*)'ierr , err2 ',TRIM(VarName), ierr , ierr2, ' ',ordering, ' ', ordering2
+
       IF ( ierr /= 0 ) THEN
-	write(*,*)'Big difference: ',VarName,' not found in ',flnm2
+        write(*,*)'Big difference: ',VarName,' not found in ',flnm2
+        GOTO 1234
       ENDIF
       IF ( ndim /= ndim2 ) THEN
-	write(*,*)'Big difference: Number of dimensions for ',Varname,' differs in ',flnm2,'(',ndim,') /= (',ndim2
-      ENDIF
-!      IF ( ordering /= ordering2 ) THEN
-!	write(*,*)'Big difference: Ordering of dimensions for ',Varname,' differs in ',flnm2,'(',ordering,') /= (',ordering2
-!      ENDIF
-
-      DO i = 1, ndim
-        IF ( end_index(i) /= end_index2(i) ) THEN
-	  write(*,*)'Big difference: dim ',i,' lengths differ for ',Varname,' differ in ',flnm2
-	  write(*,*)'   ',flnm,'  ',end_index(i)
-	  write(*,*)'   ',flnm2,'  ',end_index2(i)
-        ENDIF
-      ENDDO
-      DO i = ndim+1,3
-        start_index(i) = 1
-        end_index(i) = 1
-        start_index2(i) = 1
-        end_index2(i) = 1
-      ENDDO
-
-      write(*,'(A9,1x,I1,3(1x,I3),1x,A,1x,A)')&
-               VarName, ndim, end_index(1), end_index(2), end_index(3), &
-               trim(ordering), trim(DateStr)
-
-      allocate(data (end_index(1), end_index(2), end_index(3), 1))
-      allocate(data2(end_index(1), end_index(2), end_index(3), 1))
-
-      if ( ndim .eq. 3 ) then
-        ord = 'XYZ'
-      else if ( ndim .eq. 2 ) then
-        ord = 'XY'
-      else if ( ndim .eq. 1 ) then
-        ord = 'Z'
-      else if ( ndim .eq. 0 ) then
-        ord = '0'
-      endif
-
-      call ext_int_read_field(dh1,DateStr,TRIM(VarName),data,WRF_REAL,0,0,0,ord,   &
-                          staggering,          &
-                          dimnames,         &
-                          start_index,end_index,                      & !dom              
-                          start_index,end_index,                      & !mem
-                          start_index,end_index,                      & !pat
-                          ierr)
-
-      IF ( ierr /= 0 ) THEN
-	write(*,*)'Error reading ',Varname,' from ',flnm
-        write(*,*)'  ndim = ', ndim
-        write(*,*)'  end_index(1) ',end_index(1)
-        write(*,*)'  end_index(2) ',end_index(2)
-        write(*,*)'  end_index(3) ',end_index(3)
-      ENDIF
-      call ext_int_read_field(dh2,DateStr,TRIM(VarName),data2,WRF_REAL,0,0,0,ord,   &
-                          staggering,          &
-                          dimnames,         &
-                          start_index,end_index,                      & !dom              
-                          start_index,end_index,                      & !mem
-                          start_index,end_index,                      & !pat
-                          ierr)
-      IF ( ierr /= 0 ) THEN
-	write(*,*)'Error reading ',Varname,' from ',flnm2
-        write(*,*)'  ndim = ', ndim
-        write(*,*)'  end_index(1) ',end_index(1)
-        write(*,*)'  end_index(2) ',end_index(2)
-        write(*,*)'  end_index(3) ',end_index(3)
+        write(*,*)'Big difference: Number of dimensions for ',Varname,' differs in ',flnm2,'(',ndim,') /= (',ndim2
+        GOTO 1234
       ENDIF
 
-      IFDIFFS=0
-      DO K = 1,end_index(3)-start_index(3)+1
-       IF (LEVLIM.EQ.-1.OR.K.EQ.LEVLIM.OR.NDIM.eq.2) THEN
-        cross = 0 
-        IKDIFFS = 0
-        do i = 1, end_index(1)-cross
-          do j = 1, end_index(2)-cross
-            a = data(I,J,K,1)
-            b = data2(I,J,K,1)
-            IF (a .ne. b) then
-              IKDIFFS = IKDIFFS + 1
-              IFDIFFS = IFDIFFS + 1
-            ENDIF
-          ENDDO
-        ENDDO
-        IF ( IKDIFFS .NE. 0 ) THEN
-          EFOUND = .TRUE.
-          PRINT*,'LEVEL ',K,' WITH ',IKDIFFS,' DIFFS'
-            write(88,*)end_index(2),end_index(1),' ',name,' LEVEL ',K,' TIME ',N
-            write(98,*)end_index(2),end_index(1),' ',name,' LEVEL ',K,' TIME ',N
-            DO I = 1,end_index(1)
-              DO J = 1,end_index(2)
-                WRITE(88,*)data(I,J,K,1)
-                WRITE(98,*)data2(I,J,K,1)
-              ENDDO
-            ENDDO
-             write(88,*)end_index(2)-cross,end_index(1)-cross,' ',name,' LEVEL ',K,' TIME ',N
-             write(98,*)end_index(2)-cross,end_index(1)-cross,' ',name,' LEVEL ',K,' TIME ',N
-             DO I = 1,end_index(1)-cross
-               DO J = 1,end_index(2)-cross
-                 WRITE(88,*)data(I,J,K,1)
-                 WRITE(98,*)data2(I,J,K,1)
-               ENDDO
-             ENDDO
+      IF ( WrfType /= WrfType2 ) THEN
+        write(*,*)'Big difference: The types do not match', WrfType, WrfType2
+        GOTO 1234
+      ENDIF
+
+      if( WrfType == WRF_REAL) then
+
+        DO i = 1, ndim
+          IF ( end_index(i) /= end_index2(i) ) THEN
+            write(*,*)'Big difference: dim ',i,' lengths differ for ',Varname,' differ in ',flnm2
+            GOTO 1234
           ENDIF
-       ENDIF
-      enddo
-      IF (IFDIFFS .NE. 0 ) THEN
-         PRINT *,'3D FIELD ID= ',name,'    cross= ',cross, '     N DIFFS= ',IFDIFFS
-      ENDIF
-      deallocate(data)
-      deallocate(data2)
+        ENDDO
 
+        DO i = ndim+1,3
+          start_index(i) = 1
+          end_index(i) = 1
+          start_index2(i) = 1
+          end_index2(i) = 1
+        ENDDO
+
+!      write(*,'(A9,1x,I1,3(1x,I3),1x,A,1x,A)')&
+!               VarName, ndim, end_index(1), end_index(2), end_index(3), &
+!               trim(ordering), trim(DateStr)
+
+        allocate(data (end_index(1), end_index(2), end_index(3), 1))
+        allocate(data2(end_index(1), end_index(2), end_index(3), 1))
+
+        if ( ndim .eq. 3 ) then
+          ord = 'XYZ'
+        else if ( ndim .eq. 2 ) then
+          ord = 'XY'
+        else if ( ndim .eq. 1 ) then
+          ord = 'Z'
+        else if ( ndim .eq. 0 ) then
+          ord = '0'
+        endif
+
+        call ext_int_read_field(dh1,DateStr,TRIM(VarName),data,WRF_REAL,0,0,0,ord,   &
+                            staggering,          &
+                            dimnames,         &
+                            start_index,end_index,                      & !dom              
+                            start_index,end_index,                      & !mem
+                            start_index,end_index,                      & !pat
+                            ierr)
+
+        IF ( ierr /= 0 ) THEN
+          write(*,*)'Error reading ',Varname,' from ',flnm
+          write(*,*)'  ndim = ', ndim
+          write(*,*)'  end_index(1) ',end_index(1)
+          write(*,*)'  end_index(2) ',end_index(2)
+          write(*,*)'  end_index(3) ',end_index(3)
+        ENDIF
+
+        call ext_int_read_field(dh2,DateStr,TRIM(VarName),data2,WRF_REAL,0,0,0,ord,   &
+                            staggering,          &
+                            dimnames,         &
+                            start_index,end_index,                      & !dom              
+                            start_index,end_index,                      & !mem
+                            start_index,end_index,                      & !pat
+                            ierr)
+
+        IF ( ierr /= 0 ) THEN
+          write(*,*)'Error reading ',Varname,' from ',flnm2
+          write(*,*)'  ndim = ', ndim
+          write(*,*)'  end_index(1) ',end_index(1)
+          write(*,*)'  end_index(2) ',end_index(2)
+          write(*,*)'  end_index(3) ',end_index(3)
+        ENDIF
+
+        IFDIFFS=0
+        sum1 = 0.0
+        sum2 = 0.0
+        diff1 = 0.0
+        diff2 = 0.0
+        n = 0
+        DO K = 1,end_index(3)-start_index(3)+1
+         IF (LEVLIM.EQ.-1.OR.K.EQ.LEVLIM.OR.NDIM.eq.2) THEN
+          cross = 0 
+          IKDIFFS = 0
+          do i = 1, end_index(1)-cross
+            do j = 1, end_index(2)-cross
+              a = data(I,J,K,1)
+              b = data2(I,J,K,1)
+              ! borrowed from  Thomas Oppe's comp program
+              sum1 = sum1 + ( a - b ) * ( a - b )
+              sum2 = sum2 + b * b
+              diff1 = max ( diff1 , abs ( a - b ) )
+              diff2 = max ( diff2 , abs ( b ) )
+              n = n + 1
+              IF (a .ne. b) then
+                IKDIFFS = IKDIFFS + 1
+                IFDIFFS = IFDIFFS + 1
+              ENDIF
+            ENDDO
+          ENDDO
+         ENDIF
+        enddo
+        rms = sqrt ( sum1 / dble( n ) )
+        IF ( sum2 .GT. 0.0d0 ) THEN
+          serr = sqrt ( sum1 / sum2 )
+        ELSE
+          serr = sqrt ( sum1 )
+        ENDIF
+        IF ( diff2 .GT. 0.0d0 ) THEN
+          perr = diff1/diff2
+        ELSE
+          perr = diff1
+        ENDIF
+    
+
+        IF (IFDIFFS .NE. 0 ) THEN
+           ! create the fort.88 and fort.98 files because regression scripts will
+           ! look for these to see if there were differences.
+           write(88,*)trim(varname)
+           write(98,*)trim(varname)
+        ENDIF
+        PRINT 77,trim(varname), IFDIFFS, ndim, rms, serr, perr
+ 76 FORMAT (5x,'Field ',2x,'Ndifs ',1x,'Dims ',6x,'RMS ',9x,'2-norm',8x,'pntwise max')
+ 77 FORMAT ( A10,1x,I7,2x,I3,1x,e14.4,1x,e14.4,1x,e14.4 )
+        deallocate(data)
+        deallocate(data2)
+
+      endif
+1234  CONTINUE
       call ext_int_get_next_var (dh1, VarName, Status_next_var)
+      call ext_int_get_next_var (dh2, VarName, Status_next_var)
     enddo
     call ext_int_get_next_time(dh1, DateStr, Status_next_time)
     call ext_int_get_next_time(dh2, DateStr2, Status_next_time2)

@@ -87,9 +87,15 @@ typedef struct _malloc_rec_t
     char *file;
     char *free_file;
     int size;
+#ifdef crayx1
+    int line;
+    int free_line;
+    int freed;
+#else
     short line;
     short free_line;
     short freed;
+#endif
 } *malloc_rec_t;
 
 static struct _malloc_rec_t malloc_recs[NEXUS_N_MALLOC_RECS];

@@ -280,11 +280,83 @@ RSL_TO_PARENT_MSG ( nbuf_p, buf )
   Psize[P] += s_msize + sizeof( merge_point_desc_t ) ;
 
   /* pack the buffer associated with stage[kiddex] */
+#ifdef crayx1
+  if( nbuf == sizeof(float) ) {
+    float *bufin  = (float *) buf;
+    float *bufout = (float *)&(stage[ kiddex ].p [ stage[ kiddex].curs]);
+    bufout[0] = bufin[0];
+  }
+  else {
+    bcopy( buf, &(stage[ kiddex ].p[ stage[ kiddex ].curs ]), nbuf ) ;
+  }
+  stage[ kiddex ].curs += nbuf ;
+#else
   bcopy( buf, &(stage[ kiddex ].p[ stage[ kiddex ].curs ]), nbuf ) ;
   stage[ kiddex ].curs += nbuf ;
-
+#endif
 }
 
+#ifdef crayx1
+RSL_TO_PARENT_MSGX ( n_vals_p, s_vals_p, stride_p, buf )
+  int_p
+    n_vals_p ;            /* (I) Number of values to be packed. */
+  int_p
+    s_vals_p ;            /* (I) Size of values to be packed. */
+  int_p
+    stride_p ;            /* (I) Number of values for stride. */
+  char *
+    buf ;                 /* (I) Buffer containing the data to be packed. */
+{
+  int n_vals, s_vals, stride;
+  int kiddex, nbuf, P;
+                                                                                                    
+  RSL_TEST_ERR(buf==NULL,"2nd argument is NULL.  Field allocated?") ;
+  n_vals = *n_vals_p;
+  s_vals = *s_vals_p;
+  stride = *stride_p;
+  nbuf   = n_vals * s_vals ;   /* Number of bytes to be packed */
+  kiddex = INDEX_2(s_jg,s_ig,s_mlen_nst) ;
+  P = s_ndomain[ kiddex ].mother_P ;
+  if ( stage[ kiddex ].p == NULL )
+  {
+    stage[ kiddex ].p = RSL_MALLOC( char, s_msize ) ;
+    stage[ kiddex ].curs = 0 ;
+    stage[ kiddex ].P = P ;
+    stage[kiddex].next = Plist[P] ;
+    Plist[P] =  &(stage[ kiddex ]) ;
+  }
+  if ( stage[ kiddex ].curs + nbuf > s_msize )
+  {
+    sprintf(mess,
+    "RSL_TO_PARENT_MSGX: would overflow buffer (%d+%d>%d)\n",
+        stage[ kiddex ].curs, nbuf, s_msize ) ;
+    RSL_TEST_ERR( 1, mess ) ;
+  }
+  /* add point to head of list of points for processor P */
+  stage[kiddex].kid_id = POINTID(s_nst,s_jg,s_ig) ;
+  stage[kiddex].parent_id = POINTID( s_d, s_pjg, s_pig ) ;
+  stage[kiddex].cm = s_cm ;
+  stage[kiddex].cn = s_cn ;
+  Psize[P] += s_msize + sizeof( merge_point_desc_t ) ;
+   
+  /* pack the buffer associated with stage[kiddex] */
+  if ( s_vals == sizeof(float) ) {
+    int k, ki;
+    float *bufin = (float *)buf;
+    float *bufout = (float *)&(stage[ kiddex ].p[ stage[ kiddex ].curs ]);
+#pragma _CRI ivdep
+    for ( k = 0, ki = 0; k < n_vals; k++, ki += stride ) {
+          bufout[k] = bufin[ki];
+    }
+    stage[ kiddex ].curs += nbuf ;
+  }
+  else {
+    sprintf(mess,
+    "RSL_TO_PARENT_MSGX: Element size %d not supported for stride\n", s_vals);
+    RSL_TEST_ERR( 1, mess ) ;
+  }
+}
+#endif
 
 /*@
   RSL_MERGE_MSGS -- Convey feedback data from nest to parent points.
@@ -604,12 +676,69 @@ RSL_FROM_CHILD_MSG ( len_p, buf )
 "RSL_FROM_CHILD_MSG:\n   Requested number of bytes (%d) exceeds %d, the number remaining for this point.\n", *len_p, s_remaining) ;
     RSL_TEST_WRN(1,mess) ;
   }
+#ifdef crayx1
+  if( (*len_p) == sizeof(float) ) {
+    float *bufout = (float *)buf;
+    float *bufin  = (float *)&(s_child_msgs[s_child_msgs_curs]);
+    bufout[0]   = bufin[0];
+  }
+  else {
+    bcopy( &(s_child_msgs[s_child_msgs_curs]),
+         buf,
+         *len_p ) ;
+  }
+  s_child_msgs_curs += *len_p ;
+  s_remaining -= *len_p ;
+#else
   bcopy( &(s_child_msgs[s_child_msgs_curs]),
          buf,
          *len_p ) ;
   s_child_msgs_curs += *len_p ;
   s_remaining -= *len_p ;
+#endif
 }
+
+#ifdef crayx1
+RSL_FROM_CHILD_MSGX ( n_vals_p, s_vals_p, stride_p, buf )
+  int_p
+    n_vals_p ;            /* (I) Number of values to be packed. */
+  int_p
+    s_vals_p ;            /* (I) Size of values to be packed. */
+  int_p
+    stride_p ;            /* (I) Number of values for stride. */
+  char *
+    buf ;                 /* (O) Buffer containing the unpacked data. */
+{
+  int n_vals, s_vals, stride, len;
+  n_vals = *n_vals_p;
+  s_vals = *s_vals_p;
+  stride = *stride_p;
+  len    = n_vals * s_vals;  /* Number of bytes to unpack */
+  if ( len <= 0 ) return ;
+  if ( len > s_remaining )
+  {
+    sprintf(mess,
+"RSL_FROM_CHILD_MSGX:\n   Requested number of bytes (%d) exceeds %d, the number remaining for this point.\n", len, s_remaining) ;
+    RSL_TEST_WRN(1,mess) ;
+  }
+  if ( (s_vals) == sizeof (float) ) {
+    int k, ki;
+    float *bufout = (float *)buf;
+    float *bufin  = (float *)&(s_child_msgs[s_child_msgs_curs]);
+                                                                 
+#pragma _CRI ivdep
+    for ( k = 0, ki = 0; k < n_vals; k++, ki += stride ) {
+          bufout[ki] = bufin[k];
+    }
+    s_child_msgs_curs += len ;
+    s_remaining -= len ;
+  }
+  else {
+    sprintf(mess, "RSL_FROM_CHILD_MSGX: Element size %d not supported for stride\n", s_vals);
+    RSL_TEST_WRN(1,mess) ;
+  }
+}
+#endif
 
 /* This is called by RSL_FROM_CHILD_INFO on a parent domain each time we
    need a received point from a nest.

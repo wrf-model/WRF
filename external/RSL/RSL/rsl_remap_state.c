@@ -236,7 +236,11 @@ RSL_REMAP_STATE ( d_p )
     npts = 0 ;
     for ( lp = point_move_receives[P] ; lp != NULL ; lp = lp->next )
     {
+#ifdef crayx1
+      size += msize + 2*sizeof(int) ;  /* size plus int for ig and jg */
+#else
       size += msize + 2*sizeof(short) ;  /* size plus shorts for ig and jg */
+#endif
       npts++ ;
     }
     if ( size > 0 )
@@ -282,7 +286,11 @@ RSL_REMAP_STATE ( d_p )
     npts = 0 ;
     for ( lp = point_move_sends[P] ; lp != NULL ; lp = lp->next )
     {
+#ifdef crayx1
+      size += msize + 2*sizeof(int) ;
+#else
       size += msize + 2*sizeof(short) ;
+#endif
       npts++ ;
     }
     if ( size > 0 )
@@ -292,10 +300,17 @@ RSL_REMAP_STATE ( d_p )
     curs = 0 ;
     for ( lp = point_move_sends[P] ; lp != NULL ; lp = lp->next )
     {
-      bcopy( &(lp->info1), &(pbuf[curs]), sizeof(short)) ;	/* point id */
+#ifdef crayx1
+      bcopy( &(lp->info1), &(pbuf[curs]), sizeof(int)) ;        /* point id */
+      curs += sizeof(int) ;
+      bcopy( &(lp->info2), &(pbuf[curs]), sizeof(int)) ;        /* point id */
+      curs += sizeof(int) ;
+#else
+      bcopy( &(lp->info1), &(pbuf[curs]), sizeof(short)) ;      /* point id */
       curs += sizeof(short) ;
-      bcopy( &(lp->info2), &(pbuf[curs]), sizeof(short)) ;	/* point id */
+      bcopy( &(lp->info2), &(pbuf[curs]), sizeof(short)) ;      /* point id */
       curs += sizeof(short) ;
+#endif
       ig = lp->info1 ;
       jg = lp->info2 ;
 #ifndef NOPACK
@@ -343,14 +358,25 @@ RSL_REMAP_STATE ( d_p )
       }
       for ( i = 0 ; i < recvnpts[P] ; i++ )
       {
-	short id ;
-
-        bcopy( &(pbuf[curs]), &id, sizeof(short)) ;	/* point id */
+#ifdef crayx1
+        int id ;
+                                                                                                                    
+        bcopy( &(pbuf[curs]), &id, sizeof(int)) ;       /* point id */
+        curs += sizeof(int) ;
+        ig = id ;
+                                                                                                                    
+        bcopy( &(pbuf[curs]), &id, sizeof(int)) ;       /* point id */
+        curs += sizeof(int) ;
+#else
+        short id ;
+                                                                                                                    
+        bcopy( &(pbuf[curs]), &id, sizeof(short)) ;     /* point id */
         curs += sizeof(short) ;
-	ig = id ;
-
-        bcopy( &(pbuf[curs]), &id, sizeof(short)) ;	/* point id */
+        ig = id ;
+                                                                                                                    
+        bcopy( &(pbuf[curs]), &id, sizeof(short)) ;     /* point id */
         curs += sizeof(short) ;
+#endif
 	jg = id ;
 
 #ifndef NOUNPACK

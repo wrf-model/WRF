@@ -1230,7 +1230,9 @@ work_out_bdy( dom, mmax, nmax )
   wrk_dbdy2 = RSL_MALLOC(int, mmax*nmax) ;
 
 /* DOT GRID */
+#pragma csd parallel for private(j, i, idx, p)
   for ( j = 0 ; j < nmax ; j++ )
+#pragma _CRI concurrent
     for ( i = 0 ; i < mmax ; i++ )
     {
       idx = INDEX_2(j,i,mmax) ;
@@ -1252,8 +1254,9 @@ work_out_bdy( dom, mmax, nmax )
 		 1, -1, NORTH, SOUTH, EAST, WEST ) ;
   fill_boundary( wrk_bdy2, wrk_dbdy2, mmax, nmax,	/* clockwise */
 		 0, -1, NORTH, SOUTH, EAST, WEST ) ;
-
+#pragma csd parallel for private(j, i, idx, p)
   for ( j = 0 ; j < nmax ; j++ )
+#pragma _CRI concurrent
     for ( i = 0 ; i < mmax ; i++ )
     {
       idx = INDEX_2(j,i,mmax) ;
@@ -1273,7 +1276,9 @@ work_out_bdy( dom, mmax, nmax )
     }
 
 /* CROSS GRID */
+#pragma csd parallel for private(j, i, idx, p)
   for ( j = 0 ; j < nmax ; j++ )
+#pragma _CRI concurrent
     for ( i = 0 ; i < mmax ; i++ )
     {
       idx = INDEX_2(j,i,mmax) ;
@@ -1296,7 +1301,9 @@ work_out_bdy( dom, mmax, nmax )
   fill_boundary( wrk_bdy2, wrk_dbdy2, mmax, nmax,	/* clockwise */
 		 0, -1, NORTH, SOUTH, EAST, WEST ) ;
 
+#pragma csd parallel for private(j, i, idx, p)
   for ( j = 0 ; j < nmax ; j++ )
+#pragma _CRI concurrent
     for ( i = 0 ; i < mmax ; i++ )
     {
       idx = INDEX_2(j,i,mmax) ;
@@ -1361,6 +1368,7 @@ work_out_bdy( dom, mmax, nmax )
 /* DOT GRID */
   /* work out boundary info -- this is a little tricky (and time consuming)
      because we have to allow for irregularly shaped nests */
+#pragma csd parallel for private(j, i, p, dmlow, dmhigh, dnlow, dnhigh)
   for ( j = 0 ; j < nmax ; j++ )
   {
     for ( i = 0 ; i < mmax ; i++ )
@@ -1369,24 +1377,28 @@ work_out_bdy( dom, mmax, nmax )
       if ( p->valid == RSL_VALID && p->trimmed == 0 )
       {
         /* zip down til we find the mlow boundary */
+#pragma _CRI concurrent
         for ( dmlow = 1 ; i-dmlow >= 0 ; dmlow++ )
         {
           if ( PTEST(dom[INDEX_2(j,i-dmlow,mmax)])) break ;
         }
         dmlow-- ;
         /* zip up til we find the mhigh boundary */
+#pragma _CRI concurrent
         for ( dmhigh = 1 ; i+dmhigh < mmax ; dmhigh++ )
         {
           if ( PTEST(dom[INDEX_2(j,i+dmhigh,mmax)])) break ;
         }
         dmhigh-- ;
         /* zip west til we find the nlow boundary */
+#pragma _CRI concurrent
         for ( dnlow = 1 ; j-dnlow >= 0 ; dnlow++ )
         {
           if ( PTEST(dom[INDEX_2(j-dnlow,i,mmax)])) break ;
         }
         dnlow-- ;
         /* zip east til we find the nhigh boundary */
+#pragma _CRI concurrent
         for ( dnhigh = 1 ; j+dnhigh < nmax ; dnhigh++ )
         {
           if ( PTEST(dom[INDEX_2(j+dnhigh,i,mmax)])) break ;
@@ -1405,6 +1417,7 @@ work_out_bdy( dom, mmax, nmax )
 /* CROSS GRID */
   /* work out boundary info -- this is a little tricky (and time consuming)
      because we have to allow for irregularly shaped nests */
+#pragma csd parallel for private(j, i, p, dmlow, dmhigh, dnlow, dnhigh)
   for ( j = 0 ; j < nmax-1 ; j++ )
   {
     for ( i = 0 ; i < mmax-1 ; i++ )
@@ -1413,24 +1426,28 @@ work_out_bdy( dom, mmax, nmax )
       if ( p->valid == RSL_VALID && p->trimmed == 0 && p->cross == 1 )
       {
         /* zip down til we find the mlow boundary */
+#pragma _CRI concurrent
         for ( dmlow = 1 ; i-dmlow >= 0 ; dmlow++ )
         {
           if ( QTEST(dom[INDEX_2(j,i-dmlow,mmax)])) break ;
         }
         dmlow-- ;
         /* zip up til we find the mhigh boundary */
+#pragma _CRI concurrent
         for ( dmhigh = 1 ; i+dmhigh < mmax ; dmhigh++ )
         {
           if ( QTEST(dom[INDEX_2(j,i+dmhigh,mmax)])) break ;
         }
         dmhigh-- ;
         /* zip west til we find the nlow boundary */
+#pragma _CRI concurrent
         for ( dnlow = 1 ; j-dnlow >= 0 ; dnlow++ )
         {
           if ( QTEST(dom[INDEX_2(j-dnlow,i,mmax)])) break ;
         }
         dnlow-- ;
         /* zip east til we find the nhigh boundary */
+#pragma _CRI concurrent
         for ( dnhigh = 1 ; j+dnhigh < nmax ; dnhigh++ )
         {
           if ( QTEST(dom[INDEX_2(j+dnhigh,i,mmax)])) break ;

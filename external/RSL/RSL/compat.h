@@ -164,9 +164,11 @@
 
 #   define RSL_TO_PARENT_INFO     rsl_to_parent_info__
 #   define RSL_TO_PARENT_MSG      rsl_to_parent_msg__
+#   define RSL_TO_PARENT_MSGX     rsl_to_parent_msgx__
 #   define RSL_MERGE_MSGS         rsl_merge_msgs__
 #   define RSL_FROM_CHILD_INFO    rsl_from_child_info__
 #   define RSL_FROM_CHILD_MSG     rsl_from_child_msg__
+#   define RSL_FROM_CHILD_MSGX    rsl_from_child_msgx__
 
 #   define RSL_WITHIN_NESTED_BOUNDARY  rsl_within_nested_boundary__
 #   define RSL_WITHIN_NESTED_BETA  rsl_within_nested_beta__
@@ -366,9 +368,11 @@
 
 #   define RSL_TO_PARENT_INFO     rsl_to_parent_info_
 #   define RSL_TO_PARENT_MSG      rsl_to_parent_msg_
+#   define RSL_TO_PARENT_MSGX     rsl_to_parent_msgx_
 #   define RSL_MERGE_MSGS         rsl_merge_msgs_
 #   define RSL_FROM_CHILD_INFO    rsl_from_child_info_
 #   define RSL_FROM_CHILD_MSG     rsl_from_child_msg_
+#   define RSL_FROM_CHILD_MSGX    rsl_from_child_msgx_
 
 #   define RSL_WITHIN_NESTED_BOUNDARY  rsl_within_nested_boundary_
 #   define RSL_WITHIN_NESTED_BETA  rsl_within_nested_beta_
@@ -571,9 +575,11 @@
 
 #   define RSL_TO_PARENT_INFO     rsl_to_parent_info
 #   define RSL_TO_PARENT_MSG      rsl_to_parent_msg
+#   define RSL_TO_PARENT_MSGX     rsl_to_parent_msgx
 #   define RSL_MERGE_MSGS         rsl_merge_msgs
 #   define RSL_FROM_CHILD_INFO    rsl_from_child_info
 #   define RSL_FROM_CHILD_MSG     rsl_from_child_msg
+#   define RSL_FROM_CHILD_MSGX    rsl_from_child_msgx
 
 #   define RSL_WITHIN_NESTED_BOUNDARY  rsl_within_nested_boundary
 #   define RSL_WITHIN_NESTED_BETA  rsl_within_nested_beta

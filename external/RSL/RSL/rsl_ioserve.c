@@ -1488,7 +1488,11 @@ RSL_WRITE_MM5V3_SM_HEADER( unit_p,ndim_p,
   rsl_swapbytes( wbuf, iwordsize, 9 ) ;
 # endif
 #else
+#ifdef crayx1
+  { int i ;
+#else
   { short i ;
+#endif
     i = *ndim_p ; bcopy( &i, &(wbuf[icurs]), iwordsize/2 ) ;   icurs += iwordsize/2 ;
     i = *s1_p   ; bcopy( &i, &(wbuf[icurs]), iwordsize/2 ) ;   icurs += iwordsize/2 ;
     i = *s2_p   ; bcopy( &i, &(wbuf[icurs]), iwordsize/2 ) ;   icurs += iwordsize/2 ;
@@ -1687,9 +1691,15 @@ RSL_WRITE_MM5V3_BIG_HEADER( unit_p,
   bcopy( ibuf  , &(wbuf[icurs]), *nibuf_p * iwordsize ) ;
   icurs += *nibuf_p * iwordsize ;
 #else
+#ifdef crayx1
+  { long *p ; int *q ; int i ;
+    p = (long *) ibuf ;
+    q = (int *) ibuf ;
+#else
   { long *p ; short *q ; int i ;
     p = (long *) ibuf ;
     q = (short *) ibuf ;
+#endif
     for ( i = 0 ; i < *nibuf_p ; i++ )
     {
       *q = *p ; q++ ; p++ ;

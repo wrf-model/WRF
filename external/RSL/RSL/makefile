@@ -138,6 +138,12 @@ t3e :
 	@ make >> LAST_MADE
 	$(MAKE) -f makefile.t3e $(MAKE_OPTS) all
 
+crayx1 :
+	@ if [ -f LAST_MADE ] ; then /bin/mv -f LAST_MADE LAST_MADE.bak ; fi
+	@ echo Last made as: make x1 > LAST_MADE
+	@ make >> LAST_MADE
+	$(MAKE) -f makefile.x1 $(MAKE_OPTS) all
+
 o2k :
 	$(MAKE) -f makefile.o2k $(MAKE_OPTS) all
 

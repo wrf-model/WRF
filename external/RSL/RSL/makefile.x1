@@ -1,0 +1,64 @@
+
+##### from Bill Gropp #####
+# (see /Net/moline14/moline14_5/gropp/mpich/examples/test/pt2pt/Makefile)
+#
+#MPIR_HOME   = /opt/ctl/mpt/1.1.0.1
+##LIB_PATH    = -L$(MPIR_HOME)/lib
+#LIB_PATH    = -L/opt/ctl/mpt/1.1.0.1/lib
+#LIB_LIST    = -lmpi
+#INCLUDE_DIR =  -I$(MPIR_HOME)/include
+#
+LIBS = $(LIB_PATH) $(LIB_LIST)
+#
+##### end stuff from Gropp #####
+
+include makefile.core
+OBJ = $(CORE_OBJ) rsl_mpi_compat.o mpi_init_f.o vicopy.o debug.o 
+HDR = $(CORE_HDR)
+TAR = $(CORE_TAR)
+
+CC = cc
+FC = ftn
+
+.SUFFIXES: .o .c .F
+
+IDIR= $(INCLUDE_DIR)
+
+CFLAGS = -DMPI -O3 $(IDIR) -DRSL_SYNCIO -Dcrayx1 -h list=a  -DNO_RAGGED
+FFLAGS = -Dcrayx1
+
+CFLAGS0 = -hstream0,vector3,scalar3,fp2,inline3 -DMPI -DRSL_SYNCIO -VV -h display_opt -h report=imsvf -Dcrayx1
+
+warning :
+	@ echo 'This makefile is not a top level makefile'
+	@ echo 'and is not intended for direct use.  Please'
+	@ echo 'type "make" by itself for assistance.'
+
+all : rsl.inc librsl.a
+
+fill_boundary.o : fill_boundary.c
+	$(CC) -P $(CFLAGS0) $(CONFIG_OPTS) fill_boundary.c
+	$(CC) -c $(CFLAGS0) $(CONFIG_OPTS) fill_boundary.c
+
+rsl.inc : $(HDR) rsl.inc_base
+	cat $(HDR) | sed $(SED_LINE) |\
+	grep '^#.*define.*\/\* FORTRAN \*\/' | \
+	awk '{printf("      integer %s\n      parameter(%s=%s)\n",$$2,$$2,$$3)}' | \
+	cat rsl.inc_base - > rsl.inc
+
+librsl.a : $(OBJ)
+	ar cr librsl.a $(OBJ)
+#	ranlib librsl.a
+
+.c.o :
+	$(CC) -c $(CFLAGS) $(CONFIG_OPTS) $<
+
+.F.o :
+	$(FC) -c $(FFLAGS) $<
+
+clean :
+	/bin/rm -f *.o
+
+###
+
+$(OBJ) : $(HDR)

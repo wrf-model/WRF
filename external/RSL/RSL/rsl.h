@@ -233,7 +233,7 @@ show config:  ---See also the makefile---
 /* type declarations */
 
 typedef int * int_p ;
-#if !(defined(SUNDEBUG))
+#if !(defined(SUNDEBUG) || defined(crayx1))
 typedef short   rsl_processor_t ;
 typedef short   rsl_index_t ;
 typedef short   rsl_dimlen_t ;
@@ -243,14 +243,25 @@ typedef int   rsl_index_t ;
 typedef int   rsl_dimlen_t ;
 #endif
 typedef long    rsl_point_id_t ;
+
+#ifdef crayx1
+typedef int rsl_tag_t ;
+#else
 typedef unsigned char rsl_tag_t ;
+#endif
 
 typedef struct rsl_list {
   struct rsl_list * next ;
   void * data ;	                /* pointer to some node */
-  short info1 ;			/* blank info field */
-  short info2 ;			/* blank info field */
+#ifdef crayx1
+  int info1 ;                   /* blank info field */
+  int info2 ;                   /* blank info field */
+#else
+  short info1 ;                 /* blank info field */
+  short info2 ;                 /* blank info field */
+#endif
 } rsl_list_t ;
+
 
 typedef struct rsl_runrec {	/* added 1/9/95 for rsl_compute_islab */
   int i, j, ig, jg, runlength ;
@@ -505,6 +516,21 @@ typedef struct rsl_domain_info {
 
 
 /* March 1998 -- structure for new packing strategy */
+#ifdef crayx1
+struct packrec_struct {
+    void * base ;
+    int offset ;
+    int n ;             /* number of bytes in an element */
+    int nelems ;        /* number of elements */
+    int stride ;        /* number of bytes between each element */
+    int f90_table_index ;
+    int endstop ;
+    int valid ;
+    int curs ;          /* position of data in pack buf */
+} ;
+typedef struct packrec_struct packrec_t ;
+
+#else
 struct packrec_struct {
   void * base ;
   int offset ;
@@ -516,6 +542,7 @@ struct packrec_struct {
   int valid ;
 } ;
 typedef struct packrec_struct packrec_t ;
+#endif
 
 typedef struct rsl_procrec {
   struct rsl_procrec * next ;
@@ -543,8 +570,13 @@ typedef struct rsl_ptrec {
   rsl_index_t ig, jg ;
   rsl_list_t  *send_messages ;
   rsl_list_t  *recv_messages ;
+#ifdef crayx1
+  int nsendmsgs ;
+  int nrecvmsgs ;
+#else
   short nsendmsgs ;
   short nrecvmsgs ;
+#endif
 } rsl_ptrec_t ;
 
 typedef struct rsl_point_hdr {
@@ -558,7 +590,11 @@ typedef struct rsl_message_hdr {  /* packet hdr for message */
 
 typedef struct rsl_fld_hdr {	/* packet hdr for fld */
   void * base ;                 /* base address; byte pointer arithmetic */
-  short len ;			/* number of bytes to follow */
+#ifdef crayx1
+  int len ;                     /* number of bytes to follow */
+#else
+  short len ;                   /* number of bytes to follow */
+#endif
 } rsl_fld_hdr_t ;
 
 /* global data */

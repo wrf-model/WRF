@@ -346,7 +346,7 @@ subroutine HDF5IOWRITE(DataHandle,Comm,DateStr,Length,DomainStart,DomainEnd &
 end subroutine  HDF5IOWRITE
 
 
-subroutine ext_phdf5_ioinit(Status)
+subroutine ext_phdf5_ioinit(SysDepInfo, Status)
 
   use wrf_phdf5_data
   use HDF5
@@ -355,6 +355,7 @@ subroutine ext_phdf5_ioinit(Status)
   include 'wrf_status_codes.h'
   include 'mpif.h'
 
+  CHARACTER*(*), INTENT(IN) :: SysDepInfo
   integer, intent(out) :: status
   integer              :: hdf5err
 

@@ -774,15 +774,15 @@ The 'frame/module_io.F' file must be modified to add code to call the HDF5 modul
 *** 34,39 ****<br>
 --- 34,48 ----<br>
   #ifdef NETCDF<br>
-    CALL ext_ncd_ioinit( Status )<br>
+    CALL ext_ncd_ioinit( SysDepInfo, Status )<br>
   #endif<br>
 + <br>
 + #ifdef HDF5<br>
-+   CALL ext_hdf5_ioinit(Status)<br>
++   CALL ext_hdf5_ioinit(SysDepInfo, Status)<br>
 + #endif<br>
 + <br>
 + #ifdef PHDF5<br>
-+   CALL ext_phdf5_ioinit(Status)<br>
++   CALL ext_phdf5_ioinit(SysDepInfo, Status)<br>
 + #endif<br>
 +  <br>
   END SUBROUTINE wrf_ioinit<br>

@@ -469,6 +469,10 @@ RSL_POINT_ON_PROC ( d_p, ig_p, jg_p, retval_p )
   ig = *ig_p - 1 ;
   jg = *jg_p - 1 ;
 
+/* added 12/27/01 -- JM */
+  if ( ig < 0 || ig >= info->len_m ||
+       jg < 0 || jg >= info->len_n ) { *retval_p = 0 ; return ; }
+
   d = *d_p ;
   RSL_TEST_ERR( d < 0 || d > RSL_MAXDOMAINS,
     "rsl_ready_bcast: bad 'this hemi' descriptor" ) ;

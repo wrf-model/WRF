@@ -24,6 +24,7 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
       USE MODULE_DIFFUSION_NMM, 	ONLY: HDIFF
       USE MODULE_BNDRY_COND,		ONLY: BOCOH, BOCOV
       USE MODULE_EXT_INTERNAL
+      USE MODULE_TILES
 !     integer :: npes
 !     integer :: MPI_COMM_COMP
 !-----------------------------------------------------------------------
@@ -63,14 +64,21 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
 
       LOGICAL :: LAST_TIME
 !
-      real*8 :: timef
-      timef() = 0.
       real,save :: solve_tim,exch_tim,pdte_tim,adve_tim,vtoa_tim        &
      &,            vadz_tim,hadz_tim,eps_tim,vad2_tim,had2_tim          &
      &,            radiation_tim,rdtemp_tim,turbl_tim,cltend_tim        &
      &,            cucnvc_tim,gsmdrive_tim,hdiff_tim,bocoh_tim          &
      &,            pfdht_tim,ddamp_tim,bocov_tim,sum_tim
       real :: btim,btimx
+      integer ij
+#ifdef RSL
+      integer rsl_internal_microclock
+      external rsl_internal_microclock 
+#  define timef rsl_internal_microclock
+#else
+      real*8 :: timef
+      timef() = 0.
+#endif
 !-----------------------------------------------------------------------
 !***********************************************************************
 !-----------------------------------------------------------------------
@@ -89,6 +97,9 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
                              ids,ide,jds,jde,kds,kde,                   &
                              ims,ime,jms,jme,kms,kme,                   &
                              ips,ipe,jps,jpe,kps,kpe )
+!
+      CALL set_tiles ( grid , ids , ide , jds , jde , ips , ipe , jps , jpe )
+!
       CALL wrf_debug(100,"dyn_nmm/solve_nmm.F: warning SIGMA hard coded") 
 !
       SIGMA=1 
@@ -800,12 +811,12 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
         CALL wrf_debug ( 100 , 'nmm: out of bocov' )
       solve_tim=solve_tim+timef()-btim
 !----------------------------------------------------------------------
-#if 0
+#if 1
       sum_tim=pdte_tim+adve_tim+vtoa_tim+vadz_tim+hadz_tim+eps_tim     &
      &       +vad2_tim+had2_tim+radiation_tim+rdtemp_tim+turbl_tim     &
      &       +cltend_tim+cucnvc_tim+gsmdrive_tim+hdiff_tim             &
      &       +bocoh_tim+pfdht_tim+ddamp_tim+bocov_tim+exch_tim
-     if(ntsd.ge.9000 .and. mod(ntsd,100) .eq. 0)then
+!     if(ntsd.ge.9000 .and. mod(ntsd,100) .eq. 0)then
       write(0,*)' ntsd=',ntsd,' solve_tim=',solve_tim*1.e-3 &
      &         ,' sum_tim=',sum_tim*1.e-3
       write(0,*)' pdte_tim=',pdte_tim*1.e-3,' pct=',pdte_tim/sum_tim*100.
@@ -828,7 +839,7 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
       write(0,*)' ddamp_tim=',ddamp_tim*1.e-3,' pct=',ddamp_tim/sum_tim*100.
       write(0,*)' bocov_tim=',bocov_tim*1.e-3,' pct=',bocov_tim/sum_tim*100.
       write(0,*)' exch_tim=',exch_tim*1.e-3,' pct=',exch_tim/sum_tim*100.
-      endif
+!      endif
 #endif
 
 #define COPY_OUT

@@ -325,6 +325,7 @@ CONTAINS
 !
 !------------------------------------------------------------------
 !
+
   if (config_flags%sf_sfclay_physics .eq. 0) return
 
   v_phytmp = 0.
@@ -487,6 +488,7 @@ CONTAINS
           ELSE
             CALL wrf_error_fatal( 'Must specify NMM core with NMM LSM' )
           ENDIF
+          CALL wrf_debug(100,'back from NMM LSM')
 #endif
 
      CASE (LSMSCHEME)

@@ -157,7 +157,6 @@ READ_DOMAIN_DECOMP ( d_p, wrk,  m, n )
   int * wrk ;
   int m, n ;
 {
-#ifndef STUBS
   int P ;
   int d ;
   char fname[50] ;
@@ -209,7 +208,6 @@ READ_DOMAIN_DECOMP ( d_p, wrk,  m, n )
   }
 
   fclose(fp) ;
-#endif
   return(0) ;
 }
 
@@ -219,7 +217,6 @@ GET_DOMAIN_DECOMP ( d_p, wk, nwk_p )
   int_p wk ;
   int_p nwk_p ;
 {
-#ifndef STUBS
   rsl_index_t d ;
   char fname[50] ;
   FILE * fp ;
@@ -256,6 +253,5 @@ GET_DOMAIN_DECOMP ( d_p, wk, nwk_p )
       wk[INDEX_2(j,i,m)] = domain_info[d].domain[INDEX_2(j,i,m)].P ;
     }
   }
-#endif
   return(0) ;
 }

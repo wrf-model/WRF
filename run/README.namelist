@@ -266,7 +266,7 @@ Additional ones when running 3DVAR:
  spec_bdy_width                      = 5,       ; total number of rows for specified boundary value nudging
  spec_zone                           = 1,       ; number of points in specified zone (spec b.c. option)
  relax_zone                          = 4,       ; number of points in relaxation zone (spec b.c. option)
- specified (max_dom)                 = .false., ; specified boundary conditions (inactive)
+ specified (max_dom)                 = .false., ; specified boundary conditions (only for domain 1)
                                                   the above 4 are used for real-data runs
 
  periodic_x (max_dom)                = .false., ; periodic boundary conditions in x direction

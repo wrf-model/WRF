@@ -2897,6 +2897,81 @@ solve_interface.o : solve_interface.F
 	$(FC) -c -O 0 $(FCFLAGS) $*.f
 
 ###########################################################
+#ARCH Settings for PC Linux x86_64 (IA64 and Opteron), PGI compiler 5.2 or higher  (Single-threaded)
+# Note: requires pgi compiler version 5.2 or higher due to one-pass ipa
+# remove -Mipa=fast if using older version.
+#
+FC              =       pgf90
+CC              =       gcc
+SFC             =       $(FC)
+CFLAGS          =       -g
+FCOPTIM		=	-fastsse -Mipa=fast
+FCDEBUG		=	
+FCBASEOPTS      =       -byteswapio -Ktrap=fp -Mfree $(FCDEBUG)
+FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
+ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DIWORDSIZE=4 -DRWORDSIZE=4 -DLWORDSIZE=8 \
+                         CONFIGURE_NETCDF_FLAG \
+                        -DTRIEDNTRUE -DONLY_WRFMODEL_IO
+INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io_int \
+                        -I../frame -I../share -I../phys -I../inc
+EXTRAMODULES    =       
+PERL            =       perl
+REGISTRY        =       Registry
+LIB             =       CONFIGURE_NETCDF_LIB_PATH \
+			../frame/internal_header_util.o ../frame/pack_utils.o ../../setmxcsr.o
+LDFLAGS         =
+CPP             =       /lib/cpp
+CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -DPGF90 -traditional
+AR              =       ar ru
+M4              =       m4
+RANLIB          =       ranlib
+
+externals : CONFIGURE_WRFIO_NF wrfio_int
+	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
+
+wrfio_nf : 
+	( cd ../external/io_netcdf ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH FC=$(FC) TRADFLAG="-traditional" \
+          FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include' ; \
+          /bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc )
+
+wrfio_int : 
+	( cd ../external/io_int ; \
+          make CC=$(CC) FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" \
+          TRADFLAG="-traditional" all diffwrf )
+
+# compile these without high optimization to speed compile
+solve_interface.o : solve_interface.F
+module_io_mm5.o : module_io_mm5.F
+module_si_io.o : module_si_io.F
+module_io_wrf.o : module_io_wrf.F
+module_domain.o : module_domain.F
+module_start.o : module_start.F
+module_initialize.o : module_initialize.F
+module_initialize_b_wave.o : module_initialize_b_wave.F
+module_initialize_hill2d_x.o : module_initialize_hill2d_x.F
+module_initialize_quarter_ss.o : module_initialize_quarter_ss.F
+module_initialize_squall2d_x.o : module_initialize_squall2d_x.F
+module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
+module_initialize_real.o : module_initialize_real.F
+module_dm.o : module_dm.F
+start_domain.o : start_domain.F
+
+solve_interface.o                                              \
+module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
+module_start.o module_initialize.o module_initialize_b_wave.o  \
+module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
+module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
+module_initialize_real.o module_dm.o start_domain.o :
+	$(RM) $@
+	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(RM) $*.b
+	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
+
+###########################################################
+
+###########################################################
 #ARCH    PC Linux i486 i586 i686, PGI compiler  (Single-threaded)
 #
 FC              =       pgf90

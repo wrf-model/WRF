@@ -48,7 +48,6 @@ MODULE module_input_chem_bioemiss
     USE module_timing
     USE module_data_radm2
     USE module_aerosols_sorgam
-    USE ESMF_Mod
     USE module_get_file_names
 
 

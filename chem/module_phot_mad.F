@@ -2059,9 +2059,7 @@ END SUBROUTINE madronich1_driver
 270     RETURN
 
 280     CONTINUE
-        WRITE (6,90000)
-90000   FORMAT (//' leqt1b error--matrix algorithmically singular')
-        STOP
+        CALL wrf_error_fatal ( ' leqt1b error--matrix algorithmically singular')
       END SUBROUTINE leqt1b
 
       ! #######################################################################
@@ -2190,8 +2188,7 @@ END SUBROUTINE madronich1_driver
               lev = lev + 1
 
               IF (lev>nj) THEN
-                PRINT *, 'LEV > NJ, NJ GROESSER WAEHLEN'
-                STOP 9999
+                CALL wrf_error_fatal ( 'LEV > NJ, NJ GROESSER WAEHLEN')
               END IF
 
               z(lev) = z(lev-1) + dzu
@@ -2223,8 +2220,7 @@ END SUBROUTINE madronich1_driver
               lev = lev + 1
 
               IF (lev>nj) THEN
-                print *,'LEV > NJ, NJ GROESSER WAEHLEN'
-                STOP 9999
+                CALL wrf_error_fatal ( 'LEV > NJ, NJ GROESSER WAEHLEN')
               END IF
 
               z(lev) = z(lev-1) + dzo
@@ -2899,7 +2895,9 @@ END SUBROUTINE madronich1_driver
         isav(ktr) = isav(ktr-1) + nsub
         layers = layers + nsub - 1
 
-        IF (layers>nlev) STOP 12
+        IF (layers>nlev) then
+            CALL wrf_error_fatal ( 'layers>nlev')
+        endif
 
         IF (iup>layers) GO TO 70
 
@@ -3202,8 +3200,7 @@ END SUBROUTINE madronich1_driver
             END DO
 
             IF (phizz(kte-1)>20.) THEN
-              PRINT *, 'set kl0 to 1'
-              STOP
+              CALL wrf_error_fatal ( 'phizz(kte-1)>20., set kl0 to 1')
             END IF
 
             CALL trapez(zstd,aerstd,1,51,phizz,aerext,kts,kte,51,51,kte,kte)

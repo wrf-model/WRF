@@ -946,7 +946,7 @@ CONTAINS
 !c    1      subdown,detup,entup,entupk,detupk
 !c          print *,'dddr stuff = ',entdo,
 !c    1      detdo,entdoj
-         stop
+            CALL wrf_error_fatal ( 'cup_dellas_tr: TOTMAS > CRITICAL VALUE')
          endif
          dp=100.*(p_cup(i,k-1)-p_cup(i,k))
          do nv=1,num_chem

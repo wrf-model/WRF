@@ -49,7 +49,7 @@ MODULE module_input_chem_data
     USE module_data_radm2
     USE module_aerosols_sorgam
     USE module_data_sorgam
-    USE ESMF_Mod
+    USE WRF_ESMF_Mod
     USE module_get_file_names
 
 
@@ -287,7 +287,7 @@ SUBROUTINE input_ext_chem_file (si_grid)
 
 
      CALL model_to_grid_config_rec ( si_grid%id , model_config_rec , config_flags )
-     CALL ESMF_ClockGetCurrTime( si_grid%domain_clock, CurrTime=CurrTime, rc=ierr )
+     CALL ESMF_ClockGet( si_grid%domain_clock, CurrTime=CurrTime, rc=ierr )
 
       !  After current_date has been set, fill in the julgmt stuff.
 

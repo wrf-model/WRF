@@ -50,7 +50,7 @@
       real, dimension(grid%sm31:grid%em31,grid%sm32:grid%em32,grid%sm33:grid%em33) ::vcsulf_old
       real, dimension(grid%sm31:grid%em31,grid%sm32:grid%em32,grid%sm33:grid%em33,ldrog) ::vdrog3
     real :: dtstepc,convfac
-   INTEGER                         :: ij 
+   INTEGER                         :: ij,l 
    INTEGER                         :: im , num_3d_m , ic , num_3d_c
    INTEGER                         :: ijds, ijde
    INTEGER                         :: ksubt
@@ -90,6 +90,37 @@
      CASE DEFAULT 
                                                      
    END SELECT chem_select                              
+!
+!  transport part is in mixing ratio
+!
+      if(imicrogram == 1)then
+!    write(0,*)'change imicrogram from 1 to 0 in chem_driver'
+
+
+   if ( p_so4aj >= PARAM_FIRST_SCALAR ) then
+   !$OMP PARALLEL DO   &
+   !$OMP PRIVATE ( ij ,its,ite,jts,jte,kte)
+  aerosol_decouple_loop :  DO ij = 1 , grid%num_tiles
+       its = max(grid%i_start(ij),ids)
+       ite = min(grid%i_end(ij),ide-1)
+       jts = max(grid%j_start(ij),jds)
+       jte = min(grid%j_end(ij),jde-1)
+      do l=p_so4aj,num_chem
+      do j=jts,jte
+      do k=k_start,k_end
+      kk=min(k,kde-1)
+      do i=its,ite
+        chem_1(i,k,j,l)=chem_1(i,kk,j,l)*alt(i,kk,j)
+        chem_2(i,k,j,l)=chem_2(i,kk,j,l)*alt(i,kk,j)
+      enddo
+      enddo
+      enddo
+      enddo
+    enddo aerosol_decouple_loop
+    endif
+    imicrogram=0
+    endif
+
 !     CALL get_mminlu( mminlu_loc )
 !     if(mminlu_loc.eq.'USGS')isice=24
 !     luse_typ=mminlu_loc
@@ -98,30 +129,30 @@
 ! make more sure , even on halo....
 !
       do nv=1,num_chem
-         do j=jms,jme
-            do k=kms,kme
-               do i=ims,ime
+         do j=jps,min(jde-1,jpe)
+            do k=kps,kpe
+               do i=ips,min(ide-1,ipe)
                   chem_2(i,k,j,nv)=max(chem_2(i,k,j,nv),epsilc)
                enddo
             enddo
          enddo
       enddo
-      do j=jms,jme
-         do k=kms,kme
-             do i=ims,ime
+      do j=jps,min(jde-1,jpe)
+         do k=kps,kpe
+             do i=ips,min(ide-1,ipe)
                if(chem_2(i,k,j,p_nu0).lt.1.e07)then
                   chem_2(i,k,j,p_nu0)=1.e7
                endif
             enddo
          enddo
       enddo
-      do nv=1,num_chem
-         do j=jms,jme
-            do i=ims,ime
-                  chem_2(i,kme,j,nv)=chem_2(i,kme-1,j,nv)
-            enddo
-         enddo
-      enddo
+!     do nv=1,num_chem
+!        do j=jps,jpe
+!           do i=ips,ipe
+!                 chem_2(i,kte,j,nv)=chem_2(i,kte-1,j,nv)
+!           enddo
+!        enddo
+!     enddo
 
 
       vdrog3=0.
@@ -171,7 +202,6 @@
 !
 ! calculate photolysis rates
 !
-      if(stepphot.lt.100)then
       if(ktau.eq.1.or.mod(ktau,stepphot).eq.0)then
          call wrf_debug(15,'calling photolysis driver')
          call photolysis_driver (grid%id,ktau,dt,config_flags,             &
@@ -189,7 +219,6 @@
               k_start    , min(k_end,kde-ksubt)                     )
    
       endif
-      endif
          if(ktau.gt.2)then
          call wrf_debug(100,'calling dry_deposition_driver')
          call dry_dep_driver(grid%id,ktau,dt,                              &
@@ -199,6 +228,7 @@
               ivgtyp,tsk,gsw,vegfra,pblh,rmol,ust,znt,xlat,xlong,z,z_at_w, &
               h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,cvaro2,    &
               cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,dep_vel_o3,       &
+              imicrogram,                                                 &
               ids,ide, jds,jde, kds,kde,                                  &
               ims,ime, jms,jme, kms,kme,                                  &
               grid%i_start(ij), min(grid%i_end(ij),ide-1),      &
@@ -225,7 +255,6 @@
 !
       kts=k_start
       kte=k_end
-      if(stepchem.lt.100)then
       if(ktau.eq.1.or.mod(ktau,stepchem).eq.0)then
       call wrf_debug(15,'calling mechanism')
         dtstepc=dt*float(stepchem)
@@ -261,6 +290,7 @@
                e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_pm10,        &
                e_so4i,e_so4j,e_no3i,e_no3j,                             &
                vdrog3,aer_dry,aer_water,                                &
+               imicrogram,                                              &
                ids,ide, jds,jde, kds,kde,                               &
                ims,ime, jms,jme, kms,kme,                               &
                grid%i_start(ij), min(grid%i_end(ij),ide-1),      &
@@ -300,7 +330,6 @@
             enddo
         enddo
       endif
-      endif
 ! Fill top level to prevent spurious interpolation results (no extrapolation)
 ! should this be done on halo too????
       do nv=1,num_chem
@@ -312,6 +341,36 @@
       enddo
       call wrf_debug(15,'done tileloop in chem_driver')
    END DO chem_tile_loop_1
+!
+!  if aerosols were not called, make sure units are in micrograms/m3 for
+!  output, just in case.....
+!
+      if(imicrogram == 0)then
+!    write(0,*)'change imicrogram from 0 to 1 in chem_driver'
+
+   if ( p_so4aj >= PARAM_FIRST_SCALAR ) then
+   !$OMP PARALLEL DO   &
+   !$OMP PRIVATE ( ij ,its,ite,jts,jte,kte)
+  aerosol_couple_loop :  DO ij = 1 , grid%num_tiles
+       its = max(grid%i_start(ij),ids)
+       ite = min(grid%i_end(ij),ide-1)
+       jts = max(grid%j_start(ij),jds)
+       jte = min(grid%j_end(ij),jde-1)
+      do l=p_so4aj,num_chem
+      do j=jts,jte
+      do k=k_start,k_end
+      kk=min(k,kde-1)
+      do i=its,ite
+        chem_1(i,k,j,l)=chem_1(i,kk,j,l)/alt(i,kk,j)
+        chem_2(i,k,j,l)=chem_2(i,kk,j,l)/alt(i,kk,j)
+      enddo
+      enddo
+      enddo
+      enddo
+    enddo aerosol_couple_loop
+    endif
+    imicrogram=1
+    endif
    chem_1=chem_2
 
 

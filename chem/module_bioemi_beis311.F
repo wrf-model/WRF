@@ -743,7 +743,7 @@ MODULE module_bioemi_beis311
           write (*,*) 'ERROR: invalid Julian day'
 	  write (*,*) 'julday = ', julday
 	  write (*,*) 'growing season day = ',gday
-	  stop
+	  CALL wrf_error_fatal ( 'INVALID GROWING SEASON DAY')
       ENDIF
 	
       RETURN
@@ -792,7 +792,7 @@ MODULE module_bioemi_beis311
           write (*,*) 'ERROR: invalid Julian day'
 	  write (*,*) 'julday = ', julday
 	  write (*,*) 'growing season day = ',gday
-	  stop
+	  CALL wrf_error_fatal ( 'veg_adj: INVALID GROWING SEASON DAY' )
       ENDIF
 
 
@@ -844,7 +844,7 @@ MODULE module_bioemi_beis311
       ELSE
           write (*,*) 'ERROR: Invalid julday '
 	  write (*,*) 'julday = ',julday
-	  stop
+	  CALL wrf_error_fatal ( 'growseason: INVALID JULIAN DAY')
       ENDIF
 
 

@@ -16,6 +16,7 @@ CONTAINS
                e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_pm10,        &
                e_so4i,e_so4j,e_no3i,e_no3j,                             &
                vdrog3,aer_dry,aer_water,                                &
+               imicrogram,                                              &
                ids,ide, jds,jde, kds,kde,                               &
                ims,ime, jms,jme, kms,kme,                               &
                its,ite, jts,jte, kts,kte                                )
@@ -24,6 +25,7 @@ CONTAINS
                                       ims,ime, jms,jme, kms,kme, &
                                       its,ite, jts,jte, kts,kte, &
                                       id,ktau
+   INTEGER,      INTENT(INOUT   )    :: imicrogram
                                                                                                
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_moist ),        &
          INTENT(IN ) ::                                   moist                                
@@ -181,8 +183,11 @@ CONTAINS
    real timer
    timer=float(ktau)*dtstep/3600.
 !
-! convert advected aerosol variables to ug/m3
+! convert advected aerosol variables to ug/m3 (imicrogram=1)
 !
+   imicrogram=1
+!    write(0,*)'change imicrogram from 0 to 1 in sorgam'
+
    do l=p_so4aj,num_chem
       do j=jts,jte
          do k=kts,kte
@@ -407,15 +412,9 @@ CONTAINS
       chem(i,k,j,p_nh3)=max(epsilc,cblk(1,vnh3)/CONVFAC/MWNH3)
       enddo         ! k-loop
  100  continue      ! i,j-loop
-!     do l=p_so4aj,p_p25i
-!     do j=jms,jme
-!     do k=kms,kme-1
-!     do i=ims,ime
-!       chem(i,k,j,l)=max(chem(i,k,j,l),epsilc)
-!     enddo
-!     enddo
-!     enddo
-!     enddo
+!
+! sum up variables for interaction with radiation and photolysis
+!
       do j=jts,jte
       do k=kts,kte-1
       do i=its,ite
@@ -435,20 +434,21 @@ CONTAINS
       enddo
                                                                      
 END SUBROUTINE sorgam_driver
-    SUBROUTINE sorgam_depdriver (id,ktau,dtstep, &
-               ust,t_phy,moist,p8w,t8w, &
-               alt,p_phy,chem,rho_phy,dz8w,z,z_at_w,&
+    SUBROUTINE sorgam_depdriver (id,ktau,dtstep,                           &
+               ust,t_phy,moist,p8w,t8w,                                    &
+               alt,p_phy,chem,rho_phy,dz8w,z,z_at_w,                       &
                h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,cvaro2,    &
-               cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,&
+               cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,                  &
                aer_res,vgsa,                                               &
-               ids,ide, jds,jde, kds,kde,                            &
-               ims,ime, jms,jme, kms,kme,                            &
-               its,ite, jts,jte, kts,kte                             )
+               imicrogram,                                                 &
+               ids,ide, jds,jde, kds,kde,                                  &
+               ims,ime, jms,jme, kms,kme,                                  &
+               its,ite, jts,jte, kts,kte                                   )
    INTEGER,      INTENT(IN   )    ::                             &
                                       ids,ide, jds,jde, kds,kde, &                             
                                       ims,ime, jms,jme, kms,kme, &                             
                                       its,ite, jts,jte, kts,kte, &                             
-                                      id,ktau
+                                      id,ktau,imicrogram
                                                                                                
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_moist ),        &                           
          INTENT(IN ) ::                                   moist                                
@@ -640,6 +640,7 @@ END SUBROUTINE sorgam_driver
    INTEGER :: i,j,k,l
 !
 !     print *,'in sorgdepdriver ',its,ite,jts,jte
+
       do 100 j=jts,jte
          do 100 i=its,ite
             cblk=epsilc  
@@ -663,7 +664,8 @@ END SUBROUTINE sorgam_driver
         BLKTA(BLKSIZE)   = T(K)         ! temperature in K
         BLKDENS(BLKSIZE)=BLKPRS(BLKSIZE)/(RDGAS * BLKTA(BLKSIZE))
         USTAR(BLKSIZE) = max(1.e-8,UST(i,j))
-      convfac2=1./alt(i,k,j)
+      convfac2=1.
+      if(imicrogram.eq.0)convfac2=1./alt(i,k,j)
       cblk(1,vsulf) = max(epsilc,vsulf_in)
       cblk(1,vhno3) = max(epsilc,nitrate_in)
       cblk(1,vnh3) = max(epsilc,nh3_in)
@@ -1024,8 +1026,7 @@ END SUBROUTINE sorgam_depdriver
 
       ELSE IF (i<0.0) THEN
         xmsg = 'Ionic strength below zero...negative concentrations'
-        WRITE (6,*) xmsg
-        STOP
+        CALL wrf_error_fatal ( xmsg )
       END IF
 
 !...compute some essential expressions
@@ -2592,7 +2593,7 @@ END SUBROUTINE sorgam_depdriver
           crutes(2) = 0.0
           crutes(3) = 0.0
           nr = 0
-          STOP
+          CALL wrf_error_fatal ( 'PHI < CRITICAL VALUE')
         END IF
         theta = acos(rr/phi)/3.0
         costh = cos(theta)
@@ -6569,11 +6570,13 @@ END SUBROUTINE vdvg
     SUBROUTINE aerosols_sorgam_init(chem,                            &
          alt,t,pb,p,t0,p1000mb,rcp,                                  &
          aer_dry,aer_water,chem_in_opt,                              &
+         imicrogram,                                                 &
          ids,ide, jds,jde, kds,kde,                                  &
          ims,ime, jms,jme, kms,kme,                                  &
          its,ite, jts,jte, kts,kte                                   )
    implicit none
    INTEGER,      INTENT(IN   ) :: chem_in_opt
+   INTEGER,      INTENT(INOUT) :: imicrogram
    INTEGER,      INTENT(IN   ) ::                               &
                                   ids,ide, jds,jde, kds,kde,    &
                                   ims,ime, jms,jme, kms,kme,    &
@@ -6720,7 +6723,12 @@ END SUBROUTINE vdvg
 !  IF USING OLD SIMULATION, DO NOT REINITIALIZE!
 !
 !
-        if(chem_in_opt == 1 ) return
+        imicrogram=1
+     write(0,*)'imicrogram to 1 in sorgam_init'
+
+        if(chem_in_opt == 1 ) then
+          return
+        endif
 !       if(chem_in_opt == 1 ) then
 !         chem(ims:ime,kms:kme,jms:jme,p_nh3)=5.e-6
 !         chem(ims:ime,kms:kme,jms:jme,p_hno3)=7.e-5
@@ -6804,17 +6812,6 @@ END SUBROUTINE vdvg
         enddo
         enddo
 !
-! now convert for advection/transport
-!
-!       do l=p_so4aj,num_chem
-!       do j=jts,jte
-!       do k=kts,kte-1
-!       do i=its,ite
-!              chem(i,k,j,l)=chem(i,k,j,l)*alt(i,k,j)
-!       enddo
-!       enddo
-!       enddo
-!       enddo
         do l=p_so4aj,num_chem
         do j=jts,jte
         do i=its,ite

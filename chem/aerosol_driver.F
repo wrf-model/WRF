@@ -7,6 +7,7 @@
                e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_pm10,           &
                e_so4i,e_so4j,e_no3i,e_no3j,                             &
                vdrog3,aer_dry,aer_water,                                   &
+               imicrogram,                                                 &
                ids,ide, jds,jde, kds,kde,                                  &
                ims,ime, jms,jme, kms,kme,                                  &
                its,ite, jts,jte, kts,kte                                   )
@@ -99,6 +100,7 @@
                                       ims,ime, jms,jme, kms,kme,    &
                                       its,ite, jts,jte, kts,kte,    &
 			    	      id,ktau
+   INTEGER,      INTENT(INOUT   )    ::               imicrogram
       REAL,      INTENT(IN   ) :: dtstep
 !
 ! moisture variables
@@ -185,6 +187,7 @@
                e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_pm10,        &
                e_so4i,e_so4j,e_no3i,e_no3j,                             &
                vdrog3,aer_dry,aer_water,                                &
+               imicrogram,                                              &
                ids,ide, jds,jde, kds,kde,                               &
                ims,ime, jms,jme, kms,kme,                               &
                its,ite, jts,jte, kts,kte                                )
@@ -207,6 +210,7 @@
                e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_pm10,        &
                e_so4i,e_so4j,e_no3i,e_no3j,                             &
                vdrog3,aer_dry,aer_water,                                &
+               imicrogram,                                              &
                ids,ide, jds,jde, kds,kde,                               &
                ims,ime, jms,jme, kms,kme,                               &
                its,ite, jts,jte, kts,kte                                )

@@ -4,6 +4,7 @@
      stepphot,stepchem,ph,phb,g,aerwrf,config_flags,                 &
            alt,t,pb,p,t0,p1000mb,rcp,                                &
          aer_dry,aer_water,chem_in_opt,                              &
+               imicrogram,                                           &
                ids,ide, jds,jde, kds,kde,                            &
                ims,ime, jms,jme, kms,kme,                            &
                its,ite, jts,jte, kts,kte                             )
@@ -17,6 +18,7 @@
    USE module_dep_simple
     real  , intent(in) :: bioemdt,photdt,chemdt,dt
    INTEGER,      INTENT(IN   ) :: chem_in_opt
+   INTEGER,      INTENT(INOUT) :: imicrogram
    INTEGER,      INTENT(IN   ) :: id,                                &
                                   ids,ide, jds,jde, kds,kde,         &
                                   ims,ime, jms,jme, kms,kme,         &
@@ -69,6 +71,7 @@
       call aerosols_sorgam_init(chem,                                &
                alt,t,pb,p,t0,p1000mb,rcp,                            &
                aer_dry,aer_water,chem_in_opt,                        &
+               imicrogram,                                           &
                ids,ide, jds,jde, kds,kde,                            &
                ims,ime, jms,jme, kms,kme,                            &
                its,ite, jts,jte, kts,kte                             )
@@ -77,6 +80,7 @@
       call aerosols_sorgam_init(chem,                                &
                alt,t,pb,p,t0,p1000mb,rcp,                            &
                aer_dry,aer_water,chem_in_opt,                        &
+               imicrogram,                                           &
                ids,ide, jds,jde, kds,kde,                            &
                ims,ime, jms,jme, kms,kme,                            &
                its,ite, jts,jte, kts,kte                             )

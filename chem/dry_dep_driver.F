@@ -7,6 +7,7 @@
                ivgtyp,tsk,gsw,vegfra,pbl,rmol,ust,znt,xlat,xlong,z,z_at_w,&
                h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,cvaro2,    &
                cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,dep_vel_o3, &
+               imicrogram,                                           &
                ids,ide, jds,jde, kds,kde,                            &
                ims,ime, jms,jme, kms,kme,                            &
                its,ite, jts,jte, kts,kte                             )
@@ -21,7 +22,7 @@
   USE module_aerosols_sorgam
   IMPLICIT NONE
 
-   INTEGER,      INTENT(IN   ) :: id,julday,                    &
+   INTEGER,      INTENT(IN   ) :: id,julday,imicrogram,         &
                                   ids,ide, jds,jde, kds,kde,    &
                                   ims,ime, jms,jme, kms,kme,    &
                                   its,ite, jts,jte, kts,kte
@@ -123,12 +124,16 @@
    adrydep_select: SELECT CASE(config_flags%chem_opt)
        CASE (RADM2SORG)
        CALL wrf_debug(15,'DOING DRY DEP VELOCITIES FOR AEROSOLS/RADM')
+       if(imicrogram == 1 ) THEN
+          CALL wrf_error_fatal ( 'dry_dep_driver: IMICROGRAM==1')
+       endif
        call sorgam_depdriver (id,ktau,dtstep, &
                ust,t_phy,moist,p8w,t8w, & 
                alt,p_phy,chem,rho_phy,dz8w,z,z_at_w,&
                h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,cvaro2,    & 
                cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,&
                aer_res,vgsa,                                               &
+               imicrogram,                                                 &
                ids,ide, jds,jde, kds,kde,                            &
                ims,ime, jms,jme, kms,kme,                            &
                its,ite, jts,jte, kts,kte                             )
@@ -140,6 +145,7 @@
                h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,cvaro2,    & 
                cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,&
                aer_res,vgsa,                                               &
+               imicrogram,                                                 &
                ids,ide, jds,jde, kds,kde,                            &
                ims,ime, jms,jme, kms,kme,                            &
                its,ite, jts,jte, kts,kte                             )
@@ -187,7 +193,7 @@
          vgsinp=vgs(i,j,nv)
       elseif(p_nu0.eq.1.and.nv.gt.p_ho2)then
          print *,'trying turbulent mixing in _driver'
-         stop
+         CALL wrf_error_fatal ( 'dry_dep_driver: TURBULENT MIXING')
       elseif(p_nu0.eq.1.and.nv.le.p_ho2)then      ! SEP
          vgsinp=vgs(i,j,nv)
       endif

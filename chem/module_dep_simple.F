@@ -759,11 +759,11 @@ END SUBROUTINE wesely_driver
 ! ..
         IF (nlu/=25) THEN
           PRINT *, 'number of land use classifications not correct '
-          STOP
+          CALL wrf_error_fatal ( "LAND USE CLASSIFICATIONS NOT 25")
         END IF
         IF (dep_seasons/=5) THEN
           PRINT *, 'number of dep_seasons not correct '
-          STOP
+          CALL wrf_error_fatal ( "DEP_SEASONS NOT 5")
         END IF
 
 !     SURFACE RESISTANCE DATA FOR DEPOSITION MODEL OF

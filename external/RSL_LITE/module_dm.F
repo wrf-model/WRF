@@ -224,7 +224,7 @@ CONTAINS
       INTEGER inval, retval
       INTEGER ierr
       CALL mpi_allreduce ( inval, retval , 1, MPI_INTEGER, MPI_SUM, local_communicator, ierr )
-      wrf_dm_sum_real = retval
+      wrf_dm_sum_integer = retval
    END FUNCTION wrf_dm_sum_integer
 
    SUBROUTINE wrf_dm_maxval_real ( val, idex, jdex )

@@ -67,12 +67,13 @@
 
 @*/
 
-RSL_EXCH_PERIOD ( d_p, s_p )
+RSL_EXCH_PERIOD ( d_p, s_p, dir_p )
   int_p
     d_p             /* (I) Domain descriptor. */
-   ,s_p ;           /* (I) Period descriptor. */
+   ,s_p             /* (I) Period descriptor. */
+   ,dir_p ;         /* (I) RSL_M or RSL_N. */
 {
-  int d, s ;
+  int d, s, dir ;
   period_desc_t *per ;
   message_desc_t *msg ;
   rsl_procrec_t *procrec ;
@@ -95,12 +96,27 @@ RSL_EXCH_PERIOD ( d_p, s_p )
   void * base ;
 
 
-  d = *d_p ; s = *s_p ;
+  d = *d_p ; s = *s_p ; 
 
   RSL_TEST_ERR(d < 0 || d >= RSL_MAXDOMAINS,
           "bad domain descriptor" ) ;
   RSL_TEST_ERR( domain_info[d].valid != RSL_VALID,
         "descriptor for invalid domain" ) ;
+  if      ( *dir_p == RSL_M )
+  {
+    dir = 0 ;
+fprintf(stderr,"RSL_EXCH_PERIOD FOR RSL_M\n" );
+  }
+  else if ( *dir_p == RSL_N )
+  {
+    dir = 1 ;
+fprintf(stderr,"RSL_EXCH_PERIOD FOR RSL_N\n" );
+  }
+  else
+  {
+    RSL_TEST_ERR( 1 , "invalid direction: must be RSL_M or RSL_N" ) ;
+  }
+
 
 #ifdef UPSHOT
 MPE_Log_event( 15, s, "period begin" ) ;
@@ -121,7 +137,7 @@ fprintf(stderr,"debug called RSL_EXCH_PERIOD %d\n",s ) ;
   /* iterate over procrecs for domain and post buffers */
 
   tqp = 0 ;
-  for ( procrec = per->procs[d] ; procrec != NULL ; procrec = procrec->next )
+  for ( procrec = per->procs[dir][d] ; procrec != NULL ; procrec = procrec->next )
   {
 #if 0
 fprintf(stderr,"A procrec->P %d\n",procrec->P) ;
@@ -154,7 +170,7 @@ fprintf(stderr,"debug posting async recv for %d bytes from %d\n", procrec->unpac
 
   /* pack buffers and issue sends */
 
-  for ( procrec = per->procs[d] ; procrec != NULL ; procrec = procrec->next )
+  for ( procrec = per->procs[dir][d] ; procrec != NULL ; procrec = procrec->next )
   {
     pbuf=buffer_for_proc(procrec->P, procrec->pack_table_nbytes, RSL_SENDBUF) ;
     pr = procrec->pack_table ;

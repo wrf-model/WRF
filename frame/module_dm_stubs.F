@@ -28,7 +28,7 @@ MODULE module_dm
       IMPLICIT NONE
       INTEGER inval
       wrf_dm_sum_integer = inval
-   INTEGER FUNCTION wrf_dm_sum_integer
+   END FUNCTION wrf_dm_sum_integer
 
    SUBROUTINE wrf_dm_maxval ( val, idex, jdex )
       IMPLICIT NONE

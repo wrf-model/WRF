@@ -1,5 +1,12 @@
 .IGNORE:
 
+.SUFFIXES: .c .o
+
+CC=cc
+
+.c.o:
+	$(CC) -c -O2 $<
+
 obj=wgrib_main.o seekgrib.o ibm2flt.o readgrib.o intpower.o cnames.o BDSunpk.o \
   flt2ieee.o wrtieee.o levels.o PDStimes.o missing.o  \
   nceptable_reanal.o nceptable_opn.o ensemble.o \
@@ -10,13 +17,8 @@ obj=wgrib_main.o seekgrib.o ibm2flt.o readgrib.o intpower.o cnames.o BDSunpk.o \
   cptectable_254.o nceptab_130.o nceptab_131.o
 
 
-CC=cc
-
 wgrib: $(obj)
 	$(CC) -o wgrib $(obj) -lm
-
-.c.o:
-	$(CC) -c -O2 $*.c
 
 clean:	
 	/bin/rm $(obj) wgrib

@@ -4,10 +4,10 @@
 !
 
 SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
-!
+! Actual arguments generated from Registry
 #include "nmm_dummy_args.inc"
 !
-     &           )
+     &              )
 
 !-----------------------------------------------------------------------
       USE MODULE_DOMAIN
@@ -37,8 +37,10 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
 !
       TYPE(DOMAIN),TARGET :: GRID
 !
+!  Definitions of dummy arguments to this routine (Generated from Registry)
 #include <nmm_dummy_decl.inc>
 !
+!  Structure that contains run-time configuration (namelist) data for domain
       TYPE(GRID_CONFIG_REC_TYPE),INTENT(IN) :: CONFIG_FLAGS
 !
 !-----------------------------------------------------------------------
@@ -87,9 +89,26 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
 !-----------------------------------------------------------------------
 
 
+! Limit the number of arguments if compiled with -DLIMIT_ARGS by copying 
+! scalar (non-array) arguments out of the grid data structure into locally
+! defined copies (defined in em_dummy_decl.inc, above, as they are if they
+! are arguments). An equivalent include of em_scalar_derefs.inc appears
+! at the end of the routine to copy back any chnaged non-array values.
+! The definition of COPY_IN or COPY_OUT before the include defines the
+! direction of the copy.  Nmm_scalar_derefs is generated from Registry.
 #define COPY_IN
 #include <nmm_scalar_derefs.inc>
+
+! Trick problematic compilers into not performing copy-in/copy-out by adding
+! indices to array arguments in the CALL statements in this routine.
+! It has the effect of passing only the first element of the array, rather 
+! than the entire array.  See:  
+! http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
 #include "deref_kludge.h"
+
+! Needed by some comm layers, e.g. RSL. If needed, nmm_data_calls.inc is
+! generated from the registry.  The definition of REGISTER_I1 allows
+! I1 data to be communicated in this routine if necessary.
 #ifdef DM_PARALLEL
 #    define REGISTER_I1
 #    include <nmm_data_calls.inc>
@@ -97,11 +116,14 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
 
       CALL WRF_GET_MYPROC(MYPROC)
 !
+!  Obtain dimension information stored in the grid data structure.
       CALL GET_IJK_FROM_GRID(grid,                                      &
                              ids,ide,jds,jde,kds,kde,                   &
                              ims,ime,jms,jme,kms,kme,                   &
                              ips,ipe,jps,jpe,kps,kpe )
 !
+!  Compute these starting and stopping locations for each tile and number of tiles.
+!  See: http://www.mmm.ucar.edu/wrf/WG2/topics/settiles
       CALL set_tiles ( grid , ids , ide , jds , jde , ips , ipe , jps , jpe )
 !
       CALL wrf_debug(100,"dyn_nmm/solve_nmm.F: warning SIGMA hard coded") 

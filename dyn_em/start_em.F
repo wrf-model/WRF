@@ -1,7 +1,7 @@
 !-------------------------------------------------------------------
 
    SUBROUTINE start_domain_em ( grid, allowed_to_read , &
-!
+! Actual arguments generated from Registry
 # include <em_dummy_args.inc>
 !
 )
@@ -29,8 +29,10 @@
    TYPE (domain)          :: grid
    LOGICAL , INTENT(IN)   :: allowed_to_read
 
+   !  Definitions of dummy arguments to this routine (generated from Registry).
 # include <em_dummy_decl.inc>
 
+   !  Structure that contains run-time configuration (namelist) data for domain
    TYPE (grid_config_rec_type)              :: config_flags
 
    !  Local data
@@ -40,17 +42,34 @@
                                   ips, ipe, jps, jpe, kps, kpe, &
                                   its, ite, jts, jte, kts, kte, &
                                   ij,i,j,k,ii,jj,kk,loop,error,l
-#ifdef DEREF_KLUDGE
+                                  
+! These are used if -DDEREF_KLUDGE is compiled
    INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
-#endif
 
    REAL :: qvf1, qvf2, qvf
    REAL :: MPDT
    LOGICAL :: first_trip_for_this_domain
 
+! Trick problematic compilers into not performing copy-in/copy-out by adding
+! indices to array arguments in the CALL statements in this routine.
+! It has the effect of passing only the first element of the array, rather 
+! than the entire array.  See:  
+! http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
 #include "deref_kludge.h"
+
+! Limit the number of arguments if compiled with -DLIMIT_ARGS by copying 
+! scalar (non-array) arguments out of the grid data structure into locally
+! defined copies (defined in em_dummy_decl.inc, above, as they are if they
+! are arguments). An equivalent include of em_scalar_derefs.inc appears
+! at the end of the routine to copy back any chnaged non-array values.
+! The definition of COPY_IN or COPY_OUT before the include defines the
+! direction of the copy.  Em_scalar_derefs.inc is generated from Registry
 #define COPY_IN
 #include <em_scalar_derefs.inc>
+
+! Needed by some comm layers, e.g. RSL. If needed, nmm_data_calls.inc is
+! generated from the registry.  The definition of REGISTER_I1 allows
+! I1 data to be communicated in this routine if necessary.
 #ifdef DM_PARALLEL
 #    include <em_data_calls.inc>
 #endif

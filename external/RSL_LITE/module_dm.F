@@ -424,17 +424,23 @@ END SUBROUTINE wrf_dm_bcast_bytes
 SUBROUTINE wrf_dm_bcast_string( BUF, N1 )
    IMPLICIT NONE
    INTEGER n1
+! <DESCRIPTION>
+! Collective operation. Given a string and a size in characters on task zero, broadcast and return that buffer on all tasks.
+!
+! </DESCRIPTION>
    CHARACTER*(*) buf
    INTEGER ibuf(256),i,n
    CHARACTER*256 tstr
    n = n1
+   ! Root task is required to have the correct value of N1, other tasks 
+   ! might not have the correct value.  
+   CALL wrf_dm_bcast_integer( n , 1 )
    IF (n .GT. 256) n = 256
    IF (n .GT. 0 ) then
-     CALL wrf_dm_bcast_integer( n , IWORDSIZE )
      DO i = 1, n
        ibuf(I) = ichar(buf(I:I))
      ENDDO
-     CALL wrf_dm_bcast_bytes ( ibuf, n*IWORDSIZE )
+     CALL wrf_dm_bcast_integer( ibuf, n )
      buf = ''
      DO i = 1, n
        buf(i:i) = char(ibuf(i))

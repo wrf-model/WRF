@@ -73,7 +73,6 @@ IF ( Hndl .GT. -1 ) THEN
           ifelse($1,get,ifelse($3,logical,`CALL wrf_dm_bcast_bytes( locCount, IWORDSIZE )'))
           ifelse($1,get,ifelse($3,logical,`CALL wrf_dm_bcast_bytes( Data, LWORDSIZE*locCount )'))
           ifelse($1,get,ifelse($4,char,   `len_of_str = LEN(Data)'))
-          ifelse($1,get,ifelse($4,char,   `CALL wrf_dm_bcast_bytes( len_of_str, IWORDSIZE )'))
           ifelse($1,get,ifelse($4,char,   `CALL wrf_dm_bcast_string( Data, len_of_str )'))
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
@@ -107,7 +106,6 @@ IF ( Hndl .GT. -1 ) THEN
            ifelse($1,get,ifelse($3,logical,`CALL wrf_dm_bcast_bytes( locCount, IWORDSIZE )'))
            ifelse($1,get,ifelse($3,logical,`CALL wrf_dm_bcast_bytes( Data, LWORDSIZE*locCount )'))
            ifelse($1,get,ifelse($4,char,   `len_of_str = LEN(Data)'))
-           ifelse($1,get,ifelse($4,char,   `CALL wrf_dm_bcast_bytes( len_of_str, IWORDSIZE )'))
            ifelse($1,get,ifelse($4,char,   `CALL wrf_dm_bcast_string( Data, len_of_str )'))
            CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF

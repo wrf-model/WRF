@@ -1021,7 +1021,6 @@ SUBROUTINE wrf_get_next_time ( DataHandle, DateStr, Status )
           IF ( .NOT. multi_files(io_form) ) THEN
             CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
             len_of_str = LEN(DateStr)
-            CALL wrf_dm_bcast_bytes( len_of_str, IWORDSIZE )
             CALL wrf_dm_bcast_string ( DateStr , len_of_str )
           ENDIF
 #endif
@@ -1039,7 +1038,6 @@ SUBROUTINE wrf_get_next_time ( DataHandle, DateStr, Status )
           IF ( .NOT. multi_files(io_form) ) THEN
             CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
             len_of_str = LEN(DateStr)
-            CALL wrf_dm_bcast_bytes( len_of_str, IWORDSIZE )
             CALL wrf_dm_bcast_string ( DateStr , len_of_str )
           ENDIF
 #endif
@@ -1053,7 +1051,6 @@ SUBROUTINE wrf_get_next_time ( DataHandle, DateStr, Status )
           IF ( .NOT. multi_files(io_form) ) THEN
             CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
             len_of_str = LEN(DateStr)
-            CALL wrf_dm_bcast_bytes( len_of_str, IWORDSIZE )
             CALL wrf_dm_bcast_string ( DateStr , len_of_str )
           ENDIF
 #endif
@@ -1104,7 +1101,6 @@ SUBROUTINE wrf_get_previous_time ( DataHandle, DateStr, Status )
           IF ( .NOT. multi_files(io_form) ) THEN
             CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
             len_of_str = LEN(DateStr)
-            CALL wrf_dm_bcast_bytes( len_of_str, IWORDSIZE )
             CALL wrf_dm_bcast_string ( DateStr , len_of_str )
           ENDIF
 #endif
@@ -1122,7 +1118,6 @@ SUBROUTINE wrf_get_previous_time ( DataHandle, DateStr, Status )
           IF ( .NOT. multi_files(io_form) ) THEN
             CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
             len_of_str = LEN(DateStr)
-            CALL wrf_dm_bcast_bytes( len_of_str, IWORDSIZE )
             CALL wrf_dm_bcast_string ( DateStr , len_of_str )
          ENDIF
 #endif

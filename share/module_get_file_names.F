@@ -122,7 +122,6 @@ print *,TRIM(eligible_file_name(loop))
    CALL wrf_dm_bcast_integer ( number_of_eligible_files, 1 )
    DO loop = 1 , number_of_eligible_files
       strlen = LEN( TRIM( eligible_file_name(loop) ) )
-      CALL wrf_dm_bcast_integer ( strlen , 1 )
       CALL wrf_dm_bcast_string ( eligible_file_name(loop) , strlen  )
    ENDDO
 

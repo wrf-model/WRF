@@ -373,7 +373,7 @@
   300 CONTINUE
 !
 !--------------LAST PASS SWITCH-----------------------------------------
-      IF(NTSD.EQ.NTSTM)GO TO 400
+      IF(LAST_TIME)GO TO 400
 !-----------------------------------------------------------------------
  305  CONTINUE
 !
@@ -414,7 +414,7 @@
      &              +TNS(I,J-1)+TNE(I,J)+TNE(I+IHW(J),J-1)+TSE(I,J)     &
      &              +TSE(I+IHW(J),J+1))*RDPD(I,J)*FCP(I,J)*HM(I,J)
 
-      T(i,k,j)=OMGALF(i,k,j)+T(i,k,j)
+!jm removed        T(i,k,j)=OMGALF(i,k,j)+T(i,k,j)
       div(i,k,j)=(((few(i+ihe(j),k,j)+fns(i,k,j+1)                      &
      &             +fne(i,k,j)+fse(i,k,j))                              &
      &            -(few(i+ihw(j),k,j)+fns(i,k,j-1)                      &

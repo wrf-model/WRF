@@ -650,14 +650,29 @@
 !-----------------------------------------------------------------------
 ! Calculate du/dz.
 
-    DO j = j_start, j_end
-    DO k = kts+1, ktf
-    DO i = i_start, i_end
-      tmp1(i,k,j) = ( u(i,k,j) - u_base(k) - u(i,k-1,j) + u_base(k-1) ) *  &
-                    0.5 * ( rdz(i,k,j) + rdz(i-1,k,j) )
-    END DO
-    END DO
-    END DO
+    IF ( config_flags%mix_full_fields ) THEN
+
+      DO j = j_start, j_end
+      DO k = kts+1, ktf
+      DO i = i_start, i_end
+        tmp1(i,k,j) = ( u(i,k,j) - u(i,k-1,j) ) *  &
+                      0.5 * ( rdz(i,k,j) + rdz(i-1,k,j) )
+      END DO
+      END DO
+      END DO
+
+    ELSE
+
+      DO j = j_start, j_end
+      DO k = kts+1, ktf
+      DO i = i_start, i_end
+        tmp1(i,k,j) = ( u(i,k,j) - u_base(k) - u(i,k-1,j) + u_base(k-1) ) *  &
+                      0.5 * ( rdz(i,k,j) + rdz(i-1,k,j) )
+      END DO
+      END DO
+      END DO
+
+    END IF
 
 !-----------------------------------------------------------------------
 ! Add the second term (du/dz) to defor13 (dw/dx+du/dz) at vorticity
@@ -750,14 +765,29 @@
 !-----------------------------------------------------------------------
 ! Calculate dv/dz.
 
-    DO j = j_start, j_end
-    DO k = kts+1, ktf
-    DO i = i_start, i_end
-      tmp1(i,k,j) = ( v(i,k,j) - v_base(k) - v(i,k-1,j) + v_base(k-1) ) *  &
-                    0.5 * ( rdz(i,k,j) + rdz(i,k,j-1) )
-    END DO
-    END DO
-    END DO
+    IF ( config_flags%mix_full_fields ) THEN
+
+      DO j = j_start, j_end
+      DO k = kts+1, ktf
+      DO i = i_start, i_end
+        tmp1(i,k,j) = ( v(i,k,j) - v(i,k-1,j) ) *  &
+                      0.5 * ( rdz(i,k,j) + rdz(i,k,j-1) )
+      END DO
+      END DO
+      END DO
+
+    ELSE
+
+      DO j = j_start, j_end
+      DO k = kts+1, ktf
+      DO i = i_start, i_end
+        tmp1(i,k,j) = ( v(i,k,j) - v_base(k) - v(i,k-1,j) + v_base(k-1) ) *  &
+                      0.5 * ( rdz(i,k,j) + rdz(i,k,j-1) )
+      END DO
+      END DO
+      END DO
+
+    END IF
 
 ! End calculation of dv/dz.
 !-----------------------------------------------------------------------
@@ -1345,8 +1375,8 @@ SUBROUTINE isotropic_km( config_flags,                                         &
 
 !   khdif3=khdif*3.
 !   kvdif3=kvdif*3.
-   khdif3=khdif*prandtl
-   kvdif3=kvdif*prandtl
+   khdif3=khdif/prandtl
+   kvdif3=kvdif/prandtl
 
    DO j = j_start, j_end
    DO k = kts, ktf
@@ -1655,7 +1685,7 @@ END SUBROUTINE smag2d_km
 
 ! Local variables.
 
-    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )  &
+    REAL, DIMENSION( its:ite, kts:kte, jts:jte )  &
     :: l_scale
 
     REAL, DIMENSION( its:ite, kts:kte, jts:jte )  &
@@ -1771,8 +1801,8 @@ END SUBROUTINE smag2d_km
         xkmv(i,k,j)  = c_k * tmp * l_scale(i,k,j)
         xkmv(i,k,j)  = MIN( kv_tke_upper_bound,  xkmv(i,k,j) )
         pr_inv       = 1.0 + 2.0 * l_scale(i,k,j) / deltas
-        xkhh(i,k,j)  = MIN( kh_tke_upper_bound, xkmh(i,k,j) * pr_inv )
-        xkhv(i,k,j)  = MIN( kv_tke_upper_bound, xkmv(i,k,j) * pr_inv )
+        xkhh(i,k,j)  = MIN( kh_tke_upper_bound*pr_inv, xkmh(i,k,j) * pr_inv )
+        xkhv(i,k,j)  = MIN( kv_tke_upper_bound*pr_inv, xkmv(i,k,j) * pr_inv )
       END DO
       END DO
       END DO
@@ -1815,7 +1845,7 @@ END SUBROUTINE smag2d_km
     REAL, INTENT( IN )  &
     :: dx, dy
 
-    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( OUT )  &
+    REAL, DIMENSION( its:ite, kts:kte, jts:jte ), INTENT( OUT )  &
     :: l_scale
 
 ! Local variables.
@@ -2930,8 +2960,6 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
 
 ! LOCAL VAR
 
-   LOGICAL, PARAMETER :: filter_perturbations = .true.
- 
    REAL , DIMENSION( ims:ime, kms:kme, jms:jme)  ::    var_mix
 
    INTEGER :: im, i,j,k
@@ -3033,25 +3061,25 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
 !*****************************************
 !*****************************************
 
-   IF (filter_perturbations) THEN
+   IF ( config_flags%mix_full_fields ) THEN
 
-    DO j=jts,min(jte,jde-1)
-    DO k=kts,kte-1
-    DO i=its,min(ite,ide-1)
-      var_mix(i,k,j) = thp(i,k,j) - t_base(k)
-    ENDDO
-    ENDDO
-    ENDDO
+     DO j=jts,min(jte,jde-1)
+     DO k=kts,kte-1
+     DO i=its,min(ite,ide-1)
+       var_mix(i,k,j) = thp(i,k,j)
+     ENDDO
+     ENDDO
+     ENDDO
 
    ELSE
 
-    DO j=jts,min(jte,jde-1)
-    DO k=kts,kte-1
-    DO i=its,min(ite,ide-1)
-      var_mix(i,k,j) = thp(i,k,j)
-    ENDDO
-    ENDDO
-    ENDDO
+     DO j=jts,min(jte,jde-1)
+     DO k=kts,kte-1
+     DO i=its,min(ite,ide-1)
+       var_mix(i,k,j) = thp(i,k,j) - t_base(k)
+     ENDDO
+     ENDDO
+     ENDDO
 
    END IF
 
@@ -3098,7 +3126,7 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
 
      moist_loop: do im = PARAM_FIRST_SCALAR, n_moist
 
-       IF (filter_perturbations .and. (im == P_QV)) THEN
+       IF ( (.not. config_flags%mix_full_fields) .and. (im == P_QV) ) THEN
 
          DO j=jts,min(jte,jde-1)
          DO k=kts,kte-1
@@ -3232,7 +3260,7 @@ SUBROUTINE vertical_diffusion_u_2( tendency, config_flags, mu,            &
                          its, ite, jts, jte, kts, kte     )
 !
       DO j = j_start, j_end
-      DO k=kts,ktf
+      DO k=kts+1,ktf
       DO i = i_start, i_end
 
          rdzu = 2./(1./rdzw(i,k,j) + 1./rdzw(i-1,k,j))
@@ -3335,7 +3363,7 @@ SUBROUTINE vertical_diffusion_v_2( tendency, config_flags, mu,            &
                          its, ite, jts, jte, kts, kte     )
 
    DO j = j_start, j_end
-   DO k = kts,ktf
+   DO k = kts+1,ktf
    DO i = i_start, i_end
 
       rdzv = 2./(1./rdzw(i,k,j) + 1./rdzw(i,k,j-1))
@@ -4357,7 +4385,15 @@ END SUBROUTINE phy_bc
 
    heat_flux = config_flags%tke_heat_flux  ! constant heat flux value
                                            ! set in namelist.input
-
+ IF(abs(heat_flux).lt.1.0e-6)THEN
+   K=KTS
+   DO j = j_start, j_end
+   DO i = i_start, i_end
+      tendency(i,k,j)= tendency(i,k,j) - &
+                   mu(i,j)*xkhv(i,k,j)*BN2(i,k,j)
+   ENDDO
+   ENDDO   
+ ELSE
    K=KTS
    DO j = j_start, j_end
    DO i = i_start, i_end
@@ -4367,6 +4403,7 @@ END SUBROUTINE phy_bc
 
    ENDDO
    ENDDO   
+ ENDIF
 ! end of MARTA/WCS change
 
 ! The tendency array now includes production of TKE from buoyant
@@ -4426,7 +4463,7 @@ END SUBROUTINE phy_bc
     REAL, DIMENSION( its:ite, kts:kte, jts:jte )  &
     :: dthrdn
 
-    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )  &
+    REAL, DIMENSION( its:ite, kts:kte, jts:jte )  &
     :: l_scale
 
     REAL, DIMENSION( its:ite )  & 

@@ -175,7 +175,7 @@ EF_PROTECT_FREE = 1 ;
    retval = retval + 512 ;
 #endif
 
-#ifdef T3D
+#ifdef T3D_COMMENTOUT
    if ( rsl_myproc == 0 )
    {
    if (malloc_check(0))

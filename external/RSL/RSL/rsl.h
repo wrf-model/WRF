@@ -76,7 +76,7 @@
 /* increased from 5 to 7 10/4/96 to accomodate 168 pt stencil */
 /* decreased to 3 (2 + 1 for garbage row) to save memory -- only estore
    in sound needs 168 pt stencil and we'll handle that as a special case */
-#define RSL_DEFAULT_PADAREA 3           /* FORTRAN */
+#define RSL_DEFAULT_PADAREA 4           /* FORTRAN */
 
 #define RSL_MLOW        1		/* FORTRAN */
 #define RSL_MHIGH       2               /* FORTRAN */

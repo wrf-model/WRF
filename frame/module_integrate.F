@@ -201,6 +201,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
        TYPE (grid_config_rec_type) config_flags
      END SUBROUTINE med_nest_force
 
+#ifdef MOVE_NESTS
      SUBROUTINE med_nest_move ( parent , grid , move_x, move_y, config_flags )
        USE module_domain
        USE module_configure
@@ -208,6 +209,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
        INTEGER move_x, move_y
        TYPE (grid_config_rec_type) config_flags
      END SUBROUTINE med_nest_move
+#endif
 
        ! mediation-supplied routine that gives mediation layer opportunity to 
        ! provide parent->nest feedback
@@ -284,8 +286,9 @@ RECURSIVE SUBROUTINE integrate ( grid )
                 ! Recursive -- advance nests from previous time level to this time level.
                 CALL wrf_debug( 100 , 'module_integrate: calling med_nest_force ' )
 
-!                CALL med_nest_move ( grid_ptr , grid_ptr%nests(kid)%ptr , 1, 1, config_flags )
-
+#ifdef MOVE_NESTS
+                CALL med_nest_move ( grid_ptr , grid_ptr%nests(kid)%ptr , 1, 1, config_flags )
+#endif
                 CALL med_nest_force ( grid_ptr , grid_ptr%nests(kid)%ptr , config_flags )
                 CALL wrf_debug( 100 , 'module_integrate: back from med_nest_force ' )
                 grid_ptr%nests(kid)%ptr%start_subtime = grid%current_time - grid%step_time

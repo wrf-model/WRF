@@ -315,6 +315,7 @@ SUBROUTINE init_domain_constants ( parent , nest )
 #endif
 END SUBROUTINE init_domain_constants
 
+#ifdef MOVE_NESTS
 SUBROUTINE med_nest_move ( parent, nest, dx, dy, config_flags )
   ! Driver layer
    USE module_domain
@@ -407,8 +408,9 @@ SUBROUTINE med_nest_move ( parent, nest, dx, dy, config_flags )
 #endif
 
 END SUBROUTINE med_nest_move
+#endif
 
-#if ( EM_CORE == 1 && defined(DM_PARALLEL) )
+#if ( EM_CORE == 1 && defined(DM_PARALLEL) && MOVE_NESTS )
 
 SUBROUTINE shift_domain_em ( grid , disp_x, disp_y, config_flags, &
 !
@@ -486,6 +488,8 @@ SUBROUTINE med_nest_force ( parent , nest , config_flags )
    USE module_timing
   ! Model layer
    USE module_configure
+  ! External
+   USE esmf_mod
 
    IMPLICIT NONE
 
@@ -493,7 +497,7 @@ SUBROUTINE med_nest_force ( parent , nest , config_flags )
    TYPE(domain) , POINTER                     :: parent, nest
    TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
   ! Local
-   INTEGER                                    :: idum1 , idum2 , fid
+   INTEGER                                    :: idum1 , idum2 , fid, rc
 
    INTERFACE
      SUBROUTINE med_force_domain ( parent , nest )
@@ -506,12 +510,14 @@ SUBROUTINE med_nest_force ( parent , nest , config_flags )
      END SUBROUTINE med_interp_domain
    END INTERFACE
 
+   IF ( .NOT. ESMF_ClockIsStopTime(nest%domain_clock ,rc=rc) ) THEN
 ! initialize nest with interpolated data from the parent
-   nest%imask_nostag = 1
-   nest%imask_xstag = 1
-   nest%imask_ystag = 1
-   nest%imask_xystag = 1
-   CALL med_force_domain( parent, nest )
+     nest%imask_nostag = 1
+     nest%imask_xstag = 1
+     nest%imask_ystag = 1
+     nest%imask_xystag = 1
+     CALL med_force_domain( parent, nest )
+   ENDIF
 
 ! might also have calls here to do input from a file into the nest
 
@@ -522,8 +528,10 @@ SUBROUTINE med_nest_feedback ( parent , nest , config_flags )
   ! Driver layer
    USE module_domain
    USE module_timing
-  ! Model layer
    USE module_configure
+  ! Model layer
+  ! External
+   USE esmf_mod
 
    IMPLICIT NONE
 
@@ -531,7 +539,7 @@ SUBROUTINE med_nest_feedback ( parent , nest , config_flags )
    TYPE(domain) , POINTER                     :: parent, nest
    TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
   ! Local
-   INTEGER                                    :: idum1 , idum2 , fid
+   INTEGER                                    :: idum1 , idum2 , fid, rc
 
    INTERFACE
      SUBROUTINE med_feedback_domain ( parent , nest )
@@ -541,7 +549,8 @@ SUBROUTINE med_nest_feedback ( parent , nest , config_flags )
    END INTERFACE
 
 ! feedback nest with interpolated data from the parent
-    IF ( config_flags%feedback .NE. 0 ) THEN
+    IF ( .NOT. ESMF_ClockIsStopTime(nest%domain_clock ,rc=rc) .AND. &
+         config_flags%feedback .NE. 0 ) THEN
       CALL med_feedback_domain( parent, nest )
     END IF
 

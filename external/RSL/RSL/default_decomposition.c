@@ -150,6 +150,21 @@ SET_DEF_DECOMP_FCN ( f )
     default_decomp[i].default_decomp_fcn = f ;
 }
 
+SET_DEF_DECOMP_FCN1 ( d_p, f )
+  int_p d_p ;
+  int
+    (*f)() ;        /* (I) Function to use as default decomposition. */
+{
+  int i ;
+  int d ;
+
+  d = *d_p ;
+  RSL_TEST_ERR(d < 0 || d >= RSL_MAXDOMAINS,
+          "rsl_compile_stencil: bad domain descriptor" ) ;
+  default_decomp[*d_p].default_decomp_fcn = f ;
+}
+
+
 /*@
   SET_DEF_DECOMP_INFO --- Provide data to RSL to pass to the mapping routine.
 

@@ -32,6 +32,7 @@ PROGRAM ndown_em
    INTEGER :: ids , ide , jds , jde , kds , kde
    INTEGER :: ims , ime , jms , jme , kms , kme
    INTEGER :: ips , ipe , jps , jpe , kps , kpe
+   INTEGER :: its , ite , jts , jte , kts , kte
    INTEGER :: ijds , ijde , spec_bdy_width
    INTEGER :: i , j , k
    INTEGER :: time_loop_max , time_loop
@@ -106,13 +107,14 @@ integer :: ii
       END SUBROUTINE Setup_Timekeeping
 
    END INTERFACE
-#if 0
-call opngks
-#endif
 
    !  Define the name of this program (program_name defined in module_domain)
 
    program_name = "NDOWN_EM V2.0 PREPROCESSOR"
+
+#ifdef DM_PARALLEL
+   CALL disable_quilting
+#endif
 
    !  Initialize the modules used by the WRF system.  Many of the CALLs made from the
    !  init_modules routine are NO-OPs.  Typical initializations are: the size of a 
@@ -149,7 +151,7 @@ call opngks
    NULLIFY( null_domain )
 
    CALL       wrf_message ( program_name )
-   CALL       wrf_debug ( 100 , 'wrf: calling alloc_and_configure_domain coarse ' )
+   CALL       wrf_debug ( 100 , 'ndown_em: calling alloc_and_configure_domain coarse ' )
    CALL alloc_and_configure_domain ( domain_id  = 1 ,                  &
                                      grid       = head_grid ,          &
                                      parent     = null_domain ,        &
@@ -163,14 +165,14 @@ call opngks
    CALL ESMF_TimeIntervalSet ( time_interval , S=model_config_rec%interval_seconds, rc=rc )
    CALL ESMF_ClockSetTimeStep ( head_grid%domain_clock , time_interval , rc=rc )
 
-   CALL       wrf_debug ( 100 , 'wrf: calling model_to_grid_config_rec ' )
+   CALL       wrf_debug ( 100 , 'ndown_em: calling model_to_grid_config_rec ' )
    CALL model_to_grid_config_rec ( parent_grid%id , model_config_rec , config_flags )
-   CALL       wrf_debug ( 100 , 'wrf: calling set_scalar_indices_from_config ' )
+   CALL       wrf_debug ( 100 , 'ndown_em: calling set_scalar_indices_from_config ' )
    CALL set_scalar_indices_from_config ( parent_grid%id , idum1, idum2 )
 
    !  Initialize the I/O for WRF.
 
-   CALL       wrf_debug ( 100 , 'wrf: calling init_wrfio' )
+   CALL       wrf_debug ( 100 , 'ndown_em: calling init_wrfio' )
    CALL init_wrfio
 
    !  Some of the configuration values may have been modified from the initial READ
@@ -321,13 +323,16 @@ print *,'file date/time = ',date_string,'     desired date = ',current_date_char
 
          !  Set up time initializations for the fine grid.
 
-!        CALL Setup_Timekeeping ( nested_grid )
-!        CALL ESMF_TimeIntervalSet ( time_interval , S=model_config_rec%interval_seconds, rc=rc )
-!        CALL ESMF_ClockSetTimeStep ( nested_grid%domain_clock , time_interval , rc=rc )
+         CALL Setup_Timekeeping ( nested_grid )
+         CALL ESMF_TimeIntervalSet ( time_interval , S=model_config_rec%interval_seconds, rc=rc )
+         CALL ESMF_ClockSetTimeStep ( nested_grid%domain_clock , time_interval , rc=rc )
          CALL atotime( current_date(1:19), nested_grid%current_time )
          CALL ESMF_ClockSetCurrTime(nested_grid%domain_clock, nested_grid%current_time, rc)
-   
+
          !  Generate an output file from this program, which will be an input file to WRF.
+
+         CALL set_bdyfrq ( nested_grid%id , new_bdy_frq )
+         config_flags%bdyfrq = new_bdy_frq
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! major kludge
@@ -443,6 +448,16 @@ print *,'nested_grid%epsts     =', parent_grid%epsts
 
       END IF
 
+      CALL ESMF_ClockSetTimeStep ( nested_grid%domain_clock , time_interval , rc=rc )
+      CALL atotime( current_date(1:19), nested_grid%current_time )
+      CALL ESMF_ClockSetCurrTime(nested_grid%domain_clock, nested_grid%current_time, rc)
+
+      !  Do the horizontal interpolation.
+
+      nested_grid%imask = 1
+      CALL med_interp_domain ( head_grid , nested_grid )
+      nested_grid%ht_int = nested_grid%ht
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       IF ( time_loop .EQ. 1 ) THEN
@@ -455,12 +470,12 @@ print *,'nested_grid%epsts     =', parent_grid%epsts
          IF ( ierr .NE. 0 ) THEN
             CALL wrf_error_fatal( 'real: error opening wrf_real_input_em for reading: ' // TRIM (si_inpname) )
          END IF
-   
+
          !  Input data.
    
          CALL       wrf_debug ( 100 , 'ndown_em: calling input_aux_model_input2' )
          CALL input_aux_model_input2 ( idsi , nested_grid , config_flags , ierr )
-         nested_grid%ht_fine = nested_grid%ht
+         nested_grid%ht_input = nested_grid%ht
    
          !  Close this fine grid static input file.
    
@@ -470,16 +485,25 @@ print *,'nested_grid%epsts     =', parent_grid%epsts
          !  We need a fine grid landuse in the interpolation.  So we need to generate
          !  that field now.
 
-         IF ( ( nested_grid% vegcat(ips,jps) .GT. 0.5 ) .AND. &
-              ( nested_grid%soilcat(ips,jps) .GT. 0.5 ) ) THEN
+         IF      ( ( nested_grid%ivgtyp(ips,jps) .GT. 0 ) .AND. &
+                   ( nested_grid%isltyp(ips,jps) .GT. 0 ) ) THEN
+            DO j = jps, MIN(jde-1,jpe)
+               DO i = ips, MIN(ide-1,ipe)
+                  nested_grid% vegcat(i,j) = nested_grid%ivgtyp(i,j)
+                  nested_grid%soilcat(i,j) = nested_grid%isltyp(i,j)
+               END DO
+            END DO
+
+         ELSE IF ( ( nested_grid% vegcat(ips,jps) .GT. 0.5 ) .AND. &
+                   ( nested_grid%soilcat(ips,jps) .GT. 0.5 ) ) THEN
             DO j = jps, MIN(jde-1,jpe)
                DO i = ips, MIN(ide-1,ipe)
                   nested_grid%ivgtyp(i,j) = NINT(nested_grid% vegcat(i,j))
                   nested_grid%isltyp(i,j) = NINT(nested_grid%soilcat(i,j))
                END DO
             END DO
-         ELSE
 
+         ELSE
             num_veg_cat      = SIZE ( nested_grid%landusef , DIM=2 )
             num_soil_top_cat = SIZE ( nested_grid%soilctop , DIM=2 )
             num_soil_bot_cat = SIZE ( nested_grid%soilcbot , DIM=2 )
@@ -507,16 +531,28 @@ print *,'nested_grid%epsts     =', parent_grid%epsts
                                   ips , ipe , jps , jpe , kps , kpe , &
                                   model_config_rec%iswater(nested_grid%id) )
 
+         CALL check_consistency2( nested_grid%ivgtyp , nested_grid%isltyp , nested_grid%landmask , &
+                                  nested_grid%tmn , nested_grid%tsk , nested_grid%sst , nested_grid%xland , &
+                                  nested_grid%tslb , nested_grid%smois , nested_grid%sh2o , &
+                                  config_flags%num_soil_layers , nested_grid%id , &
+                                  ids , ide , jds , jde , kds , kde , &
+                                  ims , ime , jms , jme , kms , kme , &
+                                  ips , ipe , jps , jpe , kps , kpe , &
+                                  model_config_rec%iswater(nested_grid%id) )
+
       END IF
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   
+      !  We have 2 terrain elevations.  One is from input and the other is from the
+      !  the horizontal interpolation.
 
-      !  Do the interpolation.
-
-      CALL med_interp_domain ( head_grid , nested_grid )
+      nested_grid%ht_fine = nested_grid%ht_input
+      nested_grid%ht      = nested_grid%ht_int
 
       !  We have both the interpolated fields and the higher-resolution static fields.  From these
-      !  the rebalancing is now done.
+      !  the rebalancing is now done.  Note also that the field nested_grid%ht is now from the 
+      !  fine grid input file (after this call is completed).
 
       CALL rebalance_driver ( nested_grid ) 
 
@@ -898,6 +934,8 @@ print *,'bdy time = ',time_loop-1,'  bdy date = ',current_date,' ',start_date
 
    END DO big_time_loop_thingy
 
+   CALL wrf_debug ( 0 , 'ndown_em: SUCCESS COMPLETE NDOWN_EM INIT' )
+
 END PROGRAM ndown_em
 
 SUBROUTINE land_percentages ( xland , &
@@ -972,8 +1010,165 @@ isltyp(i,j)=14
    END DO
 
    IF ( oops ) THEN
-      print *,'DAVE mismatch in',oops_count,' locations'
-!           STOP
+      CALL wrf_debug( 0, 'mismatch in check_consistency, turned to water points, be careful' )
    END IF
 
 END SUBROUTINE check_consistency
+
+SUBROUTINE check_consistency2( ivgtyp , isltyp , landmask , &
+                               tmn , tsk , sst , xland , &
+                               tslb , smois , sh2o , &
+                               num_soil_layers , id , &
+                               ids , ide , jds , jde , kds , kde , &
+                               ims , ime , jms , jme , kms , kme , &
+                               its , ite , jts , jte , kts , kte , &
+                               iswater )
+
+   USE module_configure
+   USE module_optional_si_input
+
+   INTEGER , INTENT(IN) :: ids , ide , jds , jde , kds , kde , &
+                           ims , ime , jms , jme , kms , kme , &
+                           its , ite , jts , jte , kts , kte 
+   INTEGER , INTENT(IN) :: num_soil_layers , id
+
+   INTEGER , DIMENSION(ims:ime,jms:jme) :: ivgtyp , isltyp
+   REAL    , DIMENSION(ims:ime,jms:jme) :: landmask , tmn , tsk , sst , xland
+   REAL    , DIMENSION(ims:ime,num_soil_layers,jms:jme) :: tslb , smois , sh2o
+
+   INTEGER :: oops1 , oops2
+   INTEGER :: i , j , k
+
+      fix_tsk_tmn : SELECT CASE ( model_config_rec%sf_surface_physics(id) )
+
+         CASE ( SLABSCHEME , LSMSCHEME , RUCLSMSCHEME )
+            DO j = jts, MIN(jde-1,jte)
+               DO i = its, MIN(ide-1,ite)
+                  IF ( ( landmask(i,j) .LT. 0.5 ) .AND. ( flag_sst .EQ. 1 ) ) THEN
+                     tmn(i,j) = sst(i,j)
+                     tsk(i,j) = sst(i,j)
+                  ELSE IF ( landmask(i,j) .LT. 0.5 ) THEN
+                     tmn(i,j) = tsk(i,j)
+                  END IF
+               END DO
+            END DO
+      END SELECT fix_tsk_tmn
+
+      !  Is the TSK reasonable?
+
+      DO j = jts, MIN(jde-1,jte)
+         DO i = its, MIN(ide-1,ite)
+            IF ( tsk(i,j) .LT. 170 .or. tsk(i,j) .GT. 400. ) THEN
+               print *,'error in the TSK'
+               print *,'i,j=',i,j
+               print *,'landmask=',landmask(i,j)
+               print *,'tsk, sst, tmn=',tsk(i,j),sst(i,j),tmn(i,j)
+               if(tmn(i,j).gt.170. .and. tmn(i,j).lt.400.)then
+                  tsk(i,j)=tmn(i,j)
+               else if(sst(i,j).gt.170. .and. sst(i,j).lt.400.)then
+                  tsk(i,j)=sst(i,j)
+               else
+                  CALL wrf_error_fatal ( 'TSK unreasonable' )
+               end if
+            END IF
+         END DO
+      END DO
+
+      !  Is the TMN reasonable?
+
+      DO j = jts, MIN(jde-1,jte)
+         DO i = its, MIN(ide-1,ite)
+            IF ( ( ( tmn(i,j) .LT. 170. ) .OR. ( tmn(i,j) .GT. 400. ) ) .AND. ( landmask(i,j) .GT. 0.5 ) ) THEN
+                  print *,'error in the TMN'
+                  print *,'i,j=',i,j
+                  print *,'landmask=',landmask(i,j)
+                  print *,'tsk, sst, tmn=',tsk(i,j),sst(i,j),tmn(i,j)
+               if(tsk(i,j).gt.170. .and. tsk(i,j).lt.400.)then
+                  tmn(i,j)=tsk(i,j)
+               else if(sst(i,j).gt.170. .and. sst(i,j).lt.400.)then
+                  tmn(i,j)=sst(i,j)
+               else
+                  CALL wrf_error_fatal ( 'TMN unreasonable' )
+               endif
+            END IF
+         END DO
+      END DO
+
+      !  Is the TSLB reasonable?
+
+      DO j = jts, MIN(jde-1,jte)
+         DO i = its, MIN(ide-1,ite)
+            IF ( ( ( tslb(i,1,j) .LT. 170. ) .OR. ( tslb(i,1,j) .GT. 400. ) ) .AND. ( landmask(i,j) .GT. 0.5 ) ) THEN
+                  print *,'error in the TSLB'
+                  print *,'i,j=',i,j
+                  print *,'landmask=',landmask(i,j)
+                  print *,'tsk, sst, tmn=',tsk(i,j),sst(i,j),tmn(i,j)
+                  print *,'tslb = ',tslb(i,:,j)
+                  print *,'old smois = ',smois(i,:,j)
+                  DO l = 1 , num_soil_layers
+                     sh2o(i,l,j) = 0.0
+                  END DO
+                  DO l = 1 , num_soil_layers
+                     smois(i,l,j) = 0.3
+                  END DO
+                  if(tsk(i,j).gt.170. .and. tsk(i,j).lt.400.)then
+                     DO l = 1 , num_soil_layers
+                        tslb(i,l,j)=tsk(i,j)
+                     END DO
+                  else if(sst(i,j).gt.170. .and. sst(i,j).lt.400.)then
+                     DO l = 1 , num_soil_layers
+                        tslb(i,l,j)=sst(i,j)
+                     END DO
+                  else if(tmn(i,j).gt.170. .and. tmn(i,j).lt.400.)then
+                     DO l = 1 , num_soil_layers
+                        tslb(i,l,j)=tmn(i,j)
+                     END DO
+                  else
+                     CALL wrf_error_fatal ( 'TSLB unreasonable' )
+                  endif
+            END IF
+         END DO
+      END DO
+
+      !  Let us make sure (again) that the landmask and the veg/soil categories match.
+
+oops1=0
+oops2=0
+      DO j = jts, MIN(jde-1,jte)
+         DO i = its, MIN(ide-1,ite)
+            IF ( ( ( landmask(i,j) .LT. 0.5 ) .AND. ( ivgtyp(i,j) .NE. iswater .OR. isltyp(i,j) .NE. 14 ) ) .OR. &
+                 ( ( landmask(i,j) .GT. 0.5 ) .AND. ( ivgtyp(i,j) .EQ. iswater .OR. isltyp(i,j) .EQ. 14 ) ) ) THEN
+               IF ( tslb(i,1,j) .GT. 1. ) THEN
+oops1=oops1+1
+                  ivgtyp(i,j) = 5
+                  isltyp(i,j) = 8
+                  landmask(i,j) = 1
+                  xland(i,j) = 1
+               ELSE IF ( sst(i,j) .GT. 1. ) THEN
+oops2=oops2+1
+                  ivgtyp(i,j) = iswater
+                  isltyp(i,j) = 14
+                  landmask(i,j) = 0
+                  xland(i,j) = 2
+               ELSE
+                  print *,'the landmask and soil/veg cats do not match'
+                  print *,'i,j=',i,j
+                  print *,'landmask=',landmask(i,j)
+                  print *,'ivgtyp=',ivgtyp(i,j)
+                  print *,'isltyp=',isltyp(i,j)
+                  print *,'iswater=', iswater
+                  print *,'tslb=',tslb(i,:,j)
+                  print *,'sst=',sst(i,j)
+                  CALL wrf_error_fatal ( 'mismatch_landmask_ivgtyp' )
+               END IF
+            END IF
+         END DO
+      END DO
+if (oops1.gt.0) then
+print *,'points artificially set to land : ',oops1
+endif
+if(oops2.gt.0) then
+print *,'points artificially set to water: ',oops2
+endif
+
+END SUBROUTINE check_consistency2

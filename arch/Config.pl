@@ -76,6 +76,8 @@ until ( $validresponse ) {
   printf "\nEnter selection [%d-%d] : ",1,$opt ;
   $response = <STDIN> ;
 
+  if ( $response == -1 ) { exit ; }
+
   if ( $response >= 1 && $response <= $opt ) 
   { $validresponse = 1 ; }
   else

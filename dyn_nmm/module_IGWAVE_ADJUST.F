@@ -3,6 +3,7 @@
 !
 #include "nmm_loop_basemacros.h"
 #include "nmm_loop_macros.h"
+#define  DATA_CALLS_INCLUDED
 !
 !#define OPTIM_PFDHT
 
@@ -1426,6 +1427,9 @@
 #ifdef DM_PARALLEL
       INTEGER :: IPS,IPE,JPS,JPE,KPS,KPE
 #endif
+#ifdef DEREF_KLUDGE
+      INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
+#endif
 !
       REAL,DIMENSION(ITS-5:ITE+5,JTS-5:JTE+5) :: APDT,HBMS,PRET
 !
@@ -1438,6 +1442,7 @@
 !**********************************************************************
 !----------------------------------------------------------------------
 !
+#include "deref_kludge.h"
 
       DO J=JMS,JME
       DO I=IMS,IME

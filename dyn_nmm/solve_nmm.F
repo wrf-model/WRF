@@ -72,7 +72,7 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
       real :: btim,btimx
       integer ij
 #ifdef DEREF_KLUDGE
-   INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
+      INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
 #endif
 #ifdef RSL
       integer rsl_internal_microclock

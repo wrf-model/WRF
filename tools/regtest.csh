@@ -651,6 +651,8 @@ if ( $dataset == jun01 ) then
 	set filetag_real=2001-06-11_12:00:00
 else if ( $dataset == jan00 ) then
 	set filetag_real=2000-01-24_12:00:00
+else if ( $dataset == chem ) then
+	set filetag_real=2004-06-25_12:00:00
 endif
 
 set filetag_ideal=0001-01-01_00:00:00

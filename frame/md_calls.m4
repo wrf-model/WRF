@@ -32,7 +32,6 @@ CHARACTER*(*) , INTENT(IN)  :: Element
 ifelse($6,td,`CHARACTER*(*) , INTENT(IN)  :: DateStr')
 ifelse($2,var,`CHARACTER*(*) , INTENT(IN)  :: VarName') 
 
-! ifelse($4,char,`CHARACTER*(*)  :: Data', `ifelse($3,double,real*8,$3)  :: Data ifelse($5,arr,(*),)')
  ifelse($4,char,`CHARACTER*(*)  :: Data', `ifelse($3,double,real*8,$3)  :: Data ifelse($5,arr,(*),)')
 
 ifelse($4,char,,`INTEGER ,       INTENT(IN)  :: Count')
@@ -62,8 +61,16 @@ IF ( Hndl .GT. -1 ) THEN
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
         IF ( multi_files(io_form) .OR.  wrf_dm_on_monitor() ) THEN
-           CALL ext_ncd_$1_$2_$6_$3$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
+ifelse($3,real,
+`#  if ( RWORDSIZE == DWORDSIZE )
+           CALL ext_ncd_$1_$2_$6_double$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
                                  ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )
+#  else
+           CALL ext_ncd_$1_$2_$6_real$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
+                                 ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )
+#  endif',
+`           CALL ext_ncd_$1_$2_$6_$3$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
+                                 ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )' )
         ENDIF
         IF ( .NOT. multi_files(io_form) ) THEN
           ifelse($1,get,ifelse($3,integer,`CALL wrf_dm_bcast_bytes( locCount, IWORDSIZE )'))
@@ -79,24 +86,56 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
 #ifdef PHDF5
       CASE ( IO_PHDF5   )
-        CALL ext_phdf5_$1_$2_$6_$3$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
+ifelse($3,real,
+`#  if ( RWORDSIZE == DWORDSIZE )
+        CALL ext_phdf5_$1_$2_$6_double$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
                               ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )
+#  else
+        CALL ext_phdf5_$1_$2_$6_real$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
+                              ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )
+#  endif',
+`        CALL ext_phdf5_$1_$2_$6_$3$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
+                              ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )' )
 #endif
 #ifdef XXX
       CASE ( IO_XXX   )
-        CALL ext_xxx_$1_$2_$6_$3$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
+ifelse($3,real,
+`#  if ( RWORDSIZE == DWORDSIZE )
+        CALL ext_xxx_$1_$2_$6_double$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
                               ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )
+#  else
+        CALL ext_xxx_$1_$2_$6_real$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
+                              ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )
+#  endif',
+`        CALL ext_xxx_$1_$2_$6_$3$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
+                              ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )' )
 #endif
 #ifdef YYY
       CASE ( IO_YYY   )
-        CALL ext_yyy_$1_$2_$6_$3$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
+ifelse($3,real,
+`#  if ( RWORDSIZE == DWORDSIZE )
+        CALL ext_yyy_$1_$2_$6_double$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
                               ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )
+#  else
+        CALL ext_yyy_$1_$2_$6_real$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
+                              ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )
+#  endif',
+`        CALL ext_yyy_$1_$2_$6_$3$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
+                              ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )' )
 #endif
 #ifdef INTIO
       CASE ( IO_INTIO   )
         IF ( multi_files(io_form) .OR.  wrf_dm_on_monitor() ) THEN
-           CALL ext_int_$1_$2_$6_$3$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
+ifelse($3,real,
+`#  if ( RWORDSIZE == DWORDSIZE )
+           CALL ext_int_$1_$2_$6_double$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
                                  ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )
+#  else
+           CALL ext_int_$1_$2_$6_real$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
+                                 ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )
+#  endif',
+`           CALL ext_int_$1_$2_$6_$3$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
+                                 ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )' )
         ENDIF
         IF ( .NOT. multi_files(io_form) ) THEN
            ifelse($1,get,ifelse($3,integer,`CALL wrf_dm_bcast_bytes( locCount, IWORDSIZE )'))

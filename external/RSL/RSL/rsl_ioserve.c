@@ -656,6 +656,7 @@ if ( typelen == sizeof ( int ) ) {
   RSL_FREE (iptlst) ;   /* 20020524 */
   RSL_FREE (jptlst) ;   /* 20020524 */
   RSL_FREE( rbuf ) ;
+  return(0) ;
 }
 
 static int wrt_sock_err = 0 ;
@@ -1022,6 +1023,7 @@ handle_write_request( req, nelem, psize_me, pbuf_me )
     send_to_output_device( req, wbuf, nelem ) ;
   }
   RSL_FREE( wbuf ) ;
+  return(0) ;
 }
 
 

@@ -159,11 +159,12 @@ INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int -I../extern
 EXTRAMODULES    =
 ARCHFLAGS       =       -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
                         CONFIGURE_NETCDF_FLAG \
-                        -DTRIEDNTRUE   -DINTIO -DLIMIT_ARGS
+                        -DTRIEDNTRUE   -DINTIO -DYYY -DLIMIT_ARGS
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH \
 			-L../external/io_int -lwrfio_int \
+                        -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =       $(FCOPTIM) -64 -OPT:Olimit=5269
 CPP             =       /lib/cpp -C -P
@@ -186,6 +187,10 @@ wrfio_nf :
 wrfio_int : 
 	( cd ../external/io_int ; \
           make CC=$(CC) FC="f90 $(FCDEBUG) $(FCFLAGS)" CPP="$(CPP)" all )
+
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; \
+          make CC=$(CC) FC="f90 $(FCDEBUG) $(FCFLAGS) -w" CPP="$(CPP)" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -311,11 +316,12 @@ INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int -I../extern
 EXTRAMODULES    =
 ARCHFLAGS       =       -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
                         CONFIGURE_NETCDF_FLAG \
-                        -DTRIEDNTRUE   -DINTIO -DLIMIT_ARGS
+                        -DTRIEDNTRUE   -DYYY -DINTIO -DLIMIT_ARGS
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH $(OMP) \
 			-L../external/io_int -lwrfio_int \
+                        -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =       $(FCOPTIM) -64 -OPT:Olimit=5269
 CPP             =       /lib/cpp -C -P
@@ -338,6 +344,10 @@ wrfio_nf :
 wrfio_int : 
 	( cd ../external/io_int ; \
           make CC=$(CC) FC="f90 $(FCDEBUG) $(FCFLAGS)" CPP="$(CPP)" all )
+
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; \
+          make CC=$(CC) FC="f90 $(FCDEBUG) $(FCFLAGS) -w" CPP="$(CPP)" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -389,7 +399,7 @@ FCDEBUG         =       # -g
 FCOPTIM         =       -O3 -OPT:roundoff=3:IEEE_arithmetic=3
 FCBASEOPTS	=	-freeform -I. -64 -mips4 -w $(FCDEBUG) -w
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
-ARCHFLAGS       =       -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL -DIWORDSIZE=4 \
+ARCHFLAGS       =       -DINTIO -DYYY -DWRF_RSL_IO -DRSL -DDM_PARALLEL -DIWORDSIZE=4 \
                         -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
                         -DTRIEDNTRUE   -DLIMIT_ARGS -DPEDANTIC
 EXTRAMODULES    =       
@@ -399,6 +409,7 @@ PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int \
                         -L../external/RSL/RSL -lrsl -lmpi \
+                        -L../external/io_grib1 -lio_grib1 \
                         ../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS		=       -64 $(OMP)
 CPP		=	/lib/cpp
@@ -431,6 +442,10 @@ wrfio_nf :
 wrfio_int : 
 	( cd ../external/io_int ; \
           make CC=$(CC) FC="f90 $(FCDEBUG) $(FCFLAGS)" CPP="$(CPP)" all )
+
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; \
+          make CC=$(CC) FC="f90 $(FCDEBUG) $(FCFLAGS) -w" CPP="$(CPP)" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -487,13 +502,14 @@ INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../exter
 			-M../frame -M../share -M../phys -M../inc \
 			-M../dyn_em 
 EXTRAMODULES    =       
-ARCHFLAGS       =       -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
+ARCHFLAGS       =       -DINTIO -DYYY -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
                         CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   \
 			-DLIMIT_ARGS
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH \
 			-L../external/io_int -lwrfio_int \
+                        -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =	$(FCOPTIM)
 #CPP            =       /opt/SUNWspro/bin/fpp
@@ -517,6 +533,10 @@ wrfio_nf :
 wrfio_int : 
 	( cd ../external/io_int ; \
           make CC=$(CC) FC="$(FC) $(FCBASEOPTS)" CPP="$(CPP)" all )
+
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; \
+          make CC=$(CC) FC="$(FC) $(FCBASEOPTS)" CPP="$(CPP)" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -580,7 +600,7 @@ OMPCPP          =
 FC              =       f95
 LD              =       f95
 CC              =       cc
-ARCHFLAGS       =       -DNETCDF -DINTIO \
+ARCHFLAGS       =       -DNETCDF -DYYY -DINTIO \
                         -DDM_PARALLEL -DRSL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
                         -DTRIEDNTRUE   \
@@ -601,6 +621,7 @@ PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int \
                         -L../external/RSL/RSL -lrsl \
+                        -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =       $(FCOPTIM) $(OMP) $(OMP)
 CPP             =       /usr/ccs/lib/cpp -C -P
@@ -630,7 +651,11 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="f90 $(FCDEBUG) -convert big_endian -automatic -cpp -free" all )
+          make CC=$(CC) FC="$(FC) $(FCBASEOPTS)" CPP="$(CPP)" all )
+
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; \
+          make CC=$(CC) FC="$(FC) $(FCBASEOPTS)" CPP="$(CPP)" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -701,13 +726,14 @@ INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../exter
 			-M../frame -M../share -M../phys -M../inc \
 			-M../dyn_em 
 EXTRAMODULES    =       
-ARCHFLAGS       =       -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
+ARCHFLAGS       =       -DYYY -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
                         CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   \
 			-DLIMIT_ARGS
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH \
 			-L../external/io_int -lwrfio_int \
+                        -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =	$(FCOPTIM) $(OMP)
 #CPP            =       /opt/SUNWspro/bin/fpp
@@ -731,6 +757,10 @@ wrfio_nf :
 wrfio_int : 
 	( cd ../external/io_int ; \
           make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCBASEOPTS)" all )
+
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; \
+          make CC=$(CC) FC="$(FC) $(FCBASEOPTS)" CPP="$(CPP)" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -777,7 +807,7 @@ OMPCPP          =       -D_OPENMP
 FC              =       f95
 LD              =       f95
 CC              =       cc
-ARCHFLAGS       =       -DNETCDF -DINTIO \
+ARCHFLAGS       =       -DNETCDF -DYYY -DINTIO \
                         -DDM_PARALLEL -DRSL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
                         -DTRIEDNTRUE   \
@@ -798,6 +828,7 @@ PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int \
                         -L../external/RSL/RSL -lrsl \
+                        -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =       $(FCOPTIM) $(OMP) $(OMP)
 CPP             =       /usr/ccs/lib/cpp -C -P
@@ -828,6 +859,10 @@ wrfio_nf :
 wrfio_int : 
 	( cd ../external/io_int ; \
           make CC=$(CC) CPP="$(CPP)" FC="f90 $(FCDEBUG) -convert big_endian -automatic -cpp -free" all )
+
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; \
+          make CC=$(CC) FC="$(FC) $(FCBASEOPTS)" CPP="$(CPP)" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -879,13 +914,14 @@ FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../inc
 EXTRAMODULES    =       
-ARCHFLAGS       =       -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
+ARCHFLAGS       =       -DYYY -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
                         CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   \
 			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DNATIVE_MASSV
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -lmass -lmassv \
                         -L../external/io_int -lwrfio_int \
+                        -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 
 LDFLAGS         =	-bmaxstack:256000000 -bmaxdata:2048000000
@@ -909,6 +945,10 @@ wrfio_nf :
 wrfio_int : 
 	( cd ../external/io_int ; \
           make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; \
+          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -977,13 +1017,14 @@ FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../inc
 EXTRAMODULES    =       
-ARCHFLAGS       =       -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
+ARCHFLAGS       =       -DYYY -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
                         CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   \
 			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DNATIVE_MASSV
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -lmass -lmassv -lxlsmp \
                         -L../external/io_int -lwrfio_int \
+                        -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =	-bmaxstack:256000000 $(OMP) -bmaxdata:2048000000
 CPP             =       /lib/cpp -C -P
@@ -1006,6 +1047,10 @@ wrfio_nf :
 wrfio_int : 
 	( cd ../external/io_int ; \
           make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; \
+          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -1043,12 +1088,13 @@ INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../exter
                         -I../frame -I../share -I../phys -I../inc
 EXTRAMODULES    =       
 ARCHFLAGS       =       -DRSL_LITE -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 \
-                        -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   -DINTIO \
+                        -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   -DYYY -DINTIO \
 			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DNATIVE_MASSV
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL_LITE -lrsl_lite -lmass -lmassv \
                         -L../external/io_int -lwrfio_int  \
+                        -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =	-bmaxstack:256000000 -bmaxdata:2048000000
 CPP		=	/lib/cpp
@@ -1078,6 +1124,10 @@ wrfio_nf :
 wrfio_int : 
 	( cd ../external/io_int ; \
           make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; \
+          make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -1140,12 +1190,13 @@ INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../exter
                         -I../frame -I../share -I../phys -I../inc
 EXTRAMODULES    =       
 ARCHFLAGS       =       -DWRF_RSL_IO -DRSL -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 \
-                        -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   -DINTIO \
+                        -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   -DYYY -DINTIO \
 			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DNATIVE_MASSV
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl -lmass -lmassv \
                         -L../external/io_int -lwrfio_int  \
+                        -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =	-bmaxstack:256000000 -bmaxdata:2048000000
 CPP		=	/lib/cpp
@@ -1175,6 +1226,10 @@ wrfio_nf :
 wrfio_int : 
 	( cd ../external/io_int ; \
           make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; \
+          make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -1237,12 +1292,13 @@ INCLUDE_MODULES =       -I../external/io_netcdf  -I../external/io_phdf5 -I../ext
                         -I../frame -I../share -I../phys -I../inc
 EXTRAMODULES    =       
 ARCHFLAGS       =       -DWRF_RSL_IO -DRSL -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 \
-                        -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG CONFIGURE_PHDF5_FLAG -DTRIEDNTRUE   -DINTIO \
+                        -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG CONFIGURE_PHDF5_FLAG -DTRIEDNTRUE   -DYYY -DINTIO \
 			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DNATIVE_MASSV
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH CONFIGURE_PHDF5_LIB_PATH -L../external/RSL/RSL -lrsl -lmass -lmassv \
                         -L../external/io_int -lwrfio_int  \
+                        -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =	-bmaxstack:256000000 -bmaxdata:2048000000
 CPP		=	/lib/cpp
@@ -1275,6 +1331,10 @@ wrfio_phdf5 :
 wrfio_int : 
 	( cd ../external/io_int ; \
           make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; \
+          make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -1337,12 +1397,13 @@ INCLUDE_MODULES =       -I../external/io_netcdf  -I../external/io_phdf5 -I../ext
                         -I../frame -I../share -I../phys -I../inc
 EXTRAMODULES    =       
 ARCHFLAGS       =       -DRSL_LITE -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 \
-                        -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG CONFIGURE_PHDF5_FLAG -DTRIEDNTRUE   -DINTIO \
+                        -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG CONFIGURE_PHDF5_FLAG -DTRIEDNTRUE   -DYYY -DINTIO \
 			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DNATIVE_MASSV
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH CONFIGURE_PHDF5_LIB_PATH -L../external/RSL_LITE -lrsl_lite -lmass -lmassv \
                         -L../external/io_int -lwrfio_int  \
+                        -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =	-bmaxstack:256000000 -bmaxdata:2048000000
 CPP		=	/lib/cpp
@@ -1375,6 +1436,10 @@ wrfio_phdf5 :
 wrfio_int : 
 	( cd ../external/io_int ; \
           make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; \
+          make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -1438,13 +1503,14 @@ FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../inc
 EXTRAMODULES    =       
-ARCHFLAGS       =       -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 \
+ARCHFLAGS       =       -DYYY -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 \
                         -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   \
 			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DNATIVE_MASSV
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl -lxlsmp -lmass -lmassv \
                         -L../external/io_int -lwrfio_int  \
+                        -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =	-bmaxstack:256000000 $(OMP) -bmaxdata:2048000000
 CPP		=	/lib/cpp
@@ -1474,6 +1540,10 @@ wrfio_nf :
 wrfio_int : 
 	( cd ../external/io_int ; \
           make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; \
+          make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -1549,11 +1619,12 @@ INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../exter
                         -I../frame -I../share -I../phys -I../inc
 EXTRAMODULES    =       
 ARCHFLAGS       =       -DWRF_RSL_IO -DRSL -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 \
-                        -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   -DINTIO -DMCELIO -DLIMIT_ARGS \
+                        -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   -DYYY -DINTIO -DMCELIO -DLIMIT_ARGS \
                         -DNO_NAMELIST_PRINT -DNATIVE_MASSV
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH \
+                        -L../external/io_grib1 -lio_grib1 \
                         -L../external/RSL/RSL -lrsl -lmass -lmassv -lxlsmp \
                         -L../external/io_mcel -lwrfio_mcel  \
 -L$(MCELHOME)/MCELSystem/MCEL -lMCEL  \
@@ -1591,6 +1662,10 @@ wrfio_nf :
 wrfio_int : 
 	( cd ../external/io_int ; \
           make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; \
+          make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -1649,10 +1724,10 @@ OMPCPP          =
 FC              =       f90
 LD              =       f90
 CC              =       cc
-ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DINTIO \
+ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DYYY -DINTIO \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
                         -DTRIEDNTRUE   \
-			-DLIMIT_ARGS -DFLOATSAFE
+			-DLIMIT_ARGS -DFLOATSAFE -DYYY
 CFLAGS          =       $(ARCHFLAGS)
 FCOPTIM         =       -fast -O4
 FCDEBUG         =       # -g
@@ -1664,7 +1739,8 @@ EXTRAMODULES    =
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int \
-			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
+			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time  \
+                        -L../external/io_grib1 -lio_grib1
 LDFLAGS         =       $(FCOPTIM) $(OMP) -automatic -convert big_endian $(OMP)
 CPP             =       /usr/bin/cpp -C -P
 POUND_DEF	=	-DDEC_ALPHA -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -1688,6 +1764,10 @@ wrfio_nf :
 wrfio_int : 
 	( cd ../external/io_int ; \
           make CC=$(CC) CPP="$(CPP)" FC="f90 $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
+
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; \
+          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -1729,7 +1809,7 @@ OMPCPP          =
 FC              =       f90
 LD              =       f90
 CC              =       cc
-ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DNETCDF -DINTIO -DWRF_RSL_IO \
+ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DNETCDF -DYYY -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL -DRSL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
                         -DTRIEDNTRUE   \
@@ -1747,7 +1827,8 @@ PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int \
                         -L../external/RSL/RSL -lrsl \
-			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
+			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time  \
+                        -L../external/io_grib1 -lio_grib1
 LDFLAGS         =       $(FCOPTIM) $(OMP) -automatic -convert big_endian $(OMP)
 CPP             =       /usr/bin/cpp -C -P
 POUND_DEF	=	-DDEC_ALPHA -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -1777,6 +1858,10 @@ wrfio_nf :
 wrfio_int : 
 	( cd ../external/io_int ; \
           make CC=$(CC) CPP="$(CPP)" FC="f90 $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
+
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; \
+          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -1822,7 +1907,7 @@ OMPCPP          =       -D_OPENMP
 FC              =       f90
 LD              =       f90
 CC              =       cc
-ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DINTIO \
+ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DYYY -DINTIO \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
                         -DTRIEDNTRUE   \
 			-DLIMIT_ARGS -DFLOATSAFE
@@ -1837,7 +1922,8 @@ EXTRAMODULES    =
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int \
-			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
+			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time \
+                        -L../external/io_grib1 -lio_grib1
 LDFLAGS         =       $(FCOPTIM) $(OMP) -automatic -convert big_endian $(OMP)
 CPP             =       /usr/bin/cpp -C -P
 POUND_DEF	=	-DDEC_ALPHA -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -1861,6 +1947,10 @@ wrfio_nf :
 wrfio_int : 
 	( cd ../external/io_int ; \
           make CC=$(CC) CPP="$(CPP)" FC="f90 $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
+
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; \
+          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -1902,7 +1992,7 @@ OMPCPP          =       -D_OPENMP
 FC              =       f90
 LD              =       f90
 CC              =       cc
-ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DNETCDF -DINTIO -DWRF_RSL_IO \
+ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DNETCDF -DYYY -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL -DRSL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
                         -DTRIEDNTRUE   \
@@ -1920,7 +2010,8 @@ PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int \
                         -L../external/RSL/RSL -lrsl \
-			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
+			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time \
+                        -L../external/io_grib1 -lio_grib1
 LDFLAGS         =       $(FCOPTIM) $(OMP) -automatic -convert big_endian $(OMP)
 CPP             =       /usr/bin/cpp -C -P
 POUND_DEF	=	-DDEC_ALPHA -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -1950,6 +2041,10 @@ wrfio_nf :
 wrfio_int : 
 	( cd ../external/io_int ; \
           make CC=$(CC) CPP="$(CPP)" FC="f90 $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
+
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; \
+          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -1996,7 +2091,7 @@ OMPCPP          =
 FC              =       mpif90
 LD              =       mpif90
 CC              =       mpicc
-ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DNETCDF -DINTIO \
+ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DNETCDF -DYYY -DINTIO \
                         -DDM_PARALLEL -DRSL_LITE \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
                         -DTRIEDNTRUE   \
@@ -2014,7 +2109,8 @@ PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int \
                         -L../external/RSL_LITE -lrsl_lite  \
-			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
+			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time \
+                        -L../external/io_grib1 -lio_grib1
 LDFLAGS         =       $(FCOPTIM) -automatic -convert big_endian $(OMP)
 CPP             =       /usr/bin/cpp -C -P
 POUND_DEF	=	-DDEC_ALPHA -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -2046,6 +2142,10 @@ wrfio_nf :
 wrfio_int : 
 	( cd ../external/io_int ; \
           make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
+
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; \
+          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -2091,7 +2191,7 @@ OMPCPP          =
 FC              =       mpif90
 LD              =       mpif90
 CC              =       mpicc
-ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DINTIO -DWRF_RSL_IO \
+ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DYYY -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL -DRSL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
                         -DTRIEDNTRUE   \
@@ -2109,7 +2209,8 @@ PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int \
                         -L../external/RSL/RSL -lrsl \
-			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
+			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time  \
+                        -L../external/io_grib1 -lio_grib1
 LDFLAGS         =       $(FCOPTIM) -automatic -convert big_endian $(OMP)
 CPP             =       /usr/bin/cpp -C -P
 POUND_DEF	=	-DDEC_ALPHA -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -2141,6 +2242,10 @@ wrfio_nf :
 wrfio_int : 
 	( cd ../external/io_int ; \
           make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
+
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; \
+          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -2186,7 +2291,7 @@ OMPCPP          =       -D_OPENMP
 FC              =       mpif90
 LD              =       mpif90
 CC              =       mpicc
-ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DINTIO -DWRF_RSL_IO \
+ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DYYY -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL -DRSL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
                         -DTRIEDNTRUE   \
@@ -2204,7 +2309,8 @@ PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int \
                         -L../external/RSL/RSL -lrsl \
-			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
+			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time \
+                        -L../external/io_grib1 -lio_grib1
 LDFLAGS         =       $(FCOPTIM) -automatic -convert big_endian $(OMP)
 CPP             =       /usr/bin/cpp -C -P
 POUND_DEF	=	-DDEC_ALPHA -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -2236,6 +2342,10 @@ wrfio_nf :
 wrfio_int : 
 	( cd ../external/io_int ; \
           make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
+
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; \
+          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -2281,7 +2391,7 @@ OMPCPP          =       -D_OPENMP
 FC              =       f90
 LD              =       f90
 CC              =       cc
-ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DINTIO -DWRF_RSL_IO \
+ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DYYY -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL -DRSL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
                         -DTRIEDNTRUE   \
@@ -2299,7 +2409,8 @@ PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int \
                         -L../external/RSL/RSL -lrsl -lmpi \
-			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
+			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time \
+                        -L../external/io_grib1 -lio_grib1
 LDFLAGS         =       $(FCOPTIM) -automatic -convert big_endian $(OMP)
 CPP             =       /usr/bin/cpp -C -P
 POUND_DEF	=	-DDEC_ALPHA -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -2331,6 +2442,10 @@ wrfio_nf :
 wrfio_int : 
 	( cd ../external/io_int ; \
           make CC=$(CC) CPP="$(CPP)" FC="f90 $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
+
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; \
+          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -2376,7 +2491,7 @@ OMPCPP          =
 FC              =       mpif90
 LD              =       mpif90 -f90=cxx
 CC              =       mpicc
-ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DINTIO -DWRF_RSL_IO \
+ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DYYY -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL -DRSL -DFLOATSAFE \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
                         -DTRIEDNTRUE   \
@@ -2395,6 +2510,7 @@ REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int \
                         -L../external/RSL/RSL -lrsl \
                         ../frame/module_internal_header_util.o ../frame/pack_utils.o \
+                        -L../external/io_grib1 -lio_grib1 \
 -L../external/io_mcel -lwrfio_mcel  \
 -L/users/bettenc/MCELSystem/MCEL -lMCEL \
 -L/users/bettenc/lib -lOB -lJTC -lrt -lpthread \
@@ -2432,6 +2548,10 @@ wrfio_nf :
 wrfio_int : 
 	( cd ../external/io_int ; \
           make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
+
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; \
+          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -2483,7 +2603,7 @@ OMPCPP          =
 FC              =       echo # mpif90
 LD              =       echo # mpif90
 CC              =       echo # mpicc
-ARCHFLAGS       =       -DAUTODOC_BUILD CONFIGURE_NETCDF_FLAG -DINTIO -DWRF_RSL_IO \
+ARCHFLAGS       =       -DAUTODOC_BUILD CONFIGURE_NETCDF_FLAG -DYYY -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL="'<b>DM_PARALLEL</b>'" -DRSL="'<b>RSL</b>'" \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
                         -DTRIEDNTRUE   \
@@ -2501,6 +2621,7 @@ PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int \
                         -L../external/RSL/RSL -lrsl \
+                        -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =       $(FCOPTIM) -automatic -convert big_endian $(OMP)
 CPP             =       /usr/bin/cpp -C -P
@@ -2533,6 +2654,10 @@ wrfio_nf :
 wrfio_int : 
 	( cd ../external/io_int ; \
           make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
+
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; \
+          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -2582,7 +2707,7 @@ FCBASENOINL     =       -convert big_endian -O1 -automatic -cpp -free -I. -arch 
 FCBASEOPTS      =       -w -convert big_endian -automatic -cpp -free -I. \
                         -arch host $(FCDEBUG)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
-ARCHFLAGS       =       -DINTIO -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
+ARCHFLAGS       =       -DYYY -DINTIO -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
                         CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE  
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../inc
@@ -2590,6 +2715,7 @@ EXTRAMODULES    =
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int \
+                        -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o  -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =       $(FCOPTIM) -automatic -convert big_endian
 CPP             =       /lib/cpp -C -P
@@ -2617,6 +2743,11 @@ wrfio_int :
 	( cd ../external/io_int ; \
           make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCBASENOINL) -w" \
           TRADFLAG="-traditional" all )
+
+wrfio_grib1 : 
+	( cd ../external/io_grib1 ; \
+          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCBASENOINL) -w" \
+          TRADFLAG="-traditional" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -2662,7 +2793,7 @@ FCBASENOINL     =       -convert big_endian -O1 -automatic -cpp -free -I. -arch 
 FCBASEOPTS      =       -w -convert big_endian -automatic -cpp -free -I. \
                         -arch host $(FCDEBUG)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
-ARCHFLAGS       =       -DINTIO -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
+ARCHFLAGS       =       -DYYY -DINTIO -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
                         CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE  
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../inc
@@ -2670,6 +2801,7 @@ EXTRAMODULES    =
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int \
+                        -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o  -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =       $(FCOPTIM) -automatic -convert big_endian
 CPP             =       /lib/cpp -C -P
@@ -2697,6 +2829,11 @@ wrfio_int :
 	( cd ../external/io_int ; \
           make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCBASENOINL) -w" \
           TRADFLAG="-traditional" all )
+
+wrfio_grib1 : 
+	( cd ../external/io_grib1 ; \
+          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCBASENOINL) -w" \
+          TRADFLAG="-traditional" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -2746,7 +2883,7 @@ FCBASENOINL     =       -convert big_endian -O1 -automatic -cpp -free -I. -arch 
 FCBASEOPTS      =       -w -convert big_endian -automatic -cpp -free -I. \
                         -arch host $(FCDEBUG)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
-ARCHFLAGS       =       -DINTIO -DWRF_RSL_IO -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DRSL -DDM_PARALLEL \
+ARCHFLAGS       =       -DYYY -DINTIO -DWRF_RSL_IO -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DRSL -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
                         CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE  
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
@@ -2755,6 +2892,7 @@ EXTRAMODULES    =
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
+                        -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o \
 			-L../external/io_int -lwrfio_int -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =       $(FCOPTIM) -automatic -convert big_endian
@@ -2789,6 +2927,11 @@ wrfio_int :
 	( cd ../external/io_int ; \
           make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCBASENOINL) -w" \
           TRADFLAG="-traditional" all )
+
+wrfio_grib1 : 
+	( cd ../external/io_grib1 ; \
+          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCBASENOINL) -w" \
+          TRADFLAG="-traditional" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -2841,7 +2984,8 @@ ARCHFLAGS       = CONFIGURE_NETCDF_FLAG -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=
 			-DLIMIT_ARGS
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
-LIB             = 	../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
+LIB             = 	../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time \
+                        -L../external/io_grib1 -lio_grib1
 LDFLAGS         =      -Wl,-P -J
 LDFLAGS         =      -J
 CPP             =       /lib/cpp -C -P
@@ -2879,7 +3023,8 @@ CPPFLAGS	=	-I$(LIBINCLUDE) -C -P $(ARCHFLAGS) $(COREDEFS) $(POUND_DEF)
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 #LIB             =       CONFIGURE_NETCDF_LIB_PATH 
-LIB             = 	../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
+LIB             = 	../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time  \
+                        -L../external/io_grib1 -lio_grib1
 AR              =       ar ru
 M4              =       m4
 RANLIB          =       ranlib
@@ -2919,6 +3064,7 @@ EXTRAMODULES    =
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH \
+                        -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o ../../setmxcsr.o
 LDFLAGS         =
 CPP             =       /lib/cpp
@@ -2994,6 +3140,7 @@ EXTRAMODULES    =
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH \
+                        -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =
 CPP             =       /lib/cpp -C -P
@@ -3015,6 +3162,10 @@ wrfio_nf :
           make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC=$(FC) TRADFLAG="-traditional" \
           FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
           /bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc )
+
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; make CPP="$(CPP)" FC="$(FC) -I. $(FCDEBUG) $(FCBASEOPTS) -w"\
+	  TRADFLAG="-traditional")
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -3080,6 +3231,7 @@ EXTRAMODULES    =
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH \
+                        -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =	$(FCFLAGS) $(OMP)
 CPP             =       /lib/cpp -C -P
@@ -3101,6 +3253,10 @@ wrfio_nf :
           make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC=$(FC) TRADFLAG="-traditional" \
           FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
           /bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc )
+
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; make CPP="$(CPP)" FC="$(FC) -I. $(FCDEBUG) $(FCBASEOPTS) -w"\
+	  TRADFLAG="-traditional")
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -3157,7 +3313,7 @@ FCOPTIM		=	-fast
 FCDEBUG		=	#-g
 FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree -tp p6 $(FCDEBUG)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
-ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
+ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DYYY -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
                         -DTRIEDNTRUE   \
 			-DLIMIT_ARGS
@@ -3167,6 +3323,7 @@ EXTRAMODULES    =
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
+                        -L../external/io_grib1 -lio_grib1 \
 			-L../external/io_int -lwrfio_int \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =       -byteswapio
@@ -3196,9 +3353,17 @@ wrfio_nf :
 	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
 	/bin/cp wrf_io_flags.h ../io_quilt )
 
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; make CPP="$(CPP)" FC="$(FC) -I. $(FCDEBUG) $(FCBASEOPTS) -I. -w"\
+	  TRADFLAG="-traditional")
+
 wrfio_int : 
 	( cd ../external/io_int ; \
           make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
+
+wrfio_grib1 : 
+	( cd ../external/io_grib1 ; \
+          make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -3254,7 +3419,7 @@ FCOPTIM		=	-fast
 FCDEBUG		=	#-g
 FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree -tp p6 $(FCDEBUG)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
-ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DINTIO -DDM_PARALLEL \
+ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DYYY -DINTIO -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
                         -DTRIEDNTRUE   \
 			-DLIMIT_ARGS
@@ -3264,6 +3429,7 @@ EXTRAMODULES    =
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL_LITE -lrsl_lite \
+                        -L../external/io_grib1 -lio_grib1 \
 			-L../external/io_int -lwrfio_int \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =       -byteswapio
@@ -3292,6 +3458,10 @@ wrfio_nf :
 	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
 	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
 	/bin/cp wrf_io_flags.h ../io_quilt )
+
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; make CPP="$(CPP)" FC="$(FC) -I. $(FCDEBUG) $(FCBASEOPTS) -w"\
+	  TRADFLAG="-traditional")
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -3362,6 +3532,7 @@ EXTRAMODULES =
 PERL = perl
 REGISTRY = Registry
 LIB = -L../external/io_netcdf -lwrfio_nf $(OMP) -LCONFIGURE_NETCDF_PATH/lib -lnetcdf \
+                        -L../external/io_grib1 -lio_grib1 \
       -L../external/RSL/RSL -lrsl ../frame/module_internal_header_util.o ../frame/pack_utils.o \
       -L../external/esmf_time_f90 -lesmf_time -lmpifarg -lmpi -lelan -lintrins -lPEPCF90 \
       -limf -lguide -lunwind -lpthread -L/opt/mlib/lib/linux -lveclib8
@@ -3469,6 +3640,7 @@ EXTRAMODULES =
 PERL = perl
 REGISTRY = Registry
 LIB = -L../external/io_netcdf -lwrfio_nf $(OMP) -LCONFIGURE_NETCDF_PATH/lib -lnetcdf \
+                        -L../external/io_grib1 -lio_grib1 \
       -L../external/RSL/RSL -lrsl ../frame/module_internal_header_util.o ../frame/pack_utils.o \
       -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS = $(OMP)
@@ -3582,6 +3754,7 @@ EXTRAMODULES =
 PERL = perl
 REGISTRY = Registry
 LIB = -L../external/io_netcdf -lwrfio_nf $(OMP) -LCONFIGURE_NETCDF_PATH/lib -lnetcdf -L../external/RSL_LITE -lrsl_lite \
+                        -L../external/io_grib1 -lio_grib1 \
       ../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time \
       -lmpifarg -lmpi -lelan -lintrins -lPEPCF90 -limf -lguide -lunwind -lpthread -L/opt/mlib/lib/linux -lveclib8
 LDFLAGS = $(OMP)
@@ -3686,6 +3859,7 @@ EXTRAMODULES =
 PERL = perl
 REGISTRY = Registry
 LIB = -Vaxlib -L../external/io_netcdf -lwrfio_nf $(OMP) -L/u/ncsa/straka/AUGUST.test/WRFV1/netcdfintel7/lib -lnetcdf -L../external/RSL/RSL -lrsl \
+                        -L../external/io_grib1 -lio_grib1 \
 -L../external/io_int -lwrfio_int \
 ../frame/module_internal_header_util.o ../frame/pack_utils.o -L/usr/local/vmi/mpich/lib/ecc6 -lmpich -lfmpich -lvmi -ldl -lpthread -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS = $(OMP)
@@ -3789,6 +3963,7 @@ EXTRAMODULES =
 PERL = perl
 REGISTRY = Registry
 LIB = -Vaxlib -L../external/io_netcdf -lwrfio_nf $(OMP) -L/u/ncsa/straka/AUGUST.test/WRFV1/netcdfintel7/lib -lnetcdf -L../external/RSL_LITE -lrsl_lite \
+                        -L../external/io_grib1 -lio_grib1 \
 -L../external/io_int -lwrfio_int \
 ../frame/module_internal_header_util.o ../frame/pack_utils.o -L/usr/local/vmi/mpich/lib/ecc6 -lmpich -lfmpich -lvmi -ldl -lpthread -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS = $(OMP)
@@ -3876,7 +4051,8 @@ POUND_DEF	=	-DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=
 CPPFLAGS	=	-I$(LIBINCLUDE) -C -P $(ARCHFLAGS) $(POUND_DEF)
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
-LIB             =	../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
+LIB             =	../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time \
+                        -L../external/io_grib1 -lio_grib1
 AR              =       ar ru
 M4              =       m4 -B8000
 RANLIB          =       echo
@@ -3890,6 +4066,9 @@ module_dm.F :
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC) -FR -I. -w" ; /bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc )
+
+wrfio_grib1 : 
+	( cd ../external/io_grib1 ; make CPP="$(CPP)" FC="$(FC) -I. $(FCDEBUG) $(FCFLAGS) -w")
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -3936,6 +4115,298 @@ module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o  start_domain.o :
+	$(RM) $@
+	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(RM) $*.b
+	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
+
+###########################################################
+#ARCH   Intel xeon i686 ia32 Xeon Linux, ifc compiler (OpenMP)
+#
+OMP             =       -openmp -fpp -auto
+OMPCPP          =       -D_OPENMP
+FC              =       ifort
+LD              =       ifort
+CC              =       gcc
+SFC             =       $(FC)
+CFLAGS          =
+FCOPTIM		=	-O3 -xW
+FCDEBUG		=	#-g
+FCBASEOPTS      =       -FR -cm -w -I. $(FCDEBUG)
+FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
+ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
+                         CONFIGURE_NETCDF_FLAG \
+                        -DTRIEDNTRUE   \
+			-DLIMIT_ARGS
+INCLUDE_MODULES =       -I ../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
+                        -I../frame -I../share -I../phys -I../inc
+EXTRAMODULES    =       
+PERL            =       perl
+REGISTRY        =       Registry
+LIB             =       CONFIGURE_NETCDF_LIB_PATH \
+                        -L../external/io_grib1 -lio_grib1 \
+			../frame/internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time
+LDFLAGS         =	$(FCFLAGS) $(FCFLAGS) $(OMP)
+CPP             =       /lib/cpp -traditional
+POUND_DEF	=	-DPGF90 $(OMPCPP) $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS) -DYYY
+CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) $(POUND_DEF)
+AR              =       ar ru
+M4              =       m4
+RANLIB          =       ranlib
+NETCDFPATH	=	CONFIGURE_NETCDF_PATH
+CC_TOOLS        =       $(CC)
+
+externals : CONFIGURE_WRFIO_NF wrfio_int module_dm.F esmf_time
+
+module_dm.F :
+	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
+
+wrfio_nf : 
+	( cd ../external/io_netcdf ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC=$(FC) TRADFLAG="-traditional" \
+          FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
+          /bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc )
+
+wrfio_grib1 : 
+	( cd ../external/io_grib1 ; make CPP="$(CPP)" FC="$(FC) -I. $(FCDEBUG) $(FCFLAGS) -w")
+
+wrfio_int : 
+	( cd ../external/io_int ; \
+          make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" \
+          TRADFLAG="-traditional" all )
+
+esmf_time : 
+	( cd ../external/esmf_time_f90 ; \
+	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+# compile these without high optimization to speed compile
+solve_interface.o : solve_interface.F
+module_io_mm5.o : module_io_mm5.F
+module_si_io.o : module_si_io.F
+module_io_wrf.o : module_io_wrf.F
+module_domain.o : module_domain.F
+module_start.o : module_start.F
+module_initialize.o : module_initialize.F
+module_initialize_b_wave.o : module_initialize_b_wave.F
+module_initialize_hill2d_x.o : module_initialize_hill2d_x.F
+module_initialize_quarter_ss.o : module_initialize_quarter_ss.F
+module_initialize_squall2d_x.o : module_initialize_squall2d_x.F
+module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
+module_initialize_real.o : module_initialize_real.F
+module_dm.o : module_dm.F
+start_domain.o : start_domain.F
+mediation_integrate.o : mediation_integrate.F
+
+solve_interface.o                                              \
+module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
+module_start.o module_initialize.o module_initialize_b_wave.o  \
+module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
+module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
+mediation_integrate.o \
+module_initialize_real.o module_dm.o start_domain.o :
+	$(RM) $@
+	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(RM) $*.b
+	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
+
+###########################################################
+#ARCH    Intel xeon i686 ia32 Xeon Linux, ifc compiler  (RSL, MPICH, RSL IO, ch_p4)
+#
+DMPARALLEL      =       1
+MAX_PROC        =       1024
+FC              =       ${VENTURE}/mpich/ch_p4/bin/mpif90
+LD              =       ${VENTURE}/mpich/ch_p4/bin/mpif90
+CC              =       ${VENTURE}/mpich/ch_p4/bin/mpicc
+SFC             =       ifort
+CFLAGS          =       -w -DDM_PARALLEL -DWRF_RSL_IO \
+                        -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL/RSL
+FCOPTIM		=	-O3 -xW
+FCDEBUG		=	#-g
+FCBASEOPTS      =       -FR -cm -w -I. $(FCDEBUG)
+FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
+ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DYYY -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
+                        -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
+                        -DTRIEDNTRUE   \
+			-DLIMIT_ARGS
+INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
+                        -I../external -I../frame -I../share -I../phys -I../inc
+EXTRAMODULES    =       
+PERL            =       perl
+REGISTRY        =       Registry
+LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
+			-L${VENTURE}/mpich/ch_p4/lib \
+			-L../external/io_int -lwrfio_int -L../external/io_grib1 -lio_grib1 \
+			../frame/internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
+LDFLAGS         =       $(FCOPTIM)
+CPP             =       /lib/cpp -traditional
+POUND_DEF	=	-DNO_RRTM_PHYSICS  -DPGF90 $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS) -DYYY
+CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL/RSL -C -P `cat ../inc/dm_comm_cpp_flags` $(POUND_DEF)
+AR              =       ar ru
+M4              =       m4
+RANLIB          =       ranlib
+NETCDFPATH	=	CONFIGURE_NETCDF_PATH
+CC_TOOLS        =       gcc
+
+externals : CONFIGURE_WRFIO_NF ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
+
+gen_comms.c : ../external/RSL/gen_comms.c
+	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
+          cat ../external/RSL/gen_comms.c >> ../tools/gen_comms.c )
+
+module_dm.F : ../external/RSL/module_dm.F
+	( /bin/cp module_dm_warning module_dm.F ; cat ../external/RSL/module_dm.F >> module_dm.F )
+
+wrfio_nf : 
+	( cd ../external/io_netcdf ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC=$(FC) TRADFLAG="-traditional" \
+	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
+	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
+	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
+	/bin/cp wrf_io_flags.h ../io_quilt )
+
+wrfio_grib1 : 
+	( cd ../external/io_grib1 ; make CPP="$(CPP)" FC="$(FC) -I. $(FCDEBUG) $(FCFLAGS) -w")
+
+wrfio_int : 
+	( cd ../external/io_int ; \
+          make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
+
+esmf_time : 
+	( cd ../external/esmf_time_f90 ; \
+	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+../external/RSL/RSL/librsl.a :
+	( cd ../external/RSL/RSL ; make CC=$(CC) FC=$(FC) MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST linux )
+
+# compile these without high optimization to speed compile
+solve_interface.o : solve_interface.F
+module_io_mm5.o : module_io_mm5.F
+module_si_io.o : module_si_io.F
+module_io_wrf.o : module_io_wrf.F
+module_domain.o : module_domain.F
+module_start.o : module_start.F
+module_initialize.o : module_initialize.F
+module_initialize_b_wave.o : module_initialize_b_wave.F
+module_initialize_hill2d_x.o : module_initialize_hill2d_x.F
+module_initialize_quarter_ss.o : module_initialize_quarter_ss.F
+module_initialize_squall2d_x.o : module_initialize_squall2d_x.F
+module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
+module_initialize_real.o : module_initialize_real.F
+module_dm.o : module_dm.F
+start_domain.o : start_domain.F
+mediation_integrate.o : mediation_integrate.F
+
+solve_interface.o                                              \
+module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
+module_start.o module_initialize.o module_initialize_b_wave.o  \
+module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
+module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
+mediation_integrate.o \
+module_initialize_real.o module_dm.o start_domain.o :
+	$(RM) $@
+	sed /\!.\*\'/s/\'//g $*.F > $*.b 
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(RM) $*.b
+	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
+
+###########################################################
+#ARCH    Intel xeon i686 ia32 Xeon Linux, ifc compiler  (RSL, MPICH, RSL IO, ch_gm)
+#
+DMPARALLEL      =       1
+MAX_PROC        =       1024
+FC              =       ${VENTURE}/mpich/ch_gm/bin/mpif90
+LD              =       ${VENTURE}/mpich/ch_gm/bin/mpif90
+CC              =       ${VENTURE}/mpich/ch_gm/bin/mpicc
+SFC             =       ifort
+CFLAGS          =       -w -DDM_PARALLEL -DWRF_RSL_IO \
+                        -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL/RSL
+FCOPTIM		=	-O3 -xW
+FCDEBUG		=	#-g
+FCBASEOPTS      =       -FR -cm -w -I. $(FCDEBUG)
+FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
+ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DYYY -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
+                        -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
+                        -DTRIEDNTRUE   \
+			-DLIMIT_ARGS
+INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
+                        -I../external -I../frame -I../share -I../phys -I../inc
+EXTRAMODULES    =       
+PERL            =       perl
+REGISTRY        =       Registry
+LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
+			-L${VENTURE}/mpich/ch_gm/lib \
+			-L../external/io_int -lwrfio_int \
+                        -L../external/io_grib1 -lio_grib1 \
+			../frame/internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
+LDFLAGS         =       $(FCOPTIM)
+CPP             =       /lib/cpp -traditional
+POUND_DEF	=	-DNO_RRTM_PHYSICS  -DPGF90 $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
+CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL/RSL -C -P `cat ../inc/dm_comm_cpp_flags` $(POUND_DEF)
+AR              =       ar ru
+M4              =       m4
+RANLIB          =       ranlib
+NETCDFPATH	=	CONFIGURE_NETCDF_PATH
+CC_TOOLS        =       gcc
+
+externals : CONFIGURE_WRFIO_NF ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
+
+gen_comms.c : ../external/RSL/gen_comms.c
+	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
+          cat ../external/RSL/gen_comms.c >> ../tools/gen_comms.c )
+
+module_dm.F : ../external/RSL/module_dm.F
+	( /bin/cp module_dm_warning module_dm.F ; cat ../external/RSL/module_dm.F >> module_dm.F )
+
+wrfio_nf : 
+	( cd ../external/io_netcdf ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC=$(FC) TRADFLAG="-traditional" \
+	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
+	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
+	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
+	/bin/cp wrf_io_flags.h ../io_quilt )
+
+wrfio_int : 
+	( cd ../external/io_int ; \
+          make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
+
+wrfio_grib1 : 
+	( cd ../external/io_grib1 ; \
+          make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
+
+esmf_time : 
+	( cd ../external/esmf_time_f90 ; \
+	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+../external/RSL/RSL/librsl.a :
+	( cd ../external/RSL/RSL ; make CC=$(CC) FC=$(FC) MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST linux )
+
+# compile these without high optimization to speed compile
+solve_interface.o : solve_interface.F
+module_io_mm5.o : module_io_mm5.F
+module_si_io.o : module_si_io.F
+module_io_wrf.o : module_io_wrf.F
+module_domain.o : module_domain.F
+module_start.o : module_start.F
+module_initialize.o : module_initialize.F
+module_initialize_b_wave.o : module_initialize_b_wave.F
+module_initialize_hill2d_x.o : module_initialize_hill2d_x.F
+module_initialize_quarter_ss.o : module_initialize_quarter_ss.F
+module_initialize_squall2d_x.o : module_initialize_squall2d_x.F
+module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
+module_initialize_real.o : module_initialize_real.F
+module_dm.o : module_dm.F
+start_domain.o : start_domain.F
+mediation_integrate.o : mediation_integrate.F
+
+solve_interface.o                                              \
+module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
+module_start.o module_initialize.o module_initialize_b_wave.o  \
+module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
+module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
+mediation_integrate.o \
+module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	sed /\!.\*\'/s/\'//g $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
@@ -4106,7 +4577,7 @@ FCBASEOPTS        = -w -ip -tpp2 -ftz -FR -convert big_endian $(FCDEBUG) \
                      -mP3OPT_ecg_non_ieee_sqrt=T -mP3OPT_ecg_non_ieee_div=T  \
                      -mP3OPT_ecg_non_ieee_rcpsqrt=T -mP3OPT_ecg_non_ieee_rcp=T -I$(INCLUDE) -I. 
 FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
-ARCHFLAGS         = -DINTIO -DWRF_RSL_IO -DRSL  -DDM_PARALLEL -DIWORDSIZE=4 \
+ARCHFLAGS         = -DYYY -DINTIO -DWRF_RSL_IO -DRSL  -DDM_PARALLEL -DIWORDSIZE=4 \
                     -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
                     -DTRIEDNTRUE -DLIMIT_ARGS
 # -DONLY_WRFMODEL_IO
@@ -4116,6 +4587,7 @@ EXTRAMODULES      =
 PERL              = perl
 REGISTRY          = Registry
 LIB               = -L../external/io_netcdf -lwrfio_nf $(OMP) \
+                    -L../external/io_grib1 -lio_grib1 \
                     CONFIGURE_NETCDF_LIB_PATH \
                     -L../external/RSL/RSL -lrsl \
                     -L../external/io_int -lwrfio_int \
@@ -4155,6 +4627,11 @@ wrfio_int :
 	( cd ../external/io_int ; \
           make CC=$(CC) CPP="$(CPP)" TRADFLAG="-traditional" \
           FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
+
+wrfio_grib1 : 
+	( cd ../external/io_grib1 ; \
+          make CC=$(CC) CPP="$(CPP)" TRADFLAG="-traditional" \
+          FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -4225,7 +4702,7 @@ FCBASEOPTS        = -w -ip -tpp2 -ftz -FR -convert big_endian $(FCDEBUG) \
                      -mP3OPT_ecg_non_ieee_sqrt=T -mP3OPT_ecg_non_ieee_div=T  \
                      -mP3OPT_ecg_non_ieee_rcpsqrt=T -mP3OPT_ecg_non_ieee_rcp=T -I$(INCLUDE) -I. 
 FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
-ARCHFLAGS         = -DINTIO -DRSL_LITE -DDM_PARALLEL \
+ARCHFLAGS         = -DYYY -DINTIO -DRSL_LITE -DDM_PARALLEL \
                     -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
                     -DTRIEDNTRUE -DONLY_WRFMODEL_IO
 INCLUDE_MODULES   = -I../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
@@ -4236,6 +4713,7 @@ REGISTRY          = Registry
 LIB               = -L../external/io_netcdf -lwrfio_nf $(OMP) \
                     CONFIGURE_NETCDF_LIB_PATH \
                     -L../external/RSL_LITE -lrsl_lite \
+                    -L../external/io_grib1 -lio_grib1 \
                     -L../external/io_int -lwrfio_int \
                     ../frame/module_internal_header_util.o ../frame/pack_utils.o \
                     -L$(MPI_HOME)/lib -lmpi -L../external/esmf_time_f90 -lesmf_time 
@@ -4270,6 +4748,11 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
+          make CC=$(CC) CPP="$(CPP)" TRADFLAG="-traditional" \
+          FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
+
+wrfio_grib1 : 
+	( cd ../external/io_grib1 ; \
           make CC=$(CC) CPP="$(CPP)" TRADFLAG="-traditional" \
           FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
 
@@ -4351,6 +4834,7 @@ REGISTRY        =       Registry
 LIB             =       -L../external/io_netcdf -lwrfio_nf CONFIGURE_NETCDF_LIB_PATH \
 			-L../external/RSL_LITE -lrsl_lite \
                         -L../external/io_int -lwrfio_int  \
+                        -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o \
 			-L../external/esmf_time_f90 -lesmf_time -lmalloc
 

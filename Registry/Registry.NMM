@@ -345,6 +345,8 @@ state integer iup_h     ij   dyn_nmm     1    -    -
 state integer iup_v     ij   dyn_nmm     1    -    -
 state integer iup_adh   ij   dyn_nmm     1    -    -
 state integer iup_adv   ij   dyn_nmm     1    -    -
+state integer imicrogram -   misc        -    -    r   "imicrogram"  "flag 0/1 0=mixratio, 1=mcrograms/m3"  ""
+
 
 #                                               
 # table entries are of the form                                         

@@ -1664,25 +1664,37 @@
 !
       CALL SET_TILES(GRID,IDS+1,IDE-1,JDS+2,JDE-2,ITS,ITE,JTS,JTE)
 !
-      CALL CUMULUS_DRIVER(NTSD,DT,GPS,N_MOIST                           &
-     &                   ,RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN           &
-     &                   ,ZERO_3D,ZERO_3D,RAINC,RAINCV,NCA              &
-     &                   ,ZERO_3D,ZERO_3D,ZERO_3D                       &
-     &                   ,ZERO_3D,ZERO_3D                               &
-     &                   ,U_PHY,V_PHY,TH_PHY,T_PHY,WINT,WATER           &
-     &                   ,DZ,P8W,P_PHY,PI_PHY                           &
-     &                   ,CONFIG_FLAGS,W0AVG,RR,NSTEP_CNV               &
-     &                   ,CLDEFI,LOWLYR,XLAND,CU_ACT_FLAG,WARM_RAIN     &
-     &                   ,ZERO_2D,ZERO_2D,ZERO_2D,ZERO_2D,ZERO_2D       &
-     &                   ,ZERO_2D,ZERO_2D,ZERO_2D                       &
-     &                   ,CUTOP,CUBOT,KPBL                              &
-     &                   ,ZERO_2D,ZERO_GD,ZERO_GD,SFCZ                  & 
-     &                   ,ENSDIM,1,1,1,1                                &
-     &                   ,IDS,IDE,JDS,JDE,KDS,KDE                       &
-     &                   ,IMS,IME,JMS,JME,KMS,KME                       &
-     &                   ,GRID%I_START,GRID%I_END                       &
-     &                   ,GRID%J_START,GRID%J_END                       &
-     &                   ,KTS,KTE,GRID%NUM_TILES)
+      CALL CUMULUS_DRIVER(                                              &
+     &                  IDS=IDS,IDE=IDE,JDS=JDS,JDE=JDE,KDS=KDS,KDE=KDE &
+     &                 ,IMS=IMS,IME=IME,JMS=JMS,JME=JME,KMS=KMS,KME=KME &
+     &                 ,I_START=GRID%I_START,I_END=GRID%I_END           &
+     &                 ,J_START=GRID%J_START,J_END=GRID%J_END           &
+     &                 ,KTS=KTS,KTE=KTE,NUM_TILES=GRID%NUM_TILES        &
+                     ! prognostic
+     &                 ,U=U_PHY,V=V_PHY,TH=TH_PHY,T=T_PHY,W=WINT        &
+     &                 ,P=P_PHY,PI=PI_PHY,RHO=RR,W0AVG=W0AVG            &
+                     ! others
+     &                 ,ITIMESTEP=NTSD,DT=DT,DX=GPS                     &
+     &                 ,RAINC=RAINC,RAINCV=RAINCV,NCA=NCA               &
+     &                 ,DZ8W=DZ,P8W=P8W                                 &
+     &                 ,CLDEFI=cldefi,LOWLYR=lowlyr,XLAND=xland         &
+     &                 ,CU_ACT_FLAG=cu_act_flag,WARM_RAIN=warm_rain     &
+     &                 ,STEPCU=NSTEP_CNV                                &
+     &                 ,HTOP=CUTOP,HBOT=CUBOT,KPBL=KPBL,HT=SFCZ         &   
+     &                 ,ENSDIM=ENSDIM,maxiens=1,maxens=1                &
+     &                 ,maxens2=1,maxens3=1                             &
+     &                 ,RTHCUTEN=RTHCUTEN ,RQVCUTEN=RQVCUTEN            &
+     &                 ,RQCCUTEN=RQCCUTEN ,RQRCUTEN=RQRCUTEN            &
+                     ! selection argument
+     &                 ,CU_PHYSICS=CONFIG_FLAGS%CU_PHYSICS              &
+                     ! moisture tracer arguments
+     &                 ,QV_CURR=water(ims,kms,jms,P_QV) , F_QV=F_QV     &
+     &                 ,QC_CURR=water(ims,kms,jms,P_QC) , F_QC=F_QC     &
+     &                 ,QR_CURR=water(ims,kms,jms,P_QR) , F_QR=F_QR     &
+     &                 ,QI_CURR=water(ims,kms,jms,P_QI) , F_QI=F_QI     &
+     &                 ,QS_CURR=water(ims,kms,jms,P_QS) , F_QS=F_QS     &
+     &                 ,QG_CURR=water(ims,kms,jms,P_QG) , F_QG=F_QG     &
+                                                                        )
 !
 !-----------------------------------------------------------------------
 !

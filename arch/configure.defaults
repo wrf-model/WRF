@@ -42,7 +42,7 @@ module_dm.F :
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH FC="f90 -freeform -I." RANLIB="$(RANLIB)" CPP="$(CPP)"; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH FC="$(FC) $(PROMOTION) -freeform -I." RANLIB="$(RANLIB)" CPP="$(CPP)"; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -53,15 +53,15 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="f90 $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" all )
+          make CC="$(CC)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" FC="f90 $(FCDEBUG) $(FCFLAGS) -w" RANLIB="$(RANLIB)" CPP="$(CPP)" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS) -w" RANLIB="$(RANLIB)" CPP="$(CPP)" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS) -w" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS) -w" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -138,7 +138,7 @@ module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
 
 wrfio_nf : 
-	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH FC="$(FC) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" ; \
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH FC="$(FC) $(PROMOTION) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -149,11 +149,11 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="f90 $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" all )
+          make CC="$(CC)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -235,7 +235,7 @@ module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
 
 wrfio_nf : 
-	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH FC="$(FC) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" ; \
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH FC="$(FC) $(PROMOTION) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -246,15 +246,15 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="f90 $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" all )
+          make CC="$(CC)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" FC="f90 $(FCDEBUG) $(FCFLAGS) -w" RANLIB="$(RANLIB)" CPP="$(CPP)" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS) -w" RANLIB="$(RANLIB)" CPP="$(CPP)" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -332,7 +332,7 @@ module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
 
 wrfio_nf : 
-	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCFLAGS)" ; \
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCFLAGS)" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -343,11 +343,11 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="f90 $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" all )
+          make CC="$(CC)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -431,7 +431,7 @@ module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
 
 wrfio_nf : 
-	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCFLAGS)" ; \
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCFLAGS)" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -442,15 +442,15 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="f90 $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" all )
+          make CC="$(CC)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" FC="f90 $(FCDEBUG) $(FCFLAGS) -w" RANLIB="$(RANLIB)" CPP="$(CPP)" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS) -w" RANLIB="$(RANLIB)" CPP="$(CPP)" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -546,7 +546,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCFLAGS)" ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCFLAGS)" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -558,15 +558,15 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="f90 $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" all )
+          make CC="$(CC)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" FC="f90 $(FCDEBUG) $(FCFLAGS) -w" RANLIB="$(RANLIB)" CPP="$(CPP)" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS) -w" RANLIB="$(RANLIB)" CPP="$(CPP)" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; \
@@ -659,7 +659,7 @@ module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
 
 wrfio_nf : 
-	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCBASEOPTS) " ; \
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCBASEOPTS) " ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -670,15 +670,15 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP)" all )
+          make CC="$(CC)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(PROMOTION) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP)" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" FC="$(FC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP)" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" FC="$(FC) $(PROMOTION) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP)" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 solve_interface.o : solve_interface.F
 	$(RM) $@
@@ -799,7 +799,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCBASEOPTS)" ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCBASEOPTS)" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -810,19 +810,19 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP)" all )
+          make CC="$(CC)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(PROMOTION) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP)" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" FC="$(FC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP)" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" FC="$(FC) $(PROMOTION) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP)" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; \
-	  make CC="$(CC)" CFLAGS='-w -DSUN -DSTUBS -O' FC="$(FC)" FFLAGS='-w -O' \
+	  make CC="$(CC)" CFLAGS='-w -DSUN -DSTUBS -O' FC="$(FC) $(PROMOTION)" FFLAGS='-w -O' \
                MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST stub )
 
 # compile these without high optimization to speed compile
@@ -923,7 +923,7 @@ module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
 
 wrfio_nf : 
-	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCBASEOPTS) " ; \
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCBASEOPTS) " ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -934,15 +934,15 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(FCBASEOPTS)" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(PROMOTION) $(FCBASEOPTS)" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" FC="$(FC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP)" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" FC="$(FC) $(PROMOTION) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP)" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 solve_interface.o : solve_interface.F
 	$(RM) $@
@@ -1048,7 +1048,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCBASEOPTS)" ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCBASEOPTS)" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -1059,19 +1059,19 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="f90 $(FCDEBUG) -cpp -free" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -cpp -free" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" FC="$(FC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP)" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" FC="$(FC) $(PROMOTION) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP)" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; \
-	  make CC="$(CC)" CFLAGS='-w -DSUN -DSTUBS -O' FC="$(FC)" FFLAGS='-w -O' \
+	  make CC="$(CC)" CFLAGS='-w -DSUN -DSTUBS -O' FC="$(FC) $(PROMOTION)" FFLAGS='-w -O' \
                MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST stub )
 
 # compile these without high optimization to speed compile
@@ -1148,7 +1148,7 @@ module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
 
 wrfio_nf : 
-	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -qarch=auto -qzerosize" ; \
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -1159,15 +1159,15 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -qarch=auto -qzerosize" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 solve_interface.o : solve_interface.F
 	$(RM) $@
@@ -1266,7 +1266,7 @@ module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
 
 wrfio_nf : 
-	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -qarch=auto -qzerosize" ; \
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -1277,15 +1277,15 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -qarch=auto -qzerosize" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 module_sm.o 	: module_sm.F
 module_tiles.o	: module_tiles.F
@@ -1358,7 +1358,7 @@ module_dm.F : ../external/RSL_LITE/module_dm.F
 	( /bin/cp module_dm_warning module_dm.F ; cat ../external/RSL_LITE/module_dm.F >> module_dm.F )
 
 wrfio_nf : 
-	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" ; \
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -1369,15 +1369,15 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL_LITE/librsl_lite.a :
 	( cd ../external/RSL_LITE ; make CFLAGS="$(CFLAGS)" CC="$(CC)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
@@ -1469,7 +1469,7 @@ module_dm.F : ../external/RSL/module_dm.F
 	( /bin/cp module_dm_warning module_dm.F ; cat ../external/RSL/module_dm.F >> module_dm.F )
 
 wrfio_nf : 
-	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" ; \
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -1480,15 +1480,15 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; make MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST sp2 )
@@ -1580,7 +1580,7 @@ module_dm.F : ../external/RSL/module_dm.F
 	( /bin/cp module_dm_warning module_dm.F ; cat ../external/RSL/module_dm.F >> module_dm.F )
 
 wrfio_nf : 
-	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" ; \
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -1590,19 +1590,19 @@ wrfio_nf :
 	/bin/cp wrf_io_flags.h ../io_quilt )
 
 wrfio_phdf5 : 
-	( cd ../external/io_phdf5 ; make PHDF5PATH=CONFIGURE_PHDF5_PATH FC="$(FC) $(FCDEBUG) -qarch=auto -qfree=F90 -qzerosize" ; /bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc )
+	( cd ../external/io_phdf5 ; make PHDF5PATH=CONFIGURE_PHDF5_PATH FC="$(FC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qfree=F90 -qzerosize" ; /bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; make MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST sp2 )
@@ -1694,7 +1694,7 @@ module_dm.F : ../external/RSL_LITE/module_dm.F
 	( /bin/cp module_dm_warning module_dm.F ; cat ../external/RSL_LITE/module_dm.F >> module_dm.F )
 
 wrfio_nf : 
-	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" ; \
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -1704,19 +1704,19 @@ wrfio_nf :
 	/bin/cp wrf_io_flags.h ../io_quilt )
 
 wrfio_phdf5 : 
-	( cd ../external/io_phdf5 ; make PHDF5PATH=CONFIGURE_PHDF5_PATH FC="$(FC) $(FCDEBUG) -qarch=auto -qfree=F90 -qzerosize" ; /bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc )
+	( cd ../external/io_phdf5 ; make PHDF5PATH=CONFIGURE_PHDF5_PATH FC="$(FC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qfree=F90 -qzerosize" ; /bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL_LITE/librsl_lite.a :
 	( cd ../external/RSL_LITE ; make CC="$(CC)" CFLAGS="$(CFLAGS)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
@@ -1810,7 +1810,7 @@ module_dm.F : ../external/RSL/module_dm.F
 	( /bin/cp module_dm_warning module_dm.F ; cat ../external/RSL/module_dm.F >> module_dm.F )
 
 wrfio_nf : 
-	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" ; \
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -1821,15 +1821,15 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 solve_interface.o : solve_interface.F
 	$(RM) $@
@@ -1942,7 +1942,7 @@ module_dm.F : ../external/RSL/module_dm.F
 	( /bin/cp module_dm_warning module_dm.F ; cat ../external/RSL/module_dm.F >> module_dm.F )
 
 wrfio_nf : 
-	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" ; \
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -1953,15 +1953,15 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; make MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST sp2 )
@@ -2061,7 +2061,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -2072,19 +2072,19 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 wrfio_mcel : 
 	( cd ../external/io_mcel ; \
-          make CC="$(CC)" FC="$(SFC) $(FCDEBUG) -I../io_netcdf -I../../frame -I../../share \
+          make CC="$(CC)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -I../io_netcdf -I../../frame -I../../share \
                -I$(MCELHOME)/MCELSystem/MCEL -qfree=f90" all )
 
 
@@ -2153,7 +2153,7 @@ ESMF_ARCH       =       AIX
 ESMF_COMPILER   =       default
 # TBH:  Link ESMF_PREC with OBJECT_MODE later...  
 ESMF_PREC       =       32
-# ESMF_PREC       =       64
+#ESMF_PREC       =       64
 ESMF_SITE       =       default
 ESMF_PATH_TAIL  =       $(ESMF_BOPT)/$(ESMF_ARCH).$(ESMF_COMPILER).$(ESMF_PREC).$(ESMF_SITE)
 ESMF_MODULES    =       $(ESMF_DIR)/mod/mod$(ESMF_PATH_TAIL)
@@ -2200,7 +2200,7 @@ module_dm.F : ../external/RSL/module_dm.F
 	( /bin/cp module_dm_warning module_dm.F ; cat ../external/RSL/module_dm.F >> module_dm.F )
 
 wrfio_nf : 
-	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" ; \
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -2211,15 +2211,15 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 wrfio_esmf : 
 	( cd $(ESMF_IO_DIR) ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS) -I$(ESMF_MODULES)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF) " )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS) -I$(ESMF_MODULES)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF) " )
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; make MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST sp2 )
@@ -2285,7 +2285,7 @@ ESMF_ARCH       =       AIX
 ESMF_COMPILER   =       default
 # TBH:  Link ESMF_PREC with OBJECT_MODE later...  
 ESMF_PREC       =       32
-# ESMF_PREC       =       64
+#ESMF_PREC       =       64
 ESMF_SITE       =       default
 ESMF_PATH_TAIL  =       $(ESMF_BOPT)/$(ESMF_ARCH).$(ESMF_COMPILER).$(ESMF_PREC).$(ESMF_SITE)
 ESMF_MODULES    =       $(ESMF_DIR)/mod/mod$(ESMF_PATH_TAIL)
@@ -2333,7 +2333,7 @@ module_dm.F : ../external/RSL/module_dm.F
 	( /bin/cp module_dm_warning module_dm.F ; cat ../external/RSL/module_dm.F >> module_dm.F )
 
 wrfio_nf : 
-	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" ; \
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -2344,15 +2344,15 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 wrfio_esmf : 
 	( cd $(ESMF_IO_DIR) ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS) -I$(ESMF_MODULES)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF) " )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS) -I$(ESMF_MODULES)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF) " )
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; make MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST sp2 )
@@ -2444,7 +2444,7 @@ module_dm.F : ../external/RSL/module_dm.F
 	( /bin/cp module_dm_warning module_dm.F ; cat ../external/RSL/module_dm.F >> module_dm.F )
 
 wrfio_nf : 
-	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" ; \
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -2455,19 +2455,19 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ;  \
-          make CC="$(CC)" CFLAGS='-DSTUBS -O -DNOUNDERSCORE' FC="$(FC)" FFLAGS='-O -qfixed' \
+          make CC="$(CC)" CFLAGS='-DSTUBS -O -DNOUNDERSCORE' FC="$(FC) $(PROMOTION)" FFLAGS='-O -qfixed' \
                MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST stub )
 
 # compile these without high optimization
@@ -2559,7 +2559,7 @@ module_dm.F : ../external/RSL/module_dm.F
 	( /bin/cp module_dm_warning module_dm.F ; cat ../external/RSL/module_dm.F >> module_dm.F )
 
 wrfio_nf : 
-	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" ; \
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -2570,19 +2570,19 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ;  \
-          make CC="$(CC)" CFLAGS='-DSTUBS -O -DNOUNDERSCORE' FC="$(FC)" FFLAGS='-O -qfixed' \
+          make CC="$(CC)" CFLAGS='-DSTUBS -O -DNOUNDERSCORE' FC="$(FC) $(PROMOTION)" FFLAGS='-O -qfixed' \
                MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST stub )
 
 # compile these without high optimization
@@ -2680,7 +2680,7 @@ module_dm.F :
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -2691,15 +2691,15 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="f90 $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
@@ -2736,7 +2736,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(PROMOTION) -O0 $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
 
 ###########################################################
 #ARCH       Compaq OSF1 alpha          (single-threaded, nesting using RSL without MPI )
@@ -2798,7 +2798,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -2809,19 +2809,19 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="f90 $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; \
-	  make CC="$(CC)" CFLAGS='-DSTUBS -DSWAPBYTES -O' FC="$(FC)" FFLAGS='-O -convert big_endian' \
+	  make CC="$(CC)" CFLAGS='-DSTUBS -DSWAPBYTES -O' FC="$(FC) $(PROMOTION)" FFLAGS='-O -convert big_endian' \
                MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST stub )
 
 # compile these without high optimization to speed compile
@@ -2859,7 +2859,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(PROMOTION) -O0 $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
 
 ###########################################################
 #ARCH       Compaq OSF1 alpha SM       (OpenMP, no nesting)
@@ -2909,7 +2909,7 @@ module_dm.F :
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w" ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -2920,15 +2920,15 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="f90 $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w " )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w " )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
@@ -2965,7 +2965,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(PROMOTION) -O0 $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
 
 ###########################################################
 #ARCH       Compaq OSF1 alpha SM-Parallel       (OpenMP, nesting using RSL without MPI )
@@ -3028,7 +3028,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w" ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -3039,19 +3039,19 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="f90 $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w " )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w " )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; \
-	  make CC="$(CC)" CFLAGS='-DSTUBS -DSWAPBYTES -O' FC="$(FC)" FFLAGS="-O -convert big_endian $(FCREAL8OMP)" \
+	  make CC="$(CC)" CFLAGS='-DSTUBS -DSWAPBYTES -O' FC="$(FC) $(PROMOTION)" FFLAGS="-O -convert big_endian $(FCREAL8OMP)" \
                MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST stub )
 
 # compile these without high optimization to speed compile
@@ -3089,7 +3089,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(PROMOTION) -O0 $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
 
 ###########################################################
 #ARCH     Compaq OSF1 alpha DM-Parallel       (RSL_LITE, MPICH, no nesting)
@@ -3148,7 +3148,7 @@ module_dm.F : ../external/RSL_LITE/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -3159,19 +3159,19 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL_LITE/librsl_lite.a :
 	( cd ../external/RSL_LITE ; \
-          make CC="$(CC)" FC="$(FC)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
+          make CC="$(CC)" FC="$(FC) $(PROMOTION)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
 
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
@@ -3208,7 +3208,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(PROMOTION) -O0 $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
 
 ###########################################################
 #ARCH       Compaq OSF1 alpha DM-Parallel       (RSL, MPICH, allows nesting)
@@ -3270,7 +3270,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -3281,19 +3281,19 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; \
-          make CC="$(CC)" FC="$(FC)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST alpha )
+          make CC="$(CC)" FC="$(FC) $(PROMOTION)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST alpha )
 
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
@@ -3330,7 +3330,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(PROMOTION) -O0 $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
 
 ###########################################################
 #ARCH       Compaq OSF1 alpha DM-Parallel/SM-Parallel    (RSL, MPICH, OpenMP, allows nesting)
@@ -3393,7 +3393,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w" ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -3404,19 +3404,19 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w " )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w " )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; \
-          make CC="$(CC)" FC="$(FC) $(FCREAL8OMP)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST alpha )
+          make CC="$(CC)" FC="$(FC) $(PROMOTION) $(FCREAL8OMP)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST alpha )
 
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
@@ -3453,7 +3453,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(PROMOTION) -O0 $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
 
 ###########################################################
 #ARCH       Compaq OSF1 alpha DM-Parallel/SM-Parallel    (RSL, DECMPI, OpenMP, allows nesting)
@@ -3516,7 +3516,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w" ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -3527,19 +3527,19 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="f90 $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w " )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w " )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; \
-          make CC=cc FC="$(SFC) $(FCREAL8OMP)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST alpha )
+          make CC=cc FC="$(SFC) $(PROMOTION) $(FCREAL8OMP)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST alpha )
 
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
@@ -3576,7 +3576,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(PROMOTION) -O0 $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
 
 ###########################################################
 #ARCH       Compaq OSF1 alpha DM-Parallel       (RSL, MPICH, allows nesting, MOVING NESTS EXPERIMENTAL)
@@ -3635,7 +3635,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -3646,19 +3646,19 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; \
-          make CC="$(CC)" FC="$(FC)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST alpha )
+          make CC="$(CC)" FC="$(FC) $(PROMOTION)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST alpha )
 
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
@@ -3695,7 +3695,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(PROMOTION) -O0 $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
 
 ###########################################################
 #ARCH       Compaq OSF1 alpha DM-Parallel       (RSL, MPICH, MCEL EXPERIMENTAL)
@@ -3759,7 +3759,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -3770,24 +3770,24 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 wrfio_mcel :
 	( cd ../external/io_mcel ; \
-          make CC="$(CC)" FC="f90 $(FCDEBUG) -I../io_netcdf -I../../frame -I../../share \
+          make CC="$(CC)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -I../io_netcdf -I../../frame -I../../share \
           -I/users/bettenc/MCELSystem/MCEL -convert big_endian -automatic -cpp -free" all )
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; \
-          make CC="$(CC)" FC="$(FC)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST alpha )
+          make CC="$(CC)" FC="$(FC) $(PROMOTION)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST alpha )
 
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
@@ -3824,7 +3824,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(PROMOTION) -O0 $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
 
 ###########################################################
 #ARCH       Compaq OSF1 alpha DM/SM    (BUILD FOR AUTODOC ONLY -- DO NOT USE TO COMPILE CODE)
@@ -3883,7 +3883,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -3894,19 +3894,19 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; \
-          make CC="$(CC)" FC="$(FC)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST alpha )
+          make CC="$(CC)" FC="$(FC) $(PROMOTION)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST alpha )
 
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
@@ -3983,7 +3983,7 @@ module_dm.F :
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCBASENOINL) -w" TRADFLAG="-traditional" ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCBASENOINL) -w" TRADFLAG="-traditional" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -3994,17 +3994,17 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(FCDEBUG) $(FCBASENOINL) -w" \
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASENOINL) -w" \
           TRADFLAG="-traditional" all )
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCBASENOINL) -w" \
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASENOINL) -w" \
           TRADFLAG="-traditional" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
@@ -4081,7 +4081,7 @@ module_dm.F :
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCBASENOINL) -w" TRADFLAG="-traditional" ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCBASENOINL) -w" TRADFLAG="-traditional" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -4092,17 +4092,17 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(FCDEBUG) $(FCBASENOINL) -w" \
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASENOINL) -w" \
           TRADFLAG="-traditional" all )
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCBASENOINL) -w" \
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASENOINL) -w" \
           TRADFLAG="-traditional" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
@@ -4189,7 +4189,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCBASENOINL) -w" TRADFLAG="-traditional" ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCBASENOINL) -w" TRADFLAG="-traditional" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -4200,20 +4200,20 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(FCDEBUG) $(FCBASENOINL) -w" \
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASENOINL) -w" \
           TRADFLAG="-traditional" all )
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCBASENOINL) -w" \
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASENOINL) -w" \
           TRADFLAG="-traditional" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL/RSL/librsl.a :
-	( cd ../external/RSL/RSL ; make CC="$(CC)" FC=fort \
+	( cd ../external/RSL/RSL ; make CC="$(CC)" FC="$(FC) $(PROMOTION)" \
           MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) \
           UNDERSCORE=-DF2CSTYLE LEARN_BCAST=-DLEARN_BCAST alpha )
 
@@ -4287,7 +4287,7 @@ module_dm.F :
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-	  make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="frt" FFLAGS='-Free -X9 -ICONFIGURE_NETCDF_PATH/include' ; \
+	  make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION)" FFLAGS='-Free -X9 -ICONFIGURE_NETCDF_PATH/include' ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -4333,7 +4333,7 @@ externals : CONFIGURE_WRFIO_NF wrfio_grib1  esmf_time
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-	  make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCFLAGS)" ; \
+	  make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCFLAGS)" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -4393,7 +4393,7 @@ module_dm.F :
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC)" TRADFLAG="-traditional" \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION)" TRADFLAG="-traditional" \
           FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
@@ -4405,16 +4405,16 @@ wrfio_nf :
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" \
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS) -w" \
           TRADFLAG="-traditional" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -4505,7 +4505,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC)" TRADFLAG="-traditional" \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION)" TRADFLAG="-traditional" \
 	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
@@ -4517,18 +4517,18 @@ wrfio_nf :
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL/RSL/librsl.a :
-	( cd ../external/RSL/RSL ; make CC="$(CC)" CFLAGS='-DSTUBS' FC="$(FC)" FFLAGS='-byteswapio' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST stub )
+	( cd ../external/RSL/RSL ; make CC="$(CC)" CFLAGS='-DSTUBS' FC="$(FC) $(PROMOTION)" FFLAGS='-byteswapio' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST stub )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -4611,7 +4611,7 @@ module_dm.F :
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC)" TRADFLAG="-traditional" \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION)" TRADFLAG="-traditional" \
           FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
@@ -4623,16 +4623,16 @@ wrfio_nf :
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" \
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS) -w" \
           TRADFLAG="-traditional" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -4726,7 +4726,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC)" TRADFLAG="-traditional" \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION)" TRADFLAG="-traditional" \
 	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
@@ -4738,18 +4738,18 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL/RSL/librsl.a :
-	( cd ../external/RSL/RSL ; make CC="$(CC)" CFLAGS='-DSTUBS' FC="$(FC)" FFLAGS='-byteswapio' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST stub )
+	( cd ../external/RSL/RSL ; make CC="$(CC)" CFLAGS='-DSTUBS' FC="$(FC) $(PROMOTION)" FFLAGS='-byteswapio' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST stub )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -4841,7 +4841,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC)" TRADFLAG="-traditional" \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION)" TRADFLAG="-traditional" \
 	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
@@ -4853,18 +4853,18 @@ wrfio_nf :
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL/RSL/librsl.a :
-	( cd ../external/RSL/RSL ; make CC="$(CC)" FC="$(FC) -byteswapio" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST linux )
+	( cd ../external/RSL/RSL ; make CC="$(CC)" FC="$(FC) $(PROMOTION) -byteswapio" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST linux )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -4954,7 +4954,7 @@ module_dm.F : ../external/RSL_LITE/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC)" TRADFLAG="-traditional" \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION)" TRADFLAG="-traditional" \
 	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
@@ -4966,18 +4966,18 @@ wrfio_nf :
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL_LITE/librsl_lite.a :
-	( cd ../external/RSL_LITE ; make CC="$(CC)" FC="$(FC) -byteswapio" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
+	( cd ../external/RSL_LITE ; make CC="$(CC)" FC="$(FC) $(PROMOTION) -byteswapio" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -5070,7 +5070,7 @@ gen_comms.c : ../external/RSL/gen_comms.c
 
 wrfio_nf :
 	( cd ../external/io_netcdf ; \
-	  make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC)" TRADFLAG="-traditional" \
+	  make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION)" TRADFLAG="-traditional" \
 	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
@@ -5086,15 +5086,15 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(FCDEBUG) $(FCFLAGS) -w" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS) -w" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; make CC='mpicc -w -I. '\
-	  FC='mpif90 -cm -w ' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST linux )
+	  FC="$(FC) $(PROMOTION) -cm -w " MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST linux )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -5190,7 +5190,7 @@ gen_comms.c : ../external/RSL/gen_comms.c
 
 wrfio_nf :
 	( cd ../external/io_netcdf ; \
-	  make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC)" TRADFLAG="-traditional" \
+	  make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION)" TRADFLAG="-traditional" \
 	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
@@ -5206,15 +5206,15 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(FCDEBUG) $(FCFLAGS) -w" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS) -w" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; make CC="$(CC)" CFLAGS="-DSTUBS -O" \
-	  FC="$(FC)" FCFLAGS="$(FCFLAGS)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST stub )
+	  FC="$(FC) $(PROMOTION)" FCFLAGS="$(FCFLAGS)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST stub )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -5305,7 +5305,7 @@ io_flags:
 
 wrfio_nf :  io_flags
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC)" TRADFLAG="-traditional" \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION)" TRADFLAG="-traditional" \
           FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
@@ -5317,16 +5317,16 @@ wrfio_nf :  io_flags
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
 
 wrfio_int :  io_flags
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" \
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS) -w" \
           TRADFLAG="-traditional" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -5424,7 +5424,7 @@ io_flags:
 
 wrfio_nf :  io_flags
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC)" TRADFLAG="-traditional" \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION)" TRADFLAG="-traditional" \
 	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
@@ -5436,18 +5436,18 @@ wrfio_nf :  io_flags
 
 wrfio_int :  io_flags
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL/RSL/librsl.a :
-	( cd ../external/RSL/RSL ; make CC="$(CC)" FC='mpif90 -byteswapio' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST linux )
+	( cd ../external/RSL/RSL ; make CC="$(CC)" FC="$(FC) $(PROMOTION) -byteswapio" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST linux )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -5542,7 +5542,7 @@ io_flags:
 
 wrfio_nf :  io_flags
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC)" TRADFLAG="-traditional" \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION)" TRADFLAG="-traditional" \
 	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
@@ -5554,18 +5554,18 @@ wrfio_nf :  io_flags
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
 
 wrfio_int : io_flags
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL_LITE/librsl_lite.a :
-	( cd ../external/RSL_LITE ; make CC="$(CC)" FC='mpif90 -byteswapio' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
+	( cd ../external/RSL_LITE ; make CC="$(CC)" FC="$(FC) $(PROMOTION) -byteswapio" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -5658,7 +5658,7 @@ gen_comms.c : ../external/RSL_LITE/gen_comms.c
 
 wrfio_nf :
 	( cd ../external/io_netcdf ; \
-	  make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC)" TRADFLAG="-traditional" \
+	  make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION)" TRADFLAG="-traditional" \
 	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
@@ -5674,19 +5674,19 @@ module_dm.F : ../external/RSL_LITE/module_dm.F
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(FCDEBUG) $(FCFLAGS) -w" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS) -w" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL_LITE/librsl_lite.a :
 	( cd ../external/RSL_LITE ; make CC='mpicc -w -I.' \
-	  FC='mpif90 -cm -w ' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
+	  FC="$(FC) $(PROMOTION) -cm -w " MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -5781,7 +5781,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) -Vaxlib -I../.. $(FCFLAGS) -w" ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) -Vaxlib -I../.. $(FCFLAGS) -w" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -5792,15 +5792,15 @@ wrfio_nf :
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="efc -Vaxlib -I/usr/local/vmi/mpich/include $(FCDEBUG) $(FCFLAGS) -w" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="efc -Vaxlib -I/usr/local/vmi/mpich/include $(FCDEBUG) $(FCFLAGS) -w" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 #../external/RSL/RSL/librsl.a :
 #	( cd ../external/RSL/RSL ; \
@@ -5809,7 +5809,7 @@ esmf_time :
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; make CC='ecc -Vaxlib -I. -cm -w -I/usr/local/vmi/mpich/include '\
-	  FC='efc -cm -w -Vaxlib -I../../.. ' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST linux )
+	  FC="$(SFC) $(PROMOTION) -cm -w -Vaxlib -I../../.. " MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST linux )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -5899,7 +5899,7 @@ module_dm.F : ../external/RSL_LITE/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) -Vaxlib -I../.. $(FCFLAGS) -w" ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) -Vaxlib -I../.. $(FCFLAGS) -w" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -5910,15 +5910,15 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="efc -Vaxlib -I/usr/local/vmi/mpich/include $(FCDEBUG) $(FCFLAGS) -w" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(PROMOTION) -Vaxlib -I/usr/local/vmi/mpich/include $(FCDEBUG) $(FCFLAGS) -w" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL_LITE/librsl_lite.a :
-	( cd ../external/RSL_LITE ; make CC='ecc -Vaxlib -I. -cm -w -I/usr/local/vmi/mpich/include \
-	' FC='efc -cm -w -Vaxlib -I../../.. ' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
+	( cd ../external/RSL_LITE ; make CC='ecc -Vaxlib -I. -cm -w -I/usr/local/vmi/mpich/include' \
+	FC="$(SFC) $(PROMOTION) -cm -w -Vaxlib -I../../.. " MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -5997,7 +5997,7 @@ module_dm.F :
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) -FR -I. -w" ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) -FR -I. -w" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -6008,15 +6008,15 @@ wrfio_nf :
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCFLAGS) -w")
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCFLAGS) -w")
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(FCDEBUG) $(FCFLAGS) -w" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS) -w" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -6120,7 +6120,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC)" TRADFLAG="-traditional" \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION)" TRADFLAG="-traditional" \
 	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
@@ -6132,19 +6132,19 @@ wrfio_nf :
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCFLAGS) -w")
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCFLAGS) -w")
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; \
-          make CC="$(CC)" FC="$(FC)" CFLAGS="-DSTUBS $(CFLAGS)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST stub )
+          make CC="$(CC)" FC="$(FC) $(PROMOTION)" CFLAGS="-DSTUBS $(CFLAGS)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST stub )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -6230,7 +6230,7 @@ module_dm.F :
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC)" TRADFLAG="-traditional" \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION)" TRADFLAG="-traditional" \
           FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
@@ -6242,16 +6242,16 @@ wrfio_nf :
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCFLAGS) -w")
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCFLAGS) -w")
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" \
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS) -w" \
           TRADFLAG="-traditional" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -6346,7 +6346,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC)" TRADFLAG="-traditional" \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION)" TRADFLAG="-traditional" \
 	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
@@ -6358,19 +6358,19 @@ wrfio_nf :
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCFLAGS) -w")
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCFLAGS) -w")
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; \
-          make CC="$(CC)" FC="$(FC)" CFLAGS="-DSTUBS $(CFLAGS)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST stub )
+          make CC="$(CC)" FC="$(FC) $(PROMOTION)" CFLAGS="-DSTUBS $(CFLAGS)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST stub )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -6463,7 +6463,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC)" TRADFLAG="-traditional" \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION)" TRADFLAG="-traditional" \
 	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
@@ -6475,18 +6475,18 @@ wrfio_nf :
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) -I. $(FCDEBUG) $(FCFLAGS) -w")
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCFLAGS) -w")
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL/RSL/librsl.a :
-	( cd ../external/RSL/RSL ; make CC="$(CC)" CFLAGS="$(CFLAGS)" FC="$(FC)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST linux )
+	( cd ../external/RSL/RSL ; make CC="$(CC)" CFLAGS="$(CFLAGS)" FC="$(FC) $(PROMOTION)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST linux )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -6613,7 +6613,7 @@ module_dm.F:
 
 wrfio_nf :
 	( cd ../external/io_netcdf ; \
-	  make NETCDFPATH=/usr/local/netcdf/current FC="$(FC) $(FCFLAGS)"  ; \
+	  make NETCDFPATH=/usr/local/netcdf/current FC="$(FC) $(PROMOTION) $(FCFLAGS)"  ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -6625,16 +6625,16 @@ wrfio_nf :
 
 wrfio_int :
 	( cd ../external/io_int ; \
-	  make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(FCFLAGS)" all )
+	  make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(PROMOTION) $(FCFLAGS)" all )
 
 esmf_time :
 	( cd ../external/esmf_time_f90 ;\
- 	make FC="$(FC) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) $(CPPFLAGS) -I../../inc " )
+ 	make FC="$(FC) $(PROMOTION) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) $(CPPFLAGS) -I../../inc " )
 
 #sx : uses makefile.sx in the directory
 #../external/RSL/RSL/librsl.a :
 #	(cd ../external/RSL/RSL ; \
-#	make CC="$(CC)" FC="$(FC)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST sx )
+#	make CC="$(CC)" FC="$(FC) $(PROMOTION)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST sx )
 #
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -6754,7 +6754,7 @@ module_dm.F : ../external/RSL/module_dm.F
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
           make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" \
-          FC="$(FC) -I../.. $(FCFLAGS)" \
+          FC="$(FC) $(PROMOTION) -I../.. $(FCFLAGS)" \
           TRADFLAG="-traditional" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
@@ -6767,16 +6767,16 @@ wrfio_nf :
 wrfio_int : 
 	( cd ../external/io_int ; \
           make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" TRADFLAG="-traditional" \
-          SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
+          SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(PROMOTION) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
           make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" TRADFLAG="-traditional" \
-          FC="$(SFC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" )
+          FC="$(SFC) $(PROMOTION) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; make IDIR="-I$(MPI_HOME)/include" \
@@ -6894,7 +6894,7 @@ module_dm.F : ../external/RSL_LITE/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) -I../.. $(FCFLAGS)" \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) -I../.. $(FCFLAGS)" \
           TRADFLAG="-traditional" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
@@ -6907,20 +6907,20 @@ wrfio_nf :
 wrfio_int : 
 	( cd ../external/io_int ; \
           make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" TRADFLAG="-traditional" \
-          SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
+          SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(PROMOTION) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
           make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" TRADFLAG="-traditional" \
-          FC="$(SFC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
+          FC="$(SFC) $(PROMOTION) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL_LITE/librsl_lite.a :
 	( cd ../external/RSL_LITE ; make CC='icc -I. -w -O3 -I$(MPI_HOME)/include '\
-	 FC='ifort -w -O3 -I../../.. ' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
+	 FC="$(SFC) $(PROMOTION) -w -O3 -I../../.. " MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
 
 # compile these without high optimization to speed compile
 mediation_integrate.o : mediation_integrate.F
@@ -7016,7 +7016,7 @@ module_dm.F :
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) -I../.. $(FCFLAGS)" \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) -I../.. $(FCFLAGS)" \
           TRADFLAG="-traditional" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
@@ -7030,16 +7030,16 @@ wrfio_nf :
 wrfio_int : 
 	( cd ../external/io_int ; \
           make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" TRADFLAG="-traditional" \
-          SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
+          SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(PROMOTION) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
           make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" TRADFLAG="-traditional" \
-          FC="$(SFC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
+          FC="$(SFC) $(PROMOTION) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 # compile these without high optimization to speed compile
 mediation_integrate.o : mediation_integrate.F
@@ -7133,7 +7133,7 @@ module_dm.F :
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) -I../.. $(FCFLAGS)" \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) -I../.. $(FCFLAGS)" \
           TRADFLAG="-traditional" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
@@ -7147,16 +7147,16 @@ wrfio_nf :
 wrfio_int : 
 	( cd ../external/io_int ; \
           make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" TRADFLAG="-traditional" \
-          SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
+          SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(PROMOTION) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
           make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" TRADFLAG="-traditional" \
-          FC="$(SFC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
+          FC="$(SFC) $(PROMOTION) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 # compile these without high optimization to speed compile
 mediation_integrate.o : mediation_integrate.F
@@ -7270,7 +7270,7 @@ module_dm.F : ../external/RSL_LITE/module_dm.F
 	( /bin/cp module_dm_warning module_dm.F ; cat ../external/RSL_LITE/module_dm.F >> module_dm.F )
 
 wrfio_nf : 
-	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP) -Dcrayx1" FC="$(FC) -f free -N 255 " ; \
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP) -Dcrayx1" FC="$(FC) $(PROMOTION) -f free -N 255 " ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -7281,11 +7281,11 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP) -Dcrayx1" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) -f free -N 255" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP) -Dcrayx1" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(PROMOTION) -f free -N 255" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) -f free -N 255" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) -f free -N 255" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL_LITE/librsl_lite.a :
 	( cd ../external/RSL_LITE ; make CFLAGS="$(CFLAGS)" CC="$(CC)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
@@ -7408,7 +7408,7 @@ module_dm.F : ../external/RSL_LITE/module_dm.F
 	( /bin/cp module_dm_warning module_dm.F ; cat ../external/RSL_LITE/module_dm.F >> module_dm.F )
 
 wrfio_nf : 
-	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP) -Dcrayx1" FC="$(FC) -f free -N 255 -Ossp" ; \
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP) -Dcrayx1" FC="$(FC) $(PROMOTION) -f free -N 255 -Ossp" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -7419,11 +7419,11 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP) -Dcrayx1" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) -f free -N 255 -Ossp" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP) -Dcrayx1" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(PROMOTION) -f free -N 255 -Ossp" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) -f free -N 255 -Ossp" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) -f free -N 255 -Ossp" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL_LITE/librsl_lite.a :
 	( cd ../external/RSL_LITE ; make CFLAGS="$(CFLAGS)" CC="$(CC)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
@@ -7516,7 +7516,7 @@ module_dm.F :
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCFLAGS) " ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCFLAGS) " ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -7527,11 +7527,11 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="f90 $(FCDEBUG) $(FCFLAGS) -I../../inc " all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS) -I../../inc " all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -7617,7 +7617,7 @@ module_dm.F :
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCFLAGS) " ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCFLAGS) " ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -7628,15 +7628,15 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="f90 $(FCDEBUG) $(FCFLAGS) -I../../inc " all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS) -I../../inc " all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; \
-	  make CC="$(CC)" CFLAGS=" -DSTUBS +O3 " FC="$(FC)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST stub )
+	  make CC="$(CC)" CFLAGS=" -DSTUBS +O3 " FC="$(FC) $(PROMOTION)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST stub )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -7715,7 +7715,7 @@ module_dm.F :
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCFLAGS) " ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCFLAGS) " ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -7726,11 +7726,11 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="f90 $(FCDEBUG) $(FCFLAGS) -I../../inc " all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS) -I../../inc " all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -7809,7 +7809,7 @@ module_dm.F :
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCFLAGS) " ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCFLAGS) " ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -7820,11 +7820,11 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="f90 $(FCDEBUG) $(FCFLAGS) -I../../inc " all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS) -I../../inc " all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -7903,7 +7903,7 @@ module_dm.F :
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCFLAGS) " ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCFLAGS) " ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -7914,11 +7914,11 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="f90 $(FCDEBUG) $(FCFLAGS) -I../../inc " all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS) -I../../inc " all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -8005,7 +8005,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-	make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCFLAGS) " ; \
+	make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS) " ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -8016,15 +8016,15 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-	make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(FCDEBUG) $(FCFLAGS) -I../../inc " all )
+	make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS) -I../../inc " all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; \
-	make CC="$(CC)" FC="$(FC)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST hp )
+	make CC="$(CC)" FC="$(FC) $(PROMOTION)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST hp )
 
 
 # compile these without high optimization to speed compile
@@ -8112,7 +8112,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-	make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCFLAGS) " ; \
+	make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS) " ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -8123,15 +8123,15 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-	make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(FCDEBUG) $(FCFLAGS) -I../../inc " all )
+	make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS) -I../../inc " all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; \
-	make CC="$(CC)" FC="$(FC)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST hp )
+	make CC="$(CC)" FC="$(FC) $(PROMOTION)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST hp )
 
 
 # compile these without high optimization to speed compile
@@ -8219,7 +8219,7 @@ module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
 
 wrfio_nf : 
-	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -qarch=auto -qzerosize" ; \
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -8230,15 +8230,15 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -qarch=auto -qzerosize" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 solve_interface.o : solve_interface.F
 	$(RM) $@
@@ -8345,7 +8345,7 @@ module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
 
 wrfio_nf : 
-	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -qarch=auto -qzerosize" ; \
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" ; \
 	if [ $(RWORDSIZE) -eq 8 ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
@@ -8356,15 +8356,15 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -qarch=auto -qzerosize" )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 
 module_configure.o : module_configure.F

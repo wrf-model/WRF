@@ -101,7 +101,7 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
    IF( ESMF_AlarmIsRinging( grid%alarms( AUXINPUT5_ALARM ), rc=rc ) ) THEN
     print *,' CALL med_read_wrf_chem_emiss '
      CALL med_read_wrf_chem_emiss ( grid , config_flags )
-     CALL ESMF_AlarmTurnOff( grid%alarms( AUXINPUT5_ALARM ), rc=rc )
+     CALL ESMF_AlarmRingerOff( grid%alarms( AUXINPUT5_ALARM ), rc=rc )
     print *,' back from CALL med_read_wrf_chem_emiss '
 
    ENDIF
@@ -1394,3 +1394,191 @@ SUBROUTINE med_setup_step ( grid , config_flags )
 
 END SUBROUTINE med_setup_step
  
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+SUBROUTINE med_read_wrf_chem_emiss ( grid , config_flags )
+  ! Driver layer
+   USE module_domain
+   USE module_io_domain
+   USE module_timing
+  ! Model layer
+   USE module_configure
+   USE module_bc_time_utilities
+#ifdef DM_PARALLEL
+   USE module_dm
+#endif
+   USE module_date_time
+   USE WRF_ESMF_Mod
+
+   IMPLICIT NONE
+
+  ! Arguments
+   TYPE(domain)                               :: grid
+
+!  TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
+   TYPE (grid_config_rec_type)                :: config_flags
+   Type (ESMF_Time )                          :: start_time, stop_time, current_time
+   TYPE(ESMF_TimeInterval)                    :: time_interval
+
+  ! Local data
+   LOGICAL, EXTERNAL                      :: wrf_dm_on_monitor
+
+   INTEGER                                :: ierr, efid
+   REAL                                   :: time, tupdate
+   real, allocatable :: dumc0(:,:,:)
+   CHARACTER (LEN=256)                    :: message, current_date_char, date_string
+   CHARACTER (LEN=80)                     :: inpname
+
+#include <wrf_io_flags.h>
+
+     CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
+
+    IF ( grid%id .EQ. 1 ) THEN
+
+      CALL ESMF_ClockGet( grid%domain_clock, grid%current_time, rc=ierr )
+      CALL ESMF_TimeGetString( grid%current_time, current_date_char, rc=ierr )
+
+      time = float(grid%itimestep) * grid%dt
+      tupdate = mod( time, (12. * 3600.) )
+      IF( grid%current_time + grid%step_time .GE. grid%stop_time .AND.                  &
+          grid%auxinput5_oid .NE. 0 ) THEN
+        CALL close_dataset ( grid%auxinput5_oid , config_flags , "DATASET=AUXINPUT5" )
+        tupdate = 1.
+      ENDIF
+
+       print *,' EMISSIONS UPDATE TIME ',time,TRIM(current_date_char(12:13))
+       print *,tupdate
+
+
+      IF ( tupdate .EQ. 0. .AND.  current_date_char(12:13) .EQ. '00' ) THEN
+         CALL construct_filename1 ( inpname , 'wrfchemi_00z' , grid%id , 2 )
+         WRITE(message,*)'mediation_integrate: med_read_wrf_chem_emissions: Open file ',TRIM(inpname)
+         CALL wrf_message( TRIM(message) )
+
+        if( grid%auxinput5_oid .NE. 0 ) then
+          CALL close_dataset ( grid%auxinput5_oid , config_flags , "DATASET=AUXINPUT5" )
+        endif
+
+        CALL open_r_dataset ( grid%auxinput5_oid, TRIM(inpname) , grid , config_flags, &
+                              "DATASET=AUXINPUT5", ierr )
+        IF ( ierr .NE. 0 ) THEN
+           WRITE( message , * ) 'med_read_wrf_chem_emissions: error opening ', TRIM( inpname )
+           CALL wrf_error_fatal( TRIM( message ) )
+        ENDIF
+      ELSE IF ( tupdate .EQ. 0. .AND. current_date_char(12:13) .EQ. '12' ) THEN
+         CALL construct_filename1 ( inpname , 'wrfchemi_12z' , grid%id , 2 )
+         WRITE(message,*)'mediation_integrate: med_read_wrf_chem_emissions: Open file ',TRIM(inpname)
+         CALL wrf_message( TRIM(message) )
+
+        if( grid%auxinput5_oid .NE. 0 ) then
+          CALL close_dataset ( grid%auxinput5_oid , config_flags , "DATASET=AUXINPUT5" )
+        endif
+
+        CALL open_r_dataset ( grid%auxinput5_oid, TRIM(inpname) , grid , config_flags, &
+                              "DATASET=AUXINPUT5", ierr )
+        IF ( ierr .NE. 0 ) THEN
+           WRITE( message , * ) 'med_read_wrf_chem_emissions: error opening ', TRIM( inpname )
+           CALL wrf_error_fatal( TRIM( message ) )
+        ENDIF
+      ENDIF
+
+       print *,' HOURLY EMISSIONS UPDATE TIME ',time,mod(time,3600.)
+!      print *, grid%current_time + grid%step_time, grid%stop_time
+! hourly updates to emissions
+      IF ( ( mod( time, 3600. ) .EQ. 0   ) .AND. &
+           ( grid%current_time + grid%step_time .LT. grid%stop_time ) ) THEN
+!        IF ( wrf_dm_on_monitor() ) CALL start_timing
+
+         WRITE(message,*)'mediation_integrate: med_read_wrf_chem_emissions: Read emissions for time ',TRIM(current_date_char)
+         CALL wrf_message( TRIM(message) )
+
+         CALL wrf_debug (100 , 'mediation_integrate: calling input_aux_model_input5' )
+         CALL input_aux_model_input5 ( grid%auxinput5_oid, grid , config_flags , ierr )
+      ELSE
+         CALL wrf_debug (100 , 'mediation_integrate: med_read_wrf_chem_emissions: Do not read emissions' )
+      ENDIF
+
+!     ! Close the data file at 11z and 23z
+!     IF ( ( time - 11. * 3600. ) .GE. 0.   ) THEN
+!        CALL close_dataset ( grid%auxinput5_oid , config_flags , "DATASET=AUXINPUT5" )
+!     ENDIF
+
+   ENDIF
+   CALL wrf_debug (100 , 'mediation_integrate: med_read_wrf_chem_emissions: exit' )
+
+END SUBROUTINE med_read_wrf_chem_emiss
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+SUBROUTINE med_read_wrf_chem_bioemiss ( grid , config_flags )
+  ! Driver layer
+   USE module_domain
+   USE module_io_domain
+   USE module_timing
+  ! Model layer
+   USE module_configure
+   USE module_bc_time_utilities
+#ifdef DM_PARALLEL
+   USE module_dm
+#endif
+   USE module_date_time
+   USE WRF_ESMF_Mod
+
+   IMPLICIT NONE
+
+  ! Arguments
+   TYPE(domain)                               :: grid
+
+   TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
+   Type (ESMF_Time )                          :: start_time, stop_time, current_time
+   TYPE(ESMF_TimeInterval)                    :: time_interval
+
+  ! Local data
+   LOGICAL, EXTERNAL                      :: wrf_dm_on_monitor
+
+   INTEGER                                :: ierr, efid
+   REAL                                   :: time, tupdate
+   real, allocatable :: dumc0(:,:,:)
+   CHARACTER (LEN=256)                    :: message, current_date_char, date_string
+   CHARACTER (LEN=80)                     :: inpname
+
+#include <wrf_io_flags.h>
+    IF ( grid%id .EQ. 1 ) THEN
+
+      CALL ESMF_ClockGet( grid%domain_clock, grid%current_time, rc=ierr )
+      CALL ESMF_TimeGetString( grid%current_time, current_date_char, rc=ierr )
+
+!     IF( grid%current_time + grid%step_time .GE. grid%stop_time ) then
+!       return
+!     ENDIF
+
+      CALL construct_filename1 ( inpname , 'wrfbiochemi' , grid%id , 2 )
+      WRITE(message,*)'mediation_integrate: med_read_wrf_chem_bioemissions: Open file ',TRIM(inpname)
+      CALL wrf_message( TRIM(message) )
+
+     if( grid%auxinput4_oid .NE. 0 ) then
+       CALL close_dataset ( grid%auxinput4_oid , config_flags , "DATASET=AUXINPUT4" )
+     endif
+
+      CALL open_r_dataset ( grid%auxinput4_oid, TRIM(inpname) , grid , config_flags, &
+                              "DATASET=AUXINPUT4", ierr )
+        IF ( ierr .NE. 0 ) THEN
+           WRITE( message , * ) 'med_read_wrf_chem_bioemissions: error opening ', TRIM( inpname )
+           CALL wrf_error_fatal( TRIM( message ) )
+        ENDIF
+
+         WRITE(message,*)'mediation_integrate: med_read_wrf_chem_bioemissions: Read biogenic emissions at time ',TRIM(current_date_char)
+         CALL wrf_message( TRIM(message) )
+
+         CALL wrf_debug (100 , 'mediation_integrate: calling input_aux_model_input4' )
+         CALL input_aux_model_input4 ( grid%auxinput4_oid, grid , config_flags , ierr )
+
+         CALL close_dataset ( grid%auxinput4_oid , config_flags , "DATASET=AUXINPUT4" )
+
+   ENDIF
+   CALL wrf_debug (100 , 'mediation_integrate: med_read_wrf_chem_bioemissions: exit' )
+
+END SUBROUTINE med_read_wrf_chem_bioemiss
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

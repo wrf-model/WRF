@@ -25,6 +25,7 @@ FC = f77 -w
 
 FFLAGS = -g
 #ucomment for alpha
+CFLAGS = -DSTUBS -DSWAPBYTES -g
 FFLAGS = -g -convert big_endian
 
 warning :

@@ -82,19 +82,19 @@ state    real  LU_MASK          ij      misc        1         -     i3h1     "LU
 state    real   u              ikj     dyn_em      2         X     \
      i01rhusdf=(bdy_interp:dt,u_b,u_bt)       "U"                      "x-wind component"   "m s-1"
 state    real   ru             ikj     dyn_em      1         X      -        "MU_U"        "mu-coupled u"   "Pa m s-1"
-i1       real   ru_m           ikj     dyn_em      1         X      -        "ru_m"        ""   ""
-i1       real   ru_tend        ikj     dyn_em      1         X                                          
+state    real   ru_m           ikj     dyn_em      1         X      -        "ru_m"        ""   ""
+state    real   ru_tend        ikj     dyn_em      1         X      -        "ru_tend"        ""   ""                                   
 i1       real   ru_tendf       ikj     dyn_em      1         X                                          
-i1       real   u_save         ikj     dyn_em      1         X                                          
+state    real   u_save         ikj     dyn_em      1         X      -        "u_save"
 #                                               
 # V Vel
 state    real   v              ikj     dyn_em      2         Y     \
      i01rhusdf=(bdy_interp:dt,v_b,v_bt)        "V"                     "y-wind component"   "m s-1"
 state    real   rv             ikj     dyn_em      1         Y      -        "MU_V"        "mu-coupled v"   "Pa m s-1"
-i1       real   rv_m           ikj     dyn_em      1         Y      -        "rv_m"
-i1       real   rv_tend        ikj     dyn_em      1         Y                                          
+state    real   rv_m           ikj     dyn_em      1         Y      -        "rv_m"
+state    real   rv_tend        ikj     dyn_em      1         Y      -        "rv_tend"
 i1       real   rv_tendf       ikj     dyn_em      1         Y                                          
-i1       real    v_save        ikj     dyn_em      1         Y                                          
+state    real   v_save         ikj     dyn_em      1         Y      -        "v_save"                   
 #                                               
 # Vertical Vel                                          
 state    real   w              ikj     dyn_em      2         Z     \
@@ -128,7 +128,7 @@ i1       real   t_tend         ikj     dyn_em      1         -
 i1       real   t_tendf        ikj     dyn_em      1         -  
 state    real   tp             ikj     dyn_em      2         -  
 i1       real   t_2save        ikj     dyn_em      1         -   
-i1       real   t_save         ikj     dyn_em      1         -                                
+state    real   t_save         ikj     dyn_em      1         -               "t_save"
 #                                               
 
 
@@ -139,12 +139,12 @@ state    real   mub             ij     dyn_em      1         -     irhdu        
 state    real   mub_fine        ij     dyn_em      1         -      -           "mub_fine" "nest temp, holds interpolated coarse grid mub" "Pa"
 state    real   mu0             ij     dyn_em      1         -     i01rdu       "mu0" "initial dry mass in column" "Pa"
 state    real   mudf            ij     dyn_em      1         -      -           "mudf" "" ""
-i1       real   muu             ij     dyn_em      1          -    
+state    real   muu             ij     dyn_em      1          -                 "muu"
 i1       real   muus            ij     dyn_em      1          -     
-i1       real   muv             ij     dyn_em      1          -     
+state    real   muv             ij     dyn_em      1          -                 "muv"
 i1       real   muvs            ij     dyn_em      1          -     
-i1       real   mut             ij     dyn_em      1          -     
-i1       real   muts            ij     dyn_em      1          -     
+state    real   mut             ij     dyn_em      1          -                 "mut"
+state    real   muts            ij     dyn_em      1          -                 "muts"
 i1       real   muave           ij     dyn_em      1          -     
 i1       real   mu_save         ij     dyn_em      1          -     
 i1       real   mu_tend         ij     dyn_em      1          -     

@@ -4,7 +4,7 @@
 #include "nmm_loop_basemacros.h"
 #include "nmm_loop_macros.h"
 !
-#define OPTIM_PFDHT
+!#define OPTIM_PFDHT
 
 !-----------------------------------------------------------------------
 !
@@ -144,7 +144,7 @@
 !
       REAL,DIMENSION(ITS-5:ITE+5,KTS:KTE,JTS-5:JTE+5) :: FIM
 !
-      REAL :: ADPDNE,ADPDSE,ADPDX,ADPDY,APELP,DFI,DCNEK,DCSEK           &
+      REAL :: ADPDNE,ADPDSE,ADPDY1,APELP,DFI,DCNEK,DCSEK           &
      &       ,DPFEW,DPFNS,DPFNEK,DPFSEK,DPNEK,DPSEK,EDIV,FIUP           &
      &       ,HM,PCEW,PCNS,PEW,PNS,PVNEK,PVSEK,RTOPP,VM
 !
@@ -174,7 +174,7 @@
 !
 !***  TYPE 6 WORKING ARRAY
 !
-      REAL,DIMENSION(ITS-5:ITE+5, 0:1) :: TSE
+      REAL,DIMENSION(ITS-5:ITE+5, 0:1) :: TSE,ADPDX,ADPDY,RADPDX,RADPDY
 !----------------------------------------------------------------------
 !**********************************************************************
 !
@@ -291,7 +291,7 @@
 !----------------------------------------------------------------------
 !
 !-------------------- MAIN VERTICAL INTEGRATION LOOP -------------------
-!$omp parallel do private(adpdx,adpdy,dcnek,dcsek,dpfew,dpfnek, &
+!$omp parallel do private(adpdx,adpdy,adpdy1,dcnek,dcsek,dpfew,dpfnek, &
 !$omp&         dpfns,dpfsek,dpnek,dpsek,ediv,hm,                &
 !$omp&         pcew,pcns,pew,pns,pvnek,pvsek,vm,i,k,            &
 !$omp& i,j,k,jj,apelp,apel,dfdz,dpde,&
@@ -325,6 +325,7 @@
       DO J=-2,0
         JJ=JSTART+J
 !
+  !IBM* ASSERT(ITERCNT(100))
         DO I=MYIS_P3,MYIE_P3
           CNE(I,J)=(DFDZ(I+IHE(JJ),J+1)+DFDZ(I,J))*2.             &
      &              *(APEL(I+IHE(JJ),J+1)-APEL(I,J))
@@ -334,6 +335,7 @@
           PPNE(I,J)=PNE(I,J)*(DPDE(I+IHE(JJ),J+1)+DPDE(I,J))
         ENDDO
 !
+  !IBM* ASSERT(ITERCNT(100))
         DO I=MYIS_P3,MYIE_P3
           CSE(I,J+1)=(DFDZ(I+IHE(JJ+1),J)+DFDZ(I,J+1))*2.         &
      &                *(APEL(I+IHE(JJ+1),J)-APEL(I,J+1))
@@ -346,10 +348,20 @@
         ENDDO
       ENDDO
 !
+      J = 0
+      JJ=JSTART+J
+  !IBM* ASSERT(ITERCNT(100))
+      DO I=MYIS_P2,MYIE1_P2
+        ADPDX(I,J)=DPDE(I+IVW(JJ),J)+DPDE(I+IVE(JJ),J)
+        ADPDY(I,J)=DPDE(I,J-1)+DPDE(I,J+1)
+      ENDDO
+      CALL vsrec( RADPDX(MYIS_P2,J),ADPDX(MYIS_P2,J),MYIE1_P2-MYIS_P2+1)
+      CALL vsrec( RADPDY(MYIS_P2,J),ADPDY(MYIS_P2,J),MYIE1_P2-MYIS_P2+1)
       IF(.NOT.FIRST)THEN   ! Skip at timestep 0
-        J=0
-        JJ=JSTART+J
 !
+        J = 0
+        JJ=JSTART+J
+  !IBM* ASSERT(ITERCNT(100))
         DO I=MYIS_P2,MYIE1_P2
           DPFNEK=((PPNE(I+IVW(JJ),J)+PPNE(I,J-1))                   &
      &           +(PCNE(I+IVW(JJ),J)+PCNE(I,J-1)))*2.
@@ -357,35 +369,35 @@
      &           +(PCSE(I+IVW(JJ),J)+PCSE(I,J+1)))*2.
           DPFEW=DPFNEK+DPFSEK
           DPFNS=DPFNEK-DPFSEK
-          ADPDX=DPDE(I+IVW(JJ),J)+DPDE(I+IVE(JJ),J)
-          ADPDY=DPDE(I,J-1)+DPDE(I,J+1)
           DPNEK=PNE(I+IVW(JJ),J)+PNE(I,J-1)
           DPSEK=PSE(I+IVW(JJ),J)+PSE(I,J+1)
           PEW=DPNEK+DPSEK
           PNS=DPNEK-DPSEK
           DCNEK=CNE(I+IVW(JJ),J)+CNE(I,J-1)
           DCSEK=CSE(I+IVW(JJ),J)+CSE(I,J+1)
-          PCEW=(DCNEK+DCSEK)*ADPDX
-          PCNS=(DCNEK-DCSEK)*ADPDY
+          PCEW=(DCNEK+DCSEK)*ADPDX(I,J)
+          PCNS=(DCNEK-DCSEK)*ADPDY(I,J)
           VM=VTM(I,K,JJ)*VBM2(I,JJ)
-          U(I,K,JJ)=(((DPFEW+PCEW)/ADPDX+PEW)*CPGFU(I,JJ))*VM+U(I,K,JJ)
-          V(I,K,JJ)=(((DPFNS+PCNS)/ADPDY+PNS)*CPGFV      )*VM+V(I,K,JJ)
+          U(I,K,JJ)=(((DPFEW+PCEW)*RADPDX(I,J)+PEW)*CPGFU(I,JJ))*VM+U(I,K,JJ)
+          V(I,K,JJ)=(((DPFNS+PCNS)*RADPDY(I,J)+PNS)*CPGFV      )*VM+V(I,K,JJ)
         ENDDO
       ENDIF
 !
       DO J=-1,0
         JJ=JSTART+J
 !
+  !IBM* ASSERT(ITERCNT(100))
         DO I=MYIS_P3,MYIE_P3
           UDY(I,J)=DY*U(I,K,JJ)
           VDX(I,J)=DX(I,JJ)*V(I,K,JJ)
           DCNEK=CNE(I+IVW(JJ),J)+CNE(I,J-1)
           DCSEK=CSE(I+IVW(JJ),J)+CSE(I,J+1)
-          ADPDY=DPDE(I,J-1)+DPDE(I,J+1)
-          TNS(I,J)=VDX(I,J)*((DCNEK-DCSEK)*ADPDY)
-          FNS(I,K,JJ)=VDX(I,J)*ADPDY
+          ADPDY1=DPDE(I,J-1)+DPDE(I,J+1)
+          TNS(I,J)=VDX(I,J)*((DCNEK-DCSEK)*ADPDY1)
+          FNS(I,K,JJ)=VDX(I,J)*ADPDY1
         ENDDO
 !
+  !IBM* ASSERT(ITERCNT(100))
         DO I=MYIS_P1,MYIE_P1
           PCXC(I,J)=(PNE(I+IVW(JJ),J)-PNE(I,J-1)                  &
      &                +CNE(I+IVW(JJ),J)-CNE(I,J-1)                  &
@@ -397,6 +409,7 @@
       ENDDO
 !
       JJ=JSTART
+  !IBM* ASSERT(ITERCNT(100))
       DO I=MYIS_P2,MYIE1_P2
         ADPDNE=DPDE(I+IHE(JJ-1),0)+DPDE(I,-1)
         PVNEK=(UDY(I+IHE(JJ-1),-1)+VDX(I+IHE(JJ-1),-1))             &
@@ -407,6 +420,7 @@
         FNE(I,K,JJ-1)=PVNEK*ADPDNE
       ENDDO
 !
+  !IBM* ASSERT(ITERCNT(100))
       DO I=MYIS_P2,MYIE1_P2
         ADPDSE=DPDE(I+IHE(JJ),-1)+DPDE(I,0)
         PVSEK=(UDY(I+IHE(JJ),0)-VDX(I+IHE(JJ),0))                   &
@@ -425,6 +439,7 @@
 !----------------------------------------------------------------------
 !----------------------------------------------------------------------
 !
+  !IBM* ASSERT(ITERCNT(100))
       main_integration : DO J=MYJS2_P2,MYJE2_P2
 !
 !----------------------------------------------------------------------
@@ -464,12 +479,14 @@
       J6_00=INDX3_WRK(0,JKNT,6)
 !
 !----------------------------------------------------------------------
+  !IBM* ASSERT(ITERCNT(100))
       DO I=MYIS_P4,MYIE_P4
         APELP=0.5*(PINT(I,K+1,J+2)+PINT(I,K,J+2))
         APEL(I,J1_P2)=APELP
         DFDZ(I,J1_P2)=RTOP(I,K,J+2)
         DPDE(I,J1_P2)=DETA1(K)*PDTOP+DETA2(K)*PDSL(I,J+2)
       ENDDO
+
 !
 !-----------------------------------------------------------------------
 !***  DIAGONAL CONTRIBUTIONS TO PRESSURE GRADIENT FORCE
@@ -478,6 +495,7 @@
 !      call hpm_start(block1)
 
 
+  !IBM* ASSERT(ITERCNT(100))
       DO I=MYIS_P3,MYIE_P3
         CNE(I,J2_P1)=(DFDZ(I+IHE(J+1),J1_P2)+DFDZ(I,J1_P1))*2.    &
      &                *(APEL(I+IHE(J+1),J1_P2)-APEL(I,J1_P1))
@@ -489,6 +507,7 @@
      &                 *(DPDE(I+IHE(J+1),J1_P2)+DPDE(I,J1_P1))
       ENDDO
 !
+  !IBM* ASSERT(ITERCNT(100))
       DO I=MYIS_P3,MYIE_P3
         CSE(I,J3_P2)=(DFDZ(I+IHE(J+2),J1_P1)+DFDZ(I,J1_P2))*2.    &
      &                *(APEL(I+IHE(J+2),J1_P1)-APEL(I,J1_P2))
@@ -504,6 +523,7 @@
 !***  CONTINUITY EQUATION MODIFICATION
 !----------------------------------------------------------------------
 !
+  !IBM* ASSERT(ITERCNT(100))
       DO I=MYIS_P1,MYIE_P1
         PCXC(I,J4_P1)=(PNE(I+IVW(J+1),J2_P1)                        &
      &                  +CNE(I+IVW(J+1),J2_P1)                        &
@@ -518,6 +538,7 @@
 !
 !----------------------------------------------------------------------
 !
+  !IBM* ASSERT(ITERCNT(100))
       DO I=MYIS1,MYIE1
         DIVL(I)=(DETA1(K)*PDTOP/(SLP_STD-PT)                          &
      &            +DETA2(K)*(1.-PDTOP/(SLP_STD-PT)))*WPDAR(I,J)         &
@@ -528,24 +549,30 @@
 !
 !----------------------------------------------------------------------
 !
+  !IBM* ASSERT(ITERCNT(100))
+      DO I=MYIS_P2,MYIE1_P2
+        ADPDX(I,J6_P1)=DPDE(I+IVW(J+1),J1_P1)+DPDE(I+IVE(J+1),J1_P1)
+        ADPDY(I,J6_P1)=DPDE(I,J1_00)+DPDE(I,J1_P2)
+      ENDDO
+      CALL vsrec( RADPDX(MYIS_P2,J6_P1),ADPDX(MYIS_P2,J6_P1),MYIE1_P2-MYIS_P2+1)
+      CALL vsrec( RADPDY(MYIS_P2,J6_P1),ADPDY(MYIS_P2,J6_P1),MYIE1_P2-MYIS_P2+1)
       IF(.NOT.FIRST)THEN     ! Skip at timestep 0
 !
 !----------------------------------------------------------------------
 !***  LAT & LONG PRESSURE FORCE COMPONENTS
 !----------------------------------------------------------------------
 !
+  !IBM* ASSERT(ITERCNT(100))
         DO I=MYIS_P2,MYIE1_P2
           DPNEK=PNE(I+IVW(J+1),J2_P1)+PNE(I,J2_00)
           DPSEK=PSE(I+IVW(J+1),J3_P1)+PSE(I,J3_P2)
           PEW=DPNEK+DPSEK
           PNS=DPNEK-DPSEK
 !
-          ADPDX=DPDE(I+IVW(J+1),J1_P1)+DPDE(I+IVE(J+1),J1_P1)
-          ADPDY=DPDE(I,J1_00)+DPDE(I,J1_P2)
           DCNEK=CNE(I+IVW(J+1),J2_P1)+CNE(I,J2_00)
           DCSEK=CSE(I+IVW(J+1),J3_P1)+CSE(I,J3_P2)
-          PCEW=(DCNEK+DCSEK)*ADPDX
-          PCNS=(DCNEK-DCSEK)*ADPDY
+          PCEW=(DCNEK+DCSEK)*ADPDX(I,J6_P1)
+          PCNS=(DCNEK-DCSEK)*ADPDY(I,J6_P1)
 !
           DPFNEK=((PPNE(I+IVW(J+1),J2_P1)+PPNE(I,J2_00))            &
      &           +(PCNE(I+IVW(J+1),J2_P1)+PCNE(I,J2_00)))*2.
@@ -559,9 +586,9 @@
 !----------------------------------------------------------------------
 !
           VM=VTM(I,K,J+1)*VBM2(I,J+1)
-          U(I,K,J+1)=(((DPFEW+PCEW)/ADPDX+PEW)*CPGFU(I,J+1))*VM         &
+          U(I,K,J+1)=(((DPFEW+PCEW)*RADPDX(I,J6_P1)+PEW)*CPGFU(I,J+1))*VM         &
      &              +U(I,K,J+1) 
-          V(I,K,J+1)=(((DPFNS+PCNS)/ADPDY+PNS)*CPGFV       )*VM         &
+          V(I,K,J+1)=(((DPFNS+PCNS)*RADPDY(I,J6_P1)+PNS)*CPGFV       )*VM         &
      &              +V(I,K,J+1)
         ENDDO
 !----------------------------------------------------------------------
@@ -574,6 +601,7 @@
       IF(.NOT.LAST_TIME)THEN    !Do not execute block at last timestep
 !
 !----------------------------------------------------------------------
+  !IBM* ASSERT(ITERCNT(100))
         DO I=MYIS_P2,MYIE_P3
           UDY(I,J4_P1)=DY*U(I,K,J+1)
           VDX(I,J4_P1)=DX(I,J+1)*V(I,K,J+1)
@@ -583,24 +611,24 @@
 !***  LAT & LON FLUXES & OMEGA-ALPHA COMPONENTS
 !----------------------------------------------------------------------
 !
+  !IBM* ASSERT(ITERCNT(100))
         DO I=MYIS_P2,MYIE_P3
-          ADPDX=DPDE(I+IVW(J),J1_00)+DPDE(I+IVE(J),J1_00)
           DCNEK=CNE(I+IVW(J),J2_00)+CNE(I,J2_M1)
           DCSEK=CSE(I+IVW(J),J3_00)+CSE(I,J3_P1)
-          TEW(I)=UDY(I,J4_00)*((DCNEK+DCSEK)*ADPDX)
-          FEW(I,K,J)=UDY(I,J4_00)*ADPDX
+          TEW(I)=UDY(I,J4_00)*((DCNEK+DCSEK)*ADPDX(I,J6_00))
+          FEW(I,K,J)=UDY(I,J4_00)*ADPDX(I,J6_00)
 !
-          ADPDY=DPDE(I,J1_P2)+DPDE(I,J1_00)
           DCNEK=CNE(I+IVW(J+1),J2_P1)+CNE(I,J2_00)
           DCSEK=CSE(I+IVW(J+1),J3_P1)+CSE(I,J3_P2)
-          TNS(I,J4_P1)=VDX(I,J4_P1)*((DCNEK-DCSEK)*ADPDY)
-          FNS(I,K,J+1)=VDX(I,J4_P1)*ADPDY
+          TNS(I,J4_P1)=VDX(I,J4_P1)*((DCNEK-DCSEK)*ADPDY(I,J6_P1))
+          FNS(I,K,J+1)=VDX(I,J4_P1)*ADPDY(I,J6_P1)
         ENDDO
 !
 !----------------------------------------------------------------------
 !***  DIAGONAL FLUXES AND DIAGONALLY AVERAGED WIND
 !----------------------------------------------------------------------
 !
+  !IBM* ASSERT(ITERCNT(100))
         DO I=MYIS_P1,MYIE1_P1
           PVNEK=(UDY(I+IHE(J),J4_00)+VDX(I+IHE(J),J4_00))           &
      &         +(UDY(I,J4_P1)       +VDX(I,J4_P1))
@@ -608,6 +636,7 @@
           FNE(I,K,J)=PVNEK*(DPDE(I+IHE(J),J1_P1)+DPDE(I,J1_00))
         ENDDO
 !
+  !IBM* ASSERT(ITERCNT(100))
         DO I=MYIS_P1,MYIE1_P1
           PVSEK=(UDY(I+IHE(J+1),J4_P1)-VDX(I+IHE(J+1),J4_P1))       &
      &         +(UDY(I,J4_00)         -VDX(I,J4_00))
@@ -619,6 +648,7 @@
 !***  HORIZONTAL PART OF OMEGA-ALPHA & DIVERGENCE
 !----------------------------------------------------------------------
 !
+  !IBM* ASSERT(ITERCNT(100))
         DO I=MYIS1,MYIE1
           HM=HTM(I,K,J)*HBM2(I,J)
           OMGALF(I,K,J)=(TEW(I+IHE(J))+TEW(I+IHW(J))                &

@@ -130,7 +130,7 @@ RSL_MOTHER_DOMAIN ( domain_p, maskid_p, mlen_p, nlen_p, mloc_p, nloc_p )
     ;
 {
   rsl_index_t i, j, k ;
-  rsl_index_t d ;
+  int  d ;
   rsl_dimlen_t nmax ;
   rsl_dimlen_t mmax ;
   rsl_dimlen_t zmax ;
@@ -209,7 +209,7 @@ RSL_MOTHER_DOMAIN3D( domain_p, maskid_p, mlen_p, nlen_p, zlen_p,
 {
 
   rsl_index_t i, j, k ;
-  rsl_index_t d ;
+  int  d ;
   rsl_dimlen_t nmax ;
   rsl_dimlen_t mmax ;
   rsl_dimlen_t zmax ;

@@ -376,6 +376,7 @@
                            its , ite , jts , jte , &
                            its , ite , jts , jte   )
 
+   IF ( .not. restart ) THEN 
    CALL set_w_surface(  config_flags,                                      &
                         w_1, ht, u_1, v_1, cf1, cf2, cf3, rdx, rdy, msft,  &
                         ids, ide, jds, jde, kds, kde,                      &
@@ -388,6 +389,7 @@
                         ips, ipe, jps, jpe, kps, kpe,                      &
                         its, ite, jts, jte, kts, kte,                      &
                         ims, ime, jms, jme, kms, kme                      )
+   END IF
 
 ! finished setting kinematic condition for w at the surface
 

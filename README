@@ -107,7 +107,7 @@ How to compile and run?
 
 What is in WRF V2?
 
-- Advanced WRF core: Eulerian mass, hydrostatic and non-hydrostatic
+- Advanced Research WRF (ARW) core: Eulerian mass, hydrostatic and non-hydrostatic
   * Arakawa C-grid staggering
   * Runge-Kutta 2nd and 3rd order timestep options
   * scalar-conserving flux form for prognostic variables
@@ -141,12 +141,42 @@ What is in WRF V2?
 
 - Sofeware
 
-- Platforms being tested:
-  * Compaq (personal workstation, ES40)
-  * IBM (Power 3 and 4 system)
-  * SGI (Origin 2000, Altix)
-  * PC Linux (single processor or cluster, Intel or PGI compiler)
-  * Alpha Linux (cluster)
-  * Sun (single processor or OpenMP)
-  * Cray-X1
-
+  * Hierarchical software architecture that insulates scientific code
+    (Model Layer) from computer architecture (Driver Layer)
+  * Multi-level parallelism supporting shared-memory (OpenMP), distributed-memory (MPI), 
+    and hybrid share/distributed modes of execution
+  * Active data registry: defines and manages model state fields, I/O,
+    nesting, configuration, and numerous other aspects of WRF through a single file, 
+    called the Registry
+  * Two-way nesting:
+      Easy to extend: forcing and feedback of new fields specified by
+        editing a single table in the Registry
+      Efficient: 5-8% overhead on 64 processes of IBM
+  * Enhanced I/O options:
+      NetCDF and Parallel HDF5 formats
+      Five auxiliary history output streams separately controllable through the namelist
+      Output file names and time-stamps specifiable through namelist
+      Special output stream for 3DVAR
+  * Efficient execution on a range of computing platforms:
+      IBM SP systems, (e.g. NCAR "bluesky" Power4-based system)
+      HP/Compaq Alpha/OSF workstation, SMP, and MPP systems (e.g. Pittsburgh 
+         Supercomputing Center TCS)
+      SGI Origin and Altix
+      Linux/Intel
+         IA64 MPP (HP Superdome, SGI Altix, NCSA Teragrid systems)
+         IA64 SMP
+         Pentium 3/4 SMP and SMP clusters (NOAA/FSL iJet system)
+	 PGI and Intel compilers supported
+      Alpha Linux (NOAA/FSL Jet system)
+      Sun Solaris (single threaded and SMP)
+      Other ports under development:
+         Cray X1
+         NEC SX/6
+         Fujitsu VPP 5000
+  * RSL_LITE: optional new communication layer, scalable to very
+    large domains (limited to single domain in 2.0)
+  * ESMF Time Management, including exact arithmetic for fractional
+    time steps (no drift); model start, stop, run length and I/O frequencies are
+    now specified as times and time intervals in 2.0 (rather than numbers of
+    steps, as in 1.3 and earlier)
+  * Improved documentation, both on-line (web based browsing tools) and in-line

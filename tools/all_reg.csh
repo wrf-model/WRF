@@ -81,7 +81,7 @@ EOF
 					set joe_id = `cat llsub.out | grep '"bs1' | cut -d\" -f2 | cut -d. -f2`
 				endif
 			end
-			cp /ptmp/$USER/wrf_regression.$joe_id/wrftest.out wrftest.output.$count.$NAME[$count]
+			cp /ptmp/$USER/wrf_regression.$joe_id/wrftest.output wrftest.output.$count.$NAME[$count]
 			rm llsub.out llq.report
 		else
 			chmod +x reg.foo.$count.$NAME[$count]

@@ -348,7 +348,7 @@ CONTAINS
       hsub = xls
       hvap = xlv0
       cvap = cpv
-      ttp=t0c+0.1
+      ttp=t0c+0.01
       dldt=cvap-cliq
       xa=-dldt/rv
       xb=xa+hvap/(rv*ttp)
@@ -944,7 +944,7 @@ CONTAINS
       hsub = xls
       hvap = xlv0
       cvap = cpv
-      ttp=t0c+0.1
+      ttp=t0c+0.01
       dldt=cvap-cliq
       xa=-dldt/rv
       xb=xa+hvap/(rv*ttp)
@@ -1038,7 +1038,7 @@ CONTAINS
            xai,xbi,ttp,tr
       INTEGER ice
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-      ttp=t0c+0.1
+      ttp=t0c+0.01
       dldt=cvap-cliq
       xa=-dldt/rv
       xb=xa+hvap/(rv*ttp)

@@ -755,7 +755,7 @@ CONTAINS
            xai,xbi,ttp,tr
       INTEGER ice
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-      ttp=t0c+0.1
+      ttp=t0c+0.01
       dldt=cvap-cliq
       xa=-dldt/rv
       xb=xa+hvap/(rv*ttp)

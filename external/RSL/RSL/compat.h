@@ -265,6 +265,7 @@
 #   define INT_PACK_DATA  int_pack_data__
 
 #   define GET_NEXT_DOMAIN_DESCRIPTOR get_next_domain_descriptor__
+#   define RSL_GET_GLEN rsl_get_glen__
 
 #    else
 
@@ -461,6 +462,7 @@
 #   define INT_PACK_DATA  int_pack_data_
 
 #   define GET_NEXT_DOMAIN_DESCRIPTOR get_next_domain_descriptor_
+#   define RSL_GET_GLEN rsl_get_glen_
 
 #    endif
 
@@ -658,6 +660,7 @@
 #   define INT_PACK_DATA  int_pack_data
 
 #   define GET_NEXT_DOMAIN_DESCRIPTOR get_next_domain_descriptor
+#   define RSL_GET_GLEN rsl_get_glen
 
 #  endif
 #endif

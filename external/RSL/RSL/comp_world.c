@@ -668,3 +668,21 @@ RSL_REG_PATCHINFO_NZ ( d_p ,
   *ep1 = domain_info[d].len_m ;
 }
 
+RSL_GET_GLEN ( d_p , mlen_p , nlen_p , zlen_p )
+  int_p d_p, mlen_p, nlen_p, zlen_p ;
+{
+  rsl_domain_info_t *dinfo ;
+  int d ;
+
+  d = *d_p ;
+  RSL_TEST_ERR( d < 0 || d >= RSL_MAXDOMAINS,
+     "rsl_get_get_glen: bad domain") ;
+  RSL_TEST_ERR( domain_info[d].valid != RSL_VALID,
+     "rsl_get_glen: invalid domain") ;
+
+  dinfo = &(domain_info[d]) ;
+  *mlen_p = dinfo->len_m ;
+  *nlen_p = dinfo->len_n ;
+  *zlen_p = dinfo->len_z ;
+  return(0) ;
+}

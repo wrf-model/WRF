@@ -373,6 +373,9 @@
 
       call c_ESMC_AlarmGetPrevRingTime(alarm, PrevRingTime, rc)
 
+      PrevRingTime = alarm%PrevRingTime
+      rc = ESMF_SUCCESS
+
       end subroutine ESMF_AlarmGetPrevRingTime
 
 !------------------------------------------------------------------------------

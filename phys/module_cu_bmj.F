@@ -4,26 +4,30 @@ MODULE MODULE_CU_BMJ
 !
       USE module_model_constants
 !
-      LOGICAL :: UNIS=.TRUE.,UNIL=.FALSE.
-!
       REAL,PARAMETER ::                                                 &
      &                  DSPC=-3000.                                     &
-     &                 ,DTTOP=0.,EFIFC=5.0,EFIMN=.20,EFMNT=.70          &
+     &                 ,DTTOP=0.,EFIFC=5.0,EFIMN=0.20,EFMNT=0.70        &
      &                 ,ELIVW=2.72E6                                    &
-     &                 ,EPSDN=1.05,EPSDT=0.,EPSNTP=1.E-4,EPSTH=0.       &
-     &                 ,EPSP=1.E-7,            EPSUP=1.0                &
-     &                 ,FCC=.90,FSL=.850,FSS=.85                        &
+     &                 ,EPSDN=1.05,EPSDT=0.,EPSNTP=100.0,epspr=5.e-5    &
+     &                 ,EPSUP=0.95                                      &
+     &                 ,FR=1.0,FSL=0.85,FSS=0.85               &
+!orig     &                 ,FUP=0.07/3000.                                  &
+     &                 ,FUP=0.07/9000.                                  &
      &                 ,PBM=13000.,PFRZ=15000.,PNO=1000.                &
      &                 ,PONE=2500.,PQM=2500.                            &
-     &                 ,PSH=29000.,PSHU=45000.                          &
-     &                 ,RHLSC=0.50,RHHSC=0.99                           &
-     &                 ,RHF=0.10,ROW=1.E3                               &
-     &                 ,STABD=.90,STABFC=1.0                            &
-     &                 ,STABS=1.0,STRESH=0.50                           &
-     &                 ,T1=274.16,TREL=2400.
+     &                 ,PSH=20000.,PSHU=45000.                          &
+     &                 ,rhlsc=0.60,rhhsc=1.                             &
+     &                 ,ROW=1.E3                                        &
+     &                 ,stabdf=0.80,STABDS=1.05                         &
+     &                 ,STABS=1.0,STRESH=0.80                           &
+     &                 ,TREL=2400.
 !
-      REAL,PARAMETER :: DSPBFL=-3875.,DSP0FL=-5875.,DSPTFL=-1875.       &
-     &                 ,DSPBFS=-3875.,DSP0FS=-5875.,DSPTFS=-1875.
+      REAL,PARAMETER :: DSPBFL=-3875.*FR                                &
+     &                 ,DSP0FL=-5875.*FR                                &
+     &                 ,DSPTFL=-1875.*FR                                &
+     &                 ,DSPBFS=-3875.*FR                                &
+     &                 ,DSP0FS=-5875.*FR                                &
+     &                 ,DSPTFS=-1875.*FR
 !
       REAL,PARAMETER :: PL=2500.,PLQ=70000.,PH=105000.                  &
      &                 ,THL=210.,THH=365.,THHQ=325.
@@ -46,14 +50,18 @@ MODULE MODULE_CU_BMJ
      &                 ,RDTHE=JTB-1.,RDTHEQ=JTBQ-1.                   &
      &                 ,RSFCP=1./101300.
 !
+      REAL,PARAMETER :: AVGEFI=(EFIMN+1.)*0.5
+!
 CONTAINS
 !
 !-----------------------------------------------------------------------
       SUBROUTINE BMJDRV(DT,ITIMESTEP,STEPCU                             &
      &                 ,RTHCUTEN,RQVCUTEN                               &
-     &                 ,RAINCV,HTOP,HBOT,KPBL                           &
-     &                 ,TH,T,QV,PINT,PMID,PI,RHO,DZ8W                   &
-     &                 ,CP,R,ELWV,G,TFRZ,D608                           &
+     &                 ,RAINCV,CUTOP,CUBOT,KPBL                         &
+     &                 ,TH,T,                                           &
+     &                 QV,                                              &
+     &                 PINT,PMID,PI,RHO,DZ8W                            &
+     &                 ,CP,R,ELWV,ELIV,G,TFRZ,D608                      &
      &                 ,CLDEFI,LOWLYR,XLAND,CU_ACT_FLAG                 &
      &                 ,IDS,IDE,JDS,JDE,KDS,KDE                         &
      &                 ,IMS,IME,JMS,JME,KMS,KME                         &
@@ -67,14 +75,11 @@ CONTAINS
 !
       INTEGER,INTENT(IN) :: ITIMESTEP,STEPCU
 !
-      INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: LOWLYR
-      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: HBOT,HTOP
+      INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: KPBL,LOWLYR
 !
-      REAL,INTENT(IN) :: CP,DT,ELWV,G,R,TFRZ,D608
+      REAL,INTENT(IN) :: CP,DT,ELWV,ELIV,G,R,TFRZ,D608
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: XLAND
-
-      INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: KPBL
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: DZ8W        &
      &                                                     ,PI,PINT     &
@@ -85,19 +90,22 @@ CONTAINS
      &    ,INTENT(INOUT) ::                        RQVCUTEN,RTHCUTEN 
 ! 
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: CLDEFI,RAINCV
-
+!
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: CUBOT,CUTOP
+!
       LOGICAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: CU_ACT_FLAG
 !
 !-----------------------------------------------------------------------
 !***
 !***  LOCAL VARIABLES
 !***
-      REAL :: CUBOT,CUTOP,DTCNVC,LANDMASK,PCPCOL,PSFC,PTOP
+      INTEGER :: LBOT,LPBL,LTOP
+!
+      REAL :: DTCNVC,LANDMASK,PCPCOL,PSFC,PTOP
 ! 
       REAL,DIMENSION(KTS:KTE) :: DPCOL,DQDT,DTDT,PCOL,QCOL,TCOL
-      INTEGER,DIMENSION(ITS:ITE,JTS:JTE) :: LBOT,LTOP
 !
-      INTEGER :: I,J,K,KFLIP,ICLDCK,LMH,LPBL
+      INTEGER :: I,J,K,KFLIP,ICLDCK,LMH
 !-----------------------------------------------------------------------
 !********************************************************************* 
 !-----------------------------------------------------------------------
@@ -166,13 +174,14 @@ CONTAINS
 !***  CALL CONVECTION
 !***
 !-----------------------------------------------------------------------
-          CALL BMJ(I,J,DTCNVC,LMH,LANDMASK,CLDEFI(I,J),HTOP(I,J),HBOT(I,J) &
+
+          CALL BMJ(ITIMESTEP,I,J,DTCNVC,LMH,LANDMASK,CLDEFI(I,J)        &
      &            ,DPCOL,PCOL,QCOL,TCOL,PSFC,PTOP                       &
-     &            ,DQDT,DTDT,PCPCOL,LBOT(I,J),LTOP(I,J),LPBL            &
-     &            ,CP,R,ELWV,G,TFRZ,D608                                &        
-     &            ,IDS,IDE,JDS,JDE,KDS,KDE                              &        
+     &            ,DQDT,DTDT,PCPCOL,LBOT,LTOP,LPBL                      &
+     &            ,CP,R,ELWV,ELIV,G,TFRZ,D608                           &   
+     &            ,IDS,IDE,JDS,JDE,KDS,KDE                              &     
      &            ,IMS,IME,JMS,JME,KMS,KME                              &
-     &            ,ITS,ITE,JTS,JTE,KTS,KTE,ITIMESTEP)
+     &            ,ITS,ITE,JTS,JTE,KTS,KTE)
 !-----------------------------------------------------------------------
 ! 
 !***  COMPUTE HEATING AND MOISTENING TENDENCIES
@@ -180,7 +189,6 @@ CONTAINS
           DO K=KTS,KTE
             KFLIP=KTE+1-K
             RTHCUTEN(I,K,J)=DTDT(KFLIP)/PI(I,K,J)
-            RQVCUTEN(I,K,J)=DQDT(KFLIP)/(1.-QCOL(KFLIP))**2
 !
 !***  CONVERT FROM SPECIFIC HUMIDTY BACK TO MIXING RATIO
 !
@@ -194,112 +202,112 @@ CONTAINS
 !
 !***  CONVECTIVE CLOUD TOP AND BOTTOM FROM THIS CALL
 !
-          LTOP(I,J)=KTE+1-LTOP(I,J)
-          LBOT(I,J)=KTE+1-LBOT(I,J)
+          CUTOP(I,J)=REAL(KTE+1-LTOP)
+          CUBOT(I,J)=REAL(KTE+1-LBOT)
         ENDDO
         ENDDO
 !
       ENDIF
 !
       END SUBROUTINE BMJDRV
-!---------------------------------------------------------------------
-!XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-!---------------------------------------------------------------------
-                          SUBROUTINE BMJ                              &
-!---------------------------------------------------------------------
-       (I,J,DTCNVC,LMH,SM,CLDEFI,HTOP,HBOT                            &
-       ,DPRS,PRSMID,Q,T,PSFC,PT                                       &
-       ,DQDT,DTDT,PCPCOL,LBOT,LTOP,LPBL                               &
-       ,CP,R,ELWV,G,TFRZ,D608                                         &
-       ,IDS,IDE,JDS,JDE,KDS,KDE                                       &
-       ,IMS,IME,JMS,JME,KMS,KME                                       &
-       ,ITS,ITE,JTS,JTE,KTS,KTE,ITIMESTEP)
-!---------------------------------------------------------------------
+!-----------------------------------------------------------------------
+!XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+!-----------------------------------------------------------------------
+                          SUBROUTINE BMJ                                &
+!-----------------------------------------------------------------------
+     & (ITIMESTEP,I,J,DTCNVC,LMH,SM,CLDEFI                              &
+     & ,DPRS,PRSMID,Q,T,PSFC,PT                                         &
+     & ,DQDT,DTDT,PCPCOL,LBOT,LTOP,LPBL                                 &
+     & ,CP,R,ELWV,ELIV,G,TFRZ,D608                                      &
+     & ,IDS,IDE,JDS,JDE,KDS,KDE                                         &
+     & ,IMS,IME,JMS,JME,KMS,KME                                         &
+     & ,ITS,ITE,JTS,JTE,KTS,KTE)
+!-----------------------------------------------------------------------
       IMPLICIT NONE
-!---------------------------------------------------------------------
-      INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                   &
-                           ,IMS,IME,JMS,JME,KMS,KME                   &
-                           ,ITS,ITE,JTS,JTE,KTS,KTE                   &
+!-----------------------------------------------------------------------
+      INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                     &
+                           ,IMS,IME,JMS,JME,KMS,KME                     &
+                           ,ITS,ITE,JTS,JTE,KTS,KTE                     &
                            ,I,J,itimestep
 ! 
       INTEGER,INTENT(IN) :: LMH,LPBL
 !
       INTEGER,INTENT(OUT) :: LBOT,LTOP
 !
-      REAL,INTENT(IN) :: CP,D608,DTCNVC,ELWV,G,PSFC,PT,R,SM,TFRZ
+      REAL,INTENT(IN) :: CP,D608,DTCNVC,eliv,ELWV,G,PSFC,PT,R,SM,TFRZ
 !
       REAL,DIMENSION(KTS:KTE),INTENT(IN) :: DPRS,PRSMID,Q,T
-      REAL,INTENT(INOUT) :: HTOP,HBOT
 !
       REAL,INTENT(INOUT) :: CLDEFI,PCPCOL
 !
       REAL,DIMENSION(KTS:KTE),INTENT(INOUT) :: DQDT,DTDT
 !
-!---------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !***  DEFINE LOCAL VARIABLES
-!---------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !                                                            
-      REAL,DIMENSION(KTS:KTE) :: APEK,APESK,FPK                       &
-                                ,PK,PSK,QK,QREFK,QSATK                &
-                                ,THERK,THEVRF,THSK                    &
+      REAL,DIMENSION(KTS:KTE) :: APEK,APESK,EL,FPK                         &
+                                ,PK,PSK,QK,QREFK,QSATK                  &
+                                ,THERK,THEVRF,THSK                      &
                                 ,THVMOD,THVREF,TK,TREFK
 !
-      REAL,DIMENSION(KTS:KTE) :: APE,DIFQ,DIFT,TREF
+      REAL,DIMENSION(KTS:KTE) :: APE,DIFQ,DIFT,thes,TREF
 !
       LOGICAL :: DEEP,SHALLOW
 !
 !***
 !***  LOCAL SCALARS
 !***
-      REAL :: APEKL,APEKXX,APEKXY,APESP,APESTS                        &
-             ,AVRGT,AVRGTL,BQ,BQK,BQS00K,BQS10K                       &
-             ,CAPA,CTHRS,DEN,DENTPY,DEPMIN,DEPTH                      &
-             ,DEPWL,DHDT,DIFQL,DIFTL,DPKL,DPMIX                       &
-             ,DQREF,DRHDP,DRHEAT,DSP                                  &
-             ,DSP0,DSP0K,DSPB,DSPBK,DSPT,DSPTK                        &
-             ,DST,DSTQ,DTHEM,DTDP,EFI                                 &
-             ,FEFI,FPTK,HCORR,OTSUM,P,P00K,P01K,P10K,P11K             &
-             ,PART1,PART2,PART3,PBOT,PBOTFC,PBTK                      &
-             ,PK0,PKB,PKL,PKT,PKXXXX,PKXXXY                           &
-             ,PLMH,POTSUM,PP1,PPK,PRECK                               &
-             ,PRESK,PSP,PSUM,PTHRS,PTOP,PTPK                          &
-             ,QBT,QKL,QNEW,QOTSUM,QQ1,QQK,QRFKL,QRFTP,QSUM,RDP0T      &
-             ,RDPSUM,RDTCNVC,RHH,RHL,RHMAX,RHNEW,ROTSUM,RTBAR         &
-             ,SM1,SMIX,SQ,SQK,SQS00K,SQS10K,STABDL,SUMDE,SUMDP        &
-             ,SUMDT,TAUK,TCORR,THBT,THERKX,THERKY                     &
-             ,THESP,THSKL,THTPK,THVMKL,TKL,TNEW                       &
-             ,TPSP,TQ,TQK,TREFKX,TRFKL,TSKL,TTH,TTHBT,TTHES,TTHK
+      REAL :: APEKL,APEKXX,APEKXY,APESP,APESTS                          &
+     &            ,AVRGT,AVRGTL,BQ,BQK,BQS00K,BQS10K                    &
+     &            ,CAPA,CUP,DEN,DENTPY,DEPMIN,DEPTH                     &
+     &            ,DEPWL,DHDT,DIFQL,DIFTL,DPKL,DPMIX,DPOT               &
+     &            ,DQREF,DRHDP,DRHEAT,DSP                               &
+     &            ,DSP0,DSP0K,DSPB,DSPBK,DSPT,DSPTK                     &
+     &            ,DSQ,DST,DSTQ,DTHEM,DTDP,EFI                          &
+     &            ,FEFI,FPTK,HCORR,OTSUM,P,P00K,P01K,P10K,P11K          &
+     &            ,PART1,PART2,PART3,PBOT,PBOTFC,PBTK                   &
+     &            ,PK0,PKB,PKL,PKT,PKXXXX,PKXXXY                        &
+     &            ,PLMH,POTSUM,PP1,PPK,PRECK                            &
+     &            ,PRESK,PSP,PSUM,PTHRS,PTOP,PTPK                       &
+     &            ,QBT,QKL,QNEW,QOTSUM,QQ1,QQK,QRFKL,QRFTP,QSUM,RDP0T   &
+     &            ,RDPSUM,RDTCNVC,RHH,RHL,RHMAX,ROTSUM,RTBAR            &
+     &            ,SM1,SMIX,SQ,SQK,SQS00K,SQS10K,STABDL,SUMDE,SUMDP     &
+     &            ,SUMDT,TAUK,TAUKSC,TCORR,THBT,THERKX,THERKY           &
+     &            ,THESP,THSKL,THTPK,THVMKL,TKL,TNEW                    &
+     &            ,TPSP,TQ,TQK,TREFKX,TRFKL,TSKL,TTH,TTHBT,TTHES,TTHK   &
+     &            ,dpup,dplo,rdpup,ffup,pflo,pfup
 !
-      INTEGER :: IQ,IQTB,IT,ITER,ITREFI,ITTB,ITTBK,KB,KNUMH,KNUML     &
-                ,L,L0,L0M1,LB,LBM1,LCOR,LPT1                          &
-                ,LQM,LSHU,LTP1,LTP2,LTSH
-!---------------------------------------------------------------------
+      INTEGER :: IQ,IQTB,IT,ITER,ITREFI,ITTB,ITTBK,KB,KNUMH,KNUML       &
+     &          ,L,L0,L0M1,LB,LBM1,LCOR,LPT1                            &
+     &          ,LQM,LSHU,LTP1,LTP2,LTSH,kbmax
+!-----------------------------------------------------------------------
 !
-      REAL,PARAMETER :: DSPBSL=DSPBFL*FSL,DSP0SL=DSP0FL*FSL           &
-                       ,DSPTSL=DSPTFL*FSL                             &
-                       ,DSPBSS=DSPBFS*FSS,DSP0SS=DSP0FS*FSS           &
-                       ,DSPTSS=DSPTFS*FSS
+      REAL,PARAMETER :: DSPBSL=DSPBFL*FSL,DSP0SL=DSP0FL*FSL             &
+     &                 ,DSPTSL=DSPTFL*FSL                               &
+     &                 ,DSPBSS=DSPBFS*FSS,DSP0SS=DSP0FS*FSS             &
+     &                 ,DSPTSS=DSPTFS*FSS
 !
-      REAL,PARAMETER :: AVGEFI=(EFIMN+1.)*.5,STEFI=1.
+      REAL,PARAMETER :: ELEVFC=0.8,STEFI=1.
 !
-      REAL,PARAMETER :: SLOPBL=(DSPBFL-DSPBSL)/(1.-EFIMN)             &
-                       ,SLOP0L=(DSP0FL-DSP0SL)/(1.-EFIMN)             &
-                       ,SLOPTL=(DSPTFL-DSPTSL)/(1.-EFIMN)             &
-                       ,SLOPBS=(DSPBFS-DSPBSS)/(1.-EFIMN)             &
-                       ,SLOP0S=(DSP0FS-DSP0SS)/(1.-EFIMN)             &
-                       ,SLOPTS=(DSPTFS-DSPTSS)/(1.-EFIMN)             &
-                       ,SLOPE=(1.-EFMNT)/(1.-EFIMN)
+      REAL,PARAMETER :: SLOPBL=(DSPBFL-DSPBSL)/(1.-EFIMN)               &
+     &                 ,SLOP0L=(DSP0FL-DSP0SL)/(1.-EFIMN)               &
+     &                 ,SLOPTL=(DSPTFL-DSPTSL)/(1.-EFIMN)               &
+     &                 ,SLOPBS=(DSPBFS-DSPBSS)/(1.-EFIMN)               &
+     &                 ,SLOP0S=(DSP0FS-DSP0SS)/(1.-EFIMN)               &
+     &                 ,SLOPTS=(DSPTFS-DSPTSS)/(1.-EFIMN)               &
+     &                 ,SLOPST=(STABDF-STABDS)/(1.-EFIMN)               &
+     &                 ,SLOPE=(1.-EFMNT)/(1.-EFIMN)
 !
-      REAL :: A23M4L,CPRLG,ELOCP,FCB,RCP
-!---------------------------------------------------------------------
-!*********************************************************************
-!---------------------------------------------------------------------
+      REAL :: A23M4L,CPRLG,ELOCP,RCP
+!-----00----------------------------------------------------------------
+!***********************************************************************
+!-----------------------------------------------------------------------
       CAPA=R/CP
       CPRLG=CP/(ROW*G*ELWV)
       ELOCP=ELIVW/CP
       RCP=1./CP
       A23M4L=A2*(A3-A4)*ELWV
-      FCB=1.-FCC
       RDTCNVC=1./DTCNVC
 !
       DEEP=.FALSE.
@@ -309,42 +317,45 @@ CONTAINS
       DSPB=0.
       DSPT=0.
       PSP=0.
-!---------------------------------------------------------------------
+!-----------------------------------------------------------------------
       TAUK=DTCNVC/TREL
-      CTHRS=(0.006350/86400.)*DTCNVC/CPRLG
-!---------------------------------------------------------------------
-!---------------------------PREPARATIONS------------------------------
-!---------------------------------------------------------------------
+      TAUKSC=DTCNVC/(1.0+TREL)
+!-----------------------------------------------------------------------
+!-----------------------------PREPARATIONS------------------------------
+!-----------------------------------------------------------------------
       LBOT=LMH
       THESP=0.
       PCPCOL=0.
-      TREF(1)=T(1)
+      TREF(KTS)=T(KTS)
 !
-      DO L=1,LMH
+      KBMAX=LMH
+!
+      DO L=KTS,LMH
         APESTS=PRSMID(L)
         APE(L)=(1.E5/APESTS)**CAPA
       ENDDO
-!---------------------------------------------------------------------
-!--------------SEARCH FOR MAXIMUM BUOYANCY LEVEL----------------------
-!---------------------------------------------------------------------
+!-----------------------------------------------------------------------
+!----------------SEARCH FOR MAXIMUM BUOYANCY LEVEL----------------------
+!-----------------------------------------------------------------------
                              DO 170 KB=1,LMH
-!---------------------------------------------------------------------
-!--------------TRIAL MAXIMUM BUOYANCY LEVEL VARIABLES-----------------
-!---------------------------------------------------------------------
+!-----------------------------------------------------------------------
+!----------------TRIAL MAXIMUM BUOYANCY LEVEL VARIABLES-----------------
+!-----------------------------------------------------------------------
 !
       PKL=PRSMID(KB)
       PLMH=PRSMID(LMH)
 !
 !**   SEARCH OVER A SCALED DEPTH IN FINDING THE PARCEL
 !***  WITH THE MAX THETA-E 
-!
-      IF(KB.LE.LMH.AND.PKL.GE.0.80*PLMH)THEN
+!-----------------------------------------------------------------------
+      IF(KB.LE.LMH)THEN
+!-----------------------------------------------------------------------
         QBT=Q(KB)
         TTHBT=T(KB)*APE(KB)
         TTH=(TTHBT-THL)*RDTH
         QQ1=TTH-AINT(TTH)
         ITTB=INT(TTH)+1
-!--------------KEEPING INDICES WITHIN THE TABLE-----------------------
+!----------------KEEPING INDICES WITHIN THE TABLE-----------------------
         IF(ITTB.LT.1)THEN
           ITTB=1
           QQ1=0.
@@ -354,19 +365,19 @@ CONTAINS
           ITTB=JTB-1
           QQ1=0.
         ENDIF
-!------------BASE AND SCALING FACTOR FOR SPEC. HUMIDITY---------------
+!--------------BASE AND SCALING FACTOR FOR SPEC. HUMIDITY---------------
         ITTBK=ITTB
         BQS00K=QS0(ITTBK)
         SQS00K=SQS(ITTBK)
         BQS10K=QS0(ITTBK+1)
         SQS10K=SQS(ITTBK+1)
-!------------SCALING SPEC. HUMIDITY & TABLE INDEX---------------------
+!--------------SCALING SPEC. HUMIDITY & TABLE INDEX---------------------
         BQ=(BQS10K-BQS00K)*QQ1+BQS00K
         SQ=(SQS10K-SQS00K)*QQ1+SQS00K
         TQ=(QBT-BQ)/SQ*RDQ
         PP1=TQ-AINT(TQ)
         IQTB=INT(TQ)+1
-!--------------KEEPING INDICES WITHIN THE TABLE-----------------------
+!----------------KEEPING INDICES WITHIN THE TABLE-----------------------
         IF(IQTB.LT.1)THEN
           IQTB=1
           PP1=0.
@@ -376,32 +387,34 @@ CONTAINS
           IQTB=ITB-1
           PP1=0.
         ENDIF
-!------------SATURATION PRESSURE AT FOUR SURROUNDING TABLE PTS.-------
+!--------------SATURATION PRESSURE AT FOUR SURROUNDING TABLE PTS.-------
         IQ=IQTB
         IT=ITTB
         P00K=PTBL(IQ  ,IT  )
         P10K=PTBL(IQ+1,IT  )
         P01K=PTBL(IQ  ,IT+1)
         P11K=PTBL(IQ+1,IT+1)
-!--------------SATURATION POINT VARIABLES AT THE BOTTOM---------------
-        TPSP=P00K+(P10K-P00K)*PP1+(P01K-P00K)*QQ1                     &
-                 +(P00K-P10K-P01K+P11K)*PP1*QQ1
+!--------------SATURATION POINT VARIABLES AT THE BOTTOM-----------------
+        TPSP=P00K+(P10K-P00K)*PP1+(P01K-P00K)*QQ1                       &
+     &           +(P00K-P10K-P01K+P11K)*PP1*QQ1
         APESP=(1.E5/TPSP)**CAPA
         TTHES=TTHBT*EXP(ELOCP*QBT*APESP/TTHBT)
-!--------------CHECK FOR MAXIMUM BUOYANCY-----------------------------
-        IF(TTHES.GT.THESP)THEN
-          PSP  =TPSP
-          THBT =TTHBT
-          THESP=TTHES
-        ENDIF
-!
+        THES(KB)=TTHES
+!--------------CHECK FOR MAXIMUM BUOYANCY-------------------------------
+          IF(PKL.GE.ELEVFC*PLMH.AND.TTHES.GT.THESP)THEN
+            PSP  =TPSP
+            THBT =TTHBT
+            THESP=TTHES
+            KBMAX=KB
+          ENDIF ! end of search for maximum buoyancy level
+!-----------------------------------------------------------------------
       ENDIF
-!---------------------------------------------------------------------
+!-----------------------------------------------------------------------
   170 CONTINUE
-!---------------------------------------------------------------------
-!---------CHOOSE CLOUD BASE AS MODEL LEVEL JUST BELOW PSP-------------
-!---------------------------------------------------------------------
-      DO L=1,LMH-1
+!-----------------------------------------------------------------------
+!-----------CHOOSE CLOUD BASE AS MODEL LEVEL JUST BELOW PSP-------------
+!-----------------------------------------------------------------------
+      DO L=KTS,LMH-1
         P=PRSMID(L)
         IF(P.LT.PSP.AND.P.GE.PQM)LBOT=L+1
       ENDDO
@@ -413,50 +426,72 @@ CONTAINS
       PLMH=PRSMID(LMH)
       IF(PBOT.GE.PLMH-PONE.OR.LBOT.GE.LMH)THEN
 !
-        DO L=1,LMH-1
+        DO L=KTS,LMH-1
           P=PRSMID(L)
           IF(P.LT.PLMH-PONE)LBOT=L
         ENDDO
 !
         PBOT=PRSMID(LBOT)
       ENDIF 
-!--------------CLOUD TOP COMPUTATION----------------------------------
+!-----------------------------------------------------------------------
+!----------------CLOUD TOP COMPUTATION----------------------------------
+!-----------------------------------------------------------------------
       LTOP=LBOT
       PTOP=PBOT
-!---------------------------------------------------------------------
+!----------------entrainment during particle ascent---------------------
+!
+      DO L=LMH,KBMAX,-1
+        THES(L)=THESP
+      ENDDO
+!
+      FEFI=(CLDEFI-EFIMN)*SLOPE+EFMNT
+      FFUP=FUP/(FEFI*FEFI)
+      DPUP=DPRS(KBMAX)
+!
+      DO L=KBMAX-1,KTS,-1
+        DPLO=DPUP
+        DPUP=DPRS(L)
+        RDPUP=2./(DPLO+DPUP)
+!
+        PFUP=FFUP*DPUP*DPUP*RDPUP
+        PFLO=1.-PFUP
+!
+        THES(L)=THES(L)*PFUP+THES(L+1)*PFLO
+      ENDDO
+!-----------------------------------------------------------------------
 !***
-!***  COMPUTE PARCEL TEMPERATURE ALONG MOIST ADIABAT
+!***  compute parcel temperature along the ascent trajectory
 !***  SCALING PRESSURE & TT TABLE INDEX
 !***
 !
-      DO L=LMH,1,-1
+      DO L=LMH,KTS,-1
 !
         PRESK=PRSMID(L)
 !
         IF(PRESK.LT.PLQ)THEN
-          CALL TTBLEX(ITB,JTB,PL,PRESK,RDP,RDTHE                      &
-                     ,STHE,THE0,THESP,TTBL,TREF(L))
+          CALL TTBLEX(ITB,JTB,PL,PRESK,RDP,RDTHE                        &
+     &               ,STHE,THE0,THES(L),TTBL,TREF(L))
         ELSE
-          CALL TTBLEX(ITBQ,JTBQ,PLQ,PRESK,RDPQ,RDTHEQ                 &
-                     ,STHEQ,THE0Q,THESP,TTBLQ,TREF(L))
+          CALL TTBLEX(ITBQ,JTBQ,PLQ,PRESK,RDPQ,RDTHEQ                   &
+     &               ,STHEQ,THE0Q,THES(L),TTBLQ,TREF(L))
         ENDIF
 !
       ENDDO
 !
-!--------------BUOYANCY CHECK-----------------------------------------
+!----------------BUOYANCY CHECK-----------------------------------------
 !
-      DO L=LMH,1,-1
+      DO L=LMH,KTS,-1
         IF(TREF(L).GT.T(L)-DTTOP)LTOP=L
       ENDDO
 !
 !***  CLOUD TOP PRESSURE
 !
       PTOP=PRSMID(LTOP)
-!---------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !***
 !***  CLEAN UP AND GATHER DEEP CONVECTION POINTS
 !***
-      IF(LTOP.GE.LBOT)THEN
+      IF(LTOP.GT.LBOT)THEN
         LBOT=0
         LTOP=LBOT
         PTOP=PBOT
@@ -464,31 +499,32 @@ CONTAINS
 
 !
       IF(PTOP.GT.PBOT-PNO.OR.LTOP.GT.LBOT-2)THEN
-!!!      CLDEFI=AVGEFI*SM+STEFI*(1.-SM)
-         CLDEFI=1.
+        CLDEFI=AVGEFI
       ENDIF
 !
 !***  DEPTH OF CLOUD REQUIRED TO MAKE THE POINT A DEEP CONVECTION POINT
 !***  IS A SCALED VALUE OF PSFC.
 !
-!!!   DEPMIN=PSH*PSFC*1.E-5
       DEPMIN=PSH*PSFC*RSFCP
       DEPTH=PBOT-PTOP
 !
       IF(DEPTH.GE.DEPMIN)THEN
         DEEP=.TRUE.
       ENDIF
-!*********************************************************************
-!********************** DEEP CONVECTION ******************************
-!*********************************************************************
+!***********************************************************************
+!************************ DEEP CONVECTION ******************************
+!***********************************************************************
       IF(.NOT.DEEP)GO TO 600
-!*********************************************************************
-!DCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCD
-!DCDCDCDCDCDC  DEEP CONVECTION   DCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCD
-!DCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCD
+!***********************************************************************
+!DCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCD
+!DCDCDCDCDCDCDC  DEEP CONVECTION   DCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCD
+!DCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCD
+!
+  300 CONTINUE
+!
       LB   =LBOT
       EFI  =CLDEFI
-!------------INITIALIZE VARIABLES IN THE CONVECTIVE COLUMN------------
+!--------------INITIALIZE VARIABLES IN THE CONVECTIVE COLUMN------------
 !***
 !***  ONE SHOULD NOTE THAT THE VALUES ASSIGNED TO THE ARRAY TREFK
 !***  IN THE FOLLOWING LOOP ARE REALLY ONLY RELEVANT IN ANCHORING THE
@@ -502,7 +538,7 @@ CONTAINS
 !***  NUMBERED 450 HAS BEEN REACHED, TREFK ACTUALLY DOES HOLD THE
 !***  REFERENCE TEMPERATURE PROFILE.
 !***
-      DO L=1,LMH
+      DO L=KTS,LMH
         DIFT  (L)=0.
         DIFQ  (L)=0.
         TKL      =T(L)
@@ -523,6 +559,7 @@ CONTAINS
       LBM1=LB-1
       PKB=PK(LB)
       PKT=PK(LTOP)
+      STABDL=(EFI-EFIMN)*SLOPST+STABDS
 !------------TEMPERATURE REFERENCE PROFILE BELOW FREEZING LEVEL-------
       L0=LB
       PK0=PK(LB)
@@ -534,10 +571,10 @@ CONTAINS
 !
       DO L=LBM1,LTOP,-1
         IF(T(L+1).LT.TFRZ)GO TO 430
-        STABDL=STABD
-        TREFKX=((THERKY-THERKX)*STABDL                                &
-                +TREFKX*APEKXX)/APEKXY
+        TREFKX=((THERKY-THERKX)*STABDL                                  &
+     &          +TREFKX*APEKXX)/APEKXY
         TREFK(L)=TREFKX
+        EL(L)=ELWV
         APEKXX=APEKXY
         THERKX=THERKY
         APEKXY=APEK(L-1)
@@ -545,52 +582,67 @@ CONTAINS
         L0=L
         PK0=PK(L0)
       ENDDO
-!------------FREEZING LEVEL AT OR ABOVE THE CLOUD TOP-----------------
-      L0M1=L0-1
+!--------------FREEZING LEVEL AT OR ABOVE THE CLOUD TOP-----------------
       GO TO 450
-!------------TEMPERATURE REFERENCE PROFILE ABOVE FREEZING LEVEL-------
+!--------------TEMPERATURE REFERENCE PROFILE ABOVE FREEZING LEVEL-------
   430 L0M1=L0-1
       RDP0T=1./(PK0-PKT)
       DTHEM=THERK(L0)-TREFK(L0)*APEK(L0)
 !
       DO L=LTOP,L0M1
         TREFK(L)=(THERK(L)-(PK(L)-PKT)*DTHEM*RDP0T)/APEK(L)
+        EL(L)=ELIV
       ENDDO
-!---------------------------------------------------------------------
-!------------DEEP CONVECTION REFERENCE HUMIDITY PROFILE---------------
-!---------------------------------------------------------------------
+!-----------------------------------------------------------------------
+!--------------DEEP CONVECTION REFERENCE HUMIDITY PROFILE---------------
+!-----------------------------------------------------------------------
 !
 !***  DEPWL IS THE PRESSURE DIFFERENCE BETWEEN CLOUD BASE AND
 !***  THE FREEZING LEVEL
 !
-  450 DEPWL=PKB-PK0
+  450 CONTINUE
+      DEPWL=PKB-PK0
       DEPTH=PFRZ*PSFC*RSFCP
       SM1=1.-SM
-!     PBOTFC=101300./PSFCIJ
       PBOTFC=1.
 !
-!----------------------------------------------------------------------
-!-------------- ITERATION LOOP FOR CLOUD EFFICIENCY -------------------
-!----------------------------------------------------------------------
+!-------------FIRST ADJUSTMENT OF TEMPERATURE PROFILE-------------------
+!
+      SUMDT=0.
+      SUMDP=0.
+!
+      DO L=LTOP,LB
+        SUMDT=(TK(L)-TREFK(L))*DPRS(L)+SUMDT
+        SUMDP=SUMDP+DPRS(L)
+      ENDDO
+!
+      TCORR=SUMDT/SUMDP
+!
+      DO L=LTOP,LB
+        TREFK(L)=TREFK(L)+TCORR
+      ENDDO
+!
+!-----------------------------------------------------------------------
+!--------------- ITERATION LOOP FOR CLOUD EFFICIENCY -------------------
+!-----------------------------------------------------------------------
 !
       cloud_efficiency : DO ITREFI=1,ITREFI_MAX  
 !
-!----------------------------------------------------------------------
-      DSPBK=((EFI-EFIMN)*SLOPBS+DSPBSS*PBOTFC)*SM                      &
-           +((EFI-EFIMN)*SLOPBL+DSPBSL*PBOTFC)*SM1
-      DSP0K=((EFI-EFIMN)*SLOP0S+DSP0SS*PBOTFC)*SM                      &
-           +((EFI-EFIMN)*SLOP0L+DSP0SL*PBOTFC)*SM1
-      DSPTK=((EFI-EFIMN)*SLOPTS+DSPTSS*PBOTFC)*SM                      &
-           +((EFI-EFIMN)*SLOPTL+DSPTSL*PBOTFC)*SM1
+!-----------------------------------------------------------------------
+      DSPBK=((EFI-EFIMN)*SLOPBS+DSPBSS*PBOTFC)*SM                       &
+     &     +((EFI-EFIMN)*SLOPBL+DSPBSL*PBOTFC)*SM1
+      DSP0K=((EFI-EFIMN)*SLOP0S+DSP0SS*PBOTFC)*SM                       &
+     &     +((EFI-EFIMN)*SLOP0L+DSP0SL*PBOTFC)*SM1
+      DSPTK=((EFI-EFIMN)*SLOPTS+DSPTSS*PBOTFC)*SM                       &
+     &     +((EFI-EFIMN)*SLOPTL+DSPTSL*PBOTFC)*SM1
 !
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !
       DO L=LTOP,LB
 !
 !***
 !***  SATURATION PRESSURE DIFFERENCE
 !***
-!       IF(PKB-PK0.GE.PFRZ)THEN
         IF(DEPWL.GE.DEPTH)THEN
           IF(L.LT.L0)THEN
             DSP=((PK0-PK(L))*DSPTK+(PK(L)-PKT)*DSP0K)/(PK0-PKT)
@@ -598,7 +650,6 @@ CONTAINS
             DSP=((PKB-PK(L))*DSP0K+(PK(L)-PK0)*DSPBK)/(PKB-PK0)
           ENDIF
         ELSE
-!         DSP=DSPC
           DSP=DSP0K
           IF(L.LT.L0)THEN
             DSP=((PK0-PK(L))*DSPTK+(PK(L)-PKT)*DSP0K)/(PK0-PKT)
@@ -611,28 +662,26 @@ CONTAINS
           PSK(L)=PK(L)+DSP
           APESK(L)=(1.E5/PSK(L))**CAPA
           THSK(L)=TREFK(L)*APEK(L)
-          QREFK(L)=PQ0/PSK(L)*EXP(A2*(THSK(L)-A3*APESK(L))             &
-                                    /(THSK(L)-A4*APESK(L)))
+          QREFK(L)=PQ0/PSK(L)*EXP(A2*(THSK(L)-A3*APESK(L))              &
+     &                              /(THSK(L)-A4*APESK(L)))
         ELSE
           QREFK(L)=QK(L)
         ENDIF
 !
       ENDDO
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !***
 !***  ENTHALPY CONSERVATION INTEGRAL
 !***
-!----------------------------------------------------------------------
-      LQM=0
-!
+!-----------------------------------------------------------------------
       enthalpy_conservation : DO ITER=1,2
 !
         SUMDE=0.
         SUMDP=0.
 !
         DO L=LTOP,LB
-          SUMDE=((TK(L)-TREFK(L))*CP+(QK(L)-QREFK(L))*ELWV)*DPRS(L)    &
-                +SUMDE
+          SUMDE=((TK(L)-TREFK(L))*CP+(QK(L)-QREFK(L))*EL(L))*DPRS(L)    &
+     &          +SUMDE
           SUMDP=SUMDP+DPRS(L)
         ENDDO
 !
@@ -641,7 +690,8 @@ CONTAINS
 !***
 !***  FIND LQM
 !***
-        DO L=1,LB
+        LQM=1
+        DO L=KTS,LB
           IF(PK(L).LE.PQM)LQM=L
         ENDDO
 !***
@@ -661,55 +711,88 @@ CONTAINS
           DHDT=QREFK(L)*A23M4L/(TSKL-A4)**2+CP
           TREFK(L)=HCORR/DHDT+TREFK(L)
           THSKL=TREFK(L)*APEK(L)
-          QREFK(L)=PQ0/PSK(L)*EXP(A2*(THSKL-A3*APESK(L))               &
-                                    /(THSKL-A4*APESK(L)))
+          QREFK(L)=PQ0/PSK(L)*EXP(A2*(THSKL-A3*APESK(L))                &
+     &                              /(THSKL-A4*APESK(L)))
         ENDDO
 !
       ENDDO  enthalpy_conservation
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !
 !***  HEATING, MOISTENING, PRECIPITATION
 !
-!----------------------------------------------------------------------
-      DENTPY=0.
-      AVRGT =0.
-      PRECK =0.
+!-----------------------------------------------------------------------
+      AVRGT=0.
+      PRECK=0.
+      DSQ=0.
+      DST=0.
 !
       DO L=LTOP,LB
         TKL=TK(L)
         DIFTL=(TREFK(L)-TKL  )*TAUK
         DIFQL=(QREFK(L)-QK(L))*TAUK
         AVRGTL=(TKL+TKL+DIFTL)
-        DENTPY=(DIFTL*CP+DIFQL*ELWV)*DPRS(L)/AVRGTL+DENTPY
+        DPOT=DPRS(L)/AVRGTL
+        DST=DIFTL*DPOT+DST
+        DSQ=DIFQL*EL(L)*DPOT+DSQ
         AVRGT=AVRGTL*DPRS(L)+AVRGT
         PRECK=DIFTL*DPRS(L)+PRECK
         DIFT(L)=DIFTL
         DIFQ(L)=DIFQL
       ENDDO
 !
-      DENTPY=DENTPY+DENTPY
-      AVRGT =AVRGT/(SUMDP+SUMDP)
+      DST=(DST+DST)*CP
+      DSQ=DSQ+DSQ
+      DENTPY=DST+DSQ
+      AVRGT=AVRGT/(SUMDP+SUMDP)
 !
       DRHEAT=PRECK*CP/AVRGT
+      drheat=max(drheat,1.e-20)
       EFI=EFIFC*DENTPY/DRHEAT
-!zj   EFI=CLDEFI(I,J)*FCB+EFI*FCC
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
       EFI=MIN(EFI,1.)
       EFI=MAX(EFI,EFIMN)
-!
-      IF(PRECK.LE.0.)THEN
-        EFI=1.
-      ENDIF
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
       ENDDO  cloud_efficiency
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
+!
+!-----------------------------------------------------------------------
+!---------------------- DEEP CONVECTION --------------------------------
+!-----------------------------------------------------------------------
+      IF(DENTPY.GE.EPSNTP.AND.PRECK.GT.EPSPR)THEN
+!
+        CLDEFI=EFI
+        FEFI=EFMNT+SLOPE*(EFI-EFIMN)
+        FEFI=(DENTPY-EPSNTP)*FEFI/DENTPY
+        PRECK=PRECK*FEFI
+!
+!***  UPDATE PRECIPITATION AND TENDENCIES OF TEMPERATURE AND MOISTURE
+!
+        CUP=PRECK*CPRLG
+        PCPCOL=CUP
+!
+        DO L=LTOP,LB
+          DTDT(L)=DIFT(L)*FEFI*RDTCNVC
+          DQDT(L)=DIFQ(L)*FEFI*RDTCNVC
+        ENDDO
+!
+      ELSE
+!
+!-----------------------------------------------------------------------
+!***  REDUCE THE CLOUD TOP
+!-----------------------------------------------------------------------
+!
+!        LTOP=LTOP+3
+!        PTOP=PRSMID(LTOP)
+!        DEPMIN=PSH*PSFC*RSFCP
+!        DEPTH=PBOT-PTOP
 !***
-!***  SWAP IF ENTROPY AND/OR PRECIP .LT. 0
+!***  ITERATE DEEP CONVECTION PROCEDURE IF NEEDED
 !***
-!----------------------------------------------------------------------
-      IF(DENTPY.LT.EPSNTP.OR.PRECK.LT.0.)THEN
-!       CLDEFI=EFIMN*SM+STEFI*(1.-SM)
-        CLDEFI=1.
+!        IF(DEPTH.GE.DEPMIN)THEN
+!          GO TO 300
+!        ENDIF
+!
+        CLDEFI=AVGEFI
 !***
 !***  SEARCH FOR SHALLOW CLOUD TOP
 !***
@@ -721,7 +804,7 @@ CONTAINS
 !***
 !***  CLOUD TOP IS THE LEVEL JUST BELOW PBTK-PSH
 !***
-        DO L=1,LMH
+        DO L=KTS,LMH
           IF(PK(L).LE.PTPK)LTOP=L+1
         ENDDO
 !
@@ -731,7 +814,7 @@ CONTAINS
 !***
         IF(PTPK.LE.PSHU)THEN
 !
-          DO L=1,LMH
+          DO L=KTS,LMH
             IF(PK(L).LE.PSHU)LSHU=L+1
           ENDDO
 !
@@ -780,46 +863,22 @@ CONTAINS
         GO TO 600
 !
       ENDIF
-!----------------------------------------------------------------------
-!------------------ DEEP CONVECTION OTHERWISE -------------------------
-!----------------------------------------------------------------------
+!DCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCD
+!DCDCDCDCDCDCDC          END OF DEEP CONVECTION            DCDCDCDCDCDCD
+!DCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCD
 !
-      IF(EFI.GT.1.)EFI=1.
-      IF(PRECK.EQ.0.)EFI=1.
-      CLDEFI=EFI
-!
-      FEFI=EFMNT+SLOPE*(EFI-EFIMN)
-!     FEFI=AMAX1(EFI,EFMNT)
-!
-      PRECK=PRECK*FEFI
-!***
-!***  PRECIPITATION, TEMPERATURE & MOISTURE CHANGES
-!***
-      PCPCOL=PRECK*CPRLG
-!
-      DO L=LTOP,LB
-        DTDT(L)=DIFT(L)*FEFI*RDTCNVC
-        DQDT(L)=DIFQ(L)*FEFI*RDTCNVC
-      ENDDO
-!
-!DCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCD
-!DCDCDCDCDCDC          END OF DEEP CONVECTION            DCDCDCDCDCDCD
-!DCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCD
-!
-!----------------------------------------------------------------------
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
   600 CONTINUE
-!----------------------------------------------------------------------
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !
-!---------------GATHER SHALLOW CONVECTION POINTS-----------------------
+!----------------GATHER SHALLOW CONVECTION POINTS-----------------------
 !
       IF(PTOP.LE.PBOT-PNO.AND.LTOP.LE.LBOT-2)THEN
         DEPMIN=PSH*PSFC*RSFCP
 !
-        IF(LPBL.NE.0)THEN
-          IF(LPBL.LT.LBOT)LBOT=LPBL
-        ENDIF
+        IF(LPBL.LT.LBOT)LBOT=LPBL
         IF(LBOT.GT.LMH-1)LBOT=LMH-1
         PBOT=PRSMID(LBOT)
 !
@@ -829,15 +888,15 @@ CONTAINS
 !
       ENDIF
 !
-!**********************************************************************
+!***********************************************************************
       IF(.NOT.SHALLOW)GO TO 800
-!**********************************************************************
-!---------------------------------------------------------------------
-!SCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCS
-!SCSCSCSCSCSC         SHALLOW CONVECTION          CSCSCSCSCSCSCSCSCSCS
-!SCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCS
-!---------------------------------------------------------------------
-      DO L=1,LMH
+!***********************************************************************
+!-----------------------------------------------------------------------
+!SCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCS
+!SCSCSCSCSCSCSC         SHALLOW CONVECTION          CSCSCSCSCSCSCSCSCSCS
+!SCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCS
+!-----------------------------------------------------------------------
+      DO L=KTS,LMH
         TKL      =T(L)
         TK   (L) =TKL
         TREFK(L) =TKL
@@ -851,12 +910,23 @@ CONTAINS
         APEK (L) =APEKL
         THVMKL   =TKL*APEKL*(QKL*D608+1.)
         THVREF(L)=THVMKL
+!
+        IF(TKL.GE.TFRZ)THEN
+          EL(L)=ELWV
+        ELSE
+          EL(L)=ELIV
+        ENDIF
       ENDDO
-!-------------------------SHALLOW CLOUD TOP---------------------------
+!---------------------------SHALLOW CLOUD TOP---------------------------
       LBM1=LBOT-1
       PTPK=PTOP
       LTP1=LTOP-1
-!---------------------------------------------------------------------
+      DEPTH=PBOT-PTOP
+!
+      IF(DEPTH.LT.DEPMIN)THEN
+        GO TO 800
+      ENDIF
+!-----------------------------------------------------------------------
       IF(PTOP.GT.PBOT-PNO.OR.LTOP.GT.LBOT-2)THEN
         LBOT=0
 !!!     LTOP=LBOT
@@ -864,7 +934,7 @@ CONTAINS
         PTOP=PBOT
         GO TO 800
       ENDIF
-!------------SCALING POTENTIAL TEMPERATURE & TABLE INDEX AT TOP-------
+!--------------SCALING POTENTIAL TEMPERATURE & TABLE INDEX AT TOP-------
 !
       THTPK=T(LTP1)*APE(LTP1)
 !
@@ -881,12 +951,12 @@ CONTAINS
         IT=JTB-1
         QQK=0.
       ENDIF
-!------------BASE AND SCALING FACTOR FOR SPEC. HUMIDITY AT TOP--------
+!--------------BASE AND SCALING FACTOR FOR SPEC. HUMIDITY AT TOP--------
       BQS00K=QS0(IT)
       SQS00K=SQS(IT)
       BQS10K=QS0(IT+1)
       SQS10K=SQS(IT+1)
-!------------SCALING SPEC. HUMIDITY & TABLE INDEX AT TOP--------------
+!--------------SCALING SPEC. HUMIDITY & TABLE INDEX AT TOP--------------
       BQK=(BQS10K-BQS00K)*QQK+BQS00K
       SQK=(SQS10K-SQS00K)*QQK+SQS00K
 !
@@ -905,16 +975,16 @@ CONTAINS
         IQ=ITB-1
         PPK=0.
       ENDIF
-!--------------CLOUD TOP SATURATION POINT PRESSURE--------------------
+!----------------CLOUD TOP SATURATION POINT PRESSURE--------------------
       PART1=(PTBL(IQ+1,IT)-PTBL(IQ,IT))*PPK
       PART2=(PTBL(IQ,IT+1)-PTBL(IQ,IT))*QQK
-      PART3=(PTBL(IQ  ,IT  )-PTBL(IQ+1,IT  )                          &
-            -PTBL(IQ  ,IT+1)+PTBL(IQ+1,IT+1))*PPK*QQK
+      PART3=(PTBL(IQ  ,IT  )-PTBL(IQ+1,IT  )                            &
+     &      -PTBL(IQ  ,IT+1)+PTBL(IQ+1,IT+1))*PPK*QQK
       PTPK=PTBL(IQ,IT)+PART1+PART2+PART3
-!---------------------------------------------------------------------
+!-----------------------------------------------------------------------
       DPMIX=PTPK-PSP
       IF(ABS(DPMIX).LT.3000.)DPMIX=-3000.
-!--------------TEMPERATURE PROFILE SLOPE------------------------------
+!----------------TEMPERATURE PROFILE SLOPE------------------------------
       SMIX=(THTPK-THBT)/DPMIX*STABS
 !
       TREFKX=TREFK(LBOT+1)
@@ -924,15 +994,15 @@ CONTAINS
       APEKXY=APEK(LBOT)
 !
       DO L=LBOT,LTOP,-1
-        TREFKX=((PKXXXY-PKXXXX)*SMIX                                  &
-                +TREFKX*APEKXX)/APEKXY
+        TREFKX=((PKXXXY-PKXXXX)*SMIX                                    &
+     &          +TREFKX*APEKXX)/APEKXY
         TREFK(L)=TREFKX
         APEKXX=APEKXY
         PKXXXX=PKXXXY
         APEKXY=APEK(L-1)
         PKXXXY=PK(L-1)
       ENDDO
-!--------------TEMPERATURE REFERENCE PROFILE CORRECTION---------------
+!----------------TEMPERATURE REFERENCE PROFILE CORRECTION---------------
       SUMDT=0.
       SUMDP=0.
 !
@@ -951,7 +1021,7 @@ CONTAINS
         TREFK(L)=TRFKL
         FPK  (L)=TRFKL
       ENDDO
-!--------------HUMIDITY PROFILE EQUATIONS-----------------------------
+!----------------HUMIDITY PROFILE EQUATIONS-----------------------------
       PSUM  =0.
       QSUM  =0.
       POTSUM=0.
@@ -968,7 +1038,7 @@ CONTAINS
         OTSUM =DPRS(L)*RTBAR+OTSUM
         POTSUM=DPKL    *RTBAR*DPRS(L)+POTSUM
         QOTSUM=QK(L)   *RTBAR*DPRS(L)+QOTSUM
-        DST   =(TREFK(L)-TK(L))*RTBAR*DPRS(L)+DST
+        DST   =(TREFK(L)-TK(L))*RTBAR*DPRS(L)/EL(L)+DST
       ENDDO
 !
       PSUM  =PSUM*RDPSUM
@@ -976,21 +1046,15 @@ CONTAINS
       ROTSUM=1./OTSUM
       POTSUM=POTSUM*ROTSUM
       QOTSUM=QOTSUM*ROTSUM
-      DST   =DST*ROTSUM*CP/ELWV
-!--------------ENSURE POSITIVE ENTROPY CHANGE-------------------------
+      DST   =DST*ROTSUM*CP
+!----------------ENSURE POSITIVE ENTROPY CHANGE-------------------------
       IF(DST.GT.0.)THEN
-!
-!       DSTQ=DST*EPSUP
+        DSTQ=DST*EPSUP
         LBOT=0
-!!!!    LTOP=LBOT
-        LTOP=KTE
-        PTOP=PBOT
-        GO TO 800
-!
       ELSE
         DSTQ=DST*EPSDN
       ENDIF
-!--------------CHECK FOR ISOTHERMAL ATMOSPHERE------------------------
+!----------------CHECK FOR ISOTHERMAL ATMOSPHERE------------------------
       DEN=POTSUM-PSUM
 !
       IF(-DEN/PSUM.LT.5.E-5)THEN
@@ -1000,32 +1064,32 @@ CONTAINS
         PTOP=PBOT
         GO TO 800
 !
-!--------------SLOPE OF THE REFERENCE HUMIDITY PROFILE----------------
+!----------------SLOPE OF THE REFERENCE HUMIDITY PROFILE----------------
       ELSE
         DQREF=(QOTSUM-DSTQ-QSUM)/DEN
       ENDIF
-!------------ HUMIDITY DOES NOT INCREASE WITH HEIGHT------------------
-      IF(DQREF.LT.0.)THEN
-        LBOT=0
+!-------------- HUMIDITY DOES NOT INCREASE WITH HEIGHT------------------
+!     IF(DQREF.LT.0.)THEN
+!       LBOT=0
 !!!!    LTOP=LBOT
-        LTOP=KTE
-        PTOP=PBOT
-        GO TO 800
-      ENDIF
-!--------------HUMIDITY AT THE CLOUD TOP------------------------------
+!       LTOP=KTE
+!       PTOP=PBOT
+!       GO TO 800
+!     ENDIF
+!----------------HUMIDITY AT THE CLOUD TOP------------------------------
       QRFTP=QSUM-DQREF*PSUM
-!--------------HUMIDITY PROFILE---------------------------------------
+!----------------HUMIDITY PROFILE---------------------------------------
 !
       DO L=LTOP,LBOT
         QRFKL=(FPK(L)-FPTK)*DQREF+QRFTP
 !
-!***  SUPERSATURATION OR NEGATIVE Q NOT ALLOWED
+!***  TOO DRY CLOUDS NOT ALLOWED
 !
-        TNEW=(TREFK(L)-TK(L))*TAUK+TK(L)
+        TNEW=(TREFK(L)-TK(L))*TAUKSC+TK(L)
         QSATK(L)=PQ0/PK(L)*EXP(A2*(TNEW-A3)/(TNEW-A4))
-        QNEW=(QRFKL-QK(L))*TAUK+QK(L)
+        QNEW=(QRFKL-QK(L))*TAUKSC+QK(L)
 !
-        IF(QNEW.LT.QSATK(L)*RHLSC.OR.QNEW.GT.QSATK(L)*RHHSC)THEN
+        IF(QNEW.LT.QSATK(L)*RHLSC)THEN
           LBOT=0
 !!!!      LTOP=LBOT
           LTOP=KTE
@@ -1037,11 +1101,11 @@ CONTAINS
         QREFK(L)=QRFKL
       ENDDO
 !
-!---------------- ELIMINATE CLOUDS WITH BOTTOMS TOO DRY --------------
+!------------------ ELIMINATE CLOUDS WITH BOTTOMS TOO DRY --------------
 !
-      RHNEW=((QREFK(LBOT)-QK(LBOT))*TAUK+QK(LBOT))/QSATK(LBOT)
+      QNEW=(QREFK(LBOT)-QK(LBOT))*TAUKSC+QK(LBOT)
 !
-      IF(RHNEW.LT.QK(LBOT+1)/QSATK(LBOT+1)*STRESH)THEN
+      IF(QNEW.LT.QK(LBOT+1)*STRESH)THEN
         LBOT=0
 !!!!!   LTOP=LBOT
         LTOP=KTE
@@ -1049,7 +1113,7 @@ CONTAINS
         GO TO 800
       ENDIF
 !
-!------------ ELIMINATE IMPOSSIBLE SLOPES (BETTS,DTHETA/DQ)------------
+!-------------- ELIMINATE IMPOSSIBLE SLOPES (BETTS,DTHETA/DQ)------------
 !
       DO L=LTOP,LBOT
         DTDP=(THVREF(L-1)-THVREF(L))/(PRSMID(L)-PRSMID(L-1))
@@ -1063,50 +1127,38 @@ CONTAINS
         ENDIF
 !
       ENDDO
-!---------------------------------------------------------------------
-      DENTPY=0.
-!
-      DO L=LTOP,LBOT
-        DENTPY=((TREFK(L)-TK(L))*CP+(QREFK(L)-QK(L))*ELWV)            &
-               /(TK(L)+TREFK(L))*DPRS(L)+DENTPY
-      ENDDO
-!
-!---------------------------------------------------------------------
-!------------RELAXATION TOWARD REFERENCE PROFILES---------------------
-!---------------------------------------------------------------------
+!-----------------------------------------------------------------------
+!--------------RELAXATION TOWARD REFERENCE PROFILES---------------------
+!-----------------------------------------------------------------------
 !
       DO L=LTOP,LBOT
         DTDT(L)=(TREFK(L)-TK(L))*TAUK*RDTCNVC
         DQDT(L)=(QREFK(L)-QK(L))*TAUK*RDTCNVC
       ENDDO
-
-      HTOP=MIN(FLOAT(LTOP),HTOP)
-      HBOT=MAX(FLOAT(LBOT),HBOT)
-
-!---------------------------------------------------------------------
-!SCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCS
-!SCSCSCSCSCSC         END OF SHALLOW CONVECTION        SCSCSCSCSCSCSCS
-!SCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCS
-!---------------------------------------------------------------------
+!-----------------------------------------------------------------------
+!SCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCS
+!SCSCSCSCSCSCSC         END OF SHALLOW CONVECTION        SCSCSCSCSCSCSCS
+!SCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCS
+!-----------------------------------------------------------------------
   800 CONTINUE
-!---------------------------------------------------------------------
+!-----------------------------------------------------------------------
       END SUBROUTINE BMJ
-!---------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-!---------------------------------------------------------------------
-                           SUBROUTINE TTBLEX                          &
-       (ITBX,JTBX,PLX,PRSMID,RDPX,RDTHEX,STHE                         &
-       ,THE0,THESP,TTBL,TREF)
-!---------------------------------------------------------------------
-!     ****************************************************************
-!     *                                                              *
-!     *         EXTRACT TEMPERATURE OF THE MOIST ADIABAT FROM        *
-!     *                    THE APPROPRIATE TTBL                      *
-!     *                                                              *
-!     ****************************************************************
-!---------------------------------------------------------------------
+!-----------------------------------------------------------------------
+                           SUBROUTINE TTBLEX                            &
+     & (ITBX,JTBX,PLX,PRSMID,RDPX,RDTHEX,STHE                           &
+     & ,THE0,THESP,TTBL,TREF)
+!-----------------------------------------------------------------------
+!     ******************************************************************
+!     *                                                                *
+!     *           EXTRACT TEMPERATURE OF THE MOIST ADIABAT FROM        *
+!     *                      THE APPROPRIATE TTBL                      *
+!     *                                                                *
+!     ******************************************************************
+!-----------------------------------------------------------------------
       IMPLICIT NONE
-!---------------------------------------------------------------------
+!-----------------------------------------------------------------------
       INTEGER,INTENT(IN) :: ITBX,JTBX
 !
       REAL,INTENT(IN) :: PLX,PRSMID,RDPX,RDTHEX,THESP
@@ -1116,20 +1168,19 @@ CONTAINS
       REAL,DIMENSION(JTBX,ITBX),INTENT(IN) :: TTBL
 !
       REAL,INTENT(OUT) :: TREF
-!---------------------------------------------------------------------
-      REAL :: BTHE00K,BTHE10K,BTHK,PK,PP,QQ,STHE00K,STHE10K,STHK      &
-             ,T00K,T01K,T10K,T11K,TPK,TTHK
+!-----------------------------------------------------------------------
+      REAL :: BTHE00K,BTHE10K,BTHK,PK,PP,QQ,STHE00K,STHE10K,STHK        &
+     &       ,T00K,T01K,T10K,T11K,TPK,TTHK
 !
       INTEGER :: IPTB,ITHTB
-!---------------------------------------------------------------------
-!---------------------------------------------------------------------
-!--------------SCALING PRESSURE & TT TABLE INDEX----------------------
-!---------------------------------------------------------------------
+!-----------------------------------------------------------------------
+!----------------SCALING PRESSURE & TT TABLE INDEX----------------------
+!-----------------------------------------------------------------------
       PK=PRSMID
       TPK=(PK-PLX)*RDPX
       QQ=TPK-AINT(TPK)
       IPTB=INT(TPK)+1
-!--------------KEEPING INDICES WITHIN THE TABLE-----------------------
+!----------------KEEPING INDICES WITHIN THE TABLE-----------------------
       IF(IPTB.LT.1)THEN
         IPTB=1
         QQ=0.
@@ -1139,18 +1190,18 @@ CONTAINS
         IPTB=ITBX-1
         QQ=0.
       ENDIF
-!--------------BASE AND SCALING FACTOR FOR THETAE---------------------
+!----------------BASE AND SCALING FACTOR FOR THETAE---------------------
       BTHE00K=THE0(IPTB)
       STHE00K=STHE(IPTB)
       BTHE10K=THE0(IPTB+1)
       STHE10K=STHE(IPTB+1)
-!--------------SCALING THE & TT TABLE INDEX---------------------------
+!----------------SCALING THE & TT TABLE INDEX---------------------------
       BTHK=(BTHE10K-BTHE00K)*QQ+BTHE00K
       STHK=(STHE10K-STHE00K)*QQ+STHE00K
       TTHK=(THESP-BTHK)/STHK*RDTHEX
       PP=TTHK-AINT(TTHK)
       ITHTB=INT(TTHK)+1
-!--------------KEEPING INDICES WITHIN THE TABLE-----------------------
+!----------------KEEPING INDICES WITHIN THE TABLE-----------------------
       IF(ITHTB.LT.1)THEN
         ITHTB=1
         PP=0.
@@ -1160,40 +1211,40 @@ CONTAINS
         ITHTB=JTBX-1
         PP=0.
       ENDIF
-!--------------TEMPERATURE AT FOUR SURROUNDING TT TABLE PTS.----------
+!----------------TEMPERATURE AT FOUR SURROUNDING TT TABLE PTS.----------
       T00K=TTBL(ITHTB,IPTB)
       T10K=TTBL(ITHTB+1,IPTB)
       T01K=TTBL(ITHTB,IPTB+1)
       T11K=TTBL(ITHTB+1,IPTB+1)
-!---------------------------------------------------------------------
-!--------------PARCEL TEMPERATURE-------------------------------------
-!---------------------------------------------------------------------
-      TREF=(T00K+(T10K-T00K)*PP+(T01K-T00K)*QQ                        &
-          +(T00K-T10K-T01K+T11K)*PP*QQ)
-!---------------------------------------------------------------------
+!-----------------------------------------------------------------------
+!----------------PARCEL TEMPERATURE-------------------------------------
+!-----------------------------------------------------------------------
+      TREF=(T00K+(T10K-T00K)*PP+(T01K-T00K)*QQ                          &
+     &    +(T00K-T10K-T01K+T11K)*PP*QQ)
+!-----------------------------------------------------------------------
       END SUBROUTINE TTBLEX
-!---------------------------------------------------------------------
-!---------------------------------------------------------------------
-      SUBROUTINE BMJINIT(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN          &
-                        ,CLDEFI,LOWLYR,CP,RD,RESTART                  &
-                        ,IDS,IDE,JDS,JDE,KDS,KDE                      &
-                        ,IMS,IME,JMS,JME,KMS,KME                      &
-                        ,ITS,ITE,JTS,JTE,KTS,KTE)
-!---------------------------------------------------------------------   
+!-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
+      SUBROUTINE BMJINIT(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN            &
+     &                  ,CLDEFI,LOWLYR,CP,RD,RESTART                    &
+     &                  ,IDS,IDE,JDS,JDE,KDS,KDE                        &
+     &                  ,IMS,IME,JMS,JME,KMS,KME                        &
+     &                  ,ITS,ITE,JTS,JTE,KTS,KTE)
+!-----------------------------------------------------------------------
       IMPLICIT NONE
-!---------------------------------------------------------------------
+!-----------------------------------------------------------------------
       LOGICAL , INTENT(IN) :: RESTART
-      INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                   &
-                           ,IMS,IME,JMS,JME,KMS,KME                   &
-                           ,ITS,ITE,JTS,JTE,KTS,KTE
+      INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                     &
+     &                     ,IMS,IME,JMS,JME,KMS,KME                     &
+     &                     ,ITS,ITE,JTS,JTE,KTS,KTE
 !
       REAL,INTENT(IN) :: CP,RD
 !
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(OUT) ::                   &
-                                                    RTHCUTEN          &
-                                                   ,RQVCUTEN          &
-                                                   ,RQCCUTEN          &
-                                                   ,RQRCUTEN
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(OUT) ::            &
+     &                                              RTHCUTEN            &
+     &                                             ,RQVCUTEN            &
+     &                                             ,RQCCUTEN            &
+     &                                             ,RQRCUTEN
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: CLDEFI
 
@@ -1201,41 +1252,41 @@ CONTAINS
 !
       REAL,PARAMETER :: ELIWV=2.683E6,EPS=1.E-9
 !
-      REAL, DIMENSION(JTB) :: APP,APT,AQP,AQT,PNEW,POLD,QSNEW,QSOLD   &
-                             ,THENEW,THEOLD,TNEW,TOLD,Y2P,Y2T
+      REAL, DIMENSION(JTB) :: APP,APT,AQP,AQT,PNEW,POLD,QSNEW,QSOLD     &
+     &                       ,THENEW,THEOLD,TNEW,TOLD,Y2P,Y2T
 !
-      REAL,DIMENSION(JTBQ) :: APTQ,AQTQ,THENEWQ,THEOLDQ               &
-                             ,TNEWQ,TOLDQ,Y2TQ
+      REAL,DIMENSION(JTBQ) :: APTQ,AQTQ,THENEWQ,THEOLDQ                 &
+     &                       ,TNEWQ,TOLDQ,Y2TQ
 !
       INTEGER :: I,J,K,ITF,JTF,KTF
       INTEGER :: KTH,KTHM,KTHM1,KP,KPM,KPM1
 !
-      REAL :: APE,DP,DQS,DTH,DTHE,P,QS,QS0K,SQSK,STHEK                &
-             ,TH,THE0K
-!---------------------------------------------------------------------
+      REAL :: APE,DP,DQS,DTH,DTHE,P,QS,QS0K,SQSK,STHEK                  &
+     &       ,TH,THE0K
+!-----------------------------------------------------------------------
 
       JTF=MIN0(JTE,JDE-1)
       KTF=MIN0(KTE,KDE-1)
       ITF=MIN0(ITE,IDE-1)
 ! 
-    IF(.NOT.RESTART)THEN
-      DO J=JTS,JTF
-      DO K=KTS,KTF
-      DO I=ITS,ITF
-        RTHCUTEN(I,K,J)=0.
-        RQVCUTEN(I,K,J)=0.
-        RQCCUTEN(I,K,J)=0.
-        RQRCUTEN(I,K,J)=0.
-      ENDDO
-      ENDDO
-      ENDDO
+      IF(.NOT.RESTART)THEN
+        DO J=JTS,JTF
+        DO K=KTS,KTF
+        DO I=ITS,ITF
+          RTHCUTEN(I,K,J)=0.
+          RQVCUTEN(I,K,J)=0.
+          RQCCUTEN(I,K,J)=0.
+          RQRCUTEN(I,K,J)=0.
+        ENDDO
+        ENDDO
+        ENDDO
 !
-      DO J=JTS,JTF
-      DO I=ITS,ITF
-        CLDEFI(I,J)=1.
-      ENDDO
-      ENDDO
-    ENDIF
+        DO J=JTS,JTF
+        DO I=ITS,ITF
+          CLDEFI(I,J)=AVGEFI
+        ENDDO
+        ENDDO
+      ENDIF
 !
 !***  FOR NOW, ASSUME SIGMA MODE FOR LOWEST MODEL LAYER
 !
@@ -1244,9 +1295,9 @@ CONTAINS
         LOWLYR(I,J)=1
       ENDDO
       ENDDO
-!---------------------------------------------------------------------
-!--------------COARSE LOOK-UP TABLE FOR SATURATION POINT--------------
-!---------------------------------------------------------------------
+!-----------------------------------------------------------------------
+!----------------COARSE LOOK-UP TABLE FOR SATURATION POINT--------------
+!-----------------------------------------------------------------------
 !
       KTHM=JTB
       KPM=ITB
@@ -1257,7 +1308,7 @@ CONTAINS
       DP =(PH -PL )/REAL(KPM -1)
 !
       TH=THL-DTH
-!---------------------------------------------------------------------
+!-----------------------------------------------------------------------
       DO 100 KTH=1,KTHM
 !
       TH=TH+DTH
@@ -1282,7 +1333,7 @@ CONTAINS
 !
       QS0(KTH)=QS0K
       SQS(KTH)=SQSK
-!---------------------------------------------------------------------
+!-----------------------------------------------------------------------
       QSNEW(1  )=0.
       QSNEW(KPM)=1.
       DQS=1./REAL(KPM-1)
@@ -1299,11 +1350,11 @@ CONTAINS
       DO KP=1,KPM
         PTBL(KP,KTH)=PNEW(KP)
       ENDDO
-!---------------------------------------------------------------------
+!-----------------------------------------------------------------------
   100 CONTINUE
-!---------------------------------------------------------------------
-!------------COARSE LOOK-UP TABLE FOR T(P) FROM CONSTANT THE----------
-!---------------------------------------------------------------------
+!-----------------------------------------------------------------------
+!------------COARSE LOOK-UP TABLE FOR T(P) FROM CONSTANT THE------------
+!-----------------------------------------------------------------------
       P=PL-DP
 !
       DO 200 KP=1,KPM
@@ -1326,13 +1377,13 @@ CONTAINS
 !
       DO KTH=2,KTHM1
         THEOLD(KTH)=(THEOLD(KTH)-THE0K)/STHEK
-        IF((THEOLD(KTH)-THEOLD(KTH-1)).LT.EPS)                        &
-            THEOLD(KTH)=THEOLD(KTH-1)  +  EPS
+        IF((THEOLD(KTH)-THEOLD(KTH-1)).LT.EPS)                          &
+     &      THEOLD(KTH)=THEOLD(KTH-1)  +  EPS
       ENDDO
 !
       THE0(KP)=THE0K
       STHE(KP)=STHEK
-!---------------------------------------------------------------------
+!-----------------------------------------------------------------------
       THENEW(1  )=0.
       THENEW(KTHM)=1.
       DTHE=1./REAL(KTHM-1)
@@ -1349,13 +1400,13 @@ CONTAINS
       DO KTH=1,KTHM
         TTBL(KTH,KP)=TNEW(KTH)
       ENDDO
-!---------------------------------------------------------------------
+!-----------------------------------------------------------------------
   200 CONTINUE
-!---------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !
-!---------------------------------------------------------------------
-!-------------FINE LOOK-UP TABLE FOR SATURATION POINT-----------------
-!---------------------------------------------------------------------
+!-----------------------------------------------------------------------
+!---------------FINE LOOK-UP TABLE FOR SATURATION POINT-----------------
+!-----------------------------------------------------------------------
       KTHM=JTBQ
       KPM=ITBQ
       KTHM1=KTHM-1
@@ -1366,9 +1417,9 @@ CONTAINS
 !
       TH=THL-DTH
       P=PLQ-DP
-!---------------------------------------------------------------------
-!-------------FINE LOOK-UP TABLE FOR T(P) FROM CONSTANT THE-----------
-!---------------------------------------------------------------------
+!-----------------------------------------------------------------------
+!---------------FINE LOOK-UP TABLE FOR T(P) FROM CONSTANT THE-----------
+!-----------------------------------------------------------------------
       DO 300 KP=1,KPM
 !
       P=P+DP
@@ -1389,13 +1440,13 @@ CONTAINS
 !
       DO KTH=2,KTHM1
         THEOLDQ(KTH)=(THEOLDQ(KTH)-THE0K)/STHEK
-        IF((THEOLDQ(KTH)-THEOLDQ(KTH-1)).LT.EPS)                      &
-            THEOLDQ(KTH)=THEOLDQ(KTH-1)  +  EPS
+        IF((THEOLDQ(KTH)-THEOLDQ(KTH-1)).LT.EPS)                        &
+     &      THEOLDQ(KTH)=THEOLDQ(KTH-1)  +  EPS
       ENDDO
 !
       THE0Q(KP)=THE0K
       STHEQ(KP)=STHEK
-!---------------------------------------------------------------------
+!-----------------------------------------------------------------------
       THENEWQ(1  )=0.
       THENEWQ(KTHM)=1.
       DTHE=1./REAL(KTHM-1)
@@ -1407,54 +1458,54 @@ CONTAINS
       Y2TQ(1   )=0.
       Y2TQ(KTHM)=0.
 !
-      CALL SPLINE(JTBQ,KTHM,THEOLDQ,TOLDQ,Y2TQ,KTHM                   &     
-                 ,THENEWQ,TNEWQ,APTQ,AQTQ)
+      CALL SPLINE(JTBQ,KTHM,THEOLDQ,TOLDQ,Y2TQ,KTHM                     &
+     &           ,THENEWQ,TNEWQ,APTQ,AQTQ)
 !
       DO KTH=1,KTHM
         TTBLQ(KTH,KP)=TNEWQ(KTH)
       ENDDO
-!---------------------------------------------------------------------
+!-----------------------------------------------------------------------
   300 CONTINUE
-!---------------------------------------------------------------------
+!-----------------------------------------------------------------------
       END SUBROUTINE BMJINIT
-!---------------------------------------------------------------------
-!XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-!---------------------------------------------------------------------
+!-----------------------------------------------------------------------
+!XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+!-----------------------------------------------------------------------
       SUBROUTINE SPLINE(JTBX,NOLD,XOLD,YOLD,Y2,NNEW,XNEW,YNEW,P,Q)
-!   ******************************************************************
-!   *                                                                *
-!   *  THIS IS A ONE-DIMENSIONAL CUBIC SPLINE FITTING ROUTINE        *
-!   *  PROGRAMED FOR A SMALL SCALAR MACHINE.                         *
-!   *                                                                *
-!   *  PROGRAMER Z. JANJIC                                           *
-!   *                                                                *
-!   *  NOLD - NUMBER OF GIVEN VALUES OF THE FUNCTION.  MUST BE GE 3. *
-!   *  XOLD - LOCATIONS OF THE POINTS AT WHICH THE VALUES OF THE     *
-!   *         FUNCTION ARE GIVEN.  MUST BE IN ASCENDING ORDER.       *
-!   *  YOLD - THE GIVEN VALUES OF THE FUNCTION AT THE POINTS XOLD.   *
-!   *  Y2   - THE SECOND DERIVATIVES AT THE POINTS XOLD.  IF NATURAL *
-!   *         SPLINE IS FITTED Y2(1)=0. AND Y2(NOLD)=0. MUST BE      *
-!   *         SPECIFIED.                                             *
-!   *  NNEW - NUMBER OF VALUES OF THE FUNCTION TO BE CALCULATED.     *
-!   *  XNEW - LOCATIONS OF THE POINTS AT WHICH THE VALUES OF THE     *
-!   *         FUNCTION ARE CALCULATED.  XNEW(K) MUST BE GE XOLD(1)   *
-!   *         AND LE XOLD(NOLD).                                     *
-!   *  YNEW - THE VALUES OF THE FUNCTION TO BE CALCULATED.           *
-!   *  P, Q - AUXILIARY VECTORS OF THE LENGTH NOLD-2.                *
-!   *                                                                *
-!   ******************************************************************
-!---------------------------------------------------------------------
+!   ********************************************************************
+!   *                                                                  *
+!   *  THIS IS A ONE-DIMENSIONAL CUBIC SPLINE FITTING ROUTINE          *
+!   *  PROGRAMED FOR A SMALL SCALAR MACHINE.                           *
+!   *                                                                  *
+!   *  PROGRAMER Z. JANJIC                                             *
+!   *                                                                  *
+!   *  NOLD - NUMBER OF GIVEN VALUES OF THE FUNCTION.  MUST BE GE 3.   *
+!   *  XOLD - LOCATIONS OF THE POINTS AT WHICH THE VALUES OF THE       *
+!   *         FUNCTION ARE GIVEN.  MUST BE IN ASCENDING ORDER.         *
+!   *  YOLD - THE GIVEN VALUES OF THE FUNCTION AT THE POINTS XOLD.     *
+!   *  Y2   - THE SECOND DERIVATIVES AT THE POINTS XOLD.  IF NATURAL   *
+!   *         SPLINE IS FITTED Y2(1)=0. AND Y2(NOLD)=0. MUST BE        *
+!   *         SPECIFIED.                                               *
+!   *  NNEW - NUMBER OF VALUES OF THE FUNCTION TO BE CALCULATED.       *
+!   *  XNEW - LOCATIONS OF THE POINTS AT WHICH THE VALUES OF THE       *
+!   *         FUNCTION ARE CALCULATED.  XNEW(K) MUST BE GE XOLD(1)     *
+!   *         AND LE XOLD(NOLD).                                       *
+!   *  YNEW - THE VALUES OF THE FUNCTION TO BE CALCULATED.             *
+!   *  P, Q - AUXILIARY VECTORS OF THE LENGTH NOLD-2.                  *
+!   *                                                                  *
+!   ********************************************************************
+!-----------------------------------------------------------------------
       IMPLICIT NONE
-!---------------------------------------------------------------------
+!-----------------------------------------------------------------------
       INTEGER,INTENT(IN) :: JTBX,NNEW,NOLD
       REAL,DIMENSION(JTBX),INTENT(IN) :: XNEW,XOLD,YOLD
       REAL,DIMENSION(JTBX),INTENT(INOUT) :: P,Q,Y2
       REAL,DIMENSION(JTBX),INTENT(OUT) :: YNEW
 !
       INTEGER :: K,K1,K2,KOLD,NOLDM1
-      REAL :: AK,BK,CK,DEN,DX,DXC,DXL,DXR,DYDXL,DYDXR                 &
-             ,RDX,RTDXC,X,XK,XSQ,Y2K,Y2KP1
-!---------------------------------------------------------------------
+      REAL :: AK,BK,CK,DEN,DX,DXC,DXL,DXR,DYDXL,DYDXR                   &
+     &       ,RDX,RTDXC,X,XK,XSQ,Y2K,Y2KP1
+!-----------------------------------------------------------------------
       NOLDM1=NOLD-1
 !
       DXL=XOLD(2)-XOLD(1)
@@ -1467,7 +1518,7 @@ CONTAINS
       Q(1)=-RTDXC*DXR
 !
       IF(NOLD.EQ.3)GO TO 150
-!---------------------------------------------------------------------
+!-----------------------------------------------------------------------
       K=3
 !
   100 DXL=DXR
@@ -1529,7 +1580,7 @@ CONTAINS
       IF(K1.LE.NNEW)GO TO 300
 !-----------------------------------------------------------------------
       END SUBROUTINE SPLINE
-!---------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !
       END MODULE MODULE_CU_BMJ
 

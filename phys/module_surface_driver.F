@@ -19,13 +19,11 @@ CONTAINS
      &          ,ALBBCK,LH,SH2O,SHDMAX,SHDMIN,Z0                      &
      &          ,FLQC,FLHC,QSG,QVG,QCG,SOILT1,TSNAV                   & ! RUC LSM only
      &          ,SMFR3D,KEEPFR3DFLAG                                  &
-     &          ,POTEVP,SNOPCX,SOILTB                                 & ! NMM LSM only
      &          ,PSFC                                                 &
      &          ,ids,ide,jds,jde,kds,kde                              &
      &          ,ims,ime,jms,jme,kms,kme                              &
-     &          ,i_start,i_end,j_start,j_end,kts,kte,num_tiles        )
-!    &          ,ALBSF,POTEVP,PSHLTR,SMLIQ,SNOPCX,TBOT                &
-!    &          ,ELFLX                                                )
+     &          ,i_start,i_end,j_start,j_end,kts,kte,num_tiles        &
+     &          ,POTEVP,SNOPCX,SOILTB                                 ) ! optional args
 
    USE module_bc
    USE module_state_description
@@ -37,9 +35,7 @@ CONTAINS
    USE module_sf_myjsfc
    USE module_sf_noahlsm
    USE module_sf_ruclsm
-#if ( NMM_CORE==1)
    USE module_sf_lsm_nmm
-#endif
 
    USE module_sf_slab
 !
@@ -251,9 +247,9 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   VZ0
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   WSPD
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   ZNT
-   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   POTEVP ! NMM LSM
-   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   SNOPCX ! NMM LSM
-   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   SOILTB ! NMM LSM
+   REAL, DIMENSION( ims:ime, jms:jme ) , OPTIONAL, INTENT(INOUT)::   POTEVP ! NMM LSM
+   REAL, DIMENSION( ims:ime, jms:jme ) , OPTIONAL, INTENT(INOUT)::   SNOPCX ! NMM LSM
+   REAL, DIMENSION( ims:ime, jms:jme ) , OPTIONAL, INTENT(INOUT)::   SOILTB ! NMM LSM
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   BR
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   CHKLOWQ
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   GZ1OZ0
@@ -330,6 +326,19 @@ CONTAINS
 !------------------------------------------------------------------
 !
   if (config_flags%sf_sfclay_physics .eq. 0) return
+
+  v_phytmp = 0.
+  u_phytmp = 0.
+  TSKOLD = 0.
+  USTOLD = 0.
+  ZNTOLD = 0.
+  ZOL = 0.
+  QGH = 0.
+  CHS = 0.
+  CPM = 0.
+  CHS2 = 0.
+  DTMIN = 0.
+  DTBL = 0.
 
 ! RAINBL in mm (Accumulation between PBL calls)
 
@@ -457,10 +466,10 @@ CONTAINS
                      ims,ime, jms,jme, kms,kme,                    &
              i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
 
-
-#if ( NMM_CORE==1)
+#if ( WRF_NMM_CORE == 1 )
      CASE (NMMLSMSCHEME)
-         CALL wrf_debug(100,'in NMM LSM')
+         IF ( config_flags%dyn_opt .EQ. DYN_NMM ) THEN
+           CALL wrf_debug(100,'in NMM LSM')
            CALL nmmlsm(dz8w,moist(ims,kms,jms,P_QV),p8w,rho,       &
                 t_phy,th_phy,TSK,CHS,                           &
                 HFX,QFX,QGH,GSW,GLW,LH,                         &
@@ -470,12 +479,16 @@ CONTAINS
                 ALBBCK,TMN,XLAND,XICE,QZ0,                      &
                 th2,q2,SNOWC,CQS2,QSFC,SOILTB,CHKLOWQ,RAINBL,   &
                 num_soil_layers,DTBL,DZS,itimestep,             &
-                SMOIS,TSLB,SNOW,CANWAT,CPM,RCP,                 &    
+                SMOIS,TSLB,SNOW,CANWAT,CPM,RCP,                 &    !TSLB
                 ALBEDO,SNOALB,SH2O,SNOWH,                       &
                 ids,ide, jds,jde, kds,kde,                      &
                 ims,ime, jms,jme, kms,kme,                      &
                 i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
+          ELSE
+            CALL wrf_error_fatal( 'Must specify NMM core with NMM LSM' )
+          ENDIF
 #endif
+
      CASE (LSMSCHEME)
 
 !------------------------------------------------------------------

@@ -21,7 +21,8 @@ USE module_model_constants
       REAL,PARAMETER :: VKARMAN=0.4
       REAL,PARAMETER :: CAPA=R_D/CP,ELOCP=2.72E6/CP,RCAP=1./CAPA
       REAL,PARAMETER :: GOCP02=G/CP*2.,GOCP10=G/CP*10.
-      REAL,PARAMETER :: EPSL=0.32,EPSRU=1.E-7,EPSRS=1.E-7 
+! Merger with NCEP version, July 2004, JM
+      REAL,PARAMETER :: EPSL=0.10,EPSRU=1.E-7,EPSRS=1.E-7 
       REAL,PARAMETER :: EPSU2=1.E-4,EPSUST=0.07,EPSZT=1.E-5
       REAL,PARAMETER :: A1=0.659888514560862645                        &
                        ,A2x=0.6574209922667784586                      &
@@ -123,7 +124,8 @@ CONTAINS
                        ,LOWLYR,XLAND                                   &
                        ,USTAR,ZNT,PBLH,MAVAIL                          &
                        ,AKHS,AKMS                                      &
-                       ,CHS,CHS2,CQS2,HFX,QFX,LH,FLHC,FLQC,QGH,CPM,CT  &
+                       ,CHS,CHS2,CQS2,HFX,QFX,FLX_LH,FLHC,FLQC         &
+                       ,QGH,CPM,CT                                     &
                        ,U10,V10,TSHLTR,TH10,QSHLTR,Q10,PSHLTR          &
                        ,IDS,IDE,JDS,JDE,KDS,KDE                        &
                        ,IMS,IME,JMS,JME,KMS,KME                        &
@@ -150,8 +152,8 @@ CONTAINS
                                                            ,T,TH       &
                                                            ,U,V   
 !
-      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: HFX,PSHLTR        &
-                                                    ,QFX,LH,Q10,QSHLTR &
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: FLX_LH,HFX,PSHLTR &
+                                                    ,QFX,Q10,QSHLTR    &
                                                     ,TH10,TSHLTR       &
                                                     ,U10,V10
 !
@@ -302,7 +304,6 @@ CONTAINS
 !***  COMPUTE THE HEIGHT OF THE BOUNDARY LAYER
 !----------------------------------------------------------------------
 !
-!
           DO K=KTS,LMH-1
             RDZ=2./(ZHK(K)-ZHK(K+2))
             GMK=((UK(K)-UK(K+1))**2+(VK(K)-VK(K+1))**2)*RDZ*RDZ
@@ -382,7 +383,7 @@ CONTAINS
                      ,USTAR(I,J),ZNT(I,J),CT(I,J)                      &
                      ,AKMS(I,J),AKHS(I,J),PBLH(I,J),MAVAIL(I,J)        &
                      ,CHS(I,J),CHS2(I,J),CQS2(I,J)                     &
-                     ,HFX(I,J),QFX(I,J),LH(I,J)                        &
+                     ,HFX(I,J),QFX(I,J),FLX_LH(I,J)                    &
                      ,FLHC(I,J),FLQC(I,J),QGH(I,J),CPM(I,J)            &
                      ,ULOW,VLOW,TLOW,THLOW,THELOW,QLOW,CWMLOW          &
                      ,ZSL,PLOW                                         &
@@ -426,7 +427,7 @@ CONTAINS
       SUBROUTINE SFCDIF(NTSD,SEAMASK,THS,QS,PSFC                       &
                        ,UZ0,VZ0,TZ0,THZ0,QZ0                           &
                        ,USTAR,Z0,CT,AKMS,AKHS,PBLH,WETM                &
-                       ,CHS,CHS2,CQS2,HFX,QFX,LH,FLHC,FLQC,QGH,CPM     &
+                       ,CHS,CHS2,CQS2,HFX,QFX,FLX_LH,FLHC,FLQC,QGH,CPM &
                        ,ULOW,VLOW,TLOW,THLOW,THELOW,QLOW,CWMLOW        &
                        ,ZSL,PLOW                                       &
                        ,U10,V10,TH02,TH10,Q02,Q10,PSHLTR               &
@@ -452,7 +453,7 @@ CONTAINS
       REAL,INTENT(IN) :: CWMLOW,PBLH,PLOW,QLOW,PSFC,SEAMASK            &
                         ,THELOW,THLOW,THS,TLOW,TZ0,ULOW,VLOW,WETM,ZSL
 !
-      REAL,INTENT(OUT) :: CHS,CHS2,CQS2,HFX,QFX,LH,FLHC,FLQC,PSHLTR    &
+      REAL,INTENT(OUT):: CHS,CHS2,CQS2,HFX,QFX,FLX_LH,FLHC,FLQC,PSHLTR &
                          ,QGH,CPM,CT,Q02,Q10,TH02,TH10,U10,V10
       REAL,INTENT(INOUT) :: AKHS,AKMS,QZ0,THZ0,USTAR,UZ0,VZ0,Z0,QS
 !----------------------------------------------------------------------
@@ -461,8 +462,8 @@ CONTAINS
 !***
       INTEGER :: ITR,K
 !
-      REAL :: A,B,BTGH,BTGX,CXCHL,CXCHS,DTHV,DU2,ELFC,HLFLX,HSFLX      &
-             ,PSH02,PSH10,PSHZ,PSHZL,PSM10,PSMZ,PSMZL                  &
+      REAL :: A,B,BTGH,BTGX,CXCHL,CXCHS,DTHV,DU2,ELFC,FCT              &
+             ,HLFLX,HSFLX,HV,PSH02,PSH10,PSHZ,PSHZL,PSM10,PSMZ,PSMZL   &
              ,RDZ,RDZT,RIB,RLMA,RLMN,RLMO,RLMP                         &
              ,RLOGT,RLOGU,RWGH,RZ,RZST,RZSU,SIMH,SIMM,TEM,THM          &
              ,UMFLX,USTARK,VMFLX,WGHT,WGHTT,WGHTQ,WSTAR2               &
@@ -798,13 +799,13 @@ CONTAINS
 !----------------------------------------------------------------------
 !***  COUNTERGRADIENT FIX
 !----------------------------------------------------------------------
-!     HV=-AKHS*DTHV
-!     IF(HV.GT.0.)THEN
-!       FCT=-10.*(BTGX)**(-1./3.)
-!       CT=FCT*(HV/(PBLH*PBLH))**(2./3.)
-!     ELSE
+      HV=-AKHS*DTHV
+      IF(HV.GT.0.)THEN
+        FCT=-10.*(BTGX)**(-1./3.)
+        CT=FCT*(HV/(PBLH*PBLH))**(2./3.)
+      ELSE
         CT=0.
-!     ENDIF
+      ENDIF
 !----------------------------------------------------------------------
 !----------------------------------------------------------------------
 !***  THE FOLLOWING DIAGNOSTIC BLOCK PRODUCES 2-m and 10-m VALUES
@@ -952,8 +953,10 @@ CONTAINS
       CHS2=AKHS02
       CQS2=AKHS02
       HFX=-RLOW*CP*HSFLX
-      QFX=-RLOW*HLFLX
-      LH=XLV*QFX
+! QFX=-RLOW*HLFLX
+! LH=XLV*QFX
+      QFX=-RLOW*HLFLX*WETM
+      FLX_LH=XLV*QFX
       FLHC=RLOW*CP*AKHS
       FLQC=RLOW*AKHS*WETM
 !!!   QGH=PQ0/PSHLTR*EXP(A2S*(TSK-A3S)/(TSK-A4S))
@@ -993,6 +996,7 @@ CONTAINS
       REAL,DIMENSION(IMS:,JMS:),INTENT(INOUT) :: USTAR,Z0
 !
       REAL,DIMENSION(0:30) :: VZ0TBL
+      REAL,DIMENSION(0:30) :: VZ0TBL_24
 !
       INTEGER :: I,J,K,ITF,JTF,KTF
 !
@@ -1005,6 +1009,14 @@ CONTAINS
           2.653,0.826,0.563,1.089,0.854,0.856,0.035,0.238,0.065,0.076  &
          ,0.011,0.035,0.011,0.000,0.000,0.000,0.000,0.000,0.000,0.000  &
          ,0.000,0.000,0.000,0.000,0.000,0.000,0.000,0.000,0.000,0.000/)
+
+      VZ0TBL_24= (/0., &
+                  1.00,  0.07,  0.07,  0.07,  0.07,  0.15, &
+                  0.08,  0.03,  0.05,  0.86,  0.80,  0.85, &
+                  2.65,  1.09,  0.80,  0.001, 0.04,  0.05, &
+                  0.01,  0.04,  0.06,  0.05,  0.03,  0.001, &
+                  0.000, 0.000, 0.000, 0.000, 0.000, 0.000/)
+
 !----------------------------------------------------------------------
 !
       JTF=MIN0(JTE,JDE-1)
@@ -1022,6 +1034,8 @@ CONTAINS
       ENDDO
 !----------------------------------------------------------------------
 #if (NMM_CORE == 1)
+
+        IF (MAXVAL(IVGTYP) .lt. 13) THEN
       DO J=JTS,JTE
       DO I=ITS,ITE
         SM=SEAMASK(I,J)-1.
@@ -1030,6 +1044,20 @@ CONTAINS
         ENDIF
       ENDDO
       ENDDO
+
+        ELSE
+
+      DO J=JTS,JTE
+      DO I=ITS,ITE
+        SM=SEAMASK(I,J)-1.
+        IF(SM+XICE(I,J).LT.0.5)THEN
+          Z0(I,J)=Z0(I,J)+VZ0TBL_24(IVGTYP(I,J))
+        ENDIF
+      ENDDO
+      ENDDO
+
+        ENDIF ! vegtype check
+
 #endif
 !----------------------------------------------------------------------
       IF(.NOT.RESTART)THEN
@@ -1047,11 +1075,14 @@ CONTAINS
       FH01=1.
       FH02=1.
 !
-      ZTMIN1=-10.0
-      ZTMAX1=2.0
-!
-      ZTMIN2=-10.0
-      ZTMAX2=2.0
+!      ZTMIN1=-10.0
+!      ZTMAX1=2.0
+!      ZTMIN2=-10.0
+!      ZTMAX2=2.0
+      ZTMIN1=-5.0
+      ZTMAX1=1.0
+      ZTMIN2=-5.0
+      ZTMAX2=1.0
 !
       ZRNG1=ZTMAX1-ZTMIN1
       ZRNG2=ZTMAX2-ZTMIN2

@@ -14,6 +14,7 @@ CONTAINS
                          JULDAY,config_flags,RADT,STEPRA,ICLOUD,         &
                          taucldi,taucldc,warm_rain,                      &
                          XLAND,TSK,HTOP,HBOT,CUPPT,VEGFRA,SNOW,          &
+                         F_ICE_PHY,F_RAIN_PHY,                           &
                          julyr,                                          &
                          NPHS,                                           &
                          TOTSWDN,TOTLWDN,RSWTOA,RLWTOA,CZMEAN,           &
@@ -174,6 +175,8 @@ CONTAINS
 !-- P_QI          species index for cloud ice
 !-- P_QS          species index for snow
 !-- P_QG          species index for graupel
+!-- F_ICE_PHY     fraction of ice
+!-- F_RAIN_PHY    fraction of rain
 !-- ids           start index for i in domain
 !-- ide           end index for i in domain
 !-- jds           start index for j in domain
@@ -230,7 +233,10 @@ CONTAINS
                                                           pi_phy, &
                                                            t_phy, &
                                                              t8w, &
-                                                         rho_phy
+                                                         rho_phy, &
+                                                       F_ICE_PHY, &
+                                                      F_RAIN_PHY
+
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          INTENT(INOUT) ::                                 CLDFRA
 !
@@ -372,7 +378,7 @@ CONTAINS
 
              gfdl_lw  = .true.
 
-               CALL  ETARA(DT,RTHRATEN,RTHRATENLW,RTHRATENSW,pi_phy, &
+               CALL ETARA(DT,RTHRATEN,RTHRATENLW,RTHRATENSW,pi_phy, &
                         XLAND,p8w,dz8w,rho_phy,p_phy,t_phy,          &
                         moist(ims,kms,jms,P_QV),                     &
                         moist(ims,kms,jms,P_QC),TSK,GLW,GSW,         &
@@ -383,6 +389,7 @@ CONTAINS
                         julyr,julday,gfdl_lw,gfdl_sw,                &
                         CFRACL,CFRACM,CFRACH,                        & !Added
                         ACFRST,NCFRST,ACFRCV,NCFRCV,                 & !Added
+                        F_ICE_PHY,F_RAIN_PHY,                        & !added
                         ids,ide, jds,jde, kds,kde,                   &
                         ims,ime, jms,jme, kms,kme,                   &
                         its,ite, jts,jte, kts,kte                    )
@@ -463,6 +470,7 @@ CONTAINS
                         julyr,julday,gfdl_lw,gfdl_sw,                &
                         CFRACL,CFRACM,CFRACH,                        & !Added
                         ACFRST,NCFRST,ACFRCV,NCFRCV,                 & !Added
+                        F_ICE_PHY,F_RAIN_PHY,                        & !added
                         ids,ide, jds,jde, kds,kde,                   &
                         ims,ime, jms,jme, kms,kme,                   &
                         its,ite, jts,jte, kts,kte                    )

@@ -1,9 +1,9 @@
 !WRF:MODEL_LAYER:PHYSICS
 !
-MODULE module_sf_LSM_NMM
+MODULE MODULE_SF_LSM_NMM
 
-USE module_MPP
-USE module_model_constants
+USE MODULE_MPP
+USE MODULE_MODEL_CONSTANTS
 
   REAL, SAVE    :: SCFX(30)
 
@@ -12,7 +12,7 @@ USE module_model_constants
 CONTAINS
 
 !-----------------------------------------------------------------------
-      SUBROUTINE NMMLSM(DZ8W,QV3D,P8W3D,RHO3D,                             &
+      SUBROUTINE NMMLSM(DZ8W,QV3D,P8W3D,RHO3D,                          &
      &               T3D,TH3D,TSK,CHS,                                  &
      &               HFX,QFX,QGH,GSW,GLW,ELFLX,                         &
      &               SMSTAV,SMSTOT,SFCRUNOFF,                           &
@@ -104,7 +104,7 @@ CONTAINS
 !
       REAL,DIMENSION(IMS:IME,1:NUM_SOIL_LAYERS,JMS:JME),                &
      &     INTENT(INOUT) ::                                      SMOIS, & ! new
-                                                                 SMLIQ, & ! new
+					                         SMLIQ, & ! new
                                                                  TSLB     ! 
 
       REAL,DIMENSION(1:NUM_SOIL_LAYERS),INTENT(IN) :: DZS
@@ -278,20 +278,20 @@ CONTAINS
 !                                                                       
    REAL,     DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ),       &
              INTENT(INOUT)   ::                          SMOIS,       & ! new
-                                                         SMLIQ,       & ! new
+						         SMLIQ,       & ! new
                                                          TSLB           ! new  !STEMP
 
 
    REAL,    DIMENSION( ims:ime, jms:jme )                           , &
             INTENT(INOUT)    ::                                  TSK, & !was TGB (temperature)
-                                                                 HFX, & !new
-                                                                 QFX, & !new
-                                                                 QSFC,& !new
-                                                                SNOW, & !new
-                                                               SNOWH, & !new
-                                                                 ALB, &
-                                                              SNOALB, &
-                                                               ALBSF, &
+						                 HFX, & !new
+						                 QFX, & !new
+						                 QSFC,& !new
+						                SNOW, & !new
+						               SNOWH, & !new
+						 	         ALB, &
+						 	      SNOALB, &
+						 	       ALBSF, &
                                                                SNOWC, & 
                                                               CANWAT, & ! new
                                                               SMSTAV, &
@@ -320,7 +320,7 @@ CONTAINS
 
    REAL,    DIMENSION( ims:ime, jms:jme )                           , &
             INTENT(INOUT)    ::                                   Q2, &
-                                                                 TH2, &
+							         TH2, &
                                                               SFCEXC
 
    REAL,    DIMENSION( ims:ime, jms:jme )                           , &
@@ -340,19 +340,18 @@ CONTAINS
 ! MODULE-LOCAL VARIABLES, DEFINED IN  SUBROUTINE LSM
    REAL,    DIMENSION( its:ite )                                    , &
             INTENT(IN   )    ::                                   ZA, &
-                                                                  TH, & 
-                                                                  QV, & 
-                                                                   T, & 
+                                                                  TH, &
+                                                                  QV, &
+                                                                   T, &
                                                                  p8w, &
                                                                 PSFC, &
                                                                  rho, &
                                                                 PREC    ! one time step in mm
-
-
-! LOCAL VARS
    REAL,    DIMENSION( its:ite )   ::                          TGDSA 
 
-   REAL, DIMENSION(1:num_soil_layers) :: SMLIQ1D,SMOIS1D,STEMP1D
+! LOCAL VARS
+
+    REAL, DIMENSION(1:num_soil_layers) :: SMLIQ1D,SMOIS1D,STEMP1D
 
 !---------------------------------------------------------------------- 
 !***  DECLARATIONS FOR IMPLICIT NONE                                    
@@ -447,6 +446,7 @@ CONTAINS
 !*** LAND OR SEA-ICE                                                    
 !ATEC          ICE=INT(XICE(I,J)+0.3)                                   
           IF (XICE(I,J) .GT. 0.5) THEN                                  
+!	write(0,*) 'ICE is 1 at : ', I,J
              ICE=1                                                      
           ELSE                                                          
              ICE=0                                                      
@@ -456,6 +456,15 @@ CONTAINS
           Z=ZA(I)                                                    
 !          FK=GSW(I,J)+GLW(I,J)                                          
           LWDN=GLW(I,J)
+
+
+!tst
+	if (I .ge. 198 .and. I .le. 202 .and. J .ge. 486 .and. J .le. 494) then
+!	write(0,*) 'I,J,LWDN: ', I,J,LWDN
+	endif
+!tst
+
+!         SOLDN=GSW(I,J)
           SOLDN=GSW(I,J)/(1.-ALB(I,J))                                  
           ALBSF1D=ALBSF(I,J)
           SNOALB1D=SNOALB(I,J)
@@ -529,13 +538,21 @@ CONTAINS
           VGFRCK,DUM6,TBOTK,ALBSF1D,SNOALB1D,                           &
           CMCK,T1K,STEMP1D,SMOIS1D,SMLIQ1D,SNOWH1D,SNODPK,ALB1D,CHK,DUM7, &
           PLFLX,ELFLX(I,J),HFLX,GFLX,RNOF1K,RNOF2K,Q1K,SMELTK,          &
-          SOILQW,SOILQM,DUM1,DUM2,DUM3,DUM4,i,j)
+          SOILQW,SOILQM,DUM1,DUM2,DUM3,DUM4)
 !-----------------------------------------------------------------------
 !***  DIAGNOSTICS                                                       
 !        Convert the water unit into mm                                 
           SFCRUNOFF(I,J)=SFCRUNOFF(I,J)+RNOF1K*DT*1000.0                  
           UDRUNOFF(I,J)=UDRUNOFF(I,J)+RNOF2K*DT*1000.0                  
           SMSTAV(I,J)=SOILQW                                            
+
+!mp
+	if (abs(SMSTAV(I,J)) .lt. 3.5) then
+	else
+	write(0,*) 'bad SMSTAV: ', I,J,SMSTAV(I,J)
+	endif
+!mp	
+
           SMSTOT(I,J)=SOILQM*1000.                                      
           SFCEXC(I,J)=CHK                                               
 !       IF(SNOB(I,J).GT.0..OR.SICE(I,J).GT.0.)THEN                      
@@ -559,7 +576,8 @@ CONTAINS
           T2K=T1K-HFX(I,J)/(RHO(I)*CPM(I)*CHS2(I))
           TH2(I,J)=T2K*(1.E5/SFCPRS)**ROVCP                                  
           Q2M=Q1K-QFX(I,J)/(RHO(I)*CHS2(I))                            
-          Q2(I,J)=Q2M
+!!!!!!    Q2(I,J)=Q2M
+!!!!!!    Q2(I,J)=Q2K
 !        t2k=th2k/(1.E5/SFCPRS)**ROVCP                                  
 !        QS(I,J)=Q1K                                                    
 !!!      QSFC(I,J)=Q1K                                                    
@@ -645,7 +663,7 @@ CONTAINS
        SHDFAC,PTU,TBOT,ALB,SNOALB,                                      &
        CMC,T1,STC,SMC,SH2O,SNOWH,SNEQV,ALBEDO,CH,CM,                    &
        ETP,ETA,H,S,RUNOFF1,RUNOFF2,Q1,SNMAX,                            &
-       SOILW,SOILM, SMCWLT,SMCDRY,SMCREF,SMCMAX,ii,jj)
+       SOILW,SOILM, SMCWLT,SMCDRY,SMCREF,SMCMAX)
 !
       IMPLICIT NONE
 !!
@@ -678,15 +696,15 @@ CONTAINS
 ! NOTE ON ALBEDO FRACTIONS:
 !   Input:
 !     ALB    = BASELINE SNOW-FREE ALBEDO, FOR JULIAN DAY OF YEAR 
-!              (USUALLY FROM TEMPORAL INTERPOLATION OF MONTHLY MEAN VALUES)
-!              (CALLING PROG MAY OR MAY NOT INCLUDE DIURNAL SUN ANGLE EFFECT)
+!   	       (USUALLY FROM TEMPORAL INTERPOLATION OF MONTHLY MEAN VALUES)
+!   	       (CALLING PROG MAY OR MAY NOT INCLUDE DIURNAL SUN ANGLE EFFECT)
 !     SNOALB = UPPER BOUND ON MAXIMUM ALBEDO OVER DEEP SNOW
-!              (E.G. FROM ROBINSON AND KUKLA, 1985, J. CLIM. & APPL. METEOR.)
+!   	       (E.G. FROM ROBINSON AND KUKLA, 1985, J. CLIM. & APPL. METEOR.)
 !   Output:
 !     ALBEDO = COMPUTED ALBEDO WITH SNOWCOVER EFFECTS 
-!             (COMPUTED USING ALB, SNOALB, SNEQV, AND SHDFAC->green veg frac)
+!   	      (COMPUTED USING ALB, SNOALB, SNEQV, AND SHDFAC->green veg frac)
 !
-!                ARGUMENT LIST IN THE CALL TO SFLX
+!   		 ARGUMENT LIST IN THE CALL TO SFLX
 !
 ! ----------------------------------------------------------------------
 ! 1. CALLING STATEMENT
@@ -738,7 +756,7 @@ CONTAINS
 !       SNOALB: ALBEDO UPPER BOUND OVER DEEP SNOW (FRACTION)
 !
 ! 3. STATE VARIABLES: BOTH INPUT AND OUTPUT
-!                        (NOTE: OUTPUT USUALLY MODIFIED FROM INPUT BY PHYSICS)
+!			 (NOTE: OUTPUT USUALLY MODIFIED FROM INPUT BY PHYSICS)
 !
 !      (denoted by "2" in column six of argument list at top of routine)
 !
@@ -763,7 +781,7 @@ CONTAINS
 !
 ! 4. OUTPUT (denoted by "O" in column six of argument list at top of routine)
 !
-!       NOTE-- SIGN CONVENTION OF SFC ENERGY FLUXES BELOW IS: NEGATIVE IF
+!	NOTE-- SIGN CONVENTION OF SFC ENERGY FLUXES BELOW IS: NEGATIVE IF
 !            SINK OF ENERGY TO SURFACE
 !
 !          ETP: POTENTIAL EVAPORATION (W M-2)
@@ -781,14 +799,15 @@ CONTAINS
 !        SOILM: TOTAL SOIL COLUMN MOISTURE CONTENT (M) (FROZEN + UNFROZEN)
 !
 !           FOR DIAGNOSTIC PURPOSES, RETURN SOME PRIMARY PARAMETERS NEXT
-!                       (SET IN ROUTINE REDPRM)
+!			(SET IN ROUTINE REDPRM)
 !
 !       SMCWLT: WILTING POINT (VOLUMETRIC)
 !       SMCDRY: DRY SOIL MOISTURE THRESHOLD WHERE DIRECT EVAP FRM TOP LYR ENDS
 !       SMCREF: SOIL MOISTURE THRESHOLD WHERE TRANSPIRATION BEGINS TO STRESS
 !       SMCMAX: POROSITY, I.E. SATURATED VALUE OF SOIL MOISTURE
-      INTEGER NSOLD,ii,jj
+      INTEGER NSOLD
       PARAMETER (NSOLD = 20)
+!tst      PARAMETER (NSOLD = 4)
 !
       LOGICAL SNOWNG
       LOGICAL FRZGRA
@@ -916,6 +935,9 @@ CONTAINS
       REAL ZBOT
       REAL Z0
       REAL ZSOIL(NSOLD)
+
+      CHARACTER(LEN=4) :: veg_def
+
 !
       PARAMETER ( TFREEZ = 273.15      )
       PARAMETER ( LVH2O  = 2.501000E+6 )
@@ -931,6 +953,13 @@ CONTAINS
                    DEW,RIB,RUNOFF3
 
 !   INITIALIZATION
+
+
+!tst
+	if (SH2O(1) .lt. 0) then
+	write(0,*) 'negative SH2O coming INTO SFLX... ', SH2O(1),SMC(1)
+	endif
+!tst
 
       RUNOFF1 = 0.0
       RUNOFF2 = 0.0
@@ -965,12 +994,33 @@ CONTAINS
 !C
 !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 !C
+        veg_def='9999'
+        call get_mminlu(veg_def)
+
+        if (veg_def .ne. 'USGS') then
         CALL REDPRM(VEGTYP,SOILTYP, SLOPETYP,                         &
           CFACTR, CMCMAX, RSMAX, TOPT, REFKDT, KDT, SBETA,            &
           SHDFAC, RCMIN, RGL, HS, ZBOT, FRZX, PSISAT, SLOPE,          &
           SNUP, SALP, B, DKSAT, DWSAT, SMCMAX, SMCWLT, SMCREF,        &
           SMCDRY, F1, QUARTZ, FXEXP, RTDIS, SLDPTH, ZSOIL,            &
           NROOT, NSOIL, Z0, CZIL, XLAI, CSOIL, PTU)
+	else 
+        CALL REDPRM_USGS(VEGTYP,SOILTYP, SLOPETYP,                         &
+          CFACTR, CMCMAX, RSMAX, TOPT, REFKDT, KDT, SBETA,            &
+          SHDFAC, RCMIN, RGL, HS, ZBOT, FRZX, PSISAT, SLOPE,          &
+          SNUP, SALP, B, DKSAT, DWSAT, SMCMAX, SMCWLT, SMCREF,        &
+          SMCDRY, F1, QUARTZ, FXEXP, RTDIS, SLDPTH, ZSOIL,            &
+          NROOT, NSOIL, Z0, CZIL, XLAI, CSOIL, PTU)
+	
+	if ( abs(SMCWLT) .lt. 1.5) then
+!okay
+	else
+	write(0,*) 'BAD SMCWLT from REDPRM_USGS: ', SMCWLT
+	write(0,*) 'BAD VEGTYP,SOILTYP:: ', VEGTYP,SOILTYP
+	endif
+	
+        endif
+
 !
 !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 !C
@@ -1206,7 +1256,7 @@ CONTAINS
 !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 
        CALL PENMAN ( SFCTMP,SFCPRS,CH,T2V,TH2,PRCP,F,T24,S,Q2,     &
-                    Q2SAT,ETP,RCH,EPSCA,RR,SNOWNG,FRZGRA,DQSDT2,ii,jj)
+                    Q2SAT,ETP,RCH,EPSCA,RR,SNOWNG,FRZGRA,DQSDT2)
 !
 ! following old constraint is disabled
 !.....IF(SATURATED) ETP = 0.0
@@ -1249,6 +1299,10 @@ CONTAINS
                        QUARTZ, FXEXP,CSOIL)
 
         ELSE
+
+	if (SH2O(1) .lt. 0) then
+	write(0,*) 'calling SNOPAC with negative SH2O: ', SH2O(1)
+	endif
 
           CALL SNOPAC ( ETP,ETA,PRCP,PRCP1,SNOWNG,SMC,SMCMAX,SMCWLT,  &
                       SMCREF, SMCDRY, CMC, CMCMAX, NSOIL, DT,         &
@@ -1306,6 +1360,16 @@ CONTAINS
         SOILWW=SOILWW+(SMC(K)-SMCWLT)*(ZSOIL(K-1)-ZSOIL(K))
       END DO
       SOILW=SOILWW/SOILWM
+
+	if (SOILWM .eq. 0) then
+	write(0,*) 'div zero in SFLX....SMCMAX, SMCWLT: ', SMCMAX, SMCWLT
+	endif
+	
+	if (abs(SOILW) .lt. 3.5) then
+	else
+	write(0,*) 'bad SOILW in SFLX...SMCMAX, SMCWLT: ', SMCMAX, SMCWLT
+	write(0,*) 'SMC: ', SMC
+	endif
 !
       END SUBROUTINE SFLX
 
@@ -1354,6 +1418,7 @@ CONTAINS
 
       INTEGER   NSOLD
       PARAMETER (NSOLD = 20)
+!tst      PARAMETER (NSOLD = 4)
 
       INTEGER K
       INTEGER NROOT
@@ -1468,6 +1533,7 @@ CONTAINS
 
       INTEGER NSOLD
       PARAMETER ( NSOLD = 20 )
+!tst      PARAMETER ( NSOLD = 4 )
 
       INTEGER I
       INTEGER K
@@ -1556,6 +1622,11 @@ CONTAINS
       S = DF1 * ( STC(1) - YY ) / ( 0.5 * ZSOIL(1) * ZZ1 )
       RHSTS(1) = ( DF1 * DTSDZ - S ) / ( ZSOIL(1) * HCPCT )
 
+	if (DT*RHSTS(1) .lt. -100.) then
+	write(0,*) 'DTSDZ, ZSOIL(1), DF1, S, RHSTS(1): ',  &
+             DTSDZ, ZSOIL(1), DF1, S, RHSTS(1)
+        endif
+
 ! NEXT, SET TEMP "TSURF" AT TOP OF SOIL COLUMN (FOR USE IN FREEZING
 ! SOIL PHYSICS LATER IN FUNCTION SUBROUTINE SNKSRC). IF SNOWPACK 
 ! CONTENT IS ZERO, THEN EXPRESSION BELOW GIVES TSURF = SKIN TEMP.
@@ -1563,6 +1634,7 @@ CONTAINS
 ! BELOW YIELDS SOIL COLUMN TOP TEMPERATURE UNDER SNOWPACK.
 !
       TSURF = ( YY + ( ZZ1 - 1 ) * STC(1) ) / ZZ1
+
 !
 ! NEXT CAPTURE THE VERTICAL DIFFERENCE OF THE HEAT FLUX AT TOP 
 ! AND BOTTOM OF FIRST SOIL LAYER FOR USE IN HEAT FLUX CONSTRAINT 
@@ -1587,11 +1659,26 @@ CONTAINS
 !
       IF ( (SICE .GT. 0.) .OR. (TSURF .LT. T0) .OR.            &
            (STC(1) .LT. T0) .OR. (TBK .LT. T0) ) THEN
+
+!	write(0,*) 'call SNKSRC... ', TSURF, STC(1),TBK,SMC(1),SH2O(1)
  
+	if (SH2O(1) .lt. 0) then
+	write(0,*) 'NEGATIVE SH2O:: ', SH2O(1)
+	endif
+
        TSNSR = SNKSRC ( TSURF, STC(1),TBK, SMC(1), SH2O(1),    &
                  ZSOIL, NSOIL, SMCMAX, PSISAT, B, DT, 1, QTOT )
+	
+	if (SH2O(1) .lt. 0) then
+	write(0,*) 'NEGATIVE SH2O(b):: ', SH2O(1)
+	write(0,*) 'return TSNSR: ', TSNSR
+	endif
 
        RHSTS(1) = RHSTS(1) - TSNSR / ( ZSOIL(1) * HCPCT )
+
+	if (DT*RHSTS(1) .lt. -100.) then
+	write(0,*) 'TBK, TSNSR,  RHSTS(1): ', TBK,  TSNSR, RHSTS(1)
+        endif
 
       ENDIF
  
@@ -1715,6 +1802,7 @@ CONTAINS
 
       INTEGER NSOLD
       PARAMETER ( NSOLD = 20 )
+!tst      PARAMETER ( NSOLD = 4 )
 
       INTEGER K
       INTEGER NSOIL
@@ -1854,6 +1942,7 @@ CONTAINS
 
       INTEGER NSOLD
       PARAMETER ( NSOLD = 20 )
+!tst      PARAMETER ( NSOLD = 4  )
 
       INTEGER K
       INTEGER NSOIL
@@ -1897,12 +1986,23 @@ CONTAINS
 
       CALL ROSR12 ( CI,AI,BI,CIin,RHSTSin,RHSTS,NSOIL)
 
+	if (RHSTS(1) .lt. -100) then
+	write(0,*) 'RHSTSin was: ', RHSTSin
+	write(0,*) 'RHSTS after ROSR12: ', RHSTS
+	endif
+
+	
 !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 !     CALC/UPDATE THE SOIL TEMPS USING MATRIX SOLUTION
 !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 
       DO K = 1 , NSOIL
          STCOUT(K) = STCIN(K) + CI(K)
+!
+	if (STCOUT(K) .lt. 100 .and. STCIN(K) .gt. 230) then
+	write(0,*) 'STC dropped in HSTEP: ', STCIN(K),STCOUT(K)
+	endif
+
       END DO
 
       END SUBROUTINE HSTEP
@@ -2107,7 +2207,7 @@ CONTAINS
       END SUBROUTINE NOPAC
 
       SUBROUTINE PENMAN(SFCTMP,SFCPRS,CH,T2V,TH2,PRCP,F,T24,S,Q2,    &
-                        Q2SAT,ETP,RCH,EPSCA,RR,SNOWNG,FRZGRA,DQSDT2,ii,jj)
+                        Q2SAT,ETP,RCH,EPSCA,RR,SNOWNG,FRZGRA,DQSDT2)
 
       IMPLICIT NONE
 
@@ -2116,7 +2216,6 @@ CONTAINS
 !C    =======   VARIOUS PARTIAL SUMS/PRODUCTS ARE ALSO CALCULATED AND
 !C              PASSED BACK TO THE CALLING ROUTINE FOR LATER USE.
 !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-      integer :: ii,jj
 
       LOGICAL SNOWNG
       LOGICAL FRZGRA
@@ -2527,6 +2626,522 @@ CONTAINS
 ! Soil heat capacity [J/m^3/K]
 
       REAL CSOIL, CSOIL_DATA
+      DATA CSOIL_DATA /2.00E+6/
+
+!  SPECIFY SNOW DISTRIBUTION SHAPE PARAMETER
+!  SALP   - SHAPE PARAMETER OF DISTRIBUTION FUNCTION
+!  OF SNOW COVER. FROM ANDERSON'S DATA (HYDRO-17)
+!  BEST FIT IS WHEN SALP = 2.6
+      REAL SALP, SALP_DATA
+      DATA SALP_DATA /2.6/
+
+!  KDT IS DEFINED BY REFERENCE REFKDT AND DKSAT
+!  REFDK=2.E-6 IS THE SAT. DK. VALUE FOR THE SOIL TYPE 2
+      REAL REFDK, REFDK_DATA
+      DATA REFDK_DATA /2.0E-6/
+
+      REAL REFKDT, REFKDT_DATA
+      DATA REFKDT_DATA /3.0/
+
+      REAL KDT
+      REAL FRZX
+
+!  FROZEN GROUND PARAMETER, FRZK, DEFINITION
+!  FRZK IS ICE CONTENT THRESHOLD ABOVE WHICH FROZEN SOIL IS IMPERMEABLE
+!  REFERENCE VALUE OF THIS PARAMETER FOR THE LIGHT CLAY SOIL (TYPE=3)
+!  FRZK = 0.15 M
+      REAL FRZK, FRZK_DATA
+      DATA FRZK_DATA /0.15/
+
+      REAL RTDIS(NSOIL)
+      REAL SLDPTH(NSOIL)
+      REAL ZSOIL(NSOIL)
+
+!  Set two canopy water parameters
+      REAL CFACTR, CFACTR_DATA
+      REAL CMCMAX, CMCMAX_DATA
+      DATA CFACTR_DATA /0.5/
+      DATA CMCMAX_DATA /0.5E-3/
+
+!  Set max. stomatal resistance
+      REAL RSMAX, RSMAX_DATA
+      DATA RSMAX_DATA /5000.0/
+
+!  Set optimum transpiration air temperature
+      REAL TOPT, TOPT_DATA
+      DATA TOPT_DATA /298.0/
+
+!  Specify depth[m] of lower boundary soil temperature
+      REAL ZBOT, ZBOT_DATA
+      DATA ZBOT_DATA /-3.0/
+
+!#######################################################################
+
+!  Namelist definition
+
+      NAMELIST /SOIL_VEG/ SLOPE_DATA, RSMTBL, RGLTBL, HSTBL, SNUPX,     &
+           BB, DRYSMC, F11, MAXSMC, REFSMC, SATPSI, SATDK, SATDW,       &
+           WLTSMC, QTZ, LPARAM, ZBOT_DATA, SALP_DATA, CFACTR_DATA,      &
+           CMCMAX_DATA, SBETA_DATA, RSMAX_DATA, TOPT_DATA,              &
+           REFDK_DATA, FRZK_DATA, BARE, DEFINED_VEG, DEFINED_SOIL,      &
+           DEFINED_SLOPE, FXEXP_DATA, NROOT_DATA, REFKDT_DATA, Z0_DATA, &
+           CZIL_DATA, LAI_DATA, CSOIL_DATA
+
+!  Read namelist file to override default parameters
+!  only once.
+!
+!  7/6/01 : E. Rogers commented out read of unit 58 since
+!           NCO does not allow hardwired file names in the code.
+
+!     IF (LFIRST) THEN
+!        OPEN(58, FILE = 'namelist_filename.txt')
+! NAMELIST_NAME must be 50 characters or less.
+!        READ(58,'(A)') NAMELIST_NAME
+!        CLOSE(58)
+!        WRITE(*,*) 'Namelist Filename is ', NAMELIST_NAME
+!        OPEN(59, FILE = NAMELIST_NAME)
+ 50      CONTINUE
+!           READ(59, SOIL_VEG, END=100)
+!        IF (LPARAM) GOTO 50
+ 100     CONTINUE
+!        CLOSE(59)
+!        WRITE(*,NML=SOIL_VEG)
+!        LFIRST = .FALSE.
+         IF (DEFINED_SOIL .GT. MAX_SOILTYP) THEN
+            WRITE(*,*) 'Warning: DEFINED_SOIL too large in namelist'
+            STOP 222
+         END IF
+         IF (DEFINED_VEG .GT. MAX_VEGTYP) THEN
+            WRITE(*,*) 'Warning: DEFINED_VEG too large in namelist'
+            STOP 222
+         END IF
+         IF (DEFINED_SLOPE .GT. MAX_SLOPETYP) THEN
+            WRITE(*,*) 'Warning: DEFINED_SLOPE too large in namelist'
+            STOP 222
+         END IF
+
+         DO I = 1, DEFINED_SOIL
+            SATDW(I)  = BB(I)*SATDK(I)*(SATPSI(I)/MAXSMC(I))
+            F11(I)    = ALOG10(SATPSI(I)) + BB(I)*ALOG10(MAXSMC(I)) + 2.0
+            REFSMC1   = MAXSMC(I)*(5.79E-9/SATDK(I))  &
+                                          **(1.0/(2.0*BB(I)+3.0))
+            REFSMC(I) = REFSMC1 + (MAXSMC(I)-REFSMC1) / 3.0
+            WLTSMC1   = MAXSMC(I) * (200.0/SATPSI(I))**(-1.0/BB(I))
+            WLTSMC(I) = WLTSMC1 - 0.5 * WLTSMC1
+! Current version DRYSMC values that equate to WLTSMC
+! Future version could let DRYSMC be independently set via namelist 
+            DRYSMC(I) = WLTSMC(I)
+         END DO
+
+!     END IF
+
+      IF (SOILTYP .GT. DEFINED_SOIL) THEN
+         WRITE(*,*) 'Warning: too many soil types'
+         STOP 333
+      END IF
+      IF (VEGTYP .GT. DEFINED_VEG) THEN
+         WRITE(*,*) 'Warning: too many veg types'
+         STOP 333
+      END IF
+      IF (SLOPETYP .GT. DEFINED_SLOPE) THEN
+         WRITE(*,*) 'Warning: too many slope types'
+         STOP 333
+      END IF
+
+!  SET-UP UNIVERSAL PARAMETERS 
+! (NOT DEPENDENT ON SOILTYP, VEGTYP OR SLOPETYP)
+      ZBOT   = ZBOT_DATA
+      SALP   = SALP_DATA
+      CFACTR = CFACTR_DATA
+      CMCMAX = CMCMAX_DATA
+      SBETA  = SBETA_DATA
+      RSMAX  = RSMAX_DATA
+      TOPT   = TOPT_DATA
+      REFDK  = REFDK_DATA
+      FRZK   = FRZK_DATA
+      FXEXP  = FXEXP_DATA
+      REFKDT = REFKDT_DATA
+      CZIL   = CZIL_DATA
+      CSOIL  = CSOIL_DATA
+
+!  SET-UP SOIL PARAMETERS
+      B       = BB(SOILTYP)
+      SMCDRY  = DRYSMC(SOILTYP)
+      F1      = F11(SOILTYP)
+      SMCMAX  = MAXSMC(SOILTYP)
+      SMCREF  = REFSMC(SOILTYP)
+      PSISAT  = SATPSI(SOILTYP)
+      DKSAT   = SATDK(SOILTYP)
+      DWSAT   = SATDW(SOILTYP)
+      SMCWLT  = WLTSMC(SOILTYP)
+      QUARTZ  = QTZ(SOILTYP)
+      FRZFACT = (SMCMAX / SMCREF) * (0.412 / 0.468)
+      KDT     = REFKDT * DKSAT/REFDK
+
+!  TO ADJUST FRZK PARAMETER TO ACTUAL SOIL TYPE: FRZK * FRZFACT
+
+      FRZX = FRZK * FRZFACT
+
+!  SET-UP VEGETATION PARAMETERS
+      NROOT = NROOT_DATA(VEGTYP)
+      SNUP  = SNUPX(VEGTYP)
+      RCMIN = RSMTBL(VEGTYP)
+      RGL   = RGLTBL(VEGTYP)
+      HS    = HSTBL(VEGTYP)
+      Z0    = Z0_DATA(VEGTYP)
+      LAI   = LAI_DATA(VEGTYP)
+      IF(VEGTYP .EQ. BARE) SHDFAC = 0.0
+
+      IF (NROOT .GT. NSOIL) THEN
+         WRITE(*,*) 'Warning: too many root layers'
+         WRITE(*,*) 'nroot=',nroot,' nsoil=',nsoil
+         STOP 333
+      END IF
+
+!  CALCULATE ROOT DISTRIBUTION
+!  PRESENT VERSION ASSUMES UNIFORM DISTRIBUTION BASED ON SOIL LAYERS
+
+      DO I=1,NROOT
+         RTDIS(I) = -SLDPTH(I)/ZSOIL(NROOT)
+      END DO
+
+!  SET-UP SLOPE PARAMETER
+      SLOPE = SLOPE_DATA(SLOPETYP)
+!
+      END SUBROUTINE REDPRM
+
+! --------------------------------------------------------------
+
+      SUBROUTINE REDPRM_USGS(VEGTYP, SOILTYP, SLOPETYP,              &
+           CFACTR, CMCMAX, RSMAX, TOPT, REFKDT, KDT, SBETA,     &
+           SHDFAC, RCMIN, RGL, HS, ZBOT, FRZX, PSISAT, SLOPE,   &
+           SNUP, SALP, B, DKSAT, DWSAT, SMCMAX, SMCWLT, SMCREF, &
+           SMCDRY, F1, QUARTZ, FXEXP, RTDIS, SLDPTH, ZSOIL,     &
+           NROOT, NSOIL, Z0, CZIL, LAI, CSOIL, PTU)
+
+
+      IMPLICIT NONE
+
+
+!  This subroutine internally sets (defaults), or optionally reads-in
+!  via namelist I/O, all the soil and vegetation parameters
+!  required for the execusion of the NOAH - LSM
+!
+! optional non-default parameters can be read in, accommodating up
+!  to 30 soil, veg, or slope classes, if the default max number of
+!  soil, veg, and/or slope types is reset.
+
+! future upgrades of routine REDPRM must expand to incorporate some
+! of the empirical parameters of the frozen soil and snowpack physics
+! (such as in routines FRH2O, SNOWPACK, and SNOW_NEW) not yet set in
+!  this REDPRM routine, but rather set in lower level subroutines
+
+!  Set maximum number of soil-, veg-, and slopetyp in data statement
+
+      INTEGER MAX_SOILTYP
+      INTEGER MAX_VEGTYP
+      INTEGER MAX_SLOPETYP
+      PARAMETER (MAX_SOILTYP  = 30)
+      PARAMETER (MAX_VEGTYP   = 30)
+      PARAMETER (MAX_SLOPETYP = 30)
+
+!  Number of defined soil-, veg-, and slopetyps used
+
+      INTEGER DEFINED_VEG
+      INTEGER DEFINED_SOIL
+      INTEGER DEFINED_SLOPE
+      DATA DEFINED_VEG/24/
+      DATA DEFINED_SOIL/16/
+      DATA DEFINED_SLOPE/9/
+
+!  SET-UP SOIL PARAMETERS FOR GIVEN SOIL TYPE
+!  INPUT: SOLTYP: SOIL TYPE (INTEGER INDEX)
+!  OUTPUT: SOIL PARAMETERS:
+
+!    MAXSMC: MAX SOIL MOISTURE CONTENT (POROSITY)
+!    REFSMC: REFERENCE SOIL MOISTURE (ONSET OF SOIL MOISTURE
+!            STRESS IN TRANSPIRATION)
+!    WLTSMC: WILTING PT SOIL MOISTURE CONTENTS
+!    DRYSMC: AIR DRY SOIL MOIST CONTENT LIMITS
+!    SATPSI: SATURATED SOIL POTENTIAL
+!    SATDK:  SATURATED SOIL HYDRAULIC CONDUCTIVITY
+!    BB:     THE 'B' PARAMETER
+!    SATDW:  SATURATED SOIL DIFFUSIVITY
+!    F11:    USED TO COMPUTE SOIL DIFFUSIVITY/CONDUCTIVITY
+!    QUARTZ:  SOIL QUARTZ CONTENT
+!
+!C     SOIL TYPES    STATSGO (Miller ??, 199?)  Cosby et al (1984)
+!C             1          SAND                  SAND
+!C             2          LOAMY SAND            LOAMY SAND
+!C             3          SANDY LOAM            SANDY LOAM
+!C             4          SILT LOAM             SILTY LOAM
+!C             5          SILT                  SILTY LOAM
+!C             6          LOAM                  LOAM
+!C             7          SANDY CLAY LOAM       SANDY CLAY LOAM
+!C             8          SILTY CLAY LOAM       SILTY CLAY LOAM
+!C             9          CLAY LOAM             CLAY LOAM
+!C            10          SANDY CLAY            SANDY CLAY
+!C            11          SILTY CLAY            SILTY CLAY
+!C            12          CLAY                  LIGHT CLAY
+!C            13          ORGANIC MATERIALS     LOAM
+!C            14          WATER
+!C            15          BEDROCK
+!C                        Bedrock is reclassified as class 14
+!C            16          OTHER (land-ice)
+!C                        the value of this class is the same as in class
+
+
+      REAL BB(MAX_SOILTYP)
+      REAL DRYSMC(MAX_SOILTYP)
+      REAL F11(MAX_SOILTYP)
+      REAL MAXSMC(MAX_SOILTYP)
+      REAL REFSMC(MAX_SOILTYP)
+      REAL SATPSI(MAX_SOILTYP)
+      REAL SATDK(MAX_SOILTYP)
+      REAL SATDW(MAX_SOILTYP)
+      REAL WLTSMC(MAX_SOILTYP)
+      REAL QTZ(MAX_SOILTYP)
+
+      REAL B
+      REAL DKSAT
+      REAL DWSAT
+      REAL SMCMAX
+      REAL SMCWLT
+      REAL SMCREF
+      REAL SMCDRY
+      REAL PTU
+      REAL F1
+      REAL QUARTZ
+      REAL REFSMC1
+      REAL WLTSMC1
+
+      DATA MAXSMC/0.339, 0.421, 0.434, 0.476, 0.476, 0.439,  &
+                  0.404, 0.464, 0.465, 0.406, 0.468, 0.468,  &
+                  0.439, 1.000, 0.200, 0.421, 0.000, 0.000,  &
+                  0.000, 0.000, 0.000, 0.000, 0.000, 0.000,  &
+                  0.000, 0.000, 0.000, 0.000, 0.000, 0.000/
+      DATA SATPSI/0.069, 0.036, 0.141, 0.759, 0.759, 0.355,   &
+                  0.135, 0.617, 0.263, 0.098, 0.324, 0.468,   &
+                  0.355, 0.000, 0.069, 0.036, 0.000, 0.000,   &
+                  0.000, 0.000, 0.000, 0.000, 0.000, 0.000,   &
+                  0.000, 0.000, 0.000, 0.000, 0.000, 0.000/
+      DATA SATDK /1.07E-6, 1.41E-5, 5.23E-6, 2.81E-6, 2.81E-6, &
+                  3.38E-6, 4.45E-6, 2.04E-6, 2.45E-6, 7.22E-6, &
+                  1.34E-6, 9.74E-7, 3.38E-6, 0.00000, 1.41E-4, &
+                  1.41E-5, 0.00   , 0.00   , 0.00   , 0.00,    &
+                  0.00   , 0.00   , 0.00   , 0.00   , 0.00,    &
+                  0.00   , 0.00   , 0.00   , 0.00   , 0.00/
+      DATA BB    /2.79,  4.26,  4.74,  5.33,  5.33,  5.25,    &
+                  6.66,  8.72,  8.17, 10.73, 10.39, 11.55,    &
+                  5.25,  0.00,  2.79,  4.26,  0.00,  0.00,    &
+                  0.00,  0.00,  0.00,  0.00,  0.00,  0.00,    &
+                  0.00,  0.00,  0.00,  0.00,  0.00,  0.00/
+
+      DATA QTZ   /0.92, 0.82, 0.60, 0.25, 0.10, 0.40,        &
+                  0.60, 0.10, 0.35, 0.52, 0.10, 0.25,        &
+                  0.05, 0.60, 0.07, 0.25, 0.00, 0.00,        &
+                  0.00, 0.00, 0.00, 0.00, 0.00, 0.00,        &
+                  0.00, 0.00, 0.00, 0.00, 0.00, 0.00/
+
+! The following 5 parameters are derived later in REDPRM.f
+! from the soil data, and are just given here for reference
+! and to force static storage allocation
+! Dag Lohmann, Feb. 2001
+
+      DATA REFSMC/0.236, 0.283, 0.312, 0.360, 0.360, 0.329,     &
+                  0.314, 0.387, 0.382, 0.338, 0.404, 0.412,     &
+                  0.329, 0.000, 0.108, 0.283, 0.000, 0.000,     &
+                  0.000, 0.000, 0.000, 0.000, 0.000, 0.000,     &
+                  0.000, 0.000, 0.000, 0.000, 0.000, 0.000/
+      DATA WLTSMC/0.010, 0.028, 0.047, 0.084, 0.084, 0.066,     &
+                  0.067, 0.120, 0.103, 0.100, 0.126, 0.138,     &
+                  0.066, 0.000, 0.006, 0.028, 0.000, 0.000,     &
+                  0.000, 0.000, 0.000, 0.000, 0.000, 0.000,     &
+                  0.000, 0.000, 0.000, 0.000, 0.000, 0.000/
+      DATA DRYSMC/0.010, 0.028, 0.047, 0.084, 0.084, 0.066,     &
+                  0.067, 0.120, 0.103, 0.100, 0.126, 0.138,     &
+                  0.066, 0.000, 0.006, 0.028, 0.000, 0.000,     &
+                  0.000, 0.000, 0.000, 0.000, 0.000, 0.000,     &
+                  0.000, 0.000, 0.000, 0.000, 0.000, 0.000/
+      DATA SATDW /0.608E-6, 0.514E-5, 0.805E-5, 0.239E-4, 0.239E-4,  &
+                  0.143E-4, 0.990E-5, 0.237E-4, 0.113E-4, 0.187E-4,  &
+                  0.964E-5, 0.112E-4, 0.143E-4, 0.000000, 0.136E-3,  &
+                  0.514E-5, 0.00   , 0.00   , 0.00   , 0.00,     &
+                  0.00    , 0.00   , 0.00   , 0.00   , 0.00,     &
+                  0.00    , 0.00   , 0.00   , 0.00   , 0.00/
+      DATA F11  /-0.472, -1.044, -0.569, 0.162, 0.162, -0.327, &
+                  -1.491, -1.118, -1.297, -3.209, -1.916, -2.138, &
+                  -0.327,  0.000, -1.111, -1.044,  0.000,  0.000, &
+                  0.000,  0.000,  0.000,  0.000,  0.000,  0.000, &
+                  0.000,  0.000,  0.000,  0.000,  0.000,  0.000/
+
+!#######################################################################
+
+!  SET-UP VEGETATION PARAMETERS FOR A GIVEN VEGETAION TYPE
+!
+!  INPUT: VEGTYP = VEGETATION TYPE (INTEGER INDEX)
+!  OUPUT: VEGETATION PARAMETERS
+!         SHDFAC: VEGETATION GREENNESS FRACTION
+!         RCMIN:  MIMIMUM STOMATAL RESISTANCE
+!         RGL:    PARAMETER USED IN SOLAR RAD TERM OF
+!                 CANOPY RESISTANCE FUNCTION
+!         HS:     PARAMETER USED IN VAPOR PRESSURE DEFICIT TERM OF
+!                 CANOPY RESISTANCE FUNCTION
+!         SNUP:   THRESHOLD SNOW DEPTH (IN WATER EQUIVALENT M) THAT
+!                 IMPLIES 100% SNOW COVER
+!
+!     USGS Vegetation Types
+!C
+!C    1:   Urban and Built-Up Land
+!C    2:   Dryland Cropland and Pasture
+!     3:   Irrigated Cropland and Pasture
+!     4:   Mixed Dryland/Irrigated Cropland and Pasture
+!     5:   Cropland/Grassland Mosaic
+!C    6:   Cropland/Woodland Mosaic
+!C    7:   Grassland
+!C    8:   Shrubland
+!C    9:   Mixed Shrubland/Grassland
+!C   10:   Savanna
+!C   11:   Deciduous Broadleaf Forest
+!C   12:   Deciduous Needleleaf Forest
+!C   13:   Evergreen Broadleaf Forest
+!C   14:   Evergreen Needleleaf Forest
+!C   15:   Mixed Forest
+!C   16:   Water Bodies
+!C   17:   Herbaceous Wetland
+!C   18:   Wooded Wetland
+!C   19:   Barren or Sparsely Vegetated
+!C   20:   Herbaceous Tundra
+!C   21:   Wooded Tundra
+!C   22:   Mixed Tundra
+!C   23:   Bare Ground Tundra
+!C   24:   Snow or Ice
+
+
+      INTEGER NROOT_DATA(MAX_VEGTYP)
+      REAL    RSMTBL(MAX_VEGTYP)
+      REAL    RGLTBL(MAX_VEGTYP)
+      REAL    HSTBL(MAX_VEGTYP)
+      REAL    SNUPX(MAX_VEGTYP)
+      REAL    Z0_DATA(MAX_VEGTYP)
+      REAL    LAI_DATA(MAX_VEGTYP)
+
+      INTEGER NROOT
+      REAL    SHDFAC
+      REAL    RCMIN
+      REAL    RGL
+      REAL    HS
+      REAL    FRZFACT
+      REAL    PSISAT
+      REAL    SNUP
+      REAL    Z0
+      REAL    LAI
+
+
+      DATA NROOT_DATA /1,3,3,3,3,3,3,3,3,3,4,4,4,4,4,       &
+                       0,2,2,1,3,3,3,2,1,0,0,0,0,0,0/
+
+      DATA RSMTBL /200.0,  40.0,  40.0,  40.0,  40.0, 70.0, &
+                    40.0, 300.0, 170.0,  70.0, 100.0, 150.0, &
+                   150.0, 125.0, 125.0, 100.0,  40.0, 100.0, &
+                   999.0, 150.0, 150.0, 150.0, 200.0, 999.0, &
+                     0.0,   0.0,   0.0,   0.0,   0.0,  0.0/
+      DATA RGLTBL / 999., 100., 100., 100., 100.,  65., 100., 100., &
+                    100.,  65.,  30.,  30.,  30.,  30.,  30.,  30., &
+                    100.,  30., 999., 100., 100., 100., 100., 999., &
+                    0.0,  0.0,  0.0,   0.0,  0.0,  0.0/
+      DATA HSTBL/999.0, 36.25, 36.25, 36.25, 36.25, 44.14, 36.35, &
+                 42.00, 39.18, 54.53, 54.53, 47.35, 41.69, 47.35, &
+                 51.93, 51.75, 60.00, 51.93, 999.0, 42.00, 42.00, &
+                 42.00, 42.00, 999.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/
+
+      DATA SNUPX  /0.040, 0.040, 0.040, 0.040, 0.040, 0.040, &
+                   0.040, 0.030, 0.035, 0.040, 0.080, 0.080, &
+                   0.080, 0.080, 0.080, 0.010, 0.010, 0.020, &
+                   0.020, 0.025, 0.025, 0.025, 0.020, 0.020, &
+                   0.000, 0.000, 0.000, 0.000, 0.000, 0.000/
+      DATA Z0_DATA /1.00,  0.07,  0.07,  0.07,  0.07,  0.15, &
+                    0.08,  0.03,  0.05,  0.86,  0.80,  0.85, &
+                    2.65,  1.09,  0.80,  0.001,  0.04,  0.05, &
+                    0.01,  0.04,  0.06,  0.05,  0.03,  0.001, &
+                    0.000, 0.000, 0.000, 0.000, 0.000, 0.000/
+
+      DATA LAI_DATA /4.0, 4.0, 4.0, 4.0, 4.0, 4.0,  &
+                     4.0, 4.0, 4.0, 4.0, 4.0, 4.0,  &
+                     4.0, 4.0, 4.0, 0.0, 4.0, 4.0,  &
+                     4.0, 4.0, 4.0, 4.0, 4.0, 4.0,  &
+                     0.0, 0.0, 0.0, 0.0, 0.0, 0.0/
+
+!#######################################################################
+
+!  CLASS PARAMETER 'SLOPETYP' WAS INCLUDED TO ESTIMATE
+!  LINEAR RESERVOIR COEFFICIENT 'SLOPE' TO THE BASEFLOW RUNOFF
+!  OUT OF THE BOTTOM LAYER. LOWEST CLASS (SLOPETYP=0)MEANS
+!  HIGHEST SLOPE PARAMETER= 1
+!  DEFINITION OF SLOPETYP FROM 'ZOBLER' SLOPE TYPE
+!  SLOPE CLASS      PERCENT SLOPE
+!  1                0-8
+!  2                8-30
+!  3                > 30
+!  4                0-30
+!  5                0-8 & > 30
+!  6                8-30 & > 30
+!  7                0-8, 8-30, > 30
+!  9                GLACIAL ICE
+!  BLANK            OCEAN/SEA
+!  NOTE:  CLASS 9 FROM 'ZOBLER' FILE SHOULD BE REPLACED BY 8
+!  AND 'BLANK'  9
+
+      REAL SLOPE
+      REAL SLOPE_DATA(MAX_SLOPETYP)
+      DATA SLOPE_DATA /0.1,  0.6, 1.0, 0.35, 0.55, 0.8,  &
+                       0.63, 0.0, 0.0, 0.0,  0.0,  0.0,  &
+                       0.0 , 0.0, 0.0, 0.0,  0.0,  0.0,  &
+                       0.0 , 0.0, 0.0, 0.0,  0.0,  0.0,  &
+                       0.0 , 0.0, 0.0, 0.0,  0.0,  0.0/
+
+!#######################################################################
+
+!  Set namelist file name
+
+      CHARACTER*50 NAMELIST_NAME
+
+!#######################################################################
+
+! SET UNIVERSAL PARAMETERS (NOT DEPENDENT ON SOIL, VEG, SLOPE TYPE)
+
+      INTEGER VEGTYP
+      INTEGER SOILTYP
+      INTEGER SLOPETYP
+
+      INTEGER NSOIL
+      INTEGER I
+
+      INTEGER BARE
+      DATA    BARE /11/
+
+      LOGICAL LPARAM
+      DATA    LPARAM /.TRUE./
+
+      LOGICAL LFIRST
+      DATA    LFIRST /.TRUE./
+
+!  Parameter used to calculate roughness length of heat
+      REAL CZIL, CZIL_DATA
+      DATA CZIL_DATA /0.2/
+
+!  Parameter used to caluculate vegetation effect on soil heat flux
+      REAL SBETA, SBETA_DATA
+      DATA SBETA_DATA /-2.0/
+
+! BARE SOIL EVAPORATION EXPONENT USED IN DEVAP
+
+      REAL FXEXP, FXEXP_DATA
+      DATA FXEXP_DATA /2.0/
+
+! Soil heat capacity [J/m^3/K]
+
+      REAL CSOIL, CSOIL_DATA
       DATA CSOIL_DATA /1.26E+6/
 
 !  SPECIFY SNOW DISTRIBUTION SHAPE PARAMETER
@@ -2610,15 +3225,15 @@ CONTAINS
 !        LFIRST = .FALSE.
          IF (DEFINED_SOIL .GT. MAX_SOILTYP) THEN
             WRITE(*,*) 'Warning: DEFINED_SOIL too large in namelist'
-            CALL wrf_error_fatal ( 'Warning: DEFINED_SOIL too large in namelist' )
+            STOP 222
          END IF
          IF (DEFINED_VEG .GT. MAX_VEGTYP) THEN
             WRITE(*,*) 'Warning: DEFINED_VEG too large in namelist'
-            CALL wrf_error_fatal ( 'Warning: DEFINED_VEG too large in namelist' )
+            STOP 222
          END IF
          IF (DEFINED_SLOPE .GT. MAX_SLOPETYP) THEN
             WRITE(*,*) 'Warning: DEFINED_SLOPE too large in namelist'
-            CALL wrf_error_fatal ( 'Warning: DEFINED_SLOPE too large in namelist' )
+            STOP 222
          END IF
 
          DO I = 1, DEFINED_SOIL
@@ -2630,7 +3245,7 @@ CONTAINS
             WLTSMC1   = MAXSMC(I) * (200.0/SATPSI(I))**(-1.0/BB(I))
             WLTSMC(I) = WLTSMC1 - 0.5 * WLTSMC1
 ! Current version DRYSMC values that equate to WLTSMC
-! Future version could let DRYSMC be independently set via namelist 
+! Future version could let DRYSMC be independently set via namelist
             DRYSMC(I) = WLTSMC(I)
          END DO
 
@@ -2638,18 +3253,18 @@ CONTAINS
 
       IF (SOILTYP .GT. DEFINED_SOIL) THEN
          WRITE(*,*) 'Warning: too many soil types'
-         CALL wrf_error_fatal ( 'Warning: too many soil types' )
+         STOP 333
       END IF
       IF (VEGTYP .GT. DEFINED_VEG) THEN
          WRITE(*,*) 'Warning: too many veg types'
-         CALL wrf_error_fatal ( 'Warning: too many veg types' )
+         STOP 333
       END IF
       IF (SLOPETYP .GT. DEFINED_SLOPE) THEN
          WRITE(*,*) 'Warning: too many slope types'
-         CALL wrf_error_fatal ( 'Warning: too many slope types' )
+         STOP 333
       END IF
 
-!  SET-UP UNIVERSAL PARAMETERS 
+!  SET-UP UNIVERSAL PARAMETERS
 ! (NOT DEPENDENT ON SOILTYP, VEGTYP OR SLOPETYP)
       ZBOT   = ZBOT_DATA
       SALP   = SALP_DATA
@@ -2696,7 +3311,7 @@ CONTAINS
       IF (NROOT .GT. NSOIL) THEN
          WRITE(*,*) 'Warning: too many root layers'
          WRITE(*,*) 'nroot=',nroot,' nsoil=',nsoil
-         CALL wrf_error_fatal ( 'Warning: too many root layers' )
+         STOP 333
       END IF
 
 !  CALCULATE ROOT DISTRIBUTION
@@ -2709,7 +3324,10 @@ CONTAINS
 !  SET-UP SLOPE PARAMETER
       SLOPE = SLOPE_DATA(SLOPETYP)
 !
-      END SUBROUTINE REDPRM
+      END SUBROUTINE REDPRM_USGS
+
+!--------------------------------------------------------------------!
+
 
       SUBROUTINE ROSR12 ( P, A, B, C, D, DELTA, NSOIL)
 
@@ -2784,6 +3402,7 @@ CONTAINS
 
       INTEGER NSOLD
       PARAMETER ( NSOLD = 20 )
+!tst      PARAMETER ( NSOLD = 4 )
 
       INTEGER I
       INTEGER ICE
@@ -2797,14 +3416,15 @@ CONTAINS
       REAL F1
       REAL PSISAT
       REAL QUARTZ
-      REAL RHSTS ( NSOLD )
+!believewrong      REAL RHSTS ( NSOLD )
+      REAL RHSTS ( NSOIL )
       REAL S
       REAL SMC   ( NSOIL )
       REAL SH2O  ( NSOIL )
       REAL SMCMAX
       REAL SMCWLT
-      REAL STC  (NSOIL)
-      REAL STCF (NSOLD)
+      REAL STC	(NSOIL)
+      REAL STCF	(NSOLD)
       REAL T0
       REAL T1
       REAL TBOT
@@ -2813,17 +3433,29 @@ CONTAINS
       REAL ZSOIL ( NSOIL )
       REAL ZZ1
 
+!tmp
+	REAL STCWAS
+!tmp
+
       PARAMETER ( T0 = 273.15)
 
 !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 !     HRT ROUTINE CALCS THE RIGHT HAND SIDE OF THE SOIL TEMP DIF EQN
 !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 
+!
+	STCWAS=STC(1)
+!
+
       IF(ICE.EQ.1) THEN
 
 !..SEA-ICE CASE
 
          CALL HRTICE(RHSTS,STC,NSOIL,ZSOIL,YY,ZZ1,DF1)
+
+	if (minval(RHSTS) .lt. -100.) then
+	write(0,*) 'small RHSTS in seaice branch: ', RHSTS(1)
+	endif
 
          CALL HSTEP (STCF,STC,RHSTS,DT,NSOIL)
          
@@ -2834,8 +3466,17 @@ CONTAINS
          CALL HRT(RHSTS,STC,SMC,SMCMAX,NSOIL,ZSOIL,YY,ZZ1,TBOT, &
               ZBOT, PSISAT, SH2O, DT,                           &
               B,F1,DF1,QUARTZ,CSOIL)
+
+	if (DT*RHSTS(1) .lt. -100.) then
+	write(0,*) 'crazy RHSTS returned from HRT: ', RHSTS
+	endif
+
          
          CALL HSTEP(STCF,STC,RHSTS,DT,NSOIL)
+
+	if (RHSTS(1) .lt. -100.) then
+!	write(0,*) 'crazy RHSTS returned from HSTEP: ', RHSTS
+	endif
 
       ENDIF
 
@@ -2859,6 +3500,11 @@ CONTAINS
 !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 
 !      S = DF1 * (STC(1) - T1) / (0.5 * ZSOIL(1))
+
+	if (STC(1) .lt. 230 .and. STCWAS .gt. 230) then
+!	write(0,*) 'ICE, STC(1) was, is: ',ICE, STCWAS, STC(1)
+!	write(0,*) 'RHSTS in SHFLX: ', RHSTS
+	endif
 
       END SUBROUTINE SHFLX
 
@@ -2885,6 +3531,7 @@ CONTAINS
  
       INTEGER NSOLD
       PARAMETER ( NSOLD = 20 )
+!tst      PARAMETER ( NSOLD = 4 )
       INTEGER K
       INTEGER NSOIL
       REAL B
@@ -2927,6 +3574,10 @@ CONTAINS
       REAL SICE   ( NSOLD )
       REAL SH2OA  ( NSOLD )
       REAL SH2OFG ( NSOLD )
+
+!tst
+	REAL SH2Oold,SICEold
+!tst
 ! -------------------------------------------------------------------
            
       REAL SMCDRY
@@ -3061,6 +3712,9 @@ CONTAINS
 !    STORE ICE CONTENT AT EACH SOIL LAYER BEFORE CALLING SRT & SSTEP
 !
       DO I = 1,NSOIL
+	if (SH2O(I) .lt. 0) then
+	write(0,*) 'neg SH2O in SICE calc: ', SH2O(I)
+	endif
          SICE(I) = SMC(I) - SH2O(I)
       END DO
 ! ------------------------------------------------------------------
@@ -3120,14 +3774,29 @@ CONTAINS
               CMCMAX, RUNOFF3, ZSOIL,SMC,SICE)
          
       ELSE
+
+
+	SH2Oold=SH2O(1)
+        SICEold=SICE(1)
          
          CALL SRT ( RHSTT,RUNOFF,EDIR,ET,SH2O,SH2O,NSOIL,PCPDRP,ZSOIL, &
               DWSAT,DKSAT,SMCMAX, B, RUNOFF1,                          &
               RUNOFF2,DT,SMCWLT,SLOPE,KDT,FRZFACT, SICE)
          
          
+	if (SICE(1) + SH2O(1) .gt. 1.0) then
+	write(0,*) 'bonus moisture into SSTEP'
+	write(0,*) 'SH2Oold, SICEold: ', SH2Oold, SICEold
+	write(0,*) 'SH2O(1), SICE(1): ', SH2O(1), SICE(1)
+	endif
          CALL SSTEP ( SH2O,SH2O,CMC,RHSTT,RHSCT,DT,NSOIL,SMCMAX,       &
               CMCMAX, RUNOFF3, ZSOIL,SMC,SICE)
+
+	if (SH2O(1) .lt. 0) then
+	write(0,*) 'neg SH2O AFTER SRT, SSTEP calls: ', SH2O(1)
+	write(0,*) 'SH2O was: ', SH2Oold
+	write(0,*) 'SMCMAX, SMCWLT, DWSAT, DKSAT:: ', SMCMAX, SMCWLT, DWSAT, DKSAT
+	endif
          
       ENDIF
       
@@ -3237,6 +3906,11 @@ CONTAINS
       REAL YY
       REAL ZSOIL( NSOIL )
       REAL ZZ1
+
+!tst
+	REAL STCWAS
+!tst
+
 !
       REAL TFREEZ, SALP, SFCPRS, SLOPE, FRZFACT, PSISAT, SNUP
       REAL RUNOFF1, RUNOFF2, RUNOFF3,RUNOXX3
@@ -3351,7 +4025,7 @@ CONTAINS
         ETP = RCH*(QSAT-Q2)/CP
         ETP2 = ETP*0.001*DT
         BETA = 1.0
-        
+	
 ! ----------------------------------------------------------------------
 ! IF POTENTIAL EVAP (SUBLIMATION) GREATER THAN DEPTH OF SNOWPACK.
 ! BETA<1
@@ -3369,7 +4043,7 @@ CONTAINS
 ! ----------------------------------------------------------------------
 ! Update soil heat flux (S) using new skin temperature (T1)
           S = DF1 * ( T1 - STC(1) ) / ( DTOT )
-          
+	  
 ! ----------------------------------------------------------------------
 ! POTENTIAL EVAP (SUBLIMATION) LESS THAN DEPTH OF SNOWPACK, BETA=1.
 ! SNOWPACK (ESD) REDUCED BY POT EVAP RATE
@@ -3442,12 +4116,18 @@ CONTAINS
 ! ----------------------------------------------------------------------
       ETP1 = 0.0
       IF (ICE .NE. 1) THEN
+	if (SH2O(1) .lt. 0) then
+	write(0,*) 'call SMFLX with neg SH2O:: ', SH2O(1)
+	endif
         CALL SMFLX ( ETA1,SMC,NSOIL,CMC,ETP1,DT,PRCP1,ZSOIL,            &
           SH2O, SLOPE, KDT, FRZFACT,                                    &
           SMCMAX,B,PC,SMCWLT,DKSAT,DWSAT,                               &
           SMCREF,SHDFAC,CMCMAX,SMCDRY,CFACTR,RUNOFF1,RUNOFF2,           &
           RUNOFF3, EDIR1, EC1, ETT1,SFCTMP,Q2,NROOT,RTDIS,              &
           FXEXP)
+	if (SH2O(1) .lt. 0) then
+	write(0,*) 'return SMFLX with neg SH2O:: ', SH2O(1)
+	endif
 
       ENDIF
       ETA = BETA*ETP
@@ -3462,6 +4142,14 @@ CONTAINS
 ! ----------------------------------------------------------------------
       ZZ1 = 1.0
       YY = STC(1)-0.5*S*ZSOIL(1)*ZZ1/DF1
+
+	if (YY .lt. 200) then
+!	write(0,*) 'computed YY= ', YY
+!	write(0,*) 'STC(1),S,ZSOIL(1),DF1: ', STC(1),S,ZSOIL(1),DF1
+	endif
+
+
+!
       T11 = T1
 
 ! ----------------------------------------------------------------------
@@ -3472,10 +4160,20 @@ CONTAINS
 ! UPDATED INSTEAD NEAR THE BEGINNING OF THE CALL TO SNOPAC.
 ! ----------------------------------------------------------------------
 
+	STCWAS=STC(1)
       CALL SHFLX(S1,STC,SMC,SMCMAX,NSOIL,T11,DT,YY,ZZ1,ZSOIL,TBOT,      &
         ZBOT, SMCWLT, PSISAT, SH2O,                                     &
         B,F1,DF1,ICE,                                                   &
         QUARTZ,CSOIL)
+
+!	write(0,*) 'SNOWH, STC(1), STCWAS: ', SNOWH, STC(1), STCWAS
+	
+	if (STC(1) .lt. 230 .and. STCWAS .gt. 230) then
+	write(0,*) 'in SNOPAC, SHFLX changed from: ', STCWAS, 'to : ', STC(1)
+	write(0,*) 'YY,S,DF1,STC(1): ', YY, S,  &
+                                              DF1,STC(1)
+	write(0,*) ' '
+	endif
       
 ! ----------------------------------------------------------------------
 ! SNOW DEPTH AND DENSITY ADJUSTMENT BASED ON SNOW COMPACTION.
@@ -3686,6 +4384,7 @@ CONTAINS
       
       INTEGER NSOLD
       PARAMETER ( NSOLD = 20 )
+!tst      PARAMETER ( NSOLD = 4 )
 
       INTEGER CVFRZ      
       INTEGER IALP1
@@ -3696,7 +4395,7 @@ CONTAINS
       INTEGER KS
       INTEGER NSOIL
 
-        REAL AI     ( NSOLD )
+	REAL AI     ( NSOLD )
       REAL B
       REAL BI     ( NSOLD )
       REAL CI     ( NSOLD )
@@ -4036,6 +4735,7 @@ CONTAINS
 
       INTEGER NSOLD
       PARAMETER ( NSOLD = 20 )
+!tst      PARAMETER ( NSOLD = 4 )
 !
       INTEGER I
       INTEGER K 
@@ -4101,10 +4801,17 @@ CONTAINS
       WPLUS = 0.0
       RUNOFF3 = 0.
       DDZ = - ZSOIL(1)
+
+write(0,*),'phys/module_sf_lsm_nmm.F : nsoil ',nsoil
       
       DO K = 1 , NSOIL
          IF ( K .NE. 1 ) DDZ = ZSOIL(K - 1) - ZSOIL(K)
          SH2OOUT(K) = SH2OIN(K) + CI(K) + WPLUS / DDZ
+
+	if (SH2OOUT(K) .lt. 0) then
+	write(0,*) 'prelim val SH2OIN(K), SH2OOUT(K), CI(K), WPLUS: ', SH2OIN(K), &
+                       SH2OOUT(K), CI(K), WPLUS
+	endif
         
 !      PRINT*,'IN sstep'
 !      PRINT*,'SH2OOUT=', SH2OOUT
@@ -4139,11 +4846,18 @@ CONTAINS
         DPLUS=WFREE-WPLUS
         IF(DPLUS .GE. 0.) THEN
          SH2OOUT(I)=SH2OOUT(I)+WPLUS/DDZ
+	if (SH2OOUT(I) .lt. 0) then
+	write(0,*) 'SH2OOUT(I) made neg down here(b): ', SH2OOUT(I)
+	endif
          SMC(I)=SH2OOUT(I)+SICE(I)
          WPLUS=0.
            
         ELSE
          SH2OOUT(I)=SH2OOUT(I)+WFREE/DDZ
+	if (SH2OOUT(I) .lt. 0) then
+	write(0,*) 'SH2OOUT(I) made neg down here(c): ',I,WFREE,DDZ,SH2OOUT(I)
+	write(0,*) 'SMCMAX, SICE, STOT: ', SMCMAX, SICE(I), STOT
+	endif
          SMC(I)=SH2OOUT(I)+SICE(I)
          WPLUS=-DPLUS
         ENDIF
@@ -4520,14 +5234,14 @@ CONTAINS
 
       END SUBROUTINE WDFCND
 
-  SUBROUTINE nmmlsminit(isn,XICE,VEGFRA,SNOW,SNOWC, CANWAT,SMSTAV,    &
-                     SMSTOT, SFCRUNOFF,UDRUNOFF,GRDFLX,ACSNOW,     &
-                     ACSNOM,IVGTYP,ISLTYP,TSLB,SMOIS,DZS,SFCEVP,   & !  STEMP
-                     TMN,                                          &
-                     num_soil_layers,                              &
-                     ids,ide, jds,jde, kds,kde,                    &
-                     ims,ime, jms,jme, kms,kme,                    &
-                     its,ite, jts,jte, kts,kte                     )
+  SUBROUTINE nmmlsminit(isn,XICE,VEGFRA,SNOW,SNOWC,CANWAT,SMSTAV,       &
+                        SMSTOT, SFCRUNOFF,UDRUNOFF,GRDFLX,ACSNOW,       &
+                        ACSNOM,IVGTYP,ISLTYP,TSLB,SMOIS,DZS,SFCEVP,     & !  STEMP
+                        TMN,                                            &
+                        num_soil_layers,                                &
+                        ids,ide, jds,jde, kds,kde,                      &
+                        ims,ime, jms,jme, kms,kme,                      &
+                        its,ite, jts,jte, kts,kte                     )
 
    IMPLICIT NONE 
 

@@ -7,7 +7,7 @@
 !
 !----------------------------------------------------------------------
       USE MODULE_MPP
-      USE module_state_description
+      USE MODULE_STATE_DESCRIPTION
 !
 #ifdef DM_PARALLEL
       INCLUDE "mpif.h"

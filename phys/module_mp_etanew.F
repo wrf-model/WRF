@@ -6,8 +6,9 @@ MODULE module_mp_etanew
 !-----------------------------------------------------------------------
       REAL,PRIVATE,SAVE ::  ABFR, CBFR, CIACW, CIACR, C_N0r0,           &
      &  CN0r0, CN0r_DMRmin, CN0r_DMRmax, CRACW, CRAUT, ESW0,            &
-     &  QAUT0, RFmax, RHgrd, RQR_DR1, RQR_DR2, RQR_DR3, RQR_DRmin,      &
+     &  QAUT0, RFmax, RQR_DR1, RQR_DR2, RQR_DR3, RQR_DRmin,      &
      &  RQR_DRmax, RR_DRmin, RR_DR1, RR_DR2, RR_DR3, RR_DRmax
+
 !
       INTEGER, PRIVATE,PARAMETER :: MY_T1=1, MY_T2=35
       REAL,PRIVATE,DIMENSION(MY_T1:MY_T2),SAVE :: MY_GROWTH
@@ -31,6 +32,7 @@ MODULE module_mp_etanew
       REAL, PARAMETER :: XMIN=180.0,XMAX=330.0
       REAL, DIMENSION(NX),PRIVATE,SAVE :: TBPVS,TBPVS0
       REAL, PRIVATE,SAVE :: C1XPVS0,C2XPVS0,C1XPVS,C2XPVS
+      REAL, PUBLIC,SAVE :: RHgrd
 !
       CONTAINS
 
@@ -38,7 +40,7 @@ MODULE module_mp_etanew
 !-----------------------------------------------------------------------
       SUBROUTINE ETAMP_NEW (itimestep,DT,DX,DY,RAINNC,RAINNCV,          &
      &                      dz8w,rho_phy,p_phy,pi_phy,th_phy,qv,qc,     &
-     &                      LOWLYR,                                     &
+     &                      LOWLYR,SR,                                  &
      &                      F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,           &
      &                      ids,ide, jds,jde, kds,kde,                  &
      &                      ims,ime, jms,jme, kms,kme,                  &
@@ -61,8 +63,8 @@ MODULE module_mp_etanew
       REAL, INTENT(INOUT),  DIMENSION(ims:ime,jms:jme):: RAINNC,RAINNCV
       REAL, INTENT(INOUT),  DIMENSION(ims:ime, kms:kme, jms:jme ) :: &
                             F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY
+      REAL, INTENT(OUT),    DIMENSION(ims:ime,jms:jme):: SR
       INTEGER, DIMENSION( ims:ime, jms:jme ),INTENT(INOUT) :: LOWLYR
-
 
 !     LOCAL VARS
 
@@ -82,7 +84,7 @@ MODULE module_mp_etanew
 
       REAL,  DIMENSION( ims:ime, kms:kme, jms:jme ) ::                &
              TLATGS_PHY,TRAIN_PHY
-      REAL,  DIMENSION(ims:ime,jms:jme):: APREC,PREC,ACPREC,SR
+      REAL,  DIMENSION(ims:ime,jms:jme):: APREC,PREC,ACPREC
       REAL,  DIMENSION(its:ite, kts:kte, jts:jte):: t_phy
 
       INTEGER :: I,J,K,KFLIP

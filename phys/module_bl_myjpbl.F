@@ -1,7 +1,7 @@
 !
 MODULE MODULE_BL_MYJPBL
 !
-USE module_model_constants
+USE MODULE_MODEL_CONSTANTS
 !
 !-----------------------------------------------------------------------
 !
@@ -30,10 +30,10 @@ USE module_model_constants
       REAL,PARAMETER :: CAPA=R_D/CP
       REAL,PARAMETER :: RLIVWV=XLS/XLV,ELOCP=2.72E6/CP
       REAL,PARAMETER :: EPS1=1.E-12,EPS2=0.
-      REAL,PARAMETER :: EPSL=0.32,EPSRU=1.E-7,EPSRS=1.E-7               &
+      REAL,PARAMETER :: EPSL=0.10,EPSRU=1.E-7,EPSRS=1.E-7               &
                        ,EPSTRB=1.E-24
       REAL,PARAMETER :: EPSA=1.E-8,EPSIT=1.E-4,EPSU2=1.E-4,EPSUST=0.07 
-      REAL,PARAMETER :: ALPH=0.20,BETA=1./273.,EL0MAX=1000.,EL0MIN=1.   &
+      REAL,PARAMETER :: ALPH=0.30,BETA=1./273.,EL0MAX=1000.,EL0MIN=1.   &
      &                 ,ELFC=0.23*0.5,GAM1=0.2222222222222222222        &
      &                 ,PRT=1.
       REAL,PARAMETER :: A1=0.659888514560862645                         &
@@ -42,8 +42,7 @@ USE module_model_constants
      &                 ,B2=7.226971804046074028                         &
      &                 ,C1=0.000830955950095854396
       REAL,PARAMETER :: A2S=17.2693882,A3S=273.16,A4S=35.86
-!!!   REAL,PARAMETER :: CZIL=.20,ELZ0=0.,ESQ=0.2,EXCM=0.001             &
-      REAL,PARAMETER :: CZIL=.20,ELZ0=0.,ESQ=5.0,EXCM=0.001             &
+      REAL,PARAMETER :: ELZ0=0.,ESQ=5.0,EXCM=0.001                      &
      &                 ,FHNEU=0.8,GLKBR=10.,GLKBS=30.                   &
      &                 ,QVISC=2.1E-5,RFC=0.191,RIC=0.505,SMALL=0.35     &
      &                 ,SQPR=0.84,SQSC=0.84,SQVISC=258.2,TVISC=2.1E-5   &
@@ -53,8 +52,8 @@ USE module_model_constants
       REAL,PARAMETER :: SEAFC=0.98,PQ0SEA=PQ0*SEAFC
 !
       REAL,PARAMETER :: BTG=BETA*G,CZIV=SMALL*GLKBS                     &
-!    &                 ,EP_1=R_V/R_D-1.,GRRS=GLKBR/GLKBS                &
-     &                 ,GRRS=GLKBR/GLKBS               &
+!    &                 ,EP_1=R_V/R_D-1.,ESQHF=0.5*5.0,GRRS=GLKBR/GLKBS  &
+     &                 ,ESQHF=0.5*5.0,GRRS=GLKBR/GLKBS                  &
      &                 ,RB1=1./B1,RTVISC=1./TVISC,RVISC=1./VISC         &
      &                 ,ZQRZT=SQSC/SQPR
 !
@@ -88,8 +87,7 @@ USE module_model_constants
      &                 ,RRIC=1./RIC                                     &
      &                 ,USTFC=0.018/G                                   &
      &                 ,WNEW=1.-WOLD                                    &
-     &                 ,WWST2=WWST*WWST                                 &
-     &                 ,ZILFC=-CZIL*VKARMAN*SQVISC
+     &                 ,WWST2=WWST*WWST
 !
 !-----------------------------------------------------------------------
 !***  FREE TERM IN THE EQUILIBRIUM EQUATION FOR (L/Q)**2
@@ -180,7 +178,9 @@ USE module_model_constants
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME)                          &
           ,INTENT(INOUT) ::                    TKE_MYJ
 !
-      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: CHKLOWQ,CT,ELFLX
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: CHKLOWQ,ELFLX
+!
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: CT
 !
 !----------------------------------------------------------------------
 !***
@@ -217,7 +217,6 @@ USE module_model_constants
 !***  MAKE PREPARATIONS
 !
 !----------------------------------------------------------------------
-!      write(0,*)'module_bl_myjpbl.f dt = ',dt
       DTTURBL=DT*STEPBL
       RDTTURBL=1./DTTURBL
       DTDIF=DTTURBL
@@ -316,7 +315,7 @@ USE module_model_constants
                      ,PBLH(I,J),LPBL(I,J),CT(I,J)                      &
                      ,IDS,IDE,JDS,JDE,KDS,KDE                          &
                      ,IMS,IME,JMS,JME,KMS,KME                          &
-                     ,ITS,ITE,JTS,JTE,KTS,KTE,i,j)
+                     ,ITS,ITE,JTS,JTE,KTS,KTE)
 !
 !----------------------------------------------------------------------
 !***
@@ -327,10 +326,10 @@ USE module_model_constants
           CALL PRODQ2(LMH,DTTURBL,USTAR(I,J),GM,GH,EL,Q2K              &
                      ,IDS,IDE,JDS,JDE,KDS,KDE                          &
                      ,IMS,IME,JMS,JME,KMS,KME                          &
-                     ,ITS,ITE,JTS,JTE,KTS,KTE,i,j)
+                     ,ITS,ITE,JTS,JTE,KTS,KTE)
 !
 !----------------------------------------------------------------------
-!*** THE HEIGHT OF THE PBL
+!*** THE MODEL LAYER (COUNTING UPWARD) CONTAINING THE TOP OF THE PBL
 !----------------------------------------------------------------------
 !
           KPBL(I,J)=KTE-LPBL(I,J)+1
@@ -339,10 +338,10 @@ USE module_model_constants
 !***
 !***  FIND THE EXCHANGE COEFFICIENTS IN THE FREE ATMOSPHERE
 !***
-          CALL DIFCOF(LMH,GM,GH,EL,Q2K,ZHK,AKMK,AKHK                   &
+          CALL DIFCOF(LMH,LPBL(I,J),GM,GH,EL,TK,Q2K,ZHK,AKMK,AKHK      &
                      ,IDS,IDE,JDS,JDE,KDS,KDE                          &
                      ,IMS,IME,JMS,JME,KMS,KME                          &
-                     ,ITS,ITE,JTS,JTE,KTS,KTE,i,j)
+                     ,ITS,ITE,JTS,JTE,KTS,KTE)
 !
           DO K=KTS,KTE-1
             AKH(I,K,J)=AKHK(K)
@@ -455,7 +454,7 @@ USE module_model_constants
                     ,THEK,QK,CWMK,AKHK,ZHK                             &
                     ,IDS,IDE,JDS,JDE,KDS,KDE                           &
                     ,IMS,IME,JMS,JME,KMS,KME                           &
-                    ,ITS,ITE,JTS,JTE,KTS,KTE,i,j)
+                    ,ITS,ITE,JTS,JTE,KTS,KTE)
 !----------------------------------------------------------------------
 !***
 !***  COMPUTE PRIMARY VARIABLE TENDENCIES
@@ -541,7 +540,7 @@ USE module_model_constants
       (LMH,U,V,T,THE,Q,CWM,Q2,Z,GM,GH,EL,PBLH,LPBL,CT                  &
       ,IDS,IDE,JDS,JDE,KDS,KDE                                         &
       ,IMS,IME,JMS,JME,KMS,KME                                         &
-      ,ITS,ITE,JTS,JTE,KTS,KTE,i,j)
+      ,ITS,ITE,JTS,JTE,KTS,KTE)
 !----------------------------------------------------------------------
 !
       IMPLICIT NONE
@@ -549,13 +548,11 @@ USE module_model_constants
 !----------------------------------------------------------------------
       INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                    &
                            ,IMS,IME,JMS,JME,KMS,KME                    &
-                           ,ITS,ITE,JTS,JTE,KTS,KTE,i,j
+                           ,ITS,ITE,JTS,JTE,KTS,KTE
 !
       INTEGER,INTENT(IN) :: LMH
 !
       INTEGER,INTENT(OUT) :: LPBL
-!
-      REAL,INTENT(IN) :: CT
 !
       REAL,DIMENSION(KTS:KTE),INTENT(IN) :: CWM,Q,Q2,T,THE,U,V
 !
@@ -564,6 +561,8 @@ USE module_model_constants
       REAL,INTENT(OUT) :: PBLH 
 !
       REAL,DIMENSION(KTS:KTE-1),INTENT(OUT) :: EL,GH,GM
+!
+      REAL,INTENT(INOUT) :: CT
 !----------------------------------------------------------------------
 !***
 !***  LOCAL VARIABLES
@@ -575,7 +574,7 @@ USE module_model_constants
 !
       REAL,DIMENSION(KTS:KTE) :: Q1
 !
-      REAL,DIMENSION(KTS:KTE-1) :: ELM
+      REAL,DIMENSION(KTS:KTE-1) :: DTH,ELM
 !
 !----------------------------------------------------------------------
 !**********************************************************************
@@ -584,6 +583,19 @@ USE module_model_constants
       DO K=KTS,LMH
         Q1(K)=0.
       ENDDO
+!
+      DO K=1,LMH-1
+        DTH(K)=THE(K)-THE(K+1)
+      ENDDO
+!
+      DO K=LMH-2,1,-1
+        IF(DTH(K).GT.0..AND.DTH(K+1).LE.0.)THEN
+          DTH(K)=DTH(K)+CT
+          GO TO 20
+        ENDIF
+      ENDDO
+!
+   20 CT=0.
 !----------------------------------------------------------------------
       DO K=KTS,LMH-1
         RDZ=2./(Z(K)-Z(K+2))
@@ -596,7 +608,7 @@ USE module_model_constants
         A=THM*P608
         B=(ELOCP/TEM-1.-P608)*THM
 !
-        GHL=((THE(K)-THE(K+1)+CT)*((Q(K)+Q(K+1))*(0.5*P608)+1.)        &
+        GHL=(DTH(K)*((Q(K)+Q(K+1))*(0.5*P608)+1.)                      &
            +(Q(K)-Q(K+1))*A                                            &
            +(CWM(K)-CWM(K+1))*B)*RDZ
 !
@@ -697,7 +709,7 @@ USE module_model_constants
       (LMH,DTTURBL,USTAR,GM,GH,EL,Q2                                   &
       ,IDS,IDE,JDS,JDE,KDS,KDE                                         &
       ,IMS,IME,JMS,JME,KMS,KME                                         &
-      ,ITS,ITE,JTS,JTE,KTS,KTE,i,j)
+      ,ITS,ITE,JTS,JTE,KTS,KTE)
 !----------------------------------------------------------------------
 !
       IMPLICIT NONE
@@ -705,7 +717,7 @@ USE module_model_constants
 !----------------------------------------------------------------------
       INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                    &
                            ,IMS,IME,JMS,JME,KMS,KME                    &
-                           ,ITS,ITE,JTS,JTE,KTS,KTE,i,j
+                           ,ITS,ITE,JTS,JTE,KTS,KTE
 !
       INTEGER,INTENT(IN) :: LMH
 !
@@ -893,10 +905,10 @@ USE module_model_constants
 !   *                LEVEL 2.5 DIFFUSION COEFFICIENTS                *
 !   *                                                                *
 !   ******************************************************************
-      (LMH,GM,GH,EL,Q2,Z,AKM,AKH                                       &
+      (LMH,LPBL,GM,GH,EL,T,Q2,Z,AKM,AKH                                &
       ,IDS,IDE,JDS,JDE,KDS,KDE                                         &
       ,IMS,IME,JMS,JME,KMS,KME                                         &
-      ,ITS,ITE,JTS,JTE,KTS,KTE,i,j)
+      ,ITS,ITE,JTS,JTE,KTS,KTE)
 !----------------------------------------------------------------------
 !
       IMPLICIT NONE
@@ -904,11 +916,11 @@ USE module_model_constants
 !----------------------------------------------------------------------
       INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                    &
                            ,IMS,IME,JMS,JME,KMS,KME                    &
-                           ,ITS,ITE,JTS,JTE,KTS,KTE,i,j
+                           ,ITS,ITE,JTS,JTE,KTS,KTE
 !
-      INTEGER,INTENT(IN) :: LMH
+      INTEGER,INTENT(IN) :: LMH,LPBL
 !
-      REAL,DIMENSION(KTS:KTE),INTENT(IN) :: Q2
+      REAL,DIMENSION(KTS:KTE),INTENT(IN) :: Q2,T
       REAL,DIMENSION(KTS:KTE-1),INTENT(IN) :: EL,GH,GM
       REAL,DIMENSION(KTS:KTE+1),INTENT(IN) :: Z
 !
@@ -917,9 +929,9 @@ USE module_model_constants
 !***
 !***  LOCAL VARIABLES
 !***
-      INTEGER :: K
+      INTEGER :: K,KINV
 !
-      REAL :: ADEN,BDEN,BESH,BESM,CDEN,ELL,ELOQ2,ELOQ4,ELQDZ           &
+      REAL :: ADEN,AKMIN,BDEN,BESH,BESM,CDEN,D2T,ELL,ELOQ2,ELOQ4,ELQDZ &
              ,ESH,ESM,GHL,GML,Q1L,RDEN,RDZ
 !
 !----------------------------------------------------------------------
@@ -979,6 +991,26 @@ USE module_model_constants
         AKH(K)=ELQDZ*ESH
 !----------------------------------------------------------------------
       ENDDO
+!----------------------------------------------------------------------
+!
+!----------------------------------------------------------------------
+!***  INVERSIONS
+!----------------------------------------------------------------------
+!
+      IF(LPBL.EQ.LMH)THEN
+        DO K=KTS+1,LMH-1
+          D2T=T(K-1)-2.*T(K)+T(K+1)
+          IF(D2T.LT.0.)KINV=K
+        ENDDO
+        IF(KINV.LT.LMH)THEN
+          DO K=KINV-1,LMH-1
+            RDZ=2./(Z(K)-Z(K+2))
+            AKMIN=0.5*RDZ
+            AKM(K)=MAX(AKM(K),AKMIN)
+            AKH(K)=MAX(AKH(K),AKMIN)
+          ENDDO
+        ENDIF
+      ENDIF
 !----------------------------------------------------------------------
 !
       END SUBROUTINE DIFCOF
@@ -1071,7 +1103,7 @@ USE module_model_constants
                       ,THE,Q,CWM,AKH,Z                                &
                       ,IDS,IDE,JDS,JDE,KDS,KDE                        &
                       ,IMS,IME,JMS,JME,KMS,KME                        &
-                      ,ITS,ITE,JTS,JTE,KTS,KTE,i,j)
+                      ,ITS,ITE,JTS,JTE,KTS,KTE)
 !     ***************************************************************
 !     *                                                             *
 !     *         VERTICAL DIFFUSION OF MASS VARIABLES                *
@@ -1084,7 +1116,7 @@ USE module_model_constants
 !---------------------------------------------------------------------
       INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                    &
                            ,IMS,IME,JMS,JME,KMS,KME                    &
-                           ,ITS,ITE,JTS,JTE,KTS,KTE,i,j
+                           ,ITS,ITE,JTS,JTE,KTS,KTE
 !
       INTEGER,INTENT(IN) :: LMH
 !
@@ -1253,7 +1285,7 @@ USE module_model_constants
      &                      IMS,IME,JMS,JME,KMS,KME,                    &
      &                      ITS,ITE,JTS,JTE,KTS,KTE
 
-      REAL,DIMENSION(IMS:IME ,KMS:KME ,JMS:JME ),INTENT(OUT) ::         RUBLTEN, &
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(OUT) ::   RUBLTEN, &
      &                                                         RVBLTEN, &
      &                                                        RTHBLTEN, &
      &                                                        RQVBLTEN, &

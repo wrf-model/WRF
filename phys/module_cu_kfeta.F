@@ -22,7 +22,7 @@ CONTAINS
               W0AVG,XLV0,XLV1,XLS0,XLS1,CP,R,G,EP1,          &
               EP2,SVP1,SVP2,SVP3,SVPT0,                      &
               P_QR,P_QI,P_QS,P_FIRST_SCALAR,STEPCU,          &
-              CU_ACT_FLAG,warm_rain,                         &
+              CU_ACT_FLAG,warm_rain,CUTOP,CUBOT,             &
               ids,ide, jds,jde, kds,kde,                     &
               ims,ime, jms,jme, kms,kme,                     &
               its,ite, jts,jte, kts,kte                      )
@@ -75,6 +75,10 @@ CONTAINS
 
    REAL,    DIMENSION( ims:ime , jms:jme ),                  &
             INTENT(INOUT) ::                            NCA
+
+   REAL, DIMENSION( ims:ime , jms:jme ),                     &
+          INTENT(OUT) ::                              CUBOT, &
+                                                      CUTOP    
 
    LOGICAL, DIMENSION( ims:ime , jms:jme ),                  &
           INTENT(INOUT) :: CU_ACT_FLAG
@@ -172,6 +176,7 @@ CONTAINS
                  DQDT,DQIDT,DQCDT,DQRDT,DQSDT,DTDT, &
                  RAINCV,NCA,NTST,                   &
                  P_QI,P_QS,P_FIRST_SCALAR,warm_rain,&
+                 CUTOP,CUBOT,                       &
                  ids,ide, jds,jde, kds,kde,         &
                  ims,ime, jms,jme, kms,kme,         &
                  its,ite, jts,jte, kts,kte)
@@ -228,6 +233,7 @@ CONTAINS
                       DQDT,DQIDT,DQCDT,DQRDT,DQSDT,DTDT,   &
                       RAINCV,NCA,NTST,                     &
                       P_QI,P_QS,P_FIRST_SCALAR,warm_rain,  &
+                      CUTOP,CUBOT,                         &
                       ids,ide, jds,jde, kds,kde,           &
                       ims,ime, jms,jme, kms,kme,           &
                       its,ite, jts,jte, kts,kte)
@@ -274,6 +280,10 @@ CONTAINS
 
       REAL, DIMENSION( ims:ime , jms:jme ),                &
             INTENT(INOUT) ::                       RAINCV
+
+      REAL, DIMENSION( ims:ime , jms:jme ),                &
+            INTENT(OUT) ::                          CUBOT, &
+                                                    CUTOP
 !
 !...DEFINE LOCAL VARIABLES...
 !
@@ -2167,6 +2177,14 @@ iter:     DO NCOUNT=1,10
 ! 1115 FORMAT (2X,F6.0,2X,F7.2,2X,F5.1,2X,F6.3,2(2X,F5.1),2X,F7.2,2X,F7.4)
 1120   FORMAT(' ','MOISTURE ERROR AS FUNCTION OF TOTAL PPT =',F9.3,'%')
 !
+!-----------------------------------------------------------------------
+!--------------SAVE CLOUD TOP AND BOTTOM FOR RADIATION------------------
+!-----------------------------------------------------------------------
+!
+      CUTOP(I,J)=REAL(LTOP)
+      CUBOT(I,J)=REAL(LCL)
+!
+!-----------------------------------------------------------------------
    END SUBROUTINE  KF_eta_PARA
 !********************************************************************
 ! ***********************************************************************

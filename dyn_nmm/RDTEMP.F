@@ -69,23 +69,19 @@
 !
       REAL :: DAYI,HOUR,TIMES,TTNDKL
 !
-      REAL,DIMENSION(IMS:IME,JMS:JME) :: CZEN2,FACTR,XLAT2,XLON2
+      REAL,DIMENSION(IMS:IME,JMS:JME) :: CZEN2,XLAT2,XLON2
+!
+      REAL,DIMENSION(ITS:ITE,JTS:JTE) :: FACTR
 !
       REAL :: DEGRAD=3.1415926/180.
       real :: xlat1,xlon1
 !
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
-!     MYIS=MAX(IDS,ITS)
-!     MYIE=MIN(IDE,ITE)
-!     MYJS=MAX(JDS,JTS)
-!     MYJE=MIN(JDE,JTE)
-! LIMIT LOOPS TO BE SAME AS RADIATION DRIVER
-      MYIS=MAX(IDS+1,ITS)
-      MYIE=MIN(IDE-1,ITE)
-      MYJS=MAX(JDS+2,JTS)
-      MYJE=MIN(JDE-2,JTE)
-
+      MYIS=MAX(IDS,ITS)
+      MYIE=MIN(IDE,ITE)
+      MYJS=MAX(JDS,JTS)
+      MYJE=MIN(JDE,JTE)
 !-----------------------------------------------------------------------
 !
 !***  GET CURRENT VALUE OF COS(ZENITH ANGLE)
@@ -98,10 +94,10 @@
         XLON2(I,J)=GLON(I,J)
 !!!!!!!!!!!!Remove the following lines after bit-correct answers
 !!!!!!!!!!!!are established with the control
-        xlat1=glat(i,j)/degrad
-        xlat2(i,j)=xlat1*degrad
-        xlon1=glon(i,j)/degrad
-        xlon2(i,j)=xlon1*degrad
+!       xlat1=glat(i,j)/degrad
+!       xlat2(i,j)=xlat1*degrad
+!       xlon1=glon(i,j)/degrad
+!       xlon2(i,j)=xlon1*degrad
 !!!!!!!!!!!!
 !!!!!!!!!!!!
       ENDDO

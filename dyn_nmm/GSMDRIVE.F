@@ -2,7 +2,8 @@
 !NCEP_MESO:MODEL_LAYER: PHYSICS
 !
 !***********************************************************************
-      SUBROUTINE GSMDRIVE(NTSD,DT,NPHS,WATER,N_MOIST                          &
+!     SUBROUTINE GSMDRIVE(NTSD,DT,NPHS,WATER,N_MOIST                    &
+      SUBROUTINE GSMDRIVE(NTSD,DT,NPHS,N_MOIST                          &
      &                   ,DX,DY,LMH,SM,HBM2,FIS                         &
      &                   ,DETA1,DETA2,AETA1,AETA2,ETA1,ETA2             &
      &                   ,PDTOP,PT,PD,RES,PINT,T,Q,CWM,TRAIN            &
@@ -32,11 +33,11 @@
 !$$$  
 !-----------------------------------------------------------------------
       USE MODULE_CONFIGURE
-      USE module_model_constants
+      USE MODULE_MODEL_CONSTANTS
       USE MODULE_STATE_DESCRIPTION,ONLY : P_QV,P_QC
       USE MODULE_MPP
       USE MODULE_MP_ETANEW
-      USE module_microphysics_driver
+      USE MODULE_MICROPHYSICS_DRIVER
 !-----------------------------------------------------------------------
 !
       IMPLICIT NONE
@@ -69,18 +70,21 @@
      &                                                        ,F_RAIN   &
      &                                                        ,F_RIMEF
 !
+!     REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME,N_MOIST)                   &
+!    &                                          ,INTENT(INOUT) :: WATER
+!
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: SR
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME,N_MOIST), INTENT(INOUT) :: WATER
 !
       TYPE(GRID_CONFIG_REC_TYPE),INTENT(IN) :: CONFIG_FLAGS
 !
 !***
 !***  LOCAL VARIABLES
 !***
-      INTEGER :: I,J,K
+      INTEGER :: I,IENDX,J,K
+!
+      INTEGER,DIMENSION(1) :: I_START,I_END,J_START,J_END
 !
       INTEGER,DIMENSION(IMS:IME,JMS:JME) :: LOWLYR
-      INTEGER, DIMENSION(1) :: I_START,I_END,J_START,J_END
 !
       REAL :: CAPA,DPL,DTPHS,PCPCOL,PDSL,PLYR,RDTPHS,RG,TNEW
 !
@@ -92,8 +96,9 @@
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: DZ,P8W,P_PHY,PI_PHY    &
      &                                          ,RR,T_PHY,TH_PHY
 !
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME,N_MOIST) :: WATER
 !
-      LOGICAL :: WARM_RAIN
+      LOGICAL :: E_BDY,WARM_RAIN
 !
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
@@ -102,11 +107,10 @@
       MYJS2=MAX(JDS+2,JTS)
       MYJE2=MIN(JDE-2,JTE)
 !
-      I_START(1)  = MYIS1
-      I_END(1)    = MYIE1
-      J_START(1)  = MYJS2
-      J_END(1)    = MYJE2
-
+      I_START(1)=MYIS1
+      I_END(1)  =MYIE1
+      J_START(1)=MYJS2
+      J_END(1)  =MYJE2
 !-----------------------------------------------------------------------
 !
       DTPHS=NPHS*DT
@@ -163,39 +167,43 @@
      &                        ,CONFIG_FLAGS,0,N_MOIST,WARM_RAIN         &
      &                        ,XLAND,NTSD-1                             &
      &                        ,F_ICE,F_RAIN,F_RIMEF                     &
-     &                        ,LOWLYR                                   &
+     &                        ,LOWLYR,SR                                &
      &                        ,IDS,IDE,JDS,JDE,KDS,KDE                  &
      &                        ,IMS,IME,JMS,JME,KMS,KME                  &
-     &                        ,I_START,I_END,J_START,J_END,KTS,KTE,1    )
-!     &                        ,SR=SR                                    ) ! optional argument
-! output zero (JD)
-sr=0.
+     &                        ,I_START,I_END,J_START,J_END,KTS,KTE,1)
 !
 !-----------------------------------------------------------------------
+      E_BDY=(ITE>=IDE)
 !
       DO J=MYJS2,MYJE2
-      DO I=MYIS1,MYIE1
-!
-        IF(HBM2(I,J).GT.0.5)THEN
+      IENDX=MYIE1
+      IF(E_BDY.AND.MOD(J,2).EQ.0)IENDX=IENDX-1
+      DO I=MYIS1,IENDX
 !
 !***  UPDATE TEMPERATURE, SPECIFIC HUMIDITY, CLOUD WATER, AND HEATING.
 !
-          DO K=KTS,KTE
-            TNEW=TH_PHY(I,K,J)*PI_PHY(I,K,J)
-            TRAIN(I,K,J)=(TNEW-T(I,K,J))*RDTPHS
-            T(I,K,J)=TNEW
-            Q(I,K,J)=WATER(I,K,J,P_QV)/(1.+WATER(I,K,J,P_QV)) !To s.h.
-            CWM(I,K,J)=WATER(I,K,J,P_QC)
-          ENDDO
+        DO K=KTS,KTE
+          TNEW=TH_PHY(I,K,J)*PI_PHY(I,K,J)
+          TRAIN(I,K,J)=(TNEW-T(I,K,J))*RDTPHS
+          T(I,K,J)=TNEW
+          Q(I,K,J)=WATER(I,K,J,P_QV)/(1.+WATER(I,K,J,P_QV)) !To s.h.
+          CWM(I,K,J)=WATER(I,K,J,P_QC)
+        ENDDO
 !
 !***  UPDATE PRECIPITATION
 !
-          PCPCOL=RAINNCV(I,J)*1.E-3
-          PREC(I,J)=PREC(I,J)+PCPCOL
-          ACPREC(I,J)=ACPREC(I,J)+PCPCOL
+        PCPCOL=RAINNCV(I,J)*1.E-3
+        PREC(I,J)=PREC(I,J)+PCPCOL
+        ACPREC(I,J)=ACPREC(I,J)+PCPCOL
 !
-        ENDIF
+      ENDDO
+      ENDDO
 !
+      DO J=JMS,JME
+      DO K=KMS,KME
+      DO I=IMS,IME
+        ZERO_3D(I,K,J)=0.
+      ENDDO
       ENDDO
       ENDDO
 !-------------------------------------------------------------------

@@ -415,6 +415,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
                     GMT,JULDAY,config_flags,RADT,STEPRA,ICLOUD,      &
                     taucldi,taucldc,warm_rain,                       &
                     XLAND,TSK,HTOP,HBOT,CUPPT,VEGFRA,SNOW,           &
+                    F_ICE_PHY,F_RAIN_PHY,                            & ! for new ETARA
                     julyr,                                           &
                     1   ,                                            &
                     TOTSWDN,TOTLWDN,RSWTOA,RLWTOA,CZMEAN,            &
@@ -448,7 +449,6 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
      &          ,ALBBCK,LH,SH2O,SHDMAX,SHDMIN,Z0                      &
      &          ,flqc,flhc,qsg,qvg,qcg,soilt1,tsnav                   & ! for RUC LSM
      &          ,SMFR3D,KEEPFR3DFLAG                                  &
-     &          ,POTEVP,SNOPCX,SOILTB                                 & ! NMM LSM only
      &          ,PSFC                                                 &
      &          ,ids,ide, jds,jde, kds,kde                            &
      &          ,ims,ime, jms,jme, kms,kme                            &
@@ -2131,6 +2131,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
 
        CALL wrf_debug ( 200 , ' call microphysics_driver' )
 
+       sr = 0.
        CALL microphysics_driver(t_2,moist_2, moist_1, w_2,                  &
                                 rho, pi_phy, p_phy, RAINNC, RAINNCV,        &
                                 z, ht, dz8w, p8w, dtm, dx, dy,              &
@@ -2138,7 +2139,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
                                 num_3d_m, warm_rain,                        &
                                 XLAND,itimestep,                            & 
                                 F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,           &
-                                LOWLYR,                                     &
+                                LOWLYR,SR,                                  &
                                 ids, ide, jds, jde, kds, kde,               &
                                 ims, ime, jms, jme, kms, kme,               &
                                 grid%i_start, min(grid%i_end, ide-1),       &

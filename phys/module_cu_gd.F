@@ -206,10 +206,10 @@ CONTAINS
       DO I = its,itf
         if(mconv(i).lt.0.)mconv(i)=0.
         if(i.eq.ipr.and.j.eq.jpr)then
-        do k=kts,ktf
-          print *,'2',tn(i,k),qo(i,k),pi(i,k,j),po(i,k)
-        enddo
-          print *,mconv(i)
+!        do k=kts,ktf
+!          print *,'2',tn(i,k),qo(i,k),pi(i,k,j),po(i,k)
+!        enddo
+!        print *,mconv(i)
         endif
       ENDDO
 !
@@ -242,9 +242,9 @@ CONTAINS
             ENDDO
             DO K=kts,ktf
             DO I=its,itf
-        if(i.eq.ipr.and.j.eq.jpr)then
-           print *,'3',i,k,outt(i,k),outq(i,k),outqc(i,k),pret(i)
-        endif
+!        if(i.eq.ipr.and.j.eq.jpr)then
+!           print *,'3',i,k,outt(i,k),outq(i,k),outqc(i,k),pret(i)
+!        endif
                RTHCUTEN(I,K,J)=outt(i,k)*cuten(i)/pi(i,k,j)
                RQVCUTEN(I,K,J)=outq(i,k)*cuten(i)
             ENDDO
@@ -943,19 +943,19 @@ CONTAINS
         enddo
 !
 !     if(j.eq.jpr.and.iedt.eq.1)then
-      if(j.eq.jpr)then
-        i=ipr
-        print *,'in 250 loop ',iedt,edt(ipr),ierr(ipr)
+!      if(j.eq.jpr)then
+!        i=ipr
+!        print *,'in 250 loop ',iedt,edt(ipr),ierr(ipr)
 !       if(ierr(i).eq.0.or.ierr(i).eq.3)then
-        print *,k22(I),kbcon(i),ktop(i),jmin(i)
-        print *,edt(i),aa0(i),aa1(i)
-        do k=kts,ktf
-          print *,k,z(i,k),he(i,k),hes(i,k)
-        enddo
-        do k=1,ktop(i)+1
-          print *,zu(i,k),zd(i,k),pw(i,k),pwd(i,k)
-        enddo
-        endif
+!        print *,k22(I),kbcon(i),ktop(i),jmin(i)
+!        print *,edt(i),aa0(i),aa1(i)
+!        do k=kts,ktf
+!          print *,k,z(i,k),he(i,k),hes(i,k)
+!        enddo
+!        do k=1,ktop(i)+1
+!          print *,zu(i,k),zd(i,k),pw(i,k),pwd(i,k)
+!        enddo
+!        endif
 !     endif
       do i=its,itf
         aad(i)=0.
@@ -1060,9 +1060,9 @@ CONTAINS
             DELLAT(I,K)=(1./cp)*(DELLAH(I,K)-xl*DELLAQ(I,K))
             XT(I,K)= DELLAT(I,K)*MBDT+TN(I,K)
             IF(XQ(I,K).LE.0.)XQ(I,K)=1.E-08
-            if(i.eq.ipr.and.j.eq.jpr)then
-              print *,k,DELLAH(I,K),DELLAQ(I,K),DELLAT(I,K)
-            endif
+!            if(i.eq.ipr.and.j.eq.jpr)then
+!              print *,k,DELLAH(I,K),DELLAQ(I,K),DELLAT(I,K)
+!            endif
          ENDIF
       enddo
       enddo
@@ -1255,10 +1255,10 @@ CONTAINS
            dellaqc_ens(i,k,iedt)=0.
            pwo_ens(i,k,iedt)=0.
         endif
-      if(i.eq.ipr.and.j.eq.jpr)then
-        print *,iens,iedt,dellat(i,k),dellat_ens(i,k,iedt), &
-          dellaq(i,k), dellaqc(i,k)
-      endif
+!      if(i.eq.ipr.and.j.eq.jpr)then
+!        print *,iens,iedt,dellat(i,k),dellat_ens(i,k,iedt), &
+!          dellaq(i,k), dellaqc(i,k)
+!      endif
       enddo
       enddo
  250  continue
@@ -1280,16 +1280,16 @@ CONTAINS
 !
 !---------------------------done------------------------------
 !
-      if(j.eq.jpr)then
-      i=ipr
+!      if(j.eq.jpr)then
+!      i=ipr
 !       if(ierr(i).eq.0)then
-         print *,'on output, pre =',pre(i)
-        do k=kts,ktf
-          print *,k,z(i,k),outt(i,k),outq(i,k),outqc(i,k)
-        enddo
+!         print *,'on output, pre =',pre(i)
+!        do k=kts,ktf
+!          print *,k,z(i,k),outt(i,k),outq(i,k),outqc(i,k)
+!        enddo
 !        else
-          print *,'ierror = ',ierr(i)
-        endif
+!          print *,'ierror = ',ierr(i)
+!        endif
 !      endif
 !     do i=its,itf
 !      if(ierr(i).eq.0)then
@@ -1886,7 +1886,7 @@ CONTAINS
      ktf=MIN(kte,kde-1)
 !
 !
-      if(j.eq.jpr)print *,'in cup dellabot '
+!      if(j.eq.jpr)print *,'in cup dellabot '
       do 100 i=its,itf
       della(i,1)=0.
       if(ierr(i).ne.0)go to 100
@@ -1961,10 +1961,10 @@ CONTAINS
 !
 !
       i=ipr
-      if(j.eq.jpr)then
-        print *,'in dellas kpbl(i),k22(i),kbcon(i),ktop(i),jmin(i)'
-        print *,kpbl(i),k22(i),kbcon(i),ktop(i),jmin(i)
-      endif
+!      if(j.eq.jpr)then
+!        print *,'in dellas kpbl(i),k22(i),kbcon(i),ktop(i),jmin(i)'
+!        print *,kpbl(i),k22(i),kbcon(i),ktop(i),jmin(i)
+!      endif
        DO K=kts+1,ktf
        do i=its,itf
           della(i,k)=0.
@@ -2025,8 +2025,8 @@ CONTAINS
 !         if(j.eq.jpr.and.i.eq.ipr)print *,'dddr stuff = ',entdo,
 !     1      detdo,entdoj
          if(abs(totmas).gt.1.e-6)then
-           print *,'*********************',i,j,k,totmas,name
-           print *,kpbl(i),k22(i),kbcon(i),ktop(i)
+!           print *,'*********************',i,j,k,totmas,name
+!           print *,kpbl(i),k22(i),kbcon(i),ktop(i)
 !c          print *,'updr stuff = ',subin,
 !c    1      subdown,detup,entup,entupk,detupk
 !c          print *,'dddr stuff = ',entdo,

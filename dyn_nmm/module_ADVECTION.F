@@ -8,7 +8,8 @@
 !
 !----------------------------------------------------------------------
       USE MODULE_MPP
-      USE module_model_constants
+      USE MODULE_MODEL_CONSTANTS
+      USE MODULE_EXT_INTERNAL
 !----------------------------------------------------------------------
 #ifdef DM_PARALLEL
       INCLUDE "mpif.h"
@@ -23,22 +24,22 @@
 !----------------------------------------------------------------------
       CONTAINS
 !
-!********************************************************************** 
-      SUBROUTINE ADVE(NTSD,DT,DETA1,DETA2,PDTOP                        &
-                     ,CURV,F,FAD,F4D,EM_LOC,EMT_LOC,EN,ENT,DX,DY       &
-                     ,HTM,HBM2,VTM,VBM2                                &
-                     ,T,U,V,PDSLO,TOLD,UOLD,VOLD                       &
-                     ,PETDT,UPSTRM                                     &
-                     ,FEW,FNS,FNE,FSE                                  &
-                     ,ADT,ADU,ADV                                      &
-                     ,N_IUP_H,N_IUP_V                                  &
-                     ,N_IUP_ADH,N_IUP_ADV                              &
-                     ,IUP_H,IUP_V,IUP_ADH,IUP_ADV                      &
-                     ,IHE,IHW,IVE,IVW,INDX3_WRK                        &
-                     ,IDS,IDE,JDS,JDE,KDS,KDE                          &
-                     ,IMS,IME,JMS,JME,KMS,KME                          &
-                     ,ITS,ITE,JTS,JTE,KTS,KTE)
-!**********************************************************************
+!*********************************************************************** 
+      SUBROUTINE ADVE(NTSD,DT,DETA1,DETA2,PDTOP                         &
+     &               ,CURV,F,FAD,F4D,EM_LOC,EMT_LOC,EN,ENT,DX,DY        &
+     &               ,HTM,HBM2,VTM,VBM2                                 &
+     &               ,T,U,V,PDSLO,TOLD,UOLD,VOLD                        &
+     &               ,PETDT,UPSTRM                                      &
+     &               ,FEW,FNS,FNE,FSE                                   &
+     &               ,ADT,ADU,ADV                                       &
+     &               ,N_IUP_H,N_IUP_V                                   &
+     &               ,N_IUP_ADH,N_IUP_ADV                               &
+     &               ,IUP_H,IUP_V,IUP_ADH,IUP_ADV                       &
+     &               ,IHE,IHW,IVE,IVW,INDX3_WRK                         &
+     &               ,IDS,IDE,JDS,JDE,KDS,KDE                           &
+     &               ,IMS,IME,JMS,JME,KMS,KME                           &
+     &               ,ITS,ITE,JTS,JTE,KTS,KTE)
+!***********************************************************************
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
 !                .      .    .     
 ! SUBPROGRAM:    ADVE        HORIZONTAL AND VERTICAL ADVECTION
@@ -91,15 +92,15 @@
 !
 !----------------------------------------------------------------------
 !
-      INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                    &
-                           ,IMS,IME,JMS,JME,KMS,KME                    &
-                           ,ITS,ITE,JTS,JTE,KTS,KTE
+      INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                     &
+     &                     ,IMS,IME,JMS,JME,KMS,KME                     &
+     &                     ,ITS,ITE,JTS,JTE,KTS,KTE
 !
       INTEGER, DIMENSION(JMS:JME),INTENT(IN) :: IHE,IHW,IVE,IVW
-      INTEGER, DIMENSION(JMS:JME),INTENT(IN) :: N_IUP_H,N_IUP_V        &
-                                               ,N_IUP_ADH,N_IUP_ADV
-      INTEGER, DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: IUP_H,IUP_V    &
-                                                       ,IUP_ADH,IUP_ADV
+      INTEGER, DIMENSION(JMS:JME),INTENT(IN) :: N_IUP_H,N_IUP_V         &
+     &                                         ,N_IUP_ADH,N_IUP_ADV
+      INTEGER, DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: IUP_H,IUP_V     &
+     &                                                 ,IUP_ADH,IUP_ADV
 !
 !***  NMM_MAX_DIM is set in configure.wrf and must agree with
 !***  the value of dimspec q in the Registry/Registry
@@ -114,21 +115,21 @@
 !
       REAL,DIMENSION(KMS:KME),INTENT(IN) :: DETA1,DETA2
 !
-      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: CURV,DX,F,FAD,HBM2 &
-                                                   ,PDSLO,VBM2
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: CURV,DX,F,FAD,HBM2  &
+     &                                             ,PDSLO,VBM2
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: PETDT
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: HTM,VTM
 !
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) :: T,TOLD  &
-                                                              ,U,UOLD  &
-                                                              ,V,VOLD
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) :: T,TOLD   &
+     &                                                        ,U,UOLD   &
+     &                                                        ,V,VOLD
 !
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(OUT) :: ADT,ADU   &
-                                                            ,ADV       &
-                                                            ,FEW,FNE   &
-                                                            ,FNS,FSE
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(OUT) :: ADT,ADU    &
+     &                                                      ,ADV        &
+     &                                                      ,FEW,FNE    &
+     &                                                      ,FNS,FSE
 !
 !----------------------------------------------------------------------
 !
@@ -136,33 +137,33 @@
 !
       LOGICAL :: UPSTRM
 !
-      INTEGER :: I,IEND,IFP,IFQ,II,IPQ,ISP,ISQ,ISTART                  &
-                ,IUP_ADH_J,IVH,IVL                                     &
-                ,J,J1,JA,JAK,JEND,JGLOBAL,JJ,JKNT,JP2,JSTART           &
-                ,K,KNTI_ADH,KSTART,KSTOP                               &
-                ,N,N_IUPH_J,N_IUPADH_J,N_IUPADV_J
+      INTEGER :: I,IEND,IFP,IFQ,II,IPQ,ISP,ISQ,ISTART                   &
+     &          ,IUP_ADH_J,IVH,IVL                                      &
+     &          ,J,J1,JA,JAK,JEND,JGLOBAL,JJ,JKNT,JP2,JSTART            &
+     &          ,K,KNTI_ADH,KSTART,KSTOP                                &
+     &          ,N,N_IUPH_J,N_IUPADH_J,N_IUPADV_J
 !
       INTEGER :: MY_IS_GLB,MY_IE_GLB,MY_JS_GLB,MY_JE_GLB
 !
-      INTEGER :: J0_P3,J0_P2,J0_P1,J0_00,J0_M1,J1_P2,J1_P1,J1_00,J1_M1 &
-                ,J2_P1,J2_00,J2_M1,J3_P2,J3_P1,J3_00                   &
-                ,J4_P1,J4_00,J4_M1,J5_00,J5_M1,J6_P1,J6_00
+      INTEGER :: J0_P3,J0_P2,J0_P1,J0_00,J0_M1,J1_P2,J1_P1,J1_00,J1_M1  &
+     &          ,J2_P1,J2_00,J2_M1,J3_P2,J3_P1,J3_00                    &
+     &          ,J4_P1,J4_00,J4_M1,J5_00,J5_M1,J6_P1,J6_00
 !
-      INTEGER,DIMENSION(ITS-5:ITE+5) :: KBOT_CFL_T,KTOP_CFL_T              &
-                                   ,KBOT_CFL_U,KTOP_CFL_U              &
-                                   ,KBOT_CFL_V,KTOP_CFL_V
+      INTEGER,DIMENSION(ITS-5:ITE+5) :: KBOT_CFL_T,KTOP_CFL_T           &
+     &                                 ,KBOT_CFL_U,KTOP_CFL_U           &
+     &                                 ,KBOT_CFL_V,KTOP_CFL_V
 !
       INTEGER,DIMENSION(ITS-5:ITE+5,KTS:KTE) :: ISPA,ISQA
 !
-      REAL :: ARRAY3_X,CFL,DPDE_P3,F0,F1,F2,F3                         &
-             ,FEW_00,FEW_P1,FNE_X,FNS_P1,FNS_X,FPP,FSE_X               &
-             ,HM,PP,QP,RDPD,RDPDX,RDPDY,T_UP,TEMPA,TEMPB,TTA,TTB       &
-             ,U_UP,UDY_P1,UDY_X,VXD_X,VDX_P2,V_UP,VDX_X,VM,VTA,VUA,VVA
+      REAL :: ARRAY3_X,CFL,DPDE_P3,F0,F1,F2,F3                          &
+     &       ,FEW_00,FEW_P1,FNE_X,FNS_P1,FNS_X,FPP,FSE_X                &
+     &       ,HM,PP,QP,RDPD,RDPDX,RDPDY,T_UP,TEMPA,TEMPB,TTA,TTB        &
+     &       ,U_UP,UDY_P1,UDY_X,VXD_X,VDX_P2,V_UP,VDX_X,VM,VTA,VUA,VVA
 !
-      REAL,DIMENSION(ITS-5:ITE+5,KTS:KTE) :: ARRAY0,ARRAY1             &
-                                            ,ARRAY2,ARRAY3             &
-                                        ,VAD_TEND_T,VAD_TEND_U         &
-                                        ,VAD_TEND_V
+      REAL,DIMENSION(ITS-5:ITE+5,KTS:KTE) :: ARRAY0,ARRAY1              &
+     &                                      ,ARRAY2,ARRAY3              &
+     &                                      ,VAD_TEND_T,VAD_TEND_U      &
+     &                                      ,VAD_TEND_V
 !
       REAL,DIMENSION(ITS-5:ITE+5,KTS:KTE) :: TEW,UEW,VEW
 !
@@ -227,51 +228,9 @@
 !
 !**********************************************************************
 !----------------------------------------------------------------------
-! initialize the temporaries to avoid floating point exceptions on 
-! machines that care
-
-#ifdef FLOATSAFE
-      ARRAY0          = 0.
-      ARRAY1          = 0.
-      ARRAY2          = 0.
-      ARRAY3          = 0.
-      VAD_TEND_T      = 0.
-      VAD_TEND_U      = 0.
-      VAD_TEND_V      = 0.
-      TEW             = 0.
-      UEW             = 0.
-      VEW             = 0.
-      VTB             = 0.
-      VUB             = 0.
-      VVB             = 0.
-      VAD_TNDX_T      = 0.
-      VAD_TNDX_U      = 0.
-      VAD_TNDX_V      = 0.
-      PETDTK          = 0.
-      TDN             = 0.
-      UDN             = 0.
-      VDN             = 0.
-      DPDE            = 0.
-      TST             = 0.
-      UDY             = 0.
-      UST             = 0.
-      VDX             = 0.
-      VST             = 0.
-      TNS             = 0.
-      UNS             = 0.
-      VNS             = 0.
-      TNE             = 0.
-      UNE             = 0.
-      VNE             = 0.
-      TSE             = 0.
-      USE             = 0.
-      VSE             = 0.
-#endif
-
 !----------------------------------------------------------------------
 ! I should have done all this but right now the loops are still
 ! using the non-thread safe versions in module_MPP.F  JM
-! what about myie and myje?  jw - not stored myis_p2,myie_p2...
       MYIS    =MAX(IDS  ,ITS  )
       MYIE    =MIN(IDE  ,ITE  )
 !
@@ -301,14 +260,14 @@
       MYIE1_P4=MIN(IDE-1,ITE+4)
 
       ISTART=MYIS_P2
-      IEND=MYIE_P2
-      IF( ITE == IDE )IEND=MYIE-3
+      IEND=MYIE_P2 
+      IF( ITE == IDE )IEND=MYIE-3 
 
 !***
 !***  INITIALIZE SOME WORKING ARRAYS TO ZERO
 !***
       DO K=KTS,KTE
-      DO I=ITS,ITE
+      DO I=ITS-5,ITE+5
         TEW(I,K)=0.
         UEW(I,K)=0.
         VEW(I,K)=0.
@@ -319,7 +278,7 @@
 !
       DO N=-3,3
         DO K=KTS,KTE
-        DO I=ITS,ITE
+        DO I=ITS-5,ITE+5
           DPDE(I,K,N)=0.
         ENDDO
         ENDDO
@@ -329,10 +288,11 @@
 !
       DO N=-2,2
         DO K=KTS,KTE
-        DO I=ITS,ITE
+        DO I=ITS-5,ITE+5
           TST(I,K,N)=0.
           UST(I,K,N)=0.
           VST(I,K,N)=0.
+          UDY(I,K,N)=0.
           VDX(I,K,N)=0.
         ENDDO
         ENDDO
@@ -342,7 +302,7 @@
 !
       DO N=-1,0
         DO K=KTS,KTE
-        DO I=ITS,ITE
+        DO I=ITS-5,ITE+5
           TNE(I,K,N)=0.
           TSE(I,K,N+1)=0.
           UNE(I,K,N)=0.
@@ -358,16 +318,8 @@
 !***
       JSTART=MYJS2
       JEND=MYJE2
-!!!   JSTART=MYJS_P2
-!!!   JEND=MYJE_P2
 !
-!!!   IF(IBROW==1)THEN
-!!!     JSTART=MYJS2
-!!!   ELSEIF(ITROW==1)THEN
-!!!     JEND=MYJE2
-!!!   ENDIF
 !
-!!!   call f_hpmstart(10,"ADVE_main")
 !----------------------------------------------------------------------
 !
 !***  FILL WORKING ARRAYS FOR THE INTEGRATION
@@ -428,8 +380,8 @@
 !
         DO K=KTS,KTE
         DO I=MYIS_P3,MYIE_P3
-          TEMPA=(UDY(I+IHE(JJ),K,J)+VDX(I+IHE(JJ),K,J))                &
-               +(UDY(I,K,J+1)      +VDX(I,K,J+1))
+          TEMPA=(UDY(I+IHE(JJ),K,J)+VDX(I+IHE(JJ),K,J))                 &
+     &         +(UDY(I,K,J+1)      +VDX(I,K,J+1))
           FNE(I,K,JJ)=TEMPA*(DPDE(I,K,J)+DPDE(I+IHE(JJ),K,J+1))
         ENDDO
         ENDDO
@@ -442,8 +394,8 @@
 !
         DO K=KTS,KTE
         DO I=MYIS_P3,MYIE_P3
-          TEMPB=(UDY(I+IHE(JJ),K,J)-VDX(I+IHE(JJ),K,J))                &
-               +(UDY(I,K,J-1)      -VDX(I,K,J-1))
+          TEMPB=(UDY(I+IHE(JJ),K,J)-VDX(I+IHE(JJ),K,J))                 &
+     &         +(UDY(I,K,J-1)      -VDX(I,K,J-1))
           FSE(I,K,JJ)=TEMPB*(DPDE(I,K,J)+DPDE(I+IHE(JJ),K,J-1))
         ENDDO
         ENDDO
@@ -466,10 +418,10 @@
 !
         DO K=KTS,KTE
         DO I=MYIS1_P4,MYIE1_P4
-          UNS(I,K,J)=(FNS(I+IHW(JJ),K,JJ)+FNS(I+IHE(JJ),K,JJ))         &
-                    *(UST(I,K,J+1)-UST(I,K,J-1))
-          VNS(I,K,J)=(FNS(I,K,JJ-1)+FNS(I,K,JJ+1))                     &
-                    *(VST(I,K,J+1)-VST(I,K,J-1))
+          UNS(I,K,J)=(FNS(I+IHW(JJ),K,JJ)+FNS(I+IHE(JJ),K,JJ))          &
+     &              *(UST(I,K,J+1)-UST(I,K,J-1))
+          VNS(I,K,J)=(FNS(I,K,JJ-1)+FNS(I,K,JJ+1))                      &
+     &              *(VST(I,K,J+1)-VST(I,K,J-1))
         ENDDO
         ENDDO
 !
@@ -486,25 +438,23 @@
         FSE_X=FSE(I,K,JJ+1)
         TSE(I,K,0)=FSE_X*(TST(I+IHE(JJ+1),K,-1)-TST(I,K,0))
 !
-        UNE(I,K,-1)=(FNE(I+IVW(JJ),K,JJ)+FNE(I+IVE(JJ),K,JJ))          &
-                   *(UST(I+IVE(JJ),K,0)-UST(I,K,-1))
-        USE(I,K,0)=(FSE(I+IVW(JJ+1),K,JJ+1)+FSE(I+IVE(JJ+1),K,JJ+1))   &
-                  *(UST(I+IVE(JJ+1),K,-1)-UST(I,K,0))
-        VNE(I,K,-1)=(FNE(I,K,JJ-1)+FNE(I,K,JJ+1))                      &
-                   *(VST(I+IVE(JJ),K,0)-VST(I,K,-1))
-        VSE(I,K,0)=(FSE(I,K,JJ)+FSE(I,K,JJ+2))                         &
-                  *(VST(I+IVE(JJ+1),K,-1)-VST(I,K,0))
+        UNE(I,K,-1)=(FNE(I+IVW(JJ),K,JJ)+FNE(I+IVE(JJ),K,JJ))           &
+     &             *(UST(I+IVE(JJ),K,0)-UST(I,K,-1))
+        USE(I,K,0)=(FSE(I+IVW(JJ+1),K,JJ+1)+FSE(I+IVE(JJ+1),K,JJ+1))    &
+     &            *(UST(I+IVE(JJ+1),K,-1)-UST(I,K,0))
+        VNE(I,K,-1)=(FNE(I,K,JJ-1)+FNE(I,K,JJ+1))                       &
+     &             *(VST(I+IVE(JJ),K,0)-VST(I,K,-1))
+        VSE(I,K,0)=(FSE(I,K,JJ)+FSE(I,K,JJ+2))                          &
+     &            *(VST(I+IVE(JJ+1),K,-1)-VST(I,K,0))
       ENDDO
       ENDDO
 !
       JKNT=0
-!!!   call f_hpmstop(10)
 !
 !----------------------------------------------------------------------
 !----------------------------------------------------------------------
 !
       main_integration : DO J=JSTART,JEND
-!!!   call f_hpmstart(10,"ADVE_main")
 !
 !----------------------------------------------------------------------
 !----------------------------------------------------------------------
@@ -555,9 +505,6 @@
       J6_P1=INDX3_WRK(1,JKNT,6)
       J6_00=INDX3_WRK(0,JKNT,6)
 !
-!
-!jm
-! only the J ones are used here
       MY_IS_GLB=1  ! make this a noop for global indexing
       MY_IE_GLB=1  ! make this a noop for global indexing
       MY_JS_GLB=1  ! make this a noop for global indexing
@@ -599,18 +546,15 @@
       ENDDO
 !
 !----------------------------------------------------------------------
-!!!   call f_hpmstart(2,"BIGLOOP")
       DO K=KTS,KTE
       DO I=MYIS_P3,MYIE_P3
-
-
-        TEMPA=(UDY(I+IHE(J+1),K,J1_P1)+VDX(I+IHE(J+1),K,J1_P1))       &
-             +(UDY(I,K,J1_P2)         +VDX(I,K,J1_P2))
+        TEMPA=(UDY(I+IHE(J+1),K,J1_P1)+VDX(I+IHE(J+1),K,J1_P1))         &
+     &       +(UDY(I,K,J1_P2)         +VDX(I,K,J1_P2))
         FNE(I,K,J+1)=TEMPA*(DPDE(I,K,J0_P1)+DPDE(I+IHE(J+1),K,J0_P2))
 !
 !----------------------------------------------------------------------
-        TEMPB=(UDY(I+IHE(J+2),K,J1_P2)-VDX(I+IHE(J+2),K,J1_P2))        &
-             +(UDY(I,K,J1_P1)         -VDX(I,K,J1_P1))
+        TEMPB=(UDY(I+IHE(J+2),K,J1_P2)-VDX(I+IHE(J+2),K,J1_P2))         &
+     &       +(UDY(I,K,J1_P1)         -VDX(I,K,J1_P1))
         FSE(I,K,J+2)=TEMPB*(DPDE(I,K,J0_P2)+DPDE(I+IHE(J),K,J0_P1))
 !
 !----------------------------------------------------------------------
@@ -619,15 +563,8 @@
 !
 !----------------------------------------------------------------------
         UDY_P1=U(I,K,J+1)*DY
-!write(0,*)'i,j,k ',i,j,k
-!write(0,*)'U(I,K,J+1) ',U(I,K,J+1)
-!write(0,*)'UDY_P1 ',UDY_P1
-!write(0,*)'DPDE(I+IVW(J+1),K,J0_P1) ',DPDE(I+IVW(J+1),K,J0_P1)
-!write(0,*)'DPDE(I+IVE(J+1),K,J0_P1) ',DPDE(I+IVE(J+1),K,J0_P1)
-!write(0,*)'IVW(J+1) ',IVW(J+1),' IVE(J+1) ',IVE(J+1)
-!write(0,*)'J0_P1  ',J0_P1
-        FEW(I,K,J+1)=UDY_P1*(DPDE(I+IVW(J+1),K,J0_P1)                  &
-                              +DPDE(I+IVE(J+1),K,J0_P1))
+        FEW(I,K,J+1)=UDY_P1*(DPDE(I+IVW(J+1),K,J0_P1)                   &
+     &                        +DPDE(I+IVE(J+1),K,J0_P1))
         FEW_00=FEW(I,K,J)
         TEW(I,K)=FEW_00*(TST(I+IVE(J),K,J1_00)-TST(I+IVW(J),K,J1_00))
 !
@@ -643,7 +580,6 @@
         TSE(I,K,J6_P1)=FSE_X*(TST(I+IHE(J+1),K,J1_00)-TST(I,K,J1_P1))
       ENDDO
       ENDDO
-!!!!  call f_hpmstop(2)
 !
 !----------------------------------------------------------------------
 !***  CALCULATION OF MOMENTUM ADVECTION COMPONENTS
@@ -654,30 +590,30 @@
 !
       DO K=KTS,KTE
       DO I=MYIS_P2,MYIE_P2
-        UEW(I,K)=(FEW(I+IHW(J),K,J)+FEW(I+IHE(J),K,J))                 &
-                *(UST(I+IHE(J),K,J1_00)-UST(I+IHW(J),K,J1_00))
-        UNS(I,K,J4_P1)=(FNS(I+IHW(J+1),K,J+1)                          &
-                       +FNS(I+IHE(J+1),K,J+1))                         &
-                      *(UST(I,K,J1_P2)-UST(I,K,J1_00))
-        VEW(I,K)=(FEW(I,K,J-1)+FEW(I,K,J+1))                           &
-                *(VST(I+IHE(J),K,J1_00)-VST(I+IHW(J),K,J1_00))
-        VNS(I,K,J4_P1)=(FNS(I,K,J)+FNS(I,K,J+2))                       &
-                      *(VST(I,K,J1_P2)-VST(I,K,J1_00))
+        UEW(I,K)=(FEW(I+IHW(J),K,J)+FEW(I+IHE(J),K,J))                  &
+     &          *(UST(I+IHE(J),K,J1_00)-UST(I+IHW(J),K,J1_00))
+        UNS(I,K,J4_P1)=(FNS(I+IHW(J+1),K,J+1)                           &
+     &                 +FNS(I+IHE(J+1),K,J+1))                          &
+     &                *(UST(I,K,J1_P2)-UST(I,K,J1_00))
+        VEW(I,K)=(FEW(I,K,J-1)+FEW(I,K,J+1))                            &
+     &          *(VST(I+IHE(J),K,J1_00)-VST(I+IHW(J),K,J1_00))
+        VNS(I,K,J4_P1)=(FNS(I,K,J)+FNS(I,K,J+2))                        &
+     &                *(VST(I,K,J1_P2)-VST(I,K,J1_00))
 !
 !----------------------------------------------------------------------
 !***  THE FOLLOWING NE AND SE FLUXES ARE TIED TO V POINTS AND ARE
 !***  LOCATED JUST TO THE NE AND SE OF THE GIVEN I,J.
 !----------------------------------------------------------------------
 !
-        UNE(I,K,J5_00)=(FNE(I+IVW(J),K,J)+FNE(I+IVE(J),K,J))           &
-                      *(UST(I+IVE(J),K,J1_P1)-UST(I,K,J1_00))
-        USE(I,K,J6_P1)=(FSE(I+IVW(J+1),K,J+1)                          &
-                       +FSE(I+IVE(J+1),K,J+1))                         &
-                      *(UST(I+IVE(J+1),K,J1_00)-UST(I,K,J1_P1))
-        VNE(I,K,J5_00)=(FNE(I,K,J-1)+FNE(I,K,J+1))                     &
-                      *(VST(I+IVE(J),K,J1_P1)-VST(I,K,J1_00))
-        VSE(I,K,J6_P1)=(FSE(I,K,J)+FSE(I,K,J+2))                       &
-                      *(VST(I+IVE(J+1),K,J1_00)-VST(I,K,J1_P1))
+        UNE(I,K,J5_00)=(FNE(I+IVW(J),K,J)+FNE(I+IVE(J),K,J))            &
+     &                *(UST(I+IVE(J),K,J1_P1)-UST(I,K,J1_00))
+        USE(I,K,J6_P1)=(FSE(I+IVW(J+1),K,J+1)                           &
+     &                 +FSE(I+IVE(J+1),K,J+1))                          &
+     &                *(UST(I+IVE(J+1),K,J1_00)-UST(I,K,J1_P1))
+        VNE(I,K,J5_00)=(FNE(I,K,J-1)+FNE(I,K,J+1))                      &
+     &                *(VST(I+IVE(J),K,J1_P1)-VST(I,K,J1_00))
+        VSE(I,K,J6_P1)=(FSE(I,K,J)+FSE(I,K,J+2))                        &
+     &                *(VST(I+IVE(J+1),K,J1_00)-VST(I,K,J1_P1))
       ENDDO
       ENDDO
 !
@@ -700,11 +636,11 @@
         DO I=ISTART,IEND
           RDPD=1./DPDE(I,K,J0_00)
 !
-          ADT(I,K,J)=(TEW(I+IHW(J),K)+TEW(I+IHE(J),K)                  &
-                     +TNS(I,K,J4_M1)+TNS(I,K,J4_P1)                    &
-                     +TNE(I+IHW(J),K,J5_M1)+TNE(I,K,J5_00)             &
-                     +TSE(I,K,J6_00)+TSE(I+IHW(J),K,J6_P1))            &
-                     *RDPD*FAD(I,J)
+          ADT(I,K,J)=(TEW(I+IHW(J),K)+TEW(I+IHE(J),K)                   &
+     &               +TNS(I,K,J4_M1)+TNS(I,K,J4_P1)                     &
+     &               +TNE(I+IHW(J),K,J5_M1)+TNE(I,K,J5_00)              &
+     &               +TSE(I,K,J6_00)+TSE(I+IHW(J),K,J6_P1))             &
+     &               *RDPD*FAD(I,J)
 !
         ENDDO
         ENDDO
@@ -714,33 +650,29 @@
 !***  THE AD ARRAYS ARE ON VELOCITY POINTS.
 !----------------------------------------------------------------------
 !
-!jw        ISTART=MYIS_P2
         IF(ITS==IDS)ISTART=3+MOD(JJ+1,2)
-!jw        IEND=MYIE_P2
-!jw        IF( ITE == IDE ) IEND=MYIE-3
 !
         DO K=KTS,KTE
         DO I=ISTART,IEND
           RDPDX=1./(DPDE(I+IVW(J),K,J0_00)+DPDE(I+IVE(J),K,J0_00))
           RDPDY=1./(DPDE(I,K,J0_M1)+DPDE(I,K,J0_P1))
 !
-          ADU(I,K,J)=(UEW(I+IVW(J),K)+UEW(I+IVE(J),K)                  &
-                     +UNS(I,K,J4_M1)+UNS(I,K,J4_P1)                    &
-                     +UNE(I+IVW(J),K,J5_M1)+UNE(I,K,J5_00)             &
-                     +USE(I,K,J6_00)+USE(I+IVW(J),K,J6_P1))            &
-                     *RDPDX*FAD(I+IVW(J),J)
+          ADU(I,K,J)=(UEW(I+IVW(J),K)+UEW(I+IVE(J),K)                   &
+     &               +UNS(I,K,J4_M1)+UNS(I,K,J4_P1)                     &
+     &               +UNE(I+IVW(J),K,J5_M1)+UNE(I,K,J5_00)              &
+     &               +USE(I,K,J6_00)+USE(I+IVW(J),K,J6_P1))             &
+     &               *RDPDX*FAD(I+IVW(J),J)
 !
-          ADV(I,K,J)=(VEW(I+IVW(J),K)+VEW(I+IVE(J),K)                  &
-                     +VNS(I,K,J4_M1)+VNS(I,K,J4_P1)                    &
-                     +VNE(I+IVW(J),K,J5_M1)+VNE(I,K,J5_00)             &
-                     +VSE(I,K,J6_00)+VSE(I+IVW(J),K,J6_P1))            &
-                     *RDPDY*FAD(I+IVW(J),J)
+          ADV(I,K,J)=(VEW(I+IVW(J),K)+VEW(I+IVE(J),K)                   &
+     &               +VNS(I,K,J4_M1)+VNS(I,K,J4_P1)                     &
+     &               +VNE(I+IVW(J),K,J5_M1)+VNE(I,K,J5_00)              &
+     &               +VSE(I,K,J6_00)+VSE(I+IVW(J),K,J6_P1))             &
+     &               *RDPDY*FAD(I+IVW(J),J)
 !
         ENDDO
         ENDDO
 !
       ENDIF
-!!!   call f_hpmstop(10)
 !
 !----------------------------------------------------------------------
 !----------------------------------------------------------------------
@@ -753,7 +685,6 @@
 !----------------------------------------------------------------------
 !----------------------------------------------------------------------
 !
-!!!   call f_hpmstart(11,"ADVE_upstr")
       upstream : IF(UPSTRM)THEN
 !
 !----------------------------------------------------------------------
@@ -766,12 +697,12 @@
 !
           DO K=KTS,KTE
 !
-            DO II=1,N_IUPH_J
-              I=IUP_H(II,J)
-              TTA=EMT_LOC(J)*(UST(I,K,J1_M1)+UST(I+IHW(J),K,J1_00)     &
-                             +UST(I+IHE(J),K,J1_00)+UST(I,K,J1_P1))
-              TTB=ENT       *(VST(I,K,J1_M1)+VST(I+IHW(J),K,J1_00)     &
-                             +VST(I+IHE(J),K,J1_00)+VST(I,K,J1_P1))
+            DO II=0,N_IUPH_J-1
+              I=IUP_H(IMS+II,J)
+              TTA=EMT_LOC(J)*(UST(I,K,J1_M1)+UST(I+IHW(J),K,J1_00)      &
+     &                       +UST(I+IHE(J),K,J1_00)+UST(I,K,J1_P1))
+              TTB=ENT       *(VST(I,K,J1_M1)+VST(I+IHW(J),K,J1_00)      &
+     &                       +VST(I+IHE(J),K,J1_00)+VST(I,K,J1_P1))
               PP=-TTA-TTB
               QP= TTA-TTB
 !
@@ -804,10 +735,10 @@
           DO K=KTS,KTE
 !
             KNTI_ADH=1
-            IUP_ADH_J=IUP_ADH(1,J)
+            IUP_ADH_J=IUP_ADH(IMS,J)
 !
-            DO II=1,N_IUPH_J
-              I=IUP_H(II,J)
+            DO II=0,N_IUPH_J-1
+              I=IUP_H(IMS+II,J)
 !
               ISP=ISPA(I,K)
               ISQ=ISQA(I,K)
@@ -815,55 +746,55 @@
               IFQ=(-ISQ-1)/2
               IPQ=(ISP-ISQ)/2
 !
-              IF(HTM(I+IHE(J)+IFP,K,J+ISP)                             &
-                *HTM(I+IHE(J)+IFQ,K,J+ISQ)                             &
-                *HTM(I+IPQ,K,J+ISP+ISQ).GT.0.1)THEN
+              IF(HTM(I+IHE(J)+IFP,K,J+ISP)                              &
+     &          *HTM(I+IHE(J)+IFQ,K,J+ISQ)                              &
+     &          *HTM(I+IPQ,K,J+ISP+ISQ).GT.0.1)THEN
                  GO TO 150
               ENDIF
 !
-              IF(HTM(I+IHE(J)+IFP,K,J+ISP)                             &
-                +HTM(I+IHE(J)+IFQ,K,J+ISQ)                             &
-                +HTM(I+IPQ,K,J+ISP+ISQ).LT.0.1)THEN 
+              IF(HTM(I+IHE(J)+IFP,K,J+ISP)                              &
+     &          +HTM(I+IHE(J)+IFQ,K,J+ISQ)                              &
+     &          +HTM(I+IPQ,K,J+ISP+ISQ).LT.0.1)THEN 
 !
                 T(I+IHE(J)+IFP,K,J+ISP)=T(I,K,J)
                 T(I+IHE(J)+IFQ,K,J+ISQ)=T(I,K,J)
                 T(I+IPQ,K,J+ISP+ISQ)=T(I,K,J)
 !
-              ELSEIF                                                   &
-              (HTM(I+IHE(J)+IFP,K,J+ISP)+HTM(I+IPQ,K,J+ISP+ISQ)        &
-              .LT.0.99)THEN
+              ELSEIF                                                    &
+     &        (HTM(I+IHE(J)+IFP,K,J+ISP)+HTM(I+IPQ,K,J+ISP+ISQ)         &
+     &        .LT.0.99)THEN
 !
                 T(I+IHE(J)+IFP,K,J+ISP)=T(I,K,J)
                 T(I+IPQ,K,J+ISP+ISQ)=T(I+IHE(J)+IFQ,K,J+ISQ)
 !
-              ELSEIF                                                   &
-              (HTM(I+IHE(J)+IFQ,K,J+ISQ)+HTM(I+IPQ,K,J+ISP+ISQ)        &
+              ELSEIF                                                    &
+     &        (HTM(I+IHE(J)+IFQ,K,J+ISQ)+HTM(I+IPQ,K,J+ISP+ISQ)         &
               .LT.0.99)THEN
 !
                 T(I+IHE(J)+IFQ,K,J+ISQ)=T(I,K,J)
                 T(I+IPQ,K,J+ISP+ISQ)=T(I+IHE(J)+IFP,K,J+ISP)
 !
-              ELSEIF                                                   &
-              (HTM(I+IHE(J)+IFP,K,J+ISP)                               &
-              +HTM(I+IHE(J)+IFQ,K,J+ISQ).LT.0.99)THEN
-                T(I+IHE(J)+IFP,K,J+ISP)=0.5*(T(I,K,J)                  &
-                                            +T(I+IPQ,K,J+ISP+ISQ))
+              ELSEIF                                                    &
+     &        (HTM(I+IHE(J)+IFP,K,J+ISP)                                &
+     &        +HTM(I+IHE(J)+IFQ,K,J+ISQ).LT.0.99)THEN
+                T(I+IHE(J)+IFP,K,J+ISP)=0.5*(T(I,K,J)                   &
+     &                                      +T(I+IPQ,K,J+ISP+ISQ))
                 T(I+IHE(J)+IFQ,K,J+ISQ)=T(I+IHE(J)+IFP,K,J+ISP)
 !
               ELSEIF(HTM(I+IHE(J)+IFP,K,J+ISP).LT.0.99)THEN
-                T(I+IHE(J)+IFP,K,J+ISP)=T(I,K,J)                       &
-                                       +T(I+IPQ,K,J+ISP+ISQ)           &
-                                       -T(I+IHE(J)+IFQ,K,J+ISQ)
+                T(I+IHE(J)+IFP,K,J+ISP)=T(I,K,J)                        &
+     &                                 +T(I+IPQ,K,J+ISP+ISQ)            &
+     &                                 -T(I+IHE(J)+IFQ,K,J+ISQ)
 !
               ELSEIF(HTM(I+IHE(J)+IFQ,K,J+ISQ).LT.0.99)THEN
-                T(I+IHE(J)+IFQ,K,J+ISQ)=T(I,K,J)                       &
-                                       +T(I+IPQ,K,J+ISP+ISQ)           &
-                                       -T(I+IHE(J)+IFP,K,J+ISP)
+                T(I+IHE(J)+IFQ,K,J+ISQ)=T(I,K,J)                        &
+     &                                 +T(I+IPQ,K,J+ISP+ISQ)            &
+     &                                 -T(I+IHE(J)+IFP,K,J+ISP)
 !
               ELSE
-                T(I+IPQ,K,J+ISP+ISQ)=T(I+IHE(J)+IFP,K,J+ISP)           &
-                                    +T(I+IHE(J)+IFQ,K,J+ISQ)           &
-                                    -T(I,K,J)
+                T(I+IPQ,K,J+ISP+ISQ)=T(I+IHE(J)+IFP,K,J+ISP)            &
+     &                              +T(I+IHE(J)+IFQ,K,J+ISQ)            &
+     &                              -T(I,K,J)
 !
               ENDIF
 !
@@ -884,21 +815,21 @@
                 F2=ARRAY2(I,K)
                 F3=ARRAY3(I,K)
 !
-                ADT(I,K,J)=F0*T(I,K,J)                                 &
-                          +F1*T(I+IHE(J)+IFP,K,J+ISP)                  &
-                          +F2*T(I+IHE(J)+IFQ,K,J+ISQ)                  &
+                ADT(I,K,J)=F0*T(I,K,J)                                  &
+     &                    +F1*T(I+IHE(J)+IFP,K,J+ISP)                   &
+     &                    +F2*T(I+IHE(J)+IFQ,K,J+ISQ)                   &
                           +F3*T(I+IPQ,K,J+ISP+ISQ)
 !
 !----------------------------------------------------------------------
 !
                 IF(KNTI_ADH.LT.N_IUPADH_J)THEN
+                  IUP_ADH_J=IUP_ADH(IMS+KNTI_ADH,J)
                   KNTI_ADH=KNTI_ADH+1
-                  IUP_ADH_J=IUP_ADH(KNTI_ADH,J)
                 ENDIF
 !
               ENDIF  ! End of advection H tendency IF block
 !
-            ENDDO  ! End of I loop
+            ENDDO  ! End of II loop
 !
           ENDDO  ! End of K loop
 !
@@ -912,8 +843,8 @@
 !
           DO K=KTS,KTE
 !
-            DO II=1,N_IUPADV_J
-              I=IUP_ADV(II,J)
+            DO II=0,N_IUPADV_J-1
+              I=IUP_ADV(IMS+II,J)
 !
               TTA=EM_LOC(J)*UST(I,K,J1_00)
               TTB=EN       *VST(I,K,J1_00)
@@ -942,15 +873,15 @@
               F1=PP-F3
               F2=QP-F3
 !
-              ADU(I,K,J)=F0*U(I,K,J)                                   &
-                        +F1*U(I+IVE(J)+IFP,K,J+ISP)                    &
-                        +F2*U(I+IVE(J)+IFQ,K,J+ISQ)                    &
-                        +F3*U(I+IPQ,K,J+ISP+ISQ)
+              ADU(I,K,J)=F0*U(I,K,J)                                    &
+     &                  +F1*U(I+IVE(J)+IFP,K,J+ISP)                     &
+     &                  +F2*U(I+IVE(J)+IFQ,K,J+ISQ)                     &
+     &                  +F3*U(I+IPQ,K,J+ISP+ISQ)
 ! 
-              ADV(I,K,J)=F0*V(I,K,J)                                   &
-                        +F1*V(I+IVE(J)+IFP,K,J+ISP)                    &
-                        +F2*V(I+IVE(J)+IFQ,K,J+ISQ)                    &
-                        +F3*V(I+IPQ,K,J+ISP+ISQ)
+              ADV(I,K,J)=F0*V(I,K,J)                                    &
+     &                  +F1*V(I+IVE(J)+IFP,K,J+ISP)                     &
+     &                  +F2*V(I+IVE(J)+IFQ,K,J+ISQ)                     &
+     &                  +F3*V(I+IPQ,K,J+ISP+ISQ)
 !
             ENDDO
 !
@@ -959,7 +890,6 @@
 !----------------------------------------------------------------------
 !
         ENDIF upstream
-!!!   call f_hpmstop(11)
 !
 !----------------------------------------------------------------------
 !***
@@ -992,31 +922,34 @@
 !***  MASS POINTS
 !
         CFL=PETDT(I,K,J)*DT*HBM2(I,J)                                   &
-           /(0.5*(DPDE(I,K+1,J0_00)+DPDE(I,K,J0_00)))
+     &     /(0.5*(DPDE(I,K+1,J0_00)+DPDE(I,K,J0_00)))
 !
         IF(ABS(CFL).GT.CFL_MAX)THEN
+        write(0,*) 'mass CFL violated...I,K,J,CFL: ', I,K,J,CFL
           IF(KTOP_CFL_T(I).EQ.0)KTOP_CFL_T(I)=MIN(K,KTE-2)
           IF(KBOT_CFL_T(I).LT.K)KBOT_CFL_T(I)=MIN(K,KTE-2)
         ENDIF
 !
 !***  U COMPONENT
 !
-        CFL=(PETDT(I+IVW(J),K,J)+PETDT(I+IVE(J),K,J))*DT*VBM2(I,J)     &
-           /((DPDE(I+IVW(J),K+1,J0_00)+DPDE(I+IVE(J),K+1,J0_00)        &
-             +DPDE(I+IVW(J),K  ,J0_00)+DPDE(I+IVE(J),K  ,J0_00))*0.5)
+        CFL=(PETDT(I+IVW(J),K,J)+PETDT(I+IVE(J),K,J))*DT*VBM2(I,J)      &
+     &     /((DPDE(I+IVW(J),K+1,J0_00)+DPDE(I+IVE(J),K+1,J0_00)         &
+     &       +DPDE(I+IVW(J),K  ,J0_00)+DPDE(I+IVE(J),K  ,J0_00))*0.5)
 !
         IF(ABS(CFL).GT.CFL_MAX)THEN
+        write(0,*) 'U-comp CFL violated...I,K,J,CFL: ', I,K,J,CFL
           IF(KTOP_CFL_U(I).EQ.0)KTOP_CFL_U(I)=MIN(K,KTE-2)
           IF(KBOT_CFL_U(I).LT.K)KBOT_CFL_U(I)=MIN(K,KTE-2)
         ENDIF
 !
 !***  V COMPONENT
 !
-        CFL=(PETDT(I,K,J-1)+PETDT(I,K,J+1))*DT*VBM2(I,J)               &
-           /((DPDE(I,K+1,J0_M1)+DPDE(I,K+1,J0_P1)                      &
-             +DPDE(I,K  ,J0_M1)+DPDE(I,K  ,J0_P1))*0.5)
+        CFL=(PETDT(I,K,J-1)+PETDT(I,K,J+1))*DT*VBM2(I,J)                &
+     &     /((DPDE(I,K+1,J0_M1)+DPDE(I,K+1,J0_P1)                       &
+     &       +DPDE(I,K  ,J0_M1)+DPDE(I,K  ,J0_P1))*0.5)
 !
         IF(ABS(CFL).GT.CFL_MAX)THEN
+        write(0,*) 'V-comp CFL violated...I,K,J,CFL: ', I,K,J,CFL
           IF(KTOP_CFL_V(I).EQ.0)KTOP_CFL_V(I)=MIN(K,KTE-2)
           IF(KBOT_CFL_V(I).LT.K)KBOT_CFL_V(I)=MIN(K,KTE-2)
         ENDIF
@@ -1066,20 +999,20 @@
 !***  U COMPONENT
 !
         U_UP=U(I,K,J)
-        VUA=(UDN(I)-U_UP)                                              &
-           *(PETDTK(I+IVW(J),0)+PETDTK(I+IVE(J),0))*F4D                   
-        VAD_TEND_U(I,K)=(VUA+VUB(I))                                   &
-                       /(DPDE(I+IVW(J),K,J0_00)                        &
-                        +DPDE(I+IVE(J),K,J0_00))+U_UP
+        VUA=(UDN(I)-U_UP)                                               &
+     &     *(PETDTK(I+IVW(J),0)+PETDTK(I+IVE(J),0))*F4D                   
+        VAD_TEND_U(I,K)=(VUA+VUB(I))                                    &
+     &                 /(DPDE(I+IVW(J),K,J0_00)                         &
+     &                  +DPDE(I+IVE(J),K,J0_00))+U_UP
         VUB(I)=VUA
 !
 !***  V COMPONENT
 !
         V_UP=V(I,K,J)
-        VVA=(VDN(I)-V_UP)                                              &
-           *(PETDTK(I,-1)+PETDTK(I,1))*F4D  
-        VAD_TEND_V(I,K)=(VVA+VVB(I))                                   &
-                       /(DPDE(I,K,J0_M1)+DPDE(I,K,J0_P1))+V_UP
+        VVA=(VDN(I)-V_UP)                                               &
+     &     *(PETDTK(I,-1)+PETDTK(I,1))*F4D  
+        VAD_TEND_V(I,K)=(VVA+VVB(I))                                    &
+     &                 /(DPDE(I,K,J0_M1)+DPDE(I,K,J0_P1))+V_UP
         VVB(I)=VVA
 !
       ENDDO
@@ -1119,20 +1052,20 @@
 !***  U COMPONENT
 !
           U_UP=VAD_TEND_U(I,K)
-          VUA=(UDN(I)-U_UP)                                            &
-             *(PETDTK(I+IVW(J),0)+PETDTK(I+IVE(J),0))*F4D
-          VAD_TEND_U(I,K)=(VUA+VUB(I))                                 &
-                         /(DPDE(I+IVW(J),K,J0_00)                      &
-                          +DPDE(I+IVE(J),K,J0_00))
+          VUA=(UDN(I)-U_UP)                                             &
+     &       *(PETDTK(I+IVW(J),0)+PETDTK(I+IVE(J),0))*F4D
+          VAD_TEND_U(I,K)=(VUA+VUB(I))                                  &
+     &                   /(DPDE(I+IVW(J),K,J0_00)                       &
+     &                    +DPDE(I+IVE(J),K,J0_00))
           VUB(I)=VUA
 !
 !***  V COMPONENT
 !
           V_UP=VAD_TEND_V(I,K)
-          VVA=(VDN(I)-V_UP)                                            &
-             *(PETDTK(I,-1)+PETDTK(I,1))*F4D
-          VAD_TEND_V(I,K)=(VVA+VVB(I))                                 &
-                         /(DPDE(I,K,J0_M1)+DPDE(I,K,J0_P1))
+          VVA=(VDN(I)-V_UP)                                             &
+     &       *(PETDTK(I,-1)+PETDTK(I,1))*F4D
+          VAD_TEND_V(I,K)=(VVA+VVB(I))                                  &
+     &                   /(DPDE(I,K,J0_M1)+DPDE(I,K,J0_P1))
           VVB(I)=VVA
 !
         ENDDO
@@ -1155,7 +1088,7 @@
 !
           DO K=KSTOP,KSTART,-1
             VAD_TNDX_T(K)=(VAD_TEND_T(I,K+1)+VAD_TEND_T(I,K-1)          &
-                          +2.*VAD_TEND_T(I,K))*0.25
+     &                    +2.*VAD_TEND_T(I,K))*0.25
           ENDDO
 !
           DO K=KSTART,KSTOP
@@ -1175,8 +1108,8 @@
           KSTOP =MIN(KBOT_CFL_U(I),KTE-1)
 !
           DO K=KSTOP,KSTART,-1
-            VAD_TNDX_U(K)=(VAD_TEND_U(I,K+1)+VAD_TEND_U(I,K-1)         &
-                          +2.*VAD_TEND_U(I,K))*0.25
+            VAD_TNDX_U(K)=(VAD_TEND_U(I,K+1)+VAD_TEND_U(I,K-1)          &
+     &                    +2.*VAD_TEND_U(I,K))*0.25
           ENDDO
           DO K=KSTART,KSTOP
             VAD_TEND_U(I,K)=VAD_TNDX_U(K)
@@ -1194,8 +1127,8 @@
           KSTOP =MIN(KBOT_CFL_V(I),KTE-1)
 !
           DO K=KSTOP,KSTART,-1
-            VAD_TNDX_V(K)=(VAD_TEND_V(I,K+1)+VAD_TEND_V(I,K-1)         &
-                          +2.*VAD_TEND_V(I,K))*0.25
+            VAD_TNDX_V(K)=(VAD_TEND_V(I,K+1)+VAD_TEND_V(I,K-1)          &
+     &                    +2.*VAD_TEND_V(I,K))*0.25
           ENDDO
           DO K=KSTART,KSTOP
             VAD_TEND_V(I,K)=VAD_TNDX_V(K)
@@ -1218,10 +1151,10 @@
         ADT(I,K,J)=(VAD_TEND_T(I,K)+2.*ADT(I,K,J))*HM
 !
         FPP=CURV(I,J)*2.*UST(I,K,J1_00)+F(I,J)*2.
-        ADU(I,K,J)=(VAD_TEND_U(I,K)+2.*ADU(I,K,J)+VST(I,K,J1_00)*FPP)  &
-                   *VM
-        ADV(I,K,J)=(VAD_TEND_V(I,K)+2.*ADV(I,K,J)-UST(I,K,J1_00)*FPP)  &
-                   *VM
+        ADU(I,K,J)=(VAD_TEND_U(I,K)+2.*ADU(I,K,J)+VST(I,K,J1_00)*FPP)   &
+     &             *VM
+        ADV(I,K,J)=(VAD_TEND_V(I,K)+2.*ADV(I,K,J)-UST(I,K,J1_00)*FPP)   &
+     &             *VM
       ENDDO
       ENDDO
 !----------------------------------------------------------------------
@@ -1263,19 +1196,19 @@
       END SUBROUTINE ADVE
 !----------------------------------------------------------------------
 !
-!**********************************************************************
-      SUBROUTINE VAD2(NTSD,DT,IDTAD,DX,DY                              &
-                     ,AETA1,AETA2,DETA1,DETA2,PDSL,PDTOP               &
-                     ,HBM2,LMH                                         &
-                     ,Q,Q2,CWM,PETDT                                   &
-                     ,N_IUP_H,N_IUP_V                                  &
-                     ,N_IUP_ADH,N_IUP_ADV                              &
-                     ,IUP_H,IUP_V,IUP_ADH,IUP_ADV                      &
-                     ,IHE,IHW,IVE,IVW,INDX3_WRK                        &
-                     ,IDS,IDE,JDS,JDE,KDS,KDE                          &
-                     ,IMS,IME,JMS,JME,KMS,KME                          &
-                     ,ITS,ITE,JTS,JTE,KTS,KTE)
-!**********************************************************************
+!***********************************************************************
+      SUBROUTINE VAD2(NTSD,DT,IDTAD,DX,DY                               &
+     &               ,AETA1,AETA2,DETA1,DETA2,PDSL,PDTOP                &
+     &               ,HBM2,LMH                                          &
+     &               ,Q,Q2,CWM,PETDT                                    &
+     &               ,N_IUP_H,N_IUP_V                                   &
+     &               ,N_IUP_ADH,N_IUP_ADV                               &
+     &               ,IUP_H,IUP_V,IUP_ADH,IUP_ADV                       &
+     &               ,IHE,IHW,IVE,IVW,INDX3_WRK                         &
+     &               ,IDS,IDE,JDS,JDE,KDS,KDE                           &
+     &               ,IMS,IME,JMS,JME,KMS,KME                           &
+     &               ,ITS,ITE,JTS,JTE,KTS,KTE)
+!***********************************************************************
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
 !                .      .    .
 ! SUBPROGRAM:    VAD2        VERTICAL ADVECTION OF H2O SUBSTANCE AND TKE
@@ -1317,15 +1250,15 @@
 !
 !----------------------------------------------------------------------
 !
-      INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                    &
-                           ,IMS,IME,JMS,JME,KMS,KME                    &
+      INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                     &
+     &                     ,IMS,IME,JMS,JME,KMS,KME                     &
                            ,ITS,ITE,JTS,JTE,KTS,KTE
 !
       INTEGER,DIMENSION(JMS:JME),INTENT(IN) :: IHE,IHW,IVE,IVW
-      INTEGER,DIMENSION(JMS:JME),INTENT(IN) :: N_IUP_H,N_IUP_V         &
-                                              ,N_IUP_ADH,N_IUP_ADV
-      INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: IUP_H,IUP_V     &
-                                                      ,IUP_ADH,IUP_ADV
+      INTEGER,DIMENSION(JMS:JME),INTENT(IN) :: N_IUP_H,N_IUP_V          &
+     &                                        ,N_IUP_ADH,N_IUP_ADV
+      INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: IUP_H,IUP_V      &
+     &                                                ,IUP_ADH,IUP_ADV
 ! NMM_MAX_DIM is set in configure.wrf and must agree with
 ! the value of dimspec q in the Registry/Registry
       INTEGER,DIMENSION(-3:3,NMM_MAX_DIM,0:6),INTENT(IN) :: INDX3_WRK
@@ -1356,15 +1289,15 @@
 !
       INTEGER,DIMENSION(KTS:KTE) :: LA
 !
-      REAL*8 :: ADDT,AFRP,D2PQE,D2PQQ,D2PQW,DEP,DETAP,DPDN,DPUP,DQP    &
-             ,DWP,E00,E4P,EP,EP0,HADDT,HBM2IJ                          &
-             ,Q00,Q4P,QP,QP0                                           &
-             ,RFACEK,RFACQK,RFACWK,RFC,RR                              &
-             ,SUMNE,SUMNQ,SUMNW,SUMPE,SUMPQ,SUMPW                      &
-             ,W00,W4P,WP,WP0
+      REAL*8 :: ADDT,AFRP,D2PQE,D2PQQ,D2PQW,DEP,DETAP,DPDN,DPUP,DQP     &
+     &       ,DWP,E00,E4P,EP,EP0,HADDT,HBM2IJ                           &
+     &       ,Q00,Q4P,QP,QP0                                            &
+     &       ,RFACEK,RFACQK,RFACWK,RFC,RR                               &
+     &       ,SUMNE,SUMNQ,SUMNW,SUMPE,SUMPQ,SUMPW                       &
+     &       ,W00,W4P,WP,WP0
 !
-      REAL,DIMENSION(KTS:KTE) :: AFR,DEL,DQL,DWL,E3,E4,PETDTK          &
-                                ,RFACE,RFACQ,RFACW,Q3,Q4,W3,W4
+      REAL,DIMENSION(KTS:KTE) :: AFR,DEL,DQL,DWL,E3,E4,PETDTK           &
+     &                          ,RFACE,RFACQ,RFACW,Q3,Q4,W3,W4
 !
 !**********************************************************************
 !
@@ -1379,7 +1312,6 @@
 !
 !----------------------------------------------------------------------
 !
-!jm still needs to be converted
       main_integration : DO J=MYJS2,MYJE2
 !
       DO I=MYIS1_P1,MYIE1_P1
@@ -1426,8 +1358,8 @@
           BOT=.FALSE.
 !
           IF(LLAP.GT.KOFF.AND.LLAP.LT.KTE+1.AND.LAP.NE.0)THEN
-            RR=ABS(RR/((AETA1(LLAP)-AETA1(K))*PDTOP                    &
-                      +(AETA2(LLAP)-AETA2(K))*PDSL(I,J)))
+            RR=ABS(RR/((AETA1(LLAP)-AETA1(K))*PDTOP                     &
+     &                +(AETA2(LLAP)-AETA2(K))*PDSL(I,J)))
 !
             AFR(K)=(((FF4*RR+FF3)*RR+FF2)*RR+FF1)*RR
             DQP=(Q3(LLAP)-Q3(K))*RR
@@ -1450,8 +1382,8 @@
 !----------------------------------------------------------------------
         IF(TOP)THEN
           IF(LA(KTE-1).GT.0)THEN
-            RFC=(DETA1(KTE-1)*PDTOP+DETA2(KTE-1)*PDSL(I,J))            &
-               /(DETA1(KTE  )*PDTOP+DETA2(KTE  )*PDSL(I,J))
+            RFC=(DETA1(KTE-1)*PDTOP+DETA2(KTE-1)*PDSL(I,J))             &
+     &         /(DETA1(KTE  )*PDTOP+DETA2(KTE  )*PDSL(I,J))
             DQL(KTE)=-DQL(KTE+1)*RFC
             DWL(KTE)=-DWL(KTE+1)*RFC
             DEL(KTE)=-DEL(KTE+1)*RFC
@@ -1460,8 +1392,8 @@
 !
         IF(BOT)THEN
           IF(LA(KOFF+2).LT.0)THEN
-            RFC=(DETA1(KOFF+2)*PDTOP+DETA2(KOFF+2)*PDSL(I,J))          &
-               /(DETA1(KOFF+1)*PDTOP+DETA2(KOFF+1)*PDSL(I,J))
+            RFC=(DETA1(KOFF+2)*PDTOP+DETA2(KOFF+2)*PDSL(I,J))           &
+     &         /(DETA1(KOFF+1)*PDTOP+DETA2(KOFF+1)*PDSL(I,J))
             DQL(KOFF+1)=-DQL(KOFF+2)*RFC
             DWL(KOFF+1)=-DWL(KOFF+2)*RFC
             DEL(KOFF+1)=-DEL(KOFF+2)*RFC
@@ -1496,18 +1428,18 @@
         LAP=LA(K)
 !
         IF(LAP.NE.0)THEN
-          DPDN=(AETA1(K+LAP)-AETA1(K))*PDTOP                           &
-              +(AETA2(K+LAP)-AETA2(K))*PDSL(I,J)
-          DPUP=(AETA1(K)-AETA1(K-LAP))*PDTOP                           &
-              +(AETA2(K)-AETA2(K-LAP))*PDSL(I,J)
+          DPDN=(AETA1(K+LAP)-AETA1(K))*PDTOP                            &
+     &        +(AETA2(K+LAP)-AETA2(K))*PDSL(I,J)
+          DPUP=(AETA1(K)-AETA1(K-LAP))*PDTOP                            &
+     &        +(AETA2(K)-AETA2(K-LAP))*PDSL(I,J)
 !
           AFRP=2.*AFR(K)*DPDN*DPDN/(DPDN+DPUP)
-          D2PQQ=((Q4(K+LAP)-Q4P)/DPDN                                  &
-                -(Q4P-Q4(K-LAP))/DPUP)*AFRP
-          D2PQW=((W4(K+LAP)-W4P)/DPDN                                  &
-                -(W4P-W4(K-LAP))/DPUP)*AFRP
-          D2PQE=((E4(K+LAP)-E4P)/DPDN                                  &
-                -(E4P-E4(K-LAP))/DPUP)*AFRP
+          D2PQQ=((Q4(K+LAP)-Q4P)/DPDN                                   &
+     &          -(Q4P-Q4(K-LAP))/DPUP)*AFRP
+          D2PQW=((W4(K+LAP)-W4P)/DPDN                                   &
+     &          -(W4P-W4(K-LAP))/DPUP)*AFRP
+          D2PQE=((E4(K+LAP)-E4P)/DPDN                                   &
+     &          -(E4P-E4(K-LAP))/DPUP)*AFRP
         ELSE
           D2PQQ=0.
           D2PQW=0.
@@ -1621,11 +1553,11 @@
         ENDDO
 !
         HBM2IJ=HBM2(I,J)
-        Q2(I,KTE,J)=MAX(E3(KTE)+E3(KTE)-EPSQ2,EPSQ2)*HBM2IJ            &
-                   +Q2(I,KTE,J)*(1.-HBM2IJ)
+        Q2(I,KTE,J)=MAX(E3(KTE)+E3(KTE)-EPSQ2,EPSQ2)*HBM2IJ             &
+     &             +Q2(I,KTE,J)*(1.-HBM2IJ)
         DO K=KTE-1,KOFF+2,-1
-          Q2(I,K,J)=MAX(E3(K)+E3(K)-Q2(I,K+1,J),EPSQ2)*HBM2IJ          &
-                   +Q2(I,K,J)*(1.-HBM2IJ)
+          Q2(I,K,J)=MAX(E3(K)+E3(K)-Q2(I,K+1,J),EPSQ2)*HBM2IJ           &
+     &             +Q2(I,K,J)*(1.-HBM2IJ)
         ENDDO
 !----------------------------------------------------------------------
 !----------------------------------------------------------------------
@@ -1637,23 +1569,23 @@
       END SUBROUTINE VAD2
 !----------------------------------------------------------------------
 !
-!**********************************************************************
-      SUBROUTINE HAD2(                                                 &
+!***********************************************************************
+      SUBROUTINE HAD2(                                                  &
 #if defined(DM_PARALLEL)
-                      domdesc ,                                        &
+     &                domdesc ,                                         &
 #endif
-                      NTSD,DT,IDTAD,DX,DY                              &
-                     ,AETA1,AETA2,DETA1,DETA2,PDSL,PDTOP               &
-                     ,HTM,HBM2,HBM3,LMH                                &
-                     ,Q,Q2,CWM,U,V,Z,HYDRO                             &
-                     ,N_IUP_H,N_IUP_V                                  &
-                     ,N_IUP_ADH,N_IUP_ADV                              &
-                     ,IUP_H,IUP_V,IUP_ADH,IUP_ADV                      &
-                     ,IHE,IHW,IVE,IVW,INDX3_WRK                        &
-                     ,IDS,IDE,JDS,JDE,KDS,KDE                          &
-                     ,IMS,IME,JMS,JME,KMS,KME                          &
-                     ,ITS,ITE,JTS,JTE,KTS,KTE)
-!**********************************************************************
+     &                NTSD,DT,IDTAD,DX,DY                               &
+     &               ,AETA1,AETA2,DETA1,DETA2,PDSL,PDTOP                &
+     &               ,HTM,HBM2,HBM3,LMH                                 &
+     &               ,Q,Q2,CWM,U,V,Z,HYDRO                              &
+     &               ,N_IUP_H,N_IUP_V                                   &
+     &               ,N_IUP_ADH,N_IUP_ADV                               &
+     &               ,IUP_H,IUP_V,IUP_ADH,IUP_ADV                       &
+     &               ,IHE,IHW,IVE,IVW,INDX3_WRK                         &
+     &               ,IDS,IDE,JDS,JDE,KDS,KDE                           &
+     &               ,IMS,IME,JMS,JME,KMS,KME                           &
+     &               ,ITS,ITE,JTS,JTE,KTS,KTE)
+!***********************************************************************
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
 !                .      .    .
 ! SUBPROGRAM:    HAD2        HORIZONTAL ADVECTION OF H2O AND TKE
@@ -1696,15 +1628,15 @@
 !
 !----------------------------------------------------------------------
 !
-      INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                    &
-                           ,IMS,IME,JMS,JME,KMS,KME                    &
-                           ,ITS,ITE,JTS,JTE,KTS,KTE
+      INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                     &
+     &                     ,IMS,IME,JMS,JME,KMS,KME                     &
+     &                     ,ITS,ITE,JTS,JTE,KTS,KTE
 !
       INTEGER,DIMENSION(JMS:JME),INTENT(IN) :: IHE,IHW,IVE,IVW
-      INTEGER,DIMENSION(JMS:JME),INTENT(IN) :: N_IUP_H,N_IUP_V         &
-                                              ,N_IUP_ADH,N_IUP_ADV
-      INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: IUP_H,IUP_V     &
-                                                      ,IUP_ADH,IUP_ADV
+      INTEGER,DIMENSION(JMS:JME),INTENT(IN) :: N_IUP_H,N_IUP_V          &
+     &                                        ,N_IUP_ADH,N_IUP_ADV
+      INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: IUP_H,IUP_V      &
+     &                                                ,IUP_ADH,IUP_ADV
 ! NMM_MAX_DIM is set in configure.wrf and must agree with
 ! the value of dimspec q in the Registry/Registry
       INTEGER,DIMENSION(-3:3,NMM_MAX_DIM,0:6),INTENT(IN) :: INDX3_WRK
@@ -1731,43 +1663,44 @@
 !
       REAL,PARAMETER :: FF1=0.530
 #ifdef DM_PARALLEL
-      integer domdesc
+      INTEGER domdesc
 #endif
 #if defined(BIT_FOR_BIT) && defined(DM_PARALLEL)
-      logical, external :: wrf_dm_on_monitor
-      integer ii
-      real, dimension(ims:ime,kms:kme,jms:jme,6) :: xsums_l
-      real, dimension(ids:ide,kds:kde,jds:jde,6) :: xsums_g
+      LOGICAL, EXTERNAL :: wrf_dm_on_monitor
+      INTEGER ii
+      REAL, DIMENSION(ims:ime,kms:kme,jms:jme,6) :: xsums_l
+      REAL, DIMENSION(ids:ide,kds:kde,jds:jde,6) :: xsums_g
 #endif
 !
       LOGICAL :: BOT,TOP
 !
       INTEGER :: I,IRECV,J,JFP,JFQ,K,KOFF,LAP,LLAP
 !
-      INTEGER,DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: IFPA,IFPF          &
-                                                   ,IFQA,IFQF          &
-                                                   ,JFPA,JFPF          &
-                                                   ,JFQA,JFQF
+      INTEGER,DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: IFPA,IFPF           &
+     &                                             ,IFQA,IFQF           &
+     &                                             ,JFPA,JFPF           &
+     &                                             ,JFQA,JFQF
 !
-      REAL :: ADDT,AFRP,CRIT,D2PQE,D2PQQ,D2PQW,DEP,DESTIJ,DQP,DQSTIJ   &
-             ,DVOLP,DWP,DWSTIJ,DZA,DZB,E00,E0Q,E1X,E2IJ,E4P,ENH,EP,EP0 &
-             ,ESTIJ,FPQ,HAFP,HAFQ,HBM2IJ,HM,HTMIKJ,PP,PPQ00,Q00,Q0Q    &
-             ,Q1IJ,Q4P,QP,QP0,QSTIJ,RDY,RFACEK,RFACQK,RFACWK,RFC       &
-             ,RFEIJ,RFQIJ,RFWIJ,RR,SLOPAC,SPP,SQP,SSA,SSB,SUMNE,SUMNQ  &
-             ,SUMNW,SUMPE,SUMPQ,SUMPW,TTA,TTB,W00,W0Q,W1IJ,W4P,WP,WP0  &
-             ,WSTIJ
+      REAL :: ADDT,AFRP,CRIT,D2PQE,D2PQQ,D2PQW,DEP,DESTIJ,DQP,DQSTIJ    &
+     &       ,DVOLP,DWP,DWSTIJ,DZA,DZB,E00,E0Q,E1X,E2IJ,E4P,ENH,EP,EP0  &
+     &       ,ESTIJ,FPQ,HAFP,HAFQ,HBM2IJ,HM,HTMIKJ,PP,PPQ00,Q00,Q0Q     &
+     &       ,Q1IJ,Q4P,QP,QP0,QSTIJ,RDY,RFACEK,RFACQK,RFACWK,RFC        &
+     &       ,RFEIJ,RFQIJ,RFWIJ,RR,SLOPAC,SPP,SQP,SSA,SSB,SUMNE,SUMNQ   &
+     &       ,SUMNW,SUMPE,SUMPQ,SUMPW,TTA,TTB,W00,W0Q,W1IJ,W4P,WP,WP0   &
+     &       ,WSTIJ
 !
       DOUBLE PRECISION,DIMENSION(6,KTE-KTS+1) :: GSUMS,XSUMS
 !
-      REAL,DIMENSION(KTS:KTE) :: AFR,DEL,DQL,DWL,E3,E4                 &
-                                ,RFACE,RFACQ,RFACW,Q3,Q4,W3,W4
+      REAL,DIMENSION(KTS:KTE) :: AFR,DEL,DQL,DWL,E3,E4                  &
+     &                          ,RFACE,RFACQ,RFACW,Q3,Q4,W3,W4
 !
       REAL,DIMENSION(IMS:IME,JMS:JME) :: DARE,EMH
 !
-      REAL,DIMENSION(ITS-5:ITE+5,KTS:KTE,JTS-5:JTE+5) :: AFP,AFQ,DEST,DQST     &
-                                                ,DVOL,DWST,E1,E2       &
-                                                ,Q1,W1
-!
+      REAL,DIMENSION(ITS-5:ITE+5,KTS:KTE,JTS-5:JTE+5) :: AFP,AFQ,DEST   &
+     &                                                  ,DQST,DVOL,DWST &
+     &                                                  ,E1,E2,Q1,W1
+      integer :: nunit,ier
+      save nunit
 !**********************************************************************
 !
 !----------------------------------------------------------------------
@@ -1837,10 +1770,10 @@
       DO K=KTS,KTE
       DO I=MYIS1_P1,MYIE1_P1
 !
-        TTA=(U(I,K,J-1)+U(I+IHW(J),K,J)+U(I+IHE(J),K,J)+U(I,K,J+1))    &
-            *EMH(I,J)*HBM2(I,J)
-        TTB=(V(I,K,J-1)+V(I+IHW(J),K,J)+V(I+IHE(J),K,J)+V(I,K,J+1))    &
-            *ENH*HBM2(I,J)
+        TTA=(U(I,K,J-1)+U(I+IHW(J),K,J)+U(I+IHE(J),K,J)+U(I,K,J+1))     &
+     &      *EMH(I,J)*HBM2(I,J)
+        TTB=(V(I,K,J-1)+V(I+IHW(J),K,J)+V(I+IHE(J),K,J)+V(I,K,J+1))     &
+     &      *ENH*HBM2(I,J)
 !
         SPP=-TTA-TTB
         SQP= TTA-TTB
@@ -1892,30 +1825,30 @@
         SPP=SPP*HTM(IFPA(I,K,J),K,JFPA(I,K,J))
         SQP=SQP*HTM(IFQA(I,K,J),K,JFQA(I,K,J))
         FPQ=SPP*SQP*HTM(I,K,J-2)*HTM(I-1,K,J)                           &
-                   *HTM(I+1,K,J)*HTM(I,K,J+2)*0.25
+     &             *HTM(I+1,K,J)*HTM(I,K,J+2)*0.25
         PP=ABS(SPP)
         QP=ABS(SQP)
 !
         AFP(I,K,J)=(((FF4*PP+FF3)*PP+FF2)*PP+FF1)*PP
         AFQ(I,K,J)=(((FF4*QP+FF3)*QP+FF2)*QP+FF1)*QP
 !
-        Q1(I,K,J)=(Q  (IFPA(I,K,J),K,JFPA(I,K,J))-Q  (I,K,J))*PP       &
-                 +(Q  (IFQA(I,K,J),K,JFQA(I,K,J))-Q  (I,K,J))*QP       &
-                 +(Q  (I,K,J-2)+Q  (I,K,J+2)                           &
-                  -Q  (I-1,K,J)-Q  (I+1,K,J))*FPQ                      &
-                 +Q(I,K,J)
+        Q1(I,K,J)=(Q  (IFPA(I,K,J),K,JFPA(I,K,J))-Q  (I,K,J))*PP        &
+     &           +(Q  (IFQA(I,K,J),K,JFQA(I,K,J))-Q  (I,K,J))*QP        &
+     &           +(Q  (I,K,J-2)+Q  (I,K,J+2)                            &
+     &            -Q  (I-1,K,J)-Q  (I+1,K,J))*FPQ                       &
+     &           +Q(I,K,J)
 !
-        W1(I,K,J)=(CWM(IFPA(I,K,J),K,JFPA(I,K,J))-CWM(I,K,J))*PP       &
-                 +(CWM(IFQA(I,K,J),K,JFQA(I,K,J))-CWM(I,K,J))*QP       &
-                 +(CWM(I,K,J-2)+CWM(I,K,J+2)                           &
-                  -CWM(I-1,K,J)-CWM(I+1,K,J))*FPQ                      &
-                 +CWM(I,K,J)
+        W1(I,K,J)=(CWM(IFPA(I,K,J),K,JFPA(I,K,J))-CWM(I,K,J))*PP        &
+     &           +(CWM(IFQA(I,K,J),K,JFQA(I,K,J))-CWM(I,K,J))*QP        &
+     &           +(CWM(I,K,J-2)+CWM(I,K,J+2)                            &
+     &            -CWM(I-1,K,J)-CWM(I+1,K,J))*FPQ                       &
+     &           +CWM(I,K,J)
 !
-        E2(I,K,J)=(E1 (IFPA(I,K,J),K,JFPA(I,K,J))-E1 (I,K,J))*PP       &
-                 +(E1 (IFQA(I,K,J),K,JFQA(I,K,J))-E1 (I,K,J))*QP       &
-                 +(E1 (I,K,J-2)+E1 (I,K,J+2)                           &
-                  -E1 (I-1,K,J)-E1 (I+1,K,J))*FPQ                      &
-                 +E1(I,K,J)
+        E2(I,K,J)=(E1 (IFPA(I,K,J),K,JFPA(I,K,J))-E1 (I,K,J))*PP        &
+     &           +(E1 (IFQA(I,K,J),K,JFQA(I,K,J))-E1 (I,K,J))*QP        &
+     &           +(E1 (I,K,J-2)+E1 (I,K,J+2)                            &
+     &            -E1 (I-1,K,J)-E1 (I+1,K,J))*FPQ                       &
+     &           +E1(I,K,J)
 !
       ENDDO
       ENDDO
@@ -1952,26 +1885,26 @@
       HAFP=HTM(IFPF(I,K,J),K,JFPF(I,K,J))*AFP(I,K,J)
       HAFQ=HTM(IFQF(I,K,J),K,JFQF(I,K,J))*AFQ(I,K,J)
 !
-      D2PQQ=(Q1(IFPA(I,K,J),K,JFPA(I,K,J))-Q1IJ                        &
-            -Q1IJ+Q1(IFPF(I,K,J),K,JFPF(I,K,J)))                       &
-            *HAFP                                                      &
-           +(Q1(IFQA(I,K,J),K,JFQA(I,K,J))-Q1IJ                        &
-            -Q1IJ+Q1(IFQF(I,K,J),K,JFQF(I,K,J)))                       &
-            *HAFQ
+      D2PQQ=(Q1(IFPA(I,K,J),K,JFPA(I,K,J))-Q1IJ                         &
+     &      -Q1IJ+Q1(IFPF(I,K,J),K,JFPF(I,K,J)))                        &
+     &      *HAFP                                                       &
+     &     +(Q1(IFQA(I,K,J),K,JFQA(I,K,J))-Q1IJ                         &
+     &      -Q1IJ+Q1(IFQF(I,K,J),K,JFQF(I,K,J)))                        &
+     &      *HAFQ
 !
-      D2PQW=(W1(IFPA(I,K,J),K,JFPA(I,K,J))-W1IJ                        &
-            -W1IJ+W1(IFPF(I,K,J),K,JFPF(I,K,J)))                       &
-            *HAFP                                                      &
-           +(W1(IFQA(I,K,J),K,JFQA(I,K,J))-W1IJ                        &
-            -W1IJ+W1(IFQF(I,K,J),K,JFQF(I,K,J)))                       &
-            *HAFQ
+      D2PQW=(W1(IFPA(I,K,J),K,JFPA(I,K,J))-W1IJ                         &
+     &      -W1IJ+W1(IFPF(I,K,J),K,JFPF(I,K,J)))                        &
+     &      *HAFP                                                       &
+     &     +(W1(IFQA(I,K,J),K,JFQA(I,K,J))-W1IJ                         &
+     &      -W1IJ+W1(IFQF(I,K,J),K,JFQF(I,K,J)))                        &
+     &      *HAFQ
 !
-      D2PQE=(E2(IFPA(I,K,J),K,JFPA(I,K,J))-E2IJ                        &
-            -E2IJ+E2(IFPF(I,K,J),K,JFPF(I,K,J)))                       &
-            *HAFP                                                      &
-           +(E2(IFQA(I,K,J),K,JFQA(I,K,J))-E2IJ                        &
-            -E2IJ+E2(IFQF(I,K,J),K,JFQF(I,K,J)))                       &
-            *HAFQ
+      D2PQE=(E2(IFPA(I,K,J),K,JFPA(I,K,J))-E2IJ                         &
+     &      -E2IJ+E2(IFPF(I,K,J),K,JFPF(I,K,J)))                        &
+     &      *HAFP                                                       &
+     &     +(E2(IFQA(I,K,J),K,JFQA(I,K,J))-E2IJ                         &
+     &      -E2IJ+E2(IFQF(I,K,J),K,JFQF(I,K,J)))                        &
+     &      *HAFQ
 !
       QSTIJ=Q1IJ-D2PQQ
       WSTIJ=W1IJ-D2PQW
@@ -2051,27 +1984,30 @@
 !
   150 CONTINUE
 #if defined(BIT_FOR_BIT) && defined(DM_PARALLEL)
-      do ii = 1,6
-        CALL WRF_PATCH_TO_GLOBAL_REAL( XSUMS_L(IMS,KMS,JMS,II),        &
-                                       XSUMS_G(1,1,1,ii), domdesc,     &
-                                       'xyz','xzy', &
-                                       ids,ide,kds,kde,jds,jde, &
-                                       ims,ime,kms,kme,jms,jme, &
-                                       its,ite,kts,kte,jts,jte )
-      enddo
-      gsums = 0.
-      if ( wrf_dm_on_monitor() ) then
-        do ii = 1,6
-        do j = jds,jde
-        do k = kds,kde
-        do i = ids,ide
-          gsums(ii,k) = gsums(ii,k) + XSUMS_G(i,k,j,ii)
-        enddo
-        enddo
-        enddo
-        enddo
-      endif
-      call wrf_dm_bcast_bytes( gsums, 2*RWORDSIZE*6*(kde-kds+1) )
+      DO II=1,6
+        CALL WRF_PATCH_TO_GLOBAL_REAL( XSUMS_L(IMS,KMS,JMS,II),         &
+     &                                 XSUMS_G(1,1,1,ii), domdesc,      & 
+     &                                'xyz','xzy',                      &
+     &                                 IDS,IDE,KDS,KDE,JDS,JDE,         &    
+     &                                 IMS,IME,KMS,KME,JMS,JME,         &
+     &                                 ITS,ITE,KTS,KTE,JTS,JTE )
+      ENDDO
+!
+      GSUMS=0.
+!
+      IF(WRF_DM_ON_MONITOR())THEN
+        DO II=1,6
+          DO J =JDS,JDE
+          DO K =KDS,KDE
+          DO I =IDS,IDE
+            GSUMS(II,K)=GSUMS(II,K)+XSUMS_G(I,K,J,II)
+          ENDDO
+          ENDDO
+          ENDDO
+        ENDDO
+      ENDIF
+
+      CALL WRF_DM_BCAST_BYTES(GSUMS,2*RWORDSIZE*6*(KDE-KDS+1) )
 
 #else
 !----------------------------------------------------------------------
@@ -2081,12 +2017,12 @@
 !----------------------------------------------------------------------
 !
 # ifdef DM_PARALLEL
-      CALL wrf_get_dm_communicator ( mpi_comm_comp )
-      CALL MPI_ALLREDUCE(XSUMS,GSUMS,6*(KTE-KTS+1)                     &
-                        ,MPI_DOUBLE_PRECISION,MPI_SUM                  &
-                        ,MPI_COMM_COMP,IRECV)
+      CALL WRF_GET_DM_COMMUNICATOR ( MPI_COMM_COMP )
+      CALL MPI_ALLREDUCE(XSUMS,GSUMS,6*(KTE-KTS+1)                      &
+     &                  ,MPI_DOUBLE_PRECISION,MPI_SUM                   &
+     &                  ,MPI_COMM_COMP,IRECV)
 # else
-      GSUMS = XSUMS
+      GSUMS=XSUMS
 # endif
 #endif
 !
@@ -2094,7 +2030,18 @@
 !***  END OF GLOBAL REDUCTION
 !----------------------------------------------------------------------
 !
+!     if(mype.eq.0)then
+!       if(ntsd.eq.0)then
+!!        call int_get_fresh_handle(nunit)
+!!        close(nunit)
+!         nunit=56
+!         open(unit=nunit,file='gsums',form='unformatted',iostat=ier)
+!       endif
+!     endif
       DO K=KTS,KTE
+!       if(mype.eq.0)then
+!         write(nunit)(gsums(i,k),i=1,6)
+!       endif
 !
 !----------------------------------------------------------------------
         SUMPQ=GSUMS(1,K)
@@ -2135,6 +2082,7 @@
         RFACE(K)=RFACEK
 !
       ENDDO
+!     if(mype.eq.0.and.ntsd.eq.181)close(nunit)
 !
 !----------------------------------------------------------------------
 !***  IMPOSE CONSERVATION ON ANTI-FILTERING
@@ -2213,8 +2161,8 @@
 !
       DO J=MYJS,MYJE
       DO I=MYIS,MYIE
-        Q2(I,KTE,J)=MAX(E1(I,KTE,J)+E1(I,KTE,J)-EPSQ2,EPSQ2)           &
-                   *HTM(I,KTE,J)
+        Q2(I,KTE,J)=MAX(E1(I,KTE,J)+E1(I,KTE,J)-EPSQ2,EPSQ2)            &
+     &             *HTM(I,KTE,J)
       ENDDO
       ENDDO
 !
@@ -2223,8 +2171,8 @@
       DO I=MYIS,MYIE
         KOFF=KTE-LMH(I,J)
         IF(K.GT.KOFF+1)THEN
-          Q2(I,K,J)=MAX(E1(I,K,J)+E1(I,K,J)-Q2(I,K+1,J),EPSQ2)         &
-                   *HTM(I,K,J)
+          Q2(I,K,J)=MAX(E1(I,K,J)+E1(I,K,J)-Q2(I,K+1,J),EPSQ2)          &
+     &             *HTM(I,K,J)
         ELSE
           Q2(I,K,J)=Q2(I,K+1,J)
         ENDIF
@@ -2234,19 +2182,19 @@
 !----------------------------------------------------------------------
       END SUBROUTINE HAD2
 !----------------------------------------------------------------------
-!**********************************************************************
-      SUBROUTINE VAD2_DRY(NTSD,DT,IDTAD,DX,DY                          &
-                         ,AETA1,AETA2,DETA1,DETA2,PDSL,PDTOP           &
-                         ,HBM2,LMH                                     &
-                         ,Q2,PETDT                                     &
-                         ,N_IUP_H,N_IUP_V                              &
-                         ,N_IUP_ADH,N_IUP_ADV                          &
-                         ,IUP_H,IUP_V,IUP_ADH,IUP_ADV                  &
-                         ,IHE,IHW,IVE,IVW,INDX3_WRK                    &
-                         ,IDS,IDE,JDS,JDE,KDS,KDE                      &
-                         ,IMS,IME,JMS,JME,KMS,KME                      &
-                         ,ITS,ITE,JTS,JTE,KTS,KTE)
-!**********************************************************************
+!***********************************************************************
+      SUBROUTINE VAD2_DRY(NTSD,DT,IDTAD,DX,DY                           &
+     &                   ,AETA1,AETA2,DETA1,DETA2,PDSL,PDTOP            &
+     &                   ,HBM2,LMH                                      &
+     &                   ,Q2,PETDT                                      &
+     &                   ,N_IUP_H,N_IUP_V                               &
+     &                   ,N_IUP_ADH,N_IUP_ADV                           &
+     &                   ,IUP_H,IUP_V,IUP_ADH,IUP_ADV                   &
+     &                   ,IHE,IHW,IVE,IVW,INDX3_WRK                     &
+     &                   ,IDS,IDE,JDS,JDE,KDS,KDE                       &
+     &                   ,IMS,IME,JMS,JME,KMS,KME                       &
+     &                   ,ITS,ITE,JTS,JTE,KTS,KTE)
+!***********************************************************************
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
 !                .      .    .
 ! SUBPROGRAM:    VAD2_DRY    VERTICAL ADVECTION OF TKE
@@ -2288,15 +2236,15 @@
 !
 !----------------------------------------------------------------------
 !
-      INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                    &
-                           ,IMS,IME,JMS,JME,KMS,KME                    &
-                           ,ITS,ITE,JTS,JTE,KTS,KTE
+      INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                     &
+     &                     ,IMS,IME,JMS,JME,KMS,KME                     &
+     &                     ,ITS,ITE,JTS,JTE,KTS,KTE
 !
       INTEGER,DIMENSION(JMS:JME),INTENT(IN) :: IHE,IHW,IVE,IVW
-      INTEGER,DIMENSION(JMS:JME),INTENT(IN) :: N_IUP_H,N_IUP_V         &
-                                              ,N_IUP_ADH,N_IUP_ADV
-      INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: IUP_H,IUP_V     &
-                                                      ,IUP_ADH,IUP_ADV
+      INTEGER,DIMENSION(JMS:JME),INTENT(IN) :: N_IUP_H,N_IUP_V          &
+     &                                        ,N_IUP_ADH,N_IUP_ADV
+      INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: IUP_H,IUP_V      &
+     &                                                ,IUP_ADH,IUP_ADV
 ! NMM_MAX_DIM is set in configure.wrf and must agree with
 ! the value of dimspec q in the Registry/Registry
       INTEGER,DIMENSION(-3:3,NMM_MAX_DIM,0:6),INTENT(IN) :: INDX3_WRK
@@ -2327,9 +2275,9 @@
 !
       INTEGER,DIMENSION(KTS:KTE) :: LA
 !
-      REAL :: ADDT,AFRP,D2PQE,DEP,DETAP,DPDN,DPUP,DQP                  &
-             ,DWP,E00,E4P,EP,EP0,HADDT,HBM2IJ                          &
-             ,RFACEK,RFC,RR,SUMNE,SUMPE
+      REAL :: ADDT,AFRP,D2PQE,DEP,DETAP,DPDN,DPUP,DQP                   &
+     &       ,DWP,E00,E4P,EP,EP0,HADDT,HBM2IJ                           &
+     &       ,RFACEK,RFC,RR,SUMNE,SUMPE
 !
       REAL,DIMENSION(KTS:KTE) :: AFR,DEL,E3,E4,PETDTK,RFACE
 !
@@ -2389,8 +2337,8 @@
           BOT=.FALSE.
 !
           IF(LLAP.GT.0.AND.LLAP.LT.KTE+1.AND.LAP.NE.0)THEN
-            RR=ABS(RR/((AETA1(LLAP)-AETA1(K))*PDTOP                    &
-                      +(AETA2(LLAP)-AETA2(K))*PDSL(I,J)))
+            RR=ABS(RR/((AETA1(LLAP)-AETA1(K))*PDTOP                     &
+     &                +(AETA2(LLAP)-AETA2(K))*PDSL(I,J)))
 !
             AFR(K)=(((FF4*RR+FF3)*RR+FF2)*RR+FF1)*RR
             DEP=(E3(LLAP)-E3(K))*RR
@@ -2407,16 +2355,16 @@
 !----------------------------------------------------------------------
         IF(TOP)THEN
           IF(LA(KTE-1).LT.0)THEN
-            RFC=(DETA1(KTE-1)*PDTOP+DETA2(KTE-1)*PDSL(I,J))            &
-               /(DETA1(KTE  )*PDTOP+DETA2(KTE  )*PDSL(I,J))
+            RFC=(DETA1(KTE-1)*PDTOP+DETA2(KTE-1)*PDSL(I,J))             &
+     &         /(DETA1(KTE  )*PDTOP+DETA2(KTE  )*PDSL(I,J))
             DEL(KTE)=-DEL(KTE+1)*RFC
           ENDIF
         ENDIF
 !
         IF(BOT)THEN
           IF(LA(KOFF+2).LT.0)THEN
-            RFC=(DETA1(KOFF+2)*PDTOP+DETA2(KOFF+2)*PDSL(I,J))          &
-               /(DETA1(KOFF+1)*PDTOP+DETA2(KOFF+1)*PDSL(I,J))
+            RFC=(DETA1(KOFF+2)*PDTOP+DETA2(KOFF+2)*PDSL(I,J))           &
+     &         /(DETA1(KOFF+1)*PDTOP+DETA2(KOFF+1)*PDSL(I,J))
             DEL(KOFF+1)=-DEL(KOFF+2)*RFC
           ENDIF
         ENDIF
@@ -2441,14 +2389,14 @@
         LAP=LA(K)
 !
         IF(LAP.NE.0)THEN
-          DPDN=(AETA1(K+LAP)-AETA1(K))*PDTOP                           &
-              +(AETA2(K+LAP)-AETA2(K))*PDSL(I,J)
-          DPUP=(AETA1(K)-AETA1(K-LAP))*PDTOP                           &
-              +(AETA2(K)-AETA2(K-LAP))*PDSL(I,J)
+          DPDN=(AETA1(K+LAP)-AETA1(K))*PDTOP                            &
+     &        +(AETA2(K+LAP)-AETA2(K))*PDSL(I,J)
+          DPUP=(AETA1(K)-AETA1(K-LAP))*PDTOP                            &
+     &        +(AETA2(K)-AETA2(K-LAP))*PDSL(I,J)
 !
           AFRP=2.*AFR(K)*DPDN*DPDN/(DPDN+DPUP)
-          D2PQE=((E4(K+LAP)-E4P)/DPDN                                  &
-                -(E4P-E4(K-LAP))/DPUP)*AFRP
+          D2PQE=((E4(K+LAP)-E4P)/DPDN                                   &
+     &          -(E4P-E4(K-LAP))/DPUP)*AFRP
         ELSE
           D2PQE=0.
         ENDIF
@@ -2500,11 +2448,11 @@
         ENDDO
 !
         HBM2IJ=HBM2(I,J)
-        Q2(I,KTE,J)=MAX(E3(KTE)+E3(KTE)-EPSQ2,EPSQ2)*HBM2IJ            &
-                   +Q2(I,KTE,J)*(1.-HBM2IJ)
+        Q2(I,KTE,J)=MAX(E3(KTE)+E3(KTE)-EPSQ2,EPSQ2)*HBM2IJ             &
+     &             +Q2(I,KTE,J)*(1.-HBM2IJ)
         DO K=KTE-1,KOFF+2
-          Q2(I,K,J)=MAX(E3(K)+E3(K)-Q2(I,K+1,J),EPSQ2)*HBM2IJ          &
-                   +Q2(I,K,J)*(1.-HBM2IJ)
+          Q2(I,K,J)=MAX(E3(K)+E3(K)-Q2(I,K+1,J),EPSQ2)*HBM2IJ           &
+     &             +Q2(I,K,J)*(1.-HBM2IJ)
         ENDDO
 !----------------------------------------------------------------------
 !----------------------------------------------------------------------
@@ -2516,19 +2464,19 @@
       END SUBROUTINE VAD2_DRY
 !----------------------------------------------------------------------
 !
-!**********************************************************************
-      SUBROUTINE HAD2_DRY(NTSD,DT,IDTAD,DX,DY                          &
-                         ,AETA1,AETA2,DETA1,DETA2,PDSL,PDTOP           &
-                         ,HTM,HBM2,HBM3,LMH                            &
-                         ,Q2,U,V,Z,HYDRO                               &
-                         ,N_IUP_H,N_IUP_V                              &
-                         ,N_IUP_ADH,N_IUP_ADV                          &
-                         ,IUP_H,IUP_V,IUP_ADH,IUP_ADV                  &
-                         ,IHE,IHW,IVE,IVW,INDX3_WRK                    &
-                         ,IDS,IDE,JDS,JDE,KDS,KDE                      &
-                         ,IMS,IME,JMS,JME,KMS,KME                      &
-                         ,ITS,ITE,JTS,JTE,KTS,KTE)
-!**********************************************************************
+!***********************************************************************
+      SUBROUTINE HAD2_DRY(NTSD,DT,IDTAD,DX,DY                           &
+     &                   ,AETA1,AETA2,DETA1,DETA2,PDSL,PDTOP            &
+     &                   ,HTM,HBM2,HBM3,LMH                             &
+     &                   ,Q2,U,V,Z,HYDRO                                &
+     &                   ,N_IUP_H,N_IUP_V                               &
+     &                   ,N_IUP_ADH,N_IUP_ADV                           &
+     &                   ,IUP_H,IUP_V,IUP_ADH,IUP_ADV                   &
+     &                   ,IHE,IHW,IVE,IVW,INDX3_WRK                     &
+     &                   ,IDS,IDE,JDS,JDE,KDS,KDE                       &
+     &                   ,IMS,IME,JMS,JME,KMS,KME                       &
+     &                   ,ITS,ITE,JTS,JTE,KTS,KTE)
+!***********************************************************************
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
 !                .      .    .
 ! SUBPROGRAM:    HAD2_DRY    HORIZONTAL ADVECTION OF TKE
@@ -2571,15 +2519,15 @@
 !
 !----------------------------------------------------------------------
 !
-      INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                    &
-                           ,IMS,IME,JMS,JME,KMS,KME                    &
-                           ,ITS,ITE,JTS,JTE,KTS,KTE
+      INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                     &
+     &                     ,IMS,IME,JMS,JME,KMS,KME                     &
+     &                     ,ITS,ITE,JTS,JTE,KTS,KTE
 !
       INTEGER,DIMENSION(JMS:JME),INTENT(IN) :: IHE,IHW,IVE,IVW
-      INTEGER,DIMENSION(JMS:JME),INTENT(IN) :: N_IUP_H,N_IUP_V         &
-                                              ,N_IUP_ADH,N_IUP_ADV
-      INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: IUP_H,IUP_V     &
-                                                      ,IUP_ADH,IUP_ADV
+      INTEGER,DIMENSION(JMS:JME),INTENT(IN) :: N_IUP_H,N_IUP_V          &
+     &                                        ,N_IUP_ADH,N_IUP_ADV
+      INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: IUP_H,IUP_V      &
+     &                                                ,IUP_ADH,IUP_ADV
 ! NMM_MAX_DIM is set in configure.wrf and must agree with
 ! the value of dimspec q in the Registry/Registry
       INTEGER,DIMENSION(-3:3,NMM_MAX_DIM,0:6),INTENT(IN) :: INDX3_WRK
@@ -2610,16 +2558,16 @@
 !
       INTEGER :: I,IRECV,J,JFP,JFQ,K,KOFF,LAP,LLAP
 !
-      INTEGER,DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: IFPA,IFPF          &
-                                                   ,IFQA,IFQF          &
-                                                   ,JFPA,JFPF          &
-                                                   ,JFQA,JFQF
+      INTEGER,DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: IFPA,IFPF           &
+     &                                             ,IFQA,IFQF           &
+     &                                             ,JFPA,JFPF           &
+     &                                             ,JFQA,JFQF
 !
-      REAL :: ADDT,AFRP,CRIT,D2PQE,DEP,DESTIJ,DVOLP,DZA,DZB            &
-             ,E00,E0Q,E2IJ,E4P,ENH,EP,EP0,ESTIJ,FPQ                    &
-             ,HAFP,HAFQ,HBM2IJ,HM,HTMIKJ,PP,PPQ00                      &
-             ,QP,RDY,RFACEK,RFC,RFEIJ,RR                               &
-             ,SLOPAC,SPP,SQP,SSA,SSB,SUMNE,SUMPE,TTA,TTB
+      REAL :: ADDT,AFRP,CRIT,D2PQE,DEP,DESTIJ,DVOLP,DZA,DZB             &
+     &       ,E00,E0Q,E2IJ,E4P,ENH,EP,EP0,ESTIJ,FPQ                     &
+     &       ,HAFP,HAFQ,HBM2IJ,HM,HTMIKJ,PP,PPQ00                       &
+     &       ,QP,RDY,RFACEK,RFC,RFEIJ,RR                                &
+     &       ,SLOPAC,SPP,SQP,SSA,SSB,SUMNE,SUMPE,TTA,TTB
 !
       REAL,DIMENSION(2,KTE-KTS+1) :: GSUMS,XSUMS
 !
@@ -2627,8 +2575,8 @@
 !
       REAL,DIMENSION(IMS:IME,JMS:JME) :: DARE,EMH
 !
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: AFP,AFQ,DEST,DVOL     &
-                                                ,E1,E2  
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: AFP,AFQ,DEST,DVOL      &
+     &                                          ,E1,E2  
 !
 !**********************************************************************
 !
@@ -2692,10 +2640,10 @@
       DO K=KTS,KTE
       DO I=MYIS1_P1,MYIE1_P1
 !
-        TTA=(U(I,K,J-1)+U(I+IHW(J),K,J)+U(I+IHE(J),K,J)+U(I,K,J+1))    &
-            *EMH(I,J)*HBM2(I,J)
-        TTB=(V(I,K,J-1)+V(I+IHW(J),K,J)+V(I+IHE(J),K,J)+V(I,K,J+1))    &
-            *ENH*HBM2(I,J)
+        TTA=(U(I,K,J-1)+U(I+IHW(J),K,J)+U(I+IHE(J),K,J)+U(I,K,J+1))     &
+     &      *EMH(I,J)*HBM2(I,J)
+        TTB=(V(I,K,J-1)+V(I+IHW(J),K,J)+V(I+IHE(J),K,J)+V(I,K,J+1))     &
+     &      *ENH*HBM2(I,J)
 !
         SPP=-TTA-TTB
         SQP= TTA-TTB
@@ -2746,19 +2694,19 @@
 !-----------------------------------------------------------------------
         SPP=SPP*HTM(IFPA(I,K,J),K,JFPA(I,K,J))
         SQP=SQP*HTM(IFQA(I,K,J),K,JFQA(I,K,J))
-        FPQ=SPP*SQP*HTM(I,K,J-2)*HTM(I-1,K,J)                &
-                   *HTM(I+1,K,J)*HTM(I,K,J+2)*0.25
+        FPQ=SPP*SQP*HTM(I,K,J-2)*HTM(I-1,K,J)                           &
+     &             *HTM(I+1,K,J)*HTM(I,K,J+2)*0.25
         PP=ABS(SPP)
         QP=ABS(SQP)
 !
         AFP(I,K,J)=(((FF4*PP+FF3)*PP+FF2)*PP+FF1)*PP
         AFQ(I,K,J)=(((FF4*QP+FF3)*QP+FF2)*QP+FF1)*QP
 !
-        E2(I,K,J)=(E1 (IFPA(I,K,J),K,JFPA(I,K,J))-E1 (I,K,J))*PP       &
-                 +(E1 (IFQA(I,K,J),K,JFQA(I,K,J))-E1 (I,K,J))*QP       &
-                 +(E1 (I,K,J-2)+E1 (I,K,J+2)                           &
-                  -E1 (I-1,K,J)-E1 (I+1,K,J))*FPQ                      &
-                 +E1(I,K,J)
+        E2(I,K,J)=(E1 (IFPA(I,K,J),K,JFPA(I,K,J))-E1 (I,K,J))*PP        &
+     &           +(E1 (IFQA(I,K,J),K,JFQA(I,K,J))-E1 (I,K,J))*QP        &
+     &           +(E1 (I,K,J-2)+E1 (I,K,J+2)                            &
+     &            -E1 (I-1,K,J)-E1 (I+1,K,J))*FPQ                       &
+     &           +E1(I,K,J)
 !
       ENDDO
       ENDDO
@@ -2785,12 +2733,12 @@
       HAFP=HTM(IFPF(I,K,J),K,JFPF(I,K,J))*AFP(I,K,J)
       HAFQ=HTM(IFQF(I,K,J),K,JFQF(I,K,J))*AFQ(I,K,J)
 !
-      D2PQE=(E2(IFPA(I,K,J),K,JFPA(I,K,J))-E2IJ                        &
-            -E2IJ+E2(IFPF(I,K,J),K,JFPF(I,K,J)))                       &
-            *HAFP                                                      &
-           +(E2(IFQA(I,K,J),K,JFQA(I,K,J))-E2IJ                        &
-            -E2IJ+E2(IFQF(I,K,J),K,JFQF(I,K,J)))                       &
-            *HAFQ
+      D2PQE=(E2(IFPA(I,K,J),K,JFPA(I,K,J))-E2IJ                         &
+     &      -E2IJ+E2(IFPF(I,K,J),K,JFPF(I,K,J)))                        &
+     &      *HAFP                                                       &
+     &     +(E2(IFQA(I,K,J),K,JFQA(I,K,J))-E2IJ                         &
+     &      -E2IJ+E2(IFQF(I,K,J),K,JFQF(I,K,J)))                        &
+     &      *HAFQ
 !
       ESTIJ=E2IJ-D2PQE
 !
@@ -2820,11 +2768,11 @@
 !----------------------------------------------------------------------
 !
 #ifdef DM_PARALLEL
-      CALL wrf_get_dm_communicator ( mpi_comm_comp )
-      CALL MPI_ALLREDUCE(XSUMS,GSUMS,2*(KTE-KTS+1),MPI_REAL,MPI_SUM    &
-                        ,MPI_COMM_COMP,IRECV)
+      CALL WRF_GET_DM_COMMUNICATOR ( MPI_COMM_COMP )
+      CALL MPI_ALLREDUCE(XSUMS,GSUMS,2*(KTE-KTS+1),MPI_REAL,MPI_SUM     &
+     &                  ,MPI_COMM_COMP,IRECV)
 #else
-      GSUMS = XSUMS
+      GSUMS=XSUMS
 #endif
 !
 !----------------------------------------------------------------------
@@ -2879,8 +2827,8 @@
 !----------------------------------------------------------------------
       DO J=MYJS,MYJE
       DO I=MYIS,MYIE
-        Q2(I,KTE,J)=MAX(E1(I,KTE,J)+E1(I,KTE,J)-EPSQ2,EPSQ2)           &
-                   *HTM(I,KTE,J)
+        Q2(I,KTE,J)=MAX(E1(I,KTE,J)+E1(I,KTE,J)-EPSQ2,EPSQ2)            &
+     &             *HTM(I,KTE,J)
       ENDDO
       ENDDO
 !
@@ -2889,8 +2837,8 @@
       DO I=MYIS,MYIE
         KOFF=KTE-LMH(I,J)
         IF(K.GT.KOFF+1)THEN
-          Q2(I,K,J)=MAX(E1(I,K,J)+E1(I,K,J)-Q2(I,K+1,J),EPSQ2)         &
-                   *HTM(I,K,J)
+          Q2(I,K,J)=MAX(E1(I,K,J)+E1(I,K,J)-Q2(I,K+1,J),EPSQ2)          &
+     &             *HTM(I,K,J)
         ELSE
           Q2(I,K,J)=Q2(I,K+1,J)
         ENDIF

@@ -485,14 +485,6 @@
         DO K=KTE,KOFF+1,-1
           DPTL=(CHI(K)+PSTR(K)-PINT_K(K))*HBM3IJ
           PINT_K(K)=PINT_K(K)+DPTL
-!     if(i.eq.61.and.j.eq.55.and.k.eq.50)then
-!       write(0,33711)t_k(k),rtop_k(k),dptl,koff
-!       write(0,33712)chi(k),pstr(k),pint_k(k)
-!       write(0,33713)chi(k-1),pstr(k-1),pint_k(k-1)
-33711   format(' t_k=',z8,' rtop_k=',z8,' dptl=',z8,' koff=',i2)
-33712   format(' chi=',z8,' pstr=',z8,' pint_k=',z8)
-33713   format(' chi-=',z8,' pstr-=',z8,' pint_k-=',z8)
-!     endif
           T_K(K)=(DPTU+DPTL)*RTOP_K(K)*FCT+T_K(K)
           DELP=(PINT_K(K)-PINT_K(K+1))*RDPP(K)
           W_K(K)=((DELP-DWDT_K(K))*GDT+W_K(K))*HBM3IJ
@@ -655,12 +647,6 @@
               /(PINT(I,K+1,J)+PINT(I,K,J))                             &
               *(DETA1(K)*PDTOP+DETA2(K)*PDSL(I,J))*TRG
             Z(I,K+1,J)=(Z(I,K,J)+DZ-ZETA)*HTM(I,K,J)+ZETA
-!     if(i.eq.61.and.j.eq.55.and.k.eq.49)then
-!       write(0,77401)dz,rtop(i,k,j),rg,w(i,k,j)
-!       write(0,77402)deta1(k),deta2(k),pdtop,pdslo(i,j)
-77401   format(' 1 dz=',z8,' rtop=',z8,' rg=',z8,' w=',z8)
-77402   format(' deta1=',z8,' deta2=',z8,' pdtop=',z8,' pdslo=',z8)
-!     endif
             W(I,K+1,J)=(DZ-RTOP(I,K,J)                                 &
                       *(DETA1(K)*PDTOP+DETA2(K)*PDSLO(I,J))*RG)        &
                       *HTM(I,K,J)*HBM2(I,J)                            &
@@ -676,10 +662,6 @@
         DO K=KTS,KTE
         DO I=MYIS,MYIE
           Z(I,K,J)=(Z(I,K+1,J)+Z(I,K,J))*0.5
-!     if(i.eq.61.and.j.eq.55.and.k.eq.50)then
-!       write(0,77411)w(i,k+1,j),w(i,k,j),rdt
-77411   format(' 2 w=',2(1x,z8),' rdt=',z8)
-!     endif
           W(I,K,J)=(W(I,K+1,J)+W(I,K,J))*HTM(I,K,J)*HBM2(I,J)*0.5*RDT
         ENDDO
         ENDDO
@@ -696,12 +678,6 @@
         DO K=KTE,KTS+1,-1
         DO I=MYIS1,MYIE1
           TTAL=(Z(I,K-1,J)-Z(I,K,J))*PETDT(I,K-1,J)*0.5
-!     if(i.eq.61.and.j.eq.55.and.k.eq.50)then
-!       write(0,77421)w(i,k,j),z(i,k-1,j),z(i,k,j),petdt(i,k-1,j)
-!       write(0,77422)z(i,k+1,j),petdt(i,k,j)
-77421   format(' 3 w=',z8,' z=',2(1x,z8),' petdt-=',z8)
-77422   format(' z+=',z8,' petdt=',z8)
-!     endif
           W(I,K,J)=(TTAL+TTB(I,J))/(DETA1(K)*PDTOP+DETA2(K)*PDSLO(I,J))&
                   +W(I,K,J)
           TTB(I,J)=TTAL
@@ -813,19 +789,19 @@
 !
 !***  TYPE 1 WORKING ARRAY (SEE PFDHT)
 !
-      REAL,DIMENSION(its-5:ite+5,KTS:KTE,-2:2) :: DPDE
+      REAL,DIMENSION(ITS-5:ITE+5,KTS:KTE,-2:2) :: DPDE
 !
 !***  TYPE 4 WORKING ARRAY 
 !
-      REAL,DIMENSION(its-5:ite+5,KTS:KTE,-1:1) :: UNED,USED,ZNS
+      REAL,DIMENSION(ITS-5:ITE+5,KTS:KTE,-1:1) :: UNED,USED,ZNS
 !
 !***  TYPE 5 WORKING ARRAY
 !
-      REAL,DIMENSION(its-5:ite+5,KTS:KTE,-1:0) :: ZNE
+      REAL,DIMENSION(ITS-5:ITE+5,KTS:KTE,-1:0) :: ZNE
 !
 !***  TYPE 6 WORKING ARRAY
 !
-      REAL,DIMENSION(its-5:ite+5,KTS:KTE, 0:1) :: ZSE
+      REAL,DIMENSION(ITS-5:ITE+5,KTS:KTE, 0:1) :: ZSE
 !----------------------------------------------------------------------
 !**********************************************************************
 !----------------------------------------------------------------------
@@ -843,6 +819,27 @@
       ENDIF
 !**********************************************************************
 !----------------------------------------------------------------------
+!
+!***  FIRST ZERO OUT SOME WORKING ARRAYS
+!
+      DO J=-2,2
+      DO K=KTS,KTE
+      DO I=ITS-5,ITE+5
+        DPDE(I,K,J)=0.
+      ENDDO
+      ENDDO
+      ENDDO
+!
+      DO J=-1,1
+      DO K=KTS,KTE
+      DO I=ITS-5,ITE+5
+        UNED(I,K,J)=0.
+        USED(I,K,J)=0.
+      ENDDO
+      ENDDO
+      ENDDO
+!
+!----------------------------------------------------------------------
 !***  MARCH NORTHWARD THROUGH THE SOUTHERNMOST SLABS TO BEGIN
 !***  FILLING THE MAIN WORKING ARRAYS WHICH ARE MULTI-DIMENSIONED
 !***  IN J BECAUSE THEY ARE DIFFERENCED OR AVERAGED IN J
@@ -854,7 +851,7 @@
         JJ=JSTART+J
 !
         DO K=KTS,KTE
-        DO I=MYIS_P3,MYIE_P3
+        DO I=MYIS_P4,MYIE_P4
           DPDE(I,K,J)=DETA1(K)*PDTOP+DETA2(K)*PDSL(I,JJ)
         ENDDO
         ENDDO
@@ -939,8 +936,12 @@
 !
 !----------------------------------------------------------------------
         DO K=KTS,KTE
-        DO I=MYIS_P3,MYIE_P3
+!
+        DO I=MYIS_P4,MYIE_P4
           DPDE(I,K,J1_P2)=DETA1(K)*PDTOP+DETA2(K)*PDSL(I,J+2)
+        ENDDO
+!
+        DO I=MYIS_P3,MYIE_P3
           UDY=U(I,K,J+1)*DY
           VDX=V(I,K,J+1)*DX(I,J+1)
 !
@@ -952,12 +953,6 @@
           FNS(I,K,J+1)=FNSP
 !
           ZEW(I,K)=FEWP*(Z(I+IVE(J),K,J)-Z(I+IVW(J),K,J))
-!     if(i.eq.61.and.j.eq.55.and.k.eq.50)then
-!       write(0,77451)zew(i,k),ive(j),ivw(j),Z(I+IVE(J),K,J),Z(I+IVW(J),K,J)
-!       write(0,77452)UDY_00(I,K),DPDE(I+IVW(J),K,J1_00),DPDE(I+IVE(J),K,J1_00)
-77451   format(' zew=',z8,' ive=',i2,' ivw=',i2,' z=',2(1x,z8))
-77452   format(' udy=',z8,' dpde=',2(1x,z8))
-!     endif
           ZNS(I,K,J4_P1)=FNSP*(Z(I,K,J+2)-Z(I,K,J))
 !
           UNED(I,K,J4_P1)=UDY+VDX
@@ -993,16 +988,6 @@
 !----------------------------------------------------------------------
         DO K=KTS,KTE
         DO I=MYIS1_P1,MYIE1_P1
-!     if(i.eq.61.and.j.eq.55.and.k.eq.50)then
-!       write(0,72851)w(i,k,j),ihe(j),ihw(j),dpde(i,k,j1_00),fad(i,j)
-!       write(0,72852)ZEW(I+IHW(J),K),ZEW(I+IHE(J),K) &
-!                    ,ZNS(I,K,J4_M1),ZNS(I,K,J4_P1)
-!       write(0,72853)ZNE(I+IHW(J),K,J5_M1),ZNE(I,K,J5_00) &
-!                    ,ZSE(I,K,J6_00),ZSE(I+IHW(J),K,J6_P1)
-72851   format(' w=',z8,' ihe=',i2,' ihw=',i2,' dpde=',z8,' fad=',z8)
-72852   format(' zew=',2(1x,z8),' zns=',2(1x,z8))
-72853   format(' zne=',2(1x,z8),' zse=',2(1x,z8))
-!     endif
           W(I,K,J)=-(ZEW(I+IHW(J),K)+ZEW(I+IHE(J),K)                   &
                     +ZNS(I,K,J4_M1)+ZNS(I,K,J4_P1)                     &
                     +ZNE(I+IHW(J),K,J5_M1)+ZNE(I,K,J5_00)              &

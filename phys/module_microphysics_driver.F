@@ -10,7 +10,7 @@ SUBROUTINE microphysics_driver(th_phy, moist_new, moist_old, w,        &
                                warm_rain,                              &
                                XLAND,itimestep,                        &
                                F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,       &
-                               LOWLYR,                                 &
+                               LOWLYR,SR,                              &
                                ids,ide, jds,jde, kds,kde,              & 
                                ims,ime, jms,jme, kms,kme,              &
                                i_start,i_end,j_start,j_end,kts,kte,num_tiles   )
@@ -94,7 +94,7 @@ SUBROUTINE microphysics_driver(th_phy, moist_new, moist_old, w,        &
 !-- p             pressure                 (Pa)
 !-- RAINNC        grid scale precipitation (mm)
 !-- RAINNCV       one time step grid scale precipitation (mm/step)
-!!!-- SR            one time step mass ratio of snow to total precip
+!-- SR            one time step mass ratio of snow to total precip
 !-- z             Height above sea level   (m)
 !-- dt            Time step              (s)
 !-- config_flags  flag for configuration      ! change ---  ?????   
@@ -182,6 +182,8 @@ SUBROUTINE microphysics_driver(th_phy, moist_new, moist_old, w,        &
 !
 
    REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN)   :: ht,XLAND
+
+   REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(OUT)   :: SR
 
    REAL, INTENT(IN   ) :: dt,dx,dy
 
@@ -315,7 +317,7 @@ SUBROUTINE microphysics_driver(th_phy, moist_new, moist_old, w,        &
                               dz8w,rho,p_phy,pi_phy,th_phy,          &
                               moist_new(ims,kms,jms,P_QV),           &
                               moist_new(ims,kms,jms,P_QC),           &
-                              LOWLYR,                                &
+                              LOWLYR,SR,                             &
                               F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,      &
                               ids,ide, jds,jde, kds,kde,             &
                               ims,ime, jms,jme, kms,kme,             &

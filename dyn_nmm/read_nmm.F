@@ -368,7 +368,7 @@ SUBROUTINE med_read_nmm ( grid , config_flags , ntsd, dt_from_file, tstart_from_
            ,PL,THL,RDQ,RDTH,RDP,RDTHE                             &
            ,(DETA(KME-K),K=KMS,KME-1)                             &
            ,(AETA(KME-K),K=KMS,KME-1)                             &
-           ,(DFRLG(KME+1-K),K=KMS,KME)                            &
+           ,(DFL(KME+1-K),K=KMS,KME)                              &
            ,(DETA1(KME-K),K=KMS,KME-1)                            &
            ,(AETA1(KME-K),K=KMS,KME-1)                            &
            ,(DETA2(KME-K),K=KMS,KME-1)                            &
@@ -482,7 +482,7 @@ SUBROUTINE med_read_nmm ( grid , config_flags , ntsd, dt_from_file, tstart_from_
    READ(NUNIT_NHB) TEMP
    DO J=JDS,JDE
      DO I=IDS,IDE
-       VEGFRC(I,J)=TEMP(I,J)
+       VEGFRA(I,J)=TEMP(I,J)
      ENDDO
    ENDDO
 !----------------------------------------------------------------------
@@ -603,12 +603,12 @@ SUBROUTINE med_read_nmm ( grid , config_flags , ntsd, dt_from_file, tstart_from_
      enddo
    enddo
 !  READ(NFCST)(((SH2O(I,J,N),I=IDS,IDE),J=JDS,JDE),N=1,NSOIL)
-!  READ(NFCST)(((hold(I,J,N),I=IDS,IDE),J=JDS,JDE),N=1,NSOIL)
+   READ(NFCST)(((hold(I,J,N),I=IDS,IDE),J=JDS,JDE),N=1,NSOIL)
    do k=1,nsoil
      do j=jds,jde
      do i=ids,ide
-!      sh2o(i,k,j)=hold(i,j,k)
-       sh2o(i,k,j)=0.05
+       sh2o(i,k,j)=hold(i,j,k)
+!      sh2o(i,k,j)=0.05
      enddo
      enddo
    enddo
@@ -859,6 +859,12 @@ ENTRY med_read_nmm_bdy ( grid , config_flags , ntsd , dt_from_file, tstart_from_
         DO J=3,JDE-2,2
           T_B(J,k,1,P_XEB) = TB(N,k,1)
           T_BT(J,k,1,P_XEB) = TB(N,k,2)
+      if(k.eq.1.and.j.eq.79)then
+        write(0,62510)ntsd,nrec
+        write(0,62511)p_xeb,t_b(j,k,1,p_xeb),t_bt(j,k,1,p_xeb)
+62510   format(' ntsd=',i5,' nrec=',i5)
+62511   format(' p_xeb=',i2,' t_b=',z8,' t_bt=',z8)
+      endif
           Q_B(J,k,1,P_XEB) = QB(N,k,1)
           Q_BT(J,k,1,P_XEB) = QB(N,k,2)
           Q2_B(J,k,1,P_XEB) = Q2B(N,k,1)

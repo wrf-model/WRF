@@ -300,7 +300,9 @@ CONTAINS
                  th_phy,t_phy,                                    &
                  moist(ims,kms,jms,P_QV),                         &
                  p8w,p_phy,pi_phy,rho_phy,dz8w,                   &
-                 CP,R_d,XLV,g,SVPT0,EP_1,                         &
+! added xls (from module_model_constants) in merging NCEP version of BMJ CU 20040706, JM
+! this appears as the additional dummy argument ELIV in the routine itself  20040706, JM
+                 CP,R_d,XLV,XLS,g,SVPT0,EP_1,                     &
                  CLDEFI,LOWLYR,XLAND,CU_ACT_FLAG,                 &
                  ids,ide, jds,jde, kds,kde,                       &
                  ims,ime, jms,jme, kms,kme,                       &
@@ -316,7 +318,7 @@ CONTAINS
                W0AVG,XLV0,XLV1,XLS0,XLS1,CP,R_d,G,EP_1,         &
                EP_2,SVP1,SVP2,SVP3,SVPT0,                       &
                P_QR,P_QI,P_QS,PARAM_FIRST_SCALAR,STEPCU,        &
-               CU_ACT_FLAG,warm_rain,                           &
+               CU_ACT_FLAG,warm_rain,HTOP,HBOT,                 &
                ids,ide, jds,jde, kds,kde,                       &
                ims,ime, jms,jme, kms,kme,                       &
                its,ite, jts,jte, kts,kte                        )

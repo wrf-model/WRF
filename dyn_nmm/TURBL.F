@@ -1,18 +1,21 @@
-!NCEP_MESO:MEDIATION_LAYER: PHYSICS
+#define ALLOW_SURFACE
+#define ALLOW_PBL
+
+!NCEP_MESO:MODEL_LAYER: PHYSICS
 !
 !***********************************************************************
-      SUBROUTINE TURBL(grid                                             &
+      SUBROUTINE TURBL(GRID                                             &
      &                ,NTSD,DT,NPHS,RESTRT                              &
      &                ,N_MOIST,NSOIL,SLDPTH,DZSOIL                      &
      &                ,DETA1,DETA2,AETA1,AETA2,ETA1,ETA2,PDTOP,PT       &
      &                ,SM,LMH,HTM,VTM,HBM2,VBM2,DX,DFRLG                &
      &                ,CZEN,CZMEAN,SIGT4,RLWIN,RSWIN,RADOT              &
-     &                ,PD,RES,PINT,T,Q,CWM,Q2,U,V                       &
+     &                ,PD,RES,PINT,T,Q,CWM,F_ICE,F_RAIN,Q2,U,V          &
      &                ,THS,SST,PREC,SNO,ZERO_3D                         &
      &                ,FIS,Z0,Z0BASE,USTAR,PBLH,LPBL,AKHS,AKMS          &
      &                ,THZ0,QZ0,UZ0,VZ0,QS                              &
      &                ,STC,SMC,CMC,SMSTAV,SMSTOT,SSROFF,BGROFF          &
-     &                ,IVGTYP,ISLTYP,VEGFRC,SHDMIN,SHDMAX,GRNFLX        &
+     &                ,IVGTYP,ISLTYP,VEGFRA,SHDMIN,SHDMAX,GRNFLX        &
      &                ,SFCEXC,ACSNOW,ACSNOM,SNOPCX,SICE,TG,SOILTB       &
      &                ,ALBASE,MXSNAL,ALBEDO,SH2O,SI,EPSR                &
      &                ,U10,V10,TH10,Q10,TSHLTR,QSHLTR,PSHLTR            &
@@ -22,6 +25,7 @@
      &                ,RSWOUT,RSWTOA,RLWTOA                             &
      &                ,ASWIN,ASWOUT,ASWTOA,ALWIN,ALWOUT,ALWTOA          &
      &                ,UZ0H,VZ0H,DUDT,DVDT                              & !jm
+     &                ,PSURF                                            & ! PSFC in caller
      &                ,CONFIG_FLAGS                                     &
      &                ,IHE,IHW,IVE,IVW                                  &
      &                ,IDS,IDE,JDS,JDE,KDS,KDE                          &
@@ -57,15 +61,15 @@
 !   MACHINE : IBM SP
 !$$$  
 !-----------------------------------------------------------------------
-      USE MODULE_domain
-      USE MODULE_dm
+      USE MODULE_DOMAIN
+      USE MODULE_DM
       USE MODULE_CONFIGURE
       USE MODULE_STATE_DESCRIPTION,ONLY : P_QV,P_QC
-      USE module_model_constants
+      USE MODULE_MODEL_CONSTANTS
       USE MODULE_MPP
       USE MODULE_SF_MYJSFC
-      USE module_surface_driver
-      USE module_pbl_driver
+      USE MODULE_SURFACE_DRIVER
+      USE MODULE_PBL_DRIVER
 !!!   USE MODULE_TIMERS
 !-----------------------------------------------------------------------
 !
@@ -73,7 +77,8 @@
 !
 !-----------------------------------------------------------------------
 !
-      TYPE(domain)         :: grid
+      TYPE(DOMAIN) :: GRID
+!
       INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                     &
      &                     ,IMS,IME,JMS,JME,KMS,KME                     &
      &                     ,ITS,ITE,JTS,JTE,KTS,KTE                     &
@@ -95,14 +100,15 @@
       REAL,DIMENSION(KMS:KME),INTENT(IN) :: DFRLG,ETA1,ETA2
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: ALBASE,MXSNAL
+!
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: CZEN,CZMEAN         &
      &                                             ,EPSR,FIS,HBM2       &
      &                                             ,PD,RES              &
      &                                             ,RLWIN,RLWTOA        &
      &                                             ,RSWIN,RSWOUT,RSWTOA &
+     &                                             ,SHDMIN,SHDMAX       &
      &                                             ,SICE,SIGT4,SM,SST   &
-     &                                             ,TG,VBM2,VEGFRC      &
-     &                                             ,SHDMIN,SHDMAX
+     &                                             ,TG,VBM2,VEGFRA
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: GRNFLX,QWBS,RADOT  &
                                                     ,SFCEXC,SMSTAV      &
@@ -120,9 +126,10 @@
      &                                                ,SNO,SNOPCX       &
      &                                                ,SSROFF,SUBSHX    &
      &                                                ,THS,THZ0         &
-     &                                                ,USTAR,UZ0,VZ0,Z0 &
-     &                                                ,Z0BASE           &
-     &                                                ,UZ0H,VZ0H
+     &                                                ,USTAR,UZ0,UZ0H   &
+     &                                                ,VZ0,VZ0H         &
+     &                                                ,Z0,Z0BASE        &
+     &                                                ,PSURF
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: ALWIN,ALWOUT       &
      &                                              ,ALWTOA,ASWIN       &
@@ -132,12 +139,16 @@
      &                                              ,U10,V10
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) :: CWM      &
+     &                                                        ,DUDT     &
+     &                                                        ,DVDT     &
+     &                                                        ,F_ICE    &
+     &                                                        ,F_RAIN   &
      &                                                        ,Q,Q2     &
      &                                                        ,T,U,V
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: HTM,VTM
-!
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: PINT
+!
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) :: ZERO_3D
 !
       REAL,DIMENSION(NSOIL),INTENT(IN) :: DZSOIL,SLDPTH
@@ -151,21 +162,26 @@
 !***
 !***  LOCAL VARIABLES
 !***
+#ifdef DM_PARALLEL
       INTEGER :: IPS,IPE,JPS,JPE,KPS,KPE
-      INTEGER, DIMENSION(1) :: I_START,I_END,J_START,J_END
-      INTEGER :: I,IDUMMY,IEND,ISFFLX,J,K,LLIJ,LLMH,LLYR,N
+#endif
+      INTEGER :: I,IDUMMY,IEND,ISFFLX,ISTR,J,K,KOUNT_ALL,LENGTH_ROW     &
+     &          ,LLIJ,LLMH,LLYR,N
+!
+      INTEGER,DIMENSION(1) :: I_START,I_END,J_START,J_END
 !
       INTEGER,DIMENSION(IMS:IME,JMS:JME) :: KPBL,LOWLYR
 !
-      REAL :: CWML,DCDT,DQDT,DTDT,DTPHS,FACTR,FACTRL,G_INV              &
-     &       ,PDSL,PLYR,PSFC,QL,QOLD,RATIOMX,RDTPHS,RHOD,RHODI,ROG      &
+      REAL :: ALTITUDE,CWML,DQDT,DTDT,DTPHS,FACTR,FACTRL,G_INV          &
+     &       ,PDSL,PLYR,PSFC,QI,QL,QOLD,QR,QW,RATIOMX,RDTPHS,ROG        &
      &       ,RWMSK,SDEPTH,TL,TLMH,TLMH4,TNEW,TSFC2,U_FRAME,V_FRAME     &
      &       ,WMSK,XLVRW
       REAL :: APES,CKLQ,FACTOR,FFS,PQ0X,Q2SAT,QFC1,QLOWX,QSX,RLIVWV     &
      &       ,THBOT
+!
       REAL :: TRESH=0.95
 !
-      REAL,DIMENSION(IMS:IME,JMS:JME) :: EXNSFC,FACTRS,PLM,Q2X          &
+      REAL,DIMENSION(IMS:IME,JMS:JME) :: EXNSFC,FACTRS,ONE,PLM,Q2X      &
      &                                  ,RAIN,RAINBL                    &
      &                                  ,RLW_DN_SFC,RSW_DN_SFC          &
      &                                  ,SFCZ,SNOW,SNOWC,SNOWH          &
@@ -173,35 +189,21 @@
      &                                  ,XLAND,ZERO_2D
 !
       REAL,DIMENSION(IMS:IME,JMS:JME) :: CWMLOW,QLOW,SFCEVPx,THLOW,TLOW
-      REAL,DIMENSION(IMS:IME,JMS:JME) :: CT
+!
+      REAL,DIMENSION(IMS:IME,JMS:JME) :: BR,CHKLOWQ,CT,ELFLX,FLHC,FLQC  &
+     &                                  ,GZ1OZ0,PSIH,PSIM,WSPD
 !
       REAL,DIMENSION(IMS:IME,KMS:KME-1,JMS:JME) :: EXNER
 !
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: DUDT,DVDT,DZ           &
-     &                                          ,P8W,P_PHY,PI_PHY       &
-     &                                          ,RQCBLTEN,RQVBLTEN      &
-     &                                          ,RR,RTHBLTEN            &
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: DZ,P8W,P_PHY,PI_PHY    &
+     &                                          ,RQCBLTEN,RQIBLTEN      &
+     &                                          ,RQVBLTEN,RR,RTHBLTEN   &
      &                                          ,T_PHY,TH_PHY,TKE       &
      &                                          ,U_PHY,V_PHY,Z
-
-
-      REAL,       DIMENSION( ims:ime, jms:jme )          ::    FLHC, &
-                                                               FLQC, &
-                                                                QGH, &
-                                                               PSIM, &
-                                                               PSIH, &
-                                                             GZ1OZ0, &
-                                                               WSPD, &
-                                                                 BR, &
-                                                                CPM, &
-                                                               CHS2, &
-                                                            CHKLOWQ, &
-                                                              ELFLX
-
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME,N_MOIST) :: WATER
-!      
-      REAL,DIMENSION(IMS:IME,NSOIL,JMS:JME) :: ZERO_TMP
+!
+      REAL,DIMENSION(IMS:IME,NSOIL,JMS:JME) :: ZERO_SOIL
 !
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: TOLD
 !
@@ -209,18 +211,12 @@
 !
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
-      IPS = ITS ; IPE = ITE
-      JPS = JTS ; JPE = JTE
-      KPS = KTS ; KPE = KTE
+      WARM_RAIN = .FALSE.
+
       MYIS    =MAX(IDS  ,ITS  )
       MYIE    =MIN(IDE  ,ITE  )
       MYJS    =MAX(JDS  ,JTS  )
       MYJE    =MIN(JDE  ,JTE  )
-!
-      I_START(1)  = MYIS
-      I_END(1)    = MYIE
-      J_START(1)  = MYJS
-      J_END(1)    = MYJE
 !
       MYIS1   =MAX(IDS+1,ITS  )
       MYIE1   =MIN(IDE-1,ITE  )
@@ -237,6 +233,11 @@
       MYJS2_P1=MAX(JDS+2,JTS-1)
       MYJE2_P1=MIN(JDE-2,JTE+1)
 !
+      I_START(1)=MYIS
+      I_END(1)  =MYIE
+      J_START(1)=MYJS
+      J_END(1)  =MYJE
+!
       DTPHS=NPHS*DT
       RDTPHS=1./DTPHS
       G_INV=1./G
@@ -249,12 +250,18 @@
       IDUMMY=0
       ISFFLX=1
 !
+      DO J=JMS,JME
+      DO I=IMS,IME
+        UZ0H(I,J)=0.
+        VZ0H(I,J)=0.
+        ONE(I,J)=1.
+      ENDDO
+      ENDDO
+!
       DO J=MYJS,MYJE
       DO I=MYIS,MYIE
         LOWLYR(I,J)=1
-        UZ0H(I,J)=0.
-        VZ0H(I,J)=0.
-        VGFRCK(I,J)=100.*VEGFRC(I,J)
+        VGFRCK(I,J)=100.*VEGFRA(I,J)
         SNOW(I,J)=SNO(I,J)
         SNOWH(I,J)=SI(I,J)
         XLAND(I,J)=SM(I,J)+1.
@@ -267,7 +274,6 @@
           SNOW(I,J)=SNO(I,J)*1000.
           SNOWH(I,J)=SI(I,J)*1000.
           Z0BASE(I,J)=Z0(I,J)
-! JD FOR NEW LSM WE SAVE THE SNOW-FREE Z0 IN Z0BASE
         ENDDO
         ENDDO
       ENDIF
@@ -291,6 +297,7 @@
 !
 !     DO J=MYJS2,MYJE2
 !     DO I=MYIS1,MYIE1
+      SNOWC = 0.
       DO J=MYJS,MYJE
       DO I=MYIS,MYIE
 !
@@ -313,7 +320,6 @@
         PLM(I,J)=(PINT(I,LLIJ,J)+PINT(I,LLIJ+1,J))*0.5
         TH2X(I,J)=T(I,LLIJ,J)*(1.E5/PLM(I,J))**CAPA
         Q2X(I,J)=Q(I,LLIJ,J)
-        IF(PBLH(I,J).LT.0.)PBLH(I,J)=0.
 !
 !*** LONG AND SHORTWAVE FLUX AT GROUND SURFACE
 !
@@ -349,8 +355,35 @@
           RR(I,K,J)=PLYR/(R_D*TL)
           T_PHY(I,K,J)=TL
           TOLD(I,K,J)=TL
+!
+!***  WATER VAPOR, CLOUD LIQUID AND ICE
+!
           WATER(I,K,J,P_QV)=QL/(1.-QL) !Need to pass mixing ratio
-          WATER(I,K,J,P_QC)=CWML
+!
+          QW=0.
+          QI=0.
+          QR=0.
+          IF(F_ICE(I,K,J)>=1.)THEN
+            QI=CWML
+          ELSEIF(F_ICE(I,K,J)<=0.)THEN
+            QW=CWML
+          ELSE
+            QI=F_ICE(I,K,J)*CWML
+            QW=CWML-QI
+          ENDIF
+          IF(QW>0..AND.F_RAIN(I,K,J)>0.)THEN
+            IF(F_RAIN(I,K,J)>=1.)THEN
+              QR=QW
+              QW=0.
+            ELSE
+              QR=F_RAIN(I,K,J)*QW
+              QW=QW-QR
+            ENDIF
+          ENDIF 
+          WATER(I,K,J,P_QC)=QW
+          WATER(I,K,J,P_QI)=QI
+          WATER(I,K,J,P_QR)=QR
+!
           EXNER(I,K,J)=(1.E5/PLYR)**CAPA
           PI_PHY(I,K,J)=1./EXNER(I,K,J)
           TH_PHY(I,K,J)=TL*EXNER(I,K,J)
@@ -362,6 +395,7 @@
           RTHBLTEN(I,K,J)=0.
           RQVBLTEN(I,K,J)=0.
           RQCBLTEN(I,K,J)=0.
+          RQIBLTEN(I,K,J)=0.
 !
           Z(I,K+1,J)=Z(I,K,J)+TL/PLYR                                   &
      &                  *(DETA1(K)*PDTOP+DETA2(K)*PDSL)*ROG             &
@@ -385,6 +419,8 @@
         QLOWX=QLOW(I,J)/(1.-QLOW(I,J))
         QLOW(I,J)=QLOWX/(1.+QLOWX)
         CWMLOW(I,J)=CWM(I,LLYR,J)
+        PBLH(I,J)=MAX(PBLH(I,J),0.)
+        PBLH(I,J)=MIN(PBLH(I,J),Z(I,KTE,J))
       ENDDO
       ENDDO
 !-----------------------------------------------------------------------
@@ -417,7 +453,15 @@
       ENDDO
 !
       DO J=MYJS1_P1,MYJE1_P1
-      DO I=MYIS_P1,MYIE_P1
+      IF(MOD(J,2).EQ.0)THEN
+        ISTR=MYIS_P1
+        IEND=MIN(MYIE_P1,IDE-1)
+      ELSE
+        ISTR=MAX(MYIS_P1,IDS+1)
+        IEND=MIN(MYIE_P1,IDE-1)
+      ENDIF
+!     DO I=MYIS_P1,MYIE_P1
+      DO I=ISTR,IEND
         UZ0H(I,J)=(UZ0(I+IHE(J),J)+UZ0(I+IHW(J),J)                      &
      &            +UZ0(I,J+1)+UZ0(I,J-1))*0.25
 !!!  &            +UZ0(I,J+1)+UZ0(I,J-1))*HBM2(I,J)*0.25
@@ -428,61 +472,156 @@
       ENDDO
 !-----------------------------------------------------------------------
 !
-!***  CALL TURBULENCE
+!***  CALL SURFACE LAYER AND LAND SURFACE PHYSICS
 !
 !-----------------------------------------------------------------------
 !
-      DUDT = 0.
-      DVDT = 0.
 
-      CALL surface_driver(                                            &
-     &           ACSNOM,ACSNOW,AKHS,AKMS,ALBEDO,BR,CMC,ZERO_2D        &
-     &          ,CHKLOWQ,CONFIG_FLAGS,DT,DX,DZ,SLDPTH,ZERO_2D         &
-     &          ,RLW_DN_SFC,GRNFLX,RLW_DN_SFC,GZ1OZ0,TWBS,ZERO_2D     &
-     &          ,SFCZ,IDUMMY,ISFFLX,ISLTYP,NTSD,IVGTYP,LOWLYR         &
-     &          ,ZERO_2D,WATER,ZERO_2D,NSOIL,N_MOIST,P8W,PBLH         &
-     &          ,PI_PHY,PSHLTR,PSIH,PSIM,P_PHY,Q10,Q2X,QWBS,QS,QSHLTR &
-     &          ,QZ0,RAINBL,RAIN,ZERO_2D,ZERO_2D,RR,SFCEVPX           &
-     &          ,SFCEXC,SSROFF,SMC,SMSTAV,SMSTOT,MXSNAL,SNOW,SNOWC    &
-     &          ,SNOWH,NPHS,ZERO_2D,TH10,TH2X,ZERO_2D,THZ0,TH_PHY     &
-     &          ,TG,TSHLTR,TSFC,STC,T_PHY,U10,BGROFF,USTAR,UZ0H       &
-     &          ,U_FRAME,U_PHY,V10,VGFRCK,VZ0H,V_FRAME,V_PHY          &
-     &          ,WARM_RAIN,WSPD,SICE,XLAND,Z,Z0,DZSOIL                &
-     &          ,CT,TKE                                               &
-     &          ,ALBASE,ELFLX,SH2O,SHDMAX,SHDMIN,Z0BASE               &
-     &          ,FLQC,FLHC,ZERO_2D,ZERO_2D,ZERO_2D,ZERO_2D,ZERO_2D    & ! for RUC LSM
-     &          ,ZERO_TMP,ZERO_TMP                                    &
-     &          ,POTEVP,SNOPCX,SOILTB                                 & ! NMM LSM only
-     &          ,ZERO_2D                                              &
-     &          ,IDS,IDE,JDS,JDE,KDS,KDE                              &
-     &          ,IMS,IME,JMS,JME,KMS,KME                              &
-     &          ,I_START,min(I_END,IDE-1),max(J_START,2),min(J_END,jde-1),KTS,KTE,1         ) ! start j at 2 for nmm
-! optional extra for Noah LSM package
-!    &          ,ALBBCK=ALBBCK,LH=LH,SH2O=SH2O,SHDMAX=SHDMAX          &
-!    &          ,SHDMIN=SHDMIN,Z0=Z0                                  )
-!    &          ,CT=CT                                                &
-!    &          ,ALBSF=ALBASE,POTEVP=POTEVP,PSHLTR=PSHLTR             &
-!    &          ,SMLIQ=SH2O,SNOPCX=SNOPCX,TBOT=SOILTB,TKE_MYJ=TKE     &
-!    &          ,ELFLX=ELFLX     )
+#ifdef ALLOW_SURFACE
+      ZERO_SOIL = 0.
+      WSPD = 0.
+      BR = 0.
+      CHKLOWQ = 0.
+      GZ1OZ0 = 0.
+      PSIH = 0.
+      PSIM = 0.
+      CALL SURFACE_DRIVER(                                              &
+     &           ACSNOM,ACSNOW,AKHS,AKMS,ALBEDO,BR,CMC,ZERO_2D          &
+     &          ,CHKLOWQ,CONFIG_FLAGS,DT,DX,DZ,SLDPTH,ZERO_2D           &
+     &          ,RLW_DN_SFC,GRNFLX,RSW_DN_SFC,GZ1OZ0,TWBS,ZERO_2D       &
+     &          ,SFCZ,IDUMMY,ISFFLX,ISLTYP,NTSD,IVGTYP,LOWLYR           &
+     &          ,ONE,WATER,ZERO_2D,NSOIL,N_MOIST,P8W,PBLH               &
+     &          ,PI_PHY,PSHLTR,PSIH,PSIM,P_PHY,Q10,Q2X,QWBS,QS,QSHLTR   &
+     &          ,QZ0,RAINBL,RAIN,ZERO_2D,ZERO_2D,RR,SFCEVPX             &
+     &          ,SFCEXC,SSROFF,SMC,SMSTAV,SMSTOT,MXSNAL,SNOW,SNOWC      &
+     &          ,SNOWH,NPHS,ZERO_2D,TH10,TH2X,ZERO_2D,THZ0,TH_PHY       &
+     &          ,TG,TSHLTR,TSFC,STC,T_PHY,U10,BGROFF,USTAR,UZ0H         &
+     &          ,U_FRAME,U_PHY,V10,VGFRCK,VZ0H,V_FRAME,V_PHY            &
+     &          ,WARM_RAIN,WSPD,SICE,XLAND,Z,Z0,DZSOIL                  &
+     &          ,CT,TKE                                                 &
+     &          ,ALBASE,ELFLX,SH2O,SHDMAX,SHDMIN,Z0BASE                 &
+     &          ,FLQC,FLHC,ZERO_2D,ZERO_2D,ZERO_2D,ZERO_2D,ZERO_2D      & ! RUC LSM
+     &          ,ZERO_SOIL,ZERO_SOIL                                    &
+     &          ,PSURF                                                  & ! added for v2 integration
+     &          ,IDS,IDE,JDS,JDE,KDS,KDE                                &
+     &          ,IMS,IME,JMS,JME,KMS,KME                                &
+     &          ,I_START,MIN(I_END,IDE-1)                               &
+     &          ,MAX(J_START,2),MIN(J_END,JDE-1)                        &
+     &          ,KTS,KTE,1                                              &
+     &          ,POTEVP=POTEVP,SNOPCX=SNOPCX,SOILTB=SOILTB              ) ! Optional args for NMM LSM
+#else
+ write(0,*)' TURBL : SURFACE_DRIVER COMMENTED OUT '
+#endif
 
-      CALL pbl_driver(NTSD,dt,u_frame,v_frame                         &
-     &          ,ZERO_3D,ZERO_3D,RTHBLTEN                             &
-     &          ,RQVBLTEN,RQCBLTEN,ZERO_3D                            &
-     &          ,TSFC,XLAND,Z0,SFCZ                                   &
-     &          ,USTAR,ZERO_2D,ZERO_2D,PBLH                           &
-     &          ,TWBS,QWBS,ZERO_2D,GRNFLX                             &
-     &          ,u_phy,v_phy,th_phy,rr,water                          &
-     &          ,p_phy,pi_phy,p8w,t_phy,dz,z                          &
-     &          ,TKE,AKHS,AKMS                                        &
-     &          ,THZ0,QZ0,UZ0H,VZ0H,QS,LOWLYR                         &
-     &          ,PSIM,PSIH,GZ1OZ0, WSPD,BR,CHKLOWQ                    &  !m  26 Aug 2002
-     &          ,config_flags,DX,n_moist                              & !TSLB (STEMP)
-     &          ,NPHS,warm_rain                                       &
-     &          ,KPBL,CT,ELFLX,SNOW,SICE                              &
-     &          ,ids,ide, jds,jde, kds,kde                            &
-     &          ,ims,ime, jms,jme, kms,kme                            &
-     &          ,I_START,min(I_END,IDE-1),max(J_START,2),min(J_END,jde-1),KTS,KTE,1         ) ! start j at 2 for nmm
 
+!
+!-----------------------------------------------------------------------
+!
+!***  CALL FREE ATMOSPHERE TURBULENCE
+!
+!-----------------------------------------------------------------------
+!
+      DO J=JMS,JME
+      DO K=KMS,KME
+      DO I=IMS,IME
+        DUDT(I,K,J)=0.
+        DVDT(I,K,J)=0.
+      ENDDO
+      ENDDO
+      ENDDO
+!
+
+#ifdef ALLOW_PBL
+      CALL PBL_DRIVER(NTSD,DT,U_FRAME,V_FRAME                           &
+     &               ,DUDT,DVDT,RTHBLTEN                                &
+     &               ,RQVBLTEN,RQCBLTEN,RQIBLTEN                        &
+     &               ,TSFC,XLAND,Z0,SFCZ                                &
+     &               ,USTAR,ZERO_2D,ZERO_2D,PBLH                        &
+     &               ,TWBS,QWBS,ZERO_2D,GRNFLX                          &
+     &               ,U_PHY,V_PHY,TH_PHY,RR,WATER                       &
+     &               ,P_PHY,PI_PHY,P8W,T_PHY,DZ,Z                       &
+     &               ,TKE,AKHS,AKMS                                     &
+     &               ,THZ0,QZ0,UZ0H,VZ0H,QS,LOWLYR                      &
+     &               ,PSIM,PSIH,GZ1OZ0,WSPD,BR,CHKLOWQ                  &
+     &               ,CONFIG_FLAGS,DX,N_MOIST                           &
+     &               ,NPHS,WARM_RAIN                                    &
+     &               ,KPBL,CT,ELFLX,SNOW,SICE                           &
+     &               ,IDS,IDE,JDS,JDE,KDS,KDE                           &
+     &               ,IMS,IME,JMS,JME,KMS,KME                           &
+     &               ,I_START,MIN(I_END,IDE-1)                          &
+     &               ,MAX(J_START,2),MIN(J_END,JDE-1)                   &
+     &               ,KTS,KTE,1)
+#else
+  write(0,*)' TURBL : PBL DRIVER COMMENTED OUT'
+#endif
+
+!*** EQUIVALENT TO --------->  ,MYIS,MYIE1,MYJS1,MYJE1,KTS,KTE,1)
+!
+!-----------------------------------------------------------------------
+! UNCOMPUTED LOCATIONS MUST BE FILLED IN FOR THE POST-PROCESSOR
+!-----------------------------------------------------------------------
+!
+!***  EASTERN GLOBAL BOUNDARY
+!
+      IF(MYIE.EQ.IDE)THEN
+        DO J=JDS,JDE
+        IF (J .GE. MYJS .AND. J .LE. MYJE) THEN
+          TH10(MYIE,J)=TH10(MYIE-1,J)
+          Q10(MYIE,J)=Q10(MYIE-1,J)
+          U10(MYIE,J)=U10(MYIE-1,J)
+          V10(MYIE,J)=V10(MYIE-1,J)
+          TSHLTR(MYIE,J)=TSHLTR(MYIE-1,J)
+          QSHLTR(MYIE,J)=QSHLTR(MYIE-1,J)
+        ENDIF
+        ENDDO
+      ENDIF
+!
+!***  SOUTHERN GLOBAL BOUNDARY
+!
+
+      IF(MYJS.EQ.1)THEN
+        DO J=1,2
+        DO I=IDS,IDE
+          IF (I .GE. MYIS .and. I .LE. MYIE) THEN
+            TH10(I,J)=TH10(I,MYJS+2)
+            Q10(I,J)=Q10(I,MYJS+2)
+            U10(I,J)=U10(I,MYJS+2)
+            V10(I,J)=V10(I,MYJS+2)
+            TSHLTR(I,J)=TSHLTR(I,MYJS+2)
+            QSHLTR(I,J)=QSHLTR(I,MYJS+2)
+          ENDIF
+        ENDDO
+        ENDDO
+      ENDIF
+!
+!***  NORTHERN GLOBAL BOUNDARY
+!
+      IF(MYJE.EQ.JDE)THEN
+        DO J=MYJE-1,MYJE
+        DO I=IDS,JDE
+          IF (I .GE. MYIS .and. I .LE. MYIE) THEN
+            TH10(I,J)=TH10(I,MYJE-2)
+            Q10(I,J)=Q10(I,MYJE-2)
+            U10(I,J)=U10(I,MYJE-2)
+            V10(I,J)=V10(I,MYJE-2)
+            TSHLTR(I,J)=TSHLTR(I,MYJE-2)
+            QSHLTR(I,J)=QSHLTR(I,MYJE-2)
+          ENDIF
+        ENDDO
+        ENDDO
+      ENDIF
+!
+      IF(CONFIG_FLAGS%SF_SFCLAY_PHYSICS.EQ.1)THEN ! non-NMM package
+        DO J=MYJS1,MYJE1
+        DO I=MYIS, MYIE1
+!         TSHLTR(I,J)=TSHLTR(I,J)*(1.E5/PSHLTR(I,J))**RCP
+          IF(TSHLTR(I,J).LT.200..OR.TSHLTR(I,J).GT.350.)THEN
+            WRITE(0,*)'Troublesome TSHLTR...I,J,TSHLTR,PSHLTR: ',       &
+               I,J,TSHLTR(I,J),PSHLTR(I,J)
+          ENDIF
+	ENDDO
+	ENDDO
+      ENDIF
 !
 !-----------------------------------------------------------------------
 !
@@ -509,6 +648,32 @@
         QWBS(I,J)=(QLOW(I,J)-QSX)*QFC1/APES
       ENDDO
       ENDDO
+!
+!***  COMPUTE MODEL LAYER CONTAINING THE TOP OF THE BOUNDARY LAYER
+!
+      IF(CONFIG_FLAGS%BL_PBL_PHYSICS.NE.MYJPBLSCHEME)THEN
+        LENGTH_ROW=MYIE1-MYIS1+1
+        DO J=MYJS2,MYJE2
+        DO I=MYIS1,MYIE1
+          KPBL(I,J)=-1000
+        ENDDO
+        ENDDO
+!
+        DO J=MYJS2,MYJE2
+          KOUNT_ALL=0
+          DO K=KTS,KTE
+          DO I=MYIS1,MYIE1
+            ALTITUDE=Z(I,K+1,J)-SFCZ(I,J)
+            IF(PBLH(I,J).LE.ALTITUDE.AND.KPBL(I,J).LT.0)THEN
+              KPBL(I,J)=K
+              KOUNT_ALL=KOUNT_ALL+1
+            ENDIF
+            IF(KOUNT_ALL.EQ.LENGTH_ROW)GO TO 100
+          ENDDO
+          ENDDO
+  100     CONTINUE
+        ENDDO
+      ENDIF
 !
       DO J=MYJS2,MYJE2
       DO I=MYIS1,MYIE1
@@ -541,6 +706,7 @@
 !
 
 #ifdef DM_PARALLEL
+      IPS=ITS;IPE=ITE;JPS=JTS;JPE=JTE;KPS=KTS;KPE=KTE
 # include "HALO_NMM_TURBL_A.inc"
 #endif
 
@@ -557,7 +723,7 @@
       ENDDO
 !
 !-----------------------------------------------------------------------
-!***  UPDATE TEMPERATURE, SPECIFIC HUMIDITY, AND TKE.
+!***  UPDATE TEMPERATURE, SPECIFIC HUMIDITY, CLOUD, AND TKE.
 !-----------------------------------------------------------------------
 !
       E_BDY=(ITE.GE.IDE)
@@ -569,13 +735,28 @@
         DO K=KTS,KTE
         DO I=MYIS1,IEND
           DTDT=RTHBLTEN(I,K,J)*PI_PHY(I,K,J)
-          DQDT=RQVBLTEN(I,K,J)   !Mixing ratio tendency
-          DCDT=RQCBLTEN(I,K,J)
+          DQDT=RQVBLTEN(I,K,J)         !Mixing ratio tendency
           T(I,K,J)=T(I,K,J)+DTDT*DTPHS
           QOLD=Q(I,K,J)
           RATIOMX=QOLD/(1.-QOLD)+DQDT*DTPHS
           Q(I,K,J)=RATIOMX/(1.+RATIOMX)
-          CWM(I,K,J)=CWM(I,K,J)+DCDT*DTPHS
+!         Q(I,K,J)=MAX(Q(I,K,J),EPSQ)
+          QW=WATER(I,K,J,P_QC)+RQCBLTEN(I,K,J)*DTPHS  
+          QI=WATER(I,K,J,P_QI)+RQIBLTEN(I,K,J)*DTPHS  
+          QR=WATER(I,K,J,P_QR)  
+          CWM(I,K,J)=QW+QI+QR  
+!
+          IF(QI<=EPSQ)THEN  
+            F_ICE(I,K,J)=0.  
+          ELSE  
+            F_ICE(I,K,J)=MAX(0.,MIN(1.,QI/CWM(I,K,J)))  
+          ENDIF 
+          IF(QR<=EPSQ)THEN  
+            F_RAIN(I,K,J)=0.  
+          ELSE  
+            F_RAIN(I,K,J)=QR/(QW+QR)  
+          ENDIF  
+!
           Q2(I,K,J)=2.*TKE(I,K,J)
         ENDDO
         ENDDO
@@ -585,15 +766,6 @@
 !-----------------------------------------------------------------------
 !***  INTERPOLATE WIND COMPONENTS BACK TO VELOCITY POINTS.
 !-----------------------------------------------------------------------
-!
-      DO J=MYJS1,MYJE1
-        DO K=KTS,KTE
-        DO I=MYIS,MYIE1
-          DUDT(I,K,J)=DUDT(I,K,J)
-          DVDT(I,K,J)=DVDT(I,K,J)
-        ENDDO
-        ENDDO
-      ENDDO
 !
 #ifdef DM_PARALLEL
 # include "HALO_NMM_TURBL_B.inc"
@@ -605,12 +777,19 @@
 !
         DO K=KTS,KTE
         DO I=MYIS1,IEND
+
           U(I,K,J)=(DUDT(I+IVE(J),K,J)+DUDT(I+IVW(J),K,J)               &
      &             +DUDT(I,K,J+1)+DUDT(I,K,J-1))*0.25*DTPHS             &
      &             *VTM(I,K,J)+U(I,K,J)
           V(I,K,J)=(DVDT(I+IVE(J),K,J)+DVDT(I+IVW(J),K,J)               &
      &             +DVDT(I,K,J+1)+DVDT(I,K,J-1))*0.25*DTPHS             &
      &             *VTM(I,K,J)+V(I,K,J)
+
+!       if ( abs ((DUDT(I+IVE(J),K,J)+DUDT(I+IVW(J),K,J)      &
+!    &             +DUDT(I,K,J+1)+DUDT(I,K,J-1))*0.25*DTPHS   &
+!    &             *VTM(I,K,J)) .gt. 10 ) then
+!       write(0,*) 'PBL changed U component by more than 10 m/s:: ', I,K,J,U(I,K,J)
+!       endif
         ENDDO
         ENDDO
       ENDDO

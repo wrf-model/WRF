@@ -1,12 +1,18 @@
+#define IDBG 62
+#define JDBG 62
+#define KDBG 1
+
 !WRF:MODEL_RA:RADIATION
 !
-MODULE module_ra_gfdleta
-      USE module_dm
-      INTEGER, PARAMETER              :: NL=81
-      INTEGER, PARAMETER              :: NBLY=15
+MODULE MODULE_RA_GFDLETA
+      USE MODULE_EXT_INTERNAL
+      USE MODULE_MODEL_CONSTANTS
+      USE MODULE_MP_ETANEW, ONLY : RHGRD,FPVS
+      INTEGER,PARAMETER :: NL=81
+      INTEGER,PARAMETER :: NBLY=15
+      REAL,PARAMETER :: RTHRESH=1.E-15
 
       INTEGER, SAVE, DIMENSION(3)     :: LTOP
-
       REAL   , SAVE, DIMENSION(37,NL) :: XDUO3N,XDO3N2,XDO3N3,XDO3N4
       REAL   , SAVE, DIMENSION(NL)    :: PRGFDL
       REAL   , SAVE                   :: AB15WD,SKO2D,SKC1R,SKO3R
@@ -27,6 +33,8 @@ MODULE module_ra_gfdleta
       REAL,   SAVE, ALLOCATABLE, DIMENSION(:)   :: CO2M51,CO2M58,CDTM51,CDTM58, &
                                            C2DM51,C2DM58
 
+      Character*256 errmess
+
 ! Used by CO2 initialization
 !     COMMON/PRESS/PA(109)
 !     COMMON/TRAN/ TRANSA(109,109)
@@ -39,7 +47,6 @@ MODULE module_ra_gfdleta
       EQUIVALENCE (EM3V(1),EM3(1,1))
       EQUIVALENCE (T1(1),TABLE1(1,1)),(T2(1),TABLE2(1,1)), &
                   (T4(1),TABLE3(1,1))
-      CHARACTER*120 message
 CONTAINS
 
 !-----------------------------------------------------------------------
@@ -60,16 +67,15 @@ CONTAINS
 !***  COMMENT OUT CALL TO CO2O3 AND UNCOMMENT CALL TO CONRAD
 !***  FOR DIRECT READ OF CO2 FUNCTIONS
 !
-#if ( ! NMM_CORE==1)
-      CALL CO2O3(sfull,shalf,pptop,kme-kms,kme-kms+1,kme-kms+2)
-#else
+!!!!!!!!CALL CO2O3(sfull,shalf,pptop,kme-kms,kme-kms+1,kme-kms+2)
+!
       CALL CONRAD(KDS,KDE,KMS,KME,KTS,KTE)
-#endif
 !
       CALL O3CLIM
       CALL TABLE
       IHRST=NINT(GMT)
       CALL SOLARD(IHRST,IDAY,MONTH,JULYR)
+!
 !-----------------------------------------------------------------------
       END SUBROUTINE GFDLETAINIT
 !-----------------------------------------------------------------------
@@ -86,6 +92,7 @@ CONTAINS
      &                ,julyr,julday,gfdl_lw,gfdl_sw                     &
      &                ,CFRACL,CFRACM,CFRACH                             & !Added
      &                ,ACFRST,NCFRST,ACFRCV,NCFRCV                      & !Added
+     &                ,F_ICE_PHY,F_RAIN_PHY                             & !Added
      &                ,IDS,IDE,JDS,JDE,KDS,KDE                          &
      &                ,IMS,IME,JMS,JME,KMS,KME                          &
      &                ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -98,7 +105,6 @@ CONTAINS
      &                     ,NPHS,NSTEPRA
  
       INTEGER,INTENT(IN) :: julyr,julday   
-!     INTEGER,INTENT(IN),DIMENSION(3) :: LTOP                             !Added
       INTEGER,INTENT(INOUT),DIMENSION(ims:ime,jms:jme) :: NCFRST        & !Added
                                                          ,NCFRCV          !Added
       REAL,INTENT(IN) :: DT,GMT,G
@@ -108,7 +114,9 @@ CONTAINS
       REAL,INTENT(IN),DIMENSION(ims:ime, kms:kme, jms:jme)::p8w,dz8w,   &
      &                                                      rho_phy,    &
      &                                                      p_phy,      &
-     &                                                      PI3D
+     &                                                      PI3D,       &
+     &                                                      F_ICE_PHY,  &
+     &                                                      F_RAIN_PHY
       REAL, INTENT(IN), DIMENSION(ims:ime, jms:jme):: ALBEDO,SNOW,      &
      &                                                TSK2D,VEGFRA,     &
      &                                                XLAND
@@ -199,11 +207,10 @@ CONTAINS
 !-----------------------------------------------------------------------
       CALL RADTN (DT,TFLIP,QFLIP,QLFLIP,PFLIP,P8WFLIP,XLAND,TSK2D,      &
      &            GLAT,GLON,HTOP,HBOT,ALBEDO,CUPPT,                     &
-!    &            IHE,IHW,ACFRCV,NCFRCV,ACFRST,NCFRST,VEGFRC,           &
      &            ACFRCV,NCFRCV,ACFRST,NCFRST,                          &
      &            VEGFRA,SNOW,GLW,GSW,                                  &
+     &            F_ICE_PHY,F_RAIN_PHY,                                 &
      &            TOTSWDN,TOTLWDN,                                      & !Added
-!    &            IDAT,IHRST,LTOP,                                      &
      &            IDAT,IHRST,                                           &
 !    &            R1,NRADS,NRADL,RESTRT,NTSD,NPHS,                      &
      &            NSTEPRA,NSTEPRA,NPHS,itimestep,                       & !Modified
@@ -275,10 +282,10 @@ CONTAINS
 !    &                 RAD1,RAD2,RAD3,RAD4,                             &
 !    &                 TABLE1,TABLE2,TABLE3,EM1,EM1WDE,EM3,             &
      &                 ACFRCV,NCFRCV,ACFRST,NCFRST,                     &
-     &                 VEGFRC,SNO,GLW,GSW,                              & 
+     &                 VEGFRA,SNO,GLW,GSW,                              & 
+     &                 F_ICE,F_RAIN,                                    & 
      &                 RSWIN,RLWIN,                                     & !Added
 !    &                 IDAT,LTOP,IHRST,PRGFDL,                          &
-!    &                 IDAT,IHRST,LTOP,                                 &
      &                 IDAT,IHRST,                                      &
      &                 NRADS,NRADL,NPHS,NTSD,                           &
 !    &                 SKO3R,AB15WD,SKC1R,SKO2D,                        &
@@ -333,7 +340,7 @@ CONTAINS
 
 !          ACFRST and NCFRST are the analogs for stratiform cloud cover.
 
-!          VEGFRC is the fraction of the gridbox with vegetation.
+!          VEGFRA is the fraction of the gridbox with vegetation.
 
 !          LVL holds the number of model layers that lie below the ground surface
 !          at each point.  Clearly for sigma coordinates LVL is zero everywhere.
@@ -389,35 +396,30 @@ CONTAINS
 !     REAL   , INTENT(IN), DIMENSION(37,NL) :: XDUO3N,XDO3N2,XDO3N3,XDO3N4
       INTEGER, INTENT(IN), DIMENSION(3) :: IDAT
 !-----------------------------------------------------------------------
-      REAL,    PARAMETER :: CAPA=287.04/1004.6,DTR=3.1415926/180.,      &
-     &                      WA=.10,WG=1.-WA,KSMUD=0
-      REAL,    PARAMETER :: A1=610.78,A2=17.2693882,A3=273.16,          &
-     &                      A4=35.86, PQ0=379.90516,SNOALB=0.55
+      REAL,    PARAMETER :: CAPA=R_D/CP,DTR=3.1415926/180.
       INTEGER            :: LM1,LP1,LM
       INTEGER, INTENT(IN)               :: IHRST
 !     REAL,    INTENT(IN), DIMENSION(NL)    :: PRGFDL
 !
-      REAL,    PARAMETER :: SLPM=1.01325E5,EPSQ1=1.E-5,EPSQ=1.E-12,     &
-     &                      EPSO3=1.E-10,HPINC=1.E1, CLDRH0=0.80,       &
-     &                      TRESH=1.00,RNRM=1./(TRESH-CLDRH0),          &
-     &                      CLDRH2=0.90,TRESH2=1.00,                    &
-     &                      RNRM2=1./(TRESH2-CLDRH2), CLAPSE=-0.0005,   &
-     &                      CLPSE=-0.0006,DCLPS=-0.0001, CM1=2937.4,    &
-     &                      CM2=4.9283,CM3=23.5518,EPS=0.622,           &
-     &                      PBOT=10000.0, STBOL=5.67E-8,                &
-     &                      PI2=2.*3.14159265,RLAG=14.8125
+      REAL,    PARAMETER :: ALPHA0=100.,CLFRMIN=0.1,CUPRATE=24.*1000.,  &
+     &                      EPS=R_D/R_V,EPSO3=1.E-10,                   &
+     &                      EPSQ=1.E-12,EPSQ1=1.E-5,                    &
+     &                      GAMMA=0.49,H0=0.,H1=1.,H69=-6.9,HPINC=1.E1, &
+     &                      PBOT=10000.0,PEXP=0.25,                     &
+     &                      QCLDMIN=EPSQ,RLAG=14.8125,RQ0=1./(1.E-4),   &
+     &                      STBOL=STBOLT,T_ICE=-10.
 !
-      INTEGER, PARAMETER :: NB=12
-!#$   REAL ::  PROD,DDX,EEX
+      INTEGER, PARAMETER :: NB=12,KSMUD=0
       INTEGER,PARAMETER :: K15=SELECTED_REAL_KIND(15)
       REAL (KIND=K15) :: DDX,EEX,PROD
 !     REAL, INTENT(IN) :: SKO3R,AB15WD,SKC1R,SKO2D
 !-----------------------------------------------------------------------
       LOGICAL :: SHORT,LONG
-      LOGICAL :: BCLD(its:ite),BTEMP1(its:ite)
       LOGICAL :: BITX,BITY,BITZ,BITW,BIT1,BIT2,BITC,BITS,BITCP1,BITSP1
-      LOGICAL :: CNCLD
+      LOGICAL :: CNCLD,NEW_CLOUD
 !-----------------------------------------------------------------------
+      REAL, INTENT(IN), DIMENSION(ims:ime,kms:kme,jms:jme) :: F_ICE     &
+     &                                                       ,F_RAIN
       REAL, INTENT(IN), DIMENSION(ims:ime,jms:jme) :: XLAND,TSK2D
       REAL, INTENT(IN), DIMENSION(its:ite, kms:kme, jts:jte):: Q,CWM,T
       REAL, INTENT(IN), DIMENSION(its:ite, kms:kme, jts:jte):: PFLIP,   &
@@ -440,9 +442,6 @@ CONTAINS
 !#$   REAL,   DIMENSION(its:ite,jts:jte)  :: CZMEAN,SIGT4
       REAL,   DIMENSION(its:ite,jts:jte)  :: SIGT4
        INTEGER, DIMENSION(its:ite, jts:jte):: LMH
-       REAL,    DIMENSION(its:ite, jts:jte):: U00
-!-----------------------------------------------------------------------
-      REAL,               DIMENSION(2*kte) :: UL
 !-----------------------------------------------------------------------
       REAL,   INTENT(INOUT), DIMENSION(ims:ime,jms:jme) :: CUPPT
 !     REAL,   DIMENSION(37*kte)          :: RAD1,RAD2,RAD3,RAD4
@@ -456,7 +455,7 @@ CONTAINS
 !#$   REAL,   DIMENSION(its:ite,jts:jte) :: RLWIN,RLWOUT
       REAL,   DIMENSION(its:ite,jts:jte) :: RLWOUT
 !-----------------------------------------------------------------------
-      REAL,   INTENT(IN),   DIMENSION(ims:ime,jms:jme) :: VEGFRC
+      REAL,   INTENT(IN),   DIMENSION(ims:ime,jms:jme) :: VEGFRA
       REAL,   INTENT(INOUT),DIMENSION(its:ite,kts:kte,jts:jte) :: TENDL,&
      &                                                            TENDS 
 !#$   REAL,   DIMENSION(its:ite,jts:jte) :: RSWIN,RSWOUT,RSWTOA
@@ -467,9 +466,8 @@ CONTAINS
       REAL :: CTHK(3)
       DATA CTHK/20000.0,20000.0,20000.0/
 
-!     INTEGER,INTENT(IN) :: LTOP(3)
       REAL    :: PTOPC(4)
-      REAL,DIMENSION(9),SAVE :: CC,PPT
+      REAL,DIMENSION(10),SAVE :: CC,PPT
 !-----------------------------------------------------------------------
       REAL,SAVE :: ABCFF(NB)
       INTEGER,DIMENSION(its:ite,jts:jte) :: LVL
@@ -478,40 +476,39 @@ CONTAINS
       REAL,   DIMENSION(its:ite,3):: CLDCFR
       INTEGER,   DIMENSION(its:ite,3):: MBOT,MTOP
       REAL,   DIMENSION(its:ite)  :: PSFC,TSKN,ALBEDO,XLAT,COSZ,        &
-     &                               SLMSK,CV,SV,FLWUP,                 &
+     &                               SLMSK,FLWUP,                       &
      &                               FSWDN,FSWUP,FSWDNS,FSWUPS,FLWDNS,  &
      &                               FLWUPS
-      INTEGER,   DIMENSION(its:ite)  :: ICVB,ICVT
 
       REAL,   DIMENSION(its:ite,kts:kte) :: PMID,TMID
       REAL,   DIMENSION(its:ite,kts:kte) :: QMID,THMID,OZN,POZN
       REAL,   DIMENSION(its:ite,jts:jte) :: TOT 
 
       REAL,   DIMENSION(its:ite,kts:kte+1) :: PINT,EMIS,CAMT
-      INTEGER,DIMENSION(its:ite,kts:kte+1) :: ITYP,KBTM,KTOP
+      INTEGER,DIMENSION(its:ite,kts:kte+1) :: KBTM,KTOP
       INTEGER,DIMENSION(its:ite)   :: NCLDS,KCLD 
-      REAL,   DIMENSION(its:ite)   :: CSTR,TAUC,TAUDAR
+      REAL,   DIMENSION(its:ite)   :: TAUDAR
       REAL,   DIMENSION(its:ite,NB,kts:kte+1) ::RRCL,TTCL
 
-      INTEGER,   DIMENSION(its:ite,kts:kte):: IW
-      REAL,   DIMENSION(its:ite,kts:kte):: CCR,CSMID,WMID,HMID,CCMID
-      REAL,   DIMENSION(its:ite)   :: BMID,UMID
+      REAL,   DIMENSION(its:ite,kts:kte):: CSMID,CCMID,QWMID,QIMID
+      REAL,   DIMENSION(kts:kte)   :: FICE,FRAIN
       REAL,SAVE :: PLOMD,PMDHI,PHITP,P400,PLBTM
       INTEGER,SAVE :: NFILE
 
 !-----------------------------------------------------------------------
-      REAL    :: UTIM,CLSTP,TIME,DAYI,HOUR,ADDL,RANG,RSIN1,RCOS1,RCOS2
+      REAL    :: CLSTP,TIME,DAYI,HOUR,ADDL,RANG,RSIN1,RCOS1,RCOS2
       REAL    :: TIMES,EXNER,APES,SNOFAC,US,CCLIMIT,CLIMIT,HH,TKL,QKL
       REAL    :: CWMKL,TMT15,AI,BI,PP,QW,P1,CC2,CC1,PMOD,CLPFIL,        &
-     &           DTHDP,DDP
+     &           DTHDP,DDP,CLFR1,CTAU,WV
       REAL    :: ARG,RQKL,FIW,U00KL,QI,FIQ,TMT0,P2,QINT,QC,CLDMAX,CCRX
       REAL    :: CL1,CL2,CR1,DPCL,QSUM,PRS1,PRS2,DELP,TCLD,DD,EE,AA,FF
       REAL    :: BB,GG,DENOM,FCTRA,FCTRB,PDSLIJ,CFRAVG,SNOMM
-      real    :: thick
+      REAL    :: TAUC,THICK,CONVPRATE,CLFR,ESAT,QSAT,RHUM,QCLD,RHGRID
       INTEGER :: I,J,MYJS,MYJE,MYIS,MYIE,NTSPH,NRADPP,ITIMSW,ITIMLW,    &
      &           JD,II
       INTEGER :: L,N,LML,LVLIJ,IR,KNTLYR,LL,NC,L400,NMOD,LTROP,IWKL
-      INTEGER :: NLVL,MALVL,LLTOP,LLBOT,KBT2,KTH1,KBT1,KTH2,KTOP1
+      INTEGER :: LCNVB,LCNVT
+      INTEGER :: NLVL,MALVL,LLTOP,LLBOT,KBT2,KTH1,KBT1,KTH2,KTOP1,KFLIP
       INTEGER :: NBAND,NCLD,LBASE,NKTP,NBTM,KS,MYJS1,MYJS2,MYJE2,MYJE1
 
 !     REAL,DIMENSION(5040):: T1,T2,T4,EM1V,EM1VW,EM3V
@@ -524,8 +521,8 @@ CONTAINS
       DATA    PLOMD/64200./,PMDHI/35000./,PHITP/15000./,P400/40000./,   &
               PLBTM/105000./
       DATA    NFILE/14/
-      DATA    CC/0.,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8/
-      DATA    PPT/.14,.31,.70,1.6,3.4,7.7,17.,38.,85./
+      DATA    CC/0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0/
+      DATA    PPT/0.,.14,.31,.70,1.6,3.4,7.7,17.,38.,85./
       DATA ABCFF/2*4.0E-5,.002,.035,.377,1.95,9.40,44.6,190.,989.,      &
      &           2706.,39011./
 
@@ -543,46 +540,21 @@ CONTAINS
       LM=kte
       LM1=LM-1
       LP1=LM+1
-      UTIM=1.
       CNCLD=.TRUE.
-
-      do j = jts,jte
-      do i = its,ite
-         LMH(i,j) = kme-1
-         LVL(i,j) = 0
-      enddo
-      enddo
-
-      do j = jts,jte
-      do i = its,ite
-         U00(I,J)=(2.-XLAND(i,j))*0.75+(XLAND(i,j) -1.)*0.80
-!!!!!!!  U00(I,J)=0.95
-      enddo
-      enddo
-
-      DO L=1,2*LM
-      IF(L.GE.LM-10.AND.L.LE.LM)THEN
-        UL(L)=0.1*FLOAT(L-LM+10)
-      ELSE
-        UL(L)=0.
-      ENDIF
+!
+      DO J=JTS,JTE
+      DO I=ITS,ITE
+        LMH(I,J)=KME-1
+        LVL(I,J)=0
       ENDDO
-
+      ENDDO
 !***  
 !***  ASSIGN THE PRESSURES FOR CLOUD DOMAIN BOUNDARIES
 !***
-        PTOPC(1)=PLBTM
-        PTOPC(2)=PLOMD
-        PTOPC(3)=PMDHI
-        PTOPC(4)=PHITP
-!***
-!***  FIND THE 'SEA LEVEL PRESSURE'.
-!***
-!     DO J=MYJS,MYJE
-!     DO I=MYIS,MYIE
-!       PDSL(I,J)=PD(I,J)
-!     ENDDO
-!     ENDDO
+      PTOPC(1)=PLBTM
+      PTOPC(2)=PLOMD
+      PTOPC(3)=PMDHI
+      PTOPC(4)=PHITP
 !**********************************************************************
 !***  THE FOLLOWING CODE IS EXECUTED EACH TIME THE RADIATION IS CALLED.
 !**********************************************************************
@@ -596,6 +568,8 @@ CONTAINS
       NTSPH=NINT(3600./DT)
       NRADPP=MIN(NRADS,NRADL)
       CLSTP=1.0*NRADPP/NTSPH
+      CONVPRATE=CUPRATE/CLSTP
+      RHGRID=RHGRD
 !----------------------CONVECTION--------------------------------------
 !***
 !***  STATE WHETHER THE SHORT OR LONGWAVE COMPUTATIONS ARE TO BE DONE.
@@ -640,7 +614,6 @@ CONTAINS
 !
         DO II=0,NRADS,NPHS
           TIMES=NTSD*DT+II*DT
-!         CALL ZENITH(TIMES,DAYI,HOUR)
           CALL ZENITH(TIMES,DAYI,HOUR,IDAT,IHRST,GLON,GLAT,CZEN,        &
      &                MYIS,MYIE,MYJS,MYJE,                              &
      &                ids,ide, jds,jde, kds,kde,                        &
@@ -675,12 +648,10 @@ CONTAINS
 !       IR=IRAD(I)
         TMID(I,L)=T(I,1,J)
         QMID(I,L)=EPSQ
+        QWMID(I,L)=0.
+        QIMID(I,L)=0.
         CSMID(I,L)=0.
-        WMID(I,L)=0.
         CCMID(I,L)=0.
-        IW(I,L)=0.
-        CCR(I,L)=0.
-        HMID(I,L)=0.
         OZN(I,L)=EPSO3
         TENDS(I,L,J)=0.
         TENDL(I,L,J)=0.
@@ -702,21 +673,14 @@ CONTAINS
 !     IR=IRAD(I)
       LML=LMH(I,J)
       LVLIJ=LVL(I,J)
-!     BMID(I)=HBM2(IR,J)
-!     BMID(I)=HBM2(I,J)
-      UMID(I)=U00(I,J)
 !
       DO L=1,LML
-!       PMID(I,L+LVLIJ)=AETA(L)*PDSL(I,J)+PT
         PMID(I,L+LVLIJ)=PFLIP(I,L,J)
-!       PINT(I,L+LVLIJ+1)=ETAD(L+1)*PDSL(I,J)+PT
         PINT(I,L+LVLIJ+1)=P8WFLIP(I,L+1,J)
         EXNER=(1.E5/PMID(I,L+LVLIJ))**CAPA
         TMID(I,L+LVLIJ)=T(I,L,J)
         THMID(I,L+LVLIJ)=T(I,L,J)*EXNER
         QMID(I,L+LVLIJ)=Q(I,L,J)
-        WMID(I,L+LVLIJ)=CWM(I,L,J)
-        HMID(I,L+LVLIJ)=1.
       ENDDO
 !***
 !***  FILL IN ARTIFICIAL VALUES ABOVE THE TOP OF THE DOMAIN.
@@ -728,7 +692,6 @@ CONTAINS
 !
         DO L=LVLIJ,1,-1
           KNTLYR=KNTLYR+1
-!         PMID(I,L)=PT-REAL(2*KNTLYR-1)*0.5*HPINC
           PMID(I,L)=P8WFLIP(I,1,J)-REAL(2*KNTLYR-1)*0.5*HPINC
           PINT(I,L+1)=PMID(I,L)+0.5*HPINC
           EXNER=(1.E5/PMID(I,L))**CAPA
@@ -737,7 +700,6 @@ CONTAINS
       ENDIF
 !
       IF(LVLIJ.EQ.0) THEN
-!        PINT(I,1)=PT
          PINT(I,1)=P8WFLIP(I,1,J)
       ELSE
          PINT(I,1)=PMID(I,1)-0.5*HPINC
@@ -749,14 +711,13 @@ CONTAINS
 !***  NEGATIVE OVER WATER.
 !***
       DO 250 I=MYIS,MYIE
-!     PSFC(I)=PD(I,J)+PT
-      PSFC(I)=P8WFLIP(I,kme,J)
+      PSFC(I)=P8WFLIP(I,KME,J)
       APES=(PSFC(I)*1.E-5)**CAPA
 !     TSKN(I)=THS(I,J)*APES*(1.-2.*SM(I,J))
-      IF ((XLAND(I,J)-1.5) .gt. 0.) then
-         TSKN(I)=-TSK2D(I,J)
+      IF((XLAND(I,J)-1.5).GT.0.)THEN
+        TSKN(I)=-TSK2D(I,J)
       ELSE
-         TSKN(I)=TSK2D(I,J)
+        TSKN(I)=TSK2D(I,J)
       ENDIF
 
 !     TSKN(I)=THS(I,J)*APES*(1.-2.*(XLAND(I,J)-1.))
@@ -766,333 +727,136 @@ CONTAINS
 !     SNO(I,J)=AMAX1(SNO(I,J),0.)
       SNOMM=AMAX1(SNO(I,J),0.)
       SNOFAC=AMIN1(SNOMM/0.02, 1.0)
-!!!!  ALBEDO(I)=ALB(I,J)+(1.0-0.01*VEGFRC(I,J))*SNOFAC*(SNOALB-ALB(I,J))
+!!!!  ALBEDO(I)=ALB(I,J)+(1.0-0.01*VEGFRA(I,J))*SNOFAC*(SNOALB-ALB(I,J))
       ALBEDO(I)=ALB(I,J)
 !
       XLAT(I)=GLAT(I,J)/DTR
       COSZ(I)=CZMEAN(I,J)
   250 CONTINUE
 !-----------------------------------------------------------------------
-!********************STRATIFORM CLOUD SECTION***************************
+!---  COMPUTE GRID-SCALE CLOUD COVER FOR RADIATION
+!     (modified by Ferrier, Feb '02)
+!
+!---  Cloud fraction parameterization follows Randall, 1994
+!     (see Hong et al., 1998)
 !-----------------------------------------------------------------------
-!  CALCULATE STRATIFORM CLOUD COVERAGE AT EACH MODEL GRID POINT WHICH 
-!  WILL BE USED IN THE MODEL RADIATION PARAMETERIZATION SCHEME.
-!-----------------------------------------------------------------------
-      US=1.                                                             
-      CCLIMIT=1.0E-3                                                    
-      CLIMIT =1.0E-20                                                   
-!------------------QW, QI AND QINT--------------------------------------
-      DO 280 I=MYIS,MYIE
-      LML=LMH(I,J)
-      LVLIJ=LVL(I,J)
 !
-      DO 275 L=1,LML
-      LL=L+LVLIJ
-!     HH=HMID(I,LL)*BMID(I)
-      HH=HMID(I,LL)
-      TKL=TMID(I,LL)                                                   
-      QKL=QMID(I,LL)                                                   
-      CWMKL=WMID(I,LL)                                                 
-      TMT0=(TKL-273.16)*HH                                              
-      TMT15=AMIN1(TMT0,-15.)*HH                                         
-      AI=0.008855
-      BI=1.
-!
-      IF(TMT0.LT.-20.)THEN
-        AI=0.007225
-        BI=0.9674
-      ENDIF 
-!
-      PP=PMID(I,LL)
-      QW=HH*PQ0/PP*EXP(HH*A2*(TKL-A3)/(TKL-A4))                  
-      QI=QW*(BI+AI*AMIN1(TMT0,0.))                               
-      QINT=QW*(1.-0.00032*TMT15*(TMT15+15.))                        
-      IF(TMT0.LE.-40.) QINT=QI                                    
-!-------------------ICE-WATER ID NUMBER IW------------------------------
-      U00KL=UMID(I)+UL(L)*(0.95-UMID(I))*UTIM
-      IF(TMT0.LT.-15.0)THEN
-        FIQ=QKL-U00KL*QI    
-        IF(FIQ.GT.0..OR.CWMKL.GT.CLIMIT)THEN                    
-          IW(I,LL)=1                                                 
-        ELSE                                                           
-          IW(I,LL)=0                                                 
-        ENDIF                                                         
-      ENDIF
-!
-      IF(TMT0.GE.0.)THEN
-        IW(I,LL)=0                                                    
-      ENDIF
-!
-      IF(TMT0.LT.0.0.AND.TMT0.GE.-15.0)THEN
-        IW(I,LL)=0
-        IF(IW(I,LL-1).EQ.1.AND.CWMKL.GT.CLIMIT) IW(I,LL)=1 
-      ENDIF
-!
-      IWKL=IW(I,LL)                                                    
-!
-!----------------THE SATURATION SPECIFIC HUMIDITY------------------------
-!
-      FIW=FLOAT(IWKL)                                                   
-      QC=(1.-FIW)*QINT+FIW*QI                                 
-!
-!----------------THE RELATIVE HUMIDITY----------------------------------
-!
-      IF(QC.LE.EPSQ1.OR.QKL.LE.EPSQ1)THEN  
-        RQKL=0.
-      ELSE                                                             
-        RQKL=QKL/QC                                                 
-      ENDIF                                                             
-!
-!----------------CLOUD COVER RATIO CCR----------------------------------
-!
-      IF(RQKL.GE.0.9999)THEN                                      
-        CCR(I,LL)=AMIN1(US,RQKL) 
-      ELSEIF(CWMKL.GT.1.E-7)THEN
-        ARG=-1000.*CWMKL/(US-RQKL)
-        ARG=AMAX1(ARG,-25.)
-        CCRX=RQKL*(1.-EXP(ARG))
-        IF(CCRX.GT.0.01)CCR(I,LL)=CCRX
-      ENDIF                                                             
-      CSMID(I,LL)=AMIN1(US,CCR(I,LL))
-!-----------------------------------------------------------------------
-  275 CONTINUE
-  280 CONTINUE
-!-----------------------------------------------------------------------
-!***********************************************************************
-! NOW CHECK THE CLOUDS PRODUCED ABOVE TO MAKE SURE THEY ARE GOOD
-! ENOUGH FOR RADIATION CALCULATIONS
-!***********************************************************************
-!***
-!***  NO STRATIFORM CLOUDS FOR THIS TYPE
-!***
-      DO 350 I=MYIS,MYIE
-!
-      LML=LMH(I,J)
-      LVLIJ=LVL(I,J)
-!***
-!***  ZERO OUT CLDAMT IF LAND AND BELOW PBOT ABOVE GROUND
-!***
-!     IF(SM(I,J).LT.0.5)THEN
-      IF((XLAND(I,J)-1.) .LT. 0.5)THEN
-        DO L=1,LML
-          LL=LML-L+1+LVLIJ
-          DDP=PSFC(I)-PMID(I,LL)
-          IF(DDP.GE.PBOT) GO TO 290
-          CSMID(I,LL)=0.
-        ENDDO
-  290   CONTINUE
-      ENDIF
-!***
-!***  CHECK FOR OCEAN STRATUS (LOW CLOUD)
-!***  LOOK ONLY OVER OCEAN AND ONLY IF AN INVERSION (DTHDP.LE.-0.05)
-!***  IS PRESENT WITH AT LEAST 2 CLOUD FREE LAYERS ABOVE IT
-!***
-!     IF(SM(I,J).GT.0.5)THEN
-      IF((XLAND(I,J)-1.) .GT. 0.5)THEN
-!
-!***  FIND BASE OF INVERSION
-!
-        LBASE=LM
-        DO L=1,LML-1
-          LL=LML-L+1+LVLIJ
-          DTHDP=(THMID(I,LL-1)-THMID(I,LL)) &
-                /(PMID(I,LL-1)-PMID(I,LL))
-          IF(DTHDP.LE.CLAPSE)THEN
-            LBASE=LL
-            GO TO 300
-          ENDIF
-        ENDDO
-  300   CONTINUE
-!
-!***  CHECK 2 LAYERS ABOVE LBASE FOR DRYNESS
-!
-        IF(CSMID(I,LBASE-1).LE.0..AND.CSMID(I,LBASE-2).LE.0. &
-                                     .AND.LBASE.LT.LM)THEN
-          IF(DTHDP.GT.CLPSE)THEN
-            CLPFIL=1.-((CLPSE-DTHDP)/DCLPS)
-          ELSE
-            CLPFIL=1.
-          ENDIF
-!
-          DO L=1,LML
-            LL=LML-L+1+LVLIJ
-            DDP=PSFC(I)-PMID(I,LL)
-            IF(DDP.GE.PBOT) GO TO 310
-            CSMID(I,LL)=CSMID(I,LL)*CLPFIL
-          ENDDO
-  310     CONTINUE
-!
-!***  IF NO INVERSION OR IF CLDS EXIST IN EITHER OF THE 2 LAYERS ABOVE 
-!***  INVERSION, ZERO OUT CLOUD BELOW PBOT
-!
-        ELSE
-          DO L=1,LML
-            LL=LML-L+1+LVLIJ
-            DDP=PSFC(I)-PMID(I,LL)
-            IF(DDP.GE.PBOT) GO TO 320
-            CSMID(I,LL)=0.
-          ENDDO
-  320     CONTINUE
-!
-        ENDIF
-!------------
-      ENDIF
-!------------
-!***
-!***  REMOVE HIGH CLOUDS ABOVE THE TROPOPAUSE
-!***
-      L400=LM
-      DO L=1,LML
-        LL=LML-L+1+LVLIJ
-        IF(PMID(I,LL).LE.40000.0)THEN
-          L400=LL
-          GO TO 330
-        ENDIF
-      ENDDO
-  330 CONTINUE
-!
-      LTROP=LM
-      DO LL=L400,2,-1
-        DTHDP=(THMID(I,LL-1)-THMID(I,LL))/(PMID(I,LL-1)-PMID(I,LL))
-!
-        IF(DTHDP.LT.-0.0025.OR.QMID(I,LL).LE.EPSQ1)THEN
-          LTROP=LL
-          GOTO 340
-        ENDIF
-      ENDDO
-  340 IF(LTROP.LT.LM)THEN
-        DO LL=LTROP,1,-1
-          CSMID(I,LL)=0.
-        ENDDO
-      ENDIF
-  350 CONTINUE
-!
-!-----------------------------------------------------------------------
-!***********************************************************************
-!********************END OF STRATIFORM CLOUD SECTION********************
-!-----------------------------CONVECTION--------------------------------   
-!***
-!***  CONVECTIVE CLOUD SECTION
-!***
-!*** THIS PART WAS MODIFIED TO COMPUTE CONVECTIVE CLOUDS AT EACH
-!*** MODEL LAYER BASED ON CONVECTIVE PRECIPITATION RATES. CURRENTLY,
-!*** CLOUDS ARE SET TO 0.75*CV(I) BELOW 400MB
-!*** AND    0.90*CV(I) ABOVE 400MB TO ACCOUNT FOR CIRRUS CAP
-!***                                       Q.ZHAO   95-3-22
-!
-!***
-!*** NON-PRECIPITATING CLOUD FRACTION OF 20 PERCENT IS ADDED AT
-!*** AT POINTS WHERE THE SHALLOW AND DEEP CONVECTIONS ACCUR.
-!***                                        Q. ZHAO  97-5-2
-!
-!   COMPUTE THE CONVECTIVE CLOUD COVER FOR RADIATION
-!
-!-----------------------------------------------------------------
-      IF(CNCLD)THEN
-!-----------------------------------------------------------------
-        DO 375 I=MYIS,MYIE
-!       IF(HBOT(I,J)-HTOP(I,J).GT.1.0)THEN
-        THICK=HBOT(I,J)-HTOP(I,J)
-        IF(THICK.GT.1..AND.THICK.LT.KTE+1)THEN
-          SV(I)=0.0
-        ELSE
-          SV(I)=0.0
-        ENDIF
-!
-        PMOD=CUPPT(I,J)*24.0*1000.0/CLSTP
-        NMOD=0
-!
-        DO NC=1,9
-          IF(PMOD.GT.PPT(NC)) NMOD=NC
-        ENDDO
-!
-!***  CLOUD TOPS AND BOTTOMS COME FROM CUCNVC
-!***  ADD LVL TO BE CONSISTENT WITH OTHER WORKING ARRAYS
-!
-        IF(NMOD.EQ.0)THEN
-          CV(I)=0.
-        ELSEIF(NMOD.EQ.9)THEN
-          CV(I)=CC(9)
-        ELSE
-          CC1=CC(NMOD)
-          CC2=CC(NMOD+1)
-          P1=PPT(NMOD)
-          P2=PPT(NMOD+1)
-          CV(I)=CC1+(CC2-CC1)*(PMOD-P1)/(P2-P1)
-        ENDIF
-!
-        CV(I)=AMAX1(SV(I),CV(I))
-        CV(I)=AMIN1(1.0,CV(I))
-!
-        IF(CV(I).EQ.0.0)THEN
-          ICVT(I)=0
-          ICVB(I)=0
-        ELSE
-          ICVT(I)=NINT(HTOP(I,J))+LVL(I,J)
-          ICVB(I)=NINT(HBOT(I,J))+LVL(I,J)
-        ENDIF
-  375   CONTINUE
-!***
-!***  MAKE SURE CLOUDS ARE DEEP ENOUGH
-!***
-        DO I=MYIS,MYIE
-          BCLD(I)=CV(I).GT.0..AND. (ICVB(I)-ICVT(I)).GE.1
-          BTEMP1(I)=BCLD(I)
-        ENDDO
-!***
-!*** COMPUTE CONVECTIVE CLOUD FRACTION
-!***
-        DO 390 I=MYIS,MYIE
-        IF(BCLD(I)) THEN
-          LML=LMH(I,J)
-          LVLIJ=LVL(I,J)
-!
-          DO L=1,LML
-            LL=L+LVLIJ
-            IF(LL.GT.ICVB(I).OR.LL.LT.ICVT(I))THEN
-              CCMID(I,LL)=0.
-            ELSE
-              CCMID(I,LL)=CV(I)
-            ENDIF
-            CCMID(I,LL)=AMIN1(1.0,CCMID(I,LL))
-          ENDDO
-        ENDIF
-  390   CONTINUE
-!***
-!***  REMOVE HIGH CLOUDS ABOVE THE TROPOPAUSE
-!***
-        L400=LM
-        DO 425 I=MYIS,MYIE
+      DO I=MYIS,MYIE
         LML=LMH(I,J)
         LVLIJ=LVL(I,J)
-!
-        DO L = 1, LML
-          LL=LML-L+1+LVLIJ
-          IF(PMID(I,LL).LE.40000.0)THEN
-            L400=LL
-            GO TO 400
-          ENDIF
+        DO L=1,LML
+          KFLIP=KTE+1-L
+          FICE(L)=F_ICE(I,KFLIP,J)
+          FRAIN(L)=F_RAIN(I,KFLIP,J)
         ENDDO
-  400   CONTINUE
+        DO L=1,LML
+          LL=L+LVLIJ
 !
-        LTROP=LM
-        DO LL=L400,2,-1
-          DTHDP=(THMID(I,LL-1)-THMID(I,LL))/(PMID(I,LL-1)-PMID(I,LL))
-          IF(DTHDP.LT.-0.0025.OR.QMID(I,LL).LE.EPSQ1)THEN
-            LTROP=LL
-            GOTO 410
-          ENDIF
-        ENDDO
-  410   IF(LTROP.LT.LM)THEN
-         DO LL=LTROP,1,-1
-           CCMID(I,LL)=0.
-         ENDDO
-        ENDIF
-  425   CONTINUE
-!***
+!--- Water vapor mixing ratio
+!
+          WV=QMID(I,LL)/(1.-QMID(I,LL))
+!
+!--- Saturation vapor pressure w/r/t water ( >=0C ) or ice ( <0C )
+!
+          ESAT=1000.*FPVS(TMID(I,LL))         !--- Saturation vapor pressure (Pa)
+          QSAT=EPS*ESAT/(PMID(I,LL)-ESAT)     !--- Saturation mixing ratio
+          RHUM=WV/QSAT                        !--- Relative humidity
+!
+!--- Mixing ratios of cloud water & total ice (cloud ice + snow).
+!    Mixing ratios of rain are not considered in this scheme.
+!
+          QIMID(I,LL)=CWM(I,L,J)*FICE(L)
+          QWMID(I,LL)=(CWM(I,L,J)-QIMID(I,LL))*(1.-FRAIN(L))
+!
+!--- Total "cloud" mixing ratio, QCLD.  Rain is not part of cloud,
+!    only cloud water + cloud ice + snow
+!
+          QCLD=QWMID(I,LL)+QIMID(I,LL)
+!
+!--- Determine cloud fraction (modified from original algorithm)
+!
+          IF (QCLD .LT. QCLDMIN) THEN
+!
+!--- Assume zero cloud fraction if there is no cloud mixing ratio
+!
+            CLFR=H0
+          ELSEIF(RHUM.GE.RHGRID)THEN
+!
+!--- Assume cloud fraction of unity if near saturation and the cloud
+!    mixing ratio is at or above the minimum threshold
+!
+            CLFR=H1
+          ELSE
+!
+!--- Adaptation of original algorithm (Randall, 1994; Zhao, 1995)
+!    modified based on assumed grid-scale saturation at RH=RHgrid.
+!
+            DENOM=(RHGRID*QSAT-WV)**GAMMA
+            ARG=MAX(H69, -ALPHA0*QCLD/DENOM)    ! <-- EXP(-6.9)=.001
+            CLFR=(RHUM/RHGRID)**PEXP*(1.-EXP(ARG))
+!!              ARG=-1000*QCLD/(RHUM-RHGRID)
+!!              ARG=MAX(ARG, ARGMIN)
+!!              CLFR=(RHUM/RHGRID)*(1.-EXP(ARG))
+            IF (CLFR .LT. .01) CLFR=0.
+          ENDIF          !--- End IF (QCLD .LT. QCLDmin) ...
+          CSMID(I,LL)=MIN(H1,CLFR)
+        ENDDO            !--- End DO L ...
+      ENDDO                !--- End DO I ...
+!***********************************************************************
+!********************END OF STRATIFORM CLOUD SECTION********************
+!***********************************************************************
+!
+!-----------------------------------------------------------------------
+!---  COMPUTE CONVECTIVE CLOUD COVER FOR RADIATION
+!
+!--- The parameterization of Slingo (1987, QJRMS, Table 1, p. 904) is
+!    used for convective cloud fraction as a function of precipitation
+!    rate.  Cloud fractions have been increased by 20% for each rainrate
+!    interval so that shallow, nonprecipitating convection is ascribed a
+!    constant cloud fraction of 0.1  (Ferrier, Feb '02).
 !-----------------------------------------------------------------
-      ENDIF
-!------------------------CONVECTION--------------------------------
+!
+      IF (CNCLD) THEN
+        DO I=MYIS,MYIE
+!
+!***  CLOUD TOPS AND BOTTOMS COME FROM CUCNVC.
+!***  CONVECTIVE CLOUDS NEED TO BE AT LEAST 2 MODEL LAYERS THICK.
+!
+          IF (HBOT(I,J)-HTOP(I,J) .GT. 1.0) THEN
+!--- Compute convective cloud fractions if appropriate  (Ferrier, Feb '02)
+            CLFR=CC(1)
+            PMOD=CUPPT(I,J)*CONVPRATE
+            IF (PMOD .GT. PPT(1)) THEN
+              DO NC=1,10
+                IF(PMOD.GT.PPT(NC)) NMOD=NC
+              ENDDO
+              IF (NMOD .GE. 10) THEN
+                CLFR=CC(10)
+              ELSE
+                CC1=CC(NMOD)
+                CC2=CC(NMOD+1)
+                P1=PPT(NMOD)
+                P2=PPT(NMOD+1)
+                CLFR=CC1+(CC2-CC1)*(PMOD-P1)/(P2-P1)
+              ENDIF      !--- End IF (NMOD .GE. 10) ...
+              CLFR=MIN(H1, CLFR)
+            ENDIF        !--- End IF (PMOD .GT. PPT(1)) ...
+!
+!***  ADD LVL TO BE CONSISTENT WITH OTHER WORKING ARRAYS
+!
+            LVLIJ=LVL(I,J)
+            LCNVT=NINT(HTOP(I,J))+LVLIJ
+            LCNVT=MIN(LM,LCNVT)
+            LCNVB=NINT(HBOT(I,J))+LVLIJ
+            LCNVB=MIN(LM,LCNVB)
+!
+            DO LL=LCNVT,LCNVB
+              CCMID(I,LL)=CLFR
+            ENDDO
+          ENDIF    !--- IF (HBOT(I,J)-HTOP(I,J) .GT. 1.0) ...
+        ENDDO      !--- End DO I loop
+      ENDIF        !--- End IF (CNCLD) ...
+!*********************************************************************
 !*****************END OF CONVECTIVE CLOUD SECTION*****************
 !*********************************************************************
 !***
@@ -1103,8 +867,6 @@ CONTAINS
 !***
 !***
        DO 500 I=MYIS,MYIE
-!!
-       CSTR(I)=0.0
 !!
        DO L=0,LM
          CLDAMT(L)=0.
@@ -1155,9 +917,9 @@ CONTAINS
        L=LLBOT-LL+LLTOP
        BIT1=.FALSE.
        CR1=CLDAMT(L)
-       BITX=(PINT(I,L).GE.PTOPC(NLVL+1)).AND. &
-            (PINT(I,L).LT.PTOPC(NLVL)).AND. &
-            (CLDAMT(L).GT.0.0)
+       BITX=(PINT(I,L).GE.PTOPC(NLVL+1)).AND.                           &
+      &     (PINT(I,L).LT.PTOPC(NLVL)).AND.                             &
+      &     (CLDAMT(L).GT.0.0)
        BIT1=BIT1.OR.BITX
        IF(.NOT.BIT1)GO TO 450
 !!***
@@ -1217,7 +979,7 @@ CONTAINS
          CL2=0.0
        ENDIF
    450 CONTINUE
-!!***
+!
        CLDCFR(I,NLVL)=AMIN1(1.0,CL1)
        MTOP(I,NLVL)=MIN(KBT1,KBT1-KTH1+1)
        MBOT(I,NLVL)=KBT1
@@ -1259,7 +1021,6 @@ CONTAINS
       KTOP(I,1)=LP1
       KBTM(I,1)=LP1
       CAMT(I,1)=1.0
-      ITYP(I,1)=0
       KCLD(I)=2
 !
       DO NBAND=1,NB
@@ -1268,7 +1029,6 @@ CONTAINS
       ENDDO
 !
       DO 510 L=2,LP1
-      ITYP(I,L)=0
       CAMT(I,L)=0.0
       KTOP(I,L)=1
       KBTM(I,L)=1
@@ -1284,70 +1044,44 @@ CONTAINS
 !*** CLOUD TYPE=1: STRATIFORM CLOUD
 !***       TYPE=2: CONVECTIVE CLOUD
 !*** WHEN BOTH CONVECTIVE AND STRATIFORM CLOUDS EXIST AT THE SAME POINT,
-!*** SELECT CONVECTIVE CLOUD (TYPE=2),IN OTHER WORDS, CONVECTIVE CLOUDS
-!*** HAVE THE HIGHER PRIORITY THAN STRATIFORM CLOUDS.
-!*** CLOUD LAYERS ARE SEPARATED BY:
-!***       1. NO-CLOUD LAYER
-!***       2. DIFFERENT CLOUD TYPE
+!*** SELECT CONVECTIVE CLOUD WITH THE HIGHER CLOUD FRACTION.
+!*** CLOUD LAYERS ARE SEPARATED BY TOTAL ABSENCE OF CLOUDINESS.
 !*** NOTE: THERE IS ONLY ONE CONVECTIVE CLOUD LAYER IN ONE COLUMN.
-!*** KTOP AND KBTM ARE THE TOP AND BOTTOM OF EACH CLOUD LAYER IN TERMS O
-!*** ETA MODEL LEVEL.
+!*** KTOP AND KBTM ARE THE TOP AND BOTTOM OF EACH CLOUD LAYER IN TERMS
+!*** OF MODEL LEVEL.
 !***
-      DO 540 L=2,LML
-      LL=LML-L+1+LVLIJ
-      BITC=CCMID(I,LL).GT.0.1
-      BITS=CSMID(I,LL).GT.0.1
-      BITCP1=CCMID(I,LL+1).GT.0.1
-      BITSP1=CSMID(I,LL+1).GT.0.1
-      BIT1=BITS.OR.BITC
-!-------------------
-      IF(BIT1)THEN
-!-------------------
-        IF(ITYP(I,KCLD(I)).EQ.0)THEN
-          CAMT(I,KCLD(I))=CSMID(I,LL)
-          ITYP(I,KCLD(I))=1
-          KBTM(I,KCLD(I))=LL
+      NEW_CLOUD=.TRUE.
 !
-          IF(BITC)THEN
-            CAMT(I,KCLD(I))=CCMID(I,LL)
-            ITYP(I,KCLD(I))=2
-          ENDIF 
-        ELSE
-          IF(BITC)THEN
-            IF(BITCP1)THEN
-              CAMT(I,KCLD(I))=AMAX1(CAMT(I,KCLD(I)),CCMID(I,LL))
-            ELSE
-              KCLD(I)=KCLD(I)+1
-              CAMT(I,KCLD(I))=CCMID(I,LL)
-              ITYP(I,KCLD(I))=2
-              KTOP(I,KCLD(I)-1)=LL+1
-              KBTM(I,KCLD(I))=LL
-            ENDIF
+      DO L=2,LML
+        LL=LML-L+1+LVLIJ                        !-- Model layer
+        CLFR=MAX(CCMID(I,LL),CSMID(I,LL))       !-- Cloud fraction in layer
+        CLFR1=MAX(CCMID(I,LL+1),CSMID(I,LL+1))  !-- Cloud fraction in lower layer
+!-------------------
+        IF (CLFR .GE. CLFRMIN) THEN
+!--- Cloud present at level
+          IF (NEW_CLOUD) THEN
+!--- New cloud layer
+            NEW_CLOUD=.FALSE.
+            CAMT(I,KCLD(I))=CLFR
+            KBTM(I,KCLD(I))=LL
           ELSE
-            IF(BITCP1)THEN
-              KCLD(I)=KCLD(I)+1
-              CAMT(I,KCLD(I))=CSMID(I,LL)
-              ITYP(I,KCLD(I))=1
-              KTOP(I,KCLD(I)-1)=LL+1
-              KBTM(I,KCLD(I))=LL
-            ELSE
-              CAMT(I,KCLD(I))=AMAX1(CAMT(I,KCLD(I)),CSMID(I,LL))
-            ENDIF
-          ENDIF 
-        ENDIF 
-!-------------------
-      ELSE
-!-------------------
-        IF(BITCP1.OR.BITSP1)THEN
+!--- Existing cloud layer
+            CAMT(I,KCLD(I))=AMAX1(CAMT(I,KCLD(I)), CLFR)
+          ENDIF        ! End IF (NEW_CLOUD .EQ. 0) ...
+        ELSE IF (CLFR1 .GE. CLFRMIN) THEN
+!--- Cloud is not present at level but did exist at lower level, then ...
+          IF (L .EQ. 2) THEN
+!--- For the case of ground fog
+            KBTM(I,KCLD(I))=LL+1
+            CAMT(I,KCLD(I))=CLFR1
+          ENDIF
+          KTOP(I,KCLD(I))=LL+1
+          NEW_CLOUD=.TRUE.
           KCLD(I)=KCLD(I)+1
-          KTOP(I,KCLD(I)-1)=LL+1
-          ITYP(I,KCLD(I))=0
           CAMT(I,KCLD(I))=0.0
         ENDIF
 !-------------------
-      ENDIF
-!-------------------
-  540 CONTINUE
+      ENDDO      !--- End DO L loop
 !***
 !*** THE REAL NUMBER OF CLOUD LAYERS IS (THE FIRST IS THE GROUND;
 !*** THE LAST IS THE SKY):
@@ -1363,60 +1097,88 @@ CONTAINS
 !***
         DO 580 NC=2,NCLD+1
 !
-        TAUC(I)=0.0
+        TAUC=0.0   ! Total optical depth for each cloud layer
         QSUM=0.0
         NKTP=LP1
         NBTM=0
-        BITX=CAMT(I,NC).GT.0.1
+        BITX=CAMT(I,NC).GE.CLFRMIN
         NKTP=MIN(NKTP,KTOP(I,NC))
         NBTM=MAX(NBTM,KBTM(I,NC))
 !
-        DO 560 LL=NKTP,NBTM
-        IF(LL.GE.KTOP(I,NC).AND.LL.LE.KBTM(I,NC).AND.BITX)THEN
-          PRS1=PINT(I,LL)*0.01
-          PRS2=PINT(I,LL+1)*0.01
-          DELP=PRS2-PRS1
-          TCLD=TMID(I,LL)-273.16
-          QSUM=QSUM+QMID(I,LL)*DELP*(PRS1+PRS2) &
-               /(120.1612*SQRT(TMID(I,LL)))
-!***
-!*** FOR CONVECTIVE CLOUD OR STARTIFORM CLOUD WITH TOP ABOVE 500MB
-!***
-          IF(ITYP(I,NC).EQ.2 &
-                 .OR.PINT(I,KTOP(I,NC)).LE.PTOPC(3))THEN
-            IF(TCLD.LE.-10.0)THEN
-              TAUC(I)=TAUC(I)+DELP*AMAX1(0.1E-3, &
-                       2.0E-6*(TCLD+82.5)**2)
-            ELSE
-              TAUC(I)=TAUC(I)+DELP*AMIN1(0.08,6.949E-3*TCLD+0.1)
-            ENDIF
-          ELSE
-!***
-!***  FOR LOW AND MID STRATIFORM CLOUDS
-!***
-            IF(TCLD.LE.-20.0)THEN
-              TAUC(I)=TAUC(I)+DELP*AMAX1(0.1E-3,2.56E-5* &
-                     (TCLD+82.5)**2)
-            ELSE
-              TAUC(I)=TAUC(I)+DELP*0.1
-            ENDIF
-          ENDIF
-        ENDIF
-  560   CONTINUE
+        DO LL=NKTP,NBTM
+          IF(LL.GE.KTOP(I,NC).AND.LL.LE.KBTM(I,NC).AND.BITX)THEN
+            PRS1=PINT(I,LL)*0.01
+            PRS2=PINT(I,LL+1)*0.01
+            DELP=PRS2-PRS1
+            TCLD=TMID(I,LL)-273.16
+            QSUM=QSUM+QMID(I,LL)*DELP*(PRS1+PRS2)                       &     
+     &           /(120.1612*SQRT(TMID(I,LL)))
 !
-        IF(BITX)EMIS(I,NC)=1.0-EXP(-0.75*TAUC(I))
+!--- The simple optical depth parameterization from eq. (1) of Harshvardhan
+!    et al. (1989, JAS, p. 1924; hereafter referred to as HRCD by authorship)
+!    is used for convective cloud properties with some simple changes.
+!
+!--- The optical depth Tau is Tau=CTau*DELP, where values of CTau are
+!    described below.
+!
+!--- For convection, assume simple optical depth coefficients of
+!      1) CTau=0.16 for ice, assumed to be for T<=T_ICE (=-10C in GSMCOLUMN)
+!         This was referenced as "optically thick anvil associated with
+!         convection in
+!      2) CTau=0.08 for water, assumed to be present for T>T_ICE
+!
+!--- For grid-scale processes in the absence of convection:
+!      1) CTau=0.08*min(1., Qc/Q0) for cloud water, where
+!         Q0 is assumed to be the threshold mixing ratio for "thick anvils",
+!         as noted in the 2nd paragraph after eq. (1) in Harshvardhan et al.
+!         (1989).  A value of Q0=0.1 g/kg is assumed based on experience w/
+!         cloud observations, and it is intended only to be a crude scaling
+!         factor for "order of magnitude" effects.  The functional dependence
+!         on mixing ratio is based on Stephens (1978, JAS, p. 2124, eq. 7).
+!      2) CTau=500*Qi for ice particles.  This is based on the optical depth
+!         of snow.  Prof. Q. Fu (U. Washington) provided the following eq.:
+!           Tau-1.5*SWP/(Res*RHOs)
+!         SWP is snow water path, Res is the snow effective radius, RHOs is
+!         the snow density.  Based on derivations using Petch (1998, JAS, 1846-
+!         1858) as a starting point, Res=1.5*Ds with Ds being the mean diameter
+!         of an exponential distribution of ice particles ("snow").  After some
+!         manipulation,
+!           Tau=CTau*DELP => CTau=CSTau*Qice, where
+!         CSTau=100./(G*Ds*RHOs) ~ 500 based on values of Ds and RHOs in the
+!         ice lookup tables (actually varies from 920 for Ds=.1 mm to ~520 for
+!         Ds>0.5 mm), and units of DELP in mb (must convert from Pascals).
+!         "Snow" (precipitating ice) is assumed because of it dominates over
+!         cloud ice in the scheme.
+!
+            CTAU=0.
+            IF (CCMID(I,LL) .GE. CLFRMIN) THEN
+!-- Crude convective cloud properties
+              IF (TCLD .GT. T_ICE) THEN
+                CTAU=0.08      !--- Cloud water
+              ELSE
+                CTAU=0.16      !--- Ice
+              ENDIF
+            ENDIF
+!-- Crude grid-scale cloud properties
+            IF (CSMID(I,LL) .GE. CLFRMIN)                               &
+     &        CTAU=CTAU+.08*MIN(1.,QWMID(I,LL)*RQ0)+500.*QIMID(I,LL)
+            TAUC=TAUC+DELP*CTAU
+          ENDIF      !--- End IF(LL.GE.KTOP(I,NC) ....
+        ENDDO        !--- End DO LL
+!
+        IF(BITX)EMIS(I,NC)=1.0-EXP(-0.75*TAUC)
         IF(QSUM.GE.EPSQ1)THEN
 !
           DO 570 NBAND=1,NB
           IF(BITX)THEN
             PROD=ABCFF(NBAND)*QSUM
-            DDX=TAUC(I)/(TAUC(I)+PROD)
+            DDX=TAUC/(TAUC+PROD)
             EEX=1.0-DDX
             IF(ABS(EEX).GE.1.E-8)THEN
               DD=DDX
               EE=EEX
               FF=1.0-DD*0.85
-              AA=MIN(50.0,SQRT(3.0*EE*FF)*TAUC(I))
+              AA=MIN(50.0,SQRT(3.0*EE*FF)*TAUC)
               AA=EXP(-AA)
               BB=FF/EE
               GG=SQRT(BB)
@@ -1448,7 +1210,6 @@ CONTAINS
       ENDDO
       ENDDO
 !
-!     CALL OZON2D(LM,POZN,XLAT,RSIN1,RCOS1,RCOS2,OZN)
       CALL OZON2D(LM,POZN,XLAT,RSIN1,RCOS1,RCOS2,OZN,              &
 !                 XDUO3N,XDO3N4,XDO3N2,XDO3N3,                     &
 !                 PRGFDL,MYIS,MYIE,                                &
@@ -1467,16 +1228,16 @@ CONTAINS
 !***
 !***
       CALL RADFS &
-           (PSFC,PMID,PINT,QMID,TMID,OZN,TSKN,SLMSK,ALBEDO,XLAT &
-      ,     CAMT,KTOP,KBTM,NCLDS,EMIS,RRCL,TTCL                 &
-      ,     COSZ,TAUDAR,1                                       &
-      ,     1,0                                                 &
-      ,     ITIMSW,ITIMLW,JD,HOUR                               &
-      ,     TENDS(its,kts,j),TENDL(its,kts,j)                   &
-      ,     FLWUP,FSWUP,FSWDN,FSWDNS,FSWUPS,FLWDNS,FLWUPS       &
-      ,     ids,ide, jds,jde, kds,kde                           &
-      ,     ims,ime, jms,jme, kms,kme                           &
-      ,     its,ite, jts,jte, kts,kte                           )
+     &     (PSFC,PMID,PINT,QMID,TMID,OZN,TSKN,SLMSK,ALBEDO,XLAT         &
+     &,     CAMT,KTOP,KBTM,NCLDS,EMIS,RRCL,TTCL                         &
+     &,     COSZ,TAUDAR,1                                               &
+     &,     1,0                                                         &
+     &,     ITIMSW,ITIMLW,JD,HOUR                                       &
+     &,     TENDS(ITS,KTS,J),TENDL(ITS,KTS,J)                           &
+     &,     FLWUP,FSWUP,FSWDN,FSWDNS,FSWUPS,FLWDNS,FLWUPS               &
+     &,     ids,ide, jds,jde, kds,kde                                   &
+     &,     ims,ime, jms,jme, kms,kme                                   &
+     &,     its,ite, jts,jte, kts,kte                           )
 !----------------------------------------------------------------------
       IF(LONG)THEN
         DO I=MYIS,MYIE
@@ -1491,33 +1252,38 @@ CONTAINS
       ENDIF
 !
       DO 650 I=MYIS,MYIE
-!     PDSLIJ=PDSL(I,J)
-      PMOD=CUPPT(I,J)*24.0*1000.0/CLSTP
       CFRACL(I,J)=CLDCFR(I,1)
       CFRACM(I,J)=CLDCFR(I,2)
       CFRACH(I,J)=CLDCFR(I,3)
 !     
 !***  ARRAYS ACFRST AND ACFRCV ACCUMULATE AVERAGE STRATIFORM AND
-!***  CONVECTIVE CLOUD FRACTIONS, RESPECTIVELY.  THIS INFORMATION
-!***  IS PASSED TO THE POST PROCESSOR VIA COMMON BLOCK ACMCLD.
-!
+!***  CONVECTIVE CLOUD FRACTIONS, RESPECTIVELY. 
 !***  ACCUMLATE THESE VARIABLES ONLY ONCE PER RADIATION CALL.
-!***  WE ASSUME THAT SHORTWAVE WILL ALWAYS BE CALLED.
 !
-      IF(SHORT)THEN
-        CFRAVG=AMAX1(CFRACL(I,J),AMAX1(CFRACM(I,J),CFRACH(I,J)))
-        IF(CNCLD)THEN
-          IF(PMOD.LE.PPT(1))THEN
-            ACFRST(I,J)=ACFRST(I,J)+CFRAVG
-            NCFRST(I,J)=NCFRST(I,J)+1
-          ELSE
-            ACFRCV(I,J)=ACFRCV(I,J)+CFRAVG
-            NCFRCV(I,J)=NCFRCV(I,J)+1
-          ENDIF
-        ELSE
+!***  ASSUME RANDOM OVERLAP BETWEEN LOW, MIDDLE, & HIGH LAYERS.
+!
+      CFRAVG=1.-(1.-CFRACL(I,J))*(1.-CFRACM(I,J))*(1.-CFRACH(I,J))
+!
+      IF(CNCLD)THEN
+        IF(HBOT(I,J)-HTOP(I,J).GT.1.)THEN
+!--- Count locations with convective cloudiness
           ACFRST(I,J)=ACFRST(I,J)+CFRAVG
           NCFRST(I,J)=NCFRST(I,J)+1
         ENDIF
+        BITS=.FALSE.
+        DO LL=1,LM
+          BITS=CSMID(I,LL).GE.CLFRMIN  !--- Existence of grid-scale cloud in layer
+          IF(BITS)EXIT
+        ENDDO
+        IF(BITS)THEN
+!--- Count locations with grid-scale cloudiness
+          ACFRST(I,J)=ACFRST(I,J)+CFRAVG
+          NCFRST(I,J)=NCFRST(I,J)+1
+        ENDIF
+      ELSE
+!--- Count only locations with grid-scale cloudiness
+        ACFRCV(I,J)=ACFRCV(I,J)+CFRAVG
+        NCFRCV(I,J)=NCFRCV(I,J)+1
       ENDIF
   650 CONTINUE
 !***
@@ -1700,15 +1466,15 @@ CONTAINS
 
       SUBROUTINE ZENITH(TIMES,DAYI,HOUR,IDAT,IHRST,GLON,GLAT,CZEN,     &
                         MYIS,MYIE,MYJS,MYJE,                           &
-                        ids,ide, jds,jde, kds,kde,                     &
-                        ims,ime, jms,jme, kms,kme,                     &
-                        its,ite, jts,jte, kts,kte)
+                        IDS,IDE, JDS,JDE, KDS,KDE,                     &
+                        IMS,IME, JMS,JME, KMS,KME,                     &
+                        ITS,ITE, JTS,JTE, KTS,KTE)
 !----------------------------------------------------------------------
       IMPLICIT NONE
 !----------------------------------------------------------------------
-      INTEGER, INTENT(IN)        :: ids,ide, jds,jde, kds,kde ,        &
-                                    ims,ime, jms,jme, kms,kme ,        &
-                                    its,ite, jts,jte, kts,kte
+      INTEGER, INTENT(IN)        :: IDS,IDE, JDS,JDE, KDS,KDE ,        &
+                                    IMS,IME, JMS,JME, KMS,KME ,        &
+                                    ITS,ITE, JTS,JTE, KTS,KTE
       INTEGER, INTENT(IN)        :: MYJS,MYJE,MYIS,MYIE
 
       REAL,    INTENT(IN)        :: TIMES
@@ -1716,8 +1482,8 @@ CONTAINS
       INTEGER, INTENT(IN)        :: IHRST
 
       INTEGER, INTENT(IN), DIMENSION(3) :: IDAT 
-      REAL,    INTENT(IN   ), DIMENSION(ims:ime,jms:jme)  :: GLAT,GLON
-      REAL,    INTENT(OUT), DIMENSION(ims:ime,jms:jme)  :: CZEN
+      REAL,    INTENT(IN), DIMENSION(IMS:IME,JMS:JME) :: GLAT,GLON
+      REAL,    INTENT(OUT), DIMENSION(IMS:IME,JMS:JME) :: CZEN
 
       REAL,    PARAMETER :: GSTC1=24110.54841,GSTC2=8640184.812866,    &
                             GSTC3=9.3104E-2,GSTC4=-6.2E-6,             &
@@ -5680,12 +5446,16 @@ CONTAINS
 !***  ACCOUNT FOR UNREALISTICALLY SMALL CLOUD AMOUNT
 !
         DENOM=ALFA(I,KK+1)*TCLU(I,KK)
-        IF(DENOM.GT.1.E-15)THEN
+        IF(DENOM.GT.RTHRESH)THEN
           UFNCLU(I,KK)=UFNCLU(I,KK+1)*ALFAU(I,KK+1)/DENOM
         ELSE
           UFNCLU(I,KK)=0.
         ENDIF
-        DFNCLU(I,KK) = UFNCLU(I,KK)/ALFA(I,KK)
+        IF(ALFA(I,KK).GT.RTHRESH)THEN
+          DFNCLU(I,KK)=UFNCLU(I,KK)/ALFA(I,KK)
+        ELSE
+          DFNCLU(I,KK)=0.
+        ENDIF
 900     CONTINUE
 901     CONTINUE
 !     NOW OBTAIN DFN AND UFN FOR LEVELS BETWEEN THE CLOUDS
@@ -5797,17 +5567,17 @@ CONTAINS
 !***************************************************************************
 !*              IX IS THE LENGTH OF A ROW IN THE DOMAIN
 !
-!*   QS(IX):            THE SURFACE PRESSURE (PA)
-!*   PP(IX,L):          THE MIDLAYER PRESSURES (PA)  (L IS THE VERT. DIMEN.)
-!*   PPI(IX,LP1)        THE INTERFACE PRESSURES (PA)
-!*   QQH2O(IX,L):       THE MIDLAYER WATER VAPOR MIXING RATIO (KG/KG)
-!*   TT(IX,L):          THE MIDLAYER TEMPERATURE (K)
-!*   O3QO3(IX,L):       THE MIDLAYER OZONE MIXING RATIO
-!*   TSFC(IX):          THE SKIN TEMP. (K); NEGATIVE OVER WATER
-!*   SLMSK(IX):         THE SEA MASK (LAND=0,SEA=1)
-!*   ALBEDO(IX):        THE SURFACE ALBEDO (EXPRESSED AS A FRACTION)
-!*   XLAT(IX):          THE GEODETIC LATITUDES OF EACH COLUMN IN DEGREES
-!*                              (N.H.> 0)
+!*   QS(IX):		THE SURFACE PRESSURE (PA)
+!*   PP(IX,L):		THE MIDLAYER PRESSURES (PA)  (L IS THE VERT. DIMEN.)
+!*   PPI(IX,LP1)	THE INTERFACE PRESSURES (PA)
+!*   QQH2O(IX,L):	THE MIDLAYER WATER VAPOR MIXING RATIO (KG/KG)
+!*   TT(IX,L):		THE MIDLAYER TEMPERATURE (K)
+!*   O3QO3(IX,L):	THE MIDLAYER OZONE MIXING RATIO
+!*   TSFC(IX):		THE SKIN TEMP. (K); NEGATIVE OVER WATER
+!*   SLMSK(IX):		THE SEA MASK (LAND=0,SEA=1)
+!*   ALBEDO(IX):	THE SURFACE ALBEDO (EXPRESSED AS A FRACTION)
+!*   XLAT(IX):		THE GEODETIC LATITUDES OF EACH COLUMN IN DEGREES
+!*				(N.H.> 0)
 !* THE FOLLOWING ARE CLOUD INFORMATION FOR EACH CLOUD LAYER
 !*                      LAYER=1:SURFACE
 !*                      LAYER=2:FIRST LAYER ABOVE GROUND, AND SO ON
@@ -5821,15 +5591,15 @@ CONTAINS
 !*   TTCL(IX,NB,LP1)    CLOUD TRANSMITANCES FOR SW SPECTRAL BANDS
 !* THE ABOVE ARE CLOUD INFORMATION FOR EACH CLOUD LAYER
 !*
-!*   COSZRO(IX):        THE COSINE OF THE SOLAR ZENITH ANGLE
-!*   TAUDAR:            =1.0
-!*   IBEG:              =1
-!*   KO3:               =1 ( READ IN THE QZONE DATA)
-!*   KALB:              =0
-!*   SLMRF(LP1):        THE INTERFACE'S ETA (LP1=L+1)
-!*   SLYMRF(L):         THE MIDLAYER ETA 
-!*   ITIMSW:            =1/0 (SHORTWAVE CALC. ARE DESIRED/NOT DESIRED)
-!*   ITIMLW:            =1/0 (LONGWAVE CALC. ARE DESIRED/NOT DESIRED)
+!*   COSZRO(IX):	THE COSINE OF THE SOLAR ZENITH ANGLE
+!*   TAUDAR:		=1.0
+!*   IBEG:		=1
+!*   KO3:		=1 ( READ IN THE QZONE DATA)
+!*   KALB:		=0
+!*   SLMRF(LP1):	THE INTERFACE'S ETA (LP1=L+1)
+!*   SLYMRF(L):		THE MIDLAYER ETA 
+!*   ITIMSW:		=1/0 (SHORTWAVE CALC. ARE DESIRED/NOT DESIRED)
+!*   ITIMLW:		=1/0 (LONGWAVE CALC. ARE DESIRED/NOT DESIRED)
 !************************************************************************
 !***
 !*** THE FOLLOWING ARE ADDITIONAL FOR ETA MODEL
@@ -8199,13 +7969,13 @@ CONTAINS
       EXPP=ZB(N,L)/DELTA(N,L)
 !JD single-precision change
 !      FAC=EXP(EXPP)+EXP(-EXPP)
-!mp     write(6,*) '.........................................'
+!mp	write(6,*) '.........................................'
 !mp what in the hell does the next line do?
-!mp     
-!mp     apparently if statement <0 or =0 then 23, else 24
+!mp	
+!mp	apparently if statement <0 or =0 then 23, else 24
 !mp     IF(ABS(EXPO)-100.0) 23,23,24
 !
-! changed to a more reasonable value for the workstation        
+! changed to a more reasonable value for the workstation	
 !
       IF(ABS(EXPO)-50.0) 23,23,24
    23 X=EXP(EXPO)
@@ -8224,8 +7994,8 @@ CONTAINS
 !    1     ALOG((EXP(EXPO)+EXP(-EXPO))/FAC))
    29 TEMP=TEMP+(C(N+1,L)-C(N,L))*0.5*(Z+DELTA(N,L)* &
            (ZLOG-FACLOG))
-!mp     write(6,*) 'ANTEMP pieces (C,C,ZLOG,FACLOG)', C(N+1,L),C(N,L),
-!mp     +       ZLOG,FACLOG
+!mp	write(6,*) 'ANTEMP pieces (C,C,ZLOG,FACLOG)', C(N+1,L),C(N,L),
+!mp     +	ZLOG,FACLOG
    20 CONTINUE
       ANTEMP=TEMP
 
@@ -8328,11 +8098,10 @@ CONTAINS
       CHECK=1.0D0+XX*PATHA
 !!!!  IF (CHECK) 1020,1020,1025
       IF(CHECK.LE.0.)THEN
-        WRITE(message,360)I,LL,CHECK
-        WRITE(message,*)' xx=',xx,' patha=',patha
+        WRITE(errmess,360)I,LL,CHECK
+        WRITE(errmess,*)' xx=',xx,' patha=',patha
   360   FORMAT(' ERROR,I=',I3,'LL=',I3,'CHECK=',F20.10)
-!!!!    STOP
-        CALL wrf_error_fatal( message )
+        CALL wrf_error_fatal ( errmess )
       ENDIF
  1010 CONTINUE
       CA(I)=(1.0D0-TRANSA(I,I-2))**(UEXP/SEXP)/ &
@@ -8385,7 +8154,7 @@ CONTAINS
 
 
 !CCC  PROGRAM CO2INS
-      SUBROUTINE CO2INS(T22,T23,T66,IQ,L,LP1)
+      SUBROUTINE CO2INS(T22,T23,T66,IQ,L,LP1,iflag)
 !     *********************************************************
 !       SAVE DATA ON PERMANENT DATA SET DENOTED BY CO222 ******
 !          ..... K.CAMPANA   MARCH 1988,OCTOBER 1988...
@@ -8448,37 +8217,37 @@ CONTAINS
 !NOV89
       IF (IQ.EQ.1) THEN
          C1=1.5
-         C2=0.5
+         C2x=0.5
       ENDIF
       IF (IQ.EQ.2) THEN
         C1=18./11.
-        C2=7./11.
+        C2x=7./11.
       ENDIF
       IF (IQ.EQ.3) THEN
         C1=18./13.
-        C2=5./13.
+        C2x=5./13.
       ENDIF
       IF (IQ.EQ.4) THEN
         C1=1.8
-        C2=0.8
+        C2x=0.8
       ENDIF
 !NOV89
       IF (IQ.EQ.5) THEN
         C1=1.0
-        C2=0.0
+        C2x=0.0
       ENDIF
 !NOV89
       DO 1021 I=1,LP1
       DO 1021 J=1,LP1
-      CO2PO(J,I)=C1*CO2PO(J,I)-C2
-      CO2800(J,I)=C1*CO2800(J,I)-C2
+      CO2PO(J,I)=C1*CO2PO(J,I)-C2x
+      CO2800(J,I)=C1*CO2800(J,I)-C2x
 !NOV89
       IF (IQ.EQ.5) GO TO 1021
 !NOV89
-      CO2PO1(J,I)=C1*CO2PO1(J,I)-C2
-      CO2801(J,I)=C1*CO2801(J,I)-C2
-      CO2PO2(J,I)=C1*CO2PO2(J,I)-C2
-      CO2802(J,I)=C1*CO2802(J,I)-C2
+      CO2PO1(J,I)=C1*CO2PO1(J,I)-C2x
+      CO2801(J,I)=C1*CO2801(J,I)-C2x
+      CO2PO2(J,I)=C1*CO2PO2(J,I)-C2x
+      CO2802(J,I)=C1*CO2802(J,I)-C2x
 1021  CONTINUE
 !NOV89
       IF (IQ.GE.1.AND.IQ.LE.4) THEN
@@ -8875,7 +8644,7 @@ CONTAINS
 !     ALSO READ IN THE METHOD NO.(1 OR 2)
 !CC         READ (5,202) NMETHD
       IF (RATIO.EQ.1.0) GO TO 621
-      CALL wrf_error_fatal ( '8746 ratio .ne. 1')
+      STOP 8746
 !NOV89  621   ITAP1=20
 621   ITAP1=ITAPE
 !NOV89
@@ -8934,14 +8703,14 @@ CONTAINS
 !mp       IF (NTAP.EQ.1) READ (ITAPE,100) ((TRANSA(I,J),I=1,109),J=1,109)
         IF (NTAP.EQ.1) THEN
            IF ( wrf_dm_on_monitor() ) READ (ITAPE,743) ((TRANSA(I,J),I=1,109),J=1,109)
-           CALL wrf_dm_bcast_real ( TRANSA , size(TRANSA) )
-!mp        if ( wrf_dm_on_monitor() ) READ (ITAPE,100) (tmp(I),I=1,11881
+           CALL wrf_dm_bcast_bytes ( TRANSA , size ( TRANSA ) * RWORDSIZE )
         ENDIF
+!mp	IF (NTAP.EQ.1) READ (ITAPE,100) (tmp(I),I=1,11881
 !mp
-!do J=109,1,-6
-!mp     write(6,697)(TRANSA(I,J),I=5,105,10)
-!enddo
-!697    format(11(f5.3,x))
+	do J=109,1,-6
+!mp	write(6,697)(TRANSA(I,J),I=5,105,10)
+	enddo
+ 697	format(11(f5.3,x))
 !mp
 !NOV89
       DO 4 I=1,IAP
@@ -9044,37 +8813,37 @@ CONTAINS
 !  WIDTHS KEPT FROM THE ORIGINAL CONSOLIDATED CO2 TF S.
       IF (IQ.EQ.1) THEN
          C1=1.5
-         C2=0.5
+         C2x=0.5
       ENDIF
       IF (IQ.EQ.2) THEN
         C1=18./11.
-        C2=7./11.
+        C2x=7./11.
       ENDIF
       IF (IQ.EQ.3) THEN
         C1=18./13.
-        C2=5./13.
+        C2x=5./13.
       ENDIF
       IF (IQ.EQ.4) THEN
         C1=1.8
-        C2=0.8
+        C2x=0.8
       ENDIF
 !NOV89
       IF (IQ.EQ.5) THEN
         C1=1.0
-        C2=0.0
+        C2x=0.0
       ENDIF
 !NOV89
       DO 1021 I=1,LP1
       DO 1021 J=1,LP1
-      CO2PO(J,I)=C1*CO2PO(J,I)-C2
-      CO2800(J,I)=C1*CO2800(J,I)-C2
+      CO2PO(J,I)=C1*CO2PO(J,I)-C2x
+      CO2800(J,I)=C1*CO2800(J,I)-C2x
 !NOV89
       IF (IQ.EQ.5) GO TO 1021
 !NOV89
-      CO2PO1(J,I)=C1*CO2PO1(J,I)-C2
-      CO2801(J,I)=C1*CO2801(J,I)-C2
-      CO2PO2(J,I)=C1*CO2PO2(J,I)-C2
-      CO2802(J,I)=C1*CO2802(J,I)-C2
+      CO2PO1(J,I)=C1*CO2PO1(J,I)-C2x
+      CO2801(J,I)=C1*CO2801(J,I)-C2x
+      CO2PO2(J,I)=C1*CO2PO2(J,I)-C2x
+      CO2802(J,I)=C1*CO2802(J,I)-C2x
 1021  CONTINUE
 !NOV89
       IF (IQ.GE.1.AND.IQ.LE.4) THEN
@@ -9165,7 +8934,9 @@ CONTAINS
          TEMP(1)=ANTEMP(6,0.0)
 !*******DETERMINE THE PRESSURES (PRESS)
       PSTAR=PSMAX
-!** ADDED CODE TO INITIALIZE LTOP FROM CO2O3
+!
+!***  LTOP COMPUTATION MOVED FROM MODEL INITIALIZATION
+!
       LTOP(1)=0
       LTOP(2)=0
       LTOP(3)=0
@@ -9176,7 +8947,6 @@ CONTAINS
         IF(PCLD.GE.642.)LTOP(3)=N
 !       PRINT *,N,PCLD,SHALF(N),PSTAR,PPTOP
    30 CONTINUE
-!       PRINT *,LTOP,'=LTOP'
 !
 !O222 IF (NTYPE.EQ.1) CALL SKYP(PSTAR,PD,GTEMP)
 !O222 IF (NTYPE.EQ.2) CALL SKY80P(PSTAR,PD,GTEMP)
@@ -9216,7 +8986,7 @@ CONTAINS
       RK2=ANTEMP(6,HT+0.5*RK1)*DZ
       RK3=ANTEMP(6,HT+0.5*RK2)*DZ
       RK4=ANTEMP(6,HT+RK3)*DZ
-!mp     write(6,*) 'RK values,DZ ', RK1,RK2,RK3,RK4,DZ
+!mp	write(6,*) 'RK values,DZ ', RK1,RK2,RK3,RK4,DZ
       HT=HT+0.16666667*(RK1+RK2+RK2+RK3+RK3+RK4)
   200 CONTINUE
       ALT(N+1)=HT
@@ -9759,7 +9529,7 @@ CONTAINS
 !       do kk=1,6
 !         write(retval)(co2d1d(k,kk),k=1,60)
 !       enddo
-      DO K=1,L
+      DO K=1,LP1
         CDTM51(K)=CO2D1D(K,1)
         CO2M51(K)=CO2D1D(K,2)
         C2DM51(K)=CO2D1D(K,3)
@@ -9776,7 +9546,7 @@ CONTAINS
 !        200 CM-1 BANDWIDTH. THE INTERPOLATION METHOD IS DESCRIBED IN
 !        SCHWARZKOPF AND FELS (J.G.R.,1985).
 !
-      CALL CO2INS(T22,T23,CO2D2D,IQ,L,LP1)
+      CALL CO2INS(T22,T23,CO2D2D,IQ,L,LP1,1)
 !       do kk=1,6
 !         write(retval)((co2d2d(ka,kb,kk),ka=1,61),kb=1,61)
 !       enddo
@@ -9803,7 +9573,7 @@ CONTAINS
       CALL CO2INT(ICO2TP,T41,T42,T22,RATIO,IR,NMETHD,L,LP1,LP2)
       CALL CO2INT(ICO2TP,T43,T44,T23,RATIO,IR,NMETHD,L,LP1,LP2)
       IQ = 2
-      CALL CO2INS(T22,T23,CO2IQ2,IQ,L,LP1)
+      CALL CO2INS(T22,T23,CO2IQ2,IQ,L,LP1,2)
 !       do kk=1,6
 !         write(retval)(co2iq2(k,1,kk),k=1,61)
 !       enddo
@@ -9826,7 +9596,7 @@ CONTAINS
       CALL CO2INT(ICO2TP,T41,T42,T22,RATIO,IR,NMETHD,L,LP1,LP2)
       CALL CO2INT(ICO2TP,T43,T44,T23,RATIO,IR,NMETHD,L,LP1,LP2)
       IQ = 3
-      CALL CO2INS(T22,T23,CO2IQ3,IQ,L,LP1)
+      CALL CO2INS(T22,T23,CO2IQ3,IQ,L,LP1,3)
 !       do kk=1,6
 !         write(retval)(co2iq3(k,1,kk),k=1,61)
 !       enddo
@@ -9869,12 +9639,15 @@ CONTAINS
       RETURN
 9061 CONTINUE
      WRITE( errmess , '(A38,I4)' ) 'module_ra_gfdleta: error reading unit ',etarad_unit61
+     write(0,*)' IERROR=',IERROR
      CALL wrf_error_fatal(errmess)
 9062 CONTINUE
      WRITE( errmess , '(A38,I4)' ) 'module_ra_gfdleta: error reading unit ',etarad_unit62
+     write(0,*)' IERROR=',IERROR
      CALL wrf_error_fatal(errmess)
 9063 CONTINUE
      WRITE( errmess , '(A38,I4)' ) 'module_ra_gfdleta: error reading unit ',etarad_unit63
+     write(0,*)' IERROR=',IERROR
      CALL wrf_error_fatal(errmess)
       END SUBROUTINE CO2O3
 
@@ -9894,11 +9667,12 @@ CONTAINS
 !----------------------------------------------------------------------
       IMPLICIT NONE
 !----------------------------------------------------------------------
+!      INCLUDE "mpif.h"
 !----------------------------------------------------------------------
-      INTEGER, INTENT(IN) :: KDS,KDE,KMS,KME,KTS,KTE
+      INTEGER,INTENT(IN) :: KDS,KDE,KMS,KME,KTS,KTE
 !----------------------------------------------------------------------
 !
-      INTEGER :: I,I1,I2,IRTN,J,K,KK,L,LP1,N,RSIZE,NUNIT_CO2,IERROR
+      INTEGER :: I,I1,I2,IERROR,IRTN,J,K,KK,L,LP1,N,NUNIT_CO2,RSIZE
       INTEGER,DIMENSION(3) :: RSZE
 !
       REAL,DIMENSION(KMS:KME-1,6) :: CO21D
@@ -9906,8 +9680,8 @@ CONTAINS
       REAL,DIMENSION(KMS:KME,6) :: CO21D3,CO21D7
       REAL,DIMENSION(KMS:KME,KMS:KME,6) :: CO22D
       REAL,DIMENSION((KME-KMS+1)*(KME-KMS+1)) :: DATA2
-      LOGICAL                 :: opened
-      LOGICAL , EXTERNAL      :: wrf_dm_on_monitor
+      LOGICAL :: OPENED
+      LOGICAL,EXTERNAL :: wrf_dm_on_monitor
       CHARACTER*80 errmess
 !
 !----------------------------------------------------------------------
@@ -10039,8 +9813,8 @@ CONTAINS
       RSIZE = RSZE(1)
 !
       DO KK=1,2
-        IF ( wrf_dm_on_monitor() ) READ(NUNIT_CO2)(SGTMP(I,KK),I=1,RSIZE)
-        CALL  wrf_dm_bcast_real ( SGTMP(1,KK), RSIZE )
+        IF( wrf_dm_on_monitor() )READ(NUNIT_CO2)(SGTMP(I,KK),I=1,RSIZE)
+        CALL wrf_dm_bcast_real( SGTMP(1,KK), RSIZE )
       ENDDO
 !
 !----------------------------------------------------------------------
@@ -10048,8 +9822,8 @@ CONTAINS
       RSIZE = RSZE(2)
 !
       DO KK=1,6
-        IF ( wrf_dm_on_monitor() ) READ(NUNIT_CO2)(CO21D(I,KK),I=1,RSIZE)
-        CALL  wrf_dm_bcast_real ( CO21D(1,KK), RSIZE )
+        IF( wrf_dm_on_monitor() )READ(NUNIT_CO2)(CO21D(I,KK),I=1,RSIZE)
+        CALL wrf_dm_bcast_real( CO21D(1,KK), RSIZE )
       ENDDO
 !
 !----------------------------------------------------------------------
@@ -10058,7 +9832,7 @@ CONTAINS
 !
       DO KK=1,6
         IF( wrf_dm_on_monitor() )READ(NUNIT_CO2)(DATA2(I),I=1,RSIZE)
-        CALL  wrf_dm_bcast_real ( DATA2(1), RSIZE )
+        CALL wrf_dm_bcast_real( DATA2(1), RSIZE )
         N=0
 !
         DO I1=1,LP1
@@ -10076,14 +9850,14 @@ CONTAINS
 !
       DO KK=1,6
         IF( wrf_dm_on_monitor() )READ(NUNIT_CO2)(CO21D3(I,KK),I=1,RSIZE)
-        CALL  wrf_dm_bcast_real ( CO21D3(1,KK), RSIZE )
+        CALL wrf_dm_bcast_real( CO21D3(1,KK), RSIZE )
       ENDDO
 !
 !----------------------------------------------------------------------
 !
       DO KK=1,6
         IF( wrf_dm_on_monitor() )READ(NUNIT_CO2)(CO21D7(I,KK),I=1,RSIZE)
-        CALL  wrf_dm_bcast_real ( CO21D7(1,KK), RSIZE )
+        CALL wrf_dm_bcast_real ( CO21D7(1,KK), RSIZE )
       ENDDO
 !
 !----------------------------------------------------------------------
@@ -10159,17 +9933,18 @@ CONTAINS
       ENDDO
 !
 !----------------------------------------------------------------------
-      IF( wrf_dm_on_monitor() ) WRITE(0,66)NUNIT_CO2
+      IF(wrf_dm_on_monitor())WRITE(0,66)NUNIT_CO2
    66 FORMAT('----READ CO2 TRANSMISSION FUNCTIONS FROM UNIT ',I2)
 !----------------------------------------------------------------------
-         IF ( wrf_dm_on_monitor() ) THEN
-           CLOSE (nunit_co2)
-         ENDIF
+      IF( wrf_dm_on_monitor() )THEN
+        CLOSE(nunit_co2)
+      ENDIF
       RETURN
+!
 9014 CONTINUE
-     WRITE( errmess , '(A51,I4)' ) 'module_ra_gfdleta: error reading co2_trans on unit ',nunit_co2
+     WRITE(errmess,'(A51,I4)')'module_ra_gfdleta: error reading co2_trans on unit ',nunit_co2
      CALL wrf_error_fatal(errmess)
-
+!----------------------------------------------------------------------
       END SUBROUTINE CONRAD
 !----------------------------------------------------------------------
 !

@@ -1,3 +1,7 @@
+#define IDBG 62
+#define JDBG 62
+#define KDBG 1
+
 !WRF:MEDIATION_LAYER:PHYSICS
 !
 
@@ -236,6 +240,7 @@ CONTAINS
                                                             THZ0, &
                                                              UZ0, &
                                                              VZ0, &
+                                                              CT, &
                                                           GRDFLX  , &
                                                             WSPD
 
@@ -257,7 +262,7 @@ CONTAINS
                INTENT(INOUT) ::                             KPBL
 
    REAL,       DIMENSION( ims:ime , jms:jme ),                    &
-               INTENT(IN)    :: XICE, CT, SNOW, LH
+               INTENT(IN)    :: XICE, SNOW, LH
 
 !  LOCAL  VAR
 

@@ -228,8 +228,9 @@ MODULE module_ext_quilt
 #ifdef YYY
           CALL ext_yyy_ioinit(ierr)
 #endif
+          CALL wrf_message ( 'obufsize .LT. 0' )
           CALL mpi_finalize(ierr)
-          CALL wrf_error_fatal ( 'obufsize .LT. 0' )
+          STOP
         ENDIF
 
         ! Allocate the buffer that's big enough -- note: obuf is size in *bytes*

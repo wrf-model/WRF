@@ -17,8 +17,8 @@ IDIR=.
 
 LIB = 
 
-COPTIM =  -g #-O
-FOPTIM =  -g #-O
+COPTIM = -O
+FOPTIM = -O
 CFLAGS = -I$(IDIR) -DMPI -DSUN
 FFLAGS =
 

@@ -915,6 +915,8 @@
              mod( time%basetime%S / 60 , 60 ), &
              mod( time%basetime%S  , 60 )
 
+!write(0,*)' ESMF_TimeGetString time%basetime%Sn ',time%basetime%Sn,' time%basetime%Sd ',time%basetime%Sd
+
       rc = ESMF_SUCCESS
 #else
       call c_ESMC_TimeGetString(time, TimeString, rc)

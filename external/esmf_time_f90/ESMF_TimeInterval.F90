@@ -652,6 +652,8 @@
              mod( timeinterval%basetime%S / 60 , 60 ), &
              mod( timeinterval%basetime%S  , 60 )
 
+!write(0,*)'TimeIntervalGetString Sn ',timeinterval%basetime%Sn,' Sd ',timeinterval%basetime%Sd
+
 
       rc = ESMF_SUCCESS
 #else
@@ -840,28 +842,32 @@
 !     TMG1.5.6, TMG5.3, TMG7.2
 !EOP
 
+      retval = timeinterval
 
       CALL ESMF_TimeIntervalSet( ESMF_TimeIntervalQuotI, rc=rc )
       call c_ESMC_TimeIntervalQuotI(timeinterval, divisor, &
                                     ESMF_TimeIntervalQuotI)
-
-      retval = timeinterval
 ! divide the whole seconds 
       retval%basetime%S = timeinterval%basetime%S / divisor
       remainder =         mod( timeinterval%basetime%S , divisor )
 
 ! divide the fractional part (don't worry about simplification here)
-      n = retval%basetime%Sn
-      d = retval%basetime%Sd * divisor
+! 
+!                              remainder    timeinterval%basetime%Sn
+! At this point we need to add --------- +  ------------------------
+!                              divisor      timeinterval%basetime%Sd
+!
 
-! add the remainder from above to the fractional part
-      n = n + remainder * divisor
+      n = timeinterval%basetime%Sd * remainder + divisor * timeinterval%basetime%Sn
+      d = timeinterval%basetime%Sd * divisor
 
       CALL simplify(n,d,retval%basetime%Sn,retval%basetime%Sd) 
+
       IF ( retval%basetime%Sn > retval%basetime%Sd ) THEN
         retval%basetime%S = retval%basetime%S + retval%basetime%Sn / retval%basetime%Sd
         retval%basetime%Sn = mod( retval%basetime%Sn, retval%basetime%Sd )
       ENDIF
+
       ESMF_TimeIntervalQuotI = retval
 
       end function ESMF_TimeIntervalQuotI

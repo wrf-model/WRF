@@ -14,7 +14,6 @@ MODULE module_physics_init
 !  USE module_io_domain
    USE module_state_description
    USE module_model_constants
-   USE module_bc
 !  USE module_timing
    USE module_configure
    USE module_date_time

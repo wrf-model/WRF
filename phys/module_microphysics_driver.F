@@ -17,7 +17,7 @@ SUBROUTINE microphysics_driver(th_phy, moist_new, moist_old, w,        &
 ! Framework
    USE module_state_description
 ! Model Layer
-   USE module_bc
+   USE module_configure
    USE module_model_constants
    USE module_wrf_error
 

@@ -21,7 +21,7 @@ CONTAINS
                      ims,ime, jms,jme, kms,kme,                       &
                      i_start,i_end,j_start,j_end,kts,kte,num_tiles    )
 !----------------------------------------------------------------------
-   USE module_bc
+   USE module_configure
    USE module_state_description
    USE module_model_constants
 

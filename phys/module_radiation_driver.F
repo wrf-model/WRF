@@ -26,7 +26,7 @@ CONTAINS
 !-------------------------------------------------------------------------
 
 ! !USES:
-   USE module_bc
+   USE module_configure
    USE module_state_description
    USE module_model_constants
    USE module_wrf_error

@@ -450,7 +450,6 @@ SUBROUTINE advance_ppt(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,           &
                      ims,ime, jms,jme, kms,kme,                       &
                      its,ite, jts,jte, kts,kte                        )     
 !----------------------------------------------------------------------
-   USE module_bc
    USE module_state_description
    USE module_cu_kf
    USE module_cu_kfeta
@@ -631,7 +630,6 @@ SUBROUTINE add_a2c_u(lvar,rvar,config_flags,                &
                    ims, ime, jms, jme, kms, kme,            &
                    its, ite, jts, jte, kts, kte             )
 !------------------------------------------------------------
-   USE module_bc
 !------------------------------------------------------------
    IMPLICIT NONE
 !------------------------------------------------------------
@@ -684,7 +682,6 @@ SUBROUTINE add_a2c_v(lvar,rvar,config_flags,                &
                    ims, ime, jms, jme, kms, kme,            &
                    its, ite, jts, jte, kts, kte             )
 !------------------------------------------------------------
-   USE module_bc
 !------------------------------------------------------------
    IMPLICIT NONE
 !------------------------------------------------------------

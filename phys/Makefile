@@ -28,6 +28,7 @@ MODULES = \
 	module_sf_sfclay.o \
 	module_sf_slab.o  \
 	module_sf_noahlsm.o  \
+	module_sf_lsm_nmm.o  \
 	module_sf_ruclsm.o \
 	module_sf_sfcdiags.o \
 	module_sf_myjsfc.o \
@@ -41,7 +42,7 @@ MODULES = \
   
 OBJS    =
 
-NMM_MODULES =  module_sf_lsm_nmm.o ../share/module_MPP.o
+NMM_MODULES =  
 
 LIBTARGET    =  physics
 TARGETDIR    =  ./
@@ -96,8 +97,7 @@ module_physics_addtendc.o: \
 		module_cu_kf.o			\
 		module_cu_kfeta.o		\
 		../frame/module_state_description.o \
-		../frame/module_configure.o \
-		../share/module_bc.o 
+		../frame/module_configure.o
 
 module_physics_init.o : \
 		module_ra_rrtm.o		\
@@ -127,7 +127,6 @@ module_physics_init.o : \
 		../frame/module_domain.o \
 		../frame/module_wrf_error.o \
 		../frame/module_dm.o \
-		../share/module_bc.o \
 		../share/module_model_constants.o \
 		../share/module_date_time.o  \
 		module_sf_lsm_nmm.o	
@@ -139,7 +138,7 @@ module_microphysics_driver.o: \
 		module_mp_wsm6.o module_mp_etanew.o \
 		../frame/module_state_description.o \
 		../frame/module_wrf_error.o \
-		../share/module_bc.o \
+		../frame/module_configure.o \
 		../share/module_model_constants.o 
 
 module_cumulus_driver.o: \
@@ -148,7 +147,7 @@ module_cumulus_driver.o: \
 		module_cu_bmj.o \
 		module_cu_gd.o \
 		../frame/module_state_description.o \
-		../share/module_bc.o \
+		../frame/module_configure.o \
 		../share/module_model_constants.o
 
 module_pbl_driver.o:  \
@@ -156,7 +155,7 @@ module_pbl_driver.o:  \
 		module_bl_ysu.o \
 		module_bl_mrf.o \
 		../frame/module_state_description.o \
-		../share/module_bc.o \
+		../frame/module_configure.o \
 		../share/module_model_constants.o 
 
 module_radiation_driver.o: \
@@ -166,7 +165,7 @@ module_radiation_driver.o: \
 		module_ra_gfdleta.o \
 		../frame/module_state_description.o \
 		../frame/module_wrf_error.o \
-		../share/module_bc.o \
+		../frame/module_configure.o \
 		../share/module_model_constants.o 
 
 module_surface_driver.o: \
@@ -177,7 +176,7 @@ module_surface_driver.o: \
 		module_sf_ruclsm.o		\
 		module_sf_sfcdiags.o		\
 		../frame/module_state_description.o \
-		../share/module_bc.o \
+		../frame/module_configure.o \
 		../share/module_model_constants.o  \
  		module_sf_lsm_nmm.o
 

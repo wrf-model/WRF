@@ -1185,6 +1185,14 @@ module_sm.o module_tiles.o solve_em.o solve_exp.o convert_nmm.o :
 	$(RM) $*.b
 	$(FC) -c -g $(OMP) $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt $*.f
 
+#	Compiled WITHOUT ANY SMP, needed Mar 2005
+module_domain.o : module_domain.F
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(RM) $*.b
+	$(FC) -c -g $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt $*.f
+
 ###########################################################
 #ARCH	AIX DM-Parallel          (RSL_LITE, IBM-MPI, no nesting)
 #
@@ -1695,7 +1703,6 @@ solve_interface.o : solve_interface.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
-module_domain.o : module_domain.F
 module_start.o : module_start.F
 module_initialize.o : module_initialize.F
 module_initialize_b_wave.o : module_initialize_b_wave.F
@@ -1713,7 +1720,7 @@ convert_nmm.o : convert_nmm.F
 module_configure.o : module_configure.F
 solve_interface.o : solve_interface.F
 
-module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
+module_io_mm5.o module_si_io.o module_io_wrf.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
@@ -1731,6 +1738,14 @@ mediation_interp_domain.o :
 # to prevent having to call our service representative
 mediation_feedback_domain.o \
 mediation_force_domain.o start_domain.o :
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(RM) $*.b
+	$(FC) -c -g $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt $*.f
+
+#	Compiled WITHOUT ANY SMP, needed Mar 2005
+module_domain.o : module_domain.F
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f

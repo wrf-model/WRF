@@ -123,7 +123,7 @@ gen_halos ( char * dirname )
             else
             {
               strcpy (indices,"");
-              if ( sw_deref_kludge &&  strchr (t2, '%') != NULLCHARPTR )
+              if ( sw_deref_kludge ) /* &&  strchr (t2, '%') != NULLCHARPTR ) */
               {
                 sprintf(post,")") ;
                 sprintf(indices, "%s",index_with_firstelem("(","",tmp3,q,post)) ;
@@ -176,7 +176,8 @@ gen_periods ( char * dirname )
   node_t * p, * q ;
   char commname[NAMELEN] ;
   char fname[NAMELEN] ;
-  char tmp[4096], tmp2[4096], commuse[4096] ;
+  char indices[NAMELEN], post[NAMELEN] ;
+  char tmp[4096], tmp2[4096], tmp3[4096], commuse[4096] ;
   int maxperwidth, perwidth ;
   FILE * fp ;
   char * t1, * t2 ;
@@ -274,8 +275,16 @@ gen_periods ( char * dirname )
                 if ( q->stag_x ) strcat( modstr , "x" ) ;
                 if ( q->stag_y ) strcat( modstr , "y" ) ;
                 if ( q->ndims == 2 ) strcat( modstr , "2d" ) ;
-                fprintf(fp,"  CALL rsl_build_message ( msg, RSL_REAL_F90 , &\n%s , %d , decomp%s , glen%s , llen%s )\n", 
-                    t2, q->ndims , modstr, modstr , modstr ) ;
+                if ( sw_deref_kludge ) /* &&  strchr (t2, '%') != NULLCHARPTR ) */
+                {
+                  sprintf(post,")") ;
+                  sprintf(indices, "%s",index_with_firstelem("(","",tmp3,q,post)) ;
+                } else {
+                  strcmp(indices,"") ;
+                }
+                
+                fprintf(fp,"  CALL rsl_build_message ( msg, RSL_REAL_F90 , &\n%s%s , %d , decomp%s , glen%s , llen%s )\n", 
+                    t2, indices, q->ndims , modstr, modstr , modstr ) ;
               }
             }
           }
@@ -561,7 +570,7 @@ if ( !strcmp( p->name , "xf_ens" ) || !strcmp( p->name,"pr_ens" ) )  {
             else
 	    {
               strcpy (indices,"");
-              if ( sw_deref_kludge &&  strchr (p->name, '%') != NULLCHARPTR )
+              if ( sw_deref_kludge ) /* &&  strchr (p->name, '%') != NULLCHARPTR ) */
               {
                 sprintf(post,")") ;
                 sprintf(indices, "%s",index_with_firstelem("(","",tmp3,p,post)) ;
@@ -741,17 +750,17 @@ gen_datacalls1 ( FILE * fp , char * corename , char * structname , int mask , no
           else
           {
             strcpy (indices,"");
-            if ( sw_deref_kludge && parent_type == DERIVED ) 
+            if ( sw_deref_kludge ) /* && parent_type == DERIVED )  */
             {
               sprintf(post,")") ;
               sprintf(indices, "%s",index_with_firstelem("(","",tmp,p,post)) ;
             }
-            if ( p->ntl > 1 ) fprintf(fp," CALL rsl_register_f90_base_and_size ( %s%s_%d%s , SIZE( %s%s_%d%s ) * %cWORDSIZE )\n",
+            if ( p->ntl > 1 ) fprintf(fp," CALL rsl_register_f90_base_and_size ( %s%s_%d%s , SIZE( %s%s_%d ) * %cWORDSIZE )\n",
                                                                                    structname,p->name,i,indices,
-                                                                                   structname,p->name,i,indices,tc ) ;
-            else              fprintf(fp," CALL rsl_register_f90_base_and_size ( %s%s%s , SIZE( %s%s%s  ) * %cWORDSIZE )\n",
+                                                                                   structname,p->name,i,tc ) ;
+            else              fprintf(fp," CALL rsl_register_f90_base_and_size ( %s%s%s , SIZE( %s%s  ) * %cWORDSIZE )\n",
                                                                                    structname,p->name,indices,
-                                                                                   structname,p->name,indices, tc) ;
+                                                                                   structname,p->name, tc) ;
           }
         }
       }

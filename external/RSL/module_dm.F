@@ -4004,6 +4004,12 @@ END
 ! <DESCRIPTION>
 ! Description is to do...
 ! </DESCRIPTION>
+
+#ifdef DEREF_KLUDGE
+   INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
+#endif
+#include "deref_kludge.h"
+
 #define COPY_IN
 #include <em_scalar_derefs.inc>
 #ifdef DM_PARALLEL
@@ -4107,6 +4113,12 @@ END
       INTEGER       ::          nids, nide, njds, njde, nkds, nkde,    &
                                 nims, nime, njms, njme, nkms, nkme,    &
                                 nips, nipe, njps, njpe, nkps, nkpe
+
+#ifdef DEREF_KLUDGE
+   INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
+#endif
+#include "deref_kludge.h"
+
 #define COPY_IN
 #include <em_scalar_derefs.inc>
 #ifdef DM_PARALLEL
@@ -4160,6 +4172,11 @@ END
                                                   ! soil temp, moisture, etc., has vertical dim
                                                   ! of soil categories
 #include <em_dummy_decl.inc>
+
+#ifdef DEREF_KLUDGE
+   INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
+#endif
+#include "deref_kludge.h"
 
 #define COPY_IN
 #include <em_scalar_derefs.inc>
@@ -4293,6 +4310,12 @@ END
                                 nims, nime, njms, njme, nkms, nkme,    &
                                 nips, nipe, njps, njpe, nkps, nkpe
       LOGICAL, EXTERNAL  :: em_cd_feedback_mask
+
+#ifdef DEREF_KLUDGE
+   INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
+#endif
+#include "deref_kludge.h"
+
 #define COPY_IN
 #include <em_scalar_derefs.inc>
 #ifdef DM_PARALLEL

@@ -1,6 +1,7 @@
 MODULE module_internal_header_util
 
 !<DESCRIPTION>
+!<PRE>
 ! Subroutines defined in this module are used to generate (put together) and get (take apart) 
 ! data headers stored in the form of integer vectors.
 ! 
@@ -27,6 +28,7 @@ MODULE module_internal_header_util
 ! information from data headers (commands) received from the compute 
 ! processes.  
 !
+!</PRE>
 !</DESCRIPTION>
 
 INTERFACE int_get_ti_header

@@ -89,7 +89,7 @@ set NAME     = ( "Standard"			\
 #	ONLY works on that specific architecture.
 
 set TOAST    = ( "NONE"				\
-                 "AIX"				\
+                 "NONE"				\
                  "NONE"				\
                  "NONE"				\
                  "NONE"				\

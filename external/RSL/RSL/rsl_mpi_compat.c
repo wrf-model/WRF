@@ -95,10 +95,15 @@ int xargc ;
 
 void rslMPIInit()
   {
+  int flag ;
   rslMPIHandleLUT.nHandles = RSLHandleInc;
   rslMPIHandleLUT.nUsed = 0;
   rslMPIHandleLUT.tags = (struct tagsToHandles *) 
                      malloc (sizeof (struct tagsToHandles) * RSLHandleInc);
+
+  MPI_Initialized( &flag ) ;
+
+  if ( ! flag ) {
 
 #ifndef linux
   MPI_INIT_F ( &dummy ) ;  /* call to fortran wrapper */
@@ -110,6 +115,8 @@ void rslMPIInit()
   mpi_init_( &dummy ) ;
 #  endif
 #endif
+
+  }
 
 #ifdef FATAL_ERRORS
   if (rslMPIHandleLUT.tags == NULL)

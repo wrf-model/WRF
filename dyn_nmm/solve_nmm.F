@@ -304,7 +304,7 @@ SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                                 &
 
       CALL ADVE(NTSD,DT,DETA1,DETA2,PDTOP                               &
      &         ,CURV,F,FAD,F4D,EM_LOC,EMT_LOC,EN,ENT,DX_NMM,DY_NMM      &
-     &         ,HTM,HBM2,VTM,VBM2                                       &
+     &         ,HTM,HBM2,VTM,VBM2,LMH,LMV                               &
      &         ,T,U,V,PDSLO,TOLD,UOLD,VOLD                              &
      &         ,PETDT,UPSTRM                                            &
      &         ,FEW,FNS,FNE,FSE                                         &

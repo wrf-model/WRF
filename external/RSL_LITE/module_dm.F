@@ -670,6 +670,8 @@ END
 
 #ifdef DEREF_KLUDGE
 #  define FRSTELEM (1)
+#else
+#  define FRSTELEM
 #endif
 
    SUBROUTINE wrf_patch_to_global_generic (buf,globbuf,domdesc,stagger,ordering,typesize,&

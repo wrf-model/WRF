@@ -2181,6 +2181,8 @@ SUBROUTINE collect_real_and_call_pkg (   fcn,                                   
 
 #ifdef DEREF_KLUDGE
 # define FRSTELEM (1)
+#else
+# define FRSTELEM
 #endif
   
   CALL collect_generic_and_call_pkg (   fcn, globbuf FRSTELEM,                                    &

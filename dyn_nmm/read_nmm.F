@@ -25,44 +25,44 @@ SUBROUTINE med_read_nmm ( grid , config_flags , ntsd, dt_from_file, tstart_from_
 #include <nmm_dummy_decl.inc>
 
 !----------------------------------------------------------------------
+   INTEGER NTSD
+   REAL DT_FROM_FILE
+   REAL tstart_from_file, tend_from_file
   ! Local
 
-   REAL, DIMENSION(1:2*NMM_MAX_DIM,2)           :: PDB
+   REAL, DIMENSION(1:2*NMM_MAX_DIM,2), SAVE           :: PDB
    REAL, DIMENSION(1:2*NMM_MAX_DIM,grid%sd32:grid%ed32-1,2) :: TB,QB,UB,VB,Q2B,CWMB
 
-   INTEGER :: NUNIT_PARMETA=10,NUNIT_FCSTDATA=11                  &
+   INTEGER, SAVE :: NUNIT_PARMETA=10,NUNIT_FCSTDATA=11                  &
              ,NUNIT_NHB=12,NUNIT_CO2=14,NUNIT_Z0=22
-   INTEGER :: NMAP,NRADSH,NRADLH,NTDDMP
-   INTEGER :: IDS,IDE,JDS,JDE,KDS,KDE
-   INTEGER :: IPS,IPE,JPS,JPE,KPS,KPE
-   INTEGER :: IMS,IME,JMS,JME,KMS,KME
-   INTEGER :: IM,JM,LM,NROOT,INPES,JNPES,NFCST,NUNIT_NBC,LISTB
-   INTEGER :: I,J,K,IHRST,JAM,NTSD,IHRSTB,IHH,IHL
-   INTEGER :: KBI,KBI2,LRECBC
-   INTEGER :: N,ISTART,LB,NREC
-   INTEGER,DIMENSION(3) :: IDAT,IDATB
-   LOGICAL :: RESTRT,SINGLRST,NEST,RUN,RUNB
-   REAL :: TSTART,TEND,TPREC,THEAT,TCLOD,TRDSW,TRDLW,TSRFC
-   REAL :: BCHR,TSTEPS,TSPH,TBOCO
-   REAL,DIMENSION(39) :: SPL
-   REAL,DIMENSION(99) :: TSHDE
-   REAL,ALLOCATABLE,DIMENSION(:) :: TEMP1
-   REAL,ALLOCATABLE,DIMENSION(:,:) :: TEMP
-   INTEGER,ALLOCATABLE,DIMENSION(:,:) :: ITEMP
-   REAL,ALLOCATABLE,DIMENSION(:,:,:) :: HOLD
-   REAL ::                      TDDAMP                     &
+   INTEGER, SAVE :: NMAP,NRADSH,NRADLH,NTDDMP
+   INTEGER, SAVE :: IDS,IDE,JDS,JDE,KDS,KDE
+   INTEGER, SAVE :: IPS,IPE,JPS,JPE,KPS,KPE
+   INTEGER, SAVE :: IMS,IME,JMS,JME,KMS,KME
+   INTEGER, SAVE :: IM,JM,LM,NROOT,INPES,JNPES,NFCST,NUNIT_NBC,LISTB
+   INTEGER, SAVE :: I,J,K,IHRST,JAM,IHRSTB,IHH,IHL
+   INTEGER, SAVE :: KBI,KBI2,LRECBC
+   INTEGER, SAVE :: N,ISTART,LB,NREC
+   INTEGER,DIMENSION(3), SAVE :: IDAT,IDATB
+   LOGICAL, SAVE :: RESTRT,SINGLRST,NEST,RUN,RUNB
+   REAL, SAVE :: TSTART,TEND,TPREC,THEAT,TCLOD,TRDSW,TRDLW,TSRFC
+   REAL, SAVE :: BCHR,TSTEPS,TSPH,TBOCO
+   REAL,DIMENSION(39), SAVE :: SPL
+   REAL,DIMENSION(99), SAVE :: TSHDE
+   REAL,ALLOCATABLE,DIMENSION(:), SAVE :: TEMP1
+   REAL,ALLOCATABLE,DIMENSION(:,:), SAVE :: TEMP
+   INTEGER,ALLOCATABLE,DIMENSION(:,:), SAVE :: ITEMP
+   REAL,ALLOCATABLE,DIMENSION(:,:,:), SAVE :: HOLD
+   REAL, SAVE ::                      TDDAMP                     &
                                             ,ETA
-   REAL :: PLQ,RDPQ,RDTHEQ,STHEQ,THE0Q
-   REAL :: ROS,CS,DS,ROI,CI,DI                             &
+   REAL, SAVE :: PLQ,RDPQ,RDTHEQ,STHEQ,THE0Q
+   REAL, SAVE :: ROS,CS,DS,ROI,CI,DI                             &
           ,PL,THL,RDQ,RDTH,RDP,RDTHE                       &
                 ,QS0,SQS,STHE,THE0
-!!!tlb   REAL :: PTBL,TTBL                                       &
-   REAL :: WBD,SBD,TLM0D,TPH0D,R,        CMLD,DP30               &
+   REAL,SAVE :: WBD,SBD,TLM0D,TPH0D,R,        CMLD,DP30               &
     ,X1P,Y1P,IXM,IYM
-   INTEGER :: NN, mype
-   REAL :: dt_from_file
-   REAL :: tstart_from_file, tend_from_file
-   real :: dtx
+   INTEGER,SAVE :: NN, mype
+   real,SAVE :: dtx
 
 
 !**********************************************************************
@@ -70,11 +70,11 @@ SUBROUTINE med_read_nmm ( grid , config_flags , ntsd, dt_from_file, tstart_from_
 !***  Temporary fix for reading in lookup tables
 !
    INTEGER,PARAMETER :: ITB=76,JTB=134,ITBQ=152,JTBQ=440
-   REAL,DIMENSION(ITB,JTB) :: PTBL
-   REAL,DIMENSION(JTB,ITB) :: TTBL
-   REAL,DIMENSION(JTBQ,ITBQ) :: TTBLQ
+   REAL,DIMENSION(ITB,JTB), SAVE :: PTBL
+   REAL,DIMENSION(JTB,ITB), SAVE :: TTBL
+   REAL,DIMENSION(JTBQ,ITBQ), SAVE :: TTBLQ
 !**********************************************************************
-   CHARACTER*256 mess
+   CHARACTER*256, SAVE :: mess
 !----------------------------------------------------------------------
 ! small file with global dimensions
    NAMELIST /PARMNMM/ IM,JM,LM,NSOIL,NROOT,INPES,JNPES
@@ -642,7 +642,7 @@ ENTRY med_read_nmm_bdy ( grid , config_flags , ntsd , dt_from_file, tstart_from_
    NSOIL=4
 
    CALL wrf_debug(100,'in mediation_read_nmm')
-   WRITE(mess,*)'ids,ide,jds,jde,kds,kde ',ids,ide,jds,jde,kds,kde
+   WRITE(mess,*)'ids,ide,jds,jde,kds,kde ',ids,ide,jds,jde,kds,kde,nest
    CALL wrf_debug(100,mess)
 
       mype = 0
@@ -659,7 +659,9 @@ ENTRY med_read_nmm_bdy ( grid , config_flags , ntsd , dt_from_file, tstart_from_
           read(nunit_nbc,rec=2) bchr
         ENDIF
 !
-        IF(.NOT.NEST)REWIND NUNIT_NBC
+        IF(.NOT.NEST) then
+            REWIND NUNIT_NBC
+        ENDIF
 !
 #ifdef DP_REAL
         IF(NEST)THEN

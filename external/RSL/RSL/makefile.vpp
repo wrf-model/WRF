@@ -17,9 +17,9 @@ LIB =
 
 .SUFFIXES: .o .c .F
 
-CFLAGS = -I$(IDIR) -DMPI -Dvpp -DRSL_SYNCIO -O -Wl,-P -J
-FFLAGS = -O -Fixed -X7 -Wl,-P -Wv
-FVFLAGS = -Sw -Wv,-Of,-te,-ilfunc,-noalias,-m3,-P255 -Oe,-P -Kfast -Pdos -lmpi -lmp
+CFLAGS = -I$(IDIR) -DMPI -Dvpp -DRSL_SYNCIO -O -Wl,-P -J -KA32
+FFLAGS = -O -Fixed -X7 -Wl,-P -Wv -KA32
+FVFLAGS = -Sw -Wv,-Of,-te,-ilfunc,-noalias,-m3,-P255 -Oe,-P -Kfast -Pdos -lmpi -lmp -KA32
 
 
 warning :

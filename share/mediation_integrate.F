@@ -181,8 +181,6 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
                                          ,save_sfcrunoff          &
                                          ,save_udrunoff
 
-integer myproc
-
    INTERFACE
      SUBROUTINE med_interp_domain ( parent , nest )
         USE module_domain
@@ -235,6 +233,19 @@ integer myproc
        REAL , DIMENSION(ims:ime,jms:jme) :: ter_interpolated
        REAL , DIMENSION(ims:ime,jms:jme) :: ter_input
      END SUBROUTINE store_terrain
+
+     SUBROUTINE  input_terrain_rsmas ( ter_input , xlat, xlon, dx,  &
+                           ids , ide , jds , jde , kds , kde , &
+                           ims , ime , jms , jme , kms , kme , &
+                           ips , ipe , jps , jpe , kps , kpe )
+       INTEGER                           :: ids , ide , jds , jde , kds , kde , &
+                                            ims , ime , jms , jme , kms , kme , &
+                                            ips , ipe , jps , jpe , kps , kpe
+       REAL , DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: ter_input
+       REAL , DIMENSION(ims:ime,jms:jme), INTENT(IN)    :: xlat, xlon
+       REAL , INTENT(IN)                                :: dx
+     END SUBROUTINE input_terrain_rsmas
+
    END INTERFACE
 
    nest%first_force = .true.
@@ -266,7 +277,8 @@ integer myproc
 ! get the nest config flags
      CALL model_to_grid_config_rec ( nest%id , model_config_rec , nest_config_flags )
 
-     IF ( nest_config_flags%input_from_file ) THEN
+     IF ( nest_config_flags%input_from_file .OR. nest_config_flags%input_from_hires ) THEN
+
         WRITE(message,FMT='(A,I2,A)') '*** Initializing nest domain #',nest%id,&
                                       ' from an input file. ***'
         CALL wrf_debug ( 0 , message )
@@ -284,8 +296,16 @@ integer myproc
                              ims , ime , jms , jme , kms , kme , &
                              ips , ipe , jps , jpe , kps , kpe )
 
+       IF ( nest_config_flags%input_from_file ) THEN
 ! read input from dataset
-       CALL med_initialdata_input_ptr( nest , nest_config_flags )
+          CALL med_initialdata_input_ptr( nest , nest_config_flags )
+       ELSE IF ( nest_config_flags%input_from_hires ) THEN
+! read in high res topography
+          CALL  input_terrain_rsmas ( nest%ht , nest%xlat, nest%xlong, nest%dx, &
+                                      ids , ide , jds , jde , 1   , 1   , &
+                                      ims , ime , jms , jme , 1   , 1   , &
+                                      ips , ipe , jps , jpe , 1   , 1   )
+       ENDIF
 
 ! blend parent and nest fields: terrain, mub, and phb.  THe mub and phb are used in start_domain.
        CALL  blend_terrain ( nest%ht_fine , nest%ht , &
@@ -300,92 +320,92 @@ integer myproc
                              ids , ide , jds , jde , kds , kde , &
                              ims , ime , jms , jme , kms , kme , &
                              ips , ipe , jps , jpe , kps , kpe )
-    ELSE
-        WRITE(message,FMT='(A,I2,A,I2,A)') '*** Initializing nest domain #',nest%id,&
-                                      ' by horizontally interpolating parent domain #' ,parent%id, &
-                                      '. ***'
-        CALL wrf_debug ( 0 , message )
-    END IF
+     ELSE
+       WRITE(message,FMT='(A,I2,A,I2,A)') '*** Initializing nest domain #',nest%id,&
+                                     ' by horizontally interpolating parent domain #' ,parent%id, &
+                                     '. ***'
+       CALL wrf_debug ( 0 , message )
+     END IF
 
 ! feedback, mostly for this new terrain, but it is the safe thing to do
-    CALL med_nest_feedback ( parent , nest , config_flags )
+     CALL med_nest_feedback ( parent , nest , config_flags )
 
 ! set some other initial fields, fill out halos, base fields; re-do parent due
 ! to new terrain elevation from feedback
-    nest%imask_nostag = 1
-    nest%imask_xstag = 1
-    nest%imask_ystag = 1
-    nest%imask_xystag = 1
-    CALL start_domain ( nest , .TRUE. )
+     nest%imask_nostag = 1
+     nest%imask_xstag = 1
+     nest%imask_ystag = 1
+     nest%imask_xystag = 1
+     CALL start_domain ( nest , .TRUE. )
 ! kludge: 20040604
-    CALL get_ijk_from_grid (  parent ,                   &
-                              ids, ide, jds, jde, kds, kde,    &
-                              ims, ime, jms, jme, kms, kme,    &
-                              ips, ipe, jps, jpe, kps, kpe    )
+     CALL get_ijk_from_grid (  parent ,                   &
+                               ids, ide, jds, jde, kds, kde,    &
+                               ims, ime, jms, jme, kms, kme,    &
+                               ips, ipe, jps, jpe, kps, kpe    )
   
-    ALLOCATE( save_acsnow(ims:ime,jms:jme) )
-    ALLOCATE( save_acsnom(ims:ime,jms:jme) )
-    ALLOCATE( save_cuppt(ims:ime,jms:jme) )
-    ALLOCATE( save_rainc(ims:ime,jms:jme) )
-    ALLOCATE( save_rainnc(ims:ime,jms:jme) )
-    ALLOCATE( save_sfcevp(ims:ime,jms:jme) )
-    ALLOCATE( save_sfcrunoff(ims:ime,jms:jme) )
-    ALLOCATE( save_udrunoff(ims:ime,jms:jme) )
-    save_acsnow       = parent%acsnow
-    save_acsnom       = parent%acsnom
-    save_cuppt        = parent%cuppt
-    save_rainc        = parent%rainc
-    save_rainnc       = parent%rainnc
-    save_sfcevp       = parent%sfcevp
-    save_sfcrunoff    = parent%sfcrunoff
-    save_udrunoff     = parent%udrunoff
-    save_itimestep    = parent%itimestep
-    parent%imask_nostag = 1
-    parent%imask_xstag = 1
-    parent%imask_ystag = 1
-    parent%imask_xystag = 1
-    CALL start_domain ( parent , .TRUE. )
-    parent%acsnow     = save_acsnow
-    parent%acsnom     = save_acsnom
-    parent%cuppt      = save_cuppt
-    parent%rainc      = save_rainc
-    parent%rainnc     = save_rainnc
-    parent%sfcevp     = save_sfcevp
-    parent%sfcrunoff  = save_sfcrunoff
-    parent%udrunoff   = save_udrunoff
-    parent%itimestep  = save_itimestep
-    DEALLOCATE( save_acsnow )
-    DEALLOCATE( save_acsnom )
-    DEALLOCATE( save_cuppt )
-    DEALLOCATE( save_rainc )
-    DEALLOCATE( save_rainnc )
-    DEALLOCATE( save_sfcevp )
-    DEALLOCATE( save_sfcrunoff )
-    DEALLOCATE( save_udrunoff )
+     ALLOCATE( save_acsnow(ims:ime,jms:jme) )
+     ALLOCATE( save_acsnom(ims:ime,jms:jme) )
+     ALLOCATE( save_cuppt(ims:ime,jms:jme) )
+     ALLOCATE( save_rainc(ims:ime,jms:jme) )
+     ALLOCATE( save_rainnc(ims:ime,jms:jme) )
+     ALLOCATE( save_sfcevp(ims:ime,jms:jme) )
+     ALLOCATE( save_sfcrunoff(ims:ime,jms:jme) )
+     ALLOCATE( save_udrunoff(ims:ime,jms:jme) )
+     save_acsnow       = parent%acsnow
+     save_acsnom       = parent%acsnom
+     save_cuppt        = parent%cuppt
+     save_rainc        = parent%rainc
+     save_rainnc       = parent%rainnc
+     save_sfcevp       = parent%sfcevp
+     save_sfcrunoff    = parent%sfcrunoff
+     save_udrunoff     = parent%udrunoff
+     save_itimestep    = parent%itimestep
+     parent%imask_nostag = 1
+     parent%imask_xstag = 1
+     parent%imask_ystag = 1
+     parent%imask_xystag = 1
+     CALL start_domain ( parent , .TRUE. )
+     parent%acsnow     = save_acsnow
+     parent%acsnom     = save_acsnom
+     parent%cuppt      = save_cuppt
+     parent%rainc      = save_rainc
+     parent%rainnc     = save_rainnc
+     parent%sfcevp     = save_sfcevp
+     parent%sfcrunoff  = save_sfcrunoff
+     parent%udrunoff   = save_udrunoff
+     parent%itimestep  = save_itimestep
+     DEALLOCATE( save_acsnow )
+     DEALLOCATE( save_acsnom )
+     DEALLOCATE( save_cuppt )
+     DEALLOCATE( save_rainc )
+     DEALLOCATE( save_rainnc )
+     DEALLOCATE( save_sfcevp )
+     DEALLOCATE( save_sfcrunoff )
+     DEALLOCATE( save_udrunoff )
 ! end of kludge: 20040604
 
 
   ELSE
 
-    CALL ESMF_ClockGet( nest%domain_clock, CurrTime=CurrTime, rc=ierr )
-    CALL wrf_timetoa ( CurrTime, timestr )
-    CALL construct_filename2a ( rstname , config_flags%rst_inname , nest%id , 2 , timestr )
+     CALL ESMF_ClockGet( nest%domain_clock, CurrTime=CurrTime, rc=ierr )
+     CALL wrf_timetoa ( CurrTime, timestr )
+     CALL construct_filename2a ( rstname , config_flags%rst_inname , nest%id , 2 , timestr )
 
-    WRITE(message,*)'opening ',TRIM(rstname),' for reading'
-    CALL wrf_debug ( 1 , message )
-    CALL open_r_dataset ( fid , TRIM(rstname) , nest , config_flags , "DATASET=RESTART", ierr )
-    IF ( ierr .NE. 0 ) THEN
-      WRITE( message , '("program wrf: error opening ",A32," for reading")') TRIM(rstname)
-      CALL WRF_ERROR_FATAL ( message )
-    ENDIF
-    CALL input_restart ( fid,   nest , config_flags , ierr )
-    CALL close_dataset ( fid , config_flags , "DATASET=RESTART" )
+     WRITE(message,*)'opening ',TRIM(rstname),' for reading'
+     CALL wrf_debug ( 1 , message )
+     CALL open_r_dataset ( fid , TRIM(rstname) , nest , config_flags , "DATASET=RESTART", ierr )
+     IF ( ierr .NE. 0 ) THEN
+       WRITE( message , '("program wrf: error opening ",A32," for reading")') TRIM(rstname)
+       CALL WRF_ERROR_FATAL ( message )
+     ENDIF
+     CALL input_restart ( fid,   nest , config_flags , ierr )
+     CALL close_dataset ( fid , config_flags , "DATASET=RESTART" )
 
-    nest%imask_nostag = 1
-    nest%imask_xstag = 1
-    nest%imask_ystag = 1
-    nest%imask_xystag = 1
-    CALL start_domain ( nest , .TRUE. )
+     nest%imask_nostag = 1
+     nest%imask_xstag = 1
+     nest%imask_ystag = 1
+     nest%imask_xystag = 1
+     CALL start_domain ( nest , .TRUE. )
 
   ENDIF
 

@@ -142,7 +142,7 @@ hlp:
 echo ' '
 echo 'Usage:'
 echo ' '
-echo '   compile wrf           compile wrf in run dir (no preprocessors)'
+echo '   compile wrf           compile wrf in run dir (NOTE: no real.exe, ndown.exe, or ideal.exe generated)'
 echo ' '
 echo '   or choose a test case (see README_test_cases for details) :'
 foreach d ( `/bin/ls test` )

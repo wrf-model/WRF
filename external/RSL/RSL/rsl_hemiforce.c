@@ -135,7 +135,7 @@ RSL_TO_OH_INFO ( t_p, o_p, msize_p, seed_p,
         if ( s_ojg >= s_oinfo->len_n )
         {
 	  *retval_p = 0 ;
-	  s_tinfo->other_hemi_proclist_built ;
+	  s_tinfo->other_hemi_proclist_built = 1 ; /* FIX 20000818 JM */
 
 /* collapse the list and keep only entries that have data associated */
 /* also fill entries for processors I must send to, indicating the number 

@@ -19,7 +19,7 @@ LIB =
 
 COPTIM =  -g #-O
 FOPTIM =  -g #-O
-CFLAGS = -I$(IDIR) -DMPI
+CFLAGS = -I$(IDIR) -DMPI -DSUN
 FFLAGS =
 
 warning :

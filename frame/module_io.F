@@ -2170,15 +2170,27 @@ SUBROUTINE collect_real_and_call_pkg (   fcn,                                   
   INTEGER ,dimension(*)         ,INTENT(IN)    :: MemoryStart, MemoryEnd
   INTEGER ,dimension(*)         ,INTENT(IN)    :: PatchStart,  PatchEnd
   INTEGER                       ,INTENT(INOUT)   :: Status
-  REAL globbuf ( (DomainEnd(1)-DomainStart(1)+3)*(DomainEnd(2)-DomainStart(2)+3)*(DomainEnd(3)-DomainStart(3)+3) )
+  REAL, ALLOCATABLE :: globbuf (:)
+  LOGICAL, EXTERNAL           :: wrf_dm_on_monitor
+
+  IF ( wrf_dm_on_monitor() ) THEN
+    ALLOCATE( globbuf( (DomainEnd(1)-DomainStart(1)+3)*(DomainEnd(2)-DomainStart(2)+3)*(DomainEnd(3)-DomainStart(3)+3) ) )
+  ELSE
+    ALLOCATE( globbuf( 1 ) )
+  ENDIF
+
+#ifdef DEREF_KLUDGE
+# define FRSTELEM (1)
+#endif
   
-  CALL collect_generic_and_call_pkg (   fcn, globbuf,                                             &
+  CALL collect_generic_and_call_pkg (   fcn, globbuf FRSTELEM,                                    &
                                      Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
                                      DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,    &
                                      DomainStart , DomainEnd ,                                    &
                                      MemoryStart , MemoryEnd ,                                    &
                                      PatchStart , PatchEnd ,                                      &
                                      Status )
+  DEALLOCATE ( globbuf )
   RETURN
 
 END SUBROUTINE collect_real_and_call_pkg
@@ -2219,15 +2231,23 @@ SUBROUTINE collect_int_and_call_pkg (   fcn,                                    
   INTEGER ,dimension(*)         ,INTENT(IN)    :: MemoryStart, MemoryEnd
   INTEGER ,dimension(*)         ,INTENT(IN)    :: PatchStart,  PatchEnd
   INTEGER                       ,INTENT(INOUT)   :: Status
-  INTEGER globbuf ( (DomainEnd(1)-DomainStart(1)+3)*(DomainEnd(2)-DomainStart(2)+3)*(DomainEnd(3)-DomainStart(3)+3) )
+  INTEGER, ALLOCATABLE :: globbuf (:)
+  LOGICAL, EXTERNAL           :: wrf_dm_on_monitor
 
-  CALL collect_generic_and_call_pkg (   fcn, globbuf,                                             &
+  IF ( wrf_dm_on_monitor() ) THEN
+    ALLOCATE( globbuf( (DomainEnd(1)-DomainStart(1)+3)*(DomainEnd(2)-DomainStart(2)+3)*(DomainEnd(3)-DomainStart(3)+3) ) )
+  ELSE
+    ALLOCATE( globbuf( 1 ) )
+  ENDIF
+
+  CALL collect_generic_and_call_pkg (   fcn, globbuf FRSTELEM ,                                   &
                                      Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
                                      DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,    &
                                      DomainStart , DomainEnd ,                                    &
                                      MemoryStart , MemoryEnd ,                                    &
                                      PatchStart , PatchEnd ,                                      &
                                      Status )
+  DEALLOCATE ( globbuf )
   RETURN
 
 END SUBROUTINE collect_int_and_call_pkg
@@ -2269,15 +2289,23 @@ SUBROUTINE collect_double_and_call_pkg (   fcn,                                 
   INTEGER ,dimension(*)         ,INTENT(IN)    :: MemoryStart, MemoryEnd
   INTEGER ,dimension(*)         ,INTENT(IN)    :: PatchStart,  PatchEnd
   INTEGER                       ,INTENT(INOUT)   :: Status
-  DOUBLE PRECISION globbuf ( (DomainEnd(1)-DomainStart(1)+3)*(DomainEnd(2)-DomainStart(2)+3)*(DomainEnd(3)-DomainStart(3)+3) )
+  DOUBLE PRECISION, ALLOCATABLE :: globbuf (:)
+  LOGICAL, EXTERNAL           :: wrf_dm_on_monitor
 
-  CALL collect_generic_and_call_pkg (   fcn, globbuf,                                             &
+  IF ( wrf_dm_on_monitor() ) THEN
+    ALLOCATE( globbuf( (DomainEnd(1)-DomainStart(1)+3)*(DomainEnd(2)-DomainStart(2)+3)*(DomainEnd(3)-DomainStart(3)+3) ) )
+  ELSE
+    ALLOCATE( globbuf( 1 ) )
+  ENDIF
+
+  CALL collect_generic_and_call_pkg (   fcn, globbuf FRSTELEM ,                                   &
                                      Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
                                      DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,    &
                                      DomainStart , DomainEnd ,                                    &
                                      MemoryStart , MemoryEnd ,                                    &
                                      PatchStart , PatchEnd ,                                      &
                                      Status )
+  DEALLOCATE ( globbuf )
   RETURN
 
 END SUBROUTINE collect_double_and_call_pkg
@@ -2318,15 +2346,23 @@ SUBROUTINE collect_logical_and_call_pkg (   fcn,                                
   INTEGER ,dimension(*)         ,INTENT(IN)    :: MemoryStart, MemoryEnd
   INTEGER ,dimension(*)         ,INTENT(IN)    :: PatchStart,  PatchEnd
   INTEGER                       ,INTENT(INOUT)   :: Status
-  LOGICAL globbuf ( (DomainEnd(1)-DomainStart(1)+3)*(DomainEnd(2)-DomainStart(2)+3)*(DomainEnd(3)-DomainStart(3)+3) )
+  LOGICAL, ALLOCATABLE :: globbuf (:)
+  LOGICAL, EXTERNAL           :: wrf_dm_on_monitor
 
-  CALL collect_generic_and_call_pkg (   fcn, globbuf,                                             &
+  IF ( wrf_dm_on_monitor() ) THEN
+    ALLOCATE( globbuf( (DomainEnd(1)-DomainStart(1)+3)*(DomainEnd(2)-DomainStart(2)+3)*(DomainEnd(3)-DomainStart(3)+3) ) )
+  ELSE
+    ALLOCATE( globbuf( 1 ) )
+  ENDIF
+
+  CALL collect_generic_and_call_pkg (   fcn, globbuf FRSTELEM ,                                   &
                                      Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
                                      DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,    &
                                      DomainStart , DomainEnd ,                                    &
                                      MemoryStart , MemoryEnd ,                                    &
                                      PatchStart , PatchEnd ,                                      &
                                      Status )
+  DEALLOCATE ( globbuf )
   RETURN
 
 END SUBROUTINE collect_logical_and_call_pkg
@@ -2870,16 +2906,24 @@ SUBROUTINE call_pkg_and_dist_real (  fcn, update_arg,                           
   INTEGER ,dimension(*)         ,INTENT(IN)    :: MemoryStart, MemoryEnd
   INTEGER ,dimension(*)         ,INTENT(IN)    :: PatchStart,  PatchEnd
   INTEGER                       ,INTENT(INOUT)   :: Status
-  REAL globbuf ( (DomainEnd(1)-DomainStart(1)+2)*(DomainEnd(2)-DomainStart(2)+2)*(DomainEnd(3)-DomainStart(3)+2) )
+  REAL, ALLOCATABLE :: globbuf (:)
+  LOGICAL, EXTERNAL :: wrf_dm_on_monitor
+
+  IF ( wrf_dm_on_monitor() ) THEN
+    ALLOCATE( globbuf( (DomainEnd(1)-DomainStart(1)+3)*(DomainEnd(2)-DomainStart(2)+3)*(DomainEnd(3)-DomainStart(3)+3) ) )
+  ELSE
+    ALLOCATE( globbuf( 1 ) )
+  ENDIF
 
   globbuf = 0.
-  CALL call_pkg_and_dist_generic (   fcn, globbuf , update_arg,                                    &
+  CALL call_pkg_and_dist_generic (   fcn, globbuf FRSTELEM , update_arg,                          &
                                      Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
                                      DomainDesc , MemoryOrder , Stagger , DimNames ,              &
                                      DomainStart , DomainEnd ,                                    &
                                      MemoryStart , MemoryEnd ,                                    &
                                      PatchStart , PatchEnd ,                                      &
                                      Status )
+  DEALLOCATE ( globbuf )
   RETURN
 END SUBROUTINE call_pkg_and_dist_real
 
@@ -2917,17 +2961,25 @@ SUBROUTINE call_pkg_and_dist_double  (  fcn, update_arg ,                       
   INTEGER ,dimension(*)         ,INTENT(IN)    :: MemoryStart, MemoryEnd
   INTEGER ,dimension(*)         ,INTENT(IN)    :: PatchStart,  PatchEnd
   INTEGER                       ,INTENT(INOUT)   :: Status
-  DOUBLE PRECISION globbuf ( (DomainEnd(1)-DomainStart(1)+2)*(DomainEnd(2)-DomainStart(2)+2)*(DomainEnd(3)-DomainStart(3)+2) )
+  DOUBLE PRECISION , ALLOCATABLE :: globbuf (:)
+  LOGICAL, EXTERNAL :: wrf_dm_on_monitor
+
+  IF ( wrf_dm_on_monitor() ) THEN
+    ALLOCATE( globbuf( (DomainEnd(1)-DomainStart(1)+3)*(DomainEnd(2)-DomainStart(2)+3)*(DomainEnd(3)-DomainStart(3)+3) ) )
+  ELSE
+    ALLOCATE( globbuf( 1 ) )
+  ENDIF
 
   globbuf = 0
 
-  CALL call_pkg_and_dist_generic (   fcn, globbuf , update_arg ,                                  &
+  CALL call_pkg_and_dist_generic (   fcn, globbuf FRSTELEM , update_arg ,                         &
                                      Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
                                      DomainDesc , MemoryOrder , Stagger , DimNames ,              &
                                      DomainStart , DomainEnd ,                                    &
                                      MemoryStart , MemoryEnd ,                                    &
                                      PatchStart , PatchEnd ,                                      &
                                      Status )
+  DEALLOCATE ( globbuf )
   RETURN
 END SUBROUTINE call_pkg_and_dist_double
 
@@ -2965,17 +3017,25 @@ SUBROUTINE call_pkg_and_dist_int  (  fcn, update_arg ,                          
   INTEGER ,dimension(*)         ,INTENT(IN)    :: MemoryStart, MemoryEnd
   INTEGER ,dimension(*)         ,INTENT(IN)    :: PatchStart,  PatchEnd
   INTEGER                       ,INTENT(INOUT)   :: Status
-  INTEGER globbuf ( (DomainEnd(1)-DomainStart(1)+2)*(DomainEnd(2)-DomainStart(2)+2)*(DomainEnd(3)-DomainStart(3)+2) )
+  INTEGER , ALLOCATABLE :: globbuf (:)
+  LOGICAL, EXTERNAL :: wrf_dm_on_monitor
+
+  IF ( wrf_dm_on_monitor() ) THEN
+    ALLOCATE( globbuf( (DomainEnd(1)-DomainStart(1)+3)*(DomainEnd(2)-DomainStart(2)+3)*(DomainEnd(3)-DomainStart(3)+3) ) )
+  ELSE
+    ALLOCATE( globbuf( 1 ) )
+  ENDIF
 
   globbuf = 0
 
-  CALL call_pkg_and_dist_generic (   fcn, globbuf , update_arg ,                                  &
+  CALL call_pkg_and_dist_generic (   fcn, globbuf FRSTELEM , update_arg ,                                  &
                                      Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
                                      DomainDesc , MemoryOrder , Stagger , DimNames ,              &
                                      DomainStart , DomainEnd ,                                    &
                                      MemoryStart , MemoryEnd ,                                    &
                                      PatchStart , PatchEnd ,                                      &
                                      Status )
+  DEALLOCATE ( globbuf )
   RETURN
 END SUBROUTINE call_pkg_and_dist_int
 
@@ -3013,17 +3073,25 @@ SUBROUTINE call_pkg_and_dist_logical  (  fcn, update_arg ,                      
   INTEGER ,dimension(*)         ,INTENT(IN)    :: MemoryStart, MemoryEnd
   INTEGER ,dimension(*)         ,INTENT(IN)    :: PatchStart,  PatchEnd
   INTEGER                       ,INTENT(INOUT)   :: Status
-  logical globbuf ( (DomainEnd(1)-DomainStart(1)+2)*(DomainEnd(2)-DomainStart(2)+2)*(DomainEnd(3)-DomainStart(3)+2) )
+  LOGICAL , ALLOCATABLE :: globbuf (:)
+  LOGICAL, EXTERNAL :: wrf_dm_on_monitor
+
+  IF ( wrf_dm_on_monitor() ) THEN
+    ALLOCATE( globbuf( (DomainEnd(1)-DomainStart(1)+3)*(DomainEnd(2)-DomainStart(2)+3)*(DomainEnd(3)-DomainStart(3)+3) ) )
+  ELSE
+    ALLOCATE( globbuf( 1 ) )
+  ENDIF
 
   globbuf = .false.
 
-  CALL call_pkg_and_dist_generic (   fcn, globbuf , update_arg ,                                  &
+  CALL call_pkg_and_dist_generic (   fcn, globbuf FRSTELEM , update_arg ,                         &
                                      Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
                                      DomainDesc , MemoryOrder , Stagger , DimNames ,              &
                                      DomainStart , DomainEnd ,                                    &
                                      MemoryStart , MemoryEnd ,                                    &
                                      PatchStart , PatchEnd ,                                      &
                                      Status )
+  DEALLOCATE ( globbuf )
   RETURN
 END SUBROUTINE call_pkg_and_dist_logical
 

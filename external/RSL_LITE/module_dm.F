@@ -668,6 +668,10 @@ END
        RETURN
    END SUBROUTINE wrf_patch_to_global_logical
 
+#ifdef DEREF_KLUDGE
+#  define FRSTELEM (1)
+#endif
+
    SUBROUTINE wrf_patch_to_global_generic (buf,globbuf,domdesc,stagger,ordering,typesize,&
                                        DS1a,DE1a,DS2a,DE2a,DS3a,DE3a,&
                                        MS1a,ME1a,MS2a,ME2a,MS3a,ME3a,&
@@ -694,8 +698,14 @@ END
 
        INTEGER i, j, k,  ndim
        INTEGER  Patch(3,2), Gpatch(3,2,ntasks)
-       REAL tmpbuf( (DE1a-DS1a+1)*(DE2a-DS2a+1)*(DE3a-DS3a+1)/RWORDSIZE*typesize+32 )
+       REAL, ALLOCATABLE :: tmpbuf( : )
        REAL locbuf( (PE1a-PS1a+1)*(PE2a-PS2a+1)*(PE3a-PS3a+1)/RWORDSIZE*typesize+32 )
+
+       IF ( wrf_dm_on_monitor() ) THEN
+         ALLOCATE ( tmpbuf ( (DE1a-DS1a+1)*(DE2a-DS2a+1)*(DE3a-DS3a+1)/RWORDSIZE*typesize+32 ) )
+       ELSE
+         ALLOCATE ( tmpbuf ( 1 ) )
+       ENDIF
  
        DS1 = DS1a ; DE1 = DE1a ; DS2=DS2a ; DE2 = DE2a ; DS3 = DS3a ; DE3 = DE3a
        MS1 = MS1a ; ME1 = ME1a ; MS2=MS2a ; ME2 = ME2a ; MS3 = MS3a ; ME3 = ME3a
@@ -753,7 +763,7 @@ END
 
        CALL collect_on_comm0 (  local_communicator , typesize ,  &
                                 locbuf , (pe1-ps1+1)*(pe2-ps2+1)*(pe3-ps3+1),   &
-                                tmpbuf , (de1-ds1+1)*(de2-ds2+1)*(de3-ds3+1) )
+                                tmpbuf FRSTELEM , (de1-ds1+1)*(de2-ds2+1)*(de3-ds3+1) )
 
 
        ndim = len(TRIM(ordering))
@@ -765,19 +775,19 @@ END
        IF ( ndim .GE. 2 .AND. wrf_dm_on_monitor() ) THEN
 
          IF      ( typesize .EQ. RWORDSIZE ) THEN
-	   CALL patch_2_outbuf_r ( tmpbuf , globbuf ,             &
+	   CALL patch_2_outbuf_r ( tmpbuf FRSTELEM , globbuf ,             &
 				   DS1, DE1, DS2, DE2, DS3, DE3 , &
 				   GPATCH                         )
 	 ELSE IF ( typesize .EQ. IWORDSIZE ) THEN
-	   CALL patch_2_outbuf_i ( tmpbuf , globbuf ,             &
+	   CALL patch_2_outbuf_i ( tmpbuf FRSTELEM , globbuf ,             &
 				   DS1, DE1, DS2, DE2, DS3, DE3 , &
 				   GPATCH                         )
 	 ELSE IF ( typesize .EQ. DWORDSIZE ) THEN
-	   CALL patch_2_outbuf_d ( tmpbuf , globbuf ,             &
+	   CALL patch_2_outbuf_d ( tmpbuf FRSTELEM , globbuf ,             &
 				   DS1, DE1, DS2, DE2, DS3, DE3 , &
 				   GPATCH                         )
 	 ELSE IF ( typesize .EQ. LWORDSIZE ) THEN
-	   CALL patch_2_outbuf_l ( tmpbuf , globbuf ,             &
+	   CALL patch_2_outbuf_l ( tmpbuf FRSTELEM , globbuf ,             &
 				   DS1, DE1, DS2, DE2, DS3, DE3 , &
 				   GPATCH                         )
 	 ENDIF
@@ -787,6 +797,7 @@ END
        IF ( wrf_at_debug_level(500) ) THEN
          CALL end_timing('wrf_patch_to_global_generic')
        ENDIF
+       DEALLOCATE( tmpbuf )
        RETURN
     END SUBROUTINE wrf_patch_to_global_generic
 
@@ -1085,8 +1096,14 @@ END
 
        INTEGER i,j,k,ord,ord2d,ndim
        INTEGER  Patch(3,2), Gpatch(3,2,ntasks)
-       REAL tmpbuf( (DE1a-DS1a+1)*(DE2a-DS2a+1)*(DE3a-DS3a+1)/RWORDSIZE*typesize+32 )
+       REAL, ALLOCATABLE :: tmpbuf( : )
        REAL locbuf( (PE1a-PS1a+1)*(PE2a-PS2a+1)*(PE3a-PS3a+1)/RWORDSIZE*typesize+32 )
+
+       IF ( wrf_dm_on_monitor() ) THEN
+         ALLOCATE ( tmpbuf ( (DE1a-DS1a+1)*(DE2a-DS2a+1)*(DE3a-DS3a+1)/RWORDSIZE*typesize+32 ) )
+       ELSE
+         ALLOCATE ( tmpbuf ( 1 ) )
+       ENDIF
 
        DS1 = DS1a ; DE1 = DE1a ; DS2=DS2a ; DE2 = DE2a ; DS3 = DS3a ; DE3 = DE3a
        MS1 = MS1a ; ME1 = ME1a ; MS2=MS2a ; ME2 = ME2a ; MS3 = MS3a ; ME3 = ME3a
@@ -1128,27 +1145,27 @@ END
 
        IF ( wrf_dm_on_monitor() .AND. ndim .GE. 2 ) THEN
          IF      ( typesize .EQ. RWORDSIZE ) THEN
-           CALL outbuf_2_patch_r ( globbuf , tmpbuf ,             &
+           CALL outbuf_2_patch_r ( globbuf , tmpbuf FRSTELEM ,    &
                                    DS1, DE1, DS2, DE2, DS3, DE3 , &
                                    MS1, ME1, MS2, ME2, MS3, ME3 , &
                                    GPATCH                         )
          ELSE IF ( typesize .EQ. IWORDSIZE ) THEN
-           CALL outbuf_2_patch_i ( globbuf , tmpbuf ,             &
+           CALL outbuf_2_patch_i ( globbuf , tmpbuf FRSTELEM ,    &
                                    DS1, DE1, DS2, DE2, DS3, DE3 , &
                                    GPATCH                         )
          ELSE IF ( typesize .EQ. DWORDSIZE ) THEN
-           CALL outbuf_2_patch_d ( globbuf , tmpbuf ,             &
+           CALL outbuf_2_patch_d ( globbuf , tmpbuf FRSTELEM ,    &
                                    DS1, DE1, DS2, DE2, DS3, DE3 , &
                                    GPATCH                         )
          ELSE IF ( typesize .EQ. LWORDSIZE ) THEN
-           CALL outbuf_2_patch_l ( globbuf , tmpbuf ,             &
+           CALL outbuf_2_patch_l ( globbuf , tmpbuf FRSTELEM ,    &
                                    DS1, DE1, DS2, DE2, DS3, DE3 , &
                                    GPATCH                         )
          ENDIF
        ENDIF
 
        CALL dist_on_comm0 (  local_communicator , typesize ,  &
-                             tmpbuf , (de1-ds1+1)*(de2-ds2+1)*(de3-ds3+1) , &
+                             tmpbuf FRSTELEM , (de1-ds1+1)*(de2-ds2+1)*(de3-ds3+1) , &
                              locbuf    , (pe1-ps1+1)*(pe2-ps2+1)*(pe3-ps3+1) )
 
        IF      ( typesize .EQ. RWORDSIZE ) THEN
@@ -1171,6 +1188,7 @@ END
        ENDIF
 
 
+       DEALLOCATE ( tmpbuf )
        RETURN
     END SUBROUTINE wrf_global_to_patch_generic
 

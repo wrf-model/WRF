@@ -23,6 +23,7 @@
    REAL    , PARAMETER :: r_d          = 287.
    REAL    , PARAMETER :: cp           = 7.*r_d/2.
 #endif
+
    REAL    , PARAMETER :: r_v          = 461.6
    REAL    , PARAMETER :: cv           = cp-r_d
    REAL    , PARAMETER :: cpv          = 4.*r_v
@@ -84,23 +85,27 @@
    REAL    , PARAMETER ::  w_beta  = 1.0 ! activation cfl number
 
        REAL , PARAMETER ::  pq0=379.90516
-       REAL , PARAMETER ::  epsq2=0.2
+!      REAL , PARAMETER ::  epsq2=0.2
+       REAL , PARAMETER ::  epsq2=0.02
        REAL , PARAMETER ::  a2=17.2693882
        REAL , PARAMETER ::  a3=273.16
        REAL , PARAMETER ::  a4=35.86
        REAL , PARAMETER ::  epsq=1.e-12
        REAL , PARAMETER ::  p608=rvovrd-1.
-#if ( NMM_CORE == 1 )
+!#if ( NMM_CORE == 1 )
        REAL , PARAMETER ::  climit=1.e-20
        REAL , PARAMETER ::  cm1=2937.4
        REAL , PARAMETER ::  cm2=4.9283
        REAL , PARAMETER ::  cm3=23.5518
-       REAL , PARAMETER ::  defc=8.0
-       REAL , PARAMETER ::  defm=32.0
+!       REAL , PARAMETER ::  defc=8.0
+!       REAL , PARAMETER ::  defm=32.0
+       REAL , PARAMETER ::  defc=0.0
+       REAL , PARAMETER ::  defm=99999.0
        REAL , PARAMETER ::  epsfc=1./1.05
        REAL , PARAMETER ::  epswet=0.0
        REAL , PARAMETER ::  fcdif=1./3.
-       REAL , PARAMETER ::  fcm=0.003
+!       REAL , PARAMETER ::  fcm=0.003
+       REAL , PARAMETER ::  fcm=0.0
        REAL , PARAMETER ::  gma=-r_d*(1.-rcp)*0.5
        REAL , PARAMETER ::  p400=40000.0
        REAL , PARAMETER ::  phitp=15000.0
@@ -123,7 +128,7 @@
        REAL , PARAMETER ::  z0land=0.10
        REAL , PARAMETER ::  z0max=0.01
        REAL , PARAMETER ::  z0sea=0.001
-#endif
+!#endif
 
 
  CONTAINS

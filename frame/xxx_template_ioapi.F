@@ -33,71 +33,37 @@ END SUBROUTINE
 !--- open_for_write_begin
 SUBROUTINE ext_xxx_open_for_write_begin( FileName , Comm_compute, Comm_io, SysDepInfo, &
                                      DataHandle , Status )
-  USE module_state_description
   IMPLICIT NONE
   CHARACTER *(*), INTENT(IN)  :: FileName
   INTEGER ,       INTENT(IN)  :: Comm_compute , Comm_io
   CHARACTER *(*), INTENT(IN)  :: SysDepInfo
   INTEGER ,       INTENT(OUT) :: DataHandle
   INTEGER ,       INTENT(OUT) :: Status
-
-! you can use this code to test on the SysDepInfo string for the setting of DATASET
-  CALL get_value_from_pairs ( "DATASET" , SysDepInfo , DataSet )
-  IF      ( DataSet .eq. 'RESTART' ) THEN
-  ELSE IF ( DataSet .eq. 'HISTORY' ) THEN
-  ELSE IF ( DataSet .eq. 'INPUT' ) THEN
-  ELSE IF ( DataSet .eq. 'BOUNDARY' ) THEN
-  ELSE  ! nothing is set
-  ENDIF
-
   RETURN  
 END SUBROUTINE ext_xxx_open_for_write_begin
 
 !--- open_for_write_commit
 SUBROUTINE ext_xxx_open_for_write_commit( DataHandle , Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN ) :: DataHandle
   INTEGER ,       INTENT(OUT) :: Status
-#if 0
-! you can use this code to test on the SysDepInfo string for the setting of DATASET
-  CALL get_value_from_pairs ( "DATASET" , SysDepInfo , DataSet )
-  IF      ( DataSet .eq. 'RESTART' ) THEN
-  ELSE IF ( DataSet .eq. 'HISTORY' ) THEN
-  ELSE IF ( DataSet .eq. 'INPUT' ) THEN
-  ELSE IF ( DataSet .eq. 'BOUNDARY' ) THEN
-  ELSE  ! nothing is set
-  ENDIF
-#endif
   RETURN  
 END SUBROUTINE ext_xxx_open_for_write_commit
 
 !--- open_for_read 
 SUBROUTINE ext_xxx_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo, &
                                DataHandle , Status )
-  USE module_state_description
   IMPLICIT NONE
   CHARACTER *(*), INTENT(IN)  :: FileName
   INTEGER ,       INTENT(IN)  :: Comm_compute , Comm_io
   CHARACTER *(*), INTENT(IN)  :: SysDepInfo
   INTEGER ,       INTENT(OUT) :: DataHandle
   INTEGER ,       INTENT(OUT) :: Status
-#if 0
-! you can use this code to test on the SysDepInfo string for the setting of DATASET
-  CALL get_value_from_pairs ( "DATASET" , SysDepInfo , DataSet )
-  IF      ( DataSet .eq. 'RESTART' ) THEN
-  ELSE IF ( DataSet .eq. 'HISTORY' ) THEN
-  ELSE IF ( DataSet .eq. 'INPUT' ) THEN
-  ELSE IF ( DataSet .eq. 'BOUNDARY' ) THEN
-  ELSE  ! nothing is set
-  ENDIF
-#endif
   RETURN  
 END SUBROUTINE ext_xxx_open_for_read
 
 !--- intio_nextrec  (INT_IO only)
 SUBROUTINE ext_xxx_intio_nextrec ( DataHandle , NextRec , Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER , INTENT(IN)  :: DataHandle
   INTEGER               :: NextRec
@@ -107,7 +73,6 @@ END SUBROUTINE ext_xxx_intio_nextrec
 
 !--- inquire_opened
 SUBROUTINE ext_xxx_inquire_opened ( DataHandle, FileName , FileStatus, Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER *(*), INTENT(IN)  :: FileName
@@ -118,7 +83,6 @@ END SUBROUTINE ext_xxx_inquire_opened
 
 !--- inquire_filename
 SUBROUTINE ext_xxx_inquire_filename ( DataHandle, FileName , FileStatus, Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER *(*), INTENT(OUT) :: FileName
@@ -128,7 +92,6 @@ END SUBROUTINE ext_xxx_inquire_filename
 
 !--- sync
 SUBROUTINE ext_xxx_iosync ( DataHandle, Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   INTEGER ,       INTENT(OUT) :: Status
@@ -137,7 +100,6 @@ END SUBROUTINE ext_xxx_iosync
 
 !--- close
 SUBROUTINE ext_xxx_ioclose ( DataHandle, Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   INTEGER ,       INTENT(OUT) :: Status
@@ -146,7 +108,6 @@ END SUBROUTINE ext_xxx_ioclose
 
 !--- get_next_time (not defined for IntIO )
 SUBROUTINE ext_xxx_get_next_time ( DataHandle, DateStr, Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(OUT) :: DateStr
@@ -156,7 +117,6 @@ END SUBROUTINE ext_xxx_get_next_time
 
 !--- set_time
 SUBROUTINE ext_xxx_set_time ( DataHandle, DateStr, Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: DateStr
@@ -166,7 +126,6 @@ END SUBROUTINE ext_xxx_set_time
 
 !--- get_next_var  (not defined for IntIO)
 SUBROUTINE ext_xxx_get_next_var ( DataHandle, VarName, Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(OUT) :: VarName
@@ -176,7 +135,6 @@ END SUBROUTINE ext_xxx_get_next_var
 
 !--- get_dom_ti_real
 SUBROUTINE ext_xxx_get_dom_ti_real ( DataHandle,Element,   Data, Count, Outcount, Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
@@ -185,7 +143,6 @@ END SUBROUTINE ext_xxx_get_dom_ti_real
 
 !--- put_dom_ti_real
 SUBROUTINE ext_xxx_put_dom_ti_real ( DataHandle,Element,   Data, Count,  Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
@@ -197,7 +154,6 @@ END SUBROUTINE ext_xxx_put_dom_ti_real
 
 !--- get_dom_ti_double
 SUBROUTINE ext_xxx_get_dom_ti_double ( DataHandle,Element,   Data, Count, Outcount, Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
@@ -210,7 +166,6 @@ END SUBROUTINE ext_xxx_get_dom_ti_double
 
 !--- put_dom_ti_double
 SUBROUTINE ext_xxx_put_dom_ti_double ( DataHandle,Element,   Data, Count,  Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
@@ -222,7 +177,6 @@ END SUBROUTINE ext_xxx_put_dom_ti_double
 
 !--- get_dom_ti_integer
 SUBROUTINE ext_xxx_get_dom_ti_integer ( DataHandle,Element,   Data, Count, Outcount, Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
@@ -235,7 +189,6 @@ END SUBROUTINE ext_xxx_get_dom_ti_integer
 
 !--- put_dom_ti_integer
 SUBROUTINE ext_xxx_put_dom_ti_integer ( DataHandle,Element,   Data, Count,  Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
@@ -247,7 +200,6 @@ END SUBROUTINE ext_xxx_put_dom_ti_integer
 
 !--- get_dom_ti_logical
 SUBROUTINE ext_xxx_get_dom_ti_logical ( DataHandle,Element,   Data, Count, Outcount, Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
@@ -260,7 +212,6 @@ END SUBROUTINE ext_xxx_get_dom_ti_logical
 
 !--- put_dom_ti_logical
 SUBROUTINE ext_xxx_put_dom_ti_logical ( DataHandle,Element,   Data, Count,  Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
@@ -272,7 +223,6 @@ END SUBROUTINE ext_xxx_put_dom_ti_logical
 
 !--- get_dom_ti_char
 SUBROUTINE ext_xxx_get_dom_ti_char ( DataHandle,Element,   Data,  Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
@@ -283,7 +233,6 @@ END SUBROUTINE ext_xxx_get_dom_ti_char
 
 !--- put_dom_ti_char
 SUBROUTINE ext_xxx_put_dom_ti_char ( DataHandle,Element,   Data,  Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
@@ -294,7 +243,6 @@ END SUBROUTINE ext_xxx_put_dom_ti_char
 
 !--- get_dom_td_real
 SUBROUTINE ext_xxx_get_dom_td_real ( DataHandle,Element, DateStr,  Data, Count, Outcount, Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
@@ -308,7 +256,6 @@ END SUBROUTINE ext_xxx_get_dom_td_real
 
 !--- put_dom_td_real
 SUBROUTINE ext_xxx_put_dom_td_real ( DataHandle,Element, DateStr,  Data, Count,  Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
@@ -321,7 +268,6 @@ END SUBROUTINE ext_xxx_put_dom_td_real
 
 !--- get_dom_td_double
 SUBROUTINE ext_xxx_get_dom_td_double ( DataHandle,Element, DateStr,  Data, Count, Outcount, Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
@@ -335,7 +281,6 @@ END SUBROUTINE ext_xxx_get_dom_td_double
 
 !--- put_dom_td_double
 SUBROUTINE ext_xxx_put_dom_td_double ( DataHandle,Element, DateStr,  Data, Count,  Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
@@ -348,7 +293,6 @@ END SUBROUTINE ext_xxx_put_dom_td_double
 
 !--- get_dom_td_integer
 SUBROUTINE ext_xxx_get_dom_td_integer ( DataHandle,Element, DateStr,  Data, Count, Outcount, Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
@@ -362,7 +306,6 @@ END SUBROUTINE ext_xxx_get_dom_td_integer
 
 !--- put_dom_td_integer
 SUBROUTINE ext_xxx_put_dom_td_integer ( DataHandle,Element, DateStr,  Data, Count,  Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
@@ -375,7 +318,6 @@ END SUBROUTINE ext_xxx_put_dom_td_integer
 
 !--- get_dom_td_logical
 SUBROUTINE ext_xxx_get_dom_td_logical ( DataHandle,Element, DateStr,  Data, Count, Outcount, Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
@@ -389,7 +331,6 @@ END SUBROUTINE ext_xxx_get_dom_td_logical
 
 !--- put_dom_td_logical
 SUBROUTINE ext_xxx_put_dom_td_logical ( DataHandle,Element, DateStr,  Data, Count,  Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
@@ -402,7 +343,6 @@ END SUBROUTINE ext_xxx_put_dom_td_logical
 
 !--- get_dom_td_char
 SUBROUTINE ext_xxx_get_dom_td_char ( DataHandle,Element, DateStr,  Data,  Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
@@ -414,7 +354,6 @@ END SUBROUTINE ext_xxx_get_dom_td_char
 
 !--- put_dom_td_char
 SUBROUTINE ext_xxx_put_dom_td_char ( DataHandle,Element, DateStr,  Data,  Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
@@ -426,7 +365,6 @@ END SUBROUTINE ext_xxx_put_dom_td_char
 
 !--- get_var_ti_real
 SUBROUTINE ext_xxx_get_var_ti_real ( DataHandle,Element,  Varname, Data, Count, Outcount, Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
@@ -440,7 +378,6 @@ END SUBROUTINE ext_xxx_get_var_ti_real
 
 !--- put_var_ti_real
 SUBROUTINE ext_xxx_put_var_ti_real ( DataHandle,Element,  Varname, Data, Count,  Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
@@ -453,7 +390,6 @@ END SUBROUTINE ext_xxx_put_var_ti_real
 
 !--- get_var_ti_double
 SUBROUTINE ext_xxx_get_var_ti_double ( DataHandle,Element,  Varname, Data, Count, Outcount, Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
@@ -467,7 +403,6 @@ END SUBROUTINE ext_xxx_get_var_ti_double
 
 !--- put_var_ti_double
 SUBROUTINE ext_xxx_put_var_ti_double ( DataHandle,Element,  Varname, Data, Count,  Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
@@ -480,7 +415,6 @@ END SUBROUTINE ext_xxx_put_var_ti_double
 
 !--- get_var_ti_integer
 SUBROUTINE ext_xxx_get_var_ti_integer ( DataHandle,Element,  Varname, Data, Count, Outcount, Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
@@ -494,7 +428,6 @@ END SUBROUTINE ext_xxx_get_var_ti_integer
 
 !--- put_var_ti_integer
 SUBROUTINE ext_xxx_put_var_ti_integer ( DataHandle,Element,  Varname, Data, Count,  Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
@@ -507,7 +440,6 @@ END SUBROUTINE ext_xxx_put_var_ti_integer
 
 !--- get_var_ti_logical
 SUBROUTINE ext_xxx_get_var_ti_logical ( DataHandle,Element,  Varname, Data, Count, Outcount, Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
@@ -521,7 +453,6 @@ END SUBROUTINE ext_xxx_get_var_ti_logical
 
 !--- put_var_ti_logical
 SUBROUTINE ext_xxx_put_var_ti_logical ( DataHandle,Element,  Varname, Data, Count,  Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
@@ -534,7 +465,6 @@ END SUBROUTINE ext_xxx_put_var_ti_logical
 
 !--- get_var_ti_char
 SUBROUTINE ext_xxx_get_var_ti_char ( DataHandle,Element,  Varname, Data,  Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
@@ -546,7 +476,6 @@ END SUBROUTINE ext_xxx_get_var_ti_char
 
 !--- put_var_ti_char
 SUBROUTINE ext_xxx_put_var_ti_char ( DataHandle,Element,  Varname, Data,  Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
@@ -558,7 +487,6 @@ END SUBROUTINE ext_xxx_put_var_ti_char
 
 !--- get_var_td_real
 SUBROUTINE ext_xxx_get_var_td_real ( DataHandle,Element,  DateStr,Varname, Data, Count, Outcount, Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
@@ -573,7 +501,6 @@ END SUBROUTINE ext_xxx_get_var_td_real
 
 !--- put_var_td_real
 SUBROUTINE ext_xxx_put_var_td_real ( DataHandle,Element,  DateStr,Varname, Data, Count,  Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
@@ -587,7 +514,6 @@ END SUBROUTINE ext_xxx_put_var_td_real
 
 !--- get_var_td_double
 SUBROUTINE ext_xxx_get_var_td_double ( DataHandle,Element,  DateStr,Varname, Data, Count, Outcount, Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
@@ -602,7 +528,6 @@ END SUBROUTINE ext_xxx_get_var_td_double
 
 !--- put_var_td_double
 SUBROUTINE ext_xxx_put_var_td_double ( DataHandle,Element,  DateStr,Varname, Data, Count,  Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
@@ -616,7 +541,6 @@ END SUBROUTINE ext_xxx_put_var_td_double
 
 !--- get_var_td_integer
 SUBROUTINE ext_xxx_get_var_td_integer ( DataHandle,Element,  DateStr,Varname, Data, Count, Outcount, Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
@@ -631,7 +555,6 @@ END SUBROUTINE ext_xxx_get_var_td_integer
 
 !--- put_var_td_integer
 SUBROUTINE ext_xxx_put_var_td_integer ( DataHandle,Element,  DateStr,Varname, Data, Count,  Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
@@ -645,7 +568,6 @@ END SUBROUTINE ext_xxx_put_var_td_integer
 
 !--- get_var_td_logical
 SUBROUTINE ext_xxx_get_var_td_logical ( DataHandle,Element,  DateStr,Varname, Data, Count, Outcount, Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
@@ -660,7 +582,6 @@ END SUBROUTINE ext_xxx_get_var_td_logical
 
 !--- put_var_td_logical
 SUBROUTINE ext_xxx_put_var_td_logical ( DataHandle,Element,  DateStr,Varname, Data, Count,  Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
@@ -674,7 +595,6 @@ END SUBROUTINE ext_xxx_put_var_td_logical
 
 !--- get_var_td_char
 SUBROUTINE ext_xxx_get_var_td_char ( DataHandle,Element,  DateStr,Varname, Data,  Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
@@ -687,7 +607,6 @@ END SUBROUTINE ext_xxx_get_var_td_char
 
 !--- put_var_td_char
 SUBROUTINE ext_xxx_put_var_td_char ( DataHandle,Element,  DateStr,Varname, Data,  Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
@@ -705,7 +624,6 @@ SUBROUTINE ext_xxx_read_field ( DataHandle , DateStr , VarName , Field , FieldTy
                             MemoryStart , MemoryEnd ,                                    &
                             PatchStart , PatchEnd ,                                      &
                             Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)    :: DataHandle 
   CHARACTER*(*) , INTENT(INOUT) :: DateStr
@@ -732,7 +650,6 @@ SUBROUTINE ext_xxx_write_field ( DataHandle , DateStr , VarName , Field , FieldT
                              MemoryStart , MemoryEnd ,                                    &
                              PatchStart , PatchEnd ,                                      &
                              Status )
-  USE module_state_description
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)    :: DataHandle 
   CHARACTER*(*) , INTENT(IN)    :: DateStr
@@ -755,7 +672,6 @@ END SUBROUTINE ext_xxx_write_field
 !--- get_var_info  (not implemented for IntIO)
 SUBROUTINE ext_xxx_get_var_info ( DataHandle , VarName , NDim , MemoryOrder , Stagger , &
                               DomainStart , DomainEnd , Status )
-  USE module_state_description
   IMPLICIT NONE
   integer               ,intent(in)     :: DataHandle
   character*(*)         ,intent(in)     :: VarName
@@ -766,3 +682,91 @@ SUBROUTINE ext_xxx_get_var_info ( DataHandle , VarName , NDim , MemoryOrder , St
   integer               ,intent(out)    :: Status
 RETURN
 END SUBROUTINE ext_xxx_get_var_info
+
+
+!--- end_of_frame
+SUBROUTINE ext_xxx_end_of_frame(DataHandle, Status)
+  IMPLICIT NONE
+  INTEGER, INTENT(IN)  :: DataHandle
+  INTEGER, INTENT(OUT) :: Status
+RETURN
+END SUBROUTINE ext_xxx_end_of_frame
+
+
+!--- error_str
+SUBROUTINE ext_xxx_error_str( Code, ReturnString, Status)
+  IMPLICIT NONE
+  INTEGER       , INTENT(IN)  :: Code
+  CHARACTER *(*), INTENT(OUT) :: ReturnString
+  INTEGER       , INTENT(OUT) :: Status
+RETURN
+END SUBROUTINE ext_xxx_error_str
+
+
+!--- get_previous_time
+SUBROUTINE ext_xxx_get_previous_time(DataHandle, DateStr, Status)
+  IMPLICIT NONE
+  INTEGER      , INTENT(IN)  :: DataHandle
+  CHARACTER*(*), INTENT(OUT) :: DateStr
+  INTEGER      , INTENT(OUT) :: Status
+RETURN
+END SUBROUTINE ext_xxx_get_previous_time
+
+
+!--- open_for_read_begin
+SUBROUTINE ext_xxx_open_for_read_begin( FileName, Comm, IOComm, SysDepInfo, DataHandle, Status)
+  IMPLICIT NONE
+  CHARACTER*(*), INTENT(IN)      :: FileName
+  INTEGER      , INTENT(IN)      :: Comm
+  INTEGER      , INTENT(IN)      :: IOComm
+  CHARACTER*(*), INTENT(IN)      :: SysDepInfo
+  INTEGER      , INTENT(OUT)     :: DataHandle
+  INTEGER      , INTENT(OUT)     :: Status
+RETURN
+END SUBROUTINE ext_xxx_open_for_read_begin
+
+
+!--- open_for_read_commit
+SUBROUTINE ext_xxx_open_for_read_commit(DataHandle, Status)
+  IMPLICIT NONE
+  INTEGER, INTENT(IN)  :: DataHandle
+  INTEGER, INTENT(OUT) :: Status
+RETURN
+END SUBROUTINE ext_xxx_open_for_read_commit
+
+
+!--- open_for_update
+SUBROUTINE ext_xxx_open_for_update( FileName, Comm, IOComm, SysDepInfo, DataHandle, Status)
+  IMPLICIT NONE
+  CHARACTER*(*), INTENT(IN)  :: FileName
+  INTEGER      , INTENT(IN)  :: Comm
+  INTEGER      , INTENT(IN)  :: IOComm
+  CHARACTER*(*), INTENT(IN)  :: SysDepInfo
+  INTEGER      , INTENT(OUT) :: DataHandle
+  INTEGER      , INTENT(OUT) :: Status
+RETURN
+END SUBROUTINE ext_xxx_open_for_update
+
+
+!--- open_for_write
+SUBROUTINE ext_xxx_open_for_write (DatasetName, Comm1, Comm2, &
+                                   SysDepInfo, DataHandle, Status)
+  IMPLICIT NONE
+  CHARACTER *(*), INTENT(IN)  :: DatasetName
+  INTEGER       , INTENT(IN)  :: Comm1, Comm2
+  CHARACTER *(*), INTENT(IN)  :: SysDepInfo
+  INTEGER       , INTENT(OUT) :: DataHandle
+  INTEGER       , INTENT(OUT) :: Status
+RETURN
+END SUBROUTINE ext_xxx_open_for_write
+
+
+!--- warning_str
+SUBROUTINE ext_xxx_warning_str( Code, ReturnString, Status)
+  IMPLICIT NONE
+  INTEGER       , INTENT(IN)  :: Code
+  CHARACTER *(*), INTENT(OUT) :: ReturnString
+  INTEGER       , INTENT(OUT) :: Status
+RETURN
+END SUBROUTINE ext_xxx_warning_str
+

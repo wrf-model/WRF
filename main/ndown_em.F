@@ -253,7 +253,7 @@ print *,'loopmax = ', time_loop_max, '   ending date = ',end_date_char
 
       get_the_right_time : DO
       
-         CALL ext_ncd_get_next_time ( fid , date_string , status_next_var )
+         CALL wrf_get_next_time ( fid , date_string , status_next_var )
 print *,'file date/time = ',date_string,'     desired date = ',current_date_char,'     status = ', status_next_var
 
          IF      (  status_next_var .NE. 0 ) THEN
@@ -283,7 +283,7 @@ print *,'file date/time = ',date_string,'     desired date = ',current_date_char
       END DO get_the_right_time 
 
       CALL wrf_debug          ( 100 , 'wrf: calling input_history' )
-      CALL ext_ncd_get_previous_time ( fid , date_string , status_next_var )
+      CALL wrf_get_previous_time ( fid , date_string , status_next_var )
       CALL input_history      ( fid , head_grid , config_flags, ierr )
       CALL wrf_debug          ( 100 , 'wrf: back from input_history' )
 
@@ -823,19 +823,19 @@ print *,'bdy time = ',time_loop-1,'  bdy date = ',current_date,' ',start_date
 
          CALL couple ( nested_grid%em_mu_2 , nested_grid%em_mub , ubdy3dtemp2 , nested_grid%em_u_2                 , &
                        'u' , nested_grid%msfu , &
-                       ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ids, ide, jds, jde, kds, kde )
+                       ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
          CALL couple ( nested_grid%em_mu_2 , nested_grid%em_mub , vbdy3dtemp2 , nested_grid%em_v_2                 , &
                        'v' , nested_grid%msfv , &
-                       ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ids, ide, jds, jde, kds, kde )
+                       ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
          CALL couple ( nested_grid%em_mu_2 , nested_grid%em_mub , tbdy3dtemp2 , nested_grid%em_t_2                 , &
                        't' , nested_grid%msft , &
-                       ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ids, ide, jds, jde, kds, kde )
+                       ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
          CALL couple ( nested_grid%em_mu_2 , nested_grid%em_mub , pbdy3dtemp2 , nested_grid%em_ph_2                , &
                        'h' , nested_grid%msft , &
-                       ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ids, ide, jds, jde, kds, kde )
+                       ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
          CALL couple ( nested_grid%em_mu_2 , nested_grid%em_mub , qbdy3dtemp2 , nested_grid%moist_2(:,:,:,P_QV)    , &
                        't' , nested_grid%msft , &
-                       ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ids, ide, jds, jde, kds, kde )
+                       ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
          mbdy2dtemp2(:,1,:) = nested_grid%em_mu_2(:,:)
 
          !  During all of the loops after the first loop, we first compute the boundary
@@ -912,7 +912,6 @@ print *,'bdy time = ',time_loop-1,'  bdy date = ',current_date,' ',start_date
       CALL wrf_put_dom_ti_integer ( fidb , 'JULDAY' , julday , 1 , ierr ) 
       CALL atotime( current_date(1:19), nested_grid%current_time )
       CALL ESMF_ClockSetCurrTime(nested_grid%domain_clock, nested_grid%current_time, rc)
-print *,'bdy time = ',time_loop-1,'  bdy date = ',current_date,' ',start_date
       CALL output_boundary ( fidb , nested_grid , config_flags , ierr )
       current_date = temp24
       start_date = temp24b
@@ -925,6 +924,7 @@ print *,'bdy time = ',time_loop-1,'  bdy date = ',current_date,' ',start_date
 
          !  Since this is the last time through here, we need to close the boundary file.
 
+         CALL model_to_grid_config_rec ( nested_grid%id , model_config_rec , config_flags )
          CALL close_dataset ( fidb , config_flags , "DATASET=BOUNDARY" )
 
 
@@ -934,7 +934,15 @@ print *,'bdy time = ',time_loop-1,'  bdy date = ',current_date,' ',start_date
 
    END DO big_time_loop_thingy
 
+   CALL model_to_grid_config_rec ( parent_grid%id , model_config_rec , config_flags )
+   CALL med_shutdown_io ( parent_grid , config_flags )
+
+   CALL model_to_grid_config_rec ( nested_grid%id , model_config_rec , config_flags )
+   CALL med_shutdown_io ( nested_grid , config_flags )
+
    CALL wrf_debug ( 0 , 'ndown_em: SUCCESS COMPLETE NDOWN_EM INIT' )
+
+   CALL wrf_shutdown
 
 END PROGRAM ndown_em
 

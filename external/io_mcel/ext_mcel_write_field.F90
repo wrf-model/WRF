@@ -173,7 +173,7 @@ SUBROUTINE ext_mcel_write_field ( DataHandle , DateStr , VarName , Field , Field
         ALLOCATE(rmask(ips:ipe,jps:jpe))
         CALL copy_field_to_cache ( FieldType , Field, rmask, ips, ipe, jps, jpe, ims, ime, jms, jme )
         mask = NINT( rmask )
-        DEALLOCATE(dmask)
+        DEALLOCATE(rmask)
       ELSE IF (FieldType .EQ. WRF_DOUBLE ) THEN
         ALLOCATE(dmask(ips:ipe,jps:jpe))
         CALL copy_field_to_cache ( FieldType , Field, dmask, ips, ipe, jps, jpe, ims, ime, jms, jme )
@@ -186,7 +186,6 @@ SUBROUTINE ext_mcel_write_field ( DataHandle , DateStr , VarName , Field , Field
 
         gSize(1) = ipe-ips+1
         gSize(2) = jpe-jps+1
-write(0,*)'ext_mcel_write_field setSize ',gSize
         CALL setSize ( open_file_descriptors(2,DataHandle), gSize, ierr )
         IF ( ierr .NE. 0 ) CALL wrf_error_fatal("ext_mcel_write_field: setSize")
 

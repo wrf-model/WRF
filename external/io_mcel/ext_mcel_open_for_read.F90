@@ -26,17 +26,19 @@ SUBROUTINE ext_mcel_open_for_read_begin( FileName , Comm_compute, Comm_io, SysDe
   ListOfFields(i) = " "
 
 ! recover the names of the strings that contain georeference and mask data, if avail
-  lat_r = ""
-  lon_r = ""
-  landmask_i = ""
+  lat_r(i) = ""
+  lon_r(i) = ""
+  landmask_i(i) = ""
   read_mode = ""
   grid_type = "STRUCTURED"
   filter_handle = "Filter"
   use_mask = ""
-  CALL get_value( "LAT_R", SysDepInfo, lat_r )
-  CALL get_value( "LON_R", SysDepInfo, lon_r )
-  CALL get_value( "LANDMASK_I", SysDepInfo, landmask_i )
+  CALL get_value( "LAT_R", SysDepInfo, lat_r(i) )
+  CALL get_value( "LON_R", SysDepInfo, lon_r(i) )
+  CALL get_value( "LANDMASK_I", SysDepInfo, landmask_i(i) )
   CALL get_value( "READ_MODE", SysDepInfo, read_mode )
+write(0,*)'open_for_write_begin: SysDepInfo ', TRIM(SysDepInfo)
+write(0,*)'open_for_write_begin: read_mode ', read_mode
   CALL get_value( "MCEL_GRIDTYPE", SysDepInfo, grid_type )
   CALL get_value( "FILTER_HANDLE", SysDepInfo, filter_handle )
   CALL get_value( "USE_MASK", SysDepInfo, use_mask )
@@ -45,6 +47,7 @@ SUBROUTINE ext_mcel_open_for_read_begin( FileName , Comm_compute, Comm_io, SysDe
   ELSE
     opened_for_update( i ) = .false.
   ENDIF
+write(0,*)'opened_for_update(i) ', opened_for_update(i)
 
   usemask(i) = MCEL_MASK_ALLVALID
   IF ( trim(use_mask) .NE. "" ) read( use_mask , '(I)' ) usemask(i)

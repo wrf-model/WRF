@@ -47,6 +47,7 @@ SUBROUTINE ext_mcel_write_field ( DataHandle , DateStr , VarName , Field , Field
 
   INTEGER inttypesize, realtypesize
 
+write(0,*)"write field : called "
   IF ( .NOT. int_valid_handle( DataHandle ) ) THEN
     CALL wrf_error_fatal("ext_mcel_write_field: invalid data handle" )
   ENDIF
@@ -73,9 +74,11 @@ SUBROUTINE ext_mcel_write_field ( DataHandle , DateStr , VarName , Field , Field
   ims = MemoryStart(1) ; ime = MemoryEnd(1)
   jms = MemoryStart(2) ; jme = MemoryEnd(2)
 
+write(0,*)"write field : okay_to_write ",okay_to_write( DataHandle )
+
   IF ( okay_to_write( DataHandle ) ) THEN
-    IF ( TRIM(VarName) .NE. TRIM(LAT_R) .AND. TRIM(VarName) .NE. TRIM(LON_R) .AND. &
-         TRIM(VarName) .NE. TRIM(LANDMASK_I) ) THEN
+    IF ( TRIM(VarName) .NE. TRIM(LAT_R(DataHandle)) .AND. TRIM(VarName) .NE. TRIM(LON_R(DataHandle)) .AND. &
+         TRIM(VarName) .NE. TRIM(LANDMASK_I(DataHandle)) ) THEN
       IF ( .NOT. mcel_finalized( DataHandle ) ) THEN
         IF ( ALLOCATED( xlat ) .AND. ALLOCATED( xlong ) ) THEN
           CALL setLocationsXY( open_file_descriptors(2,DataHandle), xlong, xlat, ierr )
@@ -150,33 +153,41 @@ SUBROUTINE ext_mcel_write_field ( DataHandle , DateStr , VarName , Field , Field
   ELSE   ! opened for training
 
     ! sieve the fields coming in and grab the ones we need for geo registration
-    IF      ( TRIM(VarName) .EQ. TRIM(LAT_R) ) THEN
+    IF      ( TRIM(VarName) .EQ. TRIM(LAT_R(DataHandle)) ) THEN
       IF ( ALLOCATED(xlat) ) THEN
         DEALLOCATE(xlat)
       ENDIF
       ALLOCATE(xlat(ips:ipe,jps:jpe))
       CALL copy_field_to_cache ( FieldType , Field, xlat, ips, ipe, jps, jpe, ims, ime, jms, jme )
-    ELSE IF ( TRIM(VarName) .EQ. TRIM(LON_R) ) THEN
+    ELSE IF ( TRIM(VarName) .EQ. TRIM(LON_R(DataHandle)) ) THEN
       IF ( ALLOCATED(xlong) ) THEN
         DEALLOCATE(xlong)
       ENDIF
       ALLOCATE(xlong(ips:ipe,jps:jpe))
       CALL copy_field_to_cache ( FieldType , Field, xlong, ips, ipe, jps, jpe, ims, ime, jms, jme )
-    ELSE IF ( TRIM(VarName) .EQ. TRIM(LANDMASK_I) ) THEN
+    ELSE IF ( TRIM(VarName) .EQ. TRIM(LANDMASK_I(DataHandle)) ) THEN
+write(0,*)'write_field: ALLOCATED(mask)', ALLOCATED(mask)
       IF ( ALLOCATED(mask) ) THEN
         DEALLOCATE(mask)
       ENDIF
+write(0,*)'write_field: ALLOCATING MASK'
       ALLOCATE(mask(ips:ipe,jps:jpe))
       IF ( FieldType .EQ. WRF_INTEGER ) THEN
+write(0,*)'write_field: INTEGER calling copy_field_to_cache'
         CALL copy_field_to_cache ( FieldType , Field, mask, ips, ipe, jps, jpe, ims, ime, jms, jme )
+write(0,*)'write_field: INTEGER back from copy_field_to_cache'
       ELSE IF ( FieldType .EQ. WRF_REAL ) THEN
         ALLOCATE(rmask(ips:ipe,jps:jpe))
+write(0,*)'write_field: REAL calling copy_field_to_cache'
         CALL copy_field_to_cache ( FieldType , Field, rmask, ips, ipe, jps, jpe, ims, ime, jms, jme )
+write(0,*)'write_field: REAL back from copy_field_to_cache'
         mask = NINT( rmask )
         DEALLOCATE(rmask)
       ELSE IF (FieldType .EQ. WRF_DOUBLE ) THEN
         ALLOCATE(dmask(ips:ipe,jps:jpe))
+write(0,*)'write_field: DOUBLE calling copy_field_to_cache'
         CALL copy_field_to_cache ( FieldType , Field, dmask, ips, ipe, jps, jpe, ims, ime, jms, jme )
+write(0,*)'write_field: DOUBLE back from copy_field_to_cache'
         mask = NINT( dmask )
         DEALLOCATE(dmask)
       ENDIF

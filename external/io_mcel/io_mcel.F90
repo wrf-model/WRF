@@ -24,7 +24,7 @@ MODULE module_ext_mcel
   INCLUDE 'intio_tags.h'
   INCLUDE 'wrf_io_flags.h'
   INCLUDE 'wrf_status_codes.h'
-  CHARACTER*80  LAT_R, LON_R, LANDMASK_I
+  CHARACTER*80  LAT_R(int_num_handles), LON_R(int_num_handles), LANDMASK_I(int_num_handles)
 
   REAL*8, ALLOCATABLE :: xlat(:,:), xlong(:,:)
   REAL*8              :: deltax, deltay, dxm(2)

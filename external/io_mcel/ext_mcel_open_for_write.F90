@@ -32,12 +32,12 @@ SUBROUTINE ext_mcel_open_for_write_begin( FileName , Comm_compute, Comm_io, SysD
 
   CALL get_value ( 'MCEL_GRIDTYPE', SysDepInfo, grid_type )
 
-  LAT_R = ""
-  LON_R = ""
-  LANDMASK_I = ""
-  CALL get_value( "LAT_R", SysDepInfo, LAT_R )
-  CALL get_value( "LON_R", SysDepInfo, LON_R )
-  CALL get_value( "LANDMASK_I", SysDepInfo, LANDMASK_I )
+  LAT_R(i) = ""
+  LON_R(i) = ""
+  LANDMASK_I(i) = ""
+  CALL get_value( "LAT_R", SysDepInfo, LAT_R(i) )
+  CALL get_value( "LON_R", SysDepInfo, LON_R(i) )
+  CALL get_value( "LANDMASK_I", SysDepInfo, LANDMASK_I(i) )
 
   mcel_npglobal=-1 ; mcel_mystart=-1 ; mcel_mnproc=-1 ; mcel_myproc=-1  
 

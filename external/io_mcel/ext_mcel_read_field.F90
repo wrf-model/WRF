@@ -88,6 +88,8 @@ SUBROUTINE ext_mcel_read_field ( DataHandle , DateStr , VarName , Field , FieldT
   ENDIF
 
   ! case 1: the file is opened but not commited for update 
+write(0,*)' read_field: okay_to_read: ', DataHandle, okay_to_read(DataHandle)
+write(0,*)' read_field: opened_for_update: ', DataHandle, opened_for_update(DataHandle)
   if ( .not. okay_to_read( DataHandle ) )  then
     IF ( opened_for_update( DataHandle) ) THEN
       CALL ext_mcel_write_field ( DataHandle , DateStr , VarName , Field , FieldType , Comm , IOComm, &
@@ -96,8 +98,8 @@ SUBROUTINE ext_mcel_read_field ( DataHandle , DateStr , VarName , Field , FieldT
                                   MemoryStart , MemoryEnd ,                                    &
                                   PatchStart , PatchEnd ,                                      &
                                   ierr )
-      IF ( TRIM(VarName) .NE. TRIM(LAT_R) .AND. TRIM(VarName) .NE. TRIM(LON_R) .AND. &
-           TRIM(VarName) .NE. TRIM(LANDMASK_I) ) THEN
+      IF ( TRIM(VarName) .NE. TRIM(LAT_R(DataHandle)) .AND. TRIM(VarName) .NE. TRIM(LON_R(DataHandle)) .AND. &
+           TRIM(VarName) .NE. TRIM(LANDMASK_I(DataHandle)) ) THEN
         ListOfFields(DataHandle) = TRIM(ListOfFields(DataHandle)) // ',' // TRIM(VarName)
       ENDIF
     ELSE
@@ -117,19 +119,19 @@ SUBROUTINE ext_mcel_read_field ( DataHandle , DateStr , VarName , Field , FieldT
       mcel_npglobal=-1 ; mcel_mystart=-1 ; mcel_mnproc=-1 ; mcel_myproc=-1
 
       ! sieve the fields coming in and grab the ones we need for geo registration
-      IF      ( TRIM(VarName) .EQ. TRIM(LAT_R) ) THEN
+      IF      ( TRIM(VarName) .EQ. TRIM(LAT_R(DataHandle)) ) THEN
         IF ( ALLOCATED(xlat) ) THEN
           DEALLOCATE(xlat)
         ENDIF
         ALLOCATE(xlat(ips:ipe,jps:jpe))
         CALL copy_field_to_cache ( FieldType , Field, xlat, ips, ipe, jps, jpe, ims, ime, jms, jme )
-      ELSE IF ( TRIM(VarName) .EQ. TRIM(LON_R) ) THEN
+      ELSE IF ( TRIM(VarName) .EQ. TRIM(LON_R(DataHandle)) ) THEN
         IF ( ALLOCATED(xlong) ) THEN
           DEALLOCATE(xlong)
         ENDIF
         ALLOCATE(xlong(ips:ipe,jps:jpe))
         CALL copy_field_to_cache ( FieldType , Field, xlong, ips, ipe, jps, jpe, ims, ime, jms, jme )
-      ELSE IF ( TRIM(VarName) .EQ. TRIM(LANDMASK_I) ) THEN
+      ELSE IF ( TRIM(VarName) .EQ. TRIM(LANDMASK_I(DataHandle)) ) THEN
         IF ( ALLOCATED(mask) ) THEN
           DEALLOCATE(mask)
         ENDIF
@@ -170,8 +172,8 @@ SUBROUTINE ext_mcel_read_field ( DataHandle , DateStr , VarName , Field , FieldT
 !  else if ( okay_to_write( DataHandle ) .and. opened_for_update( DataHandle) )  then
   else if ( okay_to_read( DataHandle ) )  then
 
-    IF ( TRIM(VarName) .NE. TRIM(LAT_R) .AND. TRIM(VarName) .NE. TRIM(LON_R) .AND. &
-         TRIM(VarName) .NE. TRIM(LANDMASK_I) ) THEN
+    IF ( TRIM(VarName) .NE. TRIM(LAT_R(DataHandle)) .AND. TRIM(VarName) .NE. TRIM(LON_R(DataHandle)) .AND. &
+         TRIM(VarName) .NE. TRIM(LANDMASK_I(DataHandle)) ) THEN
       IF ( .NOT. mcel_finalized( DataHandle ) ) THEN
         IF ( ALLOCATED( xlat ) .AND. ALLOCATED( xlong ) ) THEN
           CALL setLocationsXY( open_file_descriptors(2,DataHandle), xlong, xlat, ierr )
@@ -213,6 +215,10 @@ SUBROUTINE ext_mcel_read_field ( DataHandle , DateStr , VarName , Field , FieldT
 
       CALL YYYYMMDDHHMMSS2SECS( timestr, data_time )
 
+write(0,*)'TRIM( VarName ) ',TRIM( VarName )
+write(0,*)'TRIM( ListOfFields(DataHandle) ) ',TRIM( ListOfFields(DataHandle) )
+write(0,*)'INDEX( TRIM( ListOfFields(DataHandle) ), TRIM( VarName ) )', INDEX( TRIM( ListOfFields(DataHandle) ), TRIM( VarName ) )
+
       IF ( INDEX( TRIM( ListOfFields(DataHandle) ), TRIM( VarName ) ) .EQ. 0 ) THEN
         write(mess,*)'ext_mcel_open_for_read_field: ',TRIM( VarName ),' is not a field set up for DataHandle ', DataHandle
         CALL wrf_error_fatal( TRIM(mess) )
@@ -225,6 +231,7 @@ SUBROUTINE ext_mcel_read_field ( DataHandle , DateStr , VarName , Field , FieldT
           call getData(open_file_descriptors(1,DataHandle),TRIM(VarName),temp,                 &
             data_time,data_time,MCEL_TIMECENT_POINT,usemask(DataHandle),                       &
             MCEL_FETCHPOLICY_KEEPBLOCK,ierr)
+write(0,*)'ext_mcel_read_field ok getData returns ',ierr, Trim(VarName)
         ELSE
 ! the difference is there is no KEEP in the FETCHPOLICY
           call getData(open_file_descriptors(1,DataHandle),TRIM(VarName),temp,                 &

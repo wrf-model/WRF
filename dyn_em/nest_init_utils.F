@@ -197,3 +197,79 @@ SUBROUTINE store_terrain ( ter_interpolated , ter_input , &
    END DO 
 
 END SUBROUTINE store_terrain
+
+
+SUBROUTINE input_terrain_rsmas ( ter , xlat, xlon, dx , &
+                           ids , ide , jds , jde , kds , kde , &
+                           ims , ime , jms , jme , kms , kme , &
+                           ips , ipe , jps , jpe , kps , kpe )
+
+   IMPLICIT NONE
+
+   INTEGER , INTENT(IN)                       :: ids , ide , jds , jde , kds , kde , &
+                                                 ims , ime , jms , jme , kms , kme , &
+                                                 ips , ipe , jps , jpe , kps , kpe
+   REAL , DIMENSION(ims:ime,jms:jme) , INTENT(INOUT)  :: ter
+   REAL , DIMENSION(ims:ime,jms:jme) , INTENT(IN)     :: xlat, xlon
+   REAL , INTENT(IN)                                  :: DX
+   LOGICAL, EXTERNAL ::  wrf_dm_on_monitor
+
+   INTEGER :: i , j , k , myproc
+
+#if DM_PARALLEL
+! Local globally sized arrays
+   REAL , DIMENSION(ids:ide,jds:jde) :: ter_g, xlat_g, xlon_g
+#endif
+
+   CALL wrf_get_myproc ( myproc ) 
+
+#if 0
+write(30+myproc,*)ipe-ips+1,jpe-jps+1,' HT before '
+do j = jps,jpe
+do i = ips,ipe
+write(30+myproc,*)ter(i,j)
+enddo
+enddo
+#endif
+
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
+
+   CALL wrf_patch_to_global_real ( xlat , xlat_g , 'z' , 'xy' ,       &
+                                   ids, ide-1 , jds , jde-1 , 1 , 1 , &
+                                   ims, ime   , jms , jme   , 1 , 1 , &
+                                   ips, ipe   , jps , jpe   , 1 , 1   ) 
+   CALL wrf_patch_to_global_real ( xlon , xlon_g , 'z' , 'xy' ,       &
+                                   ids, ide-1 , jds , jde-1 , 1 , 1 , &
+                                   ims, ime   , jms , jme   , 1 , 1 , &
+                                   ips, ipe   , jps , jpe   , 1 , 1   ) 
+
+   IF ( wrf_dm_on_monitor() ) THEN
+     CALL get_terrain ( dx/1000., xlat_g(ids:ide,jds:jde), xlon_g(ids:ide,jds:jde), ter_g(ids:ide,jds:jde), &
+                        ide-ids+1,jde-jds+1,ide-ids+1,jde-jds+1 )
+     WHERE ( ter(ids:ide,jds:jde) < -1000. ) ter(ids:ide,jds:jde) = 0.
+   ENDIF
+
+   CALL wrf_global_to_patch_real ( ter_g , ter , 'z' , 'xy' ,         &
+                                   ids, ide-1 , jds , jde-1 , 1 , 1 , &
+                                   ims, ime   , jms , jme   , 1 , 1 , &
+                                   ips, ipe   , jps , jpe   , 1 , 1   ) 
+
+#else
+
+   CALL get_terrain ( dx/1000., xlat(ids:ide,jds:jde), xlon(ids:ide,jds:jde), ter(ids:ide,jds:jde), &
+                       ide-ids+1,jde-jds+1,ide-ids+1,jde-jds+1 )
+   WHERE ( ter(ids:ide,jds:jde) < -1000. ) ter(ids:ide,jds:jde) = 0.
+
+#endif
+
+#if 0
+write(30+myproc,*)ipe-ips+1,jpe-jps+1,' HT after '
+do j = jps,jpe
+do i = ips,ipe
+write(30+myproc,*)ter(i,j)
+enddo
+enddo
+#endif
+                       
+END SUBROUTINE input_terrain_rsmas
+

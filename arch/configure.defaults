@@ -935,7 +935,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" CPP="$(CPP)" FC="f90 $(FCDEBUG) -automatic -cpp -free" all )
+          make CC="$(CC)" CPP="$(CPP)" FC="f90 $(FCDEBUG) -cpp -free" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
@@ -4101,7 +4101,6 @@ module_initialize_real.o module_dm.o start_domain.o :
 #          On Jacaranda, setenv NETCDF /jacaranda/users/michalak/netcdf-3.5.1
 #          Built this netcdf by first setenv FC efc and CPPFLAGS '-DNDEBUG -DpgiFortran'
 #          before typing configure and make and make install   20040506. JM
-#          Remember: setenv F_UFMTENDIAN big
 #
 # Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #
@@ -4119,7 +4118,7 @@ CFLAGS = -DDM_PARALLEL -DWRF_RSL_IO -cm -w \
          -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL/RSL -size_lp64
 FCOPTIM = -O2 -ftz
 FCDEBUG = #-g
-FCBASEOPTS = $(FCDEBUG) -w -FR -I$(INCLUDE) -cm 
+FCBASEOPTS = $(FCDEBUG) -w -FR -I$(INCLUDE) -cm -convert big_endian
 FCNOOPTS = -O0 $(FCDEBUG) -FR -I$(INCLUDE) -w -cm 
 FCFLAGS = $(FCOPTIM) $(FCBASEOPTS) $(OMP) -size_lp64 
 ARCHFLAGS = -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
@@ -4134,7 +4133,7 @@ LIB = -L../external/io_netcdf -lwrfio_nf $(OMP) -LCONFIGURE_NETCDF_PATH/lib -lne
                         -L../external/io_grib1 -lio_grib1 \
       -L../external/RSL/RSL -lrsl ../frame/module_internal_header_util.o ../frame/pack_utils.o \
       -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS = $(OMP)
+LDFLAGS = $(OMP) -convert big_endian
 CPP             =  /lib/cpp -traditional -C -P
 POUND_DEF	=  -DNO_RRTM_PHYSICS -DF90_STANDALONE \
                    -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -4859,7 +4858,7 @@ OMPCPP          =
 FC		=	ifort
 CC              =       icc
 SFC		=	$(FC)
-FCBASEOPTS      =       -w -FR -cm -I. -Vaxlib
+FCBASEOPTS      =       -w -FR -cm -I. -Vaxlib -convert big_endian
 FCOPTIM		=	-O2
 FCFLAGS		=	$(FCOPTIM) $(FCBASEOPTS) $(OMP)
 CFLAGS		=       -w
@@ -4966,7 +4965,7 @@ CC              =       icc
 SFC             =       ifort
 FCOPTIM		=	-O3 -xW
 FCDEBUG		=	#-g
-FCBASEOPTS      =       -FR -cm -w -I. $(FCDEBUG)
+FCBASEOPTS      =       -FR -cm -w -I. $(FCDEBUG) -convert big_endian
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DYYY -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
@@ -4982,7 +4981,7 @@ REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
 			-L../external/io_int -lwrfio_int -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS         =       $(FCOPTIM) $(OMP)
+LDFLAGS         =       $(FCOPTIM) $(OMP) -convert big_endian
 CPP             =       /lib/cpp -traditional
 POUND_DEF	=	-DNO_RRTM_PHYSICS $(OMPCPP) $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS) -DYYY
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL/RSL -C -P `cat ../inc/dm_comm_cpp_flags` $(POUND_DEF)
@@ -5073,7 +5072,7 @@ SFC             =       $(FC)
 CFLAGS          =
 FCOPTIM		=	-O3 -xW
 FCDEBUG		=	#-g
-FCBASEOPTS      =       -FR -cm -w -I. $(FCDEBUG)
+FCBASEOPTS      =       -FR -cm -w -I. $(FCDEBUG) -convert big_endian
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
                          CONFIGURE_NETCDF_FLAG \
@@ -5172,7 +5171,7 @@ CC              =       icc
 SFC             =       ifort
 FCOPTIM		=	-O3 -xW
 FCDEBUG		=	#-g
-FCBASEOPTS      =       -FR -cm -w -I. $(FCDEBUG)
+FCBASEOPTS      =       -FR -cm -w -I. $(FCDEBUG) -convert big_endian
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DYYY -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
@@ -5188,7 +5187,7 @@ REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
 			-L../external/io_int -lwrfio_int -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time $(OMP)
-LDFLAGS         =       $(FCOPTIM)
+LDFLAGS         =       $(FCOPTIM) -convert big_endian
 CPP             =       /lib/cpp -traditional
 POUND_DEF	=	-DNO_RRTM_PHYSICS $(OMPCPP) $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS) -DYYY
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL/RSL -C -P `cat ../inc/dm_comm_cpp_flags` $(POUND_DEF)
@@ -5280,7 +5279,7 @@ CC              =       mpicc -cc=icc
 SFC             =       ifort
 FCOPTIM		=	-O3 -xW
 FCDEBUG		=	#-g
-FCBASEOPTS      =       -FR -cm -w -I. $(FCDEBUG)
+FCBASEOPTS      =       -FR -cm -w -I. $(FCDEBUG) -convert big_endian
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DYYY -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
@@ -5296,7 +5295,7 @@ REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
 			-L../external/io_int -lwrfio_int -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS         =       $(FCOPTIM)
+LDFLAGS         =       $(FCOPTIM) -convert big_endian
 CPP             =       /lib/cpp -traditional
 POUND_DEF	=	-DNO_RRTM_PHYSICS  $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS) -DYYY
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL/RSL -C -P `cat ../inc/dm_comm_cpp_flags` $(POUND_DEF)

@@ -634,6 +634,7 @@ RSL_WRITE ( unit_p, iotag_p, base, d_p, type_p, glen, llen  )
   int iotag ;
   int *is_write, *ie_write, *js_write, *je_write ;
   int in_write ;
+  int dummy ;
 
   d = *d_p ;
   RSL_TEST_ERR( d < 0 || d >= RSL_MAXDOMAINS,
@@ -965,7 +966,7 @@ RSL_WRITE ( unit_p, iotag_p, base, d_p, type_p, glen, llen  )
     mdest = RSL_C_MONITOR_PROC () ;
     msglen = 1 ;
     mtag = MTYPE_FROMTO( MSG_WRITE_COMPUTE_RESPONSE, mdest, rsl_myproc ) ;
-    RSL_RECV( pbuf, msglen, mtag ) ;
+    RSL_RECV( &dummy, msglen, mtag ) ;
 #endif
     mdest = RSL_C_MONITOR_PROC () ;
     msglen = psize ;

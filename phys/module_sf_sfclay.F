@@ -562,6 +562,8 @@ CONTAINS
 !---  THIS PREVENTS DENOMINATOR IN FLUXES FROM GETTING TOO SMALL                 
         PSIH(I)=AMIN1(PSIH(I),0.9*GZ1OZ0(I))                                     
         PSIM(I)=AMIN1(PSIM(I),0.9*GZ1OZ0(I))                                     
+        PSIH2(I)=AMIN1(PSIH2(I),0.9*GZ2OZ0(I))                                     
+        PSIM10(I)=AMIN1(PSIM10(I),0.9*GZ10OZ0(I))                                     
   320 CONTINUE                                                                   
 !                                                                                
 !-----COMPUTE THE FRICTIONAL VELOCITY:                                           

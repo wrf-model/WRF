@@ -49,6 +49,7 @@ gen_module_state_description1 ( FILE * fp , node_t * node )
       {
         fprintf(fp,"  INTEGER, PARAMETER :: PARAM_%s = %d\n",q->name,c1) ;
         fprintf(fp,"  INTEGER            ::     P_%s = 1\n",q->name) ;
+        fprintf(fp,"  LOGICAL            ::     F_%s = .FALSE.\n",q->name) ;
       }
     }
     fprintf(fp,"  INTEGER, PARAMETER :: PARAM_NUM_%s = %d\n",p->name,c1) ;

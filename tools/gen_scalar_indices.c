@@ -94,7 +94,7 @@ gen_scalar_indices1 ( FILE * fp )
 
   for ( p = FourD ; p != NULL ; p = p->next )
    { for ( memb = p->members ; memb != NULL ; memb = memb->next )
-      { if ( strcmp(memb->name,"-") ) fprintf(fp,"  P_%s = 1\n", memb->name ) ; } }
+      { if ( strcmp(memb->name,"-") ) fprintf(fp,"  P_%s = 1 ; F_%s = .FALSE. \n", memb->name, memb->name ) ; } }
 
   for ( pkg = Packages ; pkg != NULL ; pkg = pkg->next )
   {
@@ -131,6 +131,7 @@ gen_scalar_indices1 ( FILE * fp )
             fprintf(fp,"   ELSE\n") ;
             fprintf(fp,"     P_%s = %s_index_table( PARAM_%s , idomain )\n",c,assoc_4d,c)  ;
             fprintf(fp,"   END IF\n") ;
+            fprintf(fp,"   F_%s = .TRUE.\n",c) ;
           }
         }
 

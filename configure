@@ -302,8 +302,8 @@ fi
 
 # new feb 2005.  test whether MPI-2
 if test -e configure.wrf ; then
-  grep 'DMPARALLEL .*=.*1' configure.wrf 1> /dev/null
-  if  $status  ; then
+  grep 'DMPARALLEL .*=.*1' configure.wrf > /dev/null
+  if [ ! $? ] ; then
     echo testing for MPI_Comm_f2c and MPI_Comm_c2f 
     /bin/rm -f tools/mpi2_test
     ( make mpi2_test 2> /dev/null ) 1> /dev/null

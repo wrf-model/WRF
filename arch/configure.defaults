@@ -5144,7 +5144,8 @@ CC = cc
 SCC = $(CC)
 SFC = ifort
 RWORDSIZE       =       4
-PROMOTION	=	-r$(RWORDSIZE) -i4
+RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
+PROMOTION	=	-realsize $(RSIZEBITS)
 CFLAGS = -DDM_PARALLEL -DWRF_RSL_IO -cm -w \
          -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL/RSL -size_lp64
 FCOPTIM = -O2 -ftz
@@ -5956,11 +5957,12 @@ CC              =       icc
 SCC		=	$(CC)
 SFC		=	$(FC)
 RWORDSIZE       =       4
+RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
+PROMOTION	=	-realsize $(RSIZEBITS)
 FCDEBUG         =       # -g
 FCBASEOPTS      =       -w -FR -cm -I. -Vaxlib -convert big_endian -mp
 FCOPTIM		=	-O2
 FCFLAGS		=	$(FCOPTIM) $(FCBASEOPTS) $(OMP)
-PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS		=       -w
 EXTRAMODULES    =       
 INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
@@ -6072,6 +6074,8 @@ CC              =       icc
 SCC		=	$(CC)
 SFC             =       ifort
 RWORDSIZE       =       4
+RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
+PROMOTION	=	-realsize $(RSIZEBITS)
 FCOPTIM		=	-O3 -xW
 FCDEBUG		=	#-g
 FCBASEOPTS      =       -FR -cm -w -I. $(FCDEBUG) -convert big_endian -mp
@@ -6080,7 +6084,6 @@ ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DYYY -DINTIO -DWRF_RSL
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
                         -DTRIEDNTRUE   \
 			-DLIMIT_ARGS -DSTUBMPI -DIFORT_KLUDGE
-PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =       -w -DDM_PARALLEL -DWRF_RSL_IO \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL/RSL $(ARCHFLAGS)
 INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
@@ -6186,7 +6189,8 @@ CC              =       gcc
 SCC		=	$(CC)
 SFC             =       $(FC)
 RWORDSIZE       =       4
-PROMOTION	=	-r$(RWORDSIZE) -i4
+RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
+PROMOTION	=	-realsize $(RSIZEBITS)
 CFLAGS          =
 FCOPTIM		=	-O3 -xW
 FCDEBUG		=	#-g
@@ -6296,6 +6300,8 @@ CC              =       icc
 SCC		=	$(CC)
 SFC             =       ifort
 RWORDSIZE       =       4
+RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
+PROMOTION	=	-realsize $(RSIZEBITS)
 FCOPTIM		=	-O3 -xW
 FCDEBUG		=	#-g
 FCBASEOPTS      =       -FR -cm -w -I. $(FCDEBUG) -convert big_endian -mp
@@ -6304,7 +6310,6 @@ ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DYYY -DINTIO -DWRF_RSL
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
                         -DTRIEDNTRUE   \
 			-DLIMIT_ARGS -DSTUBMPI -DIFORT_KLUDGE
-PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =       -w -DDM_PARALLEL -DWRF_RSL_IO \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL/RSL $(ARCHFLAGS)
 INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
@@ -6412,6 +6417,8 @@ CC              =       mpicc -cc=icc
 SCC		=	icc
 SFC             =       ifort
 RWORDSIZE       =       4
+RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
+PROMOTION	=	-realsize $(RSIZEBITS)
 FCOPTIM		=	-O3 -xW
 FCDEBUG		=	#-g
 FCBASEOPTS      =       -FR -cm -w -I. $(FCDEBUG) -convert big_endian -mp
@@ -6420,7 +6427,6 @@ ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DYYY -DINTIO -DWRF_RSL
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
                         -DTRIEDNTRUE -DMPI  \
 			-DLIMIT_ARGS -DIFORT_KLUDGE 
-PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =       -w -DDM_PARALLEL -DWRF_RSL_IO $(ARCHFLAGS) \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL/RSL
 INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
@@ -6691,7 +6697,8 @@ SCC		=	$(CC)
 CC_TOOLS          = cc
 SFC               = ifort
 RWORDSIZE         = 4
-PROMOTION	=	-r$(RWORDSIZE) -i4
+RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
+PROMOTION	=	-realsize $(RSIZEBITS)
 CFLAGS            = -w -O3 -ip -tpp2 -c -ftz -no-gcc -DDM_PARALLEL -DWRF_RSL_IO \
                     -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL/RSL
 FCOPTIM           = -O3
@@ -6756,12 +6763,12 @@ wrfio_nf :
 wrfio_int : 
 	( cd ../external/io_int ; \
           make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" TRADFLAG="-traditional" \
-          SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
+          SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
           make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" TRADFLAG="-traditional" \
-          FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" )
+          FC="$(SFC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -6832,7 +6839,8 @@ SCC		=	$(CC)
 CC_TOOLS          = cc
 SFC               = ifort
 RWORDSIZE         = 4
-PROMOTION	=	-r$(RWORDSIZE) -i4
+RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
+PROMOTION	=	-realsize $(RSIZEBITS)
 CFLAGS            = -w -O3 -ip -tpp2 -c -ftz -DDM_PARALLEL -I../external/RSL_LITE \
                     -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
 FCOPTIM           = -O3
@@ -6895,12 +6903,12 @@ wrfio_nf :
 wrfio_int : 
 	( cd ../external/io_int ; \
           make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" TRADFLAG="-traditional" \
-          SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
+          SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
           make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" TRADFLAG="-traditional" \
-          FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
+          FC="$(SFC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -6960,7 +6968,8 @@ SCC		=	$(CC)
 CC_TOOLS          = cc
 SFC               = ifort
 RWORDSIZE         = 4
-PROMOTION	=	-r$(RWORDSIZE) -i4
+RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
+PROMOTION	=	-realsize $(RSIZEBITS)
 CFLAGS            = -w -O3 -ip -tpp2 -c -ftz 
 FCOPTIM           = -O3
 FCDEBUG           = # -g
@@ -7017,12 +7026,12 @@ wrfio_nf :
 wrfio_int : 
 	( cd ../external/io_int ; \
           make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" TRADFLAG="-traditional" \
-          SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
+          SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
           make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" TRADFLAG="-traditional" \
-          FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
+          FC="$(SFC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -7076,7 +7085,8 @@ SCC		=	$(CC)
 CC_TOOLS          = cc
 SFC               = ifort
 RWORDSIZE         = 4
-PROMOTION	=	-r$(RWORDSIZE) -i4
+RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
+PROMOTION	=	-realsize $(RSIZEBITS)
 CFLAGS            = -w -O3 -ip -tpp2 -c -ftz 
 FCOPTIM           = -O3
 FCDEBUG           = # -g
@@ -7133,12 +7143,12 @@ wrfio_nf :
 wrfio_int : 
 	( cd ../external/io_int ; \
           make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" TRADFLAG="-traditional" \
-          SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
+          SFC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
           make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" TRADFLAG="-traditional" \
-          FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
+          FC="$(SFC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \

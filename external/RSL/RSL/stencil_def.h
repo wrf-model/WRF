@@ -78,6 +78,8 @@ int rsl_8pt() ;		/* forward declarations for pt functions */
 int rsl_12pt() ;	/* forward declarations for pt functions */
 int rsl_24pt() ;	/* forward declarations for pt functions */
 int rsl_48pt() ;	/* forward declarations for pt functions */
+int rsl_80pt() ;	/* forward declarations for pt functions */
+int rsl_120pt() ;	/* forward declarations for pt functions */
 #if (ALLOW_RSL_168PT == 1)
 int rsl_168pt() ;	/* forward declarations for pt functions */
 #endif

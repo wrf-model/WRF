@@ -292,24 +292,27 @@
 
         END IF
 
-     ELSE  ! even refinement ratio
+     !  Even refinement ratio
 
-     !  This is a simple schematic of the feedback indexing used in the even
-     !  ratio nests.  For simplicity, a 2::1 ratio is depicted.  Only the 
-     !  mass variable staggering us shown, though the momentum variables are
-     !  handled with -istag or -jstag on the ci and cj loop indices.    Each of
-     !  the boxes with a "T" and four small "t" represents a coarse grid (CG)
-     !  cell, that is composed of four (2::1 ratio) fine grid (FG) cells.
+     ELSE IF ( MOD(nrj,2) .EQ. 0) THEN
+        IF ( ( .NOT. xstag ) .AND. ( .NOT. ystag ) ) THEN
 
-     !  Shown below is the area of the CG that is in the area of the FG.   The
-     !  first grid point of the depicted CG is the starting location of the nest
-     !  in the parent domain (ipos,jpos - i_parent_start and j_parent_start from
-     !  the namelist).  
-
-     !  For each of the CG points, the feedback loop is over each of the FG points
-     !  within the CG cell.  For a 2::1 ratio, there are four total points (this is 
-     !  the ijpoints loop).  The feedback value to the CG is the arithmetic mean of 
-     !  all of the FG values within each CG cell.
+        !  This is a simple schematic of the feedback indexing used in the even
+        !  ratio nests.  For simplicity, a 2::1 ratio is depicted.  Only the 
+        !  mass variable staggering is shown. 
+        !                                                                  Each of
+        !  the boxes with a "T" and four small "t" represents a coarse grid (CG)
+        !  cell, that is composed of four (2::1 ratio) fine grid (FG) cells.
+   
+        !  Shown below is the area of the CG that is in the area of the FG.   The
+        !  first grid point of the depicted CG is the starting location of the nest
+        !  in the parent domain (ipos,jpos - i_parent_start and j_parent_start from
+        !  the namelist).  
+   
+        !  For each of the CG points, the feedback loop is over each of the FG points
+        !  within the CG cell.  For a 2::1 ratio, there are four total points (this is 
+        !  the ijpoints loop).  The feedback value to the CG is the arithmetic mean of 
+        !  all of the FG values within each CG cell.
 
 !              |-------------||-------------|                          |-------------||-------------|
 !              |  t      t   ||  t      t   |                          |  t      t   ||  t      t   |
@@ -354,41 +357,114 @@
 ! ipoints=        0      1       0      1                                                  -istag
 !
 
-        !  For performance benefits, users can comment out the inner most loop (and cfld=0) and
-        !  hardcode the loop feedback.  For example, it is set up to run a 2::1 ratio
-        !  if uncommented.  This lacks generality, but is likely to gain timing benefits
-        !  with compilers unable to unroll inner loops that do not have parameterized sizes.
-
-        !  The extra +1 ---------/ and the extra -1 ----\  (both for ci and cj) 
-        !                       /                        \   keeps the feedback out of the 
-        !                      /                          \  outer row/col, since that CG data
-        !                     /                            \ specified the nest boundary originally
-        !                    /                              \   This
-        !                   /                                \    is just
-        !                  /                                  \   a sentence to not end a line
-        !                 /                                    \   with a stupid backslash
-        DO cj = MAX(jpos+1,cjts),MIN(jpos+(njde-njds)/nrj-jstag-1,cjte)
-           nj = (cj-jpos)*nrj + jstag
-           DO ck = ckts, ckte
-              nk = ck
-              DO ci = MAX(ipos+1,cits),MIN(ipos+(nide-nids)/nri-istag-1,cite)
-                 ni = (ci-ipos)*nri + istag
-                 cfld( ci, ck, cj ) = 0.
-                 DO ijpoints = 1 , nri * nrj
-                    ipoints = MOD((ijpoints-1),nri)
-                    jpoints = (ijpoints-1)/nri
-                    cfld( ci, ck, cj ) =  cfld( ci, ck, cj ) + &
-                                          1./REAL(nri*nrj) * nfld( ni+ipoints , nk , nj+jpoints )
+           !  For performance benefits, users can comment out the inner most loop (and cfld=0) and
+           !  hardcode the loop feedback.  For example, it is set up to run a 2::1 ratio
+           !  if uncommented.  This lacks generality, but is likely to gain timing benefits
+           !  with compilers unable to unroll inner loops that do not have parameterized sizes.
+   
+           !  The extra +1 ---------/ and the extra -1 ----\  (both for ci and cj) 
+           !                       /                        \   keeps the feedback out of the 
+           !                      /                          \  outer row/col, since that CG data
+           !                     /                            \ specified the nest boundary originally
+           !                    /                              \   This
+           !                   /                                \    is just
+           !                  /                                  \   a sentence to not end a line
+           !                 /                                    \   with a stupid backslash
+           DO cj = MAX(jpos+1,cjts),MIN(jpos+(njde-njds)/nrj-jstag-1,cjte)
+              nj = (cj-jpos)*nrj + jstag
+              DO ck = ckts, ckte
+                 nk = ck
+                 DO ci = MAX(ipos+1,cits),MIN(ipos+(nide-nids)/nri-istag-1,cite)
+                    ni = (ci-ipos)*nri + istag
+                    cfld( ci, ck, cj ) = 0.
+                    DO ijpoints = 1 , nri * nrj
+                       ipoints = MOD((ijpoints-1),nri)
+                       jpoints = (ijpoints-1)/nri
+                       cfld( ci, ck, cj ) =  cfld( ci, ck, cj ) + &
+                                             1./REAL(nri*nrj) * nfld( ni+ipoints , nk , nj+jpoints )
+                    END DO
+!                   cfld( ci, ck, cj ) =  1./4. * &
+!                                         ( nfld( ni  , nk , nj  ) + &
+!                                           nfld( ni+1, nk , nj  ) + &
+!                                           nfld( ni  , nk , nj+1) + &
+!                                           nfld( ni+1, nk , nj+1) )
                  END DO
-!                cfld( ci, ck, cj ) =  1./4. * &
-!                                      ( nfld( ni  , nk , nj  ) + &
-!                                        nfld( ni+1, nk , nj  ) + &
-!                                        nfld( ni  , nk , nj+1) + &
-!                                        nfld( ni+1, nk , nj+1) )
               END DO
            END DO
-        END DO
 
+        !  U
+
+        ELSE IF ( (       xstag ) .AND. ( .NOT. ystag ) ) THEN
+!              |---------------|
+!              |               |
+! jpoints = 1  u       u       |
+!              |               |
+!              U               |
+!              |               |
+! jpoints = 0, u       u       |
+!  nj=3        |               |
+!              |---------------|
+!              |---------------|
+!              |               |
+! jpoints = 1  u       u       |
+!              |               |
+!    jpos      U               |
+!              |               |
+! jpoints = 0, u       u       |
+! nj=1         |               |
+!              |---------------|
+! 
+!              ^               
+!              |              
+!              |             
+!            ipos           
+!     ni =     1               3
+! ipoints=     0       1       0 
+!
+
+           DO cj = MAX(jpos+1,cjts),MIN(jpos+(njde-njds)/nrj-jstag-1,cjte)
+              nj = (cj-jpos)*nrj + 1
+              DO ck = ckts, ckte
+                 nk = ck
+                 DO ci = MAX(ipos+1,cits),MIN(ipos+(nide-nids)/nri-istag-1,cite)
+                    ni = (ci-ipos)*nri + 1
+                    cfld( ci, ck, cj ) = 0.
+                    DO ijpoints = 1 , nri*nrj , nri
+                       ipoints = MOD((ijpoints-1),nri)
+                       jpoints = (ijpoints-1)/nri
+                       cfld( ci, ck, cj ) =  cfld( ci, ck, cj ) + &
+                                             1./REAL(nri    ) * nfld( ni+ipoints , nk , nj+jpoints )
+                    END DO
+!                cfld( ci, ck, cj ) =  1./2. * &
+!                                      ( nfld( ni  , nk , nj  ) + &
+!                                        nfld( ni  , nk , nj+1) )
+                 ENDDO
+              ENDDO
+           ENDDO
+
+        !  V 
+
+        ELSE IF ( ( .NOT. xstag ) .AND. (       ystag ) ) THEN
+           DO cj = MAX(jpos+1,cjts),MIN(jpos+(njde-njds)/nrj-jstag-1,cjte)
+              nj = (cj-jpos)*nrj + 1
+              DO ck = ckts, ckte
+                 nk = ck
+                 DO ci = MAX(ipos+1,cits),MIN(ipos+(nide-nids)/nri-istag-1,cite)
+                    ni = (ci-ipos)*nri + 1
+                    cfld( ci, ck, cj ) = 0.
+                    DO ijpoints = 1 , nri
+                       ipoints = MOD((ijpoints-1),nri)
+                       jpoints = (ijpoints-1)/nri
+                       cfld( ci, ck, cj ) =  cfld( ci, ck, cj ) + &
+                                             1./REAL(nri    ) * nfld( ni+ipoints , nk , nj+jpoints )
+                    END DO
+!                cfld( ci, ck, cj ) =  1./2. * &
+!                                      ( nfld( ni  , nk , nj  ) + &
+!                                        nfld( ni+1, nk , nj  ) )
+                 ENDDO
+              ENDDO
+           ENDDO
+        END IF
      END IF
 
      RETURN
@@ -454,8 +530,19 @@
            ENDDO
         ENDDO
 
-     ELSE  ! even refinement ratio
-        CALL wrf_error_fatal( 'no 1-pt feedback for reals with even nest ratio, yet' )
+     ELSE  ! even refinement ratio, pick nearest neighbor on SW corner
+        DO cj = MAX(jpos+1,cjts),MIN(jpos+(njde-njds)/nrj-jstag-1,cjte)
+           nj = (cj-jpos)*nrj + 1
+           DO ck = ckts, ckte
+              nk = ck
+              DO ci = MAX(ipos+1,cits),MIN(ipos+(nide-nids)/nri-istag-1,cite)
+                 ni = (ci-ipos)*nri + 1
+                 ipoints = nri/2 -1
+                 jpoints = nrj/2 -1
+                 cfld( ci, ck, cj ) =  nfld( ni+ipoints , nk , nj+jpoints )
+              END DO
+           END DO
+        END DO
 
      END IF
 
@@ -523,7 +610,18 @@
         ENDDO
 
      ELSE  ! even refinement ratio
-        CALL wrf_error_fatal( 'no 1-pt feedback for integers with even nest ratio, yet' )
+        DO cj = MAX(jpos+1,cjts),MIN(jpos+(njde-njds)/nrj-jstag-1,cjte)
+           nj = (cj-jpos)*nrj + 1
+           DO ck = ckts, ckte
+              nk = ck
+              DO ci = MAX(ipos+1,cits),MIN(ipos+(nide-nids)/nri-istag-1,cite)
+                 ni = (ci-ipos)*nri + 1
+                 ipoints = nri/2 -1
+                 jpoints = nrj/2 -1
+                 cfld( ci, ck, cj ) =  nfld( ni+ipoints , nk , nj+jpoints )
+              END DO
+           END DO
+        END DO
 
      END IF
 

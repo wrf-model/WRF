@@ -105,6 +105,7 @@ CONTAINS
       REAL    :: qvf , qvf1 , qvf2 , pd_surf
       REAL    :: p00 , t00 , a
       REAL    :: hold_znw
+      LOGICAL :: were_bad
 
       LOGICAL :: stretch_grid, dry_sounding, debug
 
@@ -520,34 +521,38 @@ endif
       !  We allow the vertical coordinate to *accidently* come in upside down.  We want
       !  the first full level to be the ground surface.
 
-        !Check whether ZNW (full level) data are truly full levels. If not, we need to adjust them
-        !to be full levels.
-        !in this test, we check if znw(1) is neither 0 nor 1 (within a tolerance of 10**-5)
-        IF (((znw(1).LT.(1-1.E-5)).OR.(znw(1).GT.(1+1.E-5))).AND. &
-                ((znw(1).LT.(0-1.E-5)).OR.(znw(1).GT.(0+1.E-5)))) THEN
-                print *,'Your ZNW input values are probably half-levels. '
-                print *,ZNW
-                print *,'WRF expects ZNW values to be full levels. '
-                print *,'Adjusting now to full levels...'
-        !We want to ignore the first value if it's negative
-                IF (znw(1).LT.0) THEN
-                        znw(1)=0
-                ENDIF
-                DO k=2,kde
-                        znw(k)=2*znw(k)-znw(k-1)
-                END DO
-        ENDIF
+      !  Check whether ZNW (full level) data are truly full levels. If not, we need to adjust them
+      !  to be full levels.
+      !  in this test, we check if znw(1) is neither 0 nor 1 (within a tolerance of 10**-5)
 
-        !let's check our changes
-        IF (((znw(1).LT.(1-1.E-5)).OR.(znw(1).GT.(1+1.E-5))).AND. &
-                ((znw(1).LT.(0-1.E-5)).OR.(znw(1).GT.(0+1.E-5)))) THEN
-           print *,'The input ZNW height values were half-levels or erroneous. '
-           print *,'Attempts to treat the values as half-levels and change them '
-           print *,'to valid full levels failed.'
-        CALL wrf_error_fatal("bad ZNW values from input files")
-        ELSE
-                print *,'...adjusted. ZNW array now contains full eta level values. '
-        ENDIF
+      were_bad = .false.
+      IF ( ( (znw(1).LT.(1-1.E-5) ) .OR. ( znw(1).GT.(1+1.E-5) ) ).AND. &
+           ( (znw(1).LT.(0-1.E-5) ) .OR. ( znw(1).GT.(0+1.E-5) ) ) ) THEN
+         were_bad = .true.
+         print *,'Your ZNW input values are probably half-levels. '
+         print *,ZNW
+         print *,'WRF expects ZNW values to be full levels. '
+         print *,'Adjusting now to full levels...'
+         !  We want to ignore the first value if it's negative
+         IF (znw(1).LT.0) THEN
+            znw(1)=0
+         END IF
+         DO k=2,kde
+            znw(k)=2*znw(k)-znw(k-1)
+         END DO
+      END IF
+
+      !  Let's check our changes
+
+      IF ( ( ( znw(1) .LT. (1-1.E-5) ) .OR. ( znw(1) .GT. (1+1.E-5) ) ).AND. &
+           ( ( znw(1) .LT. (0-1.E-5) ) .OR. ( znw(1) .GT. (0+1.E-5) ) ) ) THEN
+         print *,'The input ZNW height values were half-levels or erroneous. '
+         print *,'Attempts to treat the values as half-levels and change them '
+         print *,'to valid full levels failed.'
+         CALL wrf_error_fatal("bad ZNW values from input files")
+      ELSE IF ( were_bad ) THEN
+         print *,'...adjusted. ZNW array now contains full eta level values. '
+      ENDIF
 
 
       IF ( znw(1) .LT. znw(kde) ) THEN

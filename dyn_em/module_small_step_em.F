@@ -1106,7 +1106,7 @@ SUBROUTINE advance_mu_t( ww, ww_1, u, u_1, v, v_1,            &
    DO j = j_start, j_end
 
      DO i=i_start, i_end
-       DMDT(i) = 0.
+       dmdt(i) = 0.
      ENDDO
 !  NOTE:  mu is not coupled with the map scale factor.
 !         ww (omega) IS coupled with the map scale factor.

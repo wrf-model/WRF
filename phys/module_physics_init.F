@@ -177,6 +177,9 @@ integer myproc
 
 !-- should be from the namelist
 
+   sfull = 0.
+   shalf = 0.
+
    CALL wrf_debug(100,'top of phy_init')
 
    itf=min0(ite,ide-1)

@@ -111,6 +111,9 @@ RSL_INITIALIZE ()
     domain_info[d].valid = RSL_INVALID ;
   }
   for ( i = 0 ; i < RSL_MAXDESCRIPTORS ; i++ ) mh_descriptors[i] = NULL ;
+  for ( i = 0 ; i < RSL_MAXDESCRIPTORS ; i++ ) sh_descriptors[i] = NULL ;
+  for ( i = 0 ; i < RSL_MAXDESCRIPTORS ; i++ ) xp_descriptors[i] = NULL ;
+  for ( i = 0 ; i < RSL_MAXDESCRIPTORS ; i++ ) pr_descriptors[i] = NULL ;
   mh_descriptors[0] = (void*)1 ;  /* leave 0th one alone -- never use.
 				   this means that a message handle of
 				   zero is always an error */

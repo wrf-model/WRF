@@ -91,7 +91,9 @@ BREAKTHEEXAMPLECODE
 
 @*/
 
-RSL_FDECOMPOSE (d_p,fcn,py_p,px_p,info_p,mloc_p,nloc_p)
+RSL_FDECOMPOSE (d_p,fcn,py_p,px_p,info_p,mloc_p,nloc_p,zloc_p,
+                                         mloc_mz_p,nloc_mz_p,zloc_mz_p,
+                                         mloc_nz_p,nloc_nz_p,zloc_nz_p )
   int_p
     d_p  ;      /* (I) domain descriptor */
   int 
@@ -102,10 +104,17 @@ RSL_FDECOMPOSE (d_p,fcn,py_p,px_p,info_p,mloc_p,nloc_p)
    ,info_p	     /* (I) extra argument, passed as-is to fcn */
    ,mloc_p      /* (O) minimum m size of local array on this processor */
    ,nloc_p      /* (O) minimum n size of local array on this processor */
+   ,zloc_p      /* (O) minimum n size of local array on this processor */
+   ,mloc_mz_p   /* (O) minimum m size of local array on this processor */
+   ,nloc_mz_p   /* (O) minimum n size of local array on this processor */
+   ,zloc_mz_p   /* (O) minimum n size of local array on this processor */
+   ,mloc_nz_p   /* (O) minimum m size of local array on this processor */
+   ,nloc_nz_p   /* (O) minimum n size of local array on this processor */
+   ,zloc_nz_p   /* (O) minimum n size of local array on this processor */
    ;
 {
 
-  int d, nest, state, mlen, nlen, i, j, m, n, px, py, px1, py1 ;
+  int d, nest, state, mlen, nlen, zlen, i, j, k, m, n, z, px, py, px1, py1 ;
   int result ;
   int mom ;
   int kn, km, kp, np ;
@@ -116,6 +125,7 @@ RSL_FDECOMPOSE (d_p,fcn,py_p,px_p,info_p,mloc_p,nloc_p)
   int *wrk1, *wrk2 ;
   rsl_list_t *lp ;
   int P, my_P ;
+  int l, h, lz, hz ;
   int retval ;
 
   retval = 0 ;
@@ -126,14 +136,108 @@ RSL_FDECOMPOSE (d_p,fcn,py_p,px_p,info_p,mloc_p,nloc_p)
   RSL_TEST_ERR( d < 0 || d >= RSL_MAXDOMAINS, 
                 "rsl_fdecompose: bad domain descriptor" ) ;
   dinfo = &( domain_info[d] ) ;
-  domain = dinfo->domain ;
   RSL_TEST_ERR( dinfo->valid != RSL_VALID,
                 "rsl_fdecompose: invalid domain descriptor" ) ;
   mlen = dinfo->len_m ;
   nlen = dinfo->len_n ;
+  zlen = dinfo->len_z ;
+
+/* set the ones that aren't decomposed */
+  *zloc_p = zlen ;
+  *nloc_mz_p = nlen ;
+  *mloc_nz_p = mlen ;
+
+  if ( zlen > 1 ) {
+/* figure out MZ decomp: added 20010222 -- for 3d decomposition for xposes */
+    wrk1 = RSL_MALLOC( int, mlen * zlen ) ;
+    wrk2 = RSL_MALLOC( int, mlen * zlen ) ;
+    domain = dinfo->domain_mz ;
+
+  /* load up input work array with valid points */
+    for ( k = 0 ; k < zlen ; k++ )
+      for ( i = 0 ; i < mlen ; i++ )
+      {
+        if ( domain[ INDEX_2(k,i,mlen) ].valid == RSL_VALID )
+          wrk1[INDEX_2(k,i,mlen)] = RSL_VALID ;
+        else
+          wrk1[INDEX_2(k,i,mlen)] = RSL_INVALID ;
+      }
+
+    m = mlen ; z = zlen ; px1 = px ; py1 = py ;  /* protect variables */
+    result = rsl_default_decomp( wrk1, wrk2, info_p, &m, &z, &px1, &py1 ) ;
+
+    if ( ! result )
+    {
+      /* set the processor numbers of the valid points */
+      l = -1 ; h = -1 ; lz = -1 ; hz = -1 ;
+      for ( k = 0 ; k < zlen ; k++ ) {
+        for ( i = 0 ; i < mlen ; i++ ) {
+          p = &(domain[ INDEX_2(k,i,mlen) ]) ;
+	  p->valid = RSL_VALID ;
+          p->P = wrk2[INDEX_2(k,i,mlen)] ;
+          if ( rsl_c_comp2phys_proc(p->P) == rsl_myproc ) {
+	    if ( l == -1 ) l = i ;
+	    h = i ;
+	    if ( lz == -1 ) lz = k ;
+	    hz = k ;
+          }
+        }
+      }
+      *mloc_mz_p = h-l+1 ;
+      *zloc_mz_p = hz-lz+1 ;
+    }
+
+    RSL_FREE( wrk1 ) ;
+    RSL_FREE( wrk2 ) ;
+
+/* figure out NZ decomp: added 20010222 -- for 3d decomposition for xposes */
+    wrk1 = RSL_MALLOC( int, nlen * zlen ) ;
+    wrk2 = RSL_MALLOC( int, nlen * zlen ) ;
+    domain = dinfo->domain_nz ;
+
+  /* load up input work array with valid points */
+    for ( k = 0 ; k < zlen ; k++ )
+      for ( j = 0 ; j < nlen ; j++ )
+      {
+        if ( domain[ INDEX_2(k,j,nlen) ].valid == RSL_VALID )
+          wrk1[INDEX_2(k,j,nlen)] = RSL_VALID ;
+        else
+          wrk1[INDEX_2(k,j,nlen)] = RSL_INVALID ;
+      }
+
+    n = nlen ; z = zlen ; px1 = px ; py1 = py ;  /* protect variables */
+    result = rsl_default_decomp( wrk1, wrk2, info_p, &n, &z, &px1, &py1 ) ;
+
+    if ( ! result )
+    {
+      /* set the processor numbers of the valid points */
+      l = -1 ; h = -1 ; lz = -1 ; hz = -1 ;
+      for ( k = 0 ; k < zlen ; k++ ) {
+        for ( j = 0 ; j < nlen ; j++ ) {
+          p = &(domain[ INDEX_2(k,j,nlen) ]) ;
+	  p->valid = RSL_VALID ;
+          p->P = wrk2[INDEX_2(k,j,nlen)] ;
+          if ( rsl_c_comp2phys_proc(p->P) == rsl_myproc ) {
+	    if ( l == -1 ) l = j ;
+	    h = j ;
+	    if ( lz == -1 ) lz = k ;
+	    hz = k ;
+          }
+        }
+      }
+      *nloc_nz_p = h-l+1 ;
+      *zloc_nz_p = hz-lz+1 ;
+    }
+
+    RSL_FREE( wrk1 ) ;
+    RSL_FREE( wrk2 ) ;
+
+  }
+/* end of changes for xposes -- 20010222 */
 
   wrk1 = RSL_MALLOC( int, mlen * nlen ) ;
   wrk2 = RSL_MALLOC( int, mlen * nlen ) ;
+  domain = dinfo->domain ;
 
   /* load up input work array with valid points */
   for ( j = 0 ; j < nlen ; j++ )

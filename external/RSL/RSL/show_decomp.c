@@ -69,7 +69,7 @@ SHOW_DOMAIN_DECOMP ( d_p )
   int Phist[RSL_MAXPROC] ;
   char fname[50] ;
   FILE * fp ;
-  rsl_index_t i, j ;
+  rsl_index_t i, j, k ;
   char * code ;
   int i_am_monitor ;
 
@@ -124,6 +124,26 @@ SHOW_DOMAIN_DECOMP ( d_p )
   {
     fprintf(fp,"%5d  %7d\n",i,Phist[i]) ;
   }
+
+/* added 20010222 */
+  if ( domain_info[d].len_z > 1 )
+  {
+    fprintf(fp,"\nMZ decoomposition len_m = %d len_z = %d\n", domain_info[d].len_m, domain_info[d].len_z) ;
+    for ( k = domain_info[d].len_z-1 ; k >= 0 ; k-- ) {
+      for ( i = 0 ; i < domain_info[d].len_m ; i++ ) {
+        fprintf(fp, "%2d ",domain_info[d].domain_mz[INDEX_2(k,i,domain_info[d].len_m)].P) ;
+      }
+      fprintf(fp,"\n") ;
+    }
+    fprintf(fp,"\nNZ decoomposition len_n = %d len_z = %d\n", domain_info[d].len_n, domain_info[d].len_z ) ;
+    for ( k = domain_info[d].len_z-1 ; k >= 0 ; k-- ) {
+      for ( j = 0 ; j < domain_info[d].len_n ; j++ ) {
+        fprintf(fp, "%2d ",domain_info[d].domain_nz[INDEX_2(k,j,domain_info[d].len_n)].P) ;
+      }
+      fprintf(fp,"\n") ;
+    }
+  }
+
   fclose(fp) ;
  }
 }

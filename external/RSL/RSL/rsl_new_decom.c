@@ -94,10 +94,10 @@ rsl_new_decomposition( d_p, mloc_p, nloc_p )
 {
   int (*pt)(), (*f)() ;
   int d, m, n ;
-  int mlen, nlen, meff, neff ;
+  int mlen, nlen, zlen, meff, neff ;
   int P ;
   int i, j, k, size ;
-  int firsti, firstj ;
+  int firsti, firstj, firstk ;
   int mtype, mdest, retval ;
   int maskid ;
   int no_points ;
@@ -119,10 +119,61 @@ rsl_new_decomposition( d_p, mloc_p, nloc_p )
   d = *d_p ;
 
   dinfo = &(domain_info[d]) ;
-  domain = dinfo->domain ;
 
+
+/* 20010228 */
+
+/* work out the i, j, and k offsets for the transpose arrays */
+/* MZ */
+  domain = dinfo->domain_mz ;
   mlen = dinfo->len_m ;
   nlen = dinfo->len_n ;
+  zlen = dinfo->len_z ;
+  firsti = RSL_INVALID ;
+  firstk = RSL_INVALID ;
+  for ( k = 0 ; k < zlen ; k++ )
+  {
+    for ( i = 0 ; i < mlen ; i++ )
+    {
+      if ( rsl_c_comp2phys_proc ( domain[INDEX_2(k,i,mlen)].P ) == rsl_myproc )
+      {
+	if ( firsti == RSL_INVALID ) firsti = i ;
+	if ( firstk == RSL_INVALID ) firstk = k ;
+      }
+    }
+  }
+  dinfo->ilocaloffset_mz = firsti ;
+  dinfo->klocaloffset_mz = firstk ;
+  dinfo->jlocaloffset_mz = 0 ;
+
+/* NZ */
+  domain = dinfo->domain_nz ;
+  mlen = dinfo->len_m ;
+  nlen = dinfo->len_n ;
+  zlen = dinfo->len_z ;
+  firstj = RSL_INVALID ;
+  firstk = RSL_INVALID ;
+  for ( k = 0 ; k < zlen ; k++ )
+  {
+    for ( j = 0 ; j < nlen ; j++ )
+    {
+      if ( rsl_c_comp2phys_proc ( domain[INDEX_2(k,j,nlen)].P ) == rsl_myproc )
+      {
+	if ( firstj == RSL_INVALID ) firstj = j ;
+	if ( firstk == RSL_INVALID ) firstk = k ;
+      }
+    }
+  }
+  dinfo->jlocaloffset_nz = firstj ;
+  dinfo->klocaloffset_nz = firstk ;
+  dinfo->ilocaloffset_nz = 0 ;
+
+/* end 20010228 */
+
+  domain = dinfo->domain ;
+  mlen = dinfo->len_m ;
+  nlen = dinfo->len_n ;
+
   for ( n = 0 ; n < nlen ; n++ )
     for ( m = 0 ; m < mlen ; m++ )
     {
@@ -246,6 +297,7 @@ rsl_new_decomposition( d_p, mloc_p, nloc_p )
 #else
   dinfo->ilocaloffset = firsti ;
 #endif
+
   if ( old_offsets == 0 )
   {
     dinfo->jlocaloffset = firstj-rsl_padarea ;

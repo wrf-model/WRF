@@ -71,20 +71,39 @@ default_decomposition( d_p, mloc_p, nloc_p )
   int px, py ;
   int (*f)() ;
   int retval ;
+  int zloc_p,
+      mloc_mz_p, nloc_mz_p, zloc_mz_p,
+      mloc_nz_p, nloc_nz_p, zloc_nz_p ;
 
   py = rsl_nproc_m ;
   px = rsl_nproc_n ;
+
   f = default_decomp[*d_p].default_decomp_fcn ;
+
   retval = RSL_FDECOMPOSE (
           d_p,
 	  f,
 	  &py,
 	  &px,
 	  def_decomp_info[*d_p],
-	  mloc_p,
-	  nloc_p ) ;
+	  mloc_p, nloc_p, &zloc_p,
+	  &mloc_mz_p, &nloc_mz_p, &zloc_mz_p,
+	  &mloc_nz_p, &nloc_nz_p, &zloc_nz_p ) ;
+
+/* these have been added for the parallel matrix transpose, 20010223.
+   default_decomp is called many places in RSL, and rather than thread
+   all this through, I have opted to just store the additional info
+   from teh decomposition algorithma and store it in the domain info */
   domain_info[*d_p].loc_m = *mloc_p ;
   domain_info[*d_p].loc_n = *nloc_p ;
+  domain_info[*d_p].loc_z = zloc_p ;
+  domain_info[*d_p].loc_mz_m = mloc_mz_p ;
+  domain_info[*d_p].loc_mz_n = nloc_mz_p ;
+  domain_info[*d_p].loc_mz_z = zloc_mz_p ;
+  domain_info[*d_p].loc_nz_m = mloc_nz_p ;
+  domain_info[*d_p].loc_nz_n = nloc_nz_p ;
+  domain_info[*d_p].loc_nz_z = zloc_nz_p ;
+
   return(retval) ;
 }
 

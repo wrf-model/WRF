@@ -129,14 +129,16 @@ RSL_MOTHER_DOMAIN ( domain_p, maskid_p, mlen_p, nlen_p, mloc_p, nloc_p )
    ,nloc_p          /* (O)  Required size of local memory in n. */
     ;
 {
-  rsl_index_t i, j ;
+  rsl_index_t i, j, k ;
   rsl_index_t d ;
   rsl_dimlen_t nmax ;
   rsl_dimlen_t mmax ;
+  rsl_dimlen_t zmax ;
   int mmin, nmin, mtrim, ntrim ;
 
   mmax = *mlen_p ;
   nmax = *nlen_p ;
+  zmax = 1 ;  /* trivial */
   d = 0 ;
   *domain_p = d ;
 
@@ -148,20 +150,23 @@ RSL_MOTHER_DOMAIN ( domain_p, maskid_p, mlen_p, nlen_p, mloc_p, nloc_p )
   domain_info[d].trim_m     = 0 ;
   domain_info[d].trim_n     = 0 ;
 
-  rsl_c_initialize_domain( d, nmax, mmax, nmax, mmax, mloc_p, nloc_p ) ;
+  rsl_c_initialize_domain( d, nmax, mmax, zmax, nmax, mmax, zmax ) ;
 
   mtrim = domain_info[d].trim_m ;
   ntrim = domain_info[d].trim_n ;
 
-  for ( j = 0 ; j < nmax ; j++ )
-  {
-    for ( i = 0 ; i < mmax ; i++ )
-    {
-      /* all points valid on mother domain -- always rectangular */
+  for ( j = 0 ; j < nmax ; j++ ) for ( i = 0 ; i < mmax ; i++ )
+    { /* all points valid on mother domain -- always rectangular */
       domain_info[d].domain[INDEX_2(j,i,mmax)].valid = RSL_VALID ;
-      domain_info[d].domain[INDEX_2(j,i,mmax)].trimmed = 0 ;
-    }
-  }
+      domain_info[d].domain[INDEX_2(j,i,mmax)].trimmed = 0 ; }
+
+  for ( k = 0 ; k < zmax ; k++ ) for ( i = 0 ; i < mmax ; i++ )
+    { /* all points valid on mother domain -- always rectangular */
+      domain_info[d].domain_mz[INDEX_2(k,i,mmax)].valid = RSL_VALID ; }
+
+  for ( k = 0 ; k < zmax ; k++ ) for ( j = 0 ; j < nmax ; j++ )
+    { /* all points valid on mother domain -- always rectangular */
+      domain_info[d].domain_nz[INDEX_2(k,j,nmax)].valid = RSL_VALID ; }
 
   trim_domain( domain_info[d].domain, mmax, nmax, 0, 0 ) ;
 
@@ -179,6 +184,99 @@ RSL_MOTHER_DOMAIN ( domain_p, maskid_p, mlen_p, nlen_p, mloc_p, nloc_p )
   rsl_ndomains = 1 ;
 }
 
+/* (20010222) */
+RSL_MOTHER_DOMAIN3D( domain_p, maskid_p, mlen_p, nlen_p, zlen_p, 
+                                         mloc_p, nloc_p, zloc_p,
+                                         mloc_mz_p, nloc_mz_p , zloc_mz_p,
+                                         mloc_nz_p, nloc_nz_p , zloc_nz_p )
+  int_p
+    domain_p        /* (O)  Domain id. */
+   ,maskid_p        /* (I)  Id of maximum stencil for this domain. */
+   ,mlen_p          /* (I)  Number of cells in m dimension of domain. */
+   ,nlen_p          /* (I)  Number of cells in n dimension of domain. */
+   ,zlen_p          /* (I)  Number of cells in z dimension of domain. */
+   ,mloc_p          /* (O)  Required size of local memory in m. (MN decomp) */
+   ,nloc_p          /* (O)  Required size of local memory in n.      "      */
+   ,zloc_p          /* (O)  Required size of local memory in z.      "      */
+   ,mloc_mz_p       /* (O)  Required size of local memory in m. (MZ decomp) */
+   ,nloc_mz_p       /* (O)  Required size of local memory in n.      "      */
+   ,zloc_mz_p       /* (O)  Required size of local memory in z.      "      */
+   ,mloc_nz_p       /* (O)  Required size of local memory in m. (NZ decomp) */
+   ,nloc_nz_p       /* (O)  Required size of local memory in n.      "      */
+   ,zloc_nz_p       /* (O)  Required size of local memory in z.      "      */
+    ;
+{
+
+  rsl_index_t i, j, k ;
+  rsl_index_t d ;
+  rsl_dimlen_t nmax ;
+  rsl_dimlen_t mmax ;
+  rsl_dimlen_t zmax ;
+  int mmin, nmin, mtrim, ntrim ;
+
+  mmax = *mlen_p ;
+  nmax = *nlen_p ;
+  zmax = *zlen_p ;
+  d = 0 ;
+  *domain_p = d ;
+
+  RSL_TEST_ERR( domain_info[d].valid == RSL_VALID,
+     "rsl_mother_domain() called more than once" ) ;
+
+  if ( domain_info[d].domain_mz != NULL ) { RSL_FREE( domain_info[d].domain_mz ) ; }
+  if ( domain_info[d].domain_nz != NULL ) { RSL_FREE( domain_info[d].domain_nz ) ; }
+
+
+  domain_info[d].nest_level = 0 ;
+  domain_info[d].maskid     = *maskid_p ;
+  domain_info[d].trim_m     = 0 ;
+  domain_info[d].trim_n     = 0 ;
+
+  rsl_c_initialize_domain( d, nmax, mmax, zmax, nmax, mmax, zmax ) ;
+
+  mtrim = domain_info[d].trim_m ;
+  ntrim = domain_info[d].trim_n ;
+
+  for ( j = 0 ; j < nmax ; j++ ) for ( i = 0 ; i < mmax ; i++ )
+    { /* all points valid on mother domain -- always rectangular */
+      domain_info[d].domain[INDEX_2(j,i,mmax)].valid = RSL_VALID ;
+      domain_info[d].domain[INDEX_2(j,i,mmax)].trimmed = 0 ; }
+
+  for ( k = 0 ; k < zmax ; k++ ) for ( i = 0 ; i < mmax ; i++ )
+    { /* all points valid on mother domain -- always rectangular */
+      domain_info[d].domain_mz[INDEX_2(k,i,mmax)].valid = RSL_VALID ; }
+
+  for ( k = 0 ; k < zmax ; k++ ) for ( j = 0 ; j < nmax ; j++ )
+    { /* all points valid on mother domain -- always rectangular */
+      domain_info[d].domain_nz[INDEX_2(k,j,nmax)].valid = RSL_VALID ; }
+
+  trim_domain( domain_info[d].domain, mmax, nmax, 0, 0 ) ;
+
+  work_out_bdy( domain_info[d].domain, mmax, nmax ) ;
+
+  {
+/* moved here, 4/21/95 --- see comment in spawn nest below */
+    int dd ;
+    dd = d ;
+    default_decomposition( &dd,
+                           mloc_p,
+                           nloc_p ) ;
+  }
+
+/* these are set by the revised default_decomposition routine (20010223) */
+
+  *zloc_p    = domain_info[d].loc_z ;
+  *mloc_mz_p = domain_info[d].loc_mz_m ;
+  *nloc_mz_p = domain_info[d].loc_mz_n ;
+  *zloc_mz_p = domain_info[d].loc_mz_z ;
+  *mloc_nz_p = domain_info[d].loc_nz_m ;
+  *nloc_nz_p = domain_info[d].loc_nz_n ;
+  *zloc_nz_p = domain_info[d].loc_nz_z ;
+
+  rsl_ndomains = 1 ;
+
+}
+
 /*
    rsl_c_initialize_domain
 
@@ -191,13 +289,12 @@ RSL_MOTHER_DOMAIN ( domain_p, maskid_p, mlen_p, nlen_p, mloc_p, nloc_p )
 
 */
 int
-rsl_c_initialize_domain ( d, nmax, mmax, neff, meff, mloc_p, nloc_p )
+rsl_c_initialize_domain ( d, nmax, mmax, zmax, neff, meff, zeff )
   rsl_index_t d ;
-  rsl_dimlen_t nmax, mmax ;   /* actual size definition */
-  rsl_dimlen_t neff, meff ;   /* effective size definition (for computing) */
-  int_p mloc_p, nloc_p ;      /* output: required local memory */
+  rsl_dimlen_t nmax, mmax, zmax ;   /* actual size definition */
+  rsl_dimlen_t neff, meff, zeff ;   /* effective size definition (for computing) */
 {
-  rsl_index_t i, j ;
+  rsl_index_t i, j, k ;
   rsl_point_t *p ;
 
 #if 0
@@ -213,8 +310,10 @@ rsl_c_initialize_domain ( d, nmax, mmax, neff, meff, mloc_p, nloc_p )
   domain_info[d].iruns = NULL ;
   domain_info[d].len_n = nmax ;
   domain_info[d].len_m = mmax ;
+  domain_info[d].len_z = zmax ;
   domain_info[d].eff_n = neff ;
   domain_info[d].eff_m = meff ;
+  domain_info[d].eff_z = zeff ;
   domain_info[d].coord_n = RSL_INVALID ;
   domain_info[d].coord_m = RSL_INVALID ;
 
@@ -222,19 +321,18 @@ rsl_c_initialize_domain ( d, nmax, mmax, neff, meff, mloc_p, nloc_p )
   fprintf(stderr,"2> rsl_c_initialize_domain d = %d\n",d ) ;
   fprintf(stderr,"                    nmax     = %d\n",nmax ) ;
   fprintf(stderr,"                    mmax     = %d\n",mmax ) ;
+  fprintf(stderr,"                    zmax     = %d\n",zmax ) ;
   fprintf(stderr,"                    neff     = %d\n",neff ) ;
   fprintf(stderr,"                    meff     = %d\n",meff ) ;
 #endif
 
+  if ( domain_info[d].domain != NULL )    { RSL_FREE( domain_info[d].domain ) ; }
+  if ( domain_info[d].domain_mz != NULL ) { RSL_FREE( domain_info[d].domain_mz ) ; }
+  if ( domain_info[d].domain_nz != NULL ) { RSL_FREE( domain_info[d].domain_nz ) ; }
 
-  if ( domain_info[d].domain != NULL )
-  {
-    RSL_FREE( domain_info[d].domain ) ;
-  }
-
-
-  domain_info[d].domain = RSL_MALLOC(rsl_point_t,(nmax*mmax)) ;
-
+  domain_info[d].domain    = RSL_MALLOC(rsl_point_t,(nmax*mmax)) ;
+  domain_info[d].domain_nz = RSL_MALLOC(rsl_point_t,(nmax*zmax)) ;
+  domain_info[d].domain_mz = RSL_MALLOC(rsl_point_t,(mmax*zmax)) ;
 
   domain_info[d].valid = RSL_VALID ;
   domain_info[d].decomposed = 0 ;
@@ -283,25 +381,8 @@ rsl_c_initialize_domain ( d, nmax, mmax, neff, meff, mloc_p, nloc_p )
   domain_info[d].parent_bcast_compiled = 0 ;
   domain_info[d].parent_merge_compiled = 0 ;
   domain_info[d].stencurs = 0 ;
-
-#if 0
-/* when this was here, we had a problem with the nest being
-   decomposed before it was completely spawned.  Since the 
-   decomposition routine sets information in the parent (if any),
-   having this here  and called before that relationship is
-   completely established, causes problems -- namely, the
-   processor number of the parent processor is never established.
-   With this change, we now rely on anyone who calls
-   rsl_c_initialize_domain to decompose the domain as appropriate.
-   95/04/21 */
-  {
-    int dd ;
-    dd = d ;
-    default_decomposition( &dd,
-                           mloc_p, 
-                           nloc_p ) ;
-  }
-#endif
+  domain_info[d].periodcurs = 0 ;
+  domain_info[d].xposecurs = 0 ;
 
 }
 

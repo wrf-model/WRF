@@ -79,6 +79,7 @@
 #   define RSL_SHUTDOWN		rsl_shutdown__
 #   define RSL_MESH		rsl_mesh__
 #   define RSL_MOTHER_DOMAIN	rsl_mother_domain__
+#   define RSL_MOTHER_DOMAIN3D	rsl_mother_domain3d__
 #   define RSL_SPAWN_REGULAR_NEST	rsl_spawn_regular_nest__
 #   define RSL_SPAWN_REGULAR_NEST1	rsl_spawn_regular_nest1__
 #   define RSL_SPAWN_IRREG_NEST   rsl_spawn_irreg_nest__
@@ -103,10 +104,12 @@
 #   define RSL_PHYS2COMP_C	rsl_phys2comp_c__
 #   define RSL_COMP2PHYS_C	rsl_comp2phys_c__
 #   define RSL_CREATE_STENCIL	rsl_create_stencil__
+#   define RSL_CREATE_XPOSE	rsl_create_xpose__
 #   define RSL_CREATE_MESSAGE     rsl_create_message__
 #   define RSL_BUILD_MESSAGE      rsl_build_message__
 #   define RSL_BLANK_MESSAGE      rsl_blank_message__
 #   define RSL_DESCRIBE_STENCIL   rsl_describe_stencil__
+#   define RSL_DESCRIBE_XPOSE   rsl_describe_xpose__
 #   define RSL_EXCH_STENCIL       rsl_exch_stencil__
 #   define RSL_COMPILE_STENCIL    rsl_compile_stencil__
 #   define RSL_INIT_NEXTCELL      rsl_init_nextcell__
@@ -243,6 +246,13 @@
 #   define RSL_ALLOW_DYNPAD  rsl_allow_dynpad__
 #   define RSL_GET_COMMUNICATOR    rsl_get_communicator__
 
+#   define RSL_XPOSE_MN_MZ     rsl_xpose_mn_mz__
+#   define RSL_XPOSE_MZ_MN     rsl_xpose_mz_mn__
+#   define RSL_XPOSE_MZ_NZ     rsl_xpose_mz_nz__
+#   define RSL_XPOSE_NZ_MZ     rsl_xpose_nz_mz__
+#   define RSL_XPOSE_NZ_MN     rsl_xpose_nz_mn__
+#   define RSL_XPOSE_MN_NZ     rsl_xpose_mn_nz__
+
 #    else
 
 /********************************************* UNDERSCORE *****/
@@ -251,6 +261,7 @@
 #   define RSL_SHUTDOWN		rsl_shutdown_
 #   define RSL_MESH		rsl_mesh_
 #   define RSL_MOTHER_DOMAIN	rsl_mother_domain_
+#   define RSL_MOTHER_DOMAIN3D	rsl_mother_domain3d_
 #   define RSL_SPAWN_REGULAR_NEST	rsl_spawn_regular_nest_
 #   define RSL_SPAWN_REGULAR_NEST1	rsl_spawn_regular_nest1_
 #   define RSL_SPAWN_IRREG_NEST   rsl_spawn_irreg_nest_
@@ -275,10 +286,12 @@
 #   define RSL_PHYS2COMP_C	rsl_phys2comp_c_
 #   define RSL_COMP2PHYS_C	rsl_comp2phys_c_
 #   define RSL_CREATE_STENCIL	rsl_create_stencil_
+#   define RSL_CREATE_XPOSE	rsl_create_xpose_
 #   define RSL_CREATE_MESSAGE     rsl_create_message_
 #   define RSL_BUILD_MESSAGE      rsl_build_message_
 #   define RSL_BLANK_MESSAGE      rsl_blank_message_
 #   define RSL_DESCRIBE_STENCIL   rsl_describe_stencil_
+#   define RSL_DESCRIBE_XPOSE   rsl_describe_xpose_
 #   define RSL_EXCH_STENCIL       rsl_exch_stencil_
 #   define RSL_COMPILE_STENCIL    rsl_compile_stencil_
 #   define RSL_INIT_NEXTCELL      rsl_init_nextcell_
@@ -416,6 +429,13 @@
 
 #   define RSL_GET_COMMUNICATOR    rsl_get_communicator_
 
+#   define RSL_XPOSE_MN_MZ     rsl_xpose_mn_mz_
+#   define RSL_XPOSE_MZ_MN     rsl_xpose_mz_mn_
+#   define RSL_XPOSE_MZ_NZ     rsl_xpose_mz_nz_
+#   define RSL_XPOSE_NZ_MZ     rsl_xpose_nz_mz_
+#   define RSL_XPOSE_NZ_MN     rsl_xpose_nz_mn_
+#   define RSL_XPOSE_MN_NZ     rsl_xpose_mn_nz_
+
 #    endif
 
 #  else
@@ -426,6 +446,7 @@
 #   define RSL_SHUTDOWN		rsl_shutdown
 #   define RSL_MESH		rsl_mesh
 #   define RSL_MOTHER_DOMAIN	rsl_mother_domain
+#   define RSL_MOTHER_DOMAIN3D	rsl_mother_domain3d
 #   define RSL_SPAWN_REGULAR_NEST	rsl_spawn_regular_nest
 #   define RSL_SPAWN_REGULAR_NEST1	rsl_spawn_regular_nest1
 #   define RSL_SPAWN_IRREG_NEST   rsl_spawn_irreg_nest
@@ -450,10 +471,12 @@
 #   define RSL_PHYS2COMP_C	rsl_phys2comp_c
 #   define RSL_COMP2PHYS_C	rsl_comp2phys_c
 #   define RSL_CREATE_STENCIL	rsl_create_stencil
+#   define RSL_CREATE_XPOSE	rsl_create_xpose
 #   define RSL_CREATE_MESSAGE     rsl_create_message
 #   define RSL_BUILD_MESSAGE      rsl_build_message
 #   define RSL_BLANK_MESSAGE      rsl_blank_message
 #   define RSL_DESCRIBE_STENCIL   rsl_describe_stencil
+#   define RSL_DESCRIBE_XPOSE   rsl_describe_xpose
 #   define RSL_EXCH_STENCIL       rsl_exch_stencil
 #   define RSL_COMPILE_STENCIL    rsl_compile_stencil
 #   define RSL_INIT_NEXTCELL      rsl_init_nextcell
@@ -589,6 +612,13 @@
 #   define RSL_ALLOW_DYNPAD  rsl_allow_dynpad
 
 #   define RSL_GET_COMMUNICATOR    rsl_get_communicator
+
+#   define RSL_XPOSE_MN_MZ     rsl_xpose_mn_mz
+#   define RSL_XPOSE_MZ_MN     rsl_xpose_mz_mn
+#   define RSL_XPOSE_MZ_NZ     rsl_xpose_mz_nz
+#   define RSL_XPOSE_NZ_MZ     rsl_xpose_nz_mz
+#   define RSL_XPOSE_NZ_MN     rsl_xpose_nz_mn
+#   define RSL_XPOSE_MN_NZ     rsl_xpose_mn_nz
 
 #  endif
 #endif

@@ -370,9 +370,16 @@ typedef struct rsl_domain_info {
   int child_bcast_compiled[RSL_MAXDOMAINS] ;
   int child_merge_compiled[RSL_MAXDOMAINS] ;
 
-  /* pointer to domain data structure (array of points) */
+  /* pointer to MN domain data structure (array of points) */
   rsl_point_t     *domain ;
 
+  /* pointer to MZ domain data structure (array of points) (20010222) */
+  rsl_point_t     *domain_mz ;
+
+  /* pointer to NZ domain data structure (array of points) (20010222) */
+  rsl_point_t     *domain_nz ;
+
+/* MN decomp */
   /* dimensions of the global domain data structure */
   rsl_dimlen_t    len_m ;
   rsl_dimlen_t    len_n ;
@@ -380,12 +387,40 @@ typedef struct rsl_domain_info {
   rsl_dimlen_t    eff_n ;
   rsl_dimlen_t    loc_m ;
   rsl_dimlen_t    loc_n ;
+  /* dimensions of the global domain data structure (20010222) */
+  rsl_dimlen_t    len_z ;
+  rsl_dimlen_t    eff_z ;
+  rsl_dimlen_t    loc_z ;
+/* MZ decomp (20010223) */
+  /* dimensions of the global domain data structure */
+  rsl_dimlen_t    len_mz_m ;
+  rsl_dimlen_t    len_mz_n ;
+  rsl_dimlen_t    eff_mz_m ;
+  rsl_dimlen_t    eff_mz_n ;
+  rsl_dimlen_t    loc_mz_m ;
+  rsl_dimlen_t    loc_mz_n ;
+  rsl_dimlen_t    len_mz_z ;
+  rsl_dimlen_t    eff_mz_z ;
+  rsl_dimlen_t    loc_mz_z ;
+/* NZ decomp  (20010223 */
+  /* dimensions of the global domain data structure */
+  rsl_dimlen_t    len_nz_m ;
+  rsl_dimlen_t    len_nz_n ;
+  rsl_dimlen_t    eff_nz_m ;
+  rsl_dimlen_t    eff_nz_n ;
+  rsl_dimlen_t    loc_nz_m ;
+  rsl_dimlen_t    loc_nz_n ;
+  rsl_dimlen_t    len_nz_z ;
+  rsl_dimlen_t    eff_nz_z ;
+  rsl_dimlen_t    loc_nz_z ;
 
   /* list of stencils used on this domain  (just keep handles) */
   int stenlist[RSL_MAXDESCRIPTORS] ;
   int stencurs ;
   int periodlist[RSL_MAXDESCRIPTORS] ;
   int periodcurs ;
+  int xposelist[RSL_MAXDESCRIPTORS] ;
+  int xposecurs ;
 
   message_desc_t *old_state_vect, *new_state_vect ;
 
@@ -410,6 +445,15 @@ typedef struct rsl_domain_info {
   rsl_list_t   *iruns ;		/* list of runs in idimension 1/9/95 */
   rsl_index_t  ilocaloffset ;	/* ns offset global to local in domain ds */
   rsl_index_t  jlocaloffset ;   /* ew offset global to local in domain ds */
+
+  rsl_index_t  ilocaloffset_mz ;
+  rsl_index_t  jlocaloffset_mz ;
+  rsl_index_t  klocaloffset_mz ;
+
+  rsl_index_t  ilocaloffset_nz ;
+  rsl_index_t  jlocaloffset_nz ;
+  rsl_index_t  klocaloffset_nz ;
+
   rsl_index_t  old_ilocaloffset ;
   rsl_index_t  old_jlocaloffset ;
   int          maskid  ;	/* maximum stencil specified for this domain */
@@ -529,6 +573,8 @@ EXTERN rsl_domain_info_t  domain_info[RSL_MAXDOMAINS] ;
 EXTERN void * mh_descriptors[RSL_MAXDESCRIPTORS] ;
 /* stencil descriptors */
 EXTERN void * sh_descriptors[RSL_MAXDESCRIPTORS] ;
+/* xpose descriptors */
+EXTERN void * xp_descriptors[RSL_MAXDESCRIPTORS] ;
 /* period descriptors */
 EXTERN void * pr_descriptors[RSL_MAXDESCRIPTORS] ;
 EXTERN int rsl_ndomains  ; /* number of active domains */
@@ -687,6 +733,7 @@ rsl_index_t id_domain(), id_jdex(), id_idex() ;
 #define MSG_MON_BCAST		       11
 #define MSG_REDISTCOM    	       12
 #define MSG_PERCOM                     13
+#define MSG_XPOSECOM                     14
 
 #define MSG_IO_FORTRAN                  1
 #define MSG_IO_SOCKET                   2
@@ -722,6 +769,17 @@ rsl_index_t id_domain(), id_jdex(), id_idex() ;
 #define STENCIL_DESC 1
 #define BLANK_MESSAGE_DESC 2
 #define PERIOD_DESC 3
+#define XPOSE_DESC 4
+
+/* xpose switches */
+#define XPOSE_MN_MZ 0
+#define XPOSE_MZ_MN 0
+
+#define XPOSE_MZ_NZ 1
+#define XPOSE_NZ_MZ 1
+
+#define XPOSE_MN_NZ 2
+#define XPOSE_NZ_MN 2
 
 /* other includes */
 
@@ -729,7 +787,8 @@ rsl_index_t id_domain(), id_jdex(), id_idex() ;
 #include "compat.h"
 #include "buf_for_proc.h"
 #include "stencil_def.h"	/* stencil_def.h must follow message_def.h */
-#include "period_def.h"	/* stencil_def.h must follow message_def.h */
+#include "xpose_def.h"	/* xpose_def.h must follow message_def.h */
+#include "period_def.h"	/* period_def.h must follow message_def.h */
 #include "rsl_io.h"
 
 #if (( defined(vpp) || defined(vpp2) ) && ! defined(sx))

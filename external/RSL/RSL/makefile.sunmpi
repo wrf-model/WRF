@@ -5,15 +5,15 @@
 .SUFFIXES: .F .o .c
 
 include makefile.core
-OBJ = $(CORE_OBJ) rsl_mpi_compat.o debug.o fort_doubleread.o fort_doublewrite.o fort_bdyin_dbl.o mpi_init_f.o rsl_error_dup.o vicopy.o
+OBJ = $(CORE_OBJ) rsl_mpi_compat.o debug.o fort_doubleread.o fort_doublewrite.o fort_bdyin_dbl.o mpi_init_f.o rsl_error_dup.o vicopy_o2k.o
 HDR = $(CORE_HDR)
 TAR = $(CORE_TAR)
 
-CC = cc #-pg
-FC = f77 #-pg
+CC = mpcc
+FC = mpf90
 
-MPIHOME=/usr/local/mpi
-IDIR=$(MPIHOME)/include
+MPIHOME=
+IDIR=.
 
 LIB = 
 

@@ -2887,7 +2887,7 @@ messages(120)=  s5e5
 ! This is the first part of the initialization of rsl for distributed
 ! memory parallel execution.  The routine first interrogates MPI to find
 ! out if it needs to be intialized (it may not, since 
-! <a href=init_module_ext_quilt.html>init_module_ext_quilt</a> may
+! <a href=init_module_wrf_quilt.html>init_module_wrf_quilt</a> may
 ! have done this already) and if so, calls mpi_init.  Standard output
 ! and standard error on each process is directed to a separate file
 ! with a call to <a href=wrf_termio_dup.html>wrf_termio_dup</a> and,

@@ -604,6 +604,9 @@ state   real    div            ikj      misc        1         -     -         "d
 state   real    BN2            ikj      misc        1         -     -         "BN2"                   "BRUNT-VAISALA FREQUENCY"                                         "s-2"
 state  logical warm_rain        -       misc        1         -     -         "warm_rain"              "WARM_RAIN_LOGICAL"
 
+# flag for nest movement
+state  logical moved            -       misc        1         -     -          
+
 #
 #---------------------------------------------------------------------------------------------------------------------------------------
 #                                               
@@ -643,6 +646,7 @@ rconfig   integer     io_form_history     namelist,time_control		1              
 rconfig   integer     io_form_restart     namelist,time_control		1              2       h        "io_form_restart"               ""      ""
 rconfig   integer     io_form_boundary    namelist,time_control		1              2       h        "io_form_boundary"               ""      ""
 rconfig   integer debug_level             namelist,time_control		1             0       -      "debug_level"           ""      ""
+
 
 rconfig   character  history_outname   namelist,time_control		1  "wrfout_d<domain>_<date>"     -     "name of history outfile"  ""      ""
 rconfig   character  auxhist1_outname  namelist,time_control		1  "auxhist1_d<domain>_<date>"   -     "name of auxhist1 outfile" ""      ""
@@ -992,6 +996,11 @@ rconfig   integer nproc_x                 namelist,domains	1             -1     
 rconfig   integer nproc_y		  namelist,domains	1             -1       -      "nproc_y"              "-1 means not set"      ""
 rconfig   integer irand                   namelist,domains	1             0       -      "irand"           ""      ""
 rconfig   real    dt                      derived              max_domains    2.      h     "dt"        "TEMPORAL RESOLUTION"      "SECONDS"
+rconfig   integer   num_moves       namelist,domains    1                0
+rconfig   integer   move_id         namelist,domains    max_moves        0
+rconfig   integer   move_interval   namelist,domains    max_moves        999999999
+rconfig   integer   move_cd_x       namelist,domains    max_moves        0
+rconfig   integer   move_cd_y       namelist,domains    max_moves        0
 
 # Physics
 rconfig   integer     mp_physics          namelist,physics	max_domains    0       rh       "mp_physics"            ""      ""

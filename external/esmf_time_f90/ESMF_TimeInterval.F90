@@ -555,10 +555,6 @@
       IF ( PRESENT( MO ) ) THEN
         timeinterval%MM = MO
       ENDIF
-      timeinterval%DD = 0
-      IF ( PRESENT( D ) ) THEN
-        timeinterval%DD = D
-      ENDIF
 !
 !      timeinterval%basetime%S = 0
 !      IF ( PRESENT( H ) ) THEN
@@ -578,7 +574,11 @@
 !        timeinterval%basetime%MS = NINT( Sn*1.0D0 / Sd*1.0D0 * 1000 )
 !      ENDIF
 
+      timeinterval%DD = 0
       timeinterval%basetime%S = 0
+      IF ( PRESENT( D ) ) THEN
+        timeinterval%basetime%S = timeinterval%basetime%S + D * 24 * 3600
+      ENDIF
       IF ( PRESENT( H ) ) THEN
         timeinterval%basetime%S = timeinterval%basetime%S + H * 3600
       ENDIF
@@ -646,9 +646,9 @@
 !EOP
 
 #ifdef F90_STANDALONE
-      write(TimeString,'(I4.4"-"I2.2"-"I2.2"_"I2.2":"I2.2":"I2.2)') &
-             timeinterval%YR,timeinterval%MM,timeinterval%DD, &
-             timeinterval%basetime%S / 3600 , &
+      write(TimeString,'(I5.5"_"I2.2":"I2.2":"I2.2)') &
+             timeinterval%basetime%S / (3600 * 24) , &
+             mod( timeinterval%basetime%S / 3600 , 24 ) , &
              mod( timeinterval%basetime%S / 60 , 60 ), &
              mod( timeinterval%basetime%S  , 60 )
 
@@ -848,7 +848,6 @@
       call c_ESMC_TimeIntervalQuotI(timeinterval, divisor, &
                                     ESMF_TimeIntervalQuotI)
 
-#if 1
 ! convert timeinterval to a fraction and divide by multipling the denonminator by the divisor
       n = timeinterval%basetime%S * timeinterval%basetime%Sd + timeinterval%basetime%Sn
       d = timeinterval%basetime%Sd * divisor
@@ -859,29 +858,6 @@
         retval%basetime%S = retval%basetime%Sn / retval%basetime%Sd
         retval%basetime%Sn = mod( retval%basetime%Sn, retval%basetime%Sd )
       ENDIF
-
-#else
-! divide the whole seconds 
-      retval%basetime%S = timeinterval%basetime%S / divisor
-      remainder =         mod( timeinterval%basetime%S , divisor )
-
-! divide the fractional part (don't worry about simplification here)
-! 
-!                              remainder    timeinterval%basetime%Sn
-! At this point we need to add --------- +  ------------------------
-!                              divisor      timeinterval%basetime%Sd
-!
-
-      n = timeinterval%basetime%Sd * remainder + divisor * timeinterval%basetime%Sn
-      d = timeinterval%basetime%Sd * divisor
-
-      CALL simplify(n,d,retval%basetime%Sn,retval%basetime%Sd) 
-
-      IF ( retval%basetime%Sn > retval%basetime%Sd ) THEN
-        retval%basetime%S = retval%basetime%S + retval%basetime%Sn / retval%basetime%Sd
-        retval%basetime%Sn = mod( retval%basetime%Sn, retval%basetime%Sd )
-      ENDIF
-#endif
 
       ESMF_TimeIntervalQuotI = retval
 

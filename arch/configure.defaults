@@ -2142,10 +2142,12 @@ OMPCPP          =
 FC              =       f90
 LD              =       f90
 CC              =       cc
+RWORDSIZE       =       4
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DYYY -DINTIO \
-                        -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
+                        -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         -DTRIEDNTRUE   \
 			-DLIMIT_ARGS -DFLOATSAFE -DYYY
+PROMOTION       =       -r$(RWORDSIZE) -i4
 CFLAGS          =       $(ARCHFLAGS)
 FCOPTIM         =       -fast -O4
 FCDEBUG         =       # -g
@@ -2176,8 +2178,14 @@ module_dm.F :
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC) $(FCBASEOPTS) -w " ; \
-          /bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc )
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" ; \
+        if [ $(RWORDSIZE) -eq 8 ] ; then \
+          /bin/rm -f foo_io_flags.h; \
+          sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
+          /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
+	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
+	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
+	/bin/cp wrf_io_flags.h ../io_quilt )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -2218,7 +2226,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
-	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
+	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $(PROMOTION) -O0 $*.f
 
 ###########################################################
 #ARCH       Compaq OSF1 alpha          (single-threaded, nesting using RSL without MPI )
@@ -2232,12 +2240,14 @@ OMPCPP          =
 FC              =       f90
 LD              =       f90
 CC              =       cc
+RWORDSIZE       =       4
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DNETCDF -DYYY -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL -DRSL \
-                        -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
+                        -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         -DTRIEDNTRUE   \
                         -DLIMIT_ARGS -DFLOATSAFE \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -DSTUBMPI
+PROMOTION       =       -r$(RWORDSIZE) -i4
 CFLAGS          =       $(ARCHFLAGS) -I../external/RSL/RSL
 FCOPTIM         =       -fast -O4
 FCDEBUG         =       # -g
@@ -2275,8 +2285,14 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC) $(FCBASEOPTS) -w" ; \
-          /bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc )
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" ; \
+        if [ $(RWORDSIZE) -eq 8 ] ; then \
+          /bin/rm -f foo_io_flags.h; \
+          sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
+          /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
+	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
+	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
+	/bin/cp wrf_io_flags.h ../io_quilt )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -2322,7 +2338,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
-	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
+	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $(PROMOTION) -O0 $*.f
 
 ###########################################################
 #ARCH       Compaq OSF1 alpha SM       (OpenMP, no nesting)
@@ -2332,10 +2348,12 @@ OMPCPP          =       -D_OPENMP
 FC              =       f90
 LD              =       f90
 CC              =       cc
+RWORDSIZE       =       4
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DYYY -DINTIO \
-                        -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
+                        -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         -DTRIEDNTRUE   \
 			-DLIMIT_ARGS -DFLOATSAFE
+PROMOTION       =       -r$(RWORDSIZE) -i4
 CFLAGS          =       $(ARCHFLAGS)
 FCOPTIM         =       -fast -O4
 FCDEBUG         =       # -g
@@ -2366,8 +2384,14 @@ module_dm.F :
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC) $(FCBASEOPTS) -w" ; \
-          /bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc )
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" ; \
+        if [ $(RWORDSIZE) -eq 8 ] ; then \
+          /bin/rm -f foo_io_flags.h; \
+          sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
+          /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
+	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
+	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
+	/bin/cp wrf_io_flags.h ../io_quilt )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -2408,7 +2432,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
-	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
+	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $(PROMOTION) -O0 $*.f
 
 ###########################################################
 #ARCH       Compaq OSF1 alpha SM-Parallel       (OpenMP, nesting using RSL without MPI )
@@ -2422,12 +2446,14 @@ OMPCPP          =       -D_OPENMP
 FC              =       f90
 LD              =       f90
 CC              =       cc
+RWORDSIZE       =       4
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DNETCDF -DYYY -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL -DRSL \
-                        -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
+                        -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         -DTRIEDNTRUE   \
                         -DLIMIT_ARGS -DFLOATSAFE \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -DSTUBMPI
+PROMOTION       =       -r$(RWORDSIZE) -i4
 CFLAGS          =       $(ARCHFLAGS) -I../external/RSL/RSL
 FCOPTIM         =       -fast -O4
 FCDEBUG         =       # -g
@@ -2465,8 +2491,14 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC) $(FCBASEOPTS) -w" ; \
-          /bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc )
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" ; \
+        if [ $(RWORDSIZE) -eq 8 ] ; then \
+          /bin/rm -f foo_io_flags.h; \
+          sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
+          /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
+	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
+	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
+	/bin/cp wrf_io_flags.h ../io_quilt )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -2512,7 +2544,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
-	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
+	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $(PROMOTION) -O0 $*.f
 
 ###########################################################
 #ARCH     Compaq OSF1 alpha DM-Parallel       (RSL_LITE, MPICH, no nesting)
@@ -2523,12 +2555,14 @@ OMPCPP          =
 FC              =       mpif90
 LD              =       mpif90
 CC              =       mpicc
+RWORDSIZE       =       4
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DNETCDF -DYYY -DINTIO \
                         -DDM_PARALLEL -DRSL_LITE \
-                        -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
+                        -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         -DTRIEDNTRUE   \
 			-DLIMIT_ARGS -DFLOATSAFE \
 			-DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
+PROMOTION       =       -r$(RWORDSIZE) -i4
 CFLAGS          =       $(ARCHFLAGS) -I../external/RSL_LITE
 FCOPTIM         =       -fast -O4
 FCDEBUG         =       #-g
@@ -2567,6 +2601,10 @@ module_dm.F : ../external/RSL_LITE/module_dm.F
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
           make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" ; \
+        if [ $(RWORDSIZE) -eq 8 ] ; then \
+          /bin/rm -f foo_io_flags.h; \
+          sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
+          /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
 	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
 	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
 	/bin/cp wrf_io_flags.h ../io_quilt )
@@ -2614,7 +2652,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
-	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
+	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $(PROMOTION) -O0 $*.f
 
 ###########################################################
 #ARCH       Compaq OSF1 alpha DM-Parallel       (RSL, MPICH, allows nesting)
@@ -2628,112 +2666,7 @@ OMPCPP          =
 FC              =       mpif90
 LD              =       mpif90
 CC              =       mpicc
-ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DYYY -DINTIO -DWRF_RSL_IO \
-                        -DDM_PARALLEL -DRSL \
-                        -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
-                        -DTRIEDNTRUE   \
-			-DLIMIT_ARGS -DFLOATSAFE \
-			-DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
-CFLAGS          =       $(ARCHFLAGS) -I../external/RSL/RSL
-FCOPTIM         =       -fast -O4
-FCDEBUG         =       # -g
-FCBASEOPTS      =       -w -convert big_endian -automatic -cpp -free -I. -arch host $(FCDEBUG)
-FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
-INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
-                        -I../frame -I../share -I../phys -I../chem -I../inc
-EXTRAMODULES    =       
-PERL            =       CONFIGURE_PERL_PATH
-REGISTRY        =       Registry
-LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int \
-                        -L../external/RSL/RSL -lrsl \
-			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time  \
-                        -L../external/io_grib1 -lio_grib1
-LDFLAGS         =       $(FCOPTIM) -automatic -convert big_endian $(OMP)
-CPP             =       /usr/bin/cpp -C -P
-POUND_DEF	=	-DDEC_ALPHA -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
-CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL/RSL -C -P `cat ../inc/dm_comm_cpp_flags` $(OMPCPP) $(COREDEFS) $(POUND_DEF)
-MAX_PROC        =       1024
-AR              =       ar ru
-M4              =       m4 -B 10000
-RANLIB          =       ranlib
-NETCDFPATH	=	CONFIGURE_NETCDF_PATH
-CC_TOOLS        =       cc
-
-externals : CONFIGURE_WRFIO_NF wrfio_int ../external/RSL/RSL/librsl.a gen_comms.c module_dm.F esmf_time
-
-gen_comms.c : ../external/RSL/gen_comms.c
-	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
-          cat ../external/RSL/gen_comms.c >> ../tools/gen_comms.c )
-
-module_dm.F : ../external/RSL/module_dm.F
-	( /bin/cp module_dm_warning module_dm.F ; \
-          cat ../external/RSL/module_dm.F >> module_dm.F )
-
-wrfio_nf : 
-	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
-
-wrfio_int : 
-	( cd ../external/io_int ; \
-          make CC="$(CC)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
-
-wrfio_grib1 :
-	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
-
-esmf_time : 
-	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
-
-../external/RSL/RSL/librsl.a :
-	( cd ../external/RSL/RSL ; \
-          make CC="$(CC)" FC="$(FC)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST alpha )
-
-# compile these without high optimization to speed compile
-module_io_mm5.o : module_io_mm5.F
-module_si_io.o : module_si_io.F
-module_io_wrf.o : module_io_wrf.F
-module_domain.o : module_domain.F
-module_start.o : module_start.F
-module_initialize.o : module_initialize.F
-module_initialize_b_wave.o : module_initialize_b_wave.F
-module_initialize_hill2d_x.o : module_initialize_hill2d_x.F
-module_initialize_quarter_ss.o : module_initialize_quarter_ss.F
-module_initialize_squall2d_x.o : module_initialize_squall2d_x.F
-module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
-module_initialize_real.o : module_initialize_real.F
-module_dm.o : module_dm.F
-start_domain.o : start_domain.F
-module_configure.o : module_configure.F
-
-module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
-module_start.o module_initialize.o module_initialize_b_wave.o  \
-module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
-module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
-module_configure.o                                             \
-module_initialize_real.o module_dm.o start_domain.o :
-	$(RM) $@
-	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
-	$(RM) $*.b
-	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
-
-###########################################################
-#ARCH       Compaq OSF1 alpha DM-Parallel OPTIONAL DOUBLE PRECISION (RSL, MPICH, allows nesting)
-#
-# To compile with double precision set RWORDSIZE to 8
-# To compile with single precision set RWORDSIZE to 4
-#
-DMPARALLEL      =       1
-OMP             =
-OMPCPP          =
-FC              =       mpif90
-LD              =       mpif90
-CC              =       mpicc
-RWORDSIZE       =       8
+RWORDSIZE       =       4
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DYYY -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL -DRSL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
@@ -2778,121 +2711,11 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=/usr/local/netcdf CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" ; \
         if [ $(RWORDSIZE) -eq 8 ] ; then \
           /bin/rm -f foo_io_flags.h; \
           sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
           /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
-
-wrfio_int : 
-	( cd ../external/io_int ; \
-          make CC="$(CC)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
-
-wrfio_grib1 :
-	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
-
-esmf_time : 
-	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
-
-../external/RSL/RSL/librsl.a :
-	( cd ../external/RSL/RSL ; \
-          make CC="$(CC)" FC="$(FC)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST alpha ; \
-          if [ $(RWORDSIZE) -eq 8 ] ; then \
-          /bin/rm -f foo_rsl.inc ; \
-          sed -e 's/parameter(RSL_REAL=0)/parameter(RSL_REAL=1)/' \
-              -e 's/parameter(RSL_REAL_F90=100)/parameter(RSL_REAL_F90=101)/' rsl.inc > foo_rsl.inc ; \
-          /bin/mv foo_rsl.inc rsl.inc ; fi )
-
-# compile these without high optimization to speed compile
-module_io_mm5.o : module_io_mm5.F
-module_si_io.o : module_si_io.F
-module_io_wrf.o : module_io_wrf.F
-module_domain.o : module_domain.F
-module_start.o : module_start.F
-module_initialize.o : module_initialize.F
-module_initialize_b_wave.o : module_initialize_b_wave.F
-module_initialize_hill2d_x.o : module_initialize_hill2d_x.F
-module_initialize_quarter_ss.o : module_initialize_quarter_ss.F
-module_initialize_squall2d_x.o : module_initialize_squall2d_x.F
-module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
-module_initialize_real.o : module_initialize_real.F
-module_dm.o : module_dm.F
-start_domain.o : start_domain.F
-module_configure.o : module_configure.F
-
-module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
-module_start.o module_initialize.o module_initialize_b_wave.o  \
-module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
-module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
-module_configure.o                                             \
-module_initialize_real.o module_dm.o start_domain.o :
-	$(RM) $@
-	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
-	$(RM) $*.b
-	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $(PROMOTION) -O0 $*.f
-
-###########################################################
-#ARCH       Compaq OSF1 alpha DM-Parallel/SM-Parallel    (RSL, MPICH, OpenMP, allows nesting)
-#
-# Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
-#
-#
-DMPARALLEL      =       1
-OMP             =       -omp
-OMPCPP          =       -D_OPENMP
-FC              =       mpif90
-LD              =       mpif90
-CC              =       mpicc
-ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DYYY -DINTIO -DWRF_RSL_IO \
-                        -DDM_PARALLEL -DRSL \
-                        -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
-                        -DTRIEDNTRUE   \
-			-DLIMIT_ARGS -DFLOATSAFE \
-			-DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
-CFLAGS          =       $(ARCHFLAGS) -I../external/RSL/RSL
-FCOPTIM         =       -fast -O4
-FCDEBUG         =       # -g
-FCBASEOPTS      =       -w -convert big_endian -automatic -cpp -free -I. -arch host $(FCDEBUG)
-FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
-INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
-                        -I../frame -I../share -I../phys -I../chem -I../inc
-EXTRAMODULES    =       
-PERL            =       CONFIGURE_PERL_PATH
-REGISTRY        =       Registry
-LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int \
-                        -L../external/RSL/RSL -lrsl \
-			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time \
-                        -L../external/io_grib1 -lio_grib1
-LDFLAGS         =       $(FCOPTIM) -automatic -convert big_endian $(OMP)
-CPP             =       /usr/bin/cpp -C -P
-POUND_DEF	=	-DDEC_ALPHA -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
-CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL/RSL -C -P `cat ../inc/dm_comm_cpp_flags` $(OMPCPP) $(COREDEFS) $(POUND_DEF)
-MAX_PROC        =       1024
-AR              =       ar ru
-M4              =       m4 -B 10000
-RANLIB          =       ranlib
-NETCDFPATH	=	CONFIGURE_NETCDF_PATH
-CC_TOOLS        =       cc
-
-externals : CONFIGURE_WRFIO_NF wrfio_int ../external/RSL/RSL/librsl.a gen_comms.c module_dm.F esmf_time
-
-gen_comms.c : ../external/RSL/gen_comms.c
-	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
-          cat ../external/RSL/gen_comms.c >> ../tools/gen_comms.c )
-
-module_dm.F : ../external/RSL/module_dm.F
-	( /bin/cp module_dm_warning module_dm.F ; \
-          cat ../external/RSL/module_dm.F >> module_dm.F )
-
-wrfio_nf : 
-	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" ; \
 	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
 	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
 	/bin/cp wrf_io_flags.h ../io_quilt )
@@ -2940,7 +2763,118 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
-	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
+	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $(PROMOTION) -O0 $*.f
+
+###########################################################
+#ARCH       Compaq OSF1 alpha DM-Parallel/SM-Parallel    (RSL, MPICH, OpenMP, allows nesting)
+#
+# Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#
+#
+DMPARALLEL      =       1
+OMP             =       -omp
+OMPCPP          =       -D_OPENMP
+FC              =       mpif90
+LD              =       mpif90
+CC              =       mpicc
+RWORDSIZE       =       4
+ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DYYY -DINTIO -DWRF_RSL_IO \
+                        -DDM_PARALLEL -DRSL \
+                        -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+                        -DTRIEDNTRUE   \
+			-DLIMIT_ARGS -DFLOATSAFE \
+			-DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
+PROMOTION       =       -r$(RWORDSIZE) -i4
+CFLAGS          =       $(ARCHFLAGS) -I../external/RSL/RSL
+FCOPTIM         =       -fast -O4
+FCDEBUG         =       # -g
+FCBASEOPTS      =       -w -convert big_endian -automatic -cpp -free -I. -arch host $(FCDEBUG)
+FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
+INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
+                        -I../frame -I../share -I../phys -I../chem -I../inc
+EXTRAMODULES    =       
+PERL            =       CONFIGURE_PERL_PATH
+REGISTRY        =       Registry
+LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int \
+                        -L../external/RSL/RSL -lrsl \
+			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time \
+                        -L../external/io_grib1 -lio_grib1
+LDFLAGS         =       $(FCOPTIM) -automatic -convert big_endian $(OMP)
+CPP             =       /usr/bin/cpp -C -P
+POUND_DEF	=	-DDEC_ALPHA -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
+CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL/RSL -C -P `cat ../inc/dm_comm_cpp_flags` $(OMPCPP) $(COREDEFS) $(POUND_DEF)
+MAX_PROC        =       1024
+AR              =       ar ru
+M4              =       m4 -B 10000
+RANLIB          =       ranlib
+NETCDFPATH	=	CONFIGURE_NETCDF_PATH
+CC_TOOLS        =       cc
+
+externals : CONFIGURE_WRFIO_NF wrfio_int ../external/RSL/RSL/librsl.a gen_comms.c module_dm.F esmf_time
+
+gen_comms.c : ../external/RSL/gen_comms.c
+	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
+          cat ../external/RSL/gen_comms.c >> ../tools/gen_comms.c )
+
+module_dm.F : ../external/RSL/module_dm.F
+	( /bin/cp module_dm_warning module_dm.F ; \
+          cat ../external/RSL/module_dm.F >> module_dm.F )
+
+wrfio_nf : 
+	( cd ../external/io_netcdf ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" ; \
+        if [ $(RWORDSIZE) -eq 8 ] ; then \
+          /bin/rm -f foo_io_flags.h; \
+          sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
+          /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
+	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
+	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
+	/bin/cp wrf_io_flags.h ../io_quilt )
+
+wrfio_int : 
+	( cd ../external/io_int ; \
+          make CC="$(CC)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
+
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; \
+          make CC="$(CC)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
+
+esmf_time : 
+	( cd ../external/esmf_time_f90 ; \
+	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+../external/RSL/RSL/librsl.a :
+	( cd ../external/RSL/RSL ; \
+          make CC="$(CC)" FC="$(FC)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST alpha )
+
+# compile these without high optimization to speed compile
+module_io_mm5.o : module_io_mm5.F
+module_si_io.o : module_si_io.F
+module_io_wrf.o : module_io_wrf.F
+module_domain.o : module_domain.F
+module_start.o : module_start.F
+module_initialize.o : module_initialize.F
+module_initialize_b_wave.o : module_initialize_b_wave.F
+module_initialize_hill2d_x.o : module_initialize_hill2d_x.F
+module_initialize_quarter_ss.o : module_initialize_quarter_ss.F
+module_initialize_squall2d_x.o : module_initialize_squall2d_x.F
+module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
+module_initialize_real.o : module_initialize_real.F
+module_dm.o : module_dm.F
+start_domain.o : start_domain.F
+module_configure.o : module_configure.F
+
+module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
+module_start.o module_initialize.o module_initialize_b_wave.o  \
+module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
+module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
+module_configure.o                                             \
+module_initialize_real.o module_dm.o start_domain.o :
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b 
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(RM) $*.b
+	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $(PROMOTION) -O0 $*.f
 
 ###########################################################
 #ARCH       Compaq OSF1 alpha DM-Parallel/SM-Parallel    (RSL, DECMPI, OpenMP, allows nesting)
@@ -2954,12 +2888,14 @@ OMPCPP          =       -D_OPENMP
 FC              =       f90
 LD              =       f90
 CC              =       cc
+RWORDSIZE       =       4
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DYYY -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL -DRSL \
-                        -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
+                        -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         -DTRIEDNTRUE   \
 			-DLIMIT_ARGS -DFLOATSAFE \
 			-DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
+PROMOTION       =       -r$(RWORDSIZE) -i4
 CFLAGS          =       $(ARCHFLAGS) -I../external/RSL/RSL
 FCOPTIM         =       -fast -O4
 FCDEBUG         =       # -g
@@ -2997,7 +2933,11 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="f90 $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" ; \
+        if [ $(RWORDSIZE) -eq 8 ] ; then \
+          /bin/rm -f foo_io_flags.h; \
+          sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
+          /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
 	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
 	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
 	/bin/cp wrf_io_flags.h ../io_quilt )
@@ -3045,7 +2985,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
-	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
+	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $(PROMOTION) -O0 $*.f
 
 ###########################################################
 #ARCH       Compaq OSF1 alpha DM-Parallel       (RSL, MPICH, allows nesting, MOVING NESTS EXPERIMENTAL)
@@ -3056,12 +2996,14 @@ OMPCPP          =
 FC              =       mpif90
 LD              =       mpif90
 CC              =       mpicc
+RWORDSIZE       =       4
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DYYY -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL -DRSL \
-                        -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
+                        -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         -DTRIEDNTRUE   \
 			-DLIMIT_ARGS -DFLOATSAFE \
 			-DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -DMOVE_NESTS
+PROMOTION       =       -r$(RWORDSIZE) -i4
 CFLAGS          =       $(ARCHFLAGS) -I../external/RSL/RSL
 FCOPTIM         =       -fast -O4
 FCDEBUG         =       # -g
@@ -3100,6 +3042,10 @@ module_dm.F : ../external/RSL/module_dm.F
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
           make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" ; \
+        if [ $(RWORDSIZE) -eq 8 ] ; then \
+          /bin/rm -f foo_io_flags.h; \
+          sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
+          /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
 	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
 	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
 	/bin/cp wrf_io_flags.h ../io_quilt )
@@ -3147,7 +3093,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
-	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
+	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $(PROMOTION) -O0 $*.f
 
 ###########################################################
 #ARCH       Compaq OSF1 alpha DM-Parallel       (RSL, MPICH, MCEL EXPERIMENTAL)
@@ -3158,11 +3104,13 @@ OMPCPP          =
 FC              =       mpif90
 LD              =       mpif90 -f90=cxx
 CC              =       mpicc
+RWORDSIZE       =       4
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DYYY -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL -DRSL -DFLOATSAFE \
-                        -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 \
+                        -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         -DTRIEDNTRUE   \
 			-DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -DMCELIO
+PROMOTION       =       -r$(RWORDSIZE) -i4
 CFLAGS          =       $(ARCHFLAGS) -I../external/RSL/RSL
 FCOPTIM         =       -fast -O4
 FCDEBUG         =       # -g
@@ -3208,6 +3156,10 @@ module_dm.F : ../external/RSL/module_dm.F
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
           make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" ; \
+        if [ $(RWORDSIZE) -eq 8 ] ; then \
+          /bin/rm -f foo_io_flags.h; \
+          sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
+          /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
 	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
 	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
 	/bin/cp wrf_io_flags.h ../io_quilt )
@@ -3260,7 +3212,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
-	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
+	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $(PROMOTION) -O0 $*.f
 
 
 ###########################################################

@@ -97,13 +97,8 @@ MODULE module_dm
    END INTERFACE
 #endif
 
-#ifdef D3VAR_KLUDGE
-#define TRUE_RSL_REAL     RSL_DOUBLE
-#define TRUE_RSL_REAL_F90 RSL_DOUBLE_F90
-#else
 #define TRUE_RSL_REAL     RSL_REAL
 #define TRUE_RSL_REAL_F90 RSL_REAL_F90
-#endif
 
 CONTAINS
 

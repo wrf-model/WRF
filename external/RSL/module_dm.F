@@ -1501,35 +1501,29 @@ CONTAINS
       RETURN
    END SUBROUTINE add_msg_120pt_integer
 
-   SUBROUTINE stencil_x_shift ( did , stenid )
-      IMPLICIT NONE
-      INTEGER did, stenid
-      messages = RSL_INVALID
-      messages(22) = w3
-      messages(23) = w2
-      messages(24) = w1
-      messages(25) = e1
-      messages(26) = e2
-      messages(27) = e3
-      CALL rsl_create_stencil( stenid )
-      CALL rsl_describe_stencil ( did, stenid, RSL_48PT, messages )
-      RETURN
-   END SUBROUTINE stencil_x_shift
-
    SUBROUTINE stencil_y_shift ( did , stenid )
       IMPLICIT NONE
       INTEGER did, stenid
-      messages = RSL_INVALID
-      messages( 4) = n3
-      messages(11) = n2
-      messages(18) = n1
-      messages(31) = s1
-      messages(38) = s2
-      messages(45) = s3
+      INTEGER i
+      DO i = 1, 48
+        messages(i) = n1
+      ENDDO
       CALL rsl_create_stencil( stenid )
       CALL rsl_describe_stencil ( did, stenid, RSL_48PT, messages )
       RETURN
    END SUBROUTINE stencil_y_shift
+
+   SUBROUTINE stencil_x_shift ( did , stenid )
+      IMPLICIT NONE
+      INTEGER did, stenid
+      INTEGER i
+      DO i = 1, 48
+        messages(i) = w1
+      ENDDO
+      CALL rsl_create_stencil( stenid )
+      CALL rsl_describe_stencil ( did, stenid, RSL_48PT, messages )
+      RETURN
+   END SUBROUTINE stencil_x_shift
 
    SUBROUTINE stencil_4pt ( did, stenid )
       IMPLICIT NONE

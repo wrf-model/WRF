@@ -6,15 +6,14 @@ USE module_io
 USE module_io_wrf
 USE module_wrf_error
 USE module_date_time
+USE module_configure
+USE module_domain
 
   PRIVATE open_dataset
 
 CONTAINS
 
   SUBROUTINE open_r_dataset ( id , fname , grid , config_flags , sysdepinfo, ierr )
-   USE module_domain
-   USE module_io_wrf
-   USE module_configure
    TYPE (domain)             :: grid
    CHARACTER*(*) :: fname
    CHARACTER*(*) :: sysdepinfo
@@ -33,10 +32,6 @@ CONTAINS
   END SUBROUTINE
 
   SUBROUTINE open_w_dataset ( id , fname , grid , config_flags , outsub , sysdepinfo, ierr )
-   USE module_domain
-   USE module_io_wrf
-   USE module_configure
-   USE module_date_time
    TYPE (domain)             :: grid
    CHARACTER*(*) :: fname
    CHARACTER*(*) :: sysdepinfo
@@ -67,10 +62,6 @@ CONTAINS
   END SUBROUTINE open_w_dataset
 
   SUBROUTINE open_u_dataset ( id , fname , grid , config_flags , insub , sysdepinfo, ierr )
-   USE module_domain
-   USE module_io_wrf
-   USE module_configure
-   USE module_date_time
    TYPE (domain)             :: grid
    CHARACTER*(*) :: fname
    CHARACTER*(*) :: sysdepinfo
@@ -104,7 +95,6 @@ CONTAINS
   END SUBROUTINE open_u_dataset
 
   SUBROUTINE close_dataset( id , config_flags, sysdepinfo ) 
-   USE module_configure
    IMPLICIT NONE
    INTEGER id , ierr
    LOGICAL , EXTERNAL :: wrf_dm_on_monitor
@@ -119,11 +109,6 @@ CONTAINS
 ! ------------  Output model input data sets
 
   SUBROUTINE output_model_input ( fid , grid , config_flags , ierr )
-    USE module_io_wrf
-    USE module_domain
-    USE module_state_description
-    USE module_configure
-    USE module_date_time
     IMPLICIT NONE
     TYPE(domain) :: grid
     TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
@@ -136,11 +121,6 @@ CONTAINS
   END SUBROUTINE output_model_input
 
   SUBROUTINE output_aux_model_input1 ( fid , grid , config_flags , ierr )
-    USE module_io_wrf
-    USE module_domain
-    USE module_state_description
-    USE module_configure
-    USE module_date_time
     IMPLICIT NONE
     TYPE(domain) :: grid
     TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
@@ -153,11 +133,6 @@ CONTAINS
   END SUBROUTINE output_aux_model_input1
 
   SUBROUTINE output_aux_model_input2 ( fid , grid , config_flags , ierr )
-    USE module_io_wrf
-    USE module_domain
-    USE module_state_description
-    USE module_configure
-    USE module_date_time
     IMPLICIT NONE
     TYPE(domain) :: grid
     TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
@@ -170,11 +145,6 @@ CONTAINS
   END SUBROUTINE output_aux_model_input2
 
   SUBROUTINE output_aux_model_input3 ( fid , grid , config_flags , ierr )
-    USE module_io_wrf
-    USE module_domain
-    USE module_state_description
-    USE module_configure
-    USE module_date_time
     IMPLICIT NONE
     TYPE(domain) :: grid
     TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
@@ -187,11 +157,6 @@ CONTAINS
   END SUBROUTINE output_aux_model_input3
 
   SUBROUTINE output_aux_model_input4 ( fid , grid , config_flags , ierr )
-    USE module_io_wrf
-    USE module_domain
-    USE module_state_description
-    USE module_configure
-    USE module_date_time
     IMPLICIT NONE
     TYPE(domain) :: grid
     TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
@@ -204,11 +169,6 @@ CONTAINS
   END SUBROUTINE output_aux_model_input4
 
   SUBROUTINE output_aux_model_input5 ( fid , grid , config_flags , ierr )
-    USE module_io_wrf
-    USE module_domain
-    USE module_state_description
-    USE module_configure
-    USE module_date_time
     IMPLICIT NONE
     TYPE(domain) :: grid
     TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
@@ -223,11 +183,6 @@ CONTAINS
 !  ------------ Output model history data sets
 
   SUBROUTINE output_history ( fid , grid , config_flags , ierr )
-    USE module_io_wrf
-    USE module_domain
-    USE module_state_description
-    USE module_configure
-    USE module_date_time
     IMPLICIT NONE
     TYPE(domain) :: grid
     TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
@@ -240,11 +195,6 @@ CONTAINS
   END SUBROUTINE output_history
 
   SUBROUTINE output_aux_hist1 ( fid , grid , config_flags , ierr )
-    USE module_io_wrf
-    USE module_domain
-    USE module_state_description
-    USE module_configure
-    USE module_date_time
     IMPLICIT NONE
     TYPE(domain) :: grid
     TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
@@ -257,11 +207,6 @@ CONTAINS
   END SUBROUTINE output_aux_hist1
 
   SUBROUTINE output_aux_hist2 ( fid , grid , config_flags , ierr )
-    USE module_io_wrf
-    USE module_domain
-    USE module_state_description
-    USE module_configure
-    USE module_date_time
     IMPLICIT NONE
     TYPE(domain) :: grid
     TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
@@ -274,11 +219,6 @@ CONTAINS
   END SUBROUTINE output_aux_hist2
 
   SUBROUTINE output_aux_hist3 ( fid , grid , config_flags , ierr )
-    USE module_io_wrf
-    USE module_domain
-    USE module_state_description
-    USE module_configure
-    USE module_date_time
     IMPLICIT NONE
     TYPE(domain) :: grid
     TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
@@ -291,11 +231,6 @@ CONTAINS
   END SUBROUTINE output_aux_hist3
 
   SUBROUTINE output_aux_hist4 ( fid , grid , config_flags , ierr )
-    USE module_io_wrf
-    USE module_domain
-    USE module_state_description
-    USE module_configure
-    USE module_date_time
     IMPLICIT NONE
     TYPE(domain) :: grid
     TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
@@ -308,11 +243,6 @@ CONTAINS
   END SUBROUTINE output_aux_hist4
 
   SUBROUTINE output_aux_hist5 ( fid , grid , config_flags , ierr )
-    USE module_io_wrf
-    USE module_domain
-    USE module_state_description
-    USE module_configure
-    USE module_date_time
     IMPLICIT NONE
     TYPE(domain) :: grid
     TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
@@ -327,11 +257,6 @@ CONTAINS
 !  ------------ Output model restart data sets
 
   SUBROUTINE output_restart ( fid , grid , config_flags , ierr )
-    USE module_io_wrf
-    USE module_domain
-    USE module_state_description
-    USE module_configure
-    USE module_date_time
     IMPLICIT NONE
     TYPE(domain) :: grid
     TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
@@ -346,11 +271,6 @@ CONTAINS
 !  ------------ Output model boundary data sets
 
   SUBROUTINE output_boundary ( fid , grid , config_flags , ierr )
-    USE module_io_wrf
-    USE module_domain
-    USE module_state_description
-    USE module_configure
-    USE module_date_time
     IMPLICIT NONE
     TYPE(domain) :: grid
     TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
@@ -365,10 +285,6 @@ CONTAINS
 !  ------------ Input model input data sets
 
   SUBROUTINE input_model_input ( fid , grid , config_flags , ierr )
-    USE module_domain
-    USE module_state_description
-    USE module_configure
-    USE module_io_wrf
     IMPLICIT NONE
     TYPE(domain) :: grid
     TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
@@ -381,10 +297,6 @@ CONTAINS
   END SUBROUTINE input_model_input
 
   SUBROUTINE input_aux_model_input1 ( fid , grid , config_flags , ierr )
-    USE module_domain
-    USE module_state_description
-    USE module_configure
-    USE module_io_wrf
     IMPLICIT NONE
     TYPE(domain) :: grid
     TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
@@ -399,10 +311,6 @@ write(0,*)'calling input_wrf '
   END SUBROUTINE input_aux_model_input1
 
   SUBROUTINE input_aux_model_input2 ( fid , grid , config_flags , ierr )
-    USE module_domain
-    USE module_state_description
-    USE module_configure
-    USE module_io_wrf
     IMPLICIT NONE
     TYPE(domain) :: grid
     TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
@@ -415,10 +323,6 @@ write(0,*)'calling input_wrf '
   END SUBROUTINE input_aux_model_input2
 
   SUBROUTINE input_aux_model_input3 ( fid , grid , config_flags , ierr )
-    USE module_domain
-    USE module_state_description
-    USE module_configure
-    USE module_io_wrf
     IMPLICIT NONE
     TYPE(domain) :: grid
     TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
@@ -431,10 +335,6 @@ write(0,*)'calling input_wrf '
   END SUBROUTINE input_aux_model_input3
 
   SUBROUTINE input_aux_model_input4 ( fid , grid , config_flags , ierr )
-    USE module_domain
-    USE module_state_description
-    USE module_configure
-    USE module_io_wrf
     IMPLICIT NONE
     TYPE(domain) :: grid
     TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
@@ -447,10 +347,6 @@ write(0,*)'calling input_wrf '
   END SUBROUTINE input_aux_model_input4
 
   SUBROUTINE input_aux_model_input5 ( fid , grid , config_flags , ierr )
-    USE module_domain
-    USE module_state_description
-    USE module_configure
-    USE module_io_wrf
     IMPLICIT NONE
     TYPE(domain) :: grid
     TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
@@ -465,10 +361,6 @@ write(0,*)'calling input_wrf '
 !  ------------ Input model history data sets
 
   SUBROUTINE input_history ( fid , grid , config_flags , ierr )
-    USE module_domain
-    USE module_state_description
-    USE module_configure
-    USE module_io_wrf
     IMPLICIT NONE
     TYPE(domain) :: grid
     TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
@@ -481,10 +373,6 @@ write(0,*)'calling input_wrf '
   END SUBROUTINE input_history
 
   SUBROUTINE input_aux_hist1 ( fid , grid , config_flags , ierr )
-    USE module_domain
-    USE module_state_description
-    USE module_configure
-    USE module_io_wrf
     IMPLICIT NONE
     TYPE(domain) :: grid
     TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
@@ -497,10 +385,6 @@ write(0,*)'calling input_wrf '
   END SUBROUTINE input_aux_hist1
 
   SUBROUTINE input_aux_hist2 ( fid , grid , config_flags , ierr )
-    USE module_domain
-    USE module_state_description
-    USE module_configure
-    USE module_io_wrf
     IMPLICIT NONE
     TYPE(domain) :: grid
     TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
@@ -513,10 +397,6 @@ write(0,*)'calling input_wrf '
   END SUBROUTINE input_aux_hist2
 
   SUBROUTINE input_aux_hist3 ( fid , grid , config_flags , ierr )
-    USE module_domain
-    USE module_state_description
-    USE module_configure
-    USE module_io_wrf
     IMPLICIT NONE
     TYPE(domain) :: grid
     TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
@@ -529,10 +409,6 @@ write(0,*)'calling input_wrf '
   END SUBROUTINE input_aux_hist3
 
   SUBROUTINE input_aux_hist4 ( fid , grid , config_flags , ierr )
-    USE module_domain
-    USE module_state_description
-    USE module_configure
-    USE module_io_wrf
     IMPLICIT NONE
     TYPE(domain) :: grid
     TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
@@ -545,10 +421,6 @@ write(0,*)'calling input_wrf '
   END SUBROUTINE input_aux_hist4
 
   SUBROUTINE input_aux_hist5 ( fid , grid , config_flags , ierr )
-    USE module_domain
-    USE module_state_description
-    USE module_configure
-    USE module_io_wrf
     IMPLICIT NONE
     TYPE(domain) :: grid
     TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
@@ -563,10 +435,6 @@ write(0,*)'calling input_wrf '
 !  ------------ Input model restart data sets
 
   SUBROUTINE input_restart ( fid , grid , config_flags , ierr )
-    USE module_domain
-    USE module_state_description
-    USE module_configure
-    USE module_io_wrf
     IMPLICIT NONE
     TYPE(domain) :: grid
     TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
@@ -581,10 +449,6 @@ write(0,*)'calling input_wrf '
 !  ------------ Input model boundary data sets
 
   SUBROUTINE input_boundary ( fid , grid , config_flags , ierr )
-    USE module_domain
-    USE module_state_description
-    USE module_configure
-    USE module_io_wrf
     IMPLICIT NONE
     TYPE(domain) :: grid
     TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags

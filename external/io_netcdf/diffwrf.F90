@@ -87,7 +87,8 @@ end module read_util_module
   integer :: ndim, ndim2
   integer :: WrfType, WrfType2
   real :: time, time2
-  real :: a, b
+  real*8 :: a, b
+  real*8 :: sum1, sum2, diff1, diff2, serr, perr, rms
   integer, dimension(4) :: start_index, end_index, start_index2, end_index2
   integer , Dimension(3) :: MemS,MemE,PatS,PatE
   character (len= 4) :: staggering,   staggering2
@@ -238,6 +239,7 @@ else
 
   DO WHILE ( Status_next_time .eq. 0 .AND. Status_next_time2 .eq. 0 )
     write(*,*)'Next Time ',TRIM(Datestr)
+    print 76
     call ext_ncd_get_next_var (dh1, VarName, Status_next_var)
     DO WHILE ( Status_next_var .eq. 0 )
 !    write(*,*)'Next Var |',TRIM(VarName),'|'
@@ -249,22 +251,26 @@ else
       call ext_ncd_get_var_info (dh2,VarName,ndim2,ordering2,staggering2,start_index2,end_index2, WrfType2, ierr )
       IF ( ierr /= 0 ) THEN
         write(*,*)'Big difference: ',VarName,' not found in ',flnm2
+	GOTO 1234
       ENDIF
       IF ( ndim /= ndim2 ) THEN
         write(*,*)'Big difference: Number of dimensions for ',Varname,' differs in ',flnm2,'(',ndim,') /= (',ndim2
+	GOTO 1234
       ENDIF
 !      IF ( ordering /= ordering2 ) THEN
 !       write(*,*)'Big difference: Ordering of dimensions for ',Varname,' differs in ',flnm2,'(',ordering,') /= (',ordering2
 !      ENDIF
       IF ( WrfType /= WrfType2 ) THEN
         write(*,*)'Big difference: The types do not match'
+	GOTO 1234
       ENDIF
       if( WrfType == WRF_REAL) then
         DO i = 1, ndim
           IF ( end_index(i) /= end_index2(i) ) THEN
             write(*,*)'Big difference: dim ',i,' lengths differ for ',Varname,' differ in ',flnm2
-            write(*,*)'   ',flnm,'  ',end_index(i)
-            write(*,*)'   ',flnm2,'  ',end_index2(i)
+!            write(*,*)'   ',flnm,'  ',end_index(i)
+!            write(*,*)'   ',flnm2,'  ',end_index2(i)
+	    GOTO 1234
           ENDIF
         ENDDO
         DO i = ndim+1,3
@@ -274,9 +280,9 @@ else
           end_index2(i) = 1
         ENDDO
 
-        write(*,'(A9,1x,I1,3(1x,I3),1x,A,1x,A)')&
-                 VarName, ndim, end_index(1), end_index(2), end_index(3), &
-                 trim(ordering), trim(DateStr)
+!        write(*,'(A9,1x,I1,3(1x,I3),1x,A,1x,A)')&
+!                 VarName, ndim, end_index(1), end_index(2), end_index(3), &
+!                 trim(ordering), trim(DateStr)
 
         allocate(data (end_index(1), end_index(2), end_index(3), 1))
         allocate(data2(end_index(1), end_index(2), end_index(3), 1))
@@ -320,6 +326,11 @@ else
         ENDIF
 
         IFDIFFS=0
+        sum1 = 0.0
+        sum2 = 0.0
+        diff1 = 0.0
+        diff2 = 0.0
+        n = 0 
         DO K = 1,end_index(3)-start_index(3)+1
          IF (LEVLIM.EQ.-1.OR.K.EQ.LEVLIM.OR.NDIM.eq.2) THEN
           cross = 0 
@@ -328,41 +339,66 @@ else
             do j = 1, end_index(2)-cross
               a = data(I,J,K,1)
               b = data2(I,J,K,1)
+              ! borrowed from  Thomas Oppe's comp program
+              sum1 = sum1 + ( a - b ) * ( a - b )
+              sum2 = sum2 + b * b
+              diff1 = max ( diff1 , abs ( a - b ) )
+              diff2 = max ( diff2 , abs ( b ) )
+              n = n + 1
               IF (a .ne. b) then
                 IKDIFFS = IKDIFFS + 1
                 IFDIFFS = IFDIFFS + 1
               ENDIF
             ENDDO
           ENDDO
-          IF ( IKDIFFS .NE. 0 ) THEN
-            EFOUND = .TRUE.
-            PRINT*,'LEVEL ',K,' WITH ',IKDIFFS,' DIFFS'
-              write(88,*)end_index(2),end_index(1),' ',trim(varname),' LEVEL ',K,' TIME ',TRIM(Datestr)
-              write(98,*)end_index(2),end_index(1),' ',trim(varname),' LEVEL ',K,' TIME ',TRIM(Datestr)
-              DO I = 1,end_index(1)
-                DO J = 1,end_index(2)
-                  WRITE(88,*)data(I,J,K,1)
-                  WRITE(98,*)data2(I,J,K,1)
-                ENDDO
-              ENDDO
-!               write(88,*)end_index(2)-cross,end_index(1)-cross,' ',name,' LEVEL ',K,' TIME ',TRIM(Datestr)
-!               write(98,*)end_index(2)-cross,end_index(1)-cross,' ',name,' LEVEL ',K,' TIME ',TRIM(Datestr)
-!               DO I = 1,end_index(1)-cross
-!                 DO J = 1,end_index(2)-cross
-!                   WRITE(88,*)data(I,J,K,1)
-!                   WRITE(98,*)data2(I,J,K,1)
-!                 ENDDO
-!               ENDDO
-            ENDIF
+!          IF ( IKDIFFS .NE. 0 ) THEN
+!            EFOUND = .TRUE.
+!!            PRINT*,'LEVEL ',K,' WITH ',IKDIFFS,' DIFFS'
+!              write(88,*)end_index(2),end_index(1),' ',trim(varname),' LEVEL ',K,' TIME ',TRIM(Datestr)
+!              write(98,*)end_index(2),end_index(1),' ',trim(varname),' LEVEL ',K,' TIME ',TRIM(Datestr)
+!              DO I = 1,end_index(1)
+!                DO J = 1,end_index(2)
+!                  WRITE(88,*)data(I,J,K,1)
+!                  WRITE(98,*)data2(I,J,K,1)
+!                ENDDO
+!              ENDDO
+!!               write(88,*)end_index(2)-cross,end_index(1)-cross,' ',name,' LEVEL ',K,' TIME ',TRIM(Datestr)
+!!               write(98,*)end_index(2)-cross,end_index(1)-cross,' ',name,' LEVEL ',K,' TIME ',TRIM(Datestr)
+!!               DO I = 1,end_index(1)-cross
+!!                 DO J = 1,end_index(2)-cross
+!!                   WRITE(88,*)data(I,J,K,1)
+!!                   WRITE(98,*)data2(I,J,K,1)
+!!                 ENDDO
+!!               ENDDO
+!            ENDIF
          ENDIF
         enddo
+        rms = sqrt ( sum1 / dble( n ) )
+	IF ( sum2 .GT. 0.0d0 ) THEN
+	  serr = sqrt ( sum1 / sum2 )
+	ELSE
+	  serr = sqrt ( sum1 )
+	ENDIF
+	IF ( diff2 .GT. 0.0d0 ) THEN
+	  perr = diff1/diff2
+	ELSE
+	  perr = diff1
+	ENDIF
+           
         IF (IFDIFFS .NE. 0 ) THEN
-           PRINT *,'3D FIELD ID= ',trim(varname),'    cross= ',cross, '     N DIFFS= ',IFDIFFS
+           ! create the fort.88 and fort.98 files because regression scripts will
+           ! look for these to see if there were differences.
+           write(88,*)trim(varname)
+           write(98,*)trim(varname)
+           PRINT 77,trim(varname), IFDIFFS, ndim, rms, serr, perr
+ 76 FORMAT (5x,'Field ',2x,'Ndifs ',1x,'Dims ',6x,'RMS ',9x,'2-norm',8x,'pntwise max')
+ 77 FORMAT ( A10,1x,I7,2x,I3,1x,e14.4,1x,e14.4,1x,e14.4 )
         ENDIF
         deallocate(data)
         deallocate(data2)
 
       endif
+ 1234 CONTINUE
       call ext_ncd_get_next_var (dh1, VarName, Status_next_var)
     enddo
     call ext_ncd_get_next_time(dh1, DateStr, Status_next_time)

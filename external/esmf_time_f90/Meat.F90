@@ -399,8 +399,16 @@ IMPLICIT NONE
       type(ESMF_Time), intent(out) :: time2
       integer diy, daysapart, iSd, iSn, tSd, tSn, lcd
       integer nfeb
+      TYPE (ESMF_TimeInterval) :: temp
 
       CALL initdaym
+
+      IF ( timeinterval%basetime%S .LT. 0 ) THEN
+        temp = timeinterval
+        temp%basetime%S = -temp%basetime%S
+        CALL c_esmc_basetimediff( time1, temp, time2 )
+        RETURN
+      ENDIF
 
       time2%basetime%S = time1%basetime%S + timeinterval%basetime%S
 
@@ -476,8 +484,16 @@ IMPLICIT NONE
       type(ESMF_Time), intent(out) :: time2
       integer diy, daysapart, iSd, iSn, tSd, tSn,lcd
       integer nfeb
+      TYPE (ESMF_TimeInterval)  :: temp 
 
       CALL initdaym
+
+      IF ( timeinterval%basetime%S .LT. 0 ) THEN
+        temp = timeinterval
+        temp%basetime%S = -temp%basetime%S
+        CALL c_esmc_basetimesum( time1, temp, time2 )
+        RETURN
+      ENDIF
 
       iSd = timeinterval%basetime%Sd
       iSn = timeinterval%basetime%Sn
@@ -509,6 +525,7 @@ IMPLICIT NONE
         CALL compute_dayinyear(time1%YR,time1%MM,time1%DD,diy)
 
         time2%basetime%S = time1%basetime%S - timeinterval%basetime%S
+
         diy = diy - timeinterval%DD
         IF ( time2%basetime%S .LT. 0 ) THEN
           diy = diy - 1
@@ -528,7 +545,7 @@ IMPLICIT NONE
             diy = diy + 366
             time2%YR = time2%YR - 1
           ENDIF
-          time2%MM = diy
+          time2%MM = daym( diy )
           time2%DD = diy - mdayleapcum(time2%MM-1)
         ENDIF
         time2%basetime%S = mod( time2%basetime%S, 3600*24 )

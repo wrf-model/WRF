@@ -6,6 +6,7 @@
 #include "protos.h"
 #include "registry.h"
 #include "data.h"
+#include "sym.h"
 
 static FILE * fp ;
 
@@ -13,11 +14,12 @@ static FILE * fp ;
 #define GEN_OUTPUT 2
 
 #define OP_F(A,B) \
-  fn = B ;  \
+  fn = B ; \
   if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s",dirname,fn) ; } \
   else                       { sprintf(fname,"%s",fn) ; } \
   if ((A = fopen( fname , "w" )) == NULL ) return(1) ; \
-  print_warning(A,fname) ;
+  print_warning(A,fname) ; \
+  sym_forget() ;
 
 int
 gen_wrf_io ( char * dirname )
@@ -26,6 +28,7 @@ gen_wrf_io ( char * dirname )
 
   if ( dirname == NULL ) return(1) ;
 
+#if 1
   OP_F(fp,"wrf_histout.inc") ;
   gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields , HISTORY , GEN_OUTPUT ) ;
   close_the_file(fp) ;
@@ -68,7 +71,9 @@ gen_wrf_io ( char * dirname )
   OP_F(fp,"wrf_bdyout.inc") ;
   gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields , BOUNDARY , GEN_OUTPUT ) ;
   close_the_file(fp) ;
+#endif
 
+#if 1
   OP_F(fp,"wrf_histin.inc") ;
   gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields , HISTORY , GEN_INPUT ) ;
   close_the_file(fp) ;
@@ -111,6 +116,7 @@ gen_wrf_io ( char * dirname )
   OP_F(fp,"wrf_bdyin.inc") ;
   gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields , BOUNDARY , GEN_INPUT ) ;
   close_the_file(fp) ;
+#endif
 
   return(0) ;
 }
@@ -268,6 +274,7 @@ gen_wrf_io2 ( FILE * fp , char * fname, char * structname , node_t * node , int 
     if ( p->type->type == SIMPLE )
     {
 
+
 /* ////////  BOUNDARY ///////////////////// */
 
       if ( p->io_mask & BOUNDARY && (io_mask & BOUNDARY) )
@@ -297,15 +304,10 @@ gen_wrf_io2 ( FILE * fp , char * fname, char * structname , node_t * node , int 
            ps2 = "kds" ; pe2 = zdomainend ;
          }
         else
-         { 
-           strcpy(dimname[2],"") ; 
-           strcpy(dimname[1],"bdy_width") ; 
-           ds3 = "1" ; de3 = "1" ;
-           ms3 = "1" ; me3 = "1" ;
-           ps3 = "1" ; pe3 = "1" ;
-           ds2 = "1" ; de2 = "config_flags%spec_bdy_width" ;
-           ms2 = "1" ; me2 = "config_flags%spec_bdy_width" ;
-           ps2 = "1" ; pe2 = "config_flags%spec_bdy_width" ;
+         { strcpy(dimname[1],"") ; 
+           ds2 = "1" ; de2 = "1" ;
+           ms2 = "1" ; me2 = "1" ;
+           ps2 = "1" ; pe2 = "1" ;
          }
         if ( strlen(dname) < 1 ) {
           fprintf(stderr,"gen_wrf_io.c: Registry WARNING: no data name for %s \n",p->name) ;
@@ -332,7 +334,7 @@ gen_wrf_io2 ( FILE * fp , char * fname, char * structname , node_t * node , int 
               if        ( sw_io == GEN_INPUT ) {
                 ps1 = "1" ; pe1 = ydomainend ;
               } else if ( sw_io == GEN_OUTPUT ) {
-                ps1 = pdim[get_index_for_coord( p , COORD_Y )][0] ; pe1 = pdim[get_index_for_coord( p , COORD_Y )][1] ;
+                ps1 = pdim[dimnode->dim_order-1][0] ; pe1 = pdim[dimnode->dim_order-1][1] ;
               }
               if ( p->stag_y ) { sprintf( dimname[0] ,"%s_stag", dimnode->dim_data_name) ; }
               else                   { strcpy( dimname[0], dimnode->dim_data_name) ; }
@@ -347,7 +349,7 @@ gen_wrf_io2 ( FILE * fp , char * fname, char * structname , node_t * node , int 
               if        ( sw_io == GEN_INPUT ) {
                 ps1 = "1" ; pe1 = xdomainend ;
               } else if ( sw_io == GEN_OUTPUT ) {
-                ps1 = pdim[get_index_for_coord( p , COORD_X )][0] ; pe1 = pdim[get_index_for_coord( p , COORD_X )][1] ;
+                ps1 = pdim[dimnode->dim_order-1][0] ; pe1 = pdim[dimnode->dim_order-1][1] ;
               }
               if ( p->stag_x ) { sprintf( dimname[0] ,"%s_stag", dimnode->dim_data_name) ; }
               else             { strcpy( dimname[0], dimnode->dim_data_name) ; }
@@ -367,10 +369,7 @@ gen_wrf_io2 ( FILE * fp , char * fname, char * structname , node_t * node , int 
             fprintf(fp,"                       current_date(1:19) , &  ! DateStr \n" ) ;
             fprintf(fp,"                       '%s'               , &  ! Data Name \n", dname ) ;
             fprintf(fp,"                       %s%s%s(1,kds,1,%d)     , &  ! Field \n" , structname , core , p->name, ibdy ) ;
-          if ( !strcmp(p->type->name,"doubleprecision") )
-            { fprintf(fp,"                       WRF_DOUBLE         , &  ! FieldType \n" ) ; }
-          else
-            { fprintf(fp,"                       WRF_%s             , &  ! FieldType \n" , p->type->name ) ; }
+            fprintf(fp,"                       WRF_%s             , &  ! FieldType \n" , p->type->name ) ;
             fprintf(fp,"                       grid%%communicator , &  ! Comm\n") ;
             fprintf(fp,"                       grid%%iocommunicator , &  ! Comm\n") ;
             fprintf(fp,"                       grid%%domdesc      , &  ! Comm\n") ;
@@ -403,10 +402,7 @@ gen_wrf_io2 ( FILE * fp , char * fname, char * structname , node_t * node , int 
             fprintf(fp,"                       current_date(1:19) , &  ! DateStr \n" ) ;
             fprintf(fp,"                       '%s'               , &  ! Data Name \n", dname ) ;
             fprintf(fp,"                       %s%s%s(1,kds,1,%d)     , &  ! Field \n" , structname , core , p->name, ibdy ) ;
-          if ( !strcmp(p->type->name,"doubleprecision") )
-            { fprintf(fp,"                       WRF_DOUBLE         , &  ! FieldType \n" ) ; }
-          else
-            { fprintf(fp,"                       WRF_%s             , &  ! FieldType \n" , p->type->name ) ; }
+            fprintf(fp,"                       WRF_%s             , &  ! FieldType \n" , p->type->name ) ;
             fprintf(fp,"                       grid%%communicator , &  ! Comm\n") ;
             fprintf(fp,"                       grid%%iocommunicator , &  ! Comm\n") ;
             fprintf(fp,"                       grid%%domdesc      , &  ! Comm\n") ;
@@ -488,6 +484,65 @@ gen_wrf_io2 ( FILE * fp , char * fname, char * structname , node_t * node , int 
           else                                                  { strcpy(dname_tmp,p->dname) ; }
           make_upper_case(dname_tmp) ;
 
+
+/*
+   July 2004
+
+   New code to generate error if input or output for two state variables would be generated with the same dataname 
+
+   example okay:
+    dyn_nmm  tg      "SOILTB"   -> dyn_nmm_tg,SOILTB
+    dyn_em   soiltb  "SOILTB"   -> dyn_em_tg,SOILTB
+   example wrong:
+    dyn_nmm  tg      "SOILTB"   -> dyn_nmm_tg,SOILTB
+    misc     soiltb  "SOILTB"   -> gen_soiltb,SOILTB
+   example wrong:
+     misc    tg      "SOILTB"   -> gen_tg,SOILTB
+     misc    soiltb  "SOILTB"   -> gen_soiltb,SOILTB
+
+*/
+
+if ( pass == 0 )
+{
+          char dname_symbol[128] ;
+	  sym_nodeptr sym_node ;
+
+	  sprintf(dname_symbol, "DNAME_%s", dname_tmp ) ;
+	  /* check and see if it is in the symbol table already */
+
+          if ((sym_node = sym_get( dname_symbol )) == NULL ) {
+	    /* add it */
+ /* fprintf(stderr,"adding %s %s  %s\n",dname_symbol,core,p->name ) ; */
+	    sym_node = sym_add ( dname_symbol ) ;
+	    strcpy( sym_node->internal_name , p->name ) ;
+	    strcpy( sym_node->core_name , core ) ;
+	  } else {
+ /* fprintf(stderr,"got %s (core %s) (sym_core %s) %s  %s\n",
+   dname_symbol,core,sym_node->core_name,p->name,sym_node->internal_name ) ; */
+	    /* it's there already, check and make sure we don't have an error condition */
+            if ( (strlen(core) > 0 && strlen( sym_node->core_name ) > 0 && !strcmp( core, sym_node->core_name )) 
+	      || strlen(core) == 0 
+	      || strlen( sym_node->core_name ) == 0 ) 
+	    {
+	      char this_core[64] , sym_core[64] ;
+	      strcpy(this_core,"(generic)") ;
+	      if ( strlen(core) > 0 )                sprintf(this_core,"(%s)",core) ;
+	      strcpy(sym_core,"(generic)") ; 
+	      if ( strlen(sym_node->core_name) > 0 ) sprintf(this_core,"(%s)",sym_node->core_name) ;
+	      fprintf(stderr,"REGISTRY ERROR: Data-name collision on %s for %s %s and %s %s\n",
+		  dname_tmp,p->name,this_core,sym_node->internal_name,sym_core ) ;
+	    }
+	  }
+/*
+fprintf(stderr,"name: %s dname symbol: %s core %s\n",sym_node->internal_name,dname_symbol,sym_node->core_name) ;
+*/
+      
+}
+
+
+
+/* end July 2004 */
+
           if ( io_mask & RESTART &&  p->ntl > 1 ) sprintf(dname,"%s_%d",dname_tmp,pass+1) ;
           else                                    strcpy(dname,dname_tmp) ;
 
@@ -524,10 +579,7 @@ gen_wrf_io2 ( FILE * fp , char * fname, char * structname , node_t * node , int 
 	      fprintf(fp,"                       globbuf_%s               , &  ! Field \n" , p->type->name ) ;
             else
 	      fprintf(fp,"                       %s%s%s               , &  ! Field \n" , structname , vname , indices) ;
-          if ( !strcmp(p->type->name,"doubleprecision") )
-            { fprintf(fp,"                       WRF_DOUBLE         , &  ! FieldType \n" ) ; }
-          else
-	    { fprintf(fp,"                       WRF_%s             , &  ! FieldType \n" , p->type->name ) ; }
+	    fprintf(fp,"                       WRF_%s             , &  ! FieldType \n" , p->type->name ) ;
 	    fprintf(fp,"                       grid%%communicator  , &  ! Comm\n") ;
 	    fprintf(fp,"                       grid%%iocommunicator  , &  ! Comm\n") ;
 	    fprintf(fp,"                       grid%%domdesc       , &  ! Comm\n") ;
@@ -742,10 +794,7 @@ gen_wrf_io2 ( FILE * fp , char * fname, char * structname , node_t * node , int 
 	      fprintf(fp,"                       globbuf_%s               , &  ! Field \n" , p->type->name ) ;
             else
 	      fprintf(fp,"                       %s%s%s               , &  ! Field \n" , structname , vname , indices ) ;
-          if ( !strcmp(p->type->name,"doubleprecision") )
-            { fprintf(fp,"                       WRF_DOUBLE         , &  ! FieldType \n" ) ; }
-          else
-	    { fprintf(fp,"                       WRF_%s             , &  ! FieldType \n" , p->type->name ) ; }
+	    fprintf(fp,"                       WRF_%s             , &  ! FieldType \n" , p->type->name ) ;
 	    fprintf(fp,"                       grid%%communicator  , &  ! Comm\n") ;
 	    fprintf(fp,"                       grid%%iocommunicator  , &  ! Comm\n") ;
 	    fprintf(fp,"                       grid%%domdesc       , &  ! Comm\n") ;

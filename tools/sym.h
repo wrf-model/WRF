@@ -78,6 +78,10 @@ struct sym_node
     char dimname[7][64] ;
 /* name of temporary variable associated with string. variable */
     char varx[32] ;
+/* name of core association, July 2004 */
+    char core_name[64] ;
+/* internal name of variable associated with dataname entry, July 2004 */
+    char internal_name[64] ;
 /* fields associated with integer scalar variables */
     unsigned long assigned ; 	/* pointer to assignment statement */
     unsigned long thisif ;

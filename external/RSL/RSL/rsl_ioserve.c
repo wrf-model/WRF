@@ -64,6 +64,7 @@
 #include <netdb.h>
 #include <stdio.h>
 #include <sys/uio.h>
+#include <string.h>
 #ifdef T3D
 #include <fortran.h>
 #endif

@@ -169,7 +169,7 @@ if ( Justplot ) then
         cycle
       endif
 
-      write(*,'(A9,1x,I1,3(1x,I3),1x,A,1x,A)')&
+      write(*,'(A9,1x,I1,3(1x,I5),1x,A,1x,A)')&
                VarName, ndim, end_index(1), end_index(2), end_index(3), &
                trim(ordering), trim(DateStr)
 

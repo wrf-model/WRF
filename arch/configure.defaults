@@ -477,7 +477,7 @@ FC              =       f95
 LD              =       f95
 CC              =       cc
 CFLAGS          =
-FCOPTIM		=	-O4 -xlibmopt
+FCOPTIM		=	-O2 # -O4 -xlibmopt
 FCDEBUG		=	#-g
 FCBASEOPTS	=	-fnonstd -free -xpp=cpp $(FCDEBUG) -w
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
@@ -544,7 +544,21 @@ mediation_interp_domain.o : mediation_interp_domain.F
 mediation_force_domain.o : mediation_force_domain.F
 module_dm.o : module_dm.F
 start_domain.o : start_domain.F
+wrf_bdyin.o : wrf_bdyin.F
+wrf_bdyout.o : wrf_bdyout.F
+wrf_histin.o : wrf_histin.F
+wrf_histout.o : wrf_histout.F
+wrf_inputin.o : wrf_inputin.F
+wrf_inputout.o : wrf_inputout.F
+wrf_restartin.o : wrf_restartin.F
+wrf_restartout.o : wrf_restartout.F
+module_configure.o : module_configure.F
 
+module_configure.o \
+wrf_bdyin.o wrf_bdyout.o  \
+wrf_histin.o wrf_histout.o  \
+wrf_inputin.o wrf_inputout.o  \
+wrf_restartin.o wrf_restartout.o  \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
@@ -573,7 +587,7 @@ ARCHFLAGS       =       -DNETCDF -DINTIO \
                         -DLIMIT_ARGS -DFLOATSAFE \
                         -DSTUBMPI -DPEDANTIC
 CFLAGS          =       $(ARCHFLAGS) -I../external/RSL/RSL
-FCOPTIM         =       -O4 -xlibmopt
+FCOPTIM         =       -O2 # -O4 -xlibmopt
 FCDEBUG         =       # -g
 FCBASEOPTS      =       -fnonstd -free -xpp=cpp $(FCDEBUG) -w
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
@@ -642,7 +656,21 @@ module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
 module_initialize_real.o : module_initialize_real.F
 module_dm.o : module_dm.F
 start_domain.o : start_domain.F
+wrf_bdyin.o : wrf_bdyin.F
+wrf_bdyout.o : wrf_bdyout.F
+wrf_histin.o : wrf_histin.F
+wrf_histout.o : wrf_histout.F
+wrf_inputin.o : wrf_inputin.F
+wrf_inputout.o : wrf_inputout.F
+wrf_restartin.o : wrf_restartin.F
+wrf_restartout.o : wrf_restartout.F
+module_configure.o : module_configure.F
 
+module_configure.o \
+wrf_bdyin.o wrf_bdyout.o  \
+wrf_histin.o wrf_histout.o  \
+wrf_inputin.o wrf_inputout.o  \
+wrf_restartin.o wrf_restartout.o  \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
@@ -663,7 +691,7 @@ FC              =       f95
 LD              =       f95
 CC              =       cc
 CFLAGS          =
-FCOPTIM		=	-O2 -xlibmopt
+FCOPTIM		=	-O3 -xlibmopt
 FCDEBUG		=	#-g
 FCBASEOPTS	=	-fnonstd -free -xpp=cpp $(FCDEBUG) $(OMP) -w
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
@@ -756,7 +784,7 @@ ARCHFLAGS       =       -DNETCDF -DINTIO \
                         -DLIMIT_ARGS -DFLOATSAFE \
                         -DSTUBMPI -DPEDANTIC
 CFLAGS          =       $(ARCHFLAGS) -I../external/RSL/RSL
-FCOPTIM         =       -O4 -xlibmopt
+FCOPTIM         =       -O3 -xlibmopt
 FCDEBUG         =       # -g
 FCBASEOPTS      =       -fnonstd -free -xpp=cpp $(FCDEBUG) -w
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
@@ -3758,7 +3786,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 
 ###########################################################
 #ARCH Intel xeon i686 ia32 Xeon Linux, ifc compiler (single-threaded)
-FC		=	ifc
+FC		=	ifort
 CC              =       icc
 FCBASEOPTS      =       -w -FR -cm -w -I.
 FCFLAGS		=	$(FCBASEOPTS)
@@ -3768,7 +3796,7 @@ INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int -I../extern
                         -I../frame -I../share -I../phys -I../inc
 ARCHFLAGS       =       -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE  
 LDFLAGS		=
-CPP		=	/lib/cpp
+CPP		=	/lib/cpp -traditional
 POUND_DEF	=	-DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
 CPPFLAGS	=	-I$(LIBINCLUDE) -C -P $(ARCHFLAGS) $(POUND_DEF)
 PERL            =       CONFIGURE_PERL_PATH
@@ -3786,11 +3814,11 @@ module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
 
 wrfio_nf : 
-	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="ifc -FR -I. -w" ; /bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc )
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC) -FR -I. -w" ; /bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="ifc $(FCDEBUG) $(FCFLAGS) -w" all )
+          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCFLAGS) -w" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -3812,7 +3840,21 @@ module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
 module_initialize_real.o : module_initialize_real.F
 module_dm.o : module_dm.F
 start_domain.o : start_domain.F
+wrf_bdyin.o : wrf_bdyin.F
+wrf_bdyout.o : wrf_bdyout.F
+wrf_histin.o : wrf_histin.F
+wrf_histout.o : wrf_histout.F
+wrf_inputin.o : wrf_inputin.F
+wrf_inputout.o : wrf_inputout.F
+wrf_restartin.o : wrf_restartin.F
+wrf_restartout.o : wrf_restartout.F
+module_configure.o : module_configure.F
 
+module_configure.o \
+wrf_bdyin.o wrf_bdyout.o  \
+wrf_histin.o wrf_histout.o  \
+wrf_inputin.o wrf_inputout.o  \
+wrf_restartin.o wrf_restartout.o  \
 solve_interface.o                                              \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \

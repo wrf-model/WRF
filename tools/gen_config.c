@@ -154,8 +154,15 @@ gen_get_nl_config ( char * dirname )
           fprintf(fp,"  ENDIF\n" ) ;
           fprintf(fp,"  %s = model_config_rec%%%s\n",p->name,p->name) ;
         } else {
-          fprintf(fp,"  IF ( id_id .LT. 1 .OR. id_id .GT. model_config_rec%%max_dom ) THEN\n") ;
-          fprintf(fp,"    WRITE(emess,*)'Rconfig_%s_%s: Out of range domain number: ',id_id\n",gs,p->name) ;
+          if        ( !strcmp( p->nentries, "max_domains" )) {
+            fprintf(fp,"  IF ( id_id .LT. 1 .OR. id_id .GT. model_config_rec%%max_dom ) THEN\n") ;
+            fprintf(fp,"    WRITE(emess,*)'Rconfig_%s_%s: Out of range domain number: ',id_id\n",gs,p->name) ;
+	  } else if ( !strcmp( p->nentries, "max_moves" )) {
+            fprintf(fp,"  IF ( id_id .LT. 1 .OR. id_id .GT. model_config_rec%%num_moves ) THEN\n") ;
+            fprintf(fp,"    WRITE(emess,*)'Rconfig_%s_%s: Out of range move number: ',id_id\n",gs,p->name) ;
+	  } else {
+	    fprintf(stderr,"Registry WARNING: multi element rconfig entry must be either max_domains or max_moves\n") ;
+	  }
           fprintf(fp,"    CALL wrf_error_fatal(emess)\n") ;
           fprintf(fp,"  ENDIF\n" ) ;
           fprintf(fp,"  %s = model_config_rec%%%s(id_id)\n",p->name,p->name) ;
@@ -170,8 +177,15 @@ gen_get_nl_config ( char * dirname )
           fprintf(fp,"  ENDIF\n" ) ;
           fprintf(fp,"  model_config_rec%%%s = %s \n",p->name,p->name) ;
         } else {
-          fprintf(fp,"  IF ( id_id .LT. 1 .OR. id_id .GT. model_config_rec%%max_dom ) THEN\n") ;
-          fprintf(fp,"    WRITE(emess,*)'Rconfig_%s_%s: Out of range domain number: ',id_id\n",gs,p->name) ;
+          if        ( !strcmp( p->nentries, "max_domains" )) {
+            fprintf(fp,"  IF ( id_id .LT. 1 .OR. id_id .GT. model_config_rec%%max_dom ) THEN\n") ;
+            fprintf(fp,"    WRITE(emess,*)'Rconfig_%s_%s: Out of range domain number: ',id_id\n",gs,p->name) ;
+	  } else if ( !strcmp( p->nentries, "max_moves" )) {
+            fprintf(fp,"  IF ( id_id .LT. 1 .OR. id_id .GT. model_config_rec%%num_moves ) THEN\n") ;
+            fprintf(fp,"    WRITE(emess,*)'Rconfig_%s_%s: Out of range move number: ',id_id\n",gs,p->name) ;
+	  } else {
+	    fprintf(stderr,"Registry WARNING: multi element rconfig entry must be either max_domains or max_moves\n") ;
+	  }
           fprintf(fp,"    CALL wrf_error_fatal(emess)\n") ;
           fprintf(fp,"  ENDIF\n" ) ;
           fprintf(fp,"  model_config_rec%%%s(id_id) = %s\n",p->name,p->name) ;

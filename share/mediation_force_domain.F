@@ -134,7 +134,6 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
 #  include "em_actual_args.inc"
 !
                  )
-
         ! perform first part: transfer data from parent to intermediate domain
         ! at the same resolution but on the same decomposition as the nest
         ! note that this will involve communication on multiple DM procs
@@ -172,15 +171,16 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
         ! perform 2nd part: run interpolation on the intermediate domain
         ! and compute the values for the nest boundaries
         ! note that this is all local (no communication)
+        CALL model_to_grid_config_rec ( nested_grid%id , model_config_rec , config_flags )
         CALL force_domain_em_part2 ( grid, nested_grid, config_flags ,  &
 !
 # include "em_actual_args.inc"
 !
                  )
-
         ! uncouple the nest
         grid => nested_grid
 #  include "deref_kludge.h"
+        CALL model_to_grid_config_rec ( nested_grid%id , model_config_rec , config_flags )
         CALL couple_or_uncouple_em( nested_grid , config_flags ,  .false. , &
 !
 #  include "em_actual_args.inc"
@@ -194,6 +194,7 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
 #  else
      grid => parent_grid
 #  endif
+     CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
 #  include "deref_kludge.h"
      CALL couple_or_uncouple_em( grid , config_flags ,  .false. , &
 !

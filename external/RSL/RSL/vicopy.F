@@ -7,6 +7,15 @@
       return
       end
 
+      subroutine vrcopy( a, b, c )
+      real a(*), b(*)
+      integer c
+      do i = 1, c
+	b(i) = a(i)
+      enddo
+      return
+      end
+
       subroutine vbcopy( a, b, c )
       byte a(*), b(*)
       integer c

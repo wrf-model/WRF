@@ -224,6 +224,8 @@
 
 #   define RSL_RESET_STAGING   rsl_reset_staging_
 
+#   define VRCOPY   vrcopy_
+
 #  else
 
 #   define RSL_INITIALIZE		rsl_initialize
@@ -377,6 +379,8 @@
 #   define RSL_END_REGISTER_F90     rsl_end_register_f90
 
 #   define RSL_RESET_STAGING   rsl_reset_staging
+
+#   define VRCOPY   vrcopy
 
 #  endif
 #endif

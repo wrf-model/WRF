@@ -685,6 +685,7 @@ RSL_WRITE ( unit_p, iotag_p, base, d_p, type_p, glen, llen  )
   pbuf = RSL_MALLOC( char, psize ) ;
 
   cursor = 0 ;
+#ifndef vpp
   for ( jg = 0 ; jg < majelems ; jg++ )
   {
     for ( ig = 0 ; ig < minelems ; ig++ )
@@ -731,6 +732,88 @@ RSL_WRITE ( unit_p, iotag_p, base, d_p, type_p, glen, llen  )
       }
     }
   }
+#else
+/* assumes 1 d decomp in j only */
+  for ( jg = 0 ; jg < majelems ; jg++ )
+  {
+    if ( me == domain[INDEX_2(jg,0,mlen)].P )
+    {
+        switch( iotag )
+        {
+        case IO2D_IJ :
+	  if ( request.type == RSL_REAL ) 
+	  {
+            min = 0 - ioffset ;
+            maj = jg - joffset ;
+            dex = base+tlen*(min+maj*llen[0]) ;
+            VRCOPY (dex,&(pbuf[cursor]),&minelems) ;
+            cursor += tlen*minelems ;
+	  }
+	  else
+	  {
+            for ( ig = 0 ; ig < minelems ; ig++ )
+            {
+              min = ig - ioffset ;
+              maj = jg - joffset ;
+              dex = base+tlen*(min+maj*llen[0]) ;
+              bcopy(dex,&(pbuf[cursor]),tlen) ;
+              cursor += tlen ;
+            }
+          }
+          break ;
+        case IO2D_JI :
+          for ( ig = 0 ; ig < minelems ; ig++ )
+          {
+            min = jg - joffset ;
+            maj = ig - ioffset ;
+            dex = base+tlen*(min+maj*llen[0]) ;
+            bcopy(dex,&(pbuf[cursor]),tlen) ;
+            cursor += tlen ;
+	  }
+          break ;
+        case IO3D_IJK :
+          maj = jg - joffset ;
+	  if ( request.type == RSL_REAL )
+	  {
+            for ( k = 0 ; k < glen[2] ; k++ )                 /* note reversal of k and i packing order for vpp */
+            {
+              min = 0 - ioffset ;
+              dex = base+tlen*(min+llen[0]*(maj+k*llen[1])) ;
+	      VRCOPY ( dex,&(pbuf[cursor]),&minelems) ;
+              cursor += tlen*minelems ;
+	    }
+	  }
+	  else
+	  {
+            for ( k = 0 ; k < glen[2] ; k++ )                 /* note reversal of k and i packing order for vpp */
+            {
+	      for ( ig = 0 ; ig < minelems ; ig++ )
+	      {
+                min = ig - ioffset ;
+                dex = base+tlen*(min+llen[0]*(maj+k*llen[1])) ;
+                bcopy(dex,&(pbuf[cursor]),tlen) ;
+                cursor += tlen ;
+	      }
+            }
+          }
+          break ;
+        case IO3D_JIK :
+          for ( ig = 0 ; ig < minelems ; ig++ )
+          {
+            min = jg - joffset ;
+            maj = ig - ioffset ;
+            for ( k = 0 ; k < glen[2] ; k++ )
+            {
+              dex = base+tlen*(min+llen[0]*(maj+k*llen[1])) ;
+              bcopy(dex,&(pbuf[cursor]),tlen) ;
+              cursor += tlen ;
+            }
+	  }
+          break ;
+        }
+    }
+  }
+#endif
 
   if ( pbuf != NULL )
   {

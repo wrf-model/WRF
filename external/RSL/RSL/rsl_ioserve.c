@@ -342,6 +342,7 @@ handle_write_request( req, nelem, psize_me, pbuf_me )
   int mlen, nlen ;
   rsl_read_resp_t resp ;
   int psize[ RSL_MAXPROC ] ;    /* size of messages to each processor */
+  float * pr , * qr ;
   char * wbuf ;
   char *pbuf ;
   rsl_point_t *domain ;
@@ -444,6 +445,7 @@ handle_write_request( req, nelem, psize_me, pbuf_me )
       
     }
 
+#ifndef vpp
     for ( jg = 0 ; jg < majelems ; jg++ )
     {
       for ( ig = 0 ; ig < minelems ; ig++ )
@@ -498,6 +500,93 @@ handle_write_request( req, nelem, psize_me, pbuf_me )
         }
       }
     }
+#else
+    for ( jg = 0 ; jg < majelems ; jg++ )
+    {
+      if ( domain[INDEX_2(jg,0,mlen)].P == P )
+      {
+        switch ( req->iotag )
+        {
+          case IO2D_IJ :
+          case IO2D_IJ_RAW :
+          case IO2D_IJ_PORTAL :
+          case IO2D_IJ_88 :
+            if ( req->type == RSL_REAL )
+            {
+               ig = 0 ;
+               VRCOPY ( &(pbuf[cursor]),
+                       &(wbuf[typelen*(ig+jg*req->glen[0])]),
+                       &minelems ) ;
+               cursor += minelems*typelen ;
+            }
+	    else
+	    {
+              for ( ig = 0 ; ig < minelems ; ig++ )
+              {
+                bcopy(&(pbuf[cursor]),
+                      &(wbuf[typelen*(ig+jg*req->glen[0])]),
+                      typelen) ;
+                cursor += typelen ;
+	      }
+            }
+            break ;
+          case IO2D_JI :
+          case IO2D_JI_RAW :
+          case IO2D_JI_PORTAL :
+          case IO2D_JI_88 :
+            for ( ig = 0 ; ig < minelems ; ig++ )
+            {
+              bcopy(&(pbuf[cursor]),
+                    &(wbuf[typelen*(jg+ig*req->glen[0])]),
+                    typelen) ;
+              cursor += typelen ;
+	    }
+            break ;
+          case IO3D_IJK :
+          case IO3D_IJK_RAW :
+          case IO3D_IJK_PORTAL :
+          case IO3D_IJK_88 :
+            if ( req->type == RSL_REAL )
+	    {
+              ig = 0 ;
+              for ( k = 0 ; k < req->glen[2] ; k++ )   /* note reversal of i and k on vpp */
+              {
+                VRCOPY ( &(pbuf[cursor]),
+                        &(wbuf[typelen*(ig+req->glen[0]*(jg+k*req->glen[1]))]),
+                        &minelems ) ;
+                cursor += typelen*minelems ;
+              }
+	    }
+	    else
+	    {
+              for ( k = 0 ; k < req->glen[2] ; k++ )   /* note reversal of i and k on vpp */
+              {
+                for ( ig = 0 ; ig < minelems ; ig++ )
+                {
+                  bcopy(&(pbuf[cursor]),
+                        &(wbuf[typelen*(ig+req->glen[0]*(jg+k*req->glen[1]))]),
+                        typelen) ;
+                  cursor += typelen ;
+	        }
+              }
+            }
+            break ;
+          case IO3D_JIK :
+          case IO3D_JIK_RAW :
+          case IO3D_JIK_PORTAL :
+          case IO3D_JIK_88 :
+            for ( k = 0 ; k < req->glen[2] ; k++ )
+            {
+              bcopy(&(pbuf[cursor]),
+                    &(wbuf[typelen*(jg+req->glen[0]*(ig+k*req->glen[1]))]),
+                    typelen) ;
+              cursor += typelen ;
+            }
+            break ;
+        }
+      }
+    }
+#endif
     if ( rsl_myproc != rsl_c_comp2phys_proc( P ) ) 
     {
       RSL_FREE( pbuf ) ;   /* the monitor frees its own buffer outside
@@ -543,8 +632,8 @@ handle_write_request( req, nelem, psize_me, pbuf_me )
 
 RSL_WRITE_1D_DATA( unit_p,
                    buf,
-		   nbuf_p,
-		   type_p  )
+                   nbuf_p,
+                   type_p  )
   int_p  unit_p ;
   char * buf             ;  int_p nbuf_p   ;
   int_p  type_p ;
@@ -1161,11 +1250,11 @@ RSL_WRITE_MM5V3_BIG_HEADER( unit_p,
 #ifndef T3D
   nelem = *nibuf_p * iwordsize + 
           *nrbuf_p * rwordsize +
-	  *ncb1_p + *ncb2_p ;
+          *ncb1_p + *ncb2_p ;
 #else
   nelem = *nibuf_p * iwordsize /2 + 
           *nrbuf_p * rwordsize /2 +
-	  *ncb1_p + *ncb2_p ;
+          *ncb1_p + *ncb2_p ;
 #endif
           
   req.internal     = 0 ;

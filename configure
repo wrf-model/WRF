@@ -254,9 +254,21 @@ if [ $? -eq 0 ] ; then
   fi
 fi
 
+# an IBM specific hack to adjust the bmaxstack and bmaxdata options if addressing is 32-bit
+if [ "$os" = "AIX" ] ; then
+      if [ -z "$OBJECT_MODE" ] ; then
+         OBJECT_MODE=32
+         export OBJECT_MODE
+      fi
+      if [ "$OBJECT_MODE" = "32" ] ; then
+# the bang means nothing to sh in this context; use to represent spaces (perl will unbang)
+         ldflags=-bmaxstack:256000000!-bmaxdata:2048000000
+      fi
+fi
+
 # Found perl, so proceed with configuration
 if test -n "$PERL" ; then
-  $PERL arch/Config.pl -perl=$PERL -netcdf=$NETCDF -phdf5=$PHDF5 -os=$os -mach=$mach
+   $PERL arch/Config.pl -perl=$PERL -netcdf=$NETCDF -phdf5=$PHDF5 -os=$os -mach=$mach -ldflags=$ldflags
 fi
 
 

@@ -8,9 +8,6 @@ HDR = $(CORE_HDR)
 TAR = $(CORE_TAR)
 
 IDIR=$(LINUX_MPIHOME)/include
-
-### When compiling RSL with MM5, the CC and FC macros are defined by the call to make
-### from MM5/Makefile.  Don't define them here.
 #CC = $(LINUX_MPIHOME)/bin/mpicc
 #FC = $(LINUX_MPIHOME)/bin/mpif77 -byteswapio
 
@@ -20,7 +17,7 @@ LIB =
 .SUFFIXES: .o .c .F
 
 CFLAGS = -I$(IDIR) -DMPI -DRSL_SYNCIO -Dlinux -DSWAPBYTES -O
-FFLAGS = -O
+FFLAGS = -O -byteswapio
 
 warning :
 	@ echo 'This makefile is not a top level makefile'

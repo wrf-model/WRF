@@ -136,6 +136,7 @@ int RSL_INIT_NEXTISLAB ( d_p )
      "rsl_init_nextislab: invalid domain descriptor") ;
 
   rp[d] = domain_info[d].iruns ;
+  return(0) ;
 }
 
 int RSL_C_NEXTISLAB ( d_p, irun_p, min_p, maj_p, min_g_p, maj_g_p, retval_p )
@@ -171,6 +172,6 @@ int RSL_C_NEXTISLAB ( d_p, irun_p, min_p, maj_p, min_g_p, maj_g_p, retval_p )
     rp[d] = rp[d]->next ;
     *retval_p = 1 ;
   }
-  return ;
+  return(0) ;
 }
 

@@ -4,7 +4,7 @@
 
 static rsl_list_t * list_head = NULL ;
 
-static int destroy_packrec( p ) packrec_t * p ; { free( p ) ; }
+static int destroy_packrec( p ) packrec_t * p ; { free( p ) ; return(0) ; }
 
 static int compare_period_sort( a, b, dummy )
   packrec_t *a, *b ;

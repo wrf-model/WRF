@@ -697,6 +697,7 @@ rsl_new_decomposition( d_p, mloc_p, nloc_p )
       domain_info[d].nruni[p] = nrun ;
     }
   }
+  return(0) ;
 }
 
 RSL_ALLOW_DYNPAD ()

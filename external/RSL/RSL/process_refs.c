@@ -4,7 +4,7 @@
 
 static rsl_list_t * list_head = NULL ;
 
-static int destroy_packrec( p ) packrec_t * p ; { free( p ) ; }
+static int destroy_packrec( p ) packrec_t * p ; { free( p ) ; return(0) ;}
 
 init_process_refs()
 {
@@ -206,7 +206,7 @@ static int collapsetable( lst )
   rsl_list_t * lp, * lp2, * prevlp ;
   packrec_t *x, *y ;
 
-  if ( lst == NULL ) return ;
+  if ( lst == NULL ) return(0)  ;
 
 lp = *lst ; x = lp->data ; if ( ! (x->valid ) ) RSL_TEST_ERR(1,"internal error: first entry invalid\n") ;
 

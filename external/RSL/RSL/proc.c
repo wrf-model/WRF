@@ -134,7 +134,7 @@ RSL_C_IAMMONITOR ( retval )
     *retval = 0 ;
 #  endif
 #endif
-  return ;
+  return(0) ;
 }
 
 int
@@ -166,7 +166,7 @@ RSL_C_IAMCOMPUTE ( retval )
     *retval = 0 ;
 #  endif
 #endif
-  return ;
+  return(0) ;
 }
 
 RSL_C_MONITOR_PROC ()

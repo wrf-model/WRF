@@ -182,6 +182,7 @@ RSL_MOTHER_DOMAIN ( domain_p, maskid_p, mlen_p, nlen_p, mloc_p, nloc_p )
   }
 
   rsl_ndomains = 1 ;
+  return(0) ;
 }
 
 /* (20010222) */
@@ -384,6 +385,7 @@ rsl_c_initialize_domain ( d, nmax, mmax, zmax, neff, meff, zeff )
   domain_info[d].periodcurs = 0 ;
   domain_info[d].xposecurs = 0 ;
 
+  return(0);
 }
 
 /*@

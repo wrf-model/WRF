@@ -177,6 +177,7 @@ int RSL_INIT_NEXTCELL ( d_p )
 			   &(domain_info[*d_p].loc_n) ) ;
   }
   lp[d] = domain_info[d].pts ;
+  return(0) ;
 }
 
 int RSL_INIT_GHOST ( d_p )
@@ -190,6 +191,7 @@ int RSL_INIT_GHOST ( d_p )
   RSL_TEST_ERR( domain_info[d].valid != RSL_VALID,
      "rsl_init_nextcell: invalid domain") ;
   lp[d] = domain_info[d].ghost_pts ;
+  return(0) ;
 }
 
 int RSL_C_NEXTCELL ( d_p, min_p, maj_p, min_g_p, maj_g_p, retval_p )
@@ -221,5 +223,5 @@ fprintf(stderr,"%d comp_cells point -> %d %d %d %d; jlocaloffset %d\n",
     lp[d] = lp[d]->next ;
     *retval_p = 1 ;
   }
-  return ;
+  return(0) ;
 }

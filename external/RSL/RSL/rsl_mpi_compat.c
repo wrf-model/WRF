@@ -164,6 +164,7 @@ long rslMPIFindWaitH (tag, waitHandle)
       break;
       }
     }
+    return(0L) ;
   }
 
 /******************************************************

@@ -1,6 +1,3 @@
-#define ALLOW_SURFACE
-#define ALLOW_PBL
-
 !NCEP_MESO:MODEL_LAYER: PHYSICS
 !
 !***********************************************************************
@@ -208,6 +205,7 @@
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: TOLD
 !
       LOGICAL :: E_BDY,WARM_RAIN
+      CHARACTER*256 :: errmess
 !
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
@@ -286,6 +284,7 @@
       ENDDO
       ENDDO
       ENDDO
+
 !
 !-----------------------------------------------------------------------
 !
@@ -477,7 +476,6 @@
 !-----------------------------------------------------------------------
 !
 
-#ifdef ALLOW_SURFACE
       ZERO_SOIL = 0.
       WSPD = 0.
       BR = 0.
@@ -485,6 +483,8 @@
       GZ1OZ0 = 0.
       PSIH = 0.
       PSIM = 0.
+      SFCEVPX = 0.
+
       CALL SURFACE_DRIVER(                                              &
      &           ACSNOM,ACSNOW,AKHS,AKMS,ALBEDO,BR,CMC,ZERO_2D          &
      &          ,CHKLOWQ,CONFIG_FLAGS,DT,DX,DZ,SLDPTH,ZERO_2D           &
@@ -509,11 +509,6 @@
      &          ,MAX(J_START,2),MIN(J_END,JDE-1)                        &
      &          ,KTS,KTE,1                                              &
      &          ,POTEVP=POTEVP,SNOPCX=SNOPCX,SOILTB=SOILTB              ) ! Optional args for NMM LSM
-#else
- write(0,*)' TURBL : SURFACE_DRIVER COMMENTED OUT '
-#endif
-
-
 !
 !-----------------------------------------------------------------------
 !
@@ -531,7 +526,6 @@
       ENDDO
 !
 
-#ifdef ALLOW_PBL
       CALL PBL_DRIVER(NTSD,DT,U_FRAME,V_FRAME                           &
      &               ,DUDT,DVDT,RTHBLTEN                                &
      &               ,RQVBLTEN,RQCBLTEN,RQIBLTEN                        &
@@ -551,9 +545,6 @@
      &               ,I_START,MIN(I_END,IDE-1)                          &
      &               ,MAX(J_START,2),MIN(J_END,JDE-1)                   &
      &               ,KTS,KTE,1)
-#else
-  write(0,*)' TURBL : PBL DRIVER COMMENTED OUT'
-#endif
 
 !*** EQUIVALENT TO --------->  ,MYIS,MYIE1,MYJS1,MYJE1,KTS,KTE,1)
 !
@@ -616,8 +607,9 @@
         DO I=MYIS, MYIE1
 !         TSHLTR(I,J)=TSHLTR(I,J)*(1.E5/PSHLTR(I,J))**RCP
           IF(TSHLTR(I,J).LT.200..OR.TSHLTR(I,J).GT.350.)THEN
-            WRITE(0,*)'Troublesome TSHLTR...I,J,TSHLTR,PSHLTR: ',       &
+            WRITE(errmess,*)'Troublesome TSHLTR...I,J,TSHLTR,PSHLTR: ',       &
                I,J,TSHLTR(I,J),PSHLTR(I,J)
+            CALL wrf_message( errmess )
           ENDIF
 	ENDDO
 	ENDDO

@@ -19,7 +19,7 @@ RM	= 	rm -f
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
-	$(FC) -c $(FCFLAGS) $(MODULE_DIRS) $*.f
+	$(FC) -c $(FCFLAGS) $(MODULE_DIRS) $(PROMOTION) $*.f
 
 .F.f:
 	$(RM) $@
@@ -29,9 +29,9 @@ RM	= 	rm -f
 
 .f.o:
 	$(RM) $@
-	$(FC) -c $(FCFLAGS) $*.f
+	$(FC) -c $(FCFLAGS) $(PROMOTION) $*.f
 
 .c.o:
 	$(RM) $@
-	$(CC) -c $(CFLAGS) $*.c
+	$(CC) -c $(CFLAGS) $(PROMOTION) $*.c
 

@@ -13,7 +13,7 @@ SUBROUTINE init_modules
  USE module_io_wrf
  USE module_io
 #ifdef DM_PARALLEL
- USE module_ext_quilt
+ USE module_wrf_quilt
  USE module_dm
 #endif
 #ifdef INTIO
@@ -52,7 +52,7 @@ SUBROUTINE init_modules
  CALL init_module_ext_internal  !! must be called before quilt
 #endif
 #ifdef DM_PARALLEL
- CALL init_module_ext_quilt    !! this *must* be called before init_module_dm
+ CALL init_module_wrf_quilt    !! this *must* be called before init_module_dm
  CALL init_module_dm
 #endif
  CALL init_module_nesting

@@ -513,6 +513,7 @@
                          ph_2,phb,g,aerwrf,config_flags,                    &
                          alt,t_1,pb,p,t0,p1000mb,rcp,                       &
                          aer_dry,aer_water,chem_in_opt,                     &
+                         imicrogram,                                        &
                                  ids , ide , jds , jde , kds , kde ,        &
                                  ims , ime , jms , jme , kms , kme ,        &
                                  its , ite , jts , jte , kts , kte          )

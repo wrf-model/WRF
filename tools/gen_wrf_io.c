@@ -337,10 +337,14 @@ gen_wrf_io2 ( FILE * fp , char * fname, char * structname , node_t * node , int 
            ps2 = "kds" ; pe2 = zdomainend ;
          }
         else
-         { strcpy(dimname[1],"one_element") ; 
-           ds2 = "1" ; de2 = "1" ;
-           ms2 = "1" ; me2 = "1" ;
-           ps2 = "1" ; pe2 = "1" ;
+         { strcpy(dimname[1],dimname[2]) ;
+           strcpy(dimname[2],"one_element") ; 
+           ds2 = ds3 ; de2 = de3 ;
+           ms2 = ms3 ; me2 = me3 ;
+           ps2 = ps3 ; pe2 = pe3 ;
+           ds3 = "1" ; de3 = "1" ;
+           ms3 = "1" ; me3 = "1" ;
+           ps3 = "1" ; pe3 = "1" ;
          }
         if ( strlen(p->dname) < 1 ) {
           fprintf(stderr,"gen_wrf_io.c: Registry WARNING: no data name for %s \n",p->name) ;

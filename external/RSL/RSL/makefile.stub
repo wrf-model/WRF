@@ -19,8 +19,8 @@ LIB =
 #FC = xlf
 # SUN
 CFLAGS = -DSTUBS -g
-CC = cc
-FC = f77 -w
+#CC = cc
+#FC = f77 -w
 
 
 FFLAGS = -g

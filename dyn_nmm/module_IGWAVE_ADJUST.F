@@ -1,13 +1,47 @@
 !
 !NCEP_MESO:MODEL_LAYER: INERTIAL GRAVITY WAVE ADJUSTMENT
 !
+
+#define MY_IS(A,B) max(ids+(A),its-(B))
+#define MY_IE(A,B) min(ide-(A),ite+(B))
+#define MY_JS(A,B) max(jds+(A),jts-(B))
+#define MY_JE(A,B) min(jde-(A),jte+(B))
+
+#define MYIS      MY_IS( 0 , 0  )
+#define MYIS_P1   MY_IS( 0 , 1  )
+#define MYIS_P2   MY_IS( 0 , 2  )
+#define MYIS_P3   MY_IS( 0 , 3  )
+#define MYIS_P4   MY_IS( 0 , 4  )
+#define MYIS1     MY_IS( 1 , 0  )
+#define MYIS1_P1  MY_IS( 1 , 1  )
+
+#define MYIE      MY_IE( 0 , 0  )
+#define MYIE_P1   MY_IE( 0 , 1  )
+#define MYIE_P2   MY_IE( 0 , 2  )
+#define MYIE_P3   MY_IE( 0 , 3  )
+#define MYIE_P4   MY_IE( 0 , 4  )
+#define MYIE1     MY_IE( 1 , 0  )
+#define MYIE1_P1  MY_IE( 1 , 1  )
+#define MYIE1_P2  MY_IE( 1 , 2  )
+
+#define MYJS      MY_JS( 0 , 0  )
+#define MYJS_P2   MY_JS( 0 , 2  )
+#define MYJS_P4   MY_JS( 0 , 4  )
+#define MYJS2     MY_JS( 2 , 0  )
+#define MYJS2_P2  MY_JS( 2 , 2  )
+
+#define MYJE      MY_JE( 0 , 0  )
+#define MYJE_P2   MY_JE( 0 , 2  )
+#define MYJE_P4   MY_JE( 0 , 4  )
+#define MYJE2     MY_JE( 2 , 0  )
+#define MYJE2_P2  MY_JE( 2 , 2  )
+
 !-----------------------------------------------------------------------
 !
       MODULE MODULE_IGWAVE_ADJUST
 !
 !-----------------------------------------------------------------------
       USE MODULE_MODEL_CONSTANTS
-      USE MODULE_MPP
 !     USE MODULE_TIMERS  ! this one creates a name conflict at compile time
 !-----------------------------------------------------------------------
 !***
@@ -803,22 +837,8 @@
       MY_IE_GLB=ITE
       MY_JS_GLB=JTS
       MY_JE_GLB=JTE
-      MYIS=ITS
-      MYIE=ITE
-      MYJS=JTS
-      MYJE=JTE
+
 !
-      MYIS1  =MAX(IDS+1,ITS)
-      MYIE1  =MIN(IDE-1,ITE)
-      MYJS2  =MAX(JDS+2,JTS)
-      MYJE2  =MIN(JDE-2,JTE)
-!
-      MYIS_P1=MAX(IDS,ITS-1)
-      MYIE_P1=MIN(IDE,ITE+1)
-      MYIS_P2=MAX(IDS,ITS-2)
-      MYIE_P2=MIN(IDE,ITE+2)
-      MYJS_P2=MAX(JDS,JTS-2)
-      MYJE_P2=MIN(JDE,JTE+2)
 !----------------------------------------------------------------------
 !***  COMPUTATION OF PRESSURE TENDENCY & PREPARATIONS
 !----------------------------------------------------------------------
@@ -1076,15 +1096,6 @@
 !**********************************************************************
 !----------------------------------------------------------------------
 !
-      MYIS=ITS
-      MYIE=ITE
-      MYJS=JTS
-      MYJE=JTE
-!
-      MYIS_P2=MAX(IDS,ITS-2)
-      MYIE_P2=MIN(IDE,ITE+2)
-      MYJS_P2=MAX(JDS,JTS-2)
-      MYJE_P2=MIN(JDE,JTE+2)
 !----------------------------------------------------------------------
 !***  PREPARATIONS
 !----------------------------------------------------------------------
@@ -1234,13 +1245,6 @@
 !----------------------------------------------------------------------
 !**********************************************************************
 !----------------------------------------------------------------------
-      MYJS2  =MAX(JDS+2,JTS)
-      MYJE2  =MIN(JDE-2,JTE)
-!
-      MYIS_P1=MAX(IDS,ITS-1)
-      MYIE_P1=MIN(IDE,ITE+1)
-      MYIS_P2=MAX(IDS,ITS-2)
-      MYIE_P2=MIN(IDE,ITE+2)
 !
 !----------------------------------------------------------------------
 !
@@ -1287,7 +1291,7 @@
 !
 !----------------------------------------------------------------------
       DO K=KTS,KTE
-      DO I=MYIS_P1,MYIE_P1
+      DO I=MYIS_P2,MYIE_P2   ! updated to go out 2, July 2004 ; JM
         DPDE(I,K,J4_P1)=DETA1(K)*PDTOP+DETA2(K)*PDSL(I,J+1)
         DIV(I,K,J+1)=DIV(I,K,J+1)*HBM2(I,J+1)
       ENDDO
@@ -1303,8 +1307,11 @@
         RDPDY=VTM(I,K,J)/(DPDE(I,K,J4_M1)+DPDE(I,K,J4_P1))
         V(I,K,J)=V(I,K,J)+(DIV(I,K,J+1)-DIV(I,K,J-1))                   &
      &                    *RDPDY*DDMPV(I,J)
+
       ENDDO
       ENDDO
+
+
 !
 !----------------------------------------------------------------------
 !

@@ -2771,7 +2771,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
 
 ###########################################################
-#ARCH       Compaq OSF1 alpha DM-Parallel       (RSL, MPICH, RSL IO, MCEL EXPERIMENTAL)
+#ARCH       Compaq OSF1 alpha DM-Parallel       (RSL, MPICH, MCEL EXPERIMENTAL)
 #
 DMPARALLEL      =       1
 OMP             =
@@ -3163,7 +3163,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(FCBASENOINL) $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH       Alpha Linux alpha DM-Parallel  (RSL, MPICH, RSL IO, support nesting)
+#ARCH       Alpha Linux alpha DM-Parallel  (RSL, MPICH, support nesting)
 #
 DMPARALLEL      =       1
 MAX_PROC        =       1024
@@ -3746,7 +3746,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 
 
 ###########################################################
-#ARCH    PC Linux i486 i586 i686, PGI compiler  DM-Parallel (RSL, MPICH, RSL IO, support nesting)
+#ARCH    PC Linux i486 i586 i686, PGI compiler  DM-Parallel (RSL, MPICH, support nesting)
 #
 # Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #
@@ -4283,7 +4283,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH    PC Linux IA64 and Opteron, PGI 5.2 or higher, DM-Parallel  (RSL, MPICH, RSL IO, support nesting)
+#ARCH    PC Linux IA64 and Opteron, PGI 5.2 or higher, DM-Parallel  (RSL, MPICH, support nesting)
 #
 # Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #
@@ -4610,7 +4610,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(FCNOOPTS) $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH titan.ncsa.uiuc.edu specific Intel Itanium2 ia64 mckinley Linux, efc compiler DM-Parallel (RSL, VMI, RSL IO, allows nesting) 
+#ARCH titan.ncsa.uiuc.edu specific Intel Itanium2 ia64 mckinley Linux, efc compiler DM-Parallel (RSL, VMI, allows nesting) 
 #
 # Consider 'setenv F_UFMTENDIAN big' in your run scripts for big-endian output
 # Note hard-coded paths to Mark Straka's accounts and ecc6 libs

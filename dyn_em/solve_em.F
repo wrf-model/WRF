@@ -521,7 +521,6 @@ BENCH_START(rad_driver_tim)
                     GMT,JULDAY,config_flags,RADT,STEPRA,ICLOUD,      &
                     taucldi,taucldc,warm_rain,                       &
                     XLAND,TSK,HTOP,HBOT,CUPPT,VEGFRA,SNOW,           &
-                    F_ICE_PHY,F_RAIN_PHY,                            & ! for new ETARA
                     julyr,                                           &
                     1   ,                                            &
                     TOTSWDN,TOTLWDN,RSWTOA,RLWTOA,CZMEAN,            &

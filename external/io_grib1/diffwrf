@@ -11,6 +11,9 @@ set file2 = $2
 if ( -e fort.88 ) rm fort.88 
 if ( -e fort.98 ) rm fort.98 
 
+if ( -e outfile1 ) rm outfile1
+if ( -e outfile2 ) rm outfile2
+
 if ( ( ! -e $file1 ) || ( ! -e $file2 ) ) then
 	touch fort.88
 	exit ( 0 ) 

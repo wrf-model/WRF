@@ -184,33 +184,51 @@ rsl_period_pt( dir, d, min, minlen, minstag, maj, majlen, majstag, fld, bdyw, f 
       }
       else
       {
-        if ( maj == 1        && min >=0 && min < minlen+minstag ) { (*f)( d, min, maj, min,      majlen+1, -2, 0, fld ) ;
-                                                                    (*f)( d, min, maj, min,      majlen+1,  0, 0, fld ) ;
-                                                                    (*f)( d, min, maj, min,      majlen+1,  2, 0, fld ) ; }
-        if ( maj == majlen-2 && min >=0 && min < minlen+minstag ) { (*f)( d, min, maj, min,      -2,       -2, 0, fld ) ;
-                                                                    (*f)( d, min, maj, min,      -2,        0, 0, fld ) ;
-                                                                    (*f)( d, min, maj, min,      -2,        2, 0, fld ) ; }
+/**/    if ( maj == 0        && min >=0 && min < minlen+minstag ) { (*f)( d, min-2, maj, min-2,  majlen,   -2, 0, fld ) ;
+                                                                    (*f)( d, min  , maj, min  ,  majlen,    0, 0, fld ) ;
+                                                                    (*f)( d, min+2, maj, min+2,  majlen,    2, 0, fld ) ; }
+        if ( maj == 1        && min >=0 && min < minlen+minstag ) { (*f)( d, min-2, maj, min-2,  majlen+1, -2, 0, fld ) ;
+                                                                    (*f)( d, min,   maj, min,    majlen+1,  0, 0, fld ) ;
+                                                                    (*f)( d, min+2, maj, min+2,  majlen+1,  2, 0, fld ) ; }
+        if ( maj == majlen-2 && min >=0 && min < minlen+minstag ) { (*f)( d, min-2, maj, min-2,  -2,       -2, 0, fld ) ;
+                                                                    (*f)( d, min,   maj, min,    -2,        0, 0, fld ) ;
+                                                                    (*f)( d, min+2, maj, min+2,  -2,        2, 0, fld ) ; }
+/**/    if ( maj == majlen-1 && min >=0 && min < minlen+minstag ) { (*f)( d, min-2, maj, min-2,  -1,       -2, 0, fld ) ;
+                                                                    (*f)( d, min,   maj, min,    -1,        0, 0, fld ) ;
+                                                                    (*f)( d, min+2, maj, min+2,  -1,        2, 0, fld ) ; }
       }
     }
     else if ( dir == 0 ) /* RSL_M */
     {
       if ( minstag )
       {
-        if ( min == 2        && maj >=0 && maj < majlen+majstag ) { (*f)( d, min, maj, minlen+2, maj,      0, -2, fld ) ;
-                                                                    (*f)( d, min, maj, minlen+2, maj,      0,  0, fld ) ;
-                                                                    (*f)( d, min, maj, minlen+2, maj,      0,  2, fld ) ; }
-        if ( min == minlen-2 && maj >=0 && maj < majlen+majstag ) { (*f)( d, min, maj, -2,       maj,      0, -2, fld ) ;
-                                                                    (*f)( d, min, maj, -2,       maj,      0,  0, fld ) ;
-                                                                    (*f)( d, min, maj, -2,       maj,      0,  2, fld ) ; }
+/**/    if ( min == 1        && maj >=0 && maj < majlen+majstag ) { (*f)( d, min, maj-2, minlen+1, maj-2,    0, -2, fld ) ;
+                                                                    (*f)( d, min, maj,   minlen+1, maj,      0,  0, fld ) ;
+                                                                    (*f)( d, min, maj+2, minlen+1, maj+2,    0,  2, fld ) ; }
+        if ( min == 2        && maj >=0 && maj < majlen+majstag ) { (*f)( d, min, maj-2, minlen+2, maj-2,    0, -2, fld ) ;
+                                                                    (*f)( d, min, maj,   minlen+2, maj,      0,  0, fld ) ;
+                                                                    (*f)( d, min, maj+2, minlen+2, maj+2,    0,  2, fld ) ; }
+        if ( min == minlen-2 && maj >=0 && maj < majlen+majstag ) { (*f)( d, min, maj-2, -2,       maj-2,    0, -2, fld ) ;
+                                                                    (*f)( d, min, maj,   -2,       maj,      0,  0, fld ) ;
+                                                                    (*f)( d, min, maj+2, -2,       maj+2,    0,  2, fld ) ; }
+/**/    if ( min == minlen-1 && maj >=0 && maj < majlen+majstag ) { (*f)( d, min, maj-2, -1,       maj-2,    0, -2, fld ) ;
+                                                                    (*f)( d, min, maj,   -1,       maj,      0,  0, fld ) ;
+                                                                    (*f)( d, min, maj+2, -1,       maj+2,    0,  2, fld ) ; }
       }
       else
       {
-        if ( min == 1        && maj >=0 && maj < majlen+majstag ) { (*f)( d, min, maj, minlen+1, maj,      0, -2, fld ) ;
-                                                                    (*f)( d, min, maj, minlen+1, maj,      0,  0, fld ) ;
-                                                                    (*f)( d, min, maj, minlen+1, maj,      0,  2, fld ) ; }
-        if ( min == minlen-2 && maj >=0 && maj < majlen+majstag ) { (*f)( d, min, maj, -2,       maj,      0, -2, fld ) ;
-                                                                    (*f)( d, min, maj, -2,       maj,      0,  0, fld ) ;
-                                                                    (*f)( d, min, maj, -2,       maj,      0,  2, fld ) ; }
+/**/    if ( min == 0        && maj >=0 && maj < majlen+majstag ) { (*f)( d, min, maj-2, minlen,   maj-2,    0, -2, fld ) ;
+                                                                    (*f)( d, min, maj  , minlen,   maj  ,    0,  0, fld ) ;
+                                                                    (*f)( d, min, maj+2, minlen,   maj+2,    0,  2, fld ) ; }
+        if ( min == 1        && maj >=0 && maj < majlen+majstag ) { (*f)( d, min, maj-2, minlen+1, maj-2,    0, -2, fld ) ;
+                                                                    (*f)( d, min, maj  , minlen+1, maj,      0,  0, fld ) ;
+                                                                    (*f)( d, min, maj+2, minlen+1, maj+2,    0,  2, fld ) ; }
+        if ( min == minlen-2 && maj >=0 && maj < majlen+majstag ) { (*f)( d, min, maj-2, -2,       maj-2,    0, -2, fld ) ;
+                                                                    (*f)( d, min, maj,   -2,       maj,      0,  0, fld ) ;
+                                                                    (*f)( d, min, maj+2, -2,       maj+2,    0,  2, fld ) ; }
+/**/    if ( min == minlen-1 && maj >=0 && maj < majlen+majstag ) { (*f)( d, min, maj-2, -1,       maj-2,    0, -2, fld ) ;
+                                                                    (*f)( d, min, maj  , -1,       maj  ,    0,  0, fld ) ;
+                                                                    (*f)( d, min, maj+2, -1,       maj+2,    0,  2, fld ) ; }
       }
     }
 

@@ -1681,3 +1681,62 @@
       END DO smoothing_passes
    
    END SUBROUTINE smdsm
+
+!==================================
+! this is used to modify a field over the nest so we can see where the nest is
+
+   SUBROUTINE mark_domain (  cfld,                                 &  ! CD field
+                           cids, cide, ckds, ckde, cjds, cjde,   &
+                           cims, cime, ckms, ckme, cjms, cjme,   &
+                           cits, cite, ckts, ckte, cjts, cjte,   &
+                           nfld,                                 &  ! ND field
+                           nids, nide, nkds, nkde, njds, njde,   &
+                           nims, nime, nkms, nkme, njms, njme,   &
+                           nits, nite, nkts, nkte, njts, njte,   &
+                           shw,                                  &  ! stencil half width for interp
+                           imask,                                &  ! interpolation mask
+                           xstag, ystag,                         &  ! staggering of field
+                           ipos, jpos,                           &  ! Position of lower left of nest in CD
+                           nri, nrj                             )   ! nest ratios
+     USE module_configure
+     USE module_wrf_error
+     IMPLICIT NONE
+
+
+     INTEGER, INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
+                            cims, cime, ckms, ckme, cjms, cjme,   &
+                            cits, cite, ckts, ckte, cjts, cjte,   &
+                            nids, nide, nkds, nkde, njds, njde,   &
+                            nims, nime, nkms, nkme, njms, njme,   &
+                            nits, nite, nkts, nkte, njts, njte,   &
+                            shw,                                  &
+                            ipos, jpos,                           &
+                            nri, nrj
+     LOGICAL, INTENT(IN) :: xstag, ystag
+
+     REAL, DIMENSION ( cims:cime, ckms:ckme, cjms:cjme ), INTENT(OUT) :: cfld
+     REAL, DIMENSION ( nims:nime, nkms:nkme, njms:njme ), INTENT(IN) :: nfld
+     INTEGER, DIMENSION ( nims:nime, njms:njme ), INTENT(IN) :: imask
+
+     ! Local
+
+     INTEGER ci, cj, ck, ni, nj, nk, ip, jp, ioff, joff, ioffa, joffa
+     INTEGER :: icmin,icmax,jcmin,jcmax
+     INTEGER :: istag,jstag, ipoints,jpoints,ijpoints
+
+     istag = 1 ; jstag = 1
+     IF ( xstag ) istag = 0
+     IF ( ystag ) jstag = 0
+
+     DO cj = MAX(jpos+1,cjts),MIN(jpos+(njde-njds)/nrj-jstag-1,cjte)
+        nj = (cj-jpos)*nrj + jstag + 1
+        DO ck = ckts, ckte
+           nk = ck
+           DO ci = MAX(ipos+1,cits),MIN(ipos+(nide-nids)/nri-istag-1,cite)
+              ni = (ci-ipos)*nri + istag + 1
+              cfld( ci, ck, cj ) =  9021000.  !magic number: Beverly Hills * 100.
+           ENDDO
+        ENDDO
+     ENDDO
+
+   END SUBROUTINE mark_domain

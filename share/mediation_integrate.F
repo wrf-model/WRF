@@ -225,6 +225,11 @@ integer myproc
      nest%imask_ystag = 1
      nest%imask_xystag = 1
 
+#ifdef MOVE_NESTS
+     parent%nest_pos = parent%ht
+     where ( parent%nest_pos .gt. 0. ) parent%nest_pos = parent%nest_pos + 500.  ! make a cliff
+#endif
+
      CALL med_interp_domain( parent, nest )
 
 !  De-reference dimension information stored in the grid data structure.
@@ -462,6 +467,11 @@ SUBROUTINE med_nest_move ( parent, nest )
    CALL start_domain ( nest )
    nest%moved = .false.
 
+#ifdef MOVE_NESTS
+   parent%nest_pos = parent%ht
+   where ( parent%nest_pos .gt. 0 ) parent%nest_pos = parent%nest_pos + 500.  ! make a cliff
+#endif
+
    ENDIF check_for_move
 
 #endif
@@ -657,6 +667,9 @@ SUBROUTINE med_nest_feedback ( parent , nest , config_flags )
     IF ( .NOT. ESMF_ClockIsStopTime(nest%domain_clock ,rc=rc) .AND. &
          config_flags%feedback .NE. 0 ) THEN
       CALL med_feedback_domain( parent, nest )
+#ifdef MOVE_NESTS
+      WHERE ( parent%nest_pos .EQ. 9021000. ) parent%nest_pos = parent%ht*1.5 + 1000.
+#endif
     END IF
 
    RETURN

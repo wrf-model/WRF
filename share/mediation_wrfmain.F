@@ -16,6 +16,8 @@ SUBROUTINE med_initialdata_input_ptr ( grid , config_flags )
       END SUBROUTINE med_initialdata_input
    END INTERFACE
    CALL  med_initialdata_input ( grid , config_flags )
+
+
 END SUBROUTINE med_initialdata_input_ptr
 
 SUBROUTINE med_initialdata_input ( grid , config_flags )
@@ -73,6 +75,10 @@ SUBROUTINE med_initialdata_input ( grid , config_flags )
         CALL input_model_input ( fid ,   grid , config_flags , ierr )
         CALL       wrf_debug ( 100 , 'wrf: back from input_model_input' )
         CALL close_dataset ( fid , config_flags , "DATASET=INPUT" )
+#ifdef MOVE_NESTS
+        grid%nest_pos = grid%ht
+        where ( grid%nest_pos .gt. 0 ) grid%nest_pos = grid%nest_pos + 500.  ! make a cliff
+#endif
      ENDIF
      CALL start_domain ( grid )
    ELSE

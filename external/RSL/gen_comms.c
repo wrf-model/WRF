@@ -55,8 +55,17 @@ gen_halos ( char * dirname )
       t1 = strtok_rentr( NULL , "; " , &pos1 ) ;
     }
     print_warning(fp,fname) ;
-    fprintf(fp,"IF ( grid%%comms( %s ) == invalid_message_value ) THEN\n",commname ) ;
+#if 0
+    if ( ! strncmp( "dyn_", p->use, 4 ) ) {
+      fprintf(fp,"#include \"%s_data_calls.inc\"\n",p->use+4) ;
+    }
+#endif
+    fprintf(fp,"#ifndef DATA_CALLS_INCLUDED\n") ;
+    fprintf(fp,"--- DELIBERATE SYNTAX ERROR: THIS ROUTINE SHOULD INCLUDE \"%s_data_calls.inc\"\n",p->use+4) ;
+    fprintf(fp,"    BECAUSE IT CONTAINS AN RSL HALO OPERATION\n" ) ;
+    fprintf(fp,"#endif\n") ;
 
+    fprintf(fp,"IF ( grid%%comms( %s ) == invalid_message_value ) THEN\n",commname ) ;
     fprintf(fp,"  CALL wrf_debug ( 50 , 'set up halo %s' )\n",commname ) ;
     fprintf(fp,"  CALL setup_halo_rsl( grid )\n" ) ;
     fprintf(fp,"  CALL reset_msgs_%dpt\n", maxstenwidth ) ;
@@ -200,6 +209,15 @@ gen_periods ( char * dirname )
       t1 = strtok_rentr( NULL , ";" , &pos1 ) ;
     }
     print_warning(fp,fname) ;
+#if 0
+    if ( ! strncmp( "dyn_", p->use, 4 ) ) {
+      fprintf(fp,"#include \"%s_data_calls.inc\"\n",p->use+4) ;
+    }
+#endif
+    fprintf(fp,"#ifndef DATA_CALLS_INCLUDED\n") ;
+    fprintf(fp,"--- DELIBERATE SYNTAX ERROR: THIS ROUTINE SHOULD INCLUDE \"%s_data_calls.inc\"\n",p->use+4) ;
+    fprintf(fp,"    BECAUSE IT CONTAINS AN RSL PERIOD OPERATION\n" ) ;
+    fprintf(fp,"#endif\n") ;
     fprintf(fp,"IF ( grid%%comms( %s ) == invalid_message_value .AND. (config_flags%%periodic_x .OR. config_flags%%periodic_y )) THEN\n",commname ) ;
 
     fprintf(fp,"  CALL wrf_debug ( 50 , 'setting up period %s' )\n",commname ) ;
@@ -316,6 +334,15 @@ gen_xposes ( char * dirname )
       }
 
       print_warning(fp,fname) ;
+#if 0
+      if ( ! strncmp( "dyn_", p->use, 4 ) ) {
+        fprintf(fp,"#include \"%s_data_calls.inc\"\n",p->use+4) ;
+      }
+#endif
+      fprintf(fp,"#ifndef DATA_CALLS_INCLUDED\n") ;
+      fprintf(fp,"--- DELIBERATE SYNTAX ERROR: THIS ROUTINE SHOULD INCLUDE \"%s_data_calls.inc\"\n",p->use+4) ;
+      fprintf(fp,"    BECAUSE IT CONTAINS AN RSL TRANSPOSE OPERATION\n" ) ;
+      fprintf(fp,"#endif\n") ;
       fprintf(fp,"IF ( grid%%comms( %s ) == invalid_message_value ) THEN\n",commname ) ;
 
       fprintf(fp,"  CALL wrf_debug ( 50 , 'setting up xpose %s' )\n",commname ) ;
@@ -668,6 +695,7 @@ gen_datacalls ( char * dirname )
     gen_datacalls1( fp , corename, "", I1 , Domain.fields ) ;
     fprintf(fp,"#endif\n") ;
     fprintf(fp," CALL rsl_end_register_f90\n") ;
+    fprintf(fp,"#define  DATA_CALLS_INCLUDED\n") ;
     close_the_file(fp) ;
   }
   return(0) ;
@@ -678,7 +706,7 @@ gen_datacalls1 ( FILE * fp , char * corename , char * structname , int mask , no
 {
   node_t * p, * q  ;
   int i, member_number ;
-  char tmp[NAMELEN],tmp2[NAMELEN] ;
+  char tmp[NAMELEN],tmp2[NAMELEN], tc ;
   char indices[NAMELEN], post[NAMELEN] ;
 
   for ( p = node ; p != NULL ; p = p->next )
@@ -690,6 +718,9 @@ gen_datacalls1 ( FILE * fp , char * corename , char * structname , int mask , no
     {
       if ( p->type->type_type == SIMPLE )
       {
+        if ( !strcmp( p->type->name , "real" ) ) tc = 'R' ;
+        if ( !strcmp( p->type->name , "double" ) ) tc = 'D' ;
+        if ( !strcmp( p->type->name , "integer" ) ) tc = 'I' ;
         for ( i = 1 ; i <= p->ntl ; i++ )
         {
 /* IF (P_QI .ge. P_FIRST_SCALAR */
@@ -699,10 +730,10 @@ gen_datacalls1 ( FILE * fp , char * corename , char * structname , int mask , no
             for ( q = p->members ; q != NULL ; q = q->next )
             {
               sprintf(tmp, "(grid%%sm31,grid%%sm32,grid%%sm33,1+%d)", member_number ) ;
-              sprintf(tmp2, "(grid%%em31-grid%%sm31+1)*(grid%%em32-grid%%sm32+1)*(grid%%em33-grid%%sm33+1)") ;
+              sprintf(tmp2, "(grid%%em31-grid%%sm31+1)*(grid%%em32-grid%%sm32+1)*(grid%%em33-grid%%sm33+1)*%cWORDSIZE",tc) ;
               if ( p->ntl > 1 ) fprintf(fp," IF(1+%d.LE.num_%s)CALL rsl_register_f90_base_and_size ( %s%s_%d %s , &\n %s  )\n",
                                              member_number,p->name,structname,p->name,i,tmp,tmp2) ;
-              else              fprintf(fp," CALL rsl_register_f90_base_and_size ( %s%s %s , %s )\n",
+              else              fprintf(fp," CALL rsl_register_f90_base_and_size ( %s%s %s, &\n %s )\n",
                                                            structname,p->name,tmp,tmp2) ;
               member_number++ ;
             }
@@ -715,12 +746,12 @@ gen_datacalls1 ( FILE * fp , char * corename , char * structname , int mask , no
               sprintf(post,")") ;
               sprintf(indices, "%s",index_with_firstelem("(","",tmp,p,post)) ;
             }
-            if ( p->ntl > 1 ) fprintf(fp," CALL rsl_register_f90_base_and_size ( %s%s_%d%s , SIZE( %s%s_%d%s ) )\n",
+            if ( p->ntl > 1 ) fprintf(fp," CALL rsl_register_f90_base_and_size ( %s%s_%d%s , SIZE( %s%s_%d%s ) * %cWORDSIZE )\n",
                                                                                    structname,p->name,i,indices,
-                                                                                   structname,p->name,i,indices ) ;
-            else              fprintf(fp," CALL rsl_register_f90_base_and_size ( %s%s%s , SIZE( %s%s%s  ) )\n",
+                                                                                   structname,p->name,i,indices,tc ) ;
+            else              fprintf(fp," CALL rsl_register_f90_base_and_size ( %s%s%s , SIZE( %s%s%s  ) * %cWORDSIZE )\n",
                                                                                    structname,p->name,indices,
-                                                                                   structname,p->name,indices) ;
+                                                                                   structname,p->name,indices, tc) ;
           }
         }
       }

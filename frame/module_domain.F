@@ -54,6 +54,8 @@ MODULE module_domain
                                             ! MAX_WRF_ALARMS must be big enough to include 
                                             ! all of the above alarms.  
 
+#include <state_subtypes.inc>
+
    TYPE domain
 
 ! SEE THE INCLUDE FILE FOR DEFINITIONS OF STATE FIELDS WITHIN THE DOMAIN DATA STRUCTURE
@@ -124,9 +126,6 @@ MODULE module_domain
 #endif
 
    END TYPE domain
-
-!  added for 3dvar code, WCS, 5 June 2002; Wei Huang, 3 November 2004
-#include <state_subtypes.inc>
 
    !  Now that a "domain" TYPE exists, we can use it to store a few pointers
    !  to this type.  These are primarily for use in traversing the linked list.

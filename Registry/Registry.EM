@@ -111,7 +111,7 @@ i1       real   w_save         ikj     dyn_em      1         Z
 # Geopotential
 state    real   ph             ikj     dyn_em      2         Z     \
        irhusdf=(bdy_interp:dt,ph_b,ph_bt)   "ph"   "perturbation geopotential"  "m2 s-2"
-state    real   phb            ikj     dyn_em      1         Z     irhdu  "phb"  "base-state geopotential"  "m2 s-2"
+state    real   phb            ikj     dyn_em      1         Z     irhdus "phb"  "base-state geopotential"  "m2 s-2"
 state    real   phb_fine       ikj     dyn_em      1         Z      -     "phb_fine"  "for nesting, temp holding interpolated coarse grid phb"  "m2 s-2"
 state    real   ph0            ikj     dyn_em      1         Z      r     "ph0"  "initial geopotential"     "m2 s-2"
 state    real   php            ikj     dyn_em      1         Z      r     "php"  "geopotential"             "m2 s-2"
@@ -135,7 +135,7 @@ state    real   t_save         ikj     dyn_em      1         -               "t_
 # Mass
 state    real   mu              ij     dyn_em      2         -     \
      irhusdf=(bdy_interp:dt,mu_b,mu_bt)   "mu"  "perturbation dry air mass in column" "Pa"
-state    real   mub             ij     dyn_em      1         -     irhdu        "mub" "base state dry air mass in column" "Pa"
+state    real   mub             ij     dyn_em      1         -     irhdus       "mub" "base state dry air mass in column" "Pa"
 state    real   mub_fine        ij     dyn_em      1         -      -           "mub_fine" "nest temp, holds interpolated coarse grid mub" "Pa"
 state    real   mu0             ij     dyn_em      1         -     i01rdu       "mu0" "initial dry mass in column" "Pa"
 state    real   mudf            ij     dyn_em      1         -      -           "mudf" "" ""

@@ -560,7 +560,7 @@ state    real   CANWAT           ij     misc        1         -     irh       "C
 state    real   SST              ij     misc        1         -     i01rh       "SST"                  "SEA SURFACE TEMPERATURE" "K"
 state    real   WEASD            ij     misc        1         -     i01rh       "WEASD"                "WATER EQUIVALENT OF ACCUMULATED SNOW" ""
 state    real  ZNT              ij      misc        1         -     ir        "ZNT"                   "TIME-VARYING ROUGHNESS LENGTH"
-state    real  MOL              ij      misc        1         -     ir        "MOL"                   "Q* IN SIMILARITY THEORY"                      "kg kg{-1}"
+state    real  MOL              ij      misc        1         -     ir        "MOL"                   "T* IN SIMILARITY THEORY"                      "K"
 
 
 state    real   tke_myj        ikj     misc        1         -     irh       "tke_myj"               "TKE FROM MELLOR-YAMADA-JANJIC      "m2 s-2"

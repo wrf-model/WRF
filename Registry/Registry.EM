@@ -600,7 +600,7 @@ state    real  XLAND            ij      misc        1         -     i02rhd=(inte
 state    real  ZNT              ij      misc        1         -      i3r      "ZNT"                   "TIME-VARYING ROUGHNESS LENGTH"                "m"      
 state    real  UST              ij      misc        1         -      r        "UST"                   "U* IN SIMILARITY THEORY"                      "m s-1"      
 i1       real  HOL              ij      misc        1         -      -        "HOL"                   "PBL HEIGHT OVER MONIN-OBUKHOV LENGTH"         ""
-state    real  MOL              ij      misc        1         -      r        "MOL"                   "Q* IN SIMILARITY THEORY"                      "kg kg-1"      
+state    real  MOL              ij      misc        1         -      r        "MOL"                   "T* IN SIMILARITY THEORY"                      "K"      
 state    real  PBLH             ij      misc        1         -      rh       "PBLH"                  "PBL HEIGHT"         "m"      
 state    real  CAPG             ij      misc        1         -      r        "CAPG"                  "HEAT CAPACITY FOR SOIL"                       "J K-1 m-3"      
 state    real  THC              ij      misc        1         -      r        "THC"                   "THERMAL INERTIA"                              "Cal cm-1 K-1 s-0.5"      

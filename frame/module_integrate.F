@@ -253,7 +253,10 @@ RECURSIVE SUBROUTINE integrate ( grid )
          END IF
          CALL med_setup_step ( grid , config_flags )
          a_nest_was_opened = .false.
+         ! for each nest whose time has come...
          DO WHILE ( nests_to_open( grid , nestid , kid ) )
+            ! nestid is index into model_config_rec (module_configure) of the grid
+            ! to be opened; kid is index into an open slot in grid's list of children
             a_nest_was_opened = .true.
             CALL alloc_and_configure_domain ( domain_id  = nestid ,                          &
                                               grid       = new_nest ,                        &

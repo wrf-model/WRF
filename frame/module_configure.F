@@ -316,6 +316,31 @@ SUBROUTINE set_scalar_indices_from_config ( idomain , dummy2, dummy1 )
   INTEGER               :: dummy1
   INTEGER               :: dummy2
 
+!<DESCRIPTION>
+!This routine is called to adjust the integer variables that are defined
+!in frame/module_state_description.F (Registry-generated) and that serve
+!as indices into 4D tracer arrays for moisture, chemistry, etc.
+!Different domains (different grid data structures) are allowed to have
+!different sets of tracers so these indices can vary from domain to
+!domain. However, since the indices are defined globally in
+!module_state_description (a shortcoming in the current software), it is
+!necessary that these indices be reset each time a different grid is to
+!be computed on.
+!
+!The scalar idices are set according to the particular physics
+!packages -- more specifically in the case of the moisture tracers, microphysics
+!packages -- that are stored for each domain in model_config_rec and
+!indexed by the grid id, passed in as an argument to this routine.  (The
+!initial_config() routine in module_configure is what reads the
+!namelist.input file and sets model_config_rec.)
+!
+!The actual code for calculating the scalar indices on a particular
+!domain is generated from the Registry state array definitions for the
+!4d tracers and from the package definitions that indicate which physics
+!packages use which tracers.
+!
+!</DESCRIPTION>
+
 #include <scalar_indices.inc>
 #include <scalar_indices_init.inc>
   RETURN

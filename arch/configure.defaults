@@ -5671,7 +5671,7 @@ CC                = icc -I.
 CC_TOOLS          = cc
 SFC               = ifort
 CFLAGS            = -w -O3 -ip -tpp2 -c -ftz -DDM_PARALLEL -I../external/RSL_LITE \
--DMAXDOM_MAKE     = $(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
+                    -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
 FCOPTIM           = -O3
 FCDEBUG           = # -g
 FCBASEOPTS        = -w -ip -tpp2 -ftz -FR -convert big_endian $(FCDEBUG) \

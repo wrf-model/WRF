@@ -49,7 +49,7 @@ COLLECT_ON_COMM0 ( int * comm, int * typesize ,
                 inbuf, ninbuf , outbuf, noutbuf, 0 ) ;
 }
 
-col_on_comm ( int * comm, int * typesize ,
+col_on_comm ( int * Fcomm, int * typesize ,
               void * inbuf, int *ninbuf , void * outbuf, int * noutbuf, int sw )
 {
 #if defined( DM_PARALLEL ) && !(STUBMPI)
@@ -58,7 +58,10 @@ col_on_comm ( int * comm, int * typesize ,
   int *displace ;
   int noutbuf_loc ;
   int root_task ;
+  MPI_Comm *comm, dummy_comm ;
 
+  comm = &dummy_comm ;
+  *comm = MPI_Comm_f2c( *Fcomm ) ;
   MPI_Comm_size ( *comm, &ntasks ) ;
   MPI_Comm_rank ( *comm, &mytask ) ;
   recvcounts = (int *) malloc( ntasks * sizeof(int)) ;
@@ -116,7 +119,7 @@ DIST_ON_COMM0 ( int * comm, int * typesize ,
                 inbuf, ninbuf , outbuf, noutbuf, 0 ) ;
 }
 
-dst_on_comm ( int * comm, int * typesize ,
+dst_on_comm ( int * Fcomm, int * typesize ,
               void * inbuf, int *ninbuf , void * outbuf, int * noutbuf, int sw )
 {
 #if defined(DM_PARALLEL) && ! defined(STUBMPI)
@@ -125,7 +128,10 @@ dst_on_comm ( int * comm, int * typesize ,
   int *displace ;
   int noutbuf_loc ;
   int root_task ;
+  MPI_Comm *comm, dummy_comm ;
 
+  comm = &dummy_comm ;
+  *comm = MPI_Comm_f2c( *Fcomm ) ;
   MPI_Comm_size ( *comm, &ntasks ) ;
   MPI_Comm_rank ( *comm, &mytask ) ;
   sendcounts = (int *) malloc( ntasks * sizeof(int)) ;

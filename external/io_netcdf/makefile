@@ -2,15 +2,12 @@
 
 OBJSL   = wrf_io.o field_routines.o
 OBJS    = $(OBJSL)
-OPTS    = 
 CODE    = ext_ncd_get_dom_ti.code ext_ncd_get_var_td.code ext_ncd_get_var_ti.code ext_ncd_put_dom_ti.code ext_ncd_put_var_td.code ext_ncd_put_var_ti.code transpose.code 
-FFLAGS  =  $(OPTS) -I$(NETCDFPATH)/include
+FFLAGS  =  $(FCFLAGS) -I$(NETCDFPATH)/include
 LIBS    = -L$(NETCDFPATH)/lib -lnetcdf
 CPP1    = $(CPP) -C -P $(TRADFLAG)
 M4      = m4 -Uinclude -Uindex -Ulen
 AR      = ar
-#RANLIB	= ranlib
-RANLIB	= echo
 
 .SUFFIXES:      .F90 .f .o .code
 

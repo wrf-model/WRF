@@ -10,7 +10,6 @@ LIB     =-lm -lz
 CPP     = /lib/cpp -C -P $(TRADFLAG)
 M4      = m4 -Uinclude -Uindex -Ulen
 AR      = ar
-RANLIB  = ranlib
 
 .SUFFIXES:      .F90 .f .o .code
 

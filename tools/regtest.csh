@@ -859,8 +859,8 @@ if      ( $acquire_from == "cvs" ) then
 	#	Checkout the most recent version of WRF from the NCAR cvs repository,
 	#	and pick up the required input data from the anonymous ftp site.
 
-	cvs checkout -D $thedate WRFV1
-	find ./WRFV1 -exec touch \{\} \;
+	cvs checkout -D $thedate WRFV2
+	find ./WRFV2 -exec touch \{\} \;
 	ftp -n ftp.ucar.edu < ftp_script_data
 
 
@@ -870,7 +870,7 @@ else if ( $acquire_from == "filearg" ) then
 	#	the required input data files from the ftp site.
 
 	tar xvf $thefile
-	cd WRFV1
+	cd WRFV2
 	clean -a
 	cd ..
 	ftp -n ftp.ucar.edu < ftp_script_data
@@ -883,13 +883,13 @@ else if ( $acquire_from == "environment" ) then
 
 endif
 
-#	And we can stick the input data where we want, the WRFV1 directory has been created.
+#	And we can stick the input data where we want, the WRFV2 directory has been created.
 
-( cd WRFV1/test/em_real  ; ln -sf $thedataem/* . ) 
-( cd WRFV1/test/nmm_real ; ln -sf $thedatanmm/*  . ; ln -sf co2.60_hyb_bot40m co2_trans )
+( cd WRFV2/test/em_real  ; ln -sf $thedataem/* . ) 
+( cd WRFV2/test/nmm_real ; ln -sf $thedatanmm/*  . ; ln -sf co2.60_hyb_bot40m co2_trans )
 #DAVE###################################################
-( cd WRFV1/test/em_real ; ls -ls )
-( cd WRFV1/test/nmm_real ; ls -ls )
+( cd WRFV2/test/em_real ; ls -ls )
+( cd WRFV2/test/nmm_real ; ls -ls )
 banner 4
 #set ans = "$<"
 #DAVE###################################################
@@ -897,7 +897,7 @@ banner 4
 #	John-specific stuff for maple is the else; part of the "using service machines".
 
 if ( ! $clrm ) then
-	pushd WRFV1
+	pushd WRFV2
 else
 	if ( ! -d $TMPDIR ) then
 		echo something wrong 1
@@ -907,8 +907,8 @@ else
 		/bin/rm -fr $TMPDIR/RUN/*
 	endif
 	if ( -d $TMPDIR/RUN ) then
-		tar cf - ./WRFV1/test ./WRFV1/main | ( cd $TMPDIR/RUN ; tar xvf - )
-		pushd WRFV1
+		tar cf - ./WRFV2/test ./WRFV2/main | ( cd $TMPDIR/RUN ; tar xvf - )
+		pushd WRFV2
 	else
 		echo something wrong 2
 		exit
@@ -919,7 +919,7 @@ endif
 
 if ( -e ${DEF_DIR}/wrftest.output ) rm ${DEF_DIR}/wrftest.output
 echo "Architecute: $ARCH[1]      machine: `hostname`" >>! ${DEF_DIR}/wrftest.output
-echo "WRFV1 source from: $acquire_from " >>! ${DEF_DIR}/wrftest.output
+echo "WRFV2 source from: $acquire_from " >>! ${DEF_DIR}/wrftest.output
 echo "Number of OpenMP processes to use: $OPENMP" >>! ${DEF_DIR}/wrftest.output
 echo "Number of MPI    processes to use: $Num_Procs" >>! ${DEF_DIR}/wrftest.output
 set name = ( `grep ^${user}: /etc/passwd | cut -d: -f5` ) 
@@ -1007,22 +1007,22 @@ banner 6
 			if      ( ( $compopt == $COMPOPTS[1] ) && \
                                   ( -e main/wrf_${core}.exe.$compopt ) && \
                                   ( -e main/real_${core}.exe.1 ) && \
-                                  ( -e ${DEF_DIR}/regression_test/WRFV1/external/io_netcdf/diffwrf ) ) then
+                                  ( -e ${DEF_DIR}/regression_test/WRFV2/external/io_netcdf/diffwrf ) ) then
 				goto GOT_THIS_EXEC
 			else if ( ( $compopt != $COMPOPTS[1] ) && \
                                   ( -e main/wrf_${core}.exe.$compopt ) && \
-                                  ( -e ${DEF_DIR}/regression_test/WRFV1/external/io_netcdf/diffwrf ) ) then
+                                  ( -e ${DEF_DIR}/regression_test/WRFV2/external/io_netcdf/diffwrf ) ) then
 				goto GOT_THIS_EXEC
 			endif
 		else
 			if      ( ( $compopt == $COMPOPTS[1] ) && \
                                   ( -e main/wrf_${core}.exe.$compopt ) && \
                                   ( -e main/ideal_${core}.exe.1 ) && \
-                                  ( -e ${DEF_DIR}/regression_test/WRFV1/external/io_netcdf/diffwrf ) ) then
+                                  ( -e ${DEF_DIR}/regression_test/WRFV2/external/io_netcdf/diffwrf ) ) then
 				goto GOT_THIS_EXEC
 			else if ( ( $compopt != $COMPOPTS[1] ) && \
                                   ( -e main/wrf_${core}.exe.$compopt ) && \
-                                  ( -e ${DEF_DIR}/regression_test/WRFV1/external/io_netcdf/diffwrf ) ) then
+                                  ( -e ${DEF_DIR}/regression_test/WRFV2/external/io_netcdf/diffwrf ) ) then
 				goto GOT_THIS_EXEC
 			endif
 		endif
@@ -1110,13 +1110,13 @@ banner 10
 		GOT_THIS_EXEC:
 
 		if ( $clrm ) then
-			cp main/*exe* $TMPDIR/RUN/WRFV1/main
+			cp main/*exe* $TMPDIR/RUN/WRFV2/main
 		endif
 	
 	end
 
 	if ( $clrm ) then
-		pushd $TMPDIR/RUN/WRFV1
+		pushd $TMPDIR/RUN/WRFV2
 	endif
 	
 	#	We have all of the executables built, now we run'em.  This is a loop
@@ -1719,8 +1719,8 @@ banner 29
 
 	                if ( $core == nmm_real ) then
 	
-				pushd ${DEF_DIR}/regression_test/WRFV1/test/$core
-				set DIFFWRF = ${DEF_DIR}/regression_test/WRFV1/external/io_netcdf/diffwrf
+				pushd ${DEF_DIR}/regression_test/WRFV2/test/$core
+				set DIFFWRF = ${DEF_DIR}/regression_test/WRFV2/external/io_netcdf/diffwrf
 	
 	                        if ( ( -e $TMPDIR/wrfout_d01_${filetag}.${core}.${phys_option}.$COMPOPTS[3]_1p ) && \
 	                             ( -e $TMPDIR/wrfout_d01_${filetag}.${core}.${phys_option}.$COMPOPTS[3]_${Num_Procs}p ) ) then
@@ -1789,8 +1789,8 @@ banner 29
 				#	generated.  We now compare the WRF model output files to see
 				#	if they are S^2D^2.
 		
-				pushd ${DEF_DIR}/regression_test/WRFV1/test/$core
-				set DIFFWRF = ${DEF_DIR}/regression_test/WRFV1/external/io_netcdf/diffwrf
+				pushd ${DEF_DIR}/regression_test/WRFV2/test/$core
+				set DIFFWRF = ${DEF_DIR}/regression_test/WRFV2/external/io_netcdf/diffwrf
 	
 				#	Are we skipping the OpenMP runs?
 	

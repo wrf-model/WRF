@@ -585,7 +585,7 @@ show_pack_table( pack_table, pack_table_size, pack_table_nbytes )
   int pack_table_size ;
   int pack_table_nbytes ;
 {
-  int i ;
+  int i,ii,jj ;
   for ( i = 0 ; i < pack_table_size ; i++ )
   {
     fprintf(stderr,
@@ -598,6 +598,25 @@ show_pack_table( pack_table, pack_table_size, pack_table_nbytes )
 	      pack_table[i].nelems,
 	      pack_table[i].stride,
 	      pack_table[i].valid ) ;
+#if 0
+    for ( jj = 0 ; jj < pack_table[i].nelems ; jj++ )
+    for ( ii = 0 ; ii < pack_table[i].n ; ii += 4 )
+    {
+      fprintf(stderr,"** elem %d, n %d, %16lx, %f\n",jj,ii,
+		(float *)( (char *)
+		   pack_table[i].base + 
+		   pack_table[i].offset +
+		   jj * pack_table[i].stride +
+		   ii ),
+		*((float *)( (char *)
+		   pack_table[i].base + 
+		   pack_table[i].offset +
+		   jj * pack_table[i].stride +
+		   ii ))
+		   ) ;
+    }
+#endif
+
   }
   fprintf(stderr," table nbytes=%d\n", pack_table_nbytes ) ;
 }

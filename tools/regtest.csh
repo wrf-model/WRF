@@ -215,6 +215,13 @@ set REAL8 = FALSE
 set REG_TYPE = OPTIMIZED
 set REG_TYPE = BIT4BIT
 
+#	For a Linux machine, we can use PGI or Intel compilers.
+
+if ( `uname` == Linux ) then
+	set LINUX_COMP = INTEL
+	set LINUX_COMP = PGI
+endif
+
 #	Is this a WRF chem test?  
 
 if ( $NESTED != TRUE ) then
@@ -858,12 +865,20 @@ else if ( ( $ARCH[1] == Linux ) && ( `hostname` == bay-mmm ) ) then
 	if ( ! -d $DEF_DIR ) mkdir $DEF_DIR
 	set TMPDIR		= .
 	set MAIL		= /bin/mail
-	if        ( $NESTED == TRUE )                            then
-		set COMPOPTS	= ( 2 4 5 )
-	else if ( ( $NESTED != TRUE ) && ( $RSL_LITE == TRUE ) ) then
-		set COMPOPTS	= ( 1 3 6 )
-	else if ( ( $NESTED != TRUE ) && ( $RSL_LITE != TRUE ) ) then
-		set COMPOPTS	= ( 1 3 5 )
+	if      ( $LINUX_COMP == PGI ) then
+		if        ( $NESTED == TRUE )                            then
+			set COMPOPTS	= ( 2 4 5 )
+		else if ( ( $NESTED != TRUE ) && ( $RSL_LITE == TRUE ) ) then
+			set COMPOPTS	= ( 1 3 6 )
+		else if ( ( $NESTED != TRUE ) && ( $RSL_LITE != TRUE ) ) then
+			set COMPOPTS	= ( 1 3 5 )
+		endif
+	else if ( $LINUX_COMP == INTEL ) then
+		if        ( $NESTED == TRUE )                            then
+			set COMPOPTS	= ( 8 10 11 )
+		else if   ( $NESTED != TRUE )                            then
+			set COMPOPTS	= ( 7  9 11 )
+		endif
 	endif
 	set Num_Procs		= 2
 	set OPENMP		= $Num_Procs
@@ -881,7 +896,11 @@ EOF
 	endif
 	set MPIRUNCOMMAND       = ( mpirun -np $Num_Procs -machinefile $Mach )
 	echo "Compiler version info: " >! version_info
-	pgf90 -V >>&! version_info
+	if      ( $LINUX_COMP == PGI ) then
+		pgf90 -V >>&! version_info
+	else if ( $LINUX_COMP == INTEL ) then
+		ifort -v >>&! version_info
+	endif
 	echo " " >>! version_info
 	echo "OS version info: " >>! version_info
 	uname -a >>&! version_info
@@ -898,12 +917,20 @@ else if ( ( $ARCH[1] == Linux ) && ( `hostname` == loquat ) ) then
 		echo "See directory ${DEF_DIR}/ for wrftest.output and other test results"
 	endif
 	set MAIL		= /bin/mail
-	if        ( $NESTED == TRUE )                            then
-		set COMPOPTS	= ( 2 4 5 )
-	else if ( ( $NESTED != TRUE ) && ( $RSL_LITE == TRUE ) ) then
-		set COMPOPTS	= ( 1 3 6 )
-	else if ( ( $NESTED != TRUE ) && ( $RSL_LITE != TRUE ) ) then
-		set COMPOPTS	= ( 1 3 5 )
+	if      ( $LINUX_COMP == PGI ) then
+		if        ( $NESTED == TRUE )                            then
+			set COMPOPTS	= ( 2 4 5 )
+		else if ( ( $NESTED != TRUE ) && ( $RSL_LITE == TRUE ) ) then
+			set COMPOPTS	= ( 1 3 6 )
+		else if ( ( $NESTED != TRUE ) && ( $RSL_LITE != TRUE ) ) then
+			set COMPOPTS	= ( 1 3 5 )
+		endif
+	else if ( $LINUX_COMP == INTEL ) then
+		if        ( $NESTED == TRUE )                            then
+			set COMPOPTS	= ( 8 10 11 )
+		else if   ( $NESTED != TRUE )                            then
+			set COMPOPTS	= ( 7  9 11 )
+		endif
 	endif
 	set Num_Procs		= 2
 	set OPENMP		= $Num_Procs
@@ -921,7 +948,11 @@ EOF
 	endif
 	set MPIRUNCOMMAND       = ( mpirun -np $Num_Procs -machinefile $Mach )
 	echo "Compiler version info: " >! version_info
-	pgf90 -V >>&! version_info
+	if      ( $LINUX_COMP == PGI ) then
+		pgf90 -V >>&! version_info
+	else if ( $LINUX_COMP == INTEL ) then
+		ifort -v >>&! version_info
+	endif
 	echo " " >>! version_info
 	echo "OS version info: " >>! version_info
 	uname -a >>&! version_info
@@ -953,8 +984,7 @@ else if ( ( $ARCH[1] == Linux ) && ( `hostname` == jacaranda ) ) then
 	set MPIRUNCOMMAND	= ( mpirun -np $Num_Procs )
 	set ZAP_OPENMP		= TRUE
 	echo "Compiler version info: " >! version_info
-	ifort -V | grep Intel >>! version_info
-	ifort -V | grep Version >>! version_info
+	ifort -v >>! version_info
 	echo " " >>! version_info
 	echo "OS version info: " >>! version_info
 	uname -a >>&! version_info
@@ -963,12 +993,20 @@ else if ( ( $ARCH[1] == Linux ) && ( `hostname` == master ) ) then
 	set DEF_DIR		= /big6/gill/DO_NOT_REMOVE_DIR
 	set TMPDIR		= .
 	set MAIL		= /bin/mail
-	if        ( $NESTED == TRUE )                            then
-		set COMPOPTS	= ( 2 4 5 )
-	else if ( ( $NESTED != TRUE ) && ( $RSL_LITE == TRUE ) ) then
-		set COMPOPTS	= ( 1 3 6 )
-	else if ( ( $NESTED != TRUE ) && ( $RSL_LITE != TRUE ) ) then
-		set COMPOPTS	= ( 1 3 5 )
+	if      ( $LINUX_COMP == PGI ) then
+		if        ( $NESTED == TRUE )                            then
+			set COMPOPTS	= ( 2 4 5 )
+		else if ( ( $NESTED != TRUE ) && ( $RSL_LITE == TRUE ) ) then
+			set COMPOPTS	= ( 1 3 6 )
+		else if ( ( $NESTED != TRUE ) && ( $RSL_LITE != TRUE ) ) then
+			set COMPOPTS	= ( 1 3 5 )
+		endif
+	else if ( $LINUX_COMP == INTEL ) then
+		if        ( $NESTED == TRUE )                            then
+			set COMPOPTS	= ( 8 10 11 )
+		else if   ( $NESTED != TRUE )                            then
+			set COMPOPTS	= ( 7  9 11 )
+		endif
 	endif
 	set Num_Procs		= 4
 	set OPENMP		= 2
@@ -987,7 +1025,11 @@ EOF
 	set MPIRUNCOMMAND       = ( mpirun -v -np $Num_Procs -machinefile $Mach -nolocal )
 	set MPIRUNCOMMANDPOST   = "< /dev/null"
 	echo "Compiler version info: " >! version_info
-	pgf90 -V >>&! version_info
+	if      ( $LINUX_COMP == PGI ) then
+		pgf90 -V >>&! version_info
+	else if ( $LINUX_COMP == INTEL ) then
+		ifort -v >>&! version_info
+	endif
 	echo " " >>! version_info
 	echo "OS version info: " >>! version_info
 	uname -a >>&! version_info
@@ -1027,12 +1069,20 @@ else if ( ( $ARCH[1] == Linux ) && ( `hostname` == kola ) ) then
 	set DEF_DIR		= /kola2/$user
 	set TMPDIR              = .
 	set MAIL		= /bin/mail
-	if        ( $NESTED == TRUE )                            then
-		set COMPOPTS	= ( 2 4 5 )
-	else if ( ( $NESTED != TRUE ) && ( $RSL_LITE == TRUE ) ) then
-		set COMPOPTS	= ( 1 3 6 )
-	else if ( ( $NESTED != TRUE ) && ( $RSL_LITE != TRUE ) ) then
-		set COMPOPTS	= ( 1 3 5 )
+	if      ( $LINUX_COMP == PGI ) then
+		if        ( $NESTED == TRUE )                            then
+			set COMPOPTS	= ( 2 4 5 )
+		else if ( ( $NESTED != TRUE ) && ( $RSL_LITE == TRUE ) ) then
+			set COMPOPTS	= ( 1 3 6 )
+		else if ( ( $NESTED != TRUE ) && ( $RSL_LITE != TRUE ) ) then
+			set COMPOPTS	= ( 1 3 5 )
+		endif
+	else if ( $LINUX_COMP == INTEL ) then
+		if        ( $NESTED == TRUE )                            then
+			set COMPOPTS	= ( 8 10 11 )
+		else if   ( $NESTED != TRUE )                            then
+			set COMPOPTS	= ( 7  9 11 )
+		endif
 	endif
 	set Num_Procs		= 2
 	set OPENMP		= $Num_Procs
@@ -1048,7 +1098,11 @@ EOF
 	endif
 	set MPIRUNCOMMAND       = ( mpirun -np $Num_Procs -machinefile $Mach )
 	echo "Compiler version info: " >! version_info
-	pgf90 -V >>&! version_info
+	if      ( $LINUX_COMP == PGI ) then
+		pgf90 -V >>&! version_info
+	else if ( $LINUX_COMP == INTEL ) then
+		ifort -v >>&! version_info
+	endif
 	echo " " >>! version_info
 	echo "OS version info: " >>! version_info
 	uname -a >>&! version_info

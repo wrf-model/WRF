@@ -1245,7 +1245,7 @@ cwrap_fmerge_( pd, nd, msize, mf, pf, upf )
 vbcopy_C(a,b,c)
   char *a, *b ; int c ;
 {
-#if ((defined(vpp) || defined(vpp2))&& !defined(sx))
+#if (( defined(vpp) || defined(vpp2) ) && ! defined(sx))
   int l, lb ;
   l = ((c)/sizeof(int)) ;
   lb = l*sizeof(int) ;

@@ -58,9 +58,8 @@ CONTAINS
       SUBROUTINE BMJDRV(DT,ITIMESTEP,STEPCU                             &
      &                 ,RTHCUTEN,RQVCUTEN                               &
      &                 ,RAINCV,CUTOP,CUBOT,KPBL                         &
-     &                 ,TH,T,                                           &
-     &                 QV,                                              &
-     &                 PINT,PMID,PI,RHO,DZ8W                            &
+     &                 ,TH,T,QV                                         &
+     &                 ,PINT,PMID,PI,RHO,DZ8W                           &
      &                 ,CP,R,ELWV,ELIV,G,TFRZ,D608                      &
      &                 ,CLDEFI,LOWLYR,XLAND,CU_ACT_FLAG                 &
      &                 ,IDS,IDE,JDS,JDE,KDS,KDE                         &
@@ -77,7 +76,7 @@ CONTAINS
 !
       INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: KPBL,LOWLYR
 !
-      REAL,INTENT(IN) :: CP,DT,ELWV,ELIV,G,R,TFRZ,D608
+      REAL,INTENT(IN) :: CP,DT,ELIV,ELWV,G,R,TFRZ,D608
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: XLAND
 !
@@ -122,6 +121,7 @@ CONTAINS
 !***  COMPUTE CONVECTION EVERY STEPCU*DT/60.0 MINUTES
 !                                                                     
       IF(ICLDCK.EQ.0.OR.ITIMESTEP.EQ.0)THEN
+!         write(0,*) 'in BMJDRV, FUP= ', FUP
 !
         DO J=JTS,JTE
         DO I=ITS,ITE
@@ -553,6 +553,12 @@ CONTAINS
         APEKL    =APE(L)
         APEK  (L)=APEKL
         THERK (L)=TREF(L)*APEKL
+!
+        IF(TKL.GE.TFRZ)THEN
+          EL(L)=ELWV
+        ELSE
+          EL(L)=ELIV
+        ENDIF
       ENDDO
 !------------DEEP CONVECTION REFERENCE TEMPERATURE PROFILE------------
       LTP1=LTOP+1
@@ -574,7 +580,6 @@ CONTAINS
         TREFKX=((THERKY-THERKX)*STABDL                                  &
      &          +TREFKX*APEKXX)/APEKXY
         TREFK(L)=TREFKX
-        EL(L)=ELWV
         APEKXX=APEKXY
         THERKX=THERKY
         APEKXY=APEK(L-1)

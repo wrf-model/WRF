@@ -109,6 +109,8 @@ CONTAINS
 
 !      INTEGER , PARAMETER :: nl_max = 1000
 !      REAL , DIMENSION(nl_max) :: dn
+
+
 integer::oops1,oops2
 
 #define COPY_IN
@@ -474,6 +476,32 @@ endif
       !  thicknesses.  These are all defined at half level locations, so one less level.
       !  We allow the vertical coordinate to *accidently* come in upside down.  We want
       !  the first full level to be the ground surface.
+
+
+	!Check whether ZNW (full level) data are truly full levels. If not, we need to adjust them
+	!to be full levels. 
+	!in this test, we check if znw(1) is neither 0 nor 1 (within a tolerance of 10**-5)
+	IF (((znw(1).LT.(1-10**-5)).OR.(znw(1).GT.(1+10**-5))).AND. &
+		((znw(1).LT.(0-10**-5)).OR.(znw(1).GT.(0+10**-5)))) THEN
+		print *,'Your ZNW input values are probably half-levels. WRF expects ZNW values to be full levels. Adjusting now to full levels...'
+	!We want to ignore the first value if it's negative
+		IF (znw(1).LT.0) THEN
+			znw(1)=0
+		ENDIF
+		DO k=2,kde
+			znw(k)=2*znw(k)-znw(k-1)
+		END DO
+	ENDIF
+
+	!let's check our changes
+	IF (((znw(1).LT.(1-10**-5)).OR.(znw(1).GT.(1+10**-5))).AND. &
+		((znw(1).LT.(0-10**-5)).OR.(znw(1).GT.(0+10**-5)))) THEN
+			print *,'The input ZNW height values were half-levels or erroneous. Attempts to treat the values as half-levels and change them to valid full levels failed.' 
+	CALL wrf_error_fatal("bad ZNW values from input files")
+	ELSE
+		print *,'...adjusted. ZNW array now contains full eta level values. '
+	ENDIF
+
 
       IF ( znw(1) .LT. znw(kde) ) THEN
          DO k=1, kde/2

@@ -42,6 +42,9 @@ SUBROUTINE wrf_ioinit( Status )
 #ifdef PHDF5
   CALL ext_phdf5_ioinit(SysDepInfo, Status )
 #endif
+#ifdef YYY
+  CALL ext_yyy_ioinit(SysDepInfo, Status )
+#endif
 END SUBROUTINE wrf_ioinit
 
 !--- ioexit
@@ -59,6 +62,9 @@ SUBROUTINE wrf_ioexit( Status )
 #endif
 #ifdef PHDF5
   CALL ext_phdf5_ioexit(Status)
+#endif
+#ifdef YYY
+  CALL ext_yyy_ioexit(Status)
 #endif
   IF ( use_output_servers() ) CALL ext_quilt_ioexit( Status )
 END SUBROUTINE wrf_ioexit
@@ -159,8 +165,20 @@ SUBROUTINE wrf_open_for_write_begin( FileName , Comm_compute, Comm_io, SysDepInf
 #endif
 #ifdef YYY
       CASE ( IO_YYY   )
-        CALL ext_yyy_open_for_write_begin ( FileName , Comm_compute, Comm_io, SysDepInfo, &
-                                            Hndl , Status )
+        IF ( multi_files(io_form) .OR. wrf_dm_on_monitor() ) THEN
+          IF ( multi_files(io_form) ) THEN
+            CALL wrf_get_myproc ( myproc )
+            CALL append_to_filename ( LocFilename , FileName , myproc, 4 )
+          ELSE
+            LocFilename = FileName
+          ENDIF
+          CALL ext_yyy_open_for_write_begin ( LocFileName , Comm_compute, Comm_io, SysDepInfo, &
+                                              Hndl , Status )
+        ENDIF
+        IF ( .NOT. multi_files(io_form) ) THEN
+          CALL wrf_dm_bcast_bytes( Hndl, IWORDSIZE )
+          CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
+        ENDIF
 #endif
 #ifdef ZZZ
       CASE ( IO_ZZZ   )
@@ -264,7 +282,10 @@ SUBROUTINE wrf_open_for_write_commit( DataHandle , Status )
 #endif
 #ifdef YYY
       CASE ( IO_YYY   )
-        CALL ext_yyy_open_for_write_commit ( Hndl , Status )
+         IF ( multi_files(io_form) .OR. wrf_dm_on_monitor() ) THEN
+            CALL ext_yyy_open_for_write_commit ( Hndl , Status )
+         ENDIF
+         IF ( .NOT. multi_files(io_form) ) CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
 #endif
 #ifdef ZZZ
       CASE ( IO_ZZZ   )
@@ -561,8 +582,21 @@ write(0,*)'back from ext_ncd_open_for_read '
 #endif
 #ifdef YYY
     CASE ( IO_YYY   )
-      CALL ext_yyy_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo, &
-                               Hndl , Status )
+      IF ( multi_files(io_form) .OR.  wrf_dm_on_monitor() ) THEN
+        IF ( multi_files(io_form) ) THEN
+            CALL wrf_get_myproc ( myproc )
+            CALL append_to_filename ( LocFilename , FileName , myproc, 4 )
+        ELSE
+            LocFilename = FileName
+        ENDIF
+
+        CALL ext_yyy_open_for_read ( LocFilename , Comm_compute, Comm_io, SysDepInfo, &
+                                     Hndl , Status )
+      ENDIF
+      IF ( .NOT. multi_files(io_form) ) THEN
+        CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
+        CALL wrf_dm_bcast_bytes( Hndl, IWORDSIZE )
+      ENDIF
 #endif
 #ifdef ZZZ
     CASE ( IO_ZZZ   )
@@ -674,7 +708,9 @@ SUBROUTINE wrf_inquire_opened ( DataHandle, FileName , FileStatus, Status )
 #endif
 #ifdef YYY
       CASE ( IO_YYY   )
-          CALL ext_yyy_inquire_opened ( Hndl, FileName , FileStatus, Status )
+          IF (wrf_dm_on_monitor()) CALL ext_yyy_inquire_opened ( Hndl, FileName , FileStatus, Status )
+          CALL wrf_dm_bcast_bytes( FileStatus, IWORDSIZE )
+          CALL wrf_dm_bcast_bytes( Status    , IWORDSIZE )
 #endif
 #ifdef ZZZ
       CASE ( IO_ZZZ   )
@@ -744,7 +780,9 @@ SUBROUTINE wrf_inquire_filename ( DataHandle, FileName , FileStatus, Status )
 #endif
 #ifdef YYY
         CASE ( IO_YYY   )
-          CALL ext_yyy_inquire_filename ( Hndl, FileName , FileStatus, Status )
+          IF (wrf_dm_on_monitor()) CALL ext_yyy_inquire_filename ( Hndl, FileName , FileStatus, Status )
+          CALL wrf_dm_bcast_bytes( FileStatus, IWORDSIZE )
+          CALL wrf_dm_bcast_bytes( Status    , IWORDSIZE )
 #endif
 #ifdef ZZZ
         CASE ( IO_ZZZ   )
@@ -805,7 +843,8 @@ SUBROUTINE wrf_iosync ( DataHandle, Status )
 #endif
 #ifdef YYY
         CASE ( IO_YYY   )
-          CALL ext_yyy_iosync( Hndl, Status )
+          IF ( multi_files(io_form) .OR. wrf_dm_on_monitor() ) CALL ext_yyy_iosync( Hndl, Status )
+          CALL wrf_dm_bcast_bytes( Status    , IWORDSIZE )
 #endif
 #ifdef ZZZ
         CASE ( IO_ZZZ   )
@@ -869,7 +908,8 @@ SUBROUTINE wrf_ioclose ( DataHandle, Status )
 #endif
 #ifdef YYY
         CASE ( IO_YYY   )
-          CALL ext_yyy_ioclose( Hndl, Status )
+          IF ( multi_files(io_form) .OR.  wrf_dm_on_monitor() ) CALL ext_yyy_ioclose( Hndl, Status )
+          CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
 #endif
 #ifdef ZZZ
         CASE ( IO_ZZZ   )
@@ -945,7 +985,13 @@ SUBROUTINE wrf_get_next_time ( DataHandle, DateStr, Status )
 #endif
 #ifdef YYY
         CASE ( IO_YYY   )
-          CALL ext_yyy_get_next_time( Hndl, DateStr, Status )
+          IF ( multi_files(io_form) .OR.  wrf_dm_on_monitor() ) CALL ext_yyy_get_next_time( Hndl, DateStr, Status )
+          IF ( .NOT. multi_files(io_form) ) THEN
+            CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
+            len_of_str = LEN(DateStr)
+            CALL wrf_dm_bcast_bytes( len_of_str, IWORDSIZE )
+            CALL wrf_dm_bcast_string ( DateStr , len_of_str )
+          ENDIF
 #endif
 #ifdef ZZZ
         CASE ( IO_ZZZ   )
@@ -1021,7 +1067,13 @@ SUBROUTINE wrf_get_previous_time ( DataHandle, DateStr, Status )
 #endif
 #ifdef YYY
         CASE ( IO_YYY   )
-          CALL ext_yyy_get_previous_time( Hndl, DateStr, Status )
+          IF ( multi_files(io_form) .OR.  wrf_dm_on_monitor() ) CALL ext_yyy_get_previous_time( Hndl, DateStr, Status )
+          IF ( .NOT. multi_files(io_form) ) THEN
+            CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
+            len_of_str = LEN(DateStr)
+            CALL wrf_dm_bcast_bytes( len_of_str, IWORDSIZE )
+            CALL wrf_dm_bcast_string ( DateStr , len_of_str )
+         ENDIF
 #endif
 #ifdef ZZZ
         CASE ( IO_ZZZ   )
@@ -1084,7 +1136,8 @@ SUBROUTINE wrf_set_time ( DataHandle, DateStr, Status )
 #endif
 #ifdef YYY
         CASE ( IO_YYY   )
-          CALL ext_yyy_set_time( Hndl, DateStr, Status )
+          IF ( multi_files(io_form) .OR.  wrf_dm_on_monitor() ) CALL ext_yyy_set_time( Hndl, DateStr, Status )
+          CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
 #endif
 #ifdef ZZZ
         CASE ( IO_ZZZ   )
@@ -1146,7 +1199,8 @@ SUBROUTINE wrf_get_next_var ( DataHandle, VarName, Status )
 #endif
 #ifdef YYY
         CASE ( IO_YYY   )
-          CALL ext_yyy_get_next_var( Hndl, VarName, Status )
+          IF ( multi_files(io_form) .OR.  wrf_dm_on_monitor() ) CALL ext_yyy_get_next_var( Hndl, VarName, Status )
+          CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
 #endif
 #ifdef ZZZ
         CASE ( IO_ZZZ   )
@@ -1515,6 +1569,13 @@ SUBROUTINE wrf_get_var_info ( DataHandle , VarName , NDim , MemoryOrder , Stagge
 #ifdef XXX
         CASE ( IO_XXX )
           CALL ext_xxx_get_var_info ( Hndl , VarName , NDim ,            &
+                                      MemoryOrder , Stagger ,                  &
+                                      DomainStart , DomainEnd ,                &
+                                      Status )
+#endif
+#ifdef YYY
+        CASE ( IO_YYY )
+          CALL ext_yyy_get_var_info ( Hndl , VarName , NDim ,            &
                                       MemoryOrder , Stagger ,                  &
                                       DomainStart , DomainEnd ,                &
                                       Status )

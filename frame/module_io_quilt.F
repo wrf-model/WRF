@@ -192,6 +192,10 @@ MODULE module_ext_quilt
       CALL ext_ncd_ioinit( SysDepInfo, ierr)
 #endif
 
+#ifdef YYY
+      CALL ext_yyy_ioinit(ierr)
+#endif
+
 #ifndef STUBMPI
 
       okay_to_commit = .false.
@@ -219,6 +223,9 @@ MODULE module_ext_quilt
         IF ( obufsize .LT. 0 ) THEN
 #ifdef NETCDF
           CALL ext_ncd_ioexit( Status )
+#endif
+#ifdef YYY
+          CALL ext_yyy_ioinit(ierr)
 #endif
           CALL mpi_finalize(ierr)
           CALL wrf_error_fatal ( 'obufsize .LT. 0' )
@@ -344,6 +351,10 @@ MODULE module_ext_quilt
                     CASE ( IO_INTIO   )
                       CALL ext_int_put_dom_td_real( handle(DataHandle),TRIM(Element),TRIM(DateStr),RData, Count, Status )
 #endif
+#ifdef YYY
+                 CASE ( IO_YYY )
+                    CALL ext_yyy_put_dom_td_real( handle(DataHandle),TRIM(Element),TRIM(DateStr),RData, Count, Status )
+#endif
                     CASE DEFAULT
                       Status = 0
                   END SELECT
@@ -364,6 +375,10 @@ MODULE module_ext_quilt
 #ifdef INTIO
                     CASE ( IO_INTIO   )
                       CALL ext_int_put_dom_ti_real( handle(DataHandle),TRIM(Element), RData, Count, Status )
+#endif
+#ifdef YYY
+                 CASE ( IO_YYY )
+                    CALL ext_yyy_put_dom_ti_real( handle(DataHandle),TRIM(Element), RData, Count, Status )
 #endif
                     CASE DEFAULT
                       Status = 0
@@ -387,6 +402,10 @@ MODULE module_ext_quilt
                     CASE ( IO_INTIO   )
                       CALL ext_int_put_dom_td_integer( handle(DataHandle),TRIM(Element), Trim(DateStr), IData, Count, Status )
 #endif
+#ifdef YYY
+                 CASE ( IO_YYY )
+                    CALL ext_yyy_put_dom_td_integer( handle(DataHandle),TRIM(Element), Trim(DateStr), IData, Count, Status )
+#endif
                     CASE DEFAULT
                       Status = 0
                   END SELECT
@@ -409,6 +428,11 @@ MODULE module_ext_quilt
                     CASE ( IO_INTIO   )
                       CALL ext_int_put_dom_ti_integer( handle(DataHandle),TRIM(Element), IData, Count, Status )
 #endif
+#ifdef YYY
+                 CASE ( IO_YYY )
+                    CALL ext_yyy_put_dom_ti_integer( handle(DataHandle),TRIM(Element), IData, Count, Status )
+#endif
+
                     CASE DEFAULT
                       Status = 0
                   END SELECT
@@ -442,6 +466,10 @@ MODULE module_ext_quilt
                     CASE ( IO_INTIO   )
                       CALL ext_int_put_dom_ti_char ( handle(DataHandle), TRIM(Element), TRIM(CData), Status)
 #endif
+#ifdef YYY
+                 CASE ( IO_YYY )
+		    CALL ext_yyy_put_dom_ti_char ( handle(DataHandle), TRIM(Element), TRIM(CData), Status)
+#endif
                     CASE DEFAULT
                       Status = 0
                   END SELECT
@@ -461,6 +489,10 @@ MODULE module_ext_quilt
                     CASE ( IO_INTIO   )
                       CALL ext_int_put_var_ti_char ( handle(DataHandle), TRIM(Element), TRIM(VarName), TRIM(CData), Status)
 #endif
+#ifdef YYY
+                 CASE ( IO_YYY )
+   		    CALL ext_yyy_put_var_ti_char ( handle(DataHandle), TRIM(Element), TRIM(VarName), TRIM(CData), Status)
+#endif
                     CASE DEFAULT
                       Status = 0
                   END SELECT
@@ -473,6 +505,10 @@ MODULE module_ext_quilt
 #ifdef NETCDF
                     CASE ( IO_NETCDF   )
                       CALL ext_ncd_ioexit( Status )
+#endif
+#ifdef YYY
+                 CASE ( IO_YYY )
+                    CALL ext_yyy_ioexit( Status )
 #endif
                     CASE DEFAULT
                       Status = 0
@@ -501,6 +537,13 @@ MODULE module_ext_quilt
                         CALL ext_int_ioclose(handle(DataHandle),Status)
                       ENDIF
 #endif
+#ifdef YYY
+                 CASE ( IO_YYY )
+                    CALL ext_yyy_inquire_filename( handle(DataHandle), fname, fstat, Status )
+                    IF ( fstat .EQ. WRF_FILE_OPENED_FOR_WRITE .OR. fstat .EQ. WRF_FILE_OPENED_NOT_COMMITTED ) THEN
+                      CALL ext_yyy_ioclose(handle(DataHandle),Status)
+                    ENDIF
+#endif
                     CASE DEFAULT
                       Status = 0
                   END SELECT
@@ -521,6 +564,10 @@ MODULE module_ext_quilt
 #ifdef INTIO
                     CASE ( IO_INTIO   )
                       CALL ext_int_open_for_write_begin(FileName,Comm,IOComm,SysDepInfo,handle(DataHandle),Status)
+#endif
+#ifdef YYY
+                 CASE ( IO_YYY )
+                    CALL ext_yyy_open_for_write_begin(FileName,Comm,IOComm,SysDepInfo,handle(DataHandle),Status)
 #endif
                     CASE DEFAULT
                       Status = 0
@@ -584,6 +631,16 @@ MODULE module_ext_quilt
                                    DomainStart , DomainEnd ,                                    &
                                    Status )
 #endif
+#ifdef YYY
+                 CASE ( IO_YYY )
+                      CALL ext_YYY_write_field ( handle(DataHandle) , TRIM(DateStr) ,         &
+                                 TRIM(VarName) , dummy , FieldType , Comm , IOComm,           &
+                                 DomainDesc , TRIM(MemoryOrder) , TRIM(Stagger) , DimNames ,  &
+                                 DomainStart , DomainEnd ,                                    &
+                                 DomainStart , DomainEnd ,                                    &
+                                 DomainStart , DomainEnd ,                                    &
+                                 Status )
+#endif
                       CASE DEFAULT
                         Status = 0
                     END SELECT
@@ -621,6 +678,15 @@ MODULE module_ext_quilt
                     okay_to_write(DataHandle) = .true.
                   ENDIF
 #endif
+#ifdef YYY
+                 CASE ( IO_YYY )
+                    CALL ext_yyy_inquire_filename( handle(DataHandle), fname, fstat, Status )
+                    IF ( fstat .EQ. WRF_FILE_OPENED_NOT_COMMITTED ) THEN
+                       CALL ext_yyy_open_for_write_commit(handle(DataHandle),Status)
+                       okay_to_write(DataHandle) = .true.
+                    ENDIF
+#endif
+
                 CASE DEFAULT
                   Status = 0
               END SELECT

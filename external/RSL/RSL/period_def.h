@@ -65,8 +65,8 @@ typedef struct period_desc {
   int has_f90_fields ;
   rsl_tag_t compiled[RSL_MAXDOMAINS];
   rsl_tag_t bdyw[RSL_MAXDOMAINS] ;
-  message_desc_t *msgs[RSL_MAXDOMAINS] ;
-  rsl_procrec_t *procs[RSL_MAXDOMAINS] ;
+  message_desc_t *msgs[RSL_MAXDOMAINS] ; 
+  rsl_procrec_t *procs[2][RSL_MAXDOMAINS] ; /* 2 is dir, RSL_M or RSL_N */
 } period_desc_t ;
 
 #endif  /* nothing after this line */

@@ -337,37 +337,41 @@ RSL_BUILD_MESSAGE ( mh_p, t_p, base, ndim_p, decomp, glen, llen )
     }
     fld->glen[dim] = glen[dim] ;
     fld->llen[dim] = llen[dim] ;
+    if ( decomp[dim] > 10 )
+      fld->stag[dim] = 1 ;
+    else 
+      fld->stag[dim] = 0 ;
   }
 
   /* work out pack/unpack strategy for this field */
   switch ( ndim )
   {
   case 2 :
-    if      ( decomp[0] == RSL_NORTHSOUTH && 
-	      decomp[1] == RSL_EASTWEST )
+    if      ( decomp[0]%10 == RSL_M && 
+	      decomp[1]%10 == RSL_N )
       fld->strategy = MINNS_MAJEW_2D ;
-    else if ( decomp[1] == RSL_NORTHSOUTH &&
-	      decomp[0] == RSL_EASTWEST )
+    else if ( decomp[1]%10 == RSL_M &&
+	      decomp[0]%10 == RSL_N )
       fld->strategy = MINEW_MAJNS_2D ;
     else
       RSL_TEST_ERR(1,"rsl_build_message: unsupported decomposition strategy for 2d message") ;
     break ;
   case 3 :
-    if      ( decomp[0] == RSL_NORTHSOUTH &&
-	      decomp[1] == RSL_EASTWEST &&
-	      decomp[2] == RSL_NOTDECOMPOSED)
+    if      ( decomp[0]%10 == RSL_M &&
+	      decomp[1]%10 == RSL_N &&
+	      decomp[2]%10 == RSL_NOTDECOMPOSED)
       fld->strategy = MINNS_MAJEW_K_3D ;
-    else if ( decomp[0] == RSL_EASTWEST &&
-	      decomp[1] == RSL_NORTHSOUTH &&
-	      decomp[2] == RSL_NOTDECOMPOSED)
+    else if ( decomp[0]%10 == RSL_N &&
+	      decomp[1]%10 == RSL_M &&
+	      decomp[2]%10 == RSL_NOTDECOMPOSED)
       fld->strategy = MINEW_MAJNS_K_3D ;
-    else if ( decomp[0] == RSL_NOTDECOMPOSED &&
-	      decomp[1] == RSL_NORTHSOUTH &&
-	      decomp[2] == RSL_EASTWEST )
+    else if ( decomp[0]%10 == RSL_NOTDECOMPOSED &&
+	      decomp[1]%10 == RSL_M &&
+	      decomp[2]%10 == RSL_N )
       fld->strategy = K_MIDNS_MAJEW_3D ;
-    else if ( decomp[0] == RSL_NORTHSOUTH &&
-	      decomp[1] == RSL_NOTDECOMPOSED &&
-	      decomp[2] == RSL_EASTWEST )
+    else if ( decomp[0]%10 == RSL_M &&
+	      decomp[1]%10 == RSL_NOTDECOMPOSED &&
+	      decomp[2]%10 == RSL_N )
       fld->strategy = MINNS_K_MAJEW_3D ;
     else
       RSL_TEST_ERR(1,"rsl_build_message: unsupported decomposition strategy for 3d message") ;

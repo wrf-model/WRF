@@ -276,6 +276,7 @@ typedef struct rsl_fldspec {
   rsl_index_t           gdex[ RSL_MAXDIM ] ;
   rsl_dimlen_t          glen[ RSL_MAXDIM ] ;
   rsl_dimlen_t          llen[ RSL_MAXDIM ] ;
+  rsl_dimlen_t          stag[ RSL_MAXDIM ] ;  /* 0 = not staggered; 1 = staggered */
 } rsl_fldspec_t ;
 
 typedef struct message_desc {
@@ -660,10 +661,14 @@ rsl_index_t id_domain(), id_jdex(), id_idex() ;
 
 #define RSL_NORTHSOUTH       1	/* FORTRAN */
 #define RSL_EASTWEST         2	/* FORTRAN */
+#define RSL_NORTHSOUTH_STAG  11	/* FORTRAN */
+#define RSL_EASTWEST_STAG    12	/* FORTRAN */
 #define RSL_NOTDECOMPOSED    3	/* FORTRAN */
 
 #define RSL_M                1	/* FORTRAN */
 #define RSL_N                2	/* FORTRAN */
+#define RSL_M_STAG          11	/* FORTRAN */
+#define RSL_N_STAG          12	/* FORTRAN */
 
 /* message tags */
 

@@ -202,7 +202,9 @@ uncompile_period_on_domain( d, per )
   RSL_TEST_ERR( d < 0 || d >= RSL_MAXDOMAINS,
      "uncompile_period_on_domain: bad domain descriptor") ;
   per->compiled[d] = 0 ;
-  destroy_procrec_list( per->procs[d] ) ;
-  per->procs[d] = NULL ; /* 970317 */
+  destroy_procrec_list( per->procs[0][d] ) ;
+  destroy_procrec_list( per->procs[1][d] ) ;
+  per->procs[0][d] = NULL ; /* 970317 */
+  per->procs[1][d] = NULL ; /* 970317 */
 }
 

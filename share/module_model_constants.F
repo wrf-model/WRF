@@ -78,7 +78,7 @@
 
                                       ! proportionality constants for eddy viscosity coefficient calc
    REAL    , PARAMETER ::  c_s = .25  ! turbulence parameterization constant, for smagorinsky
-   REAL    , PARAMETER ::  c_k = .25  ! turbulence parameterization constant, for TKE
+   REAL    , PARAMETER ::  c_k = .15  ! turbulence parameterization constant, for TKE
    REAL    , PARAMETER ::  prandtl = 1./3.0
                                          ! constants for w-damping option
    REAL    , PARAMETER ::  w_alpha = 0.3 ! strength m/s/s

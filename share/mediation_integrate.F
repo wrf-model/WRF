@@ -459,7 +459,7 @@ SUBROUTINE med_nest_move ( parent, nest )
    END INTERFACE
 
 #ifdef DEREF_KLUDGE
-   ! see <a href="www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm">here</a>
+! see <a href="www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm">here</a>
    INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
    INTEGER     :: sm31x, em31x, sm32x, em32x, sm33x, em33x
    INTEGER     :: sm31y, em31y, sm32y, em32y, sm33y, em33y
@@ -616,7 +616,10 @@ SUBROUTINE shift_domain_em ( grid , disp_x, disp_y, &
                                       ips , ipe , jps , jpe , kps , kpe
    TYPE (grid_config_rec_type)  :: config_flags
 #ifdef DEREF_KLUDGE
+! see <a href="www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm">here</a>
    INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
+   INTEGER     :: sm31x, em31x, sm32x, em32x, sm33x, em33x
+   INTEGER     :: sm31y, em31y, sm32y, em32y, sm33y, em33y
 #endif
 
    !  Definitions of dummy arguments to solve

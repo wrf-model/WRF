@@ -49,6 +49,7 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple, &
    REAL, DIMENSION(grid%sm31:grid%em31,grid%sm33:grid%em33) :: mut_2, muut_2, muvt_2, muwt_2
 
 #ifdef DEREF_KLUDGE
+!  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
    INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
    INTEGER     :: sm31x, em31x, sm32x, em32x, sm33x, em33x
    INTEGER     :: sm31y, em31y, sm32y, em32y, sm33y, em33y

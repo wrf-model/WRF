@@ -9641,15 +9641,15 @@ CONTAINS
 
       RETURN
 9061 CONTINUE
-     WRITE( errmess , '(A38,I4)' ) 'module_ra_gfdleta: error reading unit ',etarad_unit61
+     WRITE( errmess , '(A38,I4)' ) 'module_ra_gfdleta: error reading tr49t85 on unit ',etarad_unit61
      write(0,*)' IERROR=',IERROR
      CALL wrf_error_fatal(errmess)
 9062 CONTINUE
-     WRITE( errmess , '(A38,I4)' ) 'module_ra_gfdleta: error reading unit ',etarad_unit62
+     WRITE( errmess , '(A38,I4)' ) 'module_ra_gfdleta: error reading tr49t67 on unit ',etarad_unit62
      write(0,*)' IERROR=',IERROR
      CALL wrf_error_fatal(errmess)
 9063 CONTINUE
-     WRITE( errmess , '(A38,I4)' ) 'module_ra_gfdleta: error reading unit ',etarad_unit63
+     WRITE( errmess , '(A38,I4)' ) 'module_ra_gfdleta: error reading tr67t85 on unit ',etarad_unit63
      write(0,*)' IERROR=',IERROR
      CALL wrf_error_fatal(errmess)
       END SUBROUTINE CO2O3

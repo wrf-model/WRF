@@ -361,10 +361,13 @@ integer myproc
 !---------------------------------------------------------------------
 ! Local
    CHARACTER*4 LUTYPE
+   CHARACTER*80 :: message
    INTEGER  :: ISICE, LUCATS, LUSEAS
    INTEGER  :: landuse_unit, LS, LC, LI, LUN, NSN
    INTEGER  :: i, j, itf, jtf, is, isn
    INTEGER , PARAMETER :: max_cats = 100 , max_seas = 12 
+   INTEGER , PARAMETER :: OPEN_OK = 0
+   INTEGER :: ierr
    REAL, DIMENSION( max_cats, max_seas ) :: ALBD, SLMO, SFEM, SFZ0, THERIN, SFHC
    REAL, DIMENSION( max_cats )     :: SCFX
    LOGICAL :: FOUND_LU
@@ -375,7 +378,12 @@ integer myproc
    IF ( allowed_to_read ) THEN
       landuse_unit = 29
       IF ( wrf_dm_on_monitor() ) THEN
-        OPEN(landuse_unit, FILE='LANDUSE.TBL',FORM='FORMATTED',STATUS='OLD')
+        OPEN(landuse_unit, FILE='LANDUSE.TBL',FORM='FORMATTED',STATUS='OLD',IOSTAT=ierr)
+        IF ( ierr .NE. OPEN_OK ) THEN
+          WRITE(message,FMT='(A)') &
+          'module_physics_init.F: LANDUSE_INIT: open failure for LANDUSE.TBL'
+          CALL wrf_error_fatal ( message ) 
+        END IF
       ENDIF
 ! Determine season (summer=1, winter=2)
       ISN=1                                                            

@@ -720,9 +720,11 @@ CONTAINS
         IMPLICIT NONE                                                        
 
         integer :: LUMATCH, IINDEX, LC, NUM_SLOPE 
+        integer :: ierr
+        INTEGER , PARAMETER :: OPEN_OK = 0
 
         character*4 :: MMINLU, MMINSL
-        character*128 :: mess
+        character*128 :: mess , message
         logical, external :: wrf_dm_on_monitor
  
 
@@ -752,7 +754,12 @@ CONTAINS
 
        IF ( wrf_dm_on_monitor() ) THEN
 
-        OPEN(19, FILE='VEGPARM.TBL',FORM='FORMATTED',STATUS='OLD')  
+        OPEN(19, FILE='VEGPARM.TBL',FORM='FORMATTED',STATUS='OLD',IOSTAT=ierr)  
+        IF(ierr .NE. OPEN_OK ) THEN
+          WRITE(message,FMT='(A)') &
+          'module_sf_noahlsm.F: soil_veg_gen_parm: failure opening VEGPARM.TBL'
+          CALL wrf_error_fatal ( message ) 
+        END IF
 
         WRITE ( mess, * ) 'INPUT LANDUSE = ',MMINLU                                 
         CALL wrf_message( mess )
@@ -819,7 +826,12 @@ CONTAINS
 !-----READ IN SOIL PROPERTIES FROM SOILPARM.TBL
 !                                                                       
       IF ( wrf_dm_on_monitor() ) THEN
-        OPEN(19, FILE='SOILPARM.TBL',FORM='FORMATTED',STATUS='OLD') 
+        OPEN(19, FILE='SOILPARM.TBL',FORM='FORMATTED',STATUS='OLD',IOSTAT=ierr) 
+        IF(ierr .NE. OPEN_OK ) THEN
+          WRITE(message,FMT='(A)') &
+          'module_sf_noahlsm.F: soil_veg_gen_parm: failure opening SOILPARM.TBL'
+          CALL wrf_error_fatal ( message ) 
+        END IF
 
         MMINSL='STAS'                       !oct2
         WRITE(mess,*) 'INPUT SOIL TEXTURE CLASSIFICAION = ',MMINSL
@@ -875,7 +887,12 @@ CONTAINS
 !-----READ IN GENERAL PARAMETERS FROM GENPARM.TBL 
 !                                                                       
       IF ( wrf_dm_on_monitor() ) THEN
-        OPEN(19, FILE='GENPARM.TBL',FORM='FORMATTED',STATUS='OLD') 
+        OPEN(19, FILE='GENPARM.TBL',FORM='FORMATTED',STATUS='OLD',IOSTAT=ierr) 
+        IF(ierr .NE. OPEN_OK ) THEN
+          WRITE(message,FMT='(A)') &
+          'module_sf_noahlsm.F: soil_veg_gen_parm: failure opening GENPARM.TBL'
+          CALL wrf_error_fatal ( message ) 
+        END IF
 
         READ (19,*)
         READ (19,*)

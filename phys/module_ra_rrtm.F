@@ -6569,7 +6569,7 @@ USE module_dm
 ! **************************************************************************     
         IF ( wrf_dm_on_monitor() ) THEN
           OPEN(rrtm_unit,FILE='RRTM_DATA',                  &
-               FORM='UNFORMATTED',STATUS='OLD',ERR=9010)
+               FORM='UNFORMATTED',STATUS='OLD',ERR=9009)
         ENDIF
                                                                                  
 !     The array abscoefL1 contains absorption coefs at the 16 chosen g-values   
@@ -7337,8 +7337,12 @@ USE module_dm
                    SELFREFC16, FRACREFAC16                              &
                   )
       RETURN
+9009 CONTINUE
+     WRITE( errmess , '(A,I4)' ) 'module_ra_rrtm: error opening RRTM_DATA on unit ',rrtm_unit
+     CALL wrf_error_fatal(errmess)
+     RETURN
 9010 CONTINUE
-     WRITE( errmess , '(A35,I4)' ) 'module_ra_rrtm: error reading unit ',rrtm_unit
+     WRITE( errmess , '(A,I4)' ) 'module_ra_rrtm: error reading RRTM_DATA on unit ',rrtm_unit
      CALL wrf_error_fatal(errmess)
       END SUBROUTINE rrtm_lookuptable
 

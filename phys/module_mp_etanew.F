@@ -2290,7 +2290,8 @@ nsteps = 0
 !-----------------------------------------------------------------------
 !
 9061 CONTINUE
-     WRITE( errmess , '(A37,I4)' ) 'module_mp_etanew: error reading unit ',etampnew_unit1
+     WRITE( errmess , '(A,I4)' ) &
+     'module_mp_etanew: error opening ETAMPNEW_DATA on unit ',etampnew_unit1
      CALL wrf_error_fatal(errmess)
 !
 !-----------------------------------------------------------------------

@@ -80,6 +80,9 @@
        itimestep=0
    ENDIF
 
+   IF ( restart ) THEN 
+       first_trip_for_this_domain = .TRUE.
+   ENDIF
    
    IF (config_flags%specified) THEN
 !

@@ -10,8 +10,8 @@ CONTAINS
 
 !------------------------------------------------------------------------
 
-   SUBROUTINE spec_bdyupdate_ph(  field,      &
-                               field_tend, mut, dt,            &
+   SUBROUTINE spec_bdyupdate_ph( ph_save, field,      &
+                               field_tend, mu_tend, muts, dt,     &
                                variable_in, config_flags, & 
                                spec_zone,                  &
                                ids,ide, jds,jde, kds,kde,  & ! domain dims
@@ -35,13 +35,17 @@ CONTAINS
 
 
       REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(INOUT) :: field
-      REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(IN   ) :: field_tend
-      REAL,  DIMENSION( ims:ime , jms:jme ), INTENT(IN   ) :: mut
+      REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(IN   ) :: field_tend, ph_save
+      REAL,  DIMENSION( ims:ime , jms:jme ), INTENT(IN   ) :: mu_tend, muts
       TYPE( grid_config_rec_type ) config_flags
 
       CHARACTER  :: variable
       INTEGER    :: i, j, k, ibs, ibe, jbs, jbe, itf, jtf, ktf
       INTEGER    :: b_dist
+
+!     Local array
+
+      REAL,  DIMENSION( its:ite , jts:jte ) :: mu_old
 
       variable = variable_in
 
@@ -70,7 +74,13 @@ CONTAINS
           b_dist = j - jbs
           DO k = kts, ktf
             DO i = max(its,b_dist+ibs), min(itf,ibe-b_dist)
-              field(i,k,j) = field(i,k,j) + dt*field_tend(i,k,j)/mut(i,j)
+
+              mu_old(i,j) = muts(i,j) - dt*mu_tend(i,j)
+
+              field(i,k,j) = field(i,k,j)*mu_old(i,j)/muts(i,j) + &
+                   dt*field_tend(i,k,j)/muts(i,j) +               &
+                   ph_save(i,k,j)*(mu_old(i,j)/muts(i,j) - 1.)
+
             ENDDO
           ENDDO
         ENDDO
@@ -81,7 +91,13 @@ CONTAINS
           b_dist = jbe - j 
           DO k = kts, ktf 
             DO i = max(its,b_dist+ibs), min(itf,ibe-b_dist)
-              field(i,k,j) = field(i,k,j) + dt*field_tend(i,k,j)/mut(i,j)
+
+              mu_old(i,j) = muts(i,j) - dt*mu_tend(i,j)
+
+              field(i,k,j) = field(i,k,j)*mu_old(i,j)/muts(i,j) + &
+                   dt*field_tend(i,k,j)/muts(i,j) +               &
+                   ph_save(i,k,j)*(mu_old(i,j)/muts(i,j) - 1.)
+
             ENDDO
           ENDDO
         ENDDO
@@ -93,7 +109,13 @@ CONTAINS
           b_dist = i - ibs
           DO k = kts, ktf
             DO j = max(jts,b_dist+jbs+1), min(jtf,jbe-b_dist-1)
-              field(i,k,j) = field(i,k,j) + dt*field_tend(i,k,j)/mut(i,j)
+
+              mu_old(i,j) = muts(i,j) - dt*mu_tend(i,j)
+
+              field(i,k,j) = field(i,k,j)*mu_old(i,j)/muts(i,j) + &
+                   dt*field_tend(i,k,j)/muts(i,j) +               &
+                   ph_save(i,k,j)*(mu_old(i,j)/muts(i,j) - 1.)
+
             ENDDO
           ENDDO
         ENDDO
@@ -105,7 +127,13 @@ CONTAINS
           b_dist = ibe - i
           DO k = kts, ktf
             DO j = max(jts,b_dist+jbs+1), min(jtf,jbe-b_dist-1)
-              field(i,k,j) = field(i,k,j) + dt*field_tend(i,k,j)/mut(i,j)
+
+              mu_old(i,j) = muts(i,j) - dt*mu_tend(i,j)
+
+              field(i,k,j) = field(i,k,j)*mu_old(i,j)/muts(i,j) + &
+                   dt*field_tend(i,k,j)/muts(i,j) +               &
+                   ph_save(i,k,j)*(mu_old(i,j)/muts(i,j) - 1.)
+
             ENDDO
           ENDDO
         ENDDO

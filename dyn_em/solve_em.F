@@ -1273,7 +1273,7 @@ integer , dimension(grid%sm31:grid%em31,grid%sm33:grid%em31) :: xxxxx , yyyyy , 
         IF( config_flags%specified .or. config_flags%nested ) THEN
 
            IF (non_hydrostatic)  THEN
-             CALL spec_bdyupdate_ph( ph_2, ph_tend, mut, dts_rk, &
+             CALL spec_bdyupdate_ph( ph_save, ph_2, ph_tend, mu_tend, muts, dts_rk, &
                                      'h'         , config_flags, &
                                      spec_zone,                  &
                                      ids,ide, jds,jde, kds,kde,  & ! domain dims

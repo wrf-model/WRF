@@ -119,6 +119,7 @@ gen_nest_interp1 ( FILE * fp , node_t * node, char * corename , int down_path , 
   char xstag[NAMELEN], ystag[NAMELEN] ;
   char dexes[NAMELEN] ;
   char ndexes[NAMELEN] ;
+  char *maskstr ;
 
 
   for ( p1 = node ;  p1 != NULL ; p1 = p1->next )
@@ -197,6 +198,16 @@ if ( ! contains_tok ( halo_define , vname  , ":," ) ) {
 fprintf(fp,"IF ( P_%s .GE. PARAM_FIRST_SCALAR ) THEN\n",p->name) ;
 	}
 
+        if        ( p->stag_x && p->stag_y ) {
+	  maskstr = "_xystag" ;
+	} else if ( p->stag_x ) {
+	  maskstr = "_xstag" ;
+	} else if ( p->stag_y ) {
+	  maskstr = "_ystag" ;
+	} else {
+	  maskstr = "_nostag" ;
+	}
+
 
 fprintf(fp,"CALL %s (                                                               &         \n", fcn_name ) ;
 
@@ -244,9 +255,9 @@ fprintf(fp,"                 %s, %s, %s, %s, %s, %s,   &         ! ND dims\n",
 
 if ( ! (down_path  & SMOOTH_UP)  ) {
   if ( sw_deref_kludge == 1 ) {
-fprintf(fp,"                  shw, ngrid%%imask(nims,njms),         &         ! stencil half width\n") ;
+fprintf(fp,"                  shw, ngrid%%imask%s(nims,njms),         &         ! stencil half width\n",maskstr) ;
   } else {
-fprintf(fp,"                  shw, ngrid%%imask,         &         ! stencil half width\n") ;
+fprintf(fp,"                  shw, ngrid%%imask%s,         &         ! stencil half width\n",maskstr) ;
   }
 }
 fprintf(fp,"                  %s, %s,                                                &         ! xstag, ystag\n", xstag, ystag ) ;

@@ -33,6 +33,7 @@ SUBROUTINE solve_em ( grid , config_flags , &
    USE module_pbl_driver
 #ifdef WRF_CHEM
    USE module_input_chem_data
+   USE module_chem_utilities
 #endif
 
    IMPLICIT NONE
@@ -203,13 +204,16 @@ SUBROUTINE solve_em ( grid , config_flags , &
 !    so far only for RADM2/SORGAM choice
 !
 
-      if(itimestep.le.2.or.mod(itimestep+1,stepchem).eq.0)then
-
    kte=min(k_end,kde-1)
+!
+! change units for advection to mixing ratio
+!
+      if(imicrogram == 1)then
+
    if ( p_so4aj >= PARAM_FIRST_SCALAR ) then
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij ,its,ite,jts,jte,kte)
-   DO ij = 1 , grid%num_tiles
+   aerosol_decouple_loop : DO ij = 1 , grid%num_tiles
        its = max(grid%i_start(ij),ids)
        ite = min(grid%i_end(ij),ide-1)
        jts = max(grid%j_start(ij),jds)
@@ -225,8 +229,9 @@ SUBROUTINE solve_em ( grid , config_flags , &
       enddo
       enddo
       enddo
-    enddo
+    enddo aerosol_decouple_loop
     endif
+    imicrogram=0
     endif
 # ifdef DM_PARALLEL
    if ( num_chem >= PARAM_FIRST_SCALAR ) then

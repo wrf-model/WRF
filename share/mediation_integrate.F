@@ -151,6 +151,15 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
                                             ! involve integrating the time-step
                                             ! counting into the ESMF time manager.
                                             ! JM 20040604
+   REAL, ALLOCATABLE, DIMENSION(:,:) ::   save_acsnow             &
+                                         ,save_acsnom             &
+                                         ,save_cuppt              &
+                                         ,save_rainc              &
+                                         ,save_rainnc             &
+                                         ,save_sfcevp             &
+                                         ,save_sfcrunoff          &
+                                         ,save_udrunoff
+
 integer myproc
 
    INTERFACE
@@ -270,9 +279,41 @@ integer myproc
 ! to new terrain elevation from feedback
     CALL start_domain ( nest )
 ! kludge: 20040604
-    save_itimestep = parent%itimestep
+    ALLOCATE( save_acsnow(ims:ime,jms:jme) )
+    ALLOCATE( save_acsnom(ims:ime,jms:jme) )
+    ALLOCATE( save_cuppt(ims:ime,jms:jme) )
+    ALLOCATE( save_rainc(ims:ime,jms:jme) )
+    ALLOCATE( save_rainnc(ims:ime,jms:jme) )
+    ALLOCATE( save_sfcevp(ims:ime,jms:jme) )
+    ALLOCATE( save_sfcrunoff(ims:ime,jms:jme) )
+    ALLOCATE( save_udrunoff(ims:ime,jms:jme) )
+    save_acsnow       = parent%acsnow
+    save_acsnom       = parent%acsnom
+    save_cuppt        = parent%cuppt
+    save_rainc        = parent%rainc
+    save_rainnc       = parent%rainnc
+    save_sfcevp       = parent%sfcevp
+    save_sfcrunoff    = parent%sfcrunoff
+    save_udrunoff     = parent%udrunoff
+    save_itimestep    = parent%itimestep
     CALL start_domain ( parent )
-    parent%itimestep = save_itimestep
+    parent%acsnow     = save_acsnow
+    parent%acsnom     = save_acsnom
+    parent%cuppt      = save_cuppt
+    parent%rainc      = save_rainc
+    parent%rainnc     = save_rainnc
+    parent%sfcevp     = save_sfcevp
+    parent%sfcrunoff  = save_sfcrunoff
+    parent%udrunoff   = save_udrunoff
+    parent%itimestep  = save_itimestep
+    DEALLOCATE( save_acsnow )
+    DEALLOCATE( save_acsnom )
+    DEALLOCATE( save_cuppt )
+    DEALLOCATE( save_rainc )
+    DEALLOCATE( save_rainnc )
+    DEALLOCATE( save_sfcevp )
+    DEALLOCATE( save_sfcrunoff )
+    DEALLOCATE( save_udrunoff )
 ! end of kludge: 20040604
 
   ELSE

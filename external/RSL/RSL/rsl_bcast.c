@@ -858,7 +858,7 @@ post_receives_from_parent()
   }
 }
 
-rsl_move_nest_( d_p, n_p,  mdisp_p, ndisp_p )
+RSL_MOVE_NEST ( d_p, n_p,  mdisp_p, ndisp_p )
   int_p d_p, n_p, mdisp_p, ndisp_p ;
 {
   int parent, intermed, nest, mdisp, ndisp ;
@@ -902,10 +902,6 @@ rsl_move_nest_( d_p, n_p,  mdisp_p, ndisp_p )
       ninfo->domain[ INDEX_2( j, i, ninfo->len_m ) ].mother_id = mother_id ;
       cm = ninfo->domain[ INDEX_2( j, i, ninfo->len_m ) ].which_kid_am_i_m ;
       cn = ninfo->domain[ INDEX_2( j, i, ninfo->len_m ) ].which_kid_am_i_n ;
-fprintf(stderr,"ni,nj,pi,pj,kid_i,kid_j %d %d %d %d %d %d\n",
-                                 i,j,
-                                 ID_IDEX( mother_id ),ID_JDEX( mother_id ),
-                                 cm,cn) ;
       if ( dinfo->domain[ INDEX_2( ID_JDEX( mother_id ), ID_IDEX( mother_id ), dinfo->len_m ) ].children_p != NULL )
         dinfo->domain[ INDEX_2( ID_JDEX( mother_id ), ID_IDEX( mother_id ), dinfo->len_m ) ].children_p->child[INDEX_2(cn,cm,irax_m)] = nid ;
     }

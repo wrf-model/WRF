@@ -2,6 +2,7 @@
 MODULE MODULE_SF_MYJSFC
 !
 USE module_model_constants
+USE module_dm
 !
 !----------------------------------------------------------------------
 !
@@ -995,6 +996,8 @@ CONTAINS
 !
       REAL,DIMENSION(IMS:,JMS:),INTENT(INOUT) :: USTAR,Z0
 !
+! Local
+      INTEGER              :: MAX_VALUE, IDUM, JDUM
       REAL,DIMENSION(0:30) :: VZ0TBL
       REAL,DIMENSION(0:30) :: VZ0TBL_24
 !
@@ -1035,28 +1038,32 @@ CONTAINS
 !----------------------------------------------------------------------
 #if (NMM_CORE == 1)
 
-        IF (MAXVAL(IVGTYP) .lt. 13) THEN
-      DO J=JTS,JTE
-      DO I=ITS,ITE
-        SM=SEAMASK(I,J)-1.
-        IF(SM+XICE(I,J).LT.0.5)THEN
-          Z0(I,J)=Z0(I,J)+VZ0TBL(IVGTYP(I,J))
-        ENDIF
-      ENDDO
-      ENDDO
+      MAX_VALUE = MAXVAL(IVGTYP)
+      CALL WRF_DM_MAXVAL( MAX_VALUE, IDUM, JDUM )
 
-        ELSE
+      IF ( MAX_VALUE .lt. 13) THEN
 
-      DO J=JTS,JTE
-      DO I=ITS,ITE
-        SM=SEAMASK(I,J)-1.
-        IF(SM+XICE(I,J).LT.0.5)THEN
-          Z0(I,J)=Z0(I,J)+VZ0TBL_24(IVGTYP(I,J))
-        ENDIF
-      ENDDO
-      ENDDO
+        DO J=JTS,JTE
+        DO I=ITS,ITE
+          SM=SEAMASK(I,J)-1.
+          IF(SM+XICE(I,J).LT.0.5)THEN
+            Z0(I,J)=Z0(I,J)+VZ0TBL(IVGTYP(I,J))
+          ENDIF
+        ENDDO
+        ENDDO
 
-        ENDIF ! vegtype check
+      ELSE
+
+        DO J=JTS,JTE
+        DO I=ITS,ITE
+          SM=SEAMASK(I,J)-1.
+          IF(SM+XICE(I,J).LT.0.5)THEN
+            Z0(I,J)=Z0(I,J)+VZ0TBL_24(IVGTYP(I,J))
+          ENDIF
+        ENDDO
+        ENDDO
+
+      ENDIF ! vegtype check
 
 #endif
 !----------------------------------------------------------------------

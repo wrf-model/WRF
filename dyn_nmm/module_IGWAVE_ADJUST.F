@@ -294,14 +294,13 @@
 !$omp parallel do private(adpdx,adpdy,adpdy1,dcnek,dcsek,dpfew,dpfnek, &
 !$omp&         dpfns,dpfsek,dpnek,dpsek,ediv,hm,                &
 !$omp&         pcew,pcns,pew,pns,pvnek,pvsek,vm,i,k,            &
-!$omp& i,j,k,jj,apelp,apel,dfdz,dpde,&
+!$omp& j,jj,apelp,apel,dfdz,dpde,&
 !$omp& cne,pne,pcne,ppne, &
 !$omp& cse,pse,pcse,ppse, &
-!$omp& dpfnek,dpfsek,dpfew,dpfns,adpdx,adpdy,dpnek,dpsek,  &
-!$omp& pew,pns,dcnek,dcsek,pcew,pcns,vw,  &
-!$omp& udy,vdx,dcnek,dcsek,adpdy,tns,pcxc,  &
-!$omp& adpdne,pvnek,pcne,ppne,tne,fne,  &
-!$omp& adpdse,pvsek,pcse,ppse,tse,fse,  &
+!$omp& udy,vdx,pcxc,  &
+!$omp& adpdne,tne,fne,  &
+!$omp& adpdse,tse,fse,  &
+!$omp& radpdx,radpdy,   &
 !$omp& J1_P2,J1_P1,J1_00,J1_M1,J2_P1,J2_00, &
 !$omp& J2_M1,J3_P2,J3_P1,J3_00,J4_P1,J4_00, &
 !$omp& J4_M1,J5_00,J5_M1,J6_P1,J6_00,JKNT)

@@ -83,8 +83,8 @@ module_ra_rrtm.o: ../frame/module_wrf_error.o \
 
 module_mp_lin.o : ../frame/module_wrf_error.o
 
-#module_sf_lsm_nmm.o: ../share/module_model_constants.o \
-#		../dyn_nmm/module_MPP.o
+module_sf_lsm_nmm.o: ../share/module_model_constants.o \
+		../share/module_MPP.o
 
 module_sf_myjsfc.o: ../share/module_model_constants.o 
 
@@ -129,8 +129,8 @@ module_physics_init.o : \
 		../frame/module_dm.o \
 		../share/module_bc.o \
 		../share/module_model_constants.o \
-		../share/module_date_time.o 
-#		module_sf_lsm_nmm.o		\
+		../share/module_date_time.o  \
+		module_sf_lsm_nmm.o	
 
 module_microphysics_driver.o: \
                 module_mp_kessler.o module_mp_lin.o \
@@ -178,7 +178,7 @@ module_surface_driver.o: \
 		module_sf_sfcdiags.o		\
 		../frame/module_state_description.o \
 		../share/module_bc.o \
-		../share/module_model_constants.o 
-#		module_sf_lsm_nmm.o		\
+		../share/module_model_constants.o  \
+ 		module_sf_lsm_nmm.o
 
 # DO NOT DELETE

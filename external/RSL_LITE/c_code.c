@@ -13,6 +13,8 @@
 #      define RSL_LITE_EXCH_Y rsl_lite_exch_y
 #      define RSL_LITE_EXCH_X rsl_lite_exch_x
 #      define RSL_LITE_PACK  rsl_lite_pack
+#      define RSL_INTERNAL_MILLICLOCK rsl_internal_milliclock
+#      define RSL_INTERNAL_MICROCLOCK rsl_internal_microclock
 # else
 #   ifdef F2CSTYLE
 #      define RSL_LITE_ERROR_DUP1 rsl_error_dup1__
@@ -21,6 +23,8 @@
 #      define RSL_LITE_EXCH_Y rsl_lite_exch_y__
 #      define RSL_LITE_EXCH_X rsl_lite_exch_x__
 #      define RSL_LITE_PACK  rsl_lite_pack__
+#      define RSL_INTERNAL_MILLICLOCK rsl_internal_milliclock__
+#      define RSL_INTERNAL_MICROCLOCK rsl_internal_microclock__
 #   else
 #      define RSL_LITE_ERROR_DUP1 rsl_error_dup1_
 #      define BYTE_BCAST byte_bcast_
@@ -28,6 +32,8 @@
 #      define RSL_LITE_EXCH_Y rsl_lite_exch_y_
 #      define RSL_LITE_EXCH_X rsl_lite_exch_x_
 #      define RSL_LITE_PACK  rsl_lite_pack_
+#      define RSL_INTERNAL_MILLICLOCK rsl_internal_milliclock_
+#      define RSL_INTERNAL_MICROCLOCK rsl_internal_microclock_
 #   endif
 # endif
 #endif
@@ -721,3 +727,30 @@ fprintf(stderr,"RSL_LITE_EXCH_X disabled\n") ;
   yp_curs = 0 ; ym_curs = 0 ; xp_curs = 0 ; xm_curs = 0 ;
 }
 
+#include <sys/time.h>
+RSL_INTERNAL_MILLICLOCK ()
+{
+    struct timeval tb ;
+    struct timezone tzp ;
+    int isec ;  /* seconds */
+    int usec ;  /* microseconds */
+    int msecs ;
+    gettimeofday( &tb, &tzp ) ;
+    isec = tb.tv_sec ;
+    usec = tb.tv_usec ;
+    msecs = 1000 * isec + usec / 1000 ;
+    return(msecs) ;
+}
+RSL_INTERNAL_MICROCLOCK ()
+{
+    struct timeval tb ;
+    struct timezone tzp ;
+    int isec ;  /* seconds */
+    int usec ;  /* microseconds */
+    int msecs ;
+    gettimeofday( &tb, &tzp ) ;
+    isec = tb.tv_sec ;
+    usec = tb.tv_usec ;
+    msecs = 1000000 * isec + usec ;
+    return(msecs) ;
+}

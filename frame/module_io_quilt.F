@@ -303,6 +303,7 @@ MODULE module_ext_quilt
               chunksize = (PatchEnd(1)-PatchStart(1)+1)*(PatchEnd(2)-PatchStart(2)+1)* &
                           (PatchEnd(3)-PatchStart(3)+1)*ftypesize
 
+
               call store_piece_of_field( obuf(icurs/inttypesize), VarName, hdrbufsize )
 !write(0,*) 'A-1', hdrbufsize, get_hdr_tag( obuf ( icurs / inttypesize ) ) , get_hdr_rec_size( obuf ( icurs / inttypesize ) ), TRIM(VarName)
               icurs = icurs + hdrbufsize
@@ -688,6 +689,8 @@ MODULE module_ext_quilt
                                    DomainStart , DomainEnd ,                                    &
                                    Status )
 #endif
+#if 0
+! since this is training and the grib output doesn't need training, disable this branch.
 #ifdef YYY
                  CASE ( IO_YYY )
                       CALL ext_YYY_write_field ( handle(DataHandle) , TRIM(DateStr) ,         &
@@ -697,6 +700,7 @@ MODULE module_ext_quilt
                                  DomainStart , DomainEnd ,                                    &
                                  DomainStart , DomainEnd ,                                    &
                                  Status )
+#endif
 #endif
                       CASE DEFAULT
                         Status = 0

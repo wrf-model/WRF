@@ -4802,8 +4802,6 @@ CONTAINS
       RUNOFF3 = 0.
       DDZ = - ZSOIL(1)
 
-write(0,*),'phys/module_sf_lsm_nmm.F : nsoil ',nsoil
-      
       DO K = 1 , NSOIL
          IF ( K .NE. 1 ) DDZ = ZSOIL(K - 1) - ZSOIL(K)
          SH2OOUT(K) = SH2OIN(K) + CI(K) + WPLUS / DDZ

@@ -34,17 +34,17 @@ module data_info
   INTEGER, DIMENSION(500) :: domains
   INTEGER :: max_domain = 0
   TYPE :: prevdata
-     INTEGER :: fcst_secs_rainc = 0
-     INTEGER :: fcst_secs_rainnc = 0
+     INTEGER :: fcst_secs_rainc
+     INTEGER :: fcst_secs_rainnc
      REAL, DIMENSION(:,:), POINTER :: rainc, rainnc
   END TYPE prevdata
-  TYPE (prevdata), DIMENSION(500), SAVE :: lastdata
+  TYPE (prevdata), DIMENSION(500) :: lastdata
   TYPE :: prestype
      REAL, DIMENSION(:,:,:), POINTER :: vals
-     LOGICAL :: newtime = .false.
-     CHARACTER*120 :: lastDateStr = ''
+     LOGICAL :: newtime
+     CHARACTER*120 :: lastDateStr
   END TYPE prestype
-  TYPE (prestype), DIMENSION(500), SAVE :: pressure
+  TYPE (prestype), DIMENSION(500) :: pressure
 end module data_info
 
 
@@ -62,6 +62,14 @@ subroutine ext_yyy_ioinit(Status)
         opened(i) = .false.
   enddo
   domains(:) = -1
+
+  do i = 1, 500
+    lastdata(i)%fcst_secs_rainc = 0
+    lastdata(i)%fcst_secs_rainnc = 0
+    pressure(i)%newtime = .false.
+    pressure(i)%lastDateStr = ''
+  enddo
+
   Status = WRF_NO_ERR
 
   return

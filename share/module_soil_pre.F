@@ -62,7 +62,8 @@ CONTAINS
                      num_seaice_changes = num_seaice_changes + 1
                      tmn(i,j) = 271.4
                      vegcat(i,j)=isice
-                     lu_index(i,j)=ivgtyp(i,j)
+                     ivgtyp(i,j)=isice
+                     lu_index(i,j)=isice
                      landmask(i,j)=1.
                      xland(i,j)=1.
                      DO loop=1,num_veg_cat

@@ -778,7 +778,7 @@ use esmf_timemod
                  )                                                                         &
                ) THEN
                alarm%Ringing = .TRUE.
-               alarm%PrevRingTime = clock%CurrTime
+               alarm%PrevRingTime = alarm%PrevRingTime + alarm%RingInterval
                IF ( PRESENT( RingingAlarmList ) .AND. PRESENT ( NumRingingAlarms ) ) THEN
                  NumRingingAlarms = NumRingingAlarms + 1
                  RingingAlarmList( NumRingingAlarms ) = alarm

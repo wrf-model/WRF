@@ -23,10 +23,10 @@ CFLAGS = -DSTUBS -g
 #FC = f77 -w
 
 
-FFLAGS = -g
+FFLAGS = -O
 #ucomment for alpha
-CFLAGS = -DSTUBS -DSWAPBYTES -g
-FFLAGS = -g -convert big_endian
+CFLAGS = -DSTUBS -DSWAPBYTES -O
+FFLAGS = -O -convert big_endian
 
 warning :
 	@ echo 'This makefile is not a top level makefile'

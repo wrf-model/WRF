@@ -180,12 +180,23 @@ rsl_period_pt( dir, d, min, minlen, minstag, maj, majlen, majstag, fld, bdyw, f 
         if ( min == 0        && maj >=0 && maj < majlen+majstag ) { (*f)( d, min, maj-1, minlen, maj-1,    0, -1, fld ) ;
                                                                     (*f)( d, min, maj  , minlen, maj  ,    0,  0, fld ) ;
                                                                     (*f)( d, min, maj+1, minlen, maj+1,    0,  1, fld ) ; }
+
         /* XE edge of domain goes to XS edge - 1 */
         if ( min == minlen-1 && maj >=0 && maj < majlen+majstag ) { (*f)( d, min, maj-1, -1,     maj-1,    0, -1, fld ) ;
                                                                     (*f)( d, min, maj  , -1,     maj  ,    0,  0, fld ) ;
                                                                     (*f)( d, min, maj+1, -1,     maj+1,    0,  1, fld ) ; }
       }
     }
+
+/* sw corner to ne corner */
+    if ( min == 0+minstag        && maj == 0+majstag        ) { (*f)( d, min, maj  , minlen+minstag, majlen+majstag,   0,  0, fld ) ; }
+/* nw corner to se corner */
+    if ( min == 0+minstag        && maj == majlen-1-majstag ) { (*f)( d, min, maj  , minlen+minstag, -1            ,   0,  0, fld ) ; }
+/* se corner to nw corner */
+    if ( min == minlen-1-minstag && maj == 0+majstag        ) { (*f)( d, min, maj  , -1            , majlen+majstag,   0,  0, fld ) ; }
+/* ne corner to sw corner */
+    if ( min == minlen-1-minstag && maj ==majlen-1-majstag  ) { (*f)( d, min, maj  , -1            , -1            ,   0,  0, fld ) ; }
+
   }
 #if 1
   if ( bdyw >= 2 )
@@ -262,7 +273,30 @@ rsl_period_pt( dir, d, min, minlen, minstag, maj, majlen, majstag, fld, bdyw, f 
                                                                     (*f)( d, min, maj+2, -1,       maj+2,    0,  2, fld ) ; }
       }
     }
+
+/* sw corner to ne corner */
+/*  if ( min == 0+minstag        && maj == 0+majstag        ) { (*f)( d, min, maj  , minlen+minstag  , majlen+majstag  ,   0,  0, fld ) ; } */
+    if ( min == 1+minstag        && maj == 0+majstag        ) { (*f)( d, min, maj  , minlen+minstag+1, majlen+majstag  ,   0,  0, fld ) ; }
+    if ( min == 0+minstag        && maj == 1+majstag        ) { (*f)( d, min, maj  , minlen+minstag  , majlen+majstag+1,   0,  0, fld ) ; }
+    if ( min == 1+minstag        && maj == 1+majstag        ) { (*f)( d, min, maj  , minlen+minstag+1, majlen+majstag+1,   0,  0, fld ) ; }
+/* nw corner to se corner */
+/*  if ( min == 0+minstag        && maj == majlen-1-majstag ) { (*f)( d, min, maj  , minlen+minstag  , -1            ,   0,  0, fld ) ; } */
+    if ( min == 0+minstag        && maj == majlen-2-majstag ) { (*f)( d, min, maj  , minlen+minstag  , -2            ,   0,  0, fld ) ; }
+    if ( min == 1+minstag        && maj == majlen-2-majstag ) { (*f)( d, min, maj  , minlen+minstag+1, -2            ,   0,  0, fld ) ; }
+    if ( min == 1+minstag        && maj == majlen-1-majstag ) { (*f)( d, min, maj  , minlen+minstag+1, -1            ,   0,  0, fld ) ; }
+/* se corner to nw corner */
+/*  if ( min == minlen-1-minstag && maj == 0+majstag        ) { (*f)( d, min, maj  , -1            , majlen+majstag  ,   0,  0, fld ) ; } */
+    if ( min == minlen-2-minstag && maj == 0+majstag        ) { (*f)( d, min, maj  , -2            , majlen+majstag  ,   0,  0, fld ) ; }
+    if ( min == minlen-2-minstag && maj == 1+majstag        ) { (*f)( d, min, maj  , -2            , majlen+majstag+1,   0,  0, fld ) ; }
+    if ( min == minlen-1-minstag && maj == 1+majstag        ) { (*f)( d, min, maj  , -1            , majlen+majstag+1,   0,  0, fld ) ; }
+/* ne corner to sw corner */
+/*  if ( min == minlen-1-minstag && maj ==majlen-1-majstag  ) { (*f)( d, min, maj  , -1            , -1            ,   0,  0, fld ) ; } */
+    if ( min == minlen-1-minstag && maj ==majlen-2-majstag  ) { (*f)( d, min, maj  , -1            , -2            ,   0,  0, fld ) ; }
+    if ( min == minlen-2-minstag && maj ==majlen-1-majstag  ) { (*f)( d, min, maj  , -2            , -1            ,   0,  0, fld ) ; }
+    if ( min == minlen-2-minstag && maj ==majlen-2-majstag  ) { (*f)( d, min, maj  , -2            , -2            ,   0,  0, fld ) ; }
+
   }
+
 #endif
 
   if ( bdyw >= 3 )
@@ -365,6 +399,47 @@ rsl_period_pt( dir, d, min, minlen, minstag, maj, majlen, majstag, fld, bdyw, f 
       }
     }
   }
+/* sw corner to ne corner */
+/*  if ( min == 0+minstag        && maj == 0+majstag        ) { (*f)( d, min, maj  , minlen+minstag  , majlen+majstag  ,   0,  0, fld ) ; } */
+/*  if ( min == 1+minstag        && maj == 0+majstag        ) { (*f)( d, min, maj  , minlen+minstag+1, majlen+majstag  ,   0,  0, fld ) ; } */
+/*  if ( min == 0+minstag        && maj == 1+majstag        ) { (*f)( d, min, maj  , minlen+minstag  , majlen+majstag+1,   0,  0, fld ) ; } */
+/*  if ( min == 1+minstag        && maj == 1+majstag        ) { (*f)( d, min, maj  , minlen+minstag+1, majlen+majstag+1,   0,  0, fld ) ; } */
+    if ( min == 2+minstag        && maj == 0+majstag        ) { (*f)( d, min, maj  , minlen+minstag+2, majlen+majstag  ,   0,  0, fld ) ; }
+    if ( min == 2+minstag        && maj == 1+majstag        ) { (*f)( d, min, maj  , minlen+minstag+2, majlen+majstag+1,   0,  0, fld ) ; }
+    if ( min == 2+minstag        && maj == 2+majstag        ) { (*f)( d, min, maj  , minlen+minstag+2, majlen+majstag+2,   0,  0, fld ) ; }
+    if ( min == 1+minstag        && maj == 2+majstag        ) { (*f)( d, min, maj  , minlen+minstag+1, majlen+majstag+2,   0,  0, fld ) ; }
+    if ( min == 0+minstag        && maj == 2+majstag        ) { (*f)( d, min, maj  , minlen+minstag  , majlen+majstag+2,   0,  0, fld ) ; }
+/* nw corner to se corner */
+/*  if ( min == 0+minstag        && maj == majlen-1-majstag ) { (*f)( d, min, maj  , minlen+minstag  , -1            ,   0,  0, fld ) ; } */
+/*  if ( min == 0+minstag        && maj == majlen-2-majstag ) { (*f)( d, min, maj  , minlen+minstag  , -2            ,   0,  0, fld ) ; } */
+/*  if ( min == 1+minstag        && maj == majlen-2-majstag ) { (*f)( d, min, maj  , minlen+minstag+1, -2            ,   0,  0, fld ) ; } */
+/*  if ( min == 1+minstag        && maj == majlen-1-majstag ) { (*f)( d, min, maj  , minlen+minstag+1, -1            ,   0,  0, fld ) ; } */
+    if ( min == 2+minstag        && maj == majlen-1-majstag ) { (*f)( d, min, maj  , minlen+minstag+2, -1            ,   0,  0, fld ) ; }
+    if ( min == 2+minstag        && maj == majlen-2-majstag ) { (*f)( d, min, maj  , minlen+minstag+2, -2            ,   0,  0, fld ) ; }
+    if ( min == 2+minstag        && maj == majlen-3-majstag ) { (*f)( d, min, maj  , minlen+minstag+2, -3            ,   0,  0, fld ) ; }
+    if ( min == 1+minstag        && maj == majlen-3-majstag ) { (*f)( d, min, maj  , minlen+minstag+1, -3            ,   0,  0, fld ) ; }
+    if ( min == 0+minstag        && maj == majlen-3-majstag ) { (*f)( d, min, maj  , minlen+minstag  , -3            ,   0,  0, fld ) ; }
+/* se corner to nw corner */
+/*  if ( min == minlen-1-minstag && maj == 0+majstag        ) { (*f)( d, min, maj  , -1            , majlen+majstag  ,   0,  0, fld ) ; } */
+/*  if ( min == minlen-2-minstag && maj == 0+majstag        ) { (*f)( d, min, maj  , -2            , majlen+majstag  ,   0,  0, fld ) ; } */
+/*  if ( min == minlen-2-minstag && maj == 1+majstag        ) { (*f)( d, min, maj  , -2            , majlen+majstag+1,   0,  0, fld ) ; } */
+/*  if ( min == minlen-1-minstag && maj == 1+majstag        ) { (*f)( d, min, maj  , -1            , majlen+majstag+1,   0,  0, fld ) ; } */
+    if ( min == minlen-3-minstag && maj == 0+majstag        ) { (*f)( d, min, maj  , -3            , majlen+majstag+0,   0,  0, fld ) ; }
+    if ( min == minlen-3-minstag && maj == 1+majstag        ) { (*f)( d, min, maj  , -3            , majlen+majstag+1,   0,  0, fld ) ; }
+    if ( min == minlen-3-minstag && maj == 2+majstag        ) { (*f)( d, min, maj  , -3            , majlen+majstag+2,   0,  0, fld ) ; }
+    if ( min == minlen-2-minstag && maj == 2+majstag        ) { (*f)( d, min, maj  , -2            , majlen+majstag+2,   0,  0, fld ) ; }
+    if ( min == minlen-1-minstag && maj == 2+majstag        ) { (*f)( d, min, maj  , -1            , majlen+majstag+2,   0,  0, fld ) ; }
+/* ne corner to sw corner */
+/*  if ( min == minlen-1-minstag && maj ==majlen-1-majstag  ) { (*f)( d, min, maj  , -1            , -1            ,   0,  0, fld ) ; } */
+/*  if ( min == minlen-1-minstag && maj ==majlen-2-majstag  ) { (*f)( d, min, maj  , -1            , -2            ,   0,  0, fld ) ; } */
+/*  if ( min == minlen-2-minstag && maj ==majlen-1-majstag  ) { (*f)( d, min, maj  , -2            , -1            ,   0,  0, fld ) ; } */
+/*  if ( min == minlen-2-minstag && maj ==majlen-2-majstag  ) { (*f)( d, min, maj  , -2            , -2            ,   0,  0, fld ) ; } */
+    if ( min == minlen-3-minstag && maj ==majlen-1-majstag  ) { (*f)( d, min, maj  , -3            , -1            ,   0,  0, fld ) ; }
+    if ( min == minlen-3-minstag && maj ==majlen-2-majstag  ) { (*f)( d, min, maj  , -3            , -2            ,   0,  0, fld ) ; }
+    if ( min == minlen-3-minstag && maj ==majlen-3-majstag  ) { (*f)( d, min, maj  , -3            , -3            ,   0,  0, fld ) ; }
+    if ( min == minlen-2-minstag && maj ==majlen-3-majstag  ) { (*f)( d, min, maj  , -2            , -3            ,   0,  0, fld ) ; }
+    if ( min == minlen-1-minstag && maj ==majlen-3-majstag  ) { (*f)( d, min, maj  , -1            , -3            ,   0,  0, fld ) ; }
+
 }
 
 

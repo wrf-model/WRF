@@ -251,9 +251,10 @@ END MODULE module_ext_mcel
 
 !--------------
 
-SUBROUTINE ext_mcel_ioinit( Status )
+SUBROUTINE ext_mcel_ioinit( SysDepInfo, Status )
   USE module_ext_mcel
   IMPLICIT NONE
+  CHARACTER*(*), INTENT(IN) :: SysDepInfo
   INTEGER Status
   CALL init_module_ext_mcel
   Status = 0 

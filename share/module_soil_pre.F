@@ -545,7 +545,7 @@ endif
                ELSE IF ( ( soil_elev_min_val .LT. -1000 ) .AND. ( landmask(i,j) .GT. 0.5 ) ) THEN
 !print *,'no soil temperature elevation adjustment, soil height too small = ',toposoil(i,j)
 cycle
-                  CALL wrf_error_fatal ( 'TOPOSOIL values have large negative values < -1000 m, unrealistic.' )
+!                 CALL wrf_error_fatal ( 'TOPOSOIL values have large negative values < -1000 m, unrealistic.' )
                ENDIF
          
                IF      ( ( soil_elev_max_val .GT. 10000 ) .AND. ( landmask(i,j) .LT. 0.5 ) ) THEN

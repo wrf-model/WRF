@@ -161,7 +161,7 @@ CONTAINS
                U1D(K) =U(I,K,J)
                V1D(K) =V(I,K,J)
                T1D(K) =T(I,K,J)
-             RHO1D(K) =rho_phy(I,K,J)
+               RHO1D(K) =rho_phy(I,K,J)
                QV1D(K)=QV(I,K,J)
                P1D(K) =Pcps(I,K,J)
                W0AVG1D(K) =W0AVG(I,K,J)

@@ -62,10 +62,10 @@ CONTAINS
       INTEGER :: local_comm, ierr, max_dom
       CALL wrf_get_dm_communicator ( local_comm )
       CALL mpi_comm_size( local_comm, ntasks, ierr )
-      CALL rconfig_get_max_dom ( 1, max_dom )
+      CALL nl_get_max_dom ( 1, max_dom )
       IF ( max_dom .NE. 1 ) CALL wrf_error_fatal( 'Nesting is not allowed with RSL_LITE; set max_dom to 1 in namelist.input' )
-      CALL rconfig_get_nproc_x ( 1, ntasks_x )
-      CALL rconfig_get_nproc_y ( 1, ntasks_y )
+      CALL nl_get_nproc_x ( 1, ntasks_x )
+      CALL nl_get_nproc_y ( 1, ntasks_y )
 
 ! check if user has specified in the namelist
       IF ( ntasks_x .GT. 0 .OR. ntasks_y .GT. 0 ) THEN

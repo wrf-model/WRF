@@ -3,6 +3,7 @@
 MODULE module_dm
 
    USE module_machine
+   USE module_configure
    USE module_state_description
    USE module_wrf_error
 
@@ -61,10 +62,10 @@ CONTAINS
       INTEGER :: local_comm, ierr, max_dom
       CALL wrf_get_dm_communicator ( local_comm )
       CALL mpi_comm_size( local_comm, ntasks, ierr )
-      CALL get_max_dom ( max_dom )
+      CALL rconfig_get_max_dom ( 1, max_dom )
       IF ( max_dom .NE. 1 ) CALL wrf_error_fatal( 'Nesting is not allowed with RSL_LITE; set max_dom to 1 in namelist.input' )
-      CALL get_nproc_x ( ntasks_x )
-      CALL get_nproc_y ( ntasks_y )
+      CALL rconfig_get_nproc_x ( 1, ntasks_x )
+      CALL rconfig_get_nproc_y ( 1, ntasks_y )
 
 ! check if user has specified in the namelist
       IF ( ntasks_x .GT. 0 .OR. ntasks_y .GT. 0 ) THEN
@@ -585,7 +586,7 @@ END
    END SUBROUTINE wrf_patch_to_global_real 
 
 #ifndef PEDANTIC
-   SUBROUTINE wrf_patch_to_global_doubleprecision (buf,globbuf,domdesc,stagger,ordering,&
+   SUBROUTINE wrf_patch_to_global_double (buf,globbuf,domdesc,stagger,ordering,&
                                        DS1,DE1,DS2,DE2,DS3,DE3,&
                                        MS1,ME1,MS2,ME2,MS3,ME3,&
                                        PS1,PE1,PS2,PE2,PS3,PE3 )
@@ -604,7 +605,7 @@ END
                                          PS1,PE1,PS2,PE2,PS3,PE3 )
 
        RETURN
-   END SUBROUTINE wrf_patch_to_global_doubleprecision
+   END SUBROUTINE wrf_patch_to_global_double
 #endif
 
 
@@ -628,6 +629,28 @@ END
 
        RETURN
    END SUBROUTINE wrf_patch_to_global_integer 
+
+
+   SUBROUTINE wrf_patch_to_global_logical (buf,globbuf,domdesc,stagger,ordering,&
+                                       DS1,DE1,DS2,DE2,DS3,DE3,&
+                                       MS1,ME1,MS2,ME2,MS3,ME3,&
+                                       PS1,PE1,PS2,PE2,PS3,PE3 )
+       IMPLICIT NONE
+       INTEGER                         DS1,DE1,DS2,DE2,DS3,DE3,&
+                                       MS1,ME1,MS2,ME2,MS3,ME3,&
+                                       PS1,PE1,PS2,PE2,PS3,PE3
+       CHARACTER *(*) stagger,ordering
+       INTEGER fid,domdesc
+       LOGICAL globbuf(*)
+       LOGICAL buf(*)
+
+       CALL wrf_patch_to_global_generic (buf,globbuf,domdesc,stagger,ordering,LWORDSIZE,&
+                                         DS1,DE1,DS2,DE2,DS3,DE3,&
+                                         MS1,ME1,MS2,ME2,MS3,ME3,&
+                                         PS1,PE1,PS2,PE2,PS3,PE3 )
+
+       RETURN
+   END SUBROUTINE wrf_patch_to_global_logical
 
    SUBROUTINE wrf_patch_to_global_generic (buf,globbuf,domdesc,stagger,ordering,typesize,&
                                        DS1a,DE1a,DS2a,DE2a,DS3a,DE3a,&
@@ -965,7 +988,7 @@ END
     END SUBROUTINE wrf_global_to_patch_real
 
 #ifndef PEDANTIC
-    SUBROUTINE wrf_global_to_patch_doubleprecision (globbuf,buf,domdesc,stagger,ordering,&
+    SUBROUTINE wrf_global_to_patch_double (globbuf,buf,domdesc,stagger,ordering,&
                                        DS1,DE1,DS2,DE2,DS3,DE3,&
                                        MS1,ME1,MS2,ME2,MS3,ME3,&
                                        PS1,PE1,PS2,PE2,PS3,PE3 )
@@ -983,7 +1006,7 @@ END
                                        MS1,ME1,MS2,ME2,MS3,ME3,&
                                        PS1,PE1,PS2,PE2,PS3,PE3 )
        RETURN
-    END SUBROUTINE wrf_global_to_patch_doubleprecision
+    END SUBROUTINE wrf_global_to_patch_double
 #endif
 
 
@@ -1006,6 +1029,26 @@ END
                                        PS1,PE1,PS2,PE2,PS3,PE3 )
        RETURN
     END SUBROUTINE wrf_global_to_patch_integer
+
+    SUBROUTINE wrf_global_to_patch_logical (globbuf,buf,domdesc,stagger,ordering,&
+                                       DS1,DE1,DS2,DE2,DS3,DE3,&
+                                       MS1,ME1,MS2,ME2,MS3,ME3,&
+                                       PS1,PE1,PS2,PE2,PS3,PE3 )
+       IMPLICIT NONE
+       INTEGER                         DS1,DE1,DS2,DE2,DS3,DE3,&
+                                       MS1,ME1,MS2,ME2,MS3,ME3,&
+                                       PS1,PE1,PS2,PE2,PS3,PE3
+       CHARACTER *(*) stagger,ordering
+       INTEGER fid,domdesc
+       LOGICAL globbuf(*)
+       LOGICAL buf(*)
+
+       CALL wrf_global_to_patch_generic (globbuf,buf,domdesc,stagger,ordering,LWORDSIZE,&
+                                       DS1,DE1,DS2,DE2,DS3,DE3,&
+                                       MS1,ME1,MS2,ME2,MS3,ME3,&
+                                       PS1,PE1,PS2,PE2,PS3,PE3 )
+       RETURN
+    END SUBROUTINE wrf_global_to_patch_logical
 
     SUBROUTINE wrf_global_to_patch_generic (globbuf,buf,domdesc,stagger,ordering,typesize,&
                                        DS1a,DE1a,DS2a,DE2a,DS3a,DE3a,&
@@ -1487,6 +1530,34 @@ END
                             ierr )
 
    END SUBROUTINE wrf_gatherv_real
+
+   SUBROUTINE wrf_gatherv_double (Field, field_ofst,            &
+                                my_count ,                    &    ! sendcount
+                                globbuf, glob_ofst ,          &    ! recvbuf
+                                counts                      , &    ! recvcounts
+                                displs                      , &    ! displs
+                                root                        , &    ! root
+                                communicator                , &    ! communicator
+                                ierr )
+   IMPLICIT NONE
+   INCLUDE 'mpif.h'
+   INTEGER field_ofst, glob_ofst
+   INTEGER my_count, communicator, root, ierr
+   INTEGER , DIMENSION(*) :: counts, displs
+   DOUBLE PRECISION, DIMENSION(*) :: Field, globbuf
+
+           CALL mpi_gatherv( Field( field_ofst ),      &    ! sendbuf
+                            my_count ,                       &    ! sendcount
+                            MPI_DOUBLE_PRECISION         ,               &    ! sendtype
+                            globbuf( glob_ofst ) ,                 &    ! recvbuf
+                            counts                         , &    ! recvcounts
+                            displs                         , &    ! displs
+                            MPI_REAL                       , &    ! recvtype
+                            root                           , &    ! root
+                            communicator                   , &    ! communicator
+                            ierr )
+
+   END SUBROUTINE wrf_gatherv_double
 
    SUBROUTINE wrf_gatherv_integer (Field, field_ofst,            &
                                 my_count ,                    &    ! sendcount

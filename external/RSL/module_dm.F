@@ -3,6 +3,7 @@
 MODULE module_dm
 
    USE module_machine
+   USE module_configure
    USE module_state_description
    USE module_wrf_error
 
@@ -193,8 +194,8 @@ CONTAINS
 ! 
 ! </DESCRIPTION>
       CALL RSL_SET_REGULAR_DECOMP
-      CALL get_nproc_x ( nproc_ln )
-      CALL get_nproc_y ( nproc_lt )
+      CALL rconfig_get_nproc_x ( 1, nproc_ln )
+      CALL rconfig_get_nproc_y ( 1, nproc_lt )
 ! check if user has specified in the namelist
       IF ( nproc_ln .GT. 0 .OR. nproc_lt .GT. 0 ) THEN
         ! if only nproc_ln is specified then make it 1-d decomp in i
@@ -2450,10 +2451,10 @@ messages(120)=  s5e5
 ! </DESCRIPTION>
 
 
-         CALL get_shw( id, shw )
-         CALL get_i_parent_start( id , i_parent_start )
-         CALL get_j_parent_start( id , j_parent_start )
-         CALL get_parent_grid_ratio( id, parent_grid_ratio )
+         CALL rconfig_get_shw( id, shw )
+         CALL rconfig_get_i_parent_start( id , i_parent_start )
+         CALL rconfig_get_j_parent_start( id , j_parent_start )
+         CALL rconfig_get_parent_grid_ratio( id, parent_grid_ratio )
 
          info(1) = idim               ! nest i dimension for intermediate mapping
          info(2) = jdim               ! nest j dimension for intermediate mapping
@@ -3404,7 +3405,7 @@ SUBROUTINE wrf_dm_define_comms ( grid )
 
 #include "deref_kludge.h"
 
-   CALL get_dyn_opt( dyn_opt )
+   CALL rconfig_get_dyn_opt( 1, dyn_opt )
 
    CALL set_scalar_indices_from_config ( grid%id , idum1 , idum2 )
 
@@ -3580,7 +3581,7 @@ END
    END SUBROUTINE wrf_patch_to_global_real 
 
 #ifndef PEDANTIC
-   SUBROUTINE wrf_patch_to_global_doubleprecision (buf,globbuf,domdesc,stagger,ordering,&
+   SUBROUTINE wrf_patch_to_global_double (buf,globbuf,domdesc,stagger,ordering,&
                                        DS1,DE1,DS2,DE2,DS3,DE3,&
                                        MS1,ME1,MS2,ME2,MS3,ME3,&
                                        PS1,PE1,PS2,PE2,PS3,PE3 )
@@ -3605,7 +3606,7 @@ END
                                          PS1,PE1,PS2,PE2,PS3,PE3 )
 
        RETURN
-   END SUBROUTINE wrf_patch_to_global_doubleprecision
+   END SUBROUTINE wrf_patch_to_global_double
 #endif
 
 
@@ -3635,6 +3636,37 @@ END
 
        RETURN
    END SUBROUTINE wrf_patch_to_global_integer 
+
+   SUBROUTINE wrf_patch_to_global_logical (buf,globbuf,domdesc,stagger,ordering,&
+                                       DS1,DE1,DS2,DE2,DS3,DE3,&
+                                       MS1,ME1,MS2,ME2,MS3,ME3,&
+                                       PS1,PE1,PS2,PE2,PS3,PE3 )
+       IMPLICIT NONE
+#include <rsl.inc>
+       INTEGER                         DS1,DE1,DS2,DE2,DS3,DE3,&
+                                       MS1,ME1,MS2,ME2,MS3,ME3,&
+                                       PS1,PE1,PS2,PE2,PS3,PE3
+       CHARACTER *(*) stagger,ordering
+       INTEGER fid,domdesc
+       INTEGER globbuf(*)
+       INTEGER buf(*)
+! <DESCRIPTION>
+! Collective operation. Given a buffer of type integer corresponding to a 2- or 3-dimensional patch on a local processor,
+! return on task zero the global array assembled from the pieces stored on each processor.
+!
+! </DESCRIPTION>
+
+       IF ( LWORDSIZE .NE. IWORDSIZE ) THEN
+         CALL wrf_error_fatal( "module_dm: LWORDSIZE != IWORDSIZE on this machine. RSL cannot cast" ) 
+       ENDIF
+
+       CALL wrf_patch_to_global_generic (buf,globbuf,domdesc,stagger,ordering,rsl_integer,&
+                                         DS1,DE1,DS2,DE2,DS3,DE3,&
+                                         MS1,ME1,MS2,ME2,MS3,ME3,&
+                                         PS1,PE1,PS2,PE2,PS3,PE3 )
+
+       RETURN
+   END SUBROUTINE wrf_patch_to_global_logical
 
    SUBROUTINE wrf_patch_to_global_generic (buf,globbuf,domdesc,stagger,ordering,type,&
                                        DS1a,DE1a,DS2a,DE2a,DS3a,DE3a,&
@@ -3760,7 +3792,7 @@ END
     END SUBROUTINE wrf_global_to_patch_real
 
 #ifndef PEDANTIC
-    SUBROUTINE wrf_global_to_patch_doubleprecision (globbuf,buf,domdesc,stagger,ordering,&
+    SUBROUTINE wrf_global_to_patch_double (globbuf,buf,domdesc,stagger,ordering,&
                                        DS1,DE1,DS2,DE2,DS3,DE3,&
                                        MS1,ME1,MS2,ME2,MS3,ME3,&
                                        PS1,PE1,PS2,PE2,PS3,PE3 )
@@ -3784,7 +3816,7 @@ END
                                        MS1,ME1,MS2,ME2,MS3,ME3,&
                                        PS1,PE1,PS2,PE2,PS3,PE3 )
        RETURN
-    END SUBROUTINE wrf_global_to_patch_doubleprecision
+    END SUBROUTINE wrf_global_to_patch_double
 #endif
 
 
@@ -3813,6 +3845,36 @@ END
                                        PS1,PE1,PS2,PE2,PS3,PE3 )
        RETURN
     END SUBROUTINE wrf_global_to_patch_integer
+
+    SUBROUTINE wrf_global_to_patch_logical (globbuf,buf,domdesc,stagger,ordering,&
+                                       DS1,DE1,DS2,DE2,DS3,DE3,&
+                                       MS1,ME1,MS2,ME2,MS3,ME3,&
+                                       PS1,PE1,PS2,PE2,PS3,PE3 )
+       IMPLICIT NONE
+#include <rsl.inc>
+       INTEGER                         DS1,DE1,DS2,DE2,DS3,DE3,&
+                                       MS1,ME1,MS2,ME2,MS3,ME3,&
+                                       PS1,PE1,PS2,PE2,PS3,PE3
+       CHARACTER *(*) stagger,ordering
+       INTEGER fid,domdesc
+       LOGICAL globbuf(*)
+       LOGICAL buf(*)
+! <DESCRIPTION>
+! Collective operation. Given a global 2- or 3-dimensional array of type integer on task zero,
+! return the appropriate decomposed section (patch) on each processor.
+!
+! </DESCRIPTION>
+
+       IF ( LWORDSIZE .NE. IWORDSIZE ) THEN
+         CALL wrf_error_fatal( "RSL module_dm: LWORDSIZE != IWORDSIZE on this machine. RSL cannot cast" ) 
+       ENDIF
+
+       CALL wrf_global_to_patch_generic (globbuf,buf,domdesc,stagger,ordering,rsl_integer,&
+                                       DS1,DE1,DS2,DE2,DS3,DE3,&
+                                       MS1,ME1,MS2,ME2,MS3,ME3,&
+                                       PS1,PE1,PS2,PE2,PS3,PE3 )
+       RETURN
+    END SUBROUTINE wrf_global_to_patch_logical
 
     SUBROUTINE wrf_global_to_patch_generic (globbuf,buf,domdesc,stagger,ordering,type,&
                                        DS1a,DE1a,DS2a,DE2a,DS3a,DE3a,&
@@ -4263,6 +4325,7 @@ END
 !------------------------------------------------------------------
 
 #ifndef STUBMPI
+
    SUBROUTINE wrf_gatherv_real (Field, field_ofst,            &
                                 my_count ,                    &    ! sendcount
                                 globbuf, glob_ofst ,          &    ! recvbuf
@@ -4318,5 +4381,33 @@ END
                             ierr )
 
    END SUBROUTINE wrf_gatherv_integer
+
+   SUBROUTINE wrf_gatherv_double (Field, field_ofst,            &
+                                my_count ,                    &    ! sendcount
+                                globbuf, glob_ofst ,          &    ! recvbuf
+                                counts                      , &    ! recvcounts
+                                displs                      , &    ! displs
+                                root                        , &    ! root
+                                communicator                , &    ! communicator
+                                ierr )
+   IMPLICIT NONE
+   INCLUDE 'mpif.h'
+   INTEGER field_ofst, glob_ofst
+   INTEGER my_count, communicator, root, ierr
+   INTEGER , DIMENSION(*) :: counts, displs
+   DOUBLE PRECISION, DIMENSION(*) :: Field, globbuf
+
+           CALL mpi_gatherv( Field( field_ofst ),      &    ! sendbuf
+                            my_count ,                       &    ! sendcount
+                            MPI_DOUBLE_PRECISION         ,               &    ! sendtype
+                            globbuf( glob_ofst ) ,                 &    ! recvbuf
+                            counts                         , &    ! recvcounts
+                            displs                         , &    ! displs
+                            MPI_REAL                       , &    ! recvtype
+                            root                           , &    ! root
+                            communicator                   , &    ! communicator
+                            ierr )
+
+   END SUBROUTINE wrf_gatherv_double
 
 #endif

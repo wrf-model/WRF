@@ -258,23 +258,26 @@ CONTAINS
      END DO
    END SUBROUTINE init_module_configure
 
+#include <get_nl_config.inc>
+
 END MODULE module_configure
 
 ! Special (outside registry)
-SUBROUTINE get_mminlu ( retval )
+SUBROUTINE rconfig_get_mminlu ( idum , retval )
   USE module_configure
   CHARACTER(LEN=4)  :: retval
+  INTEGER idum
   retval(1:4) = mminlu(1:4)   ! mminlu is defined in module_configure
   RETURN
-END SUBROUTINE get_mminlu
-SUBROUTINE set_mminlu ( inval )
+END SUBROUTINE rconfig_get_mminlu
+SUBROUTINE rconfig_set_mminlu ( idum, inval )
   USE module_configure
   CHARACTER(LEN=4) :: inval
+  INTEGER idum
   mminlu(1:4) = inval(1:4)    ! mminlu is defined in module_configure
   RETURN
-END SUBROUTINE set_mminlu
+END SUBROUTINE rconfig_set_mminlu
 
-#include <get_nl_config.inc>
 
 SUBROUTINE set_scalar_indices_from_config ( idomain , dummy2, dummy1 )
   USE module_driver_constants

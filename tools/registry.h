@@ -49,8 +49,9 @@ enum proc_orient     { ALL_Z_ON_PROC , ALL_X_ON_PROC , ALL_Y_ON_PROC } ;
 #define BOUNDARY      8192
 #define INTERP_DOWN   16384
 #define FORCE_DOWN (16384*2)
-#define INTERP_UP   (16384*4)
-#define SMOOTH_UP   (16384*8)
+#define INTERP_UP  (16384*4)
+#define SMOOTH_UP  (16384*8)
+#define METADATA   (16384*16)
 
 #define REGISTRY_H
 #endif

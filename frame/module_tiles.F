@@ -3,6 +3,8 @@
 
 MODULE module_tiles
 
+  USE module_configure
+
   INTERFACE set_tiles
     MODULE PROCEDURE set_tiles1 , set_tiles2
   END INTERFACE
@@ -212,7 +214,7 @@ CONTAINS
      !
 
      IF ( grid%num_tiles_spec .EQ. 0 ) THEN
-       CALL get_numtiles( num_tiles )
+       CALL rconfig_get_numtiles( 1, num_tiles )
        IF ( num_tiles .EQ. 1 ) THEN
 #ifdef _OPENMP
          num_tiles = omp_get_max_threads()
@@ -223,8 +225,8 @@ CONTAINS
 #endif
        ENDIF
 ! override num_tiles setting (however gotten) if tile sizes are specified
-       CALL get_tile_sz_x( tile_sz_x )
-       CALL get_tile_sz_y( tile_sz_y )
+       CALL rconfig_get_tile_sz_x( 1, tile_sz_x )
+       CALL rconfig_get_tile_sz_y( 1, tile_sz_y )
        IF ( tile_sz_x >= 1 .and. tile_sz_y >= 1 ) THEN
         ! figure number of whole tiles and add 1 for any partials in each dim
           num_tiles_x = (epx-spx+1) / tile_sz_x

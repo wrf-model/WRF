@@ -58,6 +58,9 @@ real::t1,t2
 
    !  Define the name of this program (program_name defined in module_domain)
 
+   ! NOTE: share/input_wrf.F tests first 7 chars of this name to decide 
+   ! whether to read P_TOP as metadata from the SI (yes, if .eq. REAL_EM)
+
    program_name = "REAL_EM V2.0.2 PREPROCESSOR"
 
 #ifdef DM_PARALLEL
@@ -86,7 +89,7 @@ real::t1,t2
    CALL initial_config
 #endif
 
-   CALL get_debug_level ( debug_level )
+   CALL rconfig_get_debug_level ( 1, debug_level )
    CALL set_wrf_debug_level ( debug_level )
 
    CALL  wrf_message ( program_name )
@@ -207,7 +210,7 @@ real::t1,t2
    current_date = start_date
    print*,'line 211: start_date=',start_date,'  current_date=',current_date
 
-   CALL set_bdyfrq ( grid%id , REAL(model_config_rec%interval_seconds) )
+   CALL rconfig_set_bdyfrq ( grid%id , REAL(model_config_rec%interval_seconds) )
 
    !!!!!!!  Loop over each time period to process.
 
@@ -224,9 +227,9 @@ real::t1,t2
         print *,'configflags%julyr, %julday, %gmt:',config_flags%julyr, config_flags%julday, config_flags%gmt
       !  Now that the specific Julian info is available, save these in the model config record.
 
-      CALL set_gmt (grid%id, config_flags%gmt)
-      CALL set_julyr (grid%id, config_flags%julyr)
-      CALL set_julday (grid%id, config_flags%julday)
+      CALL rconfig_set_gmt (grid%id, config_flags%gmt)
+      CALL rconfig_set_julyr (grid%id, config_flags%julyr)
+      CALL rconfig_set_julday (grid%id, config_flags%julday)
 
       !  Open the wrfinput file.
 

@@ -90,6 +90,7 @@ module_integrate.o: module_domain.o \
 
 module_io.o : md_calls.inc \
 		module_state_description.o \
+		module_configure.o  \
 		module_driver_constants.o 
 
 module_io_quilt.o: module_state_description.o \
@@ -100,6 +101,7 @@ module_machine.o: module_driver_constants.o
 
 module_nesting.o: module_machine.o \
 		module_driver_constants.o \
+		module_configure.o \
 		../external/esmf_time_f90/ESMF_Mod.o \
 		module_domain.o 
 
@@ -108,6 +110,7 @@ module_quilt_outbuf_ops.o: module_state_description.o
 module_tiles.o: module_domain.o \
 		module_driver_constants.o \
 		module_machine.o  \
+		module_configure.o  \
                 module_wrf_error.o
  
 module_timing.o: \

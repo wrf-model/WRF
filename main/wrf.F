@@ -108,7 +108,7 @@ PROGRAM wrf
 
 !<DESCRIPTION>
 ! Among the configuration variables read from the namelist is
-! debug_level. This is retrieved using get_debug_level (Registry
+! debug_level. This is retrieved using rconfig_get_debug_level (Registry
 ! generated and defined in frame/module_configure.F).  The value is then
 ! used to set the debug-print information level for use by <a
 ! href=wrf_debug.html>wrf_debug</a> throughout the code. Debug_level
@@ -118,7 +118,7 @@ PROGRAM wrf
 ! 
 !</DESCRIPTION>
 
-   CALL get_debug_level ( debug_level )
+   CALL rconfig_get_debug_level ( 1, debug_level )
    CALL set_wrf_debug_level ( debug_level )
 
    ! allocated and configure the mother domain

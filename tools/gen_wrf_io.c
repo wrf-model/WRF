@@ -29,6 +29,23 @@ gen_wrf_io ( char * dirname )
   if ( dirname == NULL ) return(1) ;
 
 #if 1
+
+  OP_F(fp,"wrf_metaput_input.inc") ;
+  gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields ,
+      METADATA | INPUT , GEN_OUTPUT ) ;
+
+  OP_F(fp,"wrf_metaput_restart.inc") ;
+  gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields ,
+      METADATA | RESTART , GEN_OUTPUT ) ;
+
+  OP_F(fp,"wrf_metaput_history.inc") ;
+  gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields ,
+      METADATA | HISTORY , GEN_OUTPUT ) ;
+
+  OP_F(fp,"wrf_metaput_boundary.inc") ;
+  gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields ,
+      METADATA | BOUNDARY , GEN_OUTPUT ) ;
+
   OP_F(fp,"wrf_histout.inc") ;
   gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields , HISTORY , GEN_OUTPUT ) ;
   close_the_file(fp) ;
@@ -74,6 +91,22 @@ gen_wrf_io ( char * dirname )
 #endif
 
 #if 1
+  OP_F(fp,"wrf_metaget_input.inc") ;
+  gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields , 
+      METADATA | INPUT , GEN_INPUT ) ;
+
+  OP_F(fp,"wrf_metaget_restart.inc") ;
+  gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields , 
+      METADATA | RESTART , GEN_INPUT ) ;
+
+  OP_F(fp,"wrf_metaget_history.inc") ;
+  gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields , 
+      METADATA | HISTORY , GEN_INPUT ) ;
+
+  OP_F(fp,"wrf_metaget_boundary.inc") ;
+  gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields , 
+      METADATA | BOUNDARY , GEN_INPUT ) ;
+
   OP_F(fp,"wrf_histin.inc") ;
   gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields , HISTORY , GEN_INPUT ) ;
   close_the_file(fp) ;
@@ -248,7 +281,6 @@ gen_wrf_io2 ( FILE * fp , char * fname, char * structname , node_t * node , int 
   if ( structname == NULL ) return(1) ;
   if ( fp == NULL ) return(1) ;
 
-
   for ( p = node ; p != NULL ; p = p->next )
   {
 
@@ -274,10 +306,9 @@ gen_wrf_io2 ( FILE * fp , char * fname, char * structname , node_t * node , int 
     if ( p->type->type == SIMPLE )
     {
 
-
 /* ////////  BOUNDARY ///////////////////// */
 
-      if ( p->io_mask & BOUNDARY && (io_mask & BOUNDARY) )
+      if ( p->io_mask & BOUNDARY && (io_mask & BOUNDARY) && !( io_mask & METADATA ) )
       {
         int ibdy ;
         int idx ;
@@ -311,7 +342,7 @@ gen_wrf_io2 ( FILE * fp , char * fname, char * structname , node_t * node , int 
            ms2 = "1" ; me2 = "1" ;
            ps2 = "1" ; pe2 = "1" ;
          }
-        if ( strlen(dname) < 1 ) {
+        if ( strlen(p->dname) < 1 ) {
           fprintf(stderr,"gen_wrf_io.c: Registry WARNING: no data name for %s \n",p->name) ;
         }
 
@@ -434,10 +465,73 @@ gen_wrf_io2 ( FILE * fp , char * fname, char * structname , node_t * node , int 
       }
 
 /* ////////  NOT BOUNDARY ///////////////////// */
+     else if ( (p->io_mask & io_mask) && ! (io_mask & BOUNDARY))
+     {
 
-      else if ( (p->io_mask & io_mask) && ! (io_mask & BOUNDARY) && ! (p->node_kind & RCONFIG) )
+/* Aug 2004
+
+Namelist variables
+
+The i r and h settings will be reenabled but it will work a little
+differently than i/o of regular state variables:
+
+1) rather than being read or written as records to the dataset, they
+will be gotten or put as time invariant meta data; in other words, they
+will only be written once when the dataset is created as the other
+metadata is now. This has the benefit of reducing the amount of I/O
+traffic on each write (I can't remember, but that may be why the
+reading and writing of rconfig data was turned off in the first
+place).
+
+2) All the rconfig variables will be gotten/put as metadata to input,
+restart, history, and boundary datasets, regardless of what the 'i',
+'r', and 'h' settings are.  Instead those settings will control the
+behavior with respect to the input-from-namelist vs input-from-dataset
+precedence issue that Bill raised.
+
+In other words, if an rconfig entry has an 'i', 'r', or 'h' in the
+Registry, the dataset value takes precedence over the namelist value.
+Otherwise, say it is missing the 'i', the reconfig variable's value
+still appears as metadata in the dataset but the value of the variable
+in the program does not change as a result of inputting the dataset.
+
+*/
+
+      if ( (p->node_kind & RCONFIG) && ( io_mask & METADATA ) )
       {
- 
+        char c ;
+        char dname[NAMELEN] ;
+
+        strcpy( dname, p->dname ) ; 
+        make_upper_case( dname ) ;
+        if      ( !strcmp( p->type->name , "integer" )         ) { c = 'i' ; }
+        else if ( !strcmp( p->type->name , "real" )            ) { c = 'r' ; }
+        else if ( !strcmp( p->type->name , "doubleprecision" ) ) { c = 'd' ; }
+        else if ( !strcmp( p->type->name , "logical" )         ) { c = 'l' ; }
+        else {
+          fprintf(stderr,"REGISTRY WARNING: unknown type %s for %s\n",p->type->name,p->name ) ;
+        }
+        if ( sw_io == GEN_OUTPUT ) {
+          if ( io_mask & p->io_mask ) {
+            fprintf(fp,"CALL rconfig_get_%s ( grid%%id, %cbuf(1) )\n",p->name,c) ;
+            fprintf(fp," CALL wrf_put_dom_ti_%s ( fid , '%s', %cbuf(1), 1, ierr )\n",p->type->name,dname,c) ;
+          }
+        } else {
+          if ( io_mask & p->io_mask ) {
+            fprintf(fp,"CALL wrf_get_dom_ti_%s ( fid , '%s', %cbuf(1), 1, ierr )\n",p->type->name,dname,c) ;
+            fprintf(fp," WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_%s for %s returns ',%cbuf(1)\n",p->type->name,dname,c) ;
+            fprintf(fp," CALL wrf_debug ( 300 , wrf_err_message )\n") ;
+            fprintf(fp," CALL rconfig_set_%s ( grid%%id, %cbuf(1) )\n",p->name,c) ;
+          }
+        }
+      }
+/* end Aug 2004 */
+#if 0
+      else if ( ! (io_mask & METADATA) )   /* state vars */
+#else
+      else if ( ! (io_mask & METADATA) && ! (p->node_kind & RCONFIG) )   /* state vars */
+#endif
+      {
         if ( io_mask & RESTART && p->ntl > 1 ) passes = p->ntl ;
         else                                   passes = 1 ;
 
@@ -488,11 +582,10 @@ gen_wrf_io2 ( FILE * fp , char * fname, char * structname , node_t * node , int 
           else                                                  { strcpy(dname_tmp,p->dname) ; }
           make_upper_case(dname_tmp) ;
 
-
 /*
    July 2004
 
-   New code to generate error if input or output for two state variables would be generated with the same dataname 
+   New code to generate error if input or output for two state variables would be generated with the same dataname
 
    example okay:
     dyn_nmm  tg      "SOILTB"   -> dyn_nmm_tg,SOILTB
@@ -505,46 +598,38 @@ gen_wrf_io2 ( FILE * fp , char * fname, char * structname , node_t * node , int 
      misc    soiltb  "SOILTB"   -> gen_soiltb,SOILTB
 
 */
-
 if ( pass == 0 )
 {
           char dname_symbol[128] ;
-	  sym_nodeptr sym_node ;
+          sym_nodeptr sym_node ;
 
-	  sprintf(dname_symbol, "DNAME_%s", dname_tmp ) ;
-	  /* check and see if it is in the symbol table already */
+          sprintf(dname_symbol, "DNAME_%s", dname_tmp ) ;
+          /* check and see if it is in the symbol table already */
 
           if ((sym_node = sym_get( dname_symbol )) == NULL ) {
-	    /* add it */
+            /* add it */
  /* fprintf(stderr,"adding %s %s  %s\n",dname_symbol,core,p->name ) ; */
-	    sym_node = sym_add ( dname_symbol ) ;
-	    strcpy( sym_node->internal_name , p->name ) ;
-	    strcpy( sym_node->core_name , core ) ;
-	  } else {
+            sym_node = sym_add ( dname_symbol ) ;
+            strcpy( sym_node->internal_name , p->name ) ;
+            strcpy( sym_node->core_name , core ) ;
+          } else {
  /* fprintf(stderr,"got %s (core %s) (sym_core %s) %s  %s\n",
    dname_symbol,core,sym_node->core_name,p->name,sym_node->internal_name ) ; */
-	    /* it's there already, check and make sure we don't have an error condition */
-            if ( (strlen(core) > 0 && strlen( sym_node->core_name ) > 0 && !strcmp( core, sym_node->core_name )) 
-	      || strlen(core) == 0 
-	      || strlen( sym_node->core_name ) == 0 ) 
-	    {
-	      char this_core[64] , sym_core[64] ;
-	      strcpy(this_core,"(generic)") ;
-	      if ( strlen(core) > 0 )                sprintf(this_core,"(%s)",core) ;
-	      strcpy(sym_core,"(generic)") ; 
-	      if ( strlen(sym_node->core_name) > 0 ) sprintf(this_core,"(%s)",sym_node->core_name) ;
-	      fprintf(stderr,"REGISTRY ERROR: Data-name collision on %s for %s %s and %s %s\n",
-		  dname_tmp,p->name,this_core,sym_node->internal_name,sym_core ) ;
-	    }
-	  }
-/*
-fprintf(stderr,"name: %s dname symbol: %s core %s\n",sym_node->internal_name,dname_symbol,sym_node->core_name) ;
-*/
-      
+            /* it's there already, check and make sure we don't have an error condition */
+            if ( (strlen(core) > 0 && strlen( sym_node->core_name ) > 0 && !strcmp( core, sym_node->core_name ))
+              || strlen(core) == 0
+              || strlen( sym_node->core_name ) == 0 )
+            {
+              char this_core[64] , sym_core[64] ;
+              strcpy(this_core,"(generic)") ;
+              if ( strlen(core) > 0 )                sprintf(this_core,"(%s)",core) ;
+              strcpy(sym_core,"(generic)") ;
+              if ( strlen(sym_node->core_name) > 0 ) sprintf(this_core,"(%s)",sym_node->core_name) ;
+              fprintf(stderr,"REGISTRY ERROR: Data-name collision on %s for %s %s and %s %s\n",
+                  dname_tmp,p->name,this_core,sym_node->internal_name,sym_core ) ;
+            }
+          }
 }
-
-
-
 /* end July 2004 */
 
           if ( io_mask & RESTART &&  p->ntl > 1 ) sprintf(dname,"%s_%d",dname_tmp,pass+1) ;
@@ -557,7 +642,7 @@ fprintf(stderr,"name: %s dname symbol: %s core %s\n",sym_node->internal_name,dna
           if ( sw_3dvar_iry_kludge && !strcmp(memord,"XY") ) sprintf(memord,"YX") ;
 
           if ( strlen(dname) < 1 ) {
-            fprintf(stderr,"gen_wrf_io.c: Registry WARNING: no data name for %s \n",p->name) ;
+            fprintf(stderr,"gen_wrf_io.c: Registry WARNING:: no data name for %s \n",p->name) ;
           }
           if ( p->io_mask & io_mask && sw_io == GEN_INPUT )
           {
@@ -872,6 +957,7 @@ fprintf(stderr,"name: %s dname symbol: %s core %s\n",sym_node->internal_name,dna
           }
         }
       }
+    }
     }
     if ( p->type->type_type == DERIVED )
     {

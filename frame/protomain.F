@@ -62,7 +62,7 @@ PROGRAM wrf
    CALL initial_config
 #endif
 
-   CALL get_debug_level ( debug_level )
+   CALL rconfig_get_debug_level ( 1, debug_level )
    CALL set_wrf_debug_level ( debug_level )
 
    ! allocated and configure the mother domain

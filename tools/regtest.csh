@@ -77,6 +77,9 @@ if      ( ( `hostname` == master ) || (`hostname | cut -c 1-4` == node ) ) then
 else if   ( `hostname` == duku ) then
 	set WRFREGDATAEM = /duku/users/gill/WRF-data-EM
 	set WRFREGDATANMM = /duku/users/gill/WRF-data-NMM
+else if   ( `hostname` == cape ) then
+	set WRFREGDATAEM = /cape/users/michalak/WRF-data-EM
+	set WRFREGDATANMM = /cape/users/michalak/WRF-data-NMM
 else if ( (`hostname | cut -c 1-6` == joshua ) || \
           ( `hostname` == maple ) || (`hostname | cut -c 1-7` == service ) ) then
 	set WRFREGDATAEM = /users/gill/WRF-data-EM
@@ -209,6 +212,7 @@ if      ( $NESTED == TRUE ) then
 	set CORES = (  em_real em_b_wave em_quarter_ss          )
 else if ( $NESTED != TRUE ) then
 	set CORES = (  em_real em_b_wave em_quarter_ss nmm_real )
+	set CORES = (  nmm_real )
 endif
 
 set PHYSOPTS =	( 1 2 3 )

@@ -198,6 +198,35 @@ SUBROUTINE wrf_global_to_patch_real (globbuf,buf,domdesc,ndim,&
    RETURN
 END SUBROUTINE wrf_global_to_patch_real
 
+
+SUBROUTINE wrf_patch_to_global_double (buf,globbuf,domdesc,ndim,&
+                                       ids,ide,jds,jde,kds,kde,&
+                                       ims,ime,jms,jme,kms,kme,&
+                                       ips,ipe,jps,jpe,kps,kpe )
+   IMPLICIT NONE
+   INTEGER                             ids,ide,jds,jde,kds,kde,&
+                                       ims,ime,jms,jme,kms,kme,&
+                                       ips,ipe,jps,jpe,kps,kpe
+   INTEGER fid,domdesc,ndim,glen(3),llen(3)
+   DOUBLE PRECISION globbuf(*)
+   DOUBLE PRECISION buf(*)
+   RETURN
+END SUBROUTINE wrf_patch_to_global_double
+
+SUBROUTINE wrf_global_to_patch_double (globbuf,buf,domdesc,ndim,&
+                                       ids,ide,jds,jde,kds,kde,&
+                                       ims,ime,jms,jme,kms,kme,&
+                                       ips,ipe,jps,jpe,kps,kpe )
+   IMPLICIT NONE
+   INTEGER                             ids,ide,jds,jde,kds,kde,&
+                                       ims,ime,jms,jme,kms,kme,&
+                                       ips,ipe,jps,jpe,kps,kpe
+   INTEGER fid,domdesc,ndim,glen(3),llen(3)
+   DOUBLE PRECISION globbuf(*)
+   DOUBLE PRECISION buf(*)
+   RETURN
+END SUBROUTINE wrf_global_to_patch_double
+
 SUBROUTINE wrf_patch_to_global_integer (buf,globbuf,domdesc,ndim,&
                                        ids,ide,jds,jde,kds,kde,&
                                        ims,ime,jms,jme,kms,kme,&
@@ -226,5 +255,32 @@ SUBROUTINE wrf_global_to_patch_integer (globbuf,buf,domdesc,ndim,&
    RETURN
 END SUBROUTINE wrf_global_to_patch_integer
 
+SUBROUTINE wrf_patch_to_global_logical (buf,globbuf,domdesc,ndim,&
+                                       ids,ide,jds,jde,kds,kde,&
+                                       ims,ime,jms,jme,kms,kme,&
+                                       ips,ipe,jps,jpe,kps,kpe )
+   IMPLICIT NONE
+   INTEGER                             ids,ide,jds,jde,kds,kde,&
+                                       ims,ime,jms,jme,kms,kme,&
+                                       ips,ipe,jps,jpe,kps,kpe
+   INTEGER fid,domdesc,ndim,glen(3),llen(3)
+   LOGICAL globbuf(*)
+   LOGICAL buf(*)
+   RETURN
+END SUBROUTINE wrf_patch_to_global_logical
+
+SUBROUTINE wrf_global_to_patch_LOGICAL (globbuf,buf,domdesc,ndim,&
+                                       ids,ide,jds,jde,kds,kde,&
+                                       ims,ime,jms,jme,kms,kme,&
+                                       ips,ipe,jps,jpe,kps,kpe )
+   IMPLICIT NONE
+   INTEGER                             ids,ide,jds,jde,kds,kde,&
+                                       ims,ime,jms,jme,kms,kme,&
+                                       ips,ipe,jps,jpe,kps,kpe
+   INTEGER fid,domdesc,ndim,glen(3),llen(3)
+   LOGICAL globbuf(*)
+   LOGICAL buf(*)
+   RETURN
+END SUBROUTINE wrf_global_to_patch_LOGICAL
 
 

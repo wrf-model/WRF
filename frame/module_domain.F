@@ -28,6 +28,7 @@ MODULE module_domain
    USE module_driver_constants
    USE module_machine
    USE module_state_description
+   USE module_configure
    USE module_wrf_error
    USE esmf_mod
 
@@ -353,7 +354,7 @@ CONTAINS
 
    INTEGER spec_bdy_width
 
-   CALL get_spec_bdy_width( spec_bdy_width )
+   CALL rconfig_get_spec_bdy_width( 1, spec_bdy_width )
 
 #ifndef DM_PARALLEL
 
@@ -543,57 +544,57 @@ CONTAINS
       data_ordering : SELECT CASE ( model_data_order )
         CASE  ( DATA_ORDER_XYZ )
 
-          CALL get_s_we( domain_id , sd1 )
-          CALL get_e_we( domain_id , ed1 )
-          CALL get_s_sn( domain_id , sd2 )
-          CALL get_e_sn( domain_id , ed2 )
-          CALL get_s_vert( domain_id , sd3 )
-          CALL get_e_vert( domain_id , ed3 )
+          CALL rconfig_get_s_we( domain_id , sd1 )
+          CALL rconfig_get_e_we( domain_id , ed1 )
+          CALL rconfig_get_s_sn( domain_id , sd2 )
+          CALL rconfig_get_e_sn( domain_id , ed2 )
+          CALL rconfig_get_s_vert( domain_id , sd3 )
+          CALL rconfig_get_e_vert( domain_id , ed3 )
 
         CASE  ( DATA_ORDER_YXZ )
 
-          CALL get_s_sn( domain_id , sd1 )
-          CALL get_e_sn( domain_id , ed1 )
-          CALL get_s_we( domain_id , sd2 )
-          CALL get_e_we( domain_id , ed2 )
-          CALL get_s_vert( domain_id , sd3 )
-          CALL get_e_vert( domain_id , ed3 )
+          CALL rconfig_get_s_sn( domain_id , sd1 )
+          CALL rconfig_get_e_sn( domain_id , ed1 )
+          CALL rconfig_get_s_we( domain_id , sd2 )
+          CALL rconfig_get_e_we( domain_id , ed2 )
+          CALL rconfig_get_s_vert( domain_id , sd3 )
+          CALL rconfig_get_e_vert( domain_id , ed3 )
 
         CASE  ( DATA_ORDER_ZXY )
 
-          CALL get_s_vert( domain_id , sd1 )
-          CALL get_e_vert( domain_id , ed1 )
-          CALL get_s_we( domain_id , sd2 )
-          CALL get_e_we( domain_id , ed2 )
-          CALL get_s_sn( domain_id , sd3 )
-          CALL get_e_sn( domain_id , ed3 )
+          CALL rconfig_get_s_vert( domain_id , sd1 )
+          CALL rconfig_get_e_vert( domain_id , ed1 )
+          CALL rconfig_get_s_we( domain_id , sd2 )
+          CALL rconfig_get_e_we( domain_id , ed2 )
+          CALL rconfig_get_s_sn( domain_id , sd3 )
+          CALL rconfig_get_e_sn( domain_id , ed3 )
 
         CASE  ( DATA_ORDER_ZYX )
 
-          CALL get_s_vert( domain_id , sd1 )
-          CALL get_e_vert( domain_id , ed1 )
-          CALL get_s_sn( domain_id , sd2 )
-          CALL get_e_sn( domain_id , ed2 )
-          CALL get_s_we( domain_id , sd3 )
-          CALL get_e_we( domain_id , ed3 )
+          CALL rconfig_get_s_vert( domain_id , sd1 )
+          CALL rconfig_get_e_vert( domain_id , ed1 )
+          CALL rconfig_get_s_sn( domain_id , sd2 )
+          CALL rconfig_get_e_sn( domain_id , ed2 )
+          CALL rconfig_get_s_we( domain_id , sd3 )
+          CALL rconfig_get_e_we( domain_id , ed3 )
 
         CASE  ( DATA_ORDER_XZY )
 
-          CALL get_s_we( domain_id , sd1 )
-          CALL get_e_we( domain_id , ed1 )
-          CALL get_s_vert( domain_id , sd2 )
-          CALL get_e_vert( domain_id , ed2 )
-          CALL get_s_sn( domain_id , sd3 )
-          CALL get_e_sn( domain_id , ed3 )
+          CALL rconfig_get_s_we( domain_id , sd1 )
+          CALL rconfig_get_e_we( domain_id , ed1 )
+          CALL rconfig_get_s_vert( domain_id , sd2 )
+          CALL rconfig_get_e_vert( domain_id , ed2 )
+          CALL rconfig_get_s_sn( domain_id , sd3 )
+          CALL rconfig_get_e_sn( domain_id , ed3 )
 
         CASE  ( DATA_ORDER_YZX )
 
-          CALL get_s_sn( domain_id , sd1 )
-          CALL get_e_sn( domain_id , ed1 )
-          CALL get_s_vert( domain_id , sd2 )
-          CALL get_e_vert( domain_id , ed2 )
-          CALL get_s_we( domain_id , sd3 )
-          CALL get_e_we( domain_id , ed3 )
+          CALL rconfig_get_s_sn( domain_id , sd1 )
+          CALL rconfig_get_e_sn( domain_id , ed1 )
+          CALL rconfig_get_s_vert( domain_id , sd2 )
+          CALL rconfig_get_e_vert( domain_id , ed2 )
+          CALL rconfig_get_s_we( domain_id , sd3 )
+          CALL rconfig_get_e_we( domain_id , ed3 )
 
       END SELECT data_ordering
 
@@ -612,6 +613,7 @@ CONTAINS
         parent_domdesc = -1
       ENDIF
 
+! provided by application, WRF defines in share/module_bc.F
       CALL get_bdyzone_x( bdyzone_x )
       CALL get_bdyzone_y( bdyzone_y )
 
@@ -868,8 +870,8 @@ CONTAINS
       CALL get_initial_data_value ( initial_data_value )
 #endif
 
-      CALL get_dyn_opt( dyn_opt )
-      CALL get_spec_bdy_width( spec_bdy_width )
+      CALL rconfig_get_dyn_opt( 1, dyn_opt )
+      CALL rconfig_get_spec_bdy_width( 1, spec_bdy_width )
 
       CALL set_scalar_indices_from_config( id , idum1 , idum2 )
 

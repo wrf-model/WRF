@@ -4,6 +4,8 @@
 
 MODULE module_io
 
+  USE module_configure
+
   LOGICAL :: is_inited = .FALSE.
   INTEGER :: wrf_io_handles(1000), how_opened(1000) 
   LOGICAL :: for_output(1000), first_operation(1000)
@@ -96,35 +98,35 @@ SUBROUTINE wrf_open_for_write_begin( FileName , Comm_compute, Comm_io, SysDepInf
 
   CALL get_value_from_pairs ( "DATASET" , SysDepInfo , DataSet )
   IF      ( DataSet .eq. 'RESTART' ) THEN
-    CALL get_io_form_restart( io_form )
+    CALL rconfig_get_io_form_restart( 1, io_form )
   ELSE IF ( DataSet .eq. 'INPUT' ) THEN
-    CALL get_io_form_input( io_form )
+    CALL rconfig_get_io_form_input( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXINPUT1' ) THEN
-    CALL get_io_form_auxinput1( io_form )
+    CALL rconfig_get_io_form_auxinput1( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXINPUT2' ) THEN
-    CALL get_io_form_auxinput2( io_form )
+    CALL rconfig_get_io_form_auxinput2( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXINPUT3' ) THEN
-    CALL get_io_form_auxinput3( io_form )
+    CALL rconfig_get_io_form_auxinput3( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXINPUT4' ) THEN
-    CALL get_io_form_auxinput4( io_form )
+    CALL rconfig_get_io_form_auxinput4( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXINPUT5' ) THEN
-    CALL get_io_form_auxinput5( io_form )
+    CALL rconfig_get_io_form_auxinput5( 1, io_form )
   ELSE IF ( DataSet .eq. 'HISTORY' ) THEN
-    CALL get_io_form_history( io_form )
+    CALL rconfig_get_io_form_history( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXHIST1' ) THEN
-    CALL get_io_form_auxhist1( io_form )
+    CALL rconfig_get_io_form_auxhist1( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXHIST2' ) THEN
-    CALL get_io_form_auxhist2( io_form )
+    CALL rconfig_get_io_form_auxhist2( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXHIST3' ) THEN
-    CALL get_io_form_auxhist3( io_form )
+    CALL rconfig_get_io_form_auxhist3( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXHIST4' ) THEN
-    CALL get_io_form_auxhist4( io_form )
+    CALL rconfig_get_io_form_auxhist4( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXHIST5' ) THEN
-    CALL get_io_form_auxhist5( io_form )
+    CALL rconfig_get_io_form_auxhist5( 1, io_form )
   ELSE IF ( DataSet .eq. 'BOUNDARY' ) THEN
-    CALL get_io_form_boundary( io_form )
+    CALL rconfig_get_io_form_boundary( 1, io_form )
   ELSE  ! default if nothing is set in SysDepInfo; use history
-    CALL get_io_form_history( io_form )
+    CALL rconfig_get_io_form_history( 1, io_form )
   ENDIF
 
   Status = 0
@@ -337,35 +339,35 @@ SUBROUTINE wrf_open_for_read_begin( FileName , Comm_compute, Comm_io, SysDepInfo
 
   CALL get_value_from_pairs ( "DATASET" , SysDepInfo , DataSet )
   IF      ( DataSet .eq. 'RESTART' ) THEN
-    CALL get_io_form_restart( io_form )
+    CALL rconfig_get_io_form_restart( 1, io_form )
   ELSE IF ( DataSet .eq. 'INPUT' ) THEN
-    CALL get_io_form_input( io_form )
+    CALL rconfig_get_io_form_input( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXINPUT1' ) THEN
-    CALL get_io_form_auxinput1( io_form )
+    CALL rconfig_get_io_form_auxinput1( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXINPUT2' ) THEN
-    CALL get_io_form_auxinput2( io_form )
+    CALL rconfig_get_io_form_auxinput2( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXINPUT3' ) THEN
-    CALL get_io_form_auxinput3( io_form )
+    CALL rconfig_get_io_form_auxinput3( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXINPUT4' ) THEN
-    CALL get_io_form_auxinput4( io_form )
+    CALL rconfig_get_io_form_auxinput4( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXINPUT5' ) THEN
-    CALL get_io_form_auxinput5( io_form )
+    CALL rconfig_get_io_form_auxinput5( 1, io_form )
   ELSE IF ( DataSet .eq. 'HISTORY' ) THEN
-    CALL get_io_form_history( io_form )
+    CALL rconfig_get_io_form_history( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXHIST1' ) THEN
-    CALL get_io_form_auxhist1( io_form )
+    CALL rconfig_get_io_form_auxhist1( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXHIST2' ) THEN
-    CALL get_io_form_auxhist2( io_form )
+    CALL rconfig_get_io_form_auxhist2( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXHIST3' ) THEN
-    CALL get_io_form_auxhist3( io_form )
+    CALL rconfig_get_io_form_auxhist3( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXHIST4' ) THEN
-    CALL get_io_form_auxhist4( io_form )
+    CALL rconfig_get_io_form_auxhist4( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXHIST5' ) THEN
-    CALL get_io_form_auxhist5( io_form )
+    CALL rconfig_get_io_form_auxhist5( 1, io_form )
   ELSE IF ( DataSet .eq. 'BOUNDARY' ) THEN
-    CALL get_io_form_boundary( io_form )
+    CALL rconfig_get_io_form_boundary( 1, io_form )
   ELSE  ! default if nothing is set in SysDepInfo; use history
-    CALL get_io_form_history( io_form )
+    CALL rconfig_get_io_form_history( 1, io_form )
   ENDIF
 
   Status = 0
@@ -511,35 +513,35 @@ SUBROUTINE wrf_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo, &
 
   CALL get_value_from_pairs ( "DATASET" , SysDepInfo , DataSet )
   IF      ( DataSet .eq. 'RESTART' ) THEN
-    CALL get_io_form_restart( io_form )
+    CALL rconfig_get_io_form_restart( 1, io_form )
   ELSE IF ( DataSet .eq. 'INPUT' ) THEN
-    CALL get_io_form_input( io_form )
+    CALL rconfig_get_io_form_input( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXINPUT1' ) THEN
-    CALL get_io_form_auxinput1( io_form )
+    CALL rconfig_get_io_form_auxinput1( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXINPUT2' ) THEN
-    CALL get_io_form_auxinput2( io_form )
+    CALL rconfig_get_io_form_auxinput2( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXINPUT3' ) THEN
-    CALL get_io_form_auxinput3( io_form )
+    CALL rconfig_get_io_form_auxinput3( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXINPUT4' ) THEN
-    CALL get_io_form_auxinput4( io_form )
+    CALL rconfig_get_io_form_auxinput4( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXINPUT5' ) THEN
-    CALL get_io_form_auxinput5( io_form )
+    CALL rconfig_get_io_form_auxinput5( 1, io_form )
   ELSE IF ( DataSet .eq. 'HISTORY' ) THEN
-    CALL get_io_form_history( io_form )
+    CALL rconfig_get_io_form_history( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXHIST1' ) THEN
-    CALL get_io_form_auxhist1( io_form )
+    CALL rconfig_get_io_form_auxhist1( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXHIST2' ) THEN
-    CALL get_io_form_auxhist2( io_form )
+    CALL rconfig_get_io_form_auxhist2( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXHIST3' ) THEN
-    CALL get_io_form_auxhist3( io_form )
+    CALL rconfig_get_io_form_auxhist3( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXHIST4' ) THEN
-    CALL get_io_form_auxhist4( io_form )
+    CALL rconfig_get_io_form_auxhist4( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXHIST5' ) THEN
-    CALL get_io_form_auxhist5( io_form )
+    CALL rconfig_get_io_form_auxhist5( 1, io_form )
   ELSE IF ( DataSet .eq. 'BOUNDARY' ) THEN
-    CALL get_io_form_boundary( io_form )
+    CALL rconfig_get_io_form_boundary( 1, io_form )
   ELSE  ! default if nothing is set in SysDepInfo; use history
-    CALL get_io_form_history( io_form )
+    CALL rconfig_get_io_form_history( 1, io_form )
   ENDIF
 
   Hndl = -1
@@ -1226,299 +1228,6 @@ SUBROUTINE wrf_get_next_var ( DataHandle, VarName, Status )
 END SUBROUTINE wrf_get_next_var
 
 
-SUBROUTINE wrf_read_field ( DataHandle , DateStr , VarName , Field , FieldType ,         &
-                            Comm       , IOComm  ,                                       &
-                            DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
-                            DomainStart , DomainEnd ,                                    &
-                            MemoryStart , MemoryEnd ,                                    &
-                            PatchStart , PatchEnd ,                                      &
-                            Status )
-  USE module_state_description
-  IMPLICIT NONE
-  INTEGER ,       INTENT(IN)    :: DataHandle 
-  CHARACTER*(*) :: DateStr
-  CHARACTER*(*) :: VarName
-  INTEGER ,       INTENT(INOUT) :: Field(*)
-  INTEGER                       ,INTENT(IN)    :: FieldType
-  INTEGER                       ,INTENT(INOUT) :: Comm 
-  INTEGER                       ,INTENT(INOUT) :: IOComm 
-  INTEGER                       ,INTENT(IN)    :: DomainDesc
-  LOGICAL, DIMENSION(4)                        :: bdy_mask
-  CHARACTER*(*)                 ,INTENT(IN)    :: MemoryOrder
-  CHARACTER*(*)                 ,INTENT(IN)    :: Stagger
-  CHARACTER*(*) , dimension (*) ,INTENT(IN)    :: DimNames
-  INTEGER ,dimension(*)         ,INTENT(IN)    :: DomainStart, DomainEnd
-  INTEGER ,dimension(*)         ,INTENT(IN)    :: MemoryStart, MemoryEnd
-  INTEGER ,dimension(*)         ,INTENT(IN)    :: PatchStart,  PatchEnd
-  INTEGER                       ,INTENT(OUT)   :: Status
-#include <wrf_status_codes.h>
-  INTEGER io_form , Hndl
-  LOGICAL                     :: for_out
-  INTEGER, EXTERNAL           :: use_package
-  LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers, use_input_servers
-#ifdef NETCDF
-  EXTERNAL     ext_ncd_read_field
-#endif
-#ifdef MCELIO
-  EXTERNAL     ext_mcel_read_field
-#endif
-#ifdef INTIO
-  EXTERNAL     ext_int_read_field
-#endif
-#ifdef HDF
-  EXTERNAL ext_hdf_read_field
-#endif
-#ifdef XXX
-  EXTERNAL ext_xxx_read_field
-#endif
-#ifdef YYY
-  EXTERNAL ext_yyy_read_field
-#endif
-
-  CALL wrf_debug( DEBUG_LVL, 'module_io.F: in wrf_read_field' )
-
-  Status = 0
-  CALL get_handle ( Hndl, io_form , for_out, DataHandle )
-  CALL reset_first_operation( DataHandle )
-  IF ( Hndl .GT. -1 ) THEN
-    IF ( .NOT. io_form .GT. 0 ) THEN
-      Status = 0 
-    ELSE IF ( .NOT. use_input_servers() ) THEN
-      SELECT CASE ( use_package( io_form ) )
-#ifdef NETCDF
-        CASE ( IO_NETCDF   )
-
-          CALL call_pkg_and_dist   ( ext_ncd_read_field, multi_files(io_form), .false. ,        &
-                                     Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
-                                     DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
-                                     DomainStart , DomainEnd ,                                    &
-                                     MemoryStart , MemoryEnd ,                                    &
-                                     PatchStart , PatchEnd ,                                      &
-                                     Status )
-
-#endif
-#ifdef PHDF5
-        CASE ( IO_PHDF5)
-! this should call call_pkg_and_dist... but should pass true for multi-files  JM ZAP
-          CALL ext_phdf5_read_field   (                   &
-                                     Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
-                                     DomainDesc , MemoryOrder , Stagger , DimNames ,              &
-                                     DomainStart , DomainEnd ,                                    &
-                                     MemoryStart , MemoryEnd ,                                    &
-                                     PatchStart , PatchEnd ,                                      &
-                                     Status )
-#endif
-#ifdef MCELIO
-        CASE ( IO_MCEL   )
-          CALL call_pkg_and_dist   ( ext_mcel_read_field, multi_files(io_form), .true. ,         &
-                                     Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
-                                     DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
-                                     DomainStart , DomainEnd ,                                    &
-                                     MemoryStart , MemoryEnd ,                                    &
-                                     PatchStart , PatchEnd ,                                      &
-                                     Status )
-#endif
-#ifdef HDF
-        CASE ( IO_HDF )
-          CALL call_pkg_and_dist   ( ext_hdf_read_field, multi_files(io_form),  .false.,        &
-                                     Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
-                                     DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
-                                     DomainStart , DomainEnd ,                                    &
-                                     MemoryStart , MemoryEnd ,                                    &
-                                     PatchStart , PatchEnd ,                                      &
-                                     Status )
-#endif
-#ifdef XXX
-        CASE ( IO_XXX )
-          CALL call_pkg_and_dist   ( ext_xxx_read_field, multi_files(io_form), .false.,         &
-                                     Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
-                                     DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
-                                     DomainStart , DomainEnd ,                                    &
-                                     MemoryStart , MemoryEnd ,                                    &
-                                     PatchStart , PatchEnd ,                                      &
-                                     Status )
-#endif
-#ifdef YYY
-        CASE ( IO_YYY )
-          CALL call_pkg_and_dist   ( ext_yyy_read_field, multi_files(io_form), .false.,         &
-                                     Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
-                                     DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
-                                     DomainStart , DomainEnd ,                                    &
-                                     MemoryStart , MemoryEnd ,                                    &
-                                     PatchStart , PatchEnd ,                                      &
-                                     Status )
-#endif
-#ifdef INTIO
-        CASE ( IO_INTIO )
-          CALL call_pkg_and_dist   ( ext_int_read_field, multi_files(io_form), .false.,         &
-                                     Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
-                                     DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
-                                     DomainStart , DomainEnd ,                                    &
-                                     MemoryStart , MemoryEnd ,                                    &
-                                     PatchStart , PatchEnd ,                                      &
-                                     Status )
-#endif
-        CASE DEFAULT
-          Status = 0
-      END SELECT
-    ELSE
-      CALL wrf_error_fatal('module_io.F: wrf_read_field: input_servers not inplemented yet')
-    ENDIF
-  ELSE
-    Status = WRF_ERR_FATAL_BAD_FILE_STATUS
-  ENDIF
-  RETURN
-END SUBROUTINE wrf_read_field
-
-SUBROUTINE wrf_write_field ( DataHandle , DateStr , VarName , Field , FieldType ,         &
-                             Comm       , IOComm  ,                                       &
-                             DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
-                             DomainStart , DomainEnd ,                                    &
-                             MemoryStart , MemoryEnd ,                                    &
-                             PatchStart , PatchEnd ,                                      &
-                             Status )
-
-
-  USE module_state_description
-  IMPLICIT NONE
-  INTEGER ,       INTENT(IN)    :: DataHandle 
-  CHARACTER*(*) :: DateStr
-  CHARACTER*(*) :: VarName
-  INTEGER ,       INTENT(IN)    :: Field(*)
-  INTEGER                       ,INTENT(IN)    :: FieldType
-  INTEGER                       ,INTENT(INOUT) :: Comm
-  INTEGER                       ,INTENT(INOUT) :: IOComm
-  INTEGER                       ,INTENT(IN)    :: DomainDesc
-  LOGICAL, DIMENSION(4)         ,INTENT(IN)    :: bdy_mask
-  CHARACTER*(*)                 ,INTENT(IN)    :: MemoryOrder
-  CHARACTER*(*)                 ,INTENT(IN)    :: Stagger
-  CHARACTER*(*) , dimension (*) ,INTENT(IN)    :: DimNames
-  INTEGER ,dimension(*)         ,INTENT(IN)    :: DomainStart, DomainEnd
-  INTEGER ,dimension(*)         ,INTENT(IN)    :: MemoryStart, MemoryEnd
-  INTEGER ,dimension(*)         ,INTENT(IN)    :: PatchStart,  PatchEnd
-  INTEGER                       ,INTENT(OUT)   :: Status
-#include <wrf_status_codes.h>
-  INTEGER io_form , Hndl
-  LOGICAL                     :: for_out
-  INTEGER, EXTERNAL           :: use_package
-  LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
-#ifdef NETCDF
-  EXTERNAL     ext_ncd_write_field
-#endif
-#ifdef MCELIO
-  EXTERNAL     ext_mcel_write_field
-#endif
-#ifdef INTIO
-  EXTERNAL     ext_int_write_field
-#endif
-#ifdef HDF
-  EXTERNAL ext_hdf_write_field
-#endif
-#ifdef XXX
-  EXTERNAL ext_xxx_write_field
-#endif
-#ifdef YYY
-  EXTERNAL ext_yyy_write_field
-#endif
-
-  CALL wrf_debug( DEBUG_LVL, 'module_io.F: in wrf_write_field' )
-
-  Status = 0
-  CALL get_handle ( Hndl, io_form , for_out, DataHandle )
-  CALL reset_first_operation ( DataHandle )
-  IF ( Hndl .GT. -1 ) THEN
-    IF ( multi_files( io_form ) .OR. .NOT. use_output_servers() ) THEN
-      SELECT CASE ( use_package( io_form ) )
-#ifdef NETCDF
-        CASE ( IO_NETCDF   )
-          CALL collect_fld_and_call_pkg ( ext_ncd_write_field, multi_files(io_form),                  &
-                                     Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
-                                     DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
-                                     DomainStart , DomainEnd ,                                    &
-                                     MemoryStart , MemoryEnd ,                                    &
-                                     PatchStart , PatchEnd ,                                      &
-                                     Status )
-#endif
-#ifdef MCELIO
-        CASE ( IO_MCEL   )
-          CALL collect_fld_and_call_pkg ( ext_mcel_write_field, multi_files(io_form),                  &
-                                     Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
-                                     DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
-                                     DomainStart , DomainEnd ,                                    &
-                                     MemoryStart , MemoryEnd ,                                    &
-                                     PatchStart , PatchEnd ,                                      &
-                                     Status )
-#endif
-#ifdef PHDF5
-        CASE ( IO_PHDF5 )
-! this should call collect_fld_and... but should pass true for multi-files  JM ZAP
-          CALL ext_phdf5_write_field(                  &
-                                     Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
-                                     DomainDesc , MemoryOrder , Stagger , DimNames ,              &
-                                     DomainStart , DomainEnd ,                                    &
-                                     MemoryStart , MemoryEnd ,                                    &
-                                     PatchStart , PatchEnd ,                                      &
-                                     Status )
-#endif
-#ifdef HDF
-        CASE ( IO_HDF )
-          CALL collect_fld_and_call_pkg ( ext_hdf_write_field, multi_files(io_form),                  &
-                                     Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
-                                     DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
-                                     DomainStart , DomainEnd ,                                    &
-                                     MemoryStart , MemoryEnd ,                                    &
-                                     PatchStart , PatchEnd ,                                      &
-                                     Status )
-#endif
-#ifdef XXX
-        CASE ( IO_XXX )
-          CALL collect_fld_and_call_pkg ( ext_xxx_write_field, multi_files(io_form),                  &
-                                     Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
-                                     DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
-                                     DomainStart , DomainEnd ,                                    &
-                                     MemoryStart , MemoryEnd ,                                    &
-                                     PatchStart , PatchEnd ,                                      &
-                                     Status )
-#endif
-#ifdef YYY
-        CASE ( IO_YYY )
-          CALL collect_fld_and_call_pkg ( ext_yyy_write_field, multi_files(io_form),                  &
-                                     Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
-                                     DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
-                                     DomainStart , DomainEnd ,                                    &
-                                     MemoryStart , MemoryEnd ,                                    &
-                                     PatchStart , PatchEnd ,                                      &
-                                     Status )
-#endif
-#ifdef INTIO
-        CASE ( IO_INTIO )
-          CALL collect_fld_and_call_pkg ( ext_int_write_field, multi_files(io_form),                  &
-                                     Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
-                                     DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
-                                     DomainStart , DomainEnd ,                                    &
-                                     MemoryStart , MemoryEnd ,                                    &
-                                     PatchStart , PatchEnd ,                                      &
-                                     Status )
-#endif
-        CASE DEFAULT
-          Status = 0
-      END SELECT
-    ELSE IF ( use_output_servers() ) THEN
-      IF ( io_form .GT. 0 ) THEN
-      CALL ext_quilt_write_field ( Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
-                                   DomainDesc , MemoryOrder , Stagger , DimNames ,              &
-                                   DomainStart , DomainEnd ,                                    &
-                                   MemoryStart , MemoryEnd ,                                    &
-                                   PatchStart , PatchEnd ,                                      &
-                                   Status )
-      ENDIF
-    ENDIF
-  ELSE
-    Status = WRF_ERR_FATAL_BAD_FILE_STATUS
-  ENDIF
-  RETURN
-END SUBROUTINE wrf_write_field
-
 ! wrf_get_var_info  (not implemented for IntIO)
 
 SUBROUTINE wrf_get_var_info ( DataHandle , VarName , NDim , MemoryOrder , Stagger , &
@@ -1721,6 +1430,416 @@ SUBROUTINE init_module_io
 END SUBROUTINE init_module_io
 END MODULE module_io
 
+
+! defined outside of module to defeat arg/param type checking
+SUBROUTINE wrf_read_field ( DataHandle , DateStr , VarName , Field , FieldType ,         &
+                            Comm       , IOComm  ,                                       &
+                            DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
+                            DomainStart , DomainEnd ,                                    &
+                            MemoryStart , MemoryEnd ,                                    &
+                            PatchStart , PatchEnd ,                                      &
+                            Status )
+! <DESCRIPTION>
+! Wrapper for ensuring uniform treatment of logicals across platforms by converting to integer before writing
+! </DESCRIPTION>
+  USE module_state_description
+  USE module_configure
+  IMPLICIT NONE
+  INTEGER ,       INTENT(IN)    :: DataHandle
+  CHARACTER*(*) :: DateStr
+  CHARACTER*(*) :: VarName
+  LOGICAL ,       INTENT(INOUT) :: Field(*)
+  INTEGER                       ,INTENT(IN)    :: FieldType
+  INTEGER                       ,INTENT(INOUT) :: Comm
+  INTEGER                       ,INTENT(INOUT) :: IOComm
+  INTEGER                       ,INTENT(IN)    :: DomainDesc
+  LOGICAL, DIMENSION(4)                        :: bdy_mask
+  CHARACTER*(*)                 ,INTENT(IN)    :: MemoryOrder
+  CHARACTER*(*)                 ,INTENT(IN)    :: Stagger
+  CHARACTER*(*) , dimension (*) ,INTENT(IN)    :: DimNames
+  INTEGER ,dimension(*)         ,INTENT(IN)    :: DomainStart, DomainEnd
+  INTEGER ,dimension(*)         ,INTENT(IN)    :: MemoryStart, MemoryEnd
+  INTEGER ,dimension(*)         ,INTENT(IN)    :: PatchStart,  PatchEnd
+  INTEGER                       ,INTENT(OUT)   :: Status
+#include <wrf_status_codes.h>
+#include <wrf_io_flags.h>
+  INTEGER, ALLOCATABLE        :: ICAST(:)
+  IF ( FieldType .EQ. WRF_LOGICAL ) THEN
+    ALLOCATE(ICAST((MemoryEnd(1)-MemoryStart(1)+1)*(MemoryEnd(2)-MemoryStart(2)+1)*(MemoryEnd(3)-MemoryStart(3)+1)))
+
+    CALL wrf_read_field1 ( DataHandle , DateStr , VarName , ICAST , WRF_INTEGER ,         &
+                           Comm       , IOComm  ,                                       &
+                           DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
+                           DomainStart , DomainEnd ,                                    &
+                           MemoryStart , MemoryEnd ,                                    &
+                           PatchStart , PatchEnd ,                                      &
+                           Status )
+    Field(1:(MemoryEnd(1)-MemoryStart(1)+1)*(MemoryEnd(2)-MemoryStart(2)+1)*(MemoryEnd(3)-MemoryStart(3)+1)) = ICAST == 1
+    DEALLOCATE(ICAST)
+  ELSE
+    CALL wrf_read_field1 ( DataHandle , DateStr , VarName , Field , FieldType ,         &
+                           Comm       , IOComm  ,                                       &
+                           DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
+                           DomainStart , DomainEnd ,                                    &
+                           MemoryStart , MemoryEnd ,                                    &
+                           PatchStart , PatchEnd ,                                      &
+                           Status )
+  ENDIF
+END SUBROUTINE wrf_read_field
+
+SUBROUTINE wrf_read_field1 ( DataHandle , DateStr , VarName , Field , FieldType ,         &
+                            Comm       , IOComm  ,                                       &
+                            DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
+                            DomainStart , DomainEnd ,                                    &
+                            MemoryStart , MemoryEnd ,                                    &
+                            PatchStart , PatchEnd ,                                      &
+                            Status )
+  USE module_state_description
+  USE module_configure
+  USE module_io
+  IMPLICIT NONE
+  INTEGER ,       INTENT(IN)    :: DataHandle 
+  CHARACTER*(*) :: DateStr
+  CHARACTER*(*) :: VarName
+  INTEGER ,       INTENT(INOUT) :: Field(*)
+  INTEGER                       ,INTENT(IN)    :: FieldType
+  INTEGER                       ,INTENT(INOUT) :: Comm 
+  INTEGER                       ,INTENT(INOUT) :: IOComm 
+  INTEGER                       ,INTENT(IN)    :: DomainDesc
+  LOGICAL, DIMENSION(4)                        :: bdy_mask
+  CHARACTER*(*)                 ,INTENT(IN)    :: MemoryOrder
+  CHARACTER*(*)                 ,INTENT(IN)    :: Stagger
+  CHARACTER*(*) , dimension (*) ,INTENT(IN)    :: DimNames
+  INTEGER ,dimension(*)         ,INTENT(IN)    :: DomainStart, DomainEnd
+  INTEGER ,dimension(*)         ,INTENT(IN)    :: MemoryStart, MemoryEnd
+  INTEGER ,dimension(*)         ,INTENT(IN)    :: PatchStart,  PatchEnd
+  INTEGER                       ,INTENT(OUT)   :: Status
+#include <wrf_status_codes.h>
+  INTEGER io_form , Hndl
+  LOGICAL                     :: for_out
+  INTEGER, EXTERNAL           :: use_package
+  LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers, use_input_servers
+#ifdef NETCDF
+  EXTERNAL     ext_ncd_read_field
+#endif
+#ifdef MCELIO
+  EXTERNAL     ext_mcel_read_field
+#endif
+#ifdef INTIO
+  EXTERNAL     ext_int_read_field
+#endif
+#ifdef HDF
+  EXTERNAL ext_hdf_read_field
+#endif
+#ifdef XXX
+  EXTERNAL ext_xxx_read_field
+#endif
+#ifdef YYY
+  EXTERNAL ext_yyy_read_field
+#endif
+
+  CALL wrf_debug( DEBUG_LVL, 'module_io.F: in wrf_read_field' )
+
+  Status = 0
+  CALL get_handle ( Hndl, io_form , for_out, DataHandle )
+  CALL reset_first_operation( DataHandle )
+  IF ( Hndl .GT. -1 ) THEN
+    IF ( .NOT. io_form .GT. 0 ) THEN
+      Status = 0 
+    ELSE IF ( .NOT. use_input_servers() ) THEN
+      SELECT CASE ( use_package( io_form ) )
+#ifdef NETCDF
+        CASE ( IO_NETCDF   )
+
+          CALL call_pkg_and_dist   ( ext_ncd_read_field, multi_files(io_form), .false. ,        &
+                                     Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
+                                     DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
+                                     DomainStart , DomainEnd ,                                    &
+                                     MemoryStart , MemoryEnd ,                                    &
+                                     PatchStart , PatchEnd ,                                      &
+                                     Status )
+
+#endif
+#ifdef PHDF5
+        CASE ( IO_PHDF5)
+! this should call call_pkg_and_dist... but should pass true for multi-files  JM ZAP
+          CALL ext_phdf5_read_field   (                   &
+                                     Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
+                                     DomainDesc , MemoryOrder , Stagger , DimNames ,              &
+                                     DomainStart , DomainEnd ,                                    &
+                                     MemoryStart , MemoryEnd ,                                    &
+                                     PatchStart , PatchEnd ,                                      &
+                                     Status )
+#endif
+#ifdef MCELIO
+        CASE ( IO_MCEL   )
+          CALL call_pkg_and_dist   ( ext_mcel_read_field, multi_files(io_form), .true. ,         &
+                                     Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
+                                     DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
+                                     DomainStart , DomainEnd ,                                    &
+                                     MemoryStart , MemoryEnd ,                                    &
+                                     PatchStart , PatchEnd ,                                      &
+                                     Status )
+#endif
+#ifdef HDF
+        CASE ( IO_HDF )
+          CALL call_pkg_and_dist   ( ext_hdf_read_field, multi_files(io_form),  .false.,        &
+                                     Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
+                                     DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
+                                     DomainStart , DomainEnd ,                                    &
+                                     MemoryStart , MemoryEnd ,                                    &
+                                     PatchStart , PatchEnd ,                                      &
+                                     Status )
+#endif
+#ifdef XXX
+        CASE ( IO_XXX )
+          CALL call_pkg_and_dist   ( ext_xxx_read_field, multi_files(io_form), .false.,         &
+                                     Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
+                                     DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
+                                     DomainStart , DomainEnd ,                                    &
+                                     MemoryStart , MemoryEnd ,                                    &
+                                     PatchStart , PatchEnd ,                                      &
+                                     Status )
+#endif
+#ifdef YYY
+        CASE ( IO_YYY )
+          CALL call_pkg_and_dist   ( ext_yyy_read_field, multi_files(io_form), .false.,         &
+                                     Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
+                                     DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
+                                     DomainStart , DomainEnd ,                                    &
+                                     MemoryStart , MemoryEnd ,                                    &
+                                     PatchStart , PatchEnd ,                                      &
+                                     Status )
+#endif
+#ifdef INTIO
+        CASE ( IO_INTIO )
+          CALL call_pkg_and_dist   ( ext_int_read_field, multi_files(io_form), .false.,         &
+                                     Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
+                                     DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
+                                     DomainStart , DomainEnd ,                                    &
+                                     MemoryStart , MemoryEnd ,                                    &
+                                     PatchStart , PatchEnd ,                                      &
+                                     Status )
+#endif
+        CASE DEFAULT
+          Status = 0
+      END SELECT
+    ELSE
+      CALL wrf_error_fatal('module_io.F: wrf_read_field: input_servers not inplemented yet')
+    ENDIF
+  ELSE
+    Status = WRF_ERR_FATAL_BAD_FILE_STATUS
+  ENDIF
+  RETURN
+END SUBROUTINE wrf_read_field1
+
+SUBROUTINE wrf_write_field ( DataHandle , DateStr , VarName , Field , FieldType ,         &
+                             Comm       , IOComm  ,                                       &
+                             DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
+                             DomainStart , DomainEnd ,                                    &
+                             MemoryStart , MemoryEnd ,                                    &
+                             PatchStart , PatchEnd ,                                      &
+                             Status )
+! <DESCRIPTION>
+! Wrapper for ensuring uniform treatment of logicals across platforms by converting to integer before writing
+! </DESCRIPTION>
+  USE module_state_description
+  USE module_configure
+  IMPLICIT NONE
+  INTEGER ,       INTENT(IN)    :: DataHandle
+  CHARACTER*(*) :: DateStr
+  CHARACTER*(*) :: VarName
+  LOGICAL ,       INTENT(IN)    :: Field(*)
+  INTEGER                       ,INTENT(IN)    :: FieldType
+  INTEGER                       ,INTENT(INOUT) :: Comm
+  INTEGER                       ,INTENT(INOUT) :: IOComm
+  INTEGER                       ,INTENT(IN)    :: DomainDesc
+  LOGICAL, DIMENSION(4)         ,INTENT(IN)    :: bdy_mask
+  CHARACTER*(*)                 ,INTENT(IN)    :: MemoryOrder
+  CHARACTER*(*)                 ,INTENT(IN)    :: Stagger
+  CHARACTER*(*) , dimension (*) ,INTENT(IN)    :: DimNames
+  INTEGER ,dimension(*)         ,INTENT(IN)    :: DomainStart, DomainEnd
+  INTEGER ,dimension(*)         ,INTENT(IN)    :: MemoryStart, MemoryEnd
+  INTEGER ,dimension(*)         ,INTENT(IN)    :: PatchStart,  PatchEnd
+  INTEGER                       ,INTENT(OUT)   :: Status
+#include <wrf_status_codes.h>
+#include <wrf_io_flags.h>
+  INTEGER, ALLOCATABLE        :: ICAST(:)
+  IF ( FieldType .EQ. WRF_LOGICAL ) THEN
+      ALLOCATE(ICAST((MemoryEnd(1)-MemoryStart(1)+1)*(MemoryEnd(2)-MemoryStart(2)+1)*(MemoryEnd(3)-MemoryStart(3)+1)))
+      ICAST = 0
+      WHERE ( Field(1:(MemoryEnd(1)-MemoryStart(1)+1)*(MemoryEnd(2)-MemoryStart(2)+1)*(MemoryEnd(3)-MemoryStart(3)+1)) )
+        ICAST = 1
+      END WHERE
+    CALL wrf_write_field1 ( DataHandle , DateStr , VarName , ICAST , WRF_INTEGER ,         &
+                            Comm       , IOComm  ,                                       &
+                            DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
+                            DomainStart , DomainEnd ,                                    &
+                            MemoryStart , MemoryEnd ,                                    &
+                            PatchStart , PatchEnd ,                                      &
+                            Status )
+      DEALLOCATE(ICAST)
+  ELSE
+    CALL wrf_write_field1 ( DataHandle , DateStr , VarName , Field , FieldType ,         &
+                            Comm       , IOComm  ,                                       &
+                            DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
+                            DomainStart , DomainEnd ,                                    &
+                            MemoryStart , MemoryEnd ,                                    &
+                            PatchStart , PatchEnd ,                                      &
+                            Status )
+  ENDIF
+END SUBROUTINE wrf_write_field
+
+SUBROUTINE wrf_write_field1 ( DataHandle , DateStr , VarName , Field , FieldType ,         &
+                             Comm       , IOComm  ,                                       &
+                             DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
+                             DomainStart , DomainEnd ,                                    &
+                             MemoryStart , MemoryEnd ,                                    &
+                             PatchStart , PatchEnd ,                                      &
+                             Status )
+
+  USE module_state_description
+  USE module_configure
+  USE module_io
+  IMPLICIT NONE
+  INTEGER ,       INTENT(IN)    :: DataHandle 
+  CHARACTER*(*) :: DateStr
+  CHARACTER*(*) :: VarName
+  INTEGER ,       INTENT(IN)    :: Field(*)
+  INTEGER                       ,INTENT(IN)    :: FieldType
+  INTEGER                       ,INTENT(INOUT) :: Comm
+  INTEGER                       ,INTENT(INOUT) :: IOComm
+  INTEGER                       ,INTENT(IN)    :: DomainDesc
+  LOGICAL, DIMENSION(4)         ,INTENT(IN)    :: bdy_mask
+  CHARACTER*(*)                 ,INTENT(IN)    :: MemoryOrder
+  CHARACTER*(*)                 ,INTENT(IN)    :: Stagger
+  CHARACTER*(*) , dimension (*) ,INTENT(IN)    :: DimNames
+  INTEGER ,dimension(*)         ,INTENT(IN)    :: DomainStart, DomainEnd
+  INTEGER ,dimension(*)         ,INTENT(IN)    :: MemoryStart, MemoryEnd
+  INTEGER ,dimension(*)         ,INTENT(IN)    :: PatchStart,  PatchEnd
+  INTEGER                       ,INTENT(OUT)   :: Status
+#include <wrf_status_codes.h>
+  INTEGER io_form , Hndl
+  LOGICAL                     :: for_out
+  INTEGER, EXTERNAL           :: use_package
+  LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+#ifdef NETCDF
+  EXTERNAL     ext_ncd_write_field
+#endif
+#ifdef MCELIO
+  EXTERNAL     ext_mcel_write_field
+#endif
+#ifdef INTIO
+  EXTERNAL     ext_int_write_field
+#endif
+#ifdef HDF
+  EXTERNAL ext_hdf_write_field
+#endif
+#ifdef XXX
+  EXTERNAL ext_xxx_write_field
+#endif
+#ifdef YYY
+  EXTERNAL ext_yyy_write_field
+#endif
+
+  CALL wrf_debug( DEBUG_LVL, 'module_io.F: in wrf_write_field' )
+
+  Status = 0
+  CALL get_handle ( Hndl, io_form , for_out, DataHandle )
+  CALL reset_first_operation ( DataHandle )
+  IF ( Hndl .GT. -1 ) THEN
+    IF ( multi_files( io_form ) .OR. .NOT. use_output_servers() ) THEN
+      SELECT CASE ( use_package( io_form ) )
+#ifdef NETCDF
+        CASE ( IO_NETCDF   )
+          CALL collect_fld_and_call_pkg ( ext_ncd_write_field, multi_files(io_form),                  &
+                                     Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
+                                     DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
+                                     DomainStart , DomainEnd ,                                    &
+                                     MemoryStart , MemoryEnd ,                                    &
+                                     PatchStart , PatchEnd ,                                      &
+                                     Status )
+#endif
+#ifdef MCELIO
+        CASE ( IO_MCEL   )
+          CALL collect_fld_and_call_pkg ( ext_mcel_write_field, multi_files(io_form),                  &
+                                     Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
+                                     DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
+                                     DomainStart , DomainEnd ,                                    &
+                                     MemoryStart , MemoryEnd ,                                    &
+                                     PatchStart , PatchEnd ,                                      &
+                                     Status )
+#endif
+#ifdef PHDF5
+        CASE ( IO_PHDF5 )
+! this should call collect_fld_and... but should pass true for multi-files  JM ZAP
+          CALL ext_phdf5_write_field(                  &
+                                     Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
+                                     DomainDesc , MemoryOrder , Stagger , DimNames ,              &
+                                     DomainStart , DomainEnd ,                                    &
+                                     MemoryStart , MemoryEnd ,                                    &
+                                     PatchStart , PatchEnd ,                                      &
+                                     Status )
+#endif
+#ifdef HDF
+        CASE ( IO_HDF )
+          CALL collect_fld_and_call_pkg ( ext_hdf_write_field, multi_files(io_form),                  &
+                                     Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
+                                     DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
+                                     DomainStart , DomainEnd ,                                    &
+                                     MemoryStart , MemoryEnd ,                                    &
+                                     PatchStart , PatchEnd ,                                      &
+                                     Status )
+#endif
+#ifdef XXX
+        CASE ( IO_XXX )
+          CALL collect_fld_and_call_pkg ( ext_xxx_write_field, multi_files(io_form),                  &
+                                     Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
+                                     DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
+                                     DomainStart , DomainEnd ,                                    &
+                                     MemoryStart , MemoryEnd ,                                    &
+                                     PatchStart , PatchEnd ,                                      &
+                                     Status )
+#endif
+#ifdef YYY
+        CASE ( IO_YYY )
+          CALL collect_fld_and_call_pkg ( ext_yyy_write_field, multi_files(io_form),                  &
+                                     Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
+                                     DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
+                                     DomainStart , DomainEnd ,                                    &
+                                     MemoryStart , MemoryEnd ,                                    &
+                                     PatchStart , PatchEnd ,                                      &
+                                     Status )
+#endif
+#ifdef INTIO
+        CASE ( IO_INTIO )
+          CALL collect_fld_and_call_pkg ( ext_int_write_field, multi_files(io_form),                  &
+                                     Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
+                                     DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
+                                     DomainStart , DomainEnd ,                                    &
+                                     MemoryStart , MemoryEnd ,                                    &
+                                     PatchStart , PatchEnd ,                                      &
+                                     Status )
+#endif
+        CASE DEFAULT
+          Status = 0
+      END SELECT
+    ELSE IF ( use_output_servers() ) THEN
+      IF ( io_form .GT. 0 ) THEN
+      CALL ext_quilt_write_field ( Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
+                                   DomainDesc , MemoryOrder , Stagger , DimNames ,              &
+                                   DomainStart , DomainEnd ,                                    &
+                                   MemoryStart , MemoryEnd ,                                    &
+                                   PatchStart , PatchEnd ,                                      &
+                                   Status )
+      ENDIF
+    ENDIF
+  ELSE
+    Status = WRF_ERR_FATAL_BAD_FILE_STATUS
+  ENDIF
+  RETURN
+END SUBROUTINE wrf_write_field1
+
 ! parse comma separated list of VARIABLE=VALUE strings and return the
 ! value for the matching variable if such exists, otherwise return
 ! the empty string
@@ -1838,7 +1957,17 @@ SUBROUTINE collect_fld_and_call_pkg (    fcn, donotcollect_arg,                 
                PatchStart , PatchEnd ,                                        &
                Status )
 
-  ELSE IF ( FieldType .EQ. WRF_DOUBLE  .OR.  FieldType .EQ. WRF_REAL ) THEN
+  ELSE IF ( FieldType .EQ. WRF_DOUBLE  ) THEN
+
+     CALL collect_double_and_call_pkg ( fcn,                                        &
+               Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
+               DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
+               DomainStart , DomainEnd ,                                    &
+               MemoryStart , MemoryEnd ,                                    &
+               PatchStart , PatchEnd ,                                      &
+               Status )
+
+  ELSE IF ( FieldType .EQ. WRF_REAL ) THEN
 
      CALL collect_real_and_call_pkg ( fcn,                                        &
                Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
@@ -1851,6 +1980,16 @@ SUBROUTINE collect_fld_and_call_pkg (    fcn, donotcollect_arg,                 
   ELSE IF ( FieldType .EQ. WRF_INTEGER ) THEN
 
      CALL collect_int_and_call_pkg ( fcn,                                        &
+               Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
+               DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
+               DomainStart , DomainEnd ,                                    &
+               MemoryStart , MemoryEnd ,                                    &
+               PatchStart , PatchEnd ,                                      &
+               Status )
+
+  ELSE IF ( FieldType .EQ. WRF_LOGICAL ) THEN
+
+     CALL collect_logical_and_call_pkg ( fcn,                                        &
                Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
                DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
                DomainStart , DomainEnd ,                                    &
@@ -1944,6 +2083,89 @@ SUBROUTINE collect_int_and_call_pkg (   fcn,                                    
 
 END SUBROUTINE collect_int_and_call_pkg
 
+! sole purpose of this wrapper is to allocate a big double buffer
+SUBROUTINE collect_double_and_call_pkg (   fcn,                                                     &
+                                     Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
+                                     DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,    &
+                                     DomainStart , DomainEnd ,                                    &
+                                     MemoryStart , MemoryEnd ,                                    &
+                                     PatchStart , PatchEnd ,                                      &
+                                     Status )
+  USE module_state_description
+  USE module_driver_constants
+  IMPLICIT NONE
+  EXTERNAL fcn
+  INTEGER ,       INTENT(IN)    :: Hndl
+  CHARACTER*(*) :: DateStr
+  CHARACTER*(*) :: VarName
+  DOUBLE PRECISION    ,       INTENT(IN)    :: Field(*)
+  INTEGER                       ,INTENT(IN)    :: FieldType
+  INTEGER                       ,INTENT(INOUT) :: Comm
+  INTEGER                       ,INTENT(INOUT) :: IOComm
+  INTEGER                       ,INTENT(IN)    :: DomainDesc
+  LOGICAL, DIMENSION(4)                        :: bdy_mask
+  CHARACTER*(*)                 ,INTENT(IN)    :: MemoryOrder
+  CHARACTER*(*)                 ,INTENT(IN)    :: Stagger
+  CHARACTER*(*) , dimension (*) ,INTENT(IN)    :: DimNames
+  INTEGER ,dimension(*)         ,INTENT(IN)    :: DomainStart, DomainEnd
+  INTEGER ,dimension(*)         ,INTENT(IN)    :: MemoryStart, MemoryEnd
+  INTEGER ,dimension(*)         ,INTENT(IN)    :: PatchStart,  PatchEnd
+  INTEGER                       ,INTENT(INOUT)   :: Status
+  DOUBLE PRECISION globbuf ( (DomainEnd(1)-DomainStart(1)+3)*(DomainEnd(2)-DomainStart(2)+3)*(DomainEnd(3)-DomainStart(3)+3) )
+
+  CALL collect_generic_and_call_pkg (   fcn, globbuf,                                             &
+                                     Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
+                                     DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,    &
+                                     DomainStart , DomainEnd ,                                    &
+                                     MemoryStart , MemoryEnd ,                                    &
+                                     PatchStart , PatchEnd ,                                      &
+                                     Status )
+  RETURN
+
+END SUBROUTINE collect_double_and_call_pkg
+
+! sole purpose of this wrapper is to allocate a big logical buffer
+SUBROUTINE collect_logical_and_call_pkg (   fcn,                                                     &
+                                     Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
+                                     DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,    &
+                                     DomainStart , DomainEnd ,                                    &
+                                     MemoryStart , MemoryEnd ,                                    &
+                                     PatchStart , PatchEnd ,                                      &
+                                     Status )
+  USE module_state_description
+  USE module_driver_constants
+  IMPLICIT NONE
+  EXTERNAL fcn
+  INTEGER ,       INTENT(IN)    :: Hndl
+  CHARACTER*(*) :: DateStr
+  CHARACTER*(*) :: VarName
+  LOGICAL    ,       INTENT(IN)    :: Field(*)
+  INTEGER                       ,INTENT(IN)    :: FieldType
+  INTEGER                       ,INTENT(INOUT) :: Comm
+  INTEGER                       ,INTENT(INOUT) :: IOComm
+  INTEGER                       ,INTENT(IN)    :: DomainDesc
+  LOGICAL, DIMENSION(4)                        :: bdy_mask
+  CHARACTER*(*)                 ,INTENT(IN)    :: MemoryOrder
+  CHARACTER*(*)                 ,INTENT(IN)    :: Stagger
+  CHARACTER*(*) , dimension (*) ,INTENT(IN)    :: DimNames
+  INTEGER ,dimension(*)         ,INTENT(IN)    :: DomainStart, DomainEnd
+  INTEGER ,dimension(*)         ,INTENT(IN)    :: MemoryStart, MemoryEnd
+  INTEGER ,dimension(*)         ,INTENT(IN)    :: PatchStart,  PatchEnd
+  INTEGER                       ,INTENT(INOUT)   :: Status
+  LOGICAL globbuf ( (DomainEnd(1)-DomainStart(1)+3)*(DomainEnd(2)-DomainStart(2)+3)*(DomainEnd(3)-DomainStart(3)+3) )
+
+  CALL collect_generic_and_call_pkg (   fcn, globbuf,                                             &
+                                     Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
+                                     DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,    &
+                                     DomainStart , DomainEnd ,                                    &
+                                     MemoryStart , MemoryEnd ,                                    &
+                                     PatchStart , PatchEnd ,                                      &
+                                     Status )
+  RETURN
+
+END SUBROUTINE collect_logical_and_call_pkg
+
+
 SUBROUTINE collect_generic_and_call_pkg ( fcn, globbuf,                                           &
                                      Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
                                      DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,    &
@@ -2028,13 +2250,23 @@ include "mpif.h"
     CASE (  'xzy','zxy','xyz','yxz','xy','yx' )
 
       distributed_field = .TRUE.
-      IF ( FieldType .EQ. WRF_DOUBLE .OR. FieldType .EQ. WRF_REAL ) THEN
+      IF ( FieldType .EQ. WRF_DOUBLE ) THEN
+        CALL wrf_patch_to_global_double ( Field  , globbuf , DomainDesc, Stagger, MemOrd ,             &
+           DomainStart(1), DomainEnd(1), DomainStart(2), DomainEnd(2), DomainStart(3), DomainEnd(3), &
+           MemoryStart(1), MemoryEnd(1), MemoryStart(2), MemoryEnd(2), MemoryStart(3), MemoryEnd(3), &
+           PatchStart(1) , PatchEnd(1) , PatchStart(2) , PatchEnd(2) , PatchStart(3) , PatchEnd(3) )
+      ELSE IF ( FieldType .EQ. WRF_REAL ) THEN
         CALL wrf_patch_to_global_real ( Field  , globbuf , DomainDesc, Stagger, MemOrd ,             &
            DomainStart(1), DomainEnd(1), DomainStart(2), DomainEnd(2), DomainStart(3), DomainEnd(3), &
            MemoryStart(1), MemoryEnd(1), MemoryStart(2), MemoryEnd(2), MemoryStart(3), MemoryEnd(3), &
            PatchStart(1) , PatchEnd(1) , PatchStart(2) , PatchEnd(2) , PatchStart(3) , PatchEnd(3) )
       ELSE IF ( FieldType .EQ. WRF_INTEGER ) THEN
         CALL wrf_patch_to_global_integer ( Field  , globbuf , DomainDesc, Stagger, MemOrd ,             &
+           DomainStart(1), DomainEnd(1), DomainStart(2), DomainEnd(2), DomainStart(3), DomainEnd(3), &
+           MemoryStart(1), MemoryEnd(1), MemoryStart(2), MemoryEnd(2), MemoryStart(3), MemoryEnd(3), &
+           PatchStart(1) , PatchEnd(1) , PatchStart(2) , PatchEnd(2) , PatchStart(3) , PatchEnd(3) )
+      ELSE IF ( FieldType .EQ. WRF_LOGICAL ) THEN
+        CALL wrf_patch_to_global_logical ( Field  , globbuf , DomainDesc, Stagger, MemOrd ,             &
            DomainStart(1), DomainEnd(1), DomainStart(2), DomainEnd(2), DomainStart(3), DomainEnd(3), &
            MemoryStart(1), MemoryEnd(1), MemoryStart(2), MemoryEnd(2), MemoryStart(3), MemoryEnd(3), &
            PatchStart(1) , PatchEnd(1) , PatchStart(2) , PatchEnd(2) , PatchStart(3) , PatchEnd(3) )
@@ -2073,7 +2305,19 @@ include "mpif.h"
            lx2  = dom_end_rev(1)-DomainStart(1)+1
            idx  = lx*((k-1)+(i-1)*(MemoryEnd(2)-MemoryStart(2)+1))
            idx2 = lx2*((k-1)+(i-1)*(MemoryEnd(2)-MemoryStart(2)+1))
-           IF ( FieldType .EQ. WRF_DOUBLE  .OR. FieldType .EQ. WRF_REAL ) THEN
+           IF ( FieldType .EQ. WRF_DOUBLE  ) THEN
+
+             CALL wrf_gatherv_double ( Field, PatchStart(1)+idx , &
+                             my_count ,                       &    ! sendcount
+                             globbuf, 1+idx2 ,                &    ! recvbuf
+                             counts                         , &    ! recvcounts
+                             displs                         , &    ! displs
+                             0                              , &    ! root
+                             communicator                   , &    ! communicator
+                             ierr )
+
+           ELSE IF ( FieldType .EQ. WRF_REAL ) THEN
+
              CALL wrf_gatherv_real ( Field, PatchStart(1)+idx , &
                              my_count ,                       &    ! sendcount
                              globbuf, 1+idx2 ,                &    ! recvbuf
@@ -2126,7 +2370,19 @@ include "mpif.h"
            idx  = lx*(i-1)
            lx2  = dom_end_rev(1)-DomainStart(1)+1
            idx2 = lx2*(i-1)
-           IF ( FieldType .EQ. WRF_DOUBLE  .OR. FieldType .EQ. WRF_REAL ) THEN
+           IF ( FieldType .EQ. WRF_DOUBLE ) THEN
+
+             CALL wrf_gatherv_double ( Field, PatchStart(1)+idx , &
+                             my_count ,                       &    ! sendcount
+                             globbuf, 1+idx2 ,                &    ! recvbuf
+                             counts                         , &    ! recvcounts
+                             displs                         , &    ! displs
+                             0                              , &    ! root
+                             communicator                   , &    ! communicator
+                             ierr )
+
+           ELSE IF ( FieldType .EQ. WRF_REAL ) THEN
+
              CALL wrf_gatherv_real ( Field, PatchStart(1)+idx , &
                              my_count ,                       &    ! sendcount
                              globbuf, 1+idx2 ,                &    ! recvbuf
@@ -2182,7 +2438,18 @@ include "mpif.h"
            idx  = lx*((k-1)+(j-1)*(MemoryEnd(2)-MemoryStart(2)+1))
            idx2 = lx2*((k-1)+(j-1)*(MemoryEnd(2)-MemoryStart(2)+1))
 
-           IF ( FieldType .EQ. WRF_DOUBLE .OR. FieldType .EQ. WRF_REAL ) THEN
+           IF ( FieldType .EQ. WRF_DOUBLE ) THEN 
+
+             CALL wrf_gatherv_double ( Field, PatchStart(1)+idx ,      &    ! sendbuf
+                             my_count                       , &    ! sendcount
+                             globbuf, 1+idx2                , &    ! recvbuf
+                             counts                         , &    ! recvcounts
+                             displs                         , &    ! displs
+                             0                              , &    ! root
+                             communicator                   , &    ! communicator
+                             ierr )
+
+           ELSE IF ( FieldType .EQ. WRF_REAL ) THEN
 
              CALL wrf_gatherv_real( Field, PatchStart(1)+idx ,      &    ! sendbuf
                              my_count                       , &    ! sendcount
@@ -2192,6 +2459,7 @@ include "mpif.h"
                              0                              , &    ! root
                              communicator                   , &    ! communicator
                              ierr )
+
            ELSE IF ( FieldType .EQ. WRF_INTEGER ) THEN
 
              CALL wrf_gatherv_integer( Field, PatchStart(1)+idx ,      &    ! sendbuf
@@ -2237,7 +2505,18 @@ include "mpif.h"
            lx2  = dom_end_rev(1)-DomainStart(1)+1
            idx2 = lx2*(j-1)
 
-           IF ( FieldType .EQ. WRF_DOUBLE .OR. FieldType .EQ. WRF_REAL ) THEN
+           IF ( FieldType .EQ. WRF_DOUBLE ) THEN 
+
+             CALL wrf_gatherv_double( Field, PatchStart(1)+idx ,      &    ! sendbuf
+                             my_count                       , &    ! sendcount
+                             globbuf, 1+idx2                , &    ! recvbuf
+                             counts                         , &    ! recvcounts
+                             displs                         , &    ! displs
+                             0                              , &    ! root
+                             communicator                   , &    ! communicator
+                             ierr )
+
+           ELSE IF ( FieldType .EQ. WRF_REAL ) THEN
 
              CALL wrf_gatherv_real( Field, PatchStart(1)+idx ,      &    ! sendbuf
                              my_count                       , &    ! sendcount
@@ -2247,6 +2526,7 @@ include "mpif.h"
                              0                              , &    ! root
                              communicator                   , &    ! communicator
                              ierr )
+
            ELSE IF ( FieldType .EQ. WRF_INTEGER ) THEN
 
              CALL wrf_gatherv_integer( Field, PatchStart(1)+idx ,      &    ! sendbuf
@@ -2331,7 +2611,17 @@ SUBROUTINE call_pkg_and_dist (       fcn, donotdist_arg, update_arg,            
                PatchStart , PatchEnd ,                                        &
                Status )
 
-  ELSE IF ((FieldType .EQ. WRF_DOUBLE)  .OR. (FieldType .EQ. WRF_REAL)) THEN
+  ELSE IF (FieldType .EQ. WRF_DOUBLE) THEN
+
+     CALL call_pkg_and_dist_double ( fcn, update_arg,                            &
+               Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
+               DomainDesc , MemoryOrder , Stagger , DimNames ,              &
+               DomainStart , DomainEnd ,                                    &
+               MemoryStart , MemoryEnd ,                                    &
+               PatchStart , PatchEnd ,                                      &
+               Status )
+
+  ELSE IF (FieldType .EQ. WRF_REAL) THEN
 
      CALL call_pkg_and_dist_real ( fcn, update_arg,                            &
                Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
@@ -2344,6 +2634,16 @@ SUBROUTINE call_pkg_and_dist (       fcn, donotdist_arg, update_arg,            
   ELSE IF ( FieldType .EQ. WRF_INTEGER ) THEN
 
      CALL call_pkg_and_dist_int ( fcn, update_arg,                            &
+               Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
+               DomainDesc , MemoryOrder , Stagger , DimNames ,              &
+               DomainStart , DomainEnd ,                                    &
+               MemoryStart , MemoryEnd ,                                    &
+               PatchStart , PatchEnd ,                                      &
+               Status )
+
+  ELSE IF ( FieldType .EQ. WRF_LOGICAL ) THEN
+
+     CALL call_pkg_and_dist_logical ( fcn, update_arg,                            &
                Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
                DomainDesc , MemoryOrder , Stagger , DimNames ,              &
                DomainStart , DomainEnd ,                                    &
@@ -2393,6 +2693,47 @@ SUBROUTINE call_pkg_and_dist_real (  fcn, update_arg,                           
   RETURN
 END SUBROUTINE call_pkg_and_dist_real
 
+
+SUBROUTINE call_pkg_and_dist_double  (  fcn, update_arg ,                                            &
+                                     Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
+                                     DomainDesc , MemoryOrder , Stagger , DimNames ,              &
+                                     DomainStart , DomainEnd ,                                    &
+                                     MemoryStart , MemoryEnd ,                                    &
+                                     PatchStart , PatchEnd ,                                      &
+                                     Status )
+  IMPLICIT NONE
+  EXTERNAL fcn
+  INTEGER ,       INTENT(IN)    :: Hndl
+  LOGICAL ,       INTENT(IN)    :: update_arg
+  CHARACTER*(*) :: DateStr
+  CHARACTER*(*) :: VarName
+  DOUBLE PRECISION   ,       INTENT(INOUT)    :: Field(*)
+  INTEGER                       ,INTENT(IN)    :: FieldType
+  INTEGER                       ,INTENT(INOUT) :: Comm
+  INTEGER                       ,INTENT(INOUT) :: IOComm
+  INTEGER                       ,INTENT(IN)    :: DomainDesc
+  CHARACTER*(*)                 ,INTENT(IN)    :: MemoryOrder
+  CHARACTER*(*)                 ,INTENT(IN)    :: Stagger
+  CHARACTER*(*) , dimension (*) ,INTENT(IN)    :: DimNames
+  INTEGER ,dimension(*)         ,INTENT(IN)    :: DomainStart, DomainEnd
+  INTEGER ,dimension(*)         ,INTENT(IN)    :: MemoryStart, MemoryEnd
+  INTEGER ,dimension(*)         ,INTENT(IN)    :: PatchStart,  PatchEnd
+  INTEGER                       ,INTENT(INOUT)   :: Status
+  DOUBLE PRECISION globbuf ( (DomainEnd(1)-DomainStart(1)+2)*(DomainEnd(2)-DomainStart(2)+2)*(DomainEnd(3)-DomainStart(3)+2) )
+
+  globbuf = 0
+
+  CALL call_pkg_and_dist_generic (   fcn, globbuf , update_arg ,                                  &
+                                     Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
+                                     DomainDesc , MemoryOrder , Stagger , DimNames ,              &
+                                     DomainStart , DomainEnd ,                                    &
+                                     MemoryStart , MemoryEnd ,                                    &
+                                     PatchStart , PatchEnd ,                                      &
+                                     Status )
+  RETURN
+END SUBROUTINE call_pkg_and_dist_double
+
+
 SUBROUTINE call_pkg_and_dist_int  (  fcn, update_arg ,                                            &
                                      Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
                                      DomainDesc , MemoryOrder , Stagger , DimNames ,              &
@@ -2406,7 +2747,7 @@ SUBROUTINE call_pkg_and_dist_int  (  fcn, update_arg ,                          
   LOGICAL ,       INTENT(IN)    :: update_arg
   CHARACTER*(*) :: DateStr
   CHARACTER*(*) :: VarName
-  REAL    ,       INTENT(INOUT)    :: Field(*)
+  INTEGER    ,       INTENT(INOUT)    :: Field(*)
   INTEGER                       ,INTENT(IN)    :: FieldType
   INTEGER                       ,INTENT(INOUT) :: Comm
   INTEGER                       ,INTENT(INOUT) :: IOComm
@@ -2431,6 +2772,46 @@ SUBROUTINE call_pkg_and_dist_int  (  fcn, update_arg ,                          
                                      Status )
   RETURN
 END SUBROUTINE call_pkg_and_dist_int
+
+
+SUBROUTINE call_pkg_and_dist_logical  (  fcn, update_arg ,                                            &
+                                     Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
+                                     DomainDesc , MemoryOrder , Stagger , DimNames ,              &
+                                     DomainStart , DomainEnd ,                                    &
+                                     MemoryStart , MemoryEnd ,                                    &
+                                     PatchStart , PatchEnd ,                                      &
+                                     Status )
+  IMPLICIT NONE
+  EXTERNAL fcn
+  INTEGER ,       INTENT(IN)    :: Hndl
+  LOGICAL ,       INTENT(IN)    :: update_arg
+  CHARACTER*(*) :: DateStr
+  CHARACTER*(*) :: VarName
+  logical    ,       INTENT(INOUT)    :: Field(*)
+  INTEGER                       ,INTENT(IN)    :: FieldType
+  INTEGER                       ,INTENT(INOUT) :: Comm
+  INTEGER                       ,INTENT(INOUT) :: IOComm
+  INTEGER                       ,INTENT(IN)    :: DomainDesc
+  CHARACTER*(*)                 ,INTENT(IN)    :: MemoryOrder
+  CHARACTER*(*)                 ,INTENT(IN)    :: Stagger
+  CHARACTER*(*) , dimension (*) ,INTENT(IN)    :: DimNames
+  INTEGER ,dimension(*)         ,INTENT(IN)    :: DomainStart, DomainEnd
+  INTEGER ,dimension(*)         ,INTENT(IN)    :: MemoryStart, MemoryEnd
+  INTEGER ,dimension(*)         ,INTENT(IN)    :: PatchStart,  PatchEnd
+  INTEGER                       ,INTENT(INOUT)   :: Status
+  logical globbuf ( (DomainEnd(1)-DomainStart(1)+2)*(DomainEnd(2)-DomainStart(2)+2)*(DomainEnd(3)-DomainStart(3)+2) )
+
+  globbuf = 0
+
+  CALL call_pkg_and_dist_generic (   fcn, globbuf , update_arg ,                                  &
+                                     Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
+                                     DomainDesc , MemoryOrder , Stagger , DimNames ,              &
+                                     DomainStart , DomainEnd ,                                    &
+                                     MemoryStart , MemoryEnd ,                                    &
+                                     PatchStart , PatchEnd ,                                      &
+                                     Status )
+  RETURN
+END SUBROUTINE call_pkg_and_dist_logical
 
 SUBROUTINE call_pkg_and_dist_generic (   fcn, globbuf , update_arg ,                                  &
                                      Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
@@ -2528,13 +2909,23 @@ SUBROUTINE call_pkg_and_dist_generic (   fcn, globbuf , update_arg ,            
     IF ( update_arg ) THEN
       SELECT CASE (TRIM(MemOrd))
         CASE (  'xzy','zxy','xyz','yxz','xy','yx' )
-          IF ( FieldType .EQ. WRF_DOUBLE .OR. FieldType .EQ. WRF_REAL ) THEN
+          IF ( FieldType .EQ. WRF_DOUBLE ) THEN
+            CALL wrf_patch_to_global_double ( Field  , globbuf , DomainDesc, Stagger, MemOrd ,             &
+               DomainStart(1), DomainEnd(1), DomainStart(2), DomainEnd(2), DomainStart(3), DomainEnd(3), &
+               MemoryStart(1), MemoryEnd(1), MemoryStart(2), MemoryEnd(2), MemoryStart(3), MemoryEnd(3), &
+               PatchStart(1) , PatchEnd(1) , PatchStart(2) , PatchEnd(2) , PatchStart(3) , PatchEnd(3) )
+          ELSE IF (  FieldType .EQ. WRF_REAL ) THEN
             CALL wrf_patch_to_global_real ( Field  , globbuf , DomainDesc, Stagger, MemOrd ,             &
                DomainStart(1), DomainEnd(1), DomainStart(2), DomainEnd(2), DomainStart(3), DomainEnd(3), &
                MemoryStart(1), MemoryEnd(1), MemoryStart(2), MemoryEnd(2), MemoryStart(3), MemoryEnd(3), &
                PatchStart(1) , PatchEnd(1) , PatchStart(2) , PatchEnd(2) , PatchStart(3) , PatchEnd(3) )
           ELSE IF ( FieldType .EQ. WRF_INTEGER ) THEN
             CALL wrf_patch_to_global_integer ( Field  , globbuf , DomainDesc, Stagger, MemOrd ,             &
+               DomainStart(1), DomainEnd(1), DomainStart(2), DomainEnd(2), DomainStart(3), DomainEnd(3), &
+               MemoryStart(1), MemoryEnd(1), MemoryStart(2), MemoryEnd(2), MemoryStart(3), MemoryEnd(3), &
+               PatchStart(1) , PatchEnd(1) , PatchStart(2) , PatchEnd(2) , PatchStart(3) , PatchEnd(3) )
+          ELSE IF ( FieldType .EQ. WRF_LOGICAL ) THEN
+            CALL wrf_patch_to_global_logical ( Field  , globbuf , DomainDesc, Stagger, MemOrd ,             &
                DomainStart(1), DomainEnd(1), DomainStart(2), DomainEnd(2), DomainStart(3), DomainEnd(3), &
                MemoryStart(1), MemoryEnd(1), MemoryStart(2), MemoryEnd(2), MemoryStart(3), MemoryEnd(3), &
                PatchStart(1) , PatchEnd(1) , PatchStart(2) , PatchEnd(2) , PatchStart(3) , PatchEnd(3) )
@@ -2556,7 +2947,22 @@ SUBROUTINE call_pkg_and_dist_generic (   fcn, globbuf , update_arg ,            
     CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
   
     CALL lower_case( MemoryOrder, MemOrd )
-    IF ( FieldType .EQ. WRF_DOUBLE .OR. FieldType .EQ. WRF_REAL ) THEN
+    IF ( FieldType .EQ. WRF_DOUBLE ) THEN
+
+      SELECT CASE (MemOrd)
+      CASE ( 'xzy','xyz','yxz','zxy' )
+        CALL wrf_global_to_patch_double (  globbuf,  Field  , DomainDesc, Stagger, MemOrd ,    &
+           DomainStart(1), DomainEnd(1), DomainStart(2), DomainEnd(2), DomainStart(3), DomainEnd(3), &
+           MemoryStart(1), MemoryEnd(1), MemoryStart(2), MemoryEnd(2), MemoryStart(3), MemoryEnd(3), &
+           PatchStart(1) , PatchEnd(1) , PatchStart(2) , PatchEnd(2) , PatchStart(3) , PatchEnd(3)  )
+      CASE ( 'xy','yx' )
+        CALL wrf_global_to_patch_double (  globbuf, Field ,  DomainDesc, Stagger, MemOrd ,  &
+           DomainStart(1), DomainEnd(1), DomainStart(2), DomainEnd(2), 1            , 1 , &
+           MemoryStart(1), MemoryEnd(1), MemoryStart(2), MemoryEnd(2), 1            , 1 , &
+           PatchStart(1) , PatchEnd(1) , PatchStart(2) , PatchEnd(2) , 1            , 1   )
+      END SELECT
+
+    ELSE IF ( FieldType .EQ. WRF_REAL ) THEN
 
       SELECT CASE (MemOrd)
       CASE ( 'xzy','xyz','yxz','zxy' )
@@ -2585,6 +2991,22 @@ SUBROUTINE call_pkg_and_dist_generic (   fcn, globbuf , update_arg ,            
            MemoryStart(1), MemoryEnd(1), MemoryStart(2), MemoryEnd(2), 1            , 1 , &
            PatchStart(1) , PatchEnd(1) , PatchStart(2) , PatchEnd(2) , 1            , 1   )
       END SELECT
+
+    ELSE IF ( FieldType .EQ. WRF_LOGICAL ) THEN
+
+      SELECT CASE (MemOrd)
+      CASE ( 'xzy','xyz','yxz','zxy' )
+        CALL wrf_global_to_patch_logical (  globbuf,  Field  , DomainDesc, Stagger, MemOrd ,    &
+           DomainStart(1), DomainEnd(1), DomainStart(2), DomainEnd(2), DomainStart(3), DomainEnd(3), &
+           MemoryStart(1), MemoryEnd(1), MemoryStart(2), MemoryEnd(2), MemoryStart(3), MemoryEnd(3), &
+           PatchStart(1) , PatchEnd(1) , PatchStart(2) , PatchEnd(2) , PatchStart(3) , PatchEnd(3)  )
+      CASE ( 'xy','yx' )
+        CALL wrf_global_to_patch_logical (  globbuf, Field ,  DomainDesc, Stagger, MemOrd ,  &
+           DomainStart(1), DomainEnd(1), DomainStart(2), DomainEnd(2), 1            , 1 , &
+           MemoryStart(1), MemoryEnd(1), MemoryStart(2), MemoryEnd(2), 1            , 1 , &
+           PatchStart(1) , PatchEnd(1) , PatchStart(2) , PatchEnd(2) , 1            , 1   )
+      END SELECT
+
     ENDIF
   ELSE
     IF ( wrf_dm_on_monitor()) THEN
@@ -2597,10 +3019,14 @@ SUBROUTINE call_pkg_and_dist_generic (   fcn, globbuf , update_arg ,            
     ENDIF
     CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
     memsize = (MemoryEnd(1)-MemoryStart(1)+1)*(MemoryEnd(2)-MemoryStart(2)+1)*(MemoryEnd(3)-MemoryStart(3)+1)
-    IF ( FieldType .EQ. WRF_DOUBLE .OR. FieldType .EQ. WRF_REAL) THEN
+    IF ( FieldType .EQ. WRF_DOUBLE ) THEN 
+      CALL wrf_dm_bcast_bytes( Field , DWORDSIZE*memsize )
+    ELSE IF ( FieldType .EQ. WRF_REAL) THEN
       CALL wrf_dm_bcast_bytes( Field , RWORDSIZE*memsize )
     ELSE IF ( FieldType .EQ. WRF_INTEGER ) THEN
       CALL wrf_dm_bcast_bytes( Field , IWORDSIZE*memsize )
+    ELSE IF ( FieldType .EQ. WRF_LOGICAL ) THEN
+      CALL wrf_dm_bcast_bytes( Field , LWORDSIZE*memsize )
     ENDIF
   ENDIF
 

@@ -518,6 +518,7 @@ CONTAINS
     qv_base(k) = moist_1(1,k,1,P_QV)
     u_base(k) = u_1(1,k,1)
     v_base(k) = v_1(1,k,1)
+    z_base(k) = 0.5*(phb(1,k,1)+phb(1,k+1,1)+ph_1(1,k,1)+ph_1(1,k+1,1))/g
   ENDDO
 
   DO J = jts, min(jde-1,jte)

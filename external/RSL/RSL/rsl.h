@@ -652,6 +652,7 @@ rsl_index_t id_domain(), id_jdex(), id_idex() ;
 #define RSL_8PT     8		/* FORTRAN */
 #define RSL_12PT   12		/* FORTRAN */
 #define RSL_24PT   24		/* FORTRAN */
+#define RSL_48PT   48		/* FORTRAN */
 #if (ALLOW_RSL_168PT == 1)
 /* new -- added for MM5's upper radiative boundary stencil 9/26/96 */
 #define RSL_168PT  168          /* FORTRAN */

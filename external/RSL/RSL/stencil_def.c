@@ -115,8 +115,8 @@ release_sh_descriptor (sh_p)
   Arg1.  The argument Arg2 is a stencil descriptor previously created
   by RSL_CREATE_STENCIL.  The shape of the stencil is specified by
   Arg3, which is one of RSL_4PT (N, W, E, S), RSL_8PT (NW, N, NE, W, E, SW,
-  S, SE), RSL_24PT (a 5 by 5 stencil of around a given point), and RSL_168PT
-  (a 13 by 13 stencil).
+  S, SE), RSL_24PT (a 5 by 5 stencil of around a given point), RSL_48PT
+  (a 7 by 7 stencil), and RSL_168PT (a 13 by 13 stencil).
 
   Messages for each stencil point must have been previously created and
   built using RSL_CREATE_MESSAGE and RSL_BUILD_MESSAGE.  The message
@@ -216,13 +216,14 @@ RSL_DESCRIBE_STENCIL ( d_p, sh_p, maskid_p, messages )
   case RSL_8PT  : sten->f[d].ptfcn = rsl_8pt ;  sten->npts[d] = 8  ; break ;
   case RSL_12PT : sten->f[d].ptfcn = rsl_12pt ; sten->npts[d] = 12 ; break ;
   case RSL_24PT : sten->f[d].ptfcn = rsl_24pt ; sten->npts[d] = 24 ; break ;
+  case RSL_48PT : sten->f[d].ptfcn = rsl_48pt ; sten->npts[d] = 48 ; break ;
 #if ( ALLOW_RSL_168PT == 1 )
   case RSL_168PT : sten->f[d].ptfcn = rsl_168pt ; sten->npts[d] = 168 ; break ;
   default : RSL_TEST_ERR( 1, 
-"rsl_describe_stencil: invalid maskid,\n  must be RSL_4PT, RSL_8PT, RSL_12PT, RSL_24PT, or RSL_168PT" ) ;
+"rsl_describe_stencil: invalid maskid,\n  must be RSL_4PT, RSL_8PT, RSL_12PT, RSL_24PT, RSL_48PT, or RSL_168PT" ) ;
 #else
   default : RSL_TEST_ERR( 1, 
-"rsl_describe_stencil: invalid maskid,\n  must be RSL_4PT, RSL_8PT, RSL_12PT or RSL_24PT" ) ;
+"rsl_describe_stencil: invalid maskid,\n  must be RSL_4PT, RSL_8PT, RSL_12PT or RSL_24PT, RSL_48PT" ) ;
 #endif
     return ;
   }

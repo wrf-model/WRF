@@ -234,6 +234,7 @@
 #   define RSL_FROM_TH_INFO  rsl_from_th_info__
 #   define RSL_FROM_TH_MSG   rsl_from_th_msg__
 #   define RSL_FORCE_HEMI    rsl_force_hemi__
+#   define RSL_POINT_ON_PROC    rsl_point_on_proc__
 
 #   define VRCOPY   vrcopy_
 
@@ -403,6 +404,7 @@
 #   define RSL_FROM_TH_INFO  rsl_from_th_info_
 #   define RSL_FROM_TH_MSG   rsl_from_th_msg_
 #   define RSL_FORCE_HEMI    rsl_force_hemi_
+#   define RSL_POINT_ON_PROC    rsl_point_on_proc_
 
 #   define VRCOPY   vrcopy_
 
@@ -573,6 +575,7 @@
 #   define RSL_FROM_TH_INFO  rsl_from_th_info
 #   define RSL_FROM_TH_MSG   rsl_from_th_msg
 #   define RSL_FORCE_HEMI    rsl_force_hemi
+#   define RSL_POINT_ON_PROC    rsl_point_on_proc
 
 #   define VRCOPY   vrcopy
 

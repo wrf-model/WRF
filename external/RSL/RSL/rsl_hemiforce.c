@@ -202,9 +202,6 @@ RSL_TO_OH_INFO ( t_p, o_p, msize_p, seed_p,
       q = RSL_MALLOC( rsl_hemi_rec_t, 1 ) ;
       q->next = s_tinfo->other_hemi_procbufs[P] ;
     }
-#ifdef DEBUGGAL
-fprintf(stderr,">>>> %d %d \n",s_oig, s_oig) ;
-#endif
     q->oig = s_oig ;
     q->ojg = s_ojg ;
     q->data = NULL ;
@@ -265,13 +262,6 @@ RSL_TO_OH_MSG ( nbuf_p, buf )
     s_q1->data = RSL_MALLOC( char, s_msize ) ;
     s_q1->curs = 0 ;
   }
-#ifdef DEBUGGAL
-{
-int *dp ;
-dp = (int*) buf ;
-fprintf(stderr,"RSL_TO_OH_MSG: %d %d %d\n",s_oig,s_ojg,*dp) ;
-}
-#endif
   bcopy( buf, &(s_q1->data[s_q1->curs]), nbuf ) ;
   s_q1->curs += nbuf ;
 }
@@ -463,5 +453,28 @@ RSL_FROM_TH_MSG ( len_p, buf )
          *len_p ) ;
 
   s_remaining -= *len_p ;
+}
+
+/* retval =1 if point is local, =0 otherwise */
+RSL_POINT_ON_PROC ( d_p, ig_p, jg_p, retval_p )
+  int_p d_p, ig_p, jg_p, retval_p ;
+{
+  int d ;
+  int kiddex ;
+  int P ;
+
+  rsl_domain_info_t * info ;
+  rsl_point_t       * domain ;
+
+  d = *d_p ;
+  RSL_TEST_ERR( d < 0 || d > RSL_MAXDOMAINS,
+    "rsl_ready_bcast: bad 'this hemi' descriptor" ) ;
+  info = &( domain_info[d]) ;
+  domain = info->domain ;
+  kiddex = INDEX_2(*jg_p,*ig_p,info->len_m ) ;
+  P = domain[ kiddex ].P ;
+  *retval_p = 0 ;
+  if ( P == rsl_myproc ) *retval_p = 1 ;
+  return ;
 }
 

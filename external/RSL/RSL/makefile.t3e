@@ -24,7 +24,7 @@ FC = f90
 
 IDIR= $(INCLUDE_DIR)
 
-CFLAGS = -DMPI -DT3D -O $(IDIR)
+CFLAGS = -DMPI -DT3D -O $(IDIR) -DRSL_SYNCIO
 FFLAGS = 
 
 warning :

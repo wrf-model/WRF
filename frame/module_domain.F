@@ -215,7 +215,7 @@ CONTAINS
 
     CALL dealloc_space_field ( grid )
 
-    CALL alloc_space_field ( grid, grid%id , .FALSE. ,          &
+    CALL alloc_space_field ( grid, grid%id , 1 ,          &
                              grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &
                              grid%sm31,  grid%em31,  grid%sm32,  grid%em32,  grid%sm33,  grid%em33, &
                              grid%sm31x, grid%em31x, grid%sm32x, grid%em32x, grid%sm33x, grid%em33x, &   ! x-xpose
@@ -782,9 +782,9 @@ CONTAINS
       new_grid%max_tiles   = 0
       new_grid%num_tiles_spec   = 0
 
-      CALL alloc_space_field ( new_grid, domain_id , .TRUE. ,          &
-                               sd1, ed1, sd2, ed2, sd3, ed3, &
-                               sm1,  em1,  sm2,  em2,  sm3,  em3, &
+      CALL alloc_space_field ( new_grid, domain_id , 2 ,           &
+                               sd1, ed1, sd2, ed2, sd3, ed3,       &
+                               sm1,  em1,  sm2,  em2,  sm3,  em3,  &
                                sm1x, em1x, sm2x, em2x, sm3x, em3x, &   ! x-xpose
                                sm1y, em1y, sm2y, em2y, sm3y, em3y  &   ! y-xpose
       )
@@ -958,7 +958,7 @@ CONTAINS
 
       TYPE(domain)               , POINTER          :: grid
       INTEGER , INTENT(IN)            :: id
-      LOGICAL , INTENT(IN)            :: setinitval
+      INTEGER , INTENT(IN)            :: setinitval   ! 2 = everything, 1 = arrays only, 0 = none
       INTEGER , INTENT(IN)            :: sd31, ed31, sd32, ed32, sd33, ed33
       INTEGER , INTENT(IN)            :: sm31, em31, sm32, em32, sm33, em33
       INTEGER , INTENT(IN)            :: sm31x, em31x, sm32x, em32x, sm33x, em33x

@@ -197,8 +197,6 @@ CONTAINS
          CALL nl_get_j_parent_start( id , j_parent_start )
          CALL nl_get_parent_grid_ratio( id, parent_grid_ratio )
 
-write(0,*)' shw , i_parent_start , j_parent_start , parent_grid_ratio ',shw , i_parent_start , j_parent_start , parent_grid_ratio
-
          SELECT CASE ( model_data_order )
             ! need to finish other cases
             CASE ( DATA_ORDER_ZXY )
@@ -255,11 +253,6 @@ write(0,*)' shw , i_parent_start , j_parent_start , parent_grid_ratio ',shw , i_
       END SELECT
 
 
-write(0,*)'after compute_memory_dims_rsl_lite ( shw '
-write(0,*)'c_ids,c_ide,c_jds,c_jde,c_',c_ids,c_ide,c_jds,c_jde
-write(0,*)'c_ims,c_ime,c_jms,c_jme,c_',c_ims,c_ime,c_jms,c_jme
-write(0,*)'c_ips,c_ipe,c_jps,c_jpe,c_',c_ips,c_ipe,c_jps,c_jpe
-
 #if 0
          ! global dims are same as CD
          ! good for IKJ only
@@ -288,24 +281,20 @@ write(0,*)'c_ips,c_ipe,c_jps,c_jpe,c_',c_ips,c_ipe,c_jps,c_jpe
          intermediate_grid%num_parents = 1
          intermediate_grid%max_tiles   = 0
          intermediate_grid%num_tiles_spec   = 0
-write(0,*)'calling find_grid_by_id ',id
          CALL find_grid_by_id ( id, head_grid, nest_grid )
-write(0,*)'  nest_grid%id ', nest_grid%id
 
          nest_grid%intermediate_grid => intermediate_grid  ! nest grid now has a pointer to this baby
-write(0,*)'  nest_grid%intermediate_grid%id ', nest_grid%intermediate_grid%id
          intermediate_grid%parents(1)%ptr => nest_grid     ! the intermediate grid considers nest its parent
          intermediate_grid%num_parents = 1
 
          c_sm1x = 1 ; c_em1x = 1 ; c_sm2x = 1 ; c_em2x = 1 ; c_sm3x = 1 ; c_em3x = 1
          c_sm1y = 1 ; c_em1y = 1 ; c_sm2y = 1 ; c_em2y = 1 ; c_sm3y = 1 ; c_em3y = 1
          ! allocate space for the intermediate domain
-         CALL alloc_space_field ( intermediate_grid, id , .TRUE.,  &   ! use same id as nest
+         CALL alloc_space_field ( intermediate_grid, id , 2 ,  &   ! use same id as nest
                                c_sd1, c_ed1, c_sd2, c_ed2, c_sd3, c_ed3,       &
                                c_sm1,  c_em1,  c_sm2,  c_em2,  c_sm3,  c_em3,  &
                                c_sm1x, c_em1x, c_sm2x, c_em2x, c_sm3x, c_em3x, &   ! x-xpose
                                c_sm1y, c_em1y, c_sm2y, c_em2y, c_sm3y, c_em3y  )   ! y-xpose
-write(0,*)'2  nest_grid%intermediate_grid%id ', nest_grid%intermediate_grid%id
          intermediate_grid%sd31                            =   c_sd1
          intermediate_grid%ed31                            =   c_ed1
          intermediate_grid%sp31                            = c_sp1
@@ -1683,39 +1672,11 @@ END
       idim_cd = nide - nids + 1
       jdim_cd = njde - njds + 1
 
-write(0,*)'i_parent_start - shw ',i_parent_start -shw
-write(0,*)' id ', intermediate_grid%id
-write(0,*)' sd31 ', intermediate_grid%sd31
-write(0,*)' ed31 ', intermediate_grid%ed31
-write(0,*)' cids, cide, cjds, cjde, ',cids, cide, cjds, cjde
-write(0,*)' cims, cime, cjms, cjme, ',cims, cime, cjms, cjme
-write(0,*)' cips, cipe, cjps, cjpe, ',cips, cipe, cjps, cjpe
-write(0,*)' nids, nide, njds, njde, ',nids, nide, njds, njde
-write(0,*)' nims, nime, njms, njme, ',nims, nime, njms, njme
-write(0,*)' nips, nipe, njps, njpe, ',nips, nipe, njps, njpe
-
-write(0,*) grid%sm31,grid%em31,grid%sm33,grid%em33
-write(0,*) cips, cipe, cjps, cjpe
-
       nlev  = ckde - ckds + 1
-
-write(30+myproc,*)cipe-cips+1,cjpe-cjps+1
-do j = cjps, cjpe
-do i = cips, cipe
-write(30+myproc,*)t_2(i,1,j)
-enddo
-enddo
-
-write(0,*)'before em_nest_interpdown_pack'
 
 #  include "em_nest_interpdown_pack.inc"
 
-write(0,*)'after em_nest_interpdown_pack'
-
       CALL rsl_lite_bcast_msgs( myproc, nproc, local_comm )
-
-write(0,*)'after rsl_lite_bcast_msgs'
-
 
 #define COPY_OUT
 #include <em_scalar_derefs.inc>
@@ -1778,26 +1739,12 @@ write(0,*)'after rsl_lite_bcast_msgs'
 
       CALL wrf_get_dm_communicator ( local_comm )
 
-write(0,*)'before interpdown unpack '
 #  include "em_nest_interpdown_unpack.inc"
-write(0,*)'after interpdown unpack '
 
-call wrf_get_myproc( myproc )
-write(40+myproc,*)cime-cims+1,cjme-cjms+1
-do j = cjms, cjme
-do i = cims, cime
-write(40+myproc,*)t_2(i,1,j)
-enddo
-enddo
-
-write(0,*)'before halo interp down '
 #include "HALO_EM_INTERP_DOWN.inc"
       ! code here to interpolate the data into the nested domain
-write(0,*)'after halo interp down '
 
-write(0,*)'before halo interp interp '
 #  include "em_nest_interpdown_interp.inc"
-write(0,*)'after halo interp interp '
 
 #define COPY_OUT
 #include <em_scalar_derefs.inc>

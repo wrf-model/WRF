@@ -123,10 +123,15 @@ em_real : wrf
 	( cd test/em_real ; /bin/rm -f real.exe ; ln -s ../../main/real.exe . )
 	( cd test/em_real ; /bin/rm -f ndown.exe ; ln -s ../../main/ndown.exe . )
 	( cd test/em_real ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
-	( cd test/em_real ; /bin/rm -f ETAMPNEW_DATA ; ln -s ../../run/ETAMPNEW_DATA . )
+	( cd test/em_real ; /bin/rm -f ETAMPNEW_DATA RRTM_DATA ;    \
+             ln -sf ../../run/ETAMPNEW_DATA . ;                     \
+             ln -sf ../../run/RRTM_DATA . ;                         \
+             if [ $(RWORDSIZE) -eq 8 ] ; then                       \
+                ln -sf ../../run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA ;  \
+                ln -sf ../../run/RRTM_DATA_DBL RRTM_DATA ;          \
+             fi )
 	( cd test/em_real ; /bin/rm -f GENPARM.TBL ; ln -s ../../run/GENPARM.TBL . )
 	( cd test/em_real ; /bin/rm -f LANDUSE.TBL ; ln -s ../../run/LANDUSE.TBL . )
-	( cd test/em_real ; /bin/rm -f RRTM_DATA ; ln -s ../../run/RRTM_DATA . )
 	( cd test/em_real ; /bin/rm -f SOILPARM.TBL ; ln -s ../../run/SOILPARM.TBL . )
 	( cd test/em_real ; /bin/rm -f VEGPARM.TBL ; ln -s ../../run/VEGPARM.TBL . )
 	( cd test/em_real ; /bin/rm -f tr49t67 ; ln -s ../../run/tr49t67 . )

@@ -142,9 +142,9 @@ rsl_new_decomposition( d_p, mloc_p, nloc_p )
       }
     }
   }
-  dinfo->ilocaloffset_mz = firsti ;
+  dinfo->ilocaloffset_mz = firsti - rsl_padarea ;
   dinfo->klocaloffset_mz = firstk ;
-  dinfo->jlocaloffset_mz = 0 ;
+  dinfo->jlocaloffset_mz = -rsl_padarea ;
 
 /* NZ */
   domain = dinfo->domain_nz ;
@@ -164,9 +164,9 @@ rsl_new_decomposition( d_p, mloc_p, nloc_p )
       }
     }
   }
-  dinfo->jlocaloffset_nz = firstj ;
+  dinfo->jlocaloffset_nz = firstj - rsl_padarea ;
   dinfo->klocaloffset_nz = firstk ;
-  dinfo->ilocaloffset_nz = 0 ;
+  dinfo->ilocaloffset_nz = -rsl_padarea ;
 
 /* end 20010228 */
 

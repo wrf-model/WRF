@@ -259,25 +259,19 @@ fprintf(stderr,"resset prevP to %d\n",prevP) ;
 /***/   for ( ig = 0 ; ig < mlen ; ig++ )
         {
          recvP = domain_info[*d_p].domain_mz[INDEX_2(kg,ig,mlen)].P ;
-#if 0
-          js = 0 - domain_info[d].jlocaloffset ; je = -1 ;
-#else
-          js = 0 ; je = -1 ;
-#endif
+
+          js = 0 - domain_info[d].jlocaloffset_mz ; je = -1 ;
+
           prevP = domain_info[*d_p].domain[INDEX_2(0,ig,mlen)].P ;
 /***/     for ( jg = 0 ; jg < nlen ; jg++ ) 
           {
 	    sendP = domain_info[*d_p].domain[INDEX_2(jg,ig,mlen)].P ;
 	    if ( jg == nlen-1 ) 
               { sendP = -1 ; je++ ;}
-#if 0
-            i = ig - domain_info[d].ilocaloffset ;
-            j = jg - domain_info[d].jlocaloffset ;
-#else
+
             i = ig - domain_info[d].ilocaloffset_mz ;
             j = jg - domain_info[d].jlocaloffset_mz ;
             k = kg - domain_info[d].klocaloffset_mz ;
-#endif
 
 	    if (sendP != prevP )
 	    {
@@ -514,7 +508,7 @@ fprintf(stderr,"resset prevP to %d\n",prevP) ;
 /***/   for ( kg = 0 ; kg < zlen ; kg++ )
         {
          recvP = domain_info[*d_p].domain_nz[INDEX_2(kg,jg,nlen)].P ;
-          is = 0 ; ie = -1 ;
+          is = 0 - domain_info[d].ilocaloffset_nz ; ie = -1 ;
           prevP = domain_info[*d_p].domain_mz[INDEX_2(kg,0,mlen)].P ;
 /***/     for ( ig = 0 ; ig < mlen ; ig++ ) 
           {
@@ -643,7 +637,7 @@ fprintf(stderr,"resset prevP to %d\n",prevP) ;
          recvP = domain_info[*d_p].domain[INDEX_2(jg,ig,mlen)].P ;
          if ( ipack == 0 || rsl_c_comp2phys_proc(recvP) != rsl_myproc )
          {
-          ks = 0 - domain_info[d].ilocaloffset_nz ; ke = -1 ;
+          ks = 0 - domain_info[d].klocaloffset_nz ; ke = -1 ;
           prevP = domain_info[*d_p].domain_nz[INDEX_2(0,jg,nlen)].P ;
 #if 0
 fprintf(stderr,"set ks to %d\n",ks) ;
@@ -702,7 +696,7 @@ if (1)fprintf(stderr,"s_p_r^: P %2d prevP %2d recvP %2d ipack %d i %2d j %2d k %
                       case MINNS_K_MAJEW_3D :             /* <MM> eg: u(i,k,j) */
                         t0 = fld->llen[0] ; t1 = fld->llen[1]*t0 ;
 #if 0
-if (1)fprintf(stderr,"s_p_r^: P %2d prevP %2d recvP %2d ipack %d i %2d j %2d k %2d ig %2d jg %2d t0 %3d t1 %3d ks %2d ke %2d ke-ks+1 %3d\n",P,prevP,recvP,ipack,i,j,k,ig,jg,t0,t1,ks,ke,ke-ks+1) ;
+if (1)fprintf(stderr,"MZ to MN s_p_r^: P %2d prevP %2d recvP %2d ipack %d i %2d j %2d k %2d ig %2d jg %2d t0 %3d t1 %3d ks %2d ke %2d ke-ks+1 %3d\n",P,prevP,recvP,ipack,i,j,k,ig,jg,t0,t1,ks,ke,ke-ks+1) ;
 #endif
                         store_process_refs( base, fld->f90_table_index, (i+ks*t0+j*t1)*elemsz, elemsz,
                                                   ke-ks+1,
@@ -760,7 +754,7 @@ fprintf(stderr,"resset prevP to %d\n",prevP) ;
 /***/   for ( ig = 0 ; ig < mlen ; ig++ ) 
         {
          recvP = domain_info[*d_p].domain[INDEX_2(jg,ig,mlen)].P ;
-          ks = 0 ; ke = -1 ;
+          ks = 0                               ; ke = -1 ;
           prevP = domain_info[*d_p].domain_nz[INDEX_2(0,jg,nlen)].P ;
 /***/     for ( kg = 0 ; kg < zlen ; kg++ )
           {
@@ -819,7 +813,7 @@ P,prevP,recvP,ipack,i,j,k,ig,jg,t0,t1,ks,ke,ke-ks+1) ;
                       case MINNS_K_MAJEW_3D :             /* <MM> eg: u(i,k,j) */
                         t0 = fld->llen[0] ; t1 = fld->llen[1]*t0 ;
 #if 0
-if (1)fprintf(stderr,"s_p_rv: P %2d prevP %2d recvP %2d ipack %d i %2d j %2d k %2d ig %2d jg %2d t0 %3d t1 %3d ks %2d ke %2d ke-ks+1 %3d\n",
+if (1)fprintf(stderr,"MZ to MN s_p_rv: P %2d prevP %2d recvP %2d ipack %d i %2d j %2d k %2d ig %2d jg %2d t0 %3d t1 %3d ks %2d ke %2d ke-ks+1 %3d\n",
 P,prevP,recvP,ipack,i,j,k,ig,jg,t0,t1,ks,ke,ke-ks+1) ;
 #endif
                         store_process_refs( base, fld->f90_table_index, (i+ks*t0+j*t1)*elemsz, elemsz,

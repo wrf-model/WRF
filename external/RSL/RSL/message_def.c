@@ -165,11 +165,11 @@ RSL_BLANK_MESSAGE ( mh_p, len_p )
   mh = *mh_p ; len = *len_p ;
 
   RSL_TEST_ERR((mh <= 0)|| (mh >= RSL_MAXDESCRIPTORS),
-                "rsl_build_message: bad message handle" ) ;
+                "rsl_blank_message: bad message handle" ) ;
   RSL_TEST_ERR((msg = (message_desc_t *)mh_descriptors[mh])==NULL,
                "descriptor for null message");
   RSL_TEST_ERR( msg->tag != MESSAGE_DESC,
-       "rsl_build_message: handle given is not for an rsl message def" ) ;
+       "rsl_blank_message: handle given is not for an rsl message def" ) ;
 
   msg->tag = BLANK_MESSAGE_DESC ;       /* change tag */
   msg->nbytes = len ;

@@ -144,8 +144,8 @@ RSL_FDECOMPOSE (d_p,fcn,py_p,px_p,info_p,mloc_p,nloc_p,zloc_p,
 
 /* set the ones that aren't decomposed */
   *zloc_p = zlen ;
-  *nloc_mz_p = nlen ;
-  *mloc_nz_p = mlen ;
+  *nloc_mz_p = nlen + 2 * rsl_padarea ;
+  *mloc_nz_p = mlen + 2 * rsl_padarea ;
 
   if ( zlen > 1 ) {
 /* figure out MZ decomp: added 20010222 -- for 3d decomposition for xposes */
@@ -183,7 +183,7 @@ RSL_FDECOMPOSE (d_p,fcn,py_p,px_p,info_p,mloc_p,nloc_p,zloc_p,
           }
         }
       }
-      *mloc_mz_p = h-l+1 ;
+      *mloc_mz_p = h-l+1 + 2 * rsl_padarea ;
       *zloc_mz_p = hiz-lz+1 ;
     }
 
@@ -225,7 +225,7 @@ RSL_FDECOMPOSE (d_p,fcn,py_p,px_p,info_p,mloc_p,nloc_p,zloc_p,
           }
         }
       }
-      *nloc_nz_p = h-l+1 ;
+      *nloc_nz_p = h-l+1 + 2 * rsl_padarea ;
       *zloc_nz_p = hiz-lz+1 ;
     }
 

@@ -102,7 +102,13 @@ RSL_XPOSE_NZ_MN ( d_p, x_p )
     d_p             /* (I) Domain descriptor. */
    ,x_p ;           /* (I) Xpose descriptor. */
 {
+#if 0
+fprintf(stderr,"RSL_XPOSE_NZ_MN called\n" ) ;
+#endif
   rsl_xpose_common_up ( d_p , x_p , XPOSE_NZ_MN ) ;
+#if 0
+fprintf(stderr,"RSL_XPOSE_NZ_MN back\n" ) ;
+#endif
 }
 
 RSL_XPOSE_MN_NZ ( d_p, x_p )
@@ -112,6 +118,8 @@ RSL_XPOSE_MN_NZ ( d_p, x_p )
 {
   rsl_xpose_common_down( d_p, x_p, XPOSE_MN_NZ ) ;
 }
+
+/**************************************************/
 
 rsl_xpose_common_up ( d_p, x_p, xpose_sw )
   int_p
@@ -141,9 +149,6 @@ rsl_xpose_common_up ( d_p, x_p, xpose_sw )
   void * base ;
   packrec_t * pr ;
 
-#if 0
-fprintf(stderr,"RSL_XPOSE_MN_MZ called\n" ) ;
-#endif
 
   d = *d_p ; x = *x_p ;
 
@@ -206,20 +211,46 @@ fprintf(stderr,"debug posting async recv for %d bytes from %d\n", procrec->unpac
       else
         base =  pr->base ;
 #if 0
-fprintf(stderr,"pack   base %lu, f90_index %d, xpose=%d\n",base,pr->f90_table_index,x) ;
+fprintf(stderr,"pack   base %lu, f90_index %d, xpose=%d, pr->nelems=%d\n",base,pr->f90_table_index,x, pr->nelems) ;
 #endif
       for ( j = 0 ; j < pr->nelems ; j++ )
       {
 
 #if 0
-fprintf(stderr,"pck %08x, buf %08x, curs %5d, n %5d, off %5d, j %5d, s %5d\n",
+fprintf(stderr,"pck %08x, base %08x, buf %08x, curs %5d, n %5d, off %5d, j %5d, s %5d\n",
 (char *)(base) + pr->offset + j * pr->stride,
+base,
+&(pbuf[curs]), curs, pr->n,
+pr->offset, j, pr->stride ) ;
+#endif
+#if 0
+{ int iii, mloc_mn, nloc_mn, zloc_mn, x ;
+mloc_mn = 10 ;
+nloc_mn = 9 ;
+zloc_mn = 2 ;
+for ( iii = 0 ; iii < pr->n ; iii+=4 )
+{
+x = ((pr->offset + j * pr->stride + iii))/4 ;
+fprintf(stderr,"^ >>> %3d i %2d k %2d j %2d          %f\n",
+               x ,
+               x % mloc_mn ,
+               (x % (mloc_mn*zloc_mn))/mloc_mn  ,
+               (x / (mloc_mn*zloc_mn)) ,
+               *((float *)((char *)(base) + pr->offset + j * pr->stride + iii))) ;
+}}
+#endif
+
+
+#if 0
+fprintf(stderr,"pck %08x, base %08x, buf %08x, curs %5d, n %5d, off %5d, j %5d, s %5d\n",
+(char *)(base) + pr->offset + j * pr->stride,
+base,
 &(pbuf[curs]), curs, pr->n,
 pr->offset, j, pr->stride ) ;
 { int iii ;
 for ( iii = 0 ; iii < pr->n ; iii+=4 )
 {
-fprintf(stderr," >>> %f\n", *((float *)((char *)(base) + pr->offset + j * pr->stride + iii))) ;
+fprintf(stderr,"^ >>> %d  %f\n", pr->offset + j * pr->stride + iii, *((float *)((char *)(base) + pr->offset + j * pr->stride + iii))) ;
 }}
 #endif
 
@@ -294,7 +325,7 @@ fprintf(stderr,"debug sending %d bytes to %d, xpose=%d\n", curs, mdest, x ) ;
           else
             base = pr->base ;
 #if 0
-fprintf(stderr,"unpack base %08x, n %3d, nelems %d, stride %3d, f90_index %d, xpose=%d\n",
+fprintf(stderr,"^ unpack base %08x, n %3d, nelems %d, stride %3d, f90_index %d, xpose=%d\n",
   base,pr->n,pr->nelems,pr->stride,pr->f90_table_index,x) ;
 #endif
           for ( j = 0 ; j < pr->nelems ; j++ )
@@ -303,13 +334,13 @@ fprintf(stderr,"unpack base %08x, n %3d, nelems %d, stride %3d, f90_index %d, xp
 		 (char *)(base) + pr->offset + j * pr->stride, pr->n) ;
 #if 0
 { int iii, mloc_mz, nloc_mz, zloc_mz, x ;
-mloc_mz = 2 ;
-nloc_mz = 6 ;
-zloc_mz = 2 ;
+mloc_mz = 8 ;
+nloc_mz = 9 ;
+zloc_mz = 3 ;
 for ( iii = 0 ; iii < pr->n ; iii+=4 )
 {
 x = ((pr->offset + j * pr->stride + iii))/4 ;
-fprintf(stderr," <<< %d i %2d k %2d j %2d %f\n",
+fprintf(stderr,"^ <<< %d i %2d k %2d j %2d %f\n",
                x ,
                x % mloc_mz ,
                (x % (mloc_mz*zloc_mz))/mloc_mz  ,
@@ -342,6 +373,8 @@ fprintf(stderr,"debug got message from %d and unpacked %d bytes; xpose=%d\n", Pq
 MPE_Log_event( 16, s, "xpose end" ) ;
 #endif
 }
+
+/***********************************************/
 
 rsl_xpose_common_down ( d_p , x_p , xpose_sw )
   int_p
@@ -451,10 +484,9 @@ pr->offset, j, pr->stride ) ;
 { int iii ;
 for ( iii = 0 ; iii < pr->n ; iii+=4 )
 {
-fprintf(stderr," >>> %f\n", *((float *)((char *)(base) + pr->offset + j * pr->stride + iii))) ;
+fprintf(stderr,"v >>> %f\n", *((float *)((char *)(base) + pr->offset + j * pr->stride + iii))) ;
 }}
 #endif
-
 
         bcopy((char *)(base) + pr->offset + j * pr->stride,
 	      &(pbuf[curs]),pr->n) ;
@@ -526,7 +558,7 @@ fprintf(stderr,"debug sending %d bytes to %d, xpose=%d\n", curs, mdest, x ) ;
           else
             base = pr->base ;
 #if 0
-fprintf(stderr,"unpack base %08x, n %3d, nelems %d, stride %3d, f90_index %d, xpose=%d\n",
+fprintf(stderr,"v unpack base %08x, n %3d, nelems %d, stride %3d, f90_index %d, xpose=%d\n",
   base,pr->n,pr->nelems,pr->stride,pr->f90_table_index,x) ;
 #endif
           for ( j = 0 ; j < pr->nelems ; j++ )
@@ -535,13 +567,13 @@ fprintf(stderr,"unpack base %08x, n %3d, nelems %d, stride %3d, f90_index %d, xp
 		 (char *)(base) + pr->offset + j * pr->stride, pr->n) ;
 #if 0
 { int iii, mloc_mz, nloc_mz, zloc_mz, x ;
-mloc_mz = 2 ;
-nloc_mz = 6 ;
-zloc_mz = 2 ;
+mloc_mz = 8 ;
+nloc_mz = 9 ;
+zloc_mz = 3 ;
 for ( iii = 0 ; iii < pr->n ; iii+=4 )
 {
 x = ((pr->offset + j * pr->stride + iii))/4 ;
-fprintf(stderr," <<< %d i %2d k %2d j %2d %f\n",
+fprintf(stderr,"v <<< %d i %2d k %2d j %2d %f\n",
                x ,
                x % mloc_mz ,
                (x % (mloc_mz*zloc_mz))/mloc_mz  ,

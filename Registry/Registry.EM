@@ -382,8 +382,8 @@ state    real   SMSTOT           ij     misc        1         -      r          
 
 state    real   SFCRUNOFF        ij     misc        1         -      rhd=(interp_mask_land_field:lu_index)      "SFROFF"           "SURFACE RUNOFF"     "mm"
 state    real   UDRUNOFF         ij     misc        1         -      rhd=(interp_mask_land_field:lu_index)      "UDROFF"           "UNDERGROUND RUNOFF" "mm"
-state  integer  IVGTYP           ij     misc        1         -     irhd=(interp_fcni)u=(copy_fcni)             "IVGTYP"           "DOMINANT VEGETATION CATEGORY" ""
-state  integer  ISLTYP           ij     misc        1         -     irhd=(interp_fcni)u=(copy_fcni)             "ISLTYP"           "DOMINANT SOIL CATEGORY"       ""
+state  integer  IVGTYP           ij     misc        1         -     i02rhd=(interp_fcni)u=(copy_fcni)            "IVGTYP"           "DOMINANT VEGETATION CATEGORY" ""
+state  integer  ISLTYP           ij     misc        1         -     i02rhd=(interp_fcni)u=(copy_fcni)            "ISLTYP"           "DOMINANT SOIL CATEGORY"       ""
 state    real   VEGFRA           ij     misc        1         -     i012rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)   "VEGFRA"           "VEGETATION FRACTION" ""
 state    real   SFCEVP           ij     misc        1         -      r                                          "SFCEVP"           "SURFACE EVAPORATION" "kg m-2"
 state    real   GRDFLX           ij     misc        1         -      rh                                         "GRDFLX"           "GROUND HEAT FLUX" "W m-2"
@@ -394,7 +394,7 @@ state    real   ACSNOM           ij     misc        1         -      rd=(interp_
 state    real   SNOW             ij     misc        1         -     i01rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "SNOW"             "SNOW WATER EQUIVALENT"    "kg m-2"
 state    real   SNOWH            ij     misc        1         -     i01rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "SNOWH"            "PHYSICAL SNOW DEPTH"      "m"
 state    real   CANWAT           ij     misc        1         -     i01rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "CANWAT"           "CANOPY WATER"             "kg m-2"
-state    real   SST              ij     misc        1         -     i01rhd=(interp_mask_water_field:lu_index)   "SST"              "SEA SURFACE TEMPERATURE" "K"
+state    real   SST              ij     misc        1         -     i012rhd=(interp_mask_water_field:lu_index)   "SST"              "SEA SURFACE TEMPERATURE" "K"
 state  integer  IFNDSNOWH        -      misc        1         -     i         "FNDSNOWH" "SNOWH_LOGICAL"
 state  integer  IFNDSOILW        -      misc        1         -     i         "FNDSOILW" "SOILW_LOGICAL"
 # RUC LSM
@@ -465,8 +465,10 @@ state   real    sina           ij      misc         1         -     i012rhdu=(co
 state   real    cosa           ij      misc         1         -     i012rhdu=(copy_fcnm)    "COSALPHA"         "Local cosine of map rotation"  ""
 state   real    ht             ij      misc         1         -     i012rhdus  "HGT"              "Terrain Height"   "m"
 state   real    ht_fine        ij      misc         1         -     -          "HGT_FINE"         "Fine Terrain Height"   "m"
+state   real    ht_int         ij      misc         1         -     -          "HGT_INT"          "Terrain Height Horizontally Interpolated"   "m"
+state   real    ht_input       ij      misc         1         -     -          "HGT_INPUT"        "Terrain Height from FG Input File"   "m"
 
-state   real    TSK            ij      misc         1         -     i01rhdu=(copy_fcnm)    "TSK"                   "SURFACE SKIN TEMPERATURE"                  "K"
+state   real    TSK            ij      misc         1         -     i012rhdu=(copy_fcnm)    "TSK"                   "SURFACE SKIN TEMPERATURE"                  "K"
                                                 
 state   real    u_base         k       misc         1         -     ir        "u_base"                "BASE STATE X WIND IN IDEALIZED CASES"         ""      
 state   real    v_base         k       misc         1         -     ir        "v_base"                "BASE STATE Y WIND IN IDEALIZED CASES"         ""      
@@ -548,8 +550,8 @@ i1       real  rho_phy         ikj      misc        1         -
 i1    logical  CU_ACT_FLAG     ij       misc        1         -
 
                                                 
-state    real  TMN              ij      misc        1         -     i01rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)     "TMN"                   "SOIL TEMPERATURE AT LOWER BOUNDARY"           "K"
-state    real  XLAND            ij      misc        1         -     irhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)       "XLAND"                 "LAND MASK (1 FOR LAND, 2 FOR WATER)"          ""      
+state    real  TMN              ij      misc        1         -     i012rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)     "TMN"                   "SOIL TEMPERATURE AT LOWER BOUNDARY"           "K"
+state    real  XLAND            ij      misc        1         -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)       "XLAND"                 "LAND MASK (1 FOR LAND, 2 FOR WATER)"          ""      
 state    real  ZNT              ij      misc        1         -      r        "ZNT"                   "TIME-VARYING ROUGHNESS LENGTH"                "m"      
 state    real  UST              ij      misc        1         -      r        "UST"                   "U* IN SIMILARITY THEORY"                      "m s-1"      
 i1       real  HOL              ij      misc        1         -      -        "HOL"                   "PBL HEIGHT OVER MONIN-OBUKHOV LENGTH"         ""

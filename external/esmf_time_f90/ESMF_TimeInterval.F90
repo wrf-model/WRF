@@ -651,6 +651,8 @@
              timeinterval%basetime%S / 3600 , &
              mod( timeinterval%basetime%S / 60 , 60 ), &
              mod( timeinterval%basetime%S  , 60 )
+write(0,*)'** timeinterval%basetime%S ',timeinterval%basetime%S,' ',timeinterval%basetime%Sn,' / ',timeinterval%basetime%Sd
+
 
       rc = ESMF_SUCCESS
 #else
@@ -817,7 +819,7 @@
 ! !ARGUMENTS:
       type(ESMF_TimeInterval), intent(in) :: timeinterval
       integer, intent(in) :: divisor
-      integer  d, n
+      integer  d, n, remainder
 !
       type(ESMF_TimeInterval) :: retval
 ! !LOCAL:
@@ -843,10 +845,19 @@
       CALL ESMF_TimeIntervalSet( ESMF_TimeIntervalQuotI, rc=rc )
       call c_ESMC_TimeIntervalQuotI(timeinterval, divisor, &
                                     ESMF_TimeIntervalQuotI)
+
       retval = timeinterval
+! divide the whole seconds 
       retval%basetime%S = timeinterval%basetime%S / divisor
-      n = retval%basetime%Sn*divisor + mod( timeinterval%basetime%S, divisor )
+      remainder =         mod( timeinterval%basetime%S , divisor )
+
+! divide the fractional part (don't worry about simplification here)
+      n = retval%basetime%Sn
       d = retval%basetime%Sd * divisor
+
+! add the remainder from above to the fractional part
+      n = n + remainder * divisor
+
       CALL simplify(n,d,retval%basetime%Sn,retval%basetime%Sd) 
       IF ( retval%basetime%Sn > retval%basetime%Sd ) THEN
         retval%basetime%S = retval%basetime%S + retval%basetime%Sn / retval%basetime%Sd

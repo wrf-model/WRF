@@ -1176,6 +1176,7 @@ SCC             =       xlc_r
 FC              =       mpxlf90_r
 LD              =       mpxlf90_r
 CC              =       mpcc_r
+RWORDSIZE       =       4
 CFLAGS          =       -O3 -DNOUNDERSCORE  -I../external/RSL_LITE -DDM_PARALLEL \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
 FCOPTIM         =       -O2 -qarch=auto
@@ -1279,6 +1280,7 @@ SCC             =       xlc_r
 FC              =       mpxlf90_r
 LD              =       mpxlf90_r
 CC              =       mpcc_r
+RWORDSIZE       =       4
 CFLAGS          =       -DNOUNDERSCORE -DWRF_RSL_IO  -I../external/RSL/RSL -DDM_PARALLEL  \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
 FCOPTIM         =       -O2 -qarch=auto
@@ -1382,6 +1384,7 @@ SCC             =       xlc_r
 FC              =       mpxlf90_r
 LD              =       mpxlf90_r
 CC              =       mpcc_r
+RWORDSIZE       =       4
 CFLAGS          =       -DNOUNDERSCORE -DWRF_RSL_IO  -I../external/RSL/RSL -DDM_PARALLEL  \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
 FCOPTIM         =       -O2 -qarch=auto 
@@ -1488,6 +1491,7 @@ SCC             =       xlc_r
 FC              =       mpxlf90_r
 LD              =       mpxlf90_r
 CC              =       mpcc_r
+RWORDSIZE       =       4
 CFLAGS          =       -DNOUNDERSCORE  -I../external/RSL_LITE -DDM_PARALLEL  \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
 FCOPTIM         =       -O2 -qarch=auto 
@@ -1596,6 +1600,7 @@ SCC             =       xlc_r
 FC		=	mpxlf90_r
 LD		=	mpxlf90_r
 CC              =       mpcc_r
+RWORDSIZE       =       4
 CFLAGS          =       -DNOUNDERSCORE -DWRF_RSL_IO  -I../external/RSL/RSL -DDM_PARALLEL  \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
 FCOPTIM         =       -O2 -qarch=auto
@@ -1713,6 +1718,7 @@ SCC             =       xlc_r
 FC              =       mpxlf90_r
 LD              =       mpxlf90_r
 CC              =       mpcc_r
+RWORDSIZE       =       4
 CFLAGS          =       -DNOUNDERSCORE -DWRF_RSL_IO  -I../external/RSL/RSL -DDM_PARALLEL  \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
 FCOPTIM         =       -O2 -qarch=auto
@@ -1816,6 +1822,7 @@ SCC             =       xlc_r
 FC              =       mpxlf90_r
 LD              =       mpCC_r
 CC              =       mpcc_r
+RWORDSIZE       =       4
 MCELHOME        =       /home/bluesky/bettenc/disttest
 CFLAGS          =       -DNOUNDERSCORE -DWRF_RSL_IO  -I../external/RSL/RSL -DDM_PARALLEL  \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
@@ -1934,6 +1941,7 @@ SCC             =       xlc_r
 FC              =       mpxlf90_r
 LD              =       mpxlf90_r
 CC              =       mpcc_r
+RWORDSIZE       =       4
 CFLAGS          =       -DNOUNDERSCORE -DWRF_RSL_IO  -I../external/RSL/RSL -DDM_PARALLEL  \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
 FCOPTIM         =       -O2 -qarch=auto
@@ -2058,6 +2066,7 @@ SCC             =       xlc_r
 FC              =       mpxlf90_r
 LD              =       mpxlf90_r
 CC              =       mpcc_r
+RWORDSIZE       =       4
 CFLAGS          =       -DNOUNDERSCORE -DWRF_RSL_IO  -I../external/RSL/RSL -DDM_PARALLEL  \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
 FCOPTIM         =       -O2 -qarch=auto

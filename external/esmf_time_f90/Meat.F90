@@ -706,6 +706,8 @@ SUBROUTINE atotime ( str, time )
    if ( len( str ) .ge. 20 ) then
      if ( str(20:20) .eq. '.' ) then
        read(str,34) yr,mm,dd,h,m,s,ms
+       !  last four digits are ten-thousandths of a sec, convert to ms
+       ms=nint(real(ms)/10)
      else
        read(str,33) yr,mm,dd,h,m,s
        ms = 0

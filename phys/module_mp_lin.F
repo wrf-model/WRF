@@ -1547,6 +1547,7 @@ CONTAINS
 !c       must include PPgacw or Pgacr, or both.
 !c       ( The amount of Pgacw which is not able
 !c       to freeze is shed to rain. )
+         IF(temcc(k).gt.-40.)THEN
 
              term0=constg*olambdag(k)**5.5/visc(k)
 
@@ -1579,6 +1580,9 @@ CONTAINS
          else
             delta4=0.0
          endif
+         ELSE
+            delta4=1.0
+         ENDIF
 
 !c
 !c

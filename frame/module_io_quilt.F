@@ -198,6 +198,7 @@ MODULE module_ext_quilt
 #endif
 
       okay_to_commit = .false.
+      stored_write_record = .false.
       ishuttag = 202020
       ninbuf = 0
       CALL mpi_x_comm_size( mpi_comm_io_groups(1), ntasks_io_group,    ierr )
@@ -774,6 +775,38 @@ MODULE module_ext_quilt
       END DO
 
       DEALLOCATE( obuf )
+
+      ! flush output files if needed
+      IF (stored_write_record) THEN
+        SELECT CASE ( use_package(io_form) )
+#ifdef NETCDF
+          CASE ( IO_NETCDF   )
+            CALL ext_ncd_iosync( handle(DataHandle), Status )
+#endif
+#ifdef HDF
+          CASE ( IO_HDF   )
+            CALL ext_hdf_iosync( handle(DataHandle), Status )
+#endif
+#ifdef XXX
+          CASE ( IO_XXX   )
+            CALL ext_xxx_iosync( handle(DataHandle), Status )
+#endif
+#ifdef YYY
+          CASE ( IO_YYY   )
+            CALL ext_yyy_iosync( handle(DataHandle), Status )
+#endif
+#ifdef ZZZ
+          CASE ( IO_ZZZ   )
+            CALL ext_zzz_iosync( handle(DataHandle), Status )
+#endif
+#ifdef INTIO
+          CASE ( IO_INTIO   )
+            CALL ext_int_iosync( handle(DataHandle), Status )
+#endif
+          CASE DEFAULT
+            Status = 0
+        END SELECT
+      ENDIF
 
       END DO
 

@@ -270,7 +270,7 @@
 
 #endif
 
-    IF ( dyn_opt_tmp .NE. dyn_opt .AND. switch .EQ. model_input_only ) THEN
+    IF ( dyn_opt .NE. 0 .AND. dyn_opt_tmp .NE. dyn_opt .AND. switch .EQ. model_input_only ) THEN
       WRITE(wrf_err_message,*)'input_wrf: dyn_opt in file ',dyn_opt_tmp,' NE namelist ',dyn_opt
       CALL wrf_error_fatal( wrf_err_message )
     ENDIF

@@ -1694,7 +1694,7 @@ CONTAINS
     INTEGER , INTENT(IN) :: ims, ime, jms, jme, kms, kme
     INTEGER , INTENT(IN) :: its, ite, jts, jte, kts, kte
     INTEGER , INTENT(IN) :: ijds , ijde , spec_bdy_width
-    REAL , DIMENSION(ims:,kms:,jms:) , INTENT(IN) :: data3d
+    REAL , DIMENSION(ims:ime,kms:kme,jms:jme) , INTENT(IN) :: data3d
 !    REAL , DIMENSION(:,:,:,:) , INTENT(OUT) :: space_bdy
     REAL , DIMENSION(ijds:ijde,kds:kde,spec_bdy_width,4) , INTENT(OUT) :: space_bdy
     CHARACTER (LEN=1) , INTENT(IN) :: char_stagger
@@ -1892,7 +1892,7 @@ CONTAINS
     INTEGER , INTENT(IN) :: ims, ime, jms, jme, kms, kme
     INTEGER , INTENT(IN) :: its, ite, jts, jte, kts, kte
     INTEGER , INTENT(IN) :: ijds , ijde , spec_bdy_width
-    REAL , DIMENSION(ims:,kms:,jms:) , INTENT(IN) :: data3dnew , data3dold
+    REAL , DIMENSION(ims:ime,kms:kme,jms:jme) , INTENT(IN) :: data3dnew , data3dold
 !    REAL , DIMENSION(:,:,:,:) , INTENT(OUT) :: space_bdy
     REAL , DIMENSION(ijds:ijde,kds:kde,spec_bdy_width,4) , INTENT(OUT) :: space_bdy
     CHARACTER (LEN=1) , INTENT(IN) :: char_stagger

@@ -1,13 +1,3 @@
-#include <stdio.h>
-#include <rpc/xdr.h>
-#include <math.h>
-#include <malloc.h>
-#include <string.h>
-#include "landread.h"
-
-#define MAXTOPOFILES  100
-#define MAXLEN        4096
-
 #ifndef CRAY
 # ifdef NOUNDERSCORE
 #      define GET_TERRAIN get_terrain
@@ -19,6 +9,32 @@
 #   endif
 # endif
 #endif
+
+#ifdef LANDREAD_STUB
+
+
+int GET_TERRAIN (        float *adx,
+                         float *xlat,
+                         float *xlon,
+                         float       *terrain,
+                         int   *mix,
+                         int   *mjx,
+                         int   *iyyn,
+                         int   *jxxn)
+{
+ return(0) ;
+}
+
+#else
+
+#include <stdio.h>
+#include <rpc/xdr.h>
+#include <math.h>
+#include <malloc.h>
+#include <string.h>
+#include "landread.h"
+#define MAXTOPOFILES  100
+#define MAXLEN        4096
 
 
 typedef struct
@@ -717,3 +733,5 @@ int get_bathymetry_(const float &tadx,
   return(1);
 }
 #endif
+
+#endif 

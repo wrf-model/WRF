@@ -125,7 +125,7 @@ RSL_FDECOMPOSE (d_p,fcn,py_p,px_p,info_p,mloc_p,nloc_p,zloc_p,
   int *wrk1, *wrk2 ;
   rsl_list_t *lp ;
   int P, my_P ;
-  int l, h, lz, hz ;
+  int l, h, lz, hiz ;
   int retval ;
 
   retval = 0 ;
@@ -169,7 +169,7 @@ RSL_FDECOMPOSE (d_p,fcn,py_p,px_p,info_p,mloc_p,nloc_p,zloc_p,
     if ( ! result )
     {
       /* set the processor numbers of the valid points */
-      l = -1 ; h = -1 ; lz = -1 ; hz = -1 ;
+      l = -1 ; h = -1 ; lz = -1 ; hiz = -1 ;
       for ( k = 0 ; k < zlen ; k++ ) {
         for ( i = 0 ; i < mlen ; i++ ) {
           p = &(domain[ INDEX_2(k,i,mlen) ]) ;
@@ -179,12 +179,12 @@ RSL_FDECOMPOSE (d_p,fcn,py_p,px_p,info_p,mloc_p,nloc_p,zloc_p,
 	    if ( l == -1 ) l = i ;
 	    h = i ;
 	    if ( lz == -1 ) lz = k ;
-	    hz = k ;
+	    hiz = k ;
           }
         }
       }
       *mloc_mz_p = h-l+1 ;
-      *zloc_mz_p = hz-lz+1 ;
+      *zloc_mz_p = hiz-lz+1 ;
     }
 
     RSL_FREE( wrk1 ) ;
@@ -211,7 +211,7 @@ RSL_FDECOMPOSE (d_p,fcn,py_p,px_p,info_p,mloc_p,nloc_p,zloc_p,
     if ( ! result )
     {
       /* set the processor numbers of the valid points */
-      l = -1 ; h = -1 ; lz = -1 ; hz = -1 ;
+      l = -1 ; h = -1 ; lz = -1 ; hiz = -1 ;
       for ( k = 0 ; k < zlen ; k++ ) {
         for ( j = 0 ; j < nlen ; j++ ) {
           p = &(domain[ INDEX_2(k,j,nlen) ]) ;
@@ -221,12 +221,12 @@ RSL_FDECOMPOSE (d_p,fcn,py_p,px_p,info_p,mloc_p,nloc_p,zloc_p,
 	    if ( l == -1 ) l = j ;
 	    h = j ;
 	    if ( lz == -1 ) lz = k ;
-	    hz = k ;
+	    hiz = k ;
           }
         }
       }
       *nloc_nz_p = h-l+1 ;
-      *zloc_nz_p = hz-lz+1 ;
+      *zloc_nz_p = hiz-lz+1 ;
     }
 
     RSL_FREE( wrk1 ) ;

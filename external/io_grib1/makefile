@@ -27,7 +27,7 @@ libio_grib1.a:		$(OBJS)
 
 io_grib1.o:     io_grib1.F 
 	mv $*.F $*.F90
-	$(CPP) $(CPPFLAGS) -I../../main io_grib1.F90 | $(M4) - > io_grib1.f
+	$(CPP) $(CPPFLAGS) -I../../main -I. io_grib1.F90 | $(M4) - > io_grib1.f
 	$(FC) $(FCFLAGS) -I../../main -I../../inc -c io_grib1.f
 	mv $*.F90 $*.F
 

@@ -281,7 +281,7 @@ SUBROUTINE wrf_open_for_write_begin( FileName , Comm_compute, Comm_io, SysDepInf
           ELSE
             LocFilename = FileName
           ENDIF
-          CALL ext_int_open_for_write_begin ( FileName , Comm_compute, Comm_io, SysDepInfo, &
+          CALL ext_int_open_for_write_begin ( LocFileName , Comm_compute, Comm_io, SysDepInfo, &
                                               Hndl , Status )
         ENDIF
         IF ( .NOT. multi_files(io_form) ) THEN

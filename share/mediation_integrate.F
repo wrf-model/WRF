@@ -279,6 +279,11 @@ integer myproc
 ! to new terrain elevation from feedback
     CALL start_domain ( nest )
 ! kludge: 20040604
+    CALL get_ijk_from_grid (  parent ,                   &
+                              ids, ide, jds, jde, kds, kde,    &
+                              ims, ime, jms, jme, kms, kme,    &
+                              ips, ipe, jps, jpe, kps, kpe    )
+  
     ALLOCATE( save_acsnow(ims:ime,jms:jme) )
     ALLOCATE( save_acsnom(ims:ime,jms:jme) )
     ALLOCATE( save_cuppt(ims:ime,jms:jme) )
@@ -315,6 +320,7 @@ integer myproc
     DEALLOCATE( save_sfcrunoff )
     DEALLOCATE( save_udrunoff )
 ! end of kludge: 20040604
+
 
   ELSE
 

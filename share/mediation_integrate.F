@@ -701,6 +701,8 @@ SUBROUTINE med_nest_feedback ( parent , nest , config_flags )
           parent%nest_pos(i,j) = parent%ht(i,j)*1.5 + 1000.
         ELSE IF ( parent%ht(i,j) .NE. 0. ) THEN
           parent%nest_pos(i,j) = parent%ht(i,j) + 500.
+        ELSE 
+          parent%nest_pos(i,j) = 0.
         ENDIF
       ENDDO
       ENDDO

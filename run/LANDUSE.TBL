@@ -31,7 +31,7 @@ WINTER
 USGS
 24,2, 'ALBD   SLMO   SFEM   SFZ0 THERIN   SCFX   SFHC   '
 SUMMER
-1,      18.,   .10,   .88,   50.,    3.,   .52, 18.9e5,'Urban and Built-Up Land'
+1,      15.,   .10,   .88,   50.,    3.,   .52, 18.9e5,'Urban and Built-Up Land'
 2,      17.,   .30,  .985,   15.,    4.,   .60, 25.0e5,'Dryland Cropland and Pasture'
 3,      18.,   .50,  .985,   15.,    4.,   .60, 25.0e5,'Irrigated Cropland and Pasture'
 4,      18.,   .25,  .985,   15.,    4.,   .60, 25.0e5,'Mixed Dryland/Irrigated Cropland and Pasture'
@@ -56,7 +56,7 @@ SUMMER
 23,     25.,   .02,   .85,   10.,    2.,   .62, 12.0e5,'Bare Ground Tundra'
 24,     55.,   .95,   .95,    5.,    5.,    0., 9.0e25,'Snow or Ice'
 WINTER
-1,      18.,   .10,   .88,   50.,    3.,   .52, 18.9e5,'Urban and Built-Up Land'
+1,      15.,   .10,   .88,   50.,    3.,   .52, 18.9e5,'Urban and Built-Up Land'
 2,      23.,   .60,   .92,    5.,    4.,   .60, 25.0e5,'Dryland Cropland and Pasture'
 3,      23.,   .50,   .92,    5.,    4.,   .60, 25.0e5,'Irrigated Cropland and Pasture'
 4,      23.,   .50,   .92,    5.,    4.,   .60, 25.0e5,'Mixed Dryland/Irrigated Cropland and Pasture'

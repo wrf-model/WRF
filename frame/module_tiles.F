@@ -6,7 +6,7 @@ MODULE module_tiles
   USE module_configure
 
   INTERFACE set_tiles
-    MODULE PROCEDURE set_tiles1 , set_tiles2
+    MODULE PROCEDURE set_tiles1 , set_tiles2, set_tiles3
   END INTERFACE
 
 CONTAINS
@@ -301,6 +301,122 @@ CONTAINS
 
      RETURN
   END SUBROUTINE set_tiles2
+  
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! this version sets the tiles based on a passed in integer mask
+! the assumption here is that the mask is relatively straigthforward
+! and coverable with 2 or three rectangles. No weird stuff...
+
+  SUBROUTINE set_tiles3 ( grid , imask, ims, ime, jms, jme, ips, ipe, jps, jpe )
+     USE module_domain
+     USE module_driver_constants
+     USE module_machine
+     USE module_wrf_error
+
+     IMPLICIT NONE
+  
+     !  Input data.
+  
+     TYPE(domain)                   , INTENT(INOUT)  :: grid
+     INTEGER                        , INTENT(IN)     :: ims , ime , jms , jme
+     INTEGER                        , INTENT(IN)     :: ips , ipe , jps , jpe
+     INTEGER, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: imask
+     INTEGER                :: num_tiles
+     INTEGER, DIMENSION(50) :: i_start, i_end, j_start, j_end
+
+     !  Output data.
+
+     !  Local data.
+  
+     CHARACTER*80              :: mess
+
+     CALL set_tiles_masked ( imask, ims, ime, jms, jme, ips, ipe, jps, jpe, &
+                             num_tiles, i_start, i_end, j_start, j_end )
+
+     IF ( num_tiles > grid%max_tiles ) THEN
+       IF ( ASSOCIATED(grid%i_start) ) THEN ; DEALLOCATE( grid%i_start ) ; NULLIFY( grid%i_start ) ; ENDIF
+       IF ( ASSOCIATED(grid%i_end) )   THEN ; DEALLOCATE( grid%i_end   ) ; NULLIFY( grid%i_end   ) ; ENDIF
+       IF ( ASSOCIATED(grid%j_start) ) THEN ; DEALLOCATE( grid%j_start ) ; NULLIFY( grid%j_start ) ; ENDIF
+       IF ( ASSOCIATED(grid%j_end) )   THEN ; DEALLOCATE( grid%j_end   ) ; NULLIFY( grid%j_end   ) ; ENDIF
+       ALLOCATE(grid%i_start(num_tiles))
+       ALLOCATE(grid%i_end(num_tiles))
+       ALLOCATE(grid%j_start(num_tiles))
+       ALLOCATE(grid%j_end(num_tiles))
+       grid%max_tiles = num_tiles
+     ENDIF
+     grid%num_tiles = num_tiles
+     grid%i_start(1:num_tiles) = i_start(1:num_tiles)
+     grid%i_end(1:num_tiles)   = i_end(1:num_tiles)
+     grid%j_start(1:num_tiles) = j_start(1:num_tiles)
+     grid%j_end(1:num_tiles)   = j_end(1:num_tiles)
+
+     RETURN
+  END SUBROUTINE set_tiles3
+
+  SUBROUTINE set_tiles_masked ( imask, ims, ime, jms, jme, ips, ipe, jps, jpe, &
+                                num_tiles, istarts, iends, jstarts, jends )
+
+      IMPLICIT NONE
+
+      !  Arguments
+
+      INTEGER                        , INTENT(IN)     :: ims , ime , jms , jme
+      INTEGER, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: imask
+      INTEGER                        , INTENT(IN)     :: ips , ipe , jps , jpe
+      INTEGER                        , INTENT(OUT)    :: num_tiles
+      INTEGER, DIMENSION(*)          , INTENT(OUT)    :: istarts, iends
+      INTEGER, DIMENSION(*)          , INTENT(OUT)    :: jstarts, jends
+
+      !  Output data.
+
+      !  Local data.
+      CHARACTER*80              :: mess
+      INTEGER :: i, j, ir, jr
+      INTEGER :: imaskcopy(ips:ipe,jps:jpe)    ! copy of imask to write on
+
+      imaskcopy = imask(ips:ipe,jps:jpe)
+      num_tiles = 0
+      ! simple multi-pass scheme, optimize later...
+      DO WHILE (ANY(imaskcopy == 1))
+        DO j = jps,jpe
+          DO i = ips,ipe
+            ! find first "1" and build a rectangle from it
+            IF ( imaskcopy(i,j) == 1 ) THEN
+              num_tiles = num_tiles + 1
+              istarts(num_tiles) = i
+              iends(num_tiles)   = i
+              jstarts(num_tiles) = j
+              jends(num_tiles)   = j
+              ! don't check this point again
+              imaskcopy(i,j) = 0
+              ! find length of first row
+              DO ir = istarts(num_tiles)+1,ipe
+                IF ( imaskcopy(ir,j) == 1 ) THEN
+                  iends(num_tiles) = ir
+                  ! don't check this point again
+                  imaskcopy(ir,j) = 0
+                ELSE
+                  EXIT
+                ENDIF
+              ENDDO
+              ! find number of rows
+              DO jr = jstarts(num_tiles)+1,jpe
+                IF (ALL(imaskcopy(istarts(num_tiles):iends(num_tiles),jr) == 1)) THEN
+                  jends(num_tiles) = jr
+                  ! don't check these points again
+                  imaskcopy(istarts(num_tiles):iends(num_tiles),jr) = 0
+                ELSE
+                  EXIT
+                ENDIF
+              ENDDO
+            ENDIF   ! if ( imaskcopy(i,j) == 1 )
+          ENDDO
+        ENDDO
+      ENDDO
+      RETURN
+  END SUBROUTINE set_tiles_masked
+
   
   SUBROUTINE init_module_tiles
   END SUBROUTINE init_module_tiles

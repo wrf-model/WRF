@@ -868,7 +868,7 @@ SUBROUTINE advance_uv ( u, ru_tend, v, rv_tend,        &
   u_outer_j_loop: DO j = j_start, j_end
 
    DO k = k_start, k_end
-   DO i = i_start, i_endu
+   DO i = i_start_u_tend, i_end_u_tend
      u(i,k,j) = u(i,k,j) + dts*ru_tend(i,k,j)
    ENDDO
    ENDDO
@@ -925,7 +925,7 @@ SUBROUTINE advance_uv ( u, ru_tend, v, rv_tend,        &
 
 ! now v
 
-  v_outer_j_loop: DO j = j_start, j_endv
+  v_outer_j_loop: DO j = j_start_v_tend, j_end_v_tend
 
    DO k = k_start, k_end
    DO i = i_start, i_end

@@ -678,7 +678,7 @@ gen_datacalls1 ( FILE * fp , char * corename , char * structname , int mask , no
 {
   node_t * p, * q  ;
   int i, member_number ;
-  char tmp[NAMELEN] ;
+  char tmp[NAMELEN],tmp2[NAMELEN] ;
   char indices[NAMELEN], post[NAMELEN] ;
 
   for ( p = node ; p != NULL ; p = p->next )
@@ -699,9 +699,11 @@ gen_datacalls1 ( FILE * fp , char * corename , char * structname , int mask , no
             for ( q = p->members ; q != NULL ; q = q->next )
             {
               sprintf(tmp, "(grid%%sm31,grid%%sm32,grid%%sm33,1+%d)", member_number ) ;
-              if ( p->ntl > 1 ) fprintf(fp," IF(1+%d.LE.num_%s)CALL rsl_register_f90 ( %s%s_%d %s )\n",
-                                             member_number,p->name,structname,p->name,i,tmp) ;
-              else              fprintf(fp," CALL rsl_register_f90 ( %s%s %s )\n"   ,structname,p->name,tmp) ;
+              sprintf(tmp2, "(grid%%em31-grid%%sm31+1)*(grid%%em32-grid%%sm32+1)*(grid%%em33-grid%%sm33+1)") ;
+              if ( p->ntl > 1 ) fprintf(fp," IF(1+%d.LE.num_%s)CALL rsl_register_f90_base_and_size ( %s%s_%d %s , &\n %s  )\n",
+                                             member_number,p->name,structname,p->name,i,tmp,tmp2) ;
+              else              fprintf(fp," CALL rsl_register_f90_base_and_size ( %s%s %s , %s )\n",
+                                                           structname,p->name,tmp,tmp2) ;
               member_number++ ;
             }
           }
@@ -713,8 +715,12 @@ gen_datacalls1 ( FILE * fp , char * corename , char * structname , int mask , no
               sprintf(post,")") ;
               sprintf(indices, "%s",index_with_firstelem("(","",tmp,p,post)) ;
             }
-            if ( p->ntl > 1 ) fprintf(fp," CALL rsl_register_f90 ( %s%s_%d%s )\n",structname,p->name,i,indices) ;
-            else              fprintf(fp," CALL rsl_register_f90 ( %s%s%s )\n"   ,structname,p->name,indices) ;
+            if ( p->ntl > 1 ) fprintf(fp," CALL rsl_register_f90_base_and_size ( %s%s_%d%s , SIZE( %s%s_%d%s ) )\n",
+                                                                                   structname,p->name,i,indices,
+                                                                                   structname,p->name,i,indices ) ;
+            else              fprintf(fp," CALL rsl_register_f90_base_and_size ( %s%s%s , SIZE( %s%s%s  ) )\n",
+                                                                                   structname,p->name,indices,
+                                                                                   structname,p->name,indices) ;
           }
         }
       }

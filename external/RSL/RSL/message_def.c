@@ -274,6 +274,13 @@ BREAKTHEEXAMPLECODE
 
 @*/
 
+static struct f90_base_table_entry {
+  char * base, * virt_base ;
+  int size_in_bytes ;
+} f90_base_table[ MAX_BASE_TABLE_ENTRIES ] ;
+static int base_table_cursor = 1;
+static int base_table_size = 1;
+
 RSL_BUILD_MESSAGE ( mh_p, t_p, base, ndim_p, decomp, glen, llen )
   int_p 
      mh_p       /* (I) Message handle created by RSL_CREATE_MESSAGE. */
@@ -288,7 +295,7 @@ RSL_BUILD_MESSAGE ( mh_p, t_p, base, ndim_p, decomp, glen, llen )
   int 
     llen[] ;    /* (I) Local (decomposed) dimensions of field. */
 {
-  int mh, t, ndim ;
+  int mh, t, ndim, i ;
   message_desc_t *msg ;
   rsl_fldspec_t *fld ;
   int dim ;
@@ -313,11 +320,20 @@ RSL_BUILD_MESSAGE ( mh_p, t_p, base, ndim_p, decomp, glen, llen )
 
   fld->type = t ;
   fld->elemsz = elemsize( t ) ;
+  for ( fld->memsize = fld->elemsz, i = 0 ; i < ndim ; i++ )
+  {
+    fld->memsize = fld->memsize * llen[i] ;
+  }
+
   if ( t >= 100 )
   {
     if ( ! (fld->f90_table_index = get_index_for_base( base )) )
     { RSL_TEST_ERR(1,"Use of unregistered f90 typed variable") ; }
+#if 0
     fld->base = (void *)((fld->f90_table_index-1) * F90_MAX_FLD_SIZE_IN_BYTES + 1) ; /* don't allow base of 0 */
+#else
+    fld->base = f90_base_table[ fld->f90_table_index ].virt_base ;
+#endif
   }
   else
   {
@@ -392,18 +408,33 @@ RSL_BUILD_MESSAGE ( mh_p, t_p, base, ndim_p, decomp, glen, llen )
   msg->nflds++ ;
 }
 
-static struct f90_base_table_entry {
-  unsigned long base ;
-} f90_base_table[ MAX_BASE_TABLE_ENTRIES ] ;
-static int base_table_cursor = 1;
-static int base_table_size = 1;
 
 RSL_REGISTER_F90 ( base )
-  unsigned long base ;
+  char * base ;
 {
   if ( base_table_cursor < MAX_BASE_TABLE_ENTRIES )
   {
     f90_base_table[ base_table_cursor ].base = base ;
+    base_table_cursor++ ;
+  }
+  else
+  {
+    RSL_TEST_ERR(1,"Exceeded MAX_BASE_TABLE_ENTRIES number of f90 fields") ;
+  }
+}
+
+#define BASE_TABLE_PADDING sizeof(double) ;
+RSL_REGISTER_F90_BASE_AND_SIZE ( base , size )
+  char * base ;
+  int size ;
+{
+  if ( base_table_cursor < MAX_BASE_TABLE_ENTRIES )
+  {
+    f90_base_table[ base_table_cursor ].base = base ;
+    f90_base_table[ base_table_cursor ].size_in_bytes = size ;
+    f90_base_table[ base_table_cursor ].virt_base = 
+           f90_base_table[ base_table_cursor-1 ].virt_base + 
+           f90_base_table[ base_table_cursor-1 ].size_in_bytes + BASE_TABLE_PADDING ;
     base_table_cursor++ ;
   }
   else
@@ -420,6 +451,7 @@ RSL_END_REGISTER_F90 ()
 RSL_START_REGISTER_F90 ()
 {
   base_table_cursor = 1 ;
+  f90_base_table[ 0 ].virt_base = BASE_TABLE_PADDING ;
 }
 
 void *
@@ -435,7 +467,7 @@ get_base_for_index ( dex )
 }
 
 get_index_for_base ( base )
-  unsigned long base ;
+  char * base ;
 {
   int i ;
   for ( i = 1 ; i < base_table_size ; i++ )

@@ -1354,7 +1354,7 @@ esmf_time :
 	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL_LITE/librsl_lite.a :
-	( cd ../external/RSL_LITE ; make MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
+	( cd ../external/RSL_LITE ; make CC=$(CC) CFLAGS="$(CFLAGS)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
 
 # compile these without high optimization
 module_io_mm5.o : module_io_mm5.F
@@ -2025,7 +2025,7 @@ esmf_time :
 
 ../external/RSL_LITE/librsl_lite.a :
 	( cd ../external/RSL_LITE ; \
-          make CC=mpicc FC=$(FC) MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
+          make CC=$(CC) FC=$(FC) MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
 
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F

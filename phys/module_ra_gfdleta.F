@@ -65,10 +65,14 @@ CONTAINS
 !***  COMMENT OUT CALL TO CO2O3 AND UNCOMMENT CALL TO CONRAD
 !***  FOR DIRECT READ OF CO2 FUNCTIONS
 !
-!!!!!!!!CALL CO2O3(sfull,shalf,pptop,kme-kms,kme-kms+1,kme-kms+2)
 !
       IF ( allowed_to_read ) THEN
+#if (EM_CORE==1)
+        CALL CO2O3(sfull,shalf,pptop,kme-kms,kme-kms+1,kme-kms+2)
+#endif
+#if (NMM_CORE==1)
         CALL CONRAD(KDS,KDE,KMS,KME,KTS,KTE)
+#endif
 !
         CALL O3CLIM
         CALL TABLE

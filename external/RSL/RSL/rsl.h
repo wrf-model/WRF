@@ -732,7 +732,7 @@ rsl_index_t id_domain(), id_jdex(), id_idex() ;
 #include "period_def.h"	/* stencil_def.h must follow message_def.h */
 #include "rsl_io.h"
 
-#if defined(vpp) || defined(vpp2)
+#if (( defined(vpp) || defined(vpp2) ) && ! defined(sx))
 #define bcopy(a,b,c) vbcopy_C(a,b,c)
 #endif
 

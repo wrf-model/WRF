@@ -36,7 +36,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) FC="f90 $(FCDEBUG) $(FCFLAGS)" CPP="$(CPP)" all )
+          make CC="$(CC)" FC="f90 $(FCDEBUG) $(FCFLAGS)" CPP="$(CPP)" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -110,7 +110,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) FC="f90 $(FCDEBUG) $(FCFLAGS)" CPP="$(CPP)" all )
+          make CC="$(CC)" FC="f90 $(FCDEBUG) $(FCFLAGS)" CPP="$(CPP)" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -190,11 +190,11 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) FC="f90 $(FCDEBUG) $(FCFLAGS)" CPP="$(CPP)" all )
+          make CC="$(CC)" FC="f90 $(FCDEBUG) $(FCFLAGS)" CPP="$(CPP)" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC=$(CC) FC="f90 $(FCDEBUG) $(FCFLAGS) -w" CPP="$(CPP)" )
+          make CC="$(CC)" FC="f90 $(FCDEBUG) $(FCFLAGS) -w" CPP="$(CPP)" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -269,7 +269,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) FC="f90 $(FCDEBUG) $(FCFLAGS)" CPP="$(CPP)" all )
+          make CC="$(CC)" FC="f90 $(FCDEBUG) $(FCFLAGS)" CPP="$(CPP)" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -351,11 +351,11 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) FC="f90 $(FCDEBUG) $(FCFLAGS)" CPP="$(CPP)" all )
+          make CC="$(CC)" FC="f90 $(FCDEBUG) $(FCFLAGS)" CPP="$(CPP)" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC=$(CC) FC="f90 $(FCDEBUG) $(FCFLAGS) -w" CPP="$(CPP)" )
+          make CC="$(CC)" FC="f90 $(FCDEBUG) $(FCFLAGS) -w" CPP="$(CPP)" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -454,11 +454,11 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) FC="f90 $(FCDEBUG) $(FCFLAGS)" CPP="$(CPP)" all )
+          make CC="$(CC)" FC="f90 $(FCDEBUG) $(FCFLAGS)" CPP="$(CPP)" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC=$(CC) FC="f90 $(FCDEBUG) $(FCFLAGS) -w" CPP="$(CPP)" )
+          make CC="$(CC)" FC="f90 $(FCDEBUG) $(FCFLAGS) -w" CPP="$(CPP)" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -553,11 +553,11 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) FC="$(FC) $(FCBASEOPTS)" CPP="$(CPP)" all )
+          make CC="$(CC)" FC="$(FC) $(FCBASEOPTS)" CPP="$(CPP)" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC=$(CC) FC="$(FC) $(FCBASEOPTS)" CPP="$(CPP)" )
+          make CC="$(CC)" FC="$(FC) $(FCBASEOPTS)" CPP="$(CPP)" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -681,11 +681,11 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) FC="$(FC) $(FCBASEOPTS)" CPP="$(CPP)" all )
+          make CC="$(CC)" FC="$(FC) $(FCBASEOPTS)" CPP="$(CPP)" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC=$(CC) FC="$(FC) $(FCBASEOPTS)" CPP="$(CPP)" )
+          make CC="$(CC)" FC="$(FC) $(FCBASEOPTS)" CPP="$(CPP)" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -693,7 +693,7 @@ esmf_time :
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; \
-	  make CC=$(CC) CFLAGS='-w -DSUN -DSTUBS -O' FC=$(FC) FFLAGS='-w -O' \
+	  make CC="$(CC)" CFLAGS='-w -DSUN -DSTUBS -O' FC="$(FC)" FFLAGS='-w -O' \
                MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST stub )
 
 # compile these without high optimization to speed compile
@@ -792,11 +792,11 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCBASEOPTS)" all )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(FC) $(FCBASEOPTS)" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC=$(CC) FC="$(FC) $(FCBASEOPTS)" CPP="$(CPP)" )
+          make CC="$(CC)" FC="$(FC) $(FCBASEOPTS)" CPP="$(CPP)" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -905,11 +905,11 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="f90 $(FCDEBUG) -convert big_endian -automatic -cpp -free" all )
+          make CC="$(CC)" CPP="$(CPP)" FC="f90 $(FCDEBUG) -convert big_endian -automatic -cpp -free" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC=$(CC) FC="$(FC) $(FCBASEOPTS)" CPP="$(CPP)" )
+          make CC="$(CC)" FC="$(FC) $(FCBASEOPTS)" CPP="$(CPP)" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -917,7 +917,7 @@ esmf_time :
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; \
-	  make CC=$(CC) CFLAGS='-w -DSUN -DSTUBS -O' FC=$(FC) FFLAGS='-w -O' \
+	  make CC="$(CC)" CFLAGS='-w -DSUN -DSTUBS -O' FC="$(FC)" FFLAGS='-w -O' \
                MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST stub )
 
 # compile these without high optimization to speed compile
@@ -993,11 +993,11 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -qarch=auto -qzerosize" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -qarch=auto -qzerosize" )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -1097,11 +1097,11 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -qarch=auto -qzerosize" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -qarch=auto -qzerosize" )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -1174,18 +1174,18 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL_LITE/librsl_lite.a :
-	( cd ../external/RSL_LITE ; make CFLAGS="$(CFLAGS)" CC=$(CC) MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
+	( cd ../external/RSL_LITE ; make CFLAGS="$(CFLAGS)" CC="$(CC)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
 
 # compile these without high optimization
 module_io_mm5.o : module_io_mm5.F
@@ -1276,11 +1276,11 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -1381,11 +1381,11 @@ wrfio_phdf5 :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -1486,18 +1486,18 @@ wrfio_phdf5 :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL_LITE/librsl_lite.a :
-	( cd ../external/RSL_LITE ; make CC=$(CC) CFLAGS="$(CFLAGS)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
+	( cd ../external/RSL_LITE ; make CC="$(CC)" CFLAGS="$(CFLAGS)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
 
 # compile these without high optimization
 module_io_mm5.o : module_io_mm5.F
@@ -1590,11 +1590,11 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -1706,11 +1706,11 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -1816,11 +1816,11 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -1828,7 +1828,7 @@ esmf_time :
 
 wrfio_mcel : 
 	( cd ../external/io_mcel ; \
-          make CC=$(CC) FC="$(SFC) $(FCDEBUG) -I../io_netcdf -I../../frame -I../../share \
+          make CC="$(CC)" FC="$(SFC) $(FCDEBUG) -I../io_netcdf -I../../frame -I../../share \
                -I$(MCELHOME)/MCELSystem/MCEL -qfree=f90" all )
 
 
@@ -1918,11 +1918,11 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="f90 $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
+          make CC="$(CC)" CPP="$(CPP)" FC="f90 $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -2017,11 +2017,11 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="f90 $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
+          make CC="$(CC)" CPP="$(CPP)" FC="f90 $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -2029,7 +2029,7 @@ esmf_time :
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; \
-	  make CC=$(CC) CFLAGS='-DSTUBS -DSWAPBYTES -O' FC=$(FC) FFLAGS='-O -convert big_endian' \
+	  make CC="$(CC)" CFLAGS='-DSTUBS -DSWAPBYTES -O' FC="$(FC)" FFLAGS='-O -convert big_endian' \
                MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST stub )
 
 # compile these without high optimization to speed compile
@@ -2108,11 +2108,11 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="f90 $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
+          make CC="$(CC)" CPP="$(CPP)" FC="f90 $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -2207,11 +2207,11 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="f90 $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
+          make CC="$(CC)" CPP="$(CPP)" FC="f90 $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -2219,7 +2219,7 @@ esmf_time :
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; \
-	  make CC=$(CC) CFLAGS='-DSTUBS -DSWAPBYTES -O' FC=$(FC) FFLAGS='-O -convert big_endian' \
+	  make CC="$(CC)" CFLAGS='-DSTUBS -DSWAPBYTES -O' FC="$(FC)" FFLAGS='-O -convert big_endian' \
                MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST stub )
 
 # compile these without high optimization to speed compile
@@ -2310,11 +2310,11 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -2322,7 +2322,7 @@ esmf_time :
 
 ../external/RSL_LITE/librsl_lite.a :
 	( cd ../external/RSL_LITE ; \
-          make CC=$(CC) FC=$(FC) MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
+          make CC="$(CC)" FC="$(FC)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
 
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
@@ -2415,11 +2415,11 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -2427,7 +2427,7 @@ esmf_time :
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; \
-          make CC=mpicc FC=$(FC) MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST alpha )
+          make CC="$(CC)" FC="$(FC)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST alpha )
 
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
@@ -2520,11 +2520,11 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -2532,7 +2532,7 @@ esmf_time :
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; \
-          make CC=mpicc FC=$(FC) MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST alpha )
+          make CC="$(CC)" FC="$(FC)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST alpha )
 
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
@@ -2625,11 +2625,11 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="f90 $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
+          make CC="$(CC)" CPP="$(CPP)" FC="f90 $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -2727,11 +2727,11 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -2739,7 +2739,7 @@ esmf_time :
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; \
-          make CC=mpicc FC=$(FC) MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST alpha )
+          make CC="$(CC)" FC="$(FC)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST alpha )
 
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
@@ -2835,11 +2835,11 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -2847,12 +2847,12 @@ esmf_time :
 
 wrfio_mcel :
 	( cd ../external/io_mcel ; \
-          make CC=$(CC) FC="f90 $(FCDEBUG) -I../io_netcdf -I../../frame -I../../share \
+          make CC="$(CC)" FC="f90 $(FCDEBUG) -I../io_netcdf -I../../frame -I../../share \
           -I/users/bettenc/MCELSystem/MCEL -convert big_endian -automatic -cpp -free" all )
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; \
-          make CC=mpicc FC=$(FC) MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST alpha )
+          make CC="$(CC)" FC="$(FC)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST alpha )
 
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
@@ -2943,11 +2943,11 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -2955,7 +2955,7 @@ esmf_time :
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; \
-          make CC=mpicc FC=$(FC) MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST alpha )
+          make CC="$(CC)" FC="$(FC)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST alpha )
 
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
@@ -3033,12 +3033,12 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCBASENOINL) -w" \
+          make CC="$(CC)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCBASENOINL) -w" \
           TRADFLAG="-traditional" all )
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCBASENOINL) -w" \
+          make CC="$(CC)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCBASENOINL) -w" \
           TRADFLAG="-traditional" )
 
 esmf_time : 
@@ -3121,12 +3121,12 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCBASENOINL) -w" \
+          make CC="$(CC)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCBASENOINL) -w" \
           TRADFLAG="-traditional" all )
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCBASENOINL) -w" \
+          make CC="$(CC)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCBASENOINL) -w" \
           TRADFLAG="-traditional" )
 
 esmf_time : 
@@ -3221,12 +3221,12 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCBASENOINL) -w" \
+          make CC="$(CC)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCBASENOINL) -w" \
           TRADFLAG="-traditional" all )
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCBASENOINL) -w" \
+          make CC="$(CC)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCBASENOINL) -w" \
           TRADFLAG="-traditional" )
 
 esmf_time : 
@@ -3234,7 +3234,7 @@ esmf_time :
 	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL/RSL/librsl.a :
-	( cd ../external/RSL/RSL ; make CC=mpicc FC=fort \
+	( cd ../external/RSL/RSL ; make CC="$(CC)" FC=fort \
           MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) \
           UNDERSCORE=-DF2CSTYLE LEARN_BCAST=-DLEARN_BCAST alpha )
 
@@ -3382,7 +3382,7 @@ module_dm.F :
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC=$(FC) TRADFLAG="-traditional" \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC)" TRADFLAG="-traditional" \
           FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
           /bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc )
 
@@ -3392,7 +3392,7 @@ wrfio_grib1 :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" \
+          make CC="$(CC)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" \
           TRADFLAG="-traditional" all )
 
 esmf_time : 
@@ -3484,7 +3484,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC=$(FC) TRADFLAG="-traditional" \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC)" TRADFLAG="-traditional" \
 	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
 	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
 	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
@@ -3496,14 +3496,14 @@ wrfio_grib1 :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL/RSL/librsl.a :
-	( cd ../external/RSL/RSL ; make CC=$(CC) CFLAGS='-DSTUBS' FC=$(FC) FFLAGS='-byteswapio' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST stub )
+	( cd ../external/RSL/RSL ; make CC="$(CC)" CFLAGS='-DSTUBS' FC="$(FC)" FFLAGS='-byteswapio' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST stub )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -3583,7 +3583,7 @@ module_dm.F :
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC=$(FC) TRADFLAG="-traditional" \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC)" TRADFLAG="-traditional" \
           FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
           /bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc )
 
@@ -3593,7 +3593,7 @@ wrfio_grib1 :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" \
+          make CC="$(CC)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" \
           TRADFLAG="-traditional" all )
 
 esmf_time : 
@@ -3689,7 +3689,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC=$(FC) TRADFLAG="-traditional" \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC)" TRADFLAG="-traditional" \
 	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
 	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
 	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
@@ -3708,7 +3708,7 @@ esmf_time :
 	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL/RSL/librsl.a :
-	( cd ../external/RSL/RSL ; make CC=$(CC) CFLAGS='-DSTUBS' FC=$(FC) FFLAGS='-byteswapio' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST stub )
+	( cd ../external/RSL/RSL ; make CC="$(CC)" CFLAGS='-DSTUBS' FC="$(FC)" FFLAGS='-byteswapio' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST stub )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -3810,7 +3810,7 @@ wrfio_grib1 :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -4012,7 +4012,7 @@ gen_comms.c : ../external/RSL/gen_comms.c
 
 wrfio_nf :
 	( cd ../external/io_netcdf ; \
-	  make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC=$(FC) TRADFLAG="-traditional" \
+	  make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC)" TRADFLAG="-traditional" \
 	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
 	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
 	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
@@ -4024,7 +4024,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCFLAGS) -w" all )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCFLAGS) -w" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -4125,7 +4125,7 @@ gen_comms.c : ../external/RSL/gen_comms.c
 
 wrfio_nf :
 	( cd ../external/io_netcdf ; \
-	  make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC=$(FC) TRADFLAG="-traditional" \
+	  make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC)" TRADFLAG="-traditional" \
 	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
 	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
 	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
@@ -4137,7 +4137,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCFLAGS) -w" all )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCFLAGS) -w" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -4233,7 +4233,7 @@ io_flags:
 
 wrfio_nf :  io_flags
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC=$(FC) TRADFLAG="-traditional" \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC)" TRADFLAG="-traditional" \
           FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' )
 
 wrfio_grib1 :
@@ -4242,7 +4242,7 @@ wrfio_grib1 :
 
 wrfio_int :  io_flags
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" \
+          make CC="$(CC)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" \
           TRADFLAG="-traditional" all )
 
 esmf_time : 
@@ -4341,12 +4341,12 @@ io_flags:
 
 wrfio_nf :  io_flags
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC=$(FC) TRADFLAG="-traditional" \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC)" TRADFLAG="-traditional" \
 	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' )
 
 wrfio_int :  io_flags
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
@@ -4357,7 +4357,7 @@ esmf_time :
 	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL/RSL/librsl.a :
-	( cd ../external/RSL/RSL ; make CC=mpicc FC='mpif90 -byteswapio' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST linux )
+	( cd ../external/RSL/RSL ; make CC="$(CC)" FC='mpif90 -byteswapio' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST linux )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -4449,7 +4449,7 @@ io_flags:
 
 wrfio_nf :  io_flags
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC=$(FC) TRADFLAG="-traditional" \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC)" TRADFLAG="-traditional" \
 	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' )
 
 wrfio_grib1 :
@@ -4458,14 +4458,14 @@ wrfio_grib1 :
 
 wrfio_int : io_flags
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL_LITE/librsl_lite.a :
-	( cd ../external/RSL_LITE ; make CC=mpicc FC='mpif90 -byteswapio' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
+	( cd ../external/RSL_LITE ; make CC="$(CC)" FC='mpif90 -byteswapio' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -4556,7 +4556,7 @@ gen_comms.c : ../external/RSL_LITE/gen_comms.c
 
 wrfio_nf :
 	( cd ../external/io_netcdf ; \
-	  make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC=$(FC) TRADFLAG="-traditional" \
+	  make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC)" TRADFLAG="-traditional" \
 	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
 	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
 	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
@@ -4568,7 +4568,7 @@ module_dm.F : ../external/RSL_LITE/module_dm.F
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCFLAGS) -w" all )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCFLAGS) -w" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -4674,7 +4674,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="efc -Vaxlib -I/usr/local/vmi/mpich/include $(FCDEBUG) $(FCFLAGS) -w" all )
+          make CC="$(CC)" CPP="$(CPP)" FC="efc -Vaxlib -I/usr/local/vmi/mpich/include $(FCDEBUG) $(FCFLAGS) -w" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -4780,7 +4780,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="efc -Vaxlib -I/usr/local/vmi/mpich/include $(FCDEBUG) $(FCFLAGS) -w" all )
+          make CC="$(CC)" CPP="$(CPP)" FC="efc -Vaxlib -I/usr/local/vmi/mpich/include $(FCDEBUG) $(FCFLAGS) -w" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -4869,7 +4869,7 @@ wrfio_grib1 :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCFLAGS) -w" all )
+          make CC="$(CC)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCFLAGS) -w" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -5068,7 +5068,7 @@ module_dm.F :
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC=$(FC) TRADFLAG="-traditional" \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC)" TRADFLAG="-traditional" \
           FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
           /bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc )
 
@@ -5078,7 +5078,7 @@ wrfio_grib1 :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" \
+          make CC="$(CC)" CPP="$(CPP)" FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS) -w" \
           TRADFLAG="-traditional" all )
 
 esmf_time : 
@@ -5424,7 +5424,7 @@ wrfio_nf :
 
 wrfio_int :
 	( cd ../external/io_int ; \
-	  make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCFLAGS)" all )
+	  make CC="$(CC)" CPP="$(CPP)" FC="$(FC) $(FCFLAGS)" all )
 
 esmf_time :
 	( cd ../external/esmf_time_f90 ;\
@@ -5433,7 +5433,7 @@ esmf_time :
 #sx : uses makefile.sx in the directory
 #../external/RSL/RSL/librsl.a :
 #	(cd ../external/RSL/RSL ; \
-#	make CC=$(CC) FC=$(FC) MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST sx )
+#	make CC="$(CC)" FC="$(FC)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST sx )
 #
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -5548,12 +5548,12 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" TRADFLAG="-traditional" \
+          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" \
           FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
-          make CC=$(CC) CPP="$(CPP)" TRADFLAG="-traditional" \
+          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" \
           FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" )
 
 esmf_time : 
@@ -5671,12 +5671,12 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" TRADFLAG="-traditional" \
+          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" \
           FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
-          make CC=$(CC) CPP="$(CPP)" TRADFLAG="-traditional" \
+          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" \
           FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
 
 esmf_time : 
@@ -5786,12 +5786,12 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" TRADFLAG="-traditional" \
+          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" \
           FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
-          make CC=$(CC) CPP="$(CPP)" TRADFLAG="-traditional" \
+          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" \
           FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
 
 esmf_time : 
@@ -5895,12 +5895,12 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" TRADFLAG="-traditional" \
+          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" \
           FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
-          make CC=$(CC) CPP="$(CPP)" TRADFLAG="-traditional" \
+          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" \
           FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
 
 esmf_time : 
@@ -6021,14 +6021,14 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP) -Dcrayx1" FC="$(FC) -f free -N 255" all )
+          make CC="$(CC)" CPP="$(CPP) -Dcrayx1" FC="$(FC) -f free -N 255" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(FCDEBUG) -f free -N 255" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL_LITE/librsl_lite.a :
-	( cd ../external/RSL_LITE ; make CFLAGS="$(CFLAGS)" CC=$(CC) MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
+	( cd ../external/RSL_LITE ; make CFLAGS="$(CFLAGS)" CC="$(CC)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
 
 # compile these without high optimization
 module_io_mm5.o : module_io_mm5.F
@@ -6154,14 +6154,14 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP) -Dcrayx1" FC="$(FC) -f free -N 255 -Ossp" all )
+          make CC="$(CC)" CPP="$(CPP) -Dcrayx1" FC="$(FC) -f free -N 255 -Ossp" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(FCDEBUG) -f free -N 255 -Ossp" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL_LITE/librsl_lite.a :
-	( cd ../external/RSL_LITE ; make CFLAGS="$(CFLAGS)" CC=$(CC) MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
+	( cd ../external/RSL_LITE ; make CFLAGS="$(CFLAGS)" CC="$(CC)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
 
 # compile these without high optimization
 module_io_mm5.o : module_io_mm5.F
@@ -6251,7 +6251,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="f90 $(FCDEBUG) $(FCFLAGS) -I../../inc " all )
+          make CC="$(CC)" CPP="$(CPP)" FC="f90 $(FCDEBUG) $(FCFLAGS) -I../../inc " all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -6341,7 +6341,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="f90 $(FCDEBUG) $(FCFLAGS) -I../../inc " all )
+          make CC="$(CC)" CPP="$(CPP)" FC="f90 $(FCDEBUG) $(FCFLAGS) -I../../inc " all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -6349,7 +6349,7 @@ esmf_time :
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; \
-	  make CC=$(CC) CFLAGS=" -DSTUBS +O3 " FC=$(FC) MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST stub )
+	  make CC="$(CC)" CFLAGS=" -DSTUBS +O3 " FC="$(FC)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST stub )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -6428,7 +6428,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="f90 $(FCDEBUG) $(FCFLAGS) -I../../inc " all )
+          make CC="$(CC)" CPP="$(CPP)" FC="f90 $(FCDEBUG) $(FCFLAGS) -I../../inc " all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -6511,7 +6511,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="f90 $(FCDEBUG) $(FCFLAGS) -I../../inc " all )
+          make CC="$(CC)" CPP="$(CPP)" FC="f90 $(FCDEBUG) $(FCFLAGS) -I../../inc " all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -6594,7 +6594,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC=$(CC) CPP="$(CPP)" FC="f90 $(FCDEBUG) $(FCFLAGS) -I../../inc " all )
+          make CC="$(CC)" CPP="$(CPP)" FC="f90 $(FCDEBUG) $(FCFLAGS) -I../../inc " all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -6687,7 +6687,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-	make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCFLAGS) -I../../inc " all )
+	make CC="$(CC)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCFLAGS) -I../../inc " all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -6695,7 +6695,7 @@ esmf_time :
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; \
-	make CC=mpicc FC=$(FC) MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST hp )
+	make CC="$(CC)" FC="$(FC)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST hp )
 
 
 # compile these without high optimization to speed compile
@@ -6784,7 +6784,7 @@ wrfio_nf :
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-	make CC=$(CC) CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCFLAGS) -I../../inc " all )
+	make CC="$(CC)" CPP="$(CPP)" FC="$(FC) $(FCDEBUG) $(FCFLAGS) -I../../inc " all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -6792,7 +6792,7 @@ esmf_time :
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; \
-	make CC=mpicc FC=$(FC) MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST hp )
+	make CC="$(CC)" FC="$(FC)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST hp )
 
 
 # compile these without high optimization to speed compile

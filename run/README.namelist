@@ -231,7 +231,7 @@ Additional ones when running 3DVAR:
                                                   0 = without damping
                                                   1 = with    damping
  zdamp (max_dom)                     = 5000.,	; damping depth (m) from model top
- dampcoef (max_dom)                  = 0.,	; damping coefficient (dampcoef <= 0.2)
+ dampcoef (max_dom)                  = 0.,	; damping coefficient (dampcoef <= 0.2, <=0.1 for 3D cases)
  khdif (max_dom)                     = 0,	; horizontal diffusion constant (m^2/s)
  kvdif (max_dom)                     = 0,	; vertical diffusion constant (m^2/s)
  smdiv (max_dom)                     = 0.1,	; divergence damping (0.1 is typical)

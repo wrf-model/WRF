@@ -93,7 +93,6 @@ SHOW_DOMAIN_DECOMP ( d_p )
   {
     code = "r+" ;
   }
-  printf("show_domain_decomp called on %d\n",rsl_myproc) ;
   sprintf(fname,"show_domain_%04d",rsl_myproc) ;
   if (( fp = fopen ( fname, code )) == NULL )
   {

@@ -265,6 +265,10 @@ RSL_READ ( unit_p, iotag_p, base, d_p, type_p, glen, llen  )
     iotag = IO3D_JIK ;
     request.internal = 1 ;
     break ;
+  case IO3D_IKJ_INTERNAL :
+    iotag = IO3D_IKJ ;
+    request.internal = 1 ;
+    break ;
   default :
     request.internal = 0 ;
     break ;
@@ -314,6 +318,14 @@ RSL_READ ( unit_p, iotag_p, base, d_p, type_p, glen, llen  )
     minelems = request.glen[1] ;
     majelems = request.glen[2] ;
     break ;
+  case IO3D_IKJ :
+    RSL_TEST_ERR(glen[1] > llen[1],
+       "rsl_write: global len of K dim is greater than local len") ;
+    request.ndim = 3 ;
+    minelems = request.glen[0] ;
+    majelems = request.glen[2] ;
+    break ;
+
   default:
     RSL_TEST_ERR(1,"rsl_read: unknown data tag") ;
   }
@@ -401,6 +413,17 @@ RSL_READ ( unit_p, iotag_p, base, d_p, type_p, glen, llen  )
             cursor += tlen ;
           }
           break ;
+        case IO3D_IKJ :
+          min = ig - ioffset ;
+          maj = jg - joffset ;
+          for ( k = 0 ; k < glen[1] ; k++ )
+          {
+            dex = base+tlen*(min+llen[0]*(k+maj*llen[1])) ;
+            bcopy(&(pbuf[cursor]),dex,tlen) ;
+            cursor += tlen ;
+          }
+          break ;
+
         }
       }
     }
@@ -496,6 +519,20 @@ RSL_READ ( unit_p, iotag_p, base, d_p, type_p, glen, llen  )
             }
           }
           break ;
+        case IO3D_IKJ :
+          for ( ig = 0 ; ig < mlen ; ig++ )
+          {
+            min = ig - ioffset ;
+            maj = jg - joffset ;
+            for ( k = 0 ; k < glen[1] ; k++ )
+            {
+              dex = base+tlen*(min+llen[0]*(k+maj*llen[1])) ;
+              bcopy(&(pbuf[cursor]),dex,tlen) ;
+              cursor += tlen ;
+            }
+          }
+          break ;
+
         }
     }
   }
@@ -714,6 +751,10 @@ RSL_WRITE ( unit_p, iotag_p, base, d_p, type_p, glen, llen  )
     iotag = IO3D_JIK ;
     request.internal = 1 ;
     break ;
+  case IO3D_IKJ_INTERNAL :
+    iotag = IO3D_IKJ ;
+    request.internal = 1 ;
+    break ;
   default :
     request.internal = 0 ;
     break ;
@@ -750,6 +791,11 @@ RSL_WRITE ( unit_p, iotag_p, base, d_p, type_p, glen, llen  )
     break ;
   case IO3D_KIJ :
     RSL_TEST_ERR(glen[0] > llen[0],
+       "rsl_write: global len of K dim is greater than local len") ;
+    request.ndim = 3 ;
+    break ;
+  case IO3D_IKJ :
+    RSL_TEST_ERR(glen[1] > llen[1],
        "rsl_write: global len of K dim is greater than local len") ;
     request.ndim = 3 ;
     break ;
@@ -796,6 +842,11 @@ RSL_WRITE ( unit_p, iotag_p, base, d_p, type_p, glen, llen  )
   case IO3D_KIJ :
     columnelems = request.glen[0] ;
     minelems = request.glen[1] ;
+    majelems = request.glen[2] ;
+    break ;
+  case IO3D_IKJ :
+    columnelems = request.glen[1] ;
+    minelems = request.glen[0] ;
     majelems = request.glen[2] ;
     break ;
   default:
@@ -942,6 +993,7 @@ RSL_WRITE ( unit_p, iotag_p, base, d_p, type_p, glen, llen  )
             }
 	  }
           break ;
+
         case IO3D_KIJ :
           for ( ig = *is_write ; ig <= *ie_write ; ig++ )
           {
@@ -955,6 +1007,21 @@ RSL_WRITE ( unit_p, iotag_p, base, d_p, type_p, glen, llen  )
             }
           }
           break ;
+
+        case IO3D_IKJ :
+          for ( ig = *is_write ; ig <= *ie_write ; ig++ )
+          {
+            min = ig - ioffset ;
+            maj = jg - joffset ;
+            for ( k = 0 ; k < glen[1] ; k++ )
+            {
+              dex = base+tlen*(min+llen[0]*(k+maj*llen[1])) ;
+              bcopy(dex,&(pbuf[cursor]),tlen) ;
+              cursor += tlen ;
+            }
+          }
+          break ;
+
         }
     }
   }
@@ -1002,12 +1069,23 @@ RSL_WRITE ( unit_p, iotag_p, base, d_p, type_p, glen, llen  )
               cursor += tlen ;
             }
             break ;
+
           case IO3D_KIJ :
             min = ig - ioffset ;
             maj = jg - joffset ;
             for ( k = 0 ; k < glen[0] ; k++ )
             {
               dex = base+tlen*(k+llen[0]*(min+maj*llen[1])) ;
+              bcopy(dex,&(pbuf[cursor]),tlen) ;
+              cursor += tlen ;
+            }
+            break ;
+          case IO3D_IKJ :
+            min = ig - ioffset ;
+            maj = jg - joffset ;
+            for ( k = 0 ; k < glen[1] ; k++ )
+            {
+              dex = base+tlen*(min+llen[0]*(k+maj*llen[1])) ;
               bcopy(dex,&(pbuf[cursor]),tlen) ;
               cursor += tlen ;
             }

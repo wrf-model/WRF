@@ -225,6 +225,11 @@ handle_read_request( req, resp_me, pbuf_me )
     minelems = req->glen[1] ;
     majelems = req->glen[2] ;
     break ;
+  case IO3D_IKJ :
+    columnelems = req->glen[1] ;
+    minelems = req->glen[0] ;
+    majelems = req->glen[2] ;
+    break ;
   default:
     RSL_TEST_ERR(1,"handle_read_request: unknown data tag") ;
   }
@@ -312,6 +317,16 @@ handle_read_request( req, resp_me, pbuf_me )
               cursor += typelen ;
             }
             break ;
+          case IO3D_IKJ :
+            for ( k = 0 ; k < req->glen[1] ; k++ )
+            {
+              bcopy(&(rbuf[typelen*(ig+req->glen[0]*(k+jg*req->glen[1]))]),
+                    &(pbuf[cursor]),
+                    typelen) ;
+              cursor += typelen ;
+            }
+            break ;
+
           }
         }
       }
@@ -405,6 +420,19 @@ handle_read_request( req, resp_me, pbuf_me )
               }
             }
             break ;
+          case IO3D_IKJ :
+            for ( ig = 0 ; ig < mlen ; ig++ )
+            {
+              for ( k = 0 ; k < req->glen[1] ; k++ )
+              {
+                bcopy(&(rbuf[typelen*(ig+req->glen[0]*(k+jg*req->glen[1]))]),
+                      &(pbuf[cursor]),
+                      typelen) ;
+                cursor += typelen ;
+              }
+            }
+            break ;
+
         }
       }
     }
@@ -511,6 +539,11 @@ handle_write_request( req, nelem, psize_me, pbuf_me )
   case IO3D_KIJ :
     columnelems = req->glen[0] ;
     minelems = req->glen[1] ;
+    majelems = req->glen[2] ;
+    break ;
+  case IO3D_IKJ :
+    columnelems = req->glen[1] ;
+    minelems = req->glen[0] ;
     majelems = req->glen[2] ;
     break ;
   default:
@@ -672,6 +705,18 @@ handle_write_request( req, nelem, psize_me, pbuf_me )
               }
             }
             break ;
+          case IO3D_IKJ :
+            for ( ig = is_write ; ig <= ie_write ; ig++ )
+            {
+              for ( k = 0 ; k < req->glen[1] ; k++ )
+              {
+                bcopy(&(pbuf[cursor]),
+                      &(wbuf[typelen*(ig+req->glen[0]*(k+jg*req->glen[1]))]),
+                      typelen) ;
+                cursor += typelen ;
+              }
+            }
+            break ;
         }
       }
     }
@@ -736,6 +781,16 @@ handle_write_request( req, nelem, psize_me, pbuf_me )
                 cursor += typelen ;
               }
               break ;
+            case IO3D_IKJ :
+              for ( k = 0 ; k < req->glen[1] ; k++ )
+              {
+                bcopy(&(pbuf[cursor]),
+                      &(wbuf[typelen*(ig+req->glen[0]*(k+jg*req->glen[1]))]),
+                      typelen) ;
+                cursor += typelen ;
+              }
+              break ;
+
             }
           }
         }
@@ -894,6 +949,11 @@ send_to_output_device( req, wbuf, nelem )
   case IO3D_KIJ :
     columnelems = req->glen[0] ;
     minelems = req->glen[1] ;
+    majelems = req->glen[2] ;
+    break ;
+  case IO3D_IKJ :
+    columnelems = req->glen[1] ;
+    minelems = req->glen[0] ;
     majelems = req->glen[2] ;
     break ;
   case IO_REPL :

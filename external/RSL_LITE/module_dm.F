@@ -12,6 +12,10 @@ MODULE module_dm
    INTEGER local_communicator, local_iocommunicator
    LOGICAL :: dm_debug_flag = .FALSE.
 
+   INTERFACE wrf_dm_maxval
+     MODULE PROCEDURE wrf_dm_maxval_real , wrf_dm_maxval_integer, wrf_dm_maxval_doubleprecision
+   END INTERFACE
+
 CONTAINS
 
 
@@ -210,7 +214,7 @@ CONTAINS
       wrf_dm_sum_real = retval
    END FUNCTION wrf_dm_sum_real
 
-   SUBROUTINE wrf_dm_maxval ( val, idex, jdex )
+   SUBROUTINE wrf_dm_maxval_real ( val, idex, jdex )
       IMPLICIT NONE
       INCLUDE 'mpif.h'
       REAL val, val_all( ntasks )
@@ -231,7 +235,56 @@ CONTAINS
            jdex = dex_all(2,i)
         ENDIF
       ENDDO
-   END SUBROUTINE wrf_dm_maxval
+   END SUBROUTINE wrf_dm_maxval_real
+
+
+   SUBROUTINE wrf_dm_maxval_doubleprecision ( val, idex, jdex )
+      IMPLICIT NONE
+      INCLUDE 'mpif.h'
+      DOUBLE PRECISION val, val_all( ntasks )
+      INTEGER idex, jdex, ierr
+      INTEGER dex(2)
+      INTEGER dex_all (2,ntasks)
+      INTEGER i
+
+      dex(1) = idex ; dex(2) = jdex
+      CALL mpi_allgather ( dex, 2, MPI_INTEGER, dex_all , 2, MPI_INTEGER, local_communicator, ierr )
+      CALL mpi_allgather ( val, 1, MPI_DOUBLE_PRECISION, val_all , 1, MPI_DOUBLE_PRECISION, local_communicator, ierr )
+      val = val_all(1)
+      idex = dex_all(1,1) ; jdex = dex_all(2,1)
+      DO i = 2, ntasks
+        IF ( val_all(i) .GT. val ) THEN
+           val = val_all(i)
+           idex = dex_all(1,i)
+           jdex = dex_all(2,i)
+        ENDIF
+      ENDDO
+   END SUBROUTINE wrf_dm_maxval_doubleprecision
+
+
+   SUBROUTINE wrf_dm_maxval_integer ( val, idex, jdex )
+      IMPLICIT NONE
+      INCLUDE 'mpif.h'
+      INTEGER val, val_all( ntasks )
+      INTEGER idex, jdex, ierr
+      INTEGER dex(2)
+      INTEGER dex_all (2,ntasks)
+      INTEGER i
+
+      dex(1) = idex ; dex(2) = jdex
+      CALL mpi_allgather ( dex, 2, MPI_INTEGER, dex_all , 2, MPI_INTEGER, local_communicator, ierr )
+      CALL mpi_allgather ( val, 1, MPI_INTEGER, val_all , 1, MPI_INTEGER, local_communicator, ierr )
+      val = val_all(1)
+      idex = dex_all(1,1) ; jdex = dex_all(2,1)
+      DO i = 2, ntasks
+        IF ( val_all(i) .GT. val ) THEN
+           val = val_all(i)
+           idex = dex_all(1,i)
+           jdex = dex_all(2,i)
+        ENDIF
+      ENDDO
+   END SUBROUTINE wrf_dm_maxval_integer
+
 
    SUBROUTINE init_module_dm
       IMPLICIT NONE

@@ -469,6 +469,13 @@
       IF ( PRESENT( S ) ) THEN
         S = mod( time%basetime%S , 3600 )
       ENDIF
+      ! TBH:  HACK to allow DD and S to behave as in ESMF 2.1.0+ when 
+      ! TBH:  both are present and H and M are not.  
+      IF ( PRESENT( S ) .AND. PRESENT( DD ) ) THEN
+        IF ( ( .NOT. PRESENT( H ) ) .AND. ( .NOT. PRESENT( M ) ) ) THEN
+          S = time%basetime%S
+        ENDIF
+      ENDIF
       IF ( PRESENT( MS ) ) THEN
         MS = time%basetime%MS
       ENDIF

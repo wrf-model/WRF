@@ -7,11 +7,15 @@ IMPLICIT NONE
   TYPE (ESMF_TimeInterval) :: timestep, ri1, ri2
   TYPE (ESMF_Alarm), pointer       :: alarms(:)
   TYPE (ESMF_Clock)        :: clock
+  TYPE(ESMF_VM)       :: vm
   CHARACTER*ESMF_MAXSTR  :: str,s2
   INTEGER ms
+  INTEGER :: year, month, day, hour, minute, second
 
-  CALL ESMF_CalendarSet(gregorianCalendar, ESMF_CAL_GREGORIAN, rc)
-  PRINT*,rc,ESMF_SUCCESS
+  CALL ESMF_Initialize( vm=vm, defaultCalendar=ESMF_CAL_GREGORIAN, rc=rc )
+
+!  CALL ESMF_CalendarSet(gregorianCalendar, ESMF_CAL_GREGORIAN, rc)
+!  PRINT*,rc,ESMF_SUCCESS
 
 !  CALL ESMF_TimeSet( start, YY=2002, MM=12, DD=31 , H=23, S=3599, Sn=7, Sd=3, cal=gregorianCalendar, rc=rc )
 !  CALL ESMF_TimeGetString( start, str, rc ) 
@@ -19,14 +23,24 @@ IMPLICIT NONE
 !  PRINT*,TRIM(s2)
 !  STOP
 
-  CALL ESMF_TimeSet( start, YY=2002, MM=12, DD=27 , H=3, Sn=3, Sd=6, cal=gregorianCalendar, rc=rc )
-  CALL ESMF_TimeSet( stop,  YY=2002, MM=12, DD=27 , H=3, Sn=2, Sd=5, cal=gregorianCalendar, rc=rc )
+  CALL ESMF_TimeSet( start, YY=2002, MM=12, DD=27 , H=3, Sn=3, Sd=6, rc=rc )
+  CALL ESMF_TimeSet( stop,  YY=2002, MM=12, DD=27 , H=3, Sn=2, Sd=5, rc=rc )
+
+  CALL ESMF_TimeGet( start, YY=year, MM=month, DD=day, H=hour, M=minute, S=second, rc=rc )
+  print*,'year, month, day, hour, minute, second = ', &
+          year, month, day, hour, minute, second
+  CALL ESMF_TimeGet( start, YY=year, MM=month, DD=day, S=second, rc=rc )
+  print*,'year, month, day, second = ', &
+          year, month, day, second
 
   print*,'eq',(start .eq. stop)
   print*,'lt',(start .lt. stop)
   print*,'le',(start .le. stop)
   print*,'gt',(start .gt. stop)
   print*,'ge',(start .ge. stop)
+
+  CALL ESMF_Finalize( rc=rc )
+
   stop
 
 

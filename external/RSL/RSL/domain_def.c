@@ -1001,8 +1001,8 @@ rsl_spawn_nest ( nest_p, par_p, maskid_p,
   *nest_p = nest ;
   domain_info[nest].nest_level = domain_info[par].nest_level + 1 ;
   rsl_ndomains++ ;
-  rsl_c_initialize_domain( nest, 
-      nmax_nes, mmax_nes, nmax_nes, mmax_nes, mloc_p, nloc_p ) ;
+  rsl_c_initialize_domain( nest,
+      nmax_nes, mmax_nes, 1, *nlen_p, *mlen_p, 1 ) ;
   domain_info[nest].parent = par ;
   domain_info[nest].maskid = *maskid_p ;
 

@@ -33,5 +33,5 @@ RM	= 	rm -f
 
 .c.o:
 	$(RM) $@
-	$(CC) -c $(CFLAGS) $(PROMOTION) $*.c
+	$(CC) -c $(CFLAGS) $*.c
 

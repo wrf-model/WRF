@@ -3,7 +3,7 @@
 !#define NO_UPSTREAM_ADVECTION
 !----------------------------------------------------------------------
 !
-      SUBROUTINE START_DOMAIN_NMM(GRID,                                &
+      SUBROUTINE START_DOMAIN_NMM(GRID, allowed_to_read ,              &
 !
 #include <nmm_dummy_args.inc>
 !
@@ -39,9 +39,10 @@
 !
 !----------------------------------------------------------------------
 !***
-!***  INPUT DATA
+!***  Arguments
 !***
       TYPE(DOMAIN),INTENT(INOUT) :: GRID
+      LOGICAL , INTENT(IN)       :: allowed_to_read
 !
 #include <nmm_dummy_decl.inc>
 !

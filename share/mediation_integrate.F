@@ -187,9 +187,10 @@ integer myproc
        TYPE (grid_config_rec_type) config_flags
      END SUBROUTINE med_nest_feedback
 
-     SUBROUTINE start_domain ( grid )
+     SUBROUTINE start_domain ( grid , allowed_to_move )
         USE module_domain
         TYPE(domain) :: grid
+        LOGICAL, INTENT(IN) :: allowed_to_move
      END SUBROUTINE start_domain
 
      SUBROUTINE  blend_terrain ( ter_interpolated , ter_input , &
@@ -282,7 +283,11 @@ integer myproc
 
 ! set some other initial fields, fill out halos, base fields; re-do parent due
 ! to new terrain elevation from feedback
-    CALL start_domain ( nest )
+    nest%imask_nostag = 1
+    nest%imask_xstag = 1
+    nest%imask_ystag = 1
+    nest%imask_xystag = 1
+    CALL start_domain ( nest , .TRUE. )
 ! kludge: 20040604
     CALL get_ijk_from_grid (  parent ,                   &
                               ids, ide, jds, jde, kds, kde,    &
@@ -306,7 +311,11 @@ integer myproc
     save_sfcrunoff    = parent%sfcrunoff
     save_udrunoff     = parent%udrunoff
     save_itimestep    = parent%itimestep
-    CALL start_domain ( parent )
+    parent%imask_nostag = 1
+    parent%imask_xstag = 1
+    parent%imask_ystag = 1
+    parent%imask_xystag = 1
+    CALL start_domain ( parent , .TRUE. )
     parent%acsnow     = save_acsnow
     parent%acsnom     = save_acsnom
     parent%cuppt      = save_cuppt
@@ -343,7 +352,11 @@ integer myproc
     CALL input_restart ( fid,   nest , config_flags , ierr )
     CALL close_dataset ( fid , config_flags , "DATASET=RESTART" )
 
-    CALL start_domain ( nest )
+    nest%imask_nostag = 1
+    nest%imask_xstag = 1
+    nest%imask_ystag = 1
+    nest%imask_xystag = 1
+    CALL start_domain ( nest , .TRUE. )
 
   ENDIF
 
@@ -390,6 +403,11 @@ SUBROUTINE med_nest_move ( parent, nest )
         USE module_domain
         TYPE(domain) , POINTER                 :: parent , nest
      END SUBROUTINE med_interp_domain
+     SUBROUTINE start_domain ( grid , allowed_to_move )
+        USE module_domain
+        TYPE(domain) :: grid
+        LOGICAL, INTENT(IN) :: allowed_to_move
+     END SUBROUTINE start_domain
      SUBROUTINE shift_domain_em ( grid, disp_x, disp_y,  &
 !
 # include <em_dummy_args.inc>
@@ -464,7 +482,8 @@ SUBROUTINE med_nest_move ( parent, nest )
      CALL med_interp_domain( parent, nest )
 
      nest%moved = .true.
-     CALL start_domain ( nest )
+! masks associated with nest will have been set by shift_domain_em above
+     CALL start_domain ( nest , .FALSE. )
      nest%moved = .false.
 
 ! copy time level 2 to time level 1 in new regions of multi-time level fields
@@ -1143,7 +1162,6 @@ SUBROUTINE med_auxinput_in ( grid , stream, config_flags )
        CALL wrf_message( message )
      ENDIF
    END IF
-write(0,*)'med_auxinput_in here 2 ',stream
    SELECT CASE( stream )
      CASE ( 1 )
        CALL input_aux_model_input1 ( grid%auxinput1_oid, grid , config_flags , ierr )
@@ -1156,7 +1174,6 @@ write(0,*)'med_auxinput_in here 2 ',stream
      CASE ( 5 )
        CALL input_aux_model_input5 ( grid%auxinput5_oid, grid , config_flags , ierr )
    END SELECT
-write(0,*)'med_auxinput_in here 3 ',stream
    RETURN
 END SUBROUTINE med_auxinput_in
 

@@ -976,6 +976,7 @@ CONTAINS
 !----------------------------------------------------------------------
       SUBROUTINE MYJSFCINIT(LOWLYR,USTAR,Z0                            &
                            ,SEAMASK,XICE,IVGTYP,RESTART                &
+                           , allowed_to_read                           &
                            ,IDS,IDE,JDS,JDE,KDS,KDE                    &
                            ,IMS,IME,JMS,JME,KMS,KME                    &
                            ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -983,6 +984,7 @@ CONTAINS
       IMPLICIT NONE
 !----------------------------------------------------------------------
       LOGICAL , INTENT(IN) :: RESTART
+      LOGICAL , INTENT(IN) :: allowed_to_read
 !
       INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                    &
                            ,IMS,IME,JMS,JME,KMS,KME                    &

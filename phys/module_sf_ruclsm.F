@@ -4046,6 +4046,7 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
 
   SUBROUTINE LSMRUCINIT( SMFR3D,TSLB,SMOIS,ISLTYP,                 &
                      nzs, restart,                                 &
+                     allowed_to_read ,                             &
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte                     )
@@ -4070,7 +4071,7 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
 
    REAL, DIMENSION ( 1:nzs )  ::                        soiliqw
 
-   LOGICAL , INTENT(IN) :: restart
+   LOGICAL , INTENT(IN) :: restart, allowed_to_read 
 
 !
   INTEGER ::  I,J,L,itf,jtf

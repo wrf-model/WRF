@@ -2439,14 +2439,14 @@ CONTAINS
 !====================================================================
    SUBROUTINE kfinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,           &
                      RQICUTEN,RQSCUTEN,NCA,W0AVG,P_QI,P_QS,         &
-                     P_FIRST_SCALAR,restart,                        &
+                     P_FIRST_SCALAR,restart,allowed_to_read,        &
                      ids, ide, jds, jde, kds, kde,                  &
                      ims, ime, jms, jme, kms, kme,                  &
                      its, ite, jts, jte, kts, kte                   )
 !--------------------------------------------------------------------   
    IMPLICIT NONE
 !--------------------------------------------------------------------
-   LOGICAL , INTENT(IN)           ::  restart
+   LOGICAL , INTENT(IN)           ::  restart, allowed_to_read
    INTEGER , INTENT(IN)           ::  ids, ide, jds, jde, kds, kde, &
                                       ims, ime, jms, jme, kms, kme, &
                                       its, ite, jts, jte, kts, kte

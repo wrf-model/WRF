@@ -6450,6 +6450,7 @@ CONTAINS
 
 !====================================================================
    SUBROUTINE rrtminit(RTHRATEN,RTHRATENLW,CLDFRA,restart,          &
+                       allowed_to_read ,                            &
                        ids, ide, jds, jde, kds, kde,                &
                        ims, ime, jms, jme, kms, kme,                &
                        its, ite, jts, jte, kts, kte                 )
@@ -6457,7 +6458,7 @@ CONTAINS
    IMPLICIT NONE
 !--------------------------------------------------------------------
 
-   LOGICAL , INTENT(IN)           :: restart
+   LOGICAL , INTENT(IN)           :: restart, allowed_to_read
    INTEGER , INTENT(IN)           :: ids, ide, jds, jde, kds, kde,  &
                                      ims, ime, jms, jme, kms, kme,  &
                                      its, ite, jts, jte, kts, kte
@@ -6490,7 +6491,9 @@ CONTAINS
    FLUXFAC  = PI   * 2.D4                     
    NLAYERS = kme
 
-   CALL rrtm_lookuptable
+   IF ( allowed_to_read ) THEN
+     CALL rrtm_lookuptable
+   ENDIF
 
    END SUBROUTINE rrtminit
 

@@ -2581,14 +2581,14 @@ iter:     DO NCOUNT=1,10
    SUBROUTINE kf_eta_init(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,      &
                      RQICUTEN,RQSCUTEN,NCA,W0AVG,P_QI,P_QS,         &
                      SVP1,SVP2,SVP3,SVPT0,                          &
-                     P_FIRST_SCALAR,restart,                        &
+                     P_FIRST_SCALAR,restart,allowed_to_read,        &
                      ids, ide, jds, jde, kds, kde,                  &
                      ims, ime, jms, jme, kms, kme,                  &
                      its, ite, jts, jte, kts, kte                   )
 !--------------------------------------------------------------------
    IMPLICIT NONE
 !--------------------------------------------------------------------
-   LOGICAL , INTENT(IN)           ::  restart
+   LOGICAL , INTENT(IN)           ::  restart,allowed_to_read
    INTEGER , INTENT(IN)           ::  ids, ide, jds, jde, kds, kde, &
                                       ims, ime, jms, jme, kms, kme, &
                                       its, ite, jts, jte, kts, kte

@@ -1103,7 +1103,7 @@ contains
 !
    subroutine ysuinit(rublten,rvblten,rthblten,rqvblten,           &
                       rqcblten,rqiblten,p_qi,p_first_scalar,       &
-                      restart,                                     &
+                      restart, allowed_to_read,                    &
                       ids, ide, jds, jde, kds, kde,                &
                       ims, ime, jms, jme, kms, kme,                &
                       its, ite, jts, jte, kts, kte                 )
@@ -1111,7 +1111,7 @@ contains
    implicit none
 !-------------------------------------------------------------------
 !
-   logical , intent(in)          :: restart
+   logical , intent(in)          :: restart, allowed_to_read
    integer , intent(in)          ::  ids, ide, jds, jde, kds, kde, &
                                      ims, ime, jms, jme, kms, kme, &
                                      its, ite, jts, jte, kts, kte

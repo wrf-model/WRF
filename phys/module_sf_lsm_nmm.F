@@ -5228,12 +5228,14 @@ CONTAINS
                         ACSNOM,IVGTYP,ISLTYP,TSLB,SMOIS,DZS,SFCEVP,     & !  STEMP
                         TMN,                                            &
                         num_soil_layers,                                &
+                        allowed_to_read,                                &
                         ids,ide, jds,jde, kds,kde,                      &
                         ims,ime, jms,jme, kms,kme,                      &
                         its,ite, jts,jte, kts,kte                     )
 
    IMPLICIT NONE 
 
+! Arguments
    INTEGER,  INTENT(IN   )   ::     ids,ide, jds,jde, kds,kde,  &
                                     ims,ime, jms,jme, kms,kme,  &
                                     its,ite, jts,jte, kts,kte
@@ -5269,6 +5271,8 @@ CONTAINS
 !
 
   INTEGER, INTENT(IN) :: isn
+  LOGICAL, INTENT(IN) :: allowed_to_read
+! Local
   INTEGER             :: iseason
   INTEGER :: icm,jcm,itf,jtf
   INTEGER ::  I,J,L

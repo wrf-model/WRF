@@ -1273,14 +1273,14 @@ USE MODULE_MODEL_CONSTANTS
 !
 !=======================================================================
       SUBROUTINE MYJPBLINIT(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,          &
-     &                      TKE_MYJ,RESTART,                            &
+     &                      TKE_MYJ,RESTART,allowed_to_read,            &
      &                      IDS,IDE,JDS,JDE,KDS,KDE,                    &
      &                      IMS,IME,JMS,JME,KMS,KME,                    &
      &                      ITS,ITE,JTS,JTE,KTS,KTE                 )
 !-----------------------------------------------------------------------
       IMPLICIT NONE
 !-----------------------------------------------------------------------
-      LOGICAL,INTENT(IN) :: RESTART
+      LOGICAL,INTENT(IN) :: RESTART,allowed_to_read
       INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE,                    &
      &                      IMS,IME,JMS,JME,KMS,KME,                    &
      &                      ITS,ITE,JTS,JTE,KTS,KTE

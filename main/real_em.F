@@ -161,9 +161,10 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
 
   ! Interface 
    INTERFACE
-     SUBROUTINE start_domain ( grid )  ! comes from module_start in appropriate dyn_ directory
+     SUBROUTINE start_domain ( grid , allowed_to_read )  ! comes from module_start in appropriate dyn_ directory
        USE module_domain
        TYPE (domain) grid
+       LOGICAL, INTENT(IN) :: allowed_to_read
      END SUBROUTINE start_domain
    END INTERFACE
 
@@ -267,7 +268,7 @@ real::t1,t2
       CALL       wrf_debug ( 100 , 'med_sidata_input: back from init_domain' )
       CALL close_dataset ( idsi , config_flags , "DATASET=INPUT" )
 
-!     CALL start_domain ( grid )
+!     CALL start_domain ( grid , .TRUE. )
 
       CALL assemble_output ( grid , config_flags , loop , time_loop_max )
 

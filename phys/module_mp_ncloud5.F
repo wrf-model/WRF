@@ -885,13 +885,14 @@ CONTAINS
       END FUNCTION fpvs
 
 !-------------------------------------------------------------------
-  SUBROUTINE ncloud5init(den0,denr,dens,cl,cpv)
+  SUBROUTINE ncloud5init(den0,denr,dens,cl,cpv,allowed_to_read)
 !-------------------------------------------------------------------
   IMPLICIT NONE
 !-------------------------------------------------------------------
 !.... constants which may not be tunable
 
    real, intent(in) :: den0,denr,dens,cl,cpv
+   logical, intent(in) :: allowed_to_read
    real :: pi
 
    pi = 4.*atan(1.)

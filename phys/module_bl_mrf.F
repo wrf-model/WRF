@@ -1261,14 +1261,14 @@ CONTAINS
 !===================================================================
    SUBROUTINE mrfinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,           &
                       RQCBLTEN,RQIBLTEN,P_QI,P_FIRST_SCALAR,       &
-                      restart,                                     &
+                      restart, allowed_to_read ,                   &
                       ids, ide, jds, jde, kds, kde,                &
                       ims, ime, jms, jme, kms, kme,                &
                       its, ite, jts, jte, kts, kte                 )
 !-------------------------------------------------------------------          
    IMPLICIT NONE
 !-------------------------------------------------------------------          
-   LOGICAL , INTENT(IN)          :: restart
+   LOGICAL , INTENT(IN)          :: restart , allowed_to_read
    INTEGER , INTENT(IN)          ::  ids, ide, jds, jde, kds, kde, &
                                      ims, ime, jms, jme, kms, kme, &
                                      its, ite, jts, jte, kts, kte

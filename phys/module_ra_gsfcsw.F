@@ -2924,9 +2924,10 @@ CONTAINS
       end subroutine o3prof
 
 !-----------------------------------------
-    SUBROUTINE gsfc_swinit(cen_lat)
+    SUBROUTINE gsfc_swinit(cen_lat, allowed_to_read)
 
     REAL, INTENT(IN    )      ::        cen_lat
+    LOGICAL, INTENT(IN    )   ::       allowed_to_read
 
         center_lat=cen_lat
 

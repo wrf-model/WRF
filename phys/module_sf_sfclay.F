@@ -687,8 +687,9 @@ CONTAINS
    END SUBROUTINE SFCLAY1D
 
 !====================================================================
-   SUBROUTINE sfclayinit()         
+   SUBROUTINE sfclayinit( allowed_to_read )         
 
+   LOGICAL , INTENT(IN)      ::      allowed_to_read
    INTEGER                   ::      N
    REAL                      ::      ZOLN,X,Y
 

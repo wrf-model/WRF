@@ -553,6 +553,7 @@ CONTAINS
                      ACSNOM,IVGTYP,ISLTYP,TSLB,SMOIS,SH2O,ZS,DZS, & 
                      FNDSOILW, FNDSNOWH,                       &
                      num_soil_layers, restart,                 &
+                     allowed_to_read ,                         &
                      ids,ide, jds,jde, kds,kde,                &
                      ims,ime, jms,jme, kms,kme,                &
                      its,ite, jts,jte, kts,kte                 )
@@ -563,7 +564,7 @@ CONTAINS
 
    INTEGER, INTENT(IN)       ::     num_soil_layers
 
-   LOGICAL , INTENT(IN) :: restart
+   LOGICAL , INTENT(IN) :: restart , allowed_to_read
 
    REAL,    DIMENSION( num_soil_layers), INTENT(INOUT) :: ZS, DZS
 
@@ -601,8 +602,10 @@ CONTAINS
 
 
 ! initialize three Noah LSM related tables
-   print*, 'INITIALIZE THREE Noah LSM RELATED TABLES'
-   CALL  LSM_PARM_INIT
+   IF ( allowed_to_read ) THEN
+     CALL wrf_message( 'INITIALIZE THREE Noah LSM RELATED TABLES' )
+     CALL  LSM_PARM_INIT
+   ENDIF
    
    IF(.not.restart)THEN
 
@@ -668,7 +671,7 @@ CONTAINS
 
         IF(.NOT.FNDSNOWH)THEN
 ! If no SNOWH do the following
-          PRINT *,'SNOW HEIGHT NOT FOUND - VALUE DEFINED IN LSMINIT'
+          CALL wrf_message( 'SNOW HEIGHT NOT FOUND - VALUE DEFINED IN LSMINIT' ) 
           DO J = jts,jtf
           DO I = its,itf
             SNOWH(I,J)=SNOW(I,J)*0.005               ! SNOW in mm and SNOWH in m
@@ -718,6 +721,8 @@ CONTAINS
         integer :: LUMATCH, IINDEX, LC, NUM_SLOPE 
 
         character*4 :: MMINLU, MMINSL
+        character*128 :: mess
+        logical, external :: wrf_dm_on_monitor
  
 
 !-----SPECIFY VEGETATION RELATED CHARACTERISTICS :
@@ -744,9 +749,12 @@ CONTAINS
 !-----READ IN VEGETAION PROPERTIES FROM VEGPARM.TBL 
 !                                                                       
 
+       IF ( wrf_dm_on_monitor() ) THEN
+
         OPEN(19, FILE='VEGPARM.TBL',FORM='FORMATTED',STATUS='OLD')  
 
-      PRINT *, 'INPUT LANDUSE = ',MMINLU                                
+        WRITE ( mess, * ) 'INPUT LANDUSE = ',MMINLU                                 
+        CALL wrf_message( mess )
 
         LUMATCH=0                                                       
 
@@ -756,8 +764,9 @@ CONTAINS
  2000   FORMAT (A4) 
 
         IF(LUTYPE.EQ.MMINLU)THEN                                        
-            PRINT *, 'LANDUSE TYPE = ',LUTYPE,' FOUND',           &                 
+          WRITE( mess , * ) 'LANDUSE TYPE = ',LUTYPE,' FOUND',           &                 
                   LUCATS,' CATEGORIES'
+          CALL wrf_message( mess )
           LUMATCH=1                                                     
         ENDIF                                                           
 
@@ -782,15 +791,38 @@ CONTAINS
 !
  2002   CONTINUE                                                        
 
-      CLOSE (19)                                                        
+        CLOSE (19)                                                        
+      ENDIF
+
+      CALL wrf_dm_bcast_string  ( LUTYPE  , 4 )
+      CALL wrf_dm_bcast_integer ( LUCATS  , 1 )
+      CALL wrf_dm_bcast_integer ( IINDEX  , 1 )
+      CALL wrf_dm_bcast_integer ( LUMATCH , 1 )
+      CALL wrf_dm_bcast_real    ( ALBTBL  , NLUS )
+      CALL wrf_dm_bcast_real    ( Z0TBL   , NLUS )
+      CALL wrf_dm_bcast_real    ( SHDTBL  , NLUS )
+      CALL wrf_dm_bcast_real    ( NROTBL  , NLUS )
+      CALL wrf_dm_bcast_real    ( RSTBL   , NLUS )
+      CALL wrf_dm_bcast_real    ( RGLTBL  , NLUS )
+      CALL wrf_dm_bcast_real    ( HSTBL   , NLUS )
+      CALL wrf_dm_bcast_real    ( SNUPTBL , NLUS )
+      CALL wrf_dm_bcast_real    ( LAITBL  , NLUS )
+      CALL wrf_dm_bcast_real    ( MAXALB  , NLUS )
+      CALL wrf_dm_bcast_real    ( TOPT_DATA    , 1 )
+      CALL wrf_dm_bcast_real    ( CMCMAX_DATA  , 1 )
+      CALL wrf_dm_bcast_real    ( CFACTR_DATA  , 1 )
+      CALL wrf_dm_bcast_real    ( RSMAX_DATA  , 1 )
+      CALL wrf_dm_bcast_integer ( BARE    , 1 )
 
 !                                                                       
 !-----READ IN SOIL PROPERTIES FROM SOILPARM.TBL
 !                                                                       
+      IF ( wrf_dm_on_monitor() ) THEN
         OPEN(19, FILE='SOILPARM.TBL',FORM='FORMATTED',STATUS='OLD') 
 
-      MMINSL='STAS'                       !oct2
-      PRINT *, 'INPUT SOIL TEXTURE CLASSIFICAION = ',MMINSL
+        MMINSL='STAS'                       !oct2
+        WRITE(mess,*) 'INPUT SOIL TEXTURE CLASSIFICAION = ',MMINSL
+        CALL wrf_message( mess )
 
         LUMATCH=0                                                       
 
@@ -798,8 +830,9 @@ CONTAINS
         READ (19,2000,END=2003)SLTYPE
         READ (19,*)SLCATS,IINDEX                                        
         IF(SLTYPE.EQ.MMINSL)THEN                                        
-            PRINT *, 'SOIL TEXTURE CLASSIFICATION = ',SLTYPE,' FOUND', &                 
+            WRITE( mess , * ) 'SOIL TEXTURE CLASSIFICATION = ',SLTYPE,' FOUND', &                 
                   SLCATS,' CATEGORIES'
+            CALL wrf_message ( mess )
           LUMATCH=1                                                     
         ENDIF                                                           
             IF(SLTYPE.EQ.MMINSL)THEN                                    
@@ -812,17 +845,35 @@ CONTAINS
 
  2003   CONTINUE                                                        
 
-      CLOSE (19)                                                        
+        CLOSE (19)                                                        
+      ENDIF
 
-        IF(LUMATCH.EQ.0)THEN                                            
-          PRINT *,'SOIl TEXTURE IN INPUT FILE DOES NOT '
-          PRINT *, 'MATCH SOILPARM TABLE'        
+      CALL wrf_dm_bcast_integer ( LUMATCH , 1 )
+      CALL wrf_dm_bcast_string  ( SLTYPE  , 4 )
+      CALL wrf_dm_bcast_string  ( MMINSL  , 4 )  ! since this is reset above, see oct2 ^
+      CALL wrf_dm_bcast_integer ( SLCATS  , 1 )
+      CALL wrf_dm_bcast_integer ( IINDEX  , 1 )
+      CALL wrf_dm_bcast_real    ( BB      , NSLTYPE )
+      CALL wrf_dm_bcast_real    ( DRYSMC  , NSLTYPE )
+      CALL wrf_dm_bcast_real    ( F11     , NSLTYPE )
+      CALL wrf_dm_bcast_real    ( MAXSMC  , NSLTYPE )
+      CALL wrf_dm_bcast_real    ( REFSMC  , NSLTYPE )
+      CALL wrf_dm_bcast_real    ( SATPSI  , NSLTYPE )
+      CALL wrf_dm_bcast_real    ( SATDK   , NSLTYPE )
+      CALL wrf_dm_bcast_real    ( SATDW   , NSLTYPE )
+      CALL wrf_dm_bcast_real    ( WLTSMC  , NSLTYPE )
+      CALL wrf_dm_bcast_real    ( QTZ     , NSLTYPE )
+
+      IF(LUMATCH.EQ.0)THEN                                            
+          CALL wrf_message( 'SOIl TEXTURE IN INPUT FILE DOES NOT ' )
+          CALL wrf_message( 'MATCH SOILPARM TABLE'                 )
           CALL wrf_error_fatal ( 'INCONSISTENT OR MISSING SOILPARM FILE' )
-        ENDIF                                                           
+      ENDIF                                                           
 
 !
 !-----READ IN GENERAL PARAMETERS FROM GENPARM.TBL 
 !                                                                       
+      IF ( wrf_dm_on_monitor() ) THEN
         OPEN(19, FILE='GENPARM.TBL',FORM='FORMATTED',STATUS='OLD') 
 
         READ (19,*)
@@ -857,7 +908,23 @@ CONTAINS
           READ (19,*)SMLOW_DATA
           READ (19,*)
           READ (19,*)SMHIGH_DATA
-      CLOSE (19)                                                        
+        CLOSE (19)                                                        
+      ENDIF
+      
+      CALL wrf_dm_bcast_integer ( NUM_SLOPE    ,  1 )
+      CALL wrf_dm_bcast_integer ( SLPCATS      ,  1 )
+      CALL wrf_dm_bcast_real    ( SLOPE_DATA   ,  NSLOPE )
+      CALL wrf_dm_bcast_real    ( SBETA_DATA   ,  1 )
+      CALL wrf_dm_bcast_real    ( FXEXP_DATA   ,  1 )
+      CALL wrf_dm_bcast_real    ( CSOIL_DATA   ,  1 )
+      CALL wrf_dm_bcast_real    ( SALP_DATA    ,  1 )
+      CALL wrf_dm_bcast_real    ( REFDK_DATA   ,  1 )
+      CALL wrf_dm_bcast_real    ( REFKDT_DATA  ,  1 )
+      CALL wrf_dm_bcast_real    ( FRZK_DATA    ,  1 )
+      CALL wrf_dm_bcast_real    ( ZBOT_DATA    ,  1 )
+      CALL wrf_dm_bcast_real    ( CZIL_DATA    ,  1 )
+      CALL wrf_dm_bcast_real    ( SMLOW_DATA   ,  1 )
+      CALL wrf_dm_bcast_real    ( SMHIGH_DATA  ,  1 )
 
 
 !-----------------------------------------------------------------

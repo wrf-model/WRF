@@ -52,6 +52,7 @@ CONTAINS
                          ACSNOM,IVGTYP,ISLTYP, SFCEVP, SMOIS,    &
                          SH2O, SNOWH, SMFR3D,                    &  ! temporary
                          DX,DY,F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY, &
+                         allowed_to_read,                        &
                          ids, ide, jds, jde, kds, kde,           &
                          ims, ime, jms, jme, kms, kme,           &
                          its, ite, jts, jte, kts, kte           )
@@ -157,6 +158,7 @@ CONTAINS
 !mp
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::   &
              F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY
+   LOGICAL,  INTENT(IN)  :: allowed_to_read
 
 ! Local data
 
@@ -252,6 +254,7 @@ CONTAINS
 
      CALL landuse_init(lu_index, snowc, albedo, albbck, mavail, emiss,      &
                 znt, Z0, thc, xland, xice, julday, cen_lat, iswater, mminlu_loc,  &
+                allowed_to_read ,                                   &
                 ids, ide, jds, jde, kds, kde,                       &
                 ims, ime, jms, jme, kms, kme,                       &
                 its, ite, jts, jte, kts, kte                       ) 
@@ -262,6 +265,7 @@ CONTAINS
 !-- zfull/zhalf may be either zeta or eta
 !-- what is done here depends on coordinate (check this code if adding new coordinates)
    CALL z2sigma(zfull,zhalf,sfull,shalf,p_top,pptop,config_flags, &
+                allowed_to_read,                                  &
                 kds,kde,kms,kme,kts,kte)
 
 !-- initialize physics
@@ -276,6 +280,7 @@ CONTAINS
                 RTHRATENSW,CLDFRA,cen_lat,JULYR,JULDAY,GMT,     &
                 sfull,shalf,pptop,                              &
                 config_flags,restart,                           & 
+                allowed_to_read ,                                   &
                 ids, ide, jds, jde, kds, kde,                   &
                 ims, ime, jms, jme, kms, kme,                   &
                 its, ite, jts, jte, kts, kte                    )
@@ -292,6 +297,7 @@ CONTAINS
                 SNOWH,SH2O,FNDSOILW, FNDSNOWH,                  &
                 ZNT,XLAND,XICE,                                 &
                 SFCEVP,GRDFLX,                                  &
+                allowed_to_read ,                                   &
                 ids, ide, jds, jde, kds, kde,                   &
                 ims, ime, jms, jme, kms, kme,                   &
                 its, ite, jts, jte, kts, kte                    )
@@ -305,6 +311,7 @@ CONTAINS
                 RTHFTEN, RQVFTEN,                               &
                 APR_GR,APR_W,APR_MC,APR_ST,APR_AS,              &
                 APR_CAPMA,APR_CAPME,APR_CAPMI,                  &
+                allowed_to_read ,                                   &
                 ids, ide, jds, jde, kds, kde,                   &
                 ims, ime, jms, jme, kms, kme,                   &
                 its, ite, jts, jte, kts, kte                    )
@@ -314,6 +321,7 @@ CONTAINS
    CALL mp_init(RAINNC,config_flags,restart,warm_rain,          &
                 MPDT, DT, DX, DY, LOWLYR,                       & 
                 F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,               &
+                allowed_to_read ,                                   &
                 ids, ide, jds, jde, kds, kde,                   &
                 ims, ime, jms, jme, kms, kme,                   &
                 its, ite, jts, jte, kts, kte                    )
@@ -326,6 +334,7 @@ CONTAINS
 !=====================================================================
    SUBROUTINE landuse_init(lu_index, snowc, albedo, albbck, mavail, emiss,  &
                 znt,Z0,thc,xland, xice, julday, cen_lat, iswater, mminlu, &
+                allowed_to_read ,                                   &
                 ids, ide, jds, jde, kds, kde,                       &
                 ims, ime, jms, jme, kms, kme,                       &
                 its, ite, jts, jte, kts, kte                       )
@@ -341,6 +350,7 @@ CONTAINS
    INTEGER , INTENT(IN)           :: iswater, julday
    REAL    , INTENT(IN)           :: cen_lat
    CHARACTER*4, INTENT(IN)        :: mminlu
+   LOGICAL,  INTENT(IN)           :: allowed_to_read
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(IN   ) :: lu_index, snowc, xice
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(OUT  ) :: albedo, albbck, mavail, emiss, &
                                                          znt, Z0, thc, xland
@@ -359,6 +369,7 @@ CONTAINS
 
 !---------------------------------------------------------------------
       CALL wrf_debug( 100 , 'top of landuse_init' )
+   IF ( allowed_to_read ) THEN
       landuse_unit = 29
       IF ( wrf_dm_on_monitor() ) THEN
         OPEN(landuse_unit, FILE='LANDUSE.TBL',FORM='FORMATTED',STATUS='OLD')
@@ -437,6 +448,7 @@ CONTAINS
         IF(.NOT. FOUND_LU)THEN                                         
           CALL wrf_message ( 'LANDUSE IN INPUT FILE DOES NOT MATCH LUTABLE: TABLE NOT USED' )
         ENDIF                                                     
+     ENDIF  ! allowed_to_read
 
     IF(FOUND_LU)THEN
 ! Set arrays according to lu_index
@@ -479,7 +491,7 @@ CONTAINS
         ENDDO
       ENDDO
     ENDIF
-    if ( wrf_dm_on_monitor() ) then
+    if ( wrf_dm_on_monitor() .and. allowed_to_read ) then
       CLOSE (landuse_unit)
     endif
     CALL wrf_debug( 100 , 'returning from of landuse_init' )
@@ -487,10 +499,11 @@ CONTAINS
         
    END SUBROUTINE landuse_init 
 !===================================================================== 
-   SUBROUTINE ra_init(grid,STEPRA,RADT,DT,RTHRATEN,RTHRATENLW,            & 
+   SUBROUTINE ra_init(grid,STEPRA,RADT,DT,RTHRATEN,RTHRATENLW,       & 
                       RTHRATENSW,CLDFRA,cen_lat,JULYR,JULDAY,GMT,    &
                       sfull,shalf,pptop,                             &
                       config_flags,restart,                          & 
+                      allowed_to_read ,                              &
                       ids, ide, jds, jde, kds, kde,                  &
                       ims, ime, jms, jme, kms, kme,                  &
                       its, ite, jts, jte, kts, kte                   )
@@ -506,6 +519,7 @@ CONTAINS
    TYPE (domain)                  :: grid
    TYPE (grid_config_rec_type)    :: config_flags
    LOGICAL , INTENT(IN)           :: restart
+   LOGICAL,  INTENT(IN)           :: allowed_to_read
 
    INTEGER , INTENT(IN)           :: ids, ide, jds, jde, kds, kde,   &
                                      ims, ime, jms, jme, kms, kme,   &
@@ -540,6 +554,7 @@ CONTAINS
         CASE (RRTMSCHEME)
              CALL rrtminit(RTHRATEN,RTHRATENLW,CLDFRA,      &
                            restart,                         &
+                           allowed_to_read ,                &
                            ids, ide, jds, jde, kds, kde,    &
                            ims, ime, jms, jme, kms, kme,    &
                            its, ite, jts, jte, kts, kte     )
@@ -547,6 +562,7 @@ CONTAINS
              CALL nl_get_start_month(grid%id,month)
              CALL nl_get_start_day(grid%id,iday)
              CALL gfdletainit(sfull,shalf,pptop,JULYR,MONTH,IDAY,GMT,&
+                           allowed_to_read ,                         &
                            kds, kde, kms, kme, kts, kte     )
              etalw = .true.
         CASE DEFAULT
@@ -559,18 +575,20 @@ CONTAINS
         CASE (SWRADSCHEME)
              CALL swinit(RTHRATEN,RTHRATENSW,              &
                          restart,                          &
+                         allowed_to_read ,                 &
                          ids, ide, jds, jde, kds, kde,     &
                          ims, ime, jms, jme, kms, kme,     &
                          its, ite, jts, jte, kts, kte      )
 
         CASE (GSFCSWSCHEME)
-             CALL gsfc_swinit(cen_lat)
+             CALL gsfc_swinit(cen_lat, allowed_to_read )
 
         CASE (GFDLSWSCHEME)
              IF(.not.etalw)THEN
              CALL nl_get_start_month(grid%id,month)
              CALL nl_get_start_day(grid%id,iday)
              CALL gfdletainit(sfull,shalf,pptop,JULYR,MONTH,IDAY,GMT,&
+                           allowed_to_read,                          &
                            kds, kde, kms, kme, kts, kte     )
              ENDIF
 
@@ -581,7 +599,7 @@ CONTAINS
    END SUBROUTINE ra_init
 
 !==========================================================
-   SUBROUTINE bl_init(STEPBL,BLDT,DT,RUBLTEN,RVBLTEN,RTHBLTEN,        &
+   SUBROUTINE bl_init(STEPBL,BLDT,DT,RUBLTEN,RVBLTEN,RTHBLTEN,  &
                 RQVBLTEN,RQCBLTEN,RQIBLTEN,TSK,TMN,             &
                 config_flags,restart,UST,LOWLYR,TSLB,ZS,DZS,    &
                 num_soil_layers,TKE_MYJ,VEGFRA,                 &
@@ -591,6 +609,7 @@ CONTAINS
                 SNOWH,SH2O,FNDSOILW, FNDSNOWH,                  &
                 ZNT,XLAND,XICE,                                 &
                 SFCEVP,GRDFLX,                                  &
+                allowed_to_read,                                &
                 ids, ide, jds, jde, kds, kde,                   &
                 ims, ime, jms, jme, kms, kme,                   &
                 its, ite, jts, jte, kts, kte                    )
@@ -665,6 +684,7 @@ CONTAINS
 
    REAL,  DIMENSION( ims:ime , jms:jme ) , INTENT(IN) ::     TSK
    REAL,  DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) ::  TMN
+   LOGICAL,  INTENT(IN)           :: allowed_to_read
    INTEGER :: isn, isfc
 !--------------------------------------------------------------------
 
@@ -679,11 +699,12 @@ CONTAINS
    sfclay_select: SELECT CASE(config_flags%sf_sfclay_physics)
 
       CASE (SFCLAYSCHEME)
-           CALL sfclayinit()
+           CALL sfclayinit( allowed_to_read )
            isfc = 1
       CASE (MYJSFCSCHEME)
            CALL myjsfcinit(LOWLYR,UST,ZNT,XLAND,XICE,          &
                          IVGTYP,restart,                       &
+                         allowed_to_read ,                     &
                          ids, ide, jds, jde, kds, kde,         &
                          ims, ime, jms, jme, kms, kme,         &
                          its, ite, jts, jte, kts, kte          )
@@ -701,6 +722,7 @@ CONTAINS
            CALL slabinit(TSK,TMN,                              &
                          TSLB,ZS,DZS,num_soil_layers,          & 
                          restart,                              &
+                         allowed_to_read ,                     &
                          ids, ide, jds, jde, kds, kde,         &
                          ims, ime, jms, jme, kms, kme,         &
                          its, ite, jts, jte, kts, kte          )
@@ -711,6 +733,7 @@ CONTAINS
                      ACSNOM,IVGTYP,ISLTYP,TSLB,SMOIS,DZS,SFCEVP,   &
                      TMN,                                          &
                      num_soil_layers,                              &
+                     allowed_to_read ,                             &
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte                     )
@@ -721,6 +744,7 @@ CONTAINS
                      ACSNOM,IVGTYP,ISLTYP,TSLB,SMOIS,SH2O,ZS,DZS, &
                      FNDSOILW, FNDSNOWH,                       &
                      num_soil_layers, restart,                 &
+                     allowed_to_read ,                         &
                      ids,ide, jds,jde, kds,kde,                &
                      ims,ime, jms,jme, kms,kme,                &
                      its,ite, jts,jte, kts,kte                 )
@@ -730,6 +754,7 @@ CONTAINS
             ( 'module_physics_init: use myjsfc and myjpbl scheme for this lsm option' )
            CALL lsmrucinit( SMFR3D,TSLB,SMOIS,ISLTYP,              &
                      num_soil_layers, restart,                     &
+                     allowed_to_read ,                             &
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte                     )
@@ -750,6 +775,7 @@ CONTAINS
                         RQCBLTEN,RQIBLTEN,P_QI,               &
                         PARAM_FIRST_SCALAR,                   &
                         restart,                              &
+                        allowed_to_read ,                     &
                         ids, ide, jds, jde, kds, kde,         &
                         ims, ime, jms, jme, kms, kme,         &
                         its, ite, jts, jte, kts, kte          )
@@ -760,6 +786,7 @@ CONTAINS
                         RQCBLTEN,RQIBLTEN,P_QI,               &
                         PARAM_FIRST_SCALAR,                   &
                         restart,                              &
+                        allowed_to_read ,                     &
                         ids, ide, jds, jde, kds, kde,         &
                         ims, ime, jms, jme, kms, kme,         &
                         its, ite, jts, jte, kts, kte          )
@@ -768,6 +795,7 @@ CONTAINS
             ( 'module_physics_init: use myjsfc scheme for this pbl option' )
            CALL myjpblinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN, &
                         TKE_MYJ,restart,                      &
+                        allowed_to_read ,                     &
                         ids, ide, jds, jde, kds, kde,         &
                         ims, ime, jms, jme, kms, kme,         &
                         its, ite, jts, jte, kts, kte          )
@@ -785,6 +813,7 @@ CONTAINS
                       RTHFTEN, RQVFTEN,                           &
                       APR_GR,APR_W,APR_MC,APR_ST,APR_AS,          &
                       APR_CAPMA,APR_CAPME,APR_CAPMI,              &
+                      allowed_to_read ,                           &
                       ids, ide, jds, jde, kds, kde,               &
                       ims, ime, jms, jme, kms, kme,               &
                       its, ite, jts, jte, kts, kte                )
@@ -805,6 +834,7 @@ CONTAINS
                                   its, ite, jts, jte, kts, kte
 
    REAL ,    INTENT(IN)        :: DT, CUDT
+   LOGICAL , INTENT(IN)        :: allowed_to_read
    INTEGER , INTENT(INOUT)     :: STEPCU
 
    REAL ,   DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::    &
@@ -859,6 +889,7 @@ CONTAINS
           CALL kfinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,        &
                       RQICUTEN,RQSCUTEN,NCA,W0AVG,P_QI,P_QS,      &
                       PARAM_FIRST_SCALAR,restart,                 &
+                      allowed_to_read ,                           &
                       ids, ide, jds, jde, kds, kde,               &
                       ims, ime, jms, jme, kms, kme,               &
                       its, ite, jts, jte, kts, kte                )
@@ -866,6 +897,7 @@ CONTAINS
      CASE (BMJSCHEME)
           CALL bmjinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,       &
                       CLDEFI,LOWLYR,cp,r_d,restart,               &
+                      allowed_to_read ,                           &
                       ids, ide, jds, jde, kds, kde,               &
                       ims, ime, jms, jme, kms, kme,               &
                       its, ite, jts, jte, kts, kte                )
@@ -875,6 +907,7 @@ CONTAINS
                       RQICUTEN,RQSCUTEN,NCA,W0AVG,P_QI,P_QS,      &
                       SVP1,SVP2,SVP3,SVPT0,                       &
                       PARAM_FIRST_SCALAR,restart,                 &
+                      allowed_to_read ,                           &
                       ids, ide, jds, jde, kds, kde,               &
                       ims, ime, jms, jme, kms, kme,               &
                       its, ite, jts, jte, kts, kte                )
@@ -886,6 +919,7 @@ CONTAINS
                       RTHFTEN, RQVFTEN,                           &
                       APR_GR,APR_W,APR_MC,APR_ST,APR_AS,          &
                       APR_CAPMA,APR_CAPME,APR_CAPMI,              &
+                      allowed_to_read ,                           &
                       ids, ide, jds, jde, kds, kde,               &
                       ims, ime, jms, jme, kms, kme,               &
                       its, ite, jts, jte, kts, kte                )
@@ -900,6 +934,7 @@ CONTAINS
    SUBROUTINE mp_init(RAINNC,config_flags,restart,warm_rain,      &
                       MPDT, DT, DX, DY, LOWLYR,                   & ! for eta mp
                       F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,           & ! for eta mp
+                      allowed_to_read ,                           &
                       ids, ide, jds, jde, kds, kde,               &
                       ims, ime, jms, jme, kms, kme,               &
                       its, ite, jts, jte, kts, kte                )
@@ -913,6 +948,7 @@ CONTAINS
 !------------------------------------------------------------------
    IMPLICIT NONE
 !------------------------------------------------------------------
+! Arguments
    TYPE (grid_config_rec_type) ::     config_flags
    LOGICAL , INTENT(IN)        :: restart
    LOGICAL , INTENT(OUT)       :: warm_rain
@@ -926,7 +962,9 @@ CONTAINS
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) :: RAINNC
    REAL,     DIMENSION( ims:ime , kms:kme, jms:jme ) , INTENT(INOUT) :: &
                                   F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY
+   LOGICAL , INTENT(IN)  :: allowed_to_read
 
+! Local
    INTEGER :: i, j, itf, jtf
 
    warm_rain = .false.
@@ -946,21 +984,22 @@ CONTAINS
      CASE (KESSLERSCHEME)
           warm_rain = .true.
      CASE (WSM3SCHEME)
-          CALL wsm3init(rhoair0,rhowater,rhosnow,cliq,cv)
+          CALL wsm3init(rhoair0,rhowater,rhosnow,cliq,cv, allowed_to_read )
      CASE (WSM5SCHEME)
-          CALL wsm5init(rhoair0,rhowater,rhosnow,cliq,cv)
+          CALL wsm5init(rhoair0,rhowater,rhosnow,cliq,cv, allowed_to_read )
      CASE (WSM6SCHEME)
-          CALL wsm6init(rhoair0,rhowater,rhosnow,cliq,cv)
+          CALL wsm6init(rhoair0,rhowater,rhosnow,cliq,cv, allowed_to_read )
      CASE (ETAMPNEW)
          CALL etanewinit (MPDT,DT,DX,DY,LOWLYR,restart,           &
                           F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,       &
+                          allowed_to_read,                        &
                           ids, ide, jds, jde, kds, kde,           &
                           ims, ime, jms, jme, kms, kme,           &
                           its, ite, jts, jte, kts, kte            )
      CASE (NCEPCLOUD3)
-          CALL ncloud3init(rhoair0,rhowater,rhosnow,cliq,cv)
+          CALL ncloud3init(rhoair0,rhowater,rhosnow,cliq,cv, allowed_to_read )
      CASE (NCEPCLOUD5)
-          CALL ncloud5init(rhoair0,rhowater,rhosnow,cliq,cv)
+          CALL ncloud5init(rhoair0,rhowater,rhosnow,cliq,cv, allowed_to_read )
 
      CASE DEFAULT
 
@@ -969,15 +1008,17 @@ CONTAINS
    END SUBROUTINE mp_init
 
    SUBROUTINE z2sigma(zf,zh,sf,sh,p_top,pptop,config_flags, &
+                allowed_to_read , &
                 kds,kde,kms,kme,kts,kte)
    IMPLICIT NONE
-! I/O
+! Arguments
    INTEGER, INTENT(IN) :: kds,kde,kms,kme,kts,kte
    REAL , DIMENSION( kms:kme ), INTENT(IN) :: zf,zh
    REAL , DIMENSION( kms:kme ), INTENT(OUT):: sf,sh
    REAL , INTENT(IN) :: p_top
    REAL , INTENT(OUT) :: pptop
    TYPE (grid_config_rec_type)              :: config_flags
+   LOGICAL , INTENT(IN) :: allowed_to_read
 ! Local
    REAL R, G, TS, GAMMA, PS, ZTROP, TSTRAT, PTROP, Z, T, P, ZTOP, PTOP
    INTEGER K

@@ -47,6 +47,7 @@ CONTAINS
 
 !-----------------------------------------------------------------------
       SUBROUTINE GFDLETAINIT(SFULL,SHALF,PPTOP,JULYR,MONTH,IDAY,GMT,    &
+     &                       allowed_to_read ,                          &
      &                       kds,kde,kms,kme,kts,kte)
 !-----------------------------------------------------------------------
       IMPLICIT NONE
@@ -55,6 +56,7 @@ CONTAINS
       REAL,DIMENSION(kms:kme), INTENT(IN) :: SFULL, SHALF
       INTEGER, INTENT(IN) :: JULYR,MONTH,IDAY
       REAL,INTENT(IN) :: GMT, PPTOP
+      LOGICAL , INTENT(IN) :: allowed_to_read
       INTEGER IHRST
 !-----------------------------------------------------------------------
 !***********************************************************************
@@ -65,12 +67,14 @@ CONTAINS
 !
 !!!!!!!!CALL CO2O3(sfull,shalf,pptop,kme-kms,kme-kms+1,kme-kms+2)
 !
-      CALL CONRAD(KDS,KDE,KMS,KME,KTS,KTE)
+      IF ( allowed_to_read ) THEN
+        CALL CONRAD(KDS,KDE,KMS,KME,KTS,KTE)
 !
-      CALL O3CLIM
-      CALL TABLE
-      IHRST=NINT(GMT)
-      CALL SOLARD(IHRST,IDAY,MONTH,JULYR)
+        CALL O3CLIM
+        CALL TABLE
+        IHRST=NINT(GMT)
+        CALL SOLARD(IHRST,IDAY,MONTH,JULYR)
+      ENDIF
 !
 !-----------------------------------------------------------------------
       END SUBROUTINE GFDLETAINIT

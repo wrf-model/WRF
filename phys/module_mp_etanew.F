@@ -1964,6 +1964,7 @@ nsteps = 0
 
       SUBROUTINE etanewinit (GSMDT,DT,DELX,DELY,LOWLYR,restart,            &
          F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,                                 &
+         allowed_to_read,                                                  &
          IDS,IDE,JDS,JDE,KDS,KDE,                                          &
          IMS,IME,JMS,JME,KMS,KME,                                          &
          ITS,ITE,JTS,JTE,KTS,KTE                                           )
@@ -2054,7 +2055,7 @@ nsteps = 0
        INTEGER, DIMENSION( ims:ime, jms:jme ),INTENT(INOUT) :: LOWLYR
 !
       real, INTENT(IN) ::  DELX,DELY
-      logical, INTENT(IN) :: restart
+      logical, INTENT(IN) :: restart,allowed_to_read
       real,DIMENSION(ims:ime, kms:kme, jms:jme),INTENT(OUT) ::             &
         F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY
       INTEGER, PARAMETER :: ITLO=-60, ITHI=40
@@ -2104,6 +2105,7 @@ nsteps = 0
       ENDDO
      ENDIF
 
+     IF ( allowed_to_read ) THEN
 !    
 !     DX=111.*(DPHD**2+DLMD**2)**.5         ! Model resolution at equator (km)
       DX=((DELX)**2+(DELY)**2)**.5/1000.    ! Model resolution at equator (km)
@@ -2282,6 +2284,7 @@ nsteps = 0
 !       ENDIF
 
 !wrf
+    ENDIF ! allowed to read
      RETURN
 !
 !-----------------------------------------------------------------------

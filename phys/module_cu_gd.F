@@ -3827,13 +3827,14 @@ CONTAINS
                         RTHFTEN, RQVFTEN,                           &
                         APR_GR,APR_W,APR_MC,APR_ST,APR_AS,          &
                         APR_CAPMA,APR_CAPME,APR_CAPMI,              &
+                        allowed_to_read,                            &
                         ids, ide, jds, jde, kds, kde,               &
                         ims, ime, jms, jme, kms, kme,               &
                         its, ite, jts, jte, kts, kte               )
 !--------------------------------------------------------------------   
    IMPLICIT NONE
 !--------------------------------------------------------------------
-   LOGICAL , INTENT(IN)           ::  restart
+   LOGICAL , INTENT(IN)           ::  restart,allowed_to_read
    INTEGER , INTENT(IN)           ::  ids, ide, jds, jde, kds, kde, &
                                       ims, ime, jms, jme, kms, kme, &
                                       its, ite, jts, jte, kts, kte

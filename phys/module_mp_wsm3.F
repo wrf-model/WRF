@@ -936,12 +936,13 @@ CONTAINS
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
       END FUNCTION fpvs
 !-------------------------------------------------------------------
-  SUBROUTINE wsm3init(den0,denr,dens,cl,cpv)
+  SUBROUTINE wsm3init(den0,denr,dens,cl,cpv,allowed_to_read)
 !-------------------------------------------------------------------
   IMPLICIT NONE
 !-------------------------------------------------------------------
 !.... constants which may not be tunable
    REAL, INTENT(IN) :: den0,denr,dens,cl,cpv
+   LOGICAL, INTENT(IN) :: allowed_to_read
    REAL :: pi
    pi = 4.*atan(1.)
    xlv1 = cl-cpv

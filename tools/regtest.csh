@@ -662,7 +662,7 @@ else if ( ( $ARCH[1] == Linux ) && ( `hostname` == master ) ) then
 	set DEF_DIR		= /big6/gill/DO_NOT_REMOVE_DIR
 	set TMPDIR		= .
 	set MAIL		= /bin/mail
-	set COMPOPTS		= ( 1 2 3 )
+	set COMPOPTS		= ( 1 3 5 )
 	set Num_Procs		= 4
 	set OPENMP		= 2
 	set MPIRUNCOMMAND	= ( mpirun -np $Num_Procs )
@@ -681,7 +681,7 @@ else if ( ( $ARCH[1] == Linux ) && ( `hostname` == atc-c1 ) ) then
 	endif
 	set TMPDIR              = .
 	set MAIL		= /bin/mail
-	set COMPOPTS		= ( 1 2 3 )
+	set COMPOPTS		= ( 1 3 5 )
 	set Num_Procs		= 4
 	set OPENMP 		= 2
 	set MPIRUNCOMMAND 	= ( mpirun -np $Num_Procs )
@@ -697,7 +697,7 @@ else if ( ( $ARCH[1] == Linux ) && ( `hostname` == kola ) ) then
 	set DEF_DIR		= /kola2/$user
 	set TMPDIR              = .
 	set MAIL		= /bin/mail
-	set COMPOPTS		= ( 1 2 3 )
+	set COMPOPTS		= ( 1 3 5 )
 	set Num_Procs		= 2
 	set OPENMP 		= $Num_Procs
 	cat >! machfile << EOF
@@ -717,7 +717,7 @@ else if ( ( $ARCH[1] == Linux ) && ( `hostname` == she ) ) then
 	set DEF_DIR		= /she/users/$user
 	set TMPDIR		= .
 	set MAIL		= /bin/mail
-	set COMPOPTS		= ( 1 2 3 )
+	set COMPOPTS		= ( 1 3 5 )
 	set Num_Procs		= 2
 	set OPENMP		= $Num_Procs
 	cat >! machfile << EOF
@@ -738,7 +738,7 @@ else if ( ( $ARCH[1] == Linux ) && ( `hostname` == bay-mmm ) ) then
 	if ( ! -d $DEF_DIR ) mkdir $DEF_DIR
 	set TMPDIR		= .
 	set MAIL		= /bin/mail
-	set COMPOPTS		= ( 1 2 3 )
+	set COMPOPTS		= ( 1 3 5 )
 	set Num_Procs		= 2
 	set OPENMP		= $Num_Procs
 	cat >! machfile << EOF
@@ -760,7 +760,7 @@ else if ( ( $ARCH[1] == Linux ) && ( `hostname | cut -d. -f2-` == fsl.noaa.gov )
 	set DEF_DIR		= /p10/acb/users/${user}/wrfReg
 	set TMPDIR              = .
 	set MAIL		= /usr/bin/Mail
-	set COMPOPTS		= ( 1 2 3 )
+	set COMPOPTS		= ( 1 3 5 )
 	set Num_Procs		= 4
 	set OPENMP 		= $Num_Procs
 	set MPIRUNCOMMAND 	= ( mpirun -np $Num_Procs )
@@ -775,7 +775,7 @@ else if ( ( $ARCH[1] == Linux ) && ( `hostname | cut -d. -f2-` == fsl.noaa.gov )
 	set DEF_DIR		= /p16/ncarwrf
 	set TMPDIR              = .
 	set MAIL		= /usr/bin/Mail
-	set COMPOPTS		= ( 1 2 3 )
+	set COMPOPTS		= ( 1 3 5 )
 	set Num_Procs		= 4
 	set OPENMP 		= $Num_Procs
 	set MPIRUNCOMMAND 	= ( mpirun -np $Num_Procs )

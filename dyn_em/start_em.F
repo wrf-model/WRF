@@ -1,6 +1,6 @@
 !-------------------------------------------------------------------
 
-   SUBROUTINE start_domain_em ( grid, &
+   SUBROUTINE start_domain_em ( grid, allowed_to_read , &
 !
 # include <em_dummy_args.inc>
 !
@@ -15,6 +15,7 @@
 !  USE module_timing
    USE module_configure
    USE module_date_time
+   USE module_tiles
 
    USE module_physics_init
 
@@ -27,6 +28,7 @@
 
    !  Input data.
    TYPE (domain)          :: grid
+   LOGICAL , INTENT(IN)   :: allowed_to_read
 
 # include <em_dummy_decl.inc>
 
@@ -38,7 +40,7 @@
                                   ims, ime, jms, jme, kms, kme, &
                                   ips, ipe, jps, jpe, kps, kpe, &
                                   its, ite, jts, jte, kts, kte, &
-                                  i, j, k, loop, error
+                                  i, j, k, ij, loop, error
 
    REAL :: qvf1, qvf2, qvf
    REAL :: MPDT
@@ -49,6 +51,7 @@
 #ifdef DM_PARALLEL
 #    include <em_data_calls.inc>
 #endif
+
 
    CALL get_ijk_from_grid (  grid ,                   &
                              ids, ide, jds, jde, kds, kde,    &
@@ -109,6 +112,7 @@
 
    ENDIF
 
+
    IF(.not.config_flags%restart)THEN
 
 !  if this is for a nested domain, the defined/interpolated fields are the _2
@@ -121,15 +125,19 @@
        DO j = jts,min(jte,jde-1)
        DO k = kts,kte-1
        DO i = its, min(ite,ide-1)
-           moist_1(i,k,j,P_QV)=moist_2(i,k,j,P_QV)
-           t_1(i,k,j)=t_2(i,k,j)
+           IF ( imask_nostag(i,j) .EQ. 1 ) THEN
+             moist_1(i,k,j,P_QV)=moist_2(i,k,j,P_QV)
+             t_1(i,k,j)=t_2(i,k,j)
+           ENDIF
        ENDDO
        ENDDO
        ENDDO
   
        DO j = jts,min(jte,jde-1)
        DO i = its, min(ite,ide-1)
-           mu_1(i,j)=mu_2(i,j)
+           IF ( imask_nostag(i,j) .EQ. 1 ) THEN
+             mu_1(i,j)=mu_2(i,j)
+           ENDIF
        ENDDO
        ENDDO
      END IF
@@ -139,9 +147,11 @@
      DO j = jts,min(jte,jde-1)
      DO k = kts,kte-1
      DO i = its, min(ite,ide-1)
-       pb(i,k,j) = znu(k)*mub(i,j)+p_top
-       alb(i,k,j) = -rdnw(k)*(phb(i,k+1,j)-phb(i,k,j))/mub(i,j)
-       t_init(i,k,j) = alb(i,k,j)*(p1000mb/r_d)/((pb(i,k,j)/p1000mb)**cvpm) - t0
+       IF ( imask_nostag(i,j) .EQ. 1 ) THEN
+         pb(i,k,j) = znu(k)*mub(i,j)+p_top
+         alb(i,k,j) = -rdnw(k)*(phb(i,k+1,j)-phb(i,k,j))/mub(i,j)
+         t_init(i,k,j) = alb(i,k,j)*(p1000mb/r_d)/((pb(i,k,j)/p1000mb)**cvpm) - t0
+       ENDIF
      ENDDO
      ENDDO
      ENDDO
@@ -150,25 +160,29 @@
 
        k = kte-1
        DO i = its, min(ite,ide-1)
-         qvf1 = 0.5*(moist_1(i,k,j,P_QV)+moist_1(i,k,j,P_QV))
-         qvf2 = 1./(1.+qvf1)
-         qvf1 = qvf1*qvf2
-         p(i,k,j) = - 0.5*(mu_1(i,j)+qvf1*mub(i,j))/rdnw(k)/qvf2
-         qvf = 1. + rvovrd*moist_1(i,k,j,P_QV)
-         alt(i,k,j) = (r_d/p1000mb)*(t_1(i,k,j)+t0)*qvf*(((p(i,k,j)+pb(i,k,j))/p1000mb)**cvpm)
-         al(i,k,j) = alt(i,k,j) - alb(i,k,j)
+         IF ( imask_nostag(i,j) .EQ. 1 ) THEN
+           qvf1 = 0.5*(moist_1(i,k,j,P_QV)+moist_1(i,k,j,P_QV))
+           qvf2 = 1./(1.+qvf1)
+           qvf1 = qvf1*qvf2
+           p(i,k,j) = - 0.5*(mu_1(i,j)+qvf1*mub(i,j))/rdnw(k)/qvf2
+           qvf = 1. + rvovrd*moist_1(i,k,j,P_QV)
+           alt(i,k,j) = (r_d/p1000mb)*(t_1(i,k,j)+t0)*qvf*(((p(i,k,j)+pb(i,k,j))/p1000mb)**cvpm)
+           al(i,k,j) = alt(i,k,j) - alb(i,k,j)
+         ENDIF
        ENDDO
 
        DO k = kte-2, 1, -1
        DO i = its, min(ite,ide-1)
-         qvf1 = 0.5*(moist_1(i,k,j,P_QV)+moist_1(i,k+1,j,P_QV))
-         qvf2 = 1./(1.+qvf1)
-         qvf1 = qvf1*qvf2
-         p(i,k,j) = p(i,k+1,j) - (mu_1(i,j) + qvf1*mub(i,j))/qvf2/rdn(k+1)
-         qvf = 1. + rvovrd*moist_1(i,k,j,P_QV)
-         alt(i,k,j) = (r_d/p1000mb)*(t_1(i,k,j)+t0)*qvf* &
-                      (((p(i,k,j)+pb(i,k,j))/p1000mb)**cvpm)
-         al(i,k,j) = alt(i,k,j) - alb(i,k,j)
+         IF ( imask_nostag(i,j) .EQ. 1 ) THEN
+           qvf1 = 0.5*(moist_1(i,k,j,P_QV)+moist_1(i,k+1,j,P_QV))
+           qvf2 = 1./(1.+qvf1)
+           qvf1 = qvf1*qvf2
+           p(i,k,j) = p(i,k+1,j) - (mu_1(i,j) + qvf1*mub(i,j))/qvf2/rdn(k+1)
+           qvf = 1. + rvovrd*moist_1(i,k,j,P_QV)
+           alt(i,k,j) = (r_d/p1000mb)*(t_1(i,k,j)+t0)*qvf* &
+                        (((p(i,k,j)+pb(i,k,j))/p1000mb)**cvpm)
+           al(i,k,j) = alt(i,k,j) - alb(i,k,j)
+         ENDIF
        ENDDO
        ENDDO
 
@@ -176,13 +190,19 @@
 
    ENDIF
 
-   IF ( first_trip_for_this_domain) THEN
+   IF ( first_trip_for_this_domain ) THEN
 
    CALL wrf_debug ( 100 , 'module_start: start_domain_rk: Before call to phy_init' )
 
 ! namelist MPDT does not exist yet, so set it here
 ! MPDT is the call frequency for microphysics in minutes (0 means every step)
    MPDT = 0.
+
+   CALL set_tiles ( grid , imask_nostag, ims, ime, jms, jme, ips, ipe, jps, jpe )
+
+! Phy_init is not necessarily thread-safe; do not multi-thread this loop.
+! The tiling is to handle the fact that we may be masking off part of the computation.
+   DO ij = 1, grid%num_tiles
 
    CALL phy_init   (  grid,                                   &  
                       grid%id , config_flags, DT, znw, znu,   &
@@ -210,9 +230,12 @@
                       ACSNOM,IVGTYP,ISLTYP, SFCEVP,SMOIS,     &
                       SH2O, SNOWH, SMFR3D,                    &
                       DX,DY,F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY, &
+                      allowed_to_read,                        &
                       ids, ide, jds, jde, kds, kde,           &
                       ims, ime, jms, jme, kms, kme,           &
-                      its, ite, jts, jte, kts, kte           )
+                      grid%i_start(ij), grid%i_end(ij), grid%j_start(ij), grid%j_end(ij), kts, kte           )
+
+   ENDDO
 
 !                     SH2O, SNOWH, FNDSOILW, FNDSNOWH,        &  ! correct one
 
@@ -224,6 +247,7 @@
 #endif
 
    END IF
+
 
 !
 !

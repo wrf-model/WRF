@@ -141,16 +141,18 @@ SUBROUTINE med_initialdata_output ( grid , config_flags )
    CALL output_model_input ( id, grid , config_flags , ierr )
    CALL close_dataset ( id , config_flags, "DATASET=INPUT" )
 
+   if ( config_flags%specified ) THEN
 
+     CALL construct_filename1 ( bdyname , 'wrfbdy' , grid%id , 2 )
+     CALL open_w_dataset ( id, TRIM(bdyname) , grid , config_flags , output_boundary , "DATASET=BOUNDARY", ierr )
+     IF ( ierr .NE. 0 ) THEN
+       WRITE (wrf_err_message,*)'ideal: error opening wrfbdy for writing ',ierr
+       CALL wrf_error_fatal( wrf_err_message )
+     ENDIF
+     CALL output_boundary ( id, grid , config_flags , ierr )
+     CALL close_dataset ( id , config_flags , "DATASET=BOUNDARY" )
 
-   CALL construct_filename1 ( bdyname , 'wrfbdy' , grid%id , 2 )
-   CALL open_w_dataset ( id, TRIM(bdyname) , grid , config_flags , output_boundary , "DATASET=BOUNDARY", ierr )
-   IF ( ierr .NE. 0 ) THEN
-     WRITE (wrf_err_message,*)'ideal: error opening wrfbdy for writing ',ierr
-     CALL wrf_error_fatal( wrf_err_message )
    ENDIF
-   CALL output_boundary ( id, grid , config_flags , ierr )
-   CALL close_dataset ( id , config_flags , "DATASET=BOUNDARY" )
 
    RETURN
 END SUBROUTINE med_initialdata_output

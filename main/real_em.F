@@ -58,7 +58,7 @@ real::t1,t2
 
    !  Define the name of this program (program_name defined in module_domain)
 
-   program_name = "REAL_EM V2.0 PREPROCESSOR"
+   program_name = "REAL_EM V2.0.2 PREPROCESSOR"
 
 #ifdef DM_PARALLEL
    CALL disable_quilting

@@ -126,6 +126,23 @@ PROGRAM wrf
    NULLIFY( null_domain )
 
 !<DESCRIPTION>
+! The distributed parallel build is required for WRF nesting options.
+! The non-MPI build that allows nesting is only supported on
+! DEC Alpha.  Check to see if the WRF model is being asked for a
+! for a multi-domain run (max_dom > 1, from the namelist).  If so,
+! then we check to make sure that we are under the parallel
+! run option or we are on an acceptable machine.
+!</DESCRIPTION>
+
+   CALL nl_get_max_dom( 1, max_dom )
+   IF ( max_dom > 1 ) THEN
+#if defined(DM_PARALLEL) || defined(DEC_ALPHA)
+#else
+   CALL wrf_error_fatal( 'nesting requires MPI build or running on DEC Alpha' ) 
+#endif
+   END IF
+
+!<DESCRIPTION>
 ! The top-most domain in the simulation is then allocated and configured
 ! by calling <a href=alloc_and_configure_domain.html>alloc_and_configure_domain</a>.
 ! Here, in the case of this root domain, the routine is passed the

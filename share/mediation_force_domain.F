@@ -81,6 +81,7 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
 ! vvvvvvvvvv EM PART 1 BFB (bug) vvvvvvvvvv
      grid => parent_grid
 #  include "deref_kludge.h"
+     CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
      CALL interp_domain_em_part1 ( grid , nested_grid%intermediate_grid, config_flags ,  &
 !
 #  include "em_actual_args.inc"
@@ -89,6 +90,7 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
 
      grid => nested_grid%intermediate_grid
 #  include "deref_kludge.h"
+     CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
      CALL couple_or_uncouple_em ( grid , config_flags ,  .true., &
 !
 #  include "em_actual_args.inc"
@@ -96,6 +98,7 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
                  )
      grid => nested_grid
 #  include "deref_kludge.h"
+     CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
      CALL couple_or_uncouple_em ( nested_grid , config_flags ,  .true., &
 !
 #  include "em_actual_args.inc"
@@ -180,7 +183,7 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
         ! uncouple the nest
         grid => nested_grid
 #  include "deref_kludge.h"
-        CALL model_to_grid_config_rec ( nested_grid%id , model_config_rec , config_flags )
+        CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
         CALL couple_or_uncouple_em( nested_grid , config_flags ,  .false. , &
 !
 #  include "em_actual_args.inc"

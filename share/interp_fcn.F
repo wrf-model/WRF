@@ -121,6 +121,7 @@
            ENDDO
         ENDDO
      ENDDO
+   !$OMP END PARALLEL DO
 #endif
 
 #ifdef DUMBCOPY
@@ -899,6 +900,7 @@
            ENDDO
         ENDDO
      ENDDO
+   !$OMP END PARALLEL DO
 #endif
 
 #ifdef DUMBCOPY

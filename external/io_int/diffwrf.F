@@ -1,6 +1,21 @@
 module read_util_module
 
+#ifdef crayx1
+#define iargc ipxfargc
+#endif
+
 contains
+
+#ifdef crayx1
+   subroutine getarg(i, harg)
+     implicit none
+     character(len=*) :: harg
+     integer :: ierr, ilen, i
+
+     call pxfgetarg(i, harg, ilen, ierr)
+     return
+   end subroutine getarg
+#endif
 
    subroutine arguments(v2file, lmore)
      implicit none

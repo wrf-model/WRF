@@ -520,14 +520,9 @@ subroutine netcdf_err(err,Status)
   if( err==NF_NOERR )then
     Status = WRF_NO_ERR
   else
-#ifndef CRAYX1
     errmsg = NF_STRERROR(err) 
     write(msg,*) 'NetCDF error: ',errmsg
     call wrf_debug ( WARN , TRIM(msg))
-#else
-! From Peter Johnsen, Cray. Do not know what's magic about 102. JM 20040505
-    write(102,*) 'netcdf err = ',err
-#endif
     Status = WRF_WARN_NETCDF
   endif
   return

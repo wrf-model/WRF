@@ -13,6 +13,15 @@ MODULE module_get_file_names
 CONTAINS
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#ifdef crayx1
+   SUBROUTINE system(cmd)
+      IMPLICIT NONE
+      CHARACTER (LEN=*) , INTENT(IN) :: cmd
+      integer :: ierr
+      call pxfsystem(cmd, len(cmd), ierr)
+   RETURN
+   END SUBROUTINE system
+#endif
 
    SUBROUTINE unix_ls ( root , id )
       USE module_dm

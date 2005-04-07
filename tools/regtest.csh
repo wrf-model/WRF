@@ -1181,7 +1181,7 @@ endif
 #	And we can stick the input data where we want, the WRFV2 directory has been created.
 
 ( cd WRFV2/test/em_real  ; ln -sf $thedataem/* . ) 
-( cd WRFV2/test/nmm_real ; ln -sf $thedatanmm/*  . ; ln -sf co2.60_hyb_bot40m co2_trans )
+( cd WRFV2/test/nmm_real ; tar -xf $thedatanmm/foo.tar ; ln -sf co2.60_hyb_bot40m co2_trans )
 #DAVE###################################################
 ( cd WRFV2/test/em_real ; ls -ls )
 ( cd WRFV2/test/nmm_real ; ls -ls )
@@ -1406,7 +1406,7 @@ banner 7
 					sed -e '/^OMP/d' -e '/^FCOPTIM/d' -e '/^FCDEBUG/s/#//g' ./configure.wrf >! foo ; /bin/mv foo configure.wrf
 				else
 					sed -e '/^OMP/s/noauto/noauto:noopt/' \
-					                 -e '/^FCOPTIM/d' -e '/^FCDEBUG/s/#//g' ./configure.wrf >! foo ; /bin/mv foo configure.wrf
+				                         -e '/^FCOPTIM/d' -e '/^FCDEBUG/s/#//g' ./configure.wrf >! foo ; /bin/mv foo configure.wrf
 				endif
 			else if ( `uname` == Linux ) then
 				if ( ( $compopt == $COMPOPTS[1] ) || ( $compopt == $COMPOPTS[3] ) ) then
@@ -1789,12 +1789,10 @@ banner 19
 #DAVE###################################################
 
                         set compopt = $COMPOPTS[3]   # ! parallel only
-                        set filetag = 2003-04-17_00:00:00
+                        set filetag = 2005-03-21_15:00:00
                         set phys_option=1
                         pushd test/$core
 
-                        rm wrfinput_d01 >& /dev/null
-                        rm wrfbdy_d01   >& /dev/null
 #DAVE###################################################
 echo did rms
 echo $filetag $phys_option
@@ -1804,7 +1802,8 @@ banner 19a
 
 			cp ${CUR_DIR}/io_format io_format
 			sed -e '/^ io_form_history /,/^ io_form_boundary/d' -e '/^ restart_interval/r ./io_format' \
-			    namelist.input.hi_regtest >! namelist.input
+			    namelist.input.regtest >! namelist.input
+
 #DAVE###################################################
 echo did cp of namelist
 ls -ls namelist.input
@@ -1813,50 +1812,27 @@ banner 19b
 #set ans = "$<"
 #DAVE###################################################
 
-			#	IBM machines have a tough time running a 1 proc job if we asked for 
-			#	several MPI processes (and NMM is only MPI), so we spoon feed
-			#	the IC/BC from a run formerly known as "generated on a single proc".
+			#	IC/BC from a run formerly known as "generated on a single proc".
 
-			if ( `uname` == AIX ) then
-				set RUNCOMMAND = $MPIRUNCOMMAND
-
-				if ( ( ! -e /ptmp/gill/wrfinput_d01 ) || ( ! -e /ptmp/gill/wrfbdy_d01 ) ) then
-if ( $user != gill ) then
-cat >> ${DEF_DIR}/wrftest.output << EOF
-
-
-Sorry, looks like there are missing files for the IBM.
-Tell Dave to get them from 
-/GILL/AIX_NMM_IC.tar and to untar the file in /ptmp/gill
-on the IBM `hostname`
+			set RUNCOMMAND = ( $MPIRUNCOMMAND )
+			if ( ( ! -e wrfinput_d01 ) || ( ! -e wrfbdy_d01 ) ) then
+				if ( $user != gill ) then
+					cat >> ${DEF_DIR}/wrftest.output << EOF
+Sorry, looks like there are missing files.
+Tell Dave.
 The Mgmt
 EOF
-$MAIL -s "REGRESSION FAILURE $ARCH[1] " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
-exit ( 1 ) 
-endif
-
-					pushd /ptmp/gill
-					msread AIX_NMM_IC.tar /GILL/AIX_NMM_IC.tar 
-					tar -xf AIX_NMM_IC.tar
-					popd
+					$MAIL -s "REGRESSION FAILURE $ARCH[1] " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
+					exit ( 1 ) 
 				endif
 
-				ln -sf /ptmp/gill/IO_FORM=${IO_FORM}/wrfinput_d01 .
-				ln -sf /ptmp/gill/IO_FORM=${IO_FORM}/wrfbdy_d01 .
-			else
-				set RUNCOMMAND = `echo $MPIRUNCOMMAND | sed "s/$Num_Procs/1/"`
-				$RUNCOMMAND ../../main/convert_nmm.exe >&! print.out.convert_${core}_Phys $MPIRUNCOMMANDPOST
 			endif
 #DAVE###################################################
-echo ran nmm convert.exe except on IBM
-ls -ls print.out.convert_${core}_Phys
-tail print.out.convert_${core}_Phys
+echo wrfinput and wrfbdy from a previous run
 banner 19c
 #set ans = "$<"
 #DAVE###################################################
-			/bin/mv rsl.error.0000 print.out.convert.exe
 #DAVE###################################################
-echo did convert for nmm input, it fails on IBM, but we copied 1 p input data over
 ls -lsL wrfinput* wrfb*
 if ( $IO_FORM_NAME[$IO_FORM] == io_netcdf ) then
 	ncdump -v Times wrfb* | tail -20
@@ -1879,14 +1855,23 @@ banner 21
 					set RUNCOMMAND = `echo $MPIRUNCOMMAND | sed "s/$Num_Procs/$n/"`
 				endif
 	
+				#	A fairly short forecast, 10 time steps
+
+				sed -e 's/^ run_hours *= *[0-9][0-9]*/ run_hours = 0 /' \
+				    -e 's/^ run_minutes *= *[0-9]*/ run_minutes = 3 /' \
+				    -e 's/^ history_interval *= *[0-9][0-9][0-9]*/ history_interval = 3 /' \
+				    -e 's/^ frames_per_outfile *= [0-9]*/ frames_per_outfile = 200/g' \
+				    namelist.input >! namelist.input.temp
+				mv -f namelist.input.temp namelist.input
+
 				# WRF output quilt servers are only tested for MPI configuration.  
 				# Currently, only one WRF output quilt server is used.  
 		
 				if ( ( $QUILT == TRUE ) && ( $n == $Num_Procs ) ) then
 					if ( $compopt == $COMPOPTS[3] ) then
 						#	For now, test only one group of one output quilt servers.  
-						sed -e 's/ nio_tasks_per_group *= *[0-9][0-9]*/ nio_tasks_per_group = 1/g' \
-						    -e 's/ nio_groups *= *[0-9][0-9]*/ nio_groups = 1/g' \
+						sed -e 's/ nio_tasks_per_group *= *[0-9]*/ nio_tasks_per_group = 1/g' \
+						    -e 's/ nio_groups *= *[0-9]*/ nio_groups = 1/g' \
 						namelist.input >! namelist.input.temp
 						mv -f namelist.input.temp namelist.input
 						echo "Building namelist.input.$core.${phys_option}.$compopt with one I/O quilt server enabled."

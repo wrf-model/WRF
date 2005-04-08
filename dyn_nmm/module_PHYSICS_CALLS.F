@@ -300,15 +300,15 @@
      &                 ,RTHRATENLW=THRATENLW,RTHRATENSW=THRATENSW       &
      &                 ,RTHRATEN=THRATEN                                &
      &                 ,GLW=GLW,GSW=SWNETDN,SWDOWN=SWDOWN               &
-     &                 ,XLAT=XLAT,XLON=XLONG,ALBEDO=ALBEDO,EMISS=EPSR   &
+     &                 ,XLAT=XLAT,XLONG=XLON,ALBEDO=ALBEDO,EMISS=EPSR   &
      &                 ,XLAND=XLAND,TSK=TSFC                            &
      &                 ,HTOP=HTOP,HBOT=HBOT,CUPPT=CUPPT                 &
      &                 ,VEGFRA=VEGFRC,SNOW=SNOW                         &
      &                 ,RHO=RR,P8W=P8W,P=P_PHY,PI=PI_PHY                &
      &                 ,DZ8W=DZ,T=T_PHY,T8W=T8W,GMT=GMT                 &
      &                 ,JULDAY=JULDAY,JULYR=JULYR,NPHS=NPHS             &
-     &                 ,LW_PHYSICS=CONFIG_FLAGS%LW_PHYSICS              &
-     &                 ,SW_PHYSICS=CONFIG_FLAGS%SW_PHYSICS              &
+     &                 ,LW_PHYSICS=CONFIG_FLAGS%RA_LW_PHYSICS           &
+     &                 ,SW_PHYSICS=CONFIG_FLAGS%RA_SW_PHYSICS           &
      &                 ,RADT=RADT,STEPRA=NRAD,ICLOUD=ICLOUD             &
      &                 ,WARM_RAIN=WARM_RAIN                             & 
      &                 ,TOTSWDN=TOTSWDN,TOTLWDN=TOTLWDN                 &

@@ -21,7 +21,7 @@ libwrfio_mcel.a:		$(OBJS)
 
 .F90.o:
 			$(CPP) $*.F90 | $(M4) - > $*.f
-			$(FC) $(FFLAGS) -I../../inc -c $*.f
+			$(FC) $(FFLAGS) -I../ioapi_share -c $*.f
 
 superclean:
 			/bin/rm -f *.f *.o libwrfio_mcel.a

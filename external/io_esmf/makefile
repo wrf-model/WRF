@@ -19,7 +19,7 @@ $(TARGET) : $(OBJS)
 
 .F90.o :
 	$(CPP) -C -P -I. $*.F90 > $*.f
-	$(FC) -c -g $*.f
+	$(FC) -c -g -I../ioapi_share $*.f
 
 superclean: 
 	/bin/rm -f *.f *.o $(TARGET) *.mod

@@ -45,18 +45,9 @@ module wrf_phdf5_data
   integer                , parameter      :: MemOrdLen        = 3
   character (DateStrLen) , parameter      :: ZeroDate = '0000-00-00-00:00:00'
 
-  !BEGINIOFLAGS
-  integer, parameter  :: WRF_FILE_NOT_OPENED                  = 100
-  integer, parameter  :: WRF_FILE_OPENED_NOT_COMMITTED        = 101
-  integer, parameter  :: WRF_FILE_OPENED_AND_COMMITTED        = 102
-  integer, parameter  :: WRF_FILE_OPENED_FOR_READ             = 103
-  integer, parameter  :: WRF_REAL                             = 104
-  integer, parameter  :: WRF_REAL8                            = 105
-  integer, parameter  :: WRF_INTEGER                          = 106
-  integer, parameter  :: WRF_LOGICAL                          = 107
-  integer, parameter  :: WRF_CHARACTER                        = 108
-  integer, parameter  :: WRF_REAL4                            = WRF_REAL
-  !ENDIOFLAGS
+  include 'wrf_io_flags.h'
+! This is a hack.  WRF IOAPI no longer supports WRF_CHARACTER.  Rip this out!  
+  integer, parameter  :: WRF_CHARACTER                        = 1080
 
   character (120)                         :: msg
 

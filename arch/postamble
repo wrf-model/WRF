@@ -7,6 +7,9 @@ RM	= 	rm -f
 
 #	There is probably no reason to modify these rules
 
+wrf_ioapi_includes :
+	( cd ../external/ioapi_share ; \
+	$(MAKE) NATIVE_RWORDSIZE="$(NATIVE_RWORDSIZE)" RWORDSIZE="$(RWORDSIZE)" )
 
 .F.i:
 	$(RM) $@

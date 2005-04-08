@@ -6,7 +6,7 @@ SFC		=	$(FC)
 LD		=	f90
 CC              =       cc
 SCC		=	$(CC)
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 FCDEBUG         =       # -g
 FCBASEOPTS      =       -freeform -I. -w
 FCFLAGS		=	$(FCBASEOPTS)
@@ -35,21 +35,14 @@ CC_TOOLS        =       $(CC)
 #### because the SGI Fortran compiler complains about long source lines.      ####
 SED_FTN = sed -f ../arch/no_file_line.sed
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH FC="$(FC) $(PROMOTION) -freeform -I." RANLIB="$(RANLIB)" CPP="$(CPP)"; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+	make NETCDFPATH=CONFIGURE_NETCDF_PATH FC="$(FC) $(PROMOTION) -freeform -I." RANLIB="$(RANLIB)" CPP="$(CPP)" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -102,7 +95,7 @@ FC		=	f90
 SFC		=	$(FC)
 CC              =       cc
 SCC		=	$(CC)
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 FCDEBUG         =       # -g
 FCBASEOPTS      =       -freeform -I. -w
 FCFLAGS		=	-freeform -I. -w
@@ -132,20 +125,13 @@ CC_TOOLS        =       $(CC)
 #### because the SGI Fortran compiler complains about long source lines.      ####
 SED_FTN = sed -f ../arch/no_file_line.sed
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
 
 wrfio_nf : 
-	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH FC="$(FC) $(PROMOTION) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH FC="$(FC) $(PROMOTION) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -194,13 +180,13 @@ SFC		=	$(FC)
 LD              =       f90
 CC              =       cc
 SCC		=	$(CC)
-PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =       -64 -DLANDREAD_STUB
 FCOPTIM         =       -O3
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 FCDEBUG         =       # -g
-RWORDSIZE       =       4
 FCBASEOPTS      =       -freeform -I. -64 -cpp -OPT:Olimit=5269 $(FCDEBUG) -w
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
+PROMOTION	=	-r$(RWORDSIZE) -i4
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../chem -I../inc
 EXTRAMODULES    =
@@ -229,20 +215,13 @@ CC_TOOLS        =       $(CC)
 #### because the SGI Fortran compiler complains about long source lines.      ####
 SED_FTN = sed -f ../arch/no_file_line.sed
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
 
 wrfio_nf : 
-	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH FC="$(FC) $(PROMOTION) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH FC="$(FC) $(PROMOTION) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -295,7 +274,7 @@ SFC		=	$(FC)
 LD              =       f90 -n32 -mips4 -w
 CC              =       cc
 SCC		=	$(CC)
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =       -n32 -mips4
 FCDEBUG         =       # -g
@@ -326,20 +305,13 @@ CC_TOOLS        =       $(CC)
 #### because the SGI Fortran compiler complains about long source lines.      ####
 SED_FTN = sed -f ../arch/no_file_line.sed
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
 
 wrfio_nf : 
-	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCFLAGS)" ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCFLAGS)" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -390,7 +362,7 @@ SFC		=	$(FC)
 LD              =       f90
 CC              =       cc
 SCC		=	$(CC)
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =       -64 -DLANDREAD_STUB
 FCOPTIM         =       -O3
@@ -425,20 +397,13 @@ CC_TOOLS        =       $(CC)
 #### because the SGI Fortran compiler complains about long source lines.      ####
 SED_FTN = sed -f ../arch/no_file_line.sed
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
 
 wrfio_nf : 
-	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCFLAGS)" ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCFLAGS)" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -498,7 +463,7 @@ SFC		=	$(FC)
 LD              =       f90
 CC              =       cc
 SCC		=	$(CC)
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =       -w -64 -mips4 -DWRF_RSL_IO -DMAXDOM_MAKE=$(MAX_DOMAINS) \
                         -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL/RSL -DDM_PARALLEL -DLANDREAD_STUB
@@ -534,7 +499,7 @@ CC_TOOLS        =       $(CC)
 #### because the SGI Fortran compiler complains about long source lines.      ####
 SED_FTN = sed -f ../arch/no_file_line.sed
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -546,15 +511,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCFLAGS)" ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
-
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCFLAGS)" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -612,7 +569,7 @@ SFC		=	$(FC)
 LD              =       f95
 CC              =       cc
 SCC		=	$(CC)
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
 PROMOTION	=	-xtypemap=real:$(RSIZEBITS),integer:32
 CFLAGS          =
@@ -653,20 +610,13 @@ CC_TOOLS        =       $(CC)
 #### usually due to cpp translating __FILE__ to a full pathname.              ####
 SED_FTN = sed -f ../arch/no_file_line.sed
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
 
 wrfio_nf : 
-	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCBASEOPTS) " ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCBASEOPTS) " )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -743,7 +693,7 @@ SFC		=	$(FC)
 LD              =       f95
 CC              =       cc
 SCC		=	$(CC)
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 ARCHFLAGS       =       -DNETCDF -DYYY -DINTIO \
                         -DDM_PARALLEL -DRSL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
@@ -787,7 +737,7 @@ CC_TOOLS        =       $(CC)
 #### usually due to cpp translating __FILE__ to a full pathname.              ####
 SED_FTN = sed -f ../arch/no_file_line.sed
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a gen_comms.c wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a gen_comms.c wrfio_int module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -799,14 +749,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCBASEOPTS)" ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCBASEOPTS)" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -876,7 +819,7 @@ SFC		=	$(FC)
 LD              =       f95
 CC              =       cc
 SCC		=	$(CC)
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
 PROMOTION	=	-xtypemap=real:$(RSIZEBITS),integer:32
 CFLAGS          =
@@ -917,20 +860,13 @@ CC_TOOLS        =       $(CC)
 #### usually due to cpp translating __FILE__ to a full pathname.              ####
 SED_FTN = sed -f ../arch/no_file_line.sed
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
 
 wrfio_nf : 
-	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCBASEOPTS) " ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCBASEOPTS) " )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -992,7 +928,7 @@ SFC		=	$(FC)
 LD              =       f95
 CC              =       cc
 SCC		=	$(CC)
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 ARCHFLAGS       =       -DNETCDF -DYYY -DINTIO \
                         -DDM_PARALLEL -DRSL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
@@ -1036,7 +972,7 @@ CC_TOOLS        =       $(CC)
 #### usually due to cpp translating __FILE__ to a full pathname.              ####
 SED_FTN = sed -f ../arch/no_file_line.sed
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a gen_comms.c wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a gen_comms.c wrfio_int module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -1048,14 +984,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCBASEOPTS)" ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCBASEOPTS)" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -1111,7 +1040,7 @@ SFC		=	$(FC)
 LD              =       xlf90_r
 CC              =       cc_r
 SCC		=	$(CC)
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
 CFLAGS          =       -DNOUNDERSCORE
 FCOPTIM         =       -O2 -qarch=auto
@@ -1142,20 +1071,13 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
 
 wrfio_nf : 
-	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -1230,7 +1152,7 @@ SFC		=	$(FC)
 LD              =       xlf90_r
 CC              =       cc_r
 SCC		=	$(CC)
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
 CFLAGS          =       -DNOUNDERSCORE
 FCOPTIM         =       -O2 -qarch=auto
@@ -1260,20 +1182,13 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
 
 wrfio_nf : 
-	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -1317,7 +1232,7 @@ SCC             =       cc_r
 FC              =       mpxlf90_r
 LD              =       mpxlf90_r
 CC              =       mpcc_r
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
 CFLAGS          =       -O3 -DNOUNDERSCORE  -I../external/RSL_LITE -DDM_PARALLEL \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
@@ -1349,7 +1264,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL_LITE/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; cat ../external/RSL_LITE/gen_comms.c >> ../tools/gen_comms.c )
@@ -1358,14 +1273,7 @@ module_dm.F : ../external/RSL_LITE/module_dm.F
 	( /bin/cp module_dm_warning module_dm.F ; cat ../external/RSL_LITE/module_dm.F >> module_dm.F )
 
 wrfio_nf : 
-	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -1428,7 +1336,7 @@ SCC             =       cc_r
 FC              =       mpxlf90_r
 LD              =       mpxlf90_r
 CC              =       mpcc_r
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
 CFLAGS          =       -DNOUNDERSCORE -DWRF_RSL_IO  -I../external/RSL/RSL -DDM_PARALLEL  \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
@@ -1460,7 +1368,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; cat ../external/RSL/gen_comms.c >> ../tools/gen_comms.c )
@@ -1469,14 +1377,7 @@ module_dm.F : ../external/RSL/module_dm.F
 	( /bin/cp module_dm_warning module_dm.F ; cat ../external/RSL/module_dm.F >> module_dm.F )
 
 wrfio_nf : 
-	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -1539,7 +1440,7 @@ SCC             =       cc_r
 FC              =       mpxlf90_r
 LD              =       mpxlf90_r
 CC              =       mpcc_r
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
 CFLAGS          =       -DNOUNDERSCORE -DWRF_RSL_IO  -I../external/RSL/RSL -DDM_PARALLEL  \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
@@ -1571,7 +1472,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 CONFIGURE_WRFIO_PHDF5 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 CONFIGURE_WRFIO_PHDF5 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; cat ../external/RSL/gen_comms.c >> ../tools/gen_comms.c )
@@ -1580,14 +1481,7 @@ module_dm.F : ../external/RSL/module_dm.F
 	( /bin/cp module_dm_warning module_dm.F ; cat ../external/RSL/module_dm.F >> module_dm.F )
 
 wrfio_nf : 
-	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 wrfio_phdf5 : 
 	( cd ../external/io_phdf5 ; make PHDF5PATH=CONFIGURE_PHDF5_PATH FC="$(FC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qfree=F90 -qzerosize" ; /bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc )
@@ -1653,7 +1547,7 @@ SCC             =       cc_r
 FC              =       mpxlf90_r
 LD              =       mpxlf90_r
 CC              =       mpcc_r
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
 CFLAGS          =       -DNOUNDERSCORE  -I../external/RSL_LITE -DDM_PARALLEL  \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
@@ -1685,7 +1579,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 CONFIGURE_WRFIO_PHDF5 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 CONFIGURE_WRFIO_PHDF5 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL_LITE/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; cat ../external/RSL_LITE/gen_comms.c >> ../tools/gen_comms.c )
@@ -1694,14 +1588,7 @@ module_dm.F : ../external/RSL_LITE/module_dm.F
 	( /bin/cp module_dm_warning module_dm.F ; cat ../external/RSL_LITE/module_dm.F >> module_dm.F )
 
 wrfio_nf : 
-	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 wrfio_phdf5 : 
 	( cd ../external/io_phdf5 ; make PHDF5PATH=CONFIGURE_PHDF5_PATH FC="$(FC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qfree=F90 -qzerosize" ; /bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc )
@@ -1769,7 +1656,7 @@ SCC             =       cc_r
 FC		=	mpxlf90_r
 LD		=	mpxlf90_r
 CC              =       mpcc_r
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
 CFLAGS          =       -DNOUNDERSCORE -DWRF_RSL_IO  -I../external/RSL/RSL -DDM_PARALLEL  \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
@@ -1801,7 +1688,7 @@ NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 MAX_PROC        =       1024
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; cat ../external/RSL/gen_comms.c >> ../tools/gen_comms.c )
@@ -1810,14 +1697,7 @@ module_dm.F : ../external/RSL/module_dm.F
 	( /bin/cp module_dm_warning module_dm.F ; cat ../external/RSL/module_dm.F >> module_dm.F )
 
 wrfio_nf : 
-	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -1901,7 +1781,7 @@ SCC             =       cc_r
 FC              =       mpxlf90_r
 LD              =       mpxlf90_r
 CC              =       mpcc_r
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
 CFLAGS          =       -DNOUNDERSCORE -DWRF_RSL_IO  -I../external/RSL/RSL -DDM_PARALLEL  \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
@@ -1933,7 +1813,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; cat ../external/RSL/gen_comms.c >> ../tools/gen_comms.c )
@@ -1942,14 +1822,7 @@ module_dm.F : ../external/RSL/module_dm.F
 	( /bin/cp module_dm_warning module_dm.F ; cat ../external/RSL/module_dm.F >> module_dm.F )
 
 wrfio_nf : 
-	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -2012,7 +1885,7 @@ SCC             =       cc_r
 FC              =       mpxlf90_r
 LD              =       mpCC_r
 CC              =       mpcc_r
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 MCELHOME        =       /home/bluesky/bettenc/disttest
 PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
 CFLAGS          =       -DNOUNDERSCORE -DWRF_RSL_IO  -I../external/RSL/RSL -DDM_PARALLEL  \
@@ -2051,7 +1924,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int wrfio_mcel gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int wrfio_mcel gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( cat ../tools/gen_comms_warning ../external/RSL/gen_comms.c > ../tools/gen_comms.c )
@@ -2061,14 +1934,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -2138,7 +2004,7 @@ SCC             =       cc_r
 FC              =       mpxlf90_r
 LD              =       mpxlf90_r
 CC              =       mpcc_r
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
 CFLAGS          =       -DNOUNDERSCORE -DWRF_RSL_IO  -I../external/RSL/RSL -DDM_PARALLEL  \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
@@ -2191,7 +2057,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F wrfio_esmf
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F wrfio_esmf
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; cat ../external/RSL/gen_comms.c >> ../tools/gen_comms.c )
@@ -2200,14 +2066,7 @@ module_dm.F : ../external/RSL/module_dm.F
 	( /bin/cp module_dm_warning module_dm.F ; cat ../external/RSL/module_dm.F >> module_dm.F )
 
 wrfio_nf : 
-	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -2270,7 +2129,7 @@ SCC             =       cc_r
 FC              =       mpxlf90_r
 LD              =       mpxlf90_r
 CC              =       mpcc_r
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
 CFLAGS          =       -DNOUNDERSCORE -DWRF_RSL_IO  -I../external/RSL/RSL -DDM_PARALLEL  \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
@@ -2324,7 +2183,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F wrfio_esmf
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F wrfio_esmf
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; cat ../external/RSL/gen_comms.c >> ../tools/gen_comms.c )
@@ -2333,14 +2192,7 @@ module_dm.F : ../external/RSL/module_dm.F
 	( /bin/cp module_dm_warning module_dm.F ; cat ../external/RSL/module_dm.F >> module_dm.F )
 
 wrfio_nf : 
-	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -2403,7 +2255,7 @@ SCC             =       cc_r
 FC              =       xlf90_r
 LD              =       xlf90_r
 CC              =       cc_r
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
 CFLAGS          =       -DNOUNDERSCORE -DWRF_RSL_IO  -I../external/RSL/RSL -DDM_PARALLEL  \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -DSTUBMPI
@@ -2435,7 +2287,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; cat ../external/RSL/gen_comms.c >> ../tools/gen_comms.c )
@@ -2444,14 +2296,7 @@ module_dm.F : ../external/RSL/module_dm.F
 	( /bin/cp module_dm_warning module_dm.F ; cat ../external/RSL/module_dm.F >> module_dm.F )
 
 wrfio_nf : 
-	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -2518,7 +2363,7 @@ SCC             =       cc_r
 FC              =       xlf90_r
 LD              =       xlf90_r
 CC              =       cc_r
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
 CFLAGS          =       -DNOUNDERSCORE -DWRF_RSL_IO  -I../external/RSL/RSL -DDM_PARALLEL  \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -DSTUBMPI
@@ -2550,7 +2395,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; cat ../external/RSL/gen_comms.c >> ../tools/gen_comms.c )
@@ -2559,14 +2404,7 @@ module_dm.F : ../external/RSL/module_dm.F
 	( /bin/cp module_dm_warning module_dm.F ; cat ../external/RSL/module_dm.F >> module_dm.F )
 
 wrfio_nf : 
-	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -2643,7 +2481,7 @@ SFC		=	$(FC)
 LD              =       f90
 CC              =       cc
 SCC		=	$(CC)
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DYYY -DINTIO \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         -DTRIEDNTRUE   \
@@ -2673,21 +2511,14 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -2752,7 +2583,7 @@ SFC		=	$(FC)
 LD              =       f90
 CC              =       cc
 SCC		=	$(CC)
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DNETCDF -DYYY -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL -DRSL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
@@ -2786,7 +2617,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a gen_comms.c wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a gen_comms.c wrfio_int module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -2798,14 +2629,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -2871,7 +2695,7 @@ SFC		=	$(FC)
 LD              =       f90
 CC              =       cc
 SCC		=	$(CC)
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DYYY -DINTIO \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         -DTRIEDNTRUE   \
@@ -2902,21 +2726,14 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w" ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -2981,7 +2798,7 @@ SFC		=	$(FC)
 LD              =       f90
 CC              =       cc
 SCC		=	$(CC)
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DNETCDF -DYYY -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL -DRSL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
@@ -3016,7 +2833,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a gen_comms.c wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a gen_comms.c wrfio_int module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -3028,14 +2845,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w" ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -3102,7 +2912,7 @@ SFC		=	f90
 LD              =       mpif90
 CC              =       mpicc
 SCC		=	cc
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DNETCDF -DYYY -DINTIO \
                         -DDM_PARALLEL -DRSL_LITE \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
@@ -3136,7 +2946,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int ../external/RSL_LITE/librsl_lite.a gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int ../external/RSL_LITE/librsl_lite.a gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL_LITE/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -3148,14 +2958,7 @@ module_dm.F : ../external/RSL_LITE/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -3224,7 +3027,7 @@ SFC		=	f90
 LD              =       mpif90
 CC              =       mpicc
 SCC		=	cc
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DYYY -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL -DRSL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
@@ -3258,7 +3061,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int ../external/RSL/RSL/librsl.a gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int ../external/RSL/RSL/librsl.a gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -3270,14 +3073,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -3346,7 +3142,7 @@ SFC		=	f90
 LD              =       mpif90
 CC              =       mpicc
 SCC		=	cc
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DYYY -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL -DRSL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
@@ -3381,7 +3177,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int ../external/RSL/RSL/librsl.a gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int ../external/RSL/RSL/librsl.a gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -3393,14 +3189,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w" ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -3469,7 +3258,7 @@ SFC		=	$(FC)
 LD              =       f90
 CC              =       cc
 SCC		=	$(CC)
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DYYY -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL -DRSL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
@@ -3504,7 +3293,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int ../external/RSL/RSL/librsl.a gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int ../external/RSL/RSL/librsl.a gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -3516,14 +3305,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w" ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -3589,7 +3371,7 @@ SFC		=	f90
 LD              =       mpif90
 CC              =       mpicc
 SCC		=	cc
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DYYY -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL -DRSL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
@@ -3623,7 +3405,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int ../external/RSL/RSL/librsl.a gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int ../external/RSL/RSL/librsl.a gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -3635,14 +3417,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -3708,7 +3483,7 @@ SFC		=	f90
 LD              =       mpif90 -f90=cxx
 CC              =       mpicc
 SCC		=	cc
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DYYY -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL -DRSL -DFLOATSAFE \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
@@ -3747,7 +3522,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int ../external/RSL/RSL/librsl.a wrfio_mcel gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int ../external/RSL/RSL/librsl.a wrfio_mcel gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -3759,14 +3534,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -3837,7 +3605,7 @@ SFC             =       echo # mpif90
 LD              =       echo # mpif90
 CC              =       echo # mpicc
 SCC		=	echo # cc
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 ARCHFLAGS       =       -DAUTODOC_BUILD CONFIGURE_NETCDF_FLAG -DYYY -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL="'<b>DM_PARALLEL</b>'" -DRSL="'<b>RSL</b>'" \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
@@ -3871,7 +3639,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int ../external/RSL/RSL/librsl.a gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int ../external/RSL/RSL/librsl.a gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -3883,14 +3651,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -3945,7 +3706,7 @@ SFC		=	$(FC)
 LD              =       fort
 CC              =       cc
 SCC		=	$(CC)
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =       -DF2CSTYLE 
 FCOPTIM         =       -fast -O4
@@ -3975,7 +3736,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; \
@@ -3983,14 +3744,7 @@ module_dm.F :
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCBASENOINL) -w" TRADFLAG="-traditional" ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCBASENOINL) -w" TRADFLAG="-traditional" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -4043,7 +3797,7 @@ SFC		=	$(FC)
 LD              =       fort
 CC              =       cc
 SCC		=	$(CC)
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =       -DF2CSTYLE 
 FCOPTIM         =       -fast -O4
@@ -4073,7 +3827,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -4081,14 +3835,7 @@ module_dm.F :
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCBASENOINL) -w" TRADFLAG="-traditional" ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCBASENOINL) -w" TRADFLAG="-traditional" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -4143,7 +3890,7 @@ SFC		=	f90
 LD              =       mpif90
 CC              =       mpicc
 SCC		=	cc
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =       -DDM_PARALLEL -DWRF_RSL_IO -DF2CSTYLE \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) \
@@ -4177,7 +3924,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -4189,14 +3936,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCBASENOINL) -w" TRADFLAG="-traditional" ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCBASENOINL) -w" TRADFLAG="-traditional" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -4254,7 +3994,7 @@ SFC		=	$(FC)
 LD              =       frt
 CC              =       vcc
 SCC		=	$(CC)
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =
 FCFLAGS         =       -Free -X9 -Am
@@ -4280,21 +4020,14 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1  module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1  module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-	  make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION)" FFLAGS='-Free -X9 -ICONFIGURE_NETCDF_PATH/include' ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+	  make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION)" FFLAGS='-Free -X9 -ICONFIGURE_NETCDF_PATH/include' )
 
 ###########################################################
 #ARCH	Cray
@@ -4303,7 +4036,9 @@ FC		=	f90
 SFC		=	$(FC)
 CC              =       cc
 SCC		=	$(CC)
-RWORDSIZE       =       8
+NATIVE_RWORDSIZE =      8
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+# does this PROMOTION flag work on Cray?  
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =
 FCFLAGS		=	-f free -N 255 -I.
@@ -4328,19 +4063,12 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1  esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1  esmf_time
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-	  make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCFLAGS)" ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+	  make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCFLAGS)" )
 
 solve_interface.o : solve_interface.F
 	$(RM) $@
@@ -4354,7 +4082,7 @@ FC              =       pgf90
 LD              =       pgf90
 CC              =       gcc
 SCC		=	$(CC)
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 SFC             =       $(FC)
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =
@@ -4386,7 +4114,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -4394,14 +4122,7 @@ module_dm.F :
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
           make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION)" TRADFLAG="-traditional" \
-          FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+          FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
@@ -4461,7 +4182,7 @@ LD              =       pgf90
 CC              =       gcc
 SCC		=	$(CC)
 SFC             =       pgf90
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 FCOPTIM		=	-fast
 FCDEBUG		=	#-g
 #FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree -tp p6 $(FCDEBUG)
@@ -4494,7 +4215,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -4506,14 +4227,7 @@ module_dm.F : ../external/RSL/module_dm.F
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
           make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION)" TRADFLAG="-traditional" \
-	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
@@ -4572,7 +4286,7 @@ FC              =       pgf90
 LD              =       pgf90
 CC              =       gcc
 SCC		=	$(CC)
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 SFC             =       $(FC)
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =
@@ -4604,7 +4318,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -4612,14 +4326,7 @@ module_dm.F :
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
           make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION)" TRADFLAG="-traditional" \
-          FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+          FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
@@ -4682,7 +4389,7 @@ LD              =       pgf90
 CC              =       gcc
 SCC		=	$(CC)
 SFC             =       pgf90
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 FCOPTIM		=	-fast
 FCDEBUG		=	#-g
 #FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree -tp p6 $(FCDEBUG)
@@ -4715,7 +4422,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -4727,14 +4434,7 @@ module_dm.F : ../external/RSL/module_dm.F
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
           make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION)" TRADFLAG="-traditional" \
-	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -4797,7 +4497,7 @@ LD              =       mpif90 -f90=pgf90
 CC              =       mpicc -cc=gcc
 SCC		=	gcc
 SFC             =       pgf90
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =       -DDM_PARALLEL -DWRF_RSL_IO \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL/RSL
@@ -4830,7 +4530,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -4842,14 +4542,7 @@ module_dm.F : ../external/RSL/module_dm.F
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
           make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION)" TRADFLAG="-traditional" \
-	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
@@ -4909,7 +4602,7 @@ LD              =       mpif90 -f90=pgf90
 CC              =       mpicc -cc=gcc
 SCC		=	gcc
 SFC             =       pgf90
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =       -DDM_PARALLEL \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL_LITE
@@ -4943,7 +4636,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL_LITE/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -4955,14 +4648,7 @@ module_dm.F : ../external/RSL_LITE/module_dm.F
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
           make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION)" TRADFLAG="-traditional" \
-	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
@@ -5025,7 +4711,7 @@ LD = mpif90
 CC = mpicc
 SCC = cc
 SFC = efc
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS = -DDM_PARALLEL -DWRF_RSL_IO -w \
          -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL/RSL -size_lp64 \
@@ -5062,7 +4748,7 @@ RANLIB = ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       ecc
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -5071,14 +4757,7 @@ gen_comms.c : ../external/RSL/gen_comms.c
 wrfio_nf :
 	( cd ../external/io_netcdf ; \
 	  make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION)" TRADFLAG="-traditional" \
-	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' )
 
 module_dm.F : ../external/RSL/module_dm.F
 	( /bin/cp module_dm_warning module_dm.F ; \
@@ -5147,7 +4826,7 @@ LD = ifort
 CC = cc
 SCC = $(CC)
 SFC = ifort
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
 PROMOTION	=	-real_size $(RSIZEBITS)
 CFLAGS = -DDM_PARALLEL -DWRF_RSL_IO -cm -w \
@@ -5182,7 +4861,7 @@ RANLIB = ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -5191,14 +4870,7 @@ gen_comms.c : ../external/RSL/gen_comms.c
 wrfio_nf :
 	( cd ../external/io_netcdf ; \
 	  make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION)" TRADFLAG="-traditional" \
-	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' )
 
 module_dm.F : ../external/RSL/module_dm.F
 	( /bin/cp module_dm_warning module_dm.F ; \
@@ -5264,7 +4936,7 @@ LD              =       pgf90
 CC              =       gcc
 SCC		=	$(CC)
 SFC             =       $(FC)
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =
 FCOPTIM		=	-fastsse #-Mipa=fast
@@ -5295,7 +4967,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -5306,14 +4978,7 @@ io_flags:
 wrfio_nf :  io_flags
 	( cd ../external/io_netcdf ; \
           make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION)" TRADFLAG="-traditional" \
-          FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+          FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
@@ -5375,7 +5040,7 @@ LD              =       mpif90
 CC              =       mpicc
 SCC		=	gcc
 SFC             =       pgf90
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =       -DDM_PARALLEL -DWRF_RSL_IO \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL/RSL
@@ -5408,7 +5073,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -5425,14 +5090,7 @@ io_flags:
 wrfio_nf :  io_flags
 	( cd ../external/io_netcdf ; \
           make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION)" TRADFLAG="-traditional" \
-	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' )
 
 wrfio_int :  io_flags
 	( cd ../external/io_int ; \
@@ -5493,7 +5151,7 @@ LD              =       mpif90
 CC              =       mpicc
 SCC		=	gcc
 SFC             =       pgf90
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =       -DDM_PARALLEL \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL_LITE
@@ -5526,7 +5184,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL_LITE/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -5543,14 +5201,7 @@ io_flags:
 wrfio_nf :  io_flags
 	( cd ../external/io_netcdf ; \
           make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION)" TRADFLAG="-traditional" \
-	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
@@ -5615,7 +5266,7 @@ LD         = mpif90
 CC         = mpicc
 SCC        = gcc
 SFC        = efc
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS     = -DDM_PARALLEL -w -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) \
              -I../external/RSL_LITE -size_lp64 -I/usr/lib/mpi/mpi_intel/include
@@ -5650,7 +5301,7 @@ RANLIB = ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       ecc
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL_LITE/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -5659,14 +5310,7 @@ gen_comms.c : ../external/RSL_LITE/gen_comms.c
 wrfio_nf :
 	( cd ../external/io_netcdf ; \
 	  make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION)" TRADFLAG="-traditional" \
-	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' )
 
 module_dm.F : ../external/RSL_LITE/module_dm.F
 	( /bin/cp module_dm_warning module_dm.F ; \
@@ -5738,7 +5382,7 @@ LD = efc
 CC = ecc -I. -I/usr/local/vmi/mpich/include
 SCC		=	$(CC)
 SFC = efc
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS = -DDM_PARALLEL -DWRF_RSL_IO \
 -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL/RSL -size_lp64
@@ -5769,7 +5413,7 @@ RANLIB = ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       ecc
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time io_grib1
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time io_grib1
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -5781,14 +5425,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) -Vaxlib -I../.. $(FCFLAGS) -w" ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) -Vaxlib -I../.. $(FCFLAGS) -w" )
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
@@ -5856,7 +5493,7 @@ LD = efc
 CC = ecc -I. -I/usr/local/vmi/mpich/include
 SCC		=	$(CC)
 SFC = efc
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS = -DDM_PARALLEL -I../external/RSL_LITE \
 -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -size_lp64
@@ -5887,7 +5524,7 @@ RANLIB = ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       ecc
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL_LITE/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -5899,14 +5536,7 @@ module_dm.F : ../external/RSL_LITE/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) -Vaxlib -I../.. $(FCFLAGS) -w" ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) -Vaxlib -I../.. $(FCFLAGS) -w" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -5960,7 +5590,7 @@ FC		=	ifort
 CC              =       icc
 SCC		=	$(CC)
 SFC		=	$(FC)
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
 PROMOTION	=	-real_size $(RSIZEBITS)
 FCDEBUG         =       # -g
@@ -5990,21 +5620,14 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) -FR -I. -w" ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) -FR -I. -w" )
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
@@ -6077,7 +5700,7 @@ LD              =       ifort
 CC              =       icc
 SCC		=	$(CC)
 SFC             =       ifort
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
 PROMOTION	=	-real_size $(RSIZEBITS)
 FCOPTIM		=	-O3 -xW
@@ -6109,7 +5732,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       gcc
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -6121,14 +5744,7 @@ module_dm.F : ../external/RSL/module_dm.F
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
           make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION)" TRADFLAG="-traditional" \
-	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' )
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
@@ -6192,7 +5808,7 @@ LD              =       ifort
 CC              =       gcc
 SCC		=	$(CC)
 SFC             =       $(FC)
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
 PROMOTION	=	-real_size $(RSIZEBITS)
 CFLAGS          =
@@ -6223,7 +5839,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -6231,14 +5847,7 @@ module_dm.F :
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
           make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION)" TRADFLAG="-traditional" \
-          FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+          FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' )
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
@@ -6303,7 +5912,7 @@ LD              =       ifort
 CC              =       icc
 SCC		=	$(CC)
 SFC             =       ifort
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
 PROMOTION	=	-real_size $(RSIZEBITS)
 FCOPTIM		=	-O3 -xW
@@ -6335,7 +5944,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       gcc
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -6347,14 +5956,7 @@ module_dm.F : ../external/RSL/module_dm.F
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
           make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION)" TRADFLAG="-traditional" \
-	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' )
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
@@ -6420,7 +6022,7 @@ LD              =       mpif90 -f90=ifort
 CC              =       mpicc -cc=icc
 SCC		=	icc
 SFC             =       ifort
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
 PROMOTION	=	-real_size $(RSIZEBITS)
 FCOPTIM		=	-O3 -xW
@@ -6452,7 +6054,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       gcc
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -6464,14 +6066,7 @@ module_dm.F : ../external/RSL/module_dm.F
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
           make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION)" TRADFLAG="-traditional" \
-	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' )
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
@@ -6536,7 +6131,7 @@ LD              =       mpif90 -f90=ifort
 CC              =       mpicc -cc=gcc
 SCC		=	gcc
 SFC             =       ifort
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
 PROMOTION	=	-real_size $(RSIZEBITS)
 FCOPTIM		=	-O3 -xW
@@ -6568,7 +6163,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       gcc
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -6580,14 +6175,7 @@ module_dm.F : ../external/RSL/module_dm.F
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
           make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION)" TRADFLAG="-traditional" \
-	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+	  FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include -w' )
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
@@ -6669,11 +6257,12 @@ SFC		=	$(FC)
 CC		=	cc
 SCC		=	$(CC)
 LD		=	$(FC)
-RWORDSIZE       =       8
+NATIVE_RWORDSIZE =      8
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 ARCHFLAGS	=	-DNETCDF -DINTIO -DWRF_RSL_IO -DIWORDSIZE=8 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=8 -DTRIEDNTRUE -DONLY_WRFMODEL_IO -DLIMIT_ARGS -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
 		##for DM compilation	-DDM_PARALLEL -DRSL 
-
-PROMOTION	=	-r$(RWORDSIZE) -i4
+# note:  -ew already does this for SX6, see comments above
+PROMOTION	=	
 CFLAGS		=	$(ARCHFLAGS)
 #CFLAGS		=	$(ARCHFLAGS) -DMPI -Dvpp -I../external/RSL/RSL
 
@@ -6719,7 +6308,7 @@ FLIC_MACROS = LMvpp.m4
 VECTOR = 1
 
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int  esmf_time  module_dm.F
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int  esmf_time  module_dm.F
 	( /sbin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
 	  cat ../external/RSL/gen_comms.c >> ../tools/gen_comms.c )
 
@@ -6729,14 +6318,7 @@ module_dm.F:
 
 wrfio_nf :
 	( cd ../external/io_netcdf ; \
-	  make NETCDFPATH=/usr/local/netcdf/current FC="$(FC) $(PROMOTION) $(FCFLAGS)"  ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/sbin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/sbin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/sbin/cp wrf_io_flags.h ../io_quilt )
+	  make NETCDFPATH=/usr/local/netcdf/current FC="$(FC) $(PROMOTION) $(FCFLAGS)"  )
 
 
 wrfio_int :
@@ -6816,8 +6398,8 @@ CC                = icc -I.
 SCC		=	$(CC)
 CC_TOOLS          = cc
 SFC               = ifort
-RWORDSIZE         = 4
-RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
+RWORDSIZE         = $(NATIVE_RWORDSIZE)
+RSIZEBITS	$(NATIVE_RWORDSIZE)	`expr $(RWORDSIZE) \* 8`
 PROMOTION	=	-real_size $(RSIZEBITS)
 CFLAGS            = -w -O3 -ip -tpp2 -c -ftz -no-gcc -DDM_PARALLEL -DWRF_RSL_IO \
                     -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL/RSL
@@ -6857,7 +6439,7 @@ M4                = m4
 RANLIB            = ranlib
 NETCDFPATH	  = CONFIGURE_NETCDF_PATH
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -6871,14 +6453,7 @@ wrfio_nf :
 	( cd ../external/io_netcdf ; \
           make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" \
           FC="$(FC) $(PROMOTION) -I../.. $(FCFLAGS)" \
-          TRADFLAG="-traditional" ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+          TRADFLAG="-traditional" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -6958,7 +6533,7 @@ CC                = icc -I.
 SCC		=	$(CC)
 CC_TOOLS          = cc
 SFC               = ifort
-RWORDSIZE         = 4
+RWORDSIZE         = $(NATIVE_RWORDSIZE)
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
 PROMOTION	=	-real_size $(RSIZEBITS)
 CFLAGS            = -w -O3 -ip -tpp2 -c -ftz -DDM_PARALLEL -I../external/RSL_LITE \
@@ -6998,7 +6573,7 @@ M4                = m4
 RANLIB            = ranlib
 NETCDFPATH	  = CONFIGURE_NETCDF_PATH
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL_LITE/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -7011,14 +6586,7 @@ module_dm.F : ../external/RSL_LITE/module_dm.F
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
           make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) -I../.. $(FCFLAGS)" \
-          TRADFLAG="-traditional" ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+          TRADFLAG="-traditional" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -7087,7 +6655,7 @@ CC                = icc -I.
 SCC		=	$(CC)
 CC_TOOLS          = cc
 SFC               = ifort
-RWORDSIZE         = 4
+RWORDSIZE         = $(NATIVE_RWORDSIZE)
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
 PROMOTION	=	-real_size $(RSIZEBITS)
 CFLAGS            = -w -O3 -ip -tpp2 -c -ftz 
@@ -7124,7 +6692,7 @@ M4                = m4
 RANLIB            = ranlib
 NETCDFPATH	  = CONFIGURE_NETCDF_PATH
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; \
@@ -7133,15 +6701,7 @@ module_dm.F :
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
           make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) -I../.. $(FCFLAGS)" \
-          TRADFLAG="-traditional" ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc )
-#	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-#	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-#	/bin/cp wrf_io_flags.h ../io_quilt )
+          TRADFLAG="-traditional" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -7204,7 +6764,7 @@ CC                = icc -I.
 SCC		=	$(CC)
 CC_TOOLS          = cc
 SFC               = ifort
-RWORDSIZE         = 4
+RWORDSIZE         = $(NATIVE_RWORDSIZE)
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
 PROMOTION	=	-real_size $(RSIZEBITS)
 CFLAGS            = -w -O3 -ip -tpp2 -c -ftz 
@@ -7241,7 +6801,7 @@ M4                = m4
 RANLIB            = ranlib
 NETCDFPATH	  = CONFIGURE_NETCDF_PATH
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; \
@@ -7250,15 +6810,7 @@ module_dm.F :
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
           make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) -I../.. $(FCFLAGS)" \
-          TRADFLAG="-traditional" ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc )
-#	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-#	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-#	/bin/cp wrf_io_flags.h ../io_quilt )
+          TRADFLAG="-traditional" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -7332,7 +6884,7 @@ X1_CROSS_COMP = "cc"
 X1_CROSS_CFLG = "-hcommand"
 CC_TOOLS        = 	$(X1_CROSS_COMP) $(X1_CROSS_CFLG)
 
-RWORDSIZE         = 4
+RWORDSIZE         = $(NATIVE_RWORDSIZE)
 FCDEBUG         =       # -g
 FCBASEOPTS      =       -f free -N 255 -I. -Oscalar1 -Ovector0 -Ostream0 -x omp
 FCFLAGS         =       -f free -N 255  -I. -Ofp3 -O3 -x omp -Ogen_private_callee
@@ -7377,7 +6929,7 @@ M4              =       m4 -B10000
 RANLIB          =       echo
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL_LITE/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; cat ../external/RSL_LITE/gen_comms.c >> ../tools/gen_comms.c )
@@ -7386,14 +6938,7 @@ module_dm.F : ../external/RSL_LITE/module_dm.F
 	( /bin/cp module_dm_warning module_dm.F ; cat ../external/RSL_LITE/module_dm.F >> module_dm.F )
 
 wrfio_nf : 
-	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP) -Dcrayx1" FC="$(FC) $(PROMOTION) -f free -N 255 " ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP) -Dcrayx1" FC="$(FC) $(PROMOTION) -f free -N 255 " )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -7472,7 +7017,7 @@ X1_CROSS_COMP = "cc"
 X1_CROSS_CFLG = "-hcommand"
 CC_TOOLS        = 	$(X1_CROSS_COMP) $(X1_CROSS_CFLG)
 
-RWORDSIZE       = 4
+RWORDSIZE       = $(NATIVE_RWORDSIZE)
 FCDEBUG         =       # -g
 FCBASEOPTS      =       -f free -N 255 -I. -Oscalar1 -Ovector0 -Ostream0 -x csd -Ossp
 FCFLAGS         =       -f free -N 255  -I. -Ofp3 -O3 -x csd -Ossp
@@ -7515,7 +7060,7 @@ M4              =       m4 -B10000
 RANLIB          =       echo
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL_LITE/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; cat ../external/RSL_LITE/gen_comms.c >> ../tools/gen_comms.c )
@@ -7524,14 +7069,7 @@ module_dm.F : ../external/RSL_LITE/module_dm.F
 	( /bin/cp module_dm_warning module_dm.F ; cat ../external/RSL_LITE/module_dm.F >> module_dm.F )
 
 wrfio_nf : 
-	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP) -Dcrayx1" FC="$(FC) $(PROMOTION) -f free -N 255 -Ossp" ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP) -Dcrayx1" FC="$(FC) $(PROMOTION) -f free -N 255 -Ossp" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -7597,7 +7135,7 @@ SFC		=	$(FC)
 LD              =       f90
 CC              =       cc
 SCC		=	$(CC)
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 ARCHFLAGS       =       CONFIGURE_NETCDF_FLAG -DINTIO -DTRIEDNTRUE -DLIMIT_ARGS -DFLOATSAFE \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 
 PROMOTION	=	-r$(RWORDSIZE) -i4
@@ -7625,21 +7163,14 @@ RANLIB          =       echo
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCFLAGS) " ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCFLAGS) " )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -7692,7 +7223,7 @@ SFC		=	$(FC)
 LD              =       f90
 CC              =       cc
 SCC		=	$(CC)
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 ARCHFLAGS       =       CONFIGURE_NETCDF_FLAG -DWRF_RSL_IO -DRSL -DINTIO -DTRIEDNTRUE -DLIMIT_ARGS \
                         -DDM_PARALLEL -DFLOATSAFE -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
 			-DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -DSTUBMPI
@@ -7722,7 +7253,7 @@ RANLIB          =       echo
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a gen_comms.c wrfio_int module_dm.F esmf_time 
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a gen_comms.c wrfio_int module_dm.F esmf_time 
 
 gen_comms.c : ../external/RSL/gen_comms.c
 		( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -7733,14 +7264,7 @@ module_dm.F :
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCFLAGS) " ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCFLAGS) " )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -7796,7 +7320,7 @@ SFC		=	$(FC)
 LD              =       f90
 CC              =       cc
 SCC		=	$(CC)
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 ARCHFLAGS       =       CONFIGURE_NETCDF_FLAG -DINTIO -DTRIEDNTRUE -DLIMIT_ARGS -DFLOATSAFE \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 
 PROMOTION	=	-r$(RWORDSIZE) -i4
@@ -7824,21 +7348,14 @@ RANLIB          =       echo
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCFLAGS) " ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCFLAGS) " )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -7890,7 +7407,7 @@ SFC		=	$(FC)
 LD              =       f90
 CC              =       cc
 SCC		=	$(CC)
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 ARCHFLAGS       =       CONFIGURE_NETCDF_FLAG -DWRF_RSL_IO -DRSL -DINTIO -DTRIEDNTRUE -DLIMIT_ARGS -DFLOATSAFE \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 -DSTUBMPI
 PROMOTION	=	-r$(RWORDSIZE) -i4
@@ -7918,21 +7435,14 @@ RANLIB          =       echo
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCFLAGS) " ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCFLAGS) " )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -7984,7 +7494,7 @@ SFC		=	$(FC)
 LD              =       f90
 CC              =       cc
 SCC		=	$(CC)
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 ARCHFLAGS       =       CONFIGURE_NETCDF_FLAG -DINTIO -DTRIEDNTRUE -DLIMIT_ARGS -DFLOATSAFE \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 
 PROMOTION	=	-r$(RWORDSIZE) -i4
@@ -8012,21 +7522,14 @@ RANLIB          =       echo
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCFLAGS) " ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCFLAGS) " )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -8080,7 +7583,7 @@ SFC		=	f90
 LD              =       mpif90
 CC              =       mpicc
 SCC		=	cc
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 ARCHFLAGS       =       CONFIGURE_NETCDF_FLAG -DINTIO -DWRF_RSL_IO -DTRIEDNTRUE -DLIMIT_ARGS -DFLOATSAFE \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4  -DDM_PARALLEL -DRSL \
 			-DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
@@ -8109,7 +7612,7 @@ RANLIB          =       echo
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int ../external/RSL/RSL/librsl.a gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int ../external/RSL/RSL/librsl.a gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -8121,14 +7624,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-	make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS) " ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+	make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS) " )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -8187,7 +7683,7 @@ SFC		=	f90
 LD              =       mpif90
 CC              =       mpicc
 SCC		=	cc
-RWORDSIZE       =       4
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 ARCHFLAGS       =       CONFIGURE_NETCDF_FLAG -DINTIO -DWRF_RSL_IO -DTRIEDNTRUE -DLIMIT_ARGS -DFLOATSAFE \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4  -DDM_PARALLEL -DRSL \
 			-DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
@@ -8216,7 +7712,7 @@ RANLIB          =       echo
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int ../external/RSL/RSL/librsl.a gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int ../external/RSL/RSL/librsl.a gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -8228,14 +7724,7 @@ module_dm.F : ../external/RSL/module_dm.F
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-	make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS) " ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+	make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS) " )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -8295,7 +7784,7 @@ LD              =       xlf90_r
 #CC              =       cc_r
 CC              =       cc
 SCC		=	$(CC)
-RWORDSIZE       = 4
+RWORDSIZE       = $(NATIVE_RWORDSIZE)
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =       -DNOUNDERSCORE -DLANDREAD_STUB
 FCOPTIM         =       -O3 -qarch=auto #-qfloat=nomaf
@@ -8329,20 +7818,13 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
 
 wrfio_nf : 
-	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -8425,7 +7907,7 @@ SFC		=	$(FC)
 LD              =       xlf90_r
 CC              =       cc
 SCC		=	$(CC)
-RWORDSIZE       = 4
+RWORDSIZE       = $(NATIVE_RWORDSIZE)
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =       -DNOUNDERSCORE -DLANDREAD_STUB
 FCOPTIM         =       -O2 -qarch=auto -qunroll=yes #-qfloat=nomaf
@@ -8455,20 +7937,13 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
 
-externals : CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
 
 wrfio_nf : 
-	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" ; \
-	if [ $(RWORDSIZE) -eq 8 ] ; then \
-	  /bin/rm -f foo_io_flags.h; \
-	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
-	  /bin/mv foo_io_flags.h wrf_io_flags.h ; fi ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \

@@ -1003,7 +1003,7 @@ subroutine ext_phdf5_read_field(DataHandle,DateStr,Var,Field,FieldType,Comm,  &
      select case(FieldType)
      case (WRF_REAL)
         dmemtype_id = H5T_NATIVE_REAL
-     case (WRF_REAL8)
+     case (WRF_DOUBLE)
         dmemtype_id = H5T_NATIVE_DOUBLE
      case (WRF_INTEGER)
         dmemtype_id = H5T_NATIVE_INTEGER
@@ -1035,7 +1035,7 @@ subroutine ext_phdf5_read_field(DataHandle,DateStr,Var,Field,FieldType,Comm,  &
         return
      endif
 
-     if( (FieldType == WRF_REAL .OR. FieldType == WRF_REAL8) ) then
+     if( (FieldType == WRF_REAL .OR. FieldType == WRF_DOUBLE) ) then
         if ( class_type /= H5T_FLOAT_F)  then
            Status = WRF_HDF5_ERR_TYPE_MISMATCH
            write(msg,*) 'Warning TYPE MISMATCH in ',__FILE__,', line', __LINE__
@@ -1179,7 +1179,7 @@ subroutine ext_phdf5_read_field(DataHandle,DateStr,Var,Field,FieldType,Comm,  &
 
      ! di is for double type data
      di = 1 
-     if(FieldType == WRF_REAL8) di = 2
+     if(FieldType == WRF_DOUBLE) di = 2
      allocate(XField(di,x1:x2,y1:y2,z1:z2), STAT=stat)
 
      ! use hyperslab to only read this current timestamp
@@ -1485,7 +1485,7 @@ subroutine ext_phdf5_write_field(DataHandle,DateStr,Var,Field,FieldType,&
      select case (FieldType)
      case (WRF_REAL)
         XType = H5T_NATIVE_REAL
-     case (WRF_REAL8)
+     case (WRF_DOUBLE)
         Xtype = H5T_NATIVE_DOUBLE
      case (WRF_INTEGER)
         XType = H5T_NATIVE_INTEGER
@@ -1606,7 +1606,7 @@ subroutine ext_phdf5_write_field(DataHandle,DateStr,Var,Field,FieldType,&
      call GetIndices(NDim,StoredStart,Length   ,x1,x2,y1,y2,z1,z2)
      call GetIndices(NDim,PatchStart, PatchEnd ,i1,i2,j1,j2,k1,k2)
      di=1
-     if(FieldType == WRF_REAL8) di = 2
+     if(FieldType == WRF_DOUBLE) di = 2
      allocate(XField(di,x1:x2,y1:y2,z1:z2), STAT=stat)
      if(stat/= 0) then
         Status = WRF_ERR_FATAL_ALLOCATION_ERROR
@@ -3767,7 +3767,7 @@ subroutine ext_phdf5_put_dom_ti_double(DataHandle,Element,Data,Count,Status)
 
   var           = 'DUMMY'
   routine_type  = 'DOM'
-  routine_atype = WRF_REAL8
+  routine_atype = WRF_DOUBLE
   adata_dims(1) = Count
 
   call create_phdf5_objid(DataHandle,h5_objid,routine_type,var,Status)
@@ -4125,7 +4125,7 @@ subroutine ext_phdf5_put_var_ti_double(DataHandle,Element,Var,Data,Count,Status)
   type(wrf_phdf5_data_handle),pointer    :: DH
 
   routine_type  = 'VAR'
-  routine_atype = WRF_REAL8
+  routine_atype = WRF_DOUBLE
   adata_dims(1) = Count
 
   call GetDH(DataHandle,DH,Status)

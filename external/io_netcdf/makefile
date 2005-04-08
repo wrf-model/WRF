@@ -3,7 +3,7 @@
 OBJSL   = wrf_io.o field_routines.o
 OBJS    = $(OBJSL)
 CODE    = ext_ncd_get_dom_ti.code ext_ncd_get_var_td.code ext_ncd_get_var_ti.code ext_ncd_put_dom_ti.code ext_ncd_put_var_td.code ext_ncd_put_var_ti.code transpose.code 
-FFLAGS  =  $(FCFLAGS) -I$(NETCDFPATH)/include
+FFLAGS  =  $(FCFLAGS) -I$(NETCDFPATH)/include -I../ioapi_share
 LIBS    = -L$(NETCDFPATH)/lib -lnetcdf
 CPP1    = $(CPP) -C -P $(TRADFLAG)
 M4      = m4 -Uinclude -Uindex -Ulen
@@ -11,17 +11,12 @@ AR      = ar
 
 .SUFFIXES:      .F90 .f .o .code
 
-all : flags_only libwrfio_nf.a 
-
-flags_only: wrf_io_flags.h
+all : libwrfio_nf.a 
 
 libwrfio_nf.a:		$(OBJS) $(CODE)
 			/bin/rm -f libwrfio_nf.a
 			$(AR) cr libwrfio_nf.a $(OBJSL)
 			$(RANLIB) libwrfio_nf.a
-
-wrf_io_flags.h:
-			sed -e '1,/BEGINIOFLAGS/d' -e '/ENDIOFLAGS/,$$d' wrf_io.F90 > wrf_io_flags.h
 
 wrf_io.o:               wrf_io.F90 $(CODE)
 			$(CPP1) wrf_io.F90 | $(M4) - > wrf_io.f
@@ -45,4 +40,4 @@ field_routines.o:	field_routines.F90
 
 superclean:
 			/bin/rm -f *.f *.o testWRFWrite testWRFRead \
-			*.mod libwrfio_nf.a diffwrf wrf_io_flags.h
+			*.mod libwrfio_nf.a diffwrf

@@ -183,7 +183,7 @@ subroutine create_phdf5_adtypeid(h5_atypeid,routine_datatype,Count,Status,DataHa
   select case(routine_datatype) 
   case (WRF_REAL)
      h5_atypeid = H5T_NATIVE_REAL
-  case (WRF_REAL8)
+  case (WRF_DOUBLE)
      h5_atypeid = H5T_NATIVE_DOUBLE
   case (WRF_INTEGER)
      h5_atypeid = H5T_NATIVE_INTEGER

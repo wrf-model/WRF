@@ -32,11 +32,23 @@ MAX_DOMAINS	=	21
 
 CONFIG_BUF_LEN	=	8192
 
+
+##############################################################################
+#### The settings in this section are defaults that may be overridden by the 
+#### architecture-specific settings in the next section.  
+##############################################################################
+
+#### Native size (in bytes) of Fortran REAL data type ####
+NATIVE_RWORDSIZE = 4
+
 #### Default sed command and script for Fortran source files ####
 SED_FTN = sed -f ../arch/standard.sed
 
 #### Default ESMF dependence for embedded ESMF time manager ####
 ESMF_MOD_DEPENDENCE = ../external/esmf_time_f90/ESMF_Mod.o
+
+##############################################################################
+
 
 #### Architecture specific settings ####
 

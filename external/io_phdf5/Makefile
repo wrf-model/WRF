@@ -3,7 +3,7 @@
 OBJSL   = wrf-phdf5.o wrf-phdf5attr.o wrf-phdf5support.o
 OBJS    = $(OBJSL)
 OPTS    = -bmaxdata:0x80000000
-FFLAGS  =  $(OPTS) -I$(PHDF5PATH)/lib 
+FFLAGS  =  $(OPTS) -I$(PHDF5PATH)/lib -I../ioapi_share
 FORTRANLIB=-I$(PHDF5PATH)/lib $(PHDF5PATH)/lib/libhdf5_fortran.a
 LIBSHDF = $(FORTRANLIB) $(PHDF5PATH)/lib/libhdf5.a
 LIB     =-lm -lz
@@ -32,5 +32,4 @@ wrf-phdf5.o:             wrf-phdf5.F90 wrf-phdf5attr.o wrf-phdf5support.o
 			$(FC) $(FFLAGS) -c wrf-phdf5.f
 
 superclean:
-			/bin/rm -f *.f *.o *.mod libwrfio_phdf5.a \
-			wrf_io_flags.h wrf_status_codes.h
+			/bin/rm -f *.f *.o *.mod libwrfio_phdf5.a

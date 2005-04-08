@@ -246,14 +246,14 @@ SUBROUTINE ext_yyy_open_for_write_begin(FileName, Comm, IOComm, SysDepInfo, &
   if (DataHandle .GT. 0) then
      CALL open_file(TRIM(FileName), FileFd(DataHandle), ierr)
      if (ierr .ne. 0) then
-        Status = WRF_ERR_WARN_WRITE_RONLY_FILE
+        Status = WRF_WARN_WRITE_RONLY_FILE
      else
         opened(DataHandle) = .true.
         DataFile(DataHandle) = TRIM(FileName)
      endif
      committed(DataHandle) = .false.
   else
-     Status = WRF_ERR_WARN_TOO_MANY_FILES
+     Status = WRF_WARN_TOO_MANY_FILES
   endif
 
   RETURN  
@@ -292,7 +292,7 @@ SUBROUTINE ext_yyy_inquire_opened ( DataHandle, FileName , FileStatus, Status )
   INTEGER ,       INTENT(OUT) :: FileStatus
   INTEGER ,       INTENT(OUT) :: Status
 
-  FileStatus = WRF_ERR_WARN_FILE_NOT_OPENED
+  FileStatus = WRF_WARN_FILE_NOT_OPENED
   if ((DataHandle .ge. firstFileHandle) .and. &
        (DataHandle .le. maxFileHandles)) then
      if (used(DataHandle) .and. committed(DataHandle)) then
@@ -532,7 +532,7 @@ SUBROUTINE ext_yyy_write_field( DataHandle , DateStr , VarName , &
   endif
 
   if ( .not. opened(DataHandle)) then
-     Status = WRF_ERR_WARN_FILE_NOT_OPENED
+     Status = WRF_WARN_FILE_NOT_OPENED
      return
   endif
 
@@ -810,10 +810,10 @@ SUBROUTINE ext_yyy_iosync ( DataHandle, Status )
   if (DataHandle .GT. 0) then
      CALL flush_file(FileFd(DataHandle), ierror)
      if (ierror .ne. 0) then
-        Status = WRF_ERR_WARN_WRITE_RONLY_FILE
+        Status = WRF_WARN_WRITE_RONLY_FILE
      endif
   else
-     Status = WRF_ERR_WARN_TOO_MANY_FILES
+     Status = WRF_WARN_TOO_MANY_FILES
   endif
 
   RETURN
@@ -832,7 +832,7 @@ SUBROUTINE ext_yyy_inquire_filename ( DataHandle, FileName , FileStatus, Status 
   INTEGER ,       INTENT(OUT) :: Status
   CHARACTER *80   SysDepInfo
 
-  FileStatus = WRF_ERR_WARN_FILE_NOT_OPENED
+  FileStatus = WRF_WARN_FILE_NOT_OPENED
   if ((DataHandle .ge. firstFileHandle) .and. &
        (DataHandle .le. maxFileHandles)) then
      if (used(DataHandle) .and. committed(DataHandle)) then

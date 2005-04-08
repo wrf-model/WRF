@@ -11,8 +11,7 @@ CONTAINS
                     QI3D,QS3D,QG3D,P3D,pi3D,dz8w,GMT,             &
                     R,CP,G,JULDAY,                                &
                     XTIME,DECLIN,SOLCON,                          &
-                    P_QV,P_QC,P_QR,P_QI,P_QS,P_QG,                &
-                    P_FIRST_SCALAR,                               &
+                    F_QV,F_QC,F_QR,F_QI,F_QS,F_QG,                &
                     RADFRQ,ICLOUD,DEGRAD,warm_rain,               &
                     ids,ide, jds,jde, kds,kde,                    & 
                     ims,ime, jms,jme, kms,kme,                    &
@@ -22,11 +21,10 @@ CONTAINS
 !------------------------------------------------------------------
    INTEGER,    INTENT(IN   ) ::        ids,ide, jds,jde, kds,kde, &
                                        ims,ime, jms,jme, kms,kme, &
-                                       its,ite, jts,jte, kts,kte, &
-                                       ICLOUD,P_QV,P_QC,P_QR,     &
-                                       P_QI,P_QS,P_QG,            &
-                                       P_FIRST_SCALAR
+                                       its,ite, jts,jte, kts,kte
+
    LOGICAL,    INTENT(IN   ) ::        warm_rain
+   INTEGER,    INTENT(IN   ) ::        icloud
 
    REAL, INTENT(IN    )      ::        RADFRQ,DEGRAD,             &
                                        XTIME,DECLIN,SOLCON
@@ -35,15 +33,10 @@ CONTAINS
          INTENT(IN    ) ::                                   P3D, &
                                                aer_dry,aer_water, &
                                                             pi3D, &
-                                                             T3D, &
-                                                            QV3D, &
-                                                            QC3D, &
-                                                            QR3D, &
-                                                            QI3D, &
-                                                            QS3D, &
-                                                            QG3D, &
                                                          rho_phy, &
-                                                            dz8w
+                                                            dz8w, &
+                                                             T3D
+
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          INTENT(INOUT)  ::                              RTHRATEN
@@ -59,6 +52,20 @@ CONTAINS
    REAL, INTENT(IN   )   ::                        GMT,R,CP,G,dt
 !
    INTEGER, INTENT(IN  ) ::                               JULDAY  
+!
+! Optional
+!
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
+         OPTIONAL,                                                &
+         INTENT(IN    ) ::                                        &
+                                                            QV3D, &
+                                                            QC3D, &
+                                                            QR3D, &
+                                                            QI3D, &
+                                                            QS3D, &
+                                                            QG3D
+
+   LOGICAL, OPTIONAL, INTENT(IN )      ::        F_QV,F_QC,F_QR,F_QI,F_QS,F_QG
  
 ! LOCAL VARS
  
@@ -78,6 +85,7 @@ CONTAINS
    REAL::      XLAT0,XLONG0,ALB0,GSW0
 !
    INTEGER :: i,j,K,NK
+   LOGICAL :: predicate
    real :: aer_dry1(kts:kte),aer_water1(kts:kte)
 
 !------------------------------------------------------------------
@@ -106,40 +114,52 @@ CONTAINS
             DZ(K)=dz8w(I,NK,J)
          ENDDO
 
-         IF (P_QV .ge. P_FIRST_SCALAR) THEN
-            DO K=kts,kte
-               NK=kme-1-K+kms
-               QV1D(K)=QV3D(I,NK,J)
-               QV1D(K)=max(0.,QV1D(K))
-            ENDDO
+         IF (PRESENT(F_QV) .AND. PRESENT(QV3D)) THEN
+            IF (F_QV) THEN
+               DO K=kts,kte
+                  NK=kme-1-K+kms
+                  QV1D(K)=QV3D(I,NK,J)
+                  QV1D(K)=max(0.,QV1D(K))
+               ENDDO
+            ENDIF
          ENDIF
 
-         IF (P_QC .ge. P_FIRST_SCALAR) THEN
-            DO K=kts,kte
-               NK=kme-1-K+kms
-               QC1D(K)=QC3D(I,NK,J)
-               QC1D(K)=max(0.,QC1D(K))
-            ENDDO
+         IF (PRESENT(F_QC) .AND. PRESENT(QC3D)) THEN
+            IF (F_QC) THEN
+               DO K=kts,kte
+                  NK=kme-1-K+kms
+                  QC1D(K)=QC3D(I,NK,J)
+                  QC1D(K)=max(0.,QC1D(K))
+               ENDDO
+            ENDIF
          ENDIF
 
-         IF (P_QR .ge. P_FIRST_SCALAR) THEN
-            DO K=kts,kte
-               NK=kme-1-K+kms
-               QR1D(K)=QR3D(I,NK,J)
-               QR1D(K)=max(0.,QR1D(K))
-            ENDDO
+         IF (PRESENT(F_QR) .AND. PRESENT(QR3D)) THEN
+            IF (F_QR) THEN
+               DO K=kts,kte
+                  NK=kme-1-K+kms
+                  QR1D(K)=QR3D(I,NK,J)
+                  QR1D(K)=max(0.,QR1D(K))
+               ENDDO
+            ENDIF
          ENDIF
 
 !
-         IF (P_QI .ge. P_FIRST_SCALAR) THEN
-            DO K=kts,kte          
+         IF ( PRESENT( F_QI ) ) THEN
+            predicate = F_QI
+         ELSE
+            predicate = .FALSE.
+         ENDIF
+
+         IF ( predicate .AND. PRESENT( QI3D ) ) THEN
+            DO K=kts,kte
                NK=kme-1-K+kms
                QI1D(K)=QI3D(I,NK,J)
                QI1D(K)=max(0.,QI1D(K))
             ENDDO
          ELSE
             IF (.not. warm_rain) THEN
-               DO K=kts,kte          
+               DO K=kts,kte
                IF(T1D(K) .lt. 273.15) THEN
                   QI1D(K)=QC1D(K)
                   QC1D(K)=0.
@@ -150,20 +170,24 @@ CONTAINS
             ENDIF
          ENDIF
 
-         IF (P_QS .ge. P_FIRST_SCALAR) THEN
-            DO K=kts,kte          
-               NK=kme-1-K+kms
-               QS1D(K)=QS3D(I,NK,J)
-               QS1D(K)=max(0.,QS1D(K))
-            ENDDO
+         IF (PRESENT(F_QS) .AND. PRESENT(QS3D)) THEN
+            IF (F_QS) THEN
+               DO K=kts,kte          
+                  NK=kme-1-K+kms
+                  QS1D(K)=QS3D(I,NK,J)
+                  QS1D(K)=max(0.,QS1D(K))
+               ENDDO
+            ENDIF
          ENDIF
 
-         IF (P_QG .ge. P_FIRST_SCALAR) THEN
-            DO K=kts,kte          
-               NK=kme-1-K+kms
-               QG1D(K)=QG3D(I,NK,J)
-               QG1D(K)=max(0.,QG1D(K))
-            ENDDO
+         IF (PRESENT(F_QG) .AND. PRESENT(QG3D)) THEN
+            IF (F_QG) THEN
+               DO K=kts,kte          
+                  NK=kme-1-K+kms
+                  QG1D(K)=QG3D(I,NK,J)
+                  QG1D(K)=max(0.,QG1D(K))
+               ENDDO
+            ENDIF
          ENDIF
 
          XLAT0=XLAT(I,J)

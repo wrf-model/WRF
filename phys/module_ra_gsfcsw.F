@@ -10,16 +10,15 @@ MODULE module_ra_gsfcsw
 CONTAINS
 
 !------------------------------------------------------------------
-   SUBROUTINE GSFCSWRAD(RTHRATEN,GSW,XLAT,XLONG,                  &
-                    ALB,T3D,QV3D,QC3D,QR3D,                       &
-                    QI3D,QS3D,QG3D,P3D,P8W3D,pi3D,CLDFRA3D,       &
-                    GMT,CP,G,JULDAY,XTIME,DECLIN,SOLCON,          &
-                    P_QV,P_QC,P_QR,P_QI,P_QS,P_QG,                &
-                    PARAM_FIRST_SCALAR,                           &
-                    RADFRQ,DEGRAD,taucldi,taucldc,warm_rain,      &
-                    ids,ide, jds,jde, kds,kde,                    & 
-                    ims,ime, jms,jme, kms,kme,                    &
-                    its,ite, jts,jte, kts,kte                     ) 
+   SUBROUTINE GSFCSWRAD(rthraten,gsw,xlat,xlong                   &
+                   ,alb,t3d,qv3d,qc3d,qr3d                        &
+                   ,qi3d,qs3d,qg3d,p3d,p8w3d,pi3d,cldfra3d        &
+                   ,gmt,cp,g,julday,xtime,declin,solcon           &
+                   ,radfrq,degrad,taucldi,taucldc,warm_rain       &
+                   ,f_qv,f_qc,f_qr,f_qi,f_qs,f_qg                 &
+                   ,ids,ide, jds,jde, kds,kde                     & 
+                   ,ims,ime, jms,jme, kms,kme                     &
+                   ,its,ite, jts,jte, kts,kte                     ) 
 !------------------------------------------------------------------
    IMPLICIT NONE
 !------------------------------------------------------------------
@@ -27,9 +26,7 @@ CONTAINS
 
    INTEGER,    INTENT(IN   ) ::        ids,ide, jds,jde, kds,kde, &
                                        ims,ime, jms,jme, kms,kme, &
-                                       its,ite, jts,jte, kts,kte, &
-                                       P_QV,P_QC,P_QR,P_QI,P_QS,P_QG
-   INTEGER,    INTENT(IN   ) ::        PARAM_FIRST_SCALAR
+                                       its,ite, jts,jte, kts,kte
    LOGICAL,    INTENT(IN   ) ::        warm_rain
 
    INTEGER,    INTENT(IN  )  ::                           JULDAY  
@@ -43,13 +40,8 @@ CONTAINS
                                                            P8W3D, &
                                                             pi3D, &
                                                              T3D, &
-                                                            QV3D, &
-                                                            QC3D, &
-                                                            QR3D, &
-                                                            QI3D, &
-                                                            QS3D, &
-                                                            QG3D, &
                                                         CLDFRA3D
+
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          INTENT(INOUT)  ::                              RTHRATEN
@@ -67,7 +59,23 @@ CONTAINS
 !
    REAL, INTENT(IN   )  ::                              GMT,CP,G
 !
- 
+
+!
+! Optional
+!
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
+         OPTIONAL,                                                &           
+         INTENT(IN    ) ::                                        &
+                                                            QV3D, &
+                                                            QC3D, &
+                                                            QR3D, &
+                                                            QI3D, &
+                                                            QS3D, &
+                                                            QG3D
+
+   LOGICAL, OPTIONAL, INTENT(IN )      ::        F_QV,F_QC,F_QR,F_QI,F_QS,F_QG
+
 ! LOCAL VARS
  
    REAL, DIMENSION( its:ite ) ::                                  &
@@ -112,7 +120,7 @@ CONTAINS
                                                            ozone
    REAL, DIMENSION( np )    ::                                 p
 
-   LOGICAL :: cldwater,overcast
+   LOGICAL :: cldwater,overcast, predicate
 !
    INTEGER :: i,j,K,NK,ib,kk,mix,mkx
 
@@ -431,15 +439,25 @@ CONTAINS
       ENDDO
       ENDDO
 
-      IF (P_QI .lt. PARAM_FIRST_SCALAR .and. .not. warm_rain) THEN
-      DO K=kts,kte
-      DO I=its,ite
-         IF (T2D(I,K) .lt. 273.15) THEN
-            cwc(I,K,1)=cwc(I,K,2)
-            cwc(I,K,2)=0.
-         ENDIF
-      ENDDO
-      ENDDO
+! This logic is tortured because cannot test F_QI unless
+! it is present, and order of evaluation of expressions
+! is not specified in Fortran
+
+      IF ( PRESENT ( F_QI ) ) THEN
+	predicate = F_QI
+      ELSE
+        predicate = .FALSE.
+      ENDIF
+
+      IF (.NOT. warm_rain .AND. .NOT. predicate ) THEN
+         DO K=kts,kte
+         DO I=its,ite
+            IF (T2D(I,K) .lt. 273.15) THEN
+               cwc(I,K,1)=cwc(I,K,2)
+               cwc(I,K,2)=0.
+            ENDIF
+         ENDDO
+         ENDDO
       ENDIF
 
       DO I=its,ite
@@ -453,14 +471,16 @@ CONTAINS
          fcld2D(I,0)=0.
       ENDDO
 !
-      IF (P_QI .ge. PARAM_FIRST_SCALAR) THEN
-         DO K=kts,kte          
-         DO I=its,ite          
-            NK=kme-1-K+kms
-            cwc(I,K,1)=QI3D(I,NK,J)
-            cwc(I,K,1)=max(0.,cwc(I,K,1))
-         ENDDO
-         ENDDO
+      IF ( PRESENT( F_QI ) .AND. PRESENT( qi3d)  ) THEN
+	 IF ( (F_QI) ) THEN
+            DO K=kts,kte          
+            DO I=its,ite          
+               NK=kme-1-K+kms
+               cwc(I,K,1)=QI3D(I,NK,J)
+               cwc(I,K,1)=max(0.,cwc(I,K,1))
+            ENDDO
+            ENDDO
+         ENDIF
       ENDIF
 !
 ! ... Vertical profiles for ozone

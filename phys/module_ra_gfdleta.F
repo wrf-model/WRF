@@ -152,6 +152,8 @@ CONTAINS
 !     REAL, INTENT(IN), DIMENSION(37*kte) :: RAD1,RAD2,RAD3,RAD4
       LOGICAL, INTENT(IN) :: gfdl_lw,gfdl_sw
 
+!
+
       REAL, DIMENSION(its:ite, kms:kme, jts:jte):: PFLIP,QIFLIP,QFLIP,  &
      &                                             QWFLIP,TFLIP
       REAL, DIMENSION(its:ite, kms:kme, jts:jte)::P8WFLIP,PHYD

@@ -512,28 +512,46 @@ BENCH_END(phy_prep_tim)
 
          CALL wrf_debug ( 200 , ' call radiation_driver' )
 BENCH_START(rad_driver_tim)
-         CALL radiation_driver(itimestep,dt,AER_DRY,AER_WATER,       &
-                    RTHRATENLW,RTHRATENSW,RTHRATEN,GLW,GSW,          &
-                    SWDOWN,                                          &
-                    XLAT,XLONG,ALBEDO,CLDFRA,EMISS,                  &
-                    rho,moist_2,num_3d_m,                            &
-                    p8w,p_phy,pb,pi_phy,dz8w,t_phy,t8w,              &
-                    GMT,JULDAY,config_flags,RADT,STEPRA,ICLOUD,      &
-                    taucldi,taucldc,warm_rain,                       &
-                    XLAND,TSK,HTOP,HBOT,CUPPT,VEGFRA,SNOW,           &
-                    julyr,                                           &
-                    1   ,                                            &
-                    TOTSWDN,TOTLWDN,RSWTOA,RLWTOA,CZMEAN,            &
-                    CFRACL,CFRACM,CFRACH,                            &
-                    ACFRST,NCFRST,ACFRCV,NCFRCV,                     &
-                    ids,ide, jds,jde, kds,kde,                       &
-                    ims,ime, jms,jme, kms,kme,                       &
-                    grid%i_start, min(grid%i_end, ide-1),            &
-                    grid%j_start, min(grid%j_end, jde-1),            &
-                    k_start    , min(k_end,kde-1) , grid%num_tiles   )
+         CALL radiation_driver(                                        &
+                    itimestep=itimestep,dt=dt                          &
+                   ,AER_DRY=AER_DRY,AER_WATER=AER_WATER                &
+                   ,RTHRATENLW=RTHRATENLW,RTHRATENSW=RTHRATENSW        &
+                   ,RTHRATEN=RTHRATEN,GLW=GLW,GSW=GSW                  &
+                   ,XLAT=XLAT,XLONG=XLONG,ALBEDO=ALBEDO,EMISS=EMISS    &
+                   ,SWDOWN=SWDOWN                                      &
+                   ,rho=rho,p8w=p8w,p=p_phy                            &
+                   ,pi=pi_phy,dz8w=dz8w,t=t_phy,t8w=t8w                &
+                   ,lw_physics=config_flags%ra_lw_physics              &
+                   ,sw_physics=config_flags%ra_sw_physics              &
+                   ,RADT=RADT,STEPRA=STEPRA,ICLOUD=ICLOUD              &
+                   ,taucldi=taucldi,taucldc=taucldc                    &
+                   ,XLAND=XLAND,TSK=TSK,HTOP=HTOP,HBOT=HBOT            &
+                   ,CUPPT=CUPPT,VEGFRA=VEGFRA,SNOW=SNOW                &
+                   ,TOTSWDN=TOTSWDN,TOTLWDN=TOTLWDN                    &
+                   ,RSWTOA=RSWTOA,RLWTOA=RLWTOA,CZMEAN=CZMEAN          &
+                   ,GMT=GMT,JULDAY=JULDAY ,julyr=julyr ,NPHS=1         &
+                   ,warm_rain=warm_rain                                &
+                   ,CFRACL=CFRACL,CFRACM=CFRACM,CFRACH=CFRACH          &
+                   ,ACFRST=ACFRST,NCFRST=NCFRST,ACFRCV=ACFRCV          &
+                   ,NCFRCV=NCFRCV                                      &
+                   ,ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde  & 
+                   ,ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme  &
+                   ,i_start=grid%i_start,i_end=min(grid%i_end, ide-1)  &
+                   ,j_start=grid%j_start,j_end=min(grid%j_end, jde-1)  &
+                   ,kts=k_start, kte=min(k_end,kde-1)                  &
+                   ,num_tiles=grid%num_tiles                           &
+                 ! Optional                          
+                   , CLDFRA=CLDFRA                                     &
+                   , Pb=pb                                             &
+                   , QV=moist_2(ims,kms,jms,P_QV), F_QV=F_QV           &
+                   , QC=moist_2(ims,kms,jms,P_QC), F_QC=F_QC           &
+                   , QR=moist_2(ims,kms,jms,P_QR), F_QR=F_QR           &
+                   , QI=moist_2(ims,kms,jms,P_QI), F_QI=F_QI           &
+                   , QS=moist_2(ims,kms,jms,P_QS), F_QS=F_QS           &
+                   , QG=moist_2(ims,kms,jms,P_QG), F_QG=F_QG           &
+                                                                       )
+
 BENCH_END(rad_driver_tim)
-
-
 
 !********* Surface driver
 ! surface
@@ -597,14 +615,8 @@ BENCH_END(pbl_driver_tim)
 
 BENCH_START(cu_driver_tim)
          CALL cumulus_driver(                                          &
-                 ! Order dependent args: domain, mem, tile dims
-                     ids,ide, jds,jde, kds,kde                         &
-                   , ims,ime, jms,jme, kms,kme                         &
-                   , grid%i_start, min(grid%i_end, ide-1)              &
-                   , grid%j_start, min(grid%j_end, jde-1)              &
-                   , k_start  , min(k_end,kde-1) , grid%num_tiles      &
                  ! Prognostic variables
-                   , U=u_phy   ,V=v_phy   ,TH=th_phy  ,T=t_phy         &
+                     U=u_phy   ,V=v_phy   ,TH=th_phy  ,T=t_phy         &
                    , W=w_2     ,P=p_phy   ,PI=pi_phy  ,RHO=rho         &
                  ! Other arguments
                    , ITIMESTEP=itimestep ,DT=dt      ,DX=dx            &
@@ -623,6 +635,13 @@ BENCH_START(cu_driver_tim)
                    , CU_ACT_FLAG=cu_act_flag   ,WARM_RAIN=warm_rain    &
                  ! Selection flag
                    , CU_PHYSICS=config_flags%cu_physics                &
+                 ! Dimension arguments
+                   , ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde &
+                   , ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme &
+                   , i_start=grid%i_start,i_end=min(grid%i_end, ide-1) &
+                   , j_start=grid%j_start,j_end=min(grid%j_end, jde-1) &
+                   , kts=k_start, kte=min(k_end,kde-1)                 &
+                   , num_tiles=grid%num_tiles                          &
                  ! Moisture tendency arguments
                    , RQVCUTEN=rqvcuten , RQCCUTEN=rqccuten             &
                    , RQRCUTEN=rqrcuten , RQVBLTEN=rqvblten             &

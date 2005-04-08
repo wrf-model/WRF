@@ -1727,21 +1727,20 @@ MODULE module_ra_rrtm
 CONTAINS
 
 !------------------------------------------------------------------
-   SUBROUTINE RRTMLWRAD(RTHRATEN,GLW,EMISS,                       &
-                        QV3D,QC3D,QR3D,                           &
-                        QI3D,QS3D,QG3D,p8w,P3D,pi3D,              &
-                        dz8w,T3D,t8w,rho3D,CLDFRA3D,R,G,          &
-                        P_QV,P_QC,P_QR,P_QI,P_QS,P_QG,            &
-                        P_FIRST_SCALAR,                           &
-                        ICLOUD, warm_rain,                        &
-                        ids,ide, jds,jde, kds,kde,                & 
-                        ims,ime, jms,jme, kms,kme,                &
-                        its,ite, jts,jte, kts,kte                 )
+   SUBROUTINE RRTMLWRAD(rthraten,glw,emiss                        &
+                       ,p8w,p3d,pi3d                              &
+                       ,dz8w,t3d,t8w,rho3d,r,g                    &
+                       ,icloud, warm_rain                         &
+                       ,ids,ide, jds,jde, kds,kde                 & 
+                       ,ims,ime, jms,jme, kms,kme                 &
+                       ,its,ite, jts,jte, kts,kte                 &
+                       ,qv3d,qc3d,qr3d                            &
+                       ,qi3d,qs3d,qg3d,cldfra3d                   &
+                       ,f_qv,f_qc,f_qr,f_qi,f_qs,f_qg             &
+                                                                  )
 !------------------------------------------------------------------
    IMPLICIT NONE
 !------------------------------------------------------------------
-   INTEGER, INTENT(IN )      ::        P_QV,P_QC,P_QR,P_QI,P_QS,P_QG
-   INTEGER, INTENT(IN )      ::        P_FIRST_SCALAR
    LOGICAL, INTENT(IN )      ::        warm_rain
 !
    INTEGER, INTENT(IN )      ::        ids,ide, jds,jde, kds,kde, &
@@ -1757,14 +1756,7 @@ CONTAINS
                                                              p8w, &
                                                              P3D, &
                                                             pi3D, &
-                                                           rho3D, &
-                                                        CLDFRA3D, &
-                                                            QV3D, &
-                                                            QC3D, &
-                                                            QR3D, &
-                                                            QI3D, &
-                                                            QS3D, &
-                                                            QG3D
+                                                           rho3D
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
          INTENT(INOUT)  ::                              RTHRATEN
@@ -1776,6 +1768,21 @@ CONTAINS
          INTENT(INOUT)  ::                                   GLW
 !
    REAL, INTENT(IN  )   ::                                   R,G
+!
+! Optional
+!
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
+         OPTIONAL                                               , &
+         INTENT(IN   ) ::                                         &
+                                                        CLDFRA3D, &
+                                                            QV3D, &
+                                                            QC3D, &
+                                                            QR3D, &
+                                                            QI3D, &
+                                                            QS3D, &
+                                                            QG3D
+
+   LOGICAL, OPTIONAL, INTENT(IN )      ::        F_QV,F_QC,F_QR,F_QI,F_QS,F_QG
 
 !  LOCAL VARS
  
@@ -1799,6 +1806,7 @@ CONTAINS
     REAL   ::                                   TSFC,GLW0,EMISS0,FP
 !
     INTEGER:: i,j,K,NK
+    LOGICAL :: predicate
 
 !------------------------------------------------------------------
 
@@ -1857,77 +1865,98 @@ CONTAINS
          ENDDO
 
          IF (ICLOUD .ne. 0) THEN
-            DO K=kts,kte
-               NK=kme-1-K+kms
-               CLDFRA1D(k)=CLDFRA3D(I,NK,J)
-            ENDDO
-
-            IF (P_QC .ge. P_FIRST_SCALAR ) THEN
-            DO K=kts,kte
-               NK=kme-1-K+kms
-               QC1D(K)=QC3D(I,NK,J)
-               QC1D(K)=max(0.,QC1D(K))
-            ENDDO
+            IF ( PRESENT( CLDFRA3D ) ) THEN
+              DO K=kts,kte
+                 NK=kme-1-K+kms
+                 CLDFRA1D(k)=CLDFRA3D(I,NK,J)
+              ENDDO
             ENDIF
 
-            IF (P_QR .ge. P_FIRST_SCALAR ) THEN
-            DO K=kts,kte
-               NK=kme-1-K+kms
-               QR1D(K)=QR3D(I,NK,J)
-               QR1D(K)=max(0.,QR1D(K))
-            ENDDO
+            IF (PRESENT(F_QC) .AND. PRESENT(QC3D)) THEN
+              IF ( F_QC) THEN
+                 DO K=kts,kte
+                    NK=kme-1-K+kms
+                    QC1D(K)=QC3D(I,NK,J)
+                    QC1D(K)=max(0.,QC1D(K))
+                 ENDDO
+              ENDIF
             ENDIF
 
-            IF (P_QI .lt. P_FIRST_SCALAR .and. .not. warm_rain) THEN
-            DO K=kts,kte
-               IF (T1D(K) .lt. 273.15) THEN
-               QI1D(K)=QC1D(K)
-               QS1D(K)=QR1D(K)
-               QC1D(K)=0.
-               QR1D(K)=0.
+            IF (PRESENT(F_QR) .AND. PRESENT(QR3D)) THEN
+              IF ( F_QR) THEN
+                 DO K=kts,kte
+                    NK=kme-1-K+kms
+                    QR1D(K)=QR3D(I,NK,J)
+                    QR1D(K)=max(0.,QR1D(K))
+                 ENDDO
+              ENDIF
+            ENDIF
+
+! This logic is tortured because cannot test F_QI unless
+! it is present, and order of evaluation of expressions
+! is not specified in Fortran
+
+            IF ( PRESENT ( F_QI ) ) THEN
+              predicate = F_QI
+            ELSE
+              predicate = .FALSE.
+            ENDIF
+
+            IF (.NOT. predicate .and. .not. warm_rain) THEN
+               DO K=kts,kte
+                  IF (T1D(K) .lt. 273.15) THEN
+                  QI1D(K)=QC1D(K)
+                  QS1D(K)=QR1D(K)
+                  QC1D(K)=0.
+                  QR1D(K)=0.
+                  ENDIF
+               ENDDO
+            ENDIF
+
+            IF (PRESENT(F_QI) .AND. PRESENT(QI3D)) THEN
+               DO K=kts,kte
+                  NK=kme-1-K+kms
+                  QI1D(K)=QI3D(I,NK,J)
+                  QI1D(K)=max(0.,QI1D(K))
+               ENDDO
+            ENDIF
+
+            IF (PRESENT(F_QS) .AND. PRESENT(QS3D)) THEN
+               IF (F_QS) THEN
+                  DO K=kts,kte
+                     NK=kme-1-K+kms
+                     QS1D(K)=QS3D(I,NK,J)
+                     QS1D(K)=max(0.,QS1D(K))
+                  ENDDO
                ENDIF
-            ENDDO
             ENDIF
 
-            IF (P_QI .ge. P_FIRST_SCALAR ) THEN
-            DO K=kts,kte
-               NK=kme-1-K+kms
-               QI1D(K)=QI3D(I,NK,J)
-               QI1D(K)=max(0.,QI1D(K))
-            ENDDO
+            IF (PRESENT(F_QG) .AND. PRESENT(QG3D)) THEN
+               IF (F_QG) THEN
+                  DO K=kts,kte
+                     NK=kme-1-K+kms
+                     QG1D(K)=QG3D(I,NK,J)
+                     QG1D(K)=max(0.,QG1D(K))
+                  ENDDO
+               ENDIF
             ENDIF
 
-            IF (P_QS .ge. P_FIRST_SCALAR ) THEN
-            DO K=kts,kte
-               NK=kme-1-K+kms
-               QS1D(K)=QS3D(I,NK,J)
-               QS1D(K)=max(0.,QS1D(K))
-            ENDDO
-            ENDIF
-
-            IF (P_QG .ge. P_FIRST_SCALAR ) THEN
-            DO K=kts,kte
-               NK=kme-1-K+kms
-               QG1D(K)=QG3D(I,NK,J)
-               QG1D(K)=max(0.,QG1D(K))
-            ENDDO
-            ENDIF
          ENDIF
 
          EMISS0=EMISS(I,J)
          GLW0=0. 
          TSFC=Tw1D(kme)
 
-         CALL RRTM(TTEN1D,GLW0,TSFC,CLDFRA1D,T1D,Tw1D,QV1D,QC1D,   &
-                   QR1D,QI1D,QS1D,QG1D,P1D,Pw1D,DZ1D,              &
-                   EMISS0,R,G,                                     &
+         CALL RRTM(tten1d,glw0,tsfc,cldfra1d,t1d,tw1d,qv1d,qc1d,   &
+                   qr1d,qi1d,qs1d,qg1d,p1d,pW1d,dz1d,              &
+                   emiss0,r,g,                                     &
                    kts,kte                                         )
  
          GLW(I,J)=GLW0
 
          DO K=kts,kte
-            NK=kme-1-K+kms
-            RTHRATEN(I,K,J)=RTHRATEN(I,K,J)+TTEN1D(NK)/pi3D(I,K,J)
+            nk=kme-1-k+kms
+            rthraten(i,k,j)=rthraten(i,k,j)+tten1d(nk)/pi3d(i,k,j)
          ENDDO
 
       END DO i_loop

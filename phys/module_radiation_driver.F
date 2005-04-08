@@ -6,27 +6,33 @@ CONTAINS
 ! !IROUTINE: radiation_driver - interface to radiation physics options
 
 ! !INTERFACE:
-   SUBROUTINE radiation_driver (itimestep,dt,                            &
-                       AER_DRY,AER_WATER,RTHRATENLW,RTHRATENSW,RTHRATEN, &
-                         GLW,GSW,SWDOWN,XLAT,XLONG,ALBEDO,CLDFRA,EMISS,  &
-                         rho_phy,moist,n_moist,                          &
-                         p8w,p_phy,Pb,pi_phy,dz8w,t_phy,t8w,GMT,         &
-                         JULDAY,config_flags,RADT,STEPRA,ICLOUD,         &
-                         taucldi,taucldc,warm_rain,                      &
-                         XLAND,TSK,HTOP,HBOT,CUPPT,VEGFRA,SNOW,          &
-                         julyr,                                          &
-                         NPHS,                                           &
-                         TOTSWDN,TOTLWDN,RSWTOA,RLWTOA,CZMEAN,           &
-                         CFRACL,CFRACM,CFRACH,                           &
-                         ACFRST,NCFRST,ACFRCV,NCFRCV,                    &
-                         ids,ide, jds,jde, kds,kde,                      &
-                         ims,ime, jms,jme, kms,kme,                      &
-                         i_start,i_end,j_start,j_end,kts,kte,num_tiles   )
+   SUBROUTINE radiation_driver (                                         &
+                       itimestep,dt ,lw_physics,sw_physics ,NPHS         &
+                      ,AER_DRY,AER_WATER                                 &
+                      ,RTHRATENLW,RTHRATENSW,RTHRATEN                    &
+                      ,GLW,GSW,SWDOWN,XLAT,XLONG,ALBEDO                  &
+                      ,EMISS ,rho ,p8w,p ,pi,dz8w,t,t8w,GMT              &
+                      ,XLAND,TSK,HTOP,HBOT,CUPPT,VEGFRA,SNOW             &
+                      ,julyr ,JULDAY ,RADT,STEPRA,ICLOUD ,warm_rain      &
+                      ,TOTSWDN,TOTLWDN,RSWTOA,RLWTOA,CZMEAN              &
+                      ,CFRACL,CFRACM,CFRACH                              &
+                      ,ACFRST,NCFRST,ACFRCV,NCFRCV                       &
+                      ,ids,ide, jds,jde, kds,kde                         &
+                      ,ims,ime, jms,jme, kms,kme                         &
+                      ,i_start,i_end,j_start,j_end,kts,kte,num_tiles     &
+                    ! Optional
+                      ,taucldi ,taucldc                                  &
+                      ,qv,qc,qr,qi,qs,qg                                 &
+                      ,f_qv,f_qc,f_qr,f_qi,f_qs,f_qg                     &
+                      ,CLDFRA ,Pb                                        &
+                                                                         )
+
 !-------------------------------------------------------------------------
 
 ! !USES:
-   USE module_configure
-   USE module_state_description
+   USE module_state_description, ONLY : RRTMSCHEME, GFDLLWSCHEME        &
+                                       ,SWRADSCHEME, GSFCSWSCHEME       &
+                                       ,GFDLSWSCHEME
    USE module_model_constants
    USE module_wrf_error
 
@@ -155,7 +161,6 @@ CONTAINS
 !-- t8w           temperature at full levels (K)
 !-- GMT           Greenwich Mean Time Hour of model start (hour)
 !-- JULDAY        the initial day (Julian day)
-!-- config_flags  boundary condition flag
 !-- RADT          time for calling radiation (min)
 !-- DEGRAD        conversion factor for 
 !                 degrees to radians (pi/180.) (rad/deg)
@@ -168,12 +173,6 @@ CONTAINS
 !-- XTIME         time since simulation start (min)
 !-- DECLIN        solar declination angle (rad)
 !-- SOLCON        solar constant (W/m^2)
-!-- P_QV          species index for water vapor
-!-- P_QC          species index for cloud water
-!-- P_QR          species index for rain water
-!-- P_QI          species index for cloud ice
-!-- P_QS          species index for snow
-!-- P_QG          species index for graupel
 !-- ids           start index for i in domain
 !-- ide           end index for i in domain
 !-- jds           start index for j in domain
@@ -195,16 +194,19 @@ CONTAINS
 !-- num_tiles     number of tiles
 !
 !==================================================================
-   TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
 !
    INTEGER,      INTENT(IN   )    ::   ids,ide, jds,jde, kds,kde, &
                                        ims,ime, jms,jme, kms,kme, &
                                                          kts,kte, &
-                                       n_moist,num_tiles
+                                       num_tiles
+
+   INTEGER, INTENT(IN)            :: lw_physics, sw_physics
+
    INTEGER, DIMENSION(num_tiles), INTENT(IN) ::                       &
      &           i_start,i_end,j_start,j_end
 
    INTEGER,      INTENT(IN   )    ::   STEPRA,ICLOUD
+
    LOGICAL,      INTENT(IN   )    ::   warm_rain
 
    REAL,      INTENT(IN   )       ::   RADT
@@ -225,27 +227,19 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          INTENT(IN ) ::                                     dz8w, &
                                                              p8w, &
-                                                           p_phy, &
-                                                              Pb, &
-                                                          pi_phy, &
-                                                           t_phy, &
+                                                               p, &
+                                                              pi, &
+                                                               t, &
                                                              t8w, &
-                                                         rho_phy, &
+                                                             rho, &
                                                          aer_dry, &
                                                        aer_water
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
-         INTENT(INOUT) ::                                 CLDFRA
-!
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, n_moist ),         &
-         INTENT(IN ) ::                                    moist
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          INTENT(INOUT)  ::                              RTHRATEN, &
                                                       RTHRATENLW, &
                                                       RTHRATENSW
 
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
-         INTENT(INOUT)  ::                       taucldi,taucldc
 !
    REAL, DIMENSION( ims:ime, jms:jme ),                           &
          INTENT(IN   )  ::                                  XLAT, &
@@ -278,9 +272,29 @@ CONTAINS
                                                           RSWTOA, &  !Added
                                                           ACFRST, &  !Added
                                                           ACFRCV     !Added
+
    INTEGER,DIMENSION( ims:ime, jms:jme ),INTENT(INOUT)        ::  &
                                                           NCFRST, &  !Added
                                                           NCFRCV     !Added
+
+!
+! Optional 
+!
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
+         OPTIONAL,                                                &
+         INTENT(INOUT) ::                                 CLDFRA
+!
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
+         OPTIONAL,                                                &
+         INTENT(IN ) ::                                           &
+                                                               pb &
+                                               ,qv,qc,qr,qi,qs,qg
+
+   LOGICAL, OPTIONAL ::             f_qv,f_qc,f_qr,f_qi,f_qs,f_qg
+!
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
+         OPTIONAL,                                                &
+         INTENT(INOUT)  ::                       taucldi,taucldc
  
 ! LOCAL  VAR
 
@@ -294,214 +308,252 @@ CONTAINS
                  DJUL,RJUL,ECCFAC
 !------------------------------------------------------------------
 
-   if (config_flags%ra_lw_physics .eq. 0 .and. &
-       config_flags%ra_sw_physics .eq. 0)         return
+   if (lw_physics .eq. 0 .and. sw_physics .eq. 0)         return
 
    IF (itimestep .eq. 1 .or. mod(itimestep,STEPRA) .eq. 0) THEN
    gfdl_lw = .false.
    gfdl_sw = .false.
 
 !---------------
-      !$OMP PARALLEL DO   &
-      !$OMP PRIVATE ( ij ,i,j,k,its,ite,jts,jte)
+   !$OMP PARALLEL DO   &
+   !$OMP PRIVATE ( ij ,i,j,k,its,ite,jts,jte)
 
-      DO ij = 1 , num_tiles
-        its = i_start(ij)
-        ite = i_end(ij)
-        jts = j_start(ij)
-        jte = j_end(ij)
+   DO ij = 1 , num_tiles
+     its = i_start(ij)
+     ite = i_end(ij)
+     jts = j_start(ij)
+     jte = j_end(ij)
 
 ! initialize data
 
-   DO j=jts,jte
-   DO i=its,ite
-      GSW(I,J)=0.
-      GLW(I,J)=0.
-      SWDOWN(I,J)=0.
-      GLAT(I,J)=XLAT(I,J)*DEGRAD
-      GLON(I,J)=XLONG(I,J)*DEGRAD
-   ENDDO
-   ENDDO
+     DO j=jts,jte
+     DO i=its,ite
+        GSW(I,J)=0.
+        GLW(I,J)=0.
+        SWDOWN(I,J)=0.
+        GLAT(I,J)=XLAT(I,J)*DEGRAD
+        GLON(I,J)=XLONG(I,J)*DEGRAD
+     ENDDO
+     ENDDO
 
-   DO j=jts,jte
-   DO k=kts,kte
-   DO i=its,ite
-      RTHRATEN(I,K,J)=0.
-   ENDDO
-   ENDDO
-   ENDDO
+     DO j=jts,jte
+     DO k=kts,kte
+     DO i=its,ite
+        RTHRATEN(I,K,J)=0.
+     ENDDO
+     ENDDO
+     ENDDO
 
 !---------------
 ! Calculate constant for short wave radiation
 
-   CALL radconst(XTIME,DECLIN,SOLCON,GMT,JULDAY,           &
-                 DEGRAD,DPD,itimestep,dt                   )
+     CALL radconst(XTIME,DECLIN,SOLCON,GMT,JULDAY,           &
+                   DEGRAD,DPD,itimestep,dt                   )
 
-   CALL cal_cldfra(CLDFRA,moist(ims,kms,jms,P_QC),         &
-                   moist(ims,kms,jms,P_QI),P_QI,P_QC,      &
-                   PARAM_FIRST_SCALAR,                     &
-                   ids,ide, jds,jde, kds,kde,              &
-                   ims,ime, jms,jme, kms,kme,              &
-                   its,ite, jts,jte, kts,kte               )
+     CALL cal_cldfra(CLDFRA,qc,qi,F_QC,F_QI,                 &
+                     ids,ide, jds,jde, kds,kde,              &
+                     ims,ime, jms,jme, kms,kme,              &
+                     its,ite, jts,jte, kts,kte               )
 
 !pjj/cray  Cray X1 cannot print from threaded region
 #ifndef crayx1
-   WRITE(wrf_err_message,*)'SOLCON=',SOLCON,DECLIN,XTIME
-   CALL wrf_debug(50,wrf_err_message)
+     WRITE(wrf_err_message,*)'SOLCON=',SOLCON,DECLIN,XTIME
+     CALL wrf_debug(50,wrf_err_message)
 #endif
 
-   lwrad_select: SELECT CASE(config_flags%ra_lw_physics)
+     lwrad_select: SELECT CASE(lw_physics)
 
         CASE (RRTMSCHEME)
              CALL wrf_debug (100, 'CALL rrtm')
 
-             CALL RRTMLWRAD(RTHRATEN,GLW,EMISS,                    &
-                     moist(ims,kms,jms,P_QV),                      &
-                     moist(ims,kms,jms,P_QC),                      &
-                     moist(ims,kms,jms,P_QR),                      &
-                     moist(ims,kms,jms,P_QI),                      &
-                     moist(ims,kms,jms,P_QS),                      &
-                     moist(ims,kms,jms,P_QG),                      &
-                     p8w,p_phy,pi_phy,dz8w,t_phy,                  &
-                     t8w, rho_phy, CLDFRA,R_d,G,                   &
-                     P_QV,P_QC,P_QR,P_QI,P_QS,P_QG,                &
-                     PARAM_FIRST_SCALAR,                           &
-                     ICLOUD,warm_rain,                             &
-                     ids,ide, jds,jde, kds,kde,                    &     
-                     ims,ime, jms,jme, kms,kme,                    &
-                     its,ite, jts,jte, kts,kte                     )
+             CALL RRTMLWRAD(                                        &
+                  RTHRATEN=RTHRATEN,GLW=GLW,EMISS=EMISS             &
+                 ,QV3D=QV                                           &
+                 ,QC3D=QC                                           &
+                 ,QR3D=QR                                           &
+                 ,QI3D=QI                                           &
+                 ,QS3D=QS                                           &
+                 ,QG3D=QG                                           &
+                 ,P8W=p8w,P3D=p,PI3D=pi,DZ8W=dz8w,T3D=t             &
+                 ,T8W=t8w,RHO3D=rho, CLDFRA3D=CLDFRA,R=R_d,G=G      &
+                 ,F_QV=F_QV,F_QC=F_QC,F_QR=F_QR                     &
+                 ,F_QI=F_QI,F_QS=F_QS,F_QG=F_QG                     &
+                 ,ICLOUD=icloud,WARM_RAIN=warm_rain                 &
+                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &     
+                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
+                                                                    )
 
-       CASE (GFDLLWSCHEME)
+        CASE (GFDLLWSCHEME)
 
              CALL wrf_debug (100, 'CALL gfdllw')
 
-             gfdl_lw  = .true.
-
-               CALL ETARA(DT,RTHRATEN,RTHRATENLW,RTHRATENSW,pi_phy, &
-                        XLAND,p8w,dz8w,rho_phy,p_phy,t_phy,          &
-                        moist(ims,kms,jms,P_QV),                     &
-                        moist(ims,kms,jms,P_QC),                     &
-                        moist(ims,kms,jms,P_QI),                     &
-                        TSK,GLW,GSW,                                 &
-                        TOTSWDN,TOTLWDN,RSWTOA,RLWTOA,CZMEAN,        & !Added
-                        GLAT,GLON,HTOP,HBOT,ALBEDO,CUPPT,            &
-                        VEGFRA,SNOW,G,GMT,                           & !Modified
-                        STEPRA,NPHS,itimestep,                       & !Modified
-                        julyr,julday,gfdl_lw,gfdl_sw,                &
-                        CFRACL,CFRACM,CFRACH,                        & !Added
-                        ACFRST,NCFRST,ACFRCV,NCFRCV,                 & !Added
-                        ids,ide, jds,jde, kds,kde,                   &
-                        ims,ime, jms,jme, kms,kme,                   &
-                        its,ite, jts,jte, kts,kte                    )
+             IF ( PRESENT(F_QV) .AND. PRESENT(F_QC) .AND. PRESENT(F_QI) .AND. &
+                  PRESENT(qv)   .AND. PRESENT(qc)   .AND. PRESENT(qi)  ) THEN
+               IF ( F_QV .AND. F_QC .AND. F_QI ) THEN
+                 gfdl_lw  = .true.
+                 CALL ETARA(                                        &
+                  DT=dt,XLAND=xland                                 &
+                 ,P8W=p8w,DZ8W=dz8w,RHO_PHY=rho,P_PHY=p,T=t         &
+                 ,QV=qv,QW=qc,QI=qi                                 &
+                 ,TSK2D=tsk,GLW=glw,GSW=gsw,PI3D=pi                 &
+                 ,GLAT=glat,GLON=glon,HTOP=htop,HBOT=hbot           &
+                 ,ALBEDO=albedo,CUPPT=cuppt                         &
+                 ,VEGFRA=vegfra,SNOW=snow,G=g,GMT=gmt               &
+                 ,NSTEPRA=stepra,NPHS=nphs,ITIMESTEP=itimestep      &
+                 ,JULYR=julyr,JULDAY=julday                         &
+                 ,GFDL_LW=gfdl_lw,GFDL_SW=gfdl_sw                   &
+                 ,CFRACL=cfracl,CFRACM=cfracm,CFRACH=cfrach         &
+                 ,ACFRST=acfrst,NCFRST=ncfrst                       &
+                 ,ACFRCV=acfrcv,NCFRCV=ncfrcv                       &
+                 ,TOTSWDN=totswdn,TOTLWDN=totlwdn                   &
+                 ,RSWTOA=rswtoa,RLWTOA=rlwtoa,CZMEAN=czmean         &
+                 ,THRATEN=rthraten,THRATENLW=rthratenlw             &
+                 ,THRATENSW=rthratensw                              &
+                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &     
+                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
+                                                                    )
+               ELSE
+                 CALL wrf_error_fatal('Can not call ETARA (1a). Missing moisture fields.')
+               ENDIF
+             ELSE
+               CALL wrf_error_fatal('Can not call ETARA (1b). Missing moisture fields.')
+             ENDIF
 
         CASE DEFAULT
   
-             WRITE( wrf_err_message , * ) 'The longwave option does not exist: ra_lw_physics = ', config_flags%ra_lw_physics
+             WRITE( wrf_err_message , * ) 'The longwave option does not exist: lw_physics = ', lw_physics
              CALL wrf_error_fatal ( wrf_err_message )
            
-   END SELECT lwrad_select    
+     END SELECT lwrad_select    
 
-   IF (config_flags%ra_lw_physics .gt. 0 ) THEN
-      DO j=jts,jte
-      DO k=kts,kte
-      DO i=its,ite
-         RTHRATENLW(I,K,J)=RTHRATEN(I,K,J)
-      ENDDO
-      ENDDO
-      ENDDO
-   ENDIF
+     IF (lw_physics .gt. 0 ) THEN
+        DO j=jts,jte
+        DO k=kts,kte
+        DO i=its,ite
+           RTHRATENLW(I,K,J)=RTHRATEN(I,K,J)
+        ENDDO
+        ENDDO
+        ENDDO
+     ENDIF
 !
 
-   swrad_select: SELECT CASE(config_flags%ra_sw_physics)
+     swrad_select: SELECT CASE(sw_physics)
 
         CASE (SWRADSCHEME)
              CALL wrf_debug(100, 'CALL swrad')
-             CALL SWRAD(dt,RTHRATEN,GSW,XLAT,XLONG,ALBEDO,         &
-                     aer_dry,aer_water,rho_phy,t_phy,              &
-                     moist(ims,kms,jms,P_QV),                      &
-                     moist(ims,kms,jms,P_QC),                      &
-                     moist(ims,kms,jms,P_QR),                      &
-                     moist(ims,kms,jms,P_QI),                      &
-                     moist(ims,kms,jms,P_QS),                      &
-                     moist(ims,kms,jms,P_QG),                      &
-                     p_phy,pi_phy,dz8w,GMT,                        &
-                     R_d,CP,G,JULDAY,                              &
-                     XTIME,DECLIN,SOLCON,                          &
-                     P_QV,P_QC,P_QR,P_QI,P_QS,P_QG,                &
-                     PARAM_FIRST_SCALAR,                           &
-                     RADT,ICLOUD,DEGRAD,warm_rain,                 &
-                     ids,ide, jds,jde, kds,kde,                    &    
-                     ims,ime, jms,jme, kms,kme,                    & 
-                     its,ite, jts,jte, kts,kte                     ) 
+             CALL SWRAD(                                               &
+                     DT=dt,RTHRATEN=rthraten,GSW=gsw                   &
+                    ,XLAT=xlat,XLONG=xlong,ALBEDO=albedo               &
+                    ,AER_DRY=aer_dry,AER_WATER=aer_water               &
+                    ,RHO_PHY=rho,T3D=t                                 &
+                    ,P3D=p,PI3D=pi,DZ8W=dz8w,GMT=gmt                   &
+                    ,R=r_d,CP=cp,G=g,JULDAY=julday                     &
+                    ,XTIME=xtime,DECLIN=declin,SOLCON=solcon           &
+                    ,RADFRQ=radt,ICLOUD=icloud,DEGRAD=degrad           &
+                    ,warm_rain=warm_rain                               &
+                    ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &     
+                    ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                    ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
+                    ,QV3D=qv                                           &
+                    ,QC3D=qc                                           &
+                    ,QR3D=qr                                           &
+                    ,QI3D=qi                                           &
+                    ,QS3D=qs                                           &
+                    ,QG3D=qg                                           &
+                    ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                     &
+                    ,F_QI=f_qi,F_QS=f_qs,F_QG=f_qg                     &
+                                                                       )
 
         CASE (GSFCSWSCHEME)
              CALL wrf_debug(100, 'CALL gsfcswrad')
-             CALL GSFCSWRAD(RTHRATEN,GSW,XLAT,XLONG,               &
-                     ALBEDO,t_phy,                                 &
-                     moist(ims,kms,jms,P_QV),                      &
-                     moist(ims,kms,jms,P_QC),                      &
-                     moist(ims,kms,jms,P_QR),                      &
-                     moist(ims,kms,jms,P_QI),                      &
-                     moist(ims,kms,jms,P_QS),                      &
-                     moist(ims,kms,jms,P_QG),                      &
-                     p_phy,p8w,pi_phy,CLDFRA,                      &
-                     GMT,CP,G,JULDAY,XTIME,DECLIN,SOLCON,          &
-                     P_QV,P_QC,P_QR,P_QI,P_QS,P_QG,                &
-                     PARAM_FIRST_SCALAR,                           &
-                     RADT,DEGRAD,taucldi,taucldc,warm_rain,        &
-                     ids,ide, jds,jde, kds,kde,                    &
-                     ims,ime, jms,jme, kms,kme,                    &
-                     its,ite, jts,jte, kts,kte                     )
+             CALL GSFCSWRAD(                                           &
+                     RTHRATEN=rthraten,GSW=gsw,XLAT=xlat,XLONG=xlong   &
+                    ,ALB=albedo,T3D=t,P3D=p,P8W3D=p8w,pi3D=pi          &
+                    ,CLDFRA3D=cldfra                                   &
+                    ,GMT=gmt,CP=cp,G=g                                 &
+                    ,JULDAY=julday,XTIME=xtime                         &
+                    ,DECLIN=declin,SOLCON=solcon                       &
+                    ,RADFRQ=radt,DEGRAD=degrad                         &
+                    ,TAUCLDI=taucldi,TAUCLDC=taucldc                   &
+                    ,WARM_RAIN=warm_rain                               &
+                    ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &     
+                    ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                    ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
+                    ,QV3D=qv                                           &
+                    ,QC3D=qc                                           &
+                    ,QR3D=qr                                           &
+                    ,QI3D=qi                                           &
+                    ,QS3D=qs                                           &
+                    ,QG3D=qg                                           &
+                    ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                     &
+                    ,F_QI=f_qi,F_QS=f_qs,F_QG=f_qg                     &
+                                                                       )
 
-       CASE (GFDLSWSCHEME)
+        CASE (GFDLSWSCHEME)
 
              CALL wrf_debug (100, 'CALL gfdlsw')
 
-             gfdl_sw = .true.
-
-               CALL  ETARA(DT,RTHRATEN,RTHRATENLW,RTHRATENSW,pi_phy, &
-                        XLAND,p8w,dz8w,rho_phy,p_phy,t_phy,          &
-                        moist(ims,kms,jms,P_QV),                     &
-                        moist(ims,kms,jms,P_QC),                     &
-                        moist(ims,kms,jms,P_QI),                     &
-                        TSK,GLW,GSW,                                 &
-                        TOTSWDN,TOTLWDN,RSWTOA,RLWTOA,CZMEAN,        & !Added
-                        GLAT,GLON,HTOP,HBOT,ALBEDO,CUPPT,            &
-                        VEGFRA,SNOW,G,GMT,                           & !Modified
-                        STEPRA,NPHS,itimestep,                       & !Modified
-                        julyr,julday,gfdl_lw,gfdl_sw,                &
-                        CFRACL,CFRACM,CFRACH,                        & !Added
-                        ACFRST,NCFRST,ACFRCV,NCFRCV,                 & !Added
-                        ids,ide, jds,jde, kds,kde,                   &
-                        ims,ime, jms,jme, kms,kme,                   &
-                        its,ite, jts,jte, kts,kte                    )
+             IF ( PRESENT(F_QV) .AND. PRESENT(F_QC) .AND. PRESENT(F_QI) .AND. &
+                  PRESENT(qv)   .AND. PRESENT(qc)   .AND. PRESENT(qi)  ) THEN
+               IF ( F_QV .AND. F_QC .AND. F_QI ) THEN
+                 gfdl_sw = .true.
+                 CALL ETARA(                                        &
+                  DT=dt,XLAND=xland                                 &
+                 ,P8W=p8w,DZ8W=dz8w,RHO_PHY=rho,P_PHY=p,T=t         &
+                 ,QV=qv,QW=qc,QI=qi                                 &
+                 ,TSK2D=tsk,GLW=glw,GSW=gsw,PI3D=pi                 &
+                 ,GLAT=glat,GLON=glon,HTOP=htop,HBOT=hbot           &
+                 ,ALBEDO=albedo,CUPPT=cuppt                         &
+                 ,VEGFRA=vegfra,SNOW=snow,G=g,GMT=gmt               &
+                 ,NSTEPRA=stepra,NPHS=nphs,ITIMESTEP=itimestep      &
+                 ,JULYR=julyr,JULDAY=julday                         &
+                 ,GFDL_LW=gfdl_lw,GFDL_SW=gfdl_sw                   &
+                 ,CFRACL=cfracl,CFRACM=cfracm,CFRACH=cfrach         &
+                 ,ACFRST=acfrst,NCFRST=ncfrst                       &
+                 ,ACFRCV=acfrcv,NCFRCV=ncfrcv                       &
+                 ,TOTSWDN=totswdn,TOTLWDN=totlwdn                   &
+                 ,RSWTOA=rswtoa,RLWTOA=rlwtoa,CZMEAN=czmean         &
+                 ,THRATEN=rthraten,THRATENLW=rthratenlw             &
+                 ,THRATENSW=rthratensw                              &
+                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &     
+                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
+                                                                    )
+               ELSE
+                 CALL wrf_error_fatal('Can not call ETARA (2a). Missing moisture fields.')
+               ENDIF
+             ELSE
+               CALL wrf_error_fatal('Can not call ETARA (2b). Missing moisture fields.')
+             ENDIF
 
         CASE DEFAULT
 
-             WRITE( wrf_err_message , * ) 'The shortwave option does not exist: ra_sw_physics = ', config_flags%ra_sw_physics
+             WRITE( wrf_err_message , * ) 'The shortwave option does not exist: sw_physics = ', sw_physics
              CALL wrf_error_fatal ( wrf_err_message )
 
-   END SELECT swrad_select    
+     END SELECT swrad_select    
 
-   IF (config_flags%ra_sw_physics .gt. 0) THEN
-      DO j=jts,jte
-      DO k=kts,kte
-      DO i=its,ite
-         RTHRATENSW(I,K,J)=RTHRATEN(I,K,J)-RTHRATENLW(I,K,J)
-      ENDDO
-      ENDDO
-      ENDDO
+     IF (sw_physics .gt. 0) THEN
+        DO j=jts,jte
+        DO k=kts,kte
+        DO i=its,ite
+           RTHRATENSW(I,K,J)=RTHRATEN(I,K,J)-RTHRATENLW(I,K,J)
+        ENDDO
+        ENDDO
+        ENDDO
 
-      DO j=jts,jte
-      DO i=its,ite
-         SWDOWN(I,J)=GSW(I,J)/(1.-ALBEDO(I,J))
-      ENDDO
-      ENDDO
+        DO j=jts,jte
+        DO i=its,ite
+           SWDOWN(I,J)=GSW(I,J)/(1.-ALBEDO(I,J))
+        ENDDO
+        ENDDO
 
-   ENDIF
+     ENDIF
 
-      ENDDO
-      !$OMP END PARALLEL DO
+   ENDDO
+   !$OMP END PARALLEL DO
 
    ENDIF
 
@@ -570,8 +622,7 @@ CONTAINS
 !BOP
 ! !IROUTINE: cal_cldfra - Compute cloud fraction
 ! !INTERFACE:
-   SUBROUTINE cal_cldfra(CLDFRA,QC,QI,P_QI,P_QC,                     &
-          PARAM_FIRST_SCALAR,                                        &
+   SUBROUTINE cal_cldfra(CLDFRA,QC,QI,F_QC,F_QI,                     &
           ids,ide, jds,jde, kds,kde,                                 &
           ims,ime, jms,jme, kms,kme,                                 &
           its,ite, jts,jte, kts,kte                                  )
@@ -582,7 +633,6 @@ CONTAINS
                                           ims,ime, jms,jme, kms,kme, &
                                           its,ite, jts,jte, kts,kte
 
-   INTEGER,  INTENT(IN   )   ::           P_QI,P_QC,PARAM_FIRST_SCALAR
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(OUT  ) ::    &
                                                              CLDFRA
@@ -590,6 +640,8 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   ) ::    &
                                                                  QI, &
                                                                  QC
+
+   LOGICAL,INTENT(IN) :: F_QC,F_QI
 
    REAL thresh
    INTEGER:: i,j,k
@@ -610,7 +662,7 @@ CONTAINS
 !---------------------------------------------------------------------
      thresh=1.0e-6
 
-     IF ( P_QI .ge. PARAM_FIRST_SCALAR .and. P_QC .ge. PARAM_FIRST_SCALAR ) THEN
+     IF ( f_qi .AND. f_qc ) THEN
         DO j = jts,jte
         DO k = kts,kte
         DO i = its,ite
@@ -622,7 +674,7 @@ CONTAINS
         ENDDO
         ENDDO
         ENDDO
-     ELSE IF ( P_QC .ge. PARAM_FIRST_SCALAR ) THEN
+     ELSE IF ( f_qc ) THEN
         DO j = jts,jte
         DO k = kts,kte
         DO i = its,ite

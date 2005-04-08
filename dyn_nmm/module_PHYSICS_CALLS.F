@@ -289,30 +289,41 @@
 !
       CALL SET_TILES(GRID,IDS+1,IDE-1,JDS+2,JDE-2,ITS,ITE,JTS,JTE)
 !
-      CALL RADIATION_DRIVER(NTSD,DT                                     &
-     &                     ,AER_DRY,AER_WATER                           &
-     &                     ,THRATENLW,THRATENSW,THRATEN                 &
-     &                     ,GLW,SWNETDN,SWDOWN                          &
-     &                     ,XLAT,XLON,ALBEDO,ZERO_3D,EPSR               &
-     &                     ,RR,WATER,N_MOIST                            &
-     &                     ,P8W,P_PHY,ZERO_3D,PI_PHY,DZ,T_PHY,T8W       &
-     &                     ,GMT,JULDAY,CONFIG_FLAGS,RADT                &
-     &                     ,NRAD                                        & 
-     &                     ,ICLOUD,ZERO_3D,ZERO_3D,WARM_RAIN            & 
-     &                     ,XLAND,TSFC,HTOP,HBOT,CUPPT,VEGFRC,SNOW      & 
-     &                     ,JULYR                                       & 
-     &                     ,NPHS                                        &
-     &                     ,TOTSWDN ,TOTLWDN                            &
-     &                     ,RSWTOA ,RLWTOA                              &
-     &                     ,CZMEAN ,CFRACL                              &
-     &                     ,CFRACM ,CFRACH                              &
-     &                     ,ACFRST ,NCFRST                              &
-     &                     ,ACFRCV ,NCFRCV                              &
-     &                     ,IDS,IDE,JDS,JDE,KDS,KDE                     &
-     &                     ,IMS,IME,JMS,JME,KMS,KME                     &
-     &                     ,GRID%I_START,GRID%I_END                     &
-     &                     ,GRID%J_START,GRID%J_END                     &
-     &                     ,KTS,KTE,GRID%NUM_TILES)
+      CALL RADIATION_DRIVER(                                            &
+     &                  IDS=IDS,IDE=IDE,JDS=JDS,JDE=JDE,KDS=KDS,KDE=KDE &
+     &                 ,IMS=IMS,IME=IME,JMS=JMS,JME=JME,KMS=KMS,KME=KME &
+     &                 ,I_START=GRID%I_START,I_END=GRID%I_END           &
+     &                 ,J_START=GRID%J_START,J_END=GRID%J_END           &
+     &                 ,KTS=KTS,KTE=KTE,NUM_TILES=GRID%NUM_TILES        &
+     &                 ,ITIMESTEP=NTSD,DT=DT                            &
+     &                 ,AER_DRY=AER_DRY,AER_WATER=AER_WATER             &
+     &                 ,RTHRATENLW=THRATENLW,RTHRATENSW=THRATENSW       &
+     &                 ,RTHRATEN=THRATEN                                &
+     &                 ,GLW=GLW,GSW=SWNETDN,SWDOWN=SWDOWN               &
+     &                 ,XLAT=XLAT,XLON=XLONG,ALBEDO=ALBEDO,EMISS=EPSR   &
+     &                 ,XLAND=XLAND,TSK=TSFC                            &
+     &                 ,HTOP=HTOP,HBOT=HBOT,CUPPT=CUPPT                 &
+     &                 ,VEGFRA=VEGFRC,SNOW=SNOW                         &
+     &                 ,RHO=RR,P8W=P8W,P=P_PHY,PI=PI_PHY                &
+     &                 ,DZ8W=DZ,T=T_PHY,T8W=T8W,GMT=GMT                 &
+     &                 ,JULDAY=JULDAY,JULYR=JULYR,NPHS=NPHS             &
+     &                 ,LW_PHYSICS=CONFIG_FLAGS%LW_PHYSICS              &
+     &                 ,SW_PHYSICS=CONFIG_FLAGS%SW_PHYSICS              &
+     &                 ,RADT=RADT,STEPRA=NRAD,ICLOUD=ICLOUD             &
+     &                 ,WARM_RAIN=WARM_RAIN                             & 
+     &                 ,TOTSWDN=TOTSWDN,TOTLWDN=TOTLWDN                 &
+     &                 ,RSWTOA=RSWTOA,RLWTOA=RLWTOA                     &
+     &                 ,CZMEAN=CZMEAN,CFRACL=CFRACL                     &
+     &                 ,CFRACM=CFRACM,CFRACH=CFRACH                     &
+     &                 ,ACFRST=ACFRST,NCFRST=NCFRST                     &
+     &                 ,ACFRCV=ACFRCV,NCFRCV=NCFRCV                     &
+     &                 ,QV=WATER(IMS,KMS,JMS,P_QV) , F_QV=F_QV          &
+     &                 ,QC=WATER(IMS,KMS,JMS,P_QC) , F_QC=F_QC          &
+     &                 ,QR=WATER(IMS,KMS,JMS,P_QR) , F_QR=F_QR          &
+     &                 ,QI=WATER(IMS,KMS,JMS,P_QI) , F_QI=F_QI          &
+     &                 ,QS=WATER(IMS,KMS,JMS,P_QS) , F_QS=F_QS          &
+     &                 ,QG=WATER(IMS,KMS,JMS,P_QG) , F_QG=F_QG          &
+     &                                                                  )
 !
 !-----------------------------------------------------------------------
 !
@@ -1694,6 +1705,7 @@
      &                 ,QI_CURR=water(ims,kms,jms,P_QI) , F_QI=F_QI     &
      &                 ,QS_CURR=water(ims,kms,jms,P_QS) , F_QS=F_QS     &
      &                 ,QG_CURR=water(ims,kms,jms,P_QG) , F_QG=F_QG     &
+
                                                                         )
 !
 !-----------------------------------------------------------------------

@@ -350,10 +350,13 @@ CONTAINS
      CALL radconst(XTIME,DECLIN,SOLCON,GMT,JULDAY,           &
                    DEGRAD,DPD,itimestep,dt                   )
 
-     CALL cal_cldfra(CLDFRA,qc,qi,F_QC,F_QI,                 &
-                     ids,ide, jds,jde, kds,kde,              &
-                     ims,ime, jms,jme, kms,kme,              &
-                     its,ite, jts,jte, kts,kte               )
+     IF ( PRESENT ( CLDFRA ) .AND.                           &
+          PRESENT(F_QC) .AND. PRESENT ( F_QI ) ) THEN
+       CALL cal_cldfra(CLDFRA,qc,qi,F_QC,F_QI,               &
+                       ids,ide, jds,jde, kds,kde,            &
+                       ims,ime, jms,jme, kms,kme,            &
+                       its,ite, jts,jte, kts,kte             )
+     ENDIF
 
 !pjj/cray  Cray X1 cannot print from threaded region
 #ifndef crayx1

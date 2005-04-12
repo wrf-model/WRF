@@ -1287,8 +1287,8 @@ CONTAINS
       IF(CNCLD)THEN
         IF(HBOT(I,J)-HTOP(I,J).GT.1.)THEN
 !--- Count locations with convective cloudiness
-          ACFRST(I,J)=ACFRST(I,J)+CFRAVG
-          NCFRST(I,J)=NCFRST(I,J)+1
+          ACFRCV(I,J)=ACFRCV(I,J)+CFRAVG
+          NCFRCV(I,J)=NCFRCV(I,J)+1
         ENDIF
         BITS=.FALSE.
         DO LL=1,LM
@@ -1302,8 +1302,8 @@ CONTAINS
         ENDIF
       ELSE
 !--- Count only locations with grid-scale cloudiness
-        ACFRCV(I,J)=ACFRCV(I,J)+CFRAVG
-        NCFRCV(I,J)=NCFRCV(I,J)+1
+        ACFRST(I,J)=ACFRST(I,J)+CFRAVG
+        NCFRST(I,J)=NCFRST(I,J)+1
       ENDIF
   650 CONTINUE
 !***

@@ -192,7 +192,7 @@ state  real   ustar     ij    dyn_nmm   1    -     irh
 state  real   z0        ij    dyn_nmm   1    -     i01rh
 state  real   z0base    ij    dyn_nmm   1    -     ir
 state  real   ths       ij    dyn_nmm   1    -     irh
-state  real   qs        ij    dyn_nmm   1    -     ir
+state  real   qs        ij    dyn_nmm   1    -     irh
 state  real   twbs      ij    dyn_nmm   1    -     irh
 state  real   qwbs      ij    dyn_nmm   1    -     irh
 state  real   prec      ij    dyn_nmm   1    -     rh
@@ -215,6 +215,8 @@ state  real   t_adj     ikj   dyn_nmm   1    -     r
 state  real   t_old     ikj   dyn_nmm   1    -     r
 state  real   zero_3d   ikj   dyn_nmm   1    -     r
 state  real   W0AVG     ikj   dyn_nmm   1    -     r        "W0AVG" "AVERAGE VERTICAL VELOCITY FOR KF CUMULUS SCHEME"         "m s-1"
+state  real   AKHS_OUT  ij    dyn_nmm   1    -     h        "AKHS_OUT"  "OUTPUT SFC EXCH COEFF FOR HEAT"                      "m^2 s-1"
+state  real   AKMS_OUT  ij    dyn_nmm   1    -     -        "AKMS_OUT"  "OUTPUT SFC EXCH COEFF FOR MOMENTUM"                  "m^2 s-1"    
 #
 # module_PHYS
 #
@@ -522,7 +524,7 @@ state    real   VEGFRA           ij     misc        1         -     i01rh       
 state    real   SFCEVP           ij     misc        1         -     irh     "SFCEVP"               "SURFACE EVAPORATION" ""
 state    real   GRDFLX           ij     misc        1         -     irh     "GRDFLX"               "GROUND HEAT FLUX" ""
 state    real   ALBBCK           ij     misc        1         -     i012r   "ALBBCK"          "BACKGROUND ALBEDO"        "NA"
-state    real   SFCEXC           ij     misc        1         -     irh     "SFCEXC "              "SURFACE EXCHANGE COEFFICIENT"         ""
+state    real   SFCEXC           ij     misc        1         -     ir      "SFCEXC "              "SURFACE EXCHANGE COEFFICIENT"         ""
 state    real   ACSNOW           ij     misc        1         -     irh       "ACSNOW"               "ACCUMULATED SNOW" ""
 state    real   ACSNOM           ij     misc        1         -     irh       "ACSNOM"               "ACCUMULATED MELTED SNOW"         ""
 state    real   SNOW             ij     misc        1         -     irh       "SNOW"                 "SNOW WATER EQUIVALENT"         ""
@@ -532,9 +534,9 @@ state    real   WEASD            ij     misc        1         -     i01rh       
 state    real  ZNT              ij      misc        1         -     ir        "ZNT"                   "TIME-VARYING ROUGHNESS LENGTH"
 state    real  MOL              ij      misc        1         -     ir        "MOL"                   "T* IN SIMILARITY THEORY"                      "K"
 
-
-state    real   tke_myj         ikj     misc        1         -     rh        "tke_myj"               "TKE FROM MELLOR-YAMADA-JANJIC      "m2 s-2"
-state    real   EXCH_H         ikj     misc        1         -     rh         "EXCH_H"               "EXCHANGE COEFFICIENTS "
+state    real   tke_myj         ikj     misc        1         -     rh        "tke_myj"               "TKE FROM MELLOR-YAMADA-JANJIC"     "m2 s-2"
+state    real   EL_MYJ          ikj     misc        1         -      h        "el_myj"                "MIXING LENGTH FROM MELLOR-YAMADA-JANJIC"     "m"
+state    real   EXCH_H         ikj     misc        1         -     rh         "EXCH_H"               "EXCHANGE COEFFICIENTS FOR HEAT"               "m2 s-1"
 state   real   THZ0             ij     misc        1         -     irh       "THZ0"                  "POTENTIAL TEMPERATURE AT ZNT"                 "K"
 state   real   QZ0              ij     misc        1         -     irh       "QZ0"                   "SPECIFIC HUMIDITY AT ZNT"                     "kg kg-1"
 state   real   UZ0              ij     misc        1         -     irh       "UZ0"                   "U WIND COMPONENT AT ZNT"                      "m s-1"
@@ -547,8 +549,8 @@ state   real   dudt              ikj     misc        1         -     -
 state   real   dvdt              ikj     misc        1         -     -      
 
 state   real   QSFC             ij     misc        1         -     irh       "QSFC"                  "SPECIFIC HUMIDITY AT LOWER BOUNDARY"          "kg kg-1"
-state   real   AKHS             ij     misc        1         -     irh       "AKHS"                  "SFC EXCH COEFF FOR HEAT"                      "m s-1"    
-state   real   AKMS             ij     misc        1         -     irh       "AKMS"                  "SFC EXCH COEFF FOR MOMENTUM"                  "m s-1"    
+state   real   AKHS             ij     misc        1         -     ir        "AKHS"                  "SFC EXCH COEFF FOR HEAT"                      "m s-1"    
+state   real   AKMS             ij     misc        1         -     ir        "AKMS"                  "SFC EXCH COEFF FOR MOMENTUM"                  "m s-1"    
 i1      real   TSHLTR           ij     misc        1         -     -         "TSHLTR"                "SHELTER THETA FROM MYJ"                       "K"         
 i1      real   QSHLTR           ij     misc        1         -     -         "QSHLTR"                "SHELTER SPECIFIC HUMIDITY FROM MYJ"           "kg kg-1"
 i1      real   TH10             ij     misc        1         -     -         "TH10"                  "10-M THETA FROM MYJ"                          "K"        

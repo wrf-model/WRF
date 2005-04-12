@@ -596,7 +596,7 @@ BENCH_START(pbl_driver_tim)
      &           ,HFX,QFX,REGIME,GRDFLX                               &
      &           ,u_phy,v_phy,th_phy,rho,moist_2                      &
      &           ,p_phy,pi_phy,p8w,t_phy,dz8w,z                       &
-     &           ,TKE_MYJ,EXCH_H,AKHS,AKMS                            &
+     &           ,TKE_MYJ,EL_MYJ,EXCH_H,AKHS,AKMS                     &
      &           ,THZ0,QZ0,UZ0,VZ0,QSFC,LOWLYR                        &
      &           ,PSIM, PSIH, GZ1OZ0, WSPD, BR, CHKLOWQ               &
      &           ,config_flags,DX,num_3d_m                            &

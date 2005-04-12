@@ -159,7 +159,7 @@ PROGRAM real_data
 
    !  We are done.
 
-   CALL       wrf_debug (   0 , 'real_nmm: SUCCESS COMPLETE REAL_EM INIT' )
+   CALL       wrf_debug (   0 , 'real_nmm: SUCCESS COMPLETE REAL_NMM INIT' )
 
 	write(0,*) 'to wrf_dm_shutdown call'
 

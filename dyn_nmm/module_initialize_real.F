@@ -55,7 +55,7 @@ CONTAINS
            .or. dyn_opt .eq. 2 &
            .or. dyn_opt .eq. 3 &
                                           ) THEN
-	CALL wrf_error_fatal ( "no RK version within dyn_nmm, dyn_opt wrong in namelist, wrf_error_fataling" )
+        CALL wrf_error_fatal ( "no RK version within dyn_nmm, dyn_opt wrong in namelist, wrf_error_fataling" )
 
      ELSEIF ( dyn_opt .eq. 4 ) THEN
 
@@ -67,7 +67,7 @@ CONTAINS
 
       ELSE
          WRITE(0,*)' init_domain: unknown or unimplemented dyn_opt = ',dyn_opt
-	CALL wrf_error_fatal ( "ERROR-dyn_opt-wrong-in-namelist" )
+        CALL wrf_error_fatal ( "ERROR-dyn_opt-wrong-in-namelist" )
       ENDIF
 
    END SUBROUTINE init_domain
@@ -104,7 +104,7 @@ CONTAINS
 
       !  Local data
 
-	CHARACTER(LEN=19):: start_date
+        CHARACTER(LEN=19):: start_date
 
       INTEGER :: error
       REAL    :: p_surf, p_level
@@ -136,12 +136,12 @@ CONTAINS
         REAL:: WBD,SBD
         REAL:: RSNOW,SNOFAC
         REAL, PARAMETER:: SALP=2.60
-	REAL, PARAMETER:: SNUP=0.040
-	REAL:: SMCSUM,STCSUM,SEAICESUM,FISX
+        REAL, PARAMETER:: SNUP=0.040
+        REAL:: SMCSUM,STCSUM,SEAICESUM,FISX
 
 
-	INTEGER:: KHH,KVH,JAM,JA, IHL, IHH, L
-	INTEGER:: II,JJ,ISRCH,ISUM,ival,jval,ITER
+        INTEGER:: KHH,KVH,JAM,JA, IHL, IHH, L
+        INTEGER:: II,JJ,ISRCH,ISUM,ival,jval,ITER
 
         REAL, PARAMETER:: DTR=0.01745329
         REAL, PARAMETER:: W_NMM=0.08
@@ -165,7 +165,7 @@ CONTAINS
         REAL, PARAMETER:: DZI=2.0
         REAL, PARAMETER:: THL=210.
         REAL, PARAMETER:: PLQ=70000.
-	REAL, PARAMETER:: ERAD=6371200.
+        REAL, PARAMETER:: ERAD=6371200.
 
 #ifdef DEREF_KLUDGE
 !  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
@@ -226,19 +226,19 @@ CONTAINS
 
       END SELECT
 
-	
-	DT=float(TIME_STEP)
+        
+        DT=float(TIME_STEP)
 
-	
+        
 
-!	NNXP=IDE-1
-!	NNYP=JDE-1
+!       NNXP=IDE-1
+!       NNYP=JDE-1
 
-	NNXP=min(ITE,IDE-1)
-	NNYP=min(JTE,JDE-1)
+        NNXP=min(ITE,IDE-1)
+        NNYP=min(JTE,JDE-1)
 
-	write(0,*) 'nnxp,nnyp: ', nnxp,nnyp
-	write(0,*) 'IDE, JDE: ', IDE,JDE
+        write(0,*) 'nnxp,nnyp: ', nnxp,nnyp
+        write(0,*) 'IDE, JDE: ', IDE,JDE
 
         JAM=6+2*(JDE-JDS-10)
 
@@ -254,32 +254,32 @@ CONTAINS
 
     CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
 
-	write(0,*) 'cen_lat: ', config_flags%cen_lat
-	write(0,*) 'cen_lon: ', config_flags%cen_lon
-!	write(0,*) 'truelat?: ', config_flags%moad_stand_lats(1)
-	write(0,*) 'dx: ', config_flags%dx
-	write(0,*) 'dy: ', config_flags%dy
-	write(0,*) 'config_flags%start_year: ', config_flags%start_year
-	write(0,*) 'config_flags%start_month: ', config_flags%start_month
-	write(0,*) 'config_flags%start_day: ', config_flags%start_day
-	write(0,*) 'config_flags%start_hour: ', config_flags%start_hour
+        write(0,*) 'cen_lat: ', config_flags%cen_lat
+        write(0,*) 'cen_lon: ', config_flags%cen_lon
+!       write(0,*) 'truelat?: ', config_flags%moad_stand_lats(1)
+        write(0,*) 'dx: ', config_flags%dx
+        write(0,*) 'dy: ', config_flags%dy
+        write(0,*) 'config_flags%start_year: ', config_flags%start_year
+        write(0,*) 'config_flags%start_month: ', config_flags%start_month
+        write(0,*) 'config_flags%start_day: ', config_flags%start_day
+        write(0,*) 'config_flags%start_hour: ', config_flags%start_hour
 
 
-	write(start_date,435) config_flags%start_year, config_flags%start_month, &
- 		config_flags%start_day, config_flags%start_hour
-  435	format(I4,'-',I2.2,'-',I2.2,'_',I2.2,':00:00')
-	
-	dlmd=config_flags%dx
-	dphd=config_flags%dy
+        write(start_date,435) config_flags%start_year, config_flags%start_month, &
+                config_flags%start_day, config_flags%start_hour
+  435   format(I4,'-',I2.2,'-',I2.2,'_',I2.2,':00:00')
+        
+        dlmd=config_flags%dx
+        dphd=config_flags%dy
 
-!	tph0d=global_meta%moad_known_lat
-!	tlm0d=global_meta%moad_known_lon
+!       tph0d=global_meta%moad_known_lat
+!       tlm0d=global_meta%moad_known_lon
 
-	tph0d=config_flags%cen_lat
+        tph0d=config_flags%cen_lat
         tlm0d=config_flags%cen_lon
 
-	ival=ite-15
-	jval=jte-15
+        ival=ite-15
+        jval=jte-15
 
 !==========================================================================
 
@@ -302,8 +302,8 @@ CONTAINS
 !       DO j = jts, MIN(jte,jde-1)
 !        DO k = kts, kde-1
 !         DO i = its, MIN(ite,ide-1)
-! 	 HTM(I,K,J)=1.
-!	 VTM(I,K,J)=1.
+!        HTM(I,K,J)=1.
+!        VTM(I,K,J)=1.
 !         ENDDO
 !        ENDDO
 !       ENDDO
@@ -375,61 +375,61 @@ CONTAINS
 
 !new seaice stuff
 
-!	write(0,*) 'skip seaice'
-!	goto 979
+!       write(0,*) 'skip seaice'
+!       goto 979
 
        DO j = jts, MIN(jte,jde-1)
           IHE(J)=MOD(J+1,2)
           IHW(J)=IHE(J)-1
        ENDDO
 
-	DO ITER=1,10	
+        DO ITER=1,10    
 
        DO j = jts+1, MIN(jte,jde-1)-1
          DO i = its+1, MIN(ite,ide-1)-1
 
 ! any sea ice around point in question?
 
-	IF (SM(I,J) .eq. 1) THEN
-	
-	SEAICESUM=SICE(I+IHE(J),J+1)+SICE(I+IHW(J),J+1)+ &
+        IF (SM(I,J) .eq. 1) THEN
+        
+        SEAICESUM=SICE(I+IHE(J),J+1)+SICE(I+IHW(J),J+1)+ &
                   SICE(I+IHE(J),J-1)+SICE(I+IHW(J),J-1)
 
-	IF (SEAICESUM .ge. 1. .and. SEAICESUM .lt. 3.) THEN
+        IF (SEAICESUM .ge. 1. .and. SEAICESUM .lt. 3.) THEN
 
-	IF ((SICE(I+IHE(J),J+1).eq.0 .and. SM(I+IHE(J),J+1).eq.0) .OR. &
+        IF ((SICE(I+IHE(J),J+1).eq.0 .and. SM(I+IHE(J),J+1).eq.0) .OR. &
             (SICE(I+IHW(J),J+1).eq.0 .and. SM(I+IHW(J),J+1).eq.0) .OR. &
             (SICE(I+IHE(J),J-1).eq.0 .and. SM(I+IHE(J),J-1).eq.0) .OR. &
             (SICE(I+IHW(J),J-1).eq.0 .and. SM(I+IHW(J),J-1).eq.0)) THEN 
 
-! 	HAVE SEA ICE AND A SURROUNDING LAND POINT - CONVERT TO SEA ICE
+!       HAVE SEA ICE AND A SURROUNDING LAND POINT - CONVERT TO SEA ICE
 
-	write(0,*) 'MAKING SEA ICE AT I,J: ', I,J, 'on iter: ', iter
-	SICE(I,J)=1.0
-	SM(I,J)=0.
+        write(0,*) 'MAKING SEA ICE AT I,J: ', I,J, 'on iter: ', iter
+        SICE(I,J)=1.0
+        SM(I,J)=0.
 
-	ENDIF
+        ENDIF
 
-	ELSEIF (SEAICESUM .ge. 3) THEN
+        ELSEIF (SEAICESUM .ge. 3) THEN
 
-! 	WATER POINT SURROUNDED BY ICE  - CONVERT TO SEA ICE
+!       WATER POINT SURROUNDED BY ICE  - CONVERT TO SEA ICE
 
-	write(0,*) 'MAKING SEA ICE(2) AT I,J: ', I,J, 'on iter: ', iter
-	SICE(I,J)=1.0
-	SM(I,J)=0.
+        write(0,*) 'MAKING SEA ICE(2) AT I,J: ', I,J, 'on iter: ', iter
+        SICE(I,J)=1.0
+        SM(I,J)=0.
 
-	ENDIF
-	
-	ENDIF
+        ENDIF
+        
+        ENDIF
 
-	ENDDO
-	ENDDO
+        ENDDO
+        ENDDO
 
-	ENDDO
+        ENDDO
 
-	
-	
-  979	continue
+        
+        
+  979   continue
 
 
 !new new seaice stuff
@@ -478,7 +478,7 @@ CONTAINS
   !  in elevation between the current model's elevation and the incoming data's
   !  orography.
 
-	write(0,*) 'flag_toposoil= ', flag_toposoil
+        write(0,*) 'flag_toposoil= ', flag_toposoil
          
       IF ( ( flag_toposoil .EQ. 1 ) ) THEN 
 
@@ -490,7 +490,7 @@ CONTAINS
           END DO
         END DO
            
-!	if (maxval(toposoil) .gt. 100.) then
+!       if (maxval(toposoil) .gt. 100.) then
 
 !  being avoided.   Something to revisit eventually.
 !
@@ -499,7 +499,7 @@ CONTAINS
 !    CODE NOT TESTED AT NCEP USING THIS FUNCTIONALITY, 
 !    SO TO BE SAFE WILL AVOID FOR RETRO RUNS.
 
-!	write(0,*) 'calling adjust_soil_temp_new'
+!       write(0,*) 'calling adjust_soil_temp_new'
 !        CALL adjust_soil_temp_new ( soiltb , 2 , &
 !                       nmm_tsk , ht , toposoil , landmask, flag_toposoil , &
 !                       st000010 , st010040 , st040100 , st100200 , st010200 , &
@@ -512,7 +512,7 @@ CONTAINS
 !                       ids , ide , jds , jde , kds , kde , &
 !                       ims , ime , jms , jme , kms , kme , &
 !                       its , ite , jts , jte , kts , kte )
-!	endif
+!       endif
 
       END IF
 
@@ -526,8 +526,8 @@ CONTAINS
 
 
 
-! 	sm (1=water, 0=land)
-!	landmask(0=water, 1=land)
+!       sm (1=water, 0=land)
+!       landmask(0=water, 1=land)
 
 
 
@@ -550,9 +550,13 @@ CONTAINS
                 write(0,*) 'land mask and SM both > 0.5: ', &
                                            I,J,landmask(I,J),sm(I,J)
 
+        SM(I,J)=0.
+
         elseif (landmask(I,J) .lt. 0.5 .and. sm(I,J) .eq. 0.0) then
                 write(0,*) 'land mask and SM both < 0.5: ', &
                                            I,J, landmask(I,J),sm(I,J)
+
+        SM(I,J)=1.
 
         endif
 
@@ -564,27 +568,27 @@ CONTAINS
 
         ENDIF
 
-	   ENDDO
+           ENDDO
         ENDDO
 
          DO j = jts, MIN(jde-1,jte)
             DO i = its, MIN(ide-1,ite)
 
-	if (SICE(I,J) .eq. 1.0) then
+        if (SICE(I,J) .eq. 1.0) then
 !!!! change vegtyp and sltyp to fit seaice (desireable??)
         ISLTYP(I,J)=16
-	IVGTYP(I,J)=24
-	endif
+        IVGTYP(I,J)=24
+        endif
 
-	    ENDDO
+            ENDDO
          ENDDO
 
 
 ! MOVE HERE
 
-	write(0,*) 'flag_sst before define is: ', flag_sst
+        write(0,*) 'flag_sst before define is: ', flag_sst
 !     write(0,*)' init_domain_nmm flag_sst=',flag_sst
-	FLAG_SST=1
+        FLAG_SST=1
 
          DO j = jts, MIN(jde-1,jte)
             DO i = its, MIN(ide-1,ite)
@@ -600,28 +604,28 @@ CONTAINS
             NMM_TSK(I,J)=0.
         endif
 
-		
-	if ( (NMM_TSK(I,J)+SST(I,J)) .lt. 200. .or. &
+                
+        if ( (NMM_TSK(I,J)+SST(I,J)) .lt. 200. .or. &
              (NMM_TSK(I,J)+SST(I,J)) .gt. 350. ) then
-	write(0,*) 'TSK, SST trouble at : ', I,J
-	write(0,*) 'SM= ', SM(I,J)
-	write(0,*) 'NMM_TSK(I,J), SST(I,J): ', NMM_TSK(I,J), SST(I,J)
-	endif
+        write(0,*) 'TSK, SST trouble at : ', I,J
+        write(0,*) 'SM= ', SM(I,J)
+        write(0,*) 'NMM_TSK(I,J), SST(I,J): ', NMM_TSK(I,J), SST(I,J)
+        endif
 
             ENDDO
          ENDDO
 
-	write(0,*) 'SM'
-	do J=min(jde-1,jte),jts,-(jte-jts)/15
-	write(0,635) (sm(i,J),I=its,ite,(ite-its)/10)
-	enddo
+        write(0,*) 'SM'
+        do J=min(jde-1,jte),jts,-(jte-jts)/15
+        write(0,635) (sm(i,J),I=its,ite,(ite-its)/10)
+        enddo
 
-!	write(0,*) 'SST/NMM_TSK'
-!	do J=min(jde-1,jte),jts,-(jte-jts)/15
-!	write(0,635) (SST(I,J)+NMM_TSK(I,J),I=ITS,min(ide-1,ite),(ite-its)/10)
-!	enddo
+!       write(0,*) 'SST/NMM_TSK'
+!       do J=min(jde-1,jte),jts,-(jte-jts)/15
+!       write(0,635) (SST(I,J)+NMM_TSK(I,J),I=ITS,min(ide-1,ite),(ite-its)/10)
+!       enddo
 
-  635	format(20(f5.1,1x))
+  635   format(20(f5.1,1x))
 
 
          DO j = jts, MIN(jde-1,jte)
@@ -644,7 +648,7 @@ CONTAINS
 
    !  Land use categories, dominant soil and vegetation types (if available).
 
-!	allocate(lu_index(ims:ime,jms:jme))
+!       allocate(lu_index(ims:ime,jms:jme))
    
           DO j = jts, MIN(jde-1,jte)
             DO i = its, MIN(ide-1,ite)
@@ -655,35 +659,42 @@ CONTAINS
       END IF
 
 
-	if (flag_sst .eq. 1) log_flag_sst=.true.
-	if (flag_sst .eq. 0) log_flag_sst=.false.
+        if (flag_sst .eq. 1) log_flag_sst=.true.
+        if (flag_sst .eq. 0) log_flag_sst=.false.
 
-!	write(0,*) 'st_levels_input: ', st_levels_input
-!	write(0,*) 'num_st_levels_input: ', num_st_levels_input
-
-
-	write(0,*) 'maxval st_input(1): ', maxval(st_input(:,1,:))
-	write(0,*) 'maxval st_input(2): ', maxval(st_input(:,2,:))
-	write(0,*) 'maxval st_input(3): ', maxval(st_input(:,3,:))
-	write(0,*) 'maxval st_input(4): ', maxval(st_input(:,4,:))
+!       write(0,*) 'st_levels_input: ', st_levels_input
+!       write(0,*) 'num_st_levels_input: ', num_st_levels_input
 
 
-! 	use adum2d to tmn space.  Does skin temp make sense for "bottom boundary temp"?
-!
-!	seems wrong, but following EM V2 code
+        write(0,*) 'maxval st_input(1): ', maxval(st_input(:,1,:))
+        write(0,*) 'maxval st_input(2): ', maxval(st_input(:,2,:))
+        write(0,*) 'maxval st_input(3): ', maxval(st_input(:,3,:))
+        write(0,*) 'maxval st_input(4): ', maxval(st_input(:,4,:))
+
 
             DO j = jts, MIN(jde-1,jte)
                DO i = its, MIN(ide-1,ite)
-                  IF ( ( landmask(i,j) .LT. 0.5 ) .AND. ( flag_sst .EQ. 1 ) ) THEN
-                     adum2d(i,j) = sst(i,j)
-                  ELSE IF ( landmask(i,j) .LT. 0.5 ) THEN
-                     adum2d(i,j) = nmm_tsk(i,j)
+                  IF ( ( landmask(i,j) .LT. 0.5 ) .AND. ( flag_sst .EQ. 1 ) .AND. &
+                         SICE(I,J) .eq. 0. ) THEN
+                     TG(i,j) = sst(i,j)
+                   ELSEIF (SICE(I,J) .eq. 1) THEN
+                     TG(i,j) = 271.16
                   END IF
+
+       if (TG(I,J) .lt. 200.) then
+               write(message,*) 'problematic TG point at : ', I,J
+               CALL wrf_message( message )
+               TG(I,J)=amax1(SST(I,J),SST(I,J))
+       endif
+
+        if (TG(I,J) .lt. 200. .or. TG(I,J) .gt. 320.) then
+        write(0,*) 'bad bottom boundary temp into process_soil_real: ', I,J,TG(I,J)
+        endif
+
                END DO
             END DO
 
-
-  CALL process_soil_real ( NMM_TSK, adum2d , &
+  CALL process_soil_real ( NMM_TSK, TG , &
      landmask, sst, &
      st_input, sm_input, sw_input, &
      st_levels_input , sm_levels_input , &
@@ -703,67 +714,67 @@ CONTAINS
       write(0,*)' its=',its,' ite=',ite,' jts=',jts,' jte=',jte
       write(0,*)' ide=',ide,' jde=',jde
 
-!!! 	zero out NMM_TSK at water points again
+!!!     zero out NMM_TSK at water points again
 
          DO j = jts, MIN(jde-1,jte)
             DO i = its, MIN(ide-1,ite)
-	if (SM(I,J) .gt. 0.5) then
+        if (SM(I,J) .gt. 0.5) then
             NMM_TSK(I,J)=0.
-	endif
+        endif
             END DO
          END DO
 
 
-!!	check on STC
+!!      check on STC
 
           DO j = jts, MIN(jde-1,jte)
             DO i = its, MIN(ide-1,ite)
 
-	IF (SICE(I,J) .eq. 1.0) then
+        IF (SICE(I,J) .eq. 1.0) then
           DO L = 1, grid%num_soil_layers
-	    STC(I,L,J)=271.16    ! TG value used by Eta/NMM
-	  END DO
-	END IF
-		
-	    END DO
+            STC(I,L,J)=271.16    ! TG value used by Eta/NMM
+          END DO
+        END IF
+                
+            END DO
           END DO
 
-	write(0,*) 'STC(1)'
-	do J=min(jde-1,jte),jts,-(jte-jts)/15
-	write(0,635) (stc(I,1,J),I=its,ite,(ite-its)/12)
-	enddo
+        write(0,*) 'STC(1)'
+        do J=min(jde-1,jte),jts,-(jte-jts)/15
+        write(0,635) (stc(I,1,J),I=its,ite,(ite-its)/12)
+        enddo
 
 
-	ICOUNT=0
+        ICOUNT=0
           DO j = jts, MIN(jde-1,jte)
-	  DO i=  ITS, MIN(IDE-1,ITE)
+          DO i=  ITS, MIN(IDE-1,ITE)
                       IF (STC(I,1,J) .lt. 200. .and. SM(I,J) .eq. 0) then
-	      write(0,*) 'troublesome STC...I,J,STC,SM,SICE,SMC: ',& 
+              write(0,*) 'troublesome STC...I,J,STC,SM,SICE,SMC: ',& 
                    I,J,STC(I,1,J),SM(I,J),SICE(I,J),SMC(I,1,J)
-	ICOUNT=ICOUNT+1
-	if (ICOUNT .eq. 100) then
-	call wrf_error_fatal("bad STC data...quit before gets worse")
-	endif
-	    endif
-	
+        ICOUNT=ICOUNT+1
+        if (ICOUNT .eq. 100) then
+        call wrf_error_fatal("bad STC data...quit before gets worse")
+        endif
+            endif
+        
          ENDDO
-	 ENDDO
+         ENDDO
 
 !hardwire soil stuff for time being
 
-	RTDPTH=0.
-	RTDPTH(1)=0.1
-	RTDPTH(2)=0.3
-	RTDPTH(3)=0.6
+        RTDPTH=0.
+        RTDPTH(1)=0.1
+        RTDPTH(2)=0.3
+        RTDPTH(3)=0.6
 
-	SLDPTH=0.
-	SLDPTH(1)=0.1
-	SLDPTH(2)=0.3
-	SLDPTH(3)=0.6
-	SLDPTH(4)=1.0
+        SLDPTH=0.
+        SLDPTH(1)=0.1
+        SLDPTH(2)=0.3
+        SLDPTH(3)=0.6
+        SLDPTH(4)=1.0
 
-	write(0,*) 'SLDPTH: ', SLDPTH(1:4)
-	write(0,*) 'RTDPTH: ', RTDPTH(1:4)
+        write(0,*) 'SLDPTH: ', SLDPTH(1:4)
+        write(0,*) 'RTDPTH: ', RTDPTH(1:4)
 
 !!! main body of nmm_specific starts here
 
@@ -784,28 +795,28 @@ CONTAINS
 
 !! HBM2
 
-	HBM2=0.
+        HBM2=0.
 
        do J=jts,min(jte,jde-1)
         do I=its,min(ite,ide-1)
 
 
-	IF ( (J .ge. 3 .and. J .le. (jde-1)-2) .AND. &
+        IF ( (J .ge. 3 .and. J .le. (jde-1)-2) .AND. &
              (I .ge. 2 .and. I .le. (ide-1)-2+mod(J,2)) ) THEN
        HBM2(I,J)=1.
-	ENDIF
+        ENDIF
        enddo
        enddo
 
 
-  636	format(60(f2.0))
+  636   format(60(f2.0))
 
 
 !! HBM3
-	HBM3=0.
+        HBM3=0.
 
 
-!! 	LOOP OVER LOCAL DIMENSIONS
+!!      LOOP OVER LOCAL DIMENSIONS
 
        do J=jts,min(jte,jde-1)
           IHWG(J)=mod(J+1,2)-1
@@ -826,29 +837,29 @@ CONTAINS
        do J=jts,min(jte,jde-1)
        do I=its,min(ite,ide-1)
 
-	IF ( (J .ge. 3 .and. J .le. (jde-1)-2)  .AND.  &
+        IF ( (J .ge. 3 .and. J .le. (jde-1)-2)  .AND.  &
              (I .ge. 2 .and. I .le. (ide-1)-1-mod(J,2)) ) THEN
 
            VBM2(I,J)=1.
 
-	ENDIF
+        ENDIF
 
        enddo
        enddo
 
 !! VBM3
 
-	VBM3=0.
+        VBM3=0.
 
        do J=jts,min(jte,jde-1)
        do I=its,min(ite,ide-1)
 
-	IF ( (J .ge. 4 .and. J .le. (jde-1)-3)  .AND.  &
+        IF ( (J .ge. 4 .and. J .le. (jde-1)-3)  .AND.  &
              (I .ge. 3-mod(J,2) .and. I .le. (ide-1)-2) ) THEN
 
        VBM3(I,J)=1.
 
-	ENDIF
+        ENDIF
 
        enddo
        enddo
@@ -871,10 +882,10 @@ CONTAINS
       TSPH=3600./DT
 
 
-!	DTAD=1 in const.f of intrst code
+!       DTAD=1 in const.f of intrst code
       DTAD=1.0
 
-!	IDTCF=DTCF, IDTCF=4
+!       IDTCF=DTCF, IDTCF=4
       DTCF=4.0 ! used?
 
       DY_NMM=ERAD*DPH
@@ -894,7 +905,7 @@ CONTAINS
 
 !        DO J=jts,NNYP
         DO J=jts,min(jte,jde-1)
-!	DO J=jds,jde-1
+!       DO J=jds,jde-1
          TPH=SB+float(J-1)*DPH
          DXP=ERAD*DLM*COS(TPH)
          DXJ(J)=DXP
@@ -926,11 +937,11 @@ CONTAINS
            CTPH=COS(TPH)
            DO I=ITS,MIN(ITE,IDE-1)
 
-	if (I .eq. ITS) THEN
+        if (I .eq. ITS) THEN
              TLM=TLM+TDLM*ITS
-	else
-	     TLM=TLM+TDLM
-	endif
+        else
+             TLM=TLM+TDLM
+        endif
 
              FP=TWOM*(CTPH0*STPH+STPH0*CTPH*COS(TLM))
              F(I,J)=0.5*DT*FP
@@ -961,9 +972,9 @@ CONTAINS
           FCP(I,J)=FCPJ(J)*HBM2(I,J)
           FDIV(I,J)=FDIVJ(J)*HBM2(I,J)
           FAD(I,J)=FADJ(J)
-!	if (mod(I,5) .eq. 0 .and. mod(J,5) .eq. 0) then
-!	write(0,*) 'I,J,FADJ,FAD(I,J): ', I,J,FADJ(J),FAD(I,J)
-!	endif
+!       if (mod(I,5) .eq. 0 .and. mod(J,5) .eq. 0) then
+!       write(0,*) 'I,J,FADJ,FAD(I,J): ', I,J,FADJ(J),FAD(I,J)
+!       endif
           HDACV(I,J)=HDACJ(J)*VBM2(I,J)
           HDAC(I,J)=HDACJ(J)*1.25*HBM2(I,J)
         ENDDO
@@ -972,22 +983,22 @@ CONTAINS
 
 
 !      DO J=3,(JDE-1)-2
-	DO J=JTS, MIN(JDE-1,JTE)
+        DO J=JTS, MIN(JDE-1,JTE)
 
         IF (J.LE.5.OR.J.GE.(JDE-1)-4) THEN
 
                KHH=(IDE-1)-2+MOD(J,2) ! KHH is global...loop over I that have
                DO I=ITS,MIN(IDE-1,ITE)
-	         IF (I .ge. 2 .and. I .le. KHH) THEN
+                 IF (I .ge. 2 .and. I .le. KHH) THEN
                    HDAC(I,J)=HDAC(I,J)* DFC
-	         ENDIF
+                 ENDIF
                ENDDO
 
         ELSE
 
           KHH=2+MOD(J,2)
                DO I=ITS,MIN(IDE-1,ITE)
-	         IF (I .ge. 2 .and. I .le. KHH) THEN
+                 IF (I .ge. 2 .and. I .le. KHH) THEN
                     HDAC(I,J)=HDAC(I,J)* DFC
                  ENDIF
                ENDDO
@@ -1015,20 +1026,20 @@ CONTAINS
 
 !      DO J=3,JDE-1-2
 
-	DO J=JTS,MIN(JDE-1,JTE)
+        DO J=JTS,MIN(JDE-1,JTE)
         IF (J.LE.5.OR.J.GE.JDE-1-4) THEN
           KVH=(IDE-1)-1-MOD(J,2)
           DO I=ITS,min(IDE-1,ITE)
-	    IF (I .ge. 2 .and.  I .le. KVH) THEN
+            IF (I .ge. 2 .and.  I .le. KVH) THEN
              DDMPU(I,J)=DDMPU(I,J)*DDFC
              DDMPV(I,J)=DDMPV(I,J)*DDFC
              HDACV(I,J)=HDACV(I,J)* DFC
-	    ENDIF
+            ENDIF
           ENDDO
         ELSE
           KVH=3-MOD(J,2)
           DO I=ITS,min(IDE-1,ITE)
-	   IF (I .ge. 2 .and.  I .le. KVH) THEN
+           IF (I .ge. 2 .and.  I .le. KVH) THEN
             DDMPU(I,J)=DDMPU(I,J)*DDFC
             DDMPV(I,J)=DDMPV(I,J)*DDFC
             HDACV(I,J)=HDACV(I,J)* DFC
@@ -1036,7 +1047,7 @@ CONTAINS
           ENDDO
           KVH=(IDE-1)-1-MOD(J,2)
           DO I=ITS,min(IDE-1,ITE)
-	   IF (I .ge. IDE-1-2 .and. I .le. KVH) THEN
+           IF (I .ge. IDE-1-2 .and. I .le. KVH) THEN
             DDMPU(I,J)=DDMPU(I,J)*DDFC
             DDMPV(I,J)=DDMPV(I,J)*DDFC
             HDACV(I,J)=HDACV(I,J)* DFC
@@ -1045,51 +1056,51 @@ CONTAINS
         ENDIF
       ENDDO
 
-	write(0,*) ' grid%num_soil_layers = ',  grid%num_soil_layers
+        write(0,*) ' grid%num_soil_layers = ',  grid%num_soil_layers
 
-	write(0,*) 'STC(1)'
-	do J=min(jde-1,jte),jts,-(jte-jts)/15
-	write(0,635) (stc(I,1,J),I=its,min(ite,ide-1),(ite-its)/12)
-	enddo
+        write(0,*) 'STC(1)'
+        do J=min(jde-1,jte),jts,-(jte-jts)/15
+        write(0,635) (stc(I,1,J),I=its,min(ite,ide-1),(ite-its)/12)
+        enddo
 
-	write(0,*) 'SMC(1)'
-	do J=min(jde-1,jte),jts,-(jte-jts)/15
-	write(0,635) (smc(I,1,J),I=its,min(ite,ide-1),(ite-its)/12)
-	enddo
+        write(0,*) 'SMC(1)'
+        do J=min(jde-1,jte),jts,-(jte-jts)/15
+        write(0,635) (smc(I,1,J),I=its,min(ite,ide-1),(ite-its)/12)
+        enddo
 
-!	write(0,*) 'SM'
-!	do J=min(jde-1,jte),jts,-(jte-jts)/15
-!	write(0,635) (smc(I,1,J),I=its,min(ite,ide-1),(ite-its)/12)
-!	enddo
+!       write(0,*) 'SM'
+!       do J=min(jde-1,jte),jts,-(jte-jts)/15
+!       write(0,635) (smc(I,1,J),I=its,min(ite,ide-1),(ite-its)/12)
+!       enddo
 
           DO j = jts, MIN(jde-1,jte)
-	  DO i=  ITS, MIN(IDE-1,ITE)
+          DO i=  ITS, MIN(IDE-1,ITE)
 
-	if (SM(I,J) .eq. 0 .and. SMC(I,1,J) .gt. 0.5 .and. SICE(I,J) .eq. 0) then
-	write(0,*) 'wet on land point: ', I,J,SMC(I,1,J),SICE(I,J)
-	endif
+        if (SM(I,J) .eq. 0 .and. SMC(I,1,J) .gt. 0.5 .and. SICE(I,J) .eq. 0) then
+        write(0,*) 'wet on land point: ', I,J,SMC(I,1,J),SICE(I,J)
+        endif
 
-	  enddo
-	enddo
+          enddo
+        enddo
 
 
 !!!! MOVE MONITOR BLOCK HERE
 
 !!!   compute EMT, EM on global domain, and only on task 0.
 
-	IF (wrf_dm_on_monitor()) THEN   !!!! NECESSARY TO LIMIT THIS TO TASK ZERO?
+        IF (wrf_dm_on_monitor()) THEN   !!!! NECESSARY TO LIMIT THIS TO TASK ZERO?
 
-	ALLOCATE(EMJ(JDS:JDE-1),EMTJ(JDS:JDE-1))
+        ALLOCATE(EMJ(JDS:JDE-1),EMTJ(JDS:JDE-1))
 
-!	write(0,*) 'FIGURING OUT EMJ, EMTJ ', JDS, JDE-1
-	DO J=JDS,JDE-1
+!       write(0,*) 'FIGURING OUT EMJ, EMTJ ', JDS, JDE-1
+        DO J=JDS,JDE-1
          TPH=SB+float(J-1)*DPH
          DXP=ERAD*DLM*COS(TPH)
          EMJ(J)= DT/( 4.*DXP)*DTAD
          EMTJ(J)=DT/(16.*DXP)*DTAD
-!	write(0,*) 'J, EMTJ(J): ', J, EMTJ(J)
+!       write(0,*) 'J, EMTJ(J): ', J, EMTJ(J)
         ENDDO
-	
+        
           JA=0
           DO 161 J=3,5
           JA=JA+1
@@ -1136,8 +1147,8 @@ CONTAINS
           KVHA(JA)=(IDE-1)-1-MOD(J,2)
  174      EM(JA)=EMJ(J)
 
-   696	continue
-	ENDIF ! wrf_dm_on_monitor
+   696  continue
+        ENDIF ! wrf_dm_on_monitor
 
 
       call NMM_SH2O(IMS,IME,JMS,JME,ITS,NNXP,JTS,NNYP,4,ISLTYP, &
@@ -1146,25 +1157,25 @@ CONTAINS
 !! must be a better place to put this, but will eliminate "phantom"
 !! wind points here (no wind point on eastern boundary of odd numbered rows)
 
-	if (   abs(IDE-1-ITE) .eq. 1 ) THEN ! along eastern boundary
-	write(0,*) 'zero phantom winds'
-	do K=1,KDE-1
+        if (   abs(IDE-1-ITE) .eq. 1 ) THEN ! along eastern boundary
+        write(0,*) 'zero phantom winds'
+        do K=1,KDE-1
 !         do J=JTS,JDE-1,2
-	DO J=JDS,JDE-1,2
-	if (J .ge. JTS .and. J .le. JTE) THEN
+        DO J=JDS,JDE-1,2
+        if (J .ge. JTS .and. J .le. JTE) THEN
              u(IDE-1,K,J)=0.
              v(IDE-1,K,J)=0.
-	endif
+        endif
           enddo
         enddo
-	endif
+        endif
 
-  969	continue
+  969   continue
 
-!	write(0,*) 'NMM_TSK leaving init_domain_nmm'
-!	do J=min(jte,jde-1),jts,-(jte-jts)/15
-!	write(0,635) (NMM_TSK(I,J),I=its,min(ide-1,ite),(ite-its)/12)
-!	enddo
+!       write(0,*) 'NMM_TSK leaving init_domain_nmm'
+!       do J=min(jte,jde-1),jts,-(jte-jts)/15
+!       write(0,635) (NMM_TSK(I,J),I=its,min(ide-1,ite),(ite-its)/12)
+!       enddo
 
          DO j = jms, jme
             DO i = ims, ime
@@ -1183,16 +1194,16 @@ CONTAINS
 
 
 
-	write(0,*) 'leaving init_domain_nmm'
+        write(0,*) 'leaving init_domain_nmm'
 !
 ! Gopal's doing's : following lines  moved to namelist_input4 in Registry 
 !
-!	write(0,*) 'hardwire'
-!	 sigma=.true.
-!	IDTAD=2  
-!	NSOIL=4
-!	NPHS=4
-!	NCNVC=4
+!       write(0,*) 'hardwire'
+!        sigma=.true.
+!       IDTAD=2  
+!       NSOIL=4
+!       NPHS=4
+!       NCNVC=4
  write(0,*)'STUFF MOVED TO REGISTRY:',IDTAD,NSOIL,NRADL,NRADS,NPHS,NCNVC,sigma
 !==================================================================================
 
@@ -1205,7 +1216,7 @@ CONTAINS
 !--------------------------------------------------------------------
       SUBROUTINE NMM_SH2O(IMS,IME,JMS,JME,ISTART,IM,JSTART,JM,&
                         NSOIL,ISLTPK, &
-			SM,SICE,STC,SMC,SH2O)
+                        SM,SICE,STC,SMC,SH2O)
 
 !!        INTEGER, PARAMETER:: NSOTYP=9
 !        INTEGER, PARAMETER:: NSOTYP=16
@@ -1227,22 +1238,22 @@ CONTAINS
 !      DATA SMCMAX /0.421,0.464,0.468,0.434,0.406, &
 !                  0.465,0.404,0.439,0.421/
 
-	
-!!!	 NOT SURE...PSIS=SATPSI, BETA=BB??
+        
+!!!      NOT SURE...PSIS=SATPSI, BETA=BB??
 
-	DATA PSIS /0.069, 0.036, 0.141, 0.759, 0.759, 0.355,   &
+        DATA PSIS /0.069, 0.036, 0.141, 0.759, 0.759, 0.355,   &
                    0.135, 0.617, 0.263, 0.098, 0.324, 0.468,   &
                    0.355, 0.000, 0.069, 0.036, 0.468, 0.069, 0.069  /
 
-	DATA BETA/2.79,  4.26,  4.74,  5.33,  5.33,  5.25,    &
+        DATA BETA/2.79,  4.26,  4.74,  5.33,  5.33,  5.25,    &
                   6.66,  8.72,  8.17, 10.73, 10.39, 11.55,    &
                   5.25,  0.00,  2.79,  4.26, 11.55, 2.79, 2.79 /
 
-	DATA SMCMAX/0.339, 0.421, 0.434, 0.476, 0.476, 0.439,  &
+        DATA SMCMAX/0.339, 0.421, 0.434, 0.476, 0.476, 0.439,  &
                     0.404, 0.464, 0.465, 0.406, 0.468, 0.468,  &
                     0.439, 1.000, 0.200, 0.421, 0.468, 0.200, 0.339/
 
-	write(0,*) 'define SH2O over IM,JM: ', IM,JM
+        write(0,*) 'define SH2O over IM,JM: ', IM,JM
         DO K=1,NSOIL
          DO J=JSTART,JM
           DO I=ISTART,IM
@@ -1250,12 +1261,12 @@ CONTAINS
           write(0,*)' enter NMM_SH2O k=',k,' smc=',smc(i,k,j),' sh2o=',sh2o(i,k,j)
         endif
 !tst
-	IF (SMC(I,K,J) .gt. SMCMAX(ISLTPK(I,J))) then
+        IF (SMC(I,K,J) .gt. SMCMAX(ISLTPK(I,J))) then
 ! if (K .eq. 1) then
 !  write(0,*) 'I,J,reducing SMC from ' ,I,J,SMC(I,K,J), 'to ', SMCMAX(ISLTPK(I,J))
 !  endif
-	SMC(I,K,J)=SMCMAX(ISLTPK(I,J))
-	ENDIF
+        SMC(I,K,J)=SMCMAX(ISLTPK(I,J))
+        ENDIF
 !tst
 
         if(i==056.and.j==265.and.k==1)then
@@ -1283,16 +1294,16 @@ CONTAINS
               BX = BETA(ISLTPK(I,J))
               IF ( BETA(ISLTPK(I,J)) .GT. BLIM ) BX = BLIM
 
-	if ( GRAV*(-PSIS(ISLTPK(I,J))) .eq. 0 ) then
-	write(0,*) 'TROUBLE'
-	write(0,*) 'I,J: ', i,J
-	write(0,*) 'grav, isltpk, psis(isltpk): ', grav,isltpk(I,J),&
+        if ( GRAV*(-PSIS(ISLTPK(I,J))) .eq. 0 ) then
+        write(0,*) 'TROUBLE'
+        write(0,*) 'I,J: ', i,J
+        write(0,*) 'grav, isltpk, psis(isltpk): ', grav,isltpk(I,J),&
                  psis(isltpk(I,J))
-	endif
+        endif
 
-	if (BX .eq. 0 .or. STC(I,K,J) .eq. 0) then
-		write(0,*) 'I,J,BX, STC: ', I,J,BX,STC(I,K,J)
-	endif
+        if (BX .eq. 0 .or. STC(I,K,J) .eq. 0) then
+                write(0,*) 'I,J,BX, STC: ', I,J,BX,STC(I,K,J)
+        endif
               FK = (((HLICE/(GRAV*(-PSIS(ISLTPK(I,J)))))* &
                   ((STC(I,K,J)-T0)/STC(I,K,J)))** &
                   (-1/BX))*SMCMAX(ISLTPK(I,J))
@@ -1312,13 +1323,13 @@ CONTAINS
             ENDIF
 
 
-	ELSE   ! water point
+        ELSE   ! water point
               SH2O(I,K,J)=SMC(I,K,J)
 
         ENDIF ! test on land/ice/sea
-	if (SH2O(I,K,J) .gt. SMCMAX(ISLTPK(I,J))) then
-	write(0,*) 'SH2O > THAN SMCMAX ', I,J,SH2O(I,K,J),SMCMAX(ISLTPK(I,J)),SMC(I,K,J)
-	endif
+        if (SH2O(I,K,J) .gt. SMCMAX(ISLTPK(I,J))) then
+        write(0,*) 'SH2O > THAN SMCMAX ', I,J,SH2O(I,K,J),SMCMAX(ISLTPK(I,J)),SMC(I,K,J)
+        endif
 
         if(i==169.and.j==111.and.k==1)then
           write(0,*)' exit NMM_SH2O k=',k,' smc=',smc(i,k,j),' sh2o=',sh2o(i,k,j)
@@ -1505,7 +1516,7 @@ CONTAINS
 
       ENDIF
 
-	RETURN
+        RETURN
 
       END FUNCTION FRH2O_init
 

@@ -115,7 +115,6 @@
       REAL :: DZETA1,DZETA2,FH01,FH02,ZTMAX1,ZTMAX2,ZTMIN1,ZTMIN2
 !
       REAL,DIMENSION(KZTM) :: PSIH1,PSIH2,PSIM1,PSIM2
-      integer :: isee=01,jsee=015
 !
 !----------------------------------------------------------------------
 !
@@ -502,7 +501,7 @@ CONTAINS
 !
 !----------------------------------------------------------------------
 !
-      IF(SEAMASK>0.)THEN 
+      IF(SEAMASK>0.5)THEN 
 !
 !----------------------------------------------------------------------
         DO ITR=1,ITRMX
@@ -830,7 +829,7 @@ CONTAINS
 !----------------------------------------------------------------------
 !     IF(RIB>=RIC)THEN
 !----------------------------------------------------------------------
-!       IF(SEAMASK>0.)THEN
+!       IF(SEAMASK>0.5)THEN
 !         AKMS10=MAX( VISC/10.,CXCHS)
 !         AKHS02=MAX(TVISC/02.,CXCHS)
 !         AKHS10=MAX(TVISC/10.,CXCHS)
@@ -858,7 +857,7 @@ CONTAINS
 !***  SEA
 !----------------------------------------------------------------------
 !
-        IF(SEAMASK>0.)THEN
+        IF(SEAMASK>0.5)THEN
 !
 !----------------------------------------------------------------------
           ZTAU10=MIN(MAX(ZTAU10,ZTMIN1),ZTMAX1)
@@ -952,8 +951,48 @@ CONTAINS
       PSHLTR=PSFC*EXP(TERM1)
 !
 !----------------------------------------------------------------------
+!***  COMPUTE "EQUIVALENT" Z0 TO APPROXIMATE LOCAL SHELTER READINGS.
+!----------------------------------------------------------------------
+!
+      U10E=U10
+      V10E=V10
+!
+      IF(SEAMASK<0.5)THEN
+!
+        ZUUZ=MIN(0.5*ZU,0.1)
+        ZU=MAX(0.1*ZU,ZUUZ)
+!
+        ZU10=ZU+10.
+        RZSU=ZU10/ZU
+        RLNU10=LOG(RZSU)
+!
+        ZETAU=ZU*RLMO
+        ZTAU10=ZU10*RLMO
+!
+        ZTAU10=MIN(MAX(ZTAU10,ZTMIN2),ZTMAX2)
+        ZETAU=MIN(MAX(ZETAU,ZTMIN2/RZSU),ZTMAX2/RZSU)
+!
+        RZ=(ZTAU10-ZTMIN2)/DZETA2
+        K=INT(RZ)
+        RDZT=RZ-REAL(K)
+        K=MIN(K,KZTM2)
+        K=MAX(K,0)
+        PSM10=(PSIM2(K+2)-PSIM2(K+1))*RDZT+PSIM2(K+1)
+        SIMM10=PSM10-PSMZ+RLNU10
+        EKMS10=MAX(USTARK/SIMM10,CXCHL)
+!
+        U10E=UMFLX/EKMS10+UZ0
+        V10E=VMFLX/EKMS10+VZ0
+!
+      ENDIF
+!
+      U10=U10E
+      V10=V10E
+!
+!----------------------------------------------------------------------
 !***  SET OTHER WRF DRIVER ARRAYS
 !----------------------------------------------------------------------
+!
       RLOW=PLOW/(R_D*TLOW)
       CHS=AKHS
       CHS2=AKHS02
@@ -968,7 +1007,13 @@ CONTAINS
      &     /PLOW*EXP(A2S*(TLOW-A3S)/(TLOW-A4S))
       QGH=QGH/(1.-QGH)    !Convert to mixing ratio
       CPM=CP*(1.+0.8*QLOW)
-      IF ( SEAMASK .GT. 0.5 ) THEN
+!
+!***  DO NOT COMPUTE QS OVER LAND POINTS HERE SINCE IT IS
+!***  A PROGNOSTIC VARIABLE THERE.  IT IS OKAY TO USE IT 
+!***  AS A DIAGNOSTIC OVER WATER SINCE IT WILL CAUSE NO
+!***  INTERFERENCE BEFORE BEING RECOMPUTED IN MYJPBL.
+!
+      IF(SEAMASK>0.5)THEN
         QS=QLOW+QFX/(RLOW*AKHS)
         QS=QS/(1.-QS)
       ENDIF

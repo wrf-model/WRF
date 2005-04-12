@@ -132,7 +132,7 @@
      &                 ,PMID,PINT,TH,T,EXNER,QV,CWM,U,V,RHO            &
      &                 ,TSK,QSFC,CHKLOWQ,THZ0,QZ0,UZ0,VZ0              &
      &                 ,LOWLYR,XLAND,SICE,SNOW                         &
-     &                 ,TKE_MYJ,EXCH_H,USTAR,ZNT,PBLH,KPBL,CT          &
+     &                 ,TKE_MYJ,EXCH_H,USTAR,ZNT,EL_MYJ,PBLH,KPBL,CT   &
      &                 ,AKHS,AKMS,ELFLX                                &
      &                 ,RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN     &
      &                 ,IDS,IDE,JDS,JDE,KDS,KDE                        &
@@ -169,7 +169,8 @@
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: AKHS,AKMS
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME)                          &
-     &    ,INTENT(OUT) ::                      RQCBLTEN,RQVBLTEN       &
+     &    ,INTENT(OUT) ::                      EL_MYJ                  &
+     &                                        ,RQCBLTEN,RQVBLTEN       &
      &                                        ,RTHBLTEN                &
      &                                        ,RUBLTEN,RVBLTEN        
 !
@@ -190,9 +191,10 @@
 !
       INTEGER,DIMENSION(ITS:ITE,JTS:JTE) :: LPBL
 !
-      REAL :: APEX,DCDT,DQDT,DTDIF,DTDT,DTTURBL,DUDT,DVDT,EXNSFC,FFSK  &
-     &       ,PLOW,PSFC,PTOP,QFC1,QLOW,QOLD,RATIOMX,RDTTURBL,RG,RWMSK  &
-     &       ,SEAMASK,THNEW,THOLD,TX,ULOW,VLOW,WMSK
+      REAL :: APEX,DCDT,DELTAZ,DQDT,DTDIF,DTDT,DTTURBL,DUDT,DVDT       &
+     &       ,EXNSFC,FFSK,PLOW,PSFC,PTOP,QFC1,QLOW,QOLD                &
+     &       ,RATIOMX,RDTTURBL,RG,RWMSK,SEAMASK,THNEW,THOLD,TX         &
+     &       ,ULOW,VLOW,WMSK
 !
       REAL,DIMENSION(KTS:KTE) :: CWMK,PK,Q2K,QK,THEK,TK,UK,VK
 !
@@ -343,11 +345,17 @@
      &               ,IMS,IME,JMS,JME,KMS,KME                          &
      &               ,ITS,ITE,JTS,JTE,KTS,KTE)
 !
+!***  COUNTING DOWNWARD FROM THE TOP, THE EXCHANGE COEFFICIENTS AKH 
+!***  ARE DEFINED ON THE BOTTOMS OF THE LAYERS KTS TO KTE-1.  COUNTING 
+!***  COUNTING UPWARD FROM THE BOTTOM, THOSE SAME COEFFICIENTS EXCH_H
+!***  ARE DEFINED ON THE TOPS OF THE LAYERS KTS TO KTE-1.
+!
           DO K=KTS,KTE-1
-            KFLIP=KTE+1-K
+            KFLIP=KTE-K
             AKH(I,K,J)=AKHK(K)
             AKM(I,K,J)=AKMK(K)
-            IF(K>KTS)EXCH_H(I,K,J)=AKHK(KFLIP)
+            DELTAZ=0.5*(ZHK(KFLIP)-ZHK(KFLIP+2))
+            EXCH_H(I,K,J)=AKHK(KFLIP)*DELTAZ
           ENDDO
 !
 !----------------------------------------------------------------------
@@ -361,12 +369,13 @@
      &              ,IMS,IME,JMS,JME,KMS,KME                           &
      &              ,ITS,ITE,JTS,JTE,KTS,KTE)
 !
-!***  SAVE THE NEW TKE
+!***  SAVE THE NEW TKE AND MIXING LENGTH.
 !
           DO K=KTS,KTE
             KFLIP=KTE+1-K
             Q2K(KFLIP)=AMAX1(Q2K(KFLIP),EPSQ2)
             TKE_MYJ(I,K,J)=0.5*Q2K(KFLIP)
+            EL_MYJ(I,K,J)=EL(K)
           ENDDO
 !
 !

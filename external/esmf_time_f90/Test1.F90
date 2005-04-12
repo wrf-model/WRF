@@ -8,7 +8,7 @@ IMPLICIT NONE
   TYPE (ESMF_Alarm), pointer       :: alarms(:)
   TYPE (ESMF_Clock)        :: clock
   TYPE(ESMF_VM)       :: vm
-  CHARACTER*ESMF_MAXSTR  :: str,s2
+  CHARACTER (len=ESMF_MAXSTR)  :: str,s2
   INTEGER ms
   INTEGER :: year, month, day, hour, minute, second
 

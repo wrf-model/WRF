@@ -14,7 +14,7 @@ CONTAINS
                   GRDFLX,                                         &
                   u_phy,v_phy,th_phy,rho,moist,                   &
                   p_phy,pi_phy,p8w,t_phy,dz8w,z,                  &
-                  TKE_MYJ,EXCH_H,AKHS,AKMS,                       &
+                  TKE_MYJ,EL_MYJ,EXCH_H,AKHS,AKMS,                &
                   THZ0,QZ0,UZ0,VZ0,QSFC,                          &
                   LOWLYR,                                         &
                   PSIM,PSIH,GZ1OZ0, WSPD,BR,CHKLOWQ,              &  !m  26 Aug 2002
@@ -115,6 +115,7 @@ CONTAINS
 !-- QFX           upward moisture flux at the surface (kg/m^2/s)
 !-- REGIME        flag indicating PBL regime (stable, unstable, etc.)
 !-- tke_myj       turbulence kinetic energy from Mellor-Yamada-Janjic (MYJ) (m^2/s^2)
+!-- el_myj        mixing length from Mellor-Yamada-Janjic (MYJ) (m)
 !-- akhs          sfc exchange coefficient of heat/moisture from MYJ
 !-- akms          sfc exchange coefficient of momentum from MYJ
 !-- thz0          potential temperature at roughness length (K)
@@ -250,6 +251,9 @@ CONTAINS
                                                         RQCBLTEN, &
                                                         RQIBLTEN, &
                                                   EXCH_H,TKE_MYJ
+!
+   REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ),            &
+               INTENT(OUT)    ::                          EL_MYJ
 
    REAL ,                             INTENT(IN   )  ::  u_frame, &
                                                          v_frame
@@ -403,7 +407,7 @@ CONTAINS
                TSK,QSFC,CHKLOWQ,THZ0,QZ0,UZ0,VZ0,                   &
                LOWLYR,                                              &
                XLAND,XICE,SNOW,                                     &
-               TKE_MYJ,EXCH_H,UST,ZNT,PBLH,KPBL,CT,                 &
+               TKE_MYJ,EXCH_H,UST,ZNT,EL_MYJ,PBLH,KPBL,CT,          &
                AKHS,AKMS,LH,                                        &
                RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN,          &
                ids,ide, jds,jde, kds,kde,                           &

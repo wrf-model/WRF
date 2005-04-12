@@ -106,6 +106,8 @@ CONTAINS
 
         CHARACTER(LEN=19):: start_date
 
+      CHARACTER (LEN=132) :: message
+
       INTEGER :: error
       REAL    :: p_surf, p_level
       REAL    :: cof1, cof2

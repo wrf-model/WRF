@@ -175,11 +175,6 @@
       JTE=MIN(JPE,JDF)
       KTS=KPS
       KTE=MIN(KPE,KDF)
-      if(ntsd==0)then
-        write(0,*)' its=',its,' ite=',ite
-        write(0,*)' jts=',jts,' jte=',jte
-        write(0,*)' kts=',kts,' kte=',kte
-      endif
 !-----------------------------------------------------------------------
 !***  SET TIMING VARIABLES TO ZERO AT START OF FORECAST.
 !-----------------------------------------------------------------------
@@ -616,8 +611,8 @@
      &            ,CZEN,CZMEAN,SIGT4,TOTLWDN,TOTSWDN,RADOT             &
      &            ,PD,RES,PINT,T,Q,CWM,F_ICE,F_RAIN,SR                 &
      &            ,Q2,U,V,THS,SST,PREC,SNO,ZERO_3D                     &
-     &            ,FIS,Z0,Z0BASE,USTAR,PBLH,LPBL                       &
-     &            ,EXCH_H,AKHS,AKMS                                    &
+     &            ,FIS,Z0,Z0BASE,USTAR,PBLH,LPBL,EL_MYJ                &
+     &            ,EXCH_H,AKHS,AKMS,AKHS_OUT,AKMS_OUT                  &
      &            ,THZ0,QZ0,UZ0,VZ0,QS                                 &
      &            ,STC,SMC,CMC,SMSTAV,SMSTOT,SSROFF,BGROFF             &
      &            ,IVGTYP,ISLTYP,VEGFRC,SHDMIN,SHDMAX,GRNFLX           &
@@ -1567,7 +1562,7 @@
 !----------------------------------------------------------------------
 !
       I_BY_J=(IDE-IDS)*(JDE-JDS)-(JDE-JDS-1)/2  ! This assumes that
-                                                ! IDE AND JDE are each
+                                                ! IDE and JDE are each
                                                 ! one greater than the
                                                 ! true grid size.
 !
@@ -1618,7 +1613,7 @@
      &                (POINTS*(POINTS-1)))
           RMS=SQRT(SUMF2_0(K)/POINTS)
           KFLIP=KTE-K+1
-          WRITE(0,101)KFLIP,FMAX_0(KFLIP),FMIN_0(KFLIP)
+          WRITE(0,101)KFLIP,FMAX_0(K),FMIN_0(K)
           WRITE(0,102)F_MEAN,ST_DEV,RMS
   101     FORMAT(' LAYER=',I2,' MAX=',E13.6,' MIN=',E13.6)
   102     FORMAT(9X,' MEAN=',E13.6,' STDEV=',E13.6,' RMS=',E13.6)

@@ -12,14 +12,15 @@
 !
       REAL,PARAMETER ::                                                 &
      &                  DSPC=-3000.                                     &
-     &                 ,DTTOP=0.,EFIFC=5.0,EFIMN=0.20,EFMNT=0.70        &
-     &                 ,ELIVW=2.72E6,ENPLO=88500.,ENPUP=85000.          &
-     &                 ,EPSDN=1.05,EPSDT=0.,EPSNTP=100.0,epspr=5.e-5    &
+     &                 ,DTTOP=0.,EFIFC=5.0,EFIMN=0.10,EFMNT=0.20        & 
+     &                 ,ELIVW=2.72E6,ENPLO=20000.,ENPUP=15000.          &
+     &                 ,EPSDN=1.05,EPSDT=0.                             &
+     &                 ,EPSNTP=100.0,EPSNTT=0.,EPSPR=5.E-5              &
      &                 ,EPSUP=0.95                                      &
-     &                 ,FR=1.0,FSL=0.85,FSS=0.85                        &
+     &                 ,FR=0.85,FSL=0.85,FSS=0.85                       &
 !    &                 ,FUP=0.07/3000.                                  &
 !    &                 ,FUP=0.07/9000.                                  &
-     &                 ,FUP=1.1E-05                                     &
+     &                 ,FUP=1./200000.                                  &
      &                 ,PBM=13000.,PFRZ=15000.,PNO=1000.                &
      &                 ,PONE=2500.,PQM=2500.                            &
      &                 ,PSH=20000.,PSHU=45000.                          &
@@ -30,9 +31,9 @@
      &                 ,STABS=1.0,STRESH=0.80                           &
      &                 ,TREL=2400.
 !
-      REAL,PARAMETER :: DSPBFL=-3875.*FR                                &
-     &                 ,DSP0FL=-5875.*FR                                &
-     &                 ,DSPTFL=-1875.*FR                                &
+      REAL,PARAMETER :: DSPBFL=-3875.*FR*1.333                          &
+     &                 ,DSP0FL=-5875.*FR*1.333                          &
+     &                 ,DSPTFL=-1875.*FR*1.333                          &
      &                 ,DSPBFS=-3875.*FR                                &
      &                 ,DSP0FS=-5875.*FR                                &
      &                 ,DSPTFS=-1875.*FR
@@ -275,10 +276,10 @@ CONTAINS
 !***  LOCAL SCALARS
 !***
 !-----------------------------------------------------------------------
-      REAL :: APEKL,APEKXX,APEKXY,APESP,APESTS                          &
+      REAL :: APEKL,APEKXX,APEKXY,APES,APESP,APESTS                     &
      &            ,AVRGT,AVRGTL,BQ,BQK,BQS00K,BQS10K                    &
      &            ,CAPA,CUP,DEN,DENTPY,DEPMIN,DEPTH                     &
-     &            ,DEPWL,DHDT,DIFQL,DIFTL,DPKL,DPLO,DPMIX,DPOT          &
+     &            ,DEPWL,DHDT,DIFQL,DIFTL,DP,DPKL,DPLO,DPMIX,DPOT       &
      &            ,DPUP,DQREF,DRHDP,DRHEAT,DSP                          &
      &            ,DSP0,DSP0K,DSPB,DSPBK,DSPT,DSPTK                     &
      &            ,DSQ,DST,DSTQ,DTHEM,DTDP,EFI                          &
@@ -286,14 +287,16 @@ CONTAINS
      &            ,OTSUM,P,P00K,P01K,P10K,P11K                          &
      &            ,PART1,PART2,PART3,PBOT,PBOTFC,PBTK                   &
      &            ,PK0,PKB,PKL,PKT,PKXXXX,PKXXXY                        &
-     &            ,PLMH,POTSUM,PP1,PPK,PRECK                            &
-     &            ,PRESK,PSP,PSUM,PTHRS,PTOP,PTPK                       &
-     &            ,QBT,QKL,QNEW,QOTSUM,QQ1,QQK,QRFKL,QRFTP,QSUM,RDP0T   &
+     &            ,PLMH,plo,POTSUM,PP1,PPK,PRECK                        &
+     &            ,PRESK,PSP,PSUM,PTHRS,PTOP,PTPK,PUP                   &
+     &            ,QBT,QKL,QNEW,QOTSUM,QQ1,QQBT,QQK,QRFKL               &
+     &            ,QRFTP,QSP,QSUM,QUP,RDP0T                             &
      &            ,RDPSUM,RDTCNVC,RHH,RHL,RHMAX,ROTSUM,RTBAR            &
      &            ,SM1,SMIX,SQ,SQK,SQS00K,SQS10K,STABDL,SUMDE,SUMDP     &
      &            ,SUMDT,TAUK,TAUKSC,TCORR,THBT,THERKX,THERKY           &
      &            ,THESP,THSKL,THTPK,THVMKL,TKL,TNEW                    &
-     &            ,TPSP,TQ,TQK,TREFKX,TRFKL,TSKL,TTH,TTHBT,TTHES,TTHK 
+     &            ,TPSP,TQ,TQK,TREFKX,TRFKL,trmlo,trmup,TSKL,tsp,TTH    &
+     &            ,TTHBT,TTHES,TTHK,TUP 
 !
       INTEGER :: IQ,IQTB,IT,ITER,ITREFI,ITTB,ITTBK,KB,KBMAX,KNUMH,KNUML &
      &          ,L,L0,L0M1,LB,LBM1,LCOR,LPT1                            &
@@ -425,8 +428,10 @@ CONTAINS
 !
           IF(PKL>=ELEVFC*PLMH.AND.TTHES>THESP)THEN
             PSP  =TPSP
+            APES =APESP
             THBT =TTHBT
             THESP=TTHES
+            QQBT=QBT 
             KBMAX=KB
           ENDIF ! End of search for maximum buoyancy level
 !-----------------------------------------------------------------------
@@ -512,7 +517,9 @@ CONTAINS
 !
       ENDDO
 !
+!-----------------------------------------------------------------------
 !----------------BUOYANCY CHECK-----------------------------------------
+!-----------------------------------------------------------------------
 !
       DO L=LMH,KTS,-1
         IF(TREF(L)>T(L)-DTTOP)LTOP=L
@@ -521,6 +528,78 @@ CONTAINS
 !***  CLOUD TOP PRESSURE
 !
       PTOP=PRSMID(LTOP)
+!
+!------------------FIRST ENTROPY CHECK----------------------------------
+!
+      IF(KBMAX>LBOT.AND.LBOT>LTOP)THEN
+!-----------------------------------------------------------------------
+        DENTPY=0.
+        SUMDP=0.
+        L=KBMAX
+        PLO=PRSMID(L)
+        TRMLO=0.
+!
+        DO L=KBMAX-1,LBOT+1,-1
+          PUP=PRSMID(L)
+          TUP=THBT/APE(L)
+          DP=PLO-PUP
+          TRMUP=(TUP*(QQBT*0.608+1.)                                    &
+     &          -T(L)*(Q(L)*0.608+1.))*0.5                              &
+     &           /(T(L)*(Q(L)*0.608+1.))
+          DENTPY=(TRMLO+TRMUP)*DP+DENTPY
+          SUMDP=SUMDP+DP
+          PLO=PUP
+          TRMLO=TRMUP
+        ENDDO
+!
+        L=LBOT
+        PUP=PSP
+        TUP=THBT/APES
+        TSP=(T(L+1)-T(L))/(PLO-PBOT)                                    &
+     &     *(PUP-PBOT)+T(L)
+        QSP=(T(L+1)-T(L))/(PLO-PBOT)                                    &
+     &     *(PUP-PBOT)+Q(L)
+        DP=PLO-PUP
+        TRMUP=(TUP*(QQBT*0.608+1.)                                      &
+     &        -TSP*(QSP*0.608+1.))*0.5                                  &
+     &       /(TSP*(QSP*0.608+1.))
+        DENTPY=(TRMLO+TRMUP)*DP+DENTPY
+        SUMDP=SUMDP+DP
+        PLO=PUP
+        TRMLO=TRMUP
+        PUP=PRSMID(L)
+        TUP=TREF(L)
+        QUP=PQ0/PUP*EXP(A2*(TUP-A3)/(TUP-A4))
+        DP=PLO-PUP
+        TRMUP=(TUP*(QUP*0.608+1.)                                       &
+     &        -T(L)*(Q(L)*0.608+1.))*0.5                                &
+     &       /(T(L)*(Q(L)*0.608+1.))
+        DENTPY=(TRMLO+TRMUP)*DP+DENTPY
+        SUMDP=SUMDP+DP
+        PLO=PUP
+        TRMLO=TRMUP
+!
+        DO L=LBOT-1,LTOP
+          PUP=PRSMID(L)
+          TUP=TREF(L)
+          QUP=PQ0/PUP*EXP(A2*(TUP-A3)/(TUP-A4))
+          DP=PLO-PUP
+          TRMUP=(TUP*(QUP*0.608+1.)                                     &
+     &          -t(l)*(q(l)*0.608+1.))*0.5                              &
+     &         /(t(l)*(q(l)*0.608+1.))
+          DENTPY=(TRMLO+TRMUP)*DP+DENTPY
+          SUMDP=SUMDP+DP
+          PLO=PUP
+          TRMLO=TRMUP
+        ENDDO
+!
+        DENTPY=DENTPY*CP/SUMDP
+        IF(DENTPY<=EPSNTT)THEN
+          LTOP=LBOT
+          PTOP=PBOT
+        ENDIF
+!-----------------------------------------------------------------------
+      ENDIF
 !-----------------------------------------------------------------------
 !***
 !***  CLEAN UP AND GATHER DEEP CONVECTION POINTS

@@ -1453,10 +1453,18 @@ banner 9
 #set ans = "$<"
 #DAVE###################################################
 	
-		#	Did the compile work?
+		#	Did the compile work?  Check the expected executable names and locations.
 
 		set ok = $status
                 if ( ! -x main/wrf.exe ) set ok = 1
+
+		if      ( ( $core ==  em_real ) && ( $compopt == $COMPOPTS[1] ) ) then
+			if ( ! -e main/real.exe ) set ok = 1
+		else if ( ( $core == nmm_real ) && ( $compopt == $COMPOPTS[3] ) ) then
+			if ( ! -e main/real_nmm.exe ) set ok = 1
+		else if ( $compopt == $COMPOPTS[1] ) then
+			if ( ! -e main/ideal.exe ) set ok = 1
+		endif
 
 		if ( $ok != 0 ) then
 			echo "SUMMARY compilation    for $core           parallel $compopt $esmf_lib_str FAIL" >>! ${DEF_DIR}/wrftest.output
@@ -1466,14 +1474,16 @@ banner 9
 			echo "SUMMARY compilation    for $core           parallel $compopt $esmf_lib_str PASS" >>! ${DEF_DIR}/wrftest.output
 			echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
 			mv main/wrf.exe main/wrf_${core}.exe.$compopt
-			if (  ( $core == em_real ) && ( $compopt == $COMPOPTS[1] ) ) then
+			if      ( ( $core ==  em_real ) && ( $compopt == $COMPOPTS[1] ) ) then
 				mv main/real.exe main/real_${core}.exe.1
+			else if ( ( $core == nmm_real ) && ( $compopt == $COMPOPTS[3] ) ) then
+				mv main/real_nmm.exe main/real_${core}.exe.$COMPOPTS[3]
 			else if ( $compopt == $COMPOPTS[1] ) then
 				mv main/ideal.exe main/ideal_${core}.exe.1
 			endif
 #DAVE###################################################
 echo exec exists
-ls -ls main/wrf_${core}.exe.$compopt main/real_${core}.exe.1   main/ideal_${core}.exe.1
+ls -ls main/*.exe*
 banner 10
 #set ans = "$<"
 #DAVE###################################################
@@ -1800,9 +1810,20 @@ banner 19a
 #set ans = "$<"
 #DAVE###################################################
 
+			#	Build NMM namelist
+
 			cp ${CUR_DIR}/io_format io_format
 			sed -e '/^ io_form_history /,/^ io_form_boundary/d' -e '/^ restart_interval/r ./io_format' \
 			    namelist.input.regtest >! namelist.input
+	
+			#	A fairly short forecast, 10 time steps
+
+			sed -e 's/^ run_hours *= *[0-9][0-9]*/ run_hours = 0 /' \
+			    -e 's/^ run_minutes *= *[0-9]*/ run_minutes = 3 /' \
+			    -e 's/^ history_interval *= *[0-9][0-9][0-9]*/ history_interval = 3 /' \
+			    -e 's/^ frames_per_outfile *= [0-9]*/ frames_per_outfile = 200/g' \
+			    namelist.input >! namelist.input.temp
+			mv -f namelist.input.temp namelist.input
 
 #DAVE###################################################
 echo did cp of namelist
@@ -1812,27 +1833,38 @@ banner 19b
 #set ans = "$<"
 #DAVE###################################################
 
-			#	IC/BC from a run formerly known as "generated on a single proc".
+			#	Generate IC/BC for NMM run
 
-			set RUNCOMMAND = ( $MPIRUNCOMMAND )
-			if ( ( ! -e wrfinput_d01 ) || ( ! -e wrfbdy_d01 ) ) then
-				if ( $user != gill ) then
-					cat >> ${DEF_DIR}/wrftest.output << EOF
-Sorry, looks like there are missing files.
-Tell Dave.
-The Mgmt
-EOF
-					$MAIL -s "REGRESSION FAILURE $ARCH[1] " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
-					exit ( 1 ) 
-				endif
+			set RUNCOMMAND = `echo $MPIRUNCOMMAND | sed "s/$Num_Procs/1/"`
 
-			endif
+			#	Zap any old input data laying around.
+
+			rm wrfinput_d01 >& /dev/null
+			rm wrfbdy_d01   >& /dev/null
+
+			$RUNCOMMAND ../../main/real_${core}.exe.$COMPOPTS[3] >! print.out.real_${core}_Phys=${phys_option}_Parallel=$COMPOPTS[3]
 #DAVE###################################################
-echo wrfinput and wrfbdy from a previous run
+echo finished real
 banner 19c
 #set ans = "$<"
 #DAVE###################################################
+
+			mv rsl.out.0000 print.out.real_${core}_Phys=${phys_option}_Parallel=${compopt}
+			grep "SUCCESS COMPLETE" print.out.real_${core}_Phys=${phys_option}_Parallel=${compopt} >& /dev/null
+			set success = $status
+
+			#	Did making the IC BC files work?
+
+			if ( ( -e wrfinput_d01 ) && ( -e wrfbdy_d01 ) && ( $success == 0 ) ) then
+				echo "SUMMARY generate IC/BC for $core physics $phys_option parallel $compopt $esmf_lib_str PASS" >>! ${DEF_DIR}/wrftest.output
+				echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
+			else
+				echo "SUMMARY generate IC/BC for $core physics $phys_option parallel $compopt $esmf_lib_str FAIL" >>! ${DEF_DIR}/wrftest.output
+				$MAIL -s "WRF FAIL making IC/BC $ARCH[1] " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
+				exit ( 4 )
+			endif
 #DAVE###################################################
+echo IC BC must be OK
 ls -lsL wrfinput* wrfb*
 if ( $IO_FORM_NAME[$IO_FORM] == io_netcdf ) then
 	ncdump -v Times wrfb* | tail -20
@@ -1854,19 +1886,10 @@ banner 21
 				else
 					set RUNCOMMAND = `echo $MPIRUNCOMMAND | sed "s/$Num_Procs/$n/"`
 				endif
-	
-				#	A fairly short forecast, 10 time steps
 
-				sed -e 's/^ run_hours *= *[0-9][0-9]*/ run_hours = 0 /' \
-				    -e 's/^ run_minutes *= *[0-9]*/ run_minutes = 3 /' \
-				    -e 's/^ history_interval *= *[0-9][0-9][0-9]*/ history_interval = 3 /' \
-				    -e 's/^ frames_per_outfile *= [0-9]*/ frames_per_outfile = 200/g' \
-				    namelist.input >! namelist.input.temp
-				mv -f namelist.input.temp namelist.input
-
-				# WRF output quilt servers are only tested for MPI configuration.  
-				# Currently, only one WRF output quilt server is used.  
-		
+				#	WRF output quilt servers are only tested for MPI configuration.  
+				#	Currently, only one WRF output quilt server is used.  
+			
 				if ( ( $QUILT == TRUE ) && ( $n == $Num_Procs ) ) then
 					if ( $compopt == $COMPOPTS[3] ) then
 						#	For now, test only one group of one output quilt servers.  

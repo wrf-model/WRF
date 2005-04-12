@@ -484,8 +484,8 @@
      &                ,CZEN,CZMEAN,SIGT4,RLWIN,RSWIN,RADOT              &
      &                ,PD,RES,PINT,T,Q,CWM,F_ICE,F_RAIN,SR              &
      &                ,Q2,U,V,THS,SST,PREC,SNO,ZERO_3D                  &
-     &                ,FIS,Z0,Z0BASE,USTAR,PBLH,LPBL                    &
-     &                ,EXCH_H,AKHS,AKMS                                 &
+     &                ,FIS,Z0,Z0BASE,USTAR,PBLH,LPBL,EL_MYJ             &
+     &                ,EXCH_H,AKHS,AKMS,AKHS_OUT,AKMS_OUT               &
      &                ,THZ0,QZ0,UZ0,VZ0,QS                              &
      &                ,STC,SMC,CMC,SMSTAV,SMSTOT,SSROFF,BGROFF          &
      &                ,IVGTYP,ISLTYP,VEGFRC,SHDMIN,SHDMAX,GRNFLX        &
@@ -591,7 +591,8 @@
      &                                                ,VZ0,VZ0H         &
      &                                                ,Z0,Z0BASE
 !
-      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: ALWIN,ALWOUT       &
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: AKHS_OUT,AKMS_OUT  &
+     &                                              ,ALWIN,ALWOUT       &
      &                                              ,ALWTOA,ASWIN       &
      &                                              ,ASWOUT,ASWTOA      &
      &                                              ,PSHLTR,Q10,QSHLTR  &
@@ -611,6 +612,8 @@
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: PINT
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) :: ZERO_3D
+!
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(OUT) :: EL_MYJ
 !
       REAL,DIMENSION(NSOIL),INTENT(IN) :: DZSOIL,SLDPTH
 !
@@ -634,9 +637,9 @@
 !
       REAL :: TRESH=0.95
 !
-      REAL :: ALTITUDE,CWML,DQDT,DTDT,DTPHS,DX,FACTR,FACTRL,G_INV       &
-     &       ,PDSL,PLYR,PSFC,QI,QL,QOLD,QR,QW,RATIOMX,RDTPHS,ROG        &
-     &       ,RWMSK,SDEPTH,TL,TLMH,TLMH4,TNEW,TSFC2,U_FRAME,V_FRAME     &
+      REAL :: ALTITUDE,CWML,DQDT,DTDT,DTPHS,DX,DZHALF,FACTR,FACTRL      &
+     &       ,G_INV,PDSL,PLYR,PSFC,QI,QL,QOLD,QR,QW,RATIOMX,RDTPHS      &
+     &       ,ROG,RWMSK,SDEPTH,TL,TLMH,TLMH4,TNEW,TSFC2,U_FRAME,V_FRAME &
      &       ,WMSK,XLVRW
 !
       REAL :: APES,CKLQ,FACTOR,FFS,PQ0X,Q2SAT,QFC1,QLOWX,RLIVWV         &
@@ -972,6 +975,21 @@
       ENDDO
       ENDDO
 !
+!***  THE SURFACE EXCHANGE COEFFICIENTS AKHS AND AKMS ARE ACTUALLY
+!***  MULTIPLIED BY HALF THE DEPTH OF THE LOWEST LAYER.  WE MUST RETAIN
+!***  THOSE VALUES FOR THE NEXT TIMESTEP SO USE AUXILLIARY ARRAYS FOR
+!***  THE OUTPUT.
+!
+!$omp parallel do                                                       &
+!$omp& private(dzhalf,i,j)
+      DO J=JTS,JTE
+      DO I=ITS,ITE
+        DZHALF=0.5*DZ(I,KTS,J)
+        AKHS_OUT(I,J)=AKHS(I,J)*DZHALF
+        AKMS_OUT(I,J)=AKMS(I,J)*DZHALF
+      ENDDO
+      ENDDO
+!
       CALL PBL_DRIVER(NTSD,DT,U_FRAME,V_FRAME                           &
      &               ,DUDT,DVDT,RTHBLTEN                                &
      &               ,RQVBLTEN,RQCBLTEN,RQIBLTEN                        &
@@ -980,7 +998,7 @@
      &               ,TWBS,QWBS,ZERO_2D,GRNFLX                          &
      &               ,U_PHY,V_PHY,TH_PHY,RR,WATER                       &
      &               ,P_PHY,PI_PHY,P8W,T_PHY,DZ,Z                       &
-     &               ,TKE,EXCH_H,AKHS,AKMS                              &
+     &               ,TKE,EL_MYJ,EXCH_H,AKHS,AKMS                       &
      &               ,THZ0,QZ0,UZ0H,VZ0H,QS,LOWLYR                      &
      &               ,PSIM,PSIH,GZ1OZ0,WSPD,BR,CHKLOWQ                  &
      &               ,CONFIG_FLAGS,DX,N_MOIST                           &
@@ -991,6 +1009,10 @@
      &               ,GRID%I_START,GRID%I_END                           &
      &               ,GRID%J_START,GRID%J_END                           &
      &               ,KTS,KTE,GRID%NUM_TILES)
+!
+!***  NOTE THAT THE EXCHANGE COEFFICIENTS FOR HEAT EXCH_H COMING OUT OF
+!***  PBL_DRIVER ARE DEFINED AT THE TOPS OF THE LAYERS KTS TO KTE-1
+!***  IF MODULE_BL_MYJPBL WAS INVOKED.
 !
 !-----------------------------------------------------------------------
 ! UNCOMPUTED LOCATIONS MUST BE FILLED IN FOR THE POST-PROCESSOR

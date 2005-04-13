@@ -17,6 +17,7 @@ typedef struct node_struct {
   int           stag_z ;
   int           subject_to_communication ;
   int           boundary_array ;
+  int           boundary_array_4d ;
   char    use[NAMELEN] ;
   char    dname[NAMELEN] ;
   char    descrip[NAMELEN] ;

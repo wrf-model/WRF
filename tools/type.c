@@ -31,6 +31,7 @@ set_state_dims ( char * dims , node_t * node )
   node->proc_orient = ALL_Z_ON_PROC ;  /* default */
   node->ndims = 0 ;
   node->boundary_array = 0 ;
+
   for ( c = dims ; *c ; c++ )
   {
     if      ( *c == 'f' )

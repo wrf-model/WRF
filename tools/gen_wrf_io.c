@@ -31,123 +31,123 @@ gen_wrf_io ( char * dirname )
 #if 1
 
   OP_F(fp,"wrf_metaput_input.inc") ;
-  gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields ,
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields ,
       METADATA | INPUT , GEN_OUTPUT ) ;
 
   OP_F(fp,"wrf_metaput_restart.inc") ;
-  gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields ,
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields ,
       METADATA | RESTART , GEN_OUTPUT ) ;
 
   OP_F(fp,"wrf_metaput_history.inc") ;
-  gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields ,
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields ,
       METADATA | HISTORY , GEN_OUTPUT ) ;
 
   OP_F(fp,"wrf_metaput_boundary.inc") ;
-  gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields ,
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields ,
       METADATA | BOUNDARY , GEN_OUTPUT ) ;
 
   OP_F(fp,"wrf_histout.inc") ;
-  gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields , HISTORY , GEN_OUTPUT ) ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , HISTORY , GEN_OUTPUT ) ;
   close_the_file(fp) ;
   OP_F(fp,"wrf_auxhist1out.inc") ;
-  gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields , AUXHIST1 , GEN_OUTPUT ) ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXHIST1 , GEN_OUTPUT ) ;
   close_the_file(fp) ;
   OP_F(fp,"wrf_auxhist2out.inc") ;
-  gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields , AUXHIST2 , GEN_OUTPUT ) ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXHIST2 , GEN_OUTPUT ) ;
   close_the_file(fp) ;
   OP_F(fp,"wrf_auxhist3out.inc") ;
-  gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields , AUXHIST3 , GEN_OUTPUT ) ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXHIST3 , GEN_OUTPUT ) ;
   close_the_file(fp) ;
   OP_F(fp,"wrf_auxhist4out.inc") ;
-  gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields , AUXHIST4 , GEN_OUTPUT ) ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXHIST4 , GEN_OUTPUT ) ;
   close_the_file(fp) ;
   OP_F(fp,"wrf_auxhist5out.inc") ;
-  gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields , AUXHIST5 , GEN_OUTPUT ) ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXHIST5 , GEN_OUTPUT ) ;
   close_the_file(fp) ;
   OP_F(fp,"wrf_inputout.inc") ;
-  gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields , INPUT   , GEN_OUTPUT ) ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , INPUT   , GEN_OUTPUT ) ;
   close_the_file(fp) ;
   OP_F(fp,"wrf_auxinput1out.inc") ;
-  gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields , AUXINPUT1   , GEN_OUTPUT ) ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXINPUT1   , GEN_OUTPUT ) ;
   close_the_file(fp) ;
   OP_F(fp,"wrf_auxinput2out.inc") ;
-  gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields , AUXINPUT2   , GEN_OUTPUT ) ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXINPUT2   , GEN_OUTPUT ) ;
   close_the_file(fp) ;
   OP_F(fp,"wrf_auxinput3out.inc") ;
-  gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields , AUXINPUT3   , GEN_OUTPUT ) ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXINPUT3   , GEN_OUTPUT ) ;
   close_the_file(fp) ;
   OP_F(fp,"wrf_auxinput4out.inc") ;
-  gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields , AUXINPUT4   , GEN_OUTPUT ) ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXINPUT4   , GEN_OUTPUT ) ;
   close_the_file(fp) ;
   OP_F(fp,"wrf_auxinput5out.inc") ;
-  gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields , AUXINPUT5   , GEN_OUTPUT ) ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXINPUT5   , GEN_OUTPUT ) ;
   close_the_file(fp) ;
   OP_F(fp,"wrf_restartout.inc") ;
-  gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields , RESTART , GEN_OUTPUT ) ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , RESTART , GEN_OUTPUT ) ;
   close_the_file(fp) ;
   OP_F(fp,"wrf_bdyout.inc") ;
-  gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields , BOUNDARY , GEN_OUTPUT ) ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , BOUNDARY , GEN_OUTPUT ) ;
   close_the_file(fp) ;
 #endif
 
 #if 1
   OP_F(fp,"wrf_metaget_input.inc") ;
-  gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields , 
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , 
       METADATA | INPUT , GEN_INPUT ) ;
 
   OP_F(fp,"wrf_metaget_restart.inc") ;
-  gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields , 
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , 
       METADATA | RESTART , GEN_INPUT ) ;
 
   OP_F(fp,"wrf_metaget_history.inc") ;
-  gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields , 
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , 
       METADATA | HISTORY , GEN_INPUT ) ;
 
   OP_F(fp,"wrf_metaget_boundary.inc") ;
-  gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields , 
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , 
       METADATA | BOUNDARY , GEN_INPUT ) ;
 
   OP_F(fp,"wrf_histin.inc") ;
-  gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields , HISTORY , GEN_INPUT ) ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , HISTORY , GEN_INPUT ) ;
   close_the_file(fp) ;
   OP_F(fp,"wrf_auxhist1in.inc") ;
-  gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields , AUXHIST1 , GEN_INPUT ) ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXHIST1 , GEN_INPUT ) ;
   close_the_file(fp) ;
   OP_F(fp,"wrf_auxhist2in.inc") ;
-  gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields , AUXHIST2 , GEN_INPUT ) ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXHIST2 , GEN_INPUT ) ;
   close_the_file(fp) ;
   OP_F(fp,"wrf_auxhist3in.inc") ;
-  gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields , AUXHIST3 , GEN_INPUT ) ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXHIST3 , GEN_INPUT ) ;
   close_the_file(fp) ;
   OP_F(fp,"wrf_auxhist4in.inc") ;
-  gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields , AUXHIST4 , GEN_INPUT ) ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXHIST4 , GEN_INPUT ) ;
   close_the_file(fp) ;
   OP_F(fp,"wrf_auxhist5in.inc") ;
-  gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields , AUXHIST5 , GEN_INPUT ) ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXHIST5 , GEN_INPUT ) ;
   close_the_file(fp) ;
   OP_F(fp,"wrf_inputin.inc") ;
-  gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields , INPUT   , GEN_INPUT ) ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , INPUT   , GEN_INPUT ) ;
   close_the_file(fp) ;
   OP_F(fp,"wrf_auxinput1in.inc") ;
-  gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields , AUXINPUT1   , GEN_INPUT ) ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXINPUT1   , GEN_INPUT ) ;
   close_the_file(fp) ;
   OP_F(fp,"wrf_auxinput2in.inc") ;
-  gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields , AUXINPUT2   , GEN_INPUT ) ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXINPUT2   , GEN_INPUT ) ;
   close_the_file(fp) ;
   OP_F(fp,"wrf_auxinput3in.inc") ;
-  gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields , AUXINPUT3   , GEN_INPUT ) ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXINPUT3   , GEN_INPUT ) ;
   close_the_file(fp) ;
   OP_F(fp,"wrf_auxinput4in.inc") ;
-  gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields , AUXINPUT4   , GEN_INPUT ) ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXINPUT4   , GEN_INPUT ) ;
   close_the_file(fp) ;
   OP_F(fp,"wrf_auxinput5in.inc") ;
-  gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields , AUXINPUT5   , GEN_INPUT ) ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXINPUT5   , GEN_INPUT ) ;
   close_the_file(fp) ;
   OP_F(fp,"wrf_restartin.inc") ;
-  gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields , RESTART , GEN_INPUT ) ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , RESTART , GEN_INPUT ) ;
   close_the_file(fp) ;
   OP_F(fp,"wrf_bdyin.inc") ;
-  gen_wrf_io2 ( fp , fname, "grid%" , Domain.fields , BOUNDARY , GEN_INPUT ) ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , BOUNDARY , GEN_INPUT ) ;
   close_the_file(fp) ;
 #endif
 
@@ -237,7 +237,7 @@ set_dim_strs ( node_t *node , char ddim[3][2][NAMELEN], char mdim[3][2][NAMELEN]
 }
 
 int
-gen_wrf_io2 ( FILE * fp , char * fname, char * structname , node_t * node , int io_mask , int sw_io )
+gen_wrf_io2 ( FILE * fp , char * fname, char * structname , char * fourdname, node_t * node , int io_mask , int sw_io )
 {
   node_t * p ;
   int i , ii  ;
@@ -253,6 +253,7 @@ gen_wrf_io2 ( FILE * fp , char * fname, char * structname , node_t * node , int 
   char dimname[3][NAMELEN] ;
   char core[NAMELEN] ;
   char stagstr[NAMELEN] ;
+  char * tend_tag ;
 
   char post[NAMELEN] ;
   char indices[NAMELEN] ;
@@ -298,7 +299,16 @@ gen_wrf_io2 ( FILE * fp , char * fname, char * structname , node_t * node , int 
 
     if ( p->node_kind & FOURD )
     {
-      gen_wrf_io2 ( fp , fname, structname , p->members, io_mask, sw_io ) ; 
+      node_t * nd ;
+      char p1[NAMELEN] ;
+      int itdoesnt ;
+
+      /* find out if the four-d array has an associated boundary array? */
+      itdoesnt = 0 ;
+      sprintf(p1,"%s_b",p->name ) ;
+      if (( nd = get_entry ( p1 , Domain.fields )) == NULL ) itdoesnt = 1 ;
+      if ( ! ( io_mask & BOUNDARY && itdoesnt ) )
+         gen_wrf_io2 ( fp , fname, structname , p->name, p->members, io_mask, sw_io ) ; 
     }
     else if ( p->type != NULL )
     {
@@ -308,7 +318,8 @@ gen_wrf_io2 ( FILE * fp , char * fname, char * structname , node_t * node , int 
 
 /* ////////  BOUNDARY ///////////////////// */
 
-      if ( p->io_mask & BOUNDARY && (io_mask & BOUNDARY) && !( io_mask & METADATA ) )
+      if (  p->io_mask & BOUNDARY && (io_mask & BOUNDARY) && !( io_mask & METADATA ) 
+         && strcmp( p->use, "_4d_bdy_array_" ) || ( io_mask & BOUNDARY && fourdname ) )
       {
         int ibdy ;
         int idx ;
@@ -325,7 +336,6 @@ gen_wrf_io2 ( FILE * fp , char * fname, char * structname , node_t * node , int 
         ds3 = "1" ; de3 = "config_flags%spec_bdy_width" ;
         ms3 = "1" ; me3 = "config_flags%spec_bdy_width" ;
         ps3 = "1" ; pe3 = "config_flags%spec_bdy_width" ;
-
 
         if (( dimnode = get_dimnode_for_coord( p , COORD_Z )) != NULL )
          { if ( p->stag_z ) { sprintf( dimname[1] ,"%s_stag", dimnode->dim_data_name) ; } 
@@ -346,6 +356,7 @@ gen_wrf_io2 ( FILE * fp , char * fname, char * structname , node_t * node , int 
            ms3 = "1" ; me3 = "1" ;
            ps3 = "1" ; pe3 = "1" ;
          }
+
         if ( strlen(p->dname) < 1 ) {
           fprintf(stderr,"gen_wrf_io.c: Registry WARNING: no data name for %s \n",p->name) ;
         }
@@ -397,6 +408,11 @@ gen_wrf_io2 ( FILE * fp , char * fname, char * structname , node_t * node , int 
           if      ( p->ndims == 3 ) sprintf(memord,"%sZ",bdytag ) ;
           else if ( p->ndims == 2 ) sprintf(memord,"%s",bdytag ) ;
           else                      sprintf(memord,"0") ;
+
+        passes = 1 ;
+        if ( fourdname != NULL ) passes = 2 ;
+        for ( pass = 0 ; pass < passes ; pass++ ) {
+          tend_tag = ( pass == 0 ) ? "_B" : "_BT" ;
 	  if ( sw_io == GEN_INPUT )
 	  {
 	    if ( !strncmp( p->use, "dyn_", 4 ) ) 
@@ -406,8 +422,15 @@ gen_wrf_io2 ( FILE * fp , char * fname, char * structname , node_t * node , int 
             fprintf(fp,"CALL wrf_ext_read_field (  &\n") ;
             fprintf(fp,"                       fid                , &  ! DataHandle \n" ) ;
             fprintf(fp,"                       current_date(1:19) , &  ! DateStr \n" ) ;
-            fprintf(fp,"                       '%s'               , &  ! Data Name \n", dname ) ;
-            fprintf(fp,"                       %s%s%s(1,kds,1,%d)     , &  ! Field \n" , structname , core , p->name, ibdy ) ;
+            if ( fourdname == NULL ) {
+              fprintf(fp,"                       '%s'               , &  ! Data Name \n", dname ) ;
+              fprintf(fp,"                       %s%s%s(1,kds,1,%d)     , &  ! Field \n" , structname , core , p->name, ibdy ) ;
+            } else {
+              if ( strlen(p->dname)==0 || !strcmp(p->dname,"-") ) { sprintf(dname,"%s%s%s",p->name,tend_tag,bdytag)  ; }
+              else                                                { sprintf(dname,"%s%s%s",p->dname,tend_tag,bdytag) ; }
+              fprintf(fp,"                       '%s'               , &  ! Data Name \n", dname ) ;
+              fprintf(fp,"                       %s%s%s%s(1,kds,1,%d,P_%s)     , &  ! Field \n" , structname , core , fourdname, tend_tag, ibdy, p->name ) ;
+            }
             fprintf(fp,"                       WRF_%s             , &  ! FieldType \n" , p->type->name ) ;
             fprintf(fp,"                       grid%%communicator , &  ! Comm\n") ;
             fprintf(fp,"                       grid%%iocommunicator , &  ! Comm\n") ;
@@ -439,8 +462,15 @@ gen_wrf_io2 ( FILE * fp , char * fname, char * structname , node_t * node , int 
             fprintf(fp,"CALL wrf_ext_write_field (  &\n") ;
             fprintf(fp,"                       fid                , &  ! DataHandle \n" ) ;
             fprintf(fp,"                       current_date(1:19) , &  ! DateStr \n" ) ;
-            fprintf(fp,"                       '%s'               , &  ! Data Name \n", dname ) ;
-            fprintf(fp,"                       %s%s%s(1,kds,1,%d)     , &  ! Field \n" , structname , core , p->name, ibdy ) ;
+            if ( fourdname == NULL ) {
+              fprintf(fp,"                       '%s'               , &  ! Data Name \n", dname ) ;
+              fprintf(fp,"                       %s%s%s(1,kds,1,%d)     , &  ! Field \n" , structname , core , p->name, ibdy ) ;
+            } else {
+              if ( strlen(p->dname)==0 || !strcmp(p->dname,"-") ) { sprintf(dname,"%s%s%s",p->name,tend_tag,bdytag)  ; }
+              else                                                { sprintf(dname,"%s%s%s",p->dname,tend_tag,bdytag) ; }
+              fprintf(fp,"                       '%s'               , &  ! Data Name \n", dname ) ;
+              fprintf(fp,"                       %s%s%s%s(1,kds,1,%d,P_%s)     , &  ! Field \n" , structname , core , fourdname, tend_tag, ibdy, p->name ) ;
+            }
             fprintf(fp,"                       WRF_%s             , &  ! FieldType \n" , p->type->name ) ;
             fprintf(fp,"                       grid%%communicator , &  ! Comm\n") ;
             fprintf(fp,"                       grid%%iocommunicator , &  ! Comm\n") ;
@@ -465,6 +495,7 @@ gen_wrf_io2 ( FILE * fp , char * fname, char * structname , node_t * node , int 
             if ( ok_to_collect_distribute )
               fprintf(fp,"ENDIF\n") ;
 	  }
+        }
         }
       }
 
@@ -612,13 +643,10 @@ if ( pass == 0 )
 
           if ((sym_node = sym_get( dname_symbol )) == NULL ) {
             /* add it */
- /* fprintf(stderr,"adding %s %s  %s\n",dname_symbol,core,p->name ) ; */
             sym_node = sym_add ( dname_symbol ) ;
             strcpy( sym_node->internal_name , p->name ) ;
             strcpy( sym_node->core_name , core ) ;
           } else {
- /* fprintf(stderr,"got %s (core %s) (sym_core %s) %s  %s\n",
-   dname_symbol,core,sym_node->core_name,p->name,sym_node->internal_name ) ; */
             /* it's there already, check and make sure we don't have an error condition */
             if ( (strlen(core) > 0 && strlen( sym_node->core_name ) > 0 && !strcmp( core, sym_node->core_name ))
               || strlen(core) == 0
@@ -966,7 +994,7 @@ if ( pass == 0 )
     if ( p->type->type_type == DERIVED )
     {
       sprintf(x,"%s%s%%",structname,p->name ) ;
-      gen_wrf_io2(fp, fname, x, p->type, io_mask, sw_io ) ;
+      gen_wrf_io2(fp, fname, x, NULL, p->type, io_mask, sw_io ) ;
     }
 
     }

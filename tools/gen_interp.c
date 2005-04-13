@@ -78,9 +78,9 @@ sprintf(halo_define,"48:") ;
 sprintf(halo_use,"dyn_%s",corename) ;
 
 #if 0
-      gen_nest_interp1 ( fp , Domain.fields, corename, down_path[ipath], (down_path[ipath]==FORCE_DOWN)?1:2 ) ;
+      gen_nest_interp1 ( fp , Domain.fields, corename, NULL, down_path[ipath], (down_path[ipath]==FORCE_DOWN)?1:2 ) ;
 #else
-      gen_nest_interp1 ( fp , Domain.fields, corename, down_path[ipath], (down_path[ipath]==FORCE_DOWN)?2:2 ) ;
+      gen_nest_interp1 ( fp , Domain.fields, corename, NULL, down_path[ipath], (down_path[ipath]==FORCE_DOWN)?2:2 ) ;
 #endif
 
 {
@@ -101,7 +101,7 @@ sprintf(halo_use,"dyn_%s",corename) ;
 
 
 int
-gen_nest_interp1 ( FILE * fp , node_t * node, char * corename , int down_path , int use_nest_time_level )
+gen_nest_interp1 ( FILE * fp , node_t * node, char * corename , char * fourdname, int down_path , int use_nest_time_level )
 {
   int i, ii ;
   char * fn = "nest_interp.inc" ;
@@ -127,8 +127,7 @@ gen_nest_interp1 ( FILE * fp , node_t * node, char * corename , int down_path , 
 
     if ( p1->node_kind & FOURD )
     {
-
-       gen_nest_interp1 ( fp, p1->members, corename, down_path, use_nest_time_level ) ;  /* RECURSE over members */
+       gen_nest_interp1 ( fp, p1->members, corename, p1->name, down_path, use_nest_time_level ) ;  /* RECURSE over members */
        continue ;
     }
     else
@@ -273,7 +272,13 @@ fprintf(fp,"                  ngrid%%parent_grid_ratio, ngrid%%parent_grid_ratio
 	   } else if ( down_path & INTERP_UP ) {
              strcpy( tmpstr , p->interpu_aux_fields ) ;
 	   } else if ( down_path & FORCE_DOWN ) {
-             strcpy( tmpstr , p->force_aux_fields ) ;
+             /* by default, add the boundary and boundary tendency fields to the arg list */
+             if ( ! p->scalar_array_member ) {
+               sprintf( tmpstr , "%s_b,%s_bt,", p->name, p->name )  ;
+             } else {
+               sprintf( tmpstr , "%s_b,%s_bt,", fourdname, fourdname )  ;
+             }
+             strcat( tmpstr , p->force_aux_fields ) ;
 	   } else if ( down_path & INTERP_DOWN ) {
              strcpy( tmpstr , p->interpd_aux_fields ) ;
 	   }
@@ -283,7 +288,11 @@ fprintf(fp,"                  ngrid%%parent_grid_ratio, ngrid%%parent_grid_ratio
              {
   	       if (!strncmp( nd->use, "dyn_", 4))   sprintf(core2,"%s_",corename,vname) ;
 	       else                                sprintf(core2,"") ;
-               fprintf(fp,",%s,ngrid%%%s%s  &\n", nd->name, core2, nd->name ) ;
+               if ( strcmp( nd->use , "_4d_bdy_array_" ) ) {
+                 fprintf(fp,",%s,ngrid%%%s%s  &\n", nd->name, core2, nd->name ) ;
+               } else {
+                 fprintf(fp,",%s(1,1,1,P_%s,1),ngrid%%%s%s(1,1,1,P_%s,1)  &\n", nd->name, p->name, core2, nd->name, p->name ) ;
+               }
              }
              else
              {

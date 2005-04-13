@@ -28,6 +28,18 @@
 #define FIELD_DESCRIP 10
 #define FIELD_UNITS   11
 
+#define F_OF       0
+#define F_TYPE     1
+#define F_SYM      2
+#define F_DIMS     3
+#define F_USE      4
+#define F_NTL      5
+#define F_STAG     6
+#define F_IO       7
+#define F_DNAME    8
+#define F_DESCRIP  9
+#define F_UNITS   10
+
 /* fields for rconfig entries (RCNF) */
 #define RCNF_TYPE_PRE       1
 #define RCNF_SYM_PRE        2
@@ -65,6 +77,138 @@
 #define COMM_ID            1
 #define COMM_USE           2
 #define COMM_DEFINE        3
+
+
+int
+pre_parse( FILE * infile, FILE * outfile )
+{
+  char inln[4096], parseline[4096], parseline_save[4096] ;
+  int ntracers = 0 ;
+  int found ; 
+  char tracers[1000][NAMELEN] ;
+  char *p, *q ;
+  char *tokens[MAXTOKENS], *toktmp[MAXTOKENS], newdims[NAMELEN], newdims4d[NAMELEN],newname[NAMELEN] ;
+  int i, ii, len_of_tok ;
+  char x, xstr[NAMELEN] ;
+  int is4d, wantstend, wantsbdy ;
+
+  parseline[0] = '\0' ;
+/* main parse loop over registry lines */
+  while ( fgets ( inln , 4096 , infile ) != NULL )
+  {
+    strcat( parseline , inln ) ;
+
+    /* allow \ to continue the end of a line */
+    if (( p = index( parseline,  '\\'  )) != NULL )
+    {
+      if ( *(p+1) == '\n' || *(p+1) == '\0' )
+      {
+        *p = '\0' ;
+        continue ;  /* go get another line */
+      }
+    }
+    make_lower( parseline ) ;
+    make_lower( parseline ) ;
+
+    if (( p = index( parseline , '#' ))  != NULL  ) *p = '\0' ; /* discard comments (dont worry about quotes for now) */
+    if (( p = index( parseline , '\n' )) != NULL  ) *p = '\0' ; /* discard newlines */
+    for ( i = 0 ; i < MAXTOKENS ; i++ ) tokens[i] = NULL ;
+    i = 0 ;
+
+    strcpy( parseline_save, parseline ) ;
+
+    if ((tokens[i] = my_strtok(parseline)) != NULL ) i++ ;
+    while (( tokens[i] = my_strtok(NULL) ) != NULL && i < MAXTOKENS ) i++ ;
+    if ( i <= 0 ) continue ;
+
+    for ( i = 0 ; i < MAXTOKENS ; i++ )
+    {
+      if ( tokens[i] == NULL ) tokens[i] = "-" ;
+    }
+/* remove quotes from quoted entries */
+    for ( i = 0 ; i < MAXTOKENS ; i++ )
+    {
+      char * pp ;
+      if ( tokens[i][0] == '"' ) tokens[i]++ ;
+      if ((pp=rindex( tokens[i], '"' )) != NULL ) *pp = '\0' ;
+    }
+    if      ( !strcmp( tokens[ TABLE ] , "state" ) )
+    {
+        strcpy( newdims, "" ) ;
+        strcpy( newdims4d, "" ) ;
+        is4d = 0 ; wantstend = 0 ; wantsbdy = 0 ; 
+        for ( i = 0 ; i < (len_of_tok = strlen(tokens[F_DIMS])) ; i++ )
+        {
+          x = tolower(tokens[F_DIMS][i]) ;
+          if ( x >= 'a' && x <= 'z' ) {
+            if ( x == 'f' ) { is4d = 1 ; }
+            if ( x == 't' ) { wantstend = 1 ; }
+            if ( x == 'b' ) { wantsbdy = 1 ; }
+          }
+          sprintf(xstr,"%c",x) ;
+          if ( x != 'b' ) strcat ( newdims , xstr ) ;
+          if ( x != 'f' && x != 't' ) strcat( newdims4d , xstr ) ;
+
+        }
+        if ( wantsbdy ) {
+
+
+/* first re-gurg the original entry without the b in the dims */
+
+ fprintf( outfile,"state %s %s %s %s %s %s %s \"%s\" \"%s\" \"%s\"\n",tokens[F_TYPE],tokens[F_SYM], newdims,
+                  tokens[F_USE],tokens[F_NTL],tokens[F_STAG],tokens[F_IO],
+                  tokens[F_DNAME],tokens[F_DESCRIP],tokens[F_UNITS] ) ;
+
+          if ( strcmp( tokens[F_SYM] , "-" ) ) {  /* if not unnamed, as can happen with first 4d tracer */
+/* next, output some additional entries for the boundary arrays for these guys */
+            if ( is4d == 1 ) {
+              for ( i = 0, found = 0 ; i < ntracers ; i++ ) {
+	        if ( !strcmp( tokens[F_USE] , tracers[i] ) ) found = 1 ; 
+              }
+	      if ( found == 0 ) {
+	        sprintf(tracers[ntracers],tokens[F_USE]) ;
+	        ntracers++ ;
+
+/* add entries for _b and _bt arrays */
+
+ sprintf(newname,"%s_b",tokens[F_USE]) ;
+ fprintf( outfile,"state %s %s %s %s %s %s %s \"%s\" \"bdy %s\" \"%s\"\n",tokens[F_TYPE],newname,newdims4d,
+                  "_4d_bdy_array_","-",tokens[F_STAG],"b",
+                  newname,tokens[F_DESCRIP],tokens[F_UNITS] ) ;
+
+ sprintf(newname,"%s_bt",tokens[F_USE]) ;
+ fprintf( outfile,"state %s %s %s %s %s %s %s \"%s\" \"bdy tend %s\" \"(%s)/dt\"\n",tokens[F_TYPE],newname,newdims4d,
+                  "_4d_bdy_array_","-",tokens[F_STAG],"b",
+                  newname,tokens[F_DESCRIP],tokens[F_UNITS] ) ;
+
+  	      }
+            } else {
+
+/* add entries for _b and _bt arrays */
+
+ sprintf(newname,"%s_b",tokens[F_SYM]) ;
+ fprintf( outfile,"state %s %s %s %s %s %s %s \"%s\" \"bdy %s\" \"%s\"\n",tokens[F_TYPE],newname,tokens[F_DIMS],
+                  tokens[F_USE],"-",tokens[F_STAG],"b",
+                  newname,tokens[F_DESCRIP],tokens[F_UNITS] ) ;
+
+ sprintf(newname,"%s_bt",tokens[F_SYM]) ;
+ fprintf( outfile,"state %s %s %s %s %s %s %s \"%s\" \"bdy tend %s\" \"(%s)/dt\"\n",tokens[F_TYPE],newname,tokens[F_DIMS],
+                  tokens[F_USE],"-",tokens[F_STAG],"b",
+                  newname,tokens[F_DESCRIP],tokens[F_UNITS] ) ;
+
+            }
+          }
+          parseline[0] = '\0' ;  /* reset parseline */
+          continue ;
+        }
+    }
+normal:
+    /* otherwise output the line as is */
+    fprintf(outfile,"%s\n",parseline_save) ;
+    parseline[0] = '\0' ;  /* reset parseline */
+  }
+  return(0) ;
+}
 
 int
 reg_parse( FILE * infile )
@@ -343,24 +487,6 @@ reg_parse( FILE * infile )
 	if ( field_struct->boundary  > 0 ) { field_struct->boundary  = 1 ; field_struct->io_mask |= BOUNDARY  ; }
       }
 
-#if 0
-fprintf(stderr,"field_struct->history %d\n", field_struct->history ) ;
-fprintf(stderr,"field_struct->auxhist1 %d\n", field_struct->auxhist1 ) ;
-fprintf(stderr,"field_struct->auxhist2 %d\n", field_struct->auxhist2 ) ;
-fprintf(stderr,"field_struct->auxhist3 %d\n", field_struct->auxhist3 ) ;
-fprintf(stderr,"field_struct->auxhist4 %d\n", field_struct->auxhist4 ) ;
-fprintf(stderr,"field_struct->auxhist5 %d\n", field_struct->auxhist5 ) ;
-fprintf(stderr,"field_struct->input   %d\n", field_struct->input   ) ;
-fprintf(stderr,"field_struct->auxinput1 %d\n", field_struct->auxinput1 ) ;
-fprintf(stderr,"field_struct->auxinput2 %d\n", field_struct->auxinput2 ) ;
-fprintf(stderr,"field_struct->auxinput3 %d\n", field_struct->auxinput3 ) ;
-fprintf(stderr,"field_struct->auxinput4 %d\n", field_struct->auxinput4 ) ;
-fprintf(stderr,"field_struct->auxinput5 %d\n", field_struct->auxinput5 ) ;
-fprintf(stderr,"field_struct->restart   %d\n", field_struct->restart   ) ;
-fprintf(stderr,"field_struct->boundary   %d\n", field_struct->boundary   ) ;
-fprintf(stderr,"field_struct->io_mask   %08x\n", field_struct->io_mask   ) ;
-#endif
-      
       field_struct->dname[0] = '\0' ;
       if ( strcmp( tokens[FIELD_DNAME], "-" ) ) /* that is, if not equal "-" */
         { strcpy( field_struct->dname , tokens[FIELD_DNAME] ) ; }
@@ -404,7 +530,6 @@ fprintf(stderr,"field_struct->io_mask   %08x\n", field_struct->io_mask   ) ;
         if ( field_struct->type->type_type == DERIVED && field_struct->ndims > 0 )
           { fprintf(stderr,"Registry warning: type item %s of type %s can not be multi-dimensional ",
 	  		   tokens[FIELD_SYM], tokens[FIELD_TYPE] ) ; }
-
 
 /**/  if ( ! field_struct->scalar_array_member )
       {

@@ -100,7 +100,7 @@ char * set_mem_order( node_t * node , char * str , int n  ) ;
 
 int gen_wrf_io ( char * dirname ) ;
 int set_dim_strs ( node_t *node , char ddim[3][2][NAMELEN], char mdim[3][2][NAMELEN], char pdim[3][2][NAMELEN] , char * prepend, int sw_allow_stagger ) ;
-int gen_wrf_io2 ( FILE * fp , char * fname , char * structname , node_t * node , int io_mask , int sw_io ) ;
+int gen_wrf_io2 ( FILE * fp , char * fname , char * structname , char * fourdname , node_t * node , int io_mask , int sw_io ) ;
 
 int gen_namelist_defines ( char * dirname , int sw_dimension ) ;
 int gen_namelist_defaults ( char * dirname ) ;

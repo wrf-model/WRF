@@ -1717,173 +1717,35 @@ BENCH_START(rk_scalar_tend_tim)
 BENCH_END(rk_scalar_tend_tim)
 
 BENCH_START(rlx_bdy_scalar_tim)
-     IF( (config_flags%specified .or. config_flags%nested) .and. rk_step == 1 ) THEN 
+     IF( ( config_flags%specified .or. config_flags%nested ) .and. rk_step == 1 ) THEN 
+         IF ( im .EQ. P_QV .OR. config_flags%nested ) THEN
+            CALL relax_bdy_scalar ( moist_tend(ims,kms,jms,im),            & 
+                                    moist_2(ims,kms,jms,im),  mut,         &
+                                    moist_b(1,1,1,1,im),                   &
+                                    moist_bt(1,1,1,1,im),                  &
+                                    spec_bdy_width, spec_zone, relax_zone, &
+                                    dtbc, fcx, gcx,             &
+                                    ijds, ijde,                 & ! min/max(id,jd)
+                                    ids,ide, jds,jde, kds,kde,  & ! domain dims
+                                    ims,ime, jms,jme, kms,kme,  & ! memory dims
+                                    ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+                                    grid%i_start(ij), grid%i_end(ij),      &
+                                    grid%j_start(ij), grid%j_end(ij),      &
+                                    k_start, k_end                        )
 
-       IF(im .eq. P_QV)THEN
-
-         CALL relax_bdy_scalar ( moist_tend(ims,kms,jms,im),            & 
-                                 moist_2(ims,kms,jms,im),  mut,         &
-                                 rqv_b, rqv_bt,                         &
-                                 spec_bdy_width, spec_zone, relax_zone, &
-                                 dtbc, fcx, gcx,             &
-                                 ijds, ijde,                 & ! min/max(id,jd)
-                                 ids,ide, jds,jde, kds,kde,  & ! domain dims
-                                 ims,ime, jms,jme, kms,kme,  & ! memory dims
-                                 ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
-                                 grid%i_start(ij), grid%i_end(ij),      &
-                                 grid%j_start(ij), grid%j_end(ij),      &
-                                 k_start, k_end                        )
-
-         CALL spec_bdy_scalar  ( moist_tend(ims,kms,jms,im),                &
-                                 rqv_b, rqv_bt,                             &
-                                 spec_bdy_width, spec_zone,                 &
-                                 ijds, ijde,                 & ! min/max(id,jd)
-                                 ids,ide, jds,jde, kds,kde,  & ! domain dims
-                                 ims,ime, jms,jme, kms,kme,  & ! memory dims
-                                 ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
-                                 grid%i_start(ij), grid%i_end(ij),          &
-                                 grid%j_start(ij), grid%j_end(ij),          &
-                                 k_start, k_end                               )
-       ENDIF
-
+            CALL spec_bdy_scalar  ( moist_tend(ims,kms,jms,im),                &
+                                    moist_b(1,1,1,1,im),                     &
+                                    moist_bt(1,1,1,1,im),                    &
+                                    spec_bdy_width, spec_zone,                 &
+                                    ijds, ijde,                 & ! min/max(id,jd)
+                                    ids,ide, jds,jde, kds,kde,  & ! domain dims
+                                    ims,ime, jms,jme, kms,kme,  & ! memory dims
+                                    ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+                                    grid%i_start(ij), grid%i_end(ij),          &
+                                    grid%j_start(ij), grid%j_end(ij),          &
+                                    k_start, k_end                               )
+          ENDIF
      ENDIF
-
-!  ugly code for nested b.c for moist scalars other than qv
-
-     IF( config_flags%nested .and. (rk_step == 1) ) THEN 
-
-       IF (im .eq. P_QC) THEN
-
-         CALL relax_bdy_scalar ( moist_tend(ims,kms,jms,im),            & 
-                                 moist_2(ims,kms,jms,im),  mut,         &
-                                 rqc_b, rqc_bt,                         &
-                                 spec_bdy_width, spec_zone, relax_zone, &
-                                 dtbc, fcx, gcx,             &
-                                 ijds, ijde,                 & ! min/max(id,jd)
-                                 ids,ide, jds,jde, kds,kde,  & ! domain dims
-                                 ims,ime, jms,jme, kms,kme,  & ! memory dims
-                                 ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
-                                 grid%i_start(ij), grid%i_end(ij),      &
-                                 grid%j_start(ij), grid%j_end(ij),      &
-                                 k_start, k_end                        )
-
-         CALL spec_bdy_scalar  ( moist_tend(ims,kms,jms,im),                &
-                                 rqc_b, rqc_bt,                             &
-                                 spec_bdy_width, spec_zone,                 &
-                                 ijds, ijde,                 & ! min/max(id,jd)
-                                 ids,ide, jds,jde, kds,kde,  & ! domain dims
-                                 ims,ime, jms,jme, kms,kme,  & ! memory dims
-                                 ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
-                                 grid%i_start(ij), grid%i_end(ij),          &
-                                 grid%j_start(ij), grid%j_end(ij),          &
-                                 k_start, k_end                               )
-
-       ELSE IF (im .eq. P_QR) THEN
-
-         CALL relax_bdy_scalar ( moist_tend(ims,kms,jms,im),            & 
-                                 moist_2(ims,kms,jms,im),  mut,         &
-                                 rqr_b, rqr_bt,                         &
-                                 spec_bdy_width, spec_zone, relax_zone, &
-                                 dtbc, fcx, gcx,             &
-                                 ijds, ijde,                 & ! min/max(id,jd)
-                                 ids,ide, jds,jde, kds,kde,  & ! domain dims
-                                 ims,ime, jms,jme, kms,kme,  & ! memory dims
-                                 ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
-                                 grid%i_start(ij), grid%i_end(ij),      &
-                                 grid%j_start(ij), grid%j_end(ij),      &
-                                 k_start, k_end                        )
-
-         CALL spec_bdy_scalar  ( moist_tend(ims,kms,jms,im),                &
-                                 rqr_b, rqr_bt,                             &
-                                 spec_bdy_width, spec_zone,                 &
-                                 ijds, ijde,                 & ! min/max(id,jd)
-                                 ids,ide, jds,jde, kds,kde,  & ! domain dims
-                                 ims,ime, jms,jme, kms,kme,  & ! memory dims
-                                 ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
-                                 grid%i_start(ij), grid%i_end(ij),          &
-                                 grid%j_start(ij), grid%j_end(ij),          &
-                                 k_start, k_end                               )
-
-       ELSE IF (im .eq. P_QI) THEN
-
-         CALL relax_bdy_scalar ( moist_tend(ims,kms,jms,im),            & 
-                                 moist_2(ims,kms,jms,im),  mut,         &
-                                 rqi_b, rqi_bt,                         &
-                                 spec_bdy_width, spec_zone, relax_zone, &
-                                 dtbc, fcx, gcx,             &
-                                 ijds, ijde,                 & ! min/max(id,jd)
-                                 ids,ide, jds,jde, kds,kde,  & ! domain dims
-                                 ims,ime, jms,jme, kms,kme,  & ! memory dims
-                                 ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
-                                 grid%i_start(ij), grid%i_end(ij),      &
-                                 grid%j_start(ij), grid%j_end(ij),      &
-                                 k_start, k_end                        )
-
-         CALL spec_bdy_scalar  ( moist_tend(ims,kms,jms,im),                &
-                                 rqi_b, rqi_bt,                             &
-                                 spec_bdy_width, spec_zone,                 &
-                                 ijds, ijde,                 & ! min/max(id,jd)
-                                 ids,ide, jds,jde, kds,kde,  & ! domain dims
-                                 ims,ime, jms,jme, kms,kme,  & ! memory dims
-                                 ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
-                                 grid%i_start(ij), grid%i_end(ij),          &
-                                 grid%j_start(ij), grid%j_end(ij),          &
-                                 k_start, k_end                               )
-
-       ELSE IF (im .eq. P_QS) THEN
-
-         CALL relax_bdy_scalar ( moist_tend(ims,kms,jms,im),            & 
-                                 moist_2(ims,kms,jms,im),  mut,         &
-                                 rqs_b, rqs_bt,                         &
-                                 spec_bdy_width, spec_zone, relax_zone, &
-                                 dtbc, fcx, gcx,             &
-                                 ijds, ijde,                 & ! min/max(id,jd)
-                                 ids,ide, jds,jde, kds,kde,  & ! domain dims
-                                 ims,ime, jms,jme, kms,kme,  & ! memory dims
-                                 ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
-                                 grid%i_start(ij), grid%i_end(ij),      &
-                                 grid%j_start(ij), grid%j_end(ij),      &
-                                 k_start, k_end                        )
-
-         CALL spec_bdy_scalar  ( moist_tend(ims,kms,jms,im),                &
-                                 rqs_b, rqs_bt,                             &
-                                 spec_bdy_width, spec_zone,                 &
-                                 ijds, ijde,                 & ! min/max(id,jd)
-                                 ids,ide, jds,jde, kds,kde,  & ! domain dims
-                                 ims,ime, jms,jme, kms,kme,  & ! memory dims
-                                 ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
-                                 grid%i_start(ij), grid%i_end(ij),          &
-                                 grid%j_start(ij), grid%j_end(ij),          &
-                                 k_start, k_end                               )
-       ELSE IF (im .eq. P_QG) THEN
-
-         CALL relax_bdy_scalar ( moist_tend(ims,kms,jms,im),            & 
-                                 moist_2(ims,kms,jms,im),  mut,         &
-                                 rqg_b, rqg_bt,                         &
-                                 spec_bdy_width, spec_zone, relax_zone, &
-                                 dtbc, fcx, gcx,             &
-                                 ijds, ijde,                 & ! min/max(id,jd)
-                                 ids,ide, jds,jde, kds,kde,  & ! domain dims
-                                 ims,ime, jms,jme, kms,kme,  & ! memory dims
-                                 ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
-                                 grid%i_start(ij), grid%i_end(ij),      &
-                                 grid%j_start(ij), grid%j_end(ij),      &
-                                 k_start, k_end                        )
-
-         CALL spec_bdy_scalar  ( moist_tend(ims,kms,jms,im),                &
-                                 rqg_b, rqg_bt,                             &
-                                 spec_bdy_width, spec_zone,                 &
-                                 ijds, ijde,                 & ! min/max(id,jd)
-                                 ids,ide, jds,jde, kds,kde,  & ! domain dims
-                                 ims,ime, jms,jme, kms,kme,  & ! memory dims
-                                 ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
-                                 grid%i_start(ij), grid%i_end(ij),          &
-                                 grid%j_start(ij), grid%j_end(ij),          &
-                                 k_start, k_end                               )
-       ENDIF
-
-     ENDIF ! b.c test for moist nested boundary condition
-
 BENCH_END(rlx_bdy_scalar_tim)
 
    ENDDO moist_tile_loop_1

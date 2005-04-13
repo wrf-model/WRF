@@ -134,8 +134,11 @@ gen_decls ( FILE * fp , char * corename , node_t * node , int sw_ranges, int sw_
       /* note the call to dimension_with_colons, below, does this by itself             */
       /* but dimension_with_ranges needs help (since the last arg is not just a colon)  */
 
-      if ( p->node_kind & FOURD ) { sprintf(post,",num_%s)",field_name(t4,p,0)) ; }
-      else                        { sprintf(post,")") ; }
+      if       ( p->node_kind & FOURD ) { 
+          sprintf(post,",num_%s)",field_name(t4,p,0)) ;
+      } else { 
+          sprintf(post,")") ;
+      }
 
       for ( tag = 1 ; tag <= p->ntl ; tag++ ) 
       {

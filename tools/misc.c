@@ -17,7 +17,11 @@ dimension_with_colons( char * pre , char * tmp , node_t * p , char * post )
   if ( pre != NULL ) strcat(tmp,pre) ;
   if ( p->boundary_array )
   {
-    strcat( tmp, ":,:,:,:" ) ;  /* these always have four dimensions */
+    if ( !strcmp( p->use , "_4d_bdy_array_" ) ) {
+      strcat( tmp, ":,:,:,:,:" ) ;  /* boundary array for 4d tracer array */
+    } else {
+      strcat( tmp, ":,:,:,:" ) ;  /* most always have four dimensions */
+    }
   }
   else
   {
@@ -39,9 +43,10 @@ dimension_with_ranges( char * refarg , char * pre ,
 {
   int i ;
   char tx[NAMELEN] ;
-  char r[NAMELEN] ;
+  char r[NAMELEN],s[NAMELEN],four_d[NAMELEN] ;
   int   xdex, ydex, zdex ;
   node_t *xdim, *ydim, *zdim ;
+  char *pp ;
   if ( p == NULL ) return("") ;
   if ( p->ndims <= 0 && !p->boundary_array ) return("") ;
   strcpy(tmp,"") ;
@@ -63,11 +68,20 @@ dimension_with_ranges( char * refarg , char * pre ,
       
       xdex = xdim->dim_order ;
       ydex = ydim->dim_order ;
+
+      if ( !strcmp( p->use , "_4d_bdy_array_" ) ) {   /* if a boundary array for a 4d tracer */
+        strcpy(s, p->name ) ;  /* copy the name and then remove everything after last underscore */
+        if ((pp=rindex( s, '_' )) != NULL ) *pp = '\0' ;
+        sprintf( four_d, "num_%s,", s  ) ;
+      } else {
+        strcpy( four_d, "" ) ;
+      }
+
       if ( zdim != NULL ) {
         zdex = zdim->dim_order ;
-        sprintf(tx,"max(%sed3%d,%sed3%d),%ssd3%d:%sed3%d,%sspec_bdy_width,4,", r,xdex,r,ydex,r,zdex,r,zdex,r ) ;
+        sprintf(tx,"max(%sed3%d,%sed3%d),%ssd3%d:%sed3%d,%sspec_bdy_width,4,%s", r,xdex,r,ydex,r,zdex,r,zdex,r,four_d ) ;
       } else {
-        sprintf(tx,"max(%sed3%d,%sed3%d),1,%sspec_bdy_width,4,", r,xdex,r,ydex,r ) ;
+        sprintf(tx,"max(%sed3%d,%sed3%d),1,%sspec_bdy_width,4,%s", r,xdex,r,ydex,r,four_d ) ;
       }
     }
     else
@@ -145,7 +159,11 @@ index_with_firstelem( char * pre , char * dref , char * tmp , node_t * p , char 
         strcat(tmp,tx) ;
       }
 #endif
-      strcat(tmp,"1,1,1,1,") ;
+      if ( !strcmp( p->use , "_4d_bdy_array_" ) ) {
+        strcat(tmp,"1,1,1,1,1,") ;
+      } else {
+        strcat(tmp,"1,1,1,1,") ;
+      }
     }
     else
     {

@@ -648,9 +648,9 @@
                            xstag, ystag,                         &  ! staggering of field
                            ipos, jpos,                           &  ! Position of lower left of nest in CD
                            nri, nrj,                             &  ! nest ratios
-                           cdt, ndt,                             &
                            cbdy, nbdy,                           &
-                           cbdy_t, nbdy_t                        &
+                           cbdy_t, nbdy_t,                       &
+                           cdt, ndt                              &
                            )   ! boundary arrays
      USE module_configure
      IMPLICIT NONE
@@ -694,9 +694,9 @@
                            xstag, ystag,                         &  ! staggering of field
                            ipos, jpos,                           &  ! Position of lower left of nest in CD
                            nri, nrj,                             &
-                           cdt, ndt,                             &
                            cbdy, nbdy,                           &
-                           cbdy_t, nbdy_t                        &
+                           cbdy_t, nbdy_t,                       &
+                           cdt, ndt                              &
                                         )
 
      RETURN
@@ -717,9 +717,9 @@
                            xstag, ystag,                         &  ! staggering of field
                            ipos, jpos,                           &  ! Position of lower left of nest in CD
                            nri, nrj,                             &
-                           cdt, ndt,                             &
                            cbdy, bdy,                            &
-                           cbdy_t, bdy_t                         &
+                           cbdy_t, bdy_t,                        &
+                           cdt, ndt                              &
                                         )
 
      USE module_configure

@@ -998,6 +998,10 @@ SUBROUTINE med_hist_out ( grid , stream, config_flags )
    TYPE(ESMF_Time)                        :: CurrTime
    CHARACTER*80                           :: timestr
 
+   IF ( wrf_dm_on_monitor() ) THEN
+     CALL start_timing
+   END IF
+
    IF ( stream .LT. 0 .OR. stream .GT. 5 ) THEN
      WRITE(message,*)'med_hist_out: invalid history stream ',stream
      CALL wrf_error_fatal( message )

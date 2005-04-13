@@ -79,8 +79,8 @@ state    real  LU_MASK          ij      misc        1         -     i3h1     "LU
 # Velocities
 #
 # U Vel
-state    real   u              ikj     dyn_em      2         X     \
-     i01rhusdf=(bdy_interp:dt,u_b,u_bt)       "U"                      "x-wind component"   "m s-1"
+state    real   u              ikjb     dyn_em      2         X     \
+     i01rhusdf=(bdy_interp:dt)       "U"                      "x-wind component"   "m s-1"
 state    real   ru             ikj     dyn_em      1         X      -        "MU_U"        "mu-coupled u"   "Pa m s-1"
 state    real   ru_m           ikj     dyn_em      1         X      -        "ru_m"        ""   ""
 state    real   ru_tend        ikj     dyn_em      1         X      -        "ru_tend"        ""   ""                                   
@@ -88,8 +88,8 @@ i1       real   ru_tendf       ikj     dyn_em      1         X
 state    real   u_save         ikj     dyn_em      1         X      -        "u_save"
 #                                               
 # V Vel
-state    real   v              ikj     dyn_em      2         Y     \
-     i01rhusdf=(bdy_interp:dt,v_b,v_bt)        "V"                     "y-wind component"   "m s-1"
+state    real   v              ikjb     dyn_em      2         Y     \
+     i01rhusdf=(bdy_interp:dt)        "V"                     "y-wind component"   "m s-1"
 state    real   rv             ikj     dyn_em      1         Y      -        "MU_V"        "mu-coupled v"   "Pa m s-1"
 state    real   rv_m           ikj     dyn_em      1         Y      -        "rv_m"
 state    real   rv_tend        ikj     dyn_em      1         Y      -        "rv_tend"
@@ -97,8 +97,8 @@ i1       real   rv_tendf       ikj     dyn_em      1         Y
 state    real   v_save         ikj     dyn_em      1         Y      -        "v_save"                   
 #                                               
 # Vertical Vel                                          
-state    real   w              ikj     dyn_em      2         Z     \
-        irhusdf=(bdy_interp:dt,w_b,w_bt)  "w"                          "z-wind component"   "m s-1"
+state    real   w              ikjb     dyn_em      2         Z     \
+        irhusdf=(bdy_interp:dt)  "w"                          "z-wind component"   "m s-1"
 state    real   ww             ikj     dyn_em      1         Z      r         "ww"   "mu-coupled eta-dot"    "Pa s-1"
 state    real   rw             ikj     dyn_em      1         Z      -         "rw"   "mu-coupled w"          "Pa m s-1"
 i1       real   ww1            ikj     dyn_em      1         Z                                          
@@ -109,8 +109,8 @@ i1       real   rw_tendf       ikj     dyn_em      1         Z
 i1       real   w_save         ikj     dyn_em      1         Z                                          
 
 # Geopotential
-state    real   ph             ikj     dyn_em      2         Z     \
-       irhusdf=(bdy_interp:dt,ph_b,ph_bt)   "ph"   "perturbation geopotential"  "m2 s-2"
+state    real   ph             ikjb     dyn_em      2         Z     \
+       irhusdf=(bdy_interp:dt)   "ph"   "perturbation geopotential"  "m2 s-2"
 state    real   phb            ikj     dyn_em      1         Z     irhdus "phb"  "base-state geopotential"  "m2 s-2"
 state    real   phb_fine       ikj     dyn_em      1         Z      -     "phb_fine"  "for nesting, temp holding interpolated coarse grid phb"  "m2 s-2"
 state    real   ph0            ikj     dyn_em      1         Z      r     "ph0"  "initial geopotential"     "m2 s-2"
@@ -120,8 +120,8 @@ i1       real   ph_tendf       ikj     dyn_em      1         Z
 i1       real   ph_save        ikj     dyn_em      1         Z 
 
 # Potential Temperature
-state    real   t              ikj     dyn_em      2         -     \
-       i01rhusdf=(bdy_interp:dt,t_b,t_bt)   "t"      "perturbation potential temperature (theta-t0)" "K"
+state    real   t              ikjb     dyn_em      2         -     \
+       i01rhusdf=(bdy_interp:dt)   "t"      "perturbation potential temperature (theta-t0)" "K"
 
 state    real   t_init         ikj     dyn_em      1         -      r        "t_init" "initial potential temperature" "K"
 i1       real   t_tend         ikj     dyn_em      1         -  
@@ -133,8 +133,8 @@ state    real   t_save         ikj     dyn_em      1         -               "t_
 
 
 # Mass
-state    real   mu              ij     dyn_em      2         -     \
-     irhusdf=(bdy_interp:dt,mu_b,mu_bt)   "mu"  "perturbation dry air mass in column" "Pa"
+state    real   mu              ijb     dyn_em      2         -     \
+     irhusdf=(bdy_interp:dt)   "mu"  "perturbation dry air mass in column" "Pa"
 state    real   mub             ij     dyn_em      1         -     irhdus       "mub" "base state dry air mass in column" "Pa"
 state    real   mub_fine        ij     dyn_em      1         -      -           "mub_fine" "nest temp, holds interpolated coarse grid mub" "Pa"
 state    real   mu0             ij     dyn_em      1         -     i01rdu       "mu0" "initial dry mass in column" "Pa"
@@ -263,54 +263,25 @@ state    integer imask_xystag         ij      misc     1     XY
 # moist_tend even if there are not any moist scalars (so the essentially                                                
 # dry code will will still link properly)                                               
 #                                               
-state   real    -              ikjft   moist       2         -     -    -                                       
-state   real    qv             ikjft   moist       2         -     \
-   i01rhusdf=(bdy_interp:dt,rqv_b,rqv_bt)  "QVAPOR"           "Water vapor mixing ratio"      "kg kg-1"
-state   real    qc             ikjft   moist       2         -     \
-   i01rhusdf=(bdy_interp:dt,rqc_b,rqc_bt)  "QCLOUD"           "Cloud water mixing ratio"      "kg kg-1"
-state   real    qr             ikjft   moist       2         -     \
-   i01rhusdf=(bdy_interp:dt,rqr_b,rqr_bt)  "QRAIN"            "Rain water mixing ratio"       "kg kg-1"
-state   real    qi             ikjft   moist       2         -     \
-   i01rhusdf=(bdy_interp:dt,rqi_b,rqi_bt)  "QICE"             "Ice mixing ratio"              "kg kg-1"
-state   real    qs             ikjft   moist       2         -     \
-   i01rhusdf=(bdy_interp:dt,rqs_b,rqs_bt)  "QSNOW"            "Snow mixing ratio"             "kg kg-1"
-state   real    qg             ikjft   moist       2         -     \
-   i01rhusdf=(bdy_interp:dt,rqg_b,rqg_bt)  "QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
+state   real    -              ikjftb   moist       2         -     -    -                                       
+state   real    qv             ikjftb   moist       2         -     \
+   i01rhusdf=(bdy_interp:dt)  "QVAPOR"           "Water vapor mixing ratio"      "kg kg-1"
+state   real    qc             ikjftb   moist       2         -     \
+   i01rhusdf=(bdy_interp:dt)  "QCLOUD"           "Cloud water mixing ratio"      "kg kg-1"
+state   real    qr             ikjftb   moist       2         -     \
+   i01rhusdf=(bdy_interp:dt)  "QRAIN"            "Rain water mixing ratio"       "kg kg-1"
+state   real    qi             ikjftb   moist       2         -     \
+   i01rhusdf=(bdy_interp:dt)  "QICE"             "Ice mixing ratio"              "kg kg-1"
+state   real    qs             ikjftb   moist       2         -     \
+   i01rhusdf=(bdy_interp:dt)  "QSNOW"            "Snow mixing ratio"             "kg kg-1"
+state   real    qg             ikjftb   moist       2         -     \
+   i01rhusdf=(bdy_interp:dt)  "QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
 
 # Chem Scalars
 state   real    -              ikjft   chem        2         -     -    -                                       
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
-# Arrays for Specified LBCs
-
-state    real   u_b            ikjb      dyn_em      -          X     b         "ru_b"                  "MU/MSF COUPLED X WIND AT BOUNDARIES"         ""      
-state    real   u_bt           ikjb      dyn_em      -          X     b         "ru_bt"                 "MU/MSF COUPLED X WIND TENDENCY AT BOUNDARIES"         ""      
-state    real   v_b            ikjb      dyn_em      -          Y     b         "rv_b"                  "MU/MSF COUPLED Y WIND AT BOUNDARIES"         ""      
-state    real   v_bt           ikjb      dyn_em      -          Y     b         "rv_bt"                 "MU/MSF COUPLED Y WIND TENDENCY AT BOUNDARIES"         ""      
-
-state    real   w_b            ikjb      dyn_em      -          Z     b         "rw_b"                  "MU/MSF COUPLED Z WIND AT BOUNDARIES"         ""
-state    real   w_bt           ikjb      dyn_em      -          Z     b         "rw_bt"                 "MU/MSF COUPLED Z WIND TENDENCY AT BOUNDARIES"         ""
-
-state    real   ph_b           ikjb      dyn_em      -          Z     b         "ph_b"                  "MU COUPLED HEIGHT AT BOUNDARIES"         ""
-state    real   ph_bt          ikjb      dyn_em      -          Z     b         "ph_bt"                 "MU COUPLED HEIGHT TENDENCY AT BOUNDARIES"         ""
-state    real   t_b            ikjb      dyn_em      -          -     b         "t_b"                   "MU COUPLED THETA PERTURBATION AT BOUNDARIES"         ""
-state    real   t_bt           ikjb      dyn_em      -          -     b         "t_bt"                  "MU COUPLED THETA PERTURBATION TENDENCY AT BOUNDARIES"         ""
-state    real   mu_b           ijb       dyn_em      -          -     b         "mu_b"                  "MU AT BOUNDARIES"         ""
-state    real   mu_bt          ijb       dyn_em      -          -     b         "mu_bt"                 "MU TENDENCY AT BOUNDARIES"         ""
-state    real   rqv_b          ikjb      dyn_em      -          -     b         "rqv_b"                 "MU COUPLED WATER VAPOR MIXING RATIO AT BOUNDARIES"         ""
-state    real   rqv_bt         ikjb      dyn_em      -          -     b         "rqv_bt"                "MU COUPLED WATER VAPOR MIXING RATIO TENDENCY AT BOUNDARIES"         ""
-
-state    real   rqc_b          ikjb      misc        -          -     b         "rqc_b"                 "MU COUPLED WATER CLOUD MIXING RATIO AT BOUNDARIES"         ""
-state    real   rqc_bt         ikjb      misc        -          -     b         "rqc_bt"                "MU COUPLED WATER CLOUD MIXING RATIO TENDENCY AT BOUNDARIES"         ""
-state    real   rqr_b          ikjb      misc        -          -     b         "rqr_b"                 "MU COUPLED WATER RAIN MIXING RATIO AT BOUNDARIES"         ""
-state    real   rqr_bt         ikjb      misc        -          -     b         "rqr_bt"                "MU COUPLED WATER RAIN MIXING RATIO TENDENCY AT BOUNDARIES"         ""
-state    real   rqi_b          ikjb      misc        -          -     b         "rqi_b"                 "MU COUPLED WATER ICE MIXING RATIO AT BOUNDARIES"         ""
-state    real   rqi_bt         ikjb      misc        -          -     b         "rqi_bt"                "MU COUPLED WATER ICE MIXING RATIO TENDENCY AT BOUNDARIES"         ""
-state    real   rqs_b          ikjb      misc        -          -     b         "rqs_b"                 "MU COUPLED WATER SNOW MIXING RATIO AT BOUNDARIES"         ""
-state    real   rqs_bt         ikjb      misc        -          -     b         "rqs_bt"                "MU COUPLED WATER SNOW MIXING RATIO TENDENCY AT BOUNDARIES"         ""
-state    real   rqg_b          ikjb      misc        -          -     b         "rqg_b"                 "MU COUPLED WATER GRAUPEL MIXING RATIO AT BOUNDARIES"         ""
-state    real   rqg_bt         ikjb      misc        -          -     b         "rqg_bt"                "MU COUPLED WATER GRAUPEL MIXING RATIO TENDENCY AT BOUNDARIES"         ""
-
+# Arrays for Specified LBCs  (lbc arrays REMOVED; Boundary arrays are now specified with the state array; see above, 20050413 JM )
 
 state    real   fcx            w         misc     -         -      ir       "fcx"                  "RELAXATION TERM FOR BOUNDARY ZONE"         ""
 state    real   gcx            w         misc     -         -      ir       "gcx"                  "2ND RELAXATION TERM FOR BOUNDARY ZONE"         ""

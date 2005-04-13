@@ -79,23 +79,6 @@ state    real  LU_MASK          ij      misc        1         -     i3h1     "LU
 dimspec    q      -     constant=2600             c  # a little crude right now
 dimspec    v      -     constant=1             c  # a little crude right now
 
-#state  real    pd_b     ijb    dyn_nmm     1      -      b    "PDB"
-#state  real    pd_bt    ijb    dyn_nmm     1      -      b    "PDBT"
-state  real    pd_b     ivjb    dyn_nmm     1      -      b    "PDB"
-state  real    pd_bt    ivjb    dyn_nmm     1      -      b    "PDBT"
-state  real    t_b      ikjb    dyn_nmm     1      -      b    "TB"
-state  real    t_bt     ikjb    dyn_nmm     1      -      b    "TBT"
-state  real    q_b      ikjb    dyn_nmm     1      -      b    "QB"
-state  real    q_bt     ikjb    dyn_nmm     1      -      b    "QBT"
-state  real    u_b      ikjb    dyn_nmm     1      -      b    "UB"
-state  real    u_bt     ikjb    dyn_nmm     1      -      b    "UBT"
-state  real    v_b      ikjb    dyn_nmm     1      -      b    "VB"
-state  real    v_bt     ikjb    dyn_nmm     1      -      b    "VBT"
-state  real    q2_b     ikjb    dyn_nmm     1      -      b    "Q2"
-state  real    q2_bt    ikjb    dyn_nmm     1      -      b    "Q2T"
-state  real   cwm_b     ikjb    dyn_nmm     1      -      b    "CWM"
-state  real   cwm_bt    ikjb    dyn_nmm     1      -      b    "CWMT"
-
 #
 # module_LOOPS
 #
@@ -115,13 +98,13 @@ state  real   vtm       ikj    dyn_nmm     1      -      rh
 #
 # module_VRBLS
 #
-state  real   pd        ij     dyn_nmm     1      -      i01rh
+state  real   pd        ijb     dyn_nmm     1      -      i01rh
 state  real   fis       ij     dyn_nmm     1      -      i01rh
 state  real   res       ij     dyn_nmm     1      -      irh
-state  real   t         ikj    dyn_nmm     1      -      i01rh   "T"
-state  real   q         ikj    dyn_nmm     1      -      i01rh   "Q"
-state  real   u         ikj    dyn_nmm     1      -      i01rh   "U"
-state  real   v         ikj    dyn_nmm     1      -      i01rh   "V"
+state  real   t         ikjb    dyn_nmm     1      -      i01rh   "T"
+state  real   q         ikjb    dyn_nmm     1      -      i01rh   "Q"
+state  real   u         ikjb    dyn_nmm     1      -      i01rh   "U"
+state  real   v         ikjb    dyn_nmm     1      -      i01rh   "V"
 state  real   told      ikj    dyn_nmm     1      -      r
 state  real   uold      ikj    dyn_nmm     1      -      r
 state  real   vold      ikj    dyn_nmm     1      -      r
@@ -210,7 +193,7 @@ state  real   q10       ij    dyn_nmm   1    -     irh
 state  real   pshltr    ij    dyn_nmm   1    -     irh
 state  real   tshltr    ij    dyn_nmm   1    -     irh
 state  real   qshltr    ij    dyn_nmm   1    -     irh
-state  real   q2        ikj   dyn_nmm   1    -     irh   "Q2"
+state  real   q2        ikjb   dyn_nmm   1    -     irh   "Q2"
 state  real   t_adj     ikj   dyn_nmm   1    -     r
 state  real   t_old     ikj   dyn_nmm   1    -     r
 state  real   zero_3d   ikj   dyn_nmm   1    -     r
@@ -243,7 +226,7 @@ state integer lvl       ij    dyn_nmm   1    -     ir
 #
 # module_CLDWTR.F
 #
-state  real   cwm       ikj   dyn_nmm   1    -     rh
+state  real   cwm       ikjb   dyn_nmm   1    -     rh
 state  real   f_ice     ikj   dyn_nmm   1    -     rh
 state  real   f_rain    ikj   dyn_nmm   1    -     rh
 state  real   f_rimef   ikj   dyn_nmm   1    -     rh

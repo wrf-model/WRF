@@ -70,8 +70,6 @@ PROGRAM real_data
 
    !  Define the name of this program (program_name defined in module_domain)
 
-#include "deref_kludge.h"
-
    program_name = "REAL_NMM V2.0 PREPROCESSOR"
 
 #ifdef DM_PARALLEL
@@ -123,6 +121,8 @@ PROGRAM real_data
                                      kid        = -1            )
 
    grid => head_grid
+
+#include "deref_kludge.h"
    CALL Setup_Timekeeping ( grid )
    CALL ESMF_TimeIntervalSet ( time_interval ,  &
              S=model_config_rec%interval_seconds,rc=rc )

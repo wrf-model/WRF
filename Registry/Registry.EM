@@ -1,4 +1,4 @@
-# Registry file, EM
+ Registry file, EM
 #                                               
 # At the present time this file is managed manually and edited by hand.                                         
 #                                               
@@ -263,7 +263,7 @@ state    integer imask_xystag         ij      misc     1     XY
 # moist_tend even if there are not any moist scalars (so the essentially                                                
 # dry code will will still link properly)                                               
 #                                               
-state   real    -              ikjftb   moist       2         -     -    -                                       
+state   real    -              ikjftb   moist       2         -     -    -
 state   real    qv             ikjftb   moist       2         -     \
    i01rhusdf=(bdy_interp:dt)  "QVAPOR"           "Water vapor mixing ratio"      "kg kg-1"
 state   real    qc             ikjftb   moist       2         -     \

@@ -706,7 +706,7 @@ print *,'gmt=',gmt
                                                                            ids , ide , jds , jde , kds , kde , &
                                                                            ims , ime , jms , jme , kms , kme , &
                                                                            ips , ipe , jps , jpe , kps , kpe )
-         CALL stuff_bdy     ( qbdy3dtemp1 , nested_grid%moist_b(1,1,1,1,P_QV)                                  &
+         CALL stuff_bdy     ( qbdy3dtemp1 , nested_grid%moist_b(:,:,:,:,P_QV)                                  &
                                                                    , 'T' , ijds , ijde , spec_bdy_width      , &
                                                                            ids , ide , jds , jde , kds , kde , &
                                                                            ims , ime , jms , jme , kms , kme , &
@@ -764,7 +764,7 @@ print *,'gmt=',gmt
                                                                   ids , ide , jds , jde , kds , kde , &
                                                                   ims , ime , jms , jme , kms , kme , &
                                                                   ips , ipe , jps , jpe , kps , kpe )
-         CALL stuff_bdytend ( qbdy3dtemp2 , qbdy3dtemp1 , new_bdy_frq , nested_grid%moist_bt(1,1,1,1,P_QV), 'T' , &
+         CALL stuff_bdytend ( qbdy3dtemp2 , qbdy3dtemp1 , new_bdy_frq , nested_grid%moist_bt(:,:,:,:,P_QV), 'T' , &
                                                                   ijds , ijde , spec_bdy_width      , &
                                                                   ids , ide , jds , jde , kds , kde , &
                                                                   ims , ime , jms , jme , kms , kme , &
@@ -859,7 +859,7 @@ print *,'bdy time = ',time_loop-1,'  bdy date = ',current_date,' ',start_date
                                                                            ids , ide , jds , jde , kds , kde , &
                                                                            ims , ime , jms , jme , kms , kme , &
                                                                            ips , ipe , jps , jpe , kps , kpe )
-         CALL stuff_bdy     ( qbdy3dtemp1 , nested_grid%moist_b(1,1,1,1,P_QV)   , 'T' , ijds , ijde , spec_bdy_width      , &
+         CALL stuff_bdy     ( qbdy3dtemp1 , nested_grid%moist_b(:,:,:,:,P_QV)   , 'T' , ijds , ijde , spec_bdy_width      , &
                                                                            ids , ide , jds , jde , kds , kde , &
                                                                            ims , ime , jms , jme , kms , kme , &
                                                                            ips , ipe , jps , jpe , kps , kpe )
@@ -911,7 +911,7 @@ print *,'bdy time = ',time_loop-1,'  bdy date = ',current_date,' ',start_date
                                                                   ids , ide , jds , jde , kds , kde , &
                                                                   ims , ime , jms , jme , kms , kme , &
                                                                   ips , ipe , jps , jpe , kps , kpe )
-         CALL stuff_bdytend ( qbdy3dtemp2 , qbdy3dtemp1 , new_bdy_frq , nested_grid%moist_bt(1,1,1,1,P_QV) , 'T' , &
+         CALL stuff_bdytend ( qbdy3dtemp2 , qbdy3dtemp1 , new_bdy_frq , nested_grid%moist_bt(:,:,:,:,P_QV) , 'T' , &
                                                                   ijds , ijde , spec_bdy_width      , &
                                                                   ids , ide , jds , jde , kds , kde , &
                                                                   ims , ime , jms , jme , kms , kme , &

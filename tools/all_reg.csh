@@ -11,6 +11,13 @@
 set WHICH_TEST_TO_RUN = 1
 set WHICH_TEST_TO_RUN = ALL
 
+#	You can also run this script to generate and compare the various
+#	baseline tests.  
+
+set BASELINE = GENERATE
+set BASELINE = COMPARE
+set BASELINE = NOPE
+
 #	HOW TO RUN
 #	----------
 
@@ -28,8 +35,8 @@ set WHICH_TEST_TO_RUN = ALL
 #	put all_reg.csh, regtest.csh, and wrf.tar in dir
 #	execute all_reg.csh
 #	takes 8-10 h, stay away from Jim's real-time
-#	runs from 05-08Z and 17-20Z (10-1 winter, 9-12
-#	summer)
+#	runs from 05-08Z and 17-20Z (Boulder local is 10-1 winter, 
+#	11-2 summer)
 
 #	AIX
 #	bluesky
@@ -146,15 +153,59 @@ while ( $count <= $num_tests )
 		  ( ONLY_`uname` ==  $TOAST[$count] ) ) then
 		echo doing test $NAME[$count] for `uname`
 
-		#	Build the short edit input script for ed and edit the
-		#	regtest.csh file.
+		#	If this is the generate or compare baseline test, where do we
+		#	save the data to/read the data from.
 
-		if ( -e ed.in ) rm ed.in
-		cat >! ed_in << EOF
-			/$OLD_TEXT[$count]/s/$OLD_TEXT[$count]/$NEW_TEXT[$count]/
-			w reg.foo.$count.$NAME[$count]
-			q
+		if ( ( $BASELINE == GENERATE ) || ( $BASELINE == COMPARE ) ) then
+			if ( `uname` == AIX ) then
+				set SAVE_DIR = /ptmp/gill/BASELINE/`uname`/$NAME[$count]
+			else if ( ( `uname` == OSF1 ) && ( `hostname | cut -c 1-6` == joshua ) ) then
+				set SAVE_DIR = /data3/mp/gill/BASELINE/`uname`/$NAME[$count]
+			else if ( ( `uname` == Linux ) && ( `hostname` == master ) ) then
+				set SAVE_DIR = /big6/gill/DO_NOT_REMOVE_DIR/BASELINE/`uname`/$NAME[$count]
+			else
+				echo No idea where to put the data, stopping
+				exit ( 2 )
+			endif
+
+			#	Either zap existing stuff (GENERATE), or make sure it is there (COMPARE)
+
+			if      ( $BASELINE == GENERATE ) then
+				/bin/rm -rf $SAVE_DIR
+			else if ( $BASELINE == COMPARE  ) then
+				if ( ! -d $SAVE_DIR ) then
+					echo $SAVE_DIR does not exist for BASELINE comparison, stopping
+					exit ( 3 )
+				endif
+			endif
+		endif
+
+		#	Build the short edit input script for ed and edit the regtest.csh file.
+
+		if      ( $BASELINE == NOPE     ) then
+			if ( -e ed.in ) rm ed.in
+			cat >! ed_in << EOF
+				/$OLD_TEXT[$count]/s/$OLD_TEXT[$count]/$NEW_TEXT[$count]/
+				w reg.foo.$count.$NAME[$count]
+				q
 EOF
+		else if ( $BASELINE == GENERATE ) then
+			if ( -e ed.in ) rm ed.in
+			cat >! ed_in << EOF
+				/$OLD_TEXT[$count]/s/$OLD_TEXT[$count]/$NEW_TEXT[$count]/
+				/GENERATE_BASELINE = FALSE/s/GENERATE_BASELINE = FALSE/GENERATE_BASELINE = $SAVE_DIR/
+				w reg.foo.$count.$NAME[$count]
+				q
+EOF
+		else if ( $BASELINE == COMPARE  ) then
+			if ( -e ed.in ) rm ed.in
+			cat >! ed_in << EOF
+				/$OLD_TEXT[$count]/s/$OLD_TEXT[$count]/$NEW_TEXT[$count]/
+				/COMPARE_BASELINE = FALSE/s/COMPARE_BASELINE = FALSE/COMPARE_BASELINE = $SAVE_DIR/
+				w reg.foo.$count.$NAME[$count]
+				q
+EOF
+		endif
 		ed regtest.csh < ed_in >& /dev/null
 		chmod +x reg.foo.$count.$NAME[$count]
 
@@ -181,7 +232,6 @@ EOF
 		#	we get the process returning control, then we move on.
 
 		else
-			chmod +x reg.foo.$count.$NAME[$count]
 			reg.foo.$count.$NAME[$count] -f wrf.tar >&! output.$count.$NAME[$count]
 			mv wrftest.output wrftest.output.$count.$NAME[$count]
 			if ( $WHICH_TEST_TO_RUN == ALL ) then

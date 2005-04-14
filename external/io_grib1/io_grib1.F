@@ -357,7 +357,6 @@ SUBROUTINE ext_yyy_write_field( DataHandle , DateStr , VarName , &
   integer                       ,intent(out)   :: Status
   integer                                      :: ierror
   character (120)                         :: msg
-  character, pointer :: pds
   integer :: xsize, ysize, zsize
   integer :: x, y, z
   integer :: idx
@@ -584,7 +583,6 @@ SUBROUTINE ext_yyy_write_field( DataHandle , DateStr , VarName , &
      if (output) then 
         CALL geth_idts(DateStr,StartDate,fcst_secs)
         
-        nullify(pds)
         if (center_lat .lt. 0) then
            south = 1
         else

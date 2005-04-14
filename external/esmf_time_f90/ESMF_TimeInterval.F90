@@ -1053,8 +1053,8 @@
 
       CALL ESMF_TimeIntervalSet( ESMF_TimeIntervalSum, rc=rc )
       ! call ESMC_BaseTime base class function
-      call c_ESMC_BaseTimeSum(timeinterval1, timeinterval2, &
-                              ESMF_TimeIntervalSum)
+      call c_ESMC_BaseTimeIntervalSum(timeinterval1, timeinterval2, &
+                                      ESMF_TimeIntervalSum)
 
       end function ESMF_TimeIntervalSum
 
@@ -1093,8 +1093,8 @@
 
       CALL ESMF_TimeIntervalSet( ESMF_TimeIntervalDiff, rc=rc )
       ! call ESMC_BaseTime base class function
-      call c_ESMC_BaseTimeDiff(timeinterval1, timeinterval2, &
-                               ESMF_TimeIntervalDiff)
+      call c_ESMC_BaseTimeIntervalDiff(timeinterval1, timeinterval2, &
+                                       ESMF_TimeIntervalDiff)
 
       end function ESMF_TimeIntervalDiff
 

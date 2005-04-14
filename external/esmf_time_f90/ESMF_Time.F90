@@ -1270,7 +1270,7 @@
       ESMF_TimeDec = time
 
       ! call ESMC_BaseTime base class function
-       call c_ESMC_BaseTimeDiff(time, timeinterval, ESMF_TimeDec)
+       call c_ESMC_BaseTimeDec(time, timeinterval, ESMF_TimeDec)
 
       end function ESMF_TimeDec
 

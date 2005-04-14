@@ -744,6 +744,8 @@ set MPIRUNCOMMANDPOST   =
 
 touch version_info
 if ( ( $ARCH[1] == AIX ) && ( `hostname | cut -c 1-2` == bs ) ) then
+	# NMM requires 32 bit, Apr 2005 Dave, remove this when able
+	setenv OBJECT_MODE 32
 	set DEF_DIR             = $home
 	set TMPDIR              = /ptmp/$user
 	# keep stuff out of $HOME and /ptmp/$USER

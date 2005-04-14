@@ -157,7 +157,7 @@ main( int argc, char *argv[], char *env[] )
 
 cleanup:
   sprintf(command,"/bin/rm -f %s\n",fname_tmp );
-/*   system( command ) ; */
+  system( command ) ;
 
 }
 

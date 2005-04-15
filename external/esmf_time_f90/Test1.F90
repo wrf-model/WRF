@@ -1,9 +1,6 @@
   program ttest
-
-  USE wrf_esmf_mod
-
-  IMPLICIT NONE
-
+  USE WRF_ESMF_MOD
+IMPLICIT NONE
   INTEGER rc, e, f 
   TYPE (ESMF_Time)         :: start, stop, current
   TYPE (ESMF_Calendar)     :: gregorianCalendar

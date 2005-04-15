@@ -1,7 +1,7 @@
 !--- open_for_write_begin
-SUBROUTINE ext_mcel_open_for_write_begin( FileName , Comm_compute, Comm_io, SysDepInfo, &
+SUBROUTINE ext_esmf_open_for_write_begin( FileName , Comm_compute, Comm_io, SysDepInfo, &
                                          DataHandle , Status )
-  USE module_ext_mcel
+  USE module_ext_esmf
   IMPLICIT NONE
   CHARACTER*(*) :: FileName
   INTEGER ,       INTENT(IN)  :: Comm_compute , Comm_io
@@ -75,19 +75,19 @@ SUBROUTINE ext_mcel_open_for_write_begin( FileName , Comm_compute, Comm_io, SysD
                    ierr )
   ENDIF
 
-  IF ( ierr .NE. 0 ) CALL wrf_error_fatal( "ext_mcel_open_for_write_begin: newGrid" )
+  IF ( ierr .NE. 0 ) CALL wrf_error_fatal( "ext_esmf_open_for_write_begin: newGrid" )
 
   CALL newProgram ( open_file_descriptors(1,i), TRIM(fname), ierr )
 
-  IF ( ierr .NE. 0 ) CALL wrf_error_fatal( "ext_mcel_open_for_write_begin: newProgram" )
+  IF ( ierr .NE. 0 ) CALL wrf_error_fatal( "ext_esmf_open_for_write_begin: newProgram" )
 
   Status = 0
   RETURN  
-END SUBROUTINE ext_mcel_open_for_write_begin
+END SUBROUTINE ext_esmf_open_for_write_begin
 
 !--- open_for_write_commit
-SUBROUTINE ext_mcel_open_for_write_commit( DataHandle , Status )
-  USE module_ext_mcel
+SUBROUTINE ext_esmf_open_for_write_commit( DataHandle , Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(IN ) :: DataHandle
   INTEGER ,       INTENT(OUT) :: Status
@@ -108,4 +108,4 @@ SUBROUTINE ext_mcel_open_for_write_commit( DataHandle , Status )
   Status = 0
 
   RETURN  
-END SUBROUTINE ext_mcel_open_for_write_commit
+END SUBROUTINE ext_esmf_open_for_write_commit

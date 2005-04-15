@@ -9,7 +9,7 @@ AR = ar
 RANLIB	= echo
 
 # TBH:  Now we can roll in our own stuff along with ESMF_Mod if desired.  
-OBJS = ESMF_Indirection.o ESMF_Mod_Wrapper.o
+OBJS = ESMF_Indirection.o ESMF_Mod_Wrapper.o module_iostate_esmf.o
 
 TARGET = libwrfio_esmf.a
 
@@ -18,7 +18,7 @@ $(TARGET) : $(OBJS)
 	$(RANLIB) $(TARGET)
 
 .F90.o :
-	$(CPP) -C -P -I. $*.F90 > $*.f
+	$(CPP) -C -P $*.F90 > $*.f
 	$(FC) -c -g -I../ioapi_share $*.f
 
 superclean: 
@@ -26,6 +26,6 @@ superclean:
 
 # DEPENDENCIES : only dependencies after this line 
 
-ESMF_Indirection.o : 
 ESMF_Mod_Wrapper.o : ESMF_Indirection.o
+ESMF_Indirection.o : module_iostate_esmf.o
 

@@ -1,11 +1,11 @@
 !--- write_field
-SUBROUTINE ext_mcel_write_field ( DataHandle , DateStr , VarName , Field , FieldType , Comm , IOComm,  &
+SUBROUTINE ext_esmf_write_field ( DataHandle , DateStr , VarName , Field , FieldType , Comm , IOComm,  &
                              DomainDesc , MemoryOrder , Stagger , DimNames ,              &
                              DomainStart , DomainEnd ,                                    &
                              MemoryStart , MemoryEnd ,                                    &
                              PatchStart , PatchEnd ,                                      &
                              Status )
-  USE module_ext_mcel
+  USE module_ext_esmf
 !  USE module_date_time   ! defined in share
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)    :: DataHandle 
@@ -49,10 +49,10 @@ SUBROUTINE ext_mcel_write_field ( DataHandle , DateStr , VarName , Field , Field
 
 write(0,*)"write field : called "
   IF ( .NOT. int_valid_handle( DataHandle ) ) THEN
-    CALL wrf_error_fatal("ext_mcel_write_field: invalid data handle" )
+    CALL wrf_error_fatal("ext_esmf_write_field: invalid data handle" )
   ENDIF
   IF ( .NOT. int_handle_in_use( DataHandle ) ) THEN
-    CALL wrf_error_fatal("ext_mcel_write_field: DataHandle not opened" )
+    CALL wrf_error_fatal("ext_esmf_write_field: DataHandle not opened" )
   ENDIF
 
   inttypesize = itypesize
@@ -66,7 +66,7 @@ write(0,*)"write field : called "
     typesize = itypesize
     mcel_type = MCEL_DATATYPE_INT32
   ELSE IF ( FieldType .EQ. WRF_LOGICAL ) THEN
-    CALL wrf_error_fatal( 'io_int.F90: ext_mcel_write_field, WRF_LOGICAL not yet supported')
+    CALL wrf_error_fatal( 'io_int.F90: ext_esmf_write_field, WRF_LOGICAL not yet supported')
   ENDIF
 
   ips = PatchStart(1) ; ipe = PatchEnd(1) 
@@ -82,7 +82,7 @@ write(0,*)"write field : okay_to_write ",okay_to_write( DataHandle )
       IF ( .NOT. mcel_finalized( DataHandle ) ) THEN
         IF ( ALLOCATED( xlat ) .AND. ALLOCATED( xlong ) ) THEN
           CALL setLocationsXY( open_file_descriptors(2,DataHandle), xlong, xlat, ierr )
-          IF ( ierr .NE. 0 ) CALL wrf_error_fatal( "ext_mcel_write_field: setLocationsXY" )
+          IF ( ierr .NE. 0 ) CALL wrf_error_fatal( "ext_esmf_write_field: setLocationsXY" )
         ELSE IF ( deltax .gt. 0. .and. deltay .gt. 0. .and. originx .gt. 0. .and. originy .gt. 0. ) THEN
           dxm(1) = deltax
           dxm(2) = deltay
@@ -91,18 +91,18 @@ write(0,*)"write field : okay_to_write ",okay_to_write( DataHandle )
           origin(2) = originy
           call SetOrigin ( open_file_descriptors(2,DataHandle), origin, ierr)
         ELSE
-          CALL wrf_error_fatal( "ext_mcel_write_field:noLocationsXY")
+          CALL wrf_error_fatal( "ext_esmf_write_field:noLocationsXY")
         ENDIF
         IF ( ALLOCATED(mask) ) THEN
           CALL setMask ( open_file_descriptors(2,DataHandle) , mask, ierr )
-          IF ( ierr .NE. 0 ) CALL wrf_error_fatal("ext_mcel_write_field: setMask")
+          IF ( ierr .NE. 0 ) CALL wrf_error_fatal("ext_esmf_write_field: setMask")
         ENDIF
         CALL setGrid ( open_file_descriptors(1,DataHandle), open_file_descriptors(2,DataHandle), ierr )
-        IF ( ierr .NE. 0 ) CALL wrf_error_fatal("ext_mcel_write_field: setGrid")
-        IF ( ierr .NE. 0 ) CALL wrf_error_fatal("ext_mcel_write_field: setoutputgrid")
+        IF ( ierr .NE. 0 ) CALL wrf_error_fatal("ext_esmf_write_field: setGrid")
+        IF ( ierr .NE. 0 ) CALL wrf_error_fatal("ext_esmf_write_field: setoutputgrid")
         CALL finalize ( open_file_descriptors(1,DataHandle), ierr )
         IF ( ierr .GT. 0 ) THEN
-           write(mess,*)'ext_mcel_write_field: finalize ierr=',ierr
+           write(mess,*)'ext_esmf_write_field: finalize ierr=',ierr
            CALL wrf_error_fatal( TRIM(mess) )
         ENDIF
         mcel_finalized( DataHandle ) = .TRUE.
@@ -147,7 +147,7 @@ write(0,*)"write field : okay_to_write ",okay_to_write( DataHandle )
         DEALLOCATE(temp)
       ENDIF
 
-      IF ( ierr .NE. 0 ) CALL wrf_error_fatal("ext_mcel_write_field: storeData")
+      IF ( ierr .NE. 0 ) CALL wrf_error_fatal("ext_esmf_write_field: storeData")
 
     ENDIF
   ELSE   ! opened for training
@@ -199,7 +199,7 @@ write(0,*)'write_field: ALLOCATED(mask)', ALLOCATED(mask)
         gSize(1) = ipe-ips+1
         gSize(2) = jpe-jps+1
         CALL setSize ( open_file_descriptors(2,DataHandle), gSize, ierr )
-        IF ( ierr .NE. 0 ) CALL wrf_error_fatal("ext_mcel_write_field: setSize")
+        IF ( ierr .NE. 0 ) CALL wrf_error_fatal("ext_esmf_write_field: setSize")
 
 ! these will have been set in the call to open_for_write_begin from sysdepinfo
         IF ( mcel_npglobal .NE. -1 .AND. mcel_mystart .NE. -1 .AND.  &
@@ -214,16 +214,16 @@ write(0,*)'write_field: ALLOCATED(mask)', ALLOCATED(mask)
       IF ( opened_for_read( DataHandle) ) THEN
         CALL addSources ( open_file_descriptors(1,DataHandle), MCEL_SERVER,  &
   &       TRIM(VarName),1, mcel_type, ierr )
-        IF ( ierr .NE. 0 ) CALL wrf_error_fatal("ext_mcel_write_field: addSources")
+        IF ( ierr .NE. 0 ) CALL wrf_error_fatal("ext_esmf_write_field: addSources")
         CALL addOutputs ( open_file_descriptors(1,DataHandle),   &
   &       TRIM(VarName),1, mcel_type, ierr )
-        IF ( ierr .NE. 0 ) CALL wrf_error_fatal("ext_mcel_write_field: addOutputs")
+        IF ( ierr .NE. 0 ) CALL wrf_error_fatal("ext_esmf_write_field: addOutputs")
       ELSE
         CALL addVar ( open_file_descriptors(1,DataHandle), TRIM(VarName), mcel_type, ierr )
-        IF ( ierr .NE. 0 ) CALL wrf_error_fatal("ext_mcel_write_field: addVar")
+        IF ( ierr .NE. 0 ) CALL wrf_error_fatal("ext_esmf_write_field: addVar")
       ENDIF
     ENDIF
   ENDIF
   Status = 0
   RETURN
-END SUBROUTINE ext_mcel_write_field
+END SUBROUTINE ext_esmf_write_field

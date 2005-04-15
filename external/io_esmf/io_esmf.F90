@@ -1,4 +1,11 @@
-MODULE module_ext_mcel
+MODULE module_ext_esmf
+
+  USE WRF_ESMF_MOD
+
+!$$$here...
+!$$$here...  adding calls to get_iostate_esmf() and set_iostate_esmf()
+!$$$here...  need to pass "id" via get_value()
+!$$$here...
 
   INTEGER, PARAMETER :: int_num_handles = 99
   LOGICAL, DIMENSION(int_num_handles) :: okay_to_write, okay_to_read,                     &
@@ -115,16 +122,17 @@ END SUBROUTINE get_value
 
 
     !--- ioinit
-    SUBROUTINE init_module_ext_mcel
+    SUBROUTINE init_module_ext_esmf
       IMPLICIT NONE
+!$$$here...  how to best handle type sizes?  
       CALL wrf_sizeof_integer( itypesize )
       CALL wrf_sizeof_real   ( rtypesize )
-    END SUBROUTINE init_module_ext_mcel
+    END SUBROUTINE init_module_ext_esmf
 
-END MODULE module_ext_mcel
+END MODULE module_ext_esmf
 
  SUBROUTINE copy_field_to_cache_r2r ( Field, cache, ips, ipe, jps, jpe, ims, ime, jms, jme )
-   USE module_ext_mcel
+   USE module_ext_esmf
    INTEGER FieldType, ips, ipe, jps, jpe, ims, ime, jms, jme
    INTEGER idex, i, j
    REAL             Field(*)
@@ -138,7 +146,7 @@ END MODULE module_ext_mcel
  END SUBROUTINE copy_field_to_cache_r2r
 
  SUBROUTINE copy_field_to_cache_r2d ( Field, cache, ips, ipe, jps, jpe, ims, ime, jms, jme )
-   USE module_ext_mcel
+   USE module_ext_esmf
    INTEGER FieldType, ips, ipe, jps, jpe, ims, ime, jms, jme
    INTEGER idex, i, j
    REAL             Field(*)
@@ -152,7 +160,7 @@ END MODULE module_ext_mcel
  END SUBROUTINE copy_field_to_cache_r2d
 
  SUBROUTINE copy_field_to_cache_d2r ( Field, cache, ips, ipe, jps, jpe, ims, ime, jms, jme )
-   USE module_ext_mcel
+   USE module_ext_esmf
    INTEGER FieldType, ips, ipe, jps, jpe, ims, ime, jms, jme
    INTEGER idex, i, j
    DOUBLE PRECISION Field(*) 
@@ -166,7 +174,7 @@ END MODULE module_ext_mcel
  END SUBROUTINE copy_field_to_cache_d2r
 
  SUBROUTINE copy_field_to_cache_d2d ( Field, cache, ips, ipe, jps, jpe, ims, ime, jms, jme )
-   USE module_ext_mcel
+   USE module_ext_esmf
    INTEGER FieldType, ips, ipe, jps, jpe, ims, ime, jms, jme
    INTEGER idex, i, j
    DOUBLE PRECISION Field(*) 
@@ -180,7 +188,7 @@ END MODULE module_ext_mcel
  END SUBROUTINE copy_field_to_cache_d2d
 
  SUBROUTINE copy_field_to_cache_int ( Field, cache, ips, ipe, jps, jpe, ims, ime, jms, jme )
-   USE module_ext_mcel
+   USE module_ext_esmf
    INTEGER FieldType, ips, ipe, jps, jpe, ims, ime, jms, jme
    INTEGER idex, i, j
    INTEGER Field(*)
@@ -194,7 +202,7 @@ END MODULE module_ext_mcel
  END SUBROUTINE copy_field_to_cache_int
 
  SUBROUTINE copy_cache_to_field_r2r ( cache, Field, ips, ipe, jps, jpe, ims, ime, jms, jme )
-   USE module_ext_mcel
+   USE module_ext_esmf
    INTEGER FieldType, ips, ipe, jps, jpe, ims, ime, jms, jme
    INTEGER idex, i, j
    REAL            cache(ips:ipe,jps:jpe)
@@ -208,7 +216,7 @@ END MODULE module_ext_mcel
  END SUBROUTINE copy_cache_to_field_r2r
 
  SUBROUTINE copy_cache_to_field_r2d ( cache, Field, ips, ipe, jps, jpe, ims, ime, jms, jme )
-   USE module_ext_mcel
+   USE module_ext_esmf
    INTEGER FieldType, ips, ipe, jps, jpe, ims, ime, jms, jme
    INTEGER idex, i, j
    REAL             cache(ips:ipe,jps:jpe)
@@ -222,7 +230,7 @@ END MODULE module_ext_mcel
  END SUBROUTINE copy_cache_to_field_r2d
 
  SUBROUTINE copy_cache_to_field_d2r ( cache, Field, ips, ipe, jps, jpe, ims, ime, jms, jme )
-   USE module_ext_mcel
+   USE module_ext_esmf
    INTEGER FieldType, ips, ipe, jps, jpe, ims, ime, jms, jme
    INTEGER idex, i, j
    DOUBLEPRECISION  cache(ips:ipe,jps:jpe)
@@ -236,7 +244,7 @@ END MODULE module_ext_mcel
  END SUBROUTINE copy_cache_to_field_d2r
 
  SUBROUTINE copy_cache_to_field_d2d ( cache, Field, ips, ipe, jps, jpe, ims, ime, jms, jme )
-   USE module_ext_mcel
+   USE module_ext_esmf
    INTEGER FieldType, ips, ipe, jps, jpe, ims, ime, jms, jme
    INTEGER idex, i, j
    DOUBLEPRECISION  cache(ips:ipe,jps:jpe)
@@ -251,19 +259,19 @@ END MODULE module_ext_mcel
 
 !--------------
 
-SUBROUTINE ext_mcel_ioinit( SysDepInfo, Status )
-  USE module_ext_mcel
+SUBROUTINE ext_esmf_ioinit( SysDepInfo, Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   CHARACTER*(*), INTENT(IN) :: SysDepInfo
   INTEGER Status
-  CALL init_module_ext_mcel
+  CALL init_module_ext_esmf
   Status = 0 
-END SUBROUTINE ext_mcel_ioinit
+END SUBROUTINE ext_esmf_ioinit
 
 !--- open_for_read 
-SUBROUTINE ext_mcel_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo, &
+SUBROUTINE ext_esmf_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo, &
                                DataHandle , Status )
-  USE module_ext_mcel
+  USE module_ext_esmf
   IMPLICIT NONE
   CHARACTER*(*) :: FileName
   INTEGER ,       INTENT(IN)  :: Comm_compute , Comm_io
@@ -279,12 +287,12 @@ SUBROUTINE ext_mcel_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo
   Status = WRF_WARN_NOTSUPPORTED
 
   RETURN  
-END SUBROUTINE ext_mcel_open_for_read
+END SUBROUTINE ext_esmf_open_for_read
 
 
 !--- inquire_opened
-SUBROUTINE ext_mcel_inquire_opened ( DataHandle, FileName , FileStatus, Status )
-  USE module_ext_mcel
+SUBROUTINE ext_esmf_inquire_opened ( DataHandle, FileName , FileStatus, Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: FileName
@@ -312,11 +320,11 @@ SUBROUTINE ext_mcel_inquire_opened ( DataHandle, FileName , FileStatus, Status )
   Status = 0
   
   RETURN
-END SUBROUTINE ext_mcel_inquire_opened
+END SUBROUTINE ext_esmf_inquire_opened
 
 !--- inquire_filename
-SUBROUTINE ext_mcel_inquire_filename ( DataHandle, FileName , FileStatus, Status )
-  USE module_ext_mcel
+SUBROUTINE ext_esmf_inquire_filename ( DataHandle, FileName , FileStatus, Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: FileName
@@ -345,22 +353,22 @@ SUBROUTINE ext_mcel_inquire_filename ( DataHandle, FileName , FileStatus, Status
     ENDIF
   ENDIF
   Status = 0
-END SUBROUTINE ext_mcel_inquire_filename
+END SUBROUTINE ext_esmf_inquire_filename
 
 !--- sync
-SUBROUTINE ext_mcel_iosync ( DataHandle, Status )
-  USE module_ext_mcel
+SUBROUTINE ext_esmf_iosync ( DataHandle, Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   INTEGER ,       INTENT(OUT) :: Status
 
   Status = 0
   RETURN
-END SUBROUTINE ext_mcel_iosync
+END SUBROUTINE ext_esmf_iosync
 
 !--- close
-SUBROUTINE ext_mcel_ioclose ( DataHandle, Status )
-  USE module_ext_mcel
+SUBROUTINE ext_esmf_ioclose ( DataHandle, Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER DataHandle, Status
 
@@ -373,12 +381,12 @@ SUBROUTINE ext_mcel_ioclose ( DataHandle, Status )
   Status = 0
 
   RETURN
-END SUBROUTINE ext_mcel_ioclose
+END SUBROUTINE ext_esmf_ioclose
 
 !--- ioexit
-SUBROUTINE ext_mcel_ioexit( Status )
+SUBROUTINE ext_esmf_ioexit( Status )
 
-  USE module_ext_mcel
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(OUT) :: Status
   INTEGER                     :: DataHandle
@@ -386,11 +394,11 @@ SUBROUTINE ext_mcel_ioexit( Status )
   REAL dummy
 
   RETURN  
-END SUBROUTINE ext_mcel_ioexit
+END SUBROUTINE ext_esmf_ioexit
 
 !--- get_next_time
-SUBROUTINE ext_mcel_get_next_time ( DataHandle, DateStr, Status )
-  USE module_ext_mcel
+SUBROUTINE ext_esmf_get_next_time ( DataHandle, DateStr, Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: DateStr
@@ -420,10 +428,10 @@ SUBROUTINE ext_mcel_get_next_time ( DataHandle, DateStr, Status )
   REAL, DIMENSION( 1 ) :: Field
 
   IF ( .NOT. int_valid_handle( DataHandle ) ) THEN
-    CALL wrf_error_fatal("external/io_quilt/io_int.F90: ext_mcel_get_next_time: invalid data handle" )
+    CALL wrf_error_fatal("external/io_quilt/io_int.F90: ext_esmf_get_next_time: invalid data handle" )
   ENDIF
   IF ( .NOT. int_handle_in_use( DataHandle ) ) THEN
-    CALL wrf_error_fatal("external/io_quilt/io_int.F90: ext_mcel_get_next_time: DataHandle not opened" )
+    CALL wrf_error_fatal("external/io_quilt/io_int.F90: ext_esmf_get_next_time: DataHandle not opened" )
   ENDIF
   inttypesize = itypesize
   realtypesize = rtypesize
@@ -431,11 +439,11 @@ SUBROUTINE ext_mcel_get_next_time ( DataHandle, DateStr, Status )
   Status = WRF_WARN_NOTSUPPORTED
 
   RETURN
-END SUBROUTINE ext_mcel_get_next_time
+END SUBROUTINE ext_esmf_get_next_time
 
 !--- set_time
-SUBROUTINE ext_mcel_set_time ( DataHandle, DateStr, Status )
-  USE module_ext_mcel
+SUBROUTINE ext_esmf_set_time ( DataHandle, DateStr, Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: DateStr
@@ -443,12 +451,12 @@ SUBROUTINE ext_mcel_set_time ( DataHandle, DateStr, Status )
 
   Status = WRF_WARN_NOTSUPPORTED
   RETURN
-END SUBROUTINE ext_mcel_set_time
+END SUBROUTINE ext_esmf_set_time
 
 !--- get_var_info
-SUBROUTINE ext_mcel_get_var_info ( DataHandle , VarName , NDim , MemoryOrder , Stagger , &
+SUBROUTINE ext_esmf_get_var_info ( DataHandle , VarName , NDim , MemoryOrder , Stagger , &
                               DomainStart , DomainEnd , WrfType, Status )
-  USE module_ext_mcel
+  USE module_ext_esmf
   IMPLICIT NONE
   integer               ,intent(in)     :: DataHandle
   character*(*)         ,intent(in)     :: VarName
@@ -480,21 +488,21 @@ SUBROUTINE ext_mcel_get_var_info ( DataHandle , VarName , NDim , MemoryOrder , S
   REAL, DIMENSION( 1 ) :: Field
 
   IF ( .NOT. int_valid_handle( DataHandle ) ) THEN
-    CALL wrf_error_fatal("external/io_quilt/io_int.F90: ext_mcel_get_var_info: invalid data handle" )
+    CALL wrf_error_fatal("external/io_quilt/io_int.F90: ext_esmf_get_var_info: invalid data handle" )
   ENDIF
   IF ( .NOT. int_handle_in_use( DataHandle ) ) THEN
-    CALL wrf_error_fatal("external/io_quilt/io_int.F90: ext_mcel_get_var_info: DataHandle not opened" )
+    CALL wrf_error_fatal("external/io_quilt/io_int.F90: ext_esmf_get_var_info: DataHandle not opened" )
   ENDIF
   inttypesize = itypesize
   realtypesize = rtypesize
   Status = 0
 
 RETURN
-END SUBROUTINE ext_mcel_get_var_info
+END SUBROUTINE ext_esmf_get_var_info
 
 !--- get_next_var  (not defined for IntIO)
-SUBROUTINE ext_mcel_get_next_var ( DataHandle, VarName, Status )
-  USE module_ext_mcel
+SUBROUTINE ext_esmf_get_next_var ( DataHandle, VarName, Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: VarName
@@ -526,10 +534,10 @@ real    rdata(128)
   REAL, DIMENSION( 1 ) :: Field
 
   IF ( .NOT. int_valid_handle( DataHandle ) ) THEN
-    CALL wrf_error_fatal("external/io_quilt/io_int.F90: ext_mcel_get_next_var: invalid data handle" )
+    CALL wrf_error_fatal("external/io_quilt/io_int.F90: ext_esmf_get_next_var: invalid data handle" )
   ENDIF
   IF ( .NOT. int_handle_in_use( DataHandle ) ) THEN
-    CALL wrf_error_fatal("external/io_quilt/io_int.F90: ext_mcel_get_next_var: DataHandle not opened" )
+    CALL wrf_error_fatal("external/io_quilt/io_int.F90: ext_esmf_get_next_var: DataHandle not opened" )
   ENDIF
   inttypesize = itypesize
   realtypesize = rtypesize
@@ -537,11 +545,11 @@ real    rdata(128)
   Status = 0
 
   RETURN
-END SUBROUTINE ext_mcel_get_next_var
+END SUBROUTINE ext_esmf_get_next_var
 
 !--- get_dom_ti_real
-SUBROUTINE ext_mcel_get_dom_ti_real ( DataHandle,Element,   Data, Count, Outcount, Status )
-  USE module_ext_mcel
+SUBROUTINE ext_esmf_get_dom_ti_real ( DataHandle,Element,   Data, Count, Outcount, Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -556,11 +564,11 @@ SUBROUTINE ext_mcel_get_dom_ti_real ( DataHandle,Element,   Data, Count, Outcoun
   Status = 0
 
 RETURN
-END SUBROUTINE ext_mcel_get_dom_ti_real 
+END SUBROUTINE ext_esmf_get_dom_ti_real 
 
 !--- put_dom_ti_real
-SUBROUTINE ext_mcel_put_dom_ti_real ( DataHandle,Element,   Data, Count,  Status )
-  USE module_ext_mcel
+SUBROUTINE ext_esmf_put_dom_ti_real ( DataHandle,Element,   Data, Count,  Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -572,10 +580,10 @@ SUBROUTINE ext_mcel_put_dom_ti_real ( DataHandle,Element,   Data, Count,  Status
 
   Status = 0
 RETURN
-END SUBROUTINE ext_mcel_put_dom_ti_real 
+END SUBROUTINE ext_esmf_put_dom_ti_real 
 
 !--- get_dom_ti_double
-SUBROUTINE ext_mcel_get_dom_ti_double ( DataHandle,Element,   Data, Count, Outcount, Status )
+SUBROUTINE ext_esmf_get_dom_ti_double ( DataHandle,Element,   Data, Count, Outcount, Status )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -583,25 +591,25 @@ SUBROUTINE ext_mcel_get_dom_ti_double ( DataHandle,Element,   Data, Count, Outco
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_message('ext_mcel_get_dom_ti_double not supported yet')
+  CALL wrf_message('ext_esmf_get_dom_ti_double not supported yet')
 RETURN
-END SUBROUTINE ext_mcel_get_dom_ti_double 
+END SUBROUTINE ext_esmf_get_dom_ti_double 
 
 !--- put_dom_ti_double
-SUBROUTINE ext_mcel_put_dom_ti_double ( DataHandle,Element,   Data, Count,  Status )
+SUBROUTINE ext_esmf_put_dom_ti_double ( DataHandle,Element,   Data, Count,  Status )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
   real*8 ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_message('ext_mcel_put_dom_ti_double not supported yet')
+  CALL wrf_message('ext_esmf_put_dom_ti_double not supported yet')
 RETURN
-END SUBROUTINE ext_mcel_put_dom_ti_double 
+END SUBROUTINE ext_esmf_put_dom_ti_double 
 
 !--- get_dom_ti_integer
-SUBROUTINE ext_mcel_get_dom_ti_integer ( DataHandle,Element,   Data, Count, Outcount, Status )
-  USE module_ext_mcel
+SUBROUTINE ext_esmf_get_dom_ti_integer ( DataHandle,Element,   Data, Count, Outcount, Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -615,11 +623,11 @@ SUBROUTINE ext_mcel_get_dom_ti_integer ( DataHandle,Element,   Data, Count, Outc
 
   Status = 0
 RETURN
-END SUBROUTINE ext_mcel_get_dom_ti_integer 
+END SUBROUTINE ext_esmf_get_dom_ti_integer 
 
 !--- put_dom_ti_integer
-SUBROUTINE ext_mcel_put_dom_ti_integer ( DataHandle,Element,   Data, Count,  Status )
-  USE module_ext_mcel
+SUBROUTINE ext_esmf_put_dom_ti_integer ( DataHandle,Element,   Data, Count,  Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -630,10 +638,10 @@ SUBROUTINE ext_mcel_put_dom_ti_integer ( DataHandle,Element,   Data, Count,  Sta
 !
   Status = 0
 RETURN
-END SUBROUTINE ext_mcel_put_dom_ti_integer 
+END SUBROUTINE ext_esmf_put_dom_ti_integer 
 
 !--- get_dom_ti_logical
-SUBROUTINE ext_mcel_get_dom_ti_logical ( DataHandle,Element,   Data, Count, Outcount, Status )
+SUBROUTINE ext_esmf_get_dom_ti_logical ( DataHandle,Element,   Data, Count, Outcount, Status )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -641,25 +649,25 @@ SUBROUTINE ext_mcel_get_dom_ti_logical ( DataHandle,Element,   Data, Count, Outc
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_message('ext_mcel_get_dom_ti_logical not supported yet')
+  CALL wrf_message('ext_esmf_get_dom_ti_logical not supported yet')
 RETURN
-END SUBROUTINE ext_mcel_get_dom_ti_logical 
+END SUBROUTINE ext_esmf_get_dom_ti_logical 
 
 !--- put_dom_ti_logical
-SUBROUTINE ext_mcel_put_dom_ti_logical ( DataHandle,Element,   Data, Count,  Status )
+SUBROUTINE ext_esmf_put_dom_ti_logical ( DataHandle,Element,   Data, Count,  Status )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
   logical ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_message('ext_mcel_put_dom_ti_logical not supported yet')
+  CALL wrf_message('ext_esmf_put_dom_ti_logical not supported yet')
 RETURN
-END SUBROUTINE ext_mcel_put_dom_ti_logical 
+END SUBROUTINE ext_esmf_put_dom_ti_logical 
 
 !--- get_dom_ti_char
-SUBROUTINE ext_mcel_get_dom_ti_char ( DataHandle,Element,   Data,  Status )
-  USE module_ext_mcel
+SUBROUTINE ext_esmf_get_dom_ti_char ( DataHandle,Element,   Data,  Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -672,11 +680,11 @@ SUBROUTINE ext_mcel_get_dom_ti_char ( DataHandle,Element,   Data,  Status )
 
   Status = 0
 RETURN
-END SUBROUTINE ext_mcel_get_dom_ti_char 
+END SUBROUTINE ext_esmf_get_dom_ti_char 
 
 !--- put_dom_ti_char
-SUBROUTINE ext_mcel_put_dom_ti_char ( DataHandle, Element,  Data,  Status )
-  USE module_ext_mcel
+SUBROUTINE ext_esmf_put_dom_ti_char ( DataHandle, Element,  Data,  Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -696,10 +704,10 @@ SUBROUTINE ext_mcel_put_dom_ti_char ( DataHandle, Element,  Data,  Status )
   ENDIF
   Status = 0
 RETURN
-END SUBROUTINE ext_mcel_put_dom_ti_char 
+END SUBROUTINE ext_esmf_put_dom_ti_char 
 
 !--- get_dom_td_real
-SUBROUTINE ext_mcel_get_dom_td_real ( DataHandle,Element, DateStr,  Data, Count, Outcount, Status )
+SUBROUTINE ext_esmf_get_dom_td_real ( DataHandle,Element, DateStr,  Data, Count, Outcount, Status )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -709,10 +717,10 @@ SUBROUTINE ext_mcel_get_dom_td_real ( DataHandle,Element, DateStr,  Data, Count,
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_mcel_get_dom_td_real 
+END SUBROUTINE ext_esmf_get_dom_td_real 
 
 !--- put_dom_td_real
-SUBROUTINE ext_mcel_put_dom_td_real ( DataHandle,Element, DateStr,  Data, Count,  Status )
+SUBROUTINE ext_esmf_put_dom_td_real ( DataHandle,Element, DateStr,  Data, Count,  Status )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -721,10 +729,10 @@ SUBROUTINE ext_mcel_put_dom_td_real ( DataHandle,Element, DateStr,  Data, Count,
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_mcel_put_dom_td_real 
+END SUBROUTINE ext_esmf_put_dom_td_real 
 
 !--- get_dom_td_double
-SUBROUTINE ext_mcel_get_dom_td_double ( DataHandle,Element, DateStr,  Data, Count, Outcount, Status )
+SUBROUTINE ext_esmf_get_dom_td_double ( DataHandle,Element, DateStr,  Data, Count, Outcount, Status )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -734,10 +742,10 @@ SUBROUTINE ext_mcel_get_dom_td_double ( DataHandle,Element, DateStr,  Data, Coun
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_mcel_get_dom_td_double 
+END SUBROUTINE ext_esmf_get_dom_td_double 
 
 !--- put_dom_td_double
-SUBROUTINE ext_mcel_put_dom_td_double ( DataHandle,Element, DateStr,  Data, Count,  Status )
+SUBROUTINE ext_esmf_put_dom_td_double ( DataHandle,Element, DateStr,  Data, Count,  Status )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -746,10 +754,10 @@ SUBROUTINE ext_mcel_put_dom_td_double ( DataHandle,Element, DateStr,  Data, Coun
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_mcel_put_dom_td_double 
+END SUBROUTINE ext_esmf_put_dom_td_double 
 
 !--- get_dom_td_integer
-SUBROUTINE ext_mcel_get_dom_td_integer ( DataHandle,Element, DateStr,  Data, Count, Outcount, Status )
+SUBROUTINE ext_esmf_get_dom_td_integer ( DataHandle,Element, DateStr,  Data, Count, Outcount, Status )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -759,10 +767,10 @@ SUBROUTINE ext_mcel_get_dom_td_integer ( DataHandle,Element, DateStr,  Data, Cou
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_mcel_get_dom_td_integer 
+END SUBROUTINE ext_esmf_get_dom_td_integer 
 
 !--- put_dom_td_integer
-SUBROUTINE ext_mcel_put_dom_td_integer ( DataHandle,Element, DateStr,  Data, Count,  Status )
+SUBROUTINE ext_esmf_put_dom_td_integer ( DataHandle,Element, DateStr,  Data, Count,  Status )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -771,10 +779,10 @@ SUBROUTINE ext_mcel_put_dom_td_integer ( DataHandle,Element, DateStr,  Data, Cou
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_mcel_put_dom_td_integer 
+END SUBROUTINE ext_esmf_put_dom_td_integer 
 
 !--- get_dom_td_logical
-SUBROUTINE ext_mcel_get_dom_td_logical ( DataHandle,Element, DateStr,  Data, Count, Outcount, Status )
+SUBROUTINE ext_esmf_get_dom_td_logical ( DataHandle,Element, DateStr,  Data, Count, Outcount, Status )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -784,10 +792,10 @@ SUBROUTINE ext_mcel_get_dom_td_logical ( DataHandle,Element, DateStr,  Data, Cou
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_mcel_get_dom_td_logical 
+END SUBROUTINE ext_esmf_get_dom_td_logical 
 
 !--- put_dom_td_logical
-SUBROUTINE ext_mcel_put_dom_td_logical ( DataHandle,Element, DateStr,  Data, Count,  Status )
+SUBROUTINE ext_esmf_put_dom_td_logical ( DataHandle,Element, DateStr,  Data, Count,  Status )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -796,10 +804,10 @@ SUBROUTINE ext_mcel_put_dom_td_logical ( DataHandle,Element, DateStr,  Data, Cou
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_mcel_put_dom_td_logical 
+END SUBROUTINE ext_esmf_put_dom_td_logical 
 
 !--- get_dom_td_char
-SUBROUTINE ext_mcel_get_dom_td_char ( DataHandle,Element, DateStr,  Data,  Status )
+SUBROUTINE ext_esmf_get_dom_td_char ( DataHandle,Element, DateStr,  Data,  Status )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -807,10 +815,10 @@ SUBROUTINE ext_mcel_get_dom_td_char ( DataHandle,Element, DateStr,  Data,  Statu
   CHARACTER*(*) :: Data
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_mcel_get_dom_td_char 
+END SUBROUTINE ext_esmf_get_dom_td_char 
 
 !--- put_dom_td_char
-SUBROUTINE ext_mcel_put_dom_td_char ( DataHandle,Element, DateStr,  Data,  Status )
+SUBROUTINE ext_esmf_put_dom_td_char ( DataHandle,Element, DateStr,  Data,  Status )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -818,10 +826,10 @@ SUBROUTINE ext_mcel_put_dom_td_char ( DataHandle,Element, DateStr,  Data,  Statu
   CHARACTER*(*) :: Data
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_mcel_put_dom_td_char 
+END SUBROUTINE ext_esmf_put_dom_td_char 
 
 !--- get_var_ti_real
-SUBROUTINE ext_mcel_get_var_ti_real ( DataHandle,Element,  Varname, Data, Count, Outcount, Status )
+SUBROUTINE ext_esmf_get_var_ti_real ( DataHandle,Element,  Varname, Data, Count, Outcount, Status )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -831,10 +839,10 @@ SUBROUTINE ext_mcel_get_var_ti_real ( DataHandle,Element,  Varname, Data, Count,
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_mcel_get_var_ti_real 
+END SUBROUTINE ext_esmf_get_var_ti_real 
 
 !--- put_var_ti_real
-SUBROUTINE ext_mcel_put_var_ti_real ( DataHandle,Element,  Varname, Data, Count,  Status )
+SUBROUTINE ext_esmf_put_var_ti_real ( DataHandle,Element,  Varname, Data, Count,  Status )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -843,10 +851,10 @@ SUBROUTINE ext_mcel_put_var_ti_real ( DataHandle,Element,  Varname, Data, Count,
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_mcel_put_var_ti_real 
+END SUBROUTINE ext_esmf_put_var_ti_real 
 
 !--- get_var_ti_double
-SUBROUTINE ext_mcel_get_var_ti_double ( DataHandle,Element,  Varname, Data, Count, Outcount, Status )
+SUBROUTINE ext_esmf_get_var_ti_double ( DataHandle,Element,  Varname, Data, Count, Outcount, Status )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -856,10 +864,10 @@ SUBROUTINE ext_mcel_get_var_ti_double ( DataHandle,Element,  Varname, Data, Coun
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_mcel_get_var_ti_double 
+END SUBROUTINE ext_esmf_get_var_ti_double 
 
 !--- put_var_ti_double
-SUBROUTINE ext_mcel_put_var_ti_double ( DataHandle,Element,  Varname, Data, Count,  Status )
+SUBROUTINE ext_esmf_put_var_ti_double ( DataHandle,Element,  Varname, Data, Count,  Status )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -868,10 +876,10 @@ SUBROUTINE ext_mcel_put_var_ti_double ( DataHandle,Element,  Varname, Data, Coun
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_mcel_put_var_ti_double 
+END SUBROUTINE ext_esmf_put_var_ti_double 
 
 !--- get_var_ti_integer
-SUBROUTINE ext_mcel_get_var_ti_integer ( DataHandle,Element,  Varname, Data, Count, Outcount, Status )
+SUBROUTINE ext_esmf_get_var_ti_integer ( DataHandle,Element,  Varname, Data, Count, Outcount, Status )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -881,10 +889,10 @@ SUBROUTINE ext_mcel_get_var_ti_integer ( DataHandle,Element,  Varname, Data, Cou
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_mcel_get_var_ti_integer 
+END SUBROUTINE ext_esmf_get_var_ti_integer 
 
 !--- put_var_ti_integer
-SUBROUTINE ext_mcel_put_var_ti_integer ( DataHandle,Element,  Varname, Data, Count,  Status )
+SUBROUTINE ext_esmf_put_var_ti_integer ( DataHandle,Element,  Varname, Data, Count,  Status )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -893,10 +901,10 @@ SUBROUTINE ext_mcel_put_var_ti_integer ( DataHandle,Element,  Varname, Data, Cou
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_mcel_put_var_ti_integer 
+END SUBROUTINE ext_esmf_put_var_ti_integer 
 
 !--- get_var_ti_logical
-SUBROUTINE ext_mcel_get_var_ti_logical ( DataHandle,Element,  Varname, Data, Count, Outcount, Status )
+SUBROUTINE ext_esmf_get_var_ti_logical ( DataHandle,Element,  Varname, Data, Count, Outcount, Status )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -906,10 +914,10 @@ SUBROUTINE ext_mcel_get_var_ti_logical ( DataHandle,Element,  Varname, Data, Cou
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_mcel_get_var_ti_logical 
+END SUBROUTINE ext_esmf_get_var_ti_logical 
 
 !--- put_var_ti_logical
-SUBROUTINE ext_mcel_put_var_ti_logical ( DataHandle,Element,  Varname, Data, Count,  Status )
+SUBROUTINE ext_esmf_put_var_ti_logical ( DataHandle,Element,  Varname, Data, Count,  Status )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -918,11 +926,11 @@ SUBROUTINE ext_mcel_put_var_ti_logical ( DataHandle,Element,  Varname, Data, Cou
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_mcel_put_var_ti_logical 
+END SUBROUTINE ext_esmf_put_var_ti_logical 
 
 !--- get_var_ti_char
-SUBROUTINE ext_mcel_get_var_ti_char ( DataHandle,Element,  Varname, Data,  Status )
-  USE module_ext_mcel
+SUBROUTINE ext_esmf_get_var_ti_char ( DataHandle,Element,  Varname, Data,  Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -933,11 +941,11 @@ SUBROUTINE ext_mcel_get_var_ti_char ( DataHandle,Element,  Varname, Data,  Statu
   CHARACTER*132 locElement, locVarName
   Status = 0
 RETURN
-END SUBROUTINE ext_mcel_get_var_ti_char 
+END SUBROUTINE ext_esmf_get_var_ti_char 
 
 !--- put_var_ti_char
-SUBROUTINE ext_mcel_put_var_ti_char ( DataHandle,Element,  Varname, Data,  Status )
-  USE module_ext_mcel
+SUBROUTINE ext_esmf_put_var_ti_char ( DataHandle,Element,  Varname, Data,  Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -948,10 +956,10 @@ SUBROUTINE ext_mcel_put_var_ti_char ( DataHandle,Element,  Varname, Data,  Statu
   INTEGER                 :: Count
   Status = 0
 RETURN
-END SUBROUTINE ext_mcel_put_var_ti_char 
+END SUBROUTINE ext_esmf_put_var_ti_char 
 
 !--- get_var_td_real
-SUBROUTINE ext_mcel_get_var_td_real ( DataHandle,Element,  DateStr,Varname, Data, Count, Outcount, Status )
+SUBROUTINE ext_esmf_get_var_td_real ( DataHandle,Element,  DateStr,Varname, Data, Count, Outcount, Status )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -962,10 +970,10 @@ SUBROUTINE ext_mcel_get_var_td_real ( DataHandle,Element,  DateStr,Varname, Data
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_mcel_get_var_td_real 
+END SUBROUTINE ext_esmf_get_var_td_real 
 
 !--- put_var_td_real
-SUBROUTINE ext_mcel_put_var_td_real ( DataHandle,Element,  DateStr,Varname, Data, Count,  Status )
+SUBROUTINE ext_esmf_put_var_td_real ( DataHandle,Element,  DateStr,Varname, Data, Count,  Status )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -975,10 +983,10 @@ SUBROUTINE ext_mcel_put_var_td_real ( DataHandle,Element,  DateStr,Varname, Data
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_mcel_put_var_td_real 
+END SUBROUTINE ext_esmf_put_var_td_real 
 
 !--- get_var_td_double
-SUBROUTINE ext_mcel_get_var_td_double ( DataHandle,Element,  DateStr,Varname, Data, Count, Outcount, Status )
+SUBROUTINE ext_esmf_get_var_td_double ( DataHandle,Element,  DateStr,Varname, Data, Count, Outcount, Status )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -989,10 +997,10 @@ SUBROUTINE ext_mcel_get_var_td_double ( DataHandle,Element,  DateStr,Varname, Da
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_mcel_get_var_td_double 
+END SUBROUTINE ext_esmf_get_var_td_double 
 
 !--- put_var_td_double
-SUBROUTINE ext_mcel_put_var_td_double ( DataHandle,Element,  DateStr,Varname, Data, Count,  Status )
+SUBROUTINE ext_esmf_put_var_td_double ( DataHandle,Element,  DateStr,Varname, Data, Count,  Status )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -1002,10 +1010,10 @@ SUBROUTINE ext_mcel_put_var_td_double ( DataHandle,Element,  DateStr,Varname, Da
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_mcel_put_var_td_double 
+END SUBROUTINE ext_esmf_put_var_td_double 
 
 !--- get_var_td_integer
-SUBROUTINE ext_mcel_get_var_td_integer ( DataHandle,Element,  DateStr,Varname, Data, Count, Outcount, Status )
+SUBROUTINE ext_esmf_get_var_td_integer ( DataHandle,Element,  DateStr,Varname, Data, Count, Outcount, Status )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -1016,10 +1024,10 @@ SUBROUTINE ext_mcel_get_var_td_integer ( DataHandle,Element,  DateStr,Varname, D
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_mcel_get_var_td_integer 
+END SUBROUTINE ext_esmf_get_var_td_integer 
 
 !--- put_var_td_integer
-SUBROUTINE ext_mcel_put_var_td_integer ( DataHandle,Element,  DateStr,Varname, Data, Count,  Status )
+SUBROUTINE ext_esmf_put_var_td_integer ( DataHandle,Element,  DateStr,Varname, Data, Count,  Status )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -1029,10 +1037,10 @@ SUBROUTINE ext_mcel_put_var_td_integer ( DataHandle,Element,  DateStr,Varname, D
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_mcel_put_var_td_integer 
+END SUBROUTINE ext_esmf_put_var_td_integer 
 
 !--- get_var_td_logical
-SUBROUTINE ext_mcel_get_var_td_logical ( DataHandle,Element,  DateStr,Varname, Data, Count, Outcount, Status )
+SUBROUTINE ext_esmf_get_var_td_logical ( DataHandle,Element,  DateStr,Varname, Data, Count, Outcount, Status )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -1043,10 +1051,10 @@ SUBROUTINE ext_mcel_get_var_td_logical ( DataHandle,Element,  DateStr,Varname, D
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_mcel_get_var_td_logical 
+END SUBROUTINE ext_esmf_get_var_td_logical 
 
 !--- put_var_td_logical
-SUBROUTINE ext_mcel_put_var_td_logical ( DataHandle,Element,  DateStr,Varname, Data, Count,  Status )
+SUBROUTINE ext_esmf_put_var_td_logical ( DataHandle,Element,  DateStr,Varname, Data, Count,  Status )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -1056,10 +1064,10 @@ SUBROUTINE ext_mcel_put_var_td_logical ( DataHandle,Element,  DateStr,Varname, D
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_mcel_put_var_td_logical 
+END SUBROUTINE ext_esmf_put_var_td_logical 
 
 !--- get_var_td_char
-SUBROUTINE ext_mcel_get_var_td_char ( DataHandle,Element,  DateStr,Varname, Data,  Status )
+SUBROUTINE ext_esmf_get_var_td_char ( DataHandle,Element,  DateStr,Varname, Data,  Status )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -1068,10 +1076,10 @@ SUBROUTINE ext_mcel_get_var_td_char ( DataHandle,Element,  DateStr,Varname, Data
   CHARACTER*(*) :: Data
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_mcel_get_var_td_char 
+END SUBROUTINE ext_esmf_get_var_td_char 
 
 !--- put_var_td_char
-SUBROUTINE ext_mcel_put_var_td_char ( DataHandle,Element,  DateStr,Varname, Data,  Status )
+SUBROUTINE ext_esmf_put_var_td_char ( DataHandle,Element,  DateStr,Varname, Data,  Status )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -1080,13 +1088,13 @@ SUBROUTINE ext_mcel_put_var_td_char ( DataHandle,Element,  DateStr,Varname, Data
   CHARACTER*(*) :: Data
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_mcel_put_var_td_char 
+END SUBROUTINE ext_esmf_put_var_td_char 
 
-SUBROUTINE ext_mcel_georegister( DataHandle, inlon, inlat,                                    &
+SUBROUTINE ext_esmf_georegister( DataHandle, inlon, inlat,                                    &
                                  MemoryStart , MemoryEnd ,                                    &
                                  PatchStart , PatchEnd ,                                      &
                                  Status )
-  USE module_ext_mcel
+  USE module_ext_esmf
   IMPLICIT NONE
   integer                       ,intent(in)    :: DataHandle
   integer                       ,intent(inout) :: Status
@@ -1098,13 +1106,13 @@ SUBROUTINE ext_mcel_georegister( DataHandle, inlon, inlat,                      
   integer idex,ierr,i,j
 
   IF ( .NOT. int_valid_handle( DataHandle ) ) THEN
-    CALL wrf_error_fatal("ext_mcel_georegister: invalid data handle" )
+    CALL wrf_error_fatal("ext_esmf_georegister: invalid data handle" )
   ENDIF
   IF ( .NOT. int_handle_in_use( DataHandle ) ) THEN
-    CALL wrf_error_fatal("ext_mcel_georegister: DataHandle not opened" )
+    CALL wrf_error_fatal("ext_esmf_georegister: DataHandle not opened" )
   ENDIF
   IF ( mcel_finalized( DataHandle ) ) THEN
-    CALL wrf_error_fatal( "ext_mcel_georegister: called after first read/write operation" ) ;
+    CALL wrf_error_fatal( "ext_esmf_georegister: called after first read/write operation" ) ;
   ENDIF
 
   ips = PatchStart(1) ; ipe = PatchEnd(1)
@@ -1133,13 +1141,13 @@ SUBROUTINE ext_mcel_georegister( DataHandle, inlon, inlat,                      
     ENDDO
   ENDDO
   RETURN
-END SUBROUTINE ext_mcel_georegister
+END SUBROUTINE ext_esmf_georegister
 
-SUBROUTINE ext_mcel_mask ( DataHandle, inmask,                                          &
+SUBROUTINE ext_esmf_mask ( DataHandle, inmask,                                          &
                            MemoryStart , MemoryEnd ,                                    &
                            PatchStart , PatchEnd ,                                      &
                            Status )
-  USE module_ext_mcel
+  USE module_ext_esmf
   IMPLICIT NONE
   integer                       ,intent(in)    :: DataHandle
   integer                       ,intent(inout) :: Status
@@ -1156,13 +1164,13 @@ SUBROUTINE ext_mcel_mask ( DataHandle, inmask,                                  
   jms = MemoryStart(2) ; jme = MemoryEnd(2)
 
   IF ( .NOT. int_valid_handle( DataHandle ) ) THEN
-    CALL wrf_error_fatal("ext_mcel_mask: invalid data handle" )
+    CALL wrf_error_fatal("ext_esmf_mask: invalid data handle" )
   ENDIF
   IF ( .NOT. int_handle_in_use( DataHandle ) ) THEN
-    CALL wrf_error_fatal("ext_mcel_mask: DataHandle not opened" )
+    CALL wrf_error_fatal("ext_esmf_mask: DataHandle not opened" )
   ENDIF
   IF ( mcel_finalized( DataHandle ) ) THEN
-    CALL wrf_error_fatal( "ext_mcel_mask: called after first read/write operation" ) ;
+    CALL wrf_error_fatal( "ext_esmf_mask: called after first read/write operation" ) ;
   ENDIF
 
   IF ( ALLOCATED(mask) ) THEN
@@ -1176,7 +1184,7 @@ SUBROUTINE ext_mcel_mask ( DataHandle, inmask,                                  
     ENDDO
   ENDDO
   RETURN
-END SUBROUTINE ext_mcel_mask
+END SUBROUTINE ext_esmf_mask
 
 INTEGER FUNCTION cast_to_int( a )
   INTEGER a

@@ -1462,7 +1462,7 @@ SUBROUTINE med_read_wrf_chem_emiss ( grid , config_flags )
    USE module_dm
 #endif
    USE module_date_time
-   USE WRF_ESMF_Mod
+   USE WRF_ESMF_MOD
 
    IMPLICIT NONE
 
@@ -1577,7 +1577,7 @@ SUBROUTINE med_read_wrf_chem_bioemiss ( grid , config_flags )
    USE module_dm
 #endif
    USE module_date_time
-   USE WRF_ESMF_Mod
+   USE WRF_ESMF_MOD
 
    IMPLICIT NONE
 

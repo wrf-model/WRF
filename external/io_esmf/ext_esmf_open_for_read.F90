@@ -1,7 +1,7 @@
 !--- open_for_read_begin
-SUBROUTINE ext_mcel_open_for_read_begin( FileName , Comm_compute, Comm_io, SysDepInfo, &
+SUBROUTINE ext_esmf_open_for_read_begin( FileName , Comm_compute, Comm_io, SysDepInfo, &
                                          DataHandle , Status )
-  USE module_ext_mcel
+  USE module_ext_esmf
   IMPLICIT NONE
   CHARACTER*(*) :: FileName
   INTEGER ,       INTENT(IN)  :: Comm_compute , Comm_io
@@ -87,26 +87,26 @@ write(0,*)'ofrb usemask(',i,') = ',usemask(i)
                   MCEL_GRIDCENT_NODAL, MCEL_GRIDCOORD_LATLONG, &
                   ierr )
   ENDIF
-  IF ( ierr .NE. 0 ) CALL wrf_error_fatal( "ext_mcel_open_for_read_begin: newGrid" )
+  IF ( ierr .NE. 0 ) CALL wrf_error_fatal( "ext_esmf_open_for_read_begin: newGrid" )
 
 !  IF ( opened_for_update( i ) ) THEN
     ! right now the name of the ior file is coming in as the file name; whereis for writing the
     ! file name is the program name.  Needs to be resolved for this call to newfilter. 
     ! Make the FileName the program name and find a different way to bring in the ior file; sysdepinfo? environ?
     CALL newfilter ( open_file_descriptors(1,i), 'relfile:/' // TRIM(FileName), filter_handle, ierr )
-    IF ( ierr .NE. 0 ) CALL wrf_error_fatal( "ext_mcel_open_for_read_begin: newfilter" )
+    IF ( ierr .NE. 0 ) CALL wrf_error_fatal( "ext_esmf_open_for_read_begin: newfilter" )
 !  ELSE
 !    CALL newProgram ( open_file_descriptors(1,i), TRIM(FileName), ierr )
-!    IF ( ierr .NE. 0 ) CALL wrf_error_fatal( "ext_mcel_open_for_read_begin: newProgram" )
+!    IF ( ierr .NE. 0 ) CALL wrf_error_fatal( "ext_esmf_open_for_read_begin: newProgram" )
 !  ENDIF
 
   Status = 0
   RETURN  
-END SUBROUTINE ext_mcel_open_for_read_begin
+END SUBROUTINE ext_esmf_open_for_read_begin
 
 !--- open_for_read_commit
-SUBROUTINE ext_mcel_open_for_read_commit( DataHandle , Status )
-  USE module_ext_mcel
+SUBROUTINE ext_esmf_open_for_read_commit( DataHandle , Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(IN ) :: DataHandle
   INTEGER ,       INTENT(OUT) :: Status
@@ -126,4 +126,4 @@ SUBROUTINE ext_mcel_open_for_read_commit( DataHandle , Status )
   Status = 0
 
   RETURN  
-END SUBROUTINE ext_mcel_open_for_read_commit
+END SUBROUTINE ext_esmf_open_for_read_commit

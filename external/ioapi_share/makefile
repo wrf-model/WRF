@@ -14,7 +14,7 @@ all: ../../inc/wrf_io_flags.h ../../inc/wrf_status_codes.h
 	fi ; \
 	/bin/mv foo_io_flags.h ../../inc/wrf_io_flags.h )
 
-../../inc/wrf_status_codes.h : wrf_status_codes.h ../../configure.wrf
+../../inc/wrf_status_codes.h : wrf_status_codes.h
 	/bin/rm -f ../../inc/wrf_status_codes.h
 	/bin/cp wrf_status_codes.h ../../inc
 

@@ -49,7 +49,7 @@ MODULE module_input_chem_data
     USE module_data_radm2
     USE module_aerosols_sorgam
     USE module_data_sorgam
-    USE WRF_ESMF_Mod
+    USE WRF_ESMF_MOD
     USE module_get_file_names
 
 

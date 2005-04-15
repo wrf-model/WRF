@@ -16,26 +16,51 @@ PROGRAM wrf
 !</DESCRIPTION>
 
    IMPLICIT NONE
-
-   TYPE(ESMF_GridComp) :: gcomp
-   TYPE(ESMF_State)    :: importState, exportState
-   TYPE(ESMF_Clock)    :: clock
-   TYPE(ESMF_VM)       :: vm   
+! TBH:  Get rid of this #ifdef (leaving nothing behind) as soon 
+! TBH:  as wrf_ESMFApp.F is working!  
+#ifdef WRF_ESMF_MOD
+   TYPE(ESMF_VM) :: vm
    INTEGER :: rc
+#endif
 
-   ! This call includes everything that must be done before ESMF_Initialize() 
-   ! is called.  
-   CALL init_modules(1)   ! Phase 1 returns after MPI_INIT() (if it is called)
+   ! Initialize WRF model:  phase one includes everything that must be done 
+   ! before ESMF_Initialize() is called.  This calls MPI_INIT() for DM 
+   ! parallel runs.  
+   CALL init_modules(1)
 
+   ! Initialize ESMF.  This variant of ESMF_Initialize() does not call 
+   ! MPI_INIT() for DM parallel runs.  
+! TBH:  Get rid of this #ifdef (leaving only the #else branch behind) as soon 
+! TBH:  as wrf_ESMFApp.F is working!  
+#ifdef WRF_ESMF_MOD
    CALL ESMF_Initialize( vm=vm, defaultCalendar=ESMF_CAL_GREGORIAN, rc=rc )
+#else
+   CALL ESMF_Initialize
+#endif
 
-   CALL wrf_init( gcomp, importState, exportState, clock, rc )
+   ! Initialize WRF model:  phase two includes everything that must be done 
+   ! after ESMF_Initialize() is called.  
+   CALL wrf_init
 
-   CALL wrf_run( gcomp, importState, exportState, clock, rc )
+   ! WRF model time-stepping.  Calls integrate().  
+   CALL wrf_run
 
-   CALL wrf_finalize( gcomp, importState, exportState, clock, rc )
+   ! Clean up after ESMF.  This variant of ESMF_Finalize() does not call 
+   ! MPI_FINALIZE() for DM parallel runs.  
+! TBH:  Get rid of this #ifndef (leaving only the enclosed call behind) as soon 
+! TBH:  as wrf_ESMFApp.F is working!  
+#ifndef WRF_ESMF_MOD
+   CALL ESMF_Finalize
+#endif
 
+   ! WRF model clean-up.  This calls MPI_FINALIZE() for DM parallel runs.  
+   CALL wrf_finalize
+
+! TBH:  Get rid of this #ifdef (leaving nothing behind) as soon 
+! TBH:  as wrf_ESMFApp.F is working!  
+#ifdef WRF_ESMF_MOD
    CALL ESMF_Finalize( rc=rc )
+#endif
 
 END PROGRAM wrf
 

@@ -3,13 +3,12 @@
 
 MODULE ESMF_Indirection
 
+   ! cache ESMF types here
+   USE module_iostate_esmf
+
    IMPLICIT NONE
 
-   PRIVATE
-
-! Bogus definition for now
-   INTEGER :: makecompilershappy
-
+!   PRIVATE
 
 ! CONTAINS
 

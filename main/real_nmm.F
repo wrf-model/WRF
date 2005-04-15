@@ -10,7 +10,7 @@ PROGRAM real_data
    USE module_driver_constants
    USE module_configure
    USE module_timing
-   USE wrf_esmf_mod
+   USE WRF_ESMF_MOD
 #ifdef DM_PARALLEL
    USE module_dm
 #endif

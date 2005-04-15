@@ -2025,11 +2025,12 @@ ESMF_PATH_TAIL  =       $(ESMF_BOPT)/$(ESMF_ARCH).$(ESMF_COMPILER).$(ESMF_PREC).
 ESMF_MODULES    =       $(ESMF_DIR)/mod/mod$(ESMF_PATH_TAIL)
 ESMF_LIB        =       $(ESMF_DIR)/lib/lib$(ESMF_PATH_TAIL)
 ESMF_LIB_FLAGS  =       -L$(ESMF_LIB) -lesmf -brtl -lC
+ESMF_MOD_INC    =       -I$(ESMF_MODULES)
 # end ESMF paths
 # path to WRF IOAPI external package for ESMF
 ESMF_IO_DIR     =      ../external/io_esmf
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I$(ESMF_IO_DIR) \
-                        -I../frame -I../share -I../phys -I../chem -I../inc -I$(ESMF_MODULES)
+                        -I../frame -I../share -I../phys -I../chem -I../inc $(ESMF_MOD_INC)
 # Override default ESMF dependence since embedded ESMF time manager is not used.
 ESMF_MOD_DEPENDENCE =   $(ESMF_IO_DIR)/ESMF_Mod_Wrapper.o
 EXTRAMODULES    =       ../share/module_wrf_setservices.o
@@ -2078,7 +2079,7 @@ wrfio_grib1 :
 
 wrfio_esmf : 
 	( cd $(ESMF_IO_DIR) ; \
-	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS) -I$(ESMF_MODULES)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF) " )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS) $(ESMF_MOD_INC)" RANLIB="$(RANLIB)" CPP="$(CPP) $(POUND_DEF) " )
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; make MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST sp2 )
@@ -2150,11 +2151,12 @@ ESMF_PATH_TAIL  =       $(ESMF_BOPT)/$(ESMF_ARCH).$(ESMF_COMPILER).$(ESMF_PREC).
 ESMF_MODULES    =       $(ESMF_DIR)/mod/mod$(ESMF_PATH_TAIL)
 ESMF_LIB        =       $(ESMF_DIR)/lib/lib$(ESMF_PATH_TAIL)
 ESMF_LIB_FLAGS  =       -L$(ESMF_LIB) -lesmf -brtl -lC
+ESMF_MOD_INC    =       -I$(ESMF_MODULES)
 # end ESMF paths
 # path to WRF IOAPI external package for ESMF
 ESMF_IO_DIR     =      ../external/io_esmf
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I$(ESMF_IO_DIR) \
-                        -I../frame -I../share -I../phys -I../chem -I../inc -I$(ESMF_MODULES)
+                        -I../frame -I../share -I../phys -I../chem -I../inc $(ESMF_MOD_INC)
 # Override default ESMF dependence since embedded ESMF time manager is not used.
 ESMF_MOD_DEPENDENCE =   $(ESMF_IO_DIR)/ESMF_Mod_Wrapper.o
 EXTRAMODULES    =       ../share/module_wrf_setservices.o
@@ -2204,7 +2206,7 @@ wrfio_grib1 :
 
 wrfio_esmf : 
 	( cd $(ESMF_IO_DIR) ; \
-	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS) -I$(ESMF_MODULES)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF) " )
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS) $(ESMF_MOD_INC)" RANLIB="$(RANLIB)" CPP="$(CPP) $(POUND_DEF) " )
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; make MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST sp2 )

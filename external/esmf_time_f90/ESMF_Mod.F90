@@ -1,6 +1,6 @@
 ! TBH:  This version is for use with the ESMF library embedded in the WRF 
 ! TBH:  distribution.  
-MODULE WRF_ESMF_MOD
+MODULE ESMF_Mod
    USE esmf_alarmmod
    USE esmf_basemod
    USE esmf_basetimemod
@@ -13,4 +13,4 @@ MODULE WRF_ESMF_MOD
    USE esmf_stubs   ! add new dummy interfaces and typedefs here as needed
 #include <ESMF_TimeMgr.inc>
    INTEGER, PARAMETER :: ESMF_MAX_ALARMS=MAX_ALARMS
-END MODULE WRF_ESMF_MOD
+END MODULE ESMF_Mod

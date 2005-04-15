@@ -89,7 +89,7 @@ set NAME     = ( "Standard"			\
                  "Quilting"			\
                  "Binary_IO"			\
                  "GriB1_Output"			\
-                 "REAL*8_Floats"		\
+                 "REAL8_Floats"			\
                )
 
 #	Any exceptions to where they can run?  NONE means no 

@@ -2484,11 +2484,12 @@ LD              =       f90
 CC              =       cc
 SCC		=	$(CC)
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DYYY -DINTIO \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         -DTRIEDNTRUE   \
 			-DLIMIT_ARGS -DFLOATSAFE -DYYY
-PROMOTION	=	-r$(RWORDSIZE) -i4
+PROMOTION	=	-real_size $(RSIZEBITS) -integer_size `expr 4 \* 8`
 CFLAGS          =       $(ARCHFLAGS)
 FCOPTIM         =       -fast -O4
 FCDEBUG         =       # -g
@@ -2533,6 +2534,13 @@ wrfio_grib1 :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+mediation_integrate.o : mediation_integrate.F
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(RM) $*.b
+	$(FC) -c $(PROMOTION) -w -convert big_endian -automatic -cpp -free -I. -arch host $(MODULE_DIRS) -O0 $*.f
 
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
@@ -2586,13 +2594,14 @@ LD              =       f90
 CC              =       cc
 SCC		=	$(CC)
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DNETCDF -DYYY -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL -DRSL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         -DTRIEDNTRUE   \
                         -DLIMIT_ARGS -DFLOATSAFE \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -DSTUBMPI
-PROMOTION	=	-r$(RWORDSIZE) -i4
+PROMOTION	=	-real_size $(RSIZEBITS) -integer_size `expr 4 \* 8`
 CFLAGS          =       $(ARCHFLAGS) -I../external/RSL/RSL
 FCOPTIM         =       -fast -O4
 FCDEBUG         =       # -g
@@ -2650,6 +2659,13 @@ esmf_time :
 	  make CC="$(CC)" CFLAGS='-DSTUBS -DSWAPBYTES -O' FC="$(FC) $(PROMOTION)" FFLAGS='-O -convert big_endian' \
                MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST stub )
 
+mediation_integrate.o : mediation_integrate.F
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(RM) $*.b
+	$(FC) -c $(PROMOTION) -w -convert big_endian -automatic -cpp -free -I. -arch host $(MODULE_DIRS) -O0 $*.f
+
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
@@ -2698,11 +2714,12 @@ LD              =       f90
 CC              =       cc
 SCC		=	$(CC)
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DYYY -DINTIO \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         -DTRIEDNTRUE   \
 			-DLIMIT_ARGS -DFLOATSAFE
-PROMOTION	=	-r$(RWORDSIZE) -i4
+PROMOTION	=	-real_size $(RSIZEBITS) -integer_size `expr 4 \* 8`
 CFLAGS          =       $(ARCHFLAGS)
 FCOPTIM         =       -fast -O4
 FCDEBUG         =       # -g
@@ -2748,6 +2765,13 @@ wrfio_grib1 :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+mediation_integrate.o : mediation_integrate.F
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(RM) $*.b
+	$(FC) -c $(PROMOTION) -w -convert big_endian -automatic -cpp -free -I. -arch host $(MODULE_DIRS) -O0 $*.f
 
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
@@ -2801,13 +2825,14 @@ LD              =       f90
 CC              =       cc
 SCC		=	$(CC)
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DNETCDF -DYYY -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL -DRSL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         -DTRIEDNTRUE   \
                         -DLIMIT_ARGS -DFLOATSAFE \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -DSTUBMPI
-PROMOTION	=	-r$(RWORDSIZE) -i4
+PROMOTION	=	-real_size $(RSIZEBITS) -integer_size `expr 4 \* 8`
 CFLAGS          =       $(ARCHFLAGS) -I../external/RSL/RSL
 FCOPTIM         =       -fast -O4
 FCDEBUG         =       # -g
@@ -2866,6 +2891,13 @@ esmf_time :
 	  make CC="$(CC)" CFLAGS='-DSTUBS -DSWAPBYTES -O' FC="$(FC) $(PROMOTION)" FFLAGS="-O -convert big_endian $(FCREAL8OMP)" \
                MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST stub )
 
+mediation_integrate.o : mediation_integrate.F
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(RM) $*.b
+	$(FC) -c $(PROMOTION) -w -convert big_endian -automatic -cpp -free -I. -arch host $(MODULE_DIRS) -O0 $*.f
+
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
@@ -2915,13 +2947,14 @@ LD              =       mpif90
 CC              =       mpicc
 SCC		=	cc
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DNETCDF -DYYY -DINTIO \
                         -DDM_PARALLEL -DRSL_LITE \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         -DTRIEDNTRUE   \
 			-DLIMIT_ARGS -DFLOATSAFE \
 			-DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
-PROMOTION	=	-r$(RWORDSIZE) -i4
+PROMOTION	=	-real_size $(RSIZEBITS) -integer_size `expr 4 \* 8`
 CFLAGS          =       $(ARCHFLAGS) -I../external/RSL_LITE
 FCOPTIM         =       -fast -O4
 FCDEBUG         =       #-g
@@ -2978,6 +3011,13 @@ esmf_time :
 	( cd ../external/RSL_LITE ; \
           make CC="$(CC)" FC="$(FC) $(PROMOTION)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
 
+mediation_integrate.o : mediation_integrate.F
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(RM) $*.b
+	$(FC) -c $(PROMOTION) -w -convert big_endian -automatic -cpp -free -I. -arch host $(MODULE_DIRS) -O0 $*.f
+
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
@@ -3030,13 +3070,14 @@ LD              =       mpif90
 CC              =       mpicc
 SCC		=	cc
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DYYY -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL -DRSL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         -DTRIEDNTRUE   \
 			-DLIMIT_ARGS -DFLOATSAFE \
 			-DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
-PROMOTION	=	-r$(RWORDSIZE) -i4
+PROMOTION	=	-real_size $(RSIZEBITS) -integer_size `expr 4 \* 8`
 CFLAGS          =       $(ARCHFLAGS) -I../external/RSL/RSL
 FCOPTIM         =       -fast -O4
 FCDEBUG         =       # -g
@@ -3093,6 +3134,13 @@ esmf_time :
 	( cd ../external/RSL/RSL ; \
           make CC="$(CC)" FC="$(FC) $(PROMOTION)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST alpha )
 
+mediation_integrate.o : mediation_integrate.F
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(RM) $*.b
+	$(FC) -c $(PROMOTION) -w -convert big_endian -automatic -cpp -free -I. -arch host $(MODULE_DIRS) -O0 $*.f
+
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
@@ -3145,13 +3193,14 @@ LD              =       mpif90
 CC              =       mpicc
 SCC		=	cc
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DYYY -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL -DRSL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         -DTRIEDNTRUE   \
 			-DLIMIT_ARGS -DFLOATSAFE \
 			-DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
-PROMOTION	=	-r$(RWORDSIZE) -i4
+PROMOTION	=	-real_size $(RSIZEBITS) -integer_size `expr 4 \* 8`
 CFLAGS          =       $(ARCHFLAGS) -I../external/RSL/RSL
 FCOPTIM         =       -fast -O4
 FCDEBUG         =       # -g
@@ -3209,6 +3258,13 @@ esmf_time :
 	( cd ../external/RSL/RSL ; \
           make CC="$(CC)" FC="$(FC) $(PROMOTION) $(FCREAL8OMP)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST alpha )
 
+mediation_integrate.o : mediation_integrate.F
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(RM) $*.b
+	$(FC) -c $(PROMOTION) -w -convert big_endian -automatic -cpp -free -I. -arch host $(MODULE_DIRS) -O0 $*.f
+
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
@@ -3261,13 +3317,14 @@ LD              =       f90
 CC              =       cc
 SCC		=	$(CC)
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DYYY -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL -DRSL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         -DTRIEDNTRUE   \
 			-DLIMIT_ARGS -DFLOATSAFE \
 			-DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
-PROMOTION	=	-r$(RWORDSIZE) -i4
+PROMOTION	=	-real_size $(RSIZEBITS) -integer_size `expr 4 \* 8`
 CFLAGS          =       $(ARCHFLAGS) -I../external/RSL/RSL
 FCOPTIM         =       -fast -O4
 FCDEBUG         =       # -g
@@ -3325,6 +3382,13 @@ esmf_time :
 	( cd ../external/RSL/RSL ; \
           make CC=cc FC="$(SFC) $(PROMOTION) $(FCREAL8OMP)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST alpha )
 
+mediation_integrate.o : mediation_integrate.F
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(RM) $*.b
+	$(FC) -c $(PROMOTION) -w -convert big_endian -automatic -cpp -free -I. -arch host $(MODULE_DIRS) -O0 $*.f
+
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
@@ -3374,13 +3438,14 @@ LD              =       mpif90
 CC              =       mpicc
 SCC		=	cc
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DYYY -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL -DRSL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         -DTRIEDNTRUE   \
 			-DLIMIT_ARGS -DFLOATSAFE \
 			-DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -DMOVE_NESTS
-PROMOTION	=	-r$(RWORDSIZE) -i4
+PROMOTION	=	-real_size $(RSIZEBITS) -integer_size `expr 4 \* 8`
 CFLAGS          =       $(ARCHFLAGS) -I../external/RSL/RSL
 FCOPTIM         =       -fast -O4
 FCDEBUG         =       # -g
@@ -3437,6 +3502,13 @@ esmf_time :
 	( cd ../external/RSL/RSL ; \
           make CC="$(CC)" FC="$(FC) $(PROMOTION)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST alpha )
 
+mediation_integrate.o : mediation_integrate.F
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(RM) $*.b
+	$(FC) -c $(PROMOTION) -w -convert big_endian -automatic -cpp -free -I. -arch host $(MODULE_DIRS) -O0 $*.f
+
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
@@ -3486,12 +3558,13 @@ LD              =       mpif90 -f90=cxx
 CC              =       mpicc
 SCC		=	cc
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DYYY -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL -DRSL -DFLOATSAFE \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         -DTRIEDNTRUE   \
 			-DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -DMCELIO
-PROMOTION	=	-r$(RWORDSIZE) -i4
+PROMOTION	=	-real_size $(RSIZEBITS) -integer_size `expr 4 \* 8`
 CFLAGS          =       $(ARCHFLAGS) -I../external/RSL/RSL
 FCOPTIM         =       -fast -O4
 FCDEBUG         =       # -g
@@ -3559,6 +3632,13 @@ wrfio_mcel :
 	( cd ../external/RSL/RSL ; \
           make CC="$(CC)" FC="$(FC) $(PROMOTION)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST alpha )
 
+mediation_integrate.o : mediation_integrate.F
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(RM) $*.b
+	$(FC) -c $(PROMOTION) -w -convert big_endian -automatic -cpp -free -I. -arch host $(MODULE_DIRS) -O0 $*.f
+
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
@@ -3608,13 +3688,14 @@ LD              =       echo # mpif90
 CC              =       echo # mpicc
 SCC		=	echo # cc
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
 ARCHFLAGS       =       -DAUTODOC_BUILD CONFIGURE_NETCDF_FLAG -DYYY -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL="'<b>DM_PARALLEL</b>'" -DRSL="'<b>RSL</b>'" \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         -DTRIEDNTRUE   \
 			-DLIMIT_ARGS -DFLOATSAFE \
 			-DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -DMOVE_NESTS
-PROMOTION	=	-r$(RWORDSIZE) -i4
+PROMOTION	=	-real_size $(RSIZEBITS) -integer_size `expr 4 \* 8`
 CFLAGS          =       $(ARCHFLAGS) -I../external/RSL/RSL
 FCOPTIM         =       -fast -O4
 FCDEBUG         =       # -g
@@ -3670,6 +3751,13 @@ esmf_time :
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; \
           make CC="$(CC)" FC="$(FC) $(PROMOTION)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST alpha )
+
+mediation_integrate.o : mediation_integrate.F
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(RM) $*.b
+	$(FC) -c $(PROMOTION) -w -convert big_endian -automatic -cpp -free -I. -arch host $(MODULE_DIRS) -O0 $*.f
 
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F

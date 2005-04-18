@@ -268,7 +268,9 @@ set ESMF_LIB = TRUE
 set ESMF_LIB = FALSE
 
 if ( $ESMF_LIB == TRUE ) then
-	if ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` == bs ) ) ) then
+	if ( ( `uname` == AIX ) && \
+             ( ( `hostname | cut -c 1-2` == bs ) || \
+               ( `hostname | cut -c 1-2` == bd ) ) ) then
 		echo "A separately installed version of the latest ESMF library"
 		echo "(NOT the ESMF library included in the WRF tarfile) will"
 		echo "be used for some tests"
@@ -288,7 +290,9 @@ set QUILT = TRUE
 set QUILT = FALSE
 
 if ( $QUILT == TRUE ) then
-	if ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` == bs ) ) ) then
+	if ( ( `uname` == AIX ) && \
+	     ( ( `hostname | cut -c 1-2` == bs ) || \
+	       ( `hostname | cut -c 1-2` == bd ) ) ) then
 		echo "One WRF output quilt server will be used for some tests"
 	else if ( ( `uname` == OSF1 ) && \
 		  ( ( `hostname` == duku    ) || \
@@ -743,7 +747,9 @@ set OMPRUNCOMMAND	=
 set MPIRUNCOMMANDPOST   = 
 
 touch version_info
-if ( ( $ARCH[1] == AIX ) && ( `hostname | cut -c 1-2` == bs ) ) then
+if ( ( $ARCH[1] == AIX ) && \
+     ( ( `hostname | cut -c 1-2` == bs ) || \
+       ( `hostname | cut -c 1-2` == bd ) ) ) then
 	# NMM requires 32 bit, Apr 2005 Dave, remove this when able
 	setenv OBJECT_MODE 32
 	set DEF_DIR             = $home

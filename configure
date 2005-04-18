@@ -108,6 +108,7 @@ fi
 if  test -z "$NETCDF"  ; then
  
   if [ `hostname | cut -c 1-2` = "bs" -o \
+       `hostname | cut -c 1-2` = "bd" -o \
        `hostname` = "tempest" -o `hostname` = "ute" ] ; then
     echo 'Compiling on an NCAR system with weird paths to NetCDF'
     echo 'Setting up a local NetCDF directory with symlinks'
@@ -119,7 +120,7 @@ if  test -z "$NETCDF"  ; then
          OBJECT_MODE=32 
          export OBJECT_MODE
       fi
-      if [ $OBJECT_MODE -ne 64 -a \( `hostname | cut -c 1-2` = "bb" -o `hostname | cut -c 1-2` = "bf" -o `hostname | cut -c 1-2` = "bs" \) ] ; then
+      if [ $OBJECT_MODE -ne 64 -a \( `hostname | cut -c 1-2` = "bd" -o `hostname | cut -c 1-2` = "bs" \) ] ; then
         ( cd ./netcdf_links ; ln -s /usr/local/lib32/r4i4 ./lib ; \
                               ln -s /usr/local/include ./include )
       else

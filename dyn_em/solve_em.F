@@ -1647,6 +1647,7 @@ BENCH_START(small_step_finish_tim)
                               msfu, msfv, msft,                 &
                               h_diabatic,                       &
                               number_of_small_timesteps,dts_rk, &
+                              rk_step, rk_order,                &
                               ids, ide, jds, jde, kds, kde,     &
                               ims, ime, jms, jme, kms, kme,     &
                               grid%i_start(ij), grid%i_end(ij), &

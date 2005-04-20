@@ -319,6 +319,7 @@ SUBROUTINE small_step_finish( u_2, u_1, v_2, v_1, w_2, w_1,    &
                               msfu, msfv, msft,                &
                               h_diabatic,                      &
                               number_of_small_timesteps,dts,   &
+                              rk_step, rk_order,               &
                               ids,ide, jds,jde, kds,kde,       &
                               ims,ime, jms,jme, kms,kme,       &
                               its,ite, jts,jte, kts,kte       )
@@ -332,6 +333,7 @@ SUBROUTINE small_step_finish( u_2, u_1, v_2, v_1, w_2, w_1,    &
   INTEGER,                  INTENT(IN   ) :: ims,ime, jms,jme, kms,kme
   INTEGER,                  INTENT(IN   ) :: its,ite, jts,jte, kts,kte
   INTEGER,                  INTENT(IN   ) :: number_of_small_timesteps
+  INTEGER,                  INTENT(IN   ) :: rk_step, rk_order
   REAL,                     INTENT(IN   ) :: dts
 
   REAL,   DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN   ) :: u_1, &
@@ -440,14 +442,25 @@ SUBROUTINE small_step_finish( u_2, u_1, v_2, v_1, w_2, w_1,    &
   ENDDO
   ENDDO
 
-  DO j = j_start, j_end
-  DO k = kds, kde-1
-  DO i = i_start, i_end
-    t_2(i,k,j) = (t_2(i,k,j) - dts*number_of_small_timesteps*mut(i,j)*h_diabatic(i,k,j) &
-                  + t_save(i,k,j)*mut(i,j))/muts(i,j)
-  ENDDO
-  ENDDO
-  ENDDO
+  IF ( rk_step < rk_order ) THEN
+    DO j = j_start, j_end
+    DO k = kds, kde-1
+    DO i = i_start, i_end
+      t_2(i,k,j) = (t_2(i,k,j) + t_save(i,k,j)*mut(i,j))/muts(i,j)
+    ENDDO
+    ENDDO
+    ENDDO
+  ELSE
+
+    DO j = j_start, j_end
+    DO k = kds, kde-1
+    DO i = i_start, i_end
+      t_2(i,k,j) = (t_2(i,k,j) - dts*number_of_small_timesteps*mut(i,j)*h_diabatic(i,k,j) &
+                    + t_save(i,k,j)*mut(i,j))/muts(i,j)
+    ENDDO
+    ENDDO
+    ENDDO
+  ENDIF
 
   DO j = j_start, j_end
   DO i = i_start, i_end

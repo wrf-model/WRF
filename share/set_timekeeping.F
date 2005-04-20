@@ -1084,6 +1084,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL ESMF_AlarmRingerOn( grid%alarms( AUXINPUT5_ALARM ), rc=rc )
 #endif
 
+
    CALL set_timekeeping_create_alarm( grid, BOUNDARY_ALARM )
 
    CALL ESMF_AlarmEnable( grid%alarms( BOUNDARY_ALARM ), rc=rc )
@@ -1106,6 +1107,28 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL ESMF_AlarmRingerOn( grid%alarms( AUXINPUT5_ALARM ), rc=rc )
 ! end for wrf chem emiss input
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#endif
+
+#ifdef MOVE_NESTS
+! This is the interval at which the code in time_for_move in share/mediation_integrate.F
+! will recompute the center of the Vortex.  Other times, it will use the last position.
+! Hard coded to 15 mins for now...
+   CALL ESMF_TimeIntervalSet( interval, M=15, rc=rc )
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                           'ESMF_TimeIntervalSet(interval) for computing vortex center FAILED', &
+                           __FILE__ , &
+                           __LINE__  )
+   CALL set_timekeeping_create_alarm( grid,  COMPUTE_VORTEX_CENTER_ALARM, interval  )
+   CALL ESMF_AlarmEnable( grid%alarms( COMPUTE_VORTEX_CENTER_ALARM ), rc=rc )
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'ESMF_AlarmEnable(COMPUTE_VORTEX_CENTER_ALARM) FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
+   CALL ESMF_AlarmRingerOn( grid%alarms( COMPUTE_VORTEX_CENTER_ALARM ), rc=rc )
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                         'ESMF_AlarmRingerOn(COMPUTE_VORTEX_CENTER_ALARM) FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
 #endif
 
    CALL wrf_debug ( 100 , 'setup_timekeeping:  returning...' )

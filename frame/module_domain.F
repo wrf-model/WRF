@@ -50,6 +50,9 @@ MODULE module_domain
                          AUXINPUT4_ALARM=10, AUXINPUT5_ALARM=11,                  &
                          RESTART_ALARM=12, BOUNDARY_ALARM=13, INPUTOUT_ALARM=14,  &  ! for outputing input (e.g. for 3dvar)
                          ALARM_SUBTIME=15,                                        &
+#ifdef MOVE_NESTS
+                         COMPUTE_VORTEX_CENTER_ALARM=16,                          &
+#endif
                          MAX_WRF_ALARMS=20  ! ESMF 2.0.1+ requires user to dimension alarm 
                                             ! lists.  MAX_WRF_ALARMS must be big enough 
                                             ! to include all of the above alarms.  
@@ -95,6 +98,10 @@ MODULE module_domain
 
       LOGICAL                                             :: first_force
 
+#ifdef MOVE_NESTS
+      REAL         :: xi , xj
+      REAL         :: vc_i, vc_j    ! vortex center i and j
+#endif
 
       ! domain dimensions
 
@@ -703,6 +710,7 @@ CONTAINS
 
       END SELECT data_ordering
 
+
 #ifdef RSL
 ! Check domain size to be sure it is within RSLs limit
       IF ( nx .GE. 1024 .OR. ny .GE. 1024 ) THEN
@@ -745,6 +753,11 @@ CONTAINS
       NULLIFY  (new_grid%j_end)
       ALLOCATE( new_grid%alarms( MAX_WRF_ALARMS ) )    ! initialize in setup_timekeeping
 
+#ifdef MOVE_NESTS
+      new_grid%xi = -1.0
+      new_grid%xj = -1.0
+#endif
+
       ! set up the pointers that represent the nest hierarchy
       ! set this up *prior* to calling the patching or allocation
       ! routines so that implementations of these routines can
@@ -777,6 +790,7 @@ CONTAINS
 
                          bdyzone_x  , bdyzone_y , new_grid%bdy_mask &
       ) 
+
 
       new_grid%domdesc = new_domdesc
       new_grid%num_nests = 0

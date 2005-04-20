@@ -345,7 +345,7 @@ CONTAINS
           qs(i,k) = fpvs(t(i,k),1,rd,rv,cpv,cliq,cice,xlv0,xls,psat,t0c)
           qs0(i,k) = fpvs(t(i,k),0,rd,rv,cpv,cliq,cice,xlv0,xls,psat,t0c)
 #else
-# ifdef WSR_OPTIM
+# ifdef WSM3_OPTIM
           tr=ttp/t(i,k)
           if(t(i,k).lt.ttp) then
             qs(i,k) =psat*(PWR(tr,xai))*exp(xbi*(1.-tr))

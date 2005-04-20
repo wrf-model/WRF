@@ -67,6 +67,9 @@ MODULE module_dm
    INTERFACE wrf_dm_maxval
      MODULE PROCEDURE wrf_dm_maxval_real , wrf_dm_maxval_integer, wrf_dm_maxval_doubleprecision
    END INTERFACE
+   INTERFACE wrf_dm_minval
+     MODULE PROCEDURE wrf_dm_minval_real , wrf_dm_minval_integer, wrf_dm_minval_doubleprecision
+   END INTERFACE
 
 #define TRUE_RSL_REAL     RSL_REAL
 #define TRUE_RSL_REAL_F90 RSL_REAL_F90
@@ -97,6 +100,9 @@ MODULE module_dm
    END INTERFACE
    INTERFACE wrf_dm_maxval
      MODULE PROCEDURE wrf_dm_maxval_real , wrf_dm_maxval_integer
+   END INTERFACE
+   INTERFACE wrf_dm_minval
+     MODULE PROCEDURE wrf_dm_minval_real , wrf_dm_minval_integer
    END INTERFACE
 
 #define TRUE_RSL_REAL     RSL_DOUBLE
@@ -3025,6 +3031,37 @@ messages(120)=  s5e5
 #endif
    END SUBROUTINE wrf_dm_maxval_real
 
+   SUBROUTINE wrf_dm_minval_real ( val, idex, jdex )
+      IMPLICIT NONE
+      REAL val, val_all( rsl_nproc )
+      INTEGER idex, jdex, ierr
+      INTEGER dex(2)
+      INTEGER dex_all (2,rsl_nproc)
+! <DESCRIPTION>
+! Collective operation. Each processor calls passing a local value and its index; on return
+! all processors are passed back the minimum of all values passed and its index.
+!
+! </DESCRIPTION>
+      INTEGER i, comm
+#ifndef STUBMPI
+      INCLUDE 'mpif.h'
+
+      CALL wrf_get_dm_communicator ( comm )
+      dex(1) = idex ; dex(2) = jdex
+      CALL mpi_allgather ( dex, 2, MPI_INTEGER, dex_all , 2, MPI_INTEGER, comm, ierr )
+      CALL mpi_allgather ( val, 1, MPI_REAL, val_all , 1, MPI_REAL, comm, ierr )
+      val = val_all(1)
+      idex = dex_all(1,1) ; jdex = dex_all(2,1)
+      DO i = 2, rsl_nproc
+        IF ( val_all(i) .LT. val ) THEN
+           val = val_all(i)
+           idex = dex_all(1,i)
+           jdex = dex_all(2,i)
+        ENDIF
+      ENDDO
+#endif
+   END SUBROUTINE wrf_dm_minval_real
+
    SUBROUTINE wrf_dm_maxval_doubleprecision ( val, idex, jdex )
       IMPLICIT NONE
       DOUBLE PRECISION val, val_all( rsl_nproc )
@@ -3056,6 +3093,38 @@ messages(120)=  s5e5
 #endif
    END SUBROUTINE wrf_dm_maxval_doubleprecision
 
+   SUBROUTINE wrf_dm_minval_doubleprecision ( val, idex, jdex )
+      IMPLICIT NONE
+      DOUBLE PRECISION val, val_all( rsl_nproc )
+      INTEGER idex, jdex, ierr
+      INTEGER dex(2)
+      INTEGER dex_all (2,rsl_nproc)
+! <DESCRIPTION>
+! Collective operation. Each processor calls passing a local value and its index; on return
+! all processors are passed back the minimum of all values passed and its index.
+!
+! </DESCRIPTION>
+      INTEGER i, comm
+#ifndef STUBMPI
+      INCLUDE 'mpif.h'
+
+      CALL wrf_get_dm_communicator ( comm )
+      dex(1) = idex ; dex(2) = jdex
+      CALL mpi_allgather ( dex, 2, MPI_INTEGER, dex_all , 2, MPI_INTEGER, comm, ierr )
+      CALL mpi_allgather ( val, 1, MPI_DOUBLE_PRECISION, val_all , 1, MPI_DOUBLE_PRECISION, comm, ierr )
+      val = val_all(1)
+      idex = dex_all(1,1) ; jdex = dex_all(2,1)
+      DO i = 2, rsl_nproc
+        IF ( val_all(i) .LT. val ) THEN
+           val = val_all(i)
+           idex = dex_all(1,i)
+           jdex = dex_all(2,i)
+        ENDIF
+      ENDDO
+#endif
+   END SUBROUTINE wrf_dm_minval_doubleprecision
+
+
    SUBROUTINE wrf_dm_maxval_integer ( val, idex, jdex )
       IMPLICIT NONE
       INTEGER val, val_all( rsl_nproc )
@@ -3086,6 +3155,38 @@ messages(120)=  s5e5
       ENDDO
 #endif
    END SUBROUTINE wrf_dm_maxval_integer
+
+   SUBROUTINE wrf_dm_minval_integer ( val, idex, jdex )
+      IMPLICIT NONE
+      INTEGER val, val_all( rsl_nproc )
+      INTEGER idex, jdex, ierr
+      INTEGER dex(2)
+      INTEGER dex_all (2,rsl_nproc)
+! <DESCRIPTION>
+! Collective operation. Each processor calls passing a local value and its index; on return
+! all processors are passed back the minimum of all values passed and its index.
+!
+! </DESCRIPTION>
+      INTEGER i, comm
+#ifndef STUBMPI
+      INCLUDE 'mpif.h'
+
+      CALL wrf_get_dm_communicator ( comm )
+      dex(1) = idex ; dex(2) = jdex
+      CALL mpi_allgather ( dex, 2, MPI_INTEGER, dex_all , 2, MPI_INTEGER, comm, ierr )
+      CALL mpi_allgather ( val, 1, MPI_INTEGER, val_all , 1, MPI_INTEGER, comm, ierr )
+      val = val_all(1)
+      idex = dex_all(1,1) ; jdex = dex_all(2,1)
+      DO i = 2, rsl_nproc
+        IF ( val_all(i) .LT. val ) THEN
+           val = val_all(i)
+           idex = dex_all(1,i)
+           jdex = dex_all(2,i)
+        ENDIF
+      ENDDO
+#endif
+   END SUBROUTINE wrf_dm_minval_integer
+
 
 END MODULE module_dm
 

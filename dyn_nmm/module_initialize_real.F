@@ -1109,7 +1109,7 @@ CONTAINS
           KHLA(JA)=2
           KHHA(JA)=(IDE-1)-1-MOD(J+1,2)
  161      EMT(JA)=EMTJ(J)
-          DO 162 J=(JDE-1)-4,(JDE-2)-2
+          DO 162 J=(JDE-1)-4,(JDE-1)-2
           JA=JA+1
           KHLA(JA)=2
           KHHA(JA)=(IDE-1)-1-MOD(J+1,2)
@@ -1133,7 +1133,7 @@ CONTAINS
           KVLA(JA)=2
           KVHA(JA)=(IDE-1)-1-MOD(J,2)
  171      EM(JA)=EMJ(J)
-              DO 172 J=(JDE-1)-4,(JDE-2)-2
+              DO 172 J=(JDE-1)-4,(JDE-1)-2
           JA=JA+1
           KVLA(JA)=2
           KVHA(JA)=(IDE-1)-1-MOD(J,2)

@@ -13,13 +13,12 @@
       REAL,PARAMETER ::                                                 &
      &                  DSPC=-3000.                                     &
      &                 ,DTTOP=0.,EFIFC=5.0,EFIMN=0.10,EFMNT=0.20        & 
+!    &                 ,DTTOP=0.,EFIFC=5.0,EFIMN=0.20,EFMNT=0.70        & 
      &                 ,ELIVW=2.72E6,ENPLO=20000.,ENPUP=15000.          &
      &                 ,EPSDN=1.05,EPSDT=0.                             &
-     &                 ,EPSNTP=100.0,EPSNTT=0.,EPSPR=5.E-5              &
+     &                 ,EPSNTP=100.0,EPSNTT=100.,EPSPR=5.E-5            &
      &                 ,EPSUP=0.95                                      &
-     &                 ,FR=0.85,FSL=0.85,FSS=0.85                       &
-!    &                 ,FUP=0.07/3000.                                  &
-!    &                 ,FUP=0.07/9000.                                  &
+     &                 ,FR=1.00,FSL=0.85,FSS=0.85                       &
      &                 ,FUP=1./200000.                                  &
      &                 ,PBM=13000.,PFRZ=15000.,PNO=1000.                &
      &                 ,PONE=2500.,PQM=2500.                            &
@@ -557,7 +556,7 @@ CONTAINS
         TUP=THBT/APES
         TSP=(T(L+1)-T(L))/(PLO-PBOT)                                    &
      &     *(PUP-PBOT)+T(L)
-        QSP=(T(L+1)-T(L))/(PLO-PBOT)                                    &
+        QSP=(Q(L+1)-Q(L))/(PLO-PBOT)                                    &
      &     *(PUP-PBOT)+Q(L)
         DP=PLO-PUP
         TRMUP=(TUP*(QQBT*0.608+1.)                                      &
@@ -585,8 +584,8 @@ CONTAINS
           QUP=PQ0/PUP*EXP(A2*(TUP-A3)/(TUP-A4))
           DP=PLO-PUP
           TRMUP=(TUP*(QUP*0.608+1.)                                     &
-     &          -t(l)*(q(l)*0.608+1.))*0.5                              &
-     &         /(t(l)*(q(l)*0.608+1.))
+     &          -T(L)*(Q(L)*0.608+1.))*0.5                              &
+     &         /(T(L)*(Q(L)*0.608+1.))
           DENTPY=(TRMLO+TRMUP)*DP+DENTPY
           SUMDP=SUMDP+DP
           PLO=PUP

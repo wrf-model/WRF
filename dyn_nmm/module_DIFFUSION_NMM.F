@@ -476,10 +476,10 @@
      &       -V(I,K,J+3)+V(I,K,J+1)
         DEFSK=U(I,K,J+3)-U(I,K,J+1)                                     &
      &       +V(I+IHE(J+2),K,J+2)-V(I+IHW(J+2),K,J+2)
-        DEF1=W(I+IHW(J),K,J-1)-W(I,K,J)
-        DEF2=W(I+IHE(J),K,J-1)-W(I,K,J)
-        DEF3=W(I+IHW(J),K,J+1)-W(I,K,J)
-        DEF4=W(I+IHE(J),K,J+1)-W(I,K,J)
+        DEF1=W(I+IHW(J+2),K,J+1)-W(I,K,J+2)
+        DEF2=W(I+IHE(J+2),K,J+1)-W(I,K,J+2)
+        DEF3=W(I+IHW(J+2),K,J+3)-W(I,K,J+2)
+        DEF4=W(I+IHE(J+2),K,J+3)-W(I,K,J+2)
         Q2L=MAX(Q2(I,K,J+2),EPSQ2)
         DEF_J=DEFTK*DEFTK+DEFSK*DEFSK+DEF1*DEF1+DEF2*DEF2               & 
      &       +DEF3*DEF3+DEF4*DEF4+SCQ2*Q2L

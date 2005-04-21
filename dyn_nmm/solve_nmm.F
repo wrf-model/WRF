@@ -252,13 +252,6 @@
       CALL ESMF_ClockGet(GRID%DOMAIN_CLOCK,ADVANCEcOUNT=NTSD,RC=RC)
       LAST_TIME=GRID%STOP_TIME.EQ.GRID%CURRENT_TIME+GRID%STEP_TIME
 !
-!     if(ntsd>=400)then
-!       write(0,*)' last_time=',last_time
-!       CALL print_a_time( grid%stop_time )
-!       CALL print_a_time( grid%current_time )
-!       CALL print_a_timeinterval( grid%step_time )
-!     endif
-!
 !      CALL ESMF_TimeGetString(GRID%CURRENT_TIME,MESSAGE,RC=RC)
 !
 !-----------------------------------------------------------------------
@@ -390,12 +383,6 @@
      &         ,ITS,ITE,JTS,JTE,KTS,KTE)
 !
       adve_tim=adve_tim+timef()-btimx
-!     if(ntsd<=21)then
-!       call twr(t,0,'t1',ntsd,mype,npes,mpi_comm_comp                  &
-!    &                ,ids,ide,jds,jde,kds,kde                         &
-!    &                ,ims,ime,jms,jme,kms,kme                         &
-!    &                ,its,ite,jts,jte,kts,kte)
-!     endif
 !
 !-----------------------------------------------------------------------
 !***  PRESSURE TENDENCY, ETA/SIGMADOT, VERTICAL PART OF OMEGA-ALPHA TERM
@@ -1211,11 +1198,12 @@
   100 FORMAT(' EXIT ',A,' AT NTSD=',I5)
       IEND=ITE
       S_BDY=(JTS==JDS)
-      E_BDY=(ITE==JDE)
+      E_BDY=(ITE==IDE-1)
 !
       DO J=JTS,JTE
+      IEND=ITE
       DO K=KTS,KTE
-      IF(E_BDY)IEND=ITE-1
+      IF(E_BDY.AND.MOD(J,2)==0)IEND=ITE-1
 !
       DO I=ITS,IEND
         IF(T(I,K,J)>330..OR.T(I,K,J)<180..OR.T(I,K,J)/=T(I,K,J))THEN
@@ -1243,7 +1231,17 @@
      &,          ' AT (',I3,',',I2,',',I3,')',' MYPE=',I3)
 !         CALL WRF_ERROR_FATAL(ERRMESS)
 !         CALL MPI_ABORT(MPI_COMM_WORLD,1,IERR)
-        ELSEIF(ABS(U(I,K,J))>125..OR.ABS(V(I,K,J))>125.                &
+        ENDIF
+      ENDDO
+      ENDDO
+      ENDDO
+!
+      DO J=JTS,JTE
+      IEND=ITE
+      DO K=KTS,KTE
+      IF(E_BDY.AND.MOD(J,2)==1)IEND=ITE-1
+      DO I=ITS,IEND
+        IF(ABS(U(I,K,J))>125..OR.ABS(V(I,K,J))>125.                    &
      &         .OR.U(I,K,J)/=U(I,K,J).OR.V(I,K,J)/=V(I,K,J))THEN
           WRITE(0,100)NAME,NTSD
           WRITE(0,400)I,J,K,U(I,K,J),V(I,K,J),MYPE,NTSD

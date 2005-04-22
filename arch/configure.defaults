@@ -7858,7 +7858,7 @@ LD              =       xlf90_r
 CC              =       cc
 SCC		=	$(CC)
 RWORDSIZE       = $(NATIVE_RWORDSIZE)
-PROMOTION	=	-r$(RWORDSIZE) -i4
+PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
 CFLAGS          =       -DNOUNDERSCORE -DLANDREAD_STUB
 FCOPTIM         =       -O3 -qarch=auto #-qfloat=nomaf
 FCDEBUG         =       # -qnoopt -qfullpath
@@ -7981,7 +7981,7 @@ LD              =       xlf90_r
 CC              =       cc
 SCC		=	$(CC)
 RWORDSIZE       = $(NATIVE_RWORDSIZE)
-PROMOTION	=	-r$(RWORDSIZE) -i4
+PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
 CFLAGS          =       -DNOUNDERSCORE -DLANDREAD_STUB
 FCOPTIM         =       -O2 -qarch=auto -qunroll=yes #-qfloat=nomaf
 FCDEBUG         =       # -qnoopt -qfullpath

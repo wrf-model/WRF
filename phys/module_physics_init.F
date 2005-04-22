@@ -505,6 +505,7 @@ integer myproc
           ENDIF                                                        
           ALBBCK(I,J)=ALBD(IS,ISN)/100.                                  
           ALBEDO(I,J)=ALBBCK(I,J)
+          IF(SNOWC(I,J) .GT. 0.5)ALBEDO(I,J)=ALBBCK(I,J)*(1.+SCFX(IS))
           THC(I,J)=THERIN(IS,ISN)/100.                               
           Z0(I,J)=SFZ0(IS,ISN)/100.                                
           ZNT(I,J)=Z0(I,J)

@@ -40,6 +40,7 @@ MODULES = \
 	module_pbl_driver.o \
 	module_cumulus_driver.o \
 	module_microphysics_driver.o \
+	module_microphysics_zero_out.o \
 	module_radiation_driver.o \
 	module_surface_driver.o
   

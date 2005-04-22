@@ -1019,6 +1019,8 @@ rconfig   integer nproc_y		  namelist,domains	1             -1       -      "npr
 rconfig   integer irand                   namelist,domains	1             0       -      "irand"           ""      ""
 rconfig   real    dt                      derived              max_domains    2.      h     "dt"        "TEMPORAL RESOLUTION"      "SECONDS"
 rconfig   integer   num_moves       namelist,domains    1                0
+rconfig   integer   vortex_interval  namelist,domains   max_domains      15  -  "" "" "minutes"
+rconfig   integer   max_vortex_speed namelist,domains   max_domains      40  -  "" "" "meters per second"
 rconfig   integer   coral_dist      namelist,domains    max_domains      8
 rconfig   integer   move_id         namelist,domains    max_moves        0
 rconfig   integer   move_interval   namelist,domains    max_moves        999999999

@@ -15,6 +15,7 @@ MODULES =                       \
 	module_MPP.o \
 	module_wrf_esmf_super.o    \
 	module_optional_si_input.o	\
+	module_compute_geop.o           \
 	module_soil_pre.o
 
 OBJS    = 		\
@@ -155,7 +156,9 @@ mediation_integrate.o: ../frame/module_domain.o ../frame/module_configure.o \
 			../frame/module_timing.o \
 			$(ESMF_MOD_DEPENDENCE) \
 			module_date_time.o module_bc_time_utilities.o \
+                        module_compute_geop.o                         \
 			module_io_domain.o
+
 
 mediation_interp_domain.o: ../frame/module_domain.o ../frame/module_configure.o \
 			../frame/module_timing.o

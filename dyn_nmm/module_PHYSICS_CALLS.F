@@ -1913,7 +1913,7 @@
 !***  LOCAL VARIABLES
 !***
 !-----------------------------------------------------------------------
-      INTEGER :: I,IENDX,J,K
+      INTEGER :: I,IENDX,J,K,IJ
 !
       INTEGER,DIMENSION(IMS:IME,JMS:JME) :: LOWLYR
 !
@@ -1988,18 +1988,46 @@
 !
       CALL SET_TILES(GRID,IDS+1,IDE-1,JDS+2,JDE-2,ITS,ITE,JTS,JTE)
 !
-      CALL MICROPHYSICS_DRIVER(TH_PHY,WATER,ZERO_3D,ZERO_3D             &
-     &                        ,RR,PI_PHY,P_PHY,ZERO_2D,RAINNCV          &
-     &                        ,ZERO_3D,ZERO_2D,DZ,P8W,DTPHS,DX,DY       &
-     &                        ,CONFIG_FLAGS,0,N_MOIST,WARM_RAIN         &
-     &                        ,XLAND,NTSD-1                             &
-     &                        ,F_ICE,F_RAIN,F_RIMEF                     &
-     &                        ,LOWLYR,SR                                &
-     &                        ,IDS,IDE,JDS,JDE,KDS,KDE                  &
-     &                        ,IMS,IME,JMS,JME,KMS,KME                  &
-     &                        ,GRID%I_START,GRID%I_END                  &
-     &                        ,GRID%J_START,GRID%J_END                  &
-     &                        ,KTS,KTE,GRID%NUM_TILES)
+      CALL MICROPHYSICS_DRIVER(                                         &
+     &                  TH_PHY=TH_PHY                                   &
+     &                 ,RHO=RR,PI_PHY=PI_PHY,P_PHY=P_PHY                &
+     &                 ,RAINNCV=RAINNCV                                 &
+     &                 ,dz8w=DZ,p8w=P8W,DT=DTPHS,DX=DX,DY=DY            &
+     &                 ,MP_PHYSICS=CONFIG_FLAGS%MP_PHYSICS              &
+     &                 ,SPECIFIED=CONFIG_FLAGS%SPECIFIED                &
+     &                            .OR. CONFIG_FLAGS%NESTED              &
+     &                 ,SPEC_ZONE=0,WARM_RAIN=WARM_RAIN                 &
+     &                 ,XLAND=XLAND,itimestep=NTSD-1                    &
+     &                 ,F_ICE_PHY=F_ICE,F_RAIN_PHY=F_RAIN               &
+     &                 ,F_RIMEF_PHY=F_RIMEF                             &
+     &                 ,LOWLYR=LOWLYR,SR=SR                             &
+     &                 ,QV_CURR=WATER(IMS,KMS,JMS,P_QV) , F_QV=F_QV     &
+     &                 ,QC_CURR=WATER(IMS,KMS,JMS,P_QC) , F_QC=F_QC     &
+     &                 ,QR_CURR=WATER(IMS,KMS,JMS,P_QR) , F_QR=F_QR     &
+     &                 ,QI_CURR=WATER(IMS,KMS,JMS,P_QI) , F_QI=F_QI     &
+     &                 ,QS_CURR=WATER(IMS,KMS,JMS,P_QS) , F_QS=F_QS     &
+     &                 ,QG_CURR=WATER(IMS,KMS,JMS,P_QG) , F_QG=F_QG     &
+     &                 ,IDS=IDS,IDE=IDE,JDS=JDS,JDE=JDE,KDS=KDS,KDE=KDE &
+     &                 ,IMS=IMS,IME=IME,JMS=JMS,JME=JME,KMS=KMS,KME=KME &
+     &                 ,I_START=GRID%I_START,I_END=GRID%I_END           &
+     &                 ,J_START=GRID%J_START,J_END=GRID%J_END           &
+     &                 ,KTS=KTS,KTE=KTE,NUM_TILES=GRID%NUM_TILES        &
+                                                                        )
+
+   !$omp parallel do   &
+   !$omp private ( ij )
+      DO IJ = 1, GRID%NUM_TILES
+        CALL MICROPHYSICS_ZERO_OUT (                                    &
+                     MOIST_2 , N_MOIST , CONFIG_FLAGS                   &
+                    ,IDS, IDE, JDS, JDE, KDS, KDE                       &
+                    .IMS, IME, JMS, JME, KMS, KME                       &
+                    ,I_START(IJ), I_END(IJ)                             &
+                    ,J_START(IJ), J_END(IJ)                             &
+                     KTS    , KTE                                       )
+      ENDDO
+
+
+
 !
 !-----------------------------------------------------------------------
       E_BDY=(ITE>=IDE)

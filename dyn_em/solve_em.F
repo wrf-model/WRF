@@ -30,6 +30,7 @@ SUBROUTINE solve_em ( grid , config_flags , &
    USE module_surface_driver
    USE module_cumulus_driver
    USE module_microphysics_driver
+   USE module_microphysics_zero_out
    USE module_pbl_driver
 #ifdef WRF_CHEM
    USE module_input_chem_data
@@ -2264,20 +2265,43 @@ BENCH_END(moist_physics_prep_tim)
 
 BENCH_START(micro_driver_tim)
        sr = 0.
-       CALL microphysics_driver(t_2,moist_2, moist_1, w_2,                  &
-                                rho, pi_phy, p_phy, RAINNC, RAINNCV,        &
-                                z, ht, dz8w, p8w, dtm, dx, dy,              &
-                                config_flags, spec_zone,                    &
-                                num_3d_m, warm_rain,                        &
-                                XLAND,itimestep,                            & 
-                                F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,           &
-                                LOWLYR,SR,                                  &
-                                ids, ide, jds, jde, kds, kde,               &
-                                ims, ime, jms, jme, kms, kme,               &
-                                grid%i_start, min(grid%i_end, ide-1),       &
-                                grid%j_start, min(grid%j_end, jde-1),       &
-                                k_start    , min(k_end,kde-1) , grid%num_tiles )
+       CALL microphysics_driver(                                       &
+                    TH=t_2, RHO=rho, PI=pi_phy, P=p_phy                &
+                   ,DZ8W=dz8w, P8W=p8w, DT=dtm, DX=dx, DY=dy           &
+                   ,MP_PHYSICS=config_flags%mp_physics                 &
+                   ,SPECIFIED=config_flags%specified                   &
+                              .OR. config_flags%nested                 &
+                   ,SPEC_ZONE=spec_zone                                &
+                   ,WARM_RAIN=warm_rain                                &
+                   ,XLAND=xland,ITIMESTEP=itimestep                    & 
+                   ,F_ICE_PHY=f_ice_phy,F_RAIN_PHY=f_rain_phy          &
+                   ,F_RIMEF_PHY=f_rimef_phy                            &
+                   ,LOWLYR=lowlyr,SR=sr                                &
+                   ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde  &
+                   ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme  &
+                   ,I_START=grid%i_start,I_END=min(grid%i_end, ide-1)  &
+                   ,J_START=grid%j_start,J_END=min(grid%j_end, jde-1)  &
+                   ,KTS=k_start, KTE=min(k_end,kde-1)                  &
+                   ,NUM_TILES=grid%num_tiles                           &
+                 ! Optional
+                   , RAINNC=rainnc, RAINNCV=rainncv                    &
+                   , W=w_2, Z=z, HT=ht                                 &
+                   , QV_CURR=moist_2(ims,kms,jms,P_QV), F_QV=F_QV      &
+                   , QC_CURR=moist_2(ims,kms,jms,P_QC), F_QC=F_QC      &
+                   , QR_CURR=moist_2(ims,kms,jms,P_QR), F_QR=F_QR      &
+                   , QI_CURR=moist_2(ims,kms,jms,P_QI), F_QI=F_QI      &
+                   , QS_CURR=moist_2(ims,kms,jms,P_QS), F_QS=F_QS      &
+                   , QG_CURR=moist_2(ims,kms,jms,P_QG), F_QG=F_QG      &
+                   , QV_OLD=moist_1(ims,kms,jms,P_QV)                  &
+                   , QC_OLD=moist_1(ims,kms,jms,P_QC)                  &
+                   , QR_OLD=moist_1(ims,kms,jms,P_QR)                  &
+                   , QI_OLD=moist_1(ims,kms,jms,P_QI)                  &
+                   , QS_OLD=moist_1(ims,kms,jms,P_QS)                  &
+                   , QG_OLD=moist_1(ims,kms,jms,P_QG)                  &
+                                                                       )
+
 BENCH_END(micro_driver_tim)
+
 
        CALL wrf_debug ( 200 , ' call moist_physics_finish' )
 BENCH_START(moist_phys_end_tim)
@@ -2290,6 +2314,13 @@ BENCH_START(moist_phys_end_tim)
        ite = min(grid%i_end(ij),ide-1-sz)
        jts = max(grid%j_start(ij),jds+sz)
        jte = min(grid%j_end(ij),jde-1-sz)
+
+       CALL microphysics_zero_out (                                    &
+                     moist_2 , num_moist , config_flags ,              &
+                     ids, ide, jds, jde, kds, kde,                     &
+                     ims, ime, jms, jme, kms, kme,                     &
+                     its, ite, jts, jte,                               &
+                     k_start    , k_end                                )
 
        CALL moist_physics_finish_em( t_2, t_1, t0, muts,               &
                                      h_diabatic, dtm, config_flags,    &

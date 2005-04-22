@@ -35,18 +35,23 @@ CONTAINS
 !  Lin et al., 1983, JAM, 1065-1092, and
 !  Rutledge and Hobbs, 1984, JAS, 2949-2972
 !-------------------------------------------------------------------
-  SUBROUTINE lin_et_al(th, qv, ql, qr, qi, qs, qg,                 &
-                       qrold, qsold, qgold,                        &
-                       rho, pii, p, RAINNC, RAINNCV,               &
-                       dt_in, z, ht, dz8w,                         &
-                       grav, cp, Rair, rvapor,                     &
-                       XLS, XLV, XLF, rhowater, rhosnow,           &
-                       EP2,SVP1,SVP2,SVP3,SVPT0,                   &
-                       P_QI,P_QS,P_QG,                             &
-                       P_FIRST_SCALAR,                             &
-                       ids,ide, jds,jde, kds,kde,                  & ! domain dims
-                       ims,ime, jms,jme, kms,kme,                  & ! memory dims
-                       its,ite, jts,jte, kts,kte                   ) ! tile   dims
+  SUBROUTINE lin_et_al(th                                          &
+                      ,qv, ql, qr, qrold                           &
+                      ,rho, pii, p                                 &
+                      ,dt_in                                       &
+                      ,z,ht, dz8w                                  &
+                      ,grav, cp, Rair, rvapor                      &
+                      ,XLS, XLV, XLF, rhowater, rhosnow            &
+                      ,EP2,SVP1,SVP2,SVP3,SVPT0                    &
+                      ,RAINNC, RAINNCV                             &
+                      ,ids,ide, jds,jde, kds,kde                   &
+                      ,ims,ime, jms,jme, kms,kme                   &
+                      ,its,ite, jts,jte, kts,kte                   &
+                  ! Optional 
+                      , F_QI,F_QS,F_QG                             &
+                      , qsold, qgold                               &
+                      , qi, qs, qg                                 &
+                                                                   )
 !-------------------------------------------------------------------
   IMPLICIT NONE
 !-------------------------------------------------------------------
@@ -55,25 +60,20 @@ CONTAINS
 !
   INTEGER,      INTENT(IN   )    ::   ids,ide, jds,jde, kds,kde , &
                                       ims,ime, jms,jme, kms,kme , &
-                                      its,ite, jts,jte, kts,kte , &
-                                      P_QI,P_QS,P_QG,             &
-                                      P_FIRST_SCALAR
+                                      its,ite, jts,jte, kts,kte
 
   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),                 &
         INTENT(INOUT) ::                                          &
+                                                           qrold, &
                                                               th, &
                                                               qv, &
                                                               ql, &
-                                                              qr, &
-                                                              qi, &
-                                                              qs, &
-                                                              qg
+                                                              qr
+
+
 !
   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),                 &
         INTENT(IN   ) ::                                          &
-                                                           qrold, &
-                                                           qsold, &
-                                                           qgold, &
                                                              rho, &
                                                              pii, &
                                                                p, &
@@ -102,6 +102,19 @@ CONTAINS
 
   REAL, INTENT(IN   ) :: EP2,SVP1,SVP2,SVP3,SVPT0
 
+! Optional
+
+  REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),                 &
+        OPTIONAL,                                                 &
+        INTENT(INOUT) ::                                          &
+                                                           qsold, &
+                                                           qgold, &
+                                                              qi, &
+                                                              qs, &
+                                                              qg
+
+  LOGICAL, INTENT(IN), OPTIONAL :: F_QI,F_QS,F_QG
+
 ! LOCAL VAR
 
   INTEGER             ::                            min_q, max_q
@@ -117,22 +130,31 @@ CONTAINS
                                                    orhoz, sqrhoz, &
                                                         prez, zz, &
                                                         dzw
+
+  LOGICAL flag_qi, flag_qs, flag_qg
 !
   REAL    ::         dt, pptrain, pptsnow, pptgraul, rhoe_s,      &
                      gindex, pptice
 
   INTEGER ::               i,j,k
 !
+   flag_qi = .false.
+   flag_qs = .false.
+   flag_qg = .false.
+   IF ( PRESENT ( f_qi ) ) flag_qi = f_qi
+   IF ( PRESENT ( f_qs ) ) flag_qi = f_qs
+   IF ( PRESENT ( f_qg ) ) flag_qi = f_qg
+!
    dt=dt_in
    rhoe_s=1.29
 !
-   IF (P_QI .lt. P_FIRST_SCALAR .or. P_QS .lt. P_FIRST_SCALAR) THEN
+   IF ( .NOT. flag_qi .OR. .NOT. flag_qs ) THEN
       CALL wrf_error_fatal ( 'module_mp_lin: Improper use of Lin et al scheme; no ice phase. Please chose another one.')
    ENDIF
 
    gindex=1.0
 
-   IF (P_QG .lt. P_FIRST_SCALAR) gindex=0.
+   IF (flag_qg) gindex=0.
 
    j_loop:  DO j = jts, jte
    i_loop:  DO i = its, ite
@@ -155,7 +177,7 @@ CONTAINS
       dzw(k)=dz8w(i,k,j)
    END DO
 
-   IF (P_QI .ge. P_FIRST_SCALAR) THEN
+   IF ( flag_qi .AND. PRESENT( qi ) ) THEN
       DO k = kts, kte
          qiz(k)=qi(i,k,j)
       ENDDO
@@ -165,7 +187,7 @@ CONTAINS
       ENDDO
    ENDIF
 
-   IF (P_QS .ge. P_FIRST_SCALAR) THEN
+   IF ( flag_qs .AND. PRESENT( qs ) .AND. PRESENT( qsold ) ) THEN
       DO k = kts, kte
          qsz(k)=qs(i,k,j)
          qszold(k)=qsold(i,k,j)
@@ -177,7 +199,7 @@ CONTAINS
       ENDDO
    ENDIF
 
-   IF (P_QG .ge. P_FIRST_SCALAR) THEN
+   IF ( flag_qg .AND. PRESENT( qg ) .AND. PRESENT( qgold ) ) THEN
       DO k = kts, kte
          qgz(k)=qg(i,k,j)
          qgzold(k)=qgold(i,k,j)
@@ -228,19 +250,19 @@ CONTAINS
       th(i,k,j)=thz(k)
    END DO
 !
-   IF (P_QI .ge. P_FIRST_SCALAR) THEN
+   IF ( flag_qi .AND. PRESENT( qi ) ) THEN
       DO k = kts, kte
          qi(i,k,j)=qiz(k)
       ENDDO
    ENDIF
 
-   IF (P_QS .ge. P_FIRST_SCALAR) THEN
+   IF ( flag_qs .AND. PRESENT( qs ) ) THEN
       DO k = kts, kte
          qs(i,k,j)=qsz(k)
       ENDDO
    ENDIF
 
-   IF (P_QG .ge. P_FIRST_SCALAR) THEN
+   IF ( flag_qg .AND. PRESENT( qg ) ) THEN
       DO k = kts, kte
          qg(i,k,j)=qgz(k)
       ENDDO

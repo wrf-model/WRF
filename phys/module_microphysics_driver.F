@@ -3,21 +3,29 @@
 MODULE module_microphysics_driver
 CONTAINS
 
-SUBROUTINE microphysics_driver(th_phy, moist_new, moist_old, w,        &
-                               rho, pi_phy, p_phy, RAINNC, RAINNCV,    &
-                               z, ht, dz8w, p8w, dt,dx,dy,             &
-                               config_flags, spec_zone, n_moist,       &
-                               warm_rain,                              &
-                               XLAND,itimestep,                        &
-                               F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,       &
-                               LOWLYR,SR,                              &
-                               ids,ide, jds,jde, kds,kde,              & 
-                               ims,ime, jms,jme, kms,kme,              &
-                               i_start,i_end,j_start,j_end,kts,kte,num_tiles   )
+SUBROUTINE microphysics_driver(                                          &
+                       th, w , rho, pi, p, RAINNC, RAINNCV               &
+                      ,z, ht, dz8w, p8w, dt,dx,dy                        &
+                      ,mp_physics, spec_zone                             &
+                      ,specified                                         &
+                      ,warm_rain                                         &
+                      ,XLAND,itimestep                                   &
+                      ,F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY                  &
+                      ,LOWLYR,SR                                         &
+                      ,ids,ide, jds,jde, kds,kde                         &
+                      ,ims,ime, jms,jme, kms,kme                         &
+                      ,i_start,i_end,j_start,j_end,kts,kte,num_tiles     &
+                      ,qv_curr,qc_curr,qr_curr,qi_curr,qs_curr,qg_curr   &
+                      ,qv_old ,qc_old ,qr_old ,qi_old ,qs_old ,qg_old    &
+                      ,f_qv,f_qc,f_qr,f_qi,f_qs,f_qg                     &
+                                                                         )
 ! Framework
-   USE module_state_description
+   USE module_state_description, ONLY :                                  &
+                     KESSLERSCHEME, LINSCHEME, WSM3SCHEME, WSM5SCHEME    &
+                    ,WSM6SCHEME, ETAMPNEW, NCEPCLOUD3, NCEPCLOUD5 
+
+
 ! Model Layer
-   USE module_configure
    USE module_model_constants
    USE module_wrf_error
 
@@ -86,7 +94,7 @@ SUBROUTINE microphysics_driver(th_phy, moist_new, moist_old, w,        &
 ! Qi         cloud ice mixing ratio (kg/kg)
 ! Qs         snow mixing ratio (kg/kg)
 !----------------------------------------------------------------------
-!-- th_phy        potential temperature    (K)
+!-- th        potential temperature    (K)
 !-- moist_new     updated moisture array   (kg/kg)
 !-- moist_old     Old moisture array       (kg/kg)
 !-- rho           density of air           (kg/m^3)
@@ -97,8 +105,6 @@ SUBROUTINE microphysics_driver(th_phy, moist_new, moist_old, w,        &
 !-- SR            one time step mass ratio of snow to total precip
 !-- z             Height above sea level   (m)
 !-- dt            Time step              (s)
-!-- config_flags  flag for configuration      ! change ---  ?????   
-!-- n_moist       number of water substances   (integer)
 !-- G             acceleration due to gravity  (m/s^2)
 !-- CP            heat capacity at constant pressure for dry air (J/kg/K)
 !-- R_d           gas constant for dry air (J/kg/K)
@@ -143,37 +149,29 @@ SUBROUTINE microphysics_driver(th_phy, moist_new, moist_old, w,        &
 !
 !======================================================================
 
-   TYPE(grid_config_rec_type),    INTENT(IN   )    :: config_flags
+   INTEGER,    INTENT(IN   )    :: mp_physics
+   LOGICAL,    INTENT(IN   )    :: specified 
 !
    INTEGER,      INTENT(IN   )    ::       ids,ide, jds,jde, kds,kde
    INTEGER,      INTENT(IN   )    ::       ims,ime, jms,jme, kms,kme
    INTEGER,      INTENT(IN   )    ::                         kts,kte
-   INTEGER,      INTENT(IN   )    ::     n_moist,itimestep,num_tiles,spec_zone
+   INTEGER,      INTENT(IN   )    ::     itimestep,num_tiles,spec_zone
    INTEGER, DIMENSION(num_tiles), INTENT(IN) ::                       &
      &           i_start,i_end,j_start,j_end
 
    LOGICAL,      INTENT(IN   )    ::   warm_rain
 !
    REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),                    &
-         INTENT(INOUT) ::                                     th_phy
+         INTENT(INOUT) ::                                     th
 !
-   REAL, DIMENSION( ims:ime , kms:kme , jms:jme, n_moist ),           &
-         INTENT(INOUT) ::                                  moist_new
 
    REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),                    &
-         INTENT(IN   ) ::                                          z, &
+         INTENT(IN   ) ::                                             &
                                                                  rho, &
                                                                 dz8w, &
-                                                                   w, &
                                                                  p8w, &
-                                                              pi_phy, &
-                                                               p_phy
-!
-   REAL, DIMENSION( ims:ime , kms:kme , jms:jme, n_moist ),           &
-         INTENT(IN   ) ::                                  moist_old
-!
-   REAL, DIMENSION( ims:ime , jms:jme ),  INTENT(INOUT) ::    RAINNC, &
-                                                              RAINNCV
+                                                              pi, &
+                                                               p
 !
 
    REAL, INTENT(INOUT),  DIMENSION(ims:ime, kms:kme, jms:jme ) ::     &
@@ -189,6 +187,27 @@ SUBROUTINE microphysics_driver(th_phy, moist_new, moist_old, w,        &
 
    INTEGER, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) :: LOWLYR
 
+!
+! Optional
+!
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
+         OPTIONAL,                                                &
+         INTENT(INOUT ) ::                                        &
+                  w, z                                            & 
+                 ,qv_curr,qc_curr,qr_curr,qi_curr,qs_curr,qg_curr &
+                 ,qv_old ,qc_old ,qr_old ,qi_old ,qs_old ,qg_old
+
+!
+   REAL, DIMENSION( ims:ime , jms:jme ),                          &
+         INTENT(INOUT),                                           &
+         OPTIONAL   ::                                            &
+                                                           RAINNC &
+                                                         ,RAINNCV
+!
+
+   LOGICAL, OPTIONAL ::             f_qv,f_qc,f_qr,f_qi,f_qs,f_qg
+
+
  
 ! LOCAL  VAR
 
@@ -199,8 +218,8 @@ SUBROUTINE microphysics_driver(th_phy, moist_new, moist_old, w,        &
 !  specify these things!
 !---------------------------------------------------------------------
 
-   if (config_flags%mp_physics .eq. 0) return
-   IF( config_flags%specified .or. config_flags%nested ) THEN
+   if (mp_physics .eq. 0) return
+   IF( specified ) THEN
      sz = spec_zone
    ELSE
      sz = 0
@@ -217,245 +236,245 @@ SUBROUTINE microphysics_driver(th_phy, moist_new, moist_old, w,        &
        jte = min(j_end(ij),jde-1-sz)
 
 !-----------
-   IF ( n_moist >= PARAM_FIRST_SCALAR ) THEN
 
-     micro_select: SELECT CASE(config_flags%mp_physics)
+     micro_select: SELECT CASE(mp_physics)
 
         CASE (KESSLERSCHEME)
              CALL wrf_debug ( 100 , 'microphysics_driver: calling kessler' )
-             CALL kessler( th_phy,                       &
-                     moist_new(ims,kms,jms,P_QV),        &
-                     moist_new(ims,kms,jms,P_QC),        &
-                     moist_old(ims,kms,jms,P_QC),        &
-                     moist_new(ims,kms,jms,P_QR),        &
-                     moist_old(ims,kms,jms,P_QR),        &
-                     rho, pi_phy, RAINNC,                &
-                     RAINNCV, dt, z, xlv, cp,            &
-                     EP_2,SVP1,SVP2,SVP3,SVPT0,rhowater, &
-                     dz8w,                               &
-                     ids,ide, jds,jde, kds,kde,          &
-                     ims,ime, jms,jme, kms,kme,          &
-                     its,ite, jts,jte, kts,kte           )
+             IF ( PRESENT( QV_CURR ) .AND. PRESENT( QC_CURR ) .AND.  &
+                  PRESENT( QC_OLD  ) .AND. PRESENT( QR_CURR ) .AND.  &
+                  PRESENT( QR_OLD  ) .AND. PRESENT( Z       ) .AND.  &
+                  PRESENT( RAINNC  ) .AND. PRESENT( RAINNCV ) ) THEN
+               CALL kessler(                                        &
+                  T=th                                              &
+                 ,QV=qv_curr                                        &
+                 ,QC=qc_curr                                        &
+                 ,QCOLD=qc_old                                      &
+                 ,QR=qr_curr                                        &
+                 ,QROLD=qr_old                                      &
+                 ,RHO=rho, PII=pi, RAINNC=rainnc                    &
+                 ,RAINNCV=rainncv, DT_IN=dt, Z=z, XLV=xlv, CP=cp    &
+                 ,EP2=ep_2,SVP1=svp1,SVP2=svp2                      &
+                 ,SVP3=svp3,SVPT0=svpt0,RHOWATER=rhowater           &
+                 ,DZ8W=dz8w                                         &
+                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
+                                                                    )
+             ELSE 
+                CALL wrf_error_fatal ( 'arguments not present for calling kessler' )
+             ENDIF
 
         CASE (LINSCHEME)
              CALL wrf_debug ( 100 , 'microphysics_driver: calling lin_et_al' )
-             CALL lin_et_al( th_phy,                     &
-                     moist_new(ims,kms,jms,P_QV),        &
-                     moist_new(ims,kms,jms,P_QC),        &
-                     moist_new(ims,kms,jms,P_QR),        &
-                     moist_new(ims,kms,jms,P_QI),        &
-                     moist_new(ims,kms,jms,P_QS),        &
-                     moist_new(ims,kms,jms,P_QG),        &
-                     moist_old(ims,kms,jms,P_QR),        &
-                     moist_old(ims,kms,jms,P_QS),        &
-                     moist_old(ims,kms,jms,P_QG),        &
-                     rho, pi_phy, p_phy, RAINNC,         &
-                     RAINNCV,dt, z,                      &
-                     ht, dz8w, G, cp, R_d, R_v,          &
-                     XLS, XLV, XLF, rhowater, rhosnow,   &
-                     EP_2,SVP1,SVP2,SVP3,SVPT0,          &
-                     P_QI, P_QS, P_QG,                   &
-                     PARAM_FIRST_SCALAR,                 &
-                     ids,ide, jds,jde, kds,kde,          &
-                     ims,ime, jms,jme, kms,kme,          & 
-                     its,ite, jts,jte, kts,kte           )
+             IF ( PRESENT( QV_CURR ) .AND. PRESENT ( QC_CURR ) .AND.  &
+                  PRESENT( QR_CURR ) .AND. PRESENT ( QR_OLD  ) .AND.  &
+                  PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) .AND.  &
+                  PRESENT( Z       ) .AND. PRESENT ( W       )  ) THEN
+               CALL lin_et_al(                                      &
+                  TH=th                                             &
+                 ,QV=qv_curr                                        &
+                 ,QL=qc_curr                                        &
+                 ,QR=qr_curr                                        &
+                 ,QROLD=qr_old                                      &
+                 ,RHO=rho, PII=pi, P=p                              &
+                 ,RAINNC=rainnc, RAINNCV=rainncv, DT_IN=dt, Z=z     &
+                 ,HT=ht, DZ8W=dz8w, GRAV=G,  CP=cp                  &
+                 ,RAIR=r_d, RVAPOR=R_v                              &
+                 ,XLS=xls, XLV=xlv, XLF=xlf                         &
+                 ,RHOWATER=rhowater, RHOSNOW=rhosnow                &
+                 ,EP2=ep_2,SVP1=svp1,SVP2=svp2                      &
+                 ,SVP3=svp3,SVPT0=svpt0                             &
+                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
+              ! Optional
+                 ,F_QI=f_qi, F_QS=f_qs, F_QG=f_qg                   &
+                 ,QSOLD=qs_old                                      &
+                 ,QGOLD=qg_old                                      &
+                 ,QI=qi_curr                                        &
+                 ,QS=qs_curr                                        &
+                 ,QG=qg_curr                                        &
+                                                                    )
+             ELSE 
+                CALL wrf_error_fatal ( 'arguments not present for calling lin_et_al' )
+             ENDIF
 
         CASE (WSM3SCHEME)
              CALL wrf_debug ( 100 , 'microphysics_driver: calling wsm3' )
-             CALL wsm3(th_phy,                           &
-                     moist_new(ims,kms,jms,P_QV),        &
-                     moist_new(ims,kms,jms,P_QC),        &
-                     moist_new(ims,kms,jms,P_QR),        &
-                     w, rho, pi_phy, p_phy, dz8w, RAINNC,&
-                     RAINNCV,dt,g,cp,cpv,r_d,r_v,SVPT0,  &
-                     ep_1, ep_2, epsilon,                &
-                     XLS, XLV, XLF, rhoair0, rhowater,   &
-                     cliq,cice,psat,                     &
-                     ids,ide, jds,jde, kds,kde,          &
-                     ims,ime, jms,jme, kms,kme,          &
-                     its,ite, jts,jte, kts,kte           )
+             IF ( PRESENT( QV_CURR ) .AND. PRESENT ( QC_CURR ) .AND.  &
+                  PRESENT( QR_CURR ) .AND.                            &
+                  PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) .AND.  &
+                  PRESENT( W       )                            ) THEN
+             CALL wsm3(                                             &
+                  TH=th                                             &
+                 ,Q=qv_curr                                         &
+                 ,QCI=qc_curr                                       &
+                 ,QRS=qr_curr                                       &
+                 ,W=w,DEN=rho,PII=pi,P=p,DELZ=dz8w                  &
+                 ,RAIN=rainnc ,RAINNCV=rainncv                      &
+                 ,DELT=dt,G=g,CPD=cp,CPV=cpv                        &
+                 ,RD=r_d,RV=r_v,T0C=svpt0                           &
+                 ,EP1=ep_1, EP2=ep_2, QMIN=epsilon                  &
+                 ,XLS=xls, XLV0=xlv, XLF0=xlf                       &
+                 ,DEN0=rhoair0, DENR=rhowater                       &
+                 ,CLIQ=cliq,CICE=cice,PSAT=psat                     &
+                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
+                                                                    )
+             ELSE 
+                CALL wrf_error_fatal ( 'arguments not present for calling wsm3' )
+             ENDIF
 
         CASE (WSM5SCHEME)
              CALL wrf_debug ( 100 , 'microphysics_driver: calling wsm5' )
-             CALL  wsm5(th_phy,                          &
-                     moist_new(ims,kms,jms,P_QV),        &
-                     moist_new(ims,kms,jms,P_QC),        &
-                     moist_new(ims,kms,jms,P_QR),        &
-                     moist_new(ims,kms,jms,P_QI),        &
-                     moist_new(ims,kms,jms,P_QS),        &
-                     w, rho, pi_phy, p_phy, dz8w, RAINNC,&
-                     RAINNCV,dt,g,cp,cpv,r_d,r_v,SVPT0,  &
-                     ep_1, ep_2, epsilon,                &
-                     XLS, XLV, XLF, rhoair0, rhowater,   &
-                     cliq,cice,psat,                     &
-                     ids,ide, jds,jde, kds,kde,          &
-                     ims,ime, jms,jme, kms,kme,          &
-                     its,ite, jts,jte, kts,kte           )
+             IF ( PRESENT( QV_CURR ) .AND. PRESENT ( QC_CURR ) .AND.  &
+                  PRESENT( QR_CURR ) .AND. PRESENT ( QI_CURR ) .AND.  &
+                  PRESENT( QS_CURR ) .AND.                            &
+                  PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) .AND.  &
+                  PRESENT( W       )                            ) THEN
+             CALL wsm5(                                             &
+                  TH=th                                             &
+                 ,Q=qv_curr                                         &
+                 ,QC=qc_curr                                        &
+                 ,QR=qr_curr                                        &
+                 ,QI=qi_curr                                        &
+                 ,QS=qs_curr                                        &
+                 ,W=w,DEN=rho,PII=pi,P=p,DELZ=dz8w                  &
+                 ,RAIN=rainnc ,RAINNCV=rainncv                      &
+                 ,DELT=dt,G=g,CPD=cp,CPV=cpv                        &
+                 ,RD=r_d,RV=r_v,T0C=svpt0                           &
+                 ,EP1=ep_1, EP2=ep_2, QMIN=epsilon                  &
+                 ,XLS=xls, XLV0=xlv, XLF0=xlf                       &
+                 ,DEN0=rhoair0, DENR=rhowater                       &
+                 ,CLIQ=cliq,CICE=cice,PSAT=psat                     &
+                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
+                                                                    )
+             ELSE
+                CALL wrf_error_fatal ( 'arguments not present for calling wsm5' )
+             ENDIF
 
         CASE (WSM6SCHEME)
              CALL wrf_debug ( 100 , 'microphysics_driver: calling wsm6' )
-             CALL  wsm6(th_phy,                          &
-                     moist_new(ims,kms,jms,P_QV),        &
-                     moist_new(ims,kms,jms,P_QC),        &
-                     moist_new(ims,kms,jms,P_QR),        &
-                     moist_new(ims,kms,jms,P_QI),        &
-                     moist_new(ims,kms,jms,P_QS),        &
-                     moist_new(ims,kms,jms,P_QG),        &
-                     w, rho, pi_phy, p_phy, dz8w, RAINNC,&
-                     RAINNCV,dt,g,cp,cpv,r_d,r_v,SVPT0,  &
-                     ep_1, ep_2, epsilon,                &
-                     XLS, XLV, XLF, rhoair0, rhowater,   &
-                     cliq,cice,psat,                     &
-                     ids,ide, jds,jde, kds,kde,          &
-                     ims,ime, jms,jme, kms,kme,          &
-                     its,ite, jts,jte, kts,kte           )
+             IF ( PRESENT( QV_CURR ) .AND. PRESENT ( QC_CURR ) .AND.  &
+                  PRESENT( QR_CURR ) .AND. PRESENT ( QI_CURR ) .AND.  &
+                  PRESENT( QS_CURR ) .AND. PRESENT ( QG_CURR ) .AND.  &
+                  PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) .AND.  &
+                  PRESENT( W       )                            ) THEN
+             CALL wsm6(                                             &
+                  TH=th                                             &
+                 ,Q=qv_curr                                         &
+                 ,QC=qc_curr                                        &
+                 ,QR=qr_curr                                        &
+                 ,QI=qi_curr                                        &
+                 ,QS=qs_curr                                        &
+                 ,QG=qg_curr                                        &
+                 ,W=w,DEN=rho,PII=pi,P=p,DELZ=dz8w                  &
+                 ,RAIN=rainnc ,RAINNCV=rainncv                      &
+                 ,DELT=dt,G=g,CPD=cp,CPV=cpv                        &
+                 ,RD=r_d,RV=r_v,T0C=svpt0                           &
+                 ,EP1=ep_1, EP2=ep_2, QMIN=epsilon                  &
+                 ,XLS=xls, XLV0=xlv, XLF0=xlf                       &
+                 ,DEN0=rhoair0, DENR=rhowater                       &
+                 ,CLIQ=cliq,CICE=cice,PSAT=psat                     &
+                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
+                                                                    )
+             ELSE
+                CALL wrf_error_fatal ( 'arguments not present for calling wsm6' )
+             ENDIF
 
         CASE (ETAMPNEW)
              CALL wrf_debug ( 100 , 'microphysics_driver: calling etampnew')
 
-               CALL ETAMP_NEW(itimestep,DT,DX,DY,RAINNC,RAINNCV,     &
-                              dz8w,rho,p_phy,pi_phy,th_phy,          &
-                              moist_new(ims,kms,jms,P_QV),           &
-                              moist_new(ims,kms,jms,P_QC),           &
-                              LOWLYR,SR,                             &
-                              F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,      &
-                              ids,ide, jds,jde, kds,kde,             &
-                              ims,ime, jms,jme, kms,kme,             &
-                              its,ite, jts,jte, kts,kte             )
+             IF ( PRESENT( QV_CURR ) .AND. PRESENT ( QC_CURR ) .AND.  &
+                  PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) ) THEN
+               CALL ETAMP_NEW(                                      &
+                  ITIMESTEP=itimestep,DT=dt,DX=dx,DY=dy             &
+                 ,RAINNC=rainnc,RAINNCV=rainncv                     &
+                 ,DZ8W=dz8w,RHO_PHY=rho,P_PHY=p,PI_PHY=pi,TH_PHY=th &
+                 ,QV=qv_curr                                        &
+                 ,QC=qc_curr                                        &
+                 ,LOWLYR=LOWLYR,SR=SR                               &
+                 ,F_ICE_PHY=F_ICE_PHY,F_RAIN_PHY=F_RAIN_PHY         &
+                 ,F_RIMEF_PHY=F_RIMEF_PHY                           &
+                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
+                                                                    )
+             ELSE
+                CALL wrf_error_fatal ( 'arguments not present for calling etampnew' )
+             ENDIF
 
         CASE (NCEPCLOUD3)
              CALL wrf_debug ( 100 , 'microphysics_driver: calling ncloud3' )
-             CALL ncloud3(th_phy,                        &
-                     moist_new(ims,kms,jms,P_QV),        &
-                     moist_new(ims,kms,jms,P_QC),        &
-                     moist_new(ims,kms,jms,P_QR),        &
-                     w, rho, pi_phy, p_phy, dz8w, RAINNC,&
-                     RAINNCV,dt,g,cp,cpv,r_d,r_v,SVPT0,  &
-                     ep_1, ep_2, epsilon,                &
-                     XLS, XLV, XLF, rhoair0, rhowater,   &
-                     cliq,cice,psat,                     &
-                     ids,ide, jds,jde, kds,kde,          &
-                     ims,ime, jms,jme, kms,kme,          &
-                     its,ite, jts,jte, kts,kte           )
+             IF ( PRESENT( QV_CURR ) .AND. PRESENT ( QC_CURR ) .AND.  &
+                  PRESENT( QR_CURR ) .AND.                            &
+                  PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) .AND.  &
+                  PRESENT( W       )                            ) THEN
+             CALL ncloud3(                                          &
+                  TH=th                                             &
+                 ,Q=qv_curr                                         &
+                 ,QCI=qc_curr                                       &
+                 ,QRS=qr_curr                                       &
+                 ,W=w, DEN=rho, PII=pi, P=p, DELZ=dz8w              &
+                 ,DELT=dt,G=g,CPD=cp,CPV=cpv                        &
+                 ,RAIN=RAINNC,RAINNCV=RAINNCV                       &
+                 ,RD=r_d,RV=r_v,T0C=SVPT0                           &
+                 ,EP1=ep_1, EP2=ep_2, QMIN=epsilon                  &
+                 ,XLS=xls, XLV0=xlv, XLF0=xlf                       &
+                 ,DEN0=rhoair0, DENR=rhowater                       &
+                 ,CLIQ=cliq,CICE=cice,PSAT=psat                     &
+                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
+                                                                    )
+
+             ELSE
+                CALL wrf_error_fatal ( 'arguments not present for calling ncepcloud3' )
+             ENDIF
 
         CASE (NCEPCLOUD5)
              CALL wrf_debug ( 100 , 'microphysics_driver: calling ncloud5' )
-             CALL  ncloud5(th_phy,                       &
-                     moist_new(ims,kms,jms,P_QV),        &
-                     moist_new(ims,kms,jms,P_QC),        &
-                     moist_new(ims,kms,jms,P_QR),        &
-                     moist_new(ims,kms,jms,P_QI),        &
-                     moist_new(ims,kms,jms,P_QS),        &
-                     w, rho, pi_phy, p_phy, dz8w, RAINNC,&
-                     RAINNCV,dt,g,cp,cpv,r_d,r_v,SVPT0,  &
-                     ep_1, ep_2, epsilon,                &
-                     XLS, XLV, XLF, rhoair0, rhowater,   &
-                     cliq,cice,psat,                     &
-                     ids,ide, jds,jde, kds,kde,          &
-                     ims,ime, jms,jme, kms,kme,          &
-                     its,ite, jts,jte, kts,kte           )
+             IF ( PRESENT( QV_CURR ) .AND. PRESENT ( QC_CURR ) .AND.  &
+                  PRESENT( QR_CURR ) .AND. PRESENT ( QI_CURR ) .AND.  &
+                  PRESENT( QS_CURR ) .AND. PRESENT ( QG_CURR ) .AND.  &
+                  PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) .AND.  &
+                  PRESENT( W       )                            ) THEN
+             CALL ncloud5(                                          &
+                  TH=th                                             &
+                 ,Q=qv_curr                                         &
+                 ,QC=qc_curr                                        &
+                 ,QR=qr_curr                                        &
+                 ,QI=qi_curr                                        &
+                 ,QS=qs_curr                                        &
+                 ,W=w, DEN=rho, PII=pi, P=p, DELZ=dz8w              &
+                 ,DELT=dt,G=g,CPD=cp,CPV=cpv                        &
+                 ,RAIN=RAINNC,RAINNCV=RAINNCV                       &
+                 ,RD=r_d,RV=r_v,T0C=SVPT0                           &
+                 ,EP1=ep_1, EP2=ep_2, QMIN=epsilon                  &
+                 ,XLS=xls, XLV0=xlv, XLF0=xlf                       &
+                 ,DEN0=rhoair0, DENR=rhowater                       &
+                 ,CLIQ=cliq,CICE=cice,PSAT=psat                     &
+                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
+                                                                    )
+             ELSE
+                CALL wrf_error_fatal ( 'arguments not present for calling ncepcloud5' )
+             ENDIF
 
 
       CASE DEFAULT 
 
-         WRITE( wrf_err_message , * ) 'The microphysics option does not exist: mp_physics = ', config_flags%mp_physics
+         WRITE( wrf_err_message , * ) 'The microphysics option does not exist: mp_physics = ', mp_physics
          CALL wrf_error_fatal ( wrf_err_message )
 
       END SELECT micro_select 
-
-         ! Zero out small condensate values  FSL-BLS-12-JUL-2004
-
-         IF ( config_flags%mp_zero_out .EQ. 0 ) THEN
-            !  do nothing
-         ELSE IF ( config_flags%mp_zero_out .EQ. 1 ) THEN
-            !  All of the "moist" fields, except for vapor, that are below a critical
-            !  threshold are set to zero.
-            CALL wrf_debug ( 100 , 'zero out small condensates, vapor not included')
-            DO n = PARAM_FIRST_SCALAR,n_moist
-               IF ( n .NE. P_QV ) THEN
-                  DO j = jts, jte
-                  DO k = kts, kte
-                  DO i = its, ite
-                     IF ( moist_new(i,k,j,n) .LT. config_flags%mp_zero_out_thresh )  moist_new(i,k,j,n) =0.
-                  ENDDO
-                  ENDDO
-                  ENDDO
-               END IF
-            ENDDO
-         ELSE IF ( config_flags%mp_zero_out .EQ. 2 ) then
-            !  All of the non-Qv "moist" fields that are below a critical threshold are set to 
-            !  zero.  The vapor is constrained to be non-negative.
-            CALL wrf_debug ( 100 , 'zero out small condensates, zero out negative vapor')
-            DO n = PARAM_FIRST_SCALAR,n_moist
-               IF ( n .NE. P_QV ) THEN
-                  DO j = jts, jte
-                  DO k = kts, kte
-                  DO i = its, ite
-                     IF ( moist_new(i,k,j,n) .LT. config_flags%mp_zero_out_thresh )  moist_new(i,k,j,n) =0.
-                  ENDDO
-                  ENDDO
-                  ENDDO
-               ELSE IF ( n .EQ. P_QV ) THEN
-                  DO j = jts, jte
-                  DO k = kts, kte
-                  DO i = its, ite
-                     moist_new(i,k,j,n) = MAX ( moist_new(i,k,j,n) , 0. )
-                  ENDDO
-                  ENDDO
-                  ENDDO
-               END IF
-            ENDDO
-         END IF
-
-         ! Make sure that the boundary is .GE. 0 if the mp_zero_out option is selected (1 or 2)
-         ! Just do the outer row/col, no interior points.
-
-         IF ( config_flags%mp_zero_out .NE. 0 ) THEN
-            DO n = PARAM_FIRST_SCALAR,n_moist
-               !  bottom row
-               j = jds
-               IF ( ( j .GE. j_start(ij) ) .AND. ( j .LE. MIN( j_end(ij) , jde-1) ) ) THEN
-                  DO k = kts, kte
-                  DO i = i_start(ij) , MIN ( i_end(ij) , ide-1 )
-                     moist_new(i,k,j,n) = MAX ( moist_new(i,k,j,n) , 0. )
-                  ENDDO
-                  ENDDO
-               END IF
-               !  top row
-               j = jde-1
-               IF ( ( j .GE. j_start(ij) ) .AND. ( j .LE. MIN( j_end(ij) , jde-1) ) ) THEN
-                  DO k = kts, kte
-                  DO i = i_start(ij) , MIN ( i_end(ij) , ide-1 )
-                     moist_new(i,k,j,n) = MAX ( moist_new(i,k,j,n) , 0. )
-                  ENDDO
-                  ENDDO
-               END IF
-               !  left column
-               i = ids
-               IF ( ( i .GE. i_start(ij) ) .AND. ( i .LE. MIN( i_end(ij) , ide-1) ) ) THEN
-                  DO j = j_start(ij) , MIN ( j_end(ij) , jde-1 )
-                  DO k = kts, kte
-                     moist_new(i,k,j,n) = MAX ( moist_new(i,k,j,n) , 0. )
-                  ENDDO
-                  ENDDO
-               END IF
-               !  right column
-               i = ide-1
-               IF ( ( i .GE. i_start(ij) ) .AND. ( i .LE. MIN( i_end(ij) , ide-1) ) ) THEN
-                  DO j = j_start(ij) , MIN ( j_end(ij) , jde-1 )
-                  DO k = kts, kte
-                     moist_new(i,k,j,n) = MAX ( moist_new(i,k,j,n) , 0. )
-                  ENDDO
-                  ENDDO
-               END IF
-            ENDDO
-         END IF
-   ELSE
-
-      WRITE( wrf_err_message , * ) 'The microphysics option does not exist: mp_physics = ', config_flags%mp_physics
-      CALL wrf_error_fatal ( wrf_err_message )
-
-   ENDIF
 
    ENDDO
    !$OMP END PARALLEL DO

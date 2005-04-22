@@ -1613,8 +1613,10 @@ SUBROUTINE smag2d_km( config_flags,xkmh,xkmhd,xkmv,xkhh,xkhv,                  &
    do j=j_start,j_end
    do k=kts,ktf
    do i=i_start,i_end
-      def2(i,k,j)=0.25*(defor11(i,k,j)-defor22(i,k,j))**2 + &
-                       defor12(i,k,j)*defor12(i,k,j)
+      def2(i,k,j)=0.25*(defor11(i,k,j)-defor22(i,k,j))**2
+      tmp=0.25*(defor12(i  ,k,j)+defor12(i  ,k,j+1)+ &
+                defor12(i+1,k,j)+defor12(i+1,k,j+1))
+      def2(i,k,j)=def2(i,k,j)+tmp*tmp
    enddo
    enddo
    enddo

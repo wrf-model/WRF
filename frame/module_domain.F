@@ -756,6 +756,8 @@ CONTAINS
 #ifdef MOVE_NESTS
       new_grid%xi = -1.0
       new_grid%xj = -1.0
+      new_grid%vc_i = -1.0
+      new_grid%vc_j = -1.0
 #endif
 
       ! set up the pointers that represent the nest hierarchy

@@ -358,7 +358,10 @@
           DO II=0,NRADS,NPHS
             TIMES=NTSD*DT+II*DT
             CALL ZENITH(TIMES,DAYI,HOUR,IDAT,IHRST,GLON,GLAT,CZEN       &
-     &                 ,MYIS,MYIE,MYJS,MYJE                             &
+     &                 ,MYIS &
+     &                 ,MYIE &
+     &                 ,MYJS &
+     &                 ,MYJE &
      &                 ,IDS,IDE,JDS,JDE,KDS,KDE                         &
      &                 ,IMS,IME,JMS,JME,KMS,KME                         &
      &                 ,ITS,ITE,JTS,JTE,KTS,KTE)

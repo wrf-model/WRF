@@ -142,8 +142,8 @@ CONTAINS
    flag_qs = .false.
    flag_qg = .false.
    IF ( PRESENT ( f_qi ) ) flag_qi = f_qi
-   IF ( PRESENT ( f_qs ) ) flag_qi = f_qs
-   IF ( PRESENT ( f_qg ) ) flag_qi = f_qg
+   IF ( PRESENT ( f_qs ) ) flag_qs = f_qs
+   IF ( PRESENT ( f_qg ) ) flag_qg = f_qg
 !
    dt=dt_in
    rhoe_s=1.29

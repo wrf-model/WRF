@@ -179,7 +179,7 @@ SUBROUTINE microphysics_driver(                                          &
 
 !
 
-   REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN)   :: ht,XLAND
+   REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN)   :: XLAND
 
    REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(OUT)   :: SR
 
@@ -203,6 +203,9 @@ SUBROUTINE microphysics_driver(                                          &
          OPTIONAL   ::                                            &
                                                            RAINNC &
                                                          ,RAINNCV
+
+   REAL , DIMENSION( ims:ime , jms:jme ) , OPTIONAL ,             &
+         INTENT(IN)   ::                                       ht
 !
 
    LOGICAL, OPTIONAL ::             f_qv,f_qc,f_qr,f_qi,f_qs,f_qg

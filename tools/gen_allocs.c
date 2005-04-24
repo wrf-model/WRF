@@ -303,9 +303,9 @@ gen_dealloc2 ( FILE * fp , char * structname , char * corename , node_t * node )
 "  DEALLOCATE(%s%s,STAT=ierr)\n if (ierr.ne.0) then\n CALL wrf_error_fatal ( &\n'frame/module_domain.f: Failed to dallocate %s%s. ')\n endif\n",
 structname, fname, structname, fname ) ;
         fprintf(fp,
-"  NULLIFY(%s%s)",structname, fname ) ;
+"  NULLIFY(%s%s)\n",structname, fname ) ;
         fprintf(fp,
-"ENDIF" ) ;
+"ENDIF\n" ) ;
 
 
       }

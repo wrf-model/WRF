@@ -43,15 +43,18 @@ CONTAINS
 
 !===================================================================
 !
-  SUBROUTINE ncloud5(th, q, qc, qr, qi, qs,                        &
-                     w, den, pii, p, delz, rain, rainncv,          &
-                     delt,g, cpd, cpv, rd, rv, t0c,                &
-                     ep1, ep2, qmin,                               &
-                     XLS, XLV0, XLF0, den0, denr,                  &
-                     cliq,cice,psat,                               &
-                     ids,ide, jds,jde, kds,kde,                    &
-                     ims,ime, jms,jme, kms,kme,                    &
-                     its,ite, jts,jte, kts,kte                     )
+  SUBROUTINE ncloud5(th, q, qc, qr, qi, qs                         &
+                    ,w, den, pii, p, delz                          &
+                    ,delt,g, cpd, cpv, rd, rv, t0c                 &
+                    ,ep1, ep2, qmin                                &
+                    ,XLS, XLV0, XLF0, den0, denr                   &
+                    ,cliq,cice,psat                                &
+                    ,ids,ide, jds,jde, kds,kde                     &
+                    ,ims,ime, jms,jme, kms,kme                     &
+                    ,its,ite, jts,jte, kts,kte                     &
+                ! optional
+                    ,rain, rainncv                                 &
+                                                                   )
 !-------------------------------------------------------------------
   IMPLICIT NONE
 !-------------------------------------------------------------------
@@ -78,10 +81,6 @@ CONTAINS
                                                                p, &
                                                             delz
 
-  REAL, DIMENSION( ims:ime , jms:jme ),                           &
-        INTENT(INOUT) ::                                    rain, &
-                                                         rainncv
-
 
   REAL, INTENT(IN   ) ::                                    delt, &
                                                                g, &
@@ -101,6 +100,14 @@ CONTAINS
                                                             cice, &
                                                             psat, &
                                                             denr
+!
+! Optional 
+!
+  REAL, DIMENSION( ims:ime , jms:jme ),                           &
+        OPTIONAL ,                                                &
+        INTENT(INOUT) ::                                    rain, &
+                                                         rainncv
+
 ! LOCAL VAR
 
   REAL, DIMENSION( its:ite , kts:kte ) ::   t
@@ -120,17 +127,20 @@ CONTAINS
          ENDDO
          ENDDO
 
-         CALL ncloud52D(t, q(ims,kms,j), qci, qrs,                 &
-                     w(ims,kms,j), den(ims,kms,j),                 &
-                     p(ims,kms,j), delz(ims,kms,j), rain(ims,j),   &
-                     rainncv(ims,j),delt,g, cpd, cpv, rd, rv, t0c, &
-                     ep1, ep2, qmin,                               &
-                     XLS, XLV0, XLF0, den0, denr,                  &
-                     cliq,cice,psat,                               &
-                     j,                                            &
-                     ids,ide, jds,jde, kds,kde,                    &
-                     ims,ime, jms,jme, kms,kme,                    &
-                     its,ite, jts,jte, kts,kte                     )
+         CALL ncloud52D(t, q(ims,kms,j), qci, qrs                  &
+                    ,w(ims,kms,j), den(ims,kms,j)                  &
+                    ,p(ims,kms,j), delz(ims,kms,j)                 &
+                    ,delt,g, cpd, cpv, rd, rv, t0c                 &
+                    ,ep1, ep2, qmin                                &
+                    ,XLS, XLV0, XLF0, den0, denr                   &
+                    ,cliq,cice,psat                                &
+                    ,j                                             &
+                    ,ids,ide, jds,jde, kds,kde                     &
+                    ,ims,ime, jms,jme, kms,kme                     &
+                    ,its,ite, jts,jte, kts,kte                     &
+                 ! optional
+                    ,rain(ims,j),rainncv(ims,j)                    &
+                                                                   )
 
          DO K=kts,kte
          DO I=its,ite
@@ -148,15 +158,18 @@ CONTAINS
 
 !===================================================================
 !
-  SUBROUTINE ncloud52D(t, q, qci, qrs,w, den, p, delz, rain,       &
-                     rainncv,delt,g, cpd, cpv, rd, rv, t0c,        &
-                     ep1, ep2, qmin,                               &
-                     XLS, XLV0, XLF0, den0, denr,                  &
-                     cliq,cice,psat,                               &
-                     lat,                                          &
-                     ids,ide, jds,jde, kds,kde,                    &
-                     ims,ime, jms,jme, kms,kme,                    &
-                     its,ite, jts,jte, kts,kte                     )
+  SUBROUTINE ncloud52D(t, q, qci, qrs,w, den, p, delz              &
+                    ,delt,g, cpd, cpv, rd, rv, t0c                 &
+                    ,ep1, ep2, qmin                                &
+                    ,XLS, XLV0, XLF0, den0, denr                   &
+                    ,cliq,cice,psat                                &
+                    ,lat                                           &
+                    ,ids,ide, jds,jde, kds,kde                     &
+                    ,ims,ime, jms,jme, kms,kme                     &
+                    ,its,ite, jts,jte, kts,kte                     &
+                 ! optional
+                    ,rain,rainncv                                  &
+                                                                   )
 !-------------------------------------------------------------------
   IMPLICIT NONE
 !-------------------------------------------------------------------
@@ -182,10 +195,6 @@ CONTAINS
                                                              den, &
                                                             delz
 
-  REAL, DIMENSION( ims:ime ),                                     &
-        INTENT(INOUT) ::                                    rain, &
-                                                         rainncv
-
   REAL, INTENT(IN   ) ::                                    delt, &
                                                                g, &
                                                              cpd, &
@@ -204,6 +213,14 @@ CONTAINS
                                                             cice, &
                                                             psat, &
                                                             denr
+!
+! Optional
+!
+  REAL, DIMENSION( ims:ime ),                                     &
+        OPTIONAL,                                                 &
+        INTENT(INOUT) ::                                    rain, &
+                                                         rainncv
+
 ! LOCAL VAR
 
   INTEGER, PARAMETER :: iun      = 84
@@ -824,13 +841,13 @@ CONTAINS
       do i = its, ite
         fallsum = fall(i,1,1)+fall(i,1,2)
         if(fallsum.gt.0.) then
-          rainncv(i) = fallsum*delz(i,1)/denr*dtcld*1000.
-          rain(i) = fallsum*delz(i,1)/denr*dtcld*1000.                             &
+          IF (PRESENT(rainncv)) rainncv(i) = fallsum*delz(i,1)/denr*dtcld*1000.
+          IF (PRESENT(rain   )) rain(i) = fallsum*delz(i,1)/denr*dtcld*1000.        &
                   + rain(i)
         endif
       enddo
 !
-!      if(lat.eq.latd) write(iun,601) latd,lond,loop,rain(lond)
+!      if(lat.eq.latd.AND.PRESENT(rain)) write(iun,601) latd,lond,loop,rain(lond)
 ! 601  format(1x,' ncloud5 lat lon loop : rain(mm) ',3i6,f20.2)
 !
       enddo                  ! big loops

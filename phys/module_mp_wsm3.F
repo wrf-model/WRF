@@ -50,15 +50,18 @@ MODULE module_mp_wsm3
 CONTAINS
 !===================================================================
 !
-  SUBROUTINE wsm3(th, q, qci, qrs,                                 &
-                     w, den, pii, p, delz, rain, rainncv,          &
-                     delt,g, cpd, cpv, rd, rv, t0c,                &
-                     ep1, ep2, qmin,                               &
-                     XLS, XLV0, XLF0, den0, denr,                  &
-                     cliq,cice,psat,                               &
-                     ids,ide, jds,jde, kds,kde,                    &
-                     ims,ime, jms,jme, kms,kme,                    &
-                     its,ite, jts,jte, kts,kte                     )
+  SUBROUTINE wsm3(th, q, qci, qrs                                  &
+                   , w, den, pii, p, delz                          &
+                   , delt,g, cpd, cpv, rd, rv, t0c                 &
+                   , ep1, ep2, qmin                                &
+                   , XLS, XLV0, XLF0, den0, denr                   &
+                   , cliq,cice,psat                                &
+                   , ids,ide, jds,jde, kds,kde                     &
+                   , ims,ime, jms,jme, kms,kme                     &
+                   , its,ite, jts,jte, kts,kte                     &
+                ! optional
+                   , rain, rainncv                                 &
+                                                                   )
 !-------------------------------------------------------------------
   IMPLICIT NONE
 !-------------------------------------------------------------------
@@ -95,9 +98,8 @@ CONTAINS
                                                              pii, &
                                                                p, &
                                                             delz
-  REAL, DIMENSION( ims:ime , jms:jme ),                           &
-        INTENT(INOUT) ::                                    rain, &
-                                                         rainncv
+
+
   REAL, INTENT(IN   ) ::                                    delt, &
                                                                g, &
                                                               rd, &
@@ -116,6 +118,14 @@ CONTAINS
                                                             cice, &
                                                             psat, &
                                                             denr
+!
+! Optional
+!
+  REAL, DIMENSION( ims:ime , jms:jme ),                           &
+        OPTIONAL,                                                 &
+        INTENT(INOUT) ::                                    rain, &
+                                                         rainncv
+
 ! LOCAL VAR
   REAL, DIMENSION( its:ite , kts:kte ) ::   t
   INTEGER ::               i,j,k
@@ -126,17 +136,19 @@ CONTAINS
             t(i,k)=th(i,k,j)*pii(i,k,j)
          ENDDO
          ENDDO
-         CALL wsm32D(t, q(ims,kms,j), qci(ims,kms,j),              &
-                     qrs(ims,kms,j),w(ims,kms,j), den(ims,kms,j),  &
-                     p(ims,kms,j), delz(ims,kms,j), rain(ims,j),   &
-                     rainncv(ims,j),delt,g, cpd, cpv, rd, rv, t0c, &
-                     ep1, ep2, qmin,                               &
-                     XLS, XLV0, XLF0, den0, denr,                  &
-                     cliq,cice,psat,                               &
-                     j,                                            &
-                     ids,ide, jds,jde, kds,kde,                    &
-                     ims,ime, jms,jme, kms,kme,                    &
-                     its,ite, jts,jte, kts,kte                     )
+         CALL wsm32D(t, q(ims,kms,j), qci(ims,kms,j)               &
+                    ,qrs(ims,kms,j),w(ims,kms,j), den(ims,kms,j)   &
+                    ,p(ims,kms,j), delz(ims,kms,j)                 &
+                    ,delt,g, cpd, cpv, rd, rv, t0c                 &
+                    ,ep1, ep2, qmin                                &
+                    ,XLS, XLV0, XLF0, den0, denr                   &
+                    ,cliq,cice,psat                                &
+                    ,j                                             &
+                    ,ids,ide, jds,jde, kds,kde                     &
+                    ,ims,ime, jms,jme, kms,kme                     &
+                    ,its,ite, jts,jte, kts,kte                     &
+                    ,rain(ims,j), rainncv(ims,j)                   &
+                                                                   )
          DO K=kts,kte
          DO I=its,ite
             th(i,k,j)=t(i,k)/pii(i,k,j)
@@ -146,15 +158,18 @@ CONTAINS
   END SUBROUTINE wsm3
 !===================================================================
 !
-  SUBROUTINE wsm32D(t, q, qci, qrs,w, den, p, delz, rain,          &
-                     rainncv,delt,g, cpd, cpv, rd, rv, t0c,        &
-                     ep1, ep2, qmin,                               &
-                     XLS, XLV0, XLF0, den0, denr,                  &
-                     cliq,cice,psat,                               &
-                     lat,                                          &
-                     ids,ide, jds,jde, kds,kde,                    &
-                     ims,ime, jms,jme, kms,kme,                    &
-                     its,ite, jts,jte, kts,kte                     )
+  SUBROUTINE wsm32D(t, q, qci, qrs,w, den, p, delz                &
+                   ,delt,g, cpd, cpv, rd, rv, t0c                 &
+                   ,ep1, ep2, qmin                                &
+                   ,XLS, XLV0, XLF0, den0, denr                   &
+                   ,cliq,cice,psat                                &
+                   ,lat                                           &
+                   ,ids,ide, jds,jde, kds,kde                     &
+                   ,ims,ime, jms,jme, kms,kme                     &
+                   ,its,ite, jts,jte, kts,kte                     &
+                ! Optional
+                   ,rain, rainncv                                 &
+                                                                  )
 !-------------------------------------------------------------------
   IMPLICIT NONE
 !-------------------------------------------------------------------
@@ -175,9 +190,6 @@ CONTAINS
                                                              den, &
                                                                p, &
                                                             delz
-  REAL, DIMENSION( ims:ime ),                                     &
-        INTENT(INOUT) ::                                    rain, &
-                                                         rainncv
   REAL, INTENT(IN   ) ::                                    delt, &
                                                                g, &
                                                              cpd, &
@@ -196,6 +208,13 @@ CONTAINS
                                                             cice, &
                                                             psat, &
                                                             denr
+!
+! Optional
+!
+  REAL, DIMENSION( ims:ime ),                                     &
+        OPTIONAL,                                                 &
+        INTENT(INOUT) ::                                    rain, &
+                                                         rainncv
 ! LOCAL VAR
   REAL, DIMENSION( its:ite , kts:kte ) ::                         &
         rh, qs, denfac, rslope, rslope2, rslope3, rslopeb,        &
@@ -597,8 +616,8 @@ CONTAINS
 !
       do i = its, ite
         if(fall(i,1).gt.0.) then
-          rainncv(i) = fall(i,1)*delz(i,1)/denr*dtcld*1000.
-          rain(i) = fall(i,1)*delz(i,1)/denr*dtcld*1000.                &
+          IF (PRESENT(rainncv))rainncv(i) = fall(i,1)*delz(i,1)/denr*dtcld*1000.
+          IF (PRESENT(rain   ))rain(i) = fall(i,1)*delz(i,1)/denr*dtcld*1000.                &
                   + rain(i)
         endif
       enddo

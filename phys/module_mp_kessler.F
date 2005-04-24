@@ -5,13 +5,16 @@ MODULE module_mp_kessler
 
 CONTAINS
 !----------------------------------------------------------------
-   SUBROUTINE kessler( t, qv, qc, qcold, qr, qrold, rho, pii,   &
-                       RAINNC, RAINNCV, dt_in, z, xlv, cp,      &
-                       EP2,SVP1,SVP2,SVP3,SVPT0,rhowater,       &
-                       dz8w,                                    &
-                       ids,ide, jds,jde, kds,kde,               & ! domain dims
-                       ims,ime, jms,jme, kms,kme,               & ! memory dims
-                       its,ite, jts,jte, kts,kte                ) ! tile   dims
+   SUBROUTINE kessler( t, qv, qc, qcold, qr, qrold, rho, pii    &
+                      ,dt_in, z, xlv, cp                        &
+                      ,EP2,SVP1,SVP2,SVP3,SVPT0,rhowater        &
+                      ,dz8w                                     &
+                      ,ids,ide, jds,jde, kds,kde                & ! domain dims
+                      ,ims,ime, jms,jme, kms,kme                & ! memory dims
+                      ,its,ite, jts,jte, kts,kte                & ! tile   dims
+                    ! Optional 
+                      ,RAINNC, RAINNCV                          &
+                                                                )
 !----------------------------------------------------------------
    IMPLICIT NONE
 !----------------------------------------------------------------
@@ -50,12 +53,17 @@ CONTAINS
    REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),              &
          INTENT(IN   ) ::                                    z
 
+   REAL, INTENT(IN   ) :: dt_in
+
+!
+! Optional
+!
    REAL, DIMENSION( ims:ime , jms:jme ),                        &
+         OPTIONAL,                                              &
          INTENT(INOUT) ::                               RAINNC, &
                                                        RAINNCV
 
 
-   REAL, INTENT(IN   ) :: dt_in
 
    ! local variables
 
@@ -142,8 +150,8 @@ CONTAINS
 
       k = 1
       ppt=rhok(k)*prodk(k)*vt(k)*dtfall/rhowater
-      RAINNCV(i,j)=ppt*1000.
-      RAINNC(i,j)=RAINNC(i,j)+ppt*1000.  ! unit = mm
+      IF ( PRESENT( RAINNCV ) ) RAINNCV(i,j)=ppt*1000.
+      IF ( PRESENT( RAINNC  ) ) RAINNC(i,j)=RAINNC(i,j)+ppt*1000.  ! unit = mm
  
 !------------------------------------------------------------------------------
 ! Time split loop, Fallout done with flux upstream

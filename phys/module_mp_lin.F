@@ -43,11 +43,11 @@ CONTAINS
                       ,grav, cp, Rair, rvapor                      &
                       ,XLS, XLV, XLF, rhowater, rhosnow            &
                       ,EP2,SVP1,SVP2,SVP3,SVPT0                    &
-                      ,RAINNC, RAINNCV                             &
                       ,ids,ide, jds,jde, kds,kde                   &
                       ,ims,ime, jms,jme, kms,kme                   &
                       ,its,ite, jts,jte, kts,kte                   &
                   ! Optional 
+                      , RAINNC, RAINNCV                            &
                       , F_QI,F_QS,F_QG                             &
                       , qsold, qgold                               &
                       , qi, qs, qg                                 &
@@ -82,9 +82,6 @@ CONTAINS
   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),                 &
         INTENT(IN   ) ::                                       z
 
-  REAL, DIMENSION( ims:ime , jms:jme ),                           &
-        INTENT(INOUT) ::                                  RAINNC, &
-                                                         RAINNCV
 
 
   REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN) ::       ht
@@ -112,6 +109,11 @@ CONTAINS
                                                               qi, &
                                                               qs, &
                                                               qg
+
+  REAL, DIMENSION( ims:ime , jms:jme ),                           &
+        OPTIONAL,                                                 &
+        INTENT(INOUT) ::                                  RAINNC, &
+                                                         RAINNCV
 
   LOGICAL, INTENT(IN), OPTIONAL :: F_QI,F_QS,F_QG
 
@@ -236,8 +238,8 @@ CONTAINS
    graupel(i,j)=pptgraul
    ice(i,j)=pptice
 !
-   RAINNCV(i,j)= pptrain + pptsnow + pptgraul + pptice
-   RAINNC(i,j)=RAINNC(i,j) + pptrain + pptsnow + pptgraul + pptice
+   IF ( PRESENT( RAINNCV ) ) RAINNCV(i,j)= pptrain + pptsnow + pptgraul + pptice
+   IF ( PRESENT( RAINNC  ) ) RAINNC(i,j)=RAINNC(i,j) + pptrain + pptsnow + pptgraul + pptice
 
 !
 !- update data from 1-D back to 3-D

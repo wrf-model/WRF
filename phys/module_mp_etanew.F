@@ -36,13 +36,15 @@ MODULE module_mp_etanew
 
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
-      SUBROUTINE ETAMP_NEW (itimestep,DT,DX,DY,RAINNC,RAINNCV,          &
-     &                      dz8w,rho_phy,p_phy,pi_phy,th_phy,qv,qc,     &
-     &                      LOWLYR,SR,                                  &
-     &                      F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,           &
-     &                      ids,ide, jds,jde, kds,kde,		        &
-     &                      ims,ime, jms,jme, kms,kme,		        &
-     &                      its,ite, jts,jte, kts,kte		     )
+      SUBROUTINE ETAMP_NEW (itimestep,DT,DX,DY                          &
+     &                     ,dz8w,rho_phy,p_phy,pi_phy,th_phy,qv,qc      &
+     &                     ,LOWLYR,SR                                   &
+     &                     ,F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY            &
+     &                     ,ids,ide, jds,jde, kds,kde 		        &
+     &                     ,ims,ime, jms,jme, kms,kme 		        &
+     &                     ,its,ite, jts,jte, kts,kte                   &
+     &                     ,RAINNC,RAINNCV                              &
+     &                                                                  )
 !-----------------------------------------------------------------------
       IMPLICIT NONE
 !-----------------------------------------------------------------------
@@ -58,11 +60,12 @@ MODULE module_mp_etanew
      &                      dz8w,p_phy,pi_phy,rho_phy
       REAL, INTENT(INOUT),  DIMENSION(ims:ime, kms:kme, jms:jme)::      &
      &                      th_phy,qv,qc
-      REAL, INTENT(INOUT),  DIMENSION(ims:ime,jms:jme):: RAINNC,RAINNCV
       REAL, INTENT(INOUT),  DIMENSION(ims:ime, kms:kme, jms:jme ) ::    &
      &                      F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY
       REAL, INTENT(OUT),    DIMENSION(ims:ime,jms:jme):: SR
       INTEGER, DIMENSION( ims:ime, jms:jme ),INTENT(INOUT) :: LOWLYR
+      REAL, INTENT(INOUT),  DIMENSION(ims:ime,jms:jme), OPTIONAL::      &
+                            RAINNC,RAINNCV
 
 
 !-----------------------------------------------------------------------
@@ -169,12 +172,20 @@ MODULE module_mp_etanew
 ! 
 ! update rain (from m to mm)
 
-     DO j = jts,jte
-     DO i = its,ite
-        RAINNC (i,j)=APREC(i,j)*1000. + RAINNC(i,j)
-        RAINNCV(i,j)=APREC(i,j)*1000.
-      ENDDO
-      ENDDO
+     IF ( PRESENT ( RAINNC ) ) THEN
+       DO j = jts,jte
+       DO i = its,ite
+          RAINNC (i,j)=APREC(i,j)*1000. + RAINNC(i,j)
+       ENDDO
+       ENDDO
+     ENDIF
+     IF ( PRESENT ( RAINNCV ) ) THEN
+       DO j = jts,jte
+       DO i = its,ite
+          RAINNCV(i,j)=APREC(i,j)*1000.
+       ENDDO
+       ENDDO
+     ENDIF
 
 !-----------------------------------------------------------------------
 

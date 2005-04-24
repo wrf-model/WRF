@@ -25,6 +25,7 @@
       USE MODULE_CUMULUS_DRIVER
       USE MODULE_MP_ETANEW
       USE MODULE_MICROPHYSICS_DRIVER
+      USE MODULE_MICROPHYSICS_ZERO_OUT
 !-----------------------------------------------------------------------
 !
       CONTAINS
@@ -1992,8 +1993,8 @@
       CALL SET_TILES(GRID,IDS+1,IDE-1,JDS+2,JDE-2,ITS,ITE,JTS,JTE)
 !
       CALL MICROPHYSICS_DRIVER(                                         &
-     &                  TH_PHY=TH_PHY                                   &
-     &                 ,RHO=RR,PI_PHY=PI_PHY,P_PHY=P_PHY                &
+     &                  TH=TH_PHY                                       &
+     &                 ,RHO=RR,PI=PI_PHY,P=P_PHY                        &
      &                 ,RAINNCV=RAINNCV                                 &
      &                 ,dz8w=DZ,p8w=P8W,DT=DTPHS,DX=DX,DY=DY            &
      &                 ,MP_PHYSICS=CONFIG_FLAGS%MP_PHYSICS              &
@@ -2021,11 +2022,11 @@
    !$omp private ( ij )
       DO IJ = 1, GRID%NUM_TILES
         CALL MICROPHYSICS_ZERO_OUT (                                    &
-                     MOIST_2 , N_MOIST , CONFIG_FLAGS                   &
+                     WATER , N_MOIST , CONFIG_FLAGS                     &
                     ,IDS, IDE, JDS, JDE, KDS, KDE                       &
-                    .IMS, IME, JMS, JME, KMS, KME                       &
-                    ,I_START(IJ), I_END(IJ)                             &
-                    ,J_START(IJ), J_END(IJ)                             &
+                    ,IMS, IME, JMS, JME, KMS, KME                       &
+                    ,GRID%I_START(IJ), GRID%I_END(IJ)                   &
+                    ,GRID%J_START(IJ), GRID%J_END(IJ)                   &
                     ,KTS    , KTE                                       )
       ENDDO
 

@@ -80,7 +80,7 @@ gen_alloc2 ( FILE * fp , char * structname , char * corename , node_t * node )
 	 fprintf(fp,"IF(.NOT.inter_domain)THEN\n",tag) ;
        }
        if ( p->ntl > 1 ) {
-	 fprintf(fp,"IF(IAND(%d,tl))THEN\n",tag) ;
+	 fprintf(fp,"IF(IAND(%d,tl).NE.0)THEN\n",tag) ;
        }
        fprintf(fp, "ALLOCATE(%s%s%s,STAT=ierr)\n if (ierr.ne.0) then\n CALL wrf_error_fatal ( &\n'frame/module_domain.f: Failed to allocate %s%s%s. ')\n endif\n",
                 structname, fname,

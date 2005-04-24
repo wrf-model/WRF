@@ -94,6 +94,15 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
 #if (EM_CORE == 1 && defined( DM_PARALLEL ))
    CALL model_to_grid_config_rec ( nested_grid%id , model_config_rec , config_flags )
    IF ( config_flags%dyn_opt == DYN_EM ) THEN
+
+    grid => nested_grid%intermediate_grid
+    CALL alloc_space_field ( grid, grid%id , 1 , 2 ,  .TRUE. ,    &
+                             grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &
+                             grid%sm31,  grid%em31,  grid%sm32,  grid%em32,  grid%sm33,  grid%em33, &
+                             grid%sm31x, grid%em31x, grid%sm32x, grid%em32x, grid%sm33x, grid%em33x, &   ! x-xpose
+                             grid%sm31y, grid%em31y, grid%sm32y, grid%em32y, grid%sm33y, grid%em33y  &   ! y-xpose
+      )
+
      ! couple parent domain
      grid => parent_grid
      ! swich config_flags to point to parent rconfig info
@@ -163,6 +172,9 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
         nested_grid%first_force = .FALSE.
      ENDIF
      nested_grid%dtbc = 0.
+!
+     grid => nested_grid%intermediate_grid
+     CALL dealloc_space_field ( grid )
    ENDIF
 #endif
 ! ------------------------------------------------------

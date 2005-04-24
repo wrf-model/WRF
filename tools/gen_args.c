@@ -73,8 +73,6 @@ gen_args1 ( FILE * fp , char * outstr , char * structname , char * corename ,
   char indices[NAMELEN] ;
   int lenarg ; 
 
-fprintf(stderr,"in gen_args1: %s\n", node->name) ;
-
   if ( node == NULL ) return(1) ;
   for ( p = node->fields ; p != NULL ; p = p->next )
   {

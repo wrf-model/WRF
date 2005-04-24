@@ -223,14 +223,16 @@ CONTAINS
 
     END SELECT data_ordering
 
+#if 0
     CALL dealloc_space_field ( grid )
 
-    CALL alloc_space_field ( grid, grid%id , 1 ,          &
+    CALL alloc_space_field ( grid, grid%id , 1 , 2 , .FALSE. ,     &
                              grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &
                              grid%sm31,  grid%em31,  grid%sm32,  grid%em32,  grid%sm33,  grid%em33, &
                              grid%sm31x, grid%em31x, grid%sm32x, grid%em32x, grid%sm33x, grid%em33x, &   ! x-xpose
                              grid%sm31y, grid%em31y, grid%sm32y, grid%em32y, grid%sm33y, grid%em33y  &   ! y-xpose
       )
+#endif
 
     RETURN
 
@@ -802,7 +804,7 @@ CONTAINS
       new_grid%num_tiles_spec   = 0
       new_grid%nframes   = 0         ! initialize the number of frames per file (array assignment)
 
-      CALL alloc_space_field ( new_grid, domain_id , 3 ,           &
+      CALL alloc_space_field ( new_grid, domain_id , 3 , 3 , .FALSE. ,      &
                                sd1, ed1, sd2, ed2, sd3, ed3,       &
                                sm1,  em1,  sm2,  em2,  sm3,  em3,  &
                                sm1x, em1x, sm2x, em2x, sm3x, em3x, &   ! x-xpose
@@ -963,7 +965,7 @@ CONTAINS
 !  below this top-level of data allocation and management (in the solve routine
 !  and below).
 
-   SUBROUTINE alloc_space_field ( grid,   id, setinitval ,            &
+   SUBROUTINE alloc_space_field ( grid,   id, setinitval ,  tl , inter_domain ,   &
                                   sd31, ed31, sd32, ed32, sd33, ed33, &
                                   sm31 , em31 , sm32 , em32 , sm33 , em33 , &
                                   sm31x, em31x, sm32x, em32x, sm33x, em33x, &
@@ -983,6 +985,16 @@ CONTAINS
       INTEGER , INTENT(IN)            :: sm31, em31, sm32, em32, sm33, em33
       INTEGER , INTENT(IN)            :: sm31x, em31x, sm32x, em32x, sm33x, em33x
       INTEGER , INTENT(IN)            :: sm31y, em31y, sm32y, em32y, sm33y, em33y
+
+      ! this argument is a bitmask. First bit is time level 1, second is time level 2, and so on.
+      ! e.g. to set both 1st and second time level, use 3
+      !      to set only 1st                        use 1
+      !      to set only 2st                        use 2
+      INTEGER , INTENT(IN)            :: tl
+  
+      ! true if the allocation is for an intermediate domain (for nesting); only certain fields allocated
+      ! false otherwise (all allocated, modulo tl above)
+      LOGICAL , INTENT(IN)            :: inter_domain
 
       !  Local data.
       INTEGER dyn_opt, idum1, idum2, spec_bdy_width

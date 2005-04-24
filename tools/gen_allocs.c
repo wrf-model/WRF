@@ -46,8 +46,6 @@ gen_alloc2 ( FILE * fp , char * structname , char * corename , node_t * node )
   char fname[NAMELEN] ;
   char x[NAMELEN] ;
 
-fprintf(stderr,"xxx\n") ;
-
   if ( node == NULL ) return(1) ;
 
   for ( p = node->fields ; p != NULL ; p = p->next )
@@ -76,6 +74,14 @@ fprintf(stderr,"xxx\n") ;
 
 /* check for errors in memory allocation */
 
+       if ( ! ( p->node_kind & FOURD ) && 
+            ! ( p->io_mask & INTERP_DOWN || p->io_mask & FORCE_DOWN || p->io_mask & INTERP_UP || p->io_mask & SMOOTH_UP ) )
+       {
+	 fprintf(fp,"IF(.NOT.inter_domain)THEN\n",tag) ;
+       }
+       if ( p->ntl > 1 ) {
+	 fprintf(fp,"IF(IAND(%d,tl))THEN\n",tag) ;
+       }
        fprintf(fp, "ALLOCATE(%s%s%s,STAT=ierr)\n if (ierr.ne.0) then\n CALL wrf_error_fatal ( &\n'frame/module_domain.f: Failed to allocate %s%s%s. ')\n endif\n",
                 structname, fname,
                 dimension_with_ranges( "", "(", t2, p, post, "model_config_rec%"), 
@@ -91,6 +97,18 @@ fprintf(stderr,"xxx\n") ;
          fprintf(fp, ".FALSE.\n");
        } else if ( !strcmp( p->type->name , "integer" ) ) {
          fprintf(fp, "0\n");
+       }
+       if ( p->ntl > 1 ) {
+	 fprintf(fp,"ELSE\n") ;
+	 fprintf(fp,"NULLIFY( %s%s )\n", structname, fname ) ;
+	 fprintf(fp,"ENDIF\n") ;
+       }
+       if ( ! ( p->node_kind & FOURD ) && 
+            ! ( p->io_mask & INTERP_DOWN || p->io_mask & FORCE_DOWN || p->io_mask & INTERP_UP || p->io_mask & SMOOTH_UP ) )
+       {
+	 fprintf(fp,"ELSE\n") ;
+	 fprintf(fp,"NULLIFY( %s%s )\n", structname, fname ) ;
+	 fprintf(fp,"ENDIF\n") ;
        }
 
       }
@@ -279,9 +297,16 @@ gen_dealloc2 ( FILE * fp , char * structname , char * corename , node_t * node )
         else
           strcpy(fname,field_name(t4,p,(p->ntl>1)?tag:0)) ;
 
+        fprintf(fp,
+"IF ( ASSOCIATED( %s%s ) ) THEN \n", structname, fname ) ;
         fprintf(fp, 
-"DEALLOCATE(%s%s,STAT=ierr)\n if (ierr.ne.0) then\n CALL wrf_error_fatal ( &\n'frame/module_domain.f: Failed to dallocate %s%s. ')\n endif\n",
+"  DEALLOCATE(%s%s,STAT=ierr)\n if (ierr.ne.0) then\n CALL wrf_error_fatal ( &\n'frame/module_domain.f: Failed to dallocate %s%s. ')\n endif\n",
 structname, fname, structname, fname ) ;
+        fprintf(fp,
+"  NULLIFY(%s%s)",structname, fname ) ;
+        fprintf(fp,
+"ENDIF" ) ;
+
 
       }
     }

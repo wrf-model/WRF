@@ -2601,12 +2601,28 @@ messages(120)=  s5e5
          c_sm1x = 1 ; c_em1x = 1 ; c_sm2x = 1 ; c_em2x = 1 ; c_sm3x = 1 ; c_em3x = 1
          c_sm1y = 1 ; c_em1y = 1 ; c_sm2y = 1 ; c_em2y = 1 ; c_sm3y = 1 ; c_em3y = 1
 
+         intermediate_grid%sm31x                           = c_sm1x
+         intermediate_grid%em31x                           = c_em1x
+         intermediate_grid%sm32x                           = c_sm2x
+         intermediate_grid%em32x                           = c_em2x
+         intermediate_grid%sm33x                           = c_sm3x
+         intermediate_grid%em33x                           = c_em3x
+         intermediate_grid%sm31y                           = c_sm1y
+         intermediate_grid%em31y                           = c_em1y
+         intermediate_grid%sm32y                           = c_sm2y
+         intermediate_grid%em32y                           = c_em2y
+         intermediate_grid%sm33y                           = c_sm3y
+         intermediate_grid%em33y                           = c_em3y
+
+
+#if 0
          ! allocate space for the intermediate domain
-         CALL alloc_space_field ( intermediate_grid, id , 3 ,  &   ! use same id as nest
+         CALL alloc_space_field ( intermediate_grid, id , 3 , .TRUE. , &   ! use same id as nest
                                c_sd1, c_ed1, c_sd2, c_ed2, c_sd3, c_ed3,       &
                                c_sm1,  c_em1,  c_sm2,  c_em2,  c_sm3,  c_em3,  &
                                c_sm1x, c_em1x, c_sm2x, c_em2x, c_sm3x, c_em3x, &   ! x-xpose
                                c_sm1y, c_em1y, c_sm2y, c_em2y, c_sm3y, c_em3y  )   ! y-xpose
+#endif
 
          intermediate_grid%sd31                            =   c_sd1
          intermediate_grid%ed31                            =   c_ed1

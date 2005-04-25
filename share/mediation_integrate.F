@@ -654,7 +654,7 @@ write(0,*)'COMPUTE_VORTEX_CENTER_ALARM is ringing  '
                                      ims, ime   , jms , jme   , 1 , 1 , &
                                      ips, ipe   , jps , jpe   , 1 , 1   )
 
-     IF ( wrf_dm_on_monitor() ) THEN
+     monitor_only : IF ( wrf_dm_on_monitor() ) THEN
 
 
 
@@ -761,12 +761,24 @@ write(0,*)'   js, jds-1,  je,  jde-1 ', js, jds-1, je, jde-1
        grid%vc_i = grid%xi + .5
        grid%vc_j = grid%xj + .5
 
-     IF ( wrf_dm_on_monitor() ) THEN
-       DEALLOCATE ( height )
-     ENDIF
-     DEALLOCATE ( height_l )
+write(0,*)'computed grid%vc_i, grid%vc_j ',grid%vc_i, grid%vc_j
 
-     ENDIF
+i = grid%vc_i ; j = grid%vc_j ; height( i,j ) = height(i,j) * 1.2   !mark the center
+CALL wrf_timetoa ( grid%current_time, message2 )
+WRITE ( message , FMT = '(A," on domain ",I3)' ) TRIM(message2), grid%id
+write(70,*)ide-ids,jde-jds,TRIM(message)
+do j = jds,jde-1
+do i = ids,ide-1
+write(70,*)height(i,j)
+enddo
+enddo
+call flush_(70)
+
+       DEALLOCATE ( height )
+
+     ENDIF monitor_only
+
+     DEALLOCATE ( height_l )
 
      CALL wrf_dm_bcast_real( grid%vc_i , 1 )
      CALL wrf_dm_bcast_real( grid%vc_j , 1 )

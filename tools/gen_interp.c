@@ -291,7 +291,7 @@ fprintf(fp,"                  ngrid%%parent_grid_ratio, ngrid%%parent_grid_ratio
                if ( strcmp( nd->use , "_4d_bdy_array_" ) ) {
                  fprintf(fp,",%s,ngrid%%%s%s  &\n", nd->name, core2, nd->name ) ;
                } else {
-                 fprintf(fp,",%s(1,1,1,P_%s,1),ngrid%%%s%s(1,1,1,P_%s,1)  &\n", nd->name, p->name, core2, nd->name, p->name ) ;
+                 fprintf(fp,",%s(1,1,1,1,P_%s),ngrid%%%s%s(1,1,1,1,P_%s)  &\n", nd->name, p->name, core2, nd->name, p->name ) ;
                }
              }
              else

@@ -589,25 +589,42 @@ BENCH_END(surf_driver_tim)
 
       CALL wrf_debug ( 200 , ' call pbl_driver' )
 BENCH_START(pbl_driver_tim)
-      CALL pbl_driver(itimestep,dt,u_frame,v_frame                    &
-     &           ,RUBLTEN,RVBLTEN,RTHBLTEN                            &
-     &           ,RQVBLTEN,RQCBLTEN,RQIBLTEN                          &
-     &           ,TSK,XLAND,ZNT,HT                                    &
-     &           ,UST,HOL,MOL,PBLH                                    &
-     &           ,HFX,QFX,REGIME,GRDFLX                               &
-     &           ,u_phy,v_phy,th_phy,rho,moist_2                      &
-     &           ,p_phy,pi_phy,p8w,t_phy,dz8w,z                       &
-     &           ,TKE_MYJ,EL_MYJ,EXCH_H,AKHS,AKMS                     &
-     &           ,THZ0,QZ0,UZ0,VZ0,QSFC,LOWLYR                        &
-     &           ,PSIM, PSIH, GZ1OZ0, WSPD, BR, CHKLOWQ               &
-     &           ,config_flags,DX,num_3d_m                            &
-     &           ,STEPBL,warm_rain                                    &
-     &           ,KPBL,CT,LH,SNOW,XICE                                &
-     &           ,ids,ide, jds,jde, kds,kde                           &
-     &           ,ims,ime, jms,jme, kms,kme                           &
-     &           ,grid%i_start, min(grid%i_end,ide-1)                 &
-     &           ,grid%j_start, min(grid%j_end,jde-1)                 &
-     &           ,k_start    , min(k_end,kde-1) , grid%num_tiles  )
+      CALL pbl_driver(                                                &
+     &            ITIMESTEP=itimestep,DT=dt                           &
+     &           ,U_FRAME=u_frame,V_FRAME=v_frame                     &
+     &           ,RUBLTEN=rublten,RVBLTEN=rvblten,RTHBLTEN=rthblten   &
+     &           ,RQVBLTEN=rqvblten,RQCBLTEN=rqcblten                 &
+     &           ,RQIBLTEN=rqiblten                                   &
+     &           ,TSK=tsk,XLAND=xland,ZNT=znt,HT=ht,UST=ust           &
+     &           ,PBLH=pblh,HFX=hfx,QFX=qfx,GRDFLX=grdflx             &
+     &           ,U_PHY=u_phy,V_PHY=v_phy,TH_PHY=th_phy,RHO=rho       &
+     &           ,P_PHY=p_phy,PI_PHY=pi_phy,P8W=p8w,T_PHY=t_phy       &
+     &           ,DZ8W=dz8w,Z=z,TKE_MYJ=tke_myj,EL_MYJ=el_myj         &
+     &           ,EXCH_H=exch_h,AKHS=akhs,AKMS=akms                   &
+     &           ,THZ0=thz0,QZ0=qz0,UZ0=uz0,VZ0=vz0,QSFC=qsfc         &
+     &           ,LOWLYR=lowlyr                                       &
+     &           ,PSIM=psim, PSIH=psih, GZ1OZ0=gz1oz0                 &
+     &           ,WSPD=wspd, BR=br , CHKLOWQ=chklowq                  &
+     &           ,DX=dx                                               &
+     &           ,STEPBL=stepbl,WARM_RAIN=warm_rain                   &
+     &           ,KPBL=kpbl,CT=ct,LH=lh,SNOW=snow,XICE=xice           &
+     &           ,BL_PBL_PHYSICS=config_flags%bl_pbl_physics          &
+     &           ,RA_LW_PHYSICS=config_flags%ra_lw_physics            &
+     &           , IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde  &
+     &           , IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme  &
+     &           , I_START=grid%i_start,I_END=min(grid%i_end, ide-1)  &
+     &           , J_START=grid%j_start,J_END=min(grid%j_end, jde-1)  &
+     &           , KTS=k_start, KTE=min(k_end,kde-1)                  &
+     &           , NUM_TILES=grid%num_tiles                           &
+          ! optional
+     &           , QV_CURR=moist_2(ims,kms,jms,P_QV), F_QV=F_QV       &
+     &           , QC_CURR=moist_2(ims,kms,jms,P_QC), F_QC=F_QC       &
+     &           , QR_CURR=moist_2(ims,kms,jms,P_QR), F_QR=F_QR       &
+     &           , QI_CURR=moist_2(ims,kms,jms,P_QI), F_QI=F_QI       &
+     &           , QS_CURR=moist_2(ims,kms,jms,P_QS), F_QS=F_QS       &
+     &           , QG_CURR=moist_2(ims,kms,jms,P_QG), F_QG=F_QG       &
+     &           ,HOL=HOL, MOL=MOL, REGIME=REGIME                     &
+     &                                                                )
 BENCH_END(pbl_driver_tim)
 
 ! cumulus para.
@@ -637,12 +654,12 @@ BENCH_START(cu_driver_tim)
                  ! Selection flag
                    , CU_PHYSICS=config_flags%cu_physics                &
                  ! Dimension arguments
-                   , ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde &
-                   , ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme &
-                   , i_start=grid%i_start,i_end=min(grid%i_end, ide-1) &
-                   , j_start=grid%j_start,j_end=min(grid%j_end, jde-1) &
-                   , kts=k_start, kte=min(k_end,kde-1)                 &
-                   , num_tiles=grid%num_tiles                          &
+                   , IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+                   , IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                   , I_START=grid%i_start,I_END=min(grid%i_end, ide-1) &
+                   , J_START=grid%j_start,J_END=min(grid%j_end, jde-1) &
+                   , KTS=k_start, KTE=min(k_end,kde-1)                 &
+                   , NUM_TILES=grid%num_tiles                          &
                  ! Moisture tendency arguments
                    , RQVCUTEN=rqvcuten , RQCCUTEN=rqccuten             &
                    , RQRCUTEN=rqrcuten , RQVBLTEN=rqvblten             &

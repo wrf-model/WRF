@@ -34,6 +34,33 @@ dimension_with_colons( char * pre , char * tmp , node_t * p , char * post )
 }
 
 char *
+dimension_with_ones( char * pre , char * tmp , node_t * p , char * post )
+{
+  int i ;
+  if ( p == NULL ) return("") ;
+  if ( p->ndims <= 0 && ! p->boundary_array ) return("") ;
+  strcpy(tmp,"") ;
+  if ( pre != NULL ) strcat(tmp,pre) ;
+  if ( p->boundary_array )
+  {
+    if ( !strcmp( p->use , "_4d_bdy_array_" ) ) {
+      strcat( tmp, "1,1,1,1,1" ) ;  /* boundary array for 4d tracer array */
+    } else {
+      strcat( tmp, "1,1,1,1" ) ;  /* most always have four dimensions */
+    }
+  }
+  else
+  {
+    for ( i = 0 ; i < p->ndims ; i++ ) strcat(tmp,"1,") ;
+    if ( p->node_kind & FOURD ) strcat(tmp,"1,") ;       /* add an extra for 4d arrays */
+    tmp[strlen(tmp)-1] = '\0' ;
+  }
+  if ( post != NULL ) strcat(tmp,post)  ;
+  return(tmp) ;
+}
+
+
+char *
 dimension_with_ranges( char * refarg , char * pre ,
                        char * tmp , node_t * p , char * post ,
                        char * nlstructname  )   /* added 20020130;

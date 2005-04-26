@@ -965,7 +965,7 @@ CONTAINS
 !  below this top-level of data allocation and management (in the solve routine
 !  and below).
 
-   SUBROUTINE alloc_space_field ( grid,   id, setinitval ,  tl , inter_domain ,   &
+   SUBROUTINE alloc_space_field ( grid,   id, setinitval ,  tl_in , inter_domain_in ,   &
                                   sd31, ed31, sd32, ed32, sd33, ed33, &
                                   sm31 , em31 , sm32 , em32 , sm33 , em33 , &
                                   sm31x, em31x, sm32x, em32x, sm33x, em33x, &
@@ -1009,7 +1009,7 @@ CONTAINS
 
       INTEGER                              :: loop
 
-#if 0
+#if 1
       tl = tl_in
       inter_domain = inter_domain_in
 #else

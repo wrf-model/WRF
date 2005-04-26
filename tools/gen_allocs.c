@@ -100,14 +100,22 @@ gen_alloc2 ( FILE * fp , char * structname , char * corename , node_t * node )
        }
        if ( p->ntl > 1 ) {
 	 fprintf(fp,"ELSE\n") ;
-	 fprintf(fp,"NULLIFY( %s%s )\n", structname, fname ) ;
+
+       fprintf(fp, "ALLOCATE(%s%s%s,STAT=ierr)\n if (ierr.ne.0) then\n CALL wrf_error_fatal ( &\n'frame/module_domain.f: Failed to allocate %s%s%s.  ')\n endif\n",
+                structname, fname, dimension_with_ones( "(",t2,p,")" ), 
+                structname, fname, dimension_with_ones( "(",t2,p,")" ) ) ;
+
+
+
 	 fprintf(fp,"ENDIF\n") ;
        }
        if ( ! ( p->node_kind & FOURD ) && 
             ! ( p->io_mask & INTERP_DOWN || p->io_mask & FORCE_DOWN || p->io_mask & INTERP_UP || p->io_mask & SMOOTH_UP ) )
        {
 	 fprintf(fp,"ELSE\n") ;
-	 fprintf(fp,"NULLIFY( %s%s )\n", structname, fname ) ;
+       fprintf(fp, "ALLOCATE(%s%s%s,STAT=ierr)\n if (ierr.ne.0) then\n CALL wrf_error_fatal ( &\n'frame/module_domain.f: Failed to allocate %s%s%s.  ')\n endif\n",
+                structname, fname, dimension_with_ones( "(",t2,p,")" ), 
+                structname, fname, dimension_with_ones( "(",t2,p,")" ) ) ;
 	 fprintf(fp,"ENDIF\n") ;
        }
 

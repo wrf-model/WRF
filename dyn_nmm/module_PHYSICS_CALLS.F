@@ -994,25 +994,40 @@
       ENDDO
       ENDDO
 !
-      CALL PBL_DRIVER(NTSD,DT,U_FRAME,V_FRAME                           &
-     &               ,DUDT,DVDT,RTHBLTEN                                &
-     &               ,RQVBLTEN,RQCBLTEN,RQIBLTEN                        &
-     &               ,TSFC,XLAND,Z0,SFCZ                                &
-     &               ,USTAR,ZERO_2D,ZERO_2D,PBLH                        &
-     &               ,TWBS,QWBS,ZERO_2D,GRNFLX                          &
-     &               ,U_PHY,V_PHY,TH_PHY,RR,WATER                       &
-     &               ,P_PHY,PI_PHY,P8W,T_PHY,DZ,Z                       &
-     &               ,TKE,EL_MYJ,EXCH_H,AKHS,AKMS                       &
-     &               ,THZ0,QZ0,UZ0H,VZ0H,QS,LOWLYR                      &
-     &               ,PSIM,PSIH,GZ1OZ0,WSPD,BR,CHKLOWQ                  &
-     &               ,CONFIG_FLAGS,DX,N_MOIST                           &
-     &               ,NPHS,WARM_RAIN                                    &
-     &               ,KPBL,CT,ELFLX,SNOW,SICE                           &
-     &               ,IDS,IDE,JDS,JDE,KDS,KDE                           &
-     &               ,IMS,IME,JMS,JME,KMS,KME                           &
-     &               ,GRID%I_START,GRID%I_END                           &
-     &               ,GRID%J_START,GRID%J_END                           &
-     &               ,KTS,KTE,GRID%NUM_TILES)
+      CALL PBL_DRIVER(                                                &
+     &                ITIMESTEP=NTSD,DT=DT                            &
+     &               ,U_FRAME=U_FRAME,V_FRAME=V_FRAME                 &
+     &               ,RUBLTEN=DUDT,RVBLTEN=DVDT,RTHBLTEN=RTHBLTEN     &
+     &               ,RQVBLTEN=RQVBLTEN,RQCBLTEN=RQCBLTEN             &
+     &               ,RQIBLTEN=RQIBLTEN                               &
+     &               ,TSK=TSFC,XLAND=XLAND,ZNT=Z0,HT=SFCZ             &
+     &               ,UST=USTAR, PBLH=PBLH                            &
+     &               ,HFX=TWBS,QFX=QWBS,  GRDFLX=GRNFLX               &
+     &               ,U_PHY=U_PHY,V_PHY=V_PHY,TH_PHY=TH_PHY,RHO=RR    &
+     &               ,P_PHY=P_PHY,PI_PHY=PI_PHY,P8W=P8W,T_PHY=T_PHY   &
+     &               ,DZ8W=DZ,Z=Z,TKE_MYJ=TKE,EL_MYJ=EL_MYJ           &
+     &               ,EXCH_H=EXCH_H,AKHS=AKHS,AKMS=AKMS               &
+     &               ,THZ0=THZ0,QZ0=QZ0,UZ0=UZ0H,VZ0=VZ0H             &
+     &               ,QSFC=QS,LOWLYR=LOWLYR                           &
+     &               ,PSIM=PSIM,PSIH=PSIH,GZ1OZ0=GZ1OZ0               &
+     &               ,WSPD=WSPD,BR=BR,CHKLOWQ=CHKLOWQ                 &
+     &               ,DX=DX,STEPBL=NPHS,WARM_RAIN=WARM_RAIN           &
+     &               ,KPBL=KPBL,CT=CT,LH=ELFLX,SNOW=SNOW,XICE=SICE    &
+     &               ,BL_PBL_PHYSICS=config_flags%bl_pbl_physics      &
+     &               ,RA_LW_PHYSICS=config_flags%ra_lw_physics        &
+     &               ,IDS=IDS,IDE=IDE,JDS=JDS,JDE=JDE,KDS=KDS,KDE=KDE &
+     &               ,IMS=IMS,IME=IME,JMS=JMS,JME=JME,KMS=KMS,KME=KME &
+     &               ,I_START=GRID%I_START,I_END=GRID%I_END           &
+     &               ,J_START=GRID%J_START,J_END=GRID%J_END           &
+     &               ,KTS=KTS,KTE=KTE,NUM_TILES=GRID%NUM_TILES        &
+                ! Optional args
+     &               ,QV_CURR=water(ims,kms,jms,P_QV) , F_QV=F_QV     &
+     &               ,QC_CURR=water(ims,kms,jms,P_QC) , F_QC=F_QC     &
+     &               ,QR_CURR=water(ims,kms,jms,P_QR) , F_QR=F_QR     &
+     &               ,QI_CURR=water(ims,kms,jms,P_QI) , F_QI=F_QI     &
+     &               ,QS_CURR=water(ims,kms,jms,P_QS) , F_QS=F_QS     &
+     &               ,QG_CURR=water(ims,kms,jms,P_QG) , F_QG=F_QG     &
+     &                                                                )
 !
 !***  NOTE THAT THE EXCHANGE COEFFICIENTS FOR HEAT EXCH_H COMING OUT OF
 !***  PBL_DRIVER ARE DEFINED AT THE TOPS OF THE LAYERS KTS TO KTE-1

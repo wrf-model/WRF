@@ -12,13 +12,15 @@ contains
                   rqvblten,rqcblten,rqiblten,          		   &
                   cp,g,rovcp,rd,rovg,                              &
                   dz8w,z,xlv,rv,psfc,                              &
-                  znt,ust,zol,hol,hpbl,regime,psim,psih,           &
+                  znt,ust,zol,hol,hpbl,psim,psih,                  &
                   xland,hfx,qfx,tsk,gz1oz0,wspd,br,                &
                   dt,dtmin,kpbl2d,                                 &
                   svp1,svp2,svp3,svpt0,ep1,ep2,karman,eomeg,stbolt,&
                   ids,ide, jds,jde, kds,kde,                       &
                   ims,ime, jms,jme, kms,kme,                       &
-                  its,ite, jts,jte, kts,kte                        )
+                  its,ite, jts,jte, kts,kte,                       &
+                !optional
+                  regime                                           )
 !-------------------------------------------------------------------
       implicit none
 !-------------------------------------------------------------------
@@ -128,8 +130,8 @@ contains
 							  rvblten, &
 							 rthblten, &
 							 rqvblten, &
-							 rqcblten, &
-							 rqiblten
+							 rqcblten
+
 !
       real,     dimension( ims:ime, jms:jme )                    , &
                 intent(in   )   ::                          xland, &
@@ -147,9 +149,9 @@ contains
 							      ust, &
 							     hpbl, &
                                                               znt, &
-						           regime, &
 						             wspd, &
                                                               zol
+
 !
      real,     dimension( ims:ime, kms:kme, jms:jme )            , &
                 intent(in   )   ::                            u3d, &
@@ -157,26 +159,45 @@ contains
 !
      integer,  dimension( ims:ime, jms:jme )                     , &
                 intent(out  )   ::                         kpbl2d
+!optional
+      real,     dimension( ims:ime, jms:jme )                    , &
+                optional                                         , &
+                intent(inout)   ::                         regime
 !
+      real,     dimension( ims:ime, kms:kme, jms:jme )           , &
+                optional                                         , &
+                intent(inout)   ::                        rqiblten
+!
+							      
+!local
    integer ::  i,j,k
 !
    do j = jts,jte
-      call ysu2d(j,u3d(ims,kms,j),v3d(ims,kms,j),t3d(ims,kms,j),    &
-               qv3d(ims,kms,j),qc3d(ims,kms,j),qi3d(ims,kms,j),     &
-               p3d(ims,kms,j),rublten(ims,kms,j),rvblten(ims,kms,j),&
-               rthblten(ims,kms,j),rqvblten(ims,kms,j),             &
-               rqcblten(ims,kms,j),rqiblten(ims,kms,j),             &
-               cp,g,rovcp,rd,rovg,                                  &
-               dz8w(ims,kms,j),z(ims,kms,j),xlv,rv,                 &
-               psfc(ims,j),znt(ims,j),ust(ims,j),zol(ims,j),        &
-               hol(ims,j),hpbl(ims,j),regime(ims,j),psim(ims,j),    &
-               psih(ims,j),xland(ims,j),hfx(ims,j),qfx(ims,j),      &
-               tsk(ims,j),gz1oz0(ims,j),wspd(ims,j),br(ims,j),      &
-               dt,dtmin,kpbl2d(ims,j),                              &
-               svp1,svp2,svp3,svpt0,ep1,ep2,karman,eomeg,stbolt,    &
-               ids,ide, jds,jde, kds,kde,                           &
-               ims,ime, jms,jme, kms,kme,                           &
-               its,ite, jts,jte, kts,kte                            )
+      call ysu2d(J=j,ux=u3d(ims,kms,j),vx=v3d(ims,kms,j)           &
+              ,tx=t3d(ims,kms,j)                                   &
+              ,qx=qv3d(ims,kms,j),qcx=qc3d(ims,kms,j)              &
+              ,qix=qi3d(ims,kms,j)                                 &
+              ,p2d=p3d(ims,kms,j),utnp=rublten(ims,kms,j)          &
+              ,vtnp=rvblten(ims,kms,j)                             &
+              ,ttnp=rthblten(ims,kms,j),qtnp=rqvblten(ims,kms,j)   &
+              ,qctnp=rqcblten(ims,kms,j),qitnp=rqiblten(ims,kms,j) &
+              ,cp=cp,g=g,rovcp=rovcp,rd=rd,rovg=rovg               &
+              ,dz8w2d=dz8w(ims,kms,j),z2d=z(ims,kms,j)             &
+              ,xlv=xlv,rv=rv                                       &
+              ,psfcpa=psfc(ims,j),znt=znt(ims,j),ust=ust(ims,j)    &
+              ,zol=zol(ims,j),hol=hol(ims,j),hpbl=hpbl(ims,j)      &
+              ,regime=regime(ims,j),psim=psim(ims,j)               &
+              ,psih=psih(ims,j),xland=xland(ims,j)                 &
+              ,hfx=hfx(ims,j),qfx=qfx(ims,j)                       &
+              ,tsk=tsk(ims,j),gz1oz0=gz1oz0(ims,j)                 &
+              ,wspd=wspd(ims,j),br=br(ims,j)                       &
+              ,dt=dt,dtmin=dtmin,kpbl1d=kpbl2d(ims,j)              &
+              ,svp1=svp1,svp2=svp2,svp3=svp3,svpt0=svpt0           &
+              ,ep1=ep1,ep2=ep2,karman=karman,eomeg=eomeg           &
+              ,stbolt=stbolt                                       &
+              ,ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde   &
+              ,ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme   &
+              ,its=its,ite=ite, jts=jts,jte=jte, kts=kts,kte=kte   )
       do k = kts,kte
       do i = its,ite
          rthblten(i,k,j) = rthblten(i,k,j)/pi3d(i,k,j)
@@ -193,13 +214,15 @@ contains
                   qtnp,qctnp,qitnp,             		   &
                   cp,g,rovcp,rd,rovg,                              &
                   dz8w2d,z2d,xlv,rv,psfcpa,                        &
-                  znt,ust,zol,hol,hpbl,regime,psim,psih,           &
+                  znt,ust,zol,hol,hpbl,psim,psih,                  &
                   xland,hfx,qfx,tsk,gz1oz0,wspd,br,                &
                   dt,dtmin,kpbl1d,                                 &
                   svp1,svp2,svp3,svpt0,ep1,ep2,karman,eomeg,stbolt,&
                   ids,ide, jds,jde, kds,kde,                       &
                   ims,ime, jms,jme, kms,kme,                       &
-                  its,ite, jts,jte, kts,kte                        )
+                  its,ite, jts,jte, kts,kte,                       &
+              !optional
+                  regime                                           )
 !-------------------------------------------------------------------
       implicit none
 !-------------------------------------------------------------------
@@ -289,8 +312,9 @@ contains
                 intent(inout)   ::                            hol, &
 							      ust, &
 							     hpbl, &
-                                                              znt, &
-						           regime
+                                                              znt
+
+
       real,     dimension( ims:ime )                             , &
                 intent(in   )   ::                          xland, &
            			                              hfx, &
@@ -313,6 +337,10 @@ contains
       real,     dimension( ims:ime, kms:kme )                    , &
                 intent(in   )   ::                             ux, &
                                                                vx
+!optional
+      real,     dimension( ims:ime )                             , &
+                optional                                         , &
+                intent(inout)   ::                         regime
 !
 ! local vars
 !

@@ -5,28 +5,38 @@ MODULE module_pbl_driver
 CONTAINS
 
 !------------------------------------------------------------------
-   SUBROUTINE pbl_driver(itimestep,dt,u_frame,v_frame,            &
-                  RUBLTEN,RVBLTEN,RTHBLTEN,                       &
-                  RQVBLTEN,RQCBLTEN,RQIBLTEN,                     &
-                  TSK,XLAND,ZNT,HT,                               &
-                  UST,HOL,MOL,PBLH,                               &
-                  HFX,QFX,REGIME,                                 &
-                  GRDFLX,                                         &
-                  u_phy,v_phy,th_phy,rho,moist,                   &
-                  p_phy,pi_phy,p8w,t_phy,dz8w,z,                  &
-                  TKE_MYJ,EL_MYJ,EXCH_H,AKHS,AKMS,                &
-                  THZ0,QZ0,UZ0,VZ0,QSFC,                          &
-                  LOWLYR,                                         &
-                  PSIM,PSIH,GZ1OZ0, WSPD,BR,CHKLOWQ,              &  !m  26 Aug 2002
-                  config_flags,DX,n_moist,                        & !TSLB (STEMP)
-                  STEPBL,warm_rain,                               &
-                  KPBL,CT,LH,SNOW,XICE,                           &
-                  ids,ide, jds,jde, kds,kde,                      &
-                  ims,ime, jms,jme, kms,kme,                      &
-                  i_start,i_end, j_start,j_end, kts,kte, num_tiles)
+   SUBROUTINE pbl_driver(                                          &
+                  itimestep,dt,u_frame,v_frame                     &
+                 ,rublten,rvblten,rthblten                         &
+                 ,tsk,xland,znt,ht                                 &
+                 ,ust,pblh,hfx,qfx,grdflx                          &
+                 ,u_phy,v_phy,th_phy,rho                           &
+                 ,p_phy,pi_phy,p8w,t_phy,dz8w,z                    &
+                 ,tke_myj,el_myj,exch_h,akhs,akms                  &
+                 ,thz0,qz0,uz0,vz0,qsfc                            &
+                 ,lowlyr                                           &
+                 ,psim,psih,gz1oz0, wspd,br,chklowq                &
+                 ,bl_pbl_physics, ra_lw_physics, dx                &
+                 ,stepbl,warm_rain                                 &
+                 ,kpbl,ct,lh,snow,xice                             &
+                 ,ids,ide, jds,jde, kds,kde                        &
+                 ,ims,ime, jms,jme, kms,kme                        &
+                 ,i_start,i_end, j_start,j_end, kts,kte, num_tiles &
+             ! Optional
+                 ,hol, mol, regime                                 &
+             !  Optional moisture tracers
+                 ,qv_curr, qc_curr, qr_curr                        &
+                 ,qi_curr, qs_curr, qg_curr                        &
+                 ,rqvblten,rqcblten,rqiblten                       &
+                 ,rqrblten,rqsblten,rqgblten                       &
+             !  Optional moisture tracer flags
+                 ,f_qv,f_qc,f_qr                                   &
+                 ,f_qi,f_qs,f_qg                                   &
+                                                                   )
 !------------------------------------------------------------------
-   USE module_configure
-   USE module_state_description
+   USE module_state_description, ONLY :                            &
+                   YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME
+
    USE module_model_constants
 
 ! *** add new modules of schemes here
@@ -130,14 +140,12 @@ CONTAINS
 !-- u_phy         u-velocity interpolated to theta points (m/s)
 !-- v_phy         v-velocity interpolated to theta points (m/s)
 !-- th_phy        potential temperature (K)
-!-- moist         moisture array (4D - last index is species) (kg/kg)
 !-- p_phy         pressure (Pa)
 !-- pi_phy        exner function (dimensionless)
 !-- p8w           pressure at full levels (Pa)
 !-- t_phy         temperature (K)
 !-- dz8w          dz between full levels (m)
 !-- z             height above sea level (m)
-!-- config_flags
 !-- DX            horizontal space interval (m)
 !-- DT            time step (second)
 !-- n_moist       number of moisture species
@@ -173,15 +181,14 @@ CONTAINS
 !
 !******************************************************************
 !------------------------------------------------------------------ 
-   TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
 !
 
 
+   INTEGER,    INTENT(IN   )    ::     bl_pbl_physics, ra_lw_physics
 
    INTEGER,    INTENT(IN   )    ::     ids,ide, jds,jde, kds,kde, &
                                        ims,ime, jms,jme, kms,kme, &
-                                       kts,kte, num_tiles,        &
-                                       n_moist           
+                                       kts,kte, num_tiles
 
    INTEGER, DIMENSION(num_tiles), INTENT(IN) ::                   &
   &                                    i_start,i_end,j_start,j_end
@@ -208,9 +215,6 @@ CONTAINS
                                                                z, &
                                                           th_phy
 !
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, n_moist ),         &
-         INTENT(IN ) ::                                    moist
-!
 !
    REAL,       DIMENSION( ims:ime , jms:jme ),                    &
                INTENT(IN   )    ::                         XLAND, &
@@ -224,12 +228,9 @@ CONTAINS
    REAL,       DIMENSION( ims:ime, jms:jme )                    , &
                INTENT(INOUT)    ::                           TSK, &
                                                              UST, &
-                                                             HOL, &
-                                                             MOL, &
                                                             PBLH, &
                                                              HFX, &
                                                              QFX, &
-                                                          REGIME, &
                                                              ZNT, &
                                                             QSFC, &
                                                             AKHS, &
@@ -247,9 +248,6 @@ CONTAINS
                INTENT(INOUT)    ::                       RUBLTEN, &
                                                          RVBLTEN, &
                                                         RTHBLTEN, &
-                                                        RQVBLTEN, &
-                                                        RQCBLTEN, &
-                                                        RQIBLTEN, &
                                                   EXCH_H,TKE_MYJ
 !
    REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ),            &
@@ -264,6 +262,39 @@ CONTAINS
 
    REAL,       DIMENSION( ims:ime , jms:jme ),                    &
                INTENT(IN)    :: XICE, SNOW, LH
+
+!
+! Optional
+!
+!
+! Flags relating to the optional tendency arrays declared above
+! Models that carry the optional tendencies will provdide the
+! optional arguments at compile time; these flags all the model
+! to determine at run-time whether a particular tracer is in
+! use or not.
+!
+   LOGICAL, INTENT(IN), OPTIONAL ::                             &
+                                                      f_qv      &
+                                                     ,f_qc      &
+                                                     ,f_qr      &
+                                                     ,f_qi      &
+                                                     ,f_qs      &
+                                                     ,f_qg
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
+         OPTIONAL, INTENT(INOUT) ::                              &
+                      ! optional moisture tracers
+                      ! 2 time levels; if only one then use CURR
+                      qv_curr, qc_curr, qr_curr                  &
+                     ,qi_curr, qs_curr, qg_curr                  &
+                     ,rqvblten,rqcblten,rqrblten                 &
+                     ,rqiblten,rqsblten,rqgblten
+
+   REAL,       DIMENSION( ims:ime, jms:jme )                    , &
+               OPTIONAL                                         , &
+               INTENT(INOUT)    ::                           HOL, &
+                                                             MOL, &
+                                                          REGIME
 
 !  LOCAL  VAR
 
@@ -280,21 +311,30 @@ CONTAINS
 
    REAL    :: DTMIN,DTBL
 !
-   INTEGER :: i,J,K,NK,jj,ij
+   INTEGER :: i,J,K,NK,jj,ij,its,ite,jts,jte
    LOGICAL :: radiation
+   LOGICAL :: flag_qv, flag_qc, flag_qr, flag_qi, flag_qs, flag_qg
+   CHARACTER*256 :: message
 
 !------------------------------------------------------------------
 !
 
+  flag_qv = .FALSE. ; IF ( PRESENT( F_QV ) ) flag_qv = F_QV
+  flag_qc = .FALSE. ; IF ( PRESENT( F_QC ) ) flag_qv = F_QC
+  flag_qr = .FALSE. ; IF ( PRESENT( F_QR ) ) flag_qv = F_QR
+  flag_qi = .FALSE. ; IF ( PRESENT( F_QI ) ) flag_qv = F_QI
+  flag_qs = .FALSE. ; IF ( PRESENT( F_QS ) ) flag_qv = F_QS
+  flag_qg = .FALSE. ; IF ( PRESENT( F_QG ) ) flag_qv = F_QG
 
-  if (config_flags%bl_pbl_physics .eq. 0) return
+
+  if (bl_pbl_physics .eq. 0) return
 ! RAINBL in mm (Accumulation between PBL calls)
 
 
   IF (itimestep .eq. 1 .or. mod(itimestep,STEPBL) .eq. 0) THEN
 
   radiation = .false.
-  IF (config_flags%ra_lw_physics .gt. 0) radiation = .true.
+  IF (ra_lw_physics .gt. 0) radiation = .true.
 
 !---- 
 ! CALCULATE CONSTANT
@@ -331,11 +371,11 @@ CONTAINS
             RTHBLTEN(I,K,J)=0.
             RUBLTEN(I,K,J)=0.
             RVBLTEN(I,K,J)=0.
-            RQCBLTEN(I,K,J)=0.
-            RQVBLTEN(I,K,J)=0.
+            IF ( PRESENT( RQCBLTEN )) RQCBLTEN(I,K,J)=0.
+            IF ( PRESENT( RQVBLTEN )) RQVBLTEN(I,K,J)=0.
          ENDDO
 
-         IF (P_QI .ge. PARAM_FIRST_SCALAR) THEN
+         IF (flag_QI .AND. PRESENT(RQIBLTEN) ) THEN
             DO k=kts,min(kte+1,kde)
                RQIBLTEN(I,K,J)=0.
             ENDDO
@@ -347,77 +387,141 @@ CONTAINS
    !$OMP END PARALLEL DO
 !
   !$OMP PARALLEL DO   &
-  !$OMP PRIVATE ( ij, i,j,k )
+  !$OMP PRIVATE ( ij, i,j,k, its, ite, jts, jte )
   DO ij = 1 , num_tiles
-   pbl_select: SELECT CASE(config_flags%bl_pbl_physics)
+
+   its = i_start(ij)
+   ite = i_end(ij)
+   jts = j_start(ij)
+   jte = j_end(ij)
+
+   pbl_select: SELECT CASE(bl_pbl_physics)
 
       CASE (YSUSCHEME)
         CALL wrf_debug(100,'in YSU PBL')
-           CALL YSU(u_phytmp,v_phytmp,th_phy,t_phy,                 &
-               moist(ims,kms,jms,P_QV),moist(ims,kms,jms,P_QC),     &
-               moist(ims,kms,jms,P_QI),p_phy,pi_phy,                &
-               RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN,RQIBLTEN, &
-               CP,G,RCP,R_d,ROVG,                                   &
-               dz8w,z,XLV,R_v,PSFC,                                 &
-               ZNT,UST,ZOL,HOL,PBLH,REGIME,PSIM,PSIH,               &
-               XLAND,HFX,QFX,TSKOLD,GZ1OZ0,WSPD,BR,                 &
-               DTBL,DTMIN,KPBL,                                     &
-               SVP1,SVP2,SVP3,SVPT0,EP_1,EP_2,KARMAN,EOMEG,STBOLT,  &
-               ids,ide, jds,jde, kds,kde,                           &
-               ims,ime, jms,jme, kms,kme,                           &
-               i_start(ij),i_end(ij),j_start(ij),j_end(ij),kts,kte  )
+           IF ( PRESENT( qv_curr )  .AND. PRESENT( qc_curr )  .AND. &
+                PRESENT( qi_curr )                            .AND. &
+                PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
+                PRESENT( rqiblten )                           .AND. &
+                PRESENT( hol      )                           .AND. &
+                                                        .TRUE.  ) THEN
+             CALL ysu(                                              &
+               U3D=u_phytmp,V3D=v_phytmp,TH3D=th_phy,T3D=t_phy      &
+              ,QV3D=qv_curr,QC3D=qc_curr,QI3D=qi_curr               &
+              ,P3D=p_phy,PI3D=pi_phy                                &
+              ,RUBLTEN=rublten,RVBLTEN=rvblten                      &
+              ,RTHBLTEN=rthblten,RQVBLTEN=rqvblten                  &
+              ,RQCBLTEN=rqcblten,RQIBLTEN=rqiblten                  &
+              ,CP=cp,G=g,ROVCP=rcp,RD=r_D,ROVG=rovg                 &
+              ,DZ8W=dz8w,Z=z,XLV=XLV,RV=r_v,PSFC=PSFC               &
+              ,ZNT=znt,UST=ust,ZOL=zol,HOL=hol,HPBL=pblh            &
+              ,PSIM=psim,PSIH=psih,XLAND=xland                      &
+              ,HFX=hfx,QFX=qfx,TSK=tskold,GZ1OZ0=gz1oz0             &
+              ,WSPD=wspd,BR=br,DT=dtbl,DTMIN=dtmin,KPBL2D=kpbl      &
+              ,SVP1=svp1,SVP2=svp2,SVP3=svp3,SVPT0=svpt0            &
+              ,EP1=ep_1,EP2=ep_2,KARMAN=karman,EOMEG=eomeg          &
+              ,STBOLT=stbolt,REGIME=regime                          &
+              ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
+              ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
+              ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
+                                                                    )
+           ELSE
+               CALL wrf_error_fatal('Lack arguments to call YSU pbl')
+           ENDIF
 
       CASE (MRFSCHEME)
-        CALL wrf_debug(100,'in MRF')
-           CALL MRF(u_phytmp,v_phytmp,th_phy,t_phy,                 &
-               moist(ims,kms,jms,P_QV),moist(ims,kms,jms,P_QC),     &
-               moist(ims,kms,jms,P_QI),p_phy,pi_phy,                &
-               RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN,RQIBLTEN, &
-               CP,G,RCP,R_d,ROVG,P_QI,PARAM_FIRST_SCALAR,           &
-               dz8w,z,XLV,R_v,PSFC,                                 &
-               ZNT,UST,ZOL,HOL,PBLH,REGIME,PSIM,PSIH,               &
-               XLAND,HFX,QFX,TSKOLD,GZ1OZ0,WSPD,BR,                 &
-               DTBL,DTMIN,KPBL,                                     &
-               SVP1,SVP2,SVP3,SVPT0,EP_1,EP_2,KARMAN,EOMEG,STBOLT,  &
-               ids,ide, jds,jde, kds,kde,                           &
-               ims,ime, jms,jme, kms,kme,                           &
-               i_start(ij),i_end(ij),j_start(ij),j_end(ij),kts,kte  )
+           IF ( PRESENT( qv_curr )  .AND. PRESENT( qc_curr )  .AND. &
+                PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
+                PRESENT( hol      )                           .AND. &
+                                                        .TRUE.  ) THEN
+
+             CALL wrf_debug(100,'in MRF')
+             CALL mrf(                                              &
+               U3D=u_phytmp,V3D=v_phytmp,TH3D=th_phy,T3D=t_phy      &
+              ,QV3D=qv_curr                                         &
+              ,QC3D=qc_curr                                         &
+              ,QI3D=qi_curr                                         &
+              ,P3D=p_phy,PI3D=pi_phy                                &
+              ,RUBLTEN=rublten,RVBLTEN=rvblten                      &
+              ,RTHBLTEN=rthblten,RQVBLTEN=rqvblten                  &
+              ,RQCBLTEN=rqcblten,RQIBLTEN=rqiblten                  &
+              ,CP=cp,G=g,ROVCP=rcp,R=r_d,ROVG=rovg                  &
+              ,DZ8W=dz8w,Z=z,XLV=xlv,RV=r_v,PSFC=psfc               &
+              ,ZNT=znt,UST=ust,ZOL=zol,HOL=hol                      &
+              ,PBL=pblh,PSIM=psim,PSIH=psih                         &
+              ,XLAND=xland,HFX=hfx,QFX=qfx,TSK=tskold               &
+              ,GZ1OZ0=gz1oz0,WSPD=wspd,BR=br                        &
+              ,DT=dtbl,DTMIN=dtmin,KPBL2D=kpbl                      &
+              ,SVP1=svp1,SVP2=svp2,SVP3=svp3,SVPT0=svpt0            &
+              ,EP1=ep_1,EP2=ep_2,KARMAN=karman,EOMEG=eomeg          &
+              ,STBOLT=stbolt,REGIME=regime                          &
+              ,FLAG_QI=flag_qi                                      &
+              ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
+              ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
+              ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
+                                                                    )
+           ELSE
+               CALL wrf_error_fatal('Lack arguments to call MRF pbl')
+           ENDIF
 
       CASE (GFSSCHEME)
-        CALL wrf_debug(100,'in GFS')
-           CALL BL_GFS(u_phytmp,v_phytmp,th_phy,t_phy,              &
-               moist(ims,kms,jms,P_QV),moist(ims,kms,jms,P_QC),     &
-               moist(ims,kms,jms,P_QI),p_phy,pi_phy,                &
-               RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN,RQIBLTEN, &
-               CP,G,RCP,R_d,ROVG,P_QI,PARAM_FIRST_SCALAR,           &
-               dz8w,z,PSFC,                                         &
-               UST,PBLH,PSIM,PSIH,                                  &
-               HFX,QFX,TSKOLD,GZ1OZ0,WSPD,BR,                       &
-               DTBL,KPBL,EP_1,KARMAN,                               &
-               ids,ide, jds,jde, kds,kde,                           &
-               ims,ime, jms,jme, kms,kme,                           &
-               i_start(ij),i_end(ij),j_start(ij),j_end(ij),kts,kte  )
+           IF ( PRESENT( qv_curr )  .AND. PRESENT( qc_curr )  .AND. &
+                PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
+                                                        .TRUE.  ) THEN
+             CALL wrf_debug(100,'in GFS')
+             CALL bl_gfs(                                           &
+               U3D=u_phytmp,V3D=v_phytmp                            &
+              ,TH3D=th_phy,T3D=t_phy                                &
+              ,QV3D=qv_curr,QC3D=qc_curr,QI3D=qi_curr               &
+              ,P3D=p_phy,PI3D=pi_phy                                &
+              ,RUBLTEN=rublten,RVBLTEN=rvblten,RTHBLTEN=rthblten    &
+              ,RQVBLTEN=rqvblten,RQCBLTEN=rqcblten                  &
+              ,RQIBLTEN=rqiblten                                    &
+              ,CP=cp,G=g,ROVCP=rcp,R=r_d,ROVG=rovg,FLAG_QI=flag_qi  &
+              ,DZ8W=dz8w,z=z,PSFC=psfc                              &
+              ,UST=ust,PBL=pblh,PSIM=psim,PSIH=psih                 &
+              ,HFX=hfx,QFX=qfx,TSK=tskold,GZ1OZ0=gz1oz0             &
+              ,WSPD=wspd,BR=br                                      &
+              ,DT=dtbl,KPBL2D=kpbl,EP1=ep_1,KARMAN=karman           &
+              ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
+              ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
+              ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
+                                                                    )
+           ELSE
+               CALL wrf_error_fatal('Lack arguments to call GFS pbl')
+           ENDIF
 
       CASE (MYJPBLSCHEME)
-        CALL wrf_debug(100,'in MYJPBL')
-             CALL MYJPBL(DT,STEPBL,ht,dz8w,                           &
-               p_phy,p8w,th_phy,t_phy,pi_phy,                       &
-               moist(ims,kms,jms,P_QV),moist(ims,kms,jms,P_QC),     &
-               u_phy,v_phy,rho,                                     &
-               TSK,QSFC,CHKLOWQ,THZ0,QZ0,UZ0,VZ0,                   &
-               LOWLYR,                                              &
-               XLAND,XICE,SNOW,                                     &
-               TKE_MYJ,EXCH_H,UST,ZNT,EL_MYJ,PBLH,KPBL,CT,          &
-               AKHS,AKMS,LH,                                        &
-               RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN,          &
-               ids,ide, jds,jde, kds,kde,                           &
-               ims,ime, jms,jme, kms,kme,                           &
-               i_start(ij),i_end(ij),j_start(ij),j_end(ij),kts,kte  )
+           IF ( PRESENT( qv_curr )  .AND. PRESENT( qc_curr )  .AND. &
+                PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
+                                                        .TRUE.  ) THEN
+             CALL wrf_debug(100,'in MYJPBL')
+             CALL myjpbl(                                           &
+               DT=dt,STEPBL=stepbl,HT=ht,DZ=dz8w                    &
+              ,PMID=p_phy,PINT=p8w,TH=th_phy,T=t_phy,EXNER=pi_phy   &
+              ,QV=qv_curr, CWM=qc_curr                              &
+              ,U=u_phy,V=v_phy,RHO=rho                              &
+              ,TSK=tsk,QSFC=qsfc,CHKLOWQ=chklowq,THZ0=thz0          &
+              ,QZ0=qz0,UZ0=uz0,VZ0=vz0                              &
+              ,LOWLYR=lowlyr                                        &
+              ,XLAND=xland,SICE=xice,SNOW=snow                      &
+              ,TKE_MYJ=tke_myj,EXCH_H=exch_h,USTAR=ust,ZNT=znt      &
+              ,EL_MYJ=el_myj,PBLH=pblh,KPBL=kpbl,CT=ct              &
+              ,AKHS=akhs,AKMS=akms,ELFLX=lh                         &
+              ,RUBLTEN=rublten,RVBLTEN=rvblten,RTHBLTEN=rthblten    &
+              ,RQVBLTEN=rqvblten,RQCBLTEN=rqcblten                  &
+              ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
+              ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
+              ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
+                                                                    )
+           ELSE
+               CALL wrf_error_fatal('Lack arguments to call MYJ pbl')
+           ENDIF
 
      CASE DEFAULT
 
-       WRITE( wrf_err_message , * ) 'The pbl option does not exist: bl_pbl_physics = ', config_flags%bl_pbl_physics
-       CALL wrf_error_fatal ( wrf_err_message )
+       WRITE( message , * ) 'The pbl option does not exist: bl_pbl_physics = ', bl_pbl_physics
+       CALL wrf_error_fatal ( message )
 
    END SELECT pbl_select
 

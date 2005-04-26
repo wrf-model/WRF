@@ -990,22 +990,32 @@ CONTAINS
       ! e.g. to set both 1st and second time level, use 3
       !      to set only 1st                        use 1
       !      to set only 2st                        use 2
-      INTEGER , INTENT(IN)            :: tl
+      INTEGER , INTENT(IN)            :: tl_in
   
       ! true if the allocation is for an intermediate domain (for nesting); only certain fields allocated
       ! false otherwise (all allocated, modulo tl above)
-      LOGICAL , INTENT(IN)            :: inter_domain
+      LOGICAL , INTENT(IN)            :: inter_domain_in
 
       !  Local data.
       INTEGER dyn_opt, idum1, idum2, spec_bdy_width
       INTEGER num_bytes_allocated
       REAL    initial_data_value
       CHARACTER (LEN=256) message
+      INTEGER tl
+      LOGICAL inter_domain
 
       !declare ierr variable for error checking ALLOCATE calls
       INTEGER ierr
 
       INTEGER                              :: loop
+
+#if 0
+      tl = tl_in
+      inter_domain = inter_domain_in
+#else
+      tl = 3
+      inter_domain = .FALSE.
+#endif
 
 #if ( RWORDSIZE == 8 )
       initial_data_value = 0.

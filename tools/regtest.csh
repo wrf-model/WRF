@@ -2299,45 +2299,7 @@ banner 29
 	                                echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
 	                        endif
 	
-	
-	                        #       1p vs baseline output from 20031015
-	
-	                        if ( ( -e $TMPDIR/wrfout_d01_${filetag}.${core}.${phys_option}.$COMPOPTS[3]_1p ) && \
-	                             ( -e wrfout_d01_2003-04-17_00:00:00.nmm_baseline ) ) then
-	                                set foo1 = ( ` \ls -ls $TMPDIR/wrfout_d01_${filetag}.${core}.${phys_option}.$COMPOPTS[3]_1p `)
-	                                set foo2 = ( ` \ls -lsL wrfout_d01_2003-04-17_00:00:00.nmm_baseline `)
-	                                set size1 = $foo1[6]
-	                                set size2 = $foo2[6]
-	                                if ( $size1 == $size2 ) then
-	                                        set RIGHT_SIZE = TRUE
-	                                else
-	                                        set RIGHT_SIZE = FALSE
-	                                endif
-	                        else
-	                                set RIGHT_SIZE = FALSE
-	                        endif
-
-	                        rm fort.88 fort.98 >& /dev/null
-	                        if ( ( -e $TMPDIR/wrfout_d01_${filetag}.${core}.${phys_option}.$COMPOPTS[3]_1p ) && \
-	                             ( -e wrfout_d01_2003-04-17_00:00:00.nmm_baseline ) && \
-	                             ( $RIGHT_SIZE == TRUE ) ) then
-	                                $DIFFWRF $TMPDIR/wrfout_d01_${filetag}.${core}.${phys_option}.$COMPOPTS[3]_1p \
-	                                         wrfout_d01_2003-04-17_00:00:00.nmm_baseline >& /dev/null
-	                        else
-	                                touch fort.88 fort.98
-	                        endif
-	                        if ( ! -e fort.88 ) then
-	                                echo "SUMMARY 1 vs 20031015 baseline output for $core physics $phys_option $esmf_lib_str            PASS" >>! ${DEF_DIR}/wrftest.output
-	                                echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
-	                        else
-	                                echo "SUMMARY 1 vs 20031015 baseline output for $core physics $phys_option $esmf_lib_str            FAIL" >>! ${DEF_DIR}/wrftest.output
-	                                echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
-	                        endif
-	
 	                        popd
-	
-	                        # only one pass of physics for NMM right now
-	                        goto ALL_SHE_WROTE_FOR_NMM 
 	
 			else if ( ${#COMPOPTS} != 1 ) then
 	
@@ -2444,7 +2406,7 @@ banner 29
 			endif
 
 			# Generate and archive baseline or compare against baseline
-			# Get nmm_real working later...  (just different output file names)
+
 			if ( $core != nmm_real ) then
 				if ( $GENERATE_BASELINE != FALSE ) then
 					if ( ! -d $GENERATE_BASELINE ) then
@@ -2531,6 +2493,94 @@ banner 29
 						popd
 					endif
 				endif
+			else if ( $core == nmm_real ) then
+				if ( $GENERATE_BASELINE != FALSE ) then
+					if ( ! -d $GENERATE_BASELINE ) then
+						echo "ERROR:  Baseline directory ${GENERATE_BASELINE} does not exist" >>! \
+						     ${DEF_DIR}/wrftest.output
+						exit ( 10 ) 
+					else
+						# Archive serial output file to baseline
+						pushd ${DEF_DIR}/regression_test/WRFV2/test/$core
+						set basefilenm = wrfout_d01_${filetag}.${core}.${phys_option}
+						set basefile = ${GENERATE_BASELINE}/${basefilenm}
+						set outfile = $TMPDIR/${basefilenm}.$COMPOPTS[3]_1p
+						if ( -e $outfile ) then
+							cp $outfile $basefile || \
+							  ( echo "ERROR:  cannot copy ${outfile} to ${basefile}" >>! \
+							   ${DEF_DIR}/wrftest.output; exit 10 )
+						else
+							echo "ERROR:  Cannot archive baseline, file $outfile does not exist" >>! \
+							     ${DEF_DIR}/wrftest.output
+					echo "SUMMARY baseline archived in ${GENERATE_BASELINE} for $core physics $phys_option  FAIL" >>! \
+							     ${DEF_DIR}/wrftest.output
+							echo "-------------------------------------------------------------" >> \
+							     ${DEF_DIR}/wrftest.output
+							exit ( 10 ) 
+						endif
+					echo "SUMMARY baseline archived in ${GENERATE_BASELINE} for $core physics $phys_option  PASS" >>! \
+						     ${DEF_DIR}/wrftest.output
+						echo "-------------------------------------------------------------" >> \
+						     ${DEF_DIR}/wrftest.output
+						popd
+					endif
+				endif
+				if ( $COMPARE_BASELINE != FALSE ) then
+					if ( ! -d $COMPARE_BASELINE ) then
+						echo "${0}: ERROR::  Baseline directory ${COMPARE_BASELINE} does not exist" >>! \
+						     ${DEF_DIR}/wrftest.output
+						exit ( 10 ) 
+					else
+						# Compare against baseline output file
+						set basefilenm = wrfout_d01_${filetag}.${core}.${phys_option}
+						set basefile = ${COMPARE_BASELINE}/${basefilenm}
+						set DIFFWRF = ${DEF_DIR}/regression_test/WRFV2/external/$IO_FORM_NAME[$IO_FORM]/diffwrf
+						set testdir = ${DEF_DIR}/regression_test/WRFV2/test/$core
+						pushd ${testdir}
+						set compopt = $COMPOPTS[3]
+						foreach proc ( 1p 4p )
+							set cmpfile = $TMPDIR/${basefilenm}.$compopt_${proc}
+							rm fort.88 fort.98 >& /dev/null
+							if ( ( -e ${basefile} ) && ( -e ${cmpfile} ) ) then
+								#	Are the files the same size?  If not, then only the initial times
+								#	will be compared.  That means, on a failure to run a forecast, the
+								#	diffwrf will give a pass.  We need to root out this evil.
+								set foob = ( ` \ls -ls ${basefile} `)
+								set fooc = ( ` \ls -ls ${cmpfile} `)
+								set sizeb = $foob[6]
+								set sizec = $fooc[6]
+								if ( $sizeb == $sizec ) then
+									$DIFFWRF ${basefile} ${cmpfile} >& /dev/null
+									if ( -e fort.88 ) then
+			echo "FAIL:  Baseline comparison, file ${cmpfile} did not match ${basefile} according to diffwrf" >>! \
+										${DEF_DIR}/wrftest.output
+									endif
+								else
+									touch fort.88 fort.98
+			echo "FAIL:  Baseline comparison, files ${cmpfile} and ${basefile} have different sizes" >>! \
+									${DEF_DIR}/wrftest.output
+								endif
+							else
+			echo "FAIL:  Baseline comparison, either ${cmpfile} or ${basefile} does not exist" >>! \
+									${DEF_DIR}/wrftest.output
+								touch fort.88 fort.98
+							endif
+							if ( ! -e fort.88 ) then
+			echo "SUMMARY compare vs baseline ${COMPARE_BASELINE} for $core physics $phys_option compopt $compopt $esmf_lib_str  PASS" >>! \
+								     ${DEF_DIR}/wrftest.output
+								echo "-------------------------------------------------------------" >> \
+								     ${DEF_DIR}/wrftest.output
+							else
+			echo "SUMMARY compare vs baseline ${COMPARE_BASELINE} for $core physics $phys_option compopt $compopt $esmf_lib_str  FAIL" >>! \
+								     ${DEF_DIR}/wrftest.output
+								echo "-------------------------------------------------------------" >> \
+								     ${DEF_DIR}/wrftest.output
+							endif
+						end
+						popd
+					endif
+				endif
+				goto ALL_SHE_WROTE_FOR_NMM
 			endif
 			# End of generate and archive baseline or compare against baseline
 

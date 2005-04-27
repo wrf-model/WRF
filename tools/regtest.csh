@@ -226,17 +226,19 @@ endif
 #	and it has to be in the .cshrc file for the rsh for mpirun
 #	intel 8.0 Apr 2005
 
-if ( $LINUX_COMP == INTEL ) then
-
-	grep LD_LIBRARY_PATH ~/.cshrc >& /dev/null
-	set ok1 = $status
-	echo $LD_LIBRARY_PATH | grep intel >& /dev/null
-	set ok2 = $status
-	if ( ( $ok1 != 0 ) || ( $ok2 != 0 ) ) then
-		echo You need to stick the following line in your .cshrc file
-		echo setenv LD_LIBRARY_PATH /usr/lib:/usr/local/lib:/usr/local/intel-8.0/lib
-		echo Otherwise mpirun cannot find libcxa.so.5 
-		exit ( 1 )
+if ( `uname` == Linux ) then
+	if ( $LINUX_COMP == INTEL ) then
+	
+		grep LD_LIBRARY_PATH ~/.cshrc >& /dev/null
+		set ok1 = $status
+		echo $LD_LIBRARY_PATH | grep intel >& /dev/null
+		set ok2 = $status
+		if ( ( $ok1 != 0 ) || ( $ok2 != 0 ) ) then
+			echo You need to stick the following line in your .cshrc file
+			echo setenv LD_LIBRARY_PATH /usr/lib:/usr/local/lib:/usr/local/intel-8.0/lib
+			echo Otherwise mpirun cannot find libcxa.so.5 
+			exit ( 1 )
+		endif
 	endif
 endif
 

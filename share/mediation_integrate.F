@@ -282,23 +282,39 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
         WRITE(message,FMT='(A,I2,A)') '*** Initializing nest domain #',nest%id,&
                                       ' from an input file. ***'
         CALL wrf_debug ( 0 , message )
-! store horizontally interpolated terrain in temp location
-       CALL  store_terrain ( nest%ht_fine , nest%ht , &
-                             ids , ide , jds , jde , 1   , 1   , &
-                             ims , ime , jms , jme , 1   , 1   , &
-                             ips , ipe , jps , jpe , 1   , 1   )
-       CALL  store_terrain ( nest%em_mub_fine , nest%em_mub , &
-                             ids , ide , jds , jde , 1   , 1   , &
-                             ims , ime , jms , jme , 1   , 1   , &
-                             ips , ipe , jps , jpe , 1   , 1   )
-       CALL  store_terrain ( nest%em_phb_fine , nest%em_phb , &
-                             ids , ide , jds , jde , kds , kde , &
-                             ims , ime , jms , jme , kms , kme , &
-                             ips , ipe , jps , jpe , kps , kpe )
-
        IF ( nest_config_flags%input_from_file ) THEN
+
+! store horizontally interpolated terrain in temp location
+          CALL  store_terrain ( nest%ht_fine , nest%ht , &
+                                ids , ide , jds , jde , 1   , 1   , &
+                                ims , ime , jms , jme , 1   , 1   , &
+                                ips , ipe , jps , jpe , 1   , 1   )
+          CALL  store_terrain ( nest%em_mub_fine , nest%em_mub , &
+                                ids , ide , jds , jde , 1   , 1   , &
+                                ims , ime , jms , jme , 1   , 1   , &
+                                ips , ipe , jps , jpe , 1   , 1   )
+          CALL  store_terrain ( nest%em_phb_fine , nest%em_phb , &
+                                ids , ide , jds , jde , kds , kde , &
+                                ims , ime , jms , jme , kms , kme , &
+                                ips , ipe , jps , jpe , kps , kpe )
+
 ! read input from dataset
           CALL med_initialdata_input_ptr( nest , nest_config_flags )
+
+! blend parent and nest fields: terrain, mub, and phb.  THe mub and phb are used in start_domain.
+          CALL  blend_terrain ( nest%ht_fine , nest%ht , &
+                                ids , ide , jds , jde , 1   , 1   , &
+                                ims , ime , jms , jme , 1   , 1   , &
+                                ips , ipe , jps , jpe , 1   , 1   )
+          CALL  blend_terrain ( nest%em_mub_fine , nest%em_mub , &
+                                ids , ide , jds , jde , 1   , 1   , &
+                                ims , ime , jms , jme , 1   , 1   , &
+                                ips , ipe , jps , jpe , 1   , 1   )
+          CALL  blend_terrain ( nest%em_phb_fine , nest%em_phb , &
+                                ids , ide , jds , jde , kds , kde , &
+                                ims , ime , jms , jme , kms , kme , &
+                                ips , ipe , jps , jpe , kps , kpe )
+
        ELSE IF ( nest_config_flags%input_from_hires ) THEN
 ! read in high res topography
           CALL  input_terrain_rsmas ( nest%ht , nest%xlat, nest%xlong, nest%dx, &
@@ -307,19 +323,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
                                       ips , ipe , jps , jpe , 1   , 1   )
        ENDIF
 
-! blend parent and nest fields: terrain, mub, and phb.  THe mub and phb are used in start_domain.
-       CALL  blend_terrain ( nest%ht_fine , nest%ht , &
-                             ids , ide , jds , jde , 1   , 1   , &
-                             ims , ime , jms , jme , 1   , 1   , &
-                             ips , ipe , jps , jpe , 1   , 1   )
-       CALL  blend_terrain ( nest%em_mub_fine , nest%em_mub , &
-                             ids , ide , jds , jde , 1   , 1   , &
-                             ims , ime , jms , jme , 1   , 1   , &
-                             ips , ipe , jps , jpe , 1   , 1   )
-       CALL  blend_terrain ( nest%em_phb_fine , nest%em_phb , &
-                             ids , ide , jds , jde , kds , kde , &
-                             ims , ime , jms , jme , kms , kme , &
-                             ips , ipe , jps , jpe , kps , kpe )
+
      ELSE
        WRITE(message,FMT='(A,I2,A,I2,A)') '*** Initializing nest domain #',nest%id,&
                                      ' by horizontally interpolating parent domain #' ,parent%id, &
@@ -613,6 +617,7 @@ character*256 message, message2
 integer myproc
 
 !#define VORTEX_CENTER
+!#define MOVING_DIAGS
 #ifdef VORTEX_CENTER
 
 
@@ -626,13 +631,17 @@ integer myproc
 ! save on cost for global collection of height field and broadcast
 ! of new center.
 
+#ifdef MOVING_DIAGS
 write(0,*)'Check to see if COMPUTE_VORTEX_CENTER_ALARM is ringing? '
+#endif
    CALL nl_get_parent_grid_ratio ( grid%id , pgr )
    CALL nl_get_dx ( grid%id , dx )
 
    IF ( ESMF_AlarmIsRinging( grid%alarms( COMPUTE_VORTEX_CENTER_ALARM ), rc=rc ) ) THEN
 
+#ifdef MOVING_DIAGS
 write(0,*)'COMPUTE_VORTEX_CENTER_ALARM is ringing  '
+#endif
      CALL ESMF_AlarmRingerOff( grid%alarms( COMPUTE_VORTEX_CENTER_ALARM ), rc=rc )
 
      last_vc_i = grid%vc_i
@@ -688,9 +697,11 @@ write(0,*)'COMPUTE_VORTEX_CENTER_ALARM is ringing  '
           je = min( grid%vc_j + vortex_interval * max_vortex_speed / dx , 1.0 * (jde-1) )
        ENDIF
 
+#ifdef MOVING_DIAGS
 write(0,*)'search set around last position '
 write(0,*)'   is, ids-1,  ie,  ide-1 ', is, ids-1, ie, ide-1
 write(0,*)'   js, jds-1,  je,  jde-1 ', js, jds-1, je, jde-1
+#endif
 
        ! find local min, max
        vmin =  1000000.0
@@ -761,8 +772,8 @@ write(0,*)'   js, jds-1,  je,  jde-1 ', js, jds-1, je, jde-1
        grid%vc_i = grid%xi + .5
        grid%vc_j = grid%xj + .5
 
+#ifdef MOVING_DIAGS
 write(0,*)'computed grid%vc_i, grid%vc_j ',grid%vc_i, grid%vc_j
-
 i = grid%vc_i ; j = grid%vc_j ; height( i,j ) = height(i,j) * 1.2   !mark the center
 CALL wrf_timetoa ( grid%current_time, message2 )
 WRITE ( message , FMT = '(A," on domain ",I3)' ) TRIM(message2), grid%id
@@ -773,6 +784,7 @@ write(70,*)height(i,j)
 enddo
 enddo
 call flush_(70)
+#endif
 
        DEALLOCATE ( height )
 
@@ -783,12 +795,16 @@ call flush_(70)
      CALL wrf_dm_bcast_real( grid%vc_i , 1 )
      CALL wrf_dm_bcast_real( grid%vc_j , 1 )
 
+#ifdef MOVING_DIAGS
 write(0,*)'after bcast : grid%vc_i, grid%vc_j ',grid%vc_i, grid%vc_j
+#endif
 
 
    ENDIF   ! COMPUTE_VORTEX_CENTER_ALARM ringing
 
+#ifdef MOVING_DIAGS
 write(0,*)'After ENDIF : grid%vc_i, grid%vc_j ',grid%vc_i, grid%vc_j
+#endif
 
    dc_i = (ide-ids+1)/2.    ! domain center
    dc_j = (jde-jds+1)/2.
@@ -812,15 +828,19 @@ write(0,*)'After ENDIF : grid%vc_i, grid%vc_j ',grid%vc_i, grid%vc_j
    IF ( move_cd_x .LT. 0 ) move_cd_x = max ( move_cd_x , -1 )
    IF ( move_cd_y .LT. 0 ) move_cd_y = max ( move_cd_y , -1 )
 
+#ifdef MOVING_DIAGS
 write(0,*)'vortex center : ',grid%vc_i, grid%vc_j
 write(0,*)'grid   center : ',     dc_i,      dc_j
 write(0,*)'disp          : ',   disp_x,    disp_y
 write(0,*)'move (rel cd) : ',move_cd_x, move_cd_y
+#endif
 
    grid%vc_i = grid%vc_i - move_cd_x * pgr
    grid%vc_j = grid%vc_j - move_cd_y * pgr
 
+#ifdef MOVING_DIAGS
 write(0,*)' changing grid%vc_i,  move_cd_x * pgr ', grid%vc_i, move_cd_x * pgr, move_cd_x, pgr
+#endif
 
    IF ( ( move_cd_x .NE. 0 ) .OR. ( move_cd_y .NE. 0 ) ) THEN
      time_for_move2 = .TRUE.

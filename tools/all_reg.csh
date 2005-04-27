@@ -193,7 +193,7 @@ EOF
 			if ( -e ed.in ) rm ed.in
 			cat >! ed_in << EOF
 				/$OLD_TEXT[$count]/s/$OLD_TEXT[$count]/$NEW_TEXT[$count]/
-				/GENERATE_BASELINE = FALSE/s/GENERATE_BASELINE = FALSE/GENERATE_BASELINE = $SAVE_DIR/
+				/GENERATE_BASELINE = FALSE/s?GENERATE_BASELINE = FALSE?GENERATE_BASELINE = $SAVE_DIR?
 				w reg.foo.$count.$NAME[$count]
 				q
 EOF
@@ -201,7 +201,7 @@ EOF
 			if ( -e ed.in ) rm ed.in
 			cat >! ed_in << EOF
 				/$OLD_TEXT[$count]/s/$OLD_TEXT[$count]/$NEW_TEXT[$count]/
-				/COMPARE_BASELINE = FALSE/s/COMPARE_BASELINE = FALSE/COMPARE_BASELINE = $SAVE_DIR/
+				/COMPARE_BASELINE = FALSE/s?COMPARE_BASELINE = FALSE?COMPARE_BASELINE = $SAVE_DIR?
 				w reg.foo.$count.$NAME[$count]
 				q
 EOF

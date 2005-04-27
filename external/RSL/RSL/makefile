@@ -63,7 +63,7 @@
 ###################################################
 
 # largest number of domains
-MAX_DOMAINS  = 5
+MAX_DOMAINS  = 6
 
 # largest number of processors
 MAX_PROC     = 256

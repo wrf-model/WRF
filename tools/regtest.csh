@@ -222,6 +222,24 @@ if ( `uname` == Linux ) then
 	set LINUX_COMP = PGI
 endif
 
+#	Intel requires /usr/local/intel-8.0/lib in LD_LIBRARY_PATH
+#	and it has to be in the .cshrc file for the rsh for mpirun
+#	intel 8.0 Apr 2005
+
+if ( $LINUX_COMP == INTEL ) then
+
+	grep LD_LIBRARY_PATH ~/.cshrc >& /dev/null
+	set ok1 = $status
+	echo $LD_LIBRARY_PATH | grep intel >& /dev/null
+	set ok2 = $status
+	if ( ( $ok1 != 0 ) || ( $ok2 != 0 ) ) then
+		echo You need to stick the following line in your .cshrc file
+		echo setenv LD_LIBRARY_PATH /usr/lib:/usr/local/lib:/usr/local/intel-8.0/lib
+		echo Otherwise mpirun cannot find libcxa.so.5 
+		exit ( 1 )
+	endif
+endif
+
 #	Is this a WRF chem test?  
 
 if ( $NESTED != TRUE ) then
@@ -902,6 +920,9 @@ EOF
 	else if ( $CHEM == FALSE ) then
 		set ZAP_OPENMP		= FALSE
 	endif
+	if ( $LINUX_COMP == INTEL ) then
+		set ZAP_OPENMP		= TRUE
+	endif
 	set MPIRUNCOMMAND       = ( mpirun -np $Num_Procs -machinefile $Mach )
 	echo "Compiler version info: " >! version_info
 	if      ( $LINUX_COMP == PGI ) then
@@ -953,6 +974,9 @@ EOF
 		set ZAP_OPENMP		= TRUE
 	else if ( $CHEM == FALSE ) then
 		set ZAP_OPENMP		= FALSE
+	endif
+	if ( $LINUX_COMP == INTEL ) then
+		set ZAP_OPENMP		= TRUE
 	endif
 	set MPIRUNCOMMAND       = ( mpirun -np $Num_Procs -machinefile $Mach )
 	echo "Compiler version info: " >! version_info
@@ -1030,6 +1054,9 @@ EOF
 	else if ( $CHEM == FALSE ) then
 		set ZAP_OPENMP		= FALSE
 	endif
+	if ( $LINUX_COMP == INTEL ) then
+		set ZAP_OPENMP		= TRUE
+	endif
 	set MPIRUNCOMMAND       = ( mpirun -v -np $Num_Procs -machinefile $Mach -nolocal )
 	set MPIRUNCOMMANDPOST   = "< /dev/null"
 	echo "Compiler version info: " >! version_info
@@ -1103,6 +1130,9 @@ EOF
 		set ZAP_OPENMP		= TRUE
 	else if ( $CHEM == FALSE ) then
 		set ZAP_OPENMP		= FALSE
+	endif
+	if ( $LINUX_COMP == INTEL ) then
+		set ZAP_OPENMP		= TRUE
 	endif
 	set MPIRUNCOMMAND       = ( mpirun -np $Num_Procs -machinefile $Mach )
 	echo "Compiler version info: " >! version_info

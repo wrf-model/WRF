@@ -938,29 +938,47 @@
       CALL SET_TILES(GRID,IDS,IDE-1,JDS+1,JDE-1,ITS,ITE,JTS,JTE)
 !
       CALL SURFACE_DRIVER(                                              &
-     &           ACSNOM,ACSNOW,AKHS,AKMS,ALBEDO,BR,CMC,ZERO_2D          &
-     &          ,CHKLOWQ,CONFIG_FLAGS,DT,DX,DZ,SLDPTH,ZERO_2D           &
-     &          ,RLW_DN_SFC,GRNFLX,RSW_NET_SFC,GZ1OZ0,TWBS,ZERO_2D      &
-     &          ,SFCZ,IDUMMY,ISFFLX,ISLTYP,NTSD,IVGTYP,LOWLYR           &
-     &          ,ONE,WATER,ZERO_2D,RMOL,NSOIL,N_MOIST,P8W,PBLH          &
-     &          ,PI_PHY,PSHLTR,PSIH,PSIM,P_PHY,Q10,Q2X,QWBS,QS,QSHLTR   &
-     &          ,QZ0,RAINBL,RAIN,ZERO_2D,ZERO_2D,RR,SFCEVPX             &
-     &          ,SFCEXC,SSROFF,SMC,SMSTAV,SMSTOT,MXSNAL,SNOW,SNOWC      &
-     &          ,SNOWH,NPHS,ZERO_2D,TH10,TH2X,ZERO_2D,THZ0,TH_PHY       &
-     &          ,TG,TSHLTR,TSFC,STC,T_PHY,U10,BGROFF,USTAR,UZ0H         &
-     &          ,U_FRAME,U_PHY,V10,VGFRCK,VZ0H,V_FRAME,V_PHY            &
-     &          ,WARM_RAIN,WSPD,SICE,XLAND,Z,Z0,DZSOIL                  &
-     &          ,CT,TKE                                                 &
-     &          ,ALBASE,ELFLX,SH2O,SHDMAX,SHDMIN,Z0BASE                 &
-     &          ,FLQC,FLHC,ZERO_2D,ZERO_2D,ZERO_2D,ZERO_2D,ZERO_2D      & ! RUC LSM
-     &          ,ZERO_SOIL,ZERO_SOIL                                    &
-     &          ,PSFC_OUT                                               &
-     &          ,IDS,IDE,JDS,JDE,KDS,KDE                                &
-     &          ,IMS,IME,JMS,JME,KMS,KME                                &
-     &          ,GRID%I_START,GRID%I_END                                &
-     &          ,GRID%J_START,GRID%J_END                                &
-     &          ,KTS,KTE,GRID%NUM_TILES                                 &
-     &          ,POTEVP,SNOPCX,SOILTB,SR)                                 ! NMM LSM only
+     &           ACSNOM=ACSNOM,ACSNOW=ACSNOW,AKHS=AKHS,AKMS=AKMS        &
+     &          ,ALBEDO=ALBEDO,BR=BR,CANWAT=CMC,CHKLOWQ=CHKLOWQ         &
+     &          ,DT=DT,DX=DX,DZ8W=DZ,DZS=SLDPTH,GLW=RLW_DN_SFC          &
+     &          ,GRDFLX=GRNFLX,GSW=RSW_NET_SFC,GZ1OZ0=GZ1OZ0,HFX=TWBS   &
+     &          ,HT=SFCZ,IFSNOW=IDUMMY,ISFFLX=ISFFLX,ISLTYP=ISLTYP      &
+     &          ,ITIMESTEP=NTSD,IVGTYP=IVGTYP,LOWLYR=LOWLYR             &
+     &          ,MAVAIL=ONE,RMOL=RMOL,NUM_SOIL_LAYERS=NSOIL,P8W=P8W     &
+     &          ,PBLH=PBLH,PI_PHY=PI_PHY,PSHLTR=PSHLTR,PSIH=PSIH        &
+     &          ,PSIM=PSIM,P_PHY=P_PHY,Q10=Q10,Q2=Q2X,QFX=QWBS,QSFC=QS  &
+     &          ,QSHLTR=QSHLTR,QZ0=QZ0,RAINCV=RAIN                      &
+     &          ,RHO=RR,SFCEVP=SFCEVPX,SFCEXC=SFCEXC,SFCRUNOFF=SSROFF   &
+     &          ,SMOIS=SMC,SMSTAV=SMSTAV,SMSTOT=SMSTOT,SNOALB=MXSNAL    &
+     &          ,SNOW=SNOW,SNOWC=SNOWC,SNOWH=SNOWH,STEPBL=NPHS          &
+     &          ,TH10=TH10,TH2=TH2X,THZ0=THZ0,TH_PHY=TH_PHY             &
+     &          ,TMN=TG,TSHLTR=TSHLTR,TSK=TSFC,TSLB=STC,T_PHY=T_PHY     &
+     &          ,U10=U10,UDRUNOFF=BGROFF,UST=USTAR,UZ0=UZ0H             &
+     &          ,U_FRAME=U_FRAME,U_PHY=U_PHY,V10=V10,VEGFRA=VGFRCK      &
+     &          ,VZ0=VZ0H,V_FRAME=V_FRAME,V_PHY=V_PHY                   &
+     &          ,WARM_RAIN=WARM_RAIN,WSPD=WSPD,XICE=SICE                &
+     &          ,XLAND=XLAND,Z=Z,ZNT=Z0,ZS=DZSOIL,CT=CT,TKE_MYJ=TKE     &
+     &          ,ALBBCK=ALBASE,LH=ELFLX,SH2O=SH2O,SHDMAX=SHDMAX         &
+     &          ,SHDMIN=SHDMIN,Z0=Z0BASE,FLQC=FLQC,FLHC=FLHC            &
+     &          ,PSFC=PSFC_OUT                                          &
+     &          ,SF_SFCLAY_PHYSICS=CONFIG_FLAGS%SF_SFCLAY_PHYSICS       &
+     &          ,SF_SURFACE_PHYSICS=CONFIG_FLAGS%SF_SURFACE_PHYSICS     &
+     &          ,RA_LW_PHYSICS=CONFIG_FLAGS%RA_LW_PHYSICS               &
+     &          , IDS=IDS,IDE=IDE,JDS=JDS,JDE=JDE,KDS=KDS,KDE=KDE       &
+     &          , IMS=IMS,IME=IME,JMS=JMS,JME=JME,KMS=KMS,KME=KME       &
+     &          , I_START=GRID%I_START,I_END=GRID%I_END                 &
+     &          , J_START=GRID%J_START,J_END=GRID%J_END                 &
+     &          , KTS=KTS,KTE=KTE,NUM_TILES=GRID%NUM_TILES              &
+           ! optional
+     &          ,QV_CURR=water(ims,kms,jms,P_QV) , F_QV=F_QV            &
+     &          ,QC_CURR=water(ims,kms,jms,P_QC) , F_QC=F_QC            &
+     &          ,QR_CURR=water(ims,kms,jms,P_QR) , F_QR=F_QR            &
+     &          ,QI_CURR=water(ims,kms,jms,P_QI) , F_QI=F_QI            &
+     &          ,QS_CURR=water(ims,kms,jms,P_QS) , F_QS=F_QS            &
+     &          ,QG_CURR=water(ims,kms,jms,P_QG) , F_QG=F_QG            &
+     &          ,RAINBL=RAINBL                                          &
+     &          ,POTEVP=POTEVP,SNOPCX=SNOPCX,SOILTB=SOILTB,SR=SR        &
+     &                                                                  )
 !
 !-----------------------------------------------------------------------
 !

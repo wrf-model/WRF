@@ -62,6 +62,8 @@ SUBROUTINE solve_em ( grid , config_flags , &
    INTEGER                         :: itmpstep
    INTEGER                         :: sz
 
+   LOGICAL                         :: specified_bdy
+
 ! storage for tendencies and decoupled state (generated from Registry)
 #include <em_i1_decl.inc>
 
@@ -513,44 +515,45 @@ BENCH_END(phy_prep_tim)
 
          CALL wrf_debug ( 200 , ' call radiation_driver' )
 BENCH_START(rad_driver_tim)
-         CALL radiation_driver(                                        &
-                    itimestep=itimestep,dt=dt                          &
-                   ,AER_DRY=AER_DRY,AER_WATER=AER_WATER                &
-                   ,RTHRATENLW=RTHRATENLW,RTHRATENSW=RTHRATENSW        &
-                   ,RTHRATEN=RTHRATEN,GLW=GLW,GSW=GSW                  &
-                   ,XLAT=XLAT,XLONG=XLONG,ALBEDO=ALBEDO,EMISS=EMISS    &
-                   ,SWDOWN=SWDOWN                                      &
-                   ,rho=rho,p8w=p8w,p=p_phy                            &
-                   ,pi=pi_phy,dz8w=dz8w,t=t_phy,t8w=t8w                &
-                   ,lw_physics=config_flags%ra_lw_physics              &
-                   ,sw_physics=config_flags%ra_sw_physics              &
-                   ,RADT=RADT,STEPRA=STEPRA,ICLOUD=ICLOUD              &
-                   ,taucldi=taucldi,taucldc=taucldc                    &
-                   ,XLAND=XLAND,TSK=TSK,HTOP=HTOP,HBOT=HBOT            &
-                   ,CUPPT=CUPPT,VEGFRA=VEGFRA,SNOW=SNOW                &
-                   ,TOTSWDN=TOTSWDN,TOTLWDN=TOTLWDN                    &
-                   ,RSWTOA=RSWTOA,RLWTOA=RLWTOA,CZMEAN=CZMEAN          &
-                   ,GMT=GMT,JULDAY=JULDAY ,julyr=julyr ,NPHS=1         &
-                   ,warm_rain=warm_rain                                &
-                   ,CFRACL=CFRACL,CFRACM=CFRACM,CFRACH=CFRACH          &
-                   ,ACFRST=ACFRST,NCFRST=NCFRST,ACFRCV=ACFRCV          &
-                   ,NCFRCV=NCFRCV                                      &
-                   ,ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde  & 
-                   ,ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme  &
-                   ,i_start=grid%i_start,i_end=min(grid%i_end, ide-1)  &
-                   ,j_start=grid%j_start,j_end=min(grid%j_end, jde-1)  &
-                   ,kts=k_start, kte=min(k_end,kde-1)                  &
-                   ,num_tiles=grid%num_tiles                           &
-                 ! Optional                          
-                   , CLDFRA=CLDFRA                                     &
-                   , Pb=pb                                             &
-                   , QV=moist_2(ims,kms,jms,P_QV), F_QV=F_QV           &
-                   , QC=moist_2(ims,kms,jms,P_QC), F_QC=F_QC           &
-                   , QR=moist_2(ims,kms,jms,P_QR), F_QR=F_QR           &
-                   , QI=moist_2(ims,kms,jms,P_QI), F_QI=F_QI           &
-                   , QS=moist_2(ims,kms,jms,P_QS), F_QS=F_QS           &
-                   , QG=moist_2(ims,kms,jms,P_QG), F_QG=F_QG           &
-                                                                       )
+         CALL radiation_driver(                                           &
+     &         ACFRCV=acfrcv      ,ACFRST=acfrst      ,AER_DRY=aer_dry    &
+     &        ,AER_WATER=aer_water                    ,ALBEDO=albedo      &
+     &        ,CFRACH=cfrach      ,CFRACL=cfracl      ,CFRACM=cfracm      &
+     &        ,CUPPT=cuppt        ,CZMEAN=czmean      ,DT=dt              &
+     &        ,DZ8W=dz8w          ,EMISS=emiss        ,GLW=glw            &
+     &        ,GMT=gmt            ,GSW=gsw            ,HBOT=hbot          &
+     &        ,HTOP=htop          ,ICLOUD=icloud                          &
+     &        ,ITIMESTEP=itimestep                    ,JULDAY=julday      &
+     &        ,JULYR=julyr        ,LW_PHYSICS=config_flags%ra_lw_physics  &
+     &        ,NCFRCV=ncfrcv      ,NCFRST=ncfrst      ,NPHS=1             &
+     &        ,P8W=p8w            ,P=p_phy            ,PI=pi_phy          &
+     &        ,RADT=radt          ,RHO=rho            ,RLWTOA=rlwtoa      &
+     &        ,RSWTOA=rswtoa      ,RTHRATEN=rthraten                      &
+     &        ,RTHRATENLW=rthratenlw                                      &
+     &        ,RTHRATENSW=rthratensw                  ,SNOW=snow          &
+     &        ,STEPRA=stepra      ,SWDOWN=swdown                          &
+     &        ,SW_PHYSICS=config_flags%ra_sw_physics  ,T8W=t8w            &
+     &        ,T=t_phy            ,TAUCLDC=taucldc    ,TAUCLDI=taucldi    &
+     &        ,TOTLWDN=totlwdn    ,TOTSWDN=totswdn    ,TSK=tsk            &
+     &        ,VEGFRA=vegfra      ,WARM_RAIN=warm_rain                    &
+     &        ,XLAND=xland        ,XLAT=xlat          ,XLONG=xlong        &
+            ! indexes
+     &        ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde          &
+     &        ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme          &
+     &        ,i_start=grid%i_start,i_end=min(grid%i_end, ide-1)          &
+     &        ,j_start=grid%j_start,j_end=min(grid%j_end, jde-1)          &
+     &        ,kts=k_start, kte=min(k_end,kde-1)                          &
+     &        ,num_tiles=grid%num_tiles                                   &
+            ! Optional                          
+     &        , CLDFRA=CLDFRA                                             &
+     &        , Pb=pb                                                     &
+     &        , QV=moist_2(ims,kms,jms,P_QV), F_QV=F_QV                   &
+     &        , QC=moist_2(ims,kms,jms,P_QC), F_QC=F_QC                   &
+     &        , QR=moist_2(ims,kms,jms,P_QR), F_QR=F_QR                   &
+     &        , QI=moist_2(ims,kms,jms,P_QI), F_QI=F_QI                   &
+     &        , QS=moist_2(ims,kms,jms,P_QS), F_QS=F_QS                   &
+     &        , QG=moist_2(ims,kms,jms,P_QG), F_QG=F_QG                   &
+     &                                                                    )
 
 BENCH_END(rad_driver_tim)
 
@@ -560,28 +563,62 @@ BENCH_END(rad_driver_tim)
 BENCH_START(surf_driver_tim)
 
       CALL wrf_debug ( 200 , ' call surface_driver' )
-      CALL surface_driver(                                          &
-     &           ACSNOM,ACSNOW,AKHS,AKMS,ALBEDO,BR,CANWAT,CAPG        &
-     &          ,CHKLOWQ,CONFIG_FLAGS,DT,DX,DZ8W,DZS,EMISS,GLW        &
-     &          ,GRDFLX,GSW,GZ1OZ0,HFX,HOL,HT,IFSNOW,ISFFLX           &
-     &          ,ISLTYP,ITIMESTEP,IVGTYP,LOWLYR,MAVAIL,MOIST_2,MOL,RMOL&
-     &          ,NUM_SOIL_LAYERS,NUM_3D_M,P8W,PBLH,PI_PHY,PSHLTR,PSIH &
-     &          ,PSIM,P_PHY,Q10,Q2,QFX,QSFC,QSHLTR,QZ0,RAINBL         &
-     &          ,RAINCV,RAINNCV,REGIME,RHO,SFCEVP,SFCEXC,SFCRUNOFF    &
-     &          ,SMOIS,SMSTAV,SMSTOT,SNOALB,SNOW,SNOWC,SNOWH,STEPBL   &
-     &          ,T2,TH10,TH2,THC,THZ0,TH_PHY,TMN,TSHLTR,TSK,TSLB      &
-     &          ,T_PHY,U10,UDRUNOFF,UST,UZ0,U_FRAME,U_PHY,V10,VEGFRA  &
-     &          ,VZ0,V_FRAME,V_PHY,WARM_RAIN,WSPD,XICE,XLAND,Z,ZNT,ZS &
-     &          ,CT,TKE_MYJ                                           &
-     &          ,ALBBCK,LH,SH2O,SHDMAX,SHDMIN,Z0                      &
-     &          ,flqc,flhc,qsg,qvg,qcg,soilt1,tsnav                   & ! for RUC LSM
-     &          ,SMFR3D,KEEPFR3DFLAG                                  &
-     &          ,PSFC                                                 &
-     &          ,ids,ide, jds,jde, kds,kde                            &
-     &          ,ims,ime, jms,jme, kms,kme                            &
-     &          ,grid%i_start, min(grid%i_end, ide-1)                 &
-     &          ,grid%j_start, min(grid%j_end, jde-1)                 &
-     &          ,k_start    , min(k_end,kde-1) , grid%num_tiles       )
+      CALL surface_driver(                                                &
+     &         ACSNOM=acsnom      ,ACSNOW=acsnow      ,AKHS=akhs          &
+     &        ,AKMS=akms          ,ALBBCK=albbck      ,ALBEDO=albedo      &
+     &        ,BR=br              ,CANWAT=canwat      ,CHKLOWQ=chklowq    &
+     &        ,CT=ct              ,DT=dt              ,DX=dx              &
+     &        ,DZ8W=dz8w          ,DZS=dzs            ,FLHC=flhc          &
+     &        ,FLQC=flqc          ,GLW=glw            ,GRDFLX=grdflx      &
+     &        ,GSW=gsw            ,GZ1OZ0=gz1oz0      ,HFX=hfx            &
+     &        ,HT=ht              ,IFSNOW=ifsnow      ,ISFFLX=isfflx      &
+     &        ,ISLTYP=isltyp      ,ITIMESTEP=itimestep                    &
+     &        ,IVGTYP=ivgtyp      ,LH=lh              ,LOWLYR=lowlyr      &
+     &        ,MAVAIL=mavail      ,NUM_SOIL_LAYERS=num_soil_layers        &
+     &        ,P8W=p8w            ,PBLH=pblh          ,PI_PHY=pi_phy      &
+     &        ,PSFC=psfc          ,PSHLTR=pshltr      ,PSIH=psih          &
+     &        ,PSIM=psim          ,P_PHY=p_phy        ,Q10=q10            &
+     &        ,Q2=q2              ,QFX=qfx            ,QSFC=qsfc          &
+     &        ,QSHLTR=qshltr      ,QZ0=qz0            ,RAINCV=raincv      &
+     &        ,RA_LW_PHYSICS=ra_lw_physics            ,RHO=rho            &
+     &        ,RMOL=rmol          ,SFCEVP=sfcevp      ,SFCEXC=sfcexc      &
+     &        ,SFCRUNOFF=sfcrunoff                                        &
+     &        ,SF_SFCLAY_PHYSICS=sf_sfclay_physics                        &
+     &        ,SF_SURFACE_PHYSICS=sf_surface_physics  ,SH2O=sh2o          &
+     &        ,SHDMAX=shdmax      ,SHDMIN=shdmin      ,SMOIS=smois        &
+     &        ,SMSTAV=smstav      ,SMSTOT=smstot      ,SNOALB=snoalb      &
+     &        ,SNOW=snow          ,SNOWC=snowc        ,SNOWH=snowh        &
+     &        ,STEPBL=stepbl      ,TH10=th10          ,TH2=th2            &
+     &        ,THZ0=thz0          ,TH_PHY=th_phy      ,TKE_MYJ=tke_myj    &
+     &        ,TMN=tmn            ,TSHLTR=tshltr      ,TSK=tsk            &
+     &        ,TSLB=tslb          ,T_PHY=t_phy        ,U10=u10            &
+     &        ,UDRUNOFF=udrunoff  ,UST=ust            ,UZ0=uz0            &
+     &        ,U_FRAME=u_frame    ,U_PHY=u_phy        ,V10=v10            &
+     &        ,VEGFRA=vegfra      ,VZ0=vz0            ,V_FRAME=v_frame    &
+     &        ,V_PHY=v_phy        ,WARM_RAIN=warm_rain                    &
+     &        ,WSPD=wspd          ,XICE=xice          ,XLAND=xland        &
+     &        ,Z0=z0              ,Z=z                ,ZNT=znt            &
+     &        ,ZS=zs                                                      &
+           ! Indexes
+     &        ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde          &
+     &        ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme          &
+     &        , I_START=grid%i_start,I_END=min(grid%i_end, ide-1)         &
+     &        , J_START=grid%j_start,J_END=min(grid%j_end, jde-1)         &
+     &        , KTS=k_start, KTE=min(k_end,kde-1)                         &
+     &        , NUM_TILES=grid%num_tiles                                  &
+           ! Optional
+     &          ,QV_CURR=moist_2(ims,kms,jms,P_QV), F_QV=F_QV             &
+     &          ,QC_CURR=moist_2(ims,kms,jms,P_QC), F_QC=F_QC             &
+     &          ,QR_CURR=moist_2(ims,kms,jms,P_QR), F_QR=F_QR             &
+     &          ,QI_CURR=moist_2(ims,kms,jms,P_QI), F_QI=F_QI             &
+     &          ,QS_CURR=moist_2(ims,kms,jms,P_QS), F_QS=F_QS             &
+     &          ,QG_CURR=moist_2(ims,kms,jms,P_QG), F_QG=F_QG             &
+     &          ,CAPG=capg, EMISS=emiss, HOL=hol,MOL=mol                  &
+     &          ,RAINBL=rainbl                                            &
+     &          ,RAINNCV=rainncv,REGIME=regime,T2=t2,THC=thc              &
+     &          ,QSG=qsg,QVG=qvg,QCG=qcg,SOILT1=soilt1,TSNAV=tsnav        &   ! ruc lsm
+     &          ,SMFR3D=smfr3d,KEEPFR3DFLAG=keepfr3dflag                  &   ! ruc lsm
+     &                                                                    )
 BENCH_END(surf_driver_tim)
 
 !*********
@@ -589,42 +626,45 @@ BENCH_END(surf_driver_tim)
 
       CALL wrf_debug ( 200 , ' call pbl_driver' )
 BENCH_START(pbl_driver_tim)
-      CALL pbl_driver(                                                &
-     &            ITIMESTEP=itimestep,DT=dt                           &
-     &           ,U_FRAME=u_frame,V_FRAME=v_frame                     &
-     &           ,RUBLTEN=rublten,RVBLTEN=rvblten,RTHBLTEN=rthblten   &
-     &           ,RQVBLTEN=rqvblten,RQCBLTEN=rqcblten                 &
-     &           ,RQIBLTEN=rqiblten                                   &
-     &           ,TSK=tsk,XLAND=xland,ZNT=znt,HT=ht,UST=ust           &
-     &           ,PBLH=pblh,HFX=hfx,QFX=qfx,GRDFLX=grdflx             &
-     &           ,U_PHY=u_phy,V_PHY=v_phy,TH_PHY=th_phy,RHO=rho       &
-     &           ,P_PHY=p_phy,PI_PHY=pi_phy,P8W=p8w,T_PHY=t_phy       &
-     &           ,DZ8W=dz8w,Z=z,TKE_MYJ=tke_myj,EL_MYJ=el_myj         &
-     &           ,EXCH_H=exch_h,AKHS=akhs,AKMS=akms                   &
-     &           ,THZ0=thz0,QZ0=qz0,UZ0=uz0,VZ0=vz0,QSFC=qsfc         &
-     &           ,LOWLYR=lowlyr                                       &
-     &           ,PSIM=psim, PSIH=psih, GZ1OZ0=gz1oz0                 &
-     &           ,WSPD=wspd, BR=br , CHKLOWQ=chklowq                  &
-     &           ,DX=dx                                               &
-     &           ,STEPBL=stepbl,WARM_RAIN=warm_rain                   &
-     &           ,KPBL=kpbl,CT=ct,LH=lh,SNOW=snow,XICE=xice           &
-     &           ,BL_PBL_PHYSICS=config_flags%bl_pbl_physics          &
-     &           ,RA_LW_PHYSICS=config_flags%ra_lw_physics            &
-     &           , IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde  &
-     &           , IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme  &
-     &           , I_START=grid%i_start,I_END=min(grid%i_end, ide-1)  &
-     &           , J_START=grid%j_start,J_END=min(grid%j_end, jde-1)  &
-     &           , KTS=k_start, KTE=min(k_end,kde-1)                  &
-     &           , NUM_TILES=grid%num_tiles                           &
+      CALL pbl_driver(                                                    &
+     &         AKHS=akhs          ,AKMS=akms                              &
+     &        ,BL_PBL_PHYSICS=config_flags%bl_pbl_physics                 &
+     &        ,BR=br              ,CHKLOWQ=chklowq    ,CT=ct              &
+     &        ,DT=dt              ,DX=dx              ,DZ8W=dz8w          &
+     &        ,EL_MYJ=el_myj      ,EXCH_H=exch_h      ,GRDFLX=grdflx      &
+     &        ,GZ1OZ0=gz1oz0      ,HFX=hfx            ,HT=ht              &
+     &        ,ITIMESTEP=itimestep                    ,KPBL=kpbl          &
+     &        ,LH=lh              ,LOWLYR=lowlyr      ,P8W=p8w            &
+     &        ,PBLH=pblh          ,PI_PHY=pi_phy      ,PSIH=psih          &
+     &        ,PSIM=psim          ,P_PHY=p_phy        ,QFX=qfx            &
+     &        ,QSFC=qsfc          ,QZ0=qz0                                &
+     &        ,RA_LW_PHYSICS=config_flags%ra_lw_physics                   &
+     &        ,RHO=rho            ,RQCBLTEN=rqcblten  ,RQIBLTEN=rqiblten  &
+     &        ,RQVBLTEN=rqvblten  ,RTHBLTEN=rthblten  ,RUBLTEN=rublten    &
+     &        ,RVBLTEN=rvblten    ,SNOW=snow          ,STEPBL=stepbl      &
+     &        ,THZ0=thz0          ,TH_PHY=th_phy      ,TKE_MYJ=tke_myj    &
+     &        ,TSK=tsk            ,T_PHY=t_phy        ,UST=ust            &
+     &        ,UZ0=uz0            ,U_FRAME=u_frame    ,U_PHY=u_phy        &
+     &        ,VZ0=vz0            ,V_FRAME=v_frame    ,V_PHY=v_phy        &
+     &        ,WARM_RAIN=warm_rain                    ,WSPD=wspd          &
+     &        ,XICE=xice          ,XLAND=xland        ,Z=z                &
+     &        ,ZNT=znt                                                    &
+     &        , IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde         &
+     &        , IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme         &
+     &        , I_START=grid%i_start,I_END=min(grid%i_end, ide-1)         &
+     &        , J_START=grid%j_start,J_END=min(grid%j_end, jde-1)         &
+     &        , KTS=k_start, KTE=min(k_end,kde-1)                         &
+     &        , NUM_TILES=grid%num_tiles                                  &
           ! optional
-     &           , QV_CURR=moist_2(ims,kms,jms,P_QV), F_QV=F_QV       &
-     &           , QC_CURR=moist_2(ims,kms,jms,P_QC), F_QC=F_QC       &
-     &           , QR_CURR=moist_2(ims,kms,jms,P_QR), F_QR=F_QR       &
-     &           , QI_CURR=moist_2(ims,kms,jms,P_QI), F_QI=F_QI       &
-     &           , QS_CURR=moist_2(ims,kms,jms,P_QS), F_QS=F_QS       &
-     &           , QG_CURR=moist_2(ims,kms,jms,P_QG), F_QG=F_QG       &
-     &           ,HOL=HOL, MOL=MOL, REGIME=REGIME                     &
-     &                                                                )
+     &        , QV_CURR=moist_2(ims,kms,jms,P_QV), F_QV=F_QV              &
+     &        , QC_CURR=moist_2(ims,kms,jms,P_QC), F_QC=F_QC              &
+     &        , QR_CURR=moist_2(ims,kms,jms,P_QR), F_QR=F_QR              &
+     &        , QI_CURR=moist_2(ims,kms,jms,P_QI), F_QI=F_QI              &
+     &        , QS_CURR=moist_2(ims,kms,jms,P_QS), F_QS=F_QS              &
+     &        , QG_CURR=moist_2(ims,kms,jms,P_QG), F_QG=F_QG              &
+     &        ,HOL=HOL, MOL=MOL, REGIME=REGIME                            &
+     &                                                                    )
+
 BENCH_END(pbl_driver_tim)
 
 ! cumulus para.
@@ -2282,40 +2322,42 @@ BENCH_END(moist_physics_prep_tim)
 
 BENCH_START(micro_driver_tim)
        sr = 0.
-       CALL microphysics_driver(                                       &
-                    TH=t_2, RHO=rho, PI=pi_phy, P=p_phy                &
-                   ,DZ8W=dz8w, P8W=p8w, DT=dtm, DX=dx, DY=dy           &
-                   ,MP_PHYSICS=config_flags%mp_physics                 &
-                   ,SPECIFIED=config_flags%specified                   &
-                              .OR. config_flags%nested                 &
-                   ,SPEC_ZONE=spec_zone                                &
-                   ,WARM_RAIN=warm_rain                                &
-                   ,XLAND=xland,ITIMESTEP=itimestep                    & 
-                   ,F_ICE_PHY=f_ice_phy,F_RAIN_PHY=f_rain_phy          &
-                   ,F_RIMEF_PHY=f_rimef_phy                            &
-                   ,LOWLYR=lowlyr,SR=sr                                &
-                   ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde  &
-                   ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme  &
-                   ,I_START=grid%i_start,I_END=min(grid%i_end, ide-1)  &
-                   ,J_START=grid%j_start,J_END=min(grid%j_end, jde-1)  &
-                   ,KTS=k_start, KTE=min(k_end,kde-1)                  &
-                   ,NUM_TILES=grid%num_tiles                           &
+       specified_bdy = config_flags%specified .OR. config_flags%nested
+
+       CALL microphysics_driver(                                          &
+     &         DT=dtm             ,DX=dx              ,DY=dy              &
+     &        ,DZ8W=dz8w          ,F_ICE_PHY=f_ice_phy                    &
+     &        ,ITIMESTEP=itimestep                    ,LOWLYR=lowlyr      &
+     &        ,P8W=p8w            ,P=p_phy            ,PI=pi_phy          &
+     &        ,RHO=rho            ,SPEC_ZONE=spec_zone                    &
+     &        ,SR=sr              ,TH=t_2                                 &
+     &        ,WARM_RAIN=warm_rain                    ,XLAND=xland        &
+     &        ,SPECIFIED=specified_bdy                                    &
+     &        ,F_RAIN_PHY=f_rain_phy                                      &
+     &        ,F_RIMEF_PHY=f_rimef_phy                                    &
+     &        ,MP_PHYSICS=config_flags%mp_physics                         &
+     &        ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde          &
+     &        ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme          &
+     &        ,I_START=grid%i_start,I_END=min(grid%i_end, ide-1)          &
+     &        ,J_START=grid%j_start,J_END=min(grid%j_end, jde-1)          &
+     &        ,KTS=k_start, KTE=min(k_end,kde-1)                          &
+     &        ,NUM_TILES=grid%num_tiles                                   &
                  ! Optional
-                   , RAINNC=rainnc, RAINNCV=rainncv                    &
-                   , W=w_2, Z=z, HT=ht                                 &
-                   , QV_CURR=moist_2(ims,kms,jms,P_QV), F_QV=F_QV      &
-                   , QC_CURR=moist_2(ims,kms,jms,P_QC), F_QC=F_QC      &
-                   , QR_CURR=moist_2(ims,kms,jms,P_QR), F_QR=F_QR      &
-                   , QI_CURR=moist_2(ims,kms,jms,P_QI), F_QI=F_QI      &
-                   , QS_CURR=moist_2(ims,kms,jms,P_QS), F_QS=F_QS      &
-                   , QG_CURR=moist_2(ims,kms,jms,P_QG), F_QG=F_QG      &
-                   , QV_OLD=moist_1(ims,kms,jms,P_QV)                  &
-                   , QC_OLD=moist_1(ims,kms,jms,P_QC)                  &
-                   , QR_OLD=moist_1(ims,kms,jms,P_QR)                  &
-                   , QI_OLD=moist_1(ims,kms,jms,P_QI)                  &
-                   , QS_OLD=moist_1(ims,kms,jms,P_QS)                  &
-                   , QG_OLD=moist_1(ims,kms,jms,P_QG)                  &
-                                                                       )
+     &        , RAINNC=rainnc, RAINNCV=rainncv                            &
+     &        , W=w_2, Z=z, HT=ht                                         &
+     &        , QV_CURR=moist_2(ims,kms,jms,P_QV), F_QV=F_QV              &
+     &        , QC_CURR=moist_2(ims,kms,jms,P_QC), F_QC=F_QC              &
+     &        , QR_CURR=moist_2(ims,kms,jms,P_QR), F_QR=F_QR              &
+     &        , QI_CURR=moist_2(ims,kms,jms,P_QI), F_QI=F_QI              &
+     &        , QS_CURR=moist_2(ims,kms,jms,P_QS), F_QS=F_QS              &
+     &        , QG_CURR=moist_2(ims,kms,jms,P_QG), F_QG=F_QG              &
+     &        , QV_OLD=moist_1(ims,kms,jms,P_QV)                          &
+     &        , QC_OLD=moist_1(ims,kms,jms,P_QC)                          &
+     &        , QR_OLD=moist_1(ims,kms,jms,P_QR)                          &
+     &        , QI_OLD=moist_1(ims,kms,jms,P_QI)                          &
+     &        , QS_OLD=moist_1(ims,kms,jms,P_QS)                          &
+     &        , QG_OLD=moist_1(ims,kms,jms,P_QG)                          &
+                                                                          )
 
 BENCH_END(micro_driver_tim)
 

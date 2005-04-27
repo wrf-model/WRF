@@ -49,6 +49,26 @@ set BASELINE = NOPE
 #=======================================================================
 #=======================================================================
 
+#	A friendly check for the baseline directory existence
+
+if ( ( $BASELINE == GENERATE ) || ( $BASELINE == COMPARE ) ) then
+	if ( `uname` == AIX ) then
+		set SAVE_DIR = /ptmp/gill/BASELINE/`uname`
+	else if ( ( `uname` == OSF1 ) && ( `hostname | cut -c 1-6` == joshua ) ) then
+		set SAVE_DIR = /data3/mp/gill/BASELINE/`uname`
+	else if ( ( `uname` == Linux ) && ( `hostname` == master ) ) then
+		set SAVE_DIR = /big6/gill/DO_NOT_REMOVE_DIR/BASELINE/`uname`
+	else
+		echo Hmm, no idea where to put/get this baseline data, stopping
+		exit ( 10 )
+	endif
+
+	if ( ( (   -d $SAVE_DIR ) && ( $BASELINE == GENERATE ) ) || \
+	     ( ( ! -d $SAVE_DIR ) && ( $BASELINE == COMPARE  ) ) ) then
+		echo WARNING Might be troubles with $SAVE_DIR logic
+	endif
+endif
+
 #	The regtest.csh file is treated as a template.  The following
 #	strings (first occurrence) is sought (OLD_TEXT) and replaced
 #	with the modified string (NEW_TEXT).  This edited regression 

@@ -266,3 +266,6 @@ EOF
 
 	@ count ++
 end
+
+rm ed_in
+rm io_format

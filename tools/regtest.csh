@@ -2539,7 +2539,7 @@ banner 29
 						pushd ${testdir}
 						set compopt = $COMPOPTS[3]
 						foreach proc ( 1p 4p )
-							set cmpfile = $TMPDIR/${basefilenm}.$compopt_${proc}
+							set cmpfile = $TMPDIR/${basefilenm}.${compopt}_${proc}
 							rm fort.88 fort.98 >& /dev/null
 							if ( ( -e ${basefile} ) && ( -e ${cmpfile} ) ) then
 								#	Are the files the same size?  If not, then only the initial times

@@ -199,74 +199,78 @@ SUBROUTINE store_terrain ( ter_interpolated , ter_input , &
 END SUBROUTINE store_terrain
 
 
-SUBROUTINE input_terrain_rsmas ( ter , xlat, xlon, dx , &
+SUBROUTINE input_terrain_rsmas ( grid ,                        &
                            ids , ide , jds , jde , kds , kde , &
                            ims , ime , jms , jme , kms , kme , &
                            ips , ipe , jps , jpe , kps , kpe )
 
+   USE module_domain
    IMPLICIT NONE
+   TYPE ( domain ) :: grid
 
    INTEGER , INTENT(IN)                       :: ids , ide , jds , jde , kds , kde , &
                                                  ims , ime , jms , jme , kms , kme , &
                                                  ips , ipe , jps , jpe , kps , kpe
-   REAL , DIMENSION(ims:ime,jms:jme) , INTENT(INOUT)  :: ter
-   REAL , DIMENSION(ims:ime,jms:jme) , INTENT(IN)     :: xlat, xlon
-   REAL , INTENT(IN)                                  :: DX
+
    LOGICAL, EXTERNAL ::  wrf_dm_on_monitor
 
    INTEGER :: i , j , k , myproc
+   CHARACTER*256:: message, message2
 
 #if DM_PARALLEL
 ! Local globally sized arrays
-   REAL , DIMENSION(ids:ide,jds:jde) :: ter_g, xlat_g, xlon_g
+   REAL , DIMENSION(ids:ide,jds:jde) :: ht_g, xlat_g, xlon_g
 #endif
 
    CALL wrf_get_myproc ( myproc ) 
 
 #if 0
-write(30+myproc,*)ipe-ips+1,jpe-jps+1,' HT before '
+CALL wrf_timetoa ( grid%current_time, message2 )
+WRITE ( message , FMT = '(A," HT before ",I3)' ) TRIM(message2), grid%id
+write(30+myproc,*)ipe-ips+1,jpe-jps+1,trim(message)
 do j = jps,jpe
 do i = ips,ipe
-write(30+myproc,*)ter(i,j)
+write(30+myproc,*)grid%ht(i,j)
 enddo
 enddo
 #endif
 
 #if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
-
-   CALL wrf_patch_to_global_real ( xlat , xlat_g , 'z' , 'xy' ,       &
+   CALL wrf_patch_to_global_real ( grid%xlat , xlat_g , grid%domdesc, 'z' , 'xy' ,       &
                                    ids, ide-1 , jds , jde-1 , 1 , 1 , &
                                    ims, ime   , jms , jme   , 1 , 1 , &
                                    ips, ipe   , jps , jpe   , 1 , 1   ) 
-   CALL wrf_patch_to_global_real ( xlon , xlon_g , 'z' , 'xy' ,       &
+   CALL wrf_patch_to_global_real ( grid%xlong , xlon_g , grid%domdesc, 'z' , 'xy' ,       &
                                    ids, ide-1 , jds , jde-1 , 1 , 1 , &
                                    ims, ime   , jms , jme   , 1 , 1 , &
                                    ips, ipe   , jps , jpe   , 1 , 1   ) 
 
    IF ( wrf_dm_on_monitor() ) THEN
-     CALL get_terrain ( dx/1000., xlat_g(ids:ide,jds:jde), xlon_g(ids:ide,jds:jde), ter_g(ids:ide,jds:jde), &
+     CALL get_terrain ( grid%dx/1000., xlat_g(ids:ide,jds:jde), xlon_g(ids:ide,jds:jde), ht_g(ids:ide,jds:jde), &
                         ide-ids+1,jde-jds+1,ide-ids+1,jde-jds+1 )
-     WHERE ( ter(ids:ide,jds:jde) < -1000. ) ter(ids:ide,jds:jde) = 0.
+     WHERE ( ht_g(ids:ide,jds:jde) < -1000. ) ht_g(ids:ide,jds:jde) = 0.
    ENDIF
 
-   CALL wrf_global_to_patch_real ( ter_g , ter , 'z' , 'xy' ,         &
+   CALL wrf_global_to_patch_real ( ht_g , grid%ht , grid%domdesc, 'z' , 'xy' ,         &
                                    ids, ide-1 , jds , jde-1 , 1 , 1 , &
                                    ims, ime   , jms , jme   , 1 , 1 , &
                                    ips, ipe   , jps , jpe   , 1 , 1   ) 
 
 #else
 
-   CALL get_terrain ( dx/1000., xlat(ids:ide,jds:jde), xlon(ids:ide,jds:jde), ter(ids:ide,jds:jde), &
+   CALL get_terrain ( grid%dx/1000., grid%xlat(ids:ide,jds:jde), grid%xlong(ids:ide,jds:jde), grid%ht(ids:ide,jds:jde), &
                        ide-ids+1,jde-jds+1,ide-ids+1,jde-jds+1 )
-   WHERE ( ter(ids:ide,jds:jde) < -1000. ) ter(ids:ide,jds:jde) = 0.
+   WHERE ( grid%ht(ids:ide,jds:jde) < -1000. ) grid%ht(ids:ide,jds:jde) = 0.
 
 #endif
 
 #if 0
-write(30+myproc,*)ipe-ips+1,jpe-jps+1,' HT after '
+CALL wrf_timetoa ( grid%current_time, message2 )
+WRITE ( message , FMT = '(A," HT after ",I3)' ) TRIM(message2), grid%id
+write(30+myproc,*)ipe-ips+1,jpe-jps+1,trim(message)
 do j = jps,jpe
 do i = ips,ipe
-write(30+myproc,*)ter(i,j)
+write(30+myproc,*)grid%ht(i,j)
 enddo
 enddo
 #endif

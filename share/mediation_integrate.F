@@ -234,16 +234,15 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
        REAL , DIMENSION(ims:ime,jms:jme) :: ter_input
      END SUBROUTINE store_terrain
 
-     SUBROUTINE  input_terrain_rsmas ( ter_input , xlat, xlon, dx,  &
+     SUBROUTINE  input_terrain_rsmas ( grid ,                  &
                            ids , ide , jds , jde , kds , kde , &
                            ims , ime , jms , jme , kms , kme , &
                            ips , ipe , jps , jpe , kps , kpe )
+       USE module_domain
+       TYPE ( domain ) :: grid
        INTEGER                           :: ids , ide , jds , jde , kds , kde , &
                                             ims , ime , jms , jme , kms , kme , &
                                             ips , ipe , jps , jpe , kps , kpe
-       REAL , DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: ter_input
-       REAL , DIMENSION(ims:ime,jms:jme), INTENT(IN)    :: xlat, xlon
-       REAL , INTENT(IN)                                :: dx
      END SUBROUTINE input_terrain_rsmas
 
    END INTERFACE
@@ -317,7 +316,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
 
        ELSE IF ( nest_config_flags%input_from_hires ) THEN
 ! read in high res topography
-          CALL  input_terrain_rsmas ( nest%ht , nest%xlat, nest%xlong, nest%dx, &
+          CALL  input_terrain_rsmas ( nest,                               &
                                       ids , ide , jds , jde , 1   , 1   , &
                                       ims , ime , jms , jme , 1   , 1   , &
                                       ips , ipe , jps , jpe , 1   , 1   )
@@ -449,6 +448,7 @@ SUBROUTINE med_nest_move ( parent, nest )
                                       ims , ime , jms , jme , kms , kme , &
                                       ips , ipe , jps , jpe , kps , kpe
    INTEGER ierr, fid
+   LOGICAL input_from_hires
 
 #if ( EM_CORE == 1 && defined(DM_PARALLEL) )
    INTERFACE
@@ -480,6 +480,16 @@ SUBROUTINE med_nest_move ( parent, nest )
         TYPE(domain) , POINTER    :: parent , nest
         INTEGER, INTENT(OUT)      :: dx , dy
      END FUNCTION time_for_move
+     SUBROUTINE  input_terrain_rsmas ( grid ,                  &
+                           ids , ide , jds , jde , kds , kde , &
+                           ims , ime , jms , jme , kms , kme , &
+                           ips , ipe , jps , jpe , kps , kpe )
+       USE module_domain
+       TYPE ( domain ) :: grid
+       INTEGER                           :: ids , ide , jds , jde , kds , kde , &
+                                            ims , ime , jms , jme , kms , kme , &
+                                            ips , ipe , jps , jpe , kps , kpe
+     END SUBROUTINE input_terrain_rsmas
    END INTERFACE
 
 #ifdef DEREF_KLUDGE
@@ -539,6 +549,14 @@ write(0,*)' moving ',grid%id,dx,dy
      CALL nl_set_j_parent_start( grid%id, grid%j_parent_start )
 
      CALL med_interp_domain( parent, nest )
+
+     CALL nl_get_input_from_hires( nest%id , input_from_hires ) 
+     IF ( input_from_hires ) THEN
+       CALL  input_terrain_rsmas ( nest,                               &
+                                   ids , ide , jds , jde , 1   , 1   , &
+                                   ims , ime , jms , jme , 1   , 1   , &
+                                   ips , ipe , jps , jpe , 1   , 1   )
+     ENDIF
 
      nest%moved = .true.
 ! masks associated with nest will have been set by shift_domain_em above

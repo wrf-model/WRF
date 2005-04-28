@@ -53,9 +53,9 @@ set BASELINE = NOPE
 
 if ( ( $BASELINE == GENERATE ) || ( $BASELINE == COMPARE ) ) then
 	if ( `uname` == AIX ) then
-		set SAVE_DIR = /ptmp/gill/BASELINE/`uname`
+		set SAVE_DIR = /ptmp/${USER}/BASELINE/`uname`
 	else if ( ( `uname` == OSF1 ) && ( `hostname | cut -c 1-6` == joshua ) ) then
-		set SAVE_DIR = /data3/mp/gill/BASELINE/`uname`
+		set SAVE_DIR = /data3/mp/${USER}/BASELINE/`uname`
 	else if ( ( `uname` == Linux ) && ( `hostname` == master ) ) then
 		set SAVE_DIR = /big6/gill/DO_NOT_REMOVE_DIR/BASELINE/`uname`
 	else
@@ -178,9 +178,9 @@ while ( $count <= $num_tests )
 
 		if ( ( $BASELINE == GENERATE ) || ( $BASELINE == COMPARE ) ) then
 			if ( `uname` == AIX ) then
-				set SAVE_DIR = /ptmp/gill/BASELINE/`uname`/$NAME[$count]
+				set SAVE_DIR = /ptmp/${USER}/BASELINE/`uname`/$NAME[$count]
 			else if ( ( `uname` == OSF1 ) && ( `hostname | cut -c 1-6` == joshua ) ) then
-				set SAVE_DIR = /data3/mp/gill/BASELINE/`uname`/$NAME[$count]
+				set SAVE_DIR = /data3/mp/${USER}/BASELINE/`uname`/$NAME[$count]
 			else if ( ( `uname` == Linux ) && ( `hostname` == master ) ) then
 				set SAVE_DIR = /big6/gill/DO_NOT_REMOVE_DIR/BASELINE/`uname`/$NAME[$count]
 			else

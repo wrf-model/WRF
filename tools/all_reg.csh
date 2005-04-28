@@ -259,7 +259,7 @@ FOUND_SELECTED_TEST:
 			else if ( ( $BASELINE == COMPARE  )  && ( $NAME[$count] != Full_Optimization ) ) then
 				if ( ! -d $SAVE_DIR ) then
 					echo $SAVE_DIR does not exist for BASELINE comparison, stopping
-#				exit ( 3 )
+					exit ( 3 )
 				endif
 			else if ( ( $BASELINE == COMPARE  )  && ( $NAME[$count] == Full_Optimization ) ) then
 				echo No comparison done with baseline since this is an optimized run
@@ -318,7 +318,6 @@ EOF
 		#	we get the process returning control, then we move on.
 
 		else
-cat >! foo1 << EOF
 			reg.foo.$count.$NAME[$count] -f wrf.tar >&! output.$count.$NAME[$count]
 			mv wrftest.output wrftest.output.$count.$NAME[$count]
 			if ( $NUM_TESTS != $#NAME ) then
@@ -328,7 +327,6 @@ cat >! foo1 << EOF
 					mv regression_test regression_test.$count.$NAME[$count]
 				endif
 			endif
-EOF
 		endif
 	endif
 end

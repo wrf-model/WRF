@@ -23,6 +23,9 @@
    USE module_dm
 #endif
 
+!!debug
+!USE module_compute_geop
+
    USE module_model_constants
    IMPLICIT NONE
    !  Input data.
@@ -58,6 +61,7 @@
    REAL :: qvf1, qvf2, qvf
    REAL :: MPDT
    LOGICAL :: first_trip_for_this_domain
+!integer myproc
 
 ! Trick problematic compilers into not performing copy-in/copy-out by adding
 ! indices to array arguments in the CALL statements in this routine.
@@ -142,11 +146,41 @@
    ENDIF
 
 
+!call wrf_get_myproc(myproc)
+
+
    IF ( config_flags%input_from_hires ) THEN
 
       CALL nl_get_base_pres  ( 1 , p00 )
       CALL nl_get_base_temp  ( 1 , t00 )
       CALL nl_get_base_lapse ( 1 , a   )
+
+!CALL compute_500mb_height ( ph_2 , phb, p, pb, ht_fine , &
+!                                 ids, ide, jds, jde, kds, kde, &
+!                                 ims, ime, jms, jme, kms, kme, &
+!                                 its, ite, jts, jte, kts, kte  )
+!write(20+myproc,*)MIN(ite,ide-1)-its+1,MIN(jte,jde-1)-jts+1,' ht_fine before '
+!DO j = jts, MIN(jte,jde-1)
+!DO i = its, MIN(ite,ide-1)
+!write(20+myproc,*)ht_fine(i,j)
+!ENDDO
+!ENDDO
+!write(20+myproc,*)MIN(ite,ide-1)-its+1,MIN(jte,jde-1)-jts+1,' mu_2 before '
+!DO j = jts, MIN(jte,jde-1)
+!DO i = its, MIN(ite,ide-1)
+!write(20+myproc,*)mu_2(i,j)
+!ENDDO
+!ENDDO
+!DO k = kts,kte,5
+!write(20+myproc,*)MIN(ite,ide-1)-its+1,MIN(jte,jde-1)-jts+1,' phb before ',k
+!DO j = jts, MIN(jte,jde-1)
+!DO i = its, MIN(ite,ide-1)
+!write(20+myproc,*)phb(i,k,j)
+!ENDDO
+!ENDDO
+!ENDDO
+
+!write(0,*)'start_domain: recomputing base state for hires: p00, t00, a ',p00, t00, a
 
       !  Base state potential temperature and inverse density (alpha = 1/rho) from
       !  the half eta levels and the base-profile surface pressure.  Compute 1/rho
@@ -172,6 +206,8 @@
 
             mub(i,j) = p_surf - p_top
 
+#if 0
+REMOVED THIS; WE DON'T WANT TO REDO THE PERTURBATION
             !  Dry surface pressure is defined as the following (this mu is from the input file
             !  computed from the dry pressure).  Here the dry pressure is just reconstituted.
 
@@ -181,6 +217,7 @@
             !  (a function of elevation) and the dry surface pressure.
 
             mu_2(i,j) = pd_surf-p_surf
+#endif
 
             !  Integrate base geopotential, starting at terrain elevation.  This assures that
             !  the base state is in exact hydrostatic balance with respect to the model equations.
@@ -192,6 +229,34 @@
             END DO
          END DO
       END DO
+
+!write(0,*)'start_domain: done recomputing base state for hires: p00, t00, a ',p00, t00, a
+!
+!CALL compute_500mb_height ( ph_2 , phb, p, pb, ht_fine , &
+!                                 ids, ide, jds, jde, kds, kde, &
+!                                 ims, ime, jms, jme, kms, kme, &
+!                                 its, ite, jts, jte, kts, kte  )
+!write(20+myproc,*)MIN(ite,ide-1)-its+1,MIN(jte,jde-1)-jts+1,' ht_fine after '
+!DO j = jts, MIN(jte,jde-1)
+!DO i = its, MIN(ite,ide-1)
+!write(20+myproc,*)ht_fine(i,j)
+!ENDDO
+!ENDDO
+!write(20+myproc,*)MIN(ite,ide-1)-its+1,MIN(jte,jde-1)-jts+1,' mu_2 after '
+!DO j = jts, MIN(jte,jde-1)
+!DO i = its, MIN(ite,ide-1)
+!write(20+myproc,*)mu_2(i,j)
+!ENDDO
+!ENDDO
+!DO k = kts,kte,5
+!write(20+myproc,*)MIN(ite,ide-1)-its+1,MIN(jte,jde-1)-jts+1,' phb after ',k
+!DO j = jts, MIN(jte,jde-1)
+!DO i = its, MIN(ite,ide-1)
+!write(20+myproc,*)phb(i,k,j)
+!ENDDO
+!ENDDO
+!ENDDO
+
    ENDIF
 
    IF(.not.config_flags%restart)THEN

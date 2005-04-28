@@ -670,6 +670,8 @@ write(0,*)'COMPUTE_VORTEX_CENTER_ALARM is ringing  '
      IF ( wrf_dm_on_monitor() ) THEN
        ALLOCATE ( height   ( ids:ide , jds:jde ), STAT=ierr )
        IF ( ierr .ne. 0 ) CALL wrf_error_fatal ('allocating height in time_for_move2')
+     ELSE
+       ALLOCATE ( height   ( 1:1 , 1:1 ), STAT=ierr )
      ENDIF
 
      CALL compute_500mb_height ( grid%em_ph_2 , grid%em_phb, grid%em_p, grid%em_pb, height_l , &
@@ -805,10 +807,10 @@ enddo
 call flush_(70)
 #endif
 
-       DEALLOCATE ( height )
 
      ENDIF monitor_only
 
+     DEALLOCATE ( height )
      DEALLOCATE ( height_l )
 
      CALL wrf_dm_bcast_real( grid%vc_i , 1 )

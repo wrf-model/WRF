@@ -822,9 +822,12 @@ if ( ( $ARCH[1] == AIX ) && \
 	echo " " >>! version_info
 	setenv MP_SHARED_MEMORY yes
 else if ( $ARCH[1] == OSF1 && $clrm == 0 ) then
-	if ( ( `hostname` == duku ) && ( -d /data1/$user ) ) then
+	if      ( ( `hostname` == duku )                && ( -d /data1/$user ) ) then
 		set DEF_DIR	= /data1/$user
-	else
+	else if ( ( `hostname | cut -c 1-6` == joshua ) && ( -d /data3/mp/$user ) ) then
+		set DEF_DIR	= /data3/mp/${user}/`hostname`
+		if ( ! -d $DEF_DIR ) mkdir $DEF_DIR
+	else 
 		set DEF_DIR	= /mmmtmp/${user}/`hostname`
 		if ( ! -d $DEF_DIR ) mkdir $DEF_DIR
 	endif
@@ -889,7 +892,7 @@ EOF
 	uname -a >>&! version_info
 	echo " " >>! version_info
 else if ( ( $ARCH[1] == Linux ) && ( `hostname` == bay-mmm ) ) then
-	set DEF_DIR	= /mmmtmp/${user}/`hostname`
+	set DEF_DIR	= /data3/mp/${user}/`hostname`
 	if ( ! -d $DEF_DIR ) mkdir $DEF_DIR
 	set TMPDIR		= .
 	set MAIL		= /bin/mail

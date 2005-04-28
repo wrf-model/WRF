@@ -613,7 +613,7 @@ LOGICAL FUNCTION time_for_move2 ( parent , grid , move_cd_x, move_cd_y )
    INTEGER     :: ids, ide, jds, jde, kds, kde, &
                   ims, ime, jms, jme, kms, kme, &
                   ips, ipe, jps, jpe, kps, kpe
-   INTEGER :: is, ie, js, je
+   INTEGER :: is, ie, js, je, ierr
    REAL    :: ipbar, pbar, jpbar, fact
    REAL    :: last_vc_i , last_vc_j
 
@@ -635,7 +635,7 @@ character*256 message, message2
 integer myproc
 
 !#define VORTEX_CENTER
-!#define MOVING_DIAGS
+#define MOVING_DIAGS
 #ifdef VORTEX_CENTER
 
 
@@ -665,11 +665,12 @@ write(0,*)'COMPUTE_VORTEX_CENTER_ALARM is ringing  '
      last_vc_i = grid%vc_i
      last_vc_j = grid%vc_j
 
-     ALLOCATE ( height_l ( ims:ime , jms:jme ) )
+     ALLOCATE ( height_l ( ims:ime , jms:jme ), STAT=ierr )
+     IF ( ierr .ne. 0 ) CALL wrf_error_fatal ('allocating height_l in time_for_move2')
      IF ( wrf_dm_on_monitor() ) THEN
-       ALLOCATE ( height   ( ids:ide , jds:jde ) )
+       ALLOCATE ( height   ( ids:ide , jds:jde ), STAT=ierr )
+       IF ( ierr .ne. 0 ) CALL wrf_error_fatal ('allocating height in time_for_move2')
      ENDIF
-
 
      CALL compute_500mb_height ( grid%em_ph_2 , grid%em_phb, grid%em_p, grid%em_pb, height_l , &
                                  ids, ide, jds, jde, kds, kde, &

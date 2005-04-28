@@ -18,7 +18,7 @@ all : libio_grib1.a wgrib_exe
 
 wgrib_exe :
 	( cd WGRIB ; make "CC=$(CC)" )
-	ln -s WGRIB/wgrib .
+	ln -sf WGRIB/wgrib .
 
 libio_grib1.a:		$(OBJS)
 			/bin/rm -f libio_grib1.a

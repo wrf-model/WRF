@@ -1,4 +1,5 @@
 #define WSM3_OPTIM
+#define INL
 #if (RWORDSIZE == DWORDSIZE)
 #  define VREC(A,B,C) vrec(A,B,C)
 #  define VSQRT(A,B,C) vsqrt(A,B,C)
@@ -45,7 +46,6 @@ MODULE module_mp_wsm3
 !
 ! Specifies code-inlining of fpvs function in WSM32D below. JM 20040507
 !
-#define INL
 
 CONTAINS
 !===================================================================

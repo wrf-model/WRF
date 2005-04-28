@@ -1,3 +1,5 @@
+#define WSM5_OPTIM
+#define INL
 #if (RWORDSIZE == DWORDSIZE)
 #  define VREC(A,B,C) vrec(A,B,C)
 #  define VSQRT(A,B,C) vsqrt(A,B,C)
@@ -50,8 +52,6 @@ MODULE module_mp_wsm5
 !
 ! Specifies code-inlining of fpvs function in WSM52D below. JM 20040507
 !
-#define WSM5_OPTIM
-#define INL
 
 CONTAINS
 !===================================================================

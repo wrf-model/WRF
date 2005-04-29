@@ -268,7 +268,7 @@ FOUND_SELECTED_TEST:
 
 		#	Build the short edit input script for ed and edit the regtest.csh file.
 
-		if      ( $BASELINE == RUN_ONLY ) then
+		if      ( ( $BASELINE == RUN_ONLY ) || ( $NAME[$count] == Full_Optimization ) ) then
 			if ( -e ed.in ) rm ed.in
 			cat >! ed_in << EOF
 				/$OLD_TEXT[$count]/s/$OLD_TEXT[$count]/$NEW_TEXT[$count]/

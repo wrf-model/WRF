@@ -449,6 +449,7 @@ SUBROUTINE med_nest_move ( parent, nest )
                                       ips , ipe , jps , jpe , kps , kpe
    INTEGER ierr, fid
    LOGICAL input_from_hires
+   TYPE (grid_config_rec_type)   :: config_flags
 
 #if ( EM_CORE == 1 && defined(DM_PARALLEL) )
    INTERFACE
@@ -490,6 +491,12 @@ SUBROUTINE med_nest_move ( parent, nest )
                                             ims , ime , jms , jme , kms , kme , &
                                             ips , ipe , jps , jpe , kps , kpe
      END SUBROUTINE input_terrain_rsmas
+     SUBROUTINE med_nest_feedback ( parent , nest , config_flags )
+       USE module_domain
+       USE module_configure
+       TYPE (domain), POINTER ::  nest , parent
+       TYPE (grid_config_rec_type) config_flags
+     END SUBROUTINE med_nest_feedback
    END INTERFACE
 
 #ifdef DEREF_KLUDGE
@@ -557,7 +564,10 @@ write(0,*)' moving ',grid%id,dx,dy
                                    ims , ime , jms , jme , 1   , 1   , &
                                    ips , ipe , jps , jpe , 1   , 1   )
      ENDIF
-
+!
+     CALL model_to_grid_config_rec ( parent%id , model_config_rec , config_flags )
+     CALL med_nest_feedback ( parent , nest , config_flags )
+!
      nest%moved = .true.
 ! masks associated with nest will have been set by shift_domain_em above
      CALL start_domain ( nest , .FALSE. )
@@ -635,7 +645,7 @@ character*256 message, message2
 integer myproc
 
 !#define VORTEX_CENTER
-#define MOVING_DIAGS
+!#define MOVING_DIAGS
 #ifdef VORTEX_CENTER
 
 
@@ -673,6 +683,7 @@ write(0,*)'COMPUTE_VORTEX_CENTER_ALARM is ringing  '
      ELSE
        ALLOCATE ( height   ( 1:1 , 1:1 ), STAT=ierr )
      ENDIF
+
 
      CALL compute_500mb_height ( grid%em_ph_2 , grid%em_phb, grid%em_p, grid%em_pb, height_l , &
                                  ids, ide, jds, jde, kds, kde, &
@@ -849,12 +860,12 @@ write(0,*)'After ENDIF : grid%vc_i, grid%vc_j ',grid%vc_i, grid%vc_j
    IF ( move_cd_x .LT. 0 ) move_cd_x = max ( move_cd_x , -1 )
    IF ( move_cd_y .LT. 0 ) move_cd_y = max ( move_cd_y , -1 )
 
-#ifdef MOVING_DIAGS
+!#ifdef MOVING_DIAGS
 write(0,*)'vortex center : ',grid%vc_i, grid%vc_j
 write(0,*)'grid   center : ',     dc_i,      dc_j
 write(0,*)'disp          : ',   disp_x,    disp_y
 write(0,*)'move (rel cd) : ',move_cd_x, move_cd_y
-#endif
+!#endif
 
    grid%vc_i = grid%vc_i - move_cd_x * pgr
    grid%vc_j = grid%vc_j - move_cd_y * pgr

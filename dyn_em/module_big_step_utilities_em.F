@@ -1,5 +1,15 @@
 !WRF:MODEL_LAYER:DYNAMICS
 !
+
+#if (RWORDSIZE == 4)
+#   define VPOWX vspowx
+#   define VPOW  vspow
+#else
+#   define VPOWX vpowx
+#   define VPOW  vpow
+#endif
+
+
 MODULE module_big_step_utilities_em
 
    USE module_domain
@@ -846,6 +856,7 @@ SUBROUTINE calc_cq ( moist, cqu, cqv, cqw, n_moist, &
         DO k=kts,ktf
         DO i=its,itf
           qtot = 0.
+!DEC$ loop count(3)
           DO ispe=PARAM_FIRST_SCALAR,n_moist
             qtot = qtot + moist(i,k,j,ispe) + moist(i-1,k,j,ispe)
           ENDDO
@@ -864,6 +875,7 @@ SUBROUTINE calc_cq ( moist, cqu, cqv, cqw, n_moist, &
         DO k=kts,ktf
         DO i=its,itf
           qtot = 0.
+!DEC$ loop count(3)
           DO ispe=PARAM_FIRST_SCALAR,n_moist
             qtot = qtot + moist(i,k,j,ispe) + moist(i,k,j-1,ispe)
           ENDDO
@@ -881,6 +893,7 @@ SUBROUTINE calc_cq ( moist, cqu, cqv, cqw, n_moist, &
         DO k=kts+1,ktf
         DO i=its,itf
           qtot = 0.
+!DEC$ loop count(3)
           DO ispe=PARAM_FIRST_SCALAR,n_moist
             qtot = qtot + moist(i,k,j,ispe) + moist(i,k-1,j,ispe)
           ENDDO
@@ -1012,6 +1025,8 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist,                &
 
   INTEGER :: i, j, k, itf, jtf, ktf, ispe
   REAL    :: qvf, qtot, qf1, qf2
+  REAL, DIMENSION( its:ite) :: temp,cpovcv_v
+
 
 !<DESCRIPTION>
 !
@@ -1030,6 +1045,10 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist,                &
   jtf=MIN(jte,jde-1)
   ktf=MIN(kte,kde-1)
 
+#ifndef INTELMKL
+  cpovcv_v = cpovcv
+#endif
+
   IF (non_hydrostatic) THEN
 
       IF (n_moist >= PARAM_FIRST_SCALAR ) THEN  
@@ -1040,10 +1059,17 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist,                &
           qvf = 1.+rvovrd*moist(i,k,j,P_QV)
           al(i,k,j)=-1./muts(i,j)*(alb(i,k,j)*mu(i,j)  &
                      +rdnw(k)*(ph(i,k+1,j)-ph(i,k,j)))
-          p(i,k,j)= ( (r_d*(t0+t(i,k,j))*qvf)/                 &
-                        (p0*(al(i,k,j)+alb(i,k,j))) )**cpovcv  &
-                        *p0 -pb(i,k,j)
-
+          temp(i)=(r_d*(t0+t(i,k,j))*qvf)/                 &
+                        (p0*(al(i,k,j)+alb(i,k,j)))
+        ENDDO
+#ifdef INTELMKL
+        CALL VPOWX ( itf-its+1, temp(its), cpovcv, p(its,k,j) )
+#else
+! use vector version from libmassv or from compat lib in frame/libmassv.F
+        CALL VPOW  ( p(its,k,j), temp(its), cpovcv_v(its), itf-its+1 )
+#endif
+        DO i=its,itf
+           p(i,k,j)= p(i,k,j)*p0-pb(i,k,j)
         ENDDO
         ENDDO
         ENDDO

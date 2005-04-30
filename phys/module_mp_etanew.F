@@ -253,8 +253,18 @@ MODULE module_mp_etanew
 !-----------------------------------------------------------------------
 !LOCAL VARIABLES
 !-----------------------------------------------------------------------
+
+#define CACHE_FRIENDLY_MP_ETANEW
+#ifdef CACHE_FRIENDLY_MP_ETANEW
+#  define TEMP_DIMS  kts:kte,its:ite,jts:jte
+#  define TEMP_DEX   L,I,J
+#else
+#  define TEMP_DIMS  its:ite,jts:jte,kts:kte
+#  define TEMP_DEX   I,J,L
+#endif
+
       INTEGER :: LSFC,I,J,I_index,J_index,L,K,KFLIP
-      REAL,DIMENSION(its:ite,jts:jte,kts:kte) ::                        &
+      REAL,DIMENSION( TEMP_DIMS ) ::                        &
      &   CWM,T,Q,TRAIN,TLATGS,P                                               
       REAL,DIMENSION(kts:kte,its:ite,jts:jte) :: F_ice,F_rain,F_RimeF       
       INTEGER,DIMENSION(its:ite,jts:jte) :: LMH
@@ -274,12 +284,12 @@ MODULE module_mp_etanew
         DO 98  I=ITS,ITE  
            DO L=KTS,KTE
              KFLIP=KTE+1-L
-             CWM(I,J,L)=CWM_PHY(I,KFLIP,J)
-             T(I,J,L)=T_PHY(I,KFLIP,J)
-             Q(I,J,L)=Q_PHY(I,KFLIP,J)
-             P(I,J,L)=P_PHY(I,KFLIP,J)
-             TLATGS(I,J,L)=TLATGS_PHY(I,KFLIP,J)
-             TRAIN(I,J,L)=TRAIN_PHY(I,KFLIP,J)
+             CWM( TEMP_DEX )=CWM_PHY(I,KFLIP,J)
+             T( TEMP_DEX )=T_PHY(I,KFLIP,J)
+             Q( TEMP_DEX )=Q_PHY(I,KFLIP,J)
+             P( TEMP_DEX )=P_PHY(I,KFLIP,J)
+             TLATGS( TEMP_DEX )=TLATGS_PHY(I,KFLIP,J)
+             TRAIN( TEMP_DEX )=TRAIN_PHY(I,KFLIP,J)
              F_ice(L,I,J)=F_ice_PHY(I,KFLIP,J)
              F_rain(L,I,J)=F_rain_PHY(I,KFLIP,J)
              F_RimeF(L,I,J)=F_RimeF_PHY(I,KFLIP,J)
@@ -298,7 +308,8 @@ MODULE module_mp_etanew
    !
    !--- Initialize column data (1D arrays)
    !
-        IF (CWM(I,J,1) .LE. CLIMIT) CWM(I,J,1)=EPSQ
+        L = 1
+        IF (CWM( TEMP_DEX ) .LE. CLIMIT) CWM( TEMP_DEX )=EPSQ
           F_ice(1,I,J)=1.
           F_rain(1,I,J)=0.
           F_RimeF(1,I,J)=1.
@@ -306,15 +317,15 @@ MODULE module_mp_etanew
       !
       !--- Pressure (Pa) = (Psfc-Ptop)*(ETA/ETA_sfc)+Ptop
       !
-            P_col(L)=P(I,J,L)
+            P_col(L)=P( TEMP_DEX )
       !
       !--- Layer thickness = RHO*DZ = -DP/G = (Psfc-Ptop)*D_ETA/(G*ETA_sfc)
       !
             THICK_col(L)=DPCOL(L)/GRAV
-            T_col(L)=T(I,J,L)
+            T_col(L)=T( TEMP_DEX )
             TC=T_col(L)-T0C
-            QV_col(L)=max(EPSQ, Q(I,J,L))
-            IF (CWM(I,J,L) .LE. CLIMIT) THEN
+            QV_col(L)=max(EPSQ, Q( TEMP_DEX ))
+            IF (CWM( TEMP_DEX ) .LE. CLIMIT) THEN
               WC_col(L)=0.
               IF (TC .LT. T_ICE) THEN
                 F_ice(L,I,J)=1.
@@ -324,7 +335,7 @@ MODULE module_mp_etanew
               F_rain(L,I,J)=0.
               F_RimeF(L,I,J)=1.
             ELSE
-              WC_col(L)=CWM(I,J,L)
+              WC_col(L)=CWM( TEMP_DEX )
             ENDIF
       !
       !--- Determine composition of condensate in terms of 
@@ -404,11 +415,11 @@ MODULE module_mp_etanew
    !--- Update storage arrays
    !
           DO L=1,LSFC
-            TRAIN(I,J,L)=(T_col(L)-T(I,J,L))/DTPH
-            TLATGS(I,J,L)=T_col(L)-T(I,J,L)
-            T(I,J,L)=T_col(L)
-            Q(I,J,L)=QV_col(L)
-            CWM(I,J,L)=WC_col(L)
+            TRAIN( TEMP_DEX )=(T_col(L)-T( TEMP_DEX ))/DTPH
+            TLATGS( TEMP_DEX )=T_col(L)-T( TEMP_DEX )
+            T( TEMP_DEX )=T_col(L)
+            Q( TEMP_DEX )=QV_col(L)
+            CWM( TEMP_DEX )=WC_col(L)
       !
       !--- REAL*4 array storage
       !
@@ -484,11 +495,11 @@ MODULE module_mp_etanew
         DO 101 I=ITS,ITE  
            DO L=KTS,KTE
               KFLIP=KTE+1-L
-             CWM_PHY(I,KFLIP,J)=CWM(I,J,L)
-             T_PHY(I,KFLIP,J)=T(I,J,L)
-             Q_PHY(I,KFLIP,J)=Q(I,J,L)
-             TLATGS_PHY(I,KFLIP,J)=TLATGS(I,J,L)
-             TRAIN_PHY(I,KFLIP,J)=TRAIN(I,J,L)
+             CWM_PHY(I,KFLIP,J)=CWM( TEMP_DEX )
+             T_PHY(I,KFLIP,J)=T( TEMP_DEX )
+             Q_PHY(I,KFLIP,J)=Q( TEMP_DEX )
+             TLATGS_PHY(I,KFLIP,J)=TLATGS( TEMP_DEX )
+             TRAIN_PHY(I,KFLIP,J)=TRAIN( TEMP_DEX )
              F_ice_PHY(I,KFLIP,J)=F_ice(L,I,J)
              F_rain_PHY(I,KFLIP,J)=F_rain(L,I,J)
              F_RimeF_PHY(I,KFLIP,J)=F_RimeF(L,I,J)

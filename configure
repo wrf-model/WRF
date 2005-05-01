@@ -305,13 +305,9 @@ fi
 
 echo " * " $arg1
 if [ "$arg1" = "-d" ] ; then
-echo here
    if [ -e configure.wrf ] ; then
-echo here1
      sed -e 's/FCOPTIM  *=/& # /' -e '/FCDEBUG  *=/s/#//g' configure.wrf > configure.wrf.edit
-echo here2
      /bin/mv configure.wrf.edit configure.wrf
-echo here3
    fi
 fi
 

@@ -5,8 +5,8 @@
 SUBROUTINE med_calc_model_time ( grid , config_flags )
   ! Driver layer
    USE module_domain
-  ! Model layer
    USE module_configure
+  ! Model layer
    USE module_date_time
 
    IMPLICIT NONE
@@ -28,8 +28,8 @@ END SUBROUTINE med_calc_model_time
 SUBROUTINE med_before_solve_io ( grid , config_flags )
   ! Driver layer
    USE module_domain
-  ! Model layer
    USE module_configure
+  ! Model layer
    USE WRF_ESMF_MOD
 
    IMPLICIT NONE
@@ -131,8 +131,8 @@ SUBROUTINE med_after_solve_io ( grid , config_flags )
   ! Driver layer
    USE module_domain
    USE module_timing
-  ! Model layer
    USE module_configure
+  ! Model layer
 
    IMPLICIT NONE
 
@@ -143,13 +143,74 @@ SUBROUTINE med_after_solve_io ( grid , config_flags )
    RETURN
 END SUBROUTINE med_after_solve_io
 
+SUBROUTINE med_pre_nest_initial ( parent , newid , config_flags )
+  ! Driver layer
+   USE module_domain
+   USE module_timing
+   USE module_io_domain
+   USE module_configure
+  ! Model layer
+
+   IMPLICIT NONE
+
+  ! Arguments
+   TYPE(domain) , POINTER                      :: parent
+   INTEGER, INTENT(IN)                         :: newid
+   TYPE (grid_config_rec_type) , INTENT(INOUT) :: config_flags
+   TYPE (grid_config_rec_type)                 :: nest_config_flags
+
+  ! Local
+   INTEGER                :: itmp, fid, ierr, icnt
+   CHARACTER*256          :: rstname, message, timestr
+   TYPE(ESMF_Time)        :: CurrTime
+
+#ifdef MOVE_NESTS
+
+   CALL ESMF_ClockGet( parent%domain_clock, CurrTime=CurrTime, rc=ierr )
+   CALL wrf_timetoa ( CurrTime, timestr )
+   CALL construct_filename2a ( rstname , config_flags%rst_inname , newid , 2 , timestr )
+
+   WRITE(message,*)'RESTART: nest, opening ',TRIM(rstname),' for reading header information only'
+   CALL wrf_message ( message )
+
+   IF ( config_flags%restart ) THEN
+     WRITE(message,*)'RESTART: nest, opening ',TRIM(rstname),' for reading header information only'
+     CALL wrf_message ( message )
+  ! note that the parent pointer is not strictly correct, but nest is not allocated yet and
+  ! only the i/o communicator fields are used from "parent" (and those are dummies in current
+  ! implementation.
+     CALL open_r_dataset ( fid , TRIM(rstname) , parent , config_flags , "DATASET=RESTART", ierr )
+     IF ( ierr .NE. 0 ) THEN
+       WRITE( message , '("program wrf: error opening ",A32," for reading")') TRIM(rstname)
+       CALL WRF_ERROR_FATAL ( message )
+     ENDIF
+
+  ! update the values of parent_start that were read in from the namelist (nest may have moved)
+     CALL wrf_get_dom_ti_integer ( fid , 'I_PARENT_START' ,  itmp  , 1 , icnt, ierr )
+     IF ( ierr .EQ. 0 ) THEN
+       config_flags%i_parent_start = itmp
+       CALL nl_set_i_parent_start ( newid , config_flags%i_parent_start )
+     ENDIF
+     CALL wrf_get_dom_ti_integer ( fid , 'J_PARENT_START' ,  itmp  , 1 , icnt, ierr )
+     IF ( ierr .EQ. 0 ) THEN
+       config_flags%j_parent_start = itmp
+       CALL nl_set_j_parent_start ( newid , config_flags%j_parent_start )
+     ENDIF
+
+     CALL close_dataset ( fid , config_flags , "DATASET=RESTART" )
+   ENDIF
+#endif
+
+END SUBROUTINE med_pre_nest_initial
+
+
 SUBROUTINE med_nest_initial ( parent , nest , config_flags )
   ! Driver layer
    USE module_domain
    USE module_timing
    USE module_io_domain
-  ! Model layer
    USE module_configure
+  ! Model layer
 
    IMPLICIT NONE
 
@@ -1106,8 +1167,8 @@ SUBROUTINE med_nest_force ( parent , nest )
   ! Driver layer
    USE module_domain
    USE module_timing
-  ! Model layer
    USE module_configure
+  ! Model layer
   ! External
    USE WRF_ESMF_MOD
 
@@ -1200,8 +1261,8 @@ END SUBROUTINE med_nest_feedback
 SUBROUTINE med_last_solve_io ( grid , config_flags )
   ! Driver layer
    USE module_domain
-  ! Model layer
    USE module_configure
+  ! Model layer
 
    IMPLICIT NONE
 
@@ -1250,8 +1311,8 @@ SUBROUTINE med_restart_out ( grid , config_flags )
    USE module_domain
    USE module_io_domain
    USE module_timing
-  ! Model layer
    USE module_configure
+  ! Model layer
    USE module_bc_time_utilities
    USE WRF_ESMF_MOD
 
@@ -1599,8 +1660,8 @@ SUBROUTINE med_filter_out ( grid , config_flags )
    USE module_domain
    USE module_io_domain
    USE module_timing
-  ! Model layer
    USE module_configure
+  ! Model layer
    USE module_bc_time_utilities
 
    IMPLICIT NONE
@@ -1658,8 +1719,8 @@ SUBROUTINE med_latbound_in ( grid , config_flags )
    USE module_domain
    USE module_io_domain
    USE module_timing
-  ! Model layer
    USE module_configure
+  ! Model layer
    USE module_bc_time_utilities
    USE WRF_ESMF_MOD
 
@@ -1748,8 +1809,8 @@ END SUBROUTINE med_latbound_in
 SUBROUTINE med_setup_step ( grid , config_flags )
   ! Driver layer
    USE module_domain
-  ! Model layer
    USE module_configure
+  ! Model layer
 
    IMPLICIT NONE
 !<DESCRIPTION>
@@ -1782,8 +1843,8 @@ SUBROUTINE med_read_wrf_chem_emiss ( grid , config_flags )
    USE module_domain
    USE module_io_domain
    USE module_timing
-  ! Model layer
    USE module_configure
+  ! Model layer
    USE module_bc_time_utilities
 #ifdef DM_PARALLEL
    USE module_dm
@@ -1897,8 +1958,8 @@ SUBROUTINE med_read_wrf_chem_bioemiss ( grid , config_flags )
    USE module_domain
    USE module_io_domain
    USE module_timing
-  ! Model layer
    USE module_configure
+  ! Model layer
    USE module_bc_time_utilities
 #ifdef DM_PARALLEL
    USE module_dm

@@ -3,7 +3,7 @@
 cont1:
 
 if ( !  -e configure.wrf  ) then
-   ./configure
+   ./configure $1
    set dontask
 endif
 
@@ -27,10 +27,13 @@ endif
 
 set arglist=""
 foreach a ( $argv )
+if ( "$a" != "-d" ) echo foo
   if ( "$a" == "-h" ) then
     goto hlp
   else
-    set arglist = ( $arglist $a )
+    if ( "$a" != "-d" ) then
+      set arglist = ( $arglist $a )
+    endif
   endif
 end
 

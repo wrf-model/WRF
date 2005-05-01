@@ -73,14 +73,12 @@ CONTAINS
       IF ( ntasks_x .GT. 0 .OR. ntasks_y .GT. 0 ) THEN
         ! if only ntasks_x is specified then make it 1-d decomp in i
         IF      ( ntasks_x .GT. 0 .AND. ntasks_y .EQ. -1 ) THEN
-          ntasks_x = ntasks
-          ntasks_y = 1
+          ntasks_y = ntasks / ntasks_x
         ! if only ntasks_y is specified then make it 1-d decomp in j
         ELSE IF ( ntasks_x .EQ. -1 .AND. ntasks_y .GT. 0 ) THEN
-          ntasks_x = 1
-          ntasks_y = ntasks
+          ntasks_x = ntasks / ntasks_y
         ENDIF
-        ! make sure user knows what they're doing (when both specified)
+        ! make sure user knows what they're doing
         IF ( ntasks_x * ntasks_y .NE. ntasks ) THEN
           WRITE( wrf_err_message , * )'WRF_DM_INITIALIZE (RSL_LITE): nproc_x * nproc_y in namelist ne ',ntasks
           CALL wrf_error_fatal ( wrf_err_message )

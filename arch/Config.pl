@@ -160,20 +160,20 @@ while ( <CONFIGURE_DEFAULTS> )
 }
 close CONFIGURE_DEFAULTS ;
 
-printf "\nYou have chosen: %s",$optstr[$optchoice] ;
-printf "These are the default options for this platform:\n" ;
-printf "------------------------------------------------------------------------\n" ;
-foreach $f ( @machopts )
-{
-  if ( substr( $f , 0 , 8 ) eq "external" ) { last ; }
-  print $f ;
-}
-printf "------------------------------------------------------------------------\n" ;
-printf "These will be written to the file configure.wrf here in the top-level\n" ;
-printf "directory.  If you wish to change settings, please edit that file.\n" ;
-printf "If you wish to change the default options, edit the file:\n\n" ;
-printf "     arch/configure.defaults\n" ;
-printf "\n" ;
+#printf "------------------------------------------------------------------------\n" ;
+#foreach $f ( @machopts )
+#{
+#  if ( substr( $f , 0 , 8 ) eq "external" ) { last ; }
+#  print $f ;
+#}
+#printf "------------------------------------------------------------------------\n" ;
+#printf "\nYou have chosen: %s",$optstr[$optchoice] ;
+#printf "Listed above are the default options for this platform.\n" ;
+#printf "Settings are written to the file configure.wrf here in the top-level\n" ;
+#printf "directory.  If you wish to change settings, please edit that file.\n" ;
+#printf "If you wish to change the default options, edit the file:\n\n" ;
+#printf "     arch/configure.defaults\n" ;
+#printf "\n" ;
 
 open CONFIGURE_WRF, "> configure.wrf" or die "cannot append configure.wrf" ;
 open ARCH_PREAMBLE, "< arch/preamble" or die "cannot open arch/preamble" ;

@@ -1,5 +1,7 @@
 #!/bin/sh
 
+arg1=$1
+
 # lifted from the configure file for mpich; 00/03/10 jm
 #
 # Check for perl and perl version
@@ -301,6 +303,18 @@ if test -n "$PERL" ; then
    -compileflags=$compileflags
 fi
 
+echo " * " $arg1
+if [ "$arg1" = "-d" ] ; then
+echo here
+   if [ -e configure.wrf ] ; then
+echo here1
+     sed -e 's/FCOPTIM  *=/& # /' -e '/FCDEBUG  *=/s/#//g' configure.wrf > configure.wrf.edit
+echo here2
+     /bin/mv configure.wrf.edit configure.wrf
+echo here3
+   fi
+fi
+
 # new feb 2005.  test whether MPI-2
 if test -f configure.wrf ; then
   grep 'DMPARALLEL .*=.*1' configure.wrf > /dev/null
@@ -316,4 +330,14 @@ if test -f configure.wrf ; then
     fi
   fi
 fi
+
+echo "------------------------------------------------------------------------"
+sed -e '1,/#### Architecture specific settings ####/d' -e '/^externals/,$d' configure.wrf
+
+echo "------------------------------------------------------------------------"
+echo "Settings listed above are written to configure.wrf."
+echo "If you wish to change settings, please edit that file."
+echo "If you wish to change the default options, edit the file:"
+echo "     arch/configure.defaults"
+echo " "
 

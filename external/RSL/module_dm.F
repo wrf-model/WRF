@@ -204,14 +204,12 @@ CONTAINS
       IF ( nproc_ln .GT. 0 .OR. nproc_lt .GT. 0 ) THEN
         ! if only nproc_ln is specified then make it 1-d decomp in i
         IF      ( nproc_ln .GT. 0 .AND. nproc_lt .EQ. -1 ) THEN
-          nproc_ln = rsl_nproc
-          nproc_lt = 1
+          nproc_lt = rsl_nproc / nproc_ln
         ! if only nproc_lt is specified then make it 1-d decomp in j
         ELSE IF ( nproc_ln .EQ. -1 .AND. nproc_lt .GT. 0 ) THEN
-          nproc_ln = 1
-          nproc_lt = rsl_nproc
+          nproc_ln = rsl_nproc / nproc_lt
         ENDIF
-        ! make sure user knows what they're doing (when both specified)
+        ! make sure user knows what they're doing
         IF ( nproc_ln * nproc_lt .NE. rsl_nproc ) THEN
           WRITE( wrf_err_message , * )'WRF_DM_INITIALIZE (RSL): nproc_x * nproc_y in namelist ne ',rsl_nproc
           CALL wrf_error_fatal ( wrf_err_message )

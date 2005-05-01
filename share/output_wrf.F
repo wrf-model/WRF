@@ -172,6 +172,7 @@
       ibuf(1) = cu_physics
       CALL wrf_put_dom_ti_integer ( fid , 'CU_PHYSICS' ,  ibuf , 1 , ierr )
 
+
 ! added these fields for use by reassembly programs , 010831, JM
 
 #ifdef D3VAR_IRY_KLUDGE
@@ -254,6 +255,9 @@
       CALL wrf_put_dom_ti_integer ( fid , 'ISICE' ,  config_flags%isice , 1 , ierr )
       CALL wrf_put_dom_ti_integer ( fid , 'ISURBAN' ,  config_flags%isurban , 1 , ierr )
       CALL wrf_put_dom_ti_integer ( fid , 'ISOILWATER' ,  config_flags%isoilwater , 1 , ierr )
+! added these fields for restarting of moving nests, JM
+      CALL wrf_put_dom_ti_integer ( fid , 'I_PARENT_START' ,  config_flags%i_parent_start  , 1 , ierr )
+      CALL wrf_put_dom_ti_integer ( fid , 'J_PARENT_START' ,  config_flags%j_parent_start  , 1 , ierr )
 
 
     IF ( switch .EQ. boundary_only ) THEN

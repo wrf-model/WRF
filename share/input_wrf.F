@@ -47,6 +47,7 @@
     CHARACTER*80  fname
     LOGICAL dryrun
     INTEGER idt
+    INTEGER itmp
     INTEGER dyn_opt_tmp, dyn_opt, filestate, ierr3
     INTEGER :: ide_compare , jde_compare , kde_compare
     REAL , DIMENSION(16) :: lats16 , lons16
@@ -244,6 +245,18 @@
          config_flags%isoilwater = 14
     ENDIF
     CALL nl_set_isoilwater ( grid%id , config_flags%isoilwater )
+
+! added these fields for restarting of moving nests, JM
+    CALL wrf_get_dom_ti_integer ( fid , 'I_PARENT_START' ,  itmp  , 1 , icnt, ierr )
+    IF ( ierr .EQ. 0 ) THEN
+      config_flags%i_parent_start = itmp
+      CALL nl_set_i_parent_start ( grid%id , config_flags%i_parent_start )
+    ENDIF
+    CALL wrf_get_dom_ti_integer ( fid , 'J_PARENT_START' ,  itmp  , 1 , icnt, ierr )
+    IF ( ierr .EQ. 0 ) THEN
+      config_flags%j_parent_start = itmp
+      CALL nl_set_j_parent_start ( grid%id , config_flags%j_parent_start )
+    ENDIF
 
 ! If this was not a training read (dry run) check for erroneous values.  
     CALL wrf_inquire_filename ( fid , fname , filestate , ierr )

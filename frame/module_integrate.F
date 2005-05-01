@@ -188,19 +188,25 @@ RECURSIVE SUBROUTINE integrate ( grid )
      END SUBROUTINE med_after_solve_io
        ! mediation-supplied routine that gives mediation layer opportunity to 
        ! perform I/O to initialize a new nest
+     SUBROUTINE med_pre_nest_initial ( parent , newid , config_flags )
+       USE module_domain
+       USE module_configure
+       TYPE (domain), POINTER ::  parent
+       INTEGER, INTENT(IN)    ::  newid
+       TYPE (grid_config_rec_type) config_flags
+     END SUBROUTINE med_pre_nest_initial
      SUBROUTINE med_nest_initial ( parent , grid , config_flags )
        USE module_domain
        USE module_configure
        TYPE (domain), POINTER ::  grid , parent
        TYPE (grid_config_rec_type) config_flags
      END SUBROUTINE med_nest_initial
-
        ! mediation-supplied routine that gives mediation layer opportunity to 
        ! provide parent->nest forcing
      SUBROUTINE med_nest_force ( parent , grid , config_flags )
        USE module_domain
        USE module_configure
-       TYPE (domain), POINTER ::  grid , parent
+       TYPE (domain), POINTER ::  grid, parent
        TYPE (grid_config_rec_type) config_flags
      END SUBROUTINE med_nest_force
 
@@ -263,6 +269,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
             ! nestid is index into model_config_rec (module_configure) of the grid
             ! to be opened; kid is index into an open slot in grid's list of children
             a_nest_was_opened = .true.
+            CALL med_pre_nest_initial ( grid , nestid , config_flags )
             CALL alloc_and_configure_domain ( domain_id  = nestid ,                          &
                                               grid       = new_nest ,                        &
                                               parent     = grid ,                            &

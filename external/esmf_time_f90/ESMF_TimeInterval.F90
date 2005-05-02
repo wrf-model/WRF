@@ -844,7 +844,7 @@
 
       retval = timeinterval
 
-      CALL ESMF_TimeIntervalSet( ESMF_TimeIntervalQuotI, rc=rc )
+      CALL ESMF_TimeIntervalSet( retval, rc=rc )
       call c_ESMC_TimeIntervalQuotI(timeinterval, divisor, &
                                     ESMF_TimeIntervalQuotI)
 

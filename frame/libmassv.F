@@ -217,7 +217,8 @@
       subroutine vdint(y,x,n)
       real*8 x(*),y(*)
       do 10 j=1,n
-      y(j)=dint(x(j))
+!     y(j)=dint(x(j))
+      y(j)=int(x(j))
    10 continue
       return
       end
@@ -225,7 +226,8 @@
       subroutine vdnint(y,x,n)
       real*8 x(*),y(*)
       do 10 j=1,n
-      y(j)=dnint(x(j))
+!     y(j)=dnint(x(j))
+      y(j)=nint(x(j))
    10 continue
       return
       end

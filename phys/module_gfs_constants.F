@@ -113,8 +113,8 @@ module module_gfs_constants
   end function fpvs
 !-------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------
-  elemental function fpvsx(t)
-!  function fpvsx(t)
+! elemental function fpvsx(t)
+   function fpvsx(t)
 !$$$     Subprogram Documentation Block
 !
 ! Subprogram: fpvsx        Compute saturation vapor pressure

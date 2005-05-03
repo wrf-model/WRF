@@ -1882,6 +1882,9 @@
      &                   ,PDTOP,PT,PD,RES,PINT,T,Q,CWM,TRAIN            &
      &                   ,F_ICE,F_RAIN,F_RIMEF,SR                       &
      &                   ,PREC,ACPREC,AVRAIN,ZERO_3D                    &
+     &                   ,MY_GROWTH_STATE                               &
+     &                   ,TBPVS_STATE                                   &
+     &                   ,TBPVS0_STATE                                  &
      &                   ,GRID,CONFIG_FLAGS                             &
      &                   ,IDS,IDE,JDS,JDE,KDS,KDE                       &
      &                   ,IMS,IME,JMS,JME,KMS,KME                       &
@@ -1938,6 +1941,11 @@
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) :: F_ICE    &
      &                                                        ,F_RAIN   &
      &                                                        ,F_RIMEF
+!  state var for etampnew microphysics (JM, 2005 05 02)
+      REAL,DIMENSION(*),INTENT(INOUT) ::                MY_GROWTH_STATE &
+     &                                                     ,TBPVS_STATE &
+     &                                                    ,TBPVS0_STATE
+
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: SR
 !
@@ -2044,6 +2052,9 @@
      &                 ,QI_CURR=WATER(IMS,KMS,JMS,P_QI) , F_QI=F_QI     &
      &                 ,QS_CURR=WATER(IMS,KMS,JMS,P_QS) , F_QS=F_QS     &
      &                 ,QG_CURR=WATER(IMS,KMS,JMS,P_QG) , F_QG=F_QG     &
+     &                 ,MY_GROWTH_STATE=my_growth_state                 &
+     &                 ,TBPVS_STATE=TBPVS_STATE                         &
+     &                 ,TBPVS0_STATE=TBPVS0_STATE                       &
      &                 ,IDS=IDS,IDE=IDE,JDS=JDS,JDE=JDE,KDS=KDS,KDE=KDE &
      &                 ,IMS=IMS,IME=IME,JMS=JMS,JME=JME,KMS=KMS,KME=KME &
      &                 ,I_START=GRID%I_START,I_END=GRID%I_END           &

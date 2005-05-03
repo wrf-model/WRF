@@ -38,7 +38,16 @@ CONFIG_BUF_LEN	=	8192
 #### architecture-specific settings in the next section.  
 ##############################################################################
 
-#### Native size (in bytes) of Fortran REAL data type ####
+##############################################################################
+#### NOTE:  Do not modify these default values here.  To override these 
+####        values, make changes after "Architecture specific settings".  
+##############################################################################
+
+#### Native size (in bytes) of Fortran REAL data type on this architecture ####
+#### Note:  to change real wordsize (for example, to promote REALs from 
+####        4-byte to 8-byte), modify the definition of RWORDSIZE in the 
+####        section following "Architecture specific settings".  Do not 
+####        change NATIVE_RWORDSIZE as is it architecture-specific.  
 NATIVE_RWORDSIZE = 4
 
 #### Default sed command and script for Fortran source files ####

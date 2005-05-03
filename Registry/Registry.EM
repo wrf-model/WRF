@@ -46,7 +46,8 @@ dimspec    k      2     standard_domain           z          bottom_top
 dimspec    l      2     namelist=num_soil_layers  z          soil_layers
 dimspec    u      2     namelist=num_land_cat     z          land_cat
 dimspec    s      2     namelist=num_soil_cat     z          soil_cat
-dimspec    m      -     constant=3                c          three_things  # example; not used
+dimspec    o      -     constant=50               c          etamp_state_1
+dimspec    p      -     constant=7501             c          etamp_state_2
 dimspec    w      -     namelist=spec_bdy_width   c          spec_bdy_width
 dimspec    e      3     namelist=ensdim           z          ensemble dimension
 
@@ -562,6 +563,12 @@ state    real  RTHBLTEN        ikj      misc        1         -      r        "R
 state    real  RQVBLTEN        ikj      misc        1         -      r        "RQVBLTEN"              "COUPLED Q_V TENDENCY DUE TO PBL PARAMETERIZATION"     "Pa kg kg-1 s-1"
 state    real  RQCBLTEN        ikj      misc        1         -      r        "RQCBLTEN"              "COUPLED Q_C TENDENCY DUE TO PBL PARAMETERIZATION"     "Pa kg kg-1 s-1"
 state    real  RQIBLTEN        ikj      misc        1         -      r        "RQIBLTEN"              "COUPLED Q_I TENDENCY DUE TO PBL PARAMETERIZATION"     "Pa kg kg-1 s-1"      
+
+# State vector for etampnew microphysics. Must be declared state because it is not read-once and is needed for restarting.
+state    real  my_growth_state   o      misc        1         -      r        "MY_GROWTH_STATE"       "STATE VECTOR FOR ETAMPNEW MICROPHYSICS"
+state    real  tbpvs_state       p      misc        1         -      r        "TBPVS_STATE"           "STATE FOR ETAMPNEW MICROPHYSICS"
+state    real  tbpvs0_state      p      misc        1         -      r        "TBPVS0_STATE"          "STATE FOR ETAMPNEW MICROPHYSICS"
+
 i1       real  th_phy          ikj      misc        1         -                                          
 i1       real  pi_phy          ikj      misc        1         -                                          
 i1       real  p_phy           ikj      misc        1         -                                          

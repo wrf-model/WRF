@@ -4,20 +4,23 @@ MODULE module_microphysics_driver
 CONTAINS
 
 SUBROUTINE microphysics_driver(                                          &
-                       th, w , rho, pi, p, RAINNC, RAINNCV               &
-                      ,z, ht, dz8w, p8w, dt,dx,dy                        &
+                       th, rho, pi, p                                    &
+                      ,ht, dz8w, p8w, dt,dx,dy                           &
                       ,mp_physics, spec_zone                             &
                       ,specified                                         &
                       ,warm_rain                                         &
-                      ,XLAND,itimestep                                   &
-                      ,F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY                  &
-                      ,LOWLYR,SR                                         &
+                      ,xland,itimestep                                   &
+                      ,f_ice_phy,f_rain_phy,f_rimef_phy                  &
+                      ,lowlyr,sr                                         &
                       ,ids,ide, jds,jde, kds,kde                         &
                       ,ims,ime, jms,jme, kms,kme                         &
                       ,i_start,i_end,j_start,j_end,kts,kte,num_tiles     &
                       ,qv_curr,qc_curr,qr_curr,qi_curr,qs_curr,qg_curr   &
                       ,qv_old ,qc_old ,qr_old ,qi_old ,qs_old ,qg_old    &
                       ,f_qv,f_qc,f_qr,f_qi,f_qs,f_qg                     &
+                      ,my_growth_state,tbpvs_state,tbpvs0_state          & ! for etampnew
+                      ,w ,z                                              &
+                      ,rainnc, rainncv                                   &
                                                                          )
 ! Framework
    USE module_state_description, ONLY :                                  &
@@ -206,12 +209,14 @@ SUBROUTINE microphysics_driver(                                          &
 
    REAL , DIMENSION( ims:ime , jms:jme ) , OPTIONAL ,             &
          INTENT(IN)   ::                                       ht
+
+   REAL, DIMENSION (*), OPTIONAL, INTENT(INOUT) :: my_growth_state &
+                                         ,tbpvs_state,tbpvs0_state
 !
 
    LOGICAL, OPTIONAL ::             f_qv,f_qc,f_qr,f_qi,f_qs,f_qg
 
 
- 
 ! LOCAL  VAR
 
    INTEGER :: i,j,k,its,ite,jts,jte,ij,sz,n
@@ -393,7 +398,10 @@ SUBROUTINE microphysics_driver(                                          &
         CASE (ETAMPNEW)
              CALL wrf_debug ( 100 , 'microphysics_driver: calling etampnew')
 
-             IF ( PRESENT( QV_CURR ) .AND. PRESENT ( QC_CURR ) ) THEN
+             IF ( PRESENT( qv_curr ) .AND. PRESENT( qc_curr ) .AND. &
+                  PRESENT( my_growth_state )                  .AND. &
+                  PRESENT( tbpvs_state )                      .AND. &
+                  PRESENT( tbpvs0_state )                       ) THEN
                CALL ETAMP_NEW(                                      &
                   ITIMESTEP=itimestep,DT=dt,DX=dx,DY=dy             &
                  ,DZ8W=dz8w,RHO_PHY=rho,P_PHY=p,PI_PHY=pi,TH_PHY=th &
@@ -407,6 +415,8 @@ SUBROUTINE microphysics_driver(                                          &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
               ! Optional
                  ,RAINNC=rainnc,RAINNCV=rainncv                     &
+                 ,MY_GROWTH_STATE=my_growth_state                   &
+                 ,TBPVS_STATE=tbpvs_state,TBPVS0_STATE=tbpvs0_state &
                                                                     )
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling etampnew' )

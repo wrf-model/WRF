@@ -726,6 +726,9 @@
      &               ,PDTOP,PT,PD,RES,PINT,T,Q,CWM,TRAIN               &
      &               ,F_ICE,F_RAIN,F_RIMEF,SR                          &
      &               ,PREC,ACPREC,AVRAIN,ZERO_3D                       &
+     &               ,MY_GROWTH_STATE                                  &
+     &               ,TBPVS_STATE                                      &
+     &               ,TBPVS0_STATE                                     &
      &               ,GRID,CONFIG_FLAGS                                &
      &               ,IDS,IDF,JDS,JDF,KDS,KDE                          &
      &               ,IMS,IME,JMS,JME,KMS,KME                          &

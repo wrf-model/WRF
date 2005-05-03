@@ -2345,6 +2345,9 @@ BENCH_START(micro_driver_tim)
                  ! Optional
      &        , RAINNC=rainnc, RAINNCV=rainncv                            &
      &        , W=w_2, Z=z, HT=ht                                         &
+     &        , MY_GROWTH_STATE=my_growth_state                           & ! etampnew
+     &        , TBPVS_STATE=tbpvs_state                                   & ! etampnew
+     &        , TBPVS0_STATE=tbpvs0_state                                 & ! etampnew
      &        , QV_CURR=moist_2(ims,kms,jms,P_QV), F_QV=F_QV              &
      &        , QC_CURR=moist_2(ims,kms,jms,P_QC), F_QC=F_QC              &
      &        , QR_CURR=moist_2(ims,kms,jms,P_QR), F_QR=F_QR              &
@@ -2387,7 +2390,6 @@ BENCH_START(moist_phys_end_tim)
                                      ims, ime, jms, jme, kms, kme,     &
                                      its, ite, jts, jte,               &
                                      k_start    , k_end               )
-
 
        CALL calc_p_rho_phi( moist_2, num_3d_m,                &
                             al, alb, mu_2, muts,              &

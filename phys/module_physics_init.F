@@ -51,6 +51,7 @@ CONTAINS
                          ACSNOM,IVGTYP,ISLTYP, SFCEVP, SMOIS,    &
                          SH2O, SNOWH, SMFR3D,                    &  ! temporary
                          DX,DY,F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY, &
+                         my_growth_state,tbpvs_state,tbpvs0_state,&
                          allowed_to_read, moved,                 &
                          ids, ide, jds, jde, kds, kde,           &
                          ims, ime, jms, jme, kms, kme,           &
@@ -157,6 +158,7 @@ CONTAINS
 !mp
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::   &
              F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY
+   REAL, DIMENSION(*), INTENT(INOUT)   :: my_growth_state,tbpvs_state,tbpvs0_state
    LOGICAL,  INTENT(IN)  :: allowed_to_read, moved
 
 ! Local data
@@ -343,7 +345,8 @@ integer myproc
    CALL mp_init(RAINNC,config_flags,restart,warm_rain,          &
                 MPDT, DT, DX, DY, LOWLYR,                       & 
                 F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,               &
-                allowed_to_read ,                                   &
+                my_growth_state,tbpvs_state,tbpvs0_state,       &
+                allowed_to_read ,                               &
                 ids, ide, jds, jde, kds, kde,                   &
                 ims, ime, jms, jme, kms, kme,                   &
                 its, ite, jts, jte, kts, kte                    )
@@ -1005,6 +1008,7 @@ integer myproc
    SUBROUTINE mp_init(RAINNC,config_flags,restart,warm_rain,      &
                       MPDT, DT, DX, DY, LOWLYR,                   & ! for eta mp
                       F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,           & ! for eta mp
+                      my_growth_state,tbpvs_state,tbpvs0_state,   & ! eta mp
                       allowed_to_read ,                           &
                       ids, ide, jds, jde, kds, kde,               &
                       ims, ime, jms, jme, kms, kme,               &
@@ -1033,6 +1037,7 @@ integer myproc
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) :: RAINNC
    REAL,     DIMENSION( ims:ime , kms:kme, jms:jme ) , INTENT(INOUT) :: &
                                   F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY
+   REAL , DIMENSION( * ) ,INTENT(INOUT)  :: my_growth_state,tbpvs_state,tbpvs0_state
    LOGICAL , INTENT(IN)  :: allowed_to_read
 
 ! Local
@@ -1063,6 +1068,7 @@ integer myproc
      CASE (ETAMPNEW)
          CALL etanewinit (MPDT,DT,DX,DY,LOWLYR,restart,           &
                           F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,       &
+                          my_growth_state,tbpvs_state,tbpvs0_state,&
                           allowed_to_read,                        &
                           ids, ide, jds, jde, kds, kde,           &
                           ims, ime, jms, jme, kms, kme,           &

@@ -8,6 +8,8 @@ MODULE module_mp_etanew
      &  QAUT0, RFmax, RQR_DR1, RQR_DR2, RQR_DR3, RQR_DRmin,             &
      &  RQR_DRmax, RR_DRmin, RR_DR1, RR_DR2, RR_DR3, RR_DRmax
 !
+! If these change, double check value of dimespec 'o' in Registry.
+!
       INTEGER, PRIVATE,PARAMETER :: MY_T1=1, MY_T2=35
       REAL,PRIVATE,DIMENSION(MY_T1:MY_T2),SAVE :: MY_GROWTH
 !
@@ -40,6 +42,7 @@ MODULE module_mp_etanew
      &                     ,dz8w,rho_phy,p_phy,pi_phy,th_phy,qv,qc      &
      &                     ,LOWLYR,SR                                   &
      &                     ,F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY            &
+     &                     ,my_growth_state,tbpvs_state,tbpvs0_state    &
      &                     ,ids,ide, jds,jde, kds,kde 		        &
      &                     ,ims,ime, jms,jme, kms,kme 		        &
      &                     ,its,ite, jts,jte, kts,kte                   &
@@ -66,6 +69,9 @@ MODULE module_mp_etanew
       INTEGER, DIMENSION( ims:ime, jms:jme ),INTENT(INOUT) :: LOWLYR
       REAL, INTENT(INOUT),  DIMENSION(ims:ime,jms:jme), OPTIONAL::      &
                             RAINNC,RAINNCV
+      ! add four to save C1XPVS0,C2XPVS0,C1XPVS,C2XPVS
+      REAL,DIMENSION(*),INTENT(INOUT) :: my_growth_state
+      REAL,DIMENSION(NX),INTENT(INOUT) :: tbpvs_state,tbpvs0_state
 
 
 !-----------------------------------------------------------------------
@@ -92,6 +98,18 @@ MODULE module_mp_etanew
       REAL,  DIMENSION(its:ite, kts:kte, jts:jte):: t_phy
 
       INTEGER :: I,J,K,KFLIP
+
+      MY_GROWTH( MY_T1:MY_T2 ) = MY_GROWTH_STATE ( MY_T1:MY_T2 )
+      C1XPVS0 = MY_GROWTH_STATE ( MY_T2+1 )
+      C2XPVS0 = MY_GROWTH_STATE ( MY_T2+2 )
+      C1XPVS  = MY_GROWTH_STATE ( MY_T2+3 )
+      C2XPVS  = MY_GROWTH_STATE ( MY_T2+4 )
+      CIACW   = MY_GROWTH_STATE ( MY_T2+5 )
+      CIACR   = MY_GROWTH_STATE ( MY_T2+6 )
+      CRACW   = MY_GROWTH_STATE ( MY_T2+7 )
+      CRAUT   =  MY_GROWTH_STATE ( MY_T2+8 )
+      tbpvs(1:NX)  = tbpvs_state (1:NX)
+      tbpvs0(1:NX) = tbpvs0_state (1:NX)
 
       DO j = jts,jte
       DO k = kts,kte
@@ -143,15 +161,6 @@ MODULE module_mp_etanew
       ENDDO
       ENDDO
 
-!-----------------------------------------------------------------------
-!     if (itimestep .eq. 0)                                             &
-!   	 CALL etanewinit (DT,DX,DY,LOWLYR,               	        &
-!    &                    F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,             &
-!    &                    ids, ide, jds, jde, kds, kde,	                &
-!    &                    ims, ime, jms, jme, kms, kme,	                &
-!    &                    its, ite, jts, jte, kts, kte)
-
-
       CALL EGCP01DRV(DT,LOWLYR,                                         &
      &               APREC,PREC,ACPREC,SR,NSTATS,QMAX,QTOT,	        &
      &               dz8w,rho_phy,qc,t_phy,qv,F_ICE_PHY,P_PHY,          &
@@ -169,6 +178,7 @@ MODULE module_mp_etanew
 	ENDDO
         ENDDO
      ENDDO
+
 ! 
 ! update rain (from m to mm)
 
@@ -186,6 +196,22 @@ MODULE module_mp_etanew
        ENDDO
        ENDDO
      ENDIF
+
+     MY_GROWTH_STATE ( MY_T1:MY_T2 ) = MY_GROWTH ( MY_T1:MY_T2 )
+     MY_GROWTH_STATE ( MY_T2+1 ) = C1XPVS0
+     MY_GROWTH_STATE ( MY_T2+2 ) = C2XPVS0
+     MY_GROWTH_STATE ( MY_T2+3 ) = C1XPVS
+     MY_GROWTH_STATE ( MY_T2+4 ) = C2XPVS
+     MY_GROWTH_STATE ( MY_T2+5 ) = CIACW
+     MY_GROWTH_STATE ( MY_T2+6 ) = CIACR
+     MY_GROWTH_STATE ( MY_T2+7 ) = CRACW
+     MY_GROWTH_STATE ( MY_T2+8 ) = CRAUT
+
+
+     tbpvs_state(1:NX)  = tbpvs (1:NX)
+     tbpvs0_state(1:NX) = tbpvs0 (1:NX)
+!
+     RETURN
 
 !-----------------------------------------------------------------------
 
@@ -1016,6 +1042,7 @@ MODULE module_mp_etanew
 !
             ENDIF            ! End IF (TC.GE.0. .OR. WVQW.LT.QSIgrd)
             FSMALL=(1.-FLARGE)/FLARGE
+   
             XSIMASS=RRHO*MASSI(MDImin)*FSMALL
             IF (QI.LE.CLIMIT .AND. ASNOW.LE.CLIMIT) THEN
               INDEXS=MDImin
@@ -1047,6 +1074,7 @@ MODULE module_mp_etanew
               DUM2=RimeF_col(L)
               RimeF1=(DUM2*THICK*QI+DUM1*BLEND*ASNOW)/TOT_ICE
               RimeF1=MIN(RimeF1, RFmax)
+
               DO IPASS=0,1
                 IF (RimeF1 .LE. 1.) THEN
                   RimeF1=1.
@@ -1996,6 +2024,7 @@ nsteps = 0
 !-----------------------------------------------------------------------
       SUBROUTINE etanewinit (GSMDT,DT,DELX,DELY,LOWLYR,restart,         &
      &   F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,                              &
+     &   MY_GROWTH_STATE,tbpvs_state,tbpvs0_state,                      &
      &   ALLOWED_TO_READ,                                               &
      &   IDS,IDE,JDS,JDE,KDS,KDE,                                       &
      &   IMS,IME,JMS,JME,KMS,KME,                                       &
@@ -2090,6 +2119,8 @@ nsteps = 0
        INTEGER, DIMENSION(ims:ime,jms:jme),INTENT(INOUT) :: LOWLYR
 !
       real, INTENT(IN) ::  DELX,DELY
+      real,DIMENSION( * ), INTENT(INOUT) :: my_growth_state 
+      real,DIMENSION( NX ), INTENT(INOUT) :: tbpvs_state,tbpvs0_state
       real,DIMENSION(ims:ime, kms:kme, jms:jme),INTENT(OUT) ::          &
      &  F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY
       INTEGER, PARAMETER :: ITLO=-60, ITHI=40
@@ -2322,7 +2353,22 @@ nsteps = 0
 !       ENDIF
 
 !wrf
+      IF(.NOT.RESTART)THEN
+        MY_GROWTH_STATE ( MY_T1:MY_T2 ) = MY_GROWTH ( MY_T1:MY_T2 )
+        MY_GROWTH_STATE ( MY_T2+1 ) = C1XPVS0
+        MY_GROWTH_STATE ( MY_T2+2 ) = C2XPVS0
+        MY_GROWTH_STATE ( MY_T2+3 ) = C1XPVS
+        MY_GROWTH_STATE ( MY_T2+4 ) = C2XPVS
+        MY_GROWTH_STATE ( MY_T2+5 ) = CIACW
+        MY_GROWTH_STATE ( MY_T2+6 ) = CIACR
+        MY_GROWTH_STATE ( MY_T2+7 ) = CRACW
+        MY_GROWTH_STATE ( MY_T2+8 ) = CRAUT
+        tbpvs_state(1:NX)  = tbpvs (1:NX)
+        tbpvs0_state(1:NX) = tbpvs0 (1:NX)
+      ENDIF
+
       ENDIF  ! Allowed_to_read
+
       RETURN
 !
 !-----------------------------------------------------------------------

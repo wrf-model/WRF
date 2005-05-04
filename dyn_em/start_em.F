@@ -399,7 +399,7 @@ REMOVED THIS; WE DON'T WANT TO REDO THE PERTURBATION
                       ACSNOM,IVGTYP,ISLTYP, SFCEVP,SMOIS,     &
                       SH2O, SNOWH, SMFR3D,                    &
                       DX,DY,F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY, &
-                      my_growth_state,tbpvs_state,tbpvs0_state,&
+                      mp_restart_state,tbpvs_state,tbpvs0_state,&
                       allowed_to_read, moved ,                &
                       ids, ide, jds, jde, kds, kde,           &
                       ims, ime, jms, jme, kms, kme,           &

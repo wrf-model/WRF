@@ -42,7 +42,7 @@ MODULE module_mp_etanew
      &                     ,dz8w,rho_phy,p_phy,pi_phy,th_phy,qv,qc      &
      &                     ,LOWLYR,SR                                   &
      &                     ,F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY            &
-     &                     ,my_growth_state,tbpvs_state,tbpvs0_state    &
+     &                     ,mp_restart_state,tbpvs_state,tbpvs0_state   &
      &                     ,ids,ide, jds,jde, kds,kde 		        &
      &                     ,ims,ime, jms,jme, kms,kme 		        &
      &                     ,its,ite, jts,jte, kts,kte                   &
@@ -70,7 +70,7 @@ MODULE module_mp_etanew
       REAL, INTENT(INOUT),  DIMENSION(ims:ime,jms:jme), OPTIONAL::      &
                             RAINNC,RAINNCV
       ! add four to save C1XPVS0,C2XPVS0,C1XPVS,C2XPVS
-      REAL,DIMENSION(*),INTENT(INOUT) :: my_growth_state
+      REAL,DIMENSION(*),INTENT(INOUT) :: mp_restart_state
       REAL,DIMENSION(NX),INTENT(INOUT) :: tbpvs_state,tbpvs0_state
 
 
@@ -99,15 +99,15 @@ MODULE module_mp_etanew
 
       INTEGER :: I,J,K,KFLIP
 
-      MY_GROWTH( MY_T1:MY_T2 ) = MY_GROWTH_STATE ( MY_T1:MY_T2 )
-      C1XPVS0 = MY_GROWTH_STATE ( MY_T2+1 )
-      C2XPVS0 = MY_GROWTH_STATE ( MY_T2+2 )
-      C1XPVS  = MY_GROWTH_STATE ( MY_T2+3 )
-      C2XPVS  = MY_GROWTH_STATE ( MY_T2+4 )
-      CIACW   = MY_GROWTH_STATE ( MY_T2+5 )
-      CIACR   = MY_GROWTH_STATE ( MY_T2+6 )
-      CRACW   = MY_GROWTH_STATE ( MY_T2+7 )
-      CRAUT   =  MY_GROWTH_STATE ( MY_T2+8 )
+      MY_GROWTH( MY_T1:MY_T2 ) = mp_restart_state ( MY_T1:MY_T2 )
+      C1XPVS0 = mp_restart_state ( MY_T2+1 )
+      C2XPVS0 = mp_restart_state ( MY_T2+2 )
+      C1XPVS  = mp_restart_state ( MY_T2+3 )
+      C2XPVS  = mp_restart_state ( MY_T2+4 )
+      CIACW   = mp_restart_state ( MY_T2+5 )
+      CIACR   = mp_restart_state ( MY_T2+6 )
+      CRACW   = mp_restart_state ( MY_T2+7 )
+      CRAUT   =  mp_restart_state ( MY_T2+8 )
       tbpvs(1:NX)  = tbpvs_state (1:NX)
       tbpvs0(1:NX) = tbpvs0_state (1:NX)
 
@@ -197,15 +197,15 @@ MODULE module_mp_etanew
        ENDDO
      ENDIF
 
-     MY_GROWTH_STATE ( MY_T1:MY_T2 ) = MY_GROWTH ( MY_T1:MY_T2 )
-     MY_GROWTH_STATE ( MY_T2+1 ) = C1XPVS0
-     MY_GROWTH_STATE ( MY_T2+2 ) = C2XPVS0
-     MY_GROWTH_STATE ( MY_T2+3 ) = C1XPVS
-     MY_GROWTH_STATE ( MY_T2+4 ) = C2XPVS
-     MY_GROWTH_STATE ( MY_T2+5 ) = CIACW
-     MY_GROWTH_STATE ( MY_T2+6 ) = CIACR
-     MY_GROWTH_STATE ( MY_T2+7 ) = CRACW
-     MY_GROWTH_STATE ( MY_T2+8 ) = CRAUT
+     mp_restart_state ( MY_T1:MY_T2 ) = MY_GROWTH ( MY_T1:MY_T2 )
+     mp_restart_state ( MY_T2+1 ) = C1XPVS0
+     mp_restart_state ( MY_T2+2 ) = C2XPVS0
+     mp_restart_state ( MY_T2+3 ) = C1XPVS
+     mp_restart_state ( MY_T2+4 ) = C2XPVS
+     mp_restart_state ( MY_T2+5 ) = CIACW
+     mp_restart_state ( MY_T2+6 ) = CIACR
+     mp_restart_state ( MY_T2+7 ) = CRACW
+     mp_restart_state ( MY_T2+8 ) = CRAUT
 
 
      tbpvs_state(1:NX)  = tbpvs (1:NX)
@@ -2024,7 +2024,7 @@ nsteps = 0
 !-----------------------------------------------------------------------
       SUBROUTINE etanewinit (GSMDT,DT,DELX,DELY,LOWLYR,restart,         &
      &   F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,                              &
-     &   MY_GROWTH_STATE,tbpvs_state,tbpvs0_state,                      &
+     &   mp_restart_state,tbpvs_state,tbpvs0_state,                      &
      &   ALLOWED_TO_READ,                                               &
      &   IDS,IDE,JDS,JDE,KDS,KDE,                                       &
      &   IMS,IME,JMS,JME,KMS,KME,                                       &
@@ -2119,7 +2119,7 @@ nsteps = 0
        INTEGER, DIMENSION(ims:ime,jms:jme),INTENT(INOUT) :: LOWLYR
 !
       real, INTENT(IN) ::  DELX,DELY
-      real,DIMENSION( * ), INTENT(INOUT) :: my_growth_state 
+      real,DIMENSION( * ), INTENT(INOUT) :: mp_restart_state 
       real,DIMENSION( NX ), INTENT(INOUT) :: tbpvs_state,tbpvs0_state
       real,DIMENSION(ims:ime, kms:kme, jms:jme),INTENT(OUT) ::          &
      &  F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY
@@ -2354,15 +2354,15 @@ nsteps = 0
 
 !wrf
       IF(.NOT.RESTART)THEN
-        MY_GROWTH_STATE ( MY_T1:MY_T2 ) = MY_GROWTH ( MY_T1:MY_T2 )
-        MY_GROWTH_STATE ( MY_T2+1 ) = C1XPVS0
-        MY_GROWTH_STATE ( MY_T2+2 ) = C2XPVS0
-        MY_GROWTH_STATE ( MY_T2+3 ) = C1XPVS
-        MY_GROWTH_STATE ( MY_T2+4 ) = C2XPVS
-        MY_GROWTH_STATE ( MY_T2+5 ) = CIACW
-        MY_GROWTH_STATE ( MY_T2+6 ) = CIACR
-        MY_GROWTH_STATE ( MY_T2+7 ) = CRACW
-        MY_GROWTH_STATE ( MY_T2+8 ) = CRAUT
+        mp_restart_state ( MY_T1:MY_T2 ) = MY_GROWTH ( MY_T1:MY_T2 )
+        mp_restart_state ( MY_T2+1 ) = C1XPVS0
+        mp_restart_state ( MY_T2+2 ) = C2XPVS0
+        mp_restart_state ( MY_T2+3 ) = C1XPVS
+        mp_restart_state ( MY_T2+4 ) = C2XPVS
+        mp_restart_state ( MY_T2+5 ) = CIACW
+        mp_restart_state ( MY_T2+6 ) = CIACR
+        mp_restart_state ( MY_T2+7 ) = CRACW
+        mp_restart_state ( MY_T2+8 ) = CRAUT
         tbpvs_state(1:NX)  = tbpvs (1:NX)
         tbpvs0_state(1:NX) = tbpvs0 (1:NX)
       ENDIF

@@ -2345,7 +2345,7 @@ BENCH_START(micro_driver_tim)
                  ! Optional
      &        , RAINNC=rainnc, RAINNCV=rainncv                            &
      &        , W=w_2, Z=z, HT=ht                                         &
-     &        , MY_GROWTH_STATE=my_growth_state                           & ! etampnew
+     &        , MP_RESTART_STATE=mp_restart_state                         &
      &        , TBPVS_STATE=tbpvs_state                                   & ! etampnew
      &        , TBPVS0_STATE=tbpvs0_state                                 & ! etampnew
      &        , QV_CURR=moist_2(ims,kms,jms,P_QV), F_QV=F_QV              &

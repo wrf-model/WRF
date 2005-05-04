@@ -18,7 +18,7 @@ SUBROUTINE microphysics_driver(                                          &
                       ,qv_curr,qc_curr,qr_curr,qi_curr,qs_curr,qg_curr   &
                       ,qv_old ,qc_old ,qr_old ,qi_old ,qs_old ,qg_old    &
                       ,f_qv,f_qc,f_qr,f_qi,f_qs,f_qg                     &
-                      ,my_growth_state,tbpvs_state,tbpvs0_state          & ! for etampnew
+                      ,mp_restart_state,tbpvs_state,tbpvs0_state          & ! for etampnew
                       ,w ,z                                              &
                       ,rainnc, rainncv                                   &
                                                                          )
@@ -210,7 +210,7 @@ SUBROUTINE microphysics_driver(                                          &
    REAL , DIMENSION( ims:ime , jms:jme ) , OPTIONAL ,             &
          INTENT(IN)   ::                                       ht
 
-   REAL, DIMENSION (*), OPTIONAL, INTENT(INOUT) :: my_growth_state &
+   REAL, DIMENSION (*), OPTIONAL, INTENT(INOUT) :: mp_restart_state &
                                          ,tbpvs_state,tbpvs0_state
 !
 
@@ -399,7 +399,7 @@ SUBROUTINE microphysics_driver(                                          &
              CALL wrf_debug ( 100 , 'microphysics_driver: calling etampnew')
 
              IF ( PRESENT( qv_curr ) .AND. PRESENT( qc_curr ) .AND. &
-                  PRESENT( my_growth_state )                  .AND. &
+                  PRESENT( mp_restart_state )                  .AND. &
                   PRESENT( tbpvs_state )                      .AND. &
                   PRESENT( tbpvs0_state )                       ) THEN
                CALL ETAMP_NEW(                                      &
@@ -415,7 +415,7 @@ SUBROUTINE microphysics_driver(                                          &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
               ! Optional
                  ,RAINNC=rainnc,RAINNCV=rainncv                     &
-                 ,MY_GROWTH_STATE=my_growth_state                   &
+                 ,MP_RESTART_STATE=mp_restart_state                 &
                  ,TBPVS_STATE=tbpvs_state,TBPVS0_STATE=tbpvs0_state &
                                                                     )
              ELSE

@@ -1733,7 +1733,7 @@
      &             ,ACSNOM,IVGTYP,ISLTYP,SFCEVP,SMOIS                   &
      &             ,SH2O, SNOWH, SMFR3D                                 &  ! temporary
      &             ,DX,DY,F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY              &
-     &             ,MY_GROWTH_STATE,TBPVS_STATE,TBPVS0_STATE            &
+     &             ,MP_RESTART_STATE,TBPVS_STATE,TBPVS0_STATE           &
      &             ,.TRUE.,.FALSE.                                      &
      &             ,ids, ide, jds, jde, kds, kde                        &
      &             ,ims, ime, jms, jme, kms, kme                        &

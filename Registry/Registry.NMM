@@ -48,8 +48,7 @@ dimspec    w      -     namelist=spec_bdy_width   c          spec_bdy_width
 dimspec    u      2     namelist=num_land_cat     z          land_cat
 dimspec    s      2     namelist=num_soil_cat     z          soil_cat
 dimspec    e      3     namelist=ensdim           z          gd ensemble dimension
-dimspec    o      -     constant=50               c          etamp_state_1
-dimspec    p      -     constant=7501             c          etamp_state_2
+dimspec    p      -     constant=7501             c          microphysics_rstrt_state
 
 #### 7. Edit the Registry file and create the state data assocaited with this
 ####    solver.  Single entry:
@@ -567,7 +566,7 @@ state    real   SNOWH            ij     misc        1         -     i01rhd=(inte
 state    real   SMFR3D           ilj    misc        1         Z      rh       "SMFR3D"               "SOIL ICE" ""
 
 # added state for etampnew microphysics (needed for restarts)
-state    real  my_growth_state   o      misc        1         -      r        "MY_GROWTH_STATE"       "STATE VECTOR FOR ETAMPNEW MICROPHYSICS"
+state    real  mp_restart_state   p      misc        1         -      r       "MP_RESTART_STATE"       "STATE VECTOR FOR MICROPHYSICS RESTARTS"
 state    real  tbpvs_state       p      misc        1         -      r        "TBPVS_STATE"           "STATE FOR ETAMPNEW MICROPHYSICS"
 state    real  tbpvs0_state      p      misc        1         -      r        "TBPVS0_STATE"          "STATE FOR ETAMPNEW MICROPHYSICS"
 

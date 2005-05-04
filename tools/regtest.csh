@@ -1478,7 +1478,7 @@ banner 7
 		#	as the default floating precision.
 
 		if ( $REAL8 == TRUE ) then
-			sed -e 's/^RWORDSIZE *= *[0-9]/RWORDSIZE = 8/' ./configure.wrf >! foo ; /bin/mv foo configure.wrf
+			sed -e '/^RWORDSIZE/s/\$(NATIVE_RWORDSIZE)/8/'  configure.wrf > ! foo ; /bin/mv foo configure.wrf
 		endif
 
 #DAVE###################################################

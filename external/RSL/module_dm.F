@@ -40,6 +40,9 @@ MODULE module_dm
    INTEGER, PRIVATE :: nproc_lt, nproc_ln
 
 #if ( RWORDSIZE != DWORDSIZE )
+   INTERFACE add_msg_period
+     MODULE PROCEDURE add_msg_period_real, add_msg_period_integer, add_msg_period_doubleprecision
+   END INTERFACE
    INTERFACE add_msg_xpose
      MODULE PROCEDURE add_msg_xpose_real, add_msg_xpose_integer, add_msg_xpose_doubleprecision
    END INTERFACE
@@ -74,6 +77,9 @@ MODULE module_dm
 #define TRUE_RSL_REAL     RSL_REAL
 #define TRUE_RSL_REAL_F90 RSL_REAL_F90
 #else
+   INTERFACE add_msg_period
+     MODULE PROCEDURE add_msg_period_real, add_msg_period_integer
+   END INTERFACE
    INTERFACE add_msg_xpose
      MODULE PROCEDURE add_msg_xpose_real, add_msg_xpose_integer
    END INTERFACE
@@ -231,6 +237,84 @@ CONTAINS
       RETURN
    END SUBROUTINE wrf_dm_initialize
 
+! period additions, 200505
+
+   SUBROUTINE reset_period
+      IMPLICIT NONE
+      CALL rsl_create_message ( msg )
+   END SUBROUTINE reset_period
+
+   SUBROUTINE add_msg_period_real( fld, kdim )
+      IMPLICIT NONE
+      integer kdim, gl(3), ll(3)
+      real fld(*)
+      SELECT CASE ( model_data_order )
+         ! need to finish other cases
+         CASE ( DATA_ORDER_XZY )
+           gl(1) = glen(1) ; ll(1) = llen(1)
+           gl(2) = kdim    ; ll(2) = kdim
+           gl(3) = glen(3) ; ll(3) = llen(3)
+         CASE ( DATA_ORDER_XYZ )
+           gl(1) = glen(1) ; ll(1) = llen(1)
+           gl(2) = glen(2) ; ll(2) = llen(2)
+           gl(3) = kdim    ; ll(3) = kdim
+         CASE DEFAULT
+      END SELECT
+      if (      kdim >  1 ) then
+        CALL rsl_build_message(msg,TRUE_RSL_REAL_F90,fld,3,decomp(1),gl(1),ll(1))
+      else if ( kdim == 1 ) then
+        CALL rsl_build_message(msg,TRUE_RSL_REAL_F90,fld,2,decomp2d(1),glen2d(1),llen2d(1))
+      endif
+   END SUBROUTINE add_msg_period_real
+
+   SUBROUTINE add_msg_period_integer( fld, kdim )
+      IMPLICIT NONE
+      integer kdim, gl(3), ll(3)
+      integer fld(*)
+      SELECT CASE ( model_data_order )
+         ! need to finish other cases
+         CASE ( DATA_ORDER_XZY )
+           gl(1) = glen(1) ; ll(1) = llen(1)
+           gl(2) = kdim    ; ll(2) = kdim
+           gl(3) = glen(3) ; ll(3) = llen(3)
+         CASE ( DATA_ORDER_XYZ )
+           gl(1) = glen(1) ; ll(1) = llen(1)
+           gl(2) = glen(2) ; ll(2) = llen(2)
+           gl(3) = kdim    ; ll(3) = kdim
+         CASE DEFAULT
+      END SELECT
+      if (      kdim >  1 ) then
+        CALL rsl_build_message(msg,RSL_INTEGER_F90,fld,3,decomp(1),gl(1),ll(1))
+      else if ( kdim == 1 ) then
+        CALL rsl_build_message(msg,RSL_INTEGER_F90,fld,2,decomp2d(1),glen2d(1),llen2d(1))
+      endif
+   END SUBROUTINE add_msg_period_integer
+
+#if (  RWORDSIZE != DWORDSIZE )
+   SUBROUTINE add_msg_period_doubleprecision( fld, kdim )
+      IMPLICIT NONE
+      integer kdim, gl(3), ll(3)
+      doubleprecision fld(*)
+      SELECT CASE ( model_data_order )
+         ! need to finish other cases
+         CASE ( DATA_ORDER_XZY )
+           gl(1) = glen(1) ; ll(1) = llen(1)
+           gl(2) = kdim    ; ll(2) = kdim
+           gl(3) = glen(3) ; ll(3) = llen(3)
+         CASE ( DATA_ORDER_XYZ )
+           gl(1) = glen(1) ; ll(1) = llen(1)
+           gl(2) = glen(2) ; ll(2) = llen(2)
+           gl(3) = kdim    ; ll(3) = kdim
+         CASE DEFAULT
+      END SELECT
+      if (      kdim >  1 ) then
+        CALL rsl_build_message(msg,RSL_DOUBLE_F90,fld,3,decomp(1),gl(1),ll(1))
+      else if ( kdim == 1 ) then
+        CALL rsl_build_message(msg,RSL_DOUBLE_F90,fld,2,decomp2d(1),glen2d(1),llen2d(1))
+      endif
+   END SUBROUTINE add_msg_period_doubleprecision
+#endif
+
 ! xpose additions, 20000302
 
    SUBROUTINE reset_msgs_xpose
@@ -291,7 +375,7 @@ CONTAINS
       integer fld_z(*), fld_x(*), fld_y(*)
       integer dim
       if (      dim == 3 ) then
-        CALL rsl_build_message(msg_z,TRUE_RSL_REAL_F90,fld_z,dim,decomp(1),glen(1),llen(1))
+        CALL rsl_build_message(msg_z,RSL_INTEGER_F90,fld_z,dim,decomp(1),glen(1),llen(1))
 #ifdef D3VAR_IRY_KLUDGE
         CALL rsl_build_message(msg_x,RSL_INTEGER_F90,fld_x,dim,decomp(1),glen(1),llen_tx(1))
         CALL rsl_build_message(msg_y,RSL_INTEGER_F90,fld_y,dim,decomp(1),glen(1),llen_ty(1))
@@ -1890,6 +1974,14 @@ messages(120)=  s5e5
       CALL rsl_describe_stencil ( did, stenid, RSL_120PT, messages )
       RETURN
    END SUBROUTINE stencil_120pt
+
+   SUBROUTINE period_def ( did, perid, w )
+      IMPLICIT NONE
+      INTEGER did, perid, w
+      CALL rsl_create_period( perid )
+      CALL rsl_describe_period ( did, perid, w, msg )
+      RETURN
+   END SUBROUTINE period_def
 
    SUBROUTINE setup_halo_rsl( grid )
        USE module_domain

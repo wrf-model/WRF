@@ -210,7 +210,7 @@ SUBROUTINE microphysics_driver(                                          &
    REAL , DIMENSION( ims:ime , jms:jme ) , OPTIONAL ,             &
          INTENT(IN)   ::                                       ht
 
-   REAL, DIMENSION (*), OPTIONAL, INTENT(INOUT) :: mp_restart_state &
+   REAL, DIMENSION (:), OPTIONAL, INTENT(INOUT) :: mp_restart_state &
                                          ,tbpvs_state,tbpvs0_state
 !
 

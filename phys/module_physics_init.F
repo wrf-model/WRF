@@ -158,7 +158,7 @@ CONTAINS
 !mp
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::   &
              F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY
-   REAL, DIMENSION(*), INTENT(INOUT)   :: mp_restart_state,tbpvs_state,tbpvs0_state
+   REAL, DIMENSION(:), INTENT(INOUT)   :: mp_restart_state,tbpvs_state,tbpvs0_state
    LOGICAL,  INTENT(IN)  :: allowed_to_read, moved
 
 ! Local data
@@ -1037,7 +1037,7 @@ integer myproc
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) :: RAINNC
    REAL,     DIMENSION( ims:ime , kms:kme, jms:jme ) , INTENT(INOUT) :: &
                                   F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY
-   REAL , DIMENSION( * ) ,INTENT(INOUT)  :: mp_restart_state,tbpvs_state,tbpvs0_state
+   REAL , DIMENSION(:) ,INTENT(INOUT)  :: mp_restart_state,tbpvs_state,tbpvs0_state
    LOGICAL , INTENT(IN)  :: allowed_to_read
 
 ! Local

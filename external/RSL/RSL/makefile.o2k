@@ -17,7 +17,7 @@ LIB =
 
 .SUFFIXES: .o .c .F
 
-CFLAGS = -w -I$(IDIR) -DMPI -DO2K -O2
+CFLAGS = -w -I$(IDIR) -DMPI -DO2K -O2 -DMPI2_SUPPORT
 FFLAGS = -w -O2
 
 warning :

@@ -317,7 +317,7 @@ if test -f configure.wrf ; then
     echo testing for MPI_Comm_f2c and MPI_Comm_c2f 
     /bin/rm -f tools/mpi2_test
     ( make mpi2_test 2> /dev/null ) 1> /dev/null
-    if test -x tools/mpi2_test ; then
+    if test -e tools/mpi2_test.o ; then
       echo "  " MPI_Comm_f2c and MPI_Comm_c2f are supported
       sed '/^CC .*=/s/$/ -DMPI2_SUPPORT/' configure.wrf > xx$$ ; /bin/mv xx$$ configure.wrf
     else

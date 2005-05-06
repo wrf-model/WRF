@@ -15,6 +15,7 @@ PROGRAM ideal
 #ifdef DM_PARALLEL
    USE module_dm
 #endif
+   USE module_date_time
 
    IMPLICIT NONE
 
@@ -87,6 +88,7 @@ PROGRAM ideal
                                      parent     = null_domain ,        &
                                      kid        = -1                   )
 
+grid => head_grid
 #ifdef WRF_ESMF_MOD
    ! TBH:  Note that historically, IDEAL did not set up ESMF clocks.  These 
    ! TBH:  are explicit replacements for old default initializations...  
@@ -109,6 +111,28 @@ PROGRAM ideal
    CALL model_to_grid_config_rec ( head_grid%id , model_config_rec , config_flags )
    CALL       wrf_debug ( 100 , 'wrf: calling set_scalar_indices_from_config ' )
    CALL set_scalar_indices_from_config ( head_grid%id , idum1, idum2 )
+
+   WRITE ( current_date , FMT = '(I4.4,"-",I2.2,"-",I2.2,"_",I2.2,":",I2.2,":",I2.2,".0000")' ) &
+           config_flags%start_year, &
+           config_flags%start_month, &
+           config_flags%start_day, &
+           config_flags%start_hour, &
+           config_flags%start_minute, &
+           config_flags%start_second 
+   CALL wrf_atotime( current_date(1:19), grid%current_time )
+   CALL wrf_clockprint ( 150, grid%domain_clock, &
+                            'DEBUG assemble_output:  grid%domain_clock before 1st currTime set,' )
+   WRITE (wrf_err_message,*) &
+        'DEBUG assemble_output:  before 1st currTime set, current_date = ',TRIM(current_date)
+   CALL wrf_debug ( 150 , wrf_err_message )
+   CALL ESMF_ClockSet(grid%domain_clock, currTime=grid%current_time, rc=rc)
+   CALL wrf_check_error( ESMF_SUCCESS, rc, &
+                            'ESMF_ClockSet(grid%domain_clock) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
+   CALL wrf_clockprint ( 150, grid%domain_clock, &
+                            'DEBUG assemble_output:  grid%domain_clock after 1st currTime set,' )
+
    CALL       wrf_debug ( 100 , 'wrf: calling init_wrfio' )
    CALL init_wrfio
 

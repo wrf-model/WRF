@@ -1942,7 +1942,7 @@
      &                                                        ,F_RAIN   &
      &                                                        ,F_RIMEF
 !  state var for etampnew microphysics (JM, 2005 05 02)
-      REAL,DIMENSION(*),INTENT(INOUT) ::                MP_RESTART_STATE &
+      REAL,DIMENSION(:),INTENT(INOUT) ::                MP_RESTART_STATE &
      &                                                     ,TBPVS_STATE &
      &                                                    ,TBPVS0_STATE
 

@@ -1259,7 +1259,6 @@ END subroutine cup_up_tracer
 !
       do 100 i=its,ite
       IF(ierr(I).eq.0)then
-      qrch=tre_cup(I,JMIN(I),nv)
 !
 !--- assume no gas takeup by rain during falling
 !--- for now

@@ -131,17 +131,17 @@
 !
 !***  TYPE 2 WORKING ARRAY (SEE PFDHT)
 !
-      REAL,DIMENSION(ITS-5:ITE+5,KTS:KTE,-2:1) :: HKNE,QNE,Q2NE,TNE     &
+      REAL,DIMENSION(ITS-5:ITE+5,KTS:KTE,-2:2) :: HKNE,QNE,Q2NE,TNE     &
      &                                           ,UNE,VKNE,VNE
 !
 !***  TYPE 3 WORKING ARRAY (SEE PFDHT)
 !
-      REAL,DIMENSION(ITS-5:ITE+5,KTS:KTE,-1:2) :: HKSE,QSE,Q2SE,TSE     &
+      REAL,DIMENSION(ITS-5:ITE+5,KTS:KTE,-2:2) :: HKSE,QSE,Q2SE,TSE     &
      &                                           ,USE,VKSE,VSE
 !
 !***  TYPE 4 WORKING ARRAY (SEE PFDHT)
 !
-      REAL,DIMENSION(ITS-5:ITE+5,KTS:KTE,-1:1) :: CKE,QDIF,Q2DIF        &
+      REAL,DIMENSION(ITS-5:ITE+5,KTS:KTE,-2:2) :: CKE,QDIF,Q2DIF        &
      &                                           ,TDIF,UDIF,VDIF
 !
 !-----------------------------------------------------------------------

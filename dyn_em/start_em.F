@@ -207,7 +207,7 @@
             mub(i,j) = p_surf - p_top
 
 #if 0
-REMOVED THIS; WE DON'T WANT TO REDO THE PERTURBATION
+!REMOVED THIS; WE DON'T WANT TO REDO THE PERTURBATION
             !  Dry surface pressure is defined as the following (this mu is from the input file
             !  computed from the dry pressure).  Here the dry pressure is just reconstituted.
 

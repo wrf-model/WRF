@@ -304,8 +304,9 @@ if test -n "$PERL" ; then
 fi
 
 if [ "$arg1" = "-d" ] ; then
+ls -l configure.wrf
    if [ -e configure.wrf ] ; then
-     sed -e 's/FCOPTIM  *=/& # /' -e '/FCDEBUG  *=/s/#//g' configure.wrf > configure.wrf.edit
+     sed -e 's/FCOPTIM[	  ]*=/& # /' -e '/FCDEBUG[ 	]*=/s/#//g' configure.wrf > configure.wrf.edit
      /bin/mv configure.wrf.edit configure.wrf
    fi
 fi

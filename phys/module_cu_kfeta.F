@@ -477,7 +477,8 @@ CONTAINS
 !         TKE(K) = Q2(I,J,NK)
          TKE(K) = 0.
          CLDHGT(K) = 0.
-         IF(P0(K).GE.500E2)L5=K
+!        IF(P0(K).GE.500E2)L5=K
+         IF(P0(K).GE.0.5*P0(1))L5=K
          IF(P0(K).GE.P300)LLFC=K
          IF(T0(K).GT.T00)ML=K
       ENDDO
@@ -1272,6 +1273,7 @@ updraft:    DO NK=K,KL-1
 !        KSTART=MAX0(KPBL,KLCL)
 !        KSTART=KPBL                                  ! Changed 7/23/99
          KSTART=KPBL+1                                ! Changed 7/23/99
+         KLFS = LET-1
          DO NK = KSTART+1,KL
            DPPP = P0(KSTART)-P0(NK)
 !          IF(DPPP.GT.200.E2)THEN

@@ -23,6 +23,7 @@ OBJS    = 		\
 	mediation_interp_domain.o	\
 	mediation_force_domain.o	\
 	mediation_feedback_domain.o	\
+        mediation_nest_move.o           \
 	mediation_wrfmain.o		\
 	solve_interface.o               \
         start_domain.o                  \

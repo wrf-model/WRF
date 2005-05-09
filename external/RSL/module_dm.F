@@ -3293,6 +3293,12 @@ messages(120)=  s5e5
 #endif
    END SUBROUTINE wrf_dm_minval_integer
 
+   SUBROUTINE wrf_dm_move_nest ( parent, nest, dx, dy )
+      USE module_domain
+      TYPE (domain),INTENT(INOUT) :: parent, nest
+      INTEGER, INTENT(IN)         :: dx, dy
+      CALL rsl_move_nest ( parent%domdesc, nest%domdesc, dx, dy )
+   END SUBROUTINE wrf_dm_move_nest
 
 END MODULE module_dm
 

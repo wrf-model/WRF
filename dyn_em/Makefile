@@ -30,6 +30,7 @@ OBJS    = 		        \
 	init_modules_em.o       \
 	solve_em.o              \
         start_em.o              \
+        shift_domain_em.o       \
         couple_or_uncouple_em.o \
         nest_init_utils.o	\
         interp_domain_em.o

@@ -1,4 +1,5 @@
 #ifdef MOVE_NESTS
+
 SUBROUTINE med_nest_move ( parent, nest )
   ! Driver layer
    USE module_domain
@@ -18,7 +19,6 @@ SUBROUTINE med_nest_move ( parent, nest )
    LOGICAL input_from_hires
    TYPE (grid_config_rec_type)   :: config_flags
 
-#if ( EM_CORE == 1 && defined(DM_PARALLEL) )
    INTERFACE
      SUBROUTINE med_interp_domain ( parent , nest )
         USE module_domain
@@ -29,6 +29,7 @@ SUBROUTINE med_nest_move ( parent, nest )
         TYPE(domain) :: grid
         LOGICAL, INTENT(IN) :: allowed_to_move
      END SUBROUTINE start_domain
+#if ( EM_CORE == 1 )
      SUBROUTINE shift_domain_em ( grid, disp_x, disp_y,  &
 !
 # include <em_dummy_args.inc>
@@ -40,8 +41,11 @@ SUBROUTINE med_nest_move ( parent, nest )
         IMPLICIT NONE
         INTEGER disp_x, disp_y
         TYPE(domain) , POINTER                 :: grid
-#include <em_dummy_decl.inc>
+# include <em_dummy_decl.inc>
      END SUBROUTINE shift_domain_em
+#endif
+#if ( NMM_CORE == 1 )
+#endif
      LOGICAL FUNCTION time_for_move ( parent , nest , dx , dy )
         USE module_domain
         USE WRF_ESMF_MOD
@@ -180,8 +184,6 @@ write(0,*)' moving ',grid%id,dx,dy
 !
    ENDIF check_for_move
 
-#endif
-
 END SUBROUTINE med_nest_move
 
 LOGICAL FUNCTION time_for_move2 ( parent , grid , move_cd_x, move_cd_y )
@@ -225,8 +227,6 @@ character*256 message, message2
 
 integer myproc
 
-!#define VORTEX_CENTER
-!#define MOVING_DIAGS
 #ifdef VORTEX_CENTER
 
 
@@ -501,6 +501,7 @@ END FUNCTION time_for_move2
 LOGICAL FUNCTION time_for_move ( parent , grid , move_cd_x, move_cd_y )
    USE module_domain
    USE module_configure
+   USE module_dm
 USE module_timing
    USE WRF_ESMF_MOD
    IMPLICIT NONE
@@ -559,12 +560,8 @@ USE module_timing
      ds = grid%nests(kid)%ptr%j_parent_start - 1
      !  from eastern boundary
      de = cide - ( grid%nests(kid)%ptr%i_parent_start + (nide-nids+1)/pgr )
-write(0,*)' de = ',de,cide,( grid%nests(kid)%ptr%i_parent_start + (nide-nids+1)/pgr )
-write(0,*)'   i_parent_start = ',grid%nests(kid)%ptr%i_parent_start
      !  from northern boundary
      dn = cjde - ( grid%nests(kid)%ptr%j_parent_start + (njde-njds+1)/pgr )
-write(0,*)' dn = ',dn,cjde,( grid%nests(kid)%ptr%j_parent_start + (njde-njds+1)/pgr )
-write(0,*)'   j_parent_start = ',grid%nests(kid)%ptr%j_parent_start
 
      ! move this domain (the parent containing the moving nest)
      ! in a direction that reestablishes the distance from 

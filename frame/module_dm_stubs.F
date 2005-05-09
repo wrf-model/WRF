@@ -37,6 +37,14 @@ MODULE module_dm
       RETURN
    END SUBROUTINE wrf_dm_maxval
 
+! stub
+   SUBROUTINE wrf_dm_move_nest ( parent, nest, dx, dy )
+      USE module_domain
+      TYPE (domain), INTENT(INOUT) :: parent, nest
+      INTEGER, INTENT(IN)          :: dx,dy
+      RETURN
+   END SUBROUTINE wrf_dm_move_nest
+
 END MODULE module_dm
 
 !=========================================================================

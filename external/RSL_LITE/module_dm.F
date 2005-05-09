@@ -523,6 +523,14 @@ CONTAINS
       CALL wrf_get_dm_communicator( mpi_comm_local )
    END SUBROUTINE init_module_dm
 
+! stub
+   SUBROUTINE wrf_dm_move_nest ( parent, nest, dx, dy )
+      USE module_domain
+      TYPE (domain), INTENT(INOUT) :: parent, nest
+      INTEGER, INTENT(IN)          :: dx,dy
+      RETURN
+   END SUBROUTINE wrf_dm_move_nest
+
 END MODULE module_dm
 
 !=========================================================================

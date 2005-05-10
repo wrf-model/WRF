@@ -409,7 +409,7 @@ contains
                                                    ufxpbl,vfxpbl, &
                                                      delta,dthvx
       real    ::  prnumfac,bfx0,hfx0,qfx0,delb,dux,dvx,           &
-                  dsdzu,dsdzv,wm3,dthx,dqx
+                  dsdzu,dsdzv,we,wm3,dthx,dqx
 !
 !----------------------------------------------------------------------
 !
@@ -742,25 +742,14 @@ contains
           dthvx(i)  = max(thvx(i,k+1)-thvx(i,k),qmin)
           dthx  = max(thx(i,k+1)-thx(i,k),qmin)
           dqx   = min(qx(i,k+1)-qx(i,k),0.0)
-          hfxpbl(i) = bfxpbl(i)*dthx/dthvx(i)
-          qfxpbl(i) = bfxpbl(i)*dqx/dthvx(i)
+          we = max(bfxpbl(i)/dthvx(i),-sqrt(wm2(i)))
+          hfxpbl(i) = we*dthx
+          qfxpbl(i) = we*dqx
 !
           dux = ux(i,k+1)-ux(i,k)
           dvx = vx(i,k+1)-vx(i,k)
-          if(dux.gt.qmin) then
-            ufxpbl(i) = max(prpbl(i)*bfxpbl(i)*dux/dthvx(i),-ust(i)*ust(i))
-          elseif(dux.lt.-qmin) then
-            ufxpbl(i) = min(prpbl(i)*bfxpbl(i)*dux/dthvx(i),ust(i)*ust(i))
-          else
-            ufxpbl(i) = 0.0
-          endif
-          if(dvx.gt.qmin) then
-            vfxpbl(i) = max(prpbl(i)*bfxpbl(i)*dvx/dthvx(i),-ust(i)*ust(i))
-          elseif(dvx.lt.-qmin) then
-            vfxpbl(i) = min(prpbl(i)*bfxpbl(i)*dvx/dthvx(i),ust(i)*ust(i))
-          else
-            vfxpbl(i) = 0.0
-          endif
+          ufxpbl(i) = prpbl(i)*we*dux
+          vfxpbl(i) = prpbl(i)*we*dvx
           delb  = govrth(i)*d3*hpbl(i)
           delta(i) = min(d1*hpbl(i) + d2*wm2(i)/delb,100.)
         endif

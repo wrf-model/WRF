@@ -318,13 +318,12 @@
      &                 ,CFRACM=CFRACM,CFRACH=CFRACH                     &
      &                 ,ACFRST=ACFRST,NCFRST=NCFRST                     &
      &                 ,ACFRCV=ACFRCV,NCFRCV=NCFRCV                     &
-     &                 ,QV=WATER(IMS,KMS,JMS,P_QV) , F_QV=F_QV          &
-     &                 ,QC=WATER(IMS,KMS,JMS,P_QC) , F_QC=F_QC          &
-     &                 ,QR=WATER(IMS,KMS,JMS,P_QR) , F_QR=F_QR          &
-     &                 ,QI=WATER(IMS,KMS,JMS,P_QI) , F_QI=F_QI          &
-     &                 ,QS=WATER(IMS,KMS,JMS,P_QS) , F_QS=F_QS          &
-     &                 ,QG=WATER(IMS,KMS,JMS,P_QG) , F_QG=F_QG          &
-     &                                                                  )
+     &                 ,QV=WATER(IMS,KMS,JMS,P_QV),F_QV=F_QV            &
+     &                 ,QC=WATER(IMS,KMS,JMS,P_QC),F_QC=F_QC            &
+     &                 ,QR=WATER(IMS,KMS,JMS,P_QR),F_QR=F_QR            &
+     &                 ,QI=WATER(IMS,KMS,JMS,P_QI),F_QI=F_QI            &
+     &                 ,QS=WATER(IMS,KMS,JMS,P_QS),F_QS=F_QS            &
+     &                 ,QG=WATER(IMS,KMS,JMS,P_QG),F_QG=F_QG          )
 !
 !-----------------------------------------------------------------------
 !
@@ -964,21 +963,20 @@
      &          ,SF_SFCLAY_PHYSICS=CONFIG_FLAGS%SF_SFCLAY_PHYSICS       &
      &          ,SF_SURFACE_PHYSICS=CONFIG_FLAGS%SF_SURFACE_PHYSICS     &
      &          ,RA_LW_PHYSICS=CONFIG_FLAGS%RA_LW_PHYSICS               &
-     &          , IDS=IDS,IDE=IDE,JDS=JDS,JDE=JDE,KDS=KDS,KDE=KDE       &
-     &          , IMS=IMS,IME=IME,JMS=JMS,JME=JME,KMS=KMS,KME=KME       &
-     &          , I_START=GRID%I_START,I_END=GRID%I_END                 &
-     &          , J_START=GRID%J_START,J_END=GRID%J_END                 &
-     &          , KTS=KTS,KTE=KTE,NUM_TILES=GRID%NUM_TILES              &
-           ! optional
-     &          ,QV_CURR=water(ims,kms,jms,P_QV) , F_QV=F_QV            &
-     &          ,QC_CURR=water(ims,kms,jms,P_QC) , F_QC=F_QC            &
-     &          ,QR_CURR=water(ims,kms,jms,P_QR) , F_QR=F_QR            &
-     &          ,QI_CURR=water(ims,kms,jms,P_QI) , F_QI=F_QI            &
-     &          ,QS_CURR=water(ims,kms,jms,P_QS) , F_QS=F_QS            &
-     &          ,QG_CURR=water(ims,kms,jms,P_QG) , F_QG=F_QG            &
+     &          ,IDS=IDS,IDE=IDE,JDS=JDS,JDE=JDE,KDS=KDS,KDE=KDE        &
+     &          ,IMS=IMS,IME=IME,JMS=JMS,JME=JME,KMS=KMS,KME=KME        &
+     &          ,I_START=GRID%I_START,I_END=GRID%I_END                  &
+     &          ,J_START=GRID%J_START,J_END=GRID%J_END                  &
+     &          ,KTS=KTS,KTE=KTE,NUM_TILES=GRID%NUM_TILES               &
+           ! Optional args
+     &          ,QV_CURR=WATER(IMS,KMS,JMS,P_QV),F_QV=F_QV              &
+     &          ,QC_CURR=WATER(IMS,KMS,JMS,P_QC),F_QC=F_QC              &
+     &          ,QR_CURR=WATER(IMS,KMS,JMS,P_QR),F_QR=F_QR              &
+     &          ,QI_CURR=WATER(IMS,KMS,JMS,P_QI),F_QI=F_QI              &
+     &          ,QS_CURR=WATER(IMS,KMS,JMS,P_QS),F_QS=F_QS              &
+     &          ,QG_CURR=WATER(IMS,KMS,JMS,P_QG),F_QG=F_QG              &
      &          ,RAINBL=RAINBL                                          &
-     &          ,POTEVP=POTEVP,SNOPCX=SNOPCX,SOILTB=SOILTB,SR=SR        &
-     &                                                                  )
+     &          ,POTEVP=POTEVP,SNOPCX=SNOPCX,SOILTB=SOILTB,SR=SR      )
 !
 !-----------------------------------------------------------------------
 !
@@ -1039,13 +1037,12 @@
      &               ,J_START=GRID%J_START,J_END=GRID%J_END           &
      &               ,KTS=KTS,KTE=KTE,NUM_TILES=GRID%NUM_TILES        &
                 ! Optional args
-     &               ,QV_CURR=water(ims,kms,jms,P_QV) , F_QV=F_QV     &
-     &               ,QC_CURR=water(ims,kms,jms,P_QC) , F_QC=F_QC     &
-     &               ,QR_CURR=water(ims,kms,jms,P_QR) , F_QR=F_QR     &
-     &               ,QI_CURR=water(ims,kms,jms,P_QI) , F_QI=F_QI     &
-     &               ,QS_CURR=water(ims,kms,jms,P_QS) , F_QS=F_QS     &
-     &               ,QG_CURR=water(ims,kms,jms,P_QG) , F_QG=F_QG     &
-     &                                                                )
+     &               ,QV_CURR=WATER(IMS,KMS,JMS,P_QV) , F_QV=F_QV     &
+     &               ,QC_CURR=WATER(IMS,KMS,JMS,P_QC) , F_QC=F_QC     &
+     &               ,QR_CURR=WATER(IMS,KMS,JMS,P_QR) , F_QR=F_QR     &
+     &               ,QI_CURR=WATER(IMS,KMS,JMS,P_QI) , F_QI=F_QI     &
+     &               ,QS_CURR=WATER(IMS,KMS,JMS,P_QS) , F_QS=F_QS     &
+     &               ,QG_CURR=WATER(IMS,KMS,JMS,P_QG) , F_QG=F_QG   )
 !
 !***  NOTE THAT THE EXCHANGE COEFFICIENTS FOR HEAT EXCH_H COMING OUT OF
 !***  PBL_DRIVER ARE DEFINED AT THE TOPS OF THE LAYERS KTS TO KTE-1
@@ -1740,10 +1737,10 @@
      &                 ,I_START=GRID%I_START,I_END=GRID%I_END           &
      &                 ,J_START=GRID%J_START,J_END=GRID%J_END           &
      &                 ,KTS=KTS,KTE=KTE,NUM_TILES=GRID%NUM_TILES        &
-                     ! prognostic
+                  ! Prognostic
      &                 ,U=U_PHY,V=V_PHY,TH=TH_PHY,T=T_PHY,W=WINT        &
      &                 ,P=P_PHY,PI=PI_PHY,RHO=RR,W0AVG=W0AVG            &
-                     ! others
+                  ! Others
      &                 ,ITIMESTEP=NTSD,DT=DT,DX=GPS                     &
      &                 ,RAINC=RAINC,RAINCV=RAINCV,NCA=NCA               &
      &                 ,DZ8W=DZ,P8W=P8W                                 &
@@ -1755,17 +1752,15 @@
      &                 ,maxens2=1,maxens3=1                             &
      &                 ,RTHCUTEN=RTHCUTEN ,RQVCUTEN=RQVCUTEN            &
      &                 ,RQCCUTEN=RQCCUTEN ,RQRCUTEN=RQRCUTEN            &
-                     ! selection argument
+                  ! Selection argument
      &                 ,CU_PHYSICS=CONFIG_FLAGS%CU_PHYSICS              &
-                     ! moisture tracer arguments
-     &                 ,QV_CURR=water(ims,kms,jms,P_QV) , F_QV=F_QV     &
-     &                 ,QC_CURR=water(ims,kms,jms,P_QC) , F_QC=F_QC     &
-     &                 ,QR_CURR=water(ims,kms,jms,P_QR) , F_QR=F_QR     &
-     &                 ,QI_CURR=water(ims,kms,jms,P_QI) , F_QI=F_QI     &
-     &                 ,QS_CURR=water(ims,kms,jms,P_QS) , F_QS=F_QS     &
-     &                 ,QG_CURR=water(ims,kms,jms,P_QG) , F_QG=F_QG     &
-
-                                                                        )
+                  ! Moisture tracer arguments
+     &                 ,QV_CURR=WATER(IMS,KMS,JMS,P_QV),F_QV=F_QV       &
+     &                 ,QC_CURR=WATER(IMS,KMS,JMS,P_QC),F_QC=F_QC       &
+     &                 ,QR_CURR=WATER(IMS,KMS,JMS,P_QR),F_QR=F_QR       &
+     &                 ,QI_CURR=WATER(IMS,KMS,JMS,P_QI),F_QI=F_QI       &
+     &                 ,QS_CURR=WATER(IMS,KMS,JMS,P_QS),F_QS=F_QS       &
+     &                 ,QG_CURR=WATER(IMS,KMS,JMS,P_QG),F_QG=F_QG      )
 !
 !-----------------------------------------------------------------------
 !
@@ -2037,21 +2032,21 @@
      &                  TH=TH_PHY                                       &
      &                 ,RHO=RR,PI=PI_PHY,P=P_PHY                        &
      &                 ,RAINNCV=RAINNCV                                 &
-     &                 ,dz8w=DZ,p8w=P8W,DT=DTPHS,DX=DX,DY=DY            &
+     &                 ,DZ8W=DZ,P8W=P8W,DT=DTPHS,DX=DX,DY=DY            &
      &                 ,MP_PHYSICS=CONFIG_FLAGS%MP_PHYSICS              &
      &                 ,SPECIFIED=CONFIG_FLAGS%SPECIFIED                &
-     &                            .OR. CONFIG_FLAGS%NESTED              &
+     &                        .OR.CONFIG_FLAGS%NESTED                   &
      &                 ,SPEC_ZONE=0,WARM_RAIN=WARM_RAIN                 &
-     &                 ,XLAND=XLAND,itimestep=NTSD-1                    &
+     &                 ,XLAND=XLAND,ITIMESTEP=NTSD-1                    &
      &                 ,F_ICE_PHY=F_ICE,F_RAIN_PHY=F_RAIN               &
      &                 ,F_RIMEF_PHY=F_RIMEF                             &
      &                 ,LOWLYR=LOWLYR,SR=SR                             &
-     &                 ,QV_CURR=WATER(IMS,KMS,JMS,P_QV) , F_QV=F_QV     &
-     &                 ,QC_CURR=WATER(IMS,KMS,JMS,P_QC) , F_QC=F_QC     &
-     &                 ,QR_CURR=WATER(IMS,KMS,JMS,P_QR) , F_QR=F_QR     &
-     &                 ,QI_CURR=WATER(IMS,KMS,JMS,P_QI) , F_QI=F_QI     &
-     &                 ,QS_CURR=WATER(IMS,KMS,JMS,P_QS) , F_QS=F_QS     &
-     &                 ,QG_CURR=WATER(IMS,KMS,JMS,P_QG) , F_QG=F_QG     &
+     &                 ,QV_CURR=WATER(IMS,KMS,JMS,P_QV),F_QV=F_QV       &
+     &                 ,QC_CURR=WATER(IMS,KMS,JMS,P_QC),F_QC=F_QC       &
+     &                 ,QR_CURR=WATER(IMS,KMS,JMS,P_QR),F_QR=F_QR       &
+     &                 ,QI_CURR=WATER(IMS,KMS,JMS,P_QI),F_QI=F_QI       &
+     &                 ,QS_CURR=WATER(IMS,KMS,JMS,P_QS),F_QS=F_QS       &
+     &                 ,QG_CURR=WATER(IMS,KMS,JMS,P_QG),F_QG=F_QG       &
      &                 ,MP_RESTART_STATE=MP_RESTART_STATE               &
      &                 ,TBPVS_STATE=TBPVS_STATE                         &
      &                 ,TBPVS0_STATE=TBPVS0_STATE                       &
@@ -2062,22 +2057,23 @@
      &                 ,KTS=KTS,KTE=KTE,NUM_TILES=GRID%NUM_TILES        &
                                                                         )
 
-   !$omp parallel do   &
-   !$omp private ( ij )
-      DO IJ = 1, GRID%NUM_TILES
-        CALL MICROPHYSICS_ZERO_OUT (                                    &
-                     WATER , N_MOIST , CONFIG_FLAGS                     &
-                    ,IDS, IDE, JDS, JDE, KDS, KDE                       &
-                    ,IMS, IME, JMS, JME, KMS, KME                       &
-                    ,GRID%I_START(IJ), GRID%I_END(IJ)                   &
-                    ,GRID%J_START(IJ), GRID%J_END(IJ)                   &
-                    ,KTS    , KTE                                       )
+!$omp parallel do                                                       &
+!$omp& private(ij)
+      DO IJ=1,GRID%NUM_TILES
+        CALL MICROPHYSICS_ZERO_OUT(                                     &
+                     WATER,N_MOIST,CONFIG_FLAGS                         &
+                    ,IDS,IDE,JDS,JDE,KDS,KDE                            &
+                    ,IMS,IME,JMS,JME,KMS,KME                            &
+                    ,GRID%I_START(IJ),GRID%I_END(IJ)                    &
+                    ,GRID%J_START(IJ),GRID%J_END(IJ)                    &
+                    ,KTS,KTE                                       )
       ENDDO
 
 
 
 !
 !-----------------------------------------------------------------------
+!
       E_BDY=(ITE>=IDE)
 !
 !$omp parallel do                                                       &

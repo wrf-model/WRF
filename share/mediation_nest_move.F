@@ -68,6 +68,26 @@ SUBROUTINE med_nest_move ( parent, nest )
        TYPE (domain), POINTER ::  nest , parent
        TYPE (grid_config_rec_type) config_flags
      END SUBROUTINE med_nest_feedback
+     SUBROUTINE  blend_terrain ( ter_interpolated , ter_input , &
+                           ids , ide , jds , jde , kds , kde , &
+                           ims , ime , jms , jme , kms , kme , &
+                           ips , ipe , jps , jpe , kps , kpe )
+       INTEGER                           :: ids , ide , jds , jde , kds , kde , &
+                                            ims , ime , jms , jme , kms , kme , &
+                                            ips , ipe , jps , jpe , kps , kpe
+       REAL , DIMENSION(ims:ime,jms:jme) :: ter_interpolated
+       REAL , DIMENSION(ims:ime,jms:jme) :: ter_input
+     END SUBROUTINE blend_terrain
+     SUBROUTINE  store_terrain ( ter_interpolated , ter_input , &
+                           ids , ide , jds , jde , kds , kde , &
+                           ims , ime , jms , jme , kms , kme , &
+                           ips , ipe , jps , jpe , kps , kpe )
+       INTEGER                           :: ids , ide , jds , jde , kds , kde , &
+                                            ims , ime , jms , jme , kms , kme , &
+                                            ips , ipe , jps , jpe , kps , kpe
+       REAL , DIMENSION(ims:ime,jms:jme) :: ter_interpolated
+       REAL , DIMENSION(ims:ime,jms:jme) :: ter_input
+     END SUBROUTINE store_terrain
    END INTERFACE
 
 #ifdef DEREF_KLUDGE
@@ -136,14 +156,49 @@ write(0,*)' moving ',grid%id,dx,dy
 
      CALL nl_get_input_from_hires( nest%id , input_from_hires ) 
      IF ( input_from_hires ) THEN
+
+! store horizontally interpolated terrain in temp location
+       CALL  store_terrain ( nest%ht_fine , nest%ht , &
+                             ids , ide , jds , jde , 1   , 1   , &
+                             ims , ime , jms , jme , 1   , 1   , &
+                             ips , ipe , jps , jpe , 1   , 1   )
+       CALL  store_terrain ( nest%em_mub_fine , nest%em_mub , &
+                             ids , ide , jds , jde , 1   , 1   , &
+                             ims , ime , jms , jme , 1   , 1   , &
+                             ips , ipe , jps , jpe , 1   , 1   )
+       CALL  store_terrain ( nest%em_phb_fine , nest%em_phb , &
+                             ids , ide , jds , jde , kds , kde , &
+                             ims , ime , jms , jme , kms , kme , &
+                             ips , ipe , jps , jpe , kps , kpe )
+
        CALL  input_terrain_rsmas ( nest,                               &
                                    ids , ide , jds , jde , 1   , 1   , &
                                    ims , ime , jms , jme , 1   , 1   , &
                                    ips , ipe , jps , jpe , 1   , 1   )
-     ENDIF
+
+       CALL  blend_terrain ( nest%ht_fine , nest%ht , &
+                             ids , ide , jds , jde , 1   , 1   , &
+                             ims , ime , jms , jme , 1   , 1   , &
+                             ips , ipe , jps , jpe , 1   , 1   )
+       CALL  blend_terrain ( nest%em_mub_fine , nest%em_mub , &
+                             ids , ide , jds , jde , 1   , 1   , &
+                             ims , ime , jms , jme , 1   , 1   , &
+                             ips , ipe , jps , jpe , 1   , 1   )
+       CALL  blend_terrain ( nest%em_phb_fine , nest%em_phb , &
+                             ids , ide , jds , jde , kds , kde , &
+                             ims , ime , jms , jme , kms , kme , &
+                             ips , ipe , jps , jpe , kps , kpe )
 !
-     CALL model_to_grid_config_rec ( parent%id , model_config_rec , config_flags )
-     CALL med_nest_feedback ( parent , nest , config_flags )
+       CALL model_to_grid_config_rec ( parent%id , model_config_rec , config_flags )
+       CALL med_nest_feedback ( parent , nest , config_flags )
+       parent%imask_nostag = 1
+       parent%imask_xstag = 1
+       parent%imask_ystag = 1
+       parent%imask_xystag = 1
+       CALL start_domain ( parent , .FALSE. )
+
+     ENDIF
+
 !
      nest%moved = .true.
 ! masks associated with nest will have been set by shift_domain_em above
@@ -227,6 +282,7 @@ character*256 message, message2
 
 integer myproc
 
+!#define MOVING_DIAGS
 #ifdef VORTEX_CENTER
 
 
@@ -310,12 +366,14 @@ write(0,*)'COMPUTE_VORTEX_CENTER_ALARM is ringing  '
           je = jde-1
        ELSE
           ! limit the search to an area around the vortex
-          ! that is limited by 40 meters per second from 
-          ! previous location  (note hard-coded 15 mins)
-          is = max( grid%vc_i - vortex_interval * max_vortex_speed / dx , 1.0 * ids )
-          js = max( grid%vc_j - vortex_interval * max_vortex_speed / dx , 1.0 * jds )
-          ie = min( grid%vc_i + vortex_interval * max_vortex_speed / dx , 1.0 * (ide-1) )
-          je = min( grid%vc_j + vortex_interval * max_vortex_speed / dx , 1.0 * (jde-1) )
+          ! that is limited by max_vortex_speed (default 40) meters per second from
+          ! previous location over vortex_interval (default 15 mins)
+
+          is = max( grid%vc_i - 60 * vortex_interval * max_vortex_speed / dx , 1.0 * ids )
+          js = max( grid%vc_j - 60 * vortex_interval * max_vortex_speed / dx , 1.0 * jds )
+          ie = min( grid%vc_i + 60 * vortex_interval * max_vortex_speed / dx , 1.0 * (ide-1) )
+          je = min( grid%vc_j + 60 * vortex_interval * max_vortex_speed / dx , 1.0 * (jde-1) )
+
        ENDIF
 
 #ifdef MOVING_DIAGS

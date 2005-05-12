@@ -151,6 +151,8 @@ i1       real   mu_tend         ij     dyn_em      1          -
 
 #diagnostic for looking at nest position in output. A mungy version of terrain height.
 state    real   nest_pos        ij     misc        1   -   hu=(mark_domain)  "NEST_POS"
+state    real   nest_mask       ij     misc        1   -   u=(mark_domain)   "NEST_MASK"     "LOCATION OF NEST IF ANY"
+state    real   ht_coarse       ij     misc        1   -     -                -              "STORAGE FOR LOW-RES TERRAIN"
 
 
 # TKE

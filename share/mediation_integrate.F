@@ -339,42 +339,27 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
 
      IF ( nest_config_flags%input_from_file .OR. nest_config_flags%input_from_hires ) THEN
 
-        WRITE(message,FMT='(A,I2,A)') '*** Initializing nest domain #',nest%id,&
+       WRITE(message,FMT='(A,I2,A)') '*** Initializing nest domain #',nest%id,&
                                       ' from an input file. ***'
-        CALL wrf_debug ( 0 , message )
-       IF ( nest_config_flags%input_from_file ) THEN
+       CALL wrf_debug ( 0 , message )
 
 ! store horizontally interpolated terrain in temp location
-          CALL  store_terrain ( nest%ht_fine , nest%ht , &
-                                ids , ide , jds , jde , 1   , 1   , &
-                                ims , ime , jms , jme , 1   , 1   , &
-                                ips , ipe , jps , jpe , 1   , 1   )
-          CALL  store_terrain ( nest%em_mub_fine , nest%em_mub , &
-                                ids , ide , jds , jde , 1   , 1   , &
-                                ims , ime , jms , jme , 1   , 1   , &
-                                ips , ipe , jps , jpe , 1   , 1   )
-          CALL  store_terrain ( nest%em_phb_fine , nest%em_phb , &
-                                ids , ide , jds , jde , kds , kde , &
-                                ims , ime , jms , jme , kms , kme , &
-                                ips , ipe , jps , jpe , kps , kpe )
+       CALL  store_terrain ( nest%ht_fine , nest%ht , &
+                             ids , ide , jds , jde , 1   , 1   , &
+                             ims , ime , jms , jme , 1   , 1   , &
+                             ips , ipe , jps , jpe , 1   , 1   )
+       CALL  store_terrain ( nest%em_mub_fine , nest%em_mub , &
+                             ids , ide , jds , jde , 1   , 1   , &
+                             ims , ime , jms , jme , 1   , 1   , &
+                             ips , ipe , jps , jpe , 1   , 1   )
+       CALL  store_terrain ( nest%em_phb_fine , nest%em_phb , &
+                             ids , ide , jds , jde , kds , kde , &
+                             ims , ime , jms , jme , kms , kme , &
+                             ips , ipe , jps , jpe , kps , kpe )
 
+       IF ( nest_config_flags%input_from_file ) THEN
 ! read input from dataset
           CALL med_initialdata_input_ptr( nest , nest_config_flags )
-
-! blend parent and nest fields: terrain, mub, and phb.  THe mub and phb are used in start_domain.
-          CALL  blend_terrain ( nest%ht_fine , nest%ht , &
-                                ids , ide , jds , jde , 1   , 1   , &
-                                ims , ime , jms , jme , 1   , 1   , &
-                                ips , ipe , jps , jpe , 1   , 1   )
-          CALL  blend_terrain ( nest%em_mub_fine , nest%em_mub , &
-                                ids , ide , jds , jde , 1   , 1   , &
-                                ims , ime , jms , jme , 1   , 1   , &
-                                ips , ipe , jps , jpe , 1   , 1   )
-          CALL  blend_terrain ( nest%em_phb_fine , nest%em_phb , &
-                                ids , ide , jds , jde , kds , kde , &
-                                ims , ime , jms , jme , kms , kme , &
-                                ips , ipe , jps , jpe , kps , kpe )
-
        ELSE IF ( nest_config_flags%input_from_hires ) THEN
 ! read in high res topography
           CALL  input_terrain_rsmas ( nest,                               &
@@ -383,6 +368,19 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
                                       ips , ipe , jps , jpe , 1   , 1   )
        ENDIF
 
+! blend parent and nest fields: terrain, mub, and phb.  THe mub and phb are used in start_domain.
+       CALL  blend_terrain ( nest%ht_fine , nest%ht , &
+                             ids , ide , jds , jde , 1   , 1   , &
+                             ims , ime , jms , jme , 1   , 1   , &
+                             ips , ipe , jps , jpe , 1   , 1   )
+       CALL  blend_terrain ( nest%em_mub_fine , nest%em_mub , &
+                             ids , ide , jds , jde , 1   , 1   , &
+                             ims , ime , jms , jme , 1   , 1   , &
+                             ips , ipe , jps , jpe , 1   , 1   )
+       CALL  blend_terrain ( nest%em_phb_fine , nest%em_phb , &
+                             ids , ide , jds , jde , kds , kde , &
+                             ims , ime , jms , jme , kms , kme , &
+                             ips , ipe , jps , jpe , kps , kpe )
 
      ELSE
        WRITE(message,FMT='(A,I2,A,I2,A)') '*** Initializing nest domain #',nest%id,&
@@ -392,6 +390,8 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
      END IF
 
 ! feedback, mostly for this new terrain, but it is the safe thing to do
+     parent%ht_coarse = parent%ht
+
      CALL med_nest_feedback ( parent , nest , config_flags )
 
 ! set some other initial fields, fill out halos, base fields; re-do parent due
@@ -428,7 +428,9 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
      parent%imask_xstag = 1
      parent%imask_ystag = 1
      parent%imask_xystag = 1
+
      CALL start_domain ( parent , .TRUE. )
+
      parent%acsnow     = save_acsnow
      parent%acsnom     = save_acsnom
      parent%cuppt      = save_cuppt
@@ -492,6 +494,7 @@ SUBROUTINE init_domain_constants ( parent , nest )
    CALL init_domain_constants_em ( parent, nest )
 #endif
 END SUBROUTINE init_domain_constants
+
 
 SUBROUTINE med_nest_force ( parent , nest )
   ! Driver layer
@@ -573,6 +576,10 @@ SUBROUTINE med_nest_feedback ( parent , nest , config_flags )
                                 ips, ipe, jps, jpe, kps, kpe    )
       DO j = jps, MIN(jpe,jde-1)
       DO i = ips, MIN(ipe,ide-1)
+        IF      ( parent%nest_pos(i,j) .NE. 9021000. ) THEN
+          !if the nest has moved away from this point restore the stored coarse domain ht
+          parent%ht(i,j) = parent%ht_coarse(i,j)
+        ENDIF
         IF      ( parent%nest_pos(i,j) .EQ. 9021000. ) THEN
           parent%nest_pos(i,j) = parent%ht(i,j)*1.5 + 1000.
         ELSE IF ( parent%ht(i,j) .NE. 0. ) THEN

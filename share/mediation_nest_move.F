@@ -1,4 +1,3 @@
-#ifdef MOVE_NESTS
 
 SUBROUTINE med_nest_move ( parent, nest )
   ! Driver layer
@@ -9,6 +8,7 @@ SUBROUTINE med_nest_move ( parent, nest )
    USE module_dm
    TYPE(domain) , POINTER                     :: parent, nest, grid
    INTEGER dx, dy       ! number of parent domain points to move
+#ifdef MOVE_NESTS
   ! Local 
    INTEGER i, j, p, parent_grid_ratio, dyn_opt
    INTEGER px, py       ! number and direction of nd points to move
@@ -238,7 +238,7 @@ write(0,*)' moving ',grid%id,dx,dy
      where ( nest%imask_nostag .EQ. 1 ) nest%em_mu_1(:,:)  = nest%em_mu_2(:,:)
 !
    ENDIF check_for_move
-
+#endif
 END SUBROUTINE med_nest_move
 
 LOGICAL FUNCTION time_for_move2 ( parent , grid , move_cd_x, move_cd_y )
@@ -252,6 +252,7 @@ LOGICAL FUNCTION time_for_move2 ( parent , grid , move_cd_x, move_cd_y )
 ! Arguments
    TYPE(domain) , POINTER    :: parent, grid
    INTEGER, INTENT(OUT)      :: move_cd_x , move_cd_y
+#ifdef MOVE_NESTS
 ! Local
    INTEGER  num_moves, rc
    INTEGER  move_interval , move_id
@@ -283,7 +284,7 @@ character*256 message, message2
 integer myproc
 
 !#define MOVING_DIAGS
-#ifdef VORTEX_CENTER
+# ifdef VORTEX_CENTER
 
 
    CALL nl_get_dyn_opt ( 1, dyn_opt )
@@ -298,17 +299,17 @@ integer myproc
 ! save on cost for global collection of height field and broadcast
 ! of new center.
 
-#ifdef MOVING_DIAGS
+#  ifdef MOVING_DIAGS
 write(0,*)'Check to see if COMPUTE_VORTEX_CENTER_ALARM is ringing? '
-#endif
+#  endif
    CALL nl_get_parent_grid_ratio ( grid%id , pgr )
    CALL nl_get_dx ( grid%id , dx )
 
    IF ( ESMF_AlarmIsRinging( grid%alarms( COMPUTE_VORTEX_CENTER_ALARM ), rc=rc ) ) THEN
 
-#ifdef MOVING_DIAGS
+#  ifdef MOVING_DIAGS
 write(0,*)'COMPUTE_VORTEX_CENTER_ALARM is ringing  '
-#endif
+#  endif
      CALL ESMF_AlarmRingerOff( grid%alarms( COMPUTE_VORTEX_CENTER_ALARM ), rc=rc )
 
      last_vc_i = grid%vc_i
@@ -324,18 +325,18 @@ write(0,*)'COMPUTE_VORTEX_CENTER_ALARM is ringing  '
      ENDIF
 
 
-#if (EM_CORE == 1)
+#  if (EM_CORE == 1)
      IF ( dyn_opt .EQ. DYN_EM ) THEN
        CALL compute_500mb_height ( grid%em_ph_2 , grid%em_phb, grid%em_p, grid%em_pb, height_l , &
                                    ids, ide, jds, jde, kds, kde, &
                                    ims, ime, jms, jme, kms, kme, &
                                    ips, ipe, jps, jpe, kps, kpe  )
      ENDIF
-#endif
-#if (WRF_NMM_CORE == 1)
+#  endif
+#  if (WRF_NMM_CORE == 1)
      IF ( dyn_opt .EQ. DYN_NMM ) THEN
      ENDIF
-#endif
+#  endif
 
      CALL wrf_patch_to_global_real ( height_l , height , grid%domdesc, "z", "xy", &
                                      ids, ide-1 , jds , jde-1 , 1 , 1 , &
@@ -376,11 +377,11 @@ write(0,*)'COMPUTE_VORTEX_CENTER_ALARM is ringing  '
 
        ENDIF
 
-#ifdef MOVING_DIAGS
+#  ifdef MOVING_DIAGS
 write(0,*)'search set around last position '
 write(0,*)'   is, ids-1,  ie,  ide-1 ', is, ids-1, ie, ide-1
 write(0,*)'   js, jds-1,  je,  jde-1 ', js, jds-1, je, jde-1
-#endif
+#  endif
 
        ! find local min, max
        vmin =  1000000.0
@@ -451,7 +452,7 @@ write(0,*)'   js, jds-1,  je,  jde-1 ', js, jds-1, je, jde-1
        grid%vc_i = grid%xi + .5
        grid%vc_j = grid%xj + .5
 
-#ifdef MOVING_DIAGS
+#  ifdef MOVING_DIAGS
 write(0,*)'computed grid%vc_i, grid%vc_j ',grid%vc_i, grid%vc_j
 i = grid%vc_i ; j = grid%vc_j ; height( i,j ) = height(i,j) * 1.2   !mark the center
 CALL wrf_timetoa ( grid%current_time, message2 )
@@ -463,7 +464,7 @@ write(70,*)height(i,j)
 enddo
 enddo
 call flush_(70)
-#endif
+#  endif
 
 
      ENDIF monitor_only
@@ -474,16 +475,16 @@ call flush_(70)
      CALL wrf_dm_bcast_real( grid%vc_i , 1 )
      CALL wrf_dm_bcast_real( grid%vc_j , 1 )
 
-#ifdef MOVING_DIAGS
+#  ifdef MOVING_DIAGS
 write(0,*)'after bcast : grid%vc_i, grid%vc_j ',grid%vc_i, grid%vc_j
-#endif
+#  endif
 
 
    ENDIF   ! COMPUTE_VORTEX_CENTER_ALARM ringing
 
-#ifdef MOVING_DIAGS
+#  ifdef MOVING_DIAGS
 write(0,*)'After ENDIF : grid%vc_i, grid%vc_j ',grid%vc_i, grid%vc_j
-#endif
+#  endif
 
    dc_i = (ide-ids+1)/2.    ! domain center
    dc_j = (jde-jds+1)/2.
@@ -517,9 +518,9 @@ write(0,*)'move (rel cd) : ',move_cd_x, move_cd_y
    grid%vc_i = grid%vc_i - move_cd_x * pgr
    grid%vc_j = grid%vc_j - move_cd_y * pgr
 
-#ifdef MOVING_DIAGS
+#  ifdef MOVING_DIAGS
 write(0,*)' changing grid%vc_i,  move_cd_x * pgr ', grid%vc_i, move_cd_x * pgr, move_cd_x, pgr
-#endif
+#  endif
 
    IF ( ( move_cd_x .NE. 0 ) .OR. ( move_cd_y .NE. 0 ) ) THEN
      time_for_move2 = .TRUE.
@@ -527,7 +528,7 @@ write(0,*)' changing grid%vc_i,  move_cd_x * pgr ', grid%vc_i, move_cd_x * pgr, 
      time_for_move2 = .FALSE.
    ENDIF
 
-#else
+# else
 ! from namelist
    time_for_move2 = .FALSE.
    CALL ESMF_ClockGet( grid%domain_clock, CurrTime=ct, StartTime=st, rc=rc )
@@ -552,8 +553,9 @@ write(0,*)' changing grid%vc_i,  move_cd_x * pgr ', grid%vc_i, move_cd_x * pgr, 
        ENDIF
      ENDIF
    ENDDO
-#endif
+# endif
    RETURN
+#endif
 END FUNCTION time_for_move2
 
 LOGICAL FUNCTION time_for_move ( parent , grid , move_cd_x, move_cd_y )
@@ -566,6 +568,7 @@ USE module_timing
 ! arguments
    TYPE(domain) , POINTER    :: parent, grid
    INTEGER, INTENT(OUT)      :: move_cd_x , move_cd_y
+#ifdef MOVE_NESTS
 ! local
    INTEGER     :: coral_dist, kid
    INTEGER     :: dw, de, ds, dn, pgr
@@ -656,7 +659,6 @@ USE module_timing
    ENDIF
 
    RETURN
-
+#endif
 END FUNCTION time_for_move
 
-#endif

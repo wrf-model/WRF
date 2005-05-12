@@ -1,5 +1,8 @@
 ! on linux, compile wrf then compile as:
 ! pgf90 -Mfree -I ../../main -I ../../inc -I /usr/local/netcdf-pgi/include vort.F90 libwrfio_nf.a /usr/local/netcdf-pgi/lib/libnetcdf.a ../../main/libwrflib.a
+! on AIX, compile wrf then compile as:
+! /lib/cpp -C -P vort.F90 > vort.f
+! mpxlf -qfree=f90 -I ../../share -I ../../main -I ../../inc -I /usr/local/netcdf/include vort.f libwrfio_nf.a /usr/local/netcdf/lib/libnetcdf.a ../../main/libwrflib.a
 
 module read_util_module
 

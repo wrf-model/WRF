@@ -266,7 +266,7 @@ SUBROUTINE wrf_open_for_write_begin( FileName , Comm_compute, Comm_io, SysDepInf
       CASE ( IO_MCEL )
         IF ( wrf_dm_on_monitor() ) THEN
           tstr = TRIM(SysDepInfo) // ',' // 'LAT_R=XLAT,LON_R=XLONG,LANDMASK_I=LU_MASK'
-          CALL ext_mcel_open_for_write_begin ( FileName , Comm_compute, Comm_io, SysDepInfo, &
+          CALL ext_mcel_open_for_write_begin ( FileName , Comm_compute, Comm_io, tstr, &
                                                Hndl , Status )
         ENDIF
         CALL wrf_dm_bcast_bytes( Hndl, IWORDSIZE )

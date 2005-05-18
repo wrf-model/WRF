@@ -1964,7 +1964,7 @@ esmf_time :
 
 wrfio_mcel : 
 	( cd ../external/io_mcel ; \
-          make CC="$(CC)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -I../io_netcdf -I../../frame -I../../share \
+          make CC="$(CC)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -I../../inc -I../io_netcdf -I../../frame -I../../share \
                -I$(MCELHOME)/MCELSystem/MCEL -qfree=f90" all )
 
 

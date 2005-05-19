@@ -98,13 +98,13 @@ RSL_ERROR_DUP ()
     if ((newfd = open( filename, O_CREAT | O_WRONLY, 0666 )) < 0 )
     {
 	perror("error_dup: cannot open rsl.out.nnnn") ;
-	fprintf(stderr,"...sending error to standard error and continuing.\n") ;
+	fprintf(stderr,"...sending output to standard output and continuing.\n") ;
 	return ;
     }
     if( dup2( newfd, STANDARD_OUTPUT ) < 0 )
     {
 	perror("error_dup: dup2 fails to change output descriptor") ;
-	fprintf(stderr,"...sending error to standard error and continuing.\n") ;
+	fprintf(stderr,"...sending output to standard output and continuing.\n") ;
 	close(newfd) ;
 	return ;
     }
@@ -137,13 +137,13 @@ RSL_ERROR_DUP1 ( int *me )
     if ((newfd = open( filename, O_CREAT | O_WRONLY, 0666 )) < 0 )
     {
         perror("error_dup: cannot open rsl.out.nnnn") ;
-        fprintf(stderr,"...sending error to standard error and continuing.\n") ;
+        fprintf(stderr,"...sending output to standard output and continuing.\n") ;
         return ;
     }
     if( dup2( newfd, STANDARD_OUTPUT ) < 0 )
     {
         perror("error_dup: dup2 fails to change output descriptor") ;
-        fprintf(stderr,"...sending error to standard error and continuing.\n") ;
+        fprintf(stderr,"...sending output to standard output and continuing.\n") ;
         close(newfd) ;
         return ;
     }

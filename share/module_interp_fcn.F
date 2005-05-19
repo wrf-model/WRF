@@ -8,7 +8,7 @@
                            nfld,                                 &  ! ND field
                            nids, nide, nkds, nkde, njds, njde,   &
                            nims, nime, nkms, nkme, njms, njme,   &
-                           nits, nite, nkts, nkte, njts, njte,
+                           nits, nite, nkts, nkte, njts, njte,   &
                            nri, nrj                             )   ! nest ratios
      IMPLICIT NONE
 

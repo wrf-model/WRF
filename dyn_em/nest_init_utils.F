@@ -215,7 +215,9 @@ SUBROUTINE input_terrain_rsmas ( grid ,                        &
    LOGICAL, EXTERNAL ::  wrf_dm_on_monitor
 
    INTEGER :: i , j , k , myproc
-   CHARACTER*256:: message, message2
+   INTEGER, DIMENSION(256) :: ipath  ! array for integer coded ascii for passing path down to get_terrain
+   CHARACTER*256 :: message, message2
+   CHARACTER*256 :: rsmas_data_path
 
 #if DM_PARALLEL
 ! Local globally sized arrays
@@ -235,6 +237,11 @@ enddo
 enddo
 #endif
 
+   CALL nl_get_rsmas_data_path(1,rsmas_data_path)
+   do i = 1, LEN(TRIM(rsmas_data_path))
+      ipath(i) = ICHAR(rsmas_data_path(i:i))
+   enddo
+
 #if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
    CALL wrf_patch_to_global_real ( grid%xlat , xlat_g , grid%domdesc, 'z' , 'xy' ,       &
                                    ids, ide-1 , jds , jde-1 , 1 , 1 , &
@@ -247,7 +254,7 @@ enddo
 
    IF ( wrf_dm_on_monitor() ) THEN
      CALL get_terrain ( grid%dx/1000., xlat_g(ids:ide,jds:jde), xlon_g(ids:ide,jds:jde), ht_g(ids:ide,jds:jde), &
-                        ide-ids+1,jde-jds+1,ide-ids+1,jde-jds+1 )
+                        ide-ids+1,jde-jds+1,ide-ids+1,jde-jds+1, ipath, LEN(TRIM(rsmas_data_path)) )
      WHERE ( ht_g(ids:ide,jds:jde) < -1000. ) ht_g(ids:ide,jds:jde) = 0.
    ENDIF
 
@@ -259,7 +266,7 @@ enddo
 #else
 
    CALL get_terrain ( grid%dx/1000., grid%xlat(ids:ide,jds:jde), grid%xlong(ids:ide,jds:jde), grid%ht(ids:ide,jds:jde), &
-                       ide-ids+1,jde-jds+1,ide-ids+1,jde-jds+1 )
+                       ide-ids+1,jde-jds+1,ide-ids+1,jde-jds+1, ipath, LEN(TRIM(rsmas_data_path)) )
    WHERE ( grid%ht(ids:ide,jds:jde) < -1000. ) grid%ht(ids:ide,jds:jde) = 0.
 
 #endif

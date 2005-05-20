@@ -156,7 +156,11 @@ gen_get_nl_config ( char * dirname )
                             gs,p->name, p->name ) ;
             fprintf(fp,"  ENDIF\n" ) ;
           }
-          fprintf(fp,"  %s = model_config_rec%%%s\n",p->name,p->name) ;
+          if ( !strncmp(p->type->name,"character",9)) {
+            fprintf(fp,"  %s = trim(model_config_rec%%%s)\n",p->name,p->name) ;
+          }else{
+            fprintf(fp,"  %s = model_config_rec%%%s\n",p->name,p->name) ;
+          }
         } else {
           if ( ! sw_ifort_kludge ) {
             if        ( !strcmp( p->nentries, "max_domains" )) {
@@ -183,7 +187,11 @@ gen_get_nl_config ( char * dirname )
                             gs,p->name, p->name ) ;
             fprintf(fp,"  ENDIF\n" ) ;
           }
-          fprintf(fp,"  model_config_rec%%%s = %s \n",p->name,p->name) ;
+          if ( !strncmp(p->type->name,"character",9)) {
+            fprintf(fp,"  model_config_rec%%%s = trim(%s) \n",p->name,p->name) ;
+          }else{
+            fprintf(fp,"  model_config_rec%%%s = %s \n",p->name,p->name) ;
+          }
         } else {
           if ( ! sw_ifort_kludge ) {
             if        ( !strcmp( p->nentries, "max_domains" )) {

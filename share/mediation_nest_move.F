@@ -268,7 +268,7 @@ LOGICAL FUNCTION time_for_move2 ( parent , grid , move_cd_x, move_cd_y )
 
    REAL, ALLOCATABLE, DIMENSION(:,:) :: height_l, height
    REAL :: minh, maxh
-   INTEGER :: mini, minj, maxi, maxj, i, j, pgr
+   INTEGER :: mini, minj, maxi, maxj, i, j, pgr, irad
    REAL :: disp_x, disp_y, lag, radius, center_i, center_j, dx
    REAL :: dijsmooth, vmax, vmin, a, b
    REAL :: dc_i, dc_j   ! domain center
@@ -492,7 +492,8 @@ write(0,*)'After ENDIF : grid%vc_i, grid%vc_j ',grid%vc_i, grid%vc_j
    disp_x = grid%vc_i - dc_i * 1.0
    disp_y = grid%vc_j - dc_j * 1.0
 
-   radius = 2 * pgr
+   CALL nl_get_vortex_search_radius( 1, irad )
+   radius = irad
 
    if ( disp_x .GT. 0 ) disp_x = min( disp_x , radius )
    if ( disp_y .GT. 0 ) disp_y = min( disp_y , radius )

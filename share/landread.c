@@ -20,7 +20,9 @@ int GET_TERRAIN (        float *adx,
                          int   *mix,
                          int   *mjx,
                          int   *iyyn,
-                         int   *jxxn)
+                         int   *jxxn,
+                         int   *ipath , int * ipathlen)  /* integer coded ASCII string from Funtran and len */
+
 {
  return(0) ;
 }
@@ -431,7 +433,9 @@ int GET_TERRAIN (        float *adx,
   }
   path[*ipathlen] = '\0' ;
 
+# if 0
   fprintf(stderr,"path: %s\n",path) ;
+# endif
 tsfTopo.num  = 0;
 tsfTopo.dx[tsfTopo.num] =  1; sprintf(tsfTopo.fn[tsfTopo.num], "%s/topo.%02dkm.ts", path,  1); tsfTopo.num++ ;
 tsfTopo.dx[tsfTopo.num] =  2; sprintf(tsfTopo.fn[tsfTopo.num], "%s/topo.%02dkm.ts", path,  2); tsfTopo.num++ ;
@@ -447,9 +451,11 @@ tsfTopo.dx[tsfTopo.num] = 20; sprintf(tsfTopo.fn[tsfTopo.num], "%s/topo.%02dkm.t
 tsfTopo.dx[tsfTopo.num] = 30; sprintf(tsfTopo.fn[tsfTopo.num], "%s/topo.%02dkm.ts", path, 30); tsfTopo.num++ ;
 tsfTopo.dx[tsfTopo.num] = 40; sprintf(tsfTopo.fn[tsfTopo.num], "%s/topo.%02dkm.ts", path, 40); tsfTopo.num++ ;
 
+# if 0
   for ( i = 0 ; i < tsfTopo.num ; i++ ) {
     fprintf(stderr,"%02d. %s\n",i, tsfTopo.fn[i] ) ;
   }
+# endif
 #endif
 
 
@@ -462,7 +468,9 @@ tsfTopo.dx[tsfTopo.num] = 40; sprintf(tsfTopo.fn[tsfTopo.num], "%s/topo.%02dkm.t
     int first = 1;
     for (i = 0; i < tsfTopo.num; i++)
       {
+# if 0
 fprintf(stderr,"%d %d file %f adx %f max %f\n",i,first,tsfTopo.dx[i],*adx , maxdx ) ;
+# endif
 	if (tsfTopo.dx[i] < maxdx) continue;
 	if (first || tsfTopo.dx[i] < *adx)
 	  {

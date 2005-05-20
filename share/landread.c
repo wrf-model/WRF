@@ -374,18 +374,21 @@ int GET_TERRAIN (        float *adx,
                          int   *mix,
                          int   *mjx,
                          int   *iyyn,
-                         int   *jxxn)
+                         int   *jxxn, 
+                         int   *ipath , int * ipathlen)  /* integer coded ASCII string from Funtran and len */
 #endif
 {
   TsFileInfo tsfTopo;
   TsFileInfo tsfOcean;
   TsFileInfo tsfLU;
   int i, j ;
+  char path[1024] ;
 
   tsfTopo.num  = 0;
   tsfOcean.num = 0;
   tsfLU.num    = 0;
 
+#if 0
   /* Read in the list of topography/land use filenames. */
   {
     FILE *fp = fopen("landFilenames", "r");
@@ -420,9 +423,35 @@ int GET_TERRAIN (        float *adx,
 	    tsfOcean.num++;
 	  }
       }
-
     fclose(fp);
   }
+#else
+  for (i = 0 ; i < *ipathlen ; i++ ) {
+    path[i] = ipath[i] ;
+  }
+  path[*ipathlen] = '\0' ;
+
+  fprintf(stderr,"path: %s\n",path) ;
+tsfTopo.num  = 0;
+tsfTopo.dx[tsfTopo.num] =  1; sprintf(tsfTopo.fn[tsfTopo.num], "%s/topo.%02dkm.ts", path,  1); tsfTopo.num++ ;
+tsfTopo.dx[tsfTopo.num] =  2; sprintf(tsfTopo.fn[tsfTopo.num], "%s/topo.%02dkm.ts", path,  2); tsfTopo.num++ ;
+tsfTopo.dx[tsfTopo.num] =  3; sprintf(tsfTopo.fn[tsfTopo.num], "%s/topo.%02dkm.ts", path,  3); tsfTopo.num++ ;
+tsfTopo.dx[tsfTopo.num] =  4; sprintf(tsfTopo.fn[tsfTopo.num], "%s/topo.%02dkm.ts", path,  4); tsfTopo.num++ ;
+tsfTopo.dx[tsfTopo.num] =  5; sprintf(tsfTopo.fn[tsfTopo.num], "%s/topo.%02dkm.ts", path,  5); tsfTopo.num++ ;
+tsfTopo.dx[tsfTopo.num] =  6; sprintf(tsfTopo.fn[tsfTopo.num], "%s/topo.%02dkm.ts", path,  6); tsfTopo.num++ ;
+tsfTopo.dx[tsfTopo.num] =  7; sprintf(tsfTopo.fn[tsfTopo.num], "%s/topo.%02dkm.ts", path,  7); tsfTopo.num++ ;
+tsfTopo.dx[tsfTopo.num] =  8; sprintf(tsfTopo.fn[tsfTopo.num], "%s/topo.%02dkm.ts", path,  8); tsfTopo.num++ ;
+tsfTopo.dx[tsfTopo.num] =  9; sprintf(tsfTopo.fn[tsfTopo.num], "%s/topo.%02dkm.ts", path,  9); tsfTopo.num++ ;
+tsfTopo.dx[tsfTopo.num] = 10; sprintf(tsfTopo.fn[tsfTopo.num], "%s/topo.%02dkm.ts", path, 10); tsfTopo.num++ ;
+tsfTopo.dx[tsfTopo.num] = 20; sprintf(tsfTopo.fn[tsfTopo.num], "%s/topo.%02dkm.ts", path, 20); tsfTopo.num++ ;
+tsfTopo.dx[tsfTopo.num] = 30; sprintf(tsfTopo.fn[tsfTopo.num], "%s/topo.%02dkm.ts", path, 30); tsfTopo.num++ ;
+tsfTopo.dx[tsfTopo.num] = 40; sprintf(tsfTopo.fn[tsfTopo.num], "%s/topo.%02dkm.ts", path, 40); tsfTopo.num++ ;
+
+  for ( i = 0 ; i < tsfTopo.num ; i++ ) {
+    fprintf(stderr,"%02d. %s\n",i, tsfTopo.fn[i] ) ;
+  }
+#endif
+
 
   /* First get the terrain from GTOPO30. */
   {

@@ -282,7 +282,13 @@ state   real    qg             ikjftb   moist       2         -     \
 # Chem Scalars
 state   real    -              ikjft   chem        2         -     -    -                                       
 
+# Other Scalars
+state   real    -              ikjftb  scalar      2         -     -    -                                       
+state   real    qni            ikjftb  scalar      2         -     \
+   i01rhusdf=(bdy_interp:dt,rqni_b,rqni_bt)    "QNICE"         "Ice Number concentration" "# kg(-1)"
+
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 # Arrays for Specified LBCs  (lbc arrays REMOVED; Boundary arrays are now specified with the state array; see above, 20050413 JM )
 
 state    real   fcx            w         misc     -         -      ir       "fcx"                  "RELAXATION TERM FOR BOUNDARY ZONE"         ""
@@ -1162,7 +1168,7 @@ package   etampnew      mp_physics==5                -             moist:qv,qc
 package   wsm6scheme    mp_physics==6                -             moist:qv,qc,qr,qi,qs,qg
 package   ncepcloud3    mp_physics==98               -             moist:qv,qc,qr
 package   ncepcloud5    mp_physics==99               -             moist:qv,qc,qr,qi,qs
-#package   reisner2      mp_physics==8                -             moist:qv,qc,qr,qi,qs,qg;chem:qn
+package   thompson       mp_physics==8               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni
 
 package   rrtmscheme    ra_lw_physics==1             -             -
 package   gfdllwscheme  ra_lw_physics==99            -             moist:qv,qc,qr,qi
@@ -1212,7 +1218,7 @@ halo      HALO_EM_INIT_1 dyn_em 48:u_1,u_2,v_1,v_2,w_1,w_2,ph_1,ph_2
 halo      HALO_EM_INIT_2 dyn_em 48:t_1,t_2,mu_1,mu_2,tke_1,tke_2,ww,phb
 halo      HALO_EM_INIT_3 dyn_em 48:ph0,php,t_init,mub,mu0,p,al,alt,alb
 halo      HALO_EM_INIT_4 dyn_em 48:pb,h_diabatic,msft,msfu,msfv,f,e,sina,cosa,ht
-halo      HALO_EM_INIT_5 dyn_em 48:moist_1,moist_2,chem_1,chem_2
+halo      HALO_EM_INIT_5 dyn_em 48:moist_1,moist_2,chem_1,chem_2,scalar_1,scalar_2
 halo      HALO_EM_A dyn_em  8:ru,rv,rw,ww,php,alt,al,p,muu,muv,mut
 halo      HALO_EM_PHYS_A  dyn_em 4:u_2,v_2
 halo      HALO_EM_PHYS_PBL dyn_em        4:rublten,rvblten
@@ -1232,23 +1238,25 @@ halo      HALO_EM_B2 dyn_em 4:ru_tend,rv_tend
 halo      HALO_EM_C dyn_em    4:u_2,v_2
 halo      HALO_EM_C2 dyn_em    4:ph_2,al,p,mu_2,muts,mudf
 halo      HALO_EM_D dyn_em    4:ru_m,rv_m
-halo      HALO_EM_D2_3 dyn_em 24:u_2,v_2,w_2,t_2,ph_2;24:moist_2,chem_2;4:mu_2,al
-halo      HALO_EM_D2_5 dyn_em 48:u_2,v_2,w_2,t_2,ph_2;24:moist_2,chem_2;4:mu_2,al
-halo      HALO_EM_D3_3 dyn_em 24:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,moist_1,moist_2,chem_1,chem_2;4:mu_1,mu_2
-halo      HALO_EM_D3_5 dyn_em 48:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,moist_1,moist_2,chem_1,chem_2;4:mu_1,mu_2
+halo      HALO_EM_D2_3 dyn_em 24:u_2,v_2,w_2,t_2,ph_2;24:moist_2,chem_2,scalar_2;4:mu_2,al
+halo      HALO_EM_D2_5 dyn_em 48:u_2,v_2,w_2,t_2,ph_2;24:moist_2,chem_2,scalar_2;4:mu_2,al
+halo      HALO_EM_D3_3 dyn_em 24:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,moist_1,moist_2,chem_1,chem_2,scalar_1,scalar_2;4:mu_1,mu_2
+halo      HALO_EM_D3_5 dyn_em 48:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,moist_1,moist_2,chem_1,chem_2,scalar_1,scvalar_2;4:mu_1,mu_2
 halo      HALO_EM_E_3 dyn_em 24:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,;4:mu_1,mu_2
 halo      HALO_EM_E_5 dyn_em 48:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,;4:mu_1,mu_2
 halo      HALO_EM_MOIST_E_3 dyn_em 24:moist_1,moist_2
 halo      HALO_EM_MOIST_E_5 dyn_em 48:moist_1,moist_2
 halo      HALO_EM_CHEM_E_3 dyn_em 24:chem_1,chem_2
 halo      HALO_EM_CHEM_E_5 dyn_em 48:chem_1,chem_2
+halo      HALO_EM_SCALAR_E_3 dyn_em 24:scalar_1,scalar_2
+halo      HALO_EM_SCALAR_E_5 dyn_em 48:scalar_1,scalar_2
 
 halo      HALO_EM_COUPLE_A   dyn_em 24:mub,mu_1,mu_2
 period    PERIOD_EM_COUPLE_A dyn_em 2:mub,mu_1,mu_2
 halo      HALO_EM_COUPLE_B   dyn_em 48:ph_1,ph_2,w_1,w_2,t_1,t_2,u_1,u_2,v_1,v_2,\
-                                       moist_1,moist_2,chem_1,chem_2
+                                       moist_1,moist_2,chem_1,chem_2,scalar_1,scalar_2
 period    PERIOD_EM_COUPLE_B dyn_em 3:ph_1,ph_2,w_1,w_2,t_1,t_2,u_1,u_2,v_1,v_2,\
-                                       moist_1,moist_2,chem_1,chem_2
+                                       moist_1,moist_2,chem_1,chem_2,scalar_1,scalar_2
 
 # For moving nests
 halo      em_shift_halo_y  dyn_em 48:imask_nostag,imask_xstag,imask_ystag,imask_xystag,u_2,v_2,t_2
@@ -1259,8 +1267,10 @@ halo      em_shift_halo_x  dyn_em 48:imask_nostag,imask_xstag,imask_ystag,imask_
 period    PERIOD_BDY_EM_INIT dyn_em 3:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,t_init,phb,ph0,php,pb,al,alt,alb,mu_1,mu_2,mub,mu0,ht,msft,msfu,msfv,sina,cosa,e,f
 period    PERIOD_BDY_EM_MOIST dyn_em 3:moist_1,moist_2
 period    PERIOD_BDY_EM_CHEM dyn_em 3:chem_1,chem_2
+period    PERIOD_BDY_EM_SCALAR dyn_em 3:scalar_1,scalar_2
 period    PERIOD_BDY_EM_MOIST2 dyn_em 3:moist_2
 period    PERIOD_BDY_EM_CHEM2 dyn_em 3:chem_2
+period    PERIOD_BDY_EM_SCALAR2 dyn_em 3:scalar_2
 period    PERIOD_BDY_EM_A dyn_em 2:ru,rv,rw,ww,php,alt,p,muu,muv,mut,ph_2
 period    PERIOD_BDY_EM_A1  dyn_em 3:rdzw,rdz,z,zx,zy
 period    PERIOD_BDY_EM_PHY_BC dyn_em 2:rublten,rvblten,xkmh,xkmhd,xkmv,xkhh,xkhv,div,defor11,defor22,defor12,defor13,defor23,defor33,tke_2

@@ -43,7 +43,7 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple, &
                                       ips , ipe , jps , jpe , kps , kpe
 
    INTEGER                         :: i,j,k, im
-   INTEGER                         :: num_3d_c, num_3d_m
+   INTEGER                         :: num_3d_c, num_3d_m, num_3d_s
    REAL                            :: mu_factor
 
    REAL, DIMENSION(grid%sm31:grid%em31,grid%sm33:grid%em33) :: mut_2, muut_2, muvt_2, muwt_2
@@ -66,6 +66,7 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple, &
 
    num_3d_m        = num_moist
    num_3d_c        = num_chem
+   num_3d_s        = num_scalar
 
    !  couple or uncouple mass-point variables
    !  first, compute mu or its reciprical as necessary
@@ -269,6 +270,16 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple, &
        ENDDO
      END IF
 
+     IF (num_3d_s >= PARAM_FIRST_SCALAR )  THEN
+       DO im = PARAM_FIRST_SCALAR, num_3d_s
+         DO k = kps,kpe-1
+         DO i = max(ids,ips),min(ide-1,ipe)
+           scalar_2(i,k,j,im)  =  scalar_2(i,k,j,im)*mut_2(i,j)
+         ENDDO
+         ENDDO
+       ENDDO
+     END IF
+
 !  do u and v
 
      DO k = kps,kpe-1
@@ -382,6 +393,24 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple, &
                              ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
                              ips,ipe, jps,jpe, kps,kpe )
      CALL set_physical_bc3d( chem_2(ims,kms,jms,im), 'p',        &
+                             config_flags,                   &
+                             ids,ide, jds,jde, kds,kde,  & ! domain dims
+                             ims,ime, jms,jme, kms,kme,  & ! memory dims
+                             ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+                             ips,ipe, jps,jpe, kps,kpe )
+     ENDDO
+     ENDIF
+
+     IF (num_3d_s >= PARAM_FIRST_SCALAR) THEN
+       DO im = PARAM_FIRST_SCALAR , num_3d_s
+
+     CALL set_physical_bc3d( scalar_1(ims,kms,jms,im), 'p',        &
+                             config_flags,                   &
+                             ids,ide, jds,jde, kds,kde,  & ! domain dims
+                             ims,ime, jms,jme, kms,kme,  & ! memory dims
+                             ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+                             ips,ipe, jps,jpe, kps,kpe )
+     CALL set_physical_bc3d( scalar_2(ims,kms,jms,im), 'p',        &
                              config_flags,                   &
                              ids,ide, jds,jde, kds,kde,  & ! domain dims
                              ims,ime, jms,jme, kms,kme,  & ! memory dims

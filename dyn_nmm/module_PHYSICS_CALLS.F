@@ -2030,7 +2030,7 @@
 !
       CALL MICROPHYSICS_DRIVER(                                         &
      &                  TH=TH_PHY                                       &
-     &                 ,RHO=RR,PI=PI_PHY,P=P_PHY                        &
+     &                 ,RHO=RR,PI_PHY=PI_PHY,P=P_PHY                    &
      &                 ,RAINNCV=RAINNCV                                 &
      &                 ,DZ8W=DZ,P8W=P8W,DT=DTPHS,DX=DX,DY=DY            &
      &                 ,MP_PHYSICS=CONFIG_FLAGS%MP_PHYSICS              &

@@ -142,6 +142,7 @@ Namelist variables for controling the prototype moving nest:
                                      = 4, WSM 5-class scheme
                                      = 5, Ferrier (new Eta) microphysics
                                      = 6, WSM 6-class graupel scheme
+                                     = 8, Thompson et al. scheme
                                      = 98, NCEP 3-class simple ice scheme (to be removed)
                                      = 99, NCEP 5-class scheme (to be removed)
 

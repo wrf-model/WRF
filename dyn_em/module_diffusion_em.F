@@ -1886,11 +1886,12 @@ END SUBROUTINE smag2d_km
 SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
                                     tke_tendf,                                 &
                                     moist_tendf, n_moist,                      &
+                                    chem_tendf, n_chem,                        &
                                     scalar_tendf, n_scalar,                    &
                                     thp, theta, mu, tke, config_flags,         &
                                     defor11, defor22, defor12,                 &
                                     defor13, defor23, div,                     &
-                                    moist, scalar,                             &
+                                    moist, chem, scalar,                       &
                                     msfu, msfv, msft, xkmh, xkhh,km_opt,       &
                                     rdx, rdy, rdz, rdzw, fnm, fnp,             &
                                     cf1, cf2, cf3, zx, zy, dn, dnw,            &
@@ -1909,7 +1910,7 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
                                             ims, ime, jms, jme, kms, kme, &
                                             its, ite, jts, jte, kts, kte
 
-   INTEGER ,        INTENT(IN   ) ::        n_moist, n_scalar, km_opt
+   INTEGER ,        INTENT(IN   ) ::        n_moist, n_chem, n_scalar, km_opt
 
    REAL ,           INTENT(IN   ) ::        cf1, cf2, cf3
 
@@ -1932,11 +1933,17 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
    REAL , DIMENSION( ims:ime, kms:kme, jms:jme, n_moist),                 &
           INTENT(INOUT) ::                                    moist_tendf
 
+   REAL , DIMENSION( ims:ime, kms:kme, jms:jme, n_chem),                  &
+          INTENT(INOUT) ::                                     chem_tendf
+
    REAL , DIMENSION( ims:ime, kms:kme, jms:jme, n_scalar),                &
           INTENT(INOUT) ::                                   scalar_tendf
 
    REAL , DIMENSION( ims:ime, kms:kme, jms:jme, n_moist),                 &
           INTENT(IN   ) ::                                          moist
+
+   REAL , DIMENSION( ims:ime, kms:kme, jms:jme, n_chem),                  &
+          INTENT(IN   ) ::                                          chem 
 
    REAL , DIMENSION( ims:ime, kms:kme, jms:jme, n_scalar) ,               &
           INTENT(IN   ) ::                                         scalar 
@@ -1963,7 +1970,7 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
 
 ! LOCAL VARS
    
-   INTEGER :: im
+   INTEGER :: im, ic, is
 
 !  REAL , DIMENSION(its-1:ite+1, kts:kte, jts-1:jte+1)       ::     xkhh
 
@@ -2040,13 +2047,31 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
 
     ENDIF
 
+    IF (n_chem .ge. PARAM_FIRST_SCALAR) THEN 
+
+      chem_loop: do ic = PARAM_FIRST_SCALAR, n_chem
+
+        CALL horizontal_diffusion_s( chem_tendf(ims,kms,jms,ic),     &
+                                     mu, config_flags,                 &
+                                     chem(ims,kms,jms,ic),           &
+                                     msft, msfu, msfv, xkhh, rdx, rdy, &
+                                     fnm, fnp, cf1, cf2, cf3,          &
+                                     zx, zy, rdz, rdzw, dnw, dn,       &
+                                     .false.,                          &
+                                     ids, ide, jds, jde, kds, kde,     &
+                                     ims, ime, jms, jme, kms, kme,     &
+                                     its, ite, jts, jte, kts, kte     )
+
+      ENDDO chem_loop
+
+    ENDIF
     IF (n_scalar .ge. PARAM_FIRST_SCALAR) THEN 
 
-      scalar_loop: do im = PARAM_FIRST_SCALAR, n_scalar
+      scalar_loop: do is = PARAM_FIRST_SCALAR, n_scalar
 
-        CALL horizontal_diffusion_s( scalar_tendf(ims,kms,jms,im),     &
+        CALL horizontal_diffusion_s( scalar_tendf(ims,kms,jms,is),     &
                                      mu, config_flags,                 &
-                                     scalar(ims,kms,jms,im),           &
+                                     scalar(ims,kms,jms,is),           &
                                      msft, msfu, msfv, xkhh, rdx, rdy, &
                                      fnm, fnp, cf1, cf2, cf3,          &
                                      zx, zy, rdz, rdzw, dnw, dn,       &
@@ -2894,11 +2919,12 @@ END SUBROUTINE horizontal_diffusion_s
 
 SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
                                     tke_tendf, moist_tendf, n_moist,          &
+                                    chem_tendf, n_chem,                       &
                                     scalar_tendf, n_scalar,                   &
                                     u_2, v_2,                                 &
                                     thp,u_base,v_base,t_base,qv_base,mu,tke,  &
                                     config_flags,defor13,defor23,defor33,div, &
-                                    moist, scalar, xkmv, xkhv,km_opt,         &
+                                    moist, chem, scalar, xkmv, xkhv,km_opt,   &
                                     fnm, fnp, dn, dnw, rdz, rdzw,             &
                                     ids, ide, jds, jde, kds, kde,             &
                                     ims, ime, jms, jme, kms, kme,             &
@@ -2915,7 +2941,7 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
                                             ims, ime, jms, jme, kms, kme, &
                                             its, ite, jts, jte, kts, kte
 
-   INTEGER ,        INTENT(IN   ) ::        n_moist, n_scalar, km_opt
+   INTEGER ,        INTENT(IN   ) ::        n_moist, n_chem, n_scalar, km_opt
 
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: fnm
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: fnp
@@ -2937,11 +2963,17 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
    REAL , DIMENSION( ims:ime, kms:kme, jms:jme, n_moist),                 &
           INTENT(INOUT) ::                                    moist_tendf
 
+   REAL , DIMENSION( ims:ime, kms:kme, jms:jme, n_chem),                  &
+          INTENT(INOUT) ::                                     chem_tendf
+
    REAL , DIMENSION( ims:ime, kms:kme, jms:jme, n_scalar) ,               &
           INTENT(INOUT) ::                                   scalar_tendf
 
    REAL , DIMENSION( ims:ime, kms:kme, jms:jme, n_moist),                 &
           INTENT(INOUT) ::                                          moist
+
+   REAL , DIMENSION( ims:ime, kms:kme, jms:jme, n_chem),                  &
+          INTENT(INOUT) ::                                           chem
 
    REAL , DIMENSION( ims:ime, kms:kme, jms:jme, n_scalar) ,               &
           INTENT(IN   ) ::                                         scalar
@@ -3161,6 +3193,22 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
                                      its, ite, jts, jte, kts, kte        )
 
      ENDDO moist_loop
+
+   ENDIF
+
+   IF (n_chem .ge. PARAM_FIRST_SCALAR) THEN 
+
+     chem_loop: do im = PARAM_FIRST_SCALAR, n_chem
+
+          CALL vertical_diffusion_s( chem_tendf(ims,kms,jms,im),         &
+                                     config_flags, chem(ims,kms,jms,im), &
+                                     mu, xkhv,                             &
+                                     dn, dnw, rdz, rdzw, fnm, fnp,         &
+                                     .false.,                              &
+                                     ids, ide, jds, jde, kds, kde,         &
+                                     ims, ime, jms, jme, kms, kme,         &
+                                     its, ite, jts, jte, kts, kte         )
+     ENDDO chem_loop
 
    ENDIF
 

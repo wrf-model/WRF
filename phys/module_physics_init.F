@@ -1020,6 +1020,7 @@ integer myproc
    USE module_mp_wsm5
    USE module_mp_wsm6
    USE module_mp_etanew
+   USE module_mp_thompson
 !------------------------------------------------------------------
    IMPLICIT NONE
 !------------------------------------------------------------------
@@ -1073,6 +1074,8 @@ integer myproc
                           ids, ide, jds, jde, kds, kde,           &
                           ims, ime, jms, jme, kms, kme,           &
                           its, ite, jts, jte, kts, kte            )
+     CASE (THOMPSON)
+         CALL thomp_init
      CASE (NCEPCLOUD3)
           CALL ncloud3init(rhoair0,rhowater,rhosnow,cliq,cv, allowed_to_read )
      CASE (NCEPCLOUD5)

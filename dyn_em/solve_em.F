@@ -56,7 +56,7 @@ SUBROUTINE solve_em ( grid , config_flags , &
                                       ims , ime , jms , jme , kms , kme , &
                                       ips , ipe , jps , jpe , kps , kpe
    INTEGER                         :: ij , iteration
-   INTEGER                         :: im , num_3d_m , ic , num_3d_c
+   INTEGER                         :: im , num_3d_m , ic , num_3d_c , is , num_3d_s
    INTEGER                         :: loop
    INTEGER                         :: ijds, ijde
    INTEGER                         :: itmpstep
@@ -171,6 +171,7 @@ SUBROUTINE solve_em ( grid , config_flags , &
 
   num_3d_m        = num_moist
   num_3d_c        = num_chem
+  num_3d_s        = num_scalar
 
 !  Compute these starting and stopping locations for each tile and number of tiles.
 !  See: http://www.mmm.ucar.edu/wrf/WG2/topics/settiles
@@ -445,8 +446,9 @@ BENCH_START(init_zero_tend_tim)
         CALL wrf_debug ( 200 , ' call init_zero_tendency' )
         CALL init_zero_tendency ( ru_tendf, rv_tendf, rw_tendf,     &
                                   ph_tendf, t_tendf, tke_tend,      &
-                                  moist_tend,chem_tend,             &
-                                  num_3d_m,num_3d_c,rk_step,        &
+                                  moist_tend,chem_tend,scalar_tend, &
+                                  num_3d_m,num_3d_c,num_3d_s,       &
+                                  rk_step,                          &
                                   ids, ide, jds, jde, kds, kde,     &
                                   ims, ime, jms, jme, kms, kme,     &
                                   grid%i_start(ij), grid%i_end(ij), &
@@ -1016,11 +1018,13 @@ BENCH_START(vert_diff_tim)
                                       t_tendf, tke_tend,                         &
                                       moist_tend, num_3d_m,                      &
                                       chem_tend, num_3d_c,                       &
+                                      scalar_tend, num_3d_s,                     &
                                       u_2, v_2,                                  &
                                       t_2,u_base,v_base,t_base,qv_base,          &
                                       mut,tke_2,config_flags,                    &
                                       defor13,defor23,defor33,                   &
-                                      div, moist_2, chem_2, xkmv, xkhv, km_opt,  &
+                                      div, moist_2, chem_2, scalar_2,            &
+                                      xkmv, xkhv, km_opt,                        &
                                       fnm, fnp, dn, dnw, rdz, rdzw,              &
                                       ids, ide, jds, jde, kds, kde,              &
                                       ims, ime, jms, jme, kms, kme,              &
@@ -1044,11 +1048,12 @@ BENCH_START(hor_diff_tim)
                                       tke_tend,                              &
                                       moist_tend, num_3d_m,                  &
                                       chem_tend, num_3d_c,                   &
+                                      scalar_tend, num_3d_s,                 &
                                       t_2, th_phy,                           &
                                       mut, tke_2, config_flags,              &
                                       defor11, defor22, defor12,             &
                                       defor13, defor23, div,                 &
-                                      moist_2, chem_2,                       &
+                                      moist_2, chem_2, scalar_2,             &
                                       msfu, msfv, msft, xkmhd, xkhh, km_opt, &
                                       rdx, rdy, rdz, rdzw,                   &
                                       fnm, fnp, cf1, cf2, cf3,               &
@@ -1976,6 +1981,7 @@ BENCH_END(tke_adv_tim)
                              k_start    , k_end               )
 
    ENDDO chem_tile_loop_1
+
    !$OMP END PARALLEL DO
 
 
@@ -2033,6 +2039,114 @@ BENCH_END(tke_adv_tim)
    ENDDO chem_variable_loop
 
  ENDIF chem_scalar_advance
+
+!  next the other scalar species
+  other_scalar_advance: IF (num_3d_s >= PARAM_FIRST_SCALAR)  THEN
+
+   scalar_variable_loop: do is = PARAM_FIRST_SCALAR, num_3d_s
+   !$OMP PARALLEL DO   &
+   !$OMP PRIVATE ( ij )
+
+   scalar_tile_loop_1: DO ij = 1 , grid%num_tiles
+
+       CALL wrf_debug ( 200 , ' call rk_scalar_tend' )
+       CALL rk_scalar_tend ( is, is, config_flags,                  &
+                             rk_step, dt_rk,                   &
+                             ru_m, rv_m, ww_m,                 &
+                             mut, alt,                         &
+                             scalar_1(ims,kms,jms,is),           &
+                             scalar_2(ims,kms,jms,is),           &
+                             scalar_tend(ims,kms,jms,is),        &
+                             advect_tend,RQVFTEN,              &
+                             qv_base, .false., fnm, fnp,       &
+                             msfu, msfv, msft,                 &
+                             rdx, rdy, rdn, rdnw,              &
+                             khdif, kvdif, xkmhd,              &
+                             leapfrog,                         &
+                             ids, ide, jds, jde, kds, kde,     &
+                             ims, ime, jms, jme, kms, kme,     &
+                             grid%i_start(ij), grid%i_end(ij), &
+                             grid%j_start(ij), grid%j_end(ij), &
+                             k_start    , k_end               )
+
+     IF( config_flags%nested .and. (rk_step == 1) ) THEN
+
+       IF (is .eq. P_QNI) THEN
+
+         CALL relax_bdy_scalar ( scalar_tend(ims,kms,jms,is),            &
+                                 scalar_2(ims,kms,jms,is),  mut,         &
+                                 scalar_b(1,1,1,1,is),                   &
+                                 scalar_bt(1,1,1,1,is),                  &
+                                 spec_bdy_width, spec_zone, relax_zone, &
+                                 dtbc, fcx, gcx,             &
+                                 ijds, ijde,                 & ! min/max(id,jd)
+                                 ids,ide, jds,jde, kds,kde,  & ! domain dims
+                                 ims,ime, jms,jme, kms,kme,  & ! memory dims
+                                 ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+                                 grid%i_start(ij), grid%i_end(ij),      &
+                                 grid%j_start(ij), grid%j_end(ij),      &
+                                 k_start, k_end                        )
+
+         CALL spec_bdy_scalar  ( scalar_tend(ims,kms,jms,is),                &
+                                 scalar_b(1,1,1,1,is),                   &
+                                 scalar_bt(1,1,1,1,is),                  &
+                                 spec_bdy_width, spec_zone,                 &
+                                 ijds, ijde,                 & ! min/max(id,jd)
+                                 ids,ide, jds,jde, kds,kde,  & ! domain dims
+                                 ims,ime, jms,jme, kms,kme,  & ! memory dims
+                                 ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+                                 grid%i_start(ij), grid%i_end(ij),          &
+                                 grid%j_start(ij), grid%j_end(ij),          &
+                                 k_start, k_end                               )
+
+       ENDIF
+
+     ENDIF ! b.c test for chem nested boundary condition
+
+   ENDDO scalar_tile_loop_1
+   !$OMP END PARALLEL DO
+
+
+   !$OMP PARALLEL DO   &
+   !$OMP PRIVATE ( ij )
+
+   scalar_tile_loop_2: DO ij = 1 , grid%num_tiles
+
+       CALL wrf_debug ( 200 , ' call rk_update_scalar' )
+       CALL rk_update_scalar( is, is,                           &
+                              scalar_1(ims,kms,jms,is),           &
+                              scalar_2(ims,kms,jms,is),           &
+                              scalar_tend(ims,kms,jms,is),        &
+                              advect_tend, msft,                &
+                              mu_1, mu_2, mub,                  &
+                              rk_step, dt_rk, spec_zone,        &
+                              epsts, leapfrog,config_flags,     &
+                              ids, ide, jds, jde, kds, kde,     &
+                              ims, ime, jms, jme, kms, kme,     &
+                              grid%i_start(ij), grid%i_end(ij), &
+                              grid%j_start(ij), grid%j_end(ij), &
+                              k_start    , k_end               )
+
+
+       IF( config_flags%specified ) THEN
+           CALL flow_dep_bdy  ( scalar_2(ims,kms,jms,is),     &
+                                ru_m, rv_m, config_flags,   &
+                                spec_zone,                  &
+                                ids,ide, jds,jde, kds,kde,  & ! domain dims
+                                ims,ime, jms,jme, kms,kme,  & ! memory dims
+                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+                                grid%i_start(ij), grid%i_end(ij),  &
+                                grid%j_start(ij), grid%j_end(ij),  &
+                                k_start, k_end                    )
+       ENDIF
+
+
+   ENDDO scalar_tile_loop_2
+   !$OMP END PARALLEL DO
+
+   ENDDO scalar_variable_loop
+
+ ENDIF other_scalar_advance
 
  !  update the pressure and density at the new time level
 
@@ -2102,6 +2216,7 @@ BENCH_END(diag_w_tim)
 !  4D variable
 ! moist_2               x
 ! chem_2                x
+!scalar_2               x
 
 #ifdef DM_PARALLEL
    IF      ( h_mom_adv_order <= 4 ) THEN
@@ -2115,6 +2230,7 @@ BENCH_END(diag_w_tim)
 #  include "PERIOD_BDY_EM_D.inc"
 #  include "PERIOD_BDY_EM_MOIST2.inc"
 #  include "PERIOD_BDY_EM_CHEM2.inc"
+#  include "PERIOD_BDY_EM_SCALAR2.inc"
 #endif
 
 BENCH_START(bc_end_tim)
@@ -2163,6 +2279,22 @@ BENCH_START(bc_end_tim)
                                   k_start    , k_end-1                    )
 
         END DO chem_species_bdy_loop_1
+
+      END IF
+
+      IF (num_3d_s >= PARAM_FIRST_SCALAR) THEN
+
+        scalar_species_bdy_loop_1 : DO is = PARAM_FIRST_SCALAR , num_3d_s
+
+          CALL set_physical_bc3d( scalar_2(ims,kms,jms,is), 'p', config_flags,   &
+                                  ids, ide, jds, jde, kds, kde,            &
+                                  ims, ime, jms, jme, kms, kme,            &
+                                  ips, ipe, jps, jpe, kps, kpe,            &
+                                  grid%i_start(ij), grid%i_end(ij),                  &
+                                  grid%j_start(ij), grid%j_end(ij),                  &
+                                  k_start    , k_end-1                    )
+
+        END DO scalar_species_bdy_loop_1
 
       END IF
 
@@ -2232,6 +2364,25 @@ BENCH_END(bc_end_tim)
 #      include "HALO_EM_CHEM_E_3.inc"
      ELSE IF ( h_mom_adv_order <= 6 ) THEN
 #      include "HALO_EM_CHEM_E_5.inc"
+     ELSE
+       WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',h_mom_adv_order
+       CALL wrf_error_fatal(TRIM(wrf_err_message))
+     ENDIF
+   endif
+   if ( num_scalar >= PARAM_FIRST_SCALAR ) then
+
+!                           * * * * *
+!         *        * * *    * * * * *
+!       * + *      * + *    * * + * *
+!         *        * * *    * * * * *
+!                           * * * * *
+
+! scalar_2                      x
+
+     IF      ( h_mom_adv_order <= 4 ) THEN
+#      include "HALO_EM_SCALAR_E_3.inc"
+     ELSE IF ( h_mom_adv_order <= 6 ) THEN
+#      include "HALO_EM_SCALAR_E_5.inc"
      ELSE
        WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',h_mom_adv_order
        CALL wrf_error_fatal(TRIM(wrf_err_message))
@@ -2328,7 +2479,7 @@ BENCH_START(micro_driver_tim)
      &         DT=dtm             ,DX=dx              ,DY=dy              &
      &        ,DZ8W=dz8w          ,F_ICE_PHY=f_ice_phy                    &
      &        ,ITIMESTEP=itimestep                    ,LOWLYR=lowlyr      &
-     &        ,P8W=p8w            ,P=p_phy            ,PI=pi_phy          &
+     &        ,P8W=p8w            ,P=p_phy            ,PI_PHY=pi_phy      &
      &        ,RHO=rho            ,SPEC_ZONE=spec_zone                    &
      &        ,SR=sr              ,TH=t_2                                 &
      &        ,WARM_RAIN=warm_rain                    ,XLAND=xland        &
@@ -2354,6 +2505,7 @@ BENCH_START(micro_driver_tim)
      &        , QI_CURR=moist_2(ims,kms,jms,P_QI), F_QI=F_QI              &
      &        , QS_CURR=moist_2(ims,kms,jms,P_QS), F_QS=F_QS              &
      &        , QG_CURR=moist_2(ims,kms,jms,P_QG), F_QG=F_QG              &
+     &        , QNI_CURR=scalar_2(ims,kms,jms,P_QNI), F_QNI=F_QNI         &
      &        , QV_OLD=moist_1(ims,kms,jms,P_QV)                          &
      &        , QC_OLD=moist_1(ims,kms,jms,P_QC)                          &
      &        , QR_OLD=moist_1(ims,kms,jms,P_QR)                          &
@@ -2416,7 +2568,7 @@ BENCH_END(moist_phys_end_tim)
 
   ENDIF
 
-   scalar_tile_loop_2: DO ij = 1 , grid%num_tiles
+   chem_tile_loop_3: DO ij = 1 , grid%num_tiles
 
           CALL wrf_debug ( 200 , ' call scalar_tile_loop_2' )
 
@@ -2428,7 +2580,7 @@ BENCH_END(moist_phys_end_tim)
 
      END IF
 
-   END DO scalar_tile_loop_2
+   END DO chem_tile_loop_3
 
 
    IF (leapfrog ) THEN
@@ -2507,6 +2659,8 @@ BENCH_END(time_filt_tim)
 !  moist_2                         x
 !   chem_1                         x
 !   chem_2                         x
+! scalar_1                         x
+! scalar_2                         x
 !----------------------------------------------------------
 
 
@@ -2522,6 +2676,7 @@ BENCH_END(time_filt_tim)
 #  include "PERIOD_BDY_EM_D3.inc"
 #  include "PERIOD_BDY_EM_MOIST.inc"
 #  include "PERIOD_BDY_EM_CHEM.inc"
+#  include "PERIOD_BDY_EM_SCALAR.inc"
 #endif
 
 !  now set physical b.c on a patch
@@ -2599,6 +2754,25 @@ BENCH_START(bc_2d_tim)
 
      END DO chem_species_bdy_loop_2
 
+     scalar_species_bdy_loop_2 : DO is = PARAM_FIRST_SCALAR , num_3d_s
+
+       CALL set_physical_bc3d( scalar_1(ims,kms,jms,is), 'p', config_flags,   &
+                               ids, ide, jds, jde, kds, kde,            &
+                               ims, ime, jms, jme, kms, kme,            &
+                               ips, ipe, jps, jpe, kps, kpe,            &
+                               grid%i_start(ij), grid%i_end(ij),                  &
+                               grid%j_start(ij), grid%j_end(ij),                  &
+                               k_start    , k_end                    )
+       CALL set_physical_bc3d( scalar_2(ims,kms,jms,is) , 'p', config_flags,  &
+                               ids, ide, jds, jde, kds, kde,            &
+                               ims, ime, jms, jme, kms, kme,            &
+                               ips, ipe, jps, jpe, kps, kpe,            &
+                               grid%i_start(ij), grid%i_end(ij),                  &
+                               grid%j_start(ij), grid%j_end(ij),                  &
+                               k_start    , k_end                      )
+
+     END DO scalar_species_bdy_loop_2
+
    END DO tile_bc_loop_2
    !$OMP END PARALLEL DO
 BENCH_END(bc_2d_tim)
@@ -2646,6 +2820,20 @@ BENCH_END(bc_2d_tim)
 #      include "HALO_EM_CHEM_E_3.inc"
      ELSE IF ( h_mom_adv_order <= 6 ) THEN
 #      include "HALO_EM_CHEM_E_5.inc"
+     ELSE
+       WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',h_mom_adv_order
+       CALL wrf_error_fatal(TRIM(wrf_err_message))
+     ENDIF
+   endif
+   if ( num_scalar >= PARAM_FIRST_SCALAR ) then
+!-----------------------------------------------------------------------
+! see above
+!--------------------------------------------------------------
+     CALL wrf_debug ( 200 , ' call HALO_RK_SCALAR' )
+     IF      ( h_mom_adv_order <= 4 ) THEN
+#      include "HALO_EM_SCALAR_E_3.inc"
+     ELSE IF ( h_mom_adv_order <= 6 ) THEN
+#      include "HALO_EM_SCALAR_E_5.inc"
      ELSE
        WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',h_mom_adv_order
        CALL wrf_error_fatal(TRIM(wrf_err_message))

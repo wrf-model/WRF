@@ -203,7 +203,7 @@ framework :
 #	( cd frame ; $(MAKE) framework )
 	( cd frame ; $(MAKE) framework; \
 	cd ../external/io_netcdf ; make NETCDFPATH="$(NETCDFPATH)" FC="$(FC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP)" diffwrf; \
-	cd ../io_grib1/WGRIB ; make clean ; \
+	cd ../io_grib1/WGRIB ; \
 	cd .. ; rm wgrib ; make FC="$(FC) -I. $(FCBASEOPTS)" CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)"; \
 	cd ../io_int ; $(MAKE) SFC="$(SFC) $(FCBASEOPTS)" FC="$(FC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP)" diffwrf ; cd ../../frame )
 

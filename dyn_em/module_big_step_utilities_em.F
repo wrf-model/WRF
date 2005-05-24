@@ -3850,52 +3850,6 @@ END SUBROUTINE decouple
 
 !-------------------------------------------------------------------------------
 
-SUBROUTINE mix_qv ( qv_tend, qv_mix, rho,         &
-                    ids, ide, jds, jde, kds, kde, &
-                    ims, ime, jms, jme, kms, kme, &
-                    its, ite, jts, jte, kts, kte )
-
-   IMPLICIT NONE
-
-   ! Input data
-
-   INTEGER ,               INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
-                                            ims, ime, jms, jme, kms, kme, &
-                                            its, ite, jts, jte, kts, kte
-
-   REAL , DIMENSION( ims:ime, kms:kme , jms:jme ) , INTENT(IN   ) :: qv_mix,  &
-                                                                     rho
-
-   REAL , DIMENSION( ims:ime, kms:kme , jms:jme ) , INTENT(INOUT) :: qv_tend
-
-   ! Local data
-   
-   INTEGER :: i, j, k, itf, jtf, ktf
-
-!<DESCRIPTION>
-!
-!  mix_qv adds the qv_mixing tendency to the qv tendency.
-!
-!</DESCRIPTION>
-
-   ktf=MIN(kte,kde-1)
-   itf=MIN(ite,ide-1)
-   jtf=MIN(jte,jde-1)
-
-     DO j=jts,jtf
-     DO k=kts,ktf
-     DO i=its,itf
-
-       qv_tend(i,k,j) = qv_tend(i,k,j)  + qv_mix(i,k,j)
-
-     ENDDO
-     ENDDO
-     ENDDO
-
-END SUBROUTINE mix_qv
-
-!-------------------------------------------------------------------------------
-
 
 SUBROUTINE zero_tend ( tendency,                     &
                        ids, ide, jds, jde, kds, kde, &

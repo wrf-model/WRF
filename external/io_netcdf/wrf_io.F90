@@ -199,6 +199,94 @@ subroutine allocHandle(DataHandle,DH,Comm,Status)
   Status = WRF_NO_ERR
 end subroutine allocHandle
 
+subroutine deallocHandle(DataHandle, Status)
+  use wrf_data
+  include 'wrf_status_codes.h'
+  integer              ,intent(in) :: DataHandle
+  integer              ,intent(out) :: Status
+  type(wrf_data_handle),pointer     :: DH
+  integer                           :: i
+  integer                           :: stat
+
+  IF ( DataHandle .GE. 1 .AND. DataHandle .LE. WrfDataHandleMax ) THEN
+    if(.NOT. WrfDataHandles(DataHandle)%Free) then
+      DH => WrfDataHandles(DataHandle)
+      deallocate(DH%Times, STAT=stat)
+      if(stat/= 0) then
+        Status = WRF_ERR_FATAL_DEALLOCATION_ERR
+        write(msg,*) 'Fatal DEALLOCATION ERROR in ',__FILE__,', line', __LINE__
+        call wrf_debug ( FATAL , msg)
+        return
+      endif
+      deallocate(DH%DimLengths, STAT=stat)
+      if(stat/= 0) then
+        Status = WRF_ERR_FATAL_DEALLOCATION_ERR
+        write(msg,*) 'Fatal DEALLOCATION ERROR in ',__FILE__,', line', __LINE__
+        call wrf_debug ( FATAL , msg)
+        return
+      endif
+      deallocate(DH%DimIDs, STAT=stat)
+      if(stat/= 0) then
+        Status = WRF_ERR_FATAL_DEALLOCATION_ERR
+        write(msg,*) 'Fatal DEALLOCATION ERROR in ',__FILE__,', line', __LINE__
+        call wrf_debug ( FATAL , msg)
+        return
+      endif
+      deallocate(DH%DimNames, STAT=stat)
+      if(stat/= 0) then
+        Status = WRF_ERR_FATAL_DEALLOCATION_ERR
+        write(msg,*) 'Fatal ALLOCATION ERROR in ',__FILE__,', line', __LINE__
+        call wrf_debug ( FATAL , msg)
+        return
+      endif
+      deallocate(DH%MDVarIDs, STAT=stat)
+      if(stat/= 0) then
+        Status = WRF_ERR_FATAL_DEALLOCATION_ERR
+        write(msg,*) 'Fatal DEALLOCATION ERROR in ',__FILE__,', line', __LINE__
+        call wrf_debug ( FATAL , msg)
+        return
+      endif
+      deallocate(DH%MDVarDimLens, STAT=stat)
+      if(stat/= 0) then
+        Status = WRF_ERR_FATAL_DEALLOCATION_ERR
+        write(msg,*) 'Fatal DEALLOCATION ERROR in ',__FILE__,', line', __LINE__
+        call wrf_debug ( FATAL , msg)
+        return
+      endif
+      deallocate(DH%MDVarNames, STAT=stat)
+      if(stat/= 0) then
+        Status = WRF_ERR_FATAL_DEALLOCATION_ERR
+        write(msg,*) 'Fatal DEALLOCATION ERROR in ',__FILE__,', line', __LINE__
+        call wrf_debug ( FATAL , msg)
+        return
+      endif
+      deallocate(DH%VarIDs, STAT=stat)
+      if(stat/= 0) then
+        Status = WRF_ERR_FATAL_DEALLOCATION_ERR
+        write(msg,*) 'Fatal DEALLOCATION ERROR in ',__FILE__,', line', __LINE__
+        call wrf_debug ( FATAL , msg)
+        return
+      endif
+      deallocate(DH%VarDimLens, STAT=stat)
+      if(stat/= 0) then
+        Status = WRF_ERR_FATAL_DEALLOCATION_ERR
+        write(msg,*) 'Fatal DEALLOCATION ERROR in ',__FILE__,', line', __LINE__
+        call wrf_debug ( FATAL , msg)
+        return
+      endif
+      deallocate(DH%VarNames, STAT=stat)
+      if(stat/= 0) then
+        Status = WRF_ERR_FATAL_DEALLOCATION_ERR
+        write(msg,*) 'Fatal DEALLOCATION ERROR in ',__FILE__,', line', __LINE__
+        call wrf_debug ( FATAL , msg)
+        return
+      endif
+      DH%Free      =.TRUE.
+    endif
+  ENDIF
+  Status = WRF_NO_ERR
+end subroutine deallocHandle
+
 subroutine GetDH(DataHandle,DH,Status)
   use wrf_data
   include 'wrf_status_codes.h'
@@ -1229,6 +1317,7 @@ subroutine ext_ncd_ioclose(DataHandle, Status)
     call wrf_debug ( FATAL , TRIM(msg))
     return
   endif
+
   stat = NF_CLOSE(DH%NCID)
   call netcdf_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
@@ -1236,6 +1325,7 @@ subroutine ext_ncd_ioclose(DataHandle, Status)
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
+  CALL deallocHandle( DataHandle, Status )
   DH%Free=.true.
   return
 end subroutine ext_ncd_ioclose
@@ -1430,6 +1520,7 @@ end subroutine ext_ncd_inquiry
 
 subroutine ext_ncd_ioexit(Status)
   use wrf_data
+  use ext_ncd_support_routines
   implicit none
   include 'wrf_status_codes.h'
   include 'netcdf.inc'
@@ -1445,80 +1536,7 @@ subroutine ext_ncd_ioexit(Status)
     return
   endif
   do i=1,WrfDataHandleMax
-    if(.not.WrfDataHandles(i)%Free) then
-      DH => WrfDataHandles(i)
-      deallocate(DH%Times, STAT=stat)
-      if(stat/= 0) then
-        Status = WRF_ERR_FATAL_DEALLOCATION_ERR
-        write(msg,*) 'Fatal DEALLOCATION ERROR in ',__FILE__,', line', __LINE__
-        call wrf_debug ( FATAL , TRIM(msg))
-        return
-      endif
-      deallocate(DH%DimLengths, STAT=stat)
-      if(stat/= 0) then
-        Status = WRF_ERR_FATAL_DEALLOCATION_ERR
-        write(msg,*) 'Fatal DEALLOCATION ERROR in ',__FILE__,', line', __LINE__
-        call wrf_debug ( FATAL , TRIM(msg))
-        return
-      endif
-      deallocate(DH%DimIDs, STAT=stat)
-      if(stat/= 0) then
-        Status = WRF_ERR_FATAL_DEALLOCATION_ERR
-        write(msg,*) 'Fatal DEALLOCATION ERROR in ',__FILE__,', line', __LINE__
-        call wrf_debug ( FATAL , TRIM(msg))
-        return
-      endif
-      deallocate(DH%DimNames, STAT=stat)
-      if(stat/= 0) then
-        Status = WRF_ERR_FATAL_DEALLOCATION_ERR
-        write(msg,*) 'Fatal DEALLOCATION ERROR in ',__FILE__,', line', __LINE__
-        call wrf_debug ( FATAL , TRIM(msg))
-        return
-      endif
-      deallocate(DH%MDVarIDs, STAT=stat)
-      if(stat/= 0) then
-        Status = WRF_ERR_FATAL_DEALLOCATION_ERR
-        write(msg,*) 'Fatal DEALLOCATION ERROR in ',__FILE__,', line', __LINE__
-        call wrf_debug ( FATAL , TRIM(msg))
-        return
-      endif
-      deallocate(DH%MDVarDimLens, STAT=stat)
-      if(stat/= 0) then
-        Status = WRF_ERR_FATAL_DEALLOCATION_ERR
-        write(msg,*) 'Fatal DEALLOCATION ERROR in ',__FILE__,', line', __LINE__
-        call wrf_debug ( FATAL , TRIM(msg))
-        return
-      endif
-      deallocate(DH%MDVarNames, STAT=stat)
-      if(stat/= 0) then
-        Status = WRF_ERR_FATAL_DEALLOCATION_ERR
-        write(msg,*) 'Fatal DEALLOCATION ERROR in ',__FILE__,', line', __LINE__
-        call wrf_debug ( FATAL , TRIM(msg))
-        return
-      endif
-      deallocate(DH%VarIDs, STAT=stat)
-      if(stat/= 0) then
-        Status = WRF_ERR_FATAL_DEALLOCATION_ERR
-        write(msg,*) 'Fatal DEALLOCATION ERROR in ',__FILE__,', line', __LINE__
-        call wrf_debug ( FATAL , TRIM(msg))
-        return
-      endif
-      deallocate(DH%VarDimLens, STAT=stat)
-      if(stat/= 0) then
-        Status = WRF_ERR_FATAL_DEALLOCATION_ERR
-        write(msg,*) 'Fatal DEALLOCATION ERROR in ',__FILE__,', line', __LINE__
-        call wrf_debug ( FATAL , TRIM(msg))
-        return
-      endif
-      deallocate(DH%VarNames, STAT=stat)
-      if(stat/= 0) then
-        Status = WRF_ERR_FATAL_DEALLOCATION_ERR
-        write(msg,*) 'Fatal DEALLOCATION ERROR in ',__FILE__,', line', __LINE__
-        call wrf_debug ( FATAL , TRIM(msg))
-        return
-      endif
-      exit
-    endif
+    CALL deallocHandle( i , stat ) 
   enddo
   return
 end subroutine ext_ncd_ioexit

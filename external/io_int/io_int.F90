@@ -68,6 +68,17 @@ MODULE module_ext_internal
       NULLIFY ( int_local_output_buffer )
     END SUBROUTINE int_get_fresh_handle
 
+    SUBROUTINE release_handle( i )
+      include 'wrf_io_flags.h'
+      INTEGER, INTENT(IN) :: i
+      IF ( i .LT. 8 .OR. i .GT. int_num_handles ) RETURN
+      IF ( .NOT. int_handle_in_use(i) ) RETURN
+      int_handle_in_use(i) = .FALSE.
+      RETURN
+    END SUBROUTINE release_handle
+
+      
+
     !--- ioinit
     SUBROUTINE init_module_ext_internal
       IMPLICIT NONE
@@ -339,6 +350,7 @@ SUBROUTINE ext_int_ioclose ( DataHandle, Status )
     IF ( int_handle_in_use( DataHandle ) ) THEN
       CLOSE ( DataHandle ) 
     ENDIF
+    CALL release_handle(DataHandle)
   ENDIF
 
   Status = 0

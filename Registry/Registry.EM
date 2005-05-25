@@ -285,7 +285,7 @@ state   real    -              ikjft   chem        2         -     -    -
 # Other Scalars
 state   real    -              ikjftb  scalar      2         -     -    -                                       
 state   real    qni            ikjftb  scalar      2         -     \
-   i01rhusdf=(bdy_interp:dt,rqni_b,rqni_bt)    "QNICE"         "Ice Number concentration" "# kg(-1)"
+   i01rhusdf=(bdy_interp:dt)    "QNICE"         "Ice Number concentration" "# kg(-1)"
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 

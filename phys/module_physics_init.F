@@ -605,7 +605,7 @@ integer myproc
              CALL nl_get_start_month(grid%id,month)
              CALL nl_get_start_day(grid%id,iday)
              CALL gfdletainit(sfull,shalf,pptop,JULYR,MONTH,IDAY,GMT,&
-                           allowed_to_read ,                         &
+                           config_flags,allowed_to_read ,            &
                            kds, kde, kms, kme, kts, kte     )
              etalw = .true.
         CASE DEFAULT
@@ -631,7 +631,7 @@ integer myproc
              CALL nl_get_start_month(grid%id,month)
              CALL nl_get_start_day(grid%id,iday)
              CALL gfdletainit(sfull,shalf,pptop,JULYR,MONTH,IDAY,GMT,&
-                           allowed_to_read,                          &
+                           config_flags,allowed_to_read,             &
                            kds, kde, kms, kme, kts, kte     )
              ENDIF
 

@@ -1,4 +1,4 @@
- Registry file, EM
+# Registry file, EM
 #                                               
 # At the present time this file is managed manually and edited by hand.                                         
 #                                               
@@ -1242,7 +1242,7 @@ halo      HALO_EM_D dyn_em    4:ru_m,rv_m
 halo      HALO_EM_D2_3 dyn_em 24:u_2,v_2,w_2,t_2,ph_2;24:moist_2,chem_2,scalar_2;4:mu_2,al
 halo      HALO_EM_D2_5 dyn_em 48:u_2,v_2,w_2,t_2,ph_2;24:moist_2,chem_2,scalar_2;4:mu_2,al
 halo      HALO_EM_D3_3 dyn_em 24:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,moist_1,moist_2,chem_1,chem_2,scalar_1,scalar_2;4:mu_1,mu_2
-halo      HALO_EM_D3_5 dyn_em 48:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,moist_1,moist_2,chem_1,chem_2,scalar_1,scvalar_2;4:mu_1,mu_2
+halo      HALO_EM_D3_5 dyn_em 48:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,moist_1,moist_2,chem_1,chem_2,scalar_1,scalar_2;4:mu_1,mu_2
 halo      HALO_EM_E_3 dyn_em 24:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,;4:mu_1,mu_2
 halo      HALO_EM_E_5 dyn_em 48:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,;4:mu_1,mu_2
 halo      HALO_EM_MOIST_E_3 dyn_em 24:moist_1,moist_2

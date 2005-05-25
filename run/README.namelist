@@ -171,6 +171,10 @@ Namelist variables for controling the prototype moving nest:
  radt (max_dom)                      = 30,	; minutes between radiation physics calls
                                            recommend 1 min per km of dx (e.g. 10 for 10 km)
 
+ co2tf                               CO2 transmission function flag only for GFDL radiation
+                                     = 0, read CO2 function data from pre-generated file
+                                     = 1, generate CO2 functions internally in the forecast
+
  sf_sfclay_physics (max_dom)         surface-layer option (old bl_sfclay_physics option)
                                      = 0, no surface-layer
                                      = 1, Monin-Obukhov scheme

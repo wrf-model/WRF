@@ -1017,6 +1017,7 @@ rconfig   integer ensdim                  namelist,physics	1            144     
 rconfig   integer     chem_opt            namelist,physics	max_domains    0       rh       "chem_opt"              ""      ""
 rconfig   integer num_land_cat            namelist,physics	1            24       -      "num_land_cat"                  ""      ""
 rconfig   integer num_soil_cat            namelist,physics	1            16       -      "num_soil_cat"                  ""      ""
+rconfig   integer co2tf                   namelist,physics	1            0        -      "GFDL radiation co2 flag"       ""      ""
 
 
 # Dynamics

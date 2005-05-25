@@ -1035,6 +1035,7 @@ rconfig   integer ncnvc                   namelist,physics     max_domains   10 
 rconfig   integer nrads                   namelist,physics     max_domains  200       irh    "nmm input 5"
 rconfig   integer nradl                   namelist,physics     max_domains  200       irh    "nmm input 6"
 rconfig   integer sigma                   namelist,physics     max_domains    1       irh    "nmm input 7"
+rconfig   integer co2tf                   namelist,physics     1              0       -      "GFDL radiation co2 flag"
 
 # Dynamics
 # dynamics option (see package definitions, below)

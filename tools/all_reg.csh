@@ -1,4 +1,5 @@
 #!/bin/csh
+unalias rm
 
 #	This script runs a large number of WRF regression tests.  On the
 #	IBM machines (which at NCAR allow queueing), the jobs are sent to

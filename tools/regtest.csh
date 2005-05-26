@@ -827,6 +827,9 @@ else if ( $ARCH[1] == OSF1 && $clrm == 0 ) then
 	else if ( ( `hostname | cut -c 1-6` == joshua ) && ( -d /data3/mp/$user ) ) then
 		set DEF_DIR	= /data3/mp/${user}/`hostname`
 		if ( ! -d $DEF_DIR ) mkdir $DEF_DIR
+	else if ( ( `hostname | cut -c 1-6` == joshua ) && ( -d /data6a/md/$user ) ) then
+		set DEF_DIR	= /data6a/md/${user}/`hostname`
+		if ( ! -d $DEF_DIR ) mkdir $DEF_DIR
 	else 
 		set DEF_DIR	= /mmmtmp/${user}/`hostname`
 		if ( ! -d $DEF_DIR ) mkdir $DEF_DIR

@@ -52,6 +52,7 @@
  ra_lw_physics                       = 99,
  ra_sw_physics                       = 99,
  radt                                = 30,
+ co2tf                               = 0,
  sf_sfclay_physics                   = 2,
  sf_surface_physics                  = 99,
  bl_pbl_physics                      = 2,

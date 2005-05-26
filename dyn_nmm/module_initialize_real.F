@@ -118,7 +118,7 @@ CONTAINS
       LOGICAL :: stretch_grid, dry_sounding, debug, log_flag_sst
       LOGICAL :: wrf_dm_on_monitor
 
-        REAL, ALLOCATABLE,DIMENSION(:,:):: ADUM2D,SNOWC,HT
+        REAL, ALLOCATABLE,DIMENSION(:,:):: ADUM2D,SNOWC,HT,TG_ALT
 
         INTEGER, ALLOCATABLE, DIMENSION(:):: KHL2,KVL2,KHH2,KVH2, &
                                              KHLA,KHHA,KVLA,KVHA
@@ -140,6 +140,8 @@ CONTAINS
         REAL, PARAMETER:: SALP=2.60
         REAL, PARAMETER:: SNUP=0.040
         REAL:: SMCSUM,STCSUM,SEAICESUM,FISX
+        REAL:: TERM1,APH
+
 
 
         INTEGER:: KHH,KVH,JAM,JA, IHL, IHH, L
@@ -168,6 +170,9 @@ CONTAINS
         REAL, PARAMETER:: THL=210.
         REAL, PARAMETER:: PLQ=70000.
         REAL, PARAMETER:: ERAD=6371200.
+        REAL, PARAMETER:: TG0=258.16
+        REAL, PARAMETER:: TGA=30.0
+
 
 #ifdef DEREF_KLUDGE
 !  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
@@ -179,6 +184,7 @@ CONTAINS
 #include "deref_kludge.h"
 
         if (ALLOCATED(ADUM2D)) DEALLOCATE(ADUM2D)
+        if (ALLOCATED(TG_ALT)) DEALLOCATE(TG_ALT)
 
 #define COPY_IN
 #include <nmm_scalar_derefs.inc>
@@ -673,30 +679,97 @@ CONTAINS
         write(0,*) 'maxval st_input(3): ', maxval(st_input(:,3,:))
         write(0,*) 'maxval st_input(4): ', maxval(st_input(:,4,:))
 
+!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!
+
+        ALLOCATE(TG_ALT(grid%sm31:grid%em31,grid%sm33:grid%em33))
+
+
+      TPH0=TPH0D*DTR
+!     WBD=-((nnxp-1)*DLMD)
+      WBD=-(((ide-1)-1)*DLMD)
+      WB= WBD*DTR
+!     SBD=-((nnyp/2)*DPHD)
+      SBD=-(((jde-1)/2)*DPHD)
+      SB= SBD*DTR
+      DLM=DLMD*DTR
+      DPH=DPHD*DTR
+      TDLM=DLM+DLM
+      TDPH=DPH+DPH
+      WBI=WB+TDLM
+      SBI=SB+TDPH
+!     EBI=WB+(nnxp-2)*TDLM
+      EBI=WB+(ide-2)*TDLM
+      ANBI=SB+(jde-2)*DPH
+      STPH0=SIN(TPH0)
+      CTPH0=COS(TPH0)
+      TSPH=3600./DT
+         DO J=JTS,min(JTE,JDE-1)
+           TLM=WB-TDLM+MOD(J,2)*DLM   !For velocity points on the E grid
+           TPH=SB+float(J-1)*DPH
+           STPH=SIN(TPH)
+           CTPH=COS(TPH)
+           DO I=ITS,MIN(ITE,IDE-1)
+
+        if (I .eq. ITS) THEN
+             TLM=TLM+TDLM*ITS
+        else
+             TLM=TLM+TDLM
+        endif
+
+             TERM1=(STPH0*CTPH*COS(TLM)+CTPH0*STPH)
+             FP=TWOM*(TERM1)
+             F(I,J)=0.5*DT*FP
+           ENDDO
+         ENDDO
+         DO J=JTS,min(JTE,JDE-1)
+           TLM=WB-TDLM+MOD(J+1,2)*DLM   !For mass points on the E grid
+           TPH=SB+float(J-1)*DPH
+           STPH=SIN(TPH)
+           CTPH=COS(TPH)
+           DO I=ITS,MIN(ITE,IDE-1)
+
+        if (I .eq. ITS) THEN
+             TLM=TLM+TDLM*ITS
+        else
+             TLM=TLM+TDLM
+        endif
+
+             TERM1=(STPH0*CTPH*COS(TLM)+CTPH0*STPH)
+             APH=ASIN(TERM1)
+             TG_ALT(I,J)=TG0+TGA*COS(APH)-FIS(I,J)/3333.
+           ENDDO
+         ENDDO
+
+
 
             DO j = jts, MIN(jde-1,jte)
                DO i = its, MIN(ide-1,ite)
-                  IF ( ( landmask(i,j) .LT. 0.5 ) .AND. ( flag_sst .EQ. 1 ) .AND. &
-                         SICE(I,J) .eq. 0. ) THEN
-                     TG(i,j) = sst(i,j)
-                   ELSEIF (SICE(I,J) .eq. 1) THEN
-                     TG(i,j) = 271.16
-                  END IF
+!                  IF ( ( landmask(i,j) .LT. 0.5 ) .AND. ( flag_sst .EQ. 1 ) .AND. &
+!                         SICE(I,J) .eq. 0. ) THEN
+!                     TG(i,j) = sst(i,j)
+!                   ELSEIF (SICE(I,J) .eq. 1) THEN
+!                     TG(i,j) = 271.16
+!                   END IF
 
-       if (TG(I,J) .lt. 200.) then
+        if (TG(I,J) .lt. 200.) then   ! only use default TG_ALT definition if
+                                      ! not getting TGROUND from SI
+                TG(I,J)=TG_ALT(I,J)
+        endif
+
+       if (TG(I,J) .lt. 200. .or. TG(I,J) .gt. 320.) then
                write(message,*) 'problematic TG point at : ', I,J
                CALL wrf_message( message )
-               TG(I,J)=amax1(SST(I,J),SST(I,J))
        endif
 
-        if (TG(I,J) .lt. 200. .or. TG(I,J) .gt. 320.) then
-        write(0,*) 'bad bottom boundary temp into process_soil_real: ', I,J,TG(I,J)
-        endif
+        adum2d(i,j)=nmm_tsk(I,J)+sst(I,J)
 
                END DO
             END DO
 
-  CALL process_soil_real ( NMM_TSK, TG , &
+        DEALLOCATE(TG_ALT)
+
+  CALL process_soil_real ( adum2d, TG , &
      landmask, sst, &
      st_input, sm_input, sw_input, &
      st_levels_input , sm_levels_input , &
@@ -865,24 +938,6 @@ CONTAINS
 
        enddo
        enddo
-
-      TPH0=TPH0D*DTR
-      WBD=-(((ide-1)-1)*DLMD)
-      WB= WBD*DTR
-      SBD=-(((jde-1)/2)*DPHD)
-      SB= SBD*DTR
-      DLM=DLMD*DTR
-      DPH=DPHD*DTR
-      TDLM=DLM+DLM
-      TDPH=DPH+DPH
-      WBI=WB+TDLM
-      SBI=SB+TDPH
-      EBI=WB+((ide-1)-2)*TDLM
-      ANBI=SB+((jde-1)-3)*DPH
-      STPH0=SIN(TPH0)
-      CTPH0=COS(TPH0)
-      TSPH=3600./DT
-
 
 !       DTAD=1 in const.f of intrst code
       DTAD=1.0

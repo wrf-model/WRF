@@ -48,7 +48,7 @@
 
 !------------------------------------------------------------------------------
 ! !PRIVATE TYPES:
-!     private
+     private
 !------------------------------------------------------------------------------
 !     ! ESMF_Alarm
 !
@@ -83,25 +83,26 @@
 ! !PUBLIC MEMBER FUNCTIONS:
       public ESMF_AlarmSet
       public ESMF_AlarmGet
-      public ESMF_AlarmGetRingInterval
-      public ESMF_AlarmSetRingInterval
-      public ESMF_AlarmGetRingTime
-      public ESMF_AlarmSetRingTime
-      public ESMF_AlarmGetPrevRingTime
-      public ESMF_AlarmSetPrevRingTime
-      public ESMF_AlarmGetStopTime
-      public ESMF_AlarmSetStopTime
+!      public ESMF_AlarmGetRingInterval
+!      public ESMF_AlarmSetRingInterval
+!      public ESMF_AlarmGetRingTime
+!      public ESMF_AlarmSetRingTime
+!      public ESMF_AlarmGetPrevRingTime
+!      public ESMF_AlarmSetPrevRingTime
+!      public ESMF_AlarmGetStopTime
+!      public ESMF_AlarmSetStopTime
       public ESMF_AlarmEnable
       public ESMF_AlarmDisable
       public ESMF_AlarmRingerOn
       public ESMF_AlarmRingerOff
       public ESMF_AlarmIsRinging
-      public ESMF_AlarmCheckRingTime
+!      public ESMF_AlarmCheckRingTime
+      public operator(==)
  
 ! Required inherited and overridden ESMF_Base class methods
 
-      public ESMF_AlarmRead
-      public ESMF_AlarmWrite
+!      public ESMF_AlarmRead
+!      public ESMF_AlarmWrite
       public ESMF_AlarmValidate
       public ESMF_AlarmPrint
 

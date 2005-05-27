@@ -112,19 +112,21 @@
 ! !PUBLIC TYPES:
       public MONTHS_PER_YEAR
       public ESMF_CalendarType
-      public ESMF_CAL_GREGORIAN, ESMF_CAL_JULIAN, ESMF_CAL_NOLEAP, &
-             ESMF_CAL_360DAY, ESMF_CAL_GENERIC, ESMF_CAL_NOCALENDAR
+      public ESMF_CAL_GREGORIAN, ESMF_CAL_NOLEAP, &
+             ESMF_CAL_360DAY, ESMF_CAL_NOCALENDAR
+!      public ESMF_CAL_JULIAN
+!      public ESMF_CAL_GENERIC
       public ESMF_Calendar
 !------------------------------------------------------------------------------
 !
 ! !PUBLIC MEMBER FUNCTIONS:
       public ESMF_CalendarSet
-      public ESMF_CalendarSetGeneric
+!      public ESMF_CalendarSetGeneric
 
 ! Required inherited and overridden ESMF_Base class methods
 
-      public ESMF_CalendarRead
-      public ESMF_CalendarWrite
+!      public ESMF_CalendarRead
+!      public ESMF_CalendarWrite
       public ESMF_CalendarValidate
       public ESMF_CalendarPrint
 !EOPI

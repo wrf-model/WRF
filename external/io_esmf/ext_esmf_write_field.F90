@@ -23,6 +23,7 @@ SUBROUTINE ext_esmf_write_field ( DataHandle , DateStr , VarName , Field , Field
   integer ,dimension(*)         ,intent(in)    :: PatchStart,  PatchEnd
   integer                       ,intent(out)   :: Status
 
+!$$$here...  clean up
   integer ips,ipe,jps,jpe
   integer ims,ime,jms,jme
   integer idex,ierr,i,j
@@ -32,7 +33,8 @@ SUBROUTINE ext_esmf_write_field ( DataHandle , DateStr , VarName , Field , Field
   integer idts
   real*8 data_time
   CHARACTER*256 RollOverDeathDate
-  CHARACTER*80 mess, timestr
+  CHARACTER*256 mess
+  CHARACTER*80 timestr
   INTEGER, EXTERNAL :: cast_to_int
 
 !  REAL, DIMENSION( MemoryStart(1):MemoryEnd(1), &
@@ -47,7 +49,19 @@ SUBROUTINE ext_esmf_write_field ( DataHandle , DateStr , VarName , Field , Field
 
   INTEGER inttypesize, realtypesize
 
-write(0,*)"write field : called "
+!$$$
+!$$$  NOTE:  DUE TO CICO, we must delay populating Fields until after training.  
+!$$$         Create an empty *exportState* during open_for_write.  Then 
+!$$$         populate it with empty Fields during training.  Perform the 
+!$$$         actual communication during the first "real" read, and then 
+!$$$         copy-out from each field prior to each return.  Release 
+!$$$         the Bundle and all of its Fields during "close".  With the 
+!$$$         current design, it just does not make sense to hand ESMF a 
+!$$$         FORTRAN POINTER to Field.  
+!$$$
+
+write(mess,*)"write field : called "
+call wrf_debug( 300, mess )
   IF ( .NOT. int_valid_handle( DataHandle ) ) THEN
     CALL wrf_error_fatal("ext_esmf_write_field: invalid data handle" )
   ENDIF
@@ -66,7 +80,7 @@ write(0,*)"write field : called "
     typesize = itypesize
     mcel_type = MCEL_DATATYPE_INT32
   ELSE IF ( FieldType .EQ. WRF_LOGICAL ) THEN
-    CALL wrf_error_fatal( 'io_int.F90: ext_esmf_write_field, WRF_LOGICAL not yet supported')
+    CALL wrf_error_fatal( 'io_esmf.F90: ext_esmf_write_field, WRF_LOGICAL not yet supported')
   ENDIF
 
   ips = PatchStart(1) ; ipe = PatchEnd(1) 
@@ -74,7 +88,8 @@ write(0,*)"write field : called "
   ims = MemoryStart(1) ; ime = MemoryEnd(1)
   jms = MemoryStart(2) ; jme = MemoryEnd(2)
 
-write(0,*)"write field : okay_to_write ",okay_to_write( DataHandle )
+write(mess,*)"write field : okay_to_write ",okay_to_write( DataHandle )
+call wrf_debug( 300, mess )
 
   IF ( okay_to_write( DataHandle ) ) THEN
     IF ( TRIM(VarName) .NE. TRIM(LAT_R(DataHandle)) .AND. TRIM(VarName) .NE. TRIM(LON_R(DataHandle)) .AND. &
@@ -83,13 +98,6 @@ write(0,*)"write field : okay_to_write ",okay_to_write( DataHandle )
         IF ( ALLOCATED( xlat ) .AND. ALLOCATED( xlong ) ) THEN
           CALL setLocationsXY( open_file_descriptors(2,DataHandle), xlong, xlat, ierr )
           IF ( ierr .NE. 0 ) CALL wrf_error_fatal( "ext_esmf_write_field: setLocationsXY" )
-        ELSE IF ( deltax .gt. 0. .and. deltay .gt. 0. .and. originx .gt. 0. .and. originy .gt. 0. ) THEN
-          dxm(1) = deltax
-          dxm(2) = deltay
-          call SetDX ( open_file_descriptors(2,DataHandle), dxm, ierr)
-          origin(1) = originx
-          origin(2) = originy
-          call SetOrigin ( open_file_descriptors(2,DataHandle), origin, ierr)
         ELSE
           CALL wrf_error_fatal( "ext_esmf_write_field:noLocationsXY")
         ENDIF
@@ -174,7 +182,8 @@ write(0,*)"write field : okay_to_write ",okay_to_write( DataHandle )
         CALL copy_field_to_cache_d2d ( Field, xlong, ips, ipe, jps, jpe, ims, ime, jms, jme )
       ENDIF
     ELSE IF ( TRIM(VarName) .EQ. TRIM(LANDMASK_I(DataHandle)) ) THEN
-write(0,*)'write_field: ALLOCATED(mask)', ALLOCATED(mask)
+write(mess,*)'write_field: ALLOCATED(mask)', ALLOCATED(mask)
+call wrf_debug( 300, mess )
       IF ( ALLOCATED(mask) ) THEN
         DEALLOCATE(mask)
       ENDIF
@@ -200,15 +209,6 @@ write(0,*)'write_field: ALLOCATED(mask)', ALLOCATED(mask)
         gSize(2) = jpe-jps+1
         CALL setSize ( open_file_descriptors(2,DataHandle), gSize, ierr )
         IF ( ierr .NE. 0 ) CALL wrf_error_fatal("ext_esmf_write_field: setSize")
-
-! these will have been set in the call to open_for_write_begin from sysdepinfo
-        IF ( mcel_npglobal .NE. -1 .AND. mcel_mystart .NE. -1 .AND.  &
-             mcel_mnproc   .NE. -1 .AND. mcel_myproc  .NE. -1     ) THEN
-          call setglobalsize(open_file_descriptors(2,DataHandle),mcel_npglobal,ierr)
-          call setglobalstart(open_file_descriptors(2,DataHandle),mcel_mystart,ierr)
-          call setprocinfo(open_file_descriptors(1,DataHandle),mcel_mnproc,mcel_myproc,ierr)
-        ENDIF
-        mcel_npglobal=-1 ; mcel_mystart=-1 ; mcel_mnproc=-1 ; mcel_myproc=-1
 
       ENDIF
       IF ( opened_for_read( DataHandle) ) THEN

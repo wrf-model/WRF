@@ -231,6 +231,8 @@ CONTAINS
 #ifdef NMM_CORE
       CALL rsl_set_padarea ( 6 )
 #endif
+      CALL nl_set_nproc_x ( 1, nproc_ln )
+      CALL nl_set_nproc_y ( 1, nproc_lt )
       invalid_message_value = RSL_INVALID
       x_period_flag         = RSL_M
       y_period_flag         = RSL_N

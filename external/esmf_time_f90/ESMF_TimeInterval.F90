@@ -83,14 +83,14 @@
 ! !PUBLIC MEMBER FUNCTIONS:
       public ESMF_TimeIntervalGet
       public ESMF_TimeIntervalSet
-      public ESMF_TimeIntervalGetString
+      public ESMFold_TimeIntervalGetString
       public ESMF_TimeIntervalAbsValue
       public ESMF_TimeIntervalNegAbsValue
 
 ! Required inherited and overridden ESMF_Base class methods
 
-      public ESMF_TimeIntervalRead
-      public ESMF_TimeIntervalWrite
+!      public ESMF_TimeIntervalRead
+!      public ESMF_TimeIntervalWrite
       public ESMF_TimeIntervalValidate
       public ESMF_TimeIntervalPrint
 
@@ -618,10 +618,10 @@
 
 !------------------------------------------------------------------------------
 !BOP
-! !IROUTINE:  ESMF_TimeIntervalGetString - Get time interval value in string format
+! !IROUTINE:  ESMFold_TimeIntervalGetString - Get time interval value in string format
 
 ! !INTERFACE:
-      subroutine ESMF_TimeIntervalGetString(timeinterval, TimeString, rc)
+      subroutine ESMFold_TimeIntervalGetString(timeinterval, TimeString, rc)
 
 ! !ARGUMENTS:
       type(ESMF_TimeInterval), intent(in) :: timeinterval
@@ -660,7 +660,7 @@
       call c_ESMC_TimeIntervalGetString(timeinterval, TimeString, rc)
 #endif
 
-      end subroutine ESMF_TimeIntervalGetString
+      end subroutine ESMFold_TimeIntervalGetString
 
 !------------------------------------------------------------------------------
 !BOP

@@ -9,7 +9,7 @@
     USE module_io_wrf
     USE module_date_time
     USE module_bc_time_utilities
-    USE WRF_ESMF_MOD
+    USE module_comp
     IMPLICIT NONE
 #include <wrf_io_flags.h>
 #include <wrf_status_codes.h>
@@ -40,8 +40,8 @@
     INTEGER       IBDY, NAMELEN
     LOGICAL wrf_dm_on_monitor
     EXTERNAL wrf_dm_on_monitor
-    Type(ESMF_Time)    time, oldtime, newtime, currtime
-    Type(ESMF_TimeInterval)    timetonext
+    Type(WRF_COMP_Time)    time, oldtime, newtime, currtime
+    Type(WRF_COMP_TimeInterval)    timetonext
     CHARACTER*19  new_date
     CHARACTER*24  base_date
     CHARACTER*80  fname
@@ -314,7 +314,7 @@
         CASE ( model_input_only, aux_model_input1_only, aux_model_input2_only,       &
                aux_model_input3_only, aux_model_input4_only, aux_model_input5_only )
             CALL wrf_atotime( current_date(1:19), time )
-            CALL ESMF_ClockGet( grid%domain_clock, CurrTime=currtime, rc=ierr )
+            CALL WRF_COMP_ClockGet( grid%domain_clock, CurrTime=currtime, rc=ierr )
             CALL wrf_clockprint(150, grid%domain_clock, &
                                 'DEBUG input_wrf():  get currTime from grid%domain_clock,')
             IF ( time .NE. currtime ) THEN

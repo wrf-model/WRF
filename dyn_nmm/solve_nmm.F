@@ -249,10 +249,8 @@
 !***  FIRST TIME THROUGH TOTAL_TIME_STEPS IS ZERO.
 !***  IT IS INCREMENTED IN SOLVE_INTERFACE.
 !***
-      CALL ESMF_ClockGet(GRID%DOMAIN_CLOCK,ADVANCEcOUNT=NTSD,RC=RC)
+      CALL WRF_COMP_ClockGet(GRID%DOMAIN_CLOCK,ADVANCEcOUNT=NTSD,RC=RC)
       LAST_TIME=GRID%STOP_TIME.EQ.GRID%CURRENT_TIME+GRID%STEP_TIME
-!
-!      CALL ESMF_TimeGetString(GRID%CURRENT_TIME,MESSAGE,RC=RC)
 !
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------

@@ -1,21 +1,23 @@
-!WRF:DRIVER_LAYER:ESMF
+!WRF:DRIVER_LAYER:COMP
 !
 
 MODULE module_wrf_setservices
 !<DESCRIPTION>
-! This module defines WRF ESMF "Set Services" method wrf_register().  
-! This module is only built if the ESMF superstructure is used.  
+! This module defines WRF "Set Services" method wrf_register().  
+! This module is only built if ESMF is used for coupling.  
 !</DESCRIPTION>
 
-   USE WRF_ESMF_MOD
-   USE module_wrf_esmf_super, ONLY: wrf_init, wrf_run, wrf_finalize
+#ifdef ESMF_HACK
+
+   USE module_wrf_comp_super, ONLY: wrf_init, wrf_run, wrf_finalize
+   USE module_comp
 
    IMPLICIT NONE
 
    ! everything is private by default
    PRIVATE
 
-   ! Public entry point for ESMF_GridCompSetServices()
+   ! Public entry point for WRF_COMP_GridCompSetServices()
    PUBLIC WRF_register
 
 
@@ -23,7 +25,7 @@ CONTAINS
 
 
    SUBROUTINE wrf_register(gcomp, rc)
-     TYPE(ESMF_GridComp), INTENT(INOUT) :: gcomp
+     TYPE(WRF_COMP_GridComp), INTENT(INOUT) :: gcomp
      INTEGER, INTENT(OUT) :: rc
      INTEGER :: finalrc
 !
@@ -37,39 +39,40 @@ CONTAINS
 !
 !     The arguments are:
 !       gcomp           Component
-!       rc              Return code; equals ESMF_SUCCESS if there are no errors,
-!                       otherwise ESMF_FAILURE.
+!       rc              Return code; equals WRF_COMP_SUCCESS if there are no errors,
+!                       otherwise WRF_COMP_FAILURE.
 !</DESCRIPTION>
 
-     finalrc = ESMF_SUCCESS
+     finalrc = WRF_COMP_SUCCESS
      ! Register the callback routines.
-     call ESMF_GridCompSetEntryPoint(gcomp, ESMF_SETINIT, &
-                                     wrf_init, ESMF_SINGLEPHASE, rc)
-     IF ( rc /= ESMF_SUCCESS) THEN
+     call WRF_COMP_GridCompSetEntryPoint(gcomp, WRF_COMP_SETINIT, &
+                                     wrf_init, WRF_COMP_SINGLEPHASE, rc)
+     IF ( rc /= WRF_COMP_SUCCESS) THEN
         ! TBH:  replace "print"
-        print *,'ERROR:  ESMF_GridCompSetEntryPoint(wrf_init) failed with rc = ',rc
+        print *,'ERROR:  WRF_COMP_GridCompSetEntryPoint(wrf_init) failed with rc = ',rc
         finalrc = rc
      ENDIF
-     call ESMF_GridCompSetEntryPoint(gcomp, ESMF_SETRUN, &
-                                     wrf_run, ESMF_SINGLEPHASE, rc)
-     IF ( rc /= ESMF_SUCCESS) THEN
+     call WRF_COMP_GridCompSetEntryPoint(gcomp, WRF_COMP_SETRUN, &
+                                     wrf_run, WRF_COMP_SINGLEPHASE, rc)
+     IF ( rc /= WRF_COMP_SUCCESS) THEN
         ! TBH:  replace "print"
-        print *,'ERROR:  ESMF_GridCompSetEntryPoint(wrf_run) failed with rc = ',rc
+        print *,'ERROR:  WRF_COMP_GridCompSetEntryPoint(wrf_run) failed with rc = ',rc
         finalrc = rc
      ENDIF
-     call ESMF_GridCompSetEntryPoint(gcomp, ESMF_SETFINAL, &
-                                     wrf_finalize, ESMF_SINGLEPHASE, rc)
-     IF ( rc /= ESMF_SUCCESS) THEN
+     call WRF_COMP_GridCompSetEntryPoint(gcomp, WRF_COMP_SETFINAL, &
+                                     wrf_finalize, WRF_COMP_SINGLEPHASE, rc)
+     IF ( rc /= WRF_COMP_SUCCESS) THEN
         ! TBH:  replace "print"
-        print *,'ERROR:  ESMF_GridCompSetEntryPoint(wrf_finalize) failed with rc = ',rc
+        print *,'ERROR:  WRF_COMP_GridCompSetEntryPoint(wrf_finalize) failed with rc = ',rc
         finalrc = rc
      ENDIF
-     print *, "WRF-ESMF:  Registered Initialize, Run, and Finalize routines"
+     print *, "WRF:  Registered Initialize, Run, and Finalize routines"
 
      rc = finalrc
 
    END SUBROUTINE wrf_register
 
+#endif
 
 END MODULE module_wrf_setservices
 

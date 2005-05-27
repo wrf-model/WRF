@@ -35,8 +35,8 @@ include ../configure.wrf
 
 LIBTARGET    =  framework
 TARGETDIR    =  ./
-$(LIBTARGET) :  $(MODULES) $(EXTRAMODULES) $(OBJS) $(SPECIAL)
-		$(AR) ../main/libwrflib.a $(MODULES) $(EXTRAMODULES) $(OBJS)
+$(LIBTARGET) :  $(MODULES) $(OBJS) $(SPECIAL)
+		$(AR) ../main/libwrflib.a $(MODULES) $(OBJS)
 		$(RANLIB) ../main/libwrflib.a
 
 

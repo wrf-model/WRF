@@ -82,29 +82,29 @@
       public ESMF_ClockSet
       public ESMF_ClockSetOLD
       public ESMF_ClockGet
-      public ESMF_ClockGetAdvanceCount
-      public ESMF_ClockGetTimeStep
-      public ESMF_ClockSetTimeStep
-      public ESMF_ClockGetCurrTime
-      public ESMF_ClockSetCurrTime
-      public ESMF_ClockGetStartTime
-      public ESMF_ClockGetStopTime
-      public ESMF_ClockGetRefTime
-      public ESMF_ClockGetPrevTime
-      public ESMF_ClockGetCurrSimTime
-      public ESMF_ClockGetPrevSimTime
+!      public ESMF_ClockGetAdvanceCount
+!      public ESMF_ClockGetTimeStep
+!      public ESMF_ClockSetTimeStep
+!      public ESMF_ClockGetCurrTime
+!      public ESMF_ClockSetCurrTime
+!      public ESMF_ClockGetStartTime
+!      public ESMF_ClockGetStopTime
+!      public ESMF_ClockGetRefTime
+!      public ESMF_ClockGetPrevTime
+!      public ESMF_ClockGetCurrSimTime
+!      public ESMF_ClockGetPrevSimTime
       public ESMF_ClockAddAlarm
       public ESMF_ClockGetAlarmList
-      public ESMF_ClockGetNumAlarms
-      public ESMF_ClockSyncToWallClock
+!      public ESMF_ClockGetNumAlarms
+!      public ESMF_ClockSyncToWallClock
       public ESMF_ClockAdvance
       public ESMF_ClockIsStopTime
       public ESMF_ClockStopTimeDisable
 
 ! Required inherited and overridden ESMF_Base class methods
 
-      public ESMF_ClockRead
-      public ESMF_ClockWrite
+!      public ESMF_ClockRead
+!      public ESMF_ClockWrite
       public ESMF_ClockValidate
       public ESMF_ClockPrint
 !EOPI

@@ -1058,7 +1058,7 @@ SUBROUTINE print_a_time( time )
    type(ESMF_Time) time
    character*128 :: s
    integer rc
-   CALL ESMF_TimeGetString( time, s, rc )
+   CALL ESMFold_TimeGetString( time, s, rc )
    print *,'Print a time|',TRIM(s),'|'
    write(0,*)'Print a time|',TRIM(s),'|'
    return
@@ -1070,7 +1070,7 @@ SUBROUTINE print_a_timeinterval( time )
    type(ESMF_TimeInterval) time
    character*128 :: s
    integer rc
-   CALL ESMF_TimeIntervalGetString( time, s, rc )
+   CALL ESMFold_TimeIntervalGetString( time, s, rc )
    print *,'Print a time interval|',TRIM(s),'|'
    write(0,*)'Print a time interval|',TRIM(s),'|'
    return

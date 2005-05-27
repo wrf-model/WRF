@@ -6,7 +6,7 @@ SUBROUTINE wrf_auxinput4in ( fid , grid , config_flags , switch , ierr )
     USE module_io_wrf
     USE module_date_time
     USE module_bc_time_utilities
-    USE WRF_ESMF_MOD
+    USE module_comp
     IMPLICIT NONE
 #include <wrf_io_flags.h>
 #include <wrf_status_codes.h>
@@ -37,8 +37,8 @@ SUBROUTINE wrf_auxinput4in ( fid , grid , config_flags , switch , ierr )
     INTEGER       IBDY, NAMELEN
     LOGICAL wrf_dm_on_monitor
     EXTERNAL wrf_dm_on_monitor
-    Type(ESMF_Time)    time, oldtime, newtime
-    Type(ESMF_TimeInterval)    timetonext
+    Type(WRF_COMP_Time)    time, oldtime, newtime
+    Type(WRF_COMP_TimeInterval)    timetonext
     CHARACTER*19  new_date
     CHARACTER*24  base_date
     INTEGER idt

@@ -222,9 +222,10 @@
 
 ! !PUBLIC TYPES:
 
-      public ESMF_STATE_UNINIT, ESMF_STATE_READY, &
-             ESMF_STATE_UNALLOCATED, ESMF_STATE_ALLOCATED, &
-             ESMF_STATE_BUSY, ESMF_STATE_INVALID
+      public ESMF_STATE_INVALID
+!      public ESMF_STATE_UNINIT, ESMF_STATE_READY, &
+!             ESMF_STATE_UNALLOCATED, ESMF_STATE_ALLOCATED, &
+!             ESMF_STATE_BUSY
 
       public ESMF_DATA_INTEGER, ESMF_DATA_REAL, &
              ESMF_DATA_LOGICAL, ESMF_DATA_CHARACTER
@@ -246,11 +247,15 @@
       public ESMF_VERSION_STRING 
 
       public ESMF_Status, ESMF_Pointer, ESMF_DataType, ESMF_DataKind
-      public ESMF_DataValue, ESMF_Attribute, ESMF_MemIndex
-      public ESMF_BasePointer, ESMF_Base
+      public ESMF_DataValue, ESMF_Attribute
+!      public ESMF_MemIndex
+!      public ESMF_BasePointer
+      public ESMF_Base
 
-      public ESMF_AxisIndex, ESMF_AxisIndexInit, ESMF_AxisIndexGet
-      public ESMF_Logical, ESMF_TF_TRUE, ESMF_TF_FALSE
+      public ESMF_AxisIndex, ESMF_AxisIndexGet
+!      public ESMF_AxisIndexInit
+      public ESMF_Logical
+!      public ESMF_TF_TRUE, ESMF_TF_FALSE
 
 ! !PUBLIC MEMBER FUNCTIONS:
 !
@@ -260,7 +265,7 @@
 !     routines need to be specialized by the higher level objects.
 !
 !   Base class methods
-       public ESMF_BaseInit
+!      public ESMF_BaseInit
    
 !      public ESMF_BaseGetConfig
 !      public ESMF_BaseSetConfig

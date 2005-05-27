@@ -50,8 +50,8 @@ END SUBROUTINE wrf_debug
 
 SUBROUTINE wrf_message( str )
   USE module_wrf_error
-#ifdef WRF_ESMF_LOGERR
-  USE ESMF_Mod
+#ifdef WRF_COMP_LOGERR
+  USE module_comp
 #endif
   IMPLICIT NONE
   CHARACTER*(*) str
@@ -59,22 +59,22 @@ SUBROUTINE wrf_message( str )
   write(0,*) str
 #endif
   print*, str
-#ifdef WRF_ESMF_LOGERR
-  CALL ESMF_LogWrite( str, ESMF_LOG_INFO )
+#ifdef WRF_COMP_LOGERR
+  CALL WRF_COMP_LogWrite( str, WRF_COMP_LOG_INFO )
 #endif
 END SUBROUTINE wrf_message
 
 ! intentionally write to stderr only
 SUBROUTINE wrf_message2( str )
   USE module_wrf_error
-#ifdef WRF_ESMF_LOGERR
-  USE ESMF_Mod
+#ifdef WRF_COMP_LOGERR
+  USE module_comp
 #endif
   IMPLICIT NONE
   CHARACTER*(*) str
   write(0,*) str
-#ifdef WRF_ESMF_LOGERR
-  CALL ESMF_LogWrite( str, ESMF_LOG_INFO )
+#ifdef WRF_COMP_LOGERR
+  CALL WRF_COMP_LogWrite( str, WRF_COMP_LOG_INFO )
 #endif
 END SUBROUTINE wrf_message2
 

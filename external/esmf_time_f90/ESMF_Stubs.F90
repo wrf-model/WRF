@@ -6,7 +6,14 @@ MODULE ESMF_Stubs
 
    IMPLICIT NONE
 
+   PRIVATE
+
 ! Bogus typedefs
+   TYPE ESMF_Grid
+      SEQUENCE
+      INTEGER :: dummy
+   END TYPE
+
    TYPE ESMF_GridComp
       SEQUENCE
       INTEGER :: dummy
@@ -22,6 +29,8 @@ MODULE ESMF_Stubs
       INTEGER :: dummy
    END TYPE
 
+   PUBLIC ESMF_Grid, ESMF_GridComp, ESMF_State, ESMF_VM
+   PUBLIC ESMF_Initialize, ESMF_Finalize
 
 CONTAINS
 

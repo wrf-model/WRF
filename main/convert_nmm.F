@@ -10,14 +10,14 @@ PROGRAM convert_nmm
    USE module_bc
    USE module_configure
    USE module_timing
-   USE WRF_ESMF_MOD
+   USE module_comp
 #ifdef DM_PARALLEL
    USE module_dm
 #endif
 
    IMPLICIT NONE
 
-   TYPE(ESMF_TimeInterval) :: time_interval
+   TYPE(WRF_COMP_TimeInterval) :: time_interval
 
    INTERFACE
      SUBROUTINE Setup_Timekeeping( grid )
@@ -91,7 +91,7 @@ PROGRAM convert_nmm
 #endif
 
    CALL init_modules(1)   ! Phase 1 returns after MPI_INIT() (if it is called)
-   CALL ESMF_Initialize( defaultCalendar=ESMF_CAL_GREGORIAN, rc=rc )
+   CALL WRF_COMP_Initialize( defaultCalendar=WRF_COMP_CAL_GREGORIAN, rc=rc )
    CALL init_modules(2)   ! Phase 2 resumes after MPI_INIT() (if it is called)
 
 #ifdef DM_PARALLEL
@@ -123,9 +123,9 @@ PROGRAM convert_nmm
    CALL set_scalar_indices_from_config ( grid%id , idum1, idum2 )
 
    CALL Setup_Timekeeping ( grid )
-   CALL ESMF_TimeIntervalSet ( time_interval , S=model_config_rec%interval_seconds, rc=rc )
-   CALL ESMF_ClockSet ( grid%domain_clock , timeStep=time_interval , rc=rc )
-   CALL ESMF_ClockGet ( grid%domain_clock, currTime=grid%current_time , rc=rc )
+   CALL WRF_COMP_TimeIntervalSet ( time_interval , S=model_config_rec%interval_seconds, rc=rc )
+   CALL WRF_COMP_ClockSet ( grid%domain_clock , timeStep=time_interval , rc=rc )
+   CALL WRF_COMP_ClockGet ( grid%domain_clock, currTime=grid%current_time , rc=rc )
    CALL wrf_timetoa ( grid%current_time, message )
    write(0,*)Trim(message)
 
@@ -165,9 +165,9 @@ print *,'init_typ  =',model_config_rec%real_data_init_type
 
    !  Override stop time with value computed above.
    CALL wrf_atotime( end_date_char, grid%stop_time )
-   CALL ESMF_ClockSet ( grid%domain_clock , StopTime=grid%stop_time, rc=rc )
-   CALL wrf_check_error( ESMF_SUCCESS, rc, &
-                         'ESMF_ClockSet(grid%domain_clock) FAILED', &
+   CALL WRF_COMP_ClockSet ( grid%domain_clock , StopTime=grid%stop_time, rc=rc )
+   CALL wrf_check_error( WRF_COMP_SUCCESS, rc, &
+                         'WRF_COMP_ClockSet(grid%domain_clock) FAILED', &
                          __FILE__ , &
                          __LINE__  )
 
@@ -255,15 +255,15 @@ print *,'init_typ  =',model_config_rec%real_data_init_type
        CALL wrf_error_fatal( 'real: error opening wrfbdy for writing' )
      ENDIF
 
-     CALL ESMF_ClockGet ( grid%domain_clock, currTime=grid%current_time , rc=rc )
+     CALL WRF_COMP_ClockGet ( grid%domain_clock, currTime=grid%current_time , rc=rc )
 
      current_date_char = current_date(1:19)
      CALL geth_newdate ( next_date_char, current_date_char, 3600 )
      current_date = next_date_char // '.0000'
 
      CALL output_boundary ( id, grid , config_flags , ierr )
-     IF ( .NOT. ESMF_ClockIsStopTime(grid%domain_clock ,rc=rc) ) THEN
-        CALL ESMF_ClockAdvance( grid%domain_clock, rc=rc )
+     IF ( .NOT. WRF_COMP_ClockIsStopTime(grid%domain_clock ,rc=rc) ) THEN
+        CALL WRF_COMP_ClockAdvance( grid%domain_clock, rc=rc )
      ENDIF
 
      ntsd = (bdy_frame-1)*(3600./dt_from_file)
@@ -280,6 +280,6 @@ print *,'init_typ  =',model_config_rec%real_data_init_type
 
    CALL wrf_shutdown
 
-   CALL ESMF_Finalize( rc=rc )
+   CALL WRF_COMP_Finalize( rc=rc )
 
 END PROGRAM convert_nmm

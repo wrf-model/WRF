@@ -14,7 +14,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
    USE module_nesting
    USE module_configure
    USE module_timing
-   USE WRF_ESMF_MOD
+   USE module_comp
 
    IMPLICIT NONE
 
@@ -34,7 +34,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
 ! stop_subtime value is arbitrary and does not have to be the same as
 ! time that the domain finished integrating.  The simulation stop time
 ! for the grid is known to the grid's clock (grid%domain_clock) and that
-! is checked with a call to ESMF_ClockIsStopTime prior to beginning the
+! is checked with a call to WRF_COMP_ClockIsStopTime prior to beginning the
 ! loop over time period that is specified by the
 ! current_time/stop_subtime interval.
 ! 
@@ -43,12 +43,14 @@ RECURSIVE SUBROUTINE integrate ( grid )
 ! (<a href="setup_timekeeping.html">setup_timekeeping</a>) at the time
 ! that the domain is initialized.
 ! The lower-level time library and the type declarations for the times
-! and time intervals used are defined in external/esmf_time_f90 which, 
-! depending on build-time options, either incorporates the embedded ESMF 
-! subset implementation contained in that directory or incorporates a 
-! site-specific installation of the ESMF library.  Note that arithmetic and 
-! comparison is performed on these data types using F90 operator overloading, 
-! also defined in that library.
+! and time intervals used are defined either in 
+! external/esmf_time_f90/module_comp.F90 or in 
+! external/io_esmf/module_comp.F90 depending on a build-time decision to 
+! incorporate either the embedded ESMF subset implementation contained in 
+! external/esmf_time_f90 or to use a site-specific installation of the ESMF 
+! library.  This decision is made during the configuration step of the WRF 
+! build process.  Note that arithmetic and comparison is performed on these 
+! data types using F90 operator overloading, also defined in that library.
 ! 
 ! This routine is the lowest level of the WRF Driver Layer and for the most
 ! part the WRF routines that are called from here are in the topmost level
@@ -66,7 +68,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
 ! Flow of control
 ! 
 ! 1. Check to see that the domain is not finished 
-! by testing the value returned by ESMF_ClockIsStopTime for the
+! by testing the value returned by WRF_COMP_ClockIsStopTime for the
 ! domain.
 ! 
 ! 2. <a href=model_to_grid_config_rec.html>Model_to_grid_config_rec</a> is called to load the local config_flags
@@ -75,7 +77,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
 ! structures are defined in frame/module_configure.F.
 ! 
 ! 3. The current time of the domain is retrieved from the domain's clock
-! using ESMF_ClockGet.  There is another call to ESMF_ClockGet
+! using WRF_COMP_ClockGet.  There is another call to WRF_COMP_ClockGet
 ! inside the WHILE loop that follows.
 ! 
 ! 4. Iterate forward while the current time is less than the stop subtime.
@@ -108,8 +110,8 @@ RECURSIVE SUBROUTINE integrate ( grid )
 ! restart data is output.
 ! 
 ! 4.f  Call <a href=solve_interface.html>solve_interface</a> which calls the solver that advance the domain 
-! one time step, then advance the domain's clock by calling ESMF_ClockAdvance.  Upon advancing the clock,
-! the current time for the grid is updated by calling ESMF_ClockGet. The enclosing WHILE loop around
+! one time step, then advance the domain's clock by calling WRF_COMP_ClockAdvance.  Upon advancing the clock,
+! the current time for the grid is updated by calling WRF_COMP_ClockGet. The enclosing WHILE loop around
 ! this section is for handling other domains with which this domain may overlap.  It is not active in WRF 2.0 and
 ! only executes one trip.  
 ! 
@@ -253,9 +255,9 @@ RECURSIVE SUBROUTINE integrate ( grid )
 
    END INTERFACE
 
-   IF ( .NOT. ESMF_ClockIsStopTime(grid%domain_clock ,rc=rc) ) THEN
+   IF ( .NOT. WRF_COMP_ClockIsStopTime(grid%domain_clock ,rc=rc) ) THEN
       CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
-      CALL ESMF_ClockGet( grid%domain_clock, currTime=grid%current_time, rc=rc )
+      CALL WRF_COMP_ClockGet( grid%domain_clock, currTime=grid%current_time, rc=rc )
       CALL wrf_clockprint ( 150, grid%domain_clock, &
                             'DEBUG:  top of integrate(),' )
       DO WHILE ( grid%current_time .LT. grid%stop_subtime )
@@ -286,15 +288,15 @@ RECURSIVE SUBROUTINE integrate ( grid )
             CALL wrf_debug( 100 , 'module_integrate: calling solve interface ' )
             CALL solve_interface ( grid_ptr ) 
             CALL wrf_clockprint ( 150, grid_ptr%domain_clock, &
-                                  'DEBUG integrate():  before ESMF_ClockAdvance,' )
-            CALL ESMF_ClockAdvance( grid_ptr%domain_clock, rc=rc )
-            CALL wrf_check_error( ESMF_SUCCESS, rc, &
-                                  'ESMF_ClockAdvance() FAILED', &
+                                  'DEBUG integrate():  before WRF_COMP_ClockAdvance,' )
+            CALL WRF_COMP_ClockAdvance( grid_ptr%domain_clock, rc=rc )
+            CALL wrf_check_error( WRF_COMP_SUCCESS, rc, &
+                                  'WRF_COMP_ClockAdvance() FAILED', &
                                   __FILE__ , &
                                   __LINE__  )
             CALL wrf_clockprint ( 150, grid_ptr%domain_clock, &
-                                  'DEBUG integrate():  after ESMF_ClockAdvance,' )
-            CALL ESMF_ClockGet( grid_ptr%domain_clock, currTime=grid_ptr%current_time, rc=rc )
+                                  'DEBUG integrate():  after WRF_COMP_ClockAdvance,' )
+            CALL WRF_COMP_ClockGet( grid_ptr%domain_clock, currTime=grid_ptr%current_time, rc=rc )
             CALL wrf_debug( 100 , 'module_integrate: back from solve interface ' )
             grid_ptr => grid_ptr%sibling
          END DO
@@ -334,8 +336,8 @@ RECURSIVE SUBROUTINE integrate ( grid )
       IF ( grid%id .EQ. 1 ) THEN               ! head_grid
         CALL med_last_solve_io ( grid , config_flags )
       ELSE
-        IF ( ESMF_ClockIsStopTime(grid%domain_clock , rc=rc) .OR. &
-             ESMF_ClockIsStopTime(grid%parents(1)%ptr%domain_clock , rc=rc ) ) THEN
+        IF ( WRF_COMP_ClockIsStopTime(grid%domain_clock , rc=rc) .OR. &
+             WRF_COMP_ClockIsStopTime(grid%parents(1)%ptr%domain_clock , rc=rc ) ) THEN
            CALL med_last_solve_io ( grid , config_flags )
         ENDIF
       ENDIF

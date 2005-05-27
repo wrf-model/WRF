@@ -91,22 +91,22 @@
 ! !PUBLIC MEMBER FUNCTIONS:
       public ESMF_TimeGet
       public ESMF_TimeSet
-      public ESMF_TimeGetCalendar
-      public ESMF_TimeSetCalendar
-      public ESMF_TimeIsSameCal
-      public ESMF_TimeGetTimezone
-      public ESMF_TimeSetTimezone
-      public ESMF_TimeGetString
-      public ESMF_TimeGetDayOfYear
-      public ESMF_TimeGetDayOfWeek
-      public ESMF_TimeGetDayOfMonth
-      public ESMF_TimeGetMidMonth
-      public ESMF_TimeGetRealTime
+!      public ESMF_TimeGetCalendar
+!      public ESMF_TimeSetCalendar
+!      public ESMF_TimeIsSameCal
+!      public ESMF_TimeGetTimezone
+!      public ESMF_TimeSetTimezone
+      public ESMFold_TimeGetString
+!      public ESMF_TimeGetDayOfYear
+!      public ESMF_TimeGetDayOfWeek
+!      public ESMF_TimeGetDayOfMonth
+!      public ESMF_TimeGetMidMonth
+!      public ESMF_TimeGetRealTime
 
 ! Required inherited and overridden ESMF_Base class methods
 
-      public ESMF_TimeRead
-      public ESMF_TimeWrite
+!      public ESMF_TimeRead
+!      public ESMF_TimeWrite
       public ESMF_TimeValidate
       public ESMF_TimePrint
 
@@ -487,7 +487,7 @@
         CALL ESMF_TimeGetDayOfYear( time, dayOfYear, rc=ierr )
       ENDIF
       IF ( PRESENT( timeString ) ) THEN
-        CALL ESMF_TimeGetString( time, timeString, rc=ierr )
+        CALL ESMFold_TimeGetString( time, timeString, rc=ierr )
       ENDIF
 
       IF ( PRESENT( rc ) ) THEN
@@ -899,10 +899,10 @@
 
 !------------------------------------------------------------------------------
 !BOP
-! !IROUTINE:  ESMF_TimeGetString - Get time instant value in string format
+! !IROUTINE:  ESMFold_TimeGetString - Get time instant value in string format
 
 ! !INTERFACE:
-      subroutine ESMF_TimeGetString(time, TimeString, rc)
+      subroutine ESMFold_TimeGetString(time, TimeString, rc)
 
 ! !ARGUMENTS:
       type(ESMF_Time), intent(in) :: time
@@ -939,7 +939,7 @@
       call c_ESMC_TimeGetString(time, TimeString, rc)
 #endif
 
-      end subroutine ESMF_TimeGetString
+      end subroutine ESMFold_TimeGetString
 
 !------------------------------------------------------------------------------
 !BOP

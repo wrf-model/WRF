@@ -30,7 +30,7 @@ MODULE module_domain
    USE module_state_description
    USE module_configure
    USE module_wrf_error
-   USE WRF_ESMF_MOD
+   USE module_comp
 
    CHARACTER (LEN=80) program_name
 
@@ -53,9 +53,9 @@ MODULE module_domain
 #ifdef MOVE_NESTS
                          COMPUTE_VORTEX_CENTER_ALARM=16,                          &
 #endif
-                         MAX_WRF_ALARMS=20  ! ESMF 2.0.1+ requires user to dimension alarm 
-                                            ! lists.  MAX_WRF_ALARMS must be big enough 
-                                            ! to include all of the above alarms.  
+                         MAX_WRF_ALARMS=20  ! WARNING:  MAX_WRF_ALARMS must be 
+                                            ! large enough to include all of 
+                                            ! the alarms declared above.  
 
 #include <state_subtypes.inc>
 
@@ -123,13 +123,13 @@ MODULE module_domain
                     sp21y,  ep21y,  sp22y,  ep22y,                        &
                     sm31y,  em31y,  sm32y,  em32y,  sm33y,  em33y,        &
                     sm21y,  em21y,  sm22y,  em22y
-      Type(ESMF_Clock)                                    :: domain_clock
-      Type(ESMF_Time)                                     :: start_time, stop_time, current_time
-      Type(ESMF_Time)                                     :: start_subtime, stop_subtime
-      Type(ESMF_Time)                                     :: this_bdy_time, next_bdy_time
-      Type(ESMF_Time)                                     :: this_emi_time, next_emi_time
-      Type(ESMF_TimeInterval) :: step_time
-      Type(ESMF_Alarm), pointer :: alarms(:)
+      Type(WRF_COMP_Clock)                                    :: domain_clock
+      Type(WRF_COMP_Time)                                     :: start_time, stop_time, current_time
+      Type(WRF_COMP_Time)                                     :: start_subtime, stop_subtime
+      Type(WRF_COMP_Time)                                     :: this_bdy_time, next_bdy_time
+      Type(WRF_COMP_Time)                                     :: this_emi_time, next_emi_time
+      Type(WRF_COMP_TimeInterval) :: step_time
+      Type(WRF_COMP_Alarm), pointer :: alarms(:)
 
    END TYPE domain
 

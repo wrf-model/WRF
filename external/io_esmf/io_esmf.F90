@@ -1,17 +1,23 @@
 MODULE module_ext_esmf
 
-  USE WRF_ESMF_MOD
+  USE ESMF_Mod
 
 !$$$here...
-!$$$here...  adding calls to get_iostate_esmf() and set_iostate_esmf()
+!$$$here...  adding calls to get_iostate_comp() and set_iostate_comp()
 !$$$here...  need to pass "id" via get_value()
 !$$$here...
 
+!$$$here...  eliminate some duplication between io_quilt, io_mcel, and io_esmf !!!  
+
   INTEGER, PARAMETER :: int_num_handles = 99
-  LOGICAL, DIMENSION(int_num_handles) :: okay_to_write, okay_to_read,                     &
-                                         opened_for_write, opened_for_update,             &
-                                         opened_for_read,                                 &
+! TBH:  Note that these *are* consistent with "metadata_training" changes I 
+! TBH:  made in December 2004 because this package does NOT support 
+! TBH:  time-[in]dependent metadata at all!  
+  LOGICAL, DIMENSION(int_num_handles) :: okay_to_write, okay_to_read,         &
+                                         opened_for_write, opened_for_update, &
+                                         opened_for_read,                     &
                                          int_handle_in_use, okay_to_commit
+!$$$here...  check these...  
   LOGICAL, DIMENSION(int_num_handles) :: mcel_grid_defined, mcel_finalized
   INTEGER, DIMENSION(int_num_handles) :: int_num_bytes_to_write
   INTEGER, DIMENSION(int_num_handles) :: usemask
@@ -19,7 +25,6 @@ MODULE module_ext_esmf
   CHARACTER*8092, DIMENSION(int_num_handles) :: ListOfFields
   REAL, POINTER    :: int_local_output_buffer(:)
   INTEGER          :: int_local_output_cursor
-  INTEGER          :: mcel_npglobal, mcel_mystart, mcel_mnproc, mcel_myproc
 
   INTEGER, PARAMETER           :: onebyte = 1
   INTEGER comm_io_servers, iserver, hdrbufsize, obufsize
@@ -27,15 +32,12 @@ MODULE module_ext_esmf
   INTEGER, DIMENSION(512)     :: hdrbuf
   INTEGER, DIMENSION(int_num_handles)       :: handle
   INTEGER, DIMENSION(512, int_num_handles)  :: open_file_descriptors
-  INCLUDE "MCEL.inc"
   INCLUDE 'intio_tags.h'
   INCLUDE 'wrf_io_flags.h'
   INCLUDE 'wrf_status_codes.h'
   CHARACTER*80  LAT_R(int_num_handles), LON_R(int_num_handles), LANDMASK_I(int_num_handles)
 
   REAL*8, ALLOCATABLE :: xlat(:,:), xlong(:,:)
-  REAL*8              :: deltax, deltay, dxm(2)
-  REAL*8              :: originx, originy, origin(2)
   INTEGER, ALLOCATABLE :: mask(:,:)
   REAL, ALLOCATABLE :: rmask(:,:)
   DOUBLEPRECISION, ALLOCATABLE :: dmask(:,:)
@@ -51,15 +53,7 @@ MODULE module_ext_esmf
     END FUNCTION int_valid_handle
 
     SUBROUTINE int_get_fresh_handle( retval )
-!      USE wrf_data, ONLY : wrf_data_handle
-!      USE ext_ncd_support_routines, ONLY : allocHandle
-!      type(wrf_data_handle),pointer     :: DH
-!      INTEGER i, retval, comm, Status
       INTEGER i, retval
-
-#if 0
-      CALL allocHandle(retval,DH,Comm,Status)
-#endif
 
       retval = -1
 ! dont use first 8 handles
@@ -71,7 +65,8 @@ MODULE module_ext_esmf
       ENDDO
 33    CONTINUE
       IF ( retval < 0 )  THEN
-        CALL wrf_error_fatal("external/io_quilt/io_int.F90: int_get_fresh_handle() can not")
+        CALL wrf_error_fatal( &
+             "external/io_esmf/io_esmf.F90: int_get_fresh_handle() out of handles")
       ENDIF
       int_handle_in_use(retval) = .TRUE.
       NULLIFY ( int_local_output_buffer )
@@ -131,6 +126,7 @@ END SUBROUTINE get_value
 
 END MODULE module_ext_esmf
 
+!$$$here...  use generic explicit interfaces?  if not, why not?  
  SUBROUTINE copy_field_to_cache_r2r ( Field, cache, ips, ipe, jps, jpe, ims, ime, jms, jme )
    USE module_ext_esmf
    INTEGER FieldType, ips, ipe, jps, jpe, ims, ime, jms, jme
@@ -284,6 +280,7 @@ SUBROUTINE ext_esmf_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo
   okay_to_write(i) = .false.
   DataHandle = i
   CurrentDateInFile(i) = ""
+!$$$here...  ???
   Status = WRF_WARN_NOTSUPPORTED
 
   RETURN  
@@ -323,6 +320,7 @@ SUBROUTINE ext_esmf_inquire_opened ( DataHandle, FileName , FileStatus, Status )
 END SUBROUTINE ext_esmf_inquire_opened
 
 !--- inquire_filename
+!$$$here...  This looks like ext_esmf_inquire_opened() and does not set FileName (???)
 SUBROUTINE ext_esmf_inquire_filename ( DataHandle, FileName , FileStatus, Status )
   USE module_ext_esmf
   IMPLICIT NONE
@@ -374,6 +372,7 @@ SUBROUTINE ext_esmf_ioclose ( DataHandle, Status )
 
   IF ( int_valid_handle (DataHandle) ) THEN
     IF ( int_handle_in_use( DataHandle ) ) THEN
+!$$$here...  ???
       CLOSE ( DataHandle ) 
     ENDIF
   ENDIF
@@ -393,6 +392,7 @@ SUBROUTINE ext_esmf_ioexit( Status )
   INTEGER i,ierr
   REAL dummy
 
+!$$$here...  ???
   RETURN  
 END SUBROUTINE ext_esmf_ioexit
 
@@ -428,10 +428,10 @@ SUBROUTINE ext_esmf_get_next_time ( DataHandle, DateStr, Status )
   REAL, DIMENSION( 1 ) :: Field
 
   IF ( .NOT. int_valid_handle( DataHandle ) ) THEN
-    CALL wrf_error_fatal("external/io_quilt/io_int.F90: ext_esmf_get_next_time: invalid data handle" )
+    CALL wrf_error_fatal("external/io_esmf/io_esmf.F90: ext_esmf_get_next_time: invalid data handle" )
   ENDIF
   IF ( .NOT. int_handle_in_use( DataHandle ) ) THEN
-    CALL wrf_error_fatal("external/io_quilt/io_int.F90: ext_esmf_get_next_time: DataHandle not opened" )
+    CALL wrf_error_fatal("external/io_esmf/io_esmf.F90: ext_esmf_get_next_time: DataHandle not opened" )
   ENDIF
   inttypesize = itypesize
   realtypesize = rtypesize
@@ -488,19 +488,20 @@ SUBROUTINE ext_esmf_get_var_info ( DataHandle , VarName , NDim , MemoryOrder , S
   REAL, DIMENSION( 1 ) :: Field
 
   IF ( .NOT. int_valid_handle( DataHandle ) ) THEN
-    CALL wrf_error_fatal("external/io_quilt/io_int.F90: ext_esmf_get_var_info: invalid data handle" )
+    CALL wrf_error_fatal("external/io_esmf/io_esmf.F90: ext_esmf_get_var_info: invalid data handle" )
   ENDIF
   IF ( .NOT. int_handle_in_use( DataHandle ) ) THEN
-    CALL wrf_error_fatal("external/io_quilt/io_int.F90: ext_esmf_get_var_info: DataHandle not opened" )
+    CALL wrf_error_fatal("external/io_esmf/io_esmf.F90: ext_esmf_get_var_info: DataHandle not opened" )
   ENDIF
   inttypesize = itypesize
   realtypesize = rtypesize
+!$$$here...  ???
   Status = 0
 
 RETURN
 END SUBROUTINE ext_esmf_get_var_info
 
-!--- get_next_var  (not defined for IntIO)
+!--- get_next_var  (not defined)
 SUBROUTINE ext_esmf_get_next_var ( DataHandle, VarName, Status )
   USE module_ext_esmf
   IMPLICIT NONE
@@ -534,14 +535,15 @@ real    rdata(128)
   REAL, DIMENSION( 1 ) :: Field
 
   IF ( .NOT. int_valid_handle( DataHandle ) ) THEN
-    CALL wrf_error_fatal("external/io_quilt/io_int.F90: ext_esmf_get_next_var: invalid data handle" )
+    CALL wrf_error_fatal("external/io_esmf/io_esmf.F90: ext_esmf_get_next_var: invalid data handle" )
   ENDIF
   IF ( .NOT. int_handle_in_use( DataHandle ) ) THEN
-    CALL wrf_error_fatal("external/io_quilt/io_int.F90: ext_esmf_get_next_var: DataHandle not opened" )
+    CALL wrf_error_fatal("external/io_esmf/io_esmf.F90: ext_esmf_get_next_var: DataHandle not opened" )
   ENDIF
   inttypesize = itypesize
   realtypesize = rtypesize
 
+!$$$here...  ???
   Status = 0
 
   RETURN
@@ -561,6 +563,7 @@ SUBROUTINE ext_esmf_get_dom_ti_real ( DataHandle,Element,   Data, Count, Outcoun
   CHARACTER*132                :: locElement, mess
   LOGICAL keepgoing
 
+!$$$here...  ???
   Status = 0
 
 RETURN
@@ -578,6 +581,7 @@ SUBROUTINE ext_esmf_put_dom_ti_real ( DataHandle,Element,   Data, Count,  Status
   REAL dummy
 !
 
+!$$$here...  ???
   Status = 0
 RETURN
 END SUBROUTINE ext_esmf_put_dom_ti_real 
@@ -621,6 +625,7 @@ SUBROUTINE ext_esmf_get_dom_ti_integer ( DataHandle,Element,   Data, Count, Outc
   CHARACTER*132   locElement, mess
   LOGICAL keepgoing
 
+!$$$here...  ???
   Status = 0
 RETURN
 END SUBROUTINE ext_esmf_get_dom_ti_integer 
@@ -636,6 +641,7 @@ SUBROUTINE ext_esmf_put_dom_ti_integer ( DataHandle,Element,   Data, Count,  Sta
   INTEGER ,       INTENT(OUT) :: Status
   REAL dummy
 !
+!$$$here...  ???
   Status = 0
 RETURN
 END SUBROUTINE ext_esmf_put_dom_ti_integer 
@@ -678,6 +684,7 @@ SUBROUTINE ext_esmf_get_dom_ti_char ( DataHandle,Element,   Data,  Status )
   INTEGER locDataHandle
   LOGICAL keepgoing
 
+!$$$here...  ???
   Status = 0
 RETURN
 END SUBROUTINE ext_esmf_get_dom_ti_char 
@@ -695,6 +702,7 @@ SUBROUTINE ext_esmf_put_dom_ti_char ( DataHandle, Element,  Data,  Status )
   INTEGER                 :: Count
 
 ! TBH:  Not sure what this is doing here.  2004_11_15
+!$$$here...  ???
   IF ( int_valid_handle ( Datahandle ) ) THEN
     IF ( int_handle_in_use( DataHandle ) ) THEN
       CALL int_gen_ti_header_char( hdrbuf, hdrbufsize, itypesize,  &
@@ -716,6 +724,7 @@ SUBROUTINE ext_esmf_get_dom_td_real ( DataHandle,Element, DateStr,  Data, Count,
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
+!$$$here...  ???
 RETURN
 END SUBROUTINE ext_esmf_get_dom_td_real 
 
@@ -728,6 +737,7 @@ SUBROUTINE ext_esmf_put_dom_td_real ( DataHandle,Element, DateStr,  Data, Count,
   real ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
+!$$$here...  ???
 RETURN
 END SUBROUTINE ext_esmf_put_dom_td_real 
 
@@ -741,6 +751,7 @@ SUBROUTINE ext_esmf_get_dom_td_double ( DataHandle,Element, DateStr,  Data, Coun
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
+!$$$here...  ???
 RETURN
 END SUBROUTINE ext_esmf_get_dom_td_double 
 
@@ -753,6 +764,7 @@ SUBROUTINE ext_esmf_put_dom_td_double ( DataHandle,Element, DateStr,  Data, Coun
   real*8 ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
+!$$$here...  ???
 RETURN
 END SUBROUTINE ext_esmf_put_dom_td_double 
 
@@ -766,6 +778,7 @@ SUBROUTINE ext_esmf_get_dom_td_integer ( DataHandle,Element, DateStr,  Data, Cou
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
+!$$$here...  ???
 RETURN
 END SUBROUTINE ext_esmf_get_dom_td_integer 
 
@@ -778,6 +791,7 @@ SUBROUTINE ext_esmf_put_dom_td_integer ( DataHandle,Element, DateStr,  Data, Cou
   integer ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
+!$$$here...  ???
 RETURN
 END SUBROUTINE ext_esmf_put_dom_td_integer 
 
@@ -791,6 +805,7 @@ SUBROUTINE ext_esmf_get_dom_td_logical ( DataHandle,Element, DateStr,  Data, Cou
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
+!$$$here...  ???
 RETURN
 END SUBROUTINE ext_esmf_get_dom_td_logical 
 
@@ -803,6 +818,7 @@ SUBROUTINE ext_esmf_put_dom_td_logical ( DataHandle,Element, DateStr,  Data, Cou
   logical ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
+!$$$here...  ???
 RETURN
 END SUBROUTINE ext_esmf_put_dom_td_logical 
 
@@ -814,6 +830,7 @@ SUBROUTINE ext_esmf_get_dom_td_char ( DataHandle,Element, DateStr,  Data,  Statu
   CHARACTER*(*) :: DateStr
   CHARACTER*(*) :: Data
   INTEGER ,       INTENT(OUT) :: Status
+!$$$here...  ???
 RETURN
 END SUBROUTINE ext_esmf_get_dom_td_char 
 
@@ -825,6 +842,7 @@ SUBROUTINE ext_esmf_put_dom_td_char ( DataHandle,Element, DateStr,  Data,  Statu
   CHARACTER*(*) :: DateStr
   CHARACTER*(*) :: Data
   INTEGER ,       INTENT(OUT) :: Status
+!$$$here...  ???
 RETURN
 END SUBROUTINE ext_esmf_put_dom_td_char 
 
@@ -838,6 +856,7 @@ SUBROUTINE ext_esmf_get_var_ti_real ( DataHandle,Element,  Varname, Data, Count,
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
+!$$$here...  ???
 RETURN
 END SUBROUTINE ext_esmf_get_var_ti_real 
 
@@ -850,6 +869,7 @@ SUBROUTINE ext_esmf_put_var_ti_real ( DataHandle,Element,  Varname, Data, Count,
   real ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
+!$$$here...  ???
 RETURN
 END SUBROUTINE ext_esmf_put_var_ti_real 
 
@@ -863,6 +883,7 @@ SUBROUTINE ext_esmf_get_var_ti_double ( DataHandle,Element,  Varname, Data, Coun
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
+!$$$here...  ???
 RETURN
 END SUBROUTINE ext_esmf_get_var_ti_double 
 
@@ -875,6 +896,7 @@ SUBROUTINE ext_esmf_put_var_ti_double ( DataHandle,Element,  Varname, Data, Coun
   real*8 ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
+!$$$here...  ???
 RETURN
 END SUBROUTINE ext_esmf_put_var_ti_double 
 
@@ -888,6 +910,7 @@ SUBROUTINE ext_esmf_get_var_ti_integer ( DataHandle,Element,  Varname, Data, Cou
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
+!$$$here...  ???
 RETURN
 END SUBROUTINE ext_esmf_get_var_ti_integer 
 
@@ -900,6 +923,7 @@ SUBROUTINE ext_esmf_put_var_ti_integer ( DataHandle,Element,  Varname, Data, Cou
   integer ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
+!$$$here...  ???
 RETURN
 END SUBROUTINE ext_esmf_put_var_ti_integer 
 
@@ -913,6 +937,7 @@ SUBROUTINE ext_esmf_get_var_ti_logical ( DataHandle,Element,  Varname, Data, Cou
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
+!$$$here...  ???
 RETURN
 END SUBROUTINE ext_esmf_get_var_ti_logical 
 
@@ -925,6 +950,7 @@ SUBROUTINE ext_esmf_put_var_ti_logical ( DataHandle,Element,  Varname, Data, Cou
   logical ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
+!$$$here...  ???
 RETURN
 END SUBROUTINE ext_esmf_put_var_ti_logical 
 
@@ -940,6 +966,7 @@ SUBROUTINE ext_esmf_get_var_ti_char ( DataHandle,Element,  Varname, Data,  Statu
   INTEGER locDataHandle, code
   CHARACTER*132 locElement, locVarName
   Status = 0
+!$$$here...  ???
 RETURN
 END SUBROUTINE ext_esmf_get_var_ti_char 
 
@@ -955,6 +982,7 @@ SUBROUTINE ext_esmf_put_var_ti_char ( DataHandle,Element,  Varname, Data,  Statu
   REAL dummy
   INTEGER                 :: Count
   Status = 0
+!$$$here...  ???
 RETURN
 END SUBROUTINE ext_esmf_put_var_ti_char 
 
@@ -969,6 +997,7 @@ SUBROUTINE ext_esmf_get_var_td_real ( DataHandle,Element,  DateStr,Varname, Data
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
+!$$$here...  ???
 RETURN
 END SUBROUTINE ext_esmf_get_var_td_real 
 
@@ -982,6 +1011,7 @@ SUBROUTINE ext_esmf_put_var_td_real ( DataHandle,Element,  DateStr,Varname, Data
   real ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
+!$$$here...  ???
 RETURN
 END SUBROUTINE ext_esmf_put_var_td_real 
 
@@ -996,6 +1026,7 @@ SUBROUTINE ext_esmf_get_var_td_double ( DataHandle,Element,  DateStr,Varname, Da
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
+!$$$here...  ???
 RETURN
 END SUBROUTINE ext_esmf_get_var_td_double 
 
@@ -1009,6 +1040,7 @@ SUBROUTINE ext_esmf_put_var_td_double ( DataHandle,Element,  DateStr,Varname, Da
   real*8 ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
+!$$$here...  ???
 RETURN
 END SUBROUTINE ext_esmf_put_var_td_double 
 
@@ -1023,6 +1055,7 @@ SUBROUTINE ext_esmf_get_var_td_integer ( DataHandle,Element,  DateStr,Varname, D
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
+!$$$here...  ???
 RETURN
 END SUBROUTINE ext_esmf_get_var_td_integer 
 
@@ -1036,6 +1069,7 @@ SUBROUTINE ext_esmf_put_var_td_integer ( DataHandle,Element,  DateStr,Varname, D
   integer ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
+!$$$here...  ???
 RETURN
 END SUBROUTINE ext_esmf_put_var_td_integer 
 
@@ -1050,6 +1084,7 @@ SUBROUTINE ext_esmf_get_var_td_logical ( DataHandle,Element,  DateStr,Varname, D
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
+!$$$here...  ???
 RETURN
 END SUBROUTINE ext_esmf_get_var_td_logical 
 
@@ -1063,6 +1098,7 @@ SUBROUTINE ext_esmf_put_var_td_logical ( DataHandle,Element,  DateStr,Varname, D
   logical ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
+!$$$here...  ???
 RETURN
 END SUBROUTINE ext_esmf_put_var_td_logical 
 
@@ -1075,6 +1111,7 @@ SUBROUTINE ext_esmf_get_var_td_char ( DataHandle,Element,  DateStr,Varname, Data
   CHARACTER*(*) :: VarName 
   CHARACTER*(*) :: Data
   INTEGER ,       INTENT(OUT) :: Status
+!$$$here...  ???
 RETURN
 END SUBROUTINE ext_esmf_get_var_td_char 
 
@@ -1087,105 +1124,12 @@ SUBROUTINE ext_esmf_put_var_td_char ( DataHandle,Element,  DateStr,Varname, Data
   CHARACTER*(*) :: VarName 
   CHARACTER*(*) :: Data
   INTEGER ,       INTENT(OUT) :: Status
+!$$$here...  ???
 RETURN
 END SUBROUTINE ext_esmf_put_var_td_char 
 
-SUBROUTINE ext_esmf_georegister( DataHandle, inlon, inlat,                                    &
-                                 MemoryStart , MemoryEnd ,                                    &
-                                 PatchStart , PatchEnd ,                                      &
-                                 Status )
-  USE module_ext_esmf
-  IMPLICIT NONE
-  integer                       ,intent(in)    :: DataHandle
-  integer                       ,intent(inout) :: Status
-  integer ,dimension(*)         ,intent(in)    :: MemoryStart, MemoryEnd
-  integer ,dimension(*)         ,intent(in)    :: PatchStart,  PatchEnd
-  REAL , DIMENSION(MemoryStart(1):MemoryEnd(1),MemoryStart(2):MemoryEnd(2)), INTENT(IN) :: inlon, inlat
-  integer ips,ipe,jps,jpe
-  integer ims,ime,jms,jme
-  integer idex,ierr,i,j
 
-  IF ( .NOT. int_valid_handle( DataHandle ) ) THEN
-    CALL wrf_error_fatal("ext_esmf_georegister: invalid data handle" )
-  ENDIF
-  IF ( .NOT. int_handle_in_use( DataHandle ) ) THEN
-    CALL wrf_error_fatal("ext_esmf_georegister: DataHandle not opened" )
-  ENDIF
-  IF ( mcel_finalized( DataHandle ) ) THEN
-    CALL wrf_error_fatal( "ext_esmf_georegister: called after first read/write operation" ) ;
-  ENDIF
-
-  ips = PatchStart(1) ; ipe = PatchEnd(1)
-  jps = PatchStart(2) ; jpe = PatchEnd(2)
-  ims = MemoryStart(1) ; ime = MemoryEnd(1)
-  jms = MemoryStart(2) ; jme = MemoryEnd(2)
-
-  IF ( ALLOCATED(xlat) ) THEN
-    DEALLOCATE(xlat)
-  ENDIF
-  IF ( ALLOCATED(xlong) ) THEN
-    DEALLOCATE(xlong)
-  ENDIF
-  ALLOCATE(xlat(ips:ipe,jps:jpe))
-  DO j = jps, jpe
-    DO i = ips, ipe
-      idex = i+ips-ims + (j+jps-jms-1)*(ime-ims+1)
-      xlat(i,j) = inlat( i,j)  ! idex )
-    ENDDO
-  ENDDO
-  ALLOCATE(xlong(ips:ipe,jps:jpe))
-  DO j = jps, jpe
-    DO i = ips, ipe
-      idex = i+ips-ims + (j+jps-jms-1)*(ime-ims+1)
-      xlong(i,j) = inlon( i,j ) ! idex )
-    ENDDO
-  ENDDO
-  RETURN
-END SUBROUTINE ext_esmf_georegister
-
-SUBROUTINE ext_esmf_mask ( DataHandle, inmask,                                          &
-                           MemoryStart , MemoryEnd ,                                    &
-                           PatchStart , PatchEnd ,                                      &
-                           Status )
-  USE module_ext_esmf
-  IMPLICIT NONE
-  integer                       ,intent(in)    :: DataHandle
-  integer                       ,intent(inout) :: Status
-  integer ,dimension(*)         ,intent(in)    :: MemoryStart, MemoryEnd
-  integer ,dimension(*)         ,intent(in)    :: PatchStart,  PatchEnd
-  INTEGER , DIMENSION(MemoryStart(1):MemoryEnd(1),MemoryStart(2):MemoryEnd(2)), INTENT(IN) :: inmask
-  integer ips,ipe,jps,jpe
-  integer ims,ime,jms,jme
-  integer idex,ierr,i,j
-
-  ips = PatchStart(1) ; ipe = PatchEnd(1)
-  jps = PatchStart(2) ; jpe = PatchEnd(2)
-  ims = MemoryStart(1) ; ime = MemoryEnd(1)
-  jms = MemoryStart(2) ; jme = MemoryEnd(2)
-
-  IF ( .NOT. int_valid_handle( DataHandle ) ) THEN
-    CALL wrf_error_fatal("ext_esmf_mask: invalid data handle" )
-  ENDIF
-  IF ( .NOT. int_handle_in_use( DataHandle ) ) THEN
-    CALL wrf_error_fatal("ext_esmf_mask: DataHandle not opened" )
-  ENDIF
-  IF ( mcel_finalized( DataHandle ) ) THEN
-    CALL wrf_error_fatal( "ext_esmf_mask: called after first read/write operation" ) ;
-  ENDIF
-
-  IF ( ALLOCATED(mask) ) THEN
-    DEALLOCATE(mask)
-  ENDIF
-  ALLOCATE(mask(ips:ipe,jps:jpe))
-  DO j = jps, jpe
-    DO i = ips, ipe
-      idex = i+ips-ims + (j+jps-jms-1)*(ime-ims+1)
-      mask(i,j) = inmask( i,j ) ! idex )
-    ENDDO
-  ENDDO
-  RETURN
-END SUBROUTINE ext_esmf_mask
-
+!$$$here...  ???  does this fail with autopromotion of REALs?  
 INTEGER FUNCTION cast_to_int( a )
   INTEGER a
   cast_to_int = a

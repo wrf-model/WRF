@@ -1,13 +1,10 @@
-!WRF:DRIVER_LAYER:ESMF
+!WRF:DRIVER_LAYER:COMP
 !
 
-MODULE module_wrf_esmf_super
+MODULE module_wrf_comp_super
 !<DESCRIPTION>
-! This module defines wrf_init(), wrf_run(), and wrf_finalize() routines for 
-! use by ESMF superstructure.  
-! These routines are also called by non-ESMF main program main/wrf.F with 
-! ESMF-specific arguments omitted.  
-! Note that WRF_ESMF_MOD is USEd by module_domain.  
+! This module defines wrf_init(), wrf_run(), and wrf_finalize() routines.  
+! Note that module_comp is USEd by module_domain.  
 !</DESCRIPTION>
 
    USE module_machine
@@ -61,9 +58,9 @@ CONTAINS
 
 
    SUBROUTINE wrf_init( gcomp, importState, exportState, clock, rc )
-     TYPE(ESMF_GridComp), OPTIONAL, INTENT(INOUT) :: gcomp
-     TYPE(ESMF_State),    OPTIONAL, INTENT(INOUT) :: importState, exportState
-     TYPE(ESMF_Clock),    OPTIONAL, INTENT(INOUT) :: clock
+     TYPE(WRF_COMP_GridComp), OPTIONAL, INTENT(INOUT) :: gcomp
+     TYPE(WRF_COMP_State),    OPTIONAL, INTENT(INOUT) :: importState, exportState
+     TYPE(WRF_COMP_Clock),    OPTIONAL, INTENT(INOUT) :: clock
      INTEGER,             OPTIONAL, INTENT(  OUT) :: rc
 !<DESCRIPTION>
 !     WRF init routine.
@@ -73,8 +70,8 @@ CONTAINS
 !       importState     Importstate
 !       exportState     Exportstate
 !       clock           External clock
-!       rc              Return code; equals ESMF_SUCCESS if there are no errors,
-!                       otherwise ESMF_FAILURE.
+!       rc              Return code; equals WRF_COMP_SUCCESS if there are no errors,
+!                       otherwise WRF_COMP_FAILURE.
 !
 !     All arguments are optional and will only be present when the ESMF 
 !     library is linked in during the WRF build.  
@@ -242,14 +239,35 @@ CONTAINS
 #endif
    END IF
 
-! TBH:  Need to connect head_grid%start_subtime and head_grid%stop_subtime to 
-! TBH:  clock when building with ESMF library...  
+   ! Initialize coupling-related objects, if needed.  
+   ! $$$ Cannot move this call beneath init_wrfio() at the moment because it 
+   ! $$$ depends on config values being already broadcast.   
+   ! Calls set_iostate_comp().  
+   !$$$ TBH:  Get rid of [s|g]et_iostate_comp() once ESMF_StateGetCurrentImport(), 
+   !$$$ TBH:  ESMF_StateGetCurrentExport(), ESMF_GridCompGetCurrent(), and ESMF_ClockGetCurrent() 
+   !$$$ TBH:  are supported!  
+   CALL wrf_init_coupling( head_grid, gcomp=gcomp, importState=importState, &
+                                      exportState=exportState, clock=clock )
+
+!$$$ TBH:  Need to connect head_grid%start_subtime and head_grid%stop_subtime to 
+!$$$ TBH:  clock when building with ESMF library...  
    head_grid%start_subtime = head_grid%start_time
    head_grid%stop_subtime = head_grid%stop_time
 
+   ! TBH:  Do we need this here?  And in wrf_finalize() too?  
+   ! TBH:  NOTE:  copy-out is not required with the current implementation of 
+   ! TBH:  ESMF objects (they contain only a Fortran90 POINTER).  HOWEVER, 
+   ! TBH:  ESMF core team advises against relying on this behavior since it 
+   ! TBH:  may differ in a future release.  
+   !$$$ TBH:  Get rid of [s|g]et_iostate_comp() once ESMF_StateGetCurrentImport(), 
+   !$$$ TBH:  ESMF_StateGetCurrentExport(), ESMF_GridCompGetCurrent(), and ESMF_ClockGetCurrent() 
+   !$$$ TBH:  are supported!  
+   CALL get_iostate_comp( head_grid%id, gcomp=gcomp, importState=importState, &
+                                        exportState=exportState, clock=clock )
+
    ! return success status
    IF ( PRESENT( rc ) ) THEN
-     rc = ESMF_SUCCESS
+     rc = WRF_COMP_SUCCESS
    ENDIF
 
    END SUBROUTINE wrf_init
@@ -257,9 +275,9 @@ CONTAINS
 
 
    SUBROUTINE wrf_run( gcomp, importState, exportState, clock, rc )
-     TYPE(ESMF_GridComp), OPTIONAL, INTENT(INOUT) :: gcomp
-     TYPE(ESMF_State),    OPTIONAL, INTENT(INOUT) :: importState, exportState
-     TYPE(ESMF_Clock),    OPTIONAL, INTENT(INOUT) :: clock
+     TYPE(WRF_COMP_GridComp), OPTIONAL, INTENT(INOUT) :: gcomp
+     TYPE(WRF_COMP_State),    OPTIONAL, INTENT(INOUT) :: importState, exportState
+     TYPE(WRF_COMP_Clock),    OPTIONAL, INTENT(INOUT) :: clock
      INTEGER,             OPTIONAL, INTENT(  OUT) :: rc
 !<DESCRIPTION>
 !     WRF run routine.
@@ -269,8 +287,8 @@ CONTAINS
 !       importState     Importstate
 !       exportState     Exportstate
 !       clock           External clock
-!       rc              Return code; equals ESMF_SUCCESS if there are no errors,
-!                       otherwise ESMF_FAILURE.
+!       rc              Return code; equals WRF_COMP_SUCCESS if there are no errors,
+!                       otherwise WRF_COMP_FAILURE.
 !
 !     All arguments are optional and will only be present when the ESMF 
 !     library is linked in during the WRF build.  
@@ -296,27 +314,37 @@ CONTAINS
    !  The forecast integration for the most coarse grid is now started.  The
    !  integration is from the first step (1) to the last step of the simulation.
 
-   ! TBH:  Probably want to move this call inside integrate() passing gcomp, 
-   ! TBH:  importState, exportState, and clock as optional arguments.  For 
-   ! TBH:  now, leave as-is (to make the code more explicit) since ESMF 
-   ! TBH:  types are only currently available for head_grid.  
-   CALL set_iostate_esmf( head_grid%id, gcomp=gcomp, importState=importState, &
+   !$$$ TBH:  Probably want to move this call inside integrate() passing gcomp, 
+   !$$$ TBH:  importState, exportState, and clock as optional arguments.  For 
+   !$$$ TBH:  now, leave as-is (to make the code more explicit) since ESMF 
+   !$$$ TBH:  types are only currently available for head_grid.  
+   !$$$ TBH:  Get rid of [s|g]et_iostate_comp() once ESMF_StateGetCurrentImport(), 
+   !$$$ TBH:  ESMF_StateGetCurrentExport(), ESMF_GridCompGetCurrent(), and ESMF_ClockGetCurrent() 
+   !$$$ TBH:  are supported!  
+   CALL set_iostate_comp( head_grid%id, gcomp=gcomp, importState=importState, &
                                         exportState=exportState, clock=clock )
 
    CALL       wrf_debug ( 100 , 'wrf: calling integrate' )
    CALL integrate ( head_grid )
    CALL       wrf_debug ( 100 , 'wrf: back from integrate' )
 
-   ! TBH:  Probably want to move this call inside integrate() passing gcomp, 
-   ! TBH:  importState, exportState, and clock as optional arguments.  For 
-   ! TBH:  now, leave as-is (to make the code more explicit) since ESMF 
-   ! TBH:  types are only currently available for head_grid.  
-   CALL get_iostate_esmf( head_grid%id, gcomp=gcomp, importState=importState, &
+   !$$$ TBH:  Probably want to move this call inside integrate() passing gcomp, 
+   !$$$ TBH:  importState, exportState, and clock as optional arguments.  For 
+   !$$$ TBH:  now, leave as-is (to make the code more explicit) since ESMF 
+   !$$$ TBH:  types are only currently available for head_grid.  
+   !$$$ TBH:  NOTE:  copy-out is not required with the current implementation of 
+   !$$$ TBH:  ESMF objects (they contain only a Fortran90 POINTER).  HOWEVER, 
+   !$$$ TBH:  ESMF core team advises against relying on this behavior since it 
+   !$$$ TBH:  may differ in a future release.  
+   !$$$ TBH:  Get rid of [s|g]et_iostate_comp() once ESMF_StateGetCurrentImport(), 
+   !$$$ TBH:  ESMF_StateGetCurrentExport(), ESMF_GridCompGetCurrent(), and ESMF_ClockGetCurrent() 
+   !$$$ TBH:  are supported!  
+   CALL get_iostate_comp( head_grid%id, gcomp=gcomp, importState=importState, &
                                         exportState=exportState, clock=clock )
 
    ! return success status
    IF ( PRESENT( rc ) ) THEN
-     rc = ESMF_SUCCESS
+     rc = WRF_COMP_SUCCESS
    ENDIF
 
    END SUBROUTINE wrf_run
@@ -324,9 +352,9 @@ CONTAINS
 
 
    SUBROUTINE wrf_finalize( gcomp, importState, exportState, clock, rc )
-     TYPE(ESMF_GridComp), OPTIONAL, INTENT(INOUT) :: gcomp
-     TYPE(ESMF_State),    OPTIONAL, INTENT(INOUT) :: importState, exportState
-     TYPE(ESMF_Clock),    OPTIONAL, INTENT(INOUT) :: clock
+     TYPE(WRF_COMP_GridComp), OPTIONAL, INTENT(INOUT) :: gcomp
+     TYPE(WRF_COMP_State),    OPTIONAL, INTENT(INOUT) :: importState, exportState
+     TYPE(WRF_COMP_Clock),    OPTIONAL, INTENT(INOUT) :: clock
      INTEGER,             OPTIONAL, INTENT(  OUT) :: rc
 !<DESCRIPTION>
 !     WRF finalize routine.
@@ -336,8 +364,8 @@ CONTAINS
 !       importState     Importstate
 !       exportState     Exportstate
 !       clock           External clock
-!       rc              Return code; equals ESMF_SUCCESS if there are no errors,
-!                       otherwise ESMF_FAILURE.
+!       rc              Return code; equals WRF_COMP_SUCCESS if there are no errors,
+!                       otherwise WRF_COMP_FAILURE.
 !
 !     All arguments are optional and will only be present when the ESMF 
 !     library is linked in during the WRF build.  
@@ -348,10 +376,14 @@ CONTAINS
 
    CALL       wrf_debug (   0 , 'wrf: SUCCESS COMPLETE WRF' )
 
+   ! Release coupling-related objects, if needed.  
+   ! $$$ May move this beneath med_shutdown_io()
+   CALL final_iostate_comp( head_grid%id )
+
    IF ( PRESENT( rc ) ) THEN
      ! If ESMF library is used, then skip wrf_shutdown() and rely on 
-     ! ESMF_Finalize() to call MPI_FINALIZE() for DM parallel runs.  
-     rc = ESMF_SUCCESS
+     ! WRF_COMP_Finalize() to call MPI_FINALIZE() for DM parallel runs.  
+     rc = WRF_COMP_SUCCESS
    ELSE
      ! Otherwise, call wrf_shutdown() (which calls MPI_FINALIZE() 
      ! for DM parallel runs).  
@@ -361,6 +393,115 @@ CONTAINS
    END SUBROUTINE wrf_finalize
 
 
-END MODULE module_wrf_esmf_super
+   ! WRF-specific initialization required for coupling.  
+   ! This is always called but does nothing useful unless linked with the ESMF 
+   ! library.  
+   SUBROUTINE wrf_init_coupling( grid, gcomp, importState, exportState, clock )
+     TYPE(domain), POINTER                            :: grid           ! WRF domain
+     TYPE(WRF_COMP_GridComp), OPTIONAL, INTENT(IN   ) :: gcomp
+     TYPE(WRF_COMP_State),    OPTIONAL, INTENT(IN   ) :: importState, exportState
+     TYPE(WRF_COMP_Clock),    OPTIONAL, INTENT(IN   ) :: clock
+     ! Local variables
+     INTEGER :: numprocsX, numprocsY
+     LOGICAL :: periodicX, periodicY
+     INTEGER :: i, j
+     INTEGER :: myXcount, myYcount   ! process-local values for mass points only
+     INTEGER :: myXend,   myYend     ! process-local values for mass points only
+     INTEGER :: globalXcount, globalYcount  ! global values for mass points only
+     REAL, POINTER :: coordX(:), coordY(:)
+     INTEGER :: ids, ide, jds, jde, kds, kde
+     INTEGER :: ims, ime, jms, jme, kms, kme
+     INTEGER :: ips, ipe, jps, jpe, kps, kpe
+
+     ! Extract information from WRF domain.  
+
+     ! For distributed-memory parallel runs, get numbers of tasks in each 
+     ! decomposed dimension.  This is identical for all WRF domains.  
+#ifdef DM_PARALLEL
+     CALL nl_get_nproc_x ( 1, numprocsX )
+     CALL nl_get_nproc_y ( 1, numprocsY )
+#else
+     numprocsX = 1
+     numprocsY = 1
+#endif
+     IF ( ( numprocsX < 1 ) .OR. ( numprocsY < 1 ) ) THEN
+       CALL wrf_error_fatal( 'bad value for numprocsX or numprocsY' )
+     ENDIF
+
+     CALL get_ijk_from_grid ( grid ,                        &
+                              ids, ide, jds, jde, kds, kde, &
+                              ims, ime, jms, jme, kms, kme, &
+                              ips, ipe, jps, jpe, kps, kpe  )
+     ! numbers of points in domain for non-staggered arrays
+     globalXcount = (ide-1) - ids + 1
+     globalYcount = (jde-1) - jds + 1
+
+     !$$$ HACK:  ESMF does not yet support mercator, polar-stereographic, or 
+     !$$$ HACK:  lambert-conformal projections.  Therefore, we're using fake 
+     !$$$ HACK:  coordinates here.  This means that WRF will either have to 
+     !$$$ HACK:  couple to models that run on the same coorindate such that 
+     !$$$ HACK:  grid points are co-located or something else will have to 
+     !$$$ HACK:  perform the inter-grid interpolation computations.  Replace 
+     !$$$ HACK:  this once ESMF is upgraded to support the above map 
+     !$$$ HACK:  projections.  
+     CALL wrf_message( 'WARNING:  Using artificial coordinates for ESMF coupling.' )
+     CALL wrf_message( 'WARNING:  ESMF coupling interpolation will be incorrect' )
+     CALL wrf_message( 'WARNING:  unless grid points in the coupled components' )
+     CALL wrf_message( 'WARNING:  are co-located.  This limitation will be removed' )
+     CALL wrf_message( 'WARNING:  once ESMF coupling supports common map projections.' )
+     ! Note that ESMF defines coordinates at *vertices*
+     ALLOCATE( coordX( globalXcount + 1 ), coordY( globalYcount + 1 ) )
+     coordX(1) = 0.0
+     DO i = 2, globalXcount+1
+       coordX(i) = coordX(i-1) + 1.0
+     ENDDO
+     coordY(1) = 0.0
+     DO i = 2, globalYcount+1
+       coordY(i) = coordY(i-1) + 1.0
+     ENDDO
+
+     ! task-local numbers of points in patch for non-staggered arrays
+     myXend = min(ipe, ide-1)
+     myYend = min(jpe, jde-1)
+     myXcount = myXend - ips + 1
+     myYcount = myYend - jps + 1
+PRINT *, 'DEBUG:  WRF non-staggered     ips = ', ips
+PRINT *, 'DEBUG:  WRF non-staggered     ipe = ', min(ipe, ide-1)
+PRINT *, 'DEBUG:  WRF non-staggered i count = ', myXCount
+PRINT *, 'DEBUG:  WRF non-staggered     jps = ', jps
+PRINT *, 'DEBUG:  WRF non-staggered     jpe = ', min(jpe, jde-1)
+PRINT *, 'DEBUG:  WRF non-staggered j count = ', myYCount
+PRINT *, 'DEBUG:  WRF     staggered     ips = ', ips
+PRINT *, 'DEBUG:  WRF     staggered     ipe = ', ipe
+PRINT *, 'DEBUG:  WRF     staggered i count = ', ipe-ips+1
+PRINT *, 'DEBUG:  WRF     staggered     jps = ', jps
+PRINT *, 'DEBUG:  WRF     staggered     jpe = ', jpe
+PRINT *, 'DEBUG:  WRF     staggered j count = ', jpe-jps+1
+
+     ! periodicity
+     CALL nl_get_periodic_x ( grid%id, periodicX )
+     CALL nl_get_periodic_y ( grid%id, periodicY )
+
+     ! Send WRF initialization information to ESMF for this grid
+     CALL init_iostate_comp( grid%id, numprocsX,    numprocsY,    &
+                                      periodicX,    periodicY,    &
+                                      coordX,       coordY,       &
+                                      globalXcount, globalYcount, &
+                                      ips,          myXend,       &
+                                      jps,          myYend )
+
+
+     !$$$ TBH:  Get rid of [s|g]et_iostate_comp() once ESMF_StateGetCurrentImport(), 
+     !$$$ TBH:  ESMF_StateGetCurrentExport(), ESMF_GridCompGetCurrent(), and ESMF_ClockGetCurrent() 
+     !$$$ TBH:  are supported!  
+     CALL set_iostate_comp( grid%id, gcomp=gcomp, importState=importState, &
+                                     exportState=exportState, clock=clock )
+
+     DEALLOCATE( coordX, coordY )
+
+   END SUBROUTINE wrf_init_coupling
+
+
+END MODULE module_wrf_comp_super
 
 

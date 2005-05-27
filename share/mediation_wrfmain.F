@@ -28,7 +28,7 @@ SUBROUTINE med_initialdata_input ( grid , config_flags )
   ! Model layer
    USE module_configure
    USE module_bc_time_utilities
-   USE WRF_ESMF_MOD
+   USE module_comp
 
    IMPLICIT NONE
 
@@ -50,7 +50,7 @@ SUBROUTINE med_initialdata_input ( grid , config_flags )
    CHARACTER (LEN=80)     :: inpname , rstname, timestr
    CHARACTER (LEN=80)     :: message
    LOGICAL                :: restart
-   TYPE(ESMF_Time)        :: CurrTime
+   TYPE(WRF_COMP_Time)        :: CurrTime
 
 
    CALL nl_get_restart( 1, restart )
@@ -63,7 +63,7 @@ SUBROUTINE med_initialdata_input ( grid , config_flags )
         CALL       wrf_debug ( 1 , 'wrf main: calling open_r_dataset for wrfinput' )
 
 ! typically <date> will not be part of input_inname but allow for it
-        CALL ESMF_ClockGet( grid%domain_clock, CurrTime=CurrTime, rc=ierr )
+        CALL WRF_COMP_ClockGet( grid%domain_clock, CurrTime=CurrTime, rc=ierr )
         CALL wrf_timetoa ( CurrTime, timestr )
         CALL construct_filename2a ( inpname , config_flags%input_inname , grid%id , 2 , timestr )
 
@@ -109,7 +109,7 @@ SUBROUTINE med_initialdata_input ( grid , config_flags )
      grid%imask_xystag = 1
      CALL start_domain ( grid , .TRUE. )
    ELSE
-     CALL ESMF_ClockGet( grid%domain_clock, CurrTime=CurrTime, rc=ierr )
+     CALL WRF_COMP_ClockGet( grid%domain_clock, CurrTime=CurrTime, rc=ierr )
      CALL wrf_timetoa ( CurrTime, timestr )
      CALL construct_filename2a ( rstname , config_flags%rst_inname , grid%id , 2 , timestr )
 

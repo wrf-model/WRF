@@ -343,7 +343,9 @@ SUBROUTINE update_after_feedback_em ( grid , &
                             ims, ime, jms, jme, kms, kme,    &
                             ips, ipe, jps, jpe, kps, kpe    )
 
+#ifdef DM_PARALLEL
 #include "HALO_EM_FEEDBACK.inc"
+#endif
 
 END SUBROUTINE update_after_feedback_em
 

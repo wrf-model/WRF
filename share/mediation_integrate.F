@@ -576,10 +576,6 @@ SUBROUTINE med_nest_feedback ( parent , nest , config_flags )
                                 ips, ipe, jps, jpe, kps, kpe    )
       DO j = jps, MIN(jpe,jde-1)
       DO i = ips, MIN(ipe,ide-1)
-        IF      ( parent%nest_pos(i,j) .NE. 9021000. ) THEN
-          !if the nest has moved away from this point restore the stored coarse domain ht
-          parent%ht(i,j) = parent%ht_coarse(i,j)
-        ENDIF
         IF      ( parent%nest_pos(i,j) .EQ. 9021000. ) THEN
           parent%nest_pos(i,j) = parent%ht(i,j)*1.5 + 1000.
         ELSE IF ( parent%ht(i,j) .NE. 0. ) THEN

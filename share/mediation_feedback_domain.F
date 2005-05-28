@@ -51,6 +51,16 @@ SUBROUTINE med_feedback_domain ( parent_grid , nested_grid )
          TYPE (grid_config_rec_type)            :: config_flags
 #        include <em_dummy_decl.inc>
       END SUBROUTINE feedback_domain_em_part2
+      SUBROUTINE update_after_feedback_em ( grid,  &
+!
+#          include "em_dummy_args.inc"
+!
+                                          )
+         USE module_domain
+         USE module_configure
+         TYPE(domain), TARGET :: grid          ! name of the grid being dereferenced (must be "grid")
+#        include <em_dummy_decl.inc>
+      END SUBROUTINE update_after_feedback_em
 #endif
 ! ----------------------------------------------------------
 !    Interface definitions for NMM (placeholder)
@@ -98,6 +108,12 @@ SUBROUTINE med_feedback_domain ( parent_grid , nested_grid )
 !
 #      include "em_actual_args.inc"
 
+                                   )
+     WHERE   ( grid%nest_pos .NE. 9021000.  ) grid%ht = grid%ht_coarse
+     CALL update_after_feedback_em ( grid , &
+!
+#      include "em_actual_args.inc"
+!
                                    )
      grid => nested_grid%intermediate_grid
      CALL dealloc_space_field ( grid )

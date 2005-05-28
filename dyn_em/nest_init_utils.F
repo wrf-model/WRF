@@ -284,3 +284,66 @@ enddo
                        
 END SUBROUTINE input_terrain_rsmas
 
+SUBROUTINE update_after_feedback_em ( grid , &
+!
+#include "em_dummy_args.inc"
+!
+                 )
+!
+! perform core specific updates, exchanges after
+! model feedback  (called from med_feedback_domain) -John
+!
+
+! Driver layer modules
+   USE module_domain
+   USE module_configure
+   USE module_driver_constants
+   USE module_machine
+   USE module_tiles
+   USE module_dm
+   USE module_bc
+! Mediation layer modules
+! Registry generated module
+   USE module_state_description
+
+   IMPLICIT NONE
+
+   !  Subroutine interface block.
+
+   TYPE(domain) , TARGET         :: grid
+
+   !  Definitions of dummy arguments
+#include <em_dummy_decl.inc>
+
+   INTEGER                         :: ids , ide , jds , jde , kds , kde , &
+                                      ims , ime , jms , jme , kms , kme , &
+                                      ips , ipe , jps , jpe , kps , kpe
+
+! These are used if -DDEREF_KLUDGE is compiled
+!  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
+   INTEGER     :: sm31  , em31  , sm32  , em32  , sm33  , em33
+   INTEGER     :: sm31x , em31x , sm32x , em32x , sm33x , em33x
+   INTEGER     :: sm31y , em31y , sm32y , em32y , sm33y , em33y
+
+! Trick problematic compilers into not performing copy-in/copy-out by adding
+! indices to array arguments in the CALL statements in this routine.
+! It has the effect of passing only the first element of the array, rather
+! than the entire array.  See:
+! http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
+#include "deref_kludge.h"
+
+#ifdef DM_PARALLEL
+#    define REGISTER_I1
+#      include <em_data_calls.inc>
+#endif
+
+!  Obtain dimension information stored in the grid data structure.
+  CALL get_ijk_from_grid (  grid ,                   &
+                            ids, ide, jds, jde, kds, kde,    &
+                            ims, ime, jms, jme, kms, kme,    &
+                            ips, ipe, jps, jpe, kps, kpe    )
+
+#include "HALO_EM_FEEDBACK.inc"
+
+END SUBROUTINE update_after_feedback_em
+

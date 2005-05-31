@@ -61,7 +61,6 @@ CONTAINS
 !-------------------------------------------------------------------
 !
   SUBROUTINE mp_thomp(itimestep,th, qv, ql, qr, qi, qs, qg,        &
-                       qrold, qsold, qgold,                        &
                        qni,              &
                        rho, pii, p,                                &
                        dt_in, z, ht, dz8w, w,                      &
@@ -98,9 +97,6 @@ CONTAINS
 !
   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),                 &
         INTENT(IN   ) ::                                     rho, &
-                                                           qrold, &
-                                                           qsold, &
-                                                           qgold, &
                                                              pii, &
                                               		       p, &
                                               		    dz8w, &

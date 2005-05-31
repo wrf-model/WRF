@@ -5,7 +5,7 @@ MODULE module_mp_kessler
 
 CONTAINS
 !----------------------------------------------------------------
-   SUBROUTINE kessler( t, qv, qc, qcold, qr, qrold, rho, pii    &
+   SUBROUTINE kessler( t, qv, qc, qr, rho, pii                  &
                       ,dt_in, z, xlv, cp                        &
                       ,EP2,SVP1,SVP2,SVP3,SVPT0,rhowater        &
                       ,dz8w                                     &
@@ -44,8 +44,6 @@ CONTAINS
 
    REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),              &
          INTENT(IN   ) ::                                       &
-                                                         qcold, &
-                                                         qrold, &
                                                            rho, &
                                                            pii, &
                                                           dz8w 
@@ -76,7 +74,7 @@ CONTAINS
    REAL    :: f5, dtfall, rdz, product
    REAL    :: max_heating, max_condense, max_rain, maxqrp
    REAL    :: vtmax, ernmax, crmax, factorn, time_sediment
-   REAL    :: qcr, qroldr, qcoldr, factorr, maxqrold, minqrold, ppt
+   REAL    :: qcr, factorr, ppt
    REAL, PARAMETER :: max_cr_sedimentation = 0.75
 !----------------------------------------------------------------
 

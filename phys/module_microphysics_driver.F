@@ -17,7 +17,6 @@ SUBROUTINE microphysics_driver(                                          &
                       ,i_start,i_end,j_start,j_end,kts,kte,num_tiles     &
                       ,qv_curr,qc_curr,qr_curr,qi_curr,qs_curr,qg_curr   &
                       ,qni_curr                                          &
-                      ,qv_old ,qc_old ,qr_old ,qi_old ,qs_old ,qg_old    &
                       ,f_qv,f_qc,f_qr,f_qi,f_qs,f_qg,f_qni               &
                       ,mp_restart_state,tbpvs_state,tbpvs0_state          & ! for etampnew
                       ,w ,z                                              &
@@ -204,8 +203,7 @@ SUBROUTINE microphysics_driver(                                          &
          INTENT(INOUT ) ::                                        &
                   w, z                                            & 
                  ,qv_curr,qc_curr,qr_curr,qi_curr,qs_curr,qg_curr &
-                 ,qni_curr                                        &
-                 ,qv_old ,qc_old ,qr_old ,qi_old ,qs_old ,qg_old
+                 ,qni_curr
 
 !
    REAL, DIMENSION( ims:ime , jms:jme ),                          &
@@ -257,15 +255,13 @@ SUBROUTINE microphysics_driver(                                          &
         CASE (KESSLERSCHEME)
              CALL wrf_debug ( 100 , 'microphysics_driver: calling kessler' )
              IF ( PRESENT( QV_CURR ) .AND. PRESENT( QC_CURR ) .AND.  &
-                  PRESENT( QC_OLD  ) .AND. PRESENT( QR_CURR ) .AND.  &
-                  PRESENT( QR_OLD  ) .AND. PRESENT( Z       ))  THEN
+                                           PRESENT( QR_CURR ) .AND.  &
+                                           PRESENT( Z       ))  THEN
                CALL kessler(                                        &
                   T=th                                              &
                  ,QV=qv_curr                                        &
                  ,QC=qc_curr                                        &
-                 ,QCOLD=qc_old                                      &
                  ,QR=qr_curr                                        &
-                 ,QROLD=qr_old                                      &
                  ,RHO=rho, PII=pi_phy,DT_IN=dt, Z=z, XLV=xlv, CP=cp &
                  ,EP2=ep_2,SVP1=svp1,SVP2=svp2                      &
                  ,SVP3=svp3,SVPT0=svpt0,RHOWATER=rhowater           &
@@ -287,8 +283,7 @@ SUBROUTINE microphysics_driver(                                          &
                   PRESENT( QR_CURR ) .AND. PRESENT ( QI_CURR ) .AND.  &
                   PRESENT( QS_CURR ) .AND. PRESENT ( QG_CURR ) .AND.  &
                   PRESENT( QR_CURR ) .AND. PRESENT ( QI_CURR ) .AND.  &
-                  PRESENT( QR_OLD  ) .AND. PRESENT ( QS_OLD  ) .AND.  &
-                  PRESENT( QG_OLD  ) .AND. PRESENT ( QNI_CURR ) .AND.  &
+                                           PRESENT ( QNI_CURR ).AND.  &
                   PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) .AND.  &
                   PRESENT( Z       ) .AND. PRESENT ( W       )  ) THEN
              CALL mp_thomp(                              &
@@ -300,9 +295,6 @@ SUBROUTINE microphysics_driver(                                          &
                      QI=qi_curr,                         &
                      QS=qs_curr,                         &
                      QG=qg_curr,                         &
-                     QROLD=qr_old,                       &
-                     QSOLD=qs_old,                       &
-                     QGOLD=qg_old,                       &
                      QNI=qni_curr,                       &
                      RHO=rho,                            &
                      PII=pi_phy,                         &
@@ -326,14 +318,13 @@ SUBROUTINE microphysics_driver(                                          &
         CASE (LINSCHEME)
              CALL wrf_debug ( 100 , 'microphysics_driver: calling lin_et_al' )
              IF ( PRESENT( QV_CURR ) .AND. PRESENT ( QC_CURR ) .AND.  &
-                  PRESENT( QR_CURR ) .AND. PRESENT ( QR_OLD  ) .AND.  &
+                  PRESENT( QR_CURR )                           .AND.  &
                   PRESENT( Z       ) .AND. PRESENT ( W       )  ) THEN
                CALL lin_et_al(                                      &
                   TH=th                                             &
                  ,QV=qv_curr                                        &
                  ,QL=qc_curr                                        &
                  ,QR=qr_curr                                        &
-                 ,QROLD=qr_old                                      &
                  ,RHO=rho, PII=pi_phy, P=p, DT_IN=dt, Z=z           &
                  ,HT=ht, DZ8W=dz8w, GRAV=G,  CP=cp                  &
                  ,RAIR=r_d, RVAPOR=R_v                              &
@@ -347,8 +338,6 @@ SUBROUTINE microphysics_driver(                                          &
               ! Optional
                  ,RAINNC=rainnc, RAINNCV=rainncv                    &
                  ,F_QI=f_qi, F_QS=f_qs, F_QG=f_qg                   &
-                 ,QSOLD=qs_old                                      &
-                 ,QGOLD=qg_old                                      &
                  ,QI=qi_curr                                        &
                  ,QS=qs_curr                                        &
                  ,QG=qg_curr                                        &

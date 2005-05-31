@@ -110,8 +110,7 @@
       do k=k_start,k_end
       kk=min(k,kde-1)
       do i=its,ite
-        chem_1(i,k,j,l)=chem_1(i,kk,j,l)*alt(i,kk,j)
-        chem_2(i,k,j,l)=chem_2(i,kk,j,l)*alt(i,kk,j)
+        chem(i,k,j,l)=chem(i,kk,j,l)*alt(i,kk,j)
       enddo
       enddo
       enddo
@@ -132,7 +131,7 @@
          do j=jps,min(jde-1,jpe)
             do k=kps,kpe
                do i=ips,min(ide-1,ipe)
-                  chem_2(i,k,j,nv)=max(chem_2(i,k,j,nv),epsilc)
+                  chem(i,k,j,nv)=max(chem(i,k,j,nv),epsilc)
                enddo
             enddo
          enddo
@@ -140,8 +139,8 @@
       do j=jps,min(jde-1,jpe)
          do k=kps,kpe
              do i=ips,min(ide-1,ipe)
-               if(chem_2(i,k,j,p_nu0).lt.1.e07)then
-                  chem_2(i,k,j,p_nu0)=1.e7
+               if(chem(i,k,j,p_nu0).lt.1.e07)then
+                  chem(i,k,j,p_nu0)=1.e7
                endif
             enddo
          enddo
@@ -149,7 +148,7 @@
 !     do nv=1,num_chem
 !        do j=jps,jpe
 !           do i=ips,ipe
-!                 chem_2(i,kte,j,nv)=chem_2(i,kte-1,j,nv)
+!                 chem(i,kte,j,nv)=chem(i,kte-1,j,nv)
 !           enddo
 !        enddo
 !     enddo
@@ -166,7 +165,7 @@
           CALL wrf_debug ( 15 , ' call chem_prep' )
          CALL chem_prep ( config_flags,                           &
                          mut, u_2, v_2, p, pb, alt,              &
-                         ph_2, phb, t_2, tsk, moist_2, num_3d_m, &
+                         ph_2, phb, t_2, tsk, moist, num_3d_m, &
                          mu_3d, rho,                             &
                          th_phy, p_phy,  u_phy, v_phy,    &
                          p8w, t_phy, t8w, z, z_at_w,             &
@@ -182,8 +181,8 @@
       call wrf_debug(15,'calling emissions driver')
       call emissions_driver(grid%id,ktau,dt,DX,                            &
          config_flags, stepbioe,                                          &
-         gmt,julday,t_phy,moist_2,p8w,t8w,                                  & 
-         e_bio,p_phy,chem_2,rho,dz8w,ne_area,                    &
+         gmt,julday,t_phy,moist,p8w,t8w,                                  & 
+         e_bio,p_phy,chem,rho,dz8w,ne_area,                    &
          e_iso,e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,  &
          e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_pm25,e_pm10,e_nh3,  &
          ivgtyp,tsk,gsw,vegfra,pblh,rmol,ust,znt,xlat,xlong,z,z_at_w,      &
@@ -205,8 +204,8 @@
       if(ktau.eq.1.or.mod(ktau,stepphot).eq.0)then
          call wrf_debug(15,'calling photolysis driver')
          call photolysis_driver (grid%id,ktau,dt,config_flags,             &
-              gmt,julday,t_phy,moist_2,aerwrf,p8w,t8w,p_phy,         &
-              chem_2,rho,dz8w,xlat,xlong,z,z_at_w,                      &
+              gmt,julday,t_phy,moist,aerwrf,p8w,t8w,p_phy,         &
+              chem,rho,dz8w,xlat,xlong,z,z_at_w,                      &
               ph_macr,ph_o31d,ph_o33p,ph_no2,ph_no3o2,ph_no3o,ph_hno2,      &
               ph_hno3,ph_hno4,ph_h2o2,ph_ch2or,ph_ch2om,ph_ch3cho,        &
               ph_ch3coch3,ph_ch3coc2h5,ph_hcocho,ph_ch3cocho,             &
@@ -223,8 +222,8 @@
          call wrf_debug(100,'calling dry_deposition_driver')
          call dry_dep_driver(grid%id,ktau,dt,                              &
               config_flags,                                               &
-              gmt,julday,t_phy,moist_2,p8w,t8w,                             &
-              alt,p_phy,chem_2,rho,dz8w,exch_h,                    &
+              gmt,julday,t_phy,moist,p8w,t8w,                             &
+              alt,p_phy,chem,rho,dz8w,exch_h,                    &
               ivgtyp,tsk,gsw,vegfra,pblh,rmol,ust,znt,xlat,xlong,z,z_at_w, &
               h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,cvaro2,    &
               cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,dep_vel_o3,       &
@@ -241,8 +240,8 @@
 
          call wrf_debug(15,'calling conv transport')
          call grelldrvct(DT,ktau,DX,grid%id,config_flags,                 &
-              rho,RAINCV,chem_2,                                        &
-              U_phy,V_phy,t_phy,W_2,moist_2,dz8w,           &
+              rho,RAINCV,chem,                                        &
+              U_phy,V_phy,t_phy,W_2,moist,dz8w,           &
               p_phy,XLV0,CP,G,r_v,z,cu_co_ten,                  &
               ids,ide, jds,jde, kds,kde,               &
               ims,ime, jms,jme, kms,kme,                                  &
@@ -264,8 +263,8 @@
 ! chemical mechanisms
 !
         call mechanism_driver(grid%id,ktauc,dtstepc,config_flags,            &
-              gmt,julday,t_phy,moist_2,p8w,t8w,                          &
-              p_phy,chem_2,rho,dz8w,z,z_at_w,vdrog3,vcsulf_old,&
+              gmt,julday,t_phy,moist,p8w,t8w,                          &
+              p_phy,chem,rho,dz8w,z,z_at_w,vdrog3,vcsulf_old,&
               ph_macr,ph_o31d,ph_o33p,ph_no2,ph_no3o2,ph_no3o,ph_hno2,   &
               ph_hno3,ph_hno4,ph_h2o2,ph_ch2or,ph_ch2om,ph_ch3cho,     &
               ph_ch3coch3,ph_ch3coc2h5,ph_hcocho,ph_ch3cocho,          &
@@ -283,8 +282,8 @@
 !
       call wrf_debug(15,'calling aerosols')
       call aerosols_driver (grid%id,ktauc,config_flags,dtstepc,               &
-               alt,t_phy,moist_2,aerwrf,p8w,t8w,                              &
-               p_phy,chem_2,rho,dz8w,z,z_at_w,                 &
+               alt,t_phy,moist,aerwrf,p8w,t8w,                              &
+               p_phy,chem,rho,dz8w,z,z_at_w,                 &
                h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,cvaro2, &
                cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,vcsulf_old,    &
                e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_pm10,        &
@@ -312,7 +311,7 @@
                 do k=kts,kte
                    kk=min(k,kte-1)
                    do i=its,ite
-                      pm2_5(i,k,j)=pm2_5(i,k,j)+chem_2(i,kk,j,nv)
+                      pm2_5(i,k,j)=pm2_5(i,k,j)+chem(i,kk,j,nv)
                    enddo
                 enddo
              enddo
@@ -323,9 +322,9 @@
                kk=min(k,kte-1)
                do i=its,ite
                       pm10(i,k,j)= pm2_5(i,k,j)                      &
-                                  +chem_2(i,kk,j,p_antha)     &
-                                  +chem_2(i,kk,j,p_soila)    &
-                                  +chem_2(i,kk,j,p_seas)
+                                  +chem(i,kk,j,p_antha)     &
+                                  +chem(i,kk,j,p_soila)    &
+                                  +chem(i,kk,j,p_seas)
                enddo
             enddo
         enddo
@@ -335,7 +334,7 @@
       do nv=1,num_chem
          do j=jts,jte
             do i=its,ite
-                  chem_2(i,kte,j,nv)=chem_2(i,kte-1,j,nv)
+                  chem(i,kte,j,nv)=chem(i,kte-1,j,nv)
             enddo
          enddo
       enddo
@@ -361,8 +360,7 @@
       do k=k_start,k_end
       kk=min(k,kde-1)
       do i=its,ite
-        chem_1(i,k,j,l)=chem_1(i,kk,j,l)/alt(i,kk,j)
-        chem_2(i,k,j,l)=chem_2(i,kk,j,l)/alt(i,kk,j)
+        chem(i,k,j,l)=chem(i,kk,j,l)/alt(i,kk,j)
       enddo
       enddo
       enddo
@@ -371,7 +369,6 @@
     endif
     imicrogram=1
     endif
-   chem_1=chem_2
 
 
     END subroutine chem_driver

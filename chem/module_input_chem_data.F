@@ -462,14 +462,14 @@ SUBROUTINE input_ext_chem_file (si_grid)
          
       ! check size of si_grid vs chgrid
 
-        IF( size(si_grid%chem_1,1) .NE. ime-ims+1 .OR.  &
-            size(si_grid%chem_1,2) .NE. kme-kms+1 .OR.  &
-            size(si_grid%chem_1,3) .NE. jme-jms+1 .OR.  &
-            size(si_grid%chem_1,4) .NE. num_chem  ) then
+        IF( size(si_grid%chem,1) .NE. ime-ims+1 .OR.  &
+            size(si_grid%chem,2) .NE. kme-kms+1 .OR.  &
+            size(si_grid%chem,3) .NE. jme-jms+1 .OR.  &
+            size(si_grid%chem,4) .NE. num_chem  ) then
 
           CALL wrf_debug (100, ' SI grid dimensions ' )
-          write(message,'(4i8.8)') size(si_grid%chem_1,1),size(si_grid%chem_1,2), &
-                                   size(si_grid%chem_1,3),size(si_grid%chem_1,4)
+          write(message,'(4i8.8)') size(si_grid%chem,1),size(si_grid%chem,2), &
+                                   size(si_grid%chem,3),size(si_grid%chem,4)
           CALL wrf_debug (100, message)
           CALL wrf_debug (100, ' Input data dimensions ' )
           write(message,'(4i8.8)') ime-ims+1,kme-kms+1,jme-jms+1,num_chem
@@ -479,16 +479,12 @@ SUBROUTINE input_ext_chem_file (si_grid)
         ENDIF
 
         ! Fill top level to prevent spurious interpolation results (no extrapolation)
-        chgrid%chem_1(:,kde,:,:) = chgrid%chem_1(:,kde-1,:,:)
-        chgrid%chem_2(:,kde,:,:) = chgrid%chem_2(:,kde-1,:,:)
+        chgrid%chem(:,kde,:,:) = chgrid%chem(:,kde-1,:,:)
 
       ! Interpolate the chemistry data to the SI grid (holding place for time interpolation)
 
         call vinterp_chem(ims, ime, jms, jme, kms, kme, kme, num_chem, ch_zsig, si_zsig, &
-                          chgrid%chem_1, si_grid%chem_1, .false.)
-
-        call vinterp_chem(ims, ime, jms, jme, kms, kme, kme, num_chem, ch_zsig, si_zsig, &
-                          chgrid%chem_2, si_grid%chem_2, .false.)
+                          chgrid%chem, si_grid%chem, .false.)
 
           if(wgt0 == 0.) EXIT big_time_loop_thingy
         ENDIF
@@ -502,26 +498,17 @@ SUBROUTINE input_ext_chem_file (si_grid)
 !         enddo
 !         ch_zsig(:,kde,:) = 0.5 * ( 3. * ch_zsigf(:,kde,:) - ch_zsigf(:,kde-1,:) ) 
 
-!       ! Fill top level to prevent spurious interpolation results (no extrapolation)
-!         chgrid%chem_1(:,kde,:,:) = chgrid%chem_1(:,kde-1,:,:)
-!         chgrid%chem_2(:,kde,:,:) = chgrid%chem_2(:,kde-1,:,:)
-
 !     ! Interpolate the chemistry data to the temp chgrid2 structure
 
 !         call vinterp_chem(ims, ime, jms, jme, kms, kme, kme, num_chem, ch_zsig, si_zsig, &
-!                           chgrid%chem_1, chgrid2%chem_1, .false.)
-
-!         call vinterp_chem(ims, ime, jms, jme, kms, kme, kme, num_chem, ch_zsig, si_zsig, &
-!                           chgrid%chem_2, chgrid2%chem_2, .false.)
+!                           chgrid%chem, chgrid2%chem, .false.)
 
 !     ! use linear interpolation in time to get new chem arrays
-!         si_grid%chem_1 = (1. - wgt0) * si_grid%chem_1 + &
-!                                wgt0  * chgrid2%chem_1 
-!         si_grid%chem_2 = (1. - wgt0) * si_grid%chem_2 + &
-!                                wgt0  * chgrid2%chem_2 
+!         si_grid%chem = (1. - wgt0) * si_grid%chem + &
+!                                wgt0  * chgrid2%chem 
 
           !ALLOCATE(  ozone(ims:ime,kms:kme,jms:jme) )
-          !ozone = chgrid2%chem_2(:,:,:,p_o3)
+          !ozone = chgrid2%chem(:,:,:,p_o3)
           !!print *, '     GRID2'
           !!print *,ozone(:,1,:)
           !write(15,*) ids,ide,jds,jde,kds,kde
@@ -547,8 +534,7 @@ SUBROUTINE input_ext_chem_file (si_grid)
    do j=jds,jde
    do k=kds,kde
    do i=ids,ide
-     si_grid%chem_1(i,k,j,l) = MAX(si_grid%chem_1(i,k,j,l),epsilc)
-     si_grid%chem_2(i,k,j,l) = MAX(si_grid%chem_2(i,k,j,l),epsilc)
+     si_grid%chem(i,k,j,l) = MAX(si_grid%chem(i,k,j,l),epsilc)
    enddo
    enddo
    enddo
@@ -735,14 +721,12 @@ SUBROUTINE input_chem_profile (si_grid)
 
    ! Interpolate the chemistry data to the SI grid
 
-   CALL make_chem_profile (ims, ime, jms, jme, kms, kme, num_chem, &
-                           si_zsig, si_grid%chem_1)
-   DO k=kms,kme
-     print *,k,si_grid%chem_1(10,k,10,6)
-   ENDDO
 
    CALL make_chem_profile (ims, ime, jms, jme, kms, kme, num_chem, &
-                           si_zsig, si_grid%chem_2)
+                           si_zsig, si_grid%chem)
+   DO k=kms,kme
+     print *,k,si_grid%chem(10,k,10,6)
+   ENDDO
 
    CALL wrf_debug       ( 100,' input_chem_profile: exit subroutine ')
 

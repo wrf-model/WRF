@@ -67,6 +67,16 @@ SUBROUTINE solve_em ( grid , config_flags , &
 ! storage for tendencies and decoupled state (generated from Registry)
 #include <em_i1_decl.inc>
 
+! Previous time level of tracer arrays now defined as i1 variables;
+! the state 4d arrays now redefined as 1-time level arrays in Registry.
+! Benefit: save memory in nested runs, since only 1 domain is active at a
+! time.  Potential problem on stack-limited architectures: increases
+! amount of data on program stack by making these automatic arrays.
+
+   REAL ,DIMENSION(grid%sm31:grid%em31,grid%sm32:grid%em32,grid%sm33:grid%em33,num_moist)  :: moist_old
+   REAL ,DIMENSION(grid%sm31:grid%em31,grid%sm32:grid%em32,grid%sm33:grid%em33,num_chem)   :: chem_old
+   REAL ,DIMENSION(grid%sm31:grid%em31,grid%sm32:grid%em32,grid%sm33:grid%em33,num_scalar) :: scalar_old
+
    INTEGER :: rc 
    INTEGER :: number_of_small_timesteps, rk_step
    INTEGER :: klevel,ijm,ijp,i,j,k,size1,size2    ! for prints/plots only
@@ -76,6 +86,7 @@ SUBROUTINE solve_em ( grid , config_flags , &
    REAL :: dt_rk, dts_rk, dtm, wmax
    LOGICAL :: leapfrog
    INTEGER :: l,kte,kk
+
 
 ! These are used if -DDEREF_KLUDGE is compiled
 !  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
@@ -230,8 +241,7 @@ SUBROUTINE solve_em ( grid , config_flags , &
       do k=k_start,kte+1 
       kk=min(k,kde-1)
       do i=its,ite
-        chem_1(i,k,j,l)=chem_1(i,kk,j,l)*alt(i,kk,j)
-        chem_2(i,k,j,l)=chem_2(i,kk,j,l)*alt(i,kk,j)
+        chem(i,k,j,l)=chem(i,kk,j,l)*alt(i,kk,j)
       enddo
       enddo
       enddo
@@ -343,7 +353,7 @@ BENCH_START(step_prep_tim)
 
       CALL rk_step_prep  ( config_flags, rk_step,            &
                            u_2, v_2, w_2, t_2, ph_2, mu_2,   &
-                           moist_2,                          &
+                           moist,                            &
                            ru, rv, rw, ww, php, alt, muu, muv,   &
                            mub, mut, phb, pb, p, al, alb,    &
                            cqu, cqv, cqw,                    &
@@ -487,7 +497,7 @@ BENCH_START(phy_prep_tim)
           CALL wrf_debug ( 200 , ' call phy_prep' )
          CALL phy_prep ( config_flags,                           &
                          mut, u_2, v_2, p, pb, alt,              &
-                         ph_2, phb, t_2, tsk, moist_2, num_3d_m, &
+                         ph_2, phb, t_2, tsk, moist, num_3d_m,   &
                          mu_3d, rho,                             &
                          th_phy, p_phy, pi_phy, u_phy, v_phy,    &
                          p8w, t_phy, t8w, z, z_at_w,             &
@@ -549,13 +559,13 @@ BENCH_START(rad_driver_tim)
             ! Optional                          
      &        , CLDFRA=CLDFRA                                             &
      &        , Pb=pb                                                     &
-     &        , QV=moist_2(ims,kms,jms,P_QV), F_QV=F_QV                   &
-     &        , QC=moist_2(ims,kms,jms,P_QC), F_QC=F_QC                   &
-     &        , QR=moist_2(ims,kms,jms,P_QR), F_QR=F_QR                   &
-     &        , QI=moist_2(ims,kms,jms,P_QI), F_QI=F_QI                   &
-     &        , QS=moist_2(ims,kms,jms,P_QS), F_QS=F_QS                   &
-     &        , QG=moist_2(ims,kms,jms,P_QG), F_QG=F_QG                   &
-     &                                                                    )
+     &        , QV=moist(ims,kms,jms,P_QV), F_QV=F_QV                     &
+     &        , QC=moist(ims,kms,jms,P_QC), F_QC=F_QC                     &
+     &        , QR=moist(ims,kms,jms,P_QR), F_QR=F_QR                     &
+     &        , QI=moist(ims,kms,jms,P_QI), F_QI=F_QI                     &
+     &        , QS=moist(ims,kms,jms,P_QS), F_QS=F_QS                     &
+     &        , QG=moist(ims,kms,jms,P_QG), F_QG=F_QG                     &
+     &                                                              )
 
 BENCH_END(rad_driver_tim)
 
@@ -609,18 +619,18 @@ BENCH_START(surf_driver_tim)
      &        , KTS=k_start, KTE=min(k_end,kde-1)                         &
      &        , NUM_TILES=grid%num_tiles                                  &
            ! Optional
-     &          ,QV_CURR=moist_2(ims,kms,jms,P_QV), F_QV=F_QV             &
-     &          ,QC_CURR=moist_2(ims,kms,jms,P_QC), F_QC=F_QC             &
-     &          ,QR_CURR=moist_2(ims,kms,jms,P_QR), F_QR=F_QR             &
-     &          ,QI_CURR=moist_2(ims,kms,jms,P_QI), F_QI=F_QI             &
-     &          ,QS_CURR=moist_2(ims,kms,jms,P_QS), F_QS=F_QS             &
-     &          ,QG_CURR=moist_2(ims,kms,jms,P_QG), F_QG=F_QG             &
-     &          ,CAPG=capg, EMISS=emiss, HOL=hol,MOL=mol                  &
-     &          ,RAINBL=rainbl                                            &
-     &          ,RAINNCV=rainncv,REGIME=regime,T2=t2,THC=thc              &
-     &          ,QSG=qsg,QVG=qvg,QCG=qcg,SOILT1=soilt1,TSNAV=tsnav        &   ! ruc lsm
-     &          ,SMFR3D=smfr3d,KEEPFR3DFLAG=keepfr3dflag                  &   ! ruc lsm
-     &                                                                    )
+     &        ,QV_CURR=moist(ims,kms,jms,P_QV), F_QV=F_QV                 &
+     &        ,QC_CURR=moist(ims,kms,jms,P_QC), F_QC=F_QC                 &
+     &        ,QR_CURR=moist(ims,kms,jms,P_QR), F_QR=F_QR                 &
+     &        ,QI_CURR=moist(ims,kms,jms,P_QI), F_QI=F_QI                 &
+     &        ,QS_CURR=moist(ims,kms,jms,P_QS), F_QS=F_QS                 &
+     &        ,QG_CURR=moist(ims,kms,jms,P_QG), F_QG=F_QG                 &
+     &        ,CAPG=capg, EMISS=emiss, HOL=hol,MOL=mol                    &
+     &        ,RAINBL=rainbl                                              &
+     &        ,RAINNCV=rainncv,REGIME=regime,T2=t2,THC=thc                &
+     &        ,QSG=qsg,QVG=qvg,QCG=qcg,SOILT1=soilt1,TSNAV=tsnav          & ! ruc lsm
+     &        ,SMFR3D=smfr3d,KEEPFR3DFLAG=keepfr3dflag                    & ! ruc lsm
+     &                                                              )
 BENCH_END(surf_driver_tim)
 
 !*********
@@ -651,21 +661,21 @@ BENCH_START(pbl_driver_tim)
      &        ,WARM_RAIN=warm_rain                    ,WSPD=wspd          &
      &        ,XICE=xice          ,XLAND=xland        ,Z=z                &
      &        ,ZNT=znt                                                    &
-     &        , IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde         &
-     &        , IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme         &
-     &        , I_START=grid%i_start,I_END=min(grid%i_end, ide-1)         &
-     &        , J_START=grid%j_start,J_END=min(grid%j_end, jde-1)         &
-     &        , KTS=k_start, KTE=min(k_end,kde-1)                         &
-     &        , NUM_TILES=grid%num_tiles                                  &
+     &        ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde          &
+     &        ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme          &
+     &        ,I_START=grid%i_start,I_END=min(grid%i_end, ide-1)          &
+     &        ,J_START=grid%j_start,J_END=min(grid%j_end, jde-1)          &
+     &        ,KTS=k_start, KTE=min(k_end,kde-1)                          &
+     &        ,NUM_TILES=grid%num_tiles                                   &
           ! optional
-     &        , QV_CURR=moist_2(ims,kms,jms,P_QV), F_QV=F_QV              &
-     &        , QC_CURR=moist_2(ims,kms,jms,P_QC), F_QC=F_QC              &
-     &        , QR_CURR=moist_2(ims,kms,jms,P_QR), F_QR=F_QR              &
-     &        , QI_CURR=moist_2(ims,kms,jms,P_QI), F_QI=F_QI              &
-     &        , QS_CURR=moist_2(ims,kms,jms,P_QS), F_QS=F_QS              &
-     &        , QG_CURR=moist_2(ims,kms,jms,P_QG), F_QG=F_QG              &
+     &        ,QV_CURR=moist(ims,kms,jms,P_QV), F_QV=F_QV                 &
+     &        ,QC_CURR=moist(ims,kms,jms,P_QC), F_QC=F_QC                 &
+     &        ,QR_CURR=moist(ims,kms,jms,P_QR), F_QR=F_QR                 &
+     &        ,QI_CURR=moist(ims,kms,jms,P_QI), F_QI=F_QI                 &
+     &        ,QS_CURR=moist(ims,kms,jms,P_QS), F_QS=F_QS                 &
+     &        ,QG_CURR=moist(ims,kms,jms,P_QG), F_QG=F_QG                 &
      &        ,HOL=HOL, MOL=MOL, REGIME=REGIME                            &
-     &                                                                    )
+     &                                                          )
 
 BENCH_END(pbl_driver_tim)
 
@@ -674,49 +684,49 @@ BENCH_END(pbl_driver_tim)
           CALL wrf_debug ( 200 , ' call cumulus_driver' )
 
 BENCH_START(cu_driver_tim)
-         CALL cumulus_driver(                                          &
+         CALL cumulus_driver(                                             &
                  ! Prognostic variables
-                     U=u_phy   ,V=v_phy   ,TH=th_phy  ,T=t_phy         &
-                   , W=w_2     ,P=p_phy   ,PI=pi_phy  ,RHO=rho         &
+     &              U=u_phy   ,V=v_phy   ,TH=th_phy  ,T=t_phy             &
+     &             ,W=w_2     ,P=p_phy   ,PI=pi_phy  ,RHO=rho             &
                  ! Other arguments
-                   , ITIMESTEP=itimestep ,DT=dt      ,DX=dx            &
-                   , RAINC=rainc   ,RAINCV=raincv   ,NCA=nca           &
-                   , HTOP=htop     ,HBOT=hbot       ,KPBL=kpbl         &
-                   , DZ8W=dz8w     ,P8W=p8w                            &
-                   , W0AVG=w0avg   ,STEPCU=stepcu                      &
-                   , CLDEFI=cldefi ,LOWLYR=lowlyr ,XLAND=xland         &
-                   , APR_GR=apr_gr ,APR_W=apr_w   ,APR_MC=apr_mc       &
-                   , APR_ST=apr_st ,APR_AS=apr_as ,APR_CAPMA=apr_capma &
-                   , APR_CAPME=apr_capme          ,APR_CAPMI=apr_capmi &
-                   , MASS_FLUX=mass_flux          ,XF_ENS=xf_ens       &
-                   , PR_ENS=pr_ens ,HT=ht                              &
-                   , ENSDIM=ensdim ,MAXIENS=maxiens ,MAXENS=maxens     &
-                   , MAXENS2=maxens2                ,MAXENS3=maxens3   &
-                   , CU_ACT_FLAG=cu_act_flag   ,WARM_RAIN=warm_rain    &
+     &             ,ITIMESTEP=itimestep ,DT=dt      ,DX=dx                &
+     &             ,RAINC=rainc   ,RAINCV=raincv   ,NCA=nca               &
+     &             ,HTOP=htop     ,HBOT=hbot       ,KPBL=kpbl             &
+     &             ,DZ8W=dz8w     ,P8W=p8w                                &
+     &             ,W0AVG=w0avg   ,STEPCU=stepcu                          &
+     &             ,CLDEFI=cldefi ,LOWLYR=lowlyr ,XLAND=xland             &
+     &             ,APR_GR=apr_gr ,APR_W=apr_w   ,APR_MC=apr_mc           &
+     &             ,APR_ST=apr_st ,APR_AS=apr_as ,APR_CAPMA=apr_capma     &
+     &             ,APR_CAPME=apr_capme          ,APR_CAPMI=apr_capmi     &
+     &             ,MASS_FLUX=mass_flux          ,XF_ENS=xf_ens           &
+     &             ,PR_ENS=pr_ens ,HT=ht                                  &
+     &             ,ENSDIM=ensdim ,MAXIENS=maxiens ,MAXENS=maxens         &
+     &             ,MAXENS2=maxens2                ,MAXENS3=maxens3       &
+     &             ,CU_ACT_FLAG=cu_act_flag   ,WARM_RAIN=warm_rain        &
                  ! Selection flag
-                   , CU_PHYSICS=config_flags%cu_physics                &
+     &             ,CU_PHYSICS=config_flags%cu_physics                    &
                  ! Dimension arguments
-                   , IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
-                   , IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
-                   , I_START=grid%i_start,I_END=min(grid%i_end, ide-1) &
-                   , J_START=grid%j_start,J_END=min(grid%j_end, jde-1) &
-                   , KTS=k_start, KTE=min(k_end,kde-1)                 &
-                   , NUM_TILES=grid%num_tiles                          &
+     &             ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde     &
+     &             ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme     &
+     &             ,I_START=grid%i_start,I_END=min(grid%i_end, ide-1)     &
+     &             ,J_START=grid%j_start,J_END=min(grid%j_end, jde-1)     &
+     &             ,KTS=k_start, KTE=min(k_end,kde-1)                     &
+     &             ,NUM_TILES=grid%num_tiles                              &
                  ! Moisture tendency arguments
-                   , RQVCUTEN=rqvcuten , RQCCUTEN=rqccuten             &
-                   , RQRCUTEN=rqrcuten , RQVBLTEN=rqvblten             &
-                   , RQVFTEN=rqvften                                   &
+     &             ,RQVCUTEN=rqvcuten , RQCCUTEN=rqccuten                 &
+     &             ,RQRCUTEN=rqrcuten , RQVBLTEN=rqvblten                 &
+     &             ,RQVFTEN=rqvften                                       &
                  ! Other tendency arguments
-                   , RTHRATEN=rthraten , RTHBLTEN=rthblten             &
-                   , RTHCUTEN=rthcuten , RTHFTEN=rthften               &
+     &             ,RTHRATEN=rthraten , RTHBLTEN=rthblten                 &
+     &             ,RTHCUTEN=rthcuten , RTHFTEN=rthften                   &
                  ! Moisture tracer arguments
-                   , QV_CURR=moist_2(ims,kms,jms,P_QV), F_QV=F_QV      &
-                   , QC_CURR=moist_2(ims,kms,jms,P_QC), F_QC=F_QC      &
-                   , QR_CURR=moist_2(ims,kms,jms,P_QR), F_QR=F_QR      &
-                   , QI_CURR=moist_2(ims,kms,jms,P_QI), F_QI=F_QI      &
-                   , QS_CURR=moist_2(ims,kms,jms,P_QS), F_QS=F_QS      &
-                   , QG_CURR=moist_2(ims,kms,jms,P_QG), F_QG=F_QG      &
-                                                                       )
+     &             ,QV_CURR=moist(ims,kms,jms,P_QV), F_QV=F_QV            &
+     &             ,QC_CURR=moist(ims,kms,jms,P_QC), F_QC=F_QC            &
+     &             ,QR_CURR=moist(ims,kms,jms,P_QR), F_QR=F_QR            &
+     &             ,QI_CURR=moist(ims,kms,jms,P_QI), F_QI=F_QI            &
+     &             ,QS_CURR=moist(ims,kms,jms,P_QS), F_QS=F_QS            &
+     &             ,QG_CURR=moist(ims,kms,jms,P_QG), F_QG=F_QG            &
+     &                                                          )
 BENCH_END(cu_driver_tim)
 
 ! calculate_phy_tend
@@ -781,28 +791,28 @@ BENCH_START(tke_diff_bc_tim)
                                   grid%i_start(ij), grid%i_end(ij),   &
                                   grid%j_start(ij), grid%j_end(ij),   &
                                   k_start    , k_end                 )
-          CALL set_physical_bc3d( rdz , 'w', config_flags,           &
+          CALL set_physical_bc3d( rdz , 'w', config_flags,            &
                                   ids, ide, jds, jde, kds, kde,       &
                                   ims, ime, jms, jme, kms, kme,       &
                                   ips, ipe, jps, jpe, kps, kpe,       &
                                   grid%i_start(ij), grid%i_end(ij),   &
                                   grid%j_start(ij), grid%j_end(ij),   &
                                   k_start    , k_end                 )
-          CALL set_physical_bc3d( z , 'w', config_flags,           &
+          CALL set_physical_bc3d( z , 'w', config_flags,              &
                                   ids, ide, jds, jde, kds, kde,       &
                                   ims, ime, jms, jme, kms, kme,       &
                                   ips, ipe, jps, jpe, kps, kpe,       &
                                   grid%i_start(ij), grid%i_end(ij),   &
                                   grid%j_start(ij), grid%j_end(ij),   &
                                   k_start    , k_end                 )
-          CALL set_physical_bc3d( zx , 'w', config_flags,           &
+          CALL set_physical_bc3d( zx , 'w', config_flags,             &
                                   ids, ide, jds, jde, kds, kde,       &
                                   ims, ime, jms, jme, kms, kme,       &
                                   ips, ipe, jps, jpe, kps, kpe,       &
                                   grid%i_start(ij), grid%i_end(ij),   &
                                   grid%j_start(ij), grid%j_end(ij),   &
                                   k_start    , k_end                 )
-          CALL set_physical_bc3d( zy , 'w', config_flags,           &
+          CALL set_physical_bc3d( zy , 'w', config_flags,             &
                                   ids, ide, jds, jde, kds, kde,       &
                                   ims, ime, jms, jme, kms, kme,       &
                                   ips, ipe, jps, jpe, kps, kpe,       &
@@ -861,7 +871,7 @@ BENCH_START(calc_tke_tim)
                                 defor11,defor22,defor33,defor12,             &
                                 defor13,defor23,                             &
                                 tke_2(ims,kms,jms),p8w,t8w,th_phy,           &
-                                t_phy,p_phy,moist_2,dn,dnw,                  &
+                                t_phy,p_phy,moist,dn,dnw,                    &
                                 dx,dy,rdz,rdzw,mix_cr_len,num_3d_m,          &
                                 cf1, cf2, cf3, warm_rain,                    &
                                 kh_tke_upper_bound, kv_tke_upper_bound,      &
@@ -900,8 +910,8 @@ BENCH_START(phy_bc_tim)
                             ids, ide, jds, jde, kds, kde,                &
                             ims, ime, jms, jme, kms, kme,                &
                             ips, ipe, jps, jpe, kps, kpe,                &
-                            grid%i_start(ij), grid%i_end(ij),                      &
-                            grid%j_start(ij), grid%j_end(ij),                      &
+                            grid%i_start(ij), grid%i_end(ij),            &
+                            grid%j_start(ij), grid%j_end(ij),            &
                             k_start    , k_end                           )
      ENDDO
      !$OMP END PARALLEL DO
@@ -960,14 +970,14 @@ BENCH_START(update_phy_ten_tim)
 
           CALL wrf_debug ( 200 , ' call update_phy_ten' )
         CALL update_phy_ten(t_tendf, ru_tendf, rv_tendf,moist_tend,        &
-                          RTHRATEN,RTHBLTEN,RTHCUTEN,RUBLTEN,RVBLTEN,  &
-                          RQVBLTEN,RQCBLTEN,RQIBLTEN,                  &
-                          RQVCUTEN,RQCCUTEN,RQRCUTEN,RQICUTEN,RQSCUTEN,&
-                          num_3d_m,config_flags,rk_step,              &
-                          ids, ide, jds, jde, kds, kde,                &
-                          ims, ime, jms, jme, kms, kme,                &
-                          grid%i_start(ij), grid%i_end(ij),                      &
-                          grid%j_start(ij), grid%j_end(ij),                      &
+                          RTHRATEN,RTHBLTEN,RTHCUTEN,RUBLTEN,RVBLTEN,      &
+                          RQVBLTEN,RQCBLTEN,RQIBLTEN,                      &
+                          RQVCUTEN,RQCCUTEN,RQRCUTEN,RQICUTEN,RQSCUTEN,    &
+                          num_3d_m,config_flags,rk_step,                   &
+                          ids, ide, jds, jde, kds, kde,                    &
+                          ims, ime, jms, jme, kms, kme,                    &
+                          grid%i_start(ij), grid%i_end(ij),                &
+                          grid%j_start(ij), grid%j_end(ij),                &
                           k_start, k_end                               )
 
       END DO
@@ -1023,7 +1033,7 @@ BENCH_START(vert_diff_tim)
                                       t_2,u_base,v_base,t_base,qv_base,          &
                                       mut,tke_2,config_flags,                    &
                                       defor13,defor23,defor33,                   &
-                                      div, moist_2, chem_2, scalar_2,            &
+                                      div, moist, chem, scalar,                  &
                                       xkmv, xkhv, km_opt,                        &
                                       fnm, fnp, dn, dnw, rdz, rdzw,              &
                                       ids, ide, jds, jde, kds, kde,              &
@@ -1053,7 +1063,7 @@ BENCH_START(hor_diff_tim)
                                       mut, tke_2, config_flags,              &
                                       defor11, defor22, defor12,             &
                                       defor13, defor23, div,                 &
-                                      moist_2, chem_2, scalar_2,             &
+                                      moist, chem, scalar,                   &
                                       msfu, msfv, msft, xkmhd, xkhh, km_opt, &
                                       rdx, rdy, rdz, rdzw,                   &
                                       fnm, fnp, cf1, cf2, cf3,               &
@@ -1120,11 +1130,11 @@ BENCH_START(relax_bdy_dry_tim)
                             u_bt, v_bt, ph_bt, t_bt,                     &
                             w_bt, mu_bt,                                 &
                             spec_bdy_width, spec_zone, relax_zone,       &
-                            dtbc, fcx, gcx,             &
-                            ijds, ijde,                 &
-                            ids,ide, jds,jde, kds,kde,  &
-                            ims,ime, jms,jme, kms,kme,  &
-                            ips,ipe, jps,jpe, kps,kpe,  &
+                            dtbc, fcx, gcx,                              &
+                            ijds, ijde,                                  &
+                            ids,ide, jds,jde, kds,kde,                   &
+                            ims,ime, jms,jme, kms,kme,                   &
+                            ips,ipe, jps,jpe, kps,kpe,                   &
                             grid%i_start(ij), grid%i_end(ij),            &
                             grid%j_start(ij), grid%j_end(ij),            &
                             k_start, k_end                              )
@@ -1764,8 +1774,7 @@ BENCH_START(rk_scalar_tend_tim)
                               rk_step, dt_rk,                   &
                               ru_m, rv_m, ww_m,                 &
                               mut, alt,                         &
-                              moist_1(ims,kms,jms,im),          &
-                              moist_2(ims,kms,jms,im),          &
+                              moist(ims,kms,jms,im),            &
                               moist_tend(ims,kms,jms,im),       &
                               advect_tend,RQVFTEN,              &
                               qv_base, .true., fnm, fnp,        &
@@ -1784,7 +1793,7 @@ BENCH_START(rlx_bdy_scalar_tim)
      IF( ( config_flags%specified .or. config_flags%nested ) .and. rk_step == 1 ) THEN 
          IF ( im .EQ. P_QV .OR. config_flags%nested ) THEN
             CALL relax_bdy_scalar ( moist_tend(ims,kms,jms,im),            & 
-                                    moist_2(ims,kms,jms,im),  mut,         &
+                                    moist(ims,kms,jms,im),  mut,         &
                                     moist_b(1,1,1,1,im),                   &
                                     moist_bt(1,1,1,1,im),                  &
                                     spec_bdy_width, spec_zone, relax_zone, &
@@ -1824,8 +1833,8 @@ BENCH_END(rlx_bdy_scalar_tim)
 
 BENCH_START(update_scal_tim)
        CALL rk_update_scalar( im, im,                           &
-                              moist_1(ims,kms,jms,im),          &
-                              moist_2(ims,kms,jms,im),          &
+                              moist_old(ims,kms,jms,im),        &
+                              moist(ims,kms,jms,im),            &
                               moist_tend(ims,kms,jms,im),       &
                               advect_tend, msft,                &
                               mu_1, mu_2, mub,                  &
@@ -1841,7 +1850,7 @@ BENCH_END(update_scal_tim)
 BENCH_START(flow_depbdy_tim)
        IF( config_flags%specified ) THEN
          IF(im .ne. P_QV)THEN
-           CALL flow_dep_bdy  (  moist_2(ims,kms,jms,im),                     &
+           CALL flow_dep_bdy  (  moist(ims,kms,jms,im),                     &
                                ru_m, rv_m, config_flags, &
                                spec_zone,                  &
                                ids,ide, jds,jde, kds,kde,  & ! domain dims
@@ -1885,7 +1894,6 @@ BENCH_START(tke_adv_tim)
                            rk_step, dt_rk,                   &
                            ru_m, rv_m, ww_m,                 &
                            mut, alt,                         &
-                           tke_1(ims,kms,jms),               &
                            tke_2(ims,kms,jms),               &
                            tke_tend(ims,kms,jms),            &
                            advect_tend,RQVFTEN,              &
@@ -1951,6 +1959,7 @@ BENCH_END(tke_adv_tim)
 
 !  next the chemical species
 
+
   chem_scalar_advance: IF (num_3d_c >= PARAM_FIRST_SCALAR)  THEN
 
    chem_variable_loop: do ic = PARAM_FIRST_SCALAR, num_3d_c
@@ -1965,8 +1974,7 @@ BENCH_END(tke_adv_tim)
                              rk_step, dt_rk,                   &
                              ru_m, rv_m, ww_m,                 &
                              mut, alt,                         &
-                             chem_1(ims,kms,jms,ic),           &
-                             chem_2(ims,kms,jms,ic),           &
+                             chem(ims,kms,jms,ic),             &
                              chem_tend(ims,kms,jms,ic),        &
                              advect_tend,RQVFTEN,              &
                              qv_base, .false., fnm, fnp,       &
@@ -1992,8 +2000,8 @@ BENCH_END(tke_adv_tim)
 
        CALL wrf_debug ( 200 , ' call rk_update_scalar' )
        CALL rk_update_scalar( ic, ic,                           &
-                              chem_1(ims,kms,jms,ic),           &
-                              chem_2(ims,kms,jms,ic),           &
+                              chem_old(ims,kms,jms,ic),         &  ! was chem_1
+                              chem(ims,kms,jms,ic),             &
                               chem_tend(ims,kms,jms,ic),        &
                               advect_tend, msft,                &
                               mu_1, mu_2, mub,                  &
@@ -2009,7 +2017,7 @@ BENCH_END(tke_adv_tim)
        IF( config_flags%specified ) THEN
 ! come back to this and figure out why two different routines are needed. JM 20041203
 #ifndef WRF_CHEM
-           CALL flow_dep_bdy  ( chem_2(ims,kms,jms,ic),     &
+           CALL flow_dep_bdy  ( chem(ims,kms,jms,ic),     &
                                 ru_m, rv_m, config_flags,   &
                                 spec_zone,                  &
                                 ids,ide, jds,jde, kds,kde,  & ! domain dims
@@ -2019,7 +2027,7 @@ BENCH_END(tke_adv_tim)
                                 grid%j_start(ij), grid%j_end(ij),  &
                                 k_start, k_end                    )
 #else
-           CALL flow_dep_bdy_chem( chem_2(ims,kms,jms,ic),z,&
+           CALL flow_dep_bdy_chem( chem(ims,kms,jms,ic),z,&
                                 ru_m, rv_m, config_flags,alt,   &
                                 t_1,pb,p,t0,p1000mb,rcp,ph_2,phb,g, &
                                 spec_zone,ic,               &
@@ -2050,13 +2058,12 @@ BENCH_END(tke_adv_tim)
    scalar_tile_loop_1: DO ij = 1 , grid%num_tiles
 
        CALL wrf_debug ( 200 , ' call rk_scalar_tend' )
-       CALL rk_scalar_tend ( is, is, config_flags,                  &
+       CALL rk_scalar_tend ( is, is, config_flags,             &
                              rk_step, dt_rk,                   &
                              ru_m, rv_m, ww_m,                 &
                              mut, alt,                         &
-                             scalar_1(ims,kms,jms,is),           &
-                             scalar_2(ims,kms,jms,is),           &
-                             scalar_tend(ims,kms,jms,is),        &
+                             scalar(ims,kms,jms,is),           &
+                             scalar_tend(ims,kms,jms,is),      &
                              advect_tend,RQVFTEN,              &
                              qv_base, .false., fnm, fnp,       &
                              msfu, msfv, msft,                 &
@@ -2074,7 +2081,7 @@ BENCH_END(tke_adv_tim)
        IF (is .eq. P_QNI) THEN
 
          CALL relax_bdy_scalar ( scalar_tend(ims,kms,jms,is),            &
-                                 scalar_2(ims,kms,jms,is),  mut,         &
+                                 scalar(ims,kms,jms,is),  mut,         &
                                  scalar_b(1,1,1,1,is),                   &
                                  scalar_bt(1,1,1,1,is),                  &
                                  spec_bdy_width, spec_zone, relax_zone, &
@@ -2114,9 +2121,9 @@ BENCH_END(tke_adv_tim)
 
        CALL wrf_debug ( 200 , ' call rk_update_scalar' )
        CALL rk_update_scalar( is, is,                           &
-                              scalar_1(ims,kms,jms,is),           &
-                              scalar_2(ims,kms,jms,is),           &
-                              scalar_tend(ims,kms,jms,is),        &
+                              scalar_old(ims,kms,jms,is),       &  ! was scalar_1
+                              scalar(ims,kms,jms,is),           &
+                              scalar_tend(ims,kms,jms,is),      &
                               advect_tend, msft,                &
                               mu_1, mu_2, mub,                  &
                               rk_step, dt_rk, spec_zone,        &
@@ -2129,7 +2136,7 @@ BENCH_END(tke_adv_tim)
 
 
        IF( config_flags%specified ) THEN
-           CALL flow_dep_bdy  ( scalar_2(ims,kms,jms,is),     &
+           CALL flow_dep_bdy  ( scalar(ims,kms,jms,is),     &
                                 ru_m, rv_m, config_flags,   &
                                 spec_zone,                  &
                                 ids,ide, jds,jde, kds,kde,  & ! domain dims
@@ -2155,7 +2162,8 @@ BENCH_END(tke_adv_tim)
    DO ij = 1 , grid%num_tiles
 
 BENCH_START(calc_p_rho_tim)
-     CALL calc_p_rho_phi( moist_2, num_3d_m,                &
+
+     CALL calc_p_rho_phi( moist, num_3d_m,                &
                           al, alb, mu_2, muts,              &
                           ph_2, p, pb, t_2,                 &
                           p0, t0, znu, dnw, rdnw,           &
@@ -2165,6 +2173,7 @@ BENCH_START(calc_p_rho_tim)
                           grid%i_start(ij), grid%i_end(ij), &
                           grid%j_start(ij), grid%j_end(ij), &
                           k_start    , k_end               )
+
 BENCH_END(calc_p_rho_tim)
 
 BENCH_START(diag_w_tim)
@@ -2214,9 +2223,9 @@ BENCH_END(diag_w_tim)
 ! mu_2       x
 !
 !  4D variable
-! moist_2               x
-! chem_2                x
-!scalar_2               x
+! moist               x
+! chem                x
+!scalar               x
 
 #ifdef DM_PARALLEL
    IF      ( h_mom_adv_order <= 4 ) THEN
@@ -2255,7 +2264,7 @@ BENCH_START(bc_end_tim)
 
         moisture_loop_bdy_1 : DO im = PARAM_FIRST_SCALAR , num_3d_m
   
-          CALL set_physical_bc3d( moist_2(ims,kms,jms,im), 'p', config_flags,   &
+          CALL set_physical_bc3d( moist(ims,kms,jms,im), 'p', config_flags,   &
                                    ids, ide, jds, jde, kds, kde,             &
                                    ims, ime, jms, jme, kms, kme,             &
                                    ips, ipe, jps, jpe, kps, kpe,             &
@@ -2270,7 +2279,7 @@ BENCH_START(bc_end_tim)
 
         chem_species_bdy_loop_1 : DO ic = PARAM_FIRST_SCALAR , num_3d_c
 
-          CALL set_physical_bc3d( chem_2(ims,kms,jms,ic), 'p', config_flags,   &
+          CALL set_physical_bc3d( chem(ims,kms,jms,ic), 'p', config_flags,   &
                                   ids, ide, jds, jde, kds, kde,            &
                                   ims, ime, jms, jme, kms, kme,            &
                                   ips, ipe, jps, jpe, kps, kpe,            &
@@ -2286,7 +2295,7 @@ BENCH_START(bc_end_tim)
 
         scalar_species_bdy_loop_1 : DO is = PARAM_FIRST_SCALAR , num_3d_s
 
-          CALL set_physical_bc3d( scalar_2(ims,kms,jms,is), 'p', config_flags,   &
+          CALL set_physical_bc3d( scalar(ims,kms,jms,is), 'p', config_flags,   &
                                   ids, ide, jds, jde, kds, kde,            &
                                   ims, ime, jms, jme, kms, kme,            &
                                   ips, ipe, jps, jpe, kps, kpe,            &
@@ -2339,7 +2348,7 @@ BENCH_END(bc_end_tim)
 !         *        * * *    * * * * *
 !                           * * * * *
 
-! moist_2                       x
+! moist                       x
 
      IF      ( h_mom_adv_order <= 4 ) THEN
 #      include "HALO_EM_MOIST_E_3.inc"
@@ -2358,7 +2367,7 @@ BENCH_END(bc_end_tim)
 !         *        * * *    * * * * *
 !                           * * * * *
 
-! chem_2                        x
+! chem                        x
 
      IF      ( h_mom_adv_order <= 4 ) THEN
 #      include "HALO_EM_CHEM_E_3.inc"
@@ -2377,7 +2386,7 @@ BENCH_END(bc_end_tim)
 !         *        * * *    * * * * *
 !                           * * * * *
 
-! scalar_2                      x
+! scalar                      x
 
      IF      ( h_mom_adv_order <= 4 ) THEN
 #      include "HALO_EM_SCALAR_E_3.inc"
@@ -2499,19 +2508,13 @@ BENCH_START(micro_driver_tim)
      &        , MP_RESTART_STATE=mp_restart_state                         &
      &        , TBPVS_STATE=tbpvs_state                                   & ! etampnew
      &        , TBPVS0_STATE=tbpvs0_state                                 & ! etampnew
-     &        , QV_CURR=moist_2(ims,kms,jms,P_QV), F_QV=F_QV              &
-     &        , QC_CURR=moist_2(ims,kms,jms,P_QC), F_QC=F_QC              &
-     &        , QR_CURR=moist_2(ims,kms,jms,P_QR), F_QR=F_QR              &
-     &        , QI_CURR=moist_2(ims,kms,jms,P_QI), F_QI=F_QI              &
-     &        , QS_CURR=moist_2(ims,kms,jms,P_QS), F_QS=F_QS              &
-     &        , QG_CURR=moist_2(ims,kms,jms,P_QG), F_QG=F_QG              &
-     &        , QNI_CURR=scalar_2(ims,kms,jms,P_QNI), F_QNI=F_QNI         &
-     &        , QV_OLD=moist_1(ims,kms,jms,P_QV)                          &
-     &        , QC_OLD=moist_1(ims,kms,jms,P_QC)                          &
-     &        , QR_OLD=moist_1(ims,kms,jms,P_QR)                          &
-     &        , QI_OLD=moist_1(ims,kms,jms,P_QI)                          &
-     &        , QS_OLD=moist_1(ims,kms,jms,P_QS)                          &
-     &        , QG_OLD=moist_1(ims,kms,jms,P_QG)                          &
+     &        , QV_CURR=moist(ims,kms,jms,P_QV), F_QV=F_QV              &
+     &        , QC_CURR=moist(ims,kms,jms,P_QC), F_QC=F_QC              &
+     &        , QR_CURR=moist(ims,kms,jms,P_QR), F_QR=F_QR              &
+     &        , QI_CURR=moist(ims,kms,jms,P_QI), F_QI=F_QI              &
+     &        , QS_CURR=moist(ims,kms,jms,P_QS), F_QS=F_QS              &
+     &        , QG_CURR=moist(ims,kms,jms,P_QG), F_QG=F_QG              &
+     &        , QNI_CURR=scalar(ims,kms,jms,P_QNI), F_QNI=F_QNI         &
                                                                           )
 
 BENCH_END(micro_driver_tim)
@@ -2530,7 +2533,7 @@ BENCH_START(moist_phys_end_tim)
        jte = min(grid%j_end(ij),jde-1-sz)
 
        CALL microphysics_zero_out (                                    &
-                     moist_2 , num_moist , config_flags ,              &
+                     moist , num_moist , config_flags ,              &
                      ids, ide, jds, jde, kds, kde,                     &
                      ims, ime, jms, jme, kms, kme,                     &
                      its, ite, jts, jte,                               &
@@ -2543,7 +2546,7 @@ BENCH_START(moist_phys_end_tim)
                                      its, ite, jts, jte,               &
                                      k_start    , k_end               )
 
-       CALL calc_p_rho_phi( moist_2, num_3d_m,                &
+       CALL calc_p_rho_phi( moist, num_3d_m,                &
                             al, alb, mu_2, muts,              &
                             ph_2, p, pb, t_2,                 &
                             p0, t0, znu, dnw, rdnw,           &
@@ -2655,12 +2658,9 @@ BENCH_END(time_filt_tim)
 !  mu_2     x
 !
 !    4D variables
-!  moist_1                         x
-!  moist_2                         x
-!   chem_1                         x
-!   chem_2                         x
-! scalar_1                         x
-! scalar_2                         x
+!  moist                         x
+!   chem                         x
+! scalar                         x
 !----------------------------------------------------------
 
 
@@ -2716,15 +2716,7 @@ BENCH_START(bc_2d_tim)
 
      moisture_loop_bdy_2 : DO im = PARAM_FIRST_SCALAR , num_3d_m
 
-       CALL set_physical_bc3d( moist_1(ims,kms,jms,im), 'p',           &
-                               config_flags,                           &
-                               ids, ide, jds, jde, kds, kde,           &
-                               ims, ime, jms, jme, kms, kme,           &
-                               ips, ipe, jps, jpe, kps, kpe,           &
-                               grid%i_start(ij), grid%i_end(ij),       &
-                               grid%j_start(ij), grid%j_end(ij),       &
-                               k_start    , k_end                     )
-       CALL set_physical_bc3d( moist_2(ims,kms,jms,im), 'p',           &
+       CALL set_physical_bc3d( moist(ims,kms,jms,im), 'p',           &
                                config_flags,                           &
                                ids, ide, jds, jde, kds, kde,           &
                                ims, ime, jms, jme, kms, kme,           &
@@ -2737,14 +2729,7 @@ BENCH_START(bc_2d_tim)
 
      chem_species_bdy_loop_2 : DO ic = PARAM_FIRST_SCALAR , num_3d_c
 
-       CALL set_physical_bc3d( chem_1(ims,kms,jms,ic), 'p', config_flags,   &
-                               ids, ide, jds, jde, kds, kde,            &
-                               ims, ime, jms, jme, kms, kme,            &
-                               ips, ipe, jps, jpe, kps, kpe,            &
-                               grid%i_start(ij), grid%i_end(ij),                  &
-                               grid%j_start(ij), grid%j_end(ij),                  &
-                               k_start    , k_end                    )
-       CALL set_physical_bc3d( chem_2(ims,kms,jms,ic) , 'p', config_flags,  &
+       CALL set_physical_bc3d( chem(ims,kms,jms,ic) , 'p', config_flags,  &
                                ids, ide, jds, jde, kds, kde,            &
                                ims, ime, jms, jme, kms, kme,            &
                                ips, ipe, jps, jpe, kps, kpe,            &
@@ -2756,14 +2741,7 @@ BENCH_START(bc_2d_tim)
 
      scalar_species_bdy_loop_2 : DO is = PARAM_FIRST_SCALAR , num_3d_s
 
-       CALL set_physical_bc3d( scalar_1(ims,kms,jms,is), 'p', config_flags,   &
-                               ids, ide, jds, jde, kds, kde,            &
-                               ims, ime, jms, jme, kms, kme,            &
-                               ips, ipe, jps, jpe, kps, kpe,            &
-                               grid%i_start(ij), grid%i_end(ij),                  &
-                               grid%j_start(ij), grid%j_end(ij),                  &
-                               k_start    , k_end                    )
-       CALL set_physical_bc3d( scalar_2(ims,kms,jms,is) , 'p', config_flags,  &
+       CALL set_physical_bc3d( scalar(ims,kms,jms,is) , 'p', config_flags,  &
                                ids, ide, jds, jde, kds, kde,            &
                                ims, ime, jms, jme, kms, kme,            &
                                ips, ipe, jps, jpe, kps, kpe,            &

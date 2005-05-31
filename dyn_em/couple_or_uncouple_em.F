@@ -254,7 +254,7 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple, &
        DO im = PARAM_FIRST_SCALAR, num_3d_m
          DO k = kps,kpe-1
          DO i = max(ids,ips),min(ide-1,ipe)
-           moist_2(i,k,j,im)  =  moist_2(i,k,j,im)*mut_2(i,j)
+           moist(i,k,j,im)  =  moist(i,k,j,im)*mut_2(i,j)
          ENDDO
          ENDDO
        ENDDO
@@ -264,7 +264,7 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple, &
        DO im = PARAM_FIRST_SCALAR, num_3d_c
          DO k = kps,kpe-1
          DO i = max(ids,ips),min(ide-1,ipe)
-           chem_2(i,k,j,im)  =  chem_2(i,k,j,im)*mut_2(i,j)
+           chem(i,k,j,im)  =  chem(i,k,j,im)*mut_2(i,j)
          ENDDO
          ENDDO
        ENDDO
@@ -274,7 +274,7 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple, &
        DO im = PARAM_FIRST_SCALAR, num_3d_s
          DO k = kps,kpe-1
          DO i = max(ids,ips),min(ide-1,ipe)
-           scalar_2(i,k,j,im)  =  scalar_2(i,k,j,im)*mut_2(i,j)
+           scalar(i,k,j,im)  =  scalar(i,k,j,im)*mut_2(i,j)
          ENDDO
          ENDDO
        ENDDO
@@ -367,13 +367,7 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple, &
      IF (num_3d_m >= PARAM_FIRST_SCALAR) THEN
        DO im = PARAM_FIRST_SCALAR , num_3d_m
 
-     CALL set_physical_bc3d( moist_1(ims,kms,jms,im), 'p',        &
-                             config_flags,                   &
-                             ids,ide, jds,jde, kds,kde,  & ! domain dims
-                             ims,ime, jms,jme, kms,kme,  & ! memory dims
-                             ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
-                             ips,ipe, jps,jpe, kps,kpe )
-     CALL set_physical_bc3d( moist_2(ims,kms,jms,im), 'p',        &
+     CALL set_physical_bc3d( moist(ims,kms,jms,im), 'p',        &
                              config_flags,                   &
                              ids,ide, jds,jde, kds,kde,  & ! domain dims
                              ims,ime, jms,jme, kms,kme,  & ! memory dims
@@ -386,13 +380,7 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple, &
      IF (num_3d_c >= PARAM_FIRST_SCALAR) THEN
        DO im = PARAM_FIRST_SCALAR , num_3d_c
 
-     CALL set_physical_bc3d( chem_1(ims,kms,jms,im), 'p',        &
-                             config_flags,                   &
-                             ids,ide, jds,jde, kds,kde,  & ! domain dims
-                             ims,ime, jms,jme, kms,kme,  & ! memory dims
-                             ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
-                             ips,ipe, jps,jpe, kps,kpe )
-     CALL set_physical_bc3d( chem_2(ims,kms,jms,im), 'p',        &
+     CALL set_physical_bc3d( chem(ims,kms,jms,im), 'p',        &
                              config_flags,                   &
                              ids,ide, jds,jde, kds,kde,  & ! domain dims
                              ims,ime, jms,jme, kms,kme,  & ! memory dims
@@ -404,13 +392,7 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple, &
      IF (num_3d_s >= PARAM_FIRST_SCALAR) THEN
        DO im = PARAM_FIRST_SCALAR , num_3d_s
 
-     CALL set_physical_bc3d( scalar_1(ims,kms,jms,im), 'p',        &
-                             config_flags,                   &
-                             ids,ide, jds,jde, kds,kde,  & ! domain dims
-                             ims,ime, jms,jme, kms,kme,  & ! memory dims
-                             ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
-                             ips,ipe, jps,jpe, kps,kpe )
-     CALL set_physical_bc3d( scalar_2(ims,kms,jms,im), 'p',        &
+     CALL set_physical_bc3d( scalar(ims,kms,jms,im), 'p',        &
                              config_flags,                   &
                              ids,ide, jds,jde, kds,kde,  & ! domain dims
                              ims,ime, jms,jme, kms,kme,  & ! memory dims

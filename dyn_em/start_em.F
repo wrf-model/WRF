@@ -272,7 +272,6 @@
        DO k = kts,kte-1
        DO i = its, min(ite,ide-1)
            IF ( imask_nostag(i,j) .EQ. 1 ) THEN
-             moist_1(i,k,j,P_QV)=moist_2(i,k,j,P_QV)
              t_1(i,k,j)=t_2(i,k,j)
            ENDIF
        ENDDO
@@ -307,11 +306,11 @@
        k = kte-1
        DO i = its, min(ite,ide-1)
          IF ( imask_nostag(i,j) .EQ. 1 ) THEN
-           qvf1 = 0.5*(moist_1(i,k,j,P_QV)+moist_1(i,k,j,P_QV))
+           qvf1 = 0.5*(moist(i,k,j,P_QV)+moist(i,k,j,P_QV))
            qvf2 = 1./(1.+qvf1)
            qvf1 = qvf1*qvf2
            p(i,k,j) = - 0.5*(mu_1(i,j)+qvf1*mub(i,j))/rdnw(k)/qvf2
-           qvf = 1. + rvovrd*moist_1(i,k,j,P_QV)
+           qvf = 1. + rvovrd*moist(i,k,j,P_QV)
            alt(i,k,j) = (r_d/p1000mb)*(t_1(i,k,j)+t0)*qvf*(((p(i,k,j)+pb(i,k,j))/p1000mb)**cvpm)
            al(i,k,j) = alt(i,k,j) - alb(i,k,j)
          ENDIF
@@ -320,11 +319,11 @@
        DO k = kte-2, 1, -1
        DO i = its, min(ite,ide-1)
          IF ( imask_nostag(i,j) .EQ. 1 ) THEN
-           qvf1 = 0.5*(moist_1(i,k,j,P_QV)+moist_1(i,k+1,j,P_QV))
+           qvf1 = 0.5*(moist(i,k,j,P_QV)+moist(i,k+1,j,P_QV))
            qvf2 = 1./(1.+qvf1)
            qvf1 = qvf1*qvf2
            p(i,k,j) = p(i,k+1,j) - (mu_1(i,j) + qvf1*mub(i,j))/qvf2/rdn(k+1)
-           qvf = 1. + rvovrd*moist_1(i,k,j,P_QV)
+           qvf = 1. + rvovrd*moist(i,k,j,P_QV)
            alt(i,k,j) = (r_d/p1000mb)*(t_1(i,k,j)+t0)*qvf* &
                         (((p(i,k,j)+pb(i,k,j))/p1000mb)**cvpm)
            al(i,k,j) = alt(i,k,j) - alb(i,k,j)
@@ -475,12 +474,9 @@
 !
 !  4D variables
 !
-! moist_1                        x
-! moist_2                        x
-!  chem_1                        x
-!  chem_2                        x
-!scalar_1                        x
-!scalar_2                        x
+! moist                        x
+!  chem                        x
+!scalar                        x
 
 !--------------------------------------------------------------
 
@@ -647,12 +643,7 @@
 ! use of (:,:,:,loop) not efficient on DEC, but (ims,kms,jms,loop) not portable to SGI/Cray
 
       loop_3d_m   : DO loop = 1 , num_moist
-         CALL set_physical_bc3d( moist_1(:,:,:,loop) , 'r' , config_flags ,                 &
-                                 ids , ide , jds , jde , kds , kde ,        &
-                                 ims , ime , jms , jme , kms , kme ,        &
-                                 its , ite , jts , jte , kts , kte ,        &
-                                 its , ite , jts , jte , kts , kte )
-         CALL set_physical_bc3d( moist_2(:,:,:,loop) , 'r' , config_flags ,                 &
+         CALL set_physical_bc3d( moist(:,:,:,loop) , 'r' , config_flags ,                 &
                                  ids , ide , jds , jde , kds , kde ,        &
                                  ims , ime , jms , jme , kms , kme ,        &
                                  its , ite , jts , jte , kts , kte ,        &
@@ -663,7 +654,7 @@
 
    IF (num_chem >= PARAM_FIRST_SCALAR ) THEN
 #ifdef WRF_CHEM
-         CALL chem_init (grid%id,chem_2,dt,bioemdt,photdt,chemdt,           &
+         CALL chem_init (grid%id,chem,dt,bioemdt,photdt,chemdt,           &
                          stepbioe,stepphot,stepchem,                        &
                          ph_2,phb,g,aerwrf,config_flags,                    &
                          alt,t_1,pb,p,t0,p1000mb,rcp,                       &
@@ -672,7 +663,6 @@
                                  ids , ide , jds , jde , kds , kde ,        &
                                  ims , ime , jms , jme , kms , kme ,        &
                                  its , ite , jts , jte , kts , kte          )
-        chem_1=chem_2
 !
 ! calculate initial pm
 !
@@ -686,12 +676,12 @@
 
           pm2_5(i,k,j)=0.
           do l=p_so4aj,p_p25i
-             pm2_5(i,k,j)=pm2_5(i,k,j)+chem_2(ii,kk,jj,l)
+             pm2_5(i,k,j)=pm2_5(i,k,j)+chem(ii,kk,jj,l)
           enddo
           pm10(i,k,j)= pm2_5(i,k,j)                      &
-                      +chem_2(ii,kk,jj,p_antha)             &
-                      +chem_2(ii,kk,jj,p_soila)             &
-                      +chem_2(ii,kk,jj,p_seas)
+                      +chem(ii,kk,jj,p_antha)             &
+                      +chem(ii,kk,jj,p_soila)             &
+                      +chem(ii,kk,jj,p_seas)
         enddo
         enddo
         enddo
@@ -700,12 +690,7 @@
 ! use of (:,:,:,loop) not efficient on DEC, but (ims,kms,jms,loop) not portable to SGI/Cray
 
       loop_3d_c   : DO loop = PARAM_FIRST_SCALAR , num_chem
-         CALL set_physical_bc3d( chem_1(:,:,:,loop) , 'r' , config_flags ,                 &
-                                 ids , ide , jds , jde , kds , kde ,        &
-                                 ims , ime , jms , jme , kms , kme ,        &
-                                 its , ite , jts , jte , kts , kte ,        &
-                                 its , ite , jts , jte , kts , kte )
-         CALL set_physical_bc3d( chem_2(:,:,:,loop) , 'r' , config_flags ,                 &
+         CALL set_physical_bc3d( chem(:,:,:,loop) , 'r' , config_flags ,                 &
                                  ids , ide , jds , jde , kds , kde ,        &
                                  ims , ime , jms , jme , kms , kme ,        &
                                  its , ite , jts , jte , kts , kte ,        &

@@ -387,8 +387,7 @@ CONTAINS
 
       p_level = znu(k)*(pd_surf - p_top) + p_top
 
-      moist_1(i,k,j,P_QV) = interp_0( qv, pd_in, p_level, nl_in )
-      moist_2(i,k,j,P_QV) = moist_1(i,k,j,P_QV)
+      moist(i,k,j,P_QV) = interp_0( qv, pd_in, p_level, nl_in )
       t_1(i,k,j)          = interp_0( theta, pd_in, p_level, nl_in ) - t0
       t_2(i,k,j)          = t_1(i,k,j)
       
@@ -401,13 +400,13 @@ CONTAINS
 
     k = kte-1  ! top level
 
-    qvf1 = 0.5*(moist_1(i,k,j,P_QV)+moist_1(i,k,j,P_QV))
+    qvf1 = 0.5*(moist(i,k,j,P_QV)+moist(i,k,j,P_QV))
     qvf2 = 1./(1.+qvf1)
     qvf1 = qvf1*qvf2
 
 !    p(i,k,j) = - 0.5*mu_1(i,j)/rdnw(k)
     p(i,k,j) = - 0.5*(mu_1(i,j)+qvf1*mub(i,j))/rdnw(k)/qvf2
-    qvf = 1. + rvovrd*moist_1(i,k,j,P_QV)
+    qvf = 1. + rvovrd*moist(i,k,j,P_QV)
     alt(i,k,j) = (r_d/p1000mb)*(t_1(i,k,j)+t0)*qvf* &
                 (((p(i,k,j)+pb(i,k,j))/p1000mb)**cvpm)
     al(i,k,j) = alt(i,k,j) - alb(i,k,j)
@@ -415,11 +414,11 @@ CONTAINS
 !  down the column
 
     do k=kte-2,1,-1
-      qvf1 = 0.5*(moist_1(i,k,j,P_QV)+moist_1(i,k+1,j,P_QV))
+      qvf1 = 0.5*(moist(i,k,j,P_QV)+moist(i,k+1,j,P_QV))
       qvf2 = 1./(1.+qvf1)
       qvf1 = qvf1*qvf2
       p(i,k,j) = p(i,k+1,j) - (mu_1(i,j) + qvf1*mub(i,j))/qvf2/rdn(k+1)
-      qvf = 1. + rvovrd*moist_1(i,k,j,P_QV)
+      qvf = 1. + rvovrd*moist(i,k,j,P_QV)
       alt(i,k,j) = (r_d/p1000mb)*(t_1(i,k,j)+t0)*qvf* &
                   (((p(i,k,j)+pb(i,k,j))/p1000mb)**cvpm)
       al(i,k,j) = alt(i,k,j) - alb(i,k,j)
@@ -475,7 +474,7 @@ CONTAINS
            tp = tpbub*cos(rad*piov2)*cos(rad*piov2)*cos(xrad*2*pi+pi)
            T_1(i,k,j)=T_1(i,k,j)+tp
            T_2(i,k,j)=T_1(i,k,j)
-           qvf = 1. + rvovrd*moist_1(i,k,j,P_QV)
+           qvf = 1. + rvovrd*moist(i,k,j,P_QV)
            alt(i,k,j) = (r_d/p1000mb)*(t_1(i,k,j)+t0)*qvf* &
                         (((p(i,k,j)+pb(i,k,j))/p1000mb)**cvpm)
            al(i,k,j) = alt(i,k,j) - alb(i,k,j)
@@ -502,7 +501,7 @@ CONTAINS
    write(6,*) ' pert state sounding from comp, ph_1, pp, al, t_1, qv '
    do k=1,kde-1
      write(6,'(i3,1x,5(1x,1pe10.3))') k, ph_1(1,k,1),p(1,k,1), al(1,k,1), &
-                     t_1(1,k,1), moist_1(1,k,1,P_QV)
+                     t_1(1,k,1), moist(1,k,1,P_QV)
    enddo
 
    write(6,*) ' mu_1 from comp ', mu_1(1,1)
@@ -511,7 +510,7 @@ CONTAINS
    do k=1,kde-1
      write(6,'(i3,1x,5(1x,1pe10.3))') k, ph_1(1,k,1)+phb(1,k,1), &
                      p(1,k,1)+pb(1,k,1), al(1,k,1)+alb(1,k,1), &
-                     t_1(1,k,1)+t0, moist_1(1,k,1,P_QV)
+                     t_1(1,k,1)+t0, moist(1,k,1,P_QV)
    enddo
 
 
@@ -520,7 +519,7 @@ CONTAINS
    do k=1,kde-1
      write(6,'(i3,1x,5(1x,1pe10.3))') k, ph_1(1,k,jde/2)+phb(1,k,jde/2), &
                      p(1,k,jde/2)+pb(1,k,jde/2), al(1,k,jde/2)+alb(1,k,jde/2), &
-                     t_1(1,k,jde/2)+t0, moist_1(1,k,jde/2,P_QV)
+                     t_1(1,k,jde/2)+t0, moist(1,k,jde/2,P_QV)
    enddo
 
    write(6,*) ' full state sounding from comp, ph, p, al, t_1, qv '
@@ -528,7 +527,7 @@ CONTAINS
    do k=1,kde-1
      write(6,'(i3,1x,5(1x,1pe10.3))') k, ph_1(1,k,jde-1)+phb(1,k,jde-1), &
                      p(1,k,jde-1)+pb(1,k,jde-1), al(1,k,jde-1)+alb(1,k,jde-1), &
-                     t_1(1,k,jde-1)+t0, moist_1(1,k,jde-1,P_QV)
+                     t_1(1,k,jde-1)+t0, moist(1,k,jde-1,P_QV)
    enddo
 
 ! set v
@@ -580,7 +579,7 @@ CONTAINS
 
   DO k=1,kte-1
     t_base(k) = t_1(1,k,1)
-    qv_base(k) = moist_1(1,k,1,P_QV)
+    qv_base(k) = moist(1,k,1,P_QV)
     u_base(k) = u_1(1,k,1)
     v_base(k) = v_1(1,k,1)
   ENDDO

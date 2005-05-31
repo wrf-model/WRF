@@ -781,7 +781,7 @@ END SUBROUTINE rk_addtend_dry
 SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,    &
                             rk_step, dt,                  &
                             ru, rv, ww, mut, alt,         &
-                            scalar_old, scalar,           &
+                            scalar,                       &
                             scalar_tends, advect_tend,    &
                             RQVFTEN,                      &
                             base, moist_step, fnm, fnp,   &
@@ -807,8 +807,7 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,    &
    LOGICAL , INTENT(IN   ) :: moist_step
 
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme , scs:sce ),                &
-                                         INTENT(INOUT)  :: scalar,     &
-                                                           scalar_old
+                                         INTENT(INOUT)  :: scalar
 
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme , scs:sce ),                      &
                                          INTENT(  OUT)  :: scalar_tends
@@ -863,128 +862,71 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,    &
    khdq = khdif/prandtl
    kvdq = kvdif/prandtl
 
-  scalar_loop : DO im = scs, sce
+   scalar_loop : DO im = scs, sce
 
      CALL zero_tend ( advect_tend(ims,kms,jms),     &
                       ids, ide, jds, jde, kds, kde, &
                       ims, ime, jms, jme, kms, kme, &
                       its, ite, jts, jte, kts, kte )
 
-   IF (.not. leapfrog ) THEN
+     CALL advect_scalar     ( scalar(ims,kms,jms,im),        &
+                              scalar(ims,kms,jms,im),        &
+                              advect_tend(ims,kms,jms),      &
+                              ru, rv, ww, mut, config_flags, &
+                              msfu, msfv, msft, fnm, fnp,    &
+                              rdx, rdy, rdnw,                &
+                              ids, ide, jds, jde, kds, kde,  &
+                              ims, ime, jms, jme, kms, kme,  &
+                              its, ite, jts, jte, kts, kte  )
 
-      CALL advect_scalar     ( scalar(ims,kms,jms,im),        &
-                               scalar(ims,kms,jms,im),        &
-                               advect_tend(ims,kms,jms),      &
-                               ru, rv, ww, mut, config_flags, &
-                               msfu, msfv, msft, fnm, fnp,    &
-                               rdx, rdy, rdnw,                &
-                               ids, ide, jds, jde, kds, kde,  &
-                               ims, ime, jms, jme, kms, kme,  &
-                               its, ite, jts, jte, kts, kte  )
-
-    ELSE
-
-      CALL advect_scalar     ( scalar(ims,kms,jms,im),        &
-                               scalar_old(ims,kms,jms,im),    &
-                               advect_tend(ims,kms,jms),      &
-                               ru, rv, ww, mut, config_flags, &
-                               msfu, msfv, msft, fnm, fnp,    &
-                               rdx, rdy, rdnw,                &
-                               ids, ide, jds, jde, kds, kde,  &
-                               ims, ime, jms, jme, kms, kme,  &
-                               its, ite, jts, jte, kts, kte  )
-
-    END IF
-
-    IF( config_flags%cu_physics == GDSCHEME .and. moist_step .and. ( im == P_QV) ) THEN
+     IF( config_flags%cu_physics == GDSCHEME .and. moist_step .and. ( im == P_QV) ) THEN
 
         CALL set_tend( RQVFTEN, advect_tend, msft,     &
                        ids, ide, jds, jde, kds, kde,   &
                        ims, ime, jms, jme, kms, kme,   &
                        its, ite, jts, jte, kts, kte      )
-    ENDIF
+     ENDIF
 
-    diff_opt1 : IF (config_flags%diff_opt .eq. 1) THEN
+     diff_opt1 : IF (config_flags%diff_opt .eq. 1) THEN
 
-    rk_step_1: IF( rk_step == 1 ) THEN
-
-
-    IF (.not. leapfrog ) THEN
-
-     CALL horizontal_diffusion ( 'm', scalar(ims,kms,jms,im),            &
-                                      scalar_tends(ims,kms,jms,im), mut, &
-                                      config_flags,                      &
-                                      msfu, msfv, msft, khdq , xkmhd, rdx, rdy, &
-                                      ids, ide, jds, jde, kds, kde,      &
-                                      ims, ime, jms, jme, kms, kme,      &
-                                      its, ite, jts, jte, kts, kte      )
-
-        pbl_test : IF (config_flags%bl_pbl_physics .eq. 0) THEN
-
-     IF( (moist_step) .and. ( im == P_QV)) THEN
-
-     CALL vertical_diffusion_mp ( scalar(ims,kms,jms,im),       &
-                                  scalar_tends(ims,kms,jms,im), &
-                                  config_flags, base,           &
-                                  alt, mut, rdn, rdnw, kvdq ,   &
-                                  ids, ide, jds, jde, kds, kde, &
-                                  ims, ime, jms, jme, kms, kme, &
-                                  its, ite, jts, jte, kts, kte )
-
-     ELSE 
-
-     CALL vertical_diffusion (  'm', scalar(ims,kms,jms,im),       &
-                                     scalar_tends(ims,kms,jms,im), &
-                                     config_flags,                 &
-                                     alt, mut, rdn, rdnw, kvdq,    &
-                                     ids, ide, jds, jde, kds, kde, &
-                                     ims, ime, jms, jme, kms, kme, &
-                                     its, ite, jts, jte, kts, kte )
-
-     END IF
-
-        ENDIF pbl_test
-
-    ELSE
-
-     CALL horizontal_diffusion ( 'm', scalar_old(ims,kms,jms,im),        &
-                                      scalar_tends(ims,kms,jms,im), mut, &
-                                      config_flags,                      &
-                                      msfu, msfv, msft, khdq , xkmhd, rdx, rdy, &
-                                      ids, ide, jds, jde, kds, kde,      &
-                                      ims, ime, jms, jme, kms, kme,      &
-                                      its, ite, jts, jte, kts, kte      )
-
-        pbl_test_lf : IF (config_flags%bl_pbl_physics .eq. 0) THEN
-
-   IF( (moist_step) .and. ( im == P_QV)) THEN
-
-     CALL vertical_diffusion_mp ( scalar_old(ims,kms,jms,im),   &
-                                  scalar_tends(ims,kms,jms,im), &
-                                  config_flags, base,           &
-                                  alt, mut, rdn, rdnw, kvdq ,   &
-                                  ids, ide, jds, jde, kds, kde, &
-                                  ims, ime, jms, jme, kms, kme, &
-                                  its, ite, jts, jte, kts, kte )
-
-    ELSE
-
-     CALL vertical_diffusion (  'm', scalar_old(ims,kms,jms,im),   &
-                                     scalar_tends(ims,kms,jms,im), &
-                                     config_flags,                 &
-                                     alt, mut, rdn, rdnw, kvdq,    &
-                                     ids, ide, jds, jde, kds, kde, &
-                                     ims, ime, jms, jme, kms, kme, &
-                                     its, ite, jts, jte, kts, kte )
-
-    END IF
-
-        ENDIF pbl_test_lf
-
-   END IF ! leapfrog test
+       rk_step_1: IF( rk_step == 1 ) THEN
 
 
-  ENDIF rk_step_1
+       CALL horizontal_diffusion ( 'm', scalar(ims,kms,jms,im),            &
+                                        scalar_tends(ims,kms,jms,im), mut, &
+                                        config_flags,                      &
+                                        msfu, msfv, msft, khdq , xkmhd, rdx, rdy, &
+                                        ids, ide, jds, jde, kds, kde,      &
+                                        ims, ime, jms, jme, kms, kme,      &
+                                        its, ite, jts, jte, kts, kte      )
+
+       pbl_test : IF (config_flags%bl_pbl_physics .eq. 0) THEN
+
+         IF( (moist_step) .and. ( im == P_QV)) THEN
+
+            CALL vertical_diffusion_mp ( scalar(ims,kms,jms,im),       &
+                                         scalar_tends(ims,kms,jms,im), &
+                                         config_flags, base,           &
+                                         alt, mut, rdn, rdnw, kvdq ,   &
+                                         ids, ide, jds, jde, kds, kde, &
+                                         ims, ime, jms, jme, kms, kme, &
+                                         its, ite, jts, jte, kts, kte )
+
+         ELSE 
+
+            CALL vertical_diffusion (  'm', scalar(ims,kms,jms,im),       &
+                                            scalar_tends(ims,kms,jms,im), &
+                                            config_flags,                 &
+                                            alt, mut, rdn, rdnw, kvdq,    &
+                                            ids, ide, jds, jde, kds, kde, &
+                                            ims, ime, jms, jme, kms, kme, &
+                                            its, ite, jts, jte, kts, kte )
+
+         END IF
+
+      ENDIF pbl_test
+
+    ENDIF rk_step_1
 
   ENDIF diff_opt1
 
@@ -1018,7 +960,7 @@ SUBROUTINE rk_update_scalar( scs, sce,                      &
    REAL,                    INTENT(IN   ) :: dt, epsts
 
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme , scs:sce),                &
-         INTENT(INOUT)                                  :: scalar_1,  &
+         INTENT(INOUT)                                  :: scalar_1,    &
                                                            scalar_2,  &
                                                            sc_tend
 
@@ -1075,8 +1017,6 @@ SUBROUTINE rk_update_scalar( scs, sce,                      &
       k_start = kts
       k_end   = min( kte, kde-1 )
     ENDIF
-
-   IF( .not. leapfrog ) THEN
 
     IF ( rk_step == 1 ) THEN
 
@@ -1179,63 +1119,6 @@ SUBROUTINE rk_update_scalar( scs, sce,                      &
       ENDDO
 
     END IF
-
-   ELSE  !  leapfrog model, do time filter here also
-
-      DO  im = scs, sce
-
-       DO  j = jts, min(jte,jde-1)
-       DO  k = kts, min(kte,kde-1)
-       DO  i = its, min(ite,ide-1)
-           tendency(i,k,j) = 0.
-       ENDDO
-       ENDDO
-       ENDDO
-   
-       DO  j = j_start,j_end
-       DO  k = k_start,k_end
-       DO  i = i_start,i_end
-           tendency(i,k,j) = advect_tend(i,k,j)
-       ENDDO
-       ENDDO
-       ENDDO
-   
-       DO  j = j_start_spc,j_end_spc
-       DO  k = k_start_spc,k_end_spc
-       DO  i = i_start_spc,i_end_spc
-           tendency(i,k,j) = tendency(i,k,j) + sc_tend(i,k,j,im)
-       ENDDO
-       ENDDO
-       ENDDO
-      DO  j = jts, min(jte,jde-1)
-
-      DO  i = its, min(ite,ide-1)
-        muold(i) = mu_old(i,j) + mu_base(i,j)
-        r_munew(i) = 1./(mu_new(i,j) + mu_base(i,j))
-      ENDDO
-
-      DO  k = kts, min(kte,kde-1)
-      DO  i = its, min(ite,ide-1)
-
-        sc_middle = scalar_2(i,k,j,im)
-        scalar_2(i,k,j,im) = (muold(i)*scalar_1(i,k,j,im)   &
-                           + (msft(i,j)**2)*2*dt*tendency(i,k,j))*r_munew(i)
-
-     !  asselin time filter here
-
-        scalar_1(i,k,j,im) = sc_middle + epsts*( scalar_1(i,k,j,im)   &
-                                                -2*sc_middle          &
-                                                +scalar_2(i,k,j,im)  )
-      ENDDO
-      ENDDO
-      ENDDO
-
-      ENDDO
-
-   END IF ! end if for leapfrog branch
-
-!  leapfrog update, we are putting the time filter here 
-!  at present
 
 END SUBROUTINE rk_update_scalar
 

@@ -225,16 +225,6 @@ write(0,*)' moving ',grid%id,dx,dy
      IF ( dyn_opt .EQ. DYN_NMM ) THEN
      ENDIF
 #endif
-     do p = PARAM_FIRST_SCALAR , num_moist
-       do k = kms,kme
-         where ( nest%imask_nostag .EQ. 1 ) nest%moist_1(:,k,:,p) = nest%moist_2(:,k,:,p)
-       enddo
-     enddo
-     do p = PARAM_FIRST_SCALAR , num_chem
-       do k = kms,kme
-         where ( nest%imask_nostag .EQ. 1 ) nest%chem_1(:,k,:,p) = nest%chem_2(:,k,:,p)
-       enddo
-     enddo
      where ( nest%imask_nostag .EQ. 1 ) nest%em_mu_1(:,:)  = nest%em_mu_2(:,:)
 !
    ENDIF check_for_move

@@ -61,7 +61,7 @@ CONTAINS
      TYPE(WRF_COMP_GridComp), OPTIONAL, INTENT(INOUT) :: gcomp
      TYPE(WRF_COMP_State),    OPTIONAL, INTENT(INOUT) :: importState, exportState
      TYPE(WRF_COMP_Clock),    OPTIONAL, INTENT(INOUT) :: clock
-     INTEGER,             OPTIONAL, INTENT(  OUT) :: rc
+     INTEGER,                 OPTIONAL, INTENT(  OUT) :: rc
 !<DESCRIPTION>
 !     WRF init routine.
 !
@@ -278,7 +278,7 @@ CONTAINS
      TYPE(WRF_COMP_GridComp), OPTIONAL, INTENT(INOUT) :: gcomp
      TYPE(WRF_COMP_State),    OPTIONAL, INTENT(INOUT) :: importState, exportState
      TYPE(WRF_COMP_Clock),    OPTIONAL, INTENT(INOUT) :: clock
-     INTEGER,             OPTIONAL, INTENT(  OUT) :: rc
+     INTEGER,                 OPTIONAL, INTENT(  OUT) :: rc
 !<DESCRIPTION>
 !     WRF run routine.
 !
@@ -355,7 +355,7 @@ CONTAINS
      TYPE(WRF_COMP_GridComp), OPTIONAL, INTENT(INOUT) :: gcomp
      TYPE(WRF_COMP_State),    OPTIONAL, INTENT(INOUT) :: importState, exportState
      TYPE(WRF_COMP_Clock),    OPTIONAL, INTENT(INOUT) :: clock
-     INTEGER,             OPTIONAL, INTENT(  OUT) :: rc
+     INTEGER,                 OPTIONAL, INTENT(  OUT) :: rc
 !<DESCRIPTION>
 !     WRF finalize routine.
 !
@@ -395,7 +395,7 @@ CONTAINS
 
    ! WRF-specific initialization required for coupling.  
    ! This is always called but does nothing useful unless linked with the ESMF 
-   ! library.  
+   ! library.  Optional arguments will only be present in this case.  
    SUBROUTINE wrf_init_coupling( grid, gcomp, importState, exportState, clock )
      TYPE(domain), POINTER                            :: grid           ! WRF domain
      TYPE(WRF_COMP_GridComp), OPTIONAL, INTENT(IN   ) :: gcomp
@@ -413,58 +413,61 @@ CONTAINS
      INTEGER :: ims, ime, jms, jme, kms, kme
      INTEGER :: ips, ipe, jps, jpe, kps, kpe
 
-     ! Extract information from WRF domain.  
+     ! Only do something if the the ESMF library is used in place of esmf_time_f90.  
+     IF ( PRESENT( gcomp ) ) THEN
 
-     ! For distributed-memory parallel runs, get numbers of tasks in each 
-     ! decomposed dimension.  This is identical for all WRF domains.  
+       ! Extract information from WRF domain.  
+
+       ! For distributed-memory parallel runs, get numbers of tasks in each 
+       ! decomposed dimension.  This is identical for all WRF domains.  
 #ifdef DM_PARALLEL
-     CALL nl_get_nproc_x ( 1, numprocsX )
-     CALL nl_get_nproc_y ( 1, numprocsY )
+       CALL nl_get_nproc_x ( 1, numprocsX )
+       CALL nl_get_nproc_y ( 1, numprocsY )
 #else
-     numprocsX = 1
-     numprocsY = 1
+       numprocsX = 1
+       numprocsY = 1
 #endif
-     IF ( ( numprocsX < 1 ) .OR. ( numprocsY < 1 ) ) THEN
-       CALL wrf_error_fatal( 'bad value for numprocsX or numprocsY' )
-     ENDIF
+       IF ( ( numprocsX < 1 ) .OR. ( numprocsY < 1 ) ) THEN
+         CALL wrf_error_fatal( 'bad value for numprocsX or numprocsY' )
+       ENDIF
 
-     CALL get_ijk_from_grid ( grid ,                        &
-                              ids, ide, jds, jde, kds, kde, &
-                              ims, ime, jms, jme, kms, kme, &
-                              ips, ipe, jps, jpe, kps, kpe  )
-     ! numbers of points in domain for non-staggered arrays
-     globalXcount = (ide-1) - ids + 1
-     globalYcount = (jde-1) - jds + 1
+       CALL get_ijk_from_grid ( grid ,                        &
+                                ids, ide, jds, jde, kds, kde, &
+                                ims, ime, jms, jme, kms, kme, &
+                                ips, ipe, jps, jpe, kps, kpe  )
+       ! numbers of points in domain for non-staggered arrays
+       globalXcount = (ide-1) - ids + 1
+       globalYcount = (jde-1) - jds + 1
 
-     !$$$ HACK:  ESMF does not yet support mercator, polar-stereographic, or 
-     !$$$ HACK:  lambert-conformal projections.  Therefore, we're using fake 
-     !$$$ HACK:  coordinates here.  This means that WRF will either have to 
-     !$$$ HACK:  couple to models that run on the same coorindate such that 
-     !$$$ HACK:  grid points are co-located or something else will have to 
-     !$$$ HACK:  perform the inter-grid interpolation computations.  Replace 
-     !$$$ HACK:  this once ESMF is upgraded to support the above map 
-     !$$$ HACK:  projections.  
-     CALL wrf_message( 'WARNING:  Using artificial coordinates for ESMF coupling.' )
-     CALL wrf_message( 'WARNING:  ESMF coupling interpolation will be incorrect' )
-     CALL wrf_message( 'WARNING:  unless grid points in the coupled components' )
-     CALL wrf_message( 'WARNING:  are co-located.  This limitation will be removed' )
-     CALL wrf_message( 'WARNING:  once ESMF coupling supports common map projections.' )
-     ! Note that ESMF defines coordinates at *vertices*
-     ALLOCATE( coordX( globalXcount + 1 ), coordY( globalYcount + 1 ) )
-     coordX(1) = 0.0
-     DO i = 2, globalXcount+1
-       coordX(i) = coordX(i-1) + 1.0
-     ENDDO
-     coordY(1) = 0.0
-     DO i = 2, globalYcount+1
-       coordY(i) = coordY(i-1) + 1.0
-     ENDDO
+       !$$$ HACK:  ESMF does not yet support mercator, polar-stereographic, or 
+       !$$$ HACK:  lambert-conformal projections.  Therefore, we're using fake 
+       !$$$ HACK:  coordinates here.  This means that WRF will either have to 
+       !$$$ HACK:  couple to models that run on the same coorindate such that 
+       !$$$ HACK:  grid points are co-located or something else will have to 
+       !$$$ HACK:  perform the inter-grid interpolation computations.  Replace 
+       !$$$ HACK:  this once ESMF is upgraded to support the above map 
+       !$$$ HACK:  projections.  
+       CALL wrf_message( 'WARNING:  Using artificial coordinates for ESMF coupling.' )
+       CALL wrf_message( 'WARNING:  ESMF coupling interpolation will be incorrect' )
+       CALL wrf_message( 'WARNING:  unless grid points in the coupled components' )
+       CALL wrf_message( 'WARNING:  are co-located.  This limitation will be removed' )
+       CALL wrf_message( 'WARNING:  once ESMF coupling supports common map projections.' )
+       ! Note that ESMF defines coordinates at *vertices*
+       ALLOCATE( coordX( globalXcount + 1 ), coordY( globalYcount + 1 ) )
+       coordX(1) = 0.0
+       DO i = 2, globalXcount+1
+         coordX(i) = coordX(i-1) + 1.0
+       ENDDO
+       coordY(1) = 0.0
+       DO i = 2, globalYcount+1
+         coordY(i) = coordY(i-1) + 1.0
+       ENDDO
 
-     ! task-local numbers of points in patch for non-staggered arrays
-     myXend = min(ipe, ide-1)
-     myYend = min(jpe, jde-1)
-     myXcount = myXend - ips + 1
-     myYcount = myYend - jps + 1
+       ! task-local numbers of points in patch for non-staggered arrays
+       myXend = min(ipe, ide-1)
+       myYend = min(jpe, jde-1)
+       myXcount = myXend - ips + 1
+       myYcount = myYend - jps + 1
 PRINT *, 'DEBUG:  WRF non-staggered     ips = ', ips
 PRINT *, 'DEBUG:  WRF non-staggered     ipe = ', min(ipe, ide-1)
 PRINT *, 'DEBUG:  WRF non-staggered i count = ', myXCount
@@ -478,26 +481,28 @@ PRINT *, 'DEBUG:  WRF     staggered     jps = ', jps
 PRINT *, 'DEBUG:  WRF     staggered     jpe = ', jpe
 PRINT *, 'DEBUG:  WRF     staggered j count = ', jpe-jps+1
 
-     ! periodicity
-     CALL nl_get_periodic_x ( grid%id, periodicX )
-     CALL nl_get_periodic_y ( grid%id, periodicY )
+       ! periodicity
+       CALL nl_get_periodic_x ( grid%id, periodicX )
+       CALL nl_get_periodic_y ( grid%id, periodicY )
 
-     ! Send WRF initialization information to ESMF for this grid
-     CALL init_iostate_comp( grid%id, numprocsX,    numprocsY,    &
-                                      periodicX,    periodicY,    &
-                                      coordX,       coordY,       &
-                                      globalXcount, globalYcount, &
-                                      ips,          myXend,       &
-                                      jps,          myYend )
+       ! Send WRF initialization information to ESMF for this grid
+       CALL init_iostate_comp( grid%id, numprocsX,    numprocsY,    &
+                                        periodicX,    periodicY,    &
+                                        coordX,       coordY,       &
+                                        globalXcount, globalYcount, &
+                                        ips,          myXend,       &
+                                        jps,          myYend )
 
 
-     !$$$ TBH:  Get rid of [s|g]et_iostate_comp() once ESMF_StateGetCurrentImport(), 
-     !$$$ TBH:  ESMF_StateGetCurrentExport(), ESMF_GridCompGetCurrent(), and ESMF_ClockGetCurrent() 
-     !$$$ TBH:  are supported!  
-     CALL set_iostate_comp( grid%id, gcomp=gcomp, importState=importState, &
-                                     exportState=exportState, clock=clock )
+       !$$$ TBH:  Get rid of [s|g]et_iostate_comp() once ESMF_StateGetCurrentImport(), 
+       !$$$ TBH:  ESMF_StateGetCurrentExport(), ESMF_GridCompGetCurrent(), and ESMF_ClockGetCurrent() 
+       !$$$ TBH:  are supported!  
+       CALL set_iostate_comp( grid%id, gcomp=gcomp, importState=importState, &
+                                       exportState=exportState, clock=clock )
 
-     DEALLOCATE( coordX, coordY )
+       DEALLOCATE( coordX, coordY )
+
+     ENDIF
 
    END SUBROUTINE wrf_init_coupling
 

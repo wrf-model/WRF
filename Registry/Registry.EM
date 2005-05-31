@@ -265,26 +265,26 @@ state    integer imask_xystag         ij      misc     1     XY
 # moist_tend even if there are not any moist scalars (so the essentially                                                
 # dry code will will still link properly)                                               
 #                                               
-state   real    -              ikjftb   moist       2         -     -    -
-state   real    qv             ikjftb   moist       2         -     \
+state   real    -              ikjftb   moist       1         -     -    -
+state   real    qv             ikjftb   moist       1         -     \
    i01rhusdf=(bdy_interp:dt)  "QVAPOR"           "Water vapor mixing ratio"      "kg kg-1"
-state   real    qc             ikjftb   moist       2         -     \
+state   real    qc             ikjftb   moist       1         -     \
    i01rhusdf=(bdy_interp:dt)  "QCLOUD"           "Cloud water mixing ratio"      "kg kg-1"
-state   real    qr             ikjftb   moist       2         -     \
+state   real    qr             ikjftb   moist       1         -     \
    i01rhusdf=(bdy_interp:dt)  "QRAIN"            "Rain water mixing ratio"       "kg kg-1"
-state   real    qi             ikjftb   moist       2         -     \
+state   real    qi             ikjftb   moist       1         -     \
    i01rhusdf=(bdy_interp:dt)  "QICE"             "Ice mixing ratio"              "kg kg-1"
-state   real    qs             ikjftb   moist       2         -     \
+state   real    qs             ikjftb   moist       1         -     \
    i01rhusdf=(bdy_interp:dt)  "QSNOW"            "Snow mixing ratio"             "kg kg-1"
-state   real    qg             ikjftb   moist       2         -     \
+state   real    qg             ikjftb   moist       1         -     \
    i01rhusdf=(bdy_interp:dt)  "QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
 
 # Chem Scalars
-state   real    -              ikjft   chem        2         -     -    -                                       
+state   real    -              ikjft   chem        1         -     -    -                                       
 
 # Other Scalars
-state   real    -              ikjftb  scalar      2         -     -    -                                       
-state   real    qni            ikjftb  scalar      2         -     \
+state   real    -              ikjftb  scalar      1         -     -    -                                       
+state   real    qni            ikjftb  scalar      1         -     \
    i01rhusdf=(bdy_interp:dt)    "QNICE"         "Ice Number concentration" "# kg(-1)"
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -1219,7 +1219,7 @@ halo      HALO_EM_INIT_1 dyn_em 48:u_1,u_2,v_1,v_2,w_1,w_2,ph_1,ph_2
 halo      HALO_EM_INIT_2 dyn_em 48:t_1,t_2,mu_1,mu_2,tke_1,tke_2,ww,phb
 halo      HALO_EM_INIT_3 dyn_em 48:ph0,php,t_init,mub,mu0,p,al,alt,alb
 halo      HALO_EM_INIT_4 dyn_em 48:pb,h_diabatic,msft,msfu,msfv,f,e,sina,cosa,ht
-halo      HALO_EM_INIT_5 dyn_em 48:moist_1,moist_2,chem_1,chem_2,scalar_1,scalar_2
+halo      HALO_EM_INIT_5 dyn_em 48:moist,chem,scalar
 halo      HALO_EM_A dyn_em  8:ru,rv,rw,ww,php,alt,al,p,muu,muv,mut
 halo      HALO_EM_PHYS_A  dyn_em 4:u_2,v_2
 halo      HALO_EM_PHYS_PBL dyn_em        4:rublten,rvblten
@@ -1230,7 +1230,7 @@ halo      HALO_EM_TKE_A dyn_em 4:ph_2,phb
 halo      HALO_EM_TKE_B dyn_em 4:z,rdz,rdzw,zx,zy
 halo      HALO_EM_TKE_C dyn_em 8:u_2,v_2,z,zx,zy,rdz,rdzw
 halo      HALO_EM_TKE_D dyn_em 8:defor11,defor22,defor33,defor12,defor13,defor23,div
-halo      HALO_EM_TKE_E dyn_em 8:xkmv,xkmh,xkmhd,xkhv,xkhh,BN2,moist_2
+halo      HALO_EM_TKE_E dyn_em 8:xkmv,xkmh,xkmhd,xkhv,xkhh,BN2,moist
 halo      HALO_EM_TKE_3 dyn_em   24:tke_1,tke_2
 halo      HALO_EM_TKE_5 dyn_em   48:tke_1,tke_2
 halo      HALO_EM_TKE_F dyn_em   48:tke_1,tke_2
@@ -1239,26 +1239,26 @@ halo      HALO_EM_B2 dyn_em 4:ru_tend,rv_tend
 halo      HALO_EM_C dyn_em    4:u_2,v_2
 halo      HALO_EM_C2 dyn_em    4:ph_2,al,p,mu_2,muts,mudf
 halo      HALO_EM_D dyn_em    4:ru_m,rv_m
-halo      HALO_EM_D2_3 dyn_em 24:u_2,v_2,w_2,t_2,ph_2;24:moist_2,chem_2,scalar_2;4:mu_2,al
-halo      HALO_EM_D2_5 dyn_em 48:u_2,v_2,w_2,t_2,ph_2;24:moist_2,chem_2,scalar_2;4:mu_2,al
-halo      HALO_EM_D3_3 dyn_em 24:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,moist_1,moist_2,chem_1,chem_2,scalar_1,scalar_2;4:mu_1,mu_2
-halo      HALO_EM_D3_5 dyn_em 48:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,moist_1,moist_2,chem_1,chem_2,scalar_1,scalar_2;4:mu_1,mu_2
+halo      HALO_EM_D2_3 dyn_em 24:u_2,v_2,w_2,t_2,ph_2;24:moist,chem,scalar;4:mu_2,al
+halo      HALO_EM_D2_5 dyn_em 48:u_2,v_2,w_2,t_2,ph_2;24:moist,chem,scalar;4:mu_2,al
+halo      HALO_EM_D3_3 dyn_em 24:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,moist,chem,scalar;4:mu_1,mu_2
+halo      HALO_EM_D3_5 dyn_em 48:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,moist,chem,scalar;4:mu_1,mu_2
 halo      HALO_EM_E_3 dyn_em 24:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,;4:mu_1,mu_2
 halo      HALO_EM_E_5 dyn_em 48:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,;4:mu_1,mu_2
-halo      HALO_EM_MOIST_E_3 dyn_em 24:moist_1,moist_2
-halo      HALO_EM_MOIST_E_5 dyn_em 48:moist_1,moist_2
-halo      HALO_EM_CHEM_E_3 dyn_em 24:chem_1,chem_2
-halo      HALO_EM_CHEM_E_5 dyn_em 48:chem_1,chem_2
-halo      HALO_EM_SCALAR_E_3 dyn_em 24:scalar_1,scalar_2
-halo      HALO_EM_SCALAR_E_5 dyn_em 48:scalar_1,scalar_2
+halo      HALO_EM_MOIST_E_3 dyn_em 24:moist
+halo      HALO_EM_MOIST_E_5 dyn_em 48:moist
+halo      HALO_EM_CHEM_E_3 dyn_em 24:chem
+halo      HALO_EM_CHEM_E_5 dyn_em 48:chem
+halo      HALO_EM_SCALAR_E_3 dyn_em 24:scalar
+halo      HALO_EM_SCALAR_E_5 dyn_em 48:scalar
 halo      HALO_EM_FEEDBACK   dyn_em 48:ht
 
 halo      HALO_EM_COUPLE_A   dyn_em 24:mub,mu_1,mu_2
 period    PERIOD_EM_COUPLE_A dyn_em 2:mub,mu_1,mu_2
 halo      HALO_EM_COUPLE_B   dyn_em 48:ph_1,ph_2,w_1,w_2,t_1,t_2,u_1,u_2,v_1,v_2,\
-                                       moist_1,moist_2,chem_1,chem_2,scalar_1,scalar_2
+                                       moist,chem,scalar
 period    PERIOD_EM_COUPLE_B dyn_em 3:ph_1,ph_2,w_1,w_2,t_1,t_2,u_1,u_2,v_1,v_2,\
-                                       moist_1,moist_2,chem_1,chem_2,scalar_1,scalar_2
+                                       moist,chem,scalar
 
 # For moving nests
 halo      em_shift_halo_y  dyn_em 48:imask_nostag,imask_xstag,imask_ystag,imask_xystag,u_2,v_2,t_2
@@ -1267,12 +1267,12 @@ halo      em_shift_halo_x  dyn_em 48:imask_nostag,imask_xstag,imask_ystag,imask_
 # Periodic Boundary Communications
 
 period    PERIOD_BDY_EM_INIT dyn_em 3:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,t_init,phb,ph0,php,pb,al,alt,alb,mu_1,mu_2,mub,mu0,ht,msft,msfu,msfv,sina,cosa,e,f
-period    PERIOD_BDY_EM_MOIST dyn_em 3:moist_1,moist_2
-period    PERIOD_BDY_EM_CHEM dyn_em 3:chem_1,chem_2
-period    PERIOD_BDY_EM_SCALAR dyn_em 3:scalar_1,scalar_2
-period    PERIOD_BDY_EM_MOIST2 dyn_em 3:moist_2
-period    PERIOD_BDY_EM_CHEM2 dyn_em 3:chem_2
-period    PERIOD_BDY_EM_SCALAR2 dyn_em 3:scalar_2
+period    PERIOD_BDY_EM_MOIST dyn_em 3:moist
+period    PERIOD_BDY_EM_CHEM dyn_em 3:chem
+period    PERIOD_BDY_EM_SCALAR dyn_em 3:scalar
+period    PERIOD_BDY_EM_MOIST2 dyn_em 3:moist
+period    PERIOD_BDY_EM_CHEM2 dyn_em 3:chem
+period    PERIOD_BDY_EM_SCALAR2 dyn_em 3:scalar
 period    PERIOD_BDY_EM_A dyn_em 2:ru,rv,rw,ww,php,alt,p,muu,muv,mut,ph_2
 period    PERIOD_BDY_EM_A1  dyn_em 3:rdzw,rdz,z,zx,zy
 period    PERIOD_BDY_EM_PHY_BC dyn_em 2:rublten,rvblten,xkmh,xkmhd,xkmv,xkhh,xkhv,div,defor11,defor22,defor12,defor13,defor23,defor33,tke_2

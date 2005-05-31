@@ -1688,6 +1688,7 @@
       PDBOT=PDTOT-PDTOP
       SFULL(KTS)=1.
       SFULL(KTE)=0.
+      dsigsum = 0.
       DO K=KTS+1,KTE
         DSIG=(DETA1(K-1)*PDTOP+DETA2(K-1)*PDBOT)*RPDTOT
         dsigsum=dsigsum+dsig

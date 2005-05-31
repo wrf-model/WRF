@@ -531,7 +531,7 @@ print *,'spec_bdy_width, interval_seconds, loop=',spec_bdy_width , interval_seco
                     ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
       CALL couple ( grid%em_mu_2 , grid%em_mub , pbdy3dtemp1 , grid%em_ph_2                , 'h' , grid%msft , &
                     ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
-      CALL couple ( grid%em_mu_2 , grid%em_mub , qbdy3dtemp1 , grid%moist_2(:,:,:,P_QV) , 't' , grid%msft , &
+      CALL couple ( grid%em_mu_2 , grid%em_mub , qbdy3dtemp1 , grid%moist(:,:,:,P_QV) , 't' , grid%msft , &
                     ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
 
       DO j = jps , MIN(jde-1,jpe)
@@ -599,7 +599,7 @@ print *,'spec_bdy_width, interval_seconds, loop=',spec_bdy_width , interval_seco
                     ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
       CALL couple ( grid%em_mu_2 , grid%em_mub , pbdy3dtemp2 , grid%em_ph_2                , 'h' , grid%msft , &
                     ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
-      CALL couple ( grid%em_mu_2 , grid%em_mub , qbdy3dtemp2 , grid%moist_2(:,:,:,P_QV) , 't' , grid%msft , &
+      CALL couple ( grid%em_mu_2 , grid%em_mub , qbdy3dtemp2 , grid%moist(:,:,:,P_QV) , 't' , grid%msft , &
                     ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
 
       DO j = jps , jpe

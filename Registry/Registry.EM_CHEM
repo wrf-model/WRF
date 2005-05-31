@@ -410,111 +410,111 @@ state    real  ketp         ikj     eh+em        1         -      r        "ketp
 # moist_tend even if there are not any moist scalars (so the essentially                                                
 # dry code will will still link properly)                                               
 #                                               
-state   real    -              ikjftb   moist       2         -     -    -
-state   real    qv             ikjftb   moist       2         -     \
+state   real    -              ikjftb   moist       1         -     -    -
+state   real    qv             ikjftb   moist       1         -     \
    i01rhusdf=(bdy_interp:dt)  "QVAPOR"           "Water vapor mixing ratio"      "kg kg-1"
-state   real    qc             ikjftb   moist       2         -     \
+state   real    qc             ikjftb   moist       1         -     \
    i01rhusdf=(bdy_interp:dt)  "QCLOUD"           "Cloud water mixing ratio"      "kg kg-1"
-state   real    qr             ikjftb   moist       2         -     \
+state   real    qr             ikjftb   moist       1         -     \
    i01rhusdf=(bdy_interp:dt)  "QRAIN"            "Rain water mixing ratio"       "kg kg-1"
-state   real    qi             ikjftb   moist       2         -     \
+state   real    qi             ikjftb   moist       1         -     \
    i01rhusdf=(bdy_interp:dt)  "QICE"             "Ice mixing ratio"              "kg kg-1"
-state   real    qs             ikjftb   moist       2         -     \
+state   real    qs             ikjftb   moist       1         -     \
    i01rhusdf=(bdy_interp:dt)  "QSNOW"            "Snow mixing ratio"             "kg kg-1"
-state   real    qg             ikjftb   moist       2         -     \
+state   real    qg             ikjftb   moist       1         -     \
    i01rhusdf=(bdy_interp:dt)  "QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
 
 # Chem Scalars
-state   real    -              ikjft   chem        2         -     -    -                                       
-state   real   so2             ikjft   chem        2         -   irh        "SO2"               "SO2 concentration"      "ppm"
-state   real   sulf            ikjft   chem        2         -   irh        "SULF"              "sulf concentration"     "ppm"
-state   real   no2             ikjft   chem        2         -   irh        "NO2"               "no2 concentration"      "ppm"
-state   real   no              ikjft   chem        2         -   irh        "NO"                "no concentration"       "ppm"
-state   real   o3              ikjft   chem        2         -   irh        "O3"                "Ozone concentration"    "ppm"
-state   real   hno3            ikjft   chem        2         -   irh        "HNO3"              "hno3 concentration"     "ppm"
-state   real   h2o2            ikjft   chem        2         -   irh        "H2O2"              "h2o2 concentration"     "ppm"
-state   real   ald             ikjft   chem        2         -   irh        "ALD"               "ald concentration"      "ppm"
-state   real   hcho            ikjft   chem        2         -   irh        "HCHO"              "hcho concentration"     "ppm"
-state   real   op1             ikjft   chem        2         -   irh        "OP1"               "op1 concentration"      "ppm"
-state   real   op2             ikjft   chem        2         -   irh        "OP2"               "op2 concentration"      "ppm"
-state   real   paa             ikjft   chem        2         -   irh        "PAA"               "paa concentration"      "ppm"
-state   real   ora1            ikjft   chem        2         -   irh        "ORA1"              "ora1 concentration"     "ppm"
-state   real   ora2            ikjft   chem        2         -   irh        "ORA2"              "ora2 concentration"     "ppm"
-state   real   nh3             ikjft   chem        2         -   irh        "NH3"               "nh3 concentration"      "ppm"
-state   real   n2o5            ikjft   chem        2         -   irh        "N2O5"              "n2o5 concentration"     "ppm"
-state   real   no3             ikjft   chem        2         -   irh        "NO3"               "no3 concentration"      "ppm"
-state   real   pan             ikjft   chem        2         -   irh        "PAN"               "pan concentration"      "ppm"
-state   real   hc3             ikjft   chem        2         -   irh        "HC3"               "hc3 concentration"      "ppm"
-state   real   hc5             ikjft   chem        2         -   irh        "HC5"               "hc5 concentration"      "ppm"
-state   real   hc8             ikjft   chem        2         -   irh        "HC8"               "hc8 concentration"      "ppm"
-state   real   eth             ikjft   chem        2         -   irh        "ETH"               "eth concentration"      "ppm"
-state   real   co              ikjft   chem        2         -   irh        "CO"                "co concentration"       "ppm"
-state   real   ol2             ikjft   chem        2         -   irh        "OL2"               "ol2 concentration"      "ppm"
-state   real   olt             ikjft   chem        2         -   irh        "OLT"               "olt concentration"      "ppm"
-state   real   oli             ikjft   chem        2         -   irh        "OLI"               "oli concentration"      "ppm"
-state   real   tol             ikjft   chem        2         -   irh        "TOL"               "tol concentration"      "ppm"
-state   real   xyl             ikjft   chem        2         -   irh        "XYL"               "xyl concentration"      "ppm"
-state   real   aco3            ikjft   chem        2         -   irh        "ACO3"              "aco3 concentration"     "ppm"
-state   real   tpan            ikjft   chem        2         -   irh        "TPAN"              "tpan concentration"     "ppm"
-state   real   hono            ikjft   chem        2         -   irh        "HONO"              "hono concentration"     "ppm"
-state   real   hno4            ikjft   chem        2         -   irh        "HNO4"              "hno4 concentration"     "ppm"
-state   real   ket             ikjft   chem        2         -   irh        "KET"               "ket concentration"      "ppm"
-state   real   gly             ikjft   chem        2         -   irh        "GLY"               "gly concentration"      "ppm"
-state   real   mgly            ikjft   chem        2         -   irh        "MGLY"              "mgly concentration"     "ppm"
-state   real   dcb             ikjft   chem        2         -   irh        "DCB"               "dcb concentration"      "ppm"
-state   real   onit            ikjft   chem        2         -   irh        "ONIT"              "onit concentration"     "ppm"
-state   real   csl             ikjft   chem        2         -   irh        "CSL"               "csl concentration"      "ppm"
-state   real   iso             ikjft   chem        2         -   irh        "ISO"               "isoprene concentration" "ppm"
-state   real   ho              ikjft   chem        2         -   irh        "HO"                "HO    concentration"    "ppm"
-state   real   ho2             ikjft   chem        2         -   irh        "HO2"               "HO2  concentration"     "ppm"
+state   real    -              ikjft   chem        1         -     -    -                                       
+state   real   so2             ikjft   chem        1         -   irh        "SO2"               "SO2 concentration"      "ppm"
+state   real   sulf            ikjft   chem        1         -   irh        "SULF"              "sulf concentration"     "ppm"
+state   real   no2             ikjft   chem        1         -   irh        "NO2"               "no2 concentration"      "ppm"
+state   real   no              ikjft   chem        1         -   irh        "NO"                "no concentration"       "ppm"
+state   real   o3              ikjft   chem        1         -   irh        "O3"                "Ozone concentration"    "ppm"
+state   real   hno3            ikjft   chem        1         -   irh        "HNO3"              "hno3 concentration"     "ppm"
+state   real   h2o2            ikjft   chem        1         -   irh        "H2O2"              "h2o2 concentration"     "ppm"
+state   real   ald             ikjft   chem        1         -   irh        "ALD"               "ald concentration"      "ppm"
+state   real   hcho            ikjft   chem        1         -   irh        "HCHO"              "hcho concentration"     "ppm"
+state   real   op1             ikjft   chem        1         -   irh        "OP1"               "op1 concentration"      "ppm"
+state   real   op2             ikjft   chem        1         -   irh        "OP2"               "op2 concentration"      "ppm"
+state   real   paa             ikjft   chem        1         -   irh        "PAA"               "paa concentration"      "ppm"
+state   real   ora1            ikjft   chem        1         -   irh        "ORA1"              "ora1 concentration"     "ppm"
+state   real   ora2            ikjft   chem        1         -   irh        "ORA2"              "ora2 concentration"     "ppm"
+state   real   nh3             ikjft   chem        1         -   irh        "NH3"               "nh3 concentration"      "ppm"
+state   real   n2o5            ikjft   chem        1         -   irh        "N2O5"              "n2o5 concentration"     "ppm"
+state   real   no3             ikjft   chem        1         -   irh        "NO3"               "no3 concentration"      "ppm"
+state   real   pan             ikjft   chem        1         -   irh        "PAN"               "pan concentration"      "ppm"
+state   real   hc3             ikjft   chem        1         -   irh        "HC3"               "hc3 concentration"      "ppm"
+state   real   hc5             ikjft   chem        1         -   irh        "HC5"               "hc5 concentration"      "ppm"
+state   real   hc8             ikjft   chem        1         -   irh        "HC8"               "hc8 concentration"      "ppm"
+state   real   eth             ikjft   chem        1         -   irh        "ETH"               "eth concentration"      "ppm"
+state   real   co              ikjft   chem        1         -   irh        "CO"                "co concentration"       "ppm"
+state   real   ol2             ikjft   chem        1         -   irh        "OL2"               "ol2 concentration"      "ppm"
+state   real   olt             ikjft   chem        1         -   irh        "OLT"               "olt concentration"      "ppm"
+state   real   oli             ikjft   chem        1         -   irh        "OLI"               "oli concentration"      "ppm"
+state   real   tol             ikjft   chem        1         -   irh        "TOL"               "tol concentration"      "ppm"
+state   real   xyl             ikjft   chem        1         -   irh        "XYL"               "xyl concentration"      "ppm"
+state   real   aco3            ikjft   chem        1         -   irh        "ACO3"              "aco3 concentration"     "ppm"
+state   real   tpan            ikjft   chem        1         -   irh        "TPAN"              "tpan concentration"     "ppm"
+state   real   hono            ikjft   chem        1         -   irh        "HONO"              "hono concentration"     "ppm"
+state   real   hno4            ikjft   chem        1         -   irh        "HNO4"              "hno4 concentration"     "ppm"
+state   real   ket             ikjft   chem        1         -   irh        "KET"               "ket concentration"      "ppm"
+state   real   gly             ikjft   chem        1         -   irh        "GLY"               "gly concentration"      "ppm"
+state   real   mgly            ikjft   chem        1         -   irh        "MGLY"              "mgly concentration"     "ppm"
+state   real   dcb             ikjft   chem        1         -   irh        "DCB"               "dcb concentration"      "ppm"
+state   real   onit            ikjft   chem        1         -   irh        "ONIT"              "onit concentration"     "ppm"
+state   real   csl             ikjft   chem        1         -   irh        "CSL"               "csl concentration"      "ppm"
+state   real   iso             ikjft   chem        1         -   irh        "ISO"               "isoprene concentration" "ppm"
+state   real   ho              ikjft   chem        1         -   irh        "HO"                "HO    concentration"    "ppm"
+state   real   ho2             ikjft   chem        1         -   irh        "HO2"               "HO2  concentration"     "ppm"
 #RACM has a few more variables to those of RADM2 (ETE is equivilant to OL2 from RADM2)
-state   real   ete             ikjft   chem        2         -   irh        "ETE"               "ETE concentration"      "ppm"
-state   real   co2             ikjft   chem        2         -   irh        "CO2"               "CO2 concentration"      "ppm"
-state   real   ch4             ikjft   chem        2         -   irh        "CH4"               "CH4 concentration"      "ppm"
-state   real   udd             ikjft   chem        2         -   irh        "UDD"               "UDD concentration"      "ppm"
-state   real   hket            ikjft   chem        2         -   irh        "HKET"              "HKET concentration"      "ppm"
-state   real   api             ikjft   chem        2         -   irh        "API"               "API concentration"      "ppm"
-state   real   lim             ikjft   chem        2         -   irh        "LIM"               "LIM concentration"      "ppm"
-state   real   dien            ikjft   chem        2         -   irh        "DIEN"              "DIEN concentration"      "ppm"
-state   real   macr            ikjft   chem        2         -   irh        "MACR"              "MACR concentration"      "ppm"
-state   real   so4aj           ikjft   chem        2         -   irh        "SO4AJ"             "Sulfate conc. Acc. mode" "ug m{-3}"
-state   real   so4ai           ikjft   chem        2         -   irh        "SO4AI"             "Sulfate conc. Aitken mode"     "ug m{-3}"
-state   real   nh4aj           ikjft   chem        2         -   irh        "NH4AJ"             "Ammonium conc. Acc. mode "      "ug m{-3}"
-state   real   nh4ai           ikjft   chem        2         -   irh        "NH4AI"             "Ammonium  conc. Aitken mode"   "ug m{-3}"
-state   real   no3aj           ikjft   chem        2         -   irh        "NO3AJ"             "Nitrate  conc. Acc. mode "      "ug m{-3}"
-state   real   no3ai           ikjft   chem        2         -   irh        "NO3AI"             "Nitrate  conc. Aitken mode"    "ug m{-3}"
-state   real   orgaro1j        ikjft   chem        2         -   irh        "ORGARO1J"          "Anth. org. conc. from aromatics Acc. mode"    "ug m{-3}"
-state   real   orgaro1i        ikjft   chem        2         -   irh        "ORGARO1I"          "Anth. org. conc. from aromatics Aitken mode"  "ug m{-3}"
-state   real   orgaro2j        ikjft   chem        2         -   irh        "ORGARO2J"          "Anth. org. conc. from aromatics Acc. mode"    "ug m{-3}"
-state   real   orgaro2i        ikjft   chem        2         -   irh        "ORGARO2I"          "Anth. org. conc. from aromatics Aitken mode"  "ug m{-3}"
-state   real   orgalk1j        ikjft   chem        2         -   irh        "ORGALK1J"          "Anth. org. conc. from alkanes and others except aromatics Acc. mode"    "ug m{-3}"
-state   real   orgalk1i        ikjft   chem        2         -   irh        "ORGALK1I"          "Anth. org. conc. from alkanes and others except aromatics Aitken mode"  "ug m{-3}"
-state   real   orgole1j        ikjft   chem        2         -   irh        "ORGOLE1J"          "Anth. org. conc. from alkenes and others except aromatics Acc. mode"    "ug m{-3}"
-state   real   orgole1i        ikjft   chem        2         -   irh        "ORGOLE1I"          "Anth. org. conc. from alkenes and others except aromatics Aitken mode"  "ug m{-3}"
-state   real   orgba1j         ikjft   chem        2         -   irh        "ORGBA1J"           "Biog. org. conc. from aromatics Acc. mode"    "ug m{-3}"
-state   real   orgba1i         ikjft   chem        2         -   irh        "ORGBA1I"           "Biog. org. conc. from aromatics Aitken mode"  "ug m{-3}"
-state   real   orgba2j         ikjft   chem        2         -   irh        "ORGBA2J"           "Biog. org. conc. from aromatics Acc. mode"    "ug m{-3}"
-state   real   orgba2i         ikjft   chem        2         -   irh        "ORGBA2I"           "Biog. org. conc. from aromatics Aitken mode"  "ug m{-3}"
-state   real   orgba3j         ikjft   chem        2         -   irh        "ORGBA3J"           "Biog. org. conc. from aromatics Acc. mode"    "ug m{-3}"
-state   real   orgba3i         ikjft   chem        2         -   irh        "ORGBA3I"           "Biog. org. conc. from aromatics Aitken mode"  "ug m{-3}"
-state   real   orgba4j         ikjft   chem        2         -   irh        "ORGBA4J"           "Biog. org. conc. from aromatics Acc. mode"    "ug m{-3}"
-state   real   orgba4i         ikjft   chem        2         -   irh        "ORGBA4I"           "Biog. org. conc. from aromatics Aitken mode"  "ug m{-3}"
-state   real   orgpaj          ikjft   chem        2         -   irh        "ORGPAJ"            "Biog. org. conc. from aromatics Acc. mode"    "ug m{-3}"
-state   real   orgpai          ikjft   chem        2         -   irh        "ORGPAI"            "Biog. org. conc. from aromatics Aitken mode"  "ug m{-3}"
-state   real   ecj             ikjft   chem        2         -   irh        "ECJ"               "Elemental carbon Acc. mode"    "ug m{-3}"
-state   real   eci             ikjft   chem        2         -   irh        "ECI"               "Elemental carbon Aitken mode"  "ug m{-3}"
-state   real   p25j            ikjft   chem        2         -   irh        "P25J"              "Primary PM2.5 Acc. mode" "ug m{-3}"
-state   real   p25i            ikjft   chem        2         -   irh        "P25I"              "Primary PM2.5 Aitken mod e"     "ug m{-3}"
-state   real   antha           ikjft   chem        2         -   irh        "ANTHA"             "Coarse anthropogenic aer osols" "ug m{-3}"
-state   real   seas            ikjft   chem        2         -   irh        "SEAS"              "Coarse marine aerosols" "ug m{-3}"
-state   real   soila           ikjft   chem        2         -   irh        "SOILA"             "Coarse soil-derived aero sols"  "ug m{-3}"
-state   real   nu0             ikjft   chem        2         -   irh        "NU0"               "Aitken mode number"     "m{-3}"
-state   real   ac0             ikjft   chem        2         -   irh        "AC0"               "Accumulation mode number "      "m{-3}"
-state   real   corn            ikjft   chem        2         -   irh        "CORN"              "Coarse mode number"     "m{-3}"
+state   real   ete             ikjft   chem        1         -   irh        "ETE"               "ETE concentration"      "ppm"
+state   real   co2             ikjft   chem        1         -   irh        "CO2"               "CO2 concentration"      "ppm"
+state   real   ch4             ikjft   chem        1         -   irh        "CH4"               "CH4 concentration"      "ppm"
+state   real   udd             ikjft   chem        1         -   irh        "UDD"               "UDD concentration"      "ppm"
+state   real   hket            ikjft   chem        1         -   irh        "HKET"              "HKET concentration"      "ppm"
+state   real   api             ikjft   chem        1         -   irh        "API"               "API concentration"      "ppm"
+state   real   lim             ikjft   chem        1         -   irh        "LIM"               "LIM concentration"      "ppm"
+state   real   dien            ikjft   chem        1         -   irh        "DIEN"              "DIEN concentration"      "ppm"
+state   real   macr            ikjft   chem        1         -   irh        "MACR"              "MACR concentration"      "ppm"
+state   real   so4aj           ikjft   chem        1         -   irh        "SO4AJ"             "Sulfate conc. Acc. mode" "ug m{-3}"
+state   real   so4ai           ikjft   chem        1         -   irh        "SO4AI"             "Sulfate conc. Aitken mode"     "ug m{-3}"
+state   real   nh4aj           ikjft   chem        1         -   irh        "NH4AJ"             "Ammonium conc. Acc. mode "      "ug m{-3}"
+state   real   nh4ai           ikjft   chem        1         -   irh        "NH4AI"             "Ammonium  conc. Aitken mode"   "ug m{-3}"
+state   real   no3aj           ikjft   chem        1         -   irh        "NO3AJ"             "Nitrate  conc. Acc. mode "      "ug m{-3}"
+state   real   no3ai           ikjft   chem        1         -   irh        "NO3AI"             "Nitrate  conc. Aitken mode"    "ug m{-3}"
+state   real   orgaro1j        ikjft   chem        1         -   irh        "ORGARO1J"          "Anth. org. conc. from aromatics Acc. mode"    "ug m{-3}"
+state   real   orgaro1i        ikjft   chem        1         -   irh        "ORGARO1I"          "Anth. org. conc. from aromatics Aitken mode"  "ug m{-3}"
+state   real   orgaro2j        ikjft   chem        1         -   irh        "ORGARO2J"          "Anth. org. conc. from aromatics Acc. mode"    "ug m{-3}"
+state   real   orgaro2i        ikjft   chem        1         -   irh        "ORGARO2I"          "Anth. org. conc. from aromatics Aitken mode"  "ug m{-3}"
+state   real   orgalk1j        ikjft   chem        1         -   irh        "ORGALK1J"          "Anth. org. conc. from alkanes and others except aromatics Acc. mode"    "ug m{-3}"
+state   real   orgalk1i        ikjft   chem        1         -   irh        "ORGALK1I"          "Anth. org. conc. from alkanes and others except aromatics Aitken mode"  "ug m{-3}"
+state   real   orgole1j        ikjft   chem        1         -   irh        "ORGOLE1J"          "Anth. org. conc. from alkenes and others except aromatics Acc. mode"    "ug m{-3}"
+state   real   orgole1i        ikjft   chem        1         -   irh        "ORGOLE1I"          "Anth. org. conc. from alkenes and others except aromatics Aitken mode"  "ug m{-3}"
+state   real   orgba1j         ikjft   chem        1         -   irh        "ORGBA1J"           "Biog. org. conc. from aromatics Acc. mode"    "ug m{-3}"
+state   real   orgba1i         ikjft   chem        1         -   irh        "ORGBA1I"           "Biog. org. conc. from aromatics Aitken mode"  "ug m{-3}"
+state   real   orgba2j         ikjft   chem        1         -   irh        "ORGBA2J"           "Biog. org. conc. from aromatics Acc. mode"    "ug m{-3}"
+state   real   orgba2i         ikjft   chem        1         -   irh        "ORGBA2I"           "Biog. org. conc. from aromatics Aitken mode"  "ug m{-3}"
+state   real   orgba3j         ikjft   chem        1         -   irh        "ORGBA3J"           "Biog. org. conc. from aromatics Acc. mode"    "ug m{-3}"
+state   real   orgba3i         ikjft   chem        1         -   irh        "ORGBA3I"           "Biog. org. conc. from aromatics Aitken mode"  "ug m{-3}"
+state   real   orgba4j         ikjft   chem        1         -   irh        "ORGBA4J"           "Biog. org. conc. from aromatics Acc. mode"    "ug m{-3}"
+state   real   orgba4i         ikjft   chem        1         -   irh        "ORGBA4I"           "Biog. org. conc. from aromatics Aitken mode"  "ug m{-3}"
+state   real   orgpaj          ikjft   chem        1         -   irh        "ORGPAJ"            "Biog. org. conc. from aromatics Acc. mode"    "ug m{-3}"
+state   real   orgpai          ikjft   chem        1         -   irh        "ORGPAI"            "Biog. org. conc. from aromatics Aitken mode"  "ug m{-3}"
+state   real   ecj             ikjft   chem        1         -   irh        "ECJ"               "Elemental carbon Acc. mode"    "ug m{-3}"
+state   real   eci             ikjft   chem        1         -   irh        "ECI"               "Elemental carbon Aitken mode"  "ug m{-3}"
+state   real   p25j            ikjft   chem        1         -   irh        "P25J"              "Primary PM2.5 Acc. mode" "ug m{-3}"
+state   real   p25i            ikjft   chem        1         -   irh        "P25I"              "Primary PM2.5 Aitken mod e"     "ug m{-3}"
+state   real   antha           ikjft   chem        1         -   irh        "ANTHA"             "Coarse anthropogenic aer osols" "ug m{-3}"
+state   real   seas            ikjft   chem        1         -   irh        "SEAS"              "Coarse marine aerosols" "ug m{-3}"
+state   real   soila           ikjft   chem        1         -   irh        "SOILA"             "Coarse soil-derived aero sols"  "ug m{-3}"
+state   real   nu0             ikjft   chem        1         -   irh        "NU0"               "Aitken mode number"     "m{-3}"
+state   real   ac0             ikjft   chem        1         -   irh        "AC0"               "Accumulation mode number "      "m{-3}"
+state   real   corn            ikjft   chem        1         -   irh        "CORN"              "Coarse mode number"     "m{-3}"
 
 # Other Scalars
-state   real    -              ikjftb  scalar      2         -     -    -                                       
-state   real    qni            ikjftb  scalar      2         -     \
+state   real    -              ikjftb  scalar      1         -     -    -                                       
+state   real    qni            ikjftb  scalar      1         -     \
    i01rhusdf=(bdy_interp:dt)    "QNICE"         "Ice Number concentration" "# kg(-1)"
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -1473,7 +1473,7 @@ halo      HALO_EM_INIT_1 dyn_em 48:u_1,u_2,v_1,v_2,w_1,w_2,ph_1,ph_2
 halo      HALO_EM_INIT_2 dyn_em 48:t_1,t_2,mu_1,mu_2,tke_1,tke_2,ww,phb
 halo      HALO_EM_INIT_3 dyn_em 48:ph0,php,t_init,mub,mu0,p,al,alt,alb
 halo      HALO_EM_INIT_4 dyn_em 48:pb,h_diabatic,msft,msfu,msfv,f,e,sina,cosa,ht
-halo      HALO_EM_INIT_5 dyn_em 48:moist_1,moist_2,chem_1,chem_2,scalar_1,scalar_2
+halo      HALO_EM_INIT_5 dyn_em 48:moist,chem,scalar
 halo      HALO_EM_A dyn_em  8:ru,rv,rw,ww,php,alt,al,p,muu,muv,mut
 halo      HALO_EM_PHYS_A  dyn_em 4:u_2,v_2
 halo      HALO_EM_PHYS_PBL dyn_em        4:rublten,rvblten
@@ -1484,7 +1484,7 @@ halo      HALO_EM_TKE_A dyn_em 4:ph_2,phb
 halo      HALO_EM_TKE_B dyn_em 4:z,rdz,rdzw,zx,zy
 halo      HALO_EM_TKE_C dyn_em 8:u_2,v_2,z,zx,zy,rdz,rdzw
 halo      HALO_EM_TKE_D dyn_em 8:defor11,defor22,defor33,defor12,defor13,defor23,div
-halo      HALO_EM_TKE_E dyn_em 8:xkmv,xkmh,xkmhd,xkhv,xkhh,BN2,moist_2
+halo      HALO_EM_TKE_E dyn_em 8:xkmv,xkmh,xkmhd,xkhv,xkhh,BN2,moist
 halo      HALO_EM_TKE_3 dyn_em   24:tke_1,tke_2
 halo      HALO_EM_TKE_5 dyn_em   48:tke_1,tke_2
 halo      HALO_EM_TKE_F dyn_em   48:tke_1,tke_2
@@ -1493,26 +1493,27 @@ halo      HALO_EM_B2 dyn_em 4:ru_tend,rv_tend
 halo      HALO_EM_C dyn_em    4:u_2,v_2
 halo      HALO_EM_C2 dyn_em    4:ph_2,al,p,mu_2,muts,mudf
 halo      HALO_EM_D dyn_em    4:ru_m,rv_m
-halo      HALO_EM_D2_3 dyn_em 24:u_2,v_2,w_2,t_2,ph_2;24:moist_2,chem_2,scalar_2;4:mu_2,al
-halo      HALO_EM_D2_5 dyn_em 48:u_2,v_2,w_2,t_2,ph_2;24:moist_2,chem_2,scalar_2;4:mu_2,al
-halo      HALO_EM_D3_3 dyn_em 24:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,moist_1,moist_2,chem_1,chem_2,scalar_1,scalar_2;4:mu_1,mu_2
-halo      HALO_EM_D3_5 dyn_em 48:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,moist_1,moist_2,chem_1,chem_2,scalar_1,scalar_2;4:mu_1,mu_2
+halo      HALO_EM_D2_3 dyn_em 24:u_2,v_2,w_2,t_2,ph_2;24:moist,chem,scalar;4:mu_2,al
+halo      HALO_EM_D2_5 dyn_em 48:u_2,v_2,w_2,t_2,ph_2;24:moist,chem,scalar;4:mu_2,al
+halo      HALO_EM_D3_3 dyn_em 24:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,moist,chem,scalar;4:mu_1,mu_2
+halo      HALO_EM_D3_5 dyn_em 48:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,moist,chem,scalar;4:mu_1,mu_2
 halo      HALO_EM_E_3 dyn_em 24:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,;4:mu_1,mu_2
 halo      HALO_EM_E_5 dyn_em 48:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,;4:mu_1,mu_2
-halo      HALO_EM_MOIST_E_3 dyn_em 24:moist_1,moist_2
-halo      HALO_EM_MOIST_E_5 dyn_em 48:moist_1,moist_2
-halo      HALO_EM_CHEM_E_3 dyn_em 24:chem_1,chem_2
-halo      HALO_EM_CHEM_E_5 dyn_em 48:chem_1,chem_2
-halo      HALO_EM_SCALAR_E_3 dyn_em 24:scalar_1,scalar_2
-halo      HALO_EM_SCALAR_E_5 dyn_em 48:scalar_1,scalar_2
+
+halo      HALO_EM_MOIST_E_3 dyn_em 24:moist
+halo      HALO_EM_MOIST_E_5 dyn_em 48:moist
+halo      HALO_EM_CHEM_E_3 dyn_em 24:chem
+halo      HALO_EM_CHEM_E_5 dyn_em 48:chem
+halo      HALO_EM_SCALAR_E_3 dyn_em 24:scalar
+halo      HALO_EM_SCALAR_E_5 dyn_em 48:scalar
 halo      HALO_EM_FEEDBACK   dyn_em 48:ht
 
 halo      HALO_EM_COUPLE_A   dyn_em 24:mub,mu_1,mu_2
 period    PERIOD_EM_COUPLE_A dyn_em 2:mub,mu_1,mu_2
 halo      HALO_EM_COUPLE_B   dyn_em 48:ph_1,ph_2,w_1,w_2,t_1,t_2,u_1,u_2,v_1,v_2,\
-                                       moist_1,moist_2,chem_1,chem_2,scalar_1,scalar_2
+                                       moist,chem,scalar
 period    PERIOD_EM_COUPLE_B dyn_em 3:ph_1,ph_2,w_1,w_2,t_1,t_2,u_1,u_2,v_1,v_2,\
-                                       moist_1,moist_2,chem_1,chem_2,scalar_1,scalar_2
+                                       moist,chem,scalar
 
 # For moving nests
 halo      em_shift_halo_y  dyn_em 48:imask_nostag,imask_xstag,imask_ystag,imask_xystag,u_2,v_2,t_2
@@ -1521,12 +1522,12 @@ halo      em_shift_halo_x  dyn_em 48:imask_nostag,imask_xstag,imask_ystag,imask_
 # Periodic Boundary Communications
 
 period    PERIOD_BDY_EM_INIT dyn_em 3:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,t_init,phb,ph0,php,pb,al,alt,alb,mu_1,mu_2,mub,mu0,ht,msft,msfu,msfv,sina,cosa,e,f
-period    PERIOD_BDY_EM_MOIST dyn_em 3:moist_1,moist_2
-period    PERIOD_BDY_EM_CHEM dyn_em 3:chem_1,chem_2
-period    PERIOD_BDY_EM_SCALAR dyn_em 3:scalar_1,scalar_2
-period    PERIOD_BDY_EM_MOIST2 dyn_em 3:moist_2
-period    PERIOD_BDY_EM_CHEM2 dyn_em 3:chem_2
-period    PERIOD_BDY_EM_SCALAR2 dyn_em 3:scalar_2
+period    PERIOD_BDY_EM_MOIST dyn_em 3:moist
+period    PERIOD_BDY_EM_CHEM dyn_em 3:chem
+period    PERIOD_BDY_EM_SCALAR dyn_em 3:scalar
+period    PERIOD_BDY_EM_MOIST2 dyn_em 3:moist
+period    PERIOD_BDY_EM_CHEM2 dyn_em 3:chem
+period    PERIOD_BDY_EM_SCALAR2 dyn_em 3:scalar
 period    PERIOD_BDY_EM_A dyn_em 2:ru,rv,rw,ww,php,alt,p,muu,muv,mut,ph_2
 period    PERIOD_BDY_EM_A1  dyn_em 3:rdzw,rdz,z,zx,zy
 period    PERIOD_BDY_EM_PHY_BC dyn_em 2:rublten,rvblten,xkmh,xkmhd,xkmv,xkhh,xkhv,div,defor11,defor22,defor12,defor13,defor23,defor33,tke_2

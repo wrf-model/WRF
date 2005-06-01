@@ -760,8 +760,8 @@ banner 2
 
 set ARCH=( `uname` )
 
-set ZAP_SERIAL         =FALSE
-set ZAP_OPENMP         =FALSE
+set ZAP_SERIAL         = FALSE
+set ZAP_OPENMP         = FALSE
 set SERIALRUNCOMMAND	= 
 set OMPRUNCOMMAND	= 
 set MPIRUNCOMMANDPOST  =
@@ -834,7 +834,7 @@ else if ( $ARCH[1] == OSF1 && $clrm == 0 ) then
 		set DEF_DIR	= /mmmtmp/${user}/`hostname`
 		if ( ! -d $DEF_DIR ) mkdir $DEF_DIR
 	endif
-	set TMPDIR             =.
+	set TMPDIR             = .
 	set MAIL		= /usr/bin/mailx
 	if        ( $NESTED == TRUE )                            then
 		set COMPOPTS	= ( 2 4 6 )
@@ -1079,7 +1079,7 @@ EOF
 	echo " " >>! version_info
 else if ( ( $ARCH[1] == Linux ) && ( `hostname | cut -d. -f2-` == fsl.noaa.gov ) && ( $user == jacquesm ) ) then
 	set DEF_DIR		= /p10/acb/users/${user}/wrfReg
-	set TMPDIR             =.
+	set TMPDIR             = .
 	set MAIL		= /usr/bin/Mail
 	set COMPOPTS		= ( 1 3 5 )
 	set Num_Procs		= 4
@@ -1094,7 +1094,7 @@ else if ( ( $ARCH[1] == Linux ) && ( `hostname | cut -d. -f2-` == fsl.noaa.gov )
 	echo " " >>! version_info
 else if ( ( $ARCH[1] == Linux ) && ( `hostname | cut -d. -f2-` == fsl.noaa.gov ) && ( $user == weiwang ) ) then
 	set DEF_DIR		= /p31/ncarwrf
-	set TMPDIR             =.
+	set TMPDIR             = .
 	set MAIL		= /usr/bin/Mail
 	set COMPOPTS		= ( 1 3 5 )
 	set Num_Procs		= 4
@@ -1110,7 +1110,7 @@ else if ( ( $ARCH[1] == Linux ) && ( `hostname | cut -d. -f2-` == fsl.noaa.gov )
 	setenv NETCDF /usr/local/netcdf-3.4
 else if ( ( $ARCH[1] == Linux ) && ( `hostname` == kola ) ) then
 	set DEF_DIR		= /kola2/$user
-	set TMPDIR             =.
+	set TMPDIR             = .
 	set MAIL		= /bin/mail
 	if      ( $LINUX_COMP == PGI ) then
 		if        ( $NESTED == TRUE )                            then

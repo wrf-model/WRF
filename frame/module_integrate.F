@@ -245,6 +245,14 @@ RECURSIVE SUBROUTINE integrate ( grid )
        TYPE (domain) grid
        TYPE (grid_config_rec_type) config_flags
      END SUBROUTINE med_setup_step
+       ! mediation-supplied routine that gives mediation layer opportunity to
+       ! perform setup before iteration over steps in this call to integrate
+     SUBROUTINE med_endup_step ( grid , config_flags )
+       USE module_domain
+       USE module_configure
+       TYPE (domain) grid
+       TYPE (grid_config_rec_type) config_flags
+     END SUBROUTINE med_endup_step
        ! mediation-supplied routine that intializes the nest from the grid
        ! by interpolation
 
@@ -330,6 +338,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
            WRITE ( message , FMT = '("main: time ",A," on domain ",I3)' ) TRIM(message2), grid%id
            CALL end_timing ( TRIM(message) )
          END IF
+         CALL med_endup_step ( grid , config_flags )
       END DO
       ! Avoid double writes on nests if this is not really the last time;
       ! Do check for write if the parent domain is ending.

@@ -95,8 +95,8 @@ CONTAINS
       CALL mpi_comm_rank( local_comm, mytask, ierr )
       mytask_x = mod( mytask , ntasks_x )
       mytask_y = mytask / ntasks_x
-      CALL nl_set_nproc_x ( 1, mytask_x )
-      CALL nl_set_nproc_y ( 1, mytask_y )
+      CALL nl_set_nproc_x ( 1, ntasks_x )
+      CALL nl_set_nproc_y ( 1, ntasks_y )
       RETURN
    END SUBROUTINE wrf_dm_initialize
 

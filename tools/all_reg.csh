@@ -1,4 +1,4 @@
-#!/bin/csh
+#!/bin/csh 
 unalias rm
 unalias cp
 unalias mv
@@ -134,7 +134,7 @@ FINISHED_BASELINE_TYPE:
                              set TOAST    = ( $TOAST "$NAME[$count_test]" )
                              @ count_test ++
                         else
-                             @ count_test += 3
+                             @ count_test += 4
 			endif
 		end
 	end
@@ -196,10 +196,11 @@ while ( $count_test < $#tests )
 
 	set count = 1 
 	while ( $count < $#NAME )
-	if ( "$tests[$count_test]" == "$NAME[$count]" ) then
-		goto FOUND_SELECTED_TEST
-	endif
-	@ count += 4
+
+	    if ( "$tests[$count_test]" == "$NAME[$count]" ) then
+		    goto FOUND_SELECTED_TEST
+	    endif
+	    @ count += 4
 	end
 	echo "Hmmm, no valid test found"
 	exit ( 11 )

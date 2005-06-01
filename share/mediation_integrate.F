@@ -1168,6 +1168,43 @@ SUBROUTINE med_setup_step ( grid , config_flags )
    RETURN
 
 END SUBROUTINE med_setup_step
+
+SUBROUTINE med_endup_step ( grid , config_flags )
+  ! Driver layer
+   USE module_domain
+   USE module_configure
+  ! Model layer
+
+   IMPLICIT NONE
+!<DESCRIPTION>
+!
+!The driver layer routine integrate() calls this mediation layer routine
+!prior to initiating a time step on the domain specified by the argument
+!grid.  This provides the model-layer contributor an opportunity to make
+!any pre-time-step initializations that pertain to a particular model
+!domain.  In WRF, this routine is used to call
+!set_scalar_indices_from_config for the specified domain.
+!
+!</DESCRIPTION>
+
+  ! Arguments
+   TYPE(domain)                               :: grid
+   TYPE (grid_config_rec_type) , INTENT(OUT)   :: config_flags
+  ! Local
+   INTEGER                                    :: idum1 , idum2
+
+   IF ( grid%id .EQ. 1 ) THEN
+     ! turn off the restart flag after the first mother-domain step is finished
+     model_config_rec%restart = .FALSE.
+     config_flags%restart = .FALSE.
+     CALL nl_set_restart(1, .FALSE.)
+
+   ENDIF
+
+   RETURN
+
+END SUBROUTINE med_endup_step
+
  
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 

@@ -1345,22 +1345,22 @@ banner 5
 
 	#	Cores to test.
 
-        set ZAP_SERIAL_FOR_THIS_CORE         =FALSE
-        set ZAP_OPENMP_FOR_THIS_CORE         =FALSE
+        set ZAP_SERIAL_FOR_THIS_CORE         = FALSE
+        set ZAP_OPENMP_FOR_THIS_CORE         = FALSE
 	if      ( `echo $core | cut -c 1-2` == em ) then
 		setenv WRF_EM_CORE	1
 		setenv WRF_NMM_CORE	0
 		setenv WRF_COAMPS_CORE	0
 		setenv WRF_EXP_CORE	0
-                set ZAP_SERIAL_FOR_THIS_CORE         =FALSE
-                set ZAP_OPENMP_FOR_THIS_CORE         =FALSE
+                set ZAP_SERIAL_FOR_THIS_CORE         = FALSE
+                set ZAP_OPENMP_FOR_THIS_CORE         = FALSE
         else if ( `echo $core | cut -c 1-3` == nmm ) then
 		setenv WRF_EM_CORE	0
 		setenv WRF_NMM_CORE	1
 		setenv WRF_COAMPS_CORE	0
 		setenv WRF_EXP_CORE	0
-                set ZAP_SERIAL_FOR_THIS_CORE         =TRUE
-                set ZAP_OPENMP_FOR_THIS_CORE         =TRUE
+                set ZAP_SERIAL_FOR_THIS_CORE         = TRUE
+                set ZAP_OPENMP_FOR_THIS_CORE         = TRUE
 	endif
 
 	#	Here we are looping over all of the various compilation configurations,

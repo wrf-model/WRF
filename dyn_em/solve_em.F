@@ -2466,7 +2466,7 @@ BENCH_END(advance_ppt_tim)
 BENCH_START(moist_physics_prep_tim)
        CALL moist_physics_prep_em( t_2, t_1, t0, rho,                &
                                    al, alb, p, p8w, p0, pb,          &
-                                   ph_2, phb, pi_phy, p_phy,         &
+                                   ph_2, phb, th_phy, pi_phy, p_phy, &
                                    z, z_at_w, dz8w,                  &
                                    dtm, h_diabatic,                  &
                                    config_flags,fnm, fnp,            &
@@ -2490,7 +2490,7 @@ BENCH_START(micro_driver_tim)
      &        ,ITIMESTEP=itimestep                    ,LOWLYR=lowlyr      &
      &        ,P8W=p8w            ,P=p_phy            ,PI_PHY=pi_phy      &
      &        ,RHO=rho            ,SPEC_ZONE=spec_zone                    &
-     &        ,SR=sr              ,TH=t_2                                 &
+     &        ,SR=sr              ,TH=th_phy                              &
      &        ,WARM_RAIN=warm_rain                    ,XLAND=xland        &
      &        ,SPECIFIED=specified_bdy                                    &
      &        ,F_RAIN_PHY=f_rain_phy                                      &
@@ -2539,7 +2539,7 @@ BENCH_START(moist_phys_end_tim)
                      its, ite, jts, jte,                               &
                      k_start    , k_end                                )
 
-       CALL moist_physics_finish_em( t_2, t_1, t0, muts,               &
+       CALL moist_physics_finish_em( t_2, t_1, t0, muts, th_phy,       &
                                      h_diabatic, dtm, config_flags,    &
                                      ids, ide, jds, jde, kds, kde,     &
                                      ims, ime, jms, jme, kms, kme,     &

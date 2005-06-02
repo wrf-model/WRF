@@ -4245,7 +4245,8 @@ END SUBROUTINE phy_prep
 !------------------------------------------------------------
 
    SUBROUTINE moist_physics_prep_em( t_new, t_old, t0, rho, al, alb, &
-                                     p, p8w, p0, pb, ph, phb, pii, pf,    &
+                                     p, p8w, p0, pb, ph, phb,        &
+                                     th_phy, pii, pf,                &
                                      z, z_at_w, dz8w,                &
                                      dt,h_diabatic,                  &
                                      config_flags,fzm, fzp,          &
@@ -4280,6 +4281,7 @@ END SUBROUTINE phy_prep
 
    REAL, DIMENSION( ims:ime , kms:kme, jms:jme ),       &
          INTENT(  OUT) ::                         rho,  &
+                                               th_phy,  &
                                                   pii,  &
                                                   pf,   &
                                                     z,  &
@@ -4347,7 +4349,8 @@ END SUBROUTINE phy_prep
 
            !  compute full pii, rho, and z at the new time-level
            !  (needed for physics).
-           !  convert perturbation theta to full theta
+           !  convert perturbation theta to full theta (th_phy)
+           !  use h_diabatic to temporarily save pre-microphysics full theta
 
      DO j = j_start, j_end
      DO k = k_start, k_end
@@ -4356,9 +4359,8 @@ END SUBROUTINE phy_prep
 #ifdef REVERT
        t_new(i,k,j) = t_new(i,k,j)-h_diabatic(i,k,j)*dt
 #endif
-       h_diabatic(i,k,j) = t_new(i,k,j)
-       t_new(i,k,j) = t_new(i,k,j) + t0
-       t_old(i,k,j) = t_old(i,k,j) + t0
+       th_phy(i,k,j) = t_new(i,k,j) + t0
+       h_diabatic(i,k,j) = th_phy(i,k,j)
        rho(i,k,j)  = 1./(al(i,k,j)+alb(i,k,j))
        pii(i,k,j) = ((p(i,k,j)+pb(i,k,j))/p0)**rcp
        z(i,k,j) = 0.5*(z_at_w(i,k,j) +z_at_w(i,k+1,j) )
@@ -4411,7 +4413,7 @@ END SUBROUTINE phy_prep
 !------------------------------------------------------------------------------
 
    SUBROUTINE moist_physics_finish_em( t_new, t_old, t0, mut,     &
-                                       h_diabatic, dt,            &
+                                       th_phy, h_diabatic, dt,    &
                                        config_flags,              &
                                        ids,ide, jds,jde, kds,kde, &
                                        ims,ime, jms,jme, kms,kme, &
@@ -4431,6 +4433,7 @@ END SUBROUTINE phy_prep
    REAL, DIMENSION( ims:ime , kms:kme, jms:jme ),        &
          INTENT(INOUT) ::                         t_new, &
                                                   t_old, &
+                                                 th_phy, &
                                                   h_diabatic
 
    REAL, DIMENSION( ims:ime , jms:jme ),  INTENT(INOUT) ::  mut
@@ -4461,15 +4464,14 @@ END SUBROUTINE phy_prep
     k_start = kts
     k_end = min( kte, kde-1 )
 
-!  return theta to perturbation theta, calc new p, rho
+!  add microphysics theta diff to perturbation theta, set h_diabatic
 
      DO j = j_start, j_end
      DO k = k_start, k_end
      DO i = i_start, i_end
 
-       t_new(i,k,j) = t_new(i,k,j) - t0
-       t_old(i,k,j) = t_old(i,k,j) - t0
-       h_diabatic(i,k,j) = (t_new(i,k,j)-h_diabatic(i,k,j))/dt
+       t_new(i,k,j) = t_new(i,k,j) + (th_phy(i,k,j)-h_diabatic(i,k,j))
+       h_diabatic(i,k,j) = (th_phy(i,k,j)-h_diabatic(i,k,j))/dt
 !       h_diabatic(i,k,j) = 0.
 
      ENDDO

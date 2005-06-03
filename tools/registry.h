@@ -1,5 +1,5 @@
 #ifndef REGISTRY_H
-#define NAMELEN 1024
+#define NAMELEN 8092
 #define MAXDIMS 21
 #define MAX_DYNCORES 50   /* ha ha, just kidding */
 #define MAX_ARGLINE 128

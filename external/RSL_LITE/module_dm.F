@@ -1732,8 +1732,11 @@ END
       INTEGER       ::          nids, nide, njds, njde, nkds, nkde,    &
                                 nims, nime, njms, njme, nkms, nkme,    &
                                 nips, nipe, njps, njpe, nkps, nkpe
+      INTEGER       ::          ids, ide, jds, jde, kds, kde,    &
+                                ims, ime, jms, jme, kms, kme,    &
+                                ips, ipe, jps, jpe, kps, kpe
       INTEGER myproc
-      INTEGER local_comm, ierr
+      INTEGER ierr
 
 #ifdef DEREF_KLUDGE
 !  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
@@ -1760,10 +1763,12 @@ END
 
       nlev  = ckde - ckds + 1 
 
-
-      CALL wrf_get_dm_communicator ( local_comm )
-
 #  include "em_nest_interpdown_unpack.inc"
+
+      CALL get_ijk_from_grid (  grid ,              &
+                                ids, ide, jds, jde, kds, kde,    &
+                                ims, ime, jms, jme, kms, kme,    &
+                                ips, ipe, jps, jpe, kps, kpe    )
 
 #include "HALO_EM_INTERP_DOWN.inc"
       ! code here to interpolate the data into the nested domain

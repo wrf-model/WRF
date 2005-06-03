@@ -332,7 +332,7 @@ fprintf(stderr,"RSL_LITE_BCAST_MSGS %d %d %d\n",*mytask_p, *ntasks_p, *comm0 ) ;
   RSL_TEST_ERR( ntasks == RSL_MAXPROC ,
     "RSL_BCAST_MSGS: raise the compile time value of MAXPROC" ) ;
   
-#if 1
+#if 0
 fprintf(stderr,"a1\n") ;
 
 for ( j = 0 ; j < ntasks ; j++ )
@@ -408,7 +408,7 @@ fprintf(stderr,"before all to all Rsizes[%d] %d  Rdisplacements[%d] %d \n",
 
 /* add sentinel to the end of Recvbuf */
 
-#if 1
+#if 0
 fprintf(stderr,"Adding sentinel to %d\n",Rbufsize + 2 * sizeof(int)) ;
 #endif
   r = (int *)&(Recvbuf[Rbufsize + 2 * sizeof(int)]) ;
@@ -450,7 +450,7 @@ RSL_LITE_FROM_PARENT_INFO ( ig_p, jg_p, retval_p )
     RSL_FREE( Recvbuf ) ;
   }
      
-#if 1
+#if 0
 fprintf(stderr,"FROM PARENT INFO: %d %d %d %d %d\n",*ig_p,*jg_p,Rreclen, Rbufcurs + Rpointcurs, *retval_p) ;
 #endif
   return ;

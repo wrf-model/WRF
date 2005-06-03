@@ -174,7 +174,10 @@ RSL_LITE_TO_CHILD_INFO ( msize_p,
     /* construct Plist */
     Sendbufsize = 0 ;
     Plist = RSL_MALLOC( rsl_list_t * , s_ntasks_x * s_ntasks_y ) ;  /* big enough for nest points */
-    for ( j = 0 ; j < s_ntasks_x * s_ntasks_y ; j++ ) Plist[j] = NULL ;
+    for ( j = 0 ; j < s_ntasks_x * s_ntasks_y ; j++ ) {
+       Plist[j] = NULL ;
+       Sdisplacements[j] = 0 ;
+    }
     for ( j = *cjps_p ; j <= *cjpe_p ; j++ )
     {
       for ( i = *cips_p ; i <= *cipe_p ; i++ )
@@ -336,20 +339,21 @@ for ( j = 0 ; j < ntasks ; j++ )
 {
   fprintf(stderr, "%10d ",Ssizes[j]) ;
 }
+
 #endif
-  fprintf(stderr, "\n xxxxxx\n" ) ;
   Psize_all = RSL_MALLOC( int, ntasks * ntasks ) ;
 
   MPI_Allgather( Ssizes, ntasks, MPI_INT , Psize_all, ntasks, MPI_INT, *comm0 ) ;
 
-#if 1
+#if 0
+fprintf(stderr,"a2\n") ;
 for ( j = 0 ; j < ntasks ; j++ )
 {
-for ( i = 0 ; i < ntasks ; i++ )
-{
-  fprintf(stderr, "%10d ",Psize_all[ INDEX_2( j , i , ntasks ) ] ) ;
-}
-fprintf(stderr,"\n") ;
+  for ( i = 0 ; i < ntasks ; i++ )
+  {
+    fprintf(stderr, "%10d ",Psize_all[ INDEX_2( j , i , ntasks ) ] ) ;
+  }
+  fprintf(stderr,"\n") ;
 }
 #endif
 
@@ -359,6 +363,16 @@ fprintf(stderr,"\n") ;
   {
     Rsizes[j] += Psize_all[ INDEX_2( j , mytask , ntasks ) ] ;
   }
+
+#if 0
+fprintf(stderr,"a3\n") ;
+  for ( j = 0 ; j < ntasks ; j++ )
+  {
+    fprintf(stderr, "%10d ",Rsizes[ j ] ) ;
+  }
+  fprintf(stderr,"\n") ;
+#endif
+
 
   for ( Rbufsize = 0, P = 0, Rdisplacements[0] ; P < ntasks ; P++ )
   {
@@ -378,7 +392,8 @@ fprintf(stderr,"a5, allocing %d Recvbuf \n", Rbufsize + 3 * sizeof(int) ) ;
   Rbufcurs = 0 ;
   Rreclen = 0 ;
 
-#if 1
+#if 0
+fprintf(stderr,"SendbufSize %d, Rbufsize %d\n",Sendbufsize,Rbufsize ) ;
 for ( j = 0 ; j < ntasks ; j++ )
 {
 fprintf(stderr,"before all to all Ssizes[%d] %d  Sdisplacements[%d] %d ",
@@ -387,6 +402,7 @@ fprintf(stderr,"before all to all Rsizes[%d] %d  Rdisplacements[%d] %d \n",
        j, Rsizes[j], j, Rdisplacements[j] ) ;
 }
 #endif
+
   MPI_Alltoallv ( Sendbuf, Ssizes, Sdisplacements, MPI_BYTE , 
                   Recvbuf, Rsizes, Rdisplacements, MPI_BYTE ,  *comm0 ) ;
 

@@ -11,6 +11,11 @@
 #      define RSL_LITE_TO_CHILD_INFO rsl_lite_to_child_info
 #      define RSL_LITE_FROM_PARENT_MSG rsl_lite_from_parent_msg
 #      define RSL_LITE_FROM_PARENT_INFO rsl_lite_from_parent_info
+#      define RSL_LITE_MERGE_MSGS rsl_lite_merge_msgs
+#      define RSL_LITE_TO_PARENT_MSG rsl_lite_to_parent_msg
+#      define RSL_LITE_TO_PARENT_INFO rsl_lite_to_parent_info
+#      define RSL_LITE_FROM_CHILD_MSG rsl_lite_from_child_msg
+#      define RSL_LITE_FROM_CHILD_INFO rsl_lite_from_child_info
 #      define RSL_INTERNAL_MILLICLOCK rsl_internal_milliclock
 #      define RSL_INTERNAL_MICROCLOCK rsl_internal_microclock
 # else
@@ -26,6 +31,11 @@
 #      define RSL_LITE_TO_CHILD_INFO rsl_lite_to_child_info__
 #      define RSL_LITE_FROM_PARENT_MSG rsl_lite_from_parent_msg__
 #      define RSL_LITE_FROM_PARENT_INFO rsl_lite_from_parent_info__
+#      define RSL_LITE_MERGE_MSGS rsl_lite_merge_msgs__
+#      define RSL_LITE_TO_PARENT_MSG rsl_lite_to_parent_msg__
+#      define RSL_LITE_TO_PARENT_INFO rsl_lite_to_parent_info__
+#      define RSL_LITE_FROM_CHILD_MSG rsl_lite_from_child_msg__
+#      define RSL_LITE_FROM_CHILD_INFO rsl_lite_from_child_info
 #      define RSL_INTERNAL_MILLICLOCK rsl_internal_milliclock__
 #      define RSL_INTERNAL_MICROCLOCK rsl_internal_microclock__
 #   else
@@ -40,6 +50,11 @@
 #      define RSL_LITE_TO_CHILD_INFO rsl_lite_to_child_info_
 #      define RSL_LITE_FROM_PARENT_MSG rsl_lite_from_parent_msg_
 #      define RSL_LITE_FROM_PARENT_INFO rsl_lite_from_parent_info_
+#      define RSL_LITE_MERGE_MSGS rsl_lite_merge_msgs_
+#      define RSL_LITE_TO_PARENT_MSG rsl_lite_to_parent_msg_
+#      define RSL_LITE_TO_PARENT_INFO rsl_lite_to_parent_info_
+#      define RSL_LITE_FROM_CHILD_MSG rsl_lite_from_child_msg_
+#      define RSL_LITE_FROM_CHILD_INFO rsl_lite_from_child_info_
 #      define RSL_INTERNAL_MILLICLOCK rsl_internal_milliclock_
 #      define RSL_INTERNAL_MICROCLOCK rsl_internal_microclock_
 #   endif

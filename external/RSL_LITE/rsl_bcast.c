@@ -128,20 +128,7 @@ static rsl_list_t *Pptr ;
 static int s_putmsg = 0 ;
 #endif
 
-#if (defined(vpp) || defined(vpp2))
-static char *blankstage = NULL ;
-static int blankstagesize = 0 ;
-static int blankstagecurs = 0 ;
-#endif
-
-/*@
-  RSL_TO_CHILD_INFO -- Get the next cell in a packing sequence for forcing.
-
-@*/
-
-static int cd_i ;
-static int cd_j ;
-
+/* parent->nest */
 RSL_LITE_TO_CHILD_INFO ( msize_p,
                          cips_p, cipe_p, cjps_p, cjpe_p, /* patch dims of CD */
                          nids_p, nide_p, njds_p, njde_p, /* domain dims of ND */
@@ -177,6 +164,7 @@ RSL_LITE_TO_CHILD_INFO ( msize_p,
     for ( j = 0 ; j < s_ntasks_x * s_ntasks_y ; j++ ) {
        Plist[j] = NULL ;
        Sdisplacements[j] = 0 ;
+       Ssizes[j] = 0 ;
     }
     for ( j = *cjps_p ; j <= *cjpe_p ; j++ )
     {
@@ -263,12 +251,133 @@ fprintf(stderr,"to child info returns 1 \n" );
   return ;
 }
 
+/********************************************/
+
+/* nest->parent */
+RSL_LITE_TO_PARENT_INFO ( msize_p,
+                          nips_p, nipe_p, njps_p, njpe_p, /* patch dims of ND */
+                          cids_p, cide_p, cjds_p, cjde_p, /* domain dims of CD */
+                          ntasks_x_p , ntasks_y_p ,       /* proc counts in x and y */
+                          icoord_p, jcoord_p,
+                          idim_cd_p, jdim_cd_p,
+                          ig_p, jg_p,
+                          retval_p )
+  int_p
+     nips_p, nipe_p, njps_p, njpe_p   /* (i) n.d. patch dims */
+    ,cids_p, cide_p, cjds_p, cjde_p   /* (i) n.n. global dims */
+    ,ntasks_x_p , ntasks_y_p          /* proc counts in x and y */
+    ,icoord_p       /* i coordinate of nest in cd */
+    ,jcoord_p       /* j coordinate of nest in cd */
+    ,idim_cd_p      /* i width of nest in cd */
+    ,jdim_cd_p      /* j width of nest in cd */
+    ,msize_p        /* (I) Message size in bytes. */
+    ,ig_p           /* (O) Global N index of parent domain point. */
+    ,jg_p           /* (O) Global N index of parent domain point. */
+    ,retval_p ;     /* (O) =1 if a valid point returned; =0 (zero) otherwise. */
+{
+  int P, Px, Py ;
+  rsl_list_t *q ;
+  int *r ;
+  int i, j ;
+
+  if ( Plist == NULL ) {
+    s_ntasks_x = *ntasks_x_p ;
+    s_ntasks_y = *ntasks_y_p ;
+    /* construct Plist */
+    Sendbufsize = 0 ;
+    Plist = RSL_MALLOC( rsl_list_t * , s_ntasks_x * s_ntasks_y ) ;
+    for ( j = 0 ; j < s_ntasks_x * s_ntasks_y ; j++ ) {
+       Plist[j] = NULL ;
+       Sdisplacements[j] = 0 ;
+       Ssizes[j] = 0 ;
+    }
+    for ( j = *njps_p ; j <= *njpe_p ; j++ )
+    {
+      for ( i = *nips_p ; i <= *nipe_p ; i++ )
+      {
+	if ( ( *jcoord_p <= j && j <= *jcoord_p+*jdim_cd_p-1 ) && ( *icoord_p <= i && i <= *icoord_p+*idim_cd_p-1 ) ) {
+	  TASK_FOR_POINT ( &i, &j, cids_p, cide_p, cjds_p, cjde_p, &s_ntasks_x, &s_ntasks_y, &Px, &Py, &P ) ;
+	  q = RSL_MALLOC( rsl_list_t , 1 ) ;
+	  q->info1 = i ;
+	  q->info2 = j ;
+	  q->next = Plist[P] ;
+	  Plist[P] = q ;
+	  Sendbufsize += *msize_p + 3 * sizeof( int ) ;  /* point data plus 3 ints for i, j, and size */
+        }
+      }
+    }
+    Sendbuf = RSL_MALLOC( char , Sendbufsize ) ;
+    Sendbufcurs = 0 ;
+    Recsizeindex = -1 ;
+    Pcurs = -1 ;
+    Pptr = NULL ;
+  }
+  if ( Pptr != NULL ) {
+    Pptr = Pptr->next ;
+  } 
+
+  if ( Recsizeindex >= 0 ) {
+          r = (int *) &(Sendbuf[Recsizeindex]) ;
+          *r = Sendbufcurs - Recsizeindex + 2 * sizeof(int) ;
+          Ssizes[Pcurs] += *r ;
+  }
+
+  while ( Pptr == NULL ) {
+      Pcurs++ ;
+      while ( Plist[Pcurs] == NULL && Pcurs < s_ntasks_x * s_ntasks_y ) Pcurs++ ;
+      if ( Pcurs < s_ntasks_x * s_ntasks_y ) {
+        Sdisplacements[Pcurs] = Sendbufcurs ;
+        Ssizes[Pcurs] = 0 ;
+        Pptr = Plist[Pcurs] ;
+      } else {
+        *retval_p = 0 ;
+        return ;  /* done */
+      }
+  }
+
+  *ig_p = Pptr->info1 ;
+  *jg_p = Pptr->info2 ;
+
+  r = (int *) &(Sendbuf[Sendbufcurs]) ;
+  *r++ = Pptr->info1 ; Sendbufcurs += sizeof(int) ;  /* ig to buffer */
+  *r++ = Pptr->info2 ; Sendbufcurs += sizeof(int) ;  /* jg to buffer */
+  Recsizeindex = Sendbufcurs ;
+  *r++ =           0 ; Sendbufcurs += sizeof(int) ;  /* store start for size */
+  *retval_p = 1 ;
+
+  return ;
+}
+
+
+/********************************************/
+
 /*@
   RSL_TO_CHILD_MSG -- Pack force data into a message for a nest point.
 
 @*/
 
+/* parent->nest */
 RSL_LITE_TO_CHILD_MSG ( nbuf_p, buf )
+  int_p
+    nbuf_p ;     /* (I) Number of bytes to be packed. */
+  char *
+    buf ;        /* (I) Buffer containing the data to be packed. */
+{
+   rsl_lite_to_peerpoint_msg ( nbuf_p, buf ) ;
+}
+
+/* nest->parent */
+RSL_LITE_TO_PARENT_MSG ( nbuf_p, buf )
+  int_p
+    nbuf_p ;     /* (I) Number of bytes to be packed. */
+  char *
+    buf ;        /* (I) Buffer containing the data to be packed. */
+{
+   rsl_lite_to_peerpoint_msg ( nbuf_p, buf ) ;
+}
+
+/* common code */
+rsl_lite_to_peerpoint_msg ( nbuf_p, buf )
   int_p
     nbuf_p ;     /* (I) Number of bytes to be packed. */
   char *
@@ -298,13 +407,24 @@ RSL_LITE_TO_CHILD_MSG ( nbuf_p, buf )
 
 }
 
-/*@
-  RSL_BCAST_MSGS -- Convey forcing data from parent to nest points.
+/********************************************/
 
-@*/
-
-
+/* parent->nest */
 RSL_LITE_BCAST_MSGS ( mytask_p, ntasks_p, comm0 )
+  int_p mytask_p, ntasks_p, comm0 ;
+{
+  rsl_lite_allgather_msgs ( mytask_p, ntasks_p, comm0 ) ;
+}
+
+/* nest->parent */
+RSL_LITE_MERGE_MSGS ( mytask_p, ntasks_p, comm0 )
+  int_p mytask_p, ntasks_p, comm0 ;
+{
+  rsl_lite_allgather_msgs ( mytask_p, ntasks_p, comm0 ) ;
+}
+
+/* common code */
+rsl_lite_allgather_msgs ( mytask_p, ntasks_p, comm0 )
   int_p mytask_p, ntasks_p, comm0 ;
 {
   int P ;
@@ -319,10 +439,6 @@ RSL_LITE_BCAST_MSGS ( mytask_p, ntasks_p, comm0 )
   int *Psize_all ;
   int *sp, *bp ;
 
-#if 0
-fprintf(stderr,"RSL_LITE_BCAST_MSGS %d %d %d\n",*mytask_p, *ntasks_p, *comm0 ) ;
-#endif
-
   ntasks = *ntasks_p ;
   mytask = *mytask_p ;
 
@@ -332,85 +448,34 @@ fprintf(stderr,"RSL_LITE_BCAST_MSGS %d %d %d\n",*mytask_p, *ntasks_p, *comm0 ) ;
   RSL_TEST_ERR( ntasks == RSL_MAXPROC ,
     "RSL_BCAST_MSGS: raise the compile time value of MAXPROC" ) ;
   
-#if 0
-fprintf(stderr,"a1\n") ;
-
-for ( j = 0 ; j < ntasks ; j++ )
-{
-  fprintf(stderr, "%10d ",Ssizes[j]) ;
-}
-
-#endif
   Psize_all = RSL_MALLOC( int, ntasks * ntasks ) ;
 
   MPI_Allgather( Ssizes, ntasks, MPI_INT , Psize_all, ntasks, MPI_INT, *comm0 ) ;
 
-#if 0
-fprintf(stderr,"a2\n") ;
-for ( j = 0 ; j < ntasks ; j++ )
-{
-  for ( i = 0 ; i < ntasks ; i++ )
-  {
-    fprintf(stderr, "%10d ",Psize_all[ INDEX_2( j , i , ntasks ) ] ) ;
-  }
-  fprintf(stderr,"\n") ;
-}
-#endif
-
   for ( j = 0 ; j < ntasks ; j++ ) 
     Rsizes[j] = 0 ;
+
   for ( j = 0 ; j < ntasks ; j++ ) 
   {
     Rsizes[j] += Psize_all[ INDEX_2( j , mytask , ntasks ) ] ;
   }
 
-#if 0
-fprintf(stderr,"a3\n") ;
-  for ( j = 0 ; j < ntasks ; j++ )
-  {
-    fprintf(stderr, "%10d ",Rsizes[ j ] ) ;
-  }
-  fprintf(stderr,"\n") ;
-#endif
-
-
   for ( Rbufsize = 0, P = 0, Rdisplacements[0] ; P < ntasks ; P++ )
   {
     Rdisplacements[P+1] = Rsizes[P] + Rdisplacements[P] ;
     Rbufsize += Rsizes[P] ;
-#if 0
-fprintf(stderr,"Rsizes[%d] %d  Rdisplacements[%d] %d Rdisplacements[%d] %d Rbufsize %d \n",
-       P, Rsizes[P], P, Rdisplacements[P], P+1, Rdisplacements[P+1], Rbufsize ) ;
-#endif
   }
-#if 0
-fprintf(stderr,"a5, allocing %d Recvbuf \n", Rbufsize + 3 * sizeof(int) ) ;
-#endif
 
   /* this will be freed later */
   Recvbuf = RSL_MALLOC( char , Rbufsize + 3 * sizeof(int) ) ; /* for sentinal record */
   Rbufcurs = 0 ;
   Rreclen = 0 ;
 
-#if 0
-fprintf(stderr,"SendbufSize %d, Rbufsize %d\n",Sendbufsize,Rbufsize ) ;
-for ( j = 0 ; j < ntasks ; j++ )
-{
-fprintf(stderr,"before all to all Ssizes[%d] %d  Sdisplacements[%d] %d ",
-       j, Ssizes[j], j, Sdisplacements[j] ) ;
-fprintf(stderr,"before all to all Rsizes[%d] %d  Rdisplacements[%d] %d \n",
-       j, Rsizes[j], j, Rdisplacements[j] ) ;
-}
-#endif
-
   MPI_Alltoallv ( Sendbuf, Ssizes, Sdisplacements, MPI_BYTE , 
                   Recvbuf, Rsizes, Rdisplacements, MPI_BYTE ,  *comm0 ) ;
 
 /* add sentinel to the end of Recvbuf */
 
-#if 0
-fprintf(stderr,"Adding sentinel to %d\n",Rbufsize + 2 * sizeof(int)) ;
-#endif
   r = (int *)&(Recvbuf[Rbufsize + 2 * sizeof(int)]) ;
   *r = RSL_INVALID ;
 
@@ -425,12 +490,30 @@ fprintf(stderr,"Adding sentinel to %d\n",Rbufsize + 2 * sizeof(int)) ;
 
 }
 
-/*@
-  RSL_FROM_PARENT_INFO -- Get the next cell in a unpacking sequence for forcing.
+/********************************************/
 
-@*/
-
+/* parent->nest */
 RSL_LITE_FROM_PARENT_INFO ( ig_p, jg_p, retval_p )
+  int_p
+    ig_p        /* (O) Global index in M dimension of nest. */
+   ,jg_p        /* (O) Global index in N dimension of nest. */
+   ,retval_p ;  /* (O) Return value; =1 valid point, =0 done. */
+{
+  rsl_lite_from_peerpoint_info ( ig_p, jg_p, retval_p ) ;
+}
+
+/* nest->parent */
+RSL_LITE_FROM_CHILD_INFO ( ig_p, jg_p, retval_p )
+  int_p
+    ig_p        /* (O) Global index in M dimension of nest. */
+   ,jg_p        /* (O) Global index in N dimension of nest. */
+   ,retval_p ;  /* (O) Return value; =1 valid point, =0 done. */
+{
+  rsl_lite_from_peerpoint_info ( ig_p, jg_p, retval_p ) ;
+}
+
+/* common code */
+rsl_lite_from_peerpoint_info ( ig_p, jg_p, retval_p )
   int_p
     ig_p        /* (O) Global index in M dimension of nest. */
    ,jg_p        /* (O) Global index in N dimension of nest. */
@@ -451,16 +534,35 @@ RSL_LITE_FROM_PARENT_INFO ( ig_p, jg_p, retval_p )
   }
      
 #if 0
-fprintf(stderr,"FROM PARENT INFO: %d %d %d %d %d\n",*ig_p,*jg_p,Rreclen, Rbufcurs + Rpointcurs, *retval_p) ;
+fprintf(stderr,"FROM  INFO: %d %d %d %d %d\n",*ig_p,*jg_p,Rreclen, Rbufcurs + Rpointcurs, *retval_p) ;
 #endif
   return ;
 }
 
-/*@
-  RSL_FROM_PARENT_MSG -- Unpack feedback data into a nest point.
+/********************************************/
 
-@*/
+/* parent->nest */
 RSL_LITE_FROM_PARENT_MSG ( len_p, buf )
+  int_p
+    len_p ;          /* (I) Number of bytes to unpack. */
+  int *
+    buf ;            /* (O) Destination buffer. */
+{
+  rsl_lite_from_peerpoint_msg ( len_p, buf ) ;
+}
+
+/* nest->parent */
+RSL_LITE_FROM_CHILD_MSG ( len_p, buf )
+  int_p
+    len_p ;          /* (I) Number of bytes to unpack. */
+  int *
+    buf ;            /* (O) Destination buffer. */
+{
+  rsl_lite_from_peerpoint_msg ( len_p, buf ) ;
+}
+
+/* common code */
+rsl_lite_from_peerpoint_msg ( len_p, buf )
   int_p
     len_p ;          /* (I) Number of bytes to unpack. */
   int *
@@ -474,6 +576,8 @@ RSL_LITE_FROM_PARENT_MSG ( len_p, buf )
   }
   Rpointcurs += *len_p ;
 }
+
+/********************************************/
 
 destroy_list( list, dfcn )
   rsl_list_t ** list ;          /* pointer to pointer to list */
@@ -493,6 +597,8 @@ destroy_list( list, dfcn )
   *list = NULL ;
   return(0) ;
 }
+
+/********************************************/
 
 
 #if 0
@@ -660,16 +766,6 @@ vbcopy_C(a,b,c)
   vicopy_(a,b,&l) ;
   l = c-lb ;
   vbcopy_(a+lb,b+lb,&l) ;
-#endif
-}
-
-RSL_RESET_STAGING ()
-{
-#if (defined(vpp) || defined(vpp2))
-if ( blankstage != NULL ) RSL_FREE( blankstage ) ;
-blankstage = NULL ;
-blankstagesize = 0 ;
-blankstagecurs = 0 ;
 #endif
 }
 

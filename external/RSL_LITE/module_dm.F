@@ -1669,11 +1669,8 @@ END
       INTEGER local_comm, myproc, nproc
 
       CALL wrf_get_dm_communicator ( local_comm )
-
       CALL wrf_get_myproc( myproc )
-
       CALL wrf_get_nproc( nproc )
-
 
 #define COPY_IN
 #include <em_scalar_derefs.inc>
@@ -1783,6 +1780,56 @@ END
 
 !------------------------------------------------------------------
 
+   SUBROUTINE feedback_nest_prep ( grid, config_flags ,  &
+!
+#include "em_dummy_args.inc"
+!
+)
+      USE module_domain
+      USE module_configure
+      USE module_dm
+      USE module_state_description
+!
+      TYPE(domain), TARGET :: grid          ! name of the grid being dereferenced (must be "grid")
+      TYPE (grid_config_rec_type) :: config_flags ! configureation flags, has vertical dim of 
+                                                  ! soil temp, moisture, etc., has vertical dim
+                                                  ! of soil categories
+#include <em_dummy_decl.inc>
+
+      INTEGER       ::          ids, ide, jds, jde, kds, kde,    &
+                                ims, ime, jms, jme, kms, kme,    &
+                                ips, ipe, jps, jpe, kps, kpe
+
+
+#ifdef DEREF_KLUDGE
+!  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
+   INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
+   INTEGER     :: sm31x, em31x, sm32x, em32x, sm33x, em33x
+   INTEGER     :: sm31y, em31y, sm32y, em32y, sm33y, em33y
+#endif
+#include "deref_kludge.h"
+
+#define COPY_IN
+#include <em_scalar_derefs.inc>
+
+      CALL get_ijk_from_grid (  grid ,              &
+                                ids, ide, jds, jde, kds, kde,    &
+                                ims, ime, jms, jme, kms, kme,    &
+                                ips, ipe, jps, jpe, kps, kpe    )
+
+write(0,*)'calling HALO_EM_INTERP_UP in feedback_nest_prep '
+#ifdef DM_PARALLEL
+# include "HALO_EM_INTERP_UP.inc"
+#endif
+write(0,*)'back from HALO_EM_INTERP_UP in feedback_nest_prep '
+
+#define COPY_OUT
+#include <em_scalar_derefs.inc>
+
+   END SUBROUTINE feedback_nest_prep
+
+!------------------------------------------------------------------
+
    SUBROUTINE feedback_domain_em_part1 ( grid, ngrid, config_flags ,  &
 !
 #include "em_dummy_args.inc"
@@ -1797,7 +1844,8 @@ END
 #include <em_dummy_decl.inc>
       INTEGER nlev, msize
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
-      TYPE (grid_config_rec_type)            :: config_flags
+      TYPE(domain), POINTER :: xgrid
+      TYPE (grid_config_rec_type)            :: config_flags, nconfig_flags
       REAL xv(500)
       INTEGER       ::          cids, cide, cjds, cjde, ckds, ckde,    &
                                 cims, cime, cjms, cjme, ckms, ckme,    &
@@ -1805,12 +1853,83 @@ END
       INTEGER       ::          nids, nide, njds, njde, nkds, nkde,    &
                                 nims, nime, njms, njme, nkms, nkme,    &
                                 nips, nipe, njps, njpe, nkps, nkpe
+      INTEGER local_comm, myproc, nproc
+
+#ifdef DEREF_KLUDGE
+!  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
+   INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
+   INTEGER     :: sm31x, em31x, sm32x, em32x, sm33x, em33x
+   INTEGER     :: sm31y, em31y, sm32y, em32y, sm33y, em33y
+#endif
+
+      INTERFACE
+          SUBROUTINE feedback_nest_prep ( grid, config_flags ,  &
+!
+#include "em_dummy_args.inc"
+!
+)
+             USE module_domain
+             USE module_configure
+             USE module_dm
+             USE module_state_description
+!
+             TYPE (grid_config_rec_type)            :: config_flags
+             TYPE(domain), TARGET                   :: grid
+#include <em_dummy_decl.inc>
+          END SUBROUTINE feedback_nest_prep
+      END INTERFACE
+!
+#define COPY_IN
+#include <em_scalar_derefs.inc>
+
+      CALL wrf_get_dm_communicator ( local_comm )
+      CALL wrf_get_myproc( myproc )
+      CALL wrf_get_nproc( nproc )
+
+
+!
+      CALL get_ijk_from_grid (  grid ,                                 &
+                                cids, cide, cjds, cjde, ckds, ckde,    &
+                                cims, cime, cjms, cjme, ckms, ckme,    &
+                                cips, cipe, cjps, cjpe, ckps, ckpe    )
+      CALL get_ijk_from_grid (  ngrid ,                                &
+                                nids, nide, njds, njde, nkds, nkde,    &
+                                nims, nime, njms, njme, nkms, nkme,    &
+                                nips, nipe, njps, njpe, nkps, nkpe    )
+
+      nlev  = ckde - ckds + 1
+
+      ips_save = ngrid%i_parent_start   ! used in feedback_domain_em_part2 below
+      jps_save = ngrid%j_parent_start
+      ipe_save = ngrid%i_parent_start + (nide-nids+1) / ngrid%parent_grid_ratio - 1
+      jpe_save = ngrid%j_parent_start + (njde-njds+1) / ngrid%parent_grid_ratio - 1
+
+      CALL model_to_grid_config_rec ( ngrid%id , model_config_rec , nconfig_flags )
+      CALL set_scalar_indices_from_config ( ngrid%id , idum1 , idum2 )
+      xgrid => grid
+      grid => ngrid
+
+#include "deref_kludge.h"
+
+      CALL feedback_nest_prep ( grid, nconfig_flags ,  &
+!
+#include "em_actual_args.inc"
+!
+)
+
+      grid => xgrid
+      CALL set_scalar_indices_from_config ( grid%id , idum1 , idum2 )
+
+#  include "em_nest_feedbackup_interp.inc"
+
+#define COPY_OUT
+#include <em_scalar_derefs.inc>
       RETURN
    END SUBROUTINE feedback_domain_em_part1
 
 !------------------------------------------------------------------
 
-   SUBROUTINE feedback_domain_em_part2 ( grid, intermediate_grid, config_flags ,  &
+   SUBROUTINE feedback_domain_em_part2 ( grid, intermediate_grid, ngrid , config_flags ,  &
 !
 #include "em_dummy_args.inc"
 !
@@ -1821,6 +1940,8 @@ END
 !
       TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
       TYPE(domain), POINTER :: intermediate_grid
+      TYPE(domain), POINTER :: ngrid
+
 #include <em_dummy_decl.inc>
 #include <em_i1_decl.inc>
       INTEGER nlev, msize
@@ -1833,10 +1954,81 @@ END
       INTEGER       ::          nids, nide, njds, njde, nkds, nkde,    &
                                 nims, nime, njms, njme, nkms, nkme,    &
                                 nips, nipe, njps, njpe, nkps, nkpe
+      INTEGER       ::          ids, ide, jds, jde, kds, kde,    &
+                                ims, ime, jms, jme, kms, kme,    &
+                                ips, ipe, jps, jpe, kps, kpe
+      INTEGER icoord, jcoord, idim_cd, jdim_cd
+      INTEGER local_comm, myproc, nproc
+
       LOGICAL, EXTERNAL  :: em_cd_feedback_mask
+#ifdef DEREF_KLUDGE
+!  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
+   INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
+   INTEGER     :: sm31x, em31x, sm32x, em32x, sm33x, em33x
+   INTEGER     :: sm31y, em31y, sm32y, em32y, sm33y, em33y
+#endif
+#include "deref_kludge.h"
+
+#define COPY_IN
+#include <em_scalar_derefs.inc>
+#ifdef DM_PARALLEL
+#    define REGISTER_I1
+#      include <em_data_calls.inc>
+#endif
+      CALL get_ijk_from_grid (  intermediate_grid ,                   &
+                                cids, cide, cjds, cjde, ckds, ckde,    &
+                                cims, cime, cjms, cjme, ckms, ckme,    &
+                                cips, cipe, cjps, cjpe, ckps, ckpe    )
+      CALL get_ijk_from_grid (  grid ,              &
+                                nids, nide, njds, njde, nkds, nkde,    &
+                                nims, nime, njms, njme, nkms, nkme,    &
+                                nips, nipe, njps, njpe, nkps, nkpe    )
+
+      CALL nl_get_i_parent_start ( intermediate_grid%id, i_parent_start )
+      CALL nl_get_j_parent_start ( intermediate_grid%id, j_parent_start )
+      CALL nl_get_shw            ( intermediate_grid%id, shw )
+      icoord =    i_parent_start - shw
+      jcoord =    j_parent_start - shw
+      idim_cd = cide - cids + 1
+      jdim_cd = cjde - cjds + 1
+
+      nlev  = ckde - ckds + 1
+
+#  include "em_nest_feedbackup_pack.inc"
+
+      CALL wrf_get_dm_communicator ( local_comm )
+      CALL wrf_get_myproc( myproc )
+      CALL wrf_get_nproc( nproc )
+      CALL rsl_lite_merge_msgs( myproc, nproc, local_comm )
+
+#  include "em_nest_feedbackup_unpack.inc"
+
+!write(70+myproc,*)nime-nims+1,njme-njms+1, 'after unpack'
+!do j = njms,njme
+!do i = nims,nime
+!write(70+myproc,*)mub(i,j)
+!enddo
+!enddo
+!call flush(70+myproc)
+
+      ! smooth coarse grid
+      CALL get_ijk_from_grid (  ngrid,                           &
+                                nids, nide, njds, njde, nkds, nkde,    &
+                                nims, nime, njms, njme, nkms, nkme,    &
+                                nips, nipe, njps, njpe, nkps, nkpe    )
+      CALL get_ijk_from_grid (  grid ,              &
+                                ids, ide, jds, jde, kds, kde,    &
+                                ims, ime, jms, jme, kms, kme,    &
+                                ips, ipe, jps, jpe, kps, kpe    )
+
+#  include "HALO_EM_INTERP_UP.inc"
+
+#  include "em_nest_feedbackup_smooth.inc"
+
+#define COPY_OUT
+#include <em_scalar_derefs.inc>
       RETURN
    END SUBROUTINE feedback_domain_em_part2
-
 #endif
 
 !------------------------------------------------------------------

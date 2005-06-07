@@ -11,7 +11,7 @@
 static int parent_type;
 
 int
-gen_halos ( char * dirname )
+gen_halos ( char * dirname , char * incname , node_t * halos )
 {
   node_t * p, * q ;
   node_t * dimd ;
@@ -35,10 +35,15 @@ gen_halos ( char * dirname )
 
   if ( dirname == NULL ) return(1) ;
 
-  for ( p = Halos ; p != NULL ; p = p->next )
+  for ( p = halos ; p != NULL ; p = p->next )
   {
-    strcpy( commname, p->name ) ;
-    make_upper_case(commname) ;
+    if ( incname == NULL ) {
+      strcpy( commname, p->name ) ;
+      make_upper_case(commname) ;
+    } 
+    else {
+      strcpy( commname, incname ) ;
+    }
     if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s.inc",dirname,commname) ; }
     else                       { sprintf(fname,"%s.inc",commname) ; }
     if ((fp = fopen( fname , "w" )) == NULL ) 
@@ -508,6 +513,7 @@ gen_shift (  char * dirname )
   char fname[NAMELEN], vname[NAMELEN] ;
   char indices[NAMELEN], post[NAMELEN], tmp3[NAMELEN] ;
   int zdex ;
+  node_t Shift ;
 
   for ( direction = directions ; *direction != NULL ; direction++ )
   {
@@ -515,12 +521,35 @@ gen_shift (  char * dirname )
   {
     corename = get_corename_i(ncore) ;
     if ( dirname == NULL || corename == NULL ) return(1) ;
-    if ( strlen(dirname) > 0 )
-     { sprintf(fname,"%s/%s_shift_halo_%s.inc",dirname,corename,*direction) ; }
-    else
-     { sprintf(fname,"%s_shift_halo_%s.inc",corename,*direction) ; }
+    sprintf(fname,"%s_shift_halo_%s",corename,*direction) ;
     if ((fp = fopen( fname , "w" )) == NULL ) return(1) ;
     print_warning(fp,fname) ;
+
+    Shift.next = NULL ;
+    sprintf( Shift.use, "dyn_%s", corename ) ;
+    strcpy( Shift.comm_define, "48:" ) ;
+    for ( p = Domain.fields ; p != NULL ; p = p->next ) {
+      if (( p->node_kind & (FIELD | FOURD) ) && p->ndims >= 2 && ! p->boundary_array &&
+          ((!strncmp(p->use,"dyn_",4) && !strcmp(corename,p->use+4)) || strncmp(p->use,"dyn_",4)))
+      {
+        if ( p->type->type_type == SIMPLE )
+        {
+          for ( i = 1 ; i <= p->ntl ; i++ )
+          {
+            if ( p->ntl > 1 ) sprintf(vname,"%s_%d",p->name,i ) ;
+            else              sprintf(vname,"%s",p->name ) ;
+
+            strcat( Shift.comm_define, vname ) ;
+            strcat( Shift.comm_define, "," ) ;
+          }
+        }
+      }
+    }
+    if ( strlen(Shift.comm_define) > 0 )Shift.comm_define[strlen(Shift.comm_define)-1] = '\0' ;
+
+/* generate packs prior to stencil exchange in Y */
+    gen_halos( dirname , fname, &Shift ) ;
+
     close_the_file(fp) ;
   }
   }
@@ -954,7 +983,7 @@ gen_comms ( char * dirname )
   if ( sw_dm_parallel )
     fprintf(stderr,"ADVISORY: RSL version of gen_comms is linked in with registry program.\n") ;
 
-  gen_halos( "inc" ) ;
+  gen_halos( "inc" , NULL, Halos ) ;
   gen_shift( "inc" ) ;
   gen_periods( "inc" ) ;
   gen_xposes( "inc" ) ;

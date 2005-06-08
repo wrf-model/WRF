@@ -767,6 +767,20 @@ integer myproc
                          ims, ime, jms, jme, kms, kme,         &
                          its, ite, jts, jte, kts, kte          )
            isfc = 2
+
+      CASE (GFSSFCSCHEME)
+#if ( NMM_CORE == 1 )
+           CALL myjsfcinit(LOWLYR,UST,Z0,XLAND,XICE,           &
+#else
+           CALL myjsfcinit(LOWLYR,UST,ZNT,XLAND,XICE,           &
+#endif
+                         IVGTYP,restart,                       &
+                         allowed_to_read ,                     &
+                         ids, ide, jds, jde, kds, kde,         &
+                         ims, ime, jms, jme, kms, kme,         &
+                         its, ite, jts, jte, kts, kte          )
+           isfc = 1
+
       CASE DEFAULT
 
    END SELECT sfclay_select

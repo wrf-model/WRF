@@ -19,7 +19,7 @@ CONTAINS
                ! optional
                   qi3d,rqiblten                                    )
 !--------------------------------------------------------------------
-      USE MODULE_GFS_CONSTANTS,    ONLY : kind_phys
+      USE MODULE_GFS_MACHINE,    ONLY : kind_phys
 !-------------------------------------------------------------------
       IMPLICIT NONE
 !-------------------------------------------------------------------
@@ -253,8 +253,8 @@ CONTAINS
           U1(I,K) = U3D(i,k,j)
           V1(I,K) = V3D(i,k,j)
           T1(I,K) = T3D(i,k,j)
-          Q1(I,K,1) = QV3D(i,k,j)
-          Q1(I,K,2) = QC3D(i,k,j)
+          Q1(I,K,1) = QV3D(i,k,j)/(1.+QV3D(i,k,j))
+          Q1(I,K,2) = QC3D(i,k,j)/(1.+QC3D(i,k,j))
           PRSL(I,K)=P3D(i,k,j)*.001
         ENDDO
       ENDDO
@@ -285,7 +285,7 @@ CONTAINS
       IF (flag_QI .AND. PRESENT( QI3D ) ) THEN
         DO k=kts,kte
           DO i=its,ite 
-            Q1(I,K,3) = QI3D(i,k,j)
+            Q1(I,K,3) = QI3D(i,k,j)/(1.+QI3D(i,k,j))
           ENDDO
         ENDDO
       ENDIF
@@ -309,15 +309,15 @@ CONTAINS
           RVBLTEN(I,K,J)=DV(I,K)
           RUBLTEN(I,K,J)=DU(I,K)
           RTHBLTEN(I,K,J)=TAU(I,K)/PI3D(I,K,J)
-          RQVBLTEN(I,K,J)=RTG(I,K,1)
-          RQCBLTEN(I,K,J)=RTG(I,K,2)
+          RQVBLTEN(I,K,J)=RTG(I,K,1)/(1.-Q1(I,K,1))**2
+          RQCBLTEN(I,K,J)=RTG(I,K,2)/(1.-Q1(I,K,2))**2
         ENDDO
       ENDDO
 
       IF (flag_QI .AND. PRESENT( RQIBLTEN ))  THEN
         DO k=kts,kte
           DO i=its,ite
-            RQIBLTEN(I,K,J)=RTG(I,K,3)
+            RQIBLTEN(I,K,J)=RTG(I,K,3)/(1.-Q1(I,K,3))**2
           ENDDO
         ENDDO
       ENDIF
@@ -400,9 +400,10 @@ CONTAINS
      &     PRSI,DEL,PRSL,PRSLK,PHII,PHIL,RCL,DELTIM,                    &
      &     DUSFC,DVSFC,DTSFC,DQSFC,HPBL,HGAMT,HGAMQ)
 !
-      USE MODULE_GFS_CONSTANTS, only: kind_phys, grav => con_g,         &
-     &                                RD => con_RD, CP => con_CP        &
+      USE MODULE_GFS_MACHINE, ONLY : kind_phys
+      USE MODULE_GFS_PHYSCONS, grav => con_g, RD => con_RD, CP => con_CP &
      &,             HVAP => con_HVAP, ROG => con_ROG, FV => con_FVirt
+
       implicit none
 !
 !     include 'constant.h'
@@ -955,7 +956,7 @@ CONTAINS
       SUBROUTINE TRIDI2(L,N,CL,CM,CU,R1,R2,AU,A1,A2)
 !sela %INCLUDE DBTRIDI2;
 !
-      USE MODULE_GFS_CONSTANTS     , ONLY : kind_phys
+      USE MODULE_GFS_MACHINE     , ONLY : kind_phys
       implicit none
       integer             k,n,l,i
       real(kind=kind_phys) fk
@@ -996,7 +997,7 @@ CONTAINS
       SUBROUTINE TRIDIN(L,N,nt,CL,CM,CU,R1,R2,AU,A1,A2)
 !sela %INCLUDE DBTRIDI2;
 !
-      USE MODULE_GFS_CONSTANTS     , ONLY : kind_phys
+      USE MODULE_GFS_MACHINE     , ONLY : kind_phys
       implicit none
       integer             is,k,kk,n,nt,l,i
       real(kind=kind_phys) fk(L)
@@ -1061,7 +1062,7 @@ CONTAINS
       SUBROUTINE TRIDIT(L,N,nt,CL,CM,CU,RT,AU,AT)
 !sela %INCLUDE DBTRIDI2;
 !
-      USE MODULE_GFS_CONSTANTS     , ONLY : kind_phys
+      USE MODULE_GFS_MACHINE     , ONLY : kind_phys
       implicit none
       integer             is,k,kk,n,nt,l,i
       real(kind=kind_phys) fk(L)

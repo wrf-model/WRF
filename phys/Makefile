@@ -29,6 +29,7 @@ MODULES = \
 	module_ra_rrtm.o  \
 	module_ra_gfdleta.o \
 	module_sf_sfclay.o \
+	module_sf_gfs.o \
 	module_sf_slab.o  \
 	module_sf_noahlsm.o  \
 	module_sf_lsm_nmm.o  \
@@ -38,6 +39,10 @@ MODULES = \
 	module_physics_addtendc.o \
 	module_physics_init.o \
 	module_gfs_constants.o \
+	module_gfs_machine.o \
+	module_gfs_funcphys.o \
+	module_gfs_physcons.o \
+	module_progtm.o \
 	module_pbl_driver.o \
 	module_cumulus_driver.o \
 	module_microphysics_driver.o \
@@ -74,9 +79,8 @@ clean:
 
 module_bl_myjpbl.o: ../share/module_model_constants.o
 
-module_gfs_constants.o: ../share/module_model_constants.o
-
-module_bl_gfs.o: module_gfs_constants.o
+module_bl_gfs.o: module_gfs_machine.o \
+		 module_gfs_physcons.o
 
 module_cu_bmj.o: ../share/module_model_constants.o
 
@@ -86,7 +90,12 @@ module_cu_kfeta.o: ../frame/module_wrf_error.o
 
 module_cu_gd.o:
 
-module_cu_sas.o: module_gfs_constants.o
+module_gfs_physcons.o: module_gfs_machine.o
+
+module_gfs_funcphys.o: module_gfs_machine.o \
+		       module_gfs_physcons.o
+
+module_cu_sas.o: module_gfs_constants.o 
 
 module_ra_gfdleta.o:  ../frame/module_dm.o
 
@@ -99,6 +108,11 @@ module_sf_lsm_nmm.o: ../share/module_model_constants.o \
 		../share/module_MPP.o
 
 module_sf_myjsfc.o: ../share/module_model_constants.o 
+
+module_sf_gfs.o: module_gfs_machine.o \
+		 module_gfs_funcphys.o \
+		 module_gfs_physcons.o \
+		 module_progtm.o
 
 module_sf_noahlsm.o: ../share/module_model_constants.o 
 
@@ -189,6 +203,7 @@ module_surface_driver.o: \
 		module_sf_sfclay.o		\
 		module_sf_slab.o		\
 		module_sf_myjsfc.o		\
+		module_sf_gfs.o  		\
 		module_sf_noahlsm.o		\
 		module_sf_ruclsm.o		\
 		module_sf_sfcdiags.o		\

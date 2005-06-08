@@ -79,6 +79,8 @@ clean:
 
 module_bl_myjpbl.o: ../share/module_model_constants.o
 
+module_gfs_constants.o: ../share/module_model_constants.o
+
 module_bl_gfs.o: module_gfs_machine.o \
 		 module_gfs_physcons.o
 

@@ -40,12 +40,14 @@ CONTAINS
 #if ( ! NMM_CORE == 1 )
    USE module_state_description, ONLY : SFCLAYSCHEME              &
                                        ,MYJSFCSCHEME              &
+                                       ,GFSSFCSCHEME              &
                                        ,SLABSCHEME                &
                                        ,LSMSCHEME                 &
                                        ,RUCLSMSCHEME
 #else
    USE module_state_description, ONLY : SFCLAYSCHEME              &
                                        ,MYJSFCSCHEME              &
+                                       ,GFSSFCSCHEME              &
                                        ,SLABSCHEME                &
                                        ,NMMLSMSCHEME              &
                                        ,LSMSCHEME                 &
@@ -56,6 +58,7 @@ CONTAINS
 
    USE module_sf_sfclay
    USE module_sf_myjsfc
+   USE module_sf_gfs
    USE module_sf_noahlsm
    USE module_sf_ruclsm
 #if ( NMM_CORE == 1 )
@@ -503,6 +506,31 @@ CONTAINS
               i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
        ELSE
          CALL wrf_error_fatal('Lacking arguments for MYJSFC in surface driver')
+       ENDIF
+
+     CASE (GFSSFCSCHEME)
+       IF (PRESENT(qv_curr) .AND. .TRUE. ) THEN
+       CALL wrf_debug( 100, 'in GFSSFC' )
+         CALL SF_GFS(u_phytmp,v_phytmp,t_phy,qv_curr,              &
+               p_phy,CP,RCP,R_d,XLV,PSFC,CHS,CHS2,CQS2,CPM,        &
+!               ZNTOLD,USTOLD,PSIM,PSIH,                           &
+               ZNT,UST,PSIM,PSIH,                                  &
+               XLAND,HFX,QFX,LH,TSK,FLHC,FLQC,                     &
+               QGH,QSFC,U10,V10,                                   &
+               GZ1OZ0,WSPD,BR,ISFFLX,                              &
+               EP_1,EP_2,KARMAN,itimestep,                         &
+               ids,ide, jds,jde, kds,kde,                          &
+               ims,ime, jms,jme, kms,kme,                          &
+               i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
+        CALL wrf_debug(100,'in SFCDIAGS')
+          CALL SFCDIAGS(hfx,qfx,tsk,qsfc,chs2,cqs2,tshltr,th2,qshltr, &
+                     psfc,cp,r_d,rcp,                              &
+                     ids,ide, jds,jde, kds,kde,                    &
+                     ims,ime, jms,jme, kms,kme,                    &
+             i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
+                                                                                                                                        
+       ELSE
+         CALL wrf_error_fatal('Lacking arguments for SF_GFS in surface driver')
        ENDIF
 
      CASE DEFAULT

@@ -330,7 +330,8 @@ contains
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   end subroutine
 !-------------------------------------------------------------------------------
-  elemental function fpvsl(t)
+! elemental function fpvsl(t)
+  function fpvsl(t)
 !$$$     Subprogram Documentation Block
 !
 ! Subprogram: fpvsl        Compute saturation vapor pressure over liquid
@@ -373,7 +374,8 @@ contains
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   end function
 !-------------------------------------------------------------------------------
-  elemental function fpvslq(t)
+! elemental function fpvslq(t)
+  function fpvslq(t)
 !$$$     Subprogram Documentation Block
 !
 ! Subprogram: fpvslq       Compute saturation vapor pressure over liquid
@@ -420,7 +422,8 @@ contains
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   end function
 !-------------------------------------------------------------------------------
-  elemental function fpvslx(t)
+! elemental function fpvslx(t)
+  function fpvslx(t)
 !$$$     Subprogram Documentation Block
 !
 ! Subprogram: fpvslx       Compute saturation vapor pressure over liquid
@@ -513,7 +516,8 @@ contains
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   end subroutine
 !-------------------------------------------------------------------------------
-  elemental function fpvsi(t)
+! elemental function fpvsi(t)
+  function fpvsi(t)
 !$$$     Subprogram Documentation Block
 !
 ! Subprogram: fpvsi        Compute saturation vapor pressure over ice
@@ -557,7 +561,8 @@ contains
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   end function
 !-------------------------------------------------------------------------------
-  elemental function fpvsiq(t)
+! elemental function fpvsiq(t)
+  function fpvsiq(t)
 !$$$     Subprogram Documentation Block
 !
 ! Subprogram: fpvsiq       Compute saturation vapor pressure over ice
@@ -605,7 +610,8 @@ contains
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   end function
 !-------------------------------------------------------------------------------
-  elemental function fpvsix(t)
+! elemental function fpvsix(t)
+  function fpvsix(t)
 !$$$     Subprogram Documentation Block
 !
 ! Subprogram: fpvsix       Compute saturation vapor pressure over ice
@@ -699,7 +705,8 @@ contains
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   end subroutine
 !-------------------------------------------------------------------------------
-  elemental function fpvs(t)
+! elemental function fpvs(t)
+  function fpvs(t)
 !$$$     Subprogram Documentation Block
 !
 ! Subprogram: fpvs         Compute saturation vapor pressure
@@ -743,7 +750,8 @@ contains
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   end function
 !-------------------------------------------------------------------------------
-  elemental function fpvsq(t)
+! elemental function fpvsq(t)
+  function fpvsq(t)
 !$$$     Subprogram Documentation Block
 !
 ! Subprogram: fpvsq        Compute saturation vapor pressure
@@ -791,7 +799,8 @@ contains
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   end function
 !-------------------------------------------------------------------------------
-  elemental function fpvsx(t)
+! elemental function fpvsx(t)
+  function fpvsx(t)
 !$$$     Subprogram Documentation Block
 !
 ! Subprogram: fpvsx        Compute saturation vapor pressure
@@ -906,7 +915,8 @@ contains
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   end subroutine
 !-------------------------------------------------------------------------------
-  elemental function ftdpl(pv)
+! elemental function ftdpl(pv)
+  function ftdpl(pv)
 !$$$     Subprogram Documentation Block
 !
 ! Subprogram: ftdpl        Compute dewpoint temperature over liquid
@@ -951,7 +961,8 @@ contains
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   end function
 !-------------------------------------------------------------------------------
-  elemental function ftdplq(pv)
+! elemental function ftdplq(pv)
+  function ftdplq(pv)
 !$$$     Subprogram Documentation Block
 !
 ! Subprogram: ftdplq       Compute dewpoint temperature over liquid
@@ -1000,7 +1011,8 @@ contains
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   end function
 !-------------------------------------------------------------------------------
-  elemental function ftdplx(pv)
+! elemental function ftdplx(pv)
+  function ftdplx(pv)
 !$$$     Subprogram Documentation Block
 !
 ! Subprogram: ftdplx       Compute dewpoint temperature over liquid
@@ -1042,7 +1054,8 @@ contains
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   end function
 !-------------------------------------------------------------------------------
-  elemental function ftdplxg(tg,pv)
+! elemental function ftdplxg(tg,pv)
+  function ftdplxg(tg,pv)
 !$$$     Subprogram Documentation Block
 !
 ! Subprogram: ftdplxg      Compute dewpoint temperature over liquid
@@ -1152,7 +1165,8 @@ contains
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   end subroutine
 !-------------------------------------------------------------------------------
-  elemental function ftdpi(pv)
+! elemental function ftdpi(pv)
+  function ftdpi(pv)
 !$$$     Subprogram Documentation Block
 !
 ! Subprogram: ftdpi        Compute dewpoint temperature over ice
@@ -1198,7 +1212,8 @@ contains
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   end function
 !-------------------------------------------------------------------------------
-  elemental function ftdpiq(pv)
+! elemental function ftdpiq(pv)
+  function ftdpiq(pv)
 !$$$     Subprogram Documentation Block
 !
 ! Subprogram: ftdpiq       Compute dewpoint temperature over ice
@@ -1248,7 +1263,8 @@ contains
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   end function
 !-------------------------------------------------------------------------------
-  elemental function ftdpix(pv)
+! elemental function ftdpix(pv)
+  function ftdpix(pv)
 !$$$     Subprogram Documentation Block
 !
 ! Subprogram: ftdpix       Compute dewpoint temperature over ice
@@ -1291,7 +1307,8 @@ contains
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   end function
 !-------------------------------------------------------------------------------
-  elemental function ftdpixg(tg,pv)
+! elemental function ftdpixg(tg,pv)
+  function ftdpixg(tg,pv)
 !$$$     Subprogram Documentation Block
 !
 ! Subprogram: ftdpixg      Compute dewpoint temperature over ice
@@ -1402,7 +1419,8 @@ contains
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   end subroutine
 !-------------------------------------------------------------------------------
-  elemental function ftdp(pv)
+! elemental function ftdp(pv)
+  function ftdp(pv)
 !$$$     Subprogram Documentation Block
 !
 ! Subprogram: ftdp         Compute dewpoint temperature 
@@ -1448,7 +1466,8 @@ contains
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   end function
 !-------------------------------------------------------------------------------
-  elemental function ftdpq(pv)
+! elemental function ftdpq(pv)
+  function ftdpq(pv)
 !$$$     Subprogram Documentation Block
 !
 ! Subprogram: ftdpq        Compute dewpoint temperature
@@ -1498,7 +1517,8 @@ contains
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   end function
 !-------------------------------------------------------------------------------
-  elemental function ftdpx(pv)
+! elemental function ftdpx(pv)
+  function ftdpx(pv)
 !$$$     Subprogram Documentation Block
 !
 ! Subprogram: ftdpx        Compute dewpoint temperature
@@ -1541,7 +1561,8 @@ contains
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   end function
 !-------------------------------------------------------------------------------
-  elemental function ftdpxg(tg,pv)
+! elemental function ftdpxg(tg,pv)
+  function ftdpxg(tg,pv)
 !$$$     Subprogram Documentation Block
 !
 ! Subprogram: ftdpxg       Compute dewpoint temperature
@@ -1685,7 +1706,8 @@ contains
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   end subroutine
 !-------------------------------------------------------------------------------
-  elemental function fthe(t,pk)
+! elemental function fthe(t,pk)
+  function fthe(t,pk)
 !$$$     Subprogram Documentation Block
 !
 ! Subprogram: fthe         Compute equivalent potential temperature
@@ -1739,7 +1761,8 @@ contains
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   end function
 !-------------------------------------------------------------------------------
-  elemental function ftheq(t,pk)
+! elemental function ftheq(t,pk)
+  function ftheq(t,pk)
 !$$$     Subprogram Documentation Block
 !
 ! Subprogram: ftheq        Compute equivalent potential temperature
@@ -1924,7 +1947,8 @@ contains
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   end subroutine
 !-------------------------------------------------------------------------------
-  elemental subroutine stma(the,pk,tma,qma)
+! elemental subroutine stma(the,pk,tma,qma)
+  subroutine stma(the,pk,tma,qma)
 !$$$     Subprogram Documentation Block
 !
 ! Subprogram: stma         Compute moist adiabat temperature
@@ -1979,7 +2003,8 @@ contains
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   end subroutine
 !-------------------------------------------------------------------------------
-  elemental subroutine stmaq(the,pk,tma,qma)
+! elemental subroutine stmaq(the,pk,tma,qma)
+  subroutine stmaq(the,pk,tma,qma)
 !$$$     Subprogram Documentation Block
 !
 ! Subprogram: stmaq        Compute moist adiabat temperature
@@ -2059,7 +2084,8 @@ contains
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   end subroutine
 !-------------------------------------------------------------------------------
-  elemental subroutine stmax(the,pk,tma,qma)
+! elemental subroutine stmax(the,pk,tma,qma)
+  subroutine stmax(the,pk,tma,qma)
 !$$$     Subprogram Documentation Block
 !
 ! Subprogram: stmax        Compute moist adiabat temperature
@@ -2105,7 +2131,8 @@ contains
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   end subroutine
 !-------------------------------------------------------------------------------
-  elemental subroutine stmaxg(tg,the,pk,tma,qma)
+! elemental subroutine stmaxg(tg,the,pk,tma,qma)
+  subroutine stmaxg(tg,the,pk,tma,qma)
 !$$$     Subprogram Documentation Block
 !
 ! Subprogram: stmaxg       Compute moist adiabat temperature
@@ -2221,7 +2248,8 @@ contains
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   end subroutine
 !-------------------------------------------------------------------------------
-  elemental function fpkap(p)
+! elemental function fpkap(p)
+  function fpkap(p)
 !$$$     Subprogram Documentation Block
 !
 ! Subprogram: fpkap        raise pressure to the kappa power.
@@ -2267,7 +2295,8 @@ contains
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   end function
 !-------------------------------------------------------------------------------
-  elemental function fpkapq(p)
+! elemental function fpkapq(p)
+  function fpkapq(p)
 !$$$     Subprogram Documentation Block
 !
 ! Subprogram: fpkapq       raise pressure to the kappa power.
@@ -2374,7 +2403,8 @@ contains
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   end function
 !-------------------------------------------------------------------------------
-  elemental function fpkapx(p)
+! elemental function fpkapx(p)
+  function fpkapx(p)
 !$$$   Subprogram  documentation  block
 !
 ! Subprogram: fpkapx       raise pressure to the kappa power.
@@ -2451,7 +2481,8 @@ contains
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   end subroutine
 !-------------------------------------------------------------------------------
-  elemental function frkap(pkap)
+! elemental function frkap(pkap)
+  function frkap(pkap)
 !$$$     Subprogram Documentation Block
 !
 ! Subprogram: frkap        raise pressure to the 1/kappa power.
@@ -2496,7 +2527,8 @@ contains
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   end function
 !-------------------------------------------------------------------------------
-  elemental function frkapq(pkap)
+! elemental function frkapq(pkap)
+  function frkapq(pkap)
 !$$$     Subprogram Documentation Block
 !
 ! Subprogram: frkapq       raise pressure to the 1/kappa power.
@@ -2545,7 +2577,8 @@ contains
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   end function
 !-------------------------------------------------------------------------------
-  elemental function frkapx(pkap)
+! elemental function frkapx(pkap)
+  function frkapx(pkap)
 !$$$   Subprogram  documentation  block
 !
 ! Subprogram: frkapx       raise pressure to the 1/kappa power.
@@ -2631,7 +2664,8 @@ contains
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   end subroutine
 !-------------------------------------------------------------------------------
-  elemental function ftlcl(t,tdpd)
+! elemental function ftlcl(t,tdpd)
+  function ftlcl(t,tdpd)
 !$$$     Subprogram Documentation Block
 !
 ! Subprogram: ftlcl        Compute LCL temperature
@@ -2678,7 +2712,8 @@ contains
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   end function
 !-------------------------------------------------------------------------------
-  elemental function ftlclq(t,tdpd)
+! elemental function ftlclq(t,tdpd)
+  function ftlclq(t,tdpd)
 !$$$     Subprogram Documentation Block
 !
 ! Subprogram: ftlclq       Compute LCL temperature
@@ -2781,7 +2816,8 @@ contains
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   end function
 !-------------------------------------------------------------------------------
-  elemental function ftlclx(t,tdpd)
+! elemental function ftlclx(t,tdpd)
+  function ftlclx(t,tdpd)
 !$$$   Subprogram  documentation  block
 !
 ! Subprogram: ftlclx       Compute LCL temperature.

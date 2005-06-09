@@ -151,7 +151,7 @@ CONTAINS
 
    gindex=1.0
 
-   IF (flag_qg) gindex=0.
+   IF (.not.flag_qg) gindex=0.
 
    j_loop:  DO j = jts, jte
    i_loop:  DO i = its, ite

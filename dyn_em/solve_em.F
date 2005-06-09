@@ -1102,6 +1102,7 @@ BENCH_START(rk_tend_tim)
                          msfu, msfv, msft, f, e, sina, cosa,              &
                          fnm, fnp, rdn, rdnw,                             &
                          dt, rdx, rdy, khdif, kvdif, xkmhd,               &
+                         dampcoef,zdamp,damp_opt,                         &
                          cf1, cf2, cf3, cfn, cfn1, num_3d_m,              &
                          non_hydrostatic, leapfrog,                       &
                          ids, ide, jds, jde, kds, kde,                    &

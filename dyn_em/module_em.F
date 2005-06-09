@@ -169,6 +169,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                          msfu, msfv, msft, f, e, sina, cosa,              &
                          fnm, fnp, rdn, rdnw,                             &
                          dt, rdx, rdy, khdif, kvdif, xkmhd,               &
+                         dampcoef,zdamp,damp_opt,                         &
                          cf1, cf2, cf3, cfn, cfn1, n_moist,               &
                          non_hydrostatic, leapfrog,                       &
                          ids, ide, jds, jde, kds, kde,                    &
@@ -268,6 +269,10 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                                                                 dt,      &
                                                                 khdif,   &
                                                                 kvdif
+
+   INTEGER, INTENT( IN ) :: damp_opt
+
+   REAL, INTENT( IN ) :: zdamp, dampcoef
 
    REAL    :: kdift, khdq, kvdq, cfn, cfn1, cf1, cf2, cf3
    INTEGER :: i,j,k
@@ -660,6 +665,17 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
       END IF leapfrog_test
         
     END IF diff_opt1
+
+    IF( damp_opt .eq. 2 )                                      &
+       CALL rk_rayleigh_damp( ru_tendf, rv_tendf,              &
+                              rw_tendf, t_tendf,               &
+                              u, v, w, t, t_init,              &
+                              mut, muu, muv, ph, phb,          &
+                              u_base, v_base, t_base, z_base,  &
+                              dampcoef, zdamp,                 &
+                              ids, ide, jds, jde, kds, kde,    &
+                              ims, ime, jms, jme, kms, kme,    &
+                              its, ite, jts, jte, kts, kte   )
 
   END IF forward_step
 

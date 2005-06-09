@@ -4528,4 +4528,272 @@ SUBROUTINE set_tend ( field, field_adv_tend, msf,       &
 
 END SUBROUTINE set_tend
 
+!------------------------------------------------------------------------------
+
+    SUBROUTINE rk_rayleigh_damp( ru_tendf, rv_tendf,              &
+                                 rw_tendf, t_tendf,               &
+                                 u, v, w, t, t_init,              &
+                                 mut, muu, muv, ph, phb,          &
+                                 u_base, v_base, t_base, z_base,  &
+                                 dampcoef, zdamp,                 &
+                                 ids, ide, jds, jde, kds, kde,    &
+                                 ims, ime, jms, jme, kms, kme,    &
+                                 its, ite, jts, jte, kts, kte   )
+
+! History:     Apr 2005  Modifications by George Bryan, NCAR:
+!                  - Generalized the code in a way that allows for
+!                    simulations with steep terrain.
+!
+!              Jul 2004  Modifications by George Bryan, NCAR:
+!                  - Modified the code to use u_base, v_base, and t_base
+!                    arrays for the background state.  Removed the hard-wired
+!                    base-state values.
+!                  - Modified the code to use dampcoef, zdamp, and damp_opt,
+!                    i.e., the upper-level damper variables in namelist.input.
+!                    Removed the hard-wired variables in the older version.
+!                    This damper is used when damp_opt = 2.
+!                  - Modified the code to account for the movement of the
+!                    model surfaces with time.  The code now obtains a base-
+!                    state value by interpolation using the "_base" arrays.
+
+!              Nov 2003  Bug fix by Jason Knievel, NCAR
+
+!              Aug 2003  Meridional dimension, some comments, and
+!                        changes in layout of the code added by
+!                        Jason Knievel, NCAR
+
+!              Jul 2003  Original code by Bill Skamarock, NCAR
+
+! Purpose:     This routine applies Rayleigh damping to a layer at top
+!              of the model domain.
+
+!-----------------------------------------------------------------------
+! Begin declarations.
+
+    IMPLICIT NONE
+
+    INTEGER, INTENT( IN )  &
+    :: ids, ide, jds, jde, kds, kde,  &
+       ims, ime, jms, jme, kms, kme,  &
+       its, ite, jts, jte, kts, kte
+
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( INOUT )  &
+    :: ru_tendf, rv_tendf, rw_tendf, t_tendf
+
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( IN )  &
+    :: u, v, w, t, t_init, ph, phb
+
+    REAL, DIMENSION( ims:ime, jms:jme ),  INTENT( IN )  &
+    :: mut, muu, muv
+
+    REAL, DIMENSION( kms:kme ) ,  INTENT(IN   )  &
+    :: u_base, v_base, t_base, z_base
+
+    REAL, INTENT(IN   )   &
+    :: dampcoef, zdamp
+
+! Local variables.
+
+    INTEGER  &
+    :: i_start, i_end, j_start, j_end, k_start, k_end, i, j, k, ktf, k1, k2
+
+    REAL  &
+    :: pii, dcoef, z, ztop
+
+    REAL :: wkp1, wk, wkm1
+
+    REAL, DIMENSION( kms:kme ) :: z00, u00, v00, t00
+
+! End declarations.
+!-----------------------------------------------------------------------
+
+    pii = 2.0 * asin(1.0)
+
+    ktf = MIN( kte,   kde-1 )
+
+!-----------------------------------------------------------------------
+! Adjust u to base state.
+
+    DO j = jts, MIN( jte, jde-1 )
+    DO i = its, MIN( ite, ide   )
+
+      ! Get height at top of model
+      ztop = 0.5*( phb(i  ,kde,j)+phb(i-1,kde,j)   &
+                  +ph(i  ,kde,j)+ph(i-1,kde,j) )/g
+
+      ! Find bottom of damping layer
+      k1 = ktf
+      z = ztop
+      DO WHILE( z >= (ztop-zdamp) )
+        z = 0.25*( phb(i  ,k1,j)+phb(i  ,k1+1,j)  &
+                  +phb(i-1,k1,j)+phb(i-1,k1+1,j)  &
+                  +ph(i  ,k1,j)+ph(i  ,k1+1,j)    &
+                  +ph(i-1,k1,j)+ph(i-1,k1+1,j))/g
+        z00(k1) = z
+        k1 = k1 - 1
+      ENDDO
+      k1 = k1 + 2
+
+      ! Get reference state at model levels
+      DO k = k1, ktf
+        k2 = ktf
+        DO WHILE( z_base(k2) .gt. z00(k) )
+          k2 = k2 - 1
+        ENDDO
+        if(k2+1.gt.ktf)then
+          u00(k) = u_base(k2) + ( u_base(k2) - u_base(k2-1) )   &
+                              * (     z00(k) - z_base(k2)   )   &
+                              / ( z_base(k2) - z_base(k2-1) )
+        else
+          u00(k) = u_base(k2) + ( u_base(k2+1) - u_base(k2) )   &
+                              * (       z00(k) - z_base(k2) )   &
+                              / ( z_base(k2+1) - z_base(k2) )
+        endif
+      ENDDO
+
+      ! Apply the Rayleigh damper
+      DO k = k1, ktf
+        dcoef = 1.0 - MIN( 1.0, ( ztop - z00(k) ) / zdamp )
+        dcoef = (SIN( 0.5 * pii * dcoef ) )**2
+        ru_tendf(i,k,j) = ru_tendf(i,k,j) -                    &
+                          muu(i,j) * ( dcoef / dampcoef ) *    &
+                          ( u(i,k,j) - u00(k) )
+      END DO
+
+    END DO
+    END DO
+
+! End adjustment of u.
+!-----------------------------------------------------------------------
+
+!-----------------------------------------------------------------------
+! Adjust v to base state.
+
+    DO j = jts, MIN( jte, jde   )
+    DO i = its, MIN( ite, ide-1 )
+
+      ! Get height at top of model
+      ztop = 0.5*( phb(i,kde,j  )+phb(i,kde,j-1)   &
+                  +ph(i,kde,j  )+ph(i,kde,j-1) )/g
+
+      ! Find bottom of damping layer
+      k1 = ktf
+      z = ztop
+      DO WHILE( z >= (ztop-zdamp) )
+        z = 0.25*( phb(i,k1,j  )+phb(i,k1+1,j  )  &
+                  +phb(i,k1,j-1)+phb(i,k1+1,j-1)  &
+                  +ph(i,k1,j  )+ph(i,k1+1,j  )    &
+                  +ph(i,k1,j-1)+ph(i,k1+1,j-1))/g
+        z00(k1) = z
+        k1 = k1 - 1
+      ENDDO
+      k1 = k1 + 2
+
+      ! Get reference state at model levels
+      DO k = k1, ktf
+        k2 = ktf
+        DO WHILE( z_base(k2) .gt. z00(k) )
+          k2 = k2 - 1
+        ENDDO
+        if(k2+1.gt.ktf)then
+          v00(k) = v_base(k2) + ( v_base(k2) - v_base(k2-1) )   &
+                              * (     z00(k) - z_base(k2)   )   &
+                              / ( z_base(k2) - z_base(k2-1) )
+        else
+          v00(k) = v_base(k2) + ( v_base(k2+1) - v_base(k2) )   &
+                              * (       z00(k) - z_base(k2) )   &
+                              / ( z_base(k2+1) - z_base(k2) )
+        endif
+      ENDDO
+
+      ! Apply the Rayleigh damper
+      DO k = k1, ktf
+        dcoef = 1.0 - MIN( 1.0, ( ztop - z00(k) ) / zdamp )
+        dcoef = (SIN( 0.5 * pii * dcoef ) )**2
+        rv_tendf(i,k,j) = rv_tendf(i,k,j) -                    &
+                          muv(i,j) * ( dcoef / dampcoef ) *    &
+                          ( v(i,k,j) - v00(k) )
+      END DO
+
+    END DO
+    END DO
+
+! End adjustment of v.
+!-----------------------------------------------------------------------
+
+!-----------------------------------------------------------------------
+! Adjust w to base state.
+
+    DO j = jts, MIN( jte,   jde-1 )
+    DO i = its, MIN( ite,   ide-1 )
+      ztop = ( phb(i,kde,j) + ph(i,kde,j) ) / g
+      DO k = kts, MIN( kte,   kde   )
+        z = ( phb(i,k,j) + ph(i,k,j) ) / g
+        IF ( z >= (ztop-zdamp) ) THEN
+          dcoef = 1.0 - MIN( 1.0, ( ztop - z ) / zdamp )
+          dcoef = ( SIN( 0.5 * pii * dcoef ) )**2
+          rw_tendf(i,k,j) = rw_tendf(i,k,j) -  &
+                            mut(i,j) * ( dcoef / dampcoef ) * w(i,k,j)
+        END IF
+      END DO
+    END DO
+    END DO
+
+! End adjustment of w.
+!-----------------------------------------------------------------------
+
+!-----------------------------------------------------------------------
+! Adjust potential temperature to base state.
+
+    DO j = jts, MIN( jte,   jde-1 )
+    DO i = its, MIN( ite,   ide-1 )
+
+      ! Get height at top of model
+      ztop = ( phb(i,kde,j) + ph(i,kde,j) ) / g
+
+      ! Find bottom of damping layer
+      k1 = ktf
+      z = ztop
+      DO WHILE( z >= (ztop-zdamp) )
+        z = 0.5 * ( phb(i,k1,j) + phb(i,k1+1,j) +  &
+                     ph(i,k1,j) +  ph(i,k1+1,j) ) / g
+        z00(k1) = z
+        k1 = k1 - 1
+      ENDDO
+      k1 = k1 + 2
+
+      ! Get reference state at model levels
+      DO k = k1, ktf
+        k2 = ktf
+        DO WHILE( z_base(k2) .gt. z00(k) )
+          k2 = k2 - 1
+        ENDDO
+        if(k2+1.gt.ktf)then
+          t00(k) = t_base(k2) + ( t_base(k2) - t_base(k2-1) )   &
+                              * (     z00(k) - z_base(k2)   )   &
+                              / ( z_base(k2) - z_base(k2-1) )
+        else
+          t00(k) = t_base(k2) + ( t_base(k2+1) - t_base(k2) )   &
+                              * (       z00(k) - z_base(k2) )   &
+                              / ( z_base(k2+1) - z_base(k2) )
+        endif
+      ENDDO
+
+      ! Apply the Rayleigh damper
+      DO k = k1, ktf
+        dcoef = 1.0 - MIN( 1.0, ( ztop - z00(k) ) / zdamp )
+        dcoef = (SIN( 0.5 * pii * dcoef ) )**2
+        t_tendf(i,k,j) = t_tendf(i,k,j) -                      &
+                         mut(i,j) * ( dcoef / dampcoef )  *    &
+                         ( t(i,k,j) - t00(k) )
+      END DO
+
+    END DO
+    END DO
+
+! End adjustment of potential temperature.
+!-----------------------------------------------------------------------
+
+    END SUBROUTINE rk_rayleigh_damp
+
 END MODULE module_big_step_utilities_em

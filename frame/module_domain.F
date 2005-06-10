@@ -170,6 +170,10 @@ CONTAINS
             grid%ep31  =             grid%ep31 + dx
             grid%sp32  =             grid%sp32 + dy
             grid%ep32  =             grid%ep32 + dy
+            grid%sd31  =             grid%sd31 + dx
+            grid%ed31  =             grid%ed31 + dx
+            grid%sd32  =             grid%sd32 + dy
+            grid%ed32  =             grid%ed32 + dy
 
        CASE  ( DATA_ORDER_YXZ )
             grid%sm31  =             grid%sm31 + dy
@@ -180,6 +184,10 @@ CONTAINS
             grid%ep31  =             grid%ep31 + dy
             grid%sp32  =             grid%sp32 + dx
             grid%ep32  =             grid%ep32 + dx
+            grid%sd31  =             grid%sd31 + dy
+            grid%ed31  =             grid%ed31 + dy
+            grid%sd32  =             grid%sd32 + dx
+            grid%ed32  =             grid%ed32 + dx
 
        CASE  ( DATA_ORDER_ZXY )
             grid%sm32  =             grid%sm32 + dx
@@ -190,6 +198,10 @@ CONTAINS
             grid%ep32  =             grid%ep32 + dx
             grid%sp33  =             grid%sp33 + dy
             grid%ep33  =             grid%ep33 + dy
+            grid%sd32  =             grid%sd32 + dx
+            grid%ed32  =             grid%ed32 + dx
+            grid%sd33  =             grid%sd33 + dy
+            grid%ed33  =             grid%ed33 + dy
 
        CASE  ( DATA_ORDER_ZYX )
             grid%sm32  =             grid%sm32 + dy
@@ -200,6 +212,10 @@ CONTAINS
             grid%ep32  =             grid%ep32 + dy
             grid%sp33  =             grid%sp33 + dx
             grid%ep33  =             grid%ep33 + dx
+            grid%sd32  =             grid%sd32 + dy
+            grid%ed32  =             grid%ed32 + dy
+            grid%sd33  =             grid%sd33 + dx
+            grid%ed33  =             grid%ed33 + dx
 
        CASE  ( DATA_ORDER_XZY )
             grid%sm31  =             grid%sm31 + dx
@@ -210,6 +226,10 @@ CONTAINS
             grid%ep31  =             grid%ep31 + dx
             grid%sp33  =             grid%sp33 + dy
             grid%ep33  =             grid%ep33 + dy
+            grid%sd31  =             grid%sd31 + dx
+            grid%ed31  =             grid%ed31 + dx
+            grid%sd33  =             grid%sd33 + dy
+            grid%ed33  =             grid%ed33 + dy
 
        CASE  ( DATA_ORDER_YZX )
             grid%sm31  =             grid%sm31 + dy
@@ -220,6 +240,10 @@ CONTAINS
             grid%ep31  =             grid%ep31 + dy
             grid%sp33  =             grid%sp33 + dx
             grid%ep33  =             grid%ep33 + dx
+            grid%sd31  =             grid%sd31 + dy
+            grid%ed31  =             grid%ed31 + dy
+            grid%sd33  =             grid%sd33 + dx
+            grid%ed33  =             grid%ed33 + dx
 
     END SELECT data_ordering
 

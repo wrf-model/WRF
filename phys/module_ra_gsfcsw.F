@@ -351,7 +351,7 @@ CONTAINS
 !        = 4  :  sub-arctic   winter profile
 !        = 5  :  tropical profile
 
-   IF (center_lat .le. 30. ) THEN ! tropic
+   IF (abs(center_lat) .le. 30. ) THEN ! tropic
       iprof = 5
    ELSE
       IF (center_lat .gt.  0.) THEN

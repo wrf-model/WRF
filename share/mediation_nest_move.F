@@ -10,6 +10,7 @@ SUBROUTINE med_nest_move ( parent, nest )
    INTEGER dx, dy       ! number of parent domain points to move
 #ifdef MOVE_NESTS
   ! Local 
+   CHARACTER*256 mess
    INTEGER i, j, p, parent_grid_ratio, dyn_opt
    INTEGER px, py       ! number and direction of nd points to move
    INTEGER                         :: ids , ide , jds , jde , kds , kde , &
@@ -112,7 +113,8 @@ SUBROUTINE med_nest_move ( parent, nest )
        CALL wrf_error_fatal( 'med_nest_move' )
      ENDIF
 
-write(0,*)' moving ',grid%id,dx,dy
+     WRITE(mess,*)' moving ',grid%id,dx,dy
+     CALL wrf_message(mess)
 
      CALL get_ijk_from_grid (  grid ,                   &
                                ids, ide, jds, jde, kds, kde,    &

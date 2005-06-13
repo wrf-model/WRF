@@ -438,6 +438,9 @@ rsl_lite_allgather_msgs ( mytask_p, ntasks_p, comm0 )
   int ig, jg ;
   int *Psize_all ;
   int *sp, *bp ;
+  int rc ;
+  MPI_Request req[ RSL_MAXPROC ], sreq[ RSL_MAXPROC ] ;
+  MPI_Status   Status ;
 
   ntasks = *ntasks_p ;
   mytask = *mytask_p ;
@@ -460,19 +463,43 @@ rsl_lite_allgather_msgs ( mytask_p, ntasks_p, comm0 )
     Rsizes[j] += Psize_all[ INDEX_2( j , mytask , ntasks ) ] ;
   }
 
-  for ( Rbufsize = 0, P = 0, Rdisplacements[0] ; P < ntasks ; P++ )
+  for ( Rbufsize = 0, P = 0, Rdisplacements[0] = 0 ; P < ntasks ; P++ )
   {
     Rdisplacements[P+1] = Rsizes[P] + Rdisplacements[P] ;
     Rbufsize += Rsizes[P] ;
   }
 
   /* this will be freed later */
+
   Recvbuf = RSL_MALLOC( char , Rbufsize + 3 * sizeof(int) ) ; /* for sentinal record */
   Rbufcurs = 0 ;
   Rreclen = 0 ;
 
-  MPI_Alltoallv ( Sendbuf, Ssizes, Sdisplacements, MPI_BYTE , 
-                  Recvbuf, Rsizes, Rdisplacements, MPI_BYTE ,  *comm0 ) ;
+#if 1
+  rc = MPI_Alltoallv ( Sendbuf, Ssizes, Sdisplacements, MPI_BYTE , 
+                       Recvbuf, Rsizes, Rdisplacements, MPI_BYTE ,  *comm0 ) ;
+#  if 0
+  fprintf(stderr,"MPI_Alltoallv returns %d, sentinel to %d\n",rc,Rbufsize + 2 * sizeof(int) ) ;
+#  endif
+#else
+
+  for ( P = 0 ; P < ntasks ; P++ ) { 
+    if ( Rsizes[P] != 0 ) {
+       MPI_Irecv( (void *)&(Recvbuf[Rdisplacements[P]]), Rsizes[P], MPI_BYTE, P, 32231, *comm0, (MPI_Request *)&(req[P]) ) ;
+    }
+  }
+  for ( P = 0 ; P < ntasks ; P++ ) { 
+    if ( Ssizes[P] != 0 ) {
+       MPI_Isend( (void *)&(Sendbuf[Sdisplacements[P]]), Ssizes[P], MPI_BYTE, P, 32231, *comm0, (MPI_Request *)&(sreq[P]) ) ;
+    }
+  }
+  for ( P = 0 ; P < ntasks ; P++ ) { 
+    if ( Rsizes[P] != 0 ) {
+       MPI_Wait( &(req[P]), &Status ) ;
+    }
+  }
+#endif
+
 
 /* add sentinel to the end of Recvbuf */
 

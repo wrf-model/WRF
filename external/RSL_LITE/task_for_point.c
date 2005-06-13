@@ -20,7 +20,7 @@ TASK_FOR_POINT ( i_p , j_p , ids_p, ide_p , jds_p, jde_p , npx_p , npy_p , Px_p,
   jdim = jde - jds + 1 ;
 
 #if 0
-fprintf(stderr,"i,j,npx,npy,ids,jds,idim,jdim\n%d %d %d %d %d %d %d %d\n",i,j,npx,npy,ids,jds,idim,jdim) ;
+fprintf(stderr,"tfp: i,j,npx,npy,ids,ide,jds,jde,idim,jdim\n%d %d %d %d %d %d %d %d %d %d\n",i,j,npx,npy,ids,ide,jds,jde,idim,jdim) ;
 #endif
 
   i = i >= ids ? i : ids ; i = i <= ide ? i : ide ;
@@ -36,8 +36,8 @@ fprintf(stderr,"i,j,npx,npy,ids,jds,idim,jdim\n%d %d %d %d %d %d %d %d\n",i,j,np
   j = j >= jds ? j : jds ; j = j <= jde ? j : jde ;
   rem = jdim % npy ;
   a = rem * ( (jdim / npy) + 1 ) ; 
-  if ( j-ids < a ) {
-    Py = (j-ids) / ( (jdim / npy) + 1 ) ;
+  if ( j-jds < a ) {
+    Py = (j-jds) / ( (jdim / npy) + 1 ) ;
   }
   else {
     Py = ( a / ( (jdim / npy) + 1 ) ) + (j-a-jds) / ( ( jdim - a ) / ( npy - rem ) )     ;

@@ -38,7 +38,6 @@ MODULES = \
 	module_sf_myjsfc.o \
 	module_physics_addtendc.o \
 	module_physics_init.o \
-	module_gfs_constants.o \
 	module_gfs_machine.o \
 	module_gfs_funcphys.o \
 	module_gfs_physcons.o \
@@ -79,8 +78,6 @@ clean:
 
 module_bl_myjpbl.o: ../share/module_model_constants.o
 
-module_gfs_constants.o: ../share/module_model_constants.o
-
 module_bl_gfs.o: module_gfs_machine.o \
 		 module_gfs_physcons.o
 
@@ -97,7 +94,9 @@ module_gfs_physcons.o: module_gfs_machine.o
 module_gfs_funcphys.o: module_gfs_machine.o \
 		       module_gfs_physcons.o
 
-module_cu_sas.o: module_gfs_constants.o 
+module_cu_sas.o: module_gfs_machine.o \
+		 module_gfs_funcphys.o \
+		 module_gfs_physcons.o
 
 module_ra_gfdleta.o:  ../frame/module_dm.o
 

@@ -264,15 +264,16 @@ Namelist variables for controling the prototype moving nest:
  damp_opt                            = 0,	; upper level damping flag (do not use it for real-data case
                                                       until further notice)
                                                   0 = without damping
-                                                  1 = with    damping
+                                                  1 = with diffusive damping (dampcoef nondimensional ~0.01-0.1)
+                                                  2 = with Rayleigh  damping (dampcoef inverse time scale [1/s] e.g. .003)
+ dampcoef (max_dom)                  = 0.,	; damping coefficient (see above)
+ zdamp (max_dom)                     = 5000.,	; damping depth (m) from model top
  w_damping                           = 0,       ; vertical velocity damping flag (for operational use)
                                                   0 = without damping
                                                   1 = with    damping
  base_temp                           = 290.,    ; real-data, em ONLY, base sea-level temp (K)
  base_pres                           = 10^5     ; real-data, em ONLY, base sea-level pres (Pa), DO NOT CHANGE
  base_lapse                          = 50.,     ; real-data, em ONLY, lapse rate (K), DO NOT CHANGE
- zdamp (max_dom)                     = 5000.,	; damping depth (m) from model top
- dampcoef (max_dom)                  = 0.,	; damping coefficient (dampcoef <= 0.2, <=0.1 for 3D cases)
  khdif (max_dom)                     = 0,	; horizontal diffusion constant (m^2/s)
  kvdif (max_dom)                     = 0,	; vertical diffusion constant (m^2/s)
  smdiv (max_dom)                     = 0.1,	; divergence damping (0.1 is typical)
@@ -281,6 +282,9 @@ Namelist variables for controling the prototype moving nest:
  epssm (max_dom)                     = .1,	; time off-centering for vertical sound waves
  non_hydrostatic (max_dom)           = .true.,	; whether running the model in hydrostatic or non-hydro mode
  pert_coriolis (max_dom)             = .false.,	; Coriolis only acts on wind perturbation (idealized)
+ mix_full_fields(max_dom)            = .true.,  ; used with diff_opt = 2; value of ".true." is recommended, except for
+                                                  highly idealized numerical tests; damp_opt must not be 1 if ".true."
+                                                  is chosen. .false. means subtract 1-d base-state profile before mixing
  h_mom_adv_order (max_dom)           = 5,       ; horizontal momentum advection order (5=5th, etc.)
  v_mom_adv_order (max_dom)           = 3,       ; vertical momentum advection order
  h_sca_adv_order (max_dom)           = 5,       ; horizontal scalar advection order

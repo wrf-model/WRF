@@ -733,7 +733,7 @@ END MODULE module_date_time
       CHARACTER (LEN=*), INTENT( IN) :: str
       TYPE(WRF_UTIL_Time),   INTENT(OUT) :: time
       INTEGER yr, mm, dd, h, m, s, ms
-      INTEGER rc, debug_level
+      INTEGER rc
       IF ( LEN( str ) .GE. 20 ) THEN
         IF ( str(20:20) .EQ. '.' ) THEN
           READ(str,34) yr,mm,dd,h,m,s,ms
@@ -766,7 +766,7 @@ END MODULE module_date_time
       USE module_utility
       TYPE(WRF_UTIL_Time),   INTENT( IN) :: time
       CHARACTER (LEN=*), INTENT(OUT) :: str
-      INTEGER rc, debug_level
+      INTEGER rc
       CHARACTER (LEN=256) :: mess
       CALL WRF_UTIL_TimeGet( time, timeString=str, rc=rc )
       CALL wrf_check_error( WRF_UTIL_SUCCESS, rc, &
@@ -793,29 +793,14 @@ END MODULE module_date_time
       TYPE(WRF_UTIL_Clock),  INTENT( IN) :: clock
       CHARACTER (LEN=*), INTENT( IN) :: pre_str
       INTEGER rc
-      LOGICAL clockinvalid
       INTEGER :: debug_level
       TYPE(WRF_UTIL_Time) :: currTime, startTime, stopTime
       CHARACTER (LEN=25) :: currTime_str, startTime_str, stopTime_str
       CHARACTER (LEN=256) :: mess
       CALL get_wrf_debug_level( debug_level )
       IF ( level .LE. debug_level ) THEN
-        rc=WRF_UTIL_SUCCESS
-        CALL WRF_UTIL_ClockValidate(clock, rc=rc)
-        clockinvalid = .FALSE.
-        IF (rc /= WRF_UTIL_SUCCESS) THEN
-          clockinvalid = .TRUE.
-        ENDIF
-        IF ( clockinvalid ) THEN
-          WRITE (mess,*) TRIM(pre_str),'  ERROR:  clock is invalid, rc = ',rc
-          CALL wrf_message(TRIM(mess))
-        ELSE
-          WRITE (mess,*) TRIM(pre_str),'  clock is valid'
-          CALL wrf_message(TRIM(mess))
-        ENDIF
-
         CALL WRF_UTIL_ClockGet( clock, CurrTime=currTime, StartTime=startTime, &
-                                   StopTime=stopTime, rc=rc )
+                                StopTime=stopTime, rc=rc )
         CALL wrf_timetoa( currTime, currTime_str )
         CALL wrf_timetoa( startTime, startTime_str )
         CALL wrf_timetoa( stopTime, stopTime_str )
@@ -825,13 +810,6 @@ END MODULE module_date_time
         CALL wrf_message(TRIM(mess))
         WRITE (mess,*) TRIM(pre_str),'  clock stop time = ',TRIM(stopTime_str)
         CALL wrf_message(TRIM(mess))
-        IF ( clockinvalid ) THEN
-          WRITE (mess,*) TRIM(pre_str),'   BEGIN INVALID CLOCK { '
-          CALL wrf_message(TRIM(mess))
-          CALL WRF_UTIL_ClockPrint( clock, rc=rc )
-          WRITE (mess,*) TRIM(pre_str),' } END INVALID CLOCK'
-          CALL wrf_message(TRIM(mess))
-        ENDIF
       ENDIF
       RETURN
    END SUBROUTINE wrf_clockprint

@@ -1198,16 +1198,16 @@ package   kfscheme       cu_physics==99              -             -
 # only need to specify these once; not for every io_form* variable
 package   io_intio    io_form_restart==1                     -             -
 package   io_netcdf   io_form_restart==2                     -             -
-# Four placeholders for additional packages (we can go beyond zzz 
+# Placeholders for additional packages (we can go beyond zzz 
 # but that will entail modifying frame/module_io.F and frame/md_calls.m4)
 # Please note these are placeholders; HDF has not been implemented yet.
 package   io_hdf      io_form_restart==3                     -             -
 package   io_phdf5    io_form_restart==4                     -             -
-#package   io_xxx      io_form_restart==4                     -             -
 # yyy = grib output from WSI
 package   io_yyy      io_form_restart==5                     -             -
-package   io_zzz      io_form_restart==6                     -             -
-package   io_mcel     io_form_restart==7                     -             -
+package   io_mcel     io_form_restart==6                     -             -
+package   io_esmf     io_form_restart==7                     -             -
+package   io_zzz      io_form_restart==8                     -             -
                                                 
 #---------------------------------------------------------------------------------------------------------------------------------------
 ## communications                                               

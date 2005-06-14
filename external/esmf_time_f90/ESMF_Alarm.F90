@@ -57,7 +57,8 @@
 
 !     ! Equivalent sequence and kind to C++:
 
-      type ESMF_Alarm
+! internals for ESMF_Alarm
+      type ESMF_AlarmInt
       sequence
 #ifndef F90_STANDALONE
       private
@@ -75,12 +76,24 @@
         logical :: StopTimeSet
       end type
 
+! Actual public type:  this bit allows easy mimic of "deep" ESMF_AlarmCreate
+! in ESMF 2.1.0+.  Note that ESMF_AlarmCreate is in a separae module to avoid 
+! cyclic dependence.  
+! NOTE:  DO NOT ADD NON-POINTER STATE TO THIS DATA TYPE.  It emulates ESMF 
+!        shallow-copy-masquerading-as-reference-copy.  
+      type ESMF_Alarm
+        sequence
+        type(ESMF_AlarmInt), pointer :: alarmint
+      end type
+
 !------------------------------------------------------------------------------
 ! !PUBLIC TYPES:
       public ESMF_Alarm
+      public ESMF_AlarmInt   ! needed on AIX but not PGI
 !------------------------------------------------------------------------------
 
 ! !PUBLIC MEMBER FUNCTIONS:
+      public ESMF_AlarmDestroy
       public ESMF_AlarmSet
       public ESMF_AlarmGet
 !      public ESMF_AlarmGetRingInterval
@@ -183,34 +196,51 @@
 ! !REQUIREMENTS:
 !     TMG4.1, TMG4.7
 !EOP
-      call c_ESMC_AlarmSet(alarm, RingTime, RingInterval, &
-                            StopTime, Enabled, rc)
-      alarm%RingTimeSet = .FALSE.
-      alarm%RingIntervalSet = .FALSE.
-      alarm%StopTimeSet = .FALSE.
-      IF ( PRESENT( RingInterval ) ) THEN
-	alarm%RingInterval = RingInterval
-        alarm%RingIntervalSet = .TRUE.
+      IF ( ASSOCIATED( alarm%alarmint ) ) THEN
+        alarm%alarmint%RingTimeSet = .FALSE.
+        alarm%alarmint%RingIntervalSet = .FALSE.
+        alarm%alarmint%StopTimeSet = .FALSE.
+        IF ( PRESENT( RingInterval ) ) THEN
+          alarm%alarmint%RingInterval = RingInterval
+          alarm%alarmint%RingIntervalSet = .TRUE.
+        ENDIF
+        IF ( PRESENT( RingTime ) ) THEN
+          alarm%alarmint%RingTime = RingTime
+          alarm%alarmint%RingTimeSet = .TRUE.
+        ENDIF
+        IF ( PRESENT( StopTime ) ) THEN
+          alarm%alarmint%StopTime = StopTime
+          alarm%alarmint%StopTimeSet = .TRUE.
+        ENDIF
+        alarm%alarmint%Enabled = .TRUE.
+        IF ( PRESENT( Enabled ) ) THEN
+          alarm%alarmint%Enabled = Enabled
+        ENDIF
+        IF ( PRESENT( rc ) ) THEN
+          rc = ESMF_SUCCESS
+        ENDIF
+        alarm%alarmint%Ringing = .FALSE.
+        alarm%alarmint%Enabled = .TRUE.
+      ELSE
+        IF ( PRESENT( rc ) ) rc = ESMF_FAILURE
       ENDIF
-      IF ( PRESENT( RingTime ) ) THEN
-	alarm%RingTime = RingTime
-        alarm%RingTimeSet = .TRUE.
-      ENDIF
-      IF ( PRESENT( StopTime ) ) THEN
-	alarm%StopTime = StopTime
-        alarm%StopTimeSet = .TRUE.
-      ENDIF
-      alarm%Enabled = .TRUE.
-      IF ( PRESENT( Enabled ) ) THEN
-	alarm%Enabled = Enabled
-      ENDIF
-      IF ( PRESENT( rc ) ) THEN
-	rc = ESMF_SUCCESS
-      ENDIF
-      alarm%Ringing = .FALSE.
-      alarm%Enabled = .TRUE.
 
       end subroutine ESMF_AlarmSet
+
+
+
+! Deallocate memory for ESMF_Alarm
+      SUBROUTINE ESMF_AlarmDestroy( alarm, rc )
+         TYPE(ESMF_Alarm), INTENT(INOUT) :: alarm
+         INTEGER,          INTENT(  OUT), OPTIONAL :: rc
+         IF ( ASSOCIATED( alarm%alarmint ) ) THEN
+           DEALLOCATE( alarm%alarmint )
+         ENDIF
+         ! TBH:  ignore deallocate errors, for now
+         IF ( PRESENT( rc ) ) rc = ESMF_SUCCESS
+      END SUBROUTINE ESMF_AlarmDestroy
+
+
 
 !------------------------------------------------------------------------------
 !BOP
@@ -240,9 +270,7 @@
 ! !REQUIREMENTS:
 !     TMG4.7
 !EOP
-    
-      call c_ESMC_AlarmGetRingInterval(alarm, RingInterval, rc)
-
+      CALL wrf_error_fatal( 'ESMF_AlarmGetRingInterval not supported' )
       end subroutine ESMF_AlarmGetRingInterval
  
 !------------------------------------------------------------------------------
@@ -273,9 +301,7 @@
 ! !REQUIREMENTS:
 !     TMG4.5.2, TMG4.7
 !EOP
-    
-      call c_ESMC_AlarmSetRingInterval(alarm, RingInterval, rc)
-
+      CALL wrf_error_fatal( 'ESMF_AlarmSetRingInterval not supported' )
       end subroutine ESMF_AlarmSetRingInterval
 
 !------------------------------------------------------------------------------
@@ -306,9 +332,7 @@
 ! !REQUIREMENTS:
 !     TMG4.7, TMG4.8
 !EOP
-
-      call c_ESMC_AlarmGetRingTime(alarm, RingTime, rc)
-
+      CALL wrf_error_fatal( 'ESMF_AlarmGetRingTime not supported' )
       end subroutine ESMF_AlarmGetRingTime
 
 !------------------------------------------------------------------------------
@@ -339,9 +363,7 @@
 ! !REQUIREMENTS:
 !     TMG4.5.1, TMG4.7, TMG4.8
 !EOP
-   
-      call c_ESMC_AlarmSetRingTime(alarm, RingTime, rc)
-
+      CALL wrf_error_fatal( 'ESMF_AlarmSetRingTime not supported' )
       end subroutine ESMF_AlarmSetRingTime
 
 !------------------------------------------------------------------------------
@@ -414,12 +436,12 @@
 ! !REQUIREMENTS:
 !     TMG4.7, TMG4.8
 !EOP
-
-      call c_ESMC_AlarmGetPrevRingTime(alarm, PrevRingTime, rc)
-
-      PrevRingTime = alarm%PrevRingTime
-      rc = ESMF_SUCCESS
-
+      IF ( ASSOCIATED( alarm%alarmint ) ) THEN
+        PrevRingTime = alarm%alarmint%PrevRingTime
+        IF ( PRESENT( rc ) ) rc = ESMF_SUCCESS
+      ELSE
+        IF ( PRESENT( rc ) ) rc = ESMF_FAILURE
+      ENDIF
       end subroutine ESMF_AlarmGetPrevRingTime
 
 !------------------------------------------------------------------------------
@@ -450,9 +472,7 @@
 ! !REQUIREMENTS:
 !     TMG4.7, TMG4.8
 !EOP
-
-      call c_ESMC_AlarmSetPrevRingTime(alarm, PrevRingTime, rc)
-
+      CALL wrf_error_fatal( 'ESMF_AlarmSetPrevRingTime not supported' )
       end subroutine ESMF_AlarmSetPrevRingTime
 
 !------------------------------------------------------------------------------
@@ -483,9 +503,7 @@
 ! !REQUIREMENTS:
 !     TMG4.5.2, TMG4.7
 !EOP
-   
-      call c_ESMC_AlarmGetStopTime(alarm, StopTime, rc)
-
+      CALL wrf_error_fatal( 'ESMF_AlarmGetStopTime not supported' )
       end subroutine ESMF_AlarmGetStopTime
 
 !------------------------------------------------------------------------------
@@ -516,9 +534,7 @@
 ! !REQUIREMENTS:
 !     TMG4.5.2, TMG4.7
 !EOP
-
-      call c_ESMC_AlarmSetStopTime(alarm, StopTime, rc)
-
+      CALL wrf_error_fatal( 'ESMF_AlarmSetStopTime not supported' )
       end subroutine ESMF_AlarmSetStopTime
 
 !------------------------------------------------------------------------------
@@ -530,7 +546,7 @@
 
 ! !ARGUMENTS:
       type(ESMF_Alarm), intent(out) :: alarm
-      integer, intent(out) :: rc
+      integer, intent(out), optional :: rc
 
 ! !DESCRIPTION:
 !     Enables an {\tt ESMF\_Alarm} to function
@@ -546,12 +562,12 @@
 ! !REQUIREMENTS:
 !     TMG4.5.3
 !EOP
-
-      call c_ESMC_AlarmEnable(alarm, rc)
-
-      Alarm%Enabled = .TRUE.
-      rc = ESMF_SUCCESS
-
+      IF ( ASSOCIATED( alarm%alarmint ) ) THEN
+        alarm%alarmint%Enabled = .TRUE.
+        IF ( PRESENT( rc ) ) rc = ESMF_SUCCESS
+      ELSE
+        IF ( PRESENT( rc ) ) rc = ESMF_FAILURE
+      ENDIF
       end subroutine ESMF_AlarmEnable
 
 !------------------------------------------------------------------------------
@@ -563,7 +579,7 @@
 
 ! !ARGUMENTS:
       type(ESMF_Alarm), intent(out) :: alarm
-      integer, intent(out) :: rc
+      integer, intent(out), optional :: rc
 
 ! !DESCRIPTION:
 !     Disables an {\tt ESMF\_Alarm}
@@ -579,11 +595,12 @@
 ! !REQUIREMENTS:
 !     TMG4.5.3
 !EOP
-    
-      call c_ESMC_AlarmDisable(alarm, rc)
-      alarm%Enabled = .FALSE.
-      rc = ESMF_SUCCESS
-
+      IF ( ASSOCIATED( alarm%alarmint ) ) THEN
+        alarm%alarmint%Enabled = .FALSE.
+        IF ( PRESENT( rc ) ) rc = ESMF_SUCCESS
+      ELSE
+        IF ( PRESENT( rc ) ) rc = ESMF_FAILURE
+      ENDIF
       end subroutine ESMF_AlarmDisable
 
 !------------------------------------------------------------------------------
@@ -596,7 +613,7 @@
 
 ! !ARGUMENTS:
       type(ESMF_Alarm), intent(out) :: alarm
-      integer, intent(out) :: rc
+      integer, intent(out), optional :: rc
     
 ! !DESCRIPTION:
 !     Turn on an {\tt ESMF\_Alarm}; sets ringing state
@@ -612,14 +629,16 @@
 ! !REQUIREMENTS:
 !     TMG4.6
 !EOP
-
-      call c_ESMC_AlarmTurnOn(alarm, rc)
-      IF ( alarm%Enabled ) THEN
-        alarm%Ringing = .TRUE.
-        rc = ESMF_SUCCESS
+      IF ( ASSOCIATED( alarm%alarmint ) ) THEN
+        IF ( alarm%alarmint%Enabled ) THEN
+          alarm%alarmint%Ringing = .TRUE.
+          IF ( PRESENT( rc ) ) rc = ESMF_SUCCESS
+        ELSE
+          alarm%alarmint%Ringing = .FALSE.
+          IF ( PRESENT( rc ) ) rc = ESMF_FAILURE
+        ENDIF
       ELSE
-        alarm%Ringing = .FALSE.
-        rc = ESMF_FAILURE
+        IF ( PRESENT( rc ) ) rc = ESMF_FAILURE
       ENDIF
 
       end subroutine ESMF_AlarmRingerOn
@@ -633,7 +652,7 @@
 
 ! !ARGUMENTS:
       type(ESMF_Alarm), intent(out) :: alarm
-      integer, intent(out) :: rc
+      integer, intent(out), optional :: rc
     
 ! !DESCRIPTION:
 !     Turn off an {\tt ESMF\_Alarm}; unsets ringing state
@@ -649,16 +668,16 @@
 ! !REQUIREMENTS:
 !     TMG4.6
 !EOP
-
-      call c_ESMC_AlarmTurnOff(alarm, rc)
-
-      alarm%Ringing = .FALSE.
-      IF ( alarm%Enabled ) THEN
-        rc = ESMF_SUCCESS
+      IF ( ASSOCIATED( alarm%alarmint ) ) THEN
+        alarm%alarmint%Ringing = .FALSE.
+        IF ( alarm%alarmint%Enabled ) THEN
+          IF ( PRESENT( rc ) ) rc = ESMF_SUCCESS
+        ELSE
+          IF ( PRESENT( rc ) ) rc = ESMF_FAILURE
+        ENDIF
       ELSE
-        rc = ESMF_FAILURE
+        IF ( PRESENT( rc ) ) rc = ESMF_FAILURE
       ENDIF
-
       end subroutine ESMF_AlarmRingerOff
 
 !------------------------------------------------------------------------------
@@ -673,7 +692,7 @@
 
 ! !ARGUMENTS:
       type(ESMF_Alarm), intent(in) :: alarm
-      integer, intent(out) :: rc
+      integer, intent(out), optional :: rc
 
 ! !DESCRIPTION:
 !     Check if {\tt ESMF\_Alarm} is ringing.
@@ -689,16 +708,17 @@
 ! !REQUIREMENTS:
 !     TMG4.4
 !EOP
-    
-      call c_ESMC_AlarmIsRinging(alarm, ESMF_AlarmIsRinging, rc)
-      IF ( alarm%Enabled ) THEN
-        ESMF_AlarmIsRinging = alarm%Ringing
-        rc = ESMF_SUCCESS
+      IF ( ASSOCIATED( alarm%alarmint ) ) THEN
+        IF ( alarm%alarmint%Enabled ) THEN
+          ESMF_AlarmIsRinging = alarm%alarmint%Ringing
+          IF ( PRESENT( rc ) ) rc = ESMF_SUCCESS
+        ELSE
+          ESMF_AlarmIsRinging = .FALSE.
+          IF ( PRESENT( rc ) ) rc = ESMF_FAILURE
+        ENDIF
       ELSE
-        ESMF_AlarmIsRinging = .FALSE.
-        rc = ESMF_FAILURE
+        IF ( PRESENT( rc ) ) rc = ESMF_FAILURE
       ENDIF
-
       end function ESMF_AlarmIsRinging
 
 !------------------------------------------------------------------------------
@@ -736,11 +756,8 @@
 ! !REQUIREMENTS:
 !     TMG4.4, TMG4.6
 !EOP
-
-      call c_ESMC_AlarmCheckRingTime(alarm, ESMF_AlarmCheckRingTime, &
-                                     ClockCurrTime, positive, rc)
-      ! assumes positive is always positive
-
+      CALL wrf_error_fatal( 'ESMF_AlarmCheckRingTime not supported' )
+      ESMF_AlarmCheckRingTime = .FALSE.  ! keep compilers happy
       end function ESMF_AlarmCheckRingTime
 
 !------------------------------------------------------------------------------
@@ -771,9 +788,8 @@
 !
 ! !REQUIREMENTS:  
 !EOP
-
-      call c_ESMC_AlarmEQ(alarm1, alarm2, ESMF_AlarmEQ)
-
+      CALL wrf_error_fatal( 'ESMF_AlarmEQ not supported ' )
+      ESMF_AlarmEQ = .FALSE.       ! keep compilers happy
       end function ESMF_AlarmEQ
 
 !------------------------------------------------------------------------------
@@ -828,10 +844,7 @@
 !
 ! !REQUIREMENTS:
 !EOP
-      call c_ESMC_AlarmRead(alarm, RingInterval, RingTime, &
-                            PrevRingTime, StopTime, Ringing, &
-                            Enabled, ID, rc)
-
+      CALL wrf_error_fatal( 'ESMF_AlarmRead not supported' )
       end subroutine ESMF_AlarmRead
 
 !------------------------------------------------------------------------------
@@ -881,10 +894,7 @@
 !
 ! !REQUIREMENTS:
 !EOP
-      call c_ESMC_AlarmWrite(alarm, RingInterval, RingTime, &
-                             PrevRingTime, StopTime, Ringing, &
-                             Enabled, ID, rc)
-
+      CALL wrf_error_fatal( 'ESMF_AlarmWrite not supported' )
       end subroutine ESMF_AlarmWrite
 
 !------------------------------------------------------------------------------
@@ -915,9 +925,7 @@
 ! !REQUIREMENTS:
 !     TMGn.n.n
 !EOP
-      
-      call c_ESMC_AlarmValidate(alarm, opts, rc)
-    
+      CALL wrf_error_fatal( 'ESMF_AlarmValidate not supported' )
       end subroutine ESMF_AlarmValidate
 
 !------------------------------------------------------------------------------
@@ -949,9 +957,7 @@
 ! !REQUIREMENTS:
 !     TMGn.n.n
 !EOP
-      
-      call c_ESMC_AlarmPrint(alarm, opts, rc)   
-
+      CALL wrf_error_fatal( 'ESMF_AlarmPrint not supported' )
       end subroutine ESMF_AlarmPrint
 
 !------------------------------------------------------------------------------

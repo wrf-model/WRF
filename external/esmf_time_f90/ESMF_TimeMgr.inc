@@ -35,6 +35,9 @@ by both C++ and F90 compilers.
 #define SECONDS_PER_HOUR 3600
 #define SECONDS_PER_MINUTE 60
 
+! Note that MAX_ALARMS must match MAX_WRF_ALARMS defined in 
+! ../../frame/module_domain.F !!!  Eliminate this dependence with 
+! grow-as-you-go AlarmList in ESMF_Clock...  
 #define MAX_ALARMS 20
 
 #endif

@@ -1993,7 +1993,7 @@ convert_nmm.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt $*.f
 
 ###########################################################
-#ARCH	AIX DM-Parallel ESMF     (RSL, IBM-MPI, ESMF coupling, supports nesting) EXPERIMENTAL
+#ARCH	AIX DM-Parallel ESMF     (RSL, IBM-MPI, ESMF coupling, no nesting) EXPERIMENTAL
 #
 DMPARALLEL      =       1
 SFC             =       xlf90_r
@@ -2009,6 +2009,8 @@ FCOPTIM         =       -O2 -qarch=auto
 FCDEBUG         =       # -qnoopt -qfullpath
 FCBASEOPTS      =       -w -qspill=20000 $(FCDEBUG) -qmaxmem=-1 #-qflttrap=zerodivide:invalid:enable -qsigtrap
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
+# WRF build-time switch to enable ESMF coupling
+ESMFCOUPLING    =       1
 # begin ESMF paths
 ESMF_DIR        =       /home/bluesky/hender/esmf
 ESMF_BOPT       =       O
@@ -2029,12 +2031,11 @@ ESMF_IO_DIR     =      ../external/io_esmf
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I$(ESMF_IO_DIR) \
                         -I../frame -I../share -I../phys -I../chem -I../inc $(ESMF_MOD_INC)
 # Override default ESMF dependences since embedded ESMF time manager is not used.
-ESMF_MOD_DEPENDENCE =   $(ESMF_IO_DIR)/module_comp.o
+ESMF_MOD_DEPENDENCE =   $(ESMF_IO_DIR)/module_utility.o
 
-# TBH:  NOTE:  Get rid of "-DESMF_HACK" below once the last interface differences are fixed
 ARCHFLAGS       =       -DWRF_RSL_IO -DRSL -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) \
                         -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   -DYYY -DINTIO \
-			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DNATIVE_MASSV -DESMF_HACK
+			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DNATIVE_MASSV -DESMFIO
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl -lmass -lmassv \
@@ -2120,7 +2121,7 @@ convert_nmm.o    :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt $*.f
 
 ###########################################################
-#ARCH	AIX DM-Parallel ESMF     (RSL, IBM-MPI, ESMF coupling and LogErr, supports nesting) EXPERIMENTAL
+#ARCH	AIX DM-Parallel ESMF     (RSL, IBM-MPI, ESMF coupling and LogErr, no nesting) EXPERIMENTAL
 #
 DMPARALLEL      =       1
 SFC             =       xlf90_r
@@ -2136,6 +2137,8 @@ FCOPTIM         =       -O2 -qarch=auto
 FCDEBUG         =       # -qnoopt -qfullpath
 FCBASEOPTS      =       -w -qspill=20000 $(FCDEBUG) -qmaxmem=-1 #-qflttrap=zerodivide:invalid:enable -qsigtrap
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
+# WRF build-time switch to enable ESMF coupling
+ESMFCOUPLING    =       1
 # begin ESMF paths
 ESMF_DIR        =       /home/bluesky/hender/esmf
 ESMF_BOPT       =       O
@@ -2156,13 +2159,12 @@ ESMF_IO_DIR     =      ../external/io_esmf
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I$(ESMF_IO_DIR) \
                         -I../frame -I../share -I../phys -I../chem -I../inc $(ESMF_MOD_INC)
 # Override default ESMF dependences since embedded ESMF time manager is not used.
-ESMF_MOD_DEPENDENCE =   $(ESMF_IO_DIR)/module_comp.o
+ESMF_MOD_DEPENDENCE =   $(ESMF_IO_DIR)/module_utility.o
 
-# TBH:  NOTE:  Get rid of "-DESMF_HACK" below once the last interface differences are fixed
 ARCHFLAGS       =       -DWRF_RSL_IO -DRSL -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) \
                         -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   -DYYY -DINTIO \
-			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DNATIVE_MASSV -DESMF_HACK \
-			-DWRF_COMP_LOGERR
+			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DNATIVE_MASSV \
+			-DWRF_UTIL_LOGERR -DESMFIO
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl -lmass -lmassv \
@@ -6256,6 +6258,122 @@ module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 mediation_integrate.o \
+module_initialize_real.o module_dm.o start_domain.o :
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b 
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(RM) $*.b
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
+
+###########################################################
+#ARCH    PC Linux i486 i586 i686, PGI compiler, ESMF  (Single-threaded, ESMF coupling, no nesting)
+#
+FC              =       pgf90
+LD              =       pgf90
+CC              =       gcc
+SCC		=	$(CC)
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+SFC             =       $(FC)
+PROMOTION	=	-r$(RWORDSIZE) -i4
+CFLAGS          =
+FCOPTIM		=	-fast
+FCDEBUG		=	#-g
+#FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree -tp p6 $(FCDEBUG)
+FCBASEOPTS      =       -w -byteswapio -Mfree -tp p6 $(FCDEBUG) # -Mlfs
+FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
+# WRF build-time switch to enable ESMF coupling
+ESMFCOUPLING    =       1
+# begin ESMF paths
+ESMF_DIR        =       /standalone/users/hender/ESMF/esmf
+ESMF_BOPT       =       O
+ESMF_ARCH       =       Linux
+ESMF_COMPILER   =       pgi
+# TBH:  Link ESMF_PREC with PGI address length options later...
+ESMF_PREC       =       32
+#ESMF_PREC       =       64
+ESMF_SITE       =       default
+ESMF_PATH_TAIL  =       $(ESMF_BOPT)/$(ESMF_ARCH).$(ESMF_COMPILER).$(ESMF_PREC).$(ESMF_SITE)
+ESMF_MODULES    =       $(ESMF_DIR)/mod/mod$(ESMF_PATH_TAIL)
+ESMF_LIB        =       $(ESMF_DIR)/lib/lib$(ESMF_PATH_TAIL)
+ESMF_LIB_FLAGS  =       -L$(ESMF_LIB) -lesmf -lmpiuni -lrt -lC -lc
+ESMF_MOD_INC    =       -I$(ESMF_MODULES)
+# end ESMF paths
+# path to WRF IOAPI external package for ESMF
+ESMF_IO_DIR     =      ../external/io_esmf
+INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io_int -I$(ESMF_IO_DIR) \
+                        -I../frame -I../share -I../phys -I../chem -I../inc $(ESMF_MOD_INC)
+# Override default ESMF dependences since embedded ESMF time manager is not used.
+ESMF_MOD_DEPENDENCE =   $(ESMF_IO_DIR)/module_utility.o
+
+ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+                         CONFIGURE_NETCDF_FLAG \
+                        -DTRIEDNTRUE   \
+			-DLIMIT_ARGS -DESMFIO
+PERL            =       perl
+REGISTRY        =       Registry
+LIB             =       CONFIGURE_NETCDF_LIB_PATH \
+                        -L../external/io_grib1 -lio_grib1 \
+			../frame/module_internal_header_util.o ../frame/pack_utils.o \
+                        -L$(ESMF_IO_DIR) -lwrfio_esmf $(ESMF_LIB_FLAGS)
+LDFLAGS         =       $(FCFLAGS) -byteswapio
+ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
+CPP             =       /lib/cpp -C -P -traditional
+POUND_DEF	=	$(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
+CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) $(ENVCOMPDEFS) $(POUND_DEF)
+AR              =       ar ru
+M4              =       m4
+RANLIB          =       ranlib
+NETCDFPATH	=	CONFIGURE_NETCDF_PATH
+CC_TOOLS        =       $(CC)
+
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_dm.F wrfio_esmf
+
+module_dm.F :
+	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
+
+wrfio_nf : 
+	( cd ../external/io_netcdf ; \
+	  make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCFLAGS) -w" TRADFLAG="-traditional" )
+
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; \
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
+
+wrfio_int : 
+	( cd ../external/io_int ; \
+	  make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS) -w" \
+          TRADFLAG="-traditional" all )
+
+wrfio_esmf :
+	( cd $(ESMF_IO_DIR) ; \
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS) $(ESMF_MOD_INC)" RANLIB="$(RANLIB)" CPP="$(CPP) $(POUND_DEF) " )
+
+# compile these without high optimization to speed compile
+solve_interface.o : solve_interface.F
+module_io_mm5.o : module_io_mm5.F
+module_si_io.o : module_si_io.F
+module_io_wrf.o : module_io_wrf.F
+module_domain.o : module_domain.F
+module_start.o : module_start.F
+module_initialize.o : module_initialize.F
+module_initialize_b_wave.o : module_initialize_b_wave.F
+module_initialize_hill2d_x.o : module_initialize_hill2d_x.F
+module_initialize_quarter_ss.o : module_initialize_quarter_ss.F
+module_initialize_squall2d_x.o : module_initialize_squall2d_x.F
+module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
+module_initialize_real.o : module_initialize_real.F
+module_dm.o : module_dm.F
+start_domain.o : start_domain.F
+mediation_integrate.o : mediation_integrate.F
+module_configure.o : module_configure.F
+
+solve_interface.o                                              \
+module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
+module_start.o module_initialize.o module_initialize_b_wave.o  \
+module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
+module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
+mediation_integrate.o \
+module_configure.o                                             \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 

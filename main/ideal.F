@@ -11,7 +11,7 @@ PROGRAM ideal
 
    USE module_timing
    USE module_wrf_error
-   USE module_comp
+   USE module_utility
 #ifdef DM_PARALLEL
    USE module_dm
 #endif
@@ -59,7 +59,7 @@ PROGRAM ideal
    !  Get the NAMELIST data for input.
 
    CALL init_modules(1)   ! Phase 1 returns after MPI_INIT() (if it is called)
-   CALL WRF_COMP_Initialize( defaultCalendar=WRF_COMP_CAL_GREGORIAN, rc=rc )
+   CALL WRF_UTIL_Initialize( defaultCalendar=WRF_UTIL_CAL_GREGORIAN, rc=rc )
    CALL init_modules(2)   ! Phase 2 resumes after MPI_INIT() (if it is called)
 
 #ifdef DM_PARALLEL
@@ -88,25 +88,24 @@ PROGRAM ideal
                                      parent     = null_domain ,        &
                                      kid        = -1                   )
 
-grid => head_grid
-#ifdef ESMF_HACK
+   grid => head_grid
    ! TBH:  Note that historically, IDEAL did not set up clocks.  These 
-   ! TBH:  are explicit replacements for old default initializations...  
-   CALL WRF_COMP_TimeSet(grid%start_time, YY=1, MM=1, DD=1, H=0, M=0, S=0, rc=rc)
+   ! TBH:  are explicit replacements for old default initializations...  They 
+   ! TBH:  are needed to ensure that time manager calls do not fail due to 
+   ! TBH:  uninitialized clock.  Clean this up later...  
+   CALL WRF_UTIL_TimeSet(grid%start_time, YY=1, MM=1, DD=1, H=0, M=0, S=0, rc=rc)
    grid%stop_time    = grid%start_time
    grid%current_time = grid%start_time
    ! TBH:  Bogus time step value -- clock is never advanced...  
-   CALL WRF_COMP_TimeIntervalSet(grid%step_time, S=180, rc=rc)
-   grid%domain_clock = WRF_COMP_ClockCreate( TimeStep= grid%step_time,  &
-                                         StartTime=grid%start_time, &
-                                         StopTime= grid%stop_time,  &
-                                         rc=rc)
-   CALL wrf_check_error( WRF_COMP_SUCCESS, rc, &
-                         'grid%domain_clock = WRF_COMP_ClockCreate() FAILED', &
+   CALL WRF_UTIL_TimeIntervalSet(grid%step_time, S=180, rc=rc)
+   grid%domain_clock = WRF_UTIL_ClockCreate( TimeStep= grid%step_time,  &
+                                             StartTime=grid%start_time, &
+                                             StopTime= grid%stop_time,  &
+                                             rc=rc )
+   CALL wrf_check_error( WRF_UTIL_SUCCESS, rc, &
+                         'grid%domain_clock = WRF_UTIL_ClockCreate() FAILED', &
                          __FILE__ , &
                          __LINE__  )
-#endif
-
    CALL       wrf_debug ( 100 , 'wrf: calling model_to_grid_config_rec ' )
    CALL model_to_grid_config_rec ( head_grid%id , model_config_rec , config_flags )
    CALL       wrf_debug ( 100 , 'wrf: calling set_scalar_indices_from_config ' )
@@ -125,9 +124,9 @@ grid => head_grid
    WRITE (wrf_err_message,*) &
         'DEBUG assemble_output:  before 1st currTime set, current_date = ',TRIM(current_date)
    CALL wrf_debug ( 150 , wrf_err_message )
-   CALL WRF_COMP_ClockSet(grid%domain_clock, currTime=grid%current_time, rc=rc)
-   CALL wrf_check_error( WRF_COMP_SUCCESS, rc, &
-                            'WRF_COMP_ClockSet(grid%domain_clock) FAILED', &
+   CALL WRF_UTIL_ClockSet(grid%domain_clock, currTime=grid%current_time, rc=rc)
+   CALL wrf_check_error( WRF_UTIL_SUCCESS, rc, &
+                            'WRF_UTIL_ClockSet(grid%domain_clock) FAILED', &
                             __FILE__ , &
                             __LINE__  )
    CALL wrf_clockprint ( 150, grid%domain_clock, &
@@ -148,7 +147,7 @@ grid => head_grid
    CALL med_shutdown_io ( head_grid , config_flags )
    CALL wrf_shutdown
 
-   CALL WRF_COMP_Finalize( rc=rc )
+   CALL WRF_UTIL_Finalize( rc=rc )
 
 END PROGRAM ideal
 

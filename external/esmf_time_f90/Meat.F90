@@ -113,46 +113,6 @@ IMPLICIT NONE
       ENDDO
 END SUBROUTINE initdaym
 
-SUBROUTINE c_esmc_alarmcheckringtime
-END SUBROUTINE c_esmc_alarmcheckringtime
-SUBROUTINE c_esmc_alarmdisable
-END SUBROUTINE c_esmc_alarmdisable
-SUBROUTINE c_esmc_alarmenable
-END SUBROUTINE c_esmc_alarmenable
-SUBROUTINE c_esmc_alarmeq
-END SUBROUTINE c_esmc_alarmeq
-SUBROUTINE c_esmc_alarmgetprevringtime
-END SUBROUTINE c_esmc_alarmgetprevringtime
-SUBROUTINE c_esmc_alarmgetringinterval
-END SUBROUTINE c_esmc_alarmgetringinterval
-SUBROUTINE c_esmc_alarmgetringtime
-END SUBROUTINE c_esmc_alarmgetringtime
-SUBROUTINE c_esmc_alarmgetstoptime
-END SUBROUTINE c_esmc_alarmgetstoptime
-SUBROUTINE c_esmc_alarmisringing
-END SUBROUTINE c_esmc_alarmisringing
-SUBROUTINE c_esmc_alarmprint
-END SUBROUTINE c_esmc_alarmprint
-SUBROUTINE c_esmc_alarmread
-END SUBROUTINE c_esmc_alarmread
-SUBROUTINE c_esmc_alarmset
-END SUBROUTINE c_esmc_alarmset
-SUBROUTINE c_esmc_alarmsetprevringtime
-END SUBROUTINE c_esmc_alarmsetprevringtime
-SUBROUTINE c_esmc_alarmsetringinterval
-END SUBROUTINE c_esmc_alarmsetringinterval
-SUBROUTINE c_esmc_alarmsetringtime
-END SUBROUTINE c_esmc_alarmsetringtime
-SUBROUTINE c_esmc_alarmsetstoptime
-END SUBROUTINE c_esmc_alarmsetstoptime
-SUBROUTINE c_esmc_alarmturnoff
-END SUBROUTINE c_esmc_alarmturnoff
-SUBROUTINE c_esmc_alarmturnon
-END SUBROUTINE c_esmc_alarmturnon
-SUBROUTINE c_esmc_alarmvalidate
-END SUBROUTINE c_esmc_alarmvalidate
-SUBROUTINE c_esmc_alarmwrite
-END SUBROUTINE c_esmc_alarmwrite
 
 SUBROUTINE compute_dayinyear(YR,MM,DD,dayinyear)
 USE meat
@@ -931,50 +891,6 @@ SUBROUTINE c_esmc_calendarvalidate
 END SUBROUTINE c_esmc_calendarvalidate
 SUBROUTINE c_esmc_calendarwrite
 END SUBROUTINE c_esmc_calendarwrite
-SUBROUTINE c_esmc_clockaddalarm
-END SUBROUTINE c_esmc_clockaddalarm
-SUBROUTINE c_esmc_clockadvance
-END SUBROUTINE c_esmc_clockadvance
-SUBROUTINE c_esmc_clockgetadvancecount
-END SUBROUTINE c_esmc_clockgetadvancecount
-SUBROUTINE c_esmc_clockgetalarmlist
-END SUBROUTINE c_esmc_clockgetalarmlist
-SUBROUTINE c_esmc_clockgetcurrsimtime
-END SUBROUTINE c_esmc_clockgetcurrsimtime
-SUBROUTINE c_esmc_clockgetcurrtime
-END SUBROUTINE c_esmc_clockgetcurrtime
-SUBROUTINE c_esmc_clockgetnumalarms
-END SUBROUTINE c_esmc_clockgetnumalarms
-SUBROUTINE c_esmc_clockgetprevsimtime
-END SUBROUTINE c_esmc_clockgetprevsimtime
-SUBROUTINE c_esmc_clockgetprevtime
-END SUBROUTINE c_esmc_clockgetprevtime
-SUBROUTINE c_esmc_clockgetreftime
-END SUBROUTINE c_esmc_clockgetreftime
-SUBROUTINE c_esmc_clockgetstarttime
-END SUBROUTINE c_esmc_clockgetstarttime
-SUBROUTINE c_esmc_clockgetstoptime
-END SUBROUTINE c_esmc_clockgetstoptime
-SUBROUTINE c_esmc_clockgettimestep
-END SUBROUTINE c_esmc_clockgettimestep
-SUBROUTINE c_esmc_clockisstoptime
-END SUBROUTINE c_esmc_clockisstoptime
-SUBROUTINE c_esmc_clockprint
-END SUBROUTINE c_esmc_clockprint
-SUBROUTINE c_esmc_clockread
-END SUBROUTINE c_esmc_clockread
-SUBROUTINE c_esmc_clockset
-END SUBROUTINE c_esmc_clockset
-SUBROUTINE c_esmc_clocksetcurrtime
-END SUBROUTINE c_esmc_clocksetcurrtime
-SUBROUTINE c_esmc_clocksettimestep
-END SUBROUTINE c_esmc_clocksettimestep
-SUBROUTINE c_esmc_clocksynctowallclock
-END SUBROUTINE c_esmc_clocksynctowallclock
-SUBROUTINE c_esmc_clockvalidate
-END SUBROUTINE c_esmc_clockvalidate
-SUBROUTINE c_esmc_clockwrite
-END SUBROUTINE c_esmc_clockwrite
 SUBROUTINE c_esmc_timeget
 END SUBROUTINE c_esmc_timeget
 SUBROUTINE c_esmc_timegetcalendarcopy

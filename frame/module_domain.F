@@ -30,7 +30,7 @@ MODULE module_domain
    USE module_state_description
    USE module_configure
    USE module_wrf_error
-   USE module_comp
+   USE module_utility
 
    CHARACTER (LEN=80) program_name
 
@@ -123,13 +123,18 @@ MODULE module_domain
                     sp21y,  ep21y,  sp22y,  ep22y,                        &
                     sm31y,  em31y,  sm32y,  em32y,  sm33y,  em33y,        &
                     sm21y,  em21y,  sm22y,  em22y
-      Type(WRF_COMP_Clock)                                    :: domain_clock
-      Type(WRF_COMP_Time)                                     :: start_time, stop_time, current_time
-      Type(WRF_COMP_Time)                                     :: start_subtime, stop_subtime
-      Type(WRF_COMP_Time)                                     :: this_bdy_time, next_bdy_time
-      Type(WRF_COMP_Time)                                     :: this_emi_time, next_emi_time
-      Type(WRF_COMP_TimeInterval) :: step_time
-      Type(WRF_COMP_Alarm), pointer :: alarms(:)
+      Type(WRF_UTIL_Clock), POINTER                           :: domain_clock
+      Type(WRF_UTIL_Time)                                     :: start_time, stop_time, current_time
+      Type(WRF_UTIL_Time)                                     :: start_subtime, stop_subtime
+      Type(WRF_UTIL_Time)                                     :: this_bdy_time, next_bdy_time
+      Type(WRF_UTIL_Time)                                     :: this_emi_time, next_emi_time
+      Type(WRF_UTIL_TimeInterval) :: step_time
+      Type(WRF_UTIL_Alarm), pointer :: alarms(:)
+! This awful hackery accounts for the fact that ESMF2.1.0+ alarms cannot tell 
+! us if they have ever been created or not.  So, we have to keep track of this 
+! ourselves to avoid destroying an alarm that has never been created!  Rip this 
+! out once ESMF has useful introspection here...  
+      LOGICAL, pointer :: alarms_created(:)
 
    END TYPE domain
 
@@ -777,7 +782,12 @@ CONTAINS
       NULLIFY  (new_grid%j_start)
       NULLIFY  (new_grid%i_end)
       NULLIFY  (new_grid%j_end)
+      ALLOCATE( new_grid%domain_clock )
       ALLOCATE( new_grid%alarms( MAX_WRF_ALARMS ) )    ! initialize in setup_timekeeping
+      ALLOCATE( new_grid%alarms_created( MAX_WRF_ALARMS ) )
+      DO i = 1, MAX_WRF_ALARMS
+        new_grid%alarms_created( i ) = .FALSE.
+      ENDDO
 
 #ifdef MOVE_NESTS
       new_grid%xi = -1.0
@@ -1112,6 +1122,7 @@ CONTAINS
 
       TYPE(domain) , POINTER          :: grid
       LOGICAL                         :: found
+      INTEGER                         :: alarmid
 
       !  Initializations required to start the routine.
 
@@ -1128,6 +1139,19 @@ CONTAINS
             found = .TRUE.
             old_grid%next => grid%next
             CALL dealloc_space_field ( grid )
+            DEALLOCATE( grid%parents )
+            DEALLOCATE( grid%nests )
+            ! clean up time manager bits
+            CALL WRF_UTIL_ClockDestroy( grid%domain_clock )
+            DO alarmid = 1, MAX_WRF_ALARMS
+              IF ( grid%alarms_created( alarmid ) ) THEN
+                CALL WRF_UTIL_AlarmDestroy( grid%alarms( alarmid ) )
+                grid%alarms_created( alarmid ) = .FALSE.
+              ENDIF
+            ENDDO
+            DEALLOCATE( grid%alarms )
+            DEALLOCATE( grid%alarms_created )
+            DEALLOCATE( grid%domain_clock )
             DEALLOCATE(grid)
             EXIT find_grid
          END IF

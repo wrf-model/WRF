@@ -1,10 +1,20 @@
+
+!$$$here...  TBH:  remove duplication between ext_esmf_read_field and 
+!$$$here...  TBH:  ext_esmf_write_field
+
+!$$$here...  TBH:  how to deal with time?  (via current ESMF_Clock)
+!$$$here...  TBH:  to begin, use it as an error check!  
+
+!$$$here...  TBH:  where is all this destroyed?  "close"?  
+
+
 !--- read_field
 SUBROUTINE ext_esmf_read_field ( DataHandle , DateStr , VarName , Field , FieldType , Comm , IOComm, &
-                            DomainDesc , MemoryOrder , Stagger , DimNames ,              &
-                            DomainStart , DomainEnd ,                                    &
-                            MemoryStart , MemoryEnd ,                                    &
-                            PatchStart , PatchEnd ,                                      &
-                            Status )
+                                 DomainDesc , MemoryOrder , Stagger , DimNames ,              &
+                                 DomainStart , DomainEnd ,                                    &
+                                 MemoryStart , MemoryEnd ,                                    &
+                                 PatchStart , PatchEnd ,                                      &
+                                 Status )
   USE module_ext_esmf
   IMPLICIT NONE
   INTEGER       ,INTENT(IN)    :: DataHandle 
@@ -23,285 +33,195 @@ SUBROUTINE ext_esmf_read_field ( DataHandle , DateStr , VarName , Field , FieldT
   REAL          ,INTENT(INOUT) :: Field(*)
   integer       ,intent(out)   :: Status
   ! Local declarations
-  integer ims,ime,jms,jme,kms,kme
+  INTEGER :: ims,ime,jms,jme,kms,kme
+  INTEGER :: ips,ipe,jps,jpe,kps,kpe
+  TYPE(ESMF_State), POINTER :: importstate
+  TYPE(ESMF_Field) :: tmpField
+  TYPE(ESMF_Array) :: tmpArray
+  TYPE(ESMF_ArraySpec) :: arrayspec
+  TYPE(ESMF_DataKind) :: esmf_kind
+  TYPE(ESMF_DataType) :: esmf_type
+  TYPE(ESMF_RelLoc) :: horzRelloc
+  REAL(ESMF_KIND_R4), POINTER :: data_esmf_real_ptr(:,:)
+  INTEGER(ESMF_KIND_I4), POINTER :: data_esmf_int_ptr(:,:)
+  INTEGER :: esmf_rank
+  ! esmf_counts is redundant.  remove it as soon as ESMF_ArrayCreate no 
+  ! longer requires it
+  INTEGER :: esmf_counts(3)
+  INTEGER :: rc
+  LOGICAL, EXTERNAL :: has_char
+  character*256 mess
+
+  IF ( .NOT. int_valid_handle( DataHandle ) ) THEN
+    CALL wrf_error_fatal("ext_esmf_read_field: invalid data handle" )
+  ENDIF
+  IF ( .NOT. int_handle_in_use( DataHandle ) ) THEN
+    CALL wrf_error_fatal("ext_esmf_read_field: DataHandle not opened" )
+  ENDIF
+  IF ( .NOT. opened_for_read( DataHandle ) ) THEN
+    CALL wrf_error_fatal("ext_esmf_read_field: DataHandle not opened for read" )
+  ENDIF
+
+write(mess,*)'ext_esmf_read_field ',DataHandle, TRIM(DateStr), TRIM(VarName)
+call wrf_debug( 300, mess )
+
+  IF      ( FieldType .EQ. WRF_REAL ) THEN
+    esmf_type = ESMF_DATA_REAL
+    esmf_kind = ESMF_R4
+  ELSE IF ( FieldType .EQ. WRF_DOUBLE ) THEN
+!    esmf_type = ESMF_DATA_REAL
+!    esmf_kind = ESMF_R8
+    CALL wrf_error_fatal( 'ext_esmf_read_field, WRF_DOUBLE not yet supported')
+  ELSE IF ( FieldType .EQ. WRF_INTEGER ) THEN
+    esmf_type = ESMF_DATA_INTEGER
+    esmf_kind = ESMF_I4
+  ELSE IF ( FieldType .EQ. WRF_LOGICAL ) THEN
+    CALL wrf_error_fatal( 'ext_esmf_read_field, WRF_LOGICAL not yet supported')
+  ENDIF
 
   ims = MemoryStart(1) ; ime = MemoryEnd(1)
   jms = MemoryStart(2) ; jme = MemoryEnd(2)
   kms = MemoryStart(3) ; kme = MemoryEnd(3)
 
-!$$$here...  This layer used to be needed a few years ago.  Is it still needed?  Test!  
-  CALL ext_esmf_read_fieldi ( DataHandle, DateStr, VarName, Field, FieldType, Comm, IOComm, &
-                              DomainDesc , MemoryOrder , Stagger , DimNames ,               &
-                              DomainStart , DomainEnd ,                                     &
-                              ims, ime, jms, jme, kms, kme,                                 &
-                              PatchStart , PatchEnd ,                                       &
-                              Status )
+  ips = PatchStart(1) ; ipe = PatchEnd(1)
+  jps = PatchStart(2) ; jpe = PatchEnd(2)
+  kps = PatchStart(3) ; kpe = PatchEnd(3)
 
-END SUBROUTINE ext_esmf_read_field
-
-
-
-SUBROUTINE ext_esmf_read_fieldi ( DataHandle, DateStr, VarName, Field, FieldType, Comm, IOComm, &
-                                  DomainDesc , MemoryOrder , Stagger , DimNames ,               &
-                                  DomainStart , DomainEnd ,                                     &
-                                  ims, ime, jms, jme, kms, kme,                                 &
-                                  PatchStart , PatchEnd ,                                       &
-                                  Status )
-  USE module_ext_esmf
-  IMPLICIT NONE
-  INTEGER       ,INTENT(IN)    :: DataHandle 
-  CHARACTER*(*) ,intent(inout) :: DateStr
-  CHARACTER*(*) ,intent(inout) :: VarName
-  integer       ,intent(inout) :: FieldType
-  integer       ,intent(inout) :: Comm
-  integer       ,intent(inout) :: IOComm
-  integer       ,intent(inout) :: DomainDesc
-  character*(*) ,intent(inout) :: MemoryOrder
-  character*(*) ,intent(inout) :: Stagger
-  character*(*) ,intent(inout) :: DimNames(*)
-  integer       ,intent(inout) :: DomainStart(*), DomainEnd(*)
-  integer       ,intent(inout) :: MemoryStart(*), MemoryEnd(*)
-  integer       ,intent(inout) :: PatchStart(*),  PatchEnd(*)
-  REAL          ,INTENT(INOUT) :: Field( ims:ime, jms:jme, kms:kme )
-  integer       ,intent(out)   :: Status
-
-!local
-!$$$here...  clean up
-  INTEGER                        :: locDataHandle
-  CHARACTER*132                  :: locDateStr
-  CHARACTER*132                  :: locVarName
-  integer                        :: locFieldType
-  integer                        :: locComm
-  integer                        :: locIOComm
-  integer                        :: locDomainDesc
-  character*132                  :: locMemoryOrder
-  character*132                  :: locStagger
-  character*132 , dimension (3)  :: locDimNames
-  integer ,dimension(3)          :: locDomainStart, locDomainEnd
-  integer ,dimension(3)          :: locMemoryStart, locMemoryEnd
-  integer ,dimension(3)          :: locPatchStart,  locPatchEnd
-  real, allocatable, dimension(:,:) :: temp
-  doubleprecision, allocatable, dimension(:,:) :: dtemp
-  integer gSize(2)
-  INTEGER, EXTERNAL :: cast_to_int
-integer myproc
-
-  character*256 mess
-  integer ips,ipe,jps,jpe
-  integer idex,ierr,i,j
-
-  integer ii,jj,kk,myrank,ierr, mcel_type
-  real*8 data_time
-  character*14 timestr
-
-  INTEGER inttypesize, realtypesize, istat, code
-
-  IF ( .NOT. int_valid_handle( DataHandle ) ) THEN
-    CALL wrf_error_fatal("io_esmf.F90: ext_esmf_read_fieldi: invalid data handle" )
-  ENDIF
-  IF ( .NOT. int_handle_in_use( DataHandle ) ) THEN
-    CALL wrf_error_fatal("io_esmf.F90: ext_esmf_read_fieldi: DataHandle not opened" )
+  ! For now, treat all arrays as 2D...  
+!$$$ Eventually, use ../io_netcdf subroutines Transpose() and reorder() 
+!$$$ (and etc.) to handle general array ranks and index orderings.  
+!$$$ Some copies of these exist in ../../frame/module_io.F.  
+!$$$ Then use ESMF_ArrayDataMap class to handle index mapping.  
+  esmf_rank = 2
+  IF ( kms /= kme ) THEN
+    CALL wrf_error_fatal( 'ext_esmf_read_field:  rank > 2 not yet supported')
   ENDIF
 
-  ips = PatchStart(1) ; ipe = PatchEnd(1) 
-  jps = PatchStart(2) ; jpe = PatchEnd(2) 
-
-write(mess,*)'ext_esmf_read_fieldi ',DataHandle, TRIM(DateStr), TRIM(VarName)
+write(mess,*) ' ext_esmf_read_field: okay_to_read: ', DataHandle, okay_to_read(DataHandle)
 call wrf_debug( 300, mess )
 
-  inttypesize = itypesize
-  realtypesize = rtypesize
-  IF      ( FieldType .EQ. WRF_REAL ) THEN
-    typesize = rtypesize
-    mcel_type = ESMF_KIND_R4
-  ELSE IF ( FieldType .EQ. WRF_DOUBLE ) THEN
-    mcel_type = ESMF_KIND_R8
-!$$$here...  what to do about typesize?  
-  ELSE IF ( FieldType .EQ. WRF_INTEGER ) THEN
-    typesize = itypesize
-    mcel_type = ESMF_KIND_I4
-  ELSE IF ( FieldType .EQ. WRF_LOGICAL ) THEN
-    CALL wrf_error_fatal( 'ext_esmf_write_field, WRF_LOGICAL not yet supported')
-  ENDIF
+  ! case 1: the file is opened for read but not committed ("training")
+  IF ( .NOT. okay_to_read( DataHandle ) )  THEN
 
-  ! case 1: the file is opened but not commited for read
-write(mess,*) ' read_field: okay_to_read: ', DataHandle, okay_to_read(DataHandle)
-call wrf_debug( 300, mess )
+    ! Training:  build the ESMF import state
 
-!$$$here...  need to check for opened_for_read( DataHandle ) ?  
-
-!$$$
-!$$$  What's the best way to get all of this @#$% in and out via top-of-model 
-!$$$  interfaces?  Specifically, how will ESMF know what importState to pass 
-!$$$  in given its ignorance of the WRF Registry?  Looks like we'll need to 
-!$$$  have the read "training" bits occur in a phase prior to the first phase 
-!$$$  that has coupling.  Then we can "export" an importState.  exportState 
-!$$$  should not be an issue since WRF is responsible for its content.  Of 
-!$$$  course, if this can be done for importState, then it can be done for 
-!$$$  exportState too, if that is convenient.  
-!$$$
-!$$$  NOTE:  Point to the current importState.  
-!$$$         Then copy-in matching VarName's during each non-training call.  
-!$$$         DUE TO CICO, it just does not make sense to hand ESMF 
-!$$$         a FORTRAN POINTER to Field.  
-!$$$         How to handle a missing VarName?  
-!$$$
-
-  if ( .not. okay_to_read( DataHandle ) )  then
-
-!$$$here...
-write(mess,*)'ext_esmf_read_fieldi tr addSources ', TRIM(VarName), mcel_type
-call wrf_debug( 300, mess )
-        CALL addSources ( open_file_descriptors(1,DataHandle), MCEL_SERVER,  &
-  &       TRIM(VarName),1, mcel_type, ierr )
-        IF ( ierr .NE. 0 ) CALL wrf_error_fatal("ext_esmf_write_field: addSources")
-write(mess,*)'ext_esmf_read_fieldi tr addOutputs ', TRIM(VarName), mcel_type
-call wrf_debug( 300, mess )
-        CALL addOutputs ( open_file_descriptors(1,DataHandle),   &
-  &       TRIM(VarName),1, mcel_type, ierr )
-! add this field to the list that we know something about
-        ListOfFields(DataHandle) = TRIM(ListOfFields(DataHandle)) // ',' // TRIM(VarName)
-        IF ( ierr .NE. 0 ) CALL wrf_error_fatal("ext_esmf_write_field: addOutputs")
-!$$$here...  ???
-      ! sieve the fields coming in and grab the ones we need for geo registration
-      !IF ( TRIM(VarName) .EQ. TRIM(LANDMASK_I(DataHandle)) ) THEN
-      !  IF ( ALLOCATED(mask) ) THEN
-      !    DEALLOCATE(mask)
-      !  ENDIF
-      !  ALLOCATE(mask(ips:ipe,jps:jpe))
-      !  IF ( FieldType .EQ. WRF_INTEGER ) THEN
-      !    CALL copy_field_to_cache_int ( Field, mask, ips, ipe, jps, jpe, ims, ime, jms, jme )
-      !  ELSE IF ( FieldType .EQ. WRF_REAL ) THEN
-      !    ALLOCATE(rmask(ips:ipe,jps:jpe))
-      !    CALL copy_field_to_cache_r2r ( Field, rmask, ips, ipe, jps, jpe, ims, ime, jms, jme )
-      !    mask = NINT( rmask )
-      !    DEALLOCATE(rmask)
-      !  ELSE IF (FieldType .EQ. WRF_DOUBLE ) THEN
-      !    ALLOCATE(dmask(ips:ipe,jps:jpe))
-      !    CALL copy_field_to_cache_d2d ( Field, dmask, ips, ipe, jps, jpe, ims, ime, jms, jme )
-      !    mask = NINT( dmask )
-      !    DEALLOCATE(dmask)
-      !  ENDIF
-      !ENDIF
+    ! First, build the ESMF_Grid for this DataHandle, if it does not 
+    ! already exist
+    CALL create_grid( DataHandle, MemoryOrder, Stagger, &
+                      DomainStart(1:3), DomainEnd(1:3), &
+                      MemoryStart(1:3), MemoryEnd(1:3), &
+                      PatchStart(1:3), PatchEnd(1:3) )
+    ! Grab the current importState and add to it...
+    CALL ESMF_ImportStateGetCurrent( importstate, rc )
+    IF ( rc /= ESMF_SUCCESS ) THEN
+      CALL wrf_error_fatal("ext_esmf_read_field, training:  ESMF_ImportStateGetCurrent failed" )
+    ENDIF
+    ! Build ESMF objects...  
+    ! Build an ESMF_ArraySpec
+    CALL ESMF_ArraySpecSet(arrayspec, rank=esmf_rank, type=esmf_type, &
+                                      kind=esmf_kind, rc=rc)
+    IF ( rc /= ESMF_SUCCESS ) THEN
+      CALL wrf_error_fatal("ext_esmf_read_field:  ESMF_ArraySpecSet failed" )
+    ENDIF
+    ! Build an ESMF_Array
+    ! Implementation note:  since we do not yet have full control over how 
+    ! ESMF chooses to lay out a "patch" within "memory", we must copy by 
+    ! hand.  (Reasons include lack of support in ESMF for asymmetric halos, 
+    ! addition of "extra" rows/columns to optimize alignment on some machines, 
+    ! handling of periodic boundary conditions, etc.)  Thus, there 
+    ! is no point in using larger "memory" sizes to build the array -- patch 
+    ! is fine.  Also, since we must copy anyway, might as well let ESMF manage 
+    ! the memory for simplicity.  
+!$$$ Once ESMF can match WRF memory-patch mapping, replace this with a more 
+!$$$ efficient solution that does not require a copy.  
+    ! esmf_counts is redundant.  Remove it as soon as ESMF_ArrayCreate no 
+    ! longer requires it.  
+    esmf_counts(1:3) = PatchEnd(1:3) - PatchStart(1:3) + 1
+    tmpArray = ESMF_ArrayCreate(arrayspec, counts=esmf_counts, &
+                                lbounds=PatchStart(1:3),       &
+                                ubounds=PatchEnd(1:3), rc=rc)
+    ! Determine grid staggering for this Field
+    IF ( has_char( Stagger, 'x' ) .AND. has_char( Stagger, 'y' ) ) THEN
+      CALL wrf_error_fatal( &
+        "ext_esmf_read_field:  ESMF does not yet support XY staggering for C-grid" )
+    ELSE IF ( has_char( Stagger, 'x' ) ) THEN
+      horzrelloc=ESMF_CELL_WFACE
+    ELSE IF ( has_char( Stagger, 'y' ) ) THEN
+      horzrelloc=ESMF_CELL_SFACE
+    ELSE
+      horzrelloc=ESMF_CELL_CENTER
+    ENDIF
+    ! Build an ESMF_Field
+    ! Note:  though it is counter-intuitive, ESMF uses 
+    ! shallow-copy-masquerading-as-reference to implement the 
+    ! pseudo-equivalent of POINTER assignment under-the-hood.  What this means 
+    ! here is that it is OK to pass deep object tmpArray into 
+    ! ESMF_FieldCreate() and then return from this subroutine.  Even though 
+    ! tmpArray goes out of scope, it is OK.  However, if tmpArray were to be 
+    ! modified after this call, the changes would not be guaranteed to always 
+    ! appear in tmpField.  It works that way now, but ESMF Core team has 
+    ! plans that may make it break in the future.  Build-it, attach-it, 
+    ! flush-it will work.  Build-it, attach-it, modify-it, flush-it may not 
+    ! always work.  
+    ! "Pie, pie and a fox..."  
+    ! Note:  unique Field name is required by ESMF_StateAddField().  
+    tmpField = ESMF_FieldCreate( grid( DataHandle )%ptr, tmpArray,          &
+                                 copyflag=ESMF_DATA_REF,                    &
+                                 horzrelloc=horzrelloc, name=TRIM(VarName), &
+                                 rc=rc )
+    IF ( rc /= ESMF_SUCCESS ) THEN
+      CALL wrf_error_fatal("ext_esmf_read_field:  ESMF_FieldCreate failed" )
+    ENDIF
+    ! Add the Field to the import state...  
+!$$$here...  for now, just build ESMF_Fields and stuff them in
+!$$$here...  later, use a single ESMF_Bundle
+    CALL ESMF_StateAddField( importstate, tmpField, rc=rc )
+    IF ( rc /= ESMF_SUCCESS ) THEN
+      CALL wrf_error_fatal("ext_esmf_read_field:  ESMF_StateAddField failed" )
+    ENDIF
 
   ! case 2: opened for read and committed
-  else if ( okay_to_read( DataHandle ) )  then
+  ELSE IF ( okay_to_read( DataHandle ) )  THEN
 
-write(mess,*)'ext_esmf_read_fieldi ok ', Trim(VarName)
-call wrf_debug( 300, mess )
-write(mess,*)'ext_esmf_read_fieldi LAT_R ', Trim(LAT_R(DataHandle))
-call wrf_debug( 300, mess )
-write(mess,*)'ext_esmf_read_fieldi LON_R ', Trim(LON_R(DataHandle))
-call wrf_debug( 300, mess )
-write(mess,*)'ext_esmf_read_fieldi LANDMASK_I ', Trim(LANDMASK_I(DataHandle))
-call wrf_debug( 300, mess )
-    IF ( TRIM(VarName) .NE. TRIM(LAT_R(DataHandle)) .AND. TRIM(VarName) .NE. TRIM(LON_R(DataHandle)) .AND. &
-         TRIM(VarName) .NE. TRIM(LANDMASK_I(DataHandle)) ) THEN
-      IF ( .NOT. mcel_finalized( DataHandle ) ) THEN
-        IF ( ALLOCATED( xlat ) .AND. ALLOCATED( xlong ) ) THEN
-write(mess,*)'ext_esmf_read_fieldi ok setlocationsXY ', Trim(VarName)
-call wrf_debug( 300, mess )
-          CALL setLocationsXY( open_file_descriptors(2,DataHandle), xlong, xlat, ierr )
-          IF ( ierr .NE. 0 ) CALL wrf_error_fatal( "ext_esmf_open_read_field: setLocationsXY" )
-        ELSE
-          CALL wrf_error_fatal( "ext_esmf_read_fieldi:noLocationsXY or dx/dy")
-        ENDIF
-        IF ( ALLOCATED(mask) ) THEN
-          CALL setMask ( open_file_descriptors(2,DataHandle) , mask, ierr )
-          IF ( ierr .NE. 0 ) CALL wrf_error_fatal("ext_esmf_read_fieldi: setMask")
-        ENDIF
-write(mess,*)'ext_esmf_read_fieldi ok setoutputgrid ', Trim(VarName)
-call wrf_debug( 300, mess )
-        CALL setoutputgrid ( open_file_descriptors(1,DataHandle), open_file_descriptors(2,DataHandle), ierr )
-        IF ( ierr .NE. 0 ) CALL wrf_error_fatal("ext_esmf_read_fieldi: setoutputgrid")
-write(mess,*)'ext_esmf_read_fieldi ok finalizefilters ', Trim(VarName)
-call wrf_debug( 300, mess )
-        CALL finalizefilters ( open_file_descriptors(1,DataHandle), ierr )
-        IF ( ierr .GT. 0 .and. ierr .ne. 3 ) THEN
-           write(mess,*)'ext_esmf_open_for_read_field: finalizefilters ierr=',ierr
-           CALL wrf_error_fatal( TRIM(mess) )
-        ENDIF
-        mcel_finalized( DataHandle ) = .TRUE.
-      ENDIF
-
-      ! a little string munging, assumes that we're getting an ISO compliant date string
-      ! basically removing the delimeters
-
-      timestr = "              "
-      timestr(1:4)   = DateStr(1:4)    ! YYYY
-      timestr(5:6)   = DateStr(6:7)    ! MM
-      timestr(7:8)   = DateStr(9:10)   ! DD
-      timestr(9:10)  = DateStr(12:13)  ! HH
-      timestr(11:12) = DateStr(15:16)  ! MM
-      timestr(13:14) = DateStr(18:19)  ! SS
-
-      CALL YYYYMMDDHHMMSS2SECS( timestr, data_time )
-
-write(mess,*)'TRIM( VarName ) ',TRIM( VarName )
-call wrf_debug( 300, mess )
-write(mess,*)'TRIM( ListOfFields(DataHandle) ) ',TRIM( ListOfFields(DataHandle) )
-call wrf_debug( 300, mess )
-write(mess,*)'INDEX( TRIM( ListOfFields(DataHandle) ), TRIM( VarName ) )', INDEX( TRIM( ListOfFields(DataHandle) ), TRIM( VarName ) )
-call wrf_debug( 300, mess )
-
-      IF ( INDEX( TRIM( ListOfFields(DataHandle) ), TRIM( VarName ) ) .EQ. 0 ) THEN
-        write(mess,*)'ext_esmf_open_for_read_field: ',TRIM( VarName ),' is not a field set up for DataHandle ', DataHandle
-        CALL wrf_error_fatal( TRIM(mess) )
-      ENDIF
-
-      IF ( FieldType .EQ. WRF_REAL ) THEN
-        ALLOCATE(temp(ips:ipe,jps:jpe))
-write(mess,*)'ext_esmf_read_fieldi opened_for_update(DataHandle) ',opened_for_update(DataHandle)
-call wrf_debug( 300, mess )
-        IF ( opened_for_update(DataHandle) ) THEN
-          CALL copy_field_to_cache_r2r ( Field, temp, ips, ipe, jps, jpe, ims, ime, jms, jme )
-          call getData(open_file_descriptors(1,DataHandle),TRIM(VarName),temp,                 &
-            data_time,data_time,MCEL_TIMECENT_POINT,usemask(DataHandle),                       &
-            MCEL_FETCHPOLICY_KEEPBLOCK,ierr)
-        ELSE
-! the difference is there is no KEEP in the FETCHPOLICY
-write(mess,*)'ext_esmf_read_fieldi ok getData ', Trim(VarName)
-call wrf_debug( 300, mess )
-          call getData(open_file_descriptors(1,DataHandle),TRIM(VarName),temp,                 &
-            data_time,data_time,MCEL_TIMECENT_POINT,usemask(DataHandle),                      &
-            MCEL_FETCHPOLICY_BLOCK,ierr)
-write(mess,*)'ext_esmf_read_fieldi ok getData returns ',ierr, Trim(VarName)
-call wrf_debug( 300, mess )
-        ENDIF
-        CALL copy_cache_to_field_r2r ( temp, Field, ips, ipe, jps, jpe, ims, ime, jms, jme )
-        DEALLOCATE(temp)
-      ELSE IF ( FieldType .EQ. WRF_DOUBLE ) THEN
-
-        ALLOCATE(dtemp(ips:ipe,jps:jpe))
-write(mess,*)'ext_esmf_read_fieldi opened_for_update(DataHandle) ',opened_for_update(DataHandle)
-call wrf_debug( 300, mess )
-        IF ( opened_for_update(DataHandle) ) THEN
-          CALL copy_field_to_cache_d2d ( Field, dtemp, ips, ipe, jps, jpe, ims, ime, jms, jme )
-write(mess,*)'ext_esmf_read_fieldi ok getData returns ',ierr, Trim(VarName)
-call wrf_debug( 300, mess )
-          call getData(open_file_descriptors(1,DataHandle),TRIM(VarName),dtemp,                 &
-            data_time,data_time,MCEL_TIMECENT_POINT,usemask(DataHandle),                       &
-            MCEL_FETCHPOLICY_KEEPBLOCK,ierr)
-        ELSE
-! the difference is there is no KEEP in the FETCHPOLICY
-write(mess,*)'ext_esmf_read_fieldi ok getData ', Trim(VarName)
-call wrf_debug( 300, mess )
-          call getData(open_file_descriptors(1,DataHandle),TRIM(VarName),dtemp,                 &
-            data_time,data_time,MCEL_TIMECENT_POINT,usemask(DataHandle),                      &
-            MCEL_FETCHPOLICY_BLOCK,ierr)
-write(mess,*)'ext_esmf_read_fieldi ok getData returns ',ierr, Trim(VarName)
-call wrf_debug( 300, mess )
-        ENDIF
-        CALL copy_cache_to_field_d2d ( dtemp, Field, ips, ipe, jps, jpe, ims, ime, jms, jme )
-
-        DEALLOCATE(dtemp)
-
-      ENDIF
+    ! read:  extract data from the ESMF import state
+    ! Grab the current importState
+    CALL ESMF_ImportStateGetCurrent( importstate, rc )
+    IF ( rc /= ESMF_SUCCESS ) THEN
+      CALL wrf_error_fatal("ext_esmf_read_field:  ESMF_ImportStateGetCurrent failed" )
     ENDIF
-  endif
+    ! grab the Field
+    CALL ESMF_StateGetField( importstate, fieldName=TRIM(VarName), &
+                             field=tmpfield, rc=rc )
+    IF ( rc /= ESMF_SUCCESS ) THEN
+      CALL wrf_error_fatal("ext_esmf_read_field:  ESMF_StateGetField failed" )
+    ENDIF
+
+    ! grab a pointer to the import state data and copy data into Field
+    IF      ( FieldType .EQ. WRF_REAL ) THEN
+      CALL ESMF_FieldGetDataPointer( tmpField, data_esmf_real_ptr, &
+                                     ESMF_DATA_REF, rc=rc )
+      IF ( rc /= ESMF_SUCCESS ) THEN
+        CALL wrf_error_fatal("ext_esmf_read_field:  ESMF_FieldGetDataPointer(r4) failed" )
+      ENDIF
+      CALL ext_esmf_extract_data_real( data_esmf_real_ptr, Field,    &
+                                       ips, ipe, jps, jpe, kps, kpe, &
+                                       ims, ime, jms, jme, kms, kme )
+    ELSE IF ( FieldType .EQ. WRF_INTEGER ) THEN
+      CALL ESMF_FieldGetDataPointer( tmpField, data_esmf_int_ptr, &
+                                     ESMF_DATA_REF, rc=rc )
+      IF ( rc /= ESMF_SUCCESS ) THEN
+        CALL wrf_error_fatal("ext_esmf_read_field:  ESMF_FieldGetDataPointer(i4) failed" )
+      ENDIF
+      CALL ext_esmf_extract_data_int( data_esmf_int_ptr, Field,     &
+                                      ips, ipe, jps, jpe, kps, kpe, &
+                                      ims, ime, jms, jme, kms, kme )
+    ENDIF
+
+  ENDIF
 
   Status = 0
 
   RETURN
 
-END SUBROUTINE ext_esmf_read_fieldi
+END SUBROUTINE ext_esmf_read_field
+

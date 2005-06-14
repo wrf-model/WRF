@@ -9,6 +9,7 @@ MODULE ESMF_Mod
    USE esmf_fractionmod
    USE esmf_timeintervalmod
    USE esmf_timemod
+   USE esmf_alarmclockmod
    USE meat
    USE esmf_stubs   ! add new dummy interfaces and typedefs here as needed
 #include <ESMF_TimeMgr.inc>

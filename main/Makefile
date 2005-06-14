@@ -16,6 +16,10 @@ $(SOLVER)_wrf : wrf.o
 	$(RANLIB) libwrflib.a
 	$(LD) -o wrf.exe $(LDFLAGS) wrf.o libwrflib.a $(LIB)
 
+$(SOLVER)_wrf_ESMFApp : wrf_ESMFApp.o
+	$(RANLIB) libwrflib.a
+	$(LD) -o wrf_ESMFApp.exe $(LDFLAGS) wrf_ESMFApp.o libwrflib.a $(LIB)
+
 $(SOLVER)_ideal : module_initialize ideal.o
 	$(RANLIB) libwrflib.a
 	$(LD) -o ideal.exe $(LDFLAGS) ideal.o ../dyn_$(SOLVER)/module_initialize_$(IDEAL_CASE).o libwrflib.a $(LIB)
@@ -67,7 +71,6 @@ convert_nmm.o: \
 	../frame/module_configure.o \
 	../frame/module_timing.o \
 	../frame/module_dm.o \
-	../share/module_wrf_comp_super.o \
 	../share/module_bc.o \
 	../share/module_io_domain.o \
 	$(ESMF_MOD_DEPENDENCE)
@@ -79,7 +82,6 @@ ideal.o: \
 	../frame/module_configure.o \
 	../frame/module_timing.o \
 	../frame/module_dm.o \
-	../share/module_wrf_comp_super.o \
 	../share/module_io_domain.o \
 	../dyn_$(SOLVER)/$(CASE_MODULE) \
 	$(ESMF_MOD_DEPENDENCE)
@@ -91,7 +93,6 @@ ndown_em.o: \
 	../frame/module_configure.o \
 	../frame/module_timing.o \
 	../frame/module_dm.o \
-	../share/module_wrf_comp_super.o \
 	../frame/module_wrf_error.o \
 	../frame/module_integrate.o \
 	../share/module_bc.o \
@@ -110,7 +111,6 @@ real_em.o: \
 	../frame/module_configure.o \
 	../frame/module_timing.o \
 	../frame/module_dm.o \
-	../share/module_wrf_comp_super.o \
 	../dyn_em/module_si_io_em.o \
 	../dyn_em/module_big_step_utilities_em.o \
 	../share/module_io_domain.o \
@@ -121,16 +121,8 @@ real_em.o: \
 #	../chem/module_input_chem_data.o \
 #	../chem/module_input_chem_bioemiss.o \
 
-wrf.o: \
-	../frame/module_machine.o \
-	../frame/module_domain.o \
-	../frame/module_integrate.o \
-	../frame/module_driver_constants.o \
-	../frame/module_configure.o \
-	../frame/module_timing.o \
-	../frame/module_wrf_error.o \
-	../frame/module_dm.o \
-	../share/module_wrf_comp_super.o \
-	$(ESMF_MOD_DEPENDENCE)
+wrf.o:  ../share/module_wrf_top.o
+
+wrf_ESMFApp.o:  ../share/module_wrf_top.o
 
 # DO NOT DELETE

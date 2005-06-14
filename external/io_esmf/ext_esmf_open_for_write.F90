@@ -3,59 +3,63 @@ SUBROUTINE ext_esmf_open_for_write_begin( FileName , Comm_compute, Comm_io, SysD
                                           DataHandle , Status )
   USE module_ext_esmf
   IMPLICIT NONE
-  CHARACTER*(*) :: FileName
+  CHARACTER*(*)               :: FileName
   INTEGER ,       INTENT(IN)  :: Comm_compute , Comm_io
-  CHARACTER*(*) :: SysDepInfo
+  CHARACTER*(*)               :: SysDepInfo
   INTEGER ,       INTENT(OUT) :: DataHandle
   INTEGER ,       INTENT(OUT) :: Status
   ! Local declarations
-  INTEGER i
+  INTEGER :: i
+  TYPE(ESMF_State), POINTER :: exportstate
+  TYPE(ESMF_StateType) :: statetype
+  INTEGER :: rc, itemCount
 
   CALL int_get_fresh_handle(i)
   okay_to_write(i) = .false.
   okay_to_read(i) = .false.
-  opened_for_update(i) = .false.
   opened_for_read(i) = .false.
   opened_for_write(i) = .true.
-!$$$here...  rename "mcel_*"
-  mcel_grid_defined(i) = .false.
-  mcel_finalized(i) = .false.
   DataHandle = i
 
-! right now only 2d -- extend later to 3d, 1d, 0d
-
-!$$$here...  may want to handle masks this way...  
-!  LANDMASK_I(i) = ""
-!  CALL get_value( "LANDMASK_I", SysDepInfo, LANDMASK_I(i) )
-
-! TBH:  recall this bit hacked out of module_io::wrf_open_for_read_begin()...  
-! $$$ tstr = TRIM(SysDepInfo) // ',' // 'READ_MODE=UPDATE,LAT_R=XLAT,LON_R=XLONG,LANDMASK_I=LU_MASK,FILTER_HANDLE=' // TRIM(fhand)
-
-!$$$ Create an empty exportState here
+  ! Grab the current exportState and ensure that it is empty
+  CALL ESMF_ExportStateGetCurrent(exportstate, rc)
+  IF ( rc /= ESMF_SUCCESS ) THEN
+    CALL wrf_error_fatal("ext_esmf_open_for_write:  ESMF_ExportStateGetCurrent failed" )
+  ENDIF
+  ! For now, If the export state is not empty, whine and die.
+!$$$ Eventually, get smart about interacting with "needed" and "optional" 
+!$$$ named state items
+  CALL ESMF_StateGet( exportstate, itemCount=itemCount, &
+                      statetype=statetype, rc=rc )
+  IF ( rc /= ESMF_SUCCESS ) THEN
+    CALL wrf_error_fatal("ext_esmf_open_for_write:  ESMF_ExportStateGet failed" )
+  ENDIF
+  IF ( statetype /= ESMF_STATE_EXPORT ) THEN
+    CALL wrf_error_fatal("ext_esmf_open_for_write:  not an export state" )
+  ENDIF
+  IF ( itemCount /= 0 ) THEN
+    CALL wrf_error_fatal("ext_esmf_open_for_write:  export state not empty" )
+  ENDIF
 
   Status = 0
   RETURN  
 END SUBROUTINE ext_esmf_open_for_write_begin
 
+
 !--- open_for_write_commit
 SUBROUTINE ext_esmf_open_for_write_commit( DataHandle , Status )
   USE module_ext_esmf
   IMPLICIT NONE
-  INTEGER ,       INTENT(IN ) :: DataHandle
-  INTEGER ,       INTENT(OUT) :: Status
+  INTEGER , INTENT(IN ) :: DataHandle
+  INTEGER , INTENT(OUT) :: Status
 
-  IF ( int_valid_handle ( DataHandle ) ) THEN
+  IF ( int_valid_handle( DataHandle ) ) THEN
     IF ( int_handle_in_use( DataHandle ) ) THEN
       okay_to_write( DataHandle ) = .true.
-      ! I do not think we need this MCEL stuff for ESMF 
-      ! okay_to_read( DataHandle ) = .true.
-      opened_for_update( DataHandle ) = .false.
     ENDIF
   ENDIF
 
-!$$$ Finish exportState here, if needed.
-
   Status = 0
-
   RETURN  
 END SUBROUTINE ext_esmf_open_for_write_commit
+

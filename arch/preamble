@@ -53,8 +53,9 @@ NATIVE_RWORDSIZE = 4
 #### Default sed command and script for Fortran source files ####
 SED_FTN = sed -f ../arch/standard.sed
 
-#### Default ESMF dependences for embedded ESMF time manager ####
-ESMF_MOD_DEPENDENCE = ../external/esmf_time_f90/module_comp.o
+#### Default ESMF switch and dependences for embedded ESMF time manager ####
+ESMFCOUPLING        = 0
+ESMF_MOD_DEPENDENCE = ../external/esmf_time_f90/module_utility.o
 
 ##############################################################################
 

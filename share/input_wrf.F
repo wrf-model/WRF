@@ -9,7 +9,7 @@
     USE module_io_wrf
     USE module_date_time
     USE module_bc_time_utilities
-    USE module_comp
+    USE module_utility
     IMPLICIT NONE
 #include <wrf_io_flags.h>
 #include <wrf_status_codes.h>
@@ -40,8 +40,8 @@
     INTEGER       IBDY, NAMELEN
     LOGICAL wrf_dm_on_monitor
     EXTERNAL wrf_dm_on_monitor
-    Type(WRF_COMP_Time)    time, oldtime, newtime, currtime
-    Type(WRF_COMP_TimeInterval)    timetonext
+    Type(WRF_UTIL_Time)    time, oldtime, newtime, currtime
+    Type(WRF_UTIL_TimeInterval)    timetonext
     CHARACTER*19  new_date
     CHARACTER*24  base_date
     CHARACTER*80  fname
@@ -302,10 +302,10 @@
     CALL wrf_get_next_time(fid, current_date , ierr)
     WRITE(wrf_err_message,*)fid,' input_wrf: wrf_get_next_time current_date: ',current_date(1:19),' Status = ',ierr
     CALL wrf_debug ( 300 , TRIM(wrf_err_message ) )
-    IF ( ierr .NE. 0 .AND. ierr .NE. WRF_WARN_NOTSUPPORTED ) THEN
+    IF ( ierr .NE. 0 .AND. ierr .NE. WRF_WARN_NOTSUPPORTED .AND. ierr .NE. WRF_WARN_DRYRUN_READ ) THEN 
       CALL wrf_message ( TRIM(wrf_err_message ) )
       CALL wrf_error_fatal ( "... May have run out of valid boundary conditions ..." )
-    ELSE IF ( ierr .NE. WRF_WARN_NOTSUPPORTED ) THEN
+    ELSE IF ( ierr .NE. WRF_WARN_NOTSUPPORTED .AND. ierr .NE. WRF_WARN_DRYRUN_READ) THEN 
 !
 ! check input time against domain time (which will be start time at beginning, see share/set_timekeeping.F)
 ! JM 20040511
@@ -314,7 +314,7 @@
         CASE ( model_input_only, aux_model_input1_only, aux_model_input2_only,       &
                aux_model_input3_only, aux_model_input4_only, aux_model_input5_only )
             CALL wrf_atotime( current_date(1:19), time )
-            CALL WRF_COMP_ClockGet( grid%domain_clock, CurrTime=currtime, rc=ierr )
+            CALL WRF_UTIL_ClockGet( grid%domain_clock, CurrTime=currtime, rc=ierr )
             CALL wrf_clockprint(150, grid%domain_clock, &
                                 'DEBUG input_wrf():  get currTime from grid%domain_clock,')
             IF ( time .NE. currtime ) THEN

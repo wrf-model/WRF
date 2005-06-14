@@ -56,7 +56,7 @@ SUBROUTINE wrf_ioinit( Status )
   INTEGER, INTENT(INOUT) :: Status
 !Local
   CHARACTER(len=80) :: SysDepInfo
-  INTEGER :: ierr(7), minerr, maxerr
+  INTEGER :: ierr(8), minerr, maxerr
 !
   Status = 0
   ierr = 0
@@ -84,6 +84,9 @@ SUBROUTINE wrf_ioinit( Status )
 #ifdef ZZZ
   CALL ext_zzz_ioinit(   SysDepInfo, ierr(7) )
 #endif
+#ifdef ESMFIO
+  CALL ext_esmf_ioinit(  SysDepInfo, ierr(8) )
+#endif
   minerr = MINVAL(ierr)
   maxerr = MAXVAL(ierr)
   IF ( minerr < 0 ) THEN
@@ -107,7 +110,7 @@ SUBROUTINE wrf_ioexit( Status )
   INTEGER, INTENT(INOUT) :: Status
 !Local
   LOGICAL, EXTERNAL :: use_output_servers
-  INTEGER :: ierr(8), minerr, maxerr
+  INTEGER :: ierr(9), minerr, maxerr
 !
   Status = 0
   ierr = 0
@@ -133,7 +136,10 @@ SUBROUTINE wrf_ioexit( Status )
 #ifdef ZZZ
   CALL ext_zzz_ioexit(  ierr(7) )
 #endif
-  IF ( use_output_servers() ) CALL wrf_quilt_ioexit( ierr(8) )
+#ifdef ESMFIO
+  CALL ext_esmf_ioexit( ierr(8) )
+#endif
+  IF ( use_output_servers() ) CALL wrf_quilt_ioexit( ierr(9) )
   minerr = MINVAL(ierr)
   maxerr = MAXVAL(ierr)
   IF ( minerr < 0 ) THEN
@@ -272,6 +278,11 @@ SUBROUTINE wrf_open_for_write_begin( FileName , Comm_compute, Comm_io, SysDepInf
         CALL wrf_dm_bcast_bytes( Hndl, IWORDSIZE )
         CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
 #endif
+#ifdef ESMFIO
+      CASE ( IO_ESMF )
+        CALL ext_esmf_open_for_write_begin ( FileName , Comm_compute, Comm_io, SysDepInfo, &
+                                             Hndl , Status )
+#endif
 #ifdef INTIO
       CASE ( IO_INTIO   )
         IF ( multi_files(io_form) .OR. wrf_dm_on_monitor() ) THEN
@@ -351,6 +362,10 @@ SUBROUTINE wrf_open_for_write_commit( DataHandle , Status )
             CALL ext_mcel_open_for_write_commit ( Hndl , Status )
           ENDIF
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
+#endif
+#ifdef ESMFIO
+        CASE ( IO_ESMF )
+          CALL ext_esmf_open_for_write_commit ( Hndl , Status )
 #endif
 #ifdef PHDF5
       CASE ( IO_PHDF5  )
@@ -460,6 +475,20 @@ SUBROUTINE wrf_open_for_read_begin( FileName , Comm_compute, Comm_io, SysDepInfo
     SELECT CASE ( use_package(io_form) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
+        IF ( multi_files(io_form) .OR.  wrf_dm_on_monitor() ) THEN
+          IF ( multi_files(io_form) ) THEN
+              CALL wrf_get_myproc ( myproc )
+              CALL append_to_filename ( LocFilename , FileName , myproc, 4 )
+          ELSE
+              LocFilename = FileName
+          ENDIF
+          CALL ext_ncd_open_for_read_begin ( LocFilename , Comm_compute, Comm_io, SysDepInfo, &
+                                       Hndl , Status )
+        ENDIF
+        IF ( .NOT. multi_files(io_form) ) THEN
+          CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
+          CALL wrf_dm_bcast_bytes( Hndl, IWORDSIZE )
+        ENDIF
 #endif
 #ifdef XXX
       CASE ( IO_XXX   )
@@ -488,6 +517,11 @@ tstr = TRIM(SysDepInfo) // ',' // 'READ_MODE=UPDATE,LAT_R=XLAT,LON_R=XLONG,LANDM
         ENDIF
         CALL wrf_dm_bcast_bytes( Hndl, IWORDSIZE )
         CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
+#endif
+#ifdef ESMFIO
+      CASE ( IO_ESMF )
+        CALL ext_esmf_open_for_read_begin ( FileName , Comm_compute, Comm_io, SysDepInfo, &
+                                            Hndl , Status )
 #endif
 #ifdef INTIO
       CASE ( IO_INTIO   )
@@ -538,6 +572,10 @@ SUBROUTINE wrf_open_for_read_commit( DataHandle , Status )
       SELECT CASE ( use_package(io_form) )
 #ifdef NETCDF
         CASE ( IO_NETCDF   )
+          IF ( multi_files(io_form) .OR. wrf_dm_on_monitor() ) THEN
+            CALL ext_ncd_open_for_read_commit ( Hndl , Status )
+          ENDIF
+          IF ( .NOT. multi_files(io_form) ) CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
 #endif
 #ifdef MCELIO
         CASE ( IO_MCEL   )
@@ -545,6 +583,10 @@ SUBROUTINE wrf_open_for_read_commit( DataHandle , Status )
             CALL ext_mcel_open_for_read_commit ( Hndl , Status )
           ENDIF
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
+#endif
+#ifdef ESMFIO
+        CASE ( IO_ESMF )
+          CALL ext_esmf_open_for_read_commit ( Hndl , Status )
 #endif
 #ifdef XXX
       CASE ( IO_XXX   )
@@ -967,6 +1009,10 @@ SUBROUTINE wrf_ioclose ( DataHandle, Status )
 #ifdef MCELIO
         CASE ( IO_MCEL   )
           CALL ext_mcel_ioclose( Hndl, Status )
+#endif
+#ifdef ESMFIO
+        CASE ( IO_ESMF )
+          CALL ext_esmf_ioclose( Hndl, Status )
 #endif
 #ifdef INTIO
         CASE ( IO_INTIO   )
@@ -1404,6 +1450,10 @@ SUBROUTINE add_new_handle( Hndl, Hopened, for_out, DataHandle )
       CASE ( IO_MCEL   )
         CALL wrf_error_fatal( 'add_new_handle:  multiple output files not supported for MCEL' )
 #endif
+#ifdef ESMFIO
+      CASE ( IO_ESMF )
+        CALL wrf_error_fatal( 'add_new_handle:  multiple output files not supported for ESMF' )
+#endif
     END SELECT
   ENDIF
   DataHandle = -1
@@ -1649,6 +1699,9 @@ SUBROUTINE wrf_read_field1 ( DataHandle , DateStr , VarName , Field , FieldType 
 #ifdef MCELIO
   EXTERNAL     ext_mcel_read_field
 #endif
+#ifdef ESMFIO
+  EXTERNAL     ext_esmf_read_field
+#endif
 #ifdef INTIO
   EXTERNAL     ext_int_read_field
 #endif
@@ -1683,7 +1736,6 @@ SUBROUTINE wrf_read_field1 ( DataHandle , DateStr , VarName , Field , FieldType 
 #endif
 #ifdef PHDF5
         CASE ( IO_PHDF5)
-! this should call call_pkg_and_dist... but should pass true for multi-files  JM ZAP
           CALL ext_phdf5_read_field   (                   &
                                      Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
                                      DomainDesc , MemoryOrder , Stagger , DimNames ,              &
@@ -1701,6 +1753,15 @@ SUBROUTINE wrf_read_field1 ( DataHandle , DateStr , VarName , Field , FieldType 
                                      MemoryStart , MemoryEnd ,                                    &
                                      PatchStart , PatchEnd ,                                      &
                                      Status )
+#endif
+#ifdef ESMFIO
+        CASE ( IO_ESMF )
+          CALL ext_esmf_read_field( Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
+                                    DomainDesc , MemoryOrder , Stagger , DimNames ,              &
+                                    DomainStart , DomainEnd ,                                    &
+                                    MemoryStart , MemoryEnd ,                                    &
+                                    PatchStart , PatchEnd ,                                      &
+                                    Status )
 #endif
 #ifdef XXX
         CASE ( IO_XXX )
@@ -1850,6 +1911,9 @@ SUBROUTINE wrf_write_field1 ( DataHandle , DateStr , VarName , Field , FieldType
 #ifdef MCELIO
   EXTERNAL     ext_mcel_write_field
 #endif
+#ifdef ESMFIO
+  EXTERNAL     ext_esmf_write_field
+#endif
 #ifdef INTIO
   EXTERNAL     ext_int_write_field
 #endif
@@ -1888,9 +1952,17 @@ SUBROUTINE wrf_write_field1 ( DataHandle , DateStr , VarName , Field , FieldType
                                      PatchStart , PatchEnd ,                                      &
                                      Status )
 #endif
+#ifdef ESMFIO
+        CASE ( IO_ESMF )
+          CALL ext_esmf_write_field( Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
+                                     DomainDesc , MemoryOrder , Stagger , DimNames ,              &
+                                     DomainStart , DomainEnd ,                                    &
+                                     MemoryStart , MemoryEnd ,                                    &
+                                     PatchStart , PatchEnd ,                                      &
+                                     Status )
+#endif
 #ifdef PHDF5
         CASE ( IO_PHDF5 )
-! this should call collect_fld_and... but should pass true for multi-files  JM ZAP
           CALL ext_phdf5_write_field(                  &
                                      Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
                                      DomainDesc , MemoryOrder , Stagger , DimNames ,              &

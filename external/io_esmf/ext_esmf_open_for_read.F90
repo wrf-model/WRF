@@ -3,55 +3,63 @@ SUBROUTINE ext_esmf_open_for_read_begin( FileName , Comm_compute, Comm_io, SysDe
                                          DataHandle , Status )
   USE module_ext_esmf
   IMPLICIT NONE
-  CHARACTER*(*) :: FileName
+  CHARACTER*(*)               :: FileName
   INTEGER ,       INTENT(IN)  :: Comm_compute , Comm_io
-  CHARACTER*(*) :: SysDepInfo
+  CHARACTER*(*)               :: SysDepInfo
   INTEGER ,       INTENT(OUT) :: DataHandle
   INTEGER ,       INTENT(OUT) :: Status
   ! Local declarations
-  INTEGER i
-  CHARACTER*80 read_mode
+  INTEGER :: i
+  TYPE(ESMF_State), POINTER :: importstate
+  TYPE(ESMF_StateType) :: statetype
+  INTEGER :: rc, itemCount
 
   CALL int_get_fresh_handle(i)
   okay_to_write(i) = .false.
   okay_to_read(i) = .false.
   opened_for_read(i) = .true.
   opened_for_write(i) = .false.
-!$$$here...  rename "mcel_*"
-  mcel_grid_defined(i) = .false.
-  mcel_finalized(i) = .false.
   DataHandle = i
-  ListOfFields(i) = " "
 
-!$$$ This is a noop for now.  Users of importState can point to it directly for the point of use.
-
-! recover the names of the strings that contain georeference and mask data, if avail
-!$$$here...  may want to handle masks this way...
-!  LANDMASK_I(i) = ""
-!  CALL get_value( "LANDMASK_I", SysDepInfo, LANDMASK_I(i) )
-  ! I do not think we need this MCEL stuff for ESMF -- there is no server to 
-  ! send things to.  
-  opened_for_update( i ) = .false.
+  ! Grab the current importState and ensure that it is empty
+  CALL ESMF_ImportStateGetCurrent(importstate, rc)
+  IF ( rc /= ESMF_SUCCESS ) THEN
+    CALL wrf_error_fatal("ext_esmf_open_for_read:  ESMF_ImportStateGetCurrent failed" )
+  ENDIF
+  ! For now, If the import state is not empty, whine and die.
+!$$$ Eventually, get smart about interacting with "needed" and "optional" 
+!$$$ named state items
+  CALL ESMF_StateGet( importstate, itemCount=itemCount, &
+                      statetype=statetype, rc=rc )
+  IF ( rc /= ESMF_SUCCESS ) THEN
+    CALL wrf_error_fatal("ext_esmf_open_for_read:  ESMF_ImportStateGet failed" )
+  ENDIF
+  IF ( statetype /= ESMF_STATE_IMPORT ) THEN
+    CALL wrf_error_fatal("ext_esmf_open_for_read:  not an import state" )
+  ENDIF
+  IF ( itemCount /= 0 ) THEN
+    CALL wrf_error_fatal("ext_esmf_open_for_read:  import state not empty" )
+  ENDIF
 
   Status = 0
   RETURN  
 END SUBROUTINE ext_esmf_open_for_read_begin
 
+
 !--- open_for_read_commit
 SUBROUTINE ext_esmf_open_for_read_commit( DataHandle , Status )
   USE module_ext_esmf
   IMPLICIT NONE
-  INTEGER ,       INTENT(IN ) :: DataHandle
-  INTEGER ,       INTENT(OUT) :: Status
+  INTEGER , INTENT(IN ) :: DataHandle
+  INTEGER , INTENT(OUT) :: Status
 
-  IF ( int_valid_handle ( DataHandle ) ) THEN
+  IF ( int_valid_handle( DataHandle ) ) THEN
     IF ( int_handle_in_use( DataHandle ) ) THEN
-      if ( opened_for_update( DataHandle ) ) okay_to_write( DataHandle ) = .true.
       okay_to_read( DataHandle ) = .true.
     ENDIF
   ENDIF
 
   Status = 0
-
   RETURN  
 END SUBROUTINE ext_esmf_open_for_read_commit
+

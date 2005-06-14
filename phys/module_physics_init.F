@@ -191,8 +191,8 @@ integer myproc
      restart = .false.
      CALL wrf_clockprint(150, grid%domain_clock, &
                          'DEBUG phy_init():  get currTime from grid%domain_clock,')
-     CALL WRF_COMP_ClockGet( grid%domain_clock, currTime=grid%current_time, rc=rc )
-     CALL WRF_COMP_TimeGet( grid%current_time, YY=julyr, dayOfYear=julday, H=hr, M=min, S=sec, MS=ms, rc=rc)
+     CALL WRF_UTIL_ClockGet( grid%domain_clock, currTime=grid%current_time, rc=rc )
+     CALL WRF_UTIL_TimeGet( grid%current_time, YY=julyr, dayOfYear=julday, H=hr, M=min, S=sec, MS=ms, rc=rc)
      CALL wrf_timetoa ( grid%current_time, message )
      WRITE( wrf_err_message , * ) 'DEBUG phy_init():  currTime = [',TRIM( message ),']'
      CALL wrf_debug( 150, TRIM(wrf_err_message) )

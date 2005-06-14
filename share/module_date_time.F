@@ -725,13 +725,13 @@ END MODULE module_date_time
    ! TBH:  change the WRF format to match the standard, then we remove the 
    ! TBH:  WRF dependence...  
 
-   ! Converts WRF date-time string into an WRF_COMP_Time object.  
+   ! Converts WRF date-time string into an WRF_UTIL_Time object.  
    ! The format of the WRF date-time strings is a slight variant on ISO 8601: 
    ! ISO is "YYYY-MM-DDThh:mm:ss" while WRF is "YYYY-MM-DD_hh:mm:ss".  
    SUBROUTINE wrf_atotime ( str, time )
-      USE module_comp
+      USE module_utility
       CHARACTER (LEN=*), INTENT( IN) :: str
-      TYPE(WRF_COMP_Time),   INTENT(OUT) :: time
+      TYPE(WRF_UTIL_Time),   INTENT(OUT) :: time
       INTEGER yr, mm, dd, h, m, s, ms
       INTEGER rc, debug_level
       IF ( LEN( str ) .GE. 20 ) THEN
@@ -747,9 +747,9 @@ END MODULE module_date_time
         READ(str,33) yr,mm,dd,h,m,s
         ms = 0
       ENDIF
-      CALL WRF_COMP_TimeSet( time, YY=yr, MM=mm, DD=dd, H=h, M=m, S=s, MS=ms, rc=rc )
-      CALL wrf_check_error( WRF_COMP_SUCCESS, rc, &
-                            'WRF_COMP_TimeSet() in wrf_atotime() FAILED', &
+      CALL WRF_UTIL_TimeSet( time, YY=yr, MM=mm, DD=dd, H=h, M=m, S=s, MS=ms, rc=rc )
+      CALL wrf_check_error( WRF_UTIL_SUCCESS, rc, &
+                            'WRF_UTIL_TimeSet() in wrf_atotime() FAILED', &
                             __FILE__ , &
                             __LINE__  )
 33 FORMAT (I4.4,1x,I2.2,1x,I2.2,1x,I2.2,1x,I2.2,1x,I2.2)
@@ -759,18 +759,18 @@ END MODULE module_date_time
 
 
 
-   ! Converts an WRF_COMP_Time object into a WRF date-time string.  
+   ! Converts an WRF_UTIL_Time object into a WRF date-time string.  
    ! The format of the WRF date-time strings is a slight variant on ISO 8601: 
    ! ISO is "YYYY-MM-DDThh:mm:ss" while WRF is "YYYY-MM-DD_hh:mm:ss".  
    SUBROUTINE wrf_timetoa ( time, str )
-      USE module_comp
-      TYPE(WRF_COMP_Time),   INTENT( IN) :: time
+      USE module_utility
+      TYPE(WRF_UTIL_Time),   INTENT( IN) :: time
       CHARACTER (LEN=*), INTENT(OUT) :: str
       INTEGER rc, debug_level
       CHARACTER (LEN=256) :: mess
-      CALL WRF_COMP_TimeGet( time, timeString=str, rc=rc )
-      CALL wrf_check_error( WRF_COMP_SUCCESS, rc, &
-                            'WRF_COMP_TimeGet() in wrf_timetoa() FAILED', &
+      CALL WRF_UTIL_TimeGet( time, timeString=str, rc=rc )
+      CALL wrf_check_error( WRF_UTIL_SUCCESS, rc, &
+                            'WRF_UTIL_TimeGet() in wrf_timetoa() FAILED', &
                             __FILE__ , &
                             __LINE__  )
       ! change ISO 8601 'T' to WRF '_'
@@ -784,26 +784,26 @@ END MODULE module_date_time
 
    ! Debug routine to print key clock information.  
    ! Every printed line begins with pre_str.  
-   ! If clock is invalid, also print its state using WRF_COMP_ClockPrint().  
-   ! Lines printed by WRF_COMP_ClockPrint() currently do not begin with 
+   ! If clock is invalid, also print its state using WRF_UTIL_ClockPrint().  
+   ! Lines printed by WRF_UTIL_ClockPrint() currently do not begin with 
    ! pre_str.  
    SUBROUTINE wrf_clockprint ( level, clock, pre_str )
-      USE module_comp
+      USE module_utility
       INTEGER,           INTENT( IN) :: level
-      TYPE(WRF_COMP_Clock),  INTENT( IN) :: clock
+      TYPE(WRF_UTIL_Clock),  INTENT( IN) :: clock
       CHARACTER (LEN=*), INTENT( IN) :: pre_str
       INTEGER rc
       LOGICAL clockinvalid
       INTEGER :: debug_level
-      TYPE(WRF_COMP_Time) :: currTime, startTime, stopTime
+      TYPE(WRF_UTIL_Time) :: currTime, startTime, stopTime
       CHARACTER (LEN=25) :: currTime_str, startTime_str, stopTime_str
       CHARACTER (LEN=256) :: mess
       CALL get_wrf_debug_level( debug_level )
       IF ( level .LE. debug_level ) THEN
-        rc=WRF_COMP_SUCCESS
-        CALL WRF_COMP_ClockValidate(clock, rc=rc)
+        rc=WRF_UTIL_SUCCESS
+        CALL WRF_UTIL_ClockValidate(clock, rc=rc)
         clockinvalid = .FALSE.
-        IF (rc /= WRF_COMP_SUCCESS) THEN
+        IF (rc /= WRF_UTIL_SUCCESS) THEN
           clockinvalid = .TRUE.
         ENDIF
         IF ( clockinvalid ) THEN
@@ -814,7 +814,7 @@ END MODULE module_date_time
           CALL wrf_message(TRIM(mess))
         ENDIF
 
-        CALL WRF_COMP_ClockGet( clock, CurrTime=currTime, StartTime=startTime, &
+        CALL WRF_UTIL_ClockGet( clock, CurrTime=currTime, StartTime=startTime, &
                                    StopTime=stopTime, rc=rc )
         CALL wrf_timetoa( currTime, currTime_str )
         CALL wrf_timetoa( startTime, startTime_str )
@@ -828,7 +828,7 @@ END MODULE module_date_time
         IF ( clockinvalid ) THEN
           WRITE (mess,*) TRIM(pre_str),'   BEGIN INVALID CLOCK { '
           CALL wrf_message(TRIM(mess))
-          CALL WRF_COMP_ClockPrint( clock, rc=rc )
+          CALL WRF_UTIL_ClockPrint( clock, rc=rc )
           WRITE (mess,*) TRIM(pre_str),' } END INVALID CLOCK'
           CALL wrf_message(TRIM(mess))
         ENDIF

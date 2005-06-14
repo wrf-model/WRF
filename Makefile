@@ -40,6 +40,8 @@ configcheck:
          exit 2 ; \
 	fi
 
+#TBH:  for now, build both wrf.exe and wrf_ESMF_App.exe when ESMFCOUPLING is set
+#TBH:  wrf.exe is used for testing in this case
 wrf : configcheck
 	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" ext
 	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" toolsdir
@@ -51,8 +53,16 @@ wrf : configcheck
 	if [ $(WRF_EM_CORE) -eq 1 ]    ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" em_core ; fi
 	if [ $(WRF_NMM_CORE) -eq 1 ]   ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" nmm_core ; fi
 	if [ $(WRF_EXP_CORE) -eq 1 ]   ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" exp_core ; fi
+#	if [ $(ESMFCOUPLING) -eq 0 ] ; then \
+#	  ( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em em_wrf ) ; \
+#	  ( cd run ; /bin/rm -f wrf.exe ; ln -s ../main/wrf.exe . ) ; \
+#	fi
 	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em em_wrf )
 	( cd run ; /bin/rm -f wrf.exe ; ln -s ../main/wrf.exe . )
+	if [ $(ESMFCOUPLING) -eq 1 ] ; then \
+	  ( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em em_wrf_ESMFApp ) ; \
+	  ( cd run ; /bin/rm -f wrf_ESMFApp.exe ; ln -s ../main/wrf_ESMFApp.exe . ) ; \
+	fi
 
 ### 3.a.  rules to build the framework and then the experimental core
 
@@ -69,10 +79,18 @@ nmm_wrf : wrf
 
 #  Eulerian mass coordinate initializations
 
+#TBH:  for now, link both wrf.exe and wrf_ESMF_App.exe when ESMFCOUPLING is set
+#TBH:  wrf.exe is used for testing in this case
 em_quarter_ss : wrf
 	@ echo '--------------------------------------'
 	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=quarter_ss em_ideal )
+#	if [ $(ESMFCOUPLING) -eq 0 ] ; then \
+#	  ( cd test/em_quarter_ss ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . ) ; \
+#	fi
 	( cd test/em_quarter_ss ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
+	if [ $(ESMFCOUPLING) -eq 1 ] ; then \
+	  ( cd test/em_quarter_ss ; /bin/rm -f wrf_ESMFApp.exe ; ln -s ../../main/wrf_ESMFApp.exe . ) ; \
+	fi
 	( cd test/em_quarter_ss ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
 	( cd test/em_quarter_ss ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
 	( cd test/em_quarter_ss ; /bin/rm -f gribmap.txt ; ln -s ../../run/gribmap.txt . )
@@ -80,10 +98,18 @@ em_quarter_ss : wrf
 	( cd run ; /bin/rm -f namelist.input ; ln -s ../test/em_quarter_ss/namelist.input . )
 	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_quarter_ss/input_sounding . )
 
+#TBH:  for now, link both wrf.exe and wrf_ESMF_App.exe when ESMFCOUPLING is set
+#TBH:  wrf.exe is used for testing in this case
 em_squall2d_x : wrf
 	@ echo '--------------------------------------'
 	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=squall2d_x em_ideal )
+#	if [ $(ESMFCOUPLING) -eq 0 ] ; then \
+#	  ( cd test/em_squall2d_x ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . ) ; \
+#	fi
 	( cd test/em_squall2d_x ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
+	if [ $(ESMFCOUPLING) -eq 1 ] ; then \
+	  ( cd test/em_squall2d_x ; /bin/rm -f wrf_ESMFApp.exe ; ln -s ../../main/wrf_ESMFApp.exe . ) ; \
+	fi
 	( cd test/em_squall2d_x ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
 	( cd test/em_squall2d_x ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
 	( cd test/em_squall2d_x ; /bin/rm -f gribmap.txt ; ln -s ../../run/gribmap.txt . )
@@ -91,10 +117,18 @@ em_squall2d_x : wrf
 	( cd run ; /bin/rm -f namelist.input ; ln -s ../test/em_squall2d_x/namelist.input . )
 	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_squall2d_x/input_sounding . )
 
+#TBH:  for now, link both wrf.exe and wrf_ESMF_App.exe when ESMFCOUPLING is set
+#TBH:  wrf.exe is used for testing in this case
 em_squall2d_y : wrf
 	@ echo '--------------------------------------'
 	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=squall2d_y em_ideal )
+#	if [ $(ESMFCOUPLING) -eq 0 ] ; then \
+#	  ( cd test/em_squall2d_y ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . ) ; \
+#	fi
 	( cd test/em_squall2d_y ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
+	if [ $(ESMFCOUPLING) -eq 1 ] ; then \
+	  ( cd test/em_squall2d_y ; /bin/rm -f wrf_ESMFApp.exe ; ln -s ../../main/wrf_ESMFApp.exe . ) ; \
+	fi
 	( cd test/em_squall2d_y ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
 	( cd test/em_squall2d_y ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
 	( cd test/em_squall2d_y ; /bin/rm -f gribmap.txt ; ln -s ../../run/gribmap.txt . )
@@ -102,10 +136,18 @@ em_squall2d_y : wrf
 	( cd run ; /bin/rm -f namelist.input ; ln -s ../test/em_squall2d_y/namelist.input . )
 	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_squall2d_y/input_sounding . )
 
+#TBH:  for now, link both wrf.exe and wrf_ESMF_App.exe when ESMFCOUPLING is set
+#TBH:  wrf.exe is used for testing in this case
 em_b_wave : wrf
 	@ echo '--------------------------------------'
 	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=b_wave em_ideal )
+#	if [ $(ESMFCOUPLING) -eq 0 ] ; then \
+#	  ( cd test/em_b_wave ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . ) ; \
+#	fi
 	( cd test/em_b_wave ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
+	if [ $(ESMFCOUPLING) -eq 1 ] ; then \
+	  ( cd test/em_b_wave ; /bin/rm -f wrf_ESMFApp.exe ; ln -s ../../main/wrf_ESMFApp.exe . ) ; \
+	fi
 	( cd test/em_b_wave ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
 	( cd test/em_b_wave ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
 	( cd test/em_b_wave ; /bin/rm -f gribmap.txt ; ln -s ../../run/gribmap.txt . )
@@ -113,10 +155,18 @@ em_b_wave : wrf
 	( cd run ; /bin/rm -f namelist.input ; ln -s ../test/em_b_wave/namelist.input . )
 	( cd run ; /bin/rm -f input_jet ; ln -s ../test/em_b_wave/input_jet . )
 
+#TBH:  for now, link both wrf.exe and wrf_ESMF_App.exe when ESMFCOUPLING is set
+#TBH:  wrf.exe is used for testing in this case
 em_real : wrf
 	@ echo '--------------------------------------'
 	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=real em_real )
+#	if [ $(ESMFCOUPLING) -eq 0 ] ; then \
+#	  ( cd test/em_real ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . ) ; \
+#	fi
 	( cd test/em_real ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
+	if [ $(ESMFCOUPLING) -eq 1 ] ; then \
+	  ( cd test/em_real ; /bin/rm -f wrf_ESMFApp.exe ; ln -s ../../main/wrf_ESMFApp.exe . ) ; \
+	fi
 	( cd test/em_real ; /bin/rm -f real.exe ; ln -s ../../main/real.exe . )
 	( cd test/em_real ; /bin/rm -f ndown.exe ; ln -s ../../main/ndown.exe . )
 	( cd test/em_real ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
@@ -140,10 +190,18 @@ em_real : wrf
 	( cd run ; /bin/rm -f namelist.input ; ln -s ../test/em_real/namelist.input . )
 
 
+#TBH:  for now, link both wrf.exe and wrf_ESMF_App.exe when ESMFCOUPLING is set
+#TBH:  wrf.exe is used for testing in this case
 em_hill2d_x : wrf
 	@ echo '--------------------------------------'
 	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=hill2d_x em_ideal )
+#	if [ $(ESMFCOUPLING) -eq 0 ] ; then \
+#	  ( cd test/em_hill2d_x ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . ) ; \
+#	fi
 	( cd test/em_hill2d_x ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
+	if [ $(ESMFCOUPLING) -eq 1 ] ; then \
+	  ( cd test/em_hill2d_x ; /bin/rm -f wrf_ESMFApp.exe ; ln -s ../../main/wrf_ESMFApp.exe . ) ; \
+	fi
 	( cd test/em_hill2d_x ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
 	( cd test/em_hill2d_x ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
 	( cd test/em_hill2d_x ; /bin/rm -f gribmap.txt ; ln -s ../../run/gribmap.txt . )
@@ -151,10 +209,18 @@ em_hill2d_x : wrf
 	( cd run ; /bin/rm -f namelist.input ; ln -s ../test/em_hill2d_x/namelist.input . )
 	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_hill2d_x/input_sounding . )
 
+#TBH:  for now, link both wrf.exe and wrf_ESMF_App.exe when ESMFCOUPLING is set
+#TBH:  wrf.exe is used for testing in this case
 em_grav2d_x : wrf
 	@ echo '--------------------------------------'
 	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=grav2d_x em_ideal )
+#	if [ $(ESMFCOUPLING) -eq 0 ] ; then \
+#	  ( cd test/em_grav2d_x ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . ) ; \
+#	fi
 	( cd test/em_grav2d_x ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
+	if [ $(ESMFCOUPLING) -eq 1 ] ; then \
+	  ( cd test/em_grav2d_x ; /bin/rm -f wrf_ESMFApp.exe ; ln -s ../../main/wrf_ESMFApp.exe . ) ; \
+	fi
 	( cd test/em_grav2d_x ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
 	( cd test/em_grav2d_x ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
 	( cd test/em_grav2d_x ; /bin/rm -f gribmap.txt ; ln -s ../../run/gribmap.txt . )
@@ -182,10 +248,18 @@ bio_conv : wrf
 
 #### nmm converter
 
+#TBH:  for now, link both wrf.exe and wrf_ESMF_App.exe when ESMFCOUPLING is set
+#TBH:  wrf.exe is used for testing in this case
 nmm_real : nmm_wrf
 	@ echo '--------------------------------------'
 	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=nmm IDEAL_CASE=real real_nmm )
+#	if [ $(ESMFCOUPLING) -eq 0 ] ; then \
+#	  ( cd test/nmm_real ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . ) ; \
+#	fi
 	( cd test/nmm_real ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
+	if [ $(ESMFCOUPLING) -eq 1 ] ; then \
+	  ( cd test/nmm_real ; /bin/rm -f wrf_ESMFApp.exe ; ln -s ../../main/wrf_ESMFApp.exe . ) ; \
+	fi
 	( cd test/nmm_real ; /bin/rm -f real_nmm.exe ; ln -s ../../main/real_nmm.exe . )
 	( cd test/nmm_real ; /bin/rm -f gribmap.txt ; ln -s ../../run/gribmap.txt . )
 

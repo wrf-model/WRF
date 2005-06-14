@@ -49,7 +49,7 @@ SUBROUTINE med_nest_move ( parent, nest )
 #endif
      LOGICAL FUNCTION time_for_move ( parent , nest , dx , dy )
         USE module_domain
-        USE module_comp
+        USE module_utility
         TYPE(domain) , POINTER    :: parent , nest
         INTEGER, INTENT(OUT)      :: dx , dy
      END FUNCTION time_for_move
@@ -239,7 +239,7 @@ LOGICAL FUNCTION time_for_move2 ( parent , grid , move_cd_x, move_cd_y )
    USE module_configure
    USE module_compute_geop
    USE module_dm
-   USE module_comp
+   USE module_utility
    IMPLICIT NONE
 ! Arguments
    TYPE(domain) , POINTER    :: parent, grid
@@ -248,8 +248,8 @@ LOGICAL FUNCTION time_for_move2 ( parent , grid , move_cd_x, move_cd_y )
 ! Local
    INTEGER  num_moves, rc
    INTEGER  move_interval , move_id
-   TYPE(WRF_COMP_Time) :: ct, st
-   TYPE(WRF_COMP_TimeInterval) :: ti
+   TYPE(WRF_UTIL_Time) :: ct, st
+   TYPE(WRF_UTIL_TimeInterval) :: ti
    CHARACTER*256 mess
    INTEGER     :: ids, ide, jds, jde, kds, kde, &
                   ims, ime, jms, jme, kms, kme, &
@@ -297,12 +297,12 @@ write(0,*)'Check to see if COMPUTE_VORTEX_CENTER_ALARM is ringing? '
    CALL nl_get_parent_grid_ratio ( grid%id , pgr )
    CALL nl_get_dx ( grid%id , dx )
 
-   IF ( WRF_COMP_AlarmIsRinging( grid%alarms( COMPUTE_VORTEX_CENTER_ALARM ), rc=rc ) ) THEN
+   IF ( WRF_UTIL_AlarmIsRinging( grid%alarms( COMPUTE_VORTEX_CENTER_ALARM ), rc=rc ) ) THEN
 
 #  ifdef MOVING_DIAGS
 write(0,*)'COMPUTE_VORTEX_CENTER_ALARM is ringing  '
 #  endif
-     CALL WRF_COMP_AlarmRingerOff( grid%alarms( COMPUTE_VORTEX_CENTER_ALARM ), rc=rc )
+     CALL WRF_UTIL_AlarmRingerOff( grid%alarms( COMPUTE_VORTEX_CENTER_ALARM ), rc=rc )
 
      last_vc_i = grid%vc_i
      last_vc_j = grid%vc_j
@@ -524,7 +524,7 @@ write(0,*)' changing grid%vc_i,  move_cd_x * pgr ', grid%vc_i, move_cd_x * pgr, 
 # else
 ! from namelist
    time_for_move2 = .FALSE.
-   CALL WRF_COMP_ClockGet( grid%domain_clock, CurrTime=ct, StartTime=st, rc=rc )
+   CALL WRF_UTIL_ClockGet( grid%domain_clock, CurrTime=ct, StartTime=st, rc=rc )
    CALL nl_get_num_moves( 1, num_moves )
    IF ( num_moves .GT. max_moves ) THEN
      WRITE(mess,*)'time_for_moves2: num_moves (',num_moves,') .GT. max_moves (',max_moves,')'
@@ -535,7 +535,7 @@ write(0,*)' changing grid%vc_i,  move_cd_x * pgr ', grid%vc_i, move_cd_x * pgr, 
      IF ( move_id .EQ. grid%id ) THEN
        CALL nl_get_move_interval( i, move_interval )
        IF ( move_interval .LT. 999999999 ) THEN
-         CALL WRF_COMP_TimeIntervalSet ( ti, M=move_interval, rc=rc )
+         CALL WRF_UTIL_TimeIntervalSet ( ti, M=move_interval, rc=rc )
          IF ( ct .GE. grid%start_time + ti ) THEN
            CALL nl_get_move_cd_x ( i, move_cd_x )
            CALL nl_get_move_cd_y ( i, move_cd_y )
@@ -556,7 +556,7 @@ LOGICAL FUNCTION time_for_move ( parent , grid , move_cd_x, move_cd_y )
    USE module_configure
    USE module_dm
 USE module_timing
-   USE module_comp
+   USE module_utility
    IMPLICIT NONE
 ! arguments
    TYPE(domain) , POINTER    :: parent, grid
@@ -575,7 +575,7 @@ USE module_timing
    INTERFACE
      LOGICAL FUNCTION time_for_move2 ( parent , nest , dx , dy )
         USE module_domain
-        USE module_comp
+        USE module_utility
         TYPE(domain) , POINTER    :: parent , nest
         INTEGER, INTENT(OUT)      :: dx , dy
      END FUNCTION time_for_move2

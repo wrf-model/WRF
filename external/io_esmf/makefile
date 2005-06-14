@@ -8,7 +8,14 @@ AR = ar
 #RANLIB	= ranlib
 RANLIB	= echo
 
-OBJS = module_iostate_comp.o module_symbols_comp.o module_comp.o
+OBJS = module_symbols_util.o \
+       module_esmf_extensions.o \
+       module_utility.o \
+       io_esmf.o \
+       ext_esmf_open_for_read.o \
+       ext_esmf_open_for_write.o \
+       ext_esmf_read_field.o \
+       ext_esmf_write_field.o
 
 TARGET = libwrfio_esmf.a
 
@@ -25,5 +32,10 @@ superclean:
 
 # DEPENDENCIES : only dependencies after this line 
 
-module_comp.o : module_iostate_comp.o module_symbols_comp.o
+module_utility.o : module_symbols_util.o module_esmf_extensions.o
+io_esmf.o : module_esmf_extensions.o
+ext_esmf_open_for_read.o : io_esmf.o
+ext_esmf_open_for_write.o : io_esmf.o
+ext_esmf_read_field.o : io_esmf.o
+ext_esmf_write_field.o : io_esmf.o
 

@@ -4681,7 +4681,7 @@ END SUBROUTINE set_tend
         dcoef = 1.0 - MIN( 1.0, ( ztop - z00(k) ) / zdamp )
         dcoef = (SIN( 0.5 * pii * dcoef ) )**2
         ru_tendf(i,k,j) = ru_tendf(i,k,j) -                    &
-                          muu(i,j) * ( dcoef / dampcoef ) *    &
+                          muu(i,j) * ( dcoef * dampcoef ) *    &
                           ( u(i,k,j) - u00(k) )
       END DO
 
@@ -4736,7 +4736,7 @@ END SUBROUTINE set_tend
         dcoef = 1.0 - MIN( 1.0, ( ztop - z00(k) ) / zdamp )
         dcoef = (SIN( 0.5 * pii * dcoef ) )**2
         rv_tendf(i,k,j) = rv_tendf(i,k,j) -                    &
-                          muv(i,j) * ( dcoef / dampcoef ) *    &
+                          muv(i,j) * ( dcoef * dampcoef ) *    &
                           ( v(i,k,j) - v00(k) )
       END DO
 
@@ -4758,7 +4758,7 @@ END SUBROUTINE set_tend
           dcoef = 1.0 - MIN( 1.0, ( ztop - z ) / zdamp )
           dcoef = ( SIN( 0.5 * pii * dcoef ) )**2
           rw_tendf(i,k,j) = rw_tendf(i,k,j) -  &
-                            mut(i,j) * ( dcoef / dampcoef ) * w(i,k,j)
+                            mut(i,j) * ( dcoef * dampcoef ) * w(i,k,j)
         END IF
       END DO
     END DO
@@ -4809,7 +4809,7 @@ END SUBROUTINE set_tend
         dcoef = 1.0 - MIN( 1.0, ( ztop - z00(k) ) / zdamp )
         dcoef = (SIN( 0.5 * pii * dcoef ) )**2
         t_tendf(i,k,j) = t_tendf(i,k,j) -                      &
-                         mut(i,j) * ( dcoef / dampcoef )  *    &
+                         mut(i,j) * ( dcoef * dampcoef )  *    &
                          ( t(i,k,j) - t00(k) )
       END DO
 

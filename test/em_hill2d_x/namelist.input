@@ -66,7 +66,7 @@
  km_opt                              = 1,
  damp_opt                            = 2,
  zdamp                               = 15000.,
- dampcoef                            = 300.,
+ dampcoef                            = .003,
  khdif                               = 3000,
  kvdif                               = 3,
  smdiv                               = 0.1,

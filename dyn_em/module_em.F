@@ -482,12 +482,11 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                   ims, ime, jms, jme, kms, kme,   &
                   its, ite, jts, jte, kts, kte   )
 
-  IF(config_flags%w_damping.eq.1)THEN
-    CALL w_damp   ( rw_tend, ww, w, mut, rdnw, dt,  &
+  CALL w_damp   ( rw_tend, ww, w, mut, rdnw, dt,    &
+                    config_flags%w_damping,         &
                     ids, ide, jds, jde, kds, kde,   &
                     ims, ime, jms, jme, kms, kme,   &
                     its, ite, jts, jte, kts, kte   )
-  ENDIF
 
   IF(config_flags%pert_coriolis) THEN
 

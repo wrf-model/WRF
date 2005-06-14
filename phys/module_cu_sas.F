@@ -1,6 +1,8 @@
 !
 MODULE module_cu_sas
 
+USE module_configure, ONLY: nl_get_start_year, nl_get_start_month, &
+                            nl_get_start_day, nl_get_start_hour
 CONTAINS
 
 !-----------------------------------------------------------------
@@ -17,7 +19,13 @@ CONTAINS
                                                                 )
 
 !-------------------------------------------------------------------
-      USE MODULE_GFS_CONSTANTS, ONLY:kind_phys, g=>con_g,rd=>con_rd, gpvs
+      USE MODULE_GFS_MACHINE , ONLY : kind_phys, kind_evod
+      USE MODULE_GFS_FUNCPHYS , ONLY : gfuncphys
+      USE MODULE_GFS_PHYSCONS, grav => con_g, CP => con_CP, HVAP => con_HVAP  &
+     &,             RV => con_RV, FV => con_fvirt, T0C => con_T0C       &
+     &,             CVAP => con_CVAP, CLIQ => con_CLIQ                  & 
+     &,             EPS => con_eps, EPSM1 => con_epsm1                  &
+     &,             ROVCP => con_rocp, RD => con_rd
 !-------------------------------------------------------------------
       IMPLICIT NONE
 !-------------------------------------------------------------------
@@ -45,7 +53,7 @@ CONTAINS
 !-- RQIBLTEN    Qi tendency due to
 !               PBL parameterization (kg/kg/s)
 !-- CP          heat capacity at constant pressure for dry air (J/kg/K)
-!-- G           acceleration due to gravity (m/s^2)
+!-- GRAV        acceleration due to gravity (m/s^2)
 !-- ROVCP       R/CP
 !-- RD          gas constant for dry air (J/kg/K)
 !-- ROVG 	R/G
@@ -128,14 +136,14 @@ CONTAINS
                                         W
 
 !--------------------------- OPTIONAL VARS ----------------------------
-
+                                                                                                      
       REAL, DIMENSION(ims:ime, kms:kme, jms:jme),                       &
                OPTIONAL, INTENT(INOUT) ::                               &
                                         RQCCUTEN,                       &
                                         RQICUTEN,                       &
                                         RQVCUTEN,                       &
                                         RTHCUTEN
-
+                                                                                                      
 !
 ! Flags relating to the optional tendency arrays declared above
 ! Models that carry the optional tendencies will provdide the
@@ -149,18 +157,25 @@ CONTAINS
                                                   ,F_QR      &
                                                   ,F_QI      &
                                                   ,F_QS
-
+ 
 
 !--------------------------- LOCAL VARS ------------------------------
 
       REAL,    DIMENSION(ims:ime, jms:jme) ::                           &
                                         PSFC
 
+      REAL     (kind=kind_evod),save :: seed0
+!      REAL     (kind=kind_evod) :: seed0
+      REAL     (kind=kind_evod) ::      wrk
 
       REAL     (kind=kind_phys) ::                                      &
                                         DELT,                           &
+                                        DPSHC,                          &
                                         RDELT,                          &
                                         RSEED
+
+      REAL     (kind=kind_phys), DIMENSION(ids:ide,jds:jde) ::          & 
+                                        RANNUM
 
       REAL     (kind=kind_phys), DIMENSION(its:ite) ::                  &
                                         CLDWRK,                         &
@@ -170,11 +185,15 @@ CONTAINS
                                         SLIMSK,                         &
                                         XKT2
 
+      REAL     (kind=kind_phys), DIMENSION(its:ite, kts:kte+1) ::       &
+                                        PRSI                            
+
       REAL     (kind=kind_phys), DIMENSION(its:ite, kts:kte) ::         &
                                         DEL,                            &
                                         DOT,                            &
                                         PHIL,                           &
                                         PRSL,                           &
+                                        PRSLK,                          &
                                         Q1,                             & 
                                         T1,                             & 
                                         U1,                             & 
@@ -192,7 +211,7 @@ CONTAINS
 
       INTEGER ::                                                        &
                                         I,                              &
-                                        IGPVS,                          &
+!                                        IGPVS,                          &
                                         IM,                             &
                                         J,                              &
                                         JCAP,                           &
@@ -202,7 +221,15 @@ CONTAINS
                                         KX,                             &
                                         NCLOUD 
 
-      DATA IGPVS/0/
+      INTEGER :: start_year,start_month,start_day,start_hour
+
+      integer :: iseed
+!      integer, save :: krsize
+      integer :: krsize
+      integer,  allocatable ::  nrnd(:)
+      real :: fsec
+
+!      DATA IGPVS/0/
 
 !-----------------------------------------------------------------------
 !
@@ -223,6 +250,7 @@ CONTAINS
       IM=ITE-ITS+1
       KX=KTE-KTS+1
       JCAP=126
+      DPSHC=30_kind_phys
       DELT=DT*STEPCU
       RDELT=1./DELT
       NCLOUD=1
@@ -234,8 +262,36 @@ CONTAINS
      ENDDO
    ENDDO
 
-   if(igpvs.eq.0) CALL GPVS
-   igpvs=1
+   if(itimestep.eq.0) then
+      CALL GFUNCPHYS
+
+        CALL nl_get_start_year(1,start_year)   
+        CALL nl_get_start_month(1,start_month)   
+        CALL nl_get_start_day(1,start_day)   
+        CALL nl_get_start_hour(1,start_hour)   
+
+        call random_seed(size=krsize)
+        if (.not. allocated (nrnd)) allocate (nrnd(krsize))
+
+        seed0 = start_year + start_month + start_day + start_hour
+        nrnd = start_hour + start_day*24
+        call random_seed
+        call random_seed(put=nrnd)
+        call random_number(wrk)
+        seed0 = seed0 + nint(wrk*1000.0)
+  
+   endif
+
+   fsec = ITIMESTEP*DT
+   iseed = mod(100.0*sqrt(fsec),1.0e9) + 1 + seed0
+   call random_seed(size=krsize)
+   if (.not. allocated (nrnd)) allocate (nrnd(krsize))
+   nrnd = iseed
+   call random_seed
+   call random_seed(put=nrnd)
+   call random_number(rannum)
+
+!   igpvs=1
 
 !-------------  J LOOP (OUTER) --------------------------------------------------
 
@@ -267,31 +323,44 @@ CONTAINS
 ! --------------- end compute zi and zl -------------------------------------
 
 
-      call random_number(XKT2)
+!      call random_number(XKT2)
       DO i=its,ite
+        xkt2(i)=rannum(i,j)
         PS(i)=PSFC(i,j)*.001
         RCS(i)=1.
         SLIMSK(i)=ABS(XLAND(i,j)-2.)
+      ENDDO
+
+      DO i=its,ite
+        PRSI(i,kts)=PS(i)
       ENDDO
 
       DO k=kts,kte
         kp=k+1
         DO i=its,ite
           PRSL(I,K)=Pcps(i,k,j)*.001
-          PHIL(I,K)=ZL(I,K)*G
-          DOT(i,k)=-5.0E-4*G*rho3d(i,k,j)*(w(i,k,j)+w(i,kp,j))
+          PHIL(I,K)=ZL(I,K)*GRAV
+          DOT(i,k)=-5.0E-4*GRAV*rho3d(i,k,j)*(w(i,k,j)+w(i,kp,j))
         ENDDO
       ENDDO
 
       DO k=kts,kte
         DO i=its,ite
-          DEL(i,k)=PRSL(i,k)*G/RD*dz8w(i,k,j)/T3D(i,k,j)
+          DEL(i,k)=PRSL(i,k)*GRAV/RD*dz8w(i,k,j)/T3D(i,k,j)
           U1(i,k)=U3D(i,k,j)
           V1(i,k)=V3D(i,k,j)
-          Q1(i,k)=QV3D(i,k,j)
+          Q1(i,k)=QV3D(i,k,j)/(1.+QV3D(i,k,j))
           T1(i,k)=T3D(i,k,j)
-          QL(i,k,1)=QI3D(i,k,j)
-          QL(i,k,2)=QC3D(i,k,j)
+          QL(i,k,1)=QI3D(i,k,j)/(1.+QI3D(i,k,j))
+          QL(i,k,2)=QC3D(i,k,j)/(1.+QC3D(i,k,j))
+          PRSLK(I,K)=(PRSL(i,k)*.01)**ROVCP
+        ENDDO
+      ENDDO
+
+      DO k=kts+1,kte+1
+        km=k-1
+        DO i=its,ite
+          PRSI(i,k)=PRSI(i,km)-del(i,km) 
         ENDDO
       ENDDO
 
@@ -299,6 +368,8 @@ CONTAINS
       CALL SASCNV(IM,IM,KX,JCAP,DELT,DEL,PRSL,PS,PHIL,                  &
                   QL,Q1,T1,U1,V1,RCS,CLDWRK,RN,KBOT,                    &
                   KTOP,KUO,SLIMSK,DOT,XKT2,NCLOUD)
+
+      CALL SHALCV(IM,IM,KX,DELT,DEL,PRSI,PRSL,PRSLK,KUO,Q1,T1,DPSHC)
 
       DO I=ITS,ITE
         RAINCV(I,J)=RN(I)*1000./STEPCU
@@ -309,7 +380,7 @@ CONTAINS
       DO K=KTS,KTE
         DO I=ITS,ITE
           RTHCUTEN(I,K,J)=(T1(I,K)-T3D(I,K,J))/PI3D(I,K,J)*RDELT
-          RQVCUTEN(I,K,J)=(Q1(I,K)-QV3D(I,K,J))*RDELT
+          RQVCUTEN(I,K,J)=(Q1(I,K)/(1.-q1(i,k))-QV3D(I,K,J))*RDELT
         ENDDO
       ENDDO
 
@@ -317,7 +388,7 @@ CONTAINS
         IF ( F_QC ) THEN
           DO K=KTS,KTE
             DO I=ITS,ITE
-              RQCCUTEN(I,K,J)=(QL(I,K,2)-QC3D(I,K,J))*RDELT
+              RQCCUTEN(I,K,J)=(QL(I,K,2)/(1.-ql(i,k,2))-QC3D(I,K,J))*RDELT
             ENDDO
           ENDDO
         ENDIF
@@ -327,16 +398,16 @@ CONTAINS
         IF ( F_QI ) THEN
           DO K=KTS,KTE
             DO I=ITS,ITE
-              RQICUTEN(I,K,J)=(QL(I,K,1)-QI3D(I,K,J))*RDELT
+              RQICUTEN(I,K,J)=(QL(I,K,1)/(1.-ql(i,k,1))-QI3D(I,K,J))*RDELT
             ENDDO
           ENDDO
         ENDIF
       ENDIF
 
+
    ENDDO
 
    ENDIF
-
 
    END SUBROUTINE CU_SAS
 
@@ -413,11 +484,13 @@ CONTAINS
 !    &       Q1,T1,U1,V1,RCS,CLDWRK,RN,KBOT,KTOP,KUO,SLIMSK,
 !    &       DOT,xkt2,ncloud)
 !
-      USE MODULE_GFS_CONSTANTS, ONLY: kind_phys,fpvs,                   &
-     &       grav => con_g, CP => con_CP, HVAP => con_HVAP              &
-     &,      RV => con_RV, FV => con_fvirt, T0C => con_T0C              &
-     &,      CVAP => con_CVAP, CLIQ => con_CLIQ                         &
-     &,      EPS => con_eps, EPSM1 => con_epsm1
+      USE MODULE_GFS_MACHINE , ONLY : kind_phys,kind_evod
+      USE MODULE_GFS_FUNCPHYS ,ONLY : fpvs
+      USE MODULE_GFS_PHYSCONS, grav => con_g, CP => con_CP, HVAP => con_HVAP &
+     &,             RV => con_RV, FV => con_fvirt, T0C => con_T0C       &
+     &,             CVAP => con_CVAP, CLIQ => con_CLIQ                  &
+     &,             EPS => con_eps, EPSM1 => con_epsm1
+
       implicit none
 !
 !     include 'constant.h'
@@ -602,7 +675,7 @@ CONTAINS
         DO I=1,IM
           IF (prSL(I,K)*tx1(I) .GT. 0.45) KBMAX(I) = K + 1
           IF (prSL(I,K)*tx1(I) .GT. 0.70) KBM(I)   = K + 1
-          IF (prSL(I,K)*tx1(I) .GT. 0.04) KMAX(I)  = K + 1
+          IF (prSL(I,K)*tx1(I) .GT. 0.04) KMAX(I)  = MIN(KM,K + 1)
         ENDDO
       ENDDO
       DO I=1,IM
@@ -2103,5 +2176,308 @@ CONTAINS
 !!
       RETURN
    END SUBROUTINE SASCNV
-END MODULE module_cu_sas
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      SUBROUTINE SHALCV(IM,IX,KM,DT,DEL,PRSI,PRSL,PRSLK,KUO,Q,T,DPSHC)
+!
+      USE MODULE_GFS_MACHINE , ONLY : kind_phys
+      USE MODULE_GFS_PHYSCONS, grav => con_g, CP => con_CP, HVAP => con_HVAP &
+     &,             RD => con_RD
+
+      implicit none
+!
+!     include 'constant.h'
+!
+      integer              IM, IX, KM, KUO(IM)
+      real(kind=kind_phys) DEL(IX,KM),   PRSI(IX,KM+1), PRSL(IX,KM),    &
+     &                     PRSLK(IX,KM),                                &
+     &                     Q(IX,KM),     T(IX,KM),      DT, DPSHC
+!
+!     Locals
+!
+      real(kind=kind_phys) ck,    cpdt,   dmse,   dsdz1, dsdz2,         &
+     &                     dsig,  dtodsl, dtodsu, eldq,  g,             &
+     &                     gocp,  rtdls
+!
+      integer              k,k1,k2,kliftl,kliftu,kt,N2,I,iku,ik1,ik,ii
+      integer              INDEX2(IM), KLCL(IM), KBOT(IM), KTOP(IM),kk  &
+     &,                    KTOPM(IM)
+!!
+!  PHYSICAL PARAMETERS
+      PARAMETER(G=GRAV, GOCP=G/CP)
+!  BOUNDS OF PARCEL ORIGIN
+      PARAMETER(KLIFTL=2,KLIFTU=2)
+      LOGICAL   LSHC(IM)
+      real(kind=kind_phys) Q2(IM*KM),     T2(IM*KM),                    &
+     &                     PRSL2(IM*KM),  PRSLK2(IM*KM),                &
+     &                     AL(IM*(KM-1)), AD(IM*KM), AU(IM*(KM-1))
+!-----------------------------------------------------------------------
+!  COMPRESS FIELDS TO POINTS WITH NO DEEP CONVECTION
+!  AND MOIST STATIC INSTABILITY.
+      DO I=1,IM
+        LSHC(I)=.FALSE.
+      ENDDO
+      DO K=1,KM-1
+        DO I=1,IM
+          IF(KUO(I).EQ.0) THEN
+            ELDQ    = HVAP*(Q(I,K)-Q(I,K+1))
+            CPDT    = CP*(T(I,K)-T(I,K+1))
+            RTDLS   = (PRSL(I,K)-PRSL(I,K+1)) /                         &
+     &                 PRSI(I,K+1)*RD*0.5*(T(I,K)+T(I,K+1))
+            DMSE    = ELDQ+CPDT-RTDLS
+            LSHC(I) = LSHC(I).OR.DMSE.GT.0.
+          ENDIF
+        ENDDO
+      ENDDO
+      N2 = 0
+      DO I=1,IM
+        IF(LSHC(I)) THEN
+          N2         = N2 + 1
+          INDEX2(N2) = I
+        ENDIF
+      ENDDO
+      IF(N2.EQ.0) RETURN
+      DO K=1,KM
+        KK = (K-1)*N2
+        DO I=1,N2
+          IK         = KK + I
+          ii         = index2(i)
+          Q2(IK)     = Q(II,K)
+          T2(IK)     = T(II,K)
+          PRSL2(IK)  = PRSL(II,K)
+          PRSLK2(IK) = PRSLK(II,K)
+        ENDDO
+      ENDDO
+      do i=1,N2
+        ktopm(i) = KM
+      enddo
+      do k=2,KM
+        do i=1,N2
+          ii = index2(i)
+          if (prsi(ii,1)-prsi(ii,k) .le. dpshc) ktopm(i) = k
+        enddo
+      enddo
+
+!-----------------------------------------------------------------------
+!  COMPUTE MOIST ADIABAT AND DETERMINE LIMITS OF SHALLOW CONVECTION.
+!  CHECK FOR MOIST STATIC INSTABILITY AGAIN WITHIN CLOUD.
+      CALL MSTADBT3(N2,KM-1,KLIFTL,KLIFTU,PRSL2,PRSLK2,T2,Q2,           &
+     &            KLCL,KBOT,KTOP,AL,AU)
+      DO I=1,N2
+        KBOT(I) = min(KLCL(I)-1, ktopm(i)-1)
+        KTOP(I) = min(KTOP(I)+1, ktopm(i))
+        LSHC(I) = .FALSE.
+      ENDDO
+      DO K=1,KM-1
+        KK = (K-1)*N2
+        DO I=1,N2
+          IF(K.GE.KBOT(I).AND.K.LT.KTOP(I)) THEN
+            IK      = KK + I
+            IKU     = IK + N2
+            ELDQ    = HVAP * (Q2(IK)-Q2(IKU))
+            CPDT    = CP   * (T2(IK)-T2(IKU))
+            RTDLS   = (PRSL2(IK)-PRSL2(IKU)) /                          &
+     &                 PRSI(index2(i),K+1)*RD*0.5*(T2(IK)+T2(IKU))
+            DMSE    = ELDQ + CPDT - RTDLS
+            LSHC(I) = LSHC(I).OR.DMSE.GT.0.
+            AU(IK)  = G/RTDLS
+          ENDIF
+        ENDDO
+      ENDDO
+      K1=KM+1
+      K2=0
+      DO I=1,N2
+        IF(.NOT.LSHC(I)) THEN
+          KBOT(I) = KM+1
+          KTOP(I) = 0
+        ENDIF
+        K1 = MIN(K1,KBOT(I))
+        K2 = MAX(K2,KTOP(I))
+      ENDDO
+      KT = K2-K1+1
+      IF(KT.LT.2) RETURN
+!-----------------------------------------------------------------------
+!  SET EDDY VISCOSITY COEFFICIENT CKU AT SIGMA INTERFACES.
+!  COMPUTE DIAGONALS AND RHS FOR TRIDIAGONAL MATRIX SOLVER.
+!  EXPAND FINAL FIELDS.
+      KK = (K1-1) * N2
+      DO I=1,N2
+        IK     = KK + I
+        AD(IK) = 1.
+      ENDDO
+!
+!     DTODSU=DT/DEL(K1)
+      DO K=K1,K2-1
+!       DTODSL=DTODSU
+!       DTODSU=   DT/DEL(K+1)
+!       DSIG=SL(K)-SL(K+1)
+        KK = (K-1) * N2
+        DO I=1,N2
+          ii     = index2(i)
+          DTODSL = DT/DEL(II,K)
+          DTODSU = DT/DEL(II,K+1)
+          DSIG   = PRSL(II,K) - PRSL(II,K+1)
+          IK     = KK + I
+          IKU    = IK + N2
+          IF(K.EQ.KBOT(I)) THEN
+            CK=1.5
+          ELSEIF(K.EQ.KTOP(I)-1) THEN
+            CK=1.
+          ELSEIF(K.EQ.KTOP(I)-2) THEN
+            CK=3.
+          ELSEIF(K.GT.KBOT(I).AND.K.LT.KTOP(I)-2) THEN
+            CK=5.
+          ELSE
+            CK=0.
+          ENDIF
+          DSDZ1   = CK*DSIG*AU(IK)*GOCP
+          DSDZ2   = CK*DSIG*AU(IK)*AU(IK)
+          AU(IK)  = -DTODSL*DSDZ2
+          AL(IK)  = -DTODSU*DSDZ2
+          AD(IK)  = AD(IK)-AU(IK)
+          AD(IKU) = 1.-AL(IK)
+          T2(IK)  = T2(IK)+DTODSL*DSDZ1
+          T2(IKU) = T2(IKU)-DTODSU*DSDZ1
+        ENDDO
+      ENDDO
+      IK1=(K1-1)*N2+1
+      CALL TRIDI2T3(N2,KT,AL(IK1),AD(IK1),AU(IK1),Q2(IK1),T2(IK1),      &
+     &                                  AU(IK1),Q2(IK1),T2(IK1))
+      DO K=K1,K2
+        KK = (K-1)*N2
+        DO I=1,N2
+          IK = KK + I
+          Q(INDEX2(I),K) = Q2(IK)
+          T(INDEX2(I),K) = T2(IK)
+        ENDDO
+      ENDDO
+!-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE SHALCV
+!-----------------------------------------------------------------------
+      SUBROUTINE TRIDI2T3(L,N,CL,CM,CU,R1,R2,AU,A1,A2)
+!yt      INCLUDE DBTRIDI2;
+!!
+      USE MODULE_GFS_MACHINE , ONLY : kind_phys
+      implicit none
+      integer             k,n,l,i
+      real(kind=kind_phys) fk
+!!
+      real(kind=kind_phys)                                              &
+     &          CL(L,2:N),CM(L,N),CU(L,N-1),R1(L,N),R2(L,N),            &
+     &          AU(L,N-1),A1(L,N),A2(L,N)
+!-----------------------------------------------------------------------
+      DO I=1,L
+        FK=1./CM(I,1)
+        AU(I,1)=FK*CU(I,1)
+        A1(I,1)=FK*R1(I,1)
+        A2(I,1)=FK*R2(I,1)
+      ENDDO
+      DO K=2,N-1
+        DO I=1,L
+          FK=1./(CM(I,K)-CL(I,K)*AU(I,K-1))
+          AU(I,K)=FK*CU(I,K)
+          A1(I,K)=FK*(R1(I,K)-CL(I,K)*A1(I,K-1))
+          A2(I,K)=FK*(R2(I,K)-CL(I,K)*A2(I,K-1))
+        ENDDO
+      ENDDO
+      DO I=1,L
+        FK=1./(CM(I,N)-CL(I,N)*AU(I,N-1))
+        A1(I,N)=FK*(R1(I,N)-CL(I,N)*A1(I,N-1))
+        A2(I,N)=FK*(R2(I,N)-CL(I,N)*A2(I,N-1))
+      ENDDO
+      DO K=N-1,1,-1
+        DO I=1,L
+          A1(I,K)=A1(I,K)-AU(I,K)*A1(I,K+1)
+          A2(I,K)=A2(I,K)-AU(I,K)*A2(I,K+1)
+        ENDDO
+      ENDDO
+!-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE TRIDI2T3
+!-----------------------------------------------------------------------
+
+      SUBROUTINE MSTADBT3(IM,KM,K1,K2,PRSL,PRSLK,TENV,QENV,             &
+     &                  KLCL,KBOT,KTOP,TCLD,QCLD)
+!yt      INCLUDE DBMSTADB;
+!!
+      USE MODULE_GFS_MACHINE, ONLY : kind_phys
+      USE MODULE_GFS_FUNCPHYS, ONLY : FTDP, FTHE, FTLCL, STMA
+      USE MODULE_GFS_PHYSCONS, EPS => con_eps, EPSM1 => con_epsm1, FV => con_FVirt
+
+      implicit none
+!!
+!     include 'constant.h'
+!!
+      integer              k,k1,k2,km,i,im
+      real(kind=kind_phys) pv,qma,slklcl,tdpd,thelcl,tlcl
+      real(kind=kind_phys) tma,tvcld,tvenv
+!!
+      real(kind=kind_phys) PRSL(IM,KM), PRSLK(IM,KM), TENV(IM,KM),      &
+     &                     QENV(IM,KM), TCLD(IM,KM),  QCLD(IM,KM)
+      INTEGER              KLCL(IM),    KBOT(IM),      KTOP(IM)
+!  LOCAL ARRAYS
+      real(kind=kind_phys) SLKMA(IM), THEMA(IM)
+!-----------------------------------------------------------------------
+!  DETERMINE WARMEST POTENTIAL WET-BULB TEMPERATURE BETWEEN K1 AND K2.
+!  COMPUTE ITS LIFTING CONDENSATION LEVEL.
+!
+      DO I=1,IM
+        SLKMA(I) = 0.
+        THEMA(I) = 0.
+      ENDDO
+      DO K=K1,K2
+        DO I=1,IM
+          PV   = 1000.0 * PRSL(I,K)*QENV(I,K)/(EPS-EPSM1*QENV(I,K))
+          TDPD = TENV(I,K)-FTDP(PV)
+          IF(TDPD.GT.0.) THEN
+            TLCL   = FTLCL(TENV(I,K),TDPD)
+            SLKLCL = PRSLK(I,K)*TLCL/TENV(I,K)
+          ELSE
+            TLCL   = TENV(I,K)
+            SLKLCL = PRSLK(I,K)
+          ENDIF
+          THELCL=FTHE(TLCL,SLKLCL)
+          IF(THELCL.GT.THEMA(I)) THEN
+            SLKMA(I) = SLKLCL
+            THEMA(I) = THELCL
+          ENDIF
+        ENDDO
+      ENDDO
+!-----------------------------------------------------------------------
+!  SET CLOUD TEMPERATURES AND HUMIDITIES WHEREVER THE PARCEL LIFTED UP
+!  THE MOIST ADIABAT IS BUOYANT WITH RESPECT TO THE ENVIRONMENT.
+      DO I=1,IM
+        KLCL(I)=KM+1
+        KBOT(I)=KM+1
+        KTOP(I)=0
+      ENDDO
+      DO K=1,KM
+        DO I=1,IM
+          TCLD(I,K)=0.
+          QCLD(I,K)=0.
+        ENDDO
+      ENDDO
+      DO K=K1,KM
+        DO I=1,IM
+          IF(PRSLK(I,K).LE.SLKMA(I)) THEN
+            KLCL(I)=MIN(KLCL(I),K)
+            CALL STMA(THEMA(I),PRSLK(I,K),TMA,QMA)
+!           TMA=FTMA(THEMA(I),PRSLK(I,K),QMA)
+            TVCLD=TMA*(1.+FV*QMA)
+            TVENV=TENV(I,K)*(1.+FV*QENV(I,K))
+            IF(TVCLD.GT.TVENV) THEN
+              KBOT(I)=MIN(KBOT(I),K)
+              KTOP(I)=MAX(KTOP(I),K)
+              TCLD(I,K)=TMA-TENV(I,K)
+              QCLD(I,K)=QMA-QENV(I,K)
+            ENDIF
+          ENDIF
+        ENDDO
+      ENDDO
+!-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE MSTADBT3
+     
+      END MODULE module_cu_sas

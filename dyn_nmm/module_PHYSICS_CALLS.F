@@ -1518,6 +1518,8 @@
 !-----------------------------------------------------------------------
       IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
      &   CONFIG_FLAGS%CU_PHYSICS==BMJSCHEME)RETURN
+      IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
+     &   CONFIG_FLAGS%CU_PHYSICS==SASSCHEME)RETURN
 !-----------------------------------------------------------------------
       NSTEP_CNV=NCNVC
 !

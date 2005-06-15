@@ -43,7 +43,8 @@ CONTAINS
                   ALBEDO,ALBBCK,ZNT,Z0,TMN,XLAND,XICE, EMISS,   & 
                   SNOWC,QSFC,RAINBL,                            &
                   num_soil_layers,DT,DZS,ITIMESTEP,             &
-                  SMOIS,TSLB,SNOW,CANWAT,CHS,CPM,ROVCP,         & !H   
+                  SMOIS,TSLB,SNOW,CANWAT,                       &
+                  CHS,CHS2,CQS2,CPM,ROVCP,                      & !H   
                   SH2O,SNOWH,                                   & !H 
                   SNOALB,SHDMIN,SHDMAX,                         & !I
                   ACSNOM,ACSNOW,                                & !O  
@@ -79,6 +80,8 @@ CONTAINS
 !-- ALBEDO      time-varying surface albedo including snow effect (unitless fraction)
 !-- ALBBCK      background surface albedo (unitless fraction)
 !-- CHS          surface exchange coefficient for heat and moisture (m s-1);
+!-- CHS2        2m surface exchange coefficient for heat  (m s-1);
+!-- CQS2        2m surface exchange coefficient for moisture (m s-1);
 ! --- soil variables
 !-- num_soil_layers   the number of soil layers
 !-- ZS          depths of centers of soil layers   (m)
@@ -227,6 +230,8 @@ CONTAINS
                                                             LH, &
                                                         GRDFLX, &
                                                           QSFC,&     
+                                                          CQS2,&     
+                                                          CHS2,&     
                                                           SNOW, & 
                                                          SNOWC, & 
                                                          SNOWH, & !new
@@ -517,9 +522,14 @@ CONTAINS
           LH(I,J)=ETA
           GRDFLX(I,J)=SSOIL
           SNOWC(I,J)=SNCOVR
-!          QSFC(I,J)=Q1
+          CHS2(I,J)=CQS2(I,J)
 !      prevent diagnostic ground q (q1) from being greater than qsat(tsk)
-           QSFC(I,J)=min(Q1,qsfc(i,j))
+!      as happens over snow cover where the cqs2 value also becomes irrelevant
+!      by setting cqs2=chs in this situation the 2m q should become just qv(k=1)
+          IF (Q1 .GT. QSFC(I,J)) THEN
+            CQS2(I,J) = CHS(I,J)
+          ENDIF
+          QSFC(I,J)=Q1
 !                                                                       
           DO 80 NS=1,NSOIL                                              
            SMOIS(I,NS,J)=SMC(NS)                                       

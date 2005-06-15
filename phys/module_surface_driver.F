@@ -625,7 +625,8 @@ CONTAINS
                 albedo,albbck,znt,z0, tmn,xland,xice, emiss,    &
                 snowc,qsfc,rainbl,                              & 
                 num_soil_layers,dtbl,dzs,itimestep,             &
-                smois,tslb,snow,canwat,chs, cpm,rcp,            &    
+                smois,tslb,snow,canwat,                         &
+                chs, chs2, cqs2, cpm,rcp,                       &    
                 sh2o,snowh,                                     & !h  
                 snoalb,shdmin,shdmax,                           & !i
                 acsnow,acsnow,                                  & !o 
@@ -639,7 +640,7 @@ CONTAINS
            ENDDO
            ENDDO
          
-          CALL SFCDIAGS(HFX,QFX,TSK,QSFC,CQS2,CQS2,T2,TH2,Q2,      &
+          CALL SFCDIAGS(HFX,QFX,TSK,QSFC,CHS2,CQS2,T2,TH2,Q2,      &
                      PSFC,CP,R_d,RCP,                              &
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &

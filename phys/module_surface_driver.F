@@ -17,7 +17,7 @@ CONTAINS
      &          ,vz0,v_frame,v_phy,warm_rain,wspd,xice,xland,z,znt,zs &
      &          ,ct,tke_myj                                           &
      &          ,albbck,lh,sh2o,shdmax,shdmin,z0                      &
-     &          ,flqc,flhc,psfc                                       &
+     &          ,flqc,flhc,psfc,sst,sst_update                        &
      &          ,sf_sfclay_physics,sf_surface_physics,ra_lw_physics   &
      &          , ids,ide,jds,jde,kds,kde                             &
      &          , ims,ime,jms,jme,kms,kme                             &
@@ -169,6 +169,7 @@ CONTAINS
 !-- DX            horizontal space interval (m)
 !-- DT            time step (second)
 !-- PSFC          pressure at the surface (Pa)
+!-- SST           sea-surface temperature (K)
 !-- TSLB          
 !-- ZS
 !-- DZS
@@ -202,7 +203,7 @@ CONTAINS
      &          ,ims,ime,jms,jme,kms,kme                              &
      &          ,kts,kte,num_tiles
 
-   INTEGER, INTENT(IN) :: sf_sfclay_physics,sf_surface_physics,ra_lw_physics
+   INTEGER, INTENT(IN) :: sf_sfclay_physics,sf_surface_physics,ra_lw_physics,sst_update
 
    INTEGER, DIMENSION(num_tiles), INTENT(IN) ::                       &
      &           i_start,i_end,j_start,j_end
@@ -224,6 +225,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   GSW
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   HT
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   RAINCV
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   SST
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   TMN
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   VEGFRA
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   XICE
@@ -418,6 +420,18 @@ CONTAINS
       ENDDO
     ENDDO
     !$OMP END PARALLEL DO
+  ENDIF
+! Update SST
+  IF (sst_update .EQ. 1) THEN
+    !$OMP PARALLEL DO   &
+    !$OMP PRIVATE ( ij, i, j, k )
+    DO ij = 1 , num_tiles
+      DO j=j_start(ij),j_end(ij)
+      DO i=i_start(ij),i_end(ij)
+        IF(XLAND(i,j) .GT. 1.5)TSK(i,j)=SST(i,j)
+      ENDDO
+      ENDDO
+    ENDDO
   ENDIF
 
   IF (itimestep .eq. 1 .or. mod(itimestep,STEPBL) .eq. 0) THEN

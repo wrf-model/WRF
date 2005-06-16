@@ -445,8 +445,8 @@ SUBROUTINE assemble_output ( grid , config_flags , loop , time_loop_max )
    INTEGER :: ijds , ijde , spec_bdy_width
    INTEGER :: i , j , k , idts
 
-   INTEGER :: id1 , interval_seconds , ierr, rc
-   INTEGER , SAVE :: id 
+   INTEGER :: id1 , interval_seconds , ierr, rc, sst_update
+   INTEGER , SAVE :: id, id5 
    CHARACTER (LEN=80) :: inpname , bdyname
    CHARACTER(LEN= 4) :: loop_char
 character *19 :: temp19
@@ -488,6 +488,7 @@ real::t1,t2
 
    spec_bdy_width = model_config_rec%spec_bdy_width
    interval_seconds = model_config_rec%interval_seconds
+   sst_update = model_config_rec%sst_update
 
 print *,'spec_bdy_width, interval_seconds, loop=',spec_bdy_width , interval_seconds,loop
 
@@ -516,9 +517,19 @@ print *,'spec_bdy_width, interval_seconds, loop=',spec_bdy_width , interval_seco
       IF ( ierr .NE. 0 ) THEN
          CALL wrf_error_fatal( 'real: error opening wrfinput for writing' )
       ENDIF
+      IF(sst_update .EQ. 1)THEN
+        CALL construct_filename1( inpname , 'wrflowinp' , grid%id , 2 )
+        CALL open_w_dataset ( id5, TRIM(inpname) , grid , config_flags , output_aux_model_input5 , "DATASET=AUXINPUT5", ierr )
+        IF ( ierr .NE. 0 ) THEN
+           CALL wrf_error_fatal( 'real: error opening wrflowinp for writing' )
+        ENDIF
+      ENDIF
 !     CALL calc_current_date ( grid%id , 0. )
       CALL output_model_input ( id1, grid , config_flags , ierr )
       CALL close_dataset ( id1 , config_flags , "DATASET=INPUT" )
+      IF(sst_update .EQ. 1)THEN
+        CALL output_aux_model_input5 ( id5, grid , config_flags , ierr )
+      ENDIF
 
       !  We need to save the 3d data to compute a difference during the next loop.  Couple the
       !  3d fields with total mu (mub + mu_2) and the stagger-specific map scale factor.
@@ -570,6 +581,10 @@ print *,'spec_bdy_width, interval_seconds, loop=',spec_bdy_width , interval_seco
 
 
    ELSE IF ( loop .GT. 1 ) THEN
+
+      IF(sst_update .EQ. 1)THEN
+        CALL output_aux_model_input5 ( id5, grid , config_flags , ierr )
+      ENDIF
 
       !  Open the boundary file.
 
@@ -771,6 +786,9 @@ print *,'LBC valid between these times ',current_date, ' ',start_date
          !  If this is the last time through here, we need to close the files.
 
          CALL close_dataset ( id , config_flags , "DATASET=BOUNDARY" )
+        IF(sst_update .EQ. 1)THEN
+         CALL close_dataset ( id5 , config_flags , "DATASET=AUXINPUT5" )
+        ENDIF
 
       END IF
 

@@ -260,6 +260,11 @@ Namelist variables for controling the prototype moving nest:
                                                 ; scheme, set to land point and permanent ice; if water point
                                                 ; and Noah scheme, set to land point, permanent ice, set temps
                                                 ; from 3 m to surface, and set smois and sh2o
+ sst_update                          = 0        ; time-varying sea-surface temp (0=no, 1=yes). If selected real 
+                                                ; puts SST in wrflowinp_d01 file, and wrf updates SST from it
+                                                ; at same interval as boundary file. To read this, the time-control
+                                                ; namelist must include  auxinput5_interval,  auxinput5_end_h, and
+                                                   auxinput5_inname = "wrflowinp_d01"
 
 
  &dynamics

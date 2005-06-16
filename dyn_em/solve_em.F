@@ -600,6 +600,7 @@ BENCH_START(surf_driver_tim)
      &        ,SHDMAX=shdmax      ,SHDMIN=shdmin      ,SMOIS=smois        &
      &        ,SMSTAV=smstav      ,SMSTOT=smstot      ,SNOALB=snoalb      &
      &        ,SNOW=snow          ,SNOWC=snowc        ,SNOWH=snowh        &
+     &        ,SST=sst            ,SST_UPDATE=sst_update                  &
      &        ,STEPBL=stepbl      ,TH10=th10          ,TH2=th2            &
      &        ,THZ0=thz0          ,TH_PHY=th_phy      ,TKE_MYJ=tke_myj    &
      &        ,TMN=tmn            ,TSHLTR=tshltr      ,TSK=tsk            &

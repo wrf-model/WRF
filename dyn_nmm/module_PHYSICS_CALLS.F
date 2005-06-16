@@ -634,7 +634,7 @@
 !***
 !-----------------------------------------------------------------------
       INTEGER :: I,IDUMMY,IEND,ISFFLX,ISTR,J,K,KOUNT_ALL,LENGTH_ROW     &
-     &          ,LLIJ,LLMH,LLYR,N
+     &          ,LLIJ,LLMH,LLYR,N,SST_UPDATE
 !
       INTEGER,DIMENSION(IMS:IME,JMS:JME) :: KPBL,LOWLYR
 !
@@ -686,6 +686,7 @@
       IDUMMY=0
       ISFFLX=1
       DX=0.
+      SST_UPDATE=0
 !
       DO J=JMS,JME
       DO I=IMS,IME
@@ -950,6 +951,7 @@
      &          ,RHO=RR,SFCEVP=SFCEVPX,SFCEXC=SFCEXC,SFCRUNOFF=SSROFF   &
      &          ,SMOIS=SMC,SMSTAV=SMSTAV,SMSTOT=SMSTOT,SNOALB=MXSNAL    &
      &          ,SNOW=SNOW,SNOWC=SNOWC,SNOWH=SNOWH,STEPBL=NPHS          &
+     &          ,SST=sst            ,SST_UPDATE=sst_update              &
      &          ,TH10=TH10,TH2=TH2X,THZ0=THZ0,TH_PHY=TH_PHY             &
      &          ,TMN=TG,TSHLTR=TSHLTR,TSK=TSFC,TSLB=STC,T_PHY=T_PHY     &
      &          ,U10=U10,UDRUNOFF=BGROFF,UST=USTAR,UZ0=UZ0H             &

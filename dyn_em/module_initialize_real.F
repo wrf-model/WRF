@@ -536,6 +536,14 @@ endif
 if(oops2.gt.0) then
 print *,'points artificially set to water: ',oops2
 endif
+! fill sst array with tsk if missing in real input (needed for time-varying sst in wrf)
+      DO j = jts, MIN(jde-1,jte)
+         DO i = its, MIN(ide-1,ite)
+           IF ( flag_sst .NE. 1 ) THEN
+             sst(i,j) = tsk(i,j)
+           ENDIF
+         END DO
+      END DO
 
       !  From the full level data, we can get the half levels, reciprocals, and layer
       !  thicknesses.  These are all defined at half level locations, so one less level.

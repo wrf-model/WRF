@@ -1624,7 +1624,7 @@
       write(0,*)' start nrads=',nrads,' nradl=',nradl,' nphs=',nphs,' ncnvc=',ncnvc
       G_INV=1./G
       ROG=R_D*G_INV
-      RADT=NRADS/60.
+      RADT=NRADS*DT/60.
       BLDT=NPHS*DT/60.
       CUDT=NCNVC*DT/60.
       GSMDT=NPHS*DT/60.

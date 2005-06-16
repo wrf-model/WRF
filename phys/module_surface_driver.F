@@ -523,12 +523,6 @@ CONTAINS
                ims,ime, jms,jme, kms,kme,                          &
                i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
         CALL wrf_debug(100,'in SFCDIAGS')
-          CALL SFCDIAGS(hfx,qfx,tsk,qsfc,chs2,cqs2,tshltr,th2,qshltr, &
-                     psfc,cp,r_d,rcp,                              &
-                     ids,ide, jds,jde, kds,kde,                    &
-                     ims,ime, jms,jme, kms,kme,                    &
-             i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
-                                                                                                                                        
        ELSE
          CALL wrf_error_fatal('Lacking arguments for SF_GFS in surface driver')
        ENDIF

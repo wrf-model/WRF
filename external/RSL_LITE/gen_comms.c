@@ -780,7 +780,9 @@ gen_nest_pack ( char * dirname )
 
         fprintf(fp,"CALL %s( msize*RWORDSIZE                               &\n",info_name ) ;
         fprintf(fp,"                        ,cips,cipe,cjps,cjpe                               &\n") ;
-        fprintf(fp,"                        ,nids,nide,njds,njde                               &\n") ;
+/* nids has shw already added so subtract it out so the nested decomposition will be 
+   correctly computed in the TASK_FOR_POINT routine that this guy calls */
+        fprintf(fp,"                        ,nids+shw,nide-shw,njds+shw,njde-shw               &\n") ;
         fprintf(fp,"                        ,ntasks_x,ntasks_y                                 &\n") ; 
         fprintf(fp,"                        ,icoord,jcoord                                     &\n") ;
         fprintf(fp,"                        ,idim_cd,jdim_cd                                   &\n") ;
@@ -792,7 +794,9 @@ gen_nest_pack ( char * dirname )
 
         fprintf(fp,"CALL %s( msize*RWORDSIZE                               &\n",info_name ) ;
         fprintf(fp,"                        ,cips,cipe,cjps,cjpe                               &\n") ;
-        fprintf(fp,"                        ,nids,nide,njds,njde                               &\n") ;
+/* nids has shw already added so subtract it out so the nested decomposition will be 
+   correctly computed in the TASK_FOR_POINT routine that this guy calls */
+        fprintf(fp,"                        ,nids+shw,nide-shw,njds+shw,njde-shw               &\n") ;
         fprintf(fp,"                        ,ntasks_x,ntasks_y                                 &\n") ; 
         fprintf(fp,"                        ,icoord,jcoord                                     &\n") ;
         fprintf(fp,"                        ,idim_cd,jdim_cd                                   &\n") ;

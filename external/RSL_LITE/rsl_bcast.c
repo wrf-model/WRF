@@ -92,7 +92,7 @@ static int  Rbufsize ;
 static int  Rbufcurs ;
 static int  Rpointcurs ;
 static char *Recvbuf ;
-static int  Rdisplacements[RSL_MAXPROC] ;
+static int  Rdisplacements[RSL_MAXPROC+1] ;
 static int  Rsizes[RSL_MAXPROC] ;
 static int  Rreclen ;
 
@@ -172,9 +172,6 @@ RSL_LITE_TO_CHILD_INFO ( msize_p,
       {
 	if ( ( *jcoord_p <= j && j <= *jcoord_p+*jdim_cd_p-1 ) && ( *icoord_p <= i && i <= *icoord_p+*idim_cd_p-1 ) ) {
 	   TASK_FOR_POINT ( &i, &j, nids_p, nide_p, njds_p, njde_p, &s_ntasks_x, &s_ntasks_y, &Px, &Py, &P ) ;
-#if 0
-fprintf(stderr,"%d %d is on P %d (nids_p, nide_p, njds_p, njde_p %d %d %d %d)\n",i,j,P,*nids_p,*nide_p,*njds_p,*njde_p) ;
-#endif
 	   q = RSL_MALLOC( rsl_list_t , 1 ) ;
 	   q->info1 = i ;
 	   q->info2 = j ;
@@ -190,6 +187,7 @@ fprintf(stderr,"%d %d is on P %d (nids_p, nide_p, njds_p, njde_p %d %d %d %d)\n"
     Pcurs = -1 ;
     Pptr = NULL ;
   }
+
   if ( Pptr != NULL ) {
     Pptr = Pptr->next ;
   } 
@@ -198,11 +196,6 @@ fprintf(stderr,"%d %d is on P %d (nids_p, nide_p, njds_p, njde_p %d %d %d %d)\n"
           r = (int *) &(Sendbuf[Recsizeindex]) ;
           *r = Sendbufcurs - Recsizeindex + 2 * sizeof(int) ;
           Ssizes[Pcurs] += *r ;
-#if 0
-fprintf(stderr,"B Sendbufcurs %d Recsizeindex %d Pcurs %d\n",Sendbufcurs,Recsizeindex,Pcurs);
-fprintf(stderr,"B Ssizes[%d] %d\n",Pcurs,Ssizes[Pcurs]  ) ;
-fprintf(stderr,"B storing size for %d %d (%d %d) %d\n",*ig_p,*jg_p,*(r-2),*(r-1),*r ) ;
-#endif
   }
 
   while ( Pptr == NULL ) {
@@ -214,39 +207,19 @@ fprintf(stderr,"B storing size for %d %d (%d %d) %d\n",*ig_p,*jg_p,*(r-2),*(r-1)
         Pptr = Plist[Pcurs] ;
       } else {
         *retval_p = 0 ;
-#if 0
-fprintf(stderr,"to child info returns 0 \n" );
-#endif
         return ;  /* done */
       }
   }
 
-#if 0
-  if ( Recsizeindex >= 0 ) {
-    r = (int *) &(Sendbuf[Recsizeindex]) ;
-    *r = Sendbufcurs - Recsizeindex + 2 * sizeof(int) ;
-    Ssizes[Pcurs] += *r ;
-fprintf(stderr,"A Sendbufcurs %d Recsizeindex %d Pcurs %d\n",Sendbufcurs,Recsizeindex,Pcurs);
-fprintf(stderr,"A Ssizes[Pcurs] %d\n",Ssizes[Pcurs]  ) ;
-fprintf(stderr,"A storing size for %d %d (%d %d) %d\n",*ig_p,*jg_p,*(r-2),*(r-1),*r ) ;
-  }
-#endif
-
   *ig_p = Pptr->info1 ;
   *jg_p = Pptr->info2 ;
 
-#if 0
-fprintf(stderr,"to child info %d %d %d\n",*ig_p,*jg_p,Sendbufcurs) ;
-#endif
   r = (int *) &(Sendbuf[Sendbufcurs]) ;
   *r++ = Pptr->info1 ; Sendbufcurs += sizeof(int) ;  /* ig to buffer */
   *r++ = Pptr->info2 ; Sendbufcurs += sizeof(int) ;  /* jg to buffer */
   Recsizeindex = Sendbufcurs ;
   *r++ =           0 ; Sendbufcurs += sizeof(int) ;  /* store start for size */
   *retval_p = 1 ;
-#if 0
-fprintf(stderr,"to child info returns 1 \n" );
-#endif
 
   return ;
 }
@@ -387,6 +360,7 @@ rsl_lite_to_peerpoint_msg ( nbuf_p, buf )
   int nbuf ;
   int P, Px, Py ;
   int *p, *q ;
+  char *c, *d ;
   int i ;
 
   RSL_TEST_ERR(buf==NULL,"2nd argument is NULL.  Field allocated?") ;
@@ -399,10 +373,20 @@ rsl_lite_to_peerpoint_msg ( nbuf_p, buf )
     RSL_TEST_ERR(1,mess) ;
   }
 
-  for ( p = (int *)buf, q = (int *) &(Sendbuf[Sendbufcurs]), i = 0 ; i < nbuf ; i += sizeof(int) )
-  {
-    *q++ = *p++ ;
+  if ( nbuf % sizeof(int) == 0 ) {
+    for ( p = (int *)buf, q = (int *) &(Sendbuf[Sendbufcurs]), i = 0 ; i < nbuf ; i += sizeof(int) )
+    {
+      *q++ = *p++ ;
+    }
   }
+  else
+  {
+    for ( c = buf, d = &(Sendbuf[Sendbufcurs]), i = 0 ; i < nbuf ; i ++ )
+    {
+      *q++ = *p++ ;
+    }
+  }
+
   Sendbufcurs += nbuf ;
 
 }
@@ -439,8 +423,6 @@ rsl_lite_allgather_msgs ( mytask_p, ntasks_p, comm0 )
   int *Psize_all ;
   int *sp, *bp ;
   int rc ;
-  MPI_Request req[ RSL_MAXPROC ], sreq[ RSL_MAXPROC ] ;
-  MPI_Status   Status ;
 
   ntasks = *ntasks_p ;
   mytask = *mytask_p ;
@@ -475,31 +457,8 @@ rsl_lite_allgather_msgs ( mytask_p, ntasks_p, comm0 )
   Rbufcurs = 0 ;
   Rreclen = 0 ;
 
-#if 1
   rc = MPI_Alltoallv ( Sendbuf, Ssizes, Sdisplacements, MPI_BYTE , 
                        Recvbuf, Rsizes, Rdisplacements, MPI_BYTE ,  *comm0 ) ;
-#  if 0
-  fprintf(stderr,"MPI_Alltoallv returns %d, sentinel to %d\n",rc,Rbufsize + 2 * sizeof(int) ) ;
-#  endif
-#else
-
-  for ( P = 0 ; P < ntasks ; P++ ) { 
-    if ( Rsizes[P] != 0 ) {
-       MPI_Irecv( (void *)&(Recvbuf[Rdisplacements[P]]), Rsizes[P], MPI_BYTE, P, 32231, *comm0, (MPI_Request *)&(req[P]) ) ;
-    }
-  }
-  for ( P = 0 ; P < ntasks ; P++ ) { 
-    if ( Ssizes[P] != 0 ) {
-       MPI_Isend( (void *)&(Sendbuf[Sdisplacements[P]]), Ssizes[P], MPI_BYTE, P, 32231, *comm0, (MPI_Request *)&(sreq[P]) ) ;
-    }
-  }
-  for ( P = 0 ; P < ntasks ; P++ ) { 
-    if ( Rsizes[P] != 0 ) {
-       MPI_Wait( &(req[P]), &Status ) ;
-    }
-  }
-#endif
-
 
 /* add sentinel to the end of Recvbuf */
 
@@ -561,7 +520,7 @@ rsl_lite_from_peerpoint_info ( ig_p, jg_p, retval_p )
   }
      
 #if 0
-fprintf(stderr,"FROM  INFO: %d %d %d %d %d\n",*ig_p,*jg_p,Rreclen, Rbufcurs + Rpointcurs, *retval_p) ;
+fprintf(stderr,"FROM  INFO: %d %d %d %d %d %d\n",*ig_p,*jg_p,Rreclen, Rpointcurs, Rbufcurs + Rpointcurs, *retval_p) ;
 #endif
   return ;
 }

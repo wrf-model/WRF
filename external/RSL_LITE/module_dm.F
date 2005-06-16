@@ -163,11 +163,21 @@ CONTAINS
             kds = sd3 ; kde = ed3 
       END SELECT
 
-
       CALL compute_memory_dims_rsl_lite ( 0 , bdx, bdy,   &
                    ids, ide, jds, jde, kds, kde, &
                    ims, ime, jms, jme, kms, kme, &
                    ips, ipe, jps, jpe, kps, kpe )
+
+     ! ensure that the every parent domain point has a full set of nested points under it
+     ! even at the borders. Do this by making sure the number of nest points is a multiple of
+     ! the nesting ratio. Note that this is important mostly to the intermediate domain, which
+     ! is the subject of the scatter gather comms with the parent
+
+      IF ( id .GT. 1 ) THEN
+         CALL nl_get_parent_grid_ratio( id, parent_grid_ratio )
+         if ( mod(ime,parent_grid_ratio) .NE. 0 ) ime = ime + parent_grid_ratio - mod(ime,parent_grid_ratio)
+         if ( mod(jme,parent_grid_ratio) .NE. 0 ) jme = jme + parent_grid_ratio - mod(jme,parent_grid_ratio)
+      ENDIF
 
       SELECT CASE ( model_data_order )
          ! need to finish other cases
@@ -188,7 +198,6 @@ CONTAINS
             sp1 = jps ; ep1 = jpe ; sm1 = jms ; em1 = jme
             sp3 = kps ; ep3 = kpe ; sm3 = kms ; em3 = kme
       END SELECT
-
 
       IF ( id .GT. 1 ) THEN
 
@@ -983,7 +992,6 @@ END
                                 locbuf , (pe1-ps1+1)*(pe2-ps2+1)*(pe3-ps3+1),   &
                                 tmpbuf FRSTELEM , (de1-ds1+1)*(de2-ds2+1)*(de3-ds3+1) )
 
-
        ndim = len(TRIM(ordering))
 
        IF ( wrf_at_debug_level(500) ) THEN
@@ -1761,6 +1769,7 @@ END
       nlev  = ckde - ckds + 1 
 
 #  include "em_nest_interpdown_unpack.inc"
+
 
       CALL get_ijk_from_grid (  grid ,              &
                                 ids, ide, jds, jde, kds, kde,    &

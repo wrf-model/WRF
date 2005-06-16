@@ -10,12 +10,12 @@ TASK_FOR_POINT ( i_p , j_p , ids_p, ide_p , jds_p, jde_p , npx_p , npy_p , Px_p,
   int P, Px, Py ;                             /* output */
   int idim, jdim ;
   int rem, a, b ;
-  i = *i_p ;
-  j = *j_p ;
+  i = *i_p - 1 ;
+  j = *j_p - 1 ;
   npx = *npx_p ;
   npy = *npy_p ;
-  ids = *ids_p ; ide = *ide_p ;
-  jds = *jds_p ; jde = *jde_p ;
+  ids = *ids_p - 1 ; ide = *ide_p - 1 ;
+  jds = *jds_p - 1 ; jde = *jde_p - 1 ;
   idim = ide - ids + 1 ;
   jdim = jde - jds + 1 ;
 
@@ -26,6 +26,9 @@ fprintf(stderr,"tfp: i,j,npx,npy,ids,ide,jds,jde,idim,jdim\n%d %d %d %d %d %d %d
   i = i >= ids ? i : ids ; i = i <= ide ? i : ide ;
   rem = idim % npx ;
   a = rem * ( (idim / npx) + 1 ) ; 
+#if 0
+fprintf(stderr,"idim = %d rem = %d, a %d, i %d , i-ids %d\n", idim , rem , a, i, i-ids) ;
+#endif
   if ( i-ids < a ) {
     Px = (i-ids) / ( (idim / npx) + 1 ) ;
   }
@@ -51,25 +54,36 @@ fprintf(stderr,"tfp: i,j,npx,npy,ids,ide,jds,jde,idim,jdim\n%d %d %d %d %d %d %d
 #if 0
 main()
 {
+  int ips[100], ipe[100] ;
+  int jps[100], jpe[100] ;
   int shw, i , j , ids, ide, jds, jde, npx, npy ;  /* inputs */
   int Px, Py, P ;                             /* output */
   printf("i, j, ids, ide, jds, jde, npx, npy\n") ;
   scanf("%d %d %d %d %d %d %d %d",&i, &j, &ids,&ide,&jds,&jde,&npx,&npy ) ;
-#if 0
+  shw =0 ;
+  for ( i = 0 ; i < 100 ; i++ ) { ips[i] = 9999999 ; ipe[i] = -99999999 ; }
+  for ( i = 0 ; i < 100 ; i++ ) { jps[i] = 9999999 ; jpe[i] = -99999999 ; }
+#if 1
   for ( j = jds-shw ; j <= jde+shw ; j++ )
   {
-  printf("%3d. ",j) ;
   for ( i = ids-shw ; i <= ide+shw ; i++ )
   {
 #endif
   TASK_FOR_POINT ( &i , &j ,
                    &ids, &ide, &jds, &jde , &npx , &npy ,
                    &Px, &Py, &P ) ;
-  printf("%3d %3d %3d\n",Px, Py, P) ;
-#if 0
+  if ( i < ips[P] ) ips[P] = i ;
+  if ( j < jps[P] ) jps[P] = j ;
+  if ( i > ipe[P] ) ipe[P] = i ;
+  if ( j > jpe[P] ) jpe[P] = j ;
+/*  printf("%3d",P) ; */
+#if 1
   }
-  printf("\n") ;
+/*  printf("\n") ; */
   }
+for ( i = 0 ; i < 16 ; i++ ) {
+  fprintf(stderr,"%3d. ips %d ipe %d jps %d jpe %d\n", i, ips[i], ipe[i], jps[i], jpe[i] ) ;
+}
 #endif
 }
 #endif

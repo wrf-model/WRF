@@ -170,9 +170,6 @@ SUBROUTINE med_pre_nest_initial ( parent , newid , config_flags )
    CALL wrf_timetoa ( CurrTime, timestr )
    CALL construct_filename2a ( rstname , config_flags%rst_inname , newid , 2 , timestr )
 
-   WRITE(message,*)'RESTART: nest, opening ',TRIM(rstname),' for reading header information only'
-   CALL wrf_message ( message )
-
    IF ( config_flags%restart ) THEN
      WRITE(message,*)'RESTART: nest, opening ',TRIM(rstname),' for reading header information only'
      CALL wrf_message ( message )

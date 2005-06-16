@@ -171,6 +171,17 @@ Namelist variables for controling the prototype moving nest:
  radt (max_dom)                      = 30,	; minutes between radiation physics calls
                                            recommend 1 min per km of dx (e.g. 10 for 10 km)
 
+ nrads (max_dom)                     = FOR NMM: number of fundamental timesteps between 
+                                                calls to shortwave radiation; the value
+                                                is set in Registry.NMM but is overridden
+                                                by namelist value; radt will be computed
+                                                from this.
+
+ nradl (max_dom)                     = FOR NMM: number of fundamental timesteps between 
+                                                calls to longwave radiation; the value
+                                                is set in Registry.NMM but is overridden
+                                                by namelist value.
+
  co2tf                               CO2 transmission function flag only for GFDL radiation
                                      = 0, read CO2 function data from pre-generated file
                                      = 1, generate CO2 functions internally in the forecast
@@ -178,7 +189,8 @@ Namelist variables for controling the prototype moving nest:
  sf_sfclay_physics (max_dom)         surface-layer option (old bl_sfclay_physics option)
                                      = 0, no surface-layer
                                      = 1, Monin-Obukhov scheme
-                                     = 2, Monin-Obukhov (Janjic Eta) scheme
+                                     = 2, Monin-Obukhov (Janjic) scheme
+                                     = 3, NCEP Global Forecast System scheme
 
  sf_surface_physics (max_dom)        land-surface option (old bl_surface_physics option)
                                      = 0, no surface temp prediction
@@ -189,19 +201,32 @@ Namelist variables for controling the prototype moving nest:
  bl_pbl_physics (max_dom)            boundary-layer option
                                      = 0, no boundary-layer 
                                      = 1, YSU scheme
-                                     = 2, Mellor-Yamada-Janjic (Eta) TKE scheme
+                                     = 2, Mellor-Yamada-Janjic TKE scheme
+                                     = 3, NCEP Global Forecast System scheme
                                      = 99, MRF scheme (to be removed)
 
  bldt (max_dom)                      = 0,       ; minutes between boundary-layer physics calls
+
+ nphs (max_dom)                      = FOR NMM: number of fundamental timesteps between
+                                                calls to turbulence and microphysics;
+                                                the value is set in Registry.NMM but is
+                                                overridden by namelist value; bldt will
+                                                be computed from this.
 
  cu_physics (max_dom)                cumulus option
                                      = 0, no cumulus
                                      = 1, Kain-Fritsch (new Eta) scheme
                                      = 2, Betts-Miller-Janjic scheme
                                      = 3, Grell-Devenyi ensemble scheme
+                                     = 4, Simplified Arakawa-Schubert scheme
                                      = 99, previous Kain-Fritsch scheme
 
  cudt                                = 0,       ; minutes between cumulus physics calls
+
+ ncnvc (max_dom)                     = FOR NMM: number of fundamental timesteps between
+                                                calls to convection; the value is set in Registry.NMM
+                                                but is overridden by namelist value; cudt will be
+                                                computed from this.
 
  isfflx                              = 1,	; heat and moisture fluxes from the surface
                                                   (only works for sf_sfclay_physics = 1)

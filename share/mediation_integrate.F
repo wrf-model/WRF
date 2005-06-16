@@ -93,11 +93,11 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
 ! this needs to be looked at again so we can get rid of the special
 ! handling of AUXINPUT5 but for now...
 
-#ifdef WRF_CHEM
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! add for wrf_chem emiss input
 ! - Get chemistry data
   IF( config_flags%chem_opt > 0 ) THEN
+#ifdef WRF_CHEM
    IF( WRF_UTIL_AlarmIsRinging( grid%alarms( AUXINPUT5_ALARM ), rc=rc ) ) THEN
     print *,' CALL med_read_wrf_chem_emiss '
      CALL med_read_wrf_chem_emiss ( grid , config_flags )
@@ -106,6 +106,7 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
 
    ENDIF
 ! end for wrf chem emiss input
+#endif
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ELSE
    IF( WRF_UTIL_AlarmIsRinging( grid%alarms( AUXINPUT5_ALARM ), rc=rc ) ) THEN
@@ -113,7 +114,6 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
      CALL WRF_UTIL_AlarmRingerOff( grid%alarms( AUXINPUT5_ALARM ), rc=rc )
    ENDIF
   ENDIF
-#endif
 
 ! - RESTART OUTPUT
    IF( WRF_UTIL_AlarmIsRinging( grid%alarms( RESTART_ALARM ), rc=rc ) ) THEN

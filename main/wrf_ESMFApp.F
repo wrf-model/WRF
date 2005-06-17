@@ -68,7 +68,7 @@ CONTAINS
 
 !$$$here...  TBH:  Need to connect head_grid%start_subtime and head_grid%stop_subtime to 
 !$$$here...  TBH:  clock when building with ESMF library...  
-!$$$here...  maybe call wrf_clock_override() or something...  
+!$$$here...  build an interface...  
      head_grid%start_subtime = head_grid%start_time
      head_grid%stop_subtime = head_grid%stop_time
 
@@ -191,6 +191,7 @@ CONTAINS
      TYPE(ESMF_GridComp), INTENT(INOUT) :: gcomp
      INTEGER, INTENT(OUT) :: rc
      INTEGER :: finalrc
+     CHARACTER*256 :: msg
 !
 !<DESCRIPTION>
 !     WRF_register - Externally visible registration routine
@@ -211,25 +212,26 @@ CONTAINS
      call ESMF_GridCompSetEntryPoint(gcomp, ESMF_SETINIT, &
                                      wrf_component_init, ESMF_SINGLEPHASE, rc)
      IF ( rc /= ESMF_SUCCESS) THEN
-        ! TBH:  replace "print"
-        print *,'ERROR:  ESMF_GridCompSetEntryPoint(wrf_component_init) failed with rc = ',rc
+        WRITE(msg,*) 'ESMF_GridCompSetEntryPoint(wrf_component_init) failed with rc = ', rc
+        CALL ESMF_LogWrite( TRIM(msg), ESMF_LOG_ERROR )
         finalrc = rc
      ENDIF
      call ESMF_GridCompSetEntryPoint(gcomp, ESMF_SETRUN, &
                                      wrf_component_run, ESMF_SINGLEPHASE, rc)
      IF ( rc /= ESMF_SUCCESS) THEN
-        ! TBH:  replace "print"
-        print *,'ERROR:  ESMF_GridCompSetEntryPoint(wrf_component_run) failed with rc = ',rc
+        WRITE(msg,*) 'ESMF_GridCompSetEntryPoint(wrf_component_run) failed with rc = ', rc
+        CALL ESMF_LogWrite( TRIM(msg), ESMF_LOG_ERROR )
         finalrc = rc
      ENDIF
      call ESMF_GridCompSetEntryPoint(gcomp, ESMF_SETFINAL, &
                                      wrf_component_finalize, ESMF_SINGLEPHASE, rc)
      IF ( rc /= ESMF_SUCCESS) THEN
-        ! TBH:  replace "print"
-        print *,'ERROR:  ESMF_GridCompSetEntryPoint(wrf_component_finalize) failed with rc = ',rc
+        WRITE(msg,*) 'ESMF_GridCompSetEntryPoint(wrf_component_finalize) failed with rc = ', rc
+        CALL ESMF_LogWrite( TRIM(msg), ESMF_LOG_ERROR )
         finalrc = rc
      ENDIF
-     print *, "WRF:  Registered Initialize, Run, and Finalize routines"
+     WRITE(msg,*) 'WRF:  Registered Initialize, Run, and Finalize routines'
+     CALL ESMF_LogWrite( TRIM(msg), ESMF_LOG_INFO )
 
      rc = finalrc
 
@@ -254,6 +256,8 @@ PROGRAM wrf_ESMFApp
    USE module_wrf_setservices, ONLY: WRF_register
    ! ESMF module, defines all ESMF data types and procedures
    USE ESMF_Mod
+   ! Not-yet-implemented ESMF features
+   USE module_esmf_extensions
 
    IMPLICIT NONE
 
@@ -274,6 +278,7 @@ PROGRAM wrf_ESMFApp
 
    ! Return codes for error checks
    INTEGER :: rc
+   CHARACTER*256 :: msg
         
    ! Warn users that this is not yet ready for general use.  
    PRINT *, '                      W A R N I N G                          '
@@ -288,18 +293,22 @@ PROGRAM wrf_ESMFApp
    ! Initialize ESMF, get the default Global VM, and set
    ! the default calendar to be Gregorian.
    CALL ESMF_Initialize( vm=vm, defaultCalendar=ESMF_CAL_GREGORIAN, rc=rc )
-
-!$$$ TBH:  replace "print" statements!!
+   CALL ESMF_SetInitialized()   ! eliminate this once ESMF does it internally
+   WRITE(msg,*) 'ESMF_Initialize returned rc=', rc
+   CALL ESMF_LogWrite( TRIM(msg), ESMF_LOG_INFO )
 
    ! Create the top level Gridded Component, passing in the default VM.
    compGridded = ESMF_GridCompCreate(vm, "WRF Model", rc=rc)
-   PRINT *, "ESMF_GridCompCreate returned rc=", rc
+   WRITE(msg,*) 'ESMF_GridCompCreate returned rc=', rc
+   CALL ESMF_LogWrite( TRIM(msg), ESMF_LOG_INFO )
 
    ! Create empty import and export states
    importState = ESMF_StateCreate("WRF Import State", rc=rc)
-   PRINT *, "ESMF_StateCreate(WRF Import State) returned rc=", rc
+   WRITE(msg,*) 'ESMF_StateCreate(WRF Import State) returned rc=', rc
+   CALL ESMF_LogWrite( TRIM(msg), ESMF_LOG_INFO )
    exportState = ESMF_StateCreate("WRF Export State", rc=rc)
-   PRINT *, "ESMF_StateCreate(WRF Export State) returned rc=", rc
+   WRITE(msg,*) 'ESMF_StateCreate(WRF Export State) returned rc=', rc
+   CALL ESMF_LogWrite( TRIM(msg), ESMF_LOG_INFO )
 
    ! Create "dummy" clock (for now)
 !$$$here...  this is completely bogus - fix it!!  
@@ -314,32 +323,40 @@ PROGRAM wrf_ESMFApp
 
    ! Register the top level Gridded Component
    CALL ESMF_GridCompSetServices(compGridded, WRF_register, rc)
-   PRINT *, "ESMF_GridCompSetServices returned rc=", rc
+   WRITE(msg,*) 'ESMF_GridCompSetServices returned rc=', rc
+   CALL ESMF_LogWrite( TRIM(msg), ESMF_LOG_INFO )
 
    ! Init, Run, and Finalize section
    CALL ESMF_GridCompInitialize(compGridded, importState, exportState, &
                                 driverClock, rc=rc)
-   PRINT *, "ESMF_GridCompInitialize returned rc=", rc
+   WRITE(msg,*) 'ESMF_GridCompInitialize returned rc=', rc
+   CALL ESMF_LogWrite( TRIM(msg), ESMF_LOG_INFO )
 
    CALL ESMF_GridCompRun(compGridded, importState, exportState, &
                          driverClock, rc=rc)
-   PRINT *, "ESMF_GridCompRun returned rc=", rc
+   WRITE(msg,*) 'ESMF_GridCompRun returned rc=', rc
+   CALL ESMF_LogWrite( TRIM(msg), ESMF_LOG_INFO )
 
    CALL ESMF_GridCompFinalize(compGridded, importState, exportState, &
                               driverClock, rc=rc)
-   PRINT *, "ESMF_GridCompFinalize returned rc=", rc
+   WRITE(msg,*) 'ESMF_GridCompFinalize returned rc=', rc
+   CALL ESMF_LogWrite( TRIM(msg), ESMF_LOG_INFO )
  
  
    ! Clean up
 
    CALL ESMF_GridCompDestroy(compGridded, rc)
-   PRINT *, "ESMF_GridCompDestroy returned rc=", rc
+   WRITE(msg,*) 'ESMF_GridCompDestroy returned rc=', rc
+   CALL ESMF_LogWrite( TRIM(msg), ESMF_LOG_INFO )
    CALL ESMF_StateDestroy(importState, rc)
-   PRINT *, "ESMF_StateDestroy(importState) returned rc=", rc
+   WRITE(msg,*) 'ESMF_StateDestroy(importState) returned rc=', rc
+   CALL ESMF_LogWrite( TRIM(msg), ESMF_LOG_INFO )
    CALL ESMF_StateDestroy(exportState, rc)
-   PRINT *, "ESMF_StateDestroy(exportState) returned rc=", rc
+   WRITE(msg,*) 'ESMF_StateDestroy(exportState) returned rc=', rc
+   CALL ESMF_LogWrite( TRIM(msg), ESMF_LOG_INFO )
    CALL ESMF_ClockDestroy(driverClock, rc)
-   PRINT *, "ESMF_ClockDestroy returned rc=", rc
+   WRITE(msg,*) 'ESMF_ClockDestroy returned rc=', rc
+   CALL ESMF_LogWrite( TRIM(msg), ESMF_LOG_INFO )
 
    CALL ESMF_Finalize( rc=rc )
 

@@ -382,15 +382,6 @@ CONTAINS
         b = ( jdim / ntasks_y     ) * max( 0, mytask_y+1 - rem )
         jpe = a + b + shw + jds-1
 
-        kps = 1
-        kpe = kdim
-        ims = max( ips - max(shw,max_halo_width), ids - bdx )
-        ime = min( ipe + max(shw,max_halo_width), ide + bdx )
-        jms = max( jps - max(shw,max_halo_width), jds - bdy )
-        jme = min( jpe + max(shw,max_halo_width), jde + bdy )
-        kms = 1
-        kme = kdim
-
 ! extend the patch dimensions out shw along edges of domain
         IF ( mytask_x .EQ. 0 ) THEN
            ips = ips - shw
@@ -404,6 +395,15 @@ CONTAINS
         IF ( mytask_y .EQ. ntasks_y-1 ) THEN
            jpe = jpe + shw
         ENDIF
+
+        kps = 1
+        kpe = kdim
+        ims = max( ips - max(shw,max_halo_width), ids - bdx ) 
+        ime = min( ipe + max(shw,max_halo_width), ide + bdx ) 
+        jms = max( jps - max(shw,max_halo_width), jds - bdy ) 
+        jme = min( jpe + max(shw,max_halo_width), jde + bdy ) 
+        kms = 1
+        kme = kdim
 
   END SUBROUTINE compute_memory_dims_rsl_lite
 
@@ -925,18 +925,20 @@ END
 
        INTEGER i, j, k,  ndim
        INTEGER  Patch(3,2), Gpatch(3,2,ntasks)
+    ! allocated further down, after the D indices are potentially recalculated for staggering
        REAL, ALLOCATABLE :: tmpbuf( : )
        REAL locbuf( (PE1a-PS1a+1)*(PE2a-PS2a+1)*(PE3a-PS3a+1)/RWORDSIZE*typesize+32 )
 
-       IF ( wrf_dm_on_monitor() ) THEN
-         ALLOCATE ( tmpbuf ( (DE1a-DS1a+1)*(DE2a-DS2a+1)*(DE3a-DS3a+1)/RWORDSIZE*typesize+32 ) )
-       ELSE
-         ALLOCATE ( tmpbuf ( 1 ) )
-       ENDIF
- 
        DS1 = DS1a ; DE1 = DE1a ; DS2=DS2a ; DE2 = DE2a ; DS3 = DS3a ; DE3 = DE3a
        MS1 = MS1a ; ME1 = ME1a ; MS2=MS2a ; ME2 = ME2a ; MS3 = MS3a ; ME3 = ME3a
        PS1 = PS1a ; PE1 = PE1a ; PS2=PS2a ; PE2 = PE2a ; PS3 = PS3a ; PE3 = PE3a
+
+       SELECT CASE ( TRIM(ordering) )
+         CASE ( 'xy', 'yx' )
+           ndim = 2
+         CASE DEFAULT
+           ndim = 3   ! where appropriate
+       END SELECT
 
        SELECT CASE ( TRIM(ordering) )
          CASE ( 'xyz','xy' )
@@ -945,40 +947,47 @@ END
             ! adjust if not staggered
            IF ( .NOT. has_char( stagger, 'x' ) ) DE1 = DE1+1
            IF ( .NOT. has_char( stagger, 'y' ) ) DE2 = DE2+1
-           IF ( .NOT. has_char( stagger, 'z' ) ) DE3 = DE3+1
+           IF ( ndim .EQ. 3 .AND. .NOT. has_char( stagger, 'z' ) ) DE3 = DE3+1
          CASE ( 'yxz','yx' )
            IF ( .NOT. has_char( stagger, 'x' ) ) DE2 = DE2+1
            IF ( .NOT. has_char( stagger, 'y' ) ) DE1 = DE1+1
-           IF ( .NOT. has_char( stagger, 'z' ) ) DE3 = DE3+1
+           IF ( ndim .EQ. 3 .AND. .NOT. has_char( stagger, 'z' ) ) DE3 = DE3+1
          CASE ( 'zxy' )
            IF ( .NOT. has_char( stagger, 'x' ) ) DE2 = DE2+1
            IF ( .NOT. has_char( stagger, 'y' ) ) DE3 = DE3+1
-           IF ( .NOT. has_char( stagger, 'z' ) ) DE1 = DE1+1
+           IF ( ndim .EQ. 3 .AND. .NOT. has_char( stagger, 'z' ) ) DE1 = DE1+1
          CASE ( 'xzy' )
            IF ( .NOT. has_char( stagger, 'x' ) ) DE1 = DE1+1
            IF ( .NOT. has_char( stagger, 'y' ) ) DE3 = DE3+1
-           IF ( .NOT. has_char( stagger, 'z' ) ) DE2 = DE2+1
+           IF ( ndim .EQ. 3 .AND. .NOT. has_char( stagger, 'z' ) ) DE2 = DE2+1
          CASE DEFAULT
        END SELECT
 
+     ! moved to here to be after the potential recalculations of D dims
+       IF ( wrf_dm_on_monitor() ) THEN
+         ALLOCATE ( tmpbuf ( (DE1-DS1+1)*(DE2-DS2+1)*(DE3-DS3+1)/RWORDSIZE*typesize+32 ) )
+       ELSE
+         ALLOCATE ( tmpbuf ( 1 ) )
+       ENDIF
+ 
        Patch(1,1) = ps1 ; Patch(1,2) = pe1    ! use patch dims
        Patch(2,1) = ps2 ; Patch(2,2) = pe2
        Patch(3,1) = ps3 ; Patch(3,2) = pe3
 
        IF      ( typesize .EQ. RWORDSIZE ) THEN
-         CALL just_patch_r ( buf , locbuf ,             &
+         CALL just_patch_r ( buf , locbuf , size(locbuf), &
                                    PS1, PE1, PS2, PE2, PS3, PE3 , &
                                    MS1, ME1, MS2, ME2, MS3, ME3   )
        ELSE IF ( typesize .EQ. IWORDSIZE ) THEN
-         CALL just_patch_i ( buf , locbuf ,             &
+         CALL just_patch_i ( buf , locbuf , size(locbuf), &
                                    PS1, PE1, PS2, PE2, PS3, PE3 , &
                                    MS1, ME1, MS2, ME2, MS3, ME3   )
        ELSE IF ( typesize .EQ. DWORDSIZE ) THEN
-         CALL just_patch_d ( buf , locbuf ,             &
+         CALL just_patch_d ( buf , locbuf , size(locbuf), &
                                    PS1, PE1, PS2, PE2, PS3, PE3 , &
                                    MS1, ME1, MS2, ME2, MS3, ME3   )
        ELSE IF ( typesize .EQ. LWORDSIZE ) THEN
-         CALL just_patch_l ( buf , locbuf ,             &
+         CALL just_patch_l ( buf , locbuf , size(locbuf), &
                                    PS1, PE1, PS2, PE2, PS3, PE3 , &
                                    MS1, ME1, MS2, ME2, MS3, ME3   )
        ENDIF
@@ -1027,12 +1036,13 @@ END
        RETURN
     END SUBROUTINE wrf_patch_to_global_generic
 
-  SUBROUTINE just_patch_i ( inbuf , outbuf,              &
+  SUBROUTINE just_patch_i ( inbuf , outbuf, noutbuf,     &
                                PS1,PE1,PS2,PE2,PS3,PE3,  &
                                MS1,ME1,MS2,ME2,MS3,ME3   )
     USE module_dm
     IMPLICIT NONE
-    INTEGER    , DIMENSION(*) , INTENT(OUT) :: outbuf
+    INTEGER                         , INTENT(IN)  :: noutbuf
+    INTEGER    , DIMENSION(noutbuf) , INTENT(OUT) :: outbuf
     INTEGER   MS1,ME1,MS2,ME2,MS3,ME3
     INTEGER   PS1,PE1,PS2,PE2,PS3,PE3
     INTEGER    , DIMENSION( MS1:ME1,MS2:ME2,MS3:ME3 ) , INTENT(IN) :: inbuf
@@ -1050,17 +1060,18 @@ END
     RETURN
   END SUBROUTINE just_patch_i
 
-  SUBROUTINE just_patch_r ( inbuf , outbuf,              &
+  SUBROUTINE just_patch_r ( inbuf , outbuf, noutbuf,     &
                                PS1,PE1,PS2,PE2,PS3,PE3,  &
                                MS1,ME1,MS2,ME2,MS3,ME3   )
     USE module_dm
     IMPLICIT NONE
-    REAL    , DIMENSION(*) , INTENT(OUT) :: outbuf
+    INTEGER                      , INTENT(IN)  :: noutbuf
+    REAL    , DIMENSION(noutbuf) , INTENT(OUT) :: outbuf
     INTEGER   MS1,ME1,MS2,ME2,MS3,ME3
     INTEGER   PS1,PE1,PS2,PE2,PS3,PE3
     REAL    , DIMENSION( MS1:ME1,MS2:ME2,MS3:ME3 ) , INTENT(in) :: inbuf
 ! Local
-    INTEGER               :: i,j,k,n   ,  icurs
+    INTEGER               :: i,j,k   ,  icurs
     icurs = 1
       DO k = PS3, PE3
         DO j = PS2, PE2 
@@ -1073,12 +1084,13 @@ END
     RETURN
   END SUBROUTINE just_patch_r
 
-  SUBROUTINE just_patch_d ( inbuf , outbuf,              &
+  SUBROUTINE just_patch_d ( inbuf , outbuf, noutbuf,     &
                                PS1,PE1,PS2,PE2,PS3,PE3,  &
                                MS1,ME1,MS2,ME2,MS3,ME3   )
     USE module_dm
     IMPLICIT NONE
-    DOUBLE PRECISION    , DIMENSION(*) , INTENT(OUT) :: outbuf
+    INTEGER                                  , INTENT(IN)  :: noutbuf
+    DOUBLE PRECISION    , DIMENSION(noutbuf) , INTENT(OUT) :: outbuf
     INTEGER   MS1,ME1,MS2,ME2,MS3,ME3
     INTEGER   PS1,PE1,PS2,PE2,PS3,PE3
     DOUBLE PRECISION    , DIMENSION( MS1:ME1,MS2:ME2,MS3:ME3 ) , INTENT(in) :: inbuf
@@ -1096,12 +1108,13 @@ END
     RETURN
   END SUBROUTINE just_patch_d
 
-  SUBROUTINE just_patch_l ( inbuf , outbuf,              &
+  SUBROUTINE just_patch_l ( inbuf , outbuf, noutbuf,     &
                                PS1,PE1,PS2,PE2,PS3,PE3,  &
                                MS1,ME1,MS2,ME2,MS3,ME3   )
     USE module_dm
     IMPLICIT NONE
-    LOGICAL    , DIMENSION(*) , INTENT(OUT) :: outbuf
+    INTEGER                         , INTENT(IN)  :: noutbuf
+    LOGICAL    , DIMENSION(noutbuf) , INTENT(OUT) :: outbuf
     INTEGER   MS1,ME1,MS2,ME2,MS3,ME3
     INTEGER   PS1,PE1,PS2,PE2,PS3,PE3
     LOGICAL    , DIMENSION( MS1:ME1,MS2:ME2,MS3:ME3 ) , INTENT(in) :: inbuf
@@ -1118,7 +1131,6 @@ END
       ENDDO
     RETURN
   END SUBROUTINE just_patch_l
-
 
 
   SUBROUTINE patch_2_outbuf_r( inbuf, outbuf,            &
@@ -1325,15 +1337,16 @@ END
        REAL, ALLOCATABLE :: tmpbuf( : )
        REAL locbuf( (PE1a-PS1a+1)*(PE2a-PS2a+1)*(PE3a-PS3a+1)/RWORDSIZE*typesize+32 )
 
-       IF ( wrf_dm_on_monitor() ) THEN
-         ALLOCATE ( tmpbuf ( (DE1a-DS1a+1)*(DE2a-DS2a+1)*(DE3a-DS3a+1)/RWORDSIZE*typesize+32 ) )
-       ELSE
-         ALLOCATE ( tmpbuf ( 1 ) )
-       ENDIF
-
        DS1 = DS1a ; DE1 = DE1a ; DS2=DS2a ; DE2 = DE2a ; DS3 = DS3a ; DE3 = DE3a
        MS1 = MS1a ; ME1 = ME1a ; MS2=MS2a ; ME2 = ME2a ; MS3 = MS3a ; ME3 = ME3a
        PS1 = PS1a ; PE1 = PE1a ; PS2=PS2a ; PE2 = PE2a ; PS3 = PS3a ; PE3 = PE3a
+
+       SELECT CASE ( TRIM(ordering) )
+         CASE ( 'xy', 'yx' )
+           ndim = 2
+         CASE DEFAULT
+           ndim = 3   ! where appropriate
+       END SELECT
 
        SELECT CASE ( TRIM(ordering) )
          CASE ( 'xyz','xy' )
@@ -1342,21 +1355,28 @@ END
             ! adjust if not staggered
            IF ( .NOT. has_char( stagger, 'x' ) ) DE1 = DE1+1
            IF ( .NOT. has_char( stagger, 'y' ) ) DE2 = DE2+1
-           IF ( .NOT. has_char( stagger, 'z' ) ) DE3 = DE3+1
+           IF ( ndim .EQ. 3 .AND. .NOT. has_char( stagger, 'z' ) ) DE3 = DE3+1
          CASE ( 'yxz','yx' )
            IF ( .NOT. has_char( stagger, 'x' ) ) DE2 = DE2+1
            IF ( .NOT. has_char( stagger, 'y' ) ) DE1 = DE1+1
-           IF ( .NOT. has_char( stagger, 'z' ) ) DE3 = DE3+1
+           IF ( ndim .EQ. 3 .AND. .NOT. has_char( stagger, 'z' ) ) DE3 = DE3+1
          CASE ( 'zxy' )
            IF ( .NOT. has_char( stagger, 'x' ) ) DE2 = DE2+1
            IF ( .NOT. has_char( stagger, 'y' ) ) DE3 = DE3+1
-           IF ( .NOT. has_char( stagger, 'z' ) ) DE1 = DE1+1
+           IF ( ndim .EQ. 3 .AND. .NOT. has_char( stagger, 'z' ) ) DE1 = DE1+1
          CASE ( 'xzy' )
            IF ( .NOT. has_char( stagger, 'x' ) ) DE1 = DE1+1
            IF ( .NOT. has_char( stagger, 'y' ) ) DE3 = DE3+1
-           IF ( .NOT. has_char( stagger, 'z' ) ) DE2 = DE2+1
+           IF ( ndim .EQ. 3 .AND. .NOT. has_char( stagger, 'z' ) ) DE2 = DE2+1
          CASE DEFAULT
        END SELECT
+
+     ! moved to here to be after the potential recalculations of D dims
+       IF ( wrf_dm_on_monitor() ) THEN
+         ALLOCATE ( tmpbuf ( (DE1-DS1+1)*(DE2-DS2+1)*(DE3-DS3+1)/RWORDSIZE*typesize+32 ) )
+       ELSE
+         ALLOCATE ( tmpbuf ( 1 ) )
+       ENDIF
 
        Patch(1,1) = ps1 ; Patch(1,2) = pe1    ! use patch dims
        Patch(2,1) = ps2 ; Patch(2,2) = pe2

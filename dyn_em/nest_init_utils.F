@@ -243,11 +243,12 @@ enddo
    enddo
 
 #if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
-   CALL wrf_patch_to_global_real ( grid%xlat , xlat_g , grid%domdesc, 'z' , 'xy' ,       &
+
+   CALL wrf_patch_to_global_real ( grid%xlat , xlat_g , grid%domdesc, ' ' , 'xy' ,       &
                                    ids, ide-1 , jds , jde-1 , 1 , 1 , &
                                    ims, ime   , jms , jme   , 1 , 1 , &
                                    ips, ipe   , jps , jpe   , 1 , 1   ) 
-   CALL wrf_patch_to_global_real ( grid%xlong , xlon_g , grid%domdesc, 'z' , 'xy' ,       &
+   CALL wrf_patch_to_global_real ( grid%xlong , xlon_g , grid%domdesc, ' ' , 'xy' ,       &
                                    ids, ide-1 , jds , jde-1 , 1 , 1 , &
                                    ims, ime   , jms , jme   , 1 , 1 , &
                                    ips, ipe   , jps , jpe   , 1 , 1   ) 
@@ -258,11 +259,10 @@ enddo
      WHERE ( ht_g(ids:ide,jds:jde) < -1000. ) ht_g(ids:ide,jds:jde) = 0.
    ENDIF
 
-   CALL wrf_global_to_patch_real ( ht_g , grid%ht , grid%domdesc, 'z' , 'xy' ,         &
+   CALL wrf_global_to_patch_real ( ht_g , grid%ht , grid%domdesc, ' ' , 'xy' ,         &
                                    ids, ide-1 , jds , jde-1 , 1 , 1 , &
                                    ims, ime   , jms , jme   , 1 , 1 , &
                                    ips, ipe   , jps , jpe   , 1 , 1   ) 
-
 #else
 
    CALL get_terrain ( grid%dx/1000., grid%xlat(ids:ide,jds:jde), grid%xlong(ids:ide,jds:jde), grid%ht(ids:ide,jds:jde), &

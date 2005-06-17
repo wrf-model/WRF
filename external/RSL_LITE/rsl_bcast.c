@@ -207,6 +207,9 @@ RSL_LITE_TO_CHILD_INFO ( msize_p,
         Pptr = Plist[Pcurs] ;
       } else {
         *retval_p = 0 ;
+#if 0
+fprintf(stderr,"TO _INFO: %d %d %d \n",*ig_p,*jg_p, *retval_p) ;
+#endif
         return ;  /* done */
       }
   }
@@ -220,6 +223,10 @@ RSL_LITE_TO_CHILD_INFO ( msize_p,
   Recsizeindex = Sendbufcurs ;
   *r++ =           0 ; Sendbufcurs += sizeof(int) ;  /* store start for size */
   *retval_p = 1 ;
+
+#if 0
+fprintf(stderr,"TO  INFO: %d %d %d \n",*ig_p,*jg_p, *retval_p) ;
+#endif
 
   return ;
 }
@@ -356,9 +363,7 @@ rsl_lite_to_peerpoint_msg ( nbuf_p, buf )
   char *
     buf ;        /* (I) Buffer containing the data to be packed. */
 {
-  int kiddex ;
   int nbuf ;
-  int P, Px, Py ;
   int *p, *q ;
   char *c, *d ;
   int i ;
@@ -381,9 +386,9 @@ rsl_lite_to_peerpoint_msg ( nbuf_p, buf )
   }
   else
   {
-    for ( c = buf, d = &(Sendbuf[Sendbufcurs]), i = 0 ; i < nbuf ; i ++ )
+    for ( c = buf, d = &(Sendbuf[Sendbufcurs]), i = 0 ; i < nbuf ; i++ )
     {
-      *q++ = *p++ ;
+      *d++ = *c++ ;
     }
   }
 
@@ -555,11 +560,21 @@ rsl_lite_from_peerpoint_msg ( len_p, buf )
     buf ;            /* (O) Destination buffer. */
 {
   int *p, *q ;
+  char *c, *d ;
   int i ;
-  for ( p = (int *)&(Recvbuf[Rbufcurs+Rpointcurs]), q = buf , i = 0 ; i < *len_p ; i += sizeof(int) ) 
-  {
-    *q++ = *p++ ;
+
+  if ( *len_p % sizeof(int) == 0 ) {
+    for ( p = (int *)&(Recvbuf[Rbufcurs+Rpointcurs]), q = buf , i = 0 ; i < *len_p ; i += sizeof(int) ) 
+    {
+      *q++ = *p++ ;
+    }
+  } else {
+    for ( c = &(Recvbuf[Rbufcurs+Rpointcurs]), d = (char *) buf , i = 0 ; i < *len_p ; i++ )
+    {
+      *d++ = *c++ ;
+    }
   }
+
   Rpointcurs += *len_p ;
 }
 

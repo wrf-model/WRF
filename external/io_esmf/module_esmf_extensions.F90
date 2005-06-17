@@ -44,25 +44,49 @@ MODULE module_esmf_extensions
   LOGICAL, SAVE                :: current_gridcomp_valid = .FALSE.
   TYPE(ESMF_GridComp), POINTER :: current_gridcomp
 
+  ! Flag for "is-initialized" inquiry
+  ! NOTE:  esmf_is_initialized is not reset to .FALSE. when ESMF_Finalize is called
+  LOGICAL, SAVE                :: esmf_is_initialized = .FALSE.
+
 
   ! public routines
   ! These convenience interfaces have been proposed to the ESMF core team.  
+  ! "get current" variants
   PUBLIC ESMF_ClockGetCurrent
   PUBLIC ESMF_ImportStateGetCurrent
   PUBLIC ESMF_ExportStateGetCurrent
   PUBLIC ESMF_GridCompGetCurrent
+  ! "is-initialized" inquiry
+  PUBLIC WRF_UTIL_IsInitialized
 
   ! public routines to be replaced by ESMF internal implementations
-  ! These interfaces would not be public because ESMF will always be able 
+  ! These interfaces will not be public because ESMF will always be able 
   ! to call them in the right places without user intervention.  
+  ! "get current" variants
   PUBLIC ESMF_ClockSetCurrent
   PUBLIC ESMF_ImportStateSetCurrent
   PUBLIC ESMF_ExportStateSetCurrent
   PUBLIC ESMF_GridCompSetCurrent
   PUBLIC ESMF_SetCurrent
+  ! "is-initialized" inquiry
+  PUBLIC ESMF_SetInitialized
 
 
 CONTAINS
+
+
+! Add "is initialized" behavior to ESMF interface
+  FUNCTION WRF_UTIL_IsInitialized()
+    LOGICAL WRF_UTIL_IsInitialized
+    WRF_UTIL_IsInitialized = esmf_is_initialized
+  END FUNCTION WRF_UTIL_IsInitialized
+
+! Add "is initialized" behavior to ESMF interface
+! This interface will go away as it will be done inside ESMF_Initialize().  
+  SUBROUTINE ESMF_SetInitialized()
+    esmf_is_initialized = .TRUE.
+  END SUBROUTINE ESMF_SetInitialized
+
 
 
 ! -------------------------- ESMF-public method -------------------------------

@@ -50,32 +50,28 @@ END SUBROUTINE wrf_debug
 
 SUBROUTINE wrf_message( str )
   USE module_wrf_error
-#ifdef WRF_UTIL_LOGERR
   USE module_utility
-#endif
   IMPLICIT NONE
   CHARACTER*(*) str
 #if defined( DM_PARALLEL ) && ! defined( STUBMPI) 
   write(0,*) str
 #endif
   print*, str
-#ifdef WRF_UTIL_LOGERR
-  CALL WRF_UTIL_LogWrite( str, WRF_UTIL_LOG_INFO )
-#endif
+  IF ( WRF_UTIL_IsInitialized() ) THEN
+    CALL WRF_UTIL_LogWrite( str, WRF_UTIL_LOG_INFO )
+  ENDIF
 END SUBROUTINE wrf_message
 
 ! intentionally write to stderr only
 SUBROUTINE wrf_message2( str )
   USE module_wrf_error
-#ifdef WRF_UTIL_LOGERR
   USE module_utility
-#endif
   IMPLICIT NONE
   CHARACTER*(*) str
   write(0,*) str
-#ifdef WRF_UTIL_LOGERR
-  CALL WRF_UTIL_LogWrite( str, WRF_UTIL_LOG_INFO )
-#endif
+  IF ( WRF_UTIL_IsInitialized() ) THEN
+    CALL WRF_UTIL_LogWrite( str, WRF_UTIL_LOG_INFO )
+  ENDIF
 END SUBROUTINE wrf_message2
 
 SUBROUTINE wrf_error_fatal3( file_str, line, str )

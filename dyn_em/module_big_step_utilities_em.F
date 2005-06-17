@@ -2275,8 +2275,7 @@ SUBROUTINE horizontal_diffusion ( name, field, tendency, mu,           &
    INTEGER :: i_start, i_end, j_start, j_end
 
    REAL :: mrdx, mkrdxm, mkrdxp, &
-           mrdy, mkrdym, mkrdyp, &
-           rcoup
+           mrdy, mkrdym, mkrdyp
    REAL :: pr = 3.
 
    LOGICAL :: specified
@@ -2309,17 +2308,18 @@ SUBROUTINE horizontal_diffusion ( name, field, tendency, mu,           &
       DO k=kts,ktf
       DO i = i_start, i_end
 
-         mkrdxm=msft(i-1,j)*xkmhd(i-1,k,j)*rdx
-         mkrdxp=msft(i,j)*xkmhd(i,k,j)*rdx
+         mkrdxm=msft(i-1,j)*mu(i-1,j)*xkmhd(i-1,k,j)*rdx
+         mkrdxp=msft(i,j)*mu(i,j)*xkmhd(i,k,j)*rdx
          mrdx=msfu(i,j)*rdx
          mkrdym=0.5*(msfu(i,j)+msfu(i,j-1))*    &
+                0.25*(mu(i,j)+mu(i,j-1)+mu(i-1,j-1)+mu(i-1,j))* &
                 0.25*(xkmhd(i,k,j)+xkmhd(i,k,j-1)+xkmhd(i-1,k,j-1)+xkmhd(i-1,k,j))*rdy
          mkrdyp=0.5*(msfu(i,j)+msfu(i,j+1))*    &
+                0.25*(mu(i,j)+mu(i,j+1)+mu(i-1,j+1)+mu(i-1,j))* &
                 0.25*(xkmhd(i,k,j)+xkmhd(i,k,j+1)+xkmhd(i-1,k,j+1)+xkmhd(i-1,k,j))*rdy
          mrdy=msfu(i,j)*rdy
 
-            rcoup=0.5*(mu(i,j)+mu(i-1,j))
-            tendency(i,k,j)=tendency(i,k,j)+rcoup*( &
+            tendency(i,k,j)=tendency(i,k,j)+( &
                             mrdx*(mkrdxp*(field(i+1,k,j)-field(i  ,k,j))  &
                                  -mkrdxm*(field(i  ,k,j)-field(i-1,k,j))) &
                            +mrdy*(mkrdyp*(field(i,k,j+1)-field(i,k,j  ))  &
@@ -2345,16 +2345,17 @@ SUBROUTINE horizontal_diffusion ( name, field, tendency, mu,           &
       DO i = i_start, i_end
 
          mkrdxm=0.5*(msfv(i,j)+msfv(i-1,j))*    &
+                0.25*(mu(i,j)+mu(i,j-1)+mu(i-1,j-1)+mu(i-1,j))* &
                 0.25*(xkmhd(i,k,j)+xkmhd(i,k,j-1)+xkmhd(i-1,k,j-1)+xkmhd(i-1,k,j))*rdx
          mkrdxp=0.5*(msfv(i,j)+msfv(i+1,j))*    &
+                0.25*(mu(i,j)+mu(i,j-1)+mu(i+1,j-1)+mu(i+1,j))* &
                 0.25*(xkmhd(i,k,j)+xkmhd(i,k,j-1)+xkmhd(i+1,k,j-1)+xkmhd(i+1,k,j))*rdx
          mrdx=msfv(i,j)*rdx
          mkrdym=msft(i,j-1)*xkmhd(i,k,j-1)*rdy
          mkrdyp=msft(i,j)*xkmhd(i,k,j)*rdy
          mrdy=msfv(i,j)*rdy
 
-            rcoup=0.5*(mu(i,j)+mu(i,j-1))
-            tendency(i,k,j)=tendency(i,k,j)+rcoup*( &
+            tendency(i,k,j)=tendency(i,k,j)+( &
                             mrdx*(mkrdxp*(field(i+1,k,j)-field(i  ,k,j))  &
                                  -mkrdxm*(field(i  ,k,j)-field(i-1,k,j))) &
                            +mrdy*(mkrdyp*(field(i,k,j+1)-field(i,k,j  ))  &
@@ -2379,15 +2380,22 @@ SUBROUTINE horizontal_diffusion ( name, field, tendency, mu,           &
       DO k=kts+1,ktf
       DO i = i_start, i_end
 
-         mkrdxm=msfu(i,j)*0.25*(xkmhd(i,k,j)+xkmhd(i-1,k,j)+xkmhd(i,k-1,j)+xkmhd(i-1,k-1,j))*rdx
-         mkrdxp=msfu(i+1,j)*0.25*(xkmhd(i+1,k,j)+xkmhd(i,k,j)+xkmhd(i+1,k-1,j)+xkmhd(i,k-1,j))*rdx
+         mkrdxm=msfu(i,j)*   &
+                0.25*(mu(i,j)+mu(i-1,j)+mu(i,j)+mu(i-1,j))* &
+                0.25*(xkmhd(i,k,j)+xkmhd(i-1,k,j)+xkmhd(i,k-1,j)+xkmhd(i-1,k-1,j))*rdx
+         mkrdxp=msfu(i+1,j)*   &
+                0.25*(mu(i+1,j)+mu(i,j)+mu(i+1,j)+mu(i,j))* &
+                0.25*(xkmhd(i+1,k,j)+xkmhd(i,k,j)+xkmhd(i+1,k-1,j)+xkmhd(i,k-1,j))*rdx
          mrdx=msft(i,j)*rdx
-         mkrdym=msfv(i,j)*0.25*(xkmhd(i,k,j)+xkmhd(i,k,j-1)+xkmhd(i,k-1,j)+xkmhd(i,k-1,j-1))*rdy
-         mkrdyp=msfv(i,j+1)*0.25*(xkmhd(i,k,j+1)+xkmhd(i,k,j)+xkmhd(i,k-1,j+1)+xkmhd(i,k-1,j))*rdy
+         mkrdym=msfv(i,j)*   &
+                0.25*(mu(i,j)+mu(i,j-1)+mu(i,j)+mu(i,j-1))* &
+                0.25*(xkmhd(i,k,j)+xkmhd(i,k,j-1)+xkmhd(i,k-1,j)+xkmhd(i,k-1,j-1))*rdy
+         mkrdyp=msfv(i,j+1)*   &
+                0.25*(mu(i,j+1)+mu(i,j)+mu(i,j+1)+mu(i,j))* &
+                0.25*(xkmhd(i,k,j+1)+xkmhd(i,k,j)+xkmhd(i,k-1,j+1)+xkmhd(i,k-1,j))*rdy
          mrdy=msft(i,j)*rdy
 
-            rcoup=0.5*(mu(i,j)+mu(i,j))
-            tendency(i,k,j)=tendency(i,k,j)+rcoup*( &
+            tendency(i,k,j)=tendency(i,k,j)+( &
                             mrdx*(mkrdxp*(field(i+1,k,j)-field(i  ,k,j)) &
                                  -mkrdxm*(field(i  ,k,j)-field(i-1,k,j))) &
                            +mrdy*(mkrdyp*(field(i,k,j+1)-field(i,k,j  )) &
@@ -2413,15 +2421,14 @@ SUBROUTINE horizontal_diffusion ( name, field, tendency, mu,           &
       DO k=kts,ktf
       DO i = i_start, i_end
 
-         mkrdxm=msfu(i,j)*0.5*(xkmhd(i,k,j)+xkmhd(i-1,k,j))*rdx*pr
-         mkrdxp=msfu(i+1,j)*0.5*(xkmhd(i+1,k,j)+xkmhd(i,k,j))*rdx*pr
+         mkrdxm=msfu(i,j)*0.5*(xkmhd(i,k,j)+xkmhd(i-1,k,j))*0.5*(mu(i,j)+mu(i-1,j))*rdx*pr
+         mkrdxp=msfu(i+1,j)*0.5*(xkmhd(i+1,k,j)+xkmhd(i,k,j))*0.5*(mu(i+1,j)+mu(i,j))*rdx*pr
          mrdx=msft(i,j)*rdx
-         mkrdym=msfv(i,j)*0.5*(xkmhd(i,k,j)+xkmhd(i,k,j-1))*rdy*pr
-         mkrdyp=msfv(i,j+1)*0.5*(xkmhd(i,k,j+1)+xkmhd(i,k,j))*rdy*pr
+         mkrdym=msfv(i,j)*0.5*(xkmhd(i,k,j)+xkmhd(i,k,j-1))*0.5*(mu(i,j)+mu(i,j-1))*rdy*pr
+         mkrdyp=msfv(i,j+1)*0.5*(xkmhd(i,k,j+1)+xkmhd(i,k,j))**0.5*(mu(i,j+1)+mu(i,j))*rdy*pr
          mrdy=msft(i,j)*rdy
 
-            rcoup=mu(i,j)
-            tendency(i,k,j)=tendency(i,k,j)+rcoup*( &
+            tendency(i,k,j)=tendency(i,k,j)+( &
                             mrdx*(mkrdxp*(field(i+1,k,j)-field(i  ,k,j))  &
                                  -mkrdxm*(field(i  ,k,j)-field(i-1,k,j))) &
                            +mrdy*(mkrdyp*(field(i,k,j+1)-field(i,k,j  ))  &
@@ -2478,8 +2485,7 @@ SUBROUTINE horizontal_diffusion_3dmp ( name, field, tendency, mu,           &
    INTEGER :: i_start, i_end, j_start, j_end
 
    REAL :: mrdx, mkrdxm, mkrdxp, &
-           mrdy, mkrdym, mkrdyp, &
-           rcoup
+           mrdy, mkrdym, mkrdyp
    REAL :: pr = 3.
 
    LOGICAL :: specified
@@ -2511,15 +2517,14 @@ SUBROUTINE horizontal_diffusion_3dmp ( name, field, tendency, mu,           &
       DO k=kts,ktf
       DO i = i_start, i_end
 
-         mkrdxm=msfu(i,j)*0.5*(xkmhd(i,k,j)+xkmhd(i-1,k,j))*rdx*pr
-         mkrdxp=msfu(i+1,j)*0.5*(xkmhd(i+1,k,j)+xkmhd(i,k,j))*rdx*pr
+         mkrdxm=msfu(i,j)*0.5*(xkmhd(i,k,j)+xkmhd(i-1,k,j))*0.5*(mu(i,j)+mu(i-1,j))*rdx*pr
+         mkrdxp=msfu(i+1,j)*0.5*(xkmhd(i+1,k,j)+xkmhd(i,k,j))*0.5*(mu(i+1,j)+mu(i,j))*rdx*pr
          mrdx=msft(i,j)*rdx
-         mkrdym=msfv(i,j)*0.5*(xkmhd(i,k,j)+xkmhd(i,k,j-1))*rdy*pr
-         mkrdyp=msfv(i,j+1)*0.5*(xkmhd(i,k,j+1)+xkmhd(i,k,j))*rdy*pr
+         mkrdym=msfv(i,j)*0.5*(xkmhd(i,k,j)+xkmhd(i,k,j-1))*0.5*(mu(i,j)+mu(i,j-1))*rdy*pr
+         mkrdyp=msfv(i,j+1)*0.5*(xkmhd(i,k,j+1)+xkmhd(i,k,j))**0.5*(mu(i,j+1)+mu(i,j))*rdy*pr
          mrdy=msft(i,j)*rdy
 
-            rcoup=mu(i,j)
-            tendency(i,k,j)=tendency(i,k,j)+rcoup*(                        &
+            tendency(i,k,j)=tendency(i,k,j)+(                        &
                     mrdx*( mkrdxp*(   field(i+1,k,j)  -field(i  ,k,j)      &
                                    -base_3d(i+1,k,j)+base_3d(i  ,k,j) )    &
                           -mkrdxm*(   field(i  ,k,j)  -field(i-1,k,j)      &
@@ -2577,7 +2582,7 @@ SUBROUTINE vertical_diffusion ( name, field, tendency,        &
    REAL , DIMENSION(its:ite, jts:jte) :: vfluxm, vfluxp, zz
    REAL , DIMENSION(its:ite, 0:kte+1) :: vflux
 
-   REAL :: rdz, rcoup
+   REAL :: rdz
 
    LOGICAL :: specified
 
@@ -2702,7 +2707,7 @@ SUBROUTINE vertical_diffusion_mp ( field, tendency, config_flags, &
 
    REAL , DIMENSION(its:ite, 0:kte+1) :: vflux
 
-   REAL :: rdz, rcoup
+   REAL :: rdz
 
    LOGICAL :: specified
 
@@ -2794,7 +2799,7 @@ SUBROUTINE vertical_diffusion_3dmp ( field, tendency, config_flags, &
 
    REAL , DIMENSION(its:ite, 0:kte+1) :: vflux
 
-   REAL :: rdz, rcoup
+   REAL :: rdz
 
    LOGICAL :: specified
 
@@ -2886,7 +2891,7 @@ SUBROUTINE vertical_diffusion_u ( field, tendency,              &
 
    REAL , DIMENSION(its:ite, 0:kte+1) :: vflux
 
-   REAL :: rdz, rcoup, zz
+   REAL :: rdz, zz
 
    LOGICAL :: specified
 
@@ -2984,7 +2989,7 @@ SUBROUTINE vertical_diffusion_v ( field, tendency,              &
 
    REAL , DIMENSION(its:ite, 0:kte+1) :: vflux
 
-   REAL :: rdz, rcoup, zz
+   REAL :: rdz, zz
 
    LOGICAL :: specified
 

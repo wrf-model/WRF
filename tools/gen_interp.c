@@ -111,9 +111,15 @@ gen_nest_interp1 ( FILE * fp , node_t * node, char * corename , char * fourdname
   char ddim[3][2][NAMELEN] ;
   char mdim[3][2][NAMELEN] ;
   char pdim[3][2][NAMELEN] ;
+  char ddim2[3][2][NAMELEN] ;
+  char mdim2[3][2][NAMELEN] ;
+  char pdim2[3][2][NAMELEN] ;
   char nddim[3][2][NAMELEN] ;
   char nmdim[3][2][NAMELEN] ;
   char npdim[3][2][NAMELEN] ;
+  char nddim2[3][2][NAMELEN] ;
+  char nmdim2[3][2][NAMELEN] ;
+  char npdim2[3][2][NAMELEN] ;
   char vname[NAMELEN] ; char vname2[NAMELEN] ; char tag[NAMELEN], tag2[NAMELEN] ; char core[NAMELEN], core2[NAMELEN] ;
   char fcn_name[NAMELEN] ;
   char xstag[NAMELEN], ystag[NAMELEN] ;
@@ -184,7 +190,10 @@ if ( ! contains_tok ( halo_define , vname  , ":," ) ) {
         }
 
         set_dim_strs ( p , ddim , mdim , pdim , "c", 1 ) ;
+        set_dim_strs ( p , ddim2 , mdim2 , pdim2 , "c", 0 ) ;
         set_dim_strs ( p , nddim , nmdim , npdim , "n", 1 ) ;
+        set_dim_strs ( p , nddim2 , nmdim2 , npdim2 , "n", 0 ) ;
+
         zdex = get_index_for_coord( p , COORD_Z ) ;
         xdex = get_index_for_coord( p , COORD_X ) ;
         ydex = get_index_for_coord( p , COORD_Y ) ;
@@ -212,13 +221,15 @@ fprintf(fp,"CALL %s (                                                           
 
         if ( zdex >= 0 ) {
 
+/* note this is only good for IKJ */
+
 fprintf(fp,"                  %s,                                                           &         ! CD field\n",  vname) ;
 fprintf(fp,"                 %s, %s, %s, %s, %s, %s,   &         ! CD dims\n",
                 ddim[0][0], ddim[0][1], ddim[1][0], ddim[1][1], ddim[2][0], ddim[2][1] ) ;
 fprintf(fp,"                 %s, %s, %s, %s, %s, %s,   &         ! CD dims\n",
                 mdim[0][0], mdim[0][1], mdim[1][0], mdim[1][1], mdim[2][0], mdim[2][1] ) ;
 fprintf(fp,"                 %s, %s, %s, %s, %s, %s,   &         ! CD dims\n",
-                pdim[0][0], pdim[0][1], pdim[1][0], pdim[1][1], pdim[2][0], pdim[2][1] ) ;
+                pdim[0][0], pdim[0][1], pdim2[1][0], pdim2[1][1], pdim[2][0], pdim[2][1] ) ;
 if ( ! (down_path  & SMOOTH_UP)  ) {
 fprintf(fp,"                  ngrid%%%s,                                                        &   ! ND field\n", vname2) ;
 }
@@ -227,7 +238,7 @@ fprintf(fp,"                 %s, %s, %s, %s, %s, %s,   &         ! ND dims\n",
 fprintf(fp,"                 %s, %s, %s, %s, %s, %s,   &         ! ND dims\n",
                 nmdim[0][0], nmdim[0][1], nmdim[1][0], nmdim[1][1], nmdim[2][0], nmdim[2][1] ) ;
 fprintf(fp,"                 %s, %s, %s, %s, %s, %s,   &         ! ND dims\n",
-                npdim[0][0], npdim[0][1], npdim[1][0], npdim[1][1], npdim[2][0], npdim[2][1] ) ;
+                npdim[0][0], npdim[0][1], npdim2[1][0], npdim2[1][1], npdim[2][0], npdim[2][1] ) ;
 
         } else {
 

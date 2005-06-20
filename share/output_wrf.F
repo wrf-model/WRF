@@ -34,6 +34,16 @@
             mp_physics, ra_lw_physics, ra_sw_physics, sf_sfclay_physics, &
             sf_surface_physics, bl_pbl_physics, cu_physics
     REAL    khdif, kvdif
+#if (EM_CORE == 1)
+    INTEGER grid_id , parent_id , i_parent_start , j_parent_start , parent_grid_ratio
+#endif
+    CHARACTER (len=19) simulation_start_date
+    INTEGER simulation_start_year   , &
+            simulation_start_month  , &
+            simulation_start_day    , &
+            simulation_start_hour   , &
+            simulation_start_minute , &
+            simulation_start_second
     INTEGER rc
 
     CHARACTER*256 message
@@ -90,6 +100,13 @@
     CALL nl_get_stand_lon ( grid%id , stand_lon )
     CALL nl_get_map_proj ( grid%id , map_proj )
 
+#if (EM_CORE == 1)
+    CALL nl_get_parent_id ( grid%id , parent_id )
+    CALL nl_get_i_parent_start ( grid%id , i_parent_start )
+    CALL nl_get_j_parent_start ( grid%id , j_parent_start )
+    CALL nl_get_parent_grid_ratio ( grid%id , parent_grid_ratio )
+#endif
+
     CALL wrf_clockprint(150, grid%domain_clock, &
                         'DEBUG output_wrf():  before call to WRF_UTIL_ClockGet,')
     CALL WRF_UTIL_ClockGet( grid%domain_clock, currTime=current_time, rc=rc )
@@ -108,6 +125,20 @@
       WRITE ( start_date , FMT = '(I4.4,"-",I2.2,"-",I2.2,"_",I2.2,":",I2.2,":",I2.2)' ) &
               start_year,start_month,start_day,start_hour,start_minute,start_second
       CALL wrf_put_dom_ti_char ( fid , 'START_DATE', TRIM(start_date) , ierr )
+      IF ( switch .EQ. model_input_only) THEN
+         CALL wrf_put_dom_ti_char ( fid , 'SIMULATION_START_DATE', TRIM(start_date) , ierr )
+      ELSE IF ( ( switch .EQ. restart_only ) .OR. ( switch .EQ. history_only ) ) THEN
+         CALL nl_get_simulation_start_year   ( grid%id, simulation_start_year   )
+         CALL nl_get_simulation_start_month  ( grid%id, simulation_start_month  )
+         CALL nl_get_simulation_start_day    ( grid%id, simulation_start_day    )
+         CALL nl_get_simulation_start_hour   ( grid%id, simulation_start_hour   )
+         CALL nl_get_simulation_start_minute ( grid%id, simulation_start_minute )
+         CALL nl_get_simulation_start_second ( grid%id, simulation_start_second )
+         WRITE ( simulation_start_date , FMT = '(I4.4,"-",I2.2,"-",I2.2,"_",I2.2,":",I2.2,":",I2.2)' ) &
+                 simulation_start_year,simulation_start_month,simulation_start_day,&
+                 simulation_start_hour,simulation_start_minute,simulation_start_second
+         CALL wrf_put_dom_ti_char ( fid , 'SIMULATION_START_DATE', TRIM(simulation_start_date) , ierr )
+      END IF
 
 #ifdef D3VAR_IRY_KLUDGE
       ibuf(1) = config_flags%e_sn - config_flags%s_sn + 1
@@ -232,6 +263,18 @@
       CALL wrf_put_dom_ti_integer ( fid , 'BOTTOM-TOP_PATCH_START_STAG' ,  ibuf , 1 , ierr )
       ibuf(1) = MIN(kpe,kde)
       CALL wrf_put_dom_ti_integer ( fid , 'BOTTOM-TOP_PATCH_END_STAG' ,  ibuf , 1 , ierr )
+#if (EM_CORE == 1)
+      ibuf(1) = grid%id
+      CALL wrf_put_dom_ti_integer ( fid , 'GRID_ID' ,  ibuf , 1 , ierr )
+      ibuf(1) = parent_id
+      CALL wrf_put_dom_ti_integer ( fid , 'PARENT_ID' ,  ibuf , 1 , ierr )
+      ibuf(1) = i_parent_start
+      CALL wrf_put_dom_ti_integer ( fid , 'I_PARENT_START' ,  ibuf , 1 , ierr )
+      ibuf(1) = j_parent_start
+      CALL wrf_put_dom_ti_integer ( fid , 'J_PARENT_START' ,  ibuf , 1 , ierr )
+      ibuf(1) = parent_grid_ratio
+      CALL wrf_put_dom_ti_integer ( fid , 'PARENT_GRID_RATIO' ,  ibuf , 1 , ierr )
+#endif
 
 ! end add 010831 JM
 

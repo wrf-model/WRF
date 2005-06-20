@@ -41,7 +41,6 @@
  dy                                  = 100000,20000, 4000,
  ztop                                = 16000, 16000, 16000,
  grid_id                             = 1,     2,     3,
- level                               = 1,     2,     3,
  parent_id                           = 0,     1,     2,
  i_parent_start                      = 0,     17,    17,
  j_parent_start                      = 0,     33,    33,

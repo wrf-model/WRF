@@ -40,7 +40,6 @@
  end_second                          = 00,
  interval_seconds                    = 21600
  grid_id                             = 1,
- level                               = 1,
  s_we                                = 1,
  e_we                                = 41,
  s_sn                                = 1,

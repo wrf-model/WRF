@@ -41,7 +41,6 @@
  dx                                  = 90000
  dy                                  = 90000
  grid_id                             = 1,
- level                               = 1,
  tile_sz_x		   	     = 0,
  tile_sz_y		   	     = 0,
  numtiles			     = 1,

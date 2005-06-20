@@ -149,38 +149,11 @@
 !call wrf_get_myproc(myproc)
 
 
-   IF ( config_flags%input_from_hires ) THEN
+   IF ( ( config_flags%input_from_hires ) .OR. ( config_flags%input_from_file ) ) THEN
 
       CALL nl_get_base_pres  ( 1 , p00 )
       CALL nl_get_base_temp  ( 1 , t00 )
       CALL nl_get_base_lapse ( 1 , a   )
-
-!CALL compute_500mb_height ( ph_2 , phb, p, pb, ht_fine , &
-!                                 ids, ide, jds, jde, kds, kde, &
-!                                 ims, ime, jms, jme, kms, kme, &
-!                                 its, ite, jts, jte, kts, kte  )
-!write(20+myproc,*)MIN(ite,ide-1)-its+1,MIN(jte,jde-1)-jts+1,' ht_fine before '
-!DO j = jts, MIN(jte,jde-1)
-!DO i = its, MIN(ite,ide-1)
-!write(20+myproc,*)ht_fine(i,j)
-!ENDDO
-!ENDDO
-!write(20+myproc,*)MIN(ite,ide-1)-its+1,MIN(jte,jde-1)-jts+1,' mu_2 before '
-!DO j = jts, MIN(jte,jde-1)
-!DO i = its, MIN(ite,ide-1)
-!write(20+myproc,*)mu_2(i,j)
-!ENDDO
-!ENDDO
-!DO k = kts,kte,5
-!write(20+myproc,*)MIN(ite,ide-1)-its+1,MIN(jte,jde-1)-jts+1,' phb before ',k
-!DO j = jts, MIN(jte,jde-1)
-!DO i = its, MIN(ite,ide-1)
-!write(20+myproc,*)phb(i,k,j)
-!ENDDO
-!ENDDO
-!ENDDO
-
-!write(0,*)'start_domain: recomputing base state for hires: p00, t00, a ',p00, t00, a
 
       !  Base state potential temperature and inverse density (alpha = 1/rho) from
       !  the half eta levels and the base-profile surface pressure.  Compute 1/rho
@@ -195,7 +168,6 @@
 
             p_surf = p00 * EXP ( -t00/a + ( (t00/a)**2 - 2.*g*ht(i,j)/a/r_d ) **0.5 )
 
-
             DO k = 1, kte-1
                pb(i,k,j) = znu(k)*(p_surf - p_top) + p_top
                t_init(i,k,j) = (t00 + A*LOG(pb(i,k,j)/p00))*(p00/pb(i,k,j))**(r_d/cp) - t0
@@ -205,19 +177,6 @@
             !  Base state mu is defined as base state surface pressure minus p_top
 
             mub(i,j) = p_surf - p_top
-
-#if 0
-!REMOVED THIS; WE DON'T WANT TO REDO THE PERTURBATION
-            !  Dry surface pressure is defined as the following (this mu is from the input file
-            !  computed from the dry pressure).  Here the dry pressure is just reconstituted.
-
-            pd_surf = mu0(i,j) + p_top
-
-            !  Compute the perturbation mass and the full mass from the base surface pressure
-            !  (a function of elevation) and the dry surface pressure.
-
-            mu_2(i,j) = pd_surf-p_surf
-#endif
 
             !  Integrate base geopotential, starting at terrain elevation.  This assures that
             !  the base state is in exact hydrostatic balance with respect to the model equations.
@@ -229,33 +188,6 @@
             END DO
          END DO
       END DO
-
-!write(0,*)'start_domain: done recomputing base state for hires: p00, t00, a ',p00, t00, a
-!
-!CALL compute_500mb_height ( ph_2 , phb, p, pb, ht_fine , &
-!                                 ids, ide, jds, jde, kds, kde, &
-!                                 ims, ime, jms, jme, kms, kme, &
-!                                 its, ite, jts, jte, kts, kte  )
-!write(20+myproc,*)MIN(ite,ide-1)-its+1,MIN(jte,jde-1)-jts+1,' ht_fine after '
-!DO j = jts, MIN(jte,jde-1)
-!DO i = its, MIN(ite,ide-1)
-!write(20+myproc,*)ht_fine(i,j)
-!ENDDO
-!ENDDO
-!write(20+myproc,*)MIN(ite,ide-1)-its+1,MIN(jte,jde-1)-jts+1,' mu_2 after '
-!DO j = jts, MIN(jte,jde-1)
-!DO i = its, MIN(ite,ide-1)
-!write(20+myproc,*)mu_2(i,j)
-!ENDDO
-!ENDDO
-!DO k = kts,kte,5
-!write(20+myproc,*)MIN(ite,ide-1)-its+1,MIN(jte,jde-1)-jts+1,' phb after ',k
-!DO j = jts, MIN(jte,jde-1)
-!DO i = its, MIN(ite,ide-1)
-!write(20+myproc,*)phb(i,k,j)
-!ENDDO
-!ENDDO
-!ENDDO
 
    ENDIF
 
@@ -334,6 +266,23 @@
      ENDDO
 
    ENDIF
+
+!  IF ( ( grid%id .NE. 1 ) .AND. &
+!       ( ( config_flags%input_from_hires ) .OR. ( config_flags%input_from_file ) ) ) THEN
+   IF ( ( grid%id .NE. 1 ) .AND. ( config_flags%input_from_file ) ) THEN
+      DO j = jts, MIN(jte,jde-1)
+         DO i = its, MIN(ite,ide-1)
+            mu_2(i,j) = mu_2(i,j) + al(i,1,j) / ( alt(i,1,j) * alb(i,1,j) ) * &
+                                    g * ( ht(i,j) - ht_fine(i,j) )
+         END DO
+       END DO
+       DO j = jts,min(jte,jde-1)
+       DO i = its, min(ite,ide-1)
+          mu_1(i,j)=mu_2(i,j)
+       ENDDO
+       ENDDO
+
+   END IF
 
    IF ( first_trip_for_this_domain ) THEN
 

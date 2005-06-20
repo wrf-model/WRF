@@ -222,6 +222,27 @@ integer::oops1,oops2
          ifndsoilw = 0
       END IF
 
+      !  We require input data for the various LSM schemes.
+
+      enough_data : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
+
+         CASE (SLABSCHEME)
+            IF ( num_st_levels_input .LT. 2 ) THEN
+               CALL wrf_error_fatal ( 'Not enough soil temperature data for 5-layer soil scheme.')
+            END IF
+
+         CASE (LSMSCHEME)
+            IF ( num_st_levels_input .LT. 2 ) THEN
+               CALL wrf_error_fatal ( 'Not enough soil temperature data for Noah LSM scheme.')
+            END IF
+
+         CASE (RUCLSMSCHEME)
+            IF ( num_st_levels_input .LT. 2 ) THEN
+               CALL wrf_error_fatal ( 'Not enough soil temperature data for RUC LSM scheme.')
+            END IF
+
+      END SELECT enough_data
+
       !  For sf_surface_physics = 1, we want to use close to a 10 cm value
       !  for the bottom level of the soil temps.
 

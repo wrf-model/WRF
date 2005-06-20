@@ -1112,11 +1112,19 @@
          !  Loop over each i,k,j in the nested domain.
 
          DO nj = njts, njte
-            cj = ( nj + 1) / nrj + jpos -1 ! coarse position equal to or below nest point
+            IF ( MOD ( nrj , 2 ) .EQ. 0 ) THEN
+               cj = ( nj + (nrj/2)-1 ) / nrj + jpos -1 ! first coarse position equal to or below nest point
+            ELSE
+               cj = ( nj + (nrj-1)/2 ) / nrj + jpos -1 ! first coarse position equal to or below nest point
+            END IF
             DO nk = nkts, nkte
                ck = nk
                DO ni = nits, nite
-                  ci = ( ni + 1) / nri + ipos -1 ! coarse position equal to or to the left of nest point
+                  IF ( MOD ( nri , 2 ) .EQ. 0 ) THEN
+                     ci = ( ni + (nri/2)-1 ) / nri + ipos -1 ! first coarse position equal to or to the left of nest point
+                  ELSE
+                     ci = ( ni + (nri-1)/2 ) / nri + ipos -1 ! first coarse position equal to or to the left of nest point
+                  END IF
    
 
 
@@ -1136,10 +1144,18 @@
                   !                         dx  1-dx         
 
 
-                  !  At ni=2, we are on the coarse grid point, so dx = 0
+                  !  For odd ratios, at (nri+1)/2, we are on the coarse grid point, so dx = 0
 
-                  dx = REAL ( MOD ( ni+1 , nri ) ) / REAL ( nri ) 
-                  dy = REAL ( MOD ( nj+1 , nrj ) ) / REAL ( nrj ) 
+                  IF ( MOD ( nri , 2 ) .EQ. 0 ) THEN
+                     dx = ( REAL ( MOD ( ni+(nri-1)/2 , nri ) ) + 0.5 ) / REAL ( nri ) 
+                  ELSE 
+                     dx =   REAL ( MOD ( ni+(nri-1)/2 , nri ) )         / REAL ( nri ) 
+                  END IF
+                  IF ( MOD ( nrj , 2 ) .EQ. 0 ) THEN
+                     dy = ( REAL ( MOD ( nj+(nrj-1)/2 , nrj ) ) + 0.5 ) / REAL ( nrj ) 
+                  ELSE 
+                     dy =   REAL ( MOD ( nj+(nrj-1)/2 , nrj ) )         / REAL ( nrj ) 
+                  END IF
    
                   !  This is a "land only" field.  If this is a water point, no operations required.
 
@@ -1224,8 +1240,16 @@
               DO nk = nkts, nkte
                  DO ni = nits, nite
                     IF ( nfld(ni,nk,nj) .LT. -1.e19 ) THEN
-                       cj = ( nj + 1) / nrj + jpos -1
-                       ci = ( ni + 1) / nri + ipos -1
+                       IF ( MOD ( nrj , 2 ) .EQ. 0 ) THEN
+                          cj = ( nj + (nrj/2)-1 ) / nrj + jpos -1 ! first coarse position equal to or below nest point
+                       ELSE
+                          cj = ( nj + (nrj-1)/2 ) / nrj + jpos -1 ! first coarse position equal to or below nest point
+                       END IF
+                       IF ( MOD ( nri , 2 ) .EQ. 0 ) THEN
+                          ci = ( ni + (nri/2)-1 ) / nri + ipos -1 ! first coarse position equal to or to the left of nest point
+                       ELSE
+                          ci = ( ni + (nri-1)/2 ) / nri + ipos -1 ! first coarse position equal to or to the left of nest point
+                       END IF
                        ist = MAX (ci-max_search,cits)
                        ien = MIN (ci+max_search,cite,cide-1)
                        jst = MAX (cj-max_search,cjts)
@@ -1316,11 +1340,19 @@
          !  Loop over each i,k,j in the nested domain.
 
          DO nj = njts, njte
-            cj = ( nj + 1) / nrj + jpos -1 ! coarse position equal to or below nest point
+            IF ( MOD ( nrj , 2 ) .EQ. 0 ) THEN
+               cj = ( nj + (nrj/2)-1 ) / nrj + jpos -1 ! first coarse position equal to or below nest point
+            ELSE
+               cj = ( nj + (nrj-1)/2 ) / nrj + jpos -1 ! first coarse position equal to or below nest point
+            END IF
             DO nk = nkts, nkte
                ck = nk
                DO ni = nits, nite
-                  ci = ( ni + 1) / nri + ipos -1 ! coarse position equal to or to the left of nest point
+                  IF ( MOD ( nri , 2 ) .EQ. 0 ) THEN
+                     ci = ( ni + (nri/2)-1 ) / nri + ipos -1 ! first coarse position equal to or to the left of nest point
+                  ELSE
+                     ci = ( ni + (nri-1)/2 ) / nri + ipos -1 ! first coarse position equal to or to the left of nest point
+                  END IF
    
 
 
@@ -1342,8 +1374,16 @@
 
                   !  At ni=2, we are on the coarse grid point, so dx = 0
 
-                  dx = REAL ( MOD ( ni+1 , nri ) ) / REAL ( nri ) 
-                  dy = REAL ( MOD ( nj+1 , nrj ) ) / REAL ( nrj ) 
+                  IF ( MOD ( nri , 2 ) .EQ. 0 ) THEN
+                     dx = ( REAL ( MOD ( ni+(nri-1)/2 , nri ) ) + 0.5 ) / REAL ( nri ) 
+                  ELSE 
+                     dx =   REAL ( MOD ( ni+(nri-1)/2 , nri ) )         / REAL ( nri ) 
+                  END IF
+                  IF ( MOD ( nrj , 2 ) .EQ. 0 ) THEN
+                     dy = ( REAL ( MOD ( nj+(nrj-1)/2 , nrj ) ) + 0.5 ) / REAL ( nrj ) 
+                  ELSE 
+                     dy =   REAL ( MOD ( nj+(nrj-1)/2 , nrj ) )         / REAL ( nrj ) 
+                  END IF
    
                   !  This is a "water only" field.  If this is a land point, no operations required.
 
@@ -1427,8 +1467,16 @@
             DO nk = nkts, nkte
                DO ni = nits, nite
                   IF ( nfld(ni,nk,nj) .LT. -1.e19 ) THEN
-                     cj = ( nj + 1) / nrj + jpos -1
-                     ci = ( ni + 1) / nri + ipos -1
+                     IF ( MOD ( nrj , 2 ) .EQ. 0 ) THEN
+                        cj = ( nj + (nrj/2)-1 ) / nrj + jpos -1 ! first coarse position equal to or below nest point
+                     ELSE
+                        cj = ( nj + (nrj-1)/2 ) / nrj + jpos -1 ! first coarse position equal to or below nest point
+                     END IF
+                     IF ( MOD ( nri , 2 ) .EQ. 0 ) THEN
+                        ci = ( ni + (nri/2)-1 ) / nri + ipos -1 ! first coarse position equal to or to the left of nest point
+                     ELSE
+                        ci = ( ni + (nri-1)/2 ) / nri + ipos -1 ! first coarse position equal to or to the left of nest point
+                     END IF
                      ist = MAX (ci-max_search,cits)
                      ien = MIN (ci+max_search,cite,cide-1)
                      jst = MAX (cj-max_search,cjts)

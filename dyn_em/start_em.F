@@ -267,9 +267,8 @@
 
    ENDIF
 
-!  IF ( ( grid%id .NE. 1 ) .AND. &
-!       ( ( config_flags%input_from_hires ) .OR. ( config_flags%input_from_file ) ) ) THEN
-   IF ( ( grid%id .NE. 1 ) .AND. ( config_flags%input_from_file ) ) THEN
+   IF ( ( grid%id .NE. 1 ) .AND. &
+       ( ( config_flags%input_from_hires ) .OR. ( config_flags%input_from_file ) ) ) THEN
       DO j = jts, MIN(jte,jde-1)
          DO i = its, MIN(ite,ide-1)
             mu_2(i,j) = mu_2(i,j) + al(i,1,j) / ( alt(i,1,j) * alb(i,1,j) ) * &

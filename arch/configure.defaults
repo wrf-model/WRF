@@ -446,7 +446,8 @@ module_initialize_real.o module_dm.o  start_domain.o :
 ###########################################################
 #ARCH	SGI O2K DM IRIX64     DM-Parallel        (RSL, SGI-MPI, allows nesting)
 #
-# Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
 #
 
 DMPARALLEL      =       1
@@ -675,7 +676,8 @@ mediation_force_domain.o module_dm.o start_domain.o :
 ###########################################################
 #ARCH	Sun  SunOS      (single-threaded, nesting using RSL and no MPI)
 #
-# Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
 #
 #
 DM_PARALLEL     =       1
@@ -908,7 +910,8 @@ module_initialize_real.o module_dm.o start_domain.o :
 ###########################################################
 #ARCH	Sun  SunOS SM   (OpenMP, nesting using RSL and no MPI)
 #
-# Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
 #
 #
 DM_PARALLEL     =       1
@@ -1214,7 +1217,10 @@ module_domain.o : module_domain.F
 	$(FC) -c -g $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt $*.f
 
 ###########################################################
-#ARCH	AIX DM-Parallel          (RSL_LITE, IBM-MPI, no nesting)
+#ARCH	AIX DM-Parallel          (RSL_LITE, IBM-MPI, Allows nesting)
+#
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
 #
 DMPARALLEL      =       1
 SFC             =       xlf90_r
@@ -1321,6 +1327,9 @@ convert_nmm.o    :
 ###########################################################
 #ARCH	AIX DM-Parallel          (RSL, IBM-MPI, supports nesting)
 #
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
+#
 DMPARALLEL      =       1
 SFC             =       xlf90_r
 SCC             =       cc_r
@@ -1425,6 +1434,9 @@ convert_nmm.o    :
 
 ###########################################################
 #ARCH	AIX DM-Parallel          (RSL, IBM-MPI, supports nesting )(PARALLEL HDF5)
+#
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
 #
 DMPARALLEL      =       1
 SFC             =       xlf90_r
@@ -1532,7 +1544,10 @@ convert_nmm.o    :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt $*.f
 
 ###########################################################
-#ARCH	AIX DM-Parallel          (RSL_LITE, IBM-MPI, no nesting )(PARALLEL HDF5)
+#ARCH	AIX DM-Parallel          (RSL_LITE, IBM-MPI, Supports nesting )(PARALLEL HDF5)
+#
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
 #
 DMPARALLEL      =       1
 SFC             =       xlf90_r
@@ -1640,7 +1655,10 @@ convert_nmm.o    :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt $*.f
 
 ###########################################################
-#ARCH	AIX DM-Parallel/SM-Parallel       (RSL, IBM-MPI, OpenMP, supports nesting)
+#ARCH	AIX DM-Parallel/SM-Parallel (not recommended)  (RSL, IBM-MPI, OpenMP, supports nesting)
+#
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
 #
 DMPARALLEL      =       1
 OMP             =       -qsmp=noauto
@@ -1768,112 +1786,10 @@ module_domain.o : module_domain.F
 	$(FC) -c -g $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt $*.f
 
 ###########################################################
-#ARCH	AIX DM-Parallel          (RSL, IBM-MPI, supports nesting, MOVING NESTS, EXPERIMENTAL )
-#
-DMPARALLEL      =       1
-SFC             =       xlf90_r
-SCC             =       cc_r
-FC              =       mpxlf90_r
-LD              =       mpxlf90_r
-CC              =       mpcc_r
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
-PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
-CFLAGS          =       -DNOUNDERSCORE -DWRF_RSL_IO  -I../external/RSL/RSL -DDM_PARALLEL  \
-                        -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
-FCOPTIM         =       -O2 -qarch=auto
-FCDEBUG         =       # -qnoopt -qfullpath
-FCBASEOPTS      =       -w -qspill=20000 $(FCDEBUG) -qmaxmem=32767 #-qflttrap=zerodivide:invalid:enable -qsigtrap
-FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
-INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
-                        -I../frame -I../share -I../phys -I../inc
-ARCHFLAGS       =       -DWRF_RSL_IO -DRSL -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) \
-                        -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   -DYYY -DINTIO \
-			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DNATIVE_MASSV -DMOVE_NESTS
-PERL            =       perl
-REGISTRY        =       Registry
-LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl -lmass -lmassv \
-                        -L../external/io_int -lwrfio_int  \
-                        -L../external/io_grib1 -lio_grib1 \
-			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS         =	-bmaxstack:256000000 -bmaxdata:2048000000
-ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
-CPP		=	/lib/cpp
-POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
-CPPFLAGS	=	-I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL/RSL `cat ../inc/dm_comm_cpp_flags` $(COREDEFS) $(ENVCOMPDEFS) $(POUND_DEF)
-MAX_PROC        =       1024
-AR              =       ar ru
-M4              =       m4 -B 10000
-RANLIB          =       ranlib
-NETCDFPATH	=	CONFIGURE_NETCDF_PATH
-CC_TOOLS        =       cc
-
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
-
-gen_comms.c : ../external/RSL/gen_comms.c
-	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; cat ../external/RSL/gen_comms.c >> ../tools/gen_comms.c )
-
-module_dm.F : ../external/RSL/module_dm.F
-	( /bin/cp module_dm_warning module_dm.F ; cat ../external/RSL/module_dm.F >> module_dm.F )
-
-wrfio_nf : 
-	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" )
-
-wrfio_int : 
-	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" all )
-
-wrfio_grib1 :
-	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" )
-
-esmf_time : 
-	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
-
-../external/RSL/RSL/librsl.a :
-	( cd ../external/RSL/RSL ; make MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST sp2 )
-
-# compile these without high optimization
-module_io_mm5.o : module_io_mm5.F
-module_si_io.o : module_si_io.F
-module_io_wrf.o : module_io_wrf.F
-module_domain.o : module_domain.F
-module_start.o : module_start.F
-module_initialize.o : module_initialize.F
-module_initialize_b_wave.o : module_initialize_b_wave.F
-module_initialize_hill2d_x.o : module_initialize_hill2d_x.F
-module_initialize_quarter_ss.o : module_initialize_quarter_ss.F
-module_initialize_squall2d_x.o : module_initialize_squall2d_x.F
-module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
-module_initialize_real.o : module_initialize_real.F
-module_dm.o : module_dm.F
-start_domain.o : start_domain.F
-mediation_integrate.o : mediation_integrate.F
-mediation_interp_domain.o : mediation_interp_domain.F
-mediation_force_domain.o : mediation_force_domain.F
-mediation_feedback_domain.o : mediation_feedback_domain.F
-convert_nmm.o : convert_nmm.F
-solve_interface.o : solve_interface.F
-
-module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
-module_start.o module_initialize.o module_initialize_b_wave.o  \
-module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
-module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
-module_initialize_real.o module_dm.o start_domain.o \
-mediation_force_domain.o \
-mediation_integrate.o \
-mediation_interp_domain.o \
-mediation_feedback_domain.o \
-solve_interface.o                                              \
-convert_nmm.o    :
-	$(RM) $@
-	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
-	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt $*.f
-
-###########################################################
 #ARCH	AIX DM-Parallel          (RSL, IBM-MPI, MCEL)   May 2003, EXPERIMENTAL
+#
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
 #
 DMPARALLEL      =       1
 SFC             =       xlf90_r
@@ -2123,6 +2039,9 @@ convert_nmm.o    :
 ###########################################################
 #ARCH	AIX                      (single-threaded, nesting using RSL without MPI)
 #
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
+#
 DMPARALLEL      =       1
 SFC             =       xlf90_r
 SCC             =       cc_r
@@ -2229,6 +2148,9 @@ convert_nmm.o    :
 
 ###########################################################
 #ARCH	AIX                      (OpenMP, nesting using RSL without MPI)
+#
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
 #
 OMP             =       -qsmp=noauto
 OMPCPP          =       -D_OPENMP
@@ -2455,7 +2377,8 @@ module_initialize_real.o module_dm.o start_domain.o :
 ###########################################################
 #ARCH       Compaq OSF1 alpha          (single-threaded, nesting using RSL without MPI )
 #
-# Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
 #
 #
 DM_PARALLEL     =       1
@@ -2684,7 +2607,8 @@ module_initialize_real.o module_dm.o start_domain.o :
 ###########################################################
 #ARCH       Compaq OSF1 alpha SM-Parallel       (OpenMP, nesting using RSL without MPI )
 #
-# Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
 #
 #
 DM_PARALLEL     =       1
@@ -2806,7 +2730,10 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
 
 ###########################################################
-#ARCH     Compaq OSF1 alpha DM-Parallel       (RSL_LITE, MPICH, no nesting)
+#ARCH     Compaq OSF1 alpha DM-Parallel       (RSL_LITE, MPICH, supports nesting)
+#
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
 #
 DMPARALLEL      =       1
 OMP             =
@@ -2927,7 +2854,8 @@ module_initialize_real.o module_dm.o start_domain.o :
 ###########################################################
 #ARCH       Compaq OSF1 alpha DM-Parallel       (RSL, MPICH, allows nesting)
 #
-# Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
 #
 #
 DMPARALLEL      =       1
@@ -3049,7 +2977,8 @@ module_initialize_real.o module_dm.o start_domain.o :
 ###########################################################
 #ARCH       Compaq OSF1 alpha DM-Parallel/SM-Parallel    (RSL, MPICH, OpenMP, allows nesting)
 #
-# Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
 #
 #
 DMPARALLEL      =       1
@@ -3172,7 +3101,8 @@ module_initialize_real.o module_dm.o start_domain.o :
 ###########################################################
 #ARCH       Compaq OSF1 alpha DM-Parallel/SM-Parallel    (RSL, DECMPI, OpenMP, allows nesting)
 #
-# Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
 #
 #
 DMPARALLEL      =       1
@@ -3247,125 +3177,6 @@ esmf_time :
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; \
           make CC=cc FC="$(SFC) $(PROMOTION) $(FCREAL8OMP)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST alpha )
-
-mediation_integrate.o : mediation_integrate.F
-	$(RM) $@
-	$(SED_FTN) $*.F > $*.b
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
-	$(RM) $*.b
-	$(FC) -c $(PROMOTION) -w -convert big_endian -automatic -cpp -free -I. -arch host $(MODULE_DIRS) -O0 $*.f
-
-# compile these without high optimization to speed compile
-module_io_mm5.o : module_io_mm5.F
-module_si_io.o : module_si_io.F
-module_io_wrf.o : module_io_wrf.F
-module_domain.o : module_domain.F
-module_start.o : module_start.F
-module_initialize.o : module_initialize.F
-module_initialize_b_wave.o : module_initialize_b_wave.F
-module_initialize_hill2d_x.o : module_initialize_hill2d_x.F
-module_initialize_quarter_ss.o : module_initialize_quarter_ss.F
-module_initialize_squall2d_x.o : module_initialize_squall2d_x.F
-module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
-module_initialize_real.o : module_initialize_real.F
-module_dm.o : module_dm.F
-start_domain.o : start_domain.F
-module_configure.o : module_configure.F
-mediation_interp_domain.o : mediation_interp_domain.F
-mediation_force_domain.o : mediation_force_domain.F
-mediation_feedback_domain.o : mediation_feedback_domain.F
-mediation_integrate.o : mediation_integrate.F
-
-module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
-module_start.o module_initialize.o module_initialize_b_wave.o  \
-module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
-module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
-module_configure.o                                             \
-mediation_interp_domain.o  \
-mediation_force_domain.o  \
-mediation_feedback_domain.o  \
-mediation_integrate.o \
-module_initialize_real.o module_dm.o start_domain.o :
-	$(RM) $@
-	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
-	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
-
-###########################################################
-#ARCH       Compaq OSF1 alpha DM-Parallel       (RSL, MPICH, allows nesting, MOVING NESTS EXPERIMENTAL)
-#
-DMPARALLEL      =       1
-OMP             =
-OMPCPP          =
-FC              =       mpif90
-SFC		=	f90
-LD              =       mpif90
-CC              =       mpicc
-SCC		=	cc
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
-RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
-ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DYYY -DINTIO -DWRF_RSL_IO \
-                        -DDM_PARALLEL -DRSL \
-                        -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
-                        -DTRIEDNTRUE   \
-			-DLIMIT_ARGS -DFLOATSAFE \
-			-DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -DMOVE_NESTS
-PROMOTION	=	-real_size $(RSIZEBITS) -integer_size `expr 4 \* 8`
-CFLAGS          =       $(ARCHFLAGS) -I../external/RSL/RSL
-FCOPTIM         =       -fast -O4
-FCDEBUG         =       # -g
-FCBASEOPTS      =       -w -convert big_endian -automatic -cpp -free -I. -arch host $(FCDEBUG)
-FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
-INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
-                        -I../frame -I../share -I../phys -I../inc
-PERL            =       CONFIGURE_PERL_PATH
-REGISTRY        =       Registry
-LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int \
-                        -L../external/RSL/RSL -lrsl \
-			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time  \
-                        -L../external/io_grib1 -lio_grib1
-LDFLAGS         =       $(FCOPTIM) -automatic -convert big_endian $(OMP)
-ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
-CPP             =       /usr/bin/cpp -C -P
-POUND_DEF	=	-DDEC_ALPHA -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
-CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL/RSL -C -P `cat ../inc/dm_comm_cpp_flags` $(OMPCPP) $(COREDEFS) $(ENVCOMPDEFS) $(POUND_DEF)
-MAX_PROC        =       1024
-AR              =       ar ru
-M4              =       m4 -B 10000
-RANLIB          =       ranlib
-NETCDFPATH	=	CONFIGURE_NETCDF_PATH
-CC_TOOLS        =       cc
-
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int ../external/RSL/RSL/librsl.a gen_comms.c module_dm.F esmf_time
-
-gen_comms.c : ../external/RSL/gen_comms.c
-	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
-          cat ../external/RSL/gen_comms.c >> ../tools/gen_comms.c )
-
-module_dm.F : ../external/RSL/module_dm.F
-	( /bin/cp module_dm_warning module_dm.F ; \
-          cat ../external/RSL/module_dm.F >> module_dm.F )
-
-wrfio_nf : 
-	( cd ../external/io_netcdf ; \
-	  make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" )
-
-wrfio_int : 
-	( cd ../external/io_int ; \
-          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w" all )
-
-wrfio_grib1 :
-	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " )
-
-esmf_time : 
-	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
-
-../external/RSL/RSL/librsl.a :
-	( cd ../external/RSL/RSL ; \
-          make CC="$(CC)" FC="$(FC) $(PROMOTION)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST alpha )
 
 mediation_integrate.o : mediation_integrate.F
 	$(RM) $@
@@ -3834,6 +3645,9 @@ module_initialize_real.o module_dm.o start_domain.o :
 ###########################################################
 #ARCH       Alpha Linux alpha DM-Parallel  (RSL, MPICH, support nesting)
 #
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
+#
 DMPARALLEL      =       1
 MAX_PROC        =       1024
 FC              =       mpif90
@@ -4119,7 +3933,8 @@ module_initialize_real.o module_dm.o start_domain.o :
 ###########################################################
 #ARCH    PC Linux i486 i586 i686, PGI compiler  (single threaded, supports nesting using RSL without MPI)
 #
-# Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
 #
 DMPARALLEL      =       1
 MAX_PROC        =       1024
@@ -4319,8 +4134,8 @@ module_initialize_real.o module_dm.o start_domain.o :
 ###########################################################
 #ARCH    PC Linux i486 i586 i686, PGI compiler  SM-Parallel (OpenMP, supports nesting using RSL without MPI)
 #
-# Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
-#
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
 #
 OMP             =       -mp
 OMPCPP          =       -D_OPENMP
@@ -4427,8 +4242,8 @@ module_initialize_real.o module_dm.o start_domain.o :
 ###########################################################
 #ARCH    PC Linux i486 i586 i686, PGI compiler  DM-Parallel (RSL, MPICH, support nesting)
 #
-# Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
-#
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
 #
 DMPARALLEL      =       1
 MAX_PROC        =       1024
@@ -4531,7 +4346,10 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH     PC Linux i486 i586 i686, PGI compiler  DM-Parallel (RSL_LITE, MPICH, No nesting)
+#ARCH     PC Linux i486 i586 i686, PGI compiler  DM-Parallel (RSL_LITE, MPICH, Supports nesting)
+#
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
 #
 DMPARALLEL      =       1
 MAX_PROC        =       1024
@@ -4637,7 +4455,8 @@ module_initialize_real.o module_dm.o start_domain.o :
 ###########################################################
 #ARCH    Intel Itanium2 ia64 madison Linux DM-Parallel (e.g. mpp2 at PNNL), efc71 compiler (RSL, MPICH, nesting)
 #
-# Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
 #
 #
 DMPARALLEL = 1
@@ -4747,7 +4566,8 @@ module_initialize_real.o module_dm.o start_domain.o :
 #          Built this netcdf by first setenv FC efc and CPPFLAGS '-DNDEBUG -DpgiFortran'
 #          before typing configure and make and make install   20040506. JM
 #
-# Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
 #
 #
 DMPARALLEL = 1
@@ -4959,7 +4779,8 @@ module_initialize_real.o module_dm.o start_domain.o :
 ###########################################################
 #ARCH    PC Linux x86_64 (IA64 and Opteron), PGI 5.2 or higher, DM-Parallel  (RSL, MPICH, support nesting)
 #
-# Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
 #
 #        Note that for 5.1.x comment out -Mpia=fast
 #
@@ -5069,8 +4890,11 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH    PC Linux x86_64 (IA64 and Opteron), PGI 5.2 or higher DM-Parallel   (RSL_LITE, MPICH, No nesting, No periodic LBCs)
+#ARCH    PC Linux x86_64 (IA64 and Opteron), PGI 5.2 or higher DM-Parallel   (RSL_LITE, MPICH, Supports nesting, No periodic LBCs)
 #        Note that for 5.1.x comment out -Mpia=fast
+#
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
 #
 DMPARALLEL      =       1
 MAX_PROC        =       1024
@@ -5178,12 +5002,14 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH    Intel Itanium2 ia64 madison Linux  (e.g. mpp2 at PNNL) , efc71 compiler DM-Parallel (RSL_LITE, MPICH, no nesting )
+#ARCH    Intel Itanium2 ia64 madison Linux  (e.g. mpp2 at PNNL) , efc71 compiler DM-Parallel (RSL_LITE, MPICH, Supports nesting )
 # Notes for running on PNNL cluster:
 # 
 # 1. source /home/oehmen/.mycshrc
 # 2. source /home/mscf/intel7.1/compiler70/ia64/bin/efcvars.csh
 # 
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
 #
 DMPARALLEL = 1
 MAX_PROC   = 2000
@@ -5293,7 +5119,8 @@ module_initialize_real.o module_dm.o start_domain.o :
 # Consider 'setenv F_UFMTENDIAN big' in your run scripts for big-endian output
 # Note hard-coded paths to Mark Straka's accounts and ecc6 libs
 #
-# Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
 #
 #
 DMPARALLEL = 1
@@ -5403,10 +5230,13 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH titan.ncsa.uiuc.edu specific Intel Itanium2 ia64 mckinley Linux, efc compiler DM-Parallel (RSL_LITE, VMI, no nesting)
+#ARCH titan.ncsa.uiuc.edu specific Intel Itanium2 ia64 mckinley Linux, efc compiler DM-Parallel (RSL_LITE, VMI, supports nesting)
 #
 # Consider 'setenv F_UFMTENDIAN big' in your run scripts for big-endian output
 # Note hard-coded paths to Mark Straka's accounts and ecc6 libs
+#
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
 #
 DMPARALLEL = 1
 INCLUDE = ../external/io_netcdf/
@@ -5610,7 +5440,8 @@ module_initialize_real.o module_dm.o  start_domain.o :
 #
 # Note: if you use ifort 8.0, please remove option -xW (for vectorization). This option 
 #       has been identified to produce wrong results occationally.
-# Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
 #
 OMP             =
 OMPCPP          =
@@ -5817,7 +5648,8 @@ module_initialize_real.o module_dm.o start_domain.o :
 #
 # Note: if you use ifort 8.0, please remove option -xW (for vectorization). This option 
 #       has been identified to produce wrong results occationally.
-# Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
 #
 #
 OMP             =       -openmp -fpp -auto
@@ -5927,7 +5759,8 @@ module_initialize_real.o module_dm.o start_domain.o :
 #
 # Note: if you use ifort 8.0, please remove option -xW (for vectorization). This option 
 #       has been identified to produce wrong results occationally.
-# Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
 #
 #
 DMPARALLEL      =       1
@@ -6034,7 +5867,8 @@ module_initialize_real.o module_dm.o start_domain.o :
 #
 # Note: if you use ifort 8.0, please remove option -xW (for vectorization). This option 
 #       has been identified to produce wrong results occationally.
-# Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
 #
 #
 DMPARALLEL      =       1
@@ -6411,7 +6245,8 @@ module_initialize_real.o module_dm.o  start_domain.o :
 #
 # Contributed settings from Gerardo Cisneros, SGI
 #
-# Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
 #
 #
 DMPARALLEL        = 1
@@ -6532,7 +6367,7 @@ mediation_force_domain.o:
 	$(FC) -c $(FCBASEOPTS) -O0 $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH   SGI Altix, Intel Itanium2 ia64 Linux, ifort DM-Parallel (RSL_LITE, VMI, SGI MPI, Intel MKL, no nesting)
+#ARCH   SGI Altix, Intel Itanium2 ia64 Linux, ifort DM-Parallel (RSL_LITE, VMI, SGI MPI, Intel MKL, Supports nesting)
 #
 #  'setenv F_UFMTENDIAN big' in run scripts not necessary
 #  since -convert big_endian is in FCBASEOPTS
@@ -6548,6 +6383,9 @@ mediation_force_domain.o:
 #  (details in 'man mpi').
 #
 # Contributed settings from Gerardo Cisneros, SGI
+#
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
 #
 DMPARALLEL        = 1
 INCLUDE           = ../external/io_netcdf/
@@ -6678,7 +6516,8 @@ mediation_force_domain.o:
 #
 # Contributed settings from Gerardo Cisneros, SGI
 #
-# Note: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
 #
 #
 DMPARALLEL        = 1
@@ -6796,7 +6635,7 @@ mediation_force_domain.o:
 	$(FC) -c $(FCBASEOPTS) -O0 $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH   SGI Altix, Intel Itanium2 ia64 Linux, ifort DM-Parallel (RSL_LITE, VMI, SGI MPI, no nesting)
+#ARCH   SGI Altix, Intel Itanium2 ia64 Linux, ifort DM-Parallel (RSL_LITE, VMI, SGI MPI, Supports nesting)
 #
 #  'setenv F_UFMTENDIAN big' in run scripts not necessary
 #  since -convert big_endian is in FCBASEOPTS
@@ -6811,6 +6650,9 @@ mediation_force_domain.o:
 #  (details in 'man mpi').
 #
 # Contributed settings from Gerardo Cisneros, SGI
+#
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
 #
 DMPARALLEL        = 1
 INCLUDE           = ../external/io_netcdf/
@@ -7492,6 +7334,9 @@ module_initialize_real.o module_dm.o mediation_integrate.o start_domain.o :
 ###########################################################
 #ARCH	HP-UX	PA8600	32bit   (single-threaded, nesting using RSL without MPI)
 #
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
+#
 DMPARALLEL	=	1
 OMP             =       
 OMPCPP          =       
@@ -7675,6 +7520,9 @@ module_initialize_real.o module_dm.o mediation_integrate.o start_domain.o :
 ###########################################################
 #ARCH	HP-UX	Itanium2	(single-threaded, nesting using RSL without MPI)
 #
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
+#
 OMP             =       
 OMPCPP          =       
 FC              =       f90
@@ -7847,6 +7695,9 @@ module_initialize_real.o module_dm.o mediation_integrate.o start_domain.o :
 ###########################################################
 #ARCH	HP-UX	PA8600	 DM-Parallel	(RSL, MPICH, nesting)
 #
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
+#
 DMPARALLEL	=	1
 MAX_PROC	=	1024
 OMP             =       
@@ -7945,6 +7796,9 @@ module_initialize_real.o module_dm.o mediation_integrate.o start_domain.o :
 
 ###########################################################
 #ARCH	HP-UX	Itanium2    DM-Parallel	(RSL, MPICH, nesting)
+#
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
 #
 DMPARALLEL	=	1
 MAX_PROC	=	1024

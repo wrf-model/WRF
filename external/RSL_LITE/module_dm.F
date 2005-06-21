@@ -1846,11 +1846,9 @@ END
                                 ims, ime, jms, jme, kms, kme,    &
                                 ips, ipe, jps, jpe, kps, kpe    )
 
-write(0,*)'calling HALO_EM_INTERP_UP in feedback_nest_prep '
 #ifdef DM_PARALLEL
 # include "HALO_EM_INTERP_UP.inc"
 #endif
-write(0,*)'back from HALO_EM_INTERP_UP in feedback_nest_prep '
 
 #define COPY_OUT
 #include <em_scalar_derefs.inc>

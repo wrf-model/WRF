@@ -1067,27 +1067,27 @@ CONTAINS
 
       IF ( dyn_opt == DYN_NODYN ) THEN
 
-        CALL wrf_message ( 'DYNAMICS OPTION: dynamics disabled ' )
+        IF ( grid%id .EQ. 1 ) CALL wrf_message ( 'DYNAMICS OPTION: dynamics disabled ' )
 # include <nodyn_allocs.inc>
 
 #if (EM_CORE == 1)
       ELSE IF ( dyn_opt == DYN_EM ) THEN
-        CALL wrf_message ( 'DYNAMICS OPTION: Eulerian Mass Coordinate ')
+        IF ( grid%id .EQ. 1 ) CALL wrf_message ( 'DYNAMICS OPTION: Eulerian Mass Coordinate ')
 # include <em_allocs.inc>
 #endif
 #if (NMM_CORE == 1)
       ELSE IF ( dyn_opt == DYN_NMM ) THEN
-        CALL wrf_message ( 'DYNAMICS OPTION: nmm dyncore' )
+        IF ( grid%id .EQ. 1 ) CALL wrf_message ( 'DYNAMICS OPTION: nmm dyncore' )
 # include <nmm_allocs.inc>
 #endif
 #if (COAMPS_CORE == 1)
       ELSE IF ( dyn_opt == DYN_COAMPS ) THEN
-        CALL wrf_message ( 'DYNAMICS OPTION: coamps dyncore' )
+        IF ( grid%id .EQ. 1 ) CALL wrf_message ( 'DYNAMICS OPTION: coamps dyncore' )
 # include <coamps_allocs.inc>
 #endif
 #if (EXP_CORE==1)
       ELSE IF ( dyn_opt == DYN_EXP ) THEN
-        CALL wrf_message ( 'DYNAMICS OPTION: experimental dyncore' )
+        IF ( grid%id .EQ. 1 ) CALL wrf_message ( 'DYNAMICS OPTION: experimental dyncore' )
 # include <exp_allocs.inc>
 #endif
 

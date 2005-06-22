@@ -1,4 +1,3 @@
-
 # this is a makefile for RSL that maps the package down to the
 # MPI message passing primitives on the SGI Altix using Intel 8.0 compilers
 
@@ -56,3 +55,4 @@ superclean : clean
 ###
 
 $(OBJ) : $(HDR)
+

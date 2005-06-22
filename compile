@@ -27,7 +27,6 @@ endif
 
 set arglist=""
 foreach a ( $argv )
-if ( "$a" != "-d" ) echo foo
   if ( "$a" == "-h" ) then
     goto hlp
   else

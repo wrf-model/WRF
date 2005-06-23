@@ -57,6 +57,7 @@ esmf_time :
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 module_configure.o : module_configure.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
@@ -74,6 +75,7 @@ module_dm.o : module_dm.F
 start_domain.o : start_domain.F
 
 solve_interface.o                                              \
+shift_domain_em.o                                              \
 module_configure.o                                             \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -141,6 +143,7 @@ esmf_time :
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 module_configure.o : module_configure.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
@@ -158,6 +161,7 @@ module_dm.o : module_dm.F
 start_domain.o : start_domain.F
 
 solve_interface.o                                              \
+shift_domain_em.o                                              \
 module_configure.o                                             \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -234,6 +238,7 @@ esmf_time :
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 module_configure.o : module_configure.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
@@ -251,6 +256,7 @@ module_dm.o : module_dm.F
 start_domain.o : start_domain.F
 
 solve_interface.o                                              \
+shift_domain_em.o                                              \
 module_configure.o                                             \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -319,6 +325,7 @@ esmf_time :
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 module_configure.o : module_configure.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
@@ -336,6 +343,7 @@ module_dm.o : module_dm.F
 start_domain.o : start_domain.F
 
 solve_interface.o                                              \
+shift_domain_em.o                                              \
 module_configure.o                                             \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -414,6 +422,7 @@ esmf_time :
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 module_configure.o : module_configure.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
@@ -431,6 +440,7 @@ module_dm.o : module_dm.F
 start_domain.o : start_domain.F
 
 solve_interface.o                                              \
+shift_domain_em.o                                              \
 module_configure.o                                             \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -527,6 +537,7 @@ esmf_time :
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 module_configure.o : module_configure.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
@@ -544,6 +555,7 @@ module_dm.o : module_dm.F
 start_domain.o : start_domain.F
 
 solve_interface.o                                              \
+shift_domain_em.o                                              \
 module_configure.o                                             \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -630,6 +642,7 @@ solve_interface.o : solve_interface.F
 	$(FC) -c $(FCBASEOPTS) -I. $(PROMOTION) $(MODULE_DIRS) $*.f
 
 # compile these without high optimization to speed compile
+shift_domain_em.o : shift_domain_em.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -657,6 +670,7 @@ wrf_restartout.o : wrf_restartout.F
 module_configure.o : module_configure.F
 
 module_configure.o \
+shift_domain_em.o                                              \
 wrf_bdyin.o wrf_bdyout.o  \
 wrf_histin.o wrf_histout.o  \
 wrf_inputin.o wrf_inputout.o  \
@@ -879,6 +893,7 @@ solve_interface.o : solve_interface.F
 	$(FC) -c $(FCBASEOPTS) -I. $(PROMOTION) $(MODULE_DIRS) $*.f
 
 # compile these without high optimization to speed compile
+shift_domain_em.o : shift_domain_em.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -895,6 +910,7 @@ module_dm.o : module_dm.F
 start_domain.o : start_domain.F
 module_configure.o : module_configure.F
 
+shift_domain_em.o                                              \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
@@ -1089,6 +1105,7 @@ solve_interface.o : solve_interface.F
 	$(FC) -c -qfree=f90 -qspillsize=32767 -I. $(PROMOTION) $(MODULE_DIRS) $*.f
 
 # compile these without high optimization to speed compile
+shift_domain_em.o : shift_domain_em.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -1120,6 +1137,7 @@ mediation_integrate.o \
 mediation_interp_domain.o \
 module_configure.o                                             \
 solve_interface.o                                              \
+shift_domain_em.o : shift_domain_em.F
 convert_nmm.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -1306,6 +1324,7 @@ mediation_force_domain.o : mediation_force_domain.F
 mediation_feedback_domain.o : mediation_feedback_domain.F
 convert_nmm.o : convert_nmm.F
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -1317,6 +1336,7 @@ mediation_integrate.o \
 mediation_interp_domain.o \
 mediation_feedback_domain.o \
 solve_interface.o                                              \
+shift_domain_em.o : shift_domain_em.F
 convert_nmm.o    :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -1325,7 +1345,7 @@ convert_nmm.o    :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt $*.f
 
 ###########################################################
-#ARCH	AIX DM-Parallel          (RSL, IBM-MPI, supports nesting)
+#ARCH	AIX DM-Parallel          (RSL, IBM-MPI, allows nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
@@ -1414,6 +1434,7 @@ mediation_force_domain.o : mediation_force_domain.F
 mediation_feedback_domain.o : mediation_feedback_domain.F
 convert_nmm.o : convert_nmm.F
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -1425,6 +1446,7 @@ mediation_integrate.o \
 mediation_interp_domain.o \
 mediation_feedback_domain.o \
 solve_interface.o                                              \
+shift_domain_em.o : shift_domain_em.F
 convert_nmm.o    :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -1433,7 +1455,7 @@ convert_nmm.o    :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt $*.f
 
 ###########################################################
-#ARCH	AIX DM-Parallel          (RSL, IBM-MPI, supports nesting )(PARALLEL HDF5)
+#ARCH	AIX DM-Parallel          (RSL, IBM-MPI, allows nesting )(PARALLEL HDF5)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
@@ -1525,6 +1547,7 @@ mediation_force_domain.o : mediation_force_domain.F
 mediation_feedback_domain.o : mediation_feedback_domain.F
 convert_nmm.o : convert_nmm.F
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -1536,6 +1559,7 @@ mediation_integrate.o \
 mediation_interp_domain.o \
 mediation_feedback_domain.o \
 solve_interface.o                                              \
+shift_domain_em.o : shift_domain_em.F
 convert_nmm.o    :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -1544,7 +1568,7 @@ convert_nmm.o    :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt $*.f
 
 ###########################################################
-#ARCH	AIX DM-Parallel          (RSL_LITE, IBM-MPI, Supports nesting )(PARALLEL HDF5)
+#ARCH	AIX DM-Parallel          (RSL_LITE, IBM-MPI, Allows nesting )(PARALLEL HDF5)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
@@ -1636,6 +1660,7 @@ mediation_force_domain.o : mediation_force_domain.F
 mediation_feedback_domain.o : mediation_feedback_domain.F
 convert_nmm.o : convert_nmm.F
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -1647,6 +1672,7 @@ mediation_integrate.o \
 mediation_interp_domain.o \
 mediation_feedback_domain.o \
 solve_interface.o                                              \
+shift_domain_em.o : shift_domain_em.F
 convert_nmm.o    :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -1655,7 +1681,7 @@ convert_nmm.o    :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt $*.f
 
 ###########################################################
-#ARCH	AIX DM-Parallel/SM-Parallel (not recommended)  (RSL, IBM-MPI, OpenMP, supports nesting)
+#ARCH	AIX DM-Parallel/SM-Parallel (not recommended)  (RSL, IBM-MPI, OpenMP, allows nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
@@ -1750,7 +1776,7 @@ mediation_force_domain.o : mediation_force_domain.F
 mediation_feedback_domain.o : mediation_feedback_domain.F
 convert_nmm.o : convert_nmm.F
 module_configure.o : module_configure.F
-solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -1760,6 +1786,7 @@ module_initialize_real.o module_dm.o start_domain.o \
 convert_nmm.o \
 module_configure.o                                             \
 solve_interface.o                                              \
+shift_domain_em.o                                              \
 mediation_integrate.o \
 mediation_interp_domain.o :
 	$(RM) $@
@@ -1890,6 +1917,7 @@ mediation_force_domain.o : mediation_force_domain.F
 mediation_feedback_domain.o : mediation_feedback_domain.F
 convert_nmm.o : convert_nmm.F
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -1901,6 +1929,7 @@ mediation_integrate.o \
 mediation_interp_domain.o \
 mediation_feedback_domain.o \
 solve_interface.o                                              \
+shift_domain_em.o                                              \
 convert_nmm.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -2018,6 +2047,7 @@ mediation_force_domain.o : mediation_force_domain.F
 mediation_feedback_domain.o : mediation_feedback_domain.F
 convert_nmm.o : convert_nmm.F
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -2029,6 +2059,7 @@ mediation_integrate.o \
 mediation_interp_domain.o \
 mediation_feedback_domain.o \
 solve_interface.o                                              \
+shift_domain_em.o                                              \
 convert_nmm.o    :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -2128,6 +2159,7 @@ mediation_force_domain.o : mediation_force_domain.F
 mediation_feedback_domain.o : mediation_feedback_domain.F
 convert_nmm.o : convert_nmm.F
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -2139,6 +2171,7 @@ mediation_integrate.o \
 mediation_interp_domain.o \
 mediation_feedback_domain.o \
 solve_interface.o                                              \
+shift_domain_em.o                                              \
 convert_nmm.o    :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -2233,6 +2266,7 @@ module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
 start_domain.o : start_domain.F
 convert_nmm.o : convert_nmm.F
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -2240,6 +2274,7 @@ module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 start_domain.o \
 solve_interface.o                                              \
+shift_domain_em.o                                              \
 convert_nmm.o    :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -2730,7 +2765,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
 
 ###########################################################
-#ARCH     Compaq OSF1 alpha DM-Parallel       (RSL_LITE, MPICH, supports nesting)
+#ARCH     Compaq OSF1 alpha DM-Parallel       (RSL_LITE, MPICH, allows nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
@@ -3643,7 +3678,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCBASENOINL) $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH       Alpha Linux alpha DM-Parallel  (RSL, MPICH, support nesting)
+#ARCH       Alpha Linux alpha DM-Parallel  (RSL, MPICH, Allows nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
@@ -3899,6 +3934,7 @@ esmf_time :
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -3917,6 +3953,7 @@ mediation_integrate.o : mediation_integrate.F
 module_configure.o : module_configure.F
 
 solve_interface.o                                              \
+shift_domain_em.o                                              \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
@@ -3931,7 +3968,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH    PC Linux i486 i586 i686, PGI compiler  (single threaded, supports nesting using RSL without MPI)
+#ARCH    PC Linux i486 i586 i686, PGI compiler  (single threaded, allows nesting using RSL without MPI)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
@@ -4005,6 +4042,7 @@ esmf_time :
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -4023,6 +4061,7 @@ mediation_integrate.o : mediation_integrate.F
 module_configure.o : module_configure.F
 
 solve_interface.o                                              \
+shift_domain_em.o                                              \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
@@ -4100,6 +4139,7 @@ esmf_time :
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -4118,6 +4158,7 @@ mediation_integrate.o : mediation_integrate.F
 module_configure.o : module_configure.F
 
 solve_interface.o                                              \
+shift_domain_em.o                                              \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
@@ -4132,7 +4173,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH    PC Linux i486 i586 i686, PGI compiler  SM-Parallel (OpenMP, supports nesting using RSL without MPI)
+#ARCH    PC Linux i486 i586 i686, PGI compiler  SM-Parallel (OpenMP, allows nesting using RSL without MPI)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
@@ -4208,6 +4249,7 @@ esmf_time :
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -4226,6 +4268,7 @@ mediation_integrate.o : mediation_integrate.F
 module_configure.o : module_configure.F
 
 solve_interface.o                                              \
+shift_domain_em.o                                              \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
@@ -4240,7 +4283,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH    PC Linux i486 i586 i686, PGI compiler  DM-Parallel (RSL, MPICH, support nesting)
+#ARCH    PC Linux i486 i586 i686, PGI compiler  DM-Parallel (RSL, MPICH, Allows nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
@@ -4314,6 +4357,7 @@ esmf_time :
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -4332,6 +4376,7 @@ mediation_integrate.o : mediation_integrate.F
 module_configure.o : module_configure.F
 
 solve_interface.o                                              \
+shift_domain_em.o                                              \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
@@ -4346,7 +4391,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH     PC Linux i486 i586 i686, PGI compiler  DM-Parallel (RSL_LITE, MPICH, Supports nesting)
+#ARCH     PC Linux i486 i586 i686, PGI compiler  DM-Parallel (RSL_LITE, MPICH, Allows nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
@@ -4421,6 +4466,7 @@ esmf_time :
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -4439,6 +4485,7 @@ mediation_integrate.o : mediation_integrate.F
 module_configure.o : module_configure.F
 
 solve_interface.o                                              \
+shift_domain_em.o                                              \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
@@ -4530,6 +4577,7 @@ esmf_time :
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -4547,6 +4595,7 @@ start_domain.o : start_domain.F
 module_configure.o : module_configure.F
 
 solve_interface.o \
+shift_domain_em.o                                              \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o \
@@ -4642,6 +4691,7 @@ esmf_time :
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -4663,6 +4713,7 @@ start_domain.o : start_domain.F
 module_configure.o : module_configure.F
 
 solve_interface.o \
+shift_domain_em.o                                              \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o \
@@ -4745,6 +4796,7 @@ esmf_time :
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -4763,6 +4815,7 @@ mediation_integrate.o : mediation_integrate.F
 module_configure.o : module_configure.F
 
 solve_interface.o                                              \
+shift_domain_em.o                                              \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
@@ -4777,7 +4830,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH    PC Linux x86_64 (IA64 and Opteron), PGI 5.2 or higher, DM-Parallel  (RSL, MPICH, support nesting)
+#ARCH    PC Linux x86_64 (IA64 and Opteron), PGI 5.2 or higher, DM-Parallel  (RSL, MPICH, Allows nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
@@ -4858,6 +4911,7 @@ esmf_time :
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -4876,6 +4930,7 @@ mediation_integrate.o : mediation_integrate.F
 module_configure.o : module_configure.F
 
 solve_interface.o                                              \
+shift_domain_em.o                                              \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
@@ -4890,7 +4945,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH    PC Linux x86_64 (IA64 and Opteron), PGI 5.2 or higher DM-Parallel   (RSL_LITE, MPICH, Supports nesting, No periodic LBCs)
+#ARCH    PC Linux x86_64 (IA64 and Opteron), PGI 5.2 or higher DM-Parallel   (RSL_LITE, MPICH, Allows nesting, No periodic LBCs)
 #        Note that for 5.1.x comment out -Mpia=fast
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
@@ -4970,6 +5025,7 @@ esmf_time :
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -4988,6 +5044,7 @@ mediation_integrate.o : mediation_integrate.F
 module_configure.o : module_configure.F
 
 solve_interface.o                                              \
+shift_domain_em.o                                              \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
@@ -5002,7 +5059,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH    Intel Itanium2 ia64 madison Linux  (e.g. mpp2 at PNNL) , efc71 compiler DM-Parallel (RSL_LITE, MPICH, Supports nesting )
+#ARCH    Intel Itanium2 ia64 madison Linux  (e.g. mpp2 at PNNL) , efc71 compiler DM-Parallel (RSL_LITE, MPICH, Allows nesting )
 # Notes for running on PNNL cluster:
 # 
 # 1. source /home/oehmen/.mycshrc
@@ -5084,6 +5141,7 @@ esmf_time :
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -5101,6 +5159,7 @@ start_domain.o : start_domain.F
 module_configure.o : module_configure.F
 
 solve_interface.o \
+shift_domain_em.o                                              \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o \
@@ -5200,6 +5259,7 @@ esmf_time :
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -5217,6 +5277,7 @@ start_domain.o : start_domain.F
 module_configure.o : module_configure.F
 
 solve_interface.o \
+shift_domain_em.o                                              \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o \
@@ -5230,7 +5291,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH titan.ncsa.uiuc.edu specific Intel Itanium2 ia64 mckinley Linux, efc compiler DM-Parallel (RSL_LITE, VMI, supports nesting)
+#ARCH titan.ncsa.uiuc.edu specific Intel Itanium2 ia64 mckinley Linux, efc compiler DM-Parallel (RSL_LITE, VMI, allows nesting)
 #
 # Consider 'setenv F_UFMTENDIAN big' in your run scripts for big-endian output
 # Note hard-coded paths to Mark Straka's accounts and ecc6 libs
@@ -5304,6 +5365,7 @@ esmf_time :
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -5321,6 +5383,7 @@ start_domain.o : start_domain.F
 module_configure.o : module_configure.F
 
 solve_interface.o \
+shift_domain_em.o                                              \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o \
@@ -5394,6 +5457,7 @@ esmf_time :
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -5424,6 +5488,7 @@ wrf_histin.o wrf_histout.o  \
 wrf_inputin.o wrf_inputout.o  \
 wrf_restartin.o wrf_restartout.o  \
 solve_interface.o                                              \
+shift_domain_em.o                                              \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
@@ -5436,7 +5501,7 @@ module_initialize_real.o module_dm.o  start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH    Intel xeon i686 ia32 Xeon Linux, ifort compiler  (single threaded, supports nesting using RSL without MPI)
+#ARCH    Intel xeon i686 ia32 Xeon Linux, ifort compiler  (single threaded, allows nesting using RSL without MPI)
 #
 # Note: if you use ifort 8.0, please remove option -xW (for vectorization). This option 
 #       has been identified to produce wrong results occationally.
@@ -5514,6 +5579,7 @@ esmf_time :
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -5532,6 +5598,7 @@ mediation_integrate.o : mediation_integrate.F
 module_configure.o : module_configure.F
 
 solve_interface.o                                              \
+shift_domain_em.o                                              \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
@@ -5612,6 +5679,7 @@ esmf_time :
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -5630,6 +5698,7 @@ mediation_integrate.o : mediation_integrate.F
 module_configure.o : module_configure.F
 
 solve_interface.o                                              \
+shift_domain_em.o                                              \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
@@ -5644,7 +5713,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH    Intel xeon i686 ia32 Xeon Linux, ifort compiler SM-Parallel (OpenMP, supports nesting using RSL without MPI)
+#ARCH    Intel xeon i686 ia32 Xeon Linux, ifort compiler SM-Parallel (OpenMP, allows nesting using RSL without MPI)
 #
 # Note: if you use ifort 8.0, please remove option -xW (for vectorization). This option 
 #       has been identified to produce wrong results occationally.
@@ -5723,6 +5792,7 @@ esmf_time :
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -5741,6 +5811,7 @@ mediation_integrate.o : mediation_integrate.F
 module_configure.o : module_configure.F
 
 solve_interface.o                                              \
+shift_domain_em.o                                              \
 module_configure.o                                             \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -5755,7 +5826,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH    Intel xeon i686 ia32 Xeon Linux, ifort+icc compiler  DM-Parallel (RSL, MPICH, supports nesting)
+#ARCH    Intel xeon i686 ia32 Xeon Linux, ifort+icc compiler  DM-Parallel (RSL, MPICH, allows nesting)
 #
 # Note: if you use ifort 8.0, please remove option -xW (for vectorization). This option 
 #       has been identified to produce wrong results occationally.
@@ -5831,6 +5902,7 @@ esmf_time :
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -5849,6 +5921,7 @@ mediation_integrate.o : mediation_integrate.F
 module_configure.o : module_configure.F
 
 solve_interface.o                                              \
+shift_domain_em.o                                              \
 module_configure.o                                             \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -5863,7 +5936,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH    Intel xeon i686 ia32 Xeon Linux, ifort+gcc compiler  DM-Parallel (RSL, MPICH, supports nesting)
+#ARCH    Intel xeon i686 ia32 Xeon Linux, ifort+gcc compiler  DM-Parallel (RSL, MPICH, allows nesting)
 #
 # Note: if you use ifort 8.0, please remove option -xW (for vectorization). This option 
 #       has been identified to produce wrong results occationally.
@@ -5939,6 +6012,7 @@ esmf_time :
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -5957,6 +6031,7 @@ mediation_integrate.o : mediation_integrate.F
 module_configure.o : module_configure.F
 
 solve_interface.o                                              \
+shift_domain_em.o                                              \
 module_configure.o                                             \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -6055,6 +6130,7 @@ wrfio_esmf :
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -6073,6 +6149,7 @@ mediation_integrate.o : mediation_integrate.F
 module_configure.o : module_configure.F
 
 solve_interface.o                                              \
+shift_domain_em.o                                              \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
@@ -6198,6 +6275,7 @@ esmf_time :
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -6215,6 +6293,7 @@ start_domain.o : start_domain.F
 module_configure.o : module_configure.F
    
 solve_interface.o                                              \
+shift_domain_em.o                                              \
 module_configure.o                                             \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -6348,6 +6427,7 @@ wrf_histin.o : wrf_histin.F
 wrf_restartin.o : wrf_restartin.F
 module_initialize_real.o: module_initialize_real.F
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 module_io_wrf.o : module_io_wrf.F
 module_domain.o : module_domain.F
 module_dm.o : module_dm.F
@@ -6359,6 +6439,7 @@ mediation_integrate.o mediation_interp_domain.o mediation_feedback_domain.o \
 wrf_auxinput1out.o wrf_histout.o wrf_restartout.o wrf_inputin.o \
 wrf_auxinput1in.o wrf_histin.o wrf_restartin.o module_initialize_real.o \
 module_domain.o module_dm.o module_io_wrf.o start_domain.o solve_interface.o \
+shift_domain_em.o                                              \
 mediation_force_domain.o:
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
@@ -6367,7 +6448,7 @@ mediation_force_domain.o:
 	$(FC) -c $(FCBASEOPTS) -O0 $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH   SGI Altix, Intel Itanium2 ia64 Linux, ifort DM-Parallel (RSL_LITE, VMI, SGI MPI, Intel MKL, Supports nesting)
+#ARCH   SGI Altix, Intel Itanium2 ia64 Linux, ifort DM-Parallel (RSL_LITE, VMI, SGI MPI, Intel MKL, Allows nesting)
 #
 #  'setenv F_UFMTENDIAN big' in run scripts not necessary
 #  since -convert big_endian is in FCBASEOPTS
@@ -6481,6 +6562,7 @@ wrf_histin.o : wrf_histin.F
 wrf_restartin.o : wrf_restartin.F
 module_initialize_real.o: module_initialize_real.F
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 module_io_wrf.o : module_io_wrf.F
 module_domain.o : module_domain.F
 start_domain.o : start_domain.F
@@ -6492,6 +6574,7 @@ module_configure.o                                              \
 wrf_auxinput1out.o wrf_histout.o wrf_restartout.o wrf_inputin.o \
 wrf_auxinput1in.o wrf_histin.o wrf_restartin.o module_initialize_real.o \
 module_domain.o module_io_wrf.o start_domain.o solve_interface.o \
+shift_domain_em.o                                              \
 mediation_force_domain.o:
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
@@ -6616,6 +6699,7 @@ wrf_histin.o : wrf_histin.F
 wrf_restartin.o : wrf_restartin.F
 module_initialize_real.o: module_initialize_real.F
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 module_io_wrf.o : module_io_wrf.F
 module_domain.o : module_domain.F
 module_dm.o : module_dm.F
@@ -6627,6 +6711,7 @@ mediation_integrate.o mediation_interp_domain.o mediation_feedback_domain.o \
 wrf_auxinput1out.o wrf_histout.o wrf_restartout.o wrf_inputin.o \
 wrf_auxinput1in.o wrf_histin.o wrf_restartin.o module_initialize_real.o \
 module_domain.o module_dm.o module_io_wrf.o start_domain.o solve_interface.o \
+shift_domain_em.o                                              \
 mediation_force_domain.o:
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
@@ -6635,7 +6720,7 @@ mediation_force_domain.o:
 	$(FC) -c $(FCBASEOPTS) -O0 $(MODULE_DIRS) $*.f
 
 ###########################################################
-#ARCH   SGI Altix, Intel Itanium2 ia64 Linux, ifort DM-Parallel (RSL_LITE, VMI, SGI MPI, Supports nesting)
+#ARCH   SGI Altix, Intel Itanium2 ia64 Linux, ifort DM-Parallel (RSL_LITE, VMI, SGI MPI, Allows nesting)
 #
 #  'setenv F_UFMTENDIAN big' in run scripts not necessary
 #  since -convert big_endian is in FCBASEOPTS
@@ -6745,6 +6830,7 @@ wrf_histin.o : wrf_histin.F
 wrf_restartin.o : wrf_restartin.F
 module_initialize_real.o: module_initialize_real.F
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 module_io_wrf.o : module_io_wrf.F
 module_domain.o : module_domain.F
 start_domain.o : start_domain.F
@@ -6756,6 +6842,7 @@ module_configure.o                                              \
 wrf_auxinput1out.o wrf_histout.o wrf_restartout.o wrf_inputin.o \
 wrf_auxinput1in.o wrf_histin.o wrf_restartin.o module_initialize_real.o \
 module_domain.o module_io_wrf.o start_domain.o solve_interface.o \
+shift_domain_em.o                                              \
 mediation_force_domain.o:
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
@@ -6854,6 +6941,7 @@ wrf_histin.o : wrf_histin.F
 wrf_restartin.o : wrf_restartin.F
 module_initialize_real.o: module_initialize_real.F
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 module_io_wrf.o : module_io_wrf.F
 module_domain.o : module_domain.F
 start_domain.o : start_domain.F
@@ -6865,6 +6953,7 @@ module_configure.o                                              \
 wrf_auxinput1out.o wrf_histout.o wrf_restartout.o wrf_inputin.o \
 wrf_auxinput1in.o wrf_histin.o wrf_restartin.o module_initialize_real.o \
 module_domain.o module_io_wrf.o start_domain.o solve_interface.o \
+shift_domain_em.o                                              \
 mediation_force_domain.o:
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
@@ -6960,6 +7049,7 @@ wrf_histin.o : wrf_histin.F
 wrf_restartin.o : wrf_restartin.F
 module_initialize_real.o: module_initialize_real.F
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 module_io_wrf.o : module_io_wrf.F
 module_domain.o : module_domain.F
 start_domain.o : start_domain.F
@@ -6971,6 +7061,7 @@ module_configure.o                                              \
 wrf_auxinput1out.o wrf_histout.o wrf_restartout.o wrf_inputin.o \
 wrf_auxinput1in.o wrf_histin.o wrf_restartin.o module_initialize_real.o \
 module_domain.o module_io_wrf.o start_domain.o solve_interface.o \
+shift_domain_em.o                                              \
 mediation_force_domain.o:
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
@@ -7301,6 +7392,7 @@ esmf_time :
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -7319,6 +7411,7 @@ start_domain.o : start_domain.F
 module_configure.o : module_configure.F
 
 solve_interface.o                                              \
+shift_domain_em.o                                              \
 module_configure.o                                              \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -7401,6 +7494,7 @@ esmf_time :
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -7419,6 +7513,7 @@ start_domain.o : start_domain.F
 module_configure.o : module_configure.F
 
 solve_interface.o                                              \
+shift_domain_em.o                                              \
 module_configure.o                                              \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -7487,6 +7582,7 @@ esmf_time :
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -7505,6 +7601,7 @@ start_domain.o : start_domain.F
 module_configure.o : module_configure.F
 
 solve_interface.o                                              \
+shift_domain_em.o                                              \
 module_configure.o                                              \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -7576,6 +7673,7 @@ esmf_time :
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -7594,6 +7692,7 @@ start_domain.o : start_domain.F
 module_configure.o : module_configure.F
 
 solve_interface.o                                              \
+shift_domain_em.o                                              \
 module_configure.o                                              \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -7662,6 +7761,7 @@ esmf_time :
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -7680,6 +7780,7 @@ start_domain.o : start_domain.F
 module_configure.o : module_configure.F
 
 solve_interface.o                                              \
+shift_domain_em.o                                              \
 module_configure.o                                              \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -7764,6 +7865,7 @@ esmf_time :
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -7782,6 +7884,7 @@ start_domain.o : start_domain.F
 module_configure.o : module_configure.F
 
 solve_interface.o \
+shift_domain_em.o                                              \
 module_configure.o                                              \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o \
@@ -7866,6 +7969,7 @@ esmf_time :
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -7884,6 +7988,7 @@ start_domain.o : start_domain.F
 module_configure.o : module_configure.F
 
 solve_interface.o \
+shift_domain_em.o                                              \
 module_configure.o                                              \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o \
@@ -7970,6 +8075,7 @@ solve_interface.o : solve_interface.F
 	mv $*.F90 $*.F
 
 # compile these without high optimization to speed compile
+shift_domain_em.o : shift_domain_em.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -7995,6 +8101,7 @@ module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o \
+shift_domain_em.o                                              \
 mediation_interp_domain.o \
 module_configure.o                                             \
 convert_nmm.o :

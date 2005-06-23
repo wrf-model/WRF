@@ -449,13 +449,6 @@ write(0,*)'computed grid%vc_i, grid%vc_j ',grid%vc_i, grid%vc_j
 i = grid%vc_i ; j = grid%vc_j ; height( i,j ) = height(i,j) * 1.2   !mark the center
 CALL wrf_timetoa ( grid%current_time, message2 )
 WRITE ( message , FMT = '(A," on domain ",I3)' ) TRIM(message2), grid%id
-write(70,*)ide-ids,jde-jds,TRIM(message)
-do j = jds,jde-1
-do i = ids,ide-1
-write(70,*)height(i,j)
-enddo
-enddo
-call flush_(70)
 #  endif
 
 

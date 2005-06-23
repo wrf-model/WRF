@@ -166,3 +166,39 @@ dst_on_comm ( int * Fcomm, int * typesize ,
   return(0) ;
 }
 
+#include <malloc.h>
+#include <sys/resource.h>
+
+#if 0
+  int getrusage(
+          int who,
+          struct rusage *r_usage);
+#endif
+
+#if 0
+extern int outy ;
+extern int maxstug, nouty, maxouty ;
+#endif
+
+rlim_ ()
+{
+
+   struct rusage r_usage ;
+   struct mallinfo minf ;
+
+   getrusage ( RUSAGE_SELF, &r_usage ) ;
+   minf = mallinfo() ;
+
+#if 0
+        long    ru_ixrss;               /* integral shared memory size */
+        long    ru_idrss;               /* integral unshared data " */
+        long    ru_isrss;               /* integral unshared stack " */
+#endif
+
+   fprintf(stderr,"sm %ld d %ld s %ld\n",r_usage.ru_ixrss,r_usage.ru_idrss,r_usage.ru_isrss) ;
+   fprintf(stderr,"a %ld usm %ld fsm %ld uord %ld ford %ld hblkhd %d\n",minf.arena,minf.usmblks,minf.fsmblks,minf.uordblks,minf.fordblks,minf.hblkhd) ;
+#if 0
+   fprintf(stderr," outy %d  nouty %d  maxstug %d maxouty %d \n", outy, nouty, maxstug, maxouty ) ;
+#endif
+}
+

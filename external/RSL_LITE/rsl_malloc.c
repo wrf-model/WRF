@@ -80,6 +80,21 @@ extern int EF_PROTECT_BELOW;
 extern int EF_PROTECT_FREE;
 */
 
+/* define STUG to enable tracking of allocs and frees (performance and space penalty) */
+#ifdef STUG
+#define MAXSTUG  1000000
+struct stugtype {
+   char *  ddr ;
+   int     sz  ;
+} stug[MAXSTUG] ;
+static int stugfirst =1 ;
+int outy = 0 ;
+int nouty = 0 ;
+int maxstug = 0 ;
+int maxouty = 0 ;
+int bbb ;
+#endif
+
 
 static char zero_length_storage[] = "" ;
 
@@ -107,6 +122,16 @@ void * rsl_malloc(f,l,s)
 EF_PROTECT_BELOW = 0 ;
 EF_PROTECT_FREE = 1 ;
 */
+
+#ifdef STUG
+   if ( stugfirst == 1 ) {
+      stugfirst = 0 ;
+      for ( bbb = 0 ; bbb < MAXSTUG ; bbb++ ) {
+         stug[bbb].ddr = 0L ;
+         stug[bbb].sz  = 0 ;
+      }
+   }
+#endif
 
    if ( s == 0 )
    {
@@ -178,6 +203,24 @@ EF_PROTECT_FREE = 1 ;
    retval = retval + 512 ;
 #endif
 
+#ifdef STUG
+for ( bbb = 0 ; bbb < MAXSTUG ; bbb++ )
+{
+   if ( stug[bbb].ddr == 0 ) break ;
+}
+if ( bbb < MAXSTUG ) {
+   stug[bbb].ddr = retval ;
+   stug[bbb].sz  = s ;
+   outy += stug[bbb].sz ;
+/* fprintf(stderr,"+ %10d.  %08x   %10d  %10d\n", bbb, stug[bbb].ddr, stug[bbb].sz, outy ) ; */
+   nouty ++ ;
+   if ( nouty > maxstug ) maxstug = nouty ;
+   if ( outy > maxouty ) maxouty = outy ;
+}else{
+fprintf(stderr,"stug full %d\n",bbb) ;
+RSL_FATAL(2) ;
+}
+#endif
    return(retval) ;
 }
 
@@ -185,6 +228,20 @@ rsl_free( p )
    char * p ;
 {
    if ( p == zero_length_storage ) return ;    /* fix from ANU */
+
+#ifdef STUG
+for ( bbb = 0 ; bbb < MAXSTUG ; bbb++ ) 
+{
+   if ( stug[bbb].ddr == p ) {
+      outy -= stug[bbb].sz ;
+/* fprintf(stderr,"- %10d.  %08x   %10d  %10d\n", bbb, stug[bbb].ddr, stug[bbb].sz, outy ) ; */
+      nouty -- ;
+      stug[bbb].ddr = 0L ;
+      break ;
+   }
+}
+#endif
+
 #ifdef PADIT
    BASE_FREE ( p-512 ) ;
 #else

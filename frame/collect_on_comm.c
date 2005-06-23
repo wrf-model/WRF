@@ -189,12 +189,6 @@ rlim_ ()
    getrusage ( RUSAGE_SELF, &r_usage ) ;
    minf = mallinfo() ;
 
-#if 0
-        long    ru_ixrss;               /* integral shared memory size */
-        long    ru_idrss;               /* integral unshared data " */
-        long    ru_isrss;               /* integral unshared stack " */
-#endif
-
    fprintf(stderr,"sm %ld d %ld s %ld\n",r_usage.ru_ixrss,r_usage.ru_idrss,r_usage.ru_isrss) ;
    fprintf(stderr,"a %ld usm %ld fsm %ld uord %ld ford %ld hblkhd %d\n",minf.arena,minf.usmblks,minf.fsmblks,minf.uordblks,minf.fordblks,minf.hblkhd) ;
 #if 0

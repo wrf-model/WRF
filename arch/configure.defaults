@@ -15,7 +15,7 @@ CFLAGS		=
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../chem -I../inc
 ARCHFLAGS       =       -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   -DLIMIT_ARGS
-LDFLAGS		=
+LDFLAGS		=       CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP		=	/lib/cpp -C -P
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -106,7 +106,7 @@ INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int -I../frame 
                        	-I../external/esmf_time_f90 -I../inc
 ARCHFLAGS       =       -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
                         -DTRIEDNTRUE   -DINTIO -DLIMIT_ARGS
-LDFLAGS		=
+LDFLAGS		=       CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP		=	/lib/cpp
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -200,7 +200,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH \
 			-L../external/io_int -lwrfio_int \
                         -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS         =       $(FCOPTIM) -64 -OPT:Olimit=5269
+LDFLAGS         =       $(FCOPTIM) -64 -OPT:Olimit=5269       CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =       /lib/cpp -C -P
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -293,7 +293,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 AR              =       ar ru
 M4              =       m4 -B10000
-LDFLAGS         =
+LDFLAGS         =       CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =       /lib/cpp -C -P
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -384,7 +384,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH $(OMP) \
 			-L../external/io_int -lwrfio_int \
                         -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS         =       $(FCOPTIM) -64 -OPT:Olimit=5269
+LDFLAGS         =       $(FCOPTIM) -64 -OPT:Olimit=5269       CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =       /lib/cpp -C -P
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -488,7 +488,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_i
                         -L../external/RSL/RSL -lrsl -lmpi \
                         -L../external/io_grib1 -lio_grib1 \
                         ../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS		=       -64 $(OMP)
+LDFLAGS		=       -64 $(OMP)       CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP		=	/lib/cpp
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -598,7 +598,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH \
 			-L../external/io_int -lwrfio_int \
                         -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS         =	$(FCOPTIM)
+LDFLAGS         =	$(FCOPTIM)       CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 #CPP            =       /opt/SUNWspro/bin/fpp
 CPP             =       /usr/ccs/lib/cpp -C -P
@@ -727,7 +727,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_i
                         -L../external/RSL/RSL -lrsl \
                         -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS         =       $(FCOPTIM) $(OMP) $(OMP)
+LDFLAGS         =       $(FCOPTIM) $(OMP)        CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =       /usr/ccs/lib/cpp -C -P
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -849,7 +849,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH \
 			-L../external/io_int -lwrfio_int \
                         -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS         =	$(FCOPTIM) $(OMP)
+LDFLAGS         =	$(FCOPTIM) $(OMP) CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 #CPP            =       /opt/SUNWspro/bin/fpp
 CPP             =       /usr/ccs/lib/cpp -C -P
@@ -963,7 +963,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_i
                         -L../external/RSL/RSL -lrsl \
                         -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS         =       $(FCOPTIM) $(OMP) $(OMP)
+LDFLAGS         =       $(FCOPTIM) $(OMP) $(OMP) CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =       /usr/ccs/lib/cpp -C -P
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -1068,7 +1068,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -lmass -lmassv \
                         -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 
-LDFLAGS         =	-bmaxstack:256000000 -bmaxdata:2048000000
+LDFLAGS         =	 CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =       /lib/cpp -C -P
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -1182,7 +1182,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -lmass -lmassv -lxlsmp \
                         -L../external/io_int -lwrfio_int \
                         -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS         =	-bmaxstack:256000000 $(OMP) -bmaxdata:2048000000
+LDFLAGS         =	$(OMP) CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =       /lib/cpp -C -P
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -1265,7 +1265,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL_LITE -lrsl_l
                         -L../external/io_int -lwrfio_int  \
                         -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS         =	-bmaxstack:256000000 -bmaxdata:2048000000
+LDFLAGS         =	 CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP		=	/lib/cpp
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -1375,7 +1375,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl -l
                         -L../external/io_int -lwrfio_int  \
                         -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS         =	-bmaxstack:256000000 -bmaxdata:2048000000
+LDFLAGS         =	 CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP		=	/lib/cpp
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -1485,7 +1485,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH CONFIGURE_PHDF5_LIB_PATH -L../
                         -L../external/io_int -lwrfio_int  \
                         -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS         =	-bmaxstack:256000000 -bmaxdata:2048000000
+LDFLAGS         =	 CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP		=	/lib/cpp
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -1598,7 +1598,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH CONFIGURE_PHDF5_LIB_PATH -L../
                         -L../external/io_int -lwrfio_int  \
                         -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS         =	-bmaxstack:256000000 -bmaxdata:2048000000
+LDFLAGS         =	 CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP		=	/lib/cpp
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -1713,7 +1713,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl -l
                         -L../external/io_int -lwrfio_int  \
                         -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS         =	-bmaxstack:256000000 $(OMP) -bmaxdata:2048000000
+LDFLAGS         =	$(OMP) CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP		=	/lib/cpp
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -1850,7 +1850,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH \
                         -lxlf -lxlomp_ser -lm -lc -lpthread \
                         -L../external/io_int -lwrfio_int  \
                         ../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS         =	-bmaxstack:256000000 -bmaxdata:2048000000
+LDFLAGS         =	 CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP		=	/lib/cpp
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -1988,7 +1988,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl -l
                         -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o \
 			-L$(ESMF_IO_DIR) -lwrfio_esmf $(ESMF_LIB_FLAGS)
-LDFLAGS         =	-bmaxstack:256000000 -bmaxdata:2048000000
+LDFLAGS         =	 CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP		=	/lib/cpp
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -2098,7 +2098,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl -l
                         -L../external/io_int -lwrfio_int  \
                         -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS         =	-bmaxstack:256000000 -bmaxdata:2048000000
+LDFLAGS         =	 CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP		=	/lib/cpp -C -P
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -2212,7 +2212,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl -l
                         -L../external/io_int -lwrfio_int  \
                         -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS         =	-bmaxstack:256000000 -bmaxdata:2048000000 $(OMP)
+LDFLAGS         =	$(OMP) CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP		=	/lib/cpp -C -P
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -2333,7 +2333,7 @@ REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time  \
                         -L../external/io_grib1 -lio_grib1
-LDFLAGS         =       $(FCOPTIM) $(OMP) -automatic -convert big_endian $(OMP)
+LDFLAGS         =       $(FCOPTIM) $(OMP) -automatic -convert big_endian $(OMP) CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =       /usr/bin/cpp -C -P
 POUND_DEF	=	-DDEC_ALPHA -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -2446,7 +2446,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_i
                         -L../external/RSL/RSL -lrsl \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time  \
                         -L../external/io_grib1 -lio_grib1
-LDFLAGS         =       $(FCOPTIM) $(OMP) -automatic -convert big_endian $(OMP)
+LDFLAGS         =       $(FCOPTIM) $(OMP) -automatic -convert big_endian $(OMP) CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =       /usr/bin/cpp -C -P
 POUND_DEF	=	-DDEC_ALPHA -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -2563,7 +2563,7 @@ REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time \
                         -L../external/io_grib1 -lio_grib1
-LDFLAGS         =       $(FCOPTIM) $(OMP) -automatic -convert big_endian $(OMP)
+LDFLAGS         =       $(FCOPTIM) $(OMP) -automatic -convert big_endian $(OMP) CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =       /usr/bin/cpp -C -P
 POUND_DEF	=	-DDEC_ALPHA -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -2677,7 +2677,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_i
                         -L../external/RSL/RSL -lrsl \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time \
                         -L../external/io_grib1 -lio_grib1
-LDFLAGS         =       $(FCOPTIM) $(OMP) -automatic -convert big_endian $(OMP)
+LDFLAGS         =       $(FCOPTIM) $(OMP) -automatic -convert big_endian $(OMP) CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =       /usr/bin/cpp -C -P
 POUND_DEF	=	-DDEC_ALPHA -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -2800,7 +2800,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_i
                         -L../external/RSL_LITE -lrsl_lite  \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time \
                         -L../external/io_grib1 -lio_grib1
-LDFLAGS         =       $(FCOPTIM) -automatic -convert big_endian $(OMP)
+LDFLAGS         =       $(FCOPTIM) -automatic -convert big_endian $(OMP) CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =       /usr/bin/cpp -C -P
 POUND_DEF	=	-DDEC_ALPHA -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -2923,7 +2923,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_i
                         -L../external/RSL/RSL -lrsl \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time  \
                         -L../external/io_grib1 -lio_grib1
-LDFLAGS         =       $(FCOPTIM) -automatic -convert big_endian $(OMP)
+LDFLAGS         =       $(FCOPTIM) -automatic -convert big_endian $(OMP) CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =       /usr/bin/cpp -C -P
 POUND_DEF	=	-DDEC_ALPHA -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -3047,7 +3047,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_i
                         -L../external/RSL/RSL -lrsl \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time \
                         -L../external/io_grib1 -lio_grib1
-LDFLAGS         =       $(FCOPTIM) -automatic -convert big_endian $(OMP)
+LDFLAGS         =       $(FCOPTIM) -automatic -convert big_endian $(OMP) CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =       /usr/bin/cpp -C -P
 POUND_DEF	=	-DDEC_ALPHA -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -3171,7 +3171,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_i
                         -L../external/RSL/RSL -lrsl -lmpi \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time \
                         -L../external/io_grib1 -lio_grib1
-LDFLAGS         =       $(FCOPTIM) -automatic -convert big_endian $(OMP)
+LDFLAGS         =       $(FCOPTIM) -automatic -convert big_endian $(OMP) CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =       /usr/bin/cpp -C -P
 POUND_DEF	=	-DDEC_ALPHA -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -3295,7 +3295,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_i
 -L/users/bettenc/lib -lOB -lJTC -lrt -lpthread \
 -lfor -lm -lnetcdf_c++ -lnetcdf -lpthread -lc -L/users/michalak/mpich/lib -lfmpich -lmpichfsup \
 /usr/lib/cmplrs/fortrtl/libUfor.a -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS         =       $(FCOPTIM) -pthread -ieee -ptr /users/bettenc/ptr -L/users/bettenc/MCELSystem/MCEL -lMCEL -L/users/bettenc/lib -lOB -lJTC -lrt -lpthread -lfor -lm -lnetcdf_c++ -lnetcdf -lpthread -lc
+LDFLAGS         =       $(FCOPTIM) -pthread -ieee -ptr /users/bettenc/ptr -L/users/bettenc/MCELSystem/MCEL -lMCEL -L/users/bettenc/lib -lOB -lJTC -lrt -lpthread -lfor -lm -lnetcdf_c++ -lnetcdf -lpthread -lc CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =       /usr/bin/cpp -C -P
 POUND_DEF	=	-DDEC_ALPHA -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -3419,7 +3419,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_i
                         -L../external/RSL/RSL -lrsl \
                         -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS         =       $(FCOPTIM) -automatic -convert big_endian $(OMP)
+LDFLAGS         =       $(FCOPTIM) -automatic -convert big_endian $(OMP) CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =       /usr/bin/cpp -C -P
 POUND_DEF	=	-DDEC_ALPHA -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -3523,7 +3523,7 @@ REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int \
                         -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o  -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS         =       $(FCOPTIM) -automatic -convert big_endian
+LDFLAGS         =       $(FCOPTIM) -automatic -convert big_endian CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =       /lib/cpp -C -P
 POUND_DEF	=	-DDEC_ALPHA -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -3613,7 +3613,7 @@ REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int \
                         -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o  -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS         =       $(FCOPTIM) -automatic -convert big_endian
+LDFLAGS         =       $(FCOPTIM) -automatic -convert big_endian CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =       /lib/cpp -C -P
 POUND_DEF	=	-DDEC_ALPHA -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -3712,7 +3712,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
                         -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o \
 			-L../external/io_int -lwrfio_int -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS         =       $(FCOPTIM) -automatic -convert big_endian
+LDFLAGS         =       $(FCOPTIM) -automatic -convert big_endian CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =       /lib/cpp -C -P
 POUND_DEF	=	-DDEC_ALPHA -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -3806,9 +3806,9 @@ PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             = 	../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time \
                         -L../external/io_grib1 -lio_grib1
-LDFLAGS         =      -Wl,-P -J
+LDFLAGS         =      -Wl,-P -J CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
-LDFLAGS         =      -J
+LDFLAGS         =      -J CONFIGURE_LDFLAGS
 CPP             =       /lib/cpp -C -P
 POUND_DEF	=	-DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) $(COREDEFS) $(ENVCOMPDEFS) $(POUND_DEF)
@@ -3844,7 +3844,7 @@ FCDEBUG         =       # -g
 FCBASEOPTS	=	$(FCFLAGS)
 ARCHFLAGS       =       -DCRAY CONFIGURE_NETCDF_FLAG -DIWORDSIZE=8 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=8 -DTRIEDNTRUE   \
 			-DLIMIT_ARGS
-LDFLAGS		=
+LDFLAGS		= CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP		=	/opt/ctl/bin/cpp
 POUND_DEF	=	-DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -3899,7 +3899,7 @@ REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH \
                         -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS         =       $(FCFLAGS) -byteswapio
+LDFLAGS         =       $(FCFLAGS) -byteswapio CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =       /lib/cpp -C -P -traditional
 POUND_DEF	=	$(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -4001,7 +4001,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
                         -L../external/io_grib1 -lio_grib1 \
 			-L../external/io_int -lwrfio_int \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS         =       -byteswapio $(FCFLAGS)
+LDFLAGS         =       -byteswapio $(FCFLAGS) CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =       /lib/cpp -C -P -traditional
 POUND_DEF	=	-DNO_RRTM_PHYSICS  $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -4104,7 +4104,7 @@ REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH \
                         -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS         =	$(FCFLAGS) $(OMP)
+LDFLAGS         =	$(FCFLAGS) $(OMP) CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =       /lib/cpp -C -P -traditional
 POUND_DEF	=	$(OMPCPP) -traditional $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -4208,7 +4208,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
                         -L../external/io_grib1 -lio_grib1 \
 			-L../external/io_int -lwrfio_int \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS         =       $(FCFLAGS) $(OMP)
+LDFLAGS         =       $(FCFLAGS) $(OMP) CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =       /lib/cpp -C -P -traditional
 POUND_DEF	=	-DNO_RRTM_PHYSICS  $(OMPCPP) -traditional $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -4316,7 +4316,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
                         -L../external/io_grib1 -lio_grib1 \
 			-L../external/io_int -lwrfio_int \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS         =       -byteswapio $(FCFLAGS)
+LDFLAGS         =       -byteswapio $(FCFLAGS) CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =       /lib/cpp -C -P -traditional
 POUND_DEF	=	-DNO_RRTM_PHYSICS  -traditional $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -4425,7 +4425,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL_LITE -lrsl_l
                         -L../external/io_grib1 -lio_grib1 \
 			-L../external/io_int -lwrfio_int \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS         =       -byteswapio $(FCFLAGS)
+LDFLAGS         =       -byteswapio $(FCFLAGS) CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =       /lib/cpp -C -P -traditional
 POUND_DEF	=	-DNO_RRTM_PHYSICS  -traditional $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -4536,7 +4536,7 @@ LIB = -L../external/io_netcdf -lwrfio_nf $(OMP) -LCONFIGURE_NETCDF_PATH/lib -lne
       -L../external/RSL/RSL -lrsl ../frame/module_internal_header_util.o ../frame/pack_utils.o \
       -L../external/esmf_time_f90 -lesmf_time -lmpifarg -lmpi -lelan -lintrins -lPEPCF90 \
       -limf -lguide -lunwind -lpthread -L/opt/mlib/lib/linux -lveclib8
-LDFLAGS = $(OMP)
+LDFLAGS = $(OMP) CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =  /lib/cpp -traditional -C -P
 POUND_DEF	=  -DNO_RRTM_PHYSICS -DF90_STANDALONE \
@@ -4650,7 +4650,7 @@ LIB = -L../external/io_netcdf -lwrfio_nf $(OMP) -LCONFIGURE_NETCDF_PATH/lib -lne
                         -L../external/io_grib1 -lio_grib1 \
       -L../external/RSL/RSL -lrsl ../frame/module_internal_header_util.o ../frame/pack_utils.o \
       -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS = $(OMP) -convert big_endian
+LDFLAGS = $(OMP) -convert big_endian CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =  /lib/cpp -traditional -C -P
 POUND_DEF	=  -DNO_RRTM_PHYSICS -DF90_STANDALONE \
@@ -4758,7 +4758,7 @@ REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH \
                         -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS         =
+LDFLAGS         =       CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =       /lib/cpp -C -P -traditional
 POUND_DEF	=	-traditional $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -4865,7 +4865,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
                         -L../external/io_grib1 -lio_grib1 \
 			-L../external/io_int -lwrfio_int \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS         =       -byteswapio
+LDFLAGS         =       -byteswapio CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =       /lib/cpp -C -P -traditional
 POUND_DEF	=	-DNO_RRTM_PHYSICS  -traditional $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -4979,7 +4979,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL_LITE -lrsl_l
                         -L../external/io_grib1 -lio_grib1 \
 			-L../external/io_int -lwrfio_int \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS         =       -byteswapio
+LDFLAGS         =       -byteswapio CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =       /lib/cpp -C -P -traditional
 POUND_DEF	=	-DNO_RRTM_PHYSICS  -traditional $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -5096,7 +5096,7 @@ LIB = -L../external/io_netcdf -lwrfio_nf $(OMP) -LCONFIGURE_NETCDF_PATH/lib -lne
                         -L../external/io_grib1 -lio_grib1 \
       ../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time \
       -lmpifarg -lmpi -lelan -lintrins -lPEPCF90 -limf -lguide -lunwind -lpthread -L/opt/mlib/lib/linux -lveclib8
-LDFLAGS = $(OMP)
+LDFLAGS = $(OMP) CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP        = /lib/cpp -traditional -C -P -traditional
 POUND_DEF  = -DNO_RRTM_PHYSICS -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) \
@@ -5211,7 +5211,7 @@ LIB = -Vaxlib -L../external/io_netcdf -lwrfio_nf $(OMP) -L/u/ncsa/straka/AUGUST.
                         -L../external/io_grib1 -lio_grib1 \
 -L../external/io_int -lwrfio_int \
 ../frame/module_internal_header_util.o ../frame/pack_utils.o -L/usr/local/vmi/mpich/lib/ecc6 -lmpich -lfmpich -lvmi -ldl -lpthread -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS = $(OMP)
+LDFLAGS = $(OMP) CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP = /lib/cpp -C -P -traditional
 POUND_DEF = -DNO_RRTM_PHYSICS  -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -5326,7 +5326,7 @@ LIB = -Vaxlib -L../external/io_netcdf -lwrfio_nf $(OMP) -L/u/ncsa/straka/AUGUST.
                         -L../external/io_grib1 -lio_grib1 \
 -L../external/io_int -lwrfio_int \
 ../frame/module_internal_header_util.o ../frame/pack_utils.o -L/usr/local/vmi/mpich/lib/ecc6 -lmpich -lfmpich -lvmi -ldl -lpthread -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS = $(OMP)
+LDFLAGS = $(OMP) CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP = /lib/cpp -C -P -traditional
 POUND_DEF = -DNO_RRTM_PHYSICS  -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -5418,7 +5418,7 @@ INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DLIMIT_ARGS -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) \
                         -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE -DIFORT_KLUDGE
 LD		=	$(FC)
-LDFLAGS		=	$(FCFLAGS) $(OMP)
+LDFLAGS		=	$(FCFLAGS) $(OMP) CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP		=	/lib/cpp -traditional
 POUND_DEF	=	$(OMPCPP) $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE \
@@ -5537,7 +5537,7 @@ REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
 			-L../external/io_int -lwrfio_int -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS         =       $(FCOPTIM) $(OMP) -convert big_endian
+LDFLAGS         =       $(FCOPTIM) $(OMP) -convert big_endian CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =       /lib/cpp -traditional
 POUND_DEF	=	-DNO_RRTM_PHYSICS $(OMPCPP) $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS) -DYYY
@@ -5644,7 +5644,7 @@ REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH \
                         -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time
-LDFLAGS         =	$(FCFLAGS) $(FCFLAGS) $(OMP)
+LDFLAGS         =	$(FCFLAGS) $(FCFLAGS) $(OMP) CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =       /lib/cpp -traditional
 POUND_DEF	=	$(OMPCPP) $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS) -DYYY
@@ -5750,7 +5750,7 @@ REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
 			-L../external/io_int -lwrfio_int -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time $(OMP)
-LDFLAGS         =       $(FCOPTIM) -convert big_endian
+LDFLAGS         =       $(FCOPTIM) -convert big_endian CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =       /lib/cpp -traditional
 POUND_DEF	=	-DNO_RRTM_PHYSICS $(OMPCPP) $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS) -DYYY
@@ -5861,7 +5861,7 @@ REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
 			-L../external/io_int -lwrfio_int -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS         =       $(FCOPTIM) -convert big_endian
+LDFLAGS         =       $(FCOPTIM) -convert big_endian CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =       /lib/cpp -traditional
 POUND_DEF	=	-DNO_RRTM_PHYSICS  $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS) -DYYY
@@ -5971,7 +5971,7 @@ REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
 			-L../external/io_int -lwrfio_int -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS         =       $(FCOPTIM) -convert big_endian
+LDFLAGS         =       $(FCOPTIM) -convert big_endian CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =       /lib/cpp -traditional
 POUND_DEF	=	-DNO_RRTM_PHYSICS  $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS) -DYYY
@@ -6095,7 +6095,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH \
                         -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o \
                         -L$(ESMF_IO_DIR) -lwrfio_esmf $(ESMF_LIB_FLAGS)
-LDFLAGS         =       $(FCFLAGS) -byteswapio
+LDFLAGS         =       $(FCFLAGS) -byteswapio CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =       /lib/cpp -C -P -traditional
 POUND_DEF	=	$(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -6364,7 +6364,7 @@ LIB               = -L../external/io_netcdf -lwrfio_nf $(OMP) \
                     ../frame/module_internal_header_util.o ../frame/pack_utils.o \
                     -L$(MPI_HOME)/lib -lmpi -L../external/esmf_time_f90 -lesmf_time \
                     -L$(MKL_HOME) -lvml -lmkl_ipf
-LDFLAGS           = -O3 -ip $(OMP)
+LDFLAGS           = -O3 -ip $(OMP) CONFIGURE_LDFLAGS
 CPP               = /lib/cpp -C -P -traditional
 POUND_DEF         = -DNO_RRTM_PHYSICS  -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
 CPPFLAGS          = -I$(LIBINCLUDE) -C -P -traditional $(COREDEFS) $(ARCHFLAGS) $(OMPCPP) \
@@ -6502,7 +6502,7 @@ LIB               = -L../external/io_netcdf -lwrfio_nf $(OMP) \
                     ../frame/module_internal_header_util.o ../frame/pack_utils.o \
                     -L$(MPI_HOME)/lib -lmpi -L../external/esmf_time_f90 -lesmf_time \
                     -L$(MKL_HOME) -lvml -lmkl_ipf
-LDFLAGS           = -O3 -ip $(OMP)
+LDFLAGS           = -O3 -ip $(OMP) CONFIGURE_LDFLAGS
 CPP               = /lib/cpp -C -P -traditional
 POUND_DEF         = -DNO_RRTM_PHYSICS  -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
 CPPFLAGS          = -I$(LIBINCLUDE) -C -P -traditional $(COREDEFS) $(ARCHFLAGS) $(OMPCPP) \
@@ -6636,7 +6636,7 @@ LIB               = -L../external/io_netcdf -lwrfio_nf $(OMP) \
                     -L../external/io_int -lwrfio_int \
                     ../frame/module_internal_header_util.o ../frame/pack_utils.o \
                     -L$(MPI_HOME)/lib -lmpi -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS           = -O3 -ip $(OMP)
+LDFLAGS           = -O3 -ip $(OMP) CONFIGURE_LDFLAGS
 CPP               = /lib/cpp -C -P -traditional
 POUND_DEF         = -DNO_RRTM_PHYSICS  -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
 CPPFLAGS          = -I$(LIBINCLUDE) -C -P -traditional $(COREDEFS) $(ARCHFLAGS) $(OMPCPP) \
@@ -6770,7 +6770,7 @@ LIB               = -L../external/io_netcdf -lwrfio_nf $(OMP) \
                     -L../external/io_int -lwrfio_int \
                     ../frame/module_internal_header_util.o ../frame/pack_utils.o \
                     -L$(MPI_HOME)/lib -lmpi -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS           = -O3 -ip $(OMP)
+LDFLAGS           = -O3 -ip $(OMP) CONFIGURE_LDFLAGS
 CPP               = /lib/cpp -C -P -traditional
 POUND_DEF         = -DNO_RRTM_PHYSICS  -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
 CPPFLAGS          = -I$(LIBINCLUDE) -C -P -traditional $(COREDEFS) $(ARCHFLAGS) $(OMPCPP) \
@@ -6888,7 +6888,7 @@ LIB               = -L../external/io_netcdf -lwrfio_nf $(OMP) \
                     -L../external/io_grib1 -lio_grib1 \
                     ../frame/module_internal_header_util.o ../frame/pack_utils.o \
                     -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS           = -O3 -ip $(OMP)
+LDFLAGS           = -O3 -ip $(OMP) CONFIGURE_LDFLAGS
 CPP               = /lib/cpp -C -P -traditional
 POUND_DEF         = -DNO_RRTM_PHYSICS  -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
 CPPFLAGS          = -I$(LIBINCLUDE) -C -P -traditional $(COREDEFS) $(ARCHFLAGS) $(OMPCPP) \
@@ -6996,7 +6996,7 @@ LIB               = -L../external/io_netcdf -lwrfio_nf \
                     -L../external/io_grib1 -lio_grib1 \
                     ../frame/module_internal_header_util.o ../frame/pack_utils.o \
                     -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS           = -O3 -ip 
+LDFLAGS           = -O3 -ip  CONFIGURE_LDFLAGS
 CPP               = /lib/cpp -C -P -traditional
 POUND_DEF         = -DNO_RRTM_PHYSICS  -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
 CPPFLAGS          = -I$(LIBINCLUDE) -C -P -traditional $(COREDEFS) $(ARCHFLAGS) \
@@ -7130,7 +7130,7 @@ LIB             =       -L../external/io_netcdf -lwrfio_nf CONFIGURE_NETCDF_LIB_
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 LDFLAGS         =       -Ogen_private_callee -p../external/io_netcdf -p../external/io_int -p../frame \
                         -p../frame -I ../frame -p../share -p../phys -p../inc \
-                        -p../dyn_em -p../dyn_eh -p../dyn_exp 
+                        -p../dyn_em -p../dyn_eh -p../dyn_exp  CONFIGURE_LDFLAGS
 
 CPP		=	cpp -C -P 
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS) # -DNO_NAMELIST_PRINT
@@ -7260,7 +7260,7 @@ LIB             =       -L../external/io_netcdf -lwrfio_nf CONFIGURE_NETCDF_LIB_
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 LDFLAGS         =       -Ossp -p../external/io_netcdf -p../external/io_int -p../frame \
                         -p../frame -I ../frame -p../share -p../phys -p../inc \
-                        -p../dyn_em -p../dyn_eh -p../dyn_exp 
+                        -p../dyn_em -p../dyn_eh -p../dyn_exp  CONFIGURE_LDFLAGS
 
 CPP		=	cpp -C -P 
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS) # -DNO_NAMELIST_PRINT
@@ -7362,7 +7362,7 @@ PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS         =       $(FCOPTIM) $(OMP)
+LDFLAGS         =       $(FCOPTIM) $(OMP) CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =        /lib/cpp
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -7455,7 +7455,7 @@ PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL/ -lrsl -L../external/io_int -lwrfio_int \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS         =       $(FCOPTIM) $(OMP)
+LDFLAGS         =       $(FCOPTIM) $(OMP) CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =        /lib/cpp
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -7552,7 +7552,7 @@ PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS         =       $(FCOPTIM) $(OMP)
+LDFLAGS         =       $(FCOPTIM) $(OMP) CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =        /lib/cpp
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -7643,7 +7643,7 @@ PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS         =       $(FCOPTIM) $(OMP)
+LDFLAGS         =       $(FCOPTIM) $(OMP) CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =        /lib/cpp
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -7731,7 +7731,7 @@ PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS         =       $(FCOPTIM) $(OMP)
+LDFLAGS         =       $(FCOPTIM) $(OMP) CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =        /lib/cpp
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -7825,7 +7825,7 @@ PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int -L../external/RSL/RSL -lrsl \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS         =       $(FCOPTIM) $(OMP)
+LDFLAGS         =       $(FCOPTIM) $(OMP) CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =        /lib/cpp -C -P
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -7929,7 +7929,7 @@ PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int -L../external/RSL/RSL -lrsl \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS         =       $(FCOPTIM) $(OMP)
+LDFLAGS         =       $(FCOPTIM) $(OMP) CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =        /lib/cpp -C -P
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -8035,7 +8035,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH \
                         -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 
-LDFLAGS         =	 -Wl,-stack_size,10000000,-stack_addr,0xc0000000
+LDFLAGS         =	 -Wl,-stack_size,10000000,-stack_addr,0xc0000000 CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 #CPP             =       /opt/ibmcmp/xlf/8.1/exe/cpp -C -P
 CPP             =       /usr/bin/cpp  -C -P -xassembler-with-cpp
@@ -8156,7 +8156,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -lxlsmp \
                         -L../external/io_int -lwrfio_int \
                         -L../external/io_grib1 -lio_grib1 \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
-LDFLAGS         =	$(OMP) -Wl,-stack_size,10000000,-stack_addr,0xc0000000 
+LDFLAGS         =	$(OMP) -Wl,-stack_size,10000000,-stack_addr,0xc0000000  CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =        /usr/bin/cpp -C -P -xassembler-with-cpp
 POUND_DEF	=	-DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)

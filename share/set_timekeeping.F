@@ -5,7 +5,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
    IMPLICIT NONE
    TYPE(domain), POINTER :: grid
 ! Local
-   TYPE(WRF_UTIL_TimeInterval) :: begin_time, end_time, zero_time, one_minute
+   TYPE(WRF_UTIL_TimeInterval) :: begin_time, end_time, zero_time, one_minute, one_hour, padding_interval
    TYPE(WRF_UTIL_TimeInterval) :: interval, run_length, chem_interval
    INTEGER :: start_year,start_month,start_day,start_hour,start_minute,start_second
    INTEGER :: end_year,end_month,end_day,end_hour,end_minute,end_second
@@ -164,6 +164,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
                          'WRF_UTIL_TimeIntervalSet(one_minute) FAILED', &
                          __FILE__ , &
                          __LINE__  )
+   CALL WRF_UTIL_TimeIntervalSet ( one_hour, H=1, rc=rc )
+   CALL wrf_check_error( WRF_UTIL_SUCCESS, rc, &
+                         'WRF_UTIL_TimeIntervalSet(one_hour) FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
+   padding_interval = one_hour
 
    CALL nl_get_start_year(grid%id,start_year)
    CALL nl_get_start_month(grid%id,start_month)
@@ -258,7 +264,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
                            __FILE__ , &
                            __LINE__  )
    ELSE
-     interval = run_length + one_minute
+     interval = run_length + padding_interval
    ENDIF
 
    CALL nl_get_history_begin_y( grid%id, history_begin_y )
@@ -294,7 +300,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
                             __FILE__ , &
                             __LINE__  )
    ELSE
-      end_time = run_length + one_minute
+      end_time = run_length + padding_interval
    ENDIF
 
    CALL set_timekeeping_create_alarm( grid, HISTORY_ALARM, interval, begin_time, end_time )
@@ -327,7 +333,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
                            __FILE__ , &
                            __LINE__  )
    ELSE
-     interval = run_length + one_minute
+     interval = run_length + padding_interval
    ENDIF
    CALL set_timekeeping_create_alarm( grid, RESTART_ALARM, interval )
 
@@ -349,7 +355,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
                            __FILE__ , &
                            __LINE__  )
    ELSE
-     interval = run_length + one_minute
+     interval = run_length + padding_interval
    ENDIF
 
    CALL nl_get_inputout_begin_y( grid%id, inputout_begin_y )
@@ -385,7 +391,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
                             __FILE__ , &
                             __LINE__  )
    ELSE
-      end_time = run_length + one_minute
+      end_time = run_length + padding_interval
    ENDIF
 
    CALL set_timekeeping_create_alarm( grid, INPUTOUT_ALARM, interval, begin_time, end_time )
@@ -410,7 +416,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
                            __FILE__ , &
                            __LINE__  )
    ELSE
-     interval = run_length + one_minute
+     interval = run_length + padding_interval
    ENDIF
 
    CALL nl_get_auxhist1_begin_y( grid%id, auxhist1_begin_y )
@@ -446,12 +452,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
                             __FILE__ , &
                             __LINE__  )
    ELSE
-      end_time = run_length + one_minute
+      end_time = run_length + padding_interval
    ENDIF
 
    CALL set_timekeeping_create_alarm( grid, AUXHIST1_ALARM, interval, begin_time, end_time )
 
-   IF ( interval .NE. run_length + one_minute .AND. begin_time .EQ. zero_time ) THEN
+   IF ( interval .NE. run_length + padding_interval .AND. begin_time .EQ. zero_time ) THEN
      CALL WRF_UTIL_AlarmRingerOn( grid%alarms( AUXHIST1_ALARM ),  rc=rc )
    ENDIF
 
@@ -476,7 +482,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
                            __FILE__ , &
                            __LINE__  )
    ELSE
-     interval = run_length + one_minute
+     interval = run_length + padding_interval
    ENDIF
 
    CALL nl_get_auxhist2_begin_y( grid%id, auxhist2_begin_y )
@@ -512,12 +518,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
                             __FILE__ , &
                             __LINE__  )
    ELSE
-      end_time = run_length + one_minute
+      end_time = run_length + padding_interval
    ENDIF
 
    CALL set_timekeeping_create_alarm( grid, AUXHIST2_ALARM, interval, begin_time, end_time )
 
-   IF ( interval .NE. run_length + one_minute .AND. begin_time .EQ. zero_time ) THEN
+   IF ( interval .NE. run_length + padding_interval .AND. begin_time .EQ. zero_time ) THEN
      CALL WRF_UTIL_AlarmRingerOn( grid%alarms( AUXHIST2_ALARM ),  rc=rc )
    ENDIF
 
@@ -541,7 +547,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
                            __FILE__ , &
                            __LINE__  )
    ELSE
-     interval = run_length + one_minute
+     interval = run_length + padding_interval
    ENDIF
 
    CALL nl_get_auxhist3_begin_y( grid%id, auxhist3_begin_y )
@@ -577,12 +583,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
                             __FILE__ , &
                             __LINE__  )
    ELSE
-      end_time = run_length + one_minute
+      end_time = run_length + padding_interval
    ENDIF
 
    CALL set_timekeeping_create_alarm( grid, AUXHIST3_ALARM, interval, begin_time, end_time )
 
-   IF ( interval .NE. run_length + one_minute .AND. begin_time .EQ. zero_time ) THEN
+   IF ( interval .NE. run_length + padding_interval .AND. begin_time .EQ. zero_time ) THEN
      CALL WRF_UTIL_AlarmRingerOn( grid%alarms( AUXHIST3_ALARM ),  rc=rc )
    ENDIF
 
@@ -606,7 +612,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
                            __FILE__ , &
                            __LINE__  )
    ELSE
-     interval = run_length + one_minute
+     interval = run_length + padding_interval
    ENDIF
 
    CALL nl_get_auxhist4_begin_y( grid%id, auxhist4_begin_y )
@@ -642,12 +648,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
                             __FILE__ , &
                             __LINE__  )
    ELSE
-      end_time = run_length + one_minute
+      end_time = run_length + padding_interval
    ENDIF
 
    CALL set_timekeeping_create_alarm( grid, AUXHIST4_ALARM, interval, begin_time, end_time )
 
-   IF ( interval .NE. run_length + one_minute .AND. begin_time .EQ. zero_time ) THEN
+   IF ( interval .NE. run_length + padding_interval .AND. begin_time .EQ. zero_time ) THEN
      CALL WRF_UTIL_AlarmRingerOn( grid%alarms( AUXHIST4_ALARM ),  rc=rc )
    ENDIF
 
@@ -671,7 +677,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
                            __FILE__ , &
                            __LINE__  )
    ELSE
-     interval = run_length + one_minute
+     interval = run_length + padding_interval
    ENDIF
 
    CALL nl_get_auxhist5_begin_y( grid%id, auxhist5_begin_y )
@@ -707,12 +713,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
                             __FILE__ , &
                             __LINE__  )
    ELSE
-      end_time = run_length + one_minute
+      end_time = run_length + padding_interval
    ENDIF
 
    CALL set_timekeeping_create_alarm( grid, AUXHIST5_ALARM, interval, begin_time, end_time )
 
-   IF ( interval .NE. run_length + one_minute .AND. begin_time .EQ. zero_time ) THEN
+   IF ( interval .NE. run_length + padding_interval .AND. begin_time .EQ. zero_time ) THEN
      CALL WRF_UTIL_AlarmRingerOn( grid%alarms( AUXHIST5_ALARM ),  rc=rc )
    ENDIF
 
@@ -736,7 +742,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
                            __FILE__ , &
                            __LINE__  )
    ELSE
-     interval = run_length + one_minute
+     interval = run_length + padding_interval
    ENDIF
 
    CALL nl_get_auxinput1_begin_y( grid%id, auxinput1_begin_y )
@@ -772,12 +778,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
                             __FILE__ , &
                             __LINE__  )
    ELSE
-      end_time = run_length + one_minute
+      end_time = run_length + padding_interval
    ENDIF
 
    CALL set_timekeeping_create_alarm( grid, AUXINPUT1_ALARM, interval, begin_time, end_time )
 
-   IF ( interval .NE. run_length + one_minute .AND. begin_time .EQ. zero_time ) THEN
+   IF ( interval .NE. run_length + padding_interval .AND. begin_time .EQ. zero_time ) THEN
      CALL WRF_UTIL_AlarmRingerOn( grid%alarms( AUXINPUT1_ALARM ),  rc=rc )
      CALL wrf_check_error( WRF_UTIL_SUCCESS, rc, &
                            'WRF_UTIL_AlarmRingerOn(AUXINPUT1_ALARM) FAILED', &
@@ -805,7 +811,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
                            __FILE__ , &
                            __LINE__  )
    ELSE
-     interval = run_length + one_minute
+     interval = run_length + padding_interval
    ENDIF
 
    CALL nl_get_auxinput2_begin_y( grid%id, auxinput2_begin_y )
@@ -841,12 +847,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
                             __FILE__ , &
                             __LINE__  )
    ELSE
-      end_time = run_length + one_minute
+      end_time = run_length + padding_interval
    ENDIF
 
    CALL set_timekeeping_create_alarm( grid, AUXINPUT2_ALARM, interval, begin_time, end_time )
 
-   IF ( interval .NE. run_length + one_minute .AND. begin_time .EQ. zero_time ) THEN
+   IF ( interval .NE. run_length + padding_interval .AND. begin_time .EQ. zero_time ) THEN
      CALL WRF_UTIL_AlarmRingerOn( grid%alarms( AUXINPUT2_ALARM ),  rc=rc )
      CALL wrf_check_error( WRF_UTIL_SUCCESS, rc, &
                            'WRF_UTIL_AlarmRingerOn(AUXINPUT2_ALARM) FAILED', &
@@ -874,7 +880,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
                            __FILE__ , &
                            __LINE__  )
    ELSE
-     interval = run_length + one_minute
+     interval = run_length + padding_interval
    ENDIF
 
    CALL nl_get_auxinput3_begin_y( grid%id, auxinput3_begin_y )
@@ -910,12 +916,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
                             __FILE__ , &
                             __LINE__  )
    ELSE
-      end_time = run_length + one_minute
+      end_time = run_length + padding_interval
    ENDIF
 
    CALL set_timekeeping_create_alarm( grid, AUXINPUT3_ALARM, interval, begin_time, end_time )
 
-   IF ( interval .NE. run_length + one_minute .AND. begin_time .EQ. zero_time ) THEN
+   IF ( interval .NE. run_length + padding_interval .AND. begin_time .EQ. zero_time ) THEN
      CALL WRF_UTIL_AlarmRingerOn( grid%alarms( AUXINPUT3_ALARM ),  rc=rc )
      CALL wrf_check_error( WRF_UTIL_SUCCESS, rc, &
                            'WRF_UTIL_AlarmRingerOn(AUXINPUT3_ALARM) FAILED', &
@@ -943,7 +949,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
                            __FILE__ , &
                            __LINE__  )
    ELSE
-     interval = run_length + one_minute
+     interval = run_length + padding_interval
    ENDIF
 
    CALL nl_get_auxinput4_begin_y( grid%id, auxinput4_begin_y )
@@ -979,12 +985,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
                             __FILE__ , &
                             __LINE__  )
    ELSE
-      end_time = run_length + one_minute
+      end_time = run_length + padding_interval
    ENDIF
 
    CALL set_timekeeping_create_alarm( grid, AUXINPUT4_ALARM, interval, begin_time, end_time )
 
-   IF ( interval .NE. run_length + one_minute .AND. begin_time .EQ. zero_time ) THEN
+   IF ( interval .NE. run_length + padding_interval .AND. begin_time .EQ. zero_time ) THEN
      CALL WRF_UTIL_AlarmRingerOn( grid%alarms( AUXINPUT4_ALARM ),  rc=rc )
      CALL wrf_check_error( WRF_UTIL_SUCCESS, rc, &
                            'WRF_UTIL_AlarmRingerOn(AUXINPUT4_ALARM) FAILED', &
@@ -1012,7 +1018,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
                            __FILE__ , &
                            __LINE__  )
    ELSE
-     interval = run_length + one_minute
+     interval = run_length + padding_interval
    ENDIF
 
    CALL nl_get_auxinput5_begin_y( grid%id, auxinput5_begin_y )
@@ -1048,7 +1054,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
                             __FILE__ , &
                             __LINE__  )
    ELSE
-      end_time = run_length + one_minute
+      end_time = run_length + padding_interval
    ENDIF
 
    CALL set_timekeeping_create_alarm( grid, AUXINPUT5_ALARM, interval, begin_time, end_time )
@@ -1058,7 +1064,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
 !TBH:  In fact, by setting namelist values for auxinput5 correctly, it ought 
 !TBH:  to be possible to get rid of all WRF_CHEM bits...  
 #ifndef WRF_CHEM
-   IF ( interval .NE. run_length + one_minute .AND. begin_time .EQ. zero_time ) THEN
+   IF ( interval .NE. run_length + padding_interval .AND. begin_time .EQ. zero_time ) THEN
      CALL WRF_UTIL_AlarmRingerOn( grid%alarms( AUXINPUT5_ALARM ),  rc=rc )
      CALL wrf_check_error( WRF_UTIL_SUCCESS, rc, &
                            'WRF_UTIL_AlarmRingerOn(AUXINPUT5_ALARM) FAILED', &

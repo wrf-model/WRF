@@ -1137,7 +1137,7 @@ mediation_integrate.o \
 mediation_interp_domain.o \
 module_configure.o                                             \
 solve_interface.o                                              \
-shift_domain_em.o : shift_domain_em.F
+shift_domain_em.o                                              \
 convert_nmm.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -1336,7 +1336,7 @@ mediation_integrate.o \
 mediation_interp_domain.o \
 mediation_feedback_domain.o \
 solve_interface.o                                              \
-shift_domain_em.o : shift_domain_em.F
+shift_domain_em.o                                              \
 convert_nmm.o    :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -1446,7 +1446,7 @@ mediation_integrate.o \
 mediation_interp_domain.o \
 mediation_feedback_domain.o \
 solve_interface.o                                              \
-shift_domain_em.o : shift_domain_em.F
+shift_domain_em.o                                              \
 convert_nmm.o    :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -1559,7 +1559,7 @@ mediation_integrate.o \
 mediation_interp_domain.o \
 mediation_feedback_domain.o \
 solve_interface.o                                              \
-shift_domain_em.o : shift_domain_em.F
+shift_domain_em.o                                              \
 convert_nmm.o    :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -1672,7 +1672,7 @@ mediation_integrate.o \
 mediation_interp_domain.o \
 mediation_feedback_domain.o \
 solve_interface.o                                              \
-shift_domain_em.o : shift_domain_em.F
+shift_domain_em.o                                              \
 convert_nmm.o    :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 

@@ -398,10 +398,10 @@ CONTAINS
 
         kps = 1
         kpe = kdim
-        ims = max( ips - max(shw,max_halo_width), ids - bdx ) 
-        ime = min( ipe + max(shw,max_halo_width), ide + bdx ) 
-        jms = max( jps - max(shw,max_halo_width), jds - bdy ) 
-        jme = min( jpe + max(shw,max_halo_width), jde + bdy ) 
+        ims = max( ips - max(shw,max_halo_width), ids - bdx ) - 1
+        ime = min( ipe + max(shw,max_halo_width), ide + bdx ) + 1
+        jms = max( jps - max(shw,max_halo_width), jds - bdy ) - 1
+        jme = min( jpe + max(shw,max_halo_width), jde + bdy ) + 1
         kms = 1
         kme = kdim
 
@@ -1662,10 +1662,50 @@ END
       INTEGER       ::          nids, nide, njds, njde, nkds, nkde,    &
                                 nims, nime, njms, njme, nkms, nkme,    &
                                 nips, nipe, njps, njpe, nkps, nkpe
+      INTEGER       ::          ids, ide, jds, jde, kds, kde,    &
+                                ims, ime, jms, jme, kms, kme,    &
+                                ips, ipe, jps, jpe, kps, kpe
+integer myproc
+
+#ifdef DEREF_KLUDGE
+!  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
+   INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
+   INTEGER     :: sm31x, em31x, sm32x, em32x, sm33x, em33x
+   INTEGER     :: sm31y, em31y, sm32y, em32y, sm33y, em33y
+#endif
+#include "deref_kludge.h"
+
+#define COPY_IN
+#include <em_scalar_derefs.inc>
+
+      CALL get_ijk_from_grid (  grid ,                   &
+                                cids, cide, cjds, cjde, ckds, ckde,    &
+                                cims, cime, cjms, cjme, ckms, ckme,    &
+                                cips, cipe, cjps, cjpe, ckps, ckpe    )
+      CALL get_ijk_from_grid (  ngrid ,              &
+                                nids, nide, njds, njde, nkds, nkde,    &
+                                nims, nime, njms, njme, nkms, nkme,    &
+                                nips, nipe, njps, njpe, nkps, nkpe    )
+
+      nlev  = ckde - ckds + 1
+
+#  include "em_nest_interpdown_unpack.inc"
+
+      CALL get_ijk_from_grid (  grid ,              &
+                                ids, ide, jds, jde, kds, kde,    &
+                                ims, ime, jms, jme, kms, kme,    &
+                                ips, ipe, jps, jpe, kps, kpe    )
+
+#include "HALO_EM_FORCE_DOWN.inc"
+
+      ! code here to interpolate the data into the nested domain
+#  include "em_nest_forcedown_interp.inc"
+
+#define COPY_OUT
+#include <em_scalar_derefs.inc>
+
       RETURN
    END SUBROUTINE force_domain_em_part2
-
-
 
 !------------------------------------------------------------------
 
@@ -1702,7 +1742,7 @@ END
 
 #define COPY_IN
 #include <em_scalar_derefs.inc>
-!
+
       CALL get_ijk_from_grid (  grid ,                   &
                                 cids, cide, cjds, cjde, ckds, ckde,    &
                                 cims, cime, cjms, cjme, ckms, ckme,    &
@@ -1773,10 +1813,6 @@ END
 
 #define COPY_IN
 #include <em_scalar_derefs.inc>
-#ifdef DM_PARALLEL
-#    define REGISTER_I1
-#      include <em_data_calls.inc>
-#endif
       CALL get_ijk_from_grid (  grid ,                   &
                                 cids, cide, cjds, cjde, ckds, ckde,    &
                                 cims, cime, cjms, cjme, ckms, ckme,    &
@@ -1797,7 +1833,6 @@ END
                                 ips, ipe, jps, jpe, kps, kpe    )
 
 #include "HALO_EM_INTERP_DOWN.inc"
-      ! code here to interpolate the data into the nested domain
 
 #  include "em_nest_interpdown_interp.inc"
 
@@ -1998,10 +2033,7 @@ END
 
 #define COPY_IN
 #include <em_scalar_derefs.inc>
-#ifdef DM_PARALLEL
-#    define REGISTER_I1
-#      include <em_data_calls.inc>
-#endif
+
       CALL get_ijk_from_grid (  intermediate_grid ,                   &
                                 cids, cide, cjds, cjde, ckds, ckde,    &
                                 cims, cime, cjms, cjme, ckms, ckme,    &
@@ -2029,14 +2061,6 @@ END
       CALL rsl_lite_merge_msgs( myproc, nproc, local_comm )
 
 #  include "em_nest_feedbackup_unpack.inc"
-
-!write(70+myproc,*)nime-nims+1,njme-njms+1, 'after unpack'
-!do j = njms,njme
-!do i = nims,nime
-!write(70+myproc,*)mub(i,j)
-!enddo
-!enddo
-!call flush(70+myproc)
 
       ! smooth coarse grid
       CALL get_ijk_from_grid (  ngrid,                           &

@@ -2173,6 +2173,8 @@ SUBROUTINE w_damp( rw_tend, ww, w, mut, rdnw, dt,     &
    REAL                :: cfl, cf_n, cf_d
 
    INTEGER :: itf, jtf, i, j, k
+   INTEGER :: some
+   CHARACTER*512 :: temp
 
 !<DESCRIPTION>
 !
@@ -2187,6 +2189,8 @@ SUBROUTINE w_damp( rw_tend, ww, w, mut, rdnw, dt,     &
 
    itf=MIN(ite,ide-1)
    jtf=MIN(jte,jde-1)
+
+   some = 0
 
    IF ( w_damping == 1 ) THEN
      DO j = jts,jtf
@@ -2203,14 +2207,13 @@ SUBROUTINE w_damp( rw_tend, ww, w, mut, rdnw, dt,     &
         if(cf_n .gt. cf_d*w_beta )then
 #endif
            cfl = abs(ww(i,k,j)/mut(i,j)*rdnw(k)*dt)
-           WRITE(wrf_err_message,*)i,j,k,' cfl,w,d(eta)=',cfl,w(i,k,j),-1./rdnw(k)
-           CALL wrf_debug ( 0 , wrf_err_message )
+           WRITE(temp,*)i,j,k,' cfl,w,d(eta)=',cfl,w(i,k,j),-1./rdnw(k),' (last instance)'
+           some = some + 1
            rw_tend(i,k,j) = rw_tend(i,k,j)-sign(1.,w(i,k,j))*w_alpha*(cfl-w_beta)*mut(i,j)
         endif
      END DO
      ENDDO
-
-   ENDDO
+     ENDDO
    ELSE
 ! just print
      DO j = jts,jtf
@@ -2221,14 +2224,17 @@ SUBROUTINE w_damp( rw_tend, ww, w, mut, rdnw, dt,     &
         cf_d = abs(mut(i,j))
         if(cf_n .gt. cf_d*w_beta )then
            cfl = abs(ww(i,k,j)/mut(i,j)*rdnw(k)*dt)
-           WRITE(wrf_err_message,*)i,j,k,' cfl,w,d(eta)=',cfl,w(i,k,j),-1./rdnw(k)
-           CALL wrf_debug ( 0 , wrf_err_message )
+           WRITE(temp,*)i,j,k,' cfl,w,d(eta)=',cfl,w(i,k,j),-1./rdnw(k),' (last instance)'
+           some = some + 1
         endif
-
      END DO
      ENDDO
-
      ENDDO
+   ENDIF
+   IF ( some .GT. 0 ) THEN
+     WRITE(wrf_err_message,*)some,' points exceeded cfl '
+     CALL wrf_debug ( 0 , wrf_err_message )
+     CALL wrf_debug ( 0 , temp )
    ENDIF
 
 END SUBROUTINE w_damp

@@ -57,9 +57,12 @@ SUBROUTINE wrf_message( str )
   write(0,*) str
 #endif
   print*, str
+!TBH:  work around deficiencies in build-automation
+#ifdef USE_LOGERR
   IF ( WRF_UTIL_IsInitialized() ) THEN
     CALL WRF_UTIL_LogWrite( str, WRF_UTIL_LOG_INFO )
   ENDIF
+#endif
 END SUBROUTINE wrf_message
 
 ! intentionally write to stderr only
@@ -69,9 +72,12 @@ SUBROUTINE wrf_message2( str )
   IMPLICIT NONE
   CHARACTER*(*) str
   write(0,*) str
+!TBH:  work around deficiencies in build-automation
+#ifdef USE_LOGERR
   IF ( WRF_UTIL_IsInitialized() ) THEN
     CALL WRF_UTIL_LogWrite( str, WRF_UTIL_LOG_INFO )
   ENDIF
+#endif
 END SUBROUTINE wrf_message2
 
 SUBROUTINE wrf_error_fatal3( file_str, line, str )

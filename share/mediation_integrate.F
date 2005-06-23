@@ -117,7 +117,12 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
 
 ! - RESTART OUTPUT
    IF( WRF_UTIL_AlarmIsRinging( grid%alarms( RESTART_ALARM ), rc=rc ) ) THEN
-     CALL med_restart_out ( grid , config_flags )
+     IF ( grid%id .EQ. 1 ) THEN
+       ! Only the parent initiates the restart writing. Otherwise, different
+       ! domains may be written out at different times and with different 
+       ! time stamps in the file names.
+       CALL med_restart_out ( grid , config_flags )
+     ENDIF
      CALL WRF_UTIL_AlarmRingerOff( grid%alarms( RESTART_ALARM ), rc=rc )
    ENDIF
 
@@ -628,7 +633,9 @@ SUBROUTINE med_last_solve_io ( grid , config_flags )
 
 ! - RESTART OUTPUT
    IF( WRF_UTIL_AlarmIsRinging( grid%alarms( RESTART_ALARM ), rc=rc ) ) THEN
-     CALL med_restart_out ( grid , config_flags )
+     IF ( grid%id .EQ. 1 ) THEN
+       CALL med_restart_out ( grid , config_flags )
+     ENDIF
    ENDIF
 
    RETURN
@@ -636,7 +643,7 @@ END SUBROUTINE med_last_solve_io
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-SUBROUTINE med_restart_out ( grid , config_flags )
+RECURSIVE SUBROUTINE med_restart_out ( grid , config_flags )
   ! Driver layer
    USE module_domain
    USE module_io_domain
@@ -655,16 +662,19 @@ SUBROUTINE med_restart_out ( grid , config_flags )
   ! Local
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
    CHARACTER*80                           :: rstname , outname
-   INTEGER                                :: fid , rid
+   INTEGER                                :: fid , rid, kid
    CHARACTER (LEN=256)                    :: message
    INTEGER                                :: ierr
    INTEGER                                :: myproc
    TYPE(WRF_UTIL_Time)                        :: CurrTime
    CHARACTER*80                           :: timestr
+   TYPE (grid_config_rec_type)            :: kid_config_flags
 
    IF ( wrf_dm_on_monitor() ) THEN
      CALL start_timing
    END IF
+
+   ! write out this domains restart file first
 
    CALL WRF_UTIL_ClockGet( grid%domain_clock, CurrTime=CurrTime, rc=ierr )
    CALL wrf_timetoa ( CurrTime, timestr )
@@ -684,6 +694,15 @@ SUBROUTINE med_restart_out ( grid , config_flags )
      CALL end_timing ( TRIM(message) )
    END IF
    CALL close_dataset ( rid , config_flags , "DATASET=RESTART" )
+
+   ! call recursively for children, (if any)
+   DO kid = 1, max_nests
+      IF ( ASSOCIATED( grid%nests(kid)%ptr ) ) THEN
+        CALL model_to_grid_config_rec ( grid%nests(kid)%ptr%id , model_config_rec , kid_config_flags )
+        CALL med_restart_out ( grid%nests(kid)%ptr , kid_config_flags ) 
+      ENDIF
+   ENDDO
+
    RETURN
 END SUBROUTINE med_restart_out
 

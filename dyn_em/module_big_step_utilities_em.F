@@ -2170,9 +2170,9 @@ SUBROUTINE w_damp( rw_tend, ww, w, mut, rdnw, dt,     &
    REAL, DIMENSION( kms:kme ), INTENT(IN   ) :: rdnw
 
    REAL, INTENT(IN)    :: dt
-   REAL                :: cfl, cf_n, cf_d
+   REAL                :: cfl, cf_n, cf_d, maxcfl, maxdub, maxdeta
 
-   INTEGER :: itf, jtf, i, j, k
+   INTEGER :: itf, jtf, i, j, k, maxi, maxj, maxk
    INTEGER :: some
    CHARACTER*512 :: temp
 
@@ -2191,6 +2191,7 @@ SUBROUTINE w_damp( rw_tend, ww, w, mut, rdnw, dt,     &
    jtf=MIN(jte,jde-1)
 
    some = 0
+   maxcfl = 0.
 
    IF ( w_damping == 1 ) THEN
      DO j = jts,jtf
@@ -2207,7 +2208,13 @@ SUBROUTINE w_damp( rw_tend, ww, w, mut, rdnw, dt,     &
         if(cf_n .gt. cf_d*w_beta )then
 #endif
            cfl = abs(ww(i,k,j)/mut(i,j)*rdnw(k)*dt)
-           WRITE(temp,*)i,j,k,' cfl,w,d(eta)=',cfl,w(i,k,j),-1./rdnw(k),' (last instance)'
+           IF ( cfl > maxcfl ) THEN
+             maxcfl = cfl ; maxi = i ; maxj = j ; maxk = k 
+             maxdub = w(i,k,j) ; maxdeta = -1./rdnw(k)
+           ENDIF
+           WRITE(temp,*)i,j,k,' cfl,w,d(eta)=',cfl,w(i,k,j),-1./rdnw(k), &
+                              ' in w_damp'
+           CALL wrf_debug ( 100 , TRIM(temp) )
            some = some + 1
            rw_tend(i,k,j) = rw_tend(i,k,j)-sign(1.,w(i,k,j))*w_alpha*(cfl-w_beta)*mut(i,j)
         endif
@@ -2224,7 +2231,13 @@ SUBROUTINE w_damp( rw_tend, ww, w, mut, rdnw, dt,     &
         cf_d = abs(mut(i,j))
         if(cf_n .gt. cf_d*w_beta )then
            cfl = abs(ww(i,k,j)/mut(i,j)*rdnw(k)*dt)
-           WRITE(temp,*)i,j,k,' cfl,w,d(eta)=',cfl,w(i,k,j),-1./rdnw(k),' (last instance)'
+           IF ( cfl > maxcfl ) THEN
+             maxcfl = cfl ; maxi = i ; maxj = j ; maxk = k 
+             maxdub = w(i,k,j) ; maxdeta = -1./rdnw(k)
+           ENDIF
+           WRITE(temp,*)i,j,k,' cfl,w,d(eta)=',cfl,w(i,k,j),-1./rdnw(k), &
+                              ' in w_damp'
+           CALL wrf_debug ( 100 , TRIM(temp) )
            some = some + 1
         endif
      END DO
@@ -2232,9 +2245,12 @@ SUBROUTINE w_damp( rw_tend, ww, w, mut, rdnw, dt,     &
      ENDDO
    ENDIF
    IF ( some .GT. 0 ) THEN
-     WRITE(wrf_err_message,*)some,' points exceeded cfl '
-     CALL wrf_debug ( 0 , wrf_err_message )
-     CALL wrf_debug ( 0 , temp )
+     WRITE(wrf_err_message,*)some,                                            &
+            ' points exceeded cfl in w_damp (module_big_step_utilities_em.F) '
+     CALL wrf_debug ( 0 , TRIM(wrf_err_message) )
+     WRITE(wrf_err_message,*)'WORST: ',maxi,maxj,maxk,' cfl,w,d(eta)=',maxcfl, &
+                             maxdub,maxdeta
+     CALL wrf_debug ( 0 , TRIM(wrf_err_message) )
    ENDIF
 
 END SUBROUTINE w_damp

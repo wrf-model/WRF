@@ -1,4 +1,4 @@
-#!/bin/csh 
+#!/bin/csh
 unalias rm
 unalias cp
 unalias mv
@@ -256,17 +256,20 @@ FOUND_SELECTED_TEST:
 
 		#	Build the short edit input script for ed and edit the regtest.csh file.
 
+                set OLDT = `echo $OLD_TEXT[$count_test] | sed 's/=/ = /'`
+                set NEWT = `echo $NEW_TEXT[$count_test] | sed 's/=/ = /'`
+
 		if      ( ( $BASELINE == RUN_ONLY ) || ( $tests[$count_test] == Full_Optimization ) ) then
 			if ( -e ed.in ) rm ed.in
 			cat >! ed_in << EOF
-				/$OLD_TEXT[$count_test]/s/$OLD_TEXT[$count_test]/$NEW_TEXT[$count_test]/
+				/$OLDT/s/$OLDT/$NEWT/
 				w reg.foo.$count_test.$tests[$count_test]
 				q
 EOF
 		else if ( $BASELINE == GENERATE ) then
 			if ( -e ed.in ) rm ed.in
 			cat >! ed_in << EOF
-				/$OLD_TEXT[$count_test]/s/$OLD_TEXT[$count_test]/$NEW_TEXT[$count_test]/
+				/$OLDT/s/$OLDT/$NEWT/
 				/^set GENERATE_BASELINE = FALSE/s?GENERATE_BASELINE = FALSE?GENERATE_BASELINE = $SAVE_DIR?
 				w reg.foo.$count_test.$tests[$count_test]
 				q
@@ -274,7 +277,7 @@ EOF
 		else if ( $BASELINE == COMPARE  ) then
 			if ( -e ed.in ) rm ed.in
 			cat >! ed_in << EOF
-				/$OLD_TEXT[$count_test]/s/$OLD_TEXT[$count_test]/$NEW_TEXT[$count_test]/
+				/$OLDT/s/$OLDT/$NEWT/
 				/^set COMPARE_BASELINE = FALSE/s?COMPARE_BASELINE = FALSE?COMPARE_BASELINE = $SAVE_DIR?
 				w reg.foo.$count_test.$tests[$count_test]
 				q

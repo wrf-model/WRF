@@ -262,25 +262,25 @@ FOUND_SELECTED_TEST:
 		if      ( ( $BASELINE == RUN_ONLY ) || ( $tests[$count_test] == Full_Optimization ) ) then
 			if ( -e ed.in ) rm ed.in
 			cat >! ed_in << EOF
-				,s/$OLDT/$NEWT/
-				w reg.foo.$count_test.$tests[$count_test]
-				q
+,s/$OLDT/$NEWT/
+w reg.foo.$count_test.$tests[$count_test]
+q
 EOF
 		else if ( $BASELINE == GENERATE ) then
 			if ( -e ed.in ) rm ed.in
 			cat >! ed_in << EOF
-				,s/$OLDT/$NEWT/
-				,s?GENERATE_BASELINE = FALSE?GENERATE_BASELINE = $SAVE_DIR?
-				w reg.foo.$count_test.$tests[$count_test]
-				q
+,s/$OLDT/$NEWT/
+,s?GENERATE_BASELINE = FALSE?GENERATE_BASELINE = $SAVE_DIR?
+w reg.foo.$count_test.$tests[$count_test]
+q
 EOF
 		else if ( $BASELINE == COMPARE  ) then
 			if ( -e ed.in ) rm ed.in
 			cat >! ed_in << EOF
-				,s/$OLDT/$NEWT/
-				,s?COMPARE_BASELINE = FALSE?COMPARE_BASELINE = $SAVE_DIR?
-				w reg.foo.$count_test.$tests[$count_test]
-				q
+,s/$OLDT/$NEWT/
+,s?COMPARE_BASELINE = FALSE?COMPARE_BASELINE = $SAVE_DIR?
+w reg.foo.$count_test.$tests[$count_test]
+q
 EOF
 		endif
 		ed regtest.csh < ed_in >& /dev/null

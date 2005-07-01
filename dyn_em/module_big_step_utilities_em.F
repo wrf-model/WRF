@@ -2248,7 +2248,7 @@ SUBROUTINE w_damp( rw_tend, ww, w, mut, rdnw, dt,     &
      WRITE(wrf_err_message,*)some,                                            &
             ' points exceeded cfl in w_damp (module_big_step_utilities_em.F) '
      CALL wrf_debug ( 0 , TRIM(wrf_err_message) )
-     WRITE(wrf_err_message,*)'WORST: ',maxi,maxj,maxk,' cfl,w,d(eta)=',maxcfl, &
+     WRITE(wrf_err_message,*)'MAX AT i,j,k: ',maxi,maxj,maxk,' cfl,w,d(eta)=',maxcfl, &
                              maxdub,maxdeta
      CALL wrf_debug ( 0 , TRIM(wrf_err_message) )
    ENDIF

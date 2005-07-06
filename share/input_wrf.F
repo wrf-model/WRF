@@ -69,6 +69,23 @@
                               ims, ime, jms, jme, kms, kme,    &
                               ips, ipe, jps, jpe, kps, kpe    )
 
+! simulation start time
+    IF ( switch .NE. boundary_only ) THEN
+      CALL wrf_get_dom_ti_char ( fid , 'SIMULATION_START_DATE' , simulation_start_date , ierr )
+      IF ( ierr .EQ. 0 ) THEN
+        READ ( simulation_start_date , fmt = '(I4,1x,I2,1x,I2,1x,I2,1x,I2,1x,I2)' ) &
+               config_flags%simulation_start_year,config_flags%simulation_start_month, &
+               config_flags%simulation_start_day,config_flags%simulation_start_hour, &
+               config_flags%simulation_start_minute,config_flags%simulation_start_second
+        CALL nl_set_simulation_start_year   ( grid%id , config_flags%simulation_start_year   )
+        CALL nl_set_simulation_start_month  ( grid%id , config_flags%simulation_start_month  )
+        CALL nl_set_simulation_start_day    ( grid%id , config_flags%simulation_start_day    )
+        CALL nl_set_simulation_start_hour   ( grid%id , config_flags%simulation_start_hour   )
+        CALL nl_set_simulation_start_minute ( grid%id , config_flags%simulation_start_minute )
+        CALL nl_set_simulation_start_second ( grid%id , config_flags%simulation_start_second )
+      ENDIF
+    ENDIF
+
 #if (EM_CORE == 1)
 
     !  Test to make sure that the input data is the right size.
@@ -82,6 +99,7 @@
     ! do the check later (see check_if_dryrun below)
 
 #endif
+
 
     CALL nl_get_dyn_opt( 1, dyn_opt )
     CALL wrf_get_dom_ti_integer ( fid, 'DYN_OPT', dyn_opt_tmp, 1, icnt, ierr )
@@ -259,20 +277,6 @@
       CALL nl_set_j_parent_start ( grid%id , config_flags%j_parent_start )
     ENDIF
 
-! simulation start time
-    CALL wrf_get_dom_ti_char ( fid , 'SIMULATION_START_DATE' , simulation_start_date , ierr )
-    IF ( ierr .EQ. 0 ) THEN
-      READ ( simulation_start_date , fmt = '(I4,1x,I2,1x,I2,1x,I2,1x,I2,1x,I2)' ) &
-             config_flags%simulation_start_year,config_flags%simulation_start_month, &
-             config_flags%simulation_start_day,config_flags%simulation_start_hour, &
-             config_flags%simulation_start_minute,config_flags%simulation_start_second
-      CALL nl_set_simulation_start_year   ( grid%id , config_flags%simulation_start_year   )
-      CALL nl_set_simulation_start_month  ( grid%id , config_flags%simulation_start_month  )
-      CALL nl_set_simulation_start_day    ( grid%id , config_flags%simulation_start_day    )
-      CALL nl_set_simulation_start_hour   ( grid%id , config_flags%simulation_start_hour   )
-      CALL nl_set_simulation_start_minute ( grid%id , config_flags%simulation_start_minute )
-      CALL nl_set_simulation_start_second ( grid%id , config_flags%simulation_start_second )
-    ENDIF
 
 ! If this was not a training read (dry run) check for erroneous values.  
     CALL wrf_inquire_filename ( fid , fname , filestate , ierr )

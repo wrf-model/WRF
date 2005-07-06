@@ -19,6 +19,7 @@ SUBROUTINE med_nest_move ( parent, nest )
    INTEGER ierr, fid
    LOGICAL input_from_hires
    TYPE (grid_config_rec_type)   :: config_flags
+   LOGICAL, EXTERNAL :: wrf_dm_on_monitor
 
    INTERFACE
      SUBROUTINE med_interp_domain ( parent , nest )
@@ -154,6 +155,10 @@ SUBROUTINE med_nest_move ( parent, nest )
      grid%j_parent_start = grid%j_parent_start + py / grid%parent_grid_ratio
      CALL nl_set_j_parent_start( grid%id, grid%j_parent_start )
 
+IF ( wrf_dm_on_monitor() ) THEN
+write(0,*)'Grid ',grid%id,' New SW corner (in parent x and y):',grid%i_parent_start, grid%j_parent_start
+ENDIF
+
      CALL med_interp_domain( parent, nest )
 
      CALL nl_get_input_from_hires( nest%id , input_from_hires ) 
@@ -250,7 +255,7 @@ LOGICAL FUNCTION time_for_move2 ( parent , grid , move_cd_x, move_cd_y )
    INTEGER  move_interval , move_id
    TYPE(WRF_UTIL_Time) :: ct, st
    TYPE(WRF_UTIL_TimeInterval) :: ti
-   CHARACTER*256 mess
+   CHARACTER*256 mess, timestr
    INTEGER     :: ids, ide, jds, jde, kds, kde, &
                   ims, ime, jms, jme, kms, kme, &
                   ips, ipe, jps, jpe, kps, kpe
@@ -259,15 +264,27 @@ LOGICAL FUNCTION time_for_move2 ( parent , grid , move_cd_x, move_cd_y )
    REAL    :: last_vc_i , last_vc_j
 
    REAL, ALLOCATABLE, DIMENSION(:,:) :: height_l, height
+   REAL, ALLOCATABLE, DIMENSION(:,:) :: psfc
    REAL :: minh, maxh
    INTEGER :: mini, minj, maxi, maxj, i, j, pgr, irad
    REAL :: disp_x, disp_y, lag, radius, center_i, center_j, dx
    REAL :: dijsmooth, vmax, vmin, a, b
    REAL :: dc_i, dc_j   ! domain center
+   REAL :: maxws, ws
+   REAL :: pmin
+   INTEGER imploc, jmploc 
 
    INTEGER :: fje, fjs, fie, fis, fimloc, fjmloc, imloc, jmloc, dyn_opt
+   INTEGER :: i_parent_start, j_parent_start, pgr
    INTEGER :: max_vortex_speed, vortex_interval  ! meters per second and seconds
    REAL    :: rsmooth = 100.  ! kilometers?
+   TYPE(WRF_UTIL_Time)        :: CurrTime
+
+#if 0
+share/mediation_integrate.F:   TYPE(WRF_UTIL_Time)        :: CurrTime
+share/mediation_integrate.F:   CALL WRF_UTIL_ClockGet( parent%domain_clock, CurrTime=CurrTime, rc=ierr )
+share/mediation_integrate.F:   CALL wrf_timetoa ( CurrTime, timestr )
+#endif
 
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
 
@@ -280,6 +297,9 @@ integer myproc
 
 
    CALL nl_get_dyn_opt ( 1, dyn_opt )
+   CALL nl_get_parent_grid_ratio ( grid%id , pgr )
+   CALL nl_get_i_parent_start    ( grid%id , i_parent_start )
+   CALL nl_get_j_parent_start    ( grid%id , j_parent_start )
 
    CALL get_ijk_from_grid (  grid ,                        &
                              ids, ide, jds, jde, kds, kde, &
@@ -303,6 +323,8 @@ write(0,*)'Check to see if COMPUTE_VORTEX_CENTER_ALARM is ringing? '
 write(0,*)'COMPUTE_VORTEX_CENTER_ALARM is ringing  '
 #  endif
      CALL WRF_UTIL_AlarmRingerOff( grid%alarms( COMPUTE_VORTEX_CENTER_ALARM ), rc=rc )
+     CALL WRF_UTIL_ClockGet( grid%domain_clock, CurrTime=CurrTime, rc=ierr )
+     CALL wrf_timetoa ( CurrTime, timestr )
 
      last_vc_i = grid%vc_i
      last_vc_j = grid%vc_j
@@ -312,6 +334,8 @@ write(0,*)'COMPUTE_VORTEX_CENTER_ALARM is ringing  '
      IF ( wrf_dm_on_monitor() ) THEN
        ALLOCATE ( height   ( ids:ide , jds:jde ), STAT=ierr )
        IF ( ierr .ne. 0 ) CALL wrf_error_fatal ('allocating height in time_for_move2')
+       ALLOCATE ( psfc     ( ids:ide , jds:jde ), STAT=ierr )
+       IF ( ierr .ne. 0 ) CALL wrf_error_fatal ('allocating psfc in time_for_move2')
      ELSE
        ALLOCATE ( height   ( 1:1 , 1:1 ), STAT=ierr )
      ENDIF
@@ -334,6 +358,22 @@ write(0,*)'COMPUTE_VORTEX_CENTER_ALARM is ringing  '
                                      ids, ide-1 , jds , jde-1 , 1 , 1 , &
                                      ims, ime   , jms , jme   , 1 , 1 , &
                                      ips, ipe   , jps , jpe   , 1 , 1   )
+
+     CALL wrf_patch_to_global_real ( grid%psfc , psfc , grid%domdesc, "z", "xy", &
+                                     ids, ide-1 , jds , jde-1 , 1 , 1 , &
+                                     ims, ime   , jms , jme   , 1 , 1 , &
+                                     ips, ipe   , jps , jpe   , 1 , 1   )
+
+! calculate max wind speed
+     maxws = 0 
+     do j = jps, jpe
+       do i = ips, ipe
+         ws = grid%u10(i,j) * grid%u10(i,j) + grid%v10(i,j) * grid%v10(i,j)
+         if ( ws > maxws ) maxws = ws
+       enddo
+     enddo
+     maxws = sqrt ( maxws )
+     maxws = wrf_dm_max_real ( maxws )
 
      monitor_only : IF ( wrf_dm_on_monitor() ) THEN
 
@@ -374,6 +414,18 @@ write(0,*)'search set around last position '
 write(0,*)'   is, ids-1,  ie,  ide-1 ', is, ids-1, ie, ide-1
 write(0,*)'   js, jds-1,  je,  jde-1 ', js, jds-1, je, jde-1
 #  endif
+
+       ! find minimum psfc
+       pmin = 100000.0
+       DO j = js, je
+       DO i = is, ie
+         IF ( psfc(i,j) .LT. pmin ) THEN
+           pmin = psfc(i,j)
+           imploc = i
+           jmploc = j
+         ENDIF
+       ENDDO
+       ENDDO
 
        ! find local min, max
        vmin =  1000000.0
@@ -451,14 +503,23 @@ CALL wrf_timetoa ( grid%current_time, message2 )
 WRITE ( message , FMT = '(A," on domain ",I3)' ) TRIM(message2), grid%id
 #  endif
 
+! 
+write(0,'("ATCF",A19,2f6.2,f6.1,f4.1)')timestr(1:19),grid%xlat(grid%xi,grid%xj),grid%xlong(grid%xi,grid%xj),pmin,maxws/1.94
+                            
+
 
      ENDIF monitor_only
 
      DEALLOCATE ( height )
+     DEALLOCATE ( psfc )
      DEALLOCATE ( height_l )
 
      CALL wrf_dm_bcast_real( grid%vc_i , 1 )
      CALL wrf_dm_bcast_real( grid%vc_j , 1 )
+
+     CALL wrf_dm_bcast_real( pmin , 1 )
+     CALL wrf_dm_bcast_integer( imploc , 1 )
+     CALL wrf_dm_bcast_integer( jmploc , 1 )
 
 #  ifdef MOVING_DIAGS
 write(0,*)'after bcast : grid%vc_i, grid%vc_j ',grid%vc_i, grid%vc_j
@@ -495,8 +556,8 @@ write(0,*)'After ENDIF : grid%vc_i, grid%vc_j ',grid%vc_i, grid%vc_j
    IF ( move_cd_y .LT. 0 ) move_cd_y = max ( move_cd_y , -1 )
 
 !#ifdef MOVING_DIAGS
-write(0,*)'vortex center : ',grid%vc_i, grid%vc_j
-write(0,*)'grid   center : ',     dc_i,      dc_j
+write(0,*)'vortex center (in nest x and y): ',grid%vc_i, grid%vc_j
+write(0,*)'grid   center (in nest x and y): ',     dc_i,      dc_j
 write(0,*)'disp          : ',   disp_x,    disp_y
 write(0,*)'move (rel cd) : ',move_cd_x, move_cd_y
 !#endif

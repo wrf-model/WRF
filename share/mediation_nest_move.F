@@ -527,8 +527,7 @@ WRITE ( message , FMT = '(A," on domain ",I3)' ) TRIM(message2), grid%id
 ! 
      i = INT(grid%xi+.5)
      j = INT(grid%xj+.5)
-     write(0,'("ATCF"," ",2I6," ",A19," ",f8.2," ",f8.2," ",f6.1," ",f6.1)')        &
-                                       i, j,                                        &
+     write(0,'("ATCF"," ",A19," ",f8.2," ",f8.2," ",f6.1," ",f6.1)')                &
                                        timestr(1:19),                               &
                                        xlat(i,j),                                   &
                                        xlong(i,j),                                  &

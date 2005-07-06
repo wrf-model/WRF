@@ -264,7 +264,7 @@ LOGICAL FUNCTION time_for_move2 ( parent , grid , move_cd_x, move_cd_y )
    REAL    :: last_vc_i , last_vc_j
 
    REAL, ALLOCATABLE, DIMENSION(:,:) :: height_l, height
-   REAL, ALLOCATABLE, DIMENSION(:,:) :: psfc
+   REAL, ALLOCATABLE, DIMENSION(:,:) :: psfc, xlat, xlong, terrain
    REAL :: minh, maxh
    INTEGER :: mini, minj, maxi, maxj, i, j, pgr, irad
    REAL :: disp_x, disp_y, lag, radius, center_i, center_j, dx
@@ -336,8 +336,18 @@ write(0,*)'COMPUTE_VORTEX_CENTER_ALARM is ringing  '
        IF ( ierr .ne. 0 ) CALL wrf_error_fatal ('allocating height in time_for_move2')
        ALLOCATE ( psfc     ( ids:ide , jds:jde ), STAT=ierr )
        IF ( ierr .ne. 0 ) CALL wrf_error_fatal ('allocating psfc in time_for_move2')
+       ALLOCATE ( xlat     ( ids:ide , jds:jde ), STAT=ierr )
+       IF ( ierr .ne. 0 ) CALL wrf_error_fatal ('allocating xlat in time_for_move2')
+       ALLOCATE ( xlong    ( ids:ide , jds:jde ), STAT=ierr )
+       IF ( ierr .ne. 0 ) CALL wrf_error_fatal ('allocating xlong in time_for_move2')
+       ALLOCATE ( terrain  ( ids:ide , jds:jde ), STAT=ierr )
+       IF ( ierr .ne. 0 ) CALL wrf_error_fatal ('allocating terrain in time_for_move2')
      ELSE
        ALLOCATE ( height   ( 1:1 , 1:1 ), STAT=ierr )
+       ALLOCATE ( psfc     ( 1:1 , 1:1 ), STAT=ierr )
+       ALLOCATE ( xlat     ( 1:1 , 1:1 ), STAT=ierr )
+       ALLOCATE ( xlong    ( 1:1 , 1:1 ), STAT=ierr )
+       ALLOCATE ( terrain  ( 1:1 , 1:1 ), STAT=ierr )
      ENDIF
 
 
@@ -358,14 +368,25 @@ write(0,*)'COMPUTE_VORTEX_CENTER_ALARM is ringing  '
                                      ids, ide-1 , jds , jde-1 , 1 , 1 , &
                                      ims, ime   , jms , jme   , 1 , 1 , &
                                      ips, ipe   , jps , jpe   , 1 , 1   )
-
      CALL wrf_patch_to_global_real ( grid%psfc , psfc , grid%domdesc, "z", "xy", &
+                                     ids, ide-1 , jds , jde-1 , 1 , 1 , &
+                                     ims, ime   , jms , jme   , 1 , 1 , &
+                                     ips, ipe   , jps , jpe   , 1 , 1   )
+     CALL wrf_patch_to_global_real ( grid%xlat , xlat , grid%domdesc, "z", "xy", &
+                                     ids, ide-1 , jds , jde-1 , 1 , 1 , &
+                                     ims, ime   , jms , jme   , 1 , 1 , &
+                                     ips, ipe   , jps , jpe   , 1 , 1   )
+     CALL wrf_patch_to_global_real ( grid%xlong , xlong , grid%domdesc, "z", "xy", &
+                                     ids, ide-1 , jds , jde-1 , 1 , 1 , &
+                                     ims, ime   , jms , jme   , 1 , 1 , &
+                                     ips, ipe   , jps , jpe   , 1 , 1   )
+     CALL wrf_patch_to_global_real ( grid%ht , terrain , grid%domdesc, "z", "xy", &
                                      ids, ide-1 , jds , jde-1 , 1 , 1 , &
                                      ims, ime   , jms , jme   , 1 , 1 , &
                                      ips, ipe   , jps , jpe   , 1 , 1   )
 
 ! calculate max wind speed
-     maxws = 0 
+     maxws = 0.
      do j = jps, jpe
        do i = ips, ipe
          ws = grid%u10(i,j) * grid%u10(i,j) + grid%v10(i,j) * grid%v10(i,j)
@@ -504,14 +525,25 @@ WRITE ( message , FMT = '(A," on domain ",I3)' ) TRIM(message2), grid%id
 #  endif
 
 ! 
-write(0,'("ATCF",A19,2f6.2,f6.1,f4.1)')timestr(1:19),grid%xlat(grid%xi,grid%xj),grid%xlong(grid%xi,grid%xj),pmin,maxws/1.94
+     i = INT(grid%xi+.5)
+     j = INT(grid%xj+.5)
+     write(0,'("ATCF"," ",2I6," ",A19," ",f8.2," ",f8.2," ",f6.1," ",f6.1)')        &
+                                       i, j,                                        &
+                                       timestr(1:19),                               &
+                                       xlat(i,j),                                   &
+                                       xlong(i,j),                                  &
+                                       0.01*pmin+0.1138*terrain(imploc,jmploc),     &
+                                       maxws/1.94
                             
 
 
      ENDIF monitor_only
 
-     DEALLOCATE ( height )
      DEALLOCATE ( psfc )
+     DEALLOCATE ( xlat )
+     DEALLOCATE ( xlong )
+     DEALLOCATE ( terrain )
+     DEALLOCATE ( height )
      DEALLOCATE ( height_l )
 
      CALL wrf_dm_bcast_real( grid%vc_i , 1 )

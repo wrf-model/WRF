@@ -532,7 +532,7 @@ WRITE ( message , FMT = '(A," on domain ",I3)' ) TRIM(message2), grid%id
                                        xlat(i,j),                                   &
                                        xlong(i,j),                                  &
                                        0.01*pmin+0.1138*terrain(imploc,jmploc),     &
-                                       maxws/1.94
+                                       maxws*1.94
                             
 
 

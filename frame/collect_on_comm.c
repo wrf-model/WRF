@@ -167,7 +167,10 @@ dst_on_comm ( int * Fcomm, int * typesize ,
 }
 
 #include <malloc.h>
-#include <sys/resource.h>
+
+#ifndef MACOS
+#  include <sys/resource.h>
+#endif
 
 #if 0
   int getrusage(
@@ -183,16 +186,17 @@ extern int maxstug, nouty, maxouty ;
 rlim_ ()
 {
 
+#ifndef MACOS
    struct rusage r_usage ;
    struct mallinfo minf ;
 
    getrusage ( RUSAGE_SELF, &r_usage ) ;
-   minf = mallinfo() ;
-
    fprintf(stderr,"sm %ld d %ld s %ld\n",r_usage.ru_ixrss,r_usage.ru_idrss,r_usage.ru_isrss) ;
+   minf = mallinfo() ;
    fprintf(stderr,"a %ld usm %ld fsm %ld uord %ld ford %ld hblkhd %d\n",minf.arena,minf.usmblks,minf.fsmblks,minf.uordblks,minf.fordblks,minf.hblkhd) ;
-#if 0
+# if 0
    fprintf(stderr," outy %d  nouty %d  maxstug %d maxouty %d \n", outy, nouty, maxstug, maxouty ) ;
+# endif
 #endif
 }
 

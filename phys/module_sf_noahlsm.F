@@ -32,6 +32,8 @@ MODULE module_sf_noahlsm
                  REFKDT_DATA,FRZK_DATA,ZBOT_DATA,  SMLOW_DATA,SMHIGH_DATA,        &
                         CZIL_DATA
 
+        CHARACTER*256  :: err_message
+
 !
 CONTAINS
 !
@@ -1291,7 +1293,6 @@ CONTAINS
          ELSE                                                                    
             SNDENS = SNEQV / SNOWH                                               
             IF(SNDENS > 1.0) THEN                                               
-             write(*,*)'Physical snow depth is less than snow water equiv.'           
              CALL wrf_error_fatal ( 'Physical snow depth is less than snow water equiv.' )
             ENDIF                                                                
             CALL CSNOW (SNCOND,SNDENS)                                           
@@ -2928,15 +2929,12 @@ CONTAINS
 ! ----------------------------------------------------------------------         
 !                                                                                
                IF (SOILTYP .gt. SLCATS) THEN                                     
-                        WRITE (*,*) 'Warning: too many input soil types'         
                         CALL wrf_error_fatal ( 'Warning: too many input soil types' )
                END IF                                                            
                IF (VEGTYP .gt. LUCATS) THEN                                      
-                     WRITE (*,*) 'Warning: too many input landuse types'         
                      CALL wrf_error_fatal ( 'Warning: too many input landuse types' )
                END IF                                                            
                IF (SLOPETYP .gt. SLPCATS) THEN                                   
-                     WRITE (*,*) 'Warning: too many input slope types'           
                      CALL wrf_error_fatal ( 'Warning: too many input slope types' )
                END IF                                                            
                                                                                  
@@ -2997,8 +2995,9 @@ CONTAINS
                                                                                  
                IF (VEGTYP .eq. BARE) SHDFAC = 0.0                                
                IF (NROOT .gt. NSOIL) THEN                                        
-                  WRITE (*,*) 'Warning: too many root layers'                    
-                  CALL wrf_error_fatal ( 'Warning: too many root layers' )
+                  WRITE (err_message,*) 'Error: too many root layers ',  &
+                                                 NSOIL,NROOT
+                  CALL wrf_error_fatal ( message )
 ! ----------------------------------------------------------------------         
 ! CALCULATE ROOT DISTRIBUTION.  PRESENT VERSION ASSUMES UNIFORM                  
 ! DISTRIBUTION BASED ON SOIL LAYER DEPTHS.                                       

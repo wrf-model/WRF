@@ -74,7 +74,7 @@ if      ( down_path[ipath] == INTERP_DOWN ) { sprintf(halo_id,"HALO_%s_INTERP_DO
 else if ( down_path[ipath] == FORCE_DOWN  ) { sprintf(halo_id,"HALO_%s_FORCE_DOWN",upper_case_corename) ; }
 else if ( down_path[ipath] == INTERP_UP   ) { sprintf(halo_id,"HALO_%s_INTERP_UP",upper_case_corename) ; }
 else if ( down_path[ipath] == SMOOTH_UP   ) { sprintf(halo_id,"HALO_%s_INTERP_SMOOTH",upper_case_corename) ; }
-sprintf(halo_define,"63:") ;
+sprintf(halo_define,"80:") ;
 sprintf(halo_use,"dyn_%s",corename) ;
 
 #if 0

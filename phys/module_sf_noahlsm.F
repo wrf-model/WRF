@@ -612,6 +612,7 @@ CONTAINS
    REAL                      :: BX, SMCMAX, PSISAT, FREE
    REAL, PARAMETER           :: BLIM = 5.5, HLICE = 3.335E5,    &
                                 GRAV = 9.81, T0 = 273.15
+   INTEGER                   :: errflag
 
 !
 
@@ -627,7 +628,17 @@ CONTAINS
    itf=min0(ite,ide-1)
    jtf=min0(jte,jde-1)
 
-   IF ( MINVAL ( ISLTYP( its:itf, jts:jtf ) ) .LT. 1 ) THEN
+   errflag = 0
+   DO j = jts,jtf
+     DO i = its,itf
+       IF ( ISLTYP( i,j ) .LT. 1 ) THEN
+         errflag = 1
+         WRITE(err_message,*)"module_sf_noahlsm.F: lsminit: out of range ISLTYP ",i,j,ISLTYP( i,j )
+         CALL wrf_message(err_message)
+       ENDIF
+     ENDDO
+   ENDDO
+   IF ( errflag .EQ. 1 ) THEN
       CALL wrf_error_fatal( "module_sf_noahlsm.F: lsminit: out of range value of ISLTYP. Is this field in the input?" )
    ENDIF
 

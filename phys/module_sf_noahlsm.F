@@ -2997,7 +2997,7 @@ CONTAINS
                IF (NROOT .gt. NSOIL) THEN                                        
                   WRITE (err_message,*) 'Error: too many root layers ',  &
                                                  NSOIL,NROOT
-                  CALL wrf_error_fatal ( message )
+                  CALL wrf_error_fatal ( err_message )
 ! ----------------------------------------------------------------------         
 ! CALCULATE ROOT DISTRIBUTION.  PRESENT VERSION ASSUMES UNIFORM                  
 ! DISTRIBUTION BASED ON SOIL LAYER DEPTHS.                                       

@@ -173,7 +173,7 @@ CONTAINS
             num_seaice_changes = 0
             DO j = jts , MIN(jde-1,jte)
                DO i = its , MIN(ide-1,ite)
-                  IF ( ( tsk(i,j) .LT. 200 ) .OR. ( tsk(i,j) .GT. 350 ) ) THEN
+                  IF ( ( tsk(i,j) .LT. 170 ) .OR. ( tsk(i,j) .GT. 400 ) ) THEN
                      print *,'TSK woes in seaice post, i,j=',i,j,'  tsk = ',tsk(i,j)
                      CALL wrf_error_fatal ( 'TSK is unrealistic, problems for seaice post')
                   ELSE IF ( ( xice(i,j) .GE. 0.5 ) .OR. &

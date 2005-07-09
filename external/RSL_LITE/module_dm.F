@@ -10,7 +10,7 @@ MODULE module_dm
 #if ( NMM_CORE == 1 ) || defined( WRF_CHEM ) 
    INTEGER, PARAMETER :: max_halo_width = 6
 #else
-   INTEGER, PARAMETER :: max_halo_width = 4
+   INTEGER, PARAMETER :: max_halo_width = 5
 #endif
 
    INTEGER ntasks, ntasks_y, ntasks_x, mytask, mytask_x, mytask_y

@@ -45,19 +45,24 @@ MODULE MODULE_RA_GFDLETA
 CONTAINS
 
 !-----------------------------------------------------------------------
-      SUBROUTINE GFDLETAINIT(SFULL,SHALF,PPTOP,JULYR,MONTH,IDAY,GMT,    &
-     &                       CONFIG_FLAGS,ALLOWED_TO_READ,              &
-     &                       KDS,KDE,KMS,KME,KTS,KTE)
+      SUBROUTINE GFDLETAINIT(EMISS,SFULL,SHALF,PPTOP,JULYR,MONTH,IDAY,GMT,    &
+     &                       CONFIG_FLAGS,ALLOWED_TO_READ               &
+     &                ,IDS,IDE,JDS,JDE,KDS,KDE                          &
+     &                ,IMS,IME,JMS,JME,KMS,KME                          &
+     &                ,ITS,ITE,JTS,JTE,KTS,KTE)
 !-----------------------------------------------------------------------
       IMPLICIT NONE
 !-----------------------------------------------------------------------
       TYPE (GRID_CONFIG_REC_TYPE) :: CONFIG_FLAGS
-      INTEGER,INTENT(IN) :: KDS,KDE,KMS,KME,KTS,KTE
+      INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                     &
+     &                     ,IMS,IME,JMS,JME,KMS,KME                     &
+     &                     ,ITS,ITE,JTS,JTE,KTS,KTE
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: EMISS
       REAL,DIMENSION(KMS:KME),INTENT(IN) :: SFULL, SHALF
       INTEGER,INTENT(IN) :: JULYR,MONTH,IDAY
       REAL,INTENT(IN) :: GMT,PPTOP
       LOGICAL,INTENT(IN) :: ALLOWED_TO_READ
-      INTEGER :: IHRST,N
+      INTEGER :: IHRST,N,I,J
       REAL :: PCLD
       REAL :: SSLP=1013.25
       REAL :: PTOP_HI=150.,PTOP_MID=350.,PTOP_LO=642.
@@ -95,7 +100,14 @@ CONTAINS
         CALL SOLARD(IHRST,IDAY,MONTH,JULYR)
       ENDIF
 !
-!-----------------------------------------------------------------------
+! FOR NOW, GFDL RADIATION ASSUMES EMISSIVITY = 1.0 
+      DO J=JTS,JTE
+      DO I=ITS,ITE
+        EMISS(I,J) = 1.0
+      ENDDO
+      ENDDO
+
+!---
       END SUBROUTINE GFDLETAINIT
 !-----------------------------------------------------------------------
 !

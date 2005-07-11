@@ -297,7 +297,7 @@ integer myproc
    CALL wrf_debug ( 200 , 'module_start: phy_init: Before call to ra_init' )
 
    CALL ra_init(grid,STEPRA,RADT,DT,RTHRATEN,RTHRATENLW,             &
-                RTHRATENSW,CLDFRA,cen_lat,JULYR,JULDAY,GMT,     &
+                RTHRATENSW,CLDFRA,EMISS,cen_lat,JULYR,JULDAY,GMT,    &
                 sfull,shalf,pptop,                              &
                 config_flags,restart,                           & 
                 allowed_to_read ,                                   &
@@ -543,7 +543,7 @@ integer myproc
    END SUBROUTINE landuse_init 
 !===================================================================== 
    SUBROUTINE ra_init(grid,STEPRA,RADT,DT,RTHRATEN,RTHRATENLW,       & 
-                      RTHRATENSW,CLDFRA,cen_lat,JULYR,JULDAY,GMT,    &
+                      RTHRATENSW,CLDFRA,EMISS,cen_lat,JULYR,JULDAY,GMT,    &
                       sfull,shalf,pptop,                             &
                       config_flags,restart,                          & 
                       allowed_to_read ,                              &
@@ -580,6 +580,7 @@ integer myproc
                                                          RTHRATENLW, &
                                                          RTHRATENSW, &
                                                              CLDFRA
+   REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) :: EMISS
    LOGICAL :: etalw = .false.
    integer :: month,iday
 !---------------------------------------------------------------------
@@ -604,9 +605,11 @@ integer myproc
         CASE (GFDLLWSCHEME)
              CALL nl_get_start_month(grid%id,month)
              CALL nl_get_start_day(grid%id,iday)
-             CALL gfdletainit(sfull,shalf,pptop,JULYR,MONTH,IDAY,GMT,&
+             CALL gfdletainit(emiss,sfull,shalf,pptop,JULYR,MONTH,IDAY,GMT,&
                            config_flags,allowed_to_read ,            &
-                           kds, kde, kms, kme, kts, kte     )
+                           ids, ide, jds, jde, kds, kde,    &
+                           ims, ime, jms, jme, kms, kme,    &
+                           its, ite, jts, jte, kts, kte     )
              etalw = .true.
         CASE DEFAULT
 
@@ -630,9 +633,11 @@ integer myproc
              IF(.not.etalw)THEN
              CALL nl_get_start_month(grid%id,month)
              CALL nl_get_start_day(grid%id,iday)
-             CALL gfdletainit(sfull,shalf,pptop,JULYR,MONTH,IDAY,GMT,&
+             CALL gfdletainit(emiss,sfull,shalf,pptop,JULYR,MONTH,IDAY,GMT,&
                            config_flags,allowed_to_read,             &
-                           kds, kde, kms, kme, kts, kte     )
+                           ids, ide, jds, jde, kds, kde,    &
+                           ims, ime, jms, jme, kms, kme,    &
+                           its, ite, jts, jte, kts, kte     )
              ENDIF
 
         CASE DEFAULT

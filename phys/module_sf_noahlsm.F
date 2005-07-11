@@ -360,8 +360,8 @@ CONTAINS
         SFCTMP=T3D(i,1,j)
         ZLVL=0.5*DZ8W(i,1,j)
         TH2=SFCTMP+(0.0097545*ZLVL)
-        LWDN=GLW(I,J)
         EMISSI = EMISS(I,J)
+        LWDN=GLW(I,J)*EMISSI
         SOLDN=GSW(I,J)/(1.0-albedo(i,j))
         PRCP=RAINBL(i,j)/DT 
         VEGTYP=IVGTYP(I,J)                                            

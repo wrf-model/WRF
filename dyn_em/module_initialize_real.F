@@ -99,6 +99,7 @@ CONTAINS
                                      its, ite, jts, jte, kts, kte, &
                                      ips, ipe, jps, jpe, kps, kpe, &
                                      i, j, k
+      INTEGER :: ns
 
       !  Local data
 
@@ -243,13 +244,19 @@ integer::oops1,oops2
 
       END SELECT enough_data
 
-      !  For sf_surface_physics = 1, we want to use close to a 10 cm value
+      !  For sf_surface_physics = 1, we want to use close to a 30 cm value
       !  for the bottom level of the soil temps.
 
       fix_bottom_level_for_temp : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
 
          CASE (SLABSCHEME)
-            IF      ( flag_st000010 .EQ. 1 ) THEN
+            IF      ( flag_st010040 .EQ. 1 ) THEN
+               DO j = jts , MIN(jde-1,jte)
+                  DO i = its , MIN(ide-1,ite)
+                     tmn(i,j) = st010040(i,j)
+                  END DO
+               END DO
+            ELSE IF ( flag_st000010 .EQ. 1 ) THEN
                DO j = jts , MIN(jde-1,jte)
                   DO i = its , MIN(ide-1,ite)
                      tmn(i,j) = st000010(i,j)
@@ -261,6 +268,8 @@ integer::oops1,oops2
                      tmn(i,j) = soilt020(i,j)
                   END DO
                END DO
+            ELSE
+               CALL wrf_error_fatal ( 'No 10-40 cm, 0-10 cm, or 20 cm soil temperature data for TMN')
             END IF
 
          CASE (LSMSCHEME)
@@ -473,23 +482,32 @@ integer::oops1,oops2
                   smois(i,2,j) = 0.3
                   smois(i,3,j) = 0.3
                   smois(i,4,j) = 0.3
-                  if(tsk(i,j).gt.170. .and. tsk(i,j).lt.400.)then
-                     tslb(i,1,j)=tsk(i,j)
-                     tslb(i,2,j)=tsk(i,j)
-                     tslb(i,3,j)=tsk(i,j)
-                     tslb(i,4,j)=tsk(i,j)
+
+                  IF ( (tsk(i,j).GT.170. .AND. tsk(i,j).LT.400.) .AND. &
+                       (tmn(i,j).GT.170. .AND. tmn(i,j).LT.400.) ) THEN
+                     fake_soil_temp : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
+                        CASE ( SLABSCHEME , LSMSCHEME , RUCLSMSCHEME )
+                           DO ns = 1 , model_config_rec%num_soil_layers
+                              tslb(i,ns,j) = ( tsk(i,j)*(3.0 - zs(ns)) + tmn(i,j)*(0.0 - zs(ns)) ) /(3.0 - 0.0)
+                           END DO
+                     END SELECT fake_soil_temp
+                  else if(tsk(i,j).gt.170. .and. tsk(i,j).lt.400.)then
+                     CALL wrf_error_fatal ( 'TSLB unreasonable 1' )
+                     DO ns = 1 , model_config_rec%num_soil_layers
+                        tslb(i,ns,j)=tsk(i,j)
+                     END DO
                   else if(sst(i,j).gt.170. .and. sst(i,j).lt.400.)then
-                     tslb(i,1,j)=sst(i,j)
-                     tslb(i,2,j)=sst(i,j)
-                     tslb(i,3,j)=sst(i,j)
-                     tslb(i,4,j)=sst(i,j)
+                     CALL wrf_error_fatal ( 'TSLB unreasonable 2' )
+                     DO ns = 1 , model_config_rec%num_soil_layers
+                        tslb(i,ns,j)=sst(i,j)
+                     END DO
                   else if(tmn(i,j).gt.170. .and. tmn(i,j).lt.400.)then
-                     tslb(i,1,j)=tmn(i,j)
-                     tslb(i,2,j)=tmn(i,j)
-                     tslb(i,3,j)=tmn(i,j)
-                     tslb(i,4,j)=tmn(i,j)
+                     CALL wrf_error_fatal ( 'TSLB unreasonable 3' )
+                     DO ns = 1 , model_config_rec%num_soil_layers
+                        tslb(i,ns,j)=tmn(i,j)
+                     END DO
                   else
-                     CALL wrf_error_fatal ( 'TSLB unreasonable' )
+                     CALL wrf_error_fatal ( 'TSLB unreasonable 4' )
                   endif
             END IF
          END DO

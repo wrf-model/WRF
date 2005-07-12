@@ -152,7 +152,7 @@ gen_get_nl_config ( char * dirname )
         if ( !strcmp( p->nentries, "1" )) {
           if ( ! sw_ifort_kludge ) {
             fprintf(fp,"  IF ( id_id .NE. 1 ) THEN\n") ;
-            fprintf(fp,"    call wrf_debug(1,'WARNING in nl_%s_%s: %s applies to all domains. First arg ignored.')\n",
+            fprintf(fp,"    call wrf_debug(1,&\n'WARNING in nl_%s_%s: %s applies to all domains. First arg ignored.')\n",
                             gs,p->name, p->name ) ;
             fprintf(fp,"  ENDIF\n" ) ;
           }
@@ -183,7 +183,7 @@ gen_get_nl_config ( char * dirname )
         if ( !strcmp( p->nentries, "1" )) {
           if ( ! sw_ifort_kludge ) {
             fprintf(fp,"  IF ( id_id .NE. 1 ) THEN\n") ;
-            fprintf(fp,"    call wrf_debug(1,'WARNING in nl_%s_%s: %s applies to all domains. First arg ignored.')\n",
+            fprintf(fp,"    call wrf_debug(1,&\n'WARNING in nl_%s_%s: %s applies to all domains. First arg ignored.')\n",
                             gs,p->name, p->name ) ;
             fprintf(fp,"  ENDIF\n" ) ;
           }

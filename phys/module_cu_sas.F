@@ -1,8 +1,10 @@
 !
 MODULE module_cu_sas
 
+#ifndef IFORT_KLUDGE
 USE module_configure, ONLY: nl_get_start_year, nl_get_start_month, &
                             nl_get_start_day, nl_get_start_hour
+#endif
 CONTAINS
 
 !-----------------------------------------------------------------

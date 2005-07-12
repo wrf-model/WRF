@@ -7,6 +7,7 @@
 )
 
    USE module_domain
+   USE module_dm
 !  USE module_io_domain
    USE module_state_description
    USE module_model_constants
@@ -30,6 +31,7 @@
    IMPLICIT NONE
    !  Input data.
    TYPE (domain)          :: grid
+
    LOGICAL , INTENT(IN)   :: allowed_to_read
 
    !  Definitions of dummy arguments to this routine (generated from Registry).
@@ -61,6 +63,10 @@
    REAL :: qvf1, qvf2, qvf
    REAL :: MPDT
    LOGICAL :: first_trip_for_this_domain
+
+   REAL :: lat1 , lat2 , lat3 , lat4
+   REAL :: lon1 , lon2 , lon3 , lon4
+   INTEGER :: num_points_lat_lon , iloc , jloc
 !integer myproc
 
 ! Trick problematic compilers into not performing copy-in/copy-out by adding
@@ -147,6 +153,157 @@
 
 
 !call wrf_get_myproc(myproc)
+
+      IF ( grid%id .NE. 1 ) THEN
+   
+      !  Every time a domain starts or every time a domain moves, this routine is called.  We want
+      !  the center (middle) lat/lon of the grid for the metacode.  The lat/lon values are
+      !  defined at mass points.  Depending on the even/odd points in the SN and WE directions,
+      !  we end up with the middle point as either 1 point or an average of either 2 or 4 points.
+      !  Add to this, the need to make sure that we are on the correct patch to retrieve the
+      !  value of the lat/lon, AND that the lat/lons (for an average) may not all be on the same
+      !  patch.  Once we find the correct value for lat lon, we need to keep it around on all patches, 
+      !  which is where the wrf_dm_min_real calls come in.
+   
+      IF      ( ( MOD(ide,2) .EQ. 0 ) .AND. ( MOD(jde,2) .EQ. 0 ) ) THEN
+         num_points_lat_lon = 1
+         iloc = ide/2
+         jloc = jde/2
+         IF ( ( ips .LE. iloc ) .AND. ( ipe .GE. iloc ) .AND. &
+              ( jps .LE. jloc ) .AND. ( jpe .GE. jloc ) ) THEN
+            lat1 = xlat (iloc,jloc)
+            lon1 = xlong(iloc,jloc)
+         ELSE
+            lat1 = 99999.
+            lon1 = 99999.
+         END IF
+         lat1 = wrf_dm_min_real ( lat1 )
+         lon1 = wrf_dm_min_real ( lon1 )
+         CALL nl_set_cen_lat ( grid%id , lat1 )
+         CALL nl_set_cen_lon ( grid%id , lon1 )
+      ELSE IF ( ( MOD(ide,2) .NE. 0 ) .AND. ( MOD(jde,2) .EQ. 0 ) ) THEN
+         num_points_lat_lon = 2
+         iloc = (ide-1)/2
+         jloc =  jde   /2
+         IF ( ( ips .LE. iloc ) .AND. ( ipe .GE. iloc ) .AND. &
+              ( jps .LE. jloc ) .AND. ( jpe .GE. jloc ) ) THEN
+            lat1 = xlat (iloc,jloc)
+            lon1 = xlong(iloc,jloc)
+         ELSE
+            lat1 = 99999.
+            lon1 = 99999.
+         END IF
+         lat1 = wrf_dm_min_real ( lat1 )
+         lon1 = wrf_dm_min_real ( lon1 )
+   
+         iloc = (ide+1)/2
+         jloc =  jde   /2
+         IF ( ( ips .LE. iloc ) .AND. ( ipe .GE. iloc ) .AND. &
+              ( jps .LE. jloc ) .AND. ( jpe .GE. jloc ) ) THEN
+            lat2 = xlat (iloc,jloc)
+            lon2 = xlong(iloc,jloc)
+         ELSE
+            lat2 = 99999.
+            lon2 = 99999.
+         END IF
+         lat2 = wrf_dm_min_real ( lat2 )
+         lon2 = wrf_dm_min_real ( lon2 )
+   
+         CALL nl_set_cen_lat ( grid%id , ( lat1 + lat2 ) * 0.50 )
+         CALL nl_set_cen_lon ( grid%id , ( lon1 + lon2 ) * 0.50 )
+      ELSE IF ( ( MOD(ide,2) .EQ. 0 ) .AND. ( MOD(jde,2) .NE. 0 ) ) THEN
+         num_points_lat_lon = 2
+         iloc =  ide   /2
+         jloc = (jde-1)/2
+         IF ( ( ips .LE. iloc ) .AND. ( ipe .GE. iloc ) .AND. &
+              ( jps .LE. jloc ) .AND. ( jpe .GE. jloc ) ) THEN
+            lat1 = xlat (iloc,jloc)
+            lon1 = xlong(iloc,jloc)
+         ELSE
+            lat1 = 99999.
+            lon1 = 99999.
+         END IF
+         lat1 = wrf_dm_min_real ( lat1 )
+         lon1 = wrf_dm_min_real ( lon1 )
+   
+         iloc =  ide   /2
+         jloc = (jde+1)/2
+         IF ( ( ips .LE. iloc ) .AND. ( ipe .GE. iloc ) .AND. &
+              ( jps .LE. jloc ) .AND. ( jpe .GE. jloc ) ) THEN
+            lat2 = xlat (iloc,jloc)
+            lon2 = xlong(iloc,jloc)
+         ELSE
+            lat2 = 99999.
+            lon2 = 99999.
+         END IF
+         lat2 = wrf_dm_min_real ( lat2 )
+         lon2 = wrf_dm_min_real ( lon2 )
+   
+         CALL nl_set_cen_lat ( grid%id , ( lat1 + lat2 ) * 0.50 )
+         CALL nl_set_cen_lon ( grid%id , ( lon1 + lon2 ) * 0.50 )
+      ELSE IF ( ( MOD(ide,2) .NE. 0 ) .AND. ( MOD(jde,2) .NE. 0 ) ) THEN
+         num_points_lat_lon = 4
+         iloc = (ide-1)/2
+         jloc = (jde-1)/2
+         IF ( ( ips .LE. iloc ) .AND. ( ipe .GE. iloc ) .AND. &
+              ( jps .LE. jloc ) .AND. ( jpe .GE. jloc ) ) THEN
+            lat1 = xlat (iloc,jloc)
+            lon1 = xlong(iloc,jloc)
+         ELSE
+            lat1 = 99999.
+            lon1 = 99999.
+         END IF
+         lat1 = wrf_dm_min_real ( lat1 )
+         lon1 = wrf_dm_min_real ( lon1 )
+   
+         iloc = (ide+1)/2
+         jloc = (jde-1)/2
+         IF ( ( ips .LE. iloc ) .AND. ( ipe .GE. iloc ) .AND. &
+              ( jps .LE. jloc ) .AND. ( jpe .GE. jloc ) ) THEN
+            lat2 = xlat (iloc,jloc)
+            lon2 = xlong(iloc,jloc)
+         ELSE
+            lat2 = 99999.
+            lon2 = 99999.
+         END IF
+         lat2 = wrf_dm_min_real ( lat2 )
+         lon2 = wrf_dm_min_real ( lon2 )
+   
+         iloc = (ide-1)/2
+         jloc = (jde+1)/2
+         IF ( ( ips .LE. iloc ) .AND. ( ipe .GE. iloc ) .AND. &
+              ( jps .LE. jloc ) .AND. ( jpe .GE. jloc ) ) THEN
+            lat3 = xlat (iloc,jloc)
+            lon3 = xlong(iloc,jloc)
+         ELSE
+            lat3 = 99999.
+            lon3 = 99999.
+         END IF
+         lat3 = wrf_dm_min_real ( lat3 )
+         lon3 = wrf_dm_min_real ( lon3 )
+   
+         iloc = (ide+1)/2
+         jloc = (jde+1)/2
+         IF ( ( ips .LE. iloc ) .AND. ( ipe .GE. iloc ) .AND. &
+              ( jps .LE. jloc ) .AND. ( jpe .GE. jloc ) ) THEN
+            lat4 = xlat (iloc,jloc)
+            lon4 = xlong(iloc,jloc)
+         ELSE
+            lat4 = 99999.
+            lon4 = 99999.
+         END IF
+         lat4 = wrf_dm_min_real ( lat4 )
+         lon4 = wrf_dm_min_real ( lon4 )
+   
+         CALL nl_set_cen_lat ( grid%id , ( lat1 + lat2 + lat3 + lat4 ) * 0.25 )
+         CALL nl_set_cen_lon ( grid%id , ( lon1 + lon2 + lon3 + lon4 ) * 0.25 )
+      END IF
+   END IF
+
+   
+
+   
+   
 
 
    IF ( ( config_flags%input_from_hires ) .OR. ( config_flags%input_from_file ) ) THEN

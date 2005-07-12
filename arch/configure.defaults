@@ -6338,6 +6338,7 @@ MKL_HOME          = /usr/lib
 FC                = ifort -I..
 LD                = ifort
 CC                = icc -I.
+SCC                = icc -I.
 CC_TOOLS          = cc
 SFC               = ifort
 CFLAGS            = -w -O3 -ip -tpp2 -c -ftz -no-gcc -DDM_PARALLEL -DWRF_RSL_IO \
@@ -6390,9 +6391,9 @@ wrfio_nf :
           make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" \
           FC="$(FC) -I../.. $(FCFLAGS)" \
           TRADFLAG="-traditional" ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../../inc ; \
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../io_phdf5 ; \
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../io_quilt )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -6477,6 +6478,7 @@ MKL_HOME          = /usr/lib
 FC                = ifort -I..
 LD                = ifort
 CC                = icc -I.
+SCC                = icc -I.
 CC_TOOLS          = cc
 SFC               = ifort
 CFLAGS            = -w -O3 -ip -tpp2 -c -ftz -DDM_PARALLEL -I../external/RSL_LITE \
@@ -6527,9 +6529,9 @@ wrfio_nf :
 	( cd ../external/io_netcdf ; \
           make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC) -I../.. $(FCFLAGS)" \
           TRADFLAG="-traditional" ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../../inc ; \
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../io_phdf5 ; \
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../io_quilt )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -6546,7 +6548,7 @@ esmf_time :
 	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL_LITE/librsl_lite.a :
-	( cd ../external/RSL_LITE ; make CC='icc -I. -w -O3 -I$(MPI_HOME)/include '\
+	( cd ../external/RSL_LITE ; make CC='icc -I. -w -O3 -DMPI2_SUPPORT -I$(MPI_HOME)/include '\
 	 FC='ifort -w -O3 -I../../.. ' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
 
 # compile these without high optimization to speed compile
@@ -6563,6 +6565,7 @@ wrf_restartin.o : wrf_restartin.F
 module_initialize_real.o: module_initialize_real.F
 solve_interface.o : solve_interface.F
 shift_domain_em.o : shift_domain_em.F
+module_dm.o : module_dm.F
 module_io_wrf.o : module_io_wrf.F
 module_domain.o : module_domain.F
 start_domain.o : start_domain.F
@@ -6573,7 +6576,7 @@ mediation_integrate.o mediation_interp_domain.o mediation_feedback_domain.o \
 module_configure.o                                              \
 wrf_auxinput1out.o wrf_histout.o wrf_restartout.o wrf_inputin.o \
 wrf_auxinput1in.o wrf_histin.o wrf_restartin.o module_initialize_real.o \
-module_domain.o module_io_wrf.o start_domain.o solve_interface.o \
+module_domain.o module_dm.o module_io_wrf.o start_domain.o solve_interface.o \
 shift_domain_em.o                                              \
 mediation_force_domain.o:
 	$(RM) $@
@@ -6611,6 +6614,7 @@ MPI_HOME          = /usr
 FC                = ifort -I..
 LD                = ifort
 CC                = icc -I.
+SCC                = icc -I.
 CC_TOOLS          = cc
 SFC               = ifort
 CFLAGS            = -w -O3 -ip -tpp2 -c -ftz -no-gcc -DDM_PARALLEL -DWRF_RSL_IO \
@@ -6662,9 +6666,9 @@ wrfio_nf :
           make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" \
           FC="$(FC) -I../.. $(FCFLAGS)" \
           TRADFLAG="-traditional" ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../../inc ; \
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../io_phdf5 ; \
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../io_quilt )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -6746,6 +6750,7 @@ MPI_HOME          = /usr
 FC                = ifort -I..
 LD                = ifort
 CC                = icc -I.
+SCC                = icc -I.
 CC_TOOLS          = cc
 SFC               = ifort
 CFLAGS            = -w -O3 -ip -tpp2 -c -ftz -DDM_PARALLEL -I../external/RSL_LITE \
@@ -6795,9 +6800,9 @@ wrfio_nf :
 	( cd ../external/io_netcdf ; \
           make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC) -I../.. $(FCFLAGS)" \
           TRADFLAG="-traditional" ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp wrf_io_flags.h ../io_quilt )
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../../inc ; \
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../io_phdf5 ; \
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../io_quilt )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -6814,7 +6819,7 @@ esmf_time :
 	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL_LITE/librsl_lite.a :
-	( cd ../external/RSL_LITE ; make CC='icc -I. -w -O3 -I$(MPI_HOME)/include '\
+	( cd ../external/RSL_LITE ; make CC='icc -I. -w -O3 -DMPI2_SUPPORT -I$(MPI_HOME)/include '\
 	 FC='ifort -w -O3 -I../../.. ' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
 
 # compile these without high optimization to speed compile
@@ -6832,6 +6837,7 @@ module_initialize_real.o: module_initialize_real.F
 solve_interface.o : solve_interface.F
 shift_domain_em.o : shift_domain_em.F
 module_io_wrf.o : module_io_wrf.F
+module_dm.o : module_dm.F
 module_domain.o : module_domain.F
 start_domain.o : start_domain.F
 mediation_force_domain.o : mediation_force_domain.F
@@ -6841,7 +6847,7 @@ mediation_integrate.o mediation_interp_domain.o mediation_feedback_domain.o \
 module_configure.o                                              \
 wrf_auxinput1out.o wrf_histout.o wrf_restartout.o wrf_inputin.o \
 wrf_auxinput1in.o wrf_histin.o wrf_restartin.o module_initialize_real.o \
-module_domain.o module_io_wrf.o start_domain.o solve_interface.o \
+module_domain.o module_dm.o module_io_wrf.o start_domain.o solve_interface.o \
 shift_domain_em.o                                              \
 mediation_force_domain.o:
 	$(RM) $@
@@ -6856,10 +6862,9 @@ mediation_force_domain.o:
 #
 #  'setenv F_UFMTENDIAN big' in run scripts not necessary
 #  since -convert big_endian is in FCBASEOPTS
-#  Change MPI_HOME if SGI's MPI is not in the default directories
 #
 # Contributed settings from Gerardo Cisneros, SGI
-#
+# Set up only for idealized experiments
 #
 OMP               = -openmp
 OMPCPP            = -D_OPENMP
@@ -6867,6 +6872,7 @@ INCLUDE           = ../external/io_netcdf/
 FC                = ifort -I..
 LD                = ifort
 CC                = icc -I.
+SCC                = icc -I.
 CC_TOOLS          = cc
 SFC               = ifort
 CFLAGS            = -w -O3 -ip -tpp2 -c -ftz 
@@ -6909,7 +6915,7 @@ wrfio_nf :
 	( cd ../external/io_netcdf ; \
           make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC) -I../.. $(FCFLAGS)" \
           TRADFLAG="-traditional" ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc )
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../../inc )
 #	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
 #	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
 #	/bin/cp wrf_io_flags.h ../io_quilt )
@@ -6942,18 +6948,20 @@ wrf_restartin.o : wrf_restartin.F
 module_initialize_real.o: module_initialize_real.F
 solve_interface.o : solve_interface.F
 shift_domain_em.o : shift_domain_em.F
+module_dm.o : module_dm.F
 module_io_wrf.o : module_io_wrf.F
 module_domain.o : module_domain.F
 start_domain.o : start_domain.F
 mediation_force_domain.o : mediation_force_domain.F
 module_configure.o : module_configure.F
+module_bl_mrf.o: module_bl_mrf.F
 
 mediation_integrate.o mediation_interp_domain.o mediation_feedback_domain.o \
 module_configure.o                                              \
 wrf_auxinput1out.o wrf_histout.o wrf_restartout.o wrf_inputin.o \
 wrf_auxinput1in.o wrf_histin.o wrf_restartin.o module_initialize_real.o \
-module_domain.o module_io_wrf.o start_domain.o solve_interface.o \
-shift_domain_em.o                                              \
+module_domain.o module_dm.o module_io_wrf.o start_domain.o solve_interface.o \
+shift_domain_em.o module_bl_mrf.o                              \
 mediation_force_domain.o:
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
@@ -6975,6 +6983,7 @@ INCLUDE           = ../external/io_netcdf/
 FC                = ifort -I..
 LD                = ifort
 CC                = icc -I.
+SCC                = icc -I.
 CC_TOOLS          = cc
 SFC               = ifort
 CFLAGS            = -w -O3 -ip -tpp2 -c -ftz 
@@ -7017,7 +7026,7 @@ wrfio_nf :
 	( cd ../external/io_netcdf ; \
           make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC) -I../.. $(FCFLAGS)" \
           TRADFLAG="-traditional" ; \
-	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc )
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../../inc )
 #	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
 #	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
 #	/bin/cp wrf_io_flags.h ../io_quilt )
@@ -7050,6 +7059,7 @@ wrf_restartin.o : wrf_restartin.F
 module_initialize_real.o: module_initialize_real.F
 solve_interface.o : solve_interface.F
 shift_domain_em.o : shift_domain_em.F
+module_dm.o : module_dm.F
 module_io_wrf.o : module_io_wrf.F
 module_domain.o : module_domain.F
 start_domain.o : start_domain.F
@@ -7060,7 +7070,7 @@ mediation_integrate.o mediation_interp_domain.o mediation_feedback_domain.o \
 module_configure.o                                              \
 wrf_auxinput1out.o wrf_histout.o wrf_restartout.o wrf_inputin.o \
 wrf_auxinput1in.o wrf_histin.o wrf_restartin.o module_initialize_real.o \
-module_domain.o module_io_wrf.o start_domain.o solve_interface.o \
+module_domain.o module_dm.o module_io_wrf.o start_domain.o solve_interface.o \
 shift_domain_em.o                                              \
 mediation_force_domain.o:
 	$(RM) $@

@@ -792,7 +792,7 @@ if ( ( $ARCH[1] == AIX ) && \
 	if ( ! -d $TMPDIR ) mkdir $TMPDIR
 	set MAIL                = /usr/bin/mailx
 	if        ( $NESTED == TRUE )                                                     then
-		set COMPOPTS	= ( 11 12 4 )
+		set COMPOPTS	= ( 10 11 4 )
 	else if ( ( $NESTED != TRUE ) && ( $ESMF_LIB == TRUE ) )                          then
 		set COMPOPTS    = ( 1 2 9 )
 	else if ( ( $NESTED != TRUE ) && ( $ESMF_LIB != TRUE ) && ( $RSL_LITE == TRUE ) ) then

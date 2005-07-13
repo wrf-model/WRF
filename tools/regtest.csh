@@ -767,7 +767,7 @@ if ( ( $ARCH[1] == AIX ) && \
      ( ( `hostname | cut -c 1-2` == bs ) || \
        ( `hostname | cut -c 1-2` == bd ) ) ) then
 	# NMM requires 32 bit, Apr 2005 Dave, remove this when able
-	if ( $IO_FORM_NAME == io_grib1 ) then
+	if ( $IO_FORM_NAME[$IO_FORM] == io_grib1 ) then
 		setenv OBJECT_MODE 64
 	else
 		setenv OBJECT_MODE 32

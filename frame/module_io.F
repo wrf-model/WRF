@@ -56,7 +56,7 @@ SUBROUTINE wrf_ioinit( Status )
   INTEGER, INTENT(INOUT) :: Status
 !Local
   CHARACTER(len=80) :: SysDepInfo
-  INTEGER :: ierr(8), minerr, maxerr
+  INTEGER :: ierr(10), minerr, maxerr
 !
   Status = 0
   ierr = 0
@@ -87,6 +87,12 @@ SUBROUTINE wrf_ioinit( Status )
 #ifdef ESMFIO
   CALL ext_esmf_ioinit(  SysDepInfo, ierr(8) )
 #endif
+#ifdef GRIB1
+  CALL ext_gr1_ioinit(   SysDepInfo, ierr(9) )
+#endif
+#ifdef GRIB2
+  CALL ext_gr2_ioinit(   SysDepInfo, ierr(10) )
+#endif
   minerr = MINVAL(ierr)
   maxerr = MAXVAL(ierr)
   IF ( minerr < 0 ) THEN
@@ -110,7 +116,7 @@ SUBROUTINE wrf_ioexit( Status )
   INTEGER, INTENT(INOUT) :: Status
 !Local
   LOGICAL, EXTERNAL :: use_output_servers
-  INTEGER :: ierr(9), minerr, maxerr
+  INTEGER :: ierr(11), minerr, maxerr
 !
   Status = 0
   ierr = 0
@@ -139,7 +145,14 @@ SUBROUTINE wrf_ioexit( Status )
 #ifdef ESMFIO
   CALL ext_esmf_ioexit( ierr(8) )
 #endif
-  IF ( use_output_servers() ) CALL wrf_quilt_ioexit( ierr(9) )
+#ifdef GRIB1
+  CALL ext_gr1_ioexit(  ierr(9) )
+#endif
+#ifdef GRIB2
+  CALL ext_gr2_ioexit(  ierr(10) )
+#endif
+ 
+  IF ( use_output_servers() ) CALL wrf_quilt_ioexit( ierr(11) )
   minerr = MINVAL(ierr)
   maxerr = MAXVAL(ierr)
   IF ( minerr < 0 ) THEN
@@ -268,6 +281,40 @@ SUBROUTINE wrf_open_for_write_begin( FileName , Comm_compute, Comm_io, SysDepInf
         CALL ext_zzz_open_for_write_begin ( FileName , Comm_compute, Comm_io, SysDepInfo, &
                                             Hndl , Status )
 #endif
+#ifdef GRIB1
+      CASE ( IO_GRIB1   )
+        IF ( multi_files(io_form) .OR. wrf_dm_on_monitor() ) THEN
+          IF ( multi_files(io_form) ) THEN
+            CALL wrf_get_myproc ( myproc )
+            CALL append_to_filename ( LocFilename , FileName , myproc, 4 )
+          ELSE
+            LocFilename = FileName
+          ENDIF
+          CALL ext_gr1_open_for_write_begin ( LocFileName , Comm_compute, Comm_io, SysDepInfo, &
+                                              Hndl , Status )
+        ENDIF
+        IF ( .NOT. multi_files(io_form) ) THEN
+          CALL wrf_dm_bcast_bytes( Hndl, IWORDSIZE )
+          CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
+        ENDIF
+#endif
+#ifdef GRIB2
+      CASE ( IO_GRIB2   )
+        IF ( multi_files(io_form) .OR. wrf_dm_on_monitor() ) THEN
+          IF ( multi_files(io_form) ) THEN
+            CALL wrf_get_myproc ( myproc )
+            CALL append_to_filename ( LocFilename , FileName , myproc, 4 )
+          ELSE
+            LocFilename = FileName
+          ENDIF
+          CALL ext_gr2_open_for_write_begin ( LocFileName , Comm_compute, Comm_io, SysDepInfo, &
+                                              Hndl , Status )
+        ENDIF
+        IF ( .NOT. multi_files(io_form) ) THEN
+          CALL wrf_dm_bcast_bytes( Hndl, IWORDSIZE )
+          CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
+        ENDIF
+#endif
 #ifdef MCELIO
       CASE ( IO_MCEL )
         IF ( wrf_dm_on_monitor() ) THEN
@@ -385,6 +432,20 @@ SUBROUTINE wrf_open_for_write_commit( DataHandle , Status )
 #ifdef ZZZ
       CASE ( IO_ZZZ   )
         CALL ext_zzz_open_for_write_commit ( Hndl , Status )
+#endif
+#ifdef GRIB1
+      CASE ( IO_GRIB1   )
+         IF ( multi_files(io_form) .OR. wrf_dm_on_monitor() ) THEN
+            CALL ext_gr1_open_for_write_commit ( Hndl , Status )
+         ENDIF
+         IF ( .NOT. multi_files(io_form) ) CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
+#endif
+#ifdef GRIB2
+      CASE ( IO_GRIB2   )
+         IF ( multi_files(io_form) .OR. wrf_dm_on_monitor() ) THEN
+            CALL ext_gr2_open_for_write_commit ( Hndl , Status )
+         ENDIF
+         IF ( .NOT. multi_files(io_form) ) CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
 #endif
 #ifdef INTIO
       CASE ( IO_INTIO   )
@@ -523,6 +584,40 @@ tstr = TRIM(SysDepInfo) // ',' // 'READ_MODE=UPDATE,LAT_R=XLAT,LON_R=XLONG,LANDM
         CALL ext_esmf_open_for_read_begin ( FileName , Comm_compute, Comm_io, SysDepInfo, &
                                             Hndl , Status )
 #endif
+#ifdef GRIB1
+      CASE ( IO_GRIB1   )
+        IF ( multi_files(io_form) .OR.  wrf_dm_on_monitor() ) THEN
+          IF ( multi_files(io_form) ) THEN
+              CALL wrf_get_myproc ( myproc )
+              CALL append_to_filename ( LocFilename , FileName , myproc, 4 )
+          ELSE
+              LocFilename = FileName
+          ENDIF
+          CALL ext_gr1_open_for_read_begin ( LocFileName , Comm_compute, Comm_io, SysDepInfo, &
+               Hndl , Status )
+        ENDIF
+        IF ( .NOT. multi_files(io_form) ) THEN
+          CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
+          CALL wrf_dm_bcast_bytes( Hndl, IWORDSIZE )
+        ENDIF
+#endif
+#ifdef GRIB2
+      CASE ( IO_GRIB2   )
+        IF ( multi_files(io_form) .OR.  wrf_dm_on_monitor() ) THEN
+          IF ( multi_files(io_form) ) THEN
+              CALL wrf_get_myproc ( myproc )
+              CALL append_to_filename ( LocFilename , FileName , myproc, 4 )
+          ELSE
+              LocFilename = FileName
+          ENDIF
+          CALL ext_gr2_open_for_read_begin ( LocFileName , Comm_compute, Comm_io, SysDepInfo, &
+               Hndl , Status )
+        ENDIF
+        IF ( .NOT. multi_files(io_form) ) THEN
+          CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
+          CALL wrf_dm_bcast_bytes( Hndl, IWORDSIZE )
+        ENDIF
+#endif
 #ifdef INTIO
       CASE ( IO_INTIO   )
 #endif
@@ -599,6 +694,14 @@ SUBROUTINE wrf_open_for_read_commit( DataHandle , Status )
 #ifdef ZZZ
       CASE ( IO_ZZZ   )
         CALL ext_zzz_open_for_read_commit ( Hndl , Status )
+#endif
+#ifdef GRIB1
+      CASE ( IO_GRIB1   )
+        CALL ext_gr1_open_for_read_commit ( Hndl , Status )
+#endif
+#ifdef GRIB2
+      CASE ( IO_GRIB2   )
+        CALL ext_gr2_open_for_read_commit ( Hndl , Status )
 #endif
 #ifdef INTIO
       CASE ( IO_INTIO   )
@@ -727,6 +830,42 @@ SUBROUTINE wrf_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo, &
       CALL ext_zzz_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo, &
                                Hndl , Status )
 #endif
+#ifdef GRIB1
+    CASE ( IO_GRIB1   )
+      IF ( multi_files(io_form) .OR.  wrf_dm_on_monitor() ) THEN
+        IF ( multi_files(io_form) ) THEN
+            CALL wrf_get_myproc ( myproc )
+            CALL append_to_filename ( LocFilename , FileName , myproc, 4 )
+        ELSE
+            LocFilename = FileName
+        ENDIF
+
+        CALL ext_gr1_open_for_read ( LocFilename , Comm_compute, Comm_io, SysDepInfo, &
+                                     Hndl , Status )
+      ENDIF
+      IF ( .NOT. multi_files(io_form) ) THEN
+        CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
+        CALL wrf_dm_bcast_bytes( Hndl, IWORDSIZE )
+      ENDIF
+#endif
+#ifdef GRIB2
+    CASE ( IO_GRIB2   )
+      IF ( multi_files(io_form) .OR.  wrf_dm_on_monitor() ) THEN
+        IF ( multi_files(io_form) ) THEN
+            CALL wrf_get_myproc ( myproc )
+            CALL append_to_filename ( LocFilename , FileName , myproc, 4 )
+        ELSE
+            LocFilename = FileName
+        ENDIF
+
+        CALL ext_gr2_open_for_read ( LocFilename , Comm_compute, Comm_io, SysDepInfo, &
+                                     Hndl , Status )
+      ENDIF
+      IF ( .NOT. multi_files(io_form) ) THEN
+        CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
+        CALL wrf_dm_bcast_bytes( Hndl, IWORDSIZE )
+      ENDIF
+#endif
 #ifdef INTIO
     CASE ( IO_INTIO   )
       IF ( multi_files(io_form) .OR.  wrf_dm_on_monitor() ) THEN
@@ -804,6 +943,18 @@ SUBROUTINE wrf_inquire_opened ( DataHandle, FileName , FileStatus, Status )
       CASE ( IO_ZZZ   )
           CALL ext_zzz_inquire_opened ( Hndl, FileName , FileStatus, Status )
 #endif
+#ifdef GRIB1
+      CASE ( IO_GRIB1   )
+          IF (wrf_dm_on_monitor()) CALL ext_gr1_inquire_opened ( Hndl, FileName , FileStatus, Status )
+          CALL wrf_dm_bcast_bytes( FileStatus, IWORDSIZE )
+          CALL wrf_dm_bcast_bytes( Status    , IWORDSIZE )
+#endif
+#ifdef GRIB2
+      CASE ( IO_GRIB2   )
+          IF (wrf_dm_on_monitor()) CALL ext_gr2_inquire_opened ( Hndl, FileName , FileStatus, Status )
+          CALL wrf_dm_bcast_bytes( FileStatus, IWORDSIZE )
+          CALL wrf_dm_bcast_bytes( Status    , IWORDSIZE )
+#endif
 #ifdef INTIO
       CASE ( IO_INTIO   )
           IF (wrf_dm_on_monitor()) CALL ext_int_inquire_opened ( Hndl, FileName , FileStatus, Status )
@@ -877,6 +1028,18 @@ SUBROUTINE wrf_inquire_filename ( DataHandle, FileName , FileStatus, Status )
         CASE ( IO_ZZZ   )
             CALL ext_zzz_inquire_filename ( Hndl, FileName , FileStatus, Status )
 #endif
+#ifdef GRIB1
+        CASE ( IO_GRIB1   )
+          IF (wrf_dm_on_monitor()) CALL ext_gr1_inquire_filename ( Hndl, FileName , FileStatus, Status )
+          CALL wrf_dm_bcast_bytes( FileStatus, IWORDSIZE )
+          CALL wrf_dm_bcast_bytes( Status    , IWORDSIZE )
+#endif
+#ifdef GRIB2
+        CASE ( IO_GRIB2   )
+          IF (wrf_dm_on_monitor()) CALL ext_gr2_inquire_filename ( Hndl, FileName , FileStatus, Status )
+          CALL wrf_dm_bcast_bytes( FileStatus, IWORDSIZE )
+          CALL wrf_dm_bcast_bytes( Status    , IWORDSIZE )
+#endif
 #ifdef INTIO
         CASE ( IO_INTIO   )
           IF (wrf_dm_on_monitor()) CALL ext_int_inquire_filename ( Hndl, FileName , FileStatus, Status )
@@ -934,6 +1097,16 @@ SUBROUTINE wrf_iosync ( DataHandle, Status )
 #ifdef YYY
         CASE ( IO_YYY   )
           IF ( multi_files(io_form) .OR. wrf_dm_on_monitor() ) CALL ext_yyy_iosync( Hndl, Status )
+          CALL wrf_dm_bcast_bytes( Status    , IWORDSIZE )
+#endif
+#ifdef GRIB1
+        CASE ( IO_GRIB1   )
+          IF ( multi_files(io_form) .OR. wrf_dm_on_monitor() ) CALL ext_gr1_iosync( Hndl, Status )
+          CALL wrf_dm_bcast_bytes( Status    , IWORDSIZE )
+#endif
+#ifdef GRIB2
+        CASE ( IO_GRIB2   )
+          IF ( multi_files(io_form) .OR. wrf_dm_on_monitor() ) CALL ext_gr2_iosync( Hndl, Status )
           CALL wrf_dm_bcast_bytes( Status    , IWORDSIZE )
 #endif
 #ifdef ZZZ
@@ -1005,6 +1178,16 @@ SUBROUTINE wrf_ioclose ( DataHandle, Status )
 #ifdef ZZZ
         CASE ( IO_ZZZ   )
           CALL ext_zzz_ioclose( Hndl, Status )
+#endif
+#ifdef GRIB1
+        CASE ( IO_GRIB1   )
+          IF ( multi_files(io_form) .OR.  wrf_dm_on_monitor() ) CALL ext_gr1_ioclose( Hndl, Status )
+          CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
+#endif
+#ifdef GRIB2
+        CASE ( IO_GRIB2   )
+          IF ( multi_files(io_form) .OR.  wrf_dm_on_monitor() ) CALL ext_gr2_ioclose( Hndl, Status )
+          CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
 #endif
 #ifdef MCELIO
         CASE ( IO_MCEL   )
@@ -1091,6 +1274,24 @@ SUBROUTINE wrf_get_next_time ( DataHandle, DateStr, Status )
         CASE ( IO_ZZZ   )
           CALL ext_zzz_get_next_time( Hndl, DateStr, Status )
 #endif
+#ifdef GRIB1
+        CASE ( IO_GRIB1   )
+          IF ( multi_files(io_form) .OR.  wrf_dm_on_monitor() ) CALL ext_gr1_get_next_time( Hndl, DateStr, Status )
+          IF ( .NOT. multi_files(io_form) ) THEN
+            CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
+            len_of_str = LEN(DateStr)
+            CALL wrf_dm_bcast_string ( DateStr , len_of_str )
+          ENDIF
+#endif
+#ifdef GRIB2
+        CASE ( IO_GRIB2   )
+          IF ( multi_files(io_form) .OR.  wrf_dm_on_monitor() ) CALL ext_gr2_get_next_time( Hndl, DateStr, Status )
+          IF ( .NOT. multi_files(io_form) ) THEN
+            CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
+            len_of_str = LEN(DateStr)
+            CALL wrf_dm_bcast_string ( DateStr , len_of_str )
+          ENDIF
+#endif
 #ifdef INTIO
         CASE ( IO_INTIO   )
           IF ( multi_files(io_form) .OR.  wrf_dm_on_monitor() ) CALL ext_int_get_next_time( Hndl, DateStr, Status )
@@ -1171,6 +1372,24 @@ SUBROUTINE wrf_get_previous_time ( DataHandle, DateStr, Status )
         CASE ( IO_ZZZ   )
           CALL ext_zzz_get_previous_time( Hndl, DateStr, Status )
 #endif
+#ifdef GRIB1
+        CASE ( IO_GRIB1   )
+          IF ( multi_files(io_form) .OR.  wrf_dm_on_monitor() ) CALL ext_gr1_get_previous_time( Hndl, DateStr, Status )
+          IF ( .NOT. multi_files(io_form) ) THEN
+            CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
+            len_of_str = LEN(DateStr)
+            CALL wrf_dm_bcast_string ( DateStr , len_of_str )
+         ENDIF
+#endif
+#ifdef GRIB2
+        CASE ( IO_GRIB2   )
+          IF ( multi_files(io_form) .OR.  wrf_dm_on_monitor() ) CALL ext_gr2_get_previous_time( Hndl, DateStr, Status )
+          IF ( .NOT. multi_files(io_form) ) THEN
+            CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
+            len_of_str = LEN(DateStr)
+            CALL wrf_dm_bcast_string ( DateStr , len_of_str )
+         ENDIF
+#endif
 #ifdef INTIO
 #endif
         CASE DEFAULT
@@ -1236,6 +1455,16 @@ SUBROUTINE wrf_set_time ( DataHandle, DateStr, Status )
         CASE ( IO_ZZZ   )
           CALL ext_zzz_set_time( Hndl, DateStr, Status )
 #endif
+#ifdef GRIB1
+        CASE ( IO_GRIB1   )
+          IF ( multi_files(io_form) .OR.  wrf_dm_on_monitor() ) CALL ext_gr1_set_time( Hndl, DateStr, Status )
+          CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
+#endif
+#ifdef GRIB2
+        CASE ( IO_GRIB2   )
+          IF ( multi_files(io_form) .OR.  wrf_dm_on_monitor() ) CALL ext_gr2_set_time( Hndl, DateStr, Status )
+          CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
+#endif
 #ifdef INTIO
         CASE ( IO_INTIO   )
           IF ( multi_files(io_form) .OR.  wrf_dm_on_monitor() ) CALL ext_int_set_time( Hndl, DateStr, Status )
@@ -1300,6 +1529,16 @@ SUBROUTINE wrf_get_next_var ( DataHandle, VarName, Status )
 #ifdef ZZZ
         CASE ( IO_ZZZ   )
           CALL ext_zzz_get_next_var( Hndl, VarName, Status )
+#endif
+#ifdef GRIB1
+        CASE ( IO_GRIB1   )
+          IF ( multi_files(io_form) .OR.  wrf_dm_on_monitor() ) CALL ext_gr1_get_next_var( Hndl, VarName, Status )
+          CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
+#endif
+#ifdef GRIB2
+        CASE ( IO_GRIB2   )
+          IF ( multi_files(io_form) .OR.  wrf_dm_on_monitor() ) CALL ext_gr2_get_next_var( Hndl, VarName, Status )
+          CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
 #endif
 #ifdef INTIO
         CASE ( IO_INTIO   )
@@ -1377,6 +1616,20 @@ SUBROUTINE wrf_get_var_info ( DataHandle , VarName , NDim , MemoryOrder , Stagge
 #ifdef YYY
         CASE ( IO_YYY )
           CALL ext_yyy_get_var_info ( Hndl , VarName , NDim ,            &
+                                      MemoryOrder , Stagger ,                  &
+                                      DomainStart , DomainEnd ,                &
+                                      Status )
+#endif
+#ifdef GRIB1
+        CASE ( IO_GRIB1 )
+          CALL ext_gr1_get_var_info ( Hndl , VarName , NDim ,            &
+                                      MemoryOrder , Stagger ,                  &
+                                      DomainStart , DomainEnd ,                &
+                                      Status )
+#endif
+#ifdef GRIB2
+        CASE ( IO_GRIB2 )
+          CALL ext_gr2_get_var_info ( Hndl , VarName , NDim ,            &
                                       MemoryOrder , Stagger ,                  &
                                       DomainStart , DomainEnd ,                &
                                       Status )
@@ -1711,6 +1964,12 @@ SUBROUTINE wrf_read_field1 ( DataHandle , DateStr , VarName , Field , FieldType 
 #ifdef YYY
   EXTERNAL ext_yyy_read_field
 #endif
+#ifdef GRIB1
+  EXTERNAL ext_gr1_read_field
+#endif
+#ifdef GRIB2
+  EXTERNAL ext_gr2_read_field
+#endif
 
   CALL wrf_debug( DEBUG_LVL, 'module_io.F: in wrf_read_field' )
 
@@ -1786,6 +2045,26 @@ SUBROUTINE wrf_read_field1 ( DataHandle , DateStr , VarName , Field , FieldType 
 #ifdef INTIO
         CASE ( IO_INTIO )
           CALL call_pkg_and_dist   ( ext_int_read_field, multi_files(io_form), .false.,         &
+                                     Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
+                                     DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
+                                     DomainStart , DomainEnd ,                                    &
+                                     MemoryStart , MemoryEnd ,                                    &
+                                     PatchStart , PatchEnd ,                                      &
+                                     Status )
+#endif
+#ifdef GRIB1
+        CASE ( IO_GRIB1 )
+          CALL call_pkg_and_dist   ( ext_gr1_read_field, multi_files(io_form), .false.,         &
+                                     Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
+                                     DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
+                                     DomainStart , DomainEnd ,                                    &
+                                     MemoryStart , MemoryEnd ,                                    &
+                                     PatchStart , PatchEnd ,                                      &
+                                     Status )
+#endif
+#ifdef GRIB2
+        CASE ( IO_GRIB2 )
+          CALL call_pkg_and_dist   ( ext_gr2_read_field, multi_files(io_form), .false.,         &
                                      Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
                                      DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
                                      DomainStart , DomainEnd ,                                    &
@@ -1923,6 +2202,12 @@ SUBROUTINE wrf_write_field1 ( DataHandle , DateStr , VarName , Field , FieldType
 #ifdef YYY
   EXTERNAL ext_yyy_write_field
 #endif
+#ifdef GRIB1
+  EXTERNAL ext_gr1_write_field
+#endif
+#ifdef GRIB2
+  EXTERNAL ext_gr2_write_field
+#endif
 
   CALL wrf_debug( DEBUG_LVL, 'module_io.F: in wrf_write_field' )
 
@@ -1984,6 +2269,26 @@ SUBROUTINE wrf_write_field1 ( DataHandle , DateStr , VarName , Field , FieldType
 #ifdef YYY
         CASE ( IO_YYY )
           CALL collect_fld_and_call_pkg ( ext_yyy_write_field, multi_files(io_form),                  &
+                                     Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
+                                     DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
+                                     DomainStart , DomainEnd ,                                    &
+                                     MemoryStart , MemoryEnd ,                                    &
+                                     PatchStart , PatchEnd ,                                      &
+                                     Status )
+#endif
+#ifdef GRIB1
+        CASE ( IO_GRIB1 )
+          CALL collect_fld_and_call_pkg ( ext_gr1_write_field, multi_files(io_form),                  &
+                                     Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
+                                     DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
+                                     DomainStart , DomainEnd ,                                    &
+                                     MemoryStart , MemoryEnd ,                                    &
+                                     PatchStart , PatchEnd ,                                      &
+                                     Status )
+#endif
+#ifdef GRIB2
+        CASE ( IO_GRIB2 )
+          CALL collect_fld_and_call_pkg ( ext_gr2_write_field, multi_files(io_form),                  &
                                      Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
                                      DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
                                      DomainStart , DomainEnd ,                                    &

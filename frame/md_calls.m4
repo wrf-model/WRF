@@ -123,6 +123,58 @@ ifelse($3,real,
 `        CALL ext_yyy_$1_$2_$6_$3$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
                               ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )' )
 #endif
+#ifdef GRIB1
+      CASE ( IO_GRIB1   )
+        IF ( multi_files(io_form) .OR.  wrf_dm_on_monitor() ) THEN
+ifelse($3,real,
+`#  if ( RWORDSIZE == DWORDSIZE )
+           CALL ext_gr1_$1_$2_$6_double$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
+                                 ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )
+#  else
+           CALL ext_gr1_$1_$2_$6_real$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
+                                 ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )
+#  endif',
+`           CALL ext_gr1_$1_$2_$6_$3$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
+                                 ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )' )
+        ENDIF
+        IF ( .NOT. multi_files(io_form) ) THEN
+          ifelse($1,get,ifelse($3,integer,`CALL wrf_dm_bcast_bytes( locCount, IWORDSIZE )'))
+          ifelse($1,get,ifelse($3,integer,`CALL wrf_dm_bcast_bytes( Data, IWORDSIZE*locCount )'))
+          ifelse($1,get,ifelse($3,real,   `CALL wrf_dm_bcast_bytes( locCount, IWORDSIZE )'))
+          ifelse($1,get,ifelse($3,real,   `CALL wrf_dm_bcast_bytes( Data, RWORDSIZE*locCount )'))
+          ifelse($1,get,ifelse($3,logical,`CALL wrf_dm_bcast_bytes( locCount, IWORDSIZE )'))
+          ifelse($1,get,ifelse($3,logical,`CALL wrf_dm_bcast_bytes( Data, LWORDSIZE*locCount )'))
+          ifelse($1,get,ifelse($4,char,   `len_of_str = LEN(Data)'))
+          ifelse($1,get,ifelse($4,char,   `CALL wrf_dm_bcast_string( Data, len_of_str )'))
+          CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
+        ENDIF
+#endif
+#ifdef GRIB2
+      CASE ( IO_GRIB2   )
+        IF ( multi_files(io_form) .OR.  wrf_dm_on_monitor() ) THEN
+ifelse($3,real,
+`#  if ( RWORDSIZE == DWORDSIZE )
+           CALL ext_gr2_$1_$2_$6_double$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
+                                 ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )
+#  else
+           CALL ext_gr2_$1_$2_$6_real$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
+                                 ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )
+#  endif',
+`           CALL ext_gr2_$1_$2_$6_$3$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
+                                 ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )' )
+        ENDIF
+        IF ( .NOT. multi_files(io_form) ) THEN
+          ifelse($1,get,ifelse($3,integer,`CALL wrf_dm_bcast_bytes( locCount, IWORDSIZE )'))
+          ifelse($1,get,ifelse($3,integer,`CALL wrf_dm_bcast_bytes( Data, IWORDSIZE*locCount )'))
+          ifelse($1,get,ifelse($3,real,   `CALL wrf_dm_bcast_bytes( locCount, IWORDSIZE )'))
+          ifelse($1,get,ifelse($3,real,   `CALL wrf_dm_bcast_bytes( Data, RWORDSIZE*locCount )'))
+          ifelse($1,get,ifelse($3,logical,`CALL wrf_dm_bcast_bytes( locCount, IWORDSIZE )'))
+          ifelse($1,get,ifelse($3,logical,`CALL wrf_dm_bcast_bytes( Data, LWORDSIZE*locCount )'))
+          ifelse($1,get,ifelse($4,char,   `len_of_str = LEN(Data)'))
+          ifelse($1,get,ifelse($4,char,   `CALL wrf_dm_bcast_string( Data, len_of_str )'))
+          CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
+        ENDIF
+#endif
 #ifdef INTIO
       CASE ( IO_INTIO   )
         IF ( multi_files(io_form) .OR.  wrf_dm_on_monitor() ) THEN

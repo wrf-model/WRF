@@ -338,6 +338,12 @@ MODULE module_wrf_quilt
 #ifdef ZZZ
       CALL ext_zzz_ioinit( SysDepInfo, ierr)
 #endif
+#ifdef GRIB1
+      CALL ext_gr1_ioinit( SysDepInfo, ierr)
+#endif
+#ifdef GRIB2
+      CALL ext_gr2_ioinit( SysDepInfo, ierr)
+#endif
 
       okay_to_commit = .false.
       stored_write_record = .false.
@@ -405,6 +411,12 @@ MODULE module_wrf_quilt
 #endif
 #ifdef ZZZ
           CALL ext_zzz_ioexit( Status )
+#endif
+#ifdef GRIB1
+          CALL ext_gr1_ioexit( Status )
+#endif
+#ifdef GRIB2
+          CALL ext_gr2_ioexit( Status )
 #endif
           CALL wrf_message ( 'I/O QUILT SERVERS DONE' )
           CALL mpi_finalize(ierr)
@@ -673,7 +685,15 @@ MODULE module_wrf_quilt
                  CASE ( IO_YYY )
                     CALL ext_yyy_put_dom_td_real( handle(DataHandle),TRIM(Element),TRIM(DateStr),RData, Count, Status )
 #endif
-                    CASE DEFAULT
+#ifdef GRIB1
+                 CASE ( IO_GRIB1 )
+                    CALL ext_gr1_put_dom_td_real( handle(DataHandle),TRIM(Element),TRIM(DateStr),RData, Count, Status )
+#endif
+#ifdef GRIB2
+                 CASE ( IO_GRIB2 )
+                    CALL ext_gr2_put_dom_td_real( handle(DataHandle),TRIM(Element),TRIM(DateStr),RData, Count, Status )
+#endif
+                     CASE DEFAULT
                       Status = 0
                   END SELECT
 
@@ -704,6 +724,14 @@ MODULE module_wrf_quilt
 #ifdef YYY
                  CASE ( IO_YYY )
                     CALL ext_yyy_put_dom_ti_real( handle(DataHandle),TRIM(Element), RData, Count, Status )
+#endif
+#ifdef GRIB1
+                 CASE ( IO_GRIB1 )
+                    CALL ext_gr1_put_dom_ti_real( handle(DataHandle),TRIM(Element), RData, Count, Status )
+#endif
+#ifdef GRIB2
+                 CASE ( IO_GRIB2 )
+                    CALL ext_gr2_put_dom_ti_real( handle(DataHandle),TRIM(Element), RData, Count, Status )
 #endif
                     CASE DEFAULT
                       Status = 0
@@ -737,6 +765,14 @@ MODULE module_wrf_quilt
                  CASE ( IO_YYY )
                     CALL ext_yyy_put_dom_td_integer( handle(DataHandle),TRIM(Element), Trim(DateStr), IData, Count, Status )
 #endif
+#ifdef GRIB1
+                 CASE ( IO_GRIB1 )
+                    CALL ext_gr1_put_dom_td_integer( handle(DataHandle),TRIM(Element), Trim(DateStr), IData, Count, Status )
+#endif
+#ifdef GRIB2
+                 CASE ( IO_GRIB2 )
+                    CALL ext_gr2_put_dom_td_integer( handle(DataHandle),TRIM(Element), Trim(DateStr), IData, Count, Status )
+#endif
                     CASE DEFAULT
                       Status = 0
                   END SELECT
@@ -769,6 +805,14 @@ MODULE module_wrf_quilt
 #ifdef YYY
                  CASE ( IO_YYY )
                     CALL ext_yyy_put_dom_ti_integer( handle(DataHandle),TRIM(Element), IData, Count, Status )
+#endif
+#ifdef GRIB1
+                 CASE ( IO_GRIB1 )
+                    CALL ext_gr1_put_dom_ti_integer( handle(DataHandle),TRIM(Element), IData, Count, Status )
+#endif
+#ifdef GRIB2
+                 CASE ( IO_GRIB2 )
+                    CALL ext_gr2_put_dom_ti_integer( handle(DataHandle),TRIM(Element), IData, Count, Status )
 #endif
 
                     CASE DEFAULT
@@ -820,6 +864,14 @@ MODULE module_wrf_quilt
                  CASE ( IO_YYY )
                     CALL ext_yyy_put_dom_ti_char ( handle(DataHandle), TRIM(Element), TRIM(CData), Status)
 #endif
+#ifdef GRIB1
+                 CASE ( IO_GRIB1 )
+                    CALL ext_gr1_put_dom_ti_char ( handle(DataHandle), TRIM(Element), TRIM(CData), Status)
+#endif
+#ifdef GRIB2
+                 CASE ( IO_GRIB2 )
+                    CALL ext_gr2_put_dom_ti_char ( handle(DataHandle), TRIM(Element), TRIM(CData), Status)
+#endif
                     CASE DEFAULT
                       Status = 0
                   END SELECT
@@ -848,6 +900,14 @@ MODULE module_wrf_quilt
 #ifdef YYY
                  CASE ( IO_YYY )
                     CALL ext_yyy_put_var_ti_char ( handle(DataHandle), TRIM(Element), TRIM(VarName), TRIM(CData), Status)
+#endif
+#ifdef GRIB1
+                 CASE ( IO_GRIB1 )
+                    CALL ext_gr1_put_var_ti_char ( handle(DataHandle), TRIM(Element), TRIM(VarName), TRIM(CData), Status)
+#endif
+#ifdef GRIB2
+                 CASE ( IO_GRIB2 )
+                    CALL ext_gr2_put_var_ti_char ( handle(DataHandle), TRIM(Element), TRIM(VarName), TRIM(CData), Status)
 #endif
                     CASE DEFAULT
                       Status = 0
@@ -892,6 +952,20 @@ MODULE module_wrf_quilt
                       CALL ext_yyy_ioclose(handle(DataHandle),Status)
                     ENDIF
 #endif
+#ifdef GRIB1
+                 CASE ( IO_GRIB1 )
+                    CALL ext_gr1_inquire_filename( handle(DataHandle), fname, fstat, Status )
+                    IF ( fstat .EQ. WRF_FILE_OPENED_FOR_WRITE .OR. fstat .EQ. WRF_FILE_OPENED_NOT_COMMITTED ) THEN
+                      CALL ext_gr1_ioclose(handle(DataHandle),Status)
+                    ENDIF
+#endif
+#ifdef GRIB2
+                 CASE ( IO_GRIB2 )
+                    CALL ext_gr2_inquire_filename( handle(DataHandle), fname, fstat, Status )
+                    IF ( fstat .EQ. WRF_FILE_OPENED_FOR_WRITE .OR. fstat .EQ. WRF_FILE_OPENED_NOT_COMMITTED ) THEN
+                      CALL ext_gr2_ioclose(handle(DataHandle),Status)
+                    ENDIF
+#endif
                     CASE DEFAULT
                       Status = 0
                   END SELECT
@@ -928,6 +1002,14 @@ MODULE module_wrf_quilt
 #ifdef YYY
                     CASE ( IO_YYY )
                        CALL ext_yyy_open_for_write_begin(FileName,Comm,IOComm,SysDepInfo,handle(DataHandle),Status)
+#endif
+#ifdef GRIB1
+                    CASE ( IO_GRIB1 )
+                       CALL ext_gr1_open_for_write_begin(FileName,Comm,IOComm,SysDepInfo,handle(DataHandle),Status)
+#endif
+#ifdef GRIB2
+                    CASE ( IO_GRIB2 )
+                       CALL ext_gr2_open_for_write_begin(FileName,Comm,IOComm,SysDepInfo,handle(DataHandle),Status)
 #endif
                     CASE DEFAULT
                       Status = 0
@@ -1110,6 +1192,22 @@ MODULE module_wrf_quilt
                        okay_to_write(DataHandle) = .true.
                     ENDIF
 #endif
+#ifdef GRIB1
+                 CASE ( IO_GRIB1 )
+                    CALL ext_gr1_inquire_filename( handle(DataHandle), fname, fstat, Status )
+                    IF ( fstat .EQ. WRF_FILE_OPENED_NOT_COMMITTED ) THEN
+                       CALL ext_gr1_open_for_write_commit(handle(DataHandle),Status)
+                       okay_to_write(DataHandle) = .true.
+                    ENDIF
+#endif
+#ifdef GRIB2
+                 CASE ( IO_GRIB2 )
+                    CALL ext_gr2_inquire_filename( handle(DataHandle), fname, fstat, Status )
+                    IF ( fstat .EQ. WRF_FILE_OPENED_NOT_COMMITTED ) THEN
+                       CALL ext_gr2_open_for_write_commit(handle(DataHandle),Status)
+                       okay_to_write(DataHandle) = .true.
+                    ENDIF
+#endif
 
                 CASE DEFAULT
                   Status = 0
@@ -1167,6 +1265,14 @@ MODULE module_wrf_quilt
 #ifdef ZZZ
           CASE ( IO_ZZZ   )
             CALL ext_zzz_iosync( handle(DataHandle), Status )
+#endif
+#ifdef GRIB1
+          CASE ( IO_GRIB1   )
+            CALL ext_gr1_iosync( handle(DataHandle), Status )
+#endif
+#ifdef GRIB2
+          CASE ( IO_GRIB2   )
+            CALL ext_gr2_iosync( handle(DataHandle), Status )
 #endif
 #ifdef INTIO
           CASE ( IO_INTIO   )

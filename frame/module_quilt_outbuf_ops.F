@@ -157,6 +157,88 @@ CONTAINS
                                  Status )
           ENDIF
 #endif
+#ifdef GRIB1
+      CASE ( IO_GRIB1   )
+
+          IF ( outbuf_table(ii)%FieldType .EQ. WRF_REAL ) THEN
+
+          CALL ext_gr1_write_field ( DataHandle ,                                   &
+                                 TRIM(outbuf_table(ii)%DateStr),                      &
+                                 TRIM(outbuf_table(ii)%VarName),                      &
+                                 outbuf_table(ii)%rptr(ds1:de1,ds2:de2,ds3:de3),      &
+                                 outbuf_table(ii)%FieldType,                          &  !*
+                                 Comm, IOComm, DomainDesc ,                           &
+                                 TRIM(outbuf_table(ii)%MemoryOrder),                  &
+                                 TRIM(outbuf_table(ii)%Stagger),                      &  !*
+                                 outbuf_table(ii)%DimNames ,                          &  !*
+                                 outbuf_table(ii)%DomainStart,                        &
+                                 outbuf_table(ii)%DomainEnd,                          &
+                                 outbuf_table(ii)%DomainStart,                        &
+                                 outbuf_table(ii)%DomainEnd,                          &
+                                 outbuf_table(ii)%DomainStart,                        &
+                                 outbuf_table(ii)%DomainEnd,                          &
+                                 Status )
+
+          ELSE IF ( outbuf_table(ii)%FieldType .EQ. WRF_INTEGER ) THEN
+          CALL ext_gr1_write_field ( DataHandle ,                                   &
+                                 TRIM(outbuf_table(ii)%DateStr),                      &
+                                 TRIM(outbuf_table(ii)%VarName),                      &
+                                 outbuf_table(ii)%iptr(ds1:de1,ds2:de2,ds3:de3),      &
+                                 outbuf_table(ii)%FieldType,                          &  !*
+                                 Comm, IOComm, DomainDesc ,                           &
+                                 TRIM(outbuf_table(ii)%MemoryOrder),                  &
+                                 TRIM(outbuf_table(ii)%Stagger),                      &  !*
+                                 outbuf_table(ii)%DimNames ,                          &  !*
+                                 outbuf_table(ii)%DomainStart,                        &
+                                 outbuf_table(ii)%DomainEnd,                          &
+                                 outbuf_table(ii)%DomainStart,                        &
+                                 outbuf_table(ii)%DomainEnd,                          &
+                                 outbuf_table(ii)%DomainStart,                        &
+                                 outbuf_table(ii)%DomainEnd,                          &
+                                 Status )
+          ENDIF
+#endif
+#ifdef GRIB2
+      CASE ( IO_GRIB2   )
+
+          IF ( outbuf_table(ii)%FieldType .EQ. WRF_REAL ) THEN
+
+          CALL ext_gr2_write_field ( DataHandle ,                                   &
+                                 TRIM(outbuf_table(ii)%DateStr),                      &
+                                 TRIM(outbuf_table(ii)%VarName),                      &
+                                 outbuf_table(ii)%rptr(ds1:de1,ds2:de2,ds3:de3),      &
+                                 outbuf_table(ii)%FieldType,                          &  !*
+                                 Comm, IOComm, DomainDesc ,                           &
+                                 TRIM(outbuf_table(ii)%MemoryOrder),                  &
+                                 TRIM(outbuf_table(ii)%Stagger),                      &  !*
+                                 outbuf_table(ii)%DimNames ,                          &  !*
+                                 outbuf_table(ii)%DomainStart,                        &
+                                 outbuf_table(ii)%DomainEnd,                          &
+                                 outbuf_table(ii)%DomainStart,                        &
+                                 outbuf_table(ii)%DomainEnd,                          &
+                                 outbuf_table(ii)%DomainStart,                        &
+                                 outbuf_table(ii)%DomainEnd,                          &
+                                 Status )
+
+          ELSE IF ( outbuf_table(ii)%FieldType .EQ. WRF_INTEGER ) THEN
+          CALL ext_gr2_write_field ( DataHandle ,                                   &
+                                 TRIM(outbuf_table(ii)%DateStr),                      &
+                                 TRIM(outbuf_table(ii)%VarName),                      &
+                                 outbuf_table(ii)%iptr(ds1:de1,ds2:de2,ds3:de3),      &
+                                 outbuf_table(ii)%FieldType,                          &  !*
+                                 Comm, IOComm, DomainDesc ,                           &
+                                 TRIM(outbuf_table(ii)%MemoryOrder),                  &
+                                 TRIM(outbuf_table(ii)%Stagger),                      &  !*
+                                 outbuf_table(ii)%DimNames ,                          &  !*
+                                 outbuf_table(ii)%DomainStart,                        &
+                                 outbuf_table(ii)%DomainEnd,                          &
+                                 outbuf_table(ii)%DomainStart,                        &
+                                 outbuf_table(ii)%DomainEnd,                          &
+                                 outbuf_table(ii)%DomainStart,                        &
+                                 outbuf_table(ii)%DomainEnd,                          &
+                                 Status )
+          ENDIF
+#endif
 #ifdef INTIO
         CASE ( IO_INTIO  )
           IF ( outbuf_table(ii)%FieldType .EQ. WRF_REAL ) THEN

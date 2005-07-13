@@ -283,7 +283,7 @@ float *outdata;
     
   {    
       if (bds_head->ulGrid_size && bds_head->ulGrid_size != num_calc) {
-	DPRINT0("\Averting failure of grid size test\n");
+	DPRINT0("Averting failure of grid size test\n");
 	/*
 	DPRINT3 ( "%s:  GDS present, #datapts calculated (%d) " \
 	   "not same as GDS's grid size (%d)\n",

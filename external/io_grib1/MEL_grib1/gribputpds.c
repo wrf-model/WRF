@@ -509,7 +509,7 @@ int inp2grib_PDS ( pPDS_Input, ppPGDS_Grib, errmsg)
       swap_byte4(&tmp_byte4);
       memcpy((void *)tpds->PDS_42, (void *)&tmp_byte4, 4);
 #else
-      memcpy((void *)tpds->PDS_42, (void *)&(pPDS_Input->PDS_42), 4)
+      memcpy((void *)tpds->PDS_42, (void *)&(pPDS_Input->PDS_42), 4) ;
 #endif
 
       tpds->PDS_46 = (unsigned char)pPDS_Input->PDS_46;
@@ -518,7 +518,7 @@ int inp2grib_PDS ( pPDS_Input, ppPGDS_Grib, errmsg)
       swap_byte4(&tmp_byte4);
       memcpy((void *)tpds->PDS_47, (void *)&tmp_byte4, 4);
 #else
-      memcpy((void *)tpds->PDS_47, (void *)&(pPDS_Input->PDS_47), 4)
+      memcpy((void *)tpds->PDS_47, (void *)&(pPDS_Input->PDS_47), 4) ;
 #endif
 
       tpds->PDS_51 = (unsigned char)pPDS_Input->PDS_51;

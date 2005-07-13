@@ -133,8 +133,8 @@ int READ_GRIBMAP (char *filename, Grib1_Tables *grib_tables, int *ret)
       /* Assure that we have not gone beyond 256 entries! */
       if (grib_tables->grib_table_info[tablenum].num_entries >= 256) 
 	{
-	  fprintf(stderr,"Error: Invalid number of lines in table %d in, \n
-                          skipping line: %s \n",
+	  fprintf(stderr,
+"Error: Invalid number of lines in table %d in, \n skipping line: %s \n",
 		  tablenum,line);
 	  break;
 	}

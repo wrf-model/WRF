@@ -385,6 +385,12 @@ else if ( $NESTED != TRUE ) then
 	if ( $CHEM == TRUE ) then
 		set CORES = ( em_real )
 	endif
+	if ( $ESMF_LIB == TRUE ) then
+		set CORES = ( em_real em_b_wave em_quarter_ss )
+	endif
+	if ( $IO_FORM_NAME[$IO_FORM] == io_grib1 ) then
+		set CORES = ( em_real em_b_wave em_quarter_ss )
+	endif
 endif
 
 #	The b_wave case has binary input (4-byte only), the nmm
@@ -1459,6 +1465,12 @@ banner 7
 					sed -e '/^OMP/d' -e '/^FCOPTIM/d' -e '/^FCDEBUG/s/#-g/-g/g' ./configure.wrf >! foo ; /bin/mv foo configure.wrf
 				else
 					sed              -e '/^FCOPTIM/d' -e '/^FCDEBUG/s/#-g/-g/g' ./configure.wrf >! foo ; /bin/mv foo configure.wrf
+				endif
+			else if ( `uname` == OSF1 ) then
+		 		if ( ( $compopt == $COMPOPTS[1] ) || ( $compopt == $COMPOPTS[3] ) ) then
+					sed -e '/^OMP/d' -e '/^FCOPTIM/d' -e '/^FCDEBUG/s/#/#/g' ./configure.wrf >! foo ; /bin/mv foo configure.wrf
+				else
+					sed              -e '/^FCOPTIM/d' -e '/^FCDEBUG/s/#/#/g' ./configure.wrf >! foo ; /bin/mv foo configure.wrf
 				endif
 			else
 		 		if ( ( $compopt == $COMPOPTS[1] ) || ( $compopt == $COMPOPTS[3] ) ) then

@@ -381,6 +381,7 @@ SUBROUTINE ext_yyy_write_field( DataHandle , DateStr , VarName , &
   integer :: idx1, idx2, idx3
   integer :: this_domain
   logical :: new_domain
+  character (len=12) :: gribmap_txt_name
 
   !
   ! Check if this is a domain that we haven't seen yet.  If so, add it to 
@@ -424,7 +425,8 @@ SUBROUTINE ext_yyy_write_field( DataHandle , DateStr , VarName , &
   if (.not. ASSOCIATED(grib_table_info)) then
      CALL get_grib_struct_size(size)
      ALLOCATE(grib_table_info(1:size), STAT=istat)
-     CALL read_gribmap("gribmap.txt",grib_table_info,istat)
+     gribmap_txt_name = "gribmap.txt" // ACHAR(0)
+     CALL read_gribmap(gribmap_txt_name,grib_table_info,istat)
      if (istat .eq. -1) then
         DEALLOCATE(grib_table_info)
         Status = WRF_ERR_FATAL_BAD_FILE_STATUS

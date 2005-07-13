@@ -23,15 +23,10 @@ int fill_proj_parms(GridNav *gridnav);
  *                 projection
  *   num_columns - number of columns in grid
  *   num_rows    - number of rows in grid
- *   dx          - distance between grid points, in degrees longitude for 
- *                 mercator and lat/lon projections.  In km for other 
- *                 projections.
- *   dx          - east-west distance between grid points, in degrees for 
- *                 mercator and lat/lon projections.  In km for other 
- *                 projections.
- *   dy          - north-south distance between grid points, in degrees for 
- *                 mercator and lat/lon projections.  In km for other 
- *                 projections.
+ *   dx,dy       - east-west (dx) and north-south (dy) distance between grid 
+ *                 points, in degrees for latlon (i.e., cylindrical 
+ *                 equidistant) projection, in km for all other projections 
+ *                 (including mercator).
  *   lat_origin  - latitude of grid point defined in origin_column, origin_row
  *   lon_origin  - longitude of grid point defined in origin_column, origin_row
  *   origin_column - column for lat_origin, long_origin pair

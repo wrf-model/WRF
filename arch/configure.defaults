@@ -14,7 +14,7 @@ PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS		=
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../chem -I../inc
-ARCHFLAGS       =       -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   -DLIMIT_ARGS
+ARCHFLAGS       =       -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DGRIB1 -DTRIEDNTRUE   -DLIMIT_ARGS
 LDFLAGS		=       CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP		=	/lib/cpp -C -P
@@ -105,7 +105,7 @@ CFLAGS		=
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int -I../frame -I../share -I../phys -I../chem  \
                        	-I../external/esmf_time_f90 -I../inc
 ARCHFLAGS       =       -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
-                        -DTRIEDNTRUE   -DINTIO -DLIMIT_ARGS
+                        -DGRIB1 -DTRIEDNTRUE   -DINTIO -DLIMIT_ARGS
 LDFLAGS		=       CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP		=	/lib/cpp
@@ -192,8 +192,8 @@ PROMOTION	=	-r$(RWORDSIZE) -i4
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../chem -I../inc
 ARCHFLAGS       =       -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
-                        CONFIGURE_NETCDF_FLAG \
-                        -DTRIEDNTRUE   -DINTIO -DYYY -DLIMIT_ARGS -DLANDREAD_STUB
+                        CONFIGURE_NETCDF_FLAG -DGRIB1 \
+                        -DTRIEDNTRUE   -DINTIO -DLIMIT_ARGS -DLANDREAD_STUB
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH \
@@ -284,7 +284,7 @@ FCDEBUG         =       # -g
 FCBASEOPTS      =       -freeform -I. -w
 FCFLAGS         =       -freeform -I. -O3 -OPT:roundoff=3:IEEE_arithmetic=3 -OPT:fold_arith_limit=2001
 ARCHFLAGS       =       -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
-                        -DINTIO -DTRIEDNTRUE   -DLIMIT_ARGS
+                        -DGRIB1 -DINTIO -DTRIEDNTRUE   -DLIMIT_ARGS
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int -I../frame -I../share \
                         -I../phys -I../chem -I../inc -I../external/esmf_time_f90
 PERL            =       CONFIGURE_PERL_PATH
@@ -376,8 +376,8 @@ FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../chem -I../inc
 ARCHFLAGS       =       -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
-                        CONFIGURE_NETCDF_FLAG \
-                        -DTRIEDNTRUE   -DYYY -DINTIO -DLIMIT_ARGS -DLANDREAD_STUB
+                        CONFIGURE_NETCDF_FLAG -DGRIB1 \
+                        -DTRIEDNTRUE  -DINTIO -DLIMIT_ARGS -DLANDREAD_STUB
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH $(OMP) \
@@ -477,7 +477,7 @@ FCDEBUG         =       # -g
 FCOPTIM         =       -O3 -OPT:roundoff=3:IEEE_arithmetic=3
 FCBASEOPTS	=	-freeform -I. -64 -mips4 -w $(FCDEBUG) -w
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
-ARCHFLAGS       =       -DINTIO -DYYY -DWRF_RSL_IO -DRSL -DDM_PARALLEL -DIWORDSIZE=4 \
+ARCHFLAGS       =       -DINTIO -DGRIB1 -DWRF_RSL_IO -DRSL -DDM_PARALLEL -DIWORDSIZE=4 \
                         -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
                         -DTRIEDNTRUE   -DLIMIT_ARGS -DLANDREAD_STUB
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int -I../frame -I../external/esmf_time_f90 \
@@ -589,7 +589,7 @@ INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../exter
 			-M../external/io_netcdf -M../external/io_int -M../external/esmf_time_f90 \
 			-M../frame -M../share -M../phys -M../inc \
 			-M../dyn_em 
-ARCHFLAGS       =       -DINTIO -DYYY -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+ARCHFLAGS       =       -DINTIO -DGRIB1 -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   \
 			-DLIMIT_ARGS
 PERL            =       CONFIGURE_PERL_PATH
@@ -703,7 +703,7 @@ LD              =       f95
 CC              =       cc
 SCC		=	$(CC)
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
-ARCHFLAGS       =       -DNETCDF -DYYY -DINTIO \
+ARCHFLAGS       =       -DNETCDF -DGRIB1 -DINTIO \
                         -DDM_PARALLEL -DRSL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         -DTRIEDNTRUE   \
@@ -840,7 +840,7 @@ INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../exter
 			-M../external/io_netcdf -M../external/io_int -M../external/esmf_time_f90 \
 			-M../frame -M../share -M../phys -M../inc \
 			-M../dyn_em 
-ARCHFLAGS       =       -DYYY -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+ARCHFLAGS       =       -DGRIB1 -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   \
 			-DLIMIT_ARGS
 PERL            =       CONFIGURE_PERL_PATH
@@ -939,7 +939,7 @@ LD              =       f95
 CC              =       cc
 SCC		=	$(CC)
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
-ARCHFLAGS       =       -DNETCDF -DYYY -DINTIO \
+ARCHFLAGS       =       -DNETCDF -DGRIB1 -DINTIO \
                         -DDM_PARALLEL -DRSL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         -DTRIEDNTRUE   \
@@ -1058,7 +1058,7 @@ FCBASEOPTS      =       -qspill=20000 $(FCDEBUG) -qmaxmem=32767 -w #-qflttrap=ze
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../chem -I../inc
-ARCHFLAGS       =       -DYYY -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+ARCHFLAGS       =       -DGRIB1 -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   \
 			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DNATIVE_MASSV
 PERL            =       CONFIGURE_PERL_PATH
@@ -1173,7 +1173,7 @@ FCBASEOPTS      =       -w -qspill=20000 $(FCDEBUG) -qmaxmem=32767 #-qflttrap=ze
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../chem -I../inc
-ARCHFLAGS       =       -DYYY -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+ARCHFLAGS       =       -DGRIB1 -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   \
 			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DNATIVE_MASSV
 PERL            =       CONFIGURE_PERL_PATH
@@ -1257,7 +1257,7 @@ FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../chem -I../inc
 ARCHFLAGS       =       -DRSL_LITE -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) \
-                        -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   -DYYY -DINTIO \
+                        -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   -DGRIB1 -DINTIO \
 			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DNATIVE_MASSV
 PERL            =       perl
 REGISTRY        =       Registry
@@ -1367,7 +1367,7 @@ FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../chem -I../inc
 ARCHFLAGS       =       -DWRF_RSL_IO -DRSL -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) \
-                        -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   -DYYY -DINTIO \
+                        -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   -DGRIB1 -DINTIO \
 			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DNATIVE_MASSV
 PERL            =       perl
 REGISTRY        =       Registry
@@ -1477,7 +1477,7 @@ FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 INCLUDE_MODULES =       -I../external/io_netcdf  -I../external/io_phdf5 -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../chem -I../inc
 ARCHFLAGS       =       -DWRF_RSL_IO -DRSL -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) \
-                        -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG CONFIGURE_PHDF5_FLAG -DTRIEDNTRUE   -DYYY -DINTIO \
+                        -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_PHDF5_FLAG -DTRIEDNTRUE   -DGRIB1 -DINTIO \
 			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DNATIVE_MASSV
 PERL            =       perl
 REGISTRY        =       Registry
@@ -1590,7 +1590,7 @@ FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 INCLUDE_MODULES =       -I../external/io_netcdf  -I../external/io_phdf5 -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../inc
 ARCHFLAGS       =       -DRSL_LITE -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) \
-                        -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG CONFIGURE_PHDF5_FLAG -DTRIEDNTRUE   -DYYY -DINTIO \
+                        -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG CONFIGURE_PHDF5_FLAG -DTRIEDNTRUE   -DGRIB1 -DINTIO \
 			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DNATIVE_MASSV
 PERL            =       perl
 REGISTRY        =       Registry
@@ -1704,7 +1704,7 @@ FCBASEOPTS      =       -w -qspill=20000 $(FCDEBUG) -qmaxmem=32767 #-qflttrap=ze
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../chem -I../inc
-ARCHFLAGS       =       -DYYY -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) \
+ARCHFLAGS       =       -DGRIB1 -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) \
                         -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   \
 			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DNATIVE_MASSV
 PERL            =       CONFIGURE_PERL_PATH
@@ -1836,7 +1836,7 @@ FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 INCLUDE_MODULES =       -I../../inc -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../chem -I../inc
 ARCHFLAGS       =       -DWRF_RSL_IO -DRSL -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) \
-                        -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   -DYYY -DINTIO -DMCELIO -DLIMIT_ARGS \
+                        -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   -DGRIB1 -DINTIO -DMCELIO -DLIMIT_ARGS \
                         -DNO_NAMELIST_PRINT -DNATIVE_MASSV
 PERL            =       perl
 REGISTRY        =       Registry
@@ -1979,7 +1979,7 @@ INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I$(ESMF_I
 ESMF_MOD_DEPENDENCE =   $(ESMF_IO_DIR)/module_utility.o
 
 ARCHFLAGS       =       -DWRF_RSL_IO -DRSL -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) \
-                        -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   -DYYY -DINTIO \
+                        -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   -DGRIB1 -DINTIO \
 			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DNATIVE_MASSV -DESMFIO -DUSE_LOGERR
 PERL            =       perl
 REGISTRY        =       Registry
@@ -2090,7 +2090,7 @@ FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../chem -I../inc
 ARCHFLAGS       =       -DWRF_RSL_IO -DRSL -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) \
-                        -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   -DYYY -DINTIO \
+                        -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   -DGRIB1 -DINTIO \
 			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DNATIVE_MASSV -DSTUBMPI
 PERL            =       perl
 REGISTRY        =       Registry
@@ -2204,7 +2204,7 @@ FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../chem -I../inc
 ARCHFLAGS       =       -DWRF_RSL_IO -DRSL -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) \
-                        -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   -DYYY -DINTIO \
+                        -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   -DGRIB1 -DINTIO \
 			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DNATIVE_MASSV -DSTUBMPI
 PERL            =       perl
 REGISTRY        =       Registry
@@ -2316,10 +2316,10 @@ CC              =       cc
 SCC		=	$(CC)
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
-ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DYYY -DINTIO \
+ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DGRIB1 -DINTIO \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         -DTRIEDNTRUE   \
-			-DLIMIT_ARGS -DFLOATSAFE -DYYY
+			-DLIMIT_ARGS -DFLOATSAFE -DGRIB1
 PROMOTION	=	-real_size $(RSIZEBITS) -integer_size `expr 4 \* 8`
 CFLAGS          =       $(ARCHFLAGS)
 FCOPTIM         =       -fast -O4
@@ -2426,7 +2426,7 @@ CC              =       cc
 SCC		=	$(CC)
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
-ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DNETCDF -DYYY -DINTIO -DWRF_RSL_IO \
+ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DNETCDF -DGRIB1 -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL -DRSL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         -DTRIEDNTRUE   \
@@ -2545,7 +2545,7 @@ CC              =       cc
 SCC		=	$(CC)
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
-ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DYYY -DINTIO \
+ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DGRIB1 -DINTIO \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         -DTRIEDNTRUE   \
 			-DLIMIT_ARGS -DFLOATSAFE
@@ -2656,7 +2656,7 @@ CC              =       cc
 SCC		=	$(CC)
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
-ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DNETCDF -DYYY -DINTIO -DWRF_RSL_IO \
+ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DNETCDF -DGRIB1 -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL -DRSL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         -DTRIEDNTRUE   \
@@ -2780,7 +2780,7 @@ CC              =       mpicc
 SCC		=	cc
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
-ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DNETCDF -DYYY -DINTIO \
+ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DNETCDF -DGRIB1 -DINTIO \
                         -DDM_PARALLEL -DRSL_LITE \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         -DTRIEDNTRUE   \
@@ -2903,7 +2903,7 @@ CC              =       mpicc
 SCC		=	cc
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
-ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DYYY -DINTIO -DWRF_RSL_IO \
+ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DGRIB1 -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL -DRSL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         -DTRIEDNTRUE   \
@@ -3026,7 +3026,7 @@ CC              =       mpicc
 SCC		=	cc
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
-ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DYYY -DINTIO -DWRF_RSL_IO \
+ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DGRIB1 -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL -DRSL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         -DTRIEDNTRUE   \
@@ -3150,7 +3150,7 @@ CC              =       cc
 SCC		=	$(CC)
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
-ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DYYY -DINTIO -DWRF_RSL_IO \
+ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DGRIB1 -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL -DRSL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         -DTRIEDNTRUE   \
@@ -3270,7 +3270,7 @@ CC              =       mpicc
 SCC		=	cc
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
-ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DYYY -DINTIO -DWRF_RSL_IO \
+ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE CONFIGURE_NETCDF_FLAG -DGRIB1 -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL -DRSL -DFLOATSAFE \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         -DTRIEDNTRUE   \
@@ -3399,7 +3399,7 @@ CC              =       echo # mpicc
 SCC		=	echo # cc
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
-ARCHFLAGS       =       -DAUTODOC_BUILD CONFIGURE_NETCDF_FLAG -DYYY -DINTIO -DWRF_RSL_IO \
+ARCHFLAGS       =       -DAUTODOC_BUILD CONFIGURE_NETCDF_FLAG -DGRIB1 -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL="'<b>DM_PARALLEL</b>'" -DRSL="'<b>RSL</b>'" \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         -DTRIEDNTRUE   \
@@ -3514,7 +3514,7 @@ FCBASENOINL     =       -convert big_endian -O1 -automatic -cpp -free -I. -arch 
 FCBASEOPTS      =       -w -convert big_endian -automatic -cpp -free -I. \
                         -arch host $(FCDEBUG)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
-ARCHFLAGS       =       -DYYY -DINTIO -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+ARCHFLAGS       =       -DGRIB1 -DINTIO -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE  
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../chem -I../inc
@@ -3604,7 +3604,7 @@ FCBASENOINL     =       -convert big_endian -O1 -automatic -cpp -free -I. -arch 
 FCBASEOPTS      =       -w -convert big_endian -automatic -cpp -free -I. \
                         -arch host $(FCDEBUG)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
-ARCHFLAGS       =       -DYYY -DINTIO -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+ARCHFLAGS       =       -DGRIB1 -DINTIO -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE  
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../chem -I../inc
@@ -3701,7 +3701,7 @@ FCBASENOINL     =       -convert big_endian -O1 -automatic -cpp -free -I. -arch 
 FCBASEOPTS      =       -w -convert big_endian -automatic -cpp -free -I. \
                         -arch host $(FCDEBUG)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
-ARCHFLAGS       =       -DYYY -DINTIO -DWRF_RSL_IO -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DRSL -DDM_PARALLEL \
+ARCHFLAGS       =       -DGRIB1 -DINTIO -DWRF_RSL_IO -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DRSL -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE  
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
@@ -3800,7 +3800,7 @@ FCFLAGS         =       -Free -X9 -Am
 FCFLAGS         =       -Free -X9 -Sw -Wv,-Of,-te,-ilfunc,-noalias,-m3,-P255 -Oe,-P -Kfast -Am
 FCDEBUG         =       # -g
 FCBASEOPTS      =       $(FCFLAGS)
-ARCHFLAGS       = CONFIGURE_NETCDF_FLAG -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4  -DTRIEDNTRUE   \
+ARCHFLAGS       = CONFIGURE_NETCDF_FLAG -DGRIB1 -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4  -DTRIEDNTRUE   \
 			-DLIMIT_ARGS
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
@@ -3842,7 +3842,7 @@ CFLAGS          =
 FCFLAGS		=	-f free -N 255 -I.
 FCDEBUG         =       # -g
 FCBASEOPTS	=	$(FCFLAGS)
-ARCHFLAGS       =       -DCRAY CONFIGURE_NETCDF_FLAG -DIWORDSIZE=8 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=8 -DTRIEDNTRUE   \
+ARCHFLAGS       =       -DCRAY CONFIGURE_NETCDF_FLAG -DGRIB1 -DIWORDSIZE=8 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=8 -DTRIEDNTRUE   \
 			-DLIMIT_ARGS
 LDFLAGS		= CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
@@ -3889,7 +3889,7 @@ FCDEBUG		=	#-g
 FCBASEOPTS      =       -w -byteswapio -Mfree -tp p6 $(FCDEBUG) # -Mlfs
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
-                         CONFIGURE_NETCDF_FLAG \
+                         CONFIGURE_NETCDF_FLAG -DGRIB1 \
                         -DTRIEDNTRUE   \
 			-DLIMIT_ARGS
 INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
@@ -3986,7 +3986,7 @@ FCDEBUG		=	#-g
 #FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree -tp p6 $(FCDEBUG)
 FCBASEOPTS      =       -w -byteswapio -Mfree -tp p6 $(FCDEBUG) # -Mlfs
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
-ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DYYY -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
+ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DGRIB1 -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
                         -DTRIEDNTRUE   \
 			-DLIMIT_ARGS -DSTUBMPI
@@ -4094,7 +4094,7 @@ FCDEBUG		=	#-g
 FCBASEOPTS      =       -w -byteswapio -Mfree -tp p6 $(FCDEBUG) # -Mlfs
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
-                         CONFIGURE_NETCDF_FLAG \
+                         CONFIGURE_NETCDF_FLAG -DGRIB1 \
                         -DTRIEDNTRUE   \
 			-DLIMIT_ARGS
 INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
@@ -4193,7 +4193,7 @@ FCDEBUG		=	#-g
 #FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree -tp p6 $(FCDEBUG)
 FCBASEOPTS      =       -w -byteswapio -Mfree -tp p6 $(FCDEBUG) # -Mlfs
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
-ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DYYY -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
+ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DGRIB1 -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
                         -DTRIEDNTRUE   \
 			-DLIMIT_ARGS -DSTUBMPI
@@ -4304,7 +4304,7 @@ FCDEBUG		=	#-g
 #FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree -tp p6 $(FCDEBUG)
 FCBASEOPTS      =       -w -byteswapio -Mfree -tp p6 $(FCDEBUG) # -Mlfs
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
-ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DYYY -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
+ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DGRIB1 -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
                         -DTRIEDNTRUE   \
 			-DLIMIT_ARGS
@@ -4413,7 +4413,7 @@ FCDEBUG		=	#-g
 #FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree -tp p6 $(FCDEBUG)
 FCBASEOPTS      =       -w -byteswapio -Mfree -tp p6 $(FCDEBUG) # -Mlfs
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
-ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DYYY -DINTIO -DDM_PARALLEL \
+ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DGRIB1 -DINTIO -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
                         -DTRIEDNTRUE   \
 			-DLIMIT_ARGS
@@ -4525,7 +4525,7 @@ FCNOOPTS = -O0 $(FCDEBUG) -FR -I$(INCLUDE) -w -cm
 FCFLAGS = $(FCOPTIM) $(FCBASEOPTS) $(OMP) -size_lp64 
 ARCHFLAGS = -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
             -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 -DNETCDF \
-            -DTRIEDNTRUE -DLIMIT_ARGS 
+            -DGRIB1 -DTRIEDNTRUE -DLIMIT_ARGS 
 INCLUDE_MODULES = ../main -I../external/io_int -I../external/esmf_time_f90 \
                   -I../external -I../frame -I../share -I../phys -I../chem -I../inc \
                   -I/usr/lib/mpi/mpi_intel/include
@@ -4641,7 +4641,7 @@ FCNOOPTS = -O0 $(FCDEBUG) -FR -I$(INCLUDE) -w -cm
 FCFLAGS = $(FCOPTIM) $(FCBASEOPTS) $(OMP) -size_lp64 
 ARCHFLAGS = -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
             -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 -DNETCDF \
-            -DTRIEDNTRUE -DLIMIT_ARGS -DSTUBMPI -DIFORT_KLUDGE
+            -DGRIB1 -DTRIEDNTRUE -DLIMIT_ARGS -DSTUBMPI -DIFORT_KLUDGE
 INCLUDE_MODULES = ../main -I../external/io_int -I../external/esmf_time_f90 \
                   -I../external -I../frame -I../share -I../phys -I../inc
 PERL = perl
@@ -4748,7 +4748,7 @@ FCDEBUG		=	#-g
 FCBASEOPTS      =       -w -byteswapio -Mfree $(FCDEBUG)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
-                         CONFIGURE_NETCDF_FLAG \
+                         CONFIGURE_NETCDF_FLAG -DGRIB1 \
                         -DTRIEDNTRUE   \
 			-DLIMIT_ARGS
 INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
@@ -4853,7 +4853,7 @@ FCDEBUG		=	#-g
 #FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree $(FCDEBUG)
 FCBASEOPTS      =       -w -byteswapio -Mfree $(FCDEBUG)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
-ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DYYY -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
+ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DGRIB1 -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
                         -DTRIEDNTRUE   \
 			-DLIMIT_ARGS
@@ -4967,7 +4967,7 @@ FCDEBUG		=	#-g
 #FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree $(FCDEBUG)
 FCBASEOPTS      =       -w -byteswapio -Mfree $(FCDEBUG)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
-ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DYYY -DINTIO -DDM_PARALLEL \
+ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DGRIB1 -DINTIO -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
                         -DTRIEDNTRUE   \
 			-DLIMIT_ARGS
@@ -5086,7 +5086,7 @@ FCNOOPTS = -O0 $(FCDEBUG) -FR -I$(INCLUDE) -w -cm
 FCFLAGS = $(FCOPTIM) $(FCBASEOPTS) $(OMP) -size_lp64 
 ARCHFLAGS = -DDM_PARALLEL \
             -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 -DNETCDF \
-            -DTRIEDNTRUE -DLIMIT_ARGS 
+            -DGRIB1 -DTRIEDNTRUE -DLIMIT_ARGS 
 INCLUDE_MODULES = ../main -I../external/io_int -I../external/esmf_time_f90 \
                   -I../external -I../frame -I../share -I../phys -I../inc   \
                   -I/usr/lib/mpi/mpi_intel/include
@@ -5202,7 +5202,7 @@ FCBASEOPTS = $(FCDEBUG) -w -FR -I$(INCLUDE) -I. -cm
 FCFLAGS = $(FCOPTIM) $(FCBASEOPTS) $(OMP) -size_lp64
 ARCHFLAGS = -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
 -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 -DNETCDF \
--DTRIEDNTRUE  
+-DGRIB1 -DTRIEDNTRUE  
 INCLUDE_MODULES = ../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
 -I../external -I../frame -I../share -I../phys -I../inc
 PERL = perl
@@ -5317,7 +5317,7 @@ FCBASEOPTS = $(FCDEBUG) -w -FR -I$(INCLUDE) -I. -cm
 FCFLAGS = $(FCOPTIM) $(FCBASEOPTS) $(OMP) -size_lp64
 ARCHFLAGS = -DRSL_LITE -DDM_PARALLEL \
 -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 -DNETCDF \
--DTRIEDNTRUE  
+-DGRIB1 -DTRIEDNTRUE  
 INCLUDE_MODULES = ../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
 -I../external -I../frame -I../share -I../phys -I../chem -I../inc
 PERL = perl
@@ -5402,7 +5402,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 OMP             =
 OMPCPP          =
 FC		=	ifort
-CC              =       icc
+CC              =       gcc
 SCC		=	$(CC)
 SFC		=	$(FC)
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
@@ -5416,7 +5416,7 @@ CFLAGS		=       -w
 INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
                         -I../external -I../frame -I../share -I../phys -I../inc
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DLIMIT_ARGS -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) \
-                        -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE -DIFORT_KLUDGE
+                        -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DGRIB1 -DTRIEDNTRUE -DIFORT_KLUDGE
 LD		=	$(FC)
 LDFLAGS		=	$(FCFLAGS) $(OMP) CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
@@ -5427,7 +5427,8 @@ CPPFLAGS	=	-I$(LIBINCLUDE) -C -P $(ARCHFLAGS) $(ENVCOMPDEFS) $(POUND_DEF)
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =	CONFIGURE_NETCDF_LIB_PATH ../frame/module_internal_header_util.o ../frame/pack_utils.o \
-                        -L../external/esmf_time_f90 -lesmf_time 
+                        -L../external/esmf_time_f90 -lesmf_time \
+			-L../external/io_grib1 -lio_grib1
 AR              =       ar ru
 M4              =       m4 -B10000
 RANLIB          =       ranlib
@@ -5514,7 +5515,7 @@ DMPARALLEL      =       1
 MAX_PROC        =       1024
 FC              =       ifort
 LD              =       ifort
-CC              =       icc
+CC              =       gcc
 SCC		=	$(CC)
 SFC             =       ifort
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
@@ -5524,7 +5525,7 @@ FCOPTIM		=	-O3 # -xW
 FCDEBUG		=	#-g
 FCBASEOPTS      =       -FR -cm -w -I. $(FCDEBUG) -convert big_endian -mp
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
-ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DYYY -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
+ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DGRIB1 -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
                         -DTRIEDNTRUE   \
 			-DLIMIT_ARGS -DSTUBMPI -DIFORT_KLUDGE
@@ -5540,7 +5541,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
 LDFLAGS         =       $(FCOPTIM) $(OMP) -convert big_endian CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =       /lib/cpp -traditional
-POUND_DEF	=	-DNO_RRTM_PHYSICS $(OMPCPP) $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS) -DYYY
+POUND_DEF	=	-DNO_RRTM_PHYSICS $(OMPCPP) $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS) -DGRIB1
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL/RSL -C -P `cat ../inc/dm_comm_cpp_flags` $(ENVCOMPDEFS) $(POUND_DEF)
 AR              =       ar ru
 M4              =       m4
@@ -5634,7 +5635,7 @@ FCDEBUG		=	#-g
 FCBASEOPTS      =       -FR -cm -w -I. $(FCDEBUG) -convert big_endian -mp
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
-                         CONFIGURE_NETCDF_FLAG \
+                         CONFIGURE_NETCDF_FLAG -DGRIB1 \
                         -DTRIEDNTRUE   \
 			-DLIMIT_ARGS -DIFORT_KLUDGE
 INCLUDE_MODULES =       -I ../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
@@ -5643,11 +5644,11 @@ PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH \
                         -L../external/io_grib1 -lio_grib1 \
-			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time
+			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =	$(FCFLAGS) $(FCFLAGS) $(OMP) CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =       /lib/cpp -traditional
-POUND_DEF	=	$(OMPCPP) $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS) -DYYY
+POUND_DEF	=	$(OMPCPP) $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS) -DGRIB1
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) $(ENVCOMPDEFS) $(POUND_DEF)
 AR              =       ar ru
 M4              =       m4
@@ -5727,7 +5728,7 @@ DMPARALLEL      =       1
 MAX_PROC        =       1024
 FC              =       ifort
 LD              =       ifort
-CC              =       icc
+CC              =       gcc
 SCC		=	$(CC)
 SFC             =       ifort
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
@@ -5737,7 +5738,7 @@ FCOPTIM		=	-O3 # -xW
 FCDEBUG		=	#-g
 FCBASEOPTS      =       -FR -cm -w -I. $(FCDEBUG) -convert big_endian -mp
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
-ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DYYY -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
+ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DGRIB1 -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
                         -DTRIEDNTRUE   \
 			-DLIMIT_ARGS -DSTUBMPI -DIFORT_KLUDGE
@@ -5753,7 +5754,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
 LDFLAGS         =       $(FCOPTIM) -convert big_endian CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =       /lib/cpp -traditional
-POUND_DEF	=	-DNO_RRTM_PHYSICS $(OMPCPP) $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS) -DYYY
+POUND_DEF	=	-DNO_RRTM_PHYSICS $(OMPCPP) $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS) -DGRIB1
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL/RSL -C -P `cat ../inc/dm_comm_cpp_flags` $(ENVCOMPDEFS) $(POUND_DEF)
 AR              =       ar ru
 M4              =       m4
@@ -5839,7 +5840,7 @@ MAX_PROC        =       1024
 FC              =       mpif90 -f90=ifort
 LD              =       mpif90 -f90=ifort
 CC              =       mpicc -cc=icc
-SCC		=	icc
+SCC		=	gcc
 SFC             =       ifort
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
@@ -5848,7 +5849,7 @@ FCOPTIM		=	-O3 # -xW
 FCDEBUG		=	#-g
 FCBASEOPTS      =       -FR -cm -w -I. $(FCDEBUG) -convert big_endian -mp
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
-ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DYYY -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
+ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DGRIB1 -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
                         -DTRIEDNTRUE -DMPI  \
 			-DLIMIT_ARGS -DIFORT_KLUDGE 
@@ -5864,7 +5865,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
 LDFLAGS         =       $(FCOPTIM) -convert big_endian CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =       /lib/cpp -traditional
-POUND_DEF	=	-DNO_RRTM_PHYSICS  $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS) -DYYY
+POUND_DEF	=	-DNO_RRTM_PHYSICS  $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS) -DGRIB1
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL/RSL -C -P `cat ../inc/dm_comm_cpp_flags` $(ENVCOMPDEFS) $(POUND_DEF)
 AR              =       ar ru
 M4              =       m4
@@ -5958,7 +5959,7 @@ FCOPTIM		=	-O3 # -xW
 FCDEBUG		=	#-g
 FCBASEOPTS      =       -FR -cm -w -I. $(FCDEBUG) -convert big_endian -mp
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
-ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DYYY -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
+ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DGRIB1 -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
                         -DTRIEDNTRUE -DMPI  \
 			-DLIMIT_ARGS -DIFORT_KLUDGE 
@@ -5970,11 +5971,11 @@ PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
 			-L../external/io_int -lwrfio_int -L../external/io_grib1 -lio_grib1 \
-			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
+			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time
 LDFLAGS         =       $(FCOPTIM) -convert big_endian CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =       /lib/cpp -traditional
-POUND_DEF	=	-DNO_RRTM_PHYSICS  $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS) -DYYY
+POUND_DEF	=	-DNO_RRTM_PHYSICS  $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS) -DGRIB1
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL/RSL -C -P `cat ../inc/dm_comm_cpp_flags` $(ENVCOMPDEFS) $(POUND_DEF)
 AR              =       ar ru
 M4              =       m4
@@ -6086,7 +6087,7 @@ INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io
 ESMF_MOD_DEPENDENCE =   $(ESMF_IO_DIR)/module_utility.o
 
 ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
-                         CONFIGURE_NETCDF_FLAG \
+                         CONFIGURE_NETCDF_FLAG -DGRIB1 \
                         -DTRIEDNTRUE   \
 			-DLIMIT_ARGS -DESMFIO -DUSE_LOGERR
 PERL            =       perl
@@ -6197,7 +6198,7 @@ SCC		=	$(CC)
 LD		=	$(FC)
 NATIVE_RWORDSIZE =      8
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
-ARCHFLAGS	=	-DNETCDF -DINTIO -DWRF_RSL_IO -DIWORDSIZE=8 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=8 -DTRIEDNTRUE -DONLY_WRFMODEL_IO -DLIMIT_ARGS -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
+ARCHFLAGS	=	-DNETCDF -DGRIB1 -DINTIO -DWRF_RSL_IO -DIWORDSIZE=8 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=8 -DTRIEDNTRUE -DONLY_WRFMODEL_IO -DLIMIT_ARGS -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
 		##for DM compilation	-DDM_PARALLEL -DRSL 
 # note:  -ew already does this for SX6, see comments above
 PROMOTION	=	
@@ -6349,7 +6350,7 @@ FCBASEOPTS        = -w -ip -tpp2 -ftz -FR -convert big_endian $(FCDEBUG) \
                      -fno-alias -fno-fnalias -align all -IPF_fp_relaxed \
                      -I$(INCLUDE) -I. 
 FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
-ARCHFLAGS         = -DYYY -DINTIO -DWRF_RSL_IO -DRSL  -DDM_PARALLEL -DIWORDSIZE=4 \
+ARCHFLAGS         = -DGRIB1 -DINTIO -DWRF_RSL_IO -DRSL  -DDM_PARALLEL -DIWORDSIZE=4 \
                     -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
                     -DTRIEDNTRUE -DLIMIT_ARGS -DIFORT_KLUDGE -DINTELMKL
 # -DONLY_WRFMODEL_IO
@@ -6489,9 +6490,9 @@ FCBASEOPTS        = -w -ip -tpp2 -ftz -FR -convert big_endian $(FCDEBUG) \
                      -fno-alias -fno-fnalias -align all -IPF_fp_relaxed \
                      -I$(INCLUDE) -I. 
 FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
-ARCHFLAGS         = -DYYY -DINTIO -DRSL_LITE -DDM_PARALLEL \
+ARCHFLAGS         = -DGRIB1 -DINTIO -DRSL_LITE -DDM_PARALLEL \
                     -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
-                    -DTRIEDNTRUE -DONLY_WRFMODEL_IO -DINTELMKL
+                    -DGRIB1 -DTRIEDNTRUE -DONLY_WRFMODEL_IO -DINTELMKL
 INCLUDE_MODULES   = -I../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
                     -I../external -I../frame -I../share -I../phys -I../inc
 PERL              = perl
@@ -6625,7 +6626,7 @@ FCBASEOPTS        = -w -ip -tpp2 -ftz -FR -convert big_endian $(FCDEBUG) \
                      -fno-alias -fno-fnalias -align all -IPF_fp_relaxed \
                      -I$(INCLUDE) -I. 
 FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
-ARCHFLAGS         = -DYYY -DINTIO -DWRF_RSL_IO -DRSL  -DDM_PARALLEL -DIWORDSIZE=4 \
+ARCHFLAGS         = -DGRIB1 -DINTIO -DWRF_RSL_IO -DRSL  -DDM_PARALLEL -DIWORDSIZE=4 \
                     -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
                     -DTRIEDNTRUE -DLIMIT_ARGS -DIFORT_KLUDGE
 # -DONLY_WRFMODEL_IO
@@ -6761,9 +6762,9 @@ FCBASEOPTS        = -w -ip -tpp2 -ftz -FR -convert big_endian $(FCDEBUG) \
                      -fno-alias -fno-fnalias -align all -IPF_fp_relaxed \
                      -I$(INCLUDE) -I. 
 FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
-ARCHFLAGS         = -DYYY -DINTIO -DRSL_LITE -DDM_PARALLEL \
+ARCHFLAGS         = -DGRIB1 -DINTIO -DRSL_LITE -DDM_PARALLEL \
                     -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
-                    -DTRIEDNTRUE -DONLY_WRFMODEL_IO
+                    -DGRIB1 -DTRIEDNTRUE -DONLY_WRFMODEL_IO
 INCLUDE_MODULES   = -I../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
                     -I../external -I../frame -I../share -I../phys -I../inc
 PERL              = perl
@@ -6882,8 +6883,8 @@ FCBASEOPTS        = -w -ip -tpp2 -ftz -FR -convert big_endian $(FCDEBUG) \
                      -fno-alias -fno-fnalias -align all -IPF_fp_relaxed \
                      -I$(INCLUDE) -I. 
 FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
-ARCHFLAGS         = -DYYY -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
-                    -DTRIEDNTRUE -DONLY_WRFMODEL_IO
+ARCHFLAGS         = -DGRIB1 -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
+                    -DGRIB1 -DTRIEDNTRUE -DONLY_WRFMODEL_IO
 INCLUDE_MODULES   = -I../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
                     -I../external -I../frame -I../share -I../phys -I../inc
 PERL              = perl
@@ -6993,8 +6994,8 @@ FCBASEOPTS        = -w -ip -tpp2 -ftz -FR -convert big_endian $(FCDEBUG) \
                      -fno-alias -fno-fnalias -align all -IPF_fp_relaxed \
                      -I$(INCLUDE) -I. 
 FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS)
-ARCHFLAGS         = -DYYY -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
-                    -DTRIEDNTRUE -DONLY_WRFMODEL_IO
+ARCHFLAGS         = -DGRIB1 -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
+                    -DGRIB1 -DTRIEDNTRUE -DONLY_WRFMODEL_IO
 INCLUDE_MODULES   = -I../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
                     -I../external -I../frame -I../share -I../phys -I../inc
 PERL              = perl
@@ -7124,7 +7125,7 @@ INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../exter
                         -p../frame -I ../frame -p../share -p../phys -p../inc \
                         -p../dyn_em -p../dyn_eh -p../dyn_exp -p ../external/esmf_time_f90
 ARCHFLAGS       =       -DRSL_LITE -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) \
-                        -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE  -DINTIO \
+                        -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DGRIB1 -DTRIEDNTRUE  -DINTIO \
 			-DLIMIT_ARGS -DONLY_WRFMODEL_IO -Dcrayx1
 
 PERL            =       perl
@@ -7254,7 +7255,7 @@ INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../exter
                         -p../frame -I ../frame -p../share -p../phys -p../inc \
                         -p../dyn_em -p../dyn_eh -p../dyn_exp -p ../external/esmf_time_f90
 ARCHFLAGS       =       -D_OPENMP -DRSL_LITE -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) \
-                        -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE  -DINTIO \
+                        -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DGRIB1 -DTRIEDNTRUE  -DINTIO \
 			-DLIMIT_ARGS -DONLY_WRFMODEL_IO -Dcrayx1
 
 PERL            =       perl
@@ -7357,7 +7358,7 @@ LD              =       f90
 CC              =       cc
 SCC		=	$(CC)
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
-ARCHFLAGS       =       CONFIGURE_NETCDF_FLAG -DINTIO -DTRIEDNTRUE -DLIMIT_ARGS -DFLOATSAFE \
+ARCHFLAGS       =       CONFIGURE_NETCDF_FLAG -DGRIB1 -DINTIO -DTRIEDNTRUE -DLIMIT_ARGS -DFLOATSAFE \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =       $(ARCHFLAGS) +DS2.0a -DNOUNDERSCORE
@@ -7449,7 +7450,7 @@ LD              =       f90
 CC              =       cc
 SCC		=	$(CC)
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
-ARCHFLAGS       =       CONFIGURE_NETCDF_FLAG -DWRF_RSL_IO -DRSL -DINTIO -DTRIEDNTRUE -DLIMIT_ARGS \
+ARCHFLAGS       =       CONFIGURE_NETCDF_FLAG -DGRIB1 -DWRF_RSL_IO -DRSL -DINTIO -DTRIEDNTRUE -DLIMIT_ARGS \
                         -DDM_PARALLEL -DFLOATSAFE -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
 			-DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -DSTUBMPI
 PROMOTION	=	-r$(RWORDSIZE) -i4
@@ -7547,7 +7548,7 @@ LD              =       f90
 CC              =       cc
 SCC		=	$(CC)
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
-ARCHFLAGS       =       CONFIGURE_NETCDF_FLAG -DINTIO -DTRIEDNTRUE -DLIMIT_ARGS -DFLOATSAFE \
+ARCHFLAGS       =       CONFIGURE_NETCDF_FLAG -DGRIB1 -DINTIO -DTRIEDNTRUE -DLIMIT_ARGS -DFLOATSAFE \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =       $(ARCHFLAGS) +DSitanium2 -DNOUNDERSCORE
@@ -7638,7 +7639,7 @@ LD              =       f90
 CC              =       cc
 SCC		=	$(CC)
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
-ARCHFLAGS       =       CONFIGURE_NETCDF_FLAG -DWRF_RSL_IO -DRSL -DINTIO -DTRIEDNTRUE -DLIMIT_ARGS -DFLOATSAFE \
+ARCHFLAGS       =       CONFIGURE_NETCDF_FLAG -DGRIB1 -DWRF_RSL_IO -DRSL -DINTIO -DTRIEDNTRUE -DLIMIT_ARGS -DFLOATSAFE \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 -DSTUBMPI
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =       $(ARCHFLAGS) +DSitanium2 -DNOUNDERSCORE -I../external/RSL/RSL
@@ -7726,7 +7727,7 @@ LD              =       f90
 CC              =       cc
 SCC		=	$(CC)
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
-ARCHFLAGS       =       CONFIGURE_NETCDF_FLAG -DINTIO -DTRIEDNTRUE -DLIMIT_ARGS -DFLOATSAFE \
+ARCHFLAGS       =       CONFIGURE_NETCDF_FLAG -DGRIB1 -DINTIO -DTRIEDNTRUE -DLIMIT_ARGS -DFLOATSAFE \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =       $(ARCHFLAGS) +DS2.0a -DNOUNDERSCORE
@@ -7819,7 +7820,7 @@ LD              =       mpif90
 CC              =       mpicc
 SCC		=	cc
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
-ARCHFLAGS       =       CONFIGURE_NETCDF_FLAG -DINTIO -DWRF_RSL_IO -DTRIEDNTRUE -DLIMIT_ARGS -DFLOATSAFE \
+ARCHFLAGS       =       CONFIGURE_NETCDF_FLAG -DGRIB1 -DINTIO -DWRF_RSL_IO -DTRIEDNTRUE -DLIMIT_ARGS -DFLOATSAFE \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4  -DDM_PARALLEL -DRSL \
 			-DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
 PROMOTION	=	-r$(RWORDSIZE) -i4
@@ -7923,7 +7924,7 @@ LD              =       mpif90
 CC              =       mpicc
 SCC		=	cc
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
-ARCHFLAGS       =       CONFIGURE_NETCDF_FLAG -DINTIO -DWRF_RSL_IO -DTRIEDNTRUE -DLIMIT_ARGS -DFLOATSAFE \
+ARCHFLAGS       =       CONFIGURE_NETCDF_FLAG -DGRIB1 -DINTIO -DWRF_RSL_IO -DTRIEDNTRUE -DLIMIT_ARGS -DFLOATSAFE \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4  -DDM_PARALLEL -DRSL \
 			-DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
 PROMOTION	=	-r$(RWORDSIZE) -i4
@@ -8033,7 +8034,7 @@ FCBASEOPTS      =       -qsave $(FCDEBUG) -qmaxmem=32767 -w
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../inc
-ARCHFLAGS       =       -DYYY -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+ARCHFLAGS       =       -DGRIB1 -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   \
 			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DLANDREAD_STUB
 #			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DNATIVE_MASSV -DMACOS
@@ -8157,7 +8158,7 @@ FCBASEOPTS      =       -w -qsave $(FCDEBUG) -qmaxmem=32767 #-qflttrap=zerodivid
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../inc
-ARCHFLAGS       =       -DYYY -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+ARCHFLAGS       =       -DGRIB1 -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   \
 			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DLANDREAD_STUB -DMACOS
 PERL            =       CONFIGURE_PERL_PATH

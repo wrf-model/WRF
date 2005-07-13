@@ -1209,11 +1209,11 @@ package   io_netcdf   io_form_restart==2                     -             -
 # Please note these are placeholders; HDF has not been implemented yet.
 package   io_hdf      io_form_restart==3                     -             -
 package   io_phdf5    io_form_restart==4                     -             -
-# yyy = grib output from WSI
 package   io_yyy      io_form_restart==5                     -             -
 package   io_mcel     io_form_restart==6                     -             -
 package   io_esmf     io_form_restart==7                     -             -
 package   io_zzz      io_form_restart==8                     -             -
+package   io_grib1    io_form_restart==9                     -             -
                                                 
 #---------------------------------------------------------------------------------------------------------------------------------------
 ## communications                                               

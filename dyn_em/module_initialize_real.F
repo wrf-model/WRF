@@ -486,7 +486,12 @@ integer::oops1,oops2
                   IF ( (tsk(i,j).GT.170. .AND. tsk(i,j).LT.400.) .AND. &
                        (tmn(i,j).GT.170. .AND. tmn(i,j).LT.400.) ) THEN
                      fake_soil_temp : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
-                        CASE ( SLABSCHEME , LSMSCHEME , RUCLSMSCHEME )
+                        CASE ( SLABSCHEME )
+                           DO ns = 1 , model_config_rec%num_soil_layers
+                              tslb(i,ns,j) = ( tsk(i,j)*(3.0 - zs(ns)) + tmn(i,j)*(0.0 - zs(ns)) ) /(3.0 - 0.0)
+                           END DO
+                        CASE ( LSMSCHEME , RUCLSMSCHEME )
+                           CALL wrf_error_fatal ( 'Assigning constant soil moisture, bad idea')
                            DO ns = 1 , model_config_rec%num_soil_layers
                               tslb(i,ns,j) = ( tsk(i,j)*(3.0 - zs(ns)) + tmn(i,j)*(0.0 - zs(ns)) ) /(3.0 - 0.0)
                            END DO

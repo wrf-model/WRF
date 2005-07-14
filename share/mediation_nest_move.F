@@ -275,7 +275,7 @@ LOGICAL FUNCTION time_for_move2 ( parent , grid , move_cd_x, move_cd_y )
    INTEGER imploc, jmploc 
 
    INTEGER :: fje, fjs, fie, fis, fimloc, fjmloc, imloc, jmloc, dyn_opt
-   INTEGER :: i_parent_start, j_parent_start, pgr
+   INTEGER :: i_parent_start, j_parent_start
    INTEGER :: max_vortex_speed, vortex_interval  ! meters per second and seconds
    REAL    :: rsmooth = 100.  ! kilometers?
    TYPE(WRF_UTIL_Time)        :: CurrTime

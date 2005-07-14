@@ -102,16 +102,20 @@ thisdir_linked_lib: $(OBJS)
 		cd "$$(pwd)"; \
 	fi
 
-thisdir_archive: lib$(LIB_NAME).a
+thisdir_archive: $(OBJS) .FORCE 
+	ar cruv $(LIB_DEST)/lib$(LIB_NAME).a $(OBJS)
 
-lib$(LIB_NAME).a: $(LIB_DEST)/lib$(LIB_NAME).a
-
-$(LIB_DEST)/lib$(LIB_NAME).a: $(OBJS) .FORCE
-	ar cruv $@ $(OBJS)
+#thisdir_archive: lib$(LIB_NAME).a .FORCE
+#
+#lib$(LIB_NAME).a: $(LIB_DEST)/lib$(LIB_NAME).a .FORCE
+#
+#$(LIB_DEST)/lib$(LIB_NAME).a: .FORCE $(OBJS)
+#	ar cruv $@ $(OBJS)
 
 #
 #  RULE for building unit test programs. 
 #
+
 utest: .FORCE
 	@if [ -d utest ] ; then \
 		echo "Making unit tests for `pwd`"; \

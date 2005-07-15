@@ -100,7 +100,7 @@ SUBROUTINE med_nest_move ( parent, nest )
 #endif
 
   ! set grid pointer for code in deref_kludge (if used)
-  grid => nest
+   grid => nest
 #include "deref_kludge.h"
 
    CALL nl_get_dyn_opt ( 1, dyn_opt )
@@ -155,9 +155,11 @@ SUBROUTINE med_nest_move ( parent, nest )
      grid%j_parent_start = grid%j_parent_start + py / grid%parent_grid_ratio
      CALL nl_set_j_parent_start( grid%id, grid%j_parent_start )
 
-IF ( wrf_dm_on_monitor() ) THEN
-write(0,*)'Grid ',grid%id,' New SW corner (in parent x and y):',grid%i_parent_start, grid%j_parent_start
-ENDIF
+     IF ( wrf_dm_on_monitor() ) THEN
+       write(mess,*)  &
+         'Grid ',grid%id,' New SW corner (in parent x and y):',grid%i_parent_start, grid%j_parent_start
+       CALL wrf_message(TRIM(mess))
+     ENDIF
 
      CALL med_interp_domain( parent, nest )
 
@@ -197,11 +199,13 @@ ENDIF
                              ips , ipe , jps , jpe , kps , kpe )
 !
        CALL model_to_grid_config_rec ( parent%id , model_config_rec , config_flags )
+
        CALL med_nest_feedback ( parent , nest , config_flags )
        parent%imask_nostag = 1
        parent%imask_xstag = 1
        parent%imask_ystag = 1
        parent%imask_xystag = 1
+
        CALL start_domain ( parent , .FALSE. )
 
      ENDIF
@@ -320,7 +324,7 @@ write(0,*)'Check to see if COMPUTE_VORTEX_CENTER_ALARM is ringing? '
    IF ( WRF_UTIL_AlarmIsRinging( grid%alarms( COMPUTE_VORTEX_CENTER_ALARM ), rc=rc ) ) THEN
 
 #  ifdef MOVING_DIAGS
-write(0,*)'COMPUTE_VORTEX_CENTER_ALARM is ringing  '
+     write(0,*)'COMPUTE_VORTEX_CENTER_ALARM is ringing  '
 #  endif
      CALL WRF_UTIL_AlarmRingerOff( grid%alarms( COMPUTE_VORTEX_CENTER_ALARM ), rc=rc )
      CALL WRF_UTIL_ClockGet( grid%domain_clock, CurrTime=CurrTime, rc=ierr )
@@ -344,10 +348,15 @@ write(0,*)'COMPUTE_VORTEX_CENTER_ALARM is ringing  '
        IF ( ierr .ne. 0 ) CALL wrf_error_fatal ('allocating terrain in time_for_move2')
      ELSE
        ALLOCATE ( height   ( 1:1 , 1:1 ), STAT=ierr )
+       IF ( ierr .ne. 0 ) CALL wrf_error_fatal ('allocating height in time_for_move2')
        ALLOCATE ( psfc     ( 1:1 , 1:1 ), STAT=ierr )
+       IF ( ierr .ne. 0 ) CALL wrf_error_fatal ('allocating psfc in time_for_move2')
        ALLOCATE ( xlat     ( 1:1 , 1:1 ), STAT=ierr )
+       IF ( ierr .ne. 0 ) CALL wrf_error_fatal ('allocating xlat in time_for_move2')
        ALLOCATE ( xlong    ( 1:1 , 1:1 ), STAT=ierr )
+       IF ( ierr .ne. 0 ) CALL wrf_error_fatal ('allocating xlong in time_for_move2')
        ALLOCATE ( terrain  ( 1:1 , 1:1 ), STAT=ierr )
+       IF ( ierr .ne. 0 ) CALL wrf_error_fatal ('allocating terrain in time_for_move2')
      ENDIF
 
 
@@ -506,16 +515,23 @@ write(0,*)'   js, jds-1,  je,  jde-1 ', js, jds-1, je, jde-1
           enddo
        enddo
 
+      IF ( pbar .NE. 0. ) THEN
+
 !     Compute an adjusted, smoothed, vortex center location in cross
 !     point index space.
 !     Time average. A is coef for old information; B is new
-       a = 0.0
-       b = 1.0
-       grid%xi =  (a * grid%xi + b * (is + ipbar / pbar))  / ( a + b )
-       grid%xj =  (a * grid%xj + b * (js + jpbar / pbar))  / ( a + b )
+!     If pbar is zero then just skip this, leave xi and xj alone,
+!     result will be no movement.
+         a = 0.0
+         b = 1.0
+         grid%xi =  (a * grid%xi + b * (is + ipbar / pbar))  / ( a + b )
+         grid%xj =  (a * grid%xj + b * (js + jpbar / pbar))  / ( a + b )
 
-       grid%vc_i = grid%xi + .5
-       grid%vc_j = grid%xj + .5
+         grid%vc_i = grid%xi + .5
+         grid%vc_j = grid%xj + .5
+
+
+      ENDIF
 
 #  ifdef MOVING_DIAGS
 write(0,*)'computed grid%vc_i, grid%vc_j ',grid%vc_i, grid%vc_j
@@ -525,14 +541,15 @@ WRITE ( message , FMT = '(A," on domain ",I3)' ) TRIM(message2), grid%id
 #  endif
 
 ! 
-     i = INT(grid%xi+.5)
-     j = INT(grid%xj+.5)
-     write(0,'("ATCF"," ",A19," ",f8.2," ",f8.2," ",f6.1," ",f6.1)')                &
+        i = INT(grid%xi+.5)
+        j = INT(grid%xj+.5)
+        write(mess,'("ATCF"," ",A19," ",f8.2," ",f8.2," ",f6.1," ",f6.1)')                &
                                        timestr(1:19),                               &
                                        xlat(i,j),                                   &
                                        xlong(i,j),                                  &
                                        0.01*pmin+0.1138*terrain(imploc,jmploc),     &
                                        maxws*1.94
+        CALL wrf_message(TRIM(mess))
                             
 
 
@@ -586,12 +603,17 @@ write(0,*)'After ENDIF : grid%vc_i, grid%vc_j ',grid%vc_i, grid%vc_j
    IF ( move_cd_x .LT. 0 ) move_cd_x = max ( move_cd_x , -1 )
    IF ( move_cd_y .LT. 0 ) move_cd_y = max ( move_cd_y , -1 )
 
-!#ifdef MOVING_DIAGS
-write(0,*)'vortex center (in nest x and y): ',grid%vc_i, grid%vc_j
-write(0,*)'grid   center (in nest x and y): ',     dc_i,      dc_j
-write(0,*)'disp          : ',   disp_x,    disp_y
-write(0,*)'move (rel cd) : ',move_cd_x, move_cd_y
-!#endif
+   CALL WRF_UTIL_ClockGet( grid%domain_clock, CurrTime=CurrTime, rc=ierr )
+   CALL wrf_timetoa ( CurrTime, timestr )
+
+   WRITE(mess,*)timestr(1:19),' vortex center (in nest x and y): ',grid%vc_i, grid%vc_j
+   CALL wrf_message(TRIM(mess))
+   WRITE(mess,*)timestr(1:19),' grid   center (in nest x and y): ',     dc_i,      dc_j
+   CALL wrf_message(TRIM(mess))
+   WRITE(mess,*)timestr(1:19),' disp          : ',   disp_x,    disp_y
+   CALL wrf_message(TRIM(mess))
+   WRITE(mess,*)timestr(1:19),' move (rel cd) : ',move_cd_x, move_cd_y
+   CALL wrf_message(TRIM(mess))
 
    grid%vc_i = grid%vc_i - move_cd_x * pgr
    grid%vc_j = grid%vc_j - move_cd_y * pgr

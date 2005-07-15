@@ -2447,7 +2447,7 @@ SUBROUTINE horizontal_diffusion ( name, field, tendency, mu,           &
          mkrdxp=msfu(i+1,j)*0.5*(xkmhd(i+1,k,j)+xkmhd(i,k,j))*0.5*(mu(i+1,j)+mu(i,j))*rdx*pr
          mrdx=msft(i,j)*rdx
          mkrdym=msfv(i,j)*0.5*(xkmhd(i,k,j)+xkmhd(i,k,j-1))*0.5*(mu(i,j)+mu(i,j-1))*rdy*pr
-         mkrdyp=msfv(i,j+1)*0.5*(xkmhd(i,k,j+1)+xkmhd(i,k,j))**0.5*(mu(i,j+1)+mu(i,j))*rdy*pr
+         mkrdyp=msfv(i,j+1)*0.5*(xkmhd(i,k,j+1)+xkmhd(i,k,j))*0.5*(mu(i,j+1)+mu(i,j))*rdy*pr
          mrdy=msft(i,j)*rdy
 
             tendency(i,k,j)=tendency(i,k,j)+( &
@@ -2543,7 +2543,7 @@ SUBROUTINE horizontal_diffusion_3dmp ( name, field, tendency, mu,           &
          mkrdxp=msfu(i+1,j)*0.5*(xkmhd(i+1,k,j)+xkmhd(i,k,j))*0.5*(mu(i+1,j)+mu(i,j))*rdx*pr
          mrdx=msft(i,j)*rdx
          mkrdym=msfv(i,j)*0.5*(xkmhd(i,k,j)+xkmhd(i,k,j-1))*0.5*(mu(i,j)+mu(i,j-1))*rdy*pr
-         mkrdyp=msfv(i,j+1)*0.5*(xkmhd(i,k,j+1)+xkmhd(i,k,j))**0.5*(mu(i,j+1)+mu(i,j))*rdy*pr
+         mkrdyp=msfv(i,j+1)*0.5*(xkmhd(i,k,j+1)+xkmhd(i,k,j))*0.5*(mu(i,j+1)+mu(i,j))*rdy*pr
          mrdy=msft(i,j)*rdy
 
             tendency(i,k,j)=tendency(i,k,j)+(                        &

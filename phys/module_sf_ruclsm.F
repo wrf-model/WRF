@@ -9,7 +9,7 @@ CONTAINS
 !-----------------------------------------------------------------
     SUBROUTINE LSMRUC(                                           &
                    DT,KTAU,NSL,ZS,                               &
-                   RAINBL,SNOW,SNOWC,                            &
+                   RAINBL,SNOW,SNOWH,SNOWC,                            &
                    Z3D,P8W,T3D,QV3D,QC3D,RHO3D,                  & !p8W in [PA]
                    GLW,GSW,EMISS,CHKLOWQ,                         & 
                    FLQC,FLHC,MAVAIL,CANWAT,VEGFRA,ALB,ZNT,       &
@@ -118,6 +118,7 @@ CONTAINS
    REAL,       DIMENSION( ims:ime , jms:jme ),                   &
                INTENT(INOUT)    ::                               &
                                                            SNOW, & !new
+                                                          SNOWH, &
                                                           SNOWC, &
                                                          CANWAT, & ! new
                                                             ALB, &
@@ -173,6 +174,7 @@ CONTAINS
                                                          SUBLIM, &
                                                           EVAPL, &
                                                           PRCPL, &
+                                                          XICED, &
                                                         INFILTR
 
 !--- soil/snow properties
@@ -192,6 +194,7 @@ CONTAINS
                                                             REF, &
                                                            WILT, &
                                                         CANWATR, &
+                                                          SNHEI, &
                                                            SNWE
 
    REAL                                      ::              CN, &
@@ -235,7 +238,7 @@ CONTAINS
                                                            QKMS, &
                                                            TKMS, &
                                                        INFILTRP
-   REAL      ::  cq,r61,r273,arp,brp,x
+   REAL      ::  cq,r61,r273,arp,brp,x,evs,eis
 
    INTEGER   ::  NROOT
    INTEGER   ::  ILAND,ISOIL
@@ -253,13 +256,23 @@ CONTAINS
 
 !---- table TBQ is for resolution of balance equation in VILKA
         CQ=173.15-.05
-        R61=6.1/1.61
         R273=1./273.15
-        ARP=77455.*41.9/460.
-        BRP=64.*41.9/460.
+        R61=6.1153*0.62198
+        ARP=77455.*41.9/461.525
+        BRP=64.*41.9/461.525
+
         DO K=1,4001
           CQ=CQ+.05
-          TBQ(K)=R61*EXP(ARP*(R273-1./CQ)-BRP*LOG(CQ*R273))
+!          TBQ(K)=R61*EXP(ARP*(R273-1./CQ)-BRP*LOG(CQ*R273))
+        EVS=EXP(17.67*(CQ-273.15)/(CQ-29.65))
+        EIS=EXP(22.514-6.15E3/CQ)
+        if(CQ.ge.273.15) then
+! tbq is in mb
+        tbq(k) = R61*evs
+        else
+        tbq(k) = R61*eis
+        endif
+
         END DO
 
 !--- Initialize soil/vegetation parameters
@@ -291,6 +304,9 @@ CONTAINS
            RUNOFF2(i,j) = 0.
            emissl (i,j) = 0.
            lmavail(i,j) = mavail(i,j)
+! Temporarily!!!
+            canwat(i,j)=0.
+
 ! For RUC LSM CHKLOWQ needed for MYJPBL should 
 ! 1 because is actual specific humidity at the surface, and
 ! not the saturation value
@@ -334,9 +350,9 @@ CONTAINS
       print *, 'SOILMOIS start of time step =',(soilmois(i,k,j),k=1,nsl)
       print *, 'SMFROZEN start of time step =',(smfr3d(i,k,j),k=1,nsl)
       print *, ' I,J=, after SFCLAY FLQC,FLHC ',i,j,flqc(i,j),flhc(i,j),mavail(i,j)
-      print *, 'LSMRUC, IVGTYP,ISLTYP,ZNT,ALB = ', ivgtyp(i,j),isltyp(i,j),znt(i,j),alb(i,j)
+      print *, 'LSMRUC, IVGTYP,ISLTYP,ZNT,ALB = ', ivgtyp(i,j),isltyp(i,j),znt(i,j),alb(i,j),i,j
       print *, 'LSMRUC  I,J,DT,RAINBL =',I,J,dt,RAINBL(i,j)
-      print *, 'XLAND ---->',xland(i,j)
+      print *, 'XLAND ---->, ivgtype,isoiltyp,i,j',xland(i,j),ivgtyp(i,j),isltyp(i,j),i,j
     ENDIF
 
 
@@ -361,6 +377,7 @@ CONTAINS
          TKMS=FLHC(I,J)/RHO/CP
 !--- convert incoming snow and canwat from mm to m
          SNWE=SNOW(I,J)*1.E-3
+         SNHEI=SNOWH(I,J)
          CANWATR=CANWAT(I,J)*1.E-3
 
 !-----
@@ -419,19 +436,26 @@ CONTAINS
         NROOT= 4
 !           ! rooting depth
 
+       if(SNOWH(i,j).gt.0.) then
+        RHOSN = SNOW(i,j)/SNOWH(i,j)
+       else
         RHOSN = 200.
+       endif
 
 !--- initializing soil and surface properties
      CALL SOILVEGIN  ( ILAND,ISOIL,IFOREST,                     &
-                     EMISSL(I,J),PC(i,j),ZNTL(I,J),QWRTZ,       &
+                     EMISSL(I,J),PC(i,j),ZNT(I,J),QWRTZ,       &
+!                     EMISSL(I,J),PC(i,j),ZNTL(I,J),QWRTZ,       &
                      RHOCS,BCLH,DQM,KSAT,PSIS,QMIN,REF,WILT     )
 
 !*** SET ZERO-VALUE FOR SOME OUTPUT DIAGNOSTIC ARRAYS
+
+
         IF((XLAND(I,J)-1.5).GE.0.)THEN
 !-- Water point
            SMAVAIL(I,J)=1.0
              SMMAX(I,J)=1.0
-              SNOW(I,J)=0.0
+!              SNOW(I,J)=0.0
            LMAVAIL(I,J)=1.0
 
            ILAND=16
@@ -450,8 +474,19 @@ CONTAINS
     IF ( wrf_at_debug_level(LSMRUC_DBG_LVL) ) THEN
               PRINT*,'  water point, I=',I,                      &
               'J=',J, 'SOILT=', SOILT(i,j)
+!--- decide if this water point is ice:
+!       if(tabs.le.271.) then
+!       if(xice(i,j).gt.0.5) then
+       if(soilt(i,j).le.271.or.xice(i,j).eq.1.) then
+!       if(tabs.le.271.or.xice(i,j).eq.1.) then
+           XICED(i,j)=1.
+       else
+           XICED(i,j)=0.
+       endif
+
     ENDIF
-         IF(XICE(I,J).EQ.1.)THEN
+         IF(XICED(I,J).NE.1.)  SNOW(I,J)=0.
+         IF(XICED(I,J).EQ.1.)THEN
 !-- Sea-ice case
     IF ( wrf_at_debug_level(LSMRUC_DBG_LVL) ) THEN
               PRINT*,' sea-ice at water point, I=',I,            &
@@ -462,7 +497,7 @@ CONTAINS
 
             SMAVAIL(I,J)=1.0
             SMMAX(I,J)=1.0
-            SOILT(I,J) = MIN(273.15,SOILT(I,J))
+!            SOILT(I,J) = MIN(273.15,SOILT(I,J))
 
             DO K=1,NZS
               SOILMOIS(I,K,J)=1.0
@@ -473,13 +508,20 @@ CONTAINS
            ELSE
 
 !-- Land point
+!  Attention!!!!  RUC LSM uses soil moisture content minus residual (minimum
+!     soil moisture content for a given soil type) as a state variable.
+!     If the WRF model is initialized from the RUC background model, then the 
+!     soil moisture variable is consistent with the RUC LSM.
+!     If the WRF model is initialized from another background model (ETA, GFS...)
+!     then the residual value should be subtracted when the 1-d array of soil
+!     moisture is initialized before the call to SFCTMP, and after SFCTMP qmin
+!     should be added back in.
+!
+!              soilm1d (k) = min(max(0.,soilmois(i,k,j)-qmin(i,j)),dqm(i,j))
 
-!              soilm1d (1) = min(max(0.,soilmois(i,1,j)-qmin(i,j)),dqm(i,j))
-! soil moisture minus residual is nitialized from RUC background
 
            DO k=1,nzs
-!              soilm1d (k) = min(max(0.,soilmois(i,k-1,j)-qmin(i,j)),dqm(i,j))
-! soil moisture minus residual is nitialized from RUC background
+! soilm1d - soil moisture content minus residual [m**3/m**3]
               soilm1d (k) = min(max(0.,soilmois(i,k,j)),dqm)
               tso1d   (k) = tso(i,k,j)
            ENDDO 
@@ -503,7 +545,7 @@ CONTAINS
 !--- input variables
                 nzs,nddzs,nroot,                                 &
                 iland,isoil,xland(i,j),ivgtyp(i,j),              &  
-                PRCPMS,SNWE,RHOSN,                               &
+                PRCPMS,SNWE,SNHEI,RHOSN,                         &
                 PATM,TABS,QVATM,QCATM,RHO,                       &
                 GLW(I,J),GSW(I,J),EMISSL(I,J),                   &
                 QKMS,TKMS,PC(I,J),LMAVAIL(I,J),                  &
@@ -557,6 +599,7 @@ CONTAINS
         MAVAIL (i,j) = LMAVAIL(I,J)  
 ! SNOW is in [mm], SNWE is in [m]; CANWAT is in mm, CANWATR is in m
         SNOW   (i,j) = SNWE*1000.
+        SNOWH  (I,J) = SNHEI 
         CANWAT (I,J) = CANWATR*1000.
 
     IF ( wrf_at_debug_level(LSMRUC_DBG_LVL) ) THEN
@@ -583,10 +626,10 @@ CONTAINS
     ENDIF
 
         do k=1,nzs
-! soil moisture minus residual is in soilmois initialized from RUC
-!             soilmois(i,k,j) = (soilm1d(k+1)+qmin(i,j))
 
              soilmois(i,k,j) = soilm1d(k)
+! If not initialized from the RUC model then add qmion back.
+!             soilmois(i,k,j) = (soilm1d(k)+qmin(i,j))
                   tso(i,k,j) = tso1d(k)
         enddo
 
@@ -611,7 +654,7 @@ CONTAINS
 !--- input variables
                 nzs,nddzs,nroot,                                 &
                 ILAND,ISOIL,XLAND,IVGTYP,                        &
-                PRCPMS,SNWE,RHOSN,                               &
+                PRCPMS,SNWE,SNHEI,RHOSN,                         &
                 PATM,TABS,QVATM,QCATM,rho,                       &
                 GLW,GSW,EMISS,QKMS,TKMS,PC,                      &
                 MAVAIL,CST,VEGFRA,ALB,ZNT,                       &
@@ -730,6 +773,7 @@ CONTAINS
                                                         RUNOFF2, &
                                                          ACSNOW, &
                                                            SNWE, &
+                                                          SNHEI, &
                                                           SMELT, &
                                                            SNOM, &
                                                            SNOH, &
@@ -792,16 +836,16 @@ CONTAINS
     ENDIF
 
 
-        SNHEI   = SNWE * 1000. / RHOSN
+         SNHEI   = SNWE * 1000. / RHOSN
 !--------------
-        T3      = STBOLT*SOILT*SOILT*SOILT
-        UPFLUX  = T3 *SOILT
-        XINET   = EMISS*(GLW-UPFLUX)
-        RNET    = GSW + XINET
+         T3      = STBOLT*SOILT*SOILT*SOILT
+         UPFLUX  = T3 *SOILT
+         XINET   = EMISS*(GLW-UPFLUX)
+         RNET    = GSW + XINET
 
-!*** Calculate the amount (m) of fresh snow
+!Calculate the amount (m) of fresh snow
 
-      if(snhei.gt.0.0081*1.e3/rhosn) then
+	      if(snhei.gt.0.0081*1.e3/rhosn) then
 !*** Correct snow density for current temperature (Koren et al. 1999)
         BSN=delt/3600.*c1sn*exp(0.08*tsnav-c2sn*rhosn*1.e-3)
        if(bsn*snwe*100..lt.1.e-4) goto 777
@@ -817,7 +861,9 @@ CONTAINS
          IF(TABS.LE.273.15)THEN
 
            newsn=prcpms*delt
-!--- ACSNOW - accumulation of snow water [m]
+!--- consider for now that all  PRCPMS went into snow
+           prcpms = 0.
+!---- ACSNOW - accumulation of snow water [m]
            acsnow=acsnow+newsn
 
        IF(NEWSN.GE.1.E-8) THEN
@@ -889,7 +935,7 @@ CONTAINS
 ! depth. For now commented out.
          alb_snow_free=0.2
          alb_snow=0.70
-         SNHEI_CRIT=0.1
+         SNHEI_CRIT=0.05
          KEEP_SNOW_ALBEDO = 0.
       IF (NEWSN.GT.0.) KEEP_SNOW_ALBEDO = 1.
 
@@ -3917,10 +3963,11 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
         DATA LEMI/.88,4*.92,.93,.92,.88,.9,.92,.93,.94,                 &
                   .95,.95,.94,.98,.95,.95,.85,.92,.93,.92,.85,.95/
 !-- Roughness length is changed for forests and some others
-        DATA LROU/.5,.06,.075,.065,.05,.2,.075,.1,.11,.15,.8,.85,       &
-                  2.0,1.0,.563,.0001,.2,.4,.05,.1,.15,.1,.065,.05/
-!        DATA LROU/.5,.15,.15,.15,.14,.2,.12,.1,.11,.15,.5,.5,
-!                  .5,.5,.5,.0001,.2,.4,.1,.1,.3,.15,.1,.05/
+!        DATA LROU/.5,.06,.075,.065,.05,.2,.075,.1,.11,.15,.8,.85,       &
+!                  2.0,1.0,.563,.0001,.2,.4,.05,.1,.15,.1,.065,.05/
+         DATA LROU/.5,.06,.075,.065,.05,.2,.075,.1,.11,.15,.5,.5,           & 
+                   .5,.5,.5,.0001,.2,.4,.05,.1,.15,.1,.065,.05/
+
         DATA LMOI/.1,.3,.5,.25,.25,.35,.15,.1,.15,.15,.3,.3,            &
                   .5,.3,.3,1.,.6,.35,.02,.5,.5,.5,.02,.95/
 !
@@ -4029,8 +4076,11 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
         DATA LEMI/.88,4*.92,.93,.92,.88,.9,.92,.93,.94,                 &
                   .95,.95,.94,.98,.95,.95,.85,.92,.93,.92,.85,.95/
 !-- Roughness length is changed for forests and some others
-        DATA LROU/.5,.06,.075,.065,.05,.2,.075,.1,.11,.15,.8,.85,       &
-                  2.0,1.0,.563,.0001,.2,.4,.05,.1,.15,.1,.065,.05/
+!        DATA LROU/.5,.06,.075,.065,.05,.2,.075,.1,.11,.15,.8,.85,       &
+!                  2.0,1.0,.563,.0001,.2,.4,.05,.1,.15,.1,.065,.05/
+         DATA LROU/.5,.06,.075,.065,.05,.2,.075,.1,.11,.15,.5,.5,           &
+                   .5,.5,.5,.0001,.2,.4,.05,.1,.15,.1,.065,.05/
+
 
 !--------------------------------------------------------------------------
 

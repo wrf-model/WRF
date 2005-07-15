@@ -669,7 +669,7 @@ CONTAINS
                                                       .TRUE. ) THEN
            CALL wrf_debug(100,'in RUC LSM')
            CALL LSMRUC(dtbl,itimestep,num_soil_layers,          &
-                zs,rainbl,snow,snowc,                           &
+                zs,rainbl,snow,snowh,snowc,                     &
                 dz8w,p8w,t_phy,qv_curr,qc_curr,rho,             & !p8w in [pa]
                 glw,gsw,emiss,chklowq,                          &
                 flqc,flhc,mavail,canwat,vegfra,albedo,znt,      &

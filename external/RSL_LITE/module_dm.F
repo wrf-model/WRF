@@ -207,17 +207,17 @@ CONTAINS
 
       if ( id.eq.1 ) then
          WRITE(wrf_err_message,*)'*************************************'
-         CALL wrf_message( wrf_err_message )
+         CALL wrf_message( TRIM(wrf_err_message) )
          WRITE(wrf_err_message,*)'Parent domain'
-         CALL wrf_message( wrf_err_message )
+         CALL wrf_message( TRIM(wrf_err_message) )
          WRITE(wrf_err_message,*)'ids,ide,jds,jde ',ids,ide,jds,jde
-         CALL wrf_message( wrf_err_message )
+         CALL wrf_message( TRIM(wrf_err_message) )
          WRITE(wrf_err_message,*)'ims,ime,jms,jme ',ims,ime,jms,jme
-         CALL wrf_message( wrf_err_message )
+         CALL wrf_message( TRIM(wrf_err_message) )
          WRITE(wrf_err_message,*)'ips,ipe,jps,jpe ',ips,ipe,jps,jpe
-         CALL wrf_message( wrf_err_message )
+         CALL wrf_message( TRIM(wrf_err_message) )
          WRITE(wrf_err_message,*)'*************************************'
-         CALL wrf_message( wrf_err_message )
+         CALL wrf_message( TRIM(wrf_err_message) )
       endif
 
       IF ( id .GT. 1 ) THEN
@@ -314,25 +314,25 @@ CONTAINS
          c_kme = c_kde
 
          WRITE(wrf_err_message,*)'*************************************'
-         CALL wrf_message( wrf_err_message )
+         CALL wrf_message( TRIM(wrf_err_message) )
          WRITE(wrf_err_message,*)'Nesting domain'
-         CALL wrf_message( wrf_err_message )
+         CALL wrf_message( TRIM(wrf_err_message) )
          WRITE(wrf_err_message,*)'ids,ide,jds,jde ',ids,ide,jds,jde
-         CALL wrf_message( wrf_err_message )
+         CALL wrf_message( TRIM(wrf_err_message) )
          WRITE(wrf_err_message,*)'ims,ime,jms,jme ',ims,ime,jms,jme
-         CALL wrf_message( wrf_err_message )
+         CALL wrf_message( TRIM(wrf_err_message) )
          WRITE(wrf_err_message,*)'ips,ipe,jps,jpe ',ips,ipe,jps,jpe
-         CALL wrf_message( wrf_err_message )
+         CALL wrf_message( TRIM(wrf_err_message) )
          WRITE(wrf_err_message,*)'INTERMEDIATE domain'
-         CALL wrf_message( wrf_err_message )
+         CALL wrf_message( TRIM(wrf_err_message) )
          WRITE(wrf_err_message,*)'ids,ide,jds,jde ',c_ids,c_ide,c_jds,c_jde
-         CALL wrf_message( wrf_err_message )
+         CALL wrf_message( TRIM(wrf_err_message) )
          WRITE(wrf_err_message,*)'ims,ime,jms,jme ',c_ims,c_ime,c_jms,c_jme
-         CALL wrf_message( wrf_err_message )
+         CALL wrf_message( TRIM(wrf_err_message) )
          WRITE(wrf_err_message,*)'ips,ipe,jps,jpe ',c_ips,c_ipe,c_jps,c_jpe
-         CALL wrf_message( wrf_err_message )
+         CALL wrf_message( TRIM(wrf_err_message) )
          WRITE(wrf_err_message,*)'*************************************'
-         CALL wrf_message( wrf_err_message )
+         CALL wrf_message( TRIM(wrf_err_message) )
 
          SELECT CASE ( model_data_order )
             ! need to finish other cases

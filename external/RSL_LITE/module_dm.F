@@ -6,12 +6,15 @@ MODULE module_dm
    USE module_configure
    USE module_state_description
    USE module_wrf_error
+   IMPLICIT NONE
 
 #if ( NMM_CORE == 1 ) || defined( WRF_CHEM ) 
    INTEGER, PARAMETER :: max_halo_width = 6
 #else
    INTEGER, PARAMETER :: max_halo_width = 5
 #endif
+
+   INTEGER :: ips_save, ipe_save, jps_save, jpe_save
 
    INTEGER ntasks, ntasks_y, ntasks_x, mytask, mytask_x, mytask_y
    INTEGER local_communicator, local_iocommunicator
@@ -25,6 +28,7 @@ CONTAINS
 
 
    SUBROUTINE MPASPECT( P, MINM, MINN, PROCMIN_M, PROCMIN_N )
+      IMPLICIT NONE
       INTEGER P, M, N, MINI, MINM, MINN, PROCMIN_M, PROCMIN_N
       MINI = 2*P
       MINM = 1
@@ -62,6 +66,7 @@ CONTAINS
    END SUBROUTINE MPASPECT
 
    SUBROUTINE wrf_dm_initialize
+      IMPLICIT NONE
       INCLUDE 'mpif.h'
       INTEGER :: local_comm, ierr
       CALL wrf_get_dm_communicator ( local_comm )
@@ -133,7 +138,8 @@ CONTAINS
       INTEGER               :: c_ims, c_ime, c_jms, c_jme, c_kms, c_kme
       INTEGER               :: c_ips, c_ipe, c_jps, c_jpe, c_kps, c_kpe
 
-      INTEGER               :: idim , jdim , kdim , i, rem , a, b
+      INTEGER               :: idim , jdim , kdim , rem , a, b
+      INTEGER               :: i, j, ni, nj, Px, Py, P
 
       INTEGER               :: parent_grid_ratio, i_parent_start, j_parent_start
       INTEGER               :: shw
@@ -199,6 +205,21 @@ CONTAINS
             sp3 = kps ; ep3 = kpe ; sm3 = kms ; em3 = kme
       END SELECT
 
+      if ( id.eq.1 ) then
+         WRITE(wrf_err_message,*)'*************************************'
+         CALL wrf_message( wrf_err_message )
+         WRITE(wrf_err_message,*)'Parent domain'
+         CALL wrf_message( wrf_err_message )
+         WRITE(wrf_err_message,*)'ids,ide,jds,jde ',ids,ide,jds,jde
+         CALL wrf_message( wrf_err_message )
+         WRITE(wrf_err_message,*)'ims,ime,jms,jme ',ims,ime,jms,jme
+         CALL wrf_message( wrf_err_message )
+         WRITE(wrf_err_message,*)'ips,ipe,jps,jpe ',ips,ipe,jps,jpe
+         CALL wrf_message( wrf_err_message )
+         WRITE(wrf_err_message,*)'*************************************'
+         CALL wrf_message( wrf_err_message )
+      endif
+
       IF ( id .GT. 1 ) THEN
 
          CALL nl_get_shw( id, shw )
@@ -235,40 +256,103 @@ CONTAINS
 
          ! we want the intermediate domain to be decomposed the
          ! the same as the underlying nest. So try this:
-
+#if 0
          CALL compute_memory_dims_rsl_lite ( shw, bdx, bdy,  &
                       c_ids, c_ide, c_jds, c_jde, c_kds, c_kde, &
                       c_ims, c_ime, c_jms, c_jme, c_kms, c_kme, &
                       c_ips, c_ipe, c_jps, c_jpe, c_kps, c_kpe )
+#else
 
-      SELECT CASE ( model_data_order )
-         ! need to finish other cases
-         CASE ( DATA_ORDER_ZXY )
-            c_sd2 = c_ids ; c_ed2 = c_ide ; c_sp2 = c_ips ; c_ep2 = c_ipe ; c_sm2 = c_ims ; c_em2 = c_ime
-            c_sd3 = c_jds ; c_ed3 = c_jde ; c_sp3 = c_jps ; c_ep3 = c_jpe ; c_sm3 = c_jms ; c_em3 = c_jme
-            c_sd1 = c_kds ; c_ed1 = c_kde ; c_sp1 = c_kps ; c_ep1 = c_kpe ; c_sm1 = c_kms ; c_em1 = c_kme
-         CASE ( DATA_ORDER_XYZ )
-            c_sd1 = c_ids ; c_ed1 = c_ide ; c_sp1 = c_ips ; c_ep1 = c_ipe ; c_sm1 = c_ims ; c_em1 = c_ime
-            c_sd2 = c_jds ; c_ed2 = c_jde ; c_sp2 = c_jps ; c_ep2 = c_jpe ; c_sm2 = c_jms ; c_em2 = c_jme
-            c_sd3 = c_kds ; c_ed3 = c_kde ; c_sp3 = c_kps ; c_ep3 = c_kpe ; c_sm3 = c_kms ; c_em3 = c_kme
-         CASE ( DATA_ORDER_XZY )
-            c_sd1 = c_ids ; c_ed1 = c_ide ; c_sp1 = c_ips ; c_ep1 = c_ipe ; c_sm1 = c_ims ; c_em1 = c_ime
-            c_sd3 = c_jds ; c_ed3 = c_jde ; c_sp3 = c_jps ; c_ep3 = c_jpe ; c_sm3 = c_jms ; c_em3 = c_jme
-            c_sd2 = c_kds ; c_ed2 = c_kde ; c_sp2 = c_kps ; c_ep2 = c_kpe ; c_sm2 = c_kms ; c_em2 = c_kme
-         CASE ( DATA_ORDER_YXZ)
-            c_sd2 = c_ids ; c_ed2 = c_ide ; c_sp2 = c_ips ; c_ep2 = c_ipe ; c_sm2 = c_ims ; c_em2 = c_ime
-            c_sd1 = c_jds ; c_ed1 = c_jde ; c_sp1 = c_jps ; c_ep1 = c_jpe ; c_sm1 = c_jms ; c_em1 = c_jme
-            c_sd3 = c_kds ; c_ed3 = c_kde ; c_sp3 = c_kps ; c_ep3 = c_kpe ; c_sm3 = c_kms ; c_em3 = c_kme
-      END SELECT
+         c_ips = -1
+         nj = ( c_jds - j_parent_start ) * parent_grid_ratio + 1 + 1 ;
+         DO i = c_ids, c_ide
+            ni = ( i - i_parent_start ) * parent_grid_ratio + 1 + 1 ;
+            CALL task_for_point ( ni, nj, ids, ide, jds, jde, ntasks_x, ntasks_y, Px, Py, P )
+            IF ( Px .EQ. mytask_x ) THEN
+               c_ipe = i
+               IF ( c_ips .EQ. -1 ) c_ips = i
+            ENDIF
+         ENDDO
 
+         c_jps = -1
+         ni = ( c_ids - i_parent_start ) * parent_grid_ratio + 1 + 1 ;
+         DO j = c_jds, c_jde
+            nj = ( j - j_parent_start ) * parent_grid_ratio + 1 + 1 ;
+            CALL task_for_point ( ni, nj, ids, ide, jds, jde, ntasks_x, ntasks_y, Px, Py, P )
+            IF ( Py .EQ. mytask_y ) THEN
+               c_jpe = j
+               IF ( c_jps .EQ. -1 ) c_jps = j
+            ENDIF
+         ENDDO
 
-#if 0
-         ! global dims are same as CD
-         ! good for IKJ only
-         c_sd1 = parent%sd31       ; c_ed1 = parent%ed31
-         c_sd2 = parent%sd32       ; c_ed2 = parent%ed32
-         c_sd3 = parent%sd33       ; c_ed3 = parent%ed33
 #endif
+
+! extend the patch dimensions out shw along edges of domain
+         IF ( mytask_x .EQ. 0 ) THEN
+           c_ips = c_ips - shw
+         ENDIF
+         IF ( mytask_x .EQ. ntasks_x-1 ) THEN
+           c_ipe = c_ipe + shw
+         ENDIF
+         c_ims = max( c_ips - max(shw,max_halo_width), c_ids - bdx ) - 1
+         c_ime = min( c_ipe + max(shw,max_halo_width), c_ide + bdx ) + 1
+
+! handle j dims
+! extend the patch dimensions out shw along edges of domain
+         IF ( mytask_y .EQ. 0 ) THEN
+            c_jps = c_jps - shw
+         ENDIF
+         IF ( mytask_y .EQ. ntasks_y-1 ) THEN
+            c_jpe = c_jpe + shw
+         ENDIF
+         c_jms = max( c_jps - max(shw,max_halo_width), c_jds - bdx ) - 1
+         c_jme = min( c_jpe + max(shw,max_halo_width), c_jde + bdx ) + 1
+! handle k dims
+         c_kps = 1
+         c_kpe = c_kde
+         c_kms = 1
+         c_kme = c_kde
+
+         WRITE(wrf_err_message,*)'*************************************'
+         CALL wrf_message( wrf_err_message )
+         WRITE(wrf_err_message,*)'Nesting domain'
+         CALL wrf_message( wrf_err_message )
+         WRITE(wrf_err_message,*)'ids,ide,jds,jde ',ids,ide,jds,jde
+         CALL wrf_message( wrf_err_message )
+         WRITE(wrf_err_message,*)'ims,ime,jms,jme ',ims,ime,jms,jme
+         CALL wrf_message( wrf_err_message )
+         WRITE(wrf_err_message,*)'ips,ipe,jps,jpe ',ips,ipe,jps,jpe
+         CALL wrf_message( wrf_err_message )
+         WRITE(wrf_err_message,*)'INTERMEDIATE domain'
+         CALL wrf_message( wrf_err_message )
+         WRITE(wrf_err_message,*)'ids,ide,jds,jde ',c_ids,c_ide,c_jds,c_jde
+         CALL wrf_message( wrf_err_message )
+         WRITE(wrf_err_message,*)'ims,ime,jms,jme ',c_ims,c_ime,c_jms,c_jme
+         CALL wrf_message( wrf_err_message )
+         WRITE(wrf_err_message,*)'ips,ipe,jps,jpe ',c_ips,c_ipe,c_jps,c_jpe
+         CALL wrf_message( wrf_err_message )
+         WRITE(wrf_err_message,*)'*************************************'
+         CALL wrf_message( wrf_err_message )
+
+         SELECT CASE ( model_data_order )
+            ! need to finish other cases
+            CASE ( DATA_ORDER_ZXY )
+               c_sd2 = c_ids ; c_ed2 = c_ide ; c_sp2 = c_ips ; c_ep2 = c_ipe ; c_sm2 = c_ims ; c_em2 = c_ime
+               c_sd3 = c_jds ; c_ed3 = c_jde ; c_sp3 = c_jps ; c_ep3 = c_jpe ; c_sm3 = c_jms ; c_em3 = c_jme
+               c_sd1 = c_kds ; c_ed1 = c_kde ; c_sp1 = c_kps ; c_ep1 = c_kpe ; c_sm1 = c_kms ; c_em1 = c_kme
+            CASE ( DATA_ORDER_XYZ )
+               c_sd1 = c_ids ; c_ed1 = c_ide ; c_sp1 = c_ips ; c_ep1 = c_ipe ; c_sm1 = c_ims ; c_em1 = c_ime
+               c_sd2 = c_jds ; c_ed2 = c_jde ; c_sp2 = c_jps ; c_ep2 = c_jpe ; c_sm2 = c_jms ; c_em2 = c_jme
+               c_sd3 = c_kds ; c_ed3 = c_kde ; c_sp3 = c_kps ; c_ep3 = c_kpe ; c_sm3 = c_kms ; c_em3 = c_kme
+            CASE ( DATA_ORDER_XZY )
+               c_sd1 = c_ids ; c_ed1 = c_ide ; c_sp1 = c_ips ; c_ep1 = c_ipe ; c_sm1 = c_ims ; c_em1 = c_ime
+               c_sd3 = c_jds ; c_ed3 = c_jde ; c_sp3 = c_jps ; c_ep3 = c_jpe ; c_sm3 = c_jms ; c_em3 = c_jme
+               c_sd2 = c_kds ; c_ed2 = c_kde ; c_sp2 = c_kps ; c_ep2 = c_kpe ; c_sm2 = c_kms ; c_em2 = c_kme
+            CASE ( DATA_ORDER_YXZ)
+               c_sd2 = c_ids ; c_ed2 = c_ide ; c_sp2 = c_ips ; c_ep2 = c_ipe ; c_sm2 = c_ims ; c_em2 = c_ime
+               c_sd1 = c_jds ; c_ed1 = c_jde ; c_sp1 = c_jps ; c_ep1 = c_jpe ; c_sm1 = c_jms ; c_em1 = c_jme
+               c_sd3 = c_kds ; c_ed3 = c_kde ; c_sp3 = c_kps ; c_ep3 = c_kpe ; c_sm3 = c_kms ; c_em3 = c_kme
+         END SELECT
 
          ALLOCATE ( intermediate_grid )
          ALLOCATE ( intermediate_grid%parents( max_parents ) )
@@ -355,6 +439,7 @@ CONTAINS
                    ims, ime, jms, jme, kms, kme, &
                    ips, ipe, jps, jpe, kps, kpe )
 
+        IMPLICIT NONE
         INTEGER, INTENT(IN)    ::  shw, bdx, bdy
         INTEGER, INTENT(IN)    ::  ids, ide, jds, jde, kds, kde
         INTEGER, INTENT(OUT)    ::  ips, ipe, jps, jpe, kps, kpe
@@ -537,6 +622,7 @@ CONTAINS
 ! stub
    SUBROUTINE wrf_dm_move_nest ( parent, nest, dx, dy )
       USE module_domain
+      IMPLICIT NONE
       TYPE (domain), INTENT(INOUT) :: parent, nest
       INTEGER, INTENT(IN)          :: dx,dy
       RETURN
@@ -719,7 +805,7 @@ SUBROUTINE write_68( grid, v , s , &
           its, ite, jts, jte, kts, kte
   REAL, DIMENSION( ims:ime , kms:kme, jms:jme ) :: v
 
-  INTEGER i,j,k
+  INTEGER i,j,k,ierr
 
   logical, external :: wrf_dm_on_monitor
   real globbuf( ids:ide, kds:kde, jds:jde )
@@ -756,11 +842,14 @@ SUBROUTINE write_68( grid, v , s , &
 END
 
    SUBROUTINE wrf_abort
+      IMPLICIT NONE
       INCLUDE 'mpif.h'
+      INTEGER ierr
       CALL mpi_abort(MPI_COMM_WORLD,1,ierr)
    END SUBROUTINE wrf_abort
 
    SUBROUTINE wrf_dm_shutdown
+      IMPLICIT NONE
       INTEGER ierr
       CALL MPI_FINALIZE( ierr )
       RETURN
@@ -768,6 +857,7 @@ END
 
    LOGICAL FUNCTION wrf_dm_on_monitor()
       USE module_dm
+      IMPLICIT NONE
       wrf_dm_on_monitor = mytask .EQ. 0
       RETURN
    END FUNCTION wrf_dm_on_monitor
@@ -919,7 +1009,7 @@ END
                                        ips,ipe,jps,jpe,kps,kpe
        CHARACTER *(*) stagger,ordering
        LOGICAL, EXTERNAL :: wrf_dm_on_monitor, has_char
-       INTEGER fid,domdesc,typesize
+       INTEGER fid,domdesc,typesize,ierr
        REAL globbuf(*)
        REAL buf(*)
 
@@ -965,10 +1055,11 @@ END
 
      ! moved to here to be after the potential recalculations of D dims
        IF ( wrf_dm_on_monitor() ) THEN
-         ALLOCATE ( tmpbuf ( (DE1-DS1+1)*(DE2-DS2+1)*(DE3-DS3+1)/RWORDSIZE*typesize+32 ) )
+         ALLOCATE ( tmpbuf ( (DE1-DS1+1)*(DE2-DS2+1)*(DE3-DS3+1)/RWORDSIZE*typesize+32 ), STAT=ierr )
        ELSE
-         ALLOCATE ( tmpbuf ( 1 ) )
+         ALLOCATE ( tmpbuf ( 1 ), STAT=ierr )
        ENDIF
+       IF ( ierr .ne. 0 ) CALL wrf_error_fatal ('allocating tmpbuf in wrf_patch_to_global_generic')
  
        Patch(1,1) = ps1 ; Patch(1,2) = pe1    ! use patch dims
        Patch(2,1) = ps2 ; Patch(2,2) = pe2
@@ -1327,7 +1418,7 @@ END
                                        MS1,ME1,MS2,ME2,MS3,ME3,&
                                        PS1,PE1,PS2,PE2,PS3,PE3
        CHARACTER *(*) stagger,ordering
-       INTEGER fid,domdesc,typesize
+       INTEGER fid,domdesc,typesize,ierr
        REAL globbuf(*)
        REAL buf(*)
        LOGICAL, EXTERNAL :: wrf_dm_on_monitor, has_char
@@ -1373,10 +1464,11 @@ END
 
      ! moved to here to be after the potential recalculations of D dims
        IF ( wrf_dm_on_monitor() ) THEN
-         ALLOCATE ( tmpbuf ( (DE1-DS1+1)*(DE2-DS2+1)*(DE3-DS3+1)/RWORDSIZE*typesize+32 ) )
+         ALLOCATE ( tmpbuf ( (DE1-DS1+1)*(DE2-DS2+1)*(DE3-DS3+1)/RWORDSIZE*typesize+32 ), STAT=ierr )
        ELSE
-         ALLOCATE ( tmpbuf ( 1 ) )
+         ALLOCATE ( tmpbuf ( 1 ), STAT=ierr )
        ENDIF
+       IF ( ierr .ne. 0 ) CALL wrf_error_fatal ('allocating tmpbuf in wrf_global_to_patch_generic')
 
        Patch(1,1) = ps1 ; Patch(1,2) = pe1    ! use patch dims
        Patch(2,1) = ps2 ; Patch(2,2) = pe2
@@ -1647,6 +1739,7 @@ END
       USE module_domain
       USE module_configure
       USE module_dm
+      IMPLICIT NONE
 !
       TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
       TYPE(domain), POINTER :: ngrid
@@ -1709,7 +1802,7 @@ integer myproc
 
 !------------------------------------------------------------------
 
-   SUBROUTINE interp_domain_em_part1 ( grid, intermediate_grid, config_flags ,  &
+   SUBROUTINE interp_domain_em_part1 ( grid, intermediate_grid, ngrid, config_flags ,  &
 !
 #include "em_dummy_args.inc"
 !
@@ -1718,9 +1811,11 @@ integer myproc
       USE module_configure
       USE module_dm
       USE module_timing
+      IMPLICIT NONE
 !
       TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
       TYPE(domain), POINTER :: intermediate_grid
+      TYPE(domain), POINTER :: ngrid
 #include <em_dummy_decl.inc>
       INTEGER nlev, msize
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
@@ -1729,11 +1824,14 @@ integer myproc
       INTEGER       ::          cids, cide, cjds, cjde, ckds, ckde,    &
                                 cims, cime, cjms, cjme, ckms, ckme,    &
                                 cips, cipe, cjps, cjpe, ckps, ckpe
+      INTEGER       ::          iids, iide, ijds, ijde, ikds, ikde,    &
+                                iims, iime, ijms, ijme, ikms, ikme,    &
+                                iips, iipe, ijps, ijpe, ikps, ikpe
       INTEGER       ::          nids, nide, njds, njde, nkds, nkde,    &
                                 nims, nime, njms, njme, nkms, nkme,    &
                                 nips, nipe, njps, njpe, nkps, nkpe
 
-      INTEGER icoord, jcoord, idim_cd, jdim_cd
+      INTEGER icoord, jcoord, idim_cd, jdim_cd, pgr
       INTEGER local_comm, myproc, nproc
 
       CALL wrf_get_dm_communicator ( local_comm )
@@ -1748,18 +1846,22 @@ integer myproc
                                 cims, cime, cjms, cjme, ckms, ckme,    &
                                 cips, cipe, cjps, cjpe, ckps, ckpe    )
       CALL get_ijk_from_grid (  intermediate_grid ,              &
+                                iids, iide, ijds, ijde, ikds, ikde,    &
+                                iims, iime, ijms, ijme, ikms, ikme,    &
+                                iips, iipe, ijps, ijpe, ikps, ikpe    )
+      CALL get_ijk_from_grid (  ngrid ,              &
                                 nids, nide, njds, njde, nkds, nkde,    &
                                 nims, nime, njms, njme, nkms, nkme,    &
                                 nips, nipe, njps, njpe, nkps, nkpe    )
 
-
+      CALL nl_get_parent_grid_ratio ( ngrid%id, pgr )
       CALL nl_get_i_parent_start ( intermediate_grid%id, i_parent_start )
       CALL nl_get_j_parent_start ( intermediate_grid%id, j_parent_start )
       CALL nl_get_shw            ( intermediate_grid%id, shw )
       icoord =    i_parent_start - shw
       jcoord =    j_parent_start - shw
-      idim_cd = nide - nids + 1
-      jdim_cd = njde - njds + 1
+      idim_cd = iide - iids + 1
+      jdim_cd = ijde - ijds + 1
 
       nlev  = ckde - ckds + 1
 
@@ -1782,6 +1884,7 @@ integer myproc
       USE module_domain
       USE module_configure
       USE module_dm
+      IMPLICIT NONE
 !
       TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
       TYPE(domain), POINTER :: ngrid
@@ -1826,7 +1929,6 @@ integer myproc
 
 #  include "em_nest_interpdown_unpack.inc"
 
-
       CALL get_ijk_from_grid (  grid ,              &
                                 ids, ide, jds, jde, kds, kde,    &
                                 ims, ime, jms, jme, kms, kme,    &
@@ -1853,6 +1955,7 @@ integer myproc
       USE module_configure
       USE module_dm
       USE module_state_description
+      IMPLICIT NONE
 !
       TYPE(domain), TARGET :: grid          ! name of the grid being dereferenced (must be "grid")
       TYPE (grid_config_rec_type) :: config_flags ! configureation flags, has vertical dim of 
@@ -1863,6 +1966,8 @@ integer myproc
       INTEGER       ::          ids, ide, jds, jde, kds, kde,    &
                                 ims, ime, jms, jme, kms, kme,    &
                                 ips, ipe, jps, jpe, kps, kpe
+
+      INTEGER       :: idum1, idum2
 
 
 #ifdef DEREF_KLUDGE
@@ -1900,6 +2005,7 @@ integer myproc
       USE module_domain
       USE module_configure
       USE module_dm
+      IMPLICIT NONE
 !
       TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
       TYPE(domain), POINTER :: ngrid
@@ -1915,7 +2021,7 @@ integer myproc
       INTEGER       ::          nids, nide, njds, njde, nkds, nkde,    &
                                 nims, nime, njms, njme, nkms, nkme,    &
                                 nips, nipe, njps, njpe, nkps, nkpe
-      INTEGER local_comm, myproc, nproc
+      INTEGER local_comm, myproc, nproc, idum1, idum2
 
 #ifdef DEREF_KLUDGE
 !  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
@@ -1950,10 +2056,12 @@ integer myproc
 
 
 !
+! intermediate grid
       CALL get_ijk_from_grid (  grid ,                                 &
                                 cids, cide, cjds, cjde, ckds, ckde,    &
                                 cims, cime, cjms, cjme, ckms, ckme,    &
                                 cips, cipe, cjps, cjpe, ckps, ckpe    )
+! nest grid
       CALL get_ijk_from_grid (  ngrid ,                                &
                                 nids, nide, njds, njde, nkds, nkde,    &
                                 nims, nime, njms, njme, nkms, nkme,    &
@@ -1966,21 +2074,30 @@ integer myproc
       ipe_save = ngrid%i_parent_start + (nide-nids+1) / ngrid%parent_grid_ratio - 1
       jpe_save = ngrid%j_parent_start + (njde-njds+1) / ngrid%parent_grid_ratio - 1
 
+! feedback_nest_prep invokes a halo exchange on the ngrid. It is done this way
+! in a separate routine because the HALOs need the data to be dereference from the
+! grid data structure and, in this routine, the dereferenced fields are related to
+! the intermediate domain, not the nest itself. Save the current grid pointer to intermediate
+! domain, switch grid to point to ngrid, invoke feedback_nest_prep,  then restore grid
+! to point to intermediate domain.
+
       CALL model_to_grid_config_rec ( ngrid%id , model_config_rec , nconfig_flags )
       CALL set_scalar_indices_from_config ( ngrid%id , idum1 , idum2 )
       xgrid => grid
       grid => ngrid
-
 #include "deref_kludge.h"
-
       CALL feedback_nest_prep ( grid, nconfig_flags ,  &
 !
 #include "em_actual_args.inc"
 !
 )
 
+! put things back so grid is intermediate grid
+
       grid => xgrid
       CALL set_scalar_indices_from_config ( grid%id , idum1 , idum2 )
+
+! "interp" (basically copy) ngrid onto intermediate grid
 
 #  include "em_nest_feedbackup_interp.inc"
 
@@ -1999,6 +2116,9 @@ integer myproc
       USE module_domain
       USE module_configure
       USE module_dm
+      USE module_utility
+      IMPLICIT NONE
+
 !
       TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
       TYPE(domain), POINTER :: intermediate_grid
@@ -2022,6 +2142,10 @@ integer myproc
       INTEGER icoord, jcoord, idim_cd, jdim_cd
       INTEGER local_comm, myproc, nproc
 
+      TYPE(WRF_UTIL_Time)        :: CurrTime
+      character*256 :: timestr
+      integer ierr
+
       LOGICAL, EXTERNAL  :: em_cd_feedback_mask
 #ifdef DEREF_KLUDGE
 !  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
@@ -2033,6 +2157,23 @@ integer myproc
 
 #define COPY_IN
 #include <em_scalar_derefs.inc>
+
+! On entry to this routine, 
+!  "grid" refers to the parent domain
+!  "intermediate_grid" refers to local copy of parent domain that overlies this patch of nest
+!  "ngrid" refers to the nest, which is only needed for smoothing on the parent because 
+!          the nest feedback data has already been transferred during em_nest_feedbackup_interp
+!          in part1, above.
+! The way these settings c and n dimensions are set, below, looks backwards but from the point 
+! of view of the RSL routine rsl_lite_to_parent_info(), call to which is included by 
+! em_nest_feedbackup_pack, the "n" domain represents the parent domain and the "c" domain
+! represents the intermediate domain. The backwards lookingness should be fixed in the gen_comms.c
+! registry routine that accompanies RSL_LITE but, just as it's sometimes easier to put up a road
+! sign that says "DIP" than fix the dip,  at this point it was easier just to write this comment. JM
+!
+
+      CALL WRF_UTIL_ClockGet( grid%domain_clock, CurrTime=CurrTime, rc=ierr )
+      CALL wrf_timetoa ( CurrTime, timestr )
 
       CALL get_ijk_from_grid (  intermediate_grid ,                   &
                                 cids, cide, cjds, cjde, ckds, ckde,    &
@@ -2058,6 +2199,7 @@ integer myproc
       CALL wrf_get_dm_communicator ( local_comm )
       CALL wrf_get_myproc( myproc )
       CALL wrf_get_nproc( nproc )
+
       CALL rsl_lite_merge_msgs( myproc, nproc, local_comm )
 
 #  include "em_nest_feedbackup_unpack.inc"
@@ -2177,14 +2319,17 @@ END SUBROUTINE wrf_dm_define_comms
 
    SUBROUTINE set_dm_debug 
     USE module_dm
+    IMPLICIT NONE
     dm_debug_flag = .TRUE.
    END SUBROUTINE set_dm_debug
    SUBROUTINE reset_dm_debug 
     USE module_dm
+    IMPLICIT NONE
     dm_debug_flag = .FALSE.
    END SUBROUTINE reset_dm_debug
    SUBROUTINE get_dm_debug ( arg )
     USE module_dm
+    IMPLICIT NONE
     LOGICAL arg
     arg = dm_debug_flag
    END SUBROUTINE get_dm_debug

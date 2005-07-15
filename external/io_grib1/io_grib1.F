@@ -49,10 +49,10 @@ module data_info
   real                                     :: timestep
   character,     dimension(:), pointer     :: grib_tables
   character,     dimension(:), pointer     :: grid_info
-  character, dimension(maxFileHandles,:), pointer :: fileindex(:,:)
+  character, dimension(:,:), pointer :: fileindex
   integer,   dimension(maxFileHandles)     :: CurrentTime
   integer,   dimension(maxFileHandles)     :: NumberTimes
-  character (DateStrLen), dimension(maxFileHandles,:), pointer :: Times(:,:)
+  character (DateStrLen), dimension(:,:), pointer :: Times
   integer                                  :: full_xsize, full_ysize
   integer, dimension(maxDomains)           :: domains
   integer                                  :: max_domain = 0

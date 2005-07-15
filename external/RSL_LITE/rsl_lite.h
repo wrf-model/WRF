@@ -18,6 +18,7 @@
 #      define RSL_LITE_FROM_CHILD_INFO rsl_lite_from_child_info
 #      define RSL_INTERNAL_MILLICLOCK rsl_internal_milliclock
 #      define RSL_INTERNAL_MICROCLOCK rsl_internal_microclock
+#      define TASK_FOR_POINT task_for_point
 # else
 #   ifdef F2CSTYLE
 #      define RSL_LITE_ERROR_DUP1 rsl_error_dup1__
@@ -38,6 +39,7 @@
 #      define RSL_LITE_FROM_CHILD_INFO rsl_lite_from_child_info
 #      define RSL_INTERNAL_MILLICLOCK rsl_internal_milliclock__
 #      define RSL_INTERNAL_MICROCLOCK rsl_internal_microclock__
+#      define TASK_FOR_POINT task_for_point__
 #   else
 #      define RSL_LITE_ERROR_DUP1 rsl_error_dup1_
 #      define BYTE_BCAST byte_bcast_
@@ -57,6 +59,7 @@
 #      define RSL_LITE_FROM_CHILD_INFO rsl_lite_from_child_info_
 #      define RSL_INTERNAL_MILLICLOCK rsl_internal_milliclock_
 #      define RSL_INTERNAL_MICROCLOCK rsl_internal_microclock_
+#      define TASK_FOR_POINT task_for_point_
 #   endif
 # endif
 #endif

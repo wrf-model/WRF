@@ -27,7 +27,7 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
 !    These routines are supplied by module_dm.F from the
 !    external communication package (e.g. external/RSL)
 ! ------------------------------------------------------
-      SUBROUTINE interp_domain_em_part1 ( grid, intermediate_grid, config_flags ,  &
+      SUBROUTINE interp_domain_em_part1 ( grid, intermediate_grid, ngrid, config_flags ,  &
 !
 #        include "em_dummy_args.inc"
 !
@@ -36,6 +36,7 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
          USE module_configure
          TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
          TYPE(domain), POINTER :: intermediate_grid
+         TYPE(domain), POINTER :: ngrid
          TYPE (grid_config_rec_type)            :: config_flags
 #        include <em_dummy_decl.inc>
       END SUBROUTINE interp_domain_em_part1
@@ -131,7 +132,7 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
         grid => parent_grid
         CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
 #       include "deref_kludge.h"
-        CALL interp_domain_em_part1 ( grid , nested_grid%intermediate_grid, config_flags ,  &
+        CALL interp_domain_em_part1 ( grid , nested_grid%intermediate_grid, nested_grid, config_flags ,  &
 !
 #         include "em_actual_args.inc"
 !

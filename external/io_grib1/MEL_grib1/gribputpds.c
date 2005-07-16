@@ -343,7 +343,7 @@ int inp2grib_PDS ( PDS_INPUT 	*pPDS_Input,
 		PDS_GRIB 	**ppPDS_Grib,
 		char 		*errmsg)
 #else
-int inp2grib_PDS ( pPDS_Input, ppPGDS_Grib, errmsg)
+int inp2grib_PDS ( pPDS_Input, ppPDS_Grib, errmsg)
 		PDS_INPUT 	*pPDS_Input;
 		PDS_GRIB 	**ppPDS_Grib;
 		char 		*errmsg;

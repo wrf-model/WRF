@@ -76,7 +76,7 @@ int  ld_dec_lookup ( char *lookup_fn, char *errmsg)
 #else
 int  ld_dec_lookup ( lookup_fn, errmsg)
 		     char *lookup_fn; 
-		     char *errmsg)
+		     char *errmsg;
 #endif
 {
   FILE  *infile;

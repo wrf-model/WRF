@@ -25,7 +25,7 @@
 #if PROTOTYPE_NEEDED
 int    gribhdr2file ( GRIB_HDR *gh, FILE *stream, char *errmsg)
 #else
-int    gribhdr2file ( gh, f1, errmsg)
+int    gribhdr2file ( gh, stream, errmsg)
 			GRIB_HDR *gh; 
 			FILE *stream; 
 			char *errmsg;
@@ -192,7 +192,7 @@ char wrstring[4];
 	    DPRINT1( "%s:  failed to write GH's entire Msg to file\n",func);
 	    sprintf(errmsg,
 	    "%s:  failed to write GH's entire Msg to file %d\n",func,check);
-	    //	    goto BYE; 
+	    /*	    goto BYE;  */
 	   }
   	DPRINT0 ("write GH's entire_msg to file successful\n");
 /*

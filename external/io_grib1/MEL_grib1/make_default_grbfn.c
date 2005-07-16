@@ -25,7 +25,9 @@
 void    make_default_grbfn  (DATA_INPUT di, USER_INPUT ui, char *default_fn)
 #else
 void    make_default_grbfn  (di,ui,default_fn)
-		DATA_INPUT di, USER_INPUT ui, char *default_fn)
+		DATA_INPUT di; 
+                USER_INPUT ui; 
+                char *default_fn;
 #endif
 {
 /*

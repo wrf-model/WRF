@@ -21,6 +21,7 @@
 #  There have been problems using the C-shell under Linux.
 #
 SHELL=/bin/sh
+MAKE=make
 
 #
 #  RULES that can be passed through to subdirectories. 

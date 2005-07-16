@@ -5,6 +5,9 @@
 #  Copyright (C) 2001, WSI Corporation
 #------------------------------------------------------------------------------
 #
+
+.SUFFIXES:      .c .o
+
 #
 # Specity location for Makefiles that are included.
 #
@@ -86,6 +89,9 @@ OBJS =  FTP_getfile.o \
 HDRS =	gribfuncs.h \
 	grib.h \
 	input.h
+
+.c.o:
+	$(CC) -c $(CFLAGS) $(INCLUDEDIRS) $(DEBUG) $*.c
 
 #
 #  Include the boilerplate rules for building library modules.

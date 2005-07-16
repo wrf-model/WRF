@@ -5,6 +5,9 @@
 #  Copyright (C) 2001, WSI Corporation
 #------------------------------------------------------------------------------
 #
+
+.SUFFIXES:      .c .o
+
 # Specity location for Makefiles that are included.
 #
 BUILD_DIR = ../build
@@ -47,6 +50,9 @@ DEP_LIBS =  -L$(LIB_DEST) -lMEL_grib1
 OBJS =  alloc_2d.o \
 	read_grib.o \
 	write_grib.o
+
+.c.o:
+	$(CC) -c $(CFLAGS) $(INCLUDEDIRS) $(DEBUG) $*.c
 
 #
 #  Include the boilerplate rules for building library modules.

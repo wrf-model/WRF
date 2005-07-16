@@ -794,7 +794,7 @@ CONTAINS
 
    INTEGER ::  K,ILNB
 
-   REAL    ::  BSN, XSN, RHONEWSN, SNHEI                       , &
+   REAL    ::  BSN, XSN, RHONEWSN                              , &
                RAINF, SNTH, NEWSN, PRCPMS                      , &
                T3, UPFLUX, XINET
    REAL    ::  alb_snow,alb_snow_free,snhei_crit               , &

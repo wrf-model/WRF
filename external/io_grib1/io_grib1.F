@@ -116,7 +116,7 @@ subroutine ext_gr1_ioinit(SysDepInfo,Status)
 
   CALL GET_GRIB1_TABLES_SIZE(size)
   ALLOCATE(grib_tables(1:size), STAT=istat)
-  CALL LOAD_GRIB1_TABLES ("gribmap.txt", grib_tables, istat)
+  CALL LOAD_GRIB1_TABLES ("gribmap.txt"//ACHAR(0), grib_tables, istat)
   if (istat .ne. 0) then
      DEALLOCATE(grib_tables)
      WRITE( wrf_err_message , * ) &
@@ -3774,7 +3774,7 @@ SUBROUTINE Transpose(MemoryOrder, di, FieldType, Field, &
   CHARACTER (LEN=1000)            :: msg
      
 !        Field(1:di,dims(1),dims(2),dims(3)) = data((row-1)*numcols+col)
-  if ((FieldType == WRF_REAL) .or. (FieldType == WRF_DOUBLE)) then
+! if ((FieldType == WRF_REAL) .or. (FieldType == WRF_DOUBLE)) then
      do col=1,numcols
         do row=1,numrows
            call get_dimvals(MemoryOrder,col,row,zidx,dims)
@@ -3782,25 +3782,25 @@ SUBROUTINE Transpose(MemoryOrder, di, FieldType, Field, &
                 TRANSFER(data((row-1)*numcols+col),Field,1)
         enddo
      enddo
-  else if (FieldType == WRF_INTEGER) then
-     do col=1,numcols
-        do row=1,numrows
-           call get_dimvals(MemoryOrder,col,row,zidx,dims)
-           Field(1:di,dims(1),dims(2),dims(3)) = data((row-1)*numcols+col)
-        enddo
-     enddo
-  else if (FieldType == WRF_LOGICAL) then
-     do col=1,numcols
-        do row=1,numrows
-           call get_dimvals(MemoryOrder,col,row,zidx,dims)
-           Field(1:di,dims(1),dims(2),dims(3)) = &
-                TRANSFER(data((row-1)*numcols+col),logicaltype,1)
-        enddo
-     enddo
-  else 
-     write (msg,*)'Reading of type ',FieldType,'from grib1 data not supported'
-     call wrf_message(msg)
-  endif
+! else if (FieldType == WRF_INTEGER) then
+!    do col=1,numcols
+!       do row=1,numrows
+!          call get_dimvals(MemoryOrder,col,row,zidx,dims)
+!          Field(1:di,dims(1),dims(2),dims(3)) = data((row-1)*numcols+col)
+!       enddo
+!    enddo
+! else if (FieldType == WRF_LOGICAL) then
+!    do col=1,numcols
+!       do row=1,numrows
+!          call get_dimvals(MemoryOrder,col,row,zidx,dims)
+!          Field(1:di,dims(1),dims(2),dims(3)) = &
+!               TRANSFER(data((row-1)*numcols+col),logicaltype,1)
+!       enddo
+!    enddo
+! else 
+!    write (msg,*)'Reading of type ',FieldType,'from grib1 data not supported'
+!    call wrf_message(msg)
+! endif
   
 
 end SUBROUTINE

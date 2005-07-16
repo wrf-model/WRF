@@ -7,6 +7,7 @@
 #      define GET_GRIB_PARAM get_grib_param
 #      define FREE_GRIBMAP  free_gribmap
 #      define GET_GRIB1_TABLE_INFO_SIZE get_grib1_table_info_size
+#      define GET_GRIB1_TABLES_SIZE get_grib1_tables_size
 #      define READ_GRIBMAP read_gribmap
 # else
 #   ifdef F2CSTYLE

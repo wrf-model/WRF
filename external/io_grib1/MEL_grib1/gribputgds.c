@@ -1,3 +1,5 @@
+#define NCARIBM_NOC99
+
 #include <stdio.h>
 #include <string.h>
 #include <netinet/in.h>
@@ -46,7 +48,7 @@ int   gribputgds ( GEOM_IN  Geom_In, GDS_HEAD_INPUT *pGDS_Head_Input,
 		void  **ppvGDS_Proj_Input, GRIB_HDR  **ppgrib_hdr,
 		char  *errmsg)
 #else
-int   gribputgds ( Geom_in, pGDS_Head_Input, ppvGDS_Proj_Input, 
+int   gribputgds ( Geom_In, pGDS_Head_Input, ppvGDS_Proj_Input, 
 						ppgrib_hdr, errmsg)
 		GEOM_IN  Geom_In; 
 		GDS_HEAD_INPUT *pGDS_Head_Input;
@@ -1696,3 +1698,14 @@ long round(double value)
   return retval;
 }
 */
+/*
+NCAR AIX does not have lrint, make one up.
+*/
+#ifdef NCARIBM_NOC99
+long lrint(double value)
+{
+  long retval;
+  retval=(long) rint(value);
+  return retval;
+}
+#endif

@@ -92,7 +92,7 @@ CONTAINS
                CALL wrf_debug ( 0 , message )  
             END IF
 
-         CASE ( LSMSCHEME ) 
+         CASE ( LSMSCHEME , RUCLSMSCHEME ) 
             num_seaice_changes = 0
             DO j = jts , MIN(jde-1,jte)
                DO i = its , MIN(ide-1,ite)
@@ -107,8 +107,6 @@ CONTAINS
                'Total pre number of land location changes (seaice set to zero) = ', num_seaice_changes
                CALL wrf_debug ( 0 , message )
             END IF
-
-         CASE ( RUCLSMSCHEME ) 
 
       END SELECT fix_seaice
 
@@ -155,7 +153,7 @@ CONTAINS
  
          CASE ( SLABSCHEME ) 
 
-         CASE ( LSMSCHEME ) 
+         CASE ( LSMSCHEME , RUCLSMSCHEME ) 
             DO j = jts , MIN(jde-1,jte)
                DO i = its , MIN(ide-1,ite)
                   IF ( xice(i,j) .GT. 200.0 ) THEN
@@ -228,8 +226,6 @@ CONTAINS
                CALL wrf_debug ( 0 , message )  
             END IF
 
-         CASE ( RUCLSMSCHEME ) 
-
       END SELECT fix_seaice
 
    END SUBROUTINE adjust_for_seaice_post
@@ -278,10 +274,14 @@ CONTAINS
             IF ( dominant_value .EQ. lwthresh ) THEN
                DO l = 1 , num_veg_cat
                   IF ( l .EQ. iswater ) CYCLE
-                  IF ( landuse_frac(i,l,j) .EQ. lwthresh ) THEN
+                  IF ( ( landuse_frac(i,l,j) .EQ. lwthresh ) .AND. ( landmask(i,j) .LT. 0.5 ) ) THEN
                      PRINT *,i,j,' water and category ',l,' both at 50%, landmask is ',landmask(i,j)
                      landuse_frac(i,l,j) = lwthresh - .01
-                     landuse_frac(i,iswater,j) = 1. - (lwthresh + 0.01)
+                     landuse_frac(i,iswater,j) = lwthresh + 0.01
+                  ELSE IF ( ( landuse_frac(i,l,j) .EQ. lwthresh ) .AND. ( landmask(i,j) .GT. 0.5 ) ) THEN
+                     PRINT *,i,j,' water and category ',l,' both at 50%, landmask is ',landmask(i,j)
+                     landuse_frac(i,l,j) = lwthresh + .01
+                     landuse_frac(i,iswater,j) = lwthresh - 0.01
                   END IF
                END DO
             END IF
@@ -305,20 +305,15 @@ CONTAINS
             IF ( landuse_frac(i,iswater,j) .GT. lwthresh ) THEN
                dominant_value = landuse_frac(i,iswater,j)
                dominant_index = iswater
-#if 0
-si needs to beef up consistency checks before we can use this part
             ELSE IF ( ( landuse_frac(i,iswater,j) .EQ. lwthresh) .AND. &
+                      ( landmask(i,j) .LT. 0.5) .AND. &
                       ( dominant_value .EQ. lwthresh) ) THEN
-               ! no op
-#else
-ELSEIF((landuse_frac(i,iswater,j).EQ.lwthresh).AND.(dominant_value.EQ.lwthresh).and.(dominant_index.LT.iswater))THEN
-print *,'temporary SI landmask fix'
-! no op
-ELSEIF((landuse_frac(i,iswater,j).EQ.lwthresh).AND.(dominant_value.EQ.lwthresh).and.(dominant_index.GT.iswater))THEN
-print *,'temporary SI landmask fix'
-dominant_value = landuse_frac(i,iswater,j)
-dominant_index = iswater
-#endif
+               dominant_value = landuse_frac(i,iswater,j)
+               dominant_index = iswater
+            ELSE IF ( ( landuse_frac(i,iswater,j) .EQ. lwthresh) .AND. &
+                      ( landmask(i,j) .GT. 0.5) .AND. &
+                      ( dominant_value .EQ. lwthresh) ) THEN
+               !no op
             ELSE IF ( ( landuse_frac(i,iswater,j) .EQ. lwthresh ) .AND. &
                       ( dominant_value .LT. lwthresh ) ) THEN
                dominant_value = landuse_frac(i,iswater,j)

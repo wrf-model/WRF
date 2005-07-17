@@ -23,6 +23,12 @@ wrf_ioapi_includes :
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCFLAGS) $(MODULE_DIRS) $(PROMOTION) $*.f
+#	if [ ! -e $@ ] ; then \
+#	sleep 10 ; $(FC) -c $(FCFLAGS) $(MODULE_DIRS) $(PROMOTION) $*.f 
+#	fi
+#	if [ ! -e $@ ] ; then \
+#	sleep 10 ; $(FC) -c $(FCFLAGS) $(MODULE_DIRS) $(PROMOTION) $*.f 
+#	fi
 
 .F.f:
 	$(RM) $@
@@ -33,6 +39,12 @@ wrf_ioapi_includes :
 .f.o:
 	$(RM) $@
 	$(FC) -c $(FCFLAGS) $(PROMOTION) $*.f
+#	if [ ! -e $@ ] ; then \
+#	sleep 10 ; $(FC) -c $(FCFLAGS) $(PROMOTION) $*.f
+#	fi
+#	if [ ! -e $@ ] ; then \
+#	sleep 10 ; $(FC) -c $(FCFLAGS) $(PROMOTION) $*.f
+#	fi
 
 .c.o:
 	$(RM) $@

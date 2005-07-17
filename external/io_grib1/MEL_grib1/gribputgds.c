@@ -43,6 +43,18 @@
 ************************************************************************
 */
 
+#ifdef NCARIBM_NOC99
+/*
+NCAR AIX does not have lrint, make one up.
+*/
+long lrint(double value)
+{
+  long retval;
+  retval=(long) rint(value);
+  return retval;
+}
+#endif
+
 #if PROTOTYPE_NEEDED
 int   gribputgds ( GEOM_IN  Geom_In, GDS_HEAD_INPUT *pGDS_Head_Input,
 		void  **ppvGDS_Proj_Input, GRIB_HDR  **ppgrib_hdr,
@@ -1698,14 +1710,3 @@ long round(double value)
   return retval;
 }
 */
-/*
-NCAR AIX does not have lrint, make one up.
-*/
-#ifdef NCARIBM_NOC99
-long lrint(double value)
-{
-  long retval;
-  retval=(long) rint(value);
-  return retval;
-}
-#endif

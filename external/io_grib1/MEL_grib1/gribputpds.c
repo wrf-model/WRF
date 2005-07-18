@@ -1,5 +1,6 @@
 /* FILENAME:   gribputpds.c */
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <stdlib.h>
 #include "dprints.h"		/* for dprints */

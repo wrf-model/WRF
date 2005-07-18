@@ -15,6 +15,7 @@
    09/10/98 ATN:  extension flag printing.
 */
 #include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 #include "grib_lookup.h"	/* combined encoder/decoder structs */
 #include "dprints.h"		/* for debug printing */

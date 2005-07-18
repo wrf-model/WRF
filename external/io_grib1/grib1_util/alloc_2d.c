@@ -1,4 +1,5 @@
 #include "stdio.h"
+#include <stdlib.h>
 
 /**************************************************************************
  * alloc_float_2d - dynamically allocates a two dimensional array

@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <stdlib.h>
+
 int *test_alloc_(int *abc);
 
 /*

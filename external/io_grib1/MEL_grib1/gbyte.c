@@ -18,6 +18,8 @@
               INTERGRAPH GREEN HILLS FORTRAN CLIPPER 1.8.4B
 */
 #include <stdio.h>
+#include <stdlib.h>
+
 #include "dprints.h"	/* debug prints & func prototypes */
 #include "gribfuncs.h"		/* prototypes */
 #include "isdb.h"		/* WORD_BIT_CNT defn */

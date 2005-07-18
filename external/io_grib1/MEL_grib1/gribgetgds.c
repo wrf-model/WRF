@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include "dprints.h"		/* for dprints & func prototypes  */
 #include "gribfuncs.h"		/* prototypes */
 /*

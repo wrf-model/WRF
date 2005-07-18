@@ -1,6 +1,7 @@
 /* 20jun97/atn:  always scaling data up whether dsf is -/+; 
 */
 #include <stdio.h> 
+#include <stdlib.h>
 #include <string.h> 
 #include <math.h>
 #include <netinet/in.h>

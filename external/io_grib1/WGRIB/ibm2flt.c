@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 /* ibm2flt       wesley ebisuzaki
  *

@@ -5,6 +5,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 static unsigned int mask[] = {0,1,3,7,15,31,63,127,255};

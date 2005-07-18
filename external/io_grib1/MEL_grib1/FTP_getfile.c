@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <stdlib.h>
+
 #include "dprints.h"		/* Debug printing & function prototypes*/
 #include "gribfuncs.h"		/* function prototypes */
 /*

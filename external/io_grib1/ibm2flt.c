@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <stdlib.h>
+
 /* wesley ebisuzaki v 1.1 */
 
 

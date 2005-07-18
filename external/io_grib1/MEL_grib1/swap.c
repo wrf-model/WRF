@@ -1,3 +1,5 @@
+#include <stdio.h>
+#include <stdlib.h>
 void *swap_byte4(long *theInt)
 {
   char tmp[4];

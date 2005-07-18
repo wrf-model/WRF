@@ -1,3 +1,6 @@
+#include <stdio.h>
+#include <stdlib.h>
+
 char *trim (char *str)
 {
       char *ibuf, *obuf;

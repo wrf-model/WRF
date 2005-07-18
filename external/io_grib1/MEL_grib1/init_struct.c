@@ -5,6 +5,7 @@
    27aug97 Alice Nakajima (ATN):  changed 'size_t size' to 'int' (gcc complains)
 */ 
 #include <stdio.h>
+#include <stdlib.h>
 #include "dprints.h"	/* for dprints */
 #include "gribfuncs.h"		/* prototypes */
 

@@ -1,6 +1,7 @@
 #define NCARIBM_NOC99
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <netinet/in.h>
 #include "dprints.h"		/* for dprints */

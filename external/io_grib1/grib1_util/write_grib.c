@@ -31,6 +31,8 @@
  ***************************************************************************
  */
 
+#include <stdio.h>
+#include <stdlib.h>
 #include "gribfuncs.h"
 
 int rg_write_grib(PDS_INPUT *pds, grid_desc_sec *gds, char filename[],

@@ -1,5 +1,7 @@
 /* FILE:  display_gribhdr.c  		10-OCT-96 by Alice Nakajima/SAIC */
 #include <stdio.h>              /* standard I/O header file     */
+#include <stdlib.h>
+
 #include "dprints.h"		/* function prototypes */
 #include "gribfuncs.h"		/* prototypes */
 

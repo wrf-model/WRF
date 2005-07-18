@@ -16,6 +16,7 @@
 #include "grib1_routines.h"
 #include "gridnav.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <ctype.h>
 #include <limits.h>
 

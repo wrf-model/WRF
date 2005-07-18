@@ -7,6 +7,7 @@
    10oct96 Nakajima: renamed from init_struct() to init_dec_struct()
 */
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "dprints.h"	/* for dprints */
 #include "gribfuncs.h"		/* prototypes */

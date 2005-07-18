@@ -24,10 +24,10 @@ wrf_ioapi_includes :
 	$(RM) $*.b
 	$(FC) -c $(FCFLAGS) $(MODULE_DIRS) $(PROMOTION) $*.f
 #	if [ ! -e $@ ] ; then \
-#	sleep 10 ; $(FC) -c $(FCFLAGS) $(MODULE_DIRS) $(PROMOTION) $*.f 
+#	sleep 10 ; $(FC) -c $(FCFLAGS) $(MODULE_DIRS) $(PROMOTION) $*.f ; \
 #	fi
 #	if [ ! -e $@ ] ; then \
-#	sleep 10 ; $(FC) -c $(FCFLAGS) $(MODULE_DIRS) $(PROMOTION) $*.f 
+#	sleep 10 ; $(FC) -c $(FCFLAGS) $(MODULE_DIRS) $(PROMOTION) $*.f ; \
 #	fi
 
 .F.f:
@@ -40,10 +40,10 @@ wrf_ioapi_includes :
 	$(RM) $@
 	$(FC) -c $(FCFLAGS) $(PROMOTION) $*.f
 #	if [ ! -e $@ ] ; then \
-#	sleep 10 ; $(FC) -c $(FCFLAGS) $(PROMOTION) $*.f
+#	sleep 10 ; $(FC) -c $(FCFLAGS) $(PROMOTION) $*.f ; \
 #	fi
 #	if [ ! -e $@ ] ; then \
-#	sleep 10 ; $(FC) -c $(FCFLAGS) $(PROMOTION) $*.f
+#	sleep 10 ; $(FC) -c $(FCFLAGS) $(PROMOTION) $*.f ; \
 #	fi
 
 .c.o:

@@ -3,7 +3,6 @@
 OBJSL   = io_grib1.o gribmap.o gridnav.o open_file.o grib1_routines.o trim.o
 OBJS    = $(OBJSL)
 LIBS    = -lm
-LOCAL_LIBS = MEL_grib1 grib1_util
 M4      = m4 -Uinclude -Uindex -Ulen
 AR      = ar
 #RANLIB	= ranlib
@@ -14,7 +13,7 @@ FC	= ifort
 
 .SUFFIXES:      .F90 .F .f .c .o
 
-all : clean_a $(LOCAL_LIBS) libio_grib1.a wgrib
+all : clean_a LOCAL_LIBS libio_grib1.a wgrib
 
 wgrib :
 	( cd WGRIB ; make "CC=$(CC)" )
@@ -42,15 +41,9 @@ test_grib1_routines: test_grib1_routines.F90 gridnav.c gribmap.c open_file.c tri
 	$(FC) -g -o test_grib1_routines test_grib1_routines.o grib1_routines.o gridnav.o gribmap.o open_file.o trim.o \
 		libgrib1_util.a libMEL_grib1.a -lm
 
-MEL_grib1: .FORCE
-	cd MEL_grib1; \
-	make CC=$(CC) archive; \
-	cd ..
-
-grib1_util: .FORCE
-	cd grib1_util; \
-	make CC=$(CC) archive; \
-	cd ..
+LOCAL_LIBS :
+	( cd MEL_grib1; make CC=$(CC) archive )
+	( cd grib1_util; make CC=$(CC) archive )
 
 .FORCE:
 

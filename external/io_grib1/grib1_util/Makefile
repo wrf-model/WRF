@@ -11,6 +11,7 @@
 # Specity location for Makefiles that are included.
 #
 BUILD_DIR = ../build
+INCLUDEDIRS = -I. -I.. -I ../MEL_grib1
 #
 # Specify directory that output library is to be put in.
 #

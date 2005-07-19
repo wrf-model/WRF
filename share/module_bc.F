@@ -4,6 +4,7 @@ MODULE module_bc
 
    USE module_configure
    USE module_wrf_error
+   IMPLICIT NONE
 
 !   TYPE bcs
 !
@@ -50,6 +51,7 @@ CONTAINS
 ! local variables
 
   INTEGER :: xs_bc, xe_bc, ys_bc, ye_bc, bzone_min
+  INTEGER :: nprocx, nprocy
 
   CALL wrf_debug( 100 , ' checking boundary conditions for grid ' )
 
@@ -172,6 +174,24 @@ CONTAINS
 
        ENDIF
    ENDIF
+
+#ifdef RSL_LITE
+! add a check so that people do not try to specify peridic boundaries
+! if they have compiled with RSL_LITE. It does not support periodic bcs
+   CALL wrf_get_nprocx( nprocx )
+   IF ( nprocx .GT. 1 .AND. config_flags%periodic_x ) THEN
+     WRITE ( wrf_err_message , * ) 'RSL_LITE does not support periodic boundaries for decomposed X-dimension'
+     CALL wrf_message ( TRIM( wrf_err_message ) )
+   ENDIF
+   CALL wrf_get_nprocy( nprocy )
+   IF ( nprocy .GT. 1 .AND. config_flags%periodic_y ) THEN
+     WRITE ( wrf_err_message , * ) 'RSL_LITE does not support periodic boundaries for decomposed Y-dimension'
+     CALL wrf_message ( TRIM( wrf_err_message ) )
+   ENDIF
+   IF ( (nprocy .GT. 1 .AND. config_flags%periodic_y) .OR. (nprocx .GT. 1 .AND. config_flags%periodic_x) ) THEN
+     CALL wrf_error_fatal ( 'Inappropriate selection of periodic bcs detected in boundary_condition_check' )
+   ENDIF
+#endif
 
    CALL wrf_debug ( 100 , ' boundary conditions OK for grid ' )
 

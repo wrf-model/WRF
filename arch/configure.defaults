@@ -2365,13 +2365,6 @@ esmf_time :
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
-mediation_integrate.o : mediation_integrate.F
-	$(RM) $@
-	$(SED_FTN) $*.F > $*.b
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
-	$(RM) $*.b
-	$(FC) -c $(PROMOTION) -w -convert big_endian -automatic -cpp -free -I. -arch host $(MODULE_DIRS) -O0 $*.f
-
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
@@ -2489,13 +2482,6 @@ esmf_time :
 	  make CC="$(CC)" CFLAGS='-DSTUBS -DSWAPBYTES -O' FC="$(FC) $(PROMOTION)" FFLAGS='-O -convert big_endian' \
                MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST stub )
 
-mediation_integrate.o : mediation_integrate.F
-	$(RM) $@
-	$(SED_FTN) $*.F > $*.b
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
-	$(RM) $*.b
-	$(FC) -c $(PROMOTION) -w -convert big_endian -automatic -cpp -free -I. -arch host $(MODULE_DIRS) -O0 $*.f
-
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
@@ -2594,13 +2580,6 @@ wrfio_grib1 :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
-
-mediation_integrate.o : mediation_integrate.F
-	$(RM) $@
-	$(SED_FTN) $*.F > $*.b
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
-	$(RM) $*.b
-	$(FC) -c $(PROMOTION) -w -convert big_endian -automatic -cpp -free -I. -arch host $(MODULE_DIRS) -O0 $*.f
 
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
@@ -2720,13 +2699,6 @@ esmf_time :
 	  make CC="$(CC)" CFLAGS='-DSTUBS -DSWAPBYTES -O' FC="$(FC) $(PROMOTION)" FFLAGS="-O -convert big_endian $(FCREAL8OMP)" \
                MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST stub )
 
-mediation_integrate.o : mediation_integrate.F
-	$(RM) $@
-	$(SED_FTN) $*.F > $*.b
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
-	$(RM) $*.b
-	$(FC) -c $(PROMOTION) -w -convert big_endian -automatic -cpp -free -I. -arch host $(MODULE_DIRS) -O0 $*.f
-
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
@@ -2841,13 +2813,6 @@ esmf_time :
 ../external/RSL_LITE/librsl_lite.a :
 	( cd ../external/RSL_LITE ; \
           make CC="$(CC)" FC="$(FC) $(PROMOTION)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
-
-mediation_integrate.o : mediation_integrate.F
-	$(RM) $@
-	$(SED_FTN) $*.F > $*.b
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
-	$(RM) $*.b
-	$(FC) -c $(PROMOTION) -w -convert big_endian -automatic -cpp -free -I. -arch host $(MODULE_DIRS) -O0 $*.f
 
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
@@ -2964,13 +2929,6 @@ esmf_time :
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; \
           make CC="$(CC)" FC="$(FC) $(PROMOTION)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST alpha )
-
-mediation_integrate.o : mediation_integrate.F
-	$(RM) $@
-	$(SED_FTN) $*.F > $*.b
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
-	$(RM) $*.b
-	$(FC) -c $(PROMOTION) -w -convert big_endian -automatic -cpp -free -I. -arch host $(MODULE_DIRS) -O0 $*.f
 
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
@@ -3089,13 +3047,6 @@ esmf_time :
 	( cd ../external/RSL/RSL ; \
           make CC="$(CC)" FC="$(FC) $(PROMOTION) $(FCREAL8OMP)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST alpha )
 
-mediation_integrate.o : mediation_integrate.F
-	$(RM) $@
-	$(SED_FTN) $*.F > $*.b
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
-	$(RM) $*.b
-	$(FC) -c $(PROMOTION) -w -convert big_endian -automatic -cpp -free -I. -arch host $(MODULE_DIRS) -O0 $*.f
-
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
@@ -3212,13 +3163,6 @@ esmf_time :
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; \
           make CC=cc FC="$(SFC) $(PROMOTION) $(FCREAL8OMP)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST alpha )
-
-mediation_integrate.o : mediation_integrate.F
-	$(RM) $@
-	$(SED_FTN) $*.F > $*.b
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
-	$(RM) $*.b
-	$(FC) -c $(PROMOTION) -w -convert big_endian -automatic -cpp -free -I. -arch host $(MODULE_DIRS) -O0 $*.f
 
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
@@ -3342,13 +3286,6 @@ wrfio_mcel :
 	( cd ../external/RSL/RSL ; \
           make CC="$(CC)" FC="$(FC) $(PROMOTION)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST alpha )
 
-mediation_integrate.o : mediation_integrate.F
-	$(RM) $@
-	$(SED_FTN) $*.F > $*.b
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
-	$(RM) $*.b
-	$(FC) -c $(PROMOTION) -w -convert big_endian -automatic -cpp -free -I. -arch host $(MODULE_DIRS) -O0 $*.f
-
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
@@ -3460,13 +3397,6 @@ esmf_time :
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; \
           make CC="$(CC)" FC="$(FC) $(PROMOTION)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST alpha )
-
-mediation_integrate.o : mediation_integrate.F
-	$(RM) $@
-	$(SED_FTN) $*.F > $*.b
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
-	$(RM) $*.b
-	$(FC) -c $(PROMOTION) -w -convert big_endian -automatic -cpp -free -I. -arch host $(MODULE_DIRS) -O0 $*.f
 
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F

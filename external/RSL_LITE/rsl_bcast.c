@@ -210,7 +210,7 @@ RSL_LITE_TO_CHILD_INFO ( msize_p,
 
   while ( Pptr == NULL ) {
       Pcurs++ ;
-      while ( Plist[Pcurs] == NULL && Pcurs < s_ntasks_x * s_ntasks_y ) Pcurs++ ;
+      while ( Pcurs < s_ntasks_x * s_ntasks_y && Plist[Pcurs] == NULL  ) Pcurs++ ;
       if ( Pcurs < s_ntasks_x * s_ntasks_y ) {
         Sdisplacements[Pcurs] = Sendbufcurs ;
         Ssizes[Pcurs] = 0 ;
@@ -314,7 +314,7 @@ RSL_LITE_TO_PARENT_INFO ( msize_p,
 
   while ( Pptr == NULL ) {
       Pcurs++ ;
-      while ( Plist[Pcurs] == NULL && Pcurs < s_ntasks_x * s_ntasks_y ) Pcurs++ ;
+      while ( Pcurs < s_ntasks_x * s_ntasks_y && Plist[Pcurs] == NULL ) Pcurs++ ;
       if ( Pcurs < s_ntasks_x * s_ntasks_y ) {
         Sdisplacements[Pcurs] = Sendbufcurs ;
         Ssizes[Pcurs] = 0 ;

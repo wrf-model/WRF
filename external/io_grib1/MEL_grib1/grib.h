@@ -12,6 +12,9 @@
                                 /* had been 46, bumped up to avoid a 
                                    bad reference that trashed heap on IBM
                                    found with electric fence.  JM 20050720 */
+                                /* See http://perens.com/FreeSoftware/ElectricFence JM */
+                                /* Bruce Perens is the man. */
+
 					/* Currently set to LATLON; */
 #define MAX_INP_PROJ_SIZE 300	        /* Size of Max Input GDS block, */
                                 /* this one was originally 72. 300 seems nice. JM */

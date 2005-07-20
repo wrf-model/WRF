@@ -8,9 +8,13 @@
 
 #define EXTENSION_FLAG 99	/* Implies extensions if equals PDS Oct41 */
 #define DEF_MSG_LEN    50000		/* size of GRIB HDR 's entire_msg */
-#define MAX_PROJ_SIZE  46               /* MaxSize of GDS minus 6 bytes*/
+#define MAX_PROJ_SIZE  300               /* MaxSize of GDS minus 6 bytes*/
+                                /* had been 46, bumped up to avoid a 
+                                   bad reference that trashed heap on IBM
+                                   found with electric fence.  JM 20050720 */
 					/* Currently set to LATLON; */
-#define MAX_INP_PROJ_SIZE 72	        /* Size of Max Input GDS block, */
+#define MAX_INP_PROJ_SIZE 300	        /* Size of Max Input GDS block, */
+                                /* this one was originally 72. 300 seems nice. JM */
 					/* currently set to GDS_LATLON_INPUT */
 
 /* WMO projection codes 

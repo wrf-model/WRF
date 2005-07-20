@@ -17,8 +17,8 @@ gen_halos ( char * dirname , char * incname , node_t * halos )
   node_t * dimd ;
   char commname[NAMELEN] ;
   char fname[NAMELEN] ;
-  char tmp[4096], tmp2[4096], tmp3[4096] ;
-  char commuse[4096] ;
+  char tmp[NAMELEN], tmp2[NAMELEN], tmp3[NAMELEN] ;
+  char commuse[NAMELEN] ;
   int maxstenwidth, stenwidth ;
   FILE * fp ;
   char * t1, * t2 ;
@@ -229,8 +229,8 @@ gen_packs ( FILE *fp , node_t *p, int shw, int xy /* 0=y,1=x */ , int pu /* 0=pa
   node_t * dimd ;
   char commname[NAMELEN] ;
   char fname[NAMELEN] ;
-  char tmp[4096], tmp2[4096], tmp3[4096] ;
-  char commuse[4096] ;
+  char tmp[NAMELEN], tmp2[NAMELEN], tmp3[NAMELEN] ;
+  char commuse[NAMELEN] ;
   int maxstenwidth, stenwidth ;
   char * t1, * t2 , *wordsize ;
   char * pos1 , * pos2 ;
@@ -407,7 +407,7 @@ gen_periods ( char * dirname )
   node_t * p, * q ;
   char commname[NAMELEN] ;
   char fname[NAMELEN] ;
-  char tmp[4096], tmp2[4096], commuse[4096] ;
+  char tmp[NAMELEN], tmp2[NAMELEN], commuse[NAMELEN] ;
   int maxperwidth, perwidth ;
   FILE * fp ;
   char * t1, * t2 ;
@@ -437,8 +437,8 @@ gen_xposes ( char * dirname )
   node_t * p, * q ;
   char commname[NAMELEN] ;
   char fname[NAMELEN] ;
-  char tmp[4096], tmp2[4096], tmp3[4096] ;
-  char commuse[4096] ;
+  char tmp[NAMELEN], tmp2[NAMELEN], tmp3[NAMELEN] ;
+  char commuse[NAMELEN] ;
   FILE * fp ;
   char * t1, * t2 ;
   char * pos1 , * pos2 ;

@@ -1068,7 +1068,12 @@ CONTAINS
       IF ( dyn_opt == DYN_NODYN ) THEN
 
         IF ( grid%id .EQ. 1 ) CALL wrf_message ( 'DYNAMICS OPTION: dynamics disabled ' )
+
+#if ALLOW_NODYN
 # include <nodyn_allocs.inc>
+#else
+        CALL wrf_err_fatal("To run the the NODYN option, recompile -DALLOW_NODYN in ARCHFLAGS settings of configure.wrf") 
+#endif
 
 #if (EM_CORE == 1)
       ELSE IF ( dyn_opt == DYN_EM ) THEN

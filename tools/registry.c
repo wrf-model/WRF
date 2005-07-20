@@ -1,5 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/time.h>
+#include <sys/resource.h>
+#include <unistd.h>
 
 #define DEFINE_GLOBALS
 #include "protos.h"
@@ -13,6 +16,7 @@ main( int argc, char *argv[], char *env[] )
   char * thisprog  ;
   char * strcpy() ;
   int mypid ;
+  struct rlimit rlim ;
 
   mypid = (int) getpid() ;
   strcpy( thiscom, argv[0] ) ;
@@ -32,6 +36,11 @@ main( int argc, char *argv[], char *env[] )
                                      other data streams are written to file per process */
 
   strcpy( fname_in , "" ) ;
+
+  rlim.rlim_cur = RLIM_INFINITY ;
+  rlim.rlim_max = RLIM_INFINITY ;
+
+  setrlimit ( RLIMIT_STACK , &rlim ) ;
 
   thisprog = *argv ;
   while (*argv) {

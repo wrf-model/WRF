@@ -294,7 +294,12 @@ int	pack_spatial (  pt_cnt, bit_cnt, pack_null, fbuff, ppbitstream,
 *              RETURN Stat= 999;
 *           ENDIF
 */ 
-    pBitstream = ( unsigned long * ) malloc ( byte2_cnt );
+
+/* This was being allocated way too small, in bytes instead of longs.
+   Causing seg faults on free of buffer later on.  Fixed by multiplying
+   byte2_cnt by the size of an unsigned long.  Not sure how or why this 
+   ever worked. JM 20050720 */
+    pBitstream = ( unsigned long * ) malloc ( sizeof( unsigned long ) * byte2_cnt );
     if ( !pBitstream )
     {
        DPRINT1 ("%s:  MAlloc failed pBitstream\n", func );
@@ -370,7 +375,15 @@ int	pack_spatial (  pt_cnt, bit_cnt, pack_null, fbuff, ppbitstream,
 /*
 * A.13.2       FOR (each point in bitstream) DO
 */
-	for (ipt = 0; ipt < *pt_cnt; ipt++) {
+  	for (ipt = 0; ipt < *pt_cnt; ipt++) {
+
+/* Check for overwriting the buffer.
+   Note that C pointer arithmetic takes care of the conversion of
+   byte2_cnt to represent size of of the offset in longs, JM 20050720 */
+if ( bstr >= pBitstream + byte2_cnt ) {
+sprintf(errmsg,"would overflow %d %16lx %16lx %16lx\n",ipt, pBitstream, bstr, pBitstream + byte2_cnt ) ;
+return(-1) ;
+}
 
 /*
 * A.13.2.1         IF ( data value < pack_null) THEN

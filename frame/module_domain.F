@@ -1072,7 +1072,7 @@ CONTAINS
 #if ALLOW_NODYN
 # include <nodyn_allocs.inc>
 #else
-        CALL wrf_err_fatal("To run the the NODYN option, recompile -DALLOW_NODYN in ARCHFLAGS settings of configure.wrf") 
+        CALL wrf_error_fatal("To run the the NODYN option, recompile -DALLOW_NODYN in ARCHFLAGS settings of configure.wrf") 
 #endif
 
 #if (EM_CORE == 1)

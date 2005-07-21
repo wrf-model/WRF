@@ -9,6 +9,7 @@
 #   endif
 # endif
 #endif
+#include <stdio.h>
 
 #ifdef LANDREAD_STUB
 
@@ -23,10 +24,10 @@ int GET_TERRAIN (        float *adx,
                          int   *ipath , int * ipathlen)  /* integer coded ASCII string from Funtran and len */
 
 {
- CALL wrf_message( '***************************************************************' )
- CALL wrf_message( 'Access to RSMAS Topo Ingest Code is by Special Arrangement Only' )
- CALL wrf_message( 'in WRF 2.1 .  Please contact wrfhelp@ucar.edu .                ' )
- CALL wrf_message( '***************************************************************' )
+ fprintf(stderr, "***************************************************************\n" ) ;
+ fprintf(stderr, "Access to RSMAS Topo Ingest Code is by Special Arrangement Only\n" ) ;
+ fprintf(stderr, "in WRF 2.1 .  Please contact wrfhelp@ucar.edu .                \n" ) ;
+ fprintf(stderr, "***************************************************************\n" ) ;
  return(0) ;
 }
 

@@ -1037,7 +1037,7 @@ rconfig   integer   num_moves       namelist,domains    1                0
 rconfig   integer   vortex_interval  namelist,domains   max_domains      15  -  "" "" "minutes"
 rconfig   integer   max_vortex_speed namelist,domains   max_domains      40  -  "" "" "meters per second"
 rconfig   integer   vortex_search_radius namelist,domains   1            6  -  "" "" "grid cells (nest domain)"
-rconfig   integer   coral_dist      namelist,domains    max_domains      8
+rconfig   integer   corral_dist     namelist,domains    max_domains      8
 rconfig   integer   move_id         namelist,domains    max_moves        0
 rconfig   integer   move_interval   namelist,domains    max_moves        999999999
 rconfig   integer   move_cd_x       namelist,domains    max_moves        0

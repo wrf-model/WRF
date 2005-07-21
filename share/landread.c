@@ -12,7 +12,6 @@
 
 #ifdef LANDREAD_STUB
 
-
 int GET_TERRAIN (        float *adx,
                          float *xlat,
                          float *xlon,
@@ -24,6 +23,10 @@ int GET_TERRAIN (        float *adx,
                          int   *ipath , int * ipathlen)  /* integer coded ASCII string from Funtran and len */
 
 {
+ CALL wrf_message( '***************************************************************' )
+ CALL wrf_message( 'Access to RSMAS Topo Ingest Code is by Special Arrangement Only' )
+ CALL wrf_message( 'in WRF 2.1 .  Please contact wrfhelp@ucar.edu .                ' )
+ CALL wrf_message( '***************************************************************' )
  return(0) ;
 }
 

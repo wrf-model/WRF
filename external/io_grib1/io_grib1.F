@@ -453,7 +453,7 @@ SUBROUTINE ext_gr1_inquire_opened ( DataHandle, FileName , FileStat, Status )
   else
      FileStat = WRF_FILE_NOT_OPENED
   endif
-  
+  Status = FileStat
   RETURN
 END SUBROUTINE ext_gr1_inquire_opened
 
@@ -536,7 +536,6 @@ SUBROUTINE ext_gr1_write_field( DataHandle , DateStr , VarName , &
   integer                       ,intent(out)   :: Status
   integer                                      :: ierror
   character (120)                         :: msg
-  character, pointer :: pds
   integer :: xsize, ysize, zsize
   integer :: x, y, z
   integer :: x_start,x_end,y_start,y_end,z_start,z_end,ndim
@@ -767,7 +766,6 @@ SUBROUTINE ext_gr1_write_field( DataHandle , DateStr , VarName , &
         endif
         CALL geth_idts(DateStr,StartDate,fcst_secs)
         
-        nullify(pds)
         if (center_lat .lt. 0) then
            proj_center_flag = 2
         else
@@ -1185,6 +1183,7 @@ SUBROUTINE ext_gr1_inquire_filename ( DataHandle, FileName , FileStat, &
 
   FileName = DataFile(DataHandle) 
 
+  FileStat = WRF_NO_ERR
   Status = WRF_NO_ERR
 
   RETURN
@@ -2309,6 +2308,7 @@ SUBROUTINE ext_gr1_get_dom_ti_integer ( DataHandle,Element,   Data, Count, &
      Status = WRF_WARN_COUNT_TOO_LONG
      RETURN
   endif
+  Outcount = Count
  
   RETURN
 END SUBROUTINE ext_gr1_get_dom_ti_integer 

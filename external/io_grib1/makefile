@@ -1,15 +1,12 @@
-#makefile to build io_int that does binary i/o
+#makefile to build io_grib1 that does GriB i/o
 
 OBJSL   = io_grib1.o gribmap.o gridnav.o open_file.o grib1_routines.o trim.o
 OBJS    = $(OBJSL)
 LIBS    = -lm
 M4      = m4 -Uinclude -Uindex -Ulen
 AR      = ar
-#RANLIB	= ranlib
-RANLIB  = echo
 CPPFLAGS = -C -P
 INCLUDEDIRS  = -I. -Igrib1_util -IMEL_grib1
-FC	= ifort
 
 .SUFFIXES:      .F90 .F .f .c .o
 
@@ -26,6 +23,7 @@ libio_grib1.a:	$(OBJS) makelib
 
 makelib: .FORCE
 	$(AR) cruv libio_grib1.a $(OBJS)
+	$(RANLIB) libio_grib1.a
 
 io_grib1.o:     io_grib1.F 
 	$(CPP) $(CPPFLAGS) -I../../main io_grib1.F -I. | $(M4) - > io_grib1.f

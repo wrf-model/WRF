@@ -266,7 +266,13 @@
     CALL nl_set_isoilwater ( grid%id , config_flags%isoilwater )
 
 #ifdef MOVE_NESTS
-! added these fields for restarting of moving nests, JM
+! Added these fields for restarting of moving nests, JM
+! DANGER and TODO
+! It is very important that these be set correctly if they are set at all in here.
+! Garbage values will produce unpredictable results, possibly segfaults, in the nesting
+! code. Need some integrity checking here or elsewhere in the code to at least check to
+! make sure that the istart and jstart values make sense with respect to the nest dimensions
+! and the position in the parent domain.
     CALL wrf_get_dom_ti_integer ( fid , 'I_PARENT_START' ,  itmp  , 1 , icnt, ierr )
     IF ( ierr .EQ. 0 .AND. switch .EQ. restart_only ) THEN
       config_flags%i_parent_start = itmp

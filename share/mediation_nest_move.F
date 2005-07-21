@@ -586,7 +586,15 @@ write(0,*)'After ENDIF : grid%vc_i, grid%vc_j ',grid%vc_i, grid%vc_j
    disp_x = grid%vc_i - dc_i * 1.0
    disp_y = grid%vc_j - dc_j * 1.0
 
+#if 0
+! This appears to be an old, redundant, and perhaps even misnamed parameter. 
+! Remove it from the namelist and Registry and just hard code it to 
+! the default of 6. JM 20050721
    CALL nl_get_vortex_search_radius( 1, irad )
+#else
+   irad = 6
+#endif
+
    radius = irad
 
    if ( disp_x .GT. 0 ) disp_x = min( disp_x , radius )

@@ -265,18 +265,19 @@
     ENDIF
     CALL nl_set_isoilwater ( grid%id , config_flags%isoilwater )
 
+#ifdef MOVE_NESTS
 ! added these fields for restarting of moving nests, JM
     CALL wrf_get_dom_ti_integer ( fid , 'I_PARENT_START' ,  itmp  , 1 , icnt, ierr )
-    IF ( ierr .EQ. 0 ) THEN
+    IF ( ierr .EQ. 0 .AND. switch .EQ. restart_only ) THEN
       config_flags%i_parent_start = itmp
       CALL nl_set_i_parent_start ( grid%id , config_flags%i_parent_start )
     ENDIF
     CALL wrf_get_dom_ti_integer ( fid , 'J_PARENT_START' ,  itmp  , 1 , icnt, ierr )
-    IF ( ierr .EQ. 0 ) THEN
+    IF ( ierr .EQ. 0 .AND. switch .EQ. restart_only ) THEN
       config_flags%j_parent_start = itmp
       CALL nl_set_j_parent_start ( grid%id , config_flags%j_parent_start )
     ENDIF
-
+#endif
 
 ! If this was not a training read (dry run) check for erroneous values.  
     CALL wrf_inquire_filename ( fid , fname , filestate , ierr )

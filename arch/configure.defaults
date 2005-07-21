@@ -4704,10 +4704,7 @@ externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_int module_d
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
 
-io_flags:
-	( cd ../external/io_netcdf ; make flags_only ; /bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc )
-
-wrfio_nf :  io_flags
+wrfio_nf :
 	( cd ../external/io_netcdf ; \
 	  make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCFLAGS) -w" TRADFLAG="-traditional" )
 
@@ -4715,7 +4712,7 @@ wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
           make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
 
-wrfio_int :  io_flags
+wrfio_int :
 	( cd ../external/io_int ; \
           make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS) -w" \
           TRADFLAG="-traditional" all )
@@ -4816,16 +4813,11 @@ gen_comms.c : ../external/RSL/gen_comms.c
 module_dm.F : ../external/RSL/module_dm.F
 	( /bin/cp module_dm_warning module_dm.F ; cat ../external/RSL/module_dm.F >> module_dm.F )
 
-io_flags:
-	( cd ../external/io_netcdf ; make flags_only ; \
-	  /bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	  /bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 )
-
-wrfio_nf :  io_flags
+wrfio_nf :
 	( cd ../external/io_netcdf ; \
 	  make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCFLAGS) -w" TRADFLAG="-traditional" )
 
-wrfio_int :  io_flags
+wrfio_int :
 	( cd ../external/io_int ; \
           make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
 
@@ -4931,12 +4923,7 @@ gen_comms.c : ../external/RSL_LITE/gen_comms.c
 module_dm.F : ../external/RSL_LITE/module_dm.F
 	( /bin/cp module_dm_warning module_dm.F ; cat ../external/RSL_LITE/module_dm.F >> module_dm.F )
 
-io_flags:
-	( cd ../external/io_netcdf ; make flags_only ; \
-	  /bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-	  /bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 )
-
-wrfio_nf :  io_flags
+wrfio_nf :
 	( cd ../external/io_netcdf ; \
 	  make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCFLAGS) -w" TRADFLAG="-traditional" )
 
@@ -4944,7 +4931,7 @@ wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
           make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
 
-wrfio_int : io_flags
+wrfio_int :
 	( cd ../external/io_int ; \
           make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
 
@@ -6849,9 +6836,6 @@ wrfio_nf :
           make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC) -I../.. $(FCFLAGS)" \
           TRADFLAG="-traditional" ; \
 	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../../inc )
-#	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-#	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-#	/bin/cp wrf_io_flags.h ../io_quilt )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -6960,9 +6944,6 @@ wrfio_nf :
           make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC) -I../.. $(FCFLAGS)" \
           TRADFLAG="-traditional" ; \
 	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../../inc )
-#	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
-#	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
-#	/bin/cp wrf_io_flags.h ../io_quilt )
 
 wrfio_int : 
 	( cd ../external/io_int ; \

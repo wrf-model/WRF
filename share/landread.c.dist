@@ -1,0 +1,30 @@
+#ifndef CRAY
+# ifdef NOUNDERSCORE
+#      define GET_TERRAIN get_terrain
+# else
+#   ifdef F2CSTYLE
+#      define GET_TERRAIN get_terrain__
+#   else
+#      define GET_TERRAIN get_terrain_
+#   endif
+# endif
+#endif
+
+int GET_TERRAIN (        float *adx,
+                         float *xlat,
+                         float *xlon,
+                         float       *terrain,
+                         int   *mix,
+                         int   *mjx,
+                         int   *iyyn,
+                         int   *jxxn,
+                         int   *ipath , int * ipathlen)  /* integer coded ASCII string from Funtran and len */
+
+{
+ CALL wrf_message( '***************************************************************' )
+ CALL wrf_message( 'Access to RSMAS Topo Ingest Code is by Special Arrangement Only' )
+ CALL wrf_message( 'in WRF 2.1 .  Please contact wrfhelp@ucar.edu .                ' )
+ CALL wrf_message( '***************************************************************' )
+ return(0) ;
+}
+

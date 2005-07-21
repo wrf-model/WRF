@@ -4671,7 +4671,7 @@ SCC		=	$(CC)
 SFC             =       $(FC)
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION	=	-r$(RWORDSIZE) -i4
-CFLAGS          =
+CFLAGS          =       -DLANDREAD_STUB
 FCOPTIM		=	-fastsse #-Mipa=fast
 FCDEBUG		=	#-g
 #FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree $(FCDEBUG)
@@ -4777,7 +4777,8 @@ SFC             =       pgf90
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =       -DDM_PARALLEL -DWRF_RSL_IO \
-                        -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL/RSL
+                        -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL/RSL \
+                        -DLANDREAD_STUB
 FCOPTIM         =       -fastsse #-Mipa=fast
 FCDEBUG		=	#-g
 #FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree $(FCDEBUG)
@@ -4891,7 +4892,8 @@ SFC             =       pgf90
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =       -DDM_PARALLEL \
-                        -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL_LITE
+                        -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL_LITE \
+                        -DLANDREAD_STUB
 FCOPTIM         =       -fastsse #-Mipa=fast
 FCDEBUG		=	#-g
 #FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree $(FCDEBUG)

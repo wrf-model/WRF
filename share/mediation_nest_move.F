@@ -670,7 +670,7 @@ USE module_timing
    INTEGER, INTENT(OUT)      :: move_cd_x , move_cd_y
 #ifdef MOVE_NESTS
 ! local
-   INTEGER     :: coral_dist, kid
+   INTEGER     :: corral_dist, kid
    INTEGER     :: dw, de, ds, dn, pgr
    INTEGER     :: cids, cide, cjds, cjde, ckds, ckde, &
                   cims, cime, cjms, cjme, ckms, ckme, &
@@ -703,7 +703,7 @@ USE module_timing
    ELSE
      ! code that executes on parent to see if parent needs to move
      ! get closest number of cells we'll allow nest edge to approach parent bdy
-     CALL nl_get_coral_dist ( grid%id , coral_dist )
+     CALL nl_get_corral_dist ( grid%id , corral_dist )
      ! get dims
      CALL get_ijk_from_grid (  grid%nests(kid)%ptr ,               &
                                nids, nide, njds, njde, nkds, nkde, &
@@ -729,10 +729,10 @@ USE module_timing
      ! the boundary.
      move_cd_x = 0
      move_cd_y = 0
-     if ( dw .LE. coral_dist ) move_cd_x = move_cd_x - 1
-     if ( de .LE. coral_dist ) move_cd_x = move_cd_x + 1
-     if ( ds .LE. coral_dist ) move_cd_y = move_cd_y - 1
-     if ( dn .LE. coral_dist ) move_cd_y = move_cd_y + 1
+     if ( dw .LE. corral_dist ) move_cd_x = move_cd_x - 1
+     if ( de .LE. corral_dist ) move_cd_x = move_cd_x + 1
+     if ( ds .LE. corral_dist ) move_cd_y = move_cd_y - 1
+     if ( dn .LE. corral_dist ) move_cd_y = move_cd_y + 1
 
      time_for_move = ( move_cd_x .NE. 0 ) .OR. ( move_cd_y .NE. 0 )
 

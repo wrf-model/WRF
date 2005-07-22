@@ -295,7 +295,7 @@ GDS_LATLON_INPUT *mp;
 *
 * A.8       STORE Gds length in the True Grib GDS block too
 */
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
   tempsz = (htonl(gh->gds_len)) >> 8;
 #else
   tempsz = gh->gds_len << 8;
@@ -849,7 +849,7 @@ int   inp2grib_Lambert (ppvGDS_Proj_Input, pLambert, lProj_size, errmsg)
 * E.2       DEBUG printing
 */
    GDS_LAM_INPUT     *vProjInp = 0;
-   long              lTemp = 0;
+   int               lTemp = 0;
    int               nStatus = 0;
    char		     *func= "inp2grib_Lambert";
    long              tmp_byte4;
@@ -879,14 +879,14 @@ int   inp2grib_Lambert (ppvGDS_Proj_Input, pLambert, lProj_size, errmsg)
 * E.5       FILL local block type LAMBERT
 */
   
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
       lTemp = (htonl(vProjInp->iNx)) >> 16;
 #else
       lTemp = vProjInp->iNx << 16;
 #endif
       memcpy ((void *) pLambert->achNx, (void *)&lTemp, 2);
       
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
       lTemp = (htonl(vProjInp->iNy) >> 16);
 #else
       lTemp = vProjInp->iNy << 16;
@@ -894,7 +894,7 @@ int   inp2grib_Lambert (ppvGDS_Proj_Input, pLambert, lProj_size, errmsg)
       memcpy ((void *) pLambert->achNy, (void *)&lTemp, 2);
 
 /* convert lLat1 to 3chars */
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
       lTemp = (htonl(abs(vProjInp->lLat1))) >> 8;
 #else
       lTemp = abs ( vProjInp->lLat1 ) << 8;
@@ -903,7 +903,7 @@ int   inp2grib_Lambert (ppvGDS_Proj_Input, pLambert, lProj_size, errmsg)
       if ( vProjInp->lLat1 < 0 ) pLambert->achLat1[0] |= 0x0080;
 
 /* convert lLon1 to 3chars */
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
       lTemp = (htonl(abs(vProjInp->lLon1))) >> 8;
 #else
       lTemp = abs ( vProjInp->lLon1 ) << 8;
@@ -914,7 +914,7 @@ int   inp2grib_Lambert (ppvGDS_Proj_Input, pLambert, lProj_size, errmsg)
       pLambert->chRes_flag = ( unsigned char ) vProjInp->usRes_flag;
 
 /* convert lLon_orient to 3 bytes */
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
       lTemp = (htonl(abs(vProjInp->lLon_orient))) >> 8;
 #else
       lTemp = abs(vProjInp->lLon_orient) << 8;
@@ -923,7 +923,7 @@ int   inp2grib_Lambert (ppvGDS_Proj_Input, pLambert, lProj_size, errmsg)
       if ( vProjInp->lLon_orient < 0 ) pLambert->achLon_orient[0] |= 0x0080;
 
 /* convert ulDx to 3 bytes */
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
       lTemp = (htonl(vProjInp->ulDx)) >> 8;
 #else
       lTemp=   vProjInp->ulDx  << 8;
@@ -931,7 +931,7 @@ int   inp2grib_Lambert (ppvGDS_Proj_Input, pLambert, lProj_size, errmsg)
       memcpy ((void *) pLambert->achDx, (void *)&lTemp, 3 );
    
 /* convert ulDy to 3 bytes */
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
       lTemp = (htonl(vProjInp->ulDy)) >> 8;
 #else
       lTemp= vProjInp->ulDy  << 8;
@@ -942,7 +942,7 @@ int   inp2grib_Lambert (ppvGDS_Proj_Input, pLambert, lProj_size, errmsg)
       pLambert->chScan_mode = ( unsigned char ) vProjInp->usScan_mode;
 
 /* convert lLat_cut1 to 3 chars */
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
       lTemp = (htonl(abs(vProjInp->lLat_cut1))) >> 8;
 #else
       lTemp = abs (vProjInp->lLat_cut1) << 8;
@@ -951,7 +951,7 @@ int   inp2grib_Lambert (ppvGDS_Proj_Input, pLambert, lProj_size, errmsg)
       if ( vProjInp->lLat_cut1 < 0 ) pLambert->achLat_cut1[0] |= 0x0080;
 
 /* convert lLat_cut2 to 3 chars */
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
       lTemp = (htonl(abs(vProjInp->lLat_cut2))) >> 8;
 #else
       lTemp = abs ( vProjInp->lLat_cut2 ) << 8;
@@ -960,7 +960,7 @@ int   inp2grib_Lambert (ppvGDS_Proj_Input, pLambert, lProj_size, errmsg)
       if ( vProjInp->lLat_cut2 < 0 ) pLambert->achLat_cut2[0] |= 0x0080;
 
 /* convert lLat_southpole to 3chars */
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
       lTemp = (htonl(abs(vProjInp->lLat_southpole))) >> 8;
 #else
       lTemp = abs ( vProjInp->lLat_southpole ) << 8;
@@ -970,7 +970,7 @@ int   inp2grib_Lambert (ppvGDS_Proj_Input, pLambert, lProj_size, errmsg)
 		pLambert->achLat_southpole[0] |= 0x0080;
 
 /* convert lLon_southpole to 3 chars */
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
       lTemp = (htonl(abs(vProjInp->lLon_southpole))) >> 8;
 #else
       lTemp = abs ( vProjInp->lLon_southpole ) << 8;
@@ -979,7 +979,7 @@ int   inp2grib_Lambert (ppvGDS_Proj_Input, pLambert, lProj_size, errmsg)
       if ( vProjInp->lLon_southpole < 0 )
          	pLambert->achLon_southpole[0] |= 0x0080;
 
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
       lTemp = (htonl(vProjInp->usZero)) >> 16;
 #else
       lTemp = vProjInp->usZero << 16;      /* usZero is type INT */
@@ -1114,7 +1114,7 @@ int   inp2grib_PolarSt  (ppvGDS_Proj_Input, Polar, lProj_size , errmsg)
 * F.4        FILL local struct from pProjInp
 */
 /* convert usNx to 2 chars */
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
       lTemp = (htonl(abs(pProjInp->usNx))) >> 16;
 #else
       lTemp= abs (pProjInp->usNx) << 16;
@@ -1122,7 +1122,7 @@ int   inp2grib_PolarSt  (ppvGDS_Proj_Input, Polar, lProj_size , errmsg)
       memcpy ((void*) Polar->achNx, (void*)&lTemp, 2);
    
 /* convert usNy to 2 chars */
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
       lTemp = (htonl(abs(pProjInp->usNy))) >> 16;
 #else
       lTemp= abs(pProjInp->usNy) << 16;
@@ -1130,7 +1130,7 @@ int   inp2grib_PolarSt  (ppvGDS_Proj_Input, Polar, lProj_size , errmsg)
       memcpy ((void*) Polar->achNy, (void*)&lTemp, 2);
 
 /* convert lLat1 to 3 chars */
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
       lTemp = (htonl(abs(pProjInp->lLat1))) >> 8;
 #else
       lTemp = abs ( pProjInp->lLat1 ) << 8;
@@ -1139,7 +1139,7 @@ int   inp2grib_PolarSt  (ppvGDS_Proj_Input, Polar, lProj_size , errmsg)
       if ( pProjInp->lLat1 < 0 ) Polar->achLat1[0] |= 0x0080;
 
 /* convert lLon1 to 3 chars */
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
       lTemp = (htonl(abs(pProjInp->lLon1))) >> 8;
 #else
       lTemp = abs ( pProjInp->lLon1 ) << 8;
@@ -1150,7 +1150,7 @@ int   inp2grib_PolarSt  (ppvGDS_Proj_Input, Polar, lProj_size , errmsg)
       Polar->chRes_flag = ( unsigned char ) pProjInp->usRes_flag;
 
 /* convert lLon_orient to 3 chars */
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
       lTemp = (htonl(abs(pProjInp->lLon_orient))) >> 8;
 #else
       lTemp = abs ( pProjInp->lLon_orient ) << 8;
@@ -1159,7 +1159,7 @@ int   inp2grib_PolarSt  (ppvGDS_Proj_Input, Polar, lProj_size , errmsg)
       if ( pProjInp->lLon_orient < 0 )  Polar->achLon_orient[0] |= 0x0080;
 
 /* convert ulDx to 3 char */
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
       lTemp = (htonl(pProjInp->ulDx)) >> 8;
 #else
       lTemp= ( pProjInp->ulDx << 8);
@@ -1167,7 +1167,7 @@ int   inp2grib_PolarSt  (ppvGDS_Proj_Input, Polar, lProj_size , errmsg)
       memcpy ((void *)  Polar->achDx, (void *)&lTemp, 3 );
    
 /* convert ulDy to 3chars */
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
       lTemp = (htonl(pProjInp->ulDy)) >> 8;
 #else
       lTemp=  ( pProjInp->ulDy << 8);
@@ -1312,14 +1312,14 @@ int    inp2grib_Latlon  (ppvGDS_Proj_Input, pLatlon, lProj_size, errmsg)
 * G.4       FILL local struct from Inp
 */
 /* convert usNi & usNj to 2 chars */
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
       lTemp = (htonl(Inp->usNi)) >> 16;
 #else
       lTemp= Inp->usNi << 16;
 #endif
       memcpy ((void*) pLatlon->achNi, (void*)&lTemp, 2);
 
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
       lTemp = (htonl(Inp->usNj)) >> 16;
 #else
       lTemp = Inp->usNj << 16;
@@ -1327,7 +1327,7 @@ int    inp2grib_Latlon  (ppvGDS_Proj_Input, pLatlon, lProj_size, errmsg)
       memcpy ((void*) pLatlon->achNj, (void*)&lTemp, 2);
    
 /* convert lLat1 to 3chars */
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
       lTemp = (htonl(abs(Inp->lLat1))) >> 8;
 #else
       lTemp=  abs ( Inp->lLat1 )<< 8;
@@ -1336,7 +1336,7 @@ int    inp2grib_Latlon  (ppvGDS_Proj_Input, pLatlon, lProj_size, errmsg)
       if ( Inp->lLat1 < 0 ) pLatlon->achLat1[0] |= 0x0080;
 
 /* convert lLon1 to 3chars */
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
       lTemp = (htonl(abs(Inp->lLon1))) >> 8;
 #else
       lTemp = abs ( Inp->lLon1 ) << 8;
@@ -1347,7 +1347,7 @@ int    inp2grib_Latlon  (ppvGDS_Proj_Input, pLatlon, lProj_size, errmsg)
       pLatlon->chRes_flag = ( unsigned char ) Inp->usRes_flag;
 
 /* convert lLat2 to 3chars */
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
       lTemp = (htonl(abs(Inp->lLat2))) >> 8;
 #else
       lTemp = abs ( Inp->lLat2 ) << 8;
@@ -1356,7 +1356,7 @@ int    inp2grib_Latlon  (ppvGDS_Proj_Input, pLatlon, lProj_size, errmsg)
       if ( Inp->lLat2 < 0 ) pLatlon->achLat2[0] |= 0x0080;
 
 /* convert lLon2 to 3chars */
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
       lTemp = (htonl(abs(Inp->lLon2))) >> 8;
 #else
       lTemp = abs ( Inp->lLon2 ) << 8;
@@ -1365,7 +1365,7 @@ int    inp2grib_Latlon  (ppvGDS_Proj_Input, pLatlon, lProj_size, errmsg)
       if ( Inp->lLon2 < 0 ) pLatlon->achLon2[0] |= 0x0080;
 
 /* convert lon increment to 2chars */
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
       lTemp = (htonl(Inp->iDi)) >> 16;
 #else
       lTemp = Inp->iDi  << 16;
@@ -1373,7 +1373,7 @@ int    inp2grib_Latlon  (ppvGDS_Proj_Input, pLatlon, lProj_size, errmsg)
       memcpy ((void *) pLatlon->achDi, (void *)&lTemp, 2);
 
 /* convert lat increment to 2chars */
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
       lTemp = (htonl(Inp->iDj)) >> 16;
 #else
       lTemp = Inp->iDj << 16;
@@ -1387,7 +1387,7 @@ int    inp2grib_Latlon  (ppvGDS_Proj_Input, pLatlon, lProj_size, errmsg)
       memset ((void*)pLatlon->achZero, '\0', 4);
 
 /* convert lLat_southpole to 3chars */
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
       lTemp = (htonl(abs(Inp->lLat_southpole))) >> 8;
 #else
       lTemp = abs ( Inp->lLat_southpole ) << 8;
@@ -1396,7 +1396,7 @@ int    inp2grib_Latlon  (ppvGDS_Proj_Input, pLatlon, lProj_size, errmsg)
       if ( Inp->lLat_southpole < 0) pLatlon->achLat_southpole[0] |=0x080;
 
 /* convert lLon_southpole to 3chars */
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
       lTemp = (htonl(abs(Inp->lLon_southpole))) >> 8;
 #else
       lTemp = abs ( Inp->lLon_southpole ) << 8;
@@ -1405,7 +1405,7 @@ int    inp2grib_Latlon  (ppvGDS_Proj_Input, pLatlon, lProj_size, errmsg)
       if ( Inp->lLon_southpole < 0) pLatlon->achLon_southpole[0] |=0x080;
 
 /* convert lRotate to 4chars */
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
       lTemp = (htonl(abs(Inp->lRotate)));
 #else
       lTemp = abs ( Inp->lRotate );
@@ -1413,7 +1413,7 @@ int    inp2grib_Latlon  (ppvGDS_Proj_Input, pLatlon, lProj_size, errmsg)
       memcpy ((void *) pLatlon->achRotate, (void *)&lTemp, 4 );
 
 /* convert lPole_lat to 3chars */
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
       lTemp = (htonl(abs(Inp->lPole_lat))) >> 8;
 #else
       lTemp = abs ( Inp->lPole_lat ) << 8;
@@ -1422,7 +1422,7 @@ int    inp2grib_Latlon  (ppvGDS_Proj_Input, pLatlon, lProj_size, errmsg)
       if (  Inp->lPole_lat < 0) pLatlon->achPole_lat[0] |= 0x0080;
 
 /* convert lPole_lon to 3chars */
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
       lTemp = (htonl(abs(Inp->lPole_lon))) >> 8;
 #else
       lTemp = abs ( Inp->lPole_lon ) << 8;
@@ -1431,7 +1431,7 @@ int    inp2grib_Latlon  (ppvGDS_Proj_Input, pLatlon, lProj_size, errmsg)
       if (  Inp->lPole_lon < 0) pLatlon->achPole_lon[0] |= 0x0080;
 
 /* convert lStretch to 4 chars */
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
       lTemp = (htonl(Inp->lStretch));
 #else
       lTemp = Inp->lStretch;
@@ -1569,7 +1569,7 @@ int   inp2grib_Mercator (ppvGDS_Proj_Input, Mercator, lProj_size , errmsg)
 * F.4        FILL local struct from pProjInp
 */
 /* convert cols to 2 chars */
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
       lTemp = (htonl(abs(ProjInp->cols))) >> 16;
 #else
       lTemp= abs (ProjInp->cols) << 16;
@@ -1577,7 +1577,7 @@ int   inp2grib_Mercator (ppvGDS_Proj_Input, Mercator, lProj_size , errmsg)
       memcpy ((void*) Mercator->achNi, (void*)&lTemp, 2);
    
 /* convert rows to 2 chars */
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
       lTemp = (htonl(abs(ProjInp->rows))) >> 16;
 #else
       lTemp= abs(ProjInp->rows) << 16;
@@ -1585,7 +1585,7 @@ int   inp2grib_Mercator (ppvGDS_Proj_Input, Mercator, lProj_size , errmsg)
       memcpy ((void*) Mercator->achNj, (void*)&lTemp, 2);
 
 /* convert first_lat to 3 chars */
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
       lTemp = (htonl(abs(ProjInp->first_lat))) >> 8;
 #else
       lTemp = abs ( ProjInp->first_lat ) << 8;
@@ -1594,7 +1594,7 @@ int   inp2grib_Mercator (ppvGDS_Proj_Input, Mercator, lProj_size , errmsg)
       if ( ProjInp->first_lat < 0 ) Mercator->achLat1[0] |= 0x0080;
 
 /* convert first_lon to 3 chars */
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
       lTemp = (htonl(abs(ProjInp->first_lon))) >> 8;
 #else
       lTemp = abs ( ProjInp->first_lon ) << 8;
@@ -1605,7 +1605,7 @@ int   inp2grib_Mercator (ppvGDS_Proj_Input, Mercator, lProj_size , errmsg)
       Mercator->chRes_flag = ( unsigned char ) ProjInp->usRes_flag;
 
 /* convert La2 to 3 chars */
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
       lTemp = (htonl(abs(ProjInp->La2))) >> 8;
 #else
       lTemp = abs ( ProjInp->La2 ) << 8;
@@ -1614,7 +1614,7 @@ int   inp2grib_Mercator (ppvGDS_Proj_Input, Mercator, lProj_size , errmsg)
       if ( ProjInp->La2 < 0 ) Mercator->achLat2[0] |= 0x0080;
 
 /* convert Lo2 to 3 chars */
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
       lTemp = (htonl(abs(ProjInp->Lo2))) >> 8;
 #else
       lTemp = abs ( ProjInp->Lo2 ) << 8;
@@ -1623,7 +1623,7 @@ int   inp2grib_Mercator (ppvGDS_Proj_Input, Mercator, lProj_size , errmsg)
       if ( ProjInp->Lo2 < 0 ) Mercator->achLon2[0] |= 0x0080;
 
 /* convert lLon_orient to 3 chars */
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
       lTemp = (htonl(abs(ProjInp->latin))) >> 8;
 #else
       lTemp = abs ( ProjInp->latin ) << 8;
@@ -1637,7 +1637,7 @@ int   inp2grib_Mercator (ppvGDS_Proj_Input, Mercator, lProj_size , errmsg)
       Mercator->chScan_mode = ( unsigned char ) ProjInp->usScan_mode;
 
 /* convert ulDx to 3 char */
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
       lTemp = (htonl((long)ProjInp->lon_inc)) >> 8;
 #else
       lTemp= ( (long)ProjInp->lon_inc << 8);
@@ -1645,7 +1645,7 @@ int   inp2grib_Mercator (ppvGDS_Proj_Input, Mercator, lProj_size , errmsg)
       memcpy ((void *)  Mercator->achDi, (void *)&lTemp, 3 );
 
 /* convert ulDy to 3chars */
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
       lTemp = (htonl((long)ProjInp->lat_inc)) >> 8;
 #else
       lTemp=  ( (long)ProjInp->lat_inc << 8);

@@ -6,6 +6,20 @@
 04/22/98/atn:  + extension flag;
 */
 
+/* these things should be defined in machine.h which gets included
+   in the grib code via the includes of netinet/in.h. However, in 
+   case it doesn't, make a guess and hope it's big-endian. Todd H.
+   is working on a better way to do this. JM 20050722 */
+#ifndef LITTLE_ENDIAN
+#  define LITTLE_ENDIAN 1234
+#endif
+#ifndef BIG_ENDIAN
+#  define BIG_ENDIAN  4321
+#endif
+#ifndef BYTE_ORDER
+#  define BYTE_ORDER BIG_ENDIAN
+#endif
+
 #define EXTENSION_FLAG 99	/* Implies extensions if equals PDS Oct41 */
 #define DEF_MSG_LEN    50000		/* size of GRIB HDR 's entire_msg */
 #define MAX_PROJ_SIZE  300               /* MaxSize of GDS minus 6 bytes*/

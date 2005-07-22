@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdlib.h>
+#include <netinet/in.h>
 #include "dprints.h"		/* for dprints */
 #include "gribfuncs.h"		/* prototypes */
 
@@ -356,7 +357,7 @@ int inp2grib_PDS ( pPDS_Input, ppPDS_Grib, errmsg)
    short            sDec_sc_fctr = 0;
    int              nStatus = 0;
    int              i; 		/* loop counter */
-   long		    lTemp;	/* working var */
+   int		    lTemp;	/* working var */
    PDS_GRIB         *tpds; 	/* true grib pds, working var */
    short            tmp_byte2;  /* working var */
    long             tmp_byte4;  /* working var */
@@ -431,7 +432,7 @@ int inp2grib_PDS ( pPDS_Input, ppPDS_Grib, errmsg)
         case 223:  /* middle cloud top level */
         case 232:  /* high cloud bottom level */
         case 233:  /* high cloud top level */
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
 	  tmp_byte2 = pPDS_Input->usHeight1;
 	  swap_byte2(&tmp_byte2);
           memcpy((void *)tpds->achHeight, 
@@ -443,7 +444,7 @@ int inp2grib_PDS ( pPDS_Input, ppPDS_Grib, errmsg)
           break;
 
         default:
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
           tpds->achHeight[1]= pPDS_Input->usHeight1 & ~(~0 << 8);
           tpds->achHeight[0]= pPDS_Input->usHeight2 & ~(~0 << 8);
 #else
@@ -463,7 +464,7 @@ int inp2grib_PDS ( pPDS_Input, ppPDS_Grib, errmsg)
       tpds->chP2 = ( unsigned char ) pPDS_Input->usP2;
       tpds->chTime_range = ( unsigned char ) pPDS_Input->usTime_range;
 
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
 	  tmp_byte2 = pPDS_Input->usTime_range_avg;
 	  swap_byte2(&tmp_byte2);
           memcpy((void *)tpds->achTime_range_avg, 
@@ -480,7 +481,7 @@ int inp2grib_PDS ( pPDS_Input, ppPDS_Grib, errmsg)
 
       sDec_sc_fctr = abs(pPDS_Input->sDec_sc_fctr);
       if(pPDS_Input->sDec_sc_fctr < 0) sDec_sc_fctr = sDec_sc_fctr | 0x8000;
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
 	  tmp_byte2 = sDec_sc_fctr;
 	  swap_byte2(&tmp_byte2);
           memcpy((void *)tpds->achDec_sc_fctr, 
@@ -505,7 +506,7 @@ int inp2grib_PDS ( pPDS_Input, ppPDS_Grib, errmsg)
       /* Added by Todd Hutchinson, WSI.  Extended WSI PDS section */
 
       tpds->PDS_41 = (unsigned char)pPDS_Input->PDS_41;
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
       tmp_byte4 = pPDS_Input->PDS_42;
       swap_byte4(&tmp_byte4);
       memcpy((void *)tpds->PDS_42, (void *)&tmp_byte4, 4);
@@ -514,7 +515,7 @@ int inp2grib_PDS ( pPDS_Input, ppPDS_Grib, errmsg)
 #endif
 
       tpds->PDS_46 = (unsigned char)pPDS_Input->PDS_46;
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
       tmp_byte4 = pPDS_Input->PDS_47;
       swap_byte4(&tmp_byte4);
       memcpy((void *)tpds->PDS_47, (void *)&tmp_byte4, 4);
@@ -524,7 +525,7 @@ int inp2grib_PDS ( pPDS_Input, ppPDS_Grib, errmsg)
 
       tpds->PDS_51 = (unsigned char)pPDS_Input->PDS_51;
 
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
       tmp_byte2 = pPDS_Input->PDS_52;;
       swap_byte2(&tmp_byte2);
       memcpy((void *)tpds->PDS_52, (void *)&(tmp_byte2), 2);
@@ -535,7 +536,7 @@ int inp2grib_PDS ( pPDS_Input, ppPDS_Grib, errmsg)
       ulPDS_length= sizeof (PDS_GRIB);
       DPRINT1 ( "\t length of PDS_GRIB is %d\n", ulPDS_length );
 
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
       tmp_byte4 = ulPDS_length;
       swap_byte4(&tmp_byte4);
       lTemp= (tmp_byte4 >> 8);

@@ -42,7 +42,7 @@ int	pack_spatial ( long   		*pt_cnt,
 			unsigned short	*bit_cnt,
 			float		*pack_null,
 			float 		*fbuff,
-			unsigned long  	**ppbitstream,
+			unsigned int  	**ppbitstream,
 			short   	dec_scl_fctr,
 			long    	*BDSlength,
 			char    	*errmsg)
@@ -54,7 +54,7 @@ int	pack_spatial (  pt_cnt, bit_cnt, pack_null, fbuff, ppbitstream,
 			unsigned short	*bit_cnt;
 			float		*pack_null;
 			float 		*fbuff;
-			unsigned long  	**ppbitstream;
+			unsigned int  	**ppbitstream;
 			short   	dec_scl_fctr;
 			long    	*BDSlength;
 			char    	*errmsg;
@@ -84,7 +84,7 @@ int	pack_spatial (  pt_cnt, bit_cnt, pack_null, fbuff, ppbitstream,
     float reference;		/* reference = minimum value in grid */
     float max_grid;		/* maximum value in grid */
     float ftemp;		/* temporary float containing grid value */
-    unsigned long *pBitstream;
+    unsigned int *pBitstream;
     unsigned long grib_local_ibm();
     int wordnum;
     int zero_cnt;
@@ -304,7 +304,7 @@ int	pack_spatial (  pt_cnt, bit_cnt, pack_null, fbuff, ppbitstream,
    Causing seg faults on free of buffer later on.  Fixed by multiplying
    byte2_cnt by the size of an unsigned long.  Not sure how or why this 
    ever worked. JM 20050720 */
-    pBitstream = ( unsigned long * ) malloc ( sizeof( unsigned long ) * byte2_cnt );
+    pBitstream = ( unsigned int * ) malloc ( sizeof( unsigned long ) * byte2_cnt );
     if ( !pBitstream )
     {
        DPRINT1 ("%s:  MAlloc failed pBitstream\n", func );

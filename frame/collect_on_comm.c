@@ -183,6 +183,8 @@ extern int outy ;
 extern int maxstug, nouty, maxouty ;
 #endif
 
+#if 0
+/*  used internally for chasing memory leaks  */
 rlim_ ()
 {
 
@@ -199,4 +201,4 @@ rlim_ ()
 # endif
 #endif
 }
-
+#endif

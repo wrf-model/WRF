@@ -67,8 +67,13 @@ int	pack_spatial (  pt_cnt, bit_cnt, pack_null, fbuff, ppbitstream,
     int empty;			/* number of empty bits in word */ 
     int diff;			/* difference of empty - bit1 */ 
     long max_value;		/* max value storable in bit_cnt bits */
+#if 0
     unsigned long itemp;	/* temporary unsigned integer */
     unsigned long *bstr;	/* pointer running across bitstream */
+#else
+    unsigned int itemp;	/* temporary unsigned integer */
+    unsigned int *bstr;	/* pointer running across bitstream */
+#endif
     int pack_bit_cnt;		/* count of bits to pack parameter values */ 
     int unused_bit_cnt; 	/* count of unused bits for i2 words */
     /*long byte4_cnt;		/- count of bytes using i4 words */
@@ -458,7 +463,7 @@ return(-1) ;
     }
 
 /* For little endian machines, swap the bytes in the bstr pointer */
-#ifdef LITTLE_ENDIAN
+#if ( BYTE_ORDER == LITTLE_ENDIAN )
     for (wordnum = 0; wordnum < ceil(byte2_cnt/(float)sizeof(long)); 
 	 wordnum++) {
       pBitstream[wordnum] = htonl(pBitstream[wordnum]);

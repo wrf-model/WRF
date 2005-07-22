@@ -13,7 +13,7 @@ INCLUDEDIRS  = -I. -Igrib1_util -IMEL_grib1
 all : clean_a LOCAL_LIBS libio_grib1.a wgrib
 
 wgrib :
-	( cd WGRIB ; make "CC=$(CC)" )
+	( cd WGRIB ; make CC="$(CC) $(CFLAGS)" )
 	ln -sf WGRIB/wgrib .
 
 clean_a :

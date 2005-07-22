@@ -6296,7 +6296,7 @@ M4                = m4
 RANLIB            = ranlib
 NETCDFPATH	  = CONFIGURE_NETCDF_PATH
 
-externals : CONFIGURE_WRFIO_NF ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F wrfio_grib1 esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -6310,20 +6310,20 @@ wrfio_nf :
 	( cd ../external/io_netcdf ; \
           make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" \
           FC="$(FC) -I../.. $(FCFLAGS)" \
-          TRADFLAG="-traditional" ; \
+          TRADFLAG="-traditional" RANLIB="$(RANLIB)" ; \
 	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../../inc ; \
 	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../io_phdf5 ; \
 	/bin/cp ../ioapi_share/wrf_io_flags.h ../io_quilt )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" \
+          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
           FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" \
-          FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" )
+          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
+          FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -6435,7 +6435,7 @@ M4                = m4
 RANLIB            = ranlib
 NETCDFPATH	  = CONFIGURE_NETCDF_PATH
 
-externals : CONFIGURE_WRFIO_NF ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F wrfio_grib1 esmf_time
 
 gen_comms.c : ../external/RSL_LITE/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -6448,19 +6448,19 @@ module_dm.F : ../external/RSL_LITE/module_dm.F
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
           make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC) -I../.. $(FCFLAGS)" \
-          TRADFLAG="-traditional" ; \
+          TRADFLAG="-traditional" RANLIB="$(RANLIB)" ; \
 	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../../inc ; \
 	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../io_phdf5 ; \
 	/bin/cp ../ioapi_share/wrf_io_flags.h ../io_quilt )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" \
+          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
           FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" \
+          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
           FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
 
 esmf_time : 
@@ -6571,7 +6571,7 @@ M4                = m4
 RANLIB            = ranlib
 NETCDFPATH	  = CONFIGURE_NETCDF_PATH
 
-externals : CONFIGURE_WRFIO_NF ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F wrfio_grib1 esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -6585,20 +6585,20 @@ wrfio_nf :
 	( cd ../external/io_netcdf ; \
           make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" \
           FC="$(FC) -I../.. $(FCFLAGS)" \
-          TRADFLAG="-traditional" ; \
+          TRADFLAG="-traditional" RANLIB="$(RANLIB)" ; \
 	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../../inc ; \
 	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../io_phdf5 ; \
 	/bin/cp ../ioapi_share/wrf_io_flags.h ../io_quilt )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" \
+          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" RANLIB="$(RANLIB)"\
           FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" \
-          FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" )
+          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" RANLIB="$(RANLIB)"\
+          FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -6706,7 +6706,7 @@ M4                = m4
 RANLIB            = ranlib
 NETCDFPATH	  = CONFIGURE_NETCDF_PATH
 
-externals : CONFIGURE_WRFIO_NF ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F wrfio_grib1 esmf_time
 
 gen_comms.c : ../external/RSL_LITE/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -6719,19 +6719,19 @@ module_dm.F : ../external/RSL_LITE/module_dm.F
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
           make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC) -I../.. $(FCFLAGS)" \
-          TRADFLAG="-traditional" ; \
+          TRADFLAG="-traditional" RANLIB="$(RANLIB)" ; \
 	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../../inc ; \
 	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../io_phdf5 ; \
 	/bin/cp ../ioapi_share/wrf_io_flags.h ../io_quilt )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" \
+          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
           FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" \
+          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
           FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
 
 esmf_time : 
@@ -6825,7 +6825,7 @@ M4                = m4
 RANLIB            = ranlib
 NETCDFPATH	  = CONFIGURE_NETCDF_PATH
 
-externals : CONFIGURE_WRFIO_NF wrfio_int module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_int module_dm.F wrfio_grib1 esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; \
@@ -6834,17 +6834,20 @@ module_dm.F :
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
           make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC) -I../.. $(FCFLAGS)" \
-          TRADFLAG="-traditional" ; \
+          TRADFLAG="-traditional" RANLIB="$(RANLIB)" ; \
 	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../../inc )
+#	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
+#	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
+#	/bin/cp wrf_io_flags.h ../io_quilt )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" \
+          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
           FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" \
+          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
           FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
 
 esmf_time : 
@@ -6892,7 +6895,6 @@ mediation_force_domain.o:
 #
 #  'setenv F_UFMTENDIAN big' in run scripts not necessary
 #  since -convert big_endian is in FCBASEOPTS
-#  Change MPI_HOME if SGI's MPI is not in the default directories
 #
 # Contributed settings from Gerardo Cisneros, SGI
 #
@@ -6933,7 +6935,7 @@ M4                = m4
 RANLIB            = ranlib
 NETCDFPATH	  = CONFIGURE_NETCDF_PATH
 
-externals : CONFIGURE_WRFIO_NF wrfio_int module_dm.F esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_int module_dm.F wrfio_grib1 esmf_time
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; \
@@ -6942,17 +6944,20 @@ module_dm.F :
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
           make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC) -I../.. $(FCFLAGS)" \
-          TRADFLAG="-traditional" ; \
+          TRADFLAG="-traditional" RANLIB="$(RANLIB)" ; \
 	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../../inc )
+#	/bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc ; \
+#	/bin/cp wrf_io_flags.h wrf_status_codes.h ../io_phdf5 ; \
+#	/bin/cp wrf_io_flags.h ../io_quilt )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
-          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" \
+          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
           FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
 
 wrfio_grib1 : 
 	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" \
+          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
           FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
 
 esmf_time : 

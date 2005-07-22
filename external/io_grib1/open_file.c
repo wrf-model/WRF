@@ -63,6 +63,7 @@ int OPEN_FILE (char *filename, char *permissions, int *outfd, int *ierr,
 int WRITE_FILE(int *fd, char *buf, int *ierr, int strlen)
 {
   int nbytes;
+
   nbytes = write(*fd,buf,strlen);
   if (nbytes != strlen)
     {
@@ -73,6 +74,34 @@ int WRITE_FILE(int *fd, char *buf, int *ierr, int strlen)
       *ierr = 0;
     }
   return *ierr;
+}
+
+dooney ( char * msg , char * buf, int n ) 
+{
+   int i, j ;
+   fprintf(stderr,msg) ;
+   if ( n > 200 ) n = 200 ;
+   if ( !strncmp( buf , "GRIB" , 4 ) ) {
+      bcopy( buf+4 , &j , 4 ) ;
+      j  = j >>8  ;
+      fprintf(stderr,"-> %d %08x\n",j,j ) ;
+   } else {
+      bcopy( buf+4 , &j , 4 ) ;
+      fprintf(stderr,"-> %d %08x\n",j,j ) ;
+   }
+   for ( i = 0 ; i < n ; i++ ) {
+      char c ;
+      c = buf[i] ;
+      if ( c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' )
+      {
+        fprintf(stderr,"%c ",c) ;
+      }
+      else
+      {
+        fprintf(stderr,"@ ",c) ;
+      }
+      if ( (i+1) % 40 == 0 ) fprintf(stderr,"\n") ;
+   }
 }
 
 int CLOSE_FILE (int *fd)

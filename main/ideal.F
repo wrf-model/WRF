@@ -54,7 +54,7 @@ PROGRAM ideal
 
    !  Define the name of this program (program_name defined in module_domain)
 
-   program_name = "IDEAL V2.0.3.1 PREPROCESSOR"
+   program_name = "IDEAL V2.1 PREPROCESSOR"
 
    !  Get the NAMELIST data for input.
 

@@ -65,7 +65,7 @@ real::t1,t2
    ! NOTE: share/input_wrf.F tests first 7 chars of this name to decide 
    ! whether to read P_TOP as metadata from the SI (yes, if .eq. REAL_EM)
 
-   program_name = "REAL_EM V2.0.3.1 PREPROCESSOR"
+   program_name = "REAL_EM V2.1 PREPROCESSOR"
 
 #ifdef DM_PARALLEL
    CALL disable_quilting

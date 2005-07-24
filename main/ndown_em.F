@@ -116,7 +116,7 @@ integer :: ii
 
    !  Define the name of this program (program_name defined in module_domain)
 
-   program_name = "NDOWN_EM V2.0.3.1 PREPROCESSOR"
+   program_name = "NDOWN_EM V2.1 PREPROCESSOR"
 
 #ifdef DM_PARALLEL
    CALL disable_quilting

@@ -78,7 +78,7 @@ CONTAINS
 !
 !</DESCRIPTION>
 
-   program_name = "WRF V2.0.3.1 MODEL"
+   program_name = "WRF V2.1 MODEL"
 
    ! Initialize WRF modules:  
    ! Phase 1 returns after MPI_INIT() (if it is called)

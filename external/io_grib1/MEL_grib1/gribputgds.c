@@ -1,5 +1,3 @@
-#define NCARIBM_NOC99
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

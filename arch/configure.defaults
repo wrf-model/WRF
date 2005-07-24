@@ -1051,7 +1051,7 @@ CC              =       cc_r
 SCC		=	$(CC)
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
-CFLAGS          =       -DNOUNDERSCORE
+CFLAGS          =       -DNOUNDERSCORE -DNCARIBM_NOC99
 FCOPTIM         =       -O2 -qarch=auto
 FCDEBUG         =       # -qnoopt -qfullpath
 FCBASEOPTS      =       -qspill=20000 $(FCDEBUG) -qmaxmem=32767 -w #-qflttrap=zerodivide:invalid:enable -qsigtrap
@@ -1166,7 +1166,7 @@ CC              =       cc_r
 SCC		=	$(CC)
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
-CFLAGS          =       -DNOUNDERSCORE
+CFLAGS          =       -DNOUNDERSCORE -DNCARIBM_NOC99
 FCOPTIM         =       -O2 -qarch=auto
 FCDEBUG         =       # -qnoopt -qfullpath
 FCBASEOPTS      =       -w -qspill=20000 $(FCDEBUG) -qmaxmem=32767 #-qflttrap=zerodivide:invalid:enable -qsigtrap
@@ -1249,7 +1249,7 @@ CC              =       mpcc_r
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
 CFLAGS          =       -O3 -DNOUNDERSCORE  -I../external/RSL_LITE -DDM_PARALLEL \
-                        -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
+                        -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -DNCARIBM_NOC99
 FCOPTIM         =       -O2 -qarch=auto
 FCDEBUG         =       # -qnoopt -qfullpath
 FCBASEOPTS      =       -w -qspill=20000 $(FCDEBUG) -qmaxmem=32767 #-qflttrap=zerodivide:invalid:enable -qsigtrap
@@ -1359,7 +1359,7 @@ CC              =       mpcc_r
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
 CFLAGS          =       -DNOUNDERSCORE -DWRF_RSL_IO  -I../external/RSL/RSL -DDM_PARALLEL  \
-                        -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
+                        -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -DNCARIBM_NOC99
 FCOPTIM         =       -O2 -qarch=auto
 FCDEBUG         =       # -qnoopt -qfullpath
 FCBASEOPTS      =       -w -qspill=20000 $(FCDEBUG) -qmaxmem=32767 #-qflttrap=zerodivide:invalid:enable -qsigtrap
@@ -1469,7 +1469,7 @@ CC              =       mpcc_r
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
 CFLAGS          =       -DNOUNDERSCORE -DWRF_RSL_IO  -I../external/RSL/RSL -DDM_PARALLEL  \
-                        -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
+                        -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -DNCARIBM_NOC99
 FCOPTIM         =       -O2 -qarch=auto 
 FCDEBUG         =       # -qnoopt -qfullpath
 FCBASEOPTS      =       -w -qspill=20000 $(FCDEBUG) -qmaxmem=-1 #-qflttrap=zerodivide:invalid:enable -qsigtrap
@@ -1582,7 +1582,7 @@ CC              =       mpcc_r
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
 CFLAGS          =       -DNOUNDERSCORE  -I../external/RSL_LITE -DDM_PARALLEL  \
-                        -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
+                        -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -DNCARIBM_NOC99
 FCOPTIM         =       -O2 -qarch=auto 
 FCDEBUG         =       # -qnoopt -qfullpath
 FCBASEOPTS      =       -w -qspill=20000 $(FCDEBUG) -qmaxmem=-1 #-qflttrap=zerodivide:invalid:enable -qsigtrap
@@ -1697,7 +1697,7 @@ CC              =       mpcc_r
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
 CFLAGS          =       -DNOUNDERSCORE -DWRF_RSL_IO  -I../external/RSL/RSL -DDM_PARALLEL  \
-                        -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
+                        -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -DNCARIBM_NOC99
 FCOPTIM         =       -O2 -qarch=auto
 FCDEBUG         =       # -qnoopt -qfullpath
 FCBASEOPTS      =       -w -qspill=20000 $(FCDEBUG) -qmaxmem=32767 #-qflttrap=zerodivide:invalid:enable -qsigtrap
@@ -1828,7 +1828,7 @@ RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 MCELHOME        =       /home/bluesky/bettenc/disttest
 PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
 CFLAGS          =       -DNOUNDERSCORE -DWRF_RSL_IO  -I../external/RSL/RSL -DDM_PARALLEL  \
-                        -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
+                        -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -DNCARIBM_NOC99
 FCOPTIM         =       -O2 -qarch=auto
 FCDEBUG         =       # -qnoopt -qfullpath
 FCBASEOPTS      =       -w -qspill=20000 $(FCDEBUG) -qmaxmem=32767 #-qflttrap=zerodivide:invalid:enable -qsigtrap
@@ -1949,7 +1949,7 @@ CC              =       mpcc_r
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
 CFLAGS          =       -DNOUNDERSCORE -DWRF_RSL_IO  -I../external/RSL/RSL -DDM_PARALLEL  \
-                        -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
+                        -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -DNCARIBM_NOC99
 FCOPTIM         =       -O2 -qarch=auto
 FCDEBUG         =       # -qnoopt -qfullpath
 FCBASEOPTS      =       -w -qspill=20000 $(FCDEBUG) -qmaxmem=-1 #-qflttrap=zerodivide:invalid:enable -qsigtrap
@@ -2082,7 +2082,7 @@ CC              =       cc_r
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
 CFLAGS          =       -DNOUNDERSCORE -DWRF_RSL_IO  -I../external/RSL/RSL -DDM_PARALLEL  \
-                        -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -DSTUBMPI
+                        -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -DSTUBMPI -DNCARIBM_NOC99
 FCOPTIM         =       -O2 -qarch=auto
 FCDEBUG         =       # -qnoopt -qfullpath
 FCBASEOPTS      =       -w -qspill=20000 $(FCDEBUG) -qmaxmem=32767 #-qflttrap=zerodivide:invalid:enable -qsigtrap
@@ -2196,7 +2196,7 @@ CC              =       cc_r
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
 CFLAGS          =       -DNOUNDERSCORE -DWRF_RSL_IO  -I../external/RSL/RSL -DDM_PARALLEL  \
-                        -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -DSTUBMPI
+                        -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -DSTUBMPI -DNCARIBM_NOC99
 FCOPTIM         =       -O2 -qarch=auto
 FCDEBUG         =       # -qnoopt -qfullpath
 FCBASEOPTS      =       -w -qspill=20000 $(FCDEBUG) -qmaxmem=32767 #-qflttrap=zerodivide:invalid:enable -qsigtrap

@@ -1697,7 +1697,7 @@ banner 14
 						endif
 						$SERIALRUNCOMMAND ../../main/real_${core}.exe.1 >! print.out.real_${core}_Phys=${phys_option}_Parallel=${compopt}
 					else if ( $NESTED != TRUE ) then
-						../../main/real_${core}.exe.1 >&! print.out.real_${core}_Phys=${phys_option}_Parallel=${compopt}
+						../../main/real_${core}.exe.1 >! print.out.real_${core}_Phys=${phys_option}_Parallel=${compopt}
 					endif
 #DAVE###################################################
 echo finished real
@@ -2150,7 +2150,7 @@ banner 26
 					rm wrfinput_d01 >& /dev/null
 					rm wrfbdy_d01   >& /dev/null
 
-					../../main/ideal_${core}.exe.1 >&! print.out.ideal_${core}_Parallel=${compopt}
+					../../main/ideal_${core}.exe.1 >! print.out.ideal_${core}_Parallel=${compopt}
 #DAVE###################################################
 echo ran ideal
 ls -ls wrfiput*

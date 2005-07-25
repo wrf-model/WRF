@@ -1466,12 +1466,6 @@ banner 7
 				else
 					sed              -e '/^FCOPTIM/d' -e '/^FCDEBUG/s/#-g/-g/g' ./configure.wrf >! foo ; /bin/mv foo configure.wrf
 				endif
-			else if ( `uname` == OSF1 ) then
-		 		if ( ( $compopt == $COMPOPTS[1] ) || ( $compopt == $COMPOPTS[3] ) ) then
-					sed -e '/^OMP/d' -e '/^FCOPTIM/d' -e '/^FCDEBUG/s/#/#/g' ./configure.wrf >! foo ; /bin/mv foo configure.wrf
-				else
-					sed              -e '/^FCOPTIM/d' -e '/^FCDEBUG/s/#/#/g' ./configure.wrf >! foo ; /bin/mv foo configure.wrf
-				endif
 			else
 		 		if ( ( $compopt == $COMPOPTS[1] ) || ( $compopt == $COMPOPTS[3] ) ) then
 					sed -e '/^OMP/d' -e '/^FCOPTIM/d' -e '/^FCDEBUG/s/#//g' ./configure.wrf >! foo ; /bin/mv foo configure.wrf

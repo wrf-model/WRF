@@ -2298,7 +2298,7 @@ SUBROUTINE horizontal_diffusion ( name, field, tendency, mu,           &
 
    REAL :: mrdx, mkrdxm, mkrdxp, &
            mrdy, mkrdym, mkrdyp
-   REAL :: pr = 3.
+   REAL :: pr_inv
 
    LOGICAL :: specified
 
@@ -2309,6 +2309,7 @@ SUBROUTINE horizontal_diffusion ( name, field, tendency, mu,           &
 !
 !</DESCRIPTION>
 
+   pr_inv = 1./prandtl
    specified = .false.
    if(config_flags%specified .or. config_flags%nested) specified = .true.
 
@@ -2443,11 +2444,11 @@ SUBROUTINE horizontal_diffusion ( name, field, tendency, mu,           &
       DO k=kts,ktf
       DO i = i_start, i_end
 
-         mkrdxm=msfu(i,j)*0.5*(xkmhd(i,k,j)+xkmhd(i-1,k,j))*0.5*(mu(i,j)+mu(i-1,j))*rdx*pr
-         mkrdxp=msfu(i+1,j)*0.5*(xkmhd(i+1,k,j)+xkmhd(i,k,j))*0.5*(mu(i+1,j)+mu(i,j))*rdx*pr
+         mkrdxm=msfu(i,j)*0.5*(xkmhd(i,k,j)+xkmhd(i-1,k,j))*0.5*(mu(i,j)+mu(i-1,j))*rdx*pr_inv
+         mkrdxp=msfu(i+1,j)*0.5*(xkmhd(i+1,k,j)+xkmhd(i,k,j))*0.5*(mu(i+1,j)+mu(i,j))*rdx*pr_inv
          mrdx=msft(i,j)*rdx
-         mkrdym=msfv(i,j)*0.5*(xkmhd(i,k,j)+xkmhd(i,k,j-1))*0.5*(mu(i,j)+mu(i,j-1))*rdy*pr
-         mkrdyp=msfv(i,j+1)*0.5*(xkmhd(i,k,j+1)+xkmhd(i,k,j))*0.5*(mu(i,j+1)+mu(i,j))*rdy*pr
+         mkrdym=msfv(i,j)*0.5*(xkmhd(i,k,j)+xkmhd(i,k,j-1))*0.5*(mu(i,j)+mu(i,j-1))*rdy*pr_inv
+         mkrdyp=msfv(i,j+1)*0.5*(xkmhd(i,k,j+1)+xkmhd(i,k,j))*0.5*(mu(i,j+1)+mu(i,j))*rdy*pr_inv
          mrdy=msft(i,j)*rdy
 
             tendency(i,k,j)=tendency(i,k,j)+( &
@@ -2508,7 +2509,7 @@ SUBROUTINE horizontal_diffusion_3dmp ( name, field, tendency, mu,           &
 
    REAL :: mrdx, mkrdxm, mkrdxp, &
            mrdy, mkrdym, mkrdyp
-   REAL :: pr = 3.
+   REAL :: pr_inv
 
    LOGICAL :: specified
 
@@ -2520,6 +2521,7 @@ SUBROUTINE horizontal_diffusion_3dmp ( name, field, tendency, mu,           &
 !
 !</DESCRIPTION>
 
+   pr_inv = 1./prandtl
    specified = .false.
    if(config_flags%specified .or. config_flags%nested) specified = .true.
 
@@ -2539,11 +2541,11 @@ SUBROUTINE horizontal_diffusion_3dmp ( name, field, tendency, mu,           &
       DO k=kts,ktf
       DO i = i_start, i_end
 
-         mkrdxm=msfu(i,j)*0.5*(xkmhd(i,k,j)+xkmhd(i-1,k,j))*0.5*(mu(i,j)+mu(i-1,j))*rdx*pr
-         mkrdxp=msfu(i+1,j)*0.5*(xkmhd(i+1,k,j)+xkmhd(i,k,j))*0.5*(mu(i+1,j)+mu(i,j))*rdx*pr
+         mkrdxm=msfu(i,j)*0.5*(xkmhd(i,k,j)+xkmhd(i-1,k,j))*0.5*(mu(i,j)+mu(i-1,j))*rdx*pr_inv
+         mkrdxp=msfu(i+1,j)*0.5*(xkmhd(i+1,k,j)+xkmhd(i,k,j))*0.5*(mu(i+1,j)+mu(i,j))*rdx*pr_inv
          mrdx=msft(i,j)*rdx
-         mkrdym=msfv(i,j)*0.5*(xkmhd(i,k,j)+xkmhd(i,k,j-1))*0.5*(mu(i,j)+mu(i,j-1))*rdy*pr
-         mkrdyp=msfv(i,j+1)*0.5*(xkmhd(i,k,j+1)+xkmhd(i,k,j))*0.5*(mu(i,j+1)+mu(i,j))*rdy*pr
+         mkrdym=msfv(i,j)*0.5*(xkmhd(i,k,j)+xkmhd(i,k,j-1))*0.5*(mu(i,j)+mu(i,j-1))*rdy*pr_inv
+         mkrdyp=msfv(i,j+1)*0.5*(xkmhd(i,k,j+1)+xkmhd(i,k,j))*0.5*(mu(i,j+1)+mu(i,j))*rdy*pr_inv
          mrdy=msft(i,j)*rdy
 
             tendency(i,k,j)=tendency(i,k,j)+(                        &

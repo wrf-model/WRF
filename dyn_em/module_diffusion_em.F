@@ -1461,7 +1461,7 @@ SUBROUTINE smag_km( config_flags,xkmh,xkmhd,xkmv,xkhh,xkhv,BN2,                &
    IF ( config_flags%open_ye .or. config_flags%specified .or. &
         config_flags%nested) j_end   = MIN(jde-2,jte)
 
-   pr=1./3.
+   pr = prandtl
    cr_len = cr_len_in
 
    do j=j_start,j_end
@@ -1608,7 +1608,7 @@ SUBROUTINE smag2d_km( config_flags,xkmh,xkmhd,xkmv,xkhh,xkhv,                  &
    IF ( config_flags%open_ye .or. config_flags%specified .or. &
         config_flags%nested) j_end   = MIN(jde-2,jte)
 
-   pr=1./3.
+   pr=prandtl
 
    do j=j_start,j_end
    do k=kts,ktf
@@ -1778,7 +1778,7 @@ END SUBROUTINE smag2d_km
         xkmhd(i,k,j) = xkmh(i,k,j)
         xkmv(i,k,j)  = MAX( c_k * tmp * mlen_v, 1.0E-6 * deltas * deltas )
         xkmv(i,k,j)  = MIN( xkmv(i,k,j), 10.0 * deltas )
-        pr_inv_h     = 3.0
+        pr_inv_h     = 1./prandtl
         pr_inv_v     = 1.0 + 2.0 * mlen_v / deltas
         xkhh(i,k,j)  = xkmh(i,k,j) * pr_inv_h
         xkhv(i,k,j)  = xkmv(i,k,j) * pr_inv_v

@@ -1301,7 +1301,7 @@ SUBROUTINE diagnose_w( ph_tend, ph_new, ph_old, w, mu, dt,  &
                  +.5*rdx*(                                   &
                            (ht(i+1,j)-ht(i,j  ))             &
           *(cf1*u(i+1,1,j)+cf2*u(i+1,2,j)+cf3*u(i+1,3,j))    &
-                          +(ht(i,j  )-ht(i,j-1))             &
+                          +(ht(i,j  )-ht(i-1,j))             &
           *(cf1*u(i  ,1,j)+cf2*u(i  ,2,j)+cf3*u(i  ,3,j))  ) &
                                                             )
      ENDDO

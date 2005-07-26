@@ -2178,19 +2178,6 @@ BENCH_START(calc_p_rho_tim)
 
 BENCH_END(calc_p_rho_tim)
 
-BENCH_START(diag_w_tim)
-     IF (.not. non_hydrostatic) THEN
-     CALL diagnose_w( ph_tend, ph_2, ph_1, w_2, muts, dt_rk,  &
-                      u_2, v_2, ht,                           &
-                      cf1, cf2, cf3, rdx, rdy, msft,          &
-                      ids, ide, jds, jde, kds, kde,           &
-                      ims, ime, jms, jme, kms, kme,           &
-                      grid%i_start(ij), grid%i_end(ij),       &
-                      grid%j_start(ij), grid%j_end(ij),       &
-                      k_start    , k_end                     )
-     ENDIF
-BENCH_END(diag_w_tim)
-
    ENDDO
    !$OMP END PARALLEL DO
 
@@ -2250,6 +2237,7 @@ BENCH_START(bc_end_tim)
 
     tile_bc_loop_1: DO ij = 1 , grid%num_tiles
 
+
       CALL wrf_debug ( 200 , ' call rk_phys_bc_dry_2' )
 
       CALL rk_phys_bc_dry_2( config_flags,                         &
@@ -2261,6 +2249,19 @@ BENCH_START(bc_end_tim)
                              grid%i_start(ij), grid%i_end(ij), &
                              grid%j_start(ij), grid%j_end(ij), &
                              k_start    , k_end               )
+
+BENCH_START(diag_w_tim)
+     IF (.not. non_hydrostatic) THEN
+     CALL diagnose_w( ph_tend, ph_2, ph_1, w_2, muts, dt_rk,  &
+                      u_2, v_2, ht,                           &
+                      cf1, cf2, cf3, rdx, rdy, msft,          &
+                      ids, ide, jds, jde, kds, kde,           &
+                      ims, ime, jms, jme, kms, kme,           &
+                      grid%i_start(ij), grid%i_end(ij),       &
+                      grid%j_start(ij), grid%j_end(ij),       &
+                      k_start    , k_end                     )
+     ENDIF
+BENCH_END(diag_w_tim)
 
       IF (num_3d_m >= PARAM_FIRST_SCALAR) THEN
 
@@ -2558,15 +2559,6 @@ BENCH_START(moist_phys_end_tim)
                             its, ite, jts, jte,               &
                             k_start    , k_end               )
 
-       IF (.not. non_hydrostatic)                               &
-       CALL diagnose_w( ph_tend, ph_2, ph_1, w_2, muts, dt_rk,  &
-                        u_2, v_2, ht,                           &
-                        cf1, cf2, cf3, rdx, rdy, msft,          &
-                        ids, ide, jds, jde, kds, kde,           &
-                        ims, ime, jms, jme, kms, kme,           &
-                        its, ite, jts, jte,                     &
-                        k_start    , k_end                     )
-
    END DO scalar_tile_loop_1b
    !$OMP END PARALLEL DO
 BENCH_END(moist_phys_end_tim)
@@ -2688,6 +2680,7 @@ BENCH_START(bc_2d_tim)
    !$OMP PRIVATE ( ij )
 
    tile_bc_loop_2: DO ij = 1 , grid%num_tiles
+
 
      CALL wrf_debug ( 200 , ' call set_phys_bc_dry_2' )
 

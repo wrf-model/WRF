@@ -929,10 +929,10 @@ rconfig   character  auxhist5_outname  namelist,time_control		1  "auxhist5_d<dom
 
 rconfig   character  history_inname    namelist,time_control		1  "wrfhist_d<domain>_<date>"    -     "name of history infile"  ""      ""
 rconfig   character  auxhist1_inname   namelist,time_control		1  "auxhist1_d<domain>_<date>"   -     "name of auxhist1 infile" ""      ""
-rconfig   character  auxhist2_inname   namelist,time_control		1  "auxhist2_d<domain>_<date>"   -     "name of auxhist3 infile" ""      ""
-rconfig   character  auxhist3_inname   namelist,time_control		1  "auxhist3_d<domain>_<date>"   -     "name of auxhist4 infile" ""      ""
-rconfig   character  auxhist4_inname   namelist,time_control		1  "auxhist4_d<domain>_<date>"   -     "name of auxhist5 infile" ""      ""
-rconfig   character  auxhist5_inname   namelist,time_control		1  "auxhist5_d<domain>_<date>"   -     "name of auxhist6 infile" ""      ""
+rconfig   character  auxhist2_inname   namelist,time_control		1  "auxhist2_d<domain>_<date>"   -     "name of auxhist2 infile" ""      ""
+rconfig   character  auxhist3_inname   namelist,time_control		1  "auxhist3_d<domain>_<date>"   -     "name of auxhist3 infile" ""      ""
+rconfig   character  auxhist4_inname   namelist,time_control		1  "auxhist4_d<domain>_<date>"   -     "name of auxhist4 infile" ""      ""
+rconfig   character  auxhist5_inname   namelist,time_control		1  "auxhist5_d<domain>_<date>"   -     "name of auxhist5 infile" ""      ""
 
 rconfig   character  auxinput1_outname  namelist,time_control            1  "auxinput1_d<domain>_<date>"   -     "name of auxinput1 outfile" ""      ""
 rconfig   character  auxinput2_outname  namelist,time_control            1  "auxinput2_d<domain>_<date>"   -     "name of auxinput2 outfile" ""      ""
@@ -941,10 +941,10 @@ rconfig   character  auxinput4_outname  namelist,time_control            1  "aux
 rconfig   character  auxinput5_outname  namelist,time_control            1  "auxinput5_d<domain>_<date>"   -     "name of auxinput5 outfile" ""      ""
 
 rconfig   character  auxinput1_inname   namelist,time_control            1  "auxinput1_d<domain>"   -     "name of auxinput1 infile" ""      ""
-rconfig   character  auxinput2_inname   namelist,time_control            1  "auxinput2_d<domain>"   -     "name of auxinput3 infile" ""      ""
-rconfig   character  auxinput3_inname   namelist,time_control            1  "auxinput3_d<domain>"   -     "name of auxinput4 infile" ""      ""
-rconfig   character  auxinput4_inname   namelist,time_control            1  "auxinput4_d<domain>"   -     "name of auxinput5 infile" ""      ""
-rconfig   character  auxinput5_inname   namelist,time_control            1  "auxinput5_d<domain>"   -     "name of auxinput6 infile" ""      ""
+rconfig   character  auxinput2_inname   namelist,time_control            1  "auxinput2_d<domain>"   -     "name of auxinput2 infile" ""      ""
+rconfig   character  auxinput3_inname   namelist,time_control            1  "auxinput3_d<domain>"   -     "name of auxinput3 infile" ""      ""
+rconfig   character  auxinput4_inname   namelist,time_control            1  "auxinput4_d<domain>"   -     "name of auxinput4 infile" ""      ""
+rconfig   character  auxinput5_inname   namelist,time_control            1  "auxinput5_d<domain>"   -     "name of auxinput5 infile" ""      ""
 
 rconfig   integer history_interval_mo     namelist,time_control		max_domains    0       h     "history_interval_mo"       ""      "MONTHS"
 rconfig   integer history_interval_d      namelist,time_control		max_domains    0       h     "history_interval_d"       ""      "DAYS"

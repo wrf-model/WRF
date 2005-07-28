@@ -716,7 +716,7 @@ int LOAD_GRID_INFO(char *varnameIn, char *initdateIn, int *leveltype,
   char varname[1000], initdate[1000];
 
   strncpy(varname,varnameIn,strlen1);
-  varname[strlen2] = '\0';
+  varname[strlen1] = '\0';
   strncpy(initdate,initdateIn,strlen2);
   initdate[strlen2] = '\0';
 
@@ -1107,8 +1107,10 @@ int WRITE_GRIB(Grid_Info *grid_info, int *filefd, float *data)
 				 */
 
       geom_in.parm_3 = -1;
-      geom_in.x_int_dis = grid_info->Di;
-      geom_in.y_int_dis = grid_info->Dj;
+      geom_in.x_int_dis = grid_info->Di*(1.+sin(60. * PI/180.))
+	/ (1.+sin(abs(grid_info->latin1) * PI/180.));
+      geom_in.y_int_dis = grid_info->Dj*(1.+sin(60. * PI/180.))
+	/ (1.+sin(abs(grid_info->latin1) * PI/180.));
       geom_in.parm_1 = -1;
       geom_in.parm_2 = grid_info->central_lon;
       break;

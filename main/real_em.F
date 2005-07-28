@@ -111,6 +111,9 @@ real::t1,t2
 
    grid => head_grid
 
+   IF ( model_config_rec%interval_seconds .LE. 0 ) THEN
+     CALL wrf_error_fatal( 'namelist value for interval_seconds must be > 0')
+   ENDIF
    CALL Setup_Timekeeping ( grid )
    CALL wrf_clockprint ( 150, grid%domain_clock, &
                          'DEBUG real:  grid%domain_clock after Setup_Timekeeping,' )

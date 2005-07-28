@@ -227,11 +227,6 @@ integer::oops1,oops2
 
       enough_data : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
 
-         CASE (SLABSCHEME)
-            IF ( num_st_levels_input .LT. 2 ) THEN
-               CALL wrf_error_fatal ( 'Not enough soil temperature data for 5-layer soil scheme.')
-            END IF
-
          CASE (LSMSCHEME)
             IF ( num_st_levels_input .LT. 2 ) THEN
                CALL wrf_error_fatal ( 'Not enough soil temperature data for Noah LSM scheme.')

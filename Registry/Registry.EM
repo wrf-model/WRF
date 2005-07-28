@@ -195,7 +195,7 @@ state    real    dn             k       dyn_em      1         -     irh       "d
 state    real    znu            k       dyn_em      1         -     irh       "znu"  "eta values on half (mass) levels"  ""
 state    real    znw            k       dyn_em      1         Z     i01rh     "znw"  "eta values on full (w) levels"  ""
 state    real    t_base         k       dyn_em      1         -     ir        "t_base"               "BASE STATET T IN IDEALIZED CASES"         "K"      
-state    real    z              ikj     dyn_em      1         Z     -         " " " " " "
+state    real    z              ikj     dyn_em      1         -     -         " " " " " "
 i1       real    mu_3d          ikj     dyn_em      1         -                                          
 i1       real    z_at_w         ikj     dyn_em      1         Z 
 state    real    cfn            -       misc      -         -     irh       "cfn"    "extrapolation constant"  ""

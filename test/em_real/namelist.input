@@ -76,26 +76,13 @@
  /
 
  &dynamics
- dyn_opt                             = 2,
- rk_ord                              = 3,
  w_damping                           = 0,
  diff_opt                            = 1,
  km_opt                              = 4,
- damp_opt                            = 0,
  base_temp                           = 290.
- zdamp                               = 5000.,  5000.,  5000.,
- dampcoef                            = 0.01,   0.01,   0.01
  khdif                               = 0,      0,      0,
  kvdif                               = 0,      0,      0,
- smdiv                               = 0.1,    0.1,    0.1,
- emdiv                               = 0.01,   0.01,   0.01,
- epssm                               = 0.1,    0.1,    0.1
  non_hydrostatic                     = .true., .true., .true.,
- time_step_sound                     = 4,      4,      4,
- h_mom_adv_order                     = 5,      5,      5,
- v_mom_adv_order                     = 3,      3,      3,
- h_sca_adv_order                     = 5,      5,      5,
- v_sca_adv_order                     = 3,      3,      3,
  /
 
  &bdy_control

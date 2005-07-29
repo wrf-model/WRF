@@ -90,16 +90,6 @@
  spec_zone                           = 1,
  relax_zone                          = 4,
  specified                           = .true., .false.,.false.,
- periodic_x                          = .false.,.false.,.false.,
- symmetric_xs                        = .false.,.false.,.false.,
- symmetric_xe                        = .false.,.false.,.false.,
- open_xs                             = .false.,.false.,.false.,
- open_xe                             = .false.,.false.,.false.,
- periodic_y                          = .false.,.false.,.false.,
- symmetric_ys                        = .false.,.false.,.false.,
- symmetric_ye                        = .false.,.false.,.false.,
- open_ys                             = .false.,.false.,.false.,
- open_ye                             = .false.,.false.,.false.,
  nested                              = .false., .true., .true.,
  /
 

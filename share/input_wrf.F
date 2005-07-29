@@ -89,21 +89,28 @@
 
 #if (EM_CORE == 1)
 
-    !  Test to make sure that the input data is the right size.
+    !  Test to make sure that the input data is the right size.  Do this for input from real/ideal into
+    !  WRF, and from the standard initialization into real.
 
-    ierr = 0
-    CALL wrf_get_dom_ti_integer ( fid , 'WEST-EAST_GRID_DIMENSION' ,    ide_compare , 1 , icnt , ierr3 ) ; ierr = max( ierr, ierr3 )
-    CALL wrf_get_dom_ti_integer ( fid , 'SOUTH-NORTH_GRID_DIMENSION' ,  jde_compare , 1 , icnt , ierr3 ) ; ierr = max( ierr, ierr3 )
-    CALL wrf_get_dom_ti_integer ( fid , 'BOTTOM-TOP_GRID_DIMENSION' ,   kde_compare , 1 , icnt , ierr3 ) ; ierr = max( ierr, ierr3 )
-    IF ( ierr3 .NE. 0 ) CALL wrf_error_fatal( 'wrf_get_dom_ti_integer getting dimension information from dataset' )
-
-    !  Test to make sure that the grid distances are the right size.
-
-    CALL wrf_get_dom_ti_real ( fid , 'DX' ,  dx_compare , 1 , icnt , ierr )
-    CALL wrf_get_dom_ti_real ( fid , 'DY' ,  dy_compare , 1 , icnt , ierr )
-    IF ( ( ABS ( dx_compare - config_flags%dx ) .GT. 1.E-5 * dx_compare ) .OR. &
-         ( ABS ( dy_compare - config_flags%dy ) .GT. 1.E-5 * dy_compare ) ) THEN
-       CALL wrf_error_fatal( 'DX and DY do not match from the namelist and the input file' )
+    IF ( ( switch .EQ.     model_input_only  ) .OR. &
+         ( switch .EQ. aux_model_input1_only ) ) THEN
+       ierr = 0
+       CALL wrf_get_dom_ti_integer ( fid , 'WEST-EAST_GRID_DIMENSION' ,    ide_compare , 1 , icnt , ierr3 ) 
+       ierr = max( ierr, ierr3 )
+       CALL wrf_get_dom_ti_integer ( fid , 'SOUTH-NORTH_GRID_DIMENSION' ,  jde_compare , 1 , icnt , ierr3 ) 
+       ierr = max( ierr, ierr3 )
+       CALL wrf_get_dom_ti_integer ( fid , 'BOTTOM-TOP_GRID_DIMENSION' ,   kde_compare , 1 , icnt , ierr3 ) 
+       ierr = max( ierr, ierr3 )
+       IF ( ierr3 .NE. 0 ) CALL wrf_error_fatal( 'wrf_get_dom_ti_integer getting dimension information from dataset' )
+   
+       !  Test to make sure that the grid distances are the right size.
+   
+       CALL wrf_get_dom_ti_real ( fid , 'DX' ,  dx_compare , 1 , icnt , ierr )
+       CALL wrf_get_dom_ti_real ( fid , 'DY' ,  dy_compare , 1 , icnt , ierr )
+       IF ( ( ABS ( dx_compare - config_flags%dx ) .GT. 1.E-5 * dx_compare ) .OR. &
+            ( ABS ( dy_compare - config_flags%dy ) .GT. 1.E-5 * dy_compare ) ) THEN
+          CALL wrf_error_fatal( 'DX and DY do not match from the namelist and the input file' )
+       END IF
     END IF
 
     ! do the check later (see check_if_dryrun below)
@@ -308,14 +315,16 @@
 
 #if (EM_CORE == 1)
 
-    !  Test to make sure that the input data is the right size.
-! do the check only for the model initial data input stream
-    IF ( ( ide .NE. ide_compare    ) .OR. &
-         ( kde .NE. kde_compare    ) .OR. &
-         ( jde .NE. jde_compare    ) ) THEN
-      WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  namelist ide,jde,kde=',ide,jde,kde,&
-                              '; input data ide,jde,kde=',ide_compare , jde_compare , kde_compare
-      CALL wrf_error_fatal( wrf_err_message )
+    IF ( ( switch .EQ.     model_input_only  ) .OR. &
+         ( switch .EQ. aux_model_input1_only ) ) THEN
+       !  Test to make sure that the input data is the right size.
+       IF ( ( ide .NE. ide_compare    ) .OR. &
+            ( kde .NE. kde_compare    ) .OR. &
+            ( jde .NE. jde_compare    ) ) THEN
+         WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  namelist ide,jde,kde=',ide,jde,kde,&
+                                 '; input data ide,jde,kde=',ide_compare , jde_compare , kde_compare
+         CALL wrf_error_fatal( wrf_err_message )
+       ENDIF
     ENDIF
 
 #endif

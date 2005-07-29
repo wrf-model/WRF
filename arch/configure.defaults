@@ -182,7 +182,7 @@ SFC		=	$(FC)
 LD              =       f90
 CC              =       cc
 SCC		=	$(CC)
-CFLAGS          =       -64 -DLANDREAD_STUB
+CFLAGS          =       -64 -DLANDREAD_STUB -DNCARIBM_NOC99
 FCOPTIM         =       -O3
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 FCDEBUG         =       # -g
@@ -368,7 +368,7 @@ CC              =       cc
 SCC		=	$(CC)
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION	=	-r$(RWORDSIZE) -i4
-CFLAGS          =       -64 -DLANDREAD_STUB
+CFLAGS          =       -64 -DLANDREAD_STUB -DNCARIBM_NOC99
 FCOPTIM         =       -O3
 FCDEBUG         =       # -g
 FCBASEOPTS      =       -freeform -I. -64 -cpp -OPT:Olimit=5269 $(FCDEBUG) -w
@@ -472,7 +472,7 @@ SCC		=	$(CC)
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =       -w -64 -mips4 -DWRF_RSL_IO -DMAXDOM_MAKE=$(MAX_DOMAINS) \
-                        -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL/RSL -DDM_PARALLEL -DLANDREAD_STUB
+                        -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL/RSL -DDM_PARALLEL -DLANDREAD_STUB -DNCARIBM_NOC99
 FCDEBUG         =       # -g
 FCOPTIM         =       -O3 -OPT:roundoff=3:IEEE_arithmetic=3
 FCBASEOPTS	=	-freeform -I. -64 -mips4 -w $(FCDEBUG) -w

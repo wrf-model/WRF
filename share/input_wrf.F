@@ -99,14 +99,12 @@
 
     !  Test to make sure that the grid distances are the right size.
 
-#if 0
     CALL wrf_get_dom_ti_real ( fid , 'DX' ,  dx_compare , 1 , icnt , ierr )
     CALL wrf_get_dom_ti_real ( fid , 'DY' ,  dy_compare , 1 , icnt , ierr )
     IF ( ( ABS ( dx_compare - config_flags%dx ) .GT. 1.E-5 * dx_compare ) .OR. &
          ( ABS ( dy_compare - config_flags%dy ) .GT. 1.E-5 * dy_compare ) ) THEN
        CALL wrf_error_fatal( 'DX and DY do not match from the namelist and the input file' )
     END IF
-#endif
 
     ! do the check later (see check_if_dryrun below)
 

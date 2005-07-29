@@ -157,6 +157,11 @@
     ibuf(1) = config_flags%e_vert - config_flags%s_vert + 1
     CALL wrf_put_dom_ti_integer ( fid , 'BOTTOM-TOP_GRID_DIMENSION' , ibuf , 1 , ierr )
 
+#if (EM_CORE == 1)
+    CALL wrf_put_dom_ti_real ( fid , 'DX' , config_flags%dx , 1 , ierr )
+    CALL wrf_put_dom_ti_real ( fid , 'DY' , config_flags%dy , 1 , ierr )
+#endif
+
 ! added this metadatum for H. Chuan, NCEP, 030417, JM
     SELECT CASE ( dyn_opt )
 #if (NMM_CORE == 1)
@@ -277,8 +282,8 @@
 
 ! end add 010831 JM
 
-    CALL wrf_put_dom_ti_real ( fid , 'DX' ,  config_flags%dx , 1 , ierr )
-    CALL wrf_put_dom_ti_real ( fid , 'DY' ,  config_flags%dy , 1 , ierr )
+!   CALL wrf_put_dom_ti_real ( fid , 'DX' ,  config_flags%dx , 1 , ierr )
+!   CALL wrf_put_dom_ti_real ( fid , 'DY' ,  config_flags%dy , 1 , ierr )
     CALL wrf_put_dom_ti_real ( fid , 'DT' ,  config_flags%dt , 1 , ierr )
     CALL wrf_put_dom_ti_real ( fid , 'CEN_LAT' ,  config_flags%cen_lat , 1 , ierr )
     CALL wrf_put_dom_ti_real ( fid , 'CEN_LON' ,  config_flags%cen_lon , 1 , ierr )

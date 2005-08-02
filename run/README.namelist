@@ -38,6 +38,9 @@ Description of namelist variables
  interval_seconds                    = 10800,	; time interval between incoming real data, which will be the interval
                                                   between the lateral boundary condition file
  input_from_file (max_dom)           = T,       ; whether nested run will have input files for domains other than 1
+ fine_input_stream (max_dom)         = 0,       ; field selection from nest input for its initialization
+                                                  0: all fields are used; 2: only static and time-varying, masked land 
+                                                  surface fields are used.
  history_interval (max_dom)          = 60,  	; history output file interval in minutes
  frames_per_outfile (max_dom)        = 1, 	; output times per history output file, used to split output files 
                                                   into smaller pieces
@@ -114,8 +117,8 @@ Additional ones when running 3DVAR:
  smooth_option                       = 0        ; smoothing option for parent domain, used only with feedback
                                                   option on. 0: no smoothing; 1: 1-2-1 smoothing; 2: smoothing-desmoothing
                                      
-Namelist variables for controling the prototype moving nest: 
-                   Note moving nest needs to be activated at the compile time by adding -DMOVE_NESTS
+Namelist variables for controling the specified moving nest: 
+                   Note that this moving nest option needs to be activated at the compile time by adding -DMOVE_NESTS
                    to the ARCHFLAGS. The maximum number of moves, max_moves, is set to 50 
                    but can be modified in source code file frame/module_driver_constants.F.
  num_moves                           = 4        ; total number of moves
@@ -127,6 +130,15 @@ Namelist variables for controling the prototype moving nest:
                                                   negative is to move in decreasing i and j direction.
                                                   0 means no move. The limitation now is to move only 1 grid cell
                                                   at each move.
+
+Namelist variables for controling the automatic moving nest: 
+                   Note that this moving nest option needs to be activated at the compile time by adding -DMOVE_NESTS
+                   and -DVORTEX_CENTER to the ARCHFLAGS. This option uses an mid-level vortex following algorthm to
+                   determine the nest move. This option is experimental.
+ vortex_interval                     = 15       ; how often the new vortex position is computed
+ max_vortex_speed                    = 40       ; used to compute the search radius for the new vortex position
+ corral_dist                         = 8        ; how many coarse grid cells the moving nest is allowed to get
+                                                  near the mother domain boundary
 
  &physics
 

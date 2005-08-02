@@ -457,7 +457,7 @@ module_initialize_real.o module_dm.o  start_domain.o :
 #ARCH	SGI O2K DM IRIX64     DM-Parallel        (RSL, SGI-MPI, allows nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
-#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
 #
 
 DMPARALLEL      =       1
@@ -691,7 +691,7 @@ mediation_force_domain.o module_dm.o start_domain.o :
 #ARCH	Sun  SunOS      (single-threaded, nesting using RSL and no MPI)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
-#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
 #
 #
 DM_PARALLEL     =       1
@@ -927,7 +927,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 #ARCH	Sun  SunOS SM   (OpenMP, nesting using RSL and no MPI)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
-#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
 #
 #
 DM_PARALLEL     =       1
@@ -1238,7 +1238,7 @@ module_domain.o : module_domain.F
 #ARCH	AIX DM-Parallel          (RSL_LITE, IBM-MPI, Allows nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
-#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
 #
 DMPARALLEL      =       1
 SFC             =       xlf90_r
@@ -1348,7 +1348,7 @@ convert_nmm.o    :
 #ARCH	AIX DM-Parallel          (RSL, IBM-MPI, allows nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
-#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
 #
 DMPARALLEL      =       1
 SFC             =       xlf90_r
@@ -1458,7 +1458,7 @@ convert_nmm.o    :
 #ARCH	AIX DM-Parallel          (RSL, IBM-MPI, allows nesting )(PARALLEL HDF5)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
-#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
 #
 DMPARALLEL      =       1
 SFC             =       xlf90_r
@@ -1571,7 +1571,7 @@ convert_nmm.o    :
 #ARCH	AIX DM-Parallel          (RSL_LITE, IBM-MPI, Allows nesting )(PARALLEL HDF5)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
-#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
 #
 DMPARALLEL      =       1
 SFC             =       xlf90_r
@@ -1684,7 +1684,7 @@ convert_nmm.o    :
 #ARCH	AIX DM-Parallel/SM-Parallel (not recommended)  (RSL, IBM-MPI, OpenMP, allows nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
-#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
 #
 DMPARALLEL      =       1
 OMP             =       -qsmp=noauto
@@ -1816,7 +1816,7 @@ module_domain.o : module_domain.F
 #ARCH	AIX DM-Parallel          (RSL, IBM-MPI, MCEL)   May 2003, EXPERIMENTAL
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
-#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
 #
 DMPARALLEL      =       1
 SFC             =       xlf90_r
@@ -2071,7 +2071,7 @@ convert_nmm.o    :
 #ARCH	AIX                      (single-threaded, nesting using RSL without MPI)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
-#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
 #
 DMPARALLEL      =       1
 SFC             =       xlf90_r
@@ -2183,7 +2183,7 @@ convert_nmm.o    :
 #ARCH	AIX                      (OpenMP, nesting using RSL without MPI)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
-#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
 #
 OMP             =       -qsmp=noauto
 OMPCPP          =       -D_OPENMP
@@ -2413,7 +2413,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 #ARCH       Compaq OSF1 alpha          (single-threaded, nesting using RSL without MPI )
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
-#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
 #
 #
 DM_PARALLEL     =       1
@@ -2643,7 +2643,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 #ARCH       Compaq OSF1 alpha SM-Parallel       (OpenMP, nesting using RSL without MPI )
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
-#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
 #
 #
 DM_PARALLEL     =       1
@@ -2768,7 +2768,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 #ARCH     Compaq OSF1 alpha DM-Parallel       (RSL_LITE, MPICH, allows nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
-#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
 #
 DMPARALLEL      =       1
 OMP             =
@@ -2890,7 +2890,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 #ARCH       Compaq OSF1 alpha DM-Parallel       (RSL, MPICH, allows nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
-#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
 #
 #
 DMPARALLEL      =       1
@@ -3013,7 +3013,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 #ARCH       Compaq OSF1 alpha DM-Parallel/SM-Parallel    (RSL, MPICH, OpenMP, allows nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
-#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
 #
 #
 DMPARALLEL      =       1
@@ -3137,7 +3137,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 #ARCH       Compaq OSF1 alpha DM-Parallel/SM-Parallel    (RSL, DECMPI, OpenMP, allows nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
-#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
 #
 #
 DMPARALLEL      =       1
@@ -3674,7 +3674,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 #ARCH       Alpha Linux alpha DM-Parallel  (RSL, MPICH, Allows nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
-#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
 #
 DMPARALLEL      =       1
 MAX_PROC        =       1024
@@ -3973,7 +3973,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 #ARCH    PC Linux i486 i586 i686, PGI compiler  (single threaded, allows nesting using RSL without MPI)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
-#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
 #
 DMPARALLEL      =       1
 MAX_PROC        =       1024
@@ -4196,7 +4196,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 #ARCH    PC Linux i486 i586 i686, PGI compiler  SM-Parallel (OpenMP, allows nesting using RSL without MPI)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
-#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
 #
 OMP             =       -mp
 OMPCPP          =       -D_OPENMP
@@ -4315,7 +4315,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 #ARCH    PC Linux i486 i586 i686, PGI compiler  DM-Parallel (RSL, MPICH, Allows nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
-#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
 #
 DMPARALLEL      =       1
 MAX_PROC        =       1024
@@ -4432,7 +4432,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 #ARCH     PC Linux i486 i586 i686, PGI compiler  DM-Parallel (RSL_LITE, MPICH, Allows nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
-#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
 #
 DMPARALLEL      =       1
 MAX_PROC        =       1024
@@ -4550,7 +4550,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 #ARCH    Intel Itanium2 ia64 madison Linux DM-Parallel (e.g. mpp2 at PNNL), efc71 compiler (RSL, MPICH, nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
-#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
 #
 #
 DMPARALLEL = 1
@@ -4663,7 +4663,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 #          before typing configure and make and make install   20040506. JM
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
-#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
 #
 #
 DMPARALLEL = 1
@@ -4877,7 +4877,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 #ARCH    PC Linux x86_64 (IA64 and Opteron), PGI 5.2 or higher, DM-Parallel  (RSL, MPICH, Allows nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
-#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
 #
 #        Note that for 5.1.x comment out -Mpia=fast
 #
@@ -4989,7 +4989,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 #        Note that for 5.1.x comment out -Mpia=fast
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
-#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
 #
 DMPARALLEL      =       1
 MAX_PROC        =       1024
@@ -5102,7 +5102,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 # 2. source /home/mscf/intel7.1/compiler70/ia64/bin/efcvars.csh
 # 
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
-#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
 #
 DMPARALLEL = 1
 MAX_PROC   = 2000
@@ -5215,7 +5215,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 # Note hard-coded paths to Mark Straka's accounts and ecc6 libs
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
-#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
 #
 #
 DMPARALLEL = 1
@@ -5333,7 +5333,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 # Note hard-coded paths to Mark Straka's accounts and ecc6 libs
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
-#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
 #
 DMPARALLEL = 1
 INCLUDE = ../external/io_netcdf/
@@ -5543,7 +5543,7 @@ module_initialize_real.o module_dm.o  start_domain.o :
 # Note: if you use ifort 8.0, please remove option -xW (for vectorization). This option 
 #       has been identified to produce wrong results occationally.
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
-#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
 #
 OMP             =
 OMPCPP          =
@@ -5755,7 +5755,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 # Note: if you use ifort 8.0, please remove option -xW (for vectorization). This option 
 #       has been identified to produce wrong results occationally.
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
-#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
 #
 #
 OMP             =       -openmp -fpp -auto
@@ -5868,7 +5868,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 # Note: if you use ifort 8.0, please remove option -xW (for vectorization). This option 
 #       has been identified to produce wrong results occationally.
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
-#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
 #
 #
 DMPARALLEL      =       1
@@ -5978,7 +5978,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 # Note: if you use ifort 8.0, please remove option -xW (for vectorization). This option 
 #       has been identified to produce wrong results occationally.
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
-#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
 #
 #
 DMPARALLEL      =       1
@@ -6362,7 +6362,7 @@ module_initialize_real.o module_dm.o  start_domain.o :
 # Contributed settings from Gerardo Cisneros, SGI
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
-#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
 #
 #
 DMPARALLEL        = 1
@@ -6504,7 +6504,7 @@ mediation_force_domain.o:
 # Contributed settings from Gerardo Cisneros, SGI
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
-#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
 #
 DMPARALLEL        = 1
 INCLUDE           = ../external/io_netcdf/
@@ -6640,7 +6640,7 @@ mediation_force_domain.o:
 # Contributed settings from Gerardo Cisneros, SGI
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
-#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
 #
 #
 DMPARALLEL        = 1
@@ -6778,7 +6778,7 @@ mediation_force_domain.o:
 # Contributed settings from Gerardo Cisneros, SGI
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
-#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
 #
 DMPARALLEL        = 1
 INCLUDE           = ../external/io_netcdf/
@@ -7474,7 +7474,7 @@ module_initialize_real.o module_dm.o mediation_integrate.o start_domain.o :
 #ARCH	HP-UX	PA8600	32bit   (single-threaded, nesting using RSL without MPI)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
-#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
 #
 DMPARALLEL	=	1
 OMP             =       
@@ -7664,7 +7664,7 @@ module_initialize_real.o module_dm.o mediation_integrate.o start_domain.o :
 #ARCH	HP-UX	Itanium2	(single-threaded, nesting using RSL without MPI)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
-#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
 #
 OMP             =       
 OMPCPP          =       
@@ -7843,7 +7843,7 @@ module_initialize_real.o module_dm.o mediation_integrate.o start_domain.o :
 #ARCH	HP-UX	PA8600	 DM-Parallel	(RSL, MPICH, nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
-#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
 #
 DMPARALLEL	=	1
 MAX_PROC	=	1024
@@ -7947,7 +7947,7 @@ module_initialize_real.o module_dm.o mediation_integrate.o start_domain.o :
 #ARCH	HP-UX	Itanium2    DM-Parallel	(RSL, MPICH, nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
-#        for experimental implementation of moving nests, add -DVORTEX_CENTER to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
 #
 DMPARALLEL	=	1
 MAX_PROC	=	1024

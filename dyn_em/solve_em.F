@@ -2559,6 +2559,15 @@ BENCH_START(moist_phys_end_tim)
                             its, ite, jts, jte,               &
                             k_start    , k_end               )
 
+       IF (.not. non_hydrostatic)                               &
+       CALL diagnose_w( ph_tend, ph_2, ph_1, w_2, muts, dt_rk,  &
+                        u_2, v_2, ht,                           &
+                        cf1, cf2, cf3, rdx, rdy, msft,          &
+                        ids, ide, jds, jde, kds, kde,           &
+                        ims, ime, jms, jme, kms, kme,           &
+                        its, ite, jts, jte,                     &
+                        k_start    , k_end                     )
+
    END DO scalar_tile_loop_1b
    !$OMP END PARALLEL DO
 BENCH_END(moist_phys_end_tim)

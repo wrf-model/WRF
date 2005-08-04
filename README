@@ -1,4 +1,4 @@
-WRF Model Version 2 (May 2004)
+WRF Model Version 2.1 (August 2005)
 
 ------------------------
 WRF PUBLIC DOMAIN NOTICE
@@ -24,21 +24,18 @@ infringement actions.
 
 ======================================
 
-V2 Release Notes:
+V2.1 Release Notes:
 -----------------
 
 This is the main directory for the WRF Version 2 source code release.
 
 - For directions on compiling WRF, see below or Users Web page.
-- For more information on WRF V2 release, visit WRF Users home page
+- For more information on WRF V2.1 release, visit WRF Users home page
   http://www.mmm.ucar.edu/wrf/users/
-- If you have used WRF software before, you must rerun SI (set 
-  namelist variable OUTPUT_FILE_TYPE = 'WRF') preferrably using
-  the new SI V2.0 release (www.wrf-model.org/si).
-  wrfbdy_d01/wrfinput_d01 from 1.3 release will not work for V2 WRF model.
-- WRF V2's namelist has changed significantly. Read the README.namelist
-  file in the run/ directory (or on the Users' page), and make changes 
-  carefully.
+- Use WRFSI 2.0.3 or 2.1 (http://wrfsi.noaa.gov) for real-data preparation.
+- Must rerun real.exe to generate new wrfbdy_d01/wrfinput_d01 for wrf.exe.
+- WRF V2.1's namelist has some changes. Edit with caution.
+- Need to have gribmap.txt in your run directory.
 
 For questions, send mail to wrfhelp@ucar.edu
 
@@ -50,6 +47,7 @@ V2 update history:
 - V2.0.2: June 3, 2004
 - V2.0.3: Nov 12, 2004 
   V2.0.3.1: Dec 3, 2004
+- V2.1: August 4, 2005
 
 ======================================
 
@@ -116,7 +114,7 @@ How to compile and run?
 
 What is in WRF V2?
 
-- Advanced Research WRF (ARW) core: Eulerian mass, hydrostatic and non-hydrostatic
+- Advanced Research WRF (ARW) solver: Eulerian mass, hydrostatic and non-hydrostatic
   * Arakawa C-grid staggering
   * Runge-Kutta 2nd and 3rd order timestep options
   * scalar-conserving flux form for prognostic variables
@@ -135,9 +133,13 @@ What is in WRF V2?
 
 - One-way nesting (since 2.0.2)
 
+- Moving nest (since 2.1)
+  * Specified move.
+  * Automatic move using a mid-level vortex-following algorithm.
+
 - Physics options:
   * microphysics (Kessler/ WRF Single Moment 3, 5 and 6 class / Lin et al./
-    Eta Ferrier)
+    Eta Ferrier / Thompson)
   * cumulus parameterization (Kain-Fritsch with shallow convection / 
     Betts-Miller-Janjic / Grell-Devenyi ensemble)
   * planetary boundary layer (Yosei University (S. Korea) / Mellor-Yamada-Janjic)
@@ -162,6 +164,7 @@ What is in WRF V2?
       Easy to extend: forcing and feedback of new fields specified by
         editing a single table in the Registry
       Efficient: 5-8% overhead on 64 processes of IBM
+      Moving nests.
   * Enhanced I/O options:
       NetCDF and Parallel HDF5 formats
       Five auxiliary history output streams separately controllable through the namelist
@@ -179,15 +182,15 @@ What is in WRF V2?
 	 PGI and Intel compilers supported
       Alpha Linux (NOAA/FSL Jet system)
       Sun Solaris (single threaded and SMP)
-      Cray X1
+      Cray X1, X1e (vector), X1D (Opteron)
+      Mac G5, xlf compiler (no DM-parallel yet)
       HP-UX
       Other ports under development:
          NEC SX/6
          Fujitsu VPP 5000
   * RSL_LITE: optional new communication layer, scalable to very
-    large domains (limited to single domain in 2.0)
+    large domains, support nesting.
   * ESMF Time Management, including exact arithmetic for fractional
-    time steps (no drift); model start, stop, run length and I/O frequencies are
-    now specified as times and time intervals in 2.0 (rather than numbers of
-    steps, as in 1.3 and earlier)
+    time steps (no drift).
+  * ESMF integration - WRF can be run as an ESMF component.
   * Improved documentation, both on-line (web based browsing tools) and in-line

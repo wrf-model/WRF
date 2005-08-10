@@ -637,7 +637,7 @@ CONTAINS
                 chs, chs2, cqs2, cpm,rcp,                       &    
                 sh2o,snowh,                                     & !h  
                 snoalb,shdmin,shdmax,                           & !i
-                acsnow,acsnow,                                  & !o 
+                acsnom,acsnow,                                  & !o 
                 ids,ide, jds,jde, kds,kde,                      &
                 ims,ime, jms,jme, kms,kme,                      &
                 i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )

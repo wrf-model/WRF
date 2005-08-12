@@ -5,17 +5,18 @@ MODULE module_mp_etanew
 !-----------------------------------------------------------------------
       REAL,PRIVATE,SAVE ::  ABFR, CBFR, CIACW, CIACR, C_N0r0,           &
      &  CN0r0, CN0r_DMRmin, CN0r_DMRmax, CRACW, CRAUT, ESW0,            &
-     &  QAUT0, RFmax, RQR_DR1, RQR_DR2, RQR_DR3, RQR_DRmin,             &
+     &  RFmax, RQR_DR1, RQR_DR2, RQR_DR3, RQR_DRmin,                    &
      &  RQR_DRmax, RR_DRmin, RR_DR1, RR_DR2, RR_DR3, RR_DRmax
 !
       INTEGER, PRIVATE,PARAMETER :: MY_T1=1, MY_T2=35
       REAL,PRIVATE,DIMENSION(MY_T1:MY_T2),SAVE :: MY_GROWTH
 !
       REAL, PRIVATE,PARAMETER :: DMImin=.05e-3, DMImax=1.e-3,           &
-     &      DelDMI=1.e-6,XMImin=1.e6*DMImin, XMImax=1.e6*DMImax    
-      INTEGER, PRIVATE,PARAMETER :: MDImin=XMImin, MDImax=XMImax
+     &      DelDMI=1.e-6,XMImin=1.e6*DMImin
+      INTEGER, PUBLIC,PARAMETER :: XMImax=1.e6*DMImax, XMIexp=.0536,    &
+     &                             MDImin=XMImin, MDImax=XMImax
       REAL, PRIVATE,DIMENSION(MDImin:MDImax) ::                         &
-     &      ACCRI,MASSI,SDENS,VSNOWI,VENTI1,VENTI2
+     &      ACCRI,SDENS,VSNOWI,VENTI1,VENTI2
 !
       REAL, PRIVATE,PARAMETER :: DMRmin=.05e-3, DMRmax=.45e-3,          &
      &      DelDMR=1.e-6,XMRmin=1.e6*DMRmin, XMRmax=1.e6*DMRmax
@@ -70,10 +71,13 @@ MODULE module_mp_etanew
      & ,NLImax=20.E3                                                    &
      & ,NLImin=100.                                                     &
      & ,N0r0=8.E6                                                       &
-     & ,N0rmin=1.E4                                                    &
+     & ,N0rmin=1.E4                                                     &
      & ,NCW=200.E6                                                      &
      & ,FLARGE1=1.                                                      &
      & ,FLARGE2=.2                                                      
+!--- Other public variables passed to other routines:
+      REAL,PUBLIC,SAVE ::  QAUT0
+      REAL, PUBLIC,DIMENSION(MDImin:MDImax) :: MASSI
 !
 !
       CONTAINS

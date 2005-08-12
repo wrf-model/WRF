@@ -610,11 +610,12 @@ integer myproc
         CASE (GFDLLWSCHEME)
              CALL nl_get_start_month(grid%id,month)
              CALL nl_get_start_day(grid%id,iday)
-             CALL gfdletainit(emiss,sfull,shalf,pptop,JULYR,MONTH,IDAY,GMT,&
-                           config_flags,allowed_to_read ,            &
-                           ids, ide, jds, jde, kds, kde,    &
-                           ims, ime, jms, jme, kms, kme,    &
-                           its, ite, jts, jte, kts, kte     )
+             CALL gfdletainit(emiss,sfull,shalf,pptop,      &
+                              julyr,month,iday,gmt,         &
+                              config_flags,allowed_to_read, &
+                              ids, ide, jds, jde, kds, kde, &
+                              ims, ime, jms, jme, kms, kme, &
+                              its, ite, jts, jte, kts, kte  )
              etalw = .true.
         CASE DEFAULT
 
@@ -638,11 +639,12 @@ integer myproc
              IF(.not.etalw)THEN
              CALL nl_get_start_month(grid%id,month)
              CALL nl_get_start_day(grid%id,iday)
-             CALL gfdletainit(emiss,sfull,shalf,pptop,JULYR,MONTH,IDAY,GMT,&
-                           config_flags,allowed_to_read,             &
-                           ids, ide, jds, jde, kds, kde,    &
-                           ims, ime, jms, jme, kms, kme,    &
-                           its, ite, jts, jte, kts, kte     )
+             CALL gfdletainit(emiss,sfull,shalf,pptop,      &
+                              julyr,month,iday,gmt,         &
+                              config_flags,allowed_to_read, &
+                              ids, ide, jds, jde, kds, kde, &
+                              ims, ime, jms, jme, kms, kme, &
+                              its, ite, jts, jte, kts, kte  )
              ENDIF
 
         CASE DEFAULT

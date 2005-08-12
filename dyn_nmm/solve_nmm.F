@@ -61,7 +61,7 @@
 !
       INTEGER :: I,ICLTEND,IDF,IJDE,IJDS,IRTN,J,JC,JDF,K,KDF,LB,N_MOIST
       INTEGER :: MPI_COMM_COMP,MYPE,MYPROC,NPES
-      INTEGER :: RC
+      INTEGER :: RC, NTSD_rad
 !
       CHARACTER*80 :: MESSAGE
 !
@@ -83,9 +83,9 @@
       integer :: n_print_time
 !
 #ifdef RSL
-      integer rsl_internal_microclock
-      external rsl_internal_microclock
-# define timef rsl_internal_microclock
+      integer rsl_internal_milliclock
+      external rsl_internal_milliclock
+# define timef rsl_internal_milliclock
 #else
       real*8 :: timef
       timef()=0.
@@ -175,6 +175,11 @@
       JTE=MIN(JPE,JDF)
       KTS=KPS
       KTE=MIN(KPE,KDF)
+      if(ntsd==0)then
+        write(0,*)' its=',its,' ite=',ite
+        write(0,*)' jts=',jts,' jte=',jte
+        write(0,*)' kts=',kts,' kte=',kte
+      endif
 !-----------------------------------------------------------------------
 !***  SET TIMING VARIABLES TO ZERO AT START OF FORECAST.
 !-----------------------------------------------------------------------
@@ -232,6 +237,8 @@
 !***  TIMESTEPS PER HOUR
 !
       TSPH=3600./DT
+!
+      n_print_time=nint(3600./dt)   ! Print stats once per hour
 !-----------------------------------------------------------------------
 !
       NBOCO=0
@@ -543,7 +550,17 @@
 !***  RADIATION
 !----------------------------------------------------------------------
 !
-      IF(MOD(NTSD,NRADS)==0.OR.MOD(NTSD,NRADL)==0)THEN
+      IF(NTSD<=0)THEN
+        NTSD_rad=NTSD
+      ELSE
+!
+!***  Call radiation just BEFORE the top of the hour
+!***  so that updated fields are written to history files.
+!
+        NTSD_rad=NTSD+1
+      ENDIF
+!
+      IF(MOD(NTSD_rad,NRADS)==0.OR.MOD(NTSD_rad,NRADL)==0)THEN
         btimx=timef()
 !
         CALL RADIATION(NTSD,DT,JULDAY,JULYR,IHRST,NPHS,GLAT,GLON       &
@@ -551,9 +568,9 @@
      &                ,DETA1,DETA2,AETA1,AETA2,ETA1,ETA2,PDTOP,PT      &
      &                ,PD,RES,PINT,T,Q,CWM,THS,ALBEDO,EPSR             &
      &                ,F_ICE,F_RAIN                                    &
-     &                ,SM,HBM2,LMH,ZERO_3D,N_MOIST,RESTRT              &
-     &                ,RLWTT,RSWTT,RLWIN,RSWIN,RSWOUT                  &
-     &                ,TOTSWDN,TOTLWDN,RLWTOA,RSWTOA,CZMEAN            &
+     &                ,SM,HBM2,LMH,CLDFRA,N_MOIST,RESTRT               &
+     &                ,RLWTT,RSWTT,RLWIN,RSWIN,RSWINC,RSWOUT           &
+     &                ,RLWTOA,RSWTOA,CZMEAN                            &
      &                ,CFRACL,CFRACM,CFRACH,SIGT4                      &
      &                ,ACFRST,NCFRST,ACFRCV,NCFRCV                     &
      &                ,CUPPT,VEGFRC,SNO                                &
@@ -562,6 +579,11 @@
      &                ,IDS,IDF,JDS,JDF,KDS,KDE                         &
      &                ,IMS,IME,JMS,JME,KMS,KME                         &
      &                ,ITS,ITE,JTS,JTE,KTS,KTE)
+!
+!                            ***  NOTE  ***
+! RLWIN/RSWIN  - downward longwave/shortwave at the surface (formerly TOTLWDN/TOTSWDN)
+! RSWINC - CLEAR-SKY downward shortwave at the surface (new for AQ)
+!                            ***  NOTE  ***
 !
         radiation_tim=radiation_tim+timef()-btimx
       ENDIF
@@ -593,7 +615,7 @@
      &            ,DETA1,DETA2,AETA1,AETA2,ETA1,ETA2,PDTOP,PT          &
 !    &            ,SM,LMH,HTM,VTM,HBM2,VBM2,DX_NMM,DFL                 &
      &            ,SM,LMH,HTM,VTM,HBM2,VBM2,DX_NMM,DFRLG               &
-     &            ,CZEN,CZMEAN,SIGT4,TOTLWDN,TOTSWDN,RADOT             &
+     &            ,CZEN,CZMEAN,SIGT4,RLWIN,RSWIN,RADOT                 &
      &            ,PD,RES,PINT,T,Q,CWM,F_ICE,F_RAIN,SR                 &
      &            ,Q2,U,V,THS,SST,PREC,SNO,ZERO_3D                     &
      &            ,FIS,Z0,Z0BASE,USTAR,PBLH,LPBL,EL_MYJ                &
@@ -615,6 +637,10 @@
      &            ,IDS,IDF,JDS,JDF,KDS,KDE                             &
      &            ,IMS,IME,JMS,JME,KMS,KME                             &
      &            ,ITS,ITE,JTS,JTE,KTS,KTE)
+!
+!                     ***  NOTE  ***
+! RLWIN/RSWIN - downward longwave/shortwave at the surface
+!                     ***  NOTE  ***
 !
         turbl_tim=turbl_tim+timef()-btimx
 !
@@ -699,7 +725,7 @@
      &             ,F_ICE,F_RAIN                                       &
      &             ,PDTOP,PT,PD,RES,PINT,T,Q,CWM,TCUCN                 &
      &             ,OMGALF,U,V,VTM,W,Z,FIS,W0AVG                       &
-     &             ,PREC,ACPREC,CUPREC,CUPPT                           &
+     &             ,PREC,ACPREC,CUPREC,CUPPT,CPRATE                    &
      &             ,SM,HBM2,LPBL,CNVBOT,CNVTOP                         &
      &             ,HTOP,HBOT,HTOPD,HBOTD,HTOPS,HBOTS                  &
      &             ,AVCNVC,ACUTIM,ZERO_3D,IHE,IHW                      &
@@ -820,6 +846,12 @@
      &          ,ITS,ITE,JTS,JTE,KTS,KTE)
 !
       bocoh_tim=bocoh_tim+timef()-btimx
+!     if(mod(ntsd,n_print_time)==0)then
+!       call twr(t,0,'t',ntsd,mype,npes,mpi_comm_comp &
+!    &          ,ids,ide,jds,jde,kds,kde                               &
+!    &          ,ims,ime,jms,jme,kms,kme                               &
+!    &          ,its,ite,jts,jte,kts,kte)
+!     endif
 !
 !----------------------------------------------------------------------
 !***  IS IT TIME FOR A CHECK POINT ON THE MODEL HISTORY FILE?
@@ -957,8 +989,6 @@
 !    &       +cltend_tim+cucnvc_tim+gsmdrive_tim+hdiff_tim             &
 !    &       +bocoh_tim+pfdht_tim+ddamp_tim+bocov_tim+uv_htov_tim      &
 !    &       +exch_tim
-!
-      n_print_time=nint(3600./dt)   ! Print stats once per hour
 !
       if(mod(ntsd,n_print_time)==0)then
 !       write(0,*)' ntsd=',ntsd,' solve_tim=',solve_tim*1.e-3          &
@@ -1529,7 +1559,7 @@
      &                      ,ITS,ITE,JTS,JTE,KTS,KTE)
 !----------------------------------------------------------------------
 !***
-!***  GENERATE STANDARD STATISTICS FOR THE DESIRED FIELD.
+!***  GENERATE STANDARD LAYER STATISTICS FOR THE DESIRED FIELD.
 !***
 !----------------------------------------------------------------------
       IMPLICIT NONE

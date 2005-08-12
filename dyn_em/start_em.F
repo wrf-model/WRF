@@ -56,8 +56,6 @@
 
    INTEGER     :: hr, mn, sec, ms, rc
 
-   CHARACTER*80 :: message
-
    REAL        :: p00, t00, a, p_surf, pd_surf
 
    REAL :: qvf1, qvf2, qvf
@@ -67,6 +65,7 @@
    REAL :: lat1 , lat2 , lat3 , lat4
    REAL :: lon1 , lon2 , lon3 , lon4
    INTEGER :: num_points_lat_lon , iloc , jloc
+   CHARACTER (LEN=132) :: message
 !integer myproc
 
 ! Trick problematic compilers into not performing copy-in/copy-out by adding
@@ -102,6 +101,14 @@
    jts = jps ; jte = jpe    ! note that tile is entire patch
 
    CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
+
+   IF ( ( MOD (ide-ids,config_flags%parent_grid_ratio) .NE. 0 ) .OR. &
+        ( MOD (jde-jds,config_flags%parent_grid_ratio) .NE. 0 ) ) THEN
+      WRITE(message, FMT='("Nested dimensions are illegal for domain ",I2,":  Both &
+         &MOD(",I4,"-",I1,",",I2,") and MOD(",I4,"-",I1,",",I2,") must = 0" )') &
+         grid%id,ide,ids,config_flags%parent_grid_ratio,jde,jds,config_flags%parent_grid_ratio
+      CALL wrf_error_fatal ( message ) 
+   END IF
 
 ! here we check to see if the boundary conditions are set properly
 

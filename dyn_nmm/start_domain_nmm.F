@@ -74,8 +74,8 @@
       INTEGER,DIMENSION(3) :: LPTOP
 !
       REAL :: ADDL,APELM,APELMNW,APEM1,CAPA,CLOGES,DPLM,DZLM,EPS,ESE   &
-     &       ,FAC1,FAC2,PDIF,PLM,PM1,PSFCK,PSS,PSUM,QLM,RANG,RCOS1      &
-     &       ,RCOS2,RSIN1,SLPM,TERM1,THLM,TIME,TLM,TSFCK,ULM,VLM
+     &       ,FAC1,FAC2,PDIF,PLM,PM1,PSFCK,PSS,PSUM,QLM,RANG           &
+     &       ,SLPM,TERM1,THLM,TIME,TLM,TSFCK,ULM,VLM
 !
 !!!   REAL :: BLDT,CWML,EXNSFC,G_INV,PLYR,PSFC,ROG,SFCZ,THSIJ,TL
       REAL :: CWML,EXNSFC,G_INV,PLYR,PSURF,ROG,SFCZ,THSIJ,TL
@@ -105,15 +105,14 @@
 !state    real   TSLB           ilj       dyn_em      1         Z     irh
 !state    real   ZS              l        dyn_em      -         Z     ir 
       REAL,ALLOCATABLE,DIMENSION(:) :: DZS,ZS
-      REAL,ALLOCATABLE,DIMENSION(:,:,:) :: CLDFRA                       &
-     &                                  ,RQCBLTEN,RQIBLTEN              &
-     &                                  ,RQVBLTEN,RTHBLTEN              &
-     &                                  ,RUBLTEN,RVBLTEN                &
-     &                                  ,RQCCUTEN,RQICUTEN,RQRCUTEN     &
-     &                                  ,RQSCUTEN,RQVCUTEN,RTHCUTEN     &
-     &                                  ,RTHRATEN                       &
-     &                                  ,RTHRATENLW,RTHRATENSW          &
-     &                                  ,TSLB
+      REAL,ALLOCATABLE,DIMENSION(:,:,:) :: RQCBLTEN,RQIBLTEN            &
+     &                                    ,RQVBLTEN,RTHBLTEN            &
+     &                                    ,RUBLTEN,RVBLTEN              &
+     &                                    ,RQCCUTEN,RQICUTEN,RQRCUTEN   &
+     &                                    ,RQSCUTEN,RQVCUTEN,RTHCUTEN   &
+     &                                    ,RTHRATEN                     &
+     &                                    ,RTHRATENLW,RTHRATENSW        &
+     &                                    ,TSLB
       REAL,ALLOCATABLE,DIMENSION(:,:) :: EMISS,GLW,GSW,HFX              &
      &                                  ,MAVAIL,NCA                     &
      &                                  ,QFX,RAINBL,RAINC,RAINNC        &
@@ -1599,7 +1598,6 @@
       ALLOCATE(Z0_DUM(IMS:IME,JMS:JME),STAT=I)  ; Z0_DUM   = 0.
 
       ALLOCATE(DZS(KMS:KME),STAT=I)                         ; DZS = 0.
-      ALLOCATE(CLDFRA(IMS:IME,KMS:KME, JMS:JME),STAT=I)     ; CLDFRA = 0.
       ALLOCATE(RQCBLTEN(IMS:IME,KMS:KME,JMS:JME),STAT=I)    ; RQCBLTEN = 0.
       ALLOCATE(RQIBLTEN(IMS:IME,KMS:KME,JMS:JME),STAT=I)    ; RQIBLTEN = 0.
       ALLOCATE(RQVBLTEN(IMS:IME,KMS:KME,JMS:JME),STAT=I)    ; RQVBLTEN =  0.
@@ -1689,6 +1687,7 @@
       ENDDO
       ENDDO
 
+      write(0,*)' calling PHY_INIT'
       CALL PHY_INIT(GRID,GRID%ID,CONFIG_FLAGS,DT,sfull,smid             &
      &             ,PT,TSFC,RADT,BLDT,CUDT,GSMDT                        &
      &             ,RTHCUTEN, RQVCUTEN, RQRCUTEN                        &
@@ -1733,7 +1732,6 @@
 !
       DEALLOCATE(SFULL)
       DEALLOCATE(SMID)
-      DEALLOCATE(CLDFRA)
       DEALLOCATE(DZS)
       DEALLOCATE(EMISS)
       DEALLOCATE(GLW)

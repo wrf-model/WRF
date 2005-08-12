@@ -231,13 +231,11 @@ state  real   cwm       ikjb   dyn_nmm   1    -     rh
 state  real   f_ice     ikj   dyn_nmm   1    -     rh
 state  real   f_rain    ikj   dyn_nmm   1    -     rh
 state  real   f_rimef   ikj   dyn_nmm   1    -     rh
+state  real   cldfra    ikj   dyn_nmm   1    -     h
 state  real   sr        ij    dyn_nmm   1    -     irh
-state  real   u00       ij    dyn_nmm   1    -     ir
 state  real   cfrach    ij    dyn_nmm   1    -     h
 state  real   cfracl    ij    dyn_nmm   1    -     h
 state  real   cfracm    ij    dyn_nmm   1    -     h
-state integer lc        ij    dyn_nmm   1    -     ir
-state integer ul        k     dyn_nmm   1    -     ir
 state logical micro_start        -     dyn_nmm   -    -     -
 #
 # module_SOIL.F
@@ -280,9 +278,8 @@ state  real   rlwtoa    ij    dyn_nmm     1    -    -
 state  real   alwin     ij    dyn_nmm     1    -    h
 state  real   alwout    ij    dyn_nmm     1    -    h
 state  real   alwtoa    ij    dyn_nmm     1    -    h
-state  real   totswdn   ij    dyn_nmm     1    -    -
-state  real   totlwdn   ij    dyn_nmm     1    -    -
 state  real   rswin     ij    dyn_nmm     1    -    h
+state  real   rswinc    ij    dyn_nmm     1    -    h
 state  real   rswout    ij    dyn_nmm     1    -    h
 state  real   rswtoa    ij    dyn_nmm     1    -    -
 state  real   aswin     ij    dyn_nmm     1    -    h
@@ -550,6 +547,7 @@ state    real    HBOTD           ij     misc        1         -     rh        "H
 state    real    HTOPS           ij     misc        1         -     rh        "HTOPS"                "TOP SHALLOW CONVECTION LEVEL"         ""
 state    real    HBOTS           ij     misc        1         -     rh        "HBOTS"                "BOT SHALLOW CONVECTION LEVEL"         ""
 state    REAL      CUPPT         ij     misc        1         -     rh        "CUPPT"                "ACCUMULATED CONVECTIVE RAIN SINCE LAST CALL TO THE RADIATION"         ""
+state    REAL      CPRATE        ij     misc        1         -     h         "CPRATE"               "INSTANTANEOUS CONVECTIVE PRECIPITATION RATE"      ""
 state    real    F_ICE_PHY       ikj    misc        1         -      r        "F_ICE_PHY"            "FRACTION OF ICE"         ""
 state    real    F_RAIN_PHY      ikj    misc        1         -      r        "F_RAIN_PHY"           "FRACTION OF RAIN "         ""
 state    real    F_RIMEF_PHY     ikj    misc        1         -      r        "F_RIMEF_PHY"          "MASS RATIO OF RIMED ICE "         ""

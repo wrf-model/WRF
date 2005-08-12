@@ -14,7 +14,7 @@ CONTAINS
                       ,EMISS ,rho ,p8w,p ,pi,dz8w,t,t8w,GMT              &
                       ,XLAND,TSK,HTOP,HBOT,CUPPT,VEGFRA,SNOW             &
                       ,julyr ,JULDAY ,RADT,STEPRA,ICLOUD ,warm_rain      &
-                      ,TOTSWDN,TOTLWDN,RSWTOA,RLWTOA,CZMEAN              &
+                      ,RSWTOA,RLWTOA,CZMEAN                              &
                       ,CFRACL,CFRACM,CFRACH                              &
                       ,ACFRST,NCFRST,ACFRCV,NCFRCV                       &
                       ,ids,ide, jds,jde, kds,kde                         &
@@ -24,7 +24,7 @@ CONTAINS
                       ,taucldi ,taucldc                                  &
                       ,qv,qc,qr,qi,qs,qg                                 &
                       ,f_qv,f_qc,f_qr,f_qi,f_qs,f_qg                     &
-                      ,CLDFRA ,Pb                                        &
+                      ,SWDOWNC,CLDFRA ,Pb                                &
                                                                          )
 
 !-------------------------------------------------------------------------
@@ -143,6 +143,7 @@ CONTAINS
 !-- GLW           downward long wave flux at ground surface (W/m^2)
 !-- GSW           net short wave flux at ground surface (W/m^2)
 !-- SWDOWN        downward short wave flux at ground surface (W/m^2)
+!-- SWDOWNC       clear-sky downward short wave flux at ground surface (W/m^2; optional; for AQ)
 !-- XLAT          latitude, south is negative (degree)
 !-- XLONG         longitude, west is negative (degree)
 !-- ALBEDO                albedo (between 0 and 1)
@@ -262,16 +263,13 @@ CONTAINS
                                                       CFRACH,     & !Added
                                                       CFRACL,     & !Added
                                                       CFRACM,     & !Added
-                                                      CZMEAN,     & !Added
-                                                      TOTLWDN,    & !Added
-                                                      TOTSWDN       !Added
-
+                                                      CZMEAN        !Added
    REAL, DIMENSION( ims:ime, jms:jme ),                           &
          INTENT(INOUT)  ::                                        &
-                                                          RLWTOA, &  !Added
-                                                          RSWTOA, &  !Added
-                                                          ACFRST, &  !Added
-                                                          ACFRCV     !Added
+                                                      RLWTOA,     & !Added
+                                                      RSWTOA,     & !Added
+                                                      ACFRST,     & !Added
+                                                      ACFRCV        !Added
 
    INTEGER,DIMENSION( ims:ime, jms:jme ),INTENT(INOUT)        ::  &
                                                           NCFRST, &  !Added
@@ -283,6 +281,9 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          OPTIONAL,                                                &
          INTENT(INOUT) ::                                 CLDFRA
+   REAL, DIMENSION( ims:ime, jms:jme ),                           &
+         OPTIONAL,                                                &
+         INTENT(OUT) ::                                   SWDOWNC
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          OPTIONAL,                                                &
@@ -350,6 +351,15 @@ CONTAINS
      CALL radconst(XTIME,DECLIN,SOLCON,GMT,JULDAY,           &
                    DEGRAD,DPD,itimestep,dt                   )
 
+     lwrad_gfdl_select: SELECT CASE(lw_physics)
+
+        CASE (GFDLLWSCHEME)
+
+!-- Do nothing, since cloud fractions (with partial cloudiness effects) 
+!-- are defined in GFDL LW/SW schemes and do not need to be initialized.
+
+        CASE DEFAULT
+
      IF ( PRESENT ( CLDFRA ) .AND.                           &
           PRESENT(F_QC) .AND. PRESENT ( F_QI ) ) THEN
        CALL cal_cldfra(CLDFRA,qc,qi,F_QC,F_QI,               &
@@ -357,6 +367,8 @@ CONTAINS
                        ims,ime, jms,jme, kms,kme,            &
                        its,ite, jts,jte, kts,kte             )
      ENDIF
+
+     END SELECT lwrad_gfdl_select    
 
 !pjj/cray  Cray X1 cannot print from threaded region
 #ifndef crayx1
@@ -399,7 +411,8 @@ CONTAINS
                   DT=dt,XLAND=xland                                 &
                  ,P8W=p8w,DZ8W=dz8w,RHO_PHY=rho,P_PHY=p,T=t         &
                  ,QV=qv,QW=qc,QI=qi                                 &
-                 ,TSK2D=tsk,GLW=glw,GSW=gsw,PI3D=pi                 &
+                 ,TSK2D=tsk,GLW=GLW,RSWIN=SWDOWN,GSW=GSW            &
+                 ,RSWINC=SWDOWNC,CLDFRA=CLDFRA,PI3D=pi              &
                  ,GLAT=glat,GLON=glon,HTOP=htop,HBOT=hbot           &
                  ,ALBEDO=albedo,CUPPT=cuppt                         &
                  ,VEGFRA=vegfra,SNOW=snow,G=g,GMT=gmt               &
@@ -409,7 +422,6 @@ CONTAINS
                  ,CFRACL=cfracl,CFRACM=cfracm,CFRACH=cfrach         &
                  ,ACFRST=acfrst,NCFRST=ncfrst                       &
                  ,ACFRCV=acfrcv,NCFRCV=ncfrcv                       &
-                 ,TOTSWDN=totswdn,TOTLWDN=totlwdn                   &
                  ,RSWTOA=rswtoa,RLWTOA=rlwtoa,CZMEAN=czmean         &
                  ,THRATEN=rthraten,THRATENLW=rthratenlw             &
                  ,THRATENSW=rthratensw                              &
@@ -506,7 +518,8 @@ CONTAINS
                   DT=dt,XLAND=xland                                 &
                  ,P8W=p8w,DZ8W=dz8w,RHO_PHY=rho,P_PHY=p,T=t         &
                  ,QV=qv,QW=qc,QI=qi                                 &
-                 ,TSK2D=tsk,GLW=glw,GSW=gsw,PI3D=pi                 &
+                 ,TSK2D=tsk,GLW=GLW,RSWIN=SWDOWN,GSW=GSW            &
+                 ,RSWINC=SWDOWNC,CLDFRA=CLDFRA,PI3D=pi              &
                  ,GLAT=glat,GLON=glon,HTOP=htop,HBOT=hbot           &
                  ,ALBEDO=albedo,CUPPT=cuppt                         &
                  ,VEGFRA=vegfra,SNOW=snow,G=g,GMT=gmt               &
@@ -516,7 +529,6 @@ CONTAINS
                  ,CFRACL=cfracl,CFRACM=cfracm,CFRACH=cfrach         &
                  ,ACFRST=acfrst,NCFRST=ncfrst                       &
                  ,ACFRCV=acfrcv,NCFRCV=ncfrcv                       &
-                 ,TOTSWDN=totswdn,TOTLWDN=totlwdn                   &
                  ,RSWTOA=rswtoa,RLWTOA=rlwtoa,CZMEAN=czmean         &
                  ,THRATEN=rthraten,THRATENLW=rthratenlw             &
                  ,THRATENSW=rthratensw                              &

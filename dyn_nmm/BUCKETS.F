@@ -173,8 +173,8 @@
 !
 !     IF(MOD(NTSD,NHEAT)<NPHS)THEN
       IF(MOD(NTSD,NHEAT)==0)THEN
-      write(0,*)' buckets ntsd=',ntsd,' nheat=',nheat
-      write(0,*)' zeroing train and tcucn'
+!     write(0,*)' buckets ntsd=',ntsd,' nheat=',nheat
+!     write(0,*)' zeroing train and tcucn'
         AVCNVC=0.
         AVRAIN=0.
 !

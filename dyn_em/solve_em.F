@@ -543,11 +543,10 @@ BENCH_START(rad_driver_tim)
      &        ,RSWTOA=rswtoa      ,RTHRATEN=rthraten                      &
      &        ,RTHRATENLW=rthratenlw                                      &
      &        ,RTHRATENSW=rthratensw                  ,SNOW=snow          &
-     &        ,STEPRA=stepra      ,SWDOWN=swdown                          &
+     &        ,STEPRA=stepra      ,SWDOWN=swdown      ,SWDOWNC=swdownc    &
      &        ,SW_PHYSICS=config_flags%ra_sw_physics  ,T8W=t8w            &
      &        ,T=t_phy            ,TAUCLDC=taucldc    ,TAUCLDI=taucldi    &
-     &        ,TOTLWDN=totlwdn    ,TOTSWDN=totswdn    ,TSK=tsk            &
-     &        ,VEGFRA=vegfra      ,WARM_RAIN=warm_rain                    &
+     &        ,TSK=tsk            ,VEGFRA=vegfra     ,WARM_RAIN=warm_rain &
      &        ,XLAND=xland        ,XLAT=xlat          ,XLONG=xlong        &
             ! indexes
      &        ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde          &

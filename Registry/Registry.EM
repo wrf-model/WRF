@@ -423,8 +423,6 @@ i1      real   CHKLOWQ          ij     misc        1         -     -         "CH
 state    real    HTOP            ij     misc        1         -      r        "HTOP"                 "TOP OF CONVECTION LELVEL"         ""
 state    real    HBOT            ij     misc        1         -      r        "HBOT"                 "BOT OF CONVECTION LELVEL"         ""
 state    REAL      CUPPT         ij     misc        1         -      r        "CUPPT"                "ACCUMULATED CONVECTIVE RAIN SINC LAST CALL TO THE RADIATION"         ""
-state  real   totswdn   ij    misc        1    -    i
-state  real   totlwdn   ij    misc        1    -    i
 state  real   rswtoa    ij    misc        1    -    i
 state  real   rlwtoa    ij    misc        1    -    i
 state  real   czmean    ij    misc      1    -     i
@@ -550,6 +548,7 @@ state    real  RTHRATENSW      ikj      misc        1         -      r        "R
 state    real  CLDFRA          ikj      misc        1         -      r        "CLDFRA"                "CLOUD FRACTION"                                       ""      
                                                 
 state    real  SWDOWN           ij      misc        1         -      rh       "SWDOWN"                "DOWNWARD SHORT WAVE FLUX AT GROUND SURFACE"           "W m-2"      
+state    real  SWDOWNC          ij      misc        1         -      -        "SWDOWNC"               "DOWNWARD CLEAR-SKY SHORT WAVE FLUX AT GROUND SURFACE"           "W m-2"      
 state    real  GSW              ij      misc        1         -      r        "GSW"                   "NET SHORT WAVE FLUX AT GROUND SURFACE"           "W m-2"      
 state    real  GLW              ij      misc        1         -      rh       "GLW"                   "DOWNWARD LONG WAVE FLUX AT GROUND SURFACE"            "W m-2"      
 
@@ -557,7 +556,7 @@ state    real  GLW              ij      misc        1         -      rh       "G
 # with wave model, only if compiled with -DMCELIO, JM 2003/05/29
 state    real  XLAT             ij      misc        1         -     i0123rh01du=(copy_fcnm)      "XLAT"                "LATITUDE, SOUTH IS NEGATIVE"                                          "degree_north"
 state    real  XLONG            ij      misc        1         -     i0123rh01du=(copy_fcnm)      "XLONG"               "LONGITUDE, WEST IS NEGATIVE"                                          "degree_east"
-state    real  ALBEDO           ij      misc        1         -       r          "ALBEDO"                   "ALBEDO"
+state    real  ALBEDO           ij      misc        1         -      rh          "ALBEDO"                   "ALBEDO"
 state    real  ALBBCK           ij      misc        1         -     i012r        "ALBBCK"                   "BACKGROUND ALBEDO"        ""
 state    real  EMISS            ij      misc        1         -      r        "EMISS"                 "SURFACE EMISSIVITY"         "" 
 

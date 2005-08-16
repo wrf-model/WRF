@@ -202,7 +202,6 @@ CONTAINS
                W0AVG1D(K) =W0AVG(I,K,J)
                DZ1D(k)=dz8w(I,K,J)
             ENDDO
-          CALL wrf_debug(500,'calling kf_eta_para')
             CALL KF_eta_PARA(I, J,                  &
                  U1D,V1D,T1D,QV1D,P1D,DZ1D,         &
                  W0AVG1D,DT,DX,DXSQ,RHO1D,          &
@@ -215,7 +214,6 @@ CONTAINS
                  ids,ide, jds,jde, kds,kde,         &
                  ims,ime, jms,jme, kms,kme,         &
                  its,ite, jts,jte, kts,kte)
-          CALL wrf_debug(500,'after kf_eta_para')
             IF(PRESENT(rthcuten).AND.PRESENT(rqvcuten)) THEN
               DO K=kts,kte
                  RTHCUTEN(I,K,J)=DTDT(K)/pi(I,K,J)

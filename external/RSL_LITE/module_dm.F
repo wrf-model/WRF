@@ -1819,6 +1819,7 @@ integer myproc
 #include <em_dummy_decl.inc>
       INTEGER nlev, msize
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
+      INTEGER iparstrt,jparstrt,sw
       TYPE (grid_config_rec_type)            :: config_flags
       REAL xv(500)
       INTEGER       ::          cids, cide, cjds, cjde, ckds, ckde,    &
@@ -1855,11 +1856,11 @@ integer myproc
                                 nips, nipe, njps, njpe, nkps, nkpe    )
 
       CALL nl_get_parent_grid_ratio ( ngrid%id, pgr )
-      CALL nl_get_i_parent_start ( intermediate_grid%id, i_parent_start )
-      CALL nl_get_j_parent_start ( intermediate_grid%id, j_parent_start )
-      CALL nl_get_shw            ( intermediate_grid%id, shw )
-      icoord =    i_parent_start - shw
-      jcoord =    j_parent_start - shw
+      CALL nl_get_i_parent_start ( intermediate_grid%id, iparstrt )
+      CALL nl_get_j_parent_start ( intermediate_grid%id, jparstrt )
+      CALL nl_get_shw            ( intermediate_grid%id, sw )
+      icoord =    iparstrt - sw
+      jcoord =    jparstrt - sw
       idim_cd = iide - iids + 1
       jdim_cd = ijde - ijds + 1
 
@@ -2141,6 +2142,7 @@ integer myproc
                                 ips, ipe, jps, jpe, kps, kpe
       INTEGER icoord, jcoord, idim_cd, jdim_cd
       INTEGER local_comm, myproc, nproc
+      INTEGER iparstrt, jparstrt, sw
 
       TYPE(WRF_UTIL_Time)        :: CurrTime
       character*256 :: timestr
@@ -2184,11 +2186,11 @@ integer myproc
                                 nims, nime, njms, njme, nkms, nkme,    &
                                 nips, nipe, njps, njpe, nkps, nkpe    )
 
-      CALL nl_get_i_parent_start ( intermediate_grid%id, i_parent_start )
-      CALL nl_get_j_parent_start ( intermediate_grid%id, j_parent_start )
-      CALL nl_get_shw            ( intermediate_grid%id, shw )
-      icoord =    i_parent_start - shw
-      jcoord =    j_parent_start - shw
+      CALL nl_get_i_parent_start ( intermediate_grid%id, iparstrt )
+      CALL nl_get_j_parent_start ( intermediate_grid%id, jparstrt )
+      CALL nl_get_shw            ( intermediate_grid%id, sw )
+      icoord =    iparstrt - sw
+      jcoord =    jparstrt - sw
       idim_cd = cide - cids + 1
       jdim_cd = cjde - cjds + 1
 

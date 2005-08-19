@@ -2218,6 +2218,11 @@ integer myproc
 
 #  include "HALO_EM_INTERP_UP.inc"
 
+      CALL get_ijk_from_grid (  grid ,                   &
+                                cids, cide, cjds, cjde, ckds, ckde,    &
+                                cims, cime, cjms, cjme, ckms, ckme,    &
+                                cips, cipe, cjps, cjpe, ckps, ckpe    )
+
 #  include "em_nest_feedbackup_smooth.inc"
 
 #define COPY_OUT

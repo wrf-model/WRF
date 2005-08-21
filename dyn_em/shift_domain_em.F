@@ -45,8 +45,8 @@ SUBROUTINE shift_domain_em ( grid , disp_x, disp_y, &
                              ims, ime, jms, jme, kms, kme,    &
                              ips, ipe, jps, jpe, kps, kpe    )
 
-   px = isign(parent_grid_ratio,disp_x)
-   py = isign(parent_grid_ratio,disp_y)
+   px = isign(config_flags%parent_grid_ratio,disp_x)
+   py = isign(config_flags%parent_grid_ratio,disp_y)
 
    imask_nostag = 1
    imask_xstag = 1

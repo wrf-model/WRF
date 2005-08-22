@@ -280,10 +280,10 @@ state   real    qg             ikjftb   moist       1         -     \
    i01rhusdf=(bdy_interp:dt)  "QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
 
 # Chem Scalars
-state   real    -              ikjft   chem        1         -     -    -                                       
+state   real    -              ikjftb   chem        1         -     -    -                                       
 
 # Other Scalars
-state   real    -              ikjftb  scalar      1         -     -    -                                       
+state   real    -              ikjftb  scalar      1         -     -   -
 state   real    qni            ikjftb  scalar      1         -     \
    i01rhusdf=(bdy_interp:dt)    "QNICE"         "Ice Number concentration" "# kg(-1)"
 

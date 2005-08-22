@@ -179,10 +179,10 @@
 
 !--- emissions
       call wrf_debug(15,'calling emissions driver')
-      call emissions_driver(grid%id,ktau,dt,DX,                            &
+      call emissions_driver(grid%id,ktau,grid%dt,grid%DX,                            &
          config_flags, stepbioe,                                          &
-         gmt,julday,t_phy,moist,p8w,t8w,                                  & 
-         e_bio,p_phy,chem,rho,dz8w,ne_area,                    &
+         grid%gmt,grid%julday,t_phy,moist,p8w,t8w,                                  & 
+         e_bio,p_phy,chem,rho,dz8w,grid%ne_area,                    &
          e_iso,e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,  &
          e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_pm25,e_pm10,e_nh3,  &
          ivgtyp,tsk,gsw,vegfra,pblh,rmol,ust,znt,xlat,xlong,z,z_at_w,      &
@@ -203,8 +203,8 @@
 !
       if(ktau.eq.1.or.mod(ktau,stepphot).eq.0)then
          call wrf_debug(15,'calling photolysis driver')
-         call photolysis_driver (grid%id,ktau,dt,config_flags,             &
-              gmt,julday,t_phy,moist,aerwrf,p8w,t8w,p_phy,         &
+         call photolysis_driver (grid%id,ktau,grid%dt,config_flags,             &
+              grid%gmt,grid%julday,t_phy,moist,aerwrf,p8w,t8w,p_phy,         &
               chem,rho,dz8w,xlat,xlong,z,z_at_w,                      &
               ph_macr,ph_o31d,ph_o33p,ph_no2,ph_no3o2,ph_no3o,ph_hno2,      &
               ph_hno3,ph_hno4,ph_h2o2,ph_ch2or,ph_ch2om,ph_ch3cho,        &
@@ -220,9 +220,9 @@
       endif
          if(ktau.gt.2)then
          call wrf_debug(100,'calling dry_deposition_driver')
-         call dry_dep_driver(grid%id,ktau,dt,                              &
+         call dry_dep_driver(grid%id,ktau,grid%dt,                              &
               config_flags,                                               &
-              gmt,julday,t_phy,moist,p8w,t8w,                             &
+              grid%gmt,grid%julday,t_phy,moist,p8w,t8w,                             &
               alt,p_phy,chem,rho,dz8w,exch_h,                    &
               ivgtyp,tsk,gsw,vegfra,pblh,rmol,ust,znt,xlat,xlong,z,z_at_w, &
               h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,cvaro2,    &
@@ -239,7 +239,7 @@
 !
 
          call wrf_debug(15,'calling conv transport')
-         call grelldrvct(DT,ktau,DX,grid%id,config_flags,                 &
+         call grelldrvct(grid%DT,ktau,grid%DX,grid%id,config_flags,                 &
               rho,RAINCV,chem,                                        &
               U_phy,V_phy,t_phy,W_2,moist,dz8w,           &
               p_phy,XLV0,CP,G,r_v,z,cu_co_ten,                  &
@@ -256,14 +256,14 @@
       kte=k_end
       if(ktau.eq.1.or.mod(ktau,stepchem).eq.0)then
       call wrf_debug(15,'calling mechanism')
-        dtstepc=dt*float(stepchem)
+        dtstepc=grid%dt*float(stepchem)
         ktauc=max(ktau/stepchem,1)
-        if(ktau.eq.1)dtstepc=dt
+        if(ktau.eq.1)dtstepc=grid%dt
 !
 ! chemical mechanisms
 !
         call mechanism_driver(grid%id,ktauc,dtstepc,config_flags,            &
-              gmt,julday,t_phy,moist,p8w,t8w,                          &
+              grid%gmt,grid%julday,t_phy,moist,p8w,t8w,                          &
               p_phy,chem,rho,dz8w,z,z_at_w,vdrog3,vcsulf_old,&
               ph_macr,ph_o31d,ph_o33p,ph_no2,ph_no3o2,ph_no3o,ph_hno2,   &
               ph_hno3,ph_hno4,ph_h2o2,ph_ch2or,ph_ch2om,ph_ch3cho,     &

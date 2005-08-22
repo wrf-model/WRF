@@ -57,6 +57,10 @@ gen_scalar_tables ( FILE * fp )
   {
     fprintf(fp,"  INTEGER :: %s_index_table( param_num_%s, max_domains )\n",p->name,p->name )  ;
     fprintf(fp,"  INTEGER :: %s_num_table( max_domains )\n", p->name,p->name ) ;
+    fprintf(fp,"  INTEGER :: %s_stream_table( max_domains, param_num_%s )\n", p->name,p->name ) ;
+    fprintf(fp,"  CHARACTER*256 :: %s_dname_table( max_domains, param_num_%s )\n", p->name,p->name ) ;
+    fprintf(fp,"  CHARACTER*256 :: %s_desc_table( max_domains, param_num_%s )\n", p->name,p->name ) ;
+    fprintf(fp,"  CHARACTER*256 :: %s_units_table( max_domains, param_num_%s )\n", p->name,p->name ) ;
   }
   return(0) ;
 }
@@ -86,7 +90,7 @@ gen_scalar_indices_init ( FILE * fp )
 int
 gen_scalar_indices1 ( FILE * fp )
 {
-  node_t * p, * memb , * pkg, * rconfig, * fourd ; 
+  node_t * p, * memb , * pkg, * rconfig, * fourd, *x ; 
   char * c , *pos1, *pos2 ;
   char assoc_namelist_var[NAMELEN], assoc_namelist_choice[NAMELEN], assoc_4d[NAMELEN] ;
   char scalars_str[NAMELEN] ;
@@ -122,7 +126,7 @@ gen_scalar_indices1 ( FILE * fp )
            { fprintf(stderr, "WARNING: There is no 4D array named %s\n",assoc_4d);continue;}
           for ( c = strtok_rentr(NULL,",",&pos2) ; c != NULL ; c = strtok_rentr(NULL,",",&pos2) )
           {
-            if ( get_entry( c , fourd->members ) == NULL )
+            if ( ( x = get_entry( c , fourd->members )) == NULL )
               { fprintf(stderr, "WARNING: %s is not a member of 4D array %s\n",c,assoc_4d);continue;}
             fprintf(fp,"   IF ( %s_index_table( PARAM_%s , idomain ) .lt. 1 ) THEN\n",assoc_4d,c) ;
             fprintf(fp,"     %s_num_table(idomain) = %s_num_table(idomain) + 1\n",assoc_4d,assoc_4d) ;
@@ -131,6 +135,20 @@ gen_scalar_indices1 ( FILE * fp )
             fprintf(fp,"   ELSE\n") ;
             fprintf(fp,"     P_%s = %s_index_table( PARAM_%s , idomain )\n",c,assoc_4d,c)  ;
             fprintf(fp,"   END IF\n") ;
+            {
+              char fourd_bnd[NAMELEN] ;
+              /* check for the existence of a fourd boundary array associated with this 4D array */
+              /* set io_mask accordingly for gen_wrf_io to know that it should generate i/o for _b and _bt */
+              /* arrays */
+              sprintf(fourd_bnd,"%s_b",assoc_4d) ;
+              if ( get_entry( fourd_bnd  ,Domain.fields) != NULL ) {
+                 x->io_mask |= BOUNDARY ;
+              }
+            }
+            fprintf(fp,"   %s_stream_table( idomain, P_%s ) = %d\n",assoc_4d,c, x->io_mask ) ;
+            fprintf(fp,"   %s_dname_table( idomain, P_%s ) = '%s'\n",assoc_4d,c,x->dname) ;
+            fprintf(fp,"   %s_desc_table( idomain, P_%s ) = '%s'\n",assoc_4d,c,x->descrip) ;
+            fprintf(fp,"   %s_units_table( idomain, P_%s ) = '%s'\n",assoc_4d,c,x->units) ;
             fprintf(fp,"   F_%s = .TRUE.\n",c) ;
           }
         }
@@ -145,4 +163,5 @@ gen_scalar_indices1 ( FILE * fp )
 
   return(0) ;
 }
+
 

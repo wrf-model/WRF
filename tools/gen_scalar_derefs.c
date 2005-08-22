@@ -75,11 +75,13 @@ scalar_derefs1 ( FILE * fp , char * corename, node_t * node, int direction )
 
     if (                 (
                                                    /* if it's a core specific field and we're doing that core or... */
-          (p->node_kind & FIELD && (!strncmp("dyn_",p->use,4)&&!strcmp(corename,p->use+4))) ||
+          (p->node_kind & FIELD && (!strncmp("dyn_",p->use,4)&&!strcmp(corename,p->use+4)))
                                                    /* it is not a core specific field and it is not a derived type -ajb */
-          (p->node_kind & FIELD && (p->type->type_type != DERIVED) && ( strncmp("dyn_",p->use,4))) ||
+       || (p->node_kind & FIELD && (p->type->type_type != DERIVED) && ( strncmp("dyn_",p->use,4)))
+#if 0
                                                    /* it is a state variable */
-          (p->node_kind & RCONFIG )
+       || (p->node_kind & RCONFIG )
+#endif
                          )
        )
     {

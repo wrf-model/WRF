@@ -31,27 +31,28 @@ enum proc_orient     { ALL_Z_ON_PROC , ALL_X_ON_PROC , ALL_Y_ON_PROC } ;
 #define HALO     256
 #define PERIOD   512
 #define XPOSE   1024
+#define FOURD1  2048
 
 /* I/O mask settings */
-#define HISTORY          1
-#define AUXHIST1         2
-#define AUXHIST2         4
-#define AUXHIST3         8
-#define AUXHIST4        16
-#define AUXHIST5        32
-#define INPUT           64
-#define AUXINPUT1      128
-#define AUXINPUT2      256
-#define AUXINPUT3      512
-#define AUXINPUT4     1024
-#define AUXINPUT5     2048
-#define RESTART       4096
-#define BOUNDARY      8192
-#define INTERP_DOWN   16384
-#define FORCE_DOWN (16384*2)
-#define INTERP_UP  (16384*4)
-#define SMOOTH_UP  (16384*8)
-#define METADATA   (16384*16)
+#define HISTORY          2
+#define AUXHIST1         4
+#define AUXHIST2         8
+#define AUXHIST3        16
+#define AUXHIST4        32
+#define AUXHIST5        64
+#define INPUT          128
+#define AUXINPUT1      256
+#define AUXINPUT2      512
+#define AUXINPUT3     1024
+#define AUXINPUT4     2048
+#define AUXINPUT5     4096
+#define RESTART       8192
+#define BOUNDARY      16384
+#define INTERP_DOWN (16384*2)
+#define FORCE_DOWN  (16384*4)
+#define INTERP_UP   (16384*8)
+#define SMOOTH_UP   (16384*16)
+#define METADATA    (16384*32)
 
 #define REGISTRY_H
 #endif

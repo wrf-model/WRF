@@ -258,7 +258,7 @@ gen_wrf_io2 ( FILE * fp , char * fname, char * structname , char * fourdname, no
   char post[NAMELEN] ;
   char indices[NAMELEN] ;
 
-  int pass, passes ;
+  int pass, passes, stagx, stagy, stagz ;
   int xi, yi, zi ;
   node_t * dimnode ;
   int ok_to_collect_distribute ;
@@ -285,6 +285,7 @@ gen_wrf_io2 ( FILE * fp , char * fname, char * structname , char * fourdname, no
   for ( p = node ; p != NULL ; p = p->next )
   {
 
+
     if ( p->node_kind & I1 ) continue ;  /* short circuit anything that's not a state var */
 
     set_dim_strs( p, ddim, mdim, pdim , "", 0 ) ;           /* dimensions with staggering */
@@ -299,16 +300,214 @@ gen_wrf_io2 ( FILE * fp , char * fname, char * structname , char * fourdname, no
 
     if ( p->node_kind & FOURD )
     {
-      node_t * nd ;
-      char p1[NAMELEN] ;
-      int itdoesnt ;
+      node_t * nd , *pp ;
+      char p1[NAMELEN], sv[NAMELEN], tl[25] ;
 
-      /* find out if the four-d array has an associated boundary array? */
-      itdoesnt = 0 ;
-      sprintf(p1,"%s_b",p->name ) ;
-      if (( nd = get_entry ( p1 , Domain.fields )) == NULL ) itdoesnt = 1 ;
-      if ( ! ( io_mask & BOUNDARY && itdoesnt ) )
-         gen_wrf_io2 ( fp , fname, structname , p->name, p->members, io_mask, sw_io ) ; 
+      set_dim_strs( p->members, ddim, mdim, pdim , "", 0 ) ;           /* dimensions with staggering */
+      set_dim_strs( p->members, ddim_no, mdim_no, pdim_no , "", 1 ) ;  /* dimensions ignoring staggering */
+
+      if ( ! ( io_mask & BOUNDARY ) )
+      {
+fprintf(fp,"DO itrace = PARAM_FIRST_SCALAR , num_%s\n",p->name ) ;
+fprintf(fp,"  IF (BTEST(%s_stream_table(grid%%id, itrace ) , switch )) THEN\n",p->name) ;
+fprintf(fp,"    CALL wrf_ext_%s_field (  &\n", (sw_io == GEN_INPUT)?"read":"write" ) ;
+fprintf(fp,"          fid                             , &  ! DataHandle\n") ;
+fprintf(fp,"          current_date(1:19)              , &  ! DateStr\n") ; 
+fprintf(fp,"          TRIM(%s_dname_table( grid%%id, itrace )), & !data name\n",p->name) ;
+        strcpy( tl, "" ) ;
+        if ( p->members->ntl > 1 && p->members->ntl <= 3 ) sprintf( tl, "_%d",p->members->ntl ) ;
+        if ( ok_to_collect_distribute ) {
+fprintf(fp,"                       globbuf_%s               , &  ! Field \n",p->members->type->name ) ;
+        } else {
+fprintf(fp,"          grid%%%s%s(ims,kms,jms,itrace)  , &  ! Field\n",p->name,tl) ;
+        }
+fprintf(fp,"          WRF_%s             , &  ! FieldType \n" , p->members->type->name ) ;
+fprintf(fp,"          grid%%communicator  , &  ! Comm\n") ;
+fprintf(fp,"          grid%%iocommunicator  , &  ! Comm\n") ;
+fprintf(fp,"          grid%%domdesc       , &  ! Comm\n") ;
+fprintf(fp,"          grid%%bdy_mask       , &  ! bdy_mask\n") ;
+        if ( sw_io == GEN_OUTPUT ) {
+fprintf(fp,"          dryrun             , &  ! flag\n") ;
+        }
+        set_mem_order( p->members, memord , NAMELEN) ;
+fprintf(fp,"          'XZY'               , &  ! MemoryOrder\n") ;
+        strcpy(stagstr, "") ;
+        if ( p->members->stag_x ) strcat(stagstr, "X") ;
+        if ( p->members->stag_y ) strcat(stagstr, "Y") ;
+        if ( p->members->stag_z ) strcat(stagstr, "Z") ;
+fprintf(fp,"          '%s'                , &  ! Stagger\n",stagstr) ;
+        if ( sw_io == GEN_OUTPUT ) {
+          for ( i = 0 ; i < 3 ; i++ ) strcpy(dimname[i],"") ;
+          for ( i = 0 ; i < 3 ; i++ )
+          {
+            if (( dimnode = p->members->dims[i]) != NULL )
+            {
+              switch ( dimnode->coord_axis )
+              {
+              case (COORD_X) :
+                if ( ( ! sw_3dvar_iry_kludge && p->members->stag_x ) || ( sw_3dvar_iry_kludge && p->members->stag_y ) )
+                 { sprintf( dimname[i] ,"%s_stag", dimnode->dim_data_name) ; }
+                else
+                 { strcpy( dimname[i], dimnode->dim_data_name) ; }
+                break ;
+              case (COORD_Y) :
+                if ( ( ! sw_3dvar_iry_kludge && p->members->stag_y ) || ( sw_3dvar_iry_kludge && p->members->stag_x ) )
+                 { sprintf( dimname[i] ,"%s_stag", dimnode->dim_data_name) ; }
+                else
+                 { strcpy( dimname[i], dimnode->dim_data_name) ; }
+                break ;
+              case (COORD_Z) :
+                if ( p->members->stag_z )
+                 { sprintf( dimname[i] ,"%s_stag", dimnode->dim_data_name) ; }
+                else
+                 { strcpy( dimname[i], dimnode->dim_data_name) ; }
+                break ;
+              }
+            }
+          }
+fprintf(fp,"                       '%s'               , &  ! Dimname 1 \n",dimname[0] ) ;
+fprintf(fp,"                       '%s'               , &  ! Dimname 2 \n",dimname[1] ) ;
+fprintf(fp,"                       '%s'               , &  ! Dimname 3 \n",dimname[2] ) ;
+fprintf(fp,"          %s_desc_table( grid%%id, itrace  ), & ! Desc\n",p->name) ;
+fprintf(fp,"          %s_units_table( grid%%id, itrace  ), & ! Units\n",p->name) ;
+        }
+fprintf(fp,"'%s ext_write_field '//TRIM(moist_dname_table( grid%%id, itrace ))//' memorder XZY' , & ! Debug message\n", fname ) ;
+        /* global dimensions */
+        for ( i = 0 ; i < 3 ; i++ ) { fprintf(fp,"%s , %s , ",ddim[i][0], ddim[i][1]) ; }
+        fprintf(fp," & \n") ;
+        /* mem    dimensions */
+        for ( i = 0 ; i < 3 ; i++ ) { fprintf(fp,"%s , %s , ",mdim[i][0], mdim[i][1]) ; }
+        fprintf(fp," & \n") ;
+        /* patch  dimensions */
+        for ( i = 0 ; i < 3 ; i++ ) { fprintf(fp,"%s , %s , ",pdim[i][0], pdim[i][1]) ; }
+        fprintf(fp," & \n") ;
+fprintf(fp,"                         ierr )\n" ) ;
+fprintf(fp, "  ENDIF\n" ) ;
+fprintf(fp, "ENDDO\n") ;
+      } 
+/* BOUNDARY FOR 4-D TRACER */
+      else if ( io_mask & BOUNDARY )
+      {
+        int ibdy ;
+        int idx ;
+        node_t *fourd_bound_array ;
+        char *bdytag, *xdomainend, *ydomainend, *zdomainend, bdytag2[10],fourd_bnd[NAMELEN] ;
+        char *ds1,*de1,*ds2,*de2,*ds3,*de3,*ms1,*me1,*ms2,*me2,*ms3,*me3,*ps1,*pe1,*ps2,*pe2,*ps3,*pe3 ;
+
+/* check for the existence of a fourd boundary array */
+        sprintf(fourd_bnd,"%s_b",p->name) ;
+        if (( fourd_bound_array = get_entry( fourd_bnd  ,Domain.fields)) != NULL ) {
+
+          for ( i = 0 ; i < 3 ; i++ ) strcpy(dimname[i],"") ;
+          strcpy( dimname[2] , "bdy_width" ) ;
+          ds3 = "1" ; de3 = "config_flags%spec_bdy_width" ;
+          ms3 = "1" ; me3 = "config_flags%spec_bdy_width" ;
+          ps3 = "1" ; pe3 = "config_flags%spec_bdy_width" ;
+          if (( dimnode = get_dimnode_for_coord( p , COORD_Z )) != NULL )
+           { if ( p->stag_z ) { sprintf( dimname[1] ,"%s_stag", dimnode->dim_data_name) ; }
+             else             { strcpy(  dimname[1], dimnode->dim_data_name) ; }
+             if ( p->stag_z ) { zdomainend = "kde" ; }
+             else             { zdomainend = "(kde-1)" ; }
+             ds2 = "kds" ; de2 = zdomainend ;
+             ms2 = "kds" ; me2 = "kde" ;   /* 20020924 */
+             ps2 = "kds" ; pe2 = zdomainend ;
+           }
+          else
+           {
+             fprintf(stderr,"REGISTRY WARNING: 4D ARRAYS MUST HAVE VERT DIMENSION\n") ;
+           }
+          for ( pass = 0 ; pass < 2 ; pass++ ) {
+fprintf(fp,"DO itrace = PARAM_FIRST_SCALAR , num_%s\n",p->name ) ;
+fprintf(fp,"  IF (BTEST(%s_stream_table(grid%%id, itrace ) , switch )) THEN\n",p->name) ;
+          for ( ibdy = 1 ; ibdy <= 4 ; ibdy++ )
+          {
+            if        ( pass == 0 && ibdy == 1 ) { bdytag = "_BXS" ;      /* west bdy   */
+            } else if ( pass == 0 && ibdy == 2 ) { bdytag = "_BXE" ;      /* east bdy   */
+            } else if ( pass == 0 && ibdy == 3 ) { bdytag = "_BYS" ;      /* south bdy   */
+            } else if ( pass == 0 && ibdy == 4 ) { bdytag = "_BYE" ;      /* north bdy   */
+            } else if ( pass == 1 && ibdy == 1 ) { bdytag = "_BTXS" ;      /* west bdy   */
+            } else if ( pass == 1 && ibdy == 2 ) { bdytag = "_BTXE" ;      /* east bdy   */
+            } else if ( pass == 1 && ibdy == 3 ) { bdytag = "_BTYS" ;      /* south bdy   */
+            } else if ( pass == 1 && ibdy == 4 ) { bdytag = "_BTYE" ;      /* north bdy   */
+            }
+            if ( ibdy == 1 || ibdy == 2 ) {
+              if (( dimnode = get_dimnode_for_coord( p , COORD_Y )) != NULL )
+              {
+                idx = get_index_for_coord( p , COORD_Y  ) ;
+                if ( p->stag_y ) { ydomainend = "jde" ; } else { ydomainend = "(jde-1)" ; }
+                ds1 = "1" ; de1 = ydomainend ;
+                ms1 = "1" ; me1 = "MAX( ide , jde )" ;
+                if        ( sw_io == GEN_INPUT ) {
+                  ps1 = "1" ; pe1 = ydomainend ;
+                } else if ( sw_io == GEN_OUTPUT ) {
+                  ps1 = pdim[idx][0] ; pe1 = pdim[idx][1] ;
+                }
+                if ( p->stag_y ) { sprintf( dimname[0] ,"%s_stag", dimnode->dim_data_name) ; }
+                else                   { strcpy( dimname[0], dimnode->dim_data_name) ; }
+              }
+            }
+            if ( ibdy == 3 || ibdy == 4 ) {
+              if (( dimnode = get_dimnode_for_coord( p , COORD_X )) != NULL )
+              {
+                idx = get_index_for_coord( p , COORD_X  ) ;
+                if ( p->stag_x ) { xdomainend = "ide" ; } else { xdomainend = "(ide-1)" ; }
+                ds1 = "1" ; de1 = xdomainend ;
+                ms1 = "1" ; me1 = "MAX( ide , jde )" ;
+                if        ( sw_io == GEN_INPUT ) {
+                  ps1 = "1" ; pe1 = xdomainend ;
+                } else if ( sw_io == GEN_OUTPUT ) {
+                  ps1 = pdim[idx][0] ; pe1 = pdim[idx][1] ;
+                }
+                if ( p->stag_x ) { sprintf( dimname[0] ,"%s_stag", dimnode->dim_data_name) ; }
+                else             { strcpy( dimname[0], dimnode->dim_data_name) ; }
+              }
+            }
+            if      ( p->ndims == 3 ) sprintf(memord,"%sZ",bdytag+2+pass ) ;
+            else if ( p->ndims == 2 ) sprintf(memord,"%s",bdytag+2+pass ) ;
+            else                      sprintf(memord,"0") ;
+fprintf(fp,"    CALL wrf_ext_%s_field (  &\n", (sw_io == GEN_INPUT)?"read":"write" ) ;
+fprintf(fp,"          fid                             , &  ! DataHandle\n") ;
+fprintf(fp,"          current_date(1:19)              , &  ! DateStr\n") ; 
+fprintf(fp,"          TRIM(%s_dname_table( grid%%id, itrace )) // '%s', & !data name\n",p->name,bdytag) ;
+            if ( ok_to_collect_distribute ) {
+fprintf(fp,"                       globbuf_%s               , &  ! Field \n",p->members->type->name ) ;
+            } else {
+              strcpy(bdytag2,"") ;
+              strncat(bdytag2,bdytag, pass+2) ;
+fprintf(fp,"          grid%%%s%s(1,kds,1,%d,itrace)  , &  ! Field\n",p->name,bdytag2,ibdy) ;
+            }
+fprintf(fp,"          WRF_%s             , &  ! FieldType \n" , p->members->type->name ) ;
+fprintf(fp,"          grid%%communicator  , &  ! Comm\n") ;
+fprintf(fp,"          grid%%iocommunicator  , &  ! Comm\n") ;
+fprintf(fp,"          grid%%domdesc       , &  ! Comm\n") ;
+fprintf(fp,"          grid%%bdy_mask       , &  ! bdy_mask\n") ;
+            if ( sw_io == GEN_OUTPUT ) {
+fprintf(fp,"          dryrun             , &  ! flag\n") ;
+            }
+fprintf(fp,"          '%s'               , &  ! MemoryOrder\n",memord) ;
+            strcpy(stagstr, "") ;
+            if ( p->members->stag_x ) strcat(stagstr, "X") ;
+            if ( p->members->stag_y ) strcat(stagstr, "Y") ;
+            if ( p->members->stag_z ) strcat(stagstr, "Z") ;
+fprintf(fp,"          '%s'                , &  ! Stagger\n",stagstr) ;
+            if ( sw_io == GEN_OUTPUT ) {
+fprintf(fp,"                       '%s'               , &  ! Dimname 1 \n",dimname[0] ) ;
+fprintf(fp,"                       '%s'               , &  ! Dimname 2 \n",dimname[1] ) ;
+fprintf(fp,"                       '%s'               , &  ! Dimname 3 \n",dimname[2] ) ;
+fprintf(fp,"          %s_desc_table( grid%%id, itrace  ), & ! Desc\n",p->name) ;
+fprintf(fp,"          %s_units_table( grid%%id, itrace  ), & ! Units\n",p->name) ;
+            }
+fprintf(fp,"'%s ext_write_field '//TRIM(moist_dname_table( grid%%id, itrace ))//' memorder XZY' , & ! Debug message\n", fname ) ;
+fprintf(fp,"%s, %s, %s, %s, %s, %s, &\n",ds1,de1,ds2,de2,ds3,de3 ) ;
+fprintf(fp,"%s, %s, %s, %s, %s, %s, &\n",ms1,me1,ms2,me2,ms3,me3 ) ;
+fprintf(fp,"%s, %s, %s, %s, %s, %s, &\n",ps1,pe1,ps2,pe2,ps3,pe3 ) ;
+fprintf(fp,"                         ierr )\n" ) ;
+          }
+fprintf(fp, "  ENDIF\n" ) ;
+fprintf(fp, "ENDDO\n") ;
+        }
+      }
+      } /* if fourd bound array associated with this tracer */
     }
     else if ( p->type != NULL )
     {
@@ -612,6 +811,7 @@ in the program does not change as a result of inputting the dataset.
             sprintf(vname_2,"%s%s%s",core,p->name,"_2") ;
 	  }
 
+
           /* construct data name -- maybe same as vname if dname not spec'd  */
           if ( strlen(p->dname) == 0 || !strcmp(p->dname,"-") ) { strcpy(dname_tmp,p->name) ; }
           else                                                  { strcpy(dname_tmp,p->dname) ; }
@@ -907,6 +1107,7 @@ if ( pass == 0 )
               sprintf(indices, "%s",index_with_firstelem("(","grid%",t2,p,post)) ;
             }
 
+  if ( !(p->scalar_array_member) ) {
 	    fprintf(fp,"CALL wrf_ext_write_field (  &\n") ;
 	    fprintf(fp,"                       fid                , &  ! DataHandle \n" ) ;
 	    fprintf(fp,"                       current_date(1:19) , &  ! DateStr \n" ) ;
@@ -949,7 +1150,6 @@ if ( pass == 0 )
 	      for ( i = 0 ; i < 3 ; i++ ) { fprintf(fp,"%s , %s , ",ddim_no[i][0], ddim_no[i][1]) ; }
 	      fprintf(fp," & \n") ;
 	      /* patch  dimensions are actually domain dimensions */
-/*	      for ( i = 0 ; i < 3 ; i++ ) { fprintf(fp,"%s , %s , ",ddim_no[i][0], ddim_no[i][1]) ; } */
 	      for ( i = 0 ; i < 3 ; i++ ) { fprintf(fp,"%s , %s , ",ddim[i][0], ddim[i][1]) ; }
 	      fprintf(fp," & \n") ;
 	    }
@@ -961,8 +1161,6 @@ if ( pass == 0 )
                 fprintf(fp, "%s, %s, %s, %s, 1 , 1 , &\n",ddim_no[xi][0],ddim_no[xi][1],
 							  ddim_no[yi][0],ddim_no[yi][1] ) ;
 	      /* patch  dimensions are actually domain dimensions */
-/*              fprintf(fp, "%s, %s, %s, %s, 1 , 1 , &\n",ddim_no[xi][0],ddim_no[xi][1],
-							  ddim_no[yi][0],ddim_no[yi][1] ) ; */
                 fprintf(fp, "%s, %s, %s, %s, 1 , 1 , &\n",ddim[xi][0],ddim[xi][1],
 							  ddim[yi][0],ddim[yi][1] ) ;
 	      }
@@ -981,11 +1179,14 @@ if ( pass == 0 )
             if ( ok_to_collect_distribute )
 	      fprintf(fp,"END IF\n" ) ;
 
+/*
 	    if ( p->scalar_array_member )
 	      fprintf(fp,"END IF\n" ) ;
+*/
 	    if ( !strncmp( p->use, "dyn_", 4 ) ) 
 	      fprintf(fp,"END IF\n" ) ;
 
+  }
           }
         }
       }

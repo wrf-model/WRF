@@ -106,7 +106,6 @@ fprintf(fp,"CALL wrf_debug(2,'calling %s')\n",fname) ;
           else
           {
             if ( q->node_kind & FOURD ) {
-#if 1
               if ( n4d < MAX_4DARRAYS ) {
                 strcpy( name_4d[n4d], q->name ) ;
               } else { 
@@ -116,26 +115,6 @@ fprintf(fp,"CALL wrf_debug(2,'calling %s')\n",fname) ;
                 exit(5) ;
               }
               n4d++ ;
-#else
-              node_t *member ;
-              zdex = get_index_for_coord( q , COORD_Z ) ;
-              if ( zdex >=1 && zdex <= 3 )
-              {
-                for ( member = q->members ; member != NULL ; member = member->next )
-                {
-                  if ( strcmp( member->name, "-" ) )
-                  {
-                    if        ( ! strcmp( q->type->name, "real") ) n3dR++ ;
-                    else if   ( ! strcmp( q->type->name, "integer") ) n3dI++ ;
-                    else if   ( ! strcmp( q->type->name, "doubleprecision") ) n3dD++ ;
-                  }
-                }
-              }
-              else
-              {
-                fprintf(stderr,"WARNING: %d some dimension info missing for 4d array %s\n",zdex,t2) ;
-              }
-#endif
             }
             else
             {
@@ -265,33 +244,15 @@ gen_packs ( FILE *fp , node_t *p, int shw, int xy /* 0=y,1=x */ , int pu /* 0=pa
               zdex = get_index_for_coord( q , COORD_Z ) ;
               if ( zdex >=1 && zdex <= 3 )
               {
-                for ( member = q->members ; member != NULL ; member = member->next )
-                {
-                  if ( strcmp( member->name, "-" ) )
-                  {
-                    set_mem_order( member, memord , NAMELEN) ;
-
-#if 0
-fprintf(fp,"if ( P_%s .GT. 1 )CALL wrf_debug(3,'call RSL_LITE_PACK P_%s %s shw=%d ws=%s xy=%d pu=%d m=%s')\n",member->name,member->name,t2,shw,wordsize,xy,pu,memord) ;
-fprintf(fp,"if ( P_%s .GT. 1 )write(wrf_err_message,*)' d ',ids, ide, jds, jde, kds, kde\n",member->name ) ;
-fprintf(fp,"if ( P_%s .GT. 1 )CALL wrf_debug(3,wrf_err_message)\n",member->name) ;
-fprintf(fp,"if ( P_%s .GT. 1 )write(wrf_err_message,*)' m ',ims, ime, jms, jme, kms, kme\n",member->name ) ;
-fprintf(fp,"if ( P_%s .GT. 1 )CALL wrf_debug(3,wrf_err_message)\n",member->name) ;
-fprintf(fp,"if ( P_%s .GT. 1 )write(wrf_err_message,*)' p ',ips, ipe, jps, jpe, kps, kpe\n",member->name ) ;
-fprintf(fp,"if ( P_%s .GT. 1 )CALL wrf_debug(3,wrf_err_message)\n",member->name) ;
-#endif
-
-fprintf(fp,"if ( P_%s .GT. 1 ) CALL RSL_LITE_PACK ( %s ( grid%%sm31,grid%%sm32,grid%%sm33,P_%s), %d, %s, %d, %d, '%s', &\n",
-                       member->name, t2 , member->name, shw, wordsize, xy, pu, memord ) ;
-                    fprintf(fp,"mytask, ntasks, ntasks_x, ntasks_y,       &\n") ;
-                    fprintf(fp,"ids, ide, jds, jde, kds, kde,             &\n") ;
-                    fprintf(fp,"ims, ime, jms, jme, kms, kme,             &\n") ;
-                    fprintf(fp,"ips, ipe, jps, jpe, kps, kpe              )\n") ;
-#if 0
-fprintf(fp,"if ( P_%s .GT. 1 )CALL wrf_debug(3,'back from RSL_LITE_PACK')\n",member->name) ;
-#endif
-                  }
-                }
+                set_mem_order( q->members, memord , NAMELEN) ;
+fprintf(fp,"DO itrace = PARAM_FIRST_SCALAR, num_%s\n",q->name ) ;
+fprintf(fp," CALL RSL_LITE_PACK ( %s ( grid%%sm31,grid%%sm32,grid%%sm33,itrace), %d, %s, %d, %d, '%s', &\n",
+                       t2 , shw, wordsize, xy, pu, memord ) ;
+fprintf(fp,"mytask, ntasks, ntasks_x, ntasks_y,       &\n") ;
+fprintf(fp,"ids, ide, jds, jde, kds, kde,             &\n") ;
+fprintf(fp,"ims, ime, jms, jme, kms, kme,             &\n") ;
+fprintf(fp,"ips, ipe, jps, jpe, kps, kpe              )\n") ;
+fprintf(fp,"ENDDO\n") ;
               }
               else
               {
@@ -579,6 +540,23 @@ if ( !strcmp( p->name , "xf_ens" ) || !strcmp( p->name,"pr_ens" ) )  {
               zdex = get_index_for_coord( p , COORD_Z ) ;
               if ( zdex >=1 && zdex <= 3 )
               {
+#if 1
+                    if ( !strcmp( *direction, "x" ) )
+                    {
+fprintf(fp, "  DO itrace = PARAM_FIRST_SCALAR, num_%s\n", p->name ) ;
+fprintf(fp, "   %s ( ips:min(ide%s,ipe),:,jms:jme,itrace) = %s (ips+px:min(ide%s,ipe)+px,:,jms:jme,itrace)\n",
+                       vname, p->members->stag_x?"":"-1", vname, p->members->stag_x?"":"-1" ) ;
+fprintf(fp, "  ENDDO\n" ) ;
+                    }
+                    else
+                    {
+fprintf(fp, "  DO itrace = PARAM_FIRST_SCALAR, num_%s\n", p->name ) ;
+fprintf(fp, "   %s ( ims:ime,:,jps:min(jde%s,jpe),itrace) = %s (ims:ime,:,jps+py:min(jde%s,jpe)+py,itrace)\n",
+                       vname, p->members->stag_y?"":"-1", vname, p->members->stag_y?"":"-1" ) ;
+fprintf(fp, "  ENDDO\n" ) ;
+                    }
+
+#else
                 for ( member = p->members ; member != NULL ; member = member->next )
                 {
                   if ( strcmp( member->name, "-" ) )
@@ -597,6 +575,7 @@ if ( !strcmp( p->name , "xf_ens" ) || !strcmp( p->name,"pr_ens" ) )  {
                     }
                   }
                 }
+#endif
               }
               else
               {
@@ -651,62 +630,6 @@ gen_datacalls ( char * dirname )
   return(0) ;
 }
 
-int
-gen_datacalls1 ( FILE * fp , char * corename , char * structname , int mask , node_t * node )
-{
-  node_t * p, * q  ;
-  int i, member_number ;
-  char tmp[NAMELEN] ;
-  char indices[NAMELEN], post[NAMELEN] ;
-
-  for ( p = node ; p != NULL ; p = p->next )
-  {
-    if ( ( mask & p->node_kind ) &&
-        ((!strncmp(p->use,"dyn_",4) && !strcmp(corename,p->use+4)) || strncmp(p->use,"dyn_",4)))
-    {
-    if ( (p->subject_to_communication == 1) || ( p->type->type_type == DERIVED ) )
-    {
-      if ( p->type->type_type == SIMPLE )
-      {
-        for ( i = 1 ; i <= p->ntl ; i++ )
-        {
-/* IF (P_QI .ge. P_FIRST_SCALAR */
-          if ( p->members != NULL )   /* a 4d array */
-          {
-            member_number = 0 ;
-            for ( q = p->members ; q != NULL ; q = q->next )
-            {
-              sprintf(tmp, "(grid%%sm31,grid%%sm32,grid%%sm33,1+%d)", member_number ) ;
-              if ( p->ntl > 1 ) fprintf(fp," IF(1+%d.LE.num_%s)CALL rsl_register_f90 ( %s%s_%d %s )\n",
-                                             member_number,p->name,structname,p->name,i,tmp) ;
-              else              fprintf(fp," CALL rsl_register_f90 ( %s%s %s )\n"   ,structname,p->name,tmp) ;
-              member_number++ ;
-            }
-          }
-          else
-          {
-            strcpy (indices,"");
-            if ( sw_deref_kludge && parent_type == DERIVED ) 
-            {
-              sprintf(post,")") ;
-              sprintf(indices, "%s",index_with_firstelem("(","",tmp,p,post)) ;
-            }
-            if ( p->ntl > 1 ) fprintf(fp," CALL rsl_register_f90 ( %s%s_%d%s )\n",structname,p->name,i,indices) ;
-            else              fprintf(fp," CALL rsl_register_f90 ( %s%s%s )\n"   ,structname,p->name,indices) ;
-          }
-        }
-      }
-      else if ( p->type->type_type == DERIVED )
-      {
-        parent_type = DERIVED;
-        sprintf( tmp , "%s%%", p->name ) ; 
-        gen_datacalls1 ( fp , corename , tmp , mask, p->type->fields ) ;
-      }
-    }
-  }
-  }
-  return(0) ;
-}
 /*****************/
 /*****************/
 
@@ -785,7 +708,7 @@ gen_nest_pack ( char * dirname )
         fprintf(fp,"                        ,cips,cipe,cjps,cjpe                               &\n") ;
 if (sw) fprintf(fp,"                        ,iids,iide,ijds,ijde                               &\n") ;
         fprintf(fp,"                        ,nids,nide,njds,njde                               &\n") ;
-if (sw) fprintf(fp,"                        ,pgr , shw                                        &\n") ;
+if (sw) fprintf(fp,"                        ,pgr , sw                                          &\n") ;
         fprintf(fp,"                        ,ntasks_x,ntasks_y                                 &\n") ; 
         fprintf(fp,"                        ,icoord,jcoord                                     &\n") ;
         fprintf(fp,"                        ,idim_cd,jdim_cd                                   &\n") ;
@@ -799,7 +722,7 @@ if (sw) fprintf(fp,"                        ,pgr , shw                          
         fprintf(fp,"                        ,cips,cipe,cjps,cjpe                               &\n") ;
 if (sw) fprintf(fp,"                        ,iids,iide,ijds,ijde                               &\n") ;
         fprintf(fp,"                        ,nids,nide,njds,njde                               &\n") ;
-if (sw) fprintf(fp,"                        ,pgr , shw                                        &\n") ;
+if (sw) fprintf(fp,"                        ,pgr , sw                                          &\n") ;
         fprintf(fp,"                        ,ntasks_x,ntasks_y                                 &\n") ; 
         fprintf(fp,"                        ,icoord,jcoord                                     &\n") ;
         fprintf(fp,"                        ,idim_cd,jdim_cd                                   &\n") ;
@@ -881,6 +804,7 @@ gen_nest_packunpack ( FILE *fp , node_t * node , char * corename, int dir, int d
   int i ;
   node_t *p, *p1, *dim ;
   int d2, d3, xdex, ydex, zdex ;
+  int io_mask ;
   char ddim[3][2][NAMELEN] ;
   char mdim[3][2][NAMELEN] ;
   char pdim[3][2][NAMELEN] ;
@@ -892,29 +816,40 @@ gen_nest_packunpack ( FILE *fp , node_t * node , char * corename, int dir, int d
 
     if ( p1->node_kind & FOURD )
     {
-      gen_nest_packunpack ( fp, p1->members, corename, dir , down_path ) ;  /* RECURSE over members */
-      continue ;
+      if ( p1->members->next )
+        io_mask = p1->members->next->io_mask ;
+      else
+        continue ;
     }
     else
     {
-      p = p1 ;
+      io_mask = p1->io_mask ;
     }
+    p = p1 ;
 
-    if ( p->io_mask & down_path )
+    if ( io_mask & down_path )
     {
       if ((!strncmp( p->use, "dyn_", 4) && !strcmp(p->use+4,corename)) || strncmp( p->use, "dyn_", 4))
       {
-
-        if (!strncmp( p->use, "dyn_", 4))   sprintf(core,"%s",corename) ;
-        else                                sprintf(core,"") ;
-
-        if ( p->ntl > 1 ) sprintf(tag,"_2") ;
-        else              sprintf(tag,"") ;
-
-        set_dim_strs ( p , ddim , mdim , pdim , "c", 0 ) ;
-        zdex = get_index_for_coord( p , COORD_Z ) ;
-        xdex = get_index_for_coord( p , COORD_X ) ;
-        ydex = get_index_for_coord( p , COORD_Y ) ;
+        if ( p->node_kind & FOURD ) {
+          if (!strncmp( p->members->next->use, "dyn_", 4))   sprintf(core,"%s",corename) ;
+          else                                               sprintf(core,"") ;
+          if ( p->members->next->ntl > 1 ) sprintf(tag,"_2") ;
+          else                             sprintf(tag,"") ;
+          set_dim_strs ( p->members , ddim , mdim , pdim , "c", 0 ) ;
+          zdex = get_index_for_coord( p->members , COORD_Z ) ;
+          xdex = get_index_for_coord( p->members , COORD_X ) ;
+          ydex = get_index_for_coord( p->members , COORD_Y ) ;
+        } else {
+          if (!strncmp( p->use, "dyn_", 4))   sprintf(core,"%s",corename) ;
+          else                                sprintf(core,"") ;
+          if ( p->ntl > 1 ) sprintf(tag,"_2") ;
+          else              sprintf(tag,"") ;
+          set_dim_strs ( p , ddim , mdim , pdim , "c", 0 ) ;
+          zdex = get_index_for_coord( p , COORD_Z ) ;
+          xdex = get_index_for_coord( p , COORD_X ) ;
+          ydex = get_index_for_coord( p , COORD_Y ) ;
+        }
 
         if ( down_path == INTERP_UP )
         {
@@ -935,13 +870,13 @@ gen_nest_packunpack ( FILE *fp , node_t * node , char * corename, int dir, int d
         }
 
         /* construct variable name */
-        if ( p->scalar_array_member )
+        if ( p->node_kind & FOURD )
         {
-          sprintf(vname,"%s%s(%s,P_%s)",p->use,tag,dexes,p->name) ;
+          sprintf(vname,"%s%s(%s,itrace)",p->name,tag,dexes) ;
           if ( strlen(core) > 0 )
-            sprintf(vname2,"%s_%s%s(%s,P_%s)",core,p->use,tag,dexes,p->name) ;
+            sprintf(vname2,"%s_%s%s(%s,itrace)",core,p->use,tag,dexes) ;
           else
-            sprintf(vname2,"%s%s(%s,P_%s)",p->use,tag,dexes,p->name) ;
+            sprintf(vname2,"%s%s(%s,itrace)",p->name,tag,dexes) ;
         }
         else
         {
@@ -952,9 +887,9 @@ gen_nest_packunpack ( FILE *fp , node_t * node , char * corename, int dir, int d
             sprintf(vname2,"%s%s(%s)",p->name,tag,dexes) ;
         }
 
-        if ( p->scalar_array_member )
+        if ( p->node_kind & FOURD )
 	{
-fprintf(fp,"IF ( P_%s .GE. PARAM_FIRST_SCALAR ) THEN\n",p->name) ;
+fprintf(fp,"DO itrace =  PARAM_FIRST_SCALAR, num_%s\n", p->name) ;
 	}
 
         if ( dir == UNPACKIT ) 
@@ -1006,9 +941,9 @@ fprintf(fp,"xv(1)=%s\nCALL rsl_lite_to_child_msg(RWORDSIZE,xv)\n", vname) ;
             }
           }
         }
-        if ( p->scalar_array_member )
+        if ( p->node_kind & FOURD )
 	{
-fprintf(fp,"ENDIF\n") ;
+fprintf(fp,"ENDDO\n") ;
 	}
       }
     }

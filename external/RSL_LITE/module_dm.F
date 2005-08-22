@@ -14,7 +14,7 @@ MODULE module_dm
    INTEGER, PARAMETER :: max_halo_width = 5
 #endif
 
-   INTEGER :: ips_save, ipe_save, jps_save, jpe_save
+   INTEGER :: ips_save, ipe_save, jps_save, jpe_save, itrace
 
    INTEGER ntasks, ntasks_y, ntasks_x, mytask, mytask_x, mytask_y
    INTEGER local_communicator, local_iocommunicator

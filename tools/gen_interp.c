@@ -107,7 +107,7 @@ gen_nest_interp1 ( FILE * fp , node_t * node, char * corename , char * fourdname
   char * fn = "nest_interp.inc" ;
   char fname[NAMELEN] ;
   node_t *p, *p1, *dim ;
-  int d2, d3, xdex, ydex, zdex ;
+  int d2, d3, xdex, ydex, zdex, io_mask ;
   char ddim[3][2][NAMELEN] ;
   char mdim[3][2][NAMELEN] ;
   char pdim[3][2][NAMELEN] ;
@@ -130,18 +130,21 @@ gen_nest_interp1 ( FILE * fp , node_t * node, char * corename , char * fourdname
 
   for ( p1 = node ;  p1 != NULL ; p1 = p1->next )
   {
-
     if ( p1->node_kind & FOURD )
     {
-       gen_nest_interp1 ( fp, p1->members, corename, p1->name, down_path, use_nest_time_level ) ;  /* RECURSE over members */
-       continue ;
+      if ( p1->members->next ) {
+        io_mask = p1->members->next->io_mask ;
+      } else {
+        continue ;
+      }
     }
     else
     {
-      p = p1 ; 
+      io_mask = p1->io_mask ;
     }
+    p = p1 ;
 
-    if ( p->io_mask & down_path )
+    if ( io_mask & down_path )
     {
       if ((!strncmp( p->use, "dyn_", 4) && !strcmp(p->use+4,corename)) || strncmp( p->use, "dyn_", 4))
       {
@@ -153,24 +156,22 @@ gen_nest_interp1 ( FILE * fp , node_t * node, char * corename , char * fourdname
         else              { sprintf(tag,"")   ; sprintf(tag2,"")                         ; }
 
         /* construct variable name */
-        if ( p->scalar_array_member )
-        {
+        if ( p->node_kind & FOURD ) {
 
-sprintf(x, "%s%s", p->use, tag ) ;
+sprintf(x, "%s%s", p->name, tag ) ;
 if ( ! contains_tok ( halo_define , x , ":," ) ) {
- if ( halo_define[strlen(halo_define)-1] == ':' ) { strcat(halo_define,p->use) ; strcat(halo_define,tag) ; }
- else                                             { strcat(halo_define,",") ; strcat(halo_define,p->use) ; strcat(halo_define,tag) ; }
+ if ( halo_define[strlen(halo_define)-1] == ':' ) { strcat(halo_define,p->name) ; strcat(halo_define,tag) ; }
+ else                                             { strcat(halo_define,",") ; strcat(halo_define,p->name) ; strcat(halo_define,tag) ; }
 }
-
-          strcpy(dexes,"grid%sm31,grid%sm32,grid%sm33,") ;
-          sprintf(vname,"%s%s(%sP_%s)",p->use,tag,dexes,p->name) ;
-          strcpy(ndexes,"ngrid%sm31,ngrid%sm32,ngrid%sm33,") ;
-          sprintf(vname2,"%s%s%s(%sP_%s)",core,p->use,tag2,ndexes,p->name) ;
+          strcpy(dexes,"grid%sm31,grid%sm32,grid%sm33") ;
+          sprintf(vname,"%s%s(%s,itrace)",p->name,tag,dexes) ;
+          strcpy(ndexes,"ngrid%sm31,ngrid%sm32,ngrid%sm33") ;
+          sprintf(vname2,"%s%s%s(%s,itrace)",core,p->name,tag2,ndexes) ;
 
           if ( down_path & SMOOTH_UP ) {
-            strcpy( fcn_name , p->smoothu_fcn_name ) ;
+            strcpy( fcn_name , p->members->next->smoothu_fcn_name ) ;
 	  } else {
-            strcpy( fcn_name , (down_path & INTERP_UP)?p->interpu_fcn_name:((down_path & FORCE_DOWN)?p->force_fcn_name:p->interpd_fcn_name) ) ;
+            strcpy( fcn_name , (down_path & INTERP_UP)?p->members->next->interpu_fcn_name:((down_path & FORCE_DOWN)?p->members->next->force_fcn_name:p->members->next->interpd_fcn_name) ) ;
           }
         }
         else
@@ -189,33 +190,50 @@ if ( ! contains_tok ( halo_define , vname  , ":," ) ) {
 	  }
         }
 
-        set_dim_strs ( p , ddim , mdim , pdim , "c", 1 ) ;
-        set_dim_strs ( p , ddim2 , mdim2 , pdim2 , "c", 0 ) ;
-        set_dim_strs ( p , nddim , nmdim , npdim , "n", 1 ) ;
-        set_dim_strs ( p , nddim2 , nmdim2 , npdim2 , "n", 0 ) ;
+        if ( p1->node_kind & FOURD ) {
+          set_dim_strs ( p->members->next , ddim , mdim , pdim , "c", 1 ) ;
+          set_dim_strs ( p->members->next , ddim2 , mdim2 , pdim2 , "c", 0 ) ;
+          set_dim_strs ( p->members->next , nddim , nmdim , npdim , "n", 1 ) ;
+          set_dim_strs ( p->members->next , nddim2 , nmdim2 , npdim2 , "n", 0 ) ;
+          zdex = get_index_for_coord( p->members->next , COORD_Z ) ;
+          xdex = get_index_for_coord( p->members->next , COORD_X ) ;
+          ydex = get_index_for_coord( p->members->next , COORD_Y ) ;
+          if ( p->members->next->stag_x ) strcpy( xstag, ".TRUE." ) ; else strcpy( xstag, ".FALSE." ) ;
+          if ( p->members->next->stag_y ) strcpy( ystag, ".TRUE." ) ; else strcpy( ystag, ".FALSE." ) ;
+          if ( p->members->next->stag_x && p->members->next->stag_y ) {
+	    maskstr = "_xystag" ;
+	  } else if ( p->stag_x ) {
+	    maskstr = "_xstag" ;
+	  } else if ( p->stag_y ) {
+	    maskstr = "_ystag" ;
+	  } else {
+	    maskstr = "_nostag" ;
+	  }
+        } else {
+          set_dim_strs ( p , ddim , mdim , pdim , "c", 1 ) ;
+          set_dim_strs ( p , ddim2 , mdim2 , pdim2 , "c", 0 ) ;
+          set_dim_strs ( p , nddim , nmdim , npdim , "n", 1 ) ;
+          set_dim_strs ( p , nddim2 , nmdim2 , npdim2 , "n", 0 ) ;
+          zdex = get_index_for_coord( p , COORD_Z ) ;
+          xdex = get_index_for_coord( p , COORD_X ) ;
+          ydex = get_index_for_coord( p , COORD_Y ) ;
+          if ( p->stag_x ) strcpy( xstag, ".TRUE." ) ; else strcpy( xstag, ".FALSE." ) ;
+          if ( p->stag_y ) strcpy( ystag, ".TRUE." ) ; else strcpy( ystag, ".FALSE." ) ;
+          if ( p->stag_x && p->stag_y ) {
+	    maskstr = "_xystag" ;
+	  } else if ( p->stag_x ) {
+	    maskstr = "_xstag" ;
+	  } else if ( p->stag_y ) {
+	    maskstr = "_ystag" ;
+	  } else {
+	    maskstr = "_nostag" ;
+	  }
+        }
 
-        zdex = get_index_for_coord( p , COORD_Z ) ;
-        xdex = get_index_for_coord( p , COORD_X ) ;
-        ydex = get_index_for_coord( p , COORD_Y ) ;
-
-        if ( p->stag_x ) strcpy( xstag, ".TRUE." ) ; else strcpy( xstag, ".FALSE." ) ;
-        if ( p->stag_y ) strcpy( ystag, ".TRUE." ) ; else strcpy( ystag, ".FALSE." ) ;
-
-        if ( p->scalar_array_member )
+        if ( p->node_kind & FOURD )
 	{
-fprintf(fp,"IF ( P_%s .GE. PARAM_FIRST_SCALAR ) THEN\n",p->name) ;
+fprintf(fp,"DO itrace = PARAM_FIRST_SCALAR, num_%s\n",p->name ) ;
 	}
-
-        if        ( p->stag_x && p->stag_y ) {
-	  maskstr = "_xystag" ;
-	} else if ( p->stag_x ) {
-	  maskstr = "_xstag" ;
-	} else if ( p->stag_y ) {
-	  maskstr = "_ystag" ;
-	} else {
-	  maskstr = "_nostag" ;
-	}
-
 
 fprintf(fp,"CALL %s (                                                               &         \n", fcn_name ) ;
 
@@ -265,9 +283,9 @@ fprintf(fp,"                 %s, %s, %s, %s, %s, %s,   &         ! ND dims\n",
 
 if ( ! (down_path  & SMOOTH_UP)  ) {
   if ( sw_deref_kludge == 1 ) {
-fprintf(fp,"                  shw, ngrid%%imask%s(nims,njms),         &         ! stencil half width\n",maskstr) ;
+fprintf(fp,"                  config_flags%%shw, ngrid%%imask%s(nims,njms),         &         ! stencil half width\n",maskstr) ;
   } else {
-fprintf(fp,"                  shw, ngrid%%imask%s,         &         ! stencil half width\n",maskstr) ;
+fprintf(fp,"                  config_flags%%shw, ngrid%%imask%s,         &         ! stencil half width\n",maskstr) ;
   }
 }
 fprintf(fp,"                  %s, %s,                                                &         ! xstag, ystag\n", xstag, ystag ) ;
@@ -275,49 +293,60 @@ fprintf(fp,"                  ngrid%%i_parent_start, ngrid%%j_parent_start,     
 fprintf(fp,"                  ngrid%%parent_grid_ratio, ngrid%%parent_grid_ratio                &\n") ;
    
         {
-           char tmpstr[2048], *p1 ;
-           node_t * nd ;
-           strcpy( tmpstr , "" ) ;
-           if        ( down_path & SMOOTH_UP ) {
-             strcpy( tmpstr , p->smoothu_aux_fields ) ;
-	   } else if ( down_path & INTERP_UP ) {
-             strcpy( tmpstr , p->interpu_aux_fields ) ;
-	   } else if ( down_path & FORCE_DOWN ) {
-             /* by default, add the boundary and boundary tendency fields to the arg list */
-             if ( ! p->scalar_array_member ) {
-               sprintf( tmpstr , "%s_b,%s_bt,", p->name, p->name )  ;
-             } else {
-               sprintf( tmpstr , "%s_b,%s_bt,", fourdname, fourdname )  ;
+           char tmpstr[NAMELEN], *p1 ;
+           node_t * nd, * pp  ;
+           pp = NULL ;
+           if ( p->node_kind & FOURD ) {
+             if (  p->members->next ) {
+               pp = p->members->next ;
              }
-             strcat( tmpstr , p->force_aux_fields ) ;
-	   } else if ( down_path & INTERP_DOWN ) {
-             strcpy( tmpstr , p->interpd_aux_fields ) ;
-	   }
-           for ( p1 = strtok(tmpstr,",") ; p1 != NULL ; p1 = strtok(NULL,",") )
-           {
-             if (( nd = get_entry ( p1 , Domain.fields )) != NULL )
-             {
-  	       if (!strncmp( nd->use, "dyn_", 4))   sprintf(core2,"%s_",corename,vname) ;
-	       else                                sprintf(core2,"") ;
-               if ( strcmp( nd->use , "_4d_bdy_array_" ) ) {
-                 fprintf(fp,",%s,ngrid%%%s%s  &\n", nd->name, core2, nd->name ) ;
+           } else {
+             pp = p ;
+           }
+           if ( pp ) {
+             strcpy( tmpstr , "" ) ;
+             if        ( down_path & SMOOTH_UP ) {
+               strcpy( tmpstr , pp->smoothu_aux_fields ) ;
+	     } else if ( down_path & INTERP_UP ) {
+               strcpy( tmpstr , pp->interpu_aux_fields ) ;
+	     } else if ( down_path & FORCE_DOWN ) {
+               /* by default, add the boundary and boundary tendency fields to the arg list */
+               if ( ! p->node_kind & FOURD ) {
+                 sprintf( tmpstr , "%s_b,%s_bt,", pp->name, pp->name )  ;
                } else {
-                 fprintf(fp,",%s(1,1,1,1,P_%s),ngrid%%%s%s(1,1,1,1,P_%s)  &\n", nd->name, p->name, core2, nd->name, p->name ) ;
+                 sprintf( tmpstr , "%s_b,%s_bt,", p->name, p->name )  ;
                }
-             }
-             else
-             {
-	       fprintf(stderr,"REGISTRY WARNING: Don't know about %s in definition of %s\n",p1,vname) ;
+               strcat( tmpstr , pp->force_aux_fields ) ;
+	     } else if ( down_path & INTERP_DOWN ) {
+               strcpy( tmpstr , pp->interpd_aux_fields ) ;
 	     }
+
+             for ( p1 = strtok(tmpstr,",") ; p1 != NULL ; p1 = strtok(NULL,",") )
+             {
+               if (( nd = get_entry ( p1 , Domain.fields )) != NULL )
+               {
+  	         if (!strncmp( nd->use, "dyn_", 4))   sprintf(core2,"%s_",corename,vname) ;
+	         else                                sprintf(core2,"") ;
+                 if ( strcmp( nd->use , "_4d_bdy_array_" ) ) {
+                   fprintf(fp,",grid%%%s%s,ngrid%%%s%s  &\n", core2, nd->name, core2, nd->name ) ;
+                 } else {
+                   fprintf(fp,",grid%%%s%s(1,1,1,1,itrace),ngrid%%%s%s(1,1,1,1,itrace)  &\n", core2, nd->name, core2, nd->name ) ;
+                 }
+               }
+               else
+               {
+	         fprintf(stderr,"REGISTRY WARNING: Don't know about %s in definition of %s\n",p1,vname) ;
+	       }
+             }
            }
         }
 
 fprintf(fp,"                  ) \n") ;
 
-        if ( p->scalar_array_member )
-	{
-fprintf(fp,"ENDIF\n") ;
-	}
+        if ( p->node_kind & FOURD )
+        {
+fprintf(fp,"ENDDO\n") ;
+        }
 
         }
      }

@@ -844,12 +844,12 @@
                  ENDIF
                ENDIF
 
-        DO nj1 = njts, njte+joff
+        DO nj1 = MAX(njds,njts-1), MIN(njde,njte+joff+1) 
            cj = jpos + (nj1-1) / nrj     ! j coord of CD point 
            jp = mod ( nj1-1 , nrj )  ! coord of ND w/i CD point
            nk = k
            ck = nk
-           DO ni1 = nits, nite+ioff
+           DO ni1 = MAX(nids,nits-1), MIN(nide,nite+ioff+1)
                ci = ipos + (ni1-1) / nri      ! j coord of CD point 
                ip = mod ( ni1-1 , nri )  ! coord of ND w/i CD point
 

@@ -149,9 +149,9 @@
 
      DO loop = grid%spec_zone + 1, grid%spec_zone + grid%relax_zone
        fcx(loop) = 0.1 / grid%dt * (grid%spec_zone + grid%relax_zone - loop) / (grid%relax_zone - 1)
-!       gcx(loop) = 1.0 / grid%dt / 50. * (grid%spec_zone + grid%relax_zone - loop) / (grid%relax_zone - 1)
+       gcx(loop) = 1.0 / grid%dt / 50. * (grid%spec_zone + grid%relax_zone - loop) / (grid%relax_zone - 1)
 !       fcx(loop) = 0.
-       gcx(loop) = 0.
+!       gcx(loop) = 0.
      ENDDO
 
      dtbc = 0.

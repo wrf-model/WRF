@@ -21,6 +21,7 @@ SUBROUTINE wrf_histin ( fid , grid , config_flags , switch , ierr )
             ims , ime , jms , jme , kms , kme , &
             ips , ipe , jps , jpe , kps , kpe
 
+    INTEGER       itrace
     INTEGER       iname(9)
     INTEGER       iordering(3)
     INTEGER       icurrent_date(24)

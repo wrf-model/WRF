@@ -26,6 +26,7 @@
                                      ms1, me1, ms2, me2, ms3, me3, &
                                      ps1, pe1, ps2, pe2, ps3, pe3
 
+    INTEGER       itrace
     INTEGER , DIMENSION(3) :: domain_start , domain_end
     INTEGER , DIMENSION(3) :: memory_start , memory_end
     INTEGER , DIMENSION(3) :: patch_start , patch_end

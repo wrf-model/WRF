@@ -7,19 +7,20 @@ MODULE module_io_wrf
   USE module_date_time
 
 ! switch parameters
-  INTEGER, PARAMETER :: model_input_only=1
-  INTEGER, PARAMETER :: aux_model_input1_only=2
-  INTEGER, PARAMETER :: aux_model_input2_only=3
-  INTEGER, PARAMETER :: aux_model_input3_only=4
-  INTEGER, PARAMETER :: aux_model_input4_only=5
-  INTEGER, PARAMETER :: aux_model_input5_only=6
-  INTEGER, PARAMETER :: history_only=7
-  INTEGER, PARAMETER :: aux_hist1_only=8
-  INTEGER, PARAMETER :: aux_hist2_only=9
-  INTEGER, PARAMETER :: aux_hist3_only=10
-  INTEGER, PARAMETER :: aux_hist4_only=11
-  INTEGER, PARAMETER :: aux_hist5_only=12
-  INTEGER, PARAMETER :: boundary_only=13, restart_only=14
+  INTEGER, PARAMETER :: history_only=1
+  INTEGER, PARAMETER :: aux_hist1_only=2
+  INTEGER, PARAMETER :: aux_hist2_only=3
+  INTEGER, PARAMETER :: aux_hist3_only=4
+  INTEGER, PARAMETER :: aux_hist4_only=5
+  INTEGER, PARAMETER :: aux_hist5_only=6
+  INTEGER, PARAMETER :: model_input_only=7
+  INTEGER, PARAMETER :: aux_model_input1_only=8
+  INTEGER, PARAMETER :: aux_model_input2_only=9
+  INTEGER, PARAMETER :: aux_model_input3_only=10
+  INTEGER, PARAMETER :: aux_model_input4_only=11
+  INTEGER, PARAMETER :: aux_model_input5_only=12
+  INTEGER, PARAMETER :: restart_only=13
+  INTEGER, PARAMETER :: boundary_only=14
 
 CONTAINS
   SUBROUTINE init_module_io_wrf

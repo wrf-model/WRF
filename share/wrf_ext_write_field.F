@@ -17,6 +17,7 @@
     USE module_timing
     IMPLICIT NONE
 
+    INTEGER       itrace
     integer                                      :: DataHandle
     character*(*)                                :: DateStr
     character*(*)                                :: Var

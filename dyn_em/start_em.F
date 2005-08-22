@@ -125,11 +125,11 @@
       first_trip_for_this_domain = .FALSE.
    END IF
 
-   IF ( .not. restart ) THEN 
+   IF ( .not. config_flags%restart ) THEN 
        itimestep=0
    ENDIF
 
-   IF ( restart .or. moved ) THEN 
+   IF ( config_flags%restart .or. moved ) THEN 
        first_trip_for_this_domain = .TRUE.
    ENDIF
    
@@ -138,19 +138,19 @@
 ! Arrays for specified boundary conditions
 
 
-     DO loop = spec_zone + 1, spec_zone + relax_zone
-       fcx(loop) = 0.1 / dt * (spec_zone + relax_zone - loop) / (relax_zone - 1)
-       gcx(loop) = 1.0 / dt / 50. * (spec_zone + relax_zone - loop) / (relax_zone - 1)
+     DO loop = grid%spec_zone + 1, grid%spec_zone + grid%relax_zone
+       fcx(loop) = 0.1 / grid%dt * (grid%spec_zone + grid%relax_zone - loop) / (grid%relax_zone - 1)
+       gcx(loop) = 1.0 / grid%dt / 50. * (grid%spec_zone + grid%relax_zone - loop) / (grid%relax_zone - 1)
      ENDDO
 
    ELSE IF (config_flags%nested) THEN
 !
 ! Arrays for specified boundary conditions
 
-     DO loop = spec_zone + 1, spec_zone + relax_zone
-!       fcx(loop) = 0.1 / dt * (spec_zone + relax_zone - loop) / (relax_zone - 1)
-!       gcx(loop) = 1.0 / dt / 50. * (spec_zone + relax_zone - loop) / (relax_zone - 1)
-       fcx(loop) = 0.
+     DO loop = grid%spec_zone + 1, grid%spec_zone + grid%relax_zone
+       fcx(loop) = 0.1 / grid%dt * (grid%spec_zone + grid%relax_zone - loop) / (grid%relax_zone - 1)
+!       gcx(loop) = 1.0 / grid%dt / 50. * (grid%spec_zone + grid%relax_zone - loop) / (grid%relax_zone - 1)
+!       fcx(loop) = 0.
        gcx(loop) = 0.
      ENDDO
 
@@ -458,24 +458,24 @@
 ! set GMT outside of phy_init because phy_init may not be called on this
 ! process if, for example, it is a moving nest and if this part of the domain is not
 ! being initialized (not the leading edge).
-   IF ( .NOT. grid%restart ) THEN
+   IF ( .NOT. config_flags%restart ) THEN
      CALL wrf_clockprint(150, grid%domain_clock, &
                          'DEBUG phy_init():  get currTime from grid%domain_clock,')
      CALL WRF_UTIL_ClockGet( grid%domain_clock, currTime=grid%current_time, rc=rc )
-     CALL WRF_UTIL_TimeGet( grid%current_time, YY=julyr, dayOfYear=julday, H=hr, M=mn, S=sec, MS=ms, rc=rc)
+     CALL WRF_UTIL_TimeGet( grid%current_time, YY=grid%julyr, dayOfYear=grid%julday, H=hr, M=mn, S=sec, MS=ms, rc=rc)
      CALL wrf_timetoa ( grid%current_time, message )
      WRITE( wrf_err_message , * ) 'DEBUG start_em():  currTime = [',TRIM( message ),']'
      CALL wrf_debug( 150, TRIM(wrf_err_message) )
-     gmt=hr+real(mn)/60.+real(sec)/3600.+real(ms)/(1000*3600)
+     grid%gmt=hr+real(mn)/60.+real(sec)/3600.+real(ms)/(1000*3600)
      WRITE( wrf_err_message , * ) 'DEBUG start_em():  julyr,hr,mn,sec,ms,julday = ', &
-                                  julyr,hr,mn,sec,ms,julday
+                                  grid%julyr,hr,mn,sec,ms,grid%julday
      CALL wrf_debug( 150, TRIM(wrf_err_message) )
-     WRITE( wrf_err_message , * ) 'DEBUG start_em():  gmt = ',gmt
+     WRITE( wrf_err_message , * ) 'DEBUG start_em():  gmt = ',grid%gmt
      CALL wrf_debug( 150, TRIM(wrf_err_message) )
    ELSE
-     CALL nl_get_julyr (grid%id, julyr)
-     CALL nl_get_julday (grid%id, julday)
-     CALL nl_get_gmt (grid%id, gmt)
+     CALL nl_get_julyr (grid%id, grid%julyr)
+     CALL nl_get_julday (grid%id, grid%julday)
+     CALL nl_get_gmt (grid%id, grid%gmt)
    END IF
 
    CALL set_tiles ( grid , imask_nostag, ims, ime, jms, jme, ips, ipe, jps, jpe )
@@ -485,8 +485,8 @@
    DO ij = 1, grid%num_tiles
 
      CALL phy_init (  grid,                                   &  
-                      grid%id , config_flags, DT, znw, znu,   &
-                      p_top, TSK, RADT,BLDT,CUDT, MPDT,       &
+                      grid%id , config_flags, grid%DT, znw, znu,   &
+                      p_top, TSK, grid%RADT,grid%BLDT,grid%CUDT, MPDT,       &
                       RTHCUTEN, RQVCUTEN, RQRCUTEN,           &
                       RQCCUTEN, RQSCUTEN, RQICUTEN,           &
                       RUBLTEN,RVBLTEN,RTHBLTEN,               &
@@ -499,17 +499,17 @@
                       MASS_FLUX,                              &
                       RTHFTEN, RQVFTEN,                       &
                       CLDFRA,GLW,GSW,EMISS,LU_INDEX,          &
-                      XLAT,XLONG,ALBEDO,ALBBCK,GMT,JULYR,JULDAY,     &
+                      XLAT,XLONG,ALBEDO,ALBBCK,grid%GMT,grid%JULYR,grid%JULDAY,     &
                       TMN,XLAND,ZNT,Z0,UST,MOL,PBLH,TKE_MYJ,     &
                       EXCH_H,THC,SNOWC,MAVAIL,HFX,QFX,RAINBL, &
-                      TSLB,ZS,DZS,num_soil_layers,warm_rain,  &
+                      TSLB,ZS,DZS,config_flags%num_soil_layers,warm_rain,  &
                       APR_GR,APR_W,APR_MC,APR_ST,APR_AS,      &
                       APR_CAPMA,APR_CAPME,APR_CAPMI,          &
                       XICE,VEGFRA,SNOW,CANWAT,SMSTAV,         &
                       SMSTOT, SFCRUNOFF,UDRUNOFF,GRDFLX,ACSNOW,      &
                       ACSNOM,IVGTYP,ISLTYP, SFCEVP,SMOIS,     &
                       SH2O, SNOWH, SMFR3D,                    &
-                      DX,DY,F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY, &
+                      grid%DX,grid%DY,F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY, &
                       mp_restart_state,tbpvs_state,tbpvs0_state,&
                       allowed_to_read, moved ,                &
                       ids, ide, jds, jde, kds, kde,           &
@@ -634,7 +634,7 @@
                            its , ite , jts , jte , &
                            its , ite , jts , jte   )
 
-   IF ( .not. restart ) THEN 
+   IF ( .not. config_flags%restart ) THEN 
    CALL set_w_surface(  config_flags,                                      &
                         w_1, ht, u_1, v_1, cf1, cf2, cf3, rdx, rdy, msft,  &
                         ids, ide, jds, jde, kds, kde,                      &
@@ -766,11 +766,11 @@
 
    IF (num_chem >= PARAM_FIRST_SCALAR ) THEN
 #ifdef WRF_CHEM
-         CALL chem_init (grid%id,chem,dt,bioemdt,photdt,chemdt,           &
+         CALL chem_init (grid%id,chem,grid%dt,grid%bioemdt,grid%photdt,grid%chemdt,           &
                          stepbioe,stepphot,stepchem,                        &
                          ph_2,phb,g,aerwrf,config_flags,                    &
                          alt,t_1,pb,p,t0,p1000mb,rcp,                       &
-                         aer_dry,aer_water,chem_in_opt,                     &
+                         aer_dry,aer_water,grid%chem_in_opt,                     &
                          imicrogram,                                        &
                                  ids , ide , jds , jde , kds , kde ,        &
                                  ims , ime , jms , jme , kms , kme ,        &

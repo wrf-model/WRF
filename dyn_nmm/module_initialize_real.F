@@ -235,7 +235,7 @@ CONTAINS
       END SELECT
 
         
-        DT=float(TIME_STEP)
+        grid%DT=float(grid%TIME_STEP)
 
         
 
@@ -305,7 +305,7 @@ CONTAINS
 
       !  Pull in the info in the namelist to compare it to the input data.
 
-      real_data_init_type = model_config_rec%real_data_init_type
+      grid%real_data_init_type = model_config_rec%real_data_init_type
 
 !       DO j = jts, MIN(jte,jde-1)
 !        DO k = kts, kde-1
@@ -526,7 +526,7 @@ CONTAINS
 
       !  Process the LSM data.
    
-      IF ( real_data_init_type .EQ. 1 ) THEN
+      IF ( grid%real_data_init_type .EQ. 1 ) THEN
    
          num_veg_cat      = SIZE ( landusef , DIM=2 )
          num_soil_top_cat = SIZE ( soilctop , DIM=2 )
@@ -703,7 +703,7 @@ CONTAINS
       ANBI=SB+(jde-2)*DPH
       STPH0=SIN(TPH0)
       CTPH0=COS(TPH0)
-      TSPH=3600./DT
+      TSPH=3600./GRID%DT
          DO J=JTS,min(JTE,JDE-1)
            TLM=WB-TDLM+MOD(J,2)*DLM   !For velocity points on the E grid
            TPH=SB+float(J-1)*DPH
@@ -719,7 +719,7 @@ CONTAINS
 
              TERM1=(STPH0*CTPH*COS(TLM)+CTPH0*STPH)
              FP=TWOM*(TERM1)
-             F(I,J)=0.5*DT*FP
+             F(I,J)=0.5*GRID%DT*FP
            ENDDO
          ENDDO
          DO J=JTS,min(JTE,JDE-1)
@@ -946,9 +946,9 @@ CONTAINS
       DTCF=4.0 ! used?
 
       DY_NMM=ERAD*DPH
-      CPGFV=-DT/(48.*DY_NMM)
-      EN= DT/( 4.*DY_NMM)*DTAD
-      ENT=DT/(16.*DY_NMM)*DTAD
+      CPGFV=-GRID%DT/(48.*DY_NMM)
+      EN= GRID%DT/( 4.*DY_NMM)*DTAD
+      ENT=GRID%DT/(16.*DY_NMM)*DTAD
 
 
         DO J=jts,nnyp
@@ -968,16 +968,16 @@ CONTAINS
          DXJ(J)=DXP
          WPDARJ(J)=-W_NMM * &
      ((ERAD*DLM*AMIN1(COS(ANBI),COS(SBI)))**2+DY_NMM**2)/ &
-                   (DT*32.*DXP*DY_NMM)
+                   (GRID%DT*32.*DXP*DY_NMM)
 
-         CPGFUJ(J)=-DT/(48.*DXP)
-         CURVJ(J)=.5*DT*TAN(TPH)/ERAD
-         FCPJ(J)=DT/(CP*192.*DXP*DY_NMM)
+         CPGFUJ(J)=-GRID%DT/(48.*DXP)
+         CURVJ(J)=.5*GRID%DT*TAN(TPH)/ERAD
+         FCPJ(J)=GRID%DT/(CP*192.*DXP*DY_NMM)
          FDIVJ(J)=1./(12.*DXP*DY_NMM)
-!         EMJ(J)= DT/( 4.*DXP)*DTAD
-!         EMTJ(J)=DT/(16.*DXP)*DTAD
-         FADJ(J)=-DT/(48.*DXP*DY_NMM)*DTAD
-         ACDT=DT*SQRT((ERAD*DLM*AMIN1(COS(ANBI),COS(SBI)))**2+DY_NMM**2)
+!         EMJ(J)= GRID%DT/( 4.*DXP)*DTAD
+!         EMTJ(J)=GRID%DT/(16.*DXP)*DTAD
+         FADJ(J)=-GRID%DT/(48.*DXP*DY_NMM)*DTAD
+         ACDT=GRID%DT*SQRT((ERAD*DLM*AMIN1(COS(ANBI),COS(SBI)))**2+DY_NMM**2)
          CDDAMP=CODAMP*ACDT
          HDACJ(J)=COAC*ACDT/(4.*DXP*DY_NMM)
          DDMPUJ(J)=CDDAMP/DXP
@@ -1001,21 +1001,21 @@ CONTAINS
         endif
 
              FP=TWOM*(CTPH0*STPH+STPH0*CTPH*COS(TLM))
-             F(I,J)=0.5*DT*FP
+             F(I,J)=0.5*GRID%DT*FP
 
            ENDDO
           ENDDO
 
 ! --------------DERIVED VERTICAL GRID CONSTANTS--------------------------
 
-      EF4T=.5*DT/CP
-      F4Q =   -DT*DTAD
-      F4D =-.5*DT*DTAD
+      EF4T=.5*GRID%DT/CP
+      F4Q =   -GRID%DT*DTAD
+      F4D =-.5*GRID%DT*DTAD
 
 !       DO L=KDS,KDE
        DO L=KDS,KDE-1
         RDETA(L)=1./DETA(L)
-        F4Q2(L)=-.25*DT*DTAD/DETA(L)
+        F4Q2(L)=-.25*GRID%DT*DTAD/DETA(L)
        ENDDO
 
 
@@ -1153,8 +1153,8 @@ CONTAINS
         DO J=JDS,JDE-1
          TPH=SB+float(J-1)*DPH
          DXP=ERAD*DLM*COS(TPH)
-         EMJ(J)= DT/( 4.*DXP)*DTAD
-         EMTJ(J)=DT/(16.*DXP)*DTAD
+         EMJ(J)= GRID%DT/( 4.*DXP)*DTAD
+         EMTJ(J)=GRID%DT/(16.*DXP)*DTAD
 !       write(0,*) 'J, EMTJ(J): ', J, EMTJ(J)
         ENDDO
         
@@ -1257,11 +1257,13 @@ CONTAINS
 !
 !       write(0,*) 'hardwire'
 !        sigma=.true.
-!       IDTAD=2  
-!       NSOIL=4
-!       NPHS=4
-!       NCNVC=4
- write(0,*)'STUFF MOVED TO REGISTRY:',IDTAD,NSOIL,NRADL,NRADS,NPHS,NCNVC,sigma
+!       grid%IDTAD=2  
+!       grid%NSOIL=4
+!       grid%NPHS=4
+!       grid%NCNVC=4
+       write(message,*)'STUFF MOVED TO REGISTRY:',grid%IDTAD,          &
+     & grid%NSOIL,grid%NRADL,grid%NRADS,grid%NPHS,grid%NCNVC,grid%sigma
+       CALL wrf_message( TRIM(message) )
 !==================================================================================
 
 #define COPY_OUT

@@ -41,6 +41,14 @@
       TYPE(DOMAIN),TARGET :: GRID
 !
 !***  DEFINITIONS OF DUMMY ARGUMENTS TO THIS ROUTINE (GENERATED FROM REGISTRY)
+!
+! NOTE, REGISTRY NO LONGER GENERATES DUMMY ARGUMENTS OR DUMMY ARGUMENT
+! DECLARATIONS FOR RCONFIG ENTRIES. THEY ARE STILL PART OF STATE. ACCESS
+! TO THESE VARIABLES IS NOW THROUGH GRID STRUCTURE, AS MODIFIED BELOW.
+! AFFECTED VARIABLES: SIGMA, DT, NPHS, IDTAD, NRADS, NRADL, JULDAY,
+! JULYR, NUM_SOIL_LAYERS, NCNVC, ENSDIM, DY, AND SPEC_BDY_WIDTH.
+! JM, 20050819
+!
 !----------------------------
 #include <nmm_dummy_decl.inc>
 !----------------------------
@@ -154,7 +162,7 @@
       CALL SET_TILES(GRID,IDS,IDE,JDS,JDE,IPS,IPE,JPS,JPE)
 !-----------------------------------------------------------------------
 !
-      SIGMA=1 
+      GRID%SIGMA=1 
       HYDRO=.FALSE.
       IHRST=GRID%GMT
       IJDS=MIN(IDS,JDS)
@@ -236,9 +244,9 @@
 !
 !***  TIMESTEPS PER HOUR
 !
-      TSPH=3600./DT
+      TSPH=3600./GRID%DT
 !
-      n_print_time=nint(3600./dt)   ! Print stats once per hour
+      n_print_time=nint(3600./grid%dt)   ! Print stats once per hour
 !-----------------------------------------------------------------------
 !
       NBOCO=0
@@ -261,13 +269,9 @@
 !
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
-      WRITE(0,125)NTSD,NTSD*DT/3600.
+      WRITE(MESSAGE,125)NTSD,NTSD*GRID%DT/3600.
   125 FORMAT(' SOLVE_NMM: TIMESTEP IS ',I5,'   TIME IS ',F7.3,' HOURS')
-!-----------------------------------------------------------------------
-!-----------------------------------------------------------------------
-!      WRITE(MESSAGE,*)' SOLVE_NMM CALLED: TIMESTEP IS ',NTSD            &
-!     &         ,' FCST TIME IS',TRIM(message)
-!      CALL WRF_MESSAGE(MESSAGE)
+      CALL WRF_MESSAGE(TRIM(MESSAGE))
 !-----------------------------------------------------------------------
       CALL WRF_GET_MYPROC(MYPE)
       CALL WRF_GET_DM_COMMUNICATOR(MPI_COMM_COMP)
@@ -280,7 +284,7 @@
 !***  ZERO OUT ACCUMULATED QUANTITIES WHEN NEEDED.
 !-----------------------------------------------------------------------
 !
-      CALL BUCKETS(NTSD,NPREC,NSRFC,NRDSW,NRDLW,NHEAT,NPHS              &
+      CALL BUCKETS(NTSD,NPREC,NSRFC,NRDSW,NRDLW,NHEAT,GRID%NPHS         &
      &            ,ACPREC,CUPREC,ACSNOW,ACSNOM,SSROFF,BGROFF            &
      &            ,SFCEVP,POTEVP,SFCSHX,SFCLHX,SUBSHX,SNOPCX            &
      &            ,SFCUVX,POTFLX                                        &
@@ -342,7 +346,7 @@
 #ifdef DM_PARALLEL
      &            GRID,                                                 &
 #endif
-     &            NTSD,DT,PT,ETA2,RES,HYDRO                             &
+     &            NTSD,GRID%DT,PT,ETA2,RES,HYDRO                        &
      &           ,HTM,HBM2                                              &
      &           ,PD,PDSL,PDSLO                                         &
      &           ,PETDT,DIV,PSDT                                        &
@@ -372,7 +376,7 @@
 !
       btimx=timef()
 !
-      CALL ADVE(NTSD,DT,DETA1,DETA2,PDTOP                               &
+      CALL ADVE(NTSD,GRID%DT,DETA1,DETA2,PDTOP                          &
      &         ,CURV,F,FAD,F4D,EM_LOC,EMT_LOC,EN,ENT,DX_NMM,DY_NMM      &
      &         ,HTM,HBM2,VTM,VBM2,LMH,LMV                               &
      &         ,T,U,V,PDSLO,TOLD,UOLD,VOLD                              &
@@ -399,7 +403,7 @@
 #ifdef DM_PARALLEL
      &          GRID,                                                   &
 #endif
-     &          NTSD,DT,PT,ETA2                                         &
+     &          NTSD,GRID%DT,PT,ETA2                                    &
      &         ,HTM,HBM2,EF4T                                           &
      &         ,T,DWDT,RTOP,OMGALF                                      &
      &         ,PINT,DIV,PSDT,RES                                       &
@@ -416,7 +420,7 @@
 !
       btimx=timef()
 !
-      CALL VADZ(NTSD,DT,FIS,SIGMA,DFL,HTM,HBM2                          &
+      CALL VADZ(NTSD,GRID%DT,FIS,GRID%SIGMA,DFL,HTM,HBM2                &
      &         ,DETA1,DETA2,PDTOP                                       &
      &         ,PINT,PDSL,PDSLO,PETDT                                   &
      &         ,RTOP,T,Q,CWM,Z,W,DWDT,PDWDT                             &
@@ -445,7 +449,7 @@
 !
       btimx=timef()
 !
-      CALL HADZ(NTSD,DT,HYDRO,HTM,HBM2,DETA1,DETA2,PDTOP                &
+      CALL HADZ(NTSD,GRID%DT,HYDRO,HTM,HBM2,DETA1,DETA2,PDTOP           &
      &         ,DX_NMM,DY_NMM,FAD                                       &
      &         ,FEW,FNS,FNE,FSE                                         &
      &         ,PDSL,U,V,W,Z                                            &
@@ -474,7 +478,7 @@
 !
       btimx=timef()
 !
-      CALL EPS(NTSD,DT,HYDRO,DX_NMM,DY_NMM,FAD                          &
+      CALL EPS(NTSD,GRID%DT,HYDRO,DX_NMM,DY_NMM,FAD                     &
      &        ,DETA1,DETA2,PDTOP,PT                                     &
      &        ,HTM,HBM2,HBM3,LMH                                        &
      &        ,PDSL,PDSLO,PINT,RTOP,PETDT,PDWDT                         &
@@ -492,10 +496,10 @@
 !***  ADVECTION OF Q, TKE, AND CLOUD WATER
 !-----------------------------------------------------------------------
 !
-      IF(MOD(NTSD,IDTAD)==0)THEN
+      IF(MOD(NTSD,GRID%IDTAD)==0)THEN
         btimx=timef()
 !
-        CALL VAD2(NTSD,DT,IDTAD,DX_NMM,DY_NMM                           &
+        CALL VAD2(NTSD,GRID%DT,GRID%IDTAD,DX_NMM,DY_NMM                 &
      &           ,AETA1,AETA2,DETA1,DETA2,PDSL,PDTOP                    &
      &           ,HBM2,LMH                                              &
      &           ,Q,Q2,CWM,PETDT                                        &
@@ -512,7 +516,7 @@
 !
 !-----------------------------------------------------------------------
 !
-      IF(MOD(NTSD,IDTAD)==0)THEN
+      IF(MOD(NTSD,GRID%IDTAD)==0)THEN
         btimx=timef()
 !-----------------
 #ifdef DM_PARALLEL
@@ -531,7 +535,7 @@
 #if defined(DM_PARALLEL)
      &            GRID%DOMDESC,                                        &
 #endif
-     &            NTSD,DT,IDTAD,DX_NMM,DY_NMM                          &
+     &            NTSD,GRID%DT,GRID%IDTAD,DX_NMM,DY_NMM                &
      &           ,AETA1,AETA2,DETA1,DETA2,PDSL,PDTOP                   &
      &           ,HTM,HBM2,HBM3,LMH                                    &
      &           ,Q,Q2,CWM,U,V,Z,HYDRO                                 &
@@ -560,11 +564,13 @@
         NTSD_rad=NTSD+1
       ENDIF
 !
-      IF(MOD(NTSD_rad,NRADS)==0.OR.MOD(NTSD_rad,NRADL)==0)THEN
+      IF(MOD(NTSD_rad,GRID%NRADS)==0.OR.                               &
+     &   MOD(NTSD_rad,GRID%NRADL)==0)THEN
         btimx=timef()
 !
-        CALL RADIATION(NTSD,DT,JULDAY,JULYR,IHRST,NPHS,GLAT,GLON       &
-     &                ,NRADS,NRADL                                     &
+        CALL RADIATION(NTSD,GRID%DT,GRID%JULDAY,GRID%JULYR             &
+     &                ,IHRST,GRID%NPHS                                 &
+     &                ,GLAT,GLON,GRID%NRADS,GRID%NRADL                 &
      &                ,DETA1,DETA2,AETA1,AETA2,ETA1,ETA2,PDTOP,PT      &
      &                ,PD,RES,PINT,T,Q,CWM,THS,ALBEDO,EPSR             &
      &                ,F_ICE,F_RAIN                                    &
@@ -594,7 +600,7 @@
 !
       btimx=timef()
 !
-      CALL RDTEMP(NTSD,DT,JULDAY,JULYR,IHRST,GLAT,GLON                 &
+      CALL RDTEMP(NTSD,GRID%DT,GRID%JULDAY,GRID%JULYR,IHRST,GLAT,GLON  &
      &           ,CZEN,CZMEAN,T,RSWTT,RLWTT,HTM,HBM2                   &
      &           ,IDS,IDF,JDS,JDF,KDS,KDE                              &
      &           ,IMS,IME,JMS,JME,KMS,KME                              &
@@ -606,12 +612,12 @@
 !***  TURBULENT PROCESSES 
 !----------------------------------------------------------------------
 !
-      IF(MOD(NTSD,NPHS)==0)THEN
+      IF(MOD(NTSD,GRID%NPHS)==0)THEN
 !
         btimx=timef()
 !
-        CALL TURBL(NTSD,DT,NPHS,RESTRT                                 &
-     &            ,N_MOIST,NUM_SOIL_LAYERS,SLDPTH,DZSOIL               &
+        CALL TURBL(NTSD,GRID%DT,GRID%NPHS,RESTRT                       &
+     &            ,N_MOIST,GRID%NUM_SOIL_LAYERS,SLDPTH,DZSOIL          &
      &            ,DETA1,DETA2,AETA1,AETA2,ETA1,ETA2,PDTOP,PT          &
 !    &            ,SM,LMH,HTM,VTM,HBM2,VBM2,DX_NMM,DFL                 &
      &            ,SM,LMH,HTM,VTM,HBM2,VBM2,DX_NMM,DFRLG               &
@@ -663,7 +669,7 @@
 !***  INTERPOLATE WINDS FROM H POINTS BACK TO V POINTS.
 !
         btimx=timef()
-        CALL UV_H_TO_V(NTSD,DT,NPHS,UZ0H,VZ0H,UZ0,VZ0                   &
+        CALL UV_H_TO_V(NTSD,GRID%DT,GRID%NPHS,UZ0H,VZ0H,UZ0,VZ0         &
      &                ,DUDT,DVDT,U,V,HBM2,VTM,IVE,IVW                   &
      &                ,IDS,IDF,JDS,JDF,KDS,KDE                          &
      &                ,IMS,IME,JMS,JME,KMS,KME                          &
@@ -689,7 +695,7 @@
         ICLTEND=-1
         btimx=timef()
 ! 
-        CALL CLTEND(ICLTEND,NPHS,T,T_OLD,T_ADJ                         &
+        CALL CLTEND(ICLTEND,GRID%NPHS,T,T_OLD,T_ADJ                    &
      &             ,IDS,IDF,JDS,JDF,KDS,KDE                            &
      &             ,IMS,IME,JMS,JME,KMS,KME                            &
      &             ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -700,7 +706,7 @@
 !----------------------------------------------------------------------
 !***  CONVECTIVE PRECIPITATION
 !----------------------------------------------------------------------
-      IF(MOD(NTSD,NCNVC)==0.AND.                                       &
+      IF(MOD(NTSD,GRID%NCNVC)==0.AND.                                  &
      &   CONFIG_FLAGS%CU_PHYSICS.EQ.KFETASCHEME)THEN
 !
         btimx=timef()
@@ -718,9 +724,9 @@
 !
       btimx=timef()
 !
-      IF(NCNVC/=999)THEN
-        CALL CUCNVC(NTSD,DT,NCNVC,GPS,RESTRT,HYDRO                     &
-     &             ,CLDEFI,LMH,N_MOIST,ENSDIM                          &
+      IF(GRID%NCNVC/=999)THEN
+        CALL CUCNVC(NTSD,GRID%DT,GRID%NCNVC,GPS,RESTRT,HYDRO           &
+     &             ,CLDEFI,LMH,N_MOIST,GRID%ENSDIM                     &
      &             ,DETA1,DETA2,AETA1,AETA2,ETA1,ETA2                  &
      &             ,F_ICE,F_RAIN                                       &
      &             ,PDTOP,PT,PD,RES,PINT,T,Q,CWM,TCUCN                 &
@@ -741,11 +747,11 @@
 !***  GRIDSCALE MICROPHYSICS (CONDENSATION & PRECIPITATION)
 !----------------------------------------------------------------------
 !
-      IF(MOD(NTSD,NPHS)==0)THEN
+      IF(MOD(NTSD,GRID%NPHS)==0)THEN
         btimx=timef()
 !
-        CALL GSMDRIVE(NTSD,DT,NPHS,N_MOIST                             &
-     &               ,DX_NMM(ITS,JC),DY,LMH,SM,HBM2,FIS                &
+        CALL GSMDRIVE(NTSD,GRID%DT,GRID%NPHS,N_MOIST                   &
+     &               ,DX_NMM(ITS,JC),GRID%DY,LMH,SM,HBM2,FIS           &
      &               ,DETA1,DETA2,AETA1,AETA2,ETA1,ETA2                &
      &               ,PDTOP,PT,PD,RES,PINT,T,Q,CWM,TRAIN               &
      &               ,F_ICE,F_RAIN,F_RIMEF,SR                          &
@@ -766,7 +772,7 @@
         ICLTEND=0
         btimx=timef()
 !
-        CALL CLTEND(ICLTEND,NPHS,T,T_OLD,T_ADJ                         &
+        CALL CLTEND(ICLTEND,GRID%NPHS,T,T_OLD,T_ADJ                    &
      &             ,IDS,IDF,JDS,JDF,KDS,KDE                            &
      &             ,IMS,IME,JMS,JME,KMS,KME                            &
      &             ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -781,7 +787,7 @@
       ICLTEND=1
       btimx=timef()
 !
-      CALL CLTEND(ICLTEND,NPHS,T,T_OLD,T_ADJ                           &
+      CALL CLTEND(ICLTEND,GRID%NPHS,T,T_OLD,T_ADJ                      &
      &           ,IDS,IDF,JDS,JDF,KDS,KDE                              &
      &           ,IMS,IME,JMS,JME,KMS,KME                              &
      &           ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -806,8 +812,8 @@
 !
       btimx=timef()
 !
-      CALL HDIFF(NTSD,DT,FIS,DY_NMM,HDAC,HDACV                         &
-     &          ,HTM,HBM2,VTM,DETA1,SIGMA                              &
+      CALL HDIFF(NTSD,GRID%DT,FIS,DY_NMM,HDAC,HDACV                    &
+     &          ,HTM,HBM2,VTM,DETA1,GRID%SIGMA                         &
      &          ,T,Q,U,V,Q2,Z,W                                        &
      &          ,IHE,IHW,IVE,IVW,INDX3_WRK                             &
      &          ,IDS,IDF,JDS,JDF,KDS,KDE                               &
@@ -834,12 +840,12 @@
 !
       btimx=timef()
 !
-      CALL BOCOH(NTSD,DT,NEST,NUNIT_NBC,NBOCO,LAST_TIME,TSPH           &
+      CALL BOCOH(NTSD,GRID%DT,NEST,NUNIT_NBC,NBOCO,LAST_TIME,TSPH      &
      &          ,LB,ETA1,ETA2,PDTOP,PT,RES,HTM                         &
      &          ,PD_B,T_B,Q_B,U_B,V_B,Q2_B,CWM_B                       &
      &          ,PD_BT,T_BT,Q_BT,U_BT,V_BT,Q2_BT,CWM_BT                &
      &          ,PD,T,Q,Q2,CWM,PINT                                    &
-     &          ,IJDS,IJDE,SPEC_BDY_WIDTH                              &
+     &          ,IJDS,IJDE,GRID%SPEC_BDY_WIDTH                         &
      &          ,IHE,IHW,IVE,IVW,INDX3_WRK                             &
      &          ,IDS,IDF,JDS,JDF,KDS,KDE                               &
      &          ,IMS,IME,JMS,JME,KMS,KME                               &
@@ -878,7 +884,7 @@
       btimx=timef()
 !
       CALL PFDHT(NTSD,LAST_TIME,PT,DETA1,DETA2,PDTOP,RES,FIS           &
-     &          ,HYDRO,SIGMA,FIRST,DX_NMM,DY_NMM                       &
+     &          ,HYDRO,GRID%SIGMA,FIRST,DX_NMM,DY_NMM                  &
      &          ,HTM,HBM2,VTM,VBM2,VBM3                                &
      &          ,FDIV,FCP,WPDAR,DFL,CPGFU,CPGFV                        &
      &          ,PD,PDSL,T,Q,U,V,CWM,OMGALF,PINT,DWDT                  &
@@ -908,7 +914,7 @@
 !
       btimx=timef()
 !
-      CALL DDAMP(NTSD,DT,DETA1,DETA2,PDSL,PDTOP,DIV,HBM2,VTM           &
+      CALL DDAMP(NTSD,GRID%DT,DETA1,DETA2,PDSL,PDTOP,DIV,HBM2,VTM      &
      &          ,T,U,V,DDMPU,DDMPV                                     &
      &          ,IHE,IHW,IVE,IVW,INDX3_WRK                             &
      &          ,IDS,IDF,JDS,JDF,KDS,KDE                               &
@@ -954,9 +960,9 @@
 !
       btimx=timef()
 !
-      CALL BOCOV(NTSD,DT,LB,VTM,U_B,V_B,U_BT,V_BT                      &
+      CALL BOCOV(NTSD,GRID%DT,LB,VTM,U_B,V_B,U_BT,V_BT                 &
      &          ,U,V                                                   &
-     &          ,IJDS,IJDE,SPEC_BDY_WIDTH                              &
+     &          ,IJDS,IJDE,GRID%SPEC_BDY_WIDTH                         &
      &          ,IHE,IHW,IVE,IVW,INDX3_WRK                             &
      &          ,IDS,IDF,JDS,JDF,KDS,KDE                               &
      &          ,IMS,IME,JMS,JME,KMS,KME                               &

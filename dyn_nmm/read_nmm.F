@@ -40,6 +40,12 @@ SUBROUTINE med_read_nmm ( grid , config_flags , ntsd, dt_from_file, tstart_from_
    INTEGER :: I,J,K,IHRST,JAM,NTSD,IHRSTB,IHH,IHL
    INTEGER :: KBI,KBI2,LRECBC
    INTEGER :: N,ISTART,LB,NREC
+! Addition, JM 20050819
+! Rconfig variables no longer passed through dummy arg list or declared
+! in nmm_dummy_decl. Declare them local here.
+   INTEGER :: NSOIL,NPHS,NCNVC,IDTAD,SIGMA,NRADS,NRADL
+   REAL    :: DT
+! End addition, JM 20050819
    INTEGER,DIMENSION(3) :: IDAT,IDATB
    LOGICAL :: RESTRT,SINGLRST,NEST,RUN,RUNB
    REAL :: TSTART,TEND,TPREC,THEAT,TCLOD,TRDSW,TRDLW,TSRFC

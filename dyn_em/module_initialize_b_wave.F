@@ -279,8 +279,8 @@ CONTAINS
 
    cfn  = (.5*dnw(kde-1)+dn(kde-1))/dn(kde-1)
    cfn1 = -.5*dnw(kde-1)/dn(kde-1)
-   rdx = 1./dx
-   rdy = 1./dy
+   rdx = 1./config_flags%dx
+   rdy = 1./config_flags%dy
 
 !  get the sounding from the ascii sounding file, first get dry sounding and 
 !  calculate base state
@@ -307,7 +307,7 @@ CONTAINS
 !  we will be extrapolating above the highest height data to the south
 !  of the centerline.
 
-  p_top = interp_0( p_in, zk, ztop, nl_in )
+  p_top = interp_0( p_in, zk, config_flags%ztop, nl_in )
 
   DO j=jts,jte
   DO i=its,ite  ! flat surface
@@ -456,7 +456,7 @@ CONTAINS
   write(6,*) ' delt for perturbation ',tpbub
 
   DO J = jts, min(jde-1,jte)
-    yrad = dy*float(j-jde/2-1)/radbub
+    yrad = config_flags%dy*float(j-jde/2-1)/radbub
     DO I = its, min(ide-1,ite)
       xrad = float(i-1)/float(ide-ids)
 

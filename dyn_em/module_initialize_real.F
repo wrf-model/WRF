@@ -190,7 +190,7 @@ integer::oops1,oops2
 
       !  Pull in the info in the namelist to compare it to the input data.
 
-      real_data_init_type = model_config_rec%real_data_init_type
+      grid%real_data_init_type = model_config_rec%real_data_init_type
 
       !  Save the TSK field for later use in the sea ice surface temperature
       !  for the Noah LSM scheme.
@@ -279,15 +279,15 @@ integer::oops1,oops2
       num_veg_cat      = SIZE ( landusef , DIM=2 )
       num_soil_top_cat = SIZE ( soilctop , DIM=2 )
       num_soil_bot_cat = SIZE ( soilcbot , DIM=2 )
-      CALL nl_get_seaice_threshold ( grid%id , seaice_threshold ) 
-      CALL nl_get_isice ( grid%id , isice )
-      CALL nl_get_iswater ( grid%id , iswater )
+      CALL nl_get_seaice_threshold ( grid%id , grid%seaice_threshold ) 
+      CALL nl_get_isice ( grid%id , grid%isice )
+      CALL nl_get_iswater ( grid%id , grid%iswater )
       CALL adjust_for_seaice_pre ( xice , landmask , tsk , ivgtyp , vegcat , lu_index , &
                                    xland , landusef , isltyp , soilcat , soilctop , &
                                    soilcbot , tmn , &
-                                   seaice_threshold , &
+                                   grid%seaice_threshold , &
                                    num_veg_cat , num_soil_top_cat , num_soil_bot_cat , &
-                                   iswater , isice , &
+                                   grid%iswater , grid%isice , &
                                    model_config_rec%sf_surface_physics(grid%id) , & 
                                    ids , ide , jds , jde , kds , kde , & 
                                    ims , ime , jms , jme , kms , kme , & 
@@ -519,17 +519,17 @@ integer::oops1,oops2
       num_veg_cat      = SIZE ( landusef , DIM=2 )
       num_soil_top_cat = SIZE ( soilctop , DIM=2 )
       num_soil_bot_cat = SIZE ( soilcbot , DIM=2 )
-      CALL nl_get_seaice_threshold ( grid%id , seaice_threshold ) 
-      CALL nl_get_isice ( grid%id , isice )
-      CALL nl_get_iswater ( grid%id , iswater )
+      CALL nl_get_seaice_threshold ( grid%id , grid%seaice_threshold ) 
+      CALL nl_get_isice ( grid%id , grid%isice )
+      CALL nl_get_iswater ( grid%id , grid%iswater )
       CALL adjust_for_seaice_post ( xice , landmask , tsk , tsk_save , ivgtyp , vegcat , lu_index , &
                                     xland , landusef , isltyp , soilcat , soilctop , &
                                     soilcbot , tmn , vegfra , &
                                     tslb , smois , sh2o , &
-                                    seaice_threshold , &
+                                    grid%seaice_threshold , &
                                     num_veg_cat , num_soil_top_cat , num_soil_bot_cat , &
                                     model_config_rec%num_soil_layers , &
-                                    iswater , isice , &
+                                    grid%iswater , grid%isice , &
                                     model_config_rec%sf_surface_physics(grid%id) , & 
                                     ids , ide , jds , jde , kds , kde , & 
                                     ims , ime , jms , jme , kms , kme , & 
@@ -661,8 +661,8 @@ endif
 
       !  Inverse grid distances.
 
-      rdx = 1./dx
-      rdy = 1./dy
+      rdx = 1./config_flags%dx
+      rdy = 1./config_flags%dy
 
       !  Some of the many weird geopotential initializations that we'll see today: ph0 is total, 
       !  and ph_2 is a perturbation from the base state geopotential.  We set the base geopotential 

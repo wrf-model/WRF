@@ -727,8 +727,8 @@
 !***  ACCUMULATION ARRAYS.
 !----------------------------------------------------------------------
 
-      TSPH=3600./DT ! needed?
-      NPHS0=NPHS
+      TSPH=3600./GRID%DT ! needed?
+      NPHS0=GRID%NPHS
 
 !!!!  How do we pass in this TSTART information in reality???
 
@@ -760,7 +760,7 @@
 !***
 !***    AVERAGE CLOUD AMOUNT ARRAY
 !***
-        IF(MOD(NTSD,NCLOD).LT.NPHS)THEN
+        IF(MOD(NTSD,NCLOD).LT.GRID%NPHS)THEN
           CALL wrf_message('  ZERO AVG CLD AMT ARRAY')
           DO J=JFS,JFE
           DO I=IFS,IFE
@@ -774,7 +774,7 @@
 !***  
 !***     GRID-SCALE AND CONVECTIVE LATENT HEATING ARRAYS.
 !***  
-        IF(MOD(NTSD,NHEAT).LT.NCNVC)THEN
+        IF(MOD(NTSD,NHEAT).LT.GRID%NCNVC)THEN
           CALL wrf_message('  ZERO ACCUM LATENT HEATING ARRAYS')
 !
           AVRAIN=0.
@@ -814,7 +814,7 @@
 !***  TOTAL SNOW AND SNOW MELT ARRAYS.
 !***  STORM SURFACE AND BASE GROUND RUN OFF ARRAYS.
 !     
-        IF(MOD(NTSD,NPREC).LT.NPHS)THEN
+        IF(MOD(NTSD,NPREC).LT.GRID%NPHS)THEN
           CALL wrf_message('  ZERO ACCUM PRECIP ARRAYS')
           DO J=JFS,JFE
           DO I=IFS,IFE
@@ -830,7 +830,7 @@
 !***  
 !***  LONG WAVE RADIATION ARRAYS.
 !***  
-        IF(MOD(NTSD,NRDLW).LT.NPHS)THEN
+        IF(MOD(NTSD,NRDLW).LT.GRID%NPHS)THEN
           CALL wrf_message('  ZERO ACCUM LW RADTN ARRAYS')
           ARDLW=0.
           DO J=JFS,JFE
@@ -844,7 +844,7 @@
 !***  
 !***  SHORT WAVE RADIATION ARRAYS.
 !***  
-        IF(MOD(NTSD,NRDSW).LT.NPHS)THEN
+        IF(MOD(NTSD,NRDSW).LT.GRID%NPHS)THEN
           CALL wrf_message('  ZERO ACCUM SW RADTN ARRAYS')
           ARDSW=0.
           DO J=JFS,JFE
@@ -858,7 +858,7 @@
 !***  
 !***  SURFACE SENSIBLE AND LATENT HEAT FLUX ARRAYS.
 !***  
-        IF(MOD(NTSD,NSRFC).LT.NPHS)THEN
+        IF(MOD(NTSD,NSRFC).LT.GRID%NPHS)THEN
           CALL wrf_message('  ZERO ACCUM SFC FLUX ARRAYS')
           ASRFC=0.
           DO J=JFS,JFE
@@ -1242,7 +1242,7 @@
               SSROFF(I,J)=0.0
               BGROFF(I,J)=0.0
               CMC(I,J)=0.0
-              DO NS=1,NSOIL
+              DO NS=1,GRID%NSOIL
                 SMC(I,NS,J)=1.0
 !               SH2O(I,NS,J)=0.05
                 SH2O(I,NS,J)=1.0
@@ -1264,7 +1264,7 @@
             SNOPCX(I,J)=0.0
             CMC(I,J)=0.0
             SNO(I,J)=0.0
-            DO NS=1,NSOIL
+            DO NS=1,GRID%NSOIL
               SMC(I,NS,J)=1.0
               STC(I,NS,J)=273.16
 !             SH2O(I,NS,J)=0.05
@@ -1347,7 +1347,7 @@
 !***  CALL ZENITH SIMPLY TO GET THE DAY OF THE YEAR FOR
 !***  THE SETUP OF THE OZONE DATA
 !***
-      TIME=(NTSD-1)*DT
+      TIME=(NTSD-1)*GRID%DT
 !
 !!!   CALL ZENITH(TIME,DAYI,HOUR)
 !
@@ -1451,7 +1451,7 @@
       ENDDO
 	ENDIF
 !***
-      IF(SIGMA.EQ.1)THEN
+      IF(GRID%SIGMA.EQ.1)THEN
         DO J=jfs,jfe
         DO I=ifs,ife
           PDSL(I,J)=PD(I,J)
@@ -1619,13 +1619,12 @@
 #endif
 !-----------------------------------------------------------------------
 !jm added set of g_inv
-      write(0,*)' start nrads=',nrads,' nradl=',nradl,' nphs=',nphs,' ncnvc=',ncnvc
       G_INV=1./G
       ROG=R_D*G_INV
-      RADT=NRADS*DT/60.
-      BLDT=NPHS*DT/60.
-      CUDT=NCNVC*DT/60.
-      GSMDT=NPHS*DT/60.
+      GRID%RADT=GRID%NRADS*GRID%DT/60.
+      GRID%BLDT=GRID%NPHS*GRID%DT/60.
+      GRID%CUDT=GRID%NCNVC*GRID%DT/60.
+      GRID%GSMDT=GRID%NPHS*GRID%DT/60.
 !
       DO J=MYJS,MYJE
       DO I=MYIS,MYIE
@@ -1687,9 +1686,11 @@
       ENDDO
       ENDDO
 
-      write(0,*)' calling PHY_INIT'
-      CALL PHY_INIT(GRID,GRID%ID,CONFIG_FLAGS,DT,sfull,smid             &
-     &             ,PT,TSFC,RADT,BLDT,CUDT,GSMDT                        &
+! Several arguments are RCONFIG entries in Registry.NMM. Registry no longer
+! includes these as dummy arguments or declares them.  Access them from 
+! GRID.  JM 20050819
+      CALL PHY_INIT(GRID,GRID%ID,CONFIG_FLAGS,GRID%DT,sfull,smid        &
+     &             ,PT,TSFC,GRID%RADT,GRID%BLDT,GRID%CUDT,GRID%GSMDT    &
      &             ,RTHCUTEN, RQVCUTEN, RQRCUTEN                        &
      &             ,RQCCUTEN, RQSCUTEN, RQICUTEN                        &
      &             ,RUBLTEN,RVBLTEN,RTHBLTEN                            &
@@ -1702,17 +1703,18 @@
      &             ,MASS_FLUX                                           &
      &             ,RTHFTEN, RQVFTEN                                    &
      &             ,CLDFRA,GLW,GSW,EMISS,LU_INDEX                       &
-     &             ,XLAT,XLONG,ALBEDO,ALBBCK,GMT,JULYR,JULDAY           &
+     &             ,XLAT,XLONG,ALBEDO,ALBBCK                            &
+     &             ,GRID%GMT,GRID%JULYR,GRID%JULDAY                     &
      &             ,TMN,XLAND,ZNT,Z0,USTAR,MOL,PBLH,TKE_MYJ             &
      &             ,EXCH_H,THC,SNOWC,MAVAIL,HFX,QFX,RAINBL              &
-     &             ,TSLB,ZS,DZS,num_soil_layers,warm_rain               &
+     &             ,TSLB,ZS,DZS,GRID%num_soil_layers,warm_rain          &
      &             ,APR_GR,APR_W,APR_MC,APR_ST,APR_AS                   &
      &             ,APR_CAPMA,APR_CAPME,APR_CAPMI                       &
      &             ,XICE,VEGFRA,SNOW,CANWAT,SMSTAV                      &
      &             ,SMSTOT, SFCRUNOFF,UDRUNOFF,GRDFLX,ACSNOW            &
      &             ,ACSNOM,IVGTYP,ISLTYP,SFCEVP,SMOIS                   &
      &             ,SH2O, SNOWH, SMFR3D                                 &  ! temporary
-     &             ,DX,DY,F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY              &
+     &             ,GRID%DX,GRID%DY,F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY    &
      &             ,MP_RESTART_STATE,TBPVS_STATE,TBPVS0_STATE           &
      &             ,.TRUE.,.FALSE.                                      &
      &             ,ids, ide, jds, jde, kds, kde                        &

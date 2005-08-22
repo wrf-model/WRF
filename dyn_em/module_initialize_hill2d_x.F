@@ -282,8 +282,8 @@ CONTAINS
 
    cfn  = (.5*dnw(kde-1)+dn(kde-1))/dn(kde-1)
    cfn1 = -.5*dnw(kde-1)/dn(kde-1)
-   rdx = 1./dx
-   rdy = 1./dy
+   rdx = 1./config_flags%dx
+   rdy = 1./config_flags%dy
 
 !  get the sounding from the ascii sounding file, first get dry sounding and 
 !  calculate base state
@@ -299,7 +299,7 @@ CONTAINS
 !  find ptop for the desired ztop (ztop is input from the namelist),
 !  and find surface pressure
 
-  p_top = interp_0( p_in, zk, ztop, nl_in )
+  p_top = interp_0( p_in, zk, config_flags%ztop, nl_in )
 
   DO j=jts,jte
   DO i=its,ite  ! flat surface

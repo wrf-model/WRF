@@ -282,8 +282,8 @@ CONTAINS
 
    cfn  = (.5*dnw(kde-1)+dn(kde-1))/dn(kde-1)
    cfn1 = -.5*dnw(kde-1)/dn(kde-1)
-   rdx = 1./dx
-   rdy = 1./dy
+   rdx = 1./config_flags%dx
+   rdy = 1./config_flags%dy
 
 !  get the sounding from the ascii sounding file, first get dry sounding and 
 !  calculate base state
@@ -299,7 +299,7 @@ CONTAINS
 !  find ptop for the desired ztop (ztop is input from the namelist),
 !  and find surface pressure
 
-  p_top = interp_0( p_in, zk, ztop, nl_in )
+  p_top = interp_0( p_in, zk, config_flags%ztop, nl_in )
 
   DO j=jts,jte
   DO i=its,ite  ! flat surface
@@ -437,18 +437,18 @@ CONTAINS
   t_max = t_min
   u_mean = 00.
 
-  xpos = dx*nxc - u_mean*900.
-  xposml = xpos - dx*(ide-1)
-  xpospl = xpos + dx*(ide-1)
+  xpos = config_flags%dx*nxc - u_mean*900.
+  xposml = xpos - config_flags%dx*(ide-1)
+  xpospl = xpos + config_flags%dx*(ide-1)
 
   DO J = jts, min(jde-1,jte)
     DO I = its, min(ide-1,ite)
-!      xrad = dx*float(i-nxc)/4000.  !  4000 meter horizontal radius
+!      xrad = config_flags%dx*float(i-nxc)/4000.  !  4000 meter horizontal radius
 !                                    !  centered in the domain
 
-       xrad = min( abs(dx*float(i)-xpos),   &
-                   abs(dx*float(i)-xposml), &
-                   abs(dx*float(i)-xpospl))/4000.
+       xrad = min( abs(config_flags%dx*float(i)-xpos),   &
+                   abs(config_flags%dx*float(i)-xposml), &
+                   abs(config_flags%dx*float(i)-xpospl))/4000.
 
       DO K = 1, kte-1
 

@@ -568,7 +568,7 @@
      &   MOD(NTSD_rad,GRID%NRADL)==0)THEN
         btimx=timef()
 !
-        CALL RADIATION(NTSD,GRID%DT,GRID%JULDAY,GRID%JULYR             &
+        CALL RADIATION(NTSD_rad,GRID%DT,GRID%JULDAY,GRID%JULYR         &
      &                ,IHRST,GRID%NPHS                                 &
      &                ,GLAT,GLON,GRID%NRADS,GRID%NRADL                 &
      &                ,DETA1,DETA2,AETA1,AETA2,ETA1,ETA2,PDTOP,PT      &
@@ -974,13 +974,13 @@
 !***  COPY THE NMM VARIABLE Q2 TO THE WRF VARIABLE TKE_MYJ
 !----------------------------------------------------------------------
 !
-!     DO J=JTS,JTE
-!     DO K=KTS,KTE
-!     DO I=ITS,ITE
-!       TKE_MYJ(I,K,J)=0.5*Q2(I,K,J) !TKE is q squared over 2
-!     ENDDO
-!     ENDDO
-!     ENDDO
+      DO J=JTS,JTE
+      DO K=KTS,KTE
+      DO I=ITS,ITE
+        TKE_MYJ(I,K,J)=0.5*Q2(I,K,J) !TKE is q squared over 2
+      ENDDO
+      ENDDO
+      ENDDO
 !
 !----------------------------------------------------------------------
 !

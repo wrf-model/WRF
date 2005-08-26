@@ -2629,7 +2629,7 @@ CONTAINS
 
 !  Parameter used to calculate roughness length of heat
       REAL CZIL, CZIL_DATA
-      DATA CZIL_DATA /0.2/
+      DATA CZIL_DATA /0.1/
 
 !  Parameter used to caluculate vegetation effect on soil heat flux
       REAL SBETA, SBETA_DATA

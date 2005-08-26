@@ -314,7 +314,7 @@ state  real   acutim    -     dyn_nmm     -    -    ir
 state  real   ardlw     -     dyn_nmm     -    -    irh
 state  real   ardsw     -     dyn_nmm     -    -    irh
 state  real   asrfc     -     dyn_nmm     -    -    irh
-state  real   aphtim    -     dyn_nmm     -    -    ir
+state  real   aphtim    -     dyn_nmm     -    -    irh
 #
 # module_INDX.F
 #
@@ -509,7 +509,7 @@ state    real   VEGFRA           ij     misc        1         -     i01rh       
 state    real   SFCEVP           ij     misc        1         -     irh     "SFCEVP"               "SURFACE EVAPORATION" ""
 state    real   GRDFLX           ij     misc        1         -     irh     "GRDFLX"               "GROUND HEAT FLUX" ""
 state    real   ALBBCK           ij     misc        1         -     i012r   "ALBBCK"          "BACKGROUND ALBEDO"        "NA"
-state    real   SFCEXC           ij     misc        1         -     ir      "SFCEXC "              "SURFACE EXCHANGE COEFFICIENT"         ""
+state    real   SFCEXC           ij     misc        1         -     irh     "SFCEXC "              "SURFACE EXCHANGE COEFFICIENT"         ""
 state    real   ACSNOW           ij     misc        1         -     irh       "ACSNOW"               "ACCUMULATED SNOW" ""
 state    real   ACSNOM           ij     misc        1         -     irh       "ACSNOM"               "ACCUMULATED MELTED SNOW"         ""
 state    real   SNOW             ij     misc        1         -     irh       "SNOW"                 "SNOW WATER EQUIVALENT"         ""

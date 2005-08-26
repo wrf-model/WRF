@@ -1192,7 +1192,7 @@
 !$omp& private(i,j,tsfc2)
       DO J=MYJS2,MYJE2
       DO I=MYIS,MYIE
-        ASWIN (I,J)=ASWIN (I,J)+RSWIN(I,J)
+        ASWIN (I,J)=ASWIN (I,J)+RSWIN(I,J)*HBM2(I,J)*FACTRS(I,J)
         ASWOUT(I,J)=ASWOUT(I,J)-RSWOUT(I,J)*HBM2(I,J)*FACTRS(I,J)
         ASWTOA(I,J)=ASWTOA(I,J)+RSWTOA(I,J)*HBM2(I,J)*FACTRS(I,J)
         ALWIN (I,J)=ALWIN (I,J)+RLW_DN_SFC(I,J)

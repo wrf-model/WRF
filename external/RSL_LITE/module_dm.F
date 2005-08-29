@@ -2144,7 +2144,7 @@ integer myproc
       INTEGER local_comm, myproc, nproc
       INTEGER iparstrt, jparstrt, sw
 
-      TYPE(WRF_UTIL_Time)        :: CurrTime
+      TYPE(WRFU_Time)        :: CurrTime
       character*256 :: timestr
       integer ierr
 
@@ -2174,7 +2174,7 @@ integer myproc
 ! sign that says "DIP" than fix the dip,  at this point it was easier just to write this comment. JM
 !
 
-      CALL WRF_UTIL_ClockGet( grid%domain_clock, CurrTime=CurrTime, rc=ierr )
+      CALL WRFU_ClockGet( grid%domain_clock, CurrTime=CurrTime, rc=ierr )
       CALL wrf_timetoa ( CurrTime, timestr )
 
       CALL get_ijk_from_grid (  intermediate_grid ,                   &

@@ -111,7 +111,7 @@ END SUBROUTINE get_value
   ! TBH:  Note that lat/lon coordinates are not supported by this interface 
   ! TBH:  since general curvilinear coordindates (needed for map projections 
   ! TBH:  used by WRF such as polar stereographic, mercator, lambert conformal)
-  ! TBH:  are not supported by ESMF as of ESMF 2.1.0.  Once they are supported, 
+  ! TBH:  are not supported by ESMF as of ESMF 2.2.0.  Once they are supported, 
   ! TBH:  add them via the "sieve" method used in ../io_mcel/.  
   SUBROUTINE create_grid( DataHandle, MemoryOrder, Stagger, &
                           DomainStart, DomainEnd,           &
@@ -159,7 +159,7 @@ END SUBROUTINE get_value
     IF ( .NOT. ASSOCIATED( grid( DataHandle )%ptr ) ) THEN
       ALLOCATE( grid( DataHandle )%ptr )
       ! First, determine number of tasks and number of tasks in each decomposed 
-      ! dimension (ESMF 2.1.0 is restricted to simple task layouts)
+      ! dimension (ESMF 2.2.0 is restricted to simple task layouts)
       ! get current ESMF virtual machine and inquire...  
       CALL ESMF_VMGetCurrent(vm, rc)
       IF ( rc /= ESMF_SUCCESS ) THEN
@@ -170,7 +170,7 @@ END SUBROUTINE get_value
         CALL wrf_error_fatal ( msg )
       ENDIF
       ! TBH:  Note (PET==MPI process) assumption here.  This is OK in ESMF 
-      ! TBH:  2.1.0 but may change in a future ESMF release.  If so, we will 
+      ! TBH:  2.2.0 but may change in a future ESMF release.  If so, we will 
       ! TBH:  need another way to do this.  May want to grab mpiCommunicator 
       ! TBH:  instead and ask it directly for number of MPI tasks.  Of course, 
       ! TBH:  what if this is a serial run?  
@@ -214,7 +214,7 @@ END SUBROUTINE get_value
       ENDDO
       WRITE( msg,* ) 'DEBUG:  permuteTasks = ',permuteTasks
       CALL wrf_debug ( 5 , msg )
-      taskLayout = ESMF_DELayoutCreate( vm, numprocsXY, dePetList=permuteTasks, rc=rc ) 
+      taskLayout = ESMF_DELayoutCreate( vm, numprocsXY, petList=permuteTasks, rc=rc ) 
       IF ( rc /= ESMF_SUCCESS ) THEN
         WRITE( msg,* ) 'Error in ESMF_DELayoutCreate', &
                        __FILE__ ,                      &

@@ -280,14 +280,14 @@ SUBROUTINE input_ext_chem_file (si_grid)
    TYPE (grid_config_rec_type)              :: config_flags
    TYPE(domain) , POINTER ::  null_domain, chem_grid, chgrid
    TYPE(domain) , POINTER ::  chem_grid2, chgrid2
-   TYPE(WRF_UTIL_Time)                        :: CurrTime
+   TYPE(WRFU_Time)                        :: CurrTime
 
    !  Interface block for routine that passes pointers and needs to know that they
    !  are receiving pointers.
 
 
      CALL model_to_grid_config_rec ( si_grid%id , model_config_rec , config_flags )
-     CALL WRF_UTIL_ClockGet( si_grid%domain_clock, CurrTime=CurrTime, rc=ierr )
+     CALL WRFU_ClockGet( si_grid%domain_clock, CurrTime=CurrTime, rc=ierr )
 
       !  After current_date has been set, fill in the julgmt stuff.
 

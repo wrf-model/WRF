@@ -257,8 +257,8 @@ LOGICAL FUNCTION time_for_move2 ( parent , grid , move_cd_x, move_cd_y )
 ! Local
    INTEGER  num_moves, rc
    INTEGER  move_interval , move_id
-   TYPE(WRF_UTIL_Time) :: ct, st
-   TYPE(WRF_UTIL_TimeInterval) :: ti
+   TYPE(WRFU_Time) :: ct, st
+   TYPE(WRFU_TimeInterval) :: ti
    CHARACTER*256 mess, timestr
    INTEGER     :: ids, ide, jds, jde, kds, kde, &
                   ims, ime, jms, jme, kms, kme, &
@@ -282,11 +282,11 @@ LOGICAL FUNCTION time_for_move2 ( parent , grid , move_cd_x, move_cd_y )
    INTEGER :: i_parent_start, j_parent_start
    INTEGER :: max_vortex_speed, vortex_interval  ! meters per second and seconds
    REAL    :: rsmooth = 100.  ! kilometers?
-   TYPE(WRF_UTIL_Time)        :: CurrTime
+   TYPE(WRFU_Time)        :: CurrTime
 
 #if 0
-share/mediation_integrate.F:   TYPE(WRF_UTIL_Time)        :: CurrTime
-share/mediation_integrate.F:   CALL WRF_UTIL_ClockGet( parent%domain_clock, CurrTime=CurrTime, rc=ierr )
+share/mediation_integrate.F:   TYPE(WRFU_Time)        :: CurrTime
+share/mediation_integrate.F:   CALL WRFU_ClockGet( parent%domain_clock, CurrTime=CurrTime, rc=ierr )
 share/mediation_integrate.F:   CALL wrf_timetoa ( CurrTime, timestr )
 #endif
 
@@ -321,13 +321,13 @@ write(0,*)'Check to see if COMPUTE_VORTEX_CENTER_ALARM is ringing? '
    CALL nl_get_parent_grid_ratio ( grid%id , pgr )
    CALL nl_get_dx ( grid%id , dx )
 
-   IF ( WRF_UTIL_AlarmIsRinging( grid%alarms( COMPUTE_VORTEX_CENTER_ALARM ), rc=rc ) ) THEN
+   IF ( WRFU_AlarmIsRinging( grid%alarms( COMPUTE_VORTEX_CENTER_ALARM ), rc=rc ) ) THEN
 
 #  ifdef MOVING_DIAGS
      write(0,*)'COMPUTE_VORTEX_CENTER_ALARM is ringing  '
 #  endif
-     CALL WRF_UTIL_AlarmRingerOff( grid%alarms( COMPUTE_VORTEX_CENTER_ALARM ), rc=rc )
-     CALL WRF_UTIL_ClockGet( grid%domain_clock, CurrTime=CurrTime, rc=ierr )
+     CALL WRFU_AlarmRingerOff( grid%alarms( COMPUTE_VORTEX_CENTER_ALARM ), rc=rc )
+     CALL WRFU_ClockGet( grid%domain_clock, CurrTime=CurrTime, rc=ierr )
      CALL wrf_timetoa ( CurrTime, timestr )
 
      last_vc_i = grid%vc_i
@@ -611,7 +611,7 @@ write(0,*)'After ENDIF : grid%vc_i, grid%vc_j ',grid%vc_i, grid%vc_j
    IF ( move_cd_x .LT. 0 ) move_cd_x = max ( move_cd_x , -1 )
    IF ( move_cd_y .LT. 0 ) move_cd_y = max ( move_cd_y , -1 )
 
-   CALL WRF_UTIL_ClockGet( grid%domain_clock, CurrTime=CurrTime, rc=ierr )
+   CALL WRFU_ClockGet( grid%domain_clock, CurrTime=CurrTime, rc=ierr )
    CALL wrf_timetoa ( CurrTime, timestr )
 
    WRITE(mess,*)timestr(1:19),' vortex center (in nest x and y): ',grid%vc_i, grid%vc_j
@@ -639,7 +639,7 @@ write(0,*)' changing grid%vc_i,  move_cd_x * pgr ', grid%vc_i, move_cd_x * pgr, 
 # else
 ! from namelist
    time_for_move2 = .FALSE.
-   CALL WRF_UTIL_ClockGet( grid%domain_clock, CurrTime=ct, StartTime=st, rc=rc )
+   CALL WRFU_ClockGet( grid%domain_clock, CurrTime=ct, StartTime=st, rc=rc )
    CALL nl_get_num_moves( 1, num_moves )
    IF ( num_moves .GT. max_moves ) THEN
      WRITE(mess,*)'time_for_moves2: num_moves (',num_moves,') .GT. max_moves (',max_moves,')'
@@ -650,7 +650,7 @@ write(0,*)' changing grid%vc_i,  move_cd_x * pgr ', grid%vc_i, move_cd_x * pgr, 
      IF ( move_id .EQ. grid%id ) THEN
        CALL nl_get_move_interval( i, move_interval )
        IF ( move_interval .LT. 999999999 ) THEN
-         CALL WRF_UTIL_TimeIntervalSet ( ti, M=move_interval, rc=rc )
+         CALL WRFU_TimeIntervalSet ( ti, M=move_interval, rc=rc )
          IF ( ct .GE. grid%start_time + ti ) THEN
            CALL nl_get_move_cd_x ( i, move_cd_x )
            CALL nl_get_move_cd_y ( i, move_cd_y )

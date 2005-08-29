@@ -51,8 +51,8 @@
     CHARACTER*80  char_junk
     INTEGER    ibuf(1)
     REAL       rbuf(1)
-    TYPE(WRF_UTIL_TimeInterval) :: bdy_increment
-    TYPE(WRF_UTIL_Time)         :: next_time, current_time
+    TYPE(WRFU_TimeInterval) :: bdy_increment
+    TYPE(WRFU_Time)         :: next_time, current_time
     CHARACTER*40            :: next_datestr
     INTEGER :: start_year , start_month , start_day , start_hour , start_minute , start_second
 
@@ -108,8 +108,8 @@
 #endif
 
     CALL wrf_clockprint(150, grid%domain_clock, &
-                        'DEBUG output_wrf():  before call to WRF_UTIL_ClockGet,')
-    CALL WRF_UTIL_ClockGet( grid%domain_clock, currTime=current_time, rc=rc )
+                        'DEBUG output_wrf():  before call to WRFU_ClockGet,')
+    CALL WRFU_ClockGet( grid%domain_clock, currTime=current_time, rc=rc )
     CALL wrf_timetoa ( current_time, current_date )
     WRITE ( wrf_err_message , * ) 'output_wrf: begin, current_date=',current_date
     CALL wrf_debug ( 300 , wrf_err_message )
@@ -308,7 +308,7 @@
 
 
     IF ( switch .EQ. boundary_only ) THEN
-        CALL WRF_UTIL_TimeIntervalSet( bdy_increment, S=NINT(config_flags%bdyfrq),rc=rc)
+        CALL WRFU_TimeIntervalSet( bdy_increment, S=NINT(config_flags%bdyfrq),rc=rc)
         next_time = current_time + bdy_increment
         CALL wrf_timetoa ( next_time, next_datestr )
         CALL wrf_put_dom_td_char ( fid , 'THISBDYTIME' ,  current_date(1:19), current_date(1:19), ierr )

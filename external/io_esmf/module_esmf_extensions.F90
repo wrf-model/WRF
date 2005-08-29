@@ -57,7 +57,7 @@ MODULE module_esmf_extensions
   PUBLIC ESMF_ExportStateGetCurrent
   PUBLIC ESMF_GridCompGetCurrent
   ! "is-initialized" inquiry
-  PUBLIC WRF_UTIL_IsInitialized
+  PUBLIC WRFU_IsInitialized
 
   ! public routines to be replaced by ESMF internal implementations
   ! These interfaces will not be public because ESMF will always be able 
@@ -76,10 +76,10 @@ CONTAINS
 
 
 ! Add "is initialized" behavior to ESMF interface
-  FUNCTION WRF_UTIL_IsInitialized()
-    LOGICAL WRF_UTIL_IsInitialized
-    WRF_UTIL_IsInitialized = esmf_is_initialized
-  END FUNCTION WRF_UTIL_IsInitialized
+  FUNCTION WRFU_IsInitialized()
+    LOGICAL WRFU_IsInitialized
+    WRFU_IsInitialized = esmf_is_initialized
+  END FUNCTION WRFU_IsInitialized
 
 ! Add "is initialized" behavior to ESMF interface
 ! This interface will go away as it will be done inside ESMF_Initialize().  

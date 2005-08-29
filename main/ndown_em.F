@@ -94,7 +94,7 @@ character(len=24) :: start_date_hold
 
    CHARACTER (LEN=80)      :: message
 integer :: ii
-   TYPE(WRF_UTIL_TimeInterval) :: time_interval
+   TYPE(WRFU_TimeInterval) :: time_interval
 
    !  Interface block for routine that passes pointers and needs to know that they
    !  are receiving pointers.
@@ -128,7 +128,7 @@ integer :: ii
    !  chemistry indices, etc.
 
    CALL init_modules(1)   ! Phase 1 returns after MPI_INIT() (if it is called)
-   CALL WRF_UTIL_Initialize( defaultCalendar=WRF_UTIL_CAL_GREGORIAN, rc=rc )
+   CALL WRFU_Initialize( defaultCalendar=WRFU_CAL_GREGORIAN, rc=rc )
    CALL init_modules(2)   ! Phase 2 resumes after MPI_INIT() (if it is called)
 
    !  Get the NAMELIST data.  This is handled in the initial_config routine.  All of the
@@ -170,8 +170,8 @@ integer :: ii
    !  Set up time initializations.
 
    CALL Setup_Timekeeping ( parent_grid )
-   CALL WRF_UTIL_TimeIntervalSet ( time_interval , S=model_config_rec%interval_seconds, rc=rc )
-   CALL WRF_UTIL_ClockSet ( head_grid%domain_clock , timeStep=time_interval , rc=rc )
+   CALL WRFU_TimeIntervalSet ( time_interval , S=model_config_rec%interval_seconds, rc=rc )
+   CALL WRFU_ClockSet ( head_grid%domain_clock , timeStep=time_interval , rc=rc )
 
    CALL       wrf_debug ( 100 , 'ndown_em: calling model_to_grid_config_rec ' )
    CALL model_to_grid_config_rec ( parent_grid%id , model_config_rec , config_flags )
@@ -213,9 +213,9 @@ integer :: ii
 
    !  Override stop time with value computed above.
    CALL wrf_atotime( end_date_char, parent_grid%stop_time )
-   CALL WRF_UTIL_ClockSet ( parent_grid%domain_clock , StopTime=parent_grid%stop_time, rc=rc )
-   CALL wrf_check_error( WRF_UTIL_SUCCESS, rc, &
-                         'WRF_UTIL_ClockSet(parent_grid%domain_clock) FAILED', &
+   CALL WRFU_ClockSet ( parent_grid%domain_clock , StopTime=parent_grid%stop_time, rc=rc )
+   CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                         'WRFU_ClockSet(parent_grid%domain_clock) FAILED', &
                          __FILE__ , &
                          __LINE__  )
 
@@ -260,7 +260,7 @@ print *,'-------->>>  Processing data: loop=',time_loop,'  date/time = ',date_st
       start_date        = date_string // '.0000'
 print *,'loopmax = ', time_loop_max, '   ending date = ',end_date_char
       CALL wrf_atotime( current_date(1:19), parent_grid%current_time )
-      CALL WRF_UTIL_ClockSet(parent_grid%domain_clock, currTime=parent_grid%current_time, rc=rc)
+      CALL WRFU_ClockSet(parent_grid%domain_clock, currTime=parent_grid%current_time, rc=rc)
 
       !  Which times are in this file, and more importantly, are any of them the
       !  ones that we want?  We need to loop over times in each files, loop
@@ -339,15 +339,15 @@ print *,'file date/time = ',date_string,'     desired date = ',current_date_char
          !  Set up time initializations for the fine grid.
 
          CALL Setup_Timekeeping ( nested_grid )
-         CALL WRF_UTIL_TimeIntervalSet ( time_interval , S=model_config_rec%interval_seconds, rc=rc )
+         CALL WRFU_TimeIntervalSet ( time_interval , S=model_config_rec%interval_seconds, rc=rc )
          CALL wrf_atotime( current_date(1:19), nested_grid%current_time )
          ! Strictly speaking, nest stop time should come from model_config_rec...  
-         CALL WRF_UTIL_ClockSet( nested_grid%domain_clock, timeStep=time_interval,            &
+         CALL WRFU_ClockSet( nested_grid%domain_clock, timeStep=time_interval,            &
                                                        currTime=nested_grid%current_time, &
                                                        StopTime=parent_grid%stop_time, &
                                                        rc=rc )
-         CALL wrf_check_error( WRF_UTIL_SUCCESS, rc, &
-                               'WRF_UTIL_ClockSet(nested_grid%domain_clock) FAILED', &
+         CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                               'WRFU_ClockSet(nested_grid%domain_clock) FAILED', &
                                __FILE__ , &
                                __LINE__  )
 
@@ -477,7 +477,7 @@ nested_grid%chem_in_opt = parent_grid%chem_in_opt
       END IF
 
       CALL wrf_atotime( current_date(1:19), nested_grid%current_time )
-      CALL WRF_UTIL_ClockSet( nested_grid%domain_clock, timeStep=time_interval,            &
+      CALL WRFU_ClockSet( nested_grid%domain_clock, timeStep=time_interval,            &
                                                     currTime=nested_grid%current_time, &
                                                     rc=rc )
 
@@ -599,7 +599,7 @@ nested_grid%chem_in_opt = parent_grid%chem_in_opt
 
          print *,'current_date = ',current_date
          CALL wrf_atotime( current_date(1:19), nested_grid%current_time )
-         CALL WRF_UTIL_ClockSet(nested_grid%domain_clock, currTime=nested_grid%current_time, rc=rc)
+         CALL WRFU_ClockSet(nested_grid%domain_clock, currTime=nested_grid%current_time, rc=rc)
 !
 ! SEP     Put in chemistry data
 !
@@ -792,7 +792,7 @@ print *,'gmt=',gmt
          !  Both pieces of the boundary data are now available to be written.
          
       CALL wrf_atotime( current_date(1:19), nested_grid%current_time )
-      CALL WRF_UTIL_ClockSet(nested_grid%domain_clock, currTime=nested_grid%current_time, rc=rc)
+      CALL WRFU_ClockSet(nested_grid%domain_clock, currTime=nested_grid%current_time, rc=rc)
       temp24= current_date
       temp24b=start_date_hold
       start_date = start_date_hold
@@ -806,13 +806,13 @@ print *,'gmt=',gmt
       CALL wrf_put_dom_ti_integer ( fidb , 'JULYR' , julyr , 1 , ierr ) 
       CALL wrf_put_dom_ti_integer ( fidb , 'JULDAY' , julday , 1 , ierr ) 
       CALL wrf_atotime( current_date(1:19), nested_grid%current_time )
-      CALL WRF_UTIL_ClockSet(nested_grid%domain_clock, currTime=nested_grid%current_time, rc=rc)
+      CALL WRFU_ClockSet(nested_grid%domain_clock, currTime=nested_grid%current_time, rc=rc)
 print *,'bdy time = ',time_loop-1,'  bdy date = ',current_date,' ',start_date
       CALL output_boundary ( fidb , nested_grid , config_flags , ierr )
       current_date = temp24
       start_date = temp24b
       CALL wrf_atotime( current_date(1:19), nested_grid%current_time )
-      CALL WRF_UTIL_ClockSet(nested_grid%domain_clock, currTime=nested_grid%current_time, rc=rc)
+      CALL WRFU_ClockSet(nested_grid%domain_clock, currTime=nested_grid%current_time, rc=rc)
 
          IF ( time_loop .EQ. 2 ) THEN
             CALL wrf_put_dom_ti_real    ( fidb , 'BDYFRQ' , new_bdy_frq , 1 , ierr ) 
@@ -940,7 +940,7 @@ print *,'bdy time = ',time_loop-1,'  bdy date = ',current_date,' ',start_date
          !  Both pieces of the boundary data are now available to be written.
 
       CALL wrf_atotime( current_date(1:19), nested_grid%current_time )
-      CALL WRF_UTIL_ClockSet(nested_grid%domain_clock, currTime=nested_grid%current_time, rc=rc)
+      CALL WRFU_ClockSet(nested_grid%domain_clock, currTime=nested_grid%current_time, rc=rc)
       temp24= current_date
       temp24b=start_date_hold
       start_date = start_date_hold
@@ -954,12 +954,12 @@ print *,'bdy time = ',time_loop-1,'  bdy date = ',current_date,' ',start_date
       CALL wrf_put_dom_ti_integer ( fidb , 'JULYR' , julyr , 1 , ierr ) 
       CALL wrf_put_dom_ti_integer ( fidb , 'JULDAY' , julday , 1 , ierr ) 
       CALL wrf_atotime( current_date(1:19), nested_grid%current_time )
-      CALL WRF_UTIL_ClockSet(nested_grid%domain_clock, currTime=nested_grid%current_time, rc=rc)
+      CALL WRFU_ClockSet(nested_grid%domain_clock, currTime=nested_grid%current_time, rc=rc)
       CALL output_boundary ( fidb , nested_grid , config_flags , ierr )
       current_date = temp24
       start_date = temp24b
       CALL wrf_atotime( current_date(1:19), nested_grid%current_time )
-      CALL WRF_UTIL_ClockSet(nested_grid%domain_clock, currTime=nested_grid%current_time, rc=rc)
+      CALL WRFU_ClockSet(nested_grid%domain_clock, currTime=nested_grid%current_time, rc=rc)
 
          IF ( time_loop .EQ. 2 ) THEN
             CALL wrf_put_dom_ti_real    ( fidb , 'BDYFRQ' , new_bdy_frq , 1 , ierr ) 
@@ -987,7 +987,7 @@ print *,'bdy time = ',time_loop-1,'  bdy date = ',current_date,' ',start_date
 
    CALL wrf_shutdown
 
-   CALL WRF_UTIL_Finalize( rc=rc )
+   CALL WRFU_Finalize( rc=rc )
 
 END PROGRAM ndown_em
 

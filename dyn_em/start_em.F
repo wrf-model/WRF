@@ -461,8 +461,8 @@
    IF ( .NOT. config_flags%restart ) THEN
      CALL wrf_clockprint(150, grid%domain_clock, &
                          'DEBUG phy_init():  get currTime from grid%domain_clock,')
-     CALL WRF_UTIL_ClockGet( grid%domain_clock, currTime=grid%current_time, rc=rc )
-     CALL WRF_UTIL_TimeGet( grid%current_time, YY=grid%julyr, dayOfYear=grid%julday, H=hr, M=mn, S=sec, MS=ms, rc=rc)
+     CALL WRFU_ClockGet( grid%domain_clock, currTime=grid%current_time, rc=rc )
+     CALL WRFU_TimeGet( grid%current_time, YY=grid%julyr, dayOfYear=grid%julday, H=hr, M=mn, S=sec, MS=ms, rc=rc)
      CALL wrf_timetoa ( grid%current_time, message )
      WRITE( wrf_err_message , * ) 'DEBUG start_em():  currTime = [',TRIM( message ),']'
      CALL wrf_debug( 150, TRIM(wrf_err_message) )

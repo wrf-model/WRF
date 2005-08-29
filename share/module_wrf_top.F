@@ -85,7 +85,7 @@ CONTAINS
    IF ( .NOT. PRESENT( no_init1 ) ) THEN
      CALL init_modules(1)
      ! Initialize utilities (time manager, etc.)
-     CALL WRF_UTIL_Initialize( defaultCalendar=WRF_UTIL_CAL_GREGORIAN )
+     CALL WRFU_Initialize( defaultCalendar=WRFU_CAL_GREGORIAN )
    ENDIF
    ! Phase 2 resumes after MPI_INIT() (if it is called)
    CALL init_modules(2)
@@ -288,7 +288,7 @@ CONTAINS
    ! for DM parallel runs).  
    IF ( .NOT. PRESENT( no_shutdown ) ) THEN
      ! Finalize time manager
-     CALL WRF_UTIL_Finalize
+     CALL WRFU_Finalize
      CALL wrf_shutdown
    ENDIF
 

@@ -123,14 +123,14 @@ MODULE module_domain
                     sp21y,  ep21y,  sp22y,  ep22y,                        &
                     sm31y,  em31y,  sm32y,  em32y,  sm33y,  em33y,        &
                     sm21y,  em21y,  sm22y,  em22y
-      Type(WRF_UTIL_Clock), POINTER                           :: domain_clock
-      Type(WRF_UTIL_Time)                                     :: start_time, stop_time, current_time
-      Type(WRF_UTIL_Time)                                     :: start_subtime, stop_subtime
-      Type(WRF_UTIL_Time)                                     :: this_bdy_time, next_bdy_time
-      Type(WRF_UTIL_Time)                                     :: this_emi_time, next_emi_time
-      Type(WRF_UTIL_TimeInterval) :: step_time
-      Type(WRF_UTIL_Alarm), pointer :: alarms(:)
-! This awful hackery accounts for the fact that ESMF2.1.0+ alarms cannot tell 
+      Type(WRFU_Clock), POINTER                           :: domain_clock
+      Type(WRFU_Time)                                     :: start_time, stop_time, current_time
+      Type(WRFU_Time)                                     :: start_subtime, stop_subtime
+      Type(WRFU_Time)                                     :: this_bdy_time, next_bdy_time
+      Type(WRFU_Time)                                     :: this_emi_time, next_emi_time
+      Type(WRFU_TimeInterval) :: step_time
+      Type(WRFU_Alarm), pointer :: alarms(:)
+! This awful hackery accounts for the fact that ESMF2.2.0 alarms cannot tell 
 ! us if they have ever been created or not.  So, we have to keep track of this 
 ! ourselves to avoid destroying an alarm that has never been created!  Rip this 
 ! out once ESMF has useful introspection here...  
@@ -1147,10 +1147,10 @@ CONTAINS
             DEALLOCATE( grid%parents )
             DEALLOCATE( grid%nests )
             ! clean up time manager bits
-            CALL WRF_UTIL_ClockDestroy( grid%domain_clock )
+            CALL WRFU_ClockDestroy( grid%domain_clock )
             DO alarmid = 1, MAX_WRF_ALARMS
               IF ( grid%alarms_created( alarmid ) ) THEN
-                CALL WRF_UTIL_AlarmDestroy( grid%alarms( alarmid ) )
+                CALL WRFU_AlarmDestroy( grid%alarms( alarmid ) )
                 grid%alarms_created( alarmid ) = .FALSE.
               ENDIF
             ENDDO

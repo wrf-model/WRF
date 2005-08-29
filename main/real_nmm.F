@@ -58,7 +58,7 @@ PROGRAM real_data
               end_hour ,   end_minute ,   end_second
    INTEGER :: interval_seconds , real_data_init_type
    INTEGER :: time_loop_max , time_loop, rc
-   TYPE(WRF_UTIL_TimeInterval) :: time_interval
+   TYPE(WRFU_TimeInterval) :: time_interval
    REAL    :: t1,t2
 
    INTERFACE
@@ -87,7 +87,7 @@ PROGRAM real_data
 
 !!!!   CALL init_modules
    CALL init_modules(1)   ! Phase 1 returns after MPI_INIT() (if it is called)
-   CALL WRF_UTIL_Initialize( defaultCalendar=WRF_UTIL_CAL_GREGORIAN, rc=rc )
+   CALL WRFU_Initialize( defaultCalendar=WRFU_CAL_GREGORIAN, rc=rc )
    CALL init_modules(2)   ! Phase 2 resumes after MPI_INIT() (if it is called)
 
    !  The configuration switches mostly come from the NAMELIST input.
@@ -124,9 +124,9 @@ PROGRAM real_data
 
 #include "deref_kludge.h"
    CALL Setup_Timekeeping ( grid )
-   CALL WRF_UTIL_TimeIntervalSet ( time_interval ,  &
+   CALL WRFU_TimeIntervalSet ( time_interval ,  &
              S=model_config_rec%interval_seconds,rc=rc )
-   CALL WRF_UTIL_ClockSet ( grid%domain_clock , timeStep=time_interval , rc=rc )
+   CALL WRFU_ClockSet ( grid%domain_clock , timeStep=time_interval , rc=rc )
 
    CALL wrf_debug ( 100 , 'real_nmm: calling set_scalar_indices_from_config ' )
    CALL set_scalar_indices_from_config ( grid%id , idum1, idum2 )
@@ -847,7 +847,7 @@ character *24 :: temp24 , temp24b
 ! what's this do?
 !         grid%write_metadata = .true.
 !         grid%write_metadata = .false.
-         CALL WRF_UTIL_ClockAdvance( grid%domain_clock, rc=rc )
+         CALL WRFU_ClockAdvance( grid%domain_clock, rc=rc )
       END IF
 
       write(0,*)' assemble_ouput loop=',loop,' point 2'

@@ -59,8 +59,8 @@ SUBROUTINE wrf_message( str )
   print*, str
 !TBH:  work around deficiencies in build-automation
 #ifdef USE_LOGERR
-  IF ( WRF_UTIL_IsInitialized() ) THEN
-    CALL WRF_UTIL_LogWrite( str, WRF_UTIL_LOG_INFO )
+  IF ( WRFU_IsInitialized() ) THEN
+    CALL WRFU_LogWrite( str, WRFU_LOG_INFO )
   ENDIF
 #endif
 END SUBROUTINE wrf_message
@@ -74,8 +74,8 @@ SUBROUTINE wrf_message2( str )
   write(0,*) str
 !TBH:  work around deficiencies in build-automation
 #ifdef USE_LOGERR
-  IF ( WRF_UTIL_IsInitialized() ) THEN
-    CALL WRF_UTIL_LogWrite( str, WRF_UTIL_LOG_INFO )
+  IF ( WRFU_IsInitialized() ) THEN
+    CALL WRFU_LogWrite( str, WRFU_LOG_INFO )
   ENDIF
 #endif
 END SUBROUTINE wrf_message2

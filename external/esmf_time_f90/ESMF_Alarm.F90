@@ -77,10 +77,10 @@
       end type
 
 ! Actual public type:  this bit allows easy mimic of "deep" ESMF_AlarmCreate
-! in ESMF 2.1.0+.  Note that ESMF_AlarmCreate is in a separae module to avoid 
+! in ESMF 2.1.0+.  Note that ESMF_AlarmCreate is in a separate module to avoid 
 ! cyclic dependence.  
 ! NOTE:  DO NOT ADD NON-POINTER STATE TO THIS DATA TYPE.  It emulates ESMF 
-!        shallow-copy-masquerading-as-reference-copy.  
+!        shallow-copy-masquerading-as-reference-copy insanity.  
       type ESMF_Alarm
         sequence
         type(ESMF_AlarmInt), pointer :: alarmint

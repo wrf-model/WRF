@@ -51,7 +51,7 @@ PROGRAM real_data
    INTEGER ::   end_year ,   end_month ,   end_day ,   end_hour ,   end_minute ,   end_second
    INTEGER :: interval_seconds , real_data_init_type
    INTEGER :: time_loop_max , time_loop
-   TYPE(WRF_UTIL_TimeInterval) :: time_interval
+   TYPE(WRFU_TimeInterval) :: time_interval
 real::t1,t2
    INTERFACE
      SUBROUTINE Setup_Timekeeping( grid )
@@ -78,7 +78,7 @@ real::t1,t2
 
    CALL       wrf_debug ( 100 , 'real_em: calling init_modules ' )
    CALL init_modules(1)   ! Phase 1 returns after MPI_INIT() (if it is called)
-   CALL WRF_UTIL_Initialize( defaultCalendar=WRF_UTIL_CAL_GREGORIAN, rc=rc )
+   CALL WRFU_Initialize( defaultCalendar=WRFU_CAL_GREGORIAN, rc=rc )
    CALL init_modules(2)   ! Phase 2 resumes after MPI_INIT() (if it is called)
 
    !  The configuration switches mostly come from the NAMELIST input.
@@ -117,10 +117,10 @@ real::t1,t2
    CALL Setup_Timekeeping ( grid )
    CALL wrf_clockprint ( 150, grid%domain_clock, &
                          'DEBUG real:  grid%domain_clock after Setup_Timekeeping,' )
-   CALL WRF_UTIL_TimeIntervalSet ( time_interval , S=model_config_rec%interval_seconds, rc=rc )
-   CALL WRF_UTIL_ClockSet ( grid%domain_clock , timeStep=time_interval , rc=rc )
-   CALL wrf_check_error( WRF_UTIL_SUCCESS, rc, &
-                         'WRF_UTIL_ClockSet(grid%domain_clock) FAILED', &
+   CALL WRFU_TimeIntervalSet ( time_interval , S=model_config_rec%interval_seconds, rc=rc )
+   CALL WRFU_ClockSet ( grid%domain_clock , timeStep=time_interval , rc=rc )
+   CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                         'WRFU_ClockSet(grid%domain_clock) FAILED', &
                          __FILE__ , &
                          __LINE__  )
    CALL wrf_clockprint ( 150, grid%domain_clock, &
@@ -160,7 +160,7 @@ real::t1,t2
 
    CALL wrf_shutdown
 
-   CALL WRF_UTIL_Finalize( rc=rc )
+   CALL WRFU_Finalize( rc=rc )
 
 END PROGRAM real_data
 
@@ -230,15 +230,15 @@ real::t1,t2
 
    !  Override stop time with value computed above.  
    CALL wrf_atotime( end_date_char, grid%stop_time )
-   CALL WRF_UTIL_ClockSet ( grid%domain_clock , StopTime=grid%stop_time, rc=rc )
-   CALL wrf_check_error( WRF_UTIL_SUCCESS, rc, &
-                         'WRF_UTIL_ClockSet(grid%domain_clock) FAILED', &
+   CALL WRFU_ClockSet ( grid%domain_clock , StopTime=grid%stop_time, rc=rc )
+   CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                         'WRFU_ClockSet(grid%domain_clock) FAILED', &
                          __FILE__ , &
                          __LINE__  )
    ! TBH:  for now, turn off stop time and let it run data-driven
-   CALL WRF_UTIL_ClockStopTimeDisable( grid%domain_clock, rc=rc ) 
-   CALL wrf_check_error( WRF_UTIL_SUCCESS, rc, &
-                         'WRF_UTIL_ClockStopTimeDisable(grid%domain_clock) FAILED', &
+   CALL WRFU_ClockStopTimeDisable( grid%domain_clock, rc=rc ) 
+   CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                         'WRFU_ClockStopTimeDisable(grid%domain_clock) FAILED', &
                          __FILE__ , &
                          __LINE__  )
    CALL wrf_clockprint ( 150, grid%domain_clock, &
@@ -361,9 +361,9 @@ real::t1,t2
       WRITE (wrf_err_message,*) &
         'DEBUG med_sidata_input:  before currTime set, current_date = ',TRIM(current_date)
       CALL wrf_debug ( 150 , wrf_err_message )
-      CALL WRF_UTIL_ClockSet(grid%domain_clock, currTime=grid%current_time, rc=rc)
-      CALL wrf_check_error( WRF_UTIL_SUCCESS, rc, &
-                            'WRF_UTIL_ClockSet(grid%domain_clock) FAILED', &
+      CALL WRFU_ClockSet(grid%domain_clock, currTime=grid%current_time, rc=rc)
+      CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                            'WRFU_ClockSet(grid%domain_clock) FAILED', &
                             __FILE__ , &
                             __LINE__  )
       CALL wrf_clockprint ( 150, grid%domain_clock, &
@@ -599,8 +599,8 @@ print *,'spec_bdy_width, interval_seconds, loop=',spec_bdy_width , interval_seco
                CALL wrf_error_fatal( 'real: error opening wrfbdy for writing' )
          ENDIF
       ELSE
-         IF ( .NOT. WRF_UTIL_ClockIsStopTime(grid%domain_clock ,rc=rc) ) THEN
-            CALL WRF_UTIL_ClockAdvance( grid%domain_clock, rc=rc )
+         IF ( .NOT. WRFU_ClockIsStopTime(grid%domain_clock ,rc=rc) ) THEN
+            CALL WRFU_ClockAdvance( grid%domain_clock, rc=rc )
             CALL wrf_clockprint ( 150, grid%domain_clock, &
                                   'DEBUG assemble_output:  grid%domain_clock after ClockAdvance,' )
          ENDIF
@@ -674,9 +674,9 @@ print *,'spec_bdy_width, interval_seconds, loop=',spec_bdy_width , interval_seco
       WRITE (wrf_err_message,*) &
         'DEBUG assemble_output:  before 1st currTime set, current_date = ',TRIM(current_date)
       CALL wrf_debug ( 150 , wrf_err_message )
-      CALL WRF_UTIL_ClockSet(grid%domain_clock, currTime=grid%current_time, rc=rc)
-      CALL wrf_check_error( WRF_UTIL_SUCCESS, rc, &
-                            'WRF_UTIL_ClockSet(grid%domain_clock) FAILED', &
+      CALL WRFU_ClockSet(grid%domain_clock, currTime=grid%current_time, rc=rc)
+      CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                            'WRFU_ClockSet(grid%domain_clock) FAILED', &
                             __FILE__ , &
                             __LINE__  )
       CALL wrf_clockprint ( 150, grid%domain_clock, &
@@ -693,9 +693,9 @@ print *,'spec_bdy_width, interval_seconds, loop=',spec_bdy_width , interval_seco
       WRITE (wrf_err_message,*) &
         'DEBUG assemble_output:  before 2nd currTime set, current_date = ',TRIM(current_date)
       CALL wrf_debug ( 150 , wrf_err_message )
-      CALL WRF_UTIL_ClockSet(grid%domain_clock, currTime=grid%current_time, rc=rc)
-      CALL wrf_check_error( WRF_UTIL_SUCCESS, rc, &
-                            'WRF_UTIL_ClockSet(grid%domain_clock) FAILED', &
+      CALL WRFU_ClockSet(grid%domain_clock, currTime=grid%current_time, rc=rc)
+      CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                            'WRFU_ClockSet(grid%domain_clock) FAILED', &
                             __FILE__ , &
                             __LINE__  )
       CALL wrf_clockprint ( 150, grid%domain_clock, &
@@ -710,9 +710,9 @@ print *,'LBC valid between these times ',current_date, ' ',start_date
       WRITE (wrf_err_message,*) &
         'DEBUG assemble_output:  before 3rd currTime set, current_date = ',TRIM(current_date)
       CALL wrf_debug ( 150 , wrf_err_message )
-      CALL WRF_UTIL_ClockSet(grid%domain_clock, currTime=grid%current_time, rc=rc)
-      CALL wrf_check_error( WRF_UTIL_SUCCESS, rc, &
-                            'WRF_UTIL_ClockSet(grid%domain_clock) FAILED', &
+      CALL WRFU_ClockSet(grid%domain_clock, currTime=grid%current_time, rc=rc)
+      CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                            'WRFU_ClockSet(grid%domain_clock) FAILED', &
                             __FILE__ , &
                             __LINE__  )
       CALL wrf_clockprint ( 150, grid%domain_clock, &

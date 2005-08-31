@@ -620,8 +620,8 @@
         A=THM*P608
         B=(ELOCP/TEM-1.-P608)*THM
 !
-        GHL=(DTH(K)*((Q(K)+Q(K+1))*(0.5*P608)+1.)                      &
-     &     +(Q(K)-Q(K+1))*A                                            &
+        GHL=(DTH(K)*((Q(K)+Q(K+1)+CWM(K)+CWM(K+1))*(0.5*P608)+1.)      &
+     &     +(Q(K)-Q(K+1)+CWM(K)-CWM(K+1))*A                            &
      &     +(CWM(K)-CWM(K+1))*B)*RDZ
 !
         IF(ABS(GHL)<=EPSGH)GHL=EPSGH

@@ -317,8 +317,8 @@ CONTAINS
             B=(ELOCP/TEM-1.-P608)*THM
 !
             GHK=((THEK(K)-THEK(K+1)+CT(I,J))                           &
-     &          *((QK(K)+QK(K+1))*(0.5*P608)+1.)                       &
-     &          +(QK(K)-QK(K+1))*A                                     &
+     &          *((QK(K)+QK(K+1)+CWMK(K)+CWMK(K+1))*(0.5*P608)+1.)     &
+     &          +(QK(K)-QK(K+1)+CWMK(K)-CWMK(K+1))*A                   &
      &          +(CWMK(K)-CWMK(K+1))*B)*RDZ
             IF(ABS(GHK)<=EPSGH)GHK=EPSGH
 !
@@ -583,8 +583,8 @@ CONTAINS
           A=THM*P608
           B=(ELOCP/TEM-1.-P608)*THM
 !
-          DTHV=((THELOW-THZ0)*((QLOW+QZ0)*(0.5*P608)+1.)               &
-     &        +(QLOW-QZ0)*A+CWMLOW*B)
+          DTHV=((THELOW-THZ0)*((QLOW+QZ0+CWMLOW)*(0.5*P608)+1.)        &
+     &        +(QLOW-QZ0+CWMLOW)*A+CWMLOW*B)
 !
           DU2=MAX((ULOW-UZ0)**2+(VLOW-VZ0)**2,EPSU2)
           RIB=BTGX*DTHV*ZSL/DU2
@@ -698,8 +698,8 @@ CONTAINS
         A=THM*P608
         B=(ELOCP/TEM-1.-P608)*THM
 !
-        DTHV=((THELOW-THZ0)*((QLOW+QZ0)*(0.5*P608)+1.)                 &
-     &      +(QLOW-QZ0)*A+CWMLOW*B)
+        DTHV=((THELOW-THZ0)*((QLOW+QZ0+CWMLOW)*(0.5*P608)+1.)          &
+     &      +(QLOW-QZ0+CWMLOW)*A+CWMLOW*B)
 !
         DU2=MAX((ULOW-UZ0)**2+(VLOW-VZ0)**2,EPSU2)
         RIB=BTGX*DTHV*ZSL/DU2

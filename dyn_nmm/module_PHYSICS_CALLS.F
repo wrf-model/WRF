@@ -737,8 +737,6 @@
 !$omp& private(i,j)
         DO J=MYJS,MYJE
         DO I=MYIS,MYIE
-          SNOW(I,J)=SNO(I,J)*1000.
-          SNOWH(I,J)=SI(I,J)*1000.
           Z0BASE(I,J)=Z0(I,J)
         ENDDO
         ENDDO

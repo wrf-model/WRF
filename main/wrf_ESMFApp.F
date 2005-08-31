@@ -69,8 +69,8 @@ CONTAINS
 !$$$here...  TBH:  Need to connect head_grid%start_subtime and head_grid%stop_subtime to 
 !$$$here...  TBH:  clock when building with ESMF library...  
 !$$$here...  build an interface...  
-     head_grid%start_subtime = head_grid%start_time
-     head_grid%stop_subtime = head_grid%stop_time
+     head_grid%start_subtime = domain_get_start_time ( head_grid )
+     head_grid%stop_subtime = domain_get_stop_time ( head_grid )
 
      rc = ESMF_SUCCESS
 

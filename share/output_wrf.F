@@ -52,7 +52,7 @@
     INTEGER    ibuf(1)
     REAL       rbuf(1)
     TYPE(WRFU_TimeInterval) :: bdy_increment
-    TYPE(WRFU_Time)         :: next_time, current_time
+    TYPE(WRFU_Time)         :: next_time, currentTime
     CHARACTER*40            :: next_datestr
     INTEGER :: start_year , start_month , start_day , start_hour , start_minute , start_second
 
@@ -107,10 +107,10 @@
     CALL nl_get_parent_grid_ratio ( grid%id , parent_grid_ratio )
 #endif
 
-    CALL wrf_clockprint(150, grid%domain_clock, &
-                        'DEBUG output_wrf():  before call to WRFU_ClockGet,')
-    CALL WRFU_ClockGet( grid%domain_clock, currTime=current_time, rc=rc )
-    CALL wrf_timetoa ( current_time, current_date )
+    CALL domain_clockprint(150, grid, &
+           'DEBUG output_wrf():  before call to domain_clock_get,')
+    CALL domain_clock_get( grid, current_time=currentTime, &
+                                 current_timestr=current_date )
     WRITE ( wrf_err_message , * ) 'output_wrf: begin, current_date=',current_date
     CALL wrf_debug ( 300 , wrf_err_message )
 
@@ -309,7 +309,7 @@
 
     IF ( switch .EQ. boundary_only ) THEN
         CALL WRFU_TimeIntervalSet( bdy_increment, S=NINT(config_flags%bdyfrq),rc=rc)
-        next_time = current_time + bdy_increment
+        next_time = currentTime + bdy_increment
         CALL wrf_timetoa ( next_time, next_datestr )
         CALL wrf_put_dom_td_char ( fid , 'THISBDYTIME' ,  current_date(1:19), current_date(1:19), ierr )
         CALL wrf_put_dom_td_char ( fid , 'NEXTBDYTIME' ,  current_date(1:19), next_datestr(1:19), ierr )

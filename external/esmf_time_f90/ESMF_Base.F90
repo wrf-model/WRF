@@ -98,40 +98,16 @@
                                         ESMF_DATA_CHARACTER = ESMF_DataType(4)
 
 !------------------------------------------------------------------------------
-!     ! Where we can use a derived type, the compiler will help do 
-!     ! typechecking.  For those places where the compiler refuses to allow
-!     ! anything but an Integer data type, use the second set of constants.
-      !! TODO: see comment below about defining an assignment(=) operator
-      !!  which converts a dkind into a real int.  then this could go back
-      !!  to being private.
-      type ESMF_DataKind
-      sequence
-      !!private
-        integer :: dkind
-      end type
 
-      type(ESMF_DataKind), parameter :: &
-                   ESMF_KIND_I1 = ESMF_DataKind(selected_int_kind(2)), &
-                   ESMF_KIND_I2 = ESMF_DataKind(selected_int_kind(4)), &
-                   ESMF_KIND_I4 = ESMF_DataKind(selected_int_kind(9)), &
-                   ESMF_KIND_I8 = ESMF_DataKind(selected_int_kind(18)), &
-                   ESMF_KIND_R4 = ESMF_DataKind(selected_real_kind(3,25)), &
-                   ESMF_KIND_R8 = ESMF_DataKind(selected_real_kind(6,45)), &
-                   ESMF_KIND_C8 = ESMF_DataKind(selected_real_kind(3,25)), &
-                   ESMF_KIND_C16 = ESMF_DataKind(selected_real_kind(6,45))
-
-      !! TODO: I believe that if we defined an assignment(=) operator for
-      !! the data kind to convert the derived type into a real integer, 
-      !! then we might be able to get rid of this second set of integer parms.
       integer, parameter :: &
-                   ESMF_IKIND_I1 = selected_int_kind(2), &
-                   ESMF_IKIND_I2 = selected_int_kind(4), &
-                   ESMF_IKIND_I4 = selected_int_kind(9), &
-                   ESMF_IKIND_I8 = selected_int_kind(18), &
-                   ESMF_IKIND_R4 = selected_real_kind(3,25), &
-                   ESMF_IKIND_R8 = selected_real_kind(6,45), &
-                   ESMF_IKIND_C8 = selected_real_kind(3,25), &
-                   ESMF_IKIND_C16 = selected_real_kind(6,45)
+                   ESMF_KIND_I1 = selected_int_kind(2), &
+                   ESMF_KIND_I2 = selected_int_kind(4), &
+                   ESMF_KIND_I4 = selected_int_kind(9), &
+                   ESMF_KIND_I8 = selected_int_kind(18), &
+                   ESMF_KIND_R4 = selected_real_kind(3,25), &
+                   ESMF_KIND_R8 = selected_real_kind(6,45), &
+                   ESMF_KIND_C8 = selected_real_kind(3,25), &
+                   ESMF_KIND_C16 = selected_real_kind(6,45)
 
 !------------------------------------------------------------------------------
 
@@ -233,9 +209,6 @@
       public ESMF_KIND_I1, ESMF_KIND_I2, ESMF_KIND_I4, ESMF_KIND_I8, & 
              ESMF_KIND_R4, ESMF_KIND_R8, ESMF_KIND_C8, ESMF_KIND_C16
 
-      public ESMF_IKIND_I1, ESMF_IKIND_I2, ESMF_IKIND_I4, ESMF_IKIND_I8, & 
-             ESMF_IKIND_R4, ESMF_IKIND_R8, ESMF_IKIND_C8, ESMF_IKIND_C16
-
       public ESMF_NULL_POINTER, ESMF_BAD_POINTER
 
 
@@ -246,7 +219,7 @@
       public ESMF_MAJOR_VERSION, ESMF_MINOR_VERSION, ESMF_REVISION
       public ESMF_VERSION_STRING 
 
-      public ESMF_Status, ESMF_Pointer, ESMF_DataType, ESMF_DataKind
+      public ESMF_Status, ESMF_Pointer, ESMF_DataType
       public ESMF_DataValue, ESMF_Attribute
 !      public ESMF_MemIndex
 !      public ESMF_BasePointer
@@ -332,7 +305,6 @@
 interface operator (.eq.)
  module procedure ESMF_sfeq
  module procedure ESMF_dteq
- module procedure ESMF_dkeq
  module procedure ESMF_pteq
  module procedure ESMF_tfeq
  module procedure ESMF_aieq
@@ -341,7 +313,6 @@ end interface
 interface operator (.ne.)
  module procedure ESMF_sfne
  module procedure ESMF_dtne
- module procedure ESMF_dkne
  module procedure ESMF_ptne
  module procedure ESMF_tfne
  module procedure ESMF_aine
@@ -349,7 +320,6 @@ end interface
 
 interface assignment (=)
  module procedure ESMF_dtas
- module procedure ESMF_dkas
  module procedure ESMF_ptas
 end interface
 
@@ -396,30 +366,6 @@ subroutine ESMF_dtas(intval, dtval)
  type(ESMF_DataType), intent(in) :: dtval
 
  intval = dtval%dtype
-end subroutine
-
-!------------------------------------------------------------------------------
-! function to compare two ESMF_DataKinds to see if they're the same or not
-
-function ESMF_dkeq(dk1, dk2)
- logical ESMF_dkeq
- type(ESMF_DataKind), intent(in) :: dk1, dk2
-
- ESMF_dkeq = (dk1%dkind .eq. dk2%dkind)
-end function
-
-function ESMF_dkne(dk1, dk2)
- logical ESMF_dkne
- type(ESMF_DataKind), intent(in) :: dk1, dk2
-
- ESMF_dkne = (dk1%dkind .ne. dk2%dkind)
-end function
-
-subroutine ESMF_dkas(intval, dkval)
- integer, intent(out) :: intval
- type(ESMF_DataKind), intent(in) :: dkval
-
- intval = dkval%dkind
 end subroutine
 
 

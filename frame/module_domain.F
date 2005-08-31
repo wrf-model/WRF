@@ -36,9 +36,9 @@ MODULE module_domain
 
    !  An entire domain.  This contains multiple meteorological fields by having
    !  arrays (such as "data_3d") of pointers for each field.  Also inside each
-   !  domain is a link to a couple of other domains, one is just the "next"
-   !  domain that is to be stored, the other is the next domain which happens to
-   !  also be on the "same_level".
+   !  domain is a link to a couple of other domains, one is just the 
+   !  "next" domain that is to be stored, the other is the next domain which 
+   !  happens to also be on the "same_level".
 
    TYPE domain_ptr
       TYPE(domain), POINTER :: ptr
@@ -124,11 +124,9 @@ MODULE module_domain
                     sm31y,  em31y,  sm32y,  em32y,  sm33y,  em33y,        &
                     sm21y,  em21y,  sm22y,  em22y
       Type(WRFU_Clock), POINTER                           :: domain_clock
-      Type(WRFU_Time)                                     :: start_time, stop_time, current_time
       Type(WRFU_Time)                                     :: start_subtime, stop_subtime
       Type(WRFU_Time)                                     :: this_bdy_time, next_bdy_time
       Type(WRFU_Time)                                     :: this_emi_time, next_emi_time
-      Type(WRFU_TimeInterval) :: step_time
       Type(WRFU_Alarm), pointer :: alarms(:)
 ! This awful hackery accounts for the fact that ESMF2.2.0 alarms cannot tell 
 ! us if they have ever been created or not.  So, we have to keep track of this 
@@ -1291,4 +1289,248 @@ CONTAINS
    SUBROUTINE init_module_domain
    END SUBROUTINE init_module_domain
 
+
+! <DESCRIPTION>
+!
+! The following routines named domain_*() are convenience routines that 
+! eliminate many duplicated bits of code.  They provide shortcuts for the 
+! most common operations on the domain_clock field of TYPE(domain).  
+!
+! </DESCRIPTION>
+
+      FUNCTION domain_get_current_time ( grid ) RESULT ( current_time ) 
+        IMPLICIT NONE
+! <DESCRIPTION>
+! This convenience function returns the current time for domain grid.  
+!
+! </DESCRIPTION>
+        TYPE(domain), INTENT(IN) :: grid
+        ! result
+        TYPE(WRFU_Time) :: current_time
+        ! locals
+        INTEGER :: rc
+        CALL WRFU_ClockGet( grid%domain_clock, CurrTime=current_time, &
+                            rc=rc )
+        IF ( rc /= WRFU_SUCCESS ) THEN
+          CALL wrf_error_fatal ( &
+            'domain_get_current_time:  WRFU_ClockGet failed' )
+        ENDIF
+      END FUNCTION domain_get_current_time
+
+
+      FUNCTION domain_get_start_time ( grid ) RESULT ( start_time ) 
+        IMPLICIT NONE
+! <DESCRIPTION>
+! This convenience function returns the start time for domain grid.  
+!
+! </DESCRIPTION>
+        TYPE(domain), INTENT(IN) :: grid
+        ! result
+        TYPE(WRFU_Time) :: start_time
+        ! locals
+        INTEGER :: rc
+        CALL WRFU_ClockGet( grid%domain_clock, StartTime=start_time, &
+                            rc=rc )
+        IF ( rc /= WRFU_SUCCESS ) THEN
+          CALL wrf_error_fatal ( &
+            'domain_get_start_time:  WRFU_ClockGet failed' )
+        ENDIF
+      END FUNCTION domain_get_start_time
+
+
+      FUNCTION domain_get_stop_time ( grid ) RESULT ( stop_time ) 
+        IMPLICIT NONE
+! <DESCRIPTION>
+! This convenience function returns the stop time for domain grid.  
+!
+! </DESCRIPTION>
+        TYPE(domain), INTENT(IN) :: grid
+        ! result
+        TYPE(WRFU_Time) :: stop_time
+        ! locals
+        INTEGER :: rc
+        CALL WRFU_ClockGet( grid%domain_clock, StopTime=stop_time, &
+                            rc=rc )
+        IF ( rc /= WRFU_SUCCESS ) THEN
+          CALL wrf_error_fatal ( &
+            'domain_get_stop_time:  WRFU_ClockGet failed' )
+        ENDIF
+      END FUNCTION domain_get_stop_time
+
+
+      FUNCTION domain_get_time_step ( grid ) RESULT ( time_step ) 
+        IMPLICIT NONE
+! <DESCRIPTION>
+! This convenience function returns the time step for domain grid.  
+!
+! </DESCRIPTION>
+        TYPE(domain), INTENT(IN) :: grid
+        ! result
+        TYPE(WRFU_TimeInterval) :: time_step
+        ! locals
+        INTEGER :: rc
+        CALL WRFU_ClockGet( grid%domain_clock, timeStep=time_step, &
+                            rc=rc )
+        IF ( rc /= WRFU_SUCCESS ) THEN
+          CALL wrf_error_fatal ( &
+            'domain_get_time_step:  WRFU_ClockGet failed' )
+        ENDIF
+      END FUNCTION domain_get_time_step
+
+
+      FUNCTION domain_get_advanceCount ( grid ) RESULT ( advanceCount ) 
+        IMPLICIT NONE
+! <DESCRIPTION>
+! This convenience function returns the time step for domain grid.  
+! Also converts from INTEGER(WRFU_KIND_I8) to INTEGER.  
+!
+! </DESCRIPTION>
+        TYPE(domain), INTENT(IN) :: grid
+        ! result
+        INTEGER :: advanceCount
+        ! locals
+        INTEGER(WRFU_KIND_I8) :: advanceCountLcl
+        INTEGER :: rc
+        CALL WRFU_ClockGet( grid%domain_clock, &
+                            advanceCount=advanceCountLcl, &
+                            rc=rc )
+        IF ( rc /= WRFU_SUCCESS ) THEN
+          CALL wrf_error_fatal ( &
+            'domain_get_advanceCount:  WRFU_ClockGet failed' )
+        ENDIF
+        advanceCount = advanceCountLcl
+      END FUNCTION domain_get_advanceCount
+
+
+      SUBROUTINE domain_clock_get( grid, current_time,          &
+                                         current_timestr,       &
+                                         start_time, stop_time, &
+                                         stop_timestr,          &
+                                         time_step, advanceCount )
+        IMPLICIT NONE
+        TYPE(domain),            INTENT(IN)              :: grid
+        TYPE(WRFU_Time),         INTENT(  OUT), OPTIONAL :: current_time
+        CHARACTER (LEN=*),       INTENT(  OUT), OPTIONAL :: current_timestr
+        TYPE(WRFU_Time),         INTENT(  OUT), OPTIONAL :: start_time
+        TYPE(WRFU_Time),         INTENT(  OUT), OPTIONAL :: stop_time
+        CHARACTER (LEN=*),       INTENT(  OUT), OPTIONAL :: stop_timestr
+        TYPE(WRFU_TimeInterval), INTENT(  OUT), OPTIONAL :: time_step
+        INTEGER,                 INTENT(  OUT), OPTIONAL :: advanceCount
+! <DESCRIPTION>
+! This convenience routine returns clock information for domain grid in 
+! various forms.  The caller is responsible for ensuring that character 
+! string actual arguments are big enough.  
+!
+! </DESCRIPTION>
+        ! Locals
+        TYPE(WRFU_Time) :: tmpTime
+        IF ( PRESENT( start_time ) ) THEN
+          start_time = domain_get_start_time ( grid )
+        ENDIF
+        IF ( PRESENT( time_step ) ) THEN
+          time_step = domain_get_time_step ( grid )
+        ENDIF
+        IF ( PRESENT( advanceCount ) ) THEN
+          advanceCount = domain_get_advanceCount ( grid )
+        ENDIF
+        ! This duplication avoids assignment of time-manager objects 
+        ! which works now in ESMF 2.2.0 but may not work in the future 
+        ! if these objects become "deep".  We have already been bitten 
+        ! by this when the clock objects were changed from "shallow" to 
+        ! "deep".  Once again, adherence to orthodox canonical form by 
+        ! ESMF would avoid all this crap.  
+        IF ( PRESENT( current_time ) ) THEN
+          current_time = domain_get_current_time ( grid )
+        ENDIF
+        IF ( PRESENT( current_timestr ) ) THEN
+          tmpTime = domain_get_current_time ( grid )
+          CALL wrf_timetoa ( tmpTime, current_timestr )
+        ENDIF
+        IF ( PRESENT( stop_time ) ) THEN
+          stop_time = domain_get_stop_time ( grid )
+        ENDIF
+        IF ( PRESENT( stop_timestr ) ) THEN
+          tmpTime = domain_get_stop_time ( grid )
+          CALL wrf_timetoa ( tmpTime, stop_timestr )
+        ENDIF
+        RETURN
+      END SUBROUTINE domain_clock_get
+
+
+
+      SUBROUTINE domain_clock_set( grid, current_timestr, &
+                                         stop_timestr,    &
+                                         time_step_seconds )
+        IMPLICIT NONE
+        TYPE(domain),      INTENT(INOUT)           :: grid
+        CHARACTER (LEN=*), INTENT(IN   ), OPTIONAL :: current_timestr
+        CHARACTER (LEN=*), INTENT(IN   ), OPTIONAL :: stop_timestr
+        INTEGER,           INTENT(IN   ), OPTIONAL :: time_step_seconds
+! <DESCRIPTION>
+! This convenience routine sets clock information for domain grid.  
+! The caller is responsible for ensuring that character string actual 
+! arguments are big enough.  
+!
+! </DESCRIPTION>
+        ! Locals
+        TYPE(WRFU_Time) :: tmpTime
+        TYPE(WRFU_TimeInterval) :: tmpTimeInterval
+        INTEGER :: rc
+        IF ( PRESENT( current_timestr ) ) THEN
+          CALL wrf_atotime( current_timestr(1:19), tmpTime )
+          CALL WRFU_ClockSet( grid%domain_clock, currTime=tmpTime, &
+                              rc=rc )
+          IF ( rc /= WRFU_SUCCESS ) THEN
+            CALL wrf_error_fatal ( &
+              'domain_clock_set:  WRFU_ClockSet(CurrTime) failed' )
+          ENDIF
+        ENDIF
+        IF ( PRESENT( stop_timestr ) ) THEN
+          CALL wrf_atotime( stop_timestr(1:19), tmpTime )
+          CALL WRFU_ClockSet( grid%domain_clock, stopTime=tmpTime, &
+                              rc=rc )
+          IF ( rc /= WRFU_SUCCESS ) THEN
+            CALL wrf_error_fatal ( &
+              'domain_clock_set:  WRFU_ClockSet(StopTime) failed' )
+          ENDIF
+        ENDIF
+        IF ( PRESENT( time_step_seconds ) ) THEN
+          CALL WRFU_TimeIntervalSet( tmpTimeInterval, &
+                                     S=time_step_seconds, rc=rc )
+          IF ( rc /= WRFU_SUCCESS ) THEN
+            CALL wrf_error_fatal ( &
+              'domain_clock_set:  WRFU_TimeIntervalSet failed' )
+          ENDIF
+          CALL WRFU_ClockSet ( grid%domain_clock,        &
+                               timeStep=tmpTimeInterval, &
+                               rc=rc )
+          IF ( rc /= WRFU_SUCCESS ) THEN
+            CALL wrf_error_fatal ( &
+              'domain_clock_set:  WRFU_ClockSet(TimeStep) failed' )
+          ENDIF
+        ENDIF
+        RETURN
+      END SUBROUTINE domain_clock_set
+
+
+      ! Debug routine to print key clock information.  
+      ! Printed lines begin with pre_str.  
+      SUBROUTINE domain_clockprint ( level, grid, pre_str )
+        IMPLICIT NONE
+        INTEGER,           INTENT( IN) :: level
+        TYPE(domain),      INTENT( IN) :: grid
+        CHARACTER (LEN=*), INTENT( IN) :: pre_str
+        CALL wrf_clockprint ( level, grid%domain_clock, pre_str )
+        RETURN
+      END SUBROUTINE domain_clockprint
+
+!TBH: what to do about grid%itimestep?  LEAVE AS-IS FOR NOW
+!TBH: what to do about grid%gmt?        LEAVE AS-IS FOR NOW
+!TBH: what to do about grid%julday?     LEAVE AS-IS FOR NOW
+!TBH: what to do about grid%julyr?      LEAVE AS-IS FOR NOW
+!TBH:  Eventually need to re-implement module_date_time using 
+!TBH:  time manager...  
+
+
 END MODULE module_domain
+

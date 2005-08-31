@@ -55,7 +55,7 @@
       sequence                        ! for C++ interoperability
 #ifndef F90_STANDALONE
       private
-        integer(ESMF_IKIND_I8) :: S   ! whole seconds
+        integer(ESMF_KIND_I8) :: S   ! whole seconds
 #else
         integer                :: S   ! whole seconds
 #endif

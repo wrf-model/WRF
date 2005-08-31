@@ -7,6 +7,8 @@ SUBROUTINE Setup_Timekeeping ( grid )
 ! Local
    TYPE(WRFU_TimeInterval) :: begin_time, end_time, zero_time, one_minute, one_hour, padding_interval
    TYPE(WRFU_TimeInterval) :: interval, run_length, chem_interval
+   TYPE(WRFU_Time) :: startTime, stopTime
+   TYPE(WRFU_TimeInterval) :: stepTime
    INTEGER :: start_year,start_month,start_day,start_hour,start_minute,start_second
    INTEGER :: end_year,end_month,end_day,end_hour,end_minute,end_second
 #ifdef MOVE_NESTS
@@ -177,11 +179,11 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL nl_get_start_hour(grid%id,start_hour)
    CALL nl_get_start_minute(grid%id,start_minute)
    CALL nl_get_start_second(grid%id,start_second)
-   CALL WRFU_TimeSet(grid%start_time, YY=start_year, MM=start_month, DD=start_day, &
-                                      H=start_hour, M=start_minute, S=start_second,&
+   CALL WRFU_TimeSet(startTime, YY=start_year, MM=start_month, DD=start_day, &
+                                H=start_hour, M=start_minute, S=start_second,&
                                       rc=rc)
    CALL wrf_check_error( WRFU_SUCCESS, rc, &
-                         'WRFU_TimeSet(grid%start_time) FAILED', &
+                         'WRFU_TimeSet(startTime) FAILED', &
                          __FILE__ , &
                          __LINE__  )
    CALL nl_get_run_days(1,run_days)
@@ -196,7 +198,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
                            'WRFU_TimeIntervalSet(run_length) FAILED', &
                            __FILE__ , &
                            __LINE__  )
-     grid%stop_time = grid%start_time + run_length
+     stopTime = startTime + run_length
    ELSE
      CALL nl_get_end_year(grid%id,end_year)
      CALL nl_get_end_month(grid%id,end_month)
@@ -204,14 +206,14 @@ SUBROUTINE Setup_Timekeeping ( grid )
      CALL nl_get_end_hour(grid%id,end_hour)
      CALL nl_get_end_minute(grid%id,end_minute)
      CALL nl_get_end_second(grid%id,end_second)
-     CALL WRFU_TimeSet(grid%stop_time, YY=end_year, MM=end_month, DD=end_day, &
-                                       H=end_hour, M=end_minute, S=end_second,&
-                                       rc=rc )
+     CALL WRFU_TimeSet(stopTime, YY=end_year, MM=end_month, DD=end_day, &
+                                 H=end_hour, M=end_minute, S=end_second,&
+                                 rc=rc )
      CALL wrf_check_error( WRFU_SUCCESS, rc, &
-                           'WRFU_TimeSet(grid%stop_time) FAILED', &
+                           'WRFU_TimeSet(stopTime) FAILED', &
                            __FILE__ , &
                            __LINE__  )
-     run_length = grid%stop_time - grid%start_time
+     run_length = stopTime - startTime
    ENDIF
 
    IF ( grid%id .EQ. head_grid%id ) THEN
@@ -221,27 +223,28 @@ SUBROUTINE Setup_Timekeeping ( grid )
       dt = real(time_step) + real(time_step_fract_num) / real(time_step_fract_den)
       CALL nl_set_dt( grid%id, dt )
       grid%dt = dt
-      CALL WRFU_TimeIntervalSet(grid%step_time, S=time_step, Sn=time_step_fract_num, Sd=time_step_fract_den, rc=rc)
+      CALL WRFU_TimeIntervalSet(stepTime, S=time_step, Sn=time_step_fract_num, Sd=time_step_fract_den, rc=rc)
       CALL wrf_check_error( WRFU_SUCCESS, rc, &
-                            'WRFU_TimeIntervalSet(grid%step_time) FAILED', &
+                            'WRFU_TimeIntervalSet(stepTime) FAILED', &
                             __FILE__ , &
                             __LINE__  )
    ELSE
-      grid%step_time = grid%parents(1)%ptr%step_time / grid%parent_time_step_ratio
+      stepTime = domain_get_time_step( grid%parents(1)%ptr ) / &
+                 grid%parent_time_step_ratio
       grid%dt = grid%parents(1)%ptr%dt / grid%parent_time_step_ratio
       CALL nl_set_dt( grid%id, grid%dt )
    ENDIF
 
-   grid%domain_clock = WRFU_ClockCreate( TimeStep= grid%step_time,  &
-                                             StartTime=grid%start_time, &
-                                             StopTime= grid%stop_time,  &
-                                             rc=rc)
+   grid%domain_clock = WRFU_ClockCreate( TimeStep= stepTime,  &
+                                         StartTime=startTime, &
+                                         StopTime= stopTime,  &
+                                         rc=rc )
    CALL wrf_check_error( WRFU_SUCCESS, rc, &
                          'grid%domain_clock = WRFU_ClockCreate() FAILED', &
                          __FILE__ , &
                          __LINE__  )
-   CALL wrf_clockprint ( 150, grid%domain_clock, &
-                         'DEBUG setup_timekeeping():  grid%domain_clock after creation,' )
+   CALL domain_clockprint ( 150, grid, &
+          'DEBUG setup_timekeeping():  clock after creation,' )
 
 ! HISTORY INTERVAL
 ! history_interval is left there (and means minutes) for consistency, but 
@@ -1144,6 +1147,7 @@ SUBROUTINE set_timekeeping_create_alarm( grid, alarm_id, interval, begin_time, e
 !$$$ TBH:  the actual args in-place in the calls, they must be present for the 
 !$$$ TBH:  operations themselves to be defined.  Grrr...  
    LOGICAL :: interval_only, all_args, no_args
+   TYPE(WRFU_Time) :: startTime
    interval_only = .FALSE.
    all_args = .FALSE.
    no_args = .FALSE.
@@ -1163,19 +1167,20 @@ SUBROUTINE set_timekeeping_create_alarm( grid, alarm_id, interval, begin_time, e
       CALL wrf_error_fatal ( &
         'ERROR in set_timekeeping_create_alarm:  bad argument list' )
    ENDIF
+   CALL domain_clock_get( grid, start_time=startTime )
    IF ( interval_only ) THEN
       grid%alarms( alarm_id ) = WRFU_AlarmCreate( clock=grid%domain_clock, &
                                                   RingInterval=interval,   &
                                                   rc=rc )
    ELSE IF ( no_args ) THEN
-      grid%alarms( alarm_id ) = WRFU_AlarmCreate( clock=grid%domain_clock,  &
-                                                  RingTime=grid%start_time, &
+      grid%alarms( alarm_id ) = WRFU_AlarmCreate( clock=grid%domain_clock, &
+                                                  RingTime=startTime,      &
                                                   rc=rc )
    ELSE IF ( all_args ) THEN
-      grid%alarms( alarm_id ) = WRFU_AlarmCreate( clock=grid%domain_clock,               &
-                                                  RingTime=grid%start_time + begin_time, &
-                                                  RingInterval=interval,                 &
-                                                  StopTime=grid%start_time + end_time,   &
+      grid%alarms( alarm_id ) = WRFU_AlarmCreate( clock=grid%domain_clock,         &
+                                                  RingTime=startTime + begin_time, &
+                                                  RingInterval=interval,           &
+                                                  StopTime=startTime + end_time,   &
                                                   rc=rc )
    ENDIF
    CALL wrf_check_error( WRFU_SUCCESS, rc, &

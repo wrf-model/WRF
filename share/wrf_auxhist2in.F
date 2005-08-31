@@ -38,8 +38,6 @@ SUBROUTINE wrf_auxhist2in ( fid , grid , config_flags , switch , ierr )
     INTEGER       IBDY, NAMELEN
     LOGICAL wrf_dm_on_monitor
     EXTERNAL wrf_dm_on_monitor
-    Type(WRFU_Time)    time, oldtime, newtime
-    Type(WRFU_TimeInterval)    timetonext
     CHARACTER*19  new_date
     CHARACTER*24  base_date
     INTEGER idt

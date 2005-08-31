@@ -58,7 +58,6 @@ PROGRAM real_data
               end_hour ,   end_minute ,   end_second
    INTEGER :: interval_seconds , real_data_init_type
    INTEGER :: time_loop_max , time_loop, rc
-   TYPE(WRFU_TimeInterval) :: time_interval
    REAL    :: t1,t2
 
    INTERFACE
@@ -124,10 +123,8 @@ PROGRAM real_data
 
 #include "deref_kludge.h"
    CALL Setup_Timekeeping ( grid )
-   CALL WRFU_TimeIntervalSet ( time_interval ,  &
-             S=model_config_rec%interval_seconds,rc=rc )
-   CALL WRFU_ClockSet ( grid%domain_clock , timeStep=time_interval , rc=rc )
-
+   CALL domain_clock_set( grid, &
+                          time_step_seconds=model_config_rec%interval_seconds )
    CALL wrf_debug ( 100 , 'real_nmm: calling set_scalar_indices_from_config ' )
    CALL set_scalar_indices_from_config ( grid%id , idum1, idum2 )
 
@@ -167,6 +164,8 @@ PROGRAM real_data
     CALL wrf_dm_shutdown
 #endif
 	write(0,*) 'done done'
+
+   CALL WRFU_Finalize( rc=rc )
 
 END PROGRAM real_data
 

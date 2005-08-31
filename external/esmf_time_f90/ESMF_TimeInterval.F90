@@ -64,8 +64,8 @@
 #ifndef F90_STANDALONE
       private                            !   (members opaque on F90 side)
         type(ESMF_BaseTime) :: basetime  ! inherit base class
-        integer(ESMF_IKIND_I8) :: YY     ! calendar interval number of years
-        integer(ESMF_IKIND_I8) :: MO     ! calendar interval number of months
+        integer(ESMF_KIND_I8) :: YY     ! calendar interval number of years
+        integer(ESMF_KIND_I8) :: MO     ! calendar interval number of months
 #else
         type(ESMF_BaseTime) :: basetime  ! inherit base class
         logical                :: instant  ! false for instant, true for interval
@@ -339,15 +339,15 @@
 ! !ARGUMENTS:
       type(ESMF_TimeInterval), intent(in) :: timeinterval
       integer, intent(out), optional :: YY
-      integer(ESMF_IKIND_I8), intent(out), optional :: YYl
+      integer(ESMF_KIND_I8), intent(out), optional :: YYl
       integer, intent(out), optional :: MO
-      integer(ESMF_IKIND_I8), intent(out), optional :: MOl
+      integer(ESMF_KIND_I8), intent(out), optional :: MOl
       integer, intent(out), optional :: D
-      integer(ESMF_IKIND_I8), intent(out), optional :: Dl
+      integer(ESMF_KIND_I8), intent(out), optional :: Dl
       integer, intent(out), optional :: H
       integer, intent(out), optional :: M
       integer, intent(out), optional :: S
-      integer(ESMF_IKIND_I8), intent(out), optional :: Sl
+      integer(ESMF_KIND_I8), intent(out), optional :: Sl
       integer, intent(out), optional :: MS
       integer, intent(out), optional :: US
       integer, intent(out), optional :: NS
@@ -449,15 +449,15 @@
 ! !ARGUMENTS:
       type(ESMF_TimeInterval), intent(out) :: timeinterval
       integer, intent(in), optional :: YY
-      integer(ESMF_IKIND_I8), intent(in), optional :: YYl
+      integer(ESMF_KIND_I8), intent(in), optional :: YYl
       integer, intent(in), optional :: MM
-      integer(ESMF_IKIND_I8), intent(in), optional :: MOl
+      integer(ESMF_KIND_I8), intent(in), optional :: MOl
       integer, intent(in), optional :: D
-      integer(ESMF_IKIND_I8), intent(in), optional :: Dl
+      integer(ESMF_KIND_I8), intent(in), optional :: Dl
       integer, intent(in), optional :: H
       integer, intent(in), optional :: M
       integer, intent(in), optional :: S
-      integer(ESMF_IKIND_I8), intent(in), optional :: Sl
+      integer(ESMF_KIND_I8), intent(in), optional :: Sl
       integer, intent(in), optional :: MS
       integer, intent(in), optional :: US
       integer, intent(in), optional :: NS
@@ -1329,11 +1329,11 @@
 
 ! !ARGUMENTS:
       type(ESMF_TimeInterval), intent(out) :: timeinterval
-      integer(ESMF_IKIND_I8), intent(in) :: S
+      integer(ESMF_KIND_I8), intent(in) :: S
       integer, intent(in) :: Sn
       integer, intent(in) :: Sd
-      integer(ESMF_IKIND_I8), intent(in) :: YY
-      integer(ESMF_IKIND_I8), intent(in) :: MO
+      integer(ESMF_KIND_I8), intent(in) :: YY
+      integer(ESMF_KIND_I8), intent(in) :: MO
       integer, intent(out), optional :: rc
 
 ! !DESCRIPTION:
@@ -1374,11 +1374,11 @@
 
 ! !ARGUMENTS:
       type(ESMF_TimeInterval), intent(in) :: timeinterval
-      integer(ESMF_IKIND_I8), intent(out) :: S
+      integer(ESMF_KIND_I8), intent(out) :: S
       integer, intent(out) :: Sn
       integer, intent(out) :: Sd
-      integer(ESMF_IKIND_I8), intent(out) :: YY
-      integer(ESMF_IKIND_I8), intent(out) :: MO
+      integer(ESMF_KIND_I8), intent(out) :: YY
+      integer(ESMF_KIND_I8), intent(out) :: MO
       integer, intent(out), optional :: rc
 
 ! !DESCRIPTION:

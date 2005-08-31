@@ -167,12 +167,10 @@ SUBROUTINE med_pre_nest_initial ( parent , newid , config_flags )
   ! Local
    INTEGER                :: itmp, fid, ierr, icnt
    CHARACTER*256          :: rstname, message, timestr
-   TYPE(WRFU_Time)        :: CurrTime
 
 #ifdef MOVE_NESTS
 
-   CALL WRFU_ClockGet( parent%domain_clock, CurrTime=CurrTime, rc=ierr )
-   CALL wrf_timetoa ( CurrTime, timestr )
+   CALL domain_clock_get( parent, current_timestr=timestr )
    CALL construct_filename2a ( rstname , config_flags%rst_inname , newid , 2 , timestr )
 
    IF ( config_flags%restart ) THEN
@@ -230,7 +228,6 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
                                                  ips , ipe , jps , jpe , kps , kpe
    CHARACTER * 80         :: rstname , timestr
    CHARACTER * 256        :: message
-   TYPE(WRFU_Time)        :: CurrTime
    INTEGER                :: save_itimestep ! This is a kludge, correct fix will 
                                             ! involve integrating the time-step
                                             ! counting into the time manager.
@@ -455,8 +452,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
 
   ELSE
 
-     CALL WRFU_ClockGet( nest%domain_clock, CurrTime=CurrTime, rc=ierr )
-     CALL wrf_timetoa ( CurrTime, timestr )
+     CALL domain_clock_get( nest, current_timestr=timestr )
      CALL construct_filename2a ( rstname , config_flags%rst_inname , nest%id , 2 , timestr )
 
      WRITE(message,*)'RESTART: nest, opening ',TRIM(rstname),' for reading'
@@ -666,7 +662,6 @@ RECURSIVE SUBROUTINE med_restart_out ( grid , config_flags )
    CHARACTER (LEN=256)                    :: message
    INTEGER                                :: ierr
    INTEGER                                :: myproc
-   TYPE(WRFU_Time)                        :: CurrTime
    CHARACTER*80                           :: timestr
    TYPE (grid_config_rec_type)            :: kid_config_flags
 
@@ -676,8 +671,7 @@ RECURSIVE SUBROUTINE med_restart_out ( grid , config_flags )
 
    ! write out this domains restart file first
 
-   CALL WRFU_ClockGet( grid%domain_clock, CurrTime=CurrTime, rc=ierr )
-   CALL wrf_timetoa ( CurrTime, timestr )
+   CALL domain_clock_get( grid, current_timestr=timestr )
    CALL construct_filename2a ( rstname , config_flags%rst_outname , grid%id , 2 , timestr )
 
    WRITE( message , '("med_restart_out: opening ",A," for writing")' ) TRIM ( rstname )
@@ -729,7 +723,6 @@ SUBROUTINE med_hist_out ( grid , stream, config_flags )
    CHARACTER (LEN=256)                    :: message
    INTEGER                                :: ierr
    INTEGER                                :: myproc
-   TYPE(WRFU_Time)                        :: CurrTime
    CHARACTER*80                           :: timestr
 
    IF ( wrf_dm_on_monitor() ) THEN
@@ -740,8 +733,7 @@ SUBROUTINE med_hist_out ( grid , stream, config_flags )
      WRITE(message,*)'med_hist_out: invalid history stream ',stream
      CALL wrf_error_fatal( message )
    ENDIF
-   CALL WRFU_ClockGet( grid%domain_clock, CurrTime=CurrTime, rc=ierr )
-   CALL wrf_timetoa ( CurrTime, timestr )
+   CALL domain_clock_get( grid, current_timestr=timestr )
    SELECT CASE( stream )
      CASE ( 0 )
        CALL construct_filename2a ( fname , config_flags%history_outname , grid%id , 2 , timestr )
@@ -927,15 +919,13 @@ SUBROUTINE med_auxinput_in ( grid , stream, config_flags )
    CHARACTER (LEN=256)                    :: message
    INTEGER                                :: ierr
    INTEGER                                :: myproc
-   TYPE(WRFU_Time)                        :: CurrTime
    CHARACTER*80                           :: timestr
 
    IF ( stream .LT. 1 .OR. stream .GT. 5 ) THEN
      WRITE(message,*)'med_auxinput_in: invalid inputory stream ',stream
      CALL wrf_error_fatal( message )
    ENDIF
-   CALL WRFU_ClockGet( grid%domain_clock, CurrTime=CurrTime, rc=ierr )
-   CALL wrf_timetoa ( CurrTime, timestr )
+   CALL domain_clock_get( grid, current_timestr=timestr )
    SELECT CASE( stream )
      CASE ( 1 )
        CALL construct_filename2a ( auxname , config_flags%auxinput1_inname, grid%id , 2 , timestr )
@@ -1025,7 +1015,6 @@ SUBROUTINE med_filter_out ( grid , config_flags )
    CHARACTER (LEN=256)                    :: message
    INTEGER                                :: ierr
    INTEGER                                :: myproc
-   TYPE(WRFU_Time)                        :: CurrTime
    CHARACTER*80                           :: timestr
 
    IF ( config_flags%write_input ) THEN
@@ -1034,8 +1023,7 @@ SUBROUTINE med_filter_out ( grid , config_flags )
      CALL start_timing
    END IF
 
-     CALL WRFU_ClockGet( grid%domain_clock, CurrTime=CurrTime, rc=ierr )
-     CALL wrf_timetoa ( CurrTime, timestr )
+     CALL domain_clock_get( grid, current_timestr=timestr )
      CALL construct_filename2a ( outname , config_flags%input_outname , grid%id , 2 , timestr )
 
      WRITE ( message , '("med_filter_out 1: opening ",A," for writing. ",I3)') TRIM ( outname ), ierr
@@ -1088,8 +1076,8 @@ SUBROUTINE med_latbound_in ( grid , config_flags )
    REAL                                   :: bfrq
    CHARACTER (LEN=256)                    :: message
    CHARACTER (LEN=80)                     :: bdyname
-   Type (WRFU_Time )                      :: time, btime
-   Type (WRFU_Time )                      :: current_time
+   Type (WRFU_Time )                      :: startTime, stopTime, currentTime
+   Type (WRFU_TimeInterval )              :: stepTime
 
 #include <wrf_io_flags.h>
 
@@ -1097,9 +1085,14 @@ SUBROUTINE med_latbound_in ( grid , config_flags )
 
    IF ( grid%id .EQ. 1 .AND. config_flags%specified .AND. config_flags%io_form_boundary .GT. 0 ) THEN
 
-     IF ( ( lbc_read_time( grid%current_time ) ) .AND. &
-          ( grid%current_time + grid%step_time .GE. grid%stop_time ) .AND. &
-          ( grid%current_time .NE. grid%start_time ) ) THEN
+     CALL domain_clock_get( grid, current_time=currentTime, &
+                                  start_time=startTime,     &
+                                  stop_time=stopTime,       &
+                                  time_step=stepTime )
+
+     IF ( ( lbc_read_time( currentTime ) ) .AND. &
+          ( currentTime + stepTime .GE. stopTime ) .AND. &
+          ( currentTime .NE. startTime ) ) THEN
        CALL wrf_debug( 100 , 'med_latbound_in: Skipping attempt to read lateral boundary file during last time step ' )
 
      ELSE IF ( WRFU_AlarmIsRinging( grid%alarms( BOUNDARY_ALARM ), rc=rc ) ) THEN
@@ -1130,8 +1123,8 @@ SUBROUTINE med_latbound_in ( grid , config_flags )
        CALL wrf_debug( 100 , 'med_latbound_in: calling input_boundary ' )
        CALL input_boundary ( grid%lbc_fid, grid , config_flags , ierr )
 
-       CALL WRFU_ClockGet( grid%domain_clock, CurrTime=current_time, rc=rc)
-       DO WHILE (current_time .GE. grid%next_bdy_time )         ! next_bdy_time is set by input_boundary from bdy file
+       CALL domain_clock_get( grid, current_time=currentTime )
+       DO WHILE (currentTime .GE. grid%next_bdy_time )         ! next_bdy_time is set by input_boundary from bdy file
          CALL wrf_debug( 100 , 'med_latbound_in: calling input_boundary ' )
          CALL input_boundary ( grid%lbc_fid, grid , config_flags , ierr )
        ENDDO
@@ -1141,7 +1134,7 @@ SUBROUTINE med_latbound_in ( grid , config_flags )
          WRITE( message, * ) 'med_latbound_in: error reading ',TRIM(bdyname), ' IERR = ',ierr
          CALL WRF_ERROR_FATAL( message )
        ENDIF
-       IF ( grid%current_time .EQ. grid%this_bdy_time ) grid%dtbc = 0.
+       IF ( currentTime .EQ. grid%this_bdy_time ) grid%dtbc = 0.
   
        IF ( wrf_dm_on_monitor() ) THEN
          WRITE ( message , FMT = '("processing lateral boundary for domain ",I8)' ) grid%id
@@ -1244,9 +1237,9 @@ SUBROUTINE med_read_wrf_chem_emiss ( grid , config_flags )
    TYPE(domain)                               :: grid
 
 !  TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
-   TYPE (grid_config_rec_type)                :: config_flags
-   Type (WRFU_Time )                          :: start_time, stop_time, current_time
-   TYPE(WRFU_TimeInterval)                    :: time_interval
+   TYPE (grid_config_rec_type)            :: config_flags
+   Type (WRFU_Time )                      :: stopTime, currentTime
+   Type (WRFU_TimeInterval )              :: stepTime
 
   ! Local data
    LOGICAL, EXTERNAL                      :: wrf_dm_on_monitor
@@ -1263,12 +1256,14 @@ SUBROUTINE med_read_wrf_chem_emiss ( grid , config_flags )
 
     IF ( grid%id .EQ. 1 ) THEN
 
-      CALL WRFU_ClockGet( grid%domain_clock, CurrTime=grid%current_time, rc=ierr )
-      CALL wrf_timetoa ( grid%current_time, current_date_char )
+      CALL domain_clock_get( grid, current_time=currentTime,          &
+                                   current_timestr=current_date_char, &
+                                   stop_time=stopTime,                &
+                                   time_step=stepTime )
 
       time = float(grid%itimestep) * grid%dt
       tupdate = mod( time, (12. * 3600.) )
-      IF( grid%current_time + grid%step_time .GE. grid%stop_time .AND.                  &
+      IF( currentTime + stepTime .GE. stopTime .AND. &
           grid%auxinput5_oid .NE. 0 ) THEN
         CALL close_dataset ( grid%auxinput5_oid , config_flags , "DATASET=AUXINPUT5" )
         tupdate = 1.
@@ -1311,10 +1306,10 @@ SUBROUTINE med_read_wrf_chem_emiss ( grid , config_flags )
       ENDIF
 
        print *,' HOURLY EMISSIONS UPDATE TIME ',time,mod(time,3600.)
-!      print *, grid%current_time + grid%step_time, grid%stop_time
+!      print *, currentTime + stepTime, stopTime
 ! hourly updates to emissions
       IF ( ( mod( time, 3600. ) .EQ. 0   ) .AND. &
-           ( grid%current_time + grid%step_time .LT. grid%stop_time ) ) THEN
+           ( currentTime + stepTime .LT. stopTime ) ) THEN
 !        IF ( wrf_dm_on_monitor() ) CALL start_timing
 
          WRITE(message,*)'mediation_integrate: med_read_wrf_chem_emissions: Read emissions for time ',TRIM(current_date_char)
@@ -1359,8 +1354,6 @@ SUBROUTINE med_read_wrf_chem_bioemiss ( grid , config_flags )
    TYPE(domain)                               :: grid
 
    TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
-   Type (WRFU_Time )                          :: start_time, stop_time, current_time
-   TYPE(WRFU_TimeInterval)                    :: time_interval
 
   ! Local data
    LOGICAL, EXTERNAL                      :: wrf_dm_on_monitor
@@ -1374,12 +1367,7 @@ SUBROUTINE med_read_wrf_chem_bioemiss ( grid , config_flags )
 #include <wrf_io_flags.h>
     IF ( grid%id .EQ. 1 ) THEN
 
-      CALL WRFU_ClockGet( grid%domain_clock, CurrTime=grid%current_time, rc=ierr )
-      CALL wrf_timetoa ( grid%current_time, current_date_char )
-
-!     IF( grid%current_time + grid%step_time .GE. grid%stop_time ) then
-!       return
-!     ENDIF
+      CALL domain_clock_get( grid, current_timestr=current_date_char )
 
       CALL construct_filename1 ( inpname , 'wrfbiochemi' , grid%id , 2 )
       WRITE(message,*)'mediation_integrate: med_read_wrf_chem_bioemissions: Open file ',TRIM(inpname)

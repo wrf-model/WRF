@@ -224,7 +224,7 @@ SUBROUTINE input_terrain_rsmas ( grid ,                        &
    CALL wrf_get_myproc ( myproc ) 
 
 #if 0
-CALL wrf_timetoa ( grid%current_time, message2 )
+CALL domain_clock_get ( grid, current_timestr=message2 )
 WRITE ( message , FMT = '(A," HT before ",I3)' ) TRIM(message2), grid%id
 write(30+myproc,*)ipe-ips+1,jpe-jps+1,trim(message)
 do j = jps,jpe
@@ -269,7 +269,7 @@ enddo
 #endif
 
 #if 0
-CALL wrf_timetoa ( grid%current_time, message2 )
+CALL domain_clock_get ( grid, current_timestr=message2 )
 WRITE ( message , FMT = '(A," HT after ",I3)' ) TRIM(message2), grid%id
 write(30+myproc,*)ipe-ips+1,jpe-jps+1,trim(message)
 do j = jps,jpe

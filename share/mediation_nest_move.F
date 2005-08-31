@@ -282,13 +282,6 @@ LOGICAL FUNCTION time_for_move2 ( parent , grid , move_cd_x, move_cd_y )
    INTEGER :: i_parent_start, j_parent_start
    INTEGER :: max_vortex_speed, vortex_interval  ! meters per second and seconds
    REAL    :: rsmooth = 100.  ! kilometers?
-   TYPE(WRFU_Time)        :: CurrTime
-
-#if 0
-share/mediation_integrate.F:   TYPE(WRFU_Time)        :: CurrTime
-share/mediation_integrate.F:   CALL WRFU_ClockGet( parent%domain_clock, CurrTime=CurrTime, rc=ierr )
-share/mediation_integrate.F:   CALL wrf_timetoa ( CurrTime, timestr )
-#endif
 
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
 
@@ -327,8 +320,7 @@ write(0,*)'Check to see if COMPUTE_VORTEX_CENTER_ALARM is ringing? '
      write(0,*)'COMPUTE_VORTEX_CENTER_ALARM is ringing  '
 #  endif
      CALL WRFU_AlarmRingerOff( grid%alarms( COMPUTE_VORTEX_CENTER_ALARM ), rc=rc )
-     CALL WRFU_ClockGet( grid%domain_clock, CurrTime=CurrTime, rc=ierr )
-     CALL wrf_timetoa ( CurrTime, timestr )
+     CALL domain_clock_get( grid, current_timestr=timestr )
 
      last_vc_i = grid%vc_i
      last_vc_j = grid%vc_j
@@ -536,7 +528,7 @@ write(0,*)'   js, jds-1,  je,  jde-1 ', js, jds-1, je, jde-1
 #  ifdef MOVING_DIAGS
 write(0,*)'computed grid%vc_i, grid%vc_j ',grid%vc_i, grid%vc_j
 i = grid%vc_i ; j = grid%vc_j ; height( i,j ) = height(i,j) * 1.2   !mark the center
-CALL wrf_timetoa ( grid%current_time, message2 )
+CALL domain_clock_get( grid, current_timestr=message2 )
 WRITE ( message , FMT = '(A," on domain ",I3)' ) TRIM(message2), grid%id
 #  endif
 
@@ -611,8 +603,7 @@ write(0,*)'After ENDIF : grid%vc_i, grid%vc_j ',grid%vc_i, grid%vc_j
    IF ( move_cd_x .LT. 0 ) move_cd_x = max ( move_cd_x , -1 )
    IF ( move_cd_y .LT. 0 ) move_cd_y = max ( move_cd_y , -1 )
 
-   CALL WRFU_ClockGet( grid%domain_clock, CurrTime=CurrTime, rc=ierr )
-   CALL wrf_timetoa ( CurrTime, timestr )
+   CALL domain_clock_get( grid, current_timestr=timestr )
 
    WRITE(mess,*)timestr(1:19),' vortex center (in nest x and y): ',grid%vc_i, grid%vc_j
    CALL wrf_message(TRIM(mess))
@@ -639,7 +630,7 @@ write(0,*)' changing grid%vc_i,  move_cd_x * pgr ', grid%vc_i, move_cd_x * pgr, 
 # else
 ! from namelist
    time_for_move2 = .FALSE.
-   CALL WRFU_ClockGet( grid%domain_clock, CurrTime=ct, StartTime=st, rc=rc )
+   CALL domain_clock_get( grid, current_time=ct, start_time=st )
    CALL nl_get_num_moves( 1, num_moves )
    IF ( num_moves .GT. max_moves ) THEN
      WRITE(mess,*)'time_for_moves2: num_moves (',num_moves,') .GT. max_moves (',max_moves,')'
@@ -651,7 +642,7 @@ write(0,*)' changing grid%vc_i,  move_cd_x * pgr ', grid%vc_i, move_cd_x * pgr, 
        CALL nl_get_move_interval( i, move_interval )
        IF ( move_interval .LT. 999999999 ) THEN
          CALL WRFU_TimeIntervalSet ( ti, M=move_interval, rc=rc )
-         IF ( ct .GE. grid%start_time + ti ) THEN
+         IF ( ct .GE. st + ti ) THEN
            CALL nl_get_move_cd_x ( i, move_cd_x )
            CALL nl_get_move_cd_y ( i, move_cd_y )
            CALL nl_set_move_interval ( i, 999999999 )

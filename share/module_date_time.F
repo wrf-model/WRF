@@ -784,9 +784,6 @@ END MODULE module_date_time
 
    ! Debug routine to print key clock information.  
    ! Every printed line begins with pre_str.  
-   ! If clock is invalid, also print its state using WRFU_ClockPrint().  
-   ! Lines printed by WRFU_ClockPrint() currently do not begin with 
-   ! pre_str.  
    SUBROUTINE wrf_clockprint ( level, clock, pre_str )
       USE module_utility
       INTEGER,           INTENT( IN) :: level
@@ -800,7 +797,11 @@ END MODULE module_date_time
       CALL get_wrf_debug_level( debug_level )
       IF ( level .LE. debug_level ) THEN
         CALL WRFU_ClockGet( clock, CurrTime=currTime, StartTime=startTime, &
-                                StopTime=stopTime, rc=rc )
+                                   StopTime=stopTime, rc=rc )
+        CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                              'wrf_clockprint:  WRFU_ClockGet() FAILED', &
+                              __FILE__ , &
+                              __LINE__  )
         CALL wrf_timetoa( currTime, currTime_str )
         CALL wrf_timetoa( startTime, startTime_str )
         CALL wrf_timetoa( stopTime, stopTime_str )

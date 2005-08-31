@@ -51,7 +51,6 @@ PROGRAM real_data
    INTEGER ::   end_year ,   end_month ,   end_day ,   end_hour ,   end_minute ,   end_second
    INTEGER :: interval_seconds , real_data_init_type
    INTEGER :: time_loop_max , time_loop
-   TYPE(WRFU_TimeInterval) :: time_interval
 real::t1,t2
    INTERFACE
      SUBROUTINE Setup_Timekeeping( grid )
@@ -115,16 +114,12 @@ real::t1,t2
      CALL wrf_error_fatal( 'namelist value for interval_seconds must be > 0')
    ENDIF
    CALL Setup_Timekeeping ( grid )
-   CALL wrf_clockprint ( 150, grid%domain_clock, &
-                         'DEBUG real:  grid%domain_clock after Setup_Timekeeping,' )
-   CALL WRFU_TimeIntervalSet ( time_interval , S=model_config_rec%interval_seconds, rc=rc )
-   CALL WRFU_ClockSet ( grid%domain_clock , timeStep=time_interval , rc=rc )
-   CALL wrf_check_error( WRFU_SUCCESS, rc, &
-                         'WRFU_ClockSet(grid%domain_clock) FAILED', &
-                         __FILE__ , &
-                         __LINE__  )
-   CALL wrf_clockprint ( 150, grid%domain_clock, &
-                         'DEBUG real:  grid%domain_clock after timeStep set,' )
+   CALL domain_clockprint ( 150, grid, &
+          'DEBUG real:  clock after Setup_Timekeeping,' )
+   CALL domain_clock_set( grid, &
+                          time_step_seconds=model_config_rec%interval_seconds )
+   CALL domain_clockprint ( 150, grid, &
+          'DEBUG real:  clock after timeStep set,' )
 
 
    CALL       wrf_debug ( 100 , 'real_em: calling set_scalar_indices_from_config ' )
@@ -229,20 +224,16 @@ real::t1,t2
                                    start_date_char , end_date_char , time_loop_max )
 
    !  Override stop time with value computed above.  
-   CALL wrf_atotime( end_date_char, grid%stop_time )
-   CALL WRFU_ClockSet ( grid%domain_clock , StopTime=grid%stop_time, rc=rc )
-   CALL wrf_check_error( WRFU_SUCCESS, rc, &
-                         'WRFU_ClockSet(grid%domain_clock) FAILED', &
-                         __FILE__ , &
-                         __LINE__  )
+   CALL domain_clock_set( grid, stop_timestr=end_date_char )
+
    ! TBH:  for now, turn off stop time and let it run data-driven
    CALL WRFU_ClockStopTimeDisable( grid%domain_clock, rc=rc ) 
    CALL wrf_check_error( WRFU_SUCCESS, rc, &
                          'WRFU_ClockStopTimeDisable(grid%domain_clock) FAILED', &
                          __FILE__ , &
                          __LINE__  )
-   CALL wrf_clockprint ( 150, grid%domain_clock, &
-                         'DEBUG med_sidata_input:  grid%domain_clock after stopTime set,' )
+   CALL domain_clockprint ( 150, grid, &
+          'DEBUG med_sidata_input:  clock after stopTime set,' )
 
    !  Here we define the initial time to process, for later use by the code.
    
@@ -355,19 +346,14 @@ real::t1,t2
 
       CALL geth_newdate ( current_date_char , start_date_char , loop * model_config_rec%interval_seconds )
       current_date =  current_date_char // '.0000'
-      CALL wrf_atotime( current_date(1:19), grid%current_time )
-      CALL wrf_clockprint ( 150, grid%domain_clock, &
-                            'DEBUG med_sidata_input:  grid%domain_clock before currTime set,' )
+      CALL domain_clockprint ( 150, grid, &
+             'DEBUG med_sidata_input:  clock before current_date set,' )
       WRITE (wrf_err_message,*) &
         'DEBUG med_sidata_input:  before currTime set, current_date = ',TRIM(current_date)
       CALL wrf_debug ( 150 , wrf_err_message )
-      CALL WRFU_ClockSet(grid%domain_clock, currTime=grid%current_time, rc=rc)
-      CALL wrf_check_error( WRFU_SUCCESS, rc, &
-                            'WRFU_ClockSet(grid%domain_clock) FAILED', &
-                            __FILE__ , &
-                            __LINE__  )
-      CALL wrf_clockprint ( 150, grid%domain_clock, &
-                            'DEBUG med_sidata_input:  grid%domain_clock after currTime set,' )
+      CALL domain_clock_set( grid, current_date(1:19) )
+      CALL domain_clockprint ( 150, grid, &
+             'DEBUG med_sidata_input:  clock after current_date set,' )
 if (loop.ne.time_loop_max )then
 print *,'set clock to ',current_date(1:19)
 endif
@@ -601,8 +587,8 @@ print *,'spec_bdy_width, interval_seconds, loop=',spec_bdy_width , interval_seco
       ELSE
          IF ( .NOT. WRFU_ClockIsStopTime(grid%domain_clock ,rc=rc) ) THEN
             CALL WRFU_ClockAdvance( grid%domain_clock, rc=rc )
-            CALL wrf_clockprint ( 150, grid%domain_clock, &
-                                  'DEBUG assemble_output:  grid%domain_clock after ClockAdvance,' )
+            CALL domain_clockprint ( 150, grid, &
+                   'DEBUG assemble_output:  clock after ClockAdvance,' )
          ENDIF
       END IF
 
@@ -668,55 +654,40 @@ print *,'spec_bdy_width, interval_seconds, loop=',spec_bdy_width , interval_seco
       !  that the starting time in the attributes is the second time period.  Why you may ask.  I
       !  agree, why indeed.
 
-      CALL wrf_atotime( current_date(1:19), grid%current_time )
-      CALL wrf_clockprint ( 150, grid%domain_clock, &
-                            'DEBUG assemble_output:  grid%domain_clock before 1st currTime set,' )
+      CALL domain_clockprint ( 150, grid, &
+             'DEBUG assemble_output:  clock before 1st current_date set,' )
       WRITE (wrf_err_message,*) &
         'DEBUG assemble_output:  before 1st currTime set, current_date = ',TRIM(current_date)
       CALL wrf_debug ( 150 , wrf_err_message )
-      CALL WRFU_ClockSet(grid%domain_clock, currTime=grid%current_time, rc=rc)
-      CALL wrf_check_error( WRFU_SUCCESS, rc, &
-                            'WRFU_ClockSet(grid%domain_clock) FAILED', &
-                            __FILE__ , &
-                            __LINE__  )
-      CALL wrf_clockprint ( 150, grid%domain_clock, &
-                            'DEBUG assemble_output:  grid%domain_clock after 1st currTime set,' )
+      CALL domain_clock_set( grid, current_date(1:19) )
+      CALL domain_clockprint ( 150, grid, &
+             'DEBUG assemble_output:  clock after 1st current_date set,' )
 
       temp24= current_date
       temp24b=start_date
       start_date = current_date
       CALL geth_newdate ( temp19 , temp24b(1:19) , (loop-2) * model_config_rec%interval_seconds )
       current_date = temp19 //  '.0000'
-      CALL wrf_atotime( current_date(1:19), grid%current_time )
-      CALL wrf_clockprint ( 150, grid%domain_clock, &
-                            'DEBUG assemble_output:  grid%domain_clock before 2nd currTime set,' )
+      CALL domain_clockprint ( 150, grid, &
+             'DEBUG assemble_output:  clock before 2nd current_date set,' )
       WRITE (wrf_err_message,*) &
         'DEBUG assemble_output:  before 2nd currTime set, current_date = ',TRIM(current_date)
       CALL wrf_debug ( 150 , wrf_err_message )
-      CALL WRFU_ClockSet(grid%domain_clock, currTime=grid%current_time, rc=rc)
-      CALL wrf_check_error( WRFU_SUCCESS, rc, &
-                            'WRFU_ClockSet(grid%domain_clock) FAILED', &
-                            __FILE__ , &
-                            __LINE__  )
-      CALL wrf_clockprint ( 150, grid%domain_clock, &
-                            'DEBUG assemble_output:  grid%domain_clock after 2nd currTime set,' )
+      CALL domain_clock_set( grid, current_date(1:19) )
+      CALL domain_clockprint ( 150, grid, &
+             'DEBUG assemble_output:  clock after 2nd current_date set,' )
 print *,'LBC valid between these times ',current_date, ' ',start_date
       CALL output_boundary ( id, grid , config_flags , ierr )
       current_date = temp24
       start_date = temp24b
-      CALL wrf_atotime( current_date(1:19), grid%current_time )
-      CALL wrf_clockprint ( 150, grid%domain_clock, &
-                            'DEBUG assemble_output:  grid%domain_clock before 3rd currTime set,' )
+      CALL domain_clockprint ( 150, grid, &
+             'DEBUG assemble_output:  clock before 3rd current_date set,' )
       WRITE (wrf_err_message,*) &
         'DEBUG assemble_output:  before 3rd currTime set, current_date = ',TRIM(current_date)
       CALL wrf_debug ( 150 , wrf_err_message )
-      CALL WRFU_ClockSet(grid%domain_clock, currTime=grid%current_time, rc=rc)
-      CALL wrf_check_error( WRFU_SUCCESS, rc, &
-                            'WRFU_ClockSet(grid%domain_clock) FAILED', &
-                            __FILE__ , &
-                            __LINE__  )
-      CALL wrf_clockprint ( 150, grid%domain_clock, &
-                            'DEBUG assemble_output:  grid%domain_clock after 3rd currTime set,' )
+      CALL domain_clock_set( grid, current_date(1:19) )
+      CALL domain_clockprint ( 150, grid, &
+             'DEBUG assemble_output:  clock after 3rd current_date set,' )
 
       !  OK, for all of the loops, we output the initialzation data, which would allow us to
       !  start the model at any of the available analysis time periods.

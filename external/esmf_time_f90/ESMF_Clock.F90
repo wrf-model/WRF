@@ -68,7 +68,7 @@
         type(ESMF_Time)  :: RefTime
         type(ESMF_Time)  :: CurrTime
         type(ESMF_Time)  :: PrevTime
-        integer(ESMF_IKIND_I8) :: AdvanceCount
+        integer(ESMF_KIND_I8) :: AdvanceCount
         integer :: ClockMutex
         integer :: NumAlarms
         ! Note:  to mimic ESMF 2.1.0+, AlarmList is maintained 
@@ -294,18 +294,19 @@
 ! !IROUTINE: ESMF_ClockGet - Get clock properties -- for compatibility with ESMF 2.0.1
 
 ! !INTERFACE:
-      subroutine ESMF_ClockGet(clock, StartTime, CurrTime, &
-                               AdvanceCount, StopTime, rc)
+      subroutine ESMF_ClockGet(clock, StartTime, CurrTime,       &
+                               AdvanceCount, StopTime, TimeStep, &
+                               rc)
 
 ! !ARGUMENTS:
       type(ESMF_Clock), intent(in) :: clock
       type(ESMF_Time), intent(out), optional :: StartTime
       type(ESMF_Time), intent(out), optional :: CurrTime
       type(ESMF_Time), intent(out), optional :: StopTime
-      integer, intent(out), optional :: AdvanceCount
+      integer(ESMF_KIND_I8), intent(out), optional :: AdvanceCount
+      type(ESMF_TimeInterval), intent(out), optional :: TimeStep
       integer, intent(out), optional :: rc
       integer :: ierr
-      integer(ESMF_IKIND_I8) :: AdvanceCountLcl
 
 ! !DESCRIPTION:
 !     Returns the number of times the {\tt ESMF\_Clock} has been advanced
@@ -321,6 +322,10 @@
 !          The current time
 !     \item[AdvanceCount]
 !          The number of times the {\tt ESMF\_Clock} has been advanced
+!     \item[StopTime]
+!          The {\tt ESMF\_Clock}'s stopping time
+!     \item[{[TimeStep]}]
+!          The {\tt ESMF\_Clock}'s time step interval
 !     \item[{[rc]}]
 !          Return code; equals {\tt ESMF\_SUCCESS} if there are no errors.
 !     \end{description}
@@ -340,8 +345,10 @@
         CALL ESMF_ClockGetStopTime( clock , StopTime, ierr )
       ENDIF
       IF ( PRESENT (AdvanceCount) ) THEN
-        CALL ESMF_ClockGetAdvanceCount(clock, AdvanceCountLcl, ierr)
-        AdvanceCount = AdvanceCountLcl
+        CALL ESMF_ClockGetAdvanceCount(clock, AdvanceCount, ierr)
+      ENDIF
+      IF ( PRESENT (TimeStep) ) THEN
+        CALL ESMF_ClockGetTimeStep(clock, TimeStep, ierr)
       ENDIF
 
       IF ( PRESENT (rc) ) THEN
@@ -358,7 +365,7 @@
 
 ! !ARGUMENTS:
       type(ESMF_Clock), intent(in) :: clock
-      integer(ESMF_IKIND_I8), intent(out) :: AdvanceCount
+      integer(ESMF_KIND_I8), intent(out) :: AdvanceCount
       integer, intent(out) :: rc
 
 ! !DESCRIPTION:
@@ -1035,7 +1042,7 @@ use esmf_timemod
       type(ESMF_Time), intent(in) :: RefTime
       type(ESMF_Time), intent(in) :: CurrTime
       type(ESMF_Time), intent(in) :: PrevTime
-      integer(ESMF_IKIND_I8), intent(in) :: AdvanceCount
+      integer(ESMF_KIND_I8), intent(in) :: AdvanceCount
       type(ESMF_Alarm), dimension(MAX_ALARMS), intent(in) :: AlarmList
       integer, intent(out), optional :: rc
     
@@ -1088,7 +1095,7 @@ use esmf_timemod
       type(ESMF_Time), intent(out) :: RefTime
       type(ESMF_Time), intent(out) :: CurrTime
       type(ESMF_Time), intent(out) :: PrevTime
-      integer(ESMF_IKIND_I8), intent(out) :: AdvanceCount
+      integer(ESMF_KIND_I8), intent(out) :: AdvanceCount
       type(ESMF_Alarm), dimension(MAX_ALARMS), intent(out) :: AlarmList
       integer, intent(out), optional :: rc
     

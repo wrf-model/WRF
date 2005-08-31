@@ -34,14 +34,13 @@
     INTEGER , DIMENSION(3) :: domain_start , domain_end
     INTEGER , DIMENSION(3) :: memory_start , memory_end
     INTEGER , DIMENSION(3) :: patch_start , patch_end
-    CHARACTER*256 errmess
+    CHARACTER*256 errmess, currtimestr
     CHARACTER*40            :: this_datestr, next_datestr
     CHARACTER*9   NAMESTR
     INTEGER       IBDY, NAMELEN
     LOGICAL wrf_dm_on_monitor
     EXTERNAL wrf_dm_on_monitor
-    Type(WRFU_Time)    time, oldtime, newtime, currtime
-    Type(WRFU_TimeInterval)    timetonext
+    Type(WRFU_Time) time, currtime
     CHARACTER*19  new_date
     CHARACTER*24  base_date
     CHARACTER*80  fname
@@ -360,15 +359,14 @@
         CASE ( model_input_only, aux_model_input1_only, aux_model_input2_only,       &
                aux_model_input3_only, aux_model_input4_only, aux_model_input5_only )
             CALL wrf_atotime( current_date(1:19), time )
-            CALL WRFU_ClockGet( grid%domain_clock, CurrTime=currtime, rc=ierr )
-            CALL wrf_clockprint(150, grid%domain_clock, &
-                                'DEBUG input_wrf():  get currTime from grid%domain_clock,')
+            CALL domain_clock_get( grid, current_time=currtime, &
+                                         current_timestr=currtimestr )
+            CALL domain_clockprint(150, grid, &
+                   'DEBUG input_wrf():  get CurrTime from clock,')
             IF ( time .NE. currtime ) THEN
-                CALL wrf_timetoa ( time, errmess )
-                WRITE( wrf_err_message , * )'Time in file: ',trim( errmess )
+                WRITE( wrf_err_message , * )'Time in file: ',trim( current_date(1:19) )
                 CALL wrf_message ( trim(wrf_err_message) )
-                CALL wrf_timetoa ( currtime, errmess )
-                WRITE( wrf_err_message , * )'Time on domain: ',trim( errmess )
+                WRITE( wrf_err_message , * )'Time on domain: ',trim( currtimestr )
                 CALL wrf_message ( trim(wrf_err_message) )
                 CALL wrf_message( "**WARNING** Time in input file not equal to time on domain **WARNING**" )
             ENDIF

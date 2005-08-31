@@ -66,6 +66,8 @@
    REAL :: lon1 , lon2 , lon3 , lon4
    INTEGER :: num_points_lat_lon , iloc , jloc
    CHARACTER (LEN=132) :: message
+   TYPE(WRFU_Time) :: CurrTime
+
 !integer myproc
 
 ! Trick problematic compilers into not performing copy-in/copy-out by adding
@@ -459,11 +461,12 @@
 ! process if, for example, it is a moving nest and if this part of the domain is not
 ! being initialized (not the leading edge).
    IF ( .NOT. config_flags%restart ) THEN
-     CALL wrf_clockprint(150, grid%domain_clock, &
-                         'DEBUG phy_init():  get currTime from grid%domain_clock,')
-     CALL WRFU_ClockGet( grid%domain_clock, currTime=grid%current_time, rc=rc )
-     CALL WRFU_TimeGet( grid%current_time, YY=grid%julyr, dayOfYear=grid%julday, H=hr, M=mn, S=sec, MS=ms, rc=rc)
-     CALL wrf_timetoa ( grid%current_time, message )
+     CALL domain_clockprint(150, grid, &
+       'DEBUG phy_init():  get currTime from clock,')
+     CALL domain_clock_get ( grid, current_time=CurrTime, &
+                                   current_timestr=message )
+     CALL WRFU_TimeGet( CurrTime, YY=grid%julyr, dayOfYear=grid%julday, &
+                        H=hr, M=mn, S=sec, MS=ms, rc=rc)
      WRITE( wrf_err_message , * ) 'DEBUG start_em():  currTime = [',TRIM( message ),']'
      CALL wrf_debug( 150, TRIM(wrf_err_message) )
      grid%gmt=hr+real(mn)/60.+real(sec)/3600.+real(ms)/(1000*3600)

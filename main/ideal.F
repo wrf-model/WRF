@@ -28,6 +28,8 @@ PROGRAM ideal
    TYPE(domain) , POINTER :: keep_grid, grid_ptr, null_domain, grid
    TYPE(domain)           :: dummy
    TYPE (grid_config_rec_type)              :: config_flags
+   TYPE (WRFU_Time) startTime, stopTime, currentTime
+   TYPE (WRFU_TimeInterval) stepTime
 
    INTEGER :: max_dom , domain_id , fid , oid , idum1 , idum2 , ierr
    INTEGER :: debug_level, rc
@@ -93,15 +95,15 @@ PROGRAM ideal
    ! TBH:  are explicit replacements for old default initializations...  They 
    ! TBH:  are needed to ensure that time manager calls do not fail due to 
    ! TBH:  uninitialized clock.  Clean this up later...  
-   CALL WRFU_TimeSet(grid%start_time, YY=1, MM=1, DD=1, H=0, M=0, S=0, rc=rc)
-   grid%stop_time    = grid%start_time
-   grid%current_time = grid%start_time
+   CALL WRFU_TimeSet(startTime, YY=1, MM=1, DD=1, H=0, M=0, S=0, rc=rc)
+   stopTime = startTime
+   currentTime = startTime
    ! TBH:  Bogus time step value -- clock is never advanced...  
-   CALL WRFU_TimeIntervalSet(grid%step_time, S=180, rc=rc)
-   grid%domain_clock = WRFU_ClockCreate( TimeStep= grid%step_time,  &
-                                             StartTime=grid%start_time, &
-                                             StopTime= grid%stop_time,  &
-                                             rc=rc )
+   CALL WRFU_TimeIntervalSet(stepTime, S=180, rc=rc)
+   grid%domain_clock = WRFU_ClockCreate( TimeStep= stepTime,  &
+                                         StartTime=startTime, &
+                                         StopTime= stopTime,  &
+                                         rc=rc )
    CALL wrf_check_error( WRFU_SUCCESS, rc, &
                          'grid%domain_clock = WRFU_ClockCreate() FAILED', &
                          __FILE__ , &
@@ -118,19 +120,14 @@ PROGRAM ideal
            config_flags%start_hour, &
            config_flags%start_minute, &
            config_flags%start_second 
-   CALL wrf_atotime( current_date(1:19), grid%current_time )
-   CALL wrf_clockprint ( 150, grid%domain_clock, &
-                            'DEBUG assemble_output:  grid%domain_clock before 1st currTime set,' )
+   CALL domain_clockprint ( 150, grid, &
+          'DEBUG assemble_output:  clock before 1st currTime set,' )
    WRITE (wrf_err_message,*) &
         'DEBUG assemble_output:  before 1st currTime set, current_date = ',TRIM(current_date)
    CALL wrf_debug ( 150 , wrf_err_message )
-   CALL WRFU_ClockSet(grid%domain_clock, currTime=grid%current_time, rc=rc)
-   CALL wrf_check_error( WRFU_SUCCESS, rc, &
-                            'WRFU_ClockSet(grid%domain_clock) FAILED', &
-                            __FILE__ , &
-                            __LINE__  )
-   CALL wrf_clockprint ( 150, grid%domain_clock, &
-                            'DEBUG assemble_output:  grid%domain_clock after 1st currTime set,' )
+   CALL domain_clock_set( grid, current_timestr=current_date(1:19) )
+   CALL domain_clockprint ( 150, grid, &
+          'DEBUG assemble_output:  clock after 1st currTime set,' )
 
    CALL       wrf_debug ( 100 , 'wrf: calling init_wrfio' )
    CALL init_wrfio

@@ -264,8 +264,10 @@
 !***  FIRST TIME THROUGH TOTAL_TIME_STEPS IS ZERO.
 !***  IT IS INCREMENTED IN SOLVE_INTERFACE.
 !***
-      CALL WRFU_ClockGet(GRID%DOMAIN_CLOCK,ADVANCEcOUNT=NTSD,RC=RC)
-      LAST_TIME=GRID%STOP_TIME.EQ.GRID%CURRENT_TIME+GRID%STEP_TIME
+      CALL domain_clock_get(GRID,ADVANCEcOUNT=NTSD)
+      LAST_TIME=domain_get_stop_time(GRID).EQ. &
+                domain_get_current_time(GRID)+ &
+                domain_get_time_step(GRID)
 !
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------

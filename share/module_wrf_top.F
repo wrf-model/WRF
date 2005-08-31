@@ -232,8 +232,8 @@ CONTAINS
 #endif
    END IF
 
-   head_grid%start_subtime = head_grid%start_time
-   head_grid%stop_subtime = head_grid%stop_time
+   head_grid%start_subtime = domain_get_start_time ( head_grid )
+   head_grid%stop_subtime = domain_get_stop_time ( head_grid )
 
    END SUBROUTINE wrf_init
 

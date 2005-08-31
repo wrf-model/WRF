@@ -29,14 +29,14 @@ RECURSIVE SUBROUTINE integrate ( grid )
 ! 
 ! The integrate routine takes a domain pointed to by the argument
 ! <em>grid</em> and advances the domain and its associated nests from the
-! grid's current time, stored as grid%current_time, to a given time
+! grid's current time, stored within grid%domain_clock, to a given time
 ! forward in the simulation, stored as grid%stop_subtime. The
 ! stop_subtime value is arbitrary and does not have to be the same as
 ! time that the domain finished integrating.  The simulation stop time
 ! for the grid is known to the grid's clock (grid%domain_clock) and that
 ! is checked with a call to WRFU_ClockIsStopTime prior to beginning the
 ! loop over time period that is specified by the
-! current_time/stop_subtime interval.
+! current time/stop_subtime interval.
 ! 
 ! The clock, the simulation stop time for the domain, and other timing
 ! aspects for the grid are set up in the routine
@@ -77,8 +77,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
 ! structures are defined in frame/module_configure.F.
 ! 
 ! 3. The current time of the domain is retrieved from the domain's clock
-! using WRFU_ClockGet.  There is another call to WRFU_ClockGet
-! inside the WHILE loop that follows.
+! using domain_get_current_time.  
 ! 
 ! 4. Iterate forward while the current time is less than the stop subtime.
 ! 
@@ -110,10 +109,10 @@ RECURSIVE SUBROUTINE integrate ( grid )
 ! restart data is output.
 ! 
 ! 4.f  Call <a href=solve_interface.html>solve_interface</a> which calls the solver that advance the domain 
-! one time step, then advance the domain's clock by calling WRFU_ClockAdvance.  Upon advancing the clock,
-! the current time for the grid is updated by calling WRFU_ClockGet. The enclosing WHILE loop around
-! this section is for handling other domains with which this domain may overlap.  It is not active in WRF 2.0 and
-! only executes one trip.  
+! one time step, then advance the domain's clock by calling WRFU_ClockAdvance.  
+! The enclosing WHILE loop around this section is for handling other domains 
+! with which this domain may overlap.  It is not active in WRF 2.0 and only 
+! executes one trip.  
 ! 
 ! 4.g Call med_calc_model_time and med_after_solve_io, which are stubs in WRF.
 ! 
@@ -265,10 +264,8 @@ RECURSIVE SUBROUTINE integrate ( grid )
 
    IF ( .NOT. WRFU_ClockIsStopTime(grid%domain_clock ,rc=rc) ) THEN
       CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
-      CALL WRFU_ClockGet( grid%domain_clock, currTime=grid%current_time, rc=rc )
-      CALL wrf_clockprint ( 150, grid%domain_clock, &
-                            'DEBUG:  top of integrate(),' )
-      DO WHILE ( grid%current_time .LT. grid%stop_subtime )
+      CALL domain_clockprint ( 150, grid, 'DEBUG:  top of integrate(),' )
+      DO WHILE ( domain_get_current_time(grid) .LT. grid%stop_subtime )
          IF ( wrf_dm_on_monitor() ) THEN
            CALL start_timing
          END IF
@@ -295,16 +292,15 @@ RECURSIVE SUBROUTINE integrate ( grid )
          DO WHILE ( ASSOCIATED( grid_ptr ) )
             CALL wrf_debug( 100 , 'module_integrate: calling solve interface ' )
             CALL solve_interface ( grid_ptr ) 
-            CALL wrf_clockprint ( 150, grid_ptr%domain_clock, &
-                                  'DEBUG integrate():  before WRFU_ClockAdvance,' )
+            CALL domain_clockprint ( 150, grid_ptr, &
+              'DEBUG integrate():  before WRFU_ClockAdvance,' )
             CALL WRFU_ClockAdvance( grid_ptr%domain_clock, rc=rc )
             CALL wrf_check_error( WRFU_SUCCESS, rc, &
                                   'WRFU_ClockAdvance() FAILED', &
                                   __FILE__ , &
                                   __LINE__  )
-            CALL wrf_clockprint ( 150, grid_ptr%domain_clock, &
-                                  'DEBUG integrate():  after WRFU_ClockAdvance,' )
-            CALL WRFU_ClockGet( grid_ptr%domain_clock, currTime=grid_ptr%current_time, rc=rc )
+            CALL domain_clockprint ( 150, grid_ptr, &
+              'DEBUG integrate():  after WRFU_ClockAdvance,' )
             CALL wrf_debug( 100 , 'module_integrate: back from solve interface ' )
             grid_ptr => grid_ptr%sibling
          END DO
@@ -318,8 +314,10 @@ RECURSIVE SUBROUTINE integrate ( grid )
                 CALL wrf_debug( 100 , 'module_integrate: calling med_nest_force ' )
                 CALL med_nest_force ( grid_ptr , grid_ptr%nests(kid)%ptr , config_flags )
                 CALL wrf_debug( 100 , 'module_integrate: back from med_nest_force ' )
-                grid_ptr%nests(kid)%ptr%start_subtime = grid%current_time - grid%step_time
-                grid_ptr%nests(kid)%ptr%stop_subtime = grid%current_time
+                grid_ptr%nests(kid)%ptr%start_subtime = &
+                  domain_get_current_time(grid) - domain_get_time_step(grid)
+                grid_ptr%nests(kid)%ptr%stop_subtime = &
+                  domain_get_current_time(grid)
                 CALL integrate ( grid_ptr%nests(kid)%ptr ) 
                 CALL wrf_debug( 100 , 'module_integrate: back from recursive call to integrate ' )
                 CALL wrf_debug( 100 , 'module_integrate: calling med_nest_feedback ' )
@@ -334,7 +332,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
          END DO
          !  Report on the timing for a single time step.
          IF ( wrf_dm_on_monitor() ) THEN
-           CALL wrf_timetoa ( grid%current_time, message2 )
+           CALL domain_clock_get ( grid, current_timestr=message2 )
            WRITE ( message , FMT = '("main: time ",A," on domain ",I3)' ) TRIM(message2), grid%id
            CALL end_timing ( TRIM(message) )
          END IF

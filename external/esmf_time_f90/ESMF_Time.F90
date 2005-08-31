@@ -354,15 +354,15 @@
 ! !ARGUMENTS:
       type(ESMF_Time), intent(in) :: time
       integer, intent(out), optional :: YY
-      integer(ESMF_IKIND_I8), intent(out), optional :: YRl
+      integer(ESMF_KIND_I8), intent(out), optional :: YRl
       integer, intent(out), optional :: MM
       integer, intent(out), optional :: DD
       integer, intent(out), optional :: D
-      integer(ESMF_IKIND_I8), intent(out), optional :: Dl
+      integer(ESMF_KIND_I8), intent(out), optional :: Dl
       integer, intent(out), optional :: H
       integer, intent(out), optional :: M
       integer, intent(out), optional :: S
-      integer(ESMF_IKIND_I8), intent(out), optional :: Sl
+      integer(ESMF_KIND_I8), intent(out), optional :: Sl
       integer, intent(out), optional :: MS
       integer, intent(out), optional :: US
       integer, intent(out), optional :: NS
@@ -509,15 +509,15 @@
 ! !ARGUMENTS:
       type(ESMF_Time), intent(out) :: time
       integer, intent(in), optional :: YY
-      integer(ESMF_IKIND_I8), intent(in), optional :: YRl
+      integer(ESMF_KIND_I8), intent(in), optional :: YRl
       integer, intent(in), optional :: MM
       integer, intent(in), optional :: DD
       integer, intent(in), optional :: D
-      integer(ESMF_IKIND_I8), intent(in), optional :: Dl
+      integer(ESMF_KIND_I8), intent(in), optional :: Dl
       integer, intent(in), optional :: H
       integer, intent(in), optional :: M
       integer, intent(in), optional :: S
-      integer(ESMF_IKIND_I8), intent(in), optional :: Sl
+      integer(ESMF_KIND_I8), intent(in), optional :: Sl
       integer, intent(in), optional :: MS
       integer, intent(in), optional :: US
       integer, intent(in), optional :: NS
@@ -1545,7 +1545,7 @@
 
 ! !ARGUMENTS:
       type(ESMF_Time), intent(out) :: time
-      integer(ESMF_IKIND_I8), intent(in) :: S
+      integer(ESMF_KIND_I8), intent(in) :: S
       integer, intent(in) :: Sn
       integer, intent(in) :: Sd
       type(ESMF_Calendar), intent(in) :: cal
@@ -1590,7 +1590,7 @@
 
 ! !ARGUMENTS:
       type(ESMF_Time), intent(in) :: time
-      integer(ESMF_IKIND_I8), intent(out) :: S
+      integer(ESMF_KIND_I8), intent(out) :: S
       integer, intent(out) :: Sn
       integer, intent(out) :: Sd
       type(ESMF_Calendar), intent(out) :: cal

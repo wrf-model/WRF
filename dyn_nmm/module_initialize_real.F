@@ -377,7 +377,8 @@ CONTAINS
                + (1.0-VEGFRA(I,J))*SNOFAC*(MXSNAL(I,J)-ALBASE(I,J))
             ENDIF
           END IF
-
+          SI(I,J)=5.0*WEASD(I,J)
+          SNO(I,J)=WEASD(I,J)
         ENDDO
       ENDDO
 

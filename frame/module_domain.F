@@ -1402,6 +1402,22 @@ CONTAINS
       END FUNCTION domain_get_advanceCount
 
 
+      FUNCTION domain_last_time_step ( grid ) RESULT ( LAST_TIME ) 
+        IMPLICIT NONE
+! <DESCRIPTION>
+! This convenience function returns .TRUE. if this is the last time 
+! step for domain grid.  Thanks to Tom Black.  
+!
+! </DESCRIPTION>
+        TYPE(domain), INTENT(IN) :: grid
+        ! result
+        LOGICAL :: LAST_TIME
+        LAST_TIME =   domain_get_stop_time( grid ) .EQ. &
+                    ( domain_get_current_time( grid ) + &
+                      domain_get_time_step( grid ) )
+      END FUNCTION domain_last_time_step
+
+
       SUBROUTINE domain_clock_get( grid, current_time,          &
                                          current_timestr,       &
                                          start_time, stop_time, &

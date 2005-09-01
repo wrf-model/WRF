@@ -265,9 +265,7 @@
 !***  IT IS INCREMENTED IN SOLVE_INTERFACE.
 !***
       CALL domain_clock_get(GRID,ADVANCEcOUNT=NTSD)
-      LAST_TIME=domain_get_stop_time(GRID).EQ. &
-                domain_get_current_time(GRID)+ &
-                domain_get_time_step(GRID)
+      LAST_TIME=domain_last_time_step(GRID)
 !
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------

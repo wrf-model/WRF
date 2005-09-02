@@ -2366,6 +2366,9 @@ esmf_time :
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 nest_init_utils.o : nest_init_utils.F
+module_optional_si_input.o : module_optional_si_input.F
+
+nest_init_utils.o module_optional_si_input.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
@@ -2490,6 +2493,9 @@ esmf_time :
                MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST stub )
 
 nest_init_utils.o : nest_init_utils.F
+module_optional_si_input.o : module_optional_si_input.F
+
+nest_init_utils.o module_optional_si_input.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
@@ -2596,6 +2602,9 @@ esmf_time :
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 nest_init_utils.o : nest_init_utils.F
+module_optional_si_input.o : module_optional_si_input.F
+
+nest_init_utils.o module_optional_si_input.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
@@ -2721,6 +2730,9 @@ esmf_time :
                MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST stub )
 
 nest_init_utils.o : nest_init_utils.F
+module_optional_si_input.o : module_optional_si_input.F
+
+nest_init_utils.o module_optional_si_input.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
@@ -2843,6 +2855,9 @@ esmf_time :
           make CC="$(CC)" FC="$(FC) $(PROMOTION)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
 
 nest_init_utils.o : nest_init_utils.F
+module_optional_si_input.o : module_optional_si_input.F
+
+nest_init_utils.o module_optional_si_input.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
@@ -2966,6 +2981,9 @@ esmf_time :
           make CC="$(CC)" FC="$(FC) $(PROMOTION)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST alpha )
 
 nest_init_utils.o : nest_init_utils.F
+module_optional_si_input.o : module_optional_si_input.F
+
+nest_init_utils.o module_optional_si_input.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
@@ -3090,6 +3108,9 @@ esmf_time :
           make CC="$(CC)" FC="$(FC) $(PROMOTION) $(FCREAL8OMP)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST alpha )
 
 nest_init_utils.o : nest_init_utils.F
+module_optional_si_input.o : module_optional_si_input.F
+
+nest_init_utils.o module_optional_si_input.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
@@ -3214,6 +3235,9 @@ esmf_time :
           make CC=cc FC="$(SFC) $(PROMOTION) $(FCREAL8OMP)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST alpha )
 
 nest_init_utils.o : nest_init_utils.F
+module_optional_si_input.o : module_optional_si_input.F
+
+nest_init_utils.o module_optional_si_input.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
@@ -3343,6 +3367,9 @@ wrfio_mcel :
           make CC="$(CC)" FC="$(FC) $(PROMOTION)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST alpha )
 
 nest_init_utils.o : nest_init_utils.F
+module_optional_si_input.o : module_optional_si_input.F
+
+nest_init_utils.o module_optional_si_input.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f

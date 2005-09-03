@@ -783,7 +783,7 @@
 #ifdef MM5_SINT
      CALL nl_get_spec_zone( 1, spec_zone )
      CALL nl_get_relax_zone( 1, relax_zone )
-     sz = MIN(MAX( spec_zone, relax_zone ),spec_bdy_width)
+     sz = MIN(MAX( spec_zone, relax_zone + 1 ),spec_bdy_width)
 
      nfx = nri * nrj
 
@@ -853,12 +853,17 @@
                ci = ipos + (ni1-1) / nri      ! j coord of CD point 
                ip = mod ( ni1-1 , nri )  ! coord of ND w/i CD point
 
+#if 1
+               ni = ni1
+               nj = nj1
+#else
                ni = ni1-ioff
                nj = nj1-joff
 
                IF ( ( ni.LT.nids) .OR. (nj.LT.njds) ) THEN
                   CYCLE
                END IF
+#endif
 
 !bdy contains the value at t-dt. psca contains the value at t
 !compute dv/dt and store in bdy_t

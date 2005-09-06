@@ -19,6 +19,7 @@ MODULES =                 		\
         module_ZEROX.o                  \
         module_si_io_nmm.o              \
         module_initialize_real.o        \
+        module_PRECIP_ADJUST.o          \
 	$(CASE_MODULE)
 
 # moved into share/Makefile
@@ -36,6 +37,7 @@ OBJS    = 		          	\
 	solve_nmm.o         		\
 	RDTEMP.o    			\
 	BUCKETS.o 			\
+        DSTRB.o                         \
 	CLTEND.o
 
 

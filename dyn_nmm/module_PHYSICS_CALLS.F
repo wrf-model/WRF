@@ -523,6 +523,7 @@
      &                ,RSWOUT,RSWTOA,RLWTOA                             &
      &                ,ASWIN,ASWOUT,ASWTOA,ALWIN,ALWOUT,ALWTOA          &
      &                ,UZ0H,VZ0H,DUDT,DVDT                              & 
+     &                ,PCPFLG,DDATA                                     & ! PRECIP ASSIM
      &                ,GRID,CONFIG_FLAGS                                &
      &                ,IHE,IHW,IVE,IVW                                  &
      &                ,IDS,IDE,JDS,JDE,KDS,KDE                          &
@@ -649,6 +650,10 @@
       TYPE(DOMAIN),TARGET :: GRID
 !
       TYPE(GRID_CONFIG_REC_TYPE),INTENT(IN) :: CONFIG_FLAGS
+!
+!  For precip assimilation:
+      LOGICAL,INTENT(IN) :: PCPFLG
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: DDATA
 !
 !-----------------------------------------------------------------------
 !***
@@ -999,7 +1004,8 @@
      &          ,QS_CURR=WATER(IMS,KMS,JMS,P_QS),F_QS=F_QS              &
      &          ,QG_CURR=WATER(IMS,KMS,JMS,P_QG),F_QG=F_QG              &
      &          ,RAINBL=RAINBL                                          &
-     &          ,POTEVP=POTEVP,SNOPCX=SNOPCX,SOILTB=SOILTB,SR=SR      )
+     &          ,POTEVP=POTEVP,SNOPCX=SNOPCX,SOILTB=SOILTB,SR=SR        &
+     &          ,PCPFLG=PCPFLG,DDATA=DDATA)                ! PRECIP ASSIM
 !
 !-----------------------------------------------------------------------
 !

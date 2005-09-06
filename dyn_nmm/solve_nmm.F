@@ -26,6 +26,7 @@
       USE MODULE_BNDRY_COND,		ONLY: BOCOH,BOCOV
       USE MODULE_PHYSICS_CALLS
       USE MODULE_EXT_INTERNAL
+      USE MODULE_PRECIP_ADJUST
 !-----------------------------------------------------------------------
 !
       IMPLICIT NONE
@@ -73,6 +74,11 @@
 !
       CHARACTER*80 :: MESSAGE
 !
+!  For precip assimilation:
+      LOGICAL :: PCPFLG
+      INTEGER :: ISTAT
+      REAL,ALLOCATABLE,SAVE,DIMENSION(:,:,:) :: PPTDAT
+!
       REAL :: GPS
 !
       LOGICAL :: LAST_TIME
@@ -84,7 +90,8 @@
      &,            vadz_tim,hadz_tim,eps_tim,vad2_tim,had2_tim          &
      &,            radiation_tim,rdtemp_tim,turbl_tim,cltend_tim        &
      &,            cucnvc_tim,gsmdrive_tim,hdiff_tim,bocoh_tim          &
-     &,            pfdht_tim,ddamp_tim,bocov_tim,uv_htov_tim,sum_tim
+     &,            pfdht_tim,ddamp_tim,bocov_tim,uv_htov_tim,sum_tim    &
+     &,            adjppt_tim
       real,save :: exch_tim_max
       real :: btim,btimx
       real :: et_max,this_tim
@@ -155,6 +162,14 @@
      &                      ,IPS,IPE,JPS,JPE,KPS,KPE )
 !-----------------------------------------------------------------------
 !
+!***  ALLOCATE PPTDAT ARRAY (PRECIP ASSIM):
+!
+      IF(PCPFLG)THEN
+        ALLOCATE(PPTDAT(IMS:IME,JMS:JME,3),STAT=ISTAT)
+      ENDIF
+!
+!-----------------------------------------------------------------------
+!
 !***  COMPUTE THESE STARTING AND STOPPING LOCATIONS FOR EACH TILE AND
 !***  NUMBER OF TILES.
 !***  SEE: http://www.mmm.ucar.edu/wrf/WG2/topics/settiles
@@ -215,6 +230,7 @@
         bocov_tim=0.
         uv_htov_tim=0.
         exch_tim_max=0.
+        adjppt_tim=0.
       endif
 !-----------------------------------------------------------------------
       N_MOIST=NUM_MOIST
@@ -277,6 +293,32 @@
       CALL WRF_GET_DM_COMMUNICATOR(MPI_COMM_COMP)
       CALL WRF_GET_NPROC(NPES)
 !-----------------------------------------------------------------------
+!***
+!***      Call READPCP to
+!***            1) READ IN PRECIPITATION FOR HOURS 1, 2 and 3;
+!***            2) Initialize DDATA to 999. (this is the amount
+!***               of input precip allocated to each physics time step
+!***               in ADJPPT; TURBL/SURFCE, which uses DDATA, is called
+!***               before ADJPPT)
+!***            3) Initialize LSPA to zero
+!***
+!-----------------------------------------------------------------------
+! 2005/8/31 YL Originally PCPFLG was exported from calling script and 
+! read in here with GETENV.  But GETENV is an IBM-specific routine, so 
+! that won't do.  Set PCPFLG=.FALSE. for now.  Later should read this in
+! from the name list.
+!  
+      PCPFLG=.FALSE.
+
+      IF (NTSD==0) THEN
+        IF (PCPFLG) THEN
+          CALL READPCP(PPTDAT,DDATA,LSPA                                &
+     &      ,IDS,IDE,JDS,JDE,KDS,KDE                                    &
+     &      ,IMS,IME,JMS,JME,KMS,KME                                    &
+     &      ,ITS,ITE,JTS,JTE,KTS,KTE)
+        ENDIF
+      ENDIF
+!-----------------------------------------------------------------------
 !
       btim=timef()
 !
@@ -291,6 +333,7 @@
      &            ,ARDSW,ASWIN,ASWOUT,ASWTOA                            &
      &            ,ARDLW,ALWIN,ALWOUT,ALWTOA                            &
      &            ,AVCNVC,AVRAIN,TCUCN,TRAIN                            &
+     &            ,ASRFC                                                &
      &            ,IDS,IDE,JDS,JDE,KDS,KDE                              &
      &            ,IMS,IME,JMS,JME,KMS,KME                              &
      &            ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -638,6 +681,7 @@
      &            ,RSWOUT,RSWTOA,RLWTOA                                &
      &            ,ASWIN,ASWOUT,ASWTOA,ALWIN,ALWOUT,ALWTOA             &
      &            ,UZ0H,VZ0H,DUDT,DVDT                                 & 
+     &            ,PCPFLG,DDATA                                        &
      &            ,GRID,CONFIG_FLAGS                                   &
      &            ,IHE,IHW,IVE,IVW                                     &
      &            ,IDS,IDF,JDS,JDF,KDS,KDE                             &
@@ -722,9 +766,9 @@
 !       exch_tim_max=exch_tim_max+et_max
       ENDIF
 !
-      btimx=timef()
-!
       IF(GRID%NCNVC/=999)THEN
+!
+        btimx=timef()
         CALL CUCNVC(NTSD,GRID%DT,GRID%NCNVC,GPS,RESTRT,HYDRO           &
      &             ,CLDEFI,LMH,N_MOIST,GRID%ENSDIM                     &
      &             ,DETA1,DETA2,AETA1,AETA2,ETA1,ETA2                  &
@@ -765,6 +809,22 @@
      &               ,ITS,ITE,JTS,JTE,KTS,KTE)
 !
         gsmdrive_tim=gsmdrive_tim+timef()-btimx
+!
+!-----------------------------------------------------------------------
+!---------PRECIPITATION ASSIMILATION------------------------------------
+!-----------------------------------------------------------------------
+        IF (PCPFLG) THEN
+          btim=timef()
+          CALL CHKSNOW(NTSD,GRID%DT,GRID%NPHS,SR,PPTDAT                 &
+     &      ,IDS,IDE,JDS,JDE,KDS,KDE                                    &
+     &      ,IMS,IME,JMS,JME,KMS,KME                                    &
+     &      ,ITS,ITE,JTS,JTE,KTS,KTE)
+          CALL ADJPPT(NTSD,GRID%DT,GRID%NPHS,PREC,LSPA,PPTDAT,DDATA     &
+     &      ,IDS,IDE,JDS,JDE,KDS,KDE                                    &
+     &      ,IMS,IME,JMS,JME,KMS,KME                                    &
+     &      ,ITS,ITE,JTS,JTE,KTS,KTE)
+          adjppt_tim=adjppt_tim+timef()-btim
+        ENDIF
 !----------------------------------------------------------------------
 !***  CALCULATE TEMP TENDENCIES AND RESTORE ORIGINAL TEMPS
 !----------------------------------------------------------------------
@@ -984,6 +1044,12 @@
 !
 !----------------------------------------------------------------------
 !
+      IF(PCPFLG)THEN
+        DEALLOCATE(PPTDAT,STAT=ISTAT)
+      ENDIF
+!
+!----------------------------------------------------------------------
+!
       solve_tim=solve_tim+timef()-btim
 !
 !----------------------------------------------------------------------
@@ -994,7 +1060,7 @@
 !    &       +vad2_tim+had2_tim+radiation_tim+rdtemp_tim+turbl_tim     &
 !    &       +cltend_tim+cucnvc_tim+gsmdrive_tim+hdiff_tim             &
 !    &       +bocoh_tim+pfdht_tim+ddamp_tim+bocov_tim+uv_htov_tim      &
-!    &       +exch_tim
+!    &       +exch_tim+adjppt_tim
 !
       if(mod(ntsd,n_print_time)==0)then
 !       write(0,*)' ntsd=',ntsd,' solve_tim=',solve_tim*1.e-3          &
@@ -1013,6 +1079,7 @@
 !       write(0,*)' cltend_tim=',cltend_tim*1.e-3,' pct=',cltend_tim/sum_tim*100.
 !       write(0,*)' cucnvc_tim=',cucnvc_tim*1.e-3,' pct=',cucnvc_tim/sum_tim*100.
 !       write(0,*)' gsmdrive_tim=',gsmdrive_tim*1.e-3,' pct=',gsmdrive_tim/sum_tim*100.
+!       write(0,*)' adjppt_tim=',adjppt_tim*1.e-3,' pct=',adjppt_tim/sum_tim*100.
 !       write(0,*)' hdiff_tim=',hdiff_tim*1.e-3,' pct=',hdiff_tim/sum_tim*100.
 !       write(0,*)' bocoh_tim=',bocoh_tim*1.e-3,' pct=',bocoh_tim/sum_tim*100.
 !       write(0,*)' pfdht_tim=',pfdht_tim*1.e-3,' pct=',pfdht_tim/sum_tim*100.
@@ -1032,7 +1099,6 @@
 !     if(last_time)then
 #define COPY_OUT
 #include <nmm_scalar_derefs.inc>
-
       Return
 !----------------------------------------------------------------------
 !**********************************************************************

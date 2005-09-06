@@ -24,9 +24,10 @@ CONTAINS
      &               NUM_SOIL_LAYERS,DT,DZS,ITIMESTEP,                  &
      &               SMOIS,TSLB,SNOW,CANWAT,CPM,ROVCP,SR,               & 
      &               ALB,SNOALB,SMLIQ,SNOWH,                            &
+     &               PCPFLG,DDATA,                                      & ! Precip Assim
      &               IDS,IDE, JDS,JDE, KDS,KDE,                         &
      &               IMS,IME, JMS,JME, KMS,KME,                         &
-     &               ITS,ITE, JTS,JTE, KTS,KTE                     )
+     &               ITS,ITE, JTS,JTE, KTS,KTE )
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
     IMPLICIT NONE
@@ -171,6 +172,10 @@ CONTAINS
 ! added for WRF-CHEM, 20041205, JM -- not used in this routine as yet
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) ::            RMOL
 
+! For precip assimilation:
+      LOGICAL,INTENT(IN) :: PCPFLG
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: DDATA
+
 ! LOCAL VARS
 
       REAL,DIMENSION(ITS:ITE) ::                                  QV1D, &
@@ -180,7 +185,8 @@ CONTAINS
      &                                                           P8W1D, &
      &                                                          PSFC1D, &
      &                                                           RHO1D, &
-     &                                                          PREC1D
+     &                                                          PREC1D, &
+     &                                                         DDATA1D  ! PRECIP ASSIM
                                                                            
       INTEGER :: I,J
       REAL :: RATIOMX
@@ -200,6 +206,8 @@ CONTAINS
           ZA1D(I)   = 0.5*DZ8W(I,1,J) 
           RHO1D(I)  = RHO3D(I,1,J)
           PREC1D(I) = RAINBL(I,J)/DT
+!  For precip assimilation:
+          DDATA1D(I)= DDATA(I,J)
         ENDDO
 
 !FLHC = SFCEXC
@@ -215,8 +223,9 @@ CONTAINS
                     NUM_SOIL_LAYERS,DT,DZS,ITIMESTEP,                   &
                     SMOIS,TSLB,SNOW,CANWAT,CPM(IMS,J),ROVCP,SR,         & 
                     ALB,SNOALB,SMLIQ,SNOWH,                             &
+                    PCPFLG,DDATA1D,                                     & ! Precip Assim
                     IMS,IME,JMS,JME,KMS,KME,                            &
-                    ITS,ITE,JTS,JTE,KTS,KTE                            ) 
+                    ITS,ITE,JTS,JTE,KTS,KTE )
 !
       ENDDO
 
@@ -233,8 +242,9 @@ CONTAINS
                      NUM_SOIL_LAYERS,DT,DZS,ITIMESTEP,                 &
                      SMOIS,TSLB,SNOW,CANWAT,CPM,ROVCP,SR,              & 
                      ALB,SNOALB,SMLIQ,SNOWH,                           &
+                     PCPFLG,DDATA,                                     & ! Precip Assim
                      IMS,IME,JMS,JME,KMS,KME,                          &
-                     ITS,ITE,JTS,JTE,KTS,KTE                           ) 
+                     ITS,ITE,JTS,JTE,KTS,KTE )
 !------------------------------------------------------------------------     
       IMPLICIT NONE                                                     
 !------------------------------------------------------------------------     
@@ -352,8 +362,12 @@ CONTAINS
                                                                  p8w, &
                                                                 PSFC, &
                                                                  rho, &
-                                                                PREC    ! one time step in mm
+                                                                PREC, &  ! one time step in mm
+                                                               DDATA     ! precip assim: obs'd precip allocated to one time step
+
    REAL,    DIMENSION( its:ite )   ::                          TGDSA 
+
+    LOGICAL,INTENT(IN) :: PCPFLG   ! perform precip assim?
 
 ! LOCAL VARS
 
@@ -478,7 +492,16 @@ CONTAINS
           APELM=(1.E5/SFCPRS)**CAPA
           SFCTH2=SFCTMP*APELM
           SFCTH2=SFCTH2/APES
-          PRCP=PREC(I)                                                  
+! YL      PRCP=PREC(I)                                                  
+! YL use DDATA (precip analysis allocated to this physics time step).
+!    When there is no precipitation analysis available, or when it is deemed
+!    unusable [i.e. it is snowing - subr CHKSNOW] DDATA is set to '999.')
+!
+          IF (PCPFLG .AND. DDATA(I).LT.100.) then
+            PRCP=DDATA(I)
+          ELSE
+            PRCP=PREC(I)
+          ENDIF
 !!!       Q2K=QV(I)                                                  
 !!!       Q2SAT=PQ0/SFCPRS*EXP(A2*(SFCTMP-A3)/(SFCTMP-A4))              
           DQSDTK=Q2SAT*A23M4/(SFCTMP-A4)**2                             

@@ -183,6 +183,8 @@ state  real   prec      ij    dyn_nmm   1    -     rh
 state  real   aprec     ij    dyn_nmm   1    -     rh
 state  real   acprec    ij    dyn_nmm   1    -     rh
 state  real   cuprec    ij    dyn_nmm   1    -     rh
+state  real   lspa      ij    dyn_nmm   1    -     h
+state  real   ddata     ij    dyn_nmm   1    -     -
 state  real   accliq    ij    dyn_nmm   1    -     r
 state  real   sno       ij    dyn_nmm   1    -     irh
 state  real   si        ij    dyn_nmm   1    -     irh

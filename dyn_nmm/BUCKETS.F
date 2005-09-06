@@ -10,6 +10,7 @@
      &                  ,ARDSW,ASWIN,ASWOUT,ASWTOA                      &
      &                  ,ARDLW,ALWIN,ALWOUT,ALWTOA                      &
      &                  ,AVCNVC,AVRAIN,TCUCN,TRAIN                      &
+     &                  ,ASRFC                                          &
      &                  ,IDS,IDE,JDS,JDE,KDS,KDE                        &
      &                  ,IMS,IME,JMS,JME,KMS,KME                        &
      &                  ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -66,7 +67,7 @@
                            ,IMS,IME,JMS,JME,KMS,KME                     &
                            ,ITS,ITE,JTS,JTE,KTS,KTE 
 !
-      REAL,INTENT(OUT) :: ARDLW,ARDSW,AVCNVC,AVRAIN
+      REAL,INTENT(OUT) :: ARDLW,ARDSW,ASRFC,AVCNVC,AVRAIN
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: ACPREC,ACSNOM      &
      &                                              ,ACSNOW,ALWIN       &
@@ -118,6 +119,7 @@
 !
 !     IF(MOD(NTSD,NSRFC)<NPHS)THEN
       IF(MOD(NTSD,NSRFC)==0)THEN
+        ASRFC=0.
         DO J=JTS,JTE
         DO I=ITS,ITE
           SFCEVP(I,J)=0.

@@ -143,19 +143,6 @@ SUBROUTINE Setup_Timekeeping ( grid )
    INTEGER :: rc
    REAL    :: dt
 
-   INTERFACE
-      SUBROUTINE set_timekeeping_create_alarm( grid, alarm_id, interval, begin_time, end_time )
-         USE module_domain
-         USE module_utility
-         IMPLICIT NONE
-         TYPE(domain), POINTER :: grid
-         INTEGER, INTENT(IN) :: alarm_id
-         TYPE(WRFU_TimeInterval), INTENT(IN), OPTIONAL :: interval
-         TYPE(WRFU_TimeInterval), INTENT(IN), OPTIONAL :: begin_time
-         TYPE(WRFU_TimeInterval), INTENT(IN), OPTIONAL :: end_time
-      END SUBROUTINE set_timekeeping_create_alarm
-   END INTERFACE
-
    CALL WRFU_TimeIntervalSet ( zero_time, rc=rc )
    CALL wrf_check_error( WRFU_SUCCESS, rc, &
                          'WRFU_TimeIntervalSet(zero_time) FAILED', &
@@ -235,14 +222,10 @@ SUBROUTINE Setup_Timekeeping ( grid )
       CALL nl_set_dt( grid%id, grid%dt )
    ENDIF
 
-   grid%domain_clock = WRFU_ClockCreate( TimeStep= stepTime,  &
-                                         StartTime=startTime, &
-                                         StopTime= stopTime,  &
-                                         rc=rc )
-   CALL wrf_check_error( WRFU_SUCCESS, rc, &
-                         'grid%domain_clock = WRFU_ClockCreate() FAILED', &
-                         __FILE__ , &
-                         __LINE__  )
+   ! create grid%domain_clock and associated state
+   CALL domain_clock_create( grid, TimeStep= stepTime,  &
+                                   StartTime=startTime, &
+                                   StopTime= stopTime )
    CALL domain_clockprint ( 150, grid, &
           'DEBUG setup_timekeeping():  clock after creation,' )
 
@@ -306,7 +289,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
       end_time = run_length + padding_interval
    ENDIF
 
-   CALL set_timekeeping_create_alarm( grid, HISTORY_ALARM, interval, begin_time, end_time )
+   CALL domain_alarm_create( grid, HISTORY_ALARM, interval, begin_time, end_time )
 
    IF ( begin_time .EQ. zero_time ) THEN
       CALL WRFU_AlarmRingerOn( grid%alarms( HISTORY_ALARM ),  rc=rc )
@@ -338,7 +321,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
    ELSE
      interval = run_length + padding_interval
    ENDIF
-   CALL set_timekeeping_create_alarm( grid, RESTART_ALARM, interval )
+   CALL domain_alarm_create( grid, RESTART_ALARM, interval )
 
 ! INPUTOUT INTERVAL
    CALL nl_get_inputout_interval( grid%id, inputout_interval )   ! same as minutes
@@ -397,7 +380,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
       end_time = run_length + padding_interval
    ENDIF
 
-   CALL set_timekeeping_create_alarm( grid, INPUTOUT_ALARM, interval, begin_time, end_time )
+   CALL domain_alarm_create( grid, INPUTOUT_ALARM, interval, begin_time, end_time )
 
 ! AUXHIST1 INTERVAL
 ! auxhist1_interval is left there (and means minutes) for consistency, but
@@ -458,7 +441,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
       end_time = run_length + padding_interval
    ENDIF
 
-   CALL set_timekeeping_create_alarm( grid, AUXHIST1_ALARM, interval, begin_time, end_time )
+   CALL domain_alarm_create( grid, AUXHIST1_ALARM, interval, begin_time, end_time )
 
    IF ( interval .NE. run_length + padding_interval .AND. begin_time .EQ. zero_time ) THEN
      CALL WRFU_AlarmRingerOn( grid%alarms( AUXHIST1_ALARM ),  rc=rc )
@@ -524,7 +507,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
       end_time = run_length + padding_interval
    ENDIF
 
-   CALL set_timekeeping_create_alarm( grid, AUXHIST2_ALARM, interval, begin_time, end_time )
+   CALL domain_alarm_create( grid, AUXHIST2_ALARM, interval, begin_time, end_time )
 
    IF ( interval .NE. run_length + padding_interval .AND. begin_time .EQ. zero_time ) THEN
      CALL WRFU_AlarmRingerOn( grid%alarms( AUXHIST2_ALARM ),  rc=rc )
@@ -589,7 +572,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
       end_time = run_length + padding_interval
    ENDIF
 
-   CALL set_timekeeping_create_alarm( grid, AUXHIST3_ALARM, interval, begin_time, end_time )
+   CALL domain_alarm_create( grid, AUXHIST3_ALARM, interval, begin_time, end_time )
 
    IF ( interval .NE. run_length + padding_interval .AND. begin_time .EQ. zero_time ) THEN
      CALL WRFU_AlarmRingerOn( grid%alarms( AUXHIST3_ALARM ),  rc=rc )
@@ -654,7 +637,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
       end_time = run_length + padding_interval
    ENDIF
 
-   CALL set_timekeeping_create_alarm( grid, AUXHIST4_ALARM, interval, begin_time, end_time )
+   CALL domain_alarm_create( grid, AUXHIST4_ALARM, interval, begin_time, end_time )
 
    IF ( interval .NE. run_length + padding_interval .AND. begin_time .EQ. zero_time ) THEN
      CALL WRFU_AlarmRingerOn( grid%alarms( AUXHIST4_ALARM ),  rc=rc )
@@ -719,7 +702,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
       end_time = run_length + padding_interval
    ENDIF
 
-   CALL set_timekeeping_create_alarm( grid, AUXHIST5_ALARM, interval, begin_time, end_time )
+   CALL domain_alarm_create( grid, AUXHIST5_ALARM, interval, begin_time, end_time )
 
    IF ( interval .NE. run_length + padding_interval .AND. begin_time .EQ. zero_time ) THEN
      CALL WRFU_AlarmRingerOn( grid%alarms( AUXHIST5_ALARM ),  rc=rc )
@@ -784,7 +767,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
       end_time = run_length + padding_interval
    ENDIF
 
-   CALL set_timekeeping_create_alarm( grid, AUXINPUT1_ALARM, interval, begin_time, end_time )
+   CALL domain_alarm_create( grid, AUXINPUT1_ALARM, interval, begin_time, end_time )
 
    IF ( interval .NE. run_length + padding_interval .AND. begin_time .EQ. zero_time ) THEN
      CALL WRFU_AlarmRingerOn( grid%alarms( AUXINPUT1_ALARM ),  rc=rc )
@@ -853,7 +836,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
       end_time = run_length + padding_interval
    ENDIF
 
-   CALL set_timekeeping_create_alarm( grid, AUXINPUT2_ALARM, interval, begin_time, end_time )
+   CALL domain_alarm_create( grid, AUXINPUT2_ALARM, interval, begin_time, end_time )
 
    IF ( interval .NE. run_length + padding_interval .AND. begin_time .EQ. zero_time ) THEN
      CALL WRFU_AlarmRingerOn( grid%alarms( AUXINPUT2_ALARM ),  rc=rc )
@@ -922,7 +905,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
       end_time = run_length + padding_interval
    ENDIF
 
-   CALL set_timekeeping_create_alarm( grid, AUXINPUT3_ALARM, interval, begin_time, end_time )
+   CALL domain_alarm_create( grid, AUXINPUT3_ALARM, interval, begin_time, end_time )
 
    IF ( interval .NE. run_length + padding_interval .AND. begin_time .EQ. zero_time ) THEN
      CALL WRFU_AlarmRingerOn( grid%alarms( AUXINPUT3_ALARM ),  rc=rc )
@@ -991,7 +974,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
       end_time = run_length + padding_interval
    ENDIF
 
-   CALL set_timekeeping_create_alarm( grid, AUXINPUT4_ALARM, interval, begin_time, end_time )
+   CALL domain_alarm_create( grid, AUXINPUT4_ALARM, interval, begin_time, end_time )
 
    IF ( interval .NE. run_length + padding_interval .AND. begin_time .EQ. zero_time ) THEN
      CALL WRFU_AlarmRingerOn( grid%alarms( AUXINPUT4_ALARM ),  rc=rc )
@@ -1060,7 +1043,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
       end_time = run_length + padding_interval
    ENDIF
 
-   CALL set_timekeeping_create_alarm( grid, AUXINPUT5_ALARM, interval, begin_time, end_time )
+   CALL domain_alarm_create( grid, AUXINPUT5_ALARM, interval, begin_time, end_time )
 
 !TBH:  Should be OK to remove the "#ifndef WRF_CHEM" and the code it contains 
 !TBH:  because later code overwrites grid%alarms( AUXINPUT5_ALARM )...  
@@ -1080,7 +1063,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
 #endif
 
 
-   CALL set_timekeeping_create_alarm( grid, BOUNDARY_ALARM )
+   CALL domain_alarm_create( grid, BOUNDARY_ALARM )
 
    CALL WRFU_AlarmEnable( grid%alarms( BOUNDARY_ALARM ), rc=rc )
    CALL wrf_check_error( WRFU_SUCCESS, rc, &
@@ -1114,7 +1097,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
                            'WRFU_TimeIntervalSet(interval) for computing vortex center FAILED', &
                            __FILE__ , &
                            __LINE__  )
-   CALL set_timekeeping_create_alarm( grid,  COMPUTE_VORTEX_CENTER_ALARM, interval  )
+   CALL domain_alarm_create( grid,  COMPUTE_VORTEX_CENTER_ALARM, interval  )
    CALL WRFU_AlarmEnable( grid%alarms( COMPUTE_VORTEX_CENTER_ALARM ), rc=rc )
    CALL wrf_check_error( WRFU_SUCCESS, rc, &
                          'WRFU_AlarmEnable(COMPUTE_VORTEX_CENTER_ALARM) FAILED', &
@@ -1131,62 +1114,4 @@ SUBROUTINE Setup_Timekeeping ( grid )
 
 END SUBROUTINE Setup_Timekeeping
 
-
-SUBROUTINE set_timekeeping_create_alarm( grid, alarm_id, interval, begin_time, end_time )
-   USE module_domain
-   USE module_utility
-   IMPLICIT NONE
-   TYPE(domain), POINTER :: grid
-   INTEGER, INTENT(IN) :: alarm_id
-   TYPE(WRFU_TimeInterval), INTENT(IN), OPTIONAL :: interval
-   TYPE(WRFU_TimeInterval), INTENT(IN), OPTIONAL :: begin_time
-   TYPE(WRFU_TimeInterval), INTENT(IN), OPTIONAL :: end_time
-   INTEGER :: rc
-!$$$ TBH:  Ideally, this could be simplified by passing all optional actual 
-!$$$ TBH:  args into AlarmCreate.  However, since operations are performed on 
-!$$$ TBH:  the actual args in-place in the calls, they must be present for the 
-!$$$ TBH:  operations themselves to be defined.  Grrr...  
-   LOGICAL :: interval_only, all_args, no_args
-   TYPE(WRFU_Time) :: startTime
-   interval_only = .FALSE.
-   all_args = .FALSE.
-   no_args = .FALSE.
-   IF ( ( .NOT. PRESENT( begin_time ) ) .AND. &
-        ( .NOT. PRESENT( end_time   ) ) .AND. &
-        (       PRESENT( interval   ) ) ) THEN
-      interval_only = .TRUE.
-   ELSE IF ( ( .NOT. PRESENT( begin_time ) ) .AND. &
-             ( .NOT. PRESENT( end_time   ) ) .AND. &
-             ( .NOT. PRESENT( interval   ) ) ) THEN
-      no_args = .TRUE.
-   ELSE IF ( (       PRESENT( begin_time ) ) .AND. &
-             (       PRESENT( end_time   ) ) .AND. &
-             (       PRESENT( interval   ) ) ) THEN
-      all_args = .TRUE.
-   ELSE
-      CALL wrf_error_fatal ( &
-        'ERROR in set_timekeeping_create_alarm:  bad argument list' )
-   ENDIF
-   CALL domain_clock_get( grid, start_time=startTime )
-   IF ( interval_only ) THEN
-      grid%alarms( alarm_id ) = WRFU_AlarmCreate( clock=grid%domain_clock, &
-                                                  RingInterval=interval,   &
-                                                  rc=rc )
-   ELSE IF ( no_args ) THEN
-      grid%alarms( alarm_id ) = WRFU_AlarmCreate( clock=grid%domain_clock, &
-                                                  RingTime=startTime,      &
-                                                  rc=rc )
-   ELSE IF ( all_args ) THEN
-      grid%alarms( alarm_id ) = WRFU_AlarmCreate( clock=grid%domain_clock,         &
-                                                  RingTime=startTime + begin_time, &
-                                                  RingInterval=interval,           &
-                                                  StopTime=startTime + end_time,   &
-                                                  rc=rc )
-   ENDIF
-   CALL wrf_check_error( WRFU_SUCCESS, rc, &
-                         'WRFU_AlarmCreate() FAILED', &
-                         __FILE__ , &
-                         __LINE__  )
-   grid%alarms_created( alarm_id ) = .TRUE.
-END SUBROUTINE set_timekeeping_create_alarm
 

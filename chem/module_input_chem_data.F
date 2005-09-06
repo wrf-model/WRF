@@ -316,6 +316,8 @@ SUBROUTINE input_ext_chem_file (si_grid)
    NULLIFY( null_domain )
 
    CALL       wrf_debug ( 100 , 'wrfchem:input_chem: calling alloc_and_configure_domain 1' )
+   ! Note that this is *not* the intended use of alloc_and_configure_domain()
+   ! It does not seem to hurt anything, yet...  
    CALL alloc_and_configure_domain ( domain_id  = 1           , &
                                      grid       = chem_grid   , &
                                      parent     = null_domain , &
@@ -540,6 +542,9 @@ SUBROUTINE input_ext_chem_file (si_grid)
 
 !  Close chemin data set
    CALL close_dataset ( fid , config_flags , "DATASET=INPUT" )
+
+! free memory
+   CALL domain_destroy( chem_grid )
 
    CALL wrf_debug ( 100,' input_ext_chem_data: exit subroutine ')
 

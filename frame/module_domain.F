@@ -127,12 +127,13 @@ MODULE module_domain
       Type(WRFU_Time)                                     :: start_subtime, stop_subtime
       Type(WRFU_Time)                                     :: this_bdy_time, next_bdy_time
       Type(WRFU_Time)                                     :: this_emi_time, next_emi_time
-      Type(WRFU_Alarm), pointer :: alarms(:)
-! This awful hackery accounts for the fact that ESMF2.2.0 alarms cannot tell 
+      Type(WRFU_Alarm), POINTER :: alarms(:)
+! This awful hackery accounts for the fact that ESMF2.2.0 objects cannot tell 
 ! us if they have ever been created or not.  So, we have to keep track of this 
-! ourselves to avoid destroying an alarm that has never been created!  Rip this 
-! out once ESMF has useful introspection here...  
-      LOGICAL, pointer :: alarms_created(:)
+! ourselves to avoid destroying an object that has never been created!  Rip 
+! this out once ESMF has useful introspection for creation...  
+      LOGICAL :: domain_clock_created
+      LOGICAL, POINTER :: alarms_created(:)
 
    END TYPE domain
 
@@ -743,15 +744,16 @@ CONTAINS
 #ifdef RSL
 ! Check domain size to be sure it is within RSLs limit
       IF ( nx .GE. 1024 .OR. ny .GE. 1024 ) THEN
-        WRITE ( wrf_err_message , * ) 'domain too large for RSL. Use RSL_LITE or other comm package.'
+        WRITE ( wrf_err_message , * ) &
+         'domain too large for RSL. Use RSL_LITE or other comm package.'
         CALL wrf_error_fatal ( TRIM ( wrf_err_message ) )
       ENDIF
 
 #endif
 
       IF ( num_time_levels > 3 ) THEN
-        WRITE ( wrf_err_message , * ) 'alloc_and_configure_domain: Incorrect value for num_time_levels ', &
-                                       num_time_levels
+        WRITE ( wrf_err_message , * ) 'alloc_and_configure_domain: ', &
+          'Incorrect value for num_time_levels ', num_time_levels
         CALL wrf_error_fatal ( TRIM ( wrf_err_message ) )
       ENDIF
 
@@ -781,6 +783,7 @@ CONTAINS
       NULLIFY  (new_grid%i_end)
       NULLIFY  (new_grid%j_end)
       ALLOCATE( new_grid%domain_clock )
+      new_grid%domain_clock_created = .FALSE.
       ALLOCATE( new_grid%alarms( MAX_WRF_ALARMS ) )    ! initialize in setup_timekeeping
       ALLOCATE( new_grid%alarms_created( MAX_WRF_ALARMS ) )
       DO i = 1, MAX_WRF_ALARMS
@@ -1065,53 +1068,61 @@ CONTAINS
 
       IF ( dyn_opt == DYN_NODYN ) THEN
 
-        IF ( grid%id .EQ. 1 ) CALL wrf_message ( 'DYNAMICS OPTION: dynamics disabled ' )
+        IF ( grid%id .EQ. 1 ) &
+          CALL wrf_message ( 'DYNAMICS OPTION: dynamics disabled ' )
 
 #if ALLOW_NODYN
 # include <nodyn_allocs.inc>
 #else
-        CALL wrf_error_fatal("To run the the NODYN option, recompile -DALLOW_NODYN in ARCHFLAGS settings of configure.wrf") 
+        WRITE(message,*)                                        &
+          "To run the the NODYN option, recompile ",            &
+          "-DALLOW_NODYN in ARCHFLAGS settings of configure.wrf"
+        CALL wrf_error_fatal( message )
 #endif
 
 #if (EM_CORE == 1)
       ELSE IF ( dyn_opt == DYN_EM ) THEN
-        IF ( grid%id .EQ. 1 ) CALL wrf_message ( 'DYNAMICS OPTION: Eulerian Mass Coordinate ')
+        IF ( grid%id .EQ. 1 ) CALL wrf_message ( &
+          'DYNAMICS OPTION: Eulerian Mass Coordinate ')
 # include <em_allocs.inc>
 #endif
 #if (NMM_CORE == 1)
       ELSE IF ( dyn_opt == DYN_NMM ) THEN
-        IF ( grid%id .EQ. 1 ) CALL wrf_message ( 'DYNAMICS OPTION: nmm dyncore' )
+        IF ( grid%id .EQ. 1 ) &
+          CALL wrf_message ( 'DYNAMICS OPTION: nmm dyncore' )
 # include <nmm_allocs.inc>
 #endif
 #if (COAMPS_CORE == 1)
       ELSE IF ( dyn_opt == DYN_COAMPS ) THEN
-        IF ( grid%id .EQ. 1 ) CALL wrf_message ( 'DYNAMICS OPTION: coamps dyncore' )
+        IF ( grid%id .EQ. 1 ) &
+          CALL wrf_message ( 'DYNAMICS OPTION: coamps dyncore' )
 # include <coamps_allocs.inc>
 #endif
 #if (EXP_CORE==1)
       ELSE IF ( dyn_opt == DYN_EXP ) THEN
-        IF ( grid%id .EQ. 1 ) CALL wrf_message ( 'DYNAMICS OPTION: experimental dyncore' )
+        IF ( grid%id .EQ. 1 ) &
+          CALL wrf_message ( 'DYNAMICS OPTION: experimental dyncore' )
 # include <exp_allocs.inc>
 #endif
 
       ELSE
       
-        WRITE( wrf_err_message , * )'Invalid specification of dynamics: dyn_opt = ',dyn_opt
+        WRITE( wrf_err_message , * )&
+          'Invalid specification of dynamics: dyn_opt = ',dyn_opt
         CALL wrf_error_fatal ( TRIM ( wrf_err_message ) )
       ENDIF
 
-      WRITE(message,*)'alloc_space_field: domain ',id,' ',num_bytes_allocated
+      WRITE(message,*)&
+          'alloc_space_field: domain ',id,' ',num_bytes_allocated
       CALL  wrf_debug( 1, message )
 
    END SUBROUTINE alloc_space_field
 
-!
 
-!  This routine is used to DEALLOCATE space for a single domain.  First
-!  the pointers in the linked list are fixed (so the one in the middle can
-!  be removed).  Second, the field data are all removed through a CALL to 
-!  the dealloc_space_domain routine.  Finally, the pointer to the domain
-!  itself is DEALLOCATEd.
+!  This routine is used to DEALLOCATE space for a single domain and remove 
+!  it from the linked list.  First the pointers in the linked list are fixed 
+!  (so the one in the middle can be removed).  Then the domain itself is 
+!  DEALLOCATEd via a call to domain_destroy().  
 
    SUBROUTINE dealloc_space_domain ( id )
       
@@ -1125,7 +1136,6 @@ CONTAINS
 
       TYPE(domain) , POINTER          :: grid
       LOGICAL                         :: found
-      INTEGER                         :: alarmid
 
       !  Initializations required to start the routine.
 
@@ -1141,21 +1151,7 @@ CONTAINS
          IF ( grid%id == id ) THEN
             found = .TRUE.
             old_grid%next => grid%next
-            CALL dealloc_space_field ( grid )
-            DEALLOCATE( grid%parents )
-            DEALLOCATE( grid%nests )
-            ! clean up time manager bits
-            CALL WRFU_ClockDestroy( grid%domain_clock )
-            DO alarmid = 1, MAX_WRF_ALARMS
-              IF ( grid%alarms_created( alarmid ) ) THEN
-                CALL WRFU_AlarmDestroy( grid%alarms( alarmid ) )
-                grid%alarms_created( alarmid ) = .FALSE.
-              ENDIF
-            ENDDO
-            DEALLOCATE( grid%alarms )
-            DEALLOCATE( grid%alarms_created )
-            DEALLOCATE( grid%domain_clock )
-            DEALLOCATE(grid)
+            CALL domain_destroy( grid )
             EXIT find_grid
          END IF
          old_grid => grid
@@ -1163,11 +1159,50 @@ CONTAINS
       END DO find_grid
 
       IF ( .NOT. found ) THEN
-         WRITE ( wrf_err_message , * ) 'module_domain: dealloc_space_domain: Could not de-allocate grid id ',id
+         WRITE ( wrf_err_message , * ) 'module_domain: ', &
+           'dealloc_space_domain: Could not de-allocate grid id ',id
          CALL wrf_error_fatal ( TRIM( wrf_err_message ) ) 
       END IF
 
    END SUBROUTINE dealloc_space_domain
+
+
+
+!  This routine is used to DEALLOCATE space for a single domain type.  
+!  First, the field data are all removed through a CALL to the 
+!  dealloc_space_field routine.  Then the pointer to the domain
+!  itself is DEALLOCATEd.
+
+   SUBROUTINE domain_destroy ( grid )
+      
+      IMPLICIT NONE
+
+      !  Input data.
+
+      TYPE(domain) , POINTER          :: grid
+
+      CALL dealloc_space_field ( grid )
+      DEALLOCATE( grid%parents )
+      DEALLOCATE( grid%nests )
+      ! clean up time manager bits
+      CALL domain_clock_destroy( grid )
+      CALL domain_alarms_destroy( grid )
+      IF ( ASSOCIATED( grid%i_start ) ) THEN
+        DEALLOCATE( grid%i_start ) 
+      ENDIF
+      IF ( ASSOCIATED( grid%i_end ) ) THEN
+        DEALLOCATE( grid%i_end )
+      ENDIF
+      IF ( ASSOCIATED( grid%j_start ) ) THEN
+        DEALLOCATE( grid%j_start )
+      ENDIF
+      IF ( ASSOCIATED( grid%j_end ) ) THEN
+        DEALLOCATE( grid%j_end )
+      ENDIF
+      DEALLOCATE( grid )
+      NULLIFY( grid )
+
+   END SUBROUTINE domain_destroy
 
 !
 
@@ -1208,7 +1243,8 @@ CONTAINS
 # include <exp_deallocs.inc>
 #endif
       ELSE
-        WRITE( wrf_err_message , * )'dealloc_space_field: Invalid specification of dynamics: dyn_opt = ',dyn_opt
+        WRITE( wrf_err_message , * )'dealloc_space_field: ', &
+          'Invalid specification of dynamics: dyn_opt = ',dyn_opt
         CALL wrf_error_fatal ( TRIM ( wrf_err_message ) )
       ENDIF
 
@@ -1402,6 +1438,51 @@ CONTAINS
       END FUNCTION domain_get_advanceCount
 
 
+      SUBROUTINE domain_alarms_destroy ( grid )
+        IMPLICIT NONE
+! <DESCRIPTION>
+! This convenience routine destroys and deallocates all alarms associated 
+! with grid.  
+!
+! </DESCRIPTION>
+        TYPE(domain), INTENT(INOUT) :: grid
+        !  Local data.
+        INTEGER                     :: alarmid
+
+        IF ( ASSOCIATED( grid%alarms ) .AND. &
+             ASSOCIATED( grid%alarms_created ) ) THEN
+          DO alarmid = 1, MAX_WRF_ALARMS
+            IF ( grid%alarms_created( alarmid ) ) THEN
+              CALL WRFU_AlarmDestroy( grid%alarms( alarmid ) )
+              grid%alarms_created( alarmid ) = .FALSE.
+            ENDIF
+          ENDDO
+          DEALLOCATE( grid%alarms )
+          NULLIFY( grid%alarms )
+          DEALLOCATE( grid%alarms_created )
+          NULLIFY( grid%alarms_created )
+        ENDIF
+      END SUBROUTINE domain_alarms_destroy
+
+
+      SUBROUTINE domain_clock_destroy ( grid )
+        IMPLICIT NONE
+! <DESCRIPTION>
+! This convenience routine destroys and deallocates the domain clock.  
+!
+! </DESCRIPTION>
+        TYPE(domain), INTENT(INOUT) :: grid
+        IF ( ASSOCIATED( grid%domain_clock ) ) THEN
+          IF ( grid%domain_clock_created ) THEN
+            CALL WRFU_ClockDestroy( grid%domain_clock )
+            grid%domain_clock_created = .FALSE.
+          ENDIF
+          DEALLOCATE( grid%domain_clock )
+          NULLIFY( grid%domain_clock )
+        ENDIF
+      END SUBROUTINE domain_clock_destroy
+
+
       FUNCTION domain_last_time_step ( grid ) RESULT ( LAST_TIME ) 
         IMPLICIT NONE
 ! <DESCRIPTION>
@@ -1471,6 +1552,104 @@ CONTAINS
         ENDIF
         RETURN
       END SUBROUTINE domain_clock_get
+
+
+
+      SUBROUTINE domain_clock_create( grid, StartTime, &
+                                            StopTime,  &
+                                            TimeStep )
+        IMPLICIT NONE
+        TYPE(domain),            INTENT(INOUT) :: grid
+        TYPE(WRFU_Time),         INTENT(IN   ) :: StartTime
+        TYPE(WRFU_Time),         INTENT(IN   ) :: StopTime
+        TYPE(WRFU_TimeInterval), INTENT(IN   ) :: TimeStep
+! <DESCRIPTION>
+! This convenience routine creates the domain_clock for domain grid and 
+! sets associated flags.  
+!
+! </DESCRIPTION>
+        ! Locals
+        INTEGER :: rc
+        grid%domain_clock = WRFU_ClockCreate( TimeStep= TimeStep,  &
+                                              StartTime=StartTime, &
+                                              StopTime= StopTime,  &
+                                              rc=rc )
+        IF ( rc /= WRFU_SUCCESS ) THEN
+          CALL wrf_error_fatal ( &
+            'domain_clock_create:  WRFU_ClockCreate() failed' )
+        ENDIF
+        grid%domain_clock_created = .TRUE.
+        RETURN
+      END SUBROUTINE domain_clock_create
+
+
+
+      SUBROUTINE domain_alarm_create( grid, alarm_id, interval, &
+                                            begin_time, end_time )
+        USE module_utility
+        IMPLICIT NONE
+        TYPE(domain), POINTER :: grid
+        INTEGER, INTENT(IN) :: alarm_id
+        TYPE(WRFU_TimeInterval), INTENT(IN), OPTIONAL :: interval
+        TYPE(WRFU_TimeInterval), INTENT(IN), OPTIONAL :: begin_time
+        TYPE(WRFU_TimeInterval), INTENT(IN), OPTIONAL :: end_time
+! <DESCRIPTION>
+! This convenience routine creates alarm alarm_id for domain grid and 
+! sets associated flags.  
+!
+! </DESCRIPTION>
+        ! Locals
+        INTEGER :: rc
+!$$$ TBH:  Ideally, this could be simplified by passing all optional actual 
+!$$$ TBH:  args into AlarmCreate.  However, since operations are performed on 
+!$$$ TBH:  the actual args in-place in the calls, they must be present for the 
+!$$$ TBH:  operations themselves to be defined.  Grrr...  
+        LOGICAL :: interval_only, all_args, no_args
+        TYPE(WRFU_Time) :: startTime
+        interval_only = .FALSE.
+        all_args = .FALSE.
+        no_args = .FALSE.
+        IF ( ( .NOT. PRESENT( begin_time ) ) .AND. &
+             ( .NOT. PRESENT( end_time   ) ) .AND. &
+             (       PRESENT( interval   ) ) ) THEN
+           interval_only = .TRUE.
+        ELSE IF ( ( .NOT. PRESENT( begin_time ) ) .AND. &
+                  ( .NOT. PRESENT( end_time   ) ) .AND. &
+                  ( .NOT. PRESENT( interval   ) ) ) THEN
+           no_args = .TRUE.
+        ELSE IF ( (       PRESENT( begin_time ) ) .AND. &
+                  (       PRESENT( end_time   ) ) .AND. &
+                  (       PRESENT( interval   ) ) ) THEN
+           all_args = .TRUE.
+        ELSE
+           CALL wrf_error_fatal ( &
+             'ERROR in domain_alarm_create:  bad argument list' )
+        ENDIF
+        CALL domain_clock_get( grid, start_time=startTime )
+        IF ( interval_only ) THEN
+           grid%alarms( alarm_id ) = &
+             WRFU_AlarmCreate( clock=grid%domain_clock, &
+                               RingInterval=interval,   &
+                               rc=rc )
+        ELSE IF ( no_args ) THEN
+           grid%alarms( alarm_id ) = &
+             WRFU_AlarmCreate( clock=grid%domain_clock, &
+                               RingTime=startTime,      &
+                               rc=rc )
+        ELSE IF ( all_args ) THEN
+           grid%alarms( alarm_id ) = &
+             WRFU_AlarmCreate( clock=grid%domain_clock,         &
+                               RingTime=startTime + begin_time, &
+                               RingInterval=interval,           &
+                               StopTime=startTime + end_time,   &
+                               rc=rc )
+        ENDIF
+        IF ( rc /= WRFU_SUCCESS ) THEN
+          CALL wrf_error_fatal ( &
+            'domain_alarm_create:  WRFU_AlarmCreate() failed' )
+        ENDIF
+        grid%alarms_created( alarm_id ) = .TRUE.
+      END SUBROUTINE domain_alarm_create
 
 
 

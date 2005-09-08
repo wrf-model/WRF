@@ -27,11 +27,23 @@ PROGRAM ndown_em
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! for chemistry
    USE module_input_chem_data
-   USE module_input_chem_bioemiss
+!  USE module_input_chem_bioemiss
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #endif
 
    IMPLICIT NONE
+ ! interface
+   INTERFACE
+     ! mediation-supplied
+     SUBROUTINE med_read_wrf_chem_bioemiss ( grid , config_flags)
+       USE module_domain
+       TYPE (domain) grid
+       TYPE (grid_config_rec_type) config_flags
+     END SUBROUTINE med_read_wrf_chem_bioemiss
+
+   END INTERFACE
+
+
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !new for bc

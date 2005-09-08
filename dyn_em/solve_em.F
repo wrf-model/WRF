@@ -223,33 +223,6 @@ SUBROUTINE solve_em ( grid , config_flags , &
 !
 
    kte=min(k_end,kde-1)
-!
-! change units for advection to mixing ratio
-!
-      if(imicrogram == 1)then
-
-   if ( p_so4aj >= PARAM_FIRST_SCALAR ) then
-   !$OMP PARALLEL DO   &
-   !$OMP PRIVATE ( ij ,its,ite,jts,jte,kte)
-   aerosol_decouple_loop : DO ij = 1 , grid%num_tiles
-       its = max(grid%i_start(ij),ids)
-       ite = min(grid%i_end(ij),ide-1)
-       jts = max(grid%j_start(ij),jds)
-       jte = min(grid%j_end(ij),jde-1)
-      do l=p_so4aj,num_chem
-      do j=jts,jte
-      do k=k_start,kte+1 
-      kk=min(k,kde-1)
-      do i=its,ite
-        chem(i,k,j,l)=chem(i,kk,j,l)*alt(i,kk,j)
-      enddo
-      enddo
-      enddo
-      enddo
-    enddo aerosol_decouple_loop
-    endif
-    imicrogram=0
-    endif
 # ifdef DM_PARALLEL
    if ( num_chem >= PARAM_FIRST_SCALAR ) then
 !-----------------------------------------------------------------------

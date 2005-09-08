@@ -174,9 +174,9 @@
       enddo
       ekmfull(kts)=0.
       ekmfull(kte)=0.
-      do k=kts+1,kte-1
-        ekmfull(k)=ekmfull(k)*(zzfull(k)-zzfull(k-1))
-      enddo
+!     do k=kts+1,kte-1
+!       ekmfull(k)=ekmfull(k)*(zzfull(k)-zzfull(k-1))
+!     enddo
 !
 !   vertical mixing routine (including deposition)
 !   need to be careful here with that dumm tracer in spot 1

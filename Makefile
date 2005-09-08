@@ -232,8 +232,8 @@ em_grav2d_x : wrf
 
 emi_conv : wrf
 	@ echo '--------------------------------------'
-	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=real convert_emiss )
-	( cd test/em_real ; /bin/rm -f convert_emiss.exe ; ln -s ../../main/convert_emiss.exe . )
+	( cd chem ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=real convert_emiss )
+	( cd test/em_real ; /bin/rm -f convert_emiss.exe ; ln -s ../../chem/convert_emiss.exe . )
 	( cd test/em_real ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
 	( cd run ; /bin/rm -f namelist.input ; ln -s ../test/em_real/namelist.input . )
 
@@ -241,8 +241,8 @@ emi_conv : wrf
 
 bio_conv : wrf
 	@ echo '--------------------------------------'
-	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=real convert_bioemiss )
-	( cd test/em_real ; /bin/rm -f convert_bioemiss.exe ; ln -s ../../main/convert_bioemiss.exe . )
+	( cd chem ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=real convert_bioemiss )
+	( cd test/em_real ; /bin/rm -f convert_bioemiss.exe ; ln -s ../../chem/convert_bioemiss.exe . )
 	( cd test/em_real ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
 	( cd run ; /bin/rm -f namelist.input ; ln -s ../test/em_real/namelist.input . )
 

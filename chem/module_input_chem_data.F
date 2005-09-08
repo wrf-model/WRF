@@ -59,7 +59,6 @@ MODULE module_input_chem_data
       REAL mwso4
       PARAMETER (mwso4=96.0576)
 
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Initial atmospheric chemistry profile data
     INTEGER :: k_loop           ! Used for loop index
@@ -82,6 +81,63 @@ MODULE module_input_chem_data
     CHARACTER (LEN=4), DIMENSION(logg) :: ggnam
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  The idealized profile is converted from the NALROM chemistry model.
+!
+! The variable "iref" is the reference index 
+!    "fracref" is the reference fraction correpsonding to iref
+!
+!  For example: WRF-Chem species number 1 is SO2.  iref(1) is 12, and XL(12,K)
+!  is the profile for SO2.
+!
+!  Note: NALROM calculates lumped OX (XL(1) =O3+NO2+HNO3+...) and a
+!  lumped NOX (XL(2)=NO+NO2+NO3+2N2O5+HO2NO2+HONO).  But XL(33) is
+!  strictly O3, and XL(34)=NOx=(NO+NO2 only).
+!
+!  Short-lived species are initialized to steady-state equilibrium - 
+!  since they are short-lived.  The short-lived species within a lumped category 
+!  (Ox , NOx, or NO3+N2O5 in our case) would be renormalized to the lumped class 
+!  after the steady-state equilibrium concentrations are determined.
+!
+!  The following is a list of long-lived species 
+! 
+!      NAMEL( 1)='OX        '
+!      NAMEL( 2)='NOX       '
+!      NAMEL( 3)='HNO3      '
+!      NAMEL( 4)='H2O2      '
+!      NAMEL( 5)='CH3OOH    '
+!      NAMEL( 6)='CO        '
+!      NAMEL( 7)='ISOPRENE  '
+!      NAMEL( 8)='CH2O      '
+!      NAMEL( 9)='CH3CHO    '
+!      NAMEL(10)='PAN       '
+!      NAMEL(11)='OTHER ALKA'
+!      NAMEL(12)='SO2       '
+!      NAMEL(13)='BUTANE    '
+!      NAMEL(14)='ETHENE    '
+!      NAMEL(15)='PROPENE+   '
+!      NAMEL(16)='PPN       '
+!      NAMEL(17)='MEK       '
+!      NAMEL(18)='RCHO      '
+!      NAMEL(19)='SO4=      '
+!      NAMEL(20)='MVK       '
+!      NAMEL(21)='MACR      '
+!      NAMEL(22)='HAC       '
+!      NAMEL(23)='MGLY      '
+!      NAMEL(24)='HPAN      '
+!      NAMEL(25)='MPAN      '
+!      NAMEL(26)='PROPANE   '
+!      NAMEL(27)='ACETYLENE '
+!      NAMEL(28)='OH        '
+!      NAMEL(29)='HO2       '
+!      NAMEL(30)='NO3+N2O5  '
+!      NAMEL(31)='HO2NO2    '
+!      NAMEL(32)='SUM RO2   '
+!      NAMEL(33)='OZONE     '
+!      NAMEL(34)='NOX       ' 
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
+
 
     DATA iref/12,19,2,2,1,3,4,9,8,5,5,32,6,6,6,30,30,10,26,13,11,6,6, &
                14,15,15,23,23,32,16,23,31,17,5*23,7,28,29,59*7/
@@ -280,6 +336,7 @@ SUBROUTINE input_ext_chem_file (si_grid)
    TYPE (grid_config_rec_type)              :: config_flags
    TYPE(domain) , POINTER ::  null_domain, chem_grid, chgrid
    TYPE(domain) , POINTER ::  chem_grid2, chgrid2
+!   TYPE(ESMF_Time)                        :: CurrTime
 
    !  Interface block for routine that passes pointers and needs to know that they
    !  are receiving pointers.
@@ -332,7 +389,7 @@ SUBROUTINE input_ext_chem_file (si_grid)
 
    file_counter = 1
    need_new_file = .FALSE.
-   CALL init_module_get_file_names
+!  CALL init_module_get_file_names
    CALL unix_ls ( 'chemin' , chem_grid%id )
 
    !  Open the input data (chemin_d01_000000) for reading.
@@ -496,6 +553,9 @@ SUBROUTINE input_ext_chem_file (si_grid)
 !           ch_zsig(:,k,:) = 0.5 * ( ch_zsigf(:,k,:) + ch_zsigf(:,k+1,:) ) 
 !         enddo
 !         ch_zsig(:,kde,:) = 0.5 * ( 3. * ch_zsigf(:,kde,:) - ch_zsigf(:,kde-1,:) ) 
+
+!       ! Fill top level to prevent spurious interpolation results (no extrapolation)
+!         chgrid%chem(:,kde,:,:) = chgrid%chem(:,kde-1,:,:)
 
 !     ! Interpolate the chemistry data to the temp chgrid2 structure
 
@@ -722,7 +782,6 @@ SUBROUTINE input_chem_profile (si_grid)
    si_zsig(:,kde,:) = 0.5 * ( 3. * si_zsigf(:,kde,:) - si_zsigf(:,kde-1,:) ) 
 
    ! Interpolate the chemistry data to the SI grid
-
 
    CALL make_chem_profile (ims, ime, jms, jme, kms, kme, num_chem, &
                            si_zsig, si_grid%chem)
@@ -1265,7 +1324,156 @@ SUBROUTINE input_chem_profile (si_grid)
 
 
    END SUBROUTINE cv_mmdd_jday
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-END MODULE module_input_chem_data
+SUBROUTINE med_read_bin_chem_emiss ( grid , config_flags ,intime, itime_max)
+  ! Driver layer
+!  USE module_domain
+!  USE module_io_domain
+!  USE module_timing
+  ! Model layer
+!  USE module_configure
+   USE module_bc_time_utilities
+#ifdef DM_PARALLEL
+   USE module_dm
+#endif
+!  USE module_date_time
+!  USE module_utility
+
+
+   IMPLICIT NONE
+
+  ! Arguments
+   TYPE(domain)                               :: grid
+   TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
+  !INTEGER , INTENT(IN)                       :: start_step , step , end_step
+!  Type (ESMF_Time )                          :: start_time, stop_time, CurrTime
+!   TYPE(WRF_UTIL_TimeInterval) :: time_interval
+
+
+  ! Local data
+   LOGICAL, EXTERNAL                      :: wrf_dm_on_monitor
+   LOGICAL                                :: emiss_opened
+   INTEGER                                :: intime, itime,itime_max, ierr , open_status , fid
+   REAL                                   :: time, btime, bfrq
+   REAL, ALLOCATABLE :: dumc0(:,:,:)
+   CHARACTER (LEN=256)                    :: message
+   CHARACTER (LEN=80)                     :: bdyname
+
+   CHARACTER (LEN=9 ),DIMENSION(30)       :: ename
+   INTEGER :: nv,i , j , k, &
+              ids, ide, jds, jde, kds, kde,    &
+              ims, ime, jms, jme, kms, kme,    &
+              ips, ipe, jps, jpe, kps, kpe
+
+
+#include <wrf_io_flags.h>
+
+   print *,'call read emissions', intime
+
+   IF(intime == 0 ) THEN
+     CALL construct_filename1 ( bdyname , '../../run/wrfem12k_00to12z' , grid%id , 2 )
+
+     IF (wrf_dm_on_monitor()) THEN
+        open (91,file=bdyname,form='unformatted')
+     ENDIf
+     print *,' OPENED FILE: ',bdyname
+   ENDIF
+   IF(intime == 12 ) THEN
+     CALL construct_filename1 ( bdyname , '../../run/wrfem12k_12to24z' , grid%id , 2 )
+
+     IF (wrf_dm_on_monitor()) THEN
+        open (91,file=bdyname,form='unformatted')
+     ENDIf
+     print *,' OPENED FILE: ',bdyname
+   ENDIF
+   CALL wrf_debug( 100 , 'med_read_bin_chem_emiss: calling emissions' )
+
+   CALL get_ijk_from_grid (  grid ,                        &
+                             ids, ide, jds, jde, kds, kde,    &
+                             ims, ime, jms, jme, kms, kme,    &
+                             ips, ipe, jps, jpe, kps, kpe    )
+
+   ALLOCATE (dumc0(ids:ide-1,kds:kde-1,jds:jde-1))
+
+       print *,' I am reading emissions, dims: =',ids, ide-1, jds, jde-1, kds, kde-1
+
+   IF(intime == 0 .or. intime == 12) then
+     read(91)nv
+     read(91)ename
+     print *, ' Number of emissions: ',nv
+     print *, ' Array names : ',ename
+   ENDIF
+       read(91)itime
+       print *, ' EMISSIONS INPUT FILE TIME PERIOD (GMT): ',itime-1,' TO ',itime
+
+         read(91)dumc0
+         grid%e_so2(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         read(91)dumc0
+         grid%e_no(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         read(91)dumc0
+         grid%e_ald(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         read(91)dumc0
+         grid%e_hcho(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         read(91)dumc0
+         grid%e_ora2(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         read(91)dumc0
+         grid%e_nh3(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         read(91)dumc0
+         grid%e_hc3(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         read(91)dumc0
+         grid%e_hc5(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         read(91)dumc0
+         grid%e_hc8(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         read(91)dumc0
+         grid%e_eth(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         read(91)dumc0
+         grid%e_co(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         read(91)dumc0
+         grid%e_ol2(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         read(91)dumc0
+         grid%e_olt(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         read(91)dumc0
+         grid%e_oli(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         read(91)dumc0
+         grid%e_tol(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         read(91)dumc0
+         grid%e_xyl(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         read(91)dumc0
+         grid%e_ket(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         read(91)dumc0
+         grid%e_csl(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         read(91)dumc0
+         grid%e_iso(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         read(91)dumc0
+         grid%e_pm25i(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         read(91)dumc0
+         grid%e_pm25j(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         read(91)dumc0
+         grid%e_so4i(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         read(91)dumc0
+         grid%e_so4j(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         read(91)dumc0
+         grid%e_no3i(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         read(91)dumc0
+         grid%e_no3j(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         read(91)dumc0
+         grid%e_orgi(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         read(91)dumc0
+         grid%e_orgj(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         read(91)dumc0
+         grid%e_eci(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         read(91)dumc0
+         grid%e_ecj(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         read(91)dumc0
+         grid%e_pm10(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+
+    DEALLOCATE ( dumc0 )
+   RETURN
+END SUBROUTINE med_read_bin_chem_emiss
+
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+END MODULE module_input_chem_data
+

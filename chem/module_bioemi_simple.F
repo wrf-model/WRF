@@ -106,6 +106,7 @@ MODULE module_bioemi_simple
 !             ust(i,j),znt(i,j),z_at_w(i,kts,j),z_at_w(i,kts+1,j)
       iland = ivgtyp(i,j)
       ta = tsk(i,j)      
+      ta = t_phy(i,kts,j)      
       rad = gsw(i,j)
       vegfrac = vegfra(i,j)
       pa = .01*p_phy(i,kts,j)

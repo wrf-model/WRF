@@ -1217,6 +1217,7 @@ END SUBROUTINE med_endup_step
  
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+#ifdef WRF_CHEM
 SUBROUTINE med_read_wrf_chem_emiss ( grid , config_flags )
   ! Driver layer
    USE module_domain
@@ -1397,5 +1398,6 @@ SUBROUTINE med_read_wrf_chem_bioemiss ( grid , config_flags )
    CALL wrf_debug (100 , 'mediation_integrate: med_read_wrf_chem_bioemissions: exit' )
 
 END SUBROUTINE med_read_wrf_chem_bioemiss
+#endif
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

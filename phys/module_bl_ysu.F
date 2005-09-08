@@ -16,6 +16,7 @@ contains
                   xland,hfx,qfx,tsk,gz1oz0,wspd,br,                &
                   dt,dtmin,kpbl2d,                                 &
                   svp1,svp2,svp3,svpt0,ep1,ep2,karman,eomeg,stbolt,&
+                  exch_h,                                          &
                   ids,ide, jds,jde, kds,kde,                       &
                   ims,ime, jms,jme, kms,kme,                       &
                   its,ite, jts,jte, kts,kte,                       &
@@ -132,6 +133,9 @@ contains
 							 rqvblten, &
 							 rqcblten
 
+      real,     dimension( ims:ime, kms:kme, jms:jme )           , &
+                intent(inout)   ::                         exch_h
+
 !
       real,     dimension( ims:ime, jms:jme )                    , &
                 intent(in   )   ::                          xland, &
@@ -195,6 +199,7 @@ contains
               ,svp1=svp1,svp2=svp2,svp3=svp3,svpt0=svpt0           &
               ,ep1=ep1,ep2=ep2,karman=karman,eomeg=eomeg           &
               ,stbolt=stbolt                                       &
+              ,exch_hx=exch_h(ims,kms,j)                            &
               ,ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde   &
               ,ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme   &
               ,its=its,ite=ite, jts=jts,jte=jte, kts=kts,kte=kte   )
@@ -218,6 +223,7 @@ contains
                   xland,hfx,qfx,tsk,gz1oz0,wspd,br,                &
                   dt,dtmin,kpbl1d,                                 &
                   svp1,svp2,svp3,svpt0,ep1,ep2,karman,eomeg,stbolt,&
+                  exch_hx,                                         &
                   ids,ide, jds,jde, kds,kde,                       &
                   ims,ime, jms,jme, kms,kme,                       &
                   its,ite, jts,jte, kts,kte,                       &
@@ -378,6 +384,10 @@ contains
                                                                al, &
                                                              zfac, &
                                                              scr4
+!jdf added exch_hx
+      real,    dimension( ims:ime, kms:kme )                     , &
+               intent(inout)   ::                         exch_hx
+
       real,    dimension( its:ite, kts:kte, ncloud)  ::        f3
 !
       logical, dimension( its:ite )             ::         pblflg, &
@@ -789,6 +799,7 @@ contains
             xkzm(i,k) = max(xkzm(i,k),xkzmin)
             xkzh(i,k) = min(xkzh(i,k),xkzmax)
             xkzh(i,k) = max(xkzh(i,k),xkzmin)
+            exch_hx(i,k) = xkzh(i,k)
           endif
         enddo
       enddo
@@ -837,6 +848,7 @@ contains
             xkzh(i,k) = max(xkzh(i,k),xkzmin)
             xkzml(i,k) = xkzm(i,k)
             xkzhl(i,k) = xkzh(i,k)
+            exch_hx(i,k) = xkzh(i,k)
           endif
         enddo
       enddo
@@ -908,6 +920,7 @@ contains
           al(i,k)   = -dtodsu*dsdz2
           ad(i,k)   = ad(i,k)-au(i,k)
           ad(i,k+1) = 1.-al(i,k)
+          exch_hx(i,k) = xkzh(i,k)
         enddo
       enddo
 !

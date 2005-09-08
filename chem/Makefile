@@ -90,3 +90,12 @@ emissions.o: module_data_radm2.o module_radm.o module_bioemi_simple.o module_bio
 
 dry_dep_driver.o: module_data_radm2.o module_dep_simple.o module_aerosols_sorgam.o
 
+convert_bioemiss : convert_bioemiss.o
+	$(RANLIB) ../main/libwrflib.a
+	$(FC) -o convert_bioemiss.exe $(LDFLAGS) convert_bioemiss.o ../main/libwrflib.a $(LIB)
+
+convert_emiss : convert_emiss.o
+	$(RANLIB) ../main/libwrflib.a
+	$(FC) -o convert_emiss.exe $(LDFLAGS) convert_emiss.o ../main/libwrflib.a $(LIB)
+
+

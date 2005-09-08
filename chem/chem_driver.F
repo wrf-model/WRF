@@ -90,42 +90,11 @@
      CASE DEFAULT 
                                                      
    END SELECT chem_select                              
-!
-!  transport part is in mixing ratio
-!
-      if(imicrogram == 1)then
-!    write(0,*)'change imicrogram from 1 to 0 in chem_driver'
-
-
-   if ( p_so4aj >= PARAM_FIRST_SCALAR ) then
-   !$OMP PARALLEL DO   &
-   !$OMP PRIVATE ( ij ,its,ite,jts,jte,kte)
-  aerosol_decouple_loop :  DO ij = 1 , grid%num_tiles
-       its = max(grid%i_start(ij),ids)
-       ite = min(grid%i_end(ij),ide-1)
-       jts = max(grid%j_start(ij),jds)
-       jte = min(grid%j_end(ij),jde-1)
-      do l=p_so4aj,num_chem
-      do j=jts,jte
-      do k=k_start,k_end
-      kk=min(k,kde-1)
-      do i=its,ite
-        chem(i,k,j,l)=chem(i,kk,j,l)*alt(i,kk,j)
-      enddo
-      enddo
-      enddo
-      enddo
-    enddo aerosol_decouple_loop
-    endif
-    imicrogram=0
-    endif
-
 !     CALL get_mminlu( mminlu_loc )
 !     if(mminlu_loc.eq.'USGS')isice=24
 !     luse_typ=mminlu_loc
 !
 !
-! make more sure , even on halo....
 !
       do nv=1,num_chem
          do j=jps,min(jde-1,jpe)
@@ -145,13 +114,6 @@
             enddo
          enddo
       enddo
-!     do nv=1,num_chem
-!        do j=jps,jpe
-!           do i=ips,ipe
-!                 chem(i,kte,j,nv)=chem(i,kte-1,j,nv)
-!           enddo
-!        enddo
-!     enddo
 
 
       vdrog3=0.
@@ -340,35 +302,6 @@
       enddo
       call wrf_debug(15,'done tileloop in chem_driver')
    END DO chem_tile_loop_1
-!
-!  if aerosols were not called, make sure units are in micrograms/m3 for
-!  output, just in case.....
-!
-      if(imicrogram == 0)then
-!    write(0,*)'change imicrogram from 0 to 1 in chem_driver'
-
-   if ( p_so4aj >= PARAM_FIRST_SCALAR ) then
-   !$OMP PARALLEL DO   &
-   !$OMP PRIVATE ( ij ,its,ite,jts,jte,kte)
-  aerosol_couple_loop :  DO ij = 1 , grid%num_tiles
-       its = max(grid%i_start(ij),ids)
-       ite = min(grid%i_end(ij),ide-1)
-       jts = max(grid%j_start(ij),jds)
-       jte = min(grid%j_end(ij),jde-1)
-      do l=p_so4aj,num_chem
-      do j=jts,jte
-      do k=k_start,k_end
-      kk=min(k,kde-1)
-      do i=its,ite
-        chem(i,k,j,l)=chem(i,kk,j,l)/alt(i,kk,j)
-      enddo
-      enddo
-      enddo
-      enddo
-    enddo aerosol_couple_loop
-    endif
-    imicrogram=1
-    endif
 
 
     END subroutine chem_driver

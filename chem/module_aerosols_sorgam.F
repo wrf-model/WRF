@@ -185,7 +185,7 @@ CONTAINS
 !
 ! convert advected aerosol variables to ug/m3 (imicrogram=1)
 !
-   imicrogram=1
+!  imicrogram=1
 !    write(0,*)'change imicrogram from 0 to 1 in sorgam'
 
    do l=p_so4aj,num_chem
@@ -432,6 +432,31 @@ CONTAINS
       enddo
       enddo
       enddo
+!
+!  put back units to mixing ratio
+!
+
+   if ( p_so4aj >= PARAM_FIRST_SCALAR ) then
+!  !$OMP PARALLEL DO   &
+!  !$OMP PRIVATE ( ij ,its,ite,jts,jte,kte)
+! aerosol_couple_loop :  DO ij = 1 , grid%num_tiles
+!      its = max(grid%i_start(ij),ids)
+!      ite = min(grid%i_end(ij),ide-1)
+!      jts = max(grid%j_start(ij),jds)
+!      jte = min(grid%j_end(ij),jde-1)
+      do l=p_so4aj,num_chem
+      do j=jts,jte
+!     do k=k_start,k_end
+      do k=kts,kte
+      kk=min(k,kde-1)
+      do i=its,ite
+        chem(i,k,j,l)=chem(i,kk,j,l)*alt(i,kk,j)
+      enddo
+      enddo
+      enddo
+      enddo
+!   enddo aerosol_couple_loop
+    endif
                                                                      
 END SUBROUTINE sorgam_driver
     SUBROUTINE sorgam_depdriver (id,ktau,dtstep,                           &
@@ -664,8 +689,7 @@ END SUBROUTINE sorgam_driver
         BLKTA(BLKSIZE)   = T(K)         ! temperature in K
         BLKDENS(BLKSIZE)=BLKPRS(BLKSIZE)/(RDGAS * BLKTA(BLKSIZE))
         USTAR(BLKSIZE) = max(1.e-8,UST(i,j))
-      convfac2=1.
-      if(imicrogram.eq.0)convfac2=1./alt(i,k,j)
+      convfac2=1./alt(i,k,j)
       cblk(1,vsulf) = max(epsilc,vsulf_in)
       cblk(1,vhno3) = max(epsilc,nitrate_in)
       cblk(1,vnh3) = max(epsilc,nh3_in)
@@ -6723,9 +6747,6 @@ END SUBROUTINE vdvg
 !  IF USING OLD SIMULATION, DO NOT REINITIALIZE!
 !
 !
-        imicrogram=1
-     write(0,*)'imicrogram to 1 in sorgam_init'
-
         if(chem_in_opt == 1 ) then
           return
         endif
@@ -6812,13 +6833,23 @@ END SUBROUTINE vdvg
         enddo
         enddo
 !
-        do l=p_so4aj,num_chem
-        do j=jts,jte
-        do i=its,ite
-           chem(i,kte,j,l)=chem(i,kte-1,j,l)
-        enddo
-        enddo
-        enddo
+!
+!  put back units to mixing ratio: This is only done when initializing from background startup
+!
+
+      do l=p_so4aj,num_chem
+         do j=jts,jte
+            do k=kts,kte
+               kk=min(k,kte-1)
+               do i=its,ite
+                 chem(i,k,j,l)=chem(i,kk,j,l)*alt(i,kk,j)
+               enddo
+            enddo
+            do i=its,ite
+              chem(i,kte,j,l)=chem(i,kte-1,j,l)
+            enddo
+         enddo
+      enddo
         
         chem=max(chem,epsilc)
         print*,'in sorgam init, nu0(ims:5,5,5)', chem(ims:5,5,5,p_nu0)

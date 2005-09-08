@@ -443,6 +443,10 @@ CONTAINS
         BR(I)=GOVRTH(I)*ZA(I)*DTHVDZ/(WSPD(I)*WSPD(I))                        
 !  IF PREVIOUSLY UNSTABLE, DO NOT LET INTO REGIMES 1 AND 2
         IF(MOL(I).LT.0.)BR(I)=AMIN1(BR(I),0.0)
+!jdf
+        RMOL(I)=-GOVRTH(I)*DTHVDZ*ZA(I)*KARMAN
+!jdf
+
   260 CONTINUE                                                                   
 
 !                                                                                
@@ -560,10 +564,12 @@ CONTAINS
 
 !---LIMIT PSIH AND PSIM IN THE CASE OF THIN LAYERS AND HIGH ROUGHNESS            
 !---  THIS PREVENTS DENOMINATOR IN FLUXES FROM GETTING TOO SMALL                 
-        PSIH(I)=AMIN1(PSIH(I),0.9*GZ1OZ0(I))                                     
-        PSIM(I)=AMIN1(PSIM(I),0.9*GZ1OZ0(I))                                     
-        PSIH2(I)=AMIN1(PSIH2(I),0.9*GZ2OZ0(I))                                     
-        PSIM10(I)=AMIN1(PSIM10(I),0.9*GZ10OZ0(I))                                     
+!       PSIH(I)=AMIN1(PSIH(I),0.9*GZ1OZ0(I))                                     
+!       PSIM(I)=AMIN1(PSIM(I),0.9*GZ1OZ0(I))                                     
+        PSIH(I)=AMIN1(PSIH(I),0.9*GZ1OZ0(I))
+        PSIM(I)=AMIN1(PSIM(I),0.9*GZ1OZ0(I))
+        PSIH2(I)=AMIN1(PSIH2(I),0.9*GZ2OZ0(I))
+        PSIM10(I)=AMIN1(PSIM10(I),0.9*GZ10OZ0(I))
   320 CONTINUE                                                                   
 !                                                                                
 !-----COMPUTE THE FRICTIONAL VELOCITY:                                           
@@ -684,7 +690,16 @@ CONTAINS
       ENDDO
                                                                         
   410 CONTINUE                                                                   
-  
+!jdf
+      DO I=its,ite
+        IF(UST(I).GE.0.1) THEN
+          RMOL(I)=RMOL(I)*(-FLHC(I))/(UST(I)*UST(I)*UST(I))
+        ELSE
+          RMOL(I)=RMOL(I)*(-FLHC(I))/(0.1*0.1*0.1)
+        ENDIF
+      ENDDO
+!jdf
+
 !                                                                                
    END SUBROUTINE SFCLAY1D
 

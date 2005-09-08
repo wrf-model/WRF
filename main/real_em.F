@@ -20,6 +20,18 @@ PROGRAM real_data
 
    IMPLICIT NONE
 
+#ifdef WRF_CHEM
+  ! interface
+   INTERFACE
+     ! mediation-supplied 
+     SUBROUTINE med_read_wrf_chem_bioemiss ( grid , config_flags)
+       USE module_domain
+       TYPE (domain) grid
+       TYPE (grid_config_rec_type) config_flags
+     END SUBROUTINE med_read_wrf_chem_bioemiss
+   END INTERFACE
+#endif
+
    REAL    :: time , bdyfrq
 
    INTEGER :: loop , levels_to_process , debug_level

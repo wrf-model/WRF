@@ -420,7 +420,7 @@ CONTAINS
               ,WSPD=wspd,BR=br,DT=dtbl,DTMIN=dtmin,KPBL2D=kpbl      &
               ,SVP1=svp1,SVP2=svp2,SVP3=svp3,SVPT0=svpt0            &
               ,EP1=ep_1,EP2=ep_2,KARMAN=karman,EOMEG=eomeg          &
-              ,STBOLT=stbolt,REGIME=regime                          &
+              ,STBOLT=stbolt,EXCH_H=exch_h,REGIME=regime            &
               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &

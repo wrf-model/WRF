@@ -133,6 +133,8 @@ CONTAINS
    INTEGER     :: sm31y, em31y, sm32y, em32y, sm33y, em33y
 #endif
 
+  INTEGER :: xs , xe , ys , ye
+  REAL :: mtn_ht
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
 
 #include "deref_kludge.h"
@@ -309,11 +311,46 @@ CONTAINS
   p_top = interp_0( p_in, zk, config_flags%ztop, nl_in )
 
   DO j=jts,jte
-  DO i=its,ite  ! flat surface
-    phb(i,1,j) = 0.
-    php(i,1,j) = 0.
-    ph0(i,1,j) = 0.
+  DO i=its,ite
     ht(i,j) = 0.
+  ENDDO
+  ENDDO
+
+  xs=ide/2 -3
+  xs=ids   -3
+  xe=xs + 6
+  ys=jde/2 -3
+  ye=ys + 6
+  mtn_ht = 500
+#ifdef MTN
+  DO j=max(ys,jds),min(ye,jde-1)
+  DO i=max(xs,ids),min(xe,ide-1)
+     ht(i,j) = mtn_ht * 0.25 * &
+               ( 1. + COS ( 2*pi/(xe-xs) * ( i-xs ) + pi ) ) * &
+               ( 1. + COS ( 2*pi/(ye-ys) * ( j-ys ) + pi ) )
+  ENDDO
+  ENDDO
+#endif
+#ifdef EW_RIDGE
+  DO j=max(ys,jds),min(ye,jde-1)
+  DO i=ids,ide
+     ht(i,j) = mtn_ht * 0.50 * &
+               ( 1. + COS ( 2*pi/(ye-ys) * ( j-ys ) + pi ) )
+  ENDDO
+  ENDDO
+#endif
+#ifdef NS_RIDGE
+  DO j=jds,jde
+  DO i=max(xs,ids),min(xe,ide-1)
+     ht(i,j) = mtn_ht * 0.50 * &
+               ( 1. + COS ( 2*pi/(xe-xs) * ( i-xs ) + pi ) )
+  ENDDO
+  ENDDO
+#endif
+  DO j=jts,jte
+  DO i=its,ite
+    phb(i,1,j) = g * ht(i,j)
+    ph0(i,1,j) = g * ht(i,j)
   ENDDO
   ENDDO
 

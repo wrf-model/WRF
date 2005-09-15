@@ -25,7 +25,7 @@ Why would anyone use GRIB output?
     data, especially for large grids.  (See Section V for more on performance).
 
 II. Running WRF
-  1. Set namelist entry or entries io_form_<x> to 9
+  1. Set namelist entry or entries io_form_<x> to 5
   2. Run WRF as you normally would, for example:
      cd test/em_real
      ./wrf.exe

@@ -1993,7 +1993,7 @@
 !
       REAL,DIMENSION(KMS:KME-1) :: QL,TL
 !
-      REAL,DIMENSION(IMS:IME,JMS:JME) :: CUBOT,CUTOP,RAINNCV,XLAND      &
+      REAL,DIMENSION(IMS:IME,JMS:JME) :: CUBOT,CUTOP,RAINNC,RAINNCV,XLAND      &
      &                                  ,ZERO_2D
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: DZ,P8W,P_PHY,PI_PHY    &
@@ -2028,6 +2028,10 @@
         LOWLYR(I,J)=KTE+1-LMH(I,J)
         XLAND(I,J)=SM(I,J)+1.
         ZERO_2D(I,J)=0.
+! FILL RAINNC WITH ZERO (NORMALLY CONTAINS THE NONCONVECTIVE 
+!         ACCUMULATED RAIN BUT NOT YET USED BY NMM)
+! COULD BE OBTAINED FROM ACPREC AND CUPREC (ACPREC-CUPREC) 
+        RAINNC(I,J)=0.
 !
 !***  FILL THE SINGLE-COLUMN INPUT
 !
@@ -2063,6 +2067,7 @@
       CALL MICROPHYSICS_DRIVER(                                         &
      &                  TH=TH_PHY                                       &
      &                 ,RHO=RR,PI_PHY=PI_PHY,P=P_PHY                    &
+     &                 ,RAINNC=RAINNC                                   &
      &                 ,RAINNCV=RAINNCV                                 &
      &                 ,DZ8W=DZ,P8W=P8W,DT=DTPHS,DX=DX,DY=DY            &
      &                 ,MP_PHYSICS=CONFIG_FLAGS%MP_PHYSICS              &
@@ -2130,6 +2135,8 @@
         PCPCOL=RAINNCV(I,J)*1.E-3
         PREC(I,J)=PREC(I,J)+PCPCOL
         ACPREC(I,J)=ACPREC(I,J)+PCPCOL
+! NOTE: RAINNC IS ACCUMULATED INSIDE MICROPHYSICS BUT NMM ZEROES IT OUT ABOVE
+!    SINCE IT IS ONLY A LOCAL ARRAY FOR NOW
 !
       ENDDO
       ENDDO

@@ -89,10 +89,10 @@ MODULE module_mp_etanew
      &                      LOWLYR,SR,                                  &
      &                      F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,           &
      &                      mp_restart_state,tbpvs_state,tbpvs0_state,  &
+     &                      RAINNC,RAINNCV,                             &
      &                      ids,ide, jds,jde, kds,kde,		        &
      &                      ims,ime, jms,jme, kms,kme,		        &
-     &                      its,ite, jts,jte, kts,kte,                  &
-     &                      RAINNC,RAINNCV )
+     &                      its,ite, jts,jte, kts,kte )
 !-----------------------------------------------------------------------
       IMPLICIT NONE
 !-----------------------------------------------------------------------
@@ -110,7 +110,7 @@ MODULE module_mp_etanew
      &                      th_phy,qv,qc
       REAL, INTENT(INOUT),  DIMENSION(ims:ime, kms:kme, jms:jme ) ::    &
      &                      F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY
-      REAL, INTENT(INOUT),  DIMENSION(ims:ime,jms:jme), OPTIONAL ::     &
+      REAL, INTENT(INOUT),  DIMENSION(ims:ime,jms:jme)           ::     &
      &                                                   RAINNC,RAINNCV
       REAL, INTENT(OUT),    DIMENSION(ims:ime,jms:jme):: SR
 !
@@ -235,21 +235,12 @@ MODULE module_mp_etanew
 ! 
 ! update rain (from m to mm)
 
-     IF(PRESENT(RAINNC))THEN
        DO j=jts,jte
        DO i=its,ite
           RAINNC(i,j)=APREC(i,j)*1000.+RAINNC(i,j)
-       ENDDO
-       ENDDO
-     ENDIF
-!
-     IF(PRESENT(RAINNCV))THEN
-       DO j=jts,jte
-       DO i=its,ite
           RAINNCV(i,j)=APREC(i,j)*1000.
        ENDDO
        ENDDO
-     ENDIF
 !
      MP_RESTART_STATE(MY_T1:MY_T2)=MY_GROWTH(MY_T1:MY_T2)
      MP_RESTART_STATE(MY_T2+1)=C1XPVS0

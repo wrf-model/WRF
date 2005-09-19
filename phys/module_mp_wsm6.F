@@ -58,11 +58,10 @@ CONTAINS
                  ,ep1, ep2, qmin                                   &
                  ,XLS, XLV0, XLF0, den0, denr                      &
                  ,cliq,cice,psat                                   &
+                 ,rain, rainncv                                    &
                  ,ids,ide, jds,jde, kds,kde                        &
                  ,ims,ime, jms,jme, kms,kme                        &
                  ,its,ite, jts,jte, kts,kte                        &
-               ! Optional
-                 ,rain, rainncv                                    &
                                                                    )
 !-------------------------------------------------------------------
   IMPLICIT NONE
@@ -124,11 +123,7 @@ CONTAINS
                                                             cice, &
                                                             psat, &
                                                             denr
-!
-! Optional
-!
   REAL, DIMENSION( ims:ime , jms:jme ),                           &
-        OPTIONAL,                                                 &
         INTENT(INOUT) ::                                    rain, &
                                                          rainncv
 ! LOCAL VAR
@@ -156,11 +151,10 @@ CONTAINS
                     ,XLS, XLV0, XLF0, den0, denr                   &
                     ,cliq,cice,psat                                &
                     ,j                                             &
+                    ,rain(ims,j),rainncv(ims,j)                    &
                     ,ids,ide, jds,jde, kds,kde                     &
                     ,ims,ime, jms,jme, kms,kme                     &
                     ,its,ite, jts,jte, kts,kte                     &
-                  ! optional
-                    ,rain(ims,j),rainncv(ims,j)                    &
                                                                    )
          DO K=kts,kte
          DO I=its,ite
@@ -182,11 +176,10 @@ CONTAINS
                    ,XLS, XLV0, XLF0, den0, denr                   &
                    ,cliq,cice,psat                                &
                    ,lat                                           &
+                   ,rain,rainncv                                  &
                    ,ids,ide, jds,jde, kds,kde                     &
                    ,ims,ime, jms,jme, kms,kme                     &
                    ,its,ite, jts,jte, kts,kte                     &
-                ! Optional
-                   ,rain,rainncv                                  &
                                                                   )
 !-------------------------------------------------------------------
   IMPLICIT NONE
@@ -230,11 +223,7 @@ CONTAINS
                                                             cice, &
                                                             psat, &
                                                             denr
-!
-! Optional
-!
   REAL, DIMENSION( ims:ime ),                                     &
-        OPTIONAL,                                                 &
         INTENT(INOUT) ::                                    rain, &
                                                          rainncv
 ! LOCAL VAR
@@ -593,8 +582,8 @@ CONTAINS
       do i = its, ite
         fallsum = fall(i,kts,1)+fall(i,kts,2)+fall(i,kts,3)
         if(fallsum.gt.0.) then
-          IF (PRESENT(rainncv)) rainncv(i) = fallsum*delz(i,kts)/denr*dtcld*1000.
-          IF (PRESENT(rain   )) rain(i) = fallsum*delz(i,kts)/denr*dtcld*1000. + rain(i)
+          rainncv(i) = fallsum*delz(i,kts)/denr*dtcld*1000.
+          rain(i) = fallsum*delz(i,kts)/denr*dtcld*1000. + rain(i)
         endif
       enddo
 !

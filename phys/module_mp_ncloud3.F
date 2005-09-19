@@ -44,11 +44,10 @@ CONTAINS
                    , ep1, ep2, qmin                                &
                    , XLS, XLV0, XLF0, den0, denr                   &
                    , cliq,cice,psat                                &
+                   , rain, rainncv                                 &
                    , ids,ide, jds,jde, kds,kde                     &
                    , ims,ime, jms,jme, kms,kme                     &
                    , its,ite, jts,jte, kts,kte                     &
-                ! optional
-                   , rain, rainncv                                 &
                                                                    )
                    
 !-------------------------------------------------------------------
@@ -93,11 +92,7 @@ CONTAINS
                                                             cice, &
                                                             psat, &
                                                             denr
-!
-! Optional
-!
   REAL, DIMENSION( ims:ime , jms:jme ),                           &
-        OPTIONAL,                                                 &
         INTENT(INOUT) ::                                    rain, &
                                                          rainncv
 
@@ -123,11 +118,10 @@ CONTAINS
                     ,XLS, XLV0, XLF0, den0, denr                   &
                     ,cliq,cice,psat                                &
                     ,J                                             &
+                    ,rain(ims,j), rainncv(ims,j)                   &
                     ,ids,ide, jds,jde, kds,kde                     &
                     ,ims,ime, jms,jme, kms,kme                     &
                     ,its,ite, jts,jte, kts,kte                     &
-                 ! optional 
-                    ,rain(ims,j), rainncv(ims,j)                   &
                                                                    )
 
          DO K=kts,kte
@@ -148,11 +142,10 @@ CONTAINS
                     ,XLS, XLV0, XLF0, den0, denr                   &
                     ,cliq,cice,psat                                &
                     ,lat                                           &
+                    ,rain, rainncv                                 &
                     ,ids,ide, jds,jde, kds,kde                     &
                     ,ims,ime, jms,jme, kms,kme                     &
                     ,its,ite, jts,jte, kts,kte                     &
-                  !optional
-                    ,rain, rainncv                                 &
                                                                    )
 !-------------------------------------------------------------------
   IMPLICIT NONE
@@ -196,11 +189,7 @@ CONTAINS
                                                             cice, &
                                                             psat, &
                                                             denr
-!
-! Optional
-!
   REAL, DIMENSION( ims:ime ),                                     &
-        OPTIONAL,                                                 &
         INTENT(INOUT) ::                                    rain, &
                                                          rainncv
 
@@ -728,13 +717,13 @@ CONTAINS
 !
       do i = its, ite
         if(fall(i,1).gt.0.) then
-          IF ( PRESENT( rainncv ) ) rainncv(i) = fall(i,1)*delz(i,1)/denr*dtcld*1000.
-          IF ( PRESENT( rain    ) ) rain(i) = fall(i,1)*delz(i,1)/denr*dtcld*1000.       &
+          rainncv(i) = fall(i,1)*delz(i,1)/denr*dtcld*1000.
+          rain(i) = fall(i,1)*delz(i,1)/denr*dtcld*1000.       &
                   + rain(i)
         endif
       enddo
 !
-!     if(lat.eq.latd.AND.PRESENT(rain)) write(iun,601) latd,lond,loop,rain(lond)
+!     if(lat.eq.latd) write(iun,601) latd,lond,loop,rain(lond)
  601  format(1x,' ncloud3 lat lon loop : rain(mm) ',3i6,f20.2)
 !
       enddo                  ! big loops

@@ -1166,8 +1166,11 @@ CONTAINS
       DST   =DST*ROTSUM*CP
 !----------------ENSURE POSITIVE ENTROPY CHANGE-------------------------
       IF(DST>0.)THEN
-        DSTQ=DST*EPSUP
+!       DSTQ=DST*EPSUP
         LBOT=0
+        LTOP=KTE
+        PTOP=PBOT
+        GO TO 800
       ELSE
         DSTQ=DST*EPSDN
       ENDIF

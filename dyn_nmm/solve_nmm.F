@@ -162,14 +162,6 @@
      &                      ,IPS,IPE,JPS,JPE,KPS,KPE )
 !-----------------------------------------------------------------------
 !
-!***  ALLOCATE PPTDAT ARRAY (PRECIP ASSIM):
-!
-      IF(PCPFLG)THEN
-        ALLOCATE(PPTDAT(IMS:IME,JMS:JME,3),STAT=ISTAT)
-      ENDIF
-!
-!-----------------------------------------------------------------------
-!
 !***  COMPUTE THESE STARTING AND STOPPING LOCATIONS FOR EACH TILE AND
 !***  NUMBER OF TILES.
 !***  SEE: http://www.mmm.ucar.edu/wrf/WG2/topics/settiles
@@ -289,9 +281,25 @@
   125 FORMAT(' SOLVE_NMM: TIMESTEP IS ',I5,'   TIME IS ',F7.3,' HOURS')
       CALL WRF_MESSAGE(TRIM(MESSAGE))
 !-----------------------------------------------------------------------
+!
       CALL WRF_GET_MYPROC(MYPE)
       CALL WRF_GET_DM_COMMUNICATOR(MPI_COMM_COMP)
       CALL WRF_GET_NPROC(NPES)
+!
+!-----------------------------------------------------------------------
+! 2005/8/31 YL Originally PCPFLG was exported from calling script and 
+! read in here with GETENV.  But GETENV is an IBM-specific routine, so 
+! that won't do.  Set PCPFLG=.FALSE. for now.  Later should read this in
+! from the namelist.
+!  
+      PCPFLG=.FALSE.
+!
+!***  ALLOCATE PPTDAT ARRAY (PRECIP ASSIM):
+!
+      IF(PCPFLG.AND..NOT.ALLOCATED(PPTDAT))THEN
+        ALLOCATE(PPTDAT(IMS:IME,JMS:JME,3),STAT=ISTAT)
+      ENDIF
+!
 !-----------------------------------------------------------------------
 !***
 !***      Call READPCP to
@@ -303,13 +311,6 @@
 !***            3) Initialize LSPA to zero
 !***
 !-----------------------------------------------------------------------
-! 2005/8/31 YL Originally PCPFLG was exported from calling script and 
-! read in here with GETENV.  But GETENV is an IBM-specific routine, so 
-! that won't do.  Set PCPFLG=.FALSE. for now.  Later should read this in
-! from the name list.
-!  
-      PCPFLG=.FALSE.
-
       IF (NTSD==0) THEN
         IF (PCPFLG) THEN
           CALL READPCP(PPTDAT,DDATA,LSPA                                &
@@ -1044,7 +1045,7 @@
 !
 !----------------------------------------------------------------------
 !
-      IF(PCPFLG)THEN
+      IF(LAST_TIME.AND.ALLOCATED(PPTDAT))THEN
         DEALLOCATE(PPTDAT,STAT=ISTAT)
       ENDIF
 !

@@ -68,7 +68,6 @@ CONTAINS
                        ids,ide, jds,jde, kds,kde,                  & ! domain dims
                        ims,ime, jms,jme, kms,kme,                  & ! memory dims
                        its,ite, jts,jte, kts,kte                   & ! tile   dims
-                      , F_QI,F_QS,F_QG,F_QNI                       &
                                                                    )
 
 !
@@ -113,9 +112,6 @@ CONTAINS
 
   REAL, INTENT(IN   ) :: 				   dt_in
   INTEGER, INTENT(IN   ) ::                              itimestep
-  LOGICAL, INTENT(IN), OPTIONAL ::                                &
-				      F_QI,F_QS,F_QG,             &
-                                      F_QNI
 
 ! LOCAL VAR
 
@@ -137,34 +133,16 @@ CONTAINS
                                                     dzw, wz
 !
   REAL    ::         dt, pptrain, pptsnow, pptgraul, rhoe_s,      &
-                     gindex, pptice
+                     pptice
 !
   INTEGER ::               i,j,k,iterm
 !
-  LOGICAL flag_qi, flag_qs, flag_qg, flag_qni
 
-   flag_qi = .false.
-   flag_qs = .false.
-   flag_qg = .false.
-   flag_qni = .false.
-   IF ( PRESENT ( f_qi ) ) flag_qi = f_qi
-   IF ( PRESENT ( f_qs ) ) flag_qs = f_qs
-   IF ( PRESENT ( f_qg ) ) flag_qg = f_qg
-   IF ( PRESENT ( f_qni ) ) flag_qni = f_qni
-!
 
    dt=dt_in
    ipstep=itimestep
    rhoe_s=1.29
 !
-   IF (  .NOT. flag_qi .OR. .NOT. flag_qs ) THEN
-      CALL wrf_error_fatal ( 'module_mp_thompson: Improper use of thompson scheme; no ice phase. Please chose another one.')
-   ENDIF
-
-   gindex=1.0
-
-   IF ( .NOT. flag_qg ) gindex=0.
-
      ql_max=0.
      qr_max=0.
      qs_max=0.
@@ -194,45 +172,12 @@ CONTAINS
    END DO
 !
 !
-   IF (flag_qi) THEN
       DO k = kts, kte
          qiz(k)=qi(i,k,j)
-      ENDDO
-   ELSE
-      DO k = kts, kte
-         qiz(k)=0.
-      ENDDO
-   ENDIF
-
-   IF (flag_qs) THEN
-      DO k = kts, kte
          qsz(k)=qs(i,k,j)
-      ENDDO
-   ELSE
-      DO k = kts, kte
-         qsz(k)=0.
-      ENDDO
-   ENDIF
-
-   IF (flag_qg) THEN
-      DO k = kts, kte
          qgz(k)=qg(i,k,j)
-      ENDDO
-   ELSE
-      DO k = kts, kte
-         qgz(k)=0.
-      ENDDO
-   ENDIF
-!
-   IF (flag_qni) THEN
-      DO k = kts, kte
          qniz(k)=qni(i,k,j)
       ENDDO
-   ELSE
-      DO k = kts, kte
-         qniz(k)=0.
-      ENDDO
-   ENDIF
 !
    pptrain=0.
    pptsnow=0.
@@ -277,30 +222,13 @@ CONTAINS
      qni_max=amax1(qni_max,qniz(k))
    END DO
 !
-   IF (flag_qi) THEN
       DO k = kts, kte
          qi(i,k,j)=qiz(k)
-      ENDDO
-   ENDIF
-
-   IF (flag_qs) THEN
-      DO k = kts, kte
          qs(i,k,j)=qsz(k)
-      ENDDO
-   ENDIF
-
-   IF (flag_qg) THEN
-      DO k = kts, kte
          qg(i,k,j)=qgz(k)
-      ENDDO
-   ENDIF
-!
-   IF (flag_qni) THEN
-      DO k = kts, kte
          qni(i,k,j)=qniz(k)
       ENDDO
-   ENDIF
-!
+
 !
    ENDDO i_loop
    ENDDO j_loop

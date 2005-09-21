@@ -309,7 +309,6 @@ SUBROUTINE microphysics_driver(                                          &
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
-                 ,F_QI=f_qi, F_QS=f_qs, F_QG=f_qg, F_QNI=f_qni  &
                                                                     )
              ELSE 
                 CALL wrf_error_fatal ( 'arguments not present for calling thompson_et_al' )
@@ -318,7 +317,8 @@ SUBROUTINE microphysics_driver(                                          &
         CASE (LINSCHEME)
              CALL wrf_debug ( 100 , 'microphysics_driver: calling lin_et_al' )
              IF ( PRESENT( QV_CURR ) .AND. PRESENT ( QC_CURR ) .AND.  &
-                  PRESENT( QR_CURR )                           .AND.  &
+                  PRESENT( QR_CURR ) .AND. PRESENT ( QI_CURR ) .AND.  &
+                  PRESENT( QS_CURR )                           .AND.  &
                   PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) .AND.  &
                   PRESENT( Z       ) .AND. PRESENT ( W       )  ) THEN
                CALL lin_et_al(                                      &
@@ -326,6 +326,8 @@ SUBROUTINE microphysics_driver(                                          &
                  ,QV=qv_curr                                        &
                  ,QL=qc_curr                                        &
                  ,QR=qr_curr                                        &
+                 ,QI=qi_curr                                        &
+                 ,QS=qs_curr                                        &
                  ,RHO=rho, PII=pi_phy, P=p, DT_IN=dt, Z=z           &
                  ,HT=ht, DZ8W=dz8w, GRAV=G,  CP=cp                  &
                  ,RAIR=r_d, RVAPOR=R_v                              &
@@ -337,9 +339,7 @@ SUBROUTINE microphysics_driver(                                          &
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
-                 ,F_QI=f_qi, F_QS=f_qs, F_QG=f_qg                   &
-                 ,QI=qi_curr                                        &
-                 ,QS=qs_curr                                        &
+                 ,F_QG=f_qg                                         &
                  ,QG=qg_curr                                        &
                                                                     )
              ELSE 

@@ -665,12 +665,13 @@ USE module_timing
    USE module_utility
    IMPLICIT NONE
 ! arguments
-   TYPE(domain) , POINTER    :: parent, grid
+   TYPE(domain) , POINTER    :: parent, grid, par, nst
    INTEGER, INTENT(OUT)      :: move_cd_x , move_cd_y
 #ifdef MOVE_NESTS
 ! local
    INTEGER     :: corral_dist, kid
    INTEGER     :: dw, de, ds, dn, pgr
+   INTEGER     :: would_move_x, would_move_y
    INTEGER     :: cids, cide, cjds, cjde, ckds, ckde, &
                   cims, cime, cjms, cjme, ckms, ckme, &
                   cips, cipe, cjps, cjpe, ckps, ckpe, &
@@ -699,6 +700,61 @@ USE module_timing
    IF   ( grid%num_nests .EQ. 0 ) THEN
      ! code that executes on innermost nest
      time_for_move = time_for_move2 ( parent , grid , move_cd_x, move_cd_y )
+
+     ! Make sure the parent can move before allowing the nest to approach
+     ! its boundary
+     par => grid%parents(1)%ptr
+     nst => grid
+     would_move_x = move_cd_x 
+     would_move_y = move_cd_y
+
+     ! top of until loop
+100  CONTINUE
+       CALL nl_get_corral_dist ( nst%id , corral_dist )
+       CALL get_ijk_from_grid (  nst ,                               &
+                                 nids, nide, njds, njde, nkds, nkde, &
+                                 nims, nime, njms, njme, nkms, nkme, &
+                                 nips, nipe, njps, njpe, nkps, nkpe  )
+       CALL get_ijk_from_grid (  par ,                               &
+                                 cids, cide, cjds, cjde, ckds, ckde, &
+                                 cims, cime, cjms, cjme, ckms, ckme, &
+                                 cips, cipe, cjps, cjpe, ckps, ckpe  )
+       CALL nl_get_parent_grid_ratio ( nst%id , pgr )
+       ! perform measurements...
+       !  from western boundary
+       dw = nst%i_parent_start + would_move_x - cids
+       !  from southern boundary
+       ds = nst%j_parent_start + would_move_y - cjds
+       !  from eastern boundary
+       de = cide - ( nst%i_parent_start + (nide-nids+1)/pgr + would_move_x )
+       !  from northern boundary
+       dn = cjde - ( nst%j_parent_start + (njde-njds+1)/pgr + would_move_y )
+
+       ! would this generate a move on the parent?
+       would_move_x = 0
+       would_move_y = 0
+       if ( dw .LE. corral_dist ) would_move_x = would_move_x - 1
+       if ( de .LE. corral_dist ) would_move_x = would_move_x + 1
+       if ( ds .LE. corral_dist ) would_move_y = would_move_y - 1
+       if ( dn .LE. corral_dist ) would_move_y = would_move_y + 1
+
+     IF ( par%id .EQ. 1 ) THEN
+         IF ( would_move_x .NE. 0 .AND. move_cd_x .NE. 0 ) THEN
+           CALL wrf_message('MOAD can not move. Cancelling nest move in X')
+           move_cd_x = 0
+         ENDIF
+         IF ( would_move_y .NE. 0 .AND. move_cd_y .NE. 0 ) THEN
+           CALL wrf_message('MOAD can not move. Cancelling nest move in Y')
+           move_cd_y = 0
+         ENDIF
+     ELSE
+         nst = par
+         par = nst%parents(1)%ptr
+         GOTO 100
+     ENDIF
+! bottom of until loop
+     time_for_move = ( move_cd_x .NE. 0 ) .OR. ( move_cd_y .NE. 0 )
+
    ELSE
      ! code that executes on parent to see if parent needs to move
      ! get closest number of cells we'll allow nest edge to approach parent bdy

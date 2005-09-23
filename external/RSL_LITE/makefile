@@ -1,4 +1,4 @@
-OBJSL   = c_code.o buf_for_proc.o rsl_malloc.o rsl_bcast.o task_for_point.o
+OBJSL   = c_code.o buf_for_proc.o rsl_malloc.o rsl_bcast.o task_for_point.o period.o
 OBJS    = $(OBJSL)
 OPTS    =
 FFLAGS  =  $(OPTS) -w
@@ -16,6 +16,9 @@ librsl_lite.a:          $(OBJS)
 
 c_code.o:	        c_code.c
 			$(CC) $(CFLAGS) -c c_code.c
+
+period.o:	        period.c
+			$(CC) $(CFLAGS) -c period.c
 
 rsl_bcast.o:	        rsl_bcast.c
 			$(CC) $(CFLAGS) -c rsl_bcast.c

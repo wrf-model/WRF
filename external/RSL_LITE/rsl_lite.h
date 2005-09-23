@@ -19,6 +19,10 @@
 #      define RSL_INTERNAL_MILLICLOCK rsl_internal_milliclock
 #      define RSL_INTERNAL_MICROCLOCK rsl_internal_microclock
 #      define TASK_FOR_POINT task_for_point
+#      define RSL_LITE_INIT_PERIOD rsl_lite_init_period
+#      define RSL_LITE_EXCH_PERIOD_Y rsl_lite_exch_period_y
+#      define RSL_LITE_EXCH_PERIOD_X rsl_lite_exch_period_x
+#      define RSL_LITE_PACK_PERIOD_X  rsl_lite_pack_period_x
 # else
 #   ifdef F2CSTYLE
 #      define RSL_LITE_ERROR_DUP1 rsl_error_dup1__
@@ -40,6 +44,10 @@
 #      define RSL_INTERNAL_MILLICLOCK rsl_internal_milliclock__
 #      define RSL_INTERNAL_MICROCLOCK rsl_internal_microclock__
 #      define TASK_FOR_POINT task_for_point__
+#      define RSL_LITE_INIT_PERIOD rsl_lite_init_period__
+#      define RSL_LITE_EXCH_PERIOD_Y rsl_lite_exch_period_y__
+#      define RSL_LITE_EXCH_PERIOD_X rsl_lite_exch_period_x__
+#      define RSL_LITE_PACK_PERIOD_X  rsl_lite_pack_period_x__
 #   else
 #      define RSL_LITE_ERROR_DUP1 rsl_error_dup1_
 #      define BYTE_BCAST byte_bcast_
@@ -60,6 +68,10 @@
 #      define RSL_INTERNAL_MILLICLOCK rsl_internal_milliclock_
 #      define RSL_INTERNAL_MICROCLOCK rsl_internal_microclock_
 #      define TASK_FOR_POINT task_for_point_
+#      define RSL_LITE_INIT_PERIOD rsl_lite_init_period_
+#      define RSL_LITE_EXCH_PERIOD_Y rsl_lite_exch_period_y_
+#      define RSL_LITE_EXCH_PERIOD_X rsl_lite_exch_period_x_
+#      define RSL_LITE_PACK_PERIOD_X  rsl_lite_pack_period_x_
 #   endif
 # endif
 #endif

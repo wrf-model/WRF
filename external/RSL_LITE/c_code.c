@@ -65,7 +65,7 @@ BYTE_BCAST ( char * buf, int * size, int * Fcomm )
 #endif
 }
 
-int yp_curs, ym_curs, xp_curs, xm_curs ;
+static int yp_curs, ym_curs, xp_curs, xm_curs ;
 
 RSL_LITE_INIT_EXCH ( 
                 int * shw0,
@@ -130,7 +130,7 @@ RSL_LITE_INIT_EXCH (
   yp_curs = 0 ; ym_curs = 0 ; xp_curs = 0 ; xm_curs = 0 ;
 }
 
-RSL_LITE_PACK ( char * buf , int * shw0 , int * typesize0 , int * xy0 , int * pu0 , char * memord ,
+RSL_LITE_PACK ( char * buf , int * shw0 , int * typesize0 , int * xy0 , int * pu0 , char * memord , int * xstag0, /* not used */
            int *me0, int * np0 , int * np_x0 , int * np_y0 , 
            int * ids0 , int * ide0 , int * jds0 , int * jde0 , int * kds0 , int * kde0 ,
            int * ims0 , int * ime0 , int * jms0 , int * jme0 , int * kms0 , int * kme0 ,

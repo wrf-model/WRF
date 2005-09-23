@@ -68,8 +68,6 @@
    CHARACTER (LEN=132) :: message
    TYPE(WRFU_Time) :: CurrTime
 
-!integer myproc
-
 ! Trick problematic compilers into not performing copy-in/copy-out by adding
 ! indices to array arguments in the CALL statements in this routine.
 ! It has the effect of passing only the first element of the array, rather 
@@ -160,8 +158,6 @@
 
    ENDIF
 
-
-!call wrf_get_myproc(myproc)
 
       IF ( grid%id .NE. 1 ) THEN
    
@@ -595,17 +591,17 @@
 
 !--------------------------------------------------------------
 
-
 #ifdef DM_PARALLEL
-#  include "PERIOD_BDY_EM_INIT.inc"
-#  include "PERIOD_BDY_EM_MOIST.inc"
-#  include "PERIOD_BDY_EM_CHEM.inc"
 #  include "HALO_EM_INIT_1.inc"
 #  include "HALO_EM_INIT_2.inc"
 #  include "HALO_EM_INIT_3.inc"
 #  include "HALO_EM_INIT_4.inc"
 #  include "HALO_EM_INIT_5.inc"
+#  include "PERIOD_BDY_EM_INIT.inc"
+#  include "PERIOD_BDY_EM_MOIST.inc"
+#  include "PERIOD_BDY_EM_CHEM.inc"
 #endif
+
 
    CALL set_physical_bc3d( u_1 , 'U' , config_flags ,                  &
                          ids , ide , jds , jde , kds , kde ,        &
@@ -856,6 +852,9 @@
 #   include "HALO_EM_INIT_3.inc"
 #   include "HALO_EM_INIT_4.inc"
 #   include "HALO_EM_INIT_5.inc"
+#  include "PERIOD_BDY_EM_INIT.inc"
+#  include "PERIOD_BDY_EM_MOIST.inc"
+#  include "PERIOD_BDY_EM_CHEM.inc"
 #endif
 
      CALL wrf_debug ( 100 , 'module_start: start_domain_rk: Returning' )

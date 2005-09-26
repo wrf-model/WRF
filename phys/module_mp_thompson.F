@@ -39,7 +39,7 @@ MODULE module_mp_thompson
 !
   REAL, dimension(31) :: aber1 = (/7939E-07,.7841E-06,.3369E-05,.4336E-05, &
                         .5285E-05,.3728E-05,.1852E-05,.2991E-06,.4248E-06, &
-                        .7434E-06,.1812E-05,.4394E-05,.9145E-05,.1725E-06, &
+                        .7434E-06,.1812E-05,.4394E-05,.9145E-05,.1725E-04, &
                         .3348E-04,.1725E-04,.9175E-05,.4412E-05,.2252E-05, &
                         .9115E-06,.4876E-06,.3473E-06,.4758E-06,.6306E-06, &
                         .8573E-06,.7868E-06,.7192E-06,.6513E-06,.5956E-06, &
@@ -2042,7 +2042,7 @@ k_sc  = k_c * (nu_c+2.0e0)/(nu_c+1.0e0)                                !..selfco
       EFSR=1.
       DSNOW=100.
       delta_v=ASNOW*DIAS**BS-ARAIN*DIAR**BR
-      KER_S_ACR=PI*(diar+dias)**2*EFSR*.5*(delta_v+abs(delta_v))*PI/6.*DIAR**3*DRAIN
+      KER_S_ACR=25.*PI*(diar+dias)**2*EFSR*.5*(delta_v+abs(delta_v))*PI/6.*DIAR**3*DRAIN
       return
       end function ker_s_acr
 !
@@ -2062,7 +2062,7 @@ k_sc  = k_c * (nu_c+2.0e0)/(nu_c+1.0e0)                                !..selfco
       EFSR=1.
       DSNOW=100.
       delta_v=ARAIN*DIAR**BR-ASNOW*DIAS**BS
-      KER_R_ACS=PI*(diar+dias)**2*EFSR*(delta_v+abs(delta_v))*PI/6.*DIAS**3*DSNOW
+      KER_R_ACS=25.*PI*(diar+dias)**2*EFSR*(delta_v+abs(delta_v))*PI/6.*DIAS**3*DSNOW
       return
       end function ker_r_acs
 !----------------------------------------------------------------

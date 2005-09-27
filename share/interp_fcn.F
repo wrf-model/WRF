@@ -804,44 +804,28 @@
 ! sintb ignores icmask so it does not matter that icmask is not set
 !
 ! SOUTH BDY
-               IF   ( njts .ge. njds .and. njts .le. njds + sz - 1  ) THEN
+               IF   ( njts .ge. njds .and. njts .le. njds + sz + joff - 1  ) THEN
         CALL sintb( psca1, psca,                     &
           cims, cime, cjms, cjme, icmask,  &
-          n2ci(nits)-1, n2ci(nite)+1, n2cj(MAX(njts,njds)), n2cj(MIN(njte,njds+sz-1)), nrj*nri, xstag, ystag )
+          n2ci(nits)-1, n2ci(nite)+1, n2cj(MAX(njts,njds)), n2cj(MIN(njte,njds+sz+joff-1)), nrj*nri, xstag, ystag )
                ENDIF
 ! NORTH BDY
-               IF ( ystag ) THEN
-                 IF   ( njte .le. njde .and. njte .ge. njde - sz + 1 ) THEN
+               IF   ( njte .le. njde .and. njte .ge. njde - sz + joff ) THEN
         CALL sintb( psca1, psca,                     &
           cims, cime, cjms, cjme, icmask,  &
-          n2ci(nits)-1, n2ci(nite)+1, n2cj(MAX(njts,njde-sz+1)), n2cj(MIN(njte,njde)), nrj*nri, xstag, ystag )
-                 ENDIF
-               ELSE
-                 IF   ( njte .le. njde .and. njte .ge. njde - sz ) THEN
-        CALL sintb( psca1, psca,                     &
-          cims, cime, cjms, cjme, icmask,  &
-          n2ci(nits)-1, n2ci(nite)+1, n2cj(MAX(njts,njde-sz)), n2cj(MIN(njte,njde-1)), nrj*nri, xstag, ystag )
-                 ENDIF
+          n2ci(nits)-1, n2ci(nite)+1, n2cj(MAX(njts,njde-sz+joff)), n2cj(MIN(njte,njde-1+joff)), nrj*nri, xstag, ystag )
                ENDIF
 ! WEST BDY
-               IF   ( nits .ge. nids .and. nits .le. nids + sz - 1 ) THEN
+               IF   ( nits .ge. nids .and. nits .le. nids + sz + ioff - 1 ) THEN
         CALL sintb( psca1, psca,                     &
           cims, cime, cjms, cjme, icmask,  &
-          n2ci(MAX(nits,nids)), n2ci(MIN(nite,nids+sz-1)), n2cj(njts)-1, n2cj(njte)+1, nrj*nri, xstag, ystag )
+          n2ci(MAX(nits,nids)), n2ci(MIN(nite,nids+sz-1+ioff)), n2cj(njts)-1, n2cj(njte)+1, nrj*nri, xstag, ystag )
                ENDIF
 ! EAST BDY
-               IF ( xstag ) THEN
-                 IF   ( nite .le. nide .and. nite .ge. nide - sz + 1 ) THEN
+               IF   ( nite .le. nide .and. nite .ge. nide - sz + ioff ) THEN
         CALL sintb( psca1, psca,                     &
           cims, cime, cjms, cjme, icmask,  &
-          n2ci(MAX(nits,nide-sz+1)), n2ci(MIN(nite,nide)), n2cj(njts)-1, n2cj(njte)+1, nrj*nri, xstag, ystag )
-                 ENDIF
-               ELSE
-                 IF   ( nite .le. nide .and. nite .ge. nide - sz ) THEN
-        CALL sintb( psca1, psca,                     &
-          cims, cime, cjms, cjme, icmask,  &
-          n2ci(MAX(nits,nide-sz)), n2ci(MIN(nite,nide-1)), n2cj(njts)-1, n2cj(njte)+1, nrj*nri, xstag, ystag )
-                 ENDIF
+          n2ci(MAX(nits,nide-sz+ioff)), n2ci(MIN(nite,nide-1+ioff)), n2cj(njts)-1, n2cj(njte)+1, nrj*nri, xstag, ystag )
                ENDIF
 
         DO nj1 = MAX(njds,njts-1), MIN(njde,njte+joff+1) 
@@ -853,23 +837,18 @@
                ci = ipos + (ni1-1) / nri      ! j coord of CD point 
                ip = mod ( ni1-1 , nri )  ! coord of ND w/i CD point
 
-#if 1
-               ni = ni1
-               nj = nj1
-#else
                ni = ni1-ioff
                nj = nj1-joff
 
                IF ( ( ni.LT.nids) .OR. (nj.LT.njds) ) THEN
                   CYCLE
                END IF
-#endif
 
 !bdy contains the value at t-dt. psca contains the value at t
 !compute dv/dt and store in bdy_t
 !afterwards store the new value of v at t into bdy
 
-               IF   ( ni .ge. nids .and. ni .lt. nids + sz ) THEN
+               IF   ( ni .ge. nids .and. ni .lt. nids + sz + ioff ) THEN
                  bdy_t( nj,k,ni, P_XSB ) = rdt*(psca(ci+shw,cj+shw,ip+1+(jp)*nri)-nfld(ni,k,nj))
                  bdy( nj,k,ni, P_XSB ) = psca(ci+shw,cj+shw,ip+1+(jp)*nri )
                ENDIF

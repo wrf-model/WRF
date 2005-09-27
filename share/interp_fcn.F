@@ -804,10 +804,10 @@
 ! sintb ignores icmask so it does not matter that icmask is not set
 !
 ! SOUTH BDY
-               IF   ( njts .ge. njds .and. njts .le. njds + sz + joff - 1  ) THEN
+               IF   ( njts .ge. njds .and. njts .le. njds + sz + joff  ) THEN
         CALL sintb( psca1, psca,                     &
           cims, cime, cjms, cjme, icmask,  &
-          n2ci(nits)-1, n2ci(nite)+1, n2cj(MAX(njts,njds)), n2cj(MIN(njte,njds+sz+joff-1)), nrj*nri, xstag, ystag )
+          n2ci(nits)-1, n2ci(nite)+1, n2cj(MAX(njts,njds)), n2cj(MIN(njte,njds+sz+joff)), nrj*nri, xstag, ystag )
                ENDIF
 ! NORTH BDY
                IF   ( njte .le. njde .and. njte .ge. njde - sz + joff ) THEN
@@ -816,10 +816,10 @@
           n2ci(nits)-1, n2ci(nite)+1, n2cj(MAX(njts,njde-sz+joff)), n2cj(MIN(njte,njde-1+joff)), nrj*nri, xstag, ystag )
                ENDIF
 ! WEST BDY
-               IF   ( nits .ge. nids .and. nits .le. nids + sz + ioff - 1 ) THEN
+               IF   ( nits .ge. nids .and. nits .le. nids + sz + ioff  ) THEN
         CALL sintb( psca1, psca,                     &
           cims, cime, cjms, cjme, icmask,  &
-          n2ci(MAX(nits,nids)), n2ci(MIN(nite,nids+sz-1+ioff)), n2cj(njts)-1, n2cj(njte)+1, nrj*nri, xstag, ystag )
+          n2ci(MAX(nits,nids)), n2ci(MIN(nite,nids+sz+ioff)), n2cj(njts)-1, n2cj(njte)+1, nrj*nri, xstag, ystag )
                ENDIF
 ! EAST BDY
                IF   ( nite .le. nide .and. nite .ge. nide - sz + ioff ) THEN

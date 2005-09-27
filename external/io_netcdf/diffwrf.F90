@@ -208,6 +208,20 @@ if ( Justplot ) then
         endif
 
 
+#if 0
+! uncomment this to have the code give i-slices 
+        do i = 1, end_index(1)
+          if ( levlim .eq. -1 .or. i .eq. levlim ) then
+            write(88,*)end_index(2),end_index(3),' ',trim(name),' ',k,' time ',TRIM(Datestr)
+            do k = start_index(3), end_index(3)
+            do j = 1, end_index(2)
+                write(88,*) data(i,j,k,1)
+              enddo
+            enddo
+          endif
+        enddo
+#else
+! give k-slices 
         do k = start_index(3), end_index(3)
           if ( levlim .eq. -1 .or. k .eq. levlim ) then
             write(88,*)end_index(1),end_index(2),' ',trim(name),' ',k,' time ',TRIM(Datestr)
@@ -218,6 +232,8 @@ if ( Justplot ) then
             enddo
           endif
         enddo
+#endif
+
         deallocate(data)
       endif
       call ext_ncd_get_next_var (dh1, VarName, Status_next_var)

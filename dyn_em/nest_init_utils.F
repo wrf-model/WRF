@@ -97,13 +97,16 @@ SUBROUTINE blend_terrain ( ter_interpolated , ter_input , &
    REAL , DIMENSION(ims:ime,kms:kme,jms:jme) , INTENT(INOUT) :: ter_input
 
    REAL , DIMENSION(ims:ime,kms:kme,jms:jme) :: ter_temp
-   INTEGER :: i , j , k , spec_zone
+   INTEGER :: i , j , k , spec_zone, spec_bdy_width
+   REAL    :: r_blend_zones
+   INTEGER blend_cell, blend_width
 
    !  The fine grid elevation comes from the horizontally intterpolated
    !  parent elevation for the first spec_zone row/columns, so we need
    !  to get that value.
 
    CALL nl_get_spec_zone ( 1, spec_zone) 
+   CALL nl_get_spec_bdy_width ( 1, spec_bdy_width) 
 
    !  Initialize temp values to the nest ter elevation.  This fills in the values
    !  that will not be modified below.  
@@ -121,44 +124,28 @@ SUBROUTINE blend_terrain ( ter_interpolated , ter_input , &
    !  there is much unnecessary "IF test inside of a loop" stuff.  For a large
    !  domain, this is only a patch; for a small domain, this is not a biggy.
 
+   blend_width = 5   ! we may want to make this namelist-settable at some point
+   r_blend_zones = (1./(blend_width+2))
    DO j = jps , MIN(jpe, jde-1)
       DO k = kps , kpe
          DO i = ips , MIN(ipe, ide-1)
-   
-            !  3 points out of the spec zone, 25% parent, 75% nest
-   
-            IF      ( ( i .EQ.       spec_zone + 3 ) .OR.  ( j .EQ.       spec_zone + 3 ) .OR. &
-                      ( i .EQ. ide - spec_zone - 3 ) .OR.  ( j .EQ. jde - spec_zone - 3 ) ) THEN
-               ter_temp(i,k,j) = (    ter_interpolated(i,k,j) + 3.*ter_input(i,k,j) ) *0.25
-            END IF
-   
-            !  2 points out of the spec zone, 50% parent, 50% nest
-   
-            IF      ( ( i .EQ.       spec_zone + 2 ) .OR.  ( j .EQ.       spec_zone + 2 ) .OR. &
-                      ( i .EQ. ide - spec_zone - 2 ) .OR.  ( j .EQ. jde - spec_zone - 2 ) ) THEN
-               ter_temp(i,k,j) = ( 2.*ter_interpolated(i,k,j) + 2.*ter_input(i,k,j) ) *0.25
-            END IF
-   
-            !  1 point out of the spec zone, 75% parent, 25% nest
-   
-            IF      ( ( i .EQ.       spec_zone + 1 ) .OR.  ( j .EQ.       spec_zone + 1 ) .OR. &
-                      ( i .EQ. ide - spec_zone - 1 ) .OR.  ( j .EQ. jde - spec_zone - 1 ) ) THEN
-               ter_temp(i,k,j) = ( 3.*ter_interpolated(i,k,j) +    ter_input(i,k,j) ) *0.25
-            END IF
-   
-            !  In the spec_zone: 100% of the terrain interpolated from the parent
-   
-            IF      ( ( i .LE.       spec_zone     ) .OR.  ( j .LE.       spec_zone     ) .OR. &
-                      ( i .GE. ide - spec_zone     ) .OR.  ( j .GE. jde - spec_zone     ) ) THEN
+            DO blend_cell = blend_width,1,-1
+               IF   ( ( i .EQ.       spec_bdy_width + blend_cell ) .OR.  ( j .EQ.       spec_bdy_width + blend_cell ) .OR. &
+                      ( i .EQ. ide - spec_bdy_width - blend_cell ) .OR.  ( j .EQ. jde - spec_bdy_width - blend_cell ) ) THEN
+                  ter_temp(i,k,j) = ( (blend_cell+1)*ter_interpolated(i,k,j) + (blend_width-blend_cell+1)*ter_input(i,k,j) ) &
+                                    * r_blend_zones
+               END IF
+            ENDDO
+            IF      ( ( i .LE.       spec_bdy_width     ) .OR.  ( j .LE.       spec_bdy_width     ) .OR. &
+                      ( i .GE. ide - spec_bdy_width     ) .OR.  ( j .GE. jde - spec_bdy_width     ) ) THEN
                ter_temp(i,k,j) =      ter_interpolated(i,k,j)
             END IF
-   
          END DO 
       END DO 
    END DO 
 
    !  Set nest elevation with temp values.  All values not overwritten in the above
-   !  100%, 75%, 50%, 25% loops have been previously set in the initial assignment.
+   !  loops have been previously set in the initial assignment.
 
    DO j = jps , MIN(jpe, jde-1)
       DO k = kps , kpe

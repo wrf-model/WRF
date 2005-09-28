@@ -810,10 +810,10 @@
           n2ci(nits)-1, n2ci(nite)+1, n2cj(MAX(njts,njds)), n2cj(MIN(njte,njds+sz+joff)), nrj*nri, xstag, ystag )
                ENDIF
 ! NORTH BDY
-               IF   ( njte .le. njde .and. njte .ge. njde - sz + joff ) THEN
+               IF   ( njte .le. njde .and. njte .ge. njde - sz - joff ) THEN
         CALL sintb( psca1, psca,                     &
           cims, cime, cjms, cjme, icmask,  &
-          n2ci(nits)-1, n2ci(nite)+1, n2cj(MAX(njts,njde-sz+joff)), n2cj(MIN(njte,njde-1+joff)), nrj*nri, xstag, ystag )
+          n2ci(nits)-1, n2ci(nite)+1, n2cj(MAX(njts,njde-sz-joff)), n2cj(MIN(njte,njde-1+joff)), nrj*nri, xstag, ystag )
                ENDIF
 ! WEST BDY
                IF   ( nits .ge. nids .and. nits .le. nids + sz + ioff  ) THEN
@@ -822,18 +822,18 @@
           n2ci(MAX(nits,nids)), n2ci(MIN(nite,nids+sz+ioff)), n2cj(njts)-1, n2cj(njte)+1, nrj*nri, xstag, ystag )
                ENDIF
 ! EAST BDY
-               IF   ( nite .le. nide .and. nite .ge. nide - sz + ioff ) THEN
+               IF   ( nite .le. nide .and. nite .ge. nide - sz - ioff ) THEN
         CALL sintb( psca1, psca,                     &
           cims, cime, cjms, cjme, icmask,  &
-          n2ci(MAX(nits,nide-sz+ioff)), n2ci(MIN(nite,nide-1+ioff)), n2cj(njts)-1, n2cj(njte)+1, nrj*nri, xstag, ystag )
+          n2ci(MAX(nits,nide-sz-ioff)), n2ci(MIN(nite,nide-1+ioff)), n2cj(njts)-1, n2cj(njte)+1, nrj*nri, xstag, ystag )
                ENDIF
 
-        DO nj1 = MAX(njds,njts-1), MIN(njde,njte+joff+1) 
+        DO nj1 = MAX(njds,njts-1), MIN(njde+joff,njte+joff+1) 
            cj = jpos + (nj1-1) / nrj     ! j coord of CD point 
            jp = mod ( nj1-1 , nrj )  ! coord of ND w/i CD point
            nk = k
            ck = nk
-           DO ni1 = MAX(nids,nits-1), MIN(nide,nite+ioff+1)
+           DO ni1 = MAX(nids,nits-1), MIN(nide+ioff,nite+ioff+1)
                ci = ipos + (ni1-1) / nri      ! j coord of CD point 
                ip = mod ( ni1-1 , nri )  ! coord of ND w/i CD point
 
@@ -847,36 +847,39 @@
 !bdy contains the value at t-dt. psca contains the value at t
 !compute dv/dt and store in bdy_t
 !afterwards store the new value of v at t into bdy
-
+        ! WEST
                IF   ( ni .ge. nids .and. ni .lt. nids + sz + ioff ) THEN
                  bdy_t( nj,k,ni, P_XSB ) = rdt*(psca(ci+shw,cj+shw,ip+1+(jp)*nri)-nfld(ni,k,nj))
                  bdy( nj,k,ni, P_XSB ) = psca(ci+shw,cj+shw,ip+1+(jp)*nri )
                ENDIF
 
+        ! SOUTH
                IF   ( nj .ge. njds .and. nj .lt. njds + sz ) THEN
                  bdy_t( ni,k,nj, P_YSB ) = rdt*(psca(ci+shw,cj+shw,ip+1+(jp)*nri)-nfld(ni,k,nj))
                  bdy( ni,k,nj, P_YSB ) = psca(ci+shw,cj+shw,ip+1+(jp)*nri )
                ENDIF
 
+        ! EAST
                IF ( xstag ) THEN
-                 IF   ( ni .le. nide .and. ni .ge. nide - sz + 1 ) THEN
-                   bdy_t( nj,k,nide-ni+1, P_XEB ) = rdt*(psca(ci+shw,cj+shw,ip+1+(jp)*nri)-nfld(ni,k,nj))
-                   bdy( nj,k,nide-ni+1, P_XEB ) = psca(ci+shw,cj+shw,ip+1+(jp)*nri )
+                 IF   ( ni .ge. nide - sz + ioff .AND. ni .le. nide ) THEN
+                   bdy_t( nj,k,nide-ni+ioff, P_XEB ) = rdt*(psca(ci+shw,cj+shw,ip+1+(jp)*nri)-nfld(ni,k,nj))
+                   bdy( nj,k,nide-ni+ioff, P_XEB ) = psca(ci+shw,cj+shw,ip+1+(jp)*nri )
                  ENDIF
                ELSE
-                 IF   ( ni .le. nide-1 .and. ni .ge. nide - sz ) THEN
+                 IF   ( ni .ge. nide - sz .AND. ni .le. nide-1 ) THEN
                    bdy_t( nj,k,nide-ni, P_XEB ) = rdt*(psca(ci+shw,cj+shw,ip+1+(jp)*nri)-nfld(ni,k,nj))
                    bdy( nj,k,nide-ni, P_XEB ) = psca(ci+shw,cj+shw,ip+1+(jp)*nri )
                  ENDIF
                ENDIF
 
+        ! NORTH
                IF ( ystag ) THEN
-                 IF   ( nj .le. njde .and. nj .ge. njde - sz + 1 ) THEN
-                   bdy_t(ni,k,njde-nj+1,P_YEB ) = rdt*(psca(ci+shw,cj+shw,ip+1+(jp)*nri)-nfld(ni,k,nj))
-                   bdy( ni,k,njde-nj+1,P_YEB ) = psca(ci+shw,cj+shw,ip+1+(jp)*nri )
+                 IF   ( nj .ge. njde - sz + joff .AND. nj .le. njde  ) THEN
+                   bdy_t( ni,k,njde-nj+joff,P_YEB ) = rdt*(psca(ci+shw,cj+shw,ip+1+(jp)*nri)-nfld(ni,k,nj))
+                   bdy( ni,k,njde-nj+joff,P_YEB ) = psca(ci+shw,cj+shw,ip+1+(jp)*nri )
                  ENDIF
                ELSE
-                 IF   ( nj .le. njde-1 .and. nj .ge. njde - sz ) THEN
+                 IF   (  nj .ge. njde - sz .AND. nj .le. njde-1 ) THEN
                    bdy_t(ni,k,njde-nj,P_YEB ) = rdt*(psca(ci+shw,cj+shw,ip+1+(jp)*nri)-nfld(ni,k,nj))
                    bdy( ni,k,njde-nj,P_YEB ) = psca(ci+shw,cj+shw,ip+1+(jp)*nri )
                  ENDIF

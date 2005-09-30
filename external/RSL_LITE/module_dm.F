@@ -492,12 +492,32 @@ CONTAINS
 
   END SUBROUTINE compute_memory_dims_rsl_lite
 
+! internal, used below for switching the argument to MPI calls
+! if reals are being autopromoted to doubles in the build of WRF
+   INTEGER function getrealmpitype
+#ifndef STUBMPI
+      IMPLICIT NONE
+      INCLUDE 'mpif.h'
+      INTEGER rtypesize, dtypesize, ierr
+      CALL mpi_type_size ( MPI_REAL, rtypesize, ierr )
+      CALL mpi_type_size ( MPI_DOUBLE_PRECISION, dtypesize, ierr )
+      IF ( RWORDSIZE .EQ. rtypesize ) THEN
+        getrealmpitype = MPI_REAL
+      ELSE IF ( RWORDSIZE .EQ. dtypesize ) THEN
+        getrealmpitype = MPI_DOUBLE_PRECISION
+      ELSE
+        CALL wrf_error_fatal ( 'RWORDSIZE or DWORDSIZE does not match any MPI type' )
+      ENDIF
+#endif
+      RETURN
+   END FUNCTION getrealmpitype
+
    REAL FUNCTION wrf_dm_max_real ( inval )
       IMPLICIT NONE
       INCLUDE 'mpif.h'
       REAL inval, retval
       INTEGER ierr
-      CALL mpi_allreduce ( inval, retval , 1, MPI_REAL, MPI_MAX, local_communicator, ierr )
+      CALL mpi_allreduce ( inval, retval , 1, getrealmpitype(), MPI_MAX, local_communicator, ierr )
       wrf_dm_max_real = retval
    END FUNCTION wrf_dm_max_real
 
@@ -506,7 +526,7 @@ CONTAINS
       INCLUDE 'mpif.h'
       REAL inval, retval
       INTEGER ierr
-      CALL mpi_allreduce ( inval, retval , 1, MPI_REAL, MPI_MIN, local_communicator, ierr )
+      CALL mpi_allreduce ( inval, retval , 1, getrealmpitype(), MPI_MIN, local_communicator, ierr )
       wrf_dm_min_real = retval
    END FUNCTION wrf_dm_min_real
 
@@ -515,7 +535,7 @@ CONTAINS
       INCLUDE 'mpif.h'
       REAL inval, retval
       INTEGER ierr
-      CALL mpi_allreduce ( inval, retval , 1, MPI_REAL, MPI_SUM, local_communicator, ierr )
+      CALL mpi_allreduce ( inval, retval , 1, getrealmpitype(), MPI_SUM, local_communicator, ierr )
       wrf_dm_sum_real = retval
    END FUNCTION wrf_dm_sum_real
 
@@ -539,7 +559,7 @@ CONTAINS
 
       dex(1) = idex ; dex(2) = jdex
       CALL mpi_allgather ( dex, 2, MPI_INTEGER, dex_all , 2, MPI_INTEGER, local_communicator, ierr )
-      CALL mpi_allgather ( val, 1, MPI_REAL, val_all , 1, MPI_REAL, local_communicator, ierr )
+      CALL mpi_allgather ( val, 1, getrealmpitype(), val_all , 1, getrealmpitype(), local_communicator, ierr )
       val = val_all(1)
       idex = dex_all(1,1) ; jdex = dex_all(2,1)
       DO i = 2, ntasks
@@ -550,7 +570,6 @@ CONTAINS
         ENDIF
       ENDDO
    END SUBROUTINE wrf_dm_maxval_real
-
 
    SUBROUTINE wrf_dm_maxval_doubleprecision ( val, idex, jdex )
       IMPLICIT NONE
@@ -575,7 +594,6 @@ CONTAINS
       ENDDO
    END SUBROUTINE wrf_dm_maxval_doubleprecision
 
-
    SUBROUTINE wrf_dm_maxval_integer ( val, idex, jdex )
       IMPLICIT NONE
       INCLUDE 'mpif.h'
@@ -598,7 +616,6 @@ CONTAINS
         ENDIF
       ENDDO
    END SUBROUTINE wrf_dm_maxval_integer
-
 
    SUBROUTINE init_module_dm
       IMPLICIT NONE
@@ -2239,6 +2256,7 @@ integer myproc
                                 root                        , &    ! root
                                 communicator                , &    ! communicator
                                 ierr )
+   USE module_dm
    IMPLICIT NONE
    INCLUDE 'mpif.h'
    INTEGER field_ofst, glob_ofst
@@ -2248,11 +2266,11 @@ integer myproc
 
            CALL mpi_gatherv( Field( field_ofst ),      &    ! sendbuf
                             my_count ,                       &    ! sendcount
-                            MPI_REAL         ,               &    ! sendtype
+                            getrealmpitype() ,               &    ! sendtype
                             globbuf( glob_ofst ) ,                 &    ! recvbuf
                             counts                         , &    ! recvcounts
                             displs                         , &    ! displs
-                            MPI_REAL                       , &    ! recvtype
+                            getrealmpitype()               , &    ! recvtype
                             root                           , &    ! root
                             communicator                   , &    ! communicator
                             ierr )
@@ -2267,6 +2285,7 @@ integer myproc
                                 root                        , &    ! root
                                 communicator                , &    ! communicator
                                 ierr )
+   USE module_dm
    IMPLICIT NONE
    INCLUDE 'mpif.h'
    INTEGER field_ofst, glob_ofst
@@ -2280,7 +2299,7 @@ integer myproc
                             globbuf( glob_ofst ) ,                 &    ! recvbuf
                             counts                         , &    ! recvcounts
                             displs                         , &    ! displs
-                            MPI_REAL                       , &    ! recvtype
+                            MPI_DOUBLE_PRECISION                       , &    ! recvtype
                             root                           , &    ! root
                             communicator                   , &    ! communicator
                             ierr )

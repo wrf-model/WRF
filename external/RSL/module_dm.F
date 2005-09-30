@@ -3035,6 +3035,25 @@ messages(120)=  s5e5
       CALL set_def_decomp_fcn ( rsl_patch_decomp )
    END SUBROUTINE init_module_dm
 
+! internal, used below for switching the argument to MPI calls
+! if reals are being autopromoted to doubles in the build of WRF
+   INTEGER function getrealmpitype
+#ifndef STUBMPI
+      IMPLICIT NONE
+      INCLUDE 'mpif.h'
+      INTEGER rtypesize, dtypesize, ierr
+      CALL mpi_type_size ( MPI_REAL, rtypesize, ierr )
+      CALL mpi_type_size ( MPI_DOUBLE_PRECISION, dtypesize, ierr )
+      IF ( RWORDSIZE .EQ. rtypesize ) THEN
+        getrealmpitype = MPI_REAL
+      ELSE IF ( RWORDSIZE .EQ. dtypesize ) THEN
+        getrealmpitype = MPI_DOUBLE_PRECISION
+      ELSE
+        CALL wrf_error_fatal ( 'RWORDSIZE or DWORDSIZE does not match any MPI type' )
+      ENDIF
+#endif
+      RETURN
+   END FUNCTION getrealmpitype
 
    REAL FUNCTION wrf_dm_max_real ( inval )
       IMPLICIT NONE
@@ -3047,7 +3066,7 @@ messages(120)=  s5e5
 ! </DESCRIPTION>
 #ifndef STUBMPI
       INCLUDE 'mpif.h'
-      CALL mpi_allreduce ( inval, retval , 1, MPI_REAL, MPI_MAX, mpi_comm_local, ierr )
+      CALL mpi_allreduce ( inval, retval , 1, getrealmpitype() , MPI_MAX, mpi_comm_local, ierr )
       wrf_dm_max_real = retval
 #else
       wrf_dm_max_real = inval
@@ -3057,6 +3076,7 @@ messages(120)=  s5e5
    REAL FUNCTION wrf_dm_min_real ( inval )
       IMPLICIT NONE
       REAL inval, retval
+      INTEGER typesize, op
       INTEGER ierr
 ! <DESCRIPTION>
 ! Collective operation. Each processor calls passing a local value; on return
@@ -3065,7 +3085,7 @@ messages(120)=  s5e5
 ! </DESCRIPTION>
 #ifndef STUBMPI
       INCLUDE 'mpif.h'
-      CALL mpi_allreduce ( inval, retval , 1, MPI_REAL, MPI_MIN, mpi_comm_local, ierr )
+      CALL mpi_allreduce ( inval, retval , 1, getrealmpitype() , MPI_MIN, mpi_comm_local, ierr )
       wrf_dm_min_real = retval
 #else
       wrf_dm_min_real = inval
@@ -3075,6 +3095,7 @@ messages(120)=  s5e5
    REAL FUNCTION wrf_dm_sum_real ( inval )
       IMPLICIT NONE
       INTEGER ierr
+      INTEGER typesize, op
       REAL inval, retval
 ! <DESCRIPTION>
 ! Collective operation. Each processor calls passing a local value; on return
@@ -3083,7 +3104,7 @@ messages(120)=  s5e5
 ! </DESCRIPTION>
 #ifndef STUBMPI
       INCLUDE 'mpif.h'
-      CALL mpi_allreduce ( inval, retval , 1, MPI_REAL, MPI_SUM, mpi_comm_local, ierr )
+      CALL mpi_allreduce ( inval, retval , 1, getrealmpitype() , MPI_SUM, mpi_comm_local, ierr )
       wrf_dm_sum_real = retval
 #else
       wrf_dm_sum_real = inval
@@ -3126,7 +3147,7 @@ messages(120)=  s5e5
       CALL wrf_get_dm_communicator ( comm )
       dex(1) = idex ; dex(2) = jdex
       CALL mpi_allgather ( dex, 2, MPI_INTEGER, dex_all , 2, MPI_INTEGER, comm, ierr )
-      CALL mpi_allgather ( val, 1, MPI_REAL, val_all , 1, MPI_REAL, comm, ierr )
+      CALL mpi_allgather ( val, 1, getrealmpitype(), val_all , 1, getrealmpitype(), comm, ierr )
       val = val_all(1)
       idex = dex_all(1,1) ; jdex = dex_all(2,1)
       DO i = 2, rsl_nproc
@@ -3157,7 +3178,7 @@ messages(120)=  s5e5
       CALL wrf_get_dm_communicator ( comm )
       dex(1) = idex ; dex(2) = jdex
       CALL mpi_allgather ( dex, 2, MPI_INTEGER, dex_all , 2, MPI_INTEGER, comm, ierr )
-      CALL mpi_allgather ( val, 1, MPI_REAL, val_all , 1, MPI_REAL, comm, ierr )
+      CALL mpi_allgather ( val, 1, getrealmpitype(), val_all , 1, getrealmpitype(), comm, ierr )
       val = val_all(1)
       idex = dex_all(1,1) ; jdex = dex_all(2,1)
       DO i = 2, rsl_nproc
@@ -4603,6 +4624,7 @@ END
                                 root                        , &    ! root
                                 communicator                , &    ! communicator
                                 ierr )
+   USE module_dm
    IMPLICIT NONE
    INCLUDE 'mpif.h'
    INTEGER field_ofst, glob_ofst
@@ -4612,11 +4634,11 @@ END
 
            CALL mpi_gatherv( Field( field_ofst ),      &    ! sendbuf
                             my_count ,                       &    ! sendcount
-                            MPI_REAL         ,               &    ! sendtype
+                            getrealmpitype()         ,               &    ! sendtype
                             globbuf( glob_ofst ) ,                 &    ! recvbuf
                             counts                         , &    ! recvcounts
                             displs                         , &    ! displs
-                            MPI_REAL                       , &    ! recvtype
+                            getrealmpitype()                       , &    ! recvtype
                             root                           , &    ! root
                             communicator                   , &    ! communicator
                             ierr )
@@ -4631,6 +4653,7 @@ END
                                 root                        , &    ! root
                                 communicator                , &    ! communicator
                                 ierr )
+   USE module_dm
    IMPLICIT NONE
    INCLUDE 'mpif.h'
    INTEGER field_ofst, glob_ofst
@@ -4659,6 +4682,7 @@ END
                                 root                        , &    ! root
                                 communicator                , &    ! communicator
                                 ierr )
+   USE module_dm
    IMPLICIT NONE
    INCLUDE 'mpif.h'
    INTEGER field_ofst, glob_ofst
@@ -4672,7 +4696,7 @@ END
                             globbuf( glob_ofst ) ,                 &    ! recvbuf
                             counts                         , &    ! recvcounts
                             displs                         , &    ! displs
-                            MPI_REAL                       , &    ! recvtype
+                            MPI_DOUBLE_PRECISION                      , &    ! recvtype
                             root                           , &    ! root
                             communicator                   , &    ! communicator
                             ierr )

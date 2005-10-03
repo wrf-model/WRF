@@ -3037,7 +3037,7 @@ messages(120)=  s5e5
 
 ! internal, used below for switching the argument to MPI calls
 ! if reals are being autopromoted to doubles in the build of WRF
-   INTEGER function getrealmpitype
+   INTEGER function getrealmpitype()
 #ifndef STUBMPI
       IMPLICIT NONE
       INCLUDE 'mpif.h'

@@ -306,12 +306,8 @@
    END IF
 
    
-
-   
-   
-
-
-   IF ( ( config_flags%input_from_hires ) .OR. ( config_flags%input_from_file ) ) THEN
+   IF ( .NOT. config_flags%restart .AND. &
+        (( config_flags%input_from_hires ) .OR. ( config_flags%input_from_file ))) THEN
 
       CALL nl_get_base_pres  ( 1 , p00 )
       CALL nl_get_base_temp  ( 1 , t00 )

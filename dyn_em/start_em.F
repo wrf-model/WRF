@@ -132,7 +132,7 @@
    IF ( config_flags%restart .or. moved ) THEN 
        first_trip_for_this_domain = .TRUE.
    ENDIF
-   
+
    IF (config_flags%specified) THEN
 !
 ! Arrays for specified boundary conditions
@@ -157,7 +157,6 @@
      dtbc = 0.
 
    ENDIF
-
 
       IF ( grid%id .NE. 1 ) THEN
    
@@ -305,7 +304,6 @@
       END IF
    END IF
 
-   
    IF ( .NOT. config_flags%restart .AND. &
         (( config_flags%input_from_hires ) .OR. ( config_flags%input_from_file ))) THEN
 
@@ -425,7 +423,7 @@
 
    ENDIF
 
-   IF ( ( grid%id .NE. 1 ) .AND. &
+   IF ( ( grid%id .NE. 1 ) .AND. .NOT. ( config_flags%restart ) .AND. &
        ( ( config_flags%input_from_hires ) .OR. ( config_flags%input_from_file ) ) ) THEN
       DO j = jts, MIN(jte,jde-1)
          DO i = its, MIN(ite,ide-1)
@@ -512,8 +510,6 @@
                       grid%i_start(ij), grid%i_end(ij), grid%j_start(ij), grid%j_end(ij), kts, kte           )
 
    ENDDO
-
-!                     SH2O, SNOWH, FNDSOILW, FNDSNOWH,        &  ! correct one
 
    CALL wrf_debug ( 100 , 'module_start: start_domain_rk: After call to phy_init' )
 

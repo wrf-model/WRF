@@ -307,9 +307,8 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
 
    END INTERFACE
 
-   nest%first_force = .true.
-
    IF ( .not. config_flags%restart ) THEN
+     nest%first_force = .true.
 
 ! initialize nest with interpolated data from the parent
      nest%imask_nostag = 1

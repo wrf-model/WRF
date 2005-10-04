@@ -114,52 +114,46 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
 #      include "em_actual_args.inc"
 !
                                 )
-     ! on restart do not force the nest the first time since it has already been forced
-     ! prior to the writing of the restart file
-     IF ( .NOT. ( nested_grid%first_force ) ) THEN
-        ! couple nested domain
-        grid => nested_grid
-        CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
-#       include "deref_kludge.h"
-        CALL couple_or_uncouple_em ( nested_grid , config_flags ,  .true., &
+     ! couple nested domain
+     grid => nested_grid
+     CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
+#    include "deref_kludge.h"
+     CALL couple_or_uncouple_em ( nested_grid , config_flags ,  .true., &
 !
 #         include "em_actual_args.inc"
 !
                                    )
-        ! perform first part: transfer data from parent to intermediate domain
-        ! at the same resolution but on the same decomposition as the nest
-        ! note that this will involve communication on multiple DM procs
-        grid => parent_grid
-        CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
-#       include "deref_kludge.h"
-        CALL interp_domain_em_part1 ( grid , nested_grid%intermediate_grid, nested_grid, config_flags ,  &
+     ! perform first part: transfer data from parent to intermediate domain
+     ! at the same resolution but on the same decomposition as the nest
+     ! note that this will involve communication on multiple DM procs
+     grid => parent_grid
+     CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
+#    include "deref_kludge.h"
+     CALL interp_domain_em_part1 ( grid , nested_grid%intermediate_grid, nested_grid, config_flags ,  &
 !
 #         include "em_actual_args.inc"
 !
                                     )
-     ENDIF ! not restart and first force
      grid => nested_grid%intermediate_grid
-     IF ( .NOT. ( nested_grid%first_force ) ) THEN
         ! perform 2nd part: run interpolation on the intermediate domain
         ! and compute the values for the nest boundaries
         ! note that this is all local (no communication)
-        CALL model_to_grid_config_rec ( nested_grid%id , model_config_rec , config_flags )
-#       include "deref_kludge.h"
-        CALL force_domain_em_part2 ( grid, nested_grid, config_flags ,  &
+     CALL model_to_grid_config_rec ( nested_grid%id , model_config_rec , config_flags )
+#    include "deref_kludge.h"
+     CALL force_domain_em_part2 ( grid, nested_grid, config_flags ,  &
 !
-#         include "em_actual_args.inc"
-!
-                                   )
-        ! uncouple the nest
-        grid => nested_grid
-        CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
-#       include "deref_kludge.h"
-        CALL couple_or_uncouple_em ( nested_grid , config_flags ,  .false. , &
-!
-#         include "em_actual_args.inc"
+#    include "em_actual_args.inc"
 !
                                    )
-     ENDIF ! not restart and first_force
+     ! uncouple the nest
+     grid => nested_grid
+     CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
+#    include "deref_kludge.h"
+     CALL couple_or_uncouple_em ( nested_grid , config_flags ,  .false. , &
+!
+#    include "em_actual_args.inc"
+!
+                                   )
      ! uncouple the parent
      grid => parent_grid
      CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )

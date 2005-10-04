@@ -53,9 +53,6 @@ SUBROUTINE wrf_restartin ( fid , grid , config_flags , switch , ierr )
     CALL nl_get_dyn_opt ( 1 , dyn_opt )
 
 #include <wrf_restartin.inc>
-    IF ( grid%id .GT. 1 ) THEN
-#include <wrf_bdyin.inc>
-    ENDIF
 
     RETURN
     END

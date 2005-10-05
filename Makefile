@@ -261,7 +261,24 @@ nmm_real : nmm_wrf
 	  ( cd test/nmm_real ; /bin/rm -f wrf_ESMFApp.exe ; ln -s ../../main/wrf_ESMFApp.exe . ) ; \
 	fi
 	( cd test/nmm_real ; /bin/rm -f real_nmm.exe ; ln -s ../../main/real_nmm.exe . )
+	( cd test/nmm_real ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
+	( cd test/nmm_real ; /bin/rm -f ETAMPNEW_DATA RRTM_DATA ;    \
+	     ln -sf ../../run/ETAMPNEW_DATA . ;                     \
+	     ln -sf ../../run/RRTM_DATA . ;                         \
+	     if [ $(RWORDSIZE) -eq 8 ] ; then                       \
+	        ln -sf ../../run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA ;  \
+	        ln -sf ../../run/RRTM_DATA_DBL RRTM_DATA ;          \
+	     fi )
+	( cd test/nmm_real ; /bin/rm -f GENPARM.TBL ; ln -s ../../run/GENPARM.TBL . )
+	( cd test/nmm_real ; /bin/rm -f LANDUSE.TBL ; ln -s ../../run/LANDUSE.TBL . )
+	( cd test/nmm_real ; /bin/rm -f SOILPARM.TBL ; ln -s ../../run/SOILPARM.TBL . )
+	( cd test/nmm_real ; /bin/rm -f VEGPARM.TBL ; ln -s ../../run/VEGPARM.TBL . )
+	( cd test/nmm_real ; /bin/rm -f tr49t67 ; ln -s ../../run/tr49t67 . )
+	( cd test/nmm_real ; /bin/rm -f tr49t85 ; ln -s ../../run/tr49t85 . )
+	( cd test/nmm_real ; /bin/rm -f tr67t85 ; ln -s ../../run/tr67t85 . )
 	( cd test/nmm_real ; /bin/rm -f gribmap.txt ; ln -s ../../run/gribmap.txt . )
+	( cd run ; /bin/rm -f real_nmm.exe ; ln -s ../main/real_nmm.exe . )
+	( cd run ; /bin/rm -f namelist.input ; ln -s ../test/nmm_real/namelist.input . )
 
 
 

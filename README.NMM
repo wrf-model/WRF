@@ -1,43 +1,45 @@
 
 WRF-NMM Model Version 2 (June 2005)
 
-------------------------
+----------------------------
 WRF-NMM PUBLIC DOMAIN NOTICE
-------------------------
+----------------------------
 
-WRF-NMM was developed at the National Centers for Environmental Predictions
-(NCEP) which is operated by NOAA. NCEP and NOAA make no proprietary
-claims, either statutory or otherwise, to this version and
-release of WRF-NMM and consider WRF-NMM to be in the public domain for
-use by any person or entity for any purpose without any fee or
-charge. NCEP requests that any WRF-NMM user include this notice on
-any partial or full copies of WRF-NMM. WRF-NMM is provided on an 
-"AS IS" basis and any warranties, either express or implied,
+WRF-NMM was developed at National Centers for
+Environmental Prediction (NCEP), which is part of
+NOAA's National Weather Service.  As a government
+entity, NCEP makes no proprietary claims, either
+statutory or otherwise, to this version and release of
+WRF-NMM and consider WRF-NMM to be in the public
+domain for use by any person or entity for any purpose
+without any fee or charge. NCEP requests that any WRF
+user include this notice on any partial or full copies
+of WRF-NMM. WRF-NMM is provided on an "AS IS" basis
+and any warranties, either express or implied,
 including but not limited to implied warranties of
-non-infringement, originality, merchantability and fitness for a
-particular purpose, are disclaimed. In no event shall
-NOAA be liable for any damages, whatsoever, whether direct,
-indirect, consequential or special, that arise out of or in
-connection with the access, use or performance of WRF-NMM, 
-including infringement actions.
+non-infringement, originality, merchantability and
+fitness for a particular purpose, are disclaimed. In
+no event shall NOAA, NWS or NCEP be liable for any
+damages, whatsoever, whether direct, indirect,
+consequential or special, that arise out of or in
+connection with the access, use or performance of
+WRF-NMM, including infringement actions.
 
-======================================
+================================================
 
 V2 Release Notes:
 -----------------
 
 This is the main directory for the WRF Version 2 source code release.
 
-- For directions on compiling WRF for NMM, see below or Users Web page.
-- For more information on WRF V2 release, visit WRF Users home page
-  http://wrf-model.org/??????????????/
+- For directions on compiling WRF for NMM, see below or the WRF-NMM Users' Web page.
 - If you have used WRF software before, you must re-run WRF-SI/NMM 
-(set namelist variable OUTPUT_FILE_TYPE = 'WRF') preferably using
-  the recent WRF-SI/NMM release).
-- Read the README.NMM.namelist file in the run/ directory (or on the Users' page), 
+  (set namelist variable OUTPUT_FILE_TYPE = 'WRF') preferably using
+  the recent WRF-NMM SI release).
+- Read the README.namelist file in the run/ directory (or on the WRF-NMM Users' page), 
   and make changes carefully.
 
-For questions, send mail to ???????????????????????
+For questions, send mail to wrfhelp@ucar.edu
 
 ======================================
 
@@ -80,10 +82,10 @@ How to configure, compile and run?
 
 - cd to the appropriate test or run direcotry to run "nmm_real.exe" and "wrf.exe".
 
-- Place files from NMM-SI (wrf_real_input_nmm.*)
+- Place files from WRF-NMM SI (wrf_real_input_nm.*)
   in the appropriate directory, type
 
-  real.exe
+  real_nmm.exe
 
   to produce wrfbdy_d01 and wrfinput_d01. Then type
 
@@ -97,7 +99,7 @@ How to configure, compile and run?
 
 =============================================================================
 
-What is in WRF-NMM V2?
+What is in WRF-NMM V2.1?
 
 * Dynamics:
 

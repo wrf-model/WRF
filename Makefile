@@ -5,6 +5,9 @@ MAKE    =       make -i -r
 MV	=	/bin/mv
 RM      =       /bin/rm -f
 
+deflt :
+		@ echo Please compile the code using ./compile
+
 include ./configure.wrf
 
 EM_MODULE_DIR = -I../dyn_em
@@ -25,9 +28,6 @@ ALL_MODULES =                           \
                $(NMM_MODULES)           \
                $(EXP_MODULES)           \
                $(INCLUDE_MODULES)
-
-deflt :
-		@ echo Please compile the code using ./compile
 
 configcheck:
 	@if [ "$(A2DCASE)" -a "$(DMPARALLEL)" ] ; then \

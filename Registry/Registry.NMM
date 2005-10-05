@@ -1029,14 +1029,14 @@ rconfig   integer sst_update              namelist,physics      1            0  
 
 
 # nmm variables
-rconfig   integer idtad                   namelist,physics     max_domains    2       irh    "nmm input 1"
-rconfig   integer nsoil                   namelist,physics     max_domains    4       irh    "nmm input 2"
-rconfig   integer nphs                    namelist,physics     max_domains   10       irh    "nmm input 3"
-rconfig   integer ncnvc                   namelist,physics     max_domains   10       irh    "nmm input 4"
-rconfig   integer nrads                   namelist,physics     max_domains  200       irh    "nmm input 5"
-rconfig   integer nradl                   namelist,physics     max_domains  200       irh    "nmm input 6"
-rconfig   integer sigma                   namelist,physics     max_domains    1       irh    "nmm input 7"
-rconfig   integer co2tf                   namelist,physics     1              0       -      "GFDL radiation co2 flag"
+rconfig   integer idtad                   namelist,physics     max_domains    2       irh    "idtad"  "fundamental timesteps between calls to NMM passive advection scheme"
+rconfig   integer nsoil                   namelist,physics     max_domains    4       irh    "nsoil"  "number of soil layers"
+rconfig   integer nphs                    namelist,physics     max_domains   10       irh    "nphs"  "fundamental timesteps between calls to NMM turbulence"
+rconfig   integer ncnvc                   namelist,physics     max_domains   10       irh    "ncnvc"  "fundamental timesteps between calls to NMM convection"
+rconfig   integer nrads                   namelist,physics     max_domains  200       irh    "nrads"  "fundamental timesteps between calls to NMM shortwave radiation"
+rconfig   integer nradl                   namelist,physics     max_domains  200       irh    "nradl"  "fundamental timesteps between calls to NMM longwave radiation"
+rconfig   integer sigma                   namelist,physics     max_domains    1       irh    "sigma"  "logical switch for NMM vertical coordinate (sigma or hybrid)"
+rconfig   integer co2tf                   namelist,physics     1              0       -      "co2tf"  "GFDL radiation co2 flag"
 
 # Dynamics
 # dynamics option (see package definitions, below)

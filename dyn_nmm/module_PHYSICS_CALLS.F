@@ -783,7 +783,13 @@
         TSFC(I,J)=THS(I,J)/EXNSFC(I,J)
         SFCZ(I,J)=FIS(I,J)*G_INV
         ZERO_2D(I,J)=0.
-        RAIN(I,J)=PREC(I,J)*RHOWATER
+!YL     RAIN(I,J)=PREC(I,J)*RHOWATER
+        IF (PCPFLG.AND.DDATA(I,J)<100.)THEN
+          RAIN(I,J)=DDATA(I,J)*RHOWATER
+        ELSE
+          RAIN(I,J)=PREC(I,J)*RHOWATER
+        ENDIF
+!YL
         RAINBL(I,J)=0.
         IF(SNO(I,J)>0.)SNOWC(I,J)=1.
         LLIJ=LOWLYR(I,J)
@@ -1004,8 +1010,7 @@
      &          ,QS_CURR=WATER(IMS,KMS,JMS,P_QS),F_QS=F_QS              &
      &          ,QG_CURR=WATER(IMS,KMS,JMS,P_QG),F_QG=F_QG              &
      &          ,RAINBL=RAINBL                                          &
-     &          ,POTEVP=POTEVP,SNOPCX=SNOPCX,SOILTB=SOILTB,SR=SR        &
-     &          ,PCPFLG=PCPFLG,DDATA=DDATA)                ! PRECIP ASSIM
+     &          ,POTEVP=POTEVP,SNOPCX=SNOPCX,SOILTB=SOILTB,SR=SR)
 !
 !-----------------------------------------------------------------------
 !

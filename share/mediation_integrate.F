@@ -387,6 +387,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
        CALL wrf_debug ( 0 , message )
      END IF
 
+
 ! feedback, mostly for this new terrain, but it is the safe thing to do
      parent%ht_coarse = parent%ht
 
@@ -469,6 +470,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
      nest%imask_ystag = 1
      nest%imask_xystag = 1
      CALL start_domain ( nest , .TRUE. )
+     parent%ht_coarse = parent%ht
 
   ENDIF
 

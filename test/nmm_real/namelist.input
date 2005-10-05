@@ -1,45 +1,45 @@
  &time_control
- run_days                            = 0,
- run_hours                           = 1,   
+ run_days                            = 1,
+ run_hours                           = 0,   
  run_minutes                         = 0,
  run_seconds                         = 0,
- start_year                          = 2003,
- start_month                         = 04,
- start_day                           = 17,
+ start_year                          = 2005,
+ start_month                         = 01,
+ start_day                           = 23,
  start_hour                          = 00,
  start_minute                        = 00,
  start_second                        = 00,
- end_year                            = 2003,
- end_month                           = 04,
- end_day                             = 18,
+ end_year                            = 2005,
+ end_month                           = 01,
+ end_day                             = 24,
  end_hour                            = 00,
  end_minute                          = 00,
  end_second                          = 00,
- interval_seconds                    = 3600,
+ interval_seconds                    = 10800,
  history_interval                    = 60
- frames_per_outfile                  = 10,
+ frames_per_outfile                  = 1,
  restart                             = .false.,
- restart_interval                    = 120,
+ restart_interval                    = 6000,
  io_form_history                     = 2
  io_form_restart                     = 2
  io_form_input                       = 2
  io_form_boundary                    = 2
- debug_level                         = 0
+ debug_level                         = 1
  /
 
  &domains
- time_step                           = 20,
+ time_step                           = 45,
  time_step_fract_num                 = 0,
  time_step_fract_den                 = 1,
  max_dom                             = 1,
  s_we                                = 1,
- e_we                                = 90,
+ e_we                                = 56,
  s_sn                                = 1,
- e_sn                                = 144
+ e_sn                                = 92,
  s_vert                              = 1,
- e_vert                              = 61,
- dx                                  = 90000
- dy                                  = 90000
+ e_vert                              = 38,
+ dx                                  = .097500,
+ dy                                  = .090600,
  grid_id                             = 1,
  tile_sz_x		   	     = 0,
  tile_sz_y		   	     = 0,
@@ -50,21 +50,21 @@
  mp_physics                          = 5,
  ra_lw_physics                       = 99,
  ra_sw_physics                       = 99,
- radt                                = 30,
+ radt                                = 60,
  nrads                               = 200,
  nradl                               = 200,
- co2tf                               = 0,
+ co2tf                               = 1,
  sf_sfclay_physics                   = 2,
  sf_surface_physics                  = 99,
  bl_pbl_physics                      = 2,
- bldt                                = 0,
+ bldt                                = 3,
  nphs                                = 10,
  cu_physics                          = 2,
- cudt                                = 5,
+ cudt                                = 3,
  ncnvc                               = 10,
- isfflx                              = 1,
+ isfflx                              = 0,
  ifsnow                              = 0,
- icloud                              = 1,
+ icloud                              = 0,
  num_soil_layers                     = 4,
  mp_zero_out                         = 0,
  /
@@ -87,7 +87,7 @@
  /
 
  &bdy_control
- spec_bdy_width                      = 5,
+ spec_bdy_width                      = 1,
  spec_zone                           = 1,
  relax_zone                          = 4,
  specified                           = .true.,

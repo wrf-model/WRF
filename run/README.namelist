@@ -1,5 +1,9 @@
 Description of namelist variables
 ---------------------------------
+ 
+For WRF-NMM users, please see Chapter 5 of the WRF-NMM User's Guide for 
+information on NMM specific settings (http://www.dtcenter.org/wrf-nmm/users)
+
 
  Note: variables followed by (max_dom) indicate that this variable needs to
        be defined for the nests when max_dom > 1.

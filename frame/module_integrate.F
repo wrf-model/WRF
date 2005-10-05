@@ -155,6 +155,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
    LOGICAL , EXTERNAL                     :: wrf_dm_on_monitor
    INTEGER                                :: idum1 , idum2 , ierr , open_status
    INTEGER                                :: rc
+   LOGICAL                                :: should_do_last_io
 
    ! interface
    INTERFACE
@@ -343,8 +344,16 @@ RECURSIVE SUBROUTINE integrate ( grid )
       IF ( grid%id .EQ. 1 ) THEN               ! head_grid
         CALL med_last_solve_io ( grid , config_flags )
       ELSE
-        IF ( WRFU_ClockIsStopTime(grid%domain_clock , rc=rc) .OR. &
-             WRFU_ClockIsStopTime(grid%parents(1)%ptr%domain_clock , rc=rc ) ) THEN
+
+! zip up the tree and see if any ancestor is at its stop time
+        
+        should_do_last_io = WRFU_ClockIsStopTime(head_grid%domain_clock , rc=rc)
+        grid_ptr => grid 
+        DO WHILE ( grid_ptr%id .NE. 1 )
+           IF ( WRFU_ClockIsStopTime(grid_ptr%domain_clock , rc=rc) ) should_do_last_io = .TRUE. 
+           grid_ptr => grid_ptr%parents(1)%ptr
+        ENDDO
+        IF ( should_do_last_io ) THEN 
            CALL med_last_solve_io ( grid , config_flags )
         ENDIF
       ENDIF
@@ -353,3 +362,4 @@ RECURSIVE SUBROUTINE integrate ( grid )
 END SUBROUTINE integrate
 
 END MODULE module_integrate
+

@@ -296,6 +296,11 @@
       CALL wrf_put_dom_ti_integer ( fid , 'JULYR' ,  config_flags%julyr , 1 , ierr )
       CALL wrf_put_dom_ti_integer ( fid , 'JULDAY' ,  config_flags%julday , 1 , ierr )
     ENDIF
+#if (NMM_CORE == 1)
+        write(0,*) 'MMINLU would be: ', MMINLU(1:4)
+        MMINLU(1:4)='USGS'
+        write(0,*) 'MMINLU now: ', MMINLU(1:4)
+#endif
     CALL wrf_put_dom_ti_integer ( fid , 'MAP_PROJ' ,  config_flags%map_proj , 1 , ierr )
     CALL wrf_put_dom_ti_char ( fid , 'MMINLU',  mminlu(1:4) , ierr )
     CALL wrf_put_dom_ti_integer ( fid , 'ISWATER' ,  config_flags%iswater , 1 , ierr )

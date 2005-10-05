@@ -35,8 +35,6 @@ CONTAINS
      &          ,smfr3d,keepfr3dflag                                  &
              !  Other optionals (more or less nmm specific)
      &          ,potevp,snopcx,soiltb,sr                              &
-             !  Optional Precip Assim
-     &          ,pcpflg,ddata                                         &
                                                                       )
 
 #if ( ! NMM_CORE == 1 )
@@ -354,10 +352,6 @@ CONTAINS
    REAL, DIMENSION( ims:ime, 1:num_soil_layers, jms:jme ), OPTIONAL, INTENT(INOUT)::   smfr3d
    REAL, DIMENSION( ims:ime, 1:num_soil_layers, jms:jme ), OPTIONAL, INTENT(INOUT)::   keepfr3dflag
 
-!  arguments for precip assimilation:
-   LOGICAL, OPTIONAL, INTENT(IN) :: PCPFLG
-   REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(IN) :: DDATA
-
 !  LOCAL  VAR
 
    REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ) ::v_phytmp
@@ -617,7 +611,6 @@ CONTAINS
                 num_soil_layers,dtbl,dzs,itimestep,             &
                 smois,tslb,snow,canwat,cpm,rcp,sr,              &    !tslb
                 albedo,snoalb,sh2o,snowh,                       &
-                pcpflg,ddata,                                   &    !Precip Assim
                 ids,ide, jds,jde, kds,kde,                      &
                 ims,ime, jms,jme, kms,kme,                      &
                 i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte )

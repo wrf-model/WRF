@@ -210,6 +210,21 @@ integer myproc
      CALL nl_get_julyr (id, julyr)
      CALL nl_get_julday (id, julday)
      CALL nl_get_gmt (id, gmt)
+#if (NMM_CORE == 1)
+     CALL domain_clockprint(150, grid, &
+            'DEBUG phy_init():  get currentTime from grid')
+     CALL domain_clock_get( grid, current_time=currentTime, &
+                            current_timestr=message )
+     CALL WRFU_TimeGet( currentTime, YY=julyr, dayOfYear=julday, H=hr, M=min, S=sec, MS=ms, rc=rc)
+     WRITE( wrf_err_message , * ) 'DEBUG phy_init():  currentTime = [',TRIM( message ),']'
+     CALL wrf_debug( 150, TRIM(wrf_err_message) )
+     gmt=hr+real(min)/60.+real(sec)/3600.+real(ms)/(1000*3600)
+     WRITE( wrf_err_message , * ) 'DEBUG phy_init():  julyr,hr,min,sec,ms,julday = ', &
+                                  julyr,hr,min,sec,ms,julday
+     CALL wrf_debug( 150, TRIM(wrf_err_message) )
+     WRITE( wrf_err_message , * ) 'DEBUG phy_init():  gmt = ',gmt
+     CALL wrf_debug( 150, TRIM(wrf_err_message) )
+#endif
    END IF
 
    ZZLND=0.1

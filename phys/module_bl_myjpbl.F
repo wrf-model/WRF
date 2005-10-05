@@ -34,7 +34,8 @@
       REAL,PARAMETER :: EPS1=1.E-12,EPS2=0.
       REAL,PARAMETER :: EPSL=0.10,EPSRU=1.E-7,EPSRS=1.E-7               &
      &                 ,EPSTRB=1.E-24
-      REAL,PARAMETER :: EPSA=1.E-8,EPSIT=1.E-4,EPSU2=1.E-4,EPSUST=0.07 
+      REAL,PARAMETER :: EPSA=1.E-8,EPSIT=1.E-4,EPSU2=1.E-4,EPSUST=0.07  &
+     &                 ,FH=1.01
       REAL,PARAMETER :: ALPH=0.30,BETA=1./273.,EL0MAX=1000.,EL0MIN=1.   &
      &                 ,ELFC=0.23*0.5,GAM1=0.2222222222222222222        &
      &                 ,PRT=1.
@@ -579,9 +580,9 @@
 !***
 !***  LOCAL VARIABLES
 !***
-      INTEGER :: K,LPBLM
+      INTEGER :: K,LMXL,LPBLM
 !
-      REAL :: A,ADEN,B,BDEN,AUBR,BUBR,EL0,ELOQ2X,GHL,GML               &
+      REAL :: A,ADEN,B,BDEN,AUBR,BLMX,BUBR,EL0,ELOQ2X,GHL,GML          &
      &       ,QOL2ST,QOL2UN,QDZL,RDZ,SQ,SZQ,TEM,THM,VKRMZ
 !
       REAL,DIMENSION(KTS:KTE) :: Q1
@@ -591,6 +592,23 @@
 !----------------------------------------------------------------------
 !**********************************************************************
 !----------------------------------------------------------------------
+!--------------FIND THE HEIGHT OF THE PBL-------------------------------
+!----------------------------------------------------------------------
+      LPBL=LMH
+!
+      DO K=LMH-1,1,-1
+        IF(Q2(K)<=EPSQ2*FH)THEN
+          LPBL=K
+          GO TO 110
+        ENDIF
+      ENDDO
+!
+      LPBL=1
+!----------------------------------------------------------------------
+!--------------THE HEIGHT OF THE PBL------------------------------------
+!----------------------------------------------------------------------
+  110 PBLH=Z(LPBL)-Z(LMH+1)
+!-----------------------------------------------------------------------
 !
       DO K=KTS,LMH
         Q1(K)=0.
@@ -632,7 +650,7 @@
 !***  FIND MAXIMUM MIXING LENGTHS AND THE LEVEL OF THE PBL TOP
 !----------------------------------------------------------------------
 !
-      LPBL=LMH
+      LMXL=LMH
 !
       DO K=KTS,LMH-1
         GML=GM(K)
@@ -641,7 +659,7 @@
         IF(GHL>=EPSGH)THEN
           IF(GML/GHL<=REQU)THEN
             ELM(K)=EPSL
-            LPBL=K
+            LMXL=K
           ELSE
             AUBR=(AUBM*GML+AUBH*GHL)*GHL
             BUBR= BUBM*GML+BUBH*GHL
@@ -658,13 +676,13 @@
         ENDIF
       ENDDO
 !
-      IF(ELM(LMH-1)==EPSL)LPBL=LMH
+      IF(ELM(LMH-1)==EPSL)LMXL=LMH
 !
 !----------------------------------------------------------------------
 !***  THE HEIGHT OF THE PBL
 !----------------------------------------------------------------------
 !
-      PBLH=Z(LPBL)-Z(LMH+1)
+      BLMX=Z(LMXL)-Z(LMH+1)
 !
 !----------------------------------------------------------------------
       DO K=LPBL,LMH
@@ -688,23 +706,25 @@
       EL0=MAX(EL0            ,EL0MIN)
 !
 !----------------------------------------------------------------------
-!***  INSIDE THE PBL
-!----------------------------------------------------------------------
-!
-      DO K=KTS,LMH-1
-        VKRMZ=(Z(K+1)-Z(LMH+1))*VKARMAN
-        EL(K)=MIN(VKRMZ/(VKRMZ/EL0+1.),ELM(K))
-      ENDDO
-!
-!----------------------------------------------------------------------
-!***  CORRECTION ABOVE THE PBL TOP
+!***  ABOVE THE PBL TOP
 !----------------------------------------------------------------------
 !
       LPBLM=MAX(LPBL-1,1)
-!
-      DO K=1,LPBLM
+      DO K=KTS,LPBLM
         EL(K)=MIN((Z(K)-Z(K+2))*ELFC,ELM(K))
       ENDDO
+!
+!----------------------------------------------------------------------
+!***  INSIDE THE PBL
+!----------------------------------------------------------------------
+!
+      IF(LPBL<LMH)THEN
+        DO K=LPBL,LMH-1
+          VKRMZ=(Z(K+1)-Z(LMH+1))*VKARMAN
+          EL(K)=MIN(VKRMZ/(VKRMZ/EL0+1.),ELM(K))
+        ENDDO
+      ENDIF
+!
 !----------------------------------------------------------------------
       END SUBROUTINE MIXLEN
 !----------------------------------------------------------------------
@@ -1009,7 +1029,8 @@
 !***  INVERSIONS
 !----------------------------------------------------------------------
 !
-      IF(LPBL==LMH)THEN
+      IF(LPBL>=LMH-1)THEN
+        KINV=LMH
         DO K=KTS+1,LMH-1
           D2T=T(K-1)-2.*T(K)+T(K+1)
           IF(D2T<0.)KINV=K

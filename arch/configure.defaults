@@ -8098,7 +8098,7 @@ INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../exter
                         -I../frame -I../share -I../phys -I../inc
 ARCHFLAGS       =       -DGRIB1 -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   \
-			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DLANDREAD_STUB
+			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DLANDREAD_STUB -DMAC_KLUDGE
 #			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DNATIVE_MASSV -DMACOS
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
@@ -8222,7 +8222,7 @@ INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../exter
                         -I../frame -I../share -I../phys -I../inc
 ARCHFLAGS       =       -DGRIB1 -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   \
-			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DLANDREAD_STUB -DMACOS
+			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DLANDREAD_STUB -DMACOS -DMAC_KLUDGE
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -lxlsmp \

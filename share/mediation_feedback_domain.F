@@ -8,7 +8,9 @@ SUBROUTINE med_feedback_domain ( parent_grid , nested_grid )
    TYPE(domain), POINTER :: parent_grid , nested_grid
    TYPE(domain), POINTER :: grid
    INTEGER nlev, msize
+#if !defined(MAC_KLUDGE)
    TYPE (grid_config_rec_type)            :: config_flags
+#endif
 !  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
    INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
    INTEGER     :: sm31x, em31x, sm32x, em32x, sm33x, em33x
@@ -22,6 +24,7 @@ SUBROUTINE med_feedback_domain ( parent_grid , nested_grid )
 !    Interface definitions for EM CORE
 ! ------------------------------------------------------
 #if (EM_CORE == 1)
+#if !defined(MAC_KLUDGE)
 ! ------------------------------------------------------
 !    These routines are supplied by module_dm.F from the
 !    external communication package (e.g. external/RSL)
@@ -62,6 +65,7 @@ SUBROUTINE med_feedback_domain ( parent_grid , nested_grid )
 #        include <em_dummy_decl.inc>
       END SUBROUTINE update_after_feedback_em
 #endif
+#endif
 ! ----------------------------------------------------------
 !    Interface definitions for NMM (placeholder)
 ! ----------------------------------------------------------
@@ -84,6 +88,7 @@ SUBROUTINE med_feedback_domain ( parent_grid , nested_grid )
 !    Feedback calls for EM CORE.
 ! ----------------------------------------------------------
 #if (EM_CORE == 1 && defined( DM_PARALLEL ))
+#if !defined(MAC_KLUDGE)
    CALL model_to_grid_config_rec ( nested_grid%id , model_config_rec , config_flags )
    IF ( config_flags%dyn_opt == DYN_EM ) THEN
      grid => nested_grid%intermediate_grid
@@ -118,6 +123,7 @@ SUBROUTINE med_feedback_domain ( parent_grid , nested_grid )
      grid => nested_grid%intermediate_grid
      CALL dealloc_space_field ( grid )
    ENDIF
+#endif
 #endif
 ! ------------------------------------------------------
 !    End of Feedback calls for EM CORE.

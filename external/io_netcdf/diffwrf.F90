@@ -370,11 +370,8 @@ else
         ELSE
           serr = sqrt ( sum1 )
         ENDIF
-        IF ( diff2 .GT. 0.0d0 ) THEN
-          perr = diff1/diff2
-        ELSE
-          perr = diff1
-        ENDIF
+
+        perr = diff1
            
         IF (IFDIFFS .NE. 0 ) THEN
            ! create the fort.88 and fort.98 files because regression scripts will

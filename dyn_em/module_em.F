@@ -783,7 +783,7 @@ SUBROUTINE rk_addtend_dry ( ru_tend, rv_tend, rw_tend, ph_tend, t_tend,      &
    DO k = kts,kte-1
    DO i = its,MIN(ite,ide-1)
      IF(rk_step == 1)t_tendf(i,k,j) = t_tendf(i,k,j) +  t_save(i,k,j)
-      t_tend(i,k,j) =  t_tend(i,k,j) +  t_tendf(i,k,j)/msft(i,j)  &
+     t_tend(i,k,j) =  t_tend(i,k,j) +  t_tendf(i,k,j)/msft(i,j)  &
                                      +  mut(i,j)*h_diabatic(i,k,j)/msft(i,j)
    ENDDO
    ENDDO
@@ -1005,6 +1005,7 @@ SUBROUTINE rk_update_scalar( scs, sce,                      &
 !
 !</DESCRIPTION>
 
+
 !
 !  set loop limits.
 
@@ -1025,8 +1026,8 @@ SUBROUTINE rk_update_scalar( scs, sce,                      &
       k_end_spc   = k_end
 
     IF( config_flags%nested .or. config_flags%specified ) THEN
-      i_start = max( its,ids+spec_zone )
-      i_end   = min( ite,ide-spec_zone-1 )
+      IF( .NOT. config_flags%periodic_x)i_start = max( its,ids+spec_zone )
+      IF( .NOT. config_flags%periodic_x)i_end   = min( ite,ide-spec_zone-1 )
       j_start = max( jts,jds+spec_zone )
       j_end   = min( jte,jde-spec_zone-1 )
       k_start = kts

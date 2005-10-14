@@ -569,6 +569,37 @@ END SUBROUTINE zero_pad
 
 SUBROUTINE init_wrfio
    USE module_io
+   IMPLICIT NONE
+   INTEGER ierr
    CALL wrf_ioinit(ierr)
 END SUBROUTINE init_wrfio
+
+!<DESCRIPTION>
+! This routine figures out the nearest previous time instant 
+! that corresponds to a multiple of the input time interval.
+! Example use is to give the time instant that corresponds to 
+! an I/O interval, even when the current time is a little bit
+! past that time when, for example, the number of model time
+! steps does not evenly divide the I/O interval. JM 20051013
+!</DESCRIPTION>
+! 
+SUBROUTINE adjust_io_timestr ( TI, CT, ST, timestr )
+   USE module_io_domain
+   IMPLICIT NONE
+! Args
+   TYPE(WRFU_Time), INTENT(IN)            :: ST,CT    ! domain start and current time
+   TYPE(WRFU_TimeInterval), INTENT(IN)    :: TI       ! interval
+   CHARACTER*(*), INTENT(INOUT)           :: timestr  ! returned string
+! Local
+   TYPE(WRFU_Time)                        :: OT
+   TYPE(WRFU_TimeInterval)                :: IOI
+   INTEGER                                :: n
+
+   IOI = CT-ST                               ! length of time since starting
+   n = WRFU_TimeIntervalDIVQuot( IOI , TI )  ! number of whole time intervals
+   IOI = TI * n                              ! amount of time since starting in whole time intervals
+   OT = ST + IOI                             ! previous nearest time instant
+   CALL wrf_timetoa( OT, timestr )           ! generate string
+   RETURN
+END SUBROUTINE adjust_io_timestr
 

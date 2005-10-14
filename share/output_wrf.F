@@ -38,6 +38,7 @@
     INTEGER grid_id , parent_id , i_parent_start , j_parent_start , parent_grid_ratio
 #endif
     CHARACTER (len=19) simulation_start_date
+    CHARACTER (len=len_current_date) current_date_save
     INTEGER simulation_start_year   , &
             simulation_start_month  , &
             simulation_start_day    , &
@@ -52,9 +53,10 @@
     INTEGER    ibuf(1)
     REAL       rbuf(1)
     TYPE(WRFU_TimeInterval) :: bdy_increment
-    TYPE(WRFU_Time)         :: next_time, currentTime
+    TYPE(WRFU_Time)         :: next_time, currentTime, startTime
     CHARACTER*40            :: next_datestr
     INTEGER :: start_year , start_month , start_day , start_hour , start_minute , start_second
+    LOGICAL :: adjust
 
     CALL wrf_inquire_filename ( fid , fname , filestate , ierr )
     IF ( ierr /= 0 ) THEN
@@ -110,6 +112,7 @@
     CALL domain_clockprint(150, grid, &
            'DEBUG output_wrf():  before call to domain_clock_get,')
     CALL domain_clock_get( grid, current_time=currentTime, &
+                                 start_time=startTime,     &
                                  current_timestr=current_date )
     WRITE ( wrf_err_message , * ) 'output_wrf: begin, current_date=',current_date
     CALL wrf_debug ( 300 , wrf_err_message )
@@ -320,6 +323,8 @@
         CALL wrf_put_dom_td_char ( fid , 'NEXTBDYTIME' ,  current_date(1:19), next_datestr(1:19), ierr )
     ENDIF
 
+    CALL nl_get_adjust_output_times( grid%id, adjust ) 
+    current_date_save = current_date
 #if 1
     IF ( switch .EQ. model_input_only ) THEN
       CALL wrf_debug ( 300 , 'output_wrf: calling code in wrf_inputout.inc' )
@@ -341,21 +346,27 @@
       CALL wrf_auxinput5out( fid , grid , config_flags, switch, dryrun,  ierr )
     ELSE IF ( switch .EQ. history_only ) THEN
       CALL wrf_debug ( 300 , 'output_wrf: calling code in wrf_histout.inc' )
+      IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( HISTORY_ALARM ), currentTime, startTime, current_date )
       CALL wrf_histout( fid , grid , config_flags, switch, dryrun,  ierr )
     ELSE IF ( switch .EQ. aux_hist1_only ) THEN
       CALL wrf_debug ( 300 , 'output_wrf: calling wrf_auxhist1out' )
+      IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXHIST1_ALARM ), currentTime, startTime, current_date )
       CALL wrf_auxhist1out( fid , grid , config_flags, switch, dryrun,  ierr )
     ELSE IF ( switch .EQ. aux_hist2_only ) THEN
       CALL wrf_debug ( 300 , 'output_wrf: calling code in wrf_auxhist2out.inc' )
+      IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXHIST2_ALARM ), currentTime, startTime, current_date )
       CALL wrf_auxhist2out( fid , grid , config_flags, switch, dryrun,  ierr )
     ELSE IF ( switch .EQ. aux_hist3_only ) THEN
       CALL wrf_debug ( 300 , 'output_wrf: calling code in wrf_auxhist3out.inc' )
+      IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXHIST3_ALARM ), currentTime, startTime, current_date )
       CALL wrf_auxhist3out( fid , grid , config_flags, switch, dryrun,  ierr )
     ELSE IF ( switch .EQ. aux_hist4_only ) THEN
       CALL wrf_debug ( 300 , 'output_wrf: calling code in wrf_auxhist1out.inc' )
+      IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXHIST4_ALARM ), currentTime, startTime, current_date )
       CALL wrf_auxhist4out( fid , grid , config_flags, switch, dryrun,  ierr )
     ELSE IF ( switch .EQ. aux_hist5_only ) THEN
       CALL wrf_debug ( 300 , 'output_wrf: calling code in wrf_auxhist4out.inc' )
+      IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXHIST5_ALARM ), currentTime, startTime, current_date )
       CALL wrf_auxhist5out( fid , grid , config_flags, switch, dryrun,  ierr )
     ELSE IF ( switch .EQ. restart_only ) THEN
       CALL wrf_debug ( 300 , 'output_wrf: calling code in wrf_restartout.inc' )
@@ -367,6 +378,7 @@
 #else
     CALL wrf_message ( "ALL I/O DISABLED IN share/module_io_wrf.F")
 #endif
+    current_date = current_date_save
 
     IF ( .NOT. dryrun ) THEN
        CALL wrf_debug ( 300 , 'output_wrf: calling wrf_iosync ' )

@@ -810,7 +810,6 @@ SUBROUTINE advance_uv ( u, ru_tend, v, rv_tend,        &
 !  now, the real work.
 !  set the loop bounds taking into account boundary conditions.
 
-
     IF( config_flags%nested .or. config_flags%specified ) THEN
       i_start = max( its,ids+spec_zone )
       i_end   = min( ite,ide-spec_zone-1 )
@@ -822,6 +821,13 @@ SUBROUTINE advance_uv ( u, ru_tend, v, rv_tend,        &
       i_endu = min( ite,ide-spec_zone )
       j_endv = min( jte,jde-spec_zone )
       k_endw = k_end
+
+      IF( config_flags%periodic_x) THEN
+        i_start = its
+        i_end   = ite
+        i_endu = i_end
+        IF(i_end == ide) i_end = i_end - 1
+      ENDIF
     ELSE
       i_start = its
       i_end   = ite
@@ -1110,8 +1116,6 @@ SUBROUTINE advance_mu_t( ww, ww_1, u, u_1, v, v_1,            &
   j_end   = jte
   k_start = kts
   k_end   = kte-1
-
-
      
   i_endu = i_end
   j_endv = j_end
@@ -1119,17 +1123,20 @@ SUBROUTINE advance_mu_t( ww, ww_1, u, u_1, v, v_1,            &
   IF(j_end == jde) j_end = j_end - 1
   IF(i_end == ide) i_end = i_end - 1
 
-  IF ( (config_flags%specified .or. config_flags%nested) .and. (its == ids) ) &
+  IF ( .NOT. config_flags%periodic_x )THEN
+    IF ( (config_flags%specified .or. config_flags%nested) .and. (its == ids) ) &
              i_start = i_start + 1
 
-  IF ( (config_flags%specified .or. config_flags%nested) .and. (ite == ide) ) &
+    IF ( (config_flags%specified .or. config_flags%nested) .and. (ite == ide) ) &
              i_end   = i_end - 1
+  ENDIF
 
   IF ( (config_flags%specified .or. config_flags%nested) .and. (jts == jds) ) &
              j_start = j_start + 1
 
   IF ( (config_flags%specified .or. config_flags%nested) .and. (jte == jde) ) &
              j_end   = j_end - 1
+
 
 !        CALCULATION OF WW (dETA/dt)
    DO j = j_start, j_end
@@ -1315,7 +1322,7 @@ SUBROUTINE advance_w( w, rw_tend, ww, u, v,       &
 
 !  set loop limits.
 !  currently set for periodic boundary conditions
-      
+
       i_start = its
       i_end   = ite
       j_start = jts
@@ -1327,11 +1334,13 @@ SUBROUTINE advance_w( w, rw_tend, ww, u, v,       &
       IF(j_end == jde) j_end = j_end - 1
       IF(i_end == ide) i_end = i_end - 1
 
-  IF ( (config_flags%specified .or. config_flags%nested) .and. (its == ids) ) &
+  IF ( .NOT. config_flags%periodic_x )THEN
+    IF ( (config_flags%specified .or. config_flags%nested) .and. (its == ids) ) &
              i_start = i_start + 1
 
-  IF ( (config_flags%specified .or. config_flags%nested) .and. (ite == ide) ) &
+    IF ( (config_flags%specified .or. config_flags%nested) .and. (ite == ide) ) &
              i_end   = i_end - 1
+  ENDIF
 
   IF ( (config_flags%specified .or. config_flags%nested) .and. (jts == jds) ) &
              j_start = j_start + 1

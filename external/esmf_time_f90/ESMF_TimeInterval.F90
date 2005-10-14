@@ -810,8 +810,12 @@
       call ESMF_TimeIntervalSet( zero, rc=rc )
       i1 = timeinterval1
       i2 = timeinterval2
-      if ( i1 .LT. zero ) i1 = i1 * -1
-      if ( i2 .LT. zero ) i2 = i2 * -1
+      if ( i1 .LT. zero ) then
+        i1 = i1 * -1
+      endif
+      if ( i2 .LT. zero ) then
+        i2 = i2 * -1
+      endif
 ! repeated subtraction
       retval = 0
       DO WHILE (  i1 .GE. i2 )

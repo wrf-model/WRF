@@ -148,7 +148,7 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple, &
            muvt_2(i,j) = (mub(i,j-1) + mu_2(i,j-1))/msfv(i,j)
          ENDDO
        ENDIF
-       IF ( ipe .eq. ide ) THEN
+       IF ( ipe .eq. ide .AND. .NOT. config_flags%periodic_x ) THEN
          i = ide
          DO j = max(jds,jps),min(jde-1,jpe)
            muut_2(i,j) = (mub(i-1,j) + mu_2(i-1,j))/msfu(i,j)
@@ -205,7 +205,7 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple, &
            muvt_2(i,j) = msfv(i,j)/(mub(i,j-1) + mu_2(i,j-1))
          ENDDO
        ENDIF
-       IF ( ipe .eq. ide ) THEN
+       IF ( ipe .eq. ide .AND. .NOT. config_flags%periodic_x ) THEN
          i = ide
          DO j = max(jds,jps),min(jde-1,jpe)
            muut_2(i,j) = msfu(i,j)/(mub(i-1,j) + mu_2(i-1,j))

@@ -1699,6 +1699,8 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
 
    IF (config_flags%open_xs .or. specified ) i_start = max(its,ids+2)
    IF (config_flags%open_xe .or. specified ) itf     = min(itf,ide-3)
+   IF ( config_flags%periodic_x ) i_start = its
+   IF ( config_flags%periodic_x ) itf=MIN(ite,ide-1)
 
    DO j = j_start, jtf
 
@@ -2020,6 +2022,8 @@ SUBROUTINE horizontal_pressure_gradient( ru_tend,rv_tend,                &
            config_flags%nested ) .and. its == ids ) i_start = its+1
    IF ( (config_flags%open_xe .or. specified .or. &
            config_flags%nested ) .and. ite == ide ) itf = itf-1
+   IF ( config_flags%periodic_x ) i_start = its
+   IF ( config_flags%periodic_x ) itf=ite
 
    DO j = j_start, jtf
 
@@ -2326,6 +2330,9 @@ SUBROUTINE horizontal_diffusion ( name, field, tendency, mu,           &
       IF ( config_flags%open_xe .or. specified ) i_end   = MIN(ide-1,ite)
       IF ( config_flags%open_ys .or. specified ) j_start = MAX(jds+1,jts)
       IF ( config_flags%open_ye .or. specified ) j_end   = MIN(jde-2,jte)
+      IF ( config_flags%periodic_x ) i_start = its
+      IF ( config_flags%periodic_x ) i_end = ite
+
 
       DO j = j_start, j_end
       DO k=kts,ktf
@@ -2362,6 +2369,8 @@ SUBROUTINE horizontal_diffusion ( name, field, tendency, mu,           &
       IF ( config_flags%open_xe .or. specified ) i_end   = MIN(ide-2,ite)
       IF ( config_flags%open_ys .or. specified ) j_start = MAX(jds+1,jts)
       IF ( config_flags%open_ye .or. specified ) j_end   = MIN(jde-1,jte)
+      IF ( config_flags%periodic_x ) i_start = its
+      IF ( config_flags%periodic_x ) i_end = MIN(ite,ide-1)
 
       DO j = j_start, j_end
       DO k=kts,ktf
@@ -2398,6 +2407,8 @@ SUBROUTINE horizontal_diffusion ( name, field, tendency, mu,           &
       IF ( config_flags%open_xe .or. specified ) i_end   = MIN(ide-2,ite)
       IF ( config_flags%open_ys .or. specified ) j_start = MAX(jds+1,jts)
       IF ( config_flags%open_ye .or. specified ) j_end   = MIN(jde-2,jte)
+      IF ( config_flags%periodic_x ) i_start = its
+      IF ( config_flags%periodic_x ) i_end = MIN(ite,ide-1)
 
       DO j = j_start, j_end
       DO k=kts+1,ktf
@@ -2439,6 +2450,8 @@ SUBROUTINE horizontal_diffusion ( name, field, tendency, mu,           &
       IF ( config_flags%open_xe .or. specified ) i_end   = MIN(ide-2,ite)
       IF ( config_flags%open_ys .or. specified ) j_start = MAX(jds+1,jts)
       IF ( config_flags%open_ye .or. specified ) j_end   = MIN(jde-2,jte)
+      IF ( config_flags%periodic_x ) i_start = its
+      IF ( config_flags%periodic_x ) i_end = MIN(ite,ide-1)
 
       DO j = j_start, j_end
       DO k=kts,ktf
@@ -2536,6 +2549,8 @@ SUBROUTINE horizontal_diffusion_3dmp ( name, field, tendency, mu,           &
       IF ( config_flags%open_xe .or. specified ) i_end   = MIN(ide-2,ite)
       IF ( config_flags%open_ys .or. specified ) j_start = MAX(jds+1,jts)
       IF ( config_flags%open_ye .or. specified ) j_end   = MIN(jde-2,jte)
+      IF ( config_flags%periodic_x ) i_start = its
+      IF ( config_flags%periodic_x ) i_end = MIN(ite,ide-1)
 
       DO j = j_start, j_end
       DO k=kts,ktf
@@ -2939,6 +2954,8 @@ SUBROUTINE vertical_diffusion_u ( field, tendency,              &
 
       IF ( config_flags%open_xs .or. specified ) i_start = MAX(ids+1,its)
       IF ( config_flags%open_xe .or. specified ) i_end   = MIN(ide-1,ite)
+      IF ( config_flags%periodic_x ) i_start = its
+      IF ( config_flags%periodic_x ) i_end = ite
 
 
 j_loop_u : DO j = j_start, j_end
@@ -3181,6 +3198,8 @@ SUBROUTINE coriolis ( ru, rv, rw, ru_tend, rv_tend, rw_tend, &
         config_flags%nested) i_start = MAX(ids+1,its)
    IF ( config_flags%open_xe .or. specified .or. &
         config_flags%nested) i_end   = MIN(ide-1,ite)
+      IF ( config_flags%periodic_x ) i_start = its
+      IF ( config_flags%periodic_x ) i_end = ite
 
    DO j = jts, MIN(jte,jde-1)
 
@@ -3378,6 +3397,8 @@ SUBROUTINE perturbation_coriolis ( ru_in, rv_in, rw, ru_tend, rv_tend, rw_tend, 
         config_flags%nested) i_start = MAX(ids+1,its)
    IF ( config_flags%open_xe .or. specified .or. &
         config_flags%nested) i_end   = MIN(ide-1,ite)
+      IF ( config_flags%periodic_x ) i_start = its
+      IF ( config_flags%periodic_x ) i_end = ite
 
 !  compute perturbation mu*v for use in u momentum equation
 
@@ -3687,6 +3708,8 @@ SUBROUTINE curvature ( ru, rv, rw, u, v, w, ru_tend, rv_tend, rw_tend, &
         config_flags%nested) .and. (jts == jds) ) j_start = jts
    IF ( ( config_flags%open_ye .or. specified .or. &
         config_flags%nested) .and. (jte == jde) ) j_end   = jte-1
+      IF ( config_flags%periodic_x ) i_start = its-1
+      IF ( config_flags%periodic_x ) i_end = ite
 
    DO j=j_start, j_end
    DO k=kts,ktf
@@ -3701,7 +3724,7 @@ SUBROUTINE curvature ( ru, rv, rw, u, v, w, ru_tend, rv_tend, rw_tend, &
 !  Rather crude at present, we are assuming there is no
 !    variation in this term at the boundary.
 
-   IF ( ( config_flags%open_xs .or. specified .or. &
+   IF ( ( config_flags%open_xs .or. (specified .AND. .NOT. config_flags%periodic_x) .or. &
         config_flags%nested) .and. (its == ids) ) THEN
 
      DO j = jts-1, jte
@@ -3712,7 +3735,7 @@ SUBROUTINE curvature ( ru, rv, rw, u, v, w, ru_tend, rv_tend, rw_tend, &
 
    ENDIF
 
-   IF ( ( config_flags%open_xe .or. specified .or. &
+   IF ( ( config_flags%open_xe .or. (specified .AND. .NOT. config_flags%periodic_x) .or. &
         config_flags%nested) .and. (ite == ide) ) THEN
 
      DO j = jts-1, jte
@@ -3752,6 +3775,8 @@ SUBROUTINE curvature ( ru, rv, rw, u, v, w, ru_tend, rv_tend, rw_tend, &
         config_flags%nested) i_start = MAX ( ids+1 , its )
    IF ( config_flags%open_xe .or. specified .or. &
         config_flags%nested) i_end   = MIN ( ide-1 , ite )
+      IF ( config_flags%periodic_x ) i_start = its
+      IF ( config_flags%periodic_x ) i_end = ite
 
    DO j=jts,MIN(jde-1,jte)
    DO k=kts,ktf

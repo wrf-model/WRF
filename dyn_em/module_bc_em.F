@@ -41,11 +41,14 @@ CONTAINS
 
       CHARACTER  :: variable
       INTEGER    :: i, j, k, ibs, ibe, jbs, jbe, itf, jtf, ktf
-      INTEGER    :: b_dist
+      INTEGER    :: b_dist, b_limit
 
 !     Local array
 
       REAL,  DIMENSION( its:ite , jts:jte ) :: mu_old
+      LOGICAL    :: periodic_x
+
+      periodic_x = config_flags%periodic_x
 
       variable = variable_in
 
@@ -72,8 +75,10 @@ CONTAINS
 ! Y-start boundary
         DO j = jts, min(jtf,jbs+spec_zone-1)
           b_dist = j - jbs
+          b_limit = b_dist
+          IF(periodic_x)b_limit = 0
           DO k = kts, ktf
-            DO i = max(its,b_dist+ibs), min(itf,ibe-b_dist)
+            DO i = max(its,b_limit+ibs), min(itf,ibe-b_limit)
 
               mu_old(i,j) = muts(i,j) - dt*mu_tend(i,j)
 
@@ -89,8 +94,10 @@ CONTAINS
 ! Y-end boundary 
         DO j = max(jts,jbe-spec_zone+1), jtf 
           b_dist = jbe - j 
+          b_limit = b_dist
+          IF(periodic_x)b_limit = 0
           DO k = kts, ktf 
-            DO i = max(its,b_dist+ibs), min(itf,ibe-b_dist)
+            DO i = max(its,b_limit+ibs), min(itf,ibe-b_limit)
 
               mu_old(i,j) = muts(i,j) - dt*mu_tend(i,j)
 
@@ -103,6 +110,7 @@ CONTAINS
         ENDDO
       ENDIF 
 
+    IF(.NOT.periodic_x)THEN
       IF (its - ibs .lt. spec_zone) THEN
 ! X-start boundary
         DO i = its, min(itf,ibs+spec_zone-1)
@@ -138,6 +146,7 @@ CONTAINS
           ENDDO
         ENDDO
       ENDIF 
+    ENDIF
 
    END SUBROUTINE spec_bdyupdate_ph
 
@@ -314,6 +323,7 @@ CONTAINS
                                  scalar_b, scalar_bt,        &
                                  spec_bdy_width, spec_zone, relax_zone,       &
                                  dtbc, fcx, gcx,             &
+                                 config_flags,               &
                                  ijds, ijde,                 & ! min/max(id,jd)
                                  ids,ide, jds,jde, kds,kde,  & ! domain dims
                                  ims,ime, jms,jme, kms,kme,  & ! memory dims
@@ -483,6 +493,7 @@ CONTAINS
    SUBROUTINE spec_bdy_scalar ( scalar_tend,    &
                                 scalar_b, scalar_bt,             &
                           spec_bdy_width, spec_zone,                   &
+                          config_flags,               &
                           ijds, ijde,                 & ! min/max(id,jd)
                           ids,ide, jds,jde, kds,kde,  & ! domain dims
                           ims,ime, jms,jme, kms,kme,  & ! memory dims

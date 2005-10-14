@@ -7,7 +7,7 @@ SUBROUTINE microphysics_driver(                                          &
                        th, rho, pi_phy, p                                &
                       ,ht, dz8w, p8w, dt,dx,dy                           &
                       ,mp_physics, spec_zone                             &
-                      ,specified                                         &
+                      ,specified, channel_switch                         &
                       ,warm_rain                                         &
                       ,xland,itimestep                                   &
                       ,f_ice_phy,f_rain_phy,f_rimef_phy                  &
@@ -157,7 +157,7 @@ SUBROUTINE microphysics_driver(                                          &
 !======================================================================
 
    INTEGER,    INTENT(IN   )    :: mp_physics
-   LOGICAL,    INTENT(IN   )    :: specified 
+   LOGICAL,    INTENT(IN   )    :: specified
 !
    INTEGER,      INTENT(IN   )    ::       ids,ide, jds,jde, kds,kde
    INTEGER,      INTENT(IN   )    ::       ims,ime, jms,jme, kms,kme
@@ -198,6 +198,7 @@ SUBROUTINE microphysics_driver(                                          &
 !
 ! Optional
 !
+   LOGICAL,  OPTIONAL,   INTENT(IN   )    :: channel_switch
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          OPTIONAL,                                                &
          INTENT(INOUT ) ::                                        &
@@ -225,11 +226,15 @@ SUBROUTINE microphysics_driver(                                          &
 ! LOCAL  VAR
 
    INTEGER :: i,j,k,its,ite,jts,jte,ij,sz,n
+   LOGICAL :: channel
 
 !---------------------------------------------------------------------
 !  check for microphysics type.  We need a clean way to 
 !  specify these things!
 !---------------------------------------------------------------------
+
+   channel = .FALSE.
+   IF ( PRESENT ( channel_switch ) ) channel = channel_switch
 
    if (mp_physics .eq. 0) return
    IF( specified ) THEN
@@ -243,8 +248,13 @@ SUBROUTINE microphysics_driver(                                          &
 
    DO ij = 1 , num_tiles
 
-       its = max(i_start(ij),ids+sz)
-       ite = min(i_end(ij),ide-1-sz)
+       IF (channel) THEN
+         its = max(i_start(ij),ids)
+         ite = min(i_end(ij),ide-1)
+       ELSE
+         its = max(i_start(ij),ids+sz)
+         ite = min(i_end(ij),ide-1-sz)
+       ENDIF
        jts = max(j_start(ij),jds+sz)
        jte = min(j_end(ij),jde-1-sz)
 

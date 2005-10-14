@@ -62,7 +62,7 @@ SUBROUTINE solve_em ( grid , config_flags , &
    INTEGER                         :: itmpstep
    INTEGER                         :: sz
 
-   LOGICAL                         :: specified_bdy
+   LOGICAL                         :: specified_bdy, channel_bdy
 
 ! storage for tendencies and decoupled state (generated from Registry)
 #include <em_i1_decl.inc>
@@ -467,7 +467,7 @@ BENCH_START(phy_prep_tim)
       !$OMP PRIVATE ( ij )
       DO ij = 1 , grid%num_tiles
 
-          CALL wrf_debug ( 200 , ' call phy_prep' )
+         CALL wrf_debug ( 200 , ' call phy_prep' )
          CALL phy_prep ( config_flags,                           &
                          mut, u_2, v_2, p, pb, alt,              &
                          ph_2, phb, t_2, tsk, moist, num_3d_m,   &
@@ -874,7 +874,7 @@ BENCH_START(phy_bc_tim)
 
      DO ij = 1 , grid%num_tiles
 
-          CALL wrf_debug ( 200 , ' call phy_bc' )
+       CALL wrf_debug ( 200 , ' call phy_bc' )
        CALL phy_bc (config_flags,div,defor11,defor22,defor33,            &
                             defor12,defor13,defor23,                     &
                             xkmh,xkmhd,xkmv,xkhh,xkhv,                   &
@@ -1026,7 +1026,7 @@ BENCH_START(hor_diff_tim)
        !$OMP PRIVATE ( ij )
        DO ij = 1 , grid%num_tiles
 
-          CALL wrf_debug ( 200 , ' call horizontal_diffusion_2' )
+         CALL wrf_debug ( 200 , ' call horizontal_diffusion_2' )
          CALL horizontal_diffusion_2( t_tendf, ru_tendf, rv_tendf, rw_tendf, &
                                       tke_tend,                              &
                                       moist_tend, num_3d_m,                  &
@@ -1772,6 +1772,7 @@ BENCH_START(rlx_bdy_scalar_tim)
                                     moist_bt(1,1,1,1,im),                  &
                                     config_flags%spec_bdy_width, grid%spec_zone, grid%relax_zone, &
                                     dtbc, fcx, gcx,             &
+                                    config_flags,               &
                                     ijds, ijde,                 & ! min/max(id,jd)
                                     ids,ide, jds,jde, kds,kde,  & ! domain dims
                                     ims,ime, jms,jme, kms,kme,  & ! memory dims
@@ -1784,6 +1785,7 @@ BENCH_START(rlx_bdy_scalar_tim)
                                     moist_b(1,1,1,1,im),                     &
                                     moist_bt(1,1,1,1,im),                    &
                                     config_flags%spec_bdy_width, grid%spec_zone,                 &
+                                    config_flags,               &
                                     ijds, ijde,                 & ! min/max(id,jd)
                                     ids,ide, jds,jde, kds,kde,  & ! domain dims
                                     ims,ime, jms,jme, kms,kme,  & ! memory dims
@@ -2060,6 +2062,7 @@ BENCH_END(tke_adv_tim)
                                  scalar_bt(1,1,1,1,is),                  &
                                  config_flags%spec_bdy_width, grid%spec_zone, grid%relax_zone, &
                                  dtbc, fcx, gcx,             &
+                                 config_flags,               &
                                  ijds, ijde,                 & ! min/max(id,jd)
                                  ids,ide, jds,jde, kds,kde,  & ! domain dims
                                  ims,ime, jms,jme, kms,kme,  & ! memory dims
@@ -2072,6 +2075,7 @@ BENCH_END(tke_adv_tim)
                                  scalar_b(1,1,1,1,is),                   &
                                  scalar_bt(1,1,1,1,is),                  &
                                  config_flags%spec_bdy_width, grid%spec_zone,                 &
+                                 config_flags,               &
                                  ijds, ijde,                 & ! min/max(id,jd)
                                  ids,ide, jds,jde, kds,kde,  & ! domain dims
                                  ims,ime, jms,jme, kms,kme,  & ! memory dims
@@ -2432,8 +2436,13 @@ BENCH_END(advance_ppt_tim)
 
    scalar_tile_loop_1a: DO ij = 1 , grid%num_tiles
 
-       its = max(grid%i_start(ij),ids+sz)
-       ite = min(grid%i_end(ij),ide-1-sz)
+       IF ( config_flags%periodic_x ) THEN
+         its = max(grid%i_start(ij),ids)
+         ite = min(grid%i_end(ij),ide-1)
+       ELSE
+         its = max(grid%i_start(ij),ids+sz)
+         ite = min(grid%i_end(ij),ide-1-sz)
+       ENDIF
        jts = max(grid%j_start(ij),jds+sz)
        jte = min(grid%j_end(ij),jde-1-sz)
 
@@ -2458,6 +2467,7 @@ BENCH_END(moist_physics_prep_tim)
 BENCH_START(micro_driver_tim)
        sr = 0.
        specified_bdy = config_flags%specified .OR. config_flags%nested
+       channel_bdy = config_flags%specified .AND. config_flags%periodic_x
 
        CALL microphysics_driver(                                          &
      &         DT=dtm             ,DX=grid%dx              ,DY=grid%dy              &
@@ -2467,7 +2477,7 @@ BENCH_START(micro_driver_tim)
      &        ,RHO=rho            ,SPEC_ZONE=grid%spec_zone                    &
      &        ,SR=sr              ,TH=th_phy                              &
      &        ,WARM_RAIN=warm_rain                    ,XLAND=xland        &
-     &        ,SPECIFIED=specified_bdy                                    &
+     &        ,SPECIFIED=specified_bdy, CHANNEL_SWITCH=channel_bdy        &
      &        ,F_RAIN_PHY=f_rain_phy                                      &
      &        ,F_RIMEF_PHY=f_rimef_phy                                    &
      &        ,MP_PHYSICS=config_flags%mp_physics                         &
@@ -2502,8 +2512,13 @@ BENCH_START(moist_phys_end_tim)
 
    scalar_tile_loop_1b: DO ij = 1 , grid%num_tiles
 
-       its = max(grid%i_start(ij),ids+sz)
-       ite = min(grid%i_end(ij),ide-1-sz)
+       IF ( config_flags%periodic_x ) THEN
+         its = max(grid%i_start(ij),ids)
+         ite = min(grid%i_end(ij),ide-1)
+       ELSE
+         its = max(grid%i_start(ij),ids+sz)
+         ite = min(grid%i_end(ij),ide-1-sz)
+       ENDIF
        jts = max(grid%j_start(ij),jds+sz)
        jte = min(grid%j_end(ij),jde-1-sz)
 

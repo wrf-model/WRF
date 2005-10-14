@@ -93,8 +93,8 @@ CONTAINS
    ENDIF
 
   IF( config_flags%specified ) THEN
-     xs_bc = xs_bc + 1
-     xe_bc = xe_bc + 1
+     IF( .NOT. config_flags%periodic_x)xs_bc = xs_bc + 1
+     IF( .NOT. config_flags%periodic_x)xe_bc = xe_bc + 1
      ys_bc = ys_bc + 1
      ye_bc = ye_bc + 1
    ENDIF
@@ -276,29 +276,28 @@ CONTAINS
 !  symmetry conditions can always be handled here, because no
 !  outside patch communication is needed
 
-      periodicity_x:  IF( ( config_flags%periodic_x ) .and.  &
-                          ( ids == ips )          .and.  &
-                          ( ide == ipe )                ) THEN
+      periodicity_x:  IF( ( config_flags%periodic_x ) ) THEN 
+        IF ( ( ids == ips ) .and.  ( ide == ipe ) ) THEN  ! test if east and west both on-processor 
+          IF ( its == ids ) THEN
 
-        IF ( its == ids ) THEN
+            DO j = MAX(jds,jts-1), MIN(jte+1,jde+jstag)
+            DO i = 0,-(bdyzone-1),-1
+              data(ids+i-1,j) = data(ide+i-1,j)
+            ENDDO
+            ENDDO
 
-          DO j = MAX(jds,jts-1), MIN(jte+1,jde+jstag)
-          DO i = 0,-(bdyzone-1),-1
-            data(ids+i-1,j) = data(ide+i-1,j)
-          ENDDO
-          ENDDO
+          ENDIF
 
-        ENDIF
+          IF ( ite == ide ) THEN
 
-        IF ( ite == ide ) THEN
-
-          DO j = MAX(jds,jts-1), MIN(jte+1,jde+jstag)
+            DO j = MAX(jds,jts-1), MIN(jte+1,jde+jstag)
 !!          DO i = 1 , bdyzone
-          DO i = -istag , bdyzone
-            data(ide+i+istag,j) = data(ids+i+istag,j)
-          ENDDO
-          ENDDO
+            DO i = -istag , bdyzone
+              data(ide+i+istag,j) = data(ids+i+istag,j)
+            ENDDO
+            ENDDO
 
+          ENDIF
         ENDIF
 
       ELSE 
@@ -421,28 +420,28 @@ CONTAINS
 
 !  same procedure in y
 
-      periodicity_y:  IF( ( config_flags%periodic_y ) .and.  &
-                          ( jds == jps )          .and.  & 
-                          ( jde == jpe )                  )  THEN 
+      periodicity_y:  IF( ( config_flags%periodic_y ) ) THEN
+        IF ( ( jds == jps ) .and. ( jde == jpe ) )  THEN    ! test of both north and south on processor
 
-        IF( jts == jds ) then
+          IF( jts == jds ) then
 
-          DO j = 0, -(bdyzone-1), -1
-          DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
-            data(i,jds+j-1) = data(i,jde+j-1)
-          ENDDO
-          ENDDO
+            DO j = 0, -(bdyzone-1), -1
+            DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
+              data(i,jds+j-1) = data(i,jde+j-1)
+            ENDDO
+            ENDDO
 
-        END IF
+          END IF
 
-        IF( jte == jde ) then
+          IF( jte == jde ) then
 
-!!          DO j = 1, bdyzone
-          DO j = -jstag, bdyzone
-          DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
-            data(i,jde+j+jstag) = data(i,jds+j+jstag)
-          ENDDO
-          ENDDO
+            DO j = -jstag, bdyzone
+            DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
+              data(i,jde+j+jstag) = data(i,jds+j+jstag)
+            ENDDO
+            ENDDO
+
+          END IF
 
         END IF
 
@@ -699,32 +698,33 @@ CONTAINS
 !  symmetry conditions can always be handled here, because no
 !  outside patch communication is needed
 
-      periodicity_x:  IF( ( config_flags%periodic_x ) .and.  &
-                          ( ids == ips )          .and.  &
-                          ( ide == ipe )                ) THEN
+      periodicity_x:  IF( ( config_flags%periodic_x ) ) THEN
 
-        IF ( its == ids ) THEN
+        IF ( ( ids == ips ) .and. ( ide == ipe ) ) THEN  ! test if both east and west on-processor
+          IF ( its == ids ) THEN
 
-          DO j = MAX(jds,jts-1), MIN(jte+1,jde+jstag)
-          DO k = kts, k_end
-          DO i = 0,-(bdyzone-1),-1
-            data(ids+i-1,k,j) = data(ide+i-1,k,j)
-          ENDDO
-          ENDDO
-          ENDDO
+            DO j = MAX(jds,jts-1), MIN(jte+1,jde+jstag)
+            DO k = kts, k_end
+            DO i = 0,-(bdyzone-1),-1
+              data(ids+i-1,k,j) = data(ide+i-1,k,j)
+            ENDDO
+            ENDDO
+            ENDDO
 
-        ENDIF
+          ENDIF
 
-        IF ( ite == ide ) THEN
 
-          DO j = MAX(jds,jts-1), MIN(jte+1,jde+jstag)
-          DO k = kts, k_end
-!!          DO i = 1 , bdyzone
-          DO i = -istag , bdyzone
-            data(ide+i+istag,k,j) = data(ids+i+istag,k,j)
-          ENDDO
-          ENDDO
-          ENDDO
+          IF ( ite == ide ) THEN
+
+            DO j = MAX(jds,jts-1), MIN(jte+1,jde+jstag)
+            DO k = kts, k_end
+            DO i = -istag , bdyzone
+              data(ide+i+istag,k,j) = data(ids+i+istag,k,j)
+            ENDDO
+            ENDDO
+            ENDDO
+
+          ENDIF
 
         ENDIF
 
@@ -865,32 +865,31 @@ CONTAINS
 
 !  same procedure in y
 
-      periodicity_y:  IF( ( config_flags%periodic_y ) .and.  &
-                          ( jds == jps )          .and.  & 
-                          ( jde == jpe )                  )  THEN 
+      periodicity_y:  IF( ( config_flags%periodic_y ) ) THEN
+        IF ( ( jds == jps ) .and. ( jde == jpe ) )  THEN      ! test if both north and south on processor
+          IF( jts == jds ) then
 
-        IF( jts == jds ) then
+            DO j = 0, -(bdyzone-1), -1
+            DO k = kts, k_end
+            DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
+              data(i,k,jds+j-1) = data(i,k,jde+j-1)
+            ENDDO
+            ENDDO
+            ENDDO
 
-          DO j = 0, -(bdyzone-1), -1
-          DO k = kts, k_end
-          DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
-            data(i,k,jds+j-1) = data(i,k,jde+j-1)
-          ENDDO
-          ENDDO
-          ENDDO
+          END IF
 
-        END IF
+          IF( jte == jde ) then
 
-        IF( jte == jde ) then
+            DO j = -jstag, bdyzone
+            DO k = kts, k_end
+            DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
+              data(i,k,jde+j+jstag) = data(i,k,jds+j+jstag)
+            ENDDO
+            ENDDO
+            ENDDO
 
-!!          DO j = 1, bdyzone
-          DO j = -jstag, bdyzone
-          DO k = kts, k_end
-          DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
-            data(i,k,jde+j+jstag) = data(i,k,jds+j+jstag)
-          ENDDO
-          ENDDO
-          ENDDO
+          END IF
 
         END IF
 
@@ -1120,10 +1119,12 @@ CONTAINS
       TYPE( grid_config_rec_type ) config_flags
 
       CHARACTER  :: variable
-      INTEGER    :: i, j, k, ibs, ibe, jbs, jbe, itf, jtf, ktf
-      INTEGER    :: b_dist
+      INTEGER    :: i, j, k, ibs, ibe, jbs, jbe, itf, jtf, ktf, im1, ip1
+      INTEGER    :: b_dist, b_limit
       REAL       :: fls0, fls1, fls2, fls3, fls4
+      LOGICAL    :: periodic_x
 
+      periodic_x = config_flags%periodic_x
       variable = variable_in
 
       IF (variable == 'U') variable = 'u'
@@ -1149,17 +1150,21 @@ CONTAINS
 ! Y-start boundary
         DO j = max(jts,jbs+spec_zone), min(jtf,jbs+relax_zone-1)
           b_dist = j - jbs
+          b_limit = b_dist
+          IF(periodic_x)b_limit = 0
           DO k = kts, ktf
-            DO i = max(its,b_dist+ibs), min(itf,ibe-b_dist)
+            DO i = max(its,b_limit+ibs), min(itf,ibe-b_limit)
+              im1 = max(i-1,ibs)
+              ip1 = min(i+1,ibe)
               fls0 = field_bdy(i, k, b_dist+1, P_YSB) &
                    + dtbc * field_bdy_tend(i, k, b_dist+1, P_YSB) &
                    - field(i,k,j)
-              fls1 = field_bdy(i-1, k, b_dist+1, P_YSB) &
-                   + dtbc * field_bdy_tend(i-1, k, b_dist+1, P_YSB) &
-                   - field(i-1,k,j)
-              fls2 = field_bdy(i+1, k, b_dist+1, P_YSB) &
-                   + dtbc * field_bdy_tend(i+1, k, b_dist+1, P_YSB) &
-                   - field(i+1,k,j)
+              fls1 = field_bdy(im1, k, b_dist+1, P_YSB) &
+                   + dtbc * field_bdy_tend(im1, k, b_dist+1, P_YSB) &
+                   - field(im1,k,j)
+              fls2 = field_bdy(ip1, k, b_dist+1, P_YSB) &
+                   + dtbc * field_bdy_tend(ip1, k, b_dist+1, P_YSB) &
+                   - field(ip1,k,j)
               fls3 = field_bdy(i, k, b_dist, P_YSB) &
                    + dtbc * field_bdy_tend(i, k, b_dist, P_YSB) &
                    - field(i,k,j-1)
@@ -1178,17 +1183,21 @@ CONTAINS
 ! Y-end boundary
         DO j = max(jts,jbe-relax_zone+1), min(jtf,jbe-spec_zone)
           b_dist = jbe - j
+          b_limit = b_dist
+          IF(periodic_x)b_limit = 0
           DO k = kts, ktf
-            DO i = max(its,b_dist+ibs), min(itf,ibe-b_dist)
+            DO i = max(its,b_limit+ibs), min(itf,ibe-b_limit)
+              im1 = max(i-1,ibs)
+              ip1 = min(i+1,ibe)
               fls0 = field_bdy(i, k, b_dist+1, P_YEB) &
                    + dtbc * field_bdy_tend(i, k, b_dist+1, P_YEB) &
                    - field(i,k,j)
-              fls1 = field_bdy(i-1, k, b_dist+1, P_YEB) &
-                   + dtbc * field_bdy_tend(i-1, k, b_dist+1, P_YEB) &
-                   - field(i-1,k,j)
-              fls2 = field_bdy(i+1, k, b_dist+1, P_YEB) &
-                   + dtbc * field_bdy_tend(i+1, k, b_dist+1, P_YEB) &
-                   - field(i+1,k,j)
+              fls1 = field_bdy(im1, k, b_dist+1, P_YEB) &
+                   + dtbc * field_bdy_tend(im1, k, b_dist+1, P_YEB) &
+                   - field(im1,k,j)
+              fls2 = field_bdy(ip1, k, b_dist+1, P_YEB) &
+                   + dtbc * field_bdy_tend(ip1, k, b_dist+1, P_YEB) &
+                   - field(ip1,k,j)
               fls3 = field_bdy(i, k, b_dist, P_YEB) &
                    + dtbc * field_bdy_tend(i, k, b_dist, P_YEB) &
                    - field(i,k,j+1)
@@ -1204,6 +1213,7 @@ CONTAINS
         ENDDO
       ENDIF
 
+    IF(.NOT.periodic_x)THEN
       IF (its - ibs .lt. relax_zone) THEN
 ! X-start boundary
         DO i = max(its,ibs+spec_zone), min(itf,ibs+relax_zone-1)
@@ -1262,6 +1272,7 @@ CONTAINS
           ENDDO
         ENDDO
       ENDIF
+    ENDIF
 
 
    END SUBROUTINE relax_bdytend
@@ -1302,7 +1313,10 @@ CONTAINS
 
       CHARACTER  :: variable
       INTEGER    :: i, j, k, ibs, ibe, jbs, jbe, itf, jtf, ktf
-      INTEGER    :: b_dist
+      INTEGER    :: b_dist, b_limit
+      LOGICAL    :: periodic_x
+
+      periodic_x = config_flags%periodic_x
 
       variable = variable_in
 
@@ -1329,8 +1343,10 @@ CONTAINS
 ! Y-start boundary
         DO j = jts, min(jtf,jbs+spec_zone-1)
           b_dist = j - jbs
+          b_limit = b_dist
+          IF(periodic_x)b_limit = 0
           DO k = kts, ktf
-            DO i = max(its,b_dist+ibs), min(itf,ibe-b_dist)
+            DO i = max(its,b_limit+ibs), min(itf,ibe-b_limit)
               field_tend(i,k,j) = field_bdy_tend(i, k, b_dist+1, P_YSB)
 !             field_tend(i,k,j) = field_ybdy(i, k, b_dist+1, P_SBT)
             ENDDO
@@ -1341,8 +1357,10 @@ CONTAINS
 ! Y-end boundary 
         DO j = max(jts,jbe-spec_zone+1), jtf 
           b_dist = jbe - j 
+          b_limit = b_dist
+          IF(periodic_x)b_limit = 0
           DO k = kts, ktf 
-            DO i = max(its,b_dist+ibs), min(itf,ibe-b_dist)
+            DO i = max(its,b_limit+ibs), min(itf,ibe-b_limit)
               field_tend(i,k,j) = field_bdy_tend(i, k, b_dist+1, P_YEB)
 !             field_tend(i,k,j) = field_ybdy(i, k, b_dist+1, P_EBT)
             ENDDO
@@ -1350,6 +1368,7 @@ CONTAINS
         ENDDO
       ENDIF 
 
+    IF(.NOT.periodic_x)THEN
       IF (its - ibs .lt. spec_zone) THEN
 ! X-start boundary
         DO i = its, min(itf,ibs+spec_zone-1)
@@ -1375,6 +1394,7 @@ CONTAINS
           ENDDO
         ENDDO
       ENDIF 
+    ENDIF
 
    END SUBROUTINE spec_bdytend
 !------------------------------------------------------------------------
@@ -1409,7 +1429,10 @@ CONTAINS
 
       CHARACTER  :: variable
       INTEGER    :: i, j, k, ibs, ibe, jbs, jbe, itf, jtf, ktf
-      INTEGER    :: b_dist
+      INTEGER    :: b_dist, b_limit
+      LOGICAL    :: periodic_x
+
+      periodic_x = config_flags%periodic_x
 
       variable = variable_in
 
@@ -1436,8 +1459,10 @@ CONTAINS
 ! Y-start boundary
         DO j = jts, min(jtf,jbs+spec_zone-1)
           b_dist = j - jbs
+          b_limit = b_dist
+          IF(periodic_x)b_limit = 0
           DO k = kts, ktf
-            DO i = max(its,b_dist+ibs), min(itf,ibe-b_dist)
+            DO i = max(its,b_limit+ibs), min(itf,ibe-b_limit)
               field(i,k,j) = field(i,k,j) + dt*field_tend(i,k,j) 
             ENDDO
           ENDDO
@@ -1447,14 +1472,17 @@ CONTAINS
 ! Y-end boundary 
         DO j = max(jts,jbe-spec_zone+1), jtf 
           b_dist = jbe - j 
+          b_limit = b_dist
+          IF(periodic_x)b_limit = 0
           DO k = kts, ktf 
-            DO i = max(its,b_dist+ibs), min(itf,ibe-b_dist)
+            DO i = max(its,b_limit+ibs), min(itf,ibe-b_limit)
               field(i,k,j) = field(i,k,j) + dt*field_tend(i,k,j) 
             ENDDO
           ENDDO
         ENDDO
       ENDIF 
 
+    IF(.NOT.periodic_x)THEN
       IF (its - ibs .lt. spec_zone) THEN
 ! X-start boundary
         DO i = its, min(itf,ibs+spec_zone-1)
@@ -1478,6 +1506,7 @@ CONTAINS
           ENDDO
         ENDDO
       ENDIF 
+    ENDIF
 
    END SUBROUTINE spec_bdyupdate
 !------------------------------------------------------------------------
@@ -1509,7 +1538,10 @@ CONTAINS
 
       CHARACTER  :: variable
       INTEGER    :: i, j, k, ibs, ibe, jbs, jbe, itf, jtf, ktf, i_inner, j_inner
-      INTEGER    :: b_dist
+      INTEGER    :: b_dist, b_limit
+      LOGICAL    :: periodic_x
+
+      periodic_x = config_flags%periodic_x
 
       variable = variable_in
 
@@ -1533,10 +1565,13 @@ CONTAINS
 ! Y-start boundary
         DO j = jts, min(jtf,jbs+spec_zone-1)
           b_dist = j - jbs
+          b_limit = b_dist
+          IF(periodic_x)b_limit = 0
           DO k = kts, ktf
-            DO i = max(its,b_dist+ibs), min(itf,ibe-b_dist)
+            DO i = max(its,b_limit+ibs), min(itf,ibe-b_limit)
               i_inner = max(i,ibs+spec_zone)
               i_inner = min(i_inner,ibe-spec_zone)
+              IF(periodic_x)i_inner = i
               field(i,k,j) = field(i_inner,k,jbs+spec_zone)
             ENDDO
           ENDDO
@@ -1546,16 +1581,20 @@ CONTAINS
 ! Y-end boundary 
         DO j = max(jts,jbe-spec_zone+1), jtf 
           b_dist = jbe - j 
+          b_limit = b_dist
+          IF(periodic_x)b_limit = 0
           DO k = kts, ktf 
-            DO i = max(its,b_dist+ibs), min(itf,ibe-b_dist)
+            DO i = max(its,b_limit+ibs), min(itf,ibe-b_limit)
               i_inner = max(i,ibs+spec_zone)
               i_inner = min(i_inner,ibe-spec_zone)
+              IF(periodic_x)i_inner = i
               field(i,k,j) = field(i_inner,k,jbe-spec_zone)
             ENDDO
           ENDDO
         ENDDO
       ENDIF 
 
+    IF(.NOT.periodic_x)THEN
       IF (its - ibs .lt. spec_zone) THEN
 ! X-start boundary
         DO i = its, min(itf,ibs+spec_zone-1)
@@ -1583,6 +1622,7 @@ CONTAINS
           ENDDO
         ENDDO
       ENDIF 
+    ENDIF
 
    END SUBROUTINE zero_grad_bdy
 !------------------------------------------------------------------------
@@ -1616,7 +1656,10 @@ CONTAINS
       TYPE( grid_config_rec_type ) config_flags
 
       INTEGER    :: i, j, k, ibs, ibe, jbs, jbe, itf, jtf, ktf, i_inner, j_inner
-      INTEGER    :: b_dist
+      INTEGER    :: b_dist, b_limit
+      LOGICAL    :: periodic_x
+
+      periodic_x = config_flags%periodic_x
 
       ibs = ids
       ibe = ide-1
@@ -1630,10 +1673,13 @@ CONTAINS
 ! Y-start boundary
         DO j = jts, min(jtf,jbs+spec_zone-1)
           b_dist = j - jbs
+          b_limit = b_dist
+          IF(periodic_x)b_limit = 0
           DO k = kts, ktf
-            DO i = max(its,b_dist+ibs), min(itf,ibe-b_dist)
+            DO i = max(its,b_limit+ibs), min(itf,ibe-b_limit)
               i_inner = max(i,ibs+spec_zone)
               i_inner = min(i_inner,ibe-spec_zone)
+              IF(periodic_x)i_inner = i
               IF(v(i,k,j) .lt. 0.)THEN
                 field(i,k,j) = field(i_inner,k,jbs+spec_zone)
               ELSE
@@ -1647,10 +1693,13 @@ CONTAINS
 ! Y-end boundary 
         DO j = max(jts,jbe-spec_zone+1), jtf 
           b_dist = jbe - j 
+          b_limit = b_dist
+          IF(periodic_x)b_limit = 0
           DO k = kts, ktf 
-            DO i = max(its,b_dist+ibs), min(itf,ibe-b_dist)
+            DO i = max(its,b_limit+ibs), min(itf,ibe-b_limit)
               i_inner = max(i,ibs+spec_zone)
               i_inner = min(i_inner,ibe-spec_zone)
+              IF(periodic_x)i_inner = i
               IF(v(i,k,j+1) .gt. 0.)THEN
                 field(i,k,j) = field(i_inner,k,jbe-spec_zone)
               ELSE
@@ -1661,6 +1710,7 @@ CONTAINS
         ENDDO
       ENDIF 
 
+    IF(.NOT.periodic_x)THEN
       IF (its - ibs .lt. spec_zone) THEN
 ! X-start boundary
         DO i = its, min(itf,ibs+spec_zone-1)
@@ -1696,6 +1746,7 @@ CONTAINS
           ENDDO
         ENDDO
       ENDIF 
+    ENDIF
 
    END SUBROUTINE flow_dep_bdy
 

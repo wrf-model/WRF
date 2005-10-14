@@ -811,10 +811,10 @@
       i1 = timeinterval1
       i2 = timeinterval2
       if ( i1 .LT. zero ) then
-        i1 = i1 * -1
+        i1 = ESMF_TimeIntervalProdI(i1, -1)
       endif
       if ( i2 .LT. zero ) then
-        i2 = i2 * -1
+        i2 = ESMF_TimeIntervalProdI(i2, -1)
       endif
 ! repeated subtraction
       retval = 0

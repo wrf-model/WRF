@@ -127,6 +127,7 @@ MODULE module_domain
       Type(WRFU_Time)                                     :: start_subtime, stop_subtime
       Type(WRFU_Time)                                     :: this_bdy_time, next_bdy_time
       Type(WRFU_Time)                                     :: this_emi_time, next_emi_time
+      Type(WRFU_TimeInterval), DIMENSION(MAX_WRF_ALARMS)  :: io_intervals
       Type(WRFU_Alarm), POINTER :: alarms(:)
 ! This awful hackery accounts for the fact that ESMF2.2.0 objects cannot tell 
 ! us if they have ever been created or not.  So, we have to keep track of this 
@@ -1627,6 +1628,7 @@ CONTAINS
         ENDIF
         CALL domain_clock_get( grid, start_time=startTime )
         IF ( interval_only ) THEN
+           grid%io_intervals( alarm_id ) = interval
            grid%alarms( alarm_id ) = &
              WRFU_AlarmCreate( clock=grid%domain_clock, &
                                RingInterval=interval,   &
@@ -1637,6 +1639,7 @@ CONTAINS
                                RingTime=startTime,      &
                                rc=rc )
         ELSE IF ( all_args ) THEN
+           grid%io_intervals( alarm_id ) = interval
            grid%alarms( alarm_id ) = &
              WRFU_AlarmCreate( clock=grid%domain_clock,         &
                                RingTime=startTime + begin_time, &

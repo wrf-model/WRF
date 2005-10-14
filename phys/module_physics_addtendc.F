@@ -677,6 +677,8 @@ SUBROUTINE add_a2a(lvar,rvar,config_flags,                  &
         config_flags%nested) j_start = MAX(jds+1,jts)
    IF ( config_flags%specified .or. &
         config_flags%nested) j_end   = MIN(jde-2,jte)
+      IF ( config_flags%periodic_x ) i_start = its
+      IF ( config_flags%periodic_x ) i_end = MIN( ite, ide-1 )
 
    DO j = j_start,j_end
    DO k = kts,ktf
@@ -728,6 +730,8 @@ SUBROUTINE add_a2c_u(lvar,rvar,config_flags,                &
         config_flags%nested) j_start = MAX(jds+1,jts)
    IF ( config_flags%specified .or. &
         config_flags%nested) j_end   = MIN(jde-2,jte)
+      IF ( config_flags%periodic_x ) i_start = its
+      IF ( config_flags%periodic_x ) i_end = ite
 
    DO j = j_start,j_end
    DO k = kts,ktf
@@ -780,6 +784,8 @@ SUBROUTINE add_a2c_v(lvar,rvar,config_flags,                &
         config_flags%nested) j_start = MAX(jds+1,jts)
    IF ( config_flags%specified .or. &
         config_flags%nested) j_end   = MIN(jde-1,jte)
+      IF ( config_flags%periodic_x ) i_start = its
+      IF ( config_flags%periodic_x ) i_end = MIN( ite, ide-1 )
 
    DO j = j_start,j_end
    DO k = kts,kte

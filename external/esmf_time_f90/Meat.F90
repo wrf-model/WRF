@@ -151,13 +151,15 @@ IMPLICIT NONE
       type(ESMF_Time), intent(in) :: time2
 ! local
       integer :: t1, t2, lcd, d1, d2, n1, n2
-      
-      IF ( time1%YR .GT. time2%YR ) THEN ; retval = 1 ; RETURN ; ENDIF
-      IF ( time1%YR .LT. time2%YR ) THEN ; retval = -1 ; RETURN ; ENDIF
-      IF ( time1%MM .GT. time2%MM ) THEN ; retval = 1 ; RETURN ; ENDIF
-      IF ( time1%MM .LT. time2%MM ) THEN ; retval = -1 ; RETURN ; ENDIF
-      IF ( time1%DD .GT. time2%DD ) THEN ; retval = 1 ; RETURN ; ENDIF
-      IF ( time1%DD .LT. time2%DD ) THEN ; retval = -1 ; RETURN ; ENDIF
+
+      IF ( time1%instant .AND. time2%instant ) THEN
+         IF ( time1%YR .GT. time2%YR ) THEN ; retval = 1 ; RETURN ; ENDIF
+         IF ( time1%YR .LT. time2%YR ) THEN ; retval = -1 ; RETURN ; ENDIF
+         IF ( time1%MM .GT. time2%MM ) THEN ; retval = 1 ; RETURN ; ENDIF
+         IF ( time1%MM .LT. time2%MM ) THEN ; retval = -1 ; RETURN ; ENDIF
+         IF ( time1%DD .GT. time2%DD ) THEN ; retval = 1 ; RETURN ; ENDIF
+         IF ( time1%DD .LT. time2%DD ) THEN ; retval = -1 ; RETURN ; ENDIF
+      ENDIF
 
       t1 = time1%basetime%S
       t2 = time2%basetime%S
@@ -165,10 +167,10 @@ IMPLICIT NONE
       d2 = time2%basetime%Sd
       n1 = time1%basetime%Sn
       n2 = time2%basetime%Sn
-      if ( n1 .gt. 0 .or. n2 .gt. 0 ) then
+      if ( n1 .ne. 0 .or. n2 .ne. 0 ) then
 	 CALL compute_lcd( d1, d2, lcd )
-	 n1 = n1 * ( lcd / d1 )
-	 n2 = n2 * ( lcd / d2 )
+         if ( d1 .ne. 0 ) n1 = n1 * ( lcd / d1 )
+	 if ( d2 .ne. 0 ) n2 = n2 * ( lcd / d2 )
       endif
 
       if ( t1 .GT. t2 ) retval = 1
@@ -197,6 +199,7 @@ IMPLICIT NONE
       CALL timecmp(time1,time2,res)
       ESMF_TimeEQ = (res .EQ. 0)
 END SUBROUTINE c_esmc_basetimeeq
+
 SUBROUTINE c_esmc_basetimege(time1, time2, ESMF_TimeEQ)
   USE esmf_alarmmod
   USE esmf_basemod
@@ -727,6 +730,8 @@ IMPLICIT NONE
         RETURN
       ENDIF
 
+      timeIntOut%basetime%S = time1%basetime%S - time2%basetime%S
+
       iSd = time2%basetime%Sd
       iSn = time2%basetime%Sn
       tSd = time1%basetime%Sd
@@ -816,6 +821,8 @@ IMPLICIT NONE
         CALL c_esmc_basetimeintervalsum( timeInt1, tempInt, timeIntOut )
         RETURN
       ENDIF
+
+      timeIntOut%basetime%S = timeInt1%basetime%S - timeInt2%basetime%S
 
       iSd = timeInt2%basetime%Sd
       iSn = timeInt2%basetime%Sn

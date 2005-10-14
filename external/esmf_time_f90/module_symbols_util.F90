@@ -11,6 +11,9 @@
 !
       MODULE module_symbols_util
 
+! JM -- added this next line by hand. If you rerun findsymbol, add this one too.
+        USE ESMF_Mod, WRFU_TimeIntervalDIVQuot => WRFADDITION_TimeIntervalDIVQuot
+
         USE ESMF_Mod, WRFU_ALARM => ESMF_ALARM
         USE ESMF_Mod, WRFU_ALARMCREATE => ESMF_ALARMCREATE
         USE ESMF_Mod, WRFU_ALARMDESTROY => ESMF_ALARMDESTROY

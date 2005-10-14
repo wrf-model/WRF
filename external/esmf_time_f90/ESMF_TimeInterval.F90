@@ -93,6 +93,8 @@
 !      public ESMF_TimeIntervalWrite
       public ESMF_TimeIntervalValidate
       public ESMF_TimeIntervalPrint
+!!!!!!!!! added 20051012, JM
+      public WRFADDITION_TimeIntervalDIVQuot 
 
 ! !PRIVATE MEMBER FUNCTIONS:
  
@@ -590,7 +592,7 @@
       ENDIF
       timeinterval%basetime%MS = 0
       timeinterval%basetime%Sn = 0
-      timeinterval%basetime%Sd = 0
+      timeinterval%basetime%Sd = 1
       IF ( PRESENT( MS ) ) THEN
         timeinterval%basetime%MS = MS
       ELSE IF ( PRESENT( Sd ) .AND. PRESENT( Sn ) ) THEN
@@ -772,6 +774,56 @@
 
       end function ESMF_TimeIntervalFQuot
 
+!!!!!!!!!!!!!!!!!! added jm 20051012
+! new WRF-specific function, Divide two time intervals and return the whole integer, without remainder
+      function WRFADDITION_TimeIntervalDIVQuot(timeinterval1, timeinterval2)
+
+! !RETURN VALUE:
+      INTEGER :: WRFADDITION_TimeIntervalDIVQuot 
+
+! !ARGUMENTS:
+      type(ESMF_TimeInterval), intent(in) :: timeinterval1
+      type(ESMF_TimeInterval), intent(in) :: timeinterval2
+
+! !LOCAL
+      INTEGER :: retval, rc
+      type(ESMF_TimeInterval) :: zero, i1,i2
+
+! !DESCRIPTION:
+!     Returns timeinterval1 divided by timeinterval2 as a fraction quotient.
+!
+!     The arguments are:
+!     \begin{description}
+!     \item[timeinterval1]
+!          The dividend
+!     \item[timeinterval2]
+!          The divisor
+!     \end{description}
+!
+! !REQUIREMENTS:
+!     TMG1.5.5
+!EOP
+
+      call c_ESMC_TimeIntervalFQuot(timeinterval1, timeinterval2, &
+                                    ESMF_TimeIntervalFQuot)
+
+      call ESMF_TimeIntervalSet( zero, rc=rc )
+      i1 = timeinterval1
+      i2 = timeinterval2
+      if ( i1 .LT. zero ) i1 = i1 * -1
+      if ( i2 .LT. zero ) i2 = i2 * -1
+! repeated subtraction
+      retval = 0
+      DO WHILE (  i1 .GE. i2 )
+        i1 = i1 - i2
+        retval = retval + 1
+      ENDDO
+
+      WRFADDITION_TimeIntervalDIVQuot = retval
+
+      end function WRFADDITION_TimeIntervalDIVQuot
+!!!!!!!!!!!!!!!!!!
+
 !------------------------------------------------------------------------------
 !BOP
 ! !IROUTINE:  ESMF_TimeIntervalRQuot - Divide two time intervals, return double precision result
@@ -916,6 +968,7 @@
       integer, intent(in) :: multiplier
 ! !LOCAL:
       integer    :: rc
+      integer    :: i
 
 ! !DESCRIPTION:
 !     Multiply a {\tt ESMF\_TimeInterval} by an integer, return product as a
@@ -936,6 +989,16 @@
       CALL ESMF_TimeIntervalSet( ESMF_TimeIntervalProdI, rc=rc )
       call c_ESMC_TimeIntervalProdI(timeinterval, multiplier, &
                                     ESMF_TimeIntervalProdI)
+      
+      IF ( multiplier .GT. 0 ) THEN
+        DO i = 1, multiplier
+           ESMF_TimeIntervalProdI = ESMF_TimeIntervalProdI + timeinterval
+        ENDDO
+      ELSE
+        DO i = 1, -1*multiplier
+           ESMF_TimeIntervalProdI = ESMF_TimeIntervalProdI - timeinterval
+        ENDDO
+      ENDIF
 
       end function ESMF_TimeIntervalProdI
 

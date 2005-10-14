@@ -725,6 +725,10 @@ SUBROUTINE med_hist_out ( grid , stream, config_flags )
    INTEGER                                :: ierr
    INTEGER                                :: myproc
    CHARACTER*80                           :: timestr
+   TYPE(WRFU_Time)                        :: ST,CT,OT
+   TYPE(WRFU_TimeInterval)                :: TI,IOI
+   INTEGER                                :: n
+   LOGICAL                                :: adjust
 
    IF ( wrf_dm_on_monitor() ) THEN
      CALL start_timing
@@ -734,19 +738,27 @@ SUBROUTINE med_hist_out ( grid , stream, config_flags )
      WRITE(message,*)'med_hist_out: invalid history stream ',stream
      CALL wrf_error_fatal( message )
    ENDIF
-   CALL domain_clock_get( grid, current_timestr=timestr )
+   CALL nl_get_adjust_output_times( grid%id, adjust )
+   CALL domain_clock_get( grid, current_time=CT, start_time=ST, current_timestr=timestr )
+
    SELECT CASE( stream )
      CASE ( 0 )
+       IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( HISTORY_ALARM ), CT, ST, timestr )
        CALL construct_filename2a ( fname , config_flags%history_outname , grid%id , 2 , timestr )
      CASE ( 1 )
+       IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXHIST1_ALARM ), CT, ST, timestr )
        CALL construct_filename2a ( fname , config_flags%auxhist1_outname , grid%id , 2 , timestr )
      CASE ( 2 )
+       IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXHIST2_ALARM ), CT, ST, timestr )
        CALL construct_filename2a ( fname , config_flags%auxhist2_outname , grid%id , 2 , timestr )
      CASE ( 3 )
+       IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXHIST3_ALARM ), CT, ST, timestr )
        CALL construct_filename2a ( fname , config_flags%auxhist3_outname , grid%id , 2 , timestr )
      CASE ( 4 )
+       IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXHIST4_ALARM ), CT, ST, timestr )
        CALL construct_filename2a ( fname , config_flags%auxhist4_outname , grid%id , 2 , timestr )
      CASE ( 5 )
+       IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXHIST5_ALARM ), CT, ST, timestr )
        CALL construct_filename2a ( fname , config_flags%auxhist5_outname , grid%id , 2 , timestr )
    END SELECT
 

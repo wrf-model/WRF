@@ -579,7 +579,7 @@ SCC		=	$(CC)
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
 PROMOTION	=	-xtypemap=real:$(RSIZEBITS),integer:32
-CFLAGS          =
+CFLAGS          =	-DNCARIBM_NOC99
 FCOPTIM		=	-O2 # -O4 -xlibmopt
 FCDEBUG		=	#-g
 FCBASEOPTS	=	-fnonstd -free -xpp=cpp $(FCDEBUG) -w
@@ -711,7 +711,7 @@ ARCHFLAGS       =       -DNETCDF -DGRIB1 -DINTIO \
                         -DSTUBMPI
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
 PROMOTION	=	-xtypemap=real:$(RSIZEBITS),integer:32
-CFLAGS          =       $(ARCHFLAGS) -I../external/RSL/RSL
+CFLAGS          =       $(ARCHFLAGS) -I../external/RSL/RSL -DNCARIBM_NOC99
 FCOPTIM         =       -O2 # -O4 -xlibmopt
 FCDEBUG         =       # -g
 FCBASEOPTS      =       -fnonstd -free -xpp=cpp $(FCDEBUG) -w
@@ -830,7 +830,7 @@ SCC		=	$(CC)
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
 PROMOTION	=	-xtypemap=real:$(RSIZEBITS),integer:32
-CFLAGS          =
+CFLAGS          =	-DNCARIBM_NOC99
 FCOPTIM		=	-O3 -xlibmopt
 FCDEBUG		=	#-g
 FCBASEOPTS	=	-fnonstd -free -xpp=cpp $(FCDEBUG) $(OMP) -w
@@ -947,7 +947,7 @@ ARCHFLAGS       =       -DNETCDF -DGRIB1 -DINTIO \
                         -DSTUBMPI
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
 PROMOTION	=	-xtypemap=real:$(RSIZEBITS),integer:32
-CFLAGS          =       $(ARCHFLAGS) -I../external/RSL/RSL
+CFLAGS          =       $(ARCHFLAGS) -I../external/RSL/RSL -DNCARIBM_NOC99
 FCOPTIM         =       -O3 -xlibmopt
 FCDEBUG         =       # -g
 FCBASEOPTS      =       -fnonstd -free -xpp=cpp $(FCDEBUG) -w
@@ -2856,8 +2856,9 @@ esmf_time :
 
 nest_init_utils.o : nest_init_utils.F
 module_optional_si_input.o : module_optional_si_input.F
+module_IGWAVE_ADJUST.o : module_IGWAVE_ADJUST.F
 
-nest_init_utils.o module_optional_si_input.o :
+nest_init_utils.o module_optional_si_input.o module_IGWAVE_ADJUST.o:
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f

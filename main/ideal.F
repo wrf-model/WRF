@@ -44,6 +44,8 @@ PROGRAM ideal
      END SUBROUTINE med_initialdata_output 
    END INTERFACE
 
+#include "version_decl"
+
 
 #ifdef DM_PARALLEL
    INTEGER                 :: nbytes
@@ -56,7 +58,7 @@ PROGRAM ideal
 
    !  Define the name of this program (program_name defined in module_domain)
 
-   program_name = "IDEAL V2.1 PREPROCESSOR"
+   program_name = "IDEAL " // TRIM(release_version) // " PREPROCESSOR"
 
    !  Get the NAMELIST data for input.
 

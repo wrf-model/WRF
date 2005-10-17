@@ -108,6 +108,8 @@ character(len=24) :: start_date_hold
    CHARACTER (LEN=80)      :: message
 integer :: ii
 
+#include "version_decl"
+
    !  Interface block for routine that passes pointers and needs to know that they
    !  are receiving pointers.
 
@@ -128,7 +130,7 @@ integer :: ii
 
    !  Define the name of this program (program_name defined in module_domain)
 
-   program_name = "NDOWN_EM V2.1 PREPROCESSOR"
+   program_name = "NDOWN_EM " // TRIM(release_version) // " PREPROCESSOR"
 
 #ifdef DM_PARALLEL
    CALL disable_quilting
@@ -988,7 +990,7 @@ print *,'bdy time = ',time_loop-1,'  bdy date = ',current_date,' ',start_date
 
    CALL wrf_debug ( 0 , 'ndown_em: SUCCESS COMPLETE NDOWN_EM INIT' )
 
-   CALL wrf_shutdown
+!  CALL wrf_shutdown
 
    CALL WRFU_Finalize( rc=rc )
 

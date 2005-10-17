@@ -64,6 +64,7 @@ CONTAINS
 !     WRF initialization routine.
 !</DESCRIPTION>
      LOGICAL, OPTIONAL, INTENT(IN) :: no_init1
+#include "version_decl"
 
 !<DESCRIPTION>
 ! Program_name, a global variable defined in frame/module_domain.F, is
@@ -78,7 +79,7 @@ CONTAINS
 !
 !</DESCRIPTION>
 
-   program_name = "WRF V2.1 MODEL"
+   program_name = "WRF " // TRIM(release_version) // " MODEL"
 
    ! Initialize WRF modules:  
    ! Phase 1 returns after MPI_INIT() (if it is called)

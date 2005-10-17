@@ -60,6 +60,8 @@ PROGRAM real_data
    INTEGER :: time_loop_max , time_loop, rc
    REAL    :: t1,t2
 
+#include "version_decl"
+
    INTERFACE
      SUBROUTINE Setup_Timekeeping( grid )
       USE module_domain
@@ -69,7 +71,7 @@ PROGRAM real_data
 
    !  Define the name of this program (program_name defined in module_domain)
 
-   program_name = "REAL_NMM V2.0 PREPROCESSOR"
+   program_name = "REAL_NMM " // TRIM(release_version) // " PREPROCESSOR"
 
 #ifdef DM_PARALLEL
    CALL disable_quilting

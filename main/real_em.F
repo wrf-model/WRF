@@ -71,12 +71,14 @@ real::t1,t2
      END SUBROUTINE Setup_Timekeeping
    END INTERFACE
 
+#include "version_decl"
+
    !  Define the name of this program (program_name defined in module_domain)
 
    ! NOTE: share/input_wrf.F tests first 7 chars of this name to decide 
    ! whether to read P_TOP as metadata from the SI (yes, if .eq. REAL_EM)
 
-   program_name = "REAL_EM V2.1 PREPROCESSOR"
+   program_name = "REAL_EM " // TRIM(release_version) // " PREPROCESSOR"
 
 #ifdef DM_PARALLEL
    CALL disable_quilting

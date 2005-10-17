@@ -51,7 +51,7 @@
     INTEGER :: ide_compare , jde_compare , kde_compare
     REAL , DIMENSION(16) :: lats16 , lons16
     CHARACTER (len=19) simulation_start_date
-    REAL dx_compare , dy_compare
+    REAL dx_compare , dy_compare , dum
 
 !<DESCRIPTION>
 !
@@ -120,15 +120,28 @@
     CALL nl_get_dyn_opt( 1, dyn_opt )
     CALL wrf_get_dom_ti_integer ( fid, 'DYN_OPT', dyn_opt_tmp, 1, icnt, ierr )
 
-    CALL wrf_get_dom_ti_real ( fid , 'CEN_LAT' ,  config_flags%cen_lat , 1 , icnt , ierr )
-    WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_real for CEN_LAT returns ',config_flags%cen_lat
-    CALL wrf_debug ( 300 , wrf_err_message )
-    CALL nl_set_cen_lat ( grid%id , config_flags%cen_lat )
+    !  We do not want the CEN_LAT LON values from the boundary file.  For 1-way nests
+    !  with ndown, this ends up being the data from the previous coarse domain.
 
-    CALL wrf_get_dom_ti_real ( fid , 'CEN_LON' ,  config_flags%cen_lon , 1 , icnt , ierr )
-    WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_real for CEN_LON returns ',config_flags%cen_lon
-    CALL wrf_debug ( 300 , wrf_err_message )
-    CALL nl_set_cen_lon ( grid%id , config_flags%cen_lon )
+    IF ( switch .NE. boundary_only ) THEN
+       CALL wrf_get_dom_ti_real ( fid , 'CEN_LAT' ,  config_flags%cen_lat , 1 , icnt , ierr )
+       WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_real for CEN_LAT returns ',config_flags%cen_lat
+       CALL wrf_debug ( 300 , wrf_err_message )
+       CALL nl_set_cen_lat ( grid%id , config_flags%cen_lat )
+
+       CALL wrf_get_dom_ti_real ( fid , 'CEN_LON' ,  config_flags%cen_lon , 1 , icnt , ierr )
+       WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_real for CEN_LON returns ',config_flags%cen_lon
+       CALL wrf_debug ( 300 , wrf_err_message )
+       CALL nl_set_cen_lon ( grid%id , config_flags%cen_lon )
+    ELSE
+       CALL wrf_get_dom_ti_real ( fid , 'CEN_LAT' ,  dum , 1 , icnt , ierr )
+       WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_real for CEN_LAT returns ',dum
+       CALL wrf_debug ( 300 , wrf_err_message )
+
+       CALL wrf_get_dom_ti_real ( fid , 'CEN_LON' ,  dum , 1 , icnt , ierr )
+       WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_real for CEN_LON returns ',dum
+       CALL wrf_debug ( 300 , wrf_err_message )
+    END IF
 
     CALL wrf_get_dom_ti_real ( fid , 'TRUELAT1' ,  config_flags%truelat1 , 1 , icnt , ierr )
     WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_real for TRUELAT1 returns ',config_flags%truelat1

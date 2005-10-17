@@ -1,4 +1,4 @@
-WRF Model Version 2.1 (August 2005)
+WRF Model Version 2.1.1 (October 2005)
 
 ------------------------
 WRF PUBLIC DOMAIN NOTICE
@@ -24,17 +24,17 @@ infringement actions.
 
 ======================================
 
-V2.1 Release Notes:
+V2.1.1 Release Notes:
 -----------------
 
 This is the main directory for the WRF Version 2 source code release.
 
 - For directions on compiling WRF, see below or Users Web page.
-- For more information on WRF V2.1 release, visit WRF Users home page
+- For more information on WRF V2.1.1 release, visit WRF Users home page
   http://www.mmm.ucar.edu/wrf/users/
 - Use WRFSI 2.0.3 or 2.1 (http://wrfsi.noaa.gov) for real-data preparation.
 - Must rerun real.exe to generate new wrfbdy_d01/wrfinput_d01 for wrf.exe.
-- WRF V2.1's namelist has some changes. Edit with caution.
+- WRF V2.1's namelist has some changes from 2.0.3.1). Edit with caution.
 - Need to have gribmap.txt in your run directory.
 
 For questions, send mail to wrfhelp@ucar.edu
@@ -114,6 +114,25 @@ How to compile and run?
 
 What is in WRF V2?
 
+- Bug Fixes from 2.1 Release
+  * WRFV2/external/RSL_LITE/module_dm.F: fix 3 domain runs
+  * WRFV2/main/ndown_em.F: temporary fix for OSF1, disable repeated io shutdown
+  * WRFV2/share/interp_fcn.F: extend boundary computation to spec_bdy_width, parallel fix
+  * WRFV2/dyn_em/start_em.F: allow fcx/gcx boundary relaxation for fine domain
+  * WRFV2/share/module_soil_pre.F: account for sea ice vs. permanent ice with lower boundary temp
+  * WRFV2/phys/module_surface_driver.F:  acsnow on argument list twice
+  * WRFV2/share/output_wrf.F: put dx, dy in metadata output for NMM
+  * WRFV2/arch/configure.defaults: OSF1 with RSL_LITE, add another file to optimized build list
+
+- NMM enhancements from 2.1 for Tutorial Release
+  * WRFV2/Registry/Registry.NMM: add "h" option to output additional fields in history
+  * WRFV2/test/nmm_real: remove parmnmm, fort.10, fcstdata.parm, ETAMPNEW_DATA, GENPARM.TBL,
+    RRTM_DATA, SOIL_ARM.TBL, VEGPARM.TBL, gribmap.txt - all linked from run directory or
+    no longer required
+  * WRFV2/Makefile: links data files from run dir into test/nmm_real
+  * WRFV2/test/nmm_real/namelist.input: updated settings to coincide with test data set
+  * WRFV2/README.NMM: updated information for NMM
+
 - Advanced Research WRF (ARW) solver: Eulerian mass, hydrostatic and non-hydrostatic
   * Arakawa C-grid staggering
   * Runge-Kutta 2nd and 3rd order timestep options
@@ -151,7 +170,7 @@ What is in WRF V2?
   * sub-grid turbulence (constant K diffusion/ Smagorinsky/ predicted TKE)
   * land-use categories determine surface properties
 
-- Sofeware
+- Software
 
   * Hierarchical software architecture that insulates scientific code
     (Model Layer) from computer architecture (Driver Layer)

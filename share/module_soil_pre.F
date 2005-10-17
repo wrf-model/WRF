@@ -62,7 +62,7 @@ CONTAINS
                        ( ( landmask(i,j) .LT. 0.5 ) .AND. ( tsk(i,j) .LT. seaice_threshold ) ) ) THEN
                      xice(i,j) = 1.
                      num_seaice_changes = num_seaice_changes + 1
-                     tmn(i,j) = 271.4
+                     if(landmask(i,j) .LT. 0.5 )tmn(i,j) = 271.4
                      vegcat(i,j)=isice
                      ivgtyp(i,j)=isice
                      lu_index(i,j)=isice
@@ -171,14 +171,19 @@ CONTAINS
             num_seaice_changes = 0
             DO j = jts , MIN(jde-1,jte)
                DO i = its , MIN(ide-1,ite)
-                  IF ( ( tsk(i,j) .LT. 170 ) .OR. ( tsk(i,j) .GT. 400 ) ) THEN
-                     print *,'TSK woes in seaice post, i,j=',i,j,'  tsk = ',tsk(i,j)
+                  IF ( ( ( tsk(i,j) .LT. 170 ) .OR. ( tsk(i,j) .GT. 400 ) ) .AND. &
+                       ( ( tsk_old(i,j) .GT. 170 ) .AND. ( tsk_old(i,j) .LT. 400 ) ) )THEN
+                     tsk(i,j) = tsk_old(i,j)
+                  END IF
+                  IF ( ( ( tsk(i,j) .LT. 170 ) .OR. ( tsk(i,j) .GT. 400 ) ) .AND. &
+                       ( ( tsk_old(i,j) .LT. 170 ) .OR. ( tsk_old(i,j) .GT. 400 ) ) )THEN
+                     print *,'TSK woes in seaice post, i,j=',i,j,'  tsk = ',tsk(i,j), tsk_old(i,j)
                      CALL wrf_error_fatal ( 'TSK is unrealistic, problems for seaice post')
                   ELSE IF ( ( xice(i,j) .GE. 0.5 ) .OR. &
                        ( ( landmask(i,j) .LT. 0.5 ) .AND. ( tsk(i,j) .LT. seaice_threshold ) ) ) THEN
                      xice(i,j) = 1.
                      num_seaice_changes = num_seaice_changes + 1
-                     tmn(i,j) = 271.16
+                     if(landmask(i,j) .LT. 0.5 )tmn(i,j) = 271.4
                      vegcat(i,j)=isice
                      ivgtyp(i,j)=isice
                      lu_index(i,j)=isice
@@ -2349,7 +2354,7 @@ cycle
          END DO
 
 
-#ifdef ( NMM_CORE == 1 )
+#if ( NMM_CORE == 1 )
 !new
 	write(0,*) 'st_input(1) in init_soil_2_real'
 	DO J=MIN(jde-1,jte),JTS, -MIN(jde-1,jte)/15

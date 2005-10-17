@@ -1205,6 +1205,24 @@ CONTAINS
 
    END SUBROUTINE domain_destroy
 
+   RECURSIVE SUBROUTINE show_nest_subtree ( grid )
+      TYPE(domain), POINTER :: grid
+      INTEGER myid
+      INTEGER kid
+      IF ( .NOT. ASSOCIATED( grid ) ) RETURN
+      myid = grid%id
+      write(0,*)'show_nest_subtree ',myid
+      DO kid = 1, max_nests
+        IF ( ASSOCIATED( grid%nests(kid)%ptr ) ) THEN
+          IF ( grid%nests(kid)%ptr%id .EQ. myid ) THEN
+            CALL wrf_error_fatal( 'show_nest_subtree: nest hierarchy corrupted' )
+          ENDIF
+          CALL show_nest_subtree( grid%nests(kid)%ptr )
+        ENDIF
+      ENDDO
+   END SUBROUTINE show_nest_subtree
+   
+
 !
 
 !  This routine DEALLOCATEs each gridded field for this domain.  For each type of

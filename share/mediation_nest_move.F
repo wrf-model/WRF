@@ -351,7 +351,6 @@ write(0,*)'Check to see if COMPUTE_VORTEX_CENTER_ALARM is ringing? '
        IF ( ierr .ne. 0 ) CALL wrf_error_fatal ('allocating terrain in time_for_move2')
      ENDIF
 
-
 #  if (EM_CORE == 1)
      IF ( dyn_opt .EQ. DYN_EM ) THEN
        CALL compute_500mb_height ( grid%em_ph_2 , grid%em_phb, grid%em_p, grid%em_pb, height_l , &
@@ -691,6 +690,7 @@ USE module_timing
 ! 
 ! Simplifying assumption: domains in moving nest simulations have only 
 ! one parent and only one child.
+
    IF   ( grid%num_nests .GT. 1 ) THEN
      CALL wrf_error_fatal ( 'domains in moving nest simulations can have only 1 nest' )
    ENDIF
@@ -705,6 +705,7 @@ USE module_timing
      ! its boundary
      par => grid%parents(1)%ptr
      nst => grid
+
      would_move_x = move_cd_x 
      would_move_y = move_cd_y
 
@@ -748,10 +749,11 @@ USE module_timing
            move_cd_y = 0
          ENDIF
      ELSE
-         nst = par
-         par = nst%parents(1)%ptr
+         nst => par
+         par => nst%parents(1)%ptr
          GOTO 100
      ENDIF
+
 ! bottom of until loop
      time_for_move = ( move_cd_x .NE. 0 ) .OR. ( move_cd_y .NE. 0 )
 

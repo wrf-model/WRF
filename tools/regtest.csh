@@ -95,7 +95,7 @@ else if ( (`hostname | cut -c 1-6` == joshua ) || \
           ( `hostname` == maple ) || (`hostname | cut -c 1-7` == service ) ) then
 	set WRFREGDATAEM = /users/gill/WRF-data-EM
 	set WRFREGDATANMM = /users/gill/WRF-data-NMM
-else if ( ( `hostname | cut -c 1-2` == bs ) || ( `hostname` == tempest ) ) then
+else if ( ( `hostname | cut -c 1-2` == bs ) || ( `hostname` == tempest ) || ( `hostname | cut -c 1-2` == ln ) ) then
 	set WRFREGDATAEM = /mmm/users/gill/WRF-data-EM
 	set WRFREGDATANMM = /mmm/users/gill/WRF-data-NMM
 else
@@ -948,6 +948,36 @@ EOF
 	echo "OS version info: " >>! version_info
 	uname -a >>&! version_info
 	echo " " >>! version_info
+else if ( ( $ARCH[1] == Linux ) && ( `hostname | cut -c 1-2` ==  ln) ) then
+	set DEF_DIR	= /ptmp/${user}/wrf_regtest
+	if ( ! -d $DEF_DIR ) mkdir $DEF_DIR
+	set TMPDIR		= .
+	set MAIL		= /bin/mail
+	if      ( $LINUX_COMP == PGI ) then
+		set COMPOPTS	= ( 1 2 3 )
+	endif
+	set Num_Procs		= 2
+	set OPENMP		= $Num_Procs
+	cat >! machfile << EOF
+`hostname`
+`hostname`
+`hostname`
+`hostname`
+EOF
+	set Mach		= `pwd`/machfile
+	set ZAP_OPENMP		= TRUE
+	set MPIRUNCOMMAND       = ( mpirun -np $Num_Procs -machinefile $Mach )
+	set MPIRUNCOMMAND       = ( mpirun -np $Num_Procs )
+	echo "Compiler version info: " >! version_info
+	if      ( $LINUX_COMP == PGI ) then
+		pgf90 -V >>&! version_info
+	else if ( $LINUX_COMP == INTEL ) then
+		ifort -v >>&! version_info
+	endif
+	echo " " >>! version_info
+	echo "OS version info: " >>! version_info
+	uname -a >>&! version_info
+	echo " " >>! version_info
 else if ( ( $ARCH[1] == Linux ) && ( `hostname` == loquat ) ) then
 	set job_id              = $$
 	set DEF_DIR             = /loquat2/$user/wrf_regression.${job_id}
@@ -1009,7 +1039,7 @@ else if ( `hostname` == tempest ) then
 	set TMPDIR		= .
 	set MAIL		= /usr/sbin/Mail
 	set COMPOPTS		= ( 1 2 3 )
-	set Num_Procs		= 4
+	set Num_Procs		= 2
 	set OPENMP		= $Num_Procs
 	set Mach		= `pwd`/machfile
 	set ZAP_OPENMP		= TRUE

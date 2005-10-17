@@ -158,7 +158,7 @@
 
    ENDIF
 
-      IF ( grid%id .NE. 1 ) THEN
+!     IF ( grid%id .NE. 1 ) THEN
    
       !  Every time a domain starts or every time a domain moves, this routine is called.  We want
       !  the center (middle) lat/lon of the grid for the metacode.  The lat/lon values are
@@ -302,7 +302,7 @@
          CALL nl_set_cen_lat ( grid%id , ( lat1 + lat2 + lat3 + lat4 ) * 0.25 )
          CALL nl_set_cen_lon ( grid%id , ( lon1 + lon2 + lon3 + lon4 ) * 0.25 )
       END IF
-   END IF
+!  END IF
 
    IF ( .NOT. config_flags%restart .AND. &
         (( config_flags%input_from_hires ) .OR. ( config_flags%input_from_file ))) THEN

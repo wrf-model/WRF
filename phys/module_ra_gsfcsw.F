@@ -570,8 +570,9 @@ CONTAINS
 !
       do k = kts, kte
       do i = its, ite
-         taucldc(i,k,j)=taucld(i,k,2)
-         taucldi(i,k,j)=taucld(i,k,1)
+         nk=kme-1-k+kms
+         taucldc(i,nk,j)=taucld(i,k,2)
+         taucldi(i,nk,j)=taucld(i,k,1)
       enddo
       enddo
  

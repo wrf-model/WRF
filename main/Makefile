@@ -29,6 +29,10 @@ $(SOLVER)_real : module_initialize real_$(SOLVER).o ndown_$(SOLVER).o
 	$(LD) -o real.exe $(LDFLAGS) real_$(SOLVER).o ../dyn_$(SOLVER)/module_initialize_$(IDEAL_CASE).o libwrflib.a $(LIB)
 	$(LD) -o ndown.exe $(LDFLAGS) ndown_$(SOLVER).o  ../dyn_$(SOLVER)/module_initialize_$(IDEAL_CASE).o libwrflib.a $(LIB)
 
+convert_em : convert_em.o
+	$(RANLIB) libwrflib.a
+	$(FC) -o convert_em.exe $(LDFLAGS) convert_em.o libwrflib.a $(LIB)
+
 convert_nmm : convert_nmm.o
 	$(RANLIB) libwrflib.a
 	$(FC) -o convert_nmm.exe $(LDFLAGS) convert_nmm.o libwrflib.a $(LIB)
@@ -57,6 +61,17 @@ clean:
 # DEPENDENCIES : only dependencies after this line (don't remove the word DEPENDENCIES)
 
 convert_nmm.o: \
+	../frame/module_machine.o \
+	../frame/module_domain.o \
+	../frame/module_driver_constants.o \
+	../frame/module_configure.o \
+	../frame/module_timing.o \
+	../frame/module_dm.o \
+	../share/module_bc.o \
+	../share/module_io_domain.o \
+	$(ESMF_MOD_DEPENDENCE)
+
+convert_em.o: \
 	../frame/module_machine.o \
 	../frame/module_domain.o \
 	../frame/module_driver_constants.o \

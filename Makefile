@@ -160,6 +160,9 @@ em_b_wave : wrf
 em_real : wrf
 	@ echo '--------------------------------------'
 	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=real em_real )
+	if [ $(WRF_CONVERT) -eq 1 ] ; then \
+            ( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" convert_em ) ; \
+        fi
 #	if [ $(ESMFCOUPLING) -eq 0 ] ; then \
 #	  ( cd test/em_real ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . ) ; \
 #	fi

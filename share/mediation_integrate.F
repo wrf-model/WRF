@@ -726,8 +726,7 @@ SUBROUTINE med_hist_out ( grid , stream, config_flags )
    INTEGER                                :: ierr
    INTEGER                                :: myproc
    CHARACTER*80                           :: timestr
-   TYPE(WRFU_Time)                        :: ST,CT,OT
-   TYPE(WRFU_TimeInterval)                :: TI,IOI
+   TYPE(WRFU_Time)                        :: ST,CT
    INTEGER                                :: n
    LOGICAL                                :: adjust
 
@@ -934,22 +933,32 @@ SUBROUTINE med_auxinput_in ( grid , stream, config_flags )
    INTEGER                                :: ierr
    INTEGER                                :: myproc
    CHARACTER*80                           :: timestr
+   TYPE(WRFU_Time)                        :: ST,CT
+   INTEGER                                :: n
+   LOGICAL                                :: adjust
+
+   CALL nl_get_adjust_input_times( grid%id, adjust )
 
    IF ( stream .LT. 1 .OR. stream .GT. 5 ) THEN
      WRITE(message,*)'med_auxinput_in: invalid inputory stream ',stream
      CALL wrf_error_fatal( message )
    ENDIF
-   CALL domain_clock_get( grid, current_timestr=timestr )
+   CALL domain_clock_get( grid, current_time=CT, start_time=ST, current_timestr=timestr )
    SELECT CASE( stream )
      CASE ( 1 )
+       IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXINPUT1_ALARM ), CT, ST, timestr )
        CALL construct_filename2a ( auxname , config_flags%auxinput1_inname, grid%id , 2 , timestr )
      CASE ( 2 )
+       IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXINPUT2_ALARM ), CT, ST, timestr )
        CALL construct_filename2a ( auxname , config_flags%auxinput2_inname , grid%id , 2 , timestr )
      CASE ( 3 )
+       IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXINPUT3_ALARM ), CT, ST, timestr )
        CALL construct_filename2a ( auxname , config_flags%auxinput3_inname , grid%id , 2 , timestr )
      CASE ( 4 )
+       IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXINPUT4_ALARM ), CT, ST, timestr )
        CALL construct_filename2a ( auxname , config_flags%auxinput4_inname , grid%id , 2 , timestr )
      CASE ( 5 )
+       IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXINPUT5_ALARM ), CT, ST, timestr )
        CALL construct_filename2a ( auxname , config_flags%auxinput5_inname , grid%id , 2 , timestr )
    END SELECT
    IF (      ( stream .eq. 1 .and. grid%auxinput1_oid .eq. 0 )    &

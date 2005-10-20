@@ -40,14 +40,16 @@ configcheck:
          exit 2 ; \
 	fi
 
-#TBH:  for now, build both wrf.exe and wrf_ESMF_App.exe when ESMFCOUPLING is set
-#TBH:  wrf.exe is used for testing in this case
-wrf : configcheck
+framework_only : configcheck
 	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" ext
 	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" toolsdir
 	/bin/rm -f main/libwrflib.a
 	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" framework
 	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" shared
+
+#TBH:  for now, build both wrf.exe and wrf_ESMF_App.exe when ESMFCOUPLING is set
+#TBH:  wrf.exe is used for testing in this case
+wrf : framework_only
 	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" physics
 	if [ $(WRF_CHEM) -eq 1 ]    ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" chemics ; fi
 	if [ $(WRF_EM_CORE) -eq 1 ]    ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" em_core ; fi
@@ -155,14 +157,16 @@ em_b_wave : wrf
 	( cd run ; /bin/rm -f namelist.input ; ln -s ../test/em_b_wave/namelist.input . )
 	( cd run ; /bin/rm -f input_jet ; ln -s ../test/em_b_wave/input_jet . )
 
+convert_em : framework_only
+	if [ $(WRF_CONVERT) -eq 1 ] ; then \
+            ( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" convert_em ) ; \
+        fi
+
 #TBH:  for now, link both wrf.exe and wrf_ESMF_App.exe when ESMFCOUPLING is set
 #TBH:  wrf.exe is used for testing in this case
 em_real : wrf
 	@ echo '--------------------------------------'
 	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=real em_real )
-	if [ $(WRF_CONVERT) -eq 1 ] ; then \
-            ( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" convert_em ) ; \
-        fi
 #	if [ $(ESMFCOUPLING) -eq 0 ] ; then \
 #	  ( cd test/em_real ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . ) ; \
 #	fi

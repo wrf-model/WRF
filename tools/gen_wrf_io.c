@@ -371,7 +371,7 @@ fprintf(fp,"                       '%s'               , &  ! Dimname 3 \n",dimna
 fprintf(fp,"          %s_desc_table( grid%%id, itrace  ), & ! Desc\n",p->name) ;
 fprintf(fp,"          %s_units_table( grid%%id, itrace  ), & ! Units\n",p->name) ;
         }
-fprintf(fp,"'%s ext_write_field '//TRIM(moist_dname_table( grid%%id, itrace ))//' memorder XZY' , & ! Debug message\n", fname ) ;
+fprintf(fp,"'%s ext_write_field '//TRIM(%s_dname_table( grid%%id, itrace ))//' memorder XZY' , & ! Debug message\n", fname, p->name ) ;
         /* global dimensions */
         for ( i = 0 ; i < 3 ; i++ ) { fprintf(fp,"%s , %s , ",ddim[i][0], ddim[i][1]) ; }
         fprintf(fp," & \n") ;
@@ -497,7 +497,7 @@ fprintf(fp,"                       '%s'               , &  ! Dimname 3 \n",dimna
 fprintf(fp,"          %s_desc_table( grid%%id, itrace  ), & ! Desc\n",p->name) ;
 fprintf(fp,"          %s_units_table( grid%%id, itrace  ), & ! Units\n",p->name) ;
             }
-fprintf(fp,"'%s ext_write_field '//TRIM(moist_dname_table( grid%%id, itrace ))//' memorder XZY' , & ! Debug message\n", fname ) ;
+fprintf(fp,"'%s ext_write_field '//TRIM(%s_dname_table( grid%%id, itrace ))//' memorder XZY' , & ! Debug message\n", fname, p->name ) ;
 fprintf(fp,"%s, %s, %s, %s, %s, %s, &\n",ds1,de1,ds2,de2,ds3,de3 ) ;
 fprintf(fp,"%s, %s, %s, %s, %s, %s, &\n",ms1,me1,ms2,me2,ms3,me3 ) ;
 fprintf(fp,"%s, %s, %s, %s, %s, %s, &\n",ps1,pe1,ps2,pe2,ps3,pe3 ) ;

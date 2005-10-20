@@ -20,6 +20,7 @@
     INTEGER, INTENT(INOUT) :: ierr
 
     ! Local data
+    TYPE(WRFU_Time)         :: currentTime, startTime
     INTEGER ids , ide , jds , jde , kds , kde , &
             ims , ime , jms , jme , kms , kme , &
             ips , ipe , jps , jpe , kps , kpe
@@ -51,7 +52,9 @@
     INTEGER :: ide_compare , jde_compare , kde_compare
     REAL , DIMENSION(16) :: lats16 , lons16
     CHARACTER (len=19) simulation_start_date
+    CHARACTER (len=len_current_date) current_date_save
     REAL dx_compare , dy_compare , dum
+    LOGICAL :: adjust
 
 !<DESCRIPTION>
 !
@@ -372,8 +375,9 @@
         CASE ( model_input_only, aux_model_input1_only, aux_model_input2_only,       &
                aux_model_input3_only, aux_model_input4_only, aux_model_input5_only )
             CALL wrf_atotime( current_date(1:19), time )
-            CALL domain_clock_get( grid, current_time=currtime, &
-                                         current_timestr=currtimestr )
+            CALL domain_clock_get( grid, current_time=currentTime, &
+                                   start_time=startTime,     &
+                                   current_timestr=current_date )
             CALL domain_clockprint(150, grid, &
                    'DEBUG input_wrf():  get CurrTime from clock,')
             IF ( time .NE. currtime ) THEN
@@ -399,20 +403,27 @@
         CALL wrf_atotime( next_datestr(1:19), grid%next_bdy_time )
     ENDIF
 
+    CALL nl_get_adjust_input_times( grid%id, adjust )
+    current_date_save = current_date
 #if 1
     IF      ( switch .EQ. model_input_only ) THEN
       CALL wrf_inputin( fid , grid , config_flags , switch , ierr )
     ELSE IF ( switch .EQ. history_only ) THEN
       CALL wrf_histin( fid , grid , config_flags , switch , ierr )
     ELSE IF ( switch .EQ. aux_model_input1_only ) THEN
+      IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXINPUT1_ALARM ), currentTime, startTime, current_date )
       CALL wrf_auxinput1in( fid , grid , config_flags , switch , ierr )
     ELSE IF ( switch .EQ. aux_model_input2_only ) THEN
+      IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXINPUT2_ALARM ), currentTime, startTime, current_date )
       CALL wrf_auxinput2in( fid , grid , config_flags , switch , ierr )
     ELSE IF ( switch .EQ. aux_model_input3_only ) THEN
+      IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXINPUT3_ALARM ), currentTime, startTime, current_date )
       CALL wrf_auxinput3in( fid , grid , config_flags , switch , ierr )
     ELSE IF ( switch .EQ. aux_model_input4_only ) THEN
+      IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXINPUT4_ALARM ), currentTime, startTime, current_date )
       CALL wrf_auxinput4in( fid , grid , config_flags , switch , ierr )
     ELSE IF ( switch .EQ. aux_model_input5_only ) THEN
+      IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXINPUT5_ALARM ), currentTime, startTime, current_date )
       CALL wrf_auxinput5in( fid , grid , config_flags , switch , ierr )
     ELSE IF ( switch .EQ. aux_hist1_only ) THEN
       CALL wrf_auxhist1in( fid , grid , config_flags , switch , ierr )
@@ -433,6 +444,7 @@
 #else
     CALL wrf_message ( "ALL I/O DISABLED IN share/module_io_wrf.F")
 #endif
+    current_date = current_date_save
 
     RETURN
   END SUBROUTINE input_wrf

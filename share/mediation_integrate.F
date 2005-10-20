@@ -457,13 +457,14 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
 
      WRITE(message,*)'RESTART: nest, opening ',TRIM(rstname),' for reading'
      CALL wrf_message ( message )
-     CALL open_r_dataset ( fid , TRIM(rstname) , nest , config_flags , "DATASET=RESTART", ierr )
+     CALL model_to_grid_config_rec ( nest%id , model_config_rec , nest_config_flags )
+     CALL open_r_dataset ( fid , TRIM(rstname) , nest , nest_config_flags , "DATASET=RESTART", ierr )
      IF ( ierr .NE. 0 ) THEN
        WRITE( message , '("program wrf: error opening ",A32," for reading")') TRIM(rstname)
        CALL WRF_ERROR_FATAL ( message )
      ENDIF
-     CALL input_restart ( fid,   nest , config_flags , ierr )
-     CALL close_dataset ( fid , config_flags , "DATASET=RESTART" )
+     CALL input_restart ( fid,   nest , nest_config_flags , ierr )
+     CALL close_dataset ( fid , nest_config_flags , "DATASET=RESTART" )
 
      nest%imask_nostag = 1
      nest%imask_xstag = 1

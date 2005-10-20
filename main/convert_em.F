@@ -9,7 +9,6 @@ PROGRAM convert_data
 
    USE module_machine
    USE module_domain
-   USE module_initialize
    USE module_io_domain
    USE module_driver_constants
    USE module_configure

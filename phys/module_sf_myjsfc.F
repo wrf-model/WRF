@@ -711,7 +711,6 @@ CONTAINS
 !       ELSE  !  Turbulent branch
 !----------------------------------------------------------------------
           ZSLU=ZSL+ZU
-          ZSLT=ZSL+ZT
 !
           RZSU=ZSLU/ZU
 !
@@ -726,6 +725,7 @@ CONTAINS
 !
             ZT=MAX(EXP(ZILFC*SQRT(USTAR*ZU))*ZU,EPSZT)
 !zj         ZT=EXP(ZILFC*SQRT(USTAR*ZU))*ZU
+            ZSLT=ZSL+ZT
             RZST=ZSLT/ZT
             RLOGT=LOG(RZST)
 !

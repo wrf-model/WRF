@@ -1263,7 +1263,7 @@ endif
 #	And we can stick the input data where we want, the WRFV2 directory has been created.
 
 ( cd WRFV2/test/em_real  ; ln -sf $thedataem/* . ) 
-( cd WRFV2/test/nmm_real ; tar -xf $thedatanmm/foo.tar ; ln -sf co2.60_hyb_bot40m co2_trans )
+( cd WRFV2/test/nmm_real ; ln -s $thedatanmm/wrf_real* . ; cp $thedatanmm/namelist.input.regtest . )
 #DAVE###################################################
 ( cd WRFV2/test/em_real ; ls -ls )
 ( cd WRFV2/test/nmm_real ; ls -ls )
@@ -1887,7 +1887,7 @@ banner 19
 #DAVE###################################################
 
                         set compopt = $COMPOPTS[3]   # ! parallel only
-                        set filetag = 2005-03-21_15:00:00
+                        set filetag = 2005-01-23_00:00:00
                         set phys_option=1
                         pushd test/$core
 
@@ -1902,16 +1902,15 @@ banner 19a
 
 			cp ${CUR_DIR}/io_format io_format
 			sed -e '/^ io_form_history /,/^ io_form_boundary/d' -e '/^ restart_interval/r ./io_format' \
-			    namelist.input.regtest >! namelist.input
+			    namelist.input.regtest >! namelist.input.temp
 	
 			#	A fairly short forecast, 10 time steps
 
-			sed -e 's/^ run_hours *= *[0-9][0-9]*/ run_hours = 0 /' \
-			    -e 's/^ run_minutes *= *[0-9]*/ run_minutes = 3 /' \
-			    -e 's/^ history_interval *= *[0-9][0-9][0-9]*/ history_interval = 3 /' \
+			sed -e 's/^ run_days *= *[0-9]*/ run_days = 0 /' \
+			    -e 's/^ run_seconds *= *[0-9]*/ run_seconds = 900 /' \
+			    -e 's/^ history_interval *= *[0-9][0-9]*/ history_interval = 15 /' \
 			    -e 's/^ frames_per_outfile *= [0-9]*/ frames_per_outfile = 200/g' \
-			    namelist.input >! namelist.input.temp
-			mv -f namelist.input.temp namelist.input
+			    namelist.input.temp >! namelist.input
 
 #DAVE###################################################
 echo did cp of namelist

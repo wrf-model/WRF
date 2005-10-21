@@ -451,6 +451,7 @@ CONTAINS
         INTEGER, INTENT(OUT)    ::  ims, ime, jms, jme, kms, kme
 
         INTEGER idim, jdim, kdim, rem, a, b
+        INTEGER Px, Py, P, i, j, a, b
 
         idim = ide-ids+1 - (2*shw)
         jdim = jde-jds+1 - (2*shw)

@@ -13,6 +13,9 @@ RSL_LITE_ERROR_DUP1 ( int *me )
 {
     int newfd ;
     char filename[256] ;
+    char hostname[256] ;
+
+    gethostname( hostname, 256 ) ;
 
 /* redirect standard out*/
     sprintf(filename,"rsl.out.%04d",*me) ;
@@ -45,6 +48,8 @@ RSL_LITE_ERROR_DUP1 ( int *me )
         close(newfd) ;
         return ;
     }
+    fprintf( stdout, "taskid: %d hostname: %s\n",*me,hostname) ;
+    fprintf( stderr, "taskid: %d hostname: %s\n",*me,hostname) ;
 
 }
 

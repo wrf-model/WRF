@@ -59,6 +59,10 @@ set NAME     = ( "Standard"             "NESTED=FALSE"        "NESTED=FALSE"    
 
 set tests	= ( 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 )
 
+#	Where are we located.
+
+set starting_dir = `pwd`
+
 #	If there are any command line args, they are processed, else
 #	we run all of the regression tests without a generate or
 #	compare flag being set.
@@ -322,5 +326,45 @@ EOF
 	endif
 end
 
+#	Compare regression PASS/FAILs with previous runs.
+
+pushd ~gill/RESULTS/`uname`
+grep FAIL wrftest.output.* >! ${starting_dir}/PREV.FAILS
+popd
+grep FAIL wrftest.output.* >! CURR.FAILS
+echo Comparison of regression results on `hostname` for `date` >! message
+echo "==================================================================" >> message
+echo "     " >> message
+echo "Previous FAILs" >> message
+echo "==================" >> message
+echo "     " >> message
+cat PREV.FAILS >> message
+echo "     " >> message
+echo "Current FAILs" >> message
+echo "==================" >> message
+echo "     " >> message
+cat CURR.FAILS >> message
+echo "     " >> message
+echo "Difference of FAILs" >> message
+echo "==================" >> message
+echo "     " >> message
+diff PREV.FAILS CURR.FAILS >! diffs
+set ok = $status
+cat diffs >> message
+echo "     " >> message
+
+set OS = `uname`
+if ( ( $#argv == 0 ) && ( $ok != 0 ) ) then
+	Mail -s "REG DIFFS $OS" ${user}@ucar.edu < message
+	echo "   "
+	echo "Different FAILS from before for $OS - repository may have been broken"
+	echo "   "
+else
+	echo "   "
+	echo "Same FAILS as before for $OS - repository OK"
+	echo "   "
+endif
+
 rm ed_in >& /dev/null
 rm io_format >& /dev/null
+rm PREV.FAILS CURR.FAILS message diffs >& /dev/null

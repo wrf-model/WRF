@@ -451,7 +451,7 @@ CONTAINS
         INTEGER, INTENT(OUT)    ::  ims, ime, jms, jme, kms, kme
 
         INTEGER idim, jdim, kdim, rem, a, b
-        INTEGER Px, Py, P, i, j, a, b
+        INTEGER Px, Py, P, i, j
 
         idim = ide-ids+1 - (2*shw)
         jdim = jde-jds+1 - (2*shw)
@@ -521,6 +521,7 @@ CONTAINS
            ENDIF
         ENDDO
 # endif
+#endif
 
 ! extend the patch dimensions out shw along edges of domain
         IF ( mytask_x .EQ. 0 ) THEN

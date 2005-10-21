@@ -1,7 +1,16 @@
 #include <stdio.h>
 #include "rsl_lite.h"
 
-/* for a given global i,j, return the process id */
+/* updated 20051021, new algorithm distributes the remainder, if any, at either ends of the dimension
+   rather than the first remainder number of processors in the dimension. Idea is that the processes
+   on the ends have less work because they're boundary processes.  New alg works like this:
+                     a                         b
+         + + + + + + o o o o o o o o o o o o o + + + + + +
+
+   + represents a process with an extra point (npoints is n/p+1), o processors that don't (n/p)
+   a and b are the starting process indices in the dimension of the new section of o or x.
+   JM
+*/
 
 TASK_FOR_POINT ( i_p , j_p , ids_p, ide_p , jds_p, jde_p , npx_p , npy_p , Px_p, Py_p, P_p )
   int_p i_p , j_p , P_p , Px_p , Py_p , ids_p, ide_p , jds_p, jde_p , npx_p , npy_p ;
@@ -19,31 +28,35 @@ TASK_FOR_POINT ( i_p , j_p , ids_p, ide_p , jds_p, jde_p , npx_p , npy_p , Px_p,
   idim = ide - ids + 1 ;
   jdim = jde - jds + 1 ;
 
-#if 0
-fprintf(stderr,"tfp: i,j,npx,npy,ids,ide,jds,jde,idim,jdim\n%d %d %d %d %d %d %d %d %d %d\n",i,j,npx,npy,ids,ide,jds,jde,idim,jdim) ;
-#endif
-
   i = i >= ids ? i : ids ; i = i <= ide ? i : ide ;
   rem = idim % npx ;
-  a = rem * ( (idim / npx) + 1 ) ; 
-#if 0
-fprintf(stderr,"idim = %d rem = %d, a %d, i %d , i-ids %d\n", idim , rem , a, i, i-ids) ;
-#endif
+  a = ( rem / 2 ) * ( (idim / npx) + 1 ) ;
+  b = a + ( npx - rem ) * ( idim / npx ) ;
   if ( i-ids < a ) {
     Px = (i-ids) / ( (idim / npx) + 1 ) ;
   }
+  else if ( i-ids < b ) {
+    Px = ( a / ( (idim / npx) + 1 ) ) + (i-a-ids) / ( ( b - a ) / ( npx - rem ) )     ;
+  }
   else {
-    Px = ( a / ( (idim / npx) + 1 ) ) + (i-a-ids) / ( ( idim - a ) / ( npx - rem ) )     ;
+    Px = ( a / ( (idim / npx) + 1 ) ) + (b-a-ids) / ( ( b - a ) / ( npx - rem ) ) +
+                                        (i-b-ids) / ( ( idim / npx ) + 1 )  ;
   }
 
   j = j >= jds ? j : jds ; j = j <= jde ? j : jde ;
   rem = jdim % npy ;
-  a = rem * ( (jdim / npy) + 1 ) ; 
+  a = ( rem / 2 ) * ( (jdim / npy) + 1 ) ;
+  b = a + ( npy - rem ) * ( jdim / npy ) ;
+                                                  if ( j == 0 ) printf( "a %d b %d\n", a, b ) ;
   if ( j-jds < a ) {
     Py = (j-jds) / ( (jdim / npy) + 1 ) ;
   }
+  else if ( j-jds < b ) {
+    Py = ( a / ( (jdim / npy) + 1 ) ) + (j-a-jds) / ( ( b - a ) / ( npy - rem ) )     ;
+  }
   else {
-    Py = ( a / ( (jdim / npy) + 1 ) ) + (j-a-jds) / ( ( jdim - a ) / ( npy - rem ) )     ;
+    Py = ( a / ( (jdim / npy) + 1 ) ) + (b-a-jds) / ( ( b - a ) / ( npy - rem ) ) +
+                                        (j-b-jds) / ( ( jdim / npy ) + 1 )  ;
   }
 
   *Px_p = Px ;
@@ -81,9 +94,10 @@ main()
   }
 /*  printf("\n") ; */
   }
-for ( i = 0 ; i < 16 ; i++ ) {
-  fprintf(stderr,"%3d. ips %d ipe %d jps %d jpe %d\n", i, ips[i], ipe[i], jps[i], jpe[i] ) ;
+for ( i = 0 ; i < npx*npy ; i++ ) {
+  fprintf(stderr,"%3d. ips %d ipe %d (%d) jps %d jpe %d (%d)\n", i, ips[i], ipe[i], ipe[i]-ips[i]+1, jps[i], jpe[i], jpe[i]-jps[i]+1 ) ;
 }
 #endif
 }
 #endif
+

@@ -263,6 +263,11 @@ CONTAINS
                       c_ips, c_ipe, c_jps, c_jpe, c_kps, c_kpe )
 #else
 
+! At such time as NMM nesting is able to use RSL_LITE (would require
+! a number of other mods to this file for that to happen), this should
+! be updated along the lines of what's done in compute_memory_dims_rsl_lite
+! below. See note dated 20051020.  JM
+
          c_ips = -1
          nj = ( c_jds - j_parent_start ) * parent_grid_ratio + 1 + 1 ;
          DO i = c_ids, c_ide
@@ -451,6 +456,7 @@ CONTAINS
         jdim = jde-jds+1 - (2*shw)
         kdim = kde-kds+1
 
+#if 0
         rem = mod(idim,ntasks_x)
         a = ( idim / ntasks_x + 1 ) * min( rem, mytask_x )
         b = ( idim / ntasks_x     ) * max( 0, mytask_x - rem )
@@ -466,6 +472,54 @@ CONTAINS
         a = ( jdim / ntasks_y + 1 ) * min( rem, mytask_y+1 )
         b = ( jdim / ntasks_y     ) * max( 0, mytask_y+1 - rem )
         jpe = a + b + shw + jds-1
+#else
+# if ( ! NMM_CORE == 1 )
+        ips = -1
+        j = jds ;
+        DO i = ids, ide
+           CALL task_for_point ( i, j, ids, ide, jds, jde, ntasks_x, ntasks_y, Px, Py, P )
+           IF ( Px .EQ. mytask_x ) THEN
+              ipe = i
+              IF ( ips .EQ. -1 ) ips = i
+           ENDIF
+        ENDDO
+
+        jps = -1
+        i = ids ;
+        DO j = jds, jde
+           CALL task_for_point ( i, j, ids, ide, jds, jde, ntasks_x, ntasks_y, Px, Py, P )
+           IF ( Py .EQ. mytask_y ) THEN
+              jpe = j
+              IF ( jps .EQ. -1 ) jps = j
+           ENDIF
+        ENDDO
+# else
+
+! In case of NMM CORE, the domain only ever runs from ids..ide-1 and jds..jde-1 so
+! adjust decomposition to reflect.  20051020 JM
+
+        ips = -1
+        j = jds ;
+        DO i = ids, ide-1
+           CALL task_for_point ( i, j, ids, ide-1, jds, jde-1, ntasks_x, ntasks_y, Px, Py, P )
+           IF ( Px .EQ. mytask_x ) THEN
+              ipe = i
+              IF ( Px .EQ. ntasks_x-1 ) ipe = ipe + 1
+              IF ( ips .EQ. -1 ) ips = i
+           ENDIF
+        ENDDO
+
+        jps = -1
+        i = ids ;
+        DO j = jds, jde-1
+           CALL task_for_point ( i, j, ids, ide-1, jds, jde-1, ntasks_x, ntasks_y, Px, Py, P )
+           IF ( Py .EQ. mytask_y ) THEN
+              jpe = j
+              IF ( Py .EQ. ntasks_y-1 ) jpe = jpe + 1
+              IF ( jps .EQ. -1 ) jps = j
+           ENDIF
+        ENDDO
+# endif
 
 ! extend the patch dimensions out shw along edges of domain
         IF ( mytask_x .EQ. 0 ) THEN

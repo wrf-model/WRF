@@ -359,7 +359,7 @@ if ( ( $#argv == 0 ) && ( $ok != 0 ) ) then
 	echo "   "
 	echo "Different FAILS from before for $OS - repository may have been broken"
 	echo "   "
-else
+else if ( ( $#argv == 0 ) && ( $ok == 0 ) ) then
 	echo "   "
 	echo "Same FAILS as before for $OS - repository OK"
 	echo "   "

@@ -497,6 +497,15 @@ CONTAINS
        ELSE
          CALL wrf_error_fatal('Lacking arguments for SFCLAY in surface driver')
        ENDIF
+
+! SET NEW VALUES
+
+       DO j=j_start(ij),j_end(ij)
+       DO i=i_start(ij),i_end(ij)
+          UST(i,j)=USTOLD(i,j)
+          ZNT(i,j)=ZNTOLD(i,j)
+       ENDDO
+       ENDDO
 #else
        CALL wrf_error_fatal('SFCLAY cannot be used with NMM')
 #endif

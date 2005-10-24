@@ -47,7 +47,6 @@ TASK_FOR_POINT ( i_p , j_p , ids_p, ide_p , jds_p, jde_p , npx_p , npy_p , Px_p,
   rem = jdim % npy ;
   a = ( rem / 2 ) * ( (jdim / npy) + 1 ) ;
   b = a + ( npy - rem ) * ( jdim / npy ) ;
-                                                  if ( j == 0 ) printf( "a %d b %d\n", a, b ) ;
   if ( j-jds < a ) {
     Py = (j-jds) / ( (jdim / npy) + 1 ) ;
   }

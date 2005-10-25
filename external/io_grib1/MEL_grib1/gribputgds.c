@@ -1082,7 +1082,7 @@ int   inp2grib_PolarSt  (ppvGDS_Proj_Input, Polar, lProj_size , errmsg)
 * F.1       INIT variables !default stat=good
 */
    GDS_PS_INPUT      *pProjInp = 0;
-   long              lTemp = 0;
+   int               lTemp = 0;
    int               nStatus = 0;
    char		     *func="inp2grib_PolarSt";
 
@@ -1257,7 +1257,7 @@ int    inp2grib_Latlon  (ppvGDS_Proj_Input, pLatlon, lProj_size, errmsg)
 #endif
 {
    GDS_LATLON_INPUT  *Inp = 0;
-   long              lTemp = 0;
+   int               lTemp = 0;
    char 	*func= "inp2grib_Latlon";
 /*
 *
@@ -1537,7 +1537,7 @@ int   inp2grib_Mercator (ppvGDS_Proj_Input, Mercator, lProj_size , errmsg)
 * F.1       INIT variables !default stat=good
 */
    mercator          *ProjInp = 0;
-   long              lTemp = 0;
+   int               lTemp = 0;
    int               nStatus = 0;
    char		     *func="inp2grib_PolarSt";
 

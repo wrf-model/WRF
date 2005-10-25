@@ -37,11 +37,12 @@ RSL_LITE_INIT_PERIOD (
   me = *me0 ; np = *np0 ; np_x = *np_x0 ; np_y = *np_y0 ;
   ips = *ips0-1 ; ipe = *ipe0-1 ; jps = *jps0-1 ; jpe = *jpe0-1 ; kps = *kps0-1 ; kpe = *kpe0-1 ;
 
+#if 0
   if ( np_y > 1 ) {
-    nbytes = typesizeR*(ipe-ips+1+2*shw)*shw*(n3dR*(kpe-kps+1)+n2dR) +
-             typesizeI*(ipe-ips+1+2*shw)*shw*(n3dI*(kpe-kps+1)+n2dI) +
-             typesizeD*(ipe-ips+1+2*shw)*shw*(n3dD*(kpe-kps+1)+n2dD) +
-             typesizeL*(ipe-ips+1+2*shw)*shw*(n3dL*(kpe-kps+1)+n2dL) ;
+    nbytes = typesizeR*(ipe-ips+1+2*shw)*(shw+1)*(n3dR*(kpe-kps+1)+n2dR) +
+             typesizeI*(ipe-ips+1+2*shw)*(shw+1)*(n3dI*(kpe-kps+1)+n2dI) +
+             typesizeD*(ipe-ips+1+2*shw)*(shw+1)*(n3dD*(kpe-kps+1)+n2dD) +
+             typesizeL*(ipe-ips+1+2*shw)*(shw+1)*(n3dL*(kpe-kps+1)+n2dL) ;
     yp = me + np_x ; ym = me - np_x ;
     if ( yp >= 0 && yp < np ) {
        buffer_for_proc ( yp , nbytes, RSL_RECVBUF ) ;
@@ -52,11 +53,12 @@ RSL_LITE_INIT_PERIOD (
        buffer_for_proc ( ym , nbytes, RSL_SENDBUF ) ;
     }
   }
+#endif
   if ( np_x > 1 ) {
-    nbytes = typesizeR*(jpe-jps+1+2*shw)*shw*(n3dR*(kpe-kps+1)+n2dR) +
-             typesizeI*(jpe-jps+1+2*shw)*shw*(n3dI*(kpe-kps+1)+n2dI) +
-             typesizeD*(jpe-jps+1+2*shw)*shw*(n3dD*(kpe-kps+1)+n2dD) +
-             typesizeL*(jpe-jps+1+2*shw)*shw*(n3dL*(kpe-kps+1)+n2dL) ;
+    nbytes = typesizeR*(jpe-jps+1+2*shw)*(shw+1)*(n3dR*(kpe-kps+1)+n2dR) +
+             typesizeI*(jpe-jps+1+2*shw)*(shw+1)*(n3dI*(kpe-kps+1)+n2dI) +
+             typesizeD*(jpe-jps+1+2*shw)*(shw+1)*(n3dD*(kpe-kps+1)+n2dD) +
+             typesizeL*(jpe-jps+1+2*shw)*(shw+1)*(n3dL*(kpe-kps+1)+n2dL) ;
 
     if ( me % np_x == 0 ) {
        buffer_for_proc ( me + np_x - 1 , nbytes, RSL_RECVBUF ) ;
@@ -121,9 +123,9 @@ float f ;
       if ( pu == 0 ) {
         nbytes = buffer_size_for_proc( me - np_x + 1, da_buf ) ;
 
-        if ( xp_curs + RANGE( jps-shw, jpe+shw, kps, kpe, ipe-shw+1, ipe, 1, typesize ) > nbytes ) {
-	  fprintf(stderr,"memory overwrite in rsl_lite_pack_period_x, X pack right, %d > %d\n",
-	      xp_curs + RANGE( jps-shw, jpe+shw, kps, kpe, ipe-shw+1, ipe, 1, typesize ), nbytes ) ;
+        if ( xp_curs + RANGE( JMAX(jps-shw), JMIN(jpe+shw), kps, kpe, ipe-shw, ipe-1, 1, typesize ) > nbytes ) {
+	  fprintf(stderr,"memory overwrite in rsl_lite_pack_period_x, right hand X to %d, %d > %d\n",me - np_x + 1,
+	      xp_curs + RANGE( JMAX(jps-shw), JMIN(jpe+shw), kps, kpe, ipe-shw, ipe-1, 1, typesize ), nbytes ) ;
 	  MPI_Abort(MPI_COMM_WORLD, ierr) ;
         }
 	if ( typesize == sizeof(int) ) {
@@ -143,7 +145,7 @@ float f ;
 	else {
           for ( j = JMAX(jps-shw) ; j <= JMIN(jpe+shw) ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
-              for ( i = ipe-shw+1 ; i <= ipe ; i++ ) {
+              for ( i = ipe-shw ; i <= ipe-1 ; i++ ) {
                 for ( t = 0 ; t < typesize ; t++ ) {
                   *(p+xp_curs) = 
                                  *(buf + t + typesize*(
@@ -173,7 +175,7 @@ float f ;
 	else {
           for ( j = JMAX(jps-shw) ; j <= JMIN(jpe+shw) ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
-              for ( i = ipe+1 ; i <= ipe+shw ; i++ ) {
+              for ( i = ipe ; i <= ipe+shw-1+xstag ; i++ ) {
                 for ( t = 0 ; t < typesize ; t++ ) {
                                  *(buf + t + typesize*(
                                         (i-ims) + (ime-ims+1)*(
@@ -191,9 +193,9 @@ float f ;
       p = buffer_for_proc( me + np_x - 1 , 0 , da_buf ) ;
       if ( pu == 0 ) {
         nbytes = buffer_size_for_proc( me + np_x - 1 , da_buf ) ;
-        if ( xm_curs + RANGE( jps-shw, jpe+shw, kps, kpe, ips, ips+shw-1, 1, typesize ) > nbytes ) {
-	  fprintf(stderr,"memory overwrite in rsl_lite_pack, X left , %d > %d\n",
-	      xm_curs + RANGE( jps-shw, jpe+shw, kps, kpe, ips, ips+shw-1, 1, typesize ), nbytes ) ;
+        if ( xm_curs + RANGE( JMAX(jps-shw), JMIN(jpe+shw), kps, kpe, ips, ips+shw-1+xstag, 1, typesize ) > nbytes ) {
+	  fprintf(stderr,"memory overwrite in rsl_lite_pack,  left hand X to %d , %d > %d\n",me + np_x - 1,
+	      xm_curs + RANGE( JMAX(jps-shw), JMIN(jpe+shw), kps, kpe, ips, ips+shw-1+xstag, 1, typesize ), nbytes ) ;
 	  MPI_Abort(MPI_COMM_WORLD, ierr) ;
         }
 	if ( typesize == sizeof(int) ) {
@@ -213,7 +215,7 @@ float f ;
 	else {
           for ( j = JMAX(jps-shw) ; j <= JMIN(jpe+shw) ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
-              for ( i = ips ; i <= ips+shw-1 ; i++ ) {
+              for ( i = ips ; i <= ips+shw-1+xstag ; i++ ) {
                 for ( t = 0 ; t < typesize ; t++ ) {
                   *(p+xm_curs) = 
                                  *(buf + t + typesize*(

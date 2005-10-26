@@ -658,7 +658,7 @@ gen_cycles ( char * dirname , node_t * cycles )
   int n2dI, n3dI ;
   int n2dD, n3dD ;
   int n4d ;
-  int i, xy ;
+  int i, xy, inout ;
 #define MAX_4DARRAYS 1000
   char name_4d[MAX_4DARRAYS][NAMELEN] ;
 
@@ -675,6 +675,16 @@ gen_cycles ( char * dirname , node_t * cycles )
       fprintf(stderr,"WARNING: gen_cycles in registry cannot open %s for writing\n",fname ) ;
       continue ; 
     }
+
+    /* get inout */
+    inout = 0 ;
+    strcpy( tmp, p->comm_define ) ;
+    t1 = strtok_rentr( tmp , ";" , &pos1 ) ;
+    strcpy( tmp2 , t1 ) ;
+    if (( t2 = strtok_rentr( tmp2 , ":" , &pos2 )) == NULL )
+       { fprintf(stderr,"unparseable description for cycle %s\n", commname ) ; exit(1) ; }
+    inout = atoi (t2) ;
+
     print_warning(fp,fname) ;
 
   for ( xy = 0 ; xy < 2 ; xy++ ) {
@@ -742,7 +752,7 @@ fprintf(fp,"CALL wrf_debug(2,'calling %s')\n",fname) ;
     fprintf(fp,"IF ( config_flags%%cycle_%c ) THEN\n",(xy==1)?'x':'y') ;
 
 /* generate the init statement for X swap */
-    fprintf(fp,"CALL RSL_LITE_INIT_CYCLE ( %d , &\n", xy ) ;
+    fprintf(fp,"CALL RSL_LITE_INIT_CYCLE ( %d , %d, &\n", xy, inout ) ;
     if ( n4d > 0 ) {
       fprintf(fp,  "     %d  &\n", n3dR ) ;
       for ( i = 0 ; i < n4d ; i++ ) {
@@ -759,11 +769,11 @@ fprintf(fp,"CALL wrf_debug(2,'calling %s')\n",fname) ;
     fprintf(fp,"      ids, ide, jds, jde, kds, kde,   &\n") ;
     fprintf(fp,"      ips, ipe, jps, jpe, kps, kpe    )\n") ;
 /* generate packs prior to stencil exchange  */
-    gen_packs( fp, p, 1, xy, 0, "RSL_LITE_PACK_CYCLE" ) ;
+    gen_packs( fp, p, inout, xy, 0, "RSL_LITE_PACK_CYCLE" ) ;
 /* generate stencil exchange in X */
     fprintf(fp,"   CALL RSL_LITE_CYCLE ( local_communicator , mytask, ntasks, ntasks_x, ntasks_y )\n") ;
 /* generate unpacks after stencil exchange  */
-    gen_packs( fp, p, 1, xy, 1, "RSL_LITE_PACK_CYCLE" ) ;
+    gen_packs( fp, p, inout, xy, 1, "RSL_LITE_PACK_CYCLE" ) ;
 
     fprintf(fp,"END IF\n") ;
 

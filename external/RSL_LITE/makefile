@@ -1,10 +1,11 @@
-OBJSL   = c_code.o buf_for_proc.o rsl_malloc.o rsl_bcast.o task_for_point.o period.o
+OBJSL   = c_code.o buf_for_proc.o rsl_malloc.o rsl_bcast.o task_for_point.o period.o swap.o cycle.o
 OBJS    = $(OBJSL)
 OPTS    =
 FFLAGS  =  $(OPTS) -w
 LIBS    = 
 M4      = m4 -Uinclude -Uindex -Ulen
 AR      = ar
+CFLAGS = -g
 
 .SUFFIXES:      .F90 .F .f .o .code
 
@@ -19,6 +20,12 @@ c_code.o:	        c_code.c
 
 period.o:	        period.c
 			$(CC) $(CFLAGS) -c period.c
+
+swap.o:	                swap.c
+			$(CC) $(CFLAGS) -c swap.c
+
+cycle.o:	        cycle.c
+			$(CC) $(CFLAGS) -c cycle.c
 
 rsl_bcast.o:	        rsl_bcast.c
 			$(CC) $(CFLAGS) -c rsl_bcast.c

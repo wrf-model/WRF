@@ -23,6 +23,12 @@
 #      define RSL_LITE_EXCH_PERIOD_Y rsl_lite_exch_period_y
 #      define RSL_LITE_EXCH_PERIOD_X rsl_lite_exch_period_x
 #      define RSL_LITE_PACK_PERIOD_X  rsl_lite_pack_period_x
+#      define RSL_LITE_INIT_SWAP rsl_lite_init_swap
+#      define RSL_LITE_SWAP rsl_lite_swap
+#      define RSL_LITE_PACK_SWAP  rsl_lite_pack_swap
+#      define RSL_LITE_INIT_CYCLE rsl_lite_init_cycle
+#      define RSL_LITE_CYCLE rsl_lite_cycle
+#      define RSL_LITE_PACK_CYCLE rsl_lite_pack_cycle
 # else
 #   ifdef F2CSTYLE
 #      define RSL_LITE_ERROR_DUP1 rsl_error_dup1__
@@ -48,6 +54,12 @@
 #      define RSL_LITE_EXCH_PERIOD_Y rsl_lite_exch_period_y__
 #      define RSL_LITE_EXCH_PERIOD_X rsl_lite_exch_period_x__
 #      define RSL_LITE_PACK_PERIOD_X  rsl_lite_pack_period_x__
+#      define RSL_LITE_INIT_SWAP rsl_lite_init_swap__
+#      define RSL_LITE_SWAP rsl_lite_swap__
+#      define RSL_LITE_PACK_SWAP  rsl_lite_pack_swap__
+#      define RSL_LITE_INIT_CYCLE rsl_lite_init_cycle__
+#      define RSL_LITE_CYCLE rsl_lite_cycle__
+#      define RSL_LITE_PACK_CYCLE rsl_lite_pack_cycle__
 #   else
 #      define RSL_LITE_ERROR_DUP1 rsl_error_dup1_
 #      define BYTE_BCAST byte_bcast_
@@ -72,6 +84,12 @@
 #      define RSL_LITE_EXCH_PERIOD_Y rsl_lite_exch_period_y_
 #      define RSL_LITE_EXCH_PERIOD_X rsl_lite_exch_period_x_
 #      define RSL_LITE_PACK_PERIOD_X  rsl_lite_pack_period_x_
+#      define RSL_LITE_INIT_SWAP rsl_lite_init_swap_
+#      define RSL_LITE_SWAP rsl_lite_swap_
+#      define RSL_LITE_PACK_SWAP rsl_lite_pack_swap_
+#      define RSL_LITE_INIT_CYCLE rsl_lite_init_cycle_
+#      define RSL_LITE_CYCLE rsl_lite_cycle_
+#      define RSL_LITE_PACK_CYCLE rsl_lite_pack_cycle_
 #   endif
 # endif
 #endif

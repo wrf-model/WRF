@@ -362,38 +362,6 @@ fprintf(fp,"CALL wrf_debug(3,'back from %s')\n", packname) ;
     }
 }
 
-#if 0
-int
-gen_periods ( char * dirname )
-{
-  node_t * p, * q ;
-  char commname[NAMELEN] ;
-  char fname[NAMELEN] ;
-  char tmp[NAMELEN], tmp2[NAMELEN], commuse[NAMELEN] ;
-  int maxperwidth, perwidth ;
-  FILE * fp ;
-  char * t1, * t2 ;
-  char * pos1 , * pos2 ;
-
-  if ( dirname == NULL ) return(1) ;
-
-  for ( p = Periods ; p != NULL ; p = p->next )
-  {
-    strcpy( commname, p->name ) ;
-    make_upper_case(commname) ;
-    if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s.inc",dirname,commname) ; }
-    else                       { sprintf(fname,"%s.inc",commname) ; }
-    if ((fp = fopen( fname , "w" )) == NULL ) 
-    {
-      fprintf(stderr,"WARNING: gen_periods in registry cannot open %s for writing\n",fname ) ;
-      continue ; 
-    }
-    close_the_file(fp) ;
-  }
-  return(0) ;
-}
-#endif
-
 int
 gen_periods ( char * dirname , node_t * periods )
 {
@@ -438,7 +406,7 @@ gen_periods ( char * dirname , node_t * periods )
     {
       strcpy( tmp2 , t1 ) ;
       if (( t2 = strtok_rentr( tmp2 , ":" , &pos2 )) == NULL )
-       { fprintf(stderr,"unparseable description for halo %s\n", commname ) ; exit(1) ; }
+       { fprintf(stderr,"unparseable description for period %s\n", commname ) ; exit(1) ; }
       perwidth = atoi (t2) ;
       if ( perwidth > maxperwidth ) maxperwidth = perwidth ;
       t1 = strtok_rentr( NULL , ";" , &pos1 ) ;
@@ -460,7 +428,7 @@ fprintf(fp,"CALL wrf_debug(2,'calling %s')\n",fname) ;
     {
       strcpy( tmp2 , t1 ) ;
       if (( t2 = strtok_rentr( tmp2 , ":" , &pos2 )) == NULL )
-       { fprintf(stderr,"unparseable description for halo %s\n", commname ) ; continue ; }
+       { fprintf(stderr,"unparseable description for period %s\n", commname ) ; continue ; }
       t2 = strtok_rentr(NULL,",", &pos2) ;
       while ( t2 != NULL )
       {
@@ -509,6 +477,7 @@ fprintf(fp,"CALL wrf_debug(2,'calling %s')\n",fname) ;
 
 /* generate the stencil init statement for X transfer */
     fprintf(fp,"CALL RSL_LITE_INIT_PERIOD ( %d , &\n",maxperwidth) ;
+
     if ( n4d > 0 ) {
       fprintf(fp,  "     %d  &\n", n3dR ) ;
       for ( i = 0 ; i < n4d ; i++ ) {
@@ -518,6 +487,8 @@ fprintf(fp,"CALL wrf_debug(2,'calling %s')\n",fname) ;
     } else {
       fprintf(fp,"     %d, %d, RWORDSIZE, &\n", n3dR, n2dR ) ;
     }
+
+    fprintf(fp,"     %d, %d, RWORDSIZE, &\n", n3dR, n2dR ) ;
     fprintf(fp,"     %d, %d, IWORDSIZE, &\n", n3dI, n2dI ) ;
     fprintf(fp,"     %d, %d, DWORDSIZE, &\n", n3dD, n2dD ) ;
     fprintf(fp,"      0,  0, LWORDSIZE, &\n" ) ;
@@ -532,6 +503,272 @@ fprintf(fp,"CALL wrf_debug(2,'calling %s')\n",fname) ;
 
     fprintf(fp,"END IF\n") ;
 
+    close_the_file(fp) ;
+  }
+  return(0) ;
+}
+
+int
+gen_swaps ( char * dirname , node_t * swaps )
+{
+  node_t * p, * q ;
+  node_t * dimd ;
+  char commname[NAMELEN] ;
+  char fname[NAMELEN] ;
+  char tmp[NAMELEN], tmp2[NAMELEN], tmp3[NAMELEN] ;
+  char commuse[NAMELEN] ;
+  FILE * fp ;
+  char * t1, * t2 ;
+  char * pos1 , * pos2 ;
+  char indices[NAMELEN], post[NAMELEN] ;
+  int zdex ;
+  int n2dR, n3dR ;
+  int n2dI, n3dI ;
+  int n2dD, n3dD ;
+  int n4d ;
+  int i, xy ;
+#define MAX_4DARRAYS 1000
+  char name_4d[MAX_4DARRAYS][NAMELEN] ;
+
+  if ( dirname == NULL ) return(1) ;
+
+  for ( p = swaps ; p != NULL ; p = p->next )
+  {
+    strcpy( commname, p->name ) ;
+    make_upper_case(commname) ;
+    if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s.inc",dirname,commname) ; }
+    else                       { sprintf(fname,"%s.inc",commname) ; }
+    if ((fp = fopen( fname , "w" )) == NULL ) 
+    {
+      fprintf(stderr,"WARNING: gen_swaps in registry cannot open %s for writing\n",fname ) ;
+      continue ; 
+    }
+    print_warning(fp,fname) ;
+
+  for ( xy = 0 ; xy < 2 ; xy++ ) {
+
+fprintf(fp,"CALL wrf_debug(2,'calling %s')\n",fname) ;
+
+/* count up the number of 2d and 3d real arrays and their types */
+    n2dR = 0 ; n3dR = 0 ;
+    n2dI = 0 ; n3dI = 0 ;
+    n2dD = 0 ; n3dD = 0 ;
+    n4d = 0 ;
+    strcpy( tmp, p->comm_define ) ;
+    strcpy( commuse, p->use ) ;
+    t1 = strtok_rentr( tmp , ";" , &pos1 ) ;
+    for ( i = 0 ; i < MAX_4DARRAYS ; i++ ) strcpy(name_4d[i],"") ;  /* truncate all of these */
+    while ( t1 != NULL )
+    {
+      strcpy( tmp2 , t1 ) ;
+      if (( t2 = strtok_rentr( tmp2 , ":" , &pos2 )) == NULL )
+       { fprintf(stderr,"unparseable description for period %s\n", commname ) ; continue ; }
+      t2 = strtok_rentr(NULL,",", &pos2) ;
+      while ( t2 != NULL )
+      {
+        if ((q = get_entry_r( t2, commuse, Domain.fields )) == NULL )
+          { fprintf(stderr,"WARNING 1 : %s in swap spec %s (%s) is not defined in registry.\n",t2,commname, commuse) ; }
+        else
+        {
+          if      (  strcmp( q->type->name, "real") && strcmp( q->type->name, "integer") && strcmp( q->type->name, "doubleprecision") )
+            { fprintf(stderr,"WARNING: only type 'real', 'doubleprecision', or 'integer' can be part of swaps exchange. %s in %s is %s\n",t2,commname,q->type->name) ; }
+          else if ( q->boundary_array )
+            { fprintf(stderr,"WARNING: boundary array %s cannot be member of swaps spec %s.\n",t2,commname) ; }
+          else
+          {
+            if ( q->node_kind & FOURD ) {
+              if ( n4d < MAX_4DARRAYS ) {
+                strcpy( name_4d[n4d], q->name ) ;
+              } else { 
+                fprintf(stderr,"REGISTRY ERROR: too many 4d arrays (> %d).\n", MAX_4DARRAYS ) ;
+                fprintf(stderr,"That seems like a lot, but if you are sure, increase MAX_4DARRAYS\n" ) ;
+                fprintf(stderr,"in external/RSL_LITE/gen_comms.c and recompile\n") ;
+                exit(5) ;
+              }
+              n4d++ ;
+            }
+            else
+            {
+              if        ( ! strcmp( q->type->name, "real") ) {
+                if         ( q->ndims == 3 )      { n3dR++ ; }
+	        else    if ( q->ndims == 2 )      { n2dR++ ; }
+	      } else if ( ! strcmp( q->type->name, "integer") ) {
+                if         ( q->ndims == 3 )      { n3dI++ ; }
+	        else    if ( q->ndims == 2 )      { n2dI++ ; }
+	      } else if ( ! strcmp( q->type->name, "doubleprecision") ) {
+                if         ( q->ndims == 3 )      { n3dD++ ; }
+	        else    if ( q->ndims == 2 )      { n2dD++ ; }
+	      }
+	    }
+	  }
+	}
+        t2 = strtok_rentr( NULL , "," , &pos2 ) ;
+      }
+      t1 = strtok_rentr( NULL , ";" , &pos1 ) ;
+    }
+
+    fprintf(fp,"IF ( config_flags%%swap_%c ) THEN\n",(xy==1)?'x':'y') ;
+
+/* generate the init statement for X swap */
+    fprintf(fp,"CALL RSL_LITE_INIT_SWAP ( %d , &\n", xy ) ;
+    if ( n4d > 0 ) {
+      fprintf(fp,  "     %d  &\n", n3dR ) ;
+      for ( i = 0 ; i < n4d ; i++ ) {
+        fprintf(fp,"   + num_%s   &\n", name_4d[i] ) ;
+      }
+      fprintf(fp,"     , %d, RWORDSIZE, &\n", n2dR ) ;
+    } else {
+      fprintf(fp,"     %d, %d, RWORDSIZE, &\n", n3dR, n2dR ) ;
+    }
+    fprintf(fp,"     %d, %d, IWORDSIZE, &\n", n3dI, n2dI ) ;
+    fprintf(fp,"     %d, %d, DWORDSIZE, &\n", n3dD, n2dD ) ;
+    fprintf(fp,"      0,  0, LWORDSIZE, &\n" ) ;
+    fprintf(fp,"      mytask, ntasks, ntasks_x, ntasks_y,   &\n" ) ;
+    fprintf(fp,"      ids, ide, jds, jde, kds, kde,   &\n") ;
+    fprintf(fp,"      ips, ipe, jps, jpe, kps, kpe    )\n") ;
+/* generate packs prior to stencil exchange  */
+    gen_packs( fp, p, 1, xy, 0, "RSL_LITE_PACK_SWAP" ) ;
+/* generate stencil exchange in X */
+    fprintf(fp,"   CALL RSL_LITE_SWAP ( local_communicator , mytask, ntasks, ntasks_x, ntasks_y )\n") ;
+/* generate unpacks after stencil exchange  */
+    gen_packs( fp, p, 1, xy, 1, "RSL_LITE_PACK_SWAP" ) ;
+
+    fprintf(fp,"END IF\n") ;
+
+  }
+    close_the_file(fp) ;
+  }
+  return(0) ;
+}
+
+int
+gen_cycles ( char * dirname , node_t * cycles )
+{
+  node_t * p, * q ;
+  node_t * dimd ;
+  char commname[NAMELEN] ;
+  char fname[NAMELEN] ;
+  char tmp[NAMELEN], tmp2[NAMELEN], tmp3[NAMELEN] ;
+  char commuse[NAMELEN] ;
+  FILE * fp ;
+  char * t1, * t2 ;
+  char * pos1 , * pos2 ;
+  char indices[NAMELEN], post[NAMELEN] ;
+  int zdex ;
+  int n2dR, n3dR ;
+  int n2dI, n3dI ;
+  int n2dD, n3dD ;
+  int n4d ;
+  int i, xy ;
+#define MAX_4DARRAYS 1000
+  char name_4d[MAX_4DARRAYS][NAMELEN] ;
+
+  if ( dirname == NULL ) return(1) ;
+
+  for ( p = cycles ; p != NULL ; p = p->next )
+  {
+    strcpy( commname, p->name ) ;
+    make_upper_case(commname) ;
+    if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s.inc",dirname,commname) ; }
+    else                       { sprintf(fname,"%s.inc",commname) ; }
+    if ((fp = fopen( fname , "w" )) == NULL ) 
+    {
+      fprintf(stderr,"WARNING: gen_cycles in registry cannot open %s for writing\n",fname ) ;
+      continue ; 
+    }
+    print_warning(fp,fname) ;
+
+  for ( xy = 0 ; xy < 2 ; xy++ ) {
+
+fprintf(fp,"CALL wrf_debug(2,'calling %s')\n",fname) ;
+
+/* count up the number of 2d and 3d real arrays and their types */
+    n2dR = 0 ; n3dR = 0 ;
+    n2dI = 0 ; n3dI = 0 ;
+    n2dD = 0 ; n3dD = 0 ;
+    n4d = 0 ;
+    strcpy( tmp, p->comm_define ) ;
+    strcpy( commuse, p->use ) ;
+    t1 = strtok_rentr( tmp , ";" , &pos1 ) ;
+    for ( i = 0 ; i < MAX_4DARRAYS ; i++ ) strcpy(name_4d[i],"") ;  /* truncate all of these */
+    while ( t1 != NULL )
+    {
+      strcpy( tmp2 , t1 ) ;
+      if (( t2 = strtok_rentr( tmp2 , ":" , &pos2 )) == NULL )
+       { fprintf(stderr,"unparseable description for period %s\n", commname ) ; continue ; }
+      t2 = strtok_rentr(NULL,",", &pos2) ;
+      while ( t2 != NULL )
+      {
+        if ((q = get_entry_r( t2, commuse, Domain.fields )) == NULL )
+          { fprintf(stderr,"WARNING 1 : %s in swap spec %s (%s) is not defined in registry.\n",t2,commname, commuse) ; }
+        else
+        {
+          if      (  strcmp( q->type->name, "real") && strcmp( q->type->name, "integer") && strcmp( q->type->name, "doubleprecision") )
+            { fprintf(stderr,"WARNING: only type 'real', 'doubleprecision', or 'integer' can be part of cycles exchange. %s in %s is %s\n",t2,commname,q->type->name) ; }
+          else if ( q->boundary_array )
+            { fprintf(stderr,"WARNING: boundary array %s cannot be member of cycles spec %s.\n",t2,commname) ; }
+          else
+          {
+            if ( q->node_kind & FOURD ) {
+              if ( n4d < MAX_4DARRAYS ) {
+                strcpy( name_4d[n4d], q->name ) ;
+              } else { 
+                fprintf(stderr,"REGISTRY ERROR: too many 4d arrays (> %d).\n", MAX_4DARRAYS ) ;
+                fprintf(stderr,"That seems like a lot, but if you are sure, increase MAX_4DARRAYS\n" ) ;
+                fprintf(stderr,"in external/RSL_LITE/gen_comms.c and recompile\n") ;
+                exit(5) ;
+              }
+              n4d++ ;
+            }
+            else
+            {
+              if        ( ! strcmp( q->type->name, "real") ) {
+                if         ( q->ndims == 3 )      { n3dR++ ; }
+	        else    if ( q->ndims == 2 )      { n2dR++ ; }
+	      } else if ( ! strcmp( q->type->name, "integer") ) {
+                if         ( q->ndims == 3 )      { n3dI++ ; }
+	        else    if ( q->ndims == 2 )      { n2dI++ ; }
+	      } else if ( ! strcmp( q->type->name, "doubleprecision") ) {
+                if         ( q->ndims == 3 )      { n3dD++ ; }
+	        else    if ( q->ndims == 2 )      { n2dD++ ; }
+	      }
+	    }
+	  }
+	}
+        t2 = strtok_rentr( NULL , "," , &pos2 ) ;
+      }
+      t1 = strtok_rentr( NULL , ";" , &pos1 ) ;
+    }
+
+    fprintf(fp,"IF ( config_flags%%cycle_%c ) THEN\n",(xy==1)?'x':'y') ;
+
+/* generate the init statement for X swap */
+    fprintf(fp,"CALL RSL_LITE_INIT_CYCLE ( %d , &\n", xy ) ;
+    if ( n4d > 0 ) {
+      fprintf(fp,  "     %d  &\n", n3dR ) ;
+      for ( i = 0 ; i < n4d ; i++ ) {
+        fprintf(fp,"   + num_%s   &\n", name_4d[i] ) ;
+      }
+      fprintf(fp,"     , %d, RWORDSIZE, &\n", n2dR ) ;
+    } else {
+      fprintf(fp,"     %d, %d, RWORDSIZE, &\n", n3dR, n2dR ) ;
+    }
+    fprintf(fp,"     %d, %d, IWORDSIZE, &\n", n3dI, n2dI ) ;
+    fprintf(fp,"     %d, %d, DWORDSIZE, &\n", n3dD, n2dD ) ;
+    fprintf(fp,"      0,  0, LWORDSIZE, &\n" ) ;
+    fprintf(fp,"      mytask, ntasks, ntasks_x, ntasks_y,   &\n" ) ;
+    fprintf(fp,"      ids, ide, jds, jde, kds, kde,   &\n") ;
+    fprintf(fp,"      ips, ipe, jps, jpe, kps, kpe    )\n") ;
+/* generate packs prior to stencil exchange  */
+    gen_packs( fp, p, 1, xy, 0, "RSL_LITE_PACK_CYCLE" ) ;
+/* generate stencil exchange in X */
+    fprintf(fp,"   CALL RSL_LITE_CYCLE ( local_communicator , mytask, ntasks, ntasks_x, ntasks_y )\n") ;
+/* generate unpacks after stencil exchange  */
+    gen_packs( fp, p, 1, xy, 1, "RSL_LITE_PACK_CYCLE" ) ;
+
+    fprintf(fp,"END IF\n") ;
+
+  }
     close_the_file(fp) ;
   }
   return(0) ;
@@ -1145,6 +1382,8 @@ gen_comms ( char * dirname )
   gen_halos( "inc" , NULL, Halos ) ;
   gen_shift( "inc" ) ;
   gen_periods( "inc", Periods ) ;
+  gen_swaps( "inc", Swaps ) ;
+  gen_cycles( "inc", Cycles ) ;
   gen_xposes( "inc" ) ;
   gen_comm_descrips( "inc" ) ;
   gen_datacalls( "inc" ) ;

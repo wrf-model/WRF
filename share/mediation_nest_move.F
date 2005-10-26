@@ -105,6 +105,9 @@ SUBROUTINE med_nest_move ( parent, nest )
 
    CALL nl_get_dyn_opt ( 1, dyn_opt )
 
+! if the nest has stopped don't do all this
+   IF ( WRFU_ClockIsStopTime(nest%domain_clock ,rc=ierr) ) RETURN
+
 ! mask should be defined in nest domain
 
    check_for_move: IF ( time_for_move ( parent , nest , dx, dy ) ) THEN

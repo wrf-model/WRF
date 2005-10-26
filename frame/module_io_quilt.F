@@ -1060,8 +1060,8 @@ MODULE module_wrf_quilt
 
                   IF ( okay_to_write(DataHandle) ) THEN
 
-                    WRITE(*,*)'>>> ',TRIM(DateStr), ' ', TRIM(VarName), ' ', TRIM(MemoryOrder), ' ', &
-                         (PatchEnd(1)-PatchStart(1)+1)*(PatchEnd(2)-PatchStart(2)+1)*(PatchEnd(3)-PatchStart(3)+1)
+!                   WRITE(*,*)'>>> ',TRIM(DateStr), ' ', TRIM(VarName), ' ', TRIM(MemoryOrder), ' ', &
+!                        (PatchEnd(1)-PatchStart(1)+1)*(PatchEnd(2)-PatchStart(2)+1)*(PatchEnd(3)-PatchStart(3)+1)
 
                     IF ( FieldType .EQ. WRF_REAL .OR. FieldType .EQ. WRF_DOUBLE)  THEN
                       ! Note that the WRF_DOUBLE branch of this IF statement must come first since 

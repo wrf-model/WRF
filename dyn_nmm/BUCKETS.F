@@ -88,6 +88,8 @@
 !-----------------------------------------------------------------------
 !
       INTEGER :: I,J,K
+      LOGICAL  WRF_DM_ON_MONITOR
+      EXTERNAL WRF_DM_ON_MONITOR
 !
 !-----------------------------------------------------------------------
 !***********************************************************************
@@ -110,7 +112,9 @@
         ENDDO
         ENDDO
 !
+        IF ( WRF_DM_ON_MONITOR() ) THEN
         CALL WRF_MESSAGE('ZEROED OUT PRECIP/RUNOFF ARRAYS')
+        ENDIF
 !
       ENDIF
 !
@@ -133,7 +137,9 @@
         ENDDO
         ENDDO
 !
+        IF ( WRF_DM_ON_MONITOR() ) THEN
         CALL WRF_MESSAGE('ZEROED OUT SFC EVAP/FLUX ARRAYS')
+        ENDIF
 !
       ENDIF
 !
@@ -150,7 +156,9 @@
         ENDDO
         ENDDO
 !
+        IF ( WRF_DM_ON_MONITOR() ) THEN
         CALL WRF_MESSAGE('ZEROED OUT ACCUMULATED SHORTWAVE FLUX ARRAYS')
+        ENDIF
 !
       ENDIF
 !
@@ -167,7 +175,9 @@
         ENDDO
         ENDDO
 !
+        IF ( WRF_DM_ON_MONITOR() ) THEN
         CALL WRF_MESSAGE('ZEROED OUT ACCUMULATED LONGWAVE FLUX ARRAYS')
+        ENDIF
 !
       ENDIF
 !
@@ -189,7 +199,9 @@
         ENDDO
         ENDDO
 !
+        IF ( WRF_DM_ON_MONITOR() ) THEN
         CALL WRF_MESSAGE('ZEROED OUT ACCUMULATED LATENT HEATING ARRAYS')
+        ENDIF
 !
       ENDIF
 !-----------------------------------------------------------------------

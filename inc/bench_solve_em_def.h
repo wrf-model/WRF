@@ -55,6 +55,8 @@ BENCH_DECL(micro_driver_tim)
 BENCH_DECL(moist_phys_end_tim)
 BENCH_DECL(time_filt_tim)
 BENCH_DECL(bc_2d_tim)
+BENCH_DECL(microswap_1)
+BENCH_DECL(microswap_2)
 #else
 #define SOLVE_START
 #define SOLVE_END

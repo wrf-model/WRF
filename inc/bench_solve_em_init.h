@@ -45,4 +45,6 @@ BENCH_INIT(micro_driver_tim)
 BENCH_INIT(moist_phys_end_tim)
 BENCH_INIT(time_filt_tim)
 BENCH_INIT(bc_2d_tim)
+BENCH_INIT(microswap_1)
+BENCH_INIT(microswap_2)
 SOLVE_START

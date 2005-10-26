@@ -488,7 +488,6 @@ fprintf(fp,"CALL wrf_debug(2,'calling %s')\n",fname) ;
       fprintf(fp,"     %d, %d, RWORDSIZE, &\n", n3dR, n2dR ) ;
     }
 
-    fprintf(fp,"     %d, %d, RWORDSIZE, &\n", n3dR, n2dR ) ;
     fprintf(fp,"     %d, %d, IWORDSIZE, &\n", n3dI, n2dI ) ;
     fprintf(fp,"     %d, %d, DWORDSIZE, &\n", n3dD, n2dD ) ;
     fprintf(fp,"      0,  0, LWORDSIZE, &\n" ) ;

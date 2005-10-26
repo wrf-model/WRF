@@ -1042,6 +1042,10 @@ rconfig   integer   move_id         namelist,domains    max_moves        0
 rconfig   integer   move_interval   namelist,domains    max_moves        999999999
 rconfig   integer   move_cd_x       namelist,domains    max_moves        0
 rconfig   integer   move_cd_y       namelist,domains    max_moves        0
+rconfig   logical   swap_x          namelist,domains    max_domains    .false. rh    "swap_x"            ""      ""
+rconfig   logical   swap_y          namelist,domains    max_domains    .false. rh    "swap_y"            ""      ""
+rconfig   logical   cycle_x         namelist,domains    max_domains    .false. rh    "cycle_x"            ""      ""
+rconfig   logical   cycle_y         namelist,domains    max_domains    .false. rh    "cycle_y"            ""      ""
 
 # Physics
 rconfig   integer     mp_physics          namelist,physics	max_domains    0       rh       "mp_physics"            ""      ""
@@ -1289,6 +1293,11 @@ period    PERIOD_BDY_EM_B2 dyn_em 2:ru_tend,rv_tend
 period    PERIOD_BDY_EM_C dyn_em 2:u_2,u_save,v_2,v_save,t_2,t_save,muv,msfv,muu,msfu
 period    PERIOD_BDY_EM_D dyn_em 3:u_2,v_2,w_2,t_2,ph_2,mu_2,tke_2
 period    PERIOD_BDY_EM_D3 dyn_em 3:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,mu_1,mu_2
+
+#
+#swap SWAP_ETAMP_NEW  dyn_em 1:dz8w,p_phy,pi_phy,rho,th_phy,moist,F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,RAINNC,RAINNCV,SR,LOWLYR
+#swap SWAP_WSM3       dyn_em 1:th_phy,moist,w_2,rho,pi_phy,p_phy,dz8w,rainnc,rainncv
+#cycle CYCLE_TEST       dyn_em 1:xlong
 
 ##
 

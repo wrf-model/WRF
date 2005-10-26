@@ -1277,6 +1277,10 @@ rconfig   integer   move_id         namelist,domains    max_moves        0
 rconfig   integer   move_interval   namelist,domains    max_moves        999999999
 rconfig   integer   move_cd_x       namelist,domains    max_moves        0
 rconfig   integer   move_cd_y       namelist,domains    max_moves        0
+rconfig   logical   swap_x          namelist,domains    max_domains    .false. rh    "swap_x"            ""      ""
+rconfig   logical   swap_y          namelist,domains    max_domains    .false. rh    "swap_y"            ""      ""
+rconfig   logical   cycle_x         namelist,domains    max_domains    .false. rh    "cycle_x"            ""      ""
+rconfig   logical   cycle_y         namelist,domains    max_domains    .false. rh    "cycle_y"            ""      ""
 
 # Physics
 rconfig   integer     mp_physics          namelist,physics	max_domains    0       rh       "mp_physics"            ""      ""

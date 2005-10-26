@@ -116,6 +116,8 @@ EXTERN node_t * Halos ;
 EXTERN node_t * Periods ;
 EXTERN node_t * Xposes ;
 EXTERN node_t * FourD ;
+EXTERN node_t * Swaps ;
+EXTERN node_t * Cycles ;
 
 EXTERN node_t Domain ;
 

@@ -30,8 +30,10 @@ enum proc_orient     { ALL_Z_ON_PROC , ALL_X_ON_PROC , ALL_Y_ON_PROC } ;
 #define PACKAGE  128
 #define HALO     256
 #define PERIOD   512
-#define XPOSE   1024
-#define FOURD1  2048
+#define SWAP    1024
+#define CYCLE   2048
+#define XPOSE   4096
+#define FOURD1  8192
 
 /* I/O mask settings */
 #define HISTORY          2

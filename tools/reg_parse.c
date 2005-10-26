@@ -672,6 +672,37 @@ reg_parse( FILE * infile )
 #endif
       add_node_to_end( comm_struct , &Xposes ) ;
     }
+    else if ( !strcmp( tokens[ TABLE ] , "swap" ) )
+    {
+      node_t * comm_struct ;
+      comm_struct = new_node( SWAP ) ;
+      strcpy( comm_struct->name        , tokens[COMM_ID]     ) ;
+      strcpy( comm_struct->use         , tokens[COMM_USE]     ) ;
+#if 1
+      for ( i = COMM_DEFINE, q=comm_struct->comm_define ; strcmp(tokens[i],"-") ; i++ )  {
+        for(p=tokens[i];*p;p++)if(*p!=' '&&*p!='\t'){*q++=*p;}
+      }
+#else
+      strcpy( comm_struct->comm_define , tokens[COMM_DEFINE] ) ;
+#endif
+      add_node_to_end( comm_struct , &Swaps ) ;
+    }
+    else if ( !strcmp( tokens[ TABLE ] , "cycle" ) )
+    {
+      node_t * comm_struct ;
+      comm_struct = new_node( CYCLE ) ;
+      strcpy( comm_struct->name        , tokens[COMM_ID]     ) ;
+      strcpy( comm_struct->use         , tokens[COMM_USE]     ) ;
+#if 1
+      for ( i = COMM_DEFINE, q=comm_struct->comm_define ; strcmp(tokens[i],"-") ; i++ )  {
+        for(p=tokens[i];*p;p++)if(*p!=' '&&*p!='\t'){*q++=*p;}
+      }
+#else
+      strcpy( comm_struct->comm_define , tokens[COMM_DEFINE] ) ;
+#endif
+      add_node_to_end( comm_struct , &Cycles ) ;
+    }
+
 
 #if 0
      fprintf(stderr,"vvvvvvvvvvvvvvvvvvvvvvvvvvv\n") ;

@@ -2464,10 +2464,22 @@ BENCH_END(moist_physics_prep_tim)
 
        CALL wrf_debug ( 200 , ' call microphysics_driver' )
 
-BENCH_START(micro_driver_tim)
        sr = 0.
        specified_bdy = config_flags%specified .OR. config_flags%nested
        channel_bdy = config_flags%specified .AND. config_flags%periodic_x
+
+#if 0
+BENCH_START(microswap_1)
+! for load balancing; communication to redistribute the points
+   IF ( config_flags%mp_physics .EQ. ETAMPNEW ) THEN
+#include "SWAP_ETAMP_NEW.inc"
+   ELSE IF ( config_flags%mp_physics .EQ. WSM3SCHEME ) THEN
+#include "SWAP_WSM3.inc"
+   ENDIF
+BENCH_END(microswap_1)
+#endif
+
+BENCH_START(micro_driver_tim)
 
        CALL microphysics_driver(                                          &
      &         DT=dtm             ,DX=grid%dx              ,DY=grid%dy              &
@@ -2501,9 +2513,18 @@ BENCH_START(micro_driver_tim)
      &        , QG_CURR=moist(ims,kms,jms,P_QG), F_QG=F_QG              &
      &        , QNI_CURR=scalar(ims,kms,jms,P_QNI), F_QNI=F_QNI         &
                                                                           )
-
 BENCH_END(micro_driver_tim)
 
+#if 0
+BENCH_START(microswap_2)
+! for load balancing; communication to redistribute the points
+   IF ( config_flags%mp_physics .EQ. ETAMPNEW ) THEN
+#include "SWAP_ETAMP_NEW.inc"
+   ELSE IF ( config_flags%mp_physics .EQ. WSM3SCHEME ) THEN
+#include "SWAP_WSM3.inc"
+   ENDIF
+BENCH_END(microswap_2)
+#endif
 
        CALL wrf_debug ( 200 , ' call moist_physics_finish' )
 BENCH_START(moist_phys_end_tim)

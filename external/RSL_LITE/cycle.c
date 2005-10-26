@@ -15,14 +15,18 @@
 #define  MIN(A,B)     ((A)<(B)?(A):(B))
 #define  MAX(A,B)     ((A)>(B)?(A):(B))
 
-static int *y_curs = NULL ;
-static int *x_curs = NULL ;
-static int *x_peermask = NULL ;
-static int *nbytes = NULL ; 
-static MPI_Request *x_recv = NULL , *x_send = NULL ;
+static int *y_curs_src = NULL ;
+static int *x_curs_src = NULL ;
+static int *y_curs_dst = NULL ;
+static int *x_curs_dst = NULL ;
+static int *x_peermask_src = NULL ;
+static int *x_peermask_dst = NULL ;
+static int *nbytes_src = NULL ; 
+static int *nbytes_dst = NULL ; 
+static MPI_Request *x_recv = NULL ,  *x_send = NULL ;
 
 RSL_LITE_INIT_CYCLE ( 
-                int * xy0 ,
+                int * xy0 , int * inout0 ,
                 int * n3dR0, int *n2dR0, int * typesizeR0 , 
                 int * n3dI0, int *n2dI0, int * typesizeI0 , 
                 int * n3dD0, int *n2dD0, int * typesizeD0 , 
@@ -35,15 +39,16 @@ RSL_LITE_INIT_CYCLE (
   int n3dI, n2dI, typesizeI ;
   int n3dD, n2dD, typesizeD ;
   int n3dL, n2dL, typesizeL ;
-  int xy ;
+  int xy, inout ;
   int me, np, np_x, np_y, np_dim ;
   int ids , ide , jds , jde , kds , kde ;
   int ips , ipe , jps , jpe , kps , kpe ;
   int ips_send , ipe_send ;
-  int npts, i, ii, j, m, n, ps, pe, ops, ope ;
-  int Px, Py, P ;
+  int npts, i, ii, j, jj, m, n, ps, pe, ops, ope ;
+  int Px, Py, P, Q, swap ;
 
   xy = *xy0 ;
+  inout = *inout0 ;     /* 1 is in (uncycled to cycled) 0 is out */
   n3dR = *n3dR0 ; n2dR = *n2dR0 ; typesizeR = *typesizeR0 ;
   n3dI = *n3dI0 ; n2dI = *n2dI0 ; typesizeI = *typesizeI0 ;
   n3dD = *n3dD0 ; n2dD = *n2dD0 ; typesizeD = *typesizeD0 ;
@@ -52,12 +57,16 @@ RSL_LITE_INIT_CYCLE (
   ids = *ids0-1 ; ide = *ide0-1 ; jds = *jds0-1 ; jde = *jde0-1 ; kds = *kds0-1 ; kde = *kde0-1 ;
   ips = *ips0-1 ; ipe = *ipe0-1 ; jps = *jps0-1 ; jpe = *jpe0-1 ; kps = *kps0-1 ; kpe = *kpe0-1 ;
 
-  if ( nbytes == NULL ) nbytes = RSL_MALLOC ( int , np ) ;
-  if ( x_curs == NULL ) x_curs = RSL_MALLOC ( int , np ) ;
-  if ( x_peermask == NULL ) x_peermask = RSL_MALLOC ( int , np ) ;
+  if ( nbytes_src == NULL ) nbytes_src = RSL_MALLOC ( int , np ) ;
+  if ( nbytes_dst == NULL ) nbytes_dst = RSL_MALLOC ( int , np ) ;
+  if ( x_curs_src == NULL ) x_curs_src = RSL_MALLOC ( int , np ) ;
+  if ( x_curs_dst == NULL ) x_curs_dst = RSL_MALLOC ( int , np ) ;
+  if ( x_peermask_src == NULL ) x_peermask_src = RSL_MALLOC ( int , np ) ;
+  if ( x_peermask_dst == NULL ) x_peermask_dst = RSL_MALLOC ( int , np ) ;
   if ( x_recv == NULL ) x_recv = RSL_MALLOC ( MPI_Request , np ) ;
   if ( x_send == NULL ) x_send = RSL_MALLOC ( MPI_Request , np ) ;
-  for ( i = 0 ; i < np ; i++ ) { nbytes[i] = 0 ; x_curs[i] = 0 ; x_peermask[i] = 0 ; }
+  for ( i = 0 ; i < np ; i++ ) { nbytes_src[i] = 0 ; x_curs_src[i] = 0 ; x_peermask_src[i] = 0 ; }
+  for ( i = 0 ; i < np ; i++ ) { nbytes_dst[i] = 0 ; x_curs_dst[i] = 0 ; x_peermask_dst[i] = 0 ; }
 
   if ( xy == 1 ) {   /* xy = 1, cycle in X, otherwise Y */
     np_dim = np_x ;
@@ -77,39 +86,43 @@ RSL_LITE_INIT_CYCLE (
     n = (m*np_dim)/m ;
   }
 
-fprintf(stderr,"m %d, n %d\n=======\n",m,n) ;
-
   for ( i = ps ; i <= MIN(pe,m*np_dim) ; i++ ) {
     ii = (i/n) + (i%n)*m ;
+    jj = (i/m) + (i%m)*n ;
     if ( xy == 1 ) {
       TASK_FOR_POINT ( &ii , &jps , &ids, &ide , &jds, &jde , &np_x , &np_y , &Px, &Py, &P ) ;
+      TASK_FOR_POINT ( &jj , &jps , &ids, &ide , &jds, &jde , &np_x , &np_y , &Px, &Py, &Q ) ;
     } else {
       TASK_FOR_POINT ( &ips , &ii , &ids, &ide , &jds, &jde , &np_x , &np_y , &Px, &Py, &P ) ;
+      TASK_FOR_POINT ( &ips , &jj , &ids, &ide , &jds, &jde , &np_x , &np_y , &Px, &Py, &Q ) ;
     }
-fprintf(stderr,"RSL_LITE_INIT_CYCLE xy %d i %d ii %d P %d\n",xy, i,ii,P) ;
-    nbytes[P] += typesizeR*(ope-ops+1)*(n3dR*(kpe-kps+1)+n2dR) +
-                 typesizeI*(ope-ops+1)*(n3dI*(kpe-kps+1)+n2dI) +
-                 typesizeD*(ope-ops+1)*(n3dD*(kpe-kps+1)+n2dD) +
-                 typesizeL*(ope-ops+1)*(n3dL*(kpe-kps+1)+n2dL) ;
-    x_peermask[P] = 1 ;
+    if ( inout == 0 ) { swap = P ; P = Q ; Q = swap ; }
+
+    nbytes_src[P] += typesizeR*(ope-ops+1)*(n3dR*(kpe-kps+1)+n2dR) +
+                     typesizeI*(ope-ops+1)*(n3dI*(kpe-kps+1)+n2dI) +
+                     typesizeD*(ope-ops+1)*(n3dD*(kpe-kps+1)+n2dD) +
+                     typesizeL*(ope-ops+1)*(n3dL*(kpe-kps+1)+n2dL) ;
+
+    nbytes_dst[Q] += typesizeR*(ope-ops+1)*(n3dR*(kpe-kps+1)+n2dR) +
+                     typesizeI*(ope-ops+1)*(n3dI*(kpe-kps+1)+n2dI) +
+                     typesizeD*(ope-ops+1)*(n3dD*(kpe-kps+1)+n2dD) +
+                     typesizeL*(ope-ops+1)*(n3dL*(kpe-kps+1)+n2dL) ;
   }
 
   for ( P = 0 ; P < np ; P++ ) {
-     if ( x_peermask[P] ) {
-       buffer_for_proc ( P , nbytes[P], RSL_RECVBUF ) ;
-       buffer_for_proc ( P , nbytes[P], RSL_SENDBUF ) ;
-     }
+       buffer_for_proc ( P , nbytes_src[P], RSL_SENDBUF ) ;
+       buffer_for_proc ( P , nbytes_dst[P], RSL_RECVBUF ) ;
   }
 }
 
-RSL_LITE_PACK_CYCLE ( char * buf , int * odd0 , int * typesize0 , int * xy0 , int * pu0 , char * memord , int * xstag0 ,
+RSL_LITE_PACK_CYCLE ( char * buf , int * inout0 , int * typesize0 , int * xy0 , int * pu0 , char * memord , int * xstag0 ,
            int *me0, int * np0 , int * np_x0 , int * np_y0 , 
            int * ids0 , int * ide0 , int * jds0 , int * jde0 , int * kds0 , int * kde0 ,
            int * ims0 , int * ime0 , int * jms0 , int * jme0 , int * kms0 , int * kme0 ,
            int * ips0 , int * ipe0 , int * jps0 , int * jpe0 , int * kps0 , int * kpe0 )
 {
   int me, np, np_x, np_y, np_dim ;
-  int odd , typesize ;
+  int inout , typesize ;
   int ids , ide , jds , jde , kds , kde ;
   int ims , ime , jms , jme , kms , kme ;
   int ips , ipe , jps , jpe , kps , kpe ;
@@ -131,7 +144,7 @@ RSL_LITE_PACK_CYCLE ( char * buf , int * odd0 , int * typesize0 , int * xy0 , in
 
   me = *me0 ; np = *np0 ; np_x = *np_x0 ; np_y = *np_y0 ;
   xstag = *xstag0 ;
-  odd = *odd0 ; typesize = *typesize0 ;
+  inout = *inout0 ; typesize = *typesize0 ;
   ids = *ids0-1 ; ide = *ide0-1 ; jds = *jds0-1 ; jde = *jde0-1 ; kds = *kds0-1 ; kde = *kde0-1 ;
   ims = *ims0-1 ; ime = *ime0-1 ; jms = *jms0-1 ; jme = *jme0-1 ; kms = *kms0-1 ; kme = *kme0-1 ;
   ips = *ips0-1 ; ipe = *ipe0-1 ; jps = *jps0-1 ; jpe = *jpe0-1 ; kps = *kps0-1 ; kpe = *kpe0-1 ;
@@ -145,7 +158,6 @@ RSL_LITE_PACK_CYCLE ( char * buf , int * odd0 , int * typesize0 , int * xy0 , in
 #define JMIN(A) (((A)<jde)?(A):jde)
 
   da_buf = ( pu == 0 ) ? RSL_SENDBUF : RSL_RECVBUF ;
-
 
   if ( xy == 1 ) {   /* xy = 1, cycle in X, otherwise Y */
     np_dim = np_x ;
@@ -161,27 +173,21 @@ RSL_LITE_PACK_CYCLE ( char * buf , int * odd0 , int * typesize0 , int * xy0 , in
     n = (m*np_dim)/m ;
   }
 
-fprintf(stderr,"m %d, n %d\n=======\n",m,n) ;
-
   if ( np_x > 1 && xy == 1 ) {
 
-    for ( i = ips ; i <= MIN(ipe,m*np_dim) ; i++ ) {
-      ii = (i/n) + (i%n) *m ;
-      TASK_FOR_POINT ( &ii , &jps , &ids, &ide , &jds, &jde , &np_x , &np_y , &Px, &Py, &P ) ;
-      p = buffer_for_proc( P , 0 , da_buf ) ;
+    for ( i = ips ; i <= MIN(ipe,m*np_dim-1) ; i++ ) {
       if ( pu == 0 ) {
+        ii = (inout)?(i/n)+(i%n)*m:(i/m)+(i%m)*n  ;
+        TASK_FOR_POINT ( &ii , &jps , &ids, &ide , &jds, &jde , &np_x , &np_y , &Px, &Py, &P ) ;
+        p = buffer_for_proc( P , 0 , da_buf ) ;
 	if ( typesize == sizeof(int) ) {
           for ( j = jps ; j <= jpe ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
-	      pi = (int *)(p+x_curs[P]) ;
+	      pi = (int *)(p+x_curs_src[P]) ;
 	      qi = (int *)((buf + typesize*( (i-ims) + (ime-ims+1)*(
                                              (k-kms) + (j-jms)*(kme-kms+1))))) ;
-if ( j == jps ) {
-bcopy(qi,&f,typesize) ;
-fprintf(stderr,"p: %f i %d, ii %d, j %d, P %d\n",f,i,ii,j,P) ;
-}
 	      *pi++ = *qi++ ;
-	      x_curs[P] += typesize ;
+	      x_curs_src[P] += typesize ;
 	    }
 	  }
 	}
@@ -189,28 +195,27 @@ fprintf(stderr,"p: %f i %d, ii %d, j %d, P %d\n",f,i,ii,j,P) ;
           for ( j = jps ; j <= jpe ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
               for ( t = 0 ; t < typesize ; t++ ) {
-                *(p+x_curs[P]) = 
+                *(p+x_curs_src[P]) = 
                                *(buf + t + typesize*(
                                       (i-ims) + (ime-ims+1)*(
                                       (k-kms) + (j-jms)*(kme-kms+1))) ) ;
-                x_curs[P]++ ;
+                x_curs_src[P]++ ;
               }
             }
           }
 	}
       } else {
+        ii = (inout)?(i/m)+(i%m)*n:(i/n)+(i%n)*m  ;
+        TASK_FOR_POINT ( &ii , &jps , &ids, &ide , &jds, &jde , &np_x , &np_y , &Px, &Py, &P ) ;
+        p = buffer_for_proc( P , 0 , da_buf ) ;
 	if ( typesize == sizeof(int) ) {
           for ( j = jps ; j <= jpe ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
-	      pi = (int *)(p+x_curs[P]) ;
+	      pi = (int *)(p+x_curs_dst[P]) ;
 	      qi = (int *)((buf + typesize*( (i-ims) + (ime-ims+1)*(
                                              (k-kms) + (j-jms)*(kme-kms+1))))) ;
-if ( j == jps ) {
-bcopy(pi,&f,typesize) ;
-fprintf(stderr,"u: %f i %d, ii %d, j %d, P %d\n",f,i,ii,j,P) ;
-}
 	      *qi++ = *pi++ ;
-	      x_curs[P] += typesize ;
+	      x_curs_dst[P] += typesize ;
 	    }
 	  }
 	}
@@ -221,8 +226,8 @@ fprintf(stderr,"u: %f i %d, ii %d, j %d, P %d\n",f,i,ii,j,P) ;
                                *(buf + t + typesize*(
                                       (i-ims) + (ime-ims+1)*(
                                       (k-kms) + (j-jms)*(kme-kms+1))) ) =
-                *(p+x_curs[P]) ;
-                x_curs[P]++ ;
+                *(p+x_curs_dst[P]) ;
+                x_curs_dst[P]++ ;
               }
             }
           }
@@ -230,19 +235,19 @@ fprintf(stderr,"u: %f i %d, ii %d, j %d, P %d\n",f,i,ii,j,P) ;
       }
     }
   } else if ( np_y > 1 && xy == 0 ) {
-    for ( j = jps ; j <= MIN(jpe,m*np_dim) ; j++ ) {
-      jj = (j/n) + (j%n)*m ;
-      TASK_FOR_POINT ( &ips , &jj , &ids, &ide , &jds, &jde , &np_x , &np_y , &Px, &Py, &P ) ;
-      p = buffer_for_proc( P , 0 , da_buf ) ;
+    for ( j = jps ; j <= MIN(jpe,m*np_dim-1) ; j++ ) {
       if ( pu == 0 ) {
+        jj = (inout)?(j/n) + (j%n)*m:(j/m) + (j%m)*n ;
+        TASK_FOR_POINT ( &ips , &jj , &ids, &ide , &jds, &jde , &np_x , &np_y , &Px, &Py, &P ) ;
+        p = buffer_for_proc( P , 0 , da_buf ) ;
 	if ( typesize == sizeof(int) ) {
           for ( i = ips ; i <= ipe ; i++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
-	      pi = (int *)(p+x_curs[P]) ;
+	      pi = (int *)(p+x_curs_src[P]) ;
 	      qi = (int *)((buf + typesize*( (i-ims) + (ime-ims+1)*(
                                              (k-kms) + (j-jms)*(kme-kms+1))))) ;
 	      *pi++ = *qi++ ;
-	      x_curs[P] += typesize ;
+	      x_curs_src[P] += typesize ;
 	    }
 	  }
 	}
@@ -250,24 +255,27 @@ fprintf(stderr,"u: %f i %d, ii %d, j %d, P %d\n",f,i,ii,j,P) ;
           for ( i = ips ; i <= ipe ; i++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
               for ( t = 0 ; t < typesize ; t++ ) {
-                *(p+x_curs[P]) = 
+                *(p+x_curs_src[P]) = 
                                *(buf + t + typesize*(
                                       (i-ims) + (ime-ims+1)*(
                                       (k-kms) + (j-jms)*(kme-kms+1))) ) ;
-                x_curs[P]++ ;
+                x_curs_src[P]++ ;
               }
             }
           }
 	}
       } else {
+        jj = (inout)?(j/m) + (j%m)*n:(j/n) + (j%n)*m ;
+        TASK_FOR_POINT ( &ips , &jj , &ids, &ide , &jds, &jde , &np_x , &np_y , &Px, &Py, &P ) ;
+        p = buffer_for_proc( P , 0 , da_buf ) ;
 	if ( typesize == sizeof(int) ) {
           for ( i = ips ; i <= ipe ; i++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
-	      pi = (int *)(p+x_curs[P]) ;
+	      pi = (int *)(p+x_curs_dst[P]) ;
 	      qi = (int *)((buf + typesize*( (i-ims) + (ime-ims+1)*(
                                              (k-kms) + (j-jms)*(kme-kms+1))))) ;
 	      *qi++ = *pi++ ;
-	      x_curs[P] += typesize ;
+	      x_curs_dst[P] += typesize ;
 	    }
 	  }
 	}
@@ -278,8 +286,8 @@ fprintf(stderr,"u: %f i %d, ii %d, j %d, P %d\n",f,i,ii,j,P) ;
                                *(buf + t + typesize*(
                                       (i-ims) + (ime-ims+1)*(
                                       (k-kms) + (j-jms)*(kme-kms+1))) ) =
-                *(p+x_curs[P]) ;
-                x_curs[P]++ ;
+                *(p+x_curs_dst[P]) ;
+                x_curs_dst[P]++ ;
               }
             }
           }
@@ -306,23 +314,19 @@ RSL_LITE_CYCLE ( int * Fcomm0, int *me0, int * np0 , int * np_x0 , int * np_y0 )
 /* fprintf(stderr,"RSL_LITE_CYCLE\n") ; */
 
   for ( P = 0 ; P < np ; P++ ) {
-    if ( x_peermask[P] ) {
       nb = buffer_size_for_proc( P, RSL_RECVBUF ) ;
 /* fprintf(stderr,"posting irecv from %d, nb = %d\n",P,nb) ; */
-      MPI_Irecv ( buffer_for_proc( P, x_curs[P], RSL_RECVBUF ), nb, MPI_CHAR, P, me, comm, &(x_recv[P]) ) ;
-/* fprintf(stderr,"sending to         %d, nb = %d\n",P,x_curs[P]) ; */
-      MPI_Isend ( buffer_for_proc( P, 0,         RSL_SENDBUF ), x_curs[P], MPI_CHAR, P, P, comm, &(x_send[P]) ) ;
-    }
+      MPI_Irecv ( buffer_for_proc( P, 0, RSL_RECVBUF ), nb, MPI_CHAR, P, me, comm, &(x_recv[P]) ) ;
+/* fprintf(stderr,"sending to         %d, nb = %d\n",P,x_curs_src[P]) ; */
+      MPI_Isend ( buffer_for_proc( P, 0, RSL_SENDBUF ), x_curs_src[P], MPI_CHAR, P, P, comm, &(x_send[P]) ) ;
   }
   for ( P = 0 ; P < np ; P++ ) {
-    if ( x_peermask[P] ) {
       MPI_Wait( &x_recv[P], &stat ) ; 
       MPI_Wait( &x_send[P], &stat ) ; 
-    }
   }
 #else 
 fprintf(stderr,"RSL_LITE_CYCLE disabled\n") ;
 #endif
-  for ( i = 0 ; i < np ; i++ ) {  x_curs[i] = 0 ;  }
+  for ( i = 0 ; i < np ; i++ ) {  x_curs_src[i] = 0 ; x_curs_dst[i] ; }
 }
 

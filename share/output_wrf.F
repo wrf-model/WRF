@@ -46,6 +46,8 @@
             simulation_start_minute , &
             simulation_start_second
     INTEGER rc
+    INTEGER :: io_form
+    LOGICAL, EXTERNAL :: multi_files
 
     CHARACTER*256 message
     CHARACTER*80  fname
@@ -143,18 +145,10 @@
        CALL wrf_put_dom_ti_char ( fid , 'SIMULATION_START_DATE', TRIM(simulation_start_date) , ierr )
     END IF
 
-#ifdef D3VAR_IRY_KLUDGE
-    ibuf(1) = config_flags%e_sn - config_flags%s_sn + 1
-#else
     ibuf(1) = config_flags%e_we - config_flags%s_we + 1
-#endif
     CALL wrf_put_dom_ti_integer ( fid , 'WEST-EAST_GRID_DIMENSION' ,  ibuf , 1 , ierr )
 
-#ifdef D3VAR_IRY_KLUDGE
-    ibuf(1) = config_flags%e_we - config_flags%s_we + 1
-#else
     ibuf(1) = config_flags%e_sn - config_flags%s_sn + 1
-#endif
     CALL wrf_put_dom_ti_integer ( fid , 'SOUTH-NORTH_GRID_DIMENSION' , ibuf , 1 , ierr )
 
     ibuf(1) = config_flags%e_vert - config_flags%s_vert + 1
@@ -212,63 +206,76 @@
     CALL wrf_put_dom_ti_integer ( fid , 'CU_PHYSICS' ,  ibuf , 1 , ierr )
 
 ! added these fields for use by reassembly programs , 010831, JM
+! modified these fields so "patch" == "domain" when multi-file output 
+! formats are not used.  051018, TBH
+    IF ( switch .EQ. model_input_only ) THEN
+      CALL nl_get_io_form_input( 1, io_form )
+    ELSE IF ( switch .EQ. aux_model_input1_only ) THEN
+      CALL nl_get_io_form_auxinput1( 1, io_form )
+    ELSE IF ( switch .EQ. aux_model_input2_only ) THEN
+      CALL nl_get_io_form_auxinput2( 1, io_form )
+    ELSE IF ( switch .EQ. aux_model_input3_only ) THEN
+      CALL nl_get_io_form_auxinput3( 1, io_form )
+    ELSE IF ( switch .EQ. aux_model_input4_only ) THEN
+      CALL nl_get_io_form_auxinput4( 1, io_form )
+    ELSE IF ( switch .EQ. aux_model_input5_only ) THEN
+      CALL nl_get_io_form_auxinput5( 1, io_form )
+    ELSE IF ( switch .EQ. history_only ) THEN
+      CALL nl_get_io_form_history( 1, io_form )
+    ELSE IF ( switch .EQ. aux_hist1_only ) THEN
+      CALL nl_get_io_form_auxhist1( 1, io_form )
+    ELSE IF ( switch .EQ. aux_hist2_only ) THEN
+      CALL nl_get_io_form_auxhist2( 1, io_form )
+    ELSE IF ( switch .EQ. aux_hist3_only ) THEN
+      CALL nl_get_io_form_auxhist3( 1, io_form )
+    ELSE IF ( switch .EQ. aux_hist4_only ) THEN
+      CALL nl_get_io_form_auxhist4( 1, io_form )
+    ELSE IF ( switch .EQ. aux_hist5_only ) THEN
+      CALL nl_get_io_form_auxhist5( 1, io_form )
+    ELSE IF ( switch .EQ. restart_only ) THEN
+      CALL nl_get_io_form_restart( 1, io_form )
+    ELSE IF ( switch .EQ. boundary_only ) THEN
+      CALL nl_get_io_form_boundary( 1, io_form )
+    ELSE  ! default:  use history
+      CALL nl_get_io_form_history( 1, io_form )
+    ENDIF
 
-#ifdef D3VAR_IRY_KLUDGE
-    ibuf(1) = MAX(jps,jds)
-#else
     ibuf(1) = MAX(ips,ids)
-#endif
+    IF ( .NOT. multi_files ( io_form ) ) ibuf(1) = ids
     CALL wrf_put_dom_ti_integer ( fid , 'WEST-EAST_PATCH_START_UNSTAG' ,  ibuf , 1 , ierr )
-#ifdef D3VAR_IRY_KLUDGE
-    ibuf(1) = MIN(jpe,jde-1)
-#else
     ibuf(1) = MIN(ipe,ide-1)
-#endif
+    IF ( .NOT. multi_files ( io_form ) ) ibuf(1) = ide - 1
     CALL wrf_put_dom_ti_integer ( fid , 'WEST-EAST_PATCH_END_UNSTAG' ,  ibuf , 1 , ierr )
-#ifdef D3VAR_IRY_KLUDGE
-    ibuf(1) = MAX(jps,jds)
-#else
     ibuf(1) = MAX(ips,ids)
-#endif
+    IF ( .NOT. multi_files ( io_form ) ) ibuf(1) = ids
     CALL wrf_put_dom_ti_integer ( fid , 'WEST-EAST_PATCH_START_STAG' ,  ibuf , 1 , ierr )
-#ifdef D3VAR_IRY_KLUDGE
-    ibuf(1) = MIN(jpe,jde)
-#else
     ibuf(1) = MIN(ipe,ide)
-#endif
+    IF ( .NOT. multi_files ( io_form ) ) ibuf(1) = ide
     CALL wrf_put_dom_ti_integer ( fid , 'WEST-EAST_PATCH_END_STAG' ,  ibuf , 1 , ierr )
-#ifdef D3VAR_IRY_KLUDGE
-    ibuf(1) = MAX(ips,ids)
-#else
     ibuf(1) = MAX(jps,jds)
-#endif
+    IF ( .NOT. multi_files ( io_form ) ) ibuf(1) = jds
     CALL wrf_put_dom_ti_integer ( fid , 'SOUTH-NORTH_PATCH_START_UNSTAG' ,  ibuf , 1 , ierr )
-#ifdef D3VAR_IRY_KLUDGE
-    ibuf(1) = MIN(ipe,ide-1)
-#else
     ibuf(1) = MIN(jpe,jde-1)
-#endif
+    IF ( .NOT. multi_files ( io_form ) ) ibuf(1) = jde - 1
     CALL wrf_put_dom_ti_integer ( fid , 'SOUTH-NORTH_PATCH_END_UNSTAG' ,  ibuf , 1 , ierr )
-#ifdef D3VAR_IRY_KLUDGE
-    ibuf(1) = MAX(ips,ids)
-#else
     ibuf(1) = MAX(jps,jds)
-#endif
+    IF ( .NOT. multi_files ( io_form ) ) ibuf(1) = jds
     CALL wrf_put_dom_ti_integer ( fid , 'SOUTH-NORTH_PATCH_START_STAG' ,  ibuf , 1 , ierr )
-#ifdef D3VAR_IRY_KLUDGE
-    ibuf(1) = MIN(ipe,ide)
-#else
     ibuf(1) = MIN(jpe,jde)
-#endif
+    IF ( .NOT. multi_files ( io_form ) ) ibuf(1) = jde
     CALL wrf_put_dom_ti_integer ( fid , 'SOUTH-NORTH_PATCH_END_STAG' ,  ibuf , 1 , ierr )
 
     ibuf(1) = MAX(kps,kds)
+    IF ( .NOT. multi_files ( io_form ) ) ibuf(1) = kds
     CALL wrf_put_dom_ti_integer ( fid , 'BOTTOM-TOP_PATCH_START_UNSTAG' ,  ibuf , 1 , ierr )
     ibuf(1) = MIN(kpe,kde-1)
+    IF ( .NOT. multi_files ( io_form ) ) ibuf(1) = kde - 1
     CALL wrf_put_dom_ti_integer ( fid , 'BOTTOM-TOP_PATCH_END_UNSTAG' ,  ibuf , 1 , ierr )
     ibuf(1) = MAX(kps,kds)
+    IF ( .NOT. multi_files ( io_form ) ) ibuf(1) = kds
     CALL wrf_put_dom_ti_integer ( fid , 'BOTTOM-TOP_PATCH_START_STAG' ,  ibuf , 1 , ierr )
     ibuf(1) = MIN(kpe,kde)
+    IF ( .NOT. multi_files ( io_form ) ) ibuf(1) = kde
     CALL wrf_put_dom_ti_integer ( fid , 'BOTTOM-TOP_PATCH_END_STAG' ,  ibuf , 1 , ierr )
 #if (EM_CORE == 1)
     ibuf(1) = grid%id

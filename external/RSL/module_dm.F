@@ -332,24 +332,8 @@ CONTAINS
       integer dim
       if (      dim == 3 ) then
         CALL rsl_build_message(msg_z,TRUE_RSL_REAL_F90,fld_z,dim,decomp(1),glen(1),llen(1))
-#ifdef D3VAR_IRY_KLUDGE
-!
-! The transpose utility was developed in rsl originally with MM5 3DVAR in mind, and the way
-! the implementers worked around the I->Y issue was by calling I->X in the Registry but then
-! calling the other (Z2Y) transpose throughout the code to effect the correct orientation.
-! The result is that although it's basically wrong here for codes that actually are I->X,
-! we cannot fix it without breaking 3DVAR. Hence the KLUDGE to keep it the old wrong way
-! for 3DVAR and fix it for everyone else. There was already a D3VAR_KLUDGE needed in the
-! registry anyway, to make sure the WRF I/O API gets called properly -- again, to manage
-! this MM5 assumption that was hidden in the 3DVAR code -- so we can make use of that here.
-! This needs to be revisited once the I->Y assumption is purged from 3DVAR. JM 20020910
-!
-        CALL rsl_build_message(msg_x,TRUE_RSL_REAL_F90,fld_x,dim,decomp(1),glen(1),llen_tx(1))
-        CALL rsl_build_message(msg_y,TRUE_RSL_REAL_F90,fld_y,dim,decomp(1),glen(1),llen_ty(1))
-#else
         CALL rsl_build_message(msg_y,TRUE_RSL_REAL_F90,fld_x,dim,decomp(1),glen(1),llen_tx(1))  ! msg_y->msg_x 20020908
         CALL rsl_build_message(msg_x,TRUE_RSL_REAL_F90,fld_y,dim,decomp(1),glen(1),llen_ty(1))  ! msg_x->msg_y 20020908
-#endif
       endif
    END SUBROUTINE add_msg_xpose_real
 
@@ -360,13 +344,8 @@ CONTAINS
       integer dim
       if (      dim == 3 ) then
         CALL rsl_build_message(msg_z,RSL_DOUBLE_F90,fld_z,dim,decomp(1),glen(1),llen(1))
-#ifdef D3VAR_IRY_KLUDGE
-        CALL rsl_build_message(msg_x,RSL_DOUBLE_F90,fld_x,dim,decomp(1),glen(1),llen_tx(1))
-        CALL rsl_build_message(msg_y,RSL_DOUBLE_F90,fld_y,dim,decomp(1),glen(1),llen_ty(1))
-#else
         CALL rsl_build_message(msg_y,RSL_DOUBLE_F90,fld_x,dim,decomp(1),glen(1),llen_tx(1))  ! msg_y->msg_x 20020908
         CALL rsl_build_message(msg_x,RSL_DOUBLE_F90,fld_y,dim,decomp(1),glen(1),llen_ty(1))  ! msg_x->msg_y 20020908
-#endif
       endif
    END SUBROUTINE add_msg_xpose_doubleprecision
 #endif
@@ -378,13 +357,8 @@ CONTAINS
       integer dim
       if (      dim == 3 ) then
         CALL rsl_build_message(msg_z,RSL_INTEGER_F90,fld_z,dim,decomp(1),glen(1),llen(1))
-#ifdef D3VAR_IRY_KLUDGE
-        CALL rsl_build_message(msg_x,RSL_INTEGER_F90,fld_x,dim,decomp(1),glen(1),llen_tx(1))
-        CALL rsl_build_message(msg_y,RSL_INTEGER_F90,fld_y,dim,decomp(1),glen(1),llen_ty(1))
-#else
         CALL rsl_build_message(msg_y,RSL_INTEGER_F90,fld_x,dim,decomp(1),glen(1),llen_tx(1))  ! msg_y->msg_x 20020908
         CALL rsl_build_message(msg_x,RSL_INTEGER_F90,fld_y,dim,decomp(1),glen(1),llen_ty(1))  ! msg_x->msg_y 20020908
-#endif
       endif
    END SUBROUTINE add_msg_xpose_integer
 
@@ -2444,14 +2418,8 @@ messages(120)=  s5e5
 #endif
                                   idim   ,  jdim   ,  kdim   ,     &
                                   mloc   ,  nloc   ,  zloc   ,     &
-#ifdef D3VAR_IRY_KLUDGE
-! see comment above, 20020910 JM
-                                  mloc_x ,  nloc_x ,  zloc_x ,     &
-                                  mloc_y ,  nloc_y ,  zloc_y       )
-#else
                                   mloc_y ,  nloc_y ,  zloc_y ,     &   ! x->y 20020908
                                   mloc_x ,  nloc_x ,  zloc_x       )   ! y->x 20020908
-#endif
          CALL show_domain_decomp(domdesc)
          ! this computes the dimension information for the
          ! nest and passes these back
@@ -2496,14 +2464,8 @@ messages(120)=  s5e5
 #endif
                                   idim   ,  jdim   ,  kdim   ,     &
                                   mloc   ,  nloc   ,  zloc   ,     &
-#  ifdef D3VAR_IRY_KLUDGE
-! see comment above, 20020910 JM
-                                  mloc_x ,  nloc_x ,  zloc_x ,     &
-                                  mloc_y ,  nloc_y ,  zloc_y       )
-#  else
                                   mloc_y ,  nloc_y ,  zloc_y ,     &     ! x->y 20020910
                                   mloc_x ,  nloc_x ,  zloc_x       )     ! y->x 20020910
-#  endif
          CALL show_domain_decomp(domdesc)
          ! this computes the dimension information for the
          ! nest and passes these back
@@ -2813,11 +2775,7 @@ messages(120)=  s5e5
            sm1 = sp1
            em1 = sm1 + zloc - 1
 
-#ifdef D3VAR_IRY_KLUDGE
-           CALL rsl_reg_patchinfo_mz ( domdesc ,                       &
-#else
            CALL rsl_reg_patchinfo_nz ( domdesc ,                       &                    ! switched m->n 20020910
-#endif
                        sp2x , ep2x , sp3x , ep3x ,  sp1x , ep1x  )
            sp1x = sp1x - ( 1 - sd1 ) ; ep1x = ep1x - ( 1 - sd1 )   ! adjust if domain start not 1
            sp2x = sp2x - ( 1 - sd2 ) ; ep2x = ep2x - ( 1 - sd2 )
@@ -2829,11 +2787,7 @@ messages(120)=  s5e5
            sm1x = sp1x
            em1x = sm1x + zloc_x - 1
 
-#ifdef D3VAR_IRY_KLUDGE
-           CALL rsl_reg_patchinfo_nz ( domdesc ,                       &
-#else
            CALL rsl_reg_patchinfo_mz ( domdesc ,                       &                    ! switched n->m 20020910
-#endif
                        sp2y , ep2y , sp3y , ep3y ,  sp1y , ep1y  )
            sp1y = sp1y - ( 1 - sd1 ) ; ep1y = ep1y - ( 1 - sd1 )   ! adjust if domain start not 1
            sp2y = sp2y - ( 1 - sd2 ) ; ep2y = ep2y - ( 1 - sd2 )
@@ -2861,11 +2815,7 @@ messages(120)=  s5e5
            sm2 = sp2
            em2 = sm2 + zloc - 1
 
-#ifdef D3VAR_IRY_KLUDGE
-           CALL rsl_reg_patchinfo_mz ( domdesc ,                       &
-#else
            CALL rsl_reg_patchinfo_nz ( domdesc ,                       &   ! switched m->n 20020908
-#endif
                        sp1x , ep1x , sp3x , ep3x ,  sp2x , ep2x  )
            sp1x = sp1x - ( 1 - sd1 ) ; ep1x = ep1x - ( 1 - sd1 )   ! adjust if domain start not 1
            sp2x = sp2x - ( 1 - sd2 ) ; ep2x = ep2x - ( 1 - sd2 )
@@ -2877,11 +2827,7 @@ messages(120)=  s5e5
            sm2x = sp2x
            em2x = sm2x + zloc_x - 1
 
-#ifdef D3VAR_IRY_KLUDGE
-           CALL rsl_reg_patchinfo_nz ( domdesc ,                       &
-#else
            CALL rsl_reg_patchinfo_mz ( domdesc ,                       &   ! switched n->m 20020908
-#endif
                        sp1y , ep1y , sp3y , ep3y ,  sp2y , ep2y  )
            sp1y = sp1y - ( 1 - sd1 ) ; ep1y = ep1y - ( 1 - sd1 )   ! adjust if domain start not 1
            sp2y = sp2y - ( 1 - sd2 ) ; ep2y = ep2y - ( 1 - sd2 )
@@ -2907,11 +2853,7 @@ messages(120)=  s5e5
            sm3 = sp3
            em3 = sm3 + zloc - 1
 
-#ifdef D3VAR_IRY_KLUDGE
-           CALL rsl_reg_patchinfo_mz ( domdesc ,                       &
-#else
            CALL rsl_reg_patchinfo_nz ( domdesc ,                       &     ! switched m->n 20020910
-#endif
                        sp1x , ep1x , sp2x , ep2x ,  sp3x , ep3x  )
            sp1x = sp1x - ( 1 - sd1 ) ; ep1x = ep1x - ( 1 - sd1 )   ! adjust if domain start not 1
            sp2x = sp2x - ( 1 - sd2 ) ; ep2x = ep2x - ( 1 - sd2 )
@@ -2923,11 +2865,7 @@ messages(120)=  s5e5
            sm3x = sp3x
            em3x = sm3x + zloc_x - 1
 
-#ifdef D3VAR_IRY_KLUDGE
-           CALL rsl_reg_patchinfo_nz ( domdesc ,                       &
-#else
            CALL rsl_reg_patchinfo_mz ( domdesc ,                       &     ! switched n->m 20020910
-#endif
                        sp1y , ep1y , sp2y , ep2y ,  sp3y , ep3y  )
            sp1y = sp1y - ( 1 - sd1 ) ; ep1y = ep1y - ( 1 - sd1 )   ! adjust if domain start not 1
            sp2y = sp2y - ( 1 - sd2 ) ; ep2y = ep2y - ( 1 - sd2 )
@@ -2954,11 +2892,7 @@ messages(120)=  s5e5
            sm3 = sp3
            em3 = sm3 + zloc - 1
 
-#ifdef D3VAR_IRY_KLUDGE
-           CALL rsl_reg_patchinfo_mz ( domdesc ,                       &
-#else
            CALL rsl_reg_patchinfo_nz ( domdesc ,                       &     ! switched n->m 20020910
-#endif
                        sp2x , ep2x , sp1x , ep1x ,  sp3x , ep3x  )
            sp1x = sp1x - ( 1 - sd1 ) ; ep1x = ep1x - ( 1 - sd1 )   ! adjust if domain start not 1
            sp2x = sp2x - ( 1 - sd2 ) ; ep2x = ep2x - ( 1 - sd2 )
@@ -2970,11 +2904,7 @@ messages(120)=  s5e5
            sm3x = sp3x
            em3x = sm3x + zloc_x - 1
 
-#ifdef D3VAR_IRY_KLUDGE
-           CALL rsl_reg_patchinfo_nz ( domdesc ,                       &
-#else
            CALL rsl_reg_patchinfo_mz ( domdesc ,                       &     ! switched m->n 20020910
-#endif
                        sp2y , ep2y , sp1y , ep1y ,  sp3y , ep3y  )
            sp1y = sp1y - ( 1 - sd1 ) ; ep1y = ep1y - ( 1 - sd1 )   ! adjust if domain start not 1
            sp2y = sp2y - ( 1 - sd2 ) ; ep2y = ep2y - ( 1 - sd2 )
@@ -3555,11 +3485,7 @@ SUBROUTINE wrf_dm_xpose_z2y ( domdesc , comms , xpose_id )
    USE module_dm
    IMPLICIT NONE
    INTEGER domdesc , comms(*) , xpose_id
-#ifdef D3VAR_IRY_KLUDGE
-   CALL rsl_xpose_mn_nz ( domdesc , comms( xpose_id ) )
-#else
    CALL rsl_xpose_mn_mz ( domdesc , comms( xpose_id ) )      ! switched nz->mz 20020910
-#endif
    RETURN
 END SUBROUTINE wrf_dm_xpose_z2y
 
@@ -3567,11 +3493,7 @@ SUBROUTINE wrf_dm_xpose_y2z ( domdesc , comms , xpose_id )
    USE module_dm
    IMPLICIT NONE
    INTEGER domdesc , comms(*) , xpose_id
-#ifdef D3VAR_IRY_KLUDGE
-   CALL rsl_xpose_nz_mn ( domdesc , comms( xpose_id ) )
-#else
    CALL rsl_xpose_mz_mn ( domdesc , comms( xpose_id ) )      ! switched nz->mz 20020910
-#endif
    RETURN
 END SUBROUTINE wrf_dm_xpose_y2z
 
@@ -3579,11 +3501,7 @@ SUBROUTINE wrf_dm_xpose_y2x ( domdesc , comms , xpose_id )
    USE module_dm
    IMPLICIT NONE
    INTEGER domdesc , comms(*) , xpose_id
-#ifdef D3VAR_IRY_KLUDGE
-   CALL rsl_xpose_nz_mz ( domdesc , comms( xpose_id ) )
-#else
    CALL rsl_xpose_mz_nz ( domdesc , comms( xpose_id ) )      ! switched nz<->mz 20020910
-#endif
    RETURN
 END SUBROUTINE wrf_dm_xpose_y2x
 
@@ -3591,11 +3509,7 @@ SUBROUTINE wrf_dm_xpose_x2y ( domdesc , comms , xpose_id )
    USE module_dm
    IMPLICIT NONE
    INTEGER domdesc , comms(*) , xpose_id
-#ifdef D3VAR_IRY_KLUDGE
-   CALL rsl_xpose_mz_nz ( domdesc , comms( xpose_id ) )
-#else
    CALL rsl_xpose_nz_mz ( domdesc , comms( xpose_id ) )      ! switched nz<->mz 20020910
-#endif
    RETURN
 END SUBROUTINE wrf_dm_xpose_x2y
 
@@ -3603,11 +3517,7 @@ SUBROUTINE wrf_dm_xpose_x2z ( domdesc , comms , xpose_id )
    USE module_dm
    IMPLICIT NONE
    INTEGER domdesc , comms(*) , xpose_id
-#ifdef D3VAR_IRY_KLUDGE
-   CALL rsl_xpose_mz_mn ( domdesc , comms( xpose_id ) )
-#else
    CALL rsl_xpose_nz_mn ( domdesc , comms( xpose_id ) )      ! switched mz->nz 20020910
-#endif
    RETURN
 END SUBROUTINE wrf_dm_xpose_x2z
 
@@ -3615,11 +3525,7 @@ SUBROUTINE wrf_dm_xpose_z2x ( domdesc , comms , xpose_id )
    USE module_dm
    IMPLICIT NONE
    INTEGER domdesc , comms(*) , xpose_id
-#ifdef D3VAR_IRY_KLUDGE
-   CALL rsl_xpose_mn_mz ( domdesc , comms( xpose_id ) )
-#else
    CALL rsl_xpose_mn_nz ( domdesc , comms( xpose_id ) )      ! switched mz->nz 20020910
-#endif
    RETURN
 END SUBROUTINE wrf_dm_xpose_z2x
 
@@ -3963,17 +3869,10 @@ END
            IF ( .NOT. has_char( stagger, 'y' ) ) DE2 = DE2+1
            IF ( .NOT. has_char( stagger, 'z' ) ) DE3 = DE3+1
          CASE ( 'yxz','yx' )
-#ifndef D3VAR_IRY_KLUDGE
            ord = io3d_jik_internal ; ord2d = io2d_ji_internal
            IF ( .NOT. has_char( stagger, 'x' ) ) DE2 = DE2+1
            IF ( .NOT. has_char( stagger, 'y' ) ) DE1 = DE1+1
            IF ( .NOT. has_char( stagger, 'z' ) ) DE3 = DE3+1
-#else
-           ord = io3d_ijk_internal ; ord2d = io2d_ij_internal
-           IF ( .NOT. has_char( stagger, 'x' ) ) DE2 = DE2+1
-           IF ( .NOT. has_char( stagger, 'y' ) ) DE1 = DE1+1
-           IF ( .NOT. has_char( stagger, 'z' ) ) DE3 = DE3+1
-#endif
          CASE ( 'zxy' )
            IF ( .NOT. has_char( stagger, 'x' ) ) DE2 = DE2+1
            IF ( .NOT. has_char( stagger, 'y' ) ) DE3 = DE3+1
@@ -4164,17 +4063,10 @@ END
            IF ( .NOT. has_char( stagger, 'y' ) ) DE2 = DE2+1
            IF ( .NOT. has_char( stagger, 'z' ) ) DE3 = DE3+1
          CASE ( 'yxz','yx' )
-#ifndef D3VAR_IRY_KLUDGE
            ord = io3d_jik_internal ; ord2d = io2d_ji_internal
            IF ( .NOT. has_char( stagger, 'x' ) ) DE2 = DE2+1
            IF ( .NOT. has_char( stagger, 'y' ) ) DE1 = DE1+1
            IF ( .NOT. has_char( stagger, 'z' ) ) DE3 = DE3+1
-#else
-           ord = io3d_ijk_internal ; ord2d = io2d_ij_internal
-           IF ( .NOT. has_char( stagger, 'x' ) ) DE2 = DE2+1
-           IF ( .NOT. has_char( stagger, 'y' ) ) DE1 = DE1+1
-           IF ( .NOT. has_char( stagger, 'z' ) ) DE3 = DE3+1
-#endif
          CASE ( 'zxy' )
            ord = io3d_kij_internal ; ord2d = io2d_ij_internal
            IF ( .NOT. has_char( stagger, 'x' ) ) DE2 = DE2+1

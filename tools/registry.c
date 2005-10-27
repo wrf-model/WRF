@@ -61,7 +61,11 @@ main( int argc, char *argv[], char *env[] )
         sw_ifort_kludge = 1 ;
       }
       if (!strcmp(*argv,"-DD3VAR_IRY_KLUDGE")) {
+#if 0
         sw_3dvar_iry_kludge = 1 ;
+#else
+        fprintf(stderr,"WARNING: -DD3VAR_IRY_KLUDGE option obsolete (it is now disabled by default). Ignored.\n") ;
+#endif
       }
       if (!strcmp(*argv,"-DALL_X_STAGGERED")) {
         sw_all_x_staggered = 1 ;

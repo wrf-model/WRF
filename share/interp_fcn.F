@@ -848,7 +848,7 @@
 !compute dv/dt and store in bdy_t
 !afterwards store the new value of v at t into bdy
         ! WEST
-               IF   ( ni .ge. nids .and. ni .lt. nids + sz + ioff ) THEN
+               IF   ( ni .ge. nids .and. ni .lt. nids + sz ) THEN
                  bdy_t( nj,k,ni, P_XSB ) = rdt*(psca(ci+shw,cj+shw,ip+1+(jp)*nri)-nfld(ni,k,nj))
                  bdy( nj,k,ni, P_XSB ) = psca(ci+shw,cj+shw,ip+1+(jp)*nri )
                ENDIF

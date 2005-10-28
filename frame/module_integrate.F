@@ -333,6 +333,16 @@ RECURSIVE SUBROUTINE integrate ( grid )
          END DO
          !  Report on the timing for a single time step.
          IF ( wrf_dm_on_monitor() ) THEN
+! begin KLUDGE
+! ia32 pgi 6.0-2 and prescribed moving nest: the returned date string message2 is
+! corrupt after the first specified move UNLESS the string is initialized to all 
+! spaces - REMOVE THIS INIT OF MESSAGE2 WHEN POSSIBLE 
+! 2005 10 28
+            message2='                                                                ' // &
+                     '                                                                ' // &
+                     '                                                                ' // &
+                     '                                                                '
+! end KLUDGE
            CALL domain_clock_get ( grid, current_timestr=message2 )
            WRITE ( message , FMT = '("main: time ",A," on domain ",I3)' ) TRIM(message2), grid%id
            CALL end_timing ( TRIM(message) )

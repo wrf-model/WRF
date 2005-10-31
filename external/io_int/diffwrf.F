@@ -86,7 +86,8 @@ end module read_util_module
   integer :: ndim, ndim2
   real :: time, time2
   real*8 :: a, b
-  real*8 :: sum1, sum2, diff1, diff2, serr, perr, rms
+  real*8 :: sumE, sum1, sum2, diff1, diff2, serr, perr, rmse, rms1, rms2, tmp1, tmp2
+  integer digits,d1, d2
   integer, dimension(4) :: start_index, end_index, start_index2, end_index2
   integer , Dimension(3) :: MemS,MemE,PatS,PatE
   character (len= 4) :: staggering,   staggering2
@@ -340,6 +341,7 @@ else
         ENDIF
 
         IFDIFFS=0
+        sumE = 0.0
         sum1 = 0.0
         sum2 = 0.0
         diff1 = 0.0
@@ -354,7 +356,8 @@ else
               a = data(I,J,K,1)
               b = data2(I,J,K,1)
               ! borrowed from  Thomas Oppe's comp program
-              sum1 = sum1 + ( a - b ) * ( a - b )
+              sumE = sumE + ( a - b ) * ( a - b )
+              sum1 = sum1 + a * a
               sum2 = sum2 + b * b
               diff1 = max ( diff1 , abs ( a - b ) )
               diff2 = max ( diff2 , abs ( b ) )
@@ -367,28 +370,42 @@ else
           ENDDO
          ENDIF
         enddo
-        rms = sqrt ( sum1 / dble( n ) )
+        rmsE = sqrt ( sumE / dble( n ) )
+        rms1 = sqrt ( sum1 / dble( n ) )
+        rms2 = sqrt ( sum2 / dble( n ) )
+        serr = 0.0
         IF ( sum2 .GT. 0.0d0 ) THEN
-          serr = sqrt ( sum1 / sum2 )
+          serr = sqrt ( sumE / sum2 )
         ELSE
-          serr = sqrt ( sum1 )
+          IF ( sumE .GT. 0.0d0 ) serr = 1.0
         ENDIF
+        perr = 0.0
         IF ( diff2 .GT. 0.0d0 ) THEN
           perr = diff1/diff2
         ELSE
-          perr = diff1
+          IF ( diff1 .GT. 0.0d0 ) perr = 1.0
         ENDIF
-    
+
+        digits = 0
+        IF ( rms1 - rms2 .EQ. 0.0d0 ) THEN
+          digits = 15
+        ENDIF
+        IF ( rms2 .NE. 0 ) THEN
+          tmp1 = 1.0d0/( ( abs( rms1 - rms2 ) ) / rms2 )
+          IF ( tmp1 .NE. 0 ) THEN
+            digits = log10(tmp1)
+          ENDIF
+        ENDIF
 
         IF (IFDIFFS .NE. 0 ) THEN
            ! create the fort.88 and fort.98 files because regression scripts will
            ! look for these to see if there were differences.
            write(88,*)trim(varname)
            write(98,*)trim(varname)
+           PRINT 77,trim(varname), IFDIFFS, ndim, rms1, rms2, digits, rmsE, perr
+ 76 FORMAT (5x,'Field ',2x,'Ndifs',4x,'Dims ',6x,'RMS (1)',12x,'RMS (2)',5x,'DIGITS',4x,'RMSE',5x,'pntwise max')
+ 77 FORMAT ( A10,1x,I9,2x,I3,1x,e18.10,1x,e18.10,1x,i3,1x,e12.4,1x,e12.4 )
         ENDIF
-        PRINT 77,trim(varname), IFDIFFS, ndim, rms, serr, perr
- 76 FORMAT (5x,'Field ',2x,'Ndifs ',1x,'Dims ',6x,'RMS ',9x,'2-norm',8x,'pntwise max')
- 77 FORMAT ( A10,1x,I7,2x,I3,1x,e14.4,1x,e14.4,1x,e14.4 )
         deallocate(data)
         deallocate(data2)
 

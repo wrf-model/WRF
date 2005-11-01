@@ -6231,8 +6231,8 @@ CONTAINS
 
          PHALF(1)=0.
          PHALF(LP1)=PPI(I,kme)
-         DO L=1,LM1
-            PHALF(L+1)=PP(I,L) !  AETA(L)*PDIF+PT
+         DO K=1,LM1
+            PHALF(K+1)=PP(I,K) !  AETA(K)*PDIF+PT
          ENDDO
 
          CALL O3INT(PHALF,DDUO3N,DDO3N2,DDO3N3,DDO3N4, &

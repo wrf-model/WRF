@@ -386,11 +386,13 @@
           APEM1=(1.E5/PM1)**CAPA
 
         IF (NMM_TSK(I,J) .ge. 200.) THEN ! have a specific skin temp, use it
-               THS(I,J)=NMM_TSK(I,J)*(1.+P608*Q(I,KOFF+1,J))*APEM1
-               TSFCK=NMM_TSK(I,J)*(1.+P608*Q(I,KOFF+1,J))
+!mp               THS(I,J)=NMM_TSK(I,J)*(1.+P608*Q(I,KOFF+1,J))*APEM1
+               THS(I,J)=NMM_TSK(I,J)*APEM1
+               TSFCK=NMM_TSK(I,J)
 	ELSE ! use lowest layer as a proxy
-          THS(I,J)=T(I,KOFF+1,J)*(1.+P608*Q(I,KOFF+1,J))*APEM1
-          TSFCK=T(I,KOFF+1,J)*(1.+P608*Q(I,KOFF+1,J))
+!mp          THS(I,J)=T(I,KOFF+1,J)*(1.+P608*Q(I,KOFF+1,J))*APEM1
+          THS(I,J)=T(I,KOFF+1,J)*APEM1
+          TSFCK=T(I,KOFF+1,J)
 	ENDIF
 
 	if (I .eq. IFE/2 .and. J .eq. JFE/2) then
@@ -432,6 +434,10 @@
 !***
 !***  INITIALIZE CLOUD FIELDS
 !***
+      IF (MAXVAL(CWM) .gt. 0. .and. MAXVAL(CWM) .lt. 1.) then
+        write(0,*) 'appear to have CWM values...do not zero'
+      ELSE
+        write(0,*) 'zeroing CWM'
         DO J=JFS,JFE
           DO K=KPS,KPE
           DO I=IFS,IFE
@@ -439,6 +445,7 @@
           ENDDO
           ENDDO
         ENDDO
+      ENDIF
 !***
 !***  INITIALIZE ACCUMULATOR ARRAYS TO ZERO.
 !***
@@ -531,12 +538,6 @@
         CALL wrf_message('INIT:  INITIALIZED ARRAYS FOR CLEAN START')
       ENDIF ! <--- (not restart)
 
-
-!
-!----------------------------------------------------------------------
-!***  INITIALIZE PHYSICS VARIABLES IF STARTING THIS RUN FROM SCRATCH.
-!----------------------------------------------------------------------
-!
       IF(NEST)THEN
         DO J=JFS,JFE
         DO I=IFS,IFE
@@ -554,174 +555,6 @@
         ENDDO
       ENDIF
 !
-      IF(.NOT.RESTRT)THEN
-        DO J=JFS,JFE
-        DO I=IFS,IFE
-          LLMH=LMH(I,J)
-          KOFF=KPE-1-LLMH
-          PDSL(I,J)  =PD(I,J)*RES(I,J)
-          PREC(I,J)  =0.
-          ACPREC(I,J)=0.
-          CUPREC(I,J)=0.
-!          Z0(I,J)    =SM(I,J)*Z0SEA+(1.-SM(I,J))*                      &
-!                      (FIS(I,J)*FCM+Z0LAND+Z0(I,J))
-          QS(I,J)    =0.
-          AKMS(I,J)  =0.
-          AKHS(I,J)  =0.
-          TWBS(I,J)  =0.
-          QWBS(I,J)  =0.
-          CLDEFI(I,J)=1.
-!!!!          HTOP(I,J)  =REAL(LLMH)
-!!!!          HBOT(I,J)  =REAL(LLMH)
-          HTOP(I,J)  =REAL(KTS)
-          HBOT(I,J)  =REAL(KTE)
-!***
-!***  AT THIS POINT, WE MUST CALCULATE THE INITIAL POTENTIAL TEMPERATURE
-!***  OF THE SURFACE AND OF THE SUBGROUND.
-!***  EXTRAPOLATE DOWN FOR INITIAL SURFACE POTENTIAL TEMPERATURE.
-!***  ALSO DO THE SHELTER PRESSURE.
-!***
-          PM1=AETA1(KOFF+1)*PDTOP+AETA2(KOFF+1)*PDSL(I,J)+PT
-          APEM1=(1.E5/PM1)**CAPA
-        IF (NMM_TSK(I,J) .ge. 200.) THEN ! have a specific skin temp, use it
-               THS(I,J)=NMM_TSK(I,J)*(1.+P608*Q(I,KOFF+1,J))*APEM1
-               TSFCK=NMM_TSK(I,J)*(1.+P608*Q(I,KOFF+1,J))
-	ELSE ! use lowest layer as a proxy
-          THS(I,J)=T(I,KOFF+1,J)*(1.+P608*Q(I,KOFF+1,J))*APEM1
-          TSFCK=T(I,KOFF+1,J)*(1.+P608*Q(I,KOFF+1,J))
-	ENDIF
-!!!!!          THS(I,J)=T(I,KOFF+1,J)*(1.+P608*Q(I,KOFF+1,J))*APEM1
-!               THS(I,J)=NMM_TSK(I,J)*(1.+P608*Q(I,KOFF+1,J))*APEM1
-!!          TSFCK=T(I,KOFF+1,J)*(1.+P608*Q(I,KOFF+1,J))
-!               TSFCK=NMM_TSK(I,J)*(1.+P608*Q(I,KOFF+1,J))
-
-          PSFCK=PD(I,J)+PDTOP+PT
-!
-          IF(SM(I,J).LT.0.5) THEN
-            QS(I,J)=PQ0/PSFCK*EXP(A2*(TSFCK-A3)/(TSFCK-A4))
-          ELSEIF(SM(I,J).GT.0.5) THEN
-!reinstated below 1020
-            THS(I,J)=SST(I,J)*(1.E5/(PD(I,J)+PDTOP+PT))**CAPA
-          ENDIF
-
-	IF (THS(I,J) .lt. 200) then
-	write(6,*) 'bad THS in start_domain_nmm: ', I,J,THS(I,J)
-	endif
-!
-          TERM1=-0.068283/T(I,KOFF+1,J)
-          PSHLTR(I,J)=(PD(I,J)+PDTOP+PT)*EXP(TERM1)
-!
-          USTAR(I,J)=0.1
-          THZ0(I,J)=THS(I,J)
-          QZ0(I,J)=QS(I,J)
-          UZ0(I,J)=0.
-          VZ0(I,J)=0.
-! 
-        ENDDO
-        ENDDO
-!***
-!***  INITIALIZE CLOUD FIELDS
-!***
-        DO J=JFS,JFE
-          DO K=KPS,KPE
-          DO I=IFS,IFE
-            CWM(I,K,J)=0.
-          ENDDO
-          ENDDO
-        ENDDO
-!***
-!***  INITIALIZE ACCUMULATOR ARRAYS TO ZERO.
-!***
-        ARDSW=0.0
-        ARDLW=0.0
-        ASRFC=0.0
-        AVRAIN=0.0
-        AVCNVC=0.0
-!
-        DO J=JFS,JFE
-        DO I=IFS,IFE
-          ACFRCV(I,J)=0.
-          NCFRCV(I,J)=0
-          ACFRST(I,J)=0.
-          NCFRST(I,J)=0
-          ACSNOW(I,J)=0.
-          ACSNOM(I,J)=0.
-          SSROFF(I,J)=0.
-          BGROFF(I,J)=0.
-          ALWIN(I,J) =0.
-          ALWOUT(I,J)=0.
-          ALWTOA(I,J)=0.
-          ASWIN(I,J) =0.
-          ASWOUT(I,J)=0.
-          ASWTOA(I,J)=0.
-          SFCSHX(I,J)=0.
-          SFCLHX(I,J)=0.
-          SUBSHX(I,J)=0.
-          SNOPCX(I,J)=0.
-          SFCUVX(I,J)=0.
-          SFCEVP(I,J)=0.
-          POTEVP(I,J)=0.
-          POTFLX(I,J)=0.
-        ENDDO
-        ENDDO
-!***
-!***  INITIALIZE SATURATION SPECIFIC HUMIDITY OVER THE WATER.
-!***
-        EPS=R_D/R_V
-!
-        DO J=JFS,JFE
-        DO I=IFS,IFE
-          IF(SM(I,J).GT.0.5)THEN
-            CLOGES =-CM1/SST(I,J)-CM2*ALOG10(SST(I,J))+CM3
-            ESE    = 10.**(CLOGES+2.)
-            QS(I,J)= SM(I,J)*EPS*ESE/(PD(I,J)+PDTOP+PT-ESE*(1.-EPS))
-          ENDIF
-        ENDDO
-        ENDDO
-!***  
-!***  INITIALIZE TURBULENT KINETIC ENERGY (TKE) TO A SMALL
-!***  VALUE (EPSQ2) ABOVE GROUND.  SET TKE TO ZERO IN THE
-!***  THE LOWEST MODEL LAYER.  IN THE LOWEST TWO ATMOSPHERIC
-!***  ETA LAYERS SET TKE TO A SMALL VALUE (Q2INI).
-!***
-        DO J=JFS,JFE
-        DO K=KPS,KPE-1
-        DO I=IFS,IFE
-!!!tlb    Q2(I,K,J)=HTM(I,K+1,J)*HBM2(I,J)*EPSQ2
-          Q2(I,K+1,J)=HTM(I,K,J)*HBM2(I,J)*EPSQ2
-        ENDDO
-        ENDDO
-        ENDDO
-!
-        DO J=JFS,JFE
-        DO I=IFS,IFE
-          Q2(I,KPS,J)    = 0.
-          LLMH          = LMH(I,J)
-          Q2(I,KOFF+2,J)= HBM2(I,J)*Q2INI
-          Q2(I,KOFF+3,J)= HBM2(I,J)*Q2INI
-        ENDDO
-        ENDDO
-!***  
-!***  PAD ABOVE GROUND SPECIFIC HUMIDITY IF IT IS TOO SMALL.
-!***  INITIALIZE LATENT HEATING ACCUMULATION ARRAYS.
-!***
-        DO J=JFS,JFE
-        DO K=KPS,KPE
-        DO I=IFS,IFE
-          IF(Q(I,K,J).LT.EPSQ)Q(I,K,J)=EPSQ*HTM(I,K,J)
-          TRAIN(I,K,J)=0.
-          TCUCN(I,K,J)=0.
-        ENDDO
-        ENDDO
-        ENDDO
-!
-!----------------------------------------------------------------------
-!***  END OF SCRATCH START INITIALIZATION BLOCK.
-!----------------------------------------------------------------------
-!
-        CALL wrf_message('INIT:  INITIALIZED ARRAYS FOR CLEAN START')
-      ENDIF
-!
 !----------------------------------------------------------------------
 !***  RESTART INITIALIZING.  CHECK TO SEE IF WE NEED TO ZERO
 !***  ACCUMULATION ARRAYS.
@@ -736,9 +569,9 @@
       TPREC=06.0
       THEAT=06.0
       TCLOD=06.0
-      TRDSW=03.0
-      TRDLW=03.0
-      TSRFC=03.0
+      TRDSW=06.0
+      TRDLW=06.0
+      TSRFC=06.0
 
       NSTART = INT(TSTART*TSPH+0.5)
 
@@ -1398,18 +1231,27 @@
           V10(I,J)=VLM
         ENDIF
 !
-        FAC1=2./DZLM
-        FAC2=(DZLM-2.)/DZLM
-        IF(DZLM.LE.2.)THEN
-          FAC1=1.
-          FAC2=0.
-        ENDIF
+!        FAC1=2./DZLM
+!        FAC2=(DZLM-2.)/DZLM
+!        IF(DZLM.LE.2.)THEN
+!          FAC1=1.
+!          FAC2=0.
+!        ENDIF
 !
         IF(.NOT.RESTRT.OR.NEST)THEN
-!mp          TSHLTR(I,J)=FAC2*THS(I,J)+FAC1*THLM
-          TSHLTR(I,J)=0.2*THS(I,J)+0.8*THLM
-!mp          QSHLTR(I,J)=FAC2*QS(I,J)+FAC1*QLM
-          QSHLTR(I,J)=0.2*QS(I,J)+0.8*QLM
+
+	IF ( (THLM-THS(I,J)) .gt. 2.0) THEN  ! weight differently in different scenarios
+	 FAC1=0.3
+         FAC2=0.7
+        ELSE
+         FAC1=0.8
+         FAC2=0.2
+        ENDIF
+
+          TSHLTR(I,J)=FAC2*THS(I,J)+FAC1*THLM
+!          TSHLTR(I,J)=0.2*THS(I,J)+0.8*THLM
+          QSHLTR(I,J)=FAC2*QS(I,J)+FAC1*QLM
+!          QSHLTR(I,J)=0.2*QS(I,J)+0.8*QLM
         ENDIF
 !***
 !***  NEED TO CONVERT TO THETA IF IS THE RESTART CASE
@@ -1638,18 +1480,18 @@
      &        +THS(I,J)*(2.-SM(I,J))
         TSFC(I,J)=THSIJ/EXNSFC
 !
-        DO K=KTS,KTE-1
-          PLYR=(PINT(I,K,J)+PINT(I,K+1,J))*0.5
-          TL=T(I,K,J)
-          CWML=CWM(I,K,J)
+!        DO K=KTS,KTE-1
+!         PLYR=(PINT(I,K,J)+PINT(I,K+1,J))*0.5
+!         TL=T(I,K,J)
+!         CWML=CWM(I,K,J)
 !!!       ZINT(I,K+1,J)=ZINT(I,K,J)+TL/PLYR                             &
 !!!  &                  *(DETA1(K)*PDTOP+DETA2(K)*PDSL(I,J))*ROG        &
 !!!  &                  *(Q(I,K,J)*P608-CWML+1.)
-        ENDDO
+!        ENDDO
 !
-        DO K=KTS,KTE
+!        DO K=KTS,KTE
 !!!       ZMID(I,K,J)=0.5*(ZINT(I,K,J)+ZINT(I,K+1,J))
-        ENDDO
+!        ENDDO
       ENDDO
       ENDDO
 !
@@ -1680,11 +1522,13 @@
 
        LU_INDEX=IVGTYP
 
+         IF (.NOT. RESTRT) THEN
       DO J=MYJS,MYJE
       DO I=MYIS,MYIE
-	Z0_DUM(I,J)=Z0(I,J) ! hold topography component
+	Z0_DUM(I,J)=Z0(I,J) ! hold
       ENDDO
       ENDDO
+         ENDIF
 
 ! Several arguments are RCONFIG entries in Registry.NMM. Registry no longer
 ! includes these as dummy arguments or declares them.  Access them from 
@@ -1722,11 +1566,57 @@
      &             ,its, ite, jts, jte, kts, kte)
 !-----------------------------------------------------------------------
 !
+
+!mp replace F*_PHY with values defined in module_initialize_real.F?
+
+	IF (.NOT. RESTRT) THEN
+        IF (maxval(F_ICE) .gt. 0.) THEN
+        write(0,*) 'F_ICE > 0'
+         do J=JMS,JME
+         do K=KMS,KME
+         do I=IMS,IME
+          F_ICE_PHY(I,K,J)=F_ICE(I,K,J)
+         enddo
+         enddo
+         enddo
+        ENDIF
+
+        IF (maxval(F_RAIN) .gt. 0.) THEN
+        write(0,*) 'F_RAIN > 0'
+         do J=JMS,JME
+         do K=KMS,KME
+         do I=IMS,IME
+          F_RAIN_PHY(I,K,J)=F_ICE(I,K,J)
+         enddo
+         enddo
+         enddo
+        ENDIF
+
+        IF (maxval(F_RIMEF) .gt. 0.) THEN
+        write(0,*) 'F_RIMEF > 0'
+         do J=JMS,JME
+         do K=KMS,KME
+         do I=IMS,IME
+          F_RIMEF_PHY(I,K,J)=F_RIMEF(I,K,J)
+         enddo
+         enddo
+         enddo
+        ENDIF
+	ENDIF
+
+!mp
+        IF (.NOT. RESTRT) THEN
       DO J=JMS,JME
       DO I=IMS,IME
-	Z0(I,J)=Z0_DUM(I,J)+0.5*Z0(I,J) ! add 1/2 of veg Z0 component, 
+        Z0(I,J)=Z0_DUM(I,J)+0.5*Z0(I,J) ! add 1/2 of veg Z0 component,
                                         ! expecting this code to be called
                                         ! both by real and by the model.
+      ENDDO
+      ENDDO
+        ENDIF
+
+      DO J=JMS,JME
+      DO I=IMS,IME
         APREC(I,J)=RAINNC(I,J)*1.E-3
         CUPREC(I,J)=RAINCV(I,J)*1.E-3
       ENDDO

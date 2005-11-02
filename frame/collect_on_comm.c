@@ -184,18 +184,30 @@ extern int maxstug, nouty, maxouty ;
 #endif
 
 #if 0
-/*  used internally for chasing memory leaks  */
+#include <unistd.h>
+#include <sys/times.h>
+/*  used internally for chasing memory leaks on ibm  */
 rlim_ ()
 {
-
 #ifndef MACOS
+
    struct rusage r_usage ;
    struct mallinfo minf ;
+   struct tms  tm ;
+   long tick, tock ;
+
+   tick = sysconf( _SC_CLK_TCK ) ;
+   times( &tm ) ;
+   tock = (tm.tms_utime + tm.tms_stime)*tick ;
 
    getrusage ( RUSAGE_SELF, &r_usage ) ;
-   fprintf(stderr,"sm %ld d %ld s %ld\n",r_usage.ru_ixrss,r_usage.ru_idrss,r_usage.ru_isrss) ;
+   if ( tock != 0 ) {
+     fprintf(stderr,"sm %ld d %ld s %ld maxrss %ld %d %d %ld\n",r_usage.ru_ixrss/tock,r_usage.ru_idrss/tock,r_usage.ru_isrss/tock, r
+_usage.ru_maxrss,tick,tock,r_usage.ru_ixrss) ;
+   }
    minf = mallinfo() ;
-   fprintf(stderr,"a %ld usm %ld fsm %ld uord %ld ford %ld hblkhd %d\n",minf.arena,minf.usmblks,minf.fsmblks,minf.uordblks,minf.fordblks,minf.hblkhd) ;
+   fprintf(stderr,"a %ld usm %ld fsm %ld uord %ld ford %ld hblkhd %d\n",minf.arena,minf.usmblks,minf.fsmblks,minf.uordblks,minf.ford
+blks,minf.hblkhd) ;
 # if 0
    fprintf(stderr," outy %d  nouty %d  maxstug %d maxouty %d \n", outy, nouty, maxstug, maxouty ) ;
 # endif

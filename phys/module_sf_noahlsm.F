@@ -4015,7 +4015,11 @@ CONTAINS
 ! ADJUSTMENT OF SNOW DENSITY DEPENDING ON NEW SNOWFALL                           
 ! ----------------------------------------------------------------------         
       HNEWC = NEWSNC / DSNEW                                                     
-      SNDENS = (SNOWHC * SNDENS + HNEWC * DSNEW)/ (SNOWHC + HNEWC)               
+      IF (SNOWHC + HNEWC .LT. 1.0E-3) THEN
+         SNDENS = MAX(DSNEW,SNDENS)
+      ELSE
+         SNDENS = (SNOWHC * SNDENS + HNEWC * DSNEW)/ (SNOWHC + HNEWC)               
+      ENDIF
       SNOWHC = SNOWHC + HNEWC                                                    
       SNOWH = SNOWHC *0.01                                                       
                                                                                  

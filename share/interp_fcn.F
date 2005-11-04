@@ -84,7 +84,7 @@
               DO i = cims,cime
                 ni = (i-ipos) * nri + 2   ! i point on nest
                 if ( ni .ge. nits-nioff-1 .and. ni .le. nite+nioff+1 .and. nj .ge. njts-njoff-1 .and. nj .le. njte+njoff+1 ) then
-                  if ( imask(ni,nj) .eq. 1 ) then
+                  if ( imask(ni,nj) .eq. 1 .or. imask(ni-nioff,nj-njoff) .eq. 1 ) then
                     icmask( i, j ) = .TRUE.
                   endif
                 endif
@@ -112,7 +112,7 @@
            nk = k
            ck = nk
            DO ni = nits, nite+ioff
-               ci = ipos + (ni-1) / nri      ! j coord of CD point 
+               ci = ipos + (ni-1) / nri      ! i coord of CD point 
                ip = mod ( ni-1 , nri )  ! coord of ND w/i CD point
                if ( imask ( ni, nj ) .eq. 1 .or. imask ( ni-ioff, nj-joff ) .eq. 1  ) then
                  nfld( ni-ioff, nk, nj-joff ) = psca( ci , cj, ip+1 + (jp)*nri )

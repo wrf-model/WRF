@@ -3,8 +3,8 @@
 MODULE module_sf_sfclay
 
  REAL    , PARAMETER ::  VCONVC=1.
- REAL    , PARAMETER ::  CZO=0.032
- REAL    , PARAMETER ::  OZO=1.E-4
+ REAL    , PARAMETER ::  CZO=0.0185
+ REAL    , PARAMETER ::  OZO=1.59E-5
 
  REAL,   DIMENSION(0:1000 ),SAVE          :: PSIMTB,PSIHTB
 

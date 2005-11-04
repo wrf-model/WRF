@@ -125,7 +125,7 @@
       first_trip_for_this_domain = .FALSE.
    END IF
 
-   IF ( .not. config_flags%restart ) THEN 
+   IF ( .not. ( config_flags%restart .or. moved ) ) THEN 
        itimestep=0
    ENDIF
 

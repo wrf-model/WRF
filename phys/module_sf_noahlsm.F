@@ -2740,7 +2740,7 @@ CONTAINS
 ! SHFLX BELOW) FOR USE IN COMPUTING SUBSURFACE HEAT FLUX IN HRT                  
 ! ----------------------------------------------------------------------         
 !      YYNUM = FDOWN - SIGMA * T24                                                
-	      YYNUM = FDOWN - EMISSI*SIGMA * T24
+      YYNUM = FDOWN - EMISSI*SIGMA * T24
       YY = SFCTMP + (YYNUM / RCH + TH2- SFCTMP - BETA * EPSCA) / RR              
                                                                                  
       ZZ1 = DF1 / ( -0.5 * ZSOIL (1) * RCH * RR ) + 1.0                          

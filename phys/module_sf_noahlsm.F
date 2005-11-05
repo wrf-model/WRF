@@ -2740,7 +2740,7 @@ CONTAINS
 ! SHFLX BELOW) FOR USE IN COMPUTING SUBSURFACE HEAT FLUX IN HRT                  
 ! ----------------------------------------------------------------------         
 !      YYNUM = FDOWN - SIGMA * T24                                                
-      YYNUM = FDOWN - EMISSI*SIGMA * T1**4
+	      YYNUM = FDOWN - EMISSI*SIGMA * T24
       YY = SFCTMP + (YYNUM / RCH + TH2- SFCTMP - BETA * EPSCA) / RR              
                                                                                  
       ZZ1 = DF1 / ( -0.5 * ZSOIL (1) * RCH * RR ) + 1.0                          
@@ -3631,7 +3631,7 @@ CONTAINS
 !      write(*,*) 'T12A,T12AX=',T12A,T12AX                                       
 !Place for emiss, snow emiss=0.90
 !      T12A = ( (FDOWN - FLX1- FLX2- SIGMA * T24)/ RCH                   &        
-      T12A = ( (FDOWN - FLX1- FLX2- EMISSI_S*SIGMA * T1**4)/ RCH            &
+      T12A = ( (FDOWN - FLX1- FLX2- EMISSI_S*SIGMA * T24)/ RCH            &
      &       + TH2- SFCTMP - ETANRG / RCH ) / RR                                 
       T12B = DF1 * STC (1) / (DTOT * RR * RCH)                                   
                                                                                  

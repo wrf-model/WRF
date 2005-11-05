@@ -402,7 +402,14 @@ BENCH_START(set_phys_bc_tim)
                                grid%i_start(ij), grid%i_end(ij),  &
                                grid%j_start(ij), grid%j_end(ij),  &
                                k_start, k_end                )
-
+       !TBH:  need this 2nd timestep and later
+       CALL set_physical_bc3d( al, 'p', config_flags,            &
+                               ids, ide, jds, jde, kds, kde,     &
+                               ims, ime, jms, jme, kms, kme,     &
+                               ips, ipe, jps, jpe, kps, kpe,     &
+                               grid%i_start(ij), grid%i_end(ij), &
+                               grid%j_start(ij), grid%j_end(ij), &
+                               k_start    , k_end               )
        CALL set_physical_bc3d( ph_2, 'w', config_flags,            &
                                  ids, ide, jds, jde, kds, kde, &
                                  ims, ime, jms, jme, kms, kme, &

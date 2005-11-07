@@ -6387,6 +6387,11 @@ module_initialize_real.o module_dm.o  start_domain.o :
 #  the environment variable MPI_DSM_CPULIST may be used
 #  (details in 'man mpi').
 #
+#  Adding -mP3OPT_ecg_lra_switch=T to the compiler options for
+#  modules/routines that take a long time to compile but do not
+#  significantly contribute to the total runtime performance is 
+#  appropriate.  Temporary suggestion for 2.1.1, Nov 2005.
+#
 # Contributed settings from Gerardo Cisneros, SGI
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
@@ -6529,6 +6534,11 @@ mediation_force_domain.o:
 #  the environment variable MPI_DSM_CPULIST may be used
 #  (details in 'man mpi').
 #
+#  Adding -mP3OPT_ecg_lra_switch=T to the compiler options for
+#  modules/routines that take a long time to compile but do not
+#  significantly contribute to the total runtime performance is 
+#  appropriate.  Temporary suggestion for 2.1.1, Nov 2005.
+#
 # Contributed settings from Gerardo Cisneros, SGI
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
@@ -6664,6 +6674,11 @@ mediation_force_domain.o:
 #  other cases, if specific processors are known to be free,
 #  the environment variable MPI_DSM_CPULIST may be used
 #  (details in 'man mpi').
+#
+#  Adding -mP3OPT_ecg_lra_switch=T to the compiler options for
+#  modules/routines that take a long time to compile but do not
+#  significantly contribute to the total runtime performance is 
+#  appropriate.  Temporary suggestion for 2.1.1, Nov 2005.
 #
 # Contributed settings from Gerardo Cisneros, SGI
 #
@@ -6803,6 +6818,11 @@ mediation_force_domain.o:
 #  the environment variable MPI_DSM_CPULIST may be used
 #  (details in 'man mpi').
 #
+#  Adding -mP3OPT_ecg_lra_switch=T to the compiler options for
+#  modules/routines that take a long time to compile but do not
+#  significantly contribute to the total runtime performance is 
+#  appropriate.  Temporary suggestion for 2.1.1, Nov 2005.
+#
 # Contributed settings from Gerardo Cisneros, SGI
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
@@ -6928,6 +6948,11 @@ mediation_force_domain.o:
 #  'setenv F_UFMTENDIAN big' in run scripts not necessary
 #  since -convert big_endian is in FCBASEOPTS
 #
+#  Adding -mP3OPT_ecg_lra_switch=T to the compiler options for
+#  modules/routines that take a long time to compile but do not
+#  significantly contribute to the total runtime performance is 
+#  appropriate.  Temporary suggestion for 2.1.1, Nov 2005.
+#
 # Contributed settings from Gerardo Cisneros, SGI
 # Set up only for idealized experiments
 #
@@ -7040,6 +7065,11 @@ mediation_force_domain.o:
 #
 #  'setenv F_UFMTENDIAN big' in run scripts not necessary
 #  since -convert big_endian is in FCBASEOPTS
+#
+#  Adding -mP3OPT_ecg_lra_switch=T to the compiler options for
+#  modules/routines that take a long time to compile but do not
+#  significantly contribute to the total runtime performance is 
+#  appropriate.  Temporary suggestion for 2.1.1, Nov 2005.
 #
 # Contributed settings from Gerardo Cisneros, SGI
 #

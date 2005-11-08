@@ -1,4 +1,4 @@
-WRF Model Version 2.1.1 (October 2005)
+WRF Model Version 2.1.1 (November 2005)
 
 ------------------------
 WRF PUBLIC DOMAIN NOTICE
@@ -24,17 +24,20 @@ infringement actions.
 
 ======================================
 
-V2.1.1 Release Notes:
+V2.1 Release Notes:
+-----------------
+
+V2.1 Release Notes:
 -----------------
 
 This is the main directory for the WRF Version 2 source code release.
 
 - For directions on compiling WRF, see below or Users Web page.
-- For more information on WRF V2.1.1 release, visit WRF Users home page
+- For more information on WRF V2.1 release, visit WRF Users home page
   http://www.mmm.ucar.edu/wrf/users/
 - Use WRFSI 2.0.3 or 2.1 (http://wrfsi.noaa.gov) for real-data preparation.
 - Must rerun real.exe to generate new wrfbdy_d01/wrfinput_d01 for wrf.exe.
-- WRF V2.1's namelist has some changes from 2.0.3.1). Edit with caution.
+- WRF V2.1's namelist has some changes from 2.0.3.1. Edit with caution.
 - Need to have gribmap.txt in your run directory.
 
 For questions, send mail to wrfhelp@ucar.edu
@@ -48,6 +51,7 @@ V2 update history:
 - V2.0.3: Nov 12, 2004 
   V2.0.3.1: Dec 3, 2004
 - V2.1: August 4, 2005
+- V2.1.1: Nov 8, 2005
 
 ======================================
 

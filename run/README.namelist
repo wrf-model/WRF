@@ -340,7 +340,7 @@ Namelist variables for controling the automatic moving nest:
                                                   best to use even numbers)
 
 
- &bc_control
+ &bdy_control
  spec_bdy_width                      = 5,       ; total number of rows for specified boundary value nudging
  spec_zone                           = 1,       ; number of points in specified zone (spec b.c. option)
  relax_zone                          = 4,       ; number of points in relaxation zone (spec b.c. option)

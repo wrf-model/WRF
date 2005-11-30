@@ -31,6 +31,11 @@ SUBROUTINE solve_interface ( grid )
 
    INTEGER     :: idum1, idum2
 
+! ADDED THIS FOR BILL S
+#if (EM_CORE == 1 && DA_CORE != 1)
+#include <em_i1_decl.inc>
+#endif
+
 #ifdef DEREF_KLUDGE
 !  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
    INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
@@ -51,6 +56,9 @@ SUBROUTINE solve_interface ( grid )
    ELSE IF ( config_flags%dyn_opt == DYN_EM  ) THEN
      CALL solve_em  ( grid , config_flags , &
 !
+! ADDED THIS FOR BILL S
+# include <i1_args.inc>
+               , &
 # include <em_actual_args.inc>
 !
                )

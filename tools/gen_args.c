@@ -21,6 +21,16 @@ gen_actual_args ( char * dirname )
 }
 
 int
+gen_i1_args ( char * dirname )
+{
+  int i ;
+
+  gen_args ( dirname , "i1" , DUMMY ) ;
+
+  return(0) ;
+}
+
+int
 gen_dummy_args ( char * dirname )
 {
   int i ;
@@ -43,10 +53,10 @@ gen_args ( char * dirname , char * corename , int sw )
   if ( dirname == NULL || corename == NULL ) return(1) ;
   if ( strlen(dirname) > 0 ) 
    { sprintf(fname,"%s/%s%s%s",dirname,corename,
-             (sw==ACTUAL)?"_actual":"_dummy",fn) ; }
+             (sw==ACTUAL)?"_actual":((!strcmp(corename,"i1"))?"":"_dummy"),fn) ; }
   else                       
    { sprintf(fname,"%s%s%s",corename,
-             (sw==ACTUAL)?"_actual":"_dummy",fn) ; }
+             (sw==ACTUAL)?"_actual":((!strcmp(corename,"i1"))?"":"_dummy"),fn) ; }
 
   if ((fp = fopen( fname , "w" )) == NULL ) return(1) ;
   print_warning(fp,fname) ;
@@ -76,12 +86,17 @@ gen_args1 ( FILE * fp , char * outstr , char * structname , char * corename ,
   if ( node == NULL ) return(1) ;
   for ( p = node->fields ; p != NULL ; p = p->next )
   {
-    if ( p->node_kind & I1 ) continue ;              /* short circuit any field that is not state */
+    if ( !strcmp(corename,"i1" ) )  {   /* if corename is i1 */
+      if (!((p->node_kind & I1) || (p->node_kind & FOURD))) { continue ; /* short circuit anything that is not i1 */ }
+    } else {
+      if (   (p->node_kind & I1) ) continue ; /* short circuit arguments that are not state */
+    } 
                                                      /* short circuit scalars; shortening argument lists */
     if ( p->ndims == 0 && p->type->type_type != DERIVED && sw_limit_args ) continue ; 
 
     if (                 (
           (p->node_kind & FOURD)                   /* scalar arrays or... */
+       || (p->node_kind & I1 )                     /* i1 variables */
                                                    /* if it's a core specific field and we're doing that core or... */
        || (p->node_kind & FIELD && (!strncmp("dyn_",p->use,4)&&!strcmp(corename,p->use+4))) 
                                                    /* it is not a core specific field and it is not a derived type -ajb */
@@ -102,8 +117,14 @@ gen_args1 ( FILE * fp , char * outstr , char * structname , char * corename ,
         /* the variable at the driver level */
         if (!strcmp( corename , p->use+4 ) && sw==ACTUAL)
           sprintf(fname,"%s_%s",corename,field_name(t4,p,(p->ntl>1)?tag:0)) ;
-        else
-          strcpy(fname,field_name(t4,p,(p->ntl>1)?tag:0)) ;
+        else {
+          if ( !strcmp(corename,"i1") && p->node_kind & FOURD ) {
+            sprintf(t4,"%s_tend",p->name) ;
+            strcpy(fname,t4) ;
+          } else {
+            strcpy(fname,field_name(t4,p,(p->ntl>1)?tag:0)) ;
+          }
+        }
 	strcpy(indices,"") ;
         if ( sw_deref_kludge && sw==ACTUAL ) 
 	  sprintf(indices, "%s",index_with_firstelem("(","",t2,p,post)) ;

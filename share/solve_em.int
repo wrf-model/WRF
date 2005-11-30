@@ -1,6 +1,9 @@
 
 SUBROUTINE solve_em      ( grid , config_flags ,   &
 !
+!ADDED THIS FOR BILL S
+#include <i1_args.inc>
+,&
 #include <em_dummy_args.inc>
 !
                  )
@@ -13,6 +16,8 @@ SUBROUTINE solve_em      ( grid , config_flags ,   &
    TYPE(domain) , INTENT(INOUT)                  :: grid
    TYPE (grid_config_rec_type) , INTENT(IN)      :: config_flags
 
+!ADDED THIS FOR BILL S
+#include <em_i1_decl.inc>
 #include <em_dummy_decl.inc>
 
 END SUBROUTINE solve_em

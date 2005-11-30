@@ -2,6 +2,9 @@
 
 SUBROUTINE solve_em ( grid , config_flags , &
 ! Actual arguments generated from Registry
+! ADDED THIS FOR BILL S
+#include "i1_args.inc"
+, &
 #include "em_dummy_args.inc"
 !
                     )

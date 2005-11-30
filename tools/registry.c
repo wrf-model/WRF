@@ -145,6 +145,7 @@ main( int argc, char *argv[], char *env[] )
   gen_dummy_args( "inc" ) ;
   gen_dummy_decls( "inc" ) ;
   gen_i1_decls( "inc" ) ;
+  gen_i1_args( "inc" ) ;
   gen_namelist_statements("inc") ;
   gen_namelist_defines ( "inc", 0 ) ;  /* without dimension statements  */
   gen_namelist_defines ( "inc", 1 ) ;  /* with dimension statements     */

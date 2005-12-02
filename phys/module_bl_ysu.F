@@ -768,7 +768,7 @@ contains
       do k = kts,klpbl
         do i = its,ite
           if(pblflg(i).and.k.ge.kpbl(i))then
-            entfac(i,k) = ((zq(i,k)-hpbl(i))/delta(i))**2.
+            entfac(i,k) = ((zq(i,k+1)-hpbl(i))/delta(i))**2.
           else
             entfac(i,k) = 1.e30
           endif
@@ -905,7 +905,7 @@ contains
             f3(i,k,1) = f3(i,k,1)+dtodsd*dsdzq
             f3(i,k+1,1) = qx(i,k+1)-dtodsu*dsdzq
           elseif(pblflg(i).and.k.ge.kpbl(i).and.entfac(i,k).lt.4.6) then
-            xkzh(i,k) = -bfxpbl(i)*dza(i,kpbl(i)+1)*exp(-entfac(i,k))/dthvx(i)
+            xkzh(i,k) = -bfxpbl(i)*dza(i,kpbl(i))*exp(-entfac(i,k))/dthvx(i)
             xkzh(i,k) = sqrt(xkzh(i,k)*xkzhl(i,k))
             xkzh(i,k) = min(xkzh(i,k),xkzmax)
             xkzh(i,k) = max(xkzh(i,k),xkzmin)

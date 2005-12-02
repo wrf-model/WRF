@@ -1530,6 +1530,7 @@
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: DZ,P8W,P_PHY,PI_PHY    &
      &                                          ,RQCCUTEN,RQRCUTEN      &
+     &                                          ,RQICUTEN,RQSCUTEN      &
      &                                          ,RQVCUTEN,RR,RTHCUTEN   &
      &                                          ,T_PHY,TH_PHY           &
      &                                          ,U_PHY,V_PHY
@@ -1663,6 +1664,8 @@
           RQVCUTEN(I,K,J)=0.
           RQCCUTEN(I,K,J)=0.
           RQRCUTEN(I,K,J)=0.
+          RQICUTEN(I,K,J)=0.
+          RQSCUTEN(I,K,J)=0.
         ENDDO
 !
       ENDDO
@@ -1788,6 +1791,7 @@
      &                 ,maxens2=1,maxens3=1                             &
      &                 ,RTHCUTEN=RTHCUTEN ,RQVCUTEN=RQVCUTEN            &
      &                 ,RQCCUTEN=RQCCUTEN ,RQRCUTEN=RQRCUTEN            &
+     &                 ,RQICUTEN=RQICUTEN ,RQSCUTEN=RQSCUTEN            &
                   ! Selection argument
      &                 ,CU_PHYSICS=CONFIG_FLAGS%CU_PHYSICS              &
                   ! Moisture tracer arguments

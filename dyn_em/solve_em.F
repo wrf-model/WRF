@@ -694,6 +694,7 @@ BENCH_START(cu_driver_tim)
      &             ,NUM_TILES=grid%num_tiles                              &
                  ! Moisture tendency arguments
      &             ,RQVCUTEN=rqvcuten , RQCCUTEN=rqccuten                 &
+     &             ,RQSCUTEN=rqscuten , RQICUTEN=rqicuten                 &
      &             ,RQRCUTEN=rqrcuten , RQVBLTEN=rqvblten                 &
      &             ,RQVFTEN=rqvften                                       &
                  ! Other tendency arguments

@@ -106,6 +106,16 @@ CONTAINS
 
         CHARACTER(LEN=19):: start_date
 
+#ifdef DM_PARALLEL
+
+        LOGICAL,EXTERNAL :: WRF_DM_ON_MONITOR
+
+!              INTEGER :: DOMDESC
+              REAL,ALLOCATABLE    :: SICE_G(:,:), SM_G(:,:)
+              INTEGER, ALLOCATABLE::  IHE_G(:),IHW_G(:)
+#endif
+
+
       CHARACTER (LEN=132) :: message
 
       INTEGER :: error
@@ -116,7 +126,6 @@ CONTAINS
       REAL    :: hold_znw, rmin,rmax
 
       LOGICAL :: stretch_grid, dry_sounding, debug, log_flag_sst
-      LOGICAL :: wrf_dm_on_monitor
 
         REAL, ALLOCATABLE,DIMENSION(:,:):: ADUM2D,SNOWC,HT,TG_ALT
 
@@ -140,6 +149,8 @@ CONTAINS
         REAL, PARAMETER:: SALP=2.60
         REAL, PARAMETER:: SNUP=0.040
         REAL:: SMCSUM,STCSUM,SEAICESUM,FISX
+        REAL:: cur_smc, aposs_smc
+
         REAL:: TERM1,APH
 
 
@@ -385,60 +396,149 @@ CONTAINS
 !new seaice stuff
 
 !       write(0,*) 'skip seaice'
-!       goto 979
+
+#ifdef DM_PARALLEL
+
+
+        ALLOCATE(SM_G(IDS:IDE,JDS:JDE),SICE_G(IDS:IDE,JDS:JDE))
+
+        CALL WRF_PATCH_TO_GLOBAL_REAL( SICE(IMS,JMS)           &
+     &,                                SICE_G,grid%DOMDESC         &
+     &,                               'z','xy'                       &
+     &,                                IDS,IDE-1,JDS,JDE-1,1,1          &
+     &,                                IMS,IME,JMS,JME,1,1              &
+     &,                                ITS,ITE,JTS,JTE,1,1 )
+
+        CALL WRF_PATCH_TO_GLOBAL_REAL( SM(IMS,JMS)           &
+     &,                                SM_G,grid%DOMDESC         &
+     &,                               'z','xy'                       &
+     &,                                IDS,IDE-1,JDS,JDE-1,1,1          &
+     &,                                IMS,IME,JMS,JME,1,1              &
+     &,                                ITS,ITE,JTS,JTE,1,1 )
+
+
+
+
+        IF (WRF_DM_ON_MONITOR()) THEN
+
+  637   format(40(f3.0,1x))
+
+
+        allocate(IHE_G(JDS:JDE-1),IHW_G(JDS:JDE-1))
+       DO j = JDS, JDE-1
+          IHE_G(J)=MOD(J+1,2)
+          IHW_G(J)=IHE_G(J)-1
+       ENDDO
+
+      DO ITER=1,10
+       DO j = jds+1, (jde-1)-1
+         DO i = ids+1, (ide-1)-1
+
+
+! any sea ice around point in question?
+
+        IF (SM_G(I,J) .eq. 1.) THEN
+          SEAICESUM=SICE_G(I+IHE_G(J),J+1)+SICE_G(I+IHW_G(J),J+1)+ &
+                    SICE_G(I+IHE_G(J),J-1)+SICE_G(I+IHW_G(J),J-1)
+          IF (SEAICESUM .ge. 1. .and. SEAICESUM .lt. 3.) THEN
+            IF ((SICE_G(I+IHE_G(J),J+1).eq.0 .and. SM_G(I+IHE_G(J),J+1).eq.0) .OR. &
+                (SICE_G(I+IHW_G(J),J+1).eq.0 .and. SM_G(I+IHW_G(J),J+1).eq.0) .OR. &
+                (SICE_G(I+IHE_G(J),J-1).eq.0 .and. SM_G(I+IHE_G(J),J-1).eq.0) .OR. &
+                (SICE_G(I+IHW_G(J),J-1).eq.0 .and. SM_G(I+IHW_G(J),J-1).eq.0)) THEN
+
+!       HAVE SEA ICE AND A SURROUNDING LAND POINT - CONVERT TO SEA ICE
+!       write(0,*) 'making seaice (1): ', I,J
+              SICE_G(I,J)=1.0
+              SM_G(I,J)=0.
+            ENDIF
+          ELSEIF (SEAICESUM .ge. 3) THEN
+!       WATER POINT SURROUNDED BY ICE  - CONVERT TO SEA ICE
+!       write(0,*) 'making seaice (2): ', I,J
+        SICE_G(I,J)=1.0
+        SM_G(I,J)=0.
+          ENDIF
+        ENDIF
+
+        ENDDO
+       ENDDO
+      ENDDO
+
+        ENDIF
+
+        CALL WRF_GLOBAL_TO_PATCH_REAL( SICE_G, SICE           &
+     &,                                grid%DOMDESC         &
+     &,                               'z','xy'                       &
+     &,                                IDS,IDE-1,JDS,JDE-1,1,1          &
+     &,                                IMS,IME,JMS,JME,1,1              &
+     &,                                ITS,ITE,JTS,JTE,1,1 )
+
+        CALL WRF_GLOBAL_TO_PATCH_REAL( SM_G,SM           &
+     &,                                grid%DOMDESC         &
+     &,                               'z','xy'                       &
+     &,                                IDS,IDE-1,JDS,JDE-1,1,1          &
+     &,                                IMS,IME,JMS,JME,1,1              &
+     &,                                ITS,ITE,JTS,JTE,1,1 )
+
+        IF (WRF_DM_ON_MONITOR()) THEN
+
+        DEALLOCATE(SM_G,SICE_G)
+        DEALLOCATE(IHE_G,IHW_G)
+
+        ENDIF
+
+!        write(0,*) 'revised sea ice on patch'
+!        do J=JTE,JTS,-JTE/25
+!        write(0,637) (SICE(I,J),I=ITS,ITE,ITE/20)
+!        enddo
+
+!        write(0,*) 'revised sea mask on patch'
+!        do J=JTE,JTS,-JTE/25
+!        write(0,637) (SM(I,J),I=ITS,ITE,ITE/20)
+!        enddo
+
+
+#else
+
+        write(0,*) 'shouldnt be here!'
 
        DO j = jts, MIN(jte,jde-1)
           IHE(J)=MOD(J+1,2)
           IHW(J)=IHE(J)-1
        ENDDO
 
-        DO ITER=1,10    
-
+      DO ITER=1,10
        DO j = jts+1, MIN(jte,jde-1)-1
          DO i = its+1, MIN(ite,ide-1)-1
 
 ! any sea ice around point in question?
 
         IF (SM(I,J) .eq. 1) THEN
-        
-        SEAICESUM=SICE(I+IHE(J),J+1)+SICE(I+IHW(J),J+1)+ &
+          SEAICESUM=SICE(I+IHE(J),J+1)+SICE(I+IHW(J),J+1)+ &
                   SICE(I+IHE(J),J-1)+SICE(I+IHW(J),J-1)
-
-        IF (SEAICESUM .ge. 1. .and. SEAICESUM .lt. 3.) THEN
-
-        IF ((SICE(I+IHE(J),J+1).eq.0 .and. SM(I+IHE(J),J+1).eq.0) .OR. &
-            (SICE(I+IHW(J),J+1).eq.0 .and. SM(I+IHW(J),J+1).eq.0) .OR. &
-            (SICE(I+IHE(J),J-1).eq.0 .and. SM(I+IHE(J),J-1).eq.0) .OR. &
-            (SICE(I+IHW(J),J-1).eq.0 .and. SM(I+IHW(J),J-1).eq.0)) THEN 
+          IF (SEAICESUM .ge. 1. .and. SEAICESUM .lt. 3.) THEN
+            IF ((SICE(I+IHE(J),J+1).eq.0 .and. SM(I+IHE(J),J+1).eq.0) .OR. &
+                (SICE(I+IHW(J),J+1).eq.0 .and. SM(I+IHW(J),J+1).eq.0) .OR. &
+                (SICE(I+IHE(J),J-1).eq.0 .and. SM(I+IHE(J),J-1).eq.0) .OR. &
+                (SICE(I+IHW(J),J-1).eq.0 .and. SM(I+IHW(J),J-1).eq.0)) THEN
 
 !       HAVE SEA ICE AND A SURROUNDING LAND POINT - CONVERT TO SEA ICE
-
-        write(0,*) 'MAKING SEA ICE AT I,J: ', I,J, 'on iter: ', iter
-        SICE(I,J)=1.0
-        SM(I,J)=0.
-
-        ENDIF
-
-        ELSEIF (SEAICESUM .ge. 3) THEN
-
+              SICE(I,J)=1.0
+              SM(I,J)=0.
+            ENDIF
+          ELSEIF (SEAICESUM .ge. 3) THEN
 !       WATER POINT SURROUNDED BY ICE  - CONVERT TO SEA ICE
-
-        write(0,*) 'MAKING SEA ICE(2) AT I,J: ', I,J, 'on iter: ', iter
         SICE(I,J)=1.0
         SM(I,J)=0.
-
-        ENDIF
-        
+          ENDIF
         ENDIF
 
         ENDDO
-        ENDDO
+       ENDDO
+      ENDDO
 
-        ENDDO
+#endif
 
         
-        
-  979   continue
 
 
 !new new seaice stuff
@@ -815,26 +915,53 @@ CONTAINS
             END DO
           END DO
 
-        write(0,*) 'STC(1)'
-        do J=min(jde-1,jte),jts,-(jte-jts)/15
-        write(0,635) (stc(I,1,J),I=its,ite,(ite-its)/12)
-        enddo
+         DO j = jts, MIN(jde-1,jte)
+            DO i = its, MIN(ide-1,ite)
 
+        if (STC(I,1,J) .eq. 0) then
+        write(0,*) 'troublesome STC,SMC value: ', I,J, stc(I,1,J),smc(I,1,J)
+        do JJ=J-1,J+1
+        do L=1, grid%num_soil_layers
+        do II=I-1,I+1
 
-        ICOUNT=0
-          DO j = jts, MIN(jde-1,jte)
-          DO i=  ITS, MIN(IDE-1,ITE)
-                      IF (STC(I,1,J) .lt. 200. .and. SM(I,J) .eq. 0) then
-              write(0,*) 'troublesome STC...I,J,STC,SM,SICE,SMC: ',& 
-                   I,J,STC(I,1,J),SM(I,J),SICE(I,J),SMC(I,1,J)
-        ICOUNT=ICOUNT+1
-        if (ICOUNT .eq. 100) then
-        call wrf_error_fatal("bad STC data...quit before gets worse")
+        STC(I,L,J)=amax1(STC(I,L,J),STC(II,L,JJ))
+!       write(0,*) 'possible SMC value: ',II,JJ, SMC(II,L,JJ)
+
+        cur_smc=SMC(I,L,J)
+
+        if ( SMC(II,L,JJ) .gt. 0. .and. SMC(II,L,JJ) .lt. 1.0) aposs_smc=SMC(II,L,JJ)
+
+        if ( cur_smc .eq. 0 ) then
+                cur_smc=aposs_smc
+                SMC(I,L,J)=cur_smc
+        else
+                cur_smc=amin1(cur_smc,aposs_smc)
+                SMC(I,L,J)=cur_smc
         endif
-            endif
-        
-         ENDDO
-         ENDDO
+
+        enddo
+        enddo
+        enddo
+        write(0,*) 'STC, SMC(1) now: ',  stc(I,1,J),smc(I,1,J)
+        endif
+
+        if (STC(I,1,J) .eq. 0) then
+        write(0,*) 'STILL troublesome STC value: ', I,J, stc(I,1,J),smc(I,1,J)
+        call wrf_error_fatal("quitting due to significant STC trouble")
+
+!        do JJ=J-3,J+3
+!        do L=1, grid%num_soil_layers
+!        do II=I-3,I+3
+!        STC(I,L,J)=amax1(STC(I,L,J),STC(II,L,JJ))
+!        SMC(I,L,J)=amin1(SMC(I,L,J),SMC(II,L,JJ))
+!        enddo
+!        enddo
+!        enddo
+
+        endif
+
+        ENDDO
+        ENDDO
 
 !hardwire soil stuff for time being
 

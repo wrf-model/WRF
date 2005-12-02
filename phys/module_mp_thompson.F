@@ -2042,7 +2042,7 @@ k_sc  = k_c * (nu_c+2.0e0)/(nu_c+1.0e0)                                !..selfco
       EFSR=1.
       DSNOW=100.
       delta_v=ASNOW*DIAS**BS-ARAIN*DIAR**BR
-      KER_S_ACR=25.*PI*(diar+dias)**2*EFSR*.5*(delta_v+abs(delta_v))*PI/6.*DIAR**3*DRAIN
+      KER_S_ACR=.25*PI*(diar+dias)**2*EFSR*.5*(delta_v+abs(delta_v))*PI/6.*DIAR**3*DRAIN
       return
       end function ker_s_acr
 !
@@ -2062,7 +2062,7 @@ k_sc  = k_c * (nu_c+2.0e0)/(nu_c+1.0e0)                                !..selfco
       EFSR=1.
       DSNOW=100.
       delta_v=ARAIN*DIAR**BR-ASNOW*DIAS**BS
-      KER_R_ACS=25.*PI*(diar+dias)**2*EFSR*(delta_v+abs(delta_v))*PI/6.*DIAS**3*DSNOW
+      KER_R_ACS=.25*PI*(diar+dias)**2*EFSR*.5*(delta_v+abs(delta_v))*PI/6.*DIAS**3*DSNOW
       return
       end function ker_r_acs
 !----------------------------------------------------------------

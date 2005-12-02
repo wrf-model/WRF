@@ -84,4 +84,6 @@ module_PHYSICS_CALLS.o: \
 		../phys/module_mp_etanew.o  \
 		../phys/module_microphysics_driver.o
 
+module_initialize_real.o: ../share/module_model_constants.o
+
 # DO NOT DELETE

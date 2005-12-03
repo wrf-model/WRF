@@ -432,6 +432,7 @@ CONTAINS
       ENDDO
       ENDDO
     ENDDO
+    !$OMP END PARALLEL DO
   ENDIF
 
   IF (itimestep .eq. 1 .or. mod(itimestep,STEPBL) .eq. 0) THEN

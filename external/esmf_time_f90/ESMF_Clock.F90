@@ -59,9 +59,6 @@
 ! internals for ESMF_Clock
       type ESMF_ClockInt
         sequence
-#ifndef F90_STANDALONE
-      private
-#endif
         type(ESMF_TimeInterval) :: TimeStep
         type(ESMF_Time)  :: StartTime
         type(ESMF_Time)  :: StopTime
@@ -113,7 +110,7 @@
 !      public ESMF_ClockGetPrevTime
 !      public ESMF_ClockGetCurrSimTime
 !      public ESMF_ClockGetPrevSimTime
-      ! This must be public for ESMF_AlarmClockMod...  
+! This must be public for ESMF_AlarmClockMod...  
       public ESMF_ClockAddAlarm
       public ESMF_ClockGetAlarmList
 !      public ESMF_ClockGetNumAlarms
@@ -184,7 +181,11 @@
 !     TMG3.1, TMG3.4.4
 !EOP
       IF ( PRESENT(TimeStep) ) clockint%TimeStep = TimeStep
-      IF ( PRESENT(RefTime) ) clockint%RefTime = RefTime
+      IF ( PRESENT(RefTime) )THEN
+         clockint%RefTime = RefTime
+      ELSE
+         clockint%RefTime = StartTime
+      END IF
       clockint%CurrTime = StartTime
       clockint%StartTime = StartTime
       clockint%StopTime = StopTime
@@ -256,11 +257,12 @@
 
 
 ! Create ESMF_Clock using ESMF 2.1.0+ semantics
-      FUNCTION ESMF_ClockCreate( TimeStep, StartTime, StopTime, &
+      FUNCTION ESMF_ClockCreate( name, TimeStep, StartTime, StopTime, &
                                  RefTime, rc )
         ! return value
         type(ESMF_Clock) :: ESMF_ClockCreate
         ! !ARGUMENTS:
+        character (len=*),       intent(in),  optional :: name
         type(ESMF_TimeInterval), intent(in), optional :: TimeStep
         type(ESMF_Time), intent(in) :: StartTime
         type(ESMF_Time), intent(in) :: StopTime
@@ -273,7 +275,8 @@
         CALL ESMF_ClockSetOLD( clocktmp%clockint,   &
                                TimeStep= TimeStep,  &
                                StartTime=StartTime, &
-                               StopTime= StopTime, rc=rc )
+                               StopTime= StopTime,  &
+                               RefTime=RefTime, rc=rc )
         ESMF_ClockCreate = clocktmp
       END FUNCTION ESMF_ClockCreate
 
@@ -291,11 +294,12 @@
 
 !------------------------------------------------------------------------------
 !BOP
-! !IROUTINE: ESMF_ClockGet - Get clock properties -- for compatibility with ESMF 2.0.1
+! !IROUTINE: ESMF_ClockGet - Get clock properties -- for compatibility with ESMF 2.0.1 
 
 ! !INTERFACE:
       subroutine ESMF_ClockGet(clock, StartTime, CurrTime,       &
                                AdvanceCount, StopTime, TimeStep, &
+                               PrevTime, RefTime, &
                                rc)
 
 ! !ARGUMENTS:
@@ -303,6 +307,8 @@
       type(ESMF_Time), intent(out), optional :: StartTime
       type(ESMF_Time), intent(out), optional :: CurrTime
       type(ESMF_Time), intent(out), optional :: StopTime
+      type(ESMF_Time), intent(out), optional :: PrevTime
+      type(ESMF_Time), intent(out), optional :: RefTime
       integer(ESMF_KIND_I8), intent(out), optional :: AdvanceCount
       type(ESMF_TimeInterval), intent(out), optional :: TimeStep
       integer, intent(out), optional :: rc
@@ -326,6 +332,10 @@
 !          The {\tt ESMF\_Clock}'s stopping time
 !     \item[{[TimeStep]}]
 !          The {\tt ESMF\_Clock}'s time step interval
+!     \item[{[PrevTime]}]
+!          The {\tt ESMF\_Clock}'s previous current time
+!     \item[{[PrevTime]}]
+!          The {\tt ESMF\_Clock}'s reference time
 !     \item[{[rc]}]
 !          Return code; equals {\tt ESMF\_SUCCESS} if there are no errors.
 !     \end{description}
@@ -350,6 +360,12 @@
       IF ( PRESENT (TimeStep) ) THEN
         CALL ESMF_ClockGetTimeStep(clock, TimeStep, ierr)
       ENDIF
+      IF ( PRESENT (PrevTime) ) THEN
+        CALL ESMF_ClockGetPrevTime(clock, PrevTime, ierr)
+      ENDIF
+      IF ( PRESENT (RefTime) ) THEN
+        CALL ESMF_ClockGetRefTime(clock, RefTime, ierr)
+      ENDIF
 
       IF ( PRESENT (rc) ) THEN
         rc = ierr
@@ -366,7 +382,7 @@
 ! !ARGUMENTS:
       type(ESMF_Clock), intent(in) :: clock
       integer(ESMF_KIND_I8), intent(out) :: AdvanceCount
-      integer, intent(out) :: rc
+      integer, intent(out), optional :: rc
 
 ! !DESCRIPTION:
 !     Returns the number of times the {\tt ESMF\_Clock} has been advanced
@@ -388,7 +404,7 @@
 
       AdvanceCount = clock%clockint%AdvanceCount
 
-      rc = ESMF_SUCCESS
+      IF ( PRESENT(rc) ) rc = ESMF_SUCCESS
     
       end subroutine ESMF_ClockGetAdvanceCount
 
@@ -402,7 +418,7 @@
 ! !ARGUMENTS:
       type(ESMF_Clock), intent(in) :: clock
       type(ESMF_TimeInterval), intent(out) :: TimeStep
-      integer, intent(out)           :: rc
+      integer, intent(out), optional :: rc
 
 ! !DESCRIPTION:
 !     Get an {\tt ESMF\_Clock}'s timestep interval
@@ -422,7 +438,7 @@
 !EOP
 
       TimeStep = clock%clockint%TimeStep
-      rc = ESMF_SUCCESS
+      IF ( PRESENT(rc) ) rc = ESMF_SUCCESS
     
       end subroutine ESMF_ClockGetTimeStep
 
@@ -436,7 +452,7 @@
 ! !ARGUMENTS:
       type(ESMF_Clock), intent(out) :: clock
       type(ESMF_TimeInterval), intent(in) :: TimeStep
-      integer, intent(out)                :: rc
+      integer, intent(out), optional      :: rc
 
 ! !DESCRIPTION:
 !     Set an {\tt ESMF\_Clock}'s timestep interval
@@ -456,7 +472,7 @@
 !EOP
 
       clock%clockint%TimeStep = TimeStep
-      rc = ESMF_SUCCESS
+      IF ( PRESENT(rc) ) rc = ESMF_SUCCESS
 
       end subroutine ESMF_ClockSetTimeStep
 
@@ -470,7 +486,7 @@
 ! !ARGUMENTS:
       type(ESMF_Clock), intent(in) :: clock
       type(ESMF_Time), intent(out) :: CurrTime
-      integer, intent(out) :: rc
+      integer, intent(out), optional :: rc
 
 ! !DESCRIPTION:
 !     Get an {\tt ESMF\_Clock}'s current time     
@@ -490,7 +506,7 @@
 !EOP
 
       CurrTime = clock%clockint%CurrTime
-      rc = ESMF_SUCCESS
+      IF ( PRESENT(rc) ) rc = ESMF_SUCCESS
       end subroutine ESMF_ClockGetCurrTime
 
 !------------------------------------------------------------------------------
@@ -503,7 +519,7 @@
 ! !ARGUMENTS:
       type(ESMF_Clock), intent(out) :: clock
       type(ESMF_Time), intent(in) :: CurrTime
-      integer, intent(out) :: rc
+      integer, intent(out), optional :: rc
 
 ! !DESCRIPTION:
 !     Set an {\tt ESMF\_Clock}'s current time
@@ -523,7 +539,7 @@
 !EOP
 
       clock%clockint%CurrTime = CurrTime
-      rc = ESMF_SUCCESS
+      IF ( PRESENT(rc) ) rc = ESMF_SUCCESS
     
       end subroutine ESMF_ClockSetCurrTime
 
@@ -557,7 +573,7 @@
 !EOP
 
       StartTime = clock%clockint%StartTime
-      rc = ESMF_SUCCESS
+      IF ( PRESENT(rc) ) rc = ESMF_SUCCESS
     
       end subroutine ESMF_ClockGetStartTime
 
@@ -571,7 +587,7 @@
 ! !ARGUMENTS:
       type(ESMF_Clock), intent(in) :: clock
       type(ESMF_Time), intent(out) :: StopTime
-      integer, intent(out)         :: rc
+      integer, intent(out), optional :: rc
 
 ! !DESCRIPTION:
 !     Get an {\tt ESMF\_Clock}'s stop time
@@ -591,7 +607,7 @@
 !EOP
 
       StopTime = clock%clockint%StopTime
-      rc = ESMF_SUCCESS
+      IF ( PRESENT(rc) ) rc = ESMF_SUCCESS
     
       end subroutine ESMF_ClockGetStopTime
 
@@ -623,7 +639,8 @@
 ! !REQUIREMENTS:
 !     TMG3.5.3
 !EOP
-      CALL wrf_error_fatal( 'ESMF_ClockGetRefTime not supported' )
+      refTime = clock%clockint%RefTime
+      IF ( PRESENT(rc) ) rc = ESMF_SUCCESS
       end subroutine ESMF_ClockGetRefTime
 
 !------------------------------------------------------------------------------
@@ -654,7 +671,9 @@
 ! !REQUIREMENTS:
 !     TMG3.5.4
 !EOP
-      CALL wrf_error_fatal( 'ESMF_ClockGetPrevTime not supported' )
+
+      prevTime = Clock%clockint%CurrTime - Clock%clockint%TimeStep
+      IF ( PRESENT(rc) ) rc = ESMF_SUCCESS
       end subroutine ESMF_ClockGetPrevTime
 
 !------------------------------------------------------------------------------
@@ -781,7 +800,7 @@
 ! !ARGUMENTS:
       type(ESMF_Clock), intent(in) :: clock
       type(ESMF_Alarm), pointer :: AlarmList(:)
-      integer, intent(out) :: rc
+      integer, intent(out), optional :: rc
 
 ! !DESCRIPTION:
 !     Get an {\tt ESMF\_Clock}'s {\tt ESMF\_Alarm} list     
@@ -801,7 +820,7 @@
 !EOP
 
       AlarmList => clock%clockint%AlarmList
-      rc = ESMF_SUCCESS
+      IF ( PRESENT(rc) ) rc = ESMF_SUCCESS
 
       end subroutine ESMF_ClockGetAlarmList
 
@@ -815,7 +834,7 @@
 ! !ARGUMENTS:
       type(ESMF_Clock), intent(in) :: clock
       integer, intent(out) :: NumAlarms
-      integer, intent(out) :: rc
+      integer, intent(out), optional :: rc
 
 ! !DESCRIPTION:
 !     Get the number of {\tt ESMF\_Alarm}s in an {\tt ESMF\_Clock}'s
@@ -837,7 +856,7 @@
 !EOP
 
       NumAlarms = clock%clockint%NumAlarms
-      rc = ESMF_SUCCESS
+      IF ( PRESENT(rc) ) rc = ESMF_SUCCESS
     
       end subroutine ESMF_ClockGetNumAlarms
 
@@ -975,7 +994,7 @@ use esmf_timemod
 !
 ! !ARGUMENTS:
       type(ESMF_Clock), intent(in) :: clock
-      integer, intent(out) :: rc
+      integer, intent(out), optional :: rc
 
       rc = ESMF_SUCCESS
 

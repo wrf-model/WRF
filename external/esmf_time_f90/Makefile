@@ -23,7 +23,7 @@ Test1 : Test1.F90 libesmf_time.a
 	$(FC) -o Test1 Test1.o libesmf_time.a
 
 .F90.o :
-	$(CPP) -C -P -I. -DF90_STANDALONE $*.F90 > $*.f
+	$(CPP) -C -P -I. $*.F90 > $*.f
 	$(FC) -c $*.f
 
 superclean: 

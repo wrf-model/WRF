@@ -61,18 +61,11 @@
 
       type ESMF_TimeInterval
       sequence                           ! match C++ storage order
-#ifndef F90_STANDALONE
-      private                            !   (members opaque on F90 side)
-        type(ESMF_BaseTime) :: basetime  ! inherit base class
-        integer(ESMF_KIND_I8) :: YY     ! calendar interval number of years
-        integer(ESMF_KIND_I8) :: MO     ! calendar interval number of months
-#else
         type(ESMF_BaseTime) :: basetime  ! inherit base class
         logical                :: instant  ! false for instant, true for interval
         integer                :: YR     ! calendar interval number of days
         integer                :: MM     ! calendar interval number of days
         integer                :: DD     ! calendar interval number of days
-#endif
       end type
 
 !------------------------------------------------------------------------------
@@ -95,6 +88,7 @@
       public ESMF_TimeIntervalPrint
 !!!!!!!!! added 20051012, JM
       public WRFADDITION_TimeIntervalDIVQuot 
+
 
 ! !PRIVATE MEMBER FUNCTIONS:
  
@@ -334,35 +328,15 @@
 ! !IROUTINE: ESMF_TimeIntervalGet - Get value in user-specified units
 
 ! !INTERFACE:
-      subroutine ESMF_TimeIntervalGet(timeinterval, YY, YYl, MO, MOl, D, Dl, &
-                                      H, M, S, Sl, MS, US, NS, d_, h_, m_, s_, &
-                                      ms_, us_, ns_, Sn, Sd, rc)
+      subroutine ESMF_TimeIntervalGet(timeinterval, D, d_r8, S, rc )
 
 ! !ARGUMENTS:
       type(ESMF_TimeInterval), intent(in) :: timeinterval
-      integer, intent(out), optional :: YY
-      integer(ESMF_KIND_I8), intent(out), optional :: YYl
-      integer, intent(out), optional :: MO
-      integer(ESMF_KIND_I8), intent(out), optional :: MOl
       integer, intent(out), optional :: D
-      integer(ESMF_KIND_I8), intent(out), optional :: Dl
-      integer, intent(out), optional :: H
-      integer, intent(out), optional :: M
+      real(ESMF_KIND_R8),      intent(out), optional :: d_r8
       integer, intent(out), optional :: S
-      integer(ESMF_KIND_I8), intent(out), optional :: Sl
-      integer, intent(out), optional :: MS
-      integer, intent(out), optional :: US
-      integer, intent(out), optional :: NS
-      double precision, intent(out), optional :: d_
-      double precision, intent(out), optional :: h_
-      double precision, intent(out), optional :: m_
-      double precision, intent(out), optional :: s_
-      double precision, intent(out), optional :: ms_
-      double precision, intent(out), optional :: us_
-      double precision, intent(out), optional :: ns_
-      integer, intent(out), optional :: Sn
-      integer, intent(out), optional :: Sd
       integer, intent(out), optional :: rc
+
 
 ! !DESCRIPTION:
 !     Get the value of the {\tt ESMF\_TimeInterval} in units specified by the
@@ -430,11 +404,29 @@
 ! !REQUIREMENTS:
 !     TMG1.1
 !EOP
+      INTEGER :: seconds
+      INTEGER :: diy
+      INTEGER :: years
 
-      ! use optional args for any subset
-      call c_ESMC_TimeIntervalGet(timeinterval, YY, YYl, MO, MOl, D, Dl, &
-                                  H, M, S, Sl, MS, US, NS, d_, h_, m_, s_, &
-                                  ms_, us_, ns_, Sn, Sd, rc)
+      IF ( PRESENT(rc) ) rc = ESMF_FAILURE
+      seconds = timeinterval%basetime%S
+      CALL compute_dayinyear( timeinterval%YR, timeinterval%MM, &
+                              timeinterval%DD, diy )
+      years= timeinterval%YR
+      IF ( PRESENT( D ) )THEN
+         D = seconds / SECONDS_PER_DAY
+         seconds = seconds - D*SECONDS_PER_DAY
+         D = D + diy + years * 365
+         IF ( PRESENT(S) ) S = seconds
+      ELSE IF ( PRESENT(S) )THEN
+         S = seconds + diy * SECONDS_PER_DAY
+      END IF
+      IF ( PRESENT( d_r8 ) )THEN
+         seconds = timeinterval%basetime%S
+         D_r8 = seconds / SECONDS_PER_DAY._ESMF_KIND_R8 + diy + &
+                years * 365
+      END IF
+      IF ( PRESENT(rc) ) rc = ESMF_SUCCESS
     
       end subroutine ESMF_TimeIntervalGet
 
@@ -541,13 +533,7 @@
 !     TMGn.n.n
 !EOP
 
-      ! use optional args for any subset
-      call c_ESMC_TimeIntervalSet(timeinterval, YY, YYl, MM, MOl, D, Dl, &
-                                  H, M, S, Sl, MS, US, NS, &
-                                  d_, h_, m_, s_, ms_, us_, ns_, &
-                                  Sn, Sd, rc)
-
-#ifdef F90_STANDALONE
+      IF ( PRESENT(rc) ) rc = ESMF_FAILURE
       timeinterval%instant = .false.
       timeinterval%YR = 0
       IF ( PRESENT( YY ) ) THEN
@@ -557,32 +543,14 @@
       IF ( PRESENT( MM ) ) THEN
         timeinterval%MM = MM
       ENDIF
-!
-!      timeinterval%basetime%S = 0
-!      IF ( PRESENT( H ) ) THEN
-!        timeinterval%basetime%S = timeinterval%basetime%S + H * 3600
-!      ENDIF
-!      IF ( PRESENT( M ) ) THEN
-!        timeinterval%basetime%S = timeinterval%basetime%S + M * 60
-!      ENDIF
-!      IF ( PRESENT( S ) ) THEN
-!        timeinterval%basetime%S = timeinterval%basetime%S + S
-!      ENDIF
-!      IF ( PRESENT( MS ) ) THEN
-!        timeinterval%basetime%MS = MS
-!      ELSE IF ( PRESENT( Sd ) .AND. PRESENT( Sn ) ) THEN
-!        timeinterval%basetime%Sd = Sd
-!        timeinterval%basetime%Sn = Sn
-!        timeinterval%basetime%MS = NINT( Sn*1.0D0 / Sd*1.0D0 * 1000 )
-!      ENDIF
 
       timeinterval%DD = 0
       timeinterval%basetime%S = 0
       IF ( PRESENT( D ) ) THEN
-        timeinterval%basetime%S = timeinterval%basetime%S + D * 24 * 3600
+        timeinterval%DD = D
       ENDIF
       IF ( PRESENT( H ) ) THEN
-        timeinterval%basetime%S = timeinterval%basetime%S + H * 3600
+        timeinterval%basetime%S = timeinterval%basetime%S + H * SECONDS_PER_HOUR
       ENDIF
       IF ( PRESENT( M ) ) THEN
         timeinterval%basetime%S = timeinterval%basetime%S + M * 60
@@ -611,10 +579,9 @@
         ENDIF
         timeinterval%basetime%MS = NINT( Sn*1.0D0 / Sd*1.0D0  * 1000 )
       ENDIF
+      CALL normalize_timeint( timeinterval )
 
-      rc = ESMF_SUCCESS
-#endif
-
+      IF ( PRESENT(rc) ) rc = ESMF_SUCCESS
 
       end subroutine ESMF_TimeIntervalSet
 
@@ -647,20 +614,16 @@
 !     TMG1.5.9
 !EOP
 
-#ifdef F90_STANDALONE
       write(TimeString,'(I5.5"_"I2.2":"I2.2":"I2.2)') &
-             timeinterval%basetime%S / (3600 * 24) , &
-             mod( timeinterval%basetime%S / 3600 , 24 ) , &
-             mod( timeinterval%basetime%S / 60 , 60 ), &
-             mod( timeinterval%basetime%S  , 60 )
+             timeinterval%basetime%S / SECONDS_PER_DAY , &
+             mod( timeinterval%basetime%S / SECONDS_PER_HOUR , 24 ) , &
+             mod( timeinterval%basetime%S / SECONDS_PER_MINUTE , &
+                  SECONDS_PER_MINUTE ), &
+             mod( timeinterval%basetime%S  , SECONDS_PER_MINUTE )
 
 !write(0,*)'TimeIntervalGetString Sn ',timeinterval%basetime%Sn,' Sd ',timeinterval%basetime%Sd
 
-
       rc = ESMF_SUCCESS
-#else
-      call c_ESMC_TimeIntervalGetString(timeinterval, TimeString, rc)
-#endif
 
       end subroutine ESMFold_TimeIntervalGetString
 
@@ -694,7 +657,7 @@
 !EOP
     
       CALL ESMF_TimeIntervalSet( ESMF_TimeIntervalAbsValue, rc=rc )
-      call c_ESMC_TimeIntervalAbsValue(timeinterval, ESMF_TimeIntervalAbsValue)
+!      call c_ESMC_TimeIntervalAbsValue(timeinterval, ESMF_TimeIntervalAbsValue)
 
       end function ESMF_TimeIntervalAbsValue
 
@@ -728,8 +691,8 @@
 !EOP
     
       CALL ESMF_TimeIntervalSet( ESMF_TimeIntervalNegAbsValue, rc=rc )
-      call c_ESMC_TimeIntervalNegAbsValue(timeinterval, &
-                                          ESMF_TimeIntervalNegAbsValue)
+!      call c_ESMC_TimeIntervalNegAbsValue(timeinterval, &
+!                                          ESMF_TimeIntervalNegAbsValue)
 
       end function ESMF_TimeIntervalNegAbsValue
 
@@ -769,8 +732,8 @@
 !     TMG1.5.5
 !EOP
 
-      call c_ESMC_TimeIntervalFQuot(timeinterval1, timeinterval2, &
-                                    ESMF_TimeIntervalFQuot)
+!      call c_ESMC_TimeIntervalFQuot(timeinterval1, timeinterval2, &
+!                                    ESMF_TimeIntervalFQuot)
 
       end function ESMF_TimeIntervalFQuot
 
@@ -804,8 +767,8 @@
 !     TMG1.5.5
 !EOP
 
-      call c_ESMC_TimeIntervalFQuot(timeinterval1, timeinterval2, &
-                                    ESMF_TimeIntervalFQuot)
+!      call c_ESMC_TimeIntervalFQuot(timeinterval1, timeinterval2, &
+!                                    ESMF_TimeIntervalFQuot)
 
       call ESMF_TimeIntervalSet( zero, rc=rc )
       i1 = timeinterval1
@@ -827,6 +790,8 @@
 
       end function WRFADDITION_TimeIntervalDIVQuot
 !!!!!!!!!!!!!!!!!!
+
+
 
 !------------------------------------------------------------------------------
 !BOP
@@ -858,8 +823,8 @@
 !     TMG1.5.5
 !EOP
 
-      call c_ESMC_TimeIntervalRQuot(timeinterval1, timeinterval2, &
-                                    ESMF_TimeIntervalRQuot)
+!      call c_ESMC_TimeIntervalRQuot(timeinterval1, timeinterval2, &
+!                                    ESMF_TimeIntervalRQuot)
 
       end function ESMF_TimeIntervalRQuot
 
@@ -901,8 +866,8 @@
       retval = timeinterval
 
       CALL ESMF_TimeIntervalSet( retval, rc=rc )
-      call c_ESMC_TimeIntervalQuotI(timeinterval, divisor, &
-                                    ESMF_TimeIntervalQuotI)
+!      call c_ESMC_TimeIntervalQuotI(timeinterval, divisor, &
+!                                    ESMF_TimeIntervalQuotI)
 
 ! convert timeinterval to a fraction and divide by multipling the denonminator by the divisor
       n = timeinterval%basetime%S * timeinterval%basetime%Sd + timeinterval%basetime%Sn
@@ -952,8 +917,8 @@
 !EOP
 
       CALL ESMF_TimeIntervalSet( ESMF_TimeIntervalQuotR, rc=rc )
-      call c_ESMC_TimeIntervalQuotR(timeinterval, divisor, &
-                                    ESMF_TimeIntervalQuotR)
+!      call c_ESMC_TimeIntervalQuotR(timeinterval, divisor, &
+!                                    ESMF_TimeIntervalQuotR)
 
       end function ESMF_TimeIntervalQuotR
 
@@ -972,7 +937,6 @@
       integer, intent(in) :: multiplier
 ! !LOCAL:
       integer    :: rc
-      integer    :: i
 
 ! !DESCRIPTION:
 !     Multiply a {\tt ESMF\_TimeInterval} by an integer, return product as a
@@ -993,16 +957,6 @@
       CALL ESMF_TimeIntervalSet( ESMF_TimeIntervalProdI, rc=rc )
       call c_ESMC_TimeIntervalProdI(timeinterval, multiplier, &
                                     ESMF_TimeIntervalProdI)
-      
-      IF ( multiplier .GT. 0 ) THEN
-        DO i = 1, multiplier
-           ESMF_TimeIntervalProdI = ESMF_TimeIntervalProdI + timeinterval
-        ENDDO
-      ELSE
-        DO i = 1, -1*multiplier
-           ESMF_TimeIntervalProdI = ESMF_TimeIntervalProdI - timeinterval
-        ENDDO
-      ENDIF
 
       end function ESMF_TimeIntervalProdI
 
@@ -1039,8 +993,8 @@
 !EOP
 
       CALL ESMF_TimeIntervalSet( ESMF_TimeIntervalProdF, rc=rc )
-      call c_ESMC_TimeIntervalProdF(timeinterval, multiplier, &
-                                    ESMF_TimeIntervalProdF)
+!      call c_ESMC_TimeIntervalProdF(timeinterval, multiplier, &
+!                                    ESMF_TimeIntervalProdF)
 
       end function ESMF_TimeIntervalProdF
 !------------------------------------------------------------------------------
@@ -1076,8 +1030,8 @@
 !EOP
 
       CALL ESMF_TimeIntervalSet( ESMF_TimeIntervalProdR, rc=rc )
-      call c_ESMC_TimeIntervalProdR(timeinterval, multiplier, &
-                                    ESMF_TimeIntervalProdR)
+!      call c_ESMC_TimeIntervalProdR(timeinterval, multiplier, &
+!                                    ESMF_TimeIntervalProdR)
 
       end function ESMF_TimeIntervalProdR
 
@@ -1428,7 +1382,7 @@
 !     TMGn.n.n
 !EOP
    
-      call c_ESMC_TimeIntervalRead(timeinterval, S, Sn, Sd, YY, MO, rc)
+!      call c_ESMC_TimeIntervalRead(timeinterval, S, Sn, Sd, YY, MO, rc)
 
       end subroutine ESMF_TimeIntervalRead
 

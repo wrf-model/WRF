@@ -43,6 +43,7 @@ MODULE ESMF_Stubs
       INTEGER :: dummy
    END TYPE
 
+   LOGICAL, private, save :: initialized = .false.
 
    PUBLIC ESMF_Grid, ESMF_GridComp, ESMF_State, ESMF_VM
    PUBLIC ESMF_Initialize, ESMF_Finalize, ESMF_IsInitialized
@@ -56,17 +57,38 @@ CONTAINS
    SUBROUTINE ESMF_Initialize( vm, defaultCalendar, rc )
       USE esmf_basemod
       USE esmf_calendarmod
+      USE esmf_timemod,     only: defaultCal
       TYPE(ESMF_VM),           INTENT(IN   ), OPTIONAL :: vm
       TYPE(ESMF_CalendarType), INTENT(IN   ), OPTIONAL :: defaultCalendar
       INTEGER,                 INTENT(  OUT), OPTIONAL :: rc
+
+      TYPE(ESMF_CalendarType) :: defaultCalType
+      INTEGER :: status
+
+      IF ( PRESENT( rc ) ) rc = ESMF_FAILURE
+      ! Initialize the default time manager calendar
+      IF ( PRESENT(defaultCalendar) )THEN
+         defaultCalType = defaultCalendar
+      ELSE
+         defaultCalType = ESMF_CAL_NOLEAP
+      END IF
+      allocate( defaultCal )
+      defaultCal = ESMF_CalendarCreate( calendarType=defaultCalType, &
+                        rc=status)
+
+      IF (status .ne. ESMF_SUCCESS) THEN
+          PRINT *, "Error initializing the default time manager calendar"
+          RETURN
+      END IF
+      initialized = .true.
+
       IF ( PRESENT( rc ) ) rc = ESMF_SUCCESS
    END SUBROUTINE ESMF_Initialize
 
 
-! NOOP for "is initialized" extension
    FUNCTION ESMF_IsInitialized()
       LOGICAL ESMF_IsInitialized
-      ESMF_IsInitialized = .TRUE.
+      ESMF_IsInitialized = initialized
    END FUNCTION ESMF_IsInitialized
 
 
@@ -74,7 +96,18 @@ CONTAINS
    SUBROUTINE ESMF_Finalize( rc )
       USE esmf_basemod
       INTEGER, INTENT(  OUT), OPTIONAL :: rc
+#if (defined SPMD) || (defined COUP_CSM)
+#include <mpif.h>
+#endif
+      INTEGER :: ier
+
       IF ( PRESENT( rc ) ) rc = ESMF_SUCCESS
+#if (defined SPMD) || (defined COUP_CSM)
+      CALL MPI_Finalize( ier ) 
+      IF ( ier .ne. mpi_success )THEN
+        IF ( PRESENT( rc ) ) rc = ESMF_FAILURE
+      END IF
+#endif
    END SUBROUTINE ESMF_Finalize
 
 ! NOOP

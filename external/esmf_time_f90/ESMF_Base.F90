@@ -48,10 +48,11 @@
                             ESMF_MAXDECOMPDIM=3, &
                             ESMF_MAXGRIDDIM=2
      
-      integer, parameter :: ESMF_MAJOR_VERSION = 1
-      integer, parameter :: ESMF_MINOR_VERSION = 0
-      integer, parameter :: ESMF_REVISION      = 0
-      character(32), parameter :: ESMF_VERSION_STRING = "1.0.0"
+      integer, parameter :: ESMF_MAJOR_VERSION = 2
+      integer, parameter :: ESMF_MINOR_VERSION = 1
+      integer, parameter :: ESMF_REVISION      = 1
+      integer, parameter :: ESMF_PATCHLEVEL    = 0
+      character(32), parameter :: ESMF_VERSION_STRING = "2.1.1"
 
 !------------------------------------------------------------------------------
 !

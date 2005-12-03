@@ -60,9 +60,6 @@
 ! internals for ESMF_Alarm
       type ESMF_AlarmInt
       sequence
-#ifndef F90_STANDALONE
-      private
-#endif
         type(ESMF_TimeInterval) :: RingInterval
         type(ESMF_Time)  :: RingTime
         type(ESMF_Time)  :: PrevRingTime

@@ -25,7 +25,7 @@ static int *nbytes_src = NULL ;
 static int *nbytes_dst = NULL ; 
 static MPI_Request *x_recv = NULL ,  *x_send = NULL ;
 
-RSL_LITE_INIT_CYCLE ( 
+RSL_LITE_INIT_CYCLE (  int * Fcomm ,
                 int * xy0 , int * inout0 ,
                 int * n3dR0, int *n2dR0, int * typesizeR0 , 
                 int * n3dI0, int *n2dI0, int * typesizeI0 , 
@@ -45,7 +45,11 @@ RSL_LITE_INIT_CYCLE (
   int ips , ipe , jps , jpe , kps , kpe ;
   int ips_send , ipe_send ;
   int npts, i, ii, j, jj, m, n, ps, pe, ops, ope ;
-  int Px, Py, P, Q, swap ;
+  int Px, Py, P, Q, swap, coords[2] ;
+  MPI_Comm *comm, dummy_comm ;
+
+  comm = &dummy_comm ;
+  *comm = MPI_Comm_f2c( *Fcomm ) ;
 
   xy = *xy0 ;
   inout = *inout0 ;     /* 1 is in (uncycled to cycled) 0 is out */
@@ -90,11 +94,19 @@ RSL_LITE_INIT_CYCLE (
     ii = (i/n) + (i%n)*m ;
     jj = (i/m) + (i%m)*n ;
     if ( xy == 1 ) {
-      TASK_FOR_POINT ( &ii , &jps , &ids, &ide , &jds, &jde , &np_x , &np_y , &Px, &Py, &P ) ;
-      TASK_FOR_POINT ( &jj , &jps , &ids, &ide , &jds, &jde , &np_x , &np_y , &Px, &Py, &Q ) ;
+      TASK_FOR_POINT ( &ii , &jps , &ids, &ide , &jds, &jde , &np_x , &np_y , &Px, &Py ) ;
+      coords[0] = Px ; coords[1] = Py ;
+      MPI_Cart_rank( *comm, coords, &P ) ;
+      TASK_FOR_POINT ( &jj , &jps , &ids, &ide , &jds, &jde , &np_x , &np_y , &Px, &Py ) ;
+      coords[0] = Px ; coords[1] = Py ;
+      MPI_Cart_rank( *comm, coords, &Q ) ;
     } else {
-      TASK_FOR_POINT ( &ips , &ii , &ids, &ide , &jds, &jde , &np_x , &np_y , &Px, &Py, &P ) ;
-      TASK_FOR_POINT ( &ips , &jj , &ids, &ide , &jds, &jde , &np_x , &np_y , &Px, &Py, &Q ) ;
+      TASK_FOR_POINT ( &ips , &ii , &ids, &ide , &jds, &jde , &np_x , &np_y , &Px, &Py ) ;
+      coords[0] = Px ; coords[1] = Py ;
+      MPI_Cart_rank( *comm, coords, &P ) ;
+      TASK_FOR_POINT ( &ips , &jj , &ids, &ide , &jds, &jde , &np_x , &np_y , &Px, &Py ) ;
+      coords[0] = Px ; coords[1] = Py ;
+      MPI_Cart_rank( *comm, coords, &Q ) ;
     }
     if ( inout == 0 ) { swap = P ; P = Q ; Q = swap ; }
 
@@ -115,7 +127,7 @@ RSL_LITE_INIT_CYCLE (
   }
 }
 
-RSL_LITE_PACK_CYCLE ( char * buf , int * inout0 , int * typesize0 , int * xy0 , int * pu0 , char * memord , int * xstag0 ,
+RSL_LITE_PACK_CYCLE ( int * Fcomm, char * buf , int * inout0 , int * typesize0 , int * xy0 , int * pu0 , char * memord , int * xstag0 ,
            int *me0, int * np0 , int * np_x0 , int * np_y0 , 
            int * ids0 , int * ide0 , int * jds0 , int * jde0 , int * kds0 , int * kde0 ,
            int * ims0 , int * ime0 , int * jms0 , int * jme0 , int * kms0 , int * kme0 ,
@@ -137,10 +149,14 @@ RSL_LITE_PACK_CYCLE ( char * buf , int * inout0 , int * typesize0 , int * xy0 , 
 #endif
   char *p ;
   int da_buf ;
-  int Px, Py, P ;
+  int Px, Py, P, coords[2] ;
   int ierr = 0 ;
   register int *pi, *qi ;
   float f ;
+  MPI_Comm *comm, dummy_comm ;
+
+  comm = &dummy_comm ;
+  *comm = MPI_Comm_f2c( *Fcomm ) ;
 
   me = *me0 ; np = *np0 ; np_x = *np_x0 ; np_y = *np_y0 ;
   xstag = *xstag0 ;
@@ -178,7 +194,9 @@ RSL_LITE_PACK_CYCLE ( char * buf , int * inout0 , int * typesize0 , int * xy0 , 
     for ( i = ips ; i <= MIN(ipe,m*np_dim-1) ; i++ ) {
       if ( pu == 0 ) {
         ii = (inout)?(i/n)+(i%n)*m:(i/m)+(i%m)*n  ;
-        TASK_FOR_POINT ( &ii , &jps , &ids, &ide , &jds, &jde , &np_x , &np_y , &Px, &Py, &P ) ;
+        TASK_FOR_POINT ( &ii , &jps , &ids, &ide , &jds, &jde , &np_x , &np_y , &Px, &Py ) ;
+        coords[0] = Px ; coords[1] = Py ;
+        MPI_Cart_rank( *comm, coords, &P ) ;
         p = buffer_for_proc( P , 0 , da_buf ) ;
 	if ( typesize == sizeof(int) ) {
           for ( j = jps ; j <= jpe ; j++ ) {
@@ -206,7 +224,9 @@ RSL_LITE_PACK_CYCLE ( char * buf , int * inout0 , int * typesize0 , int * xy0 , 
 	}
       } else {
         ii = (inout)?(i/m)+(i%m)*n:(i/n)+(i%n)*m  ;
-        TASK_FOR_POINT ( &ii , &jps , &ids, &ide , &jds, &jde , &np_x , &np_y , &Px, &Py, &P ) ;
+        TASK_FOR_POINT ( &ii , &jps , &ids, &ide , &jds, &jde , &np_x , &np_y , &Px, &Py ) ;
+        coords[0] = Px ; coords[1] = Py ;
+        MPI_Cart_rank( *comm, coords, &P ) ;
         p = buffer_for_proc( P , 0 , da_buf ) ;
 	if ( typesize == sizeof(int) ) {
           for ( j = jps ; j <= jpe ; j++ ) {
@@ -238,7 +258,9 @@ RSL_LITE_PACK_CYCLE ( char * buf , int * inout0 , int * typesize0 , int * xy0 , 
     for ( j = jps ; j <= MIN(jpe,m*np_dim-1) ; j++ ) {
       if ( pu == 0 ) {
         jj = (inout)?(j/n) + (j%n)*m:(j/m) + (j%m)*n ;
-        TASK_FOR_POINT ( &ips , &jj , &ids, &ide , &jds, &jde , &np_x , &np_y , &Px, &Py, &P ) ;
+        TASK_FOR_POINT ( &ips , &jj , &ids, &ide , &jds, &jde , &np_x , &np_y , &Px, &Py ) ;
+        coords[0] = Px ; coords[1] = Py ;
+        MPI_Cart_rank( *comm, coords, &P ) ;
         p = buffer_for_proc( P , 0 , da_buf ) ;
 	if ( typesize == sizeof(int) ) {
           for ( i = ips ; i <= ipe ; i++ ) {
@@ -266,7 +288,9 @@ RSL_LITE_PACK_CYCLE ( char * buf , int * inout0 , int * typesize0 , int * xy0 , 
 	}
       } else {
         jj = (inout)?(j/m) + (j%m)*n:(j/n) + (j%n)*m ;
-        TASK_FOR_POINT ( &ips , &jj , &ids, &ide , &jds, &jde , &np_x , &np_y , &Px, &Py, &P ) ;
+        TASK_FOR_POINT ( &ips , &jj , &ids, &ide , &jds, &jde , &np_x , &np_y , &Px, &Py ) ;
+        coords[0] = Px ; coords[1] = Py ;
+        MPI_Cart_rank( *comm, coords, &P ) ;
         p = buffer_for_proc( P , 0 , da_buf ) ;
 	if ( typesize == sizeof(int) ) {
           for ( i = ips ; i <= ipe ; i++ ) {

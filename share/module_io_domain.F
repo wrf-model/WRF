@@ -208,7 +208,7 @@ CONTAINS
     TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
     INTEGER, INTENT(IN) :: fid
     INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_auxhist1 .GT. 0 ) THEN
+    IF ( config_flags%io_form_auxhist2 .GT. 0 ) THEN
       CALL output_wrf ( fid , grid , config_flags , aux_hist2_only , ierr )
     ENDIF
     RETURN
@@ -220,7 +220,7 @@ CONTAINS
     TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
     INTEGER, INTENT(IN) :: fid
     INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_auxhist1 .GT. 0 ) THEN
+    IF ( config_flags%io_form_auxhist3 .GT. 0 ) THEN
       CALL output_wrf ( fid , grid , config_flags , aux_hist3_only , ierr )
     ENDIF
     RETURN
@@ -232,7 +232,7 @@ CONTAINS
     TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
     INTEGER, INTENT(IN) :: fid
     INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_auxhist1 .GT. 0 ) THEN
+    IF ( config_flags%io_form_auxhist4 .GT. 0 ) THEN
       CALL output_wrf ( fid , grid , config_flags , aux_hist4_only , ierr )
     ENDIF
     RETURN
@@ -244,7 +244,7 @@ CONTAINS
     TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
     INTEGER, INTENT(IN) :: fid
     INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_auxhist1 .GT. 0 ) THEN
+    IF ( config_flags%io_form_auxhist5 .GT. 0 ) THEN
       CALL output_wrf ( fid , grid , config_flags , aux_hist5_only , ierr )
     ENDIF
     RETURN
@@ -298,9 +298,7 @@ CONTAINS
     TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
     INTEGER, INTENT(IN) :: fid
     INTEGER, INTENT(INOUT) :: ierr
-write(0,*)'in input_aux_model_input1 : config_flags%io_form_auxinput1 ',config_flags%io_form_auxinput1
     IF ( config_flags%io_form_auxinput1 .GT. 0 ) THEN
-write(0,*)'calling input_wrf '
       CALL input_wrf ( fid , grid , config_flags , aux_model_input1_only , ierr )
     ENDIF
     RETURN

@@ -129,7 +129,7 @@ static int s_putmsg = 0 ;
 #endif
 
 /* parent->nest */
-RSL_LITE_TO_CHILD_INFO ( msize_p,
+RSL_LITE_TO_CHILD_INFO ( Fcomm, msize_p,
                          cips_p, cipe_p, cjps_p, cjpe_p, /* patch dims of SOURCE DOMAIN */
                          iids_p, iide_p, ijds_p, ijde_p, /* domain dims of INTERMEDIATE DOMAIN */
                          nids_p, nide_p, njds_p, njde_p, /* domain dims of CHILD DOMAIN */
@@ -139,8 +139,10 @@ RSL_LITE_TO_CHILD_INFO ( msize_p,
                          idim_cd_p, jdim_cd_p,
                          ig_p, jg_p,
                          retval_p )
+  
   int_p
-     cips_p, cipe_p, cjps_p, cjpe_p   /* (i) c.d. patch dims */
+     Fcomm                            /* Fortran version of MPI communicator */
+    ,cips_p, cipe_p, cjps_p, cjpe_p   /* (i) c.d. patch dims */
     ,iids_p, iide_p, ijds_p, ijde_p   /* (i) n.n. global dims */
     ,nids_p, nide_p, njds_p, njde_p   /* (i) n.n. global dims */
     ,pgr_p                            /* nesting ratio */
@@ -160,6 +162,11 @@ RSL_LITE_TO_CHILD_INFO ( msize_p,
   rsl_list_t *q ;
   int *r ;
   int i, j, ni, nj ;
+  int coords[2] ;
+  MPI_Comm *comm, dummy_comm ;
+
+  comm = &dummy_comm ;
+  *comm = MPI_Comm_f2c( *Fcomm ) ;
 
   if ( Plist == NULL ) {
     s_ntasks_x = *ntasks_x_p ;
@@ -180,7 +187,9 @@ RSL_LITE_TO_CHILD_INFO ( msize_p,
            ni = ( i - (*icoord_p + *shw_p) ) * *pgr_p + 1 + 1 ; /* add 1 to give center point */
            nj = ( j - (*jcoord_p + *shw_p) ) * *pgr_p + 1 + 1 ;
 
-	   TASK_FOR_POINT ( &ni, &nj, nids_p, nide_p, njds_p, njde_p, &s_ntasks_x, &s_ntasks_y, &Px, &Py, &P ) ;
+	   TASK_FOR_POINT ( &ni, &nj, nids_p, nide_p, njds_p, njde_p, &s_ntasks_x, &s_ntasks_y, &Px, &Py ) ;
+           coords[0] = Px ; coords[1] = Py ;
+           MPI_Cart_rank( *comm, coords, &P ) ;
 
 	   q = RSL_MALLOC( rsl_list_t , 1 ) ;
 	   q->info1 = i ;
@@ -244,7 +253,7 @@ fprintf(stderr,"TO  INFO: %d %d %d \n",*ig_p,*jg_p, *retval_p) ;
 /********************************************/
 
 /* nest->parent */
-RSL_LITE_TO_PARENT_INFO ( msize_p,
+RSL_LITE_TO_PARENT_INFO ( Fcomm, msize_p,
                           nips_p, nipe_p, njps_p, njpe_p, /* patch dims of SOURCE DOMAIN (CHILD) */
                           cids_p, cide_p, cjds_p, cjde_p, /* domain dims of TARGET DOMAIN (PARENT) */
                           ntasks_x_p , ntasks_y_p ,       /* proc counts in x and y */
@@ -253,7 +262,8 @@ RSL_LITE_TO_PARENT_INFO ( msize_p,
                           ig_p, jg_p,
                           retval_p )
   int_p
-     nips_p, nipe_p, njps_p, njpe_p   /* (i) n.d. patch dims */
+     Fcomm                            /* Fortran version of MPI communicator */
+    ,nips_p, nipe_p, njps_p, njpe_p   /* (i) n.d. patch dims */
     ,cids_p, cide_p, cjds_p, cjde_p   /* (i) n.n. global dims */
     ,ntasks_x_p , ntasks_y_p          /* proc counts in x and y */
     ,icoord_p       /* i coordinate of nest in cd */
@@ -269,6 +279,11 @@ RSL_LITE_TO_PARENT_INFO ( msize_p,
   rsl_list_t *q ;
   int *r ;
   int i, j ;
+  int coords[2] ;
+  MPI_Comm *comm, dummy_comm ;
+
+  comm = &dummy_comm ;
+  *comm = MPI_Comm_f2c( *Fcomm ) ;
 
   if ( Plist == NULL ) {
     s_ntasks_x = *ntasks_x_p ;
@@ -286,7 +301,9 @@ RSL_LITE_TO_PARENT_INFO ( msize_p,
       for ( i = *nips_p ; i <= *nipe_p ; i++ )
       {
 	if ( ( *jcoord_p <= j && j <= *jcoord_p+*jdim_cd_p-1 ) && ( *icoord_p <= i && i <= *icoord_p+*idim_cd_p-1 ) ) {
-	  TASK_FOR_POINT ( &i, &j, cids_p, cide_p, cjds_p, cjde_p, &s_ntasks_x, &s_ntasks_y, &Px, &Py, &P ) ;
+	  TASK_FOR_POINT ( &i, &j, cids_p, cide_p, cjds_p, cjde_p, &s_ntasks_x, &s_ntasks_y, &Px, &Py ) ;
+          coords[0] = Px ; coords[1] = Py ;
+          MPI_Cart_rank( *comm, coords, &P ) ;
 	  q = RSL_MALLOC( rsl_list_t , 1 ) ;
 	  q->info1 = i ;
 	  q->info2 = j ;

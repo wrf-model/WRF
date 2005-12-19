@@ -1,0 +1,5 @@
+12/2005
+	Need to add new io_quilt module
+	Add ifort rule for Linux
+	Need bug fix for get_terrain (RSMAS)
+        Take -g out of RSL_LITE build

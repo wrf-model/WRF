@@ -325,6 +325,31 @@ if test -f configure.wrf ; then
       echo "  " MPI_Comm_f2c and MPI_Comm_c2f are not supported
     fi
   fi
+# new dec 2005.  test what fseek is supported (needed for share/landread.c to work correctly)
+  echo testing for fseeko and fseeko64
+  /bin/rm -f tools/fseeko_test tools/fseeko64_test
+  ( make fseek_test 2> /dev/null ) 1> /dev/null
+  if test -x tools/fseeko64_test ; then
+    ( tools/fseeko64_test 2> /dev/null ) 1> /dev/null
+    if [ $? = 0 ] ; then
+       echo fseeko64 is supported
+       sed '/^CC .*=/s/$/ -DFSEEKO64_OK /' configure.wrf > xx$$ ; /bin/mv xx$$ configure.wrf
+    fi
+  else
+    if test -x tools/fseeko_test ; then
+      ( tools/fseeko_test 2> /dev/null ) 1> /dev/null
+      if [ $? = 0 ] ; then
+        echo fseeko is supported and handles 64 bit offsets
+        sed '/^CC .*=/s/$/ -DFSEEKO_OK /' configure.wrf > xx$$ ; /bin/mv xx$$ configure.wrf
+      else
+        echo neither fseeko64 nor fseeko with 64 bit offsets works, landread will be compiled with fseek
+        echo but may not work correctly for very high resolution terrain datasets
+      fi
+    else
+      echo neither fseeko64 nor fseeko with 64 bit offsets works, landread will be compiled with fseek
+      echo but may not work correctly for very high resolution terrain datasets
+    fi
+  fi
 fi
 
 echo "------------------------------------------------------------------------"

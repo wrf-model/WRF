@@ -12,11 +12,11 @@
    JM
 */
 
-TASK_FOR_POINT ( i_p , j_p , ids_p, ide_p , jds_p, jde_p , npx_p , npy_p , Px_p, Py_p, P_p )
-  int_p i_p , j_p , P_p , Px_p , Py_p , ids_p, ide_p , jds_p, jde_p , npx_p , npy_p ;
+TASK_FOR_POINT ( i_p , j_p , ids_p, ide_p , jds_p, jde_p , npx_p , npy_p , Px_p, Py_p )
+  int_p i_p , j_p , Px_p , Py_p , ids_p, ide_p , jds_p, jde_p , npx_p , npy_p ;
 {
   int i , j , ids, ide, jds, jde, npx, npy ;  /* inputs */
-  int P, Px, Py ;                             /* output */
+  int Px, Py ;                                /* output */
   int idim, jdim ;
   int rem, a, b ;
   i = *i_p - 1 ;
@@ -60,7 +60,6 @@ TASK_FOR_POINT ( i_p , j_p , ids_p, ide_p , jds_p, jde_p , npx_p , npy_p , Px_p,
 
   *Px_p = Px ;
   *Py_p = Py ;
-  *P_p = Px + Py * npx ;
 }
 
 #if 0
@@ -83,11 +82,7 @@ main()
 #endif
   TASK_FOR_POINT ( &i , &j ,
                    &ids, &ide, &jds, &jde , &npx , &npy ,
-                   &Px, &Py, &P ) ;
-  if ( i < ips[P] ) ips[P] = i ;
-  if ( j < jps[P] ) jps[P] = j ;
-  if ( i > ipe[P] ) ipe[P] = i ;
-  if ( j > jpe[P] ) jpe[P] = j ;
+                   &Px, &Py ) ;
 /*  printf("%3d",P) ; */
 #if 1
   }

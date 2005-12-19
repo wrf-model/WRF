@@ -17,7 +17,7 @@ MODULE module_dm
    INTEGER :: ips_save, ipe_save, jps_save, jpe_save, itrace
 
    INTEGER ntasks, ntasks_y, ntasks_x, mytask, mytask_x, mytask_y
-   INTEGER local_communicator, local_iocommunicator
+   INTEGER local_communicator, local_communicator_periodic, local_iocommunicator
    LOGICAL :: dm_debug_flag = .FALSE.
 
    INTERFACE wrf_dm_maxval
@@ -68,11 +68,17 @@ CONTAINS
    SUBROUTINE wrf_dm_initialize
       IMPLICIT NONE
       INCLUDE 'mpif.h'
-      INTEGER :: local_comm, ierr
+      INTEGER :: local_comm, local_comm2, new_local_comm, group, newgroup, p, p1, ierr
+      INTEGER, ALLOCATABLE, DIMENSION(:) :: ranks
+      INTEGER, DIMENSION(2) :: dims, coords
+      LOGICAL, DIMENSION(2) :: isperiodic
+      LOGICAL :: reorder_mesh
+
       CALL wrf_get_dm_communicator ( local_comm )
       CALL mpi_comm_size( local_comm, ntasks, ierr )
       CALL nl_get_nproc_x ( 1, ntasks_x )
       CALL nl_get_nproc_y ( 1, ntasks_y )
+      CALL nl_get_reorder_mesh( 1, reorder_mesh )
 
 ! check if user has specified in the namelist
       IF ( ntasks_x .GT. 0 .OR. ntasks_y .GT. 0 ) THEN
@@ -98,10 +104,46 @@ CONTAINS
       CALL wrf_message( wrf_err_message )
 
       CALL mpi_comm_rank( local_comm, mytask, ierr )
-      mytask_x = mod( mytask , ntasks_x )
-      mytask_y = mytask / ntasks_x
+! extra code to reorder the communicator 20051212jm
+      IF ( reorder_mesh ) THEN
+write(0,*)'reordering mesh'
+        ALLOCATE (ranks(ntasks))
+        CALL mpi_comm_dup ( local_comm , local_comm2, ierr )
+        CALL mpi_comm_group ( local_comm2, group, ierr )
+        DO p1=1,ntasks
+          p = p1 - 1
+          ranks(p1) = mod( p , ntasks_x ) * ntasks_y + p / ntasks_x  
+        ENDDO
+        CALL mpi_group_incl( group, ntasks, ranks, newgroup, ierr )
+        DEALLOCATE (ranks)
+        CALL mpi_comm_create( local_comm2, newgroup, new_local_comm , ierr )
+      ELSE
+        new_local_comm = local_comm
+      ENDIF
+! end extra code to reorder the communicator 20051212jm
+      dims(1) = ntasks_y  ! rows
+      dims(2) = ntasks_x  ! columns
+      isperiodic(1) = .false.
+      isperiodic(2) = .false.
+      CALL mpi_cart_create( new_local_comm, 2, dims, isperiodic, .false., local_communicator, ierr )
+      dims(1) = ntasks_y  ! rows
+      dims(2) = ntasks_x  ! columns
+      isperiodic(1) = .true.
+      isperiodic(2) = .true.
+      CALL mpi_cart_create( new_local_comm, 2, dims, isperiodic, .false., local_communicator_periodic, ierr )
+! debug
+      CALL mpi_comm_rank( local_communicator_periodic, mytask, ierr )
+      CALL mpi_cart_coords( local_communicator_periodic, mytask, 2, coords, ierr )
+        write(0,*)'periodic coords ',mytask, coords
+
+      CALL mpi_comm_rank( local_communicator, mytask, ierr )
+      CALL mpi_cart_coords( local_communicator, mytask, 2, coords, ierr )
+        write(0,*)'non periodic coords ',mytask, coords
+      mytask_x = coords(2)   ! col task (x)
+      mytask_y = coords(1)   ! row task (y)
       CALL nl_set_nproc_x ( 1, ntasks_x )
       CALL nl_set_nproc_y ( 1, ntasks_y )
+      CALL wrf_set_dm_communicator ( local_communicator )
       RETURN
    END SUBROUTINE wrf_dm_initialize
 
@@ -272,7 +314,7 @@ CONTAINS
          nj = ( c_jds - j_parent_start ) * parent_grid_ratio + 1 + 1 ;
          DO i = c_ids, c_ide
             ni = ( i - i_parent_start ) * parent_grid_ratio + 1 + 1 ;
-            CALL task_for_point ( ni, nj, ids, ide, jds, jde, ntasks_x, ntasks_y, Px, Py, P )
+            CALL task_for_point ( ni, nj, ids, ide, jds, jde, ntasks_x, ntasks_y, Px, Py )
             IF ( Px .EQ. mytask_x ) THEN
                c_ipe = i
                IF ( c_ips .EQ. -1 ) c_ips = i
@@ -283,7 +325,7 @@ CONTAINS
          ni = ( c_ids - i_parent_start ) * parent_grid_ratio + 1 + 1 ;
          DO j = c_jds, c_jde
             nj = ( j - j_parent_start ) * parent_grid_ratio + 1 + 1 ;
-            CALL task_for_point ( ni, nj, ids, ide, jds, jde, ntasks_x, ntasks_y, Px, Py, P )
+            CALL task_for_point ( ni, nj, ids, ide, jds, jde, ntasks_x, ntasks_y, Px, Py )
             IF ( Py .EQ. mytask_y ) THEN
                c_jpe = j
                IF ( c_jps .EQ. -1 ) c_jps = j
@@ -478,7 +520,7 @@ CONTAINS
         ips = -1
         j = jds ;
         DO i = ids, ide
-           CALL task_for_point ( i, j, ids, ide, jds, jde, ntasks_x, ntasks_y, Px, Py, P )
+           CALL task_for_point ( i, j, ids, ide, jds, jde, ntasks_x, ntasks_y, Px, Py )
            IF ( Px .EQ. mytask_x ) THEN
               ipe = i
               IF ( ips .EQ. -1 ) ips = i
@@ -488,7 +530,7 @@ CONTAINS
         jps = -1
         i = ids ;
         DO j = jds, jde
-           CALL task_for_point ( i, j, ids, ide, jds, jde, ntasks_x, ntasks_y, Px, Py, P )
+           CALL task_for_point ( i, j, ids, ide, jds, jde, ntasks_x, ntasks_y, Px, Py )
            IF ( Py .EQ. mytask_y ) THEN
               jpe = j
               IF ( jps .EQ. -1 ) jps = j
@@ -502,7 +544,7 @@ CONTAINS
         ips = -1
         j = jds ;
         DO i = ids, ide-1
-           CALL task_for_point ( i, j, ids, ide-1, jds, jde-1, ntasks_x, ntasks_y, Px, Py, P )
+           CALL task_for_point ( i, j, ids, ide-1, jds, jde-1, ntasks_x, ntasks_y, Px, Py )
            IF ( Px .EQ. mytask_x ) THEN
               ipe = i
               IF ( Px .EQ. ntasks_x-1 ) ipe = ipe + 1
@@ -513,7 +555,7 @@ CONTAINS
         jps = -1
         i = ids ;
         DO j = jds, jde-1
-           CALL task_for_point ( i, j, ids, ide-1, jds, jde-1, ntasks_x, ntasks_y, Px, Py, P )
+           CALL task_for_point ( i, j, ids, ide-1, jds, jde-1, ntasks_x, ntasks_y, Px, Py )
            IF ( Py .EQ. mytask_y ) THEN
               jpe = j
               IF ( Py .EQ. ntasks_y-1 ) jpe = jpe + 1
@@ -748,7 +790,6 @@ SUBROUTINE wrf_dm_patch_domain ( id  , domdesc , parent_id , parent_domdesc , &
                            sd2 , ed2 , sp2 , ep2 , sm2 , em2 , &
                            sd3 , ed3 , sp3 , ep3 , sm3 , em3 , &
                            bdx , bdy )
-
 
    RETURN
 END SUBROUTINE wrf_dm_patch_domain

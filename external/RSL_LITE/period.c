@@ -11,6 +11,7 @@
 static int yp_curs, ym_curs, xp_curs, xm_curs ;
 
 RSL_LITE_INIT_PERIOD ( 
+                int * Fcomm0,
                 int * shw0,
                 int * n3dR0, int *n2dR0, int * typesizeR0 , 
                 int * n3dI0, int *n2dI0, int * typesizeI0 , 
@@ -28,6 +29,11 @@ RSL_LITE_INIT_PERIOD (
   int ips , ipe , jps , jpe , kps , kpe ;
   int yp, ym, xp, xm ;
   int nbytes ;
+  int coords[2] ;
+  MPI_Comm comm, *comm0, dummy_comm ;
+
+  comm0 = &dummy_comm ;
+  *comm0 = MPI_Comm_f2c( *Fcomm0 ) ;
 
   shw = *shw0 ;
   n3dR = *n3dR0 ; n2dR = *n2dR0 ; typesizeR = *typesizeR0 ;
@@ -43,12 +49,12 @@ RSL_LITE_INIT_PERIOD (
              typesizeI*(ipe-ips+1+2*shw)*(shw+1)*(n3dI*(kpe-kps+1)+n2dI) +
              typesizeD*(ipe-ips+1+2*shw)*(shw+1)*(n3dD*(kpe-kps+1)+n2dD) +
              typesizeL*(ipe-ips+1+2*shw)*(shw+1)*(n3dL*(kpe-kps+1)+n2dL) ;
-    yp = me + np_x ; ym = me - np_x ;
-    if ( yp >= 0 && yp < np ) {
+    MPI_Cart_shift( *comm0, 1, 1, &ym, &yp ) ;
+    if ( yp != MPI_PROC_NULL ) {
        buffer_for_proc ( yp , nbytes, RSL_RECVBUF ) ;
        buffer_for_proc ( yp , nbytes, RSL_SENDBUF ) ;
     }
-    if ( ym >= 0 && ym < np ) {
+    if ( ym != MPI_PROC_NULL ) {
        buffer_for_proc ( ym , nbytes, RSL_RECVBUF ) ;
        buffer_for_proc ( ym , nbytes, RSL_SENDBUF ) ;
     }
@@ -60,19 +66,29 @@ RSL_LITE_INIT_PERIOD (
              typesizeD*(jpe-jps+1+2*shw)*(shw+1)*(n3dD*(kpe-kps+1)+n2dD) +
              typesizeL*(jpe-jps+1+2*shw)*(shw+1)*(n3dL*(kpe-kps+1)+n2dL) ;
 
-    if ( me % np_x == 0 ) {
-       buffer_for_proc ( me + np_x - 1 , nbytes, RSL_RECVBUF ) ;
-       buffer_for_proc ( me + np_x - 1 , nbytes, RSL_SENDBUF ) ;
+/*
+ this assumes that the topoology associated with the communicator is periodic
+ the period routines should be called with "local_communicator_periodic", which
+ is set up in module_dm.F for RSL_LITE.  Registry generated code automaticall
+ does this (gen_comms.c for RSL_LITE).
+*/
+
+    MPI_Comm_rank( *comm0, &me ) ;
+    MPI_Cart_coords( *comm0, me, 2, coords ) ;
+    MPI_Cart_shift( *comm0, 1, 1, &xm, &xp ) ;
+    if ( xm != MPI_PROC_NULL && coords[1] == np_x - 1 ) { /* process on right hand side of mesh */
+       buffer_for_proc ( xm , nbytes, RSL_RECVBUF ) ;
+       buffer_for_proc ( xm , nbytes, RSL_SENDBUF ) ;
     }
-    if ( me % np_x == np_x - 1 ) {
-       buffer_for_proc ( me - np_x + 1 , nbytes, RSL_RECVBUF ) ;
-       buffer_for_proc ( me - np_x + 1 , nbytes, RSL_SENDBUF ) ;
+    if ( xp != MPI_PROC_NULL && coords[1] == 0 ) {        /* process on left hand side of mesh */
+       buffer_for_proc ( xp,  nbytes, RSL_RECVBUF ) ;
+       buffer_for_proc ( xp , nbytes, RSL_SENDBUF ) ;
     }
   }
   yp_curs = 0 ; ym_curs = 0 ; xp_curs = 0 ; xm_curs = 0 ;
 }
 
-RSL_LITE_PACK_PERIOD_X ( char * buf , int * shw0 , int * typesize0 , int * xy0 , int * pu0 , char * memord , int * xstag0 ,
+RSL_LITE_PACK_PERIOD_X ( int* Fcomm0, char * buf , int * shw0 , int * typesize0 , int * xy0 , int * pu0 , char * memord , int * xstag0 ,
            int *me0, int * np0 , int * np_x0 , int * np_y0 , 
            int * ids0 , int * ide0 , int * jds0 , int * jde0 , int * kds0 , int * kde0 ,
            int * ims0 , int * ime0 , int * jms0 , int * jme0 , int * kms0 , int * kme0 ,
@@ -95,7 +111,12 @@ RSL_LITE_PACK_PERIOD_X ( char * buf , int * shw0 , int * typesize0 , int * xy0 ,
   int yp, ym, xp, xm ;
   int nbytes, ierr ;
   register int *pi, *qi ;
+  int coords[2], dims[2] ;
 float f ;
+  MPI_Comm comm, *comm0, dummy_comm ;
+
+  comm0 = &dummy_comm ;
+  *comm0 = MPI_Comm_f2c( *Fcomm0 ) ;
 
   me = *me0 ; np = *np0 ; np_x = *np_x0 ; np_y = *np_y0 ;
   xstag = *xstag0 ;
@@ -105,6 +126,9 @@ float f ;
   ips = *ips0-1 ; ipe = *ipe0-1 ; jps = *jps0-1 ; jpe = *jpe0-1 ; kps = *kps0-1 ; kpe = *kpe0-1 ;
   xy = *xy0 ;
   pu = *pu0 ;
+
+  dims[0] = np_x ;
+  dims[1] = np_y ;
 
 /* need to adapt for other memory orders */
 
@@ -117,16 +141,18 @@ float f ;
   da_buf = ( pu == 0 ) ? RSL_SENDBUF : RSL_RECVBUF ;
 
   if ( np_x > 1 && xy == 1 ) {
-    if ( me % np_x == np_x - 1 ) {
-
-      p = buffer_for_proc( me - np_x + 1 , 0 , da_buf ) ;
+    MPI_Comm_rank( *comm0, &me ) ;
+    MPI_Cart_coords( *comm0, me, 2, coords ) ;
+    MPI_Cart_shift( *comm0, 1, 1, &xm, &xp ) ;
+    if ( coords[1] == np_x - 1 ) {                /* process on right hand edge of domain */
+      p = buffer_for_proc( xp , 0 , da_buf ) ;
       if ( pu == 0 ) {
-        nbytes = buffer_size_for_proc( me - np_x + 1, da_buf ) ;
+        nbytes = buffer_size_for_proc( xp , da_buf ) ;
 
         if ( xp_curs + RANGE( JMAX(jps-shw), JMIN(jpe+shw), kps, kpe, ipe-shw, ipe-1, 1, typesize ) > nbytes ) {
-	  fprintf(stderr,"memory overwrite in rsl_lite_pack_period_x, right hand X to %d, %d > %d\n",me - np_x + 1,
+	  fprintf(stderr,"memory overwrite in rsl_lite_pack_period_x, right hand X to %d, %d > %d\n",xp,
 	      xp_curs + RANGE( JMAX(jps-shw), JMIN(jpe+shw), kps, kpe, ipe-shw, ipe-1, 1, typesize ), nbytes ) ;
-	  MPI_Abort(MPI_COMM_WORLD, ierr) ;
+	  MPI_Abort(MPI_COMM_WORLD, 98) ;
         }
 	if ( typesize == sizeof(int) ) {
           for ( j = JMAX(jps-shw) ; j <= JMIN(jpe+shw) ; j++ ) {
@@ -189,14 +215,14 @@ float f ;
         }
       }
     }
-    if ( me % np_x == 0 ) {
-      p = buffer_for_proc( me + np_x - 1 , 0 , da_buf ) ;
+    if ( coords[1] == 0 ) {         /* process on left hand edge of domain */
+      p = buffer_for_proc( xm , 0 , da_buf ) ;
       if ( pu == 0 ) {
-        nbytes = buffer_size_for_proc( me + np_x - 1 , da_buf ) ;
+        nbytes = buffer_size_for_proc( xm , da_buf ) ;
         if ( xm_curs + RANGE( JMAX(jps-shw), JMIN(jpe+shw), kps, kpe, ips, ips+shw-1+xstag, 1, typesize ) > nbytes ) {
-	  fprintf(stderr,"memory overwrite in rsl_lite_pack,  left hand X to %d , %d > %d\n",me + np_x - 1,
+	  fprintf(stderr,"memory overwrite in rsl_lite_pack,  left hand X to %d , %d > %d\n",xm,
 	      xm_curs + RANGE( JMAX(jps-shw), JMIN(jpe+shw), kps, kpe, ips, ips+shw-1+xstag, 1, typesize ), nbytes ) ;
-	  MPI_Abort(MPI_COMM_WORLD, ierr) ;
+	  MPI_Abort(MPI_COMM_WORLD, 98) ;
         }
 	if ( typesize == sizeof(int) ) {
           for ( j = JMAX(jps-shw) ; j <= JMIN(jpe+shw) ; j++ ) {
@@ -309,33 +335,37 @@ RSL_LITE_EXCH_PERIOD_X ( int * Fcomm0, int *me0, int * np0 , int * np_x0 , int *
   int yp, ym, xp, xm, nbytes ;
   MPI_Status stat ;
   MPI_Comm comm, *comm0, dummy_comm ;
+  int coords[2], dims[2] ;
 
   comm0 = &dummy_comm ;
   *comm0 = MPI_Comm_f2c( *Fcomm0 ) ;
 #if 1
-
-/* if ( me % np_x == np_x - 1 ) { */
-
   comm = *comm0 ; me = *me0 ; np = *np0 ; np_x = *np_x0 ; np_y = *np_y0 ;
+  dims[0] = np_x ;
+  dims[1] = np_y ;
+
   if ( np_x > 1 ) {
-    if ( me % np_x == np_x - 1 ) {
-      nbytes = buffer_size_for_proc( me - np_x + 1, RSL_RECVBUF ) ;
-      MPI_Irecv ( buffer_for_proc( me - np_x + 1, xp_curs, RSL_RECVBUF ), nbytes, MPI_CHAR, me - np_x + 1, me, comm, &xp_recv ) ;
+    MPI_Comm_rank( *comm0, &me ) ;
+    MPI_Cart_coords( *comm0, me, 2, coords ) ;
+    MPI_Cart_shift( *comm0, 1, 1, &xm, &xp ) ;
+    if ( coords[1] == np_x - 1 ) {   /* proc on right hand side of domain */
+      nbytes = buffer_size_for_proc( xp, RSL_RECVBUF ) ;
+      MPI_Irecv ( buffer_for_proc( xp , xp_curs, RSL_RECVBUF ), nbytes, MPI_CHAR, xp, me, comm, &xp_recv ) ;
     }
-    if ( me % np_x == 0 ) {
-      nbytes = buffer_size_for_proc( me + np_x - 1, RSL_RECVBUF ) ;
-      MPI_Irecv ( buffer_for_proc( me + np_x - 1, xm_curs, RSL_RECVBUF ), nbytes, MPI_CHAR, me + np_x - 1, me, comm, &xm_recv ) ;
+    if ( coords[1] == 0 ) {          /* proc on left hand side of domain */
+      nbytes = buffer_size_for_proc( xm, RSL_RECVBUF ) ;
+      MPI_Irecv ( buffer_for_proc( xm, xm_curs, RSL_RECVBUF ), nbytes, MPI_CHAR, xm, me, comm, &xm_recv ) ;
     }
-    if ( me % np_x == np_x - 1 ) {
-      MPI_Isend ( buffer_for_proc( me - np_x + 1, 0,       RSL_SENDBUF ), xp_curs, MPI_CHAR, me - np_x + 1, me - np_x + 1, comm, &xp_send ) ;
+    if ( coords[1] == np_x - 1 ) {   /* proc on right hand side of domain */
+      MPI_Isend ( buffer_for_proc( xp , 0,       RSL_SENDBUF ), xp_curs, MPI_CHAR, xp, xp, comm, &xp_send ) ;
     }
-    if ( me % np_x == 0 ) {
-      MPI_Isend ( buffer_for_proc( me + np_x - 1, 0,       RSL_SENDBUF ), xm_curs, MPI_CHAR, me + np_x - 1, me + np_x - 1, comm, &xm_send ) ;
+    if ( coords[1] == 0 ) {          /* proc on left hand side of domain */
+      MPI_Isend ( buffer_for_proc( xm, 0,       RSL_SENDBUF ), xm_curs, MPI_CHAR, xm, xm, comm, &xm_send ) ;
     }
-    if ( me % np_x == np_x - 1 ) MPI_Wait( &xp_recv, &stat ) ; 
-    if ( me % np_x == 0        ) MPI_Wait( &xm_recv, &stat ) ; 
-    if ( me % np_x == np_x - 1 ) MPI_Wait( &xp_send, &stat ) ; 
-    if ( me % np_x == 0        ) MPI_Wait( &xm_send, &stat ) ;
+    if ( coords[1] == np_x - 1 ) MPI_Wait( &xp_recv, &stat ) ; 
+    if ( coords[1] == 0        ) MPI_Wait( &xm_recv, &stat ) ; 
+    if ( coords[1] == np_x - 1 ) MPI_Wait( &xp_send, &stat ) ; 
+    if ( coords[1] == 0        ) MPI_Wait( &xm_send, &stat ) ;
   }
 #else 
 fprintf(stderr,"RSL_LITE_EXCH_X disabled\n") ;

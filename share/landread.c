@@ -9,9 +9,9 @@
 #   endif
 # endif
 #endif
-#include <stdio.h>
 
 #ifdef LANDREAD_STUB
+#include <stdio.h>
 
 int GET_TERRAIN (        float *adx,
                          float *xlat,
@@ -33,6 +33,9 @@ int GET_TERRAIN (        float *adx,
 
 #else
 
+#ifdef FSEEKO_OK
+#  define _FILE_OFFSET_BITS 64
+#endif
 #include <stdio.h>
 #include <rpc/xdr.h>
 #include <math.h>
@@ -255,12 +258,31 @@ float tsGetValueInt(const int aix, const int aiy)
   long long ll_tileNx = tileNx;
   long long ll_tileNy = tileNy;
 
-  off_t loc = ll_numHeaderBytes + ll_tileNx*ll_tileNy*sizeof(float)*tn +
+#ifdef FSEEKO64_OK 
+  /* This is used on machines that support fseeko64. Tested for in ./configure script */
+  long long loc = ll_numHeaderBytes + ll_tileNx*ll_tileNy*sizeof(float)*tn +
     ll_gn*sizeof(float);
 
   /* Seek to the proper location in the file and get the data value. */
-  /* fseeko64(fp, loc, SEEK_SET); */
+  fseeko64(fp, loc, SEEK_SET);
+#else
+#  ifdef FSEEKO_OK
+  /* This is used on machines that support _FILE_OFFSET_BITS=64 which makes
+     off_t be 64 bits, and for which fseeko can handle 64 bit offsets.  This
+     is tested in the ./configure script */
+  off_t loc = ll_numHeaderBytes + ll_tileNx*ll_tileNy*sizeof(float)*tn +
+    ll_gn*sizeof(float);
+
+  fseeko(fp, loc, SEEK_SET);
+#  else
+  /* Note, this will not work correctly for very high resolution terrain input
+     because the offset is only 32 bits.   */
+  off_t loc = ll_numHeaderBytes + ll_tileNx*ll_tileNy*sizeof(float)*tn +
+    ll_gn*sizeof(float);
+
   fseek(fp, loc, SEEK_SET);
+#  endif
+#endif
   xdr_float(xdrs, (float *) &f);
 
   return(f);

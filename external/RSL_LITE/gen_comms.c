@@ -140,7 +140,7 @@ fprintf(fp,"CALL wrf_debug(2,'calling %s')\n",fname) ;
 #if 0
 fprintf(fp,"CALL wrf_debug(3,'calling RSL_LITE_INIT_EXCH %d for Y %s')\n",maxstenwidth,fname) ;
 #endif
-    fprintf(fp,"CALL RSL_LITE_INIT_EXCH ( %d , &\n",maxstenwidth) ;
+    fprintf(fp,"CALL RSL_LITE_INIT_EXCH ( local_communicator, %d, &\n",maxstenwidth) ;
     if ( n4d > 0 ) {
       fprintf(fp,  "     %d  &\n", n3dR ) ;
       for ( i = 0 ; i < n4d ; i++ ) {
@@ -157,23 +157,14 @@ fprintf(fp,"CALL wrf_debug(3,'calling RSL_LITE_INIT_EXCH %d for Y %s')\n",maxste
     fprintf(fp,"      ips, ipe, jps, jpe, kps, kpe    )\n") ;
 
 /* generate packs prior to stencil exchange in Y */
-    gen_packs( fp, p, maxstenwidth, 0, 0, "RSL_LITE_PACK" ) ;
+    gen_packs( fp, p, maxstenwidth, 0, 0, "RSL_LITE_PACK", "local_communicator" ) ;
 /* generate stencil exchange in Y */
-#if 0
-fprintf(fp,"CALL wrf_debug('calling RSL_LITE_EXCH_Y')\n") ;
-#endif
     fprintf(fp,"   CALL RSL_LITE_EXCH_Y ( local_communicator , mytask, ntasks, ntasks_x, ntasks_y )\n") ;
-#if 0
-fprintf(fp,"CALL wrf_debug('back from RSL_LITE_EXCH_Y')\n") ;
-#endif
 /* generate unpacks after stencil exchange in Y */
-    gen_packs( fp, p, maxstenwidth, 0, 1 , "RSL_LITE_PACK" ) ;
+    gen_packs( fp, p, maxstenwidth, 0, 1 , "RSL_LITE_PACK", "local_communicator" ) ;
 
 /* generate the stencil init statement for X transfer */
-#if 0
-fprintf(fp,"CALL wrf_debug(3,'calling RSL_LITE_INIT_EXCH %d for X %s')\n",maxstenwidth,fname) ;
-#endif
-    fprintf(fp,"CALL RSL_LITE_INIT_EXCH ( %d , &\n",maxstenwidth) ;
+    fprintf(fp,"CALL RSL_LITE_INIT_EXCH ( local_communicator, %d , &\n",maxstenwidth) ;
     fprintf(fp,"     %d, %d, RWORDSIZE, &\n", n3dR, n2dR ) ;
     fprintf(fp,"     %d, %d, IWORDSIZE, &\n", n3dI, n2dI ) ;
     fprintf(fp,"     %d, %d, DWORDSIZE, &\n", n3dD, n2dD ) ;
@@ -181,32 +172,21 @@ fprintf(fp,"CALL wrf_debug(3,'calling RSL_LITE_INIT_EXCH %d for X %s')\n",maxste
     fprintf(fp,"      mytask, ntasks, ntasks_x, ntasks_y,   &\n" ) ;
     fprintf(fp,"      ips, ipe, jps, jpe, kps, kpe    )\n") ;
 /* generate packs prior to stencil exchange in X */
-    gen_packs( fp, p, maxstenwidth, 1, 0, "RSL_LITE_PACK" ) ;
+    gen_packs( fp, p, maxstenwidth, 1, 0, "RSL_LITE_PACK", "local_communicator" ) ;
 /* generate stencil exchange in X */
-#if 0
-fprintf(fp,"CALL wrf_debug('calling RSL_LITE_EXCH_X')\n") ;
-#endif
     fprintf(fp,"   CALL RSL_LITE_EXCH_X ( local_communicator , mytask, ntasks, ntasks_x, ntasks_y )\n") ;
-#if 0
-fprintf(fp,"CALL wrf_debug('back from RSL_LITE_EXCH_X')\n") ;
-#endif
 /* generate unpacks after stencil exchange in X */
-    gen_packs( fp, p, maxstenwidth, 1, 1, "RSL_LITE_PACK" ) ;
-
-#if 0
-fprintf(fp,"CALL wrf_debug(2,'back from %s')\n",fname) ;
-#endif
+    gen_packs( fp, p, maxstenwidth, 1, 1, "RSL_LITE_PACK", "local_communicator" ) ;
 
     close_the_file(fp) ;
   }
   return(0) ;
 }
 
-gen_packs ( FILE *fp , node_t *p, int shw, int xy /* 0=y,1=x */ , int pu /* 0=pack,1=unpack */, char * packname )   
+gen_packs ( FILE *fp , node_t *p, int shw, int xy /* 0=y,1=x */ , int pu /* 0=pack,1=unpack */, char * packname, char * commname )   
 {
   node_t * q ;
   node_t * dimd ;
-  char commname[NAMELEN] ;
   char fname[NAMELEN] ;
   char tmp[NAMELEN], tmp2[NAMELEN], tmp3[NAMELEN] ;
   char commuse[NAMELEN] ;
@@ -223,12 +203,12 @@ gen_packs ( FILE *fp , node_t *p, int shw, int xy /* 0=y,1=x */ , int pu /* 0=pa
     {
       strcpy( tmp2 , t1 ) ;
       if (( t2 = strtok_rentr( tmp2 , ":" , &pos2 )) == NULL )
-       { fprintf(stderr,"unparseable description for halo %s\n", commname ) ; continue ; }
+       { fprintf(stderr,"unparseable description for halo %s\n", p->name ) ; continue ; }
       t2 = strtok_rentr(NULL,",", &pos2) ;
       while ( t2 != NULL )
       {
         if ((q = get_entry_r( t2, commuse, Domain.fields )) == NULL )
-          { fprintf(stderr,"WARNING 1 : %s in halo spec %s (%s) is not defined in registry.\n",t2,commname, commuse) ; }
+          { fprintf(stderr,"WARNING 1 : %s in halo spec %s (%s) is not defined in registry.\n",t2,p->name, commuse) ; }
         else
         {
           if      (  strcmp( q->type->name, "real") && strcmp( q->type->name, "integer") && strcmp( q->type->name, "doubleprecision") ) { ; }
@@ -246,8 +226,8 @@ gen_packs ( FILE *fp , node_t *p, int shw, int xy /* 0=y,1=x */ , int pu /* 0=pa
               {
                 set_mem_order( q->members, memord , NAMELEN) ;
 fprintf(fp,"DO itrace = PARAM_FIRST_SCALAR, num_%s\n",q->name ) ;
-fprintf(fp," CALL %s ( %s ( grid%%sm31,grid%%sm32,grid%%sm33,itrace), %d, %s, %d, %d, '%s', %d, &\n",
-                       packname, t2 , shw, wordsize, xy, pu, memord, q->stag_x?1:0 ) ;
+fprintf(fp," CALL %s ( %s,%s ( grid%%sm31,grid%%sm32,grid%%sm33,itrace), %d, %s, %d, %d, '%s', %d, &\n",
+                       packname, commname, t2 , shw, wordsize, xy, pu, memord, q->stag_x?1:0 ) ;
 fprintf(fp,"mytask, ntasks, ntasks_x, ntasks_y,       &\n") ;
 fprintf(fp,"ids, ide, jds, jde, kds, kde,             &\n") ;
 fprintf(fp,"ims, ime, jms, jme, kms, kme,             &\n") ;
@@ -288,7 +268,7 @@ fprintf(fp,"CALL wrf_debug(3,wrf_err_message)\n") ;
 fprintf(fp,"write(wrf_err_message,*)' p ',ips, ipe, jps, jpe, kps, kpe\n" ) ;
 fprintf(fp,"CALL wrf_debug(3,wrf_err_message)\n") ;
 #endif
-                    fprintf(fp,"CALL %s ( %s, %d, %s, %d, %d, '%s', %d, &\n", packname, t2, shw, wordsize, xy, pu, memord, q->stag_x?1:0 ) ;
+                    fprintf(fp,"CALL %s ( %s, %s, %d, %s, %d, %d, '%s', %d, &\n", packname, commname, t2, shw, wordsize, xy, pu, memord, q->stag_x?1:0 ) ;
                     fprintf(fp,"mytask, ntasks, ntasks_x, ntasks_y,       &\n") ;
                     fprintf(fp,"ids, ide, jds, jde, kds, kde,             &\n") ;
                     fprintf(fp,"ims, ime, jms, jme, kms, kme,             &\n") ;
@@ -311,7 +291,7 @@ fprintf(fp,"CALL wrf_debug(3,wrf_err_message)\n") ;
 fprintf(fp,"write(wrf_err_message,*)' p ',ips, ipe, jps, jpe, %s, %s\n",s,e ) ;
 fprintf(fp,"CALL wrf_debug(3,wrf_err_message)\n") ;
 #endif
-                    fprintf(fp,"CALL %s ( %s, %d, %s, %d, %d, '%s', %d, &\n", packname, t2, shw, wordsize, xy, pu, memord, q->stag_x?1:0 ) ;
+                    fprintf(fp,"CALL %s ( %s, %s, %d, %s, %d, %d, '%s', %d, &\n", packname, commname, t2, shw, wordsize, xy, pu, memord, q->stag_x?1:0 ) ;
                     fprintf(fp,"mytask, ntasks, ntasks_x, ntasks_y,       &\n") ;
                     fprintf(fp,"ids, ide, jds, jde, %s, %s,             &\n",s,e) ;
                     fprintf(fp,"ims, ime, jms, jme, %s, %s,             &\n",s,e) ;
@@ -327,7 +307,7 @@ fprintf(fp,"CALL wrf_debug(3,wrf_err_message)\n") ;
 fprintf(fp,"write(wrf_err_message,*)' p ',ips, ipe, jps, jpe, %d, %d\n",dimd->coord_start,dimd->coord_end ) ;
 fprintf(fp,"CALL wrf_debug(3,wrf_err_message)\n") ;
 #endif
-                    fprintf(fp,"CALL %s ( %s, %d, %s, %d, %d, '%s', %d, &\n", packname, t2, shw, wordsize, xy, pu, memord, q->stag_x?1:0 ) ;
+                    fprintf(fp,"CALL %s ( %s, %s, %d, %s, %d, %d, '%s', %d, &\n", packname, commname, t2, shw, wordsize, xy, pu, memord, q->stag_x?1:0 ) ;
                     fprintf(fp,"mytask, ntasks, ntasks_x, ntasks_y,       &\n") ;
                     fprintf(fp,"ids, ide, jds, jde, %d, %d,             &\n",dimd->coord_start,dimd->coord_end) ;
                     fprintf(fp,"ims, ime, jms, jme, %d, %d,             &\n",dimd->coord_start,dimd->coord_end) ;
@@ -343,7 +323,7 @@ fprintf(fp,"CALL wrf_debug(3,wrf_err_message)\n") ;
 fprintf(fp,"write(wrf_err_message,*)' p ',ips, ipe, jps, jpe, 1, 1\n" ) ;
 fprintf(fp,"CALL wrf_debug(3,wrf_err_message)\n") ;
 #endif
-                fprintf(fp,"CALL %s ( %s, %d, %s, %d, %d, '%s', %d, &\n", packname, t2, shw, wordsize, xy, pu, memord, q->stag_x?1:0 ) ;
+                fprintf(fp,"CALL %s ( %s, %s, %d, %s, %d, %d, '%s', %d, &\n", packname, commname, t2, shw, wordsize, xy, pu, memord, q->stag_x?1:0 ) ;
                 fprintf(fp,"mytask, ntasks, ntasks_x, ntasks_y,       &\n") ;
                 fprintf(fp,"ids, ide, jds, jde, 1  , 1  ,             &\n") ;
                 fprintf(fp,"ims, ime, jms, jme, 1  , 1  ,             &\n") ;
@@ -476,7 +456,7 @@ fprintf(fp,"CALL wrf_debug(2,'calling %s')\n",fname) ;
     fprintf(fp,"IF ( config_flags%%periodic_x ) THEN\n") ;
 
 /* generate the stencil init statement for X transfer */
-    fprintf(fp,"CALL RSL_LITE_INIT_PERIOD ( %d , &\n",maxperwidth) ;
+    fprintf(fp,"CALL RSL_LITE_INIT_PERIOD ( local_communicator_periodic, %d , &\n",maxperwidth) ;
 
     if ( n4d > 0 ) {
       fprintf(fp,  "     %d  &\n", n3dR ) ;
@@ -494,11 +474,11 @@ fprintf(fp,"CALL wrf_debug(2,'calling %s')\n",fname) ;
     fprintf(fp,"      mytask, ntasks, ntasks_x, ntasks_y,   &\n" ) ;
     fprintf(fp,"      ips, ipe, jps, jpe, kps, kpe    )\n") ;
 /* generate packs prior to stencil exchange in X */
-    gen_packs( fp, p, maxperwidth, 1, 0, "RSL_LITE_PACK_PERIOD_X" ) ;
+    gen_packs( fp, p, maxperwidth, 1, 0, "RSL_LITE_PACK_PERIOD_X", "local_communicator_periodic" ) ;
 /* generate stencil exchange in X */
-    fprintf(fp,"   CALL RSL_LITE_EXCH_PERIOD_X ( local_communicator , mytask, ntasks, ntasks_x, ntasks_y )\n") ;
+    fprintf(fp,"   CALL RSL_LITE_EXCH_PERIOD_X ( local_communicator_periodic , mytask, ntasks, ntasks_x, ntasks_y )\n") ;
 /* generate unpacks after stencil exchange in X */
-    gen_packs( fp, p, maxperwidth, 1, 1, "RSL_LITE_PACK_PERIOD_X" ) ;
+    gen_packs( fp, p, maxperwidth, 1, 1, "RSL_LITE_PACK_PERIOD_X", "local_communicator_periodic" ) ;
 
     fprintf(fp,"END IF\n") ;
 
@@ -609,7 +589,7 @@ fprintf(fp,"CALL wrf_debug(2,'calling %s')\n",fname) ;
     fprintf(fp,"IF ( config_flags%%swap_%c ) THEN\n",(xy==1)?'x':'y') ;
 
 /* generate the init statement for X swap */
-    fprintf(fp,"CALL RSL_LITE_INIT_SWAP ( %d , &\n", xy ) ;
+    fprintf(fp,"CALL RSL_LITE_INIT_SWAP ( local_communicator, %d , &\n", xy ) ;
     if ( n4d > 0 ) {
       fprintf(fp,  "     %d  &\n", n3dR ) ;
       for ( i = 0 ; i < n4d ; i++ ) {
@@ -626,11 +606,11 @@ fprintf(fp,"CALL wrf_debug(2,'calling %s')\n",fname) ;
     fprintf(fp,"      ids, ide, jds, jde, kds, kde,   &\n") ;
     fprintf(fp,"      ips, ipe, jps, jpe, kps, kpe    )\n") ;
 /* generate packs prior to stencil exchange  */
-    gen_packs( fp, p, 1, xy, 0, "RSL_LITE_PACK_SWAP" ) ;
+    gen_packs( fp, p, 1, xy, 0, "RSL_LITE_PACK_SWAP", "local_communicator" ) ;
 /* generate stencil exchange in X */
     fprintf(fp,"   CALL RSL_LITE_SWAP ( local_communicator , mytask, ntasks, ntasks_x, ntasks_y )\n") ;
 /* generate unpacks after stencil exchange  */
-    gen_packs( fp, p, 1, xy, 1, "RSL_LITE_PACK_SWAP" ) ;
+    gen_packs( fp, p, 1, xy, 1, "RSL_LITE_PACK_SWAP", "local_communicator" ) ;
 
     fprintf(fp,"END IF\n") ;
 
@@ -752,7 +732,7 @@ fprintf(fp,"CALL wrf_debug(2,'calling %s')\n",fname) ;
     fprintf(fp,"IF ( config_flags%%cycle_%c ) THEN\n",(xy==1)?'x':'y') ;
 
 /* generate the init statement for X swap */
-    fprintf(fp,"CALL RSL_LITE_INIT_CYCLE ( %d , %d, &\n", xy, inout ) ;
+    fprintf(fp,"CALL RSL_LITE_INIT_CYCLE ( local_communicator, %d , %d, &\n", xy, inout ) ;
     if ( n4d > 0 ) {
       fprintf(fp,  "     %d  &\n", n3dR ) ;
       for ( i = 0 ; i < n4d ; i++ ) {
@@ -769,11 +749,11 @@ fprintf(fp,"CALL wrf_debug(2,'calling %s')\n",fname) ;
     fprintf(fp,"      ids, ide, jds, jde, kds, kde,   &\n") ;
     fprintf(fp,"      ips, ipe, jps, jpe, kps, kpe    )\n") ;
 /* generate packs prior to stencil exchange  */
-    gen_packs( fp, p, inout, xy, 0, "RSL_LITE_PACK_CYCLE" ) ;
+    gen_packs( fp, p, inout, xy, 0, "RSL_LITE_PACK_CYCLE", "local_communicator" ) ;
 /* generate stencil exchange in X */
     fprintf(fp,"   CALL RSL_LITE_CYCLE ( local_communicator , mytask, ntasks, ntasks_x, ntasks_y )\n") ;
 /* generate unpacks after stencil exchange  */
-    gen_packs( fp, p, inout, xy, 1, "RSL_LITE_PACK_CYCLE" ) ;
+    gen_packs( fp, p, inout, xy, 1, "RSL_LITE_PACK_CYCLE", "local_communicator" ) ;
 
     fprintf(fp,"END IF\n") ;
 
@@ -1095,7 +1075,7 @@ gen_nest_pack ( char * dirname )
 
         fprintf(fp,"msize = %d * nlev + %d\n", d3, d2 ) ;
 
-        fprintf(fp,"CALL %s( msize*RWORDSIZE                               &\n",info_name ) ;
+        fprintf(fp,"CALL %s( local_communicator, msize*RWORDSIZE                               &\n",info_name ) ;
         fprintf(fp,"                        ,cips,cipe,cjps,cjpe                               &\n") ;
 if (sw) fprintf(fp,"                        ,iids,iide,ijds,ijde                               &\n") ;
         fprintf(fp,"                        ,nids,nide,njds,njde                               &\n") ;
@@ -1109,7 +1089,7 @@ if (sw) fprintf(fp,"                        ,pgr , sw                           
   
         gen_nest_packunpack ( fp , Domain.fields, corename, PACKIT, down_path[ipath] ) ;
 
-        fprintf(fp,"CALL %s( msize*RWORDSIZE                               &\n",info_name ) ;
+        fprintf(fp,"CALL %s( local_communicator, msize*RWORDSIZE                               &\n",info_name ) ;
         fprintf(fp,"                        ,cips,cipe,cjps,cjpe                               &\n") ;
 if (sw) fprintf(fp,"                        ,iids,iide,ijds,ijde                               &\n") ;
         fprintf(fp,"                        ,nids,nide,njds,njde                               &\n") ;

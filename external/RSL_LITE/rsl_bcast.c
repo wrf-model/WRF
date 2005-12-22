@@ -188,7 +188,7 @@ RSL_LITE_TO_CHILD_INFO ( Fcomm, msize_p,
            nj = ( j - (*jcoord_p + *shw_p) ) * *pgr_p + 1 + 1 ;
 
 	   TASK_FOR_POINT ( &ni, &nj, nids_p, nide_p, njds_p, njde_p, &s_ntasks_x, &s_ntasks_y, &Px, &Py ) ;
-           coords[0] = Px ; coords[1] = Py ;
+           coords[1] = Px ; coords[0] = Py ;
            MPI_Cart_rank( *comm, coords, &P ) ;
 
 	   q = RSL_MALLOC( rsl_list_t , 1 ) ;
@@ -302,7 +302,7 @@ RSL_LITE_TO_PARENT_INFO ( Fcomm, msize_p,
       {
 	if ( ( *jcoord_p <= j && j <= *jcoord_p+*jdim_cd_p-1 ) && ( *icoord_p <= i && i <= *icoord_p+*idim_cd_p-1 ) ) {
 	  TASK_FOR_POINT ( &i, &j, cids_p, cide_p, cjds_p, cjde_p, &s_ntasks_x, &s_ntasks_y, &Px, &Py ) ;
-          coords[0] = Px ; coords[1] = Py ;
+          coords[1] = Px ; coords[0] = Py ;
           MPI_Cart_rank( *comm, coords, &P ) ;
 	  q = RSL_MALLOC( rsl_list_t , 1 ) ;
 	  q->info1 = i ;

@@ -434,7 +434,7 @@ char *func= "create_inpLambert";
     
    pGDS_Lam_Input->lLat_cut1=lrint(cut1 *1000.);/* 1stlat fr pole secant cuts*/
    pGDS_Lam_Input->lLat_cut2=lrint(cut2 *1000.);/* 2ndlat fr pole secant cuts*/
-   pGDS_Lam_Input->lLat_southpole = 0; /* lat of southern pole (millidegrees) */
+   pGDS_Lam_Input->lLat_southpole = -90000; /* lat of southern pole (millidegrees) */
    pGDS_Lam_Input->lLon_southpole = 0; /* lon of souther pole (millidegrees) */
    pGDS_Lam_Input->usZero = 0;         /* filler zeroes */
 
@@ -651,7 +651,7 @@ char *func= "Create_InpLatLon";
          pGDS_Latlon_Input->usRes_flag = pGDS_Latlon_Input->usRes_flag + 0x80;
    pGDS_Latlon_Input->usScan_mode = geom_in.scan; /* order ofgridpts (Tbl 8)*/
    pGDS_Latlon_Input->usZero = 0;  /* filler zeroes*/
-   pGDS_Latlon_Input->lLat_southpole= 0;/* lat of southern pole (millidegrees)*/
+   pGDS_Latlon_Input->lLat_southpole= -90000;/* lat of southern pole (millidegrees)*/
    pGDS_Latlon_Input->lLon_southpole= 0;/* lon of southern pole (millidegrees)*/
    pGDS_Latlon_Input->lRotate = 0;/* angle of rotation*/
    pGDS_Latlon_Input->lPole_lat = 0;/* lat of pole of stretching (mdeg)*/

@@ -396,7 +396,7 @@ CONTAINS
                 DT=dt, ITIMESTEP=itimestep, DX=dx               &
                ,U=u,V=v,T=t,W=w ,RHO=rho                        &
                ,P=p,PI=pi ,Q=qv_curr ,RAINCV=raincv             &
-               ,DZ8W=dz8w ,XLV=xlv0,CP=cp,G=g,R_V=r_v           &
+               ,DZ8W=dz8w ,XLV=xlv,CP=cp,G=g,R_V=r_v            &
                ,APR_GR=apr_gr,APR_W=apr_w,APR_MC=apr_mc         &
                ,APR_ST=apr_st,APR_AS=apr_as                     &
                ,APR_CAPMA=apr_capma,APR_CAPME=apr_capme         &

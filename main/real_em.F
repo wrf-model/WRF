@@ -38,7 +38,7 @@ PROGRAM real_data
 
 
    TYPE(domain) , POINTER :: null_domain
-   TYPE(domain) , POINTER :: grid
+   TYPE(domain) , POINTER :: grid , new_grid
    TYPE (grid_config_rec_type)              :: config_flags
    INTEGER                :: number_at_same_level
 
@@ -123,45 +123,66 @@ real::t1,t2
                                      kid        = -1            )
 
    grid => head_grid
+   CALL nl_get_max_dom ( 1 , max_dom )
 
    IF ( model_config_rec%interval_seconds .LE. 0 ) THEN
      CALL wrf_error_fatal( 'namelist value for interval_seconds must be > 0')
    ENDIF
-   CALL Setup_Timekeeping ( grid )
-   CALL domain_clockprint ( 150, grid, &
-          'DEBUG real:  clock after Setup_Timekeeping,' )
-   CALL domain_clock_set( grid, &
-                          time_step_seconds=model_config_rec%interval_seconds )
-   CALL domain_clockprint ( 150, grid, &
-          'DEBUG real:  clock after timeStep set,' )
+
+   all_domains : DO domain_id = 1 , max_dom
+
+      IF ( ( model_config_rec%input_from_file(domain_id) ) .OR. &
+           ( domain_id .EQ. 1 ) ) THEN
+
+         IF ( domain_id .GT. 1 ) THEN
+            CALL alloc_and_configure_domain ( domain_id  = domain_id , &
+                                              grid       = new_grid  , &
+                                              parent     = grid      , &
+                                              kid        = 1           )
+            grid => new_grid
+         END IF
+
+         CALL Setup_Timekeeping ( grid )
+         CALL domain_clockprint ( 150, grid, &
+                'DEBUG real:  clock after Setup_Timekeeping,' )
+         CALL domain_clock_set( grid, &
+                                time_step_seconds=model_config_rec%interval_seconds )
+         CALL domain_clockprint ( 150, grid, &
+                'DEBUG real:  clock after timeStep set,' )
 
 
-   CALL       wrf_debug ( 100 , 'real_em: calling set_scalar_indices_from_config ' )
-   CALL set_scalar_indices_from_config ( grid%id , idum1, idum2 )
+         CALL       wrf_debug ( 100 , 'real_em: calling set_scalar_indices_from_config ' )
+         CALL set_scalar_indices_from_config ( grid%id , idum1, idum2 )
 
-   CALL       wrf_debug ( 100 , 'real_em: calling model_to_grid_config_rec ' )
-   CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
+         CALL       wrf_debug ( 100 , 'real_em: calling model_to_grid_config_rec ' )
+         CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
 
-   !  Initialize the WRF IO: open files, init file handles, etc.
+         !  Initialize the WRF IO: open files, init file handles, etc.
 
-   CALL       wrf_debug ( 100 , 'real_em: calling init_wrfio' )
-   CALL init_wrfio
+         CALL       wrf_debug ( 100 , 'real_em: calling init_wrfio' )
+         CALL init_wrfio
 
-   !  Some of the configuration values may have been modified from the initial READ
-   !  of the NAMELIST, so we re-broadcast the configuration records.
+         !  Some of the configuration values may have been modified from the initial READ
+         !  of the NAMELIST, so we re-broadcast the configuration records.
 
 #ifdef DM_PARALLEL
-   CALL       wrf_debug ( 100 , 'real_em: re-broadcast the configuration records' )
-   CALL get_config_as_buffer( configbuf, configbuflen, nbytes )
-   CALL wrf_dm_bcast_bytes( configbuf, nbytes )
-   CALL set_config_as_buffer( configbuf, configbuflen )
+         CALL       wrf_debug ( 100 , 'real_em: re-broadcast the configuration records' )
+         CALL get_config_as_buffer( configbuf, configbuflen, nbytes )
+         CALL wrf_dm_bcast_bytes( configbuf, nbytes )
+         CALL set_config_as_buffer( configbuf, configbuflen )
 #endif
 
-   !   No looping in this layer.  
+         !   No looping in this layer.  
 
-   CALL       wrf_debug ( 100 , 'calling med_sidata_input' )
-   CALL med_sidata_input ( grid , config_flags )
-   CALL       wrf_debug ( 100 , 'backfrom med_sidata_input' )
+         CALL       wrf_debug ( 100 , 'calling med_sidata_input' )
+         CALL med_sidata_input ( grid , config_flags )
+         CALL       wrf_debug ( 100 , 'backfrom med_sidata_input' )
+
+      ELSE 
+         CYCLE all_domains
+      END IF
+
+   END DO all_domains
 
    !  We are done.
 
@@ -260,6 +281,8 @@ real::t1,t2
    !!!!!!!  Loop over each time period to process.
 
    DO loop = 1 , time_loop_max
+
+      IF ( ( grid%id .GT. 1 ) .AND. ( loop .GT. 1 ) ) EXIT
 
       print *,'-----------------------------------------------------------------------------'
       print *,' '
@@ -499,6 +522,19 @@ print *,'spec_bdy_width, interval_seconds, loop=',spec_bdy_width , interval_seco
 
       !  This is the space needed to save the current 3d data for use in computing
       !  the lateral boundary tendencies.
+
+      IF ( ALLOCATED ( ubdy3dtemp1 ) ) DEALLOCATE ( ubdy3dtemp1 )
+      IF ( ALLOCATED ( vbdy3dtemp1 ) ) DEALLOCATE ( vbdy3dtemp1 )
+      IF ( ALLOCATED ( tbdy3dtemp1 ) ) DEALLOCATE ( tbdy3dtemp1 )
+      IF ( ALLOCATED ( pbdy3dtemp1 ) ) DEALLOCATE ( pbdy3dtemp1 )
+      IF ( ALLOCATED ( qbdy3dtemp1 ) ) DEALLOCATE ( qbdy3dtemp1 )
+      IF ( ALLOCATED ( mbdy2dtemp1 ) ) DEALLOCATE ( mbdy2dtemp1 )
+      IF ( ALLOCATED ( ubdy3dtemp2 ) ) DEALLOCATE ( ubdy3dtemp2 )
+      IF ( ALLOCATED ( vbdy3dtemp2 ) ) DEALLOCATE ( vbdy3dtemp2 )
+      IF ( ALLOCATED ( tbdy3dtemp2 ) ) DEALLOCATE ( tbdy3dtemp2 )
+      IF ( ALLOCATED ( pbdy3dtemp2 ) ) DEALLOCATE ( pbdy3dtemp2 )
+      IF ( ALLOCATED ( qbdy3dtemp2 ) ) DEALLOCATE ( qbdy3dtemp2 )
+      IF ( ALLOCATED ( mbdy2dtemp2 ) ) DEALLOCATE ( mbdy2dtemp2 )
 
       ALLOCATE ( ubdy3dtemp1(ims:ime,kms:kme,jms:jme) )
       ALLOCATE ( vbdy3dtemp1(ims:ime,kms:kme,jms:jme) )

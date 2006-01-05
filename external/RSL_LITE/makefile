@@ -1,11 +1,11 @@
-OBJSL   = c_code.o buf_for_proc.o rsl_malloc.o rsl_bcast.o task_for_point.o period.o swap.o cycle.o
+OBJSL   = c_code.o buf_for_proc.o rsl_malloc.o rsl_bcast.o task_for_point.o period.o swap.o cycle.o f_pack.o
 OBJS    = $(OBJSL)
 OPTS    =
 FFLAGS  =  $(OPTS) -w
 LIBS    = 
 M4      = m4 -Uinclude -Uindex -Ulen
 AR      = ar
-CFLAGS = -g
+CFLAGS = 
 
 .SUFFIXES:      .F90 .F .f .o .code
 
@@ -38,6 +38,9 @@ task_for_point.o:	task_for_point.c
 
 buf_for_proc.o:	        buf_for_proc.c
 			$(CC) $(CFLAGS) -c buf_for_proc.c
+
+f_pack.o:	        f_pack.F
+			$(FC) $(FFLAGS) -c f_pack.F
 
 clean : 
 			/bin/rm -f *.f *.o

@@ -8,6 +8,7 @@
 #include "mpi.h"
 #include "rsl_lite.h"
 
+#define F_PACK
 
 RSL_LITE_ERROR_DUP1 ( int *me )
 {
@@ -163,6 +164,7 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 , int * typesize0 , int * 
   int nbytes, ierr ;
   register int *pi, *qi ;
   MPI_Comm comm, *comm0, dummy_comm ;
+  int js, je, ks, ke, is, ie, wcount ;
 
   comm0 = &dummy_comm ;
   *comm0 = MPI_Comm_f2c( *Fcomm0 ) ;
@@ -190,35 +192,27 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 , int * typesize0 , int * 
     if ( yp != MPI_PROC_NULL ) {
       p = buffer_for_proc( yp , 0 , da_buf ) ;
       if ( pu == 0 ) {
+        js = jpe-shw+1     ; je = jpe ;
+        ks = kps           ; ke = kpe ;
+        is = IMAX(ips-shw) ; ie = IMIN(ipe+shw) ;
         nbytes = buffer_size_for_proc( yp, da_buf ) ;
 	if ( yp_curs + RANGE( jpe-shw+1, jpe, kps, kpe, ips-shw, ipe+shw, 1, typesize ) > nbytes ) {
 	  fprintf(stderr,"memory overwrite in rsl_lite_pack, Y pack up, %d > %d\n",
 	      yp_curs + RANGE( jpe-shw+1, jpe, kps, kpe, ips-shw, ipe+shw, 1, typesize ), nbytes ) ;
 	  MPI_Abort(MPI_COMM_WORLD, 99) ;
         }
-	if ( typesize == sizeof(int) ) {
-#ifdef crayx1
-/* PETER -- CHECK THIS AND UPDATE TO USE IMAX AND IMIN MACROS */
-        i4 = IMAX(ips-shw) ;
-          i_offset = ipe+shw+1-i4;
-          i3=0;
-          for ( j = jpe-shw+1 ; j <= jpe ; j++ ) {
-          pi = (int *)(p+yp_curs) ;
-#pragma concurrent
-#pragma preferstream
-            for ( k = kps ; k <= kpe ; k++ ) {
-              i3 = i_offset*k;
-            qi = (int *)((buf + typesize*( (i4-ims) + (ime-ims+1)*(
-                                             (k-kms) + (j-jms)*(kme-kms+1))))) ;
-#pragma concurrent
-#pragma prefervector
-              for ( i = i4, i2=0; i <= ipe+shw ; i++ ) {
-                pi[i3++] = qi[i2++];
-            }
-          }
-            yp_curs += (i_offset*(kpe+1))*typesize;
+        if ( typesize == sizeof(long int) ) {
+          F_PACK_LINT ( buf, p+yp_curs, &js, &je, &ks, &ke, &is, &ie, 
+                                              &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
+          yp_curs += wcount*typesize ;
         }
+	else if ( typesize == sizeof(int) ) {
+#ifdef F_PACK
+          F_PACK_INT ( buf, p+yp_curs, &js, &je, &ks, &ke, &is, &ie,
+                                             &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
+          yp_curs += wcount*typesize ;
 #else
+          wcount = 0 ;
           for ( j = jpe-shw+1 ; j <= jpe ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
               pi = (int *)(p+yp_curs) ;
@@ -227,7 +221,9 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 , int * typesize0 , int * 
                                              (k-kms) + (j-jms)*(kme-kms+1))))) ;
               for ( i = IMAX(ips-shw) ; i <= IMIN(ipe+shw) ; i++ ) {
                 *pi++ = *qi++ ;
+                wcount++ ;
               }
+              fprintf(stderr,"yp_curs %d += %d - %d * %d = %d\n",yp_curs,i,ips-shw,typesize,(i-(ips-shw))*typesize ) ;
               yp_curs += (i-(ips-shw))*typesize ;
             }
           }
@@ -249,27 +245,19 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 , int * typesize0 , int * 
           }
         }
       } else {
-	if ( typesize == sizeof(int) ) {
-#ifdef crayx1
-/* PETER -- CHECK THIS AND UPDATE TO USE IMAX AND IMIN MACROS */
-        i4 = IMAX(ips-shw) ;
-          i_offset = ipe+shw+1-i4;
-          for ( j = jpe+1 ; j <= jpe+shw ; j++ ) {
-          pi = (int *)(p+yp_curs) ;
-#pragma concurrent
-#pragma perferstream
-            for ( k = kps ; k <= kpe ; k++ ) {
-              i3 = i_offset*k;
-            qi = (int *)((buf + typesize*( (i4-ims) + (ime-ims+1)*(
-                                             (k-kms) + (j-jms)*(kme-kms+1))))) ;
-#pragma concurrent
-#pragma prefervector
-              for ( i = i4, i2=0; i <= ipe+shw ; i++ ) {
-                qi[i2++] = pi[i3++];
-            }
-          }
-            yp_curs += (i_offset*(kpe+1))*typesize;
+        js = jpe+1         ; je = jpe+shw ;
+        ks = kps           ; ke = kpe ;
+        is = IMAX(ips-shw) ; ie = IMIN(ipe+shw) ;
+	if ( typesize == sizeof(long int) ) {
+          F_UNPACK_LINT ( p+yp_curs, buf, &js, &je, &ks, &ke, &is, &ie,
+                                             &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
+          yp_curs += wcount*typesize ;
         }
+	else if ( typesize == sizeof(int) ) {
+#ifdef F_PACK
+          F_UNPACK_INT ( p+yp_curs, buf, &js, &je, &ks, &ke, &is, &ie,
+                                             &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
+          yp_curs += wcount*typesize ;
 #else
           for ( j = jpe+1 ; j <= jpe+shw ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
@@ -305,34 +293,28 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 , int * typesize0 , int * 
     if ( ym != MPI_PROC_NULL ) {
       p = buffer_for_proc( ym , 0 , da_buf ) ;
       if ( pu == 0 ) {
+        js = jps           ; je = jps+shw-1 ;
+        ks = kps           ; ke = kpe ;
+        is = IMAX(ips-shw) ; ie = IMIN(ipe+shw) ;
         nbytes = buffer_size_for_proc( ym, da_buf ) ;
 	if ( ym_curs + RANGE( jps, jps+shw-1, kps, kpe, ips-shw, ipe+shw, 1, typesize ) > nbytes ) {
 	  fprintf(stderr,"memory overwrite in rsl_lite_pack, Y pack dn, %d > %d\n",
 	      ym_curs + RANGE( jps, jps+shw-1, kps, kpe, ips-shw, ipe+shw, 1, typesize ), nbytes ) ;
 	  MPI_Abort(MPI_COMM_WORLD, 99) ;
         }
-	if ( typesize == sizeof(int) ) {
-#ifdef crayx1
-/* PETER -- CHECK THIS AND UPDATE TO USE IMAX AND IMIN MACROS */
-        i4 = IMAX(ips-shw) ;
-          i_offset = ipe+shw+1-i4;
-          for ( j = jps ; j <= jps+shw-1 ; j++ ) {
-          pi = (int *)(p+ym_curs) ;
-#pragma concurrent
-#pragma perferstream
-            for ( k = kps ; k <= kpe ; k++ ) {
-              i3 = i_offset*k;
-            qi = (int *)((buf + typesize*( (i4-ims) + (ime-ims+1)*(
-                                             (k-kms) + (j-jms)*(kme-kms+1))))) ;
-#pragma concurrent
-#pragma perfervector
-              for ( i = i4, i2=0 ; i <= ipe+shw ; i++) {
-                pi[i3++] = qi[i2++];
-            }
-          }
-            ym_curs += (i_offset*(kpe+1))*typesize;
+	if ( typesize == sizeof(long int) ) {
+          F_PACK_LINT ( buf, p+yp_curs, &js, &je, &ks, &ke, &is, &ie,
+                                             &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
+          ym_curs += wcount*typesize ;
+          fprintf(stderr,"F_PACK_INT returns wcount %d, yp_curs %d\n", wcount, ym_curs ) ;
         }
+	else if ( typesize == sizeof(int) ) {
+#ifdef F_PACK
+          F_PACK_INT ( buf, p+ym_curs, &js, &je, &ks, &ke, &is, &ie,
+                                             &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
+          ym_curs += wcount*typesize ;
 #else
+          wcount = 0 ;
           for ( j = jps ; j <= jps+shw-1 ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
               pi = (int *)(p+ym_curs) ;
@@ -341,6 +323,7 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 , int * typesize0 , int * 
                                              (k-kms) + (j-jms)*(kme-kms+1))))) ;
               for ( i = IMAX(ips-shw) ; i <= IMIN(ipe+shw) ; i++ ) {
                 *pi++ = *qi++ ;
+                wcount++ ;
               }
               ym_curs += (i-(ips-shw))*typesize ;
             }
@@ -363,28 +346,19 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 , int * typesize0 , int * 
           }
 	}
       } else {
-	if ( typesize == sizeof(int) ) {
-#ifdef crayx1
-/* PETER -- CHECK THIS AND UPDATE TO USE IMAX AND IMIN MACROS */
-        i4 = IMAX(ips-shw) ;
-          i_offset = ipe+shw+1-i4;
-          for ( j = jps-shw ; j <= jps-1 ; j++ ) {
-          pi = (int *)(p+ym_curs) ;
-#pragma concurrent
-#pragma perferstream
-            for ( k = kps ; k <= kpe ; k++ ) {
-              i3 =i_offset*k;
-            qi = (int *)((buf + typesize*( (i4-ims) + (ime-ims+1)*(
-                                             (k-kms) + (j-jms)*(kme-kms+1))))) ;
-              i2=0;
-#pragma concurrent
-#pragma prefervector
-              for ( i = i4; i <= ipe+shw ; i++ ) {
-                qi[i2++] = pi[i3++];
-            }
-          }
-          ym_curs += (i_offset*(kpe+1))*typesize;
+        js = jps-shw       ; je = jps-1 ;
+        ks = kps           ; ke = kpe ;
+        is = IMAX(ips-shw) ; ie = IMIN(ipe+shw) ;
+	if ( typesize == sizeof(long int) ) {
+          F_UNPACK_LINT ( p+ym_curs, buf, &js, &je, &ks, &ke, &is, &ie,
+                                                &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
+          ym_curs += wcount*typesize ;
         }
+	else if ( typesize == sizeof(int) ) {
+#ifdef F_PACK
+          F_UNPACK_INT ( p+ym_curs, buf, &js, &je, &ks, &ke, &is, &ie,
+                                               &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
+          ym_curs += wcount*typesize ;
 #else
          for ( j = jps-shw ; j <= jps-1 ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
@@ -424,27 +398,26 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 , int * typesize0 , int * 
     if ( xp != MPI_PROC_NULL ) {
       p = buffer_for_proc( xp , 0 , da_buf ) ;
       if ( pu == 0 ) {
+        js = JMAX(jps-shw) ; je = JMIN(jpe+shw) ;
+        ks = kps           ; ke = kpe ;
+        is = ipe-shw+1     ; ie = ipe ;
         nbytes = buffer_size_for_proc( xp, da_buf ) ;
         if ( xp_curs + RANGE( jps-shw, jpe+shw, kps, kpe, ipe-shw+1, ipe, 1, typesize ) > nbytes ) {
 	  fprintf(stderr,"memory overwrite in rsl_lite_pack, X pack right, %d > %d\n",
 	      xp_curs + RANGE( jps-shw, jpe+shw, kps, kpe, ipe-shw+1, ipe, 1, typesize ), nbytes ) ;
 	  MPI_Abort(MPI_COMM_WORLD, 99) ;
         }
-	if ( typesize == sizeof(int) ) {
-#ifdef crayx1
-          pi = (int *)(p+xp_curs) ;
-          i3=0;
-#pragma concurrent
-          for ( j = JMAX(jps-shw) ; j <= JMIN(jpe+shw) ; j++ ) {
-            for ( k = kps ; k <= kpe ; k++ ) {
-              qi = (int *)((buf + typesize*( (ipe-shw+1-ims) + (ime-ims+1)*(
-                                            (k-kms) + (j-jms)*(kme-kms+1))))) ;
-              for ( i = ipe-shw+1, i2=0 ; i <= ipe ; i++ ) {
-                pi[i3++] = qi[i2++];
-              }
-            }
-          }
-          xp_curs += i3*typesize;
+	if ( typesize == sizeof(long int) ) {
+          F_PACK_LINT ( buf, p+xp_curs, &js, &je, &ks, &ke, &is, &ie,
+                                              &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
+          xp_curs += wcount*typesize ;
+        }
+	else if ( typesize == sizeof(int) ) {
+#ifdef F_PACK
+          F_PACK_INT ( buf, p+xp_curs, &js, &je, &ks, &ke, &is, &ie,
+                                             &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
+          xp_curs += wcount*typesize ;
+fprintf(stderr,"F_PACK_INT ( buf, p+xp_curs,... xp_curs %d, wcount %d\n", xp_curs, wcount ) ;
 #else
           for ( j = JMAX(jps-shw) ; j <= JMIN(jpe+shw) ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
@@ -476,21 +449,20 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 , int * typesize0 , int * 
           }
 	}
       } else {
-	if ( typesize == sizeof(int) ) {
-#ifdef crayx1
-          pi = (int *)(p+xp_curs) ;
-          i3=0;
-#pragma concurrent
-          for ( j = JMAX(jps-shw) ; j <= JMIN(jpe+shw) ; j++ ) {
-            for ( k = kps ; k <= kpe ; k++ ) {
-              qi = (int *)((buf + typesize*( (ipe-ims+1) + (ime-ims+1)*(
-                                            (k-kms) + (j-jms)*(kme-kms+1))))) ;
-              for ( i = ipe+1, i2=0 ; i <= ipe+shw ; i++ ) {
-                qi[i2++] = pi[i3++];
-              }
-            }
-          }
-          xp_curs += i3*typesize;
+        js = JMAX(jps-shw) ; je = JMIN(jpe+shw) ;
+        ks = kps           ; ke = kpe ;
+        is = ipe+1         ; ie = ipe+shw ;
+	if ( typesize == sizeof(long int) ) {
+          F_UNPACK_LINT ( p+xp_curs, buf, &js, &je, &ks, &ke, &is, &ie,
+                                                &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
+          xp_curs += wcount*typesize ;
+        }
+	else if ( typesize == sizeof(int) ) {
+#ifdef F_PACK
+          F_UNPACK_INT ( p+xp_curs, buf, &js, &je, &ks, &ke, &is, &ie,
+                                               &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
+          xp_curs += wcount*typesize ;
+fprintf(stderr,"F_UNPACK_INT ( p+xp_curs, buf,... xp_curs %d, wcount %d\n", xp_curs, wcount ) ;
 #else
           for ( j = JMAX(jps-shw) ; j <= JMIN(jpe+shw) ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
@@ -526,27 +498,25 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 , int * typesize0 , int * 
     if ( xm != MPI_PROC_NULL ) {
       p = buffer_for_proc( xm , 0 , da_buf ) ;
       if ( pu == 0 ) {
+        js = JMAX(jps-shw) ; je = JMIN(jpe+shw) ;
+        ks = kps           ; ke = kpe ;
+        is = ips           ; ie = ips+shw-1 ;
         nbytes = buffer_size_for_proc( xm, da_buf ) ;
         if ( xm_curs + RANGE( jps-shw, jpe+shw, kps, kpe, ips, ips+shw-1, 1, typesize ) > nbytes ) {
 	  fprintf(stderr,"memory overwrite in rsl_lite_pack, X left , %d > %d\n",
 	      xm_curs + RANGE( jps-shw, jpe+shw, kps, kpe, ips, ips+shw-1, 1, typesize ), nbytes ) ;
 	  MPI_Abort(MPI_COMM_WORLD, 99) ;
         }
-	if ( typesize == sizeof(int) ) {
-#ifdef crayx1
-          pi = (int *)(p+xm_curs) ;
-          i3=0;
-#pragma concurrent
-          for ( j = JMAX(jps-shw) ; j <= JMIN(jpe+shw) ; j++ ) {
-            for ( k = kps ; k <= kpe ; k++ ) {
-              qi = (int *)((buf + typesize*( (ips-ims) + (ime-ims+1)*(
-                                            (k-kms) + (j-jms)*(kme-kms+1))))) ;
-              for ( i = ips, i2=0 ; i <= ips+shw-1 ; i++ ) {
-                pi[i3++] = qi[i2++];
-              }
-            }
-          }
-          xm_curs += i3*typesize;
+	if ( typesize == sizeof(long int) ) {
+          F_PACK_LINT ( buf, p+xm_curs, &js, &je, &ks, &ke, &is, &ie,
+                                              &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
+          xm_curs += wcount*typesize ;
+        }
+	else if ( typesize == sizeof(int) ) {
+#ifdef F_PACK
+          F_PACK_INT ( buf, p+xm_curs, &js, &je, &ks, &ke, &is, &ie,
+                                             &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
+          xm_curs += wcount*typesize ;
 #else
           for ( j = JMAX(jps-shw) ; j <= JMIN(jpe+shw) ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
@@ -578,21 +548,19 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 , int * typesize0 , int * 
           }
         }
       } else {
-	if ( typesize == sizeof(int) ) {
-#ifdef crayx1
-          pi = (int *)(p+xm_curs) ;
-          i3=0;
-#pragma concurrent
-          for ( j = JMAX(jps-shw) ; j <= JMIN(jpe+shw) ; j++ ) {
-            for ( k = kps ; k <= kpe ; k++ ) {
-              qi = (int *)((buf + typesize*( (ips-shw-ims) + (ime-ims+1)*(
-                                            (k-kms) + (j-jms)*(kme-kms+1))))) ;
-              for ( i = ips-shw, i2=0 ; i < ips ; i++ ) {
-                qi[i2++] = pi[i3++];
-              }
-            }
-          }
-          xm_curs += i3*typesize;
+        js = JMAX(jps-shw) ; je = JMIN(jpe+shw) ;
+        ks = kps           ; ke = kpe ;
+        is = ips-shw       ; ie = ips-1 ;
+	if ( typesize == sizeof(long int) ) {
+          F_UNPACK_LINT ( p+xm_curs, buf, &js, &je, &ks, &ke, &is, &ie,
+                                                &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
+          xm_curs += wcount*typesize ;
+        } 
+        else if ( typesize == sizeof(int) ) {
+#ifdef F_PACK
+          F_UNPACK_INT ( p+xm_curs, buf, &js, &je, &ks, &ke, &is, &ie,
+                                               &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
+          xm_curs += wcount*typesize ;
 #else
           for ( j = JMAX(jps-shw) ; j <= JMIN(jpe+shw) ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
@@ -600,7 +568,7 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 , int * typesize0 , int * 
 	      i = ips-shw ;
 	      qi = (int *)((buf + typesize*( (i-ims) + (ime-ims+1)*(
                                              (k-kms) + (j-jms)*(kme-kms+1))))) ;
-              for ( i = ips-shw ; i < ips ; i++ ) {
+              for ( i = ips-shw ; i <= ips-1 ; i++ ) {
 	        *qi++ = *pi++ ;
 	      }
 	      xm_curs += shw*typesize ;
@@ -611,7 +579,7 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 , int * typesize0 , int * 
 	else {
           for ( j = JMAX(jps-shw) ; j <= JMIN(jpe+shw) ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
-              for ( i = ips-shw ; i < ips ; i++ ) {
+              for ( i = ips-shw ; i <= ips-1 ; i++ ) {
                 for ( t = 0 ; t < typesize ; t++ ) {
                                  *(buf + t + typesize*(
                                         (i-ims) + (ime-ims+1)*(

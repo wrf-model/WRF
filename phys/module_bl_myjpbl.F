@@ -10,7 +10,6 @@
 !
 ! REFERENCES:  Janjic (2001), NCEP Office Note 437
 !              Mellor and Yamada (1982), Rev. Geophys. Space Phys.
-!              Mellor and Yamada (1974), J. Atmos. Sci.
 !
 ! ABSTRACT:
 !     MYJ UPDATES THE TURBULENT KINETIC ENERGY WITH THE PRODUCTION/
@@ -188,7 +187,7 @@
 !***
 !***  LOCAL VARIABLES
 !***
-      INTEGER :: I,J,K,KFLIP,LLOW,LMH
+      INTEGER :: I,J,K,KFLIP,LLOW,LMH,LMXL
 !
       INTEGER,DIMENSION(ITS:ITE,JTS:JTE) :: LPBL
 !
@@ -316,7 +315,7 @@
 !***
           CALL MIXLEN(LMH,UK,VK,TK,THEK,QK,CWMK                        &
      &               ,Q2K,ZHK,GM,GH,EL                                 &
-     &               ,PBLH(I,J),LPBL(I,J),CT(I,J)                      &
+     &               ,PBLH(I,J),LPBL(I,J),LMXL,CT(I,J)                 &
      &               ,IDS,IDE,JDS,JDE,KDS,KDE                          &
      &               ,IMS,IME,JMS,JME,KMS,KME                          &
      &               ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -342,7 +341,7 @@
 !***
 !***  FIND THE EXCHANGE COEFFICIENTS IN THE FREE ATMOSPHERE
 !***
-          CALL DIFCOF(LMH,LPBL(I,J),GM,GH,EL,TK,Q2K,ZHK,AKMK,AKHK      &
+          CALL DIFCOF(LMH,LMXL,GM,GH,EL,TK,Q2K,ZHK,AKMK,AKHK           &
      &               ,IDS,IDE,JDS,JDE,KDS,KDE                          &
      &               ,IMS,IME,JMS,JME,KMS,KME                          &
      &               ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -550,7 +549,7 @@
 !   *                                                                *
 !   ******************************************************************
 !
-     &(LMH,U,V,T,THE,Q,CWM,Q2,Z,GM,GH,EL,PBLH,LPBL,CT                  &
+     &(LMH,U,V,T,THE,Q,CWM,Q2,Z,GM,GH,EL,PBLH,LPBL,LMXL,CT             &
      &,IDS,IDE,JDS,JDE,KDS,KDE                                         &
      &,IMS,IME,JMS,JME,KMS,KME                                         &
      &,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -583,11 +582,11 @@
       INTEGER :: K,LMXL,LPBLM
 !
       REAL :: A,ADEN,B,BDEN,AUBR,BLMX,BUBR,EL0,ELOQ2X,GHL,GML          &
-     &       ,QOL2ST,QOL2UN,QDZL,RDZ,SQ,SZQ,TEM,THM,VKRMZ
+     &       ,QOL2ST,QOL2UN,QDZL,RDZ,SQ,SREL,SZQ,TEM,THM,VKRMZ
 !
       REAL,DIMENSION(KTS:KTE) :: Q1
 !
-      REAL,DIMENSION(KTS:KTE-1) :: DTH,ELM
+      REAL,DIMENSION(KTS:KTE-1) :: DTH,ELM,REL
 !
 !----------------------------------------------------------------------
 !**********************************************************************
@@ -679,7 +678,7 @@
       IF(ELM(LMH-1)==EPSL)LMXL=LMH
 !
 !----------------------------------------------------------------------
-!***  THE HEIGHT OF THE PBL
+!***  THE HEIGHT OF THE MIXED LAYER
 !----------------------------------------------------------------------
 !
       BLMX=Z(LMXL)-Z(LMH+1)
@@ -712,6 +711,7 @@
       LPBLM=MAX(LPBL-1,1)
       DO K=KTS,LPBLM
         EL(K)=MIN((Z(K)-Z(K+2))*ELFC,ELM(K))
+        REL(K)=EL(K)/ELM(K)
       ENDDO
 !
 !----------------------------------------------------------------------
@@ -722,8 +722,14 @@
         DO K=LPBL,LMH-1
           VKRMZ=(Z(K+1)-Z(LMH+1))*VKARMAN
           EL(K)=MIN(VKRMZ/(VKRMZ/EL0+1.),ELM(K))
+          REL(K)=EL(K)/ELM(K)
         ENDDO
       ENDIF
+!
+      DO K=LPBL+1,LMH-2
+        SREL=MIN(((REL(K-1)+REL(K+1))*0.5+REL(K))*0.5,REL(K))
+        EL(K)=MAX(SREL*ELM(K),EPSL)
+      ENDDO
 !
 !----------------------------------------------------------------------
       END SUBROUTINE MIXLEN
@@ -904,8 +910,14 @@
           IF(ELOQN>EPS1)THEN
             Q2(K)=EL(K)*EL(K)/(ELOQN*ELOQN)
             Q2(K)=AMAX1(Q2(K),EPSQ2)
+!
+            IF(Q2(K)==EPSQ2)THEN
+              EL(K)=EPSL
+            ENDIF
+!
           ELSE
             Q2(K)=EPSQ2
+            EL(K)=EPSL
           ENDIF
 !
 !----------------------------------------------------------------------
@@ -937,7 +949,7 @@
 !   *                LEVEL 2.5 DIFFUSION COEFFICIENTS                *
 !   *                                                                *
 !   ******************************************************************
-     &(LMH,LPBL,GM,GH,EL,T,Q2,Z,AKM,AKH                                &
+     &(LMH,LMXL,GM,GH,EL,T,Q2,Z,AKM,AKH                                &
      &,IDS,IDE,JDS,JDE,KDS,KDE                                         &
      &,IMS,IME,JMS,JME,KMS,KME                                         &
      &,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -950,7 +962,7 @@
      &                     ,IMS,IME,JMS,JME,KMS,KME                    &
      &                     ,ITS,ITE,JTS,JTE,KTS,KTE
 !
-      INTEGER,INTENT(IN) :: LMH,LPBL
+      INTEGER,INTENT(IN) :: LMH,LMXL
 !
       REAL,DIMENSION(KTS:KTE),INTENT(IN) :: Q2,T
       REAL,DIMENSION(KTS:KTE-1),INTENT(IN) :: EL,GH,GM
@@ -1029,21 +1041,24 @@
 !***  INVERSIONS
 !----------------------------------------------------------------------
 !
-      IF(LPBL>=LMH-1)THEN
-        KINV=LMH
-        DO K=KTS+1,LMH-1
-          D2T=T(K-1)-2.*T(K)+T(K+1)
-          IF(D2T<0.)KINV=K
-        ENDDO
-        IF(KINV<LMH)THEN
-          DO K=KINV-1,LMH-1
-            RDZ=2./(Z(K)-Z(K+2))
-            AKMIN=0.5*RDZ
-            AKM(K)=MAX(AKM(K),AKMIN)
-            AKH(K)=MAX(AKH(K),AKMIN)
-          ENDDO
-        ENDIF
-      ENDIF
+!     IF(LMXL==LMH-1)THEN
+!
+!       KINV=LMH
+!       DO K=LMH/2,LMH-1
+!         D2T=T(K-1)-2.*T(K)+T(K+1)
+!         IF(D2T<0.)KINV=K
+!       ENDDO
+!
+!       IF(KINV<LMH)THEN
+!         DO K=KINV-1,LMH-1
+!           RDZ=2./(Z(K)-Z(K+2))
+!           AKMIN=0.5*RDZ
+!           AKM(K)=MAX(AKM(K),AKMIN)
+!           AKH(K)=MAX(AKH(K),AKMIN)
+!         ENDDO
+!       ENDIF
+!
+!     ENDIF
 !----------------------------------------------------------------------
 !
       END SUBROUTINE DIFCOF

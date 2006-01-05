@@ -426,30 +426,34 @@ MODULE module_wrf_quilt
 !write(0,*)'ninbuf ',ninbuf,' obufsize ', obufsize
 ! Negative obufsize will trigger I/O server exit.  
         IF ( obufsize .LT. 0 ) THEN
+          IF ( obufsize .EQ. -100 ) THEN         ! magic number
 #ifdef NETCDF
-          CALL ext_ncd_ioexit( Status )
+            CALL ext_ncd_ioexit( Status )
 #endif
 #ifdef INTIO
-          CALL ext_int_ioexit( Status )
+            CALL ext_int_ioexit( Status )
 #endif
 #ifdef XXX
-          CALL ext_xxx_ioexit( Status )
+            CALL ext_xxx_ioexit( Status )
 #endif
 #ifdef YYY
-          CALL ext_yyy_ioexit( Status )
+            CALL ext_yyy_ioexit( Status )
 #endif
 #ifdef ZZZ
-          CALL ext_zzz_ioexit( Status )
+            CALL ext_zzz_ioexit( Status )
 #endif
 #ifdef GRIB1
-          CALL ext_gr1_ioexit( Status )
+            CALL ext_gr1_ioexit( Status )
 #endif
 #ifdef GRIB2
-          CALL ext_gr2_ioexit( Status )
+            CALL ext_gr2_ioexit( Status )
 #endif
-          CALL wrf_message ( 'I/O QUILT SERVERS DONE' )
-          CALL mpi_finalize(ierr)
-          STOP
+            CALL wrf_message ( 'I/O QUILT SERVERS DONE' )
+            CALL mpi_finalize(ierr)
+            STOP
+          ELSE
+            CALL wrf_error_fatal('Possible 32-bit overflow on output server. Try larger nio_tasks_per_group in namelist.')
+          ENDIF
         ENDIF
 
 !JMTIMING        CALL start_timing
@@ -1709,7 +1713,7 @@ SUBROUTINE wrf_quilt_ioexit( Status )
   INCLUDE 'intio_tags.h'
   INTEGER ,       INTENT(OUT) :: Status
   INTEGER                     :: DataHandle
-  INTEGER i, itypesize, tasks_in_group, comm_io_group, ierr
+  INTEGER i, itypesize, tasks_in_group, comm_io_group, me, ierr 
   REAL dummy
 
   CALL wrf_debug ( DEBUG_LVL, 'in wrf_quilt_ioexit' ) 
@@ -1726,11 +1730,12 @@ SUBROUTINE wrf_quilt_ioexit( Status )
     CALL get_mpi_comm_io_groups( comm_io_group , iserver )
 
     CALL mpi_x_comm_size( comm_io_group , tasks_in_group , ierr )
+    CALL mpi_comm_rank( comm_io_group , me , ierr )
 
 ! BY SENDING A NEGATIVE SIZE WE GET THE SERVERS TO SHUT DOWN
     hdrbufsize = -100 
     reduced = 0
-    reduced(1) = hdrbufsize 
+    IF ( me .eq. 0 ) reduced(1) = hdrbufsize 
     CALL MPI_Reduce( reduced, reduced_dummy, 2, MPI_INTEGER,  &
                      MPI_SUM, tasks_in_group-1,          &   ! root = nio_tasks_in_group-1 is me
                      comm_io_group, ierr )

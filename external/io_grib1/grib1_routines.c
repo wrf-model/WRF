@@ -1132,13 +1132,19 @@ int WRITE_GRIB(Grid_Info *grid_info, int *filefd, float *data)
     grid_info->grib_tables->grib_table_info[tablenum].subcenter;
   data_input.usLevel_id = grid_info->leveltype;
 
+  /*
+   * There is no need to flip the two levels for things such as soil moisture, temperature,
+   * We want the two levels to be 0 and 10 cm, not 10 and 0 cm, for example.
   if (grid_info->leveltype == 112) {
     data_input.nLvl_1 = grid_info->level2;
     data_input.nLvl_2 = grid_info->level1;
   } else {
+   */
     data_input.nLvl_1 = grid_info->level1;
     data_input.nLvl_2 = grid_info->level2;
+  /*
   }
+   */
 
   data_input.nYear = year;
   data_input.nMonth = month;

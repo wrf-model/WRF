@@ -31,7 +31,7 @@ $(SOLVER)_real : module_initialize real_$(SOLVER).o ndown_$(SOLVER).o
 
 convert_em : convert_em.o
 	$(RANLIB) libwrflib.a
-	$(FC) -o convert_em.exe $(LDFLAGS) convert_em.o libwrflib.a $(LIB)
+	$(LD) -o convert_em.exe $(LDFLAGS) convert_em.o libwrflib.a $(LIB)
 
 convert_nmm : convert_nmm.o
 	$(RANLIB) libwrflib.a

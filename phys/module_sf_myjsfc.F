@@ -682,17 +682,17 @@ CONTAINS
       ELSE  
 !
 !----------------------------------------------------------------------
+!
         IF(NTSD==1)THEN
           QS=QLOW
         ENDIF
+!
         ZU=Z0
         UZ0=0.
         VZ0=0.
 !
         ZT=ZU*ZTFC
         THZ0=THS
-!
-        ZQ=ZT
         QZ0=QS
 !----------------------------------------------------------------------
         TEM=(TLOW+TZ0)*0.5
@@ -702,7 +702,7 @@ CONTAINS
         B=(ELOCP/TEM-1.-P608)*THM
 !
         DTHV=((THELOW-THZ0)*((QLOW+QZ0+CWMLOW)*(0.5*P608)+1.)          &
-     &      +(QLOW-QZ0+CWMLOW)*A+CWMLOW*B)
+     &       +(QLOW-QZ0+CWMLOW)*A+CWMLOW*B)
 !
         DU2=MAX((ULOW-UZ0)**2+(VLOW-VZ0)**2,EPSU2)
         RIB=BTGX*DTHV*ZSL/DU2
@@ -714,10 +714,9 @@ CONTAINS
 !       ELSE  !  Turbulent branch
 !----------------------------------------------------------------------
           ZSLU=ZSL+ZU
-!
           RZSU=ZSLU/ZU
-!
           RLOGU=LOG(RZSU)
+          ZSLT=ZSL+ZU
 !----------------------------------------------------------------------
 !
           DO ITR=1,ITRMX
@@ -728,7 +727,6 @@ CONTAINS
 !
             ZT=MAX(EXP(ZILFC*SQRT(USTAR*ZU))*ZU,EPSZT)
 !zj         ZT=EXP(ZILFC*SQRT(USTAR*ZU))*ZU
-            ZSLT=ZSL+ZT
             RZST=ZSLT/ZT
             RLOGT=LOG(RZST)
 !

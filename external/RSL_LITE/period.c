@@ -8,6 +8,8 @@
 #include "mpi.h"
 #include "rsl_lite.h"
 
+#define F_PACK
+
 static int yp_curs, ym_curs, xp_curs, xm_curs ;
 
 RSL_LITE_INIT_PERIOD ( 
@@ -112,6 +114,7 @@ RSL_LITE_PACK_PERIOD_X ( int* Fcomm0, char * buf , int * shw0 , int * typesize0 
   int nbytes, ierr ;
   register int *pi, *qi ;
   int coords[2], dims[2] ;
+  int js, je, ks, ke, is, ie, wcount ;
 float f ;
   MPI_Comm comm, *comm0, dummy_comm ;
 
@@ -147,14 +150,26 @@ float f ;
     if ( coords[1] == np_x - 1 ) {                /* process on right hand edge of domain */
       p = buffer_for_proc( xp , 0 , da_buf ) ;
       if ( pu == 0 ) {
+        js = JMAX(jps-shw) ; je = JMIN(jpe+shw) ;
+        ks = kps           ; ke = kpe ;
+        is = ipe-shw       ; ie = ipe-1         ;
         nbytes = buffer_size_for_proc( xp , da_buf ) ;
-
         if ( xp_curs + RANGE( JMAX(jps-shw), JMIN(jpe+shw), kps, kpe, ipe-shw, ipe-1, 1, typesize ) > nbytes ) {
 	  fprintf(stderr,"memory overwrite in rsl_lite_pack_period_x, right hand X to %d, %d > %d\n",xp,
 	      xp_curs + RANGE( JMAX(jps-shw), JMIN(jpe+shw), kps, kpe, ipe-shw, ipe-1, 1, typesize ), nbytes ) ;
 	  MPI_Abort(MPI_COMM_WORLD, 98) ;
         }
+        if ( typesize == sizeof(long int) ) {
+          F_PACK_LINT ( buf, p+xp_curs, &js, &je, &ks, &ke, &is, &ie,
+                                        &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
+          xp_curs += wcount*typesize ;
+        } else
 	if ( typesize == sizeof(int) ) {
+#ifdef F_PACK
+          F_PACK_INT ( buf, p+xp_curs, &js, &je, &ks, &ke, &is, &ie,
+                                       &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
+          xp_curs += wcount*typesize ;
+#else
           for ( j = JMAX(jps-shw) ; j <= JMIN(jpe+shw) ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
 	      pi = (int *)(p+xp_curs) ;
@@ -167,6 +182,7 @@ float f ;
 	      }
 	    }
 	  }
+#endif
 	}
 	else {
           for ( j = JMAX(jps-shw) ; j <= JMIN(jpe+shw) ; j++ ) {
@@ -184,7 +200,20 @@ float f ;
           }
 	}
       } else {
+        js = JMAX(jps-shw) ; je = JMIN(jpe+shw) ;
+        ks = kps           ; ke = kpe ;
+        is = ipe           ; ie = ipe+shw-1+xstag ;
+        if ( typesize == sizeof(long int) ) {
+          F_UNPACK_LINT ( p+xp_curs, buf, &js, &je, &ks, &ke, &is, &ie,
+                                          &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
+          xp_curs += wcount*typesize ;
+        } else
 	if ( typesize == sizeof(int) ) {
+#ifdef F_PACK
+          F_UNPACK_INT ( p+xp_curs, buf, &js, &je, &ks, &ke, &is, &ie,
+                                         &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
+          xp_curs += wcount*typesize ;
+#else
           for ( j = JMAX(jps-shw) ; j <= JMIN(jpe+shw) ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
 	      pi = (int *)(p+xp_curs) ;
@@ -197,6 +226,7 @@ float f ;
 	      }
 	    }
 	  }
+#endif
 	}
 	else {
           for ( j = JMAX(jps-shw) ; j <= JMIN(jpe+shw) ; j++ ) {
@@ -218,13 +248,26 @@ float f ;
     if ( coords[1] == 0 ) {         /* process on left hand edge of domain */
       p = buffer_for_proc( xm , 0 , da_buf ) ;
       if ( pu == 0 ) {
+        js = JMAX(jps-shw) ; je = JMIN(jpe+shw) ;
+        ks = kps           ; ke = kpe ;
+        is = ips           ; ie = ips+shw-1+xstag ;
         nbytes = buffer_size_for_proc( xm , da_buf ) ;
         if ( xm_curs + RANGE( JMAX(jps-shw), JMIN(jpe+shw), kps, kpe, ips, ips+shw-1+xstag, 1, typesize ) > nbytes ) {
 	  fprintf(stderr,"memory overwrite in rsl_lite_pack,  left hand X to %d , %d > %d\n",xm,
 	      xm_curs + RANGE( JMAX(jps-shw), JMIN(jpe+shw), kps, kpe, ips, ips+shw-1+xstag, 1, typesize ), nbytes ) ;
 	  MPI_Abort(MPI_COMM_WORLD, 98) ;
         }
+        if ( typesize == sizeof(long int) ) {
+          F_PACK_LINT ( buf, p+xm_curs, &js, &je, &ks, &ke, &is, &ie,
+                                        &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
+          xm_curs += wcount*typesize ;
+        } else
 	if ( typesize == sizeof(int) ) {
+#ifdef F_PACK
+          F_PACK_INT ( buf, p+xm_curs, &js, &je, &ks, &ke, &is, &ie,
+                                       &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
+          xm_curs += wcount*typesize ;
+#else
           for ( j = JMAX(jps-shw) ; j <= JMIN(jpe+shw) ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
 	      pi = (int *)(p+xm_curs) ;
@@ -237,6 +280,7 @@ float f ;
 	      }
 	    }
 	  }
+#endif
 	}
 	else {
           for ( j = JMAX(jps-shw) ; j <= JMIN(jpe+shw) ; j++ ) {
@@ -254,24 +298,38 @@ float f ;
           }
         }
       } else {
+        js = JMAX(jps-shw) ; je = JMIN(jpe+shw) ;
+        ks = kps           ; ke = kpe ;
+        is = ips-shw       ; ie = ips-1           ;
+        if ( typesize == sizeof(long int) ) {
+          F_UNPACK_LINT ( p+xm_curs, buf, &js, &je, &ks, &ke, &is, &ie,
+                                          &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
+          xm_curs += wcount*typesize ;
+        } else
 	if ( typesize == sizeof(int) ) {
+#ifdef F_PACK
+          F_UNPACK_INT ( p+xm_curs, buf, &js, &je, &ks, &ke, &is, &ie,
+                                         &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
+          xm_curs += wcount*typesize ;
+#else
           for ( j = JMAX(jps-shw) ; j <= JMIN(jpe+shw) ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
 	      pi = (int *)(p+xm_curs) ;
 	      i = ips-shw ;
 	      qi = (int *)((buf + typesize*( (i-ims) + (ime-ims+1)*(
                                              (k-kms) + (j-jms)*(kme-kms+1))))) ;
-              for ( i = ips-shw ; i < ips ; i++ ) {
+              for ( i = ips-shw ; i <= ips-1 ; i++ ) {
 	        *qi++ = *pi++ ;
 	        xm_curs += typesize ;
 	      }
 	    }
 	  }
+#endif
 	}
 	else {
           for ( j = JMAX(jps-shw) ; j <= JMIN(jpe+shw) ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
-              for ( i = ips-shw ; i < ips ; i++ ) {
+              for ( i = ips-shw ; i <= ips-1 ; i++ ) {
                 for ( t = 0 ; t < typesize ; t++ ) {
                                  *(buf + t + typesize*(
                                         (i-ims) + (ime-ims+1)*(

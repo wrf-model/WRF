@@ -29,6 +29,10 @@
 #      define RSL_LITE_INIT_CYCLE rsl_lite_init_cycle
 #      define RSL_LITE_CYCLE rsl_lite_cycle
 #      define RSL_LITE_PACK_CYCLE rsl_lite_pack_cycle
+#      define F_PACK_LINT f_pack_lint
+#      define F_PACK_INT f_pack_int
+#      define F_UNPACK_LINT f_unpack_lint
+#      define F_UNPACK_INT f_unpack_int
 # else
 #   ifdef F2CSTYLE
 #      define RSL_LITE_ERROR_DUP1 rsl_error_dup1__
@@ -60,6 +64,10 @@
 #      define RSL_LITE_INIT_CYCLE rsl_lite_init_cycle__
 #      define RSL_LITE_CYCLE rsl_lite_cycle__
 #      define RSL_LITE_PACK_CYCLE rsl_lite_pack_cycle__
+#      define F_PACK_LINT f_pack_lint__
+#      define F_PACK_INT f_pack_int__
+#      define F_UNPACK_LINT f_unpack_lint__
+#      define F_UNPACK_INT f_unpack_int__
 #   else
 #      define RSL_LITE_ERROR_DUP1 rsl_error_dup1_
 #      define BYTE_BCAST byte_bcast_
@@ -90,6 +98,10 @@
 #      define RSL_LITE_INIT_CYCLE rsl_lite_init_cycle_
 #      define RSL_LITE_CYCLE rsl_lite_cycle_
 #      define RSL_LITE_PACK_CYCLE rsl_lite_pack_cycle_
+#      define F_PACK_LINT f_pack_lint_
+#      define F_PACK_INT f_pack_int_
+#      define F_UNPACK_LINT f_unpack_lint_
+#      define F_UNPACK_INT f_unpack_int_
 #   endif
 # endif
 #endif

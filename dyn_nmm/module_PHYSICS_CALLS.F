@@ -609,8 +609,7 @@
      &                                                ,POTFLX,PREC      &
      &                                                ,QS,QZ0,SFCEVP    &
      &                                                ,SFCLHX,SFCSHX    &
-     &                                                ,SH2O,SI          &
-     &                                                ,SNO,SNOPCX       &
+     &                                                ,SI,SNO,SNOPCX    &
      &                                                ,SSROFF,SUBSHX    &
      &                                                ,THS,THZ0         &
      &                                                ,USTAR,UZ0,UZ0H   &
@@ -643,7 +642,8 @@
 !
       REAL,DIMENSION(NSOIL),INTENT(IN) :: DZSOIL,SLDPTH
 !
-      REAL,DIMENSION(IMS:IME,NSOIL,JMS:JME),INTENT(INOUT) :: SMC,STC
+      REAL,DIMENSION(IMS:IME,NSOIL,JMS:JME),INTENT(INOUT) :: SH2O,SMC   &
+     &                                                      ,STC
 !
       LOGICAL,INTENT(IN) :: RESTRT
 !
@@ -1519,7 +1519,7 @@
       INTEGER,DIMENSION(IMS:IME,JMS:JME) :: KPBL,LBOT,LOWLYR,LTOP
 !
       REAL :: CAPA,CF_HI,DPL,DQDT,DTCNVC,DTDT,FICE,FRAIN,G_INV          &
-     &       ,PCPCOL,PDSL,PLYR,QI,QR,QW,RDTCNVC,RWMSK,WMSK,WC
+     &       ,PCPCOL,PDSL,PLYR,QI,QL_K,QR,QW,RDTCNVC,RWMSK,WMSK,WC
 !
       REAL,DIMENSION(KMS:KME-1) :: QL,TL
 !
@@ -1717,9 +1717,10 @@
 !
           DO K=KTS+1,KTE
           DO I=MYIS1,MYIE1
+            QL_K=AMAX1(Q(I,K,J),EPSQ)
             WMID(I,K)=-OMGALF(I,K,J)*CP/(G*DT)
             WINT(I,K,J)=0.5*(WMID(I,K-1)+WMID(I,K))
-            DZ(I,K,J)=TL(K)*(P608*QL(K)+1.)*R_D                         &
+            DZ(I,K,J)=T_PHY(I,K,J)*(P608*QL_K+1.)*R_D                   &
      &               *(P8W(I,K,J)-P8W(I,K+1,J))                         &
      &               /(P_PHY(I,K,J)*G)
           ENDDO

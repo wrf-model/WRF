@@ -972,7 +972,11 @@ END
    LOGICAL FUNCTION wrf_dm_on_monitor()
       USE module_dm
       IMPLICIT NONE
-      wrf_dm_on_monitor = mytask .EQ. 0
+      INCLUDE 'mpif.h'
+      INTEGER tsk, ierr, mpi_comm_local
+      CALL wrf_get_dm_communicator( mpi_comm_local )
+      CALL mpi_comm_rank ( mpi_comm_local, tsk , ierr )
+      wrf_dm_on_monitor = tsk .EQ. 0
       RETURN
    END FUNCTION wrf_dm_on_monitor
 

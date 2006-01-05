@@ -1301,7 +1301,7 @@ esmf_time :
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL_LITE/librsl_lite.a :
-	( cd ../external/RSL_LITE ; make CFLAGS="$(CFLAGS)" CC="$(CC)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
+	( cd ../external/RSL_LITE ; make CFLAGS="$(CFLAGS)" CC="$(CC)" FC="$(SFC) $(PROMOTION) $(FCFLAGS)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
 
 # compile these without high optimization
 module_io_mm5.o : module_io_mm5.F
@@ -1637,7 +1637,7 @@ esmf_time :
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL_LITE/librsl_lite.a :
-	( cd ../external/RSL_LITE ; make CC="$(CC)" CFLAGS="$(CFLAGS)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
+	( cd ../external/RSL_LITE ; make CC="$(CC)" CFLAGS="$(CFLAGS)" FC="$(SFC) $(PROMOTION) $(FCFLAGS)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
 
 # compile these without high optimization
 module_io_mm5.o : module_io_mm5.F
@@ -2852,7 +2852,7 @@ esmf_time :
 
 ../external/RSL_LITE/librsl_lite.a :
 	( cd ../external/RSL_LITE ; \
-          make CC="$(CC)" FC="$(FC) $(PROMOTION)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
+          make CC="$(CC)" FC="$(FC) $(PROMOTION) $(FCFLAGS)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
 
 nest_init_utils.o : nest_init_utils.F
 module_optional_si_input.o : module_optional_si_input.F
@@ -4528,7 +4528,7 @@ esmf_time :
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL_LITE/librsl_lite.a :
-	( cd ../external/RSL_LITE ; make CC="$(CC)" FC="$(FC) $(PROMOTION) -byteswapio" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
+	( cd ../external/RSL_LITE ; make CC="$(CC)" FC="$(FC) $(FCFLAGS) $(PROMOTION) -byteswapio" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -5085,7 +5085,7 @@ esmf_time :
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL_LITE/librsl_lite.a :
-	( cd ../external/RSL_LITE ; make CC="$(CC)" FC="$(FC) $(PROMOTION) -byteswapio" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
+	( cd ../external/RSL_LITE ; make CC="$(CC)" FC="$(FC) $(PROMOTION) $(FCFLAGS) -byteswapio" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -5201,7 +5201,7 @@ esmf_time :
 
 ../external/RSL_LITE/librsl_lite.a :
 	( cd ../external/RSL_LITE ; make CC='mpicc -w -I.' \
-	  FC="$(FC) $(PROMOTION) -cm -w " MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
+	  FC="$(FC) $(PROMOTION) $(FCFLAGS) -cm -w " MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -5425,7 +5425,7 @@ esmf_time :
 
 ../external/RSL_LITE/librsl_lite.a :
 	( cd ../external/RSL_LITE ; make CC='ecc -Vaxlib -I. -cm -w -I/usr/local/vmi/mpich/include' \
-	FC="$(SFC) $(PROMOTION) -cm -w -Vaxlib -I../../.. " MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
+	FC="$(SFC) $(PROMOTION) $(FCFLAGS) -cm -w -Vaxlib -I../../.. " MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -7265,7 +7265,8 @@ esmf_time :
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) -f free -N 255" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL_LITE/librsl_lite.a :
-	( cd ../external/RSL_LITE ; make CFLAGS="$(CFLAGS)" CC="$(CC)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
+	( cd ../external/RSL_LITE ; make CFLAGS="$(CFLAGS)" CC="$(CC)" FC="$(SFC) $(PROMOTION) $(FCFLAGS)" \
+                                     MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
 
 # compile these without high optimization
 module_io_mm5.o : module_io_mm5.F
@@ -7395,7 +7396,8 @@ esmf_time :
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) -f free -N 255 -Ossp" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL_LITE/librsl_lite.a :
-	( cd ../external/RSL_LITE ; make CFLAGS="$(CFLAGS)" CC="$(CC)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
+	( cd ../external/RSL_LITE ; make CFLAGS="$(CFLAGS)" CC="$(CC)" FC="$(SFC) $(PROMOTION) $(FCFLAGS)" \
+            MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
 
 # compile these without high optimization
 module_io_mm5.o : module_io_mm5.F
@@ -8485,7 +8487,7 @@ esmf_time :
 	make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS) " CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
                                                                                 
 ../external/RSL_LITE/librsl_lite.a :
-	( cd ../external/RSL_LITE ; make CC="$(CC)" FC='mpif90 -byteswapio' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
+	( cd ../external/RSL_LITE ; make CC="$(CC)" FC='mpif90 $(FCFLAGS) -byteswapio' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
                                                                                 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F

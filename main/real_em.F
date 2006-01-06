@@ -38,7 +38,7 @@ PROGRAM real_data
 
 
    TYPE(domain) , POINTER :: null_domain
-   TYPE(domain) , POINTER :: grid , new_grid
+   TYPE(domain) , POINTER :: grid , another_grid
    TYPE (grid_config_rec_type)              :: config_flags
    INTEGER                :: number_at_same_level
 
@@ -135,11 +135,11 @@ real::t1,t2
            ( domain_id .EQ. 1 ) ) THEN
 
          IF ( domain_id .GT. 1 ) THEN
-            CALL alloc_and_configure_domain ( domain_id  = domain_id , &
-                                              grid       = new_grid  , &
-                                              parent     = grid      , &
-                                              kid        = 1           )
-            grid => new_grid
+            CALL alloc_and_configure_domain ( domain_id  = domain_id    , &
+                                              grid       = another_grid , &
+                                              parent     = grid         , &
+                                              kid        = 1              )
+            grid => another_grid
          END IF
 
          CALL Setup_Timekeeping ( grid )

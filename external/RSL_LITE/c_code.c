@@ -223,7 +223,6 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 , int * typesize0 , int * 
                 *pi++ = *qi++ ;
                 wcount++ ;
               }
-              fprintf(stderr,"yp_curs %d += %d - %d * %d = %d\n",yp_curs,i,ips-shw,typesize,(i-(ips-shw))*typesize ) ;
               yp_curs += (i-(ips-shw))*typesize ;
             }
           }
@@ -417,7 +416,6 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 , int * typesize0 , int * 
           F_PACK_INT ( buf, p+xp_curs, &js, &je, &ks, &ke, &is, &ie,
                                              &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
           xp_curs += wcount*typesize ;
-fprintf(stderr,"F_PACK_INT ( buf, p+xp_curs,... xp_curs %d, wcount %d\n", xp_curs, wcount ) ;
 #else
           for ( j = JMAX(jps-shw) ; j <= JMIN(jpe+shw) ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {
@@ -462,7 +460,6 @@ fprintf(stderr,"F_PACK_INT ( buf, p+xp_curs,... xp_curs %d, wcount %d\n", xp_cur
           F_UNPACK_INT ( p+xp_curs, buf, &js, &je, &ks, &ke, &is, &ie,
                                                &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
           xp_curs += wcount*typesize ;
-fprintf(stderr,"F_UNPACK_INT ( p+xp_curs, buf,... xp_curs %d, wcount %d\n", xp_curs, wcount ) ;
 #else
           for ( j = JMAX(jps-shw) ; j <= JMIN(jpe+shw) ; j++ ) {
             for ( k = kps ; k <= kpe ; k++ ) {

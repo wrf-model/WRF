@@ -70,7 +70,8 @@
                               ips, ipe, jps, jpe, kps, kpe    )
 
 ! simulation start time
-    IF ( switch .NE. boundary_only ) THEN
+    IF ( ( switch .EQ.     model_input_only  ) .OR. &
+         ( switch .EQ.          restart_only ) ) THEN
       CALL wrf_get_dom_ti_char ( fid , 'SIMULATION_START_DATE' , simulation_start_date , ierr )
       IF ( ierr .EQ. 0 ) THEN
         READ ( simulation_start_date , fmt = '(I4,1x,I2,1x,I2,1x,I2,1x,I2,1x,I2)' ) &
@@ -357,12 +358,22 @@
 ! about this.
 !
 
+    3003 continue
+
     CALL wrf_get_next_time(fid, current_date , ierr)
     WRITE(wrf_err_message,*)fid,' input_wrf: wrf_get_next_time current_date: ',current_date(1:19),' Status = ',ierr
     CALL wrf_debug ( 300 , TRIM(wrf_err_message ) )
     IF ( ierr .NE. 0 .AND. ierr .NE. WRF_WARN_NOTSUPPORTED .AND. ierr .NE. WRF_WARN_DRYRUN_READ ) THEN 
       CALL wrf_message ( TRIM(wrf_err_message ) )
-      CALL wrf_error_fatal ( "... May have run out of valid boundary conditions ..." )
+      IF ( switch .EQ. boundary_only ) THEN
+        WRITE(wrf_err_message,*) ' ... May have run out of valid boundary conditions in file ',TRIM(fname)
+        CALL wrf_error_fatal( TRIM(wrf_err_message) )
+      ELSE
+#if ( NMM_CORE != 1 )
+        WRITE(wrf_err_message,*) '... Could not find matching time in input file ',TRIM(fname)
+        CALL wrf_error_fatal( TRIM(wrf_err_message) )
+#endif
+      ENDIF
     ELSE IF ( ierr .NE. WRF_WARN_NOTSUPPORTED .AND. ierr .NE. WRF_WARN_DRYRUN_READ) THEN 
 !
 ! check input time against domain time (which will be start time at beginning, see share/set_timekeeping.F)
@@ -382,6 +393,9 @@
                 WRITE( wrf_err_message , * )'Time on domain: ',trim( currtimestr )
                 CALL wrf_message ( trim(wrf_err_message) )
                 CALL wrf_message( "**WARNING** Time in input file not equal to time on domain **WARNING**" )
+                WRITE(wrf_err_message,*) "**WARNING** Trying next time in file ",TRIM(fname)," ..."
+                CALL wrf_message( TRIM(wrf_err_message) )
+                GOTO 3003
             ENDIF
         CASE DEFAULT
       END SELECT

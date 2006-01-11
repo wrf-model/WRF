@@ -562,7 +562,7 @@ integer myproc
     RETURN
         
    END SUBROUTINE landuse_init 
-!===================================================================== 
+!=====================================================================
    SUBROUTINE ra_init(grid,STEPRA,RADT,DT,RTHRATEN,RTHRATENLW,       & 
                       RTHRATENSW,CLDFRA,EMISS,cen_lat,JULYR,JULDAY,GMT,    &
                       sfull,shalf,pptop,                             &
@@ -603,6 +603,7 @@ integer myproc
                                                              CLDFRA
    REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) :: EMISS
    LOGICAL :: etalw = .false.
+   LOGICAL :: etamp = .false.
    integer :: month,iday
 !---------------------------------------------------------------------
 
@@ -611,6 +612,14 @@ integer myproc
     STEPRA = nint(RADT*60./DT)
     STEPRA = max(STEPRA,1)
 
+!-- find out which microphysics option is used first
+
+   mp_select: SELECT CASE(config_flags%mp_physics)
+
+        CASE (ETAMPNEW)
+             etamp = .true.
+
+   END SELECT mp_select
 
 !-- chose long wave radiation scheme
  
@@ -624,6 +633,8 @@ integer myproc
                            ims, ime, jms, jme, kms, kme,    &
                            its, ite, jts, jte, kts, kte     )
         CASE (GFDLLWSCHEME)
+            if(.not. etamp)CALL wrf_error_fatal &
+            ( 'module_physics_init: use Ferrier mp scheme for this lw radiation option' )
              CALL nl_get_start_month(grid%id,month)
              CALL nl_get_start_day(grid%id,iday)
              CALL gfdletainit(emiss,sfull,shalf,pptop,      &
@@ -652,6 +663,8 @@ integer myproc
              CALL gsfc_swinit(cen_lat, allowed_to_read )
 
         CASE (GFDLSWSCHEME)
+            if(.not. etamp)CALL wrf_error_fatal &
+            ( 'module_physics_init: use Ferrier mp scheme for this sw radiation option' )
              IF(.not.etalw)THEN
              CALL nl_get_start_month(grid%id,month)
              CALL nl_get_start_day(grid%id,iday)

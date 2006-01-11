@@ -508,7 +508,7 @@
      &                ,CZEN,CZMEAN,SIGT4,RLWIN,RSWIN,RADOT              &
 !- RLWIN/RSWIN - downward longwave/shortwave at the surface (also TOTLWDN/TOTSWDN in RADIATION)
      &                ,PD,RES,PINT,T,Q,CWM,F_ICE,F_RAIN,SR              &
-     &                ,Q2,U,V,THS,SST,PREC,SNO,ZERO_3D                  &
+     &                ,Q2,U,V,THS,TSFC,SST,PREC,SNO,ZERO_3D             &
      &                ,FIS,Z0,Z0BASE,USTAR,PBLH,LPBL,EL_MYJ             &
      &                ,EXCH_H,AKHS,AKMS,AKHS_OUT,AKMS_OUT               &
      &                ,THZ0,QZ0,UZ0,VZ0,QS                              &
@@ -611,7 +611,7 @@
      &                                                ,SFCLHX,SFCSHX    &
      &                                                ,SI,SNO,SNOPCX    &
      &                                                ,SSROFF,SUBSHX    &
-     &                                                ,THS,THZ0         &
+     &                                                ,THS,THZ0,TSFC    &
      &                                                ,USTAR,UZ0,UZ0H   &
      &                                                ,VZ0,VZ0H         &
      &                                                ,Z0,Z0BASE
@@ -681,7 +681,7 @@
      &                                  ,Q2X,QLOW,RAIN,RAINBL           &
      &                                  ,RLW_DN_SFC,RMOL,RSW_NET_SFC    &
      &                                  ,SFCEVPX,SFCZ,SNOW,SNOWC,SNOWH  &
-     &                                  ,TH2X,THLOW,TLOW,TSFC,VGFRCK    &
+     &                                  ,TH2X,THLOW,TLOW,VGFRCK         &
      &                                  ,WSPD,XLAND,ZERO_2D
 !
       REAL,DIMENSION(IMS:IME,KMS:KME-1,JMS:JME) :: EXNER

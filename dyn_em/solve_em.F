@@ -1069,6 +1069,7 @@ BENCH_START(rk_tend_tim)
 
       CALL wrf_debug ( 200 , ' call rk_tendency' )
       CALL rk_tendency ( config_flags, rk_step,                           &
+                         itimestep, grid%id,                              &
                          ru_tend, rv_tend, rw_tend, ph_tend, t_tend,      &
                          ru_tendf, rv_tendf, rw_tendf, ph_tendf, t_tendf, &
                          mu_tend, u_save, v_save, w_save, ph_save,        &
@@ -2575,19 +2576,27 @@ BENCH_START(moist_phys_end_tim)
                             its, ite, jts, jte,               &
                             k_start    , k_end               )
 
-       IF (.not. config_flags%non_hydrostatic)                               &
-       CALL diagnose_w( ph_tend, ph_2, ph_1, w_2, muts, dt_rk,  &
-                        u_2, v_2, ht,                           &
-                        cf1, cf2, cf3, rdx, rdy, msft,          &
-                        ids, ide, jds, jde, kds, kde,           &
-                        ims, ime, jms, jme, kms, kme,           &
-                        its, ite, jts, jte,                     &
-                        k_start    , k_end                     )
-
    END DO scalar_tile_loop_1b
    !$OMP END PARALLEL DO
 BENCH_END(moist_phys_end_tim)
 
+  ENDIF
+
+  IF (.not. config_flags%non_hydrostatic) THEN
+   !$OMP PARALLEL DO   &
+   !$OMP PRIVATE ( ij )
+   DO ij = 1 , grid%num_tiles
+     CALL diagnose_w( ph_tend, ph_2, ph_1, w_2, muts, dt_rk,  &
+                      u_2, v_2, ht,                           &
+                      cf1, cf2, cf3, rdx, rdy, msft,          &
+                      ids, ide, jds, jde, kds, kde,           &
+                      ims, ime, jms, jme, kms, kme,           &
+                      grid%i_start(ij), grid%i_end(ij),       &
+                      grid%j_start(ij), grid%j_end(ij),       &
+                      k_start    , k_end                     )
+
+   END DO
+   !$OMP END PARALLEL DO
   ENDIF
 
    chem_tile_loop_3: DO ij = 1 , grid%num_tiles

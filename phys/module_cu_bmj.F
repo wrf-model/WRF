@@ -1040,9 +1040,9 @@ CONTAINS
       LTP1=LTOP-1
       DEPTH=PBOT-PTOP
 !
-      IF(DEPTH<DEPMIN)THEN
-        GO TO 800
-      ENDIF
+!!      IF(DEPTH<DEPMIN)THEN
+!!        GO TO 800
+!!      ENDIF
 !-----------------------------------------------------------------------
       IF(PTOP>PBOT-PNO.OR.LTOP>LBOT-2)THEN
         LBOT=0
@@ -1383,7 +1383,7 @@ CONTAINS
       INTEGER :: KTH,KTHM,KTHM1,KP,KPM,KPM1
 !
       REAL :: APE,DP,DQS,DTH,DTHE,P,QS,QS0K,SQSK,STHEK                  &
-     &       ,TH,THE0K
+     &       ,TH,THE0K,DENOM
 !-----------------------------------------------------------------------
 
       JTF=MIN0(JTE,JDE-1)
@@ -1438,7 +1438,13 @@ CONTAINS
       DO KP=1,KPM
         P=P+DP
         APE=(100000./P)**(RD/CP)
-        QSOLD(KP)=PQ0/P*EXP(A2*(TH-A3*APE)/(TH-A4*APE))
+        DENOM=TH-A4*APE
+        IF (DENOM>EPS) THEN
+           QSOLD(KP)=PQ0/P*EXP(A2*(TH-A3*APE)/DENOM)
+        ELSE
+           QSOLD(KP)=0.
+        ENDIF
+!        QSOLD(KP)=PQ0/P*EXP(A2*(TH-A3*APE)/(TH-A4*APE))
         POLD(KP)=P
       ENDDO
 !
@@ -1486,7 +1492,13 @@ CONTAINS
       DO KTH=1,KTHM
         TH=TH+DTH
         APE=(1.E5/P)**(RD/CP)
-        QS=PQ0/P*EXP(A2*(TH-A3*APE)/(TH-A4*APE))
+        DENOM=TH-A4*APE
+        IF (DENOM>EPS) THEN
+           QS=PQ0/P*EXP(A2*(TH-A3*APE)/DENOM)
+        ELSE
+           QS=0.
+        ENDIF
+!        QS=PQ0/P*EXP(A2*(TH-A3*APE)/(TH-A4*APE))
         TOLD(KTH)=TH/APE
         THEOLD(KTH)=TH*EXP(ELIWV*QS/(CP*TOLD(KTH)))
       ENDDO
@@ -1549,7 +1561,13 @@ CONTAINS
       DO KTH=1,KTHM
         TH=TH+DTH
         APE=(1.E5/P)**(RD/CP)
-        QS=PQ0/P*EXP(A2*(TH-A3*APE)/(TH-A4*APE))
+        DENOM=TH-A4*APE
+        IF (DENOM>EPS) THEN
+           QS=PQ0/P*EXP(A2*(TH-A3*APE)/DENOM)
+        ELSE
+           QS=0.
+        ENDIF
+!        QS=PQ0/P*EXP(A2*(TH-A3*APE)/(TH-A4*APE))
         TOLDQ(KTH)=TH/APE
         THEOLDQ(KTH)=TH*EXP(ELIWV*QS/(CP*TOLDQ(KTH)))
       ENDDO

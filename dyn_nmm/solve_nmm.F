@@ -280,10 +280,10 @@
 !
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
-      IF ( WRF_DM_ON_MONITOR() ) THEN
-      WRITE(MESSAGE,125)NTSD,NTSD*GRID%DT/3600.
-  125 FORMAT(' SOLVE_NMM: TIMESTEP IS ',I5,'   TIME IS ',F7.3,' HOURS')
-      CALL WRF_MESSAGE(TRIM(MESSAGE))
+      IF(WRF_DM_ON_MONITOR() )THEN
+        WRITE(MESSAGE,125)NTSD,NTSD*GRID%DT/3600.
+  125   FORMAT(' SOLVE_NMM: TIMESTEP IS ',I5,'   TIME IS ',F7.3,' HOURS')
+        CALL WRF_MESSAGE(TRIM(MESSAGE))
       ENDIF
 !-----------------------------------------------------------------------
 !
@@ -672,7 +672,7 @@
      &            ,SM,LMH,HTM,VTM,HBM2,VBM2,DX_NMM,DFRLG               &
      &            ,CZEN,CZMEAN,SIGT4,RLWIN,RSWIN,RADOT                 &
      &            ,PD,RES,PINT,T,Q,CWM,F_ICE,F_RAIN,SR                 &
-     &            ,Q2,U,V,THS,SST,PREC,SNO,ZERO_3D                     &
+     &            ,Q2,U,V,THS,NMM_TSK,SST,PREC,SNO,ZERO_3D             &
      &            ,FIS,Z0,Z0BASE,USTAR,PBLH,LPBL,EL_MYJ                &
      &            ,EXCH_H,AKHS,AKMS,AKHS_OUT,AKMS_OUT                  &
      &            ,THZ0,QZ0,UZ0,VZ0,QS                                 &

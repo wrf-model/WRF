@@ -2150,6 +2150,7 @@ END SUBROUTINE pg_buoy_w
 !-------------------------------------------------------------------------------
 
 SUBROUTINE w_damp( rw_tend, ww, w, mut, rdnw, dt,     &
+                      itimestep, id_grid,             &
                       w_damping,                      &
                       ids, ide, jds, jde, kds, kde,   &
                       ims, ime, jms, jme, kms, kme,   &
@@ -2159,7 +2160,7 @@ SUBROUTINE w_damp( rw_tend, ww, w, mut, rdnw, dt,     &
 
    ! Input data
 
-   INTEGER ,          INTENT(IN   ) :: w_damping
+   INTEGER ,          INTENT(IN   ) :: w_damping, itimestep, id_grid
 
    INTEGER ,          INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
                                        ims, ime, jms, jme, kms, kme, &
@@ -2216,10 +2217,9 @@ SUBROUTINE w_damp( rw_tend, ww, w, mut, rdnw, dt,     &
              maxcfl = cfl ; maxi = i ; maxj = j ; maxk = k 
              maxdub = w(i,k,j) ; maxdeta = -1./rdnw(k)
            ENDIF
-           WRITE(temp,*)i,j,k,' cfl,w,d(eta)=',cfl,w(i,k,j),-1./rdnw(k), &
-                              ' in w_damp'
+           WRITE(temp,*)i,j,k,' cfl,w,d(eta)=',cfl,w(i,k,j),-1./rdnw(k)
            CALL wrf_debug ( 100 , TRIM(temp) )
-           some = some + 1
+           if ( cfl > 2. ) some = some + 1
            rw_tend(i,k,j) = rw_tend(i,k,j)-sign(1.,w(i,k,j))*w_alpha*(cfl-w_beta)*mut(i,j)
         endif
      END DO
@@ -2239,10 +2239,9 @@ SUBROUTINE w_damp( rw_tend, ww, w, mut, rdnw, dt,     &
              maxcfl = cfl ; maxi = i ; maxj = j ; maxk = k 
              maxdub = w(i,k,j) ; maxdeta = -1./rdnw(k)
            ENDIF
-           WRITE(temp,*)i,j,k,' cfl,w,d(eta)=',cfl,w(i,k,j),-1./rdnw(k), &
-                              ' in w_damp'
+           WRITE(temp,*)i,j,k,' cfl,w,d(eta)=',cfl,w(i,k,j),-1./rdnw(k)
            CALL wrf_debug ( 100 , TRIM(temp) )
-           some = some + 1
+           if ( cfl > 2. ) some = some + 1
         endif
      END DO
      ENDDO
@@ -2250,7 +2249,7 @@ SUBROUTINE w_damp( rw_tend, ww, w, mut, rdnw, dt,     &
    ENDIF
    IF ( some .GT. 0 ) THEN
      WRITE(wrf_err_message,*)some,                                            &
-            ' points exceeded cfl in w_damp (module_big_step_utilities_em.F) '
+            ' points exceeded cfl=2 in domain ', id_grid, ' at time ', itimestep*dt/3600, ' hours'
      CALL wrf_debug ( 0 , TRIM(wrf_err_message) )
      WRITE(wrf_err_message,*)'MAX AT i,j,k: ',maxi,maxj,maxk,' cfl,w,d(eta)=',maxcfl, &
                              maxdub,maxdeta

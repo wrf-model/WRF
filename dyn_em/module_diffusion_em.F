@@ -1489,7 +1489,7 @@ SUBROUTINE smag_km( config_flags,xkmh,xkmhd,xkmv,xkhh,xkhv,BN2,                &
    do i=i_start,i_end
       tmp=0.25*(defor12(i  ,k,j)+defor12(i  ,k,j+1)+ &
                 defor12(i+1,k,j)+defor12(i+1,k,j+1))
-      def2(i,k,j)=def2(i,k,j)+0.5*tmp*tmp
+      def2(i,k,j)=def2(i,k,j)+tmp*tmp
    enddo
    enddo
    enddo
@@ -1499,7 +1499,7 @@ SUBROUTINE smag_km( config_flags,xkmh,xkmhd,xkmv,xkhh,xkhv,BN2,                &
    do i=i_start,i_end
       tmp=0.25*(defor13(i  ,k+1,j)+defor13(i  ,k,j)+ &
                 defor13(i+1,k+1,j)+defor13(i+1,k,j))
-      def2(i,k,j)=def2(i,k,j)+0.5*tmp*tmp
+      def2(i,k,j)=def2(i,k,j)+tmp*tmp
    enddo
    enddo
    enddo
@@ -1509,7 +1509,7 @@ SUBROUTINE smag_km( config_flags,xkmh,xkmhd,xkmv,xkhh,xkhv,BN2,                &
    do i=i_start,i_end
       tmp=0.25*(defor23(i,k+1,j  )+defor23(i,k,j  )+ &
                 defor23(i,k+1,j+1)+defor23(i,k,j+1))
-      def2(i,k,j)=def2(i,k,j)+0.5*tmp*tmp
+      def2(i,k,j)=def2(i,k,j)+tmp*tmp
    enddo
    enddo
    enddo

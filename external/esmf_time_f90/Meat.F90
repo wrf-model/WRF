@@ -1,95 +1,167 @@
 #include <ESMF_TimeMgr.inc>
 
-SUBROUTINE normalize_time( time )
-  USE esmf_alarmmod
+! Factor so abs(Sn) < Sd and ensure that signs of S and Sn match.  
+! Also, enforce consistency.  
+! YR and MM fields are ignored.  
+SUBROUTINE normalize_basetime( basetime )
   USE esmf_basemod
   USE esmf_basetimemod
-  USE esmf_calendarmod
-  USE esmf_clockmod
-  USE esmf_fractionmod
-  USE esmf_timeintervalmod
+  IMPLICIT NONE
+  TYPE(ESMF_BaseTime), INTENT(INOUT) :: basetime
+!PRINT *,'DEBUG:  BEGIN normalize_basetime()'
+  ! Consistency check...  
+  IF ( basetime%Sd < 0 ) THEN
+    CALL wrf_error_fatal( &
+      'normalize_basetime:  denominator of seconds cannot be negative' )
+  ENDIF
+  IF ( ( basetime%Sd == 0 ) .AND. ( basetime%Sn .NE. 0 ) ) THEN
+    CALL wrf_error_fatal( &
+      'normalize_basetime:  denominator of seconds cannot be zero when numerator is non-zero' )
+  ENDIF
+  ! factor so abs(Sn) < Sd
+  IF ( basetime%Sd > 0 ) THEN
+    IF ( ABS( basetime%Sn ) .GE. basetime%Sd ) THEN
+!PRINT *,'DEBUG:  normalize_basetime() A1:  S,Sn,Sd = ',basetime%S,basetime%Sn,basetime%Sd
+      basetime%S = basetime%S + ( basetime%Sn / basetime%Sd )
+      basetime%Sn = mod( basetime%Sn, basetime%Sd )
+!PRINT *,'DEBUG:  normalize_basetime() A2:  S,Sn,Sd = ',basetime%S,basetime%Sn,basetime%Sd
+    ENDIF
+    ! change sign of Sn if it does not match S
+    IF ( ( basetime%S > 0 ) .AND. ( basetime%Sn < 0 ) ) THEN
+!PRINT *,'DEBUG:  normalize_basetime() B1:  S,Sn,Sd = ',basetime%S,basetime%Sn,basetime%Sd
+      basetime%S = basetime%S - 1_ESMF_KIND_I8
+      basetime%Sn = basetime%Sn + basetime%Sd
+!PRINT *,'DEBUG:  normalize_basetime() B2:  S,Sn,Sd = ',basetime%S,basetime%Sn,basetime%Sd
+    ENDIF
+    IF ( ( basetime%S < 0 ) .AND. ( basetime%Sn > 0 ) ) THEN
+!PRINT *,'DEBUG:  normalize_basetime() C1:  S,Sn,Sd = ',basetime%S,basetime%Sn,basetime%Sd
+      basetime%S = basetime%S + 1_ESMF_KIND_I8
+      basetime%Sn = basetime%Sn - basetime%Sd
+!PRINT *,'DEBUG:  normalize_basetime() C2:  S,Sn,Sd = ',basetime%S,basetime%Sn,basetime%Sd
+    ENDIF
+  ENDIF
+!PRINT *,'DEBUG:  END normalize_basetime()'
+END SUBROUTINE normalize_basetime
+
+
+
+! A normalized time has time%basetime >= 0, time%basetime less than the current 
+! year expressed as a timeInterval, and time%YR can take any value
+SUBROUTINE normalize_time( time )
+  USE esmf_basemod
+  USE esmf_basetimemod
   USE esmf_timemod
-IMPLICIT NONE
-      INTEGER nfeb
-      type(ESMF_Time), intent(INOUT) :: time
-      integer DD_prev
+  IMPLICIT NONE
+  TYPE(ESMF_Time), INTENT(INOUT) :: time
+  INTEGER(ESMF_KIND_I8) :: nsecondsinyear
+  ! locals
+  TYPE(ESMF_BaseTime) :: cmptime, zerotime
+  INTEGER :: rc
+  LOGICAL :: done
 
-      ! handle any rollovers or rollunders of whole seconds
+  ! first, normalize basetime
+  ! this will force abs(Sn) < Sd and ensure that signs of S and Sn match
+  CALL normalize_basetime( time%basetime )
 
-      DD_prev = time%DD
+!$$$ add tests for these edge cases
 
-      IF      ( time%basetime%S .GE. SECONDS_PER_DAY ) THEN
-        time%DD = time%DD + time%basetime%S/(SECONDS_PER_DAY)
-        time%basetime%S = mod(time%basetime%S,(SECONDS_PER_DAY))
-      ELSE IF ( time%basetime%S .LT. 0 ) THEN
-        time%DD = time%DD + time%basetime%S/(SECONDS_PER_DAY) - 1
-        time%basetime%S = SECONDS_PER_DAY+mod(time%basetime%S,(SECONDS_PER_DAY))
-      ENDIF
+  ! next, underflow negative seconds into YEARS
+  ! time%basetime must end up non-negative
+!$$$ push this down into ESMF_BaseTime constructor
+  zerotime%S  = 0
+  zerotime%Sn = 0
+  zerotime%Sd = 0
+  DO WHILE ( time%basetime < zerotime )
+    time%YR = time%YR - 1 
+    time%basetime%S = time%basetime%S + nsecondsinyear( time%YR )
+  ENDDO
 
-      IF      ( nfeb(time%YR) .EQ. 28 .AND. time%DD .LT. 1 ) THEN
-        time%DD = time%DD + mday(mod(time%MM-1+MONTHS_PER_YEAR-1,MONTHS_PER_YEAR)+1)
-        time%MM = time%MM - 1
-      ELSE IF ( nfeb(time%YR) .EQ. 29 .AND. time%DD .LT. 1 ) THEN
-        time%DD = time%DD + mdayleap(mod(time%MM-1+MONTHS_PER_YEAR-1,MONTHS_PER_YEAR)+1)
-        time%MM = time%MM - 1
-      ENDIF
-      IF      ( nfeb(time%YR) .EQ. 28 .AND. time%DD .GT. mday(time%MM) ) THEN
-        time%DD = time%DD - mday(time%MM)
-        time%MM = time%MM + 1
-      ELSE IF ( nfeb(time%YR) .EQ. 29 .AND. time%DD .GT. mdayleap(time%MM) ) THEN
-        time%DD = time%DD - mdayleap(time%MM)
-        time%MM = time%MM + 1
-      ENDIF
-      IF ( DD_prev .NE. 0 ) THEN
-      IF ( time%MM .GT. MONTHS_PER_YEAR ) THEN
-	time%YR = time%YR + 1
-	time%MM = mod( time%MM-1, MONTHS_PER_YEAR ) + 1
-      ENDIF
-      IF ( time%MM .LT. 1 ) THEN
-	time%YR = time%YR - 1
-	time%MM = MONTHS_PER_YEAR + mod( time%MM-1, MONTHS_PER_YEAR ) + 1
-      ENDIF
-      ENDIF
-      
+  ! next, overflow seconds into YEARS
+  done = .FALSE.
+  DO WHILE ( .NOT. done )
+!$$$ push this down into ESMF_BaseTime constructor
+    cmptime%S  = nsecondsinyear( time%YR )
+    cmptime%Sn = 0
+    cmptime%Sd = 0
+    IF ( time%basetime >= cmptime ) THEN
+      time%basetime = time%basetime - cmptime
+      time%YR = time%YR + 1 
+    ELSE
+      done = .TRUE.
+    ENDIF
+  ENDDO
 END SUBROUTINE normalize_time
 
 
+
 SUBROUTINE normalize_timeint( timeInt )
-  USE esmf_alarmmod
+  USE esmf_basetimemod
+  USE esmf_timeintervalmod
+  IMPLICIT NONE
+  TYPE(ESMF_TimeInterval), INTENT(INOUT) :: timeInt
+
+  ! normalize basetime
+  ! this will force abs(Sn) < Sd and ensure that signs of S and Sn match
+  ! YR and MM are ignored
+  CALL normalize_basetime( timeInt%basetime )
+END SUBROUTINE normalize_timeint
+
+
+
+
+FUNCTION signnormtimeint ( timeInt )
+  ! Compute the sign of a time interval.  
+  ! YR and MM fields are *IGNORED*.  
+  ! returns 1, 0, or -1 or exits if timeInt fields have inconsistent signs.
   USE esmf_basemod
   USE esmf_basetimemod
-  USE esmf_calendarmod
-  USE esmf_clockmod
-  USE esmf_fractionmod
   USE esmf_timeintervalmod
-  USE esmf_timemod
-IMPLICIT NONE
-      INTEGER nfeb
-      type(ESMF_TimeInterval), intent(INOUT) :: timeInt
-      integer DD_prev
+  IMPLICIT NONE
+  TYPE(ESMF_TimeInterval), INTENT(IN) :: timeInt
+  INTEGER :: signnormtimeint
+  LOGICAL :: positive, negative
 
-      ! handle any rollovers or rollunders of whole seconds
+  positive = .FALSE.
+  negative = .FALSE.
+  signnormtimeint = 0
+  ! Note that Sd is required to be non-negative.  This is enforced in 
+  ! normalize_timeint().  
+  ! Note that Sn is required to be zero when Sd is zero.  This is enforced 
+  ! in normalize_timeint().  
+  IF ( ( timeInt%basetime%S > 0 ) .OR. &
+       ( timeInt%basetime%Sn > 0 ) ) THEN
+    positive = .TRUE.
+  ENDIF
+  IF ( ( timeInt%basetime%S < 0 ) .OR. &
+       ( timeInt%basetime%Sn < 0 ) ) THEN
+    negative = .TRUE.
+  ENDIF
+  IF ( positive .AND. negative ) THEN
+    CALL wrf_error_fatal( &
+      'signnormtimeint:  signs of fields cannot be mixed' )
+  ELSE IF ( positive ) THEN
+    signnormtimeint = 1
+  ELSE IF ( negative ) THEN
+    signnormtimeint = -1
+  ENDIF
+END FUNCTION signnormtimeint
 
-      DD_prev = timeInt%DD
 
-      ! Rollover MS to seconds, and seconds to days
-      ! Don't rollover days to months, as that depends on calendar
-      IF      ( abs(timeInt%basetime%MS) .GE. 1000 ) THEN
-        timeInt%basetime%S  = timeInt%basetime%S + timeInt%basetime%MS/1000
-        timeInt%basetime%MS = mod(timeInt%basetime%MS,1000)
-      ENDIF
-      IF      ( abs(timeInt%basetime%S) .GE. SECONDS_PER_DAY ) THEN
-        timeInt%DD = timeInt%DD + timeInt%basetime%S/(SECONDS_PER_DAY)
-        timeInt%basetime%S = mod(timeInt%basetime%S,SECONDS_PER_DAY)
-      ENDIF
+! Exits with error message if timeInt is not normalized.  
+SUBROUTINE timeintchecknormalized( timeInt, msgstr )
+  USE esmf_timeintervalmod
+  IMPLICIT NONE
+  TYPE(ESMF_TimeInterval), INTENT(IN) :: timeInt
+  CHARACTER(LEN=*), INTENT(IN) :: msgstr
+  ! locals
+  CHARACTER(LEN=256) :: outstr
+  IF ( ( timeInt%YR /= 0 ) .OR. &
+       ( timeInt%MM /= 0 ) ) THEN
+    outstr = 'un-normalized TimeInterval not allowed:  '//TRIM(msgstr)
+    CALL wrf_error_fatal( outstr )
+  ENDIF
+END SUBROUTINE timeintchecknormalized
 
-      ! Rollover months to years
-      IF      ( abs(timeInt%MM) .GE. MONTHS_PER_YEAR ) THEN
-        timeInt%YR = timeInt%YR + timeInt%MM/MONTHS_PER_YEAR
-        timeInt%MM = mod(timeInt%MM,MONTHS_PER_YEAR)
-      ENDIF
-      
-END SUBROUTINE normalize_timeint
 
 ! added from share/module_date_time in WRF.
 FUNCTION nfeb ( year ) RESULT (num_days)
@@ -111,103 +183,330 @@ FUNCTION nfeb ( year ) RESULT (num_days)
          END IF
       END IF
 #endif
-
 END FUNCTION nfeb
 
+
+
+FUNCTION ndaysinyear ( year ) RESULT (num_diy)
+  ! Compute the number of days in the given year
+  IMPLICIT NONE
+  INTEGER, INTENT(IN) :: year
+  INTEGER :: num_diy
+  INTEGER :: nfeb
+  IF ( nfeb( year ) .EQ. 29 ) THEN
+    num_diy = 366
+  ELSE
+    num_diy = 365
+  ENDIF
+END FUNCTION ndaysinyear
+
+
+
+FUNCTION nsecondsinyear ( year ) RESULT (numseconds)
+  ! Compute the number of seconds in the given year
+  USE esmf_basemod
+  IMPLICIT NONE
+  INTEGER, INTENT(IN) :: year
+  INTEGER(ESMF_KIND_I8) :: numseconds
+  INTEGER :: ndaysinyear
+  numseconds = SECONDS_PER_DAY * INT( ndaysinyear(year) , ESMF_KIND_I8 )
+END FUNCTION nsecondsinyear
+
+
+
 SUBROUTINE initdaym 
-  use ESMF_CalendarMod
-IMPLICIT NONE
-      INTEGER i,j,m
-      m = 1
-      mdaycum(0) = 0
-      DO i = 1,MONTHS_PER_YEAR
-	DO j = 1,mday(i)
-	  daym(m) = i
-	  m = m + 1
-	ENDDO
-	mdaycum(i) = mdaycum(i-1) + mday(i)
-      ENDDO
-      m = 1
-      mdayleapcum(0) = 0
-      DO i = 1,MONTHS_PER_YEAR
-	DO j = 1,mdayleap(i)
-	  daymleap(m) = i
-	  m = m + 1
-	ENDDO
-	mdayleapcum(i) = mdayleapcum(i-1) + mdayleap(i)
-      ENDDO
+  USE esmf_basemod
+  USE esmf_basetimemod
+  USE ESMF_CalendarMod
+  IMPLICIT NONE
+  INTEGER i,j,m
+  m = 1
+  mdaycum(0) = 0
+!$$$ push this down into ESMF_BaseTime constructor
+  monthbdys(0)%S  = 0
+  monthbdys(0)%Sn = 0
+  monthbdys(0)%Sd = 0
+  DO i = 1,MONTHS_PER_YEAR
+    DO j = 1,mday(i)
+      daym(m) = i
+      m = m + 1
+    ENDDO
+    mdaycum(i) = mdaycum(i-1) + mday(i)
+!$$$ push this down into ESMF_BaseTime constructor
+    monthbdys(i)%S  = SECONDS_PER_DAY * INT( mdaycum(i), ESMF_KIND_I8 )
+    monthbdys(i)%Sn = 0
+    monthbdys(i)%Sd = 0
+  ENDDO
+  m = 1
+  mdayleapcum(0) = 0
+!$$$ push this down into ESMF_BaseTime constructor
+  monthbdysleap(0)%S  = 0
+  monthbdysleap(0)%Sn = 0
+  monthbdysleap(0)%Sd = 0
+  DO i = 1,MONTHS_PER_YEAR
+    DO j = 1,mdayleap(i)
+      daymleap(m) = i
+      m = m + 1
+    ENDDO
+    mdayleapcum(i) = mdayleapcum(i-1) + mdayleap(i)
+!$$$ push this down into ESMF_BaseTime constructor
+    monthbdysleap(i)%S  = SECONDS_PER_DAY * INT( mdayleapcum(i), ESMF_KIND_I8 )
+    monthbdysleap(i)%Sn = 0
+    monthbdysleap(i)%Sd = 0
+  ENDDO
 END SUBROUTINE initdaym
 
 
+!$$$ useful, but not used at the moment...  
 SUBROUTINE compute_dayinyear(YR,MM,DD,dayinyear)
   use ESMF_CalendarMod
 IMPLICIT NONE
-      INTEGER, INTENT(IN)  :: YR,MM,DD
+      INTEGER, INTENT(IN)  :: YR,MM,DD   ! DD is day of month
       INTEGER, INTENT(OUT) :: dayinyear
       INTEGER i
       integer nfeb
 
       dayinyear = 0
       DO i = 1,MM-1
-	if (i.eq.2) then
-	  dayinyear = dayinyear + nfeb(YR)
-	else
-	  dayinyear = dayinyear + mday(i)
-	endif
+        if (i.eq.2) then
+          dayinyear = dayinyear + nfeb(YR)
+        else
+          dayinyear = dayinyear + mday(i)
+        endif
       ENDDO
       dayinyear = dayinyear + DD
 END SUBROUTINE compute_dayinyear
 
 
-SUBROUTINE timecmp(time1, time2, retval )
-  USE esmf_alarmmod
+
+SUBROUTINE timegetmonth( time, MM )
   USE esmf_basemod
   USE esmf_basetimemod
-  USE esmf_calendarmod
-  USE esmf_clockmod
-  USE esmf_fractionmod
-  USE esmf_timeintervalmod
   USE esmf_timemod
-IMPLICIT NONE
-      integer, intent(out) :: retval
+  USE esmf_calendarmod
+  IMPLICIT NONE
+  TYPE(ESMF_Time), INTENT(IN) :: time
+  INTEGER, INTENT(OUT) :: MM
+  ! locals
+  INTEGER :: nfeb
+  INTEGER :: i
+  TYPE(ESMF_BaseTime), POINTER :: MMbdys(:)
+  IF ( nfeb(time%YR) == 29 ) THEN
+    MMbdys => monthbdysleap
+  ELSE
+    MMbdys => monthbdys
+  ENDIF
+  MM = -1
+  DO i = 1,MONTHS_PER_YEAR
+    IF ( ( time%basetime >= MMbdys(i-1) ) .AND. ( time%basetime < MMbdys(i) ) ) THEN
+      MM = i
+      EXIT
+    ENDIF
+  ENDDO
+  IF ( MM == -1 ) THEN
+    CALL wrf_error_fatal( 'timegetmonth:  could not extract month of year from time' )
+  ENDIF
+END SUBROUTINE timegetmonth
+
+
+!$$$ may need to change dependencies in Makefile...  
+
+SUBROUTINE timegetdayofmonth( time, DD )
+  USE esmf_basemod
+  USE esmf_basetimemod
+  USE esmf_timemod
+  USE esmf_calendarmod
+  IMPLICIT NONE
+  TYPE(ESMF_Time), INTENT(IN) :: time
+  INTEGER, INTENT(OUT) :: DD
+  ! locals
+  INTEGER :: nfeb
+  INTEGER :: MM
+  TYPE(ESMF_BaseTime), POINTER :: MMbdys(:)
+  TYPE(ESMF_BaseTime) :: tmpbasetime
+!$$$ fix this so init just points MMbdys to the one we want for this calendar?
+  IF ( nfeb(time%YR) == 29 ) THEN
+    MMbdys => monthbdysleap
+  ELSE
+    MMbdys => monthbdys
+  ENDIF
+  CALL timegetmonth( time, MM )
+  tmpbasetime = time%basetime - MMbdys(MM-1)
+  DD = ( tmpbasetime%S / SECONDS_PER_DAY ) + 1
+END SUBROUTINE timegetdayofmonth
+
+
+! Increment Time by number of seconds between start of year and start 
+! of month MM.  
+! 1 <= MM <= 12
+! Time is NOT normalized.  
+SUBROUTINE timeaddmonths( time, MM, ierr )
+  USE esmf_basemod
+  USE esmf_basetimemod
+  USE esmf_timemod
+  USE esmf_calendarmod
+  IMPLICIT NONE
+  TYPE(ESMF_Time), INTENT(INOUT) :: time
+  INTEGER, INTENT(IN) :: MM
+  INTEGER, INTENT(OUT) :: ierr
+  ! locals
+  INTEGER :: nfeb
+  TYPE(ESMF_BaseTime), POINTER :: MMbdys(:)
+  ierr = ESMF_SUCCESS
+!  PRINT *,'DEBUG:  BEGIN timeaddmonths()'
+  IF ( ( MM < 1 ) .OR. ( MM > MONTHS_PER_YEAR ) ) THEN
+    CALL wrf_message( 'ERROR timeaddmonths():  MM out of range' )
+    ierr = ESMF_FAILURE
+  ENDIF
+!  PRINT *,'DEBUG:  timeaddmonths(): MM = ',MM
+!$$$ fix this so init just points MMbdys to the one we want for this calendar?
+!  PRINT *,'DEBUG:  timeaddmonths(): time%YR = ',time%YR
+!  PRINT *,'DEBUG:  timeaddmonths(): time%basetime%S = ',time%basetime%S
+!  PRINT *,'DEBUG:  timeaddmonths(): time%basetime%Sn = ',time%basetime%Sn
+!  PRINT *,'DEBUG:  timeaddmonths(): time%basetime%Sd = ',time%basetime%Sd
+  IF ( nfeb(time%YR) == 29 ) THEN
+!  PRINT *,'DEBUG:  timeaddmonths(): leap year'
+    MMbdys => monthbdysleap
+  ELSE
+!  PRINT *,'DEBUG:  timeaddmonths(): not leap year'
+    MMbdys => monthbdys
+  ENDIF
+!  PRINT *,'DEBUG:  timeaddmonths(): done pointing to MMbdys'
+!  PRINT *,'DEBUG:  timeaddmonths(): MMbdys(',MM-1,')%S = ',MMbdys(MM-1)%S
+!  PRINT *,'DEBUG:  timeaddmonths(): MMbdys(',MM-1,')%Sn = ',MMbdys(MM-1)%Sn
+!  PRINT *,'DEBUG:  timeaddmonths(): MMbdys(',MM-1,')%Sd = ',MMbdys(MM-1)%Sd
+!$$$ dumps core here...  
+  time%basetime = time%basetime + MMbdys(MM-1)
+!  PRINT *,'DEBUG:  END timeaddmonths()'
+END SUBROUTINE timeaddmonths
+
+
+! Increment Time by number of seconds in the current month.  
+! Time is NOT normalized.  
+SUBROUTINE timeincmonth( time )
+  USE esmf_basemod
+  USE esmf_basetimemod
+  USE esmf_timemod
+  USE esmf_calendarmod
+  IMPLICIT NONE
+  TYPE(ESMF_Time), INTENT(INOUT) :: time
+  ! locals
+  INTEGER :: nfeb
+  INTEGER :: MM
+  CALL timegetmonth( time, MM )
+  IF ( nfeb(time%YR) == 29 ) THEN
+    time%basetime%S = time%basetime%S + &
+      ( INT( mdayleap(MM), ESMF_KIND_I8 ) * SECONDS_PER_DAY )
+  ELSE
+    time%basetime%S = time%basetime%S + &
+      ( INT( mday(MM), ESMF_KIND_I8 ) * SECONDS_PER_DAY )
+  ENDIF
+END SUBROUTINE timeincmonth
+
+
+
+! Decrement Time by number of seconds in the previous month.  
+! Time is NOT normalized.  
+SUBROUTINE timedecmonth( time )
+  USE esmf_basemod
+  USE esmf_basetimemod
+  USE esmf_timemod
+  USE esmf_calendarmod
+  IMPLICIT NONE
+  TYPE(ESMF_Time), INTENT(INOUT) :: time
+  ! locals
+  INTEGER :: nfeb
+  INTEGER :: MM
+  CALL timegetmonth( time, MM )  ! current month, 1-12
+  ! find previous month
+  MM = MM - 1
+  IF ( MM == 0 ) THEN
+    ! wrap around Jan -> Dec
+    MM = MONTHS_PER_YEAR
+  ENDIF
+  IF ( nfeb(time%YR) == 29 ) THEN
+    time%basetime%S = time%basetime%S - &
+      ( INT( mdayleap(MM), ESMF_KIND_I8 ) * SECONDS_PER_DAY )
+  ELSE
+    time%basetime%S = time%basetime%S - &
+      ( INT( mday(MM), ESMF_KIND_I8 ) * SECONDS_PER_DAY )
+  ENDIF
+END SUBROUTINE timedecmonth
+
+
+
+! spaceship operator for Times
+SUBROUTINE timecmp(time1, time2, retval )
+  USE esmf_basemod
+  USE esmf_basetimemod
+  USE esmf_timemod
+  IMPLICIT NONE
+  INTEGER, INTENT(OUT) :: retval
 !
 ! !ARGUMENTS:
-      type(ESMF_Time), intent(in) :: time1
-      type(ESMF_Time), intent(in) :: time2
-! local
-      integer :: t1, t2, lcd, d1, d2, n1, n2
-      
-      IF ( time1%instant .AND. time2%instant ) THEN
-        IF ( time1%YR .GT. time2%YR ) THEN ; retval = 1 ; RETURN ; ENDIF
-        IF ( time1%YR .LT. time2%YR ) THEN ; retval = -1 ; RETURN ; ENDIF
-        IF ( time1%MM .GT. time2%MM ) THEN ; retval = 1 ; RETURN ; ENDIF
-        IF ( time1%MM .LT. time2%MM ) THEN ; retval = -1 ; RETURN ; ENDIF
-        IF ( time1%DD .GT. time2%DD ) THEN ; retval = 1 ; RETURN ; ENDIF
-        IF ( time1%DD .LT. time2%DD ) THEN ; retval = -1 ; RETURN ; ENDIF
-      END IF
-
-      t1 = time1%basetime%S
-      t2 = time2%basetime%S
-      d1 = time1%basetime%Sd
-      d2 = time2%basetime%Sd
-      n1 = time1%basetime%Sn
-      n2 = time2%basetime%Sn
-      if ( n1 .ne. 0 .or. n2 .ne. 0 ) then
-	 CALL compute_lcd( d1, d2, lcd )
-	 if ( d1 .ne. 0 ) n1 = n1 * ( lcd / d1 )
-	 if ( d2 .ne. 0 ) n2 = n2 * ( lcd / d2 )
-      endif
-
-      if ( t1 .GT. t2 ) retval = 1
-      if ( t1 .LT. t2 ) retval = -1
-      if ( t1 .EQ. t2 ) THEN
-	IF (n1 .GT. n2) retval = 1
-	IF (n1 .LT. n2) retval = -1
-        IF (n1 .EQ. n2) retval = 0
-      ENDIF
+  TYPE(ESMF_Time), INTENT(IN) :: time1
+  TYPE(ESMF_Time), INTENT(IN) :: time2
+  IF ( time1%YR .GT. time2%YR ) THEN ; retval = 1 ; RETURN ; ENDIF
+  IF ( time1%YR .LT. time2%YR ) THEN ; retval = -1 ; RETURN ; ENDIF
+  CALL seccmp( time1%basetime%S, time1%basetime%Sn, time1%basetime%Sd, &
+               time2%basetime%S, time2%basetime%Sn, time2%basetime%Sd, &
+               retval )
 END SUBROUTINE timecmp
 
-SUBROUTINE c_esmc_basetimeeq (time1, time2, ESMF_TimeEQ)
+
+
+! spaceship operator for TimeIntervals
+SUBROUTINE timeintcmp(timeint1, timeint2, retval )
+  USE esmf_basemod
+  USE esmf_basetimemod
+  USE esmf_timeintervalmod
+  IMPLICIT NONE
+  INTEGER, INTENT(OUT) :: retval
+!
+! !ARGUMENTS:
+  TYPE(ESMF_TimeInterval), INTENT(IN) :: timeint1
+  TYPE(ESMF_TimeInterval), INTENT(IN) :: timeint2
+  CALL timeintchecknormalized( timeint1, 'timeintcmp arg1' )
+  CALL timeintchecknormalized( timeint2, 'timeintcmp arg2' )
+  CALL seccmp( timeint1%basetime%S, timeint1%basetime%Sn, &
+               timeint1%basetime%Sd,                      &
+               timeint2%basetime%S, timeint2%basetime%Sn, &
+               timeint2%basetime%Sd, retval )
+END SUBROUTINE timeintcmp
+
+
+
+! spaceship operator for seconds + Sn/Sd
+SUBROUTINE seccmp(S1, Sn1, Sd1, S2, Sn2, Sd2, retval )
+  USE esmf_basemod
+  IMPLICIT NONE
+  INTEGER, INTENT(OUT) :: retval
+!
+! !ARGUMENTS:
+  INTEGER(ESMF_KIND_I8), INTENT(IN) :: S1, Sn1, Sd1
+  INTEGER(ESMF_KIND_I8), INTENT(IN) :: S2, Sn2, Sd2
+! local
+  INTEGER(ESMF_KIND_I8) :: lcd, n1, n2
+
+  n1 = Sn1
+  n2 = Sn2
+  if ( ( n1 .ne. 0 ) .or. ( n2 .ne. 0 ) ) then
+    CALL compute_lcd( Sd1, Sd2, lcd )
+    if ( Sd1 .ne. 0 ) n1 = n1 * ( lcd / Sd1 )
+    if ( Sd2 .ne. 0 ) n2 = n2 * ( lcd / Sd2 )
+  endif
+
+  if ( S1 .GT. S2 ) retval = 1
+  if ( S1 .LT. S2 ) retval = -1
+  IF ( S1 .EQ. S2 ) THEN
+    IF (n1 .GT. n2) retval = 1
+    IF (n1 .LT. n2) retval = -1
+    IF (n1 .EQ. n2) retval = 0
+  ENDIF
+END SUBROUTINE seccmp
+
+
+SUBROUTINE c_esmc_basetimeeq (time1, time2, outflag)
   USE esmf_alarmmod
   USE esmf_basemod
   USE esmf_basetimemod
@@ -217,14 +516,14 @@ SUBROUTINE c_esmc_basetimeeq (time1, time2, ESMF_TimeEQ)
   USE esmf_timeintervalmod
   USE esmf_timemod
 IMPLICIT NONE
-      logical, intent(OUT) :: ESMF_TimeEQ
+      logical, intent(OUT) :: outflag
       type(ESMF_Time), intent(in) :: time1
       type(ESMF_Time), intent(in) :: time2
       integer res 
       CALL timecmp(time1,time2,res)
-      ESMF_TimeEQ = (res .EQ. 0)
+      outflag = (res .EQ. 0)
 END SUBROUTINE c_esmc_basetimeeq
-SUBROUTINE c_esmc_basetimege(time1, time2, ESMF_TimeEQ)
+SUBROUTINE c_esmc_basetimege(time1, time2, outflag)
   USE esmf_alarmmod
   USE esmf_basemod
   USE esmf_basetimemod
@@ -233,14 +532,14 @@ SUBROUTINE c_esmc_basetimege(time1, time2, ESMF_TimeEQ)
   USE esmf_fractionmod
   USE esmf_timeintervalmod
   USE esmf_timemod
-      logical, intent(OUT) :: ESMF_TimeEQ
+      logical, intent(OUT) :: outflag
       type(ESMF_Time), intent(in) :: time1
       type(ESMF_Time), intent(in) :: time2
       integer res 
       CALL timecmp(time1,time2,res)
-      ESMF_TimeEQ = (res .EQ. 1 .OR. res .EQ. 0)
+      outflag = (res .EQ. 1 .OR. res .EQ. 0)
 END SUBROUTINE c_esmc_basetimege
-SUBROUTINE c_esmc_basetimegt(time1, time2, ESMF_TimeEQ)
+SUBROUTINE c_esmc_basetimegt(time1, time2, outflag)
   USE esmf_alarmmod
   USE esmf_basemod
   USE esmf_basetimemod
@@ -250,14 +549,14 @@ SUBROUTINE c_esmc_basetimegt(time1, time2, ESMF_TimeEQ)
   USE esmf_timeintervalmod
   USE esmf_timemod
 IMPLICIT NONE
-      logical, intent(OUT) :: ESMF_TimeEQ
+      logical, intent(OUT) :: outflag
       type(ESMF_Time), intent(in) :: time1
       type(ESMF_Time), intent(in) :: time2
       integer res 
       CALL timecmp(time1,time2,res)
-      ESMF_TimeEQ = (res .EQ. 1)
+      outflag = (res .EQ. 1)
 END SUBROUTINE c_esmc_basetimegt
-SUBROUTINE c_esmc_basetimele(time1, time2, ESMF_TimeEQ)
+SUBROUTINE c_esmc_basetimele(time1, time2, outflag)
   USE esmf_alarmmod
   USE esmf_basemod
   USE esmf_basetimemod
@@ -267,14 +566,14 @@ SUBROUTINE c_esmc_basetimele(time1, time2, ESMF_TimeEQ)
   USE esmf_timeintervalmod
   USE esmf_timemod
 IMPLICIT NONE
-      logical, intent(OUT) :: ESMF_TimeEQ
+      logical, intent(OUT) :: outflag
       type(ESMF_Time), intent(in) :: time1
       type(ESMF_Time), intent(in) :: time2
       integer res 
       CALL timecmp(time1,time2,res)
-      ESMF_TimeEQ = (res .EQ. -1 .OR. res .EQ. 0)
+      outflag = (res .EQ. -1 .OR. res .EQ. 0)
 END SUBROUTINE c_esmc_basetimele
-SUBROUTINE c_esmc_basetimelt(time1, time2, ESMF_TimeEQ)
+SUBROUTINE c_esmc_basetimelt(time1, time2, outflag)
   USE esmf_alarmmod
   USE esmf_basemod
   USE esmf_basetimemod
@@ -284,14 +583,14 @@ SUBROUTINE c_esmc_basetimelt(time1, time2, ESMF_TimeEQ)
   USE esmf_timeintervalmod
   USE esmf_timemod
 IMPLICIT NONE
-      logical, intent(OUT) :: ESMF_TimeEQ
+      logical, intent(OUT) :: outflag
       type(ESMF_Time), intent(in) :: time1
       type(ESMF_Time), intent(in) :: time2
       integer res 
       CALL timecmp(time1,time2,res)
-      ESMF_TimeEQ = (res .EQ. -1)
+      outflag = (res .EQ. -1)
 END SUBROUTINE c_esmc_basetimelt
-SUBROUTINE c_esmc_basetimene(time1, time2, ESMF_TimeEQ)
+SUBROUTINE c_esmc_basetimene(time1, time2, outflag)
   USE esmf_alarmmod
   USE esmf_basemod
   USE esmf_basetimemod
@@ -301,22 +600,84 @@ SUBROUTINE c_esmc_basetimene(time1, time2, ESMF_TimeEQ)
   USE esmf_timeintervalmod
   USE esmf_timemod
 IMPLICIT NONE
-      logical, intent(OUT) :: ESMF_TimeEQ
+      logical, intent(OUT) :: outflag
       type(ESMF_Time), intent(in) :: time1
       type(ESMF_Time), intent(in) :: time2
       integer res 
       CALL timecmp(time1,time2,res)
-      ESMF_TimeEQ = (res .NE. 0)
+      outflag = (res .NE. 0)
 END SUBROUTINE c_esmc_basetimene
 
+SUBROUTINE c_esmc_basetimeinteq(timeint1, timeint2, outflag)
+  USE esmf_timeintervalmod
+  IMPLICIT NONE
+  LOGICAL, INTENT(OUT) :: outflag
+  TYPE(ESMF_TimeInterval), INTENT(IN) :: timeint1
+  TYPE(ESMF_TimeInterval), INTENT(IN) :: timeint2
+  INTEGER :: res 
+  CALL timeintcmp(timeint1,timeint2,res)
+  outflag = (res .EQ. 0)
+END SUBROUTINE c_esmc_basetimeinteq
+SUBROUTINE c_esmc_basetimeintne(timeint1, timeint2, outflag)
+  USE esmf_timeintervalmod
+  IMPLICIT NONE
+  LOGICAL, INTENT(OUT) :: outflag
+  TYPE(ESMF_TimeInterval), INTENT(IN) :: timeint1
+  TYPE(ESMF_TimeInterval), INTENT(IN) :: timeint2
+  INTEGER :: res 
+  CALL timeintcmp(timeint1,timeint2,res)
+  outflag = (res .NE. 0)
+END SUBROUTINE c_esmc_basetimeintne
+SUBROUTINE c_esmc_basetimeintlt(timeint1, timeint2, outflag)
+  USE esmf_timeintervalmod
+  IMPLICIT NONE
+  LOGICAL, INTENT(OUT) :: outflag
+  TYPE(ESMF_TimeInterval), INTENT(IN) :: timeint1
+  TYPE(ESMF_TimeInterval), INTENT(IN) :: timeint2
+  INTEGER :: res 
+  CALL timeintcmp(timeint1,timeint2,res)
+  outflag = (res .LT. 0)
+END SUBROUTINE c_esmc_basetimeintlt
+SUBROUTINE c_esmc_basetimeintgt(timeint1, timeint2, outflag)
+  USE esmf_timeintervalmod
+  IMPLICIT NONE
+  LOGICAL, INTENT(OUT) :: outflag
+  TYPE(ESMF_TimeInterval), INTENT(IN) :: timeint1
+  TYPE(ESMF_TimeInterval), INTENT(IN) :: timeint2
+  INTEGER :: res 
+  CALL timeintcmp(timeint1,timeint2,res)
+  outflag = (res .GT. 0)
+END SUBROUTINE c_esmc_basetimeintgt
+SUBROUTINE c_esmc_basetimeintle(timeint1, timeint2, outflag)
+  USE esmf_timeintervalmod
+  IMPLICIT NONE
+  LOGICAL, INTENT(OUT) :: outflag
+  TYPE(ESMF_TimeInterval), INTENT(IN) :: timeint1
+  TYPE(ESMF_TimeInterval), INTENT(IN) :: timeint2
+  INTEGER :: res 
+  CALL timeintcmp(timeint1,timeint2,res)
+  outflag = (res .LE. 0)
+END SUBROUTINE c_esmc_basetimeintle
+SUBROUTINE c_esmc_basetimeintge(timeint1, timeint2, outflag)
+  USE esmf_timeintervalmod
+  IMPLICIT NONE
+  LOGICAL, INTENT(OUT) :: outflag
+  TYPE(ESMF_TimeInterval), INTENT(IN) :: timeint1
+  TYPE(ESMF_TimeInterval), INTENT(IN) :: timeint2
+  INTEGER :: res 
+  CALL timeintcmp(timeint1,timeint2,res)
+  outflag = (res .GE. 0)
+END SUBROUTINE c_esmc_basetimeintge
+
 SUBROUTINE compute_lcd( e1, e2, lcd )
+  USE esmf_basemod
       IMPLICIT NONE
-      INTEGER, INTENT(IN) :: e1, e2
-      INTEGER, INTENT(OUT) :: lcd
+      INTEGER(ESMF_KIND_I8), INTENT(IN) :: e1, e2
+      INTEGER(ESMF_KIND_I8), INTENT(OUT) :: lcd
       INTEGER, PARAMETER ::  nprimes = 9
-      INTEGER, DIMENSION(nprimes), PARAMETER :: primes = (/2,3,5,7,11,13,17,19,23/)
-      INTEGER i, p
-      INTEGER d1, d2
+      INTEGER(ESMF_KIND_I8), DIMENSION(nprimes), PARAMETER :: primes = (/2,3,5,7,11,13,17,19,23/)
+      INTEGER i
+      INTEGER(ESMF_KIND_I8) d1, d2, p
 
       d1 = e1 ; d2 = e2
       IF ( d1 .EQ. 0 .AND. d2 .EQ. 0 ) THEN ; lcd = 1 ; RETURN ; ENDIF
@@ -325,21 +686,23 @@ SUBROUTINE compute_lcd( e1, e2, lcd )
       IF ( d1 .EQ. d2 ) THEN ; lcd = d1 ; RETURN ; ENDIF
       lcd = d1 * d2
       DO i = 1, nprimes
-	p = primes(i)
+        p = primes(i)
         DO WHILE (lcd/p .NE. 0 .AND. &
-		  mod(lcd/p,d1) .EQ. 0 .AND. mod(lcd/p,d2) .EQ. 0) 
-	  lcd = lcd / p 
-	END DO
+          mod(lcd/p,d1) .EQ. 0 .AND. mod(lcd/p,d2) .EQ. 0) 
+          lcd = lcd / p 
+        END DO
       ENDDO
 END SUBROUTINE compute_lcd
 
 SUBROUTINE simplify( ni, di, no, do ) 
+  USE esmf_basemod
     IMPLICIT NONE
-    INTEGER, INTENT(IN)  :: ni, di
-    INTEGER, INTENT(OUT) :: no, do
+    INTEGER(ESMF_KIND_I8), INTENT(IN)  :: ni, di
+    INTEGER(ESMF_KIND_I8), INTENT(OUT) :: no, do
     INTEGER, PARAMETER ::  nprimes = 9
-    INTEGER, DIMENSION(nprimes), PARAMETER :: primes = (/2,3,5,7,11,13,17,19,23/)
-    INTEGER pr, d, n, np
+    INTEGER(ESMF_KIND_I8), DIMENSION(nprimes), PARAMETER :: primes = (/2,3,5,7,11,13,17,19,23/)
+    INTEGER(ESMF_KIND_I8) :: pr, d, n
+    INTEGER :: np
     LOGICAL keepgoing
     IF ( ni .EQ. 0 ) THEN
       do = 1
@@ -371,713 +734,90 @@ SUBROUTINE simplify( ni, di, no, do )
 END SUBROUTINE simplify
 
 
-
-! Beware:  This routine is duplicated with different argument type signatures 
-!          in several places in this file!  Be sure to change all of them 
-!          together.  Search for "c_esmc_basetimesum".  
+!$$$ this should be named "c_esmc_timesum" or something less misleading
 SUBROUTINE c_esmc_basetimesum( time1, timeinterval, timeOut )
-  USE esmf_alarmmod
   USE esmf_basemod
   USE esmf_basetimemod
-  USE esmf_calendarmod
-  USE esmf_clockmod
-  USE esmf_fractionmod
   USE esmf_timeintervalmod
   USE esmf_timemod
-IMPLICIT NONE
-      type(ESMF_Time), intent(in) :: time1
-      TYPE (ESMF_TimeInterval), intent(in) :: timeinterval
-      type(ESMF_Time), intent(out) :: timeOut
-      integer diy, daysapart, iSd, iSn, tSd, tSn, lcd
-      integer nfeb
-      TYPE (ESMF_TimeInterval) :: tempInt
-
-      CALL initdaym
-
-      IF ( timeinterval%basetime%S .LT. 0 ) THEN
-        tempInt%basetime%S = -tempInt%basetime%S
-        CALL c_esmc_basetimedec( time1, tempInt, timeOut )
-        RETURN
-      ENDIF
-
-      timeOut%basetime%S = time1%basetime%S + timeinterval%basetime%S
-
-      iSd = timeinterval%basetime%Sd
-      iSn = timeinterval%basetime%Sn
-      tSd = time1%basetime%Sd
-      tSn = time1%basetime%Sn
-      IF ( iSd .NE. 0 ) THEN
-        CALL compute_lcd( tSd , iSd , lcd )
-        if ( tSd .EQ. 0 ) tSd = 1
-        timeOut%basetime%Sd = lcd
-        timeOut%basetime%Sn = (tSn * lcd / tSd) + (iSn * lcd / iSd)
-
-        IF ( timeOut%basetime%Sn >= timeOut%basetime%Sd ) THEN
-	  timeOut%basetime%S = timeOut%basetime%S + timeOut%basetime%Sn / timeOut%basetime%Sd
-	  timeOut%basetime%Sn = mod( timeOut%basetime%Sn , timeOut%basetime%Sd )
-        ENDIF
-        timeOut%basetime%MS = NINT( timeOut%basetime%Sn*1.0D0 / timeOut%basetime%Sd*1.0D0  * 1000 )
-      ELSE IF ( timeinterval%basetime%MS .NE. 0 ) THEN
-! this is not right, does not cover all cases of some operands being in ms and 
-! others in fraction
-        timeOut%basetime%MS = time1%basetime%MS + timeinterval%basetime%MS
-        IF ( timeOut%basetime%MS >= 1000 ) THEN
-	  timeOut%basetime%S = timeOut%basetime%S + timeOut%basetime%MS / 1000
-	  timeOut%basetime%MS = mod( timeOut%basetime%MS , 1000 )
-	ENDIF
-      ENDIF
-
-      IF ( time1%instant ) THEN
-        CALL compute_dayinyear(time1%YR,time1%MM,time1%DD,diy)
-        diy = diy + timeinterval%DD
-        DO WHILE ( timeOut%basetime%S .GE. SECONDS_PER_DAY )
-          timeOut%basetime%S = timeOut%basetime%S - SECONDS_PER_DAY
-	  diy = diy + 1
-        ENDDO
-	timeOut%YR = time1%YR
-        DO WHILE ( diy .gt. 365 )
-          IF ( nfeb(time1%YR) .NE. 29 ) THEN
-	    IF ( diy .gt. 365 ) THEN
-	      diy = diy - 365
-	      timeOut%YR = timeOut%YR + 1
-	    ENDIF
-          ELSE
-	    IF ( diy .gt. 366 ) THEN
-	      diy = diy - 366
-	      timeOut%YR = timeOut%YR + 1
-	    ENDIF
-          ENDIF
-        ENDDO
-        DO WHILE ( diy .lt. 1 )
-          IF ( nfeb(time1%YR-1) .NE. 29 ) THEN
-            diy = diy + 365
-            timeOut%YR = timeOut%YR - 1
-          ELSE
-            diy = diy + 366
-            timeOut%YR = timeOut%YR - 1
-          ENDIF
-        ENDDO
-        IF ( nfeb(timeOut%YR) .NE. 29 ) THEN
-	  timeOut%MM = daym( diy )
-	  timeOut%DD = diy - mdaycum(timeOut%MM-1)
-        ELSE
-	  timeOut%MM = daymleap( diy )
-	  timeOut%DD = diy - mdayleapcum(timeOut%MM-1)
-        ENDIF
-      ELSE
-        timeOut%DD = time1%DD + timeinterval%DD
-        timeOut%MM = time1%MM + timeinterval%MM
-      ENDIF
-
+  IMPLICIT NONE
+  TYPE(ESMF_Time), INTENT(IN) :: time1
+  TYPE(ESMF_TimeInterval), INTENT(IN) :: timeinterval
+  TYPE(ESMF_Time), INTENT(INOUT) :: timeOut
+  ! locals
+  INTEGER :: m
+  timeOut = time1
+  timeOut%basetime = timeOut%basetime + timeinterval%basetime
+  DO m = 1, abs(timeinterval%MM)
+    IF ( timeinterval%MM > 0 ) THEN
+      CALL timeincmonth( timeOut )
+    ELSE
+      CALL timedecmonth( timeOut )
+    ENDIF
+  ENDDO
+  timeOut%YR = timeOut%YR + timeinterval%YR
+  CALL normalize_time( timeOut )
 END SUBROUTINE c_esmc_basetimesum
 
 
-! This is a hideous duplication of c_esmc_basetimesum.  Refactor...  
-SUBROUTINE c_esmc_basetimeplus( time1, time2, timeIntOut )
-  USE esmf_alarmmod
-  USE esmf_basemod
-  USE esmf_basetimemod
-  USE esmf_calendarmod
-  USE esmf_clockmod
-  USE esmf_fractionmod
-  USE esmf_timeintervalmod
-  USE esmf_timemod
-IMPLICIT NONE
-      type(ESMF_Time), intent(in) :: time1
-      TYPE (ESMF_Time), intent(in) :: time2
-      type(ESMF_TimeInterval), intent(out) :: timeIntOut
-      integer diy, daysapart, iSd, iSn, tSd, tSn, lcd
-      integer nfeb
-      TYPE (ESMF_Time) :: temp
-
-      CALL initdaym
-
-      IF ( time2%basetime%S .LT. 0 ) THEN
-        temp = time2
-        temp%basetime%S = -temp%basetime%S
-        CALL c_esmc_basetimediff( time1, temp, timeIntOut )
-        RETURN
-      ENDIF
-
-      timeIntOut%basetime%S = time1%basetime%S + time2%basetime%S
-
-      iSd = time2%basetime%Sd
-      iSn = time2%basetime%Sn
-      tSd = time1%basetime%Sd
-      tSn = time1%basetime%Sn
-      IF ( iSd .NE. 0 ) THEN
-        CALL compute_lcd( tSd , iSd , lcd )
-        if ( tSd .EQ. 0 ) tSd = 1
-        timeIntOut%basetime%Sd = lcd
-        timeIntOut%basetime%Sn = (tSn * lcd / tSd) + (iSn * lcd / iSd)
-
-        IF ( timeIntOut%basetime%Sn >= timeIntOut%basetime%Sd ) THEN
-	  timeIntOut%basetime%S = timeIntOut%basetime%S + timeIntOut%basetime%Sn / timeIntOut%basetime%Sd
-	  timeIntOut%basetime%Sn = mod( timeIntOut%basetime%Sn , timeIntOut%basetime%Sd )
-        ENDIF
-        timeIntOut%basetime%MS = NINT( timeIntOut%basetime%Sn*1.0D0 / timeIntOut%basetime%Sd*1.0D0  * 1000 )
-      ELSE IF ( time2%basetime%MS .NE. 0 ) THEN
-! this is not right, does not cover all cases of some operands being in ms and 
-! others in fraction
-        timeIntOut%basetime%MS = time1%basetime%MS + time2%basetime%MS
-        IF ( timeIntOut%basetime%MS >= 1000 ) THEN
-	  timeIntOut%basetime%S = timeIntOut%basetime%S + timeIntOut%basetime%MS / 1000
-	  timeIntOut%basetime%MS = mod( timeIntOut%basetime%MS , 1000 )
-	ENDIF
-      ENDIF
-
-      IF ( time1%instant ) THEN
-        CALL compute_dayinyear(time1%YR,time1%MM,time1%DD,diy)
-        diy = diy + time2%DD
-        DO WHILE ( timeIntOut%basetime%S .GE. SECONDS_PER_DAY )
-          timeIntOut%basetime%S = timeIntOut%basetime%S - SECONDS_PER_DAY
-	  diy = diy + 1
-        ENDDO
-        IF ( nfeb(time1%YR) .NE. 29 ) THEN
-	  timeIntOut%YR = time1%YR
-	  IF ( diy .gt. 365 ) THEN
-	    diy = diy - 365
-	    timeIntOut%YR = timeIntOut%YR + 1
-	  ENDIF
-	  timeIntOut%MM = daym( diy )
-	  timeIntOut%DD = diy - mdaycum(timeIntOut%MM-1)
-        ELSE
-	  timeIntOut%YR = time1%YR
-	  IF ( diy .gt. 366 ) THEN
-	    diy = diy - 366
-	    timeIntOut%YR = timeIntOut%YR + 1
-	  ENDIF
-	  timeIntOut%MM = daymleap( diy )
-	  timeIntOut%DD = diy - mdayleapcum(timeIntOut%MM-1)
-        ENDIF
-      ELSE
-        timeIntOut%DD = time1%DD + time2%DD
-        timeIntOut%MM = time1%MM + time2%MM
-      ENDIF
-
-END SUBROUTINE c_esmc_basetimeplus
-
-
-! This is a hideous duplication of c_esmc_basetimesum.  Refactor...  
-SUBROUTINE c_esmc_basetimeintervalsum( timeInt1, timeInt2, timeIntOut )
-  USE esmf_alarmmod
-  USE esmf_basemod
-  USE esmf_basetimemod
-  USE esmf_calendarmod
-  USE esmf_clockmod
-  USE esmf_fractionmod
-  USE esmf_timeintervalmod
-  USE esmf_timemod
-IMPLICIT NONE
-      type(ESMF_TimeInterval), intent(in) :: timeInt1
-      TYPE (ESMF_TimeInterval), intent(in) :: timeInt2
-      type(ESMF_TimeInterval), intent(out) :: timeIntOut
-      integer diy, daysapart, iSd, iSn, tSd, tSn, lcd
-      integer nfeb
-      TYPE (ESMF_TimeInterval) :: tempInt
-
-!TBH:  do not need this here since all time intervals are relative
-!      CALL initdaym
-
-      IF ( timeInt2%basetime%S .LT. 0 ) THEN
-        tempInt = timeInt2
-        tempInt%basetime%S = -tempInt%basetime%S
-        CALL c_esmc_basetimeintervaldiff( timeInt1, tempInt, timeIntOut )
-        RETURN
-      ENDIF
-
-      timeIntOut%basetime%S = timeInt1%basetime%S + timeInt2%basetime%S
-
-      iSd = timeInt2%basetime%Sd
-      iSn = timeInt2%basetime%Sn
-      tSd = timeInt1%basetime%Sd
-      tSn = timeInt1%basetime%Sn
-      timeIntOut%basetime%MS = 0
-      IF ( iSd .NE. 0 ) THEN
-        CALL compute_lcd( tSd , iSd , lcd )
-        if ( tSd .EQ. 0 ) tSd = 1
-        timeIntOut%basetime%Sd = lcd
-        timeIntOut%basetime%Sn = (tSn * lcd / tSd) + (iSn * lcd / iSd)
-
-        IF ( timeIntOut%basetime%Sn >= timeIntOut%basetime%Sd ) THEN
-	  timeIntOut%basetime%S = timeIntOut%basetime%S + timeIntOut%basetime%Sn / timeIntOut%basetime%Sd
-	  timeIntOut%basetime%Sn = mod( timeIntOut%basetime%Sn , timeIntOut%basetime%Sd )
-        ENDIF
-        timeIntOut%basetime%MS = NINT( timeIntOut%basetime%Sn*1.0D0 / timeIntOut%basetime%Sd*1.0D0  * 1000 )
-      ELSE
-        timeIntOut%basetime%Sd = tSd
-        timeIntOut%basetime%Sn = tSn
-      ENDIF
-
-      timeIntOut%basetime%MS = timeIntOut%basetime%MS + timeInt1%basetime%MS + timeInt2%basetime%MS
-      IF ( timeIntOut%basetime%MS >= 1000 ) THEN
-         timeIntOut%basetime%S = timeIntOut%basetime%S + timeIntOut%basetime%MS / 1000
-         timeIntOut%basetime%MS = mod( timeIntOut%basetime%MS , 1000 )
-      ENDIF
-      timeIntOut%YR = timeInt1%YR + timeInt2%YR
-      timeIntOut%DD = timeInt1%DD + timeInt2%DD
-      timeIntOut%MM = timeInt1%MM + timeInt2%MM
-
-END SUBROUTINE c_esmc_basetimeintervalsum
-
-
-! Beware:  This routine is duplicated with different argument type signatures 
-!          in several places in this file!  Be sure to change all of them 
-!          together.  Search for "c_esmc_basetimedec".  
+!$$$ this should be named "c_esmc_timedec" or something less misleading
 SUBROUTINE c_esmc_basetimedec( time1, timeinterval, timeOut )
-  USE esmf_alarmmod
   USE esmf_basemod
   USE esmf_basetimemod
-  USE esmf_calendarmod
-  USE esmf_clockmod
-  USE esmf_fractionmod
   USE esmf_timeintervalmod
   USE esmf_timemod
-IMPLICIT NONE
-      type(ESMF_Time), intent(in) :: time1
-      TYPE (ESMF_TimeInterval), intent(in) :: timeinterval
-      type(ESMF_Time), intent(out) :: timeOut
-      integer diy, daysapart, iSd, iSn, tSd, tSn,lcd
-      integer nfeb
-      TYPE (ESMF_TimeInterval)  :: tempInt 
-
-      CALL initdaym
-
-      IF ( timeinterval%basetime%S .LT. 0 ) THEN
-        tempInt%basetime%S = -tempInt%basetime%S
-        CALL c_esmc_basetimesum( time1, tempInt, timeOut )
-        RETURN
-      ENDIF
-
-      iSd = timeinterval%basetime%Sd
-      iSn = timeinterval%basetime%Sn
-      tSd = time1%basetime%Sd
-      tSn = time1%basetime%Sn
-      IF ( iSd .NE. 0 ) THEN
-        CALL compute_lcd( tSd , iSd , lcd )
-	if ( tSd .EQ. 0 ) tSd = 1
-        timeOut%basetime%Sd = lcd
-        timeOut%basetime%Sn = (tSn * lcd / tSd) - (iSn * lcd / iSd)
-        IF ( timeOut%basetime%Sn < 0 ) THEN
-          IF ( mod( -timeOut%basetime%Sn, timeOut%basetime%Sd) .EQ. 0 ) THEN
-            timeOut%basetime%S = timeOut%basetime%S - mod( -timeOut%basetime%Sn, timeOut%basetime%Sd)
-          ELSE
-            timeOut%basetime%S = timeOut%basetime%S + timeOut%basetime%Sn / timeOut%basetime%Sd - 1
-          ENDIF
-          timeOut%basetime%Sn = timeOut%basetime%Sd + mod( timeOut%basetime%Sn , timeOut%basetime%Sd )
-        ENDIF
-        timeOut%basetime%MS = NINT( timeOut%basetime%Sn*1.0D0 / timeOut%basetime%Sd*1.0D0  * 1000 )
-      ELSE IF ( timeinterval%basetime%MS .NE. 0 ) THEN
-        timeOut%basetime%MS = time1%basetime%MS - timeinterval%basetime%MS
-        IF ( timeOut%basetime%MS < 0 ) THEN
-          timeOut%basetime%S = timeOut%basetime%S + timeOut%basetime%MS / 1000 - 1
-          timeOut%basetime%MS = 1000 + mod( timeOut%basetime%MS , 1000 )
-        ENDIF
-      ENDIF
-
-      IF ( time1%instant ) THEN
-        CALL compute_dayinyear(time1%YR,time1%MM,time1%DD,diy)
-
-        timeOut%basetime%S = time1%basetime%S - timeinterval%basetime%S
-
-        diy = diy - timeinterval%DD
-        IF ( timeOut%basetime%S .LT. 0 ) THEN
-          diy = diy - 1
-          timeOut%basetime%S = timeOut%basetime%S + SECONDS_PER_DAY
-        ENDIF
-        timeOut%YR = time1%YR
-        DO WHILE ( diy .gt. 365 )
-          IF ( nfeb(time1%YR) .NE. 29 ) THEN
-	    IF ( diy .gt. 365 ) THEN
-	      diy = diy - 365
-	      timeOut%YR = timeOut%YR + 1
-	    ENDIF
-          ELSE
-	    IF ( diy .gt. 366 ) THEN
-	      diy = diy - 366
-	      timeOut%YR = timeOut%YR + 1
-	    ENDIF
-          ENDIF
-        ENDDO
-        DO WHILE ( diy .lt. 1 )
-          IF ( nfeb(time1%YR-1) .NE. 29 ) THEN
-            diy = diy + 365
-            timeOut%YR = timeOut%YR - 1
-          ELSE
-            diy = diy + 366
-            timeOut%YR = timeOut%YR - 1
-          ENDIF
-        ENDDO
-        IF ( nfeb(timeOut%YR) .NE. 29 ) THEN
-          timeOut%MM = daym( diy )
-          timeOut%DD = diy - mdaycum(timeOut%MM-1)
-        ELSE
-          timeOut%MM = daymleap( diy )
-          timeOut%DD = diy - mdayleapcum(timeOut%MM-1)
-        ENDIF
-        timeOut%basetime%S = mod( timeOut%basetime%S, SECONDS_PER_DAY )
-      ELSE
-        timeOut%DD = time1%DD - timeinterval%DD
-        timeOut%MM = time1%MM - timeinterval%MM
-      ENDIF
-
+  IMPLICIT NONE
+  TYPE(ESMF_Time), INTENT(IN) :: time1
+  TYPE(ESMF_TimeInterval), INTENT(IN) :: timeinterval
+  TYPE(ESMF_Time), INTENT(OUT) :: timeOut
+  ! locals
+  TYPE (ESMF_TimeInterval)  :: neginterval 
+  neginterval = timeinterval
+!$$$push this down into a unary negation operator on TimeInterval
+  neginterval%basetime%S = -neginterval%basetime%S
+  neginterval%basetime%Sn = -neginterval%basetime%Sn
+  neginterval%YR = -neginterval%YR
+  neginterval%MM = -neginterval%MM
+  timeOut = time1 + neginterval
 END SUBROUTINE c_esmc_basetimedec
 
 
-! This is a hideous duplication of c_esmc_basetimedec.  Refactor...  
+!$$$ this should be named "c_esmc_timediff" or something less misleading
 SUBROUTINE c_esmc_basetimediff( time1, time2, timeIntOut )
-  USE esmf_alarmmod
   USE esmf_basemod
   USE esmf_basetimemod
-  USE esmf_calendarmod
-  USE esmf_clockmod
-  USE esmf_fractionmod
   USE esmf_timeintervalmod
   USE esmf_timemod
-IMPLICIT NONE
-      type(ESMF_Time), intent(in) :: time1
-      TYPE (ESMF_Time), intent(in) :: time2
-      type(ESMF_TimeInterval), intent(out) :: timeIntOut
-      integer diy, diy2, daysapart, iSd, iSn, tSd, tSn,lcd
-      integer year
-      TYPE (ESMF_Time)  :: temp 
-
-      CALL initdaym
-
-      IF ( time2%basetime%S .LT. 0 ) THEN
-        temp = time2
-        temp%basetime%S = -temp%basetime%S
-        CALL c_esmc_basetimeplus( time1, temp, timeIntOut )
-        RETURN
-      ENDIF
-
-      iSd = time2%basetime%Sd
-      iSn = time2%basetime%Sn
-      tSd = time1%basetime%Sd
-      tSn = time1%basetime%Sn
-      IF ( iSd .NE. 0 ) THEN
-        CALL compute_lcd( tSd , iSd , lcd )
-	if ( tSd .EQ. 0 ) tSd = 1
-        timeIntOut%basetime%Sd = lcd
-        timeIntOut%basetime%Sn = (tSn * lcd / tSd) - (iSn * lcd / iSd)
-        IF ( timeIntOut%basetime%Sn < 0 ) THEN
-          IF ( mod( -timeIntOut%basetime%Sn, timeIntOut%basetime%Sd) .EQ. 0 ) THEN
-            timeIntOut%basetime%S = timeIntOut%basetime%S - mod( -timeIntOut%basetime%Sn, timeIntOut%basetime%Sd)
-          ELSE
-            timeIntOut%basetime%S = timeIntOut%basetime%S + timeIntOut%basetime%Sn / timeIntOut%basetime%Sd - 1
-          ENDIF
-          timeIntOut%basetime%Sn = timeIntOut%basetime%Sd + mod( timeIntOut%basetime%Sn , timeIntOut%basetime%Sd )
-        ENDIF
-        timeIntOut%basetime%MS = NINT( timeIntOut%basetime%Sn*1.0D0 / timeIntOut%basetime%Sd*1.0D0  * 1000 )
-      ELSE IF ( time2%basetime%MS .NE. 0 ) THEN
-        timeIntOut%basetime%MS = time1%basetime%MS - time2%basetime%MS
-        IF ( timeIntOut%basetime%MS < 0 ) THEN
-          timeIntOut%basetime%S = timeIntOut%basetime%S + timeIntOut%basetime%MS / 1000 - 1
-          timeIntOut%basetime%MS = 1000 + mod( timeIntOut%basetime%MS , 1000 )
-        ENDIF
-      ENDIF
-
-      IF ( time1%instant ) THEN
-        CALL compute_dayinyear(time1%YR,time1%MM,time1%DD,diy)
-        CALL compute_dayinyear(time2%YR,time2%MM,time2%DD,diy2)
-
-        timeIntOut%basetime%S = time1%basetime%S - time2%basetime%S
-
-        diy = diy - diy2
-        IF ( timeIntOut%basetime%S .LT. 0 ) THEN
-          diy = diy - 1
-          timeIntOut%basetime%S = timeIntOut%basetime%S + SECONDS_PER_DAY
-        ENDIF
-        DO year = time2%YR, time1%YR-1
-          CALL compute_dayinyear(year,12,31,diy2)
-          diy = diy + diy2
-        END DO
-        timeIntOut%DD = diy
-        timeIntOut%MM = 0
-        timeIntOut%YR = 0
-        timeIntOut%basetime%S = mod( timeIntOut%basetime%S, SECONDS_PER_DAY )
-      ELSE
-        call wrf_error_fatal( 'time-interval sent to c_esmc_basetimediff' )
-      ENDIF
-
+  IMPLICIT NONE
+  TYPE(ESMF_Time), INTENT(IN) :: time1
+  TYPE(ESMF_Time), INTENT(IN) :: time2
+  TYPE(ESMF_TimeInterval), INTENT(OUT) :: timeIntOut
+  ! locals
+  INTEGER(ESMF_KIND_I8) :: nsecondsinyear
+  INTEGER :: yr
+  CALL ESMF_TimeIntervalSet( timeIntOut )
+  timeIntOut%basetime = time1%basetime - time2%basetime
+  ! convert difference in years to basetime...  
+  IF ( time1%YR > time2%YR ) THEN
+    DO yr = time2%YR, ( time1%YR - 1 )
+      timeIntOut%basetime%S = timeIntOut%basetime%S + nsecondsinyear( yr )
+    ENDDO
+  ELSE IF ( time2%YR > time1%YR ) THEN
+    DO yr = time1%YR, ( time2%YR - 1 )
+      timeIntOut%basetime%S = timeIntOut%basetime%S - nsecondsinyear( yr )
+    ENDDO
+  ENDIF
+!$$$ add tests for multi-year differences
+  CALL normalize_timeint( timeIntOut )
 END SUBROUTINE c_esmc_basetimediff
 
-
-! This is a hideous duplication of c_esmc_basetimedec.  Refactor...  
-SUBROUTINE c_esmc_basetimeintervaldiff( timeInt1, timeInt2, timeIntOut )
-  USE esmf_alarmmod
-  USE esmf_basemod
-  USE esmf_basetimemod
-  USE esmf_calendarmod
-  USE esmf_clockmod
-  USE esmf_fractionmod
-  USE esmf_timeintervalmod
-  USE esmf_timemod
-IMPLICIT NONE
-      type(ESMF_TimeInterval), intent(in) :: timeInt1
-      TYPE (ESMF_TimeInterval), intent(in) :: timeInt2
-      type(ESMF_TimeInterval), intent(out) :: timeIntOut
-      integer diy, daysapart, iSd, iSn, tSd, tSn,lcd
-      integer nfeb
-      TYPE (ESMF_TimeInterval)  :: tempInt
-
-      CALL initdaym
-
-      IF ( timeInt2%basetime%S .LT. 0 ) THEN
-        tempInt = timeInt2
-        tempInt%basetime%S = -tempInt%basetime%S
-        CALL c_esmc_basetimeintervalsum( timeInt1, tempInt, timeIntOut )
-        RETURN
-      ENDIF
-
-      iSd = timeInt2%basetime%Sd
-      iSn = timeInt2%basetime%Sn
-      tSd = timeInt1%basetime%Sd
-      tSn = timeInt1%basetime%Sn
-      IF ( iSd .NE. 0 ) THEN
-        CALL compute_lcd( tSd , iSd , lcd )
-	if ( tSd .EQ. 0 ) tSd = 1
-        timeIntOut%basetime%Sd = lcd
-        timeIntOut%basetime%Sn = (tSn * lcd / tSd) - (iSn * lcd / iSd)
-        IF ( timeIntOut%basetime%Sn < 0 ) THEN
-          IF ( mod( -timeIntOut%basetime%Sn, timeIntOut%basetime%Sd) .EQ. 0 ) THEN
-            timeIntOut%basetime%S = timeIntOut%basetime%S - mod( -timeIntOut%basetime%Sn, timeIntOut%basetime%Sd)
-          ELSE
-            timeIntOut%basetime%S = timeIntOut%basetime%S + timeIntOut%basetime%Sn / timeIntOut%basetime%Sd - 1
-          ENDIF
-          timeIntOut%basetime%Sn = timeIntOut%basetime%Sd + mod( timeIntOut%basetime%Sn , timeIntOut%basetime%Sd )
-        ENDIF
-        timeIntOut%basetime%MS = NINT( timeIntOut%basetime%Sn*1.0D0 / timeIntOut%basetime%Sd*1.0D0  * 1000 )
-      ELSE IF ( timeInt2%basetime%MS .NE. 0 ) THEN
-        timeIntOut%basetime%MS = timeInt1%basetime%MS - timeInt2%basetime%MS
-        IF ( timeIntOut%basetime%MS < 0 ) THEN
-          timeIntOut%basetime%S = timeIntOut%basetime%S + timeIntOut%basetime%MS / 1000 - 1
-          timeIntOut%basetime%MS = 1000 + mod( timeIntOut%basetime%MS , 1000 )
-        ENDIF
-      ENDIF
-
-      IF ( timeInt1%instant ) THEN
-        CALL compute_dayinyear(timeInt1%YR,timeInt1%MM,timeInt1%DD,diy)
-
-        timeIntOut%basetime%S = timeInt1%basetime%S - timeInt2%basetime%S
-
-        diy = diy - timeInt2%DD
-        IF ( timeIntOut%basetime%S .LT. 0 ) THEN
-          diy = diy - 1
-          timeIntOut%basetime%S = timeIntOut%basetime%S + SECONDS_PER_DAY
-        ENDIF
-        IF ( nfeb(timeInt1%YR) .NE. 29 ) THEN
-          timeIntOut%YR = timeInt1%YR
-          IF ( diy .lt. 1 ) THEN
-            diy = diy + 365
-            timeIntOut%YR = timeIntOut%YR - 1
-          ENDIF
-          timeIntOut%MM = daym( diy )
-          timeIntOut%DD = diy - mdaycum(timeIntOut%MM-1)
-        ELSE
-          timeIntOut%YR = timeInt1%YR
-          IF ( diy .lt. 1 ) THEN
-            diy = diy + 366
-            timeIntOut%YR = timeIntOut%YR - 1
-          ENDIF
-          timeIntOut%MM = daymleap( diy )
-          timeIntOut%DD = diy - mdayleapcum(timeIntOut%MM-1)
-        ENDIF
-        timeIntOut%basetime%S = mod( timeIntOut%basetime%S, SECONDS_PER_DAY )
-      ELSE
-        timeIntOut%DD = timeInt1%DD - timeInt2%DD
-        timeIntOut%MM = timeInt1%MM - timeInt2%MM
-      ENDIF
-
-END SUBROUTINE c_esmc_basetimeintervaldiff
-
-SUBROUTINE c_esmc_timeintervalprodi( timeinterval, multiplier, prod )
-  USE esmf_basemod
-  USE esmf_basetimemod
-  USE esmf_timeintervalmod
-IMPLICIT NONE
-  TYPE (ESMF_TimeInterval), intent(in) :: timeinterval
-  integer, intent(in) :: multiplier
-  TYPE (ESMF_TimeInterval), intent(out) :: prod
-
-  prod%instant       = timeinterval%instant
-  prod%basetime%S    = timeinterval%basetime%S * multiplier
-  prod%basetime%MS   = timeinterval%basetime%MS * multiplier
-  prod%basetime%SN   = timeinterval%basetime%SN * multiplier
-  ! Don't muliply pad1, pad2, or SD
-  prod%basetime%SD   = timeinterval%basetime%SD
-  ! Leave pad1 and pad2 alone
-  prod%YR            = timeinterval%YR          * multiplier
-  prod%MM            = timeinterval%MM          * multiplier
-  prod%DD            = timeinterval%DD          * multiplier
-  CALL normalize_timeint( prod )
-END SUBROUTINE c_esmc_timeintervalprodi
-
-SUBROUTINE c_esmc_calendarprint
-END SUBROUTINE c_esmc_calendarprint
-
-SUBROUTINE c_esmc_calendarread
-   call wrf_error_fatal( 'c_esmc_calendarread not implemented' )
-END SUBROUTINE c_esmc_calendarread
-
-SUBROUTINE c_esmc_calendarset
-   call wrf_error_fatal( 'c_esmc_calendarset not implemented' )
-END SUBROUTINE c_esmc_calendarset
-
-SUBROUTINE c_esmc_calendarsetgeneric
-   call wrf_error_fatal( 'c_esmc_calendarsetgeneric not implemented' )
-END SUBROUTINE c_esmc_calendarsetgeneric
-
-SUBROUTINE c_esmc_calendarvalidate
-END SUBROUTINE c_esmc_calendarvalidate
-
-SUBROUTINE c_esmc_calendarwrite
-END SUBROUTINE c_esmc_calendarwrite
-
-SUBROUTINE c_esmc_timeget
-   call wrf_error_fatal( 'c_esmc_timeget not implemented' )
-END SUBROUTINE c_esmc_timeget
-
-SUBROUTINE c_esmc_timegetcalendarcopy
-   call wrf_error_fatal( 'c_esmc_timegetcalendarcopy not implemented' )
-END SUBROUTINE c_esmc_timegetcalendarcopy
-
-SUBROUTINE c_esmc_timegetcalendarptr
-   call wrf_error_fatal( 'c_esmc_timegetcalendarptr not implemented' )
-END SUBROUTINE c_esmc_timegetcalendarptr
-
-SUBROUTINE c_esmc_timegetdayofmonth
-   call wrf_error_fatal( 'c_esmc_timegetdayofmonth not implemented' )
-END SUBROUTINE c_esmc_timegetdayofmonth
-
-SUBROUTINE c_esmc_timegetdayofweek
-   call wrf_error_fatal( 'c_esmc_timegetdayofweek not implemented' )
-END SUBROUTINE c_esmc_timegetdayofweek
-
-SUBROUTINE c_esmc_timegetdayofyeardouble
-   call wrf_error_fatal( 'c_esmc_timegetdayofyeardouble not implemented' )
-END SUBROUTINE c_esmc_timegetdayofyeardouble
-
-SUBROUTINE c_esmc_timegetdayofyearinteger
-   call wrf_error_fatal( 'c_esmc_timegetdayofyearinteger not implemented' )
-END SUBROUTINE c_esmc_timegetdayofyearinteger
-
-SUBROUTINE c_esmc_timegetdayofyeartimeint
-   call wrf_error_fatal( 'c_esmc_timegetdayofyeartimeint not implemented' )
-END SUBROUTINE c_esmc_timegetdayofyeartimeint
-
-SUBROUTINE c_esmc_timegetmidmonth
-   call wrf_error_fatal( 'c_esmc_timegetmidmonth not implemented' )
-END SUBROUTINE c_esmc_timegetmidmonth
-
-SUBROUTINE c_esmc_timegetrealtime
-   call wrf_error_fatal( 'c_esmc_timegetrealtime not implemented' )
-END SUBROUTINE c_esmc_timegetrealtime
-
-SUBROUTINE c_esmc_timegetstring
-   call wrf_error_fatal( 'c_esmc_timegetstring not implemented' )
-END SUBROUTINE c_esmc_timegetstring
-
-SUBROUTINE c_esmc_timegettimezone
-   call wrf_error_fatal( 'c_esmc_timegettimezone not implemented' )
-END SUBROUTINE c_esmc_timegettimezone
-
-SUBROUTINE c_esmc_timeintervalabsvalue
-   call wrf_error_fatal( 'c_esmc_timeintervalabsvalue not implemented' )
-END SUBROUTINE c_esmc_timeintervalabsvalue
-
-SUBROUTINE c_esmc_timeintervalfquot
-   call wrf_error_fatal( 'c_esmc_timeintervalfquot not implemented' )
-END SUBROUTINE c_esmc_timeintervalfquot
-
-SUBROUTINE c_esmc_timeintervalget
-   call wrf_error_fatal( 'c_esmc_timeintervalget not implemented' )
-END SUBROUTINE c_esmc_timeintervalget
-
-SUBROUTINE c_esmc_timeintervalgetstring
-   call wrf_error_fatal( 'c_esmc_timeintervalgetstring not implemented' )
-END SUBROUTINE c_esmc_timeintervalgetstring
-
-SUBROUTINE c_esmc_timeintervalnegabsvalue
-   call wrf_error_fatal( 'c_esmc_timeintervalnegabsvalue not implemented' )
-END SUBROUTINE c_esmc_timeintervalnegabsvalue
-
-SUBROUTINE c_esmc_timeintervalprint
-END SUBROUTINE c_esmc_timeintervalprint
-
-SUBROUTINE c_esmc_timeintervalprodf
-   call wrf_error_fatal( 'c_esmc_timeintervalprodf not implemented' )
-END SUBROUTINE c_esmc_timeintervalprodf
-
-SUBROUTINE c_esmc_timeintervalprodr
-   call wrf_error_fatal( 'c_esmc_timeintervalprodr not implemented' )
-END SUBROUTINE c_esmc_timeintervalprodr
-
-SUBROUTINE c_esmc_timeintervalquoti
-   call wrf_error_fatal( 'c_esmc_timeintervalquoti not implemented' )
-END SUBROUTINE c_esmc_timeintervalquoti
-
-SUBROUTINE c_esmc_timeintervalquotr
-   call wrf_error_fatal( 'c_esmc_timeintervalquotr not implemented' )
-END SUBROUTINE c_esmc_timeintervalquotr
-
-SUBROUTINE c_esmc_timeintervalread
-   call wrf_error_fatal( 'c_esmc_timeintervalread not implemented' )
-END SUBROUTINE c_esmc_timeintervalread
-
-SUBROUTINE c_esmc_timeintervalrquot
-   call wrf_error_fatal( 'c_esmc_timeintervalrquot not implemented' )
-END SUBROUTINE c_esmc_timeintervalrquot
-
-SUBROUTINE c_esmc_timeintervalset
-   call wrf_error_fatal( 'c_esmc_timeintervalset not implemented' )
-END SUBROUTINE c_esmc_timeintervalset
-
-SUBROUTINE c_esmc_timeintervalvalidate
-
-END SUBROUTINE c_esmc_timeintervalvalidate
-
-SUBROUTINE c_esmc_timeintervalwrite
-END SUBROUTINE c_esmc_timeintervalwrite
-
-SUBROUTINE c_esmc_timeissamecal
-END SUBROUTINE c_esmc_timeissamecal
-
-SUBROUTINE c_esmc_timeprint
-END SUBROUTINE c_esmc_timeprint
-
-SUBROUTINE c_esmc_timeread
-   call wrf_error_fatal( 'c_esmc_timeread not implemented' )
-END SUBROUTINE c_esmc_timeread
-
-SUBROUTINE c_esmc_timeset
-   call wrf_error_fatal( 'c_esmc_timeset not implemented' )
-END SUBROUTINE c_esmc_timeset
-
-SUBROUTINE c_esmc_timesetcalendarptr
-   call wrf_error_fatal( 'c_esmc_timesetcalendarptr not implemented' )
-END SUBROUTINE c_esmc_timesetcalendarptr
-
-SUBROUTINE c_esmc_timesetcalendarptrptr
-   call wrf_error_fatal( 'c_esmc_timesetcalendarptrptr not implemented' )
-END SUBROUTINE c_esmc_timesetcalendarptrptr
-
-SUBROUTINE c_esmc_timesettimezone
-   call wrf_error_fatal( 'c_esmc_timesettimezone not implemented' )
-END SUBROUTINE c_esmc_timesettimezone
-
-SUBROUTINE c_esmc_timevalidate
-END SUBROUTINE c_esmc_timevalidate
-
-SUBROUTINE c_esmc_timewrite
-   call wrf_error_fatal( 'c_esmc_timewrite not implemented' )
-END SUBROUTINE c_esmc_timewrite
 
 ! some extra wrf stuff
 
 SUBROUTINE print_a_time( time )
    use ESMF_basemod
    use ESMF_Timemod
+   IMPLICIT NONE
    type(ESMF_Time) time
    character*128 :: s
    integer rc
@@ -1090,6 +830,7 @@ END SUBROUTINE print_a_time
 SUBROUTINE print_a_timeinterval( time )
    use ESMF_basemod
    use ESMF_TimeIntervalmod
+   IMPLICIT NONE
    type(ESMF_TimeInterval) time
    character*128 :: s
    integer rc

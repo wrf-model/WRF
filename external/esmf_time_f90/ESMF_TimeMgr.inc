@@ -31,9 +31,10 @@ by both C++ and F90 compilers.
 
 #include <ESMF_Macros.inc>
 
-#define SECONDS_PER_DAY 86400
-#define SECONDS_PER_HOUR 3600
-#define SECONDS_PER_MINUTE 60
+#define SECONDS_PER_DAY 86400_ESMF_KIND_I8
+#define SECONDS_PER_HOUR 3600_ESMF_KIND_I8
+#define SECONDS_PER_MINUTE 60_ESMF_KIND_I8
+#define HOURS_PER_DAY 24_ESMF_KIND_I8
 
 ! Note that MAX_ALARMS must match MAX_WRF_ALARMS defined in 
 ! ../../frame/module_domain.F !!!  Eliminate this dependence with 

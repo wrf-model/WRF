@@ -40,7 +40,7 @@
       use ESMF_BaseMod
 
       ! inherit from base time class
-      use ESMF_BaseTimeMod,     only : ESMF_BaseTime
+      use ESMF_BaseTimeMod
 
       implicit none
 !
@@ -52,14 +52,16 @@
 
 
       INTEGER, PARAMETER :: MONTHS_PER_YEAR = 12
-      INTEGER, DIMENSION(MONTHS_PER_YEAR), PARAMETER :: mday   &
+      INTEGER, PARAMETER :: mday(MONTHS_PER_YEAR)   &
                           = (/31,28,31,30,31,30,31,31,30,31,30,31/)
-      INTEGER, DIMENSION(MONTHS_PER_YEAR), PARAMETER :: mdayleap &
+      INTEGER, PARAMETER :: mdayleap(MONTHS_PER_YEAR) &
                           = (/31,29,31,30,31,30,31,31,30,31,30,31/)
       INTEGER, DIMENSION(365) :: daym
       INTEGER, DIMENSION(366) :: daymleap
-      INTEGER, DIMENSION(0:MONTHS_PER_YEAR)             :: mdaycum
-      INTEGER, DIMENSION(0:MONTHS_PER_YEAR)             :: mdayleapcum
+      INTEGER :: mdaycum(0:MONTHS_PER_YEAR)
+      INTEGER :: mdayleapcum(0:MONTHS_PER_YEAR)
+      TYPE(ESMF_BaseTime), TARGET :: monthbdys(0:MONTHS_PER_YEAR)
+      TYPE(ESMF_BaseTime), TARGET :: monthbdysleap(0:MONTHS_PER_YEAR)
 
 
 !------------------------------------------------------------------------------
@@ -127,6 +129,8 @@
       public MONTHS_PER_YEAR
       public mday
       public mdayleap
+      public monthbdys
+      public monthbdysleap
       public daym
       public daymleap
       public mdaycum
@@ -142,17 +146,11 @@
 !
 ! !PUBLIC MEMBER FUNCTIONS:
       public ESMF_CalendarCreate
-      public ESMF_CalendarSet
-!      public ESMF_CalendarSetGeneric
 
 ! Required inherited and overridden ESMF_Base class methods
 
-!      public ESMF_CalendarRead
-!      public ESMF_CalendarWrite
       public ESMF_CalendarInitialized ! Only in this implementation, intended
                                       ! to be private within ESMF methods
-      public ESMF_CalendarValidate
-      public ESMF_CalendarPrint
 !EOPI
 
 !------------------------------------------------------------------------------
@@ -231,6 +229,8 @@
       end if
       ESMF_CalendarCreate%Type = ESMF_CAL_GREGORIAN
 #endif
+!$$$ This is a bug on some systems -- need initial value set by compiler at 
+!$$$ startup.  
       ESMF_CalendarCreate%Set = .true.
       ESMF_CalendarCreate%SecondsPerDay = SECONDS_PER_DAY
 ! DaysPerYear and SecondsPerYear are incorrect for Gregorian calendars...  
@@ -269,273 +269,5 @@
               ESMF_CalendarInitialized = .false.
 
      end function ESMF_CalendarInitialized
-
-
-!==============================================================================
-!
-! This section includes the Set methods.
-!
-!------------------------------------------------------------------------------
-!BOP
-! !IROUTINE: ESMF_CalendarSet - Initializes the calendar type
-
-! !INTERFACE:
-      subroutine ESMF_CalendarSet(calendar, Type, rc)
-
-! !ARGUMENTS:
-      type(ESMF_Calendar), intent(out) :: calendar
-      type(ESMF_CalendarType), intent(in) :: Type
-      integer, intent(out), optional :: rc
-
-! !DESCRIPTION:
-!     Initializes a {\tt ESMF\_Calendar} to the given {\tt ESMF\_Calendar} type
-!
-!     The arguments are:
-!     \begin{description}
-!     \item[calendar]
-!          The object instance to initialize
-!     \item[Type]
-!          The {\tt CalendarType} ESMF\_CAL\_GREGORIAN, ESMF\_CAL\_JULIAN, etc.
-!     \item[{[rc]}]
-!          Return code; equals {\tt ESMF\_SUCCESS} if there are no errors.
-!     \end{description}
-!    
-! !REQUIREMENTS:
-!     TMGn.n.n
-!EOP
-    
-!     invoke C to C++ entry point
-!      call c_ESMC_CalendarSet(calendar, Type, rc)
-    
-      end subroutine ESMF_CalendarSet
-    
-!------------------------------------------------------------------------------
-!BOP
-! !IROUTINE: ESMF_CalendarSetGeneric - Initialize calendar to user-type
-
-! !INTERFACE:
-      subroutine ESMF_CalendarSetGeneric(calendar, DaysPerMonth, &
-                                          SecondsPerDay, DaysPerYear, &
-                                          DaysPerYearDn, DaysPerYearDd, rc)
-! !ARGUMENTS:
-      type(ESMF_Calendar), intent(out) :: calendar
-      integer, dimension(MONTHS_PER_YEAR), intent(in) :: DaysPerMonth
-      integer, intent(in) :: SecondsPerDay
-      integer, intent(in) :: DaysPerYear
-      integer, intent(in) :: DaysPerYearDn
-      integer, intent(in) :: DaysPerYearDd
-      integer, intent(out), optional :: rc
-
-! !DESCRIPTION:
-!     Initializes a {\tt ESMF\_Calendar} to a user-specified type
-!
-!     The arguments are:
-!     \begin{description}
-!     \item[calendar]
-!          The object instance to initialize
-!     \item[DaysPerMonth]
-!          Integer array of days per month, for each of the 12 months
-!     \item[SecondsPerDay]
-!          Integer number of seconds per day
-!     \item[DaysPerYear]
-!          Integer number of days per year
-!     \item[DaysPerYearDn]
-!          Integer fractional number of days per year (numerator)
-!     \item[DaysPerYearDd]
-!          Integer fractional number of days per year (denominator)
-!     \item[{[rc]}]
-!          Return code; equals {\tt ESMF\_SUCCESS} if there are no errors.
-!     \end{description}
-!     
-! !REQUIREMENTS:
-!     TMGn.n.n
-!EOP
-
-!     invoke C to C++ entry point
-!      call c_ESMC_CalendarSetGeneric(calendar, DaysPerMonth, &
-!                                      SecondsPerDay, DaysPerYear, &
-!                                      DaysPerYearDn, DaysPerYearDd, rc)
-    
-      end subroutine ESMF_CalendarSetGeneric
-    
-!------------------------------------------------------------------------------
-! 
-! This section defines the overridden Read, Write, Validate and Print methods
-! from the ESMF_Base class
-!
-!------------------------------------------------------------------------------
-!BOP
-! !IROUTINE:  ESMF_CalendarRead - Restore a calendar's properties
-
-! !INTERFACE:
-      subroutine ESMF_CalendarRead(calendar, Type, DaysPerMonth, &
-                           SecondsPerDay, DaysPerYear, &
-                           DaysPerYearDn, DaysPerYearDd, rc)
-
-! !ARGUMENTS:
-      type(ESMF_Calendar), intent(out) :: calendar
-      type(ESMF_CalendarType), intent(in) :: Type
-      integer, dimension(MONTHS_PER_YEAR), intent(in) :: DaysPerMonth
-      integer, intent(in) :: SecondsPerDay
-      integer, intent(in) :: DaysPerYear
-      integer, intent(in) :: DaysPerYearDn
-      integer, intent(in) :: DaysPerYearDd
-      integer, intent(out), optional :: rc
-
-! !DESCRIPTION:
-!     Perform a restore on a {\tt ESMF\_Calendar}'s properties
-!
-!     The arguments are:
-!     \begin{description}
-!     \item[calendar]
-!          {\tt ESMF\_Calendar} to restore
-!     \item[Type]
-!          The {\tt ESMF\_CalendarType} ESMF\_CAL\_GREGORIAN,
-!          ESMF\_CAL\_JULIAN, etc.
-!     \item[DaysPerMonth]
-!          Integer array of days per month, for each of the 12 months
-!     \item[SecondsPerDay]
-!          Integer number of seconds per day
-!     \item[DaysPerYear]
-!          Integer number of days per year
-!     \item[DaysPerYearDn]
-!          Integer fractional number of days per year (numerator)
-!     \item[DaysPerYearDd]
-!          Integer fractional number of days per year (denominator)
-!     \item[{[rc]}]
-!          Return code; equals {\tt ESMF\_SUCCESS} if there are no errors.
-!     \end{description}
-!
-! !REQUIREMENTS:
-!     TMGn.n.n
-!EOP
-   
-!      call c_ESMC_CalendarRead(calendar, Type, DaysPerMonth, &
-!                               SecondsPerDay, DaysPerYear, &
-!                               DaysPerYearDn, DaysPerYearDd, rc)
-
-      end subroutine ESMF_CalendarRead
-
-!------------------------------------------------------------------------------
-!BOP
-! !IROUTINE:  ESMF_CalendarWrite - Save a calendar's properties
-
-! !INTERFACE:
-      subroutine ESMF_CalendarWrite(calendar, Type, DaysPerMonth, &
-                            SecondsPerDay, DaysPerYear, &
-                            DaysPerYearDn, DaysPerYearDd, rc)
-
-! !ARGUMENTS:
-      type(ESMF_Calendar), intent(in) :: calendar
-      type(ESMF_CalendarType), intent(out) :: Type
-      integer, dimension(MONTHS_PER_YEAR), intent(out) :: DaysPerMonth
-      integer, intent(out) :: SecondsPerDay
-      integer, intent(out) :: DaysPerYear
-      integer, intent(out) :: DaysPerYearDn
-      integer, intent(out) :: DaysPerYearDd
-      integer, intent(out), optional :: rc
-
-! !DESCRIPTION:
-!     Perform a save on a {\tt ESMF\_Calendar}'s properties
-!
-!     The arguments are:
-!     \begin{description}
-!     \item[calendar]
-!          {\tt ESMF\_Calendar} to save
-!     \item[Type]
-!          The {\tt ESMF\_CalendarType} ESMF\_CAL\_GREGORIAN,
-!           ESMF\_CAL\_JULIAN, etc.
-!     \item[DaysPerMonth]
-!          Integer array of days per month, for each of the 12 months
-!     \item[SecondsPerDay]
-!          Integer number of seconds per day
-!     \item[DaysPerYear]
-!          Integer number of days per year
-!     \item[DaysPerYearDn]
-!          Integer fractional number of days per year (numerator)
-!     \item[DaysPerYearDd]
-!          Integer fractional number of days per year (denominator)
-!     \item[{[rc]}]
-!          Return code; equals {\tt ESMF\_SUCCESS} if there are no errors.
-!     \end{description}
-!
-! !REQUIREMENTS:
-!     TMGn.n.n
-!EOP
-   
-      call c_ESMC_CalendarWrite(calendar, Type, DaysPerMonth, &
-                                SecondsPerDay, DaysPerYear, &
-                                DaysPerYearDn, DaysPerYearDd, rc)
-
-      end subroutine ESMF_CalendarWrite
-
-!------------------------------------------------------------------------------
-!BOP
-! !IROUTINE:  ESMF_CalendarValidate - Validate a calendar's properties
-
-! !INTERFACE:
-      subroutine ESMF_CalendarValidate(calendar, opts, rc)
- 
-! !ARGUMENTS:
-      type(ESMF_Calendar), intent(in) :: calendar
-      character (len=*), intent(in), optional :: opts
-      integer, intent(out), optional :: rc
-
-! !DESCRIPTION:
-!     Perform a validation check on a {\tt ESMF\_Calendar}'s properties
-! 
-!     The arguments are:
-!     \begin{description}
-!     \item[calendar]
-!          {\tt ESMF\_Calendar} to validate
-!     \item[{[opts]}]
-!          Validate options
-!     \item[{[rc]}]
-!          Return code; equals {\tt ESMF\_SUCCESS} if there are no errors.
-!     \end{description}
-!
-! !REQUIREMENTS:
-!     TMGn.n.n
-!EOP
-      
-      call c_ESMC_CalendarValidate(calendar, opts, rc)
-
-      end subroutine ESMF_CalendarValidate
-
-!------------------------------------------------------------------------------
-!BOP
-! !IROUTINE:  ESMF_CalendarPrint - Print out a calendar's properties
-
-! !INTERFACE:
-      subroutine ESMF_CalendarPrint(calendar, opts, rc)
-
-! !ARGUMENTS:
-      type(ESMF_Calendar), intent(in) :: calendar
-      character (len=*), intent(in), optional :: opts
-      integer, intent(out), optional :: rc
-
-! !DESCRIPTION:
-!     To support testing/debugging, print out a {\tt ESMF\_Calendar}'s  
-!     properties.
-!
-!     The arguments are:
-!     \begin{description}
-!     \item[calendar]
-!          {\tt ESMF\_Calendar} to print out
-!     \item[{[opts]}]
-!          Print options
-!     \item[{[rc]}]
-!          Return code; equals {\tt ESMF\_SUCCESS} if there are no errors.
-!     \end{description}
-!
-! !REQUIREMENTS:
-!     TMGn.n.n
-!EOP
-  
-      call c_ESMC_CalendarPrint(calendar, opts, rc)
-
-      end subroutine ESMF_CalendarPrint
-      
-!------------------------------------------------------------------------------
 
       end module ESMF_CalendarMod

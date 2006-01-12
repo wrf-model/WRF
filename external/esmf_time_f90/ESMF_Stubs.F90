@@ -76,6 +76,9 @@ CONTAINS
       defaultCal = ESMF_CalendarCreate( calendarType=defaultCalType, &
                         rc=status)
 
+      ! initialize tables in time manager
+      CALL initdaym
+
       IF (status .ne. ESMF_SUCCESS) THEN
           PRINT *, "Error initializing the default time manager calendar"
           RETURN

@@ -11,6 +11,7 @@ CONTAINS
 
 !------------------------------------------------------------------
    SUBROUTINE GSFCSWRAD(rthraten,gsw,xlat,xlong                   &
+                   ,dz8w,rho_phy                                  &
                    ,alb,t3d,qv3d,qc3d,qr3d                        &
                    ,qi3d,qs3d,qg3d,p3d,p8w3d,pi3d,cldfra3d        &
                    ,gmt,cp,g,julday,xtime,declin,solcon           &
@@ -40,6 +41,8 @@ CONTAINS
                                                            P8W3D, &
                                                             pi3D, &
                                                              T3D, &
+                                                            dz8w, &
+                                                         rho_phy, &
                                                         CLDFRA3D
 
 
@@ -115,6 +118,8 @@ CONTAINS
                                                              P2D, &
                                                              T2D, &
                                                           fcld2D
+   real, DIMENSION( its:ite , kts:kte+1 ) :: phyd
+   real, DIMENSION( its:ite , kts:kte   ) :: phydmid
 
    REAL, DIMENSION( np, 5 ) ::                              pres, &
                                                            ozone
@@ -409,12 +414,23 @@ CONTAINS
          p(k)=pres(k,iprof)
       ENDDO
 
+      do k = kts,kte+1
+      do i = its,ite
+      if(k.eq.kts)then
+        phyd(i,k)=p8w3d(i,kts,j)
+      else
+        phyd(i,k)=phyd(i,k-1) - g*rho_phy(i,k-1,j)*dz8w(i,k-1,j)
+        phydmid(i,k-1)=0.5*(phyd(i,k-1)+phyd(i,k))
+      endif
+      enddo
+      enddo
+
 ! reverse vars 
 !
       DO K=kts,kte+1
       DO I=its,ite
          NK=kme-K+kms
-         P8W2D(I,K)=P8W3D(I,NK,J)*0.01   ! P8w2D is in mb
+         P8W2D(I,K)=phyd(I,NK)*0.01   ! P8w2D is in mb
       ENDDO
       ENDDO
 
@@ -434,7 +450,7 @@ CONTAINS
          cwc(I,K,2)=QC3D(I,NK,J)
          cwc(I,K,2)=max(0.,cwc(I,K,2))
 
-         P2D(I,K)=P3D(I,NK,J)*0.01      ! P2D is in mb
+         P2D(I,K)=phydmid(I,NK)*0.01      ! P2D is in mb
          fcld2D(I,K)=CLDFRA3D(I,NK,J)
       ENDDO
       ENDDO

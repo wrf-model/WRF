@@ -486,6 +486,7 @@ CONTAINS
              CALL GSFCSWRAD(                                           &
                      RTHRATEN=rthraten,GSW=gsw,XLAT=xlat,XLONG=xlong   &
                     ,ALB=albedo,T3D=t,P3D=p,P8W3D=p8w,pi3D=pi          &
+                    ,DZ8W=dz8w,RHO_PHY=rho                             &
                     ,CLDFRA3D=cldfra                                   &
                     ,GMT=gmt,CP=cp,G=g                                 &
                     ,JULDAY=julday,XTIME=xtime                         &

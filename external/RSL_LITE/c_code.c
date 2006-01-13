@@ -201,7 +201,7 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 , int * typesize0 , int * 
 	      yp_curs + RANGE( jpe-shw+1, jpe, kps, kpe, ips-shw, ipe+shw, 1, typesize ), nbytes ) ;
 	  MPI_Abort(MPI_COMM_WORLD, 99) ;
         }
-        if ( typesize == sizeof(long int) ) {
+        if ( typesize == sizeof(long int) && sizeof( long int ) != sizeof(int) ) {
           F_PACK_LINT ( buf, p+yp_curs, &js, &je, &ks, &ke, &is, &ie, 
                                               &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
           yp_curs += wcount*typesize ;
@@ -247,7 +247,7 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 , int * typesize0 , int * 
         js = jpe+1         ; je = jpe+shw ;
         ks = kps           ; ke = kpe ;
         is = IMAX(ips-shw) ; ie = IMIN(ipe+shw) ;
-	if ( typesize == sizeof(long int) ) {
+        if ( typesize == sizeof(long int) && sizeof( long int ) != sizeof(int) ) {
           F_UNPACK_LINT ( p+yp_curs, buf, &js, &je, &ks, &ke, &is, &ie,
                                              &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
           yp_curs += wcount*typesize ;
@@ -301,7 +301,7 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 , int * typesize0 , int * 
 	      ym_curs + RANGE( jps, jps+shw-1, kps, kpe, ips-shw, ipe+shw, 1, typesize ), nbytes ) ;
 	  MPI_Abort(MPI_COMM_WORLD, 99) ;
         }
-	if ( typesize == sizeof(long int) ) {
+        if ( typesize == sizeof(long int) && sizeof( long int ) != sizeof(int) ) {
           F_PACK_LINT ( buf, p+yp_curs, &js, &je, &ks, &ke, &is, &ie,
                                              &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
           ym_curs += wcount*typesize ;
@@ -348,7 +348,7 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 , int * typesize0 , int * 
         js = jps-shw       ; je = jps-1 ;
         ks = kps           ; ke = kpe ;
         is = IMAX(ips-shw) ; ie = IMIN(ipe+shw) ;
-	if ( typesize == sizeof(long int) ) {
+        if ( typesize == sizeof(long int) && sizeof( long int ) != sizeof(int) ) {
           F_UNPACK_LINT ( p+ym_curs, buf, &js, &je, &ks, &ke, &is, &ie,
                                                 &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
           ym_curs += wcount*typesize ;
@@ -406,7 +406,7 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 , int * typesize0 , int * 
 	      xp_curs + RANGE( jps-shw, jpe+shw, kps, kpe, ipe-shw+1, ipe, 1, typesize ), nbytes ) ;
 	  MPI_Abort(MPI_COMM_WORLD, 99) ;
         }
-	if ( typesize == sizeof(long int) ) {
+        if ( typesize == sizeof(long int) && sizeof( long int ) != sizeof(int) ) {
           F_PACK_LINT ( buf, p+xp_curs, &js, &je, &ks, &ke, &is, &ie,
                                               &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
           xp_curs += wcount*typesize ;
@@ -450,7 +450,7 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 , int * typesize0 , int * 
         js = JMAX(jps-shw) ; je = JMIN(jpe+shw) ;
         ks = kps           ; ke = kpe ;
         is = ipe+1         ; ie = ipe+shw ;
-	if ( typesize == sizeof(long int) ) {
+        if ( typesize == sizeof(long int) && sizeof( long int ) != sizeof(int) ) {
           F_UNPACK_LINT ( p+xp_curs, buf, &js, &je, &ks, &ke, &is, &ie,
                                                 &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
           xp_curs += wcount*typesize ;
@@ -504,7 +504,7 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 , int * typesize0 , int * 
 	      xm_curs + RANGE( jps-shw, jpe+shw, kps, kpe, ips, ips+shw-1, 1, typesize ), nbytes ) ;
 	  MPI_Abort(MPI_COMM_WORLD, 99) ;
         }
-	if ( typesize == sizeof(long int) ) {
+        if ( typesize == sizeof(long int) && sizeof( long int ) != sizeof(int) ) {
           F_PACK_LINT ( buf, p+xm_curs, &js, &je, &ks, &ke, &is, &ie,
                                               &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
           xm_curs += wcount*typesize ;
@@ -548,7 +548,7 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 , int * typesize0 , int * 
         js = JMAX(jps-shw) ; je = JMIN(jpe+shw) ;
         ks = kps           ; ke = kpe ;
         is = ips-shw       ; ie = ips-1 ;
-	if ( typesize == sizeof(long int) ) {
+        if ( typesize == sizeof(long int) && sizeof( long int ) != sizeof(int) ) {
           F_UNPACK_LINT ( p+xm_curs, buf, &js, &je, &ks, &ke, &is, &ie,
                                                 &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
           xm_curs += wcount*typesize ;

@@ -539,17 +539,9 @@ CONTAINS
                             __FILE__ , &
                             __LINE__  )
       ! handle fractions
-!$$$ remove duplication
-      IF ( op1_t%basetime%Sd > 0 ) THEN
-        IF ( op1_t%basetime%Sn > 0 ) THEN
-          WRITE(frac_str,FMT="('+',I2.2,'/',I2.2)") abs(op1_t%basetime%Sn), op1_t%basetime%Sd
-        ELSE IF ( op1_t%basetime%Sn < 0 ) THEN
-          WRITE(frac_str,FMT="('-',I2.2,'/',I2.2)") abs(op1_t%basetime%Sn), op1_t%basetime%Sd
-        ELSE
-          frac_str = ''
-        ENDIF
-        op1_str = TRIM(op1_str)//TRIM(frac_str)
-      ENDIF
+      CALL fraction_to_stringi8( op1_t%basetime%Sn, &
+                                 op1_t%basetime%Sd, frac_str )
+      op1_str = TRIM(op1_str)//TRIM(frac_str)
     ELSE
       op1_type_str = 'ESMF_TimeInterval'
       CALL WRFU_TimeIntervalSet( op1_ti, YY=iop1_ti_YY, MM=iop1_ti_MM, &
@@ -566,17 +558,9 @@ CONTAINS
                             __FILE__ , &
                             __LINE__  )
       ! handle fractions
-!$$$ remove duplication
-      IF ( op1_ti%basetime%Sd > 0 ) THEN
-        IF ( op1_ti%basetime%Sn > 0 ) THEN
-          WRITE(frac_str,FMT="('+',I2.2,'/',I2.2)") abs(op1_ti%basetime%Sn), op1_ti%basetime%Sd
-        ELSE IF ( op1_ti%basetime%Sn < 0 ) THEN
-          WRITE(frac_str,FMT="('-',I2.2,'/',I2.2)") abs(op1_ti%basetime%Sn), op1_ti%basetime%Sd
-        ELSE
-          frac_str = ''
-        ENDIF
-        op1_str = TRIM(op1_str)//TRIM(frac_str)
-      ENDIF
+      CALL fraction_to_stringi8( op1_ti%basetime%Sn, &
+                                 op1_ti%basetime%Sd, frac_str )
+      op1_str = TRIM(op1_str)//TRIM(frac_str)
     ENDIF
     ! Initialize op2
     IF ( op2_is_t ) THEN
@@ -593,17 +577,9 @@ CONTAINS
                             __FILE__ , &
                             __LINE__  )
       ! handle fractions
-!$$$ remove duplication
-      IF ( op2_t%basetime%Sd > 0 ) THEN
-        IF ( op2_t%basetime%Sn > 0 ) THEN
-          WRITE(frac_str,FMT="('+',I2.2,'/',I2.2)") abs(op2_t%basetime%Sn), op2_t%basetime%Sd
-        ELSE IF ( op2_t%basetime%Sn < 0 ) THEN
-          WRITE(frac_str,FMT="('-',I2.2,'/',I2.2)") abs(op2_t%basetime%Sn), op2_t%basetime%Sd
-        ELSE
-          frac_str = ''
-        ENDIF
-        op2_str = TRIM(op2_str)//TRIM(frac_str)
-      ENDIF
+      CALL fraction_to_stringi8( op2_t%basetime%Sn, &
+                                 op2_t%basetime%Sd, frac_str )
+      op2_str = TRIM(op2_str)//TRIM(frac_str)
     ELSE IF ( op2_is_ti ) THEN
       op2_type_str = 'ESMF_TimeInterval'
       CALL WRFU_TimeIntervalSet( op2_ti, YY=iop2_ti_YY, MM=iop2_ti_MM, &
@@ -620,17 +596,9 @@ CONTAINS
                             __FILE__ , &
                             __LINE__  )
       ! handle fractions
-!$$$ remove duplication
-      IF ( op2_ti%basetime%Sd > 0 ) THEN
-        IF ( op2_ti%basetime%Sn > 0 ) THEN
-          WRITE(frac_str,FMT="('+',I2.2,'/',I2.2)") abs(op2_ti%basetime%Sn), op2_ti%basetime%Sd
-        ELSE IF ( op2_ti%basetime%Sn < 0 ) THEN
-          WRITE(frac_str,FMT="('-',I2.2,'/',I2.2)") abs(op2_ti%basetime%Sn), op2_ti%basetime%Sd
-        ELSE
-          frac_str = ''
-        ENDIF
-        op2_str = TRIM(op2_str)//TRIM(frac_str)
-      ENDIF
+      CALL fraction_to_stringi8( op2_ti%basetime%Sn, &
+                                 op2_ti%basetime%Sd, frac_str )
+      op2_str = TRIM(op2_str)//TRIM(frac_str)
     ELSE
       op2_type_str = 'INTEGER'
       IF ( op2_int > 0 ) THEN
@@ -654,17 +622,9 @@ CONTAINS
                             __FILE__ , &
                             __LINE__  )
       ! handle fractions
-!$$$ remove duplication
-      IF ( res_t%basetime%Sd > 0 ) THEN
-        IF ( res_t%basetime%Sn > 0 ) THEN
-          WRITE(frac_str,FMT="('+',I2.2,'/',I2.2)") abs(res_t%basetime%Sn), res_t%basetime%Sd
-        ELSE IF ( res_t%basetime%Sn < 0 ) THEN
-          WRITE(frac_str,FMT="('-',I2.2,'/',I2.2)") abs(res_t%basetime%Sn), res_t%basetime%Sd
-        ELSE
-          frac_str = ''
-        ENDIF
-        res_str = TRIM(res_str)//TRIM(frac_str)
-      ENDIF
+      CALL fraction_to_stringi8( res_t%basetime%Sn, &
+                                 res_t%basetime%Sd, frac_str )
+      res_str = TRIM(res_str)//TRIM(frac_str)
     ELSE
       res_type_str = 'ESMF_TimeInterval'
       CALL WRFU_TimeIntervalSet( res_ti, YY=ires_ti_YY, MM=ires_ti_MM, &
@@ -681,17 +641,9 @@ CONTAINS
                             __FILE__ , &
                             __LINE__  )
       ! handle fractions
-!$$$ remove duplication
-      IF ( res_ti%basetime%Sd > 0 ) THEN
-        IF ( res_ti%basetime%Sn > 0 ) THEN
-          WRITE(frac_str,FMT="('+',I2.2,'/',I2.2)") abs(res_ti%basetime%Sn), res_ti%basetime%Sd
-        ELSE IF ( res_ti%basetime%Sn < 0 ) THEN
-          WRITE(frac_str,FMT="('-',I2.2,'/',I2.2)") abs(res_ti%basetime%Sn), res_ti%basetime%Sd
-        ELSE
-          frac_str = ''
-        ENDIF
-        res_str = TRIM(res_str)//TRIM(frac_str)
-      ENDIF
+      CALL fraction_to_stringi8( res_ti%basetime%Sn, &
+                                 res_ti%basetime%Sd, frac_str )
+      res_str = TRIM(res_str)//TRIM(frac_str)
     ENDIF
 
     ! perform requested operation
@@ -783,17 +735,9 @@ CONTAINS
                               __FILE__ , &
                               __LINE__  )
         ! handle fractions
-!$$$ remove duplication
-        IF ( computed_t%basetime%Sd > 0 ) THEN
-          IF ( computed_t%basetime%Sn > 0 ) THEN
-            WRITE(frac_str,FMT="('+',I2.2,'/',I2.2)") abs(computed_t%basetime%Sn), computed_t%basetime%Sd
-          ELSE IF ( computed_t%basetime%Sn < 0 ) THEN
-            WRITE(frac_str,FMT="('-',I2.2,'/',I2.2)") abs(computed_t%basetime%Sn), computed_t%basetime%Sd
-          ELSE
-            frac_str = ''
-          ENDIF
-          computed_str = TRIM(computed_str)//TRIM(frac_str)
-        ENDIF
+        CALL fraction_to_stringi8( computed_t%basetime%Sn, &
+                                   computed_t%basetime%Sd, frac_str )
+        computed_str = TRIM(computed_str)//TRIM(frac_str)
       ENDIF
     ELSE  ! result is ESMF_TimeInterval
       IF ( computed_ti == res_ti ) THEN
@@ -805,23 +749,15 @@ CONTAINS
                               __FILE__ , &
                               __LINE__  )
         ! handle fractions
-!$$$ remove duplication
-        IF ( computed_ti%basetime%Sd > 0 ) THEN
-          IF ( computed_ti%basetime%Sn > 0 ) THEN
-            WRITE(frac_str,FMT="('+',I2.2,'/',I2.2)") abs(computed_ti%basetime%Sn), computed_ti%basetime%Sd
-          ELSE IF ( computed_ti%basetime%Sn < 0 ) THEN
-            WRITE(frac_str,FMT="('-',I2.2,'/',I2.2)") abs(computed_ti%basetime%Sn), computed_ti%basetime%Sd
-          ELSE
-            frac_str = ''
-          ENDIF
-          computed_str = TRIM(computed_str)//TRIM(frac_str)
-        ENDIF
+        CALL fraction_to_stringi8( computed_ti%basetime%Sn, &
+                                   computed_ti%basetime%Sd, frac_str )
+        computed_str = TRIM(computed_str)//TRIM(frac_str)
       ENDIF
     ENDIF
     IF ( test_passed ) THEN
       WRITE(*,FMT='(A)') 'PASS:  '//TRIM(itestname)
     ELSE
-      WRITE(*,*) 'FAIL:  ',TRIM(itestname),':  (',                         &
+      WRITE(*,*) 'FAIL:  ',TRIM(itestname),':  (',                        &
         TRIM(res_type_str),' = ',TRIM(op1_type_str),' ',TRIM(op_str),' ', &
         TRIM(op2_type_str),')  expected ',                                &
         TRIM(res_str),' = ',TRIM(op1_str),' ',TRIM(op_str),' ',           &
@@ -922,11 +858,11 @@ CONTAINS
 
   ! simple clock creation and advance with add-subtract tests thrown in
   ! no self checks (yet)
-  SUBROUTINE test_clock_advance(                             &
-    start_yy, start_mm, start_dd, start_h, start_m, start_s, &
-     stop_yy,  stop_mm,  stop_dd,  stop_h,  stop_m,  stop_s, &
-    timestep_d, timestep_h, timestep_m, timestep_s,          &
-    testname, increment_S )
+  SUBROUTINE test_clock_advance(                                              &
+    start_yy, start_mm, start_dd, start_h, start_m, start_s,                  &
+     stop_yy,  stop_mm,  stop_dd,  stop_h,  stop_m,  stop_s,                  &
+    timestep_d, timestep_h, timestep_m, timestep_s, timestep_sn, timestep_sd, &
+    testname, increment_S, increment_Sn, increment_Sd )
     INTEGER, INTENT(IN), OPTIONAL :: start_YY
     INTEGER, INTENT(IN), OPTIONAL :: start_MM  ! month
     INTEGER, INTENT(IN), OPTIONAL :: start_DD  ! day of month
@@ -943,9 +879,13 @@ CONTAINS
     INTEGER, INTENT(IN), OPTIONAL :: timestep_H
     INTEGER, INTENT(IN), OPTIONAL :: timestep_M
     INTEGER, INTENT(IN), OPTIONAL :: timestep_S
+    INTEGER, INTENT(IN), OPTIONAL :: timestep_Sn
+    INTEGER, INTENT(IN), OPTIONAL :: timestep_Sd
     CHARACTER (LEN=*), OPTIONAL, INTENT(IN) :: testname
     INTEGER, INTENT(IN), OPTIONAL :: increment_S  ! add and subtract this 
-                                                  ! value each time step
+    INTEGER, INTENT(IN), OPTIONAL :: increment_Sn ! value each time step
+    INTEGER, INTENT(IN), OPTIONAL :: increment_Sd
+
     ! locals
     INTEGER :: istart_YY
     INTEGER :: istart_MM  ! month
@@ -963,15 +903,19 @@ CONTAINS
     INTEGER :: itimestep_H
     INTEGER :: itimestep_M
     INTEGER :: itimestep_S
+    INTEGER :: itimestep_Sn
+    INTEGER :: itimestep_Sd
     CHARACTER (LEN=512) :: itestname, itestfullname
     INTEGER :: iincrement_S
+    INTEGER :: iincrement_Sn
+    INTEGER :: iincrement_Sd
     INTEGER rc
     TYPE(WRFU_Time)           :: start_time, stop_time, current_time
     TYPE(WRFU_Clock), POINTER :: domain_clock
     TYPE(WRFU_TimeInterval)   :: timestep, increment
     TYPE(WRFU_Time)           :: add_time, subtract_time
     INTEGER :: itimestep
-    CHARACTER(LEN=WRFU_MAXSTR) :: str
+    CHARACTER(LEN=WRFU_MAXSTR) :: str, frac_str
 
     istart_YY = 0
     istart_MM = 1
@@ -989,8 +933,12 @@ CONTAINS
     itimestep_H = 0
     itimestep_M = 0
     itimestep_S = 0
+    itimestep_Sn = 0
+    itimestep_Sd = 0
     itestname = ''
     iincrement_S = 0
+    iincrement_Sn = 0
+    iincrement_Sd = 0
 
     IF ( PRESENT( start_YY ) ) istart_YY = start_YY
     IF ( PRESENT( start_MM ) ) istart_MM = start_MM
@@ -1008,8 +956,12 @@ CONTAINS
     IF ( PRESENT( timestep_H ) ) itimestep_H = timestep_H
     IF ( PRESENT( timestep_M ) ) itimestep_M = timestep_M
     IF ( PRESENT( timestep_S ) ) itimestep_S = timestep_S
+    IF ( PRESENT( timestep_Sn ) ) itimestep_Sn = timestep_Sn
+    IF ( PRESENT( timestep_Sd ) ) itimestep_Sd = timestep_Sd
     IF ( PRESENT( testname ) ) itestname = TRIM(testname)//'_'
     IF ( PRESENT( increment_S ) ) iincrement_S = increment_S
+    IF ( PRESENT( increment_Sn ) ) iincrement_Sn = increment_Sn
+    IF ( PRESENT( increment_Sd ) ) iincrement_Sd = increment_Sd
 
     ! Initialize start time, stop time, time step, clock for simple case. 
     itestfullname = TRIM(itestname)//'SETUP'
@@ -1042,7 +994,8 @@ CONTAINS
     WRITE(*,FMT='(A,A,A,A)') TRIM(itestfullname),':  stop_time = <',TRIM(str),'>'
 
     CALL WRFU_TimeIntervalSet( timestep, D=itimestep_D, H=itimestep_H, &
-                                         M=itimestep_M, S=itimestep_S, rc=rc )
+                                         M=itimestep_M, S=itimestep_S, &
+                                         Sn=itimestep_Sn, Sd=itimestep_Sd, rc=rc )
     CALL test_check_error( WRFU_SUCCESS, rc, &
                           TRIM(itestfullname)//'WRFU_TimeIntervalSet() ', &
                           __FILE__ , &
@@ -1053,9 +1006,14 @@ CONTAINS
                           TRIM(itestfullname)//'WRFU_TimeIntervalGet() ', &
                           __FILE__ , &
                           __LINE__  )
+    ! handle fractions
+    CALL fraction_to_stringi8( timestep%basetime%Sn, &
+                               timestep%basetime%Sd, frac_str )
+    str = TRIM(str)//TRIM(frac_str)
     WRITE(*,FMT='(A,A,A,A)') TRIM(itestfullname),':  timestep = <',TRIM(str),'>'
 
-    CALL WRFU_TimeIntervalSet( increment, S=iincrement_S, rc=rc )
+    CALL WRFU_TimeIntervalSet( increment, S=iincrement_S, &
+                               Sn=iincrement_Sn, Sd=iincrement_Sd, rc=rc )
     CALL test_check_error( WRFU_SUCCESS, rc, &
                           TRIM(itestfullname)//'WRFU_TimeIntervalSet() ', &
                           __FILE__ , &
@@ -1066,6 +1024,10 @@ CONTAINS
                           TRIM(itestfullname)//'WRFU_TimeIntervalGet() ', &
                           __FILE__ , &
                           __LINE__  )
+    ! handle fractions
+    CALL fraction_to_stringi8( increment%basetime%Sn, &
+                               increment%basetime%Sd, frac_str )
+    str = TRIM(str)//TRIM(frac_str)
     WRITE(*,FMT='(A,A,A,A)') TRIM(itestfullname),':  increment = <',TRIM(str),'>'
 
     ALLOCATE( domain_clock )
@@ -1090,6 +1052,9 @@ CONTAINS
                           TRIM(itestfullname)//'WRFU_TimeGet() ', &
                           __FILE__ , &
                           __LINE__  )
+    CALL fraction_to_stringi8( current_time%basetime%Sn, &
+                               current_time%basetime%Sd, frac_str )
+    str = TRIM(str)//TRIM(frac_str)
     WRITE(*,FMT='(A,A,A,A)') TRIM(itestfullname),':  clock current_time = <',TRIM(str),'>'
 
     subtract_time = current_time - increment
@@ -1098,6 +1063,9 @@ CONTAINS
                           TRIM(itestfullname)//'WRFU_TimeGet() ', &
                           __FILE__ , &
                           __LINE__  )
+    CALL fraction_to_stringi8( subtract_time%basetime%Sn, &
+                               subtract_time%basetime%Sd, frac_str )
+    str = TRIM(str)//TRIM(frac_str)
     WRITE(*,FMT='(A,A,A,A)') TRIM(itestfullname),':  current_time-increment = <',TRIM(str),'>'
 
     add_time = current_time + increment
@@ -1106,6 +1074,9 @@ CONTAINS
                           TRIM(itestfullname)//'WRFU_TimeGet() ', &
                           __FILE__ , &
                           __LINE__  )
+    CALL fraction_to_stringi8( add_time%basetime%Sn, &
+                               add_time%basetime%Sd, frac_str )
+    str = TRIM(str)//TRIM(frac_str)
     WRITE(*,FMT='(A,A,A,A)') TRIM(itestfullname),':  current_time+increment = <',TRIM(str),'>'
 
     ! Advance clock.  
@@ -1136,6 +1107,9 @@ CONTAINS
                             TRIM(itestfullname)//'WRFU_TimeGet() ', &
                             __FILE__ , &
                             __LINE__  )
+      CALL fraction_to_stringi8( current_time%basetime%Sn, &
+                                 current_time%basetime%Sd, frac_str )
+      str = TRIM(str)//TRIM(frac_str)
       WRITE(*,FMT='(A,A,I6.6,A,A,A)') TRIM(itestfullname),':  count = ', &
         itimestep,'  current_time = <',TRIM(str),'>'
 
@@ -1145,6 +1119,9 @@ CONTAINS
                             TRIM(itestfullname)//'WRFU_TimeGet() ', &
                             __FILE__ , &
                             __LINE__  )
+      CALL fraction_to_stringi8( subtract_time%basetime%Sn, &
+                                 subtract_time%basetime%Sd, frac_str )
+      str = TRIM(str)//TRIM(frac_str)
       WRITE(*,FMT='(A,A,A,A)') TRIM(itestfullname),':  current_time-increment = <',TRIM(str),'>'
 
       add_time = current_time + increment
@@ -1153,6 +1130,9 @@ CONTAINS
                             TRIM(itestfullname)//'WRFU_TimeGet() ', &
                             __FILE__ , &
                             __LINE__  )
+      CALL fraction_to_stringi8( add_time%basetime%Sn, &
+                                 add_time%basetime%Sd, frac_str )
+      str = TRIM(str)//TRIM(frac_str)
       WRITE(*,FMT='(A,A,A,A)') TRIM(itestfullname),':  current_time+increment = <',TRIM(str),'>'
 
     ENDDO
@@ -1602,6 +1582,15 @@ PROGRAM time_manager_test
     op2_ti_yy=   0, op2_ti_mm= 0, op2_ti_dd=367, op2_ti_h=4, op2_ti_m=10, op2_ti_s=10, &
      res_t_yy=2004,  res_t_mm=12,  res_t_dd=30,  res_t_h=4,  res_t_m=30,  res_t_s=00, &
     testname='SubtractT_T_TI6' )
+  ! ESMF_Time = ESMF_Time - ESMF_TimeInterval with fractions
+  CALL test_arithmetic( add_op=.FALSE.,                                             &
+     op1_t_yy=2005,  op1_t_mm=01,  op1_t_dd=01,  op1_t_h=00,  op1_t_m=00,  op1_t_s=00, &
+     op1_t_sn=00,  op1_t_sd=00, &
+    op2_ti_yy=   0, op2_ti_mm= 0, op2_ti_dd=0, op2_ti_h=0, op2_ti_m=00, op2_ti_s=01, &
+    op2_ti_sn=01, op2_ti_sd=03, &
+     res_t_yy=2004,  res_t_mm=12,  res_t_dd=31,  res_t_h=23,  res_t_m=59,  res_t_s=58, &
+     res_t_sn=02,  res_t_sd=03, &
+    testname='SubtractT_T_TI_F1' )
   ! ESMF_TimeInterval = ESMF_Time - ESMF_Time
   CALL test_arithmetic( add_op=.FALSE.,                                            &
      op1_t_yy=2001,  op1_t_mm=12,  op1_t_dd=3,  op1_t_h=1,  op1_t_m=20,  op1_t_s=10, &
@@ -1700,6 +1689,7 @@ PROGRAM time_manager_test
     op2_ti_yy=0000, op2_ti_mm=00, op2_ti_dd=3, op2_ti_h=1, op2_ti_m=20, op2_ti_s=10, &
     res_ti_yy=0000, res_ti_mm=00, res_ti_dd=-4, res_ti_h=-2, res_ti_m=-30, res_ti_s=-20,  &
     testname='SubtractTI_TI_TIN2' )
+
   ! Un-normalized ESMF_TimeInterval = ESMF_TimeInterval - ESMF_TimeInterval
   ! this is an error
 !  CALL test_arithmetic( add_op=.FALSE.,                                            &
@@ -1786,6 +1776,16 @@ PROGRAM time_manager_test
      stop_yy=2005,  stop_mm=1,   stop_dd=2,   stop_h=9,  stop_m=0,  stop_s=0, &
     timestep_d=0, timestep_h=0, timestep_m=0, timestep_s=3600,                &
     testname="LeapYearClockAdvance", increment_S=10 )
+
+  ! NRCM domain 3 case:  120 seconds / 9 
+  ! 18 timesteps through end of leap year
+  CALL test_clock_advance(                                                    &
+    start_yy=2004, start_mm=12, start_dd=31, start_h=23, start_m=58, start_s=0,&
+     stop_yy=2005,  stop_mm=1,   stop_dd=1,   stop_h=0,  stop_m=2,  stop_s=0, &
+    timestep_d=0, timestep_h=0, timestep_m=0, timestep_s=13,                  &
+    timestep_sn=1, timestep_sd=3,                                             &
+    testname="LeapYearFractionClockAdvance",                                  &
+    increment_S=1, increment_Sn=1, increment_Sd=3 )
 
   CALL WRFU_Finalize( rc=rc )
   CALL test_check_error( WRFU_SUCCESS, rc, &

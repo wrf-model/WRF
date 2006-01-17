@@ -47,6 +47,7 @@ PASS:  SubtractT_T_TI3
 PASS:  SubtractT_T_TI4
 PASS:  SubtractT_T_TI5
 PASS:  SubtractT_T_TI6
+PASS:  SubtractT_T_TI_F1
 PASS:  SubtractTI_T_T1
 PASS:  SubtractTI_T_T2
 PASS:  SubtractTI_T_T3
@@ -1192,4 +1193,65 @@ LeapYearClockAdvance_ADVANCE:  current_time+increment = <2005-01-02_08:00:10>
 LeapYearClockAdvance_ADVANCE:  count = 000096  current_time = <2005-01-02_09:00:00>
 LeapYearClockAdvance_ADVANCE:  current_time-increment = <2005-01-02_08:59:50>
 LeapYearClockAdvance_ADVANCE:  current_time+increment = <2005-01-02_09:00:10>
+LeapYearFractionClockAdvance_SETUP:  start_time = <2004-12-31_23:58:00>
+LeapYearFractionClockAdvance_SETUP:  stop_time = <2005-01-01_00:02:00>
+LeapYearFractionClockAdvance_SETUP:  timestep = <0000000000_000:000:013+01/03>
+LeapYearFractionClockAdvance_SETUP:  increment = <0000000000_000:000:001+01/03>
+LeapYearFractionClockAdvance_SETUP:  clock current_time = <2004-12-31_23:58:00>
+LeapYearFractionClockAdvance_SETUP:  current_time-increment = <2004-12-31_23:57:58+02/03>
+LeapYearFractionClockAdvance_SETUP:  current_time+increment = <2004-12-31_23:58:01+01/03>
+LeapYearFractionClockAdvance_ADVANCE:  count = 000001  current_time = <2004-12-31_23:58:13+01/03>
+LeapYearFractionClockAdvance_ADVANCE:  current_time-increment = <2004-12-31_23:58:12>
+LeapYearFractionClockAdvance_ADVANCE:  current_time+increment = <2004-12-31_23:58:14+02/03>
+LeapYearFractionClockAdvance_ADVANCE:  count = 000002  current_time = <2004-12-31_23:58:26+02/03>
+LeapYearFractionClockAdvance_ADVANCE:  current_time-increment = <2004-12-31_23:58:25+01/03>
+LeapYearFractionClockAdvance_ADVANCE:  current_time+increment = <2004-12-31_23:58:28>
+LeapYearFractionClockAdvance_ADVANCE:  count = 000003  current_time = <2004-12-31_23:58:40>
+LeapYearFractionClockAdvance_ADVANCE:  current_time-increment = <2004-12-31_23:58:38+02/03>
+LeapYearFractionClockAdvance_ADVANCE:  current_time+increment = <2004-12-31_23:58:41+01/03>
+LeapYearFractionClockAdvance_ADVANCE:  count = 000004  current_time = <2004-12-31_23:58:53+01/03>
+LeapYearFractionClockAdvance_ADVANCE:  current_time-increment = <2004-12-31_23:58:52>
+LeapYearFractionClockAdvance_ADVANCE:  current_time+increment = <2004-12-31_23:58:54+02/03>
+LeapYearFractionClockAdvance_ADVANCE:  count = 000005  current_time = <2004-12-31_23:59:06+02/03>
+LeapYearFractionClockAdvance_ADVANCE:  current_time-increment = <2004-12-31_23:59:05+01/03>
+LeapYearFractionClockAdvance_ADVANCE:  current_time+increment = <2004-12-31_23:59:08>
+LeapYearFractionClockAdvance_ADVANCE:  count = 000006  current_time = <2004-12-31_23:59:20>
+LeapYearFractionClockAdvance_ADVANCE:  current_time-increment = <2004-12-31_23:59:18+02/03>
+LeapYearFractionClockAdvance_ADVANCE:  current_time+increment = <2004-12-31_23:59:21+01/03>
+LeapYearFractionClockAdvance_ADVANCE:  count = 000007  current_time = <2004-12-31_23:59:33+01/03>
+LeapYearFractionClockAdvance_ADVANCE:  current_time-increment = <2004-12-31_23:59:32>
+LeapYearFractionClockAdvance_ADVANCE:  current_time+increment = <2004-12-31_23:59:34+02/03>
+LeapYearFractionClockAdvance_ADVANCE:  count = 000008  current_time = <2004-12-31_23:59:46+02/03>
+LeapYearFractionClockAdvance_ADVANCE:  current_time-increment = <2004-12-31_23:59:45+01/03>
+LeapYearFractionClockAdvance_ADVANCE:  current_time+increment = <2004-12-31_23:59:48>
+LeapYearFractionClockAdvance_ADVANCE:  count = 000009  current_time = <2005-01-01_00:00:00>
+LeapYearFractionClockAdvance_ADVANCE:  current_time-increment = <2004-12-31_23:59:58+02/03>
+LeapYearFractionClockAdvance_ADVANCE:  current_time+increment = <2005-01-01_00:00:01+01/03>
+LeapYearFractionClockAdvance_ADVANCE:  count = 000010  current_time = <2005-01-01_00:00:13+01/03>
+LeapYearFractionClockAdvance_ADVANCE:  current_time-increment = <2005-01-01_00:00:12>
+LeapYearFractionClockAdvance_ADVANCE:  current_time+increment = <2005-01-01_00:00:14+02/03>
+LeapYearFractionClockAdvance_ADVANCE:  count = 000011  current_time = <2005-01-01_00:00:26+02/03>
+LeapYearFractionClockAdvance_ADVANCE:  current_time-increment = <2005-01-01_00:00:25+01/03>
+LeapYearFractionClockAdvance_ADVANCE:  current_time+increment = <2005-01-01_00:00:28>
+LeapYearFractionClockAdvance_ADVANCE:  count = 000012  current_time = <2005-01-01_00:00:40>
+LeapYearFractionClockAdvance_ADVANCE:  current_time-increment = <2005-01-01_00:00:38+02/03>
+LeapYearFractionClockAdvance_ADVANCE:  current_time+increment = <2005-01-01_00:00:41+01/03>
+LeapYearFractionClockAdvance_ADVANCE:  count = 000013  current_time = <2005-01-01_00:00:53+01/03>
+LeapYearFractionClockAdvance_ADVANCE:  current_time-increment = <2005-01-01_00:00:52>
+LeapYearFractionClockAdvance_ADVANCE:  current_time+increment = <2005-01-01_00:00:54+02/03>
+LeapYearFractionClockAdvance_ADVANCE:  count = 000014  current_time = <2005-01-01_00:01:06+02/03>
+LeapYearFractionClockAdvance_ADVANCE:  current_time-increment = <2005-01-01_00:01:05+01/03>
+LeapYearFractionClockAdvance_ADVANCE:  current_time+increment = <2005-01-01_00:01:08>
+LeapYearFractionClockAdvance_ADVANCE:  count = 000015  current_time = <2005-01-01_00:01:20>
+LeapYearFractionClockAdvance_ADVANCE:  current_time-increment = <2005-01-01_00:01:18+02/03>
+LeapYearFractionClockAdvance_ADVANCE:  current_time+increment = <2005-01-01_00:01:21+01/03>
+LeapYearFractionClockAdvance_ADVANCE:  count = 000016  current_time = <2005-01-01_00:01:33+01/03>
+LeapYearFractionClockAdvance_ADVANCE:  current_time-increment = <2005-01-01_00:01:32>
+LeapYearFractionClockAdvance_ADVANCE:  current_time+increment = <2005-01-01_00:01:34+02/03>
+LeapYearFractionClockAdvance_ADVANCE:  count = 000017  current_time = <2005-01-01_00:01:46+02/03>
+LeapYearFractionClockAdvance_ADVANCE:  current_time-increment = <2005-01-01_00:01:45+01/03>
+LeapYearFractionClockAdvance_ADVANCE:  current_time+increment = <2005-01-01_00:01:48>
+LeapYearFractionClockAdvance_ADVANCE:  count = 000018  current_time = <2005-01-01_00:02:00>
+LeapYearFractionClockAdvance_ADVANCE:  current_time-increment = <2005-01-01_00:01:58+02/03>
+LeapYearFractionClockAdvance_ADVANCE:  current_time+increment = <2005-01-01_00:02:01+01/03>
  END TEST SUITE

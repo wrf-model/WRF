@@ -78,7 +78,6 @@
 ! !PUBLIC MEMBER FUNCTIONS:
       public ESMF_TimeGet
       public ESMF_TimeSet
-      public ESMFold_TimeGetString
 
 ! Required inherited and overridden ESMF_Base class methods
 
@@ -400,7 +399,7 @@
 !     TMG2.1, TMG2.5.1, TMG2.5.6
 !EOP
       TYPE(ESMF_Time) :: begofyear
-      INTEGER :: yr
+      INTEGER :: year, month, dayofmonth, hour, minute, second
 
       ierr = ESMF_SUCCESS
 
@@ -414,6 +413,7 @@
         CALL timegetdayofmonth( time, DD )
       ENDIF
 !
+!$$$ push HMS down into ESMF_BaseTime
       IF ( PRESENT( H ) ) THEN
         H = mod( time%basetime%S, SECONDS_PER_DAY ) / SECONDS_PER_HOUR
       ENDIF
@@ -445,11 +445,21 @@
         CALL ESMF_TimeGetDayOfYear( time, dayOfYear, rc=ierr )
       ENDIF
       IF ( PRESENT( timeString ) ) THEN
-        CALL ESMFold_TimeGetString( time, timeString, rc=ierr )
+        ! This duplication for YMD is an optimization that avoids calling 
+        ! timegetmonth() and timegetdayofmonth() when it is not needed.  
+        year = time%YR
+        CALL timegetmonth( time, month )
+        CALL timegetdayofmonth( time, dayofmonth )
+!$$$ push HMS down into ESMF_BaseTime
+        hour = mod( time%basetime%S, SECONDS_PER_DAY ) / SECONDS_PER_HOUR
+        minute = mod( time%basetime%S, SECONDS_PER_HOUR) / SECONDS_PER_MINUTE
+        second = mod( time%basetime%S, SECONDS_PER_MINUTE )
+        CALL ESMFold_TimeGetString( year, month, dayofmonth, &
+                                    hour, minute, second, timeString )
       ENDIF
       IF ( PRESENT( dayOfYear_intvl ) ) THEN
-        yr = time%YR
-        CALL ESMF_TimeSet( begofyear, yy=yr, mm=1, dd=1, s=0, &
+        year = time%YR
+        CALL ESMF_TimeSet( begofyear, yy=year, mm=1, dd=1, s=0, &
                            calendar=time%calendar, rc=ierr )
         IF ( ierr == ESMF_FAILURE)THEN
            rc = ierr
@@ -685,14 +695,17 @@
 ! !IROUTINE:  ESMFold_TimeGetString - Get time instant value in string format
 
 ! !INTERFACE:
-      subroutine ESMFold_TimeGetString(time, TimeString, rc)
+      subroutine ESMFold_TimeGetString( year, month, dayofmonth, &
+                                        hour, minute, second, TimeString )
 
 ! !ARGUMENTS:
-      type(ESMF_Time), intent(in) :: time
+      integer, intent(in) :: year
+      integer, intent(in) :: month
+      integer, intent(in) :: dayofmonth
+      integer, intent(in) :: hour
+      integer, intent(in) :: minute
+      integer, intent(in) :: second
       character*(*), intent(out) :: TimeString
-      integer, intent(out), optional :: rc
-      ! locals
-      INTEGER :: year, month, dayofmonth, hour, minute, second
 ! !DESCRIPTION:
 !     Convert {\tt ESMF\_Time}'s value into ISO 8601 format YYYY-MM-DDThh:mm:ss
 !
@@ -711,8 +724,6 @@
 !EOP
 
 !PRINT *,'DEBUG:  ESMF_TimePrint():  YR,S,Sn,Sd = ',time%YR,time%basetime%S,time%basetime%Sn,time%basetime%Sd
-      CALL ESMF_TimeGet( time, YY=year, MM=month, DD=dayofmonth, &
-                         H=hour, M=minute, S=second, rc=rc )
 !PRINT *,'DEBUG:  ESMF_TimePrint():  year = ',year
 !PRINT *,'DEBUG:  ESMF_TimePrint():  month, dayofmonth = ',month,dayofmonth
 !PRINT *,'DEBUG:  ESMF_TimePrint():  hour = ',hour

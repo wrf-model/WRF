@@ -870,7 +870,7 @@ SUBROUTINE print_a_time( time )
    type(ESMF_Time) time
    character*128 :: s
    integer rc
-   CALL ESMFold_TimeGetString( time, s, rc )
+   CALL ESMF_TimeGet( time, timeString=s, rc=rc )
    print *,'Print a time|',TRIM(s),'|'
    write(0,*)'Print a time|',TRIM(s),'|'
    return

@@ -905,7 +905,8 @@ contains
             f3(i,k,1) = f3(i,k,1)+dtodsd*dsdzq
             f3(i,k+1,1) = qx(i,k+1)-dtodsu*dsdzq
           elseif(pblflg(i).and.k.ge.kpbl(i).and.entfac(i,k).lt.4.6) then
-            xkzh(i,k) = -bfxpbl(i)*dza(i,kpbl(i))*exp(-entfac(i,k))/dthvx(i)
+            we = max(bfxpbl(i)/dthvx(i),-sqrt(wm2(i)))
+            xkzh(i,k) = -we*dza(i,kpbl(i))*exp(-entfac(i,k))
             xkzh(i,k) = sqrt(xkzh(i,k)*xkzhl(i,k))
             xkzh(i,k) = min(xkzh(i,k),xkzmax)
             xkzh(i,k) = max(xkzh(i,k),xkzmin)

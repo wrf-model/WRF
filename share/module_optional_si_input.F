@@ -19,7 +19,7 @@ MODULE module_optional_si_input
 
    CHARACTER (LEN=8) , PRIVATE :: flag_name
  
-   LOGICAL , PRIVATE :: already_been_here = .FALSE.
+   LOGICAL :: already_been_here
 
 CONTAINS
 
@@ -58,6 +58,10 @@ CONTAINS
          num_st_levels_alloc = config_flags%num_soil_layers * 2
          num_sm_levels_alloc = config_flags%num_soil_layers * 2
          num_sw_levels_alloc = config_flags%num_soil_layers * 2
+
+         IF ( ALLOCATED ( st_input ) ) DEALLOCATE ( st_input )
+         IF ( ALLOCATED ( sm_input ) ) DEALLOCATE ( sm_input )
+         IF ( ALLOCATED ( sw_input ) ) DEALLOCATE ( sw_input )
    
          ALLOCATE ( st_input(ims:ime,num_st_levels_alloc,jms:jme) )
          ALLOCATE ( sm_input(ims:ime,num_sm_levels_alloc,jms:jme) )

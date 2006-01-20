@@ -317,6 +317,7 @@ real::t1,t2
 
       !  Possible optional SI input.  This sets flags used by init_domain.
       IF ( loop .EQ. 1 ) THEN
+         already_been_here = .FALSE.
          CALL       wrf_debug ( 100 , 'med_sidata_input: calling init_module_optional_si_input' )
          CALL init_module_optional_si_input ( grid , config_flags )
       END IF

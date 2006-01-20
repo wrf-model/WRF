@@ -270,14 +270,10 @@ endif
 set thedataem = ${WRFREGDATAEM}/${dataset}
 set thedatanmm = $WRFREGDATANMM
 
-#	For non-nested runs, the distributed memory option RSL_LITE may be selected
+#	The distributed memory option RSL_LITE may be selected.
 
-if ( $NESTED != TRUE ) then
-	set RSL_LITE = TRUE
-	set RSL_LITE = FALSE
-else if ( $NESTED == TRUE ) then
-	set RSL_LITE = FALSE
-endif
+set RSL_LITE = TRUE
+set RSL_LITE = FALSE
 
 #	A separately installed version of the latest ESMF library (NOT the 
 #	ESMF library included in the WRF tarfile) can be tested by setting 
@@ -369,19 +365,20 @@ set IO_FORM = 2
 set IO_FORM_NAME = ( io_bin io_netcdf io_dummy io_phdf5 io_grib1 )
 set IO_FORM_WHICH =( IO     IO        IO       IO       O        )
 
-#	If we are doing nested runs, we are usually trying that non-MPI-but-using-RSL
-#	option.  That is not going to work with NMM due to needing MPI.  If this is
-#	a non-nested run and an RSL_LITE run, we cannot do any periodic bc runs.  That 
-#	means no b_wave cases at all, and fewer quarter_ss cases.  It is therefore easier
-#	to zap all idealized runs.
+#	There is a breakdown of cores to test depending on the various
+#	options that the user is testing.
+#	nested: cannot test NMM
+#	rsl_lite: cannot test anything with y periodic bc
+#	chem: em_real only
+#	esmf_lib: cannot test NMM
+#	grib output: cannot test NMM
 
-if      ( $NESTED == TRUE ) then
+if      ( ( $NESTED == TRUE ) && ( $RSL_LITE != TRUE ) ) then
 	set CORES = ( em_real em_b_wave em_quarter_ss          )
-else if ( $NESTED != TRUE ) then
+else if ( ( $NESTED == TRUE ) && ( $RSL_LITE == TRUE ) ) then
+	set CORES = ( em_real )
+else if ( ( $NESTED != TRUE ) && ( $RSL_LITE != TRUE ) ) then
 	set CORES = ( em_real em_b_wave em_quarter_ss nmm_real )
-	if ( $RSL_LITE == TRUE ) then
-		set CORES = ( em_real nmm_real )
-	endif
 	if ( $CHEM == TRUE ) then
 		set CORES = ( em_real )
 	endif
@@ -390,6 +387,17 @@ else if ( $NESTED != TRUE ) then
 	endif
 	if ( $IO_FORM_NAME[$IO_FORM] == io_grib1 ) then
 		set CORES = ( em_real em_b_wave em_quarter_ss )
+	endif
+else if ( ( $NESTED != TRUE ) && ( $RSL_LITE == TRUE ) ) then
+	set CORES = ( em_real nmm_real )
+	if ( $CHEM == TRUE ) then
+		set CORES = ( em_real )
+	endif
+	if ( $ESMF_LIB == TRUE ) then
+		set CORES = ( em_real )
+	endif
+	if ( $IO_FORM_NAME[$IO_FORM] == io_grib1 ) then
+		set CORES = ( em_real )
 	endif
 endif
 
@@ -772,12 +780,6 @@ touch version_info
 if ( ( $ARCH[1] == AIX ) && \
      ( ( `hostname | cut -c 1-2` == bs ) || \
        ( `hostname | cut -c 1-2` == bd ) ) ) then
-	# NMM requires 32 bit, Apr 2005 Dave, remove this when able
-	if ( $IO_FORM_NAME[$IO_FORM] == io_grib1 ) then
-		setenv OBJECT_MODE 64
-	else
-		setenv OBJECT_MODE 32
-	endif
 	set DEF_DIR             = $home
 	set TMPDIR              = /ptmp/$user
 	# keep stuff out of $HOME and /ptmp/$USER
@@ -801,14 +803,16 @@ if ( ( $ARCH[1] == AIX ) && \
 	endif
 	if ( ! -d $TMPDIR ) mkdir $TMPDIR
 	set MAIL                = /usr/bin/mailx
-	if        ( $NESTED == TRUE )                                                     then
-		set COMPOPTS	= ( 10 11 4 )
-	else if ( ( $NESTED != TRUE ) && ( $ESMF_LIB == TRUE ) )                          then
+	if      ( ( $NESTED != TRUE ) && ( $ESMF_LIB == TRUE ) ) then
 		set COMPOPTS    = ( 1 2 9 )
-	else if ( ( $NESTED != TRUE ) && ( $ESMF_LIB != TRUE ) && ( $RSL_LITE == TRUE ) ) then
-		set COMPOPTS	= ( 1 2 3 )
-	else if ( ( $NESTED != TRUE ) && ( $ESMF_LIB != TRUE ) && ( $RSL_LITE != TRUE ) ) then
+	else if ( ( $NESTED == TRUE ) && ( $RSL_LITE != TRUE ) ) then
+		set COMPOPTS	= ( 10 11 4 )
+	else if ( ( $NESTED != TRUE ) && ( $RSL_LITE != TRUE ) ) then
 		set COMPOPTS    = ( 1 2 4 )
+	else if ( ( $NESTED == TRUE ) && ( $RSL_LITE == TRUE ) ) then
+		set COMPOPTS	= ( 10 11 3 )
+	else if ( ( $NESTED != TRUE ) && ( $RSL_LITE == TRUE ) ) then
+		set COMPOPTS	= ( 1 2 3 )
 	endif
 	set Num_Procs		= 4
 	set OPENMP 		= $Num_Procs
@@ -842,12 +846,14 @@ else if ( $ARCH[1] == OSF1 && $clrm == 0 ) then
 	endif
 	set TMPDIR              = .
 	set MAIL		= /usr/bin/mailx
-	if        ( $NESTED == TRUE )                            then
+	if      ( ( $NESTED == TRUE ) && ( $RSL_LITE != TRUE ) ) then
 		set COMPOPTS	= ( 2 4 6 )
+	else if ( ( $NESTED != TRUE ) && ( $RSL_LITE != TRUE ) ) then
+		set COMPOPTS    = ( 1 3 6 )
+	else if ( ( $NESTED == TRUE ) && ( $RSL_LITE == TRUE ) ) then
+		set COMPOPTS	= ( 2 4 5 )
 	else if ( ( $NESTED != TRUE ) && ( $RSL_LITE == TRUE ) ) then
 		set COMPOPTS	= ( 1 3 5 )
-	else if ( ( $NESTED != TRUE ) && ( $RSL_LITE != TRUE ) ) then
-		set COMPOPTS	= ( 1 3 6 )
 	endif
 	set Num_Procs		= 4
 	set OPENMP 		= $Num_Procs
@@ -876,12 +882,14 @@ else if ( $ARCH[1] == OSF1 && $clrm == 1 ) then
 	set DEF_DIR		= /`hostname | cut -d. -f1`/$user
 	set TMPDIR		= /mmmtmp/$user
 	set MAIL		= /usr/bin/mailx
-	if        ( $NESTED == TRUE )                            then
+	if      ( ( $NESTED == TRUE ) && ( $RSL_LITE != TRUE ) ) then
 		set COMPOPTS	= ( 2 4 6 )
+	else if ( ( $NESTED != TRUE ) && ( $RSL_LITE != TRUE ) ) then
+		set COMPOPTS    = ( 1 3 6 )
+	else if ( ( $NESTED == TRUE ) && ( $RSL_LITE == TRUE ) ) then
+		set COMPOPTS	= ( 2 4 5 )
 	else if ( ( $NESTED != TRUE ) && ( $RSL_LITE == TRUE ) ) then
 		set COMPOPTS	= ( 1 3 5 )
-	else if ( ( $NESTED != TRUE ) && ( $RSL_LITE != TRUE ) ) then
-		set COMPOPTS	= ( 1 3 6 )
 	endif
 	set Num_Procs		= 4
 	set OPENMP 		= 0
@@ -906,12 +914,14 @@ else if ( ( $ARCH[1] == Linux ) && ( `hostname` == bay-mmm ) ) then
 	set TMPDIR		= .
 	set MAIL		= /bin/mail
 	if      ( $LINUX_COMP == PGI ) then
-		if        ( $NESTED == TRUE )                            then
+		if      ( ( $NESTED == TRUE ) && ( $RSL_LITE != TRUE ) ) then
 			set COMPOPTS	= ( 2 4 5 )
+		else if ( ( $NESTED != TRUE ) && ( $RSL_LITE != TRUE ) ) then
+			set COMPOPTS    = ( 1 3 5 )
+		else if ( ( $NESTED == TRUE ) && ( $RSL_LITE == TRUE ) ) then
+			set COMPOPTS	= ( 2 4 6 )
 		else if ( ( $NESTED != TRUE ) && ( $RSL_LITE == TRUE ) ) then
 			set COMPOPTS	= ( 1 3 6 )
-		else if ( ( $NESTED != TRUE ) && ( $RSL_LITE != TRUE ) ) then
-			set COMPOPTS	= ( 1 3 5 )
 		endif
 	else if ( $LINUX_COMP == INTEL ) then
 		if        ( $NESTED == TRUE )                            then
@@ -991,12 +1001,14 @@ else if ( ( $ARCH[1] == Linux ) && ( `hostname` == loquat ) ) then
 	endif
 	set MAIL		= /bin/mail
 	if      ( $LINUX_COMP == PGI ) then
-		if        ( $NESTED == TRUE )                            then
+		if      ( ( $NESTED == TRUE ) && ( $RSL_LITE != TRUE ) ) then
 			set COMPOPTS	= ( 2 4 5 )
+		else if ( ( $NESTED != TRUE ) && ( $RSL_LITE != TRUE ) ) then
+			set COMPOPTS    = ( 1 3 5 )
+		else if ( ( $NESTED == TRUE ) && ( $RSL_LITE == TRUE ) ) then
+			set COMPOPTS	= ( 2 4 6 )
 		else if ( ( $NESTED != TRUE ) && ( $RSL_LITE == TRUE ) ) then
 			set COMPOPTS	= ( 1 3 6 )
-		else if ( ( $NESTED != TRUE ) && ( $RSL_LITE != TRUE ) ) then
-			set COMPOPTS	= ( 1 3 5 )
 		endif
 	else if ( $LINUX_COMP == INTEL ) then
 		if        ( $NESTED == TRUE )                            then
@@ -1046,21 +1058,6 @@ else if ( `hostname` == tempest ) then
 	set MPIRUNCOMMAND       = ( mpirun -np $Num_Procs )
 	echo "Compiler version info: " >! version_info
 	f90 -version >>&! version_info
-	echo " " >>! version_info
-	echo "OS version info: " >>! version_info
-	uname -a >>&! version_info
-	echo " " >>! version_info
-else if ( ( $ARCH[1] == Linux ) && ( `hostname` == jacaranda ) ) then
-	set DEF_DIR		= /data1/$USER/`hostname`
-	set TMPDIR		= .
-	set MAIL		= /bin/mail
-	set COMPOPTS		= ( 2 4 3 )
-	set Num_Procs		= 4
-	set OPENMP		= 2
-	set MPIRUNCOMMAND	= ( mpirun -np $Num_Procs )
-	set ZAP_OPENMP		= TRUE
-	echo "Compiler version info: " >! version_info
-	ifort -v >>! version_info
 	echo " " >>! version_info
 	echo "OS version info: " >>! version_info
 	uname -a >>&! version_info
@@ -1144,51 +1141,6 @@ else if ( ( $ARCH[1] == Linux ) && ( `hostname | cut -d. -f2-` == fsl.noaa.gov )
 	uname -a >>&! version_info
 	echo " " >>! version_info
 	setenv NETCDF /usr/local/netcdf-3.4
-else if ( ( $ARCH[1] == Linux ) && ( `hostname` == kola ) ) then
-	set DEF_DIR		= /kola2/$user
-	set TMPDIR              = .
-	set MAIL		= /bin/mail
-	if      ( $LINUX_COMP == PGI ) then
-		if        ( $NESTED == TRUE )                            then
-			set COMPOPTS	= ( 2 4 5 )
-		else if ( ( $NESTED != TRUE ) && ( $RSL_LITE == TRUE ) ) then
-			set COMPOPTS	= ( 1 3 6 )
-		else if ( ( $NESTED != TRUE ) && ( $RSL_LITE != TRUE ) ) then
-			set COMPOPTS	= ( 1 3 5 )
-		endif
-	else if ( $LINUX_COMP == INTEL ) then
-		if        ( $NESTED == TRUE )                            then
-			set COMPOPTS	= ( 8 10 11 )
-		else if   ( $NESTED != TRUE )                            then
-			set COMPOPTS	= ( 7  9 11 )
-		endif
-	endif
-	set Num_Procs		= 2
-	set OPENMP		= $Num_Procs
-	cat >! machfile << EOF
-`hostname`
-`hostname`
-EOF
-	set Mach		= `pwd`/machfile
-	if ( $CHEM == TRUE ) then
-		set ZAP_OPENMP		= TRUE
-	else if ( $CHEM == FALSE ) then
-		set ZAP_OPENMP		= FALSE
-	endif
-	if ( $LINUX_COMP == INTEL ) then
-		set ZAP_OPENMP		= TRUE
-	endif
-	set MPIRUNCOMMAND       = ( mpirun -np $Num_Procs -machinefile $Mach )
-	echo "Compiler version info: " >! version_info
-	if      ( $LINUX_COMP == PGI ) then
-		pgf90 -V >>&! version_info
-	else if ( $LINUX_COMP == INTEL ) then
-		ifort -v >>&! version_info
-	endif
-	echo " " >>! version_info
-	echo "OS version info: " >>! version_info
-	uname -a >>&! version_info
-	echo " " >>! version_info
 else
 	echo "Unrecognized architecture for regression test"  >! error_message
 	echo `uname`                                          >> error_message
@@ -1330,6 +1282,9 @@ if ( $CHEM == TRUE ) then
 endif
 if ( $RSL_LITE == TRUE ) then
 	echo "Parallel DM portion using RSL_LITE build option" >>! ${DEF_DIR}/wrftest.output
+	echo " " >>! ${DEF_DIR}/wrftest.output
+else if ( $RSL_LITE != TRUE ) then
+	echo "Parallel DM portion using RSL build option" >>! ${DEF_DIR}/wrftest.output
 	echo " " >>! ${DEF_DIR}/wrftest.output
 endif
 if ( $ESMF_LIB == TRUE ) then
@@ -1498,9 +1453,9 @@ banner 7
 				endif
 			else if ( `uname` == OSF1 ) then
 		 		if ( ( $compopt == $COMPOPTS[1] ) || ( $compopt == $COMPOPTS[3] ) ) then
-					sed -e '/^OMP/d' -e '/^FCOPTIM/d' -e '/^FCDEBUG/s/#//g' -e '/^FCDEBUG/s/-g/-O0/' ./configure.wrf >! foo ; /bin/mv foo configure.wrf
+					sed -e '/^OMP/d' -e '/^FCOPTIM/d' -e '/^FCDEBUG/s/#//g' ./configure.wrf >! foo ; /bin/mv foo configure.wrf
 				else
-					sed              -e '/^FCOPTIM/d' -e '/^FCDEBUG/s/#//g' -e '/^FCDEBUG/s/-g/-O0/' ./configure.wrf >! foo ; /bin/mv foo configure.wrf
+					sed              -e '/^FCOPTIM/d' -e '/^FCDEBUG/s/#//g' ./configure.wrf >! foo ; /bin/mv foo configure.wrf
 				endif
 			else
 		 		if ( ( $compopt == $COMPOPTS[1] ) || ( $compopt == $COMPOPTS[3] ) ) then

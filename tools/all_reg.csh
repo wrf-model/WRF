@@ -42,26 +42,62 @@ unalias mv
 
 #       What these tests do, must be a single string.
 
-set NAME     = ( "Standard"             "NESTED=FALSE"        "NESTED=FALSE"        "NONE"  \
-                 "Moving_Nest"          "NESTED=FALSE"        "NESTED=TRUE"         "NONE"  \
-                 "Full_Optimization"    "REG_TYPE=BIT4BIT"    "REG_TYPE=OPTIMIZED"  "NONE"  \
-                 "Chemistry"            "CHEM=FALSE"          "CHEM=TRUE"           "NONE"  \
-                 "RSL_LITE"             "RSL_LITE=FALSE"      "RSL_LITE=TRUE"       "NONE"  \
-                 "ESMF_Library"         "ESMF_LIB=FALSE"      "ESMF_LIB=TRUE"       "ONLY_AIX"  \
-                 "Quilting"             "QUILT=FALSE"         "QUILT=TRUE"          "NONE"  \
-                 "Binary_IO"            "IO_FORM=2"           "IO_FORM=1"           "NONE"  \
-                 "GriB1_Output"         "IO_FORM=2"           "IO_FORM=5"           "NONE"  \
-                 "REAL8_Floats"         "REAL8=FALSE"         "REAL8=TRUE"          "NONE"  \
+set NAME     = ( "Standard"             "NESTED=FALSE"        "NESTED=FALSE"        "NONE"  	1	\
+                 "Moving_Nest"          "NESTED=FALSE"        "NESTED=TRUE"         "NONE"  	2	\
+                 "Full_Optimization"    "REG_TYPE=BIT4BIT"    "REG_TYPE=OPTIMIZED"  "NONE"  	3	\
+                 "Chemistry"            "CHEM=FALSE"          "CHEM=TRUE"           "NONE"  	4	\
+                 "RSL_LITE"             "RSL_LITE=FALSE"      "RSL_LITE=TRUE"       "NONE"  	5	\
+                 "ESMF_Library"         "ESMF_LIB=FALSE"      "ESMF_LIB=TRUE"       "ONLY_AIX"  6	\
+                 "Quilting"             "QUILT=FALSE"         "QUILT=TRUE"          "NONE"  	7	\
+                 "Binary_IO"            "IO_FORM=2"           "IO_FORM=1"           "NONE"  	8	\
+                 "GriB1_Output"         "IO_FORM=2"           "IO_FORM=5"           "NONE"  	9	\
+                 "REAL8_Floats"         "REAL8=FALSE"         "REAL8=TRUE"          "NONE"  	10	\
                )
-
-#	Allocate space for strings to be added.  Must have at least as many
-#	values as there are tests in $NAME.
-
-set tests	= ( 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 )
 
 #	Where are we located.
 
 set starting_dir = `pwd`
+
+#	Get the tag manually.  This is for the auto-report that gets
+#	sent to the WRF web page on the history of the regression tests.
+
+set current_year4  = `date -u +"%Y"`
+set current_month  = `date -u +"%m"`
+set current_day    = `date -u +"%d"`
+set current_hour   = `date -u +"%H"`
+set current_minute = `date -u +"%M"`
+set current_second = `date -u +"%S"`
+set datehms        = ${current_year4}-${current_month}-${current_day}_${current_hour}:${current_minute}:${current_second}_UTC
+set dateh          = ${current_year4}${current_month}${current_day}${current_hour}
+set date           = ${current_year4}${current_month}${current_day}
+if ( ! $?TAG ) then
+	if      ( $user == michalak ) then
+		set initials = jm
+	else if ( $user == hender   ) then
+		set initials = th
+	else if ( $user == gill     ) then
+		set initials = dg
+	else if ( $user == dudhia   ) then
+		set initials = jd
+	else if ( $user == weiwang  ) then
+		set initials = ww
+	else
+		set initials = XX
+	endif
+	echo the TAG is NOT defined
+	echo Please define an environment variable that is the WRFV2 tag
+	echo Something such as: setenv TAG trunk_${date}_${initials}
+	echo " " 
+	exit ( 1 )
+endif
+
+#	Are we only interested in the PASS/FAIL report?
+
+if ( $#argv == 1 ) then
+	if ( $argv[1] == PASSFAIL ) then
+		goto PASSFAIL
+	endif
+endif
 
 #	If there are any command line args, they are processed, else
 #	we run all of the regression tests without a generate or
@@ -75,6 +111,7 @@ if ( $#argv == 0 ) then
         set NEW_TEXT
         set TOAST
         set tests
+	set TEST_NUM
 	set count_test = 1
         while ( $count_test < $#NAME )
 		set tests =  ( $tests "$NAME[$count_test]" )
@@ -84,6 +121,8 @@ if ( $#argv == 0 ) then
                 set NEW_TEXT = ( $NEW_TEXT "$NAME[$count_test]" ) 
 		@ count_test ++
                 set TOAST    = ( $TOAST "$NAME[$count_test]" ) 
+		@ count_test ++
+                set TEST_NUM = ( $TEST_NUM "$NAME[$count_test]" ) 
 		@ count_test ++
 	end
 
@@ -113,45 +152,77 @@ else
 	set BASELINE = RUN_ONLY
 FINISHED_BASELINE_TYPE:
 
+	#	If there was only one input, and it was telling us to do which type of baseline
+	#	option (GENERATE, COMPARE, RUN_ONLY), we assume they want all of the tests
+	#	conducted.
+
+	if ( $#INIT_OPTS == 1 ) then
+		if ( ( $INIT_OPTS == GENERATE ) || ( $INIT_OPTS == COMPARE  ) || ( $INIT_OPTS == RUN_ONLY ) ) then
+		        set OLD_TEXT
+		        set NEW_TEXT
+		        set TOAST
+		        set tests
+			set TEST_NUM
+			set count_test = 1
+		        while ( $count_test < $#NAME )
+				set tests =  ( $tests "$NAME[$count_test]" )
+				@ count_test ++
+		                set OLD_TEXT = ( $OLD_TEXT "$NAME[$count_test]" ) 
+				@ count_test ++
+		                set NEW_TEXT = ( $NEW_TEXT "$NAME[$count_test]" ) 
+				@ count_test ++
+		                set TOAST    = ( $TOAST "$NAME[$count_test]" ) 
+				@ count_test ++
+				set TEST_NUM = ( $TEST_NUM "$NAME[$count_test]" ) 
+				@ count_test ++
+			end
+			goto FINISHED_TEST_LIST
+		endif
+	endif
+
 	#	Find which tests are to be conducted.  Loop over all of the
 	#	input, and compare each of the input fields with the list
 	#	of available test names.  When a match occurs, increment the
 	#	test found counter, and save the test name.
 
 	set count = 0 
-	set count_test = 0
+        set OLD_TEXT
+        set NEW_TEXT
+        set TOAST
+        set tests
+	set TEST_NUM
 	while ( $count < $#INIT_OPTS ) 
 		@ count ++
-                set OLD_TEXT
-                set NEW_TEXT
-                set TOAST
-                set tests
 	        set count_test = 1
                 while ( $count_test < $#NAME )
 			if ( $INIT_OPTS[$count] == $NAME[$count_test] ) then
-                             set tests =  ( $tests "$NAME[$count_test]" )
-                             @ count_test ++
-                             set OLD_TEXT = ( $OLD_TEXT "$NAME[$count_test]" )
-                             @ count_test ++
-                             set NEW_TEXT = ( $NEW_TEXT "$NAME[$count_test]" )
-                             @ count_test ++
-                             set TOAST    = ( $TOAST "$NAME[$count_test]" )
-                             @ count_test ++
+				set tests =  ( $tests "$NAME[$count_test]" )
+				@ count_test ++
+				set OLD_TEXT = ( $OLD_TEXT "$NAME[$count_test]" )
+				@ count_test ++
+				set NEW_TEXT = ( $NEW_TEXT "$NAME[$count_test]" )
+				@ count_test ++
+				set TOAST    = ( $TOAST "$NAME[$count_test]" )
+				@ count_test ++
+				set TEST_NUM = ( $TEST_NUM "$NAME[$count_test]" ) 
+				@ count_test ++
                         else
-                             @ count_test += 4
+				@ count_test += 5
 			endif
 		end
 	end
-	
-	#	If there a no tests requested, then they (by default) get them all
 
-	if ( $count_test == 1 ) then
-                echo no valid test requested in argument list
-                exit
+	#	If there are no recognizable tests requested, let them know our concern.
+	
+	if ( $#tests == 0 ) then
+                echo No valid test requested in argument list
+                exit ( 4 ) 
 	endif
 endif
+FINISHED_TEST_LIST:
 
-#	A friendly check for the baseline directory existence
+#	A friendly check for the baseline directory existence, and locations for known
+#	NCAR machines.
 
 if ( ( $BASELINE == GENERATE ) || ( $BASELINE == COMPARE ) ) then
 	if ( `uname` == AIX ) then
@@ -165,9 +236,14 @@ if ( ( $BASELINE == GENERATE ) || ( $BASELINE == COMPARE ) ) then
 		exit ( 10 )
 	endif
 
-	if ( ( (   -d $SAVE_DIR ) && ( $BASELINE == GENERATE ) ) || \
-	     ( ( ! -d $SAVE_DIR ) && ( $BASELINE == COMPARE  ) ) ) then
-		echo WARNING Might be troubles with $SAVE_DIR logic
+	if      ( (   -d $SAVE_DIR ) && ( $BASELINE == GENERATE ) ) then
+		echo "Troubles with SAVE_DIR logic."
+		echo "$SAVE_DIR should not exist for a $BASELINE run."
+#	exit ( 2 )
+	else if ( ( ! -d $SAVE_DIR ) && ( $BASELINE == COMPARE  ) ) then
+		echo "Troubles with SAVE_DIR logic."
+		echo "$SAVE_DIR should exist for a $BASELINE run."
+		exit ( 3 )
 	endif
 endif
 
@@ -204,7 +280,7 @@ while ( $count_test < $#tests )
 	    if ( "$tests[$count_test]" == "$NAME[$count]" ) then
 		    goto FOUND_SELECTED_TEST
 	    endif
-	    @ count += 4
+	    @ count += 5
 	end
 	echo "Hmmm, no valid test found"
 	exit ( 11 )
@@ -267,7 +343,7 @@ FOUND_SELECTED_TEST:
 			if ( -e ed.in ) rm ed.in
 			cat >! ed_in << EOF
 ,s/$OLDT/$NEWT/
-w reg.foo.$count_test.$tests[$count_test]
+w reg.foo.$TEST_NUM[$count_test].$tests[$count_test]
 q
 EOF
 		else if ( $BASELINE == GENERATE ) then
@@ -275,7 +351,7 @@ EOF
 			cat >! ed_in << EOF
 ,s/$OLDT/$NEWT/
 ,s?GENERATE_BASELINE = FALSE?GENERATE_BASELINE = $SAVE_DIR?
-w reg.foo.$count_test.$tests[$count_test]
+w reg.foo.$TEST_NUM[$count_test].$tests[$count_test]
 q
 EOF
 		else if ( $BASELINE == COMPARE  ) then
@@ -283,18 +359,18 @@ EOF
 			cat >! ed_in << EOF
 ,s/$OLDT/$NEWT/
 ,s?COMPARE_BASELINE = FALSE?COMPARE_BASELINE = $SAVE_DIR?
-w reg.foo.$count_test.$tests[$count_test]
+w reg.foo.$TEST_NUM[$count_test].$tests[$count_test]
 q
 EOF
 		endif
 		ed regtest.csh < ed_in >& /dev/null
-		chmod +x reg.foo.$count_test.$tests[$count_test]
+		chmod +x reg.foo.$TEST_NUM[$count_test].$tests[$count_test]
 
 		#	On AIX, we submit jobs to the load leveler queue.  After submission,
 		#	we wait around until it completes, and then we send in the next one.
 
 		if ( `uname` == AIX ) then
-			llsubmit reg.foo.$count_test.$tests[$count_test] >&! llsub.out
+			llsubmit reg.foo.$TEST_NUM[$count_test].$tests[$count_test] >&! llsub.out
 			set ok = 0
 			set in_already = 0
 			while ( $ok == 0 )
@@ -306,25 +382,77 @@ EOF
 					set joe_id = `cat llsub.out | grep '"bs1' | cut -d\" -f2 | cut -d. -f2`
 				endif
 			end
-			cp /ptmp/$USER/wrf_regression.$joe_id/wrftest.output wrftest.output.$count_test.$tests[$count_test]
+			cp /ptmp/$USER/wrf_regression.$joe_id/wrftest.output wrftest.output.$TEST_NUM[$count_test].$tests[$count_test]
 			rm llsub.out llq.report
 
 		#	On the "other" non-queued machines, we just execute the script and wait until
 		#	we get the process returning control, then we move on.
 
 		else
-			reg.foo.$count_test.$tests[$count_test] -f wrf.tar # >&! output.$count_test.$tests[$count_test]
-			mv wrftest.output wrftest.output.$count_test.$tests[$count_test]
+			reg.foo.$TEST_NUM[$count_test].$tests[$count_test] -f wrf.tar # >&! output.$TEST_NUM[$count_test].$tests[$count_test]
+			mv wrftest.output wrftest.output.$TEST_NUM[$count_test].$tests[$count_test]
 #			if ( $NUM_TESTS != $#NAME ) then
 #				if ( -d regression_test ) rm -rf regression_test
 #			else
 				if ( -d regression_test ) then
-					mv regression_test regression_test.$count_test.$tests[$count_test]
+					mv regression_test regression_test.$TEST_NUM[$count_test].$tests[$count_test]
 				endif
 #			endif
 		endif
 	endif
 end
+
+PASSFAIL:
+
+#	Build the html page.  We only need the middle portion.  It's
+#	a table with 5 columns: Date of test, WRFV2 tag, Developer
+#	who conducted the test, machine the test was run on, and the
+#	pass/fail status of the all_reg.csh script when comapred
+#	to the benchmark results (usually a released code).
+
+cat >! history_middle_OK.html << EOF
+<tr>
+<td> XDATEX </td>
+<td> XTAGX </td>
+<td> XTESTERX </td>
+<td> XARCHITECTUREX </td>
+<td BGCOLOR="#00FF00"><a href="ARCHITECTURE/wrftest.all_${datehms}">PASS</a></td>
+<td>
+<a href="other_docs/${date}_notes">Descriptions</a>
+<a href="other_docs/${date}_minutes">Minutes</a>
+</td>
+</tr>
+EOF
+
+cat >! history_middle_OOPS.html << EOF
+<tr>
+<td> XDATEX </td>
+<td> XTAGX </td>
+<td> XTESTERX </td>
+<td> XARCHITECTUREX </td>
+<td BGCOLOR="#FF0000"><a href="ARCHITECTURE/wrftest.all_${datehms}">FAIL</a>
+                      <a href="ARCHITECTURE/message_${datehms}">DIFFS</a></td>
+<td>
+<a href="other_docs/${date}_notes">Descriptions</a>
+<a href="other_docs/${date}_minutes">Minutes</a>
+</td>
+</tr>
+EOF
+
+set name = `uname`
+cat >! ed2.in << EOF
+,s/ARCHITECTURE/${name}/g
+w history_middle.html
+q
+EOF
+
+#	Get all of the wrftest.output.* files in one BIG file.
+
+if ( -e wrftest.all_$datehms ) rm wrftest.all_$datehms
+cat wrftest.output.?.* wrftest.output.??.* >>! wrftest.all_$datehms
+if ( -d `uname` ) rm -rf `uname`
+mkdir `uname`
+mv wrftest.all_$datehms `uname`
 
 #	Compare regression PASS/FAILs with previous runs.
 
@@ -348,23 +476,57 @@ echo "     " >> message
 echo "Difference of FAILs" >> message
 echo "==================" >> message
 echo "     " >> message
-diff PREV.FAILS CURR.FAILS >! diffs
+cat CURR.FAILS | grep -vi baseline >! CURR2.FAILS
+diff PREV.FAILS CURR2.FAILS >! diffs
 set ok = $status
 cat diffs >> message
 echo "     " >> message
+cp message message_$datehms
+mv message_$datehms `uname`
+
+#	Send out status info on the regression test.
 
 set OS = `uname`
-if ( ( $#argv == 0 ) && ( $ok != 0 ) ) then
-	Mail -s "REG DIFFS $OS" ${user}@ucar.edu < message
-	echo "   "
-	echo "Different FAILS from before for $OS - repository may have been broken"
-	echo "   "
-else if ( ( $#argv == 0 ) && ( $ok == 0 ) ) then
-	echo "   "
-	echo "Same FAILS as before for $OS - repository OK"
-	echo "   "
+set NUMARGS = $#argv
+if ( $#argv != 0 ) then
+	set ARG1 = $argv[1]
+else
+	set ARG1 = BLANK
+endif
+
+if ( ( $NUMARGS == 0 ) || ( $ARG1 == PASSFAIL ) || \
+     ( ( $ARG1 == COMPARE  ) && ( $NUMARGS == 1 ) ) || \
+     ( ( $ARG1 == GENERATE ) && ( $NUMARGS == 1 ) ) ) then
+	if ( $ok != 0 ) then
+		Mail -s "REG DIFFS $OS" ${user}@ucar.edu < message
+		echo "   "
+		echo "Different FAILS from before for $OS - repository may have been broken"
+		echo "   "
+		m4 -DXDATEX=${dateh} -DXTAGX=${TAG} -DXTESTERX=${user} -DXARCHITECTUREX=`uname` \
+			history_middle_OOPS.html >! history_middle_1.html
+	else if ( $ok == 0 ) then
+		Mail -s "REG OK $OS" ${user}@ucar.edu < message
+		echo "   "
+		echo "Same FAILS as before for $OS - repository OK"
+		echo "   "
+		m4 -DXDATEX=${dateh} -DXTAGX=${TAG} -DXTESTERX=${user} -DXARCHITECTUREX=`uname` \
+			history_middle_OK.html >! history_middle_1.html
+	endif
+	
+	#	Store on the NCAR MSS system to circumvent security.
+	
+	ed history_middle_1.html < ed2.in >& /dev/null
+	tar -cf `uname`_hist.tar history_middle.html `uname`
+	echo Storing info on NCAR MSS
+	msrcp `uname`_hist.tar mss:/GILL/ALLREG/`uname`_hist.tar
+	if ( -e `uname`_NEW ) rm `uname`_NEW
+	echo "`uname` `date`" >! `uname`_NEW
+	msrcp `uname`_NEW mss:/GILL/ALLREG/`uname`_NEW
 endif
 
 rm ed_in >& /dev/null
 rm io_format >& /dev/null
-rm PREV.FAILS CURR.FAILS message diffs >& /dev/null
+rm PREV.FAILS CURR.FAILS CURR2.FAILS message diffs >& /dev/null
+rm history_middle_OOPS.html history_middle_OK.html history_middle_1.html history_middle.html >& /dev/null
+rm `uname`_hist.tar `uname`_NEW ed2.in >& /dev/null
+rm -rf `uname` >& /dev/null

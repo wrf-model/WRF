@@ -56,10 +56,7 @@
 !     ! F90 class type to match C++ Time class in size only;
 !     !  all dereferencing within class is performed by C++ implementation
 
-!     ! Equivalent sequence and kind to C++:
-
      type ESMF_Time
-       sequence
        type(ESMF_BaseTime) :: basetime           ! inherit base class
        ! time instant is expressed as year + basetime
        integer :: YR

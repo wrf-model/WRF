@@ -49,10 +49,7 @@
 !     ! Base class type to match C++ BaseTime class in size only;
 !     !  all dereferencing within class is performed by C++ implementation
 
-!     ! Equivalent sequence and kind to C++:
-
       type ESMF_BaseTime
-      sequence                        ! for C++ interoperability
         integer(ESMF_KIND_I8) :: S   ! whole seconds
         integer(ESMF_KIND_I8) :: Sn  ! fractional seconds, numerator
         integer(ESMF_KIND_I8) :: Sd  ! fractional seconds, denominator

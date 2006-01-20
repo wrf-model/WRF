@@ -55,11 +55,8 @@
 !     ! F90 class type to match C++ Alarm class in size only;
 !     !  all dereferencing within class is performed by C++ implementation
 
-!     ! Equivalent sequence and kind to C++:
-
 ! internals for ESMF_Alarm
       type ESMF_AlarmInt
-      sequence
         type(ESMF_TimeInterval) :: RingInterval
         type(ESMF_Time)  :: RingTime
         type(ESMF_Time)  :: PrevRingTime
@@ -79,7 +76,6 @@
 ! NOTE:  DO NOT ADD NON-POINTER STATE TO THIS DATA TYPE.  It emulates ESMF 
 !        shallow-copy-masquerading-as-reference-copy insanity.  
       type ESMF_Alarm
-        sequence
         type(ESMF_AlarmInt), pointer :: alarmint
       end type
 

@@ -54,11 +54,8 @@
 !     ! F90 class type to match C++ Clock class in size only;
 !     !  all dereferencing within class is performed by C++ implementation
 
-!     ! Equivalent sequence and kind to C++:
-
 ! internals for ESMF_Clock
       type ESMF_ClockInt
-        sequence
         type(ESMF_TimeInterval) :: TimeStep
         type(ESMF_Time)  :: StartTime
         type(ESMF_Time)  :: StopTime
@@ -83,7 +80,6 @@
 ! NOTE:  DO NOT ADD NON-POINTER STATE TO THIS DATA TYPE.  It emulates ESMF 
 !        shallow-copy-masquerading-as-reference-copy.  
       type ESMF_Clock
-        sequence
         type(ESMF_ClockInt), pointer  :: clockint
       end type
 

@@ -70,7 +70,6 @@
 !     ! F90 "enum" type to match C++ ESMC_CalendarType enum
 
       type ESMF_CalendarType
-      sequence
       private
         integer :: caltype
       end type
@@ -93,13 +92,11 @@
 !     ! F90 class type to match C++ Calendar class in size only;
 !     !  all dereferencing within class is performed by C++ implementation
 !
-!     ! Equivalent sequence and kind to C++:
 !------------------------------------------------------------------------------
 !
 !     ! ESMF_DaysPerYear
 !
       type ESMF_DaysPerYear
-      sequence
       private
         integer :: D = 0    ! whole days per year
         integer :: Dn = 0   ! fractional days per year numerator
@@ -109,10 +106,8 @@
 !------------------------------------------------------------------------------
 !     ! ESMF_Calendar
 !
-!     ! F90 class to match C++ Calendar class in size and sequence
 !
       type ESMF_Calendar
-      sequence
       private
         type(ESMF_CalendarType) :: Type
         logical :: Set = .false.

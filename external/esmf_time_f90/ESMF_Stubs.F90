@@ -10,27 +10,22 @@ MODULE ESMF_Stubs
 
 ! Bogus typedefs
    TYPE ESMF_Grid
-      SEQUENCE
       INTEGER :: dummy
    END TYPE
 
    TYPE ESMF_GridComp
-      SEQUENCE
       INTEGER :: dummy
    END TYPE
 
    TYPE ESMF_State
-      SEQUENCE
       INTEGER :: dummy
    END TYPE
 
    TYPE ESMF_VM
-      SEQUENCE
       INTEGER :: dummy
    END TYPE
 
    TYPE ESMF_MsgType
-      SEQUENCE
       INTEGER :: mtype
    END TYPE
    TYPE(ESMF_MsgType), PARAMETER  ::      &
@@ -39,7 +34,6 @@ MODULE ESMF_Stubs
       ESMF_LOG_ERROR =   ESMF_MsgType(3)
 
    TYPE ESMF_LOG
-      SEQUENCE
       INTEGER :: dummy
    END TYPE
 

@@ -47,11 +47,7 @@
 !------------------------------------------------------------------------------
 !     ! ESMF_Fraction
 !
-!     ! F90 class type to match C++ Fraction class in size only;
-!     !  all dereferencing within class is performed by C++ implementation
-
       type ESMF_Fraction
-      sequence
       private
         integer :: n    ! Integer fraction (exact) n/d; numerator
         integer :: d    ! Integer fraction (exact) n/d; denominator

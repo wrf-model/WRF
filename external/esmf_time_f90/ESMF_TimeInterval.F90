@@ -57,10 +57,7 @@
 !     ! F90 class type to match C++ TimeInterval class in size only;
 !     !  all dereferencing within class is performed by C++ implementation
 
-!     ! Equivalent sequence and kind to C++:
-
       type ESMF_TimeInterval
-      sequence                           ! match C++ storage order
         ! time interval is expressed as basetime
         type(ESMF_BaseTime) :: basetime  ! inherit base class
         ! Relative year and month fields support monthly or yearly time 

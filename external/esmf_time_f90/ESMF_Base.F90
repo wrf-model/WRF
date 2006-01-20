@@ -57,7 +57,6 @@
 !------------------------------------------------------------------------------
 !
       type ESMF_Status
-      sequence
       private
           integer :: status
       end type
@@ -72,7 +71,6 @@
 !------------------------------------------------------------------------------
 !
       type ESMF_Pointer
-      sequence
       private
           integer*8 :: ptr
       end type
@@ -88,7 +86,6 @@
       !!   targets in a select case() statement and make the contents private.
       !!   (see pg 248 of the "big book")
       type ESMF_DataType
-      sequence
       !!private
           integer :: dtype
       end type
@@ -113,7 +110,6 @@
 !------------------------------------------------------------------------------
 
       type ESMF_DataValue
-      sequence
       private
           type(ESMF_DataType) :: dt
           integer :: rank
@@ -132,7 +128,6 @@
 !------------------------------------------------------------------------------
 !
       type ESMF_Attribute
-      sequence
       private
           character (len=ESMF_MAXSTR) :: attr_name
           type (ESMF_DataType) :: attr_type
@@ -144,7 +139,6 @@
       !! TODO: this should be a shallow object, with a simple init() and
       !!  get() function, and the contents should go back to being private.
       type ESMF_AxisIndex
-      sequence
 !     !!private
           integer :: l
           integer :: r
@@ -155,7 +149,6 @@
 
       !! TODO: same comment as above.
       type ESMF_MemIndex
-      sequence
 !     !!private
           integer :: l
           integer :: r
@@ -166,7 +159,6 @@
 !------------------------------------------------------------------------------
 !
       type ESMF_BasePointer
-      sequence
       private
           integer*8 :: base_ptr
       end type
@@ -177,7 +169,6 @@
 !
 !     ! WARNING: must match corresponding values in ../include/ESMC_Base.h
       type ESMF_Logical
-      sequence
       private
           integer :: value
       end type
@@ -189,7 +180,6 @@
 !------------------------------------------------------------------------------
 !
       type ESMF_Base
-      sequence
       private
          integer :: ID
          integer :: ref_count

@@ -2324,8 +2324,11 @@ PROMOTION	=	-real_size $(RSIZEBITS) -integer_size `expr 4 \* 8`
 CFLAGS          =       $(ARCHFLAGS)
 FCOPTIM         =       -fast -O4
 FCDEBUG         =       # -g
+FCDEBUG_ESMF    =       # -O0
 FCBASEOPTS      =       -w -convert big_endian -automatic -cpp -free -I. -arch host $(FCDEBUG)
+FCBASEOPTS_ESMF =       -w -convert big_endian -automatic -cpp -free -I. -arch host $(FCDEBUG_ESMF)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
+FCFLAGS_ESMF    =       $(FCOPTIM) $(FCBASEOPTS_ESMF) $(OMP)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../chem -I../inc
 PERL            =       CONFIGURE_PERL_PATH
@@ -2363,7 +2366,7 @@ wrfio_grib1 :
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCFLAGS_ESMF)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 nest_init_utils.o : nest_init_utils.F
 module_optional_si_input.o : module_optional_si_input.F
@@ -2439,8 +2442,11 @@ PROMOTION	=	-real_size $(RSIZEBITS) -integer_size `expr 4 \* 8`
 CFLAGS          =       $(ARCHFLAGS) -I../external/RSL/RSL
 FCOPTIM         =       -fast -O4
 FCDEBUG         =       # -g
+FCDEBUG_ESMF    =       # -O0
 FCBASEOPTS      =       -w -convert big_endian -automatic -cpp -free -I. -arch host $(FCDEBUG)
+FCBASEOPTS_ESMF =       -w -convert big_endian -automatic -cpp -free -I. -arch host $(FCDEBUG_ESMF)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
+FCFLAGS_ESMF    =       $(FCOPTIM) $(FCBASEOPTS_ESMF) $(OMP)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../chem -I../inc
 PERL            =       CONFIGURE_PERL_PATH
@@ -2485,7 +2491,7 @@ wrfio_grib1 :
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCFLAGS_ESMF)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; \
@@ -2559,9 +2565,12 @@ PROMOTION	=	-real_size $(RSIZEBITS) -integer_size `expr 4 \* 8`
 CFLAGS          =       $(ARCHFLAGS)
 FCOPTIM         =       -fast -O4
 FCDEBUG         =       # -g
+FCDEBUG_ESMF    =       # -O0
 FCREAL8OMP	=	-align records -align dcommons -granularity quadword
 FCBASEOPTS      =       -w -convert big_endian -automatic -cpp -free -I. -arch host $(FCDEBUG) $(FCREAL8OMP)
+FCBASEOPTS_ESMF =       -w -convert big_endian -automatic -cpp -free -I. -arch host $(FCDEBUG_ESMF) $(FCREAL8OMP)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
+FCFLAGS_ESMF    =       $(FCOPTIM) $(FCBASEOPTS_ESMF) $(OMP)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../chem -I../inc
 PERL            =       CONFIGURE_PERL_PATH
@@ -2599,7 +2608,7 @@ wrfio_grib1 :
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCFLAGS_ESMF)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 nest_init_utils.o : nest_init_utils.F
 module_optional_si_input.o : module_optional_si_input.F
@@ -2675,9 +2684,12 @@ PROMOTION	=	-real_size $(RSIZEBITS) -integer_size `expr 4 \* 8`
 CFLAGS          =       $(ARCHFLAGS) -I../external/RSL/RSL
 FCOPTIM         =       -fast -O4
 FCDEBUG         =       # -g
+FCDEBUG_ESMF    =       # -O0
 FCREAL8OMP	=	-align records -align dcommons -granularity quadword
 FCBASEOPTS      =       -w -convert big_endian -automatic -cpp -free -I. -arch host $(FCDEBUG) $(FCREAL8OMP)
+FCBASEOPTS_ESMF =       -w -convert big_endian -automatic -cpp -free -I. -arch host $(FCDEBUG_ESMF) $(FCREAL8OMP)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
+FCFLAGS_ESMF    =       $(FCOPTIM) $(FCBASEOPTS_ESMF) $(OMP)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../chem -I../inc
 PERL            =       CONFIGURE_PERL_PATH
@@ -2722,7 +2734,7 @@ wrfio_grib1 :
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCFLAGS_ESMF)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; \
@@ -2802,8 +2814,11 @@ PROMOTION	=	-real_size $(RSIZEBITS) -integer_size `expr 4 \* 8`
 CFLAGS          =       $(ARCHFLAGS) -I../external/RSL_LITE
 FCOPTIM         =       -fast -O4
 FCDEBUG         =       #-g
+FCDEBUG_ESMF    =       # -O0
 FCBASEOPTS      =       -w -convert big_endian -automatic -cpp -free -I. -arch host $(FCDEBUG)
+FCBASEOPTS_ESMF =       -w -convert big_endian -automatic -cpp -free -I. -arch host $(FCDEBUG_ESMF)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
+FCFLAGS_ESMF    =       $(FCOPTIM) $(FCBASEOPTS_ESMF) $(OMP)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../chem -I../inc
 PERL            =       CONFIGURE_PERL_PATH
@@ -2848,7 +2863,7 @@ wrfio_grib1 :
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCFLAGS_ESMF)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL_LITE/librsl_lite.a :
 	( cd ../external/RSL_LITE ; \
@@ -2929,8 +2944,11 @@ PROMOTION	=	-real_size $(RSIZEBITS) -integer_size `expr 4 \* 8`
 CFLAGS          =       $(ARCHFLAGS) -I../external/RSL/RSL
 FCOPTIM         =       -fast -O4
 FCDEBUG         =       # -g
+FCDEBUG_ESMF    =       # -O0
 FCBASEOPTS      =       -w -convert big_endian -automatic -cpp -free -I. -arch host $(FCDEBUG)
+FCBASEOPTS_ESMF =       -w -convert big_endian -automatic -cpp -free -I. -arch host $(FCDEBUG_ESMF)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
+FCFLAGS_ESMF    =       $(FCOPTIM) $(FCBASEOPTS_ESMF) $(OMP)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../chem -I../inc
 PERL            =       CONFIGURE_PERL_PATH
@@ -2975,7 +2993,7 @@ wrfio_grib1 :
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCFLAGS_ESMF)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; \
@@ -3055,9 +3073,12 @@ PROMOTION	=	-real_size $(RSIZEBITS) -integer_size `expr 4 \* 8`
 CFLAGS          =       $(ARCHFLAGS) -I../external/RSL/RSL
 FCOPTIM         =       -fast -O4
 FCDEBUG         =       # -g
+FCDEBUG_ESMF    =       # -O0
 FCREAL8OMP	=	-align records -align dcommons -granularity quadword
 FCBASEOPTS      =       -w -convert big_endian -automatic -cpp -free -I. -arch host $(FCDEBUG) $(FCREAL8OMP)
+FCBASEOPTS_ESMF =       -w -convert big_endian -automatic -cpp -free -I. -arch host $(FCDEBUG_ESMF) $(FCREAL8OMP)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
+FCFLAGS_ESMF    =       $(FCOPTIM) $(FCBASEOPTS_ESMF) $(OMP)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../chem -I../inc
 PERL            =       CONFIGURE_PERL_PATH
@@ -3102,7 +3123,7 @@ wrfio_grib1 :
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCFLAGS_ESMF)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; \
@@ -3182,9 +3203,12 @@ PROMOTION	=	-real_size $(RSIZEBITS) -integer_size `expr 4 \* 8`
 CFLAGS          =       $(ARCHFLAGS) -I../external/RSL/RSL
 FCOPTIM         =       -fast -O4
 FCDEBUG         =       # -g
+FCDEBUG_ESMF    =       # -O0
 FCREAL8OMP	=	-align records -align dcommons -granularity quadword
 FCBASEOPTS      =       -w -convert big_endian -automatic -cpp -free -I. -arch host $(FCDEBUG) $(FCREAL8OMP)
+FCBASEOPTS_ESMF =       -w -convert big_endian -automatic -cpp -free -I. -arch host $(FCDEBUG_ESMF) $(FCREAL8OMP)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
+FCFLAGS_ESMF    =       $(FCOPTIM) $(FCBASEOPTS_ESMF) $(OMP)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../chem -I../inc
 PERL            =       CONFIGURE_PERL_PATH
@@ -3229,7 +3253,7 @@ wrfio_grib1 :
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCFLAGS_ESMF)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; \
@@ -3304,8 +3328,11 @@ PROMOTION	=	-real_size $(RSIZEBITS) -integer_size `expr 4 \* 8`
 CFLAGS          =       $(ARCHFLAGS) -I../external/RSL/RSL
 FCOPTIM         =       -fast -O4
 FCDEBUG         =       # -g
+FCDEBUG_ESMF    =       # -O0
 FCBASEOPTS      =       -w -convert big_endian -automatic -cpp -free -I. -arch host $(FCDEBUG)
+FCBASEOPTS_ESMF =       -w -convert big_endian -automatic -cpp -free -I. -arch host $(FCDEBUG_ESMF)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
+FCFLAGS_ESMF    =       $(FCOPTIM) $(FCBASEOPTS_ESMF) $(OMP)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../chem -I../inc
 PERL            =       CONFIGURE_PERL_PATH
@@ -3356,7 +3383,7 @@ wrfio_grib1 :
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCFLAGS_ESMF)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 wrfio_mcel :
 	( cd ../external/io_mcel ; \
@@ -3437,8 +3464,11 @@ PROMOTION	=	-real_size $(RSIZEBITS) -integer_size `expr 4 \* 8`
 CFLAGS          =       $(ARCHFLAGS) -I../external/RSL/RSL
 FCOPTIM         =       -fast -O4
 FCDEBUG         =       # -g
+FCDEBUG_ESMF    =       # -O0
 FCBASEOPTS      =       -w -convert big_endian -automatic -cpp -free -I. -arch host $(FCDEBUG)
+FCBASEOPTS_ESMF =       -w -convert big_endian -automatic -cpp -free -I. -arch host $(FCDEBUG_ESMF)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
+FCFLAGS_ESMF    =       $(FCOPTIM) $(FCBASEOPTS_ESMF) $(OMP)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../inc
 PERL            =       CONFIGURE_PERL_PATH
@@ -3483,7 +3513,7 @@ wrfio_grib1 :
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+	  make FC="$(FC) $(PROMOTION) $(FCFLAGS_ESMF)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; \
@@ -3904,7 +3934,7 @@ RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 SFC             =       $(FC)
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =
-FCOPTIM		=	-fast
+FCOPTIM		=	-O2 # -fast
 FCDEBUG		=	#-g
 #FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree -tp p6 $(FCDEBUG)
 FCBASEOPTS      =       -w -byteswapio -Mfree -tp p6 $(FCDEBUG) # -Mlfs
@@ -4011,7 +4041,7 @@ CC              =       gcc
 SCC		=	$(CC)
 SFC             =       pgf90
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
-FCOPTIM		=	-fast
+FCOPTIM		=	-O2 # -fast
 FCDEBUG		=	#-g
 #FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree -tp p6 $(FCDEBUG)
 FCBASEOPTS      =       -w -byteswapio -Mfree -tp p6 $(FCDEBUG) # -Mlfs
@@ -4127,7 +4157,7 @@ RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 SFC             =       $(FC)
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =
-FCOPTIM		=	-fast
+FCOPTIM		=	-O2 # -fast
 FCDEBUG		=	#-g
 #FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree -tp p6 $(FCDEBUG)
 FCBASEOPTS      =       -w -byteswapio -Mfree -tp p6 $(FCDEBUG) # -Mlfs
@@ -4236,7 +4266,7 @@ CC              =       gcc
 SCC		=	$(CC)
 SFC             =       pgf90
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
-FCOPTIM		=	-fast
+FCOPTIM		=	-O2 # -fast
 FCDEBUG		=	#-g
 #FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree -tp p6 $(FCDEBUG)
 FCBASEOPTS      =       -w -byteswapio -Mfree -tp p6 $(FCDEBUG) # -Mlfs
@@ -4356,7 +4386,7 @@ RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =       -DDM_PARALLEL -DWRF_RSL_IO \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL/RSL
-FCOPTIM		=	-fast
+FCOPTIM		=	-O2 # -fast
 FCDEBUG		=	#-g
 #FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree -tp p6 $(FCDEBUG)
 FCBASEOPTS      =       -w -byteswapio -Mfree -tp p6 $(FCDEBUG) # -Mlfs
@@ -4474,7 +4504,7 @@ PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =       -DDM_PARALLEL \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL_LITE
 #FCOPTIM		=	-fastsse 
-FCOPTIM		=	-fast
+FCOPTIM		=	-O2 # -fast
 FCDEBUG		=	#-g
 #FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree -tp p6 $(FCDEBUG)
 FCBASEOPTS      =       -w -byteswapio -Mfree -tp p6 $(FCDEBUG) # -Mlfs

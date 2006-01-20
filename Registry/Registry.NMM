@@ -202,7 +202,7 @@ state  real   t_old     ikj   dyn_nmm   1    -     r
 state  real   zero_3d   ikj   dyn_nmm   1    -     r
 state  real   W0AVG     ikj   dyn_nmm   1    -     r        "W0AVG" "AVERAGE VERTICAL VELOCITY FOR KF CUMULUS SCHEME"         "m s-1"
 state  real   AKHS_OUT  ij    dyn_nmm   1    -     h        "AKHS_OUT"  "OUTPUT SFC EXCH COEFF FOR HEAT"                      "m^2 s-1"
-state  real   AKMS_OUT  ij    dyn_nmm   1    -     -        "AKMS_OUT"  "OUTPUT SFC EXCH COEFF FOR MOMENTUM"                  "m^2 s-1"    
+state  real   AKMS_OUT  ij    dyn_nmm   1    -     h        "AKMS_OUT"  "OUTPUT SFC EXCH COEFF FOR MOMENTUM"                  "m^2 s-1"    
 #
 # module_PHYS
 #

@@ -389,7 +389,7 @@ else if ( ( $NESTED != TRUE ) && ( $RSL_LITE != TRUE ) ) then
 		set CORES = ( em_real em_b_wave em_quarter_ss )
 	endif
 else if ( ( $NESTED != TRUE ) && ( $RSL_LITE == TRUE ) ) then
-	set CORES = ( em_real nmm_real )
+	set CORES = ( em_real em_quarter_ss nmm_real )
 	if ( $CHEM == TRUE ) then
 		set CORES = ( em_real )
 	endif
@@ -418,12 +418,16 @@ else if ( $CHEM == TRUE ) then
 	set PHYSOPTS =	( 1 )
 endif
 
-#	This is an ugly kludge.  The MP=2 does not work with the ideal cases with the
-#	special DEC build options.
+#	This is selecting the ideal physics options - mostly selecting BC options.
+#	With no nesting, run all three ideal physics options.  When we have
+#	RSL_LITE (we are only doing em_quarter_ss), choose the first option only
+#	since it uses open boundaries.
 
-if      ( $NESTED == TRUE ) then
+if      ( ( $NESTED == TRUE ) && ( $RSL_LITE != TRUE ) ) then
 	set Max_Ideal_Physics_Options = 2
-else if ( $NESTED != TRUE ) then
+else if   ( $RSL_LITE == TRUE )                          then
+	set Max_Ideal_Physics_Options = 1
+else if ( ( $NESTED != TRUE ) && ( $RSL_LITE != TRUE ) ) then
 	set Max_Ideal_Physics_Options = 3
 endif
 

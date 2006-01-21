@@ -20,13 +20,12 @@ unalias mv
 #       takes about 24-30 h
 
 #       Linux
-#       big (bay-mmm is too flaky with Flex lm pgi license)
-#       cd /big6/gill/DO_NOT_REMOVE_DIR
+#       joshua1 or joshua3
+#       mkdir /data3/mp/$USER/`hostname`
 #       put all_reg.csh, regtest.csh, and wrf.tar in dir
 #       execute all_reg.csh
-#       takes 8-10 h, stay away from Jim's real-time
-#       runs from 05-08Z and 17-20Z (Boulder local is 10-1 winter, 
-#       11-2 summer)
+#       takes about 36-48 h
+#	flex lm errors show up as fails to compile
 
 #       AIX
 #       bluesky
@@ -229,8 +228,8 @@ if ( ( $BASELINE == GENERATE ) || ( $BASELINE == COMPARE ) ) then
 		set SAVE_DIR = /ptmp/${USER}/BASELINE/`uname`
 	else if ( ( `uname` == OSF1 ) && ( `hostname | cut -c 1-6` == joshua ) ) then
 		set SAVE_DIR = /data3/mp/${USER}/BASELINE/`uname`
-	else if ( ( `uname` == Linux ) && ( `hostname` == master ) ) then
-		set SAVE_DIR = /big6/gill/DO_NOT_REMOVE_DIR/BASELINE/`uname`
+	else if ( ( `uname` == Linux ) && ( `hostname` == bay-mmm ) ) then
+		set SAVE_DIR = /data3/mp/${USER}/BASELINE/`uname`
 	else
 		echo Hmm, no idea where to put/get this baseline data, stopping
 		exit ( 10 )
@@ -313,8 +312,8 @@ FOUND_SELECTED_TEST:
 				set SAVE_DIR = /ptmp/${USER}/BASELINE/`uname`/$tests[$count_test]
 			else if ( ( `uname` == OSF1 ) && ( `hostname | cut -c 1-6` == joshua ) ) then
 				set SAVE_DIR = /data3/mp/${USER}/BASELINE/`uname`/$tests[$count_test]
-			else if ( ( `uname` == Linux ) && ( `hostname` == master ) ) then
-				set SAVE_DIR = /big6/gill/DO_NOT_REMOVE_DIR/BASELINE/`uname`/$tests[$count_test]
+			else if ( ( `uname` == Linux ) && ( `hostname` == bay-mmm ) ) then
+				set SAVE_DIR = /data3/mp/${USER}/BASELINE/`uname`/$tests[$count_test]
 			else
 				echo No idea where to put the data, stopping
 				exit ( 2 )
@@ -418,9 +417,11 @@ cat >! history_middle_OK.html << EOF
 <td> XARCHITECTUREX </td>
 <td BGCOLOR="#00FF00"><a href="ARCHITECTURE/wrftest.all_${datehms}">PASS</a></td>
 <td>
+<!--
 <a href="other_docs/${date}_notes">Descriptions</a>
 <a href="other_docs/${date}_minutes">Minutes</a>
 </td>
+-->
 </tr>
 EOF
 
@@ -433,8 +434,10 @@ cat >! history_middle_OOPS.html << EOF
 <td BGCOLOR="#FF0000"><a href="ARCHITECTURE/wrftest.all_${datehms}">FAIL</a>
                       <a href="ARCHITECTURE/message_${datehms}">DIFFS</a></td>
 <td>
+<!--
 <a href="other_docs/${date}_notes">Descriptions</a>
 <a href="other_docs/${date}_minutes">Minutes</a>
+-->
 </td>
 </tr>
 EOF

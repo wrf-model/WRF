@@ -2397,7 +2397,6 @@ module_configure.o : module_configure.F
 mediation_interp_domain.o : mediation_interp_domain.F
 mediation_force_domain.o : mediation_force_domain.F
 mediation_feedback_domain.o : mediation_feedback_domain.F
-mediation_integrate.o : mediation_integrate.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -2407,13 +2406,19 @@ module_configure.o                                             \
 mediation_interp_domain.o  \
 mediation_force_domain.o  \
 mediation_feedback_domain.o  \
-mediation_integrate.o \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
+
+mediation_integrate.o : mediation_integrate.F
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(RM) $*.b
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS_ESMF) $(MODULE_DIRS) -O0 $*.f
 
 ###########################################################
 #ARCH       Compaq OSF1 alpha          (single-threaded, nesting using RSL without MPI )
@@ -2527,7 +2532,6 @@ module_configure.o : module_configure.F
 mediation_interp_domain.o : mediation_interp_domain.F
 mediation_force_domain.o : mediation_force_domain.F
 mediation_feedback_domain.o : mediation_feedback_domain.F
-mediation_integrate.o : mediation_integrate.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -2537,13 +2541,19 @@ module_configure.o                                             \
 mediation_interp_domain.o  \
 mediation_force_domain.o  \
 mediation_feedback_domain.o  \
-mediation_integrate.o \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
+
+mediation_integrate.o : mediation_integrate.F
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(RM) $*.b
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS_ESMF) $(MODULE_DIRS) -O0 $*.f
 
 ###########################################################
 #ARCH       Compaq OSF1 alpha SM       (OpenMP, no nesting)
@@ -2639,7 +2649,6 @@ module_configure.o : module_configure.F
 mediation_interp_domain.o : mediation_interp_domain.F
 mediation_force_domain.o : mediation_force_domain.F
 mediation_feedback_domain.o : mediation_feedback_domain.F
-mediation_integrate.o : mediation_integrate.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -2649,13 +2658,19 @@ module_configure.o                                             \
 mediation_interp_domain.o  \
 mediation_force_domain.o  \
 mediation_feedback_domain.o  \
-mediation_integrate.o \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
+
+mediation_integrate.o : mediation_integrate.F
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(RM) $*.b
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS_ESMF) $(MODULE_DIRS) -O0 $*.f
 
 ###########################################################
 #ARCH       Compaq OSF1 alpha SM-Parallel       (OpenMP, nesting using RSL without MPI )
@@ -2770,7 +2785,6 @@ module_configure.o : module_configure.F
 mediation_interp_domain.o : mediation_interp_domain.F
 mediation_force_domain.o : mediation_force_domain.F
 mediation_feedback_domain.o : mediation_feedback_domain.F
-mediation_integrate.o : mediation_integrate.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -2780,13 +2794,19 @@ module_configure.o                                             \
 mediation_interp_domain.o  \
 mediation_force_domain.o  \
 mediation_feedback_domain.o  \
-mediation_integrate.o \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
+
+mediation_integrate.o : mediation_integrate.F
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(RM) $*.b
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS_ESMF) $(MODULE_DIRS) -O0 $*.f
 
 ###########################################################
 #ARCH     Compaq OSF1 alpha DM-Parallel       (RSL_LITE, MPICH, allows nesting)
@@ -2899,7 +2919,6 @@ module_configure.o : module_configure.F
 mediation_interp_domain.o : mediation_interp_domain.F
 mediation_force_domain.o : mediation_force_domain.F
 mediation_feedback_domain.o : mediation_feedback_domain.F
-mediation_integrate.o : mediation_integrate.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -2909,13 +2928,19 @@ module_configure.o                                             \
 mediation_interp_domain.o  \
 mediation_force_domain.o  \
 mediation_feedback_domain.o  \
-mediation_integrate.o \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
+
+mediation_integrate.o : mediation_integrate.F
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(RM) $*.b
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS_ESMF) $(MODULE_DIRS) -O0 $*.f
 
 ###########################################################
 #ARCH       Compaq OSF1 alpha DM-Parallel       (RSL, MPICH, allows nesting)
@@ -3028,7 +3053,6 @@ module_configure.o : module_configure.F
 mediation_interp_domain.o : mediation_interp_domain.F
 mediation_force_domain.o : mediation_force_domain.F
 mediation_feedback_domain.o : mediation_feedback_domain.F
-mediation_integrate.o : mediation_integrate.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -3038,13 +3062,19 @@ module_configure.o                                             \
 mediation_interp_domain.o  \
 mediation_force_domain.o  \
 mediation_feedback_domain.o  \
-mediation_integrate.o \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
+
+mediation_integrate.o : mediation_integrate.F
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(RM) $*.b
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS_ESMF) $(MODULE_DIRS) -O0 $*.f
 
 ###########################################################
 #ARCH       Compaq OSF1 alpha DM-Parallel/SM-Parallel    (RSL, MPICH, OpenMP, allows nesting)
@@ -3158,7 +3188,6 @@ module_configure.o : module_configure.F
 mediation_interp_domain.o : mediation_interp_domain.F
 mediation_force_domain.o : mediation_force_domain.F
 mediation_feedback_domain.o : mediation_feedback_domain.F
-mediation_integrate.o : mediation_integrate.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -3168,13 +3197,19 @@ module_configure.o                                             \
 mediation_interp_domain.o  \
 mediation_force_domain.o  \
 mediation_feedback_domain.o  \
-mediation_integrate.o \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
+
+mediation_integrate.o : mediation_integrate.F
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(RM) $*.b
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS_ESMF) $(MODULE_DIRS) -O0 $*.f
 
 ###########################################################
 #ARCH       Compaq OSF1 alpha DM-Parallel/SM-Parallel    (RSL, DECMPI, OpenMP, allows nesting)
@@ -3288,7 +3323,6 @@ module_configure.o : module_configure.F
 mediation_interp_domain.o : mediation_interp_domain.F
 mediation_force_domain.o : mediation_force_domain.F
 mediation_feedback_domain.o : mediation_feedback_domain.F
-mediation_integrate.o : mediation_integrate.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -3298,13 +3332,19 @@ module_configure.o                                             \
 mediation_interp_domain.o  \
 mediation_force_domain.o  \
 mediation_feedback_domain.o  \
-mediation_integrate.o \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
+
+mediation_integrate.o : mediation_integrate.F
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(RM) $*.b
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS_ESMF) $(MODULE_DIRS) -O0 $*.f
 
 ###########################################################
 #ARCH       Compaq OSF1 alpha DM-Parallel       (RSL, MPICH, MCEL EXPERIMENTAL)
@@ -3423,7 +3463,6 @@ module_configure.o : module_configure.F
 mediation_interp_domain.o : mediation_interp_domain.F
 mediation_force_domain.o : mediation_force_domain.F
 mediation_feedback_domain.o : mediation_feedback_domain.F
-mediation_integrate.o : mediation_integrate.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -3433,13 +3472,19 @@ module_configure.o                                             \
 mediation_interp_domain.o  \
 mediation_force_domain.o  \
 mediation_feedback_domain.o  \
-mediation_integrate.o \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
+
+mediation_integrate.o : mediation_integrate.F
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(RM) $*.b
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS_ESMF) $(MODULE_DIRS) -O0 $*.f
 
 ###########################################################
 #ARCH       Compaq OSF1 alpha DM/SM    (BUILD FOR AUTODOC ONLY -- DO NOT USE TO COMPILE CODE)
@@ -3547,6 +3592,13 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
+
+mediation_integrate.o : mediation_integrate.F
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(RM) $*.b
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS_ESMF) $(MODULE_DIRS) -O0 $*.f
 
 ###########################################################
 #ARCH       Alpha Linux alpha DM  (single-threaded, no nesting)

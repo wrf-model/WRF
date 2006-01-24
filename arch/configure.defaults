@@ -2391,7 +2391,6 @@ module_initialize_quarter_ss.o : module_initialize_quarter_ss.F
 module_initialize_squall2d_x.o : module_initialize_squall2d_x.F
 module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
 module_initialize_real.o : module_initialize_real.F
-module_dm.o : module_dm.F
 start_domain.o : start_domain.F
 module_configure.o : module_configure.F
 mediation_interp_domain.o : mediation_interp_domain.F
@@ -2406,7 +2405,7 @@ module_configure.o                                             \
 mediation_interp_domain.o  \
 mediation_force_domain.o  \
 mediation_feedback_domain.o  \
-module_initialize_real.o module_dm.o start_domain.o :
+module_initialize_real.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
@@ -2414,6 +2413,9 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
 
 mediation_integrate.o : mediation_integrate.F
+module_dm.o : module_dm.F
+
+mediation_integrate.o module_dm.o : 
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
@@ -2526,7 +2528,6 @@ module_initialize_quarter_ss.o : module_initialize_quarter_ss.F
 module_initialize_squall2d_x.o : module_initialize_squall2d_x.F
 module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
 module_initialize_real.o : module_initialize_real.F
-module_dm.o : module_dm.F
 start_domain.o : start_domain.F
 module_configure.o : module_configure.F
 mediation_interp_domain.o : mediation_interp_domain.F
@@ -2541,7 +2542,7 @@ module_configure.o                                             \
 mediation_interp_domain.o  \
 mediation_force_domain.o  \
 mediation_feedback_domain.o  \
-module_initialize_real.o module_dm.o start_domain.o :
+module_initialize_real.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
@@ -2549,6 +2550,9 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
 
 mediation_integrate.o : mediation_integrate.F
+module_dm.o : module_dm.F
+
+mediation_integrate.o module_dm.o : 
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
@@ -2643,7 +2647,6 @@ module_initialize_quarter_ss.o : module_initialize_quarter_ss.F
 module_initialize_squall2d_x.o : module_initialize_squall2d_x.F
 module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
 module_initialize_real.o : module_initialize_real.F
-module_dm.o : module_dm.F
 start_domain.o : start_domain.F
 module_configure.o : module_configure.F
 mediation_interp_domain.o : mediation_interp_domain.F
@@ -2658,7 +2661,7 @@ module_configure.o                                             \
 mediation_interp_domain.o  \
 mediation_force_domain.o  \
 mediation_feedback_domain.o  \
-module_initialize_real.o module_dm.o start_domain.o :
+module_initialize_real.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
@@ -2666,6 +2669,9 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
 
 mediation_integrate.o : mediation_integrate.F
+module_dm.o : module_dm.F
+
+mediation_integrate.o module_dm.o : 
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
@@ -2779,7 +2785,6 @@ module_initialize_quarter_ss.o : module_initialize_quarter_ss.F
 module_initialize_squall2d_x.o : module_initialize_squall2d_x.F
 module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
 module_initialize_real.o : module_initialize_real.F
-module_dm.o : module_dm.F
 start_domain.o : start_domain.F
 module_configure.o : module_configure.F
 mediation_interp_domain.o : mediation_interp_domain.F
@@ -2794,7 +2799,7 @@ module_configure.o                                             \
 mediation_interp_domain.o  \
 mediation_force_domain.o  \
 mediation_feedback_domain.o  \
-module_initialize_real.o module_dm.o start_domain.o :
+module_initialize_real.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
@@ -2802,6 +2807,9 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
 
 mediation_integrate.o : mediation_integrate.F
+module_dm.o : module_dm.F
+
+mediation_integrate.o module_dm.o : 
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
@@ -2913,7 +2921,6 @@ module_initialize_quarter_ss.o : module_initialize_quarter_ss.F
 module_initialize_squall2d_x.o : module_initialize_squall2d_x.F
 module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
 module_initialize_real.o : module_initialize_real.F
-module_dm.o : module_dm.F
 start_domain.o : start_domain.F
 module_configure.o : module_configure.F
 mediation_interp_domain.o : mediation_interp_domain.F
@@ -2928,7 +2935,7 @@ module_configure.o                                             \
 mediation_interp_domain.o  \
 mediation_force_domain.o  \
 mediation_feedback_domain.o  \
-module_initialize_real.o module_dm.o start_domain.o :
+module_initialize_real.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
@@ -2936,6 +2943,9 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
 
 mediation_integrate.o : mediation_integrate.F
+module_dm.o : module_dm.F
+
+mediation_integrate.o module_dm.o : 
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
@@ -3047,7 +3057,6 @@ module_initialize_quarter_ss.o : module_initialize_quarter_ss.F
 module_initialize_squall2d_x.o : module_initialize_squall2d_x.F
 module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
 module_initialize_real.o : module_initialize_real.F
-module_dm.o : module_dm.F
 start_domain.o : start_domain.F
 module_configure.o : module_configure.F
 mediation_interp_domain.o : mediation_interp_domain.F
@@ -3062,7 +3071,7 @@ module_configure.o                                             \
 mediation_interp_domain.o  \
 mediation_force_domain.o  \
 mediation_feedback_domain.o  \
-module_initialize_real.o module_dm.o start_domain.o :
+module_initialize_real.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
@@ -3070,6 +3079,9 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
 
 mediation_integrate.o : mediation_integrate.F
+module_dm.o : module_dm.F
+
+mediation_integrate.o module_dm.o : 
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
@@ -3182,7 +3194,6 @@ module_initialize_quarter_ss.o : module_initialize_quarter_ss.F
 module_initialize_squall2d_x.o : module_initialize_squall2d_x.F
 module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
 module_initialize_real.o : module_initialize_real.F
-module_dm.o : module_dm.F
 start_domain.o : start_domain.F
 module_configure.o : module_configure.F
 mediation_interp_domain.o : mediation_interp_domain.F
@@ -3197,7 +3208,7 @@ module_configure.o                                             \
 mediation_interp_domain.o  \
 mediation_force_domain.o  \
 mediation_feedback_domain.o  \
-module_initialize_real.o module_dm.o start_domain.o :
+module_initialize_real.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
@@ -3205,6 +3216,9 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
 
 mediation_integrate.o : mediation_integrate.F
+module_dm.o : module_dm.F
+
+mediation_integrate.o module_dm.o : 
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
@@ -3317,7 +3331,6 @@ module_initialize_quarter_ss.o : module_initialize_quarter_ss.F
 module_initialize_squall2d_x.o : module_initialize_squall2d_x.F
 module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
 module_initialize_real.o : module_initialize_real.F
-module_dm.o : module_dm.F
 start_domain.o : start_domain.F
 module_configure.o : module_configure.F
 mediation_interp_domain.o : mediation_interp_domain.F
@@ -3332,7 +3345,7 @@ module_configure.o                                             \
 mediation_interp_domain.o  \
 mediation_force_domain.o  \
 mediation_feedback_domain.o  \
-module_initialize_real.o module_dm.o start_domain.o :
+module_initialize_real.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
@@ -3340,6 +3353,9 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
 
 mediation_integrate.o : mediation_integrate.F
+module_dm.o : module_dm.F
+
+mediation_integrate.o module_dm.o : 
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
@@ -3457,7 +3473,6 @@ module_initialize_quarter_ss.o : module_initialize_quarter_ss.F
 module_initialize_squall2d_x.o : module_initialize_squall2d_x.F
 module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
 module_initialize_real.o : module_initialize_real.F
-module_dm.o : module_dm.F
 start_domain.o : start_domain.F
 module_configure.o : module_configure.F
 mediation_interp_domain.o : mediation_interp_domain.F
@@ -3472,7 +3487,7 @@ module_configure.o                                             \
 mediation_interp_domain.o  \
 mediation_force_domain.o  \
 mediation_feedback_domain.o  \
-module_initialize_real.o module_dm.o start_domain.o :
+module_initialize_real.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
@@ -3480,6 +3495,9 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
 
 mediation_integrate.o : mediation_integrate.F
+module_dm.o : module_dm.F
+
+mediation_integrate.o module_dm.o : 
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
@@ -3577,7 +3595,6 @@ module_initialize_quarter_ss.o : module_initialize_quarter_ss.F
 module_initialize_squall2d_x.o : module_initialize_squall2d_x.F
 module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
 module_initialize_real.o : module_initialize_real.F
-module_dm.o : module_dm.F
 start_domain.o : start_domain.F
 module_configure.o : module_configure.F
 
@@ -3586,7 +3603,7 @@ module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_configure.o                                             \
-module_initialize_real.o module_dm.o start_domain.o :
+module_initialize_real.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
@@ -3594,6 +3611,9 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
 
 mediation_integrate.o : mediation_integrate.F
+module_dm.o : module_dm.F
+
+mediation_integrate.o module_dm.o : 
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f

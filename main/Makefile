@@ -24,10 +24,11 @@ $(SOLVER)_ideal : module_initialize ideal.o
 	$(RANLIB) libwrflib.a
 	$(LD) -o ideal.exe $(LDFLAGS) ideal.o ../dyn_$(SOLVER)/module_initialize_$(IDEAL_CASE).o libwrflib.a $(LIB)
 
-$(SOLVER)_real : module_initialize real_$(SOLVER).o ndown_$(SOLVER).o
+$(SOLVER)_real : module_initialize real_$(SOLVER).o ndown_$(SOLVER).o nup_$(SOLVER).o
 	$(RANLIB) libwrflib.a
 	$(LD) -o real.exe $(LDFLAGS) real_$(SOLVER).o ../dyn_$(SOLVER)/module_initialize_$(IDEAL_CASE).o libwrflib.a $(LIB)
 	$(LD) -o ndown.exe $(LDFLAGS) ndown_$(SOLVER).o  ../dyn_$(SOLVER)/module_initialize_$(IDEAL_CASE).o libwrflib.a $(LIB)
+	$(LD) -o nup.exe $(LDFLAGS) nup_$(SOLVER).o  ../dyn_$(SOLVER)/module_initialize_$(IDEAL_CASE).o libwrflib.a $(LIB)
 
 convert_em : convert_em.o
 	$(RANLIB) libwrflib.a
@@ -94,6 +95,23 @@ ideal.o: \
 	$(ESMF_MOD_DEPENDENCE)
 
 ndown_em.o: \
+	../frame/module_machine.o \
+	../frame/module_domain.o \
+	../frame/module_driver_constants.o \
+	../frame/module_configure.o \
+	../frame/module_timing.o \
+	../frame/module_dm.o \
+	../frame/module_wrf_error.o \
+	../frame/module_integrate.o \
+	../share/module_bc.o \
+	../share/module_io_domain.o \
+	../share/module_get_file_names.o \
+	../share/module_soil_pre.o \
+	../dyn_em/module_initialize_real.o \
+	../dyn_em/module_big_step_utilities_em.o \
+	$(ESMF_MOD_DEPENDENCE)
+
+nup_em.o: \
 	../frame/module_machine.o \
 	../frame/module_domain.o \
 	../frame/module_driver_constants.o \

@@ -416,7 +416,7 @@ integer myproc
    INTEGER , SAVE :: ISICE, LUCATS, LUSEAS, ISN
    REAL    , SAVE , DIMENSION( max_cats, max_seas ) :: ALBD, SLMO, SFEM, SFZ0, THERIN, SFHC
    REAL    , SAVE , DIMENSION( max_cats )     :: SCFX
-   LOGICAL :: FOUND_LU
+   LOGICAL :: found_lu, end_of_file
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
 
 !---------------------------------------------------------------------
@@ -454,16 +454,25 @@ integer myproc
       ENDIF
       PRINT *, 'INPUT LANDUSE = ',MMINLU
       FOUND_LU = .FALSE.
- 1999   CONTINUE                                                      
-      if ( wrf_dm_on_monitor() ) then
-        READ (landuse_unit,2000,END=2001)LUTYPE                                
-        READ (landuse_unit,*)LUCATS,LUSEAS                                    
+      end_of_file = .FALSE.
+!!! BEGINNING OF 1999 LOOP
+ 1999 CONTINUE                                                      
+      IF ( wrf_dm_on_monitor() ) THEN
+        READ (landuse_unit,2000,END=2002)LUTYPE                                
+        GOTO 2003
+ 2002   CONTINUE
+        CALL wrf_message( 'INPUT FILE FOR LANDUSE REACHED END OF FILE' )
+        end_of_file = .TRUE.
+ 2003   CONTINUE
+        IF ( .NOT. end_of_file ) READ (landuse_unit,*)LUCATS,LUSEAS                                    
         FOUND_LU = LUTYPE.EQ.MMINLU
-      endif
-      CALL wrf_dm_bcast_string(lutype, 4)
-      CALL wrf_dm_bcast_bytes (lucats,  IWORDSIZE )
-      CALL wrf_dm_bcast_bytes (luseas,  IWORDSIZE )
-      CALL wrf_dm_bcast_bytes (found_lu,  LWORDSIZE )
+      ENDIF
+      CALL wrf_dm_bcast_bytes (end_of_file, LWORDSIZE )
+      IF ( .NOT. end_of_file ) THEN
+        CALL wrf_dm_bcast_string(lutype, 4)
+        CALL wrf_dm_bcast_bytes (lucats,  IWORDSIZE )
+        CALL wrf_dm_bcast_bytes (luseas,  IWORDSIZE )
+        CALL wrf_dm_bcast_bytes (found_lu,  LWORDSIZE )
  2000   FORMAT (A4)                                                
         IF(FOUND_LU)THEN                                  
           LUN=LUCATS                                             
@@ -473,12 +482,12 @@ integer myproc
                    ' WATER CATEGORY = ',ISWATER,               &
                    ' SNOW CATEGORY = ',ISICE                
         ENDIF                                             
-        DO LS=1,LUSEAS                                   
+        DO ls=1,luseas                                   
           if ( wrf_dm_on_monitor() ) then
             READ (landuse_unit,*)                                   
           endif
           DO LC=1,LUCATS                               
-            IF(FOUND_LU)THEN                  
+            IF(found_lu)THEN                  
               IF ( wrf_dm_on_monitor() ) THEN
                 READ (landuse_unit,*)LI,ALBD(LC,LS),SLMO(LC,LS),SFEM(LC,LS),        &       
                            SFZ0(LC,LS),THERIN(LC,LS),SCFX(LC),SFHC(LC,LS)       
@@ -502,13 +511,15 @@ integer myproc
         CALL wrf_dm_bcast_bytes (therin, max_cats * max_seas * RWORDSIZE )
         CALL wrf_dm_bcast_bytes (sfhc,   max_cats * max_seas * RWORDSIZE )
         CALL wrf_dm_bcast_bytes (scfx,   max_cats *            RWORDSIZE )
+      ENDIF
 
-        IF(.NOT. FOUND_LU) GOTO 1999
- 2001   CONTINUE                                                      
-        IF(.NOT. FOUND_LU)THEN                                         
-          CALL wrf_message ( 'LANDUSE IN INPUT FILE DOES NOT MATCH LUTABLE: TABLE NOT USED' )
-        ENDIF                                                     
-     ENDIF  ! allowed_to_read
+      IF(.NOT. found_lu .AND. .NOT. end_of_file ) GOTO 1999
+!!! END OF 1999 LOOP
+
+      IF(.NOT. found_lu .OR. end_of_file )THEN                                         
+        CALL wrf_message ( 'LANDUSE IN INPUT FILE DOES NOT MATCH LUTABLE: TABLE NOT USED' )
+      ENDIF                                                     
+    ENDIF  ! allowed_to_read
 
     IF(FOUND_LU)THEN
 ! Set arrays according to lu_index

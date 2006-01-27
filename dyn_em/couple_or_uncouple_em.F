@@ -411,19 +411,22 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple, &
 END SUBROUTINE couple_or_uncouple_em
 
 LOGICAL FUNCTION em_cd_feedback_mask( pig, ips_save, ipe_save , pjg, jps_save, jpe_save, xstag, ystag )
+   USE module_configure
+   IMPLICIT NONE
    INTEGER, INTENT(IN) :: pig, ips_save, ipe_save , pjg, jps_save, jpe_save
    LOGICAL, INTENT(IN) :: xstag, ystag
 
-   INTEGER ioff, joff
+   INTEGER ioff, joff, spec_zone
 
+   CALL nl_get_spec_zone( 1, spec_zone )
    ioff = 0 ; joff = 0 
    IF ( xstag  ) ioff = 1
    IF ( ystag  ) joff = 1
 
-   em_cd_feedback_mask = ( pig .ge. ips_save+1        .and.      &
-                           pjg .ge. jps_save+1        .and.      &
-                           pig .le. ipe_save-1  +ioff .and.      &
-                           pjg .le. jpe_save-1  +joff           )
+   em_cd_feedback_mask = ( pig .ge. ips_save+spec_zone        .and.      &
+                           pjg .ge. jps_save+spec_zone        .and.      &
+                           pig .le. ipe_save-spec_zone  +ioff .and.      &
+                           pjg .le. jpe_save-spec_zone  +joff           )
 
 
 END FUNCTION em_cd_feedback_mask

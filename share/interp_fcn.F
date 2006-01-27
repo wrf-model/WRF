@@ -192,6 +192,7 @@
      INTEGER :: icmin,icmax,jcmin,jcmax
      INTEGER :: istag,jstag, ipoints,jpoints,ijpoints
      INTEGER , PARAMETER :: passes = 2
+     INTEGER spec_zone
 
      !  Loop over the coarse grid in the area of the fine mesh.  Do not
      !  process the coarse grid values that are along the lateral BC
@@ -214,6 +215,7 @@
      !  3::1 ratio, temperature would use 9 pts for feedback, while u and v use
      !  only 3 points for feedback from the nest to the parent.
 
+     CALL nl_get_spec_zone( 1 , spec_zone )
      istag = 1 ; jstag = 1
      IF ( xstag ) istag = 0
      IF ( ystag ) jstag = 0
@@ -221,11 +223,11 @@
      IF( MOD(nrj,2) .NE. 0) THEN  ! odd refinement ratio
 
         IF      ( ( .NOT. xstag ) .AND. ( .NOT. ystag ) ) THEN
-           DO cj = MAX(jpos+1,cjts),MIN(jpos+(njde-njds)/nrj-jstag-1,cjte)
+           DO cj = MAX(jpos+spec_zone,cjts),MIN(jpos+(njde-njds)/nrj-jstag-spec_zone,cjte)
               nj = (cj-jpos)*nrj + jstag + 1
               DO ck = ckts, ckte
                  nk = ck
-                 DO ci = MAX(ipos+1,cits),MIN(ipos+(nide-nids)/nri-istag-1,cite)
+                 DO ci = MAX(ipos+spec_zone,cits),MIN(ipos+(nide-nids)/nri-istag-spec_zone,cite)
                     ni = (ci-ipos)*nri + istag + 1
                     cfld( ci, ck, cj ) = 0.
                     DO ijpoints = 1 , nri * nrj
@@ -249,11 +251,11 @@
            ENDDO
 
         ELSE IF ( (       xstag ) .AND. ( .NOT. ystag ) ) THEN
-           DO cj = MAX(jpos+1,cjts),MIN(jpos+(njde-njds)/nrj-jstag-1,cjte)
+           DO cj = MAX(jpos+spec_zone,cjts),MIN(jpos+(njde-njds)/nrj-jstag-spec_zone,cjte)
               nj = (cj-jpos)*nrj + jstag + 1
               DO ck = ckts, ckte
                  nk = ck
-                 DO ci = MAX(ipos+1,cits),MIN(ipos+(nide-nids)/nri-istag-1,cite)
+                 DO ci = MAX(ipos+spec_zone,cits),MIN(ipos+(nide-nids)/nri-istag-spec_zone,cite)
                     ni = (ci-ipos)*nri + istag + 1
                     cfld( ci, ck, cj ) = 0.
                     DO ijpoints = (nri+1)/2 , (nri+1)/2 + nri*(nri-1) , nri
@@ -271,11 +273,11 @@
            ENDDO
 
         ELSE IF ( ( .NOT. xstag ) .AND. (       ystag ) ) THEN
-           DO cj = MAX(jpos+1,cjts),MIN(jpos+(njde-njds)/nrj-jstag-1,cjte)
+           DO cj = MAX(jpos+spec_zone,cjts),MIN(jpos+(njde-njds)/nrj-jstag-spec_zone,cjte)
               nj = (cj-jpos)*nrj + jstag + 1
               DO ck = ckts, ckte
                  nk = ck
-                 DO ci = MAX(ipos+1,cits),MIN(ipos+(nide-nids)/nri-istag-1,cite)
+                 DO ci = MAX(ipos+spec_zone,cits),MIN(ipos+(nide-nids)/nri-istag-spec_zone,cite)
                     ni = (ci-ipos)*nri + istag + 1
                     cfld( ci, ck, cj ) = 0.
                     DO ijpoints = ( nrj*nrj +1 )/2 - nrj/2 , ( nrj*nrj +1 )/2 - nrj/2 + nrj-1
@@ -372,11 +374,11 @@
            !                   /                                \    is just
            !                  /                                  \   a sentence to not end a line
            !                 /                                    \   with a stupid backslash
-           DO cj = MAX(jpos+1,cjts),MIN(jpos+(njde-njds)/nrj-jstag-1,cjte)
+           DO cj = MAX(jpos+spec_zone,cjts),MIN(jpos+(njde-njds)/nrj-jstag-spec_zone,cjte)
               nj = (cj-jpos)*nrj + jstag
               DO ck = ckts, ckte
                  nk = ck
-                 DO ci = MAX(ipos+1,cits),MIN(ipos+(nide-nids)/nri-istag-1,cite)
+                 DO ci = MAX(ipos+spec_zone,cits),MIN(ipos+(nide-nids)/nri-istag-spec_zone,cite)
                     ni = (ci-ipos)*nri + istag
                     cfld( ci, ck, cj ) = 0.
                     DO ijpoints = 1 , nri * nrj
@@ -424,11 +426,11 @@
 ! ipoints=     0       1       0 
 !
 
-           DO cj = MAX(jpos+1,cjts),MIN(jpos+(njde-njds)/nrj-jstag-1,cjte)
+           DO cj = MAX(jpos+spec_zone,cjts),MIN(jpos+(njde-njds)/nrj-jstag-spec_zone,cjte)
               nj = (cj-jpos)*nrj + 1
               DO ck = ckts, ckte
                  nk = ck
-                 DO ci = MAX(ipos+1,cits),MIN(ipos+(nide-nids)/nri-istag-1,cite)
+                 DO ci = MAX(ipos+spec_zone,cits),MIN(ipos+(nide-nids)/nri-istag-spec_zone,cite)
                     ni = (ci-ipos)*nri + 1
                     cfld( ci, ck, cj ) = 0.
                     DO ijpoints = 1 , nri*nrj , nri
@@ -447,11 +449,11 @@
         !  V 
 
         ELSE IF ( ( .NOT. xstag ) .AND. (       ystag ) ) THEN
-           DO cj = MAX(jpos+1,cjts),MIN(jpos+(njde-njds)/nrj-jstag-1,cjte)
+           DO cj = MAX(jpos+spec_zone,cjts),MIN(jpos+(njde-njds)/nrj-jstag-spec_zone,cjte)
               nj = (cj-jpos)*nrj + 1
               DO ck = ckts, ckte
                  nk = ck
-                 DO ci = MAX(ipos+1,cits),MIN(ipos+(nide-nids)/nri-istag-1,cite)
+                 DO ci = MAX(ipos+spec_zone,cits),MIN(ipos+(nide-nids)/nri-istag-spec_zone,cite)
                     ni = (ci-ipos)*nri + 1
                     cfld( ci, ck, cj ) = 0.
                     DO ijpoints = 1 , nri
@@ -515,18 +517,20 @@
      INTEGER :: icmin,icmax,jcmin,jcmax
      INTEGER :: istag,jstag, ipoints,jpoints,ijpoints
      INTEGER , PARAMETER :: passes = 2
+     INTEGER spec_zone
 
+     CALL nl_get_spec_zone( 1, spec_zone ) 
      istag = 1 ; jstag = 1
      IF ( xstag ) istag = 0
      IF ( ystag ) jstag = 0
 
      IF( MOD(nrj,2) .NE. 0) THEN  ! odd refinement ratio
 
-        DO cj = MAX(jpos+1,cjts),MIN(jpos+(njde-njds)/nrj-jstag-1,cjte)
+        DO cj = MAX(jpos+spec_zone,cjts),MIN(jpos+(njde-njds)/nrj-jstag-spec_zone,cjte)
            nj = (cj-jpos)*nrj + jstag + 1
            DO ck = ckts, ckte
               nk = ck
-              DO ci = MAX(ipos+1,cits),MIN(ipos+(nide-nids)/nri-istag-1,cite)
+              DO ci = MAX(ipos+spec_zone,cits),MIN(ipos+(nide-nids)/nri-istag-spec_zone,cite)
                  ni = (ci-ipos)*nri + istag + 1
                  cfld( ci, ck, cj ) =  nfld( ni  , nk , nj  )
               ENDDO
@@ -534,11 +538,11 @@
         ENDDO
 
      ELSE  ! even refinement ratio, pick nearest neighbor on SW corner
-        DO cj = MAX(jpos+1,cjts),MIN(jpos+(njde-njds)/nrj-jstag-1,cjte)
+        DO cj = MAX(jpos+spec_zone,cjts),MIN(jpos+(njde-njds)/nrj-jstag-spec_zone,cjte)
            nj = (cj-jpos)*nrj + 1
            DO ck = ckts, ckte
               nk = ck
-              DO ci = MAX(ipos+1,cits),MIN(ipos+(nide-nids)/nri-istag-1,cite)
+              DO ci = MAX(ipos+spec_zone,cits),MIN(ipos+(nide-nids)/nri-istag-spec_zone,cite)
                  ni = (ci-ipos)*nri + 1
                  ipoints = nri/2 -1
                  jpoints = nrj/2 -1
@@ -595,18 +599,20 @@
      INTEGER :: icmin,icmax,jcmin,jcmax
      INTEGER :: istag,jstag, ipoints,jpoints,ijpoints
      INTEGER , PARAMETER :: passes = 2
+     INTEGER spec_zone
 
+     CALL nl_get_spec_zone( 1, spec_zone ) 
      istag = 1 ; jstag = 1
      IF ( xstag ) istag = 0
      IF ( ystag ) jstag = 0
 
      IF( MOD(nrj,2) .NE. 0) THEN  ! odd refinement ratio
 
-        DO cj = MAX(jpos+1,cjts),MIN(jpos+(njde-njds)/nrj-jstag-1,cjte)
+        DO cj = MAX(jpos+spec_zone,cjts),MIN(jpos+(njde-njds)/nrj-jstag-spec_zone,cjte)
            nj = (cj-jpos)*nrj + jstag + 1
            DO ck = ckts, ckte
               nk = ck
-              DO ci = MAX(ipos+1,cits),MIN(ipos+(nide-nids)/nri-istag-1,cite)
+              DO ci = MAX(ipos+spec_zone,cits),MIN(ipos+(nide-nids)/nri-istag-spec_zone,cite)
                  ni = (ci-ipos)*nri + istag + 1
                  cfld( ci, ck, cj ) =  nfld( ni  , nk , nj  )
               ENDDO
@@ -614,11 +620,11 @@
         ENDDO
 
      ELSE  ! even refinement ratio
-        DO cj = MAX(jpos+1,cjts),MIN(jpos+(njde-njds)/nrj-jstag-1,cjte)
+        DO cj = MAX(jpos+spec_zone,cjts),MIN(jpos+(njde-njds)/nrj-jstag-spec_zone,cjte)
            nj = (cj-jpos)*nrj + 1
            DO ck = ckts, ckte
               nk = ck
-              DO ci = MAX(ipos+1,cits),MIN(ipos+(nide-nids)/nri-istag-1,cite)
+              DO ci = MAX(ipos+spec_zone,cits),MIN(ipos+(nide-nids)/nri-istag-spec_zone,cite)
                  ni = (ci-ipos)*nri + 1
                  ipoints = nri/2 -1
                  jpoints = nrj/2 -1

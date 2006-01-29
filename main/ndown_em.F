@@ -985,12 +985,9 @@ print *,'bdy time = ',time_loop-1,'  bdy date = ',current_date,' ',start_date
    CALL model_to_grid_config_rec ( parent_grid%id , model_config_rec , config_flags )
    CALL med_shutdown_io ( parent_grid , config_flags )
 
-   CALL model_to_grid_config_rec ( nested_grid%id , model_config_rec , config_flags )
-   CALL med_shutdown_io ( nested_grid , config_flags )
-
    CALL wrf_debug ( 0 , 'ndown_em: SUCCESS COMPLETE NDOWN_EM INIT' )
 
-!  CALL wrf_shutdown
+   CALL wrf_shutdown
 
    CALL WRFU_Finalize( rc=rc )
 

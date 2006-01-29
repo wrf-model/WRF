@@ -145,7 +145,7 @@ subroutine ext_gr1_ioexit(Status)
 
   call wrf_debug ( DEBUG , 'Entering ext_gr1_ioexit')
 
-  CALL free_gribmap(grib_tables)
+! CALL free_gribmap(grib_tables)
   DEALLOCATE(grib_tables, stat=istat)
   DEALLOCATE(grid_info, stat=istat)
 

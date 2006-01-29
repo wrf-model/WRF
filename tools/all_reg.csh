@@ -28,7 +28,7 @@ unalias mv
 #	flex lm errors show up as fails to compile
 
 #       AIX
-#       bluesky
+#       bluesky or bluevista
 #       put all_reg.csh, regtest.csh, and wrf.tar in ~
 #       execute all_reg.csh
 #       takes about 8-10 h
@@ -365,10 +365,11 @@ EOF
 		ed regtest.csh < ed_in >& /dev/null
 		chmod +x reg.foo.$TEST_NUM[$count_test].$tests[$count_test]
 
-		#	On AIX, we submit jobs to the load leveler queue.  After submission,
-		#	we wait around until it completes, and then we send in the next one.
+		#	On AIX, we submit jobs to the load leveler queue for bluesky and to the LSF queue for 
+		#	bluevista.  After submission, we wait around until it completes, and then we send in 
+		#	the next one.
 
-		if ( `uname` == AIX ) then
+		if      ( ( `uname` == AIX ) && ( `hostname | cut -c 1-2` == bs ) ) then
 			llsubmit reg.foo.$TEST_NUM[$count_test].$tests[$count_test] >&! llsub.out
 			set ok = 0
 			set in_already = 0
@@ -383,6 +384,21 @@ EOF
 			end
 			cp /ptmp/$USER/wrf_regression.$joe_id/wrftest.output wrftest.output.$TEST_NUM[$count_test].$tests[$count_test]
 			rm llsub.out llq.report
+		else if ( ( `uname` == AIX ) && ( `hostname | cut -c 1-2` == bv ) ) then
+			bsub < reg.foo.$TEST_NUM[$count_test].$tests[$count_test] >&! bsub.out
+			set ok = 0
+			set in_already = 0
+			while ( $ok == 0 )
+				sleep 10 ; bjobs >&! bjobs.report
+				grep `cat bsub.out | cut -d"<" -f2 | cut -d ">" -f1` bjobs.report >& /dev/null
+				set ok = $status
+				if ( ( $ok == 0 ) && ( $in_already == 0 ) ) then
+					set in_already = 1
+					set joe_id = `cat bsub.out | cut -d"<" -f2 | cut -d ">" -f1`
+				endif
+			end
+			cp /ptmp/$USER/wrf_regression.$joe_id/wrftest.output wrftest.output.$TEST_NUM[$count_test].$tests[$count_test]
+			rm bsub.out bjobs.report
 
 		#	On the "other" non-queued machines, we just execute the script and wait until
 		#	we get the process returning control, then we move on.

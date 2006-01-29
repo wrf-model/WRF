@@ -14,20 +14,16 @@
 # @ ja_report		= yes
 # @ queue
 
-# QSUB -q ded_4             # submit to 4 proc
-# QSUB -l mpp_p=4           # request 4 processors
-# QSUB -lT  21600           # max. job time limit is 6 h
-# QSUB -lF 250Mw            # max. job file size limit is 250 Megawords
-# QSUB -eo                  # merge error and output into one file
-# QSUB -o  reg.out          # output file name
-# QSUB                      # there are no further QSUB commands
-
-#PBS -V -A acb
-#PBS -lnodes=4:comp -l walltime=40000
-
-if ( ( `uname` == Linux ) && ( `hostname | cut -d. -f2-` == fsl.noaa.gov ) ) then
-	source /usr/local/bin/setup-mpi.csh
-endif
+#BSUB -x                                # exlusive use of node (not_shared)
+# #BSUB -a mpich_gm                       # at NCAR: lightning
+# #BSUB -R "span[ptile=2]"                # how many tasks per node (1 or 2)
+#BSUB -a poe                            # at NCAR: bluevista
+#BSUB -R "span[ptile=4]"                # how many tasks per node (up to 8)
+#BSUB -n 4                              # number of total tasks
+#BSUB -o reg.out                        # output filename (%J to add job id)
+#BSUB -e reg.err                        # error filename
+#BSUB -J reg.test                       # job name
+#BSUB -q premium                        # queue
 
 #	This is a script to test the bit-for-bit reproducibility of
 #	the WRF model, when comparing single processor serial runs to
@@ -60,19 +56,13 @@ set clrm = 0          # compile local run mmmtmp, for using clsroom cluster and 
 #	If this is a batch job (NCAR's IBMs or FSL's Intel and Alpha), we need to muck with the "input"
 #	parameters a bit.
 
-if      ( ( `uname` == AIX ) || ( `hostname` == tempest ) ) then
+if      ( ( `uname` == AIX ) || ( `hostname` == tempest ) || ( `hostname | cut -c 1-2` == ln ) ) then
 	set argv = ( -here )
 	set argv = ( -ftp )
         set argv = ( -D today )
 	set argv = ( -env )
 	set WRFREGFILE = /mmm/users/gill/wrf.tar
 	set argv = ( -f wrf.tar ) 
-else if ( ( `uname` == Linux ) && ( `hostname | cut -d. -f2-` == fsl.noaa.gov ) && ( $user == jacquesm ) ) then
-	set argv = ( -env )
-else if ( ( `uname` == Linux ) && ( `hostname | cut -d. -f2-` == fsl.noaa.gov ) && ( $user == weiwang ) ) then
-	set WRFREGFILE = /p31/ncarwrf/WRF_REG_FILES/wrf.tar
-	set WRFREGDATA = /p31/ncarwrf/WRF_REG_FILES/data.tar.gz
-	set argv = ( -env )
 else if ( ( `uname` == OSF1 ) && ( `hostname` == maple ) && ( $user == michalak ) ) then
         set clrm=1
 endif
@@ -95,7 +85,8 @@ else if ( (`hostname | cut -c 1-6` == joshua ) || \
           ( `hostname` == maple ) || (`hostname | cut -c 1-7` == service ) ) then
 	set WRFREGDATAEM = /users/gill/WRF-data-EM
 	set WRFREGDATANMM = /users/gill/WRF-data-NMM
-else if ( ( `hostname | cut -c 1-2` == bs ) || ( `hostname` == tempest ) || ( `hostname | cut -c 1-2` == ln ) ) then
+else if ( ( `hostname | cut -c 1-2` == bs ) || ( `hostname` == tempest ) || ( `hostname | cut -c 1-2` == ln ) || \
+          ( `hostname | cut -c 1-2` == bv ) ) then
 	set WRFREGDATAEM = /mmm/users/gill/WRF-data-EM
 	set WRFREGDATANMM = /mmm/users/gill/WRF-data-NMM
 else
@@ -286,7 +277,7 @@ set ESMF_LIB = FALSE
 if ( $ESMF_LIB == TRUE ) then
 	if ( ( `uname` == AIX ) && \
              ( ( `hostname | cut -c 1-2` == bs ) || \
-               ( `hostname | cut -c 1-2` == bd ) ) ) then
+               ( `hostname | cut -c 1-2` == bv ) ) ) then
 		echo "A separately installed version of the latest ESMF library"
 		echo "(NOT the ESMF library included in the WRF tarfile) will"
 		echo "be used for some tests"
@@ -308,7 +299,7 @@ set QUILT = FALSE
 if ( $QUILT == TRUE ) then
 	if ( ( `uname` == AIX ) && \
 	     ( ( `hostname | cut -c 1-2` == bs ) || \
-	       ( `hostname | cut -c 1-2` == bd ) ) ) then
+	       ( `hostname | cut -c 1-2` == bv ) ) ) then
 		echo "One WRF output quilt server will be used for some tests"
 	else if ( ( `uname` == OSF1 ) && \
 		  ( ( `hostname` == duku    ) || \
@@ -783,16 +774,17 @@ set MPIRUNCOMMANDPOST   =
 touch version_info
 if ( ( $ARCH[1] == AIX ) && \
      ( ( `hostname | cut -c 1-2` == bs ) || \
-       ( `hostname | cut -c 1-2` == bd ) ) ) then
+       ( `hostname | cut -c 1-2` == bv ) ) ) then
 	set DEF_DIR             = $home
 	set TMPDIR              = /ptmp/$user
 	# keep stuff out of $HOME and /ptmp/$USER
 	# this allows multiple regressions tests to run simultaneously
 	# extend this to other machines later
-	if ( ! $?LOADL_JOB_NAME ) then
+	if      ( ( `hostname | cut -c 1-2` == bs ) && ( ! $?LOADL_JOB_NAME ) ) then
 		echo "${0}: ERROR::  This batch script must be submitted via"
 		echo "${0}:          LoadLeveler on an AIX machine\!"
-	else
+		exit
+	else if   ( `hostname | cut -c 1-2` == bs ) then
 		set job_id              = `echo ${LOADL_JOB_NAME} | cut -f2 -d'.'`
 		set DEF_DIR             = /ptmp/$user/wrf_regression.${job_id}
 		set TMPDIR              = $DEF_DIR
@@ -804,6 +796,17 @@ if ( ( $ARCH[1] == AIX ) && \
 			echo "See ${DEF_DIR}/wrftest.output and other files in ${DEF_DIR} for test results"
 		endif
 		set CUR_DIR = ${LOADL_STEP_INITDIR}
+	else if   ( `hostname | cut -c 1-2` == bv ) then
+		set job_id              = $LSB_JOBID
+		set DEF_DIR             = /ptmp/$user/wrf_regression.${job_id}
+		set TMPDIR              = $DEF_DIR
+		if ( -d $DEF_DIR ) then
+			echo "${0}: ERROR::  Directory ${DEF_DIR} exists, please remove it"
+			exit ( 1 ) 
+		else
+			mkdir -p $DEF_DIR
+			echo "See ${DEF_DIR}/wrftest.output and other files in ${DEF_DIR} for test results"
+		endif
 	endif
 	if ( ! -d $TMPDIR ) mkdir $TMPDIR
 	set MAIL                = /usr/bin/mailx
@@ -822,7 +825,11 @@ if ( ( $ARCH[1] == AIX ) && \
 	set OPENMP 		= $Num_Procs
         setenv MP_PROCS  $Num_Procs
         setenv MP_RMPOOL 1
-	set MPIRUNCOMMAND       =  poe 
+	if      ( `hostname | cut -c 1-2` == bs ) then
+		set MPIRUNCOMMAND       =  poe 
+	else if ( `hostname | cut -c 1-2` == bv ) then
+		set MPIRUNCOMMAND       =  mpirun.lsf
+	endif
 	if ( $CHEM == TRUE ) then
 		set ZAP_OPENMP		= TRUE
 	else if ( $CHEM == FALSE ) then
@@ -962,7 +969,7 @@ EOF
 	echo "OS version info: " >>! version_info
 	uname -a >>&! version_info
 	echo " " >>! version_info
-else if ( ( $ARCH[1] == Linux ) && ( `hostname | cut -c 1-2` ==  ln) ) then
+else if ( ( $ARCH[1] == Linux ) && ( `hostname | cut -c 1-2` ==  ln ) ) then
 	set DEF_DIR	= /ptmp/${user}/wrf_regtest
 	if ( ! -d $DEF_DIR ) mkdir $DEF_DIR
 	set TMPDIR		= .
@@ -970,8 +977,8 @@ else if ( ( $ARCH[1] == Linux ) && ( `hostname | cut -c 1-2` ==  ln) ) then
 	if      ( $LINUX_COMP == PGI ) then
 		set COMPOPTS	= ( 1 2 3 )
 	endif
-	set Num_Procs		= 2
-	set OPENMP		= $Num_Procs
+	set Num_Procs		= 4
+	set OPENMP		= 2
 	cat >! machfile << EOF
 `hostname`
 `hostname`
@@ -980,8 +987,7 @@ else if ( ( $ARCH[1] == Linux ) && ( `hostname | cut -c 1-2` ==  ln) ) then
 EOF
 	set Mach		= `pwd`/machfile
 	set ZAP_OPENMP		= TRUE
-	set MPIRUNCOMMAND       = ( mpirun -np $Num_Procs -machinefile $Mach )
-	set MPIRUNCOMMAND       = ( mpirun -np $Num_Procs )
+	set MPIRUNCOMMAND       =  mpirun.lsf
 	echo "Compiler version info: " >! version_info
 	if      ( $LINUX_COMP == PGI ) then
 		pgf90 -V >>&! version_info
@@ -1114,37 +1120,6 @@ EOF
 	echo "OS version info: " >>! version_info
 	uname -a >>&! version_info
 	echo " " >>! version_info
-else if ( ( $ARCH[1] == Linux ) && ( `hostname | cut -d. -f2-` == fsl.noaa.gov ) && ( $user == jacquesm ) ) then
-	set DEF_DIR		= /p10/acb/users/${user}/wrfReg
-	set TMPDIR              = .
-	set MAIL		= /usr/bin/Mail
-	set COMPOPTS		= ( 1 3 5 )
-	set Num_Procs		= 4
-	set OPENMP 		= $Num_Procs
-	set MPIRUNCOMMAND 	= ( mpirun -np $Num_Procs )
-	set ZAP_OPENMP		= TRUE
-	echo "Compiler version info: " >! version_info
-	fort -version >>&! version_info
-	echo " " >>! version_info
-	echo "OS version info: " >>! version_info
-	uname -a >>&! version_info
-	echo " " >>! version_info
-else if ( ( $ARCH[1] == Linux ) && ( `hostname | cut -d. -f2-` == fsl.noaa.gov ) && ( $user == weiwang ) ) then
-	set DEF_DIR		= /p31/ncarwrf
-	set TMPDIR              = .
-	set MAIL		= /usr/bin/Mail
-	set COMPOPTS		= ( 1 3 5 )
-	set Num_Procs		= 4
-	set OPENMP 		= $Num_Procs
-	set MPIRUNCOMMAND 	= ( mpirun -np $Num_Procs )
-	set ZAP_OPENMP		= TRUE
-	echo "Compiler version info: " >! version_info
-	fort -version >>&! version_info
-	echo " " >>! version_info
-	echo "OS version info: " >>! version_info
-	uname -a >>&! version_info
-	echo " " >>! version_info
-	setenv NETCDF /usr/local/netcdf-3.4
 else
 	echo "Unrecognized architecture for regression test"  >! error_message
 	echo `uname`                                          >> error_message

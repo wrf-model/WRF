@@ -2150,7 +2150,6 @@ END SUBROUTINE pg_buoy_w
 !-------------------------------------------------------------------------------
 
 SUBROUTINE w_damp( rw_tend, ww, w, mut, rdnw, dt,     &
-                      itimestep, id_grid,             &
                       w_damping,                      &
                       ids, ide, jds, jde, kds, kde,   &
                       ims, ime, jms, jme, kms, kme,   &
@@ -2160,7 +2159,7 @@ SUBROUTINE w_damp( rw_tend, ww, w, mut, rdnw, dt,     &
 
    ! Input data
 
-   INTEGER ,          INTENT(IN   ) :: w_damping, itimestep, id_grid
+   INTEGER ,          INTENT(IN   ) :: w_damping
 
    INTEGER ,          INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
                                        ims, ime, jms, jme, kms, kme, &
@@ -2180,6 +2179,8 @@ SUBROUTINE w_damp( rw_tend, ww, w, mut, rdnw, dt,     &
    INTEGER :: itf, jtf, i, j, k, maxi, maxj, maxk
    INTEGER :: some
    CHARACTER*512 :: temp
+   CHARACTER (LEN=256) :: time_str
+   CHARACTER (LEN=256) :: grid_str
 
 !<DESCRIPTION>
 !
@@ -2248,8 +2249,10 @@ SUBROUTINE w_damp( rw_tend, ww, w, mut, rdnw, dt,     &
      ENDDO
    ENDIF
    IF ( some .GT. 0 ) THEN
+     CALL get_current_time_string( time_str )
+     CALL get_current_grid_name( grid_str )
      WRITE(wrf_err_message,*)some,                                            &
-            ' points exceeded cfl=2 in domain ', id_grid, ' at time ', itimestep*dt/3600, ' hours'
+            ' points exceeded cfl=2 in domain '//TRIM(grid_str)//' at time '//TRIM(time_str)//' hours'
      CALL wrf_debug ( 0 , TRIM(wrf_err_message) )
      WRITE(wrf_err_message,*)'MAX AT i,j,k: ',maxi,maxj,maxk,' cfl,w,d(eta)=',maxcfl, &
                              maxdub,maxdeta

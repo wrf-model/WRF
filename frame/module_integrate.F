@@ -263,6 +263,14 @@ RECURSIVE SUBROUTINE integrate ( grid )
 
    END INTERFACE
 
+   ! This allows us to reference the current grid from anywhere beneath 
+   ! this point for debugging purposes.  
+   ! In the case of operations involving already initialized parent and child, 
+   ! the current grid is set to the child grid.  
+!$$$ Improve this later to track both parent and child...  
+!$$$ Use either an optional argument or another interface...  
+   CALL set_current_grid_ptr( grid )
+
    IF ( .NOT. WRFU_ClockIsStopTime(grid%domain_clock ,rc=rc) ) THEN
       CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
       CALL domain_clockprint ( 150, grid, 'DEBUG:  top of integrate(),' )
@@ -291,6 +299,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
          CALL med_before_solve_io ( grid , config_flags )
          grid_ptr => grid
          DO WHILE ( ASSOCIATED( grid_ptr ) )
+            CALL set_current_grid_ptr( grid_ptr )
             CALL wrf_debug( 100 , 'module_integrate: calling solve interface ' )
             CALL solve_interface ( grid_ptr ) 
             CALL domain_clockprint ( 150, grid_ptr, &
@@ -305,12 +314,14 @@ RECURSIVE SUBROUTINE integrate ( grid )
             CALL wrf_debug( 100 , 'module_integrate: back from solve interface ' )
             grid_ptr => grid_ptr%sibling
          END DO
+         CALL set_current_grid_ptr( grid )
          CALL med_calc_model_time ( grid , config_flags )
          CALL med_after_solve_io ( grid , config_flags )
          grid_ptr => grid
          DO WHILE ( ASSOCIATED( grid_ptr ) )
             DO kid = 1, max_nests
               IF ( ASSOCIATED( grid_ptr%nests(kid)%ptr ) ) THEN
+                CALL set_current_grid_ptr( grid_ptr%nests(kid)%ptr )
                 ! Recursive -- advance nests from previous time level to this time level.
                 CALL wrf_debug( 100 , 'module_integrate: calling med_nest_force ' )
                 CALL med_nest_force ( grid_ptr , grid_ptr%nests(kid)%ptr , config_flags )
@@ -331,6 +342,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
             END DO
             grid_ptr => grid_ptr%sibling
          END DO
+         CALL set_current_grid_ptr( grid )
          !  Report on the timing for a single time step.
          IF ( wrf_dm_on_monitor() ) THEN
 ! begin KLUDGE

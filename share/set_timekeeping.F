@@ -1110,6 +1110,8 @@ SUBROUTINE Setup_Timekeeping ( grid )
                          __LINE__  )
 #endif
 
+   grid%time_set = .TRUE.
+
    CALL wrf_debug ( 100 , 'setup_timekeeping:  returning...' )
 
 END SUBROUTINE Setup_Timekeeping

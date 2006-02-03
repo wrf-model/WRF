@@ -48,4 +48,14 @@ by both C++ and F90 compilers.
 #define NO_LEAP_CALENDAR
 #endif
 
+! TBH:  When NO_DT_COMPONENT_INIT is set, code that uses F95 compile-time 
+! TBH:  initialization of components of derived types is not included.  
+! TBH:  Some older compilers like PGI 5.x do not support this F95 
+! TBH:  feature.
+#ifdef NO_LEAP_CALENDAR
+#undef NO_DT_COMPONENT_INIT
+#else
+#define NO_DT_COMPONENT_INIT
+#endif
+
 #endif

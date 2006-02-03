@@ -155,7 +155,6 @@ END SUBROUTINE rk_step_prep
 !-------------------------------------------------------------------------------
 
 SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
-                         itimestep, id_grid,                              &
                          ru_tend, rv_tend, rw_tend, ph_tend, t_tend,      &
                          ru_tendf, rv_tendf, rw_tendf, ph_tendf, t_tendf, &
                          mu_tend, u_save, v_save, w_save, ph_save,        &
@@ -190,7 +189,6 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
    LOGICAL ,               INTENT(IN   ) :: non_hydrostatic, leapfrog
 
    INTEGER ,               INTENT(IN   ) :: n_moist, rk_step
-   INTEGER ,               INTENT(IN   ) :: itimestep, id_grid
 
    REAL , DIMENSION( ims:ime , kms:kme, jms:jme  ) ,              &
                                         INTENT(IN   ) :: ru,      &
@@ -485,7 +483,6 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                   its, ite, jts, jte, kts, kte   )
 
   CALL w_damp   ( rw_tend, ww, w, mut, rdnw, dt,    &
-                    itimestep, id_grid,             &
                     config_flags%w_damping,         &
                     ids, ide, jds, jde, kds, kde,   &
                     ims, ime, jms, jme, kms, kme,   &

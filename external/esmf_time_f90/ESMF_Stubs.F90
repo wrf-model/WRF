@@ -51,7 +51,6 @@ CONTAINS
    SUBROUTINE ESMF_Initialize( vm, defaultCalendar, rc )
       USE esmf_basemod
       USE esmf_calendarmod
-      USE esmf_timemod,     only: defaultCal
       TYPE(ESMF_VM),           INTENT(IN   ), OPTIONAL :: vm
       TYPE(ESMF_CalendarType), INTENT(IN   ), OPTIONAL :: defaultCalendar
       INTEGER,                 INTENT(  OUT), OPTIONAL :: rc

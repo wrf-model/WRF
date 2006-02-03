@@ -41,9 +41,18 @@ SUBROUTINE wrf_debug( level , str )
   CHARACTER*(*) str
   INTEGER , INTENT (IN) :: level
   INTEGER               :: debug_level
+  CHARACTER (LEN=256) :: time_str
+  CHARACTER (LEN=256) :: grid_str
+  CHARACTER (LEN=512) :: out_str
   CALL get_wrf_debug_level( debug_level )
   IF ( level .LE. debug_level ) THEN
-    CALL wrf_message( str )
+    ! old behavior
+!      CALL wrf_message( str )
+    ! new behavior:  include domain name and time-stamp
+    CALL get_current_time_string( time_str )
+    CALL get_current_grid_name( grid_str )
+    out_str = TRIM(grid_str)//' '//TRIM(time_str)//' '//TRIM(str)
+    CALL wrf_message( TRIM(out_str) )
   ENDIF
   RETURN
 END SUBROUTINE wrf_debug
@@ -54,15 +63,16 @@ SUBROUTINE wrf_message( str )
   IMPLICIT NONE
   CHARACTER*(*) str
 #if defined( DM_PARALLEL ) && ! defined( STUBMPI) 
-  write(0,*) str
+  write(0,*) TRIM(str)
 #endif
-  print*, str
-!TBH:  work around deficiencies in build-automation
-#ifdef USE_LOGERR
-  IF ( WRFU_IsInitialized() ) THEN
-    CALL WRFU_LogWrite( str, WRFU_LOG_INFO )
-  ENDIF
-#endif
+  print*, TRIM(str)
+!TBH:  Calls to logwrite cut off str in ESMF 2.2.0.
+!TBH:  Restore this call once this ESMF bug is fixed.
+!TBH#ifdef USE_LOGERR
+!TBH  IF ( WRFU_IsInitialized() ) THEN
+!TBH    CALL WRFU_LogWrite( TRIM(str), WRFU_LOG_INFO )
+!TBH  ENDIF
+!TBH#endif
 END SUBROUTINE wrf_message
 
 ! intentionally write to stderr only
@@ -72,12 +82,13 @@ SUBROUTINE wrf_message2( str )
   IMPLICIT NONE
   CHARACTER*(*) str
   write(0,*) str
-!TBH:  work around deficiencies in build-automation
-#ifdef USE_LOGERR
-  IF ( WRFU_IsInitialized() ) THEN
-    CALL WRFU_LogWrite( str, WRFU_LOG_INFO )
-  ENDIF
-#endif
+!TBH:  Calls to logwrite cut off str in ESMF 2.2.0.
+!TBH:  Restore this call once this ESMF bug is fixed.
+!TBH#ifdef USE_LOGERR
+!TBH  IF ( WRFU_IsInitialized() ) THEN
+!TBH    CALL WRFU_LogWrite( str, WRFU_LOG_INFO )
+!TBH  ENDIF
+!TBH#endif
 END SUBROUTINE wrf_message2
 
 SUBROUTINE wrf_error_fatal3( file_str, line, str )

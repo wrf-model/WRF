@@ -143,6 +143,7 @@ real::t1,t2
          END IF
 
          CALL Setup_Timekeeping ( grid )
+         CALL set_current_grid_ptr( grid )
          CALL domain_clockprint ( 150, grid, &
                 'DEBUG real:  clock after Setup_Timekeeping,' )
          CALL domain_clock_set( grid, &
@@ -183,6 +184,8 @@ real::t1,t2
       END IF
 
    END DO all_domains
+
+   CALL set_current_grid_ptr( head_grid )
 
    !  We are done.
 

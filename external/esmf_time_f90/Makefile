@@ -60,7 +60,8 @@ ESMF_Alarm.o : ESMF_BaseTime.o ESMF_Time.o ESMF_TimeInterval.o
 ESMF_BaseTime.o : ESMF_Base.o
 ESMF_Clock.o : ESMF_BaseTime.o ESMF_Time.o ESMF_TimeInterval.o
 ESMF_AlarmClock.o : ESMF_Alarm.o ESMF_Clock.o
-ESMF_Time.o : ESMF_BaseTime.o ESMF_TimeInterval.o
+ESMF_Time.o : ESMF_BaseTime.o ESMF_TimeInterval.o ESMF_Calendar.o \
+              ESMF_Stubs.o
 ESMF_Base.o :
 ESMF_Calendar.o : ESMF_BaseTime.o
 ESMF_Fraction.o : ESMF_BaseTime.o
@@ -71,8 +72,7 @@ ESMF_Mod.o : ESMF_Alarm.o ESMF_BaseTime.o ESMF_Clock.o ESMF_Time.o \
 Meat.o : ESMF_Alarm.o ESMF_BaseTime.o ESMF_Clock.o ESMF_Time.o \
         ESMF_Base.o ESMF_Calendar.o ESMF_Fraction.o    \
         ESMF_TimeInterval.o
-ESMF_Stubs.o : ESMF_Base.o ESMF_Calendar.o \
-        ESMF_Alarm.o ESMF_Clock.o ESMF_TimeInterval.o ESMF_Time.o
+ESMF_Stubs.o : ESMF_Base.o ESMF_Calendar.o
 module_utility.o :  ESMF_Mod.o module_symbols_util.o
 module_symbols_util.o :  ESMF_Mod.o
 Test1.o :  module_utility.o

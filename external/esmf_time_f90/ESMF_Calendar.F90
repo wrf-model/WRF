@@ -98,9 +98,10 @@
 !
       type ESMF_DaysPerYear
       private
-        integer :: D = 0    ! whole days per year
-        integer :: Dn = 0   ! fractional days per year numerator
-        integer :: Dd = 1   ! fractional days per year denominator
+        integer :: D        ! whole days per year
+! Fractional days-per-year are not yet used in this implementation.  
+!        integer :: Dn       ! fractional days per year numerator
+!        integer :: Dd       ! fractional days per year denominator
       end type              ! e.g. for Venus, D=0, Dn=926, Dd=1000
 !
 !------------------------------------------------------------------------------
@@ -110,12 +111,23 @@
       type ESMF_Calendar
       private
         type(ESMF_CalendarType) :: Type
+! TBH:  When NO_DT_COMPONENT_INIT is set, code that uses F95 compile-time 
+! TBH:  initialization of components of derived types is not included.  
+! TBH:  Some older compilers, like PGI 5.x do not support this F95 feature.  
+#ifdef NO_DT_COMPONENT_INIT
+        logical :: Set
+#else
         logical :: Set = .false.
-        integer, dimension(MONTHS_PER_YEAR) :: DaysPerMonth = 0
-        integer :: SecondsPerDay = 0
-        integer :: SecondsPerYear = 0
+#endif
+        integer, dimension(MONTHS_PER_YEAR) :: DaysPerMonth
+        integer :: SecondsPerDay
+        integer :: SecondsPerYear
         type(ESMF_DaysPerYear) :: DaysPerYear
       end type
+
+!------------------------------------------------------------------------------
+! !PUBLIC DATA:
+   TYPE(ESMF_Calendar), public, save, pointer :: defaultCal   ! Default Calendar
 
 
 !
@@ -204,7 +216,8 @@
       type(ESMF_DaysPerYear) :: dayspy
 
       if ( present(rc) ) rc = ESMF_FAILURE
-! Calendar is hard-coded.  Use ESMF library if more flexibility is needed.  
+! Calendar type is hard-coded.  Use ESMF library if more flexibility is 
+! needed.  
 #ifdef NO_LEAP_CALENDAR
       if ( calendartype%caltype  /= ESMF_CAL_NOLEAP%caltype ) then
          write(6,*) 'Not a valid calendar type for this implementation'
@@ -224,17 +237,22 @@
       end if
       ESMF_CalendarCreate%Type = ESMF_CAL_GREGORIAN
 #endif
-!$$$ This is a bug on some systems -- need initial value set by compiler at 
-!$$$ startup.  
+! This is a bug on some systems -- need initial value set by compiler at 
+! startup.  
+! However, note that some older compilers do not support compile-time 
+! initialization of data members of Fortran derived data types.  For example, 
+! PGI 5.x compilers do not support this F95 feature.  See 
+! NO_DT_COMPONENT_INIT.  
       ESMF_CalendarCreate%Set = .true.
       ESMF_CalendarCreate%SecondsPerDay = SECONDS_PER_DAY
 ! DaysPerYear and SecondsPerYear are incorrect for Gregorian calendars...  
       dayspy%D = size(daym)
-      dayspy%Dn = 0
-      dayspy%Dd = 1
+!TBH:  TODO:  Replace DaysPerYear and SecondsPerYear with methods 
+!TBH:  TODO:  since they only make sense for the NO_LEAP calendar!  
       ESMF_CalendarCreate%DaysPerYear = dayspy
       ESMF_CalendarCreate%SecondsPerYear = ESMF_CalendarCreate%SecondsPerDay &
                                        * dayspy%D
+!TBH:  TODO:  use mdayleap for leap-year calendar
       ESMF_CalendarCreate%DaysPerMonth(:) = mday(:)
 
       if ( present(rc) ) rc = ESMF_SUCCESS
@@ -259,9 +277,13 @@
 !EOP
 ! !REQUIREMENTS:
 !     TMGn.n.n
+! Note that return value from this function will be bogus for older compilers 
+! that do not support compile-time initialization of data members of Fortran 
+! derived data types.  For example, PGI 5.x compilers do not support this F95 
+! feature.  At the moment, the call to this fuction is #ifdefd out when the 
+! leap-year calendar is used so this is not an issue for WRF (see 
+! NO_DT_COMPONENT_INIT).  
         ESMF_CalendarInitialized = calendar%set
-        if ( calendar%SecondsPerDay == 0 ) &
-              ESMF_CalendarInitialized = .false.
 
      end function ESMF_CalendarInitialized
 

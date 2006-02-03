@@ -71,6 +71,10 @@ MODULE module_esmf_extensions
   ! "is-initialized" inquiry
   PUBLIC ESMF_SetInitialized
 
+!!!!!!!!! added 20051012, JM
+  ! Need to request that this interface be added...  
+  PUBLIC WRFU_TimeIntervalDIVQuot
+
 
 CONTAINS
 
@@ -286,6 +290,58 @@ CONTAINS
     ENDIF
   END SUBROUTINE ESMF_SetCurrent
 !------------------------------------------------------------------------------
+
+
+! Note:  this implementation is largely duplicated from external/esmf_time_f90
+!!!!!!!!!!!!!!!!!! added jm 20051012
+! new WRF-specific function, Divide two time intervals and return the whole integer, without remainder
+      function WRFU_TimeIntervalDIVQuot(timeinterval1, timeinterval2)
+
+! !RETURN VALUE:
+      INTEGER :: WRFU_TimeIntervalDIVQuot
+
+! !ARGUMENTS:
+      type(ESMF_TimeInterval), intent(in) :: timeinterval1
+      type(ESMF_TimeInterval), intent(in) :: timeinterval2
+
+! !LOCAL
+      INTEGER :: retval, rc
+      type(ESMF_TimeInterval) :: zero, i1,i2
+
+! !DESCRIPTION:
+!     Returns timeinterval1 divided by timeinterval2 as a fraction quotient.
+!
+!     The arguments are:
+!     \begin{description}
+!     \item[timeinterval1]
+!          The dividend
+!     \item[timeinterval2]
+!          The divisor
+!     \end{description}
+!
+! !REQUIREMENTS:
+!     TMG1.5.5
+!EOP
+      call ESMF_TimeIntervalSet( zero, rc=rc )
+      i1 = timeinterval1
+      i2 = timeinterval2
+      if ( i1 .LT. zero ) then
+        i1 = i1 * (-1)
+      endif
+      if ( i2 .LT. zero ) then
+        i2 = i2 * (-1)
+      endif
+! repeated subtraction
+      retval = 0
+      DO WHILE (  i1 .GE. i2 )
+        i1 = i1 - i2
+        retval = retval + 1
+      ENDDO
+
+      WRFU_TimeIntervalDIVQuot = retval
+
+      end function WRFU_TimeIntervalDIVQuot
+!!!!!!!!!!!!!!!!!!
 
 
 END MODULE module_esmf_extensions

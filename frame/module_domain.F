@@ -136,6 +136,9 @@ MODULE module_domain
       LOGICAL :: domain_clock_created
       LOGICAL, POINTER :: alarms_created(:)
 
+      ! Have clocks and times been initialized yet?
+      LOGICAL :: time_set = .FALSE.
+
    END TYPE domain
 
    !  Now that a "domain" TYPE exists, we can use it to store a few pointers
@@ -156,7 +159,11 @@ MODULE module_domain
    END TYPE domain_levels
 
    TYPE(domain_levels) , DIMENSION(max_levels)            :: head_for_each_level
-   
+
+   ! Use this to support debugging features, giving easy access to clock, etc.  
+   TYPE(domain), POINTER :: current_grid
+   LOGICAL, SAVE :: current_grid_set = .FALSE.
+
 CONTAINS
 
    SUBROUTINE adjust_domain_dims_for_move( grid , dx, dy )
@@ -1520,6 +1527,7 @@ CONTAINS
 
       SUBROUTINE domain_clock_get( grid, current_time,          &
                                          current_timestr,       &
+                                         current_timestr_frac,  &
                                          start_time, stop_time, &
                                          stop_timestr,          &
                                          time_step, advanceCount )
@@ -1527,6 +1535,7 @@ CONTAINS
         TYPE(domain),            INTENT(IN)              :: grid
         TYPE(WRFU_Time),         INTENT(  OUT), OPTIONAL :: current_time
         CHARACTER (LEN=*),       INTENT(  OUT), OPTIONAL :: current_timestr
+        CHARACTER (LEN=*),       INTENT(  OUT), OPTIONAL :: current_timestr_frac
         TYPE(WRFU_Time),         INTENT(  OUT), OPTIONAL :: start_time
         TYPE(WRFU_Time),         INTENT(  OUT), OPTIONAL :: stop_time
         CHARACTER (LEN=*),       INTENT(  OUT), OPTIONAL :: stop_timestr
@@ -1540,6 +1549,9 @@ CONTAINS
 ! </DESCRIPTION>
         ! Locals
         TYPE(WRFU_Time) :: tmpTime
+        INTEGER :: Sn, Sd, rc
+        CHARACTER (LEN=256) :: tmp_str
+        CHARACTER (LEN=256) :: frac_str
         IF ( PRESENT( start_time ) ) THEN
           start_time = domain_get_start_time ( grid )
         ENDIF
@@ -1561,6 +1573,18 @@ CONTAINS
         IF ( PRESENT( current_timestr ) ) THEN
           tmpTime = domain_get_current_time ( grid )
           CALL wrf_timetoa ( tmpTime, current_timestr )
+        ENDIF
+        ! current time string including fractional part, if present
+        IF ( PRESENT( current_timestr_frac ) ) THEN
+          tmpTime = domain_get_current_time ( grid )
+          CALL wrf_timetoa ( tmpTime, tmp_str )
+          CALL WRFU_TimeGet( tmpTime, Sn=Sn, Sd=Sd, rc=rc )
+          IF ( rc /= WRFU_SUCCESS ) THEN
+            CALL wrf_error_fatal ( &
+              'domain_clock_get:  WRFU_TimeGet() failed' )
+          ENDIF
+          CALL fraction_to_string( Sn, Sd, frac_str )
+          current_timestr_frac = TRIM(tmp_str)//TRIM(frac_str)
         ENDIF
         IF ( PRESENT( stop_time ) ) THEN
           stop_time = domain_get_stop_time ( grid )
@@ -1747,6 +1771,78 @@ CONTAINS
 !TBH:  Eventually need to re-implement module_date_time using 
 !TBH:  time manager...  
 
+      ! Set pointer to current grid.  
+      ! To begin with, current grid is not set.  
+      SUBROUTINE set_current_grid_ptr( grid_ptr )
+        IMPLICIT NONE
+        TYPE(domain), POINTER :: grid_ptr
+!PRINT *,'DEBUG:  begin set_current_grid_ptr()'
+!IF ( ASSOCIATED( grid_ptr ) ) THEN
+!  PRINT *,'DEBUG:  set_current_grid_ptr():  current_grid is associated'
+!ELSE
+!  PRINT *,'DEBUG:  set_current_grid_ptr():  current_grid is NOT associated'
+!ENDIF
+        current_grid_set = .TRUE.
+        current_grid => grid_ptr
+!PRINT *,'DEBUG:  end set_current_grid_ptr()'
+      END SUBROUTINE set_current_grid_ptr
 
 END MODULE module_domain
+
+
+! The following routines are outside this module to avoid build dependences.  
+
+
+! Get current time as a string (current time from clock attached to the 
+! current_grid).  Includes fractional part, if present.  
+! Returns empty string if current_grid is not set or if timing has not yet 
+! been set up on current_grid.  
+SUBROUTINE get_current_time_string( time_str )
+  USE module_domain
+  IMPLICIT NONE
+  CHARACTER (LEN=*), INTENT(OUT) :: time_str
+  ! locals
+  INTEGER :: debug_level_lcl
+!PRINT *,'DEBUG:  begin get_current_time_string()'
+  time_str = ''
+  IF ( current_grid_set ) THEN
+!$$$DEBUG
+!PRINT *,'DEBUG:  get_current_time_string():  checking association of current_grid...'
+!IF ( ASSOCIATED( current_grid ) ) THEN
+!  PRINT *,'DEBUG:  get_current_time_string():  current_grid is associated'
+!ELSE
+!  PRINT *,'DEBUG:  get_current_time_string():  current_grid is NOT associated'
+!ENDIF
+!$$$END DEBUG
+    IF ( current_grid%time_set ) THEN
+!PRINT *,'DEBUG:  get_current_time_string():  calling domain_clock_get()'
+      ! set debug_level to zero and clear current_grid_set to avoid recursion
+      CALL get_wrf_debug_level( debug_level_lcl )
+      CALL set_wrf_debug_level ( 0 )
+      current_grid_set = .FALSE.
+      CALL domain_clock_get( current_grid, current_timestr_frac=time_str )
+      ! restore debug_level and current_grid_set
+      CALL set_wrf_debug_level ( debug_level_lcl )
+      current_grid_set = .TRUE.
+!PRINT *,'DEBUG:  get_current_time_string():  back from domain_clock_get()'
+    ENDIF
+  ENDIF
+!PRINT *,'DEBUG:  end get_current_time_string()'
+END SUBROUTINE get_current_time_string
+
+
+! Get current domain name as a string of form "d<NN>" where "<NN>" is 
+! grid%id printed in two characters, with leading zero if needed ("d01", 
+! "d02", etc.).  
+! Return empty string if current_grid not set.  
+SUBROUTINE get_current_grid_name( grid_str )
+  USE module_domain
+  IMPLICIT NONE
+  CHARACTER (LEN=*), INTENT(OUT) :: grid_str
+  grid_str = ''
+  IF ( current_grid_set ) THEN
+    WRITE(grid_str,FMT="('d',I2.2)") current_grid%id
+  ENDIF
+END SUBROUTINE get_current_grid_name
+
 

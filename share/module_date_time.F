@@ -776,7 +776,7 @@ END MODULE module_date_time
       ! change ISO 8601 'T' to WRF '_'
       str(11:11) = '_'
       WRITE (mess,*) 'DEBUG wrf_timetoa():  returning with str = [',TRIM(str),']'
-      CALL wrf_debug ( 150 , mess )
+      CALL wrf_debug ( 150 , TRIM(mess) )
       RETURN
    END SUBROUTINE wrf_timetoa
 

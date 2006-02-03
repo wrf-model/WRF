@@ -173,6 +173,8 @@ FUNCTION nfeb ( year ) RESULT (num_days)
       IMPLICIT NONE
       INTEGER :: year
       INTEGER :: num_days
+! TBH:  TODO:  Replace this hack with run-time decision based on 
+! TBH:  TODO:  passed-in calendar.  
 #ifdef NO_LEAP_CALENDAR
       num_days = 28 ! By default, February has 28 days ...
 #else

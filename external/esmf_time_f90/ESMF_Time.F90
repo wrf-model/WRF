@@ -44,6 +44,7 @@
       ! associated derived types
       use ESMF_TimeIntervalMod
       use ESMF_CalendarMod
+      use ESMF_Stubs
 
       implicit none
 !
@@ -62,10 +63,6 @@
        integer :: YR
        type(ESMF_Calendar), pointer :: calendar  ! associated calendar
      end type
-!------------------------------------------------------------------------------
-! !PUBLIC DATA:
-   TYPE(ESMF_Calendar), public, save, pointer :: defaultCal   ! Default Calendar
-
 
 !------------------------------------------------------------------------------
 ! !PUBLIC TYPES:
@@ -652,14 +649,20 @@
       ENDIF
       IF ( PRESENT(calendar) )THEN
 !  PRINT *,'DEBUG:  ESMF_TimeSet():  using passed-in calendar'
+! Note that the ugly hack of wrapping the call to ESMF_CalendarInitialized() 
+! inside this #ifdef is due to lack of support for compile-time initialization 
+! of components of Fortran derived types.  Some older compilers like PGI 5.x 
+! do not support this F95 feature.  In this case we only lose a safety check.  
+#ifndef NO_DT_COMPONENT_INIT
         IF ( .not. ESMF_CalendarInitialized( calendar ) )THEN
            call wrf_error_fatal( "Error:: ESMF_CalendarCreate not "// &
                                  "called on input Calendar")
         END IF
+#endif
         time%Calendar => calendar
       ELSE
 !  PRINT *,'DEBUG:  ESMF_TimeSet():  using default calendar'
-        IF ( .not. ESMF_CalendarInitialized( defaultCal ) )THEN
+        IF ( .not. ESMF_IsInitialized() )THEN
            call wrf_error_fatal( "Error:: ESMF_Initialize not called")
         END IF
         time%Calendar => defaultCal

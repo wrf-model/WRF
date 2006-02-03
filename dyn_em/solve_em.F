@@ -1069,7 +1069,6 @@ BENCH_START(rk_tend_tim)
 
       CALL wrf_debug ( 200 , ' call rk_tendency' )
       CALL rk_tendency ( config_flags, rk_step,                           &
-                         itimestep, grid%id,                              &
                          ru_tend, rv_tend, rw_tend, ph_tend, t_tend,      &
                          ru_tendf, rv_tendf, rw_tendf, ph_tendf, t_tendf, &
                          mu_tend, u_save, v_save, w_save, ph_save,        &

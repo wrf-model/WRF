@@ -665,8 +665,14 @@ CONTAINS
 !***  BELJAARS CORRECTION FOR USTAR
 !----------------------------------------------------------------------
 !
-            WSTAR2=WWST2*ABS(BTGH*AKHS*DTHV)**(2./3.)
+            IF(DTHV<=0.)THEN                                  
+              WSTAR2=WWST2*ABS(BTGH*AKHS*DTHV)**(2./3.)      
+            ELSE                                            
+              WSTAR2=0.                                    
+            ENDIF                                         
+!
             USTAR=MAX(SQRT(AKMS*SQRT(DU2+WSTAR2)),EPSUST)
+!
 !----------------------------------------------------------------------
 !         ENDIF  !  End of turbulent branch
 !----------------------------------------------------------------------
@@ -789,7 +795,12 @@ CONTAINS
 !***  BELJAARS CORRECTION FOR USTAR
 !----------------------------------------------------------------------
 !
-            WSTAR2=WWST2*ABS(BTGH*AKHS*DTHV)**(2./3.)
+            IF(DTHV<=0.)THEN                                     
+              WSTAR2=WWST2*ABS(BTGH*AKHS*DTHV)**(2./3.)         
+            ELSE                                               
+              WSTAR2=0.                                       
+            ENDIF                                            
+!
             USTAR=MAX(SQRT(AKMS*SQRT(DU2+WSTAR2)),EPSUST)
 !
 !----------------------------------------------------------------------

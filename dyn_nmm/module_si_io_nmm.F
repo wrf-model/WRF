@@ -35,7 +35,7 @@ MODULE module_si_io_nmm
                                             green_frac_max, ter_input ,  &
                                             toposoil_input, albase_input, &
                                             mxsnal_input, psfc_in,pmsl,cmc_in,sm_in, &
-                                            islope_input
+                                            islope_input,z0_input
 
    INTEGER , DIMENSION(:,:), ALLOCATABLE :: isltyp_input , ivgtyp_input
 
@@ -54,14 +54,17 @@ MODULE module_si_io_nmm
               flag_sm000010 , flag_sm010040 , flag_sm040100 , flag_sm100200 , &
               flag_st010200 , &
               flag_sm010200
-   INTEGER :: flag_soilt010 , flag_soilt040 , flag_soilt100 , flag_soilt200 , &
-              flag_soilm010 , flag_soilm040 , flag_soilm100 , flag_soilm200
+   INTEGER :: flag_soilt000, flag_soilt010 , flag_soilt040 , flag_soilt100 , flag_soilt200 , &
+              flag_soilm000, flag_soilm010 , flag_soilm040 , flag_soilm100 , flag_soilm200
 
    INTEGER :: flag_sst , flag_toposoil
 
-   INTEGER                  :: num_st_levels_input , num_sm_levels_input
-   INTEGER , DIMENSION(100) ::     st_levels_input ,     sm_levels_input
-   REAL , ALLOCATABLE , DIMENSION(:,:,:) :: st_input , sm_input
+   INTEGER                  :: num_st_levels_input , num_sm_levels_input, num_sw_levels_input
+   INTEGER, PARAMETER                  :: num_st_levels_alloc=10 , &
+                                           num_sm_levels_alloc=10, num_sw_levels_alloc=10
+   INTEGER , DIMENSION(100) ::     st_levels_input ,     sm_levels_input, sw_levels_input
+   REAL , ALLOCATABLE , DIMENSION(:,:,:) :: st_inputx , sm_inputx, sw_inputx
+   REAL , ALLOCATABLE , DIMENSION(:,:,:) :: st_input , sm_input, sw_input
 
    REAL                     :: pdtop_in, TLM0D, TPH0D
 
@@ -404,7 +407,7 @@ CONTAINS
 
          !  2D - skin temperature and some sort of soil temp, usually 0-10 cm
 
-!         IF ( .NOT. ALLOCATED ( tg_input)           ) ALLOCATE ( tg_input(its:ite,jts:jte) )
+          IF ( .NOT. ALLOCATED ( tg_input)           ) ALLOCATE ( tg_input(its:ite,jts:jte) )
 !         IF ( .NOT. ALLOCATED ( res_input)          ) ALLOCATE ( res_input(its:ite,jts:jte) )
 
          !  2D - for LSM, these are computed from the categorical precentage values.
@@ -412,6 +415,8 @@ CONTAINS
 !         IF ( .NOT. ALLOCATED ( isltyp_input)       ) ALLOCATE ( isltyp_input(its:ite,jts:jte) )
 !         IF ( .NOT. ALLOCATED ( ivgtyp_input)       ) ALLOCATE ( ivgtyp_input(its:ite,jts:jte) )
           IF ( .NOT. ALLOCATED ( islope_input)       ) ALLOCATE ( islope_input(its:ite,jts:jte) )
+          IF ( .NOT. ALLOCATED ( z0_input)       ) ALLOCATE ( z0_input(its:ite,jts:jte) )
+
 
          !  2D - for LSM, this is a new field from the SI
 
@@ -424,13 +429,17 @@ CONTAINS
          IF ( .NOT. ALLOCATED ( st040100_input)    ) ALLOCATE ( st040100_input(its:ite,jts:jte) )
          IF ( .NOT. ALLOCATED ( st100200_input)    ) ALLOCATE ( st100200_input(its:ite,jts:jte) )
          IF ( .NOT. ALLOCATED ( st010200_input)    ) ALLOCATE ( st010200_input(its:ite,jts:jte) )
-         IF ( .NOT. ALLOCATED ( st_input      )    ) ALLOCATE ( st_input      (its:ite,jts:jte,10) )
+         IF ( .NOT. ALLOCATED ( st_inputx     )    ) ALLOCATE ( st_inputx     (its:ite,jts:jte,num_st_levels_alloc) )
+         IF ( .NOT. ALLOCATED ( st_input     )    ) ALLOCATE ( st_input     (ims:ime,1:num_st_levels_alloc,jms:jme) )
          IF ( .NOT. ALLOCATED ( sm000010_input)    ) ALLOCATE ( sm000010_input(its:ite,jts:jte) )
          IF ( .NOT. ALLOCATED ( sm010040_input)    ) ALLOCATE ( sm010040_input(its:ite,jts:jte) )
          IF ( .NOT. ALLOCATED ( sm040100_input)    ) ALLOCATE ( sm040100_input(its:ite,jts:jte) )
          IF ( .NOT. ALLOCATED ( sm100200_input)    ) ALLOCATE ( sm100200_input(its:ite,jts:jte) )
          IF ( .NOT. ALLOCATED ( sm010200_input)    ) ALLOCATE ( sm010200_input(its:ite,jts:jte) )
-         IF ( .NOT. ALLOCATED ( sm_input      )    ) ALLOCATE ( sm_input      (its:ite,jts:jte,10) )
+         IF ( .NOT. ALLOCATED ( sm_inputx     )    ) ALLOCATE ( sm_inputx     (its:ite,jts:jte,num_st_levels_alloc) )
+         IF ( .NOT. ALLOCATED ( sm_input     )    ) ALLOCATE ( sm_input     (ims:ime,1:num_st_levels_alloc,jms:jme) )
+         IF ( .NOT. ALLOCATED ( sw_inputx     )    ) ALLOCATE ( sw_inputx     (its:ite,jts:jte,num_st_levels_alloc) )
+         IF ( .NOT. ALLOCATED ( sw_input     )    ) ALLOCATE ( sw_input     (ims:ime,1:num_st_levels_alloc,jms:jme) )
 
          IF ( .NOT. ALLOCATED ( soilt010_input)    ) ALLOCATE ( soilt010_input(its:ite,jts:jte) )
          IF ( .NOT. ALLOCATED ( soilt040_input)    ) ALLOCATE ( soilt040_input(its:ite,jts:jte) )
@@ -660,7 +669,7 @@ CONTAINS
       write(0,*)' read_si var_info%name=',var_info%name(1:8)
          IF      ( var_info%name(1:8) .EQ. 'T       ' ) THEN
             READ (13) dum3d
-            do k=kts,kte
+            do k=kts,kte-1
             do j=jts,jte
             do i=its,ite
               t_input(i,j,k)=dum3d(i,j,k)
@@ -674,7 +683,7 @@ CONTAINS
 	write(6,*) 't_input(5,5,5): ', t_input(5,5,5)
          ELSE IF      ( var_info%name(1:8) .EQ. 'U       ' ) THEN
             READ (13) dum3d
-            do k=kts,kte
+            do k=kts,kte-1
             do j=jts,jte
             do i=its,ite
               u_input(i,j,k)=dum3d(i,j,k)
@@ -688,7 +697,7 @@ CONTAINS
 
          ELSE IF ( var_info%name(1:8) .EQ. 'V       ' ) THEN
             READ (13) dum3d
-            do k=kts,kte
+            do k=kts,kte-1
             do j=jts,jte
             do i=its,ite
               v_input(i,j,k)=dum3d(i,j,k)
@@ -702,7 +711,7 @@ CONTAINS
 
          ELSE IF ( var_info%name(1:8) .EQ. 'Q      ' ) THEN
             READ (13) dum3d
-            do k=kts,kte
+            do k=kts,kte-1
             do j=jts,jte
             do i=its,ite
               q_input(i,j,k)=dum3d(i,j,k)
@@ -831,7 +840,13 @@ CONTAINS
 	write(6,*) 'num_st_levels_input=',num_st_levels_input
 	write(6,*) 'st000010_input(50,50): ', st000010_input(50,50)
             st_levels_input(num_st_levels_input) = char2int2(var_info%name(3:8))
-            st_input(:,:,num_st_levels_input + 1) = st000010_input
+
+            do j=jts,jte
+            do i=its,ite
+            st_inputx(I,J,num_st_levels_input + 1) = st000010_input(I,J)
+	    enddo
+	    enddo
+
          ELSE IF ( var_info%name(1:8) .EQ. 'ST010040' ) THEN
             READ (13) dum2d
             do j=jts,jte
@@ -844,7 +859,11 @@ CONTAINS
             st_levels_input(num_st_levels_input) = char2int2(var_info%name(3:8))
 	write(6,*) 'num_st_levels_input=',num_st_levels_input
 	write(6,*) 'st_levels_input: ', st_levels_input
-            st_input(:,:,num_st_levels_input + 1) = st010040_input
+            do j=jts,jte
+            do i=its,ite
+            st_inputx(I,J,num_st_levels_input + 1) = st010040_input(I,J)
+            enddo
+            enddo
          ELSE IF ( var_info%name(1:8) .EQ. 'ST040100' ) THEN
             READ (13) dum2d
             do j=jts,jte
@@ -857,7 +876,11 @@ CONTAINS
             st_levels_input(num_st_levels_input) = char2int2(var_info%name(3:8))
 	write(6,*) 'num_st_levels_input=',num_st_levels_input
 	write(6,*) 'st_levels_input: ', st_levels_input
-            st_input(:,:,num_st_levels_input + 1) = st040100_input
+            do j=jts,jte
+            do i=its,ite
+            st_inputx(I,J,num_st_levels_input + 1) = st040100_input(I,J)
+            enddo
+            enddo
          ELSE IF ( var_info%name(1:8) .EQ. 'ST100200' ) THEN
             READ (13) dum2d
             do j=jts,jte
@@ -870,7 +893,11 @@ CONTAINS
             st_levels_input(num_st_levels_input) = char2int2(var_info%name(3:8))
 	write(6,*) 'num_st_levels_input=',num_st_levels_input
 	write(6,*) 'st_levels_input: ', st_levels_input
-            st_input(:,:,num_st_levels_input + 1) = st100200_input
+            do j=jts,jte
+            do i=its,ite
+            st_inputx(I,J,num_st_levels_input + 1) = st100200_input(I,J)
+            enddo
+            enddo
          ELSE IF ( var_info%name(1:8) .EQ. 'ST010200' ) THEN
             READ (13) dum2d
             do j=jts,jte
@@ -883,7 +910,11 @@ CONTAINS
             st_levels_input(num_st_levels_input) = char2int2(var_info%name(3:8))
 	write(6,*) 'num_st_levels_input=',num_st_levels_input
 	write(6,*) 'num_st_levels_input:: ', num_st_levels_input
-            st_input(:,:,num_st_levels_input + 1) = st010200_input
+            do j=jts,jte
+            do i=its,ite
+            st_inputx(I,J,num_st_levels_input + 1) = st010200_input(I,J)
+            enddo
+            enddo
         ELSE IF ( var_info%name(1:8) .EQ. 'SM000010' ) THEN
             READ (13) dum2d
             do j=jts,jte
@@ -894,7 +925,11 @@ CONTAINS
             flag_sm000010 = 1
             num_sm_levels_input = num_sm_levels_input + 1
             sm_levels_input(num_sm_levels_input) = char2int2(var_info%name(3:8))
-            sm_input(:,:,num_sm_levels_input + 1) = sm000010_input
+            do j=jts,jte
+            do i=its,ite
+            sm_inputx(I,J,num_sm_levels_input + 1) = sm000010_input(I,J)
+            enddo
+            enddo
          ELSE IF ( var_info%name(1:8) .EQ. 'SM010040' ) THEN
             READ (13) dum2d
             do j=jts,jte
@@ -905,7 +940,11 @@ CONTAINS
             flag_sm010040 = 1
             num_sm_levels_input = num_sm_levels_input + 1
             sm_levels_input(num_sm_levels_input) = char2int2(var_info%name(3:8))
-            sm_input(:,:,num_sm_levels_input + 1) = sm010040_input
+            do j=jts,jte
+            do i=its,ite
+            sm_inputx(I,J,num_sm_levels_input + 1) = sm010040_input(I,J)
+            enddo
+            enddo
          ELSE IF ( var_info%name(1:8) .EQ. 'SM040100' ) THEN
             READ (13) dum2d
             do j=jts,jte
@@ -916,7 +955,11 @@ CONTAINS
             flag_sm040100 = 1
             num_sm_levels_input = num_sm_levels_input + 1
             sm_levels_input(num_sm_levels_input) = char2int2(var_info%name(3:8))
-            sm_input(:,:,num_sm_levels_input + 1) = sm040100_input
+            do j=jts,jte
+            do i=its,ite
+            sm_inputx(I,J,num_sm_levels_input + 1) = sm040100_input(I,J)
+            enddo
+            enddo
          ELSE IF ( var_info%name(1:8) .EQ. 'SM100200' ) THEN
             READ (13) dum2d
             do j=jts,jte
@@ -927,7 +970,11 @@ CONTAINS
             flag_sm100200 = 1
             num_sm_levels_input = num_sm_levels_input + 1
             sm_levels_input(num_sm_levels_input) = char2int2(var_info%name(3:8))
-            sm_input(:,:,num_sm_levels_input + 1) = sm100200_input
+            do j=jts,jte
+            do i=its,ite
+            sm_inputx(I,J,num_sm_levels_input + 1) = sm100200_input(I,J)
+            enddo
+            enddo
          ELSE IF ( var_info%name(1:8) .EQ. 'SM010200' ) THEN
             READ (13) dum2d
             do j=jts,jte
@@ -938,7 +985,11 @@ CONTAINS
             flag_sm010200 = 1
             num_sm_levels_input = num_sm_levels_input + 1
             sm_levels_input(num_sm_levels_input) = char2int2(var_info%name(3:8))
-            sm_input(:,:,num_sm_levels_input + 1) = sm010200_input
+            do j=jts,jte
+            do i=its,ite
+            sm_inputx(I,J,num_sm_levels_input + 1) = sm010200_input(I,J)
+            enddo
+            enddo
 
          ELSE IF ( var_info%name(1:8) .EQ. 'SOILT010' ) THEN
             READ (13) dum2d
@@ -951,7 +1002,11 @@ CONTAINS
             flag_soilt010 = 1
             num_st_levels_input = num_st_levels_input + 1
             st_levels_input(num_st_levels_input) = char2int1(var_info%name(6:8))
-            st_input(:,:,num_st_levels_input + 1) = soilt010_input
+            do j=jts,jte
+            do i=its,ite
+            st_inputx(I,J,num_st_levels_input + 1) = soilt010_input(I,J)
+            enddo
+            enddo
 	write(6,*) 'num_st_levels_input=',num_st_levels_input
          ELSE IF ( var_info%name(1:8) .EQ. 'SOILT040' ) THEN
             READ (13) dum2d
@@ -963,7 +1018,11 @@ CONTAINS
             flag_soilt040 = 1
             num_st_levels_input = num_st_levels_input + 1
             st_levels_input(num_st_levels_input) = char2int1(var_info%name(6:8))
-            st_input(:,:,num_st_levels_input + 1) = soilt040_input
+            do j=jts,jte
+            do i=its,ite
+            st_inputx(I,J,num_st_levels_input + 1) = soilt040_input(I,J)
+            enddo
+            enddo
 	write(6,*) 'num_st_levels_input=',num_st_levels_input
          ELSE IF ( var_info%name(1:8) .EQ. 'SOILT100' ) THEN
             READ (13) dum2d
@@ -975,7 +1034,11 @@ CONTAINS
             flag_soilt100 = 1
             num_st_levels_input = num_st_levels_input + 1
             st_levels_input(num_st_levels_input) = char2int1(var_info%name(6:8))
-            st_input(:,:,num_st_levels_input + 1) = soilt100_input
+            do j=jts,jte
+            do i=its,ite
+            st_inputx(I,J,num_st_levels_input + 1) = soilt100_input(I,J)
+            enddo
+            enddo
 	write(6,*) 'num_st_levels_input=',num_st_levels_input
         ELSE IF ( var_info%name(1:8) .EQ. 'SOILT200' ) THEN
             READ (13) dum2d
@@ -987,7 +1050,11 @@ CONTAINS
             flag_soilt200 = 1
             num_st_levels_input = num_st_levels_input + 1
             st_levels_input(num_st_levels_input) = char2int1(var_info%name(6:8))
-            st_input(:,:,num_st_levels_input + 1) = soilt200_input
+            do j=jts,jte
+            do i=its,ite
+            st_inputx(I,J,num_st_levels_input + 1) = soilt200_input(I,J)
+            enddo
+            enddo
 	write(6,*) 'num_st_levels_input=',num_st_levels_input
          ELSE IF ( var_info%name(1:8) .EQ. 'SOILM010' ) THEN
             READ (13) dum2d
@@ -999,7 +1066,11 @@ CONTAINS
             flag_soilm010 = 1
             num_sm_levels_input = num_sm_levels_input + 1
             sm_levels_input(num_sm_levels_input) = char2int1(var_info%name(6:8))
-            sm_input(:,:,num_sm_levels_input + 1) = soilm010_input
+            do j=jts,jte
+            do i=its,ite
+            sm_inputx(I,J,num_sm_levels_input + 1) = soilm010_input(I,J)
+            enddo
+            enddo
          ELSE IF ( var_info%name(1:8) .EQ. 'SOILM040' ) THEN
             READ (13) dum2d
             do j=jts,jte
@@ -1010,7 +1081,11 @@ CONTAINS
             flag_soilm040 = 1
             num_sm_levels_input = num_sm_levels_input + 1
             sm_levels_input(num_sm_levels_input) = char2int1(var_info%name(6:8))
-            sm_input(:,:,num_sm_levels_input + 1) = soilm040_input
+            do j=jts,jte
+            do i=its,ite
+            sm_inputx(I,J,num_sm_levels_input + 1) = soilm040_input(I,J)
+            enddo
+            enddo
          ELSE IF ( var_info%name(1:8) .EQ. 'SOILM100' ) THEN
             READ (13) dum2d
             do j=jts,jte
@@ -1021,7 +1096,11 @@ CONTAINS
             flag_soilm100 = 1
             num_sm_levels_input = num_sm_levels_input + 1
             sm_levels_input(num_sm_levels_input) = char2int1(var_info%name(6:8))
-            sm_input(:,:,num_sm_levels_input + 1) = soilm100_input
+            do j=jts,jte
+            do i=its,ite
+            sm_inputx(I,J,num_sm_levels_input + 1) = soilm100_input(I,J)
+            enddo
+            enddo
          ELSE IF ( var_info%name(1:8) .EQ. 'SOILM200' ) THEN
             READ (13) dum2d
             do j=jts,jte
@@ -1032,8 +1111,11 @@ CONTAINS
             flag_soilm200 = 1
             num_sm_levels_input = num_sm_levels_input + 1
             sm_levels_input(num_sm_levels_input) = char2int1(var_info%name(6:8))
-            sm_input(:,:,num_sm_levels_input + 1) = soilm200_input
-
+            do j=jts,jte
+            do i=its,ite
+            sm_inputx(I,J,num_sm_levels_input + 1) = soilm200_input(I,J)
+            enddo
+            enddo
          ELSE IF ( var_info%name(1:8) .EQ. 'SEAICE  ' ) THEN
             READ (13) dum2d
             do j=jts,jte
@@ -1070,7 +1152,14 @@ CONTAINS
             do i=its,ite
               skintemp_input(i,j)=dum2d(i,j)
 !             tg_input(i,j)=dum2d(i,j)
-              tg_input=skintemp_input
+!              tg_input=skintemp_input
+            enddo
+            enddo
+         ELSE IF ( var_info%name(1:8) .EQ. 'TGROUND ' ) THEN
+            READ (13) dum2d
+            do j=jts,jte
+            do i=its,ite
+             tg_input(i,j)=dum2d(i,j)
             enddo
             enddo
          ELSE IF ( var_info%name(1:8) .EQ. 'SST     ' ) THEN
@@ -1119,6 +1208,14 @@ CONTAINS
             enddo
             enddo
 	write(6,*) 'maxval of ter_input: ', maxval(ter_input)
+         ELSE IF ( var_info%name(1:8) .EQ. 'STDEV   ' ) THEN
+            READ (13) dum2d
+            do j=jts,jte
+            do i=its,ite
+              z0_input(i,j)=dum2d(i,j)
+            enddo
+            enddo
+        write(6,*) 'maxval of z0_input: ', maxval(z0_input)
          ELSE IF ( var_info%name(1:8) .EQ. 'CMC     ' ) THEN
             READ (13) dum2d
             do j=jts,jte
@@ -1128,7 +1225,7 @@ CONTAINS
             enddo
          ELSE IF ( var_info%name(1:8) .EQ. 'HTM     ' ) THEN
             READ (13) dum3d
-            do k=kts,kte
+            do k=kts,kte-1
             do j=jts,jte
             do i=its,ite
               htm_in(i,j,k)=dum3d(i,j,k)
@@ -1137,7 +1234,7 @@ CONTAINS
             enddo
          ELSE IF ( var_info%name(1:8) .EQ. 'VTM     ' ) THEN
             READ (13) dum3d
-            do k=kts,kte
+            do k=kts,kte-1
             do j=jts,jte
             do i=its,ite
               vtm_in(i,j,k)=dum3d(i,j,k)
@@ -1261,6 +1358,10 @@ print *,'------------------> skipping ', var_info%name(1:8)
       smx_levels_input=sm_levels_input
       stx_levels_input=st_levels_input
       write(6,*) 'end of read_si...st_levels_input:: ', st_levels_input
+
+!new
+        sw_inputx=0.
+
 
    END SUBROUTINE read_si
 

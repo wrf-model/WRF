@@ -120,7 +120,7 @@
      &                                  ,SNOWC,THC,TMN,TSFC             &
      &                                  ,XLAND,XLAT,XLONG
 
-      REAL,ALLOCATABLE,DIMENSION(:,:) :: Z0_DUM
+      REAL,ALLOCATABLE,DIMENSION(:,:) :: Z0_DUM, ALBEDO_DUM
 !
 !!!   REAL,ALLOCATABLE,DIMENSION(:,:,:) :: W0AVG,ZINT,ZMID
 #if 0
@@ -1438,6 +1438,7 @@
       ALLOCATE(XLAT(IMS:IME,JMS:JME),STAT=I)    ; XLAT     = 0.
       ALLOCATE(XLONG(IMS:IME,JMS:JME),STAT=I)   ; XLONG    = 0.
       ALLOCATE(Z0_DUM(IMS:IME,JMS:JME),STAT=I)  ; Z0_DUM   = 0.
+      ALLOCATE(ALBEDO_DUM(IMS:IME,JMS:JME),STAT=I)  ; ALBEDO_DUM   = 0.
 
       ALLOCATE(DZS(KMS:KME),STAT=I)                         ; DZS = 0.
       ALLOCATE(RQCBLTEN(IMS:IME,KMS:KME,JMS:JME),STAT=I)    ; RQCBLTEN = 0.
@@ -1526,6 +1527,7 @@
       DO J=MYJS,MYJE
       DO I=MYIS,MYIE
 	Z0_DUM(I,J)=Z0(I,J) ! hold
+	ALBEDO_DUM(I,J)=ALBEDO(I,J) ! Save albedos
       ENDDO
       ENDDO
          ENDIF
@@ -1613,6 +1615,14 @@
                                         ! both by real and by the model.
       ENDDO
       ENDDO
+  !-- Replace albedos if original albedos are nonzero
+      IF(MAXVAL(ALBEDO_DUM)>0.)THEN
+        DO J=JMS,JME
+        DO I=IMS,IME
+          ALBEDO(I,J)=ALBEDO_DUM(I,J)
+        ENDDO
+        ENDDO
+      ENDIF
         ENDIF
 
       DO J=JMS,JME

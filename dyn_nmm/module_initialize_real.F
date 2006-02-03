@@ -261,7 +261,8 @@ CONTAINS
 
         JAM=6+2*(JDE-JDS-10)
 
-        ALLOCATE(ADUM2D(grid%sm31:grid%em31,grid%sm33:grid%em33))
+!!!!!   ALLOCATE(ADUM2D(grid%sm31:grid%em31,grid%sm33:grid%em33))
+        ALLOCATE(ADUM2D(grid%sm31:grid%em31,jms:jme))
         ALLOCATE(KHL2(JTS:NNYP),KVL2(JTS:NNYP),KHH2(JTS:NNYP),KVH2(JTS:NNYP))
         ALLOCATE(DXJ(JTS:NNYP),WPDARJ(JTS:NNYP),CPGFUJ(JTS:NNYP),CURVJ(JTS:NNYP))
         ALLOCATE(FCPJ(JTS:NNYP),FDIVJ(JTS:NNYP),&
@@ -783,7 +784,8 @@ CONTAINS
 !!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!
 
-        ALLOCATE(TG_ALT(grid%sm31:grid%em31,grid%sm33:grid%em33))
+!!!!!   ALLOCATE(TG_ALT(grid%sm31:grid%em31,grid%sm33:grid%em33))
+        ALLOCATE(TG_ALT(grid%sm31:grid%em31,jms:jme))
 
 
       TPH0=TPH0D*DTR

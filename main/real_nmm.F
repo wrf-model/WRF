@@ -242,6 +242,7 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
                             model_config_rec%real_data_init_type   , &
                             start_date_char , end_date_char , time_loop_max )
 
+
 	write(0,*) 'return si_start_and_end'
 
    !  Here we define the initial time to process, for later use by the code.
@@ -406,6 +407,8 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
       CALL geth_newdate ( current_date_char , start_date_char , &
                           loop * model_config_rec%interval_seconds )
       current_date =  current_date_char // '.0000'
+
+      CALL domain_clock_set( grid, current_date(1:19) )
 
 	write(0,*) 'current_date= ', current_date
 
@@ -1060,6 +1063,9 @@ character *24 :: temp24 , temp24b
       CALL geth_newdate ( temp19 , temp24b(1:19) , &
                          (loop-2) * model_config_rec%interval_seconds )
       current_date = temp19 //  '.0000'
+       CALL domain_clock_set( grid, current_date(1:19) )
+ print *,'LBC valid between these times ',current_date, ' ',start_date
+
       CALL output_boundary ( id, grid , config_flags , ierr )
       current_date = temp24
       start_date = temp24b

@@ -98,6 +98,7 @@
 !***  TOTAL AND CONVECTIVE PRECIPITATION ARRAYS.
 !***  TOTAL SNOW AND SNOW MELT ARRAYS.
 !***  STORM SURFACE AND BASE GROUND RUN OFF ARRAYS.
+!***  EVAPORATION ARRAYS.
 !
 !     IF(MOD(NTSD,NPREC)<NPHS)THEN
       IF(MOD(NTSD,NPREC)==0)THEN
@@ -109,6 +110,8 @@
           ACSNOM(I,J)=0.
           SSROFF(I,J)=0.
           BGROFF(I,J)=0.
+          SFCEVP(I,J)=0.
+          POTEVP(I,J)=0.
         ENDDO
         ENDDO
 !
@@ -118,7 +121,6 @@
 !
       ENDIF
 !
-!***  EVAPORATION ARRAYS.
 !***  SFC FLUX ARRAYS.
 !
 !     IF(MOD(NTSD,NSRFC)<NPHS)THEN
@@ -126,8 +128,6 @@
         ASRFC=0.
         DO J=JTS,JTE
         DO I=ITS,ITE
-          SFCEVP(I,J)=0.
-          POTEVP(I,J)=0.
           SFCSHX(I,J)=0.
           SFCLHX(I,J)=0.
           SUBSHX(I,J)=0.

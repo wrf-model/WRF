@@ -442,8 +442,18 @@ logical function iveceq( a, b, n )
 end function iveceq
 
 
-! stub for routine called by module_wrf_error (used by this implementation of IO api)
+! stubs for routines called by module_wrf_error (used by this implementation of IO api)
 SUBROUTINE wrf_abort
   STOP
 END SUBROUTINE wrf_abort
+
+SUBROUTINE get_current_time_string( time_str )
+  CHARACTER(LEN=*), INTENT(OUT) :: time_str
+  time_str = ''
+END SUBROUTINE get_current_time_string
+
+SUBROUTINE get_current_grid_name( grid_str )
+  CHARACTER(LEN=*), INTENT(OUT) :: grid_str
+  grid_str = ''
+END SUBROUTINE get_current_grid_name
 

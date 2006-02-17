@@ -302,10 +302,9 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 , int * typesize0 , int * 
 	  MPI_Abort(MPI_COMM_WORLD, 99) ;
         }
         if ( typesize == sizeof(long int) && sizeof( long int ) != sizeof(int) ) {
-          F_PACK_LINT ( buf, p+yp_curs, &js, &je, &ks, &ke, &is, &ie,
+          F_PACK_LINT ( buf, p+ym_curs, &js, &je, &ks, &ke, &is, &ie,
                                              &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
           ym_curs += wcount*typesize ;
-          fprintf(stderr,"F_PACK_INT returns wcount %d, yp_curs %d\n", wcount, ym_curs ) ;
         }
 	else if ( typesize == sizeof(int) ) {
 #ifdef F_PACK

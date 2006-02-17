@@ -109,10 +109,12 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
 #endif
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ELSE
+#ifndef WRF_CHEM
    IF( WRFU_AlarmIsRinging( grid%alarms( AUXINPUT5_ALARM ), rc=rc ) ) THEN
      CALL med_auxinput5_in ( grid , config_flags )
      CALL WRFU_AlarmRingerOff( grid%alarms( AUXINPUT5_ALARM ), rc=rc )
    ENDIF
+#endif
   ENDIF
 
 ! - RESTART OUTPUT

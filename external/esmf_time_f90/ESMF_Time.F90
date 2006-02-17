@@ -84,30 +84,36 @@
 
 ! Inherited and overloaded from ESMF_BaseTime
 
+      ! NOTE:  ESMF_TimeInc, ESMF_TimeDec, ESMF_TimeDiff, ESMF_TimeEQ, 
+      !        ESMF_TimeNE, ESMF_TimeLT, ESMF_TimeGT, ESMF_TimeLE, and 
+      !        ESMF_TimeGE are PUBLIC only to work around bugs in the 
+      !        PGI 5.1-x compilers.  They should all be PRIVATE.  
+
       public operator(+)
-      private ESMF_TimeInc
+      public ESMF_TimeInc
 
       public operator(-)
-      private ESMF_TimeDec
-      private ESMF_TimeDiff
+      public ESMF_TimeDec
+      public ESMF_TimeDec2
+      public ESMF_TimeDiff
 
       public operator(.EQ.)
-      private ESMF_TimeEQ
+      public ESMF_TimeEQ
 
       public operator(.NE.)
-      private ESMF_TimeNE
+      public ESMF_TimeNE
 
       public operator(.LT.)
-      private ESMF_TimeLT
+      public ESMF_TimeLT
 
       public operator(.GT.)
-      private ESMF_TimeGT
+      public ESMF_TimeGT
 
       public operator(.LE.)
-      private ESMF_TimeLE
+      public ESMF_TimeLE
 
       public operator(.GE.)
-      private ESMF_TimeGE
+      public ESMF_TimeGE
 
 !EOPI
 
@@ -651,7 +657,7 @@
 !  PRINT *,'DEBUG:  ESMF_TimeSet():  using passed-in calendar'
 ! Note that the ugly hack of wrapping the call to ESMF_CalendarInitialized() 
 ! inside this #ifdef is due to lack of support for compile-time initialization 
-! of components of Fortran derived types.  Some older compilers like PGI 5.x 
+! of components of Fortran derived types.  Some older compilers like PGI 5.1-x 
 ! do not support this F95 feature.  In this case we only lose a safety check.  
 #ifndef NO_DT_COMPONENT_INIT
         IF ( .not. ESMF_CalendarInitialized( calendar ) )THEN

@@ -668,7 +668,11 @@
 !     TMG3.5.4
 !EOP
 
-      prevTime = Clock%clockint%CurrTime - Clock%clockint%TimeStep
+! hack for bug in PGI 5.1-x
+!      prevTime = Clock%clockint%CurrTime - Clock%clockint%TimeStep
+      prevTime = ESMF_TimeDec( Clock%clockint%CurrTime, &
+                               Clock%clockint%TimeStep )
+
       IF ( PRESENT(rc) ) rc = ESMF_SUCCESS
       end subroutine ESMF_ClockGetPrevTime
 
@@ -923,8 +927,11 @@ use esmf_timemod
 ! !REQUIREMENTS:
 !     TMG3.4.1
 !EOP
-      clock%clockint%CurrTime = clock%clockint%CurrTime + &
-                                clock%clockint%TimeStep
+! hack for bug in PGI 5.1-x
+!      clock%clockint%CurrTime = clock%clockint%CurrTime + &
+!                                clock%clockint%TimeStep
+      clock%clockint%CurrTime = ESMF_TimeInc( clock%clockint%CurrTime, &
+                                              clock%clockint%TimeStep )
 
       IF ( Present(NumRingingAlarms) ) NumRingingAlarms = 0
       clock%clockint%AdvanceCount = clock%clockint%AdvanceCount + 1
@@ -939,22 +946,42 @@ use esmf_timemod
             IF ( alarm%alarmint%RingIntervalSet ) THEN
               pred1 = .FALSE. ; pred2 = .FALSE. ; pred3 = .FALSE.
               IF ( alarm%alarmint%StopTimeSet ) THEN
-                PRED1 = clock%clockint%CurrTime > alarm%alarmint%StopTime
+! hack for bug in PGI 5.1-x
+!                PRED1 = clock%clockint%CurrTime > alarm%alarmint%StopTime
+                PRED1 = ESMF_TimeGT( clock%clockint%CurrTime, &
+                                     alarm%alarmint%StopTime )
               ENDIF
               IF ( alarm%alarmint%RingTimeSet ) THEN
-                 PRED2 = ( alarm%alarmint%RingTime <= clock%clockint%CurrTime     &
-                        .AND. clock%clockint%CurrTime < alarm%alarmint%RingTime + &
-                              clock%clockint%TimeStep )
+! hack for bug in PGI 5.1-x
+!                 PRED2 = ( alarm%alarmint%RingTime <= clock%clockint%CurrTime     &
+!                        .AND. clock%clockint%CurrTime < alarm%alarmint%RingTime + &
+!                              clock%clockint%TimeStep )
+                 PRED2 = ( ESMF_TimeLE( alarm%alarmint%RingTime,       &
+                                        clock%clockint%CurrTime )      &
+                           .AND. ESMF_TimeLT( clock%clockint%CurrTime, &
+                             ESMF_TimeInc( alarm%alarmint%RingTime,    &
+                                           clock%clockint%TimeStep ) ) )
               ENDIF
               IF ( alarm%alarmint%RingIntervalSet ) THEN
-                 PRED3 = ( alarm%alarmint%PrevRingTime + alarm%alarmint%RingInterval <= &
-                           clock%clockint%CurrTime )
+! hack for bug in PGI 5.1-x
+!                 PRED3 = ( alarm%alarmint%PrevRingTime + alarm%alarmint%RingInterval <= &
+!                           clock%clockint%CurrTime )
+
+                 PRED3 = ( ESMF_TimeLE( ESMF_TimeInc(                  &
+                                        alarm%alarmint%PrevRingTime,   &
+                                        alarm%alarmint%RingInterval ), &
+                           clock%clockint%CurrTime ) )
               ENDIF
               IF ( ( .NOT. ( pred1 ) ) .AND. &
                    ( ( pred2 ) .OR. ( pred3 ) ) ) THEN
                  alarm%alarmint%Ringing = .TRUE.
-                 IF ( PRED3) alarm%alarmint%PrevRingTime = alarm%alarmint%PrevRingTime + &
-                                                  alarm%alarmint%RingInterval
+! hack for bug in PGI 5.1-x
+!                 IF ( PRED3) alarm%alarmint%PrevRingTime = alarm%alarmint%PrevRingTime + &
+!                                                  alarm%alarmint%RingInterval
+                 IF ( PRED3 )                                   &
+                   alarm%alarmint%PrevRingTime =                &
+                     ESMF_TimeInc( alarm%alarmint%PrevRingTime, &
+                                   alarm%alarmint%RingInterval )
                  IF ( PRESENT( RingingAlarmList ) .AND. &
                       PRESENT ( NumRingingAlarms ) ) THEN
                    NumRingingAlarms = NumRingingAlarms + 1
@@ -962,7 +989,10 @@ use esmf_timemod
                  ENDIF
               ENDIF
             ELSE IF ( alarm%alarmint%RingTimeSet ) THEN
-              IF ( alarm%alarmint%RingTime <= clock%clockint%CurrTime ) THEN
+! hack for bug in PGI 5.1-x
+!              IF ( alarm%alarmint%RingTime <= clock%clockint%CurrTime ) THEN
+              IF ( ESMF_TimeLE( alarm%alarmint%RingTime, &
+                                clock%clockint%CurrTime ) ) THEN
                  alarm%alarmint%Ringing = .TRUE.
                  IF ( PRESENT( RingingAlarmList ) .AND. &
                       PRESENT ( NumRingingAlarms ) ) THEN
@@ -1026,7 +1056,10 @@ use esmf_timemod
 !     TMG3.5.6
 !EOP
 
-      if ( clock%clockint%CurrTime .GE. clock%clockint%StopTime ) THEN
+! hack for bug in PGI 5.1-x
+!      if ( clock%clockint%CurrTime .GE. clock%clockint%StopTime ) THEN
+      if ( ESMF_TimeGE( clock%clockint%CurrTime, &
+                        clock%clockint%StopTime ) ) THEN
         ESMF_ClockIsStopTime = .TRUE.
       else
         ESMF_ClockIsStopTime = .FALSE.

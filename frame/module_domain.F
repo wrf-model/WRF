@@ -137,7 +137,7 @@ MODULE module_domain
       LOGICAL, POINTER :: alarms_created(:)
 
       ! Have clocks and times been initialized yet?
-      LOGICAL :: time_set = .FALSE.
+      LOGICAL :: time_set
 
    END TYPE domain
 
@@ -797,6 +797,7 @@ CONTAINS
       DO i = 1, MAX_WRF_ALARMS
         new_grid%alarms_created( i ) = .FALSE.
       ENDDO
+      new_grid%time_set = .FALSE.
 
 #ifdef MOVE_NESTS
       new_grid%xi = -1.0

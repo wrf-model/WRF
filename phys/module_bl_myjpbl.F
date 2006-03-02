@@ -8,7 +8,7 @@
 !
 !-----------------------------------------------------------------------
 !
-! REFERENCES:  Janjic (2001), NCEP Office Note 437
+! REFERENCES:  Janjic (2002), NCEP Office Note 437
 !              Mellor and Yamada (1982), Rev. Geophys. Space Phys.
 !
 ! ABSTRACT:
@@ -34,7 +34,7 @@
       REAL,PARAMETER :: EPSL=0.10,EPSRU=1.E-7,EPSRS=1.E-7               &
      &                 ,EPSTRB=1.E-24
       REAL,PARAMETER :: EPSA=1.E-8,EPSIT=1.E-4,EPSU2=1.E-4,EPSUST=0.07  &
-     &                 ,FH=1.01
+     &                 ,FH=1.01 
       REAL,PARAMETER :: ALPH=0.30,BETA=1./273.,EL0MAX=1000.,EL0MIN=1.   &
      &                 ,ELFC=0.23*0.5,GAM1=0.2222222222222222222        &
      &                 ,PRT=1.
@@ -212,9 +212,20 @@
 !
       REAL,DIMENSION(ITS:ITE,KTS:KTE+1,JTS:JTE) :: ZINT
 !
+!***  Begin debugging
+      REAL :: ZSL_DIAG
+      INTEGER :: IMD,JMD,PRINT_DIAG
+!***  End debugging
+
+!
 !----------------------------------------------------------------------
 !**********************************************************************
 !----------------------------------------------------------------------
+!
+!***  Begin debugging
+      IMD=(IMS+IME)/2
+      JMD=(JMS+JME)/2
+!***  End debugging
 !
 !***  MAKE PREPARATIONS
 !
@@ -266,9 +277,10 @@
       ENDDO
       ENDDO
 !
-!----------------------------------------------------------------------
       EL_MYJ = 0.
-        setup_integration:  DO J=JTS,JTE
+!
+!----------------------------------------------------------------------
+      setup_integration:  DO J=JTS,JTE
 !----------------------------------------------------------------------
 !
         DO I=ITS,ITE
@@ -309,6 +321,16 @@
 !
           ENDDO
           ZHK(KTE+1)=HT(I,J)          ! Z at bottom of lowest sigma layer
+!
+!***  Begin debugging
+!         IF(I==IMD.AND.J==JMD)THEN
+!           PRINT_DIAG=1
+!         ELSE
+!           PRINT_DIAG=0
+!         ENDIF
+!         IF(I==227.AND.J==363)PRINT_DIAG=2
+!***  End debugging
+!
 !----------------------------------------------------------------------
 !***
 !***  FIND THE MIXING LENGTH
@@ -341,10 +363,10 @@
 !***
 !***  FIND THE EXCHANGE COEFFICIENTS IN THE FREE ATMOSPHERE
 !***
-          CALL DIFCOF(LMH,LMXL,GM,GH,EL,TK,Q2K,ZHK,AKMK,AKHK           &
+          CALL DIFCOF(LMH,LMXL,GM,GH,EL,TK,Q2K,ZHK,AKMK,AKHK      &
      &               ,IDS,IDE,JDS,JDE,KDS,KDE                          &
      &               ,IMS,IME,JMS,JME,KMS,KME                          &
-     &               ,ITS,ITE,JTS,JTE,KTS,KTE)
+     &               ,ITS,ITE,JTS,JTE,KTS,KTE,PRINT_DIAG)   ! debug
 !
 !***  COUNTING DOWNWARD FROM THE TOP, THE EXCHANGE COEFFICIENTS AKH 
 !***  ARE DEFINED ON THE BOTTOMS OF THE LAYERS KTS TO KTE-1.  COUNTING 
@@ -376,7 +398,7 @@
             KFLIP=KTE+1-K
             Q2K(KFLIP)=AMAX1(Q2K(KFLIP),EPSQ2)
             TKE_MYJ(I,K,J)=0.5*Q2K(KFLIP)
-            IF ( K .LT. KTE ) EL_MYJ(I,K,J)=EL(K)   ! EL IS NOT DEFINED AT KTE
+            IF(K<KTE)EL_MYJ(I,K,J)=EL(K)   ! EL IS NOT DEFINED AT KTE
           ENDDO
 !
 !
@@ -466,7 +488,7 @@
      &              ,THEK,QK,CWMK,AKHK,ZHK                             &
      &              ,IDS,IDE,JDS,JDE,KDS,KDE                           &
      &              ,IMS,IME,JMS,JME,KMS,KME                           &
-     &              ,ITS,ITE,JTS,JTE,KTS,KTE,i,j)
+     &              ,ITS,ITE,JTS,JTE,KTS,KTE,I,J)
 !----------------------------------------------------------------------
 !***
 !***  COMPUTE PRIMARY VARIABLE TENDENCIES
@@ -485,6 +507,63 @@
             RQVBLTEN(I,K,J)=DQDT/(1.-QK(KFLIP))**2
             RQCBLTEN(I,K,J)=DCDT
           ENDDO
+!
+!*** Begin debugging
+!         IF(I==IMD.AND.J==JMD)THEN
+!           PRINT_DIAG=0
+!         ELSE
+!           PRINT_DIAG=0
+!         ENDIF
+!         IF(I==227.AND.J==363)PRINT_DIAG=0
+!*** End debugging
+!
+          PSFC=.01*PINT(I,LOWLYR(I,J),J)
+          ZSL_diag=0.5*DZ(I,1,J)
+!
+!         IF(PRINT_DIAG==1)THEN
+!
+!           write(6,"(a, 2i5, 2i3, 2f8.2, f6.2, 2f8.2)") &
+!           '{turb4 i,j, Kpbl, Kmxl, Psfc, Zsfc, Zsl, Zpbl, Zmxl = ' &
+!           , i, j, KPBL(i,j), KTE-LMXL+1, PSFC, ZHK(LMH+1), ZSL_diag  &
+!           , PBLH(i,j), ZHK(LMXL)-ZHK(LMH+1)
+!           write(6,"(a, 2f7.2, f7.3, 3e11.4)") &
+!           '{turb4 tsk, thsk, qz0, q**2_0, akhs, exch_0 = ' &
+!           , tsk(i,j)-273.15, thsk(i,j), 1000.*qz0(i,j) &
+!           , 2.*tke_myj(i,1,j), akhs(i,j), akhs(i,j)*ZSL_diag
+!           write(6,"(a)") &
+!           '{turb5 k, Pmid, Pint_1, Tc, TH, DTH, GH, GM, EL, Q**2, Akh, EXCH_h, Dz, Dp'
+!           do k=kts,kte/2
+!             KFLIP=KTE-K   !-- Includes the KFLIP-1 in earlier versions 
+!             write(6,"(a,i3, 2f8.2, 2f8.3, 3e12.4, 4e11.4, f7.2, f6.2)") &
+!            '{turb5 ', k, .01*pmid(i,k,j),.01*pint(i,k,j), T(i,k,j)-273.15 &
+!            , th(i,k,j), DTTURBL*rthblten(i,k,j), GH(KFLIP), GM(KFLIP) &
+!            , el_myj(i,KFLIP,j), 2.*tke_myj(i,k+1,j), akh(i,KFLIP,j) &
+!            , exch_h(i,k,j), dz(i,k,j), .01*(pint(i,k,j)-pint(i,k+1,j))
+!           enddo
+!
+!         ELSEIF(PRINT_DIAG==2)THEN
+!
+!           write(6,"(a, 2i5, 2i3, 2f8.2, f6.2, 2f8.2)") &
+!           '}turb4 i,j, Kpbl, Kmxl, Psfc, Zsfc, Zsl, Zpbl, Zmxl = ' &
+!           , i, j, KPBL(i,j), KTE-LMXL+1, PSFC, ZHK(LMH+1), ZSL_diag  &
+!           , PBLH(i,j), ZHK(LMXL)-ZHK(LMH+1)
+!           write(6,"(a, 2f7.2, f7.3, 3e11.4)") &
+!           '}turb4 tsk, thsk, qz0, q**2_0, akhs, exch_0 = ' &
+!           , tsk(i,j)-273.15, thsk(i,j), 1000.*qz0(i,j) &
+!           , 2.*tke_myj(i,1,j), akhs(i,j), akhs(i,j)*ZSL_diag
+!           write(6,"(a)") &
+!           '}turb5 k, Pmid, Pint_1, Tc, TH, DTH, GH, GM, EL, Q**2, Akh, EXCH_h, Dz, Dp'
+!           do k=kts,kte/2
+!             KFLIP=KTE-K   !-- Includes the KFLIP-1 in earlier versions 
+!             write(6,"(a,i3, 2f8.2, 2f8.3, 3e12.4, 4e11.4, f7.2, f6.2)") &
+!            '}turb5 ', k, .01*pmid(i,k,j),.01*pint(i,k,j), T(i,k,j)-273.15 &
+!            , th(i,k,j), DTTURBL*rthblten(i,k,j), GH(KFLIP), GM(KFLIP) &
+!            , el_myj(i,KFLIP,j), 2.*tke_myj(i,k+1,j), akh(i,KFLIP,j) &
+!            , exch_h(i,k,j), dz(i,k,j), .01*(pint(i,k,j)-pint(i,k+1,j))
+!           enddo
+!         ENDIF
+!*** End debugging
+!
 !----------------------------------------------------------------------
         ENDDO
 !----------------------------------------------------------------------
@@ -515,7 +594,7 @@
      &              ,AKMS(I,J),UK,VK,AKMK,ZHK                          &
      &              ,IDS,IDE,JDS,JDE,KDS,KDE                           &
      &              ,IMS,IME,JMS,JME,KMS,KME                           &
-     &              ,ITS,ITE,JTS,JTE,KTS,KTE,i,j)
+     &              ,ITS,ITE,JTS,JTE,KTS,KTE,I,J)
 !
 !----------------------------------------------------------------------
 !***
@@ -564,7 +643,7 @@
 !
       INTEGER,INTENT(IN) :: LMH
 !
-      INTEGER,INTENT(OUT) :: LPBL
+      INTEGER,INTENT(OUT) :: LMXL,LPBL
 !
       REAL,DIMENSION(KTS:KTE),INTENT(IN) :: CWM,Q,Q2,T,THE,U,V
 !
@@ -579,9 +658,9 @@
 !***
 !***  LOCAL VARIABLES
 !***
-      INTEGER :: K,LMXL,LPBLM
+      INTEGER :: K,LPBLM
 !
-      REAL :: A,ADEN,B,BDEN,AUBR,BLMX,BUBR,EL0,ELOQ2X,GHL,GML          &
+      REAL :: A,ADEN,B,BDEN,AUBR,BUBR,BLMX,EL0,ELOQ2X,GHL,GML           &
      &       ,QOL2ST,QOL2UN,QDZL,RDZ,SQ,SREL,SZQ,TEM,THM,VKRMZ
 !
       REAL,DIMENSION(KTS:KTE) :: Q1
@@ -590,9 +669,7 @@
 !
 !----------------------------------------------------------------------
 !**********************************************************************
-!----------------------------------------------------------------------
 !--------------FIND THE HEIGHT OF THE PBL-------------------------------
-!----------------------------------------------------------------------
       LPBL=LMH
 !
       DO K=LMH-1,1,-1
@@ -603,12 +680,12 @@
       ENDDO
 !
       LPBL=1
-!----------------------------------------------------------------------
-!--------------THE HEIGHT OF THE PBL------------------------------------
-!----------------------------------------------------------------------
-  110 PBLH=Z(LPBL)-Z(LMH+1)
-!-----------------------------------------------------------------------
 !
+!--------------THE HEIGHT OF THE PBL------------------------------------
+!
+ 110  PBLH=Z(LPBL)-Z(LMH+1)
+!
+!-----------------------------------------------------------------------
       DO K=KTS,LMH
         Q1(K)=0.
       ENDDO
@@ -709,6 +786,7 @@
 !----------------------------------------------------------------------
 !
       LPBLM=MAX(LPBL-1,1)
+!
       DO K=KTS,LPBLM
         EL(K)=MIN((Z(K)-Z(K+2))*ELFC,ELM(K))
         REL(K)=EL(K)/ELM(K)
@@ -910,11 +988,9 @@
           IF(ELOQN>EPS1)THEN
             Q2(K)=EL(K)*EL(K)/(ELOQN*ELOQN)
             Q2(K)=AMAX1(Q2(K),EPSQ2)
-!
             IF(Q2(K)==EPSQ2)THEN
               EL(K)=EPSL
             ENDIF
-!
           ELSE
             Q2(K)=EPSQ2
             EL(K)=EPSL
@@ -925,6 +1001,7 @@
 !----------------------------------------------------------------------
 !
         ENDIF
+!
 !----------------------------------------------------------------------
 !***  END OF PRODUCTION/DISSIPATION LOOP
 !----------------------------------------------------------------------
@@ -952,7 +1029,7 @@
      &(LMH,LMXL,GM,GH,EL,T,Q2,Z,AKM,AKH                                &
      &,IDS,IDE,JDS,JDE,KDS,KDE                                         &
      &,IMS,IME,JMS,JME,KMS,KME                                         &
-     &,ITS,ITE,JTS,JTE,KTS,KTE)
+     &,ITS,ITE,JTS,JTE,KTS,KTE,PRINT_DIAG)   ! debug
 !----------------------------------------------------------------------
 !
       IMPLICIT NONE
@@ -977,6 +1054,11 @@
 !
       REAL :: ADEN,AKMIN,BDEN,BESH,BESM,CDEN,D2T,ELL,ELOQ2,ELOQ4,ELQDZ &
      &       ,ESH,ESM,GHL,GML,Q1L,RDEN,RDZ
+!
+!*** Begin debugging
+      INTEGER,INTENt(IN) :: PRINT_DIAG
+!     REAL :: D2Tmin
+!*** End debugging
 !
 !----------------------------------------------------------------------
 !**********************************************************************
@@ -1041,12 +1123,16 @@
 !***  INVERSIONS
 !----------------------------------------------------------------------
 !
-!     IF(LMXL==LMH-1)THEN
-!
+!     IF(LMXL==LMH)THEN
 !       KINV=LMH
+!       D2Tmin=0.
+!
 !       DO K=LMH/2,LMH-1
 !         D2T=T(K-1)-2.*T(K)+T(K+1)
-!         IF(D2T<0.)KINV=K
+!         IF(D2T<D2Tmin)THEN
+!           D2Tmin=D2T
+!           IF(D2T<0)KINV=K
+!         ENDIF
 !       ENDDO
 !
 !       IF(KINV<LMH)THEN
@@ -1056,8 +1142,34 @@
 !           AKM(K)=MAX(AKM(K),AKMIN)
 !           AKH(K)=MAX(AKH(K),AKMIN)
 !         ENDDO
-!       ENDIF
-!
+! 
+!*** Begin debugging
+!         IF(PRINT_DIAG>0)THEN
+!           write(6,"(a,3i3)") '{turb1 lmxl,lmh,kinv=',lmxl,lmh,kinv
+!           write(6,"(a,3i3)") '}turb1 lmxl,lmh,kinv=',lmxl,lmh,kinv
+!           if (print_diag == 1) then
+!             write(6,"(a)") &
+!               '{turb3 k, t, d2t, rdz, z(k), z(k+2), akmin, akh '
+!           else
+!             write(6,"(a)") &
+!               '}turb3 k, t, d2t, rdz, z(k), z(k+2), akmin, akh '
+!           endif
+!           DO K=LMH-1,KINV-1,-1
+!             D2T=T(K-1)-2.*T(K)+T(K+1)
+!             RDZ=2./(Z(K)-Z(K+2))
+!             AKMIN=0.5*RDZ
+!             if (print_diag == 1) then
+!               write(6,"(a,i3,f8.3,2e12.5,2f9.2,2e12.5)") '{turb3 ' &
+!               ,k,t(k)-273.15,d2t,rdz,z(k),z(k+2),akmin,akh(k)
+!             else
+!               write(6,"(a,i3,f8.3,2e12.5,2f9.2,2e12.5)") '}turb3 ' &
+!               ,k,t(k)-273.15,d2t,rdz,z(k),z(k+2),akmin,akh(k)
+!             endif
+!           ENDDO
+!         ENDIF     !- IF (print_diag > 0) THEN
+!       ENDIF       !- IF(KINV<LMH)THEN
+!*** End debugging
+! 
 !     ENDIF
 !----------------------------------------------------------------------
 !
@@ -1151,7 +1263,7 @@
      &                ,THE,Q,CWM,AKH,Z                                &
      &                ,IDS,IDE,JDS,JDE,KDS,KDE                        &
      &                ,IMS,IME,JMS,JME,KMS,KME                        &
-     &                ,ITS,ITE,JTS,JTE,KTS,KTE,i,j)
+     &                ,ITS,ITE,JTS,JTE,KTS,KTE,I,J)
 !     ***************************************************************
 !     *                                                             *
 !     *         VERTICAL DIFFUSION OF MASS VARIABLES                *
@@ -1164,7 +1276,7 @@
 !---------------------------------------------------------------------
       INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                    &
      &                     ,IMS,IME,JMS,JME,KMS,KME                    &
-     &                     ,ITS,ITE,JTS,JTE,KTS,KTE,i,j
+     &                     ,ITS,ITE,JTS,JTE,KTS,KTE,I,J
 !
       INTEGER,INTENT(IN) :: LMH
 !
@@ -1246,7 +1358,7 @@
       SUBROUTINE VDIFV(LMH,DTDIF,UZ0,VZ0,AKMS,U,V,AKM,Z               &
      &                ,IDS,IDE,JDS,JDE,KDS,KDE                        &
      &                ,IMS,IME,JMS,JME,KMS,KME                        &
-                      ,ITS,ITE,JTS,JTE,KTS,KTE,i,j)
+                      ,ITS,ITE,JTS,JTE,KTS,KTE,I,J)
 !     ***************************************************************
 !     *                                                             *
 !     *        VERTICAL DIFFUSION OF VELOCITY COMPONENTS            *
@@ -1259,7 +1371,7 @@
 !---------------------------------------------------------------------
       INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                   &
      &                     ,IMS,IME,JMS,JME,KMS,KME                   &
-     &                     ,ITS,ITE,JTS,JTE,KTS,KTE,i,j
+     &                     ,ITS,ITE,JTS,JTE,KTS,KTE,I,J
 !
       INTEGER,INTENT(IN) :: LMH
 !

@@ -53,6 +53,18 @@ MODULE MODULE_RA_GFDLETA
       REAL, DIMENSION(NXSD),PRIVATE,SAVE :: AXSD
       REAL, PRIVATE :: RSQR
       LOGICAL, PRIVATE,SAVE :: SDprint=.FALSE.
+!
+!--- Important parameters for cloud properties - see extensive comments in
+!    DO 580 loop within subroutine RADTN 
+!
+      REAL, PARAMETER ::  &
+     &   TRAD_ice=0.5*T_ice      & !--- Very tunable parameter
+     &,  ABSCOEF_W=800.          & !--- Very tunable parameter
+     &,  ABSCOEF_I=500.          & !--- Very tunable parameter
+     &,  Qconv=0.1e-3            & !--- Very tunable parameter
+     &,  CTauCW=ABSCOEF_W*Qconv  &
+     &,  CTauCI=ABSCOEF_I*Qconv
+!
 
 CONTAINS
 
@@ -119,6 +131,7 @@ CONTAINS
         CALL O3CLIM
         CALL TABLE
         IHRST=NINT(GMT)
+        WRITE(0,*)'into solard ',gmt,ihrst
         CALL SOLARD(IHRST,IDAY,MONTH,JULYR)
       ENDIF
 !
@@ -194,7 +207,7 @@ CONTAINS
      &                                                TSK2D,VEGFRA,     &
      &                                                XLAND
       REAL, INTENT(IN), DIMENSION(ims:ime, jms:jme):: GLAT,GLON
-      REAL, INTENT(INOUT), DIMENSION(ims:ime, jms:jme):: HTOP,HBOT,CUPPT
+      REAL, INTENT(IN), DIMENSION(ims:ime, jms:jme):: HTOP,HBOT,CUPPT
       REAL, INTENT(INOUT), DIMENSION(ims:ime, jms:jme):: RSWTOA,        & !Added
      &                                                   RLWTOA,        & !Added
      &                                                   ACFRST,        & !Added
@@ -211,8 +224,13 @@ CONTAINS
      &                                             QWFLIP,TFLIP
       REAL, DIMENSION(its:ite, kms:kme, jts:jte)::P8WFLIP,PHYD
       REAL, DIMENSION(its:ite, kts:kte, jts:jte)::TENDS,TENDL
+      REAL, DIMENSION(ims:ime, jms:jme):: CUTOP,CUBOT
       INTEGER :: IDAT(3),Jmonth,Jday
       INTEGER :: I,J,K,KFLIP,IHRST
+! begin debugging radiation
+      integer :: imd,jmd
+      real :: FSWrat
+! end debugging radiation
 !-----------------------------------------------------------------------
 !***********************************************************************
 !-----------------------------------------------------------------------
@@ -270,8 +288,8 @@ CONTAINS
 !
       DO J=JTS,JTE
       DO I=ITS,ITE
-        HBOT(I,J)=KTE+1-HBOT(I,J)
-        HTOP(I,J)=KTE+1-HTOP(I,J)
+        CUBOT(I,J)=KTE+1-HBOT(I,J)
+        CUTOP(I,J)=KTE+1-HTOP(I,J)
       ENDDO
       ENDDO
 !
@@ -285,7 +303,7 @@ CONTAINS
 !-----------------------------------------------------------------------
       CALL RADTN (DT,TFLIP,QFLIP,QWFLIP,QIFLIP,                         &
      &            PFLIP,P8WFLIP,XLAND,TSK2D,                            &
-     &            GLAT,GLON,HTOP,HBOT,ALBEDO,CUPPT,                     &
+     &            GLAT,GLON,CUTOP,CUBOT,ALBEDO,CUPPT,                   &
      &            ACFRCV,NCFRCV,ACFRST,NCFRST,                          &
      &            VEGFRA,SNOW,GLW,GSW,RSWIN,RSWINC,                     &
 !BSF => for NAMX changes, pass in surface emissivity (SFCEMS) [different for snow]
@@ -297,6 +315,19 @@ CONTAINS
      &            IMS,IME,JMS,JME,KMS,KME,                              &
      &            ITS,ITE,JTS,JTE,KTS,KTE                              )
 !-----------------------------------------------------------------------
+! begin debugging radiation
+!     imd=(ims+ime)/2
+!     jmd=(jms+jme)/2
+!     FSWrat=0.
+!     if (RSWIN(imd,jmd) .gt. 0.)   &
+!        FSWrat=(RSWIN(imd,jmd)-GSW(imd,jmd))/RSWIN(imd,jmd)
+!     write(6,"(2a,2i5,5f9.2,f8.4,i3,2f8.4)") & 
+!       '{rad4 imd,jmd,GSW,RSWIN,RSWOUT=RSWIN-GSW,RSWINC,GLW,' &
+!      ,'ACFRCV,NCFRCV,ALBEDO,RSWOUT/RSWIN = '   &
+!      ,imd,jmd, GSW(imd,jmd),RSWIN(imd,jmd)  &
+!      ,RSWIN(imd,jmd)-GSW(imd,jmd),RSWINC(imd,jmd),GLW(imd,jmd) &
+!      ,ACFRCV(imd,jmd),NCFRCV(imd,jmd),ALBEDO(imd,jmd),FSWrat
+! end debugging radiation
 !
 !--- Need to save LW & SW tendencies since radiation calculates both and this block
 !    is skipped when GFDL SW is called, both only if GFDL LW is also called
@@ -327,20 +358,6 @@ CONTAINS
         ENDDO
         ENDDO
       ENDIF
-
-!
-!***  RESET ACCUMULATED CONVECTIVE CLOUD TOP/BOT AND CONVECTIVE PRECIP
-!***  FOR NEXT INTERVAL BETWEEN RADIATION CALLS
-!
-      DO J=JTS,JTE
-      DO I=ITS,ITE
-!!!!    HBOT(I,J)=KTE+1-HBOT(I,J)
-!!!!    HTOP(I,J)=KTE+1-HTOP(I,J)
-        HBOT(I,J)=REAL(KTE+1)
-        HTOP(I,J)=0.
-        CUPPT(I,J)=0.
-      ENDDO
-      ENDDO
 !
   100 IF(GFDL_SW)THEN
         DO J=JTS,JTE
@@ -358,7 +375,7 @@ CONTAINS
 !-----------------------------------------------------------------------
       SUBROUTINE RADTN(DT,T,Q,QCW,QICE,                                 &
      &                 PFLIP,P8WFLIP,XLAND,TSK2D,                       &
-     &                 GLAT,GLON,HTOP,HBOT,ALB,CUPPT,                   &
+     &                 GLAT,GLON,CUTOP,CUBOT,ALB,CUPPT,                 &
      &                 ACFRCV,NCFRCV,ACFRST,NCFRST,                     &
      &                 VEGFRC,SNO,GLW,GSW,RSWIN,RSWINC,                 & 
 !BSF => for NAMX changes, pass in surface emissivity (SFCEMS) [different for snow]
@@ -377,11 +394,11 @@ CONTAINS
 
 ! CZEN : instantaneous cosine of the solar zenith angle.
 
-! HTOP : (REAL) model layer number that is highest in the atmosphere
+! CUTOP : (REAL) model layer number that is highest in the atmosphere
 !        in which convective cloud occurred since the previous call to the
 !        radiation driver.
 
-! HBOT : (REAL) model layer number that is lowest in the atmosphere
+! CUBOT : (REAL) model layer number that is lowest in the atmosphere
 !        in which convective cloud occurred since the previous call to the
 !        radiation driver.
 
@@ -491,7 +508,7 @@ CONTAINS
 !------------------------ For Clouds ----------------------------------
      &, CLFRmin=0.01, TAUCmax=4.161                                     &
 !--- Parameters used for new cloud cover scheme
-     &, XSDmin=-XSDmax, DXSD1=-DXSD, STSDM=0.01                         &
+     &, XSDmin=-XSDmax, DXSD1=-DXSD, STSDM=0.01, CVSDM=.04              &
      &, DXSD2=HALF*DXSD, DXSD2N=-DXSD2, PCLDY=0.25
 !
       INTEGER, PARAMETER :: NB=12,KSMUD=0
@@ -520,15 +537,13 @@ CONTAINS
 !     REAL,   INTENT(IN), DIMENSION(kms:kme)   :: ETAD
 !     REAL,   INTENT(IN), DIMENSION(kms:kme)   :: AETA
 !-----------------------------------------------------------------------
-      REAL,   INTENT(INOUT), DIMENSION(ims:ime,jms:jme)  :: HTOP,HBOT
+      REAL, INTENT(IN), DIMENSION(ims:ime,jms:jme) :: CUTOP,CUBOT,CUPPT
       REAL,   INTENT(IN   ), DIMENSION(ims:ime,jms:jme)  :: ALB,SNO
 !BSF => for NAMX changes, pass in surface emissivity (SFCEMS) [different for snow]
       REAL,   INTENT(IN   ), DIMENSION(ims:ime,jms:jme)  :: GLAT,GLON
 !-----------------------------------------------------------------------
       REAL,   DIMENSION(ims:ime,jms:jme)  :: CZEN
       INTEGER, DIMENSION(its:ite, jts:jte):: LMH
-!-----------------------------------------------------------------------
-      REAL,   INTENT(INOUT), DIMENSION(ims:ime,jms:jme) :: CUPPT
 !-----------------------------------------------------------------------
 !     INTEGER,INTENT(IN), DIMENSION(jms:jme) :: IHE,IHW
 !-----------------------------------------------------------------------
@@ -566,8 +581,8 @@ CONTAINS
       REAL,   DIMENSION(its:ite)   :: TAUDAR
       REAL,   DIMENSION(its:ite,NB,kts:kte+1) ::RRCL,TTCL
 
-      REAL,   DIMENSION(its:ite,kts:kte):: CSMID,CCMID,QWMID,QIMID &
-     &                                     ,QOVRCST                  ! Added
+      REAL,   DIMENSION(its:ite,kts:kte):: CSMID,CCMID,QWMID,QIMID
+!!      &                                     ,QOVRCST                  ! Added
       REAL,SAVE :: P400=40000.
       INTEGER,SAVE :: NFILE=14
 
@@ -576,10 +591,10 @@ CONTAINS
       REAL    :: TIMES,EXNER,APES,SNOFAC,CCLIMIT,CLIMIT,P1,P2,CC1,CC2
       REAL    :: PMOD,CLFR1,CTAU,WV,ARG,CLDMAX
       REAL    :: CL1,CL2,CR1,DPCL,QSUM,PRS1,PRS2,DELP,TCLD,DD,EE,AA,FF
-      REAL    :: BB,GG,DENOM,FCTRA,FCTRB,PDSLIJ,CFRAVG,SNOMM
-      REAL    :: TAUC,THICK,CONVPRATE,CLFR,ESAT,QSAT,RHUM,QCLD
-      REAL    :: RHsat,RHtot,RRHO,FLARGE,FSMALL,DSNOW,SDM,QPCLDY,DIFCLD
-      REAL    :: TauCS,TauCL,CTauL,CTauS,  CFSmax
+      REAL    :: BB,GG,FCTR,PDSLIJ,CFRAVG,SNOMM
+      REAL    :: THICK,CONVPRATE,CLFR,ESAT,QSAT,RHUM,QCLD
+      REAL    :: RHtot,RRHO,FLARGE,FSMALL,DSNOW,SDM,QPCLDY,DIFCLD
+      REAL    :: TauC,CTauL,CTauS,  CFSmax,CFCmax
       INTEGER :: I,J,MYJS,MYJE,MYIS,MYIE,NTSPH,NRADPP,ITIMSW,ITIMLW,    &
      &           JD,II
       INTEGER :: L,N,LML,LVLIJ,IR,KNTLYR,LL,NC,L400,NMOD,LTROP,IWKL
@@ -591,7 +606,12 @@ CONTAINS
       DATA    PPT/0.,.14,.31,.70,1.6,3.4,7.7,17.,38.,85./
       DATA ABCFF/2*4.0E-5,.002,.035,.377,1.95,9.40,44.6,190.,989.,      &
      &           2706.,39011./
-
+! begin debugging radiation
+      integer :: imd,jmd, Jndx
+      real :: FSWrat
+      imd=(ims+ime)/2
+      jmd=(jms+jme)/2
+! end debugging radiation
 !
 !=======================================================================
 !
@@ -606,7 +626,6 @@ CONTAINS
       LM=kte
       LM1=LM-1
       LP1=LM+1
-      RHsat=RHgrd
 !
       DO J=JTS,JTE
       DO I=ITS,ITE
@@ -651,6 +670,7 @@ CONTAINS
      &            ims,ime, jms,jme, kms,kme,                            &
      &            its,ite, jts,jte, kts,kte                         )
 !-----------------------------------------------------------------------
+!     write(0,*)'1st ZEN ',TIME,DAYI,HOUR,IDAT,IHRST,CZEN(ITS,JTS)
       ADDL=0.
       IF(MOD(IDAT(3),4).EQ.0)ADDL=1.
       RANG=PI2*(DAYI-RLAG)/(365.+ADDL)
@@ -674,6 +694,8 @@ CONTAINS
      &                ids,ide, jds,jde, kds,kde,                        &
      &                ims,ime, jms,jme, kms,kme,                        &
      &                its,ite, jts,jte, kts,kte                       )
+!         write(0,*)'2nd ZEN ',TIMES,DAYI,HOUR,IDAT,IHRST,CZEN(ITS,JTS),&
+!    &                II,NRADS,NPHS,NTSD,DT
           DO J=MYJS,MYJE
           DO I=MYIS,MYIE
             IF(CZEN(I,J).GT.0.)THEN
@@ -689,6 +711,14 @@ CONTAINS
         ENDDO
         ENDDO
       ENDIF
+!
+!***  Do not modify pressure for ozone concentrations below the top layer
+!***
+      DO L=2,LM
+      DO I=MYIS,MYIE
+        POZN(I,L)=H1
+      ENDDO
+      ENDDO
 !-----------------------------------------------------------------------
 !
 !***********************************************************************
@@ -804,43 +834,55 @@ CONTAINS
       DO I=MYIS,MYIE
         LML=LMH(I,J)
         LVLIJ=LVL(I,J)
-        DO L=1,LML
+        DO 255 L=1,LML
             LL=L+LVLIJ
             WV=QMID(I,LL)/(1.-QMID(I,LL))       !--- Water vapor mixing ratio
+            QCLD=QWMID(I,LL)+QIMID(I,LL)        !--- Total cloud water + ice mixing ratio
+            IF (QCLD .LE. EPSQ) GO TO 255       !--- Skip if no condensate is present
+            CLFR=H0
+            WV=QMID(I,LL)/(1.-QMID(I,LL))       !--- Water vapor mixing ratio
+               
     !
     !--- Saturation vapor pressure w/r/t water ( >=0C ) or ice ( <0C )
     !
             ESAT=1000.*FPVS(TMID(I,LL))         !--- Saturation vapor pressure (Pa)
             QSAT=EP_2*ESAT/(PMID(I,LL)-ESAT)    !--- Saturation mixing ratio
             RHUM=WV/QSAT                        !--- Relative humidity
-            QCLD=QWMID(I,LL)+QIMID(I,LL)        !--- Total cloud water + ice mixing ratio
     !
     !--- Revised cloud cover parameterization (temporarily ignore rain)
     !
             RHtot=(WV+QCLD)/QSAT                !--- Total relative humidity
-    !
-    !--- QOVRCST is the amount of cloud condensate associated with full
-    !    overcast, PCLDY is an arbitrary factor for partial cloudiness
-    !
-            TCLD=TMID(I,LL)-T0C                 !--- Air temp in deg C
-            RRHO=(R_D*TMID(I,LL)*(1.+EP_1*QMID(I,LL)))/PMID(I,LL)
-            IF (TCLD .GE. 0.) THEN
-               QOVRCST(I,LL)=QAUT0*RRHO
+!!    !
+!!    !--- QOVRCST is the amount of cloud condensate associated with full
+!!    !    overcast, PCLDY is an arbitrary factor for partial cloudiness
+!!    !
+!!            TCLD=TMID(I,LL)-T0C                 !--- Air temp in deg C
+!!            RRHO=(R_D*TMID(I,LL)*(1.+EP_1*QMID(I,LL)))/PMID(I,LL)
+!!            IF (TCLD .GE. 0.) THEN
+!!               QOVRCST(I,LL)=QAUT0*RRHO
+!!            ELSE
+!!               IF (TCLD.GE.-8. .AND. TCLD.LE.-3.) THEN
+!!                  FLARGE=FLARGE1
+!!               ELSE
+!!                  FLARGE=FLARGE2
+!!               ENDIF
+!!               FSMALL=(1.-FLARGE)/FLARGE
+!!               DSNOW=XMImax*EXP(XMIexp*TCLD)
+!!               INDEXS=MAX(MDImin, MIN(MDImax, INT(DSNOW)))
+!!               QOVRCST(I,LL)=NLImax*( FSMALL*MASSI(MDImin)              &
+!!     &                               +MASSI(INDEXS) )*RRHO
+!!            ENDIF                 !--- End IF (TCLD .GE. 0.)
+!!            QOVRCST(I,LL)=PCLDY*QOVRCST(I,LL)
+            LCNVT=NINT(CUTOP(I,J))+LVLIJ
+            LCNVT=MIN(LM,LCNVT)
+            LCNVB=NINT(CUBOT(I,J))+LVLIJ
+            LCNVB=MIN(LM,LCNVB)
+            IF (LL.GE.LCNVT .AND. LL.LE.LCNVB) THEN
+               SDM=CVSDM
             ELSE
-               IF (TCLD.GE.-8. .AND. TCLD.LE.-3.) THEN
-                  FLARGE=FLARGE1
-               ELSE
-                  FLARGE=FLARGE2
-               ENDIF
-               FSMALL=(1.-FLARGE)/FLARGE
-               DSNOW=XMImax*EXP(XMIexp*TCLD)
-               INDEXS=MAX(MDImin, MIN(MDImax, INT(DSNOW)))
-               QOVRCST(I,LL)=NLImax*( FSMALL*MASSI(MDImin)              &
-     &                               +MASSI(INDEXS) )*RRHO
-            ENDIF                 !--- End IF (TCLD .GE. 0.)
-            QOVRCST(I,LL)=PCLDY*QOVRCST(I,LL)
-            SDM=MIN(QOVRCST(I,LL)/QSAT, STSDM)
-            ARG=(RHtot-RHsat)/SDM
+               SDM=STSDM
+            ENDIF
+            ARG=(RHtot-RHgrd)/SDM
             IF (ARG.LE.DXSD2 .AND. ARG.GE.DXSD2N) THEN
                CLFR=HALF
             ELSE IF (ARG .GT. DXSD2) THEN
@@ -870,21 +912,21 @@ CONTAINS
                ENDIF        !--- End IF (ARG .LE. XSDmin) 
             ENDIF           !--- IF (ARG.LE.DXSD2 .AND. ARG.GE.DXSD2N)
             CSMID(I,LL)=CLFR
-  !
-  !--- Here the condensate is adjusted to be only over the cloudy area
-  !
-            IF (CLFR.GT.0. .AND. QCLD.LE.0.) THEN
-  !
-  !--- Put in modest amounts of cloud water & cloud ice for partially cloudy grids
-  !
-               QPCLDY=MIN(.01*QSAT, QOVRCST(I,LL))
-               IF (TCLD .GE. H0) THEN
-                  QWMID(I,LL)=QPCLDY
-               ELSE
-                  QIMID(I,LL)=QPCLDY
-               ENDIF
-            ENDIF          !--- End IF (CLFR.GT.0. .AND. QCLD.LE.0.) 
-          ENDDO            !--- End DO L=1,LML
+!!  !
+!!  !--- Here the condensate is adjusted to be only over the cloudy area
+!!  !
+!!            IF (CLFR.GT.0. .AND. QCLD.LE.0.) THEN
+!!  !
+!!  !--- Put in modest amounts of cloud water & cloud ice for partially cloudy grids
+!!  !
+!!               QPCLDY=MIN(.01*QSAT, QOVRCST(I,LL))
+!!               IF (TCLD .GE. H0) THEN
+!!                  QWMID(I,LL)=QPCLDY
+!!               ELSE
+!!                  QIMID(I,LL)=QPCLDY
+!!               ENDIF
+!!            ENDIF          !--- End IF (CLFR.GT.0. .AND. QCLD.LE.0.) 
+255       CONTINUE         !--- End DO L=1,LML
       ENDDO                !--- End DO I=MYIS,MYIE
 !
 !***********************************************************************
@@ -905,7 +947,7 @@ CONTAINS
 !***  CLOUD TOPS AND BOTTOMS COME FROM CUCNVC
 !     Convective clouds need to be at least 2 model layers thick
 !
-          IF (HBOT(I,J)-HTOP(I,J) .GT. 1.0) THEN
+          IF (CUBOT(I,J)-CUTOP(I,J) .GT. 1.0) THEN
  !--- Compute convective cloud fractions if appropriate  (Ferrier, Feb '02)
             CLFR=CC(1)
             PMOD=CUPPT(I,J)*CONVPRATE
@@ -928,16 +970,16 @@ CONTAINS
   !***  ADD LVL TO BE CONSISTENT WITH OTHER WORKING ARRAYS
   !
             LVLIJ=LVL(I,J)
-            LCNVT=NINT(HTOP(I,J))+LVLIJ
+            LCNVT=NINT(CUTOP(I,J))+LVLIJ
             LCNVT=MIN(LM,LCNVT)
-            LCNVB=NINT(HBOT(I,J))+LVLIJ
+            LCNVB=NINT(CUBOT(I,J))+LVLIJ
             LCNVB=MIN(LM,LCNVB)
 !! !
 !! !---- For debugging
 !! !
 !!      WRITE(6,"(2(A,I3),2(A,I2),2(A,F5.2),2(A,I2),A,F6.4)") 
 !!     & ' J=',J,' I=',I,' LCNVB=',LCNVB,' LCNVT=',LCNVT
-!!     &, ' HBOT=',HBOT(I,J),' HTOP=',HTOP(I,J)
+!!     &, ' CUBOT=',CUBOT(I,J),' CUTOP=',CUTOP(I,J)
 !!     &,' LVL=',LVLIJ,' LMH=',LMH(I,J),' CCMID=',CLFR
 !! !
    !
@@ -946,18 +988,10 @@ CONTAINS
    !    exceeds that of the grid-scale cloud fraction
    !
             DO LL=LCNVT,LCNVB
-               CCMID(I,LL)=CLFR
-               DIFCLD=CCMID(I,LL)-CSMID(I,LL)
-               IF (DIFCLD .GT. 0.) THEN
-                  QPCLDY=QOVRCST(I,LL)*DIFCLD
-                  IF (TMID(I,LL) .GE. T0C) THEN
-                     QWMID(I,LL)=QWMID(I,LL)+QPCLDY
-                  ELSE
-                     QIMID(I,LL)=QIMID(I,LL)+QPCLDY
-                  ENDIF
-               ENDIF        !--- End IF (DIFCLD .GT. 0.) 
+              ARG=MAX(H0, H1-CSMID(I,LL))
+              CCMID(I,LL)=MIN(ARG,CLFR)
             ENDDO           !--- End DO LL=LCNVT,LCNVB
-          ENDIF             !--- IF (HBOT(I,J)-HTOP(I,J) .GT. 1.0) ...
+          ENDIF             !--- IF (CUBOT(I,J)-CUTOP(I,J) .GT. 1.0) ...
         ENDDO               !--- End DO I loop
       ENDIF                 !--- End IF (CNCLD) ...
 !
@@ -1209,8 +1243,7 @@ CONTAINS
 !***
         DO 580 NC=2,NCLD+1
 !
-        TauCS=0.    !--- Total optical depth for each cloud layer (solar)
-        TauCL=0.    !--- Total optical depth for each cloud layer (longwave)
+        TauC=0.    !--- Total optical depth for each cloud layer (solar & longwave)
         QSUM=0.0
         NKTP=LP1
         NBTM=0
@@ -1227,87 +1260,79 @@ CONTAINS
             QSUM=QSUM+QMID(I,LL)*DELP*(PRS1+PRS2)                       &     
      &           /(120.1612*SQRT(TMID(I,LL)))
 !
-!-----------------------------------------------------------------------
+!***********************************************************************
+!****  IMPORTANT NOTES concerning input cloud optical properties  ******
+!***********************************************************************
+!
 !--- The simple optical depth parameterization from eq. (1) of Harshvardhan
 !    et al. (1989, JAS, p. 1924; hereafter referred to as HRCD by authorship)
 !    is used for convective cloud properties with some simple changes.
 !
 !--- The optical depth Tau is Tau=CTau*DELP, where values of CTau are
 !    described below.
-!
-!--- For convection, assume simple optical depth coefficients of
-!      1) CTau=0.16 for ice, assumed to be for T<=T_ICE (=-10C in GSMCOLUMN)
-!         This was referenced as "optically thick anvil associated with
-!         convection in
-!      2) CTau=0.08 for water, assumed to be present for T>T_ICE
-!
-!--- For grid-scale processes in the absence of convection:
-!      1) CTau=0.08*min(1., Qc/Q0) for cloud water, where
+!      1) CTau=0.08*(Qc/Q0) for cloud water mixing ratio (Qc), where
 !         Q0 is assumed to be the threshold mixing ratio for "thick anvils",
 !         as noted in the 2nd paragraph after eq. (1) in Harshvardhan et al.
 !         (1989).  A value of Q0=0.1 g/kg is assumed based on experience w/
 !         cloud observations, and it is intended only to be a crude scaling
 !         factor for "order of magnitude" effects.  The functional dependence
 !         on mixing ratio is based on Stephens (1978, JAS, p. 2124, eq. 7).
-!      2) CTau=500*Qi for ice particles.  This is based on the optical depth
-!         of snow.  Prof. Q. Fu (U. Washington) provided the following eq.:
-!           Tau-1.5*SWP/(Res*RHOs)
-!         SWP is snow water path, Res is the snow effective radius, RHOs is
-!         the snow density.  Based on derivations using Petch (1998, JAS, 1846-
-!         1858) as a starting point, Res=1.5*Ds with Ds being the mean diameter
-!         of an exponential distribution of ice particles ("snow").  After some
-!         manipulation,
-!           Tau=CTau*DELP => CTau=CSTau*Qice, where
-!         CSTau=100./(G*Ds*RHOs) ~ 500 based on values of Ds and RHOs in the
-!         ice lookup tables (actually varies from 920 for Ds=.1 mm to ~520 for
-!         Ds>0.5 mm), and units of DELP in mb (must convert from Pascals).
-!         "Snow" (precipitating ice) is assumed because of it dominates over
-!         cloud ice in the scheme.
+!         Result: CTau=800.*Qc => note that the "800." factor is referred to
+!         as an absorption coefficient
+!      2) For an assumed value of Q0=1 g/kg for "thick anvils", then 
+!         CTau=80.*Qc, or an absorption coefficient that is an order of 
+!         magnitude less.
+!      => ABSCOEF_W can vary from 100. to 1000. !!
+!      3) From p. 3105 of Dudhia (1989), values of 
+!         0.14 (m**2/g) * 1000 (g/kg) / 9.81 (m/s**2) = 14.27 /Pa
+!         => 14.27 (/Pa) * 100 (Pa/mb) = 1427 /mb
+!      4) From Dudhia's SW radiation, ABSCOEF_W ~ 1000.  after units conversion
+!      5) Again from p. 3105 of Dudhia (1989), he notes that ice absorption 
+!         coefficients are roughly half those of cloud water, it was decided
+!         to keep this simple and assume half that of water.
+!      => ABSCOEF_I=0.5*ABSCOEF_W
 !
-!=======================================================================
-!====   The following are what's used and are based on current ops =====
-!=======================================================================
-!--- For convection, a characteristic mixing ratio of 0.1 g/kg (1.e-4) is assumed
-!    for water and ice, resulting in the following:
-!        CTauL,CTauS=0.08   for cloud water (T >= 0C)
-!        CTauL,CTauS=0.05   for ice         (T  < 0C)
+!--- For convection, the following is assumed:
+!      1) A characteristic water/ice mixing ratio (Qconv)
+!      2) A temperature threshold for water or ice (TRAD_ice)
+!
 !-----------------------------------------------------------------------
 !
-            CTauL=0.
-            CTauS=0.
+            CTau=0.
 !-- For crude estimation of convective cloud optical depths
             IF (CCMID(I,LL) .GE. CLFRmin) THEN
-              IF (TCLD .GE. 0.) THEN    !--- Cloud water
-                CTauL=0.08
-                CTauS=0.08
-              ELSE                         !--- Ice
-                CTauL=0.05
-                CTauS=0.05
+              IF (TCLD .GE. TRAD_ice) THEN
+                CTau=CTauCW            !--- Convective cloud water
+              ELSE
+                CTau=CTauCI            !--- Convective ice
               ENDIF
+!              CTau=CTau*CCMID(I,LL)    !--- Reduce by convective cloud fraction
             ENDIF
+!
 !-- For crude estimation of grid-scale cloud optical depths
-            IF (CSMID(I,LL) .GE. CLFRmin) THEN
-              CTauL=CTauL+800.*QWMID(I,LL)+500.*QIMID(I,LL)
-              CTauS=CTauS+800.*QWMID(I,LL)+500.*QIMID(I,LL)
-            ENDIF
-            TauCL=TauCL+DELP*CTauL
-            TauCS=TauCS+DELP*CTauS
+!
+!--   => The following 2 lines were intended to reduce cloud optical depths further 
+!        than what's parameterized in the NAM and what's theoretically justified
+!            CTau=CTau+CSMID(I,LL)*   &
+!     &           ( ABSCOEF_W*QWMID(I,LL)+ABSCOEF_I*QIMID(I,LL) )
+            CTau=CTau+ABSCOEF_W*QWMID(I,LL)+ABSCOEF_I*QIMID(I,LL)
+            TauC=TauC+DELP*CTau
           ENDIF      !--- End IF(LL.GE.KTOP(I,NC) ....
         ENDDO        !--- End DO LL
 !
-        IF(BITX)EMIS(I,NC)=1.0-EXP(-0.75*TauCL)
+        IF(BITX)EMIS(I,NC)=1.0-EXP(-0.75*TauC)
         IF(QSUM.GE.EPSQ1)THEN
 !
           DO 570 NBAND=1,NB
           IF(BITX)THEN
             PROD=ABCFF(NBAND)*QSUM
-            DDX=TauCS/(TauCS+PROD)
+            DDX=TauC/(TauC+PROD)
             EEX=1.0-DDX
             IF(ABS(EEX).GE.1.E-8)THEN
               DD=DDX
               EE=EEX
               FF=1.0-DD*0.85
-              AA=MIN(50.0,SQRT(3.0*EE*FF)*TauCS)
+              AA=MIN(50.0,SQRT(3.0*EE*FF)*TauC)
               AA=EXP(-AA)
               BB=FF/EE
               GG=SQRT(BB)
@@ -1327,16 +1352,12 @@ CONTAINS
 !******************  COMPUTE OZONE AT MIDLAYERS  *********************
 !*********************************************************************
 !
-!***  MODIFY PRESSURES SO THAT THE ENTIRE COLUMN OF OZONE (TO 0 MB)
-!***  IS INCLUDED IN THE MODEL COLUMN EVEN WHEN PT > 0 MB
-!***
-      DO L=1,LM
+!***  MODIFY PRESSURE AT THE TOP MODEL LAYER TO ACCOUNT FOR THE TOTAL
+!***  OZONE FROM MODEL TOP (PINT_1) TO THE TOP OF THE ATMOSPHERE (0 MB)
+!
       DO I=MYIS,MYIE
-        DENOM=1./(PINT(I,LP1)-PINT(I,1))
-        FCTRA=PINT(I,LP1)*DENOM
-        FCTRB=-PINT(I,1)*PINT(I,LP1)*DENOM
-        POZN(I,L)=PMID(I,L)*FCTRA+FCTRB
-      ENDDO
+        FCTR=PINT(I,2)/(PINT(I,2)-PINT(I,1))
+        POZN(I,L)=FCTR*(PMID(I,1)-PINT(I,1))
       ENDDO
 !
       CALL OZON2D(LM,POZN,XLAT,OZN,                                &
@@ -1353,6 +1374,7 @@ CONTAINS
 !***  CALL THE GFDL RADIATION DRIVER
 !***
 !***
+      Jndx=J
       CALL RADFS &
      &     (PSFC,PMID,PINT,QMID,TMID,OZN,TSKN,SLMSK,ALBEDO,XLAT         &
 !BSF => for NAMX changes, pass in surface emissivity (SFCEMS) [different for snow]
@@ -1364,7 +1386,10 @@ CONTAINS
      &,     FLWUP,FSWUP,FSWDN,FSWDNS,FSWUPS,FLWDNS,FLWUPS,FSWDNSC       &
      &,     ids,ide, jds,jde, kds,kde                                   &
      &,     ims,ime, jms,jme, kms,kme                                   &
-     &,     its,ite, jts,jte, kts,kte                           )
+! begin debugging radiation
+     &,     its,ite, jts,jte, kts,kte                                   &
+     &,     imd,jmd, Jndx                                       )
+! end debugging radiation
 !----------------------------------------------------------------------
       IF(LONG)THEN
 !
@@ -1408,20 +1433,17 @@ CONTAINS
         CFRACM(I,J)=CLDCFR(I,2)
         CFRACH(I,J)=CLDCFR(I,3)
         IF(CNCLD)THEN
-          IF(HBOT(I,J)-HTOP(I,J).GT.1.)THEN
-  !--- Count locations with convective cloudiness (changed w/r/t operations)
-            ACFRCV(I,J)=ACFRCV(I,J)+CCMID(I,LL)
-            NCFRCV(I,J)=NCFRCV(I,J)+1
-          ENDIF
           CFSmax=0.   !-- Maximum cloud fraction (stratiform component)
-          DO LL=1,LM
+          CFCmax=0.   !-- Maximum cloud fraction (convective component)
+          DO L=1,LMH(I,J)
+            LL=L+LVL(I,J)
             CFSmax=MAX(CFSmax, CSMID(I,LL) )
+            CFCmax=MAX(CFCmax, CCMID(I,LL) )
           ENDDO
-          IF (CFSmax .GT. 0.) THEN
-  !--- Count locations with grid-scale cloudiness (changed w/r/t operations)
-            ACFRST(I,J)=ACFRST(I,J)+CFSmax
-            NCFRST(I,J)=NCFRST(I,J)+1
-          ENDIF
+          ACFRST(I,J)=ACFRST(I,J)+CFSmax
+          NCFRST(I,J)=NCFRST(I,J)+1
+          ACFRCV(I,J)=ACFRCV(I,J)+CFCmax
+          NCFRCV(I,J)=NCFRCV(I,J)+1
         ELSE
   !--- Count only locations with grid-scale cloudiness, ignore convective clouds
   !    (option not used, but if so set to the total cloud fraction)
@@ -1447,8 +1469,20 @@ CONTAINS
 !***  CALLS TO RADIATION THIS TIME STEP ARE COMPLETE.
 !***
 !----------------------------------------------------------------------
-
+! begin debugging radiation
+!     FSWrat=0.
+!     if (RSWIN(imd,jmd) .gt. 0.)  &
+!        FSWrat=(RSWIN(imd,jmd)-GSW(imd,jmd))/RSWIN(imd,jmd)
+!     write(6,"(2a,2i5,7f9.2)") &
+!       '{rad3 imd,jmd,GSW,RSWIN,RSWOUT=RSWIN-GSW,RSWINC,GLW,' &
+!      ,'ALBEDO,RSWOUT/RSWIN = '&
+!      ,imd,jmd, GSW(imd,jmd),RSWIN(imd,jmd)  &
+!      ,RSWIN(imd,jmd)-GSW(imd,jmd),RSWINC(imd,jmd),GLW(imd,jmd) &
+!      ,ALB(imd,jmd),FSWrat
+! end debugging radiation
 !----------------------------------------------------------------------
+!
+!--- Need to save LW & SW tendencies since radiation calculates both and this block
 
       END SUBROUTINE RADTN
 
@@ -5615,7 +5649,10 @@ CONTAINS
       ,          FLWUP,FSWUP,FSWDN,FSWDNS,FSWUPS,FLWDNS,FLWUPS,FSWDNSC  &
       ,          ids,ide, jds,jde, kds,kde                      &
       ,          ims,ime, jms,jme, kms,kme                      &
-      ,          its,ite, jts,jte, kts,kte                      )
+! begin debugging radiation
+      ,          its,ite, jts,jte, kts,kte                      &
+      ,          imd,jmd, Jndx                                  )
+! end debugging radiation
 !************************************************************************
 !*    SWH: ATMOSPHERIC SHORTWAVE HEATING RATES IN K/S.
 !*         SWH IS A REAL ARRAY DIMENSIONED (NCOL X LM).
@@ -6129,8 +6166,13 @@ CONTAINS
                                              SFCALB
 
        REAL    :: RRVCO2,RRCO2,TDUM
-!BSF       REAL    :: ALBD0,ALVD1,ALND1,RRVCO2,RRCO2
+       REAL    :: ALBD0,ALVD1,ALND1
        INTEGER :: N
+!
+!***  The following two lines are for debugging.
+       integer :: imd,jmd, Jndx
+       real :: FSWrat,FSWrat1,FSWDNS1
+!***
 
 !====>    BEGIN HERE             .......................
 !
@@ -6232,7 +6274,7 @@ CONTAINS
          PHALF(1)=0.
          PHALF(LP1)=PPI(I,kme)
          DO K=1,LM1
-            PHALF(K+1)=PP(I,K) !  AETA(K)*PDIF+PT
+            PHALF(K+1)=PP(I,K) !  AETA(K)*PDIF+PT ! BSF index was erroneously L
          ENDDO
 
          CALL O3INT(PHALF,DDUO3N,DDO3N2,DDO3N3,DDO3N4, &
@@ -6263,19 +6305,23 @@ CONTAINS
         ALNB(I) = SFCALB(I)
 !
 !--- Remove diurnal variation of land surface albedos (Ferrier, 6/28/05)
+!--- Turn back on to mimic NAM 8/17/05
 !
-!BSF!.....     VISIBLE AND NEAR IR DIRECT BEAM ALBEDO,IF NOT OCEAN NOR SNOW
-!BSF!            ..FUNCTION OF COSINE SOLAR ZENITH ANGLE..
-!BSF        IF (SLMSK(I+IBEG-1).LT.0.5) THEN
-!BSF         IF (SFCALB(I).LE.0.5) THEN
-!BSF          ALBD0 = -18.0 * (0.5 - ACOS(COSZEN(I))/PI)
-!BSF          ALBD0 = EXP (ALBD0)
-!BSF          ALVD1 = (ALVD(I) - 0.054313) / 0.945687
-!BSF          ALND1 = (ALND(I) - 0.054313) / 0.945687
-!BSF          ALVB(I) = ALVD1 + (1.0 - ALVD1) * ALBD0
-!BSF          ALNB(I) = ALND1 + (1.0 - ALND1) * ALBD0
-!BSF         END IF
-!BSF        END IF
+!.....     VISIBLE AND NEAR IR DIRECT BEAM ALBEDO,IF NOT OCEAN NOR SNOW
+!        ..FUNCTION OF COSINE SOLAR ZENITH ANGLE..
+        IF (SLMSK(I+IBEG-1).LT.0.5) THEN
+         IF (SFCALB(I).LE.0.5) THEN
+          ALBD0 = -18.0 * (0.5 - ACOS(COSZEN(I))/PI)
+          ALBD0 = EXP (ALBD0)
+          ALVD1 = (ALVD(I) - 0.054313) / 0.945687
+          ALND1 = (ALND(I) - 0.054313) / 0.945687
+          ALVB(I) = ALVD1 + (1.0 - ALVD1) * ALBD0
+          ALNB(I) = ALND1 + (1.0 - ALND1) * ALBD0
+ !-- Put in an upper limit on beam albedos
+          ALVB(I) = MIN(0.5,ALVB(I))
+          ALNB(I) = MIN(0.5,ALNB(I))
+         END IF
+        END IF
   195 CONTINUE
 !.....SURFACE VALUES OF RRCL AND TTCL
       DO 200 N=1,2
@@ -6373,11 +6419,20 @@ CONTAINS
       DO 280 I=MYIS,MYIE
         IR = I + IBEG - 1
         FLWUP(IR) = .001*TOPFLX(I)
-        TDUM=TEMP(I,LP1)
+!        TDUM=TEMP(I,LP1)
+!--- Use an average of the skin & lowest model level temperature
+        TDUM=.5*(TEMP(I,LP1)+TEMP(I,L))
         FLWUPS(IR)=HSIGMA*TDUM*TDUM*TDUM*TDUM
 !BSF        FLWUPS(IR)=SFCEMS*HSIGMA*TDUM*TDUM*TDUM*TDUM
         FLWDNS(IR)=FLWUPS(IR)-.001*GRNFLX(I)
   280 CONTINUE
+!....  Average LW heating/cooling rates over the lowest 2 atmospheric layers,
+!      which may be necessary for when dealing with thin layers near the surface
+      DO I=MYIS,MYIE
+         TDUM=.5*(HEATRA(I,L)+HEATRA(I,LM1))
+         HEATRA(I,L)=TDUM
+         HEATRA(I,LM1)=TDUM
+      ENDDO
 !....      CONVERT HEATING RATES TO DEG/SEC
       DO 290 K=1,L
         DO 290 I=MYIS,MYIE
@@ -6429,6 +6484,25 @@ CONTAINS
           SWH(I+IBEG-1,K)=HSW(I,K)*DAYSEC
   330 CONTINUE
   350 CONTINUE
+! begin debugging radiation
+
+!     if (Jndx .eq. jmd) then
+!       FSWDNS1=(GDFVB(imd)+GDFNB(imd)+GDFVD(imd)+GDFND(imd))*.001
+!       write(6,"(3a,2i5,7f9.2)") '{rad2 imd,Jndx,'  &
+!      ,'GSW=FSWDNS-FSWUPS,RSWIN=FSWDNS,RSWIN_1=FSWDNS1,' &
+!      ,'FSWDNS-FSWDNS1,RSWOUT=FSWUPS,RSWINC=FSWDNSC,GLW=FLWDNS = ' &
+!      ,imd,Jndx, FSWDNS(imd)-FSWUPS(imd),FSWDNS(imd),FSWDNS1  &
+!      ,FSWDNS(imd)-FSWDNS1,FSWUPS(imd),FSWDNSC(imd),FLWDNS(imd)
+!       FSWrat=0.
+!       if (FSWDNS(imd) .ne. 0.) FSWrat=FSWUPS(imd)/FSWDNS(imd)
+!       FSWrat1=0.
+!       if (FSWDNS1 .ne. 0.) FSWrat1=FSWUPS(imd)/FSWDNS1
+!       write(6,"(2a,10f8.4)") '{rad2a ALBEDO,SFCALB,ALVD,ALND,ALVB,' &
+!      ,'ALNB,CZEN,SLMSK,FSWUPS/FSWDNS,FSWUPS/FSWDNS1 = ' &
+!      ,ALBEDO(imd),SFCALB(imd),ALVD(imd),ALND(imd),ALVB(imd)  &
+!      ,ALNB(imd),COSZEN(imd),SLMSK(imd),FSWrat,FSWrat1
+!     endif
+! end debugging radiation
       RETURN
  1000 FORMAT(1H ,' YOU ARE CALLING GFDL RADIATION CODE FOR',I5,' PTS', &
                  'AND',I4,' LYRS,WITH KDAPRX,KO3,KCZ,KEMIS,KALB = ',5I2)
@@ -7861,8 +7935,8 @@ CONTAINS
  1031 CONTINUE
       R1=1.E0-EC*COS(E)
 !
-!     WRITE(6,1000)JYR,JMNTH,JDAY,JHR,R1
-!     WRITE(6,*)JHR,R1
+      WRITE(0,1000)JYR,JMNTH,JDAY,JHR,R1
+      WRITE(0,*)JHR,R1
  1000 FORMAT('SUN-EARTH DISTANCE CALCULATION FINISHED IN SOLARD'/ &
              'YEAR=',I5,'  MONTH=',I3,'  DAY=',I3,' HOUR=' &
       ,      I3,' R1=',F9.4)

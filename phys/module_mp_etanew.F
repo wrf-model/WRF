@@ -64,17 +64,17 @@ MODULE module_mp_etanew
 !          presence of ice saturated/supersaturated conditions
 ! ======================================================================
       REAL, PUBLIC,PARAMETER ::                                         &
-     &  RHgrd=1.0                                                       &
+     &  RHgrd=1.                                                        &
      & ,T_ICE=-30.                                                      &
      & ,T_ICEK=T0C+T_ICE                                                &
      & ,T_ICE_init=-5.                                                  &
-     & ,NLImax=20.E3                                                    &
-     & ,NLImin=100.                                                     &
+     & ,NLImax=5.E3                                                     &
+     & ,NLImin=1.E3                                                     &
      & ,N0r0=8.E6                                                       &
      & ,N0rmin=1.E4                                                     &
-     & ,NCW=200.E6                                                      &
+     & ,NCW=100.E6                                                      &
      & ,FLARGE1=1.                                                      &
-     & ,FLARGE2=.2                                                      
+     & ,FLARGE2=.2
 !--- Other public variables passed to other routines:
       REAL,PUBLIC,SAVE ::  QAUT0
       REAL, PUBLIC,DIMENSION(MDImin:MDImax) :: MASSI

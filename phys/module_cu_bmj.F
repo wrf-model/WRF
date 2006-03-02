@@ -12,30 +12,28 @@
 !
       REAL,PARAMETER ::                                                 &
      &                  DSPC=-3000.                                     &
-     &                 ,DTTOP=0.,EFIFC=5.0,EFIMN=0.10,EFMNT=0.20        & 
-!    &                 ,DTTOP=0.,EFIFC=5.0,EFIMN=0.20,EFMNT=0.70        & 
+     &                 ,DTTOP=0.,EFIFC=5.0,EFIMN=0.20,EFMNT=0.70        & 
      &                 ,ELIVW=2.72E6,ENPLO=20000.,ENPUP=15000.          &
      &                 ,EPSDN=1.05,EPSDT=0.                             &
-     &                 ,EPSNTP=100.0,EPSNTT=100.,EPSPR=5.E-5            &
-     &                 ,EPSUP=0.95                                      &
+     &                 ,EPSNTP=.0001,EPSNTT=.0001,EPSPR=1.E-7           &
+     &                 ,EPSUP=1.00                                      &
      &                 ,FR=1.00,FSL=0.85,FSS=0.85                       &
-     &                 ,FUP=1./200000.                                  &
+     &                 ,FUP=0.                                          &
      &                 ,PBM=13000.,PFRZ=15000.,PNO=1000.                &
-     &                 ,PONE=2500.,PQM=2500.                            &
+     &                 ,PONE=2500.,PQM=20000.                           &
      &                 ,PSH=20000.,PSHU=45000.                          &
      &                 ,RENDP=1./(ENPLO-ENPUP)                          &
-     &                 ,RHLSC=0.60,RHHSC=1.                             &
+     &                 ,RHLSC=0.00,RHHSC=1.10                           &
      &                 ,ROW=1.E3                                        &
-     &                 ,STABDF=0.80,STABDS=1.05                         &
-     &                 ,STABS=1.0,STRESH=0.80                           &
+     &                 ,STABDF=0.90,STABDS=0.90                         &
+     &                 ,STABS=1.0,STRESH=1.10                           &
      &                 ,TREL=2400.
-!
-      REAL,PARAMETER :: DSPBFL=-3875.*FR*1.333                          &
-     &                 ,DSP0FL=-5875.*FR*1.333                          &
-     &                 ,DSPTFL=-1875.*FR*1.333                          &
-     &                 ,DSPBFS=-3875.*FR                                &
-     &                 ,DSP0FS=-5875.*FR                                &
-     &                 ,DSPTFS=-1875.*FR
+      REAL,PARAMETER :: DSPBFL=-3875.*FR                                &
+     &                 ,DSP0FL=-5875.*FR                                &
+     &                 ,DSPTFL=-1875.*FR                                &
+     &                 ,DSPBFS=-3875.                                   &
+     &                 ,DSP0FS=-5875.                                   &
+     &                 ,DSPTFS=-1875.
 !
       REAL,PARAMETER :: PL=2500.,PLQ=70000.,PH=105000.                  &
      &                 ,THL=210.,THH=365.,THHQ=325.
@@ -52,6 +50,11 @@
       REAL,DIMENSION(ITB,JTB),PRIVATE,SAVE :: PTBL
       REAL,DIMENSION(JTB,ITB),PRIVATE,SAVE :: TTBL
       REAL,DIMENSION(JTBQ,ITBQ),PRIVATE,SAVE :: TTBLQ
+
+!***  SHARE COPIES FOR MODULE_BL_MYJPBL
+!
+      REAL,DIMENSION(JTB) :: QS0_EXP,SQS_EXP
+      REAL,DIMENSION(ITB,JTB) :: PTBL_EXP
 !
       REAL,PARAMETER :: RDP=(ITB-1.)/(PH-PL),RDPQ=(ITBQ-1.)/(PH-PLQ)  &
      &                 ,RDQ=ITB-1,RDTH=(JTB-1.)/(THH-THL)             &
@@ -119,6 +122,13 @@ CONTAINS
       REAL,DIMENSION(KTS:KTE) :: DPCOL,DQDT,DTDT,PCOL,QCOL,TCOL
 !
       INTEGER :: I,J,K,KFLIP,ICLDCK,LMH
+!
+!***  Begin debugging convection
+      REAL :: DELQ,DELT,PLYR
+      INTEGER :: IMD,JMD
+      LOGICAL :: PRINT_DIAG
+!***  End debugging convection
+!
 !-----------------------------------------------------------------------
 !*********************************************************************** 
 !-----------------------------------------------------------------------
@@ -134,6 +144,12 @@ CONTAINS
 !                                                                      
 !***  COMPUTE CONVECTION EVERY STEPCU*DT/60.0 MINUTES
 !                                                                     
+!***  Begin debugging convection
+      IMD=(IMS+IME)/2
+      JMD=(JMS+JME)/2
+      PRINT_DIAG=.FALSE.
+!***  End debugging convection
+
       IF(ICLDCK==0.OR.ITIMESTEP==0)THEN
 !
         DO J=JTS,JTE
@@ -187,11 +203,16 @@ CONTAINS
 !***  CALL CONVECTION
 !***
 !-----------------------------------------------------------------------
-
+!***  Begin debugging convection
+!         PRINT_DIAG=.FALSE.
+!         IF(I==IMD.AND.J==JMD)PRINT_DIAG=.TRUE.
+!***  End debugging convection
+!-----------------------------------------------------------------------
           CALL BMJ(ITIMESTEP,I,J,DTCNVC,LMH,LANDMASK,CLDEFI(I,J)        &
      &            ,DPCOL,PCOL,QCOL,TCOL,PSFC,PTOP                       &
      &            ,DQDT,DTDT,PCPCOL,LBOT,LTOP,LPBL                      &
      &            ,CP,R,ELWV,ELIV,G,TFRZ,D608                           &   
+     &            ,PRINT_DIAG                                           &   
      &            ,IDS,IDE,JDS,JDE,KDS,KDE                              &     
      &            ,IMS,IME,JMS,JME,KMS,KME                              &
      &            ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -219,6 +240,40 @@ CONTAINS
 !
           CUTOP(I,J)=REAL(KTE+1-LTOP)
           CUBOT(I,J)=REAL(KTE+1-LBOT)
+!
+!-----------------------------------------------------------------------
+!***  Begin debugging convection
+          IF(PRINT_DIAG)THEN
+            DELT=0.
+            DELQ=0.
+            PLYR=0.
+            IF(LBOT>0.AND.LTOP<LBOT)THEN
+              DO K=LTOP,LBOT
+                PLYR=PLYR+DPCOL(K)
+                DELQ=DELQ+DPCOL(K)*DTCNVC*ABS(DQDT(K))
+                DELT=DELT+DPCOL(K)*DTCNVC*ABS(DTDT(K))
+              ENDDO
+              DELQ=DELQ/PLYR
+              DELT=DELT/PLYR
+            ENDIF
+!
+            WRITE(6,"(2a,2i4,3e12.4,f7.2,4i3)") &
+                 '{cu3 i,j,PCPCOL,DTavg,DQavg,PLYR,'  &
+                 ,'LBOT,LTOP,CUBOT,CUTOP = '  &
+                 ,i,j, PCPCOL,DELT,1000.*DELQ,.01*PLYR  &
+                 ,LBOT,LTOP,NINT(CUBOT(I,J)),NINT(CUTOP(I,J))
+!
+            IF(PLYR> 0.)THEN
+              DO K=LBOT,LTOP,-1
+                KFLIP=KTE+1-K
+                WRITE(6,"(a,i3,2e12.4,f7.2)") '{cu3a KFLIP,DT,DQ,DP = ' &
+                     ,KFLIP,DTCNVC*DTDT(K),1000.*DTCNVC*DQDT(K),.01*DPCOL(K)
+              ENDDO
+            ENDIF
+          ENDIF
+!***  End debugging convection
+!-----------------------------------------------------------------------
+!
         ENDDO
         ENDDO
 !
@@ -234,6 +289,7 @@ CONTAINS
      & ,DPRS,PRSMID,Q,T,PSFC,PT                                         &
      & ,DQDT,DTDT,PCPCOL,LBOT,LTOP,LPBL                                 &
      & ,CP,R,ELWV,ELIV,G,TFRZ,D608                                      &
+     & ,PRINT_DIAG                                                      &   
      & ,IDS,IDE,JDS,JDE,KDS,KDE                                         &
      & ,IMS,IME,JMS,JME,KMS,KME                                         &
      & ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -269,6 +325,10 @@ CONTAINS
       REAL,DIMENSION(KTS:KTE) :: APE,DIFQ,DIFT,THEE,THES,TREF
 !
       LOGICAL :: DEEP,SHALLOW
+!
+!***  Begin debugging convection
+      LOGICAL :: PRINT_DIAG
+!***  End debugging convection
 !
 !-----------------------------------------------------------------------
 !***
@@ -338,7 +398,7 @@ CONTAINS
       PSP=0.
 !-----------------------------------------------------------------------
       TAUK=DTCNVC/TREL
-      TAUKSC=DTCNVC/(1.0+TREL)
+      TAUKSC=DTCNVC/(1.0*TREL) 
 !-----------------------------------------------------------------------
 !-----------------------------PREPARATIONS------------------------------
 !-----------------------------------------------------------------------
@@ -530,88 +590,89 @@ CONTAINS
 !
 !------------------FIRST ENTROPY CHECK----------------------------------
 !
-      IF(KBMAX>LBOT.AND.LBOT>LTOP)THEN
-!-----------------------------------------------------------------------
-        DENTPY=0.
-        SUMDP=0.
-        L=KBMAX
-        PLO=PRSMID(L)
-        TRMLO=0.
-!
-        DO L=KBMAX-1,LBOT+1,-1
-          PUP=PRSMID(L)
-          TUP=THBT/APE(L)
-          DP=PLO-PUP
-          TRMUP=(TUP*(QQBT*0.608+1.)                                    &
-     &          -T(L)*(Q(L)*0.608+1.))*0.5                              &
-     &           /(T(L)*(Q(L)*0.608+1.))
-          DENTPY=(TRMLO+TRMUP)*DP+DENTPY
-          SUMDP=SUMDP+DP
-          PLO=PUP
-          TRMLO=TRMUP
-        ENDDO
-!
-        L=LBOT
-        PUP=PSP
-        TUP=THBT/APES
-        TSP=(T(L+1)-T(L))/(PLO-PBOT)                                    &
-     &     *(PUP-PBOT)+T(L)
-        QSP=(Q(L+1)-Q(L))/(PLO-PBOT)                                    &
-     &     *(PUP-PBOT)+Q(L)
-        DP=PLO-PUP
-        TRMUP=(TUP*(QQBT*0.608+1.)                                      &
-     &        -TSP*(QSP*0.608+1.))*0.5                                  &
-     &       /(TSP*(QSP*0.608+1.))
-        DENTPY=(TRMLO+TRMUP)*DP+DENTPY
-        SUMDP=SUMDP+DP
-        PLO=PUP
-        TRMLO=TRMUP
-        PUP=PRSMID(L)
-        TUP=TREF(L)
-        QUP=PQ0/PUP*EXP(A2*(TUP-A3)/(TUP-A4))
-        DP=PLO-PUP
-        TRMUP=(TUP*(QUP*0.608+1.)                                       &
-     &        -T(L)*(Q(L)*0.608+1.))*0.5                                &
-     &       /(T(L)*(Q(L)*0.608+1.))
-        DENTPY=(TRMLO+TRMUP)*DP+DENTPY
-        SUMDP=SUMDP+DP
-        PLO=PUP
-        TRMLO=TRMUP
-!
-        DO L=LBOT-1,LTOP
-          PUP=PRSMID(L)
-          TUP=TREF(L)
-          QUP=PQ0/PUP*EXP(A2*(TUP-A3)/(TUP-A4))
-          DP=PLO-PUP
-          TRMUP=(TUP*(QUP*0.608+1.)                                     &
-     &          -T(L)*(Q(L)*0.608+1.))*0.5                              &
-     &         /(T(L)*(Q(L)*0.608+1.))
-          DENTPY=(TRMLO+TRMUP)*DP+DENTPY
-          SUMDP=SUMDP+DP
-          PLO=PUP
-          TRMLO=TRMUP
-        ENDDO
-!
-        DENTPY=DENTPY*CP/SUMDP
-        IF(DENTPY<=EPSNTT)THEN
-          LTOP=LBOT
-          PTOP=PBOT
-        ENDIF
-!-----------------------------------------------------------------------
-      ENDIF
+!      IF(KBMAX>LBOT.AND.LBOT>LTOP)THEN
+!!-----------------------------------------------------------------------
+!        DENTPY=0.
+!        SUMDP=0.
+!        L=KBMAX
+!        PLO=PRSMID(L)
+!        TRMLO=0.
+!!
+!        DO L=KBMAX-1,LBOT+1,-1
+!          PUP=PRSMID(L)
+!          TUP=THBT/APE(L)
+!          DP=PLO-PUP
+!          TRMUP=(TUP*(QQBT*0.608+1.)                                    &
+!     &          -T(L)*(Q(L)*0.608+1.))*0.5                              &
+!     &           /(T(L)*(Q(L)*0.608+1.))
+!          DENTPY=(TRMLO+TRMUP)*DP+DENTPY
+!          SUMDP=SUMDP+DP
+!          PLO=PUP
+!          TRMLO=TRMUP
+!        ENDDO
+!!
+!        L=LBOT
+!        PUP=PSP
+!        TUP=THBT/APES
+!        TSP=(T(L+1)-T(L))/(PLO-PBOT)                                    &
+!     &     *(PUP-PBOT)+T(L)
+!        QSP=(Q(L+1)-Q(L))/(PLO-PBOT)                                    &
+!     &     *(PUP-PBOT)+Q(L)
+!        DP=PLO-PUP
+!        TRMUP=(TUP*(QQBT*0.608+1.)                                      &
+!     &        -TSP*(QSP*0.608+1.))*0.5                                  &
+!     &       /(TSP*(QSP*0.608+1.))
+!        DENTPY=(TRMLO+TRMUP)*DP+DENTPY
+!        SUMDP=SUMDP+DP
+!        PLO=PUP
+!        TRMLO=TRMUP
+!        PUP=PRSMID(L)
+!        TUP=TREF(L)
+!        QUP=PQ0/PUP*EXP(A2*(TUP-A3)/(TUP-A4))
+!        DP=PLO-PUP
+!        TRMUP=(TUP*(QUP*0.608+1.)                                       &
+!     &        -T(L)*(Q(L)*0.608+1.))*0.5                                &
+!     &       /(T(L)*(Q(L)*0.608+1.))
+!        DENTPY=(TRMLO+TRMUP)*DP+DENTPY
+!        SUMDP=SUMDP+DP
+!        PLO=PUP
+!        TRMLO=TRMUP
+!!
+!        DO L=LBOT-1,LTOP
+!          PUP=PRSMID(L)
+!          TUP=TREF(L)
+!          QUP=PQ0/PUP*EXP(A2*(TUP-A3)/(TUP-A4))
+!          DP=PLO-PUP
+!          TRMUP=(TUP*(QUP*0.608+1.)                                     &
+!     &          -T(L)*(Q(L)*0.608+1.))*0.5                              &
+!     &         /(T(L)*(Q(L)*0.608+1.))
+!          DENTPY=(TRMLO+TRMUP)*DP+DENTPY
+!          SUMDP=SUMDP+DP
+!          PLO=PUP
+!          TRMLO=TRMUP
+!        ENDDO
+!!
+!        DENTPY=DENTPY*CP/SUMDP
+!        IF(DENTPY<=EPSNTT)THEN
+!          LTOP=LBOT
+!          PTOP=PBOT
+!        ENDIF
+!!-----------------------------------------------------------------------
+!      ENDIF
 !-----------------------------------------------------------------------
 !***
 !***  CLEAN UP AND GATHER DEEP CONVECTION POINTS
 !***
-      IF(LTOP>LBOT)THEN
+      IF(LTOP>=LBOT)THEN
         LBOT=0
-        LTOP=LBOT
+!!        LTOP=LBOT
+        LTOP=KTE
         PTOP=PBOT
       ENDIF
 
 !
       IF(PTOP>PBOT-PNO.OR.LTOP>LBOT-2)THEN
-        CLDEFI=AVGEFI
+        CLDEFI=AVGEFI*SM+STEFI*(1.-SM)
       ENDIF
 !
 !***  DEPTH OF CLOUD REQUIRED TO MAKE THE POINT A DEEP CONVECTION POINT
@@ -665,12 +726,6 @@ CONTAINS
         APEKL    =APE(L)
         APEK  (L)=APEKL
         THERK (L)=TREF(L)*APEKL
-!
-        IF(TKL>=TFRZ)THEN
-          EL(L)=ELWV
-        ELSE
-          EL(L)=ELIV
-        ENDIF
       ENDDO
 !------------DEEP CONVECTION REFERENCE TEMPERATURE PROFILE------------
       LTP1=LTOP+1
@@ -692,6 +747,7 @@ CONTAINS
         TREFKX=((THERKY-THERKX)*STABDL                                  &
      &          +TREFKX*APEKXX)/APEKXY
         TREFK(L)=TREFKX
+        EL(L)=ELWV
         APEKXX=APEKXY
         THERKX=THERKY
         APEKXY=APEK(L-1)
@@ -708,7 +764,7 @@ CONTAINS
 !
       DO L=LTOP,L0M1
         TREFK(L)=(THERK(L)-(PK(L)-PKT)*DTHEM*RDP0T)/APEK(L)
-        EL(L)=ELIV
+        EL(L)=ELWV !ELIV
       ENDDO
 !-----------------------------------------------------------------------
 !--------------DEEP CONVECTION REFERENCE HUMIDITY PROFILE---------------
@@ -724,21 +780,21 @@ CONTAINS
       PBOTFC=1.
 !
 !-------------FIRST ADJUSTMENT OF TEMPERATURE PROFILE-------------------
-!
-      SUMDT=0.
-      SUMDP=0.
-!
-      DO L=LTOP,LB
-        SUMDT=(TK(L)-TREFK(L))*DPRS(L)+SUMDT
-        SUMDP=SUMDP+DPRS(L)
-      ENDDO
-!
-      TCORR=SUMDT/SUMDP
-!
-      DO L=LTOP,LB
-        TREFK(L)=TREFK(L)+TCORR
-      ENDDO
-!
+!!
+!      SUMDT=0.
+!      SUMDP=0.
+!!
+!      DO L=LTOP,LB
+!        SUMDT=(TK(L)-TREFK(L))*DPRS(L)+SUMDT
+!        SUMDP=SUMDP+DPRS(L)
+!      ENDDO
+!!
+!      TCORR=SUMDT/SUMDP
+!!
+!      DO L=LTOP,LB
+!        TREFK(L)=TREFK(L)+TCORR
+!      ENDDO
+!!
 !-----------------------------------------------------------------------
 !--------------- ITERATION LOOP FOR CLOUD EFFICIENCY -------------------
 !-----------------------------------------------------------------------
@@ -862,7 +918,8 @@ CONTAINS
       DENTPY=DST+DSQ
       AVRGT=AVRGT/(SUMDP+SUMDP)
 !
-      DRHEAT=PRECK*CP/AVRGT
+!      DRHEAT=PRECK*CP/AVRGT
+      DRHEAT=(PRECK*SM+MAX(1.E-7,PRECK)*(1.-SM))*CP/AVRGT !As in Eta!
       DRHEAT=MAX(DRHEAT,1.E-20)
       EFI=EFIFC*DENTPY/DRHEAT
 !-----------------------------------------------------------------------
@@ -909,7 +966,8 @@ CONTAINS
 !          GO TO 300
 !        ENDIF
 !
-        CLDEFI=AVGEFI
+!        CLDEFI=AVGEFI
+         CLDEFI=EFIMN*SM+STEFI*(1.-SM)
 !***
 !***  SEARCH FOR SHALLOW CLOUD TOP
 !***
@@ -939,14 +997,14 @@ CONTAINS
           PTPK=PK(LTOP)
         ENDIF
 !
-        IF(LTOP>=LBOT)THEN
-!!!!!     LBOT=0
-          LTOP=LMH
-!!!!!     PBOT=PK(LBOT)
-          PTOP=PK(LTOP)
-          PBOT=PTOP
-          GO TO 600
-        ENDIF
+!        if(ltop>=lbot)then
+!!!!!!     lbot=0
+!          ltop=lmh
+!!!!!!     pbot=pk(lbot)
+!          ptop=pk(ltop)
+!          pbot=ptop
+!          go to 600
+!        endif
 !
         LTP1=LTOP+1
         LTP2=LTOP+2
@@ -977,7 +1035,6 @@ CONTAINS
         IF(LBOT-LTOP<2)LTOP=LBOT-2
 !
         PTOP=PK(LTOP)
-        GO TO 600
 !
       ENDIF
 !DCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCD
@@ -993,20 +1050,32 @@ CONTAINS
 !----------------GATHER SHALLOW CONVECTION POINTS-----------------------
 !
       IF(PTOP<=PBOT-PNO.AND.LTOP<=LBOT-2)THEN
-        DEPMIN=PSH*PSFC*RSFCP
+         DEPMIN=PSH*PSFC*RSFCP
 !
-        IF(LPBL<LBOT)LBOT=LPBL
-        IF(LBOT>LMH-1)LBOT=LMH-1
-        PBOT=PRSMID(LBOT)
+!        if(lpbl<lbot)lbot=lpbl
+!        if(lbot>lmh-1)lbot=lmh-1
+!        pbot=prsmid(lbot)
 !
-        IF(LTOP<=LBOT-2.AND.PTOP+1.>=PBOT-DEPMIN)THEN
-          SHALLOW=.TRUE.
-        ENDIF
-!
+         IF(PTOP+1.>=PBOT-DEPMIN)SHALLOW=.TRUE.
+      ELSE
+         LBOT=0
+         LTOP=KTE
       ENDIF
 !
 !***********************************************************************
+!-----------------------------------------------------------------------
+!***  Begin debugging convection
+      IF(PRINT_DIAG)THEN
+        WRITE(6,"(a,2i3,L2,3e12.4)")  &
+             '{cu2a lbot,ltop,shallow,pbot,ptop,depmin = ' &
+             ,lbot,ltop,shallow,pbot,ptop,depmin
+      ENDIF
+!***  End debugging convection
+!-----------------------------------------------------------------------
+!
       IF(.NOT.SHALLOW)GO TO 800
+!
+!-----------------------------------------------------------------------
 !***********************************************************************
 !-----------------------------------------------------------------------
 !SCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCS
@@ -1028,21 +1097,29 @@ CONTAINS
         THVMKL   =TKL*APEKL*(QKL*D608+1.)
         THVREF(L)=THVMKL
 !
-        IF(TKL>=TFRZ)THEN
+!        if(tkl>=tfrz)then
           EL(L)=ELWV
-        ELSE
-          EL(L)=ELIV
-        ENDIF
+!        else
+!          el(l)=eliv
+!        endif
       ENDDO
 !---------------------------SHALLOW CLOUD TOP---------------------------
       LBM1=LBOT-1
       PTPK=PTOP
       LTP1=LTOP-1
       DEPTH=PBOT-PTOP
+!-----------------------------------------------------------------------
+!***  Begin debugging convection
+      IF(PRINT_DIAG)THEN
+        WRITE(6,"(a,4e12.4)") '{cu2b PBOT,PTOP,DEPTH,DEPMIN= ' &
+             ,PBOT,PTOP,DEPTH,DEPMIN
+      ENDIF
+!***  End debugging convection
+!-----------------------------------------------------------------------
 !
-!!      IF(DEPTH<DEPMIN)THEN
-!!        GO TO 800
-!!      ENDIF
+!BSF      IF(DEPTH<DEPMIN)THEN
+!BSF        GO TO 800
+!BSF      ENDIF
 !-----------------------------------------------------------------------
       IF(PTOP>PBOT-PNO.OR.LTOP>LBOT-2)THEN
         LBOT=0
@@ -1164,10 +1241,21 @@ CONTAINS
       POTSUM=POTSUM*ROTSUM
       QOTSUM=QOTSUM*ROTSUM
       DST   =DST*ROTSUM*CP
+!
+!-----------------------------------------------------------------------
+!***  Begin debugging convection
+      IF(PRINT_DIAG)THEN
+        WRITE(6,"(a,5e12.4)") '{cu2c DST,PSUM,QSUM,POTSUM,QOTSUM = ' &
+             ,DST,PSUM,QSUM,POTSUM,QOTSUM
+      ENDIF
+!***  End debugging convection
+!-----------------------------------------------------------------------
+!
 !----------------ENSURE POSITIVE ENTROPY CHANGE-------------------------
       IF(DST>0.)THEN
-!       DSTQ=DST*EPSUP
+!        dstq=dst*epsup
         LBOT=0
+!!!!    LTOP=LBOT
         LTOP=KTE
         PTOP=PBOT
         GO TO 800
@@ -1189,13 +1277,13 @@ CONTAINS
         DQREF=(QOTSUM-DSTQ-QSUM)/DEN
       ENDIF
 !-------------- HUMIDITY DOES NOT INCREASE WITH HEIGHT------------------
-!     IF(DQREF<0.)THEN
-!       LBOT=0
+      IF(DQREF<0.)THEN
+        LBOT=0
 !!!!    LTOP=LBOT
-!       LTOP=KTE
-!       PTOP=PBOT
-!       GO TO 800
-!     ENDIF
+        LTOP=KTE
+        PTOP=PBOT
+        GO TO 800
+      ENDIF
 !----------------HUMIDITY AT THE CLOUD TOP------------------------------
       QRFTP=QSUM-DQREF*PSUM
 !----------------HUMIDITY PROFILE---------------------------------------
@@ -1217,22 +1305,33 @@ CONTAINS
           GO TO 800
         ENDIF
 !
+!-------------TOO MOIST CLOUDS NOT ALLOWED------------------------------
+!
+        IF(QNEW>QSATK(L)*RHHSC)THEN
+          LBOT=0
+!!!!      LTOP=LBOT
+          LTOP=KTE
+          PTOP=PBOT
+          GO TO 800
+        ENDIF
+
+!
         THVREF(L)=TREFK(L)*APEK(L)*(QRFKL*D608+1.)
         QREFK(L)=QRFKL
       ENDDO
 !
 !------------------ ELIMINATE CLOUDS WITH BOTTOMS TOO DRY --------------
-!
-      QNEW=(QREFK(LBOT)-QK(LBOT))*TAUKSC+QK(LBOT)
-!
-      IF(QNEW<QK(LBOT+1)*STRESH)THEN
-        LBOT=0
-!!!!!   LTOP=LBOT
-        LTOP=KTE
-        PTOP=PBOT
-        GO TO 800
-      ENDIF
-!
+!!
+!      qnew=(qrefk(lbot)-qk(lbot))*tauksc+qk(lbot)
+!!
+!      if(qnew<qk(lbot+1)*stresh)then  !!?? stresh too large!!
+!        lbot=0
+!!!!!!   ltop=lbot
+!        ltop=kte
+!        ptop=pbot
+!        go to 800
+!      endif
+!!
 !-------------- ELIMINATE IMPOSSIBLE SLOPES (BETTS,DTHETA/DQ)------------
 !
       DO L=LTOP,LBOT
@@ -1252,9 +1351,21 @@ CONTAINS
 !-----------------------------------------------------------------------
 !
       DO L=LTOP,LBOT
-        DTDT(L)=(TREFK(L)-TK(L))*TAUK*RDTCNVC
-        DQDT(L)=(QREFK(L)-QK(L))*TAUK*RDTCNVC
+        DTDT(L)=(TREFK(L)-TK(L))*TAUKSC*RDTCNVC
+        DQDT(L)=(QREFK(L)-QK(L))*TAUKSC*RDTCNVC
       ENDDO
+!
+!-----------------------------------------------------------------------
+!***  Begin debugging convection
+      IF(PRINT_DIAG)THEN
+        DO L=LBOT,LTOP,-1
+          WRITE(6,"(a,i3,4e12.4)") '{cu2 KFLIP,DT,DTDT,DQ,DQDT = ' &
+               ,KTE+1-L,TREFK(L)-TK(L),DTDT(L),QREFK(L)-QK(L),DQDT(L)
+        ENDDO
+      ENDIF
+!***  End debugging convection
+!-----------------------------------------------------------------------
+!
 !-----------------------------------------------------------------------
 !SCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCS
 !SCSCSCSCSCSCSC         END OF SHALLOW CONVECTION        SCSCSCSCSCSCSCS
@@ -1444,7 +1555,6 @@ CONTAINS
         ELSE
            QSOLD(KP)=0.
         ENDIF
-!        QSOLD(KP)=PQ0/P*EXP(A2*(TH-A3*APE)/(TH-A4*APE))
         POLD(KP)=P
       ENDDO
 !
@@ -1459,7 +1569,9 @@ CONTAINS
       ENDDO
 !
       QS0(KTH)=QS0K
+      QS0_EXP(KTH)=QS0K
       SQS(KTH)=SQSK
+      SQS_EXP(KTH)=SQSK
 !-----------------------------------------------------------------------
       QSNEW(1  )=0.
       QSNEW(KPM)=1.
@@ -1476,6 +1588,7 @@ CONTAINS
 !
       DO KP=1,KPM
         PTBL(KP,KTH)=PNEW(KP)
+        PTBL_EXP(KP,KTH)=PNEW(KP)
       ENDDO
 !-----------------------------------------------------------------------
   100 CONTINUE

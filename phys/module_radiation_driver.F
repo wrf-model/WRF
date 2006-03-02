@@ -219,7 +219,7 @@ CONTAINS
                                                             SNOW 
 
    REAL, DIMENSION( ims:ime, jms:jme ),                           &
-         INTENT(INOUT)  ::                                  HTOP, &
+         INTENT(IN)  ::                                     HTOP, &
                                                             HBOT, &
                                                            CUPPT
 
@@ -443,7 +443,7 @@ CONTAINS
            
      END SELECT lwrad_select    
 
-     IF (lw_physics .gt. 0 ) THEN
+     IF (lw_physics .gt. 0 .and. .not.gfdl_lw) THEN
         DO j=jts,jte
         DO k=kts,kte
         DO i=its,ite
@@ -551,7 +551,7 @@ CONTAINS
 
      END SELECT swrad_select    
 
-     IF (sw_physics .gt. 0) THEN
+     IF (sw_physics .gt. 0 .and. .not.gfdl_sw) THEN
         DO j=jts,jte
         DO k=kts,kte
         DO i=its,ite

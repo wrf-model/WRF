@@ -68,14 +68,15 @@
      &          ,IPS,IPE,JPS,JPE,KPS,KPE                                &
      &          ,ITS,ITE,JTS,JTE,KTS,KTE
 !
-      INTEGER :: I,ICLTEND,IDF,IJDE,IJDS,IRTN,J,JC,JDF,K,KDF,LB,N_MOIST
+      INTEGER :: I,ICLTEND,IDF,IJDE,IJDS,IRTN,J,JC,JDF,K,KDF,LB,N_MOIST &
+     &          ,NTSD_current
+      INTEGER,SAVE :: NTSD_restart
       INTEGER :: MPI_COMM_COMP,MYPE,MYPROC,NPES
       INTEGER :: RC, NTSD_rad
 !
       CHARACTER*80 :: MESSAGE
 !
 !  For precip assimilation:
-      LOGICAL :: PCPFLG
       INTEGER :: ISTAT
       REAL,ALLOCATABLE,SAVE,DIMENSION(:,:,:) :: PPTDAT
 !
@@ -155,6 +156,7 @@
 !***********************************************************************
 !-----------------------------------------------------------------------
       CALL WRF_GET_MYPROC(MYPROC)
+      MYPE=MYPROC
 !-----------------------------------------------------------------------
 !
 !***  OBTAIN DIMENSION INFORMATION STORED IN THE GRID DATA STRUCTURE.
@@ -174,7 +176,7 @@
 !
       GRID%SIGMA=1 
       HYDRO=.FALSE.
-      IHRST=GRID%GMT
+!
       IJDS=MIN(IDS,JDS)
       IJDE=MAX(IDE,JDE)
 !
@@ -270,12 +272,25 @@
 !***  NTSD IS THE TIMESTEP COUNTER (Number of Time Steps Done)
 !
 !-----------------------------------------------------------------------
+!***
+!***  ADVANCE_count STARTS AT ZERO FOR ALL RUNS (REGULAR AND RESTART).
+!***
+!-----------------------------------------------------------------------
 !
-!***
-!***  FIRST TIME THROUGH TOTAL_TIME_STEPS IS ZERO.
-!***  IT IS INCREMENTED IN SOLVE_INTERFACE.
-!***
-      CALL domain_clock_get(GRID,ADVANCEcOUNT=NTSD)
+      CALL DOMAIN_CLOCK_GET(GRID,ADVANCEcOUNT=NTSD_current)
+!
+      IF(NTSD_current==0)THEN
+        IF(GRID%RESTART.AND.GRID%TSTART>0.)THEN
+          IHRST=NSTART_HOUR
+          NTSD_restart=NTSD+1
+        ELSE
+          IHRST=GRID%GMT
+          NSTART_HOUR=IHRST
+          NTSD_restart=0
+        ENDIF
+      ENDIF
+!
+      NTSD=NTSD_restart+NTSD_current
       LAST_TIME=domain_last_time_step(GRID)
 !
 !-----------------------------------------------------------------------
@@ -287,21 +302,14 @@
       ENDIF
 !-----------------------------------------------------------------------
 !
-      CALL WRF_GET_MYPROC(MYPE)
       CALL WRF_GET_DM_COMMUNICATOR(MPI_COMM_COMP)
       CALL WRF_GET_NPROC(NPES)
 !
 !-----------------------------------------------------------------------
-! 2005/8/31 YL Originally PCPFLG was exported from calling script and 
-! read in here with GETENV.  But GETENV is an IBM-specific routine, so 
-! that won't do.  Set PCPFLG=.FALSE. for now.  Later should read this in
-! from the namelist.
-!  
-      PCPFLG=.FALSE.
-!
 !***  ALLOCATE PPTDAT ARRAY (PRECIP ASSIM):
+!-----------------------------------------------------------------------
 !
-      IF(PCPFLG.AND..NOT.ALLOCATED(PPTDAT))THEN
+      IF(GRID%PCPFLG.AND..NOT.ALLOCATED(PPTDAT))THEN
         ALLOCATE(PPTDAT(IMS:IME,JMS:JME,3),STAT=ISTAT)
       ENDIF
 !
@@ -317,7 +325,7 @@
 !***
 !-----------------------------------------------------------------------
       IF (NTSD==0) THEN
-        IF (PCPFLG) THEN
+        IF (GRID%PCPFLG) THEN
           CALL READPCP(PPTDAT,DDATA,LSPA                                &
      &      ,IDS,IDE,JDS,JDE,KDS,KDE                                    &
      &      ,IMS,IME,JMS,JME,KMS,KME                                    &
@@ -332,12 +340,13 @@
 !***  ZERO OUT ACCUMULATED QUANTITIES WHEN NEEDED.
 !-----------------------------------------------------------------------
 !
-      CALL BUCKETS(NTSD,NPREC,NSRFC,NRDSW,NRDLW,NHEAT,GRID%NPHS         &
+      CALL BUCKETS(NTSD,NPREC,NSRFC,NRDSW,NRDLW,NCLOD,NHEAT,GRID%NPHS   &
      &            ,ACPREC,CUPREC,ACSNOW,ACSNOM,SSROFF,BGROFF            &
      &            ,SFCEVP,POTEVP,SFCSHX,SFCLHX,SUBSHX,SNOPCX            &
      &            ,SFCUVX,POTFLX                                        &
      &            ,ARDSW,ASWIN,ASWOUT,ASWTOA                            &
      &            ,ARDLW,ALWIN,ALWOUT,ALWTOA                            &
+     &            ,ACFRST,NCFRST,ACFRCV,NCFRCV                          &
      &            ,AVCNVC,AVRAIN,TCUCN,TRAIN                            &
      &            ,ASRFC                                                &
      &            ,IDS,IDE,JDS,JDE,KDS,KDE                              &
@@ -628,8 +637,7 @@
      &                ,RLWTOA,RSWTOA,CZMEAN                            &
      &                ,CFRACL,CFRACM,CFRACH,SIGT4                      &
      &                ,ACFRST,NCFRST,ACFRCV,NCFRCV                     &
-     &                ,CUPPT,VEGFRC,SNO                                &
-     &                ,HTOP,HBOT,HTOPD,HBOTD,HTOPS,HBOTS               &
+     &                ,CUPPT,VEGFRC,SNO,HTOP,HBOT                      &
      &                ,GRID,CONFIG_FLAGS                               &
      &                ,IDS,IDF,JDS,JDF,KDS,KDE                         &
      &                ,IMS,IME,JMS,JME,KMS,KME                         &
@@ -687,7 +695,7 @@
      &            ,RSWOUT,RSWTOA,RLWTOA                                &
      &            ,ASWIN,ASWOUT,ASWTOA,ALWIN,ALWOUT,ALWTOA             &
      &            ,UZ0H,VZ0H,DUDT,DVDT                                 & 
-     &            ,PCPFLG,DDATA                                        &
+     &            ,GRID%PCPFLG,DDATA                                   &
      &            ,GRID,CONFIG_FLAGS                                   &
      &            ,IHE,IHW,IVE,IVW                                     &
      &            ,IDS,IDF,JDS,JDF,KDS,KDE                             &
@@ -775,8 +783,8 @@
       IF(GRID%NCNVC/=999)THEN
 !
         btimx=timef()
-        CALL CUCNVC(NTSD,GRID%DT,GRID%NCNVC,GPS,RESTRT,HYDRO           &
-     &             ,CLDEFI,LMH,N_MOIST,GRID%ENSDIM                     &
+        CALL CUCNVC(NTSD,GRID%DT,GRID%NCNVC,GRID%NRADS,GRID%NRADL      &
+     &             ,GPS,RESTRT,HYDRO,CLDEFI,LMH,N_MOIST,GRID%ENSDIM    &
      &             ,DETA1,DETA2,AETA1,AETA2,ETA1,ETA2                  &
      &             ,F_ICE,F_RAIN                                       &
      &             ,PDTOP,PT,PD,RES,PINT,T,Q,CWM,TCUCN                 &
@@ -819,7 +827,7 @@
 !-----------------------------------------------------------------------
 !---------PRECIPITATION ASSIMILATION------------------------------------
 !-----------------------------------------------------------------------
-        IF (PCPFLG) THEN
+        IF (GRID%PCPFLG) THEN
           btim=timef()
           CALL CHKSNOW(NTSD,GRID%DT,GRID%NPHS,SR,PPTDAT                 &
      &      ,IDS,IDE,JDS,JDE,KDS,KDE                                    &

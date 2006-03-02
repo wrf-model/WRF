@@ -3,12 +3,13 @@
 !NCEP_MESO:MODEL_LAYER: ACCUMULATION BUCKETS
 !
 !-----------------------------------------------------------------------
-      SUBROUTINE BUCKETS(NTSD,NPREC,NSRFC,NRDSW,NRDLW,NHEAT,NPHS        &
+      SUBROUTINE BUCKETS(NTSD,NPREC,NSRFC,NRDSW,NRDLW,NCLOD,NHEAT,NPHS  &
      &                  ,ACPREC,CUPREC,ACSNOW,ACSNOM,SSROFF,BGROFF      &
      &                  ,SFCEVP,POTEVP,SFCSHX,SFCLHX,SUBSHX,SNOPCX      &
      &                  ,SFCUVX,POTFLX                                  &
      &                  ,ARDSW,ASWIN,ASWOUT,ASWTOA                      &
      &                  ,ARDLW,ALWIN,ALWOUT,ALWTOA                      &
+     &                  ,ACFRST,NCFRST,ACFRCV,NCFRCV                    &
      &                  ,AVCNVC,AVRAIN,TCUCN,TRAIN                      &
      &                  ,ASRFC                                          &
      &                  ,IDS,IDE,JDS,JDE,KDS,KDE                        &
@@ -62,7 +63,8 @@
 !*** ARGUMENTS
 !-----------------------------------------------------------------------
 !
-      INTEGER,INTENT(IN) :: NHEAT,NPHS,NPREC,NRDLW,NRDSW,NSRFC,NTSD     &
+      INTEGER,INTENT(IN) :: NCLOD,NHEAT,NPHS,NPREC,NRDLW,NRDSW          &
+                           ,NSRFC,NTSD                                  &
                            ,IDS,IDE,JDS,JDE,KDS,KDE                     &
                            ,IMS,IME,JMS,JME,KMS,KME                     &
                            ,ITS,ITE,JTS,JTE,KTS,KTE 
@@ -71,6 +73,7 @@
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: ACPREC,ACSNOM      &
      &                                              ,ACSNOW,ALWIN       &
+     &                                              ,ACFRST,ACFRCV      &
      &                                              ,ALWOUT,ALWTOA      &
      &                                              ,ASWIN,ASWOUT       &
      &                                              ,ASWTOA,BGROFF      &
@@ -79,6 +82,8 @@
      &                                              ,SFCLHX,SFCSHX      &
      &                                              ,SFCUVX,SNOPCX      &
      &                                              ,SSROFF,SUBSHX
+!
+      INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: NCFRST,NCFRCV
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(OUT) :: TCUCN      &
      &                                                      ,TRAIN
@@ -181,12 +186,34 @@
 !
       ENDIF
 !
+!***  TIME-AVERAGED CLOUD FRACTION ARRAYS.
+!
+!     IF(MOD(NTSD,NCLOD)<NPHS)THEN
+      IF(MOD(NTSD,NCLOD)==0)THEN
+!***
+  !--- Ferrier 11/2/05:  Right now no accumulator variable is used (e.g.,
+  !    "ACLOD"), but instead the 2D arrays NCFRST & NCFRCV are used.  These
+  !    can be removed later when time's available to streamline the code.
+!***
+        DO J=JTS,JTE
+        DO I=ITS,ITE
+          ACFRCV(I,J)=0.
+          ACFRST(I,J)=0.
+          NCFRCV(I,J)=0
+          NCFRST(I,J)=0
+        ENDDO
+        ENDDO
+!
+        IF ( WRF_DM_ON_MONITOR() ) THEN
+        CALL WRF_MESSAGE('ZEROED OUT ACCUMULATED CLOUD FRACTION ARRAYS')
+        ENDIF
+!
+      ENDIF
+!
 !***  GRID-SCALE AND CONVECTIVE (LATENT) HEATING ARRAYS.
 !
 !     IF(MOD(NTSD,NHEAT)<NPHS)THEN
       IF(MOD(NTSD,NHEAT)==0)THEN
-!     write(0,*)' buckets ntsd=',ntsd,' nheat=',nheat
-!     write(0,*)' zeroing train and tcucn'
         AVCNVC=0.
         AVRAIN=0.
 !

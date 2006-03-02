@@ -9,9 +9,7 @@
 !
 !----------------------------------------------------------------------
 !
-! REFERENCES:  Janjic (2001), NCEP Office Note 437
-!              Mellor and Yamada (1982), Rev. Geophys. Space Phys.
-!              Mellor and Yamada (1974), J. Atmos. Sci.
+! REFERENCES:  Janjic (2002), NCEP Office Note 437
 !
 ! ABSTRACT:
 !     MYJSFC GENERATES THE SURFACE EXCHANGE COEFFICIENTS FOR VERTICAL
@@ -25,47 +23,23 @@
       REAL,PARAMETER :: VKARMAN=0.4
       REAL,PARAMETER :: CAPA=R_D/CP,ELOCP=2.72E6/CP,RCAP=1./CAPA
       REAL,PARAMETER :: GOCP02=G/CP*2.,GOCP10=G/CP*10.
-      REAL,PARAMETER :: EPSL=0.10,EPSRU=1.E-7,EPSRS=1.E-7 
-      REAL,PARAMETER :: EPSU2=1.E-4,EPSUST=0.07,EPSZT=1.E-5
-      REAL,PARAMETER :: A1=0.659888514560862645                        &
-     &                 ,A2x=0.6574209922667784586                      &
-     &                 ,B1=11.87799326209552761                        &
-     &                 ,B2=7.226971804046074028                        &
-     &                 ,C1=0.000830955950095854396
+!      REAL,PARAMETER :: EPSU2=1.E-4,EPSUST=0.07,EPSZT=1.E-5
+!	ECMWF sets lower limit on ln(Z0h)=-20 --> EPSZT=2.E-9
+      REAL,PARAMETER :: EPSU2=1.E-6,EPSUST=1.E-9,EPSZT=1.E-28
       REAL,PARAMETER :: A2S=17.2693882,A3S=273.16,A4S=35.86
       REAL,PARAMETER :: SEAFC=0.98,PQ0SEA=PQ0*SEAFC
-      REAL,PARAMETER :: BETA=1./273.,CZIL=0.1,EXCML=0.001,EXCMS=0.001  &
+      REAL,PARAMETER :: BETA=1./273.,CZIL=0.1,EXCML=0.0001,EXCMS=0.0001  &
+!old      REAL,PARAMETER :: BETA=1./273.,CZIL=0.1,EXCML=0.001,EXCMS=0.001  &
      &                 ,GLKBR=10.,GLKBS=30.,PI=3.1415926               &
      &                 ,QVISC=2.1E-5,RIC=0.505,SMALL=0.35              &
      &                 ,SQPR=0.84,SQSC=0.84,SQVISC=258.2,TVISC=2.1E-5  &
-     &                 ,USTC=0.7,USTR=0.225,VISC=1.5E-5                &
-     &                 ,WWST=1.2,ZTFC=1.
+     &                 ,USTC=0.7,USTR=0.225,VISC=1.5E-5,FH=1.01        &
+     &                 ,WWST=1.2,ZTFC=1.,TOPOFAC=9.0E-6
 !
       REAL,PARAMETER :: BTG=BETA*G,CZIV=SMALL*GLKBS                    &
-!    &                 ,EP_1=R_V/R_D-1.,GRRS=GLKBR/GLKBS               &
-     &                 ,GRRS=GLKBR/GLKBS               &
-     &                 ,RB1=1./B1,RTVISC=1./TVISC,RVISC=1./VISC        &
-     &                 ,ZQRZT=SQSC/SQPR
-!
-      REAL,PARAMETER :: ADNH= 9.*A1*A2x*A2x*(12.*A1+3.*B2)*BTG*BTG     &                  
-     &                 ,ADNM=18.*A1*A1*A2x*(B2-3.*A2x)*BTG             & 
-     &                 ,ANMH=-9.*A1*A2x*A2x*BTG*BTG                    &
-     &                 ,ANMM=-3.*A1*A2x*(3.*A2x+3.*B2*C1+18.*A1*C1-B2) &
-     &                                *BTG                             &   
-     &                 ,BDNH= 3.*A2x*(7.*A1+B2)*BTG                    &
-     &                 ,BDNM= 6.*A1*A1                                 &
-     &                 ,BEQH= A2x*B1*BTG+3.*A2x*(7.*A1+B2)*BTG         &
-     &                 ,BEQM=-A1*B1*(1.-3.*C1)+6.*A1*A1                &
-     &                 ,BNMH=-A2x*BTG                                  &     
-     &                 ,BNMM=A1*(1.-3.*C1)                             &
-     &                 ,BSHH=9.*A1*A2x*A2x*BTG                         &
-     &                 ,BSHM=18.*A1*A1*A2x*C1                          &
-     &                 ,BSMH=-3.*A1*A2x*(3.*A2x+3.*B2*C1+12.*A1*C1-B2) &
-     &                                *BTG                             &
-     &                 ,CESH=A2x                                       &
-     &                 ,CESM=A1*(1.-3.*C1)                             &
-     &                 ,CNV=EP_1*G/BTG                                 &
-     &                 ,ELFCS=VKARMAN*BTG                              &
+     &                 ,GRRS=GLKBR/GLKBS                               &
+     &                 ,RTVISC=1./TVISC,RVISC=1./VISC                  &
+     &                 ,ZQRZT=SQSC/SQPR                                &
      &                 ,FZQ1=RTVISC*QVISC*ZQRZT                        &
      &                 ,FZQ2=RTVISC*QVISC*ZQRZT                        &
      &                 ,FZT1=RVISC *TVISC*SQPR                         &
@@ -73,42 +47,10 @@
      &                 ,FZU1=CZIV*VISC                                 &
      &                 ,PIHF=0.5*PI                                    &
      &                 ,RQVISC=1./QVISC                                &
-     &                 ,RRIC=1./RIC                                    &
      &                 ,USTFC=0.018/G                                  &
      &                 ,WWST2=WWST*WWST                                &
      &                 ,ZILFC=-CZIL*VKARMAN*SQVISC
 !
-!
-!----------------------------------------------------------------------
-!***  FREE TERM IN THE EQUILIBRIUM EQUATION FOR (L/Q)**2
-!----------------------------------------------------------------------
-!
-      REAL,PARAMETER :: AEQH=9.*A1*A2x*A2x*B1*BTG*BTG                  &
-     &                      +9.*A1*A2x*A2x*(12.*A1+3.*B2)*BTG*BTG      &
-     &                 ,AEQM=3.*A1*A2x*B1*(3.*A2x+3.*B2*C1+18.*A1*C1-B2) &
-     &                      *BTG+18.*A1*A1*A2x*(B2-3.*A2x)*BTG
-!
-!----------------------------------------------------------------------
-!***  FORBIDDEN TURBULENCE AREA
-!----------------------------------------------------------------------
-!
-      REAL,PARAMETER :: REQU=-AEQH/AEQM                                &
-     &                 ,EPSGH=1.E-9,EPSGM=REQU*EPSGH
-!----------------------------------------------------------------------
-!***  NEAR ISOTROPY FOR SHEAR TURBULENCE, WW/Q2 LOWER LIMIT
-!----------------------------------------------------------------------
-!
-      REAL,PARAMETER :: UBRYL=(18.*REQU*A1*A1*A2x*B2*C1*BTG            &
-     &                         +9.*A1*A2x*A2x*B2*BTG*BTG)              &
-     &                        /(REQU*ADNM+ADNH)                        &
-     &                 ,UBRY=(1.+EPSRS)*UBRYL,UBRY3=3.*UBRY
-!
-      REAL,PARAMETER :: AUBH=27.*A1*A2x*A2x*B2*BTG*BTG-ADNH*UBRY3      &
-     &                 ,AUBM=54.*A1*A1*A2x*B2*C1*BTG -ADNM*UBRY3       &
-     &                 ,BUBH=(9.*A1*A2x+3.*A2x*B2)*BTG-BDNH*UBRY3      &
-     &                 ,BUBM=18.*A1*A1*C1           -BDNM*UBRY3        &
-     &                 ,CUBR=1.                     -     UBRY3        &
-     &                 ,RCUBR=1./CUBR
 !----------------------------------------------------------------------
       INTEGER, PARAMETER :: KZTM=10001,KZTM2=KZTM-2
 !
@@ -175,17 +117,17 @@ CONTAINS
 !***
       INTEGER :: I,J,K,KFLIP,LMH,LPBL,NTSD
 !
-      REAL :: A,ADEN,APESFC,AUBR,B,BDEN,BTGX,BUBR,CWMLOW               &
+      REAL :: A,APESFC,B,BTGX,CWMLOW                                   &
      &       ,DQDT,DTDIF,DTDT,DUDT,DVDT                                &
-     &       ,ELOQ2X,FIS,GHK,GMK                                       &
-     &       ,P02P,P10P,PLOW,PSFC,PTOP,QLOW,QOL2ST,QOL2UN,QS02,QS10    &
+     &       ,FIS                                                      &
+     &       ,P02P,P10P,PLOW,PSFC,PTOP,QLOW,QS02,QS10                  &
      &       ,RAPA,RAPA02,RAPA10,RATIOMX,RDZ,SEAMASK,SM                &
      &       ,T02P,T10P,TEM,TH02P,TH10P,THLOW,THELOW,THM               &
      &       ,TLOW,TZ0,ULOW,VLOW,ZSL
 !
       REAL,DIMENSION(KTS:KTE) :: CWMK,PK,Q2K,QK,THEK,THK,TK,UK,VK
 !
-      REAL,DIMENSION(KTS:KTE-1) :: AKHK,AKMK,EL,ELM,GH,GM
+      REAL,DIMENSION(KTS:KTE-1) :: EL,ELM
 !
       REAL,DIMENSION(KTS:KTE+1) :: ZHK
 !
@@ -301,66 +243,23 @@ CONTAINS
             VK(K)=V(I,KFLIP,J)
           ENDDO
 !
-!----------------------------------------------------------------------
-!***  COMPUTE THE HEIGHT OF THE BOUNDARY LAYER
-!----------------------------------------------------------------------
-!
-          DO K=KTS,LMH-1
-            RDZ=2./(ZHK(K)-ZHK(K+2))
-            GMK=((UK(K)-UK(K+1))**2+(VK(K)-VK(K+1))**2)*RDZ*RDZ
-            GM(K)=MAX(GMK,EPSGM)
-!
-            TEM=(TK(K)+TK(K+1))*0.5
-            THM=(THEK(K)+THEK(K+1))*0.5
-!
-            A=THM*P608
-            B=(ELOCP/TEM-1.-P608)*THM
-!
-            GHK=((THEK(K)-THEK(K+1)+CT(I,J))                           &
-     &          *((QK(K)+QK(K+1)+CWMK(K)+CWMK(K+1))*(0.5*P608)+1.)     &
-     &          +(QK(K)-QK(K+1)+CWMK(K)-CWMK(K+1))*A                   &
-     &          +(CWMK(K)-CWMK(K+1))*B)*RDZ
-            IF(ABS(GHK)<=EPSGH)GHK=EPSGH
-!
-            GH(K)=GHK
-          ENDDO
-!
-!***  FIND MAXIMUM MIXING LENGTHS AND THE LEVEL OF THE PBL TOP
+!***  FIND THE HEIGHT OF THE PBL
 !
           LPBL=LMH
-!
-          DO K=1,LMH-1
-            GMK=GM(K)
-            GHK=GH(K)
-!
-            IF(GHK>=EPSGH)THEN
-!
-              IF(GMK/GHK<=REQU)THEN
-                ELM(K)=EPSL
-                LPBL=K
-              ELSE
-                AUBR=(AUBM*GMK+AUBH*GHK)*GHK
-                BUBR= BUBM*GMK+BUBH*GHK
-                QOL2ST=(-0.5*BUBR+SQRT(BUBR*BUBR*0.25-AUBR*CUBR))*RCUBR
-                ELOQ2X=1./QOL2ST
-                ELM(K)=MAX(SQRT(ELOQ2X*Q2K(K)),EPSL)
-              ENDIF
-!
-            ELSE
-              ADEN=(ADNM*GMK+ADNH*GHK)*GHK
-              BDEN= BDNM*GMK+BDNH*GHK
-              QOL2UN=-0.5*BDEN+SQRT(BDEN*BDEN*0.25-ADEN)
-              ELOQ2X=1./(QOL2UN+EPSRU)  !  repsr1/qol2un
-              ELM(K)=MAX(SQRT(ELOQ2X*Q2K(K)),EPSL)
+          DO K=LMH-1,1,-1
+            IF(Q2K(K)<=EPSQ2*FH) THEN
+              LPBL=K
+              GO TO 110
             ENDIF
-!
           ENDDO
 !
-          IF(ELM(LMH-1)==EPSL)LPBL=LMH
+          LPBL=1
 !
-!***  THE HEIGHT OF THE PBL
+!-----------------------------------------------------------------------
+!--------------THE HEIGHT OF THE PBL------------------------------------
+!-----------------------------------------------------------------------
 !
-          PBLH(I,J)=ZHK(LPBL)-ZHK(LMH+1)
+ 110      PBLH(I,J)=ZHK(LPBL)-ZHK(LMH+1)
 !
 !----------------------------------------------------------------------
 !***
@@ -392,7 +291,7 @@ CONTAINS
      &               ,QSHLTR(I,J),Q10(I,J),PSHLTR(I,J)                 &
      &               ,IDS,IDE,JDS,JDE,KDS,KDE                          &
      &               ,IMS,IME,JMS,JME,KMS,KME                          &
-     &               ,ITS,ITE,JTS,JTE,KTS,KTE,i,j)
+     &               ,ITS,ITE,JTS,JTE,KTS,KTE,i,j,ZHK(LMH+1))
 !
 !***  REMOVE SUPERATURATION AT 2M AND 10M
 !
@@ -434,7 +333,7 @@ CONTAINS
      &                 ,U10,V10,TH02,TH10,Q02,Q10,PSHLTR               &
      &                 ,IDS,IDE,JDS,JDE,KDS,KDE                        &
      &                 ,IMS,IME,JMS,JME,KMS,KME                        &
-     &                 ,ITS,ITE,JTS,JTE,KTS,KTE,i,j)
+     &                 ,ITS,ITE,JTS,JTE,KTS,KTE,i,j,ZSFC)
 !     ****************************************************************
 !     *                                                              *
 !     *                       SURFACE LAYER                          *
@@ -451,7 +350,7 @@ CONTAINS
 !
       INTEGER,INTENT(IN) :: NTSD
 !
-      REAL,INTENT(IN) :: CWMLOW,PBLH,PLOW,QLOW,PSFC,SEAMASK            &
+      REAL,INTENT(IN) :: CWMLOW,PBLH,PLOW,QLOW,PSFC,SEAMASK,ZSFC       &
      &                  ,THELOW,THLOW,THS,TLOW,TZ0,ULOW,VLOW,WETM,ZSL
 !
       REAL,INTENT(OUT) :: CHS,CHS2,CPM,CQS2,CT,FLHC,FLQC,FLX_LH,HFX    &
@@ -470,7 +369,7 @@ CONTAINS
      &       ,RLOGT,RLOGU,RWGH,RZ,RZST,RZSU,SIMH,SIMM,TEM,THM          &
      &       ,UMFLX,USTARK,VMFLX,WGHT,WGHTT,WGHTQ,WSTAR2               &
      &       ,X,XLT,XLT4,XLU,XLU4,XT,XT4,XU,XU4,ZETALT,ZETALU          &
-     &       ,ZETAT,ZETAU,ZQ,ZSLT,ZSLU,ZT,ZU
+     &       ,ZETAT,ZETAU,ZQ,ZSLT,ZSLU,ZT,ZU,TOPOTERM,ZZIL
 !
 !***  DIAGNOSTICS
 !
@@ -584,7 +483,7 @@ CONTAINS
           B=(ELOCP/TEM-1.-P608)*THM
 !
           DTHV=((THELOW-THZ0)*((QLOW+QZ0+CWMLOW)*(0.5*P608)+1.)        &
-     &        +(QLOW-QZ0+CWMLOW)*A+CWMLOW*B)
+     &        +(QLOW-QZ0+CWMLOW)*A+CWMLOW*B) 
 !
           DU2=MAX((ULOW-UZ0)**2+(VLOW-VZ0)**2,EPSU2)
           RIB=BTGX*DTHV*ZSL/DU2
@@ -665,12 +564,11 @@ CONTAINS
 !***  BELJAARS CORRECTION FOR USTAR
 !----------------------------------------------------------------------
 !
-            IF(DTHV<=0.)THEN                                  
-              WSTAR2=WWST2*ABS(BTGH*AKHS*DTHV)**(2./3.)      
-            ELSE                                            
-              WSTAR2=0.                                    
-            ENDIF                                         
-!
+            IF(DTHV<=0.)THEN                                           !zj
+              WSTAR2=WWST2*ABS(BTGH*AKHS*DTHV)**(2./3.)                !zj
+            ELSE                                                       !zj
+              WSTAR2=0.                                                !zj
+            ENDIF                                                      !zj
             USTAR=MAX(SQRT(AKMS*SQRT(DU2+WSTAR2)),EPSUST)
 !
 !----------------------------------------------------------------------
@@ -688,7 +586,6 @@ CONTAINS
       ELSE  
 !
 !----------------------------------------------------------------------
-!
         IF(NTSD==1)THEN
           QS=QLOW
         ENDIF
@@ -699,6 +596,8 @@ CONTAINS
 !
         ZT=ZU*ZTFC
         THZ0=THS
+!
+        ZQ=ZT
         QZ0=QS
 !----------------------------------------------------------------------
         TEM=(TLOW+TZ0)*0.5
@@ -708,7 +607,7 @@ CONTAINS
         B=(ELOCP/TEM-1.-P608)*THM
 !
         DTHV=((THELOW-THZ0)*((QLOW+QZ0+CWMLOW)*(0.5*P608)+1.)          &
-     &       +(QLOW-QZ0+CWMLOW)*A+CWMLOW*B)
+     &        +(QLOW-QZ0+CWMLOW)*A+CWMLOW*B) 
 !
         DU2=MAX((ULOW-UZ0)**2+(VLOW-VZ0)**2,EPSU2)
         RIB=BTGX*DTHV*ZSL/DU2
@@ -720,19 +619,36 @@ CONTAINS
 !       ELSE  !  Turbulent branch
 !----------------------------------------------------------------------
           ZSLU=ZSL+ZU
+!
           RZSU=ZSLU/ZU
+!
           RLOGU=LOG(RZSU)
-          ZSLT=ZSL+ZU
+
+          ZSLT=ZSL+ZU ! u,v and t are at the same level
 !----------------------------------------------------------------------
 !
-          DO ITR=1,ITRMX
+!mp   Topo modification of ZILFC term
+!	
+          TOPOTERM=TOPOFAC*ZSFC**2.
+          TOPOTERM=MAX(TOPOTERM,3.0)
+!
+          IF(DTHV>0.)THEN
+            ZZIL=ZILFC*TOPOTERM
+          ELSE
+            ZZIL=ZILFC
+          ENDIF
+!
+!----------------------------------------------------------------------
+!
+          land_point_iteration: DO ITR=1,ITRMX
 !
 !----------------------------------------------------------------------
 !***  ZILITINKEVITCH FIX FOR ZT
 !----------------------------------------------------------------------
 !
-            ZT=MAX(EXP(ZILFC*SQRT(USTAR*ZU))*ZU,EPSZT)
-!zj         ZT=EXP(ZILFC*SQRT(USTAR*ZU))*ZU
+
+            ZT=MAX(EXP(ZZIL*SQRT(USTAR*ZU))*ZU,EPSZT)
+!
             RZST=ZSLT/ZT
             RLOGT=LOG(RZST)
 !
@@ -795,16 +711,16 @@ CONTAINS
 !***  BELJAARS CORRECTION FOR USTAR
 !----------------------------------------------------------------------
 !
-            IF(DTHV<=0.)THEN                                     
-              WSTAR2=WWST2*ABS(BTGH*AKHS*DTHV)**(2./3.)         
-            ELSE                                               
-              WSTAR2=0.                                       
-            ENDIF                                            
+            IF(DTHV<=0.)THEN                                           !zj
+              WSTAR2=WWST2*ABS(BTGH*AKHS*DTHV)**(2./3.)                !zj
+            ELSE                                                       !zj
+              WSTAR2=0.                                                !zj
+            ENDIF                                                      !zj
 !
             USTAR=MAX(SQRT(AKMS*SQRT(DU2+WSTAR2)),EPSUST)
 !
 !----------------------------------------------------------------------
-          ENDDO  !  End of iteration for land points
+          ENDDO land_point_iteration
 !----------------------------------------------------------------------
 !
 !       ENDIF  !  End of turbulant branch over land
@@ -816,13 +732,15 @@ CONTAINS
 !----------------------------------------------------------------------
 !***  COUNTERGRADIENT FIX
 !----------------------------------------------------------------------
-      HV=-AKHS*DTHV
-      IF(HV>0.)THEN
-        FCT=-10.*(BTGX)**(-1./3.)
-        CT=FCT*(HV/(PBLH*PBLH))**(2./3.)
-      ELSE
-        CT=0.
-      ENDIF
+!
+!     HV=-AKHS*DTHV
+!     IF(HV>0.)THEN
+!       FCT=-10.*(BTGX)**(-1./3.)
+!       CT=FCT*(HV/(PBLH*PBLH))**(2./3.)
+!     ELSE
+       CT=0.
+!     ENDIF
+!
 !----------------------------------------------------------------------
 !----------------------------------------------------------------------
 !***  THE FOLLOWING DIAGNOSTIC BLOCK PRODUCES 2-m and 10-m VALUES
@@ -970,20 +888,25 @@ CONTAINS
       V10E=V10
 !
       IF(SEAMASK<0.5)THEN
-!
-        ZUUZ=MIN(0.5*ZU,0.1)
-        ZU=MAX(0.1*ZU,ZUUZ)
+
+!1st        ZUUZ=MIN(0.5*ZU,0.1)
+!1st        ZU=MAX(0.1*ZU,ZUUZ)
+!tst        ZUUZ=amin1(ZU*0.50,0.3)
+!tst        ZU=amax1(ZU*0.3,ZUUZ)
+
+        ZUUZ=AMIN1(ZU*0.50,0.18)
+        ZU=AMAX1(ZU*0.35,ZUUZ)
 !
         ZU10=ZU+10.
         RZSU=ZU10/ZU
         RLNU10=LOG(RZSU)
-!
+
         ZETAU=ZU*RLMO
         ZTAU10=ZU10*RLMO
-!
+
         ZTAU10=MIN(MAX(ZTAU10,ZTMIN2),ZTMAX2)
         ZETAU=MIN(MAX(ZETAU,ZTMIN2/RZSU),ZTMAX2/RZSU)
-!
+
         RZ=(ZTAU10-ZTMIN2)/DZETA2
         K=INT(RZ)
         RDZT=RZ-REAL(K)
@@ -992,10 +915,10 @@ CONTAINS
         PSM10=(PSIM2(K+2)-PSIM2(K+1))*RDZT+PSIM2(K+1)
         SIMM10=PSM10-PSMZ+RLNU10
         EKMS10=MAX(USTARK/SIMM10,CXCHL)
-!
+
         U10E=UMFLX/EKMS10+UZ0
         V10E=VMFLX/EKMS10+VZ0
-!
+
       ENDIF
 !
       U10=U10E

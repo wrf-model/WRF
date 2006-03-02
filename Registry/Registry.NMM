@@ -99,6 +99,8 @@ state  real   vtm       ikj    dyn_nmm     1      -      rh
 #
 # module_VRBLS
 #
+state  integer ntsd     -       dyn_nmm     -      -      r
+state  integer nstart_hour  -   dyn_nmm     -      -      r
 state  real   pd        ijb     dyn_nmm     1      -      i01rh
 state  real   fis       ij     dyn_nmm     1      -      i01rh
 state  real   res       ij     dyn_nmm     1      -      irh
@@ -166,7 +168,7 @@ state  real   fns       ikj    dyn_nmm     1      -      -
 state  real   fse       ikj    dyn_nmm     1      -      -
 state  real   omgalf    ikj    dyn_nmm     1      -      r
 state  real   petdt     ikj    dyn_nmm     1      -      -
-state  real   rtop      ikj    dyn_nmm     1      -      -
+state  real   rtop      ikj    dyn_nmm     1      -      r
 #
 # module_PVRBLS
 #
@@ -219,10 +221,10 @@ state  real   glon      ij    dyn_nmm   1    -     i01rh
 state  real   NMM_TSK   ij    dyn_nmm   1    -    i01r     "TSK"
 state  real   hdac      ij    dyn_nmm   1    -     ir
 state  real   hdacv     ij    dyn_nmm   1    -     ir
-state  real   mxsnal    ij    dyn_nmm   1    -     i01r
+state  real   mxsnal    ij    dyn_nmm   1    -     i01rh
 state  real   radin     ij    dyn_nmm   1    -     -
-state  real   radot     ij    dyn_nmm   1    -     h
-state  real   sigt4     ij    dyn_nmm   1    -     h
+state  real   radot     ij    dyn_nmm   1    -     rh  # 1-17-06
+state  real   sigt4     ij    dyn_nmm   1    -     rh
 state  real   tg        ij    dyn_nmm   1    -     i01rh "TGROUND"  # changed data name from SOILTB to avoid conflict
 state  real   dfrlg     k     dyn_nmm   1    Z     i01r
 state integer lvl       ij    dyn_nmm   1    -     ir
@@ -233,11 +235,11 @@ state  real   cwm       ikjb   dyn_nmm   1    -     rh
 state  real   f_ice     ikj   dyn_nmm   1    -     rh
 state  real   f_rain    ikj   dyn_nmm   1    -     rh
 state  real   f_rimef   ikj   dyn_nmm   1    -     rh
-state  real   cldfra    ikj   dyn_nmm   1    -     h
+state  real   cldfra    ikj   dyn_nmm   1    -     rh   # 1-17-06
 state  real   sr        ij    dyn_nmm   1    -     irh
-state  real   cfrach    ij    dyn_nmm   1    -     h
-state  real   cfracl    ij    dyn_nmm   1    -     h
-state  real   cfracm    ij    dyn_nmm   1    -     h
+state  real   cfrach    ij    dyn_nmm   1    -     rh   # 1-17-06a
+state  real   cfracl    ij    dyn_nmm   1    -     rh   # 1-17-06a
+state  real   cfracm    ij    dyn_nmm   1    -     rh   # 1-17-06a
 state logical micro_start        -     dyn_nmm   -    -     -
 #
 # module_SOIL.F
@@ -274,15 +276,15 @@ state  real   acfrcv    ij    dyn_nmm     1    -    h
 state  real   acfrst    ij    dyn_nmm     1    -    h
 state  real   ssroff    ij    dyn_nmm     1    -    h
 state  real   bgroff    ij    dyn_nmm     1    -    h
-state  real   rlwin     ij    dyn_nmm     1    -    h
+state  real   rlwin     ij    dyn_nmm     1    -    rh   # 1-17-06
 state  real   rlwout    ij    dyn_nmm     1    -    -
-state  real   rlwtoa    ij    dyn_nmm     1    -    -
+state  real   rlwtoa    ij    dyn_nmm     1    -    rh   # 1-17-06_special
 state  real   alwin     ij    dyn_nmm     1    -    h
 state  real   alwout    ij    dyn_nmm     1    -    h
 state  real   alwtoa    ij    dyn_nmm     1    -    h
-state  real   rswin     ij    dyn_nmm     1    -    h
-state  real   rswinc    ij    dyn_nmm     1    -    h
-state  real   rswout    ij    dyn_nmm     1    -    h
+state  real   rswin     ij    dyn_nmm     1    -    rh   # 1-17-06
+state  real   rswinc    ij    dyn_nmm     1    -    rh   # 1-17-06
+state  real   rswout    ij    dyn_nmm     1    -    rh   # 1-17-06
 state  real   rswtoa    ij    dyn_nmm     1    -    -
 state  real   aswin     ij    dyn_nmm     1    -    h
 state  real   aswout    ij    dyn_nmm     1    -    h
@@ -296,8 +298,8 @@ state  real   potevp    ij    dyn_nmm     1    -    h
 state  real   potflx    ij    dyn_nmm     1    -    -
 state  real   tlmin     ij    dyn_nmm     1    -    -
 state  real   tlmax     ij    dyn_nmm     1    -    -
-state  real   rlwtt     ikj   dyn_nmm     1    -    h
-state  real   rswtt     ikj   dyn_nmm     1    -    h
+state  real   rlwtt     ikj   dyn_nmm     1    -    rh
+state  real   rswtt     ikj   dyn_nmm     1    -    rh
 state  real   tcucn     ikj   dyn_nmm     1    -    h
 state  real   train     ikj   dyn_nmm     1    -    h
 state integer ncfrcv    ij    dyn_nmm     1    -    irh
@@ -549,7 +551,7 @@ state    real    HBOTD           ij     misc        1         -     rh        "H
 state    real    HTOPS           ij     misc        1         -     rh        "HTOPS"                "TOP SHALLOW CONVECTION LEVEL"         ""
 state    real    HBOTS           ij     misc        1         -     rh        "HBOTS"                "BOT SHALLOW CONVECTION LEVEL"         ""
 state    REAL      CUPPT         ij     misc        1         -     rh        "CUPPT"                "ACCUMULATED CONVECTIVE RAIN SINCE LAST CALL TO THE RADIATION"         ""
-state    REAL      CPRATE        ij     misc        1         -     h         "CPRATE"               "INSTANTANEOUS CONVECTIVE PRECIPITATION RATE"      ""
+state    REAL      CPRATE        ij     misc        1         -     rh         "CPRATE"               "INSTANTANEOUS CONVECTIVE PRECIPITATION RATE"      ""   #  1-17-06a
 state    real    F_ICE_PHY       ikj    misc        1         -      r        "F_ICE_PHY"            "FRACTION OF ICE"         ""
 state    real    F_RAIN_PHY      ikj    misc        1         -      r        "F_RAIN_PHY"           "FRACTION OF RAIN "         ""
 state    real    F_RIMEF_PHY     ikj    misc        1         -      r        "F_RIMEF_PHY"          "MASS RATIO OF RIMED ICE "         ""
@@ -959,6 +961,7 @@ rconfig   logical write_input             namelist,time_control		1             .
 rconfig   logical write_restart_at_0h     namelist,time_control		1             .false. h    "write_restart_at_0h"              ""      ""
 rconfig   logical adjust_output_times     namelist,time_control         1             .false. -    "adjust_output_times"
 rconfig   logical adjust_input_times      namelist,time_control         1             .false. -    "adjust_input_times"
+rconfig   real    tstart                  namelist,time_control     max_domains       0       rh   "tstart"  "forecast hour at the start of the NMM integration"
 
 # Domains
 rconfig   integer time_step               namelist,domains	1             -       ih   "time_step"     
@@ -1041,6 +1044,13 @@ rconfig   integer nphs                    namelist,physics     max_domains   10 
 rconfig   integer ncnvc                   namelist,physics     max_domains   10       irh    "ncnvc"  "fundamental timesteps between calls to NMM convection"
 rconfig   integer nrads                   namelist,physics     max_domains  200       irh    "nrads"  "fundamental timesteps between calls to NMM shortwave radiation"
 rconfig   integer nradl                   namelist,physics     max_domains  200       irh    "nradl"  "fundamental timesteps between calls to NMM longwave radiation"
+rconfig   real    tprec                   namelist,physics     max_domains    3.       rh    "tprec"  "number of hours in bucket for total precipitation"
+rconfig   real    theat                   namelist,physics     max_domains    6.       rh    "theat"  "number of hours in bucket for gridscale and convective heating rates"
+rconfig   real    tclod                   namelist,physics     max_domains    6.       rh    "tclod"  "number of hours in bucket for cloud amounts"
+rconfig   real    trdsw                   namelist,physics     max_domains    6.       rh    "trdsw"  "number of hours in bucket for short wave fluxes"
+rconfig   real    trdlw                   namelist,physics     max_domains    6.       rh    "trdlw"  "number of hours in bucket for long wave fluxes"
+rconfig   real    tsrfc                   namelist,physics     max_domains    6.       rh    "tsrfc"  "number of hours in bucket for evaporation / sfc fluxes"
+rconfig   logical pcpflg                  namelist,physics     max_domains   .false.   rh    "pcpflg"  "logical switch that turns on/off the precipitation assimilation"
 rconfig   integer sigma                   namelist,physics     max_domains    1       irh    "sigma"  "logical switch for NMM vertical coordinate (sigma or hybrid)"
 rconfig   integer co2tf                   namelist,physics     1              0       -      "co2tf"  "GFDL radiation co2 flag"
 
@@ -1205,7 +1215,7 @@ halo HALO_NMM_INIT_9	dyn_nmm 120:GFFC,SST,ALBASE
 halo HALO_NMM_INIT_10	dyn_nmm 120:HDAC,HDACV
 #halo HALO_NMM_INIT_11	dyn_nmm 120:ISLTYP,ISLOPE,VEGFRC
 halo HALO_NMM_INIT_11	dyn_nmm 120:VEGFRC
-halo HALO_NMM_INIT_12	dyn_nmm 120:OMGALF,PD,RES
+halo HALO_NMM_INIT_12	dyn_nmm 120:DIV,OMGALF,PD,RES
 halo HALO_NMM_INIT_13	dyn_nmm 120:FIS,T,U
 halo HALO_NMM_INIT_14	dyn_nmm 120:V,Q,Q2
 halo HALO_NMM_INIT_15	dyn_nmm 120:CWM,TRAIN,TCUCN
@@ -1221,8 +1231,7 @@ halo HALO_NMM_INIT_24	dyn_nmm 120:CUPPT,CFRACH,SOILTB
 halo HALO_NMM_INIT_25	dyn_nmm 120:SFCEXC,SMSTAV,SMSTOT
 halo HALO_NMM_INIT_26	dyn_nmm 120:GRNFLX,PCTSNO,RLWIN
 halo HALO_NMM_INIT_27	dyn_nmm 120:RADOT,CZMEAN,SIGT4
-#halo HALO_NMM_INIT_28	dyn_nmm 120:U00,LC,SR
-halo HALO_NMM_INIT_28	dyn_nmm 120:U00,SR
+halo HALO_NMM_INIT_28	dyn_nmm 120:SR
 halo HALO_NMM_INIT_29	dyn_nmm 120:PREC,ACPREC,ACCLIQ
 halo HALO_NMM_INIT_30	dyn_nmm 120:ACFRST,ACSNOW
 halo HALO_NMM_INIT_31	dyn_nmm 120:ACSNOM,SSROFF,BGROFF

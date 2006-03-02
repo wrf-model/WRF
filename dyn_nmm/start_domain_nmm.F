@@ -79,7 +79,7 @@
 !
 !!!   REAL :: BLDT,CWML,EXNSFC,G_INV,PLYR,PSFC,ROG,SFCZ,THSIJ,TL
       REAL :: CWML,EXNSFC,G_INV,PLYR,PSURF,ROG,SFCZ,THSIJ,TL
-      REAL :: TSTART,TEND,TPREC,THEAT,TCLOD,TRDSW,TRDLW,TSRFC
+      REAL :: TEND
 
 !
 !!!   REAL,ALLOCATABLE,DIMENSION(:,:) :: RAINBL,RAINNC,RAINNC           &
@@ -274,7 +274,8 @@
 !
 #ifdef DM_PARALLEL
 
-        call wrf_get_myproc(myproc)
+      CALL WRF_GET_MYPROC(MYPROC)
+      MYPE=MYPROC
 
 #  include <HALO_NMM_INIT_1.inc>
 #  include <HALO_NMM_INIT_2.inc>
@@ -345,7 +346,6 @@
       IFE=MIN(IPE,IDE-1)
 !
       IF(.NOT.RESTRT)THEN
-       call wrf_get_myproc(mype)
         DO J=JFS,JFE
         DO I=IFS,IFE
           LLMH=LMH(I,J)
@@ -386,11 +386,9 @@
           APEM1=(1.E5/PM1)**CAPA
 
         IF (NMM_TSK(I,J) .ge. 200.) THEN ! have a specific skin temp, use it
-!mp               THS(I,J)=NMM_TSK(I,J)*(1.+P608*Q(I,KOFF+1,J))*APEM1
                THS(I,J)=NMM_TSK(I,J)*APEM1
                TSFCK=NMM_TSK(I,J)
 	ELSE ! use lowest layer as a proxy
-!mp          THS(I,J)=T(I,KOFF+1,J)*(1.+P608*Q(I,KOFF+1,J))*APEM1
           THS(I,J)=T(I,KOFF+1,J)*APEM1
           TSFCK=T(I,KOFF+1,J)
 	ENDIF
@@ -501,6 +499,12 @@
 !***  THE LOWEST MODEL LAYER.  IN THE LOWEST TWO ATMOSPHERIC
 !***  ETA LAYERS SET TKE TO A SMALL VALUE (Q2INI).
 !***
+!***EROGERS: add check for realistic values of q2
+!
+      IF (MAXVAL(Q2) .gt. epsq2 .and. MAXVAL(Q2) .lt. 200.) then
+        write(0,*) 'appear to have Q2 values...do not zero'
+      ELSE
+        write(0,*) 'zeroing Q2'
         DO J=JFS,JFE
         DO K=KPS,KPE-1
         DO I=IFS,IFE
@@ -517,6 +521,7 @@
           Q2(I,LLMH-1,J)= HBM2(I,J)*Q2INI
         ENDDO
         ENDDO
+      ENDIF
 !***  
 !***  PAD ABOVE GROUND SPECIFIC HUMIDITY IF IT IS TOO SMALL.
 !***  INITIALIZE LATENT HEATING ACCUMULATION ARRAYS.
@@ -563,30 +568,31 @@
       TSPH=3600./GRID%DT ! needed?
       NPHS0=GRID%NPHS
 
-!!!!  How do we pass in this TSTART information in reality???
+      IF(MYPE==0)THEN
+        write(0,*)' start_nmm TSTART=',grid%tstart
+        write(0,*)' start_nmm TPREC=',grid%tprec
+        write(0,*)' start_nmm THEAT=',grid%theat
+        write(0,*)' start_nmm TCLOD=',grid%tclod
+        write(0,*)' start_nmm TRDSW=',grid%trdsw
+        write(0,*)' start_nmm TRDLW=',grid%trdlw
+        write(0,*)' start_nmm TSRFC=',grid%tsrfc
+        write(0,*)' start_nmm PCPFLG=',grid%pcpflg
+      ENDIF
 
-      TSTART=00.0
-      TPREC=06.0
-      THEAT=06.0
-      TCLOD=06.0
-      TRDSW=06.0
-      TRDLW=06.0
-      TSRFC=06.0
-
-      NSTART = INT(TSTART*TSPH+0.5)
-
-      NTSD = NSTART  ! (this NTSD value not honored by integrate)
+      NSTART = INT(grid%TSTART*TSPH+0.5)
+!
+      NTSD = NSTART
 
 
 !! want non-zero values for NPREC, NHEAT type vars to avoid problems
 !! with mod statements below.
 
-      NPREC  = INT(TPREC *TSPH+0.5)
-      NHEAT  = INT(THEAT *TSPH+0.5)
-      NCLOD  = INT(TCLOD *TSPH+0.5)
-      NRDSW  = INT(TRDSW *TSPH+0.5)
-      NRDLW  = INT(TRDLW *TSPH+0.5)
-      NSRFC  = INT(TSRFC *TSPH+0.5)
+      NPREC  = INT(grid%TPREC *TSPH+0.5)
+      NHEAT  = INT(grid%THEAT *TSPH+0.5)
+      NCLOD  = INT(grid%TCLOD *TSPH+0.5)
+      NRDSW  = INT(grid%TRDSW *TSPH+0.5)
+      NRDLW  = INT(grid%TRDLW *TSPH+0.5)
+      NSRFC  = INT(grid%TSRFC *TSPH+0.5)
 
       IF(RESTRT)THEN
 !
@@ -1257,9 +1263,11 @@
 !***  NEED TO CONVERT TO THETA IF IS THE RESTART CASE
 !***  AS CHKOUT.f WILL CONVERT TO TEMPERATURE
 !***
-        IF(RESTRT)THEN
-          TSHLTR(I,J)=TSHLTR(I,J)*APELMNW
-        ENDIF
+!EROGERS: COMMENT OUT IN WRF-NMM
+!***
+!       IF(RESTRT)THEN
+!         TSHLTR(I,J)=TSHLTR(I,J)*APELMNW
+!       ENDIF
       ENDDO
       ENDDO
 !
@@ -1267,15 +1275,17 @@
 !***  INITIALIZE TAU-1 VALUES FOR ADAMS-BASHFORTH 
 !----------------------------------------------------------------------
 !
-      DO J=jfs,jfe
-        DO K=KPS,KPE
-        DO I=ifs,ife
-          TOLD(I,K,J)=T(I,K,J)   ! T AT TAU-1
-          UOLD(I,K,J)=U(I,K,J)   ! U AT TAU-1
-          VOLD(I,K,J)=V(I,K,J)   ! V AT TAU-1
+      IF(.NOT.RESTRT)THEN
+        DO J=jfs,jfe
+          DO K=KPS,KPE
+          DO I=ifs,ife
+            TOLD(I,K,J)=T(I,K,J)   ! T AT TAU-1
+            UOLD(I,K,J)=U(I,K,J)   ! U AT TAU-1
+            VOLD(I,K,J)=V(I,K,J)   ! V AT TAU-1
+          ENDDO
+          ENDDO
         ENDDO
-        ENDDO
-      ENDDO
+      ENDIF
 !
 !----------------------------------------------------------------------
 !***  INITIALIZE NONHYDROSTATIC QUANTITIES
@@ -1527,7 +1537,7 @@
       DO J=MYJS,MYJE
       DO I=MYIS,MYIE
 	Z0_DUM(I,J)=Z0(I,J) ! hold
-	ALBEDO_DUM(I,J)=ALBEDO(I,J) ! Save albedos
+        ALBEDO_DUM(I,J)=ALBEDO(I,J) ! Save albedos
       ENDDO
       ENDDO
          ENDIF
@@ -1568,7 +1578,6 @@
      &             ,its, ite, jts, jte, kts, kte)
 !-----------------------------------------------------------------------
 !
-
 !mp replace F*_PHY with values defined in module_initialize_real.F?
 
 	IF (.NOT. RESTRT) THEN

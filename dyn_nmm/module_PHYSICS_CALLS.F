@@ -42,8 +42,7 @@
      &                    ,RLWTOA,RSWTOA,CZMEAN                         &
      &                    ,CFRACL,CFRACM,CFRACH,SIGT4                   &
      &                    ,ACFRST,NCFRST,ACFRCV,NCFRCV                  &
-     &                    ,CUPPT,VEGFRC,SNOW                            &
-     &                    ,HTOP,HBOT,HTOPD,HBOTD,HTOPS,HBOTS            &
+     &                    ,CUPPT,VEGFRC,SNOW,HTOP,HBOT                  &
      &                    ,GRID,CONFIG_FLAGS                            &
      &                    ,IDS,IDE,JDS,JDE,KDS,KDE                      &
      &                    ,IMS,IME,JMS,JME,KMS,KME                      &
@@ -95,29 +94,26 @@
 !
       REAL,DIMENSION(KMS:KME),INTENT(IN) :: ETA1,ETA2
 !
-      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: ALBEDO              &
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: ALBEDO,CUPPT        &
      &                                             ,EPSR,GLAT,GLON      &
-     &                                             ,HBM2,PD,RES,SM      &
+     &                                             ,HBM2,HBOT,HTOP      &
+     &                                             ,PD,RES,SM           &
      &                                             ,SNOW,THS,VEGFRC
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: CWM,F_ICE   &
      &                                                     ,F_RAIN,Q,T
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: ACFRCV,ACFRST    &
-     &                                                ,CUPPT            &
-     &                                                ,HBOT,HTOP        &
      &                                                ,RLWIN,RLWTOA     &
      &                                                ,RSWIN,RSWOUT     &
      &                                                ,RSWINC,RSWTOA
 !
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) :: RLWTT    &
-     &                                                        ,RSWTT    &
-     &                                                        ,PINT
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) :: PINT     &
+     &                                                        ,RLWTT    &
+     &                                                        ,RSWTT
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: CFRACH,CFRACL      &
      &                                              ,CFRACM,CZMEAN      &
-     &                                              ,HBOTD,HTOPD        &
-     &                                              ,HBOTS,HTOPS        &
      &                                              ,SIGT4
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(OUT) :: CLDFRA
@@ -480,21 +476,6 @@
         ENDDO
       ENDDO
 !-----------------------------------------------------------------------
-!***  RESET THE DIAGNOSTIC CONVECTIVE CLOUD TOPS/BOTTOMS AFTER
-!***  EACH RADIATION CALL.
-!-----------------------------------------------------------------------
-!
-!$omp parallel do                                                       &
-!$omp& private(i,j)
-      DO J=JMS,JME
-      DO I=IMS,IME
-        HTOPD(I,J)=0.
-        HTOPS(I,J)=0.
-        HBOTD(I,J)=KTE+1.
-        HBOTS(I,J)=KTE+1.
-      ENDDO
-      ENDDO
-!-----------------------------------------------------------------------
 !
 
       END SUBROUTINE RADIATION
@@ -594,8 +575,11 @@
      &                                             ,RLWIN,RLWTOA        &
      &                                             ,RSWIN,RSWOUT,RSWTOA &
      &                                             ,SHDMIN,SHDMAX       &
-     &                                             ,SICE,SIGT4,SM,SR    &
+!    &                                             ,SICE,SIGT4,SM,SR    & !Bandaid
+     &                                             ,SICE,SIGT4   ,SR    &
      &                                             ,SST,TG,VBM2,VEGFRC
+!
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: SM   !Bandaid
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: GRNFLX,QWBS,RADOT  &
                                                     ,SFCEXC,SMSTAV      &
@@ -680,6 +664,7 @@
      &                                  ,ONE,PLM,PSFC_OUT,PSIH,PSIM     &
      &                                  ,Q2X,QLOW,RAIN,RAINBL           &
      &                                  ,RLW_DN_SFC,RMOL,RSW_NET_SFC    &
+     &                                  ,RSW_DN_SFC                     &
      &                                  ,SFCEVPX,SFCZ,SNOW,SNOWC,SNOWH  &
      &                                  ,TH2X,THLOW,TLOW,VGFRCK         &
      &                                  ,WSPD,XLAND,ZERO_2D
@@ -743,6 +728,10 @@
         DO J=MYJS,MYJE
         DO I=MYIS,MYIE
           Z0BASE(I,J)=Z0(I,J)
+          IF(SM(I,J)>0.5.AND.SICE(I,J)>0.5)THEN  !Bandaid
+            write(0,*)'mask mismatch at (',i,',',j,')  sice=',sice(i,j),' sm=',sm(i,j)
+            SM(I,J)=0.        
+          ENDIF              
         ENDDO
         ENDDO
       ENDIF
@@ -818,6 +807,10 @@
 !
         RLW_DN_SFC(I,J)=RLWIN(I,J)*HBM2(I,J)*FACTRL
         RSW_NET_SFC(I,J)=(RSWIN(I,J)-RSWOUT(I,J))*HBM2(I,J)*FACTRS(I,J)
+!
+!- Instant downward solar for nmm_lsm
+!
+        RSW_DN_SFC(I,J)=RSWIN(I,J)*HBM2(I,J)*FACTRS(I,J)
 !
 !-----------------------------------------------------------------------
 !***  FILL THE ARRAYS FOR CALLING THE INNER DRIVER.
@@ -973,7 +966,7 @@
      &           ACSNOM=ACSNOM,ACSNOW=ACSNOW,AKHS=AKHS,AKMS=AKMS        &
      &          ,ALBEDO=ALBEDO,BR=BR,CANWAT=CMC,CHKLOWQ=CHKLOWQ         &
      &          ,DT=DT,DX=DX,DZ8W=DZ,DZS=SLDPTH,GLW=RLW_DN_SFC          &
-     &          ,GRDFLX=GRNFLX,GSW=RSW_NET_SFC,GZ1OZ0=GZ1OZ0,HFX=TWBS   &
+     &          ,GRDFLX=GRNFLX,GSW=RSW_DN_SFC,GZ1OZ0=GZ1OZ0,HFX=TWBS    &
      &          ,HT=SFCZ,IFSNOW=IDUMMY,ISFFLX=ISFFLX,ISLTYP=ISLTYP      &
      &          ,ITIMESTEP=NTSD,IVGTYP=IVGTYP,LOWLYR=LOWLYR             &
      &          ,MAVAIL=ONE,RMOL=RMOL,NUM_SOIL_LAYERS=NSOIL,P8W=P8W     &
@@ -1416,7 +1409,8 @@
 !
 !-----------------------------------------------------------------------
 !***********************************************************************
-      SUBROUTINE CUCNVC(NTSD,DT,NCNVC,GPS,RESTRT,HYDRO                  &
+      SUBROUTINE CUCNVC(NTSD,DT,NCNVC,NRADS,NRADL                       &
+     &                 ,GPS,RESTRT,HYDRO                                &
 !    &                 ,CLDEFI,LMH,WATER,N_MOIST,ENSDIM                 &
      &                 ,CLDEFI,LMH,N_MOIST,ENSDIM                       &
      &                 ,DETA1,DETA2,AETA1,AETA2,ETA1,ETA2               &
@@ -1460,7 +1454,7 @@
      &                     ,IDS,IDE,JDS,JDE,KDS,KDE                     &
      &                     ,IMS,IME,JMS,JME,KMS,KME                     &
      &                     ,ITS,ITE,JTS,JTE,KTS,KTE                     &
-     &                     ,N_MOIST,NCNVC,NTSD
+     &                     ,N_MOIST,NCNVC,NTSD,NRADS,NRADL
 !
       INTEGER, DIMENSION(JMS:JME),INTENT(IN) :: IHE,IHW
 !
@@ -1550,6 +1544,28 @@
       REAL :: TCHANGE
 !-----------------------------------------------------------------------
 !***********************************************************************
+!-----------------------------------------------------------------------
+!***  RESET THE DIAGNOSTIC CONVECTIVE CLOUD TOPS/BOTTOMS AFTER
+!***  EACH RADIATION CALL AND AFTER THE TOP OF THE HOUR SO THAT THE
+!***  FIELDS CAN BE POSTED.  THE HBOT,HTOP ARRAYS ARE USED IN RADIATION,
+!***  BUT THE OTHER ARRAYS ARE STRICTLY FOR POSTING FOR SHALLOW CONVECTION
+!***  (HBOTS,HTOPS) AND DEEP CONVECTION (HBOTD,HTOPD).
+!-----------------------------------------------------------------------
+!
+      IF(MOD(NTSD,NRADS)==0.OR.MOD(NTSD,NRADL)==0)THEN
+         DO J=JMS,JME
+         DO I=IMS,IME
+           HTOP(I,J)=0.
+           HTOPD(I,J)=0.
+           HTOPS(I,J)=0.
+           HBOT(I,J)=REAL(KTE+1)
+           HBOTD(I,J)=REAL(KTE+1.)
+           HBOTS(I,J)=REAL(KTE+1.)
+           CUPPT(I,J)=0.
+           CPRATE(I,J)=0.
+         ENDDO
+         ENDDO
+      ENDIF
 !-----------------------------------------------------------------------
       IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
      &   CONFIG_FLAGS%CU_PHYSICS==BMJSCHEME)RETURN

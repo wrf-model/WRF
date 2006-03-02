@@ -24,6 +24,7 @@ information on NMM specific settings (http://www.dtcenter.org/wrf-nmm/users)
  start_second (max_dom)              = 00,	; two digit second of starting time
                                                   Note: the start time is used to name the first wrfout file.
                                                   It also controls the start time for nest domains, and the time to restart
+ tstart (max_dom)                    = 00,	; FOR NMM: starting hour of the forecast
  end_year (max_dom)                  = 2001,	; four digit year of ending time
  end_month (max_dom)                 = 06,	; two digit month of ending time
  end_day (max_dom)                   = 12,	; two digit day of ending time
@@ -242,6 +243,14 @@ Namelist variables for controling the automatic moving nest:
                                                 calls to convection; the value is set in Registry.NMM
                                                 but is overridden by namelist value; cudt will be
                                                 computed from this.
+
+ tprec (max_dom)                     = FOR NMM: number of hours in precipitation bucket
+ theat (max_dom)                     = FOR NMM: number of hours in latent heating bucket
+ tclod (max_dom)                     = FOR NMM: number of hours in cloud fraction average
+ trdsw (max_dom)                     = FOR NMM: number of hours in short wave buckets
+ trdlw (max_dom)                     = FOR NMM: number of hours in long wave buckets
+ tsrfc (max_dom)                     = FOR NMM: number of hours in surface flux buckets
+ pcpflg (max_dom)                    = FOR NMM: logical switch for precipitation assimilation
 
  isfflx                              = 1,	; heat and moisture fluxes from the surface
                                                   (only works for sf_sfclay_physics = 1)

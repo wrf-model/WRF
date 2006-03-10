@@ -327,8 +327,8 @@ mpi2_test :
 
 # rule used by configure to test if fseeko and fseeko64 are supported (for share/landread.c to work right)
 fseek_test :
-	@ cd tools ; /bin/rm -f fseeko_test ; $(CC) -DTEST_FSEEKO -o fseeko_test fseek_test.c ; cd ..
-	@ cd tools ; /bin/rm -f fseeko64_test ; $(CC) -DTEST_FSEEKO64 -o fseeko64_test fseek_test.c ; cd ..
+	@ cd tools ; /bin/rm -f fseeko_test ; $(SCC) -DTEST_FSEEKO -o fseeko_test fseek_test.c ; cd ..
+	@ cd tools ; /bin/rm -f fseeko64_test ; $(SCC) -DTEST_FSEEKO64 -o fseeko64_test fseek_test.c ; cd ..
 
 ### 3.b.  sub-rule to build the expimental core
 

@@ -272,7 +272,7 @@ contains
       real afac, phifac, qmin
       real d1,d2,d3
       real h1,h2
-      parameter (rlam = 150.,prmin = 0.25,prmax = 4.)
+      parameter (rlam = 30.,prmin = 0.25,prmax = 4.)
       parameter (brcr = 0.0,bfac = 6.8,pfac = 2.0,sfcfrac = 0.1)
       parameter (afac = 6.8,phifac = 8.,qmin=1.e-2)
       parameter (d1 = 0.02, d2 = 0.05, d3 = 0.001)

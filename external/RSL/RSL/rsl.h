@@ -232,9 +232,15 @@ show config:  ---See also the makefile---
 
 typedef int * int_p ;
 #if !(defined(SUNDEBUG) || defined(crayx1))
+#ifndef NEC_TUNE
 typedef short   rsl_processor_t ;
 typedef short   rsl_index_t ;
 typedef short   rsl_dimlen_t ;
+#else
+typedef int   rsl_processor_t ;
+typedef int   rsl_index_t ;
+typedef int   rsl_dimlen_t ;
+#endif
 #else
 typedef int   rsl_processor_t ;
 typedef int   rsl_index_t ;
@@ -245,7 +251,11 @@ typedef long    rsl_point_id_t ;
 #ifdef crayx1
 typedef int rsl_tag_t ;
 #else
+#ifndef NEC_TUNE
 typedef unsigned char rsl_tag_t ;
+#else
+typedef int rsl_tag_t ;
+#endif
 #endif
 
 typedef struct rsl_list {
@@ -639,8 +649,13 @@ EXTERN int sw_allow_dynpad ;
 #define RSL_TEST_WRN(T,M) {if(T){fprintf(stderr,"%d rsl warning (\"%s\":%d) %s\n",rsl_myproc,__FILE__,__LINE__,M);}}
 
 #if 1
+#ifndef NEC_TUNE
 #define RSL_MALLOC(T,N)  (T *)rsl_malloc(__FILE__,__LINE__,(sizeof(T))*(N))
 #define RSL_FREE(P)      rsl_free(P)
+#else
+#define RSL_MALLOC(T,N)  (T *)calloc(N, sizeof(T))
+#define RSL_FREE(P)      free(P)
+#endif
 #else
 /* Bob Olson's stuff */
 #define RSL_MALLOC(T,N)  (T *)nexus_debug_malloc((sizeof(T))*(N),__FILE__,__LINE__)
@@ -851,6 +866,9 @@ typedef int MPI_Fint;
 void * rsl_malloc(), * malloc()  ;
 void * get_base_for_index() ;
 
+#ifdef NEC_TUNE
+extern void copymem( void *, int, void *, int, int, int ) ;
+#endif
 
 
 #endif   /* nothing after this line */

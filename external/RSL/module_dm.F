@@ -3388,7 +3388,11 @@ SUBROUTINE wrf_dm_bcast_bytes ( buf , size )
    USE module_dm
    IMPLICIT NONE
    INTEGER size
+#ifndef NEC
    INTEGER*1 BUF(size)
+#else
+   CHARACTER*1 BUF(size)
+#endif
 ! <DESCRIPTION>
 ! Collective operation. Given a buffer and a size in bytes on task zero, broadcast and return that buffer on all tasks.
 !

@@ -193,7 +193,11 @@ handle_read_request( req, resp_me, pbuf_me )
   /* call fortran to read a record from the named unit */
   if ( req->internal ) 
   {
+#ifndef NEC_TUNE
     bcopy( req->unit_p, rbuf, nbytes ) ;
+#else
+    copymem( (void *)req->unit_p, typelen, (void *)rbuf, typelen, typelen, nelem_alloc ) ;
+#endif
   }
   else
   {
@@ -661,6 +665,10 @@ if ( typelen == sizeof ( int ) ) {
 }
 
 static int wrt_sock_err = 0 ;
+#ifdef NEC_TUNE
+static int pndomains_init = 0;
+static int pndomains[ RSL_MAXPROC ] ; /* Number of domains for each processor */
+#endif
 
 int
 handle_write_request( req, nelem, psize_me, pbuf_me )
@@ -683,6 +691,10 @@ handle_write_request( req, nelem, psize_me, pbuf_me )
   rsl_point_t *domain ;
   int is_write, ie_write, js_write, je_write ;
   int in_write ;
+#ifdef NEC_TUNE
+  int tcursor ;
+  int j ;
+#endif
 
   typelen = elemsize( req->type ) ;
   nbytes = typelen * nelem ;
@@ -750,6 +762,8 @@ handle_write_request( req, nelem, psize_me, pbuf_me )
   { sprintf(mess,"Minor dim spec on write (%d) greater than global domain defini tion in that dimension (%d)\n",minelems,mlen) ;
     RSL_TEST_ERR(1,mess) ; }
 
+#if !(defined(NEC_TUNE)) || !(defined(NEC_SINGLENEST))
+#ifndef NEC_TUNE
   /*  figure out sizes for each processor */
   pbuf = NULL ;
   for ( i = 0 ; i < rsl_nproc_all ; i++ )       /* 95/02/22 */
@@ -763,6 +777,69 @@ handle_write_request( req, nelem, psize_me, pbuf_me )
       psize[domain[INDEX_2(jg,ig,mlen)].P] += columnelems * typelen ;
     }
   }
+#else
+  pbuf = NULL ;
+/*
+   NECNOTE:
+   Count the number of domains allocated to each processor.
+*/
+  for ( i = 0 ; i < rsl_nproc_all ; i++ )
+  {
+    pndomains[i] = 0 ;
+  }
+  for ( i = 0 ; i < rsl_nproc_all ; i++ )
+  {
+    j = 0 ;
+    for ( jg = 0 ; jg < majelems ; jg++ )
+    {
+      for ( ig = 0 ; ig < minelems ; ig++ )
+      {
+        if( domain[INDEX_2(jg,ig,mlen)].P == i )
+        {
+          j++ ;
+        }
+      }
+    }
+    pndomains[i] = j ;
+  }
+  for ( i = 0 ; i < rsl_nproc_all ; i++ )
+  {
+    psize[i] = ((regular_decomp)?(4*sizeof(int)):0) + pndomains[i]*columnelems*typelen ;
+  }
+#endif
+#else /* !(defined(NEC_TUNE)) || !(defined(NEC_SINGLENEST)) */
+  pbuf = NULL ;
+  if ( ! pndomains_init )
+  {
+/*
+   NECNOTE:
+   Count the number of domains allocated to each processor.
+*/
+    for ( i = 0 ; i < rsl_nproc_all ; i++ )
+    {
+      pndomains[i] = 0 ;
+    }
+    for ( i = 0 ; i < rsl_nproc_all ; i++ )
+    {
+      j = 0 ;
+      for ( jg = 0 ; jg < majelems ; jg++ )
+      {
+        for ( ig = 0 ; ig < minelems ; ig++ )
+        {
+          if( domain[INDEX_2(jg,ig,mlen)].P == i )
+          {
+            j++ ;
+          }
+        }
+      }
+      pndomains[i] = j ;
+    }
+  }
+  for ( i = 0 ; i < rsl_nproc_all ; i++ )
+  {
+    psize[i] = ((regular_decomp)?(4*sizeof(int)):0) + pndomains[i]*columnelems*typelen ;
+  }
+#endif /* !(defined(NEC_TUNE)) || !(defined(NEC_SINGLENEST)) */
 
   for ( P = 0 ; P < rsl_nproc_all ; P++ )       /* 95/02/22 */
   {
@@ -897,6 +974,7 @@ handle_write_request( req, nelem, psize_me, pbuf_me )
             }
             break ;
           case IO3D_IKJ :
+#ifndef NEC_TUNE
             for ( ig = is_write ; ig <= ie_write ; ig++ )
             {
               for ( k = 0 ; k < req->glen[1] ; k++ )
@@ -907,6 +985,16 @@ handle_write_request( req, nelem, psize_me, pbuf_me )
                 cursor += typelen ;
               }
             }
+#else
+            for ( k = 0 ; k < req->glen[1] ; k++ )
+            {
+              tcursor = cursor + (k * typelen) ;
+              copymem(&(pbuf[tcursor]), typelen*req->glen[1],
+                &(wbuf[typelen*(is_write+req->glen[0]*(k+jg*req->glen[1]))]), typelen,
+                typelen, ie_write-is_write+1) ;
+            }
+            cursor += (ie_write-is_write+1)*req->glen[1]*typelen ;
+#endif
             break ;
         }
       }

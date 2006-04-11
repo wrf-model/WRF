@@ -7,8 +7,8 @@ OBJ = $(CORE_OBJ) rsl_mpi_compat.o mpi_init_f.o debug.o fort_doubleread.o fort_d
 HDR = $(CORE_HDR)
 TAR = $(CORE_TAR)
 
-CC = cc
-FC = f90
+CC = sxmpic++
+FC = sxmpif90
 
 #MPIHOME=
 #IDIR=
@@ -17,8 +17,24 @@ LIB =
 
 .SUFFIXES: .o .c .F
 
-CFLAGS = -DMPI -h float0 -I../../../include -Dvpp -Dsx -DRSL_SYNCIO
+CFLAGS = -DMPI -I../../../include -Dsx -DRSL_SYNCIO -Dcrayx1 -DNO_RAGGED
+CFLAGS = -DMPI -I../../../include -Dsx -DRSL_SYNCIO -DNEC_TUNE -DNEC_SINGLENEST -DNEC_TYPE4B
+CFLAGS = -DMPI -I../../../include -Dsx -DRSL_SYNCIO -DNEC_TUNE
 FFLAGS = -float0
+#INLINE = -pi fullmsg auto file=proc.c
+
+# "-DNEC_SINGLENEST"
+# avoids redundant count of grid points.
+# don't specify this if the form of the grid-plane changes.
+# (i.e. multi-nest run)
+# target file is "rsl_ioserve.c".
+
+# "-DNEC_TYPE4B"
+# 1 byte char data copy by "bcopy" is replaced with 4 byte float
+# substitution.
+# this modification promotes vectorization.
+# this effects only multi-nest run.
+# target file is "rsl_bcast.c".
 
 warning :
 	@ echo 'This makefile is not a top level makefile'
@@ -34,11 +50,14 @@ rsl.inc : $(HDR) rsl.inc_base
 	cat rsl.inc_base - > rsl.inc
 
 librsl.a : $(OBJ)
-	ar cr librsl.a $(OBJ)
+	sxar cr librsl.a $(OBJ)
 #	ranlib librsl.a
 
-.c.o :
+rsl_mpi_compat.o:	rsl_mpi_compat.c
 	$(CC) -c $(CFLAGS) $(CONFIG_OPTS) $<
+
+.c.o :
+	$(CC) -c $(CFLAGS) $(INLINE) $(CONFIG_OPTS) $<
 
 .F.o :
 	$(FC) -c $(FFLAGS) $<

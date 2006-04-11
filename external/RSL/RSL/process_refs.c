@@ -2,6 +2,19 @@
 #include <stdlib.h>
 #include "rsl.h"
 
+#ifdef NEC_TUNE
+typedef struct{
+  int max_nsec ;                   /* Maximum number of entris on secondary list */
+  int nsec ;                       /* Number of entries on secondary list */
+  void *base ;                     /* Base address */
+  int *offset ;                    /* Array of "offsets" associated with base */
+  int *n ;                         /* Array of "lengths" associated with offset */
+  packrec_t **data ;               /* Array of "Ptr's to head data" */
+} Pri_lst_t ;
+static int max_npri = 128 ;        /* Max. no of "base" entries on primary list */
+static int npri = 0 ;              /* Number of "base" entries on primary list */
+static Pri_lst_t *Pri_lst = NULL ; /* Primary list */
+#endif
 static rsl_list_t * list_head = NULL ;
 
 static int destroy_packrec( p ) packrec_t * p ; { free( p ) ; return(0) ;}
@@ -16,6 +29,22 @@ init_process_refs()
     destroy_list( &(lp->data), destroy_packrec ) ;
   }
   destroy_list( &list_head, NULL ) ;
+#ifdef NEC_TUNE
+/*
+   NECNOTE: 
+   If primary list is allocated and has entries assigned, free all data
+   allocated on secondary lists by reseting variable 'nsec' to zero.
+*/
+  if ( npri != 0 )
+  {
+    int ipri ;
+    for ( ipri = 0 ; ipri < npri ; ipri++ )
+    {
+      Pri_lst[ipri].nsec = 0 ; /* Free all entries on secondary list */
+    }
+    npri = 0 ; /* Free all entries on primary list */
+  }
+#endif
 }
 /*
    The data structure being built by this routine:
@@ -61,6 +90,17 @@ store_process_refs( base, f90_table_index , offset, n, nelems, stride )
   rsl_list_t * x ;
   packrec_t * newrec, *arec, *nextrec ;
   int found, found1 ;
+#ifdef NEC_TUNE
+  int ipri ;
+  int isec ;
+  int found_search ;
+
+  if ( Pri_lst == NULL ) /* Need to initialize Primary list */
+  {
+    Pri_lst = realloc(Pri_lst, max_npri*sizeof(Pri_lst_t)) ;
+    RSL_TEST_ERR(Pri_lst == NULL, "out of memory - 1") ;
+  }
+#endif
 
 #if 0
 fprintf(stderr,"debug store_process_refs 1 base %08x ",base) ;
@@ -89,6 +129,40 @@ fprintf(stderr," stride %5d\n",stride) ;
      there's not already an entry for newrec.  If there isn't, add
      an entry for newrec to the end of the secondary list. */
   found = 0 ;
+#ifdef	NEC_TUNE
+  for ( ipri = 0 ; ipri < npri ; ipri++ )
+  {
+    if ( base == Pri_lst[ipri].base )
+    {
+      found = 1 ;
+      break ;
+    }
+  }
+  if ( found )
+  {
+    /* Quick search to see whether this is a duplicate call. */
+    found_search = 0 ;
+#pragma vdir altcode=loopcnt
+    for ( isec = 0 ; isec < Pri_lst[ipri].nsec ; isec++ )
+    {
+      if ( Pri_lst[ipri].offset[isec] == offset )
+      {
+        found_search = 1 ; /* return silently */
+        break ;
+      }
+    }
+    if ( found_search )
+    {
+      if ( Pri_lst[ipri].n[isec] < n )
+      {
+        Pri_lst[ipri].n[isec] = n ;
+        Pri_lst[ipri].data[isec]->n = n ;
+      }
+      RSL_FREE(newrec) ;
+      return ;
+    }
+  }
+#endif
   for ( lp = list_head ; lp ; lp = lp->next )
   {
     if ( lp != NULL )
@@ -113,6 +187,7 @@ fprintf(stderr," stride %5d\n",stride) ;
   {
     /* includes an insertion sort */
     found1 = 0 ;
+#ifndef NEC_TUNE
     for ( lp2 = lp1 ; lp2 != NULL ; lp2 = lp2->next )
     {
       lp3 = lp2 ;  /* store previous lp2 */
@@ -142,6 +217,91 @@ fprintf(stderr," stride %5d\n",stride) ;
         { found1 = 2 ; break ; }
       }
     }
+#else
+    for ( lp2 = lp1 ; lp2 != NULL ; lp2 = lp2->next )
+    {
+      lp3 = lp2 ;  /* store previous lp2 */
+      arec = (packrec_t *) lp2->data ;
+
+      if (lp2 == lp1)
+      {
+        if ( offset < arec->offset )
+        { found1 = 0 ; break ; }
+      }
+      if (offset == arec->offset)
+      {
+        if (arec->n >= n)
+          { found1 = 1 ; break ; }
+        else
+          { arec->n = n ; found1 = 3 ; break ; }
+      }
+      else if (lp2->next != NULL)
+      {
+        nextrec = lp2->next->data ;
+        if ( offset > arec->offset &&
+             offset < nextrec->offset )
+        { found1 = 2 ; break ; }
+      }
+      else if (offset > arec->offset)
+      {
+        { found1 = 2 ; break ; }
+      }
+    }
+/* NECNOTE: Add base/offset/n to duplicate list. */
+    if ( found1 == 1 || found1 == 3 )
+    {
+      int nsec ;
+      int pri_found ;
+      RSL_FREE(newrec) ;
+
+      for ( ipri = 0, pri_found = 0 ; ipri < npri ; ipri++ )
+      {
+        if ( Pri_lst[ipri].base == base )
+        {
+          pri_found = 1 ;
+          break ;
+        }
+      }
+
+      if ( !pri_found )
+      {
+        if ( npri == max_npri )
+        {
+          max_npri *= 2 ;
+          Pri_lst = (Pri_lst_t *)realloc(Pri_lst, max_npri*sizeof(Pri_lst_t)) ;
+        }
+
+        Pri_lst[npri].max_nsec = 128 ;
+        Pri_lst[npri].nsec = 0 ;
+        Pri_lst[npri].base = base ;
+/*
+   NECNOTE:
+   I'd like to use RSL_MALLOC, but there is a good chance that the
+   following two pointers will be 'realloc'ed.
+*/
+        Pri_lst[npri].offset = (int *)malloc(Pri_lst[npri].max_nsec*sizeof(int)) ;
+        Pri_lst[npri].n = (int *)malloc(Pri_lst[npri].max_nsec*sizeof(int)) ;
+        Pri_lst[npri].data = (packrec_t **)malloc(Pri_lst[npri].max_nsec*sizeof(packrec_t *)) ;
+        RSL_TEST_ERR(Pri_lst[npri].offset == NULL || Pri_lst[npri].n == NULL ||
+                     Pri_lst[npri].data == NULL, "out of memory - 2") ;
+        npri++ ;
+      }
+
+      nsec = Pri_lst[ipri].nsec ;
+      if ( nsec == Pri_lst[ipri].max_nsec )
+      {
+        Pri_lst[ipri].max_nsec *= 2 ;
+        Pri_lst[ipri].offset = (int *)realloc(Pri_lst[ipri].offset, Pri_lst[ipri].max_nsec*sizeof(int)) ;
+        Pri_lst[ipri].n = (int *)realloc(Pri_lst[ipri].n, Pri_lst[ipri].max_nsec*sizeof(int)) ;
+        Pri_lst[ipri].data = (packrec_t **)realloc(Pri_lst[ipri].data, Pri_lst[ipri].max_nsec*sizeof(packrec_t *)) ;
+      }
+
+      Pri_lst[ipri].offset[nsec] = offset ;
+      Pri_lst[ipri].n[nsec] = n ;
+      Pri_lst[ipri].data[nsec] = arec ;
+      Pri_lst[ipri].nsec++ ;
+    }
+#endif
     if ( found1 == 0 )      /* not found; add to beginning of list */
     {
       lp4 = RSL_MALLOC( rsl_list_t, 1 ) ;

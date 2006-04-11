@@ -282,12 +282,21 @@ RSL_TO_CHILD_INFO ( d_p, n_p, msize_p,
 RSL_TO_CHILD_MSG ( nbuf_p, buf )
   int_p
     nbuf_p ;     /* (I) Number of bytes to be packed. */
+#ifndef NEC_TYPE4B
   char *
     buf ;        /* (I) Buffer containing the data to be packed. */
+#else
+  float *
+    buf ;        /* (I) Buffer containing the data to be packed. */
+#endif
 {
   int kiddex ;
   int nbuf ;
   int P ;
+#ifdef NEC_TYPE4B
+  float * dist ;
+  int i ;
+#endif
 
   RSL_TEST_ERR(buf==NULL,"2nd argument is NULL.  Field allocated?") ;
 
@@ -358,7 +367,16 @@ RSL_TO_CHILD_MSG ( nbuf_p, buf )
   Psize[P] += s_msize + sizeof( bcast_point_desc_t ) ;
 
   /* pack the buffer associated with stage[kiddex] */
+#ifndef NEC_TYPE4B
   bcopy( buf, &(stage[ kiddex ].p[ stage[ kiddex ].curs ]), nbuf ) ;
+#else
+  dist = (float *) &(stage[ kiddex ].p[ stage[ kiddex ].curs ]) ;
+#pragma cdir nodep
+  for ( i = 0 ; i < nbuf / 4 ; i++ )
+  {
+    *(dist++) = *(buf++) ;
+  }
+#endif
   stage[ kiddex ].curs += nbuf ;
 
 }
@@ -481,6 +499,11 @@ RSL_BCAST_MSGS ()
   int msglen, mdest, mtag ;
   int ii ;
   int ig, jg ;
+#ifdef NEC_TYPE4B
+  float * from ;
+  float * to ;
+  int i ;
+#endif
 
   RSL_TEST_ERR( stage == NULL,
     "RSL_BCAST_MSGS: rsl_to_child_info not called first" ) ;
@@ -539,7 +562,17 @@ RSL_BCAST_MSGS ()
       pdesc.cn = pt->cn ;
       bcopy( &pdesc, &work[curs], sizeof( bcast_point_desc_t )) ;
       curs += sizeof( bcast_point_desc_t ) ;
+#ifndef NEC_TYPE4B
       bcopy( pt->p, &work[curs], s_msize ) ;
+#else
+      from = (float *) pt->p ;
+      to = (float *) &work[curs] ;
+#pragma cdir nodep
+      for ( i = 0 ; i < s_msize / 4 ; i++ )
+      {
+        *(to++) = *(from++) ;
+      }
+#endif
 
 #if 0
 {
@@ -710,9 +743,18 @@ RSL_FROM_PARENT_INFO ( i_p, j_p, ig_p, jg_p, cm_p, cn_p,
 RSL_FROM_PARENT_MSG ( len_p, buf )
   int_p
     len_p ;          /* (I) Number of bytes to unpack. */
+#ifndef NEC_TYPE4B
   char *
     buf ;            /* (O) Destination buffer. */
+#else
+  float *
+    buf ;            /* (O) Destination buffer. */
+#endif
 {
+#ifdef NEC_TYPE4B
+  float * dist ;
+  int i ;
+#endif
   if ( *len_p <= 0 ) return ;
   if ( *len_p > s_remaining ) 
   {
@@ -720,9 +762,18 @@ RSL_FROM_PARENT_MSG ( len_p, buf )
 "RSL_FROM_PARENT_MSG:\n   Requested number of bytes (%d) exceeds %d, the number remaining for this point.\n", *len_p, s_remaining) ;
     RSL_TEST_WRN(1,mess) ;
   }
+#ifndef NEC_TYPE4B
   bcopy( &(s_parent_msgs[s_parent_msgs_curs]),
          buf,
          *len_p ) ;
+#else
+  dist = (float *) &(s_parent_msgs[s_parent_msgs_curs]) ;
+#pragma cdir nodep
+  for ( i = 0 ; i < *len_p / 4 ; i++ )
+  {
+    *(buf++) = *(dist++) ;
+  }
+#endif
 
 #if 0
 {
@@ -954,6 +1005,11 @@ rsl_ready_bcast( d_p, n_p, msize_p )
   int kidid ;
   int ig, jg, kig, kjg, cn, cm ;
   int P ;
+#ifdef NEC_TUNE
+  int size ;
+  int myproc ;
+  int * list ;
+#endif
 
   s_msize = *msize_p ;
   s_d = *d_p ;
@@ -1015,6 +1071,7 @@ rsl_ready_bcast( d_p, n_p, msize_p )
   if ( s_ninfo->bcast_Xlist == NULL )
   {
     /* traverse backwards so that Xlist can be constructed easily frontwards */
+#ifndef NEC_TUNE
     for ( jg = s_nlen-1 ; jg >=0 ; jg-- )
     {
       for ( ig = s_mlen-1 ; ig >= 0 ; ig-- )
@@ -1053,6 +1110,98 @@ rsl_ready_bcast( d_p, n_p, msize_p )
         }
       }
     }
+#else
+    list = malloc( (s_irax_n*s_irax_m*s_nlen*s_mlen+1) * sizeof(int) ) ;
+    size = 0 ;
+    for ( cn = s_irax_n-1 ; cn >= 0; cn-- )
+    {
+      for ( cm = s_irax_m-1 ; cm >= 0; cm-- )
+      {
+#pragma cdir nodep
+        for ( i = s_nlen*s_mlen-1 ; i >= 0; i-- )
+        {
+          pt = &(s_ddomain[i]) ;
+#if ( HOST_NODE == 0 )
+#  if ( MON_LOW == 0 )
+          myproc = pt->P ;
+#  else
+          myproc = pt->P ;
+#  endif
+#else
+#  if ( MON_LOW == 0 )
+          myproc = pt->P ;
+#  else
+          myproc = pt->P + 1 ;
+#  endif
+#endif
+          if ( pt->valid == RSL_VALID && myproc == rsl_myproc )
+          {
+            if ((kid=pt->children_p) != NULL )
+            {
+              kidid = kid->child[INDEX_2(cn,cm,s_irax_m)] ;
+              kig = ID_IDEX( kidid ) ;
+              kjg = ID_JDEX( kidid ) ;
+              pt2 = &(s_ndomain[INDEX_2(kjg,kig,s_mlen_nst)]) ;
+              if ( pt2->valid == RSL_VALID && ID_DOMAIN(kidid)==s_nst)
+              {
+                size++ ;
+                *(list+size) = i ;
+              }
+            }
+          }
+        }
+      }
+    }
+    dp = RSL_MALLOC( par_info_t, size ) ;
+    lp = RSL_MALLOC( rsl_list_t, size ) ;
+    for ( cn = s_irax_n-1 ; cn >= 0; cn-- )
+    {
+      for ( cm = s_irax_m-1 ; cm >= 0; cm-- )
+      {
+        for ( i = 1 ; i <= size ; i++ )
+        {
+          pt = &(s_ddomain[*(list+i)]) ;
+#if ( HOST_NODE == 0 )
+#  if ( MON_LOW == 0 )
+          myproc = pt->P ;
+#  else
+          myproc = pt->P ;
+#  endif
+#else
+#  if ( MON_LOW == 0 )
+          myproc = pt->P ;
+#  else
+          myproc = pt->P + 1 ;
+#  endif
+#endif
+          if ( pt->valid == RSL_VALID && myproc == rsl_myproc )
+          {
+            if ((kid=pt->children_p) != NULL )
+            {
+              kidid = kid->child[INDEX_2(cn,cm,s_irax_m)] ;
+              kig = ID_IDEX( kidid ) ;
+              kjg = ID_JDEX( kidid ) ;
+              pt2 = &(s_ndomain[INDEX_2(kjg,kig,s_mlen_nst)]) ;
+              if ( pt2->valid == RSL_VALID && ID_DOMAIN(kidid)==s_nst)
+              {
+                dp->ig = *(list+i) % s_mlen ;
+                dp->jg = *(list+i) / s_mlen ;
+                dp->cn = cn ;
+                dp->cm = cm ;
+                dp->kidid = kidid ;
+                lp->data = dp ;
+                lp->next = s_ninfo->bcast_Xlist ;
+                s_ninfo->bcast_Xlist = lp ;
+                dp++ ;
+                lp++ ;
+              }
+            }
+          }
+        }
+      }
+    }
+    free( list ) ;
+#endif
   }
   Xlist = s_ninfo->bcast_Xlist ;
 

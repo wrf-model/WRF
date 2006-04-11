@@ -1205,8 +1205,13 @@ trim_domain( dom, mmax, nmax, mtrim, ntrim )
   }
 }
 
+#ifndef NEC_TUNE
 #define PTEST(P) (!(P.valid==RSL_VALID && P.trimmed == 0)) 
 #define QTEST(P) (!(P.valid==RSL_VALID && P.trimmed == 0 && P.cross == 1 )) 
+#else
+#define PTEST(P) (!(P.valid==RSL_VALID & P.trimmed == 0)) 
+#define QTEST(P) (!(P.valid==RSL_VALID & P.trimmed == 0 & P.cross == 1 )) 
+#endif
 
 
 work_out_bdy( dom, mmax, nmax )
@@ -1220,6 +1225,14 @@ work_out_bdy( dom, mmax, nmax )
   rsl_point_t *p ;
   int *wrk_bdy1, *wrk_dbdy1 ;
   int *wrk_bdy2, *wrk_dbdy2 ;
+#ifdef NEC_TUNE
+  int ii ;
+  int jj ;
+  int Tdmlow ;
+  int Tdmhigh ;
+  int Tdnlow ;
+  int Tdnhigh ;
+#endif
 
 /* this first section works out the distance and direction to the "closest"
    boundary. */
@@ -1233,6 +1246,7 @@ work_out_bdy( dom, mmax, nmax )
 #pragma csd parallel for private(j, i, idx, p)
   for ( j = 0 ; j < nmax ; j++ )
 #pragma _CRI concurrent
+#pragma cdir nodep
     for ( i = 0 ; i < mmax ; i++ )
     {
       idx = INDEX_2(j,i,mmax) ;
@@ -1257,9 +1271,11 @@ work_out_bdy( dom, mmax, nmax )
 #pragma csd parallel for private(j, i, idx, p)
   for ( j = 0 ; j < nmax ; j++ )
 #pragma _CRI concurrent
+#pragma cdir nodep
     for ( i = 0 ; i < mmax ; i++ )
     {
       idx = INDEX_2(j,i,mmax) ;
+#ifndef NEC_TUNE
       p = &(dom[ idx ]) ;
       if ( p->valid == RSL_VALID && p->trimmed == 0 )
       {
@@ -1273,12 +1289,27 @@ work_out_bdy( dom, mmax, nmax )
 	p->bdy_cclockwise = RSL_INVALID ;
 	p->bdy_clockwise = RSL_INVALID ;
       }
+#else
+      if ( dom[idx].valid == RSL_VALID && dom[idx].trimmed == 0 )
+      {
+        dom[idx].dbdy = wrk_dbdy1[ idx ] ;
+        dom[idx].bdy_cclockwise = wrk_bdy1[ idx ] ;
+        dom[idx].bdy_clockwise = wrk_bdy2[ idx ] ; 
+      }
+      else
+      {
+        dom[idx].dbdy = RSL_INVALID ;
+        dom[idx].bdy_cclockwise = RSL_INVALID ;
+        dom[idx].bdy_clockwise = RSL_INVALID ;
+      }
+#endif
     }
 
 /* CROSS GRID */
 #pragma csd parallel for private(j, i, idx, p)
   for ( j = 0 ; j < nmax ; j++ )
 #pragma _CRI concurrent
+#pragma cdir nodep
     for ( i = 0 ; i < mmax ; i++ )
     {
       idx = INDEX_2(j,i,mmax) ;
@@ -1304,6 +1335,7 @@ work_out_bdy( dom, mmax, nmax )
 #pragma csd parallel for private(j, i, idx, p)
   for ( j = 0 ; j < nmax ; j++ )
 #pragma _CRI concurrent
+#pragma cdir nodep
     for ( i = 0 ; i < mmax ; i++ )
     {
       idx = INDEX_2(j,i,mmax) ;
@@ -1377,33 +1409,69 @@ work_out_bdy( dom, mmax, nmax )
       if ( p->valid == RSL_VALID && p->trimmed == 0 )
       {
         /* zip down til we find the mlow boundary */
+#ifndef NEC_TUNE
 #pragma _CRI concurrent
         for ( dmlow = 1 ; i-dmlow >= 0 ; dmlow++ )
         {
           if ( PTEST(dom[INDEX_2(j,i-dmlow,mmax)])) break ;
         }
         dmlow-- ;
+#else
+        for ( ii = 1 ; ii <= i ; ii++ )
+        {
+          if ( PTEST(dom[INDEX_2(j,i-ii,mmax)])) break ;
+        }
+        dmlow = ii - 1 ;
+        Tdmlow = dmlow ;
+#endif
         /* zip up til we find the mhigh boundary */
+#ifndef NEC_TUNE
 #pragma _CRI concurrent
         for ( dmhigh = 1 ; i+dmhigh < mmax ; dmhigh++ )
         {
           if ( PTEST(dom[INDEX_2(j,i+dmhigh,mmax)])) break ;
         }
         dmhigh-- ;
+#else
+        for ( ii = 1 ; ii < mmax-i ; ii++ )
+        {
+          if ( PTEST(dom[INDEX_2(j,i+ii,mmax)])) break ;
+        }
+        dmhigh = ii - 1 ;
+        Tdmhigh = dmhigh ;
+#endif
         /* zip west til we find the nlow boundary */
+#ifndef NEC_TUNE
 #pragma _CRI concurrent
         for ( dnlow = 1 ; j-dnlow >= 0 ; dnlow++ )
         {
           if ( PTEST(dom[INDEX_2(j-dnlow,i,mmax)])) break ;
         }
         dnlow-- ;
+#else
+        for ( jj = 1 ; jj <= j ; jj++ )
+        {
+          if ( PTEST(dom[INDEX_2(j-jj,i,mmax)])) break ;
+        }
+        dnlow = jj - 1 ;
+        Tdnlow = dnlow ;
+#endif
         /* zip east til we find the nhigh boundary */
+#ifndef NEC_TUNE
 #pragma _CRI concurrent
         for ( dnhigh = 1 ; j+dnhigh < nmax ; dnhigh++ )
         {
           if ( PTEST(dom[INDEX_2(j+dnhigh,i,mmax)])) break ;
         }
         dnhigh-- ;
+#else
+        for ( jj = 1 ; jj < nmax-j ; jj++ )
+        {
+          if ( PTEST(dom[INDEX_2(j+jj,i,mmax)])) break ;
+        }
+        dnhigh = jj - 1 ;
+        Tdnhigh = dnhigh ;
+#endif
 
         p->dist_mlow  = dmlow+1  ;		/* make 1 based for fortran */
         p->dist_mhigh = dmhigh+1 ;
@@ -1426,33 +1494,69 @@ work_out_bdy( dom, mmax, nmax )
       if ( p->valid == RSL_VALID && p->trimmed == 0 && p->cross == 1 )
       {
         /* zip down til we find the mlow boundary */
+#ifndef NEC_TUNE
 #pragma _CRI concurrent
         for ( dmlow = 1 ; i-dmlow >= 0 ; dmlow++ )
         {
           if ( QTEST(dom[INDEX_2(j,i-dmlow,mmax)])) break ;
         }
         dmlow-- ;
+#else
+        for ( ii = 1 ; ii <= i ; ii++ )
+        {
+          if ( QTEST(dom[INDEX_2(j,i-ii,mmax)])) break ;
+        }
+        dmlow = ii - 1 ;
+        Tdmlow = dmlow ;
+#endif
         /* zip up til we find the mhigh boundary */
+#ifndef NEC_TUNE
 #pragma _CRI concurrent
         for ( dmhigh = 1 ; i+dmhigh < mmax ; dmhigh++ )
         {
           if ( QTEST(dom[INDEX_2(j,i+dmhigh,mmax)])) break ;
         }
         dmhigh-- ;
+#else
+        for ( ii = 1 ; ii < mmax-i ; ii++ )
+        {
+          if ( QTEST(dom[INDEX_2(j,i+ii,mmax)])) break ;
+        }
+        dmhigh = ii - 1 ;
+        Tdmhigh = dmhigh ;
+#endif
         /* zip west til we find the nlow boundary */
+#ifndef NEC_TUNE
 #pragma _CRI concurrent
         for ( dnlow = 1 ; j-dnlow >= 0 ; dnlow++ )
         {
           if ( QTEST(dom[INDEX_2(j-dnlow,i,mmax)])) break ;
         }
         dnlow-- ;
+#else
+        for ( jj = 1 ; jj <= j ; jj++ )
+        {
+          if ( QTEST(dom[INDEX_2(j-jj,i,mmax)])) break ;
+        }
+        dnlow = jj - 1 ;
+        Tdnlow = dnlow ;
+#endif
         /* zip east til we find the nhigh boundary */
+#ifndef NEC_TUNE
 #pragma _CRI concurrent
         for ( dnhigh = 1 ; j+dnhigh < nmax ; dnhigh++ )
         {
           if ( QTEST(dom[INDEX_2(j+dnhigh,i,mmax)])) break ;
         }
         dnhigh-- ;
+#else
+        for ( jj = 1 ; jj < nmax-j ; jj++ )
+        {
+          if ( QTEST(dom[INDEX_2(j+jj,i,mmax)])) break ;
+        }
+        dnhigh = jj - 1 ;
+        Tdnhigh = dnhigh ;
+#endif
 
         p->dist_mlow_x  = dmlow+1  ;		/* make 1 based for fortran */
         p->dist_mhigh_x = dmhigh+1 ;

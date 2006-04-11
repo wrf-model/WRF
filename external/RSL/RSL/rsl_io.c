@@ -1015,6 +1015,7 @@ RSL_WRITE ( unit_p, iotag_p, base, d_p, type_p, glen, llen  )
           break ;
 
         case IO3D_IKJ :
+#ifndef NEC_TUNE
           for ( ig = *is_write ; ig <= *ie_write ; ig++ )
           {
             min = ig - ioffset ;
@@ -1026,6 +1027,16 @@ RSL_WRITE ( unit_p, iotag_p, base, d_p, type_p, glen, llen  )
               cursor += tlen ;
             }
           }
+#else
+          maj = jg - joffset ;
+          min = *is_write - ioffset ;
+          for ( k = 0 ; k < glen[1] ; k++ )
+          {
+            dex = base+tlen*(min+llen[0]*(k+maj*llen[1])) ;
+            copymem(dex, tlen, &(pbuf[cursor+k*tlen]), tlen*glen[1], tlen, *ie_write-*is_write+1) ;
+          }
+          cursor += tlen*(*ie_write-*is_write+1)*glen[1] ;
+#endif
           break ;
 
         }

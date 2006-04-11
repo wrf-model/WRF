@@ -146,6 +146,18 @@ dstry_ptrec_list( recv_ptrec )
 
 rsl_processor_t idx_ ;
 
+#ifdef NEC_TUNE
+/*
+   NECNOTE: 
+   quick tables to speed up link list searching in routine check_local_pts.
+   tbl_'id'_... used for searching rsl_point_t id's.
+*/
+static int ntbl_id_max = 128 ; /* Note first allocation will be of size 256 */
+static int ntbl_id = 0 ;
+static rsl_point_id_t *tbl_id = NULL ;
+static rsl_ptrec_t **tbl_ptrec = NULL ;
+static rsl_procrec_t *prev_procrec = NULL ;
+#endif
 /* 1.1.1 (continued) */
 /* this routine is called for each point on the ghost point's stencil */
 check_local_pts( d, m, n, hm, hn, pt, ipt )
@@ -166,6 +178,9 @@ check_local_pts( d, m, n, hm, hn, pt, ipt )
   message_desc_t *msg ;
   rsl_domain_info_t *dinfo ;
   rsl_point_t *domain ;
+#ifdef NEC_TUNE
+  int i ;
+#endif
 
   dinfo = &(domain_info[d]) ;
   domain = dinfo->domain ;
@@ -179,6 +194,7 @@ check_local_pts( d, m, n, hm, hn, pt, ipt )
 /* 1.1.1.1.1 */
     id = POINTID(d,n,m) ;
     found = 0 ;
+#ifndef NEC_TUNE
     for ( lp = procrec->point_list ; lp != NULL ; lp = lp->next )
     {
       ptrec = (rsl_ptrec_t *)lp->data ;
@@ -188,6 +204,22 @@ check_local_pts( d, m, n, hm, hn, pt, ipt )
         break ;
       }
     }
+#else
+    if ( prev_procrec != procrec )
+    {
+      ntbl_id = 0 ;
+      prev_procrec = procrec ;
+    }
+    for ( i = 0 ; i < ntbl_id ; i++ )
+    {
+      if ( tbl_id[i] == id )
+      {
+        found = 1 ;
+        break ;
+      }
+    }
+    if ( found ) ptrec = tbl_ptrec[i] ;
+#endif
     if ( !found )       /* add it */
     {
       lp    = RSL_MALLOC( rsl_list_t, 1 ) ;
@@ -204,6 +236,17 @@ check_local_pts( d, m, n, hm, hn, pt, ipt )
       procrec->point_list = lp ;
       procrec->npts++ ;
       send_accum += sizeof( rsl_point_hdr_t ) ;
+#ifdef NEC_TUNE
+      if ( ntbl_id == ntbl_id_max || tbl_id == NULL )
+      {
+        ntbl_id_max *= 2 ;
+        tbl_id = (rsl_point_id_t *)realloc((void *)tbl_id, ntbl_id_max*sizeof(rsl_point_id_t *)) ;
+        tbl_ptrec = (rsl_ptrec_t **)realloc((void *)tbl_ptrec, ntbl_id_max*sizeof(rsl_ptrec_t *)) ;
+      }
+      tbl_id[ntbl_id] = id ;
+      tbl_ptrec[ntbl_id] = ptrec ;
+      ntbl_id++ ;
+#endif
     }
 
 /* 2.1.1.1.1 */

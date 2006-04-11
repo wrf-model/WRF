@@ -84,6 +84,55 @@
 
 #ifndef crayx1
 
+#ifdef NEC_TUNE
+void copymem( void *src,    /* Source address (byte) */
+              int src_inc,  /* Stride between source per copy (bytes) */
+              void *dest,   /* Destination address (byte) */
+              int dest_inc, /* Stride between destination per copy (bytes) */
+              int nbytes,   /* Number of bytes to move per copy (bytes) */
+              int nelems )  /* Number of times to repeat copy */
+{
+  /* Byte based pointers. */
+  char * src1b ;
+  char * dest1b ;
+  /* 4 byte based pointers. */
+  int * src4b ;
+  int * dest4b ;
+  /* 8 byte based pointers. */
+  long * src8b ;
+  long * dest8b ;
+  int outer ;
+  int inner ;
+
+  if ( (((long)src | (long)dest | src_inc | dest_inc | nbytes) & (sizeof(int) -1)) == 0 )
+  {
+    src4b = (int *)(src) ;
+    dest4b = (int *)(dest) ;
+    src_inc /= sizeof(int) ;
+    dest_inc /= sizeof(int) ;
+
+    for ( outer = 0 ; outer < nbytes/sizeof(int) ; outer++ )
+    {
+#pragma cdir nodep
+      for ( inner = 0 ; inner < nelems ; inner++ )
+      {
+        dest4b[outer + inner*dest_inc] = src4b[outer + inner*src_inc] ;
+      }
+    }
+  }
+  else
+  {
+    src1b = (char *) (src) ;
+    dest1b = (char *) (dest) ;
+    for ( inner = 0 ; inner < nelems ; inner++ )
+    {
+      bcopy(src1b, dest1b, nbytes) ;
+      src1b += src_inc ;
+      dest1b += dest_inc ;
+    }
+  }
+} /* copymem */
+#endif
 
 RSL_EXCH_STENCIL ( d_p, s_p )
   int_p
@@ -179,6 +228,7 @@ fprintf(stderr,"debug posting async recv for %d bytes from %d\n", procrec->unpac
 #if 0
 fprintf(stderr,"pack   base %lu, f90_index %d, sten=%d\n",base,pr->f90_table_index,s) ;
 #endif
+#ifndef NEC_TUNE
       for ( j = 0 ; j < pr->nelems ; j++ )
       {
 
@@ -195,6 +245,10 @@ pr->offset, j, pr->stride ) ;
 	      &(pbuf[curs]),pr->n) ;
         curs += pr->n ;
       }
+#else
+      copymem((char *)(base) + pr->offset, pr->stride, &(pbuf[curs]), pr->n, pr->n, pr->nelems) ;
+      curs += pr->n*pr->nelems ;
+#endif
     }
     if ( curs > 0 )
     {
@@ -256,12 +310,17 @@ fprintf(stderr,"debug sending %d bytes to %d, sten=%d\n", curs, mdest, s ) ;
 #if 0
 fprintf(stderr,"unpack base %lu, f90_index %d, sten=%d\n",base,pr->f90_table_index,s) ;
 #endif
+#ifndef NEC_TUNE
           for ( j = 0 ; j < pr->nelems ; j++ )
           {
             bcopy(&(pbuf[curs]),
 		 (char *)(base) + pr->offset + j * pr->stride, pr->n) ;
             curs += pr->n ;
 	  }
+#else
+          copymem(&(pbuf[curs]), pr->n, (char *)(base) + pr->offset, pr->stride, pr->n, pr->nelems) ;
+          curs += pr->n*pr->nelems ;
+#endif
 	}
 	if ( curs == 0 )
 	{
@@ -423,6 +482,7 @@ fprintf(stderr,"pack   base %lu, f90_index %d, sten=%d\n",base,pr->f90_table_ind
         for (j = 0; j < nwrds; j++) {
 #pragma _CRI ivdep
 #pragma prefervector 
+#pragma cdir nodep
            for (k = 0; k < pr->nelems; k++) {
               bufout[k*nwrds+j] = bufin[k*inc+j];
            }
@@ -434,6 +494,7 @@ fprintf(stderr,"pack   base %lu, f90_index %d, sten=%d\n",base,pr->f90_table_ind
         int iwd2 = 0;
         for (j = 0; j < pr->nelems; j++) {
 #pragma _CRI ivdep
+#pragma cdir nodep
           for (k = 0; k < nwrds; k++) {
             bufout[iwd++] = bufin[iwd2+k];
           }
@@ -509,6 +570,7 @@ fprintf(stderr,"unpack base %lu, f90_index %d, sten=%d\n",base,pr->f90_table_ind
             for (j = 0; j < nwrds; j++) {
 #pragma _CRI ivdep
 #pragma prefervector 
+#pragma cdir nodep
                 for (k = 0; k < pr->nelems; k++) {
                 bufout[k*inc+j] = bufin[k*nwrds+j];
               }
@@ -520,6 +582,7 @@ fprintf(stderr,"unpack base %lu, f90_index %d, sten=%d\n",base,pr->f90_table_ind
             int iwd2 = 0;
             for (j = 0; j < pr->nelems; j++) {
 #pragma _CRI ivdep
+#pragma cdir nodep
               for (k = 0; k < nwrds; k++) {
                 bufout[iwd2+k] = bufin[iwd++];
               }

@@ -68,6 +68,16 @@ typedef struct bufdesc {
 static bufdesc_t buftab[2][RSL_MAXPROC] ;
 static int first = 1 ;
 
+#ifdef NEC_TUNE
+/*
+   NECNOTE:
+   modify RSL message buffering scheme to utilize NEC Global Memory
+   to aid in performance of MPI Message Passing on Multi-node SX machines.
+*/
+#include <mpi.h>
+#include <malloc.h>
+#define MAXBUFSIZE 1024*1024*64 /* NEC Global Memory buffer size */
+#endif
 /* 
    buffer_for_proc
 
@@ -94,6 +104,10 @@ buffer_for_proc( P, size, code )
   rsl_processor_t p ;
   int i, j ;
   char * ret ;
+#ifdef NEC_TUNE
+  static char * private_buf ; /* pointer to NEC Global Memory */
+  static int cur_indx ;       /* size of total user memory requests */
+#endif
 
   ret = NULL ;
   if ( first )
@@ -105,22 +119,33 @@ buffer_for_proc( P, size, code )
       buftab[0][p].size = 0 ;    
       buftab[1][p].size = 0 ;    
     }
+#ifdef NEC_TUNE
+    MPI_Alloc_mem(MAXBUFSIZE, MPI_INFO_NULL, &private_buf) ;
+    cur_indx = 0 ;
+#endif
     first = 0 ;
   }
   if ( P < 0 || P >= RSL_MAXPROC )
   {
+#ifndef NEC_TUNE
     sprintf(mess,"Bad P argument to buffer_for_proc.  P = %d. Has RSL_MESH been called?\n",P) ;
     RSL_TEST_ERR( 1, mess ) ;
+#else
+    fprintf(stderr,"Bad P argument to buffer_for_proc.  P = %d. Has RSL_MESH been called?\n",P) ;
+#endif
   }
   if ( code == RSL_FREEBUF )
   {
 /* fprintf(stderr,"buffer_for_proc freeing buffer %d\n",P) ; */
+/* NECNOTE: do not free Global Memory */
+#ifndef NEC_TUNE
     if ( buftab[0][P].buf != NULL ) RSL_FREE( buftab[0][P].buf ) ;
     if ( buftab[1][P].buf != NULL ) RSL_FREE( buftab[1][P].buf ) ;
     buftab[0][P].buf  = NULL ;    
     buftab[1][P].buf  = NULL ;    
     buftab[0][P].size = 0 ;    
     buftab[1][P].size = 0 ;    
+#endif
 /* show_tot_size() ; */
   }
   else if ( code == RSL_SENDBUF || code == RSL_RECVBUF )
@@ -130,9 +155,28 @@ buffer_for_proc( P, size, code )
 /* fprintf(stderr,"buffer_for_proc %s %d : was %d, increasing to %d\n",
          (code == RSL_SENDBUF)?"RSL_SENDBUF":"RSL_RECVBUF",
 	 P,buftab[code][P].size, size+512) ; */
+#ifndef NEC_TUNE
       if ( buftab[code][P].buf != NULL ) RSL_FREE( buftab[code][P].buf ) ;
       buftab[code][P].buf = RSL_MALLOC(char,size+512) ;
       buftab[code][P].size = size ;
+#else
+/*
+   NECNOTE:
+   if we exceed the GLOBAL MEMORY allocated, stop program.
+   user should increase MAXBUFSIZE above to fix problem.
+*/
+      if( (cur_indx+size) > MAXBUFSIZE )
+      {
+        fprintf(stderr,
+          "<<<buf_for_proc>>> exceeded MAXBUFSIZE %ld requested %ld bytes",
+          MAXBUFSIZE, cur_indx+size) ;
+        exit(3) ;
+      }
+      buftab[code][P].buf = private_buf ;
+      buftab[code][P].size = size ;
+      private_buf =  private_buf + size+512 ;
+      cur_indx = cur_indx + size+512 ;
+#endif
 /* show_tot_size() ; */
     }
     ret = buftab[code][P].buf ;
@@ -150,7 +194,11 @@ show_tot_size()
     acc += buftab[0][P].size ;
     acc += buftab[1][P].size ;
   }
+#ifndef NEC_TUNE
   fprintf(stderr,"Total bytes allocated for buffers: %d\n", acc ) ;
+#else
+  printf("Total bytes allocated for buffers: %d\n", acc ) ;
+#endif
 }
 
 int

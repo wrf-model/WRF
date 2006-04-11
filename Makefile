@@ -301,9 +301,9 @@ ext :
 framework :
 	@ echo '--------------------------------------'
 	( cd frame ; $(MAKE) framework; \
-	cd ../external/io_netcdf ; make NETCDFPATH="$(NETCDFPATH)" FC="$(FC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP)" diffwrf; \
-	cd ../io_grib1 ; rm wgrib ; make FC="$(FC) -I. $(FCBASEOPTS)" CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" wgrib ; \
-	cd ../io_int ; $(MAKE) SFC="$(SFC) $(FCBASEOPTS)" FC="$(FC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP)" diffwrf ; cd ../../frame )
+	cd ../external/io_netcdf ; make NETCDFPATH="$(NETCDFPATH)" FC="$(SFC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP)" diffwrf; \
+	cd ../io_grib1 ; rm wgrib ; make FC="$(SFC) -I. $(FCBASEOPTS)" CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" wgrib ; \
+	cd ../io_int ; $(MAKE) SFC="$(SFC) $(FCBASEOPTS)" FC="$(SFC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP)" diffwrf ; cd ../../frame )
 
 shared :
 	@ echo '--------------------------------------'

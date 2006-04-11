@@ -224,7 +224,9 @@ FINISHED_TEST_LIST:
 #	NCAR machines.
 
 if ( ( $BASELINE == GENERATE ) || ( $BASELINE == COMPARE ) ) then
-	if ( `uname` == AIX ) then
+	if ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` != bs ) && ( `hostname | cut -c 1-2` != bv ) ) ) then
+		set SAVE_DIR = /ptmp/${USER}/BASELINE/`uname`
+	else if   ( `uname` == AIX ) then
 		set SAVE_DIR = /ptmp/${USER}/BASELINE/`uname`
 	else if ( ( `uname` == OSF1 ) && ( `hostname | cut -c 1-6` == joshua ) ) then
 		set SAVE_DIR = /data3/mp/${USER}/BASELINE/`uname`
@@ -308,7 +310,9 @@ FOUND_SELECTED_TEST:
 		#	save the data to/read the data from.
 
 		if ( ( $BASELINE == GENERATE ) || ( $BASELINE == COMPARE ) ) then
-			if ( `uname` == AIX ) then
+			if ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` != bs ) && ( `hostname | cut -c 1-2` != bv ) ) ) then
+				set SAVE_DIR = /ptmp/${USER}/BASELINE/`uname`/$tests[$count_test]
+			else if   ( `uname` == AIX ) then
 				set SAVE_DIR = /ptmp/${USER}/BASELINE/`uname`/$tests[$count_test]
 			else if ( ( `uname` == OSF1 ) && ( `hostname | cut -c 1-6` == joshua ) ) then
 				set SAVE_DIR = /data3/mp/${USER}/BASELINE/`uname`/$tests[$count_test]
@@ -369,7 +373,7 @@ EOF
 		#	bluevista.  After submission, we wait around until it completes, and then we send in 
 		#	the next one.
 
-		if      ( ( `uname` == AIX ) && ( `hostname | cut -c 1-2` == bs ) ) then
+		if      ( ( `uname` == AIX ) && ( `hostname | cut -c 1-2` == bs   ) ) then
 			llsubmit reg.foo.$TEST_NUM[$count_test].$tests[$count_test] >&! llsub.out
 			set ok = 0
 			set in_already = 0
@@ -399,6 +403,24 @@ EOF
 			end
 			cp /ptmp/$USER/wrf_regression.$joe_id/wrftest.output wrftest.output.$TEST_NUM[$count_test].$tests[$count_test]
 			rm bsub.out bjobs.report
+		else if ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` != bs ) && ( `hostname | cut -c 1-2` != bv ) ) ) then
+			llsubmit reg.foo.$TEST_NUM[$count_test].$tests[$count_test] >&! llsub.out
+			set ok = 0
+			set in_already = 0
+			while ( $ok == 0 )
+				sleep 10 ; llq -u $USER >&! llq.report
+				set llsubmit_name_all   = `cat llsub.out  | grep '"b'  | cut -d\" -f2`
+				set llsubmit_name_front = `echo $llsubmit_name_all | cut -d\. -f1`
+				set llsubmit_name_end   = `echo $llsubmit_name_all | cut -d\. -f5`
+				grep $llsubmit_name_front llq.report | grep $llsubmit_name_end >& /dev/null
+				set ok = $status
+				if ( ( $ok == 0 ) && ( $in_already == 0 ) ) then
+					set in_already = 1
+					set joe_id = `cat llsub.out | grep '"b'  | cut -d\" -f2 | cut -d. -f5`
+				endif
+			end
+			cp /ptmp/$USER/wrf_regression.$joe_id/wrftest.output wrftest.output.$TEST_NUM[$count_test].$tests[$count_test]
+			rm llsub.out llq.report
 
 		#	On the "other" non-queued machines, we just execute the script and wait until
 		#	we get the process returning control, then we move on.
@@ -416,6 +438,11 @@ EOF
 		endif
 	endif
 end
+
+if ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` != bs ) && ( `hostname | cut -c 1-2` != bv ) ) ) then
+	echo no web page building, stopping
+	exit
+endif
 
 PASSFAIL:
 

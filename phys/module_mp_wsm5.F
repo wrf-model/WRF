@@ -1,5 +1,6 @@
 #define WSM5_OPTIM
 #define INL
+#define INL_STATFUN
 #if (RWORDSIZE == DWORDSIZE)
 #  define VREC(A,B,C) vrec(A,B,C)
 #  define VLOG(A,B,C) vlog(A,B,C)
@@ -332,7 +333,7 @@ real qrs1_points, qrs2_points
 !     diffus: diffusion coefficient of the water vapor
 !     viscos: kinematic viscosity(m2s-1)
 !
-# if 1
+# ifdef INL_STATFUN
 #   define DIFFUS(x,y) (8.794e-5 * PWR(x,1.81) / y        )
 #   define VISCOS(x,y) (1.496e-6 * ((x)*sqrt(x)) /((x)+120.)/(y)  )
 #   define XKA(x,y) (1.414e3*VISCOS(x,y)*(y))
@@ -639,9 +640,19 @@ STARTTIME
 !       (T>T0: S->R)
 !----------------------------------------------------------------
                 xlf = xlf0
+#ifdef INL_STATFUN
+                work2(i,k)= (exp(log(((1.496e-6*((t(i,k))*sqrt(t(i,k))) &
+                            /((t(i,k))+120.)/(den(i,k)))/(8.794e-5      &
+                            *exp(log(t(i,k))*(1.81))/p(i,k))))          &
+                            *((.3333333)))/sqrt((1.496e-6*((t(i,k))     &
+                            *sqrt(t(i,k)))/((t(i,k))+120.)/(den(i,k)))) &
+                            *sqrt(sqrt(den0/(den(i,k)))))
+#else
                 work2(i,k) = VENFAC(p(i,k),t(i,k),den(i,k))
+#endif
                 coeres = rslope2(i,k,2)*sqrt(rslope(i,k,2)*rslopeb(i,k,2))
-                psml(i,k) = XKA(t(i,k),den(i,k))/xlf*(t0c-t(i,k))*pi/2. &
+                psml(i,k) = XKA(t(i,k),den(i,k))                        &
+                            /xlf*(t0c-t(i,k))*pi/2.                     &
                             *n0sfac(i,k)*(precs1*rslope2(i,k,2)+precs2  &
                             *work2(i,k)*coeres)
                 psml(i,k) = min(max(psml(i,k)*dtcld/mstep(i),           &

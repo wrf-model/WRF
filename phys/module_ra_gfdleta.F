@@ -1357,7 +1357,7 @@ CONTAINS
 !
       DO I=MYIS,MYIE
         FCTR=PINT(I,2)/(PINT(I,2)-PINT(I,1))
-        POZN(I,L)=FCTR*(PMID(I,1)-PINT(I,1))
+        POZN(I,1)=FCTR*(PMID(I,1)-PINT(I,1))
       ENDDO
 !
       CALL OZON2D(LM,POZN,XLAT,OZN,                                &

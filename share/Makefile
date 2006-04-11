@@ -92,7 +92,7 @@ solve_interface.o: solve_em.int ../frame/module_domain.o ../frame/module_configu
 		../frame/module_timing.o ../frame/module_driver_constants.o \
 		../frame/module_wrf_error.o
 
-start_domain: start_domain_em.int ../frame/module_domain.o ../frame/module_configure.o
+start_domain.o: start_domain_em.int ../frame/module_domain.o ../frame/module_configure.o
 
 module_bc.o: ../frame/module_configure.o ../frame/module_state_description.o \
 		../frame/module_wrf_error.o

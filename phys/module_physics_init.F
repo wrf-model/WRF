@@ -42,7 +42,7 @@ CONTAINS
                          CLDFRA,GLW,GSW,EMISS,LU_INDEX,          &
                          XLAT,XLONG,ALBEDO,ALBBCK,GMT,JULYR,JULDAY,&
                          TMN,XLAND,ZNT,Z0,UST,MOL,PBLH,TKE_MYJ,  &
-                         EXCH_H,THC,SNOWC,MAVAIL,HFX,QFX,RAINBL,        &
+                         EXCH_H,THC,SNOWC,MAVAIL,HFX,QFX,RAINBL, &
                          TSLB,ZS,DZS,num_soil_layers,warm_rain,  & 
                          APR_GR,APR_W,APR_MC,APR_ST,APR_AS,      &
                          APR_CAPMA,APR_CAPME,APR_CAPMI,          &
@@ -284,6 +284,7 @@ integer myproc
 #endif
        MAVAIL(i,j)=1.0 
      ENDIF
+
    ENDDO
    ENDDO
 
@@ -294,11 +295,15 @@ integer myproc
 
      CALL landuse_init(lu_index, snowc, albedo, albbck, mavail, emiss,      &
                 znt, Z0, thc, xland, xice, julday, cen_lat, iswater, mminlu_loc,  &
+                grid%landuse_ISICE, grid%landuse_LUCATS,            &
+                grid%landuse_LUSEAS, grid%landuse_ISN,              &
+                grid%lu_state,                                      &
                 allowed_to_read , usebgalb ,                        &
                 ids, ide, jds, jde, kds, kde,                       &
                 ims, ime, jms, jme, kms, kme,                       &
                 its, ite, jts, jte, kts, kte                       ) 
    ENDIF
+
   ENDIF
 
 !-- convert zfull and zhalf to sigma values for ra_init (Eta CO2 needs these)
@@ -379,6 +384,8 @@ integer myproc
 !=====================================================================
    SUBROUTINE landuse_init(lu_index, snowc, albedo, albbck, mavail, emiss,  &
                 znt,Z0,thc,xland, xice, julday, cen_lat, iswater, mminlu, &
+                ISICE, LUCATS, LUSEAS, ISN,                         &
+                lu_state,                                           &
                 allowed_to_read , usebgalb ,                        &
                 ids, ide, jds, jde, kds, kde,                       &
                 ims, ime, jms, jme, kms, kme,                       &
@@ -398,29 +405,52 @@ integer myproc
    LOGICAL,  INTENT(IN)           :: allowed_to_read , usebgalb
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(IN   ) :: lu_index, snowc, xice
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(OUT  ) :: albedo, albbck, mavail, emiss, &
-                                                         znt, Z0, thc, xland
+                                                               znt, Z0, thc, xland
+   INTEGER , INTENT(INOUT)  :: ISICE, LUCATS, LUSEAS, ISN
+   REAL    , INTENT(INOUT)  , DIMENSION( : ) :: lu_state
 
 !---------------------------------------------------------------------
 ! Local
    CHARACTER*4 LUTYPE
    CHARACTER*80 :: message
    INTEGER  :: landuse_unit, LS, LC, LI, LUN, NSN
-   INTEGER  :: i, j, itf, jtf, is
-   INTEGER , PARAMETER :: max_cats = 100 , max_seas = 12 
+   INTEGER  :: i, j, itf, jtf, is, cats, seas, curs
    INTEGER , PARAMETER :: OPEN_OK = 0
    INTEGER :: ierr
+   INTEGER , PARAMETER :: max_cats = 100 , max_seas = 12 
+   REAL    , DIMENSION( max_cats, max_seas ) :: ALBD, SLMO, SFEM, SFZ0, THERIN, SFHC
+   REAL    , DIMENSION( max_cats )     :: SCFX
 ! save these fields in case nest moves or has to be reinitialized
 ! and this routine is called with allowed_to_read set to false
 ! note that by saving these, we're locking in the same landuse for
 ! the duration of a run; possible implications for long climate runs
-   INTEGER , SAVE :: ISICE, LUCATS, LUSEAS, ISN
-   REAL    , SAVE , DIMENSION( max_cats, max_seas ) :: ALBD, SLMO, SFEM, SFZ0, THERIN, SFHC
-   REAL    , SAVE , DIMENSION( max_cats )     :: SCFX
    LOGICAL :: found_lu, end_of_file
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
 
 !---------------------------------------------------------------------
    CALL wrf_debug( 100 , 'top of landuse_init' )
+
+! recover LU variables from state
+   IF ( 6*(max_cats*max_seas)+1*max_cats .GT. 7501 ) THEN
+      WRITE(message,*)'landuse_init: lu_state overflow. Make Registry dimspec p > ',6*(max_cats*max_seas)+1*max_cats
+   ENDIF
+   curs = 1
+   DO cats = 1, max_cats
+     SCFX(cats) =           lu_state(curs)         ; curs = curs + 1
+     DO seas = 1, max_seas
+       ALBD(cats,seas) =    lu_state(curs)         ; curs = curs + 1
+       SLMO(cats,seas) =    lu_state(curs)         ; curs = curs + 1
+       SFEM(cats,seas) =    lu_state(curs)         ; curs = curs + 1
+       SFZ0(cats,seas) =    lu_state(curs)         ; curs = curs + 1
+       SFHC(cats,seas) =    lu_state(curs)         ; curs = curs + 1
+       THERIN(cats,seas) =  lu_state(curs)         ; curs = curs + 1
+     ENDDO
+   ENDDO
+
+! Determine season (summer=1, winter=2)
+   ISN=1                                                            
+   IF(JULDAY.LT.105.OR.JULDAY.GT.288)ISN=2                         
+   IF(CEN_LAT.LT.0.0)ISN=3-ISN                                   
 
    FOUND_LU = .TRUE.
    IF ( allowed_to_read ) THEN
@@ -433,10 +463,6 @@ integer myproc
           CALL wrf_error_fatal ( message ) 
         END IF
       ENDIF
-! Determine season (summer=1, winter=2)
-      ISN=1                                                            
-      IF(JULDAY.LT.105.OR.JULDAY.GT.288)ISN=2                         
-      IF(CEN_LAT.LT.0.0)ISN=3-ISN                                   
 
 ! Read info from file LANDUSE.TBL
       IF(MMINLU.EQ.'OLD ')THEN
@@ -570,9 +596,24 @@ integer myproc
     endif
     CALL wrf_debug( 100 , 'returning from of landuse_init' )
 
+! restore LU variables from state
+    curs = 1
+    DO cats = 1, max_cats
+      lu_state(curs) = SCFX(cats)                 ; curs = curs + 1
+      DO seas = 1, max_seas
+        lu_state(curs) = ALBD(cats,seas)          ; curs = curs + 1
+        lu_state(curs) = SLMO(cats,seas)          ; curs = curs + 1
+        lu_state(curs) = SFEM(cats,seas)          ; curs = curs + 1
+        lu_state(curs) = SFZ0(cats,seas)          ; curs = curs + 1
+        lu_state(curs) = SFHC(cats,seas)          ; curs = curs + 1
+        lu_state(curs) = THERIN(cats,seas)        ; curs = curs + 1
+      ENDDO
+    ENDDO
+
     RETURN
         
    END SUBROUTINE landuse_init 
+
 !=====================================================================
    SUBROUTINE ra_init(grid,STEPRA,RADT,DT,RTHRATEN,RTHRATENLW,       & 
                       RTHRATENSW,CLDFRA,EMISS,cen_lat,JULYR,JULDAY,GMT,    &

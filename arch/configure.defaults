@@ -2414,8 +2414,9 @@ module_initialize_real.o start_domain.o :
 
 mediation_integrate.o : mediation_integrate.F
 module_dm.o : module_dm.F
+mediation_wrfmain.o : mediation_wrfmain.F
 
-mediation_integrate.o module_dm.o : 
+mediation_integrate.o module_dm.o mediation_wrfmain.o : 
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
@@ -2551,8 +2552,9 @@ module_initialize_real.o start_domain.o :
 
 mediation_integrate.o : mediation_integrate.F
 module_dm.o : module_dm.F
+mediation_wrfmain.o : mediation_wrfmain.F
 
-mediation_integrate.o module_dm.o : 
+mediation_integrate.o module_dm.o mediation_wrfmain.o : 
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
@@ -2670,8 +2672,9 @@ module_initialize_real.o start_domain.o :
 
 mediation_integrate.o : mediation_integrate.F
 module_dm.o : module_dm.F
+mediation_wrfmain.o : mediation_wrfmain.F
 
-mediation_integrate.o module_dm.o : 
+mediation_integrate.o module_dm.o mediation_wrfmain.o : 
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
@@ -2808,8 +2811,9 @@ module_initialize_real.o start_domain.o :
 
 mediation_integrate.o : mediation_integrate.F
 module_dm.o : module_dm.F
+mediation_wrfmain.o : mediation_wrfmain.F
 
-mediation_integrate.o module_dm.o : 
+mediation_integrate.o module_dm.o mediation_wrfmain.o : 
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
@@ -2944,8 +2948,9 @@ module_initialize_real.o start_domain.o :
 
 mediation_integrate.o : mediation_integrate.F
 module_dm.o : module_dm.F
+mediation_wrfmain.o : mediation_wrfmain.F
 
-mediation_integrate.o module_dm.o : 
+mediation_integrate.o module_dm.o mediation_wrfmain.o : 
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
@@ -3080,8 +3085,9 @@ module_initialize_real.o start_domain.o :
 
 mediation_integrate.o : mediation_integrate.F
 module_dm.o : module_dm.F
+mediation_wrfmain.o : mediation_wrfmain.F
 
-mediation_integrate.o module_dm.o : 
+mediation_integrate.o module_dm.o mediation_wrfmain.o : 
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
@@ -3217,8 +3223,9 @@ module_initialize_real.o start_domain.o :
 
 mediation_integrate.o : mediation_integrate.F
 module_dm.o : module_dm.F
+mediation_wrfmain.o : mediation_wrfmain.F
 
-mediation_integrate.o module_dm.o : 
+mediation_integrate.o module_dm.o mediation_wrfmain.o : 
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
@@ -3354,8 +3361,9 @@ module_initialize_real.o start_domain.o :
 
 mediation_integrate.o : mediation_integrate.F
 module_dm.o : module_dm.F
+mediation_wrfmain.o : mediation_wrfmain.F
 
-mediation_integrate.o module_dm.o : 
+mediation_integrate.o module_dm.o mediation_wrfmain.o : 
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
@@ -3496,8 +3504,9 @@ module_initialize_real.o start_domain.o :
 
 mediation_integrate.o : mediation_integrate.F
 module_dm.o : module_dm.F
+mediation_wrfmain.o : mediation_wrfmain.F
 
-mediation_integrate.o module_dm.o : 
+mediation_integrate.o module_dm.o mediation_wrfmain.o : 
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
@@ -3612,8 +3621,9 @@ module_initialize_real.o start_domain.o :
 
 mediation_integrate.o : mediation_integrate.F
 module_dm.o : module_dm.F
+mediation_wrfmain.o : mediation_wrfmain.F
 
-mediation_integrate.o module_dm.o : 
+mediation_integrate.o module_dm.o mediation_wrfmain.o : 
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
@@ -5223,6 +5233,125 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
+
+###########################################################
+
+#ARCH    PC Linux x86_64 (IA64 and Opteron), PGI compiler 5.2 or higher  (Single-threaded, RSL, Allows nesting)
+#        Note that for 5.1.x comment out -Mpia=fast
+#
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
+#
+DMPARALLEL      =       1
+MAX_PROC        =       1024
+FC              =       pgf90
+LD              =       pgf90
+CC              =       gcc
+SCC		=	$(CC)
+SFC             =       pgf90
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+FCOPTIM		=	-fastsse # -Mipa=fast
+FCDEBUG		=	#-g
+#FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree $(FCDEBUG)
+FCBASEOPTS      =       -w -byteswapio -Mfree $(FCDEBUG) # -Mlfs
+FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
+ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DGRIB1 -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
+                        -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
+                        -DTRIEDNTRUE   \
+			-DLIMIT_ARGS -DSTUBMPI
+PROMOTION	=	-r$(RWORDSIZE) -i4
+CFLAGS          =       -DLANDREADSTUB -DDM_PARALLEL -DWRF_RSL_IO \
+                        -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL/RSL $(ARCHFLAGS)
+INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
+                        -I../external -I../frame -I../share -I../phys -I../chem -I../inc
+PERL            =       perl
+REGISTRY        =       Registry
+LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
+                        -L../external/io_grib1 -lio_grib1 \
+			-L../external/io_int -lwrfio_int \
+			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
+LDFLAGS         =       -byteswapio $(FCFLAGS) CONFIGURE_LDFLAGS
+ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
+CPP             =       /lib/cpp -C -P -traditional
+POUND_DEF	=	-DNO_RRTM_PHYSICS  $(COREDEFS) -DNONSTANDARD_SYSTEM -DF90_STANDALONE -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
+CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL/RSL -C -P `cat ../inc/dm_comm_cpp_flags` $(ENVCOMPDEFS) $(POUND_DEF)
+AR              =       ar ru
+M4              =       m4
+RANLIB          =       ranlib
+NETCDFPATH	=	CONFIGURE_NETCDF_PATH
+CC_TOOLS        =       cc
+
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
+
+gen_comms.c : ../external/RSL/gen_comms.c
+	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
+          cat ../external/RSL/gen_comms.c >> ../tools/gen_comms.c )
+
+module_dm.F : ../external/RSL/module_dm.F
+	( /bin/cp module_dm_warning module_dm.F ; cat ../external/RSL/module_dm.F >> module_dm.F )
+
+wrfio_nf : 
+	( cd ../external/io_netcdf ; \
+	  make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCFLAGS) -w" TRADFLAG="-traditional" )
+
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; \
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" )
+
+wrfio_int : 
+	( cd ../external/io_int ; \
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
+
+esmf_time : 
+	( cd ../external/esmf_time_f90 ; \
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+../external/RSL/RSL/librsl.a :
+	( cd ../external/RSL/RSL ; make CC="$(CC)" CFLAGS='-DSTUBS' FC="$(FC) $(PROMOTION)" FFLAGS='-byteswapio' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST stub )
+
+# compile these without high optimization to speed compile
+solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
+module_io_mm5.o : module_io_mm5.F
+module_si_io.o : module_si_io.F
+module_io_wrf.o : module_io_wrf.F
+module_domain.o : module_domain.F
+module_start.o : module_start.F
+module_initialize.o : module_initialize.F
+module_initialize_b_wave.o : module_initialize_b_wave.F
+module_initialize_hill2d_x.o : module_initialize_hill2d_x.F
+module_initialize_quarter_ss.o : module_initialize_quarter_ss.F
+module_initialize_squall2d_x.o : module_initialize_squall2d_x.F
+module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
+module_initialize_real.o : module_initialize_real.F
+module_dm.o : module_dm.F
+start_domain.o : start_domain.F
+mediation_integrate.o : mediation_integrate.F
+module_configure.o : module_configure.F
+
+solve_interface.o                                              \
+shift_domain_em.o                                              \
+module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
+module_start.o module_initialize.o module_initialize_b_wave.o  \
+module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
+module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
+module_configure.o                                             \
+mediation_integrate.o \
+module_initialize_real.o module_dm.o start_domain.o :
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b 
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(RM) $*.b
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
+#	if [ ! -e $@ ] ; then \
+#	sleep 10 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
+#	fi
+#	if [ ! -e $@ ] ; then \
+#	sleep 30 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
+#	fi
+#	if [ ! -e $@ ] ; then \
+#	sleep 300 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
+#	fi
 
 ###########################################################
 #ARCH    Intel Itanium2 ia64 madison Linux  (e.g. mpp2 at PNNL) , efc71 compiler DM-Parallel (RSL_LITE, MPICH, Allows nesting )
@@ -8573,6 +8702,7 @@ MAX_PROC        =       1024
 FC              =       mpif90 -f90=pathf90
 LD              =       mpif90 -f90=pathf90
 CC              =       mpicc  -cc=pathcc
+SCC             =       pathcc
 SFC             =       pathf90
 NATIVE_RWORDSIZE=	4
 RWORDSIZE	=	$(NATIVE_RWORDSIZE)

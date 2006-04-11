@@ -8,7 +8,7 @@ MODULE module_date_time
   CHARACTER* 24 ::   start_date = '                        '
   CHARACTER* 24 ::   current_date
   INTEGER , PARAMETER :: len_current_date  = 24
-  REAL :: xtime
+  REAL , PRIVATE :: xtime
 
 !  1.  geth_idts (ndate, odate, idts)
 !  Get the time period between two dates.

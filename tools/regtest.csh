@@ -10,8 +10,15 @@
 # @ wall_clock_limit	= 21600
 # @ node		= 1
 # @ total_tasks		= 4
-# @ class		= share
+###################  NCAR  ########################
 # @ ja_report		= yes
+# @ class               = share
+###################  NCAR  ########################
+###################  NCEP  ########################
+## @ class              = dev
+## @ group              = devqpri
+## @ preferences        = Feature == "dev"
+###################  NCEP  ########################
 # @ queue
 
 #BSUB -x                                # exlusive use of node (not_shared)
@@ -40,8 +47,26 @@
 #	These need to be changed for your particular set of runs.  This is
 #	where email gets sent.
 
-set FAIL_MAIL = ( ${user}@ucar.edu )
-set GOOD_MAIL = ( ${user}@ucar.edu )
+if ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` != bs ) && ( `hostname | cut -c 1-2` != bv ) ) ) then
+	set FAIL_MAIL = ( ${user}@noaa.gov )
+	set GOOD_MAIL = ( ${user}@noaa.gov )
+
+	setenv MP_EAGER_LIMIT 65536
+	setenv MP_SHARED_MEMORY yes
+	setenv MP_SINGLE_THREAD yes
+	setenv MP_LABELIO yes
+	setenv MP_STDOUTMODE ordered
+
+	setenv OMP_NUM_THREADS 4
+	setenv XLSMPOPTS "parthds=4:spins=0:yields=0:stack=128000000:schedule=static"
+	setenv AIXTHREAD_SCOPE S
+	setenv AIXTHREAD_MNRATIO 1:1
+	setenv SPINLOOPTIME 1000
+	setenv YIELDLOOPTIME 1000
+else
+	set FAIL_MAIL = ( ${user}@ucar.edu )
+	set GOOD_MAIL = ( ${user}@ucar.edu )
+endif
 
 unalias cd cp rm ls pushd popd mv
 if ( `uname` == Linux ) alias banner echo
@@ -62,7 +87,11 @@ if      ( ( `uname` == AIX ) || ( `hostname` == tempest ) || ( `hostname | cut -
         set argv = ( -D today )
 	set argv = ( -env )
 	set WRFREGFILE = /mmm/users/gill/wrf.tar
-	set argv = ( -f wrf.tar ) 
+	if ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` != bs ) && ( `hostname | cut -c 1-2` != bv ) ) ) then
+		set argv = ( -f /nbns/meso/wx22tb/regression_tests/wrf.tar )
+	else
+		set argv = ( -f wrf.tar )
+	endif
 else if ( ( `uname` == OSF1 ) && ( `hostname` == maple ) && ( $user == michalak ) ) then
         set clrm=1
 endif
@@ -89,6 +118,9 @@ else if ( ( `hostname | cut -c 1-2` == bs ) || ( `hostname` == tempest ) || ( `h
           ( `hostname | cut -c 1-2` == bv ) ) then
 	set WRFREGDATAEM = /mmm/users/gill/WRF-data-EM
 	set WRFREGDATANMM = /mmm/users/gill/WRF-data-NMM
+else if ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` != bs ) && ( `hostname | cut -c 1-2` != bv ) ) ) then
+	set WRFREGDATAEM = /nbns/meso/wx22tb/regression_tests/WRF-data-EM
+	set WRFREGDATANMM = /nbns/meso/wx22tb/regression_tests/WRF-data-NMM
 else
 	if      ( ( -d /users/gill/WRF-data-EM ) && ( -d /users/gill/WRF-data-NMM ) ) then
 		set WRFREGDATAEM = /users/gill/WRF-data-EM
@@ -297,9 +329,7 @@ set QUILT = TRUE
 set QUILT = FALSE
 
 if ( $QUILT == TRUE ) then
-	if ( ( `uname` == AIX ) && \
-	     ( ( `hostname | cut -c 1-2` == bs ) || \
-	       ( `hostname | cut -c 1-2` == bv ) ) ) then
+	if ( `uname` == AIX ) then
 		echo "One WRF output quilt server will be used for some tests"
 	else if ( ( `uname` == OSF1 ) && \
 		  ( ( `hostname` == duku    ) || \
@@ -772,9 +802,7 @@ set OMPRUNCOMMAND	=
 set MPIRUNCOMMANDPOST   = 
 
 touch version_info
-if ( ( $ARCH[1] == AIX ) && \
-     ( ( `hostname | cut -c 1-2` == bs ) || \
-       ( `hostname | cut -c 1-2` == bv ) ) ) then
+if ( $ARCH[1] == AIX ) then
 	set DEF_DIR             = $home
 	set TMPDIR              = /ptmp/$user
 	# keep stuff out of $HOME and /ptmp/$USER
@@ -807,6 +835,22 @@ if ( ( $ARCH[1] == AIX ) && \
 			mkdir -p $DEF_DIR
 			echo "See ${DEF_DIR}/wrftest.output and other files in ${DEF_DIR} for test results"
 		endif
+	else if ( ( ( `hostname | cut -c 1-2` != bs ) && ( `hostname | cut -c 1-2` != bv ) ) && ( ! $?LOADL_JOB_NAME ) ) then
+		echo "${0}: ERROR::  This batch script must be submitted via"
+		echo "${0}:          LoadLeveler on an AIX machine\!"
+		exit
+	else if   ( ( `hostname | cut -c 1-2` != bs ) && ( `hostname | cut -c 1-2` != bv ) ) then
+		set job_id              = `echo ${LOADL_JOB_NAME} | cut -f2 -d'.'`
+		set DEF_DIR             = /ptmp/$user/wrf_regression.${job_id}
+		set TMPDIR              = $DEF_DIR
+		if ( -d $DEF_DIR ) then
+			echo "${0}: ERROR::  Directory ${DEF_DIR} exists, please remove it"
+			exit ( 1 ) 
+		else
+			mkdir -p $DEF_DIR
+			echo "See ${DEF_DIR}/wrftest.output and other files in ${DEF_DIR} for test results"
+		endif
+		set CUR_DIR = ${LOADL_STEP_INITDIR}
 	endif
 	if ( ! -d $TMPDIR ) mkdir $TMPDIR
 	set MAIL                = /usr/bin/mailx
@@ -829,6 +873,8 @@ if ( ( $ARCH[1] == AIX ) && \
 		set MPIRUNCOMMAND       =  poe 
 	else if ( `hostname | cut -c 1-2` == bv ) then
 		set MPIRUNCOMMAND       =  mpirun.lsf
+	else if ( ( `hostname | cut -c 1-2` != bs ) && ( `hostname | cut -c 1-2` != bv ) ) then
+		set MPIRUNCOMMAND       =  poe
 	endif
 	if ( $CHEM == TRUE ) then
 		set ZAP_OPENMP		= TRUE
@@ -836,10 +882,10 @@ if ( ( $ARCH[1] == AIX ) && \
 		set ZAP_OPENMP		= FALSE
 	endif
 	echo "Compiler version info: " >! version_info
-	pmrinfo | grep "FORTRAN:" >>&! version_info
+	echo "FORTRAN:        " `lslpp -l | grep xlfrte | head -1 | awk '{print $1 "   " $2}'` >>! version_info
 	echo " " >>! version_info
 	echo "OS version info: " >>! version_info
-	pmrinfo | grep "AIX:" >>&! version_info
+	echo "AIX:            " `lslpp -l | grep bos.mp | head -1 | awk '{print $1 "   " $2}'` >>! version_info
 	echo " " >>! version_info
 	setenv MP_SHARED_MEMORY yes
 else if ( $ARCH[1] == OSF1 && $clrm == 0 ) then
@@ -975,7 +1021,11 @@ else if ( ( $ARCH[1] == Linux ) && ( `hostname | cut -c 1-2` ==  ln ) ) then
 	set TMPDIR		= .
 	set MAIL		= /bin/mail
 	if      ( $LINUX_COMP == PGI ) then
-		set COMPOPTS	= ( 1 2 3 )
+		if      ( ( $NESTED == TRUE ) && ( $RSL_LITE != TRUE ) ) then
+			set COMPOPTS    = ( 4 2 3 )
+		else if ( ( $NESTED != TRUE ) && ( $RSL_LITE != TRUE ) ) then
+			set COMPOPTS    = ( 1 2 3 )
+		endif
 	endif
 	set Num_Procs		= 4
 	set OPENMP		= 2
@@ -1419,11 +1469,12 @@ banner 7
 		if ( $REG_TYPE == BIT4BIT ) then
 			if ( `uname` == AIX ) then
 				if ( ( $compopt == $COMPOPTS[1] ) || ( $compopt == $COMPOPTS[3] ) ) then
-					sed -e '/^OMP/d' -e '/^FCOPTIM/d' -e '/^FCDEBUG/s/#//g' ./configure.wrf >! foo ; /bin/mv foo configure.wrf
+					sed -e '/^OMP/d' -e '/^FCOPTIM/d' -e '/^FCDEBUG/s/#/-g -O0 /g' ./configure.wrf >! foo ; /bin/mv foo configure.wrf
 				else
 					sed -e '/^OMP/s/noauto/noauto:noopt/' \
-				                         -e '/^FCOPTIM/d' -e '/^FCDEBUG/s/#//g' ./configure.wrf >! foo ; /bin/mv foo configure.wrf
+					    -e '/^FCOPTIM/d' -e '/^FCDEBUG/s/#/-g -O0 /g' ./configure.wrf >! foo ; /bin/mv foo configure.wrf
 				endif
+				sed -e 's/-lmassv//g'  -e 's/-lmass//g'  -e 's/-DNATIVE_MASSV//g' -e '/^FCBASEOPTS/s/#//g' ./configure.wrf >! foo ; /bin/mv foo configure.wrf
 			else if ( `uname` == Linux ) then
 				if ( ( $compopt == $COMPOPTS[1] ) || ( $compopt == $COMPOPTS[3] ) ) then
 					sed -e '/^OMP/d' -e '/^FCOPTIM/d' -e '/^FCDEBUG/s/#-g/-g/g' ./configure.wrf >! foo ; /bin/mv foo configure.wrf
@@ -1432,9 +1483,9 @@ banner 7
 				endif
 			else if ( `uname` == OSF1 ) then
 		 		if ( ( $compopt == $COMPOPTS[1] ) || ( $compopt == $COMPOPTS[3] ) ) then
-					sed -e '/^OMP/d' -e '/^FCOPTIM/d' -e '/^FCDEBUG/s/#//g' ./configure.wrf >! foo ; /bin/mv foo configure.wrf
+					sed -e '/^OMP/d' -e '/^FCOPTIM/d' -e '/^FCDEBUG/s/# -g/-O0/g' -e '/^FCDEBUG/s/# -O0/-O0/g' ./configure.wrf >! foo ; /bin/mv foo configure.wrf
 				else
-					sed              -e '/^FCOPTIM/d' -e '/^FCDEBUG/s/#//g' ./configure.wrf >! foo ; /bin/mv foo configure.wrf
+					sed              -e '/^FCOPTIM/d' -e '/^FCDEBUG/s/# -g/-O0/g' -e '/^FCDEBUG/s/# -O0/-O0/g' ./configure.wrf >! foo ; /bin/mv foo configure.wrf
 				endif
 			else
 		 		if ( ( $compopt == $COMPOPTS[1] ) || ( $compopt == $COMPOPTS[3] ) ) then

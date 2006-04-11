@@ -85,7 +85,7 @@ pre_parse( FILE * infile, FILE * outfile )
   char inln[4096], parseline[4096], parseline_save[4096] ;
   int ntracers = 0 ;
   int found ; 
-  char tracers[1000][NAMELEN] ;
+  char tracers[1000][100] ;
   char *p, *q ;
   char *tokens[MAXTOKENS], *toktmp[MAXTOKENS], newdims[NAMELEN], newdims4d[NAMELEN],newname[NAMELEN] ;
   int i, ii, len_of_tok ;

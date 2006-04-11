@@ -112,6 +112,7 @@ CONTAINS
       LOGICAL :: were_bad
 
       LOGICAL :: stretch_grid, dry_sounding, debug
+integer iicount
 
 !      INTEGER , PARAMETER :: nl_max = 1000
 !      REAL , DIMENSION(nl_max) :: dn
@@ -459,6 +460,21 @@ integer::oops1,oops2
                                   model_config_rec%real_data_init_type , &
                                   num_st_levels_input , num_sm_levels_input , num_sw_levels_input , &
                                   num_st_levels_alloc , num_sm_levels_alloc , num_sw_levels_alloc )
+
+            iicount = 0
+            DO j = jts, MIN(jde-1,jte)
+               DO i = its, MIN(ide-1,ite)
+                  IF ( (landmask(i,j).gt.0.5) .and. ( tslb(i,1,j) .gt. 250 ) .and. &
+                       ( tslb(i,1,j) .lt. 400 ) .and. ( smois(i,1,j) .lt. 0.005 ) ) then
+                     print *,'bad soil moisture at i,j = ',i,j,smois(i,:,j)
+                     iicount = iicount + 1
+                     smois(i,:,j) = 0.005
+                  END IF
+               END DO
+            END DO
+            IF ( iicount .GT. 0 ) THEN
+               print *,'total number of small soil moisture locations = ',iicount
+            END IF
 
       END SELECT interpolate_soil_tmw
 
@@ -1106,6 +1122,36 @@ endif
 #   include "HALO_EM_INIT_5.inc"
 #endif
    END SUBROUTINE rebalance
+
+!---------------------------------------------------------------------
+
+   RECURSIVE SUBROUTINE find_my_parent ( grid_ptr_in , grid_ptr_out , id_wanted , found_the_id )
+
+      USE module_domain
+
+      TYPE(domain) , POINTER :: grid_ptr_in , grid_ptr_out
+      TYPE(domain) , POINTER :: grid_ptr_sibling
+      INTEGER :: id_wanted
+      LOGICAL :: found_the_id
+
+      found_the_id = .FALSE.
+      grid_ptr_sibling => grid_ptr_in
+      DO WHILE ( ASSOCIATED ( grid_ptr_sibling ) )
+
+         IF ( grid_ptr_sibling%grid_id .EQ. id_wanted ) THEN
+            found_the_id = .TRUE.
+            grid_ptr_out => grid_ptr_sibling
+            RETURN
+         ELSE IF ( grid_ptr_sibling%num_nests .GT. 0 ) THEN
+            grid_ptr_sibling => grid_ptr_sibling%nests(1)%ptr
+            CALL find_my_parent ( grid_ptr_sibling , grid_ptr_out , id_wanted , found_the_id )
+         ELSE
+            grid_ptr_sibling => grid_ptr_sibling%sibling
+         END IF
+
+      END DO
+
+   END SUBROUTINE find_my_parent
 
 !---------------------------------------------------------------------
 

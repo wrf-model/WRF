@@ -1051,6 +1051,14 @@ SUBROUTINE cal_dampkm( config_flags,xkmhd,xkmh,xkhh,xkmv,xkhv,                 &
    j_start = jts
    j_end   = MIN(jte,jde-1)
 
+! keep upper damping diffusion away from relaxation zones at boundaries if used
+   IF(config_flags%specified .OR. config_flags%nested)THEN
+     i_start = MAX(i_start,ids+config_flags%spec_bdy_width-1)
+     i_end   = MIN(i_end,ide-config_flags%spec_bdy_width)
+     j_start = MAX(j_start,jds+config_flags%spec_bdy_width-1)
+     j_end   = MIN(j_end,jde-config_flags%spec_bdy_width)
+   ENDIF
+
    kmmax=dx*dx/dt
    degrad90=DEGRAD*90.
    DO j = j_start, j_end

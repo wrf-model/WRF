@@ -383,17 +383,17 @@ else
           IF ( diff1 .GT. 0.0d0 ) perr = 1.0
         ENDIF
 
-        digits = 0
         IF ( rms1 - rms2 .EQ. 0.0d0 ) THEN
           digits = 15
-        ENDIF
-        IF ( rms2 .NE. 0 ) THEN
-          tmp1 = 1.0d0/( ( abs( rms1 - rms2 ) ) / rms2 )
-          IF ( tmp1 .NE. 0 ) THEN
-            digits = log10(tmp1)
+        ELSE
+          IF ( rms2 .NE. 0 ) THEN
+            tmp1 = 1.0d0/( ( abs( rms1 - rms2 ) ) / rms2 )
+            IF ( tmp1 .NE. 0 ) THEN
+              digits = log10(tmp1)
+            ENDIF
           ENDIF
         ENDIF
-           
+
         IF (IFDIFFS .NE. 0 ) THEN
            ! create the fort.88 and fort.98 files because regression scripts will
            ! look for these to see if there were differences.

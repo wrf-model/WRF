@@ -13,6 +13,7 @@
     do j=j1,j2
 !dir$ prefervector
 !dir$ concurrent
+!cdir select(vector)
       do i=i1,i2
           DFIELD = Field(1:di,abs(ix-i),abs(jx-j),abs(kx-k))
       enddo
@@ -24,6 +25,7 @@ else
     do j=j1,j2
 !dir$ prefervector
 !dir$ concurrent
+!cdir select(vector)
       do i=i1,i2
           Field(1:di,abs(ix-i),abs(jx-j),abs(kx-k)) = DFIELD
       enddo

@@ -225,7 +225,11 @@ state   real    cf1            -        misc      -         -     irh       "cf1
 state   real    cf2            -        misc      -         -     irh       "cf2"                   "2nd order extrapolation constant"         ""      
 state   real    cf3            -        misc      -         -     irh       "cf3"                   "2nd order extrapolation constant"         ""      
 state   integer number_at_same_level    -        -          -         -     -        "number_at_same_level"  ""         ""      
+
+# State for derived time quantities.  
 state   integer itimestep      -        -          -         -     rh         "itimestep"             ""         ""      
+state   real    xtime          -        -          -         -     rh         "xtime"                 "minutes since simulation start"         ""      
+state   real    julian         -        -          -         -     -          "julian"                "day of year"         ""      
 
 # Output file descriptor for a domain                                           
 state   integer oid            -        -          -         -     -         "oid"                   ""         ""      
@@ -696,6 +700,7 @@ rconfig   integer     io_form_history     namelist,time_control		1              
 rconfig   integer     io_form_restart     namelist,time_control		1              2       h        "io_form_restart"               ""      ""
 rconfig   integer     io_form_boundary    namelist,time_control		1              2       h        "io_form_boundary"               ""      ""
 rconfig   integer debug_level             namelist,time_control		1             0       -      "debug_level"           ""      ""
+rconfig   logical self_test_domain        namelist,time_control		1              .false. -      "self_test_domain"           ""      ""
 
 
 rconfig   character  history_outname   namelist,time_control		1  "wrfout_d<domain>_<date>"     -     "name of history outfile"  ""      ""

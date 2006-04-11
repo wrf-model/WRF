@@ -679,8 +679,8 @@ print *,'spec_bdy_width, interval_seconds, loop=',spec_bdy_width , interval_seco
                CALL wrf_error_fatal( 'real: error opening wrfbdy for writing' )
          ENDIF
       ELSE
-         IF ( .NOT. WRFU_ClockIsStopTime(grid%domain_clock ,rc=rc) ) THEN
-            CALL WRFU_ClockAdvance( grid%domain_clock, rc=rc )
+         IF ( .NOT. domain_clockisstoptime(grid) ) THEN
+            CALL domain_clockadvance( grid )
             CALL domain_clockprint ( 150, grid, &
                    'DEBUG assemble_output:  clock after ClockAdvance,' )
          ENDIF

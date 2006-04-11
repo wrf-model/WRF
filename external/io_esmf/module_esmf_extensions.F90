@@ -59,6 +59,11 @@ MODULE module_esmf_extensions
   ! "is-initialized" inquiry
   PUBLIC WRFU_IsInitialized
 
+  ! extensions to standard ESMF interfaces
+  ! these extensions conform to documented plans for ESMF extensions
+  ! they should be removed as ESMF implementations are released
+  PUBLIC WRFU_TimeGet
+
   ! public routines to be replaced by ESMF internal implementations
   ! These interfaces will not be public because ESMF will always be able 
   ! to call them in the right places without user intervention.  
@@ -305,7 +310,7 @@ CONTAINS
       type(ESMF_TimeInterval), intent(in) :: timeinterval2
 
 ! !LOCAL
-      INTEGER :: retval, rc
+      INTEGER :: retval, isgn, rc
       type(ESMF_TimeInterval) :: zero, i1,i2
 
 ! !DESCRIPTION:
@@ -325,11 +330,14 @@ CONTAINS
       call ESMF_TimeIntervalSet( zero, rc=rc )
       i1 = timeinterval1
       i2 = timeinterval2
+      isgn = 1
       if ( i1 .LT. zero ) then
         i1 = i1 * (-1)
+        isgn = -isgn
       endif
       if ( i2 .LT. zero ) then
         i2 = i2 * (-1)
+        isgn = -isgn
       endif
 ! repeated subtraction
       retval = 0
@@ -337,11 +345,108 @@ CONTAINS
         i1 = i1 - i2
         retval = retval + 1
       ENDDO
+      retval = retval * isgn
 
       WRFU_TimeIntervalDIVQuot = retval
 
       end function WRFU_TimeIntervalDIVQuot
 !!!!!!!!!!!!!!!!!!
+
+
+
+  ! implementations of extensions to standard ESMF interfaces
+  ! these extensions conform to documented plans for ESMF extensions
+  ! they should be removed as ESMF implementations are released
+
+      ! extend ESMF_TimeGet() to make dayOfYear_r8 work...  
+      subroutine WRFU_TimeGet(time, yy, yy_i8, &
+                                    mm, dd, &
+                                    d, d_i8, &
+                                    h, m, &
+                                    s, s_i8, &
+                                    ms, us, ns, &
+                                    d_r8, h_r8, m_r8, s_r8, &
+                                    ms_r8, us_r8, ns_r8, &
+                                    sN, sD, &
+                                    calendar, calendarType, timeZone, &
+                                    timeString, timeStringISOFrac, &
+                                    dayOfWeek, midMonth, &
+                                    dayOfYear,  dayOfYear_r8, &
+                                    dayOfYear_intvl, rc)
+
+      type(ESMF_Time),         intent(in)            :: time
+      integer(ESMF_KIND_I4),   intent(out), optional :: yy
+      integer(ESMF_KIND_I8),   intent(out), optional :: yy_i8
+      integer,                 intent(out), optional :: mm
+      integer,                 intent(out), optional :: dd
+      integer(ESMF_KIND_I4),   intent(out), optional :: d
+      integer(ESMF_KIND_I8),   intent(out), optional :: d_i8
+      integer(ESMF_KIND_I4),   intent(out), optional :: h
+      integer(ESMF_KIND_I4),   intent(out), optional :: m
+      integer(ESMF_KIND_I4),   intent(out), optional :: s
+      integer(ESMF_KIND_I8),   intent(out), optional :: s_i8
+      integer(ESMF_KIND_I4),   intent(out), optional :: ms
+      integer(ESMF_KIND_I4),   intent(out), optional :: us
+      integer(ESMF_KIND_I4),   intent(out), optional :: ns
+      real(ESMF_KIND_R8),      intent(out), optional :: d_r8  ! not implemented
+      real(ESMF_KIND_R8),      intent(out), optional :: h_r8  ! not implemented
+      real(ESMF_KIND_R8),      intent(out), optional :: m_r8  ! not implemented
+      real(ESMF_KIND_R8),      intent(out), optional :: s_r8  ! not implemented
+      real(ESMF_KIND_R8),      intent(out), optional :: ms_r8 ! not implemented
+      real(ESMF_KIND_R8),      intent(out), optional :: us_r8 ! not implemented
+      real(ESMF_KIND_R8),      intent(out), optional :: ns_r8 ! not implemented
+      integer(ESMF_KIND_I4),   intent(out), optional :: sN
+      integer(ESMF_KIND_I4),   intent(out), optional :: sD
+      type(ESMF_Calendar),     intent(out), optional :: calendar
+      type(ESMF_CalendarType), intent(out), optional :: calendarType
+      integer,                 intent(out), optional :: timeZone
+      character (len=*),       intent(out), optional :: timeString
+      character (len=*),       intent(out), optional :: timeStringISOFrac
+      integer,                 intent(out), optional :: dayOfWeek
+      type(ESMF_Time),         intent(out), optional :: midMonth
+      integer(ESMF_KIND_I4),   intent(out), optional :: dayOfYear
+      real(ESMF_KIND_R8),      intent(out), optional :: dayOfYear_r8 ! NOW implemented
+      type(ESMF_TimeInterval), intent(out), optional :: dayOfYear_intvl
+      integer,                 intent(out), optional :: rc
+      REAL(ESMF_KIND_R8) :: rsec
+      INTEGER(ESMF_KIND_I4) :: year, seconds, Sn, Sd
+      INTEGER(ESMF_KIND_I8), PARAMETER :: SECONDS_PER_DAY = 86400_ESMF_KIND_I8
+
+      call WRFU_TimeGet(time, yy, yy_i8, &
+                              mm, dd, &
+                              d, d_i8, &
+                              h, m, &
+                              s, s_i8, &
+                              ms, us, ns, &
+                              d_r8, h_r8, m_r8, s_r8, &
+                              ms_r8, us_r8, ns_r8, &
+                              sN, sD, &
+                              calendar, calendarType, timeZone, &
+                              timeString, timeStringISOFrac, &
+                              dayOfWeek, midMonth, &
+                              dayOfYear,  dayOfYear_r8, &
+                              dayOfYear_intvl, rc)
+      IF ( rc == ESMF_SUCCESS ) THEN
+        IF ( PRESENT( dayOfYear_r8 ) ) THEN
+          ! get seconds since start of year and fractional seconds
+          CALL ESMF_TimeGet( time, yy=year, s=seconds, sN=Sn, sD=Sd, rc=rc )
+          IF ( rc == ESMF_SUCCESS ) THEN
+            ! 64-bit IEEE 754 has 52-bit mantisssa -- only need 25 bits to hold
+            ! number of seconds in a year...
+            rsec = REAL( seconds, ESMF_KIND_R8 )
+            IF ( Sd /= 0 ) THEN
+              rsec = rsec + ( REAL( Sn, ESMF_KIND_R8 ) / REAL( Sd, ESMF_KIND_R8 ) )
+            ENDIF
+            dayOfYear_r8 = rsec / REAL( SECONDS_PER_DAY, ESMF_KIND_R8 )
+            ! start at 1
+            dayOfYear_r8 = dayOfYear_r8 + 1.0_ESMF_KIND_R8
+          ENDIF
+        ENDIF
+      ENDIF
+
+      end subroutine WRFU_TimeGet
+
+!------------------------------------------------------------------------------
 
 
 END MODULE module_esmf_extensions

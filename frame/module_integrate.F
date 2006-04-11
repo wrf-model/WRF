@@ -34,7 +34,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
 ! stop_subtime value is arbitrary and does not have to be the same as
 ! time that the domain finished integrating.  The simulation stop time
 ! for the grid is known to the grid's clock (grid%domain_clock) and that
-! is checked with a call to WRFU_ClockIsStopTime prior to beginning the
+! is checked with a call to domain_clockisstoptime prior to beginning the
 ! loop over time period that is specified by the
 ! current time/stop_subtime interval.
 ! 
@@ -68,7 +68,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
 ! Flow of control
 ! 
 ! 1. Check to see that the domain is not finished 
-! by testing the value returned by WRFU_ClockIsStopTime for the
+! by testing the value returned by domain_clockisstoptime for the
 ! domain.
 ! 
 ! 2. <a href=model_to_grid_config_rec.html>Model_to_grid_config_rec</a> is called to load the local config_flags
@@ -109,7 +109,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
 ! restart data is output.
 ! 
 ! 4.f  Call <a href=solve_interface.html>solve_interface</a> which calls the solver that advance the domain 
-! one time step, then advance the domain's clock by calling WRFU_ClockAdvance.  
+! one time step, then advance the domain's clock by calling domain_clockadvance.  
 ! The enclosing WHILE loop around this section is for handling other domains 
 ! with which this domain may overlap.  It is not active in WRF 2.0 and only 
 ! executes one trip.  
@@ -154,7 +154,6 @@ RECURSIVE SUBROUTINE integrate ( grid )
    TYPE (grid_config_rec_type)            :: config_flags
    LOGICAL , EXTERNAL                     :: wrf_dm_on_monitor
    INTEGER                                :: idum1 , idum2 , ierr , open_status
-   INTEGER                                :: rc
    LOGICAL                                :: should_do_last_io
 
    ! interface
@@ -271,7 +270,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
 !$$$ Use either an optional argument or another interface...  
    CALL set_current_grid_ptr( grid )
 
-   IF ( .NOT. WRFU_ClockIsStopTime(grid%domain_clock ,rc=rc) ) THEN
+   IF ( .NOT. domain_clockisstoptime( grid ) ) THEN
       CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
       CALL domain_clockprint ( 150, grid, 'DEBUG:  top of integrate(),' )
       DO WHILE ( domain_get_current_time(grid) .LT. grid%stop_subtime )
@@ -302,16 +301,11 @@ RECURSIVE SUBROUTINE integrate ( grid )
             CALL set_current_grid_ptr( grid_ptr )
             CALL wrf_debug( 100 , 'module_integrate: calling solve interface ' )
             CALL solve_interface ( grid_ptr ) 
-            CALL domain_clockprint ( 150, grid_ptr, &
-              'DEBUG integrate():  before WRFU_ClockAdvance,' )
-            CALL WRFU_ClockAdvance( grid_ptr%domain_clock, rc=rc )
-            CALL wrf_check_error( WRFU_SUCCESS, rc, &
-                                  'WRFU_ClockAdvance() FAILED', &
-                                  __FILE__ , &
-                                  __LINE__  )
-            CALL domain_clockprint ( 150, grid_ptr, &
-              'DEBUG integrate():  after WRFU_ClockAdvance,' )
+            CALL domain_clockadvance ( grid_ptr )
             CALL wrf_debug( 100 , 'module_integrate: back from solve interface ' )
+            ! print lots of time-related information for testing
+            ! switch this on with namelist variable self_test_domain
+            CALL domain_time_test( grid_ptr, 'domain_clockadvance' )
             grid_ptr => grid_ptr%sibling
          END DO
          CALL set_current_grid_ptr( grid )
@@ -371,10 +365,10 @@ RECURSIVE SUBROUTINE integrate ( grid )
 
 ! zip up the tree and see if any ancestor is at its stop time
         
-        should_do_last_io = WRFU_ClockIsStopTime(head_grid%domain_clock , rc=rc)
+        should_do_last_io = domain_clockisstoptime( head_grid )
         grid_ptr => grid 
         DO WHILE ( grid_ptr%id .NE. 1 )
-           IF ( WRFU_ClockIsStopTime(grid_ptr%domain_clock , rc=rc) ) should_do_last_io = .TRUE. 
+           IF ( domain_clockisstoptime( grid_ptr ) ) should_do_last_io = .TRUE. 
            grid_ptr => grid_ptr%parents(1)%ptr
         ENDDO
         IF ( should_do_last_io ) THEN 

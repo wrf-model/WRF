@@ -73,12 +73,27 @@ PASS:  MultiplyTI_TI_INT3
 PASS:  DivideTI_TI_INT1
 PASS:  DivideTI_TI_INT2
 PASS:  DivideTI_TI_INT3
-PASS:  adjust_io_timestr_1
+PASS:  DivideINT_TI_TI1
+PASS:  DivideINT_TI_TI2
+PASS:  DivideINT_TI_TI3
+PASS:  DivideINT_TI_TI4
+PASS:  DivideINT_TI_TI5
+PASS:  DivideINT_TI_TI6
+PASS:  DivideINT_TI_TIR1
+PASS:  DivideINT_TI_TIR2
+PASS:  DivideINT_TI_TIF1
+PASS:  DivideINT_TI_TIF2
+PASS:  DivideINT_TI_TIF3
+PASS:  DivideINT_TI_TIF4
+PASS:  DivideINT_TI_TIN1
+PASS:  DivideINT_TI_TIN2
+PASS:  DivideINT_TI_TIN3
 SimpleClockAdvance_SETUP:  start_time = <2002-12-27_03:00:00>
 SimpleClockAdvance_SETUP:  stop_time = <2002-12-28_08:00:00>
 SimpleClockAdvance_SETUP:  timestep = <0000000000_000:010:000>
 SimpleClockAdvance_SETUP:  increment = <0000000000_000:000:000>
 SimpleClockAdvance_SETUP:  clock current_time = <2002-12-27_03:00:00>
+SimpleClockAdvance_SETUP:  current_time dayOfYear_r8 = < 361.125000 >
 SimpleClockAdvance_SETUP:  current_time-increment = <2002-12-27_03:00:00>
 SimpleClockAdvance_SETUP:  current_time+increment = <2002-12-27_03:00:00>
 SimpleClockAdvance_ADVANCE:  count = 000001  current_time = <2002-12-27_03:10:00>
@@ -608,6 +623,7 @@ StdYearClockAdvance_SETUP:  stop_time = <2004-01-02_09:00:00>
 StdYearClockAdvance_SETUP:  timestep = <0000000000_001:000:000>
 StdYearClockAdvance_SETUP:  increment = <0000000000_000:000:010>
 StdYearClockAdvance_SETUP:  clock current_time = <2003-12-29_09:00:00>
+StdYearClockAdvance_SETUP:  current_time dayOfYear_r8 = < 363.375000 >
 StdYearClockAdvance_SETUP:  current_time-increment = <2003-12-29_08:59:50>
 StdYearClockAdvance_SETUP:  current_time+increment = <2003-12-29_09:00:10>
 StdYearClockAdvance_ADVANCE:  count = 000001  current_time = <2003-12-29_10:00:00>
@@ -903,6 +919,7 @@ LeapYearClockAdvance_SETUP:  stop_time = <2005-01-02_09:00:00>
 LeapYearClockAdvance_SETUP:  timestep = <0000000000_001:000:000>
 LeapYearClockAdvance_SETUP:  increment = <0000000000_000:000:010>
 LeapYearClockAdvance_SETUP:  clock current_time = <2004-12-29_09:00:00>
+LeapYearClockAdvance_SETUP:  current_time dayOfYear_r8 = < 364.375000 >
 LeapYearClockAdvance_SETUP:  current_time-increment = <2004-12-29_08:59:50>
 LeapYearClockAdvance_SETUP:  current_time+increment = <2004-12-29_09:00:10>
 LeapYearClockAdvance_ADVANCE:  count = 000001  current_time = <2004-12-29_10:00:00>
@@ -1198,6 +1215,7 @@ LeapYearFractionClockAdvance_SETUP:  stop_time = <2005-01-01_00:02:00>
 LeapYearFractionClockAdvance_SETUP:  timestep = <0000000000_000:000:013+01/03>
 LeapYearFractionClockAdvance_SETUP:  increment = <0000000000_000:000:001+01/03>
 LeapYearFractionClockAdvance_SETUP:  clock current_time = <2004-12-31_23:58:00>
+LeapYearFractionClockAdvance_SETUP:  current_time dayOfYear_r8 = < 366.998611 >
 LeapYearFractionClockAdvance_SETUP:  current_time-increment = <2004-12-31_23:57:58+02/03>
 LeapYearFractionClockAdvance_SETUP:  current_time+increment = <2004-12-31_23:58:01+01/03>
 LeapYearFractionClockAdvance_ADVANCE:  count = 000001  current_time = <2004-12-31_23:58:13+01/03>

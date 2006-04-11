@@ -385,8 +385,8 @@ write(0,*)'after alloc_and_configure_domain ',associated(nested_grid%intermediat
         ENDIF
         CALL WRFU_AlarmRingerOff( nested_grid%alarms( HISTORY_ALARM ), rc=rc )
       ENDIF
-      CALL WRFU_ClockAdvance( nested_grid%domain_clock, rc=rc )
-      CALL WRFU_ClockAdvance( parent_grid%domain_clock, rc=rc )
+      CALL domain_clockadvance( nested_grid )
+      CALL domain_clockadvance( parent_grid )
    ENDDO main_loop
    CALL model_to_grid_config_rec ( parent_grid%id , model_config_rec , config_flags )
    CALL med_shutdown_io ( parent_grid , config_flags )

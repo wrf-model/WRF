@@ -51,6 +51,12 @@
     INTEGER :: ide_compare , jde_compare , kde_compare
     REAL , DIMENSION(16) :: lats16 , lons16
     CHARACTER (len=19) simulation_start_date
+    INTEGER simulation_start_year   , &
+            simulation_start_month  , &
+            simulation_start_day    , &
+            simulation_start_hour   , &
+            simulation_start_minute , &
+            simulation_start_second
     REAL dx_compare , dy_compare , dum
 
 !<DESCRIPTION>
@@ -74,16 +80,26 @@
          ( switch .EQ.          restart_only ) ) THEN
       CALL wrf_get_dom_ti_char ( fid , 'SIMULATION_START_DATE' , simulation_start_date , ierr )
       IF ( ierr .EQ. 0 ) THEN
+        ! Overwrite simulation start date with metadata.  
         READ ( simulation_start_date , fmt = '(I4,1x,I2,1x,I2,1x,I2,1x,I2,1x,I2)' ) &
-               config_flags%simulation_start_year,config_flags%simulation_start_month, &
-               config_flags%simulation_start_day,config_flags%simulation_start_hour, &
-               config_flags%simulation_start_minute,config_flags%simulation_start_second
-        CALL nl_set_simulation_start_year   ( grid%id , config_flags%simulation_start_year   )
-        CALL nl_set_simulation_start_month  ( grid%id , config_flags%simulation_start_month  )
-        CALL nl_set_simulation_start_day    ( grid%id , config_flags%simulation_start_day    )
-        CALL nl_set_simulation_start_hour   ( grid%id , config_flags%simulation_start_hour   )
-        CALL nl_set_simulation_start_minute ( grid%id , config_flags%simulation_start_minute )
-        CALL nl_set_simulation_start_second ( grid%id , config_flags%simulation_start_second )
+               simulation_start_year,   simulation_start_month,                     &
+               simulation_start_day,    simulation_start_hour,                      &
+               simulation_start_minute, simulation_start_second
+        CALL nl_set_simulation_start_year   ( grid%id , simulation_start_year   )
+        CALL nl_set_simulation_start_month  ( grid%id , simulation_start_month  )
+        CALL nl_set_simulation_start_day    ( grid%id , simulation_start_day    )
+        CALL nl_set_simulation_start_hour   ( grid%id , simulation_start_hour   )
+        CALL nl_set_simulation_start_minute ( grid%id , simulation_start_minute )
+        CALL nl_set_simulation_start_second ( grid%id , simulation_start_second )
+        IF ( switch .EQ. model_input_only  ) THEN
+          WRITE(wrf_err_message,*)fid,' input_wrf, model_input_only:  SIMULATION_START_DATE = ', &
+                                  simulation_start_date(1:19)
+          CALL wrf_debug ( 300 , TRIM(wrf_err_message ) )
+        ELSE IF ( switch .EQ. restart_only  ) THEN
+          WRITE(wrf_err_message,*)fid,' input_wrf, restart_only:  SIMULATION_START_DATE = ', &
+                                  simulation_start_date(1:19)
+          CALL wrf_debug ( 300 , TRIM(wrf_err_message ) )
+        ENDIF
       ENDIF
     ENDIF
 

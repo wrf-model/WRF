@@ -1,4 +1,3 @@
-!$$$  need to test with ESMF_ instead of WRFU_ ...  
 !
 ! Sub-system tests for esmf_time_f90
 !
@@ -6,10 +5,10 @@
 !
 
 MODULE my_tests
-  USE module_utility
+  USE ESMF_Mod
   IMPLICIT NONE
 
-  ! Set this to .TRUE. to make wrf_error_fatal() print a message on failure 
+  ! Set this to .TRUE. to make wrf_error_fatal3() print a message on failure 
   ! instead of stopping the program.  Use for testing only (since we cannot 
   ! catch exceptions in Fortran90!!)  
   LOGICAL :: WRF_ERROR_FATAL_PRINT = .FALSE.
@@ -65,11 +64,11 @@ CONTAINS
     CHARACTER (LEN=512) :: itestname
     LOGICAL :: iexpect_error
     INTEGER rc
-    TYPE(WRFU_Time)           :: t
-    TYPE(WRFU_TimeInterval)   :: ti
-    CHARACTER(LEN=WRFU_MAXSTR) :: str, computed_str, frac_str
+    TYPE(ESMF_Time)           :: t
+    TYPE(ESMF_TimeInterval)   :: ti
+    CHARACTER(LEN=ESMF_MAXSTR) :: str, computed_str, frac_str
     CHARACTER(LEN=17) :: type_str
-    INTEGER :: res_len, computed_len
+    INTEGER :: res_len, computed_len, Sn, Sd
     LOGICAL :: test_passed
 
 !  PRINT *,'DEBUG:  BEGIN test_print()'
@@ -121,74 +120,64 @@ CONTAINS
               PRESENT( ti_M )  .OR. PRESENT( ti_S ) .OR.  &
               PRESENT( ti_Sn )  .OR. PRESENT( ti_Sd ) )
     IF ( is_t .EQV. is_ti ) THEN
-      CALL wrf_error_fatal( &
+      CALL wrf_error_fatal3( __FILE__ , __LINE__ , &
         'ERROR test_print:  inconsistent args' )
     ENDIF
 
 !PRINT *,'DEBUG:  test_print():  init objects'
     ! Initialize object to be tested
-    ! modify behavior of wrf_error_fatal for tests
+    ! modify behavior of wrf_error_fatal3 for tests expected to fail
     IF ( iexpect_error ) WRF_ERROR_FATAL_PRINT = .TRUE.
+    Sn = 0
+    Sd = 0
     IF ( is_t ) THEN
       type_str = 'ESMF_Time'
-!PRINT *,'DEBUG:  test_print():  calling WRFU_TimeSet()'
+!PRINT *,'DEBUG:  test_print():  calling ESMF_TimeSet()'
 !PRINT *,'DEBUG:  test_print():  YY,MM,DD,H,M,S,Sn,Sd = ', it_YY,it_MM,it_DD,it_H,it_M,it_S,it_Sn,it_Sd
-      CALL WRFU_TimeSet( t, YY=it_YY, MM=it_MM, DD=it_DD , &
+      CALL ESMF_TimeSet( t, YY=it_YY, MM=it_MM, DD=it_DD , &
                              H=it_H, M=it_M, S=it_S, Sn=it_Sn, Sd=it_Sd, rc=rc )
-!PRINT *,'DEBUG:  test_print():  back from WRFU_TimeSet()'
-      CALL test_check_error( WRFU_SUCCESS, rc, &
-                             TRIM(itestname)//'WRFU_TimeSet() ', &
+!PRINT *,'DEBUG:  test_print():  back from ESMF_TimeSet()'
+      CALL test_check_error( ESMF_SUCCESS, rc, &
+                             TRIM(itestname)//'ESMF_TimeSet() ', &
                              __FILE__ , &
                              __LINE__  )
-!PRINT *,'DEBUG:  test_print():  calling WRFU_TimeGet()'
-      CALL WRFU_TimeGet( t, timeString=computed_str, rc=rc )
-      CALL test_check_error( WRFU_SUCCESS, rc, &
-                            TRIM(itestname)//'WRFU_TimeGet() ', &
+!PRINT *,'DEBUG:  test_print():  calling ESMF_TimeGet()'
+      CALL ESMF_TimeGet( t, timeString=computed_str, Sn=Sn, Sd=Sd, rc=rc )
+      CALL test_check_error( ESMF_SUCCESS, rc, &
+                            TRIM(itestname)//'ESMF_TimeGet() ', &
                             __FILE__ , &
                             __LINE__  )
-!PRINT *,'DEBUG:  test_print():  back from WRFU_TimeGet(), computed_str = ',TRIM(computed_str)
-      ! handle fractions
-      IF ( t%basetime%Sd > 0 ) THEN
-        IF ( t%basetime%Sn > 0 ) THEN
-          WRITE(frac_str,FMT="('+',I2.2,'/',I2.2)") abs(t%basetime%Sn), t%basetime%Sd
-        ELSE IF ( t%basetime%Sn < 0 ) THEN
-          WRITE(frac_str,FMT="('-',I2.2,'/',I2.2)") abs(t%basetime%Sn), t%basetime%Sd
-        ELSE
-          frac_str = ''
-        ENDIF
-        computed_str = TRIM(computed_str)//TRIM(frac_str)
-      ENDIF
-!PRINT *,'DEBUG:  test_print():  back from WRFU_TimeGet(), computed_str = ',TRIM(computed_str)
+!PRINT *,'DEBUG:  test_print():  back from ESMF_TimeGet(), computed_str = ',TRIM(computed_str)
     ELSE
       type_str = 'ESMF_TimeInterval'
-!PRINT *,'DEBUG:  test_print():  calling WRFU_TimeIntervalSet()'
-      CALL WRFU_TimeIntervalSet( ti, YY=iti_YY, MM=iti_MM, &
+!PRINT *,'DEBUG:  test_print():  calling ESMF_TimeIntervalSet()'
+      CALL ESMF_TimeIntervalSet( ti, YY=iti_YY, MM=iti_MM, &
                                       D=iti_DD ,           &
                                       H=iti_H, M=iti_M,    &
                                       S=iti_S, Sn=iti_Sn, Sd=iti_Sd, rc=rc )
-      CALL test_check_error( WRFU_SUCCESS, rc, &
-                             TRIM(itestname)//'WRFU_TimeIntervalSet() ', &
+      CALL test_check_error( ESMF_SUCCESS, rc, &
+                             TRIM(itestname)//'ESMF_TimeIntervalSet() ', &
                              __FILE__ , &
                              __LINE__  )
-!PRINT *,'DEBUG:  test_print():  calling WRFU_TimeIntervalGet()'
-      CALL WRFU_TimeIntervalGet( ti, timeString=computed_str, rc=rc )
-      CALL test_check_error( WRFU_SUCCESS, rc, &
-                            TRIM(itestname)//'WRFU_TimeGet() ', &
+!PRINT *,'DEBUG:  test_print():  calling ESMF_TimeIntervalGet()'
+      CALL ESMF_TimeIntervalGet( ti, timeString=computed_str, Sn=Sn, Sd=Sd, rc=rc )
+      CALL test_check_error( ESMF_SUCCESS, rc, &
+                            TRIM(itestname)//'ESMF_TimeGet() ', &
                             __FILE__ , &
                             __LINE__  )
-      ! handle fractions
-      IF ( ti%basetime%Sd > 0 ) THEN
-        IF ( ti%basetime%Sn > 0 ) THEN
-          WRITE(frac_str,FMT="('+',I2.2,'/',I2.2)") abs(ti%basetime%Sn), ti%basetime%Sd
-        ELSE IF ( ti%basetime%Sn < 0 ) THEN
-          WRITE(frac_str,FMT="('-',I2.2,'/',I2.2)") abs(ti%basetime%Sn), ti%basetime%Sd
-        ELSE
-          frac_str = ''
-        ENDIF
-        computed_str = TRIM(computed_str)//TRIM(frac_str)
-      ENDIF
     ENDIF
-    ! restore default behavior of wrf_error_fatal
+    ! handle fractions
+    IF ( Sd > 0 ) THEN
+      IF ( Sn > 0 ) THEN
+        WRITE(frac_str,FMT="('+',I2.2,'/',I2.2)") abs(Sn), Sd
+      ELSE IF ( Sn < 0 ) THEN
+        WRITE(frac_str,FMT="('-',I2.2,'/',I2.2)") abs(Sn), Sd
+      ELSE
+        frac_str = ''
+      ENDIF
+      computed_str = TRIM(computed_str)//TRIM(frac_str)
+    ENDIF
+    ! restore default behavior of wrf_error_fatal3
     IF ( iexpect_error ) WRF_ERROR_FATAL_PRINT = .FALSE.
 !PRINT *,'DEBUG:  test_print():  done init objects'
 
@@ -238,7 +227,7 @@ CONTAINS
     op2_int,                                                                             &
      res_t_yy,  res_t_mm,  res_t_dd,  res_t_h,  res_t_m,  res_t_s,  res_t_sn,  res_t_sd, &
     res_ti_yy, res_ti_mm, res_ti_dd, res_ti_h, res_ti_m, res_ti_s, res_ti_sn, res_ti_sd, &
-    testname, expect_error )
+    res_int, testname, expect_error )
     LOGICAL, INTENT(IN), OPTIONAL :: add_op      ! .TRUE.=add, .FALSE.=subtract
     LOGICAL, INTENT(IN), OPTIONAL :: multiply_op ! .TRUE.=multiply, .FALSE.=divide
     INTEGER, INTENT(IN), OPTIONAL :: op1_t_YY
@@ -290,6 +279,7 @@ CONTAINS
     INTEGER, INTENT(IN), OPTIONAL :: res_ti_S
     INTEGER, INTENT(IN), OPTIONAL :: res_ti_Sn
     INTEGER, INTENT(IN), OPTIONAL :: res_ti_Sd
+    INTEGER, INTENT(IN), OPTIONAL :: res_int
     CHARACTER (LEN=*), OPTIONAL, INTENT(IN) :: testname
     LOGICAL, OPTIONAL, INTENT(IN) :: expect_error
     ! locals
@@ -347,14 +337,16 @@ CONTAINS
     INTEGER :: ires_ti_Sd
     LOGICAL :: op1_is_t , op2_is_t , res_is_t
     LOGICAL :: op1_is_ti, op2_is_ti, res_is_ti, op2_is_int
-    INTEGER :: num_ops, num_op2
+    LOGICAL :: res_is_int
+    INTEGER :: num_ops, num_op1, num_op2, num_res
     LOGICAL :: unsupported_op, test_passed
     CHARACTER (LEN=512) :: itestname
     LOGICAL :: iexpect_error
-    INTEGER rc
-    TYPE(WRFU_Time)           :: op1_t , op2_t , res_t, computed_t
-    TYPE(WRFU_TimeInterval)   :: op1_ti, op2_ti, res_ti, computed_ti
-    CHARACTER(LEN=WRFU_MAXSTR) :: str, op1_str, op2_str, res_str, computed_str, frac_str
+    INTEGER :: rc
+    INTEGER :: computed_int, Sn, Sd
+    TYPE(ESMF_Time)           :: op1_t , op2_t , res_t, computed_t
+    TYPE(ESMF_TimeInterval)   :: op1_ti, op2_ti, res_ti, computed_ti
+    CHARACTER(LEN=ESMF_MAXSTR) :: str, op1_str, op2_str, res_str, computed_str, frac_str
     CHARACTER(LEN=1) :: op_str
     CHARACTER(LEN=17) :: op1_type_str, op2_type_str, res_type_str
 
@@ -427,7 +419,7 @@ CONTAINS
     IF ( imultiply_op ) num_ops = num_ops + 1
     IF ( idivide_op )   num_ops = num_ops + 1
     IF ( num_ops /= 1 ) THEN
-      CALL wrf_error_fatal( &
+      CALL wrf_error_fatal3( __FILE__ , __LINE__ , &
         'ERROR test_arithmetic:  inconsistent operation' )
     ENDIF
     IF ( PRESENT( op1_t_YY ) ) iop1_t_YY = op1_t_YY
@@ -507,8 +499,12 @@ CONTAINS
                   PRESENT( res_ti_DD ) .OR. PRESENT( res_ti_H ) .OR.  &
                   PRESENT( res_ti_M )  .OR. PRESENT( res_ti_S ) .OR.  &
                   PRESENT( res_ti_Sn )  .OR. PRESENT( res_ti_Sd ) )
-    IF ( op1_is_t .EQV. op1_is_ti ) THEN
-      CALL wrf_error_fatal( &
+    res_is_int = ( PRESENT( res_int ) )
+    num_op1 = 0
+    IF ( op1_is_t   ) num_op1 = num_op1 + 1
+    IF ( op1_is_ti  ) num_op1 = num_op1 + 1
+    IF ( num_op1 /= 1 ) THEN
+      CALL wrf_error_fatal3( __FILE__ , __LINE__ , &
         'ERROR test_arithmetic:  inconsistent args for op1' )
     ENDIF
     num_op2 = 0
@@ -516,139 +512,144 @@ CONTAINS
     IF ( op2_is_ti  ) num_op2 = num_op2 + 1
     IF ( op2_is_int ) num_op2 = num_op2 + 1
     IF ( num_op2 /= 1 ) THEN
-      CALL wrf_error_fatal( &
+      CALL wrf_error_fatal3( __FILE__ , __LINE__ , &
         'ERROR test_arithmetic:  inconsistent args for op2' )
     ENDIF
-    IF ( res_is_t .EQV. res_is_ti ) THEN
-      CALL wrf_error_fatal( &
+    num_res = 0
+    IF ( res_is_t   ) num_res = num_res + 1
+    IF ( res_is_ti  ) num_res = num_res + 1
+    IF ( res_is_int ) num_res = num_res + 1
+    IF ( num_res /= 1 ) THEN
+      CALL wrf_error_fatal3( __FILE__ , __LINE__ , &
         'ERROR test_arithmetic:  inconsistent args for result' )
     ENDIF
 
     ! Initialize op1
     IF ( op1_is_t ) THEN
       op1_type_str = 'ESMF_Time'
-      CALL WRFU_TimeSet( op1_t, YY=iop1_t_YY, MM=iop1_t_MM, DD=iop1_t_DD , &
+      CALL ESMF_TimeSet( op1_t, YY=iop1_t_YY, MM=iop1_t_MM, DD=iop1_t_DD , &
                                  H=iop1_t_H, M=iop1_t_M, S=iop1_t_S, Sn=iop1_t_Sn, Sd=iop1_t_Sd, rc=rc )
-      CALL test_check_error( WRFU_SUCCESS, rc, &
-                             TRIM(itestname)//'WRFU_TimeSet() ', &
+      CALL test_check_error( ESMF_SUCCESS, rc, &
+                             TRIM(itestname)//'ESMF_TimeSet() ', &
                              __FILE__ , &
                              __LINE__  )
-      CALL WRFU_TimeGet( op1_t, timeString=op1_str, rc=rc )
-      CALL test_check_error( WRFU_SUCCESS, rc, &
-                            TRIM(itestname)//'WRFU_TimeGet() ', &
+      CALL ESMF_TimeGet( op1_t, timeString=op1_str, Sn=Sn, Sd=Sd, rc=rc )
+      CALL test_check_error( ESMF_SUCCESS, rc, &
+                            TRIM(itestname)//'ESMF_TimeGet() ', &
                             __FILE__ , &
                             __LINE__  )
       ! handle fractions
-      CALL fraction_to_stringi8( op1_t%basetime%Sn, &
-                                 op1_t%basetime%Sd, frac_str )
+      CALL fraction_to_string( Sn, Sd, frac_str )
       op1_str = TRIM(op1_str)//TRIM(frac_str)
     ELSE
       op1_type_str = 'ESMF_TimeInterval'
-      CALL WRFU_TimeIntervalSet( op1_ti, YY=iop1_ti_YY, MM=iop1_ti_MM, &
+      CALL ESMF_TimeIntervalSet( op1_ti, YY=iop1_ti_YY, MM=iop1_ti_MM, &
                                           D=iop1_ti_DD ,               &
                                           H=iop1_ti_H, M=iop1_ti_M,    &
                                           S=iop1_ti_S, Sn=iop1_ti_Sn, Sd=iop1_ti_Sd, rc=rc )
-      CALL test_check_error( WRFU_SUCCESS, rc, &
-                             TRIM(itestname)//'WRFU_TimeIntervalSet() ', &
+      CALL test_check_error( ESMF_SUCCESS, rc, &
+                             TRIM(itestname)//'ESMF_TimeIntervalSet() ', &
                              __FILE__ , &
                              __LINE__  )
-      CALL WRFU_TimeIntervalGet( op1_ti, timeString=op1_str, rc=rc )
-      CALL test_check_error( WRFU_SUCCESS, rc, &
-                            TRIM(itestname)//'WRFU_TimeGet() ', &
+      CALL ESMF_TimeIntervalGet( op1_ti, timeString=op1_str, Sn=Sn, Sd=Sd, rc=rc )
+      CALL test_check_error( ESMF_SUCCESS, rc, &
+                            TRIM(itestname)//'ESMF_TimeGet() ', &
                             __FILE__ , &
                             __LINE__  )
       ! handle fractions
-      CALL fraction_to_stringi8( op1_ti%basetime%Sn, &
-                                 op1_ti%basetime%Sd, frac_str )
+      CALL fraction_to_string( Sn, Sd, frac_str )
       op1_str = TRIM(op1_str)//TRIM(frac_str)
     ENDIF
     ! Initialize op2
     IF ( op2_is_t ) THEN
       op2_type_str = 'ESMF_Time'
-      CALL WRFU_TimeSet( op2_t, YY=iop2_t_YY, MM=iop2_t_MM, DD=iop2_t_DD , &
+      CALL ESMF_TimeSet( op2_t, YY=iop2_t_YY, MM=iop2_t_MM, DD=iop2_t_DD , &
                                  H=iop2_t_H, M=iop2_t_M, S=iop2_t_S, Sn=iop2_t_Sn, Sd=iop2_t_Sd, rc=rc )
-      CALL test_check_error( WRFU_SUCCESS, rc, &
-                             TRIM(itestname)//'WRFU_TimeSet() ', &
+      CALL test_check_error( ESMF_SUCCESS, rc, &
+                             TRIM(itestname)//'ESMF_TimeSet() ', &
                              __FILE__ , &
                              __LINE__  )
-      CALL WRFU_TimeGet( op2_t, timeString=op2_str, rc=rc )
-      CALL test_check_error( WRFU_SUCCESS, rc, &
-                            TRIM(itestname)//'WRFU_TimeGet() ', &
+      CALL ESMF_TimeGet( op2_t, timeString=op2_str, Sn=Sn, Sd=Sd, rc=rc )
+      CALL test_check_error( ESMF_SUCCESS, rc, &
+                            TRIM(itestname)//'ESMF_TimeGet() ', &
                             __FILE__ , &
                             __LINE__  )
       ! handle fractions
-      CALL fraction_to_stringi8( op2_t%basetime%Sn, &
-                                 op2_t%basetime%Sd, frac_str )
+      CALL fraction_to_string( Sn, Sd, frac_str )
       op2_str = TRIM(op2_str)//TRIM(frac_str)
     ELSE IF ( op2_is_ti ) THEN
       op2_type_str = 'ESMF_TimeInterval'
-      CALL WRFU_TimeIntervalSet( op2_ti, YY=iop2_ti_YY, MM=iop2_ti_MM, &
+      CALL ESMF_TimeIntervalSet( op2_ti, YY=iop2_ti_YY, MM=iop2_ti_MM, &
                                           D=iop2_ti_DD ,               &
                                           H=iop2_ti_H, M=iop2_ti_M,    &
                                           S=iop2_ti_S, Sn=iop2_ti_Sn, Sd=iop2_ti_Sd, rc=rc )
-      CALL test_check_error( WRFU_SUCCESS, rc, &
-                             TRIM(itestname)//'WRFU_TimeIntervalSet() ', &
+      CALL test_check_error( ESMF_SUCCESS, rc, &
+                             TRIM(itestname)//'ESMF_TimeIntervalSet() ', &
                              __FILE__ , &
                              __LINE__  )
-      CALL WRFU_TimeIntervalGet( op2_ti, timeString=op2_str, rc=rc )
-      CALL test_check_error( WRFU_SUCCESS, rc, &
-                            TRIM(itestname)//'WRFU_TimeGet() ', &
+      CALL ESMF_TimeIntervalGet( op2_ti, timeString=op2_str, Sn=Sn, Sd=Sd, rc=rc )
+      CALL test_check_error( ESMF_SUCCESS, rc, &
+                            TRIM(itestname)//'ESMF_TimeGet() ', &
                             __FILE__ , &
                             __LINE__  )
       ! handle fractions
-      CALL fraction_to_stringi8( op2_ti%basetime%Sn, &
-                                 op2_ti%basetime%Sd, frac_str )
+      CALL fraction_to_string( Sn, Sd, frac_str )
       op2_str = TRIM(op2_str)//TRIM(frac_str)
     ELSE
       op2_type_str = 'INTEGER'
       IF ( op2_int > 0 ) THEN
-        WRITE(op2_type_str,FMT="('+',I8.8)") ABS(op2_int)
+        WRITE(op2_str,FMT="('+',I8.8)") ABS(op2_int)
       ELSE
-        WRITE(op2_type_str,FMT="('-',I8.8)") ABS(op2_int)
+        WRITE(op2_str,FMT="('-',I8.8)") ABS(op2_int)
       ENDIF
     ENDIF
     ! Initialize res
-    IF ( res_is_t ) THEN
+    IF ( res_is_t ) THEN  ! result is ESMF_Time
       res_type_str = 'ESMF_Time'
-      CALL WRFU_TimeSet( res_t, YY=ires_t_YY, MM=ires_t_MM, DD=ires_t_DD , &
+      CALL ESMF_TimeSet( res_t, YY=ires_t_YY, MM=ires_t_MM, DD=ires_t_DD , &
                                  H=ires_t_H, M=ires_t_M, S=ires_t_S, Sn=ires_t_Sn, Sd=ires_t_Sd, rc=rc )
-      CALL test_check_error( WRFU_SUCCESS, rc, &
-                             TRIM(itestname)//'WRFU_TimeSet() ', &
+      CALL test_check_error( ESMF_SUCCESS, rc, &
+                             TRIM(itestname)//'ESMF_TimeSet() ', &
                              __FILE__ , &
                              __LINE__  )
-      CALL WRFU_TimeGet( res_t, timeString=res_str, rc=rc )
-      CALL test_check_error( WRFU_SUCCESS, rc, &
-                            TRIM(itestname)//'WRFU_TimeGet() ', &
+      CALL ESMF_TimeGet( res_t, timeString=res_str, Sn=Sn, Sd=Sd, rc=rc )
+      CALL test_check_error( ESMF_SUCCESS, rc, &
+                            TRIM(itestname)//'ESMF_TimeGet() ', &
                             __FILE__ , &
                             __LINE__  )
       ! handle fractions
-      CALL fraction_to_stringi8( res_t%basetime%Sn, &
-                                 res_t%basetime%Sd, frac_str )
+      CALL fraction_to_string( Sn, Sd, frac_str )
       res_str = TRIM(res_str)//TRIM(frac_str)
-    ELSE
+    ELSE IF ( res_is_ti ) THEN  ! result is ESMF_TimeInterval
       res_type_str = 'ESMF_TimeInterval'
-      CALL WRFU_TimeIntervalSet( res_ti, YY=ires_ti_YY, MM=ires_ti_MM, &
+      CALL ESMF_TimeIntervalSet( res_ti, YY=ires_ti_YY, MM=ires_ti_MM, &
                                           D=ires_ti_DD ,               &
                                           H=ires_ti_H, M=ires_ti_M,    &
                                           S=ires_ti_S, Sn=ires_ti_Sn, Sd=ires_ti_Sd, rc=rc )
-      CALL test_check_error( WRFU_SUCCESS, rc, &
-                             TRIM(itestname)//'WRFU_TimeIntervalSet() ', &
+      CALL test_check_error( ESMF_SUCCESS, rc, &
+                             TRIM(itestname)//'ESMF_TimeIntervalSet() ', &
                              __FILE__ , &
                              __LINE__  )
-      CALL WRFU_TimeIntervalGet( res_ti, timeString=res_str, rc=rc )
-      CALL test_check_error( WRFU_SUCCESS, rc, &
-                            TRIM(itestname)//'WRFU_TimeGet() ', &
+      CALL ESMF_TimeIntervalGet( res_ti, timeString=res_str, Sn=Sn, Sd=Sd, rc=rc )
+      CALL test_check_error( ESMF_SUCCESS, rc, &
+                            TRIM(itestname)//'ESMF_TimeGet() ', &
                             __FILE__ , &
                             __LINE__  )
       ! handle fractions
-      CALL fraction_to_stringi8( res_ti%basetime%Sn, &
-                                 res_ti%basetime%Sd, frac_str )
+      CALL fraction_to_string( Sn, Sd, frac_str )
       res_str = TRIM(res_str)//TRIM(frac_str)
+    ELSE  ! result is INTEGER
+      res_type_str = 'INTEGER'
+      IF ( res_int > 0 ) THEN
+        WRITE(res_str,FMT="('+',I8.8)") ABS(res_int)
+      ELSE
+        WRITE(res_str,FMT="('-',I8.8)") ABS(res_int)
+      ENDIF
     ENDIF
 
     ! perform requested operation
     unsupported_op = .FALSE.
-    ! modify behavior of wrf_error_fatal for operator being tested
+    ! modify behavior of wrf_error_fatal3 for operator being tested
     IF ( iexpect_error ) WRF_ERROR_FATAL_PRINT = .TRUE.
     ! add
     IF ( iadd_op ) THEN
@@ -711,16 +712,24 @@ CONTAINS
         ELSE
           unsupported_op = .TRUE.
         ENDIF
+      ELSE IF ( res_is_int ) THEN  ! result is INTEGER
+        IF ( op1_is_ti .AND. op2_is_ti ) THEN
+          !  INTEGER = ESMF_TimeInterval / ESMF_TimeInterval
+          ! number of whole time intervals
+          computed_int = ESMF_TimeIntervalDIVQuot( op1_ti , op2_ti )
+        ELSE
+          unsupported_op = .TRUE.
+        ENDIF
       ENDIF
     ENDIF
-    ! restore default behavior of wrf_error_fatal
+    ! restore default behavior of wrf_error_fatal3
     IF ( iexpect_error ) WRF_ERROR_FATAL_PRINT = .FALSE.
     IF ( unsupported_op ) THEN
       WRITE(str,*) 'ERROR test_arithmetic ',TRIM(itestname), &
         ':  unsupported operation (',                           &
         TRIM(res_type_str),' = ',TRIM(op1_type_str),' ',TRIM(op_str),' ', &
         TRIM(op2_type_str),')'
-      CALL wrf_error_fatal( str )
+      CALL wrf_error_fatal3( __FILE__ , __LINE__ , str )
     ENDIF
 
     ! check result
@@ -729,29 +738,37 @@ CONTAINS
       IF ( computed_t == res_t ) THEN
         test_passed = .TRUE.
       ELSE
-        CALL WRFU_TimeGet( computed_t, timeString=computed_str, rc=rc )
-        CALL test_check_error( WRFU_SUCCESS, rc, &
-                              TRIM(itestname)//'WRFU_TimeGet() ', &
+        CALL ESMF_TimeGet( computed_t, timeString=computed_str, Sn=Sn, Sd=Sd, rc=rc )
+        CALL test_check_error( ESMF_SUCCESS, rc, &
+                              TRIM(itestname)//'ESMF_TimeGet() ', &
                               __FILE__ , &
                               __LINE__  )
         ! handle fractions
-        CALL fraction_to_stringi8( computed_t%basetime%Sn, &
-                                   computed_t%basetime%Sd, frac_str )
+        CALL fraction_to_string( Sn, Sd, frac_str )
         computed_str = TRIM(computed_str)//TRIM(frac_str)
       ENDIF
-    ELSE  ! result is ESMF_TimeInterval
+    ELSE IF ( res_is_ti ) THEN  ! result is ESMF_TimeInterval
       IF ( computed_ti == res_ti ) THEN
         test_passed = .TRUE.
       ELSE
-        CALL WRFU_TimeIntervalGet( computed_ti, timeString=computed_str, rc=rc )
-        CALL test_check_error( WRFU_SUCCESS, rc, &
-                              TRIM(itestname)//'WRFU_TimeGet() ', &
+        CALL ESMF_TimeIntervalGet( computed_ti, timeString=computed_str, Sn=Sn, Sd=Sd, rc=rc )
+        CALL test_check_error( ESMF_SUCCESS, rc, &
+                              TRIM(itestname)//'ESMF_TimeGet() ', &
                               __FILE__ , &
                               __LINE__  )
         ! handle fractions
-        CALL fraction_to_stringi8( computed_ti%basetime%Sn, &
-                                   computed_ti%basetime%Sd, frac_str )
+        CALL fraction_to_string( Sn, Sd, frac_str )
         computed_str = TRIM(computed_str)//TRIM(frac_str)
+      ENDIF
+    ELSE  ! result is INTEGER
+      IF ( computed_int == res_int ) THEN
+        test_passed = .TRUE.
+      ELSE
+        IF ( computed_int > 0 ) THEN
+          WRITE(computed_str,FMT="('+',I8.8)") ABS(computed_int)
+        ELSE
+          WRITE(computed_str,FMT="('-',I8.8)") ABS(computed_int)
+        ENDIF
       ENDIF
     ENDIF
     IF ( test_passed ) THEN
@@ -765,94 +782,6 @@ CONTAINS
     ENDIF
 
   END SUBROUTINE test_arithmetic
-
-
-
-  ! Test adjust_io_timestr 
-  SUBROUTINE test_adjust_io_timestr( TI_h, TI_m, TI_s, &
-    CT_yy,  CT_mm,  CT_dd,  CT_h,  CT_m,  CT_s,        &
-    ST_yy,  ST_mm,  ST_dd,  ST_h,  ST_m,  ST_s,        &
-    res_str, testname )
-    INTEGER, INTENT(IN) :: TI_H
-    INTEGER, INTENT(IN) :: TI_M
-    INTEGER, INTENT(IN) :: TI_S
-    INTEGER, INTENT(IN) :: CT_YY
-    INTEGER, INTENT(IN) :: CT_MM  ! month
-    INTEGER, INTENT(IN) :: CT_DD  ! day of month
-    INTEGER, INTENT(IN) :: CT_H
-    INTEGER, INTENT(IN) :: CT_M
-    INTEGER, INTENT(IN) :: CT_S
-    INTEGER, INTENT(IN) :: ST_YY
-    INTEGER, INTENT(IN) :: ST_MM  ! month
-    INTEGER, INTENT(IN) :: ST_DD  ! day of month
-    INTEGER, INTENT(IN) :: ST_H
-    INTEGER, INTENT(IN) :: ST_M
-    INTEGER, INTENT(IN) :: ST_S
-    CHARACTER (LEN=*), INTENT(IN) :: res_str
-    CHARACTER (LEN=*), INTENT(IN) :: testname
-    ! locals
-    TYPE(WRFU_TimeInterval) :: TI
-    TYPE(WRFU_Time) :: CT, ST
-    LOGICAL :: test_passed
-    INTEGER :: rc
-    CHARACTER(LEN=WRFU_MAXSTR) :: TI_str, CT_str, ST_str, computed_str
-    ! TI
-    CALL WRFU_TimeIntervalSet( TI, H=TI_H, M=TI_M, S=TI_S, rc=rc )
-    CALL test_check_error( WRFU_SUCCESS, rc, &
-                           TRIM(testname)//'WRFU_TimeIntervalSet() ', &
-                           __FILE__ , &
-                           __LINE__  )
-    CALL WRFU_TimeIntervalGet( TI, timeString=TI_str, rc=rc )
-    CALL test_check_error( WRFU_SUCCESS, rc, &
-                          TRIM(testname)//'WRFU_TimeGet() ', &
-                          __FILE__ , &
-                          __LINE__  )
-    ! CT
-    CALL WRFU_TimeSet( CT, YY=CT_YY, MM=CT_MM, DD=CT_DD , &
-                            H=CT_H,   M=CT_M,   S=CT_S, rc=rc )
-    CALL test_check_error( WRFU_SUCCESS, rc, &
-                           TRIM(testname)//'WRFU_TimeSet() ', &
-                           __FILE__ , &
-                           __LINE__  )
-    CALL WRFU_TimeGet( CT, timeString=CT_str, rc=rc )
-    CALL test_check_error( WRFU_SUCCESS, rc, &
-                          TRIM(testname)//'WRFU_TimeGet() ', &
-                          __FILE__ , &
-                          __LINE__  )
-    ! ST
-    CALL WRFU_TimeSet( ST, YY=ST_YY, MM=ST_MM, DD=ST_DD , &
-                            H=ST_H,   M=ST_M,   S=ST_S, rc=rc )
-    CALL test_check_error( WRFU_SUCCESS, rc, &
-                           TRIM(testname)//'WRFU_TimeSet() ', &
-                           __FILE__ , &
-                           __LINE__  )
-    CALL WRFU_TimeGet( ST, timeString=ST_str, rc=rc )
-    CALL test_check_error( WRFU_SUCCESS, rc, &
-                          TRIM(testname)//'WRFU_TimeGet() ', &
-                          __FILE__ , &
-                          __LINE__  )
-
-    ! Test
-    CALL adjust_io_timestr ( TI, CT, ST, computed_str )
-
-    ! check result
-    test_passed = .FALSE.
-    IF ( LEN_TRIM(res_str) == LEN_TRIM(computed_str) ) THEN
-      IF ( res_str(1:LEN_TRIM(res_str)) == computed_str(1:LEN_TRIM(computed_str)) ) THEN
-        test_passed = .TRUE.
-      ENDIF
-    ENDIF
-
-    ! print result
-    IF ( test_passed ) THEN
-      WRITE(*,FMT='(A)') 'PASS:  '//TRIM(testname)
-    ELSE
-      WRITE(*,*) 'FAIL:  ',TRIM(testname),':  adjust_io_timestr(',    &
-        TRIM(TI_str),',',TRIM(CT_str),',',TRIM(ST_str),')  expected <', &
-        TRIM(res_str),'>  but computed <',TRIM(computed_str),'>'
-    ENDIF
-
-  END SUBROUTINE test_adjust_io_timestr
 
 
 
@@ -909,13 +838,15 @@ CONTAINS
     INTEGER :: iincrement_S
     INTEGER :: iincrement_Sn
     INTEGER :: iincrement_Sd
+    INTEGER :: Sn, Sd
     INTEGER rc
-    TYPE(WRFU_Time)           :: start_time, stop_time, current_time
-    TYPE(WRFU_Clock), POINTER :: domain_clock
-    TYPE(WRFU_TimeInterval)   :: timestep, increment
-    TYPE(WRFU_Time)           :: add_time, subtract_time
+    TYPE(ESMF_Time)           :: start_time, stop_time, current_time
+    TYPE(ESMF_Clock), POINTER :: domain_clock
+    TYPE(ESMF_TimeInterval)   :: timestep, increment
+    TYPE(ESMF_Time)           :: add_time, subtract_time
     INTEGER :: itimestep
-    CHARACTER(LEN=WRFU_MAXSTR) :: str, frac_str
+    REAL(ESMF_KIND_R8) :: dayr8
+    CHARACTER(LEN=ESMF_MAXSTR) :: str, frac_str
 
     istart_YY = 0
     istart_MM = 1
@@ -965,173 +896,172 @@ CONTAINS
 
     ! Initialize start time, stop time, time step, clock for simple case. 
     itestfullname = TRIM(itestname)//'SETUP'
-    CALL WRFU_TimeSet( start_time, YY=istart_YY, MM=istart_MM, DD=istart_DD , &
+    CALL ESMF_TimeSet( start_time, YY=istart_YY, MM=istart_MM, DD=istart_DD , &
                                    H=istart_H, M=istart_M, S=istart_S, rc=rc )
-    CALL test_check_error( WRFU_SUCCESS, rc, &
-                          TRIM(itestfullname)//'WRFU_TimeSet() ', &
+    CALL test_check_error( ESMF_SUCCESS, rc, &
+                          TRIM(itestfullname)//'ESMF_TimeSet() ', &
                           __FILE__ , &
                           __LINE__  )
 
-    CALL WRFU_TimeGet( start_time, timeString=str, rc=rc )
-    CALL test_check_error( WRFU_SUCCESS, rc, &
-                          TRIM(itestfullname)//'WRFU_TimeGet() ', &
+    CALL ESMF_TimeGet( start_time, timeString=str, rc=rc )
+    CALL test_check_error( ESMF_SUCCESS, rc, &
+                          TRIM(itestfullname)//'ESMF_TimeGet() ', &
                           __FILE__ , &
                           __LINE__  )
     WRITE(*,FMT='(A,A,A,A)') TRIM(itestfullname),':  start_time = <',TRIM(str),'>'
 
-    CALL WRFU_TimeSet( stop_time, YY=istop_YY, MM=istop_MM, DD=istop_DD , &
+    CALL ESMF_TimeSet( stop_time, YY=istop_YY, MM=istop_MM, DD=istop_DD , &
                                    H=istop_H, M=istop_M, S=istop_S, rc=rc )
-    CALL test_check_error( WRFU_SUCCESS, rc, &
-                          TRIM(itestfullname)//'WRFU_TimeSet() ', &
+    CALL test_check_error( ESMF_SUCCESS, rc, &
+                          TRIM(itestfullname)//'ESMF_TimeSet() ', &
                           __FILE__ , &
                           __LINE__  )
 
-    CALL WRFU_TimeGet( stop_time, timeString=str, rc=rc )
-    CALL test_check_error( WRFU_SUCCESS, rc, &
-                          TRIM(itestfullname)//'WRFU_TimeGet() ', &
+    CALL ESMF_TimeGet( stop_time, timeString=str, rc=rc )
+    CALL test_check_error( ESMF_SUCCESS, rc, &
+                          TRIM(itestfullname)//'ESMF_TimeGet() ', &
                           __FILE__ , &
                           __LINE__  )
     WRITE(*,FMT='(A,A,A,A)') TRIM(itestfullname),':  stop_time = <',TRIM(str),'>'
 
-    CALL WRFU_TimeIntervalSet( timestep, D=itimestep_D, H=itimestep_H, &
+    CALL ESMF_TimeIntervalSet( timestep, D=itimestep_D, H=itimestep_H, &
                                          M=itimestep_M, S=itimestep_S, &
                                          Sn=itimestep_Sn, Sd=itimestep_Sd, rc=rc )
-    CALL test_check_error( WRFU_SUCCESS, rc, &
-                          TRIM(itestfullname)//'WRFU_TimeIntervalSet() ', &
+    CALL test_check_error( ESMF_SUCCESS, rc, &
+                          TRIM(itestfullname)//'ESMF_TimeIntervalSet() ', &
                           __FILE__ , &
                           __LINE__  )
 
-    CALL WRFU_TimeIntervalGet( timestep, timeString=str, rc=rc )
-    CALL test_check_error( WRFU_SUCCESS, rc, &
-                          TRIM(itestfullname)//'WRFU_TimeIntervalGet() ', &
+    CALL ESMF_TimeIntervalGet( timestep, timeString=str, Sn=Sn, Sd=Sd, rc=rc )
+    CALL test_check_error( ESMF_SUCCESS, rc, &
+                          TRIM(itestfullname)//'ESMF_TimeIntervalGet() ', &
                           __FILE__ , &
                           __LINE__  )
     ! handle fractions
-    CALL fraction_to_stringi8( timestep%basetime%Sn, &
-                               timestep%basetime%Sd, frac_str )
+    CALL fraction_to_string( Sn, Sd, frac_str )
     str = TRIM(str)//TRIM(frac_str)
     WRITE(*,FMT='(A,A,A,A)') TRIM(itestfullname),':  timestep = <',TRIM(str),'>'
 
-    CALL WRFU_TimeIntervalSet( increment, S=iincrement_S, &
+    CALL ESMF_TimeIntervalSet( increment, S=iincrement_S, &
                                Sn=iincrement_Sn, Sd=iincrement_Sd, rc=rc )
-    CALL test_check_error( WRFU_SUCCESS, rc, &
-                          TRIM(itestfullname)//'WRFU_TimeIntervalSet() ', &
+    CALL test_check_error( ESMF_SUCCESS, rc, &
+                          TRIM(itestfullname)//'ESMF_TimeIntervalSet() ', &
                           __FILE__ , &
                           __LINE__  )
 
-    CALL WRFU_TimeIntervalGet( increment, timeString=str, rc=rc )
-    CALL test_check_error( WRFU_SUCCESS, rc, &
-                          TRIM(itestfullname)//'WRFU_TimeIntervalGet() ', &
+    CALL ESMF_TimeIntervalGet( increment, timeString=str, Sn=Sn, Sd=Sd, rc=rc )
+    CALL test_check_error( ESMF_SUCCESS, rc, &
+                          TRIM(itestfullname)//'ESMF_TimeIntervalGet() ', &
                           __FILE__ , &
                           __LINE__  )
     ! handle fractions
-    CALL fraction_to_stringi8( increment%basetime%Sn, &
-                               increment%basetime%Sd, frac_str )
+    CALL fraction_to_string( Sn, Sd, frac_str )
     str = TRIM(str)//TRIM(frac_str)
     WRITE(*,FMT='(A,A,A,A)') TRIM(itestfullname),':  increment = <',TRIM(str),'>'
 
     ALLOCATE( domain_clock )
-    domain_clock = WRFU_ClockCreate( TimeStep= timestep,  &
+    domain_clock = ESMF_ClockCreate( TimeStep= timestep,  &
                                      StartTime=start_time, &
                                      StopTime= stop_time,  &
                                      rc=rc )
-    CALL test_check_error( WRFU_SUCCESS, rc, &
-                          TRIM(itestfullname)//'WRFU_ClockCreate() ', &
+    CALL test_check_error( ESMF_SUCCESS, rc, &
+                          TRIM(itestfullname)//'ESMF_ClockCreate() ', &
                           __FILE__ , &
                           __LINE__  )
 
-    CALL WRFU_ClockGet( domain_clock, CurrTime=current_time, &
+    CALL ESMF_ClockGet( domain_clock, CurrTime=current_time, &
                         rc=rc )
-    CALL test_check_error( WRFU_SUCCESS, rc, &
-                          TRIM(itestfullname)//'WRFU_ClockGet() ', &
+    CALL test_check_error( ESMF_SUCCESS, rc, &
+                          TRIM(itestfullname)//'ESMF_ClockGet() ', &
                           __FILE__ , &
                           __LINE__  )
 
-    CALL WRFU_TimeGet( current_time, timeString=str, rc=rc )
-    CALL test_check_error( WRFU_SUCCESS, rc, &
-                          TRIM(itestfullname)//'WRFU_TimeGet() ', &
+    CALL ESMF_TimeGet( current_time, timeString=str, Sn=Sn, Sd=Sd, rc=rc )
+    CALL test_check_error( ESMF_SUCCESS, rc, &
+                          TRIM(itestfullname)//'ESMF_TimeGet() ', &
                           __FILE__ , &
                           __LINE__  )
-    CALL fraction_to_stringi8( current_time%basetime%Sn, &
-                               current_time%basetime%Sd, frac_str )
+    CALL fraction_to_string( Sn, Sd, frac_str )
     str = TRIM(str)//TRIM(frac_str)
     WRITE(*,FMT='(A,A,A,A)') TRIM(itestfullname),':  clock current_time = <',TRIM(str),'>'
 
-    subtract_time = current_time - increment
-    CALL WRFU_TimeGet( subtract_time, timeString=str, rc=rc )
-    CALL test_check_error( WRFU_SUCCESS, rc, &
-                          TRIM(itestfullname)//'WRFU_TimeGet() ', &
+    CALL ESMF_TimeGet( current_time, dayOfYear_r8=dayr8, rc=rc )
+    CALL test_check_error( ESMF_SUCCESS, rc, &
+                          TRIM(itestfullname)//'ESMF_TimeGet() ', &
                           __FILE__ , &
                           __LINE__  )
-    CALL fraction_to_stringi8( subtract_time%basetime%Sn, &
-                               subtract_time%basetime%Sd, frac_str )
+    WRITE(*,FMT='(A,A,F10.6,A)') TRIM(itestfullname),':  current_time dayOfYear_r8 = < ',dayr8,' >'
+
+    subtract_time = current_time - increment
+    CALL ESMF_TimeGet( subtract_time, timeString=str, Sn=Sn, Sd=Sd, rc=rc )
+    CALL test_check_error( ESMF_SUCCESS, rc, &
+                          TRIM(itestfullname)//'ESMF_TimeGet() ', &
+                          __FILE__ , &
+                          __LINE__  )
+    CALL fraction_to_string( Sn, Sd, frac_str )
     str = TRIM(str)//TRIM(frac_str)
     WRITE(*,FMT='(A,A,A,A)') TRIM(itestfullname),':  current_time-increment = <',TRIM(str),'>'
 
     add_time = current_time + increment
-    CALL WRFU_TimeGet( add_time, timeString=str, rc=rc )
-    CALL test_check_error( WRFU_SUCCESS, rc, &
-                          TRIM(itestfullname)//'WRFU_TimeGet() ', &
+    CALL ESMF_TimeGet( add_time, timeString=str, Sn=Sn, Sd=Sd, rc=rc )
+    CALL test_check_error( ESMF_SUCCESS, rc, &
+                          TRIM(itestfullname)//'ESMF_TimeGet() ', &
                           __FILE__ , &
                           __LINE__  )
-    CALL fraction_to_stringi8( add_time%basetime%Sn, &
-                               add_time%basetime%Sd, frac_str )
+    CALL fraction_to_string( Sn, Sd, frac_str )
     str = TRIM(str)//TRIM(frac_str)
     WRITE(*,FMT='(A,A,A,A)') TRIM(itestfullname),':  current_time+increment = <',TRIM(str),'>'
 
     ! Advance clock.  
     itestfullname = TRIM(itestname)//'ADVANCE'
     itimestep = 0
-    DO WHILE ( .NOT. WRFU_ClockIsStopTime(domain_clock ,rc=rc) )
-      CALL test_check_error( WRFU_SUCCESS, rc, &
-                            TRIM(itestfullname)//'WRFU_ClockIsStopTime() ', &
+    DO WHILE ( .NOT. ESMF_ClockIsStopTime(domain_clock ,rc=rc) )
+      CALL test_check_error( ESMF_SUCCESS, rc, &
+                            TRIM(itestfullname)//'ESMF_ClockIsStopTime() ', &
                             __FILE__ , &
                             __LINE__  )
       itimestep = itimestep + 1
 
-      CALL WRFU_ClockAdvance( domain_clock, rc=rc )
-      CALL test_check_error( WRFU_SUCCESS, rc, &
-                            TRIM(itestfullname)//'WRFU_ClockAdvance() ', &
+      CALL ESMF_ClockAdvance( domain_clock, rc=rc )
+      CALL test_check_error( ESMF_SUCCESS, rc, &
+                            TRIM(itestfullname)//'ESMF_ClockAdvance() ', &
                             __FILE__ , &
                             __LINE__  )
 
-      CALL WRFU_ClockGet( domain_clock, CurrTime=current_time, &
+      CALL ESMF_ClockGet( domain_clock, CurrTime=current_time, &
                           rc=rc )
-      CALL test_check_error( WRFU_SUCCESS, rc, &
-                            TRIM(itestfullname)//'WRFU_ClockGet() ', &
+      CALL test_check_error( ESMF_SUCCESS, rc, &
+                            TRIM(itestfullname)//'ESMF_ClockGet() ', &
                             __FILE__ , &
                             __LINE__  )
 
-      CALL WRFU_TimeGet( current_time, timeString=str, rc=rc )
-      CALL test_check_error( WRFU_SUCCESS, rc, &
-                            TRIM(itestfullname)//'WRFU_TimeGet() ', &
+      CALL ESMF_TimeGet( current_time, timeString=str, Sn=Sn, Sd=Sd, rc=rc )
+      CALL test_check_error( ESMF_SUCCESS, rc, &
+                            TRIM(itestfullname)//'ESMF_TimeGet() ', &
                             __FILE__ , &
                             __LINE__  )
-      CALL fraction_to_stringi8( current_time%basetime%Sn, &
-                                 current_time%basetime%Sd, frac_str )
+      CALL fraction_to_string( Sn, Sd, frac_str )
       str = TRIM(str)//TRIM(frac_str)
       WRITE(*,FMT='(A,A,I6.6,A,A,A)') TRIM(itestfullname),':  count = ', &
         itimestep,'  current_time = <',TRIM(str),'>'
 
       subtract_time = current_time - increment
-      CALL WRFU_TimeGet( subtract_time, timeString=str, rc=rc )
-      CALL test_check_error( WRFU_SUCCESS, rc, &
-                            TRIM(itestfullname)//'WRFU_TimeGet() ', &
+      CALL ESMF_TimeGet( subtract_time, timeString=str, Sn=Sn, Sd=Sd, rc=rc )
+      CALL test_check_error( ESMF_SUCCESS, rc, &
+                            TRIM(itestfullname)//'ESMF_TimeGet() ', &
                             __FILE__ , &
                             __LINE__  )
-      CALL fraction_to_stringi8( subtract_time%basetime%Sn, &
-                                 subtract_time%basetime%Sd, frac_str )
+      CALL fraction_to_string( Sn, Sd, frac_str )
       str = TRIM(str)//TRIM(frac_str)
       WRITE(*,FMT='(A,A,A,A)') TRIM(itestfullname),':  current_time-increment = <',TRIM(str),'>'
 
       add_time = current_time + increment
-      CALL WRFU_TimeGet( add_time, timeString=str, rc=rc )
-      CALL test_check_error( WRFU_SUCCESS, rc, &
-                            TRIM(itestfullname)//'WRFU_TimeGet() ', &
+      CALL ESMF_TimeGet( add_time, timeString=str, Sn=Sn, Sd=Sd, rc=rc )
+      CALL test_check_error( ESMF_SUCCESS, rc, &
+                            TRIM(itestfullname)//'ESMF_TimeGet() ', &
                             __FILE__ , &
                             __LINE__  )
-      CALL fraction_to_stringi8( add_time%basetime%Sn, &
-                                 add_time%basetime%Sd, frac_str )
+      CALL fraction_to_string( Sn, Sd, frac_str )
       str = TRIM(str)//TRIM(frac_str)
       WRITE(*,FMT='(A,A,A,A)') TRIM(itestfullname),':  current_time+increment = <',TRIM(str),'>'
 
@@ -1144,7 +1074,7 @@ CONTAINS
 END MODULE my_tests
 
 
-#if defined( ESMF_TIME_F90_ONLY ) 
+#if defined( TIME_F90_ONLY ) 
 
 ! TBH:  Improve the build of Test1.exe to use WRF versions of these 
 ! TBH:  routines and remove these hacked-in duplicates!!  
@@ -1217,72 +1147,6 @@ SUBROUTINE wrf_error_fatal( str )
   CALL wrf_error_fatal3 ( ' ', 0, str )
 END SUBROUTINE wrf_error_fatal
 
-
-! Converts an WRFU_Time object into a WRF date-time string.
-! The format of the WRF date-time strings is a slight variant on ISO 8601:
-! ISO is "YYYY-MM-DDThh:mm:ss" while WRF is "YYYY-MM-DD_hh:mm:ss".
-SUBROUTINE wrf_timetoa ( time, str )
-   USE module_utility
-   IMPLICIT NONE
-   TYPE(WRFU_Time),   INTENT( IN) :: time
-   CHARACTER (LEN=*), INTENT(OUT) :: str
-   INTEGER rc
-   CHARACTER (LEN=256) :: mess
-   CALL WRFU_TimeGet( time, timeString=str, rc=rc )
-   CALL test_check_error( WRFU_SUCCESS, rc, &
-                         'WRFU_TimeGet() in wrf_timetoa() FAILED', &
-                         __FILE__ , &
-                         __LINE__  )
-   ! change ISO 8601 'T' to WRF '_'
-   str(11:11) = '_'
-!   WRITE (mess,*) 'DEBUG wrf_timetoa():  returning with str = [',TRIM(str),']'
-!   CALL wrf_debug ( 150 , mess )
-   RETURN
-END SUBROUTINE wrf_timetoa
-
-
-! This is a test for the adjust_output_times capability in WRF, which is
-! implemented with the adjust_io_timestr subroutine, defined in
-! share/module_io_domain.F.
-! 
-! If the time manager (including the WRF extension
-! WRFU_TimeIntervalDIVQuot, defined as WRFADDITION_TimeIntervalDIVQuot in
-! ESMF_TimeInterval.F90) is working properly, it should behave as:
-! 
-! Given:
-! 
-!     CT = 2000-01-26_00:00:00   (current time)
-!     ST = 2000-01-24_12:00:00   (start time)
-!     TI = 00000_03:00:00        (time interval)
-! 
-! the resulting time string should be:
-! 
-!     2000-01-26_00:00:00
-! 
-! If CT is perturbed slightly, e.g. 2000-01-26_00:00:03, the resulting
-! time string should still be 2000-01-26_00:00:00
-! 
-SUBROUTINE adjust_io_timestr ( TI, CT, ST, timestr )
-   USE module_utility
-   IMPLICIT NONE
-! Args
-   TYPE(WRFU_Time), INTENT(IN)            :: ST,CT    ! domain start and current time
-   TYPE(WRFU_TimeInterval), INTENT(IN)    :: TI       ! interval
-   CHARACTER*(*), INTENT(INOUT)           :: timestr  ! returned string
-! Local
-   TYPE(WRFU_Time)                        :: OT
-   TYPE(WRFU_TimeInterval)                :: IOI
-   INTEGER                                :: n
-
-   IOI = CT-ST                               ! length of time since starting
-   n = WRFU_TimeIntervalDIVQuot( IOI , TI )  ! number of whole time intervals
-   IOI = TI * n                              ! amount of time since starting in whole time intervals
-   OT = ST + IOI                             ! previous nearest time instant
-   CALL wrf_timetoa( OT, timestr )           ! generate string
-   RETURN
-END SUBROUTINE adjust_io_timestr
-
-
 #endif
 
 
@@ -1307,19 +1171,19 @@ END SUBROUTINE test_check_error
 
 
 PROGRAM time_manager_test
-  USE module_utility
+  USE ESMF_Mod
   USE my_tests
   IMPLICIT NONE
   INTEGER :: rc
 
   PRINT *,'BEGIN TEST SUITE'
 
-  CALL WRFU_Initialize( defaultCalendar=WRFU_CAL_GREGORIAN, rc=rc )
-  CALL test_check_error( WRFU_SUCCESS, rc, &
-                        'WRFU_Initialize() ', &
+  CALL ESMF_Initialize( defaultCalendar=ESMF_CAL_GREGORIAN, rc=rc )
+  CALL test_check_error( ESMF_SUCCESS, rc, &
+                        'ESMF_Initialize() ', &
                         __FILE__ , &
                         __LINE__  )
-!  PRINT *,'DEBUG:  back from WRFU_Initialize(), rc = ',rc
+!  PRINT *,'DEBUG:  back from ESMF_Initialize(), rc = ',rc
 
 !  CALL test_print(  t_yy,  t_mm,  t_dd,  t_h,  t_m,  t_s, &
 !                   ti_yy, ti_mm, ti_dd, ti_h, ti_m, ti_s, &
@@ -1414,15 +1278,6 @@ PROGRAM time_manager_test
 !    res_str='02002-000-003_001:020:010', testname='printTI_NN2', expect_error=.TRUE. )
 !  CALL test_print( ti_yy=2002,  ti_mm=5,  ti_dd=500,  ti_h=0,  ti_m=0,  ti_s=7270, &
 !    res_str='02002-005-500_002:001:010', testname='printTI_NN3', expect_error=.TRUE. )
-
-!  CALL test_arithmetic( add_op=,                                 &
-!     op1_t_yy,  op1_t_mm,  op1_t_dd,  op1_t_h,  op1_t_m,  op1_t_s, &
-!    op1_ti_yy, op1_ti_mm, op1_ti_dd, op1_ti_h, op1_ti_m, op1_ti_s, &
-!     op2_t_yy,  op2_t_mm,  op2_t_dd,  op2_t_h,  op2_t_m,  op2_t_s, &
-!    op2_ti_yy, op2_ti_mm, op2_ti_dd, op2_ti_h, op2_ti_m, op2_ti_s, &
-!     res_t_yy,  res_t_mm,  res_t_dd,  res_t_h,  res_t_m,  res_t_s, &
-!    res_ti_yy, res_ti_mm, res_ti_dd, res_ti_h, res_ti_m, res_ti_s, &
-!    testname )
 
   ! Addition tests
   ! ESMF_Time = ESMF_Time + ESMF_TimeInterval
@@ -1741,22 +1596,86 @@ PROGRAM time_manager_test
     op2_int=5,                                             &
     res_ti_s=0, res_ti_sn=7,  res_ti_sd=20,                &
     testname='DivideTI_TI_INT3' )
-
-  ! Test adjust_io_timestr()
-!     CT = 2000-01-26_00:00:00   (current time)
-!     ST = 2000-01-24_12:00:00   (start time)
-!     TI = 00000_03:00:00        (time interval)
-! the resulting time string should be:
-!     2000-01-26_00:00:00
-  CALL test_adjust_io_timestr( TI_h=3, TI_m=0, TI_s=0,          &
-    CT_yy=2000,  CT_mm=1,  CT_dd=26,  CT_h=0,  CT_m=0,  CT_s=0, &
-    ST_yy=2000,  ST_mm=1,  ST_dd=24,  ST_h=12, ST_m=0,  ST_s=0, &
-    res_str='2000-01-26_00:00:00', testname='adjust_io_timestr_1' )
-! this should fail (and does)
-!  CALL test_adjust_io_timestr( TI_h=3, TI_m=0, TI_s=0,          &
-!    CT_yy=2000,  CT_mm=1,  CT_dd=26,  CT_h=0,  CT_m=0,  CT_s=0, &
-!    ST_yy=2000,  ST_mm=1,  ST_dd=24,  ST_h=12, ST_m=0,  ST_s=0, &
-!    res_str='2000-01-26_00:00:01', testname='adjust_io_timestr_FAIL1' )
+  ! INTEGER = ESMF_TimeInterval / ESMF_TimeInterval
+  ! this operator truncates to whole integers
+  CALL test_arithmetic( multiply_op=.FALSE.,               &
+    op1_ti_dd=3,  op1_ti_h=12,  op1_ti_m=18,  op1_ti_s=33, &
+    op2_ti_dd=3,  op2_ti_h=12,  op2_ti_m=18,  op2_ti_s=33, &
+    res_int=1,                                             &
+    testname='DivideINT_TI_TI1' )
+  CALL test_arithmetic( multiply_op=.FALSE.,               &
+    op1_ti_dd=6,  op1_ti_h=24,  op1_ti_m=36,  op1_ti_s=66, &
+    op2_ti_dd=3,  op2_ti_h=12,  op2_ti_m=18,  op2_ti_s=33, &
+    res_int=2,                                             &
+    testname='DivideINT_TI_TI2' )
+  CALL test_arithmetic( multiply_op=.FALSE.,               &
+    op1_ti_dd=0,  op1_ti_h=00,  op1_ti_m=00,  op1_ti_s=00, &
+    op2_ti_dd=3,  op2_ti_h=12,  op2_ti_m=18,  op2_ti_s=33, &
+    res_int=0,                                             &
+    testname='DivideINT_TI_TI3' )
+  CALL test_arithmetic( multiply_op=.FALSE.,               &
+    op1_ti_dd=1,  op1_ti_h=00,  op1_ti_m=00,  op1_ti_s=00, &
+    op2_ti_dd=0,  op2_ti_h=01,  op2_ti_m=00,  op2_ti_s=00, &
+    res_int=24,                                            &
+    testname='DivideINT_TI_TI4' )
+  CALL test_arithmetic( multiply_op=.FALSE.,               &
+    op1_ti_dd=1,  op1_ti_h=00,  op1_ti_m=00,  op1_ti_s=00, &
+    op2_ti_dd=0,  op2_ti_h=00,  op2_ti_m=01,  op2_ti_s=00, &
+    res_int=1440,                                          &
+    testname='DivideINT_TI_TI5' )
+  CALL test_arithmetic( multiply_op=.FALSE.,               &
+    op1_ti_dd=1,  op1_ti_h=00,  op1_ti_m=00,  op1_ti_s=00, &
+    op2_ti_dd=0,  op2_ti_h=00,  op2_ti_m=00,  op2_ti_s=01, &
+    res_int=86400,                                         &
+    testname='DivideINT_TI_TI6' )
+  ! rounding
+  CALL test_arithmetic( multiply_op=.FALSE.,               &
+    op1_ti_dd=0,  op1_ti_h=00,  op1_ti_m=00,  op1_ti_s=03, &
+    op2_ti_dd=0,  op2_ti_h=00,  op2_ti_m=00,  op2_ti_s=02, &
+    res_int=1,                                             &
+    testname='DivideINT_TI_TIR1' )
+  CALL test_arithmetic( multiply_op=.FALSE.,               &
+    op1_ti_dd=1,  op1_ti_h=00,  op1_ti_m=00,  op1_ti_s=02, &
+    op2_ti_dd=1,  op2_ti_h=00,  op2_ti_m=00,  op2_ti_s=03, &
+    res_int=0,                                             &
+    testname='DivideINT_TI_TIR2' )
+  ! fractional operands
+  CALL test_arithmetic( multiply_op=.FALSE.,               &
+    op1_ti_m=00,  op1_ti_s=00, op1_ti_sn=03, op1_ti_sd=04, &
+    op2_ti_m=00,  op2_ti_s=00, op2_ti_sn=03, op2_ti_sd=04, &
+    res_int=1,                                             &
+    testname='DivideINT_TI_TIF1' )
+  CALL test_arithmetic( multiply_op=.FALSE.,               &
+    op1_ti_m=00,  op1_ti_s=00, op1_ti_sn=06, op1_ti_sd=08, &
+    op2_ti_m=00,  op2_ti_s=00, op2_ti_sn=03, op2_ti_sd=04, &
+    res_int=1,                                             &
+    testname='DivideINT_TI_TIF2' )
+  CALL test_arithmetic( multiply_op=.FALSE.,               &
+    op1_ti_m=00,  op1_ti_s=00, op1_ti_sn=03, op1_ti_sd=04, &
+    op2_ti_m=00,  op2_ti_s=00, op2_ti_sn=04, op2_ti_sd=03, &
+    res_int=0,                                             &
+    testname='DivideINT_TI_TIF3' )
+  CALL test_arithmetic( multiply_op=.FALSE.,               &
+    op1_ti_m=00,  op1_ti_s=02, op1_ti_sn=03, op1_ti_sd=04, &
+    op2_ti_m=00,  op2_ti_s=01, op2_ti_sn=01, op2_ti_sd=03, &
+    res_int=2,                                             &
+    testname='DivideINT_TI_TIF4' )
+  ! negative operands
+  CALL test_arithmetic( multiply_op=.FALSE.,               &
+    op1_ti_dd=-6,  op1_ti_h=-24,  op1_ti_m=-36,  op1_ti_s=-66, &
+    op2_ti_dd=3,  op2_ti_h=12,  op2_ti_m=18,  op2_ti_s=33, &
+    res_int=-2,                                             &
+    testname='DivideINT_TI_TIN1' )
+  CALL test_arithmetic( multiply_op=.FALSE.,               &
+    op1_ti_dd=6,  op1_ti_h=24,  op1_ti_m=36,  op1_ti_s=66, &
+    op2_ti_dd=-3,  op2_ti_h=-12,  op2_ti_m=-18,  op2_ti_s=-33, &
+    res_int=-2,                                             &
+    testname='DivideINT_TI_TIN2' )
+  CALL test_arithmetic( multiply_op=.FALSE.,               &
+    op1_ti_dd=-6,  op1_ti_h=-24,  op1_ti_m=-36,  op1_ti_s=-66, &
+    op2_ti_dd=-3,  op2_ti_h=-12,  op2_ti_m=-18,  op2_ti_s=-33, &
+    res_int=2,                                             &
+    testname='DivideINT_TI_TIN3' )
 
 !$$$here...  modify these to add self-test PASS/FAIL output
   CALL test_clock_advance(                                                    &
@@ -1787,9 +1706,9 @@ PROGRAM time_manager_test
     testname="LeapYearFractionClockAdvance",                                  &
     increment_S=1, increment_Sn=1, increment_Sd=3 )
 
-  CALL WRFU_Finalize( rc=rc )
-  CALL test_check_error( WRFU_SUCCESS, rc, &
-                        'WRFU_Finalize() ', &
+  CALL ESMF_Finalize( rc=rc )
+  CALL test_check_error( ESMF_SUCCESS, rc, &
+                        'ESMF_Finalize() ', &
                         __FILE__ , &
                         __LINE__  )
 

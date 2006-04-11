@@ -159,6 +159,10 @@ MODULE module_domain
    TYPE(domain), POINTER :: current_grid
    LOGICAL, SAVE :: current_grid_set = .FALSE.
 
+   ! internal routines
+   PRIVATE domain_time_test_print
+   PRIVATE test_adjust_io_timestr
+
 CONTAINS
 
    SUBROUTINE adjust_domain_dims_for_move( grid , dx, dy )
@@ -1521,22 +1525,133 @@ CONTAINS
       END FUNCTION domain_last_time_step
 
 
-      SUBROUTINE domain_clock_get( grid, current_time,          &
-                                         current_timestr,       &
-                                         current_timestr_frac,  &
-                                         start_time, stop_time, &
-                                         stop_timestr,          &
-                                         time_step, advanceCount )
+
+      FUNCTION domain_clockisstoptime ( grid ) RESULT ( is_stop_time ) 
+        IMPLICIT NONE
+! <DESCRIPTION>
+! This convenience function returns .TRUE. iff grid%clock has reached its 
+! stop time.  
+!
+! </DESCRIPTION>
+        TYPE(domain), INTENT(IN) :: grid
+        ! result
+        LOGICAL :: is_stop_time
+        INTEGER :: rc
+        is_stop_time = WRFU_ClockIsStopTime( grid%domain_clock , rc=rc )
+        IF ( rc /= WRFU_SUCCESS ) THEN
+          CALL wrf_error_fatal ( &
+            'domain_clockisstoptime:  WRFU_ClockIsStopTime() failed' )
+        ENDIF
+      END FUNCTION domain_clockisstoptime
+
+
+
+
+      FUNCTION domain_get_sim_start_time ( grid ) RESULT ( simulationStartTime ) 
+        IMPLICIT NONE
+! <DESCRIPTION>
+! This convenience routine returns simulation start time for domain grid as 
+! a time instant.  
+!
+! If this is not a restart run, the start_time of grid%clock is returned 
+! instead.  
+!
+! Note that simulation start time remains constant through restarts while 
+! the start_time of grid%clock always refers to the start time of the 
+! current run (restart or otherwise).  
+!
+! </DESCRIPTION>
+        TYPE(domain), INTENT(IN) :: grid
+        ! result
+        TYPE(WRFU_Time) :: simulationStartTime
+        ! Locals
+        INTEGER :: rc
+        INTEGER :: simulation_start_year,   simulation_start_month, &
+                   simulation_start_day,    simulation_start_hour , &
+                   simulation_start_minute, simulation_start_second
+        CALL nl_get_simulation_start_year   ( grid%id, simulation_start_year   )
+        CALL nl_get_simulation_start_month  ( grid%id, simulation_start_month  )
+        CALL nl_get_simulation_start_day    ( grid%id, simulation_start_day    )
+        CALL nl_get_simulation_start_hour   ( grid%id, simulation_start_hour   )
+        CALL nl_get_simulation_start_minute ( grid%id, simulation_start_minute )
+        CALL nl_get_simulation_start_second ( grid%id, simulation_start_second )
+        CALL WRFU_TimeSet( simulationStartTime,       &
+                           YY=simulation_start_year,  &
+                           MM=simulation_start_month, &
+                           DD=simulation_start_day,   &
+                           H=simulation_start_hour,   &
+                           M=simulation_start_minute, &
+                           S=simulation_start_second, &
+                           rc=rc )
+        IF ( rc /= WRFU_SUCCESS ) THEN
+          CALL wrf_error_fatal ( &
+            'domain_get_sim_start_time:  WRFU_TimeSet(simulationStartTime) failed' )
+        ENDIF
+        RETURN
+      END FUNCTION domain_get_sim_start_time
+
+
+
+      FUNCTION domain_get_time_since_sim_start ( grid ) RESULT ( time_since_sim_start ) 
+        IMPLICIT NONE
+! <DESCRIPTION>
+! This convenience function returns the time elapsed since start of 
+! simulation for domain grid.  
+!
+! Note that simulation start time remains constant through restarts while 
+! the start_time of grid%clock always refers to the start time of the 
+! current run (restart or otherwise).  
+!
+! </DESCRIPTION>
+        TYPE(domain), INTENT(IN) :: grid
+        ! result
+        TYPE(WRFU_TimeInterval) :: time_since_sim_start
+        ! locals
+        TYPE(WRFU_Time) :: lcl_currtime, lcl_simstarttime
+        lcl_simstarttime = domain_get_sim_start_time( grid )
+        lcl_currtime = domain_get_current_time ( grid )
+        time_since_sim_start = lcl_currtime - lcl_simstarttime
+      END FUNCTION domain_get_time_since_sim_start
+
+
+
+
+      SUBROUTINE domain_clock_get( grid, current_time,                &
+                                         current_timestr,             &
+                                         current_timestr_frac,        &
+                                         start_time, start_timestr,   &
+                                         stop_time, stop_timestr,     &
+                                         time_step, time_stepstr,     &
+                                         time_stepstr_frac,           &
+                                         advanceCount,                &
+                                         currentDayOfYearReal,        &
+                                         minutesSinceSimulationStart, &
+                                         timeSinceSimulationStart,    &
+                                         simulationStartTime )
         IMPLICIT NONE
         TYPE(domain),            INTENT(IN)              :: grid
         TYPE(WRFU_Time),         INTENT(  OUT), OPTIONAL :: current_time
         CHARACTER (LEN=*),       INTENT(  OUT), OPTIONAL :: current_timestr
         CHARACTER (LEN=*),       INTENT(  OUT), OPTIONAL :: current_timestr_frac
         TYPE(WRFU_Time),         INTENT(  OUT), OPTIONAL :: start_time
+        CHARACTER (LEN=*),       INTENT(  OUT), OPTIONAL :: start_timestr
         TYPE(WRFU_Time),         INTENT(  OUT), OPTIONAL :: stop_time
         CHARACTER (LEN=*),       INTENT(  OUT), OPTIONAL :: stop_timestr
         TYPE(WRFU_TimeInterval), INTENT(  OUT), OPTIONAL :: time_step
+        CHARACTER (LEN=*),       INTENT(  OUT), OPTIONAL :: time_stepstr
+        CHARACTER (LEN=*),       INTENT(  OUT), OPTIONAL :: time_stepstr_frac
         INTEGER,                 INTENT(  OUT), OPTIONAL :: advanceCount
+        ! currentDayOfYearReal = 1.0 at 0Z on 1 January, 1.5 at 12Z on 
+        ! 1 January, etc.
+        REAL,                    INTENT(  OUT), OPTIONAL :: currentDayOfYearReal
+        ! Time at which simulation started.  If this is not a restart run, 
+        ! start_time is returned instead.  
+        TYPE(WRFU_Time),         INTENT(  OUT), OPTIONAL :: simulationStartTime
+        ! time interval since start of simulation, includes effects of 
+        ! restarting even when restart uses a different timestep
+        TYPE(WRFU_TimeInterval), INTENT(  OUT), OPTIONAL :: timeSinceSimulationStart
+        ! minutes since simulation start date
+        REAL,                    INTENT(  OUT), OPTIONAL :: minutesSinceSimulationStart
 ! <DESCRIPTION>
 ! This convenience routine returns clock information for domain grid in 
 ! various forms.  The caller is responsible for ensuring that character 
@@ -1544,15 +1659,41 @@ CONTAINS
 !
 ! </DESCRIPTION>
         ! Locals
-        TYPE(WRFU_Time) :: tmpTime
-        INTEGER :: Sn, Sd, rc
+        TYPE(WRFU_Time) :: lcl_currtime, lcl_stoptime, lcl_starttime
+        TYPE(WRFU_TimeInterval) :: lcl_time_step, lcl_timeSinceSimulationStart
+        INTEGER :: days, seconds, Sn, Sd, rc
         CHARACTER (LEN=256) :: tmp_str
         CHARACTER (LEN=256) :: frac_str
+        REAL(WRFU_KIND_R8) :: currentDayOfYearR8
         IF ( PRESENT( start_time ) ) THEN
           start_time = domain_get_start_time ( grid )
         ENDIF
+        IF ( PRESENT( start_timestr ) ) THEN
+          lcl_starttime = domain_get_start_time ( grid )
+          CALL wrf_timetoa ( lcl_starttime, start_timestr )
+        ENDIF
         IF ( PRESENT( time_step ) ) THEN
           time_step = domain_get_time_step ( grid )
+        ENDIF
+        IF ( PRESENT( time_stepstr ) ) THEN
+          lcl_time_step = domain_get_time_step ( grid )
+          CALL WRFU_TimeIntervalGet( lcl_time_step, &
+                                     timeString=time_stepstr, rc=rc )
+          IF ( rc /= WRFU_SUCCESS ) THEN
+            CALL wrf_error_fatal ( &
+              'domain_clock_get:  WRFU_TimeIntervalGet() failed' )
+          ENDIF
+        ENDIF
+        IF ( PRESENT( time_stepstr_frac ) ) THEN
+          lcl_time_step = domain_get_time_step ( grid )
+          CALL WRFU_TimeIntervalGet( lcl_time_step, timeString=tmp_str, &
+                                     Sn=Sn, Sd=Sd, rc=rc )
+          IF ( rc /= WRFU_SUCCESS ) THEN
+            CALL wrf_error_fatal ( &
+              'domain_clock_get:  WRFU_TimeIntervalGet() failed' )
+          ENDIF
+          CALL fraction_to_string( Sn, Sd, frac_str )
+          time_stepstr_frac = TRIM(tmp_str)//TRIM(frac_str)
         ENDIF
         IF ( PRESENT( advanceCount ) ) THEN
           advanceCount = domain_get_advanceCount ( grid )
@@ -1567,14 +1708,14 @@ CONTAINS
           current_time = domain_get_current_time ( grid )
         ENDIF
         IF ( PRESENT( current_timestr ) ) THEN
-          tmpTime = domain_get_current_time ( grid )
-          CALL wrf_timetoa ( tmpTime, current_timestr )
+          lcl_currtime = domain_get_current_time ( grid )
+          CALL wrf_timetoa ( lcl_currtime, current_timestr )
         ENDIF
         ! current time string including fractional part, if present
         IF ( PRESENT( current_timestr_frac ) ) THEN
-          tmpTime = domain_get_current_time ( grid )
-          CALL wrf_timetoa ( tmpTime, tmp_str )
-          CALL WRFU_TimeGet( tmpTime, Sn=Sn, Sd=Sd, rc=rc )
+          lcl_currtime = domain_get_current_time ( grid )
+          CALL wrf_timetoa ( lcl_currtime, tmp_str )
+          CALL WRFU_TimeGet( lcl_currtime, Sn=Sn, Sd=Sd, rc=rc )
           IF ( rc /= WRFU_SUCCESS ) THEN
             CALL wrf_error_fatal ( &
               'domain_clock_get:  WRFU_TimeGet() failed' )
@@ -1586,8 +1727,40 @@ CONTAINS
           stop_time = domain_get_stop_time ( grid )
         ENDIF
         IF ( PRESENT( stop_timestr ) ) THEN
-          tmpTime = domain_get_stop_time ( grid )
-          CALL wrf_timetoa ( tmpTime, stop_timestr )
+          lcl_stoptime = domain_get_stop_time ( grid )
+          CALL wrf_timetoa ( lcl_stoptime, stop_timestr )
+        ENDIF
+        IF ( PRESENT( currentDayOfYearReal ) ) THEN
+          lcl_currtime = domain_get_current_time ( grid )
+          CALL WRFU_TimeGet( lcl_currtime, dayOfYear_r8=currentDayOfYearR8, &
+                             rc=rc )
+          IF ( rc /= WRFU_SUCCESS ) THEN
+            CALL wrf_error_fatal ( &
+                   'domain_clock_get:  WRFU_TimeGet(dayOfYear_r8) failed' )
+          ENDIF
+          currentDayOfYearReal = REAL( currentDayOfYearR8 )
+        ENDIF
+        IF ( PRESENT( simulationStartTime ) ) THEN
+          simulationStartTime = domain_get_sim_start_time( grid )
+        ENDIF
+        IF ( PRESENT( timeSinceSimulationStart ) ) THEN
+          timeSinceSimulationStart = domain_get_time_since_sim_start( grid )
+        ENDIF
+        IF ( PRESENT( minutesSinceSimulationStart ) ) THEN
+          lcl_timeSinceSimulationStart = domain_get_time_since_sim_start( grid )
+          CALL WRFU_TimeIntervalGet( lcl_timeSinceSimulationStart, &
+                                     D=days, S=seconds, Sn=Sn, Sd=Sd, rc=rc )
+          IF ( rc /= WRFU_SUCCESS ) THEN
+            CALL wrf_error_fatal ( &
+                   'domain_clock_get:  WRFU_TimeIntervalGet() failed' )
+          ENDIF
+          ! get rid of hard-coded constants
+          minutesSinceSimulationStart = ( REAL( days ) * 24. * 60. ) + &
+                                        ( REAL( seconds ) / 60. )
+          IF ( Sd /= 0 ) THEN
+            minutesSinceSimulationStart = minutesSinceSimulationStart + &
+                                          ( ( REAL( Sn ) / REAL( Sd ) ) / 60. )
+          ENDIF
         ENDIF
         RETURN
       END SUBROUTINE domain_clock_get
@@ -1709,12 +1882,12 @@ CONTAINS
 !
 ! </DESCRIPTION>
         ! Locals
-        TYPE(WRFU_Time) :: tmpTime
+        TYPE(WRFU_Time) :: lcl_currtime, lcl_stoptime
         TYPE(WRFU_TimeInterval) :: tmpTimeInterval
         INTEGER :: rc
         IF ( PRESENT( current_timestr ) ) THEN
-          CALL wrf_atotime( current_timestr(1:19), tmpTime )
-          CALL WRFU_ClockSet( grid%domain_clock, currTime=tmpTime, &
+          CALL wrf_atotime( current_timestr(1:19), lcl_currtime )
+          CALL WRFU_ClockSet( grid%domain_clock, currTime=lcl_currtime, &
                               rc=rc )
           IF ( rc /= WRFU_SUCCESS ) THEN
             CALL wrf_error_fatal ( &
@@ -1722,8 +1895,8 @@ CONTAINS
           ENDIF
         ENDIF
         IF ( PRESENT( stop_timestr ) ) THEN
-          CALL wrf_atotime( stop_timestr(1:19), tmpTime )
-          CALL WRFU_ClockSet( grid%domain_clock, stopTime=tmpTime, &
+          CALL wrf_atotime( stop_timestr(1:19), lcl_stoptime )
+          CALL WRFU_ClockSet( grid%domain_clock, stopTime=lcl_stoptime, &
                               rc=rc )
           IF ( rc /= WRFU_SUCCESS ) THEN
             CALL wrf_error_fatal ( &
@@ -1750,7 +1923,7 @@ CONTAINS
 
 
       ! Debug routine to print key clock information.  
-      ! Printed lines begin with pre_str.  
+      ! Printed lines include pre_str.  
       SUBROUTINE domain_clockprint ( level, grid, pre_str )
         IMPLICIT NONE
         INTEGER,           INTENT( IN) :: level
@@ -1760,7 +1933,30 @@ CONTAINS
         RETURN
       END SUBROUTINE domain_clockprint
 
-!TBH: what to do about grid%itimestep?  LEAVE AS-IS FOR NOW
+
+      ! Advance the clock associated with grid.  
+      ! Also updates several derived time quantities in grid state.  
+      SUBROUTINE domain_clockadvance ( grid )
+        IMPLICIT NONE
+        TYPE(domain), INTENT(INOUT) :: grid
+        INTEGER :: rc
+        CALL domain_clockprint ( 250, grid, &
+          'DEBUG domain_clockadvance():  before WRFU_ClockAdvance,' )
+        CALL WRFU_ClockAdvance( grid%domain_clock, rc=rc )
+        IF ( rc /= WRFU_SUCCESS ) THEN
+          CALL wrf_error_fatal ( &
+            'domain_clockadvance:  WRFU_ClockAdvance() failed' )
+        ENDIF
+        CALL domain_clockprint ( 250, grid, &
+          'DEBUG domain_clockadvance():  after WRFU_ClockAdvance,' )
+        ! Update derived time quantities in grid state.
+        ! These are initialized in setup_timekeeping().
+        CALL domain_clock_get( grid, minutesSinceSimulationStart=grid%xtime )
+        CALL domain_clock_get( grid, currentDayOfYearReal=grid%julian )
+        RETURN
+      END SUBROUTINE domain_clockadvance
+
+
 !TBH: what to do about grid%gmt?        LEAVE AS-IS FOR NOW
 !TBH: what to do about grid%julday?     LEAVE AS-IS FOR NOW
 !TBH: what to do about grid%julyr?      LEAVE AS-IS FOR NOW
@@ -1782,6 +1978,195 @@ CONTAINS
         current_grid => grid_ptr
 !PRINT *,'DEBUG:  end set_current_grid_ptr()'
       END SUBROUTINE set_current_grid_ptr
+
+
+
+!******************************************************************************
+! BEGIN TEST SECTION
+!   Code in the test section is used to test domain methods.  
+!   This code should probably be moved elsewhere, eventually.  
+!******************************************************************************
+
+      ! Private utility routines for domain_time_test.  
+      SUBROUTINE domain_time_test_print ( pre_str, name_str, res_str )
+        IMPLICIT NONE
+        CHARACTER (LEN=*), INTENT(IN) :: pre_str
+        CHARACTER (LEN=*), INTENT(IN) :: name_str
+        CHARACTER (LEN=*), INTENT(IN) :: res_str
+        CHARACTER (LEN=512) :: out_str
+        WRITE (out_str,                                            &
+          FMT="('DOMAIN_TIME_TEST ',A,':  ',A,' = ',A)") &
+          TRIM(pre_str), TRIM(name_str), TRIM(res_str)
+        CALL wrf_debug( 0, TRIM(out_str) )
+      END SUBROUTINE domain_time_test_print
+
+      ! Test adjust_io_timestr 
+      SUBROUTINE test_adjust_io_timestr( TI_h, TI_m, TI_s, &
+        CT_yy,  CT_mm,  CT_dd,  CT_h,  CT_m,  CT_s,        &
+        ST_yy,  ST_mm,  ST_dd,  ST_h,  ST_m,  ST_s,        &
+        res_str, testname )
+        INTEGER, INTENT(IN) :: TI_H
+        INTEGER, INTENT(IN) :: TI_M
+        INTEGER, INTENT(IN) :: TI_S
+        INTEGER, INTENT(IN) :: CT_YY
+        INTEGER, INTENT(IN) :: CT_MM  ! month
+        INTEGER, INTENT(IN) :: CT_DD  ! day of month
+        INTEGER, INTENT(IN) :: CT_H
+        INTEGER, INTENT(IN) :: CT_M
+        INTEGER, INTENT(IN) :: CT_S
+        INTEGER, INTENT(IN) :: ST_YY
+        INTEGER, INTENT(IN) :: ST_MM  ! month
+        INTEGER, INTENT(IN) :: ST_DD  ! day of month
+        INTEGER, INTENT(IN) :: ST_H
+        INTEGER, INTENT(IN) :: ST_M
+        INTEGER, INTENT(IN) :: ST_S
+        CHARACTER (LEN=*), INTENT(IN) :: res_str
+        CHARACTER (LEN=*), INTENT(IN) :: testname
+        ! locals
+        TYPE(WRFU_TimeInterval) :: TI
+        TYPE(WRFU_Time) :: CT, ST
+        LOGICAL :: test_passed
+        INTEGER :: rc
+        CHARACTER(LEN=WRFU_MAXSTR) :: TI_str, CT_str, ST_str, computed_str
+        ! TI
+        CALL WRFU_TimeIntervalSet( TI, H=TI_H, M=TI_M, S=TI_S, rc=rc )
+        CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                              'FAIL:  '//TRIM(testname)//'WRFU_TimeIntervalSet() ', &
+                              __FILE__ , &
+                              __LINE__  )
+        CALL WRFU_TimeIntervalGet( TI, timeString=TI_str, rc=rc )
+        CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                              'FAIL:  '//TRIM(testname)//'WRFU_TimeGet() ', &
+                              __FILE__ , &
+                              __LINE__  )
+        ! CT
+        CALL WRFU_TimeSet( CT, YY=CT_YY, MM=CT_MM, DD=CT_DD , &
+                                H=CT_H,   M=CT_M,   S=CT_S, rc=rc )
+        CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                              'FAIL:  '//TRIM(testname)//'WRFU_TimeSet() ', &
+                              __FILE__ , &
+                              __LINE__  )
+        CALL WRFU_TimeGet( CT, timeString=CT_str, rc=rc )
+        CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                              'FAIL:  '//TRIM(testname)//'WRFU_TimeGet() ', &
+                              __FILE__ , &
+                              __LINE__  )
+        ! ST
+        CALL WRFU_TimeSet( ST, YY=ST_YY, MM=ST_MM, DD=ST_DD , &
+                                H=ST_H,   M=ST_M,   S=ST_S, rc=rc )
+        CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                              'FAIL:  '//TRIM(testname)//'WRFU_TimeSet() ', &
+                              __FILE__ , &
+                              __LINE__  )
+        CALL WRFU_TimeGet( ST, timeString=ST_str, rc=rc )
+        CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                              'FAIL:  '//TRIM(testname)//'WRFU_TimeGet() ', &
+                              __FILE__ , &
+                              __LINE__  )
+        ! Test
+        CALL adjust_io_timestr ( TI, CT, ST, computed_str )
+        ! check result
+        test_passed = .FALSE.
+        IF ( LEN_TRIM(res_str) == LEN_TRIM(computed_str) ) THEN
+          IF ( res_str(1:LEN_TRIM(res_str)) == computed_str(1:LEN_TRIM(computed_str)) ) THEN
+            test_passed = .TRUE.
+          ENDIF
+        ENDIF
+        ! print result
+        IF ( test_passed ) THEN
+          WRITE(*,FMT='(A)') 'PASS:  '//TRIM(testname)
+        ELSE
+          WRITE(*,*) 'FAIL:  ',TRIM(testname),':  adjust_io_timestr(',    &
+            TRIM(TI_str),',',TRIM(CT_str),',',TRIM(ST_str),')  expected <', &
+            TRIM(res_str),'>  but computed <',TRIM(computed_str),'>'
+        ENDIF
+      END SUBROUTINE test_adjust_io_timestr
+
+      ! Print lots of time-related information for testing and debugging.  
+      ! Printed lines include pre_str and special string DOMAIN_TIME_TEST 
+      ! suitable for grepping by test scripts.  
+      ! Returns immediately unless self_test_domain has been set to .true. in 
+      ! namelist /time_control/ .  
+      SUBROUTINE domain_time_test ( grid, pre_str )
+        IMPLICIT NONE
+        TYPE(domain),      INTENT(IN) :: grid
+        CHARACTER (LEN=*), INTENT(IN) :: pre_str
+        ! locals
+        LOGICAL, SAVE :: one_time_tests_done = .FALSE.
+        REAL :: minutesSinceSimulationStart
+        INTEGER :: advance_count, rc
+        REAL :: currentDayOfYearReal
+        TYPE(WRFU_TimeInterval) :: timeSinceSimulationStart
+        TYPE(WRFU_Time) :: simulationStartTime
+        CHARACTER (LEN=512) :: res_str
+        LOGICAL :: self_test_domain
+        !
+        ! NOTE:  test_adjust_io_timestr() (see below) is a self-test that 
+        !        prints PASS/FAIL/ERROR messages in a standard format.  All 
+        !        of the other tests should be strucutred the same way, 
+        !        someday.  
+        !
+        CALL nl_get_self_test_domain( 1, self_test_domain )
+        IF ( self_test_domain ) THEN
+          CALL domain_clock_get( grid, advanceCount=advance_count )
+          WRITE ( res_str, FMT="(I8.8)" ) advance_count
+          CALL domain_time_test_print( pre_str, 'advanceCount', res_str )
+          CALL domain_clock_get( grid, currentDayOfYearReal=currentDayOfYearReal )
+          WRITE ( res_str, FMT='(F10.6)' ) currentDayOfYearReal
+          CALL domain_time_test_print( pre_str, 'currentDayOfYearReal', res_str )
+          CALL domain_clock_get( grid, minutesSinceSimulationStart=minutesSinceSimulationStart )
+          WRITE ( res_str, FMT='(F10.6)' ) minutesSinceSimulationStart
+          CALL domain_time_test_print( pre_str, 'minutesSinceSimulationStart', res_str )
+          CALL domain_clock_get( grid, current_timestr=res_str )
+          CALL domain_time_test_print( pre_str, 'current_timestr', res_str )
+          CALL domain_clock_get( grid, current_timestr_frac=res_str )
+          CALL domain_time_test_print( pre_str, 'current_timestr_frac', res_str )
+          CALL domain_clock_get( grid, timeSinceSimulationStart=timeSinceSimulationStart )
+          CALL WRFU_TimeIntervalGet( timeSinceSimulationStart, timeString=res_str, rc=rc )
+          IF ( rc /= WRFU_SUCCESS ) THEN
+            CALL wrf_error_fatal ( &
+              'domain_time_test:  WRFU_TimeIntervalGet() failed' )
+          ENDIF
+          CALL domain_time_test_print( pre_str, 'timeSinceSimulationStart', res_str )
+          ! The following tests should only be done once, the first time this 
+          ! routine is called.  
+          IF ( .NOT. one_time_tests_done ) THEN
+            one_time_tests_done = .TRUE.
+            CALL domain_clock_get( grid, simulationStartTime=simulationStartTime )
+            CALL wrf_timetoa ( simulationStartTime, res_str )
+            CALL domain_time_test_print( pre_str, 'simulationStartTime', res_str )
+            CALL domain_clock_get( grid, start_timestr=res_str )
+            CALL domain_time_test_print( pre_str, 'start_timestr', res_str )
+            CALL domain_clock_get( grid, stop_timestr=res_str )
+            CALL domain_time_test_print( pre_str, 'stop_timestr', res_str )
+            CALL domain_clock_get( grid, time_stepstr=res_str )
+            CALL domain_time_test_print( pre_str, 'time_stepstr', res_str )
+            CALL domain_clock_get( grid, time_stepstr_frac=res_str )
+            CALL domain_time_test_print( pre_str, 'time_stepstr_frac', res_str )
+            ! Test adjust_io_timestr()
+            !     CT = 2000-01-26_00:00:00   (current time)
+            !     ST = 2000-01-24_12:00:00   (start time)
+            !     TI = 00000_03:00:00        (time interval)
+            ! the resulting time string should be:
+            !     2000-01-26_00:00:00
+            CALL test_adjust_io_timestr( TI_h=3, TI_m=0, TI_s=0,          &
+              CT_yy=2000,  CT_mm=1,  CT_dd=26,  CT_h=0,  CT_m=0,  CT_s=0, &
+              ST_yy=2000,  ST_mm=1,  ST_dd=24,  ST_h=12, ST_m=0,  ST_s=0, &
+              res_str='2000-01-26_00:00:00', testname='adjust_io_timestr_1' )
+            ! this should fail (and does)
+            !  CALL test_adjust_io_timestr( TI_h=3, TI_m=0, TI_s=0,          &
+            !    CT_yy=2000,  CT_mm=1,  CT_dd=26,  CT_h=0,  CT_m=0,  CT_s=0, &
+            !    ST_yy=2000,  ST_mm=1,  ST_dd=24,  ST_h=12, ST_m=0,  ST_s=0, &
+            !    res_str='2000-01-26_00:00:01', testname='adjust_io_timestr_FAIL1' )
+          ENDIF
+        ENDIF
+        RETURN
+      END SUBROUTINE domain_time_test
+
+!******************************************************************************
+! END TEST SECTION
+!******************************************************************************
+
 
 END MODULE module_domain
 

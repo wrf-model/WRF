@@ -298,7 +298,8 @@
 ! !INTERFACE:
       subroutine ESMF_TimeGet(time, YY, YRl, MM, DD, D, Dl, H, M, S, Sl, MS, &
                               US, NS, d_, h_, m_, s_, ms_, us_, ns_, Sn, Sd, &
-                              dayOfYear, dayOfYear_intvl, timeString, rc)
+                              dayOfYear, dayOfYear_r8, dayOfYear_intvl,      &
+                              timeString, rc)
 
 ! !ARGUMENTS:
       type(ESMF_Time), intent(in) :: time
@@ -325,6 +326,9 @@
       integer, intent(out), optional :: Sn
       integer, intent(out), optional :: Sd
       integer, intent(out), optional :: dayOfYear
+      ! dayOfYear_r8 = 1.0 at 0Z on 1 January, 1.5 at 12Z on
+      ! 1 January, etc.
+      real(ESMF_KIND_R8), intent(out), optional :: dayOfYear_r8
       character (len=*), intent(out), optional :: timeString
       type(ESMF_TimeInterval), intent(out), optional :: dayOfYear_intvl
       integer, intent(out), optional :: rc
@@ -400,6 +404,7 @@
 !EOP
       TYPE(ESMF_Time) :: begofyear
       INTEGER :: year, month, dayofmonth, hour, minute, second
+      REAL(ESMF_KIND_R8) :: rsec
 
       ierr = ESMF_SUCCESS
 
@@ -413,7 +418,8 @@
         CALL timegetdayofmonth( time, DD )
       ENDIF
 !
-!$$$ push HMS down into ESMF_BaseTime
+!$$$ Push HMS down into ESMF_BaseTime from EVERYWHERE
+!$$$ and THEN add ESMF scaling behavior when other args are present...  
       IF ( PRESENT( H ) ) THEN
         H = mod( time%basetime%S, SECONDS_PER_DAY ) / SECONDS_PER_HOUR
       ENDIF
@@ -443,6 +449,18 @@
       ENDIF
       IF ( PRESENT( dayOfYear ) ) THEN
         CALL ESMF_TimeGetDayOfYear( time, dayOfYear, rc=ierr )
+      ENDIF
+      IF ( PRESENT( dayOfYear_r8 ) ) THEN
+        ! 64-bit IEEE 754 has 52-bit mantisssa -- only need 25 bits to hold 
+        ! number of seconds in a year...  
+        rsec = REAL( time%basetime%S, ESMF_KIND_R8 )
+        IF ( time%basetime%Sd /= 0 ) THEN
+          rsec = rsec + ( REAL( time%basetime%Sn, ESMF_KIND_R8 ) / &
+                          REAL( time%basetime%Sd, ESMF_KIND_R8 ) )
+        ENDIF
+        dayOfYear_r8 = rsec / REAL( SECONDS_PER_DAY, ESMF_KIND_R8 )
+        ! start at 1
+        dayOfYear_r8 = dayOfYear_r8 + 1.0_ESMF_KIND_R8
       ENDIF
       IF ( PRESENT( timeString ) ) THEN
         ! This duplication for YMD is an optimization that avoids calling 

@@ -174,6 +174,7 @@ rconfig   integer     io_form_history     namelist,time_control		1              
 rconfig   integer     io_form_restart     namelist,time_control		1              2       h        "io_form_restart"               ""      ""
 rconfig   integer     io_form_boundary    namelist,time_control		1              2       h        "io_form_boundary"               ""      ""
 rconfig   integer debug_level             namelist,time_control		1             0       -      "debug_level"           ""      ""
+rconfig   logical self_test_domain        namelist,time_control		1              .false. -      "self_test_domain"           ""      ""
 
 
 rconfig   character  history_outname   namelist,time_control		1  "wrfout_d<domain>_<date>"     -     "name of history outfile"  ""      ""
@@ -655,6 +656,10 @@ state integer nodyn_dummy - dyn_nodyn -  -  -  "" "" ""
 #-------------------------------------------------------------------------------------------------------------------------------------------
 # a few entries that need to be in the registry for stuff in share to compile, but that you probably do not want converted
 
+
+# State for derived time quantities.  
+state   real    xtime          -        -          -         -     -        "xtime"                 "minutes since simulation start"         ""      
+state   real    julian         -        -          -         -     -        "julian"                "day of year"         ""      
 
 # Output file descriptor for a domain
 state   integer oid            -        -          -         -     -         "oid"                   ""         ""

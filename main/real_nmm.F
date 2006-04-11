@@ -851,7 +851,7 @@ character *24 :: temp24 , temp24b
 ! what's this do?
 !         grid%write_metadata = .true.
 !         grid%write_metadata = .false.
-         CALL WRFU_ClockAdvance( grid%domain_clock, rc=rc )
+         CALL domain_clockadvance( grid )
       END IF
 
       write(0,*)' assemble_ouput loop=',loop,' point 2'

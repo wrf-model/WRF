@@ -6,8 +6,10 @@
 
 .SUFFIXES: .F90 .o .f
 
-# a hack, should pass this in from top-level Makefile
-SED_FTN = sed -f ../../arch/standard.sed
+# get rid of single quotes after comments
+# WARNING:  This will break if a quoted string is followed by a comment that has
+#           a single quote.
+SED_FTN = sed -e "/\!.*'/s/'//g"
 
 AR = ar
 #RANLIB	= ranlib
@@ -21,15 +23,28 @@ OBJS = ESMF_Alarm.o ESMF_BaseTime.o ESMF_Clock.o ESMF_Time.o \
 
 default: libesmf_time.a
 
-tests: Test1.exe
+tests: Test1_ESMF.exe Test1_WRFU.exe
 
 libesmf_time.a : $(OBJS)
-	\rm -f libesmf_time.a
+	$(RM) libesmf_time.a
 	$(AR) ru libesmf_time.a $(OBJS)
 	$(RANLIB) libesmf_time.a
 
-Test1.exe : libesmf_time.a Test1.o
-	$(FC) -o Test1.exe Test1.o libesmf_time.a
+Test1_ESMF.f : Test1.F90
+	$(RM) Test1_ESMF.b Test1_ESMF.f
+	cp Test1.F90 Test1_ESMF.b
+	$(CPP) -C -P -I. Test1_ESMF.b > Test1_ESMF.f
+
+Test1_ESMF.exe : libesmf_time.a Test1_ESMF.o
+	$(FC) -o Test1_ESMF.exe Test1_ESMF.o libesmf_time.a
+
+Test1_WRFU.f : Test1.F90
+	$(RM) Test1_WRFU.b Test1_WRFU.f
+	sed -e "s/ESMF_Mod/module_utility/g" -e "s/ESMF_/WRFU_/g" Test1.F90 > Test1_WRFU.b
+	$(CPP) -C -P -I. Test1_WRFU.b > Test1_WRFU.f
+
+Test1_WRFU.exe : libesmf_time.a Test1_WRFU.o
+	$(FC) -o Test1_WRFU.exe Test1_WRFU.o libesmf_time.a
 
 .F90.o :
 	$(RM) $@
@@ -49,8 +64,11 @@ Test1.exe : libesmf_time.a Test1.o
 	$(RM) $*.b
 	$(FC) -c $*.f
 
-superclean: 
-	/bin/rm -f *.b *.f *.o libesmf_time.a *.mod Test1.exe Test1.out
+testclean: 
+	$(RM) *.b *.f *.o libesmf_time.a *.mod Test1*.exe
+
+superclean: testclean
+	$(RM) Test1*.out make_tests.out
 
 # DEPENDENCIES : only dependencies after this line 
 

@@ -82,7 +82,9 @@
 ! Required inherited and overridden ESMF_Base class methods
 
 !!!!!!!!! added 20051012, JM
-      public WRFADDITION_TimeIntervalDIVQuot 
+!      public WRFADDITION_TimeIntervalDIVQuot 
+!!!!!!!!! renamed to simplify testing 20060320, TH
+      public ESMF_TimeIntervalDIVQuot 
 
 
 ! !PRIVATE MEMBER FUNCTIONS:
@@ -296,13 +298,16 @@
 ! !IROUTINE: ESMF_TimeIntervalGet - Get value in user-specified units
 
 ! !INTERFACE:
-      subroutine ESMF_TimeIntervalGet(timeinterval, D, d_r8, S, TimeString, rc )
+      subroutine ESMF_TimeIntervalGet(timeinterval, D, d_r8, S, Sn, Sd, &
+                                      TimeString, rc )
 
 ! !ARGUMENTS:
       type(ESMF_TimeInterval), intent(in) :: timeinterval
       integer, intent(out), optional :: D
       real(ESMF_KIND_R8),      intent(out), optional :: d_r8
       integer, intent(out), optional :: S
+      integer, intent(out), optional :: Sn
+      integer, intent(out), optional :: Sd
       character*(*), optional, intent(out) :: TimeString
       integer, intent(out), optional :: rc
 
@@ -376,21 +381,26 @@
       INTEGER(ESMF_KIND_I8) :: seconds
       INTEGER :: ierr
 
-      ierr = ESMF_FAILURE
-      IF ( PRESENT( D ) )THEN
-        seconds = timeinterval%basetime%S
+      ierr = ESMF_SUCCESS
+      seconds = timeinterval%basetime%S
+      ! note that S is overwritten below (if present) if other args are also 
+      ! present
+      IF ( PRESENT(S) ) S = seconds
+      IF ( PRESENT( D ) ) THEN
         D = seconds / SECONDS_PER_DAY
-        IF ( PRESENT(S) ) S = mod( seconds, SECONDS_PER_DAY )
-      ELSE IF ( PRESENT(S) )THEN
-        S = seconds
-      END IF
-      IF ( PRESENT( d_r8 ) )THEN
-        seconds = timeinterval%basetime%S
+        IF ( PRESENT(S) ) S = MOD( seconds, SECONDS_PER_DAY )
+      ENDIF
+      IF ( PRESENT( d_r8 ) ) THEN
         D_r8 = REAL( seconds, ESMF_KIND_R8 ) / &
                REAL( SECONDS_PER_DAY, ESMF_KIND_R8 )
-!$$$ bug in returned S here if S and D_R8 both present?  Should this behave 
-!$$$ as when both S and D are present?  
-      END IF
+        IF ( PRESENT(S) ) S = MOD( seconds, SECONDS_PER_DAY )
+      ENDIF
+      IF ( PRESENT(Sn) ) THEN
+        Sn = timeinterval%basetime%Sn
+      ENDIF
+      IF ( PRESENT(Sd) ) THEN
+        Sd = timeinterval%basetime%Sd
+      ENDIF
       IF ( PRESENT( timeString ) ) THEN
         CALL ESMFold_TimeIntervalGetString( timeinterval, timeString, rc=ierr )
       ENDIF
@@ -533,7 +543,8 @@
         timeinterval%basetime%S = timeinterval%basetime%S + &
           ( SECONDS_PER_DAY * INT( D, ESMF_KIND_I8 ) )
       ENDIF
-!$$$ push H,M,S,Sn,Sd,MS down into BaseTime constructor
+!$$$ Push H,M,S,Sn,Sd,MS down into BaseTime constructor from EVERYWHERE
+!$$$ and THEN add ESMF scaling behavior when other args are present...  
       IF ( PRESENT( H ) ) THEN
         timeinterval%basetime%S = timeinterval%basetime%S + &
           ( SECONDS_PER_HOUR * INT( H, ESMF_KIND_I8 ) )
@@ -728,17 +739,17 @@
 
 !!!!!!!!!!!!!!!!!! added jm 20051012
 ! new WRF-specific function, Divide two time intervals and return the whole integer, without remainder
-      function WRFADDITION_TimeIntervalDIVQuot(timeinterval1, timeinterval2)
+      function ESMF_TimeIntervalDIVQuot(timeinterval1, timeinterval2)
 
 ! !RETURN VALUE:
-      INTEGER :: WRFADDITION_TimeIntervalDIVQuot 
+      INTEGER :: ESMF_TimeIntervalDIVQuot 
 
 ! !ARGUMENTS:
       type(ESMF_TimeInterval), intent(in) :: timeinterval1
       type(ESMF_TimeInterval), intent(in) :: timeinterval2
 
 ! !LOCAL
-      INTEGER :: retval, rc
+      INTEGER :: retval, isgn, rc
       type(ESMF_TimeInterval) :: zero, i1,i2
 
 ! !DESCRIPTION:
@@ -756,17 +767,20 @@
 !     TMG1.5.5
 !EOP
 
-      CALL timeintchecknormalized( timeinterval1, 'WRFADDITION_TimeIntervalDIVQuot arg1' )
-      CALL timeintchecknormalized( timeinterval2, 'WRFADDITION_TimeIntervalDIVQuot arg2' )
+      CALL timeintchecknormalized( timeinterval1, 'ESMF_TimeIntervalDIVQuot arg1' )
+      CALL timeintchecknormalized( timeinterval2, 'ESMF_TimeIntervalDIVQuot arg2' )
 
       call ESMF_TimeIntervalSet( zero, rc=rc )
       i1 = timeinterval1
       i2 = timeinterval2
+      isgn = 1
       if ( i1 .LT. zero ) then
         i1 = ESMF_TimeIntervalProdI(i1, -1)
+        isgn = -isgn
       endif
       if ( i2 .LT. zero ) then
         i2 = ESMF_TimeIntervalProdI(i2, -1)
+        isgn = -isgn
       endif
 ! repeated subtraction
       retval = 0
@@ -774,11 +788,11 @@
         i1 = i1 - i2
         retval = retval + 1
       ENDDO
+      retval = retval * isgn
 
-      WRFADDITION_TimeIntervalDIVQuot = retval
+      ESMF_TimeIntervalDIVQuot = retval
 
-!$$$add tests for this!
-      end function WRFADDITION_TimeIntervalDIVQuot
+      end function ESMF_TimeIntervalDIVQuot
 !!!!!!!!!!!!!!!!!!
 
 

@@ -229,6 +229,17 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL domain_clockprint ( 150, grid, &
           'DEBUG setup_timekeeping():  clock after creation,' )
 
+   ! Set default value for SIMULATION_START_DATE.  
+   ! This is overwritten later in input_wrf(), if needed.  
+   IF ( grid%id .EQ. head_grid%id ) THEN
+      CALL nl_set_simulation_start_year   ( grid%id , start_year   )
+      CALL nl_set_simulation_start_month  ( grid%id , start_month  )
+      CALL nl_set_simulation_start_day    ( grid%id , start_day    )
+      CALL nl_set_simulation_start_hour   ( grid%id , start_hour   )
+      CALL nl_set_simulation_start_minute ( grid%id , start_minute )
+      CALL nl_set_simulation_start_second ( grid%id , start_second )
+   ENDIF
+
 ! HISTORY INTERVAL
 ! history_interval is left there (and means minutes) for consistency, but 
 ! history_interval_m will take precedence if specified
@@ -1113,6 +1124,11 @@ SUBROUTINE Setup_Timekeeping ( grid )
    grid%time_set = .TRUE.
 
    CALL wrf_debug ( 100 , 'setup_timekeeping:  returning...' )
+
+   ! Initialize derived time quantities in grid state.  
+   ! These are updated in domain_clockadvance().  
+   CALL domain_clock_get( grid, minutesSinceSimulationStart=grid%xtime )
+   CALL domain_clock_get( grid, currentDayOfYearReal=grid%julian )
 
 END SUBROUTINE Setup_Timekeeping
 

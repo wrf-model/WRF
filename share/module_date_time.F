@@ -766,14 +766,23 @@ END MODULE module_date_time
       USE module_utility
       TYPE(WRFU_Time),   INTENT( IN) :: time
       CHARACTER (LEN=*), INTENT(OUT) :: str
-      INTEGER rc
-      CHARACTER (LEN=256) :: mess
-      CALL WRFU_TimeGet( time, timeString=str, rc=rc )
+      INTEGER strlen, rc
+      CHARACTER (LEN=256) :: mess, tmpstr
+      ! Assertion
+      IF ( LEN(str) < 19 ) THEN
+        CALL wrf_error_fatal( 'wrf_timetoa:  str is too short' )
+      ENDIF
+      tmpstr = ''
+      CALL WRFU_TimeGet( time, timeString=tmpstr, rc=rc )
       CALL wrf_check_error( WRFU_SUCCESS, rc, &
                             'WRFU_TimeGet() in wrf_timetoa() FAILED', &
                             __FILE__ , &
                             __LINE__  )
-      ! change ISO 8601 'T' to WRF '_'
+      ! change ISO 8601 'T' to WRF '_' and hack off fraction if str is not 
+      ! big enough to hold it
+      strlen = MIN( LEN(str), LEN_TRIM(tmpstr) )
+      str = ''
+      str(1:strlen) = tmpstr(1:strlen)
       str(11:11) = '_'
       WRITE (mess,*) 'DEBUG wrf_timetoa():  returning with str = [',TRIM(str),']'
       CALL wrf_debug ( 150 , TRIM(mess) )

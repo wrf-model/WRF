@@ -350,7 +350,7 @@ toolsdir :
 # Only touches external/esmf_time_f90/.  
 esmf_time_f90_only :
 	@ echo '--------------------------------------'
-	( cd external/esmf_time_f90 ; $(MAKE) FC="$(FC) $(FCFLAGS)" CPP="$(CPP) -DESMF_TIME_F90_ONLY" RM="$(RM)" tests )
+	( cd external/esmf_time_f90 ; $(MAKE) FC="$(FC) $(FCFLAGS)" CPP="$(CPP) -DTIME_F90_ONLY" RM="$(RM)" tests )
 
 clean :
 		@ echo 'Use the clean script'

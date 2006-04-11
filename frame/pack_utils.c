@@ -12,6 +12,7 @@
 #      define RETRIEVE_PIECES_OF_FIELD_C  retrieve_pieces_of_field_c
 #      define INIT_STORE_PIECE_OF_FIELD init_store_piece_of_field
 #      define INIT_RETRIEVE_PIECES_OF_FIELD init_retrieve_pieces_of_field
+#      define PERTURB_REAL perturb_real
 # else
 #   ifdef F2CSTYLE
 #      define INT_PACK_DATA  int_pack_data__
@@ -22,6 +23,7 @@
 #      define RETRIEVE_PIECES_OF_FIELD_C  retrieve_pieces_of_field_c__
 #      define INIT_STORE_PIECE_OF_FIELD init_store_piece_of_field__
 #      define INIT_RETRIEVE_PIECES_OF_FIELD init_retrieve_pieces_of_field__
+#      define PERTURB_REAL perturb_real__
 #   else
 #      define INT_PACK_DATA  int_pack_data_
 #      define INT_GET_TI_HEADER_C  int_get_ti_header_c_
@@ -31,6 +33,7 @@
 #      define RETRIEVE_PIECES_OF_FIELD_C  retrieve_pieces_of_field_c_
 #      define INIT_STORE_PIECE_OF_FIELD init_store_piece_of_field_
 #      define INIT_RETRIEVE_PIECES_OF_FIELD init_retrieve_pieces_of_field_
+#      define PERTURB_REAL perturb_real_
 #   endif
 # endif
 #endif
@@ -148,6 +151,7 @@ ADD_TO_BUFSIZE_FOR_FIELD_C ( int varname[], int * chunksize )
   }
   if ( fld_cache[found] != NULL ) { free( fld_cache[found] ) ; }
   fld_cache[found] = NULL ;
+  return(0) ;
 }
 
 int
@@ -215,3 +219,32 @@ RETRIEVE_PIECES_OF_FIELD_C ( char * buf , int varname[], int * insize, int * out
   return(0) ;
 }
 
+#define INDEX_2(A,B,NB)       ( (B) + (A)*(NB) )
+#define INDEX_3(A,B,C)  INDEX_2( (A), INDEX_2( (B), (C), (me[1]-ms[1]+1) ), (me[1]-ms[1]+1)*(me[0]-ms[0]+1) )
+/* flip low order bit of fp number */
+int
+PERTURB_REAL ( float * field, int ds[], int de[], int ms[], int me[], int ps[], int pe[] )
+{
+   int i,j,k ;
+   int le ; /* index of little end */
+   float x = 2.0 ;
+   unsigned int y ; 
+   unsigned char a[4], *p ;
+   if ( sizeof(float) != 4 ) return(-1) ;
+   /* check endianness of machine */
+   bcopy ( &x, a, 4 ) ;
+   le = 0 ;
+   if ( a[0] == 0x40 ) le = 3 ;
+   for ( k = ps[2]-1 ; k <= pe[2]-1 ; k++ )
+     for ( j = ps[1]-1 ; j <= pe[1]-1 ; j++ )
+       for ( i = ps[0]-1 ; i <= pe[0]-1 ; i++ )
+       {
+          /* do not change zeros */
+          if ( field[ INDEX_3(k,j,i) ] != 0.0 ) {
+             p = (unsigned char *)&(field[ INDEX_3(k,j,i) ] ) ; 
+             if ( *(p+le) & 1 ) { *(p+le) &= 0x7e ; }
+             else               { *(p+le) |= 1 ; }
+          }
+       }
+   return(0) ;
+}

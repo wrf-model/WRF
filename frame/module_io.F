@@ -1885,6 +1885,7 @@ SUBROUTINE wrf_read_field ( DataHandle , DateStr , VarName , Field , FieldType ,
 #include <wrf_status_codes.h>
 #include <wrf_io_flags.h>
   INTEGER, ALLOCATABLE        :: ICAST(:)
+  LOGICAL perturb_input
   IF ( FieldType .EQ. WRF_LOGICAL ) THEN
     ALLOCATE(ICAST((MemoryEnd(1)-MemoryStart(1)+1)*(MemoryEnd(2)-MemoryStart(2)+1)*(MemoryEnd(3)-MemoryStart(3)+1)))
 
@@ -1905,6 +1906,12 @@ SUBROUTINE wrf_read_field ( DataHandle , DateStr , VarName , Field , FieldType ,
                            MemoryStart , MemoryEnd ,                                    &
                            PatchStart , PatchEnd ,                                      &
                            Status )
+    CALL nl_get_perturb_input( 1, perturb_input )
+    IF ( perturb_input .AND. FieldType .EQ. WRF_REAL .AND. TRIM(MemoryOrder) .EQ. 'XZY' ) THEN
+       CALL perturb_real ( Field, DomainStart, DomainEnd,        &
+                                  MemoryStart, MemoryEnd,        &
+                                  PatchStart, PatchEnd )
+    ENDIF
   ENDIF
 END SUBROUTINE wrf_read_field
 

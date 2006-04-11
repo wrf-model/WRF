@@ -1625,7 +1625,7 @@ SUBROUTINE smag2d_km( config_flags,xkmh,xkmhd,xkmv,xkhh,xkhv,                  &
    do j=j_start,j_end
    do k=kts,ktf
    do i=i_start,i_end
-      def2(i,k,j)=0.25*(defor11(i,k,j)-defor22(i,k,j))**2
+      def2(i,k,j)=0.25*((defor11(i,k,j)-defor22(i,k,j))*(defor11(i,k,j)-defor22(i,k,j)))
       tmp=0.25*(defor12(i  ,k,j)+defor12(i  ,k,j+1)+ &
                 defor12(i+1,k,j)+defor12(i+1,k,j+1))
       def2(i,k,j)=def2(i,k,j)+tmp*tmp
@@ -1637,7 +1637,7 @@ SUBROUTINE smag2d_km( config_flags,xkmh,xkmhd,xkmv,xkhh,xkhv,                  &
       DO j = j_start, j_end
       DO k = kts, ktf
       DO i = i_start, i_end
-         tmp=def2(i,k,j)**0.5
+         tmp=sqrt(def2(i,k,j))
 !        xkmh(i,k,j)=max(c_s*c_s*mlen_h*mlen_h*tmp, 1.0E-6*mlen_h*mlen_h )
          xkmh(i,k,j)=c_s*c_s*mlen_h*mlen_h*tmp
          xkmh(i,k,j)=min(xkmh(i,k,j), 10.*mlen_h )

@@ -1036,6 +1036,7 @@ rconfig   integer parent_grid_ratio       namelist,domains	max_domains    1     
 rconfig   integer parent_time_step_ratio  namelist,domains	max_domains    1       h     "parent_time_step_ratio"                ""      ""
 rconfig   integer feedback                namelist,domains	1    1       h     "feedback"          ""      ""
 rconfig   integer smooth_option           namelist,domains	1    2       h     "smooth_option"          ""      ""
+rconfig   integer blend_width             namelist,domains	1    5       h     "blend_width"  "width of cg fg terrain blended zone"      ""
 rconfig   real    ztop                    namelist,domains	max_domains    15000.  h    "ztop"          ""      ""
 rconfig   integer moad_grid_ratio         namelist,domains	max_domains    1       h     "moad_grid_ratio"               ""      ""
 rconfig   integer moad_time_step_ratio    namelist,domains	max_domains    1       h     "moad_time_step_ratio"          ""      ""

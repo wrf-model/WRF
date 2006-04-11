@@ -39,10 +39,12 @@ PROGRAM real_data
 
    TYPE(domain) , POINTER :: null_domain
    TYPE(domain) , POINTER :: grid , another_grid
+   TYPE(domain) , POINTER :: grid_ptr , grid_ptr2
    TYPE (grid_config_rec_type)              :: config_flags
    INTEGER                :: number_at_same_level
 
-   INTEGER :: max_dom, domain_id
+   INTEGER :: max_dom, domain_id , grid_id , parent_id , parent_id1 , id
+   INTEGER :: e_we , e_sn , i_parent_start , j_parent_start
    INTEGER :: idum1, idum2 
 #ifdef DM_PARALLEL
    INTEGER                 :: nbytes
@@ -50,6 +52,7 @@ PROGRAM real_data
    INTEGER                 :: configbuf( configbuflen )
    LOGICAL , EXTERNAL      :: wrf_dm_on_monitor
 #endif
+   LOGICAL found_the_id
 
    INTEGER :: ids , ide , jds , jde , kds , kde
    INTEGER :: ims , ime , jms , jme , kms , kme
@@ -135,11 +138,46 @@ real::t1,t2
            ( domain_id .EQ. 1 ) ) THEN
 
          IF ( domain_id .GT. 1 ) THEN
-            CALL alloc_and_configure_domain ( domain_id  = domain_id    , &
-                                              grid       = another_grid , &
-                                              parent     = grid         , &
-                                              kid        = 1              )
-            grid => another_grid
+            CALL nl_get_grid_id        ( domain_id, grid_id        )
+            CALL nl_get_parent_id      ( domain_id, parent_id      )
+            CALL nl_get_e_we           ( domain_id, e_we           )
+            CALL nl_get_e_sn           ( domain_id, e_sn           )
+            CALL nl_get_i_parent_start ( domain_id, i_parent_start )
+            CALL nl_get_j_parent_start ( domain_id, j_parent_start )
+            WRITE (message,FMT='(A,2I3,2I4,2I3)') &
+            'new allocated  domain: id, par id, dims i/j, start i/j =', &
+            grid_id, parent_id, e_we, e_sn, i_parent_start, j_parent_start
+
+            CALL wrf_debug ( 100 , message )
+            CALL nl_get_grid_id        ( parent_id, grid_id        )
+            CALL nl_get_parent_id      ( parent_id, parent_id1     )
+            CALL nl_get_e_we           ( parent_id, e_we           )
+            CALL nl_get_e_sn           ( parent_id, e_sn           )
+            CALL nl_get_i_parent_start ( parent_id, i_parent_start )
+            CALL nl_get_j_parent_start ( parent_id, j_parent_start )
+            WRITE (message,FMT='(A,2I3,2I4,2I3)') &
+            'parent domain: id, par id, dims i/j, start i/j =', &
+            grid_id, parent_id1, e_we, e_sn, i_parent_start, j_parent_start
+            CALL wrf_debug ( 100 , message )
+
+            CALL nl_get_grid_id        ( domain_id, grid_id        )
+            CALL nl_get_parent_id      ( domain_id, parent_id      )
+            CALL nl_get_e_we           ( domain_id, e_we           )
+            CALL nl_get_e_sn           ( domain_id, e_sn           )
+            CALL nl_get_i_parent_start ( domain_id, i_parent_start )
+            CALL nl_get_j_parent_start ( domain_id, j_parent_start )
+            grid_ptr2 => head_grid
+            found_the_id = .FALSE.
+            CALL find_my_parent ( grid_ptr2 , grid_ptr , parent_id , found_the_id )
+            IF ( found_the_id ) THEN
+               CALL alloc_and_configure_domain ( domain_id  = domain_id    , &
+                                                 grid       = another_grid , &
+                                                 parent     = grid_ptr     , &
+                                                 kid        = 1            )
+               grid => another_grid
+            ELSE
+              CALL wrf_error_fatal( 'real_em.F: Could not find the parent domain')
+            END IF
          END IF
 
          CALL Setup_Timekeeping ( grid )
@@ -287,9 +325,11 @@ real::t1,t2
 
       IF ( ( grid%id .GT. 1 ) .AND. ( loop .GT. 1 ) ) EXIT
 
+      print *,' '
       print *,'-----------------------------------------------------------------------------'
       print *,' '
-      print '(A,A,A,I2,A,I2)' , ' Current date being processed: ',current_date, ', which is loop #',loop,' out of ',time_loop_max
+      print '(A,I2,A,A,A,I2,A,I2)' , &
+      ' Domain ',grid%id,': Current date being processed: ',current_date, ', which is loop #',loop,' out of ',time_loop_max
 
       !  After current_date has been set, fill in the julgmt stuff.
 

@@ -841,7 +841,11 @@ SUBROUTINE wrf_dm_bcast_bytes ( buf , size )
    IMPLICIT NONE
    INCLUDE 'mpif.h'
    INTEGER size
+#ifndef NEC
    INTEGER*1 BUF(size)
+#else
+   CHARACTER*1 BUF(size)
+#endif
    CALL BYTE_BCAST ( buf , size, local_communicator )
    RETURN
 END SUBROUTINE wrf_dm_bcast_bytes

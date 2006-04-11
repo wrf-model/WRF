@@ -4089,15 +4089,15 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
-#	if [ ! -e $@ ] ; then \
-#	sleep 10 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
-#	fi
-#	if [ ! -e $@ ] ; then \
-#	sleep 30 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
-#	fi
-#	if [ ! -e $@ ] ; then \
-#	sleep 300 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
-#	fi
+#PGI	if [ ! -e $@ ] ; then \
+#PGI	sleep 10 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
+#PGI	fi
+#PGI	if [ ! -e $@ ] ; then \
+#PGI	sleep 30 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
+#PGI	fi
+#PGI	if [ ! -e $@ ] ; then \
+#PGI	sleep 300 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
+#PGI	fi
 
 ###########################################################
 #ARCH    PC Linux i486 i586 i686, PGI compiler  (single threaded, allows nesting using RSL without MPI)
@@ -4206,15 +4206,15 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
-#	if [ ! -e $@ ] ; then \
-#	sleep 10 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
-#	fi
-#	if [ ! -e $@ ] ; then \
-#	sleep 30 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
-#	fi
-#	if [ ! -e $@ ] ; then \
-#	sleep 300 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
-#	fi
+#PGI	if [ ! -e $@ ] ; then \
+#PGI	sleep 10 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
+#PGI	fi
+#PGI	if [ ! -e $@ ] ; then \
+#PGI	sleep 30 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
+#PGI	fi
+#PGI	if [ ! -e $@ ] ; then \
+#PGI	sleep 300 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
+#PGI	fi
 
 ###########################################################
 #ARCH   PC Linux i486 i586 i686, PGI compiler  SM-Parallel (OpenMP, no nesting)
@@ -4312,15 +4312,15 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
-#	if [ ! -e $@ ] ; then \
-#	sleep 10 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
-#	fi
-#	if [ ! -e $@ ] ; then \
-#	sleep 30 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
-#	fi
-#	if [ ! -e $@ ] ; then \
-#	sleep 300 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
-#	fi
+#PGI	if [ ! -e $@ ] ; then \
+#PGI	sleep 10 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
+#PGI	fi
+#PGI	if [ ! -e $@ ] ; then \
+#PGI	sleep 30 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
+#PGI	fi
+#PGI	if [ ! -e $@ ] ; then \
+#PGI	sleep 300 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
+#PGI	fi
 
 ###########################################################
 #ARCH    PC Linux i486 i586 i686, PGI compiler  SM-Parallel (OpenMP, allows nesting using RSL without MPI)
@@ -4431,15 +4431,15 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
-#	if [ ! -e $@ ] ; then \
-#	sleep 10 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
-#	fi
-#	if [ ! -e $@ ] ; then \
-#	sleep 30 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
-#	fi
-#	if [ ! -e $@ ] ; then \
-#	sleep 300 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
-#	fi
+#PGI	if [ ! -e $@ ] ; then \
+#PGI	sleep 10 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
+#PGI	fi
+#PGI	if [ ! -e $@ ] ; then \
+#PGI	sleep 30 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
+#PGI	fi
+#PGI	if [ ! -e $@ ] ; then \
+#PGI	sleep 300 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
+#PGI	fi
 
 ###########################################################
 #ARCH    PC Linux i486 i586 i686, PGI compiler  DM-Parallel (RSL, MPICH, Allows nesting)
@@ -4548,15 +4548,15 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
-#	if [ ! -e $@ ] ; then \
-#	sleep 10 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
-#	fi
-#	if [ ! -e $@ ] ; then \
-#	sleep 30 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
-#	fi
-#	if [ ! -e $@ ] ; then \
-#	sleep 300 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
-#	fi
+#PGI	if [ ! -e $@ ] ; then \
+#PGI	sleep 10 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
+#PGI	fi
+#PGI	if [ ! -e $@ ] ; then \
+#PGI	sleep 30 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
+#PGI	fi
+#PGI	if [ ! -e $@ ] ; then \
+#PGI	sleep 300 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
+#PGI	fi
 
 ###########################################################
 #ARCH     PC Linux i486 i586 i686, PGI compiler  DM-Parallel (RSL_LITE, MPICH, Allows nesting)
@@ -4666,15 +4666,15 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
-#	if [ ! -e $@ ] ; then \
-#	sleep 10 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
-#	fi
-#	if [ ! -e $@ ] ; then \
-#	sleep 30 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
-#	fi
-#	if [ ! -e $@ ] ; then \
-#	sleep 300 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
-#	fi
+#PGI	if [ ! -e $@ ] ; then \
+#PGI	sleep 10 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
+#PGI	fi
+#PGI	if [ ! -e $@ ] ; then \
+#PGI	sleep 30 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
+#PGI	fi
+#PGI	if [ ! -e $@ ] ; then \
+#PGI	sleep 300 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
+#PGI	fi
 
 ###########################################################
 #ARCH    Intel Itanium2 ia64 madison Linux DM-Parallel (e.g. mpp2 at PNNL), efc71 compiler (RSL, MPICH, nesting)
@@ -6680,9 +6680,9 @@ CC                = icc -I.
 SCC                = icc -I.
 CC_TOOLS          = cc
 SFC               = ifort
-CFLAGS            = -w -O3 -ip -tpp2 -c -ftz -no-gcc -DDM_PARALLEL -DWRF_RSL_IO \
+CFLAGS            = -w -O3 -unroll0 -ip -tpp2 -c -ftz -no-gcc -DDM_PARALLEL -DWRF_RSL_IO \
                     -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL/RSL
-FCOPTIM           = -O3
+FCOPTIM           = -O3 -unroll0
 FCDEBUG           = # -g
 FCBASEOPTS        = -w -ip -tpp2 -ftz -FR -convert big_endian $(FCDEBUG) \
                      -fno-alias -fno-fnalias -align all -IPF_fp_relaxed \
@@ -6825,9 +6825,9 @@ CC                = icc -I.
 SCC                = icc -I.
 CC_TOOLS          = cc
 SFC               = ifort
-CFLAGS            = -w -O3 -ip -tpp2 -c -ftz -DDM_PARALLEL -I../external/RSL_LITE \
+CFLAGS            = -w -O3 -unroll0 -ip -tpp2 -c -ftz -DDM_PARALLEL -I../external/RSL_LITE \
                     -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
-FCOPTIM           = -O3
+FCOPTIM           = -O3 -unroll0
 FCDEBUG           = # -g
 FCBASEOPTS        = -w -ip -tpp2 -ftz -FR -convert big_endian $(FCDEBUG) \
                      -fno-alias -fno-fnalias -align all -IPF_fp_relaxed \
@@ -6966,9 +6966,9 @@ CC                = icc -I.
 SCC                = icc -I.
 CC_TOOLS          = cc
 SFC               = ifort
-CFLAGS            = -w -O3 -ip -tpp2 -c -ftz -no-gcc -DDM_PARALLEL -DWRF_RSL_IO \
+CFLAGS            = -w -O3 -unroll0 -ip -tpp2 -c -ftz -no-gcc -DDM_PARALLEL -DWRF_RSL_IO \
                     -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL/RSL
-FCOPTIM           = -O3
+FCOPTIM           = -O3 -unroll0 
 FCDEBUG           = # -g
 FCBASEOPTS        = -w -ip -tpp2 -ftz -FR -convert big_endian $(FCDEBUG) \
                      -fno-alias -fno-fnalias -align all -IPF_fp_relaxed \
@@ -7107,9 +7107,9 @@ CC                = icc -I.
 SCC                = icc -I.
 CC_TOOLS          = cc
 SFC               = ifort
-CFLAGS            = -w -O3 -ip -tpp2 -c -ftz -DDM_PARALLEL -I../external/RSL_LITE \
+CFLAGS            = -w -O3 -unroll0 -ip -tpp2 -c -ftz -DDM_PARALLEL -I../external/RSL_LITE \
                     -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
-FCOPTIM           = -O3
+FCOPTIM           = -O3 -unroll0
 FCDEBUG           = # -g
 FCBASEOPTS        = -w -ip -tpp2 -ftz -FR -convert big_endian $(FCDEBUG) \
                      -fno-alias -fno-fnalias -align all -IPF_fp_relaxed \
@@ -7234,8 +7234,8 @@ CC                = icc -I.
 SCC                = icc -I.
 CC_TOOLS          = cc
 SFC               = ifort
-CFLAGS            = -w -O3 -ip -tpp2 -c -ftz 
-FCOPTIM           = -O3
+CFLAGS            = -w -O3 -unroll0 -ip -tpp2 -c -ftz 
+FCOPTIM           = -O3 -unroll0
 FCDEBUG           = # -g
 FCBASEOPTS        = -w -ip -tpp2 -ftz -FR -convert big_endian $(FCDEBUG) \
                      -fno-alias -fno-fnalias -align all -IPF_fp_relaxed \
@@ -7349,8 +7349,8 @@ CC                = icc -I.
 SCC                = icc -I.
 CC_TOOLS          = cc
 SFC               = ifort
-CFLAGS            = -w -O3 -ip -tpp2 -c -ftz 
-FCOPTIM           = -O3
+CFLAGS            = -w -O3 -unroll0 -ip -tpp2 -c -ftz 
+FCOPTIM           = -O3 -unroll0
 FCDEBUG           = # -g
 FCBASEOPTS        = -w -ip -tpp2 -ftz -FR -convert big_endian $(FCDEBUG) \
                      -fno-alias -fno-fnalias -align all -IPF_fp_relaxed \

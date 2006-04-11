@@ -1099,11 +1099,6 @@ esmf_time :
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
-solve_interface.o : solve_interface.F
-	$(RM) $@
-	$(CPP) -I../inc $(CPPFLAGS) $*.F > $*.f
-	$(FC) -c -qfree=f90 -qspillsize=32767 -I. $(PROMOTION) $(MODULE_DIRS) $*.f
-
 # compile these without high optimization to speed compile
 shift_domain_em.o : shift_domain_em.F
 module_io_mm5.o : module_io_mm5.F
@@ -1747,11 +1742,6 @@ wrfio_grib1 :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
-
-solve_interface.o : solve_interface.F
-	$(RM) $@
-	$(CPP) -I../inc $(CPPFLAGS) $*.F > $*.f
-	$(FC) -c -qfree=f90 -qspillsize=32767 -I. $(PROMOTION) $(MODULE_DIRS) $*.f
 
 ../external/RSL/RSL/librsl.a :
 	( cd ../external/RSL/RSL ; make MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST sp2 )

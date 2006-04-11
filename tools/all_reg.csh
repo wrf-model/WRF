@@ -394,11 +394,11 @@ EOF
 			set in_already = 0
 			while ( $ok == 0 )
 				sleep 10 ; bjobs >&! bjobs.report
-				grep `cat bsub.out | cut -d"<" -f2 | cut -d ">" -f1` bjobs.report >& /dev/null
+				grep `cat bsub.out | grep Job | cut -d"<" -f2 | cut -d">" -f1` bjobs.report >& /dev/null
 				set ok = $status
 				if ( ( $ok == 0 ) && ( $in_already == 0 ) ) then
 					set in_already = 1
-					set joe_id = `cat bsub.out | cut -d"<" -f2 | cut -d ">" -f1`
+					set joe_id = `cat bsub.out | grep Job | cut -d"<" -f2 | cut -d">" -f1`
 				endif
 			end
 			cp /ptmp/$USER/wrf_regression.$joe_id/wrftest.output wrftest.output.$TEST_NUM[$count_test].$tests[$count_test]

@@ -21,7 +21,7 @@
 ###################  NCEP  ########################
 # @ queue
 
-#BSUB -x                                # exlusive use of node (not_shared)
+# #BSUB -x                                # exlusive use of node (not_shared)
 # #BSUB -a mpich_gm                       # at NCAR: lightning
 # #BSUB -R "span[ptile=2]"                # how many tasks per node (1 or 2)
 #BSUB -a poe                            # at NCAR: bluevista
@@ -30,7 +30,8 @@
 #BSUB -o reg.out                        # output filename (%J to add job id)
 #BSUB -e reg.err                        # error filename
 #BSUB -J reg.test                       # job name
-#BSUB -q premium                        # queue
+# #BSUB -q premium                        # queue
+#BSUB -q share                          # queue
 
 #	This is a script to test the bit-for-bit reproducibility of
 #	the WRF model, when comparing single processor serial runs to
@@ -1481,6 +1482,7 @@ banner 7
 				else
 					sed              -e '/^FCOPTIM/d' -e '/^FCDEBUG/s/#-g/-g/g' ./configure.wrf >! foo ; /bin/mv foo configure.wrf
 				endif
+				sed -e '/^#PGI	/s/#PGI	/	/g' ./configure.wrf >! foo ; /bin/mv foo configure.wrf
 			else if ( `uname` == OSF1 ) then
 		 		if ( ( $compopt == $COMPOPTS[1] ) || ( $compopt == $COMPOPTS[3] ) ) then
 					sed -e '/^OMP/d' -e '/^FCOPTIM/d' -e '/^FCDEBUG/s/# -g/-O0/g' -e '/^FCDEBUG/s/# -O0/-O0/g' ./configure.wrf >! foo ; /bin/mv foo configure.wrf
@@ -1815,6 +1817,22 @@ banner 17
 					if      ( $IO_FORM_NAME[$IO_FORM] == io_netcdf ) then
 						ncdump -h wrfout_d01_${filetag} | grep Time | grep UNLIMITED | grep currently | grep -q 2
 						set ok = $status
+						set found_nans = 1
+						if      ( `uname` == AIX   ) then
+							ncdump wrfout_d01_${filetag} | grep NaN >& /dev/null
+							set found_nans = $status
+						else if ( `uname` == OSF1  ) then
+							ncdump wrfout_d01_${filetag} | grep nan >& /dev/null
+					#		set found_nans = $status
+						else if ( `uname` == Linux ) then
+							ncdump wrfout_d01_${filetag} | grep nan >& /dev/null
+							set found_nans = $status
+						endif
+						if ( $found_nans == 0 ) then
+							echo found nans
+							set ok = 1
+						endif
+
 					else if ( $IO_FORM_NAME[$IO_FORM] == io_grib1  ) then
 #						set joe_times = `../../external/io_grib1/wgrib -s -4yr wrfout_d01_${filetag} |  grep -v ":anl:" | wc -l`
 #						if ( $joe_times >= 100 ) then
@@ -1993,6 +2011,22 @@ banner 22
 						if      ( $IO_FORM_NAME[$IO_FORM] == io_netcdf ) then
 							ncdump -h wrfout_d01_${filetag} | grep Time | grep UNLIMITED | grep currently | grep -q 2
 							set ok = $status
+							set found_nans = 1
+							if      ( `uname` == AIX   ) then
+								ncdump wrfout_d01_${filetag} | grep NaN >& /dev/null
+								set found_nans = $status
+							else if ( `uname` == OSF1  ) then
+								ncdump wrfout_d01_${filetag} | grep nan >& /dev/null
+						#		set found_nans = $status
+							else if ( `uname` == Linux ) then
+								ncdump wrfout_d01_${filetag} | grep nan >& /dev/null
+								set found_nans = $status
+							endif
+							if ( $found_nans == 0 ) then
+								echo found nans
+								set ok = 1
+							endif
+
 						else if ( $IO_FORM_NAME[$IO_FORM] == io_grib1  ) then
 							../../external/io_grib1/wgrib -s -4yr wrfout_d01_${filetag} |  grep "UGRD:10 m above gnd:3600 sec fcst"
 							set ok = $status
@@ -2234,6 +2268,22 @@ banner 28
 					if      ( $IO_FORM_NAME[$IO_FORM] == io_netcdf ) then
 						ncdump -h wrfout_d01_${filetag} | grep Time | grep UNLIMITED | grep currently | grep -q 2
 						set ok = $status
+						set found_nans = 1
+						if      ( `uname` == AIX   ) then
+							ncdump wrfout_d01_${filetag} | grep NaN >& /dev/null
+							set found_nans = $status
+						else if ( `uname` == OSF1  ) then
+							ncdump wrfout_d01_${filetag} | grep nan >& /dev/null
+					#		set found_nans = $status
+						else if ( `uname` == Linux ) then
+							ncdump wrfout_d01_${filetag} | grep nan >& /dev/null
+							set found_nans = $status
+						endif
+						if ( $found_nans == 0 ) then
+							echo found nans
+							set ok = 1
+						endif
+
 					else if ( $IO_FORM_NAME[$IO_FORM] == io_grib1  ) then
 #						set joe_times = `../../external/io_grib1/wgrib -s -4yr wrfout_d01_${filetag} |  grep -v ":anl:" | wc -l`
 #						if ( $joe_times >= 100 ) then

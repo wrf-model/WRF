@@ -97,16 +97,17 @@ SUBROUTINE blend_terrain ( ter_interpolated , ter_input , &
    REAL , DIMENSION(ims:ime,kms:kme,jms:jme) , INTENT(INOUT) :: ter_input
 
    REAL , DIMENSION(ims:ime,kms:kme,jms:jme) :: ter_temp
-   INTEGER :: i , j , k , spec_zone, spec_bdy_width
+   INTEGER :: i , j , k , spec_bdy_width
    REAL    :: r_blend_zones
    INTEGER blend_cell, blend_width
 
-   !  The fine grid elevation comes from the horizontally intterpolated
-   !  parent elevation for the first spec_zone row/columns, so we need
-   !  to get that value.
+   !  The fine grid elevation comes from the horizontally interpolated
+   !  parent elevation for the first spec_bdy_width row/columns, so we need
+   !  to get that value.  We blend the coarse and fine in the next blend_width
+   !  rows and columns.  After that, in the interior, it is 100% fine grid.
 
-   CALL nl_get_spec_zone ( 1, spec_zone) 
    CALL nl_get_spec_bdy_width ( 1, spec_bdy_width) 
+   CALL nl_get_blend_width ( 1, blend_width)
 
    !  Initialize temp values to the nest ter elevation.  This fills in the values
    !  that will not be modified below.  
@@ -124,15 +125,14 @@ SUBROUTINE blend_terrain ( ter_interpolated , ter_input , &
    !  there is much unnecessary "IF test inside of a loop" stuff.  For a large
    !  domain, this is only a patch; for a small domain, this is not a biggy.
 
-   blend_width = 5   ! we may want to make this namelist-settable at some point
-   r_blend_zones = (1./(blend_width+2))
+   r_blend_zones = 1./(blend_width+1)
    DO j = jps , MIN(jpe, jde-1)
       DO k = kps , kpe
          DO i = ips , MIN(ipe, ide-1)
             DO blend_cell = blend_width,1,-1
                IF   ( ( i .EQ.       spec_bdy_width + blend_cell ) .OR.  ( j .EQ.       spec_bdy_width + blend_cell ) .OR. &
                       ( i .EQ. ide - spec_bdy_width - blend_cell ) .OR.  ( j .EQ. jde - spec_bdy_width - blend_cell ) ) THEN
-                  ter_temp(i,k,j) = ( (blend_cell+1)*ter_interpolated(i,k,j) + (blend_width-blend_cell+1)*ter_input(i,k,j) ) &
+                  ter_temp(i,k,j) = ( (blend_cell)*ter_input(i,k,j) + (blend_width+1-blend_cell)*ter_interpolated(i,k,j) ) &
                                     * r_blend_zones
                END IF
             ENDDO

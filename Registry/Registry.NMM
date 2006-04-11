@@ -576,6 +576,15 @@ state    real  mp_restart_state   p      misc        1         -      r       "M
 state    real  tbpvs_state       p      misc        1         -      r        "TBPVS_STATE"           "STATE FOR ETAMPNEW MICROPHYSICS"
 state    real  tbpvs0_state      p      misc        1         -      r        "TBPVS0_STATE"          "STATE FOR ETAMPNEW MICROPHYSICS"
 
+# State variables for landuse_init, Must be declared state because the are read in and needed for restarts. Had been SAVE vars in
+# landuse_init (phys/module_physics_init.F)
+state    integer  landuse_isice   -      misc       -          -     r
+state    integer  landuse_lucats  -      misc       -          -     r
+state    integer  landuse_luseas  -      misc       -          -     r
+state    integer  landuse_isn     -      misc       -          -     r
+state    real     lu_state        p      misc       -          -     r
+
+
 #################################################################
 #                                               
                                                 

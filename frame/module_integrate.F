@@ -330,7 +330,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
                 CALL med_nest_feedback ( grid_ptr , grid_ptr%nests(kid)%ptr , config_flags )
                 CALL wrf_debug( 100 , 'module_integrate: back from med_nest_feedback ' )
 #ifdef MOVE_NESTS
-                IF ( .NOT. WRFU_ClockIsStopTime(head_grid%domain_clock , rc=rc) ) THEN
+                IF ( .NOT. domain_clockisstoptime( head_grid ) ) THEN
                   CALL med_nest_move ( grid_ptr , grid_ptr%nests(kid)%ptr )
                 ENDIF
 #endif

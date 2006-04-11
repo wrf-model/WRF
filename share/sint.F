@@ -310,8 +310,10 @@
 !  HERE STARTS RESIDUAL ADVECTION                                       
 !                                                                       
         DO 9000 JJ=N2STAR,N2END                                         
+!cdir unroll=5
           DO 50 J=-IOR,IOR                                              
 
+!cdir unroll=5
             DO 51 I=-IOR,IOR                                            
               DO 511 II=N1STAR,N1END                                    
                 Y(II,JJ,I)=XF1(II+I,JJ+J,IIM)              

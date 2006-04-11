@@ -104,7 +104,7 @@ thisdir_linked_lib: $(OBJS)
 	fi
 
 thisdir_archive: $(OBJS) .FORCE 
-	ar cruv $(LIB_DEST)/lib$(LIB_NAME).a $(OBJS)
+	$(AR) cruv $(LIB_DEST)/lib$(LIB_NAME).a $(OBJS)
 
 #thisdir_archive: lib$(LIB_NAME).a .FORCE
 #

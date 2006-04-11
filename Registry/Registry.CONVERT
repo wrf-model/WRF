@@ -539,6 +539,7 @@ rconfig   logical   swap_y          namelist,domains    max_domains    .false. r
 rconfig   logical   cycle_x         namelist,domains    max_domains    .false. rh    "cycle_x"            ""      ""
 rconfig   logical   cycle_y         namelist,domains    max_domains    .false. rh    "cycle_y"            ""      ""
 rconfig   logical   reorder_mesh    namelist,domains    1              .false. rh    "reorder_mesh"       ""      ""
+rconfig   logical   perturb_input   namelist,domains    1              .false. h     "" "" ""
 
 # Physics
 rconfig   integer     mp_physics          namelist,physics	max_domains    0       rh       "mp_physics"            ""      ""

@@ -483,6 +483,7 @@ CONTAINS
 !
 !...DZQ IS DZ BETWEEN SIGMA SURFACES, DZA IS DZ BETWEEN MODEL HALF LEVEL
         Z0(1)=.5*DZQ(1)
+!cdir novector
         DO K=2,KL
           Z0(K)=Z0(K-1)+.5*(DZQ(K)+DZQ(K-1))
           DZA(K-1)=Z0(K)-Z0(K-1)
@@ -581,6 +582,7 @@ usl:   DO
 !...MASS-WEIGHTING THE CHARACTERISTICS OF THE INDIVIDUAL MODEL
 !...LAYERS...
 !
+!cdir novector
            DO NK=LC,KPBL
              TMIX=TMIX+DP(NK)*T0(NK)
              QMIX=QMIX+DP(NK)*Q0(NK)

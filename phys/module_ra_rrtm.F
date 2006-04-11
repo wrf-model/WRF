@@ -4280,6 +4280,7 @@ CONTAINS
 !     Compute the optical depth by interpolating in ln(pressure) and             
 !     temperature.  Below LAYTROP, the water vapor self-continuum                
 !     is interpolated (in temperature) separately.                               
+!cdir novector
       DO 2500 LAY = 1, LAYTROP                                                   
          IND0 = ((JP(LAY)-1)*5+(JT(LAY)-1))*NSPA(1) + 1                          
          IND1 = (JP(LAY)*5+(JT1(LAY)-1))*NSPA(1) + 1                             
@@ -4298,6 +4299,7 @@ CONTAINS
  2000    CONTINUE                                                                
  2500 CONTINUE                                                                   
                                                                                  
+!cdir novector
       DO 3500 LAY = LAYTROP+1, NLAYERS                                           
          IND0 = ((JP(LAY)-13)*5+(JT(LAY)-1))*NSPB(1) + 1                         
          IND1 = ((JP(LAY)-12)*5+(JT1(LAY)-1))*NSPB(1) + 1                        
@@ -4373,6 +4375,7 @@ CONTAINS
 !     Compute the optical depth by interpolating in ln(pressure) and             
 !     temperature.  Below LAYTROP, the water vapor self-continuum is             
 !     interpolated (in temperature) separately.                                  
+!cdir novector
       DO 2500 LAY = 1, LAYTROP                                                   
          WATER = 1.E20 * COLH2O(LAY) / COLDRY(LAY)                               
          H2OPARAM = WATER/(WATER +.002)                                          
@@ -4408,6 +4411,7 @@ CONTAINS
  2000    CONTINUE                                                                
  2500 CONTINUE                                                                   
                                                                                  
+!cdir novector
       DO 3500 LAY = LAYTROP+1, NLAYERS                                           
          FP = FAC11(LAY) + FAC01(LAY)                                            
          IFP = 2.E2*FP+0.5                                                       
@@ -4512,6 +4516,7 @@ CONTAINS
 !     temperature, and appropriate species.  Below LAYTROP, the water            
 !     vapor self-continuum is interpolated (in temperature) separately.          
 
+!cdir novector
       DO 2500 LAY = 1, LAYTROP                                                   
          SPECCOMB = COLH2O(LAY) + STRRAT*COLCO2(LAY)                             
          SPECPARM = COLH2O(LAY)/SPECCOMB                                         
@@ -4575,6 +4580,7 @@ CONTAINS
  2500 CONTINUE                                                                   
                                                                                  
 !!DIR$ NOVECTOR                                                                   
+!cdir novector
       DO 3500 LAY = LAYTROP+1, NLAYERS                                           
          SPECCOMB = COLH2O(LAY) + STRRAT*COLCO2(LAY)                             
          SPECPARM = COLH2O(LAY)/SPECCOMB                                         
@@ -4672,6 +4678,7 @@ CONTAINS
 !     temperature, and appropriate species.  Below LAYTROP, the water            
 !     vapor self-continuum is interpolated (in temperature) separately.          
 !!DIR$ NOVECTOR                                                                   
+!cdir novector
       DO 2500 LAY = 1, LAYTROP                                                   
          SPECCOMB = COLH2O(LAY) + STRRAT1*COLCO2(LAY)                            
          SPECPARM = COLH2O(LAY)/SPECCOMB                                         
@@ -4711,6 +4718,7 @@ CONTAINS
  2500 CONTINUE                                                                   
                                                                                  
 !!DIR$ NOVECTOR                                                                   
+!cdir novector
       DO 3500 LAY = LAYTROP+1, NLAYERS                                           
          SPECCOMB = COLO3(LAY) + STRRAT2*COLCO2(LAY)                             
          SPECPARM = COLO3(LAY)/SPECCOMB                                          
@@ -4804,6 +4812,7 @@ CONTAINS
 !     temperature, and appropriate species.  Below LAYTROP, the water            
 !     vapor self-continuum is interpolated (in temperature) separately.          
 !!DIR$ NOVECTOR                                                                   
+!cdir novector
       DO 2500 LAY = 1, LAYTROP                                                   
          SPECCOMB = COLH2O(LAY) + STRRAT1*COLCO2(LAY)                            
          SPECPARM = COLH2O(LAY)/SPECCOMB                                         
@@ -4844,6 +4853,7 @@ CONTAINS
  2500 CONTINUE                                                                   
                                                                                  
 !!DIR$ NOVECTOR                                                                   
+!cdir novector
       DO 3500 LAY = LAYTROP+1, NLAYERS                                           
          SPECCOMB = COLO3(LAY) + STRRAT2*COLCO2(LAY)                             
          SPECPARM = COLO3(LAY)/SPECCOMB                                          
@@ -4924,6 +4934,7 @@ CONTAINS
 !     Compute the optical depth by interpolating in ln(pressure) and             
 !     temperature. The water vapor self-continuum is interpolated                
 !     (in temperature) separately.                                               
+!cdir novector
       DO 2500 LAY = 1, LAYTROP                                                   
          IND0 = ((JP(LAY)-1)*5+(JT(LAY)-1))*NSPA(6) + 1                          
          IND1 = (JP(LAY)*5+(JT1(LAY)-1))*NSPA(6) + 1                             
@@ -4945,6 +4956,7 @@ CONTAINS
  2500 CONTINUE                                                                   
                                                                                  
 !     Nothing important goes on above LAYTROP in this band.                      
+!cdir novector
       DO 3500 LAY = LAYTROP+1, NLAYERS                                           
          DO 3000 IG = 1, NG6                                                     
             TAUG(NGS5+IG,LAY) = 0.0                        & 
@@ -5001,6 +5013,7 @@ CONTAINS
 !     temperature, and appropriate species.  Below LAYTROP, the water            
 !     vapor self-continuum is interpolated (in temperature) separately.          
 !!DIR$ NOVECTOR                                                                   
+!cdir novector
       DO 2500 LAY = 1, LAYTROP                                                   
          SPECCOMB = COLH2O(LAY) + STRRAT1*COLO3(LAY)                             
          SPECPARM = COLH2O(LAY)/SPECCOMB                                         
@@ -5040,6 +5053,7 @@ CONTAINS
  2000    CONTINUE                                                                
  2500 CONTINUE                                                                   
                                                                                  
+!cdir novector
       DO 3500 LAY = LAYTROP+1, NLAYERS                                           
          IND0 = ((JP(LAY)-13)*5+(JT(LAY)-1))*NSPB(7) + 1                         
          IND1 = ((JP(LAY)-12)*5+(JT1(LAY)-1))*NSPB(7) + 1                        
@@ -5144,6 +5158,7 @@ CONTAINS
                                                                                  
 !     Compute the optical depth by interpolating in ln(pressure) and             
 !     temperature.                                                               
+!cdir novector
       DO 2500 LAY = 1, LAYSWTCH                                                  
          FP = FAC01(LAY) + FAC11(LAY)                                            
          IND0 = ((JP(LAY)-1)*5+(JT(LAY)-1))*NSPA(8) + 1                          
@@ -5173,6 +5188,7 @@ CONTAINS
  2000    CONTINUE                                                                
  2500 CONTINUE                                                                   
                                                                                  
+!cdir novector
       DO 3500 LAY = LAYSWTCH+1, NLAYERS                                          
          FP = FAC01(LAY) + FAC11(LAY)                                            
          IND0 = ((JP(LAY)-7)*5+(JT(LAY)-1))*NSPB(8) + 1                          
@@ -5265,6 +5281,7 @@ CONTAINS
 !     Compute the optical depth by interpolating in ln(pressure),                
 !     temperature, and appropriate species.  Below LAYTROP, the water            
 !     vapor self-continuum is interpolated (in temperature) separately.          
+!cdir novector
       DO 2500 LAY = 1, LAYTROP                                                   
          SPECCOMB = COLH2O(LAY) + STRRAT*COLCH4(LAY)                             
          SPECPARM = COLH2O(LAY)/SPECCOMB                                         
@@ -5337,6 +5354,7 @@ CONTAINS
  2000    CONTINUE                                                                
  2500 CONTINUE                                                                   
                                                                                  
+!cdir novector
       DO 3500 LAY = LAYTROP+1, NLAYERS                                           
          IND0 = ((JP(LAY)-13)*5+(JT(LAY)-1))*NSPB(9) + 1                         
          IND1 = ((JP(LAY)-12)*5+(JT1(LAY)-1))*NSPB(9) + 1                        
@@ -5387,6 +5405,7 @@ CONTAINS
                                                                                  
 !     Compute the optical depth by interpolating in ln(pressure) and             
 !     temperature.                                                               
+!cdir novector
       DO 2500 LAY = 1, LAYTROP                                                   
          IND0 = ((JP(LAY)-1)*5+(JT(LAY)-1))*NSPA(10) + 1                         
          IND1 = (JP(LAY)*5+(JT1(LAY)-1))*NSPA(10) + 1                            
@@ -5400,6 +5419,7 @@ CONTAINS
  2000    CONTINUE                                                                
  2500 CONTINUE                                                                   
                                                                                  
+!cdir novector
       DO 3500 LAY = LAYTROP+1, NLAYERS                                           
          IND0 = ((JP(LAY)-13)*5+(JT(LAY)-1))*NSPB(10) + 1                        
          IND1 = ((JP(LAY)-12)*5+(JT1(LAY)-1))*NSPB(10) + 1                       
@@ -5456,6 +5476,7 @@ CONTAINS
 !     Compute the optical depth by interpolating in ln(pressure) and             
 !     temperature.  Below LAYTROP, the water vapor self-continuum                
 !     is interpolated (in temperature) separately.                               
+!cdir novector
       DO 2500 LAY = 1, LAYTROP                                                   
          IND0 = ((JP(LAY)-1)*5+(JT(LAY)-1))*NSPA(11) + 1                         
          IND1 = (JP(LAY)*5+(JT1(LAY)-1))*NSPA(11) + 1                            
@@ -5473,6 +5494,7 @@ CONTAINS
  2000    CONTINUE                                                                
  2500 CONTINUE                                                                   
                                                                                  
+!cdir novector
       DO 3500 LAY = LAYTROP+1, NLAYERS                                           
          IND0 = ((JP(LAY)-13)*5+(JT(LAY)-1))*NSPB(11) + 1                        
          IND1 = ((JP(LAY)-12)*5+(JT1(LAY)-1))*NSPB(11) + 1                       
@@ -5532,6 +5554,7 @@ CONTAINS
 !     temperature, and appropriate species.  Below LAYTROP, the water            
 !     vapor self-continuum is interpolated (in temperature) separately.          
 !!DIR$ NOVECTOR                                                                   
+!cdir novector
       DO 2500 LAY = 1, LAYTROP                                                   
          SPECCOMB = COLH2O(LAY) + STRRAT1*COLCO2(LAY)                            
          SPECPARM = COLH2O(LAY)/SPECCOMB                                         
@@ -5570,6 +5593,7 @@ CONTAINS
  2000    CONTINUE                                                                
  2500 CONTINUE                                                                   
                                                                                  
+!cdir novector
       DO 3500 LAY = LAYTROP+1, NLAYERS                                           
          DO 3000 IG = 1, NG12                                                    
             TAUG(NGS11+IG,LAY) = 0.0                                             

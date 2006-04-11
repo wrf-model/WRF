@@ -1036,7 +1036,7 @@ CONTAINS
           DO I=ITS,ITE
             SM=SEAMASK(I,J)-1.
             IF(SM+XICE(I,J)<0.5)THEN
-              Z0(I,J)=Z0(I,J)+VZ0TBL(IVGTYP(I,J))
+              Z0(I,J)=VZ0TBL(IVGTYP(I,J))
             ENDIF
           ENDDO
           ENDDO
@@ -1047,7 +1047,7 @@ CONTAINS
           DO I=ITS,ITE
             SM=SEAMASK(I,J)-1.
             IF(SM+XICE(I,J)<0.5)THEN
-              Z0(I,J)=Z0(I,J)+VZ0TBL_24(IVGTYP(I,J))
+              Z0(I,J)=VZ0TBL_24(IVGTYP(I,J))
             ENDIF
           ENDDO
           ENDDO

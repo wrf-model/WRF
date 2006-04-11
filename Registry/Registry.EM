@@ -150,9 +150,9 @@ i1       real   mu_save         ij     dyn_em      1          -
 i1       real   mu_tend         ij     dyn_em      1          -     
 
 #diagnostic for looking at nest position in output. A mungy version of terrain height.
-state    real   nest_pos        ij     misc        1   -   hu=(mark_domain)  "NEST_POS"
-state    real   nest_mask       ij     misc        1   -   u=(mark_domain)   "NEST_MASK"     "LOCATION OF NEST IF ANY"
-state    real   ht_coarse       ij     misc        1   -     -                -              "STORAGE FOR LOW-RES TERRAIN"
+state    real   nest_pos        ij     misc        1   -   rhu=(mark_domain)  "NEST_POS"
+state    real   nest_mask       ij     misc        1   -   ru=(mark_domain)   "NEST_MASK"     "LOCATION OF NEST IF ANY"
+state    real   ht_coarse       ij     misc        1   -     r                -              "STORAGE FOR LOW-RES TERRAIN"
 
 
 # TKE
@@ -255,6 +255,11 @@ state    integer imask_nostag         ij      misc     1     -
 state    integer imask_xstag          ij      misc     1     X
 state    integer imask_ystag          ij      misc     1     Y
 state    integer imask_xystag         ij      misc     1     XY 
+# vortex center indices; need for restarts of moving nests
+state    real    xi                   -       misc     -     -    r
+state    real    xj                   -       misc     -     -    r
+state    real    vc_i                 -       misc     -     -    r
+state    real    vc_j                 -       misc     -     -    r
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Scalar (4D) arrays
@@ -572,8 +577,16 @@ state    real  RQIBLTEN        ikj      misc        1         -      r        "R
 
 # State vector for etampnew microphysics. Must be declared state because it is not read-once and is needed for restarting.
 state    real  mp_restart_state   p      misc        1         -      r       "MP_RESTART_STATE"       "STATE VECTOR FOR MICROPHYSICS RESTARTS"
-state    real  tbpvs_state       p      misc        1         -      r        "TBPVS_STATE"           "STATE FOR ETAMPNEW MICROPHYSICS"
-state    real  tbpvs0_state      p      misc        1         -      r        "TBPVS0_STATE"          "STATE FOR ETAMPNEW MICROPHYSICS"
+state    real  tbpvs_state        p      misc        1         -      r        "TBPVS_STATE"           "STATE FOR ETAMPNEW MICROPHYSICS"
+state    real  tbpvs0_state       p      misc        1         -      r        "TBPVS0_STATE"          "STATE FOR ETAMPNEW MICROPHYSICS"
+
+# State variables for landuse_init, Must be declared state because the are read in and needed for restarts. Had been SAVE vars in 
+# landuse_init (phys/module_physics_init.F)
+state    integer  landuse_isice   -      misc       -          -     r
+state    integer  landuse_lucats  -      misc       -          -     r
+state    integer  landuse_luseas  -      misc       -          -     r
+state    integer  landuse_isn     -      misc       -          -     r
+state    real     lu_state        p      misc       -          -     r
 
 i1       real  th_phy          ikj      misc        1         -                                          
 i1       real  pi_phy          ikj      misc        1         -                                          
@@ -618,19 +631,19 @@ state integer  STEPBL          -        misc        1         -      r        "S
 state    real  taucldi         ikj      misc        1         -      r        "TAUCLDI"               "CLOUD OPTICAL THICKNESS FOR ICE"              ""
 state    real  taucldc         ikj      misc        1         -      r        "TAUCLDC"               "CLOUD OPTICAL THICKNESS FOR WATER"            ""
                                                 
-state   real  defor11          ikj      misc        1         -     -         "defor11"               "DEFORMATION 11"              "s-1"      
-state   real  defor22          ikj      misc        1         -     -         "defor22"               "DEFORMATION 22"              "s-1"      
-state   real  defor12          ikj      misc        1         -     -         "defor12"               "DEFORMATION 12"              "s-1"      
-state   real  defor33          ikj      misc        1         z     -         "defor33"               "DEFORMATION 33"              "s-1"      
-state   real  defor13          ikj      misc        1         z     -         "defor13"               "DEFORMATION 13"              "s-1"      
-state   real  defor23          ikj      misc        1         z     -         "defor23"               "DEFORMATION 23"              "s-1"      
-state   real   xkmv            ikj      misc        1         -     -         "xkmv"                  "VERTICAL EDDY VISCOSITY"     "m2 s-1"      
-state   real   xkmh            ikj      misc        1         -     -         "xkmh"                  "HORIZONTAL EDDY VISCOSITY"   "m2 s-1"      
-state   real   xkmhd           ikj      misc        1         -     -         "xkmhd"                 "HORIZONTAL EDDY DIFFUSIVITY"     "m2 s-1"      
-state   real   xkhv            ikj      misc        1         -     -         "xkhv"                  "VERTICAL EDDY DIFFUSIVITY OF HEAT"                               "m2 s-1"      
-state   real   xkhh            ikj      misc        1         -     -         "xkhh"                  "HORIZONTAL EDDY DIFFUSIVITY OF HEAT"                             "m2 s-1"      
-state   real    div            ikj      misc        1         -     -         "div"                   "DIVERGENCE"                                                      "s-1"
-state   real    BN2            ikj      misc        1         -     -         "BN2"                   "BRUNT-VAISALA FREQUENCY"                                         "s-2"
+state   real  defor11          ikj      misc        1         -     r         "defor11"               "DEFORMATION 11"              "s-1"      
+state   real  defor22          ikj      misc        1         -     r         "defor22"               "DEFORMATION 22"              "s-1"      
+state   real  defor12          ikj      misc        1         -     r         "defor12"               "DEFORMATION 12"              "s-1"      
+state   real  defor33          ikj      misc        1         z     r         "defor33"               "DEFORMATION 33"              "s-1"      
+state   real  defor13          ikj      misc        1         z     r         "defor13"               "DEFORMATION 13"              "s-1"      
+state   real  defor23          ikj      misc        1         z     r         "defor23"               "DEFORMATION 23"              "s-1"      
+state   real   xkmv            ikj      misc        1         -     r         "xkmv"                  "VERTICAL EDDY VISCOSITY"     "m2 s-1"      
+state   real   xkmh            ikj      misc        1         -     r         "xkmh"                  "HORIZONTAL EDDY VISCOSITY"   "m2 s-1"      
+state   real   xkmhd           ikj      misc        1         -     r         "xkmhd"                 "HORIZONTAL EDDY DIFFUSIVITY"     "m2 s-1"      
+state   real   xkhv            ikj      misc        1         -     r         "xkhv"                  "VERTICAL EDDY DIFFUSIVITY OF HEAT"                               "m2 s-1"      
+state   real   xkhh            ikj      misc        1         -     r         "xkhh"                  "HORIZONTAL EDDY DIFFUSIVITY OF HEAT"                             "m2 s-1"      
+state   real    div            ikj      misc        1         -     r         "div"                   "DIVERGENCE"                                                      "s-1"
+state   real    BN2            ikj      misc        1         -     r         "BN2"                   "BRUNT-VAISALA FREQUENCY"                                         "s-2"
 state  logical warm_rain        -       misc        1         -     -         "warm_rain"              "WARM_RAIN_LOGICAL"
 
 # flag for nest movement

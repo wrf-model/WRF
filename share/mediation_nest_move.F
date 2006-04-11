@@ -18,6 +18,7 @@ SUBROUTINE med_nest_move ( parent, nest )
                                       ips , ipe , jps , jpe , kps , kpe
    INTEGER ierr, fid
    LOGICAL input_from_hires
+   LOGICAL saved_restart_value
    TYPE (grid_config_rec_type)   :: config_flags
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
 
@@ -114,7 +115,8 @@ SUBROUTINE med_nest_move ( parent, nest )
 
      IF ( (dx .gt. 1 .and. dx .lt. -1 ) .or.  &
           (dy .gt. 1 .and. dy .lt. -1 ) ) THEN
-       CALL wrf_error_fatal( 'med_nest_move' )
+       WRITE(mess,*)' invalid move: dx, dy ', dx, dy
+       CALL wrf_error_fatal( mess )
      ENDIF
 
      WRITE(mess,*)' moving ',grid%id,dx,dy
@@ -209,15 +211,34 @@ SUBROUTINE med_nest_move ( parent, nest )
        parent%imask_ystag = 1
        parent%imask_xystag = 1
 
+! start_domain will key off "restart". Even if this is a restart run
+! we don't want it to here. Save the value, set it to false, and restore afterwards
+       saved_restart_value = config_flags%restart
+       config_flags%restart = .FALSE.
+       grid%restart = .FALSE.
+       CALL nl_set_restart ( 1, .FALSE. )
        CALL start_domain ( parent , .FALSE. )
+       config_flags%restart = saved_restart_value
+       grid%restart = saved_restart_value
+       CALL nl_set_restart ( 1,  saved_restart_value )
 
      ENDIF
 
 !
-     nest%moved = .true.
 ! masks associated with nest will have been set by shift_domain_em above
+     nest%moved = .true.
+! start_domain will key off "restart". Even if this is a restart run
+! we don't want it to here. Save the value, set it to false, and restore afterwards
+     saved_restart_value = config_flags%restart
+     config_flags%restart = .FALSE.
+     CALL nl_set_restart ( 1, .FALSE. )
+     grid%restart = .FALSE.
      CALL start_domain ( nest , .FALSE. )
+     config_flags%restart = saved_restart_value
+     grid%restart = saved_restart_value
+     CALL nl_set_restart ( 1,  saved_restart_value )
      nest%moved = .false.
+      
 !
 ! copy time level 2 to time level 1 in new regions of multi-time level fields
 ! this should be registry generated.
@@ -233,13 +254,13 @@ SUBROUTINE med_nest_move ( parent, nest )
          where ( nest%imask_nostag .EQ. 1 ) nest%em_tp_1(:,k,:)  = nest%em_tp_2(:,k,:)
          where ( nest%imask_nostag .EQ. 1 ) nest%em_tke_1(:,k,:) = nest%em_tke_2(:,k,:)
        enddo
+       where ( nest%imask_nostag .EQ. 1 ) nest%em_mu_1(:,:)  = nest%em_mu_2(:,:)
      ENDIF
 #endif
 #if ( WRF_NMM_CORE == 1 )
      IF ( dyn_opt .EQ. DYN_NMM ) THEN
      ENDIF
 #endif
-     where ( nest%imask_nostag .EQ. 1 ) nest%em_mu_1(:,:)  = nest%em_mu_2(:,:)
 !
    ENDIF check_for_move
 #endif
@@ -289,8 +310,6 @@ LOGICAL FUNCTION time_for_move2 ( parent , grid , move_cd_x, move_cd_y )
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
 
 character*256 message, message2
-
-integer myproc
 
 !#define MOVING_DIAGS
 # ifdef VORTEX_CENTER
@@ -631,6 +650,8 @@ write(0,*)' changing grid%vc_i,  move_cd_x * pgr ', grid%vc_i, move_cd_x * pgr, 
 
 # else
 ! from namelist
+   move_cd_x = 0
+   move_cd_y = 0
    time_for_move2 = .FALSE.
    CALL domain_clock_get( grid, current_time=ct, start_time=st )
    CALL nl_get_num_moves( 1, num_moves )
@@ -638,7 +659,7 @@ write(0,*)' changing grid%vc_i,  move_cd_x * pgr ', grid%vc_i, move_cd_x * pgr, 
      WRITE(mess,*)'time_for_moves2: num_moves (',num_moves,') .GT. max_moves (',max_moves,')'
      CALL wrf_error_fatal( TRIM(mess) )
    ENDIF
-   DO I = 1, num_moves
+   DO i = 1, num_moves
      CALL nl_get_move_id( i, move_id )
      IF ( move_id .EQ. grid%id ) THEN
        CALL nl_get_move_interval( i, move_interval )
@@ -745,10 +766,12 @@ USE module_timing
      IF ( par%id .EQ. 1 ) THEN
          IF ( would_move_x .NE. 0 .AND. move_cd_x .NE. 0 ) THEN
            CALL wrf_message('MOAD can not move. Cancelling nest move in X')
+           if ( grid%num_nests .eq. 0 ) grid%vc_i = grid%vc_i + move_cd_x * pgr  ! cancel effect of move
            move_cd_x = 0
          ENDIF
          IF ( would_move_y .NE. 0 .AND. move_cd_y .NE. 0 ) THEN
            CALL wrf_message('MOAD can not move. Cancelling nest move in Y')
+           if ( grid%num_nests .eq. 0 ) grid%vc_j = grid%vc_j + move_cd_y * pgr  ! cancel effect of move
            move_cd_y = 0
          ENDIF
      ELSE
@@ -763,7 +786,7 @@ USE module_timing
    ELSE
      ! code that executes on parent to see if parent needs to move
      ! get closest number of cells we'll allow nest edge to approach parent bdy
-     CALL nl_get_corral_dist ( grid%id , corral_dist )
+     CALL nl_get_corral_dist ( grid%nests(kid)%ptr%id , corral_dist )
      ! get dims
      CALL get_ijk_from_grid (  grid%nests(kid)%ptr ,               &
                                nids, nide, njds, njde, nkds, nkde, &

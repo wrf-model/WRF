@@ -98,11 +98,6 @@ MODULE module_domain
 
       LOGICAL                                             :: first_force
 
-#ifdef MOVE_NESTS
-      REAL         :: xi , xj
-      REAL         :: vc_i, vc_j    ! vortex center i and j
-#endif
-
       ! domain dimensions
 
       INTEGER    :: sd31,   ed31,   sd32,   ed32,   sd33,   ed33,         &
@@ -799,13 +794,6 @@ CONTAINS
       ENDDO
       new_grid%time_set = .FALSE.
 
-#ifdef MOVE_NESTS
-      new_grid%xi = -1.0
-      new_grid%xj = -1.0
-      new_grid%vc_i = -1.0
-      new_grid%vc_j = -1.0
-#endif
-
       ! set up the pointers that represent the nest hierarchy
       ! set this up *prior* to calling the patching or allocation
       ! routines so that implementations of these routines can
@@ -854,6 +842,13 @@ CONTAINS
                                sm1x, em1x, sm2x, em2x, sm3x, em3x, &   ! x-xpose
                                sm1y, em1y, sm2y, em2y, sm3y, em3y  &   ! y-xpose
       )
+#if MOVE_NESTS
+!set these here, after alloc_space_field, which initializes vc_i, vc_j to zero
+      new_grid%xi = -1.0
+      new_grid%xj = -1.0
+      new_grid%vc_i = -1.0
+      new_grid%vc_j = -1.0
+#endif
 
       new_grid%sd31                            = sd1 
       new_grid%ed31                            = ed1

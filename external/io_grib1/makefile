@@ -41,7 +41,7 @@ test_grib1_routines: test_grib1_routines.F90 gridnav.c gribmap.c open_file.c tri
 
 LOCAL_LIBS :
 	( cd MEL_grib1; make CC="$(CC) $(CFLAGS)" AR="$(AR)" archive )
-	( cd grib1_util; make CC="$(CC) $(CFLAGS)" archive )
+	( cd grib1_util; make CC="$(CC) $(CFLAGS)" AR="$(AR)" archive )
 
 .FORCE:
 

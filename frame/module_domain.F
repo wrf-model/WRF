@@ -1641,7 +1641,7 @@ CONTAINS
         CHARACTER (LEN=*),       INTENT(  OUT), OPTIONAL :: time_stepstr
         CHARACTER (LEN=*),       INTENT(  OUT), OPTIONAL :: time_stepstr_frac
         INTEGER,                 INTENT(  OUT), OPTIONAL :: advanceCount
-        ! currentDayOfYearReal = 1.0 at 0Z on 1 January, 1.5 at 12Z on 
+        ! currentDayOfYearReal = 0.0 at 0Z on 1 January, 0.5 at 12Z on 
         ! 1 January, etc.
         REAL,                    INTENT(  OUT), OPTIONAL :: currentDayOfYearReal
         ! Time at which simulation started.  If this is not a restart run, 
@@ -1738,7 +1738,7 @@ CONTAINS
             CALL wrf_error_fatal ( &
                    'domain_clock_get:  WRFU_TimeGet(dayOfYear_r8) failed' )
           ENDIF
-          currentDayOfYearReal = REAL( currentDayOfYearR8 )
+          currentDayOfYearReal = REAL( currentDayOfYearR8 ) - 1.0
         ENDIF
         IF ( PRESENT( simulationStartTime ) ) THEN
           simulationStartTime = domain_get_sim_start_time( grid )
@@ -1764,6 +1764,25 @@ CONTAINS
         ENDIF
         RETURN
       END SUBROUTINE domain_clock_get
+
+
+
+      FUNCTION domain_clockisstarttime ( grid ) RESULT ( is_start_time ) 
+        IMPLICIT NONE
+! <DESCRIPTION>
+! This convenience function returns .TRUE. iff grid%clock is at its 
+! start time.  
+!
+! </DESCRIPTION>
+        TYPE(domain), INTENT(IN) :: grid
+        ! result
+        LOGICAL :: is_start_time
+        TYPE(WRFU_Time) :: start_time, current_time
+        CALL domain_clock_get( grid, current_time=current_time, &
+                                     start_time=start_time )
+        is_start_time = ( current_time == start_time )
+      END FUNCTION domain_clockisstarttime
+
 
 
 

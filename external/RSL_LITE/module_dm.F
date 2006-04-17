@@ -2265,6 +2265,7 @@ integer myproc
       INTEGER icoord, jcoord, idim_cd, jdim_cd
       INTEGER local_comm, myproc, nproc
       INTEGER iparstrt, jparstrt, sw
+      REAL    nest_influence
 
       character*256 :: timestr
       integer ierr
@@ -2294,6 +2295,7 @@ integer myproc
 ! registry routine that accompanies RSL_LITE but, just as it's sometimes easier to put up a road
 ! sign that says "DIP" than fix the dip,  at this point it was easier just to write this comment. JM
 !
+      nest_influence = 1.
 
       CALL domain_clock_get( grid, current_timestr=timestr )
 
@@ -2324,6 +2326,7 @@ integer myproc
 
       CALL rsl_lite_merge_msgs( myproc, nproc, local_comm )
 
+#define NEST_INFLUENCE(A,B) A = B
 #  include "em_nest_feedbackup_unpack.inc"
 
       ! smooth coarse grid

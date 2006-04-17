@@ -4457,6 +4457,7 @@ END
       INTEGER       ::          nids, nide, njds, njde, nkds, nkde,    &
                                 nims, nime, njms, njme, nkms, nkme,    &
                                 nips, nipe, njps, njpe, nkps, nkpe
+      REAL          :: nest_influence
       LOGICAL, EXTERNAL  :: em_cd_feedback_mask
 
 #ifdef DEREF_KLUDGE
@@ -4474,6 +4475,8 @@ END
 #      include <em_data_calls.inc>
 #endif
 
+      nest_influence = 1.
+
       CALL get_ijk_from_grid (  grid ,                   &
                                 cids, cide, cjds, cjde, ckds, ckde,    &
                                 cims, cime, cjms, cjme, ckms, ckme,    &
@@ -4489,6 +4492,7 @@ END
 
       CALL rsl_merge_msgs
 
+#define NEST_INFLUENCE(A,B) A = B
 #  include "em_nest_feedbackup_unpack.inc"
 
       ! smooth coarse grid 

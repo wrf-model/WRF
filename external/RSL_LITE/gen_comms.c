@@ -1275,7 +1275,7 @@ fprintf(fp,"CALL rsl_lite_from_child_msg(RWORDSIZE,xv)\n" ) ;
 fprintf(fp,"IF ( %s_cd_feedback_mask( pig, ips_save, ipe_save , pjg, jps_save, jpe_save, %s, %s ) ) THEN\n",
                  corename, p->stag_x?".TRUE.":".FALSE." ,p->stag_y?".TRUE.":".FALSE." ) ;
             if ( zdex >= 0 ) {
-fprintf(fp,"DO k = %s,%s\n%s = xv(k)\nENDDO\n", ddim[zdex][0], ddim[zdex][1], vname) ;
+fprintf(fp,"DO k = %s,%s\nNEST_INFLUENCE(%s,xv(k))\nENDDO\n", ddim[zdex][0], ddim[zdex][1], vname, vname) ;
             } else {
 fprintf(fp,"%s = xv(1) ;\n", vname) ;
             }

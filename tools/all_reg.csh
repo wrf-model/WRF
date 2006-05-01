@@ -458,13 +458,14 @@ cat >! history_middle_OK.html << EOF
 <td> XTAGX </td>
 <td> XTESTERX </td>
 <td> XARCHITECTUREX </td>
-<td BGCOLOR="#00FF00"><a href="ARCHITECTURE/wrftest.all_${datehms}">PASS</a></td>
+<td BGCOLOR="#00FF00"><a href="ARCHITECTURE/wrftest.all_${datehms}">PASS</a>
+                      <a href="ARCHITECTURE/message_${datehms}">DIFFS</a></td>
 <td>
 <!--
 <a href="other_docs/${date}_notes">Descriptions</a>
 <a href="other_docs/${date}_minutes">Minutes</a>
-</td>
 -->
+</td>
 </tr>
 EOF
 

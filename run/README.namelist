@@ -339,6 +339,8 @@ Namelist variables for controling the automatic moving nest:
  mix_full_fields(max_dom)            = .true.,  ; used with diff_opt = 2; value of ".true." is recommended, except for
                                                   highly idealized numerical tests; damp_opt must not be 1 if ".true."
                                                   is chosen. .false. means subtract 1-d base-state profile before mixing
+ tke_drag_coefficient(max_dom)       = 0.,      ; surface drag coefficient (Cd, dimensionless) for diff_opt=2 only
+ tke_heat_flux(max_dom)              = 0.,      ; surface thermal flux (H/(rho*cp), K m/s) for diff_opt=2 only
  h_mom_adv_order (max_dom)           = 5,       ; horizontal momentum advection order (5=5th, etc.)
  v_mom_adv_order (max_dom)           = 3,       ; vertical momentum advection order
  h_sca_adv_order (max_dom)           = 5,       ; horizontal scalar advection order

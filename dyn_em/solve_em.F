@@ -188,7 +188,6 @@ SUBROUTINE solve_em ( grid , config_flags , &
   CALL set_tiles ( grid , ids , ide , jds , jde , ips , ipe , jps , jpe )
 
   itimestep = itimestep + 1
-print *,julian,xtime,'=julian,xtime'
 
 !**********************************************************************
 !

@@ -627,6 +627,7 @@
         btimx=timef()
 !
         CALL RADIATION(NTSD_rad,GRID%DT,GRID%JULDAY,GRID%JULYR         &
+     &                ,GRID%XTIME,GRID%JULIAN                          &
      &                ,IHRST,GRID%NPHS                                 &
      &                ,GLAT,GLON,GRID%NRADS,GRID%NRADL                 &
      &                ,DETA1,DETA2,AETA1,AETA2,ETA1,ETA2,PDTOP,PT      &

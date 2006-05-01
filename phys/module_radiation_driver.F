@@ -14,6 +14,7 @@ CONTAINS
                       ,EMISS ,rho ,p8w,p ,pi,dz8w,t,t8w,GMT              &
                       ,XLAND,TSK,HTOP,HBOT,CUPPT,VEGFRA,SNOW             &
                       ,julyr ,JULDAY ,RADT,STEPRA,ICLOUD ,warm_rain      &
+                      ,julian, xtime                                     &
                       ,RSWTOA,RLWTOA,CZMEAN                              &
                       ,CFRACL,CFRACM,CFRACH                              &
                       ,ACFRST,NCFRST,ACFRCV,NCFRCV                       &
@@ -254,7 +255,8 @@ CONTAINS
 
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)  ::   SWDOWN
 !
-   REAL, INTENT(IN  )   ::                                GMT,dt
+   REAL, INTENT(IN  )   ::                                GMT,dt, &
+                                                   julian, xtime
 !
    INTEGER, INTENT(IN  ) ::                    JULDAY, itimestep
 
@@ -301,7 +303,7 @@ CONTAINS
 
    REAL, DIMENSION( ims:ime, jms:jme ) ::             GLAT,GLON
 
-   REAL    ::    XTIME,DECLIN,SOLCON 
+   REAL    ::    DECLIN,SOLCON 
    INTEGER ::    i,j,k,its,ite,jts,jte,ij
    LOGICAL ::    gfdl_lw,gfdl_sw
 
@@ -348,8 +350,8 @@ CONTAINS
 !---------------
 ! Calculate constant for short wave radiation
 
-     CALL radconst(XTIME,DECLIN,SOLCON,GMT,JULDAY,           &
-                   DEGRAD,DPD,itimestep,dt                   )
+     CALL radconst(XTIME,DECLIN,SOLCON,JULIAN,               &
+                   DEGRAD,DPD                                )
 
      lwrad_gfdl_select: SELECT CASE(lw_physics)
 
@@ -579,18 +581,17 @@ CONTAINS
 !BOP
 ! !IROUTINE: radconst - compute radiation terms
 ! !INTERFAC:
-   SUBROUTINE radconst(XTIME,DECLIN,SOLCON,GMT,JULDAY,               &
-                       DEGRAD,DPD,step,dt                            )
+   SUBROUTINE radconst(XTIME,DECLIN,SOLCON,JULIAN,                   &
+                       DEGRAD,DPD                                    )
 !---------------------------------------------------------------------
    USE module_wrf_error
    IMPLICIT NONE
 !---------------------------------------------------------------------
 
 ! !ARGUMENTS:
-   INTEGER, INTENT(IN   )   ::       JULDAY, step
-   REAL, INTENT(IN   )      ::       GMT,dt,DEGRAD,DPD
-   REAL, INTENT(OUT  )      ::       XTIME,DECLIN,SOLCON
-   REAL                     ::       OBECL,SINOB,SXLONG,ARG,JULIAN,  &
+   REAL, INTENT(IN   )      ::       DEGRAD,DPD,XTIME,JULIAN
+   REAL, INTENT(OUT  )      ::       DECLIN,SOLCON
+   REAL                     ::       OBECL,SINOB,SXLONG,ARG,  &
                                      DECDEG,DJUL,RJUL,ECCFAC
 !
 ! !DESCRIPTION:
@@ -606,11 +607,9 @@ CONTAINS
         
    OBECL=23.5*DEGRAD
    SINOB=SIN(OBECL)
-   XTIME=float(step)*dt/60.
         
 !-----CALCULATE LONGITUDE OF THE SUN FROM VERNAL EQUINOX:
         
-   JULIAN=FLOAT(JULDAY-1)+(XTIME/60.+GMT)/24.
    IF(JULIAN.GE.80.)SXLONG=DPD*(JULIAN-80.)
    IF(JULIAN.LT.80.)SXLONG=DPD*(JULIAN+285.)
    SXLONG=SXLONG*DEGRAD

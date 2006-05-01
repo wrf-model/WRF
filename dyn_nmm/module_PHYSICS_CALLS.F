@@ -32,7 +32,8 @@
 !
 !-----------------------------------------------------------------------
 !***********************************************************************
-      SUBROUTINE RADIATION(NTSD,DT,JULDAY,JULYR,IHRST,NPHS,GLAT,GLON    &
+      SUBROUTINE RADIATION(NTSD,DT,JULDAY,JULYR,XTIME,JULIAN            &
+     &                    ,IHRST,NPHS,GLAT,GLON                         &
      &                    ,NRADS,NRADL                                  &
      &                    ,DETA1,DETA2,AETA1,AETA2,ETA1,ETA2,PDTOP,PT   &
      &                    ,PD,RES,PINT,T,Q,CWM,THS,ALBEDO,EPSR          &
@@ -86,7 +87,7 @@
 !
       INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: NCFRCV,NCFRST
 !
-      REAL,INTENT(IN) :: DT,PDTOP,PT
+      REAL,INTENT(IN) :: DT,PDTOP,PT,XTIME,JULIAN
 !
       INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: LMH
 !
@@ -317,6 +318,7 @@
      &                 ,RHO=RR,P8W=P8W,P=P_PHY,PI=PI_PHY                &
      &                 ,DZ8W=DZ,T=T_PHY,T8W=T8W,GMT=GMT                 &
      &                 ,JULDAY=JULDAY,JULYR=JULYR,NPHS=NPHS             &
+     &                 ,JULIAN=JULIAN,XTIME=XTIME                       &
      &                 ,LW_PHYSICS=CONFIG_FLAGS%RA_LW_PHYSICS           &
      &                 ,SW_PHYSICS=CONFIG_FLAGS%RA_SW_PHYSICS           &
      &                 ,RADT=RADT,STEPRA=NRAD,ICLOUD=ICLOUD             &

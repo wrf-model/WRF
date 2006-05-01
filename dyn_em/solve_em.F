@@ -59,7 +59,6 @@ SUBROUTINE solve_em ( grid , config_flags , &
    INTEGER                         :: im , num_3d_m , ic , num_3d_c , is , num_3d_s
    INTEGER                         :: loop
    INTEGER                         :: ijds, ijde
-   INTEGER                         :: itmpstep
    INTEGER                         :: sz
 
    LOGICAL                         :: specified_bdy, channel_bdy
@@ -189,6 +188,7 @@ SUBROUTINE solve_em ( grid , config_flags , &
   CALL set_tiles ( grid , ids , ide , jds , jde , ips , ipe , jps , jpe )
 
   itimestep = itimestep + 1
+print *,julian,xtime,'=julian,xtime'
 
 !**********************************************************************
 !
@@ -515,7 +515,7 @@ BENCH_START(rad_driver_tim)
      &        ,DZ8W=dz8w          ,EMISS=emiss        ,GLW=glw            &
      &        ,GMT=grid%gmt            ,GSW=gsw            ,HBOT=hbot          &
      &        ,HTOP=htop          ,ICLOUD=config_flags%icloud                          &
-     &        ,ITIMESTEP=itimestep                    ,JULDAY=grid%julday      &
+     &        ,ITIMESTEP=itimestep,JULDAY=grid%julday, JULIAN=julian      &
      &        ,JULYR=grid%julyr        ,LW_PHYSICS=config_flags%ra_lw_physics  &
      &        ,NCFRCV=ncfrcv      ,NCFRST=ncfrst      ,NPHS=1             &
      &        ,P8W=p8w            ,P=p_phy            ,PI=pi_phy          &
@@ -528,6 +528,7 @@ BENCH_START(rad_driver_tim)
      &        ,T=t_phy            ,TAUCLDC=taucldc    ,TAUCLDI=taucldi    &
      &        ,TSK=tsk            ,VEGFRA=vegfra     ,WARM_RAIN=warm_rain &
      &        ,XLAND=xland        ,XLAT=xlat          ,XLONG=xlong        &
+     &        ,XTIME=xtime                                                &
             ! indexes
      &        ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde          &
      &        ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme          &

@@ -138,6 +138,10 @@ CONTAINS
                                           FCPJ,FDIVJ,EMJ,EMTJ,FADJ, &
                                           HDACJ,DDMPUJ,DDMPVJ
 
+!-- Carsel and Parrish [1988]
+         REAL , DIMENSION(100) :: lqmi
+         integer iicount 
+
         REAL:: TPH0D,TLM0D
         REAL:: TPH0,WB,SB,DLM,DPH,TDLM,TDPH
         REAL:: WBI,SBI,EBI,ANBI,STPH0,CTPH0
@@ -891,6 +895,73 @@ CONTAINS
      num_sw_levels_alloc )
       write(0,*)' its=',its,' ite=',ite,' jts=',jts,' jte=',jte
       write(0,*)' ide=',ide,' jde=',jde
+
+!  Minimum soil values, residual, from RUC LSM scheme.  For input from Noah and using
+       !  RUC LSM scheme, this must be subtracted from the input total soil moisture.  For
+       !  input RUC data and using the Noah LSM scheme, this value must be added to the soil
+       !  moisture input.
+
+       lqmi(1:num_soil_top_cat) = &
+       (/0.045, 0.057, 0.065, 0.067, 0.034, 0.078, 0.10,     &
+         0.089, 0.095, 0.10,  0.070, 0.068, 0.078, 0.0,      &
+         0.004, 0.065, 0.020, 0.004, 0.008 /)
+
+!  At the initial time we care about values of soil moisture and temperature, other times are
+!  ignored by the model, so we ignore them, too.
+
+
+          account_for_zero_soil_moisture : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
+
+             CASE ( LSMSCHEME , NMMLSMSCHEME)
+                iicount = 0
+                IF      ( FLAG_SM000010 .EQ. 1 ) THEN
+                   DO j = jts, MIN(jde-1,jte)
+                      DO i = its, MIN(ide-1,ite)
+                         IF ( (landmask(i,j).gt.0.5) .and. ( stc(i,1,j) .gt. 200 ) .and. &
+                              ( stc(i,1,j) .lt. 400 ) .and. ( smc(i,1,j) .lt. 0.005 ) ) then
+                            print *,'Noah > Noah: bad soil moisture at i,j = ',i,j,smc(i,:,j)
+                            iicount = iicount + 1
+                            smc(i,:,j) = 0.005
+                         END IF
+                      END DO
+                   END DO
+                   IF ( iicount .GT. 0 ) THEN
+                      print *,'Noah -> Noah: total number of small soil moisture locations = ',iicount
+                   END IF
+                ELSE IF ( FLAG_SOILM000 .EQ. 1 ) THEN
+                   DO j = jts, MIN(jde-1,jte)
+                      DO i = its, MIN(ide-1,ite)
+                         smc(i,:,j) = smc(i,:,j) + lqmi(isltyp(i,j))
+                      END DO
+                   END DO
+                   DO j = jts, MIN(jde-1,jte)
+                      DO i = its, MIN(ide-1,ite)
+                         IF ( (landmask(i,j).gt.0.5) .and. ( stc(i,1,j) .gt. 200 ) .and. &
+                              ( stc(i,1,j) .lt. 400 ) .and. ( smc(i,1,j) .lt. 0.004 ) ) then
+                            print *,'RUC -> Noah: bad soil moisture at i,j = ',i,j,smc(i,:,j)
+                            iicount = iicount + 1
+                            smc(i,:,j) = 0.004
+                         END IF
+                      END DO
+                   END DO
+                   IF ( iicount .GT. 0 ) THEN
+                      print *,'RUC -> Noah: total number of small soil moisture locations = ',iicount
+                   END IF
+                END IF 
+               CASE ( RUCLSMSCHEME )
+                iicount = 0
+                IF      ( FLAG_SM000010 .EQ. 1 ) THEN
+                   DO j = jts, MIN(jde-1,jte)
+                      DO i = its, MIN(ide-1,ite)
+                         smc(i,:,j) = MAX ( smc(i,:,j) - lqmi(isltyp(i,j)) , 0. )
+                      END DO
+                   END DO
+                ELSE IF ( FLAG_SOILM000 .EQ. 1 ) THEN
+                   ! no op
+                END IF
+
+          END SELECT account_for_zero_soil_moisture
+
 
 !!!     zero out NMM_TSK at water points again
 

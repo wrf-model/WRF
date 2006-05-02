@@ -131,7 +131,7 @@ CONTAINS
         CALL O3CLIM
         CALL TABLE
         IHRST=NINT(GMT)
-        WRITE(0,*)'into solard ',gmt,ihrst
+!       WRITE(0,*)'into solard ',gmt,ihrst
         CALL SOLARD(IHRST,IDAY,MONTH,JULYR)
       ENDIF
 !
@@ -174,7 +174,7 @@ CONTAINS
      &                ,QV,QW,QI                                         & 
      &                ,TSK2D,GLW,RSWIN,GSW,RSWINC                       &
      &                ,RSWTOA,RLWTOA,CZMEAN                             & 
-     &                ,GLAT,GLON,HTOP,HBOT,ALBEDO,CUPPT                 &
+     &                ,GLAT,GLON,HTOP,HBOT,HTOPR,HBOTR,ALBEDO,CUPPT     &
      &                ,VEGFRA,SNOW,G,GMT                                &
 !BSF => for NAMX changes, pass in surface emissivity (SFCEMS) [different for snow]
      &                ,NSTEPRA,NPHS,ITIMESTEP                           &
@@ -207,7 +207,7 @@ CONTAINS
      &                                                TSK2D,VEGFRA,     &
      &                                                XLAND
       REAL, INTENT(IN), DIMENSION(ims:ime, jms:jme):: GLAT,GLON
-      REAL, INTENT(IN), DIMENSION(ims:ime, jms:jme):: HTOP,HBOT,CUPPT
+      REAL, INTENT(INOUT), DIMENSION(ims:ime, jms:jme):: HTOP,HBOT,HTOPR,HBOTR,CUPPT
       REAL, INTENT(INOUT), DIMENSION(ims:ime, jms:jme):: RSWTOA,        & !Added
      &                                                   RLWTOA,        & !Added
      &                                                   ACFRST,        & !Added
@@ -358,6 +358,20 @@ CONTAINS
         ENDDO
         ENDDO
       ENDIF
+!
+!***  RESET ACCUMULATED CONVECTIVE CLOUD TOP/BOT AND CONVECTIVE PRECIP
+!***  FOR NEXT INTERVAL BETWEEN RADIATION CALLS
+!
+      DO J=JTS,JTE
+      DO I=ITS,ITE
+! SAVE VALUE USED BY RADIATION BEFORE RESETTING HTOP AND HBOT
+        HBOTR(I,J)=HBOT(I,J)
+        HTOPR(I,J)=HTOP(I,J)
+        HBOT(I,J)=REAL(KTE+1)
+        HTOP(I,J)=0.
+        CUPPT(I,J)=0.
+      ENDDO
+      ENDDO
 !
   100 IF(GFDL_SW)THEN
         DO J=JTS,JTE
@@ -7869,7 +7883,7 @@ CONTAINS
       DATA JDOR2/2415020/, JDOR1/2415019/
 
       REAL    :: DAYINC,DAT,T,YEAR,DATE,EM,E,EC,EP,CR,FJD,FJD1
-      INTEGER :: JYR,JMNTH,JDAY,JHRJD,JHR,JD,ITER
+      INTEGER :: JHR,JD,ITER
 !
 !     LIBRARY: IW3JDN
 !
@@ -7880,9 +7894,6 @@ CONTAINS
 !     CALENDAR DURING THIS PERIOD
 !    --------------------------------------------------------------------
 
-!     JYR=IDAT(3)
-!     JMNTH=IDAT(1)
-!     JDAY=IDAT(2)
       JHR=IHRST
 !
       JD=IDAY-32075                                                     &
@@ -7935,8 +7946,8 @@ CONTAINS
  1031 CONTINUE
       R1=1.E0-EC*COS(E)
 !
-      WRITE(0,1000)JYR,JMNTH,JDAY,JHR,R1
-      WRITE(0,*)JHR,R1
+      WRITE(0,1000)JULYR,MONTH,IDAY,IHRST
+      WRITE(0,*)R1
  1000 FORMAT('SUN-EARTH DISTANCE CALCULATION FINISHED IN SOLARD'/ &
              'YEAR=',I5,'  MONTH=',I3,'  DAY=',I3,' HOUR=' &
       ,      I3,' R1=',F9.4)

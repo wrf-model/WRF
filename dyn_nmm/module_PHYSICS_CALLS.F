@@ -97,7 +97,7 @@
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: ALBEDO,CUPPT        &
      &                                             ,EPSR,GLAT,GLON      &
-     &                                             ,HBM2,HBOT,HTOP      &
+     &                                             ,HBM2                &
      &                                             ,PD,RES,SM           &
      &                                             ,SNOW,THS,VEGFRC
 !
@@ -107,6 +107,7 @@
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: ACFRCV,ACFRST    &
      &                                                ,RLWIN,RLWTOA     &
      &                                                ,RSWIN,RSWOUT     &
+     &                                                ,HBOT,HTOP        &
      &                                                ,RSWINC,RSWTOA
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) :: PINT     &
@@ -143,7 +144,8 @@
 !
       REAL,DIMENSION(IMS:IME,JMS:JME) :: REXNSFC,SWNETDN                &
      &                                  ,TOT,TSFC,XLAND,XLAT,XLON       &
-     &                                  ,TOTLWDN,TOTSWDN,TOTSWDNC,CZEN
+     &                                  ,TOTLWDN,TOTSWDN,TOTSWDNC,CZEN  &
+     &                                  ,HBOTR,HTOPR,CUPPTR
 !
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: AER_DRY,AER_WATER      &
@@ -295,6 +297,12 @@
           TOTSWDNC(I,J)=0.  ! CLEAR SKY shortwave down at the surface
           SWNETDN(I,J)=0.   ! Net (down - up) total (clear+cloudy sky) shortwave at the surface
           TOTLWDN(I,J)=0.   ! Total longwave down at the surface
+          CUPPTR(I,J)=CUPPT(I,J)   ! Temporary array set to zero in radiation
+!-- NOTE:  HBOTR, HTOPR are passed into radiation and set equal to HBOT, HTOP.  HBOT, HTOP are
+!          reset to clear sky values to be used by the ARW.  At the bottom of this subroutine, 
+!          HBOT, HTOP are re-defined again to values stored in HBOTR, HTOPR.  HBOT, HTOP are 
+!          reset to clear sky values after the call to radiation and after the top of the hour
+!          in subroutine CUCNVC below.
         ENDDO
       ENDDO
 !
@@ -313,7 +321,8 @@
      &                 ,GLW=TOTLWDN,GSW=SWNETDN,SWDOWN=TOTSWDN          &
      &                 ,XLAT=XLAT,XLONG=XLON,ALBEDO=ALBEDO,EMISS=EPSR   &
      &                 ,XLAND=XLAND,TSK=TSFC                            &
-     &                 ,HTOP=HTOP,HBOT=HBOT,CUPPT=CUPPT                 &
+     &                 ,HTOP=HTOP,HBOT=HBOT,CUPPT=CUPPTR                &
+     &                 ,HTOPR=HTOPR,HBOTR=HBOTR                         &
      &                 ,VEGFRA=VEGFRC,SNOW=SNOW                         &
      &                 ,RHO=RR,P8W=P8W,P=P_PHY,PI=PI_PHY                &
      &                 ,DZ8W=DZ,T=T_PHY,T8W=T8W,GMT=GMT                 &
@@ -466,7 +475,7 @@
 !
       ENDIF
 !
-!-- Store 3D cloud fractions
+!-- Store 3D cloud fractions & restore HBOT/HTOP arrays
 !
       DO J=MYJS2,MYJE2
         IENDX=MYIE1
@@ -475,6 +484,10 @@
           DO I=MYIS1,IENDX
             CLDFRA(I,K,J)=CLFR(I,K,J)
           ENDDO
+        ENDDO
+        DO I=MYIS1,IENDX
+          HBOT(I,J)=HBOTR(I,J)
+          HTOP(I,J)=HTOPR(I,J)
         ENDDO
       ENDDO
 !-----------------------------------------------------------------------
@@ -1547,24 +1560,18 @@
 !-----------------------------------------------------------------------
 !***********************************************************************
 !-----------------------------------------------------------------------
-!***  RESET THE DIAGNOSTIC CONVECTIVE CLOUD TOPS/BOTTOMS AFTER
-!***  EACH RADIATION CALL AND AFTER THE TOP OF THE HOUR SO THAT THE
-!***  FIELDS CAN BE POSTED.  THE HBOT,HTOP ARRAYS ARE USED IN RADIATION,
-!***  BUT THE OTHER ARRAYS ARE STRICTLY FOR POSTING FOR SHALLOW CONVECTION
-!***  (HBOTS,HTOPS) AND DEEP CONVECTION (HBOTD,HTOPD).
+!***  RESET THE HBOT/HTOP CONVECTIVE CLOUD BOTTOM (BASE) AND TOP ARRAYS
+!***  USED IN RADIATION.  THEY STORE THE MAXIMUM VERTICAL LIMITS OF 
+!***  CONVECTIVE CLOUD BETWEEN RADIATION CALLS.  CUPPT IS THE ACCUMULATED
+!***  CONVECTIVE PRECIPITATION BETWEEN RADIATION CALLS.
 !-----------------------------------------------------------------------
 !
       IF(MOD(NTSD,NRADS)==0.OR.MOD(NTSD,NRADL)==0)THEN
          DO J=JMS,JME
          DO I=IMS,IME
            HTOP(I,J)=0.
-           HTOPD(I,J)=0.
-           HTOPS(I,J)=0.
            HBOT(I,J)=REAL(KTE+1)
-           HBOTD(I,J)=REAL(KTE+1.)
-           HBOTS(I,J)=REAL(KTE+1.)
            CUPPT(I,J)=0.
-           CPRATE(I,J)=0.
          ENDDO
          ENDDO
       ENDIF
@@ -1823,9 +1830,10 @@
 !
 !-----------------------------------------------------------------------
 !
-!***  CNVTOP AND CNVBOT HOLD THE MAXIMUM VERTICAL LIMITS OF
-!***  CONVECTIVE CLOUD BETWEEN HISTORY OUTPUT TIMES.
-!***  IF WE HAVE JUST PASSED SUCH A TIME THEN REINITIALIZE THE ARRAYS.
+!***  CNVTOP/CNVBOT HOLD THE MAXIMUM VERTICAL LIMITS OF CONVECTIVE CLOUD 
+!***  BETWEEN HISTORY OUTPUT TIMES.  HBOTS/HTOPS STORE SIMILIAR INFORMATION
+!***  FOR SHALLOW (NONPRECIPITATING) CONVECTION, AND HBOTD/HTOPD ARE FOR
+!***  DEEP (PRECIPITATING) CONVECTION.  
 !
       CF_HI=CONFIG_FLAGS%HISTORY_INTERVAL
       N_TIMSTPS_OUTPUT=NINT(60.*CF_HI/DT)
@@ -1836,8 +1844,12 @@
         IENDX=MYIE1
         IF(MOD(J,2)==0.AND.ITE==IDE-1)IENDX=IENDX-1
         DO I=MYIS1,IENDX
+          CNVBOT(I,J)=REAL(KTE+1.)
           CNVTOP(I,J)=0.
-          CNVBOT(I,J)=1000.
+          HBOTD(I,J)=REAL(KTE+1.)
+          HTOPD(I,J)=0.
+          HBOTS(I,J)=REAL(KTE+1.)
+          HTOPS(I,J)=0.
         ENDDO
         ENDDO
       ENDIF
@@ -1887,14 +1899,14 @@
         CUPPT(I,J)=CUPPT(I,J)+PCPCOL
         CPRATE(I,J)=PCPCOL
 !
-!***  SAVE CLOUD TOP AND BOTTOM FOR RADIATION (HTOP, HBOT)
-!***  AND FOR OUTPUT (CNVTOP, CNVBOT).  THESE ARRAYS
+!***  SAVE CLOUD TOP AND BOTTOM FOR RADIATION (HTOP/HBOT) AND
+!***  FOR OUTPUT (CNVTOP/CNVBOT, HTOPS/HBOTS, HTOPD/HBOTD) ARRAYS.
 !***  MUST BE TREATED SEPARATELY FROM EACH OTHER.
 !
         NCUTOP=NINT(CUTOP(I,J))
         NCUBOT=NINT(CUBOT(I,J))
 !
-        IF(NCUTOP>0.AND.NCUTOP<KTE+1)THEN
+        IF(NCUTOP>1.AND.NCUTOP<KDE)THEN
           HTOP(I,J)=MAX(CUTOP(I,J),HTOP(I,J))
           CNVTOP(I,J)=MAX(CUTOP(I,J),CNVTOP(I,J))
           IF(PCPCOL>0.)THEN
@@ -1903,7 +1915,7 @@
             HTOPS(I,J)=MAX(CUTOP(I,J),HTOPS(I,J))
           ENDIF
         ENDIF
-        IF(NCUBOT>0.AND.NCUBOT<KTE+1)THEN
+        IF(NCUBOT>0.AND.NCUBOT<KDE)THEN
           HBOT(I,J)=MIN(CUBOT(I,J),HBOT(I,J))
           CNVBOT(I,J)=MIN(CUBOT(I,J),CNVBOT(I,J))
           IF(PCPCOL>0.)THEN

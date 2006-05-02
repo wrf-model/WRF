@@ -189,6 +189,8 @@ CONTAINS
                DTDT(k)=0.
             ENDDO
             RAINCV(I,J)=0.
+            CUTOP(I,J)=KTS
+            CUBOT(I,J)=KTE+1
 !
 ! assign vars from 3D to 1D
 

@@ -654,8 +654,12 @@ i1      real   Q10              ij     misc        1         -     -         "Q1
 i1      real   CHKLOWQ          ij     misc        1         -     -         "CHKLOWQ"               "SURFACE SATURATION FLAG"        ""
 
 # gfdl (eta) radiation State Variables
-state    real    HTOP            ij     misc        1         -      r        "HTOP"                 "TOP OF CONVECTION LELVEL"         ""
-state    real    HBOT            ij     misc        1         -      r        "HBOT"                 "BOT OF CONVECTION LELVEL"         ""
+state    real    HTOP            ij     misc        1         -      r        "HTOP"                 "TOP OF CONVECTION LEVEL"         ""
+state    real    HBOT            ij     misc        1         -      r        "HBOT"                 "BOT OF CONVECTION LEVEL"         ""
+state    real    HTOPR           ij     misc        1         -      r        "HTOPR"                "TOP OF CONVECTION LEVEL FOR RADIATION"    ""
+state    real    HBOTR           ij     misc        1         -      r        "HBOTR"                "BOT OF CONVECTION LEVEL FOR RADIATION"    ""
+state    real    CUTOP           ij     misc        1         -      r        "CUTOP"                "TOP OF CONVECTION LEVEL FROM CUMULUS PAR"    ""
+state    real    CUBOT           ij     misc        1         -      r        "CUBOT"                "BOT OF CONVECTION LEVEL FROM CUMULUS PAR"    ""
 state    REAL      CUPPT         ij     misc        1         -      r        "CUPPT"                "ACCUMULATED CONVECTIVE RAIN SINC LAST CALL TO THE RADIATION"         ""
 state  real   rswtoa    ij    misc        1    -    i
 state  real   rlwtoa    ij    misc        1    -    i

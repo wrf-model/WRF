@@ -12,7 +12,7 @@ CONTAINS
                       ,RTHRATENLW,RTHRATENSW,RTHRATEN                    &
                       ,GLW,GSW,SWDOWN,XLAT,XLONG,ALBEDO                  &
                       ,EMISS ,rho ,p8w,p ,pi,dz8w,t,t8w,GMT              &
-                      ,XLAND,TSK,HTOP,HBOT,CUPPT,VEGFRA,SNOW             &
+                      ,XLAND,TSK,HTOP,HBOT,HTOPR,HBOTR,CUPPT,VEGFRA,SNOW &
                       ,julyr ,JULDAY ,RADT,STEPRA,ICLOUD ,warm_rain      &
                       ,julian, xtime                                     &
                       ,RSWTOA,RLWTOA,CZMEAN                              &
@@ -220,8 +220,10 @@ CONTAINS
                                                             SNOW 
 
    REAL, DIMENSION( ims:ime, jms:jme ),                           &
-         INTENT(IN)  ::                                     HTOP, &
+         INTENT(INOUT)  ::                                  HTOP, &
                                                             HBOT, &
+                                                           HTOPR, &
+                                                           HBOTR, &
                                                            CUPPT
 
    INTEGER, INTENT(IN   )  ::   julyr
@@ -416,6 +418,7 @@ CONTAINS
                  ,TSK2D=tsk,GLW=GLW,RSWIN=SWDOWN,GSW=GSW            &
                  ,RSWINC=SWDOWNC,CLDFRA=CLDFRA,PI3D=pi              &
                  ,GLAT=glat,GLON=glon,HTOP=htop,HBOT=hbot           &
+                 ,HBOTR=hbotr, HTOPR=htopr                          &
                  ,ALBEDO=albedo,CUPPT=cuppt                         &
                  ,VEGFRA=vegfra,SNOW=snow,G=g,GMT=gmt               &
                  ,NSTEPRA=stepra,NPHS=nphs,ITIMESTEP=itimestep      &
@@ -524,6 +527,7 @@ CONTAINS
                  ,TSK2D=tsk,GLW=GLW,RSWIN=SWDOWN,GSW=GSW            &
                  ,RSWINC=SWDOWNC,CLDFRA=CLDFRA,PI3D=pi              &
                  ,GLAT=glat,GLON=glon,HTOP=htop,HBOT=hbot           &
+                 ,HBOTR=hbotr, HTOPR=htopr                          &
                  ,ALBEDO=albedo,CUPPT=cuppt                         &
                  ,VEGFRA=vegfra,SNOW=snow,G=g,GMT=gmt               &
                  ,NSTEPRA=stepra,NPHS=nphs,ITIMESTEP=itimestep      &

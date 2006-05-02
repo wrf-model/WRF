@@ -513,7 +513,7 @@ BENCH_START(rad_driver_tim)
      &        ,CUPPT=cuppt        ,CZMEAN=czmean      ,DT=grid%dt              &
      &        ,DZ8W=dz8w          ,EMISS=emiss        ,GLW=glw            &
      &        ,GMT=grid%gmt            ,GSW=gsw            ,HBOT=hbot          &
-     &        ,HTOP=htop          ,ICLOUD=config_flags%icloud                          &
+     &        ,HTOP=htop ,HBOTR=hbotr, HTOPR=htopr ,ICLOUD=config_flags%icloud &
      &        ,ITIMESTEP=itimestep,JULDAY=grid%julday, JULIAN=julian      &
      &        ,JULYR=grid%julyr        ,LW_PHYSICS=config_flags%ra_lw_physics  &
      &        ,NCFRCV=ncfrcv      ,NCFRST=ncfrst      ,NPHS=1             &
@@ -671,7 +671,7 @@ BENCH_START(cu_driver_tim)
                  ! Other arguments
      &             ,ITIMESTEP=itimestep ,DT=grid%dt      ,DX=grid%dx                &
      &             ,RAINC=rainc   ,RAINCV=raincv   ,NCA=nca               &
-     &             ,HTOP=htop     ,HBOT=hbot       ,KPBL=kpbl             &
+     &             ,HTOP=cutop    ,HBOT=cubot      ,KPBL=kpbl             &
      &             ,DZ8W=dz8w     ,P8W=p8w                                &
      &             ,W0AVG=w0avg   ,STEPCU=stepcu                          &
      &             ,CLDEFI=cldefi ,LOWLYR=lowlyr ,XLAND=xland             &
@@ -2406,6 +2406,7 @@ BENCH_START(advance_ppt_tim)
       CALL wrf_debug ( 200 , ' call advance_ppt' )
       CALL advance_ppt(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN, &
                      RQICUTEN,RQSCUTEN,RAINC,RAINCV,NCA,    &
+                     HTOP,HBOT,CUTOP,CUBOT,                 &
                      CUPPT, config_flags,                   &
                      ids,ide, jds,jde, kds,kde,             &
                      ims,ime, jms,jme, kms,kme,             &

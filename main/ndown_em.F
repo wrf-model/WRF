@@ -41,6 +41,12 @@ PROGRAM ndown_em
        TYPE (grid_config_rec_type) config_flags
      END SUBROUTINE med_read_wrf_chem_bioemiss
 
+     SUBROUTINE init_domain_constants_em_ptr ( parent , nest )
+       USE module_domain
+       USE module_configure
+       TYPE(domain), POINTER  :: parent , nest
+     END SUBROUTINE init_domain_constants_em_ptr
+
    END INTERFACE
 
 
@@ -361,63 +367,14 @@ print *,'file date/time = ',date_string,'     desired date = ',current_date_char
          CALL nl_set_bdyfrq ( nested_grid%id , new_bdy_frq )
          config_flags%bdyfrq = new_bdy_frq
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! major kludge
-print *,'kludge - stupid way to get 1d and consts into new grid'
-nested_grid%em_fnm    = parent_grid%em_fnm
-nested_grid%em_fnp    = parent_grid%em_fnp
-nested_grid%em_rdnw   = parent_grid%em_rdnw
-nested_grid%em_rdn    = parent_grid%em_rdn
-nested_grid%em_dnw    = parent_grid%em_dnw
-nested_grid%em_dn     = parent_grid%em_dn 
-nested_grid%em_znu    = parent_grid%em_znu
-nested_grid%em_znw    = parent_grid%em_znw
-
-print *,'nested_grid%em_fnm    =', parent_grid%em_fnm
-print *,'nested_grid%em_fnp    =', parent_grid%em_fnp
-print *,'nested_grid%em_rdnw   =', parent_grid%em_rdnw
-print *,'nested_grid%em_rdn    =', parent_grid%em_rdn
-print *,'nested_grid%em_dnw    =', parent_grid%em_dnw
-print *,'nested_grid%em_dn     =', parent_grid%em_dn 
-print *,'nested_grid%em_znu    =', parent_grid%em_znu
-print *,'nested_grid%em_znw    =', parent_grid%em_znw
-
-nested_grid%zs        = parent_grid%zs
-nested_grid%dzs       = parent_grid%dzs
-
-nested_grid%p_top     = parent_grid%p_top
-nested_grid%rdx       = parent_grid%rdx * 3.
-nested_grid%rdy       = parent_grid%rdy * 3.
-nested_grid%resm      = parent_grid%resm
-nested_grid%zetatop   = parent_grid%zetatop
-nested_grid%cf1       = parent_grid%cf1
-nested_grid%cf2       = parent_grid%cf2
-nested_grid%cf3       = parent_grid%cf3
-
-print *,'nested_grid%zs        =', parent_grid%zs
-print *,'nested_grid%dzs       =', parent_grid%dzs
-
-print *,'nested_grid%p_top     =', parent_grid%p_top
-print *,'nested_grid%rdx       =', parent_grid%rdx *3.
-print *,'nested_grid%rdy       =', parent_grid%rdy * 3.
-print *,'nested_grid%resm      =', parent_grid%resm
-print *,'nested_grid%zetatop   =', parent_grid%zetatop
-print *,'nested_grid%cf1       =', parent_grid%cf1
-print *,'nested_grid%cf2       =', parent_grid%cf2
-print *,'nested_grid%cf3       =', parent_grid%cf3
-
-nested_grid%cfn       = parent_grid%cfn 
-nested_grid%cfn1      = parent_grid%cfn1
-nested_grid%epsts     = parent_grid%epsts
-
-print *,'nested_grid%cfn       =', parent_grid%cfn 
-print *,'nested_grid%cfn1      =', parent_grid%cfn1
-print *,'nested_grid%epsts     =', parent_grid%epsts
-
 #ifdef WRF_CHEM
 nested_grid%chem_opt    = parent_grid%chem_opt
 nested_grid%chem_in_opt = parent_grid%chem_in_opt
 #endif
+
+         !  Initialize constants and 1d arrays in fine grid from the parent.
+
+         CALL init_domain_constants_em_ptr ( parent_grid , nested_grid ) 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    
@@ -1227,3 +1184,18 @@ print *,'points artificially set to water: ',oops2
 endif
 
 END SUBROUTINE check_consistency2
+
+SUBROUTINE init_domain_constants_em_ptr ( parent , nest ) 
+   USE module_domain
+   USE module_configure
+   IMPLICIT NONE
+   TYPE(domain), POINTER  :: parent , nest
+   INTERFACE 
+   SUBROUTINE init_domain_constants_em ( parent , nest )
+      USE module_domain
+      USE module_configure
+      TYPE(domain)  :: parent , nest
+   END SUBROUTINE init_domain_constants_em
+   END INTERFACE 
+   CALL init_domain_constants_em ( parent , nest )
+END SUBROUTINE init_domain_constants_em_ptr

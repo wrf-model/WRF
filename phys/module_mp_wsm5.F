@@ -651,7 +651,8 @@ STARTTIME
                 work2(i,k) = VENFAC(p(i,k),t(i,k),den(i,k))
 #endif
                 coeres = rslope2(i,k,2)*sqrt(rslope(i,k,2)*rslopeb(i,k,2))
-                psml(i,k) = XKA(t(i,k),den(i,k))                        &
+                psml(i,k) = &
+XKA(t(i,k),den(i,k))&
                             /xlf*(t0c-t(i,k))*pi/2.                     &
                             *n0sfac(i,k)*(precs1*rslope2(i,k,2)+precs2  &
                             *work2(i,k)*coeres)

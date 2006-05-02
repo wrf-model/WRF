@@ -33,6 +33,14 @@
 # #BSUB -q premium                        # queue
 #BSUB -q share                          # queue
 
+# QSUB -q ded_4             # submit to 4 proc
+# QSUB -l mpp_p=4           # request 4 processors
+# QSUB -lT  21600           # max. job time limit is 6 h
+# QSUB -lF 250Mw            # max. job file size limit is 250 Megawords
+# QSUB -eo                  # merge error and output into one file
+# QSUB -o  reg.out          # output file name
+# QSUB                      # there are no further QSUB commands
+
 #	This is a script to test the bit-for-bit reproducibility of
 #	the WRF model, when comparing single processor serial runs to
 #	OpenMP and MPI parallel runs.  There are several regression tests
@@ -402,7 +410,7 @@ else if ( ( $NESTED == TRUE ) && ( $RSL_LITE == TRUE ) ) then
 else if ( ( $NESTED != TRUE ) && ( $RSL_LITE != TRUE ) ) then
 	set CORES = ( em_real em_b_wave em_quarter_ss nmm_real )
 	if ( $CHEM == TRUE ) then
-		set CORES = ( em_real )
+		set CORES = ( em_real em_real )
 	endif
 	if ( $ESMF_LIB == TRUE ) then
 		set CORES = ( em_real em_b_wave em_quarter_ss )
@@ -413,7 +421,7 @@ else if ( ( $NESTED != TRUE ) && ( $RSL_LITE != TRUE ) ) then
 else if ( ( $NESTED != TRUE ) && ( $RSL_LITE == TRUE ) ) then
 	set CORES = ( em_real em_quarter_ss nmm_real )
 	if ( $CHEM == TRUE ) then
-		set CORES = ( em_real )
+		set CORES = ( em_real em_real )
 	endif
 	if ( $ESMF_LIB == TRUE ) then
 		set CORES = ( em_real )
@@ -437,7 +445,7 @@ endif
 if ( $CHEM != TRUE ) then
 	set PHYSOPTS =	( 1 2 3 )
 else if ( $CHEM == TRUE ) then
-	set PHYSOPTS =	( 1 )
+	set PHYSOPTS =	( 1 2 3 4 5 6 )
 endif
 
 #	This is selecting the ideal physics options - mostly selecting BC options.
@@ -780,7 +788,7 @@ if ( $dataset == jun01 ) then
 else if ( $dataset == jan00 ) then
 	set filetag_real=2000-01-24_12:00:00
 else if ( $dataset == chem ) then
-	set filetag_real=2004-06-25_12:00:00
+	set filetag_real = ( 2006-04-06_00:00:00  2006-04-06_12:00:00 )
 endif
 
 set filetag_ideal=0001-01-01_00:00:00
@@ -1364,6 +1372,21 @@ banner 5
 #set ans = "$<"
 #DAVE###################################################
 
+	#	Some sleight of hand is required for the chemistry tests because we need to
+	#	build it twice.  But normally, we only build with different real vs ideal, or em vs nmm.
+	#	What to do, what to do?  Well, we ask for em_real TWICE.  The first time we build without chemistry
+	#	activated, the second time with it activated.  The first time, we do a single
+	#	test, the second time through, we do the other 5 tests.
+
+	if      ( ( $CHEM == TRUE ) && ( ${#CORES} == 2 ) && ( $first_time_in == TRUE ) ) then
+		setenv WRF_CHEM 0
+		set PHYSOPTS =	( 1 )
+		set first_time_in = FALSE
+	else if ( ( $CHEM == TRUE ) && ( ${#CORES} == 2 ) && ( $first_time_in != TRUE ) ) then
+		setenv WRF_CHEM 1
+		set PHYSOPTS =	( 2 3 4 5 6 )
+	endif
+
 	#	Cores to test.
 
         set ZAP_SERIAL_FOR_THIS_CORE          = FALSE
@@ -1594,7 +1617,15 @@ banner 11
 
 		if (  $core == em_real )  then
 
-                        set filetag=$filetag_real
+			if ( $CHEM != TRUE ) then
+				set filetag=$filetag_real
+			else if ( $CHEM == TRUE ) then
+				if ( $phys_option <= 3 ) then
+					set filetag=$filetag_real[1]
+				else
+					set filetag=$filetag_real[2]
+				endif
+			endif
 
 			foreach compopt ( $COMPOPTS )
 #DAVE###################################################
@@ -1663,7 +1694,16 @@ EOF
 				#	The chem run has its own namelist, due to special input files (io_form not tested for chem)
 
 				else if ( $CHEM == TRUE ) then
-					cp namelist.input.$dataset namelist.input
+					cp namelist.input.chem_test_${phys_option} namelist.input
+					if ( -e wrf_real_input_em.d01.${filetag} ) then
+						\rm wrf_real_input_em.d01.*
+					endif
+					if ( ${phys_option} <= 3 ) then
+						ln -s 00z/wrf_real* .
+					else
+						ln -s 12z/wrf_real* .
+					endif
+
 				endif
 
 				# WRF output quilt servers are only tested for MPI configuration.  
@@ -1750,13 +1790,9 @@ banner 16
 
 				rm $TMPDIR/wrfout_d01_${filetag}.${core}.${phys_option}.$compopt >& /dev/null
 				
-				#	The chem run has its own namelist, due to special input files, and it changes between
-				#	the IC generation and the forecast parts.  Just edit the existing one since the
-				#	quilt mods would have already been added.
+				#	The chem run has its own set of namelists, due to special input files.
 
 				if ( $CHEM == TRUE ) then
-					sed -e 's/ chem_in_opt *= *[0-9]*/ chem_in_opt = 0/g' namelist.input >! namelist.input.temp
-					mv namelist.input.temp namelist.input
 
 					# WRF output quilt servers are only tested for MPI configuration.  
 					# Currently, only one WRF output quilt server is used.  

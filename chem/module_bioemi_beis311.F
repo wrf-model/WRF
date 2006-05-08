@@ -135,7 +135,8 @@ MODULE module_bioemi_beis311
       gmtp=float(ktau)*dtstep/3600.
 !     
       gmtp=mod(gmt+gmtp,24.)
-      print *,'calculate beis311 emissions at gmtp = ',gmtp
+      write(mesg,*) 'calculate beis311 emissions at gmtp = ',gmtp
+      call wrf_debug(15,mesg)
       DO 100 j=jts,jte  
       DO 100 i=its,ite  
 
@@ -387,8 +388,6 @@ MODULE module_bioemi_beis311
         rlt = lat*dr
         rphi = long*dr
 
-        ! print julian days current 'ijd'
-
         ! ???? + (yr - yref)
 
         jd = ijd
@@ -436,7 +435,10 @@ MODULE module_bioemi_beis311
         lzgmt = 15.0*(gmt-lbgmt)
         zpt = lzgmt*dr
         csz = sin(rlt)*sin(rdecl) + cos(rlt)*cos(rdecl)*cos(zpt)
-        if(csz.gt.1)print *,'calczen,csz ',csz
+        if(csz.gt.1) then
+           write(mesg,*) 'calczen,csz ',csz
+           call wrf_debug(15,mesg)
+        endif
         csz = min(1.,csz)
         zr = acos(csz)
 !       zenith = zr/dr

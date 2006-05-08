@@ -57,6 +57,11 @@ information on NMM specific settings (http://www.dtcenter.org/wrf-nmm/users)
  io_form_boundary                    = 2,       ; netCDF format
                                      = 4,       ; PHD5 format
                                      = 5,       ; GRIB1 format
+ frames_per_emissfile                = 12,  ; Number of times in each chemistry emission file.
+ io_style_emiss                      = 1,   ; Style to use for the chemistry emission files.
+                                                ; 0 = Do not read emissions from files.
+                                                ; 1 = Cycle between two 12 hour files (set frames_per_emissfile=12)
+                                                ; 2 = Dated files with length set by frames_per_emissfile
  debug_level                         = 0, 	; 50,100,200,300 values give increasing prints
 
 Other output options:

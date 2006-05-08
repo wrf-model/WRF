@@ -1,13 +1,13 @@
 !WRF:MODEL_LAYER:PHYSICS
 !
-      SUBROUTINE aerosols_driver (id,ktau,config_flags,dtstep,             &
-               alt,t_phy,moist,aerwrf,p8w,t8w,p_phy,chem,rho_phy,dz8w,  &
+      SUBROUTINE aerosols_driver (id,ktau,dtstep,ktauc,config_flags,       &
+               dtstepc,                                                    &
+               alt,t_phy,moist,aerwrf,p8w,t8w,p_phy,chem,rho_phy,dz8w,     &
                z,z_at_w,h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,  &
                cvaro2,cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,vcsulf_old,&
                e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_pm10,           &
-               e_so4i,e_so4j,e_no3i,e_no3j,                             &
-               vdrog3,aer_dry,aer_water,                                   &
-               imicrogram,                                                 &
+               e_so4i,e_so4j,e_no3i,e_no3j,                                &
+               vdrog3,                                                     &
                ids,ide, jds,jde, kds,kde,                                  &
                ims,ime, jms,jme, kms,kme,                                  &
                its,ite, jts,jte, kts,kte                                   )
@@ -21,11 +21,13 @@
 
    USE module_aerosols_sorgam
    USE module_data_sorgam
+   USE module_mosaic_driver, only:  mosaic_aerchem_driver
 
    !  This driver calls subroutines for aerosols parameterizations.
    !
    !  1. MADE-SORGAM
-   !
+   !  2. MOSAIC
+
 !----------------------------------------------------------------------
    IMPLICIT NONE
 !======================================================================
@@ -58,6 +60,7 @@
 !======================================================================
 ! Definitions
 !-----------
+!-- alt       inverse density
 !-- t_phy	  temperature (K)
 !-- w             vertical velocity (m/s)
 !-- moist	  moisture array (4D - last index is species) (kg/kg)
@@ -90,6 +93,7 @@
 !-- jte           end index for j in tile
 !-- kts           start index for k in tile
 !-- kte           end index for k in tile
+!-- config_flags%kemit  end index for k for emissions arrays
 !
 !======================================================================
 
@@ -99,9 +103,8 @@
                                       ids,ide, jds,jde, kds,kde,    &
                                       ims,ime, jms,jme, kms,kme,    &
                                       its,ite, jts,jte, kts,kte,    &
-			    	      id,ktau
-   INTEGER,      INTENT(INOUT   )    ::               imicrogram
-      REAL,      INTENT(IN   ) :: dtstep
+                                      id,ktau,ktauc
+      REAL,      INTENT(IN   ) :: dtstep,dtstepc
 !
 ! moisture variables
 !
@@ -122,7 +125,8 @@
 !
 ! aerosol emissions arrays
 !
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                    &
+!   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                    &
+   REAL, DIMENSION( ims:ime, kms:config_flags%kemit, jms:jme ),     &
          INTENT(INOUT ) ::                                          &
                e_so4i,e_so4j,e_no3i,e_no3j,                         &
                e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_pm10
@@ -131,7 +135,7 @@
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                    &
          INTENT(INOUT ) ::                                          &
-               aer_dry,aer_water,aerwrf
+               aerwrf
 !
 ! aerosol/radm2 interaction
 !
@@ -142,10 +146,11 @@
 ! input from meteorology
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,        &
           INTENT(IN   ) ::                                          &
+                                                        alt,        &
                                                       t_phy,        &
                                                       p_phy,        &
                                                       dz8w,         &
-                                            alt,      z    ,        &
+                                                      z    ,        &
                                             t8w,p8w,z_at_w ,        &
                                                     rho_phy
 !
@@ -161,16 +166,19 @@
 
 !-----------------------------------------------------------------
 
-   IF (config_flags%chem_opt .eq. 0) return
-   IF (config_flags%chem_opt .eq. 1) return
+! These are unneeded, since the default behavior is to do nothing.
+! If the default changes, then lines need to be added for CBMZ and
+! CBMZ_BB.
+!   IF (config_flags%chem_opt .eq. 0) return
+!   IF (config_flags%chem_opt .eq. 1) return
 
 !
 ! select which aerosol scheme to take 
 !
    cps_select: SELECT CASE(config_flags%chem_opt)
 
-       CASE (RADM2SORG)
-       CALL wrf_debug(15,'in sorgam')
+   CASE (RADM2SORG)
+       CALL wrf_debug(15,'aerosols_driver calling sorgam_driver')
        do ii=its,ite
           do kk=kts,kte
              do jj=jts,jte
@@ -180,20 +188,20 @@
              enddo
           enddo
        enddo
-       call sorgam_driver (id,ktau,dtstep,t_phy,moist,aerwrf,p8w,t8w,   &
-               alt,p_phy,chem,rho_phy,dz8w,z,z_at_w,                 &
+       call sorgam_driver (id,ktauc,dtstepc,t_phy,moist,aerwrf,p8w,t8w, &
+               alt,p_phy,chem,rho_phy,dz8w,z,z_at_w,                    &
                h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,cvaro2, &
                cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,vcsulf_old,    &
                e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_pm10,        &
                e_so4i,e_so4j,e_no3i,e_no3j,                             &
-               vdrog3,aer_dry,aer_water,                                &
-               imicrogram,                                              &
+               vdrog3,                                                  &
+               config_flags%kemit,                                      &
                ids,ide, jds,jde, kds,kde,                               &
                ims,ime, jms,jme, kms,kme,                               &
                its,ite, jts,jte, kts,kte                                )
 
-       CASE (RACMSORG)
-       CALL wrf_debug(15,'in sorgam')
+   CASE (RACMSORG)
+       CALL wrf_debug(15,'aerosols_driver calling sorgam_driver')
        do ii=its,ite
           do kk=kts,kte
              do jj=jts,jte
@@ -203,22 +211,89 @@
              enddo
           enddo
        enddo
-       call sorgam_driver (id,ktau,dtstep,t_phy,moist,aerwrf,p8w,t8w,   &
-               alt,p_phy,chem,rho_phy,dz8w,z,z_at_w,                 &
+       call sorgam_driver (id,ktauc,dtstepc,t_phy,moist,aerwrf,p8w,t8w, &
+               alt,p_phy,chem,rho_phy,dz8w,z,z_at_w,                    &
                h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,cvaro2, &
                cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,vcsulf_old,    &
                e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_pm10,        &
                e_so4i,e_so4j,e_no3i,e_no3j,                             &
-               vdrog3,aer_dry,aer_water,                                &
-               imicrogram,                                              &
+               vdrog3,                                                  &
+               config_flags%kemit,                                      &
                ids,ide, jds,jde, kds,kde,                               &
                ims,ime, jms,jme, kms,kme,                               &
                its,ite, jts,jte, kts,kte                                )
 
-     CASE DEFAULT 
+   CASE (CBMZ_MOSAIC_AA, CBMZ_MOSAIC_BB)
+       CALL wrf_debug(15,'aerosols_driver calling mosaic_aerchem_driver')
+       CALL mosaic_aerchem_driver(                                      &
+            id, ktau, dtstep, ktauc, dtstepc, config_flags,             &
+            t_phy, rho_phy, p_phy,                                      &
+            moist, chem,                                                &
+            ids,ide, jds,jde, kds,kde,                                  &
+            ims,ime, jms,jme, kms,kme,                                  &
+            its,ite, jts,jte, kts,kte                                   )
+
+   CASE DEFAULT 
 
    END SELECT cps_select
 
    END SUBROUTINE aerosols_driver
 
+!-----------------------------------------------------------------------
 
+   SUBROUTINE sum_pm_driver ( config_flags,                            &
+            alt, chem, h2oaj, h2oai,                                   &
+            pm2_5_dry, pm2_5_water, pm2_5_dry_ec, pm10,                &
+            ids,ide, jds,jde, kds,kde,                                 &
+            ims,ime, jms,jme, kms,kme,                                 &
+            its,ite, jts,jte, kts,kte                                  )
+
+   USE module_configure
+   USE module_aerosols_sorgam, only: sum_pm_sorgam
+   USE module_mosaic_driver, only: sum_pm_mosaic
+   IMPLICIT NONE
+
+   INTEGER,      INTENT(IN   )    ::                                   &
+                                      ids,ide, jds,jde, kds,kde,       &
+                                      ims,ime, jms,jme, kms,kme,       &
+                                      its,ite, jts,jte, kts,kte
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_chem ),             &
+         INTENT(IN ) :: chem
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                       &
+         INTENT(IN ) :: alt,h2oaj,h2oai
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                       &
+         INTENT(OUT) :: pm2_5_dry,pm2_5_water,pm2_5_dry_ec,pm10
+
+   TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
+!
+! Select the active aerosol scheme and sum up pm2.5 and pm10 mass
+! for use in radiation and/or diagnostic purposes.
+!
+   sum_pm_select: SELECT CASE(config_flags%chem_opt)
+
+   CASE (RADM2SORG, RACMSORG)
+       CALL wrf_debug(15,'sum_pm_driver: calling sum_pm_sorgam')
+       CALL sum_pm_sorgam (                                            &
+            alt, chem, h2oaj, h2oai,                                   &
+            pm2_5_dry, pm2_5_water, pm2_5_dry_ec, pm10,                &
+            ids,ide, jds,jde, kds,kde,                                 &
+            ims,ime, jms,jme, kms,kme,                                 &
+            its,ite, jts,jte, kts,kte                                  )
+
+   CASE (CBMZ_MOSAIC_AA, CBMZ_MOSAIC_BB)
+       CALL wrf_debug(15,'sum_pm_driver: calling sum_pm_mosaic')
+       call sum_pm_mosaic (                                            &
+            alt, chem,                                                 &
+            pm2_5_dry, pm2_5_water, pm2_5_dry_ec, pm10,                &
+            ids,ide, jds,jde, kds,kde,                                 &
+            ims,ime, jms,jme, kms,kme,                                 &
+            its,ite, jts,jte, kts,kte                                  )
+
+   CASE DEFAULT 
+
+   END SELECT sum_pm_select
+
+   END SUBROUTINE sum_pm_driver

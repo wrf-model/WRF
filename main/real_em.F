@@ -383,10 +383,7 @@ real::t1,t2
 
 #ifdef WRF_CHEM
       IF ( loop == 1 ) THEN
-         IF ( ( grid%chem_opt .EQ. RADM2     ) .OR. &
-              ( grid%chem_opt .EQ. RADM2SORG ) .OR. &
-              ( grid%chem_opt .EQ. RACM      ) .OR. &
-              ( grid%chem_opt .EQ. RACMSORG  ) ) THEN
+         IF( grid%chem_opt > 0 ) then
            ! Read the chemistry data from a previous wrf forecast (wrfout file)
            IF(grid%chem_in_opt == 1 ) THEN
               message = 'INITIALIZING CHEMISTRY WITH OLD SIMULATION'

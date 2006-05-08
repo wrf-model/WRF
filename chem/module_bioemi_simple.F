@@ -16,19 +16,19 @@ MODULE module_bioemi_simple
       SUBROUTINE bio_emissions(id,ktau,dtstep,DX,                         &
                config_flags,                                              &
                gmt,julday,t_phy,moist,p8w,t8w,                            &
-               e_bio,p_phy,chem,rho_phy,dz8w,ne_area,              &
+               e_bio,p_phy,chem,rho_phy,dz8w,ne_area,                     &
                ivgtyp,tsk,gsw,vegfra,pbl,rmol,ust,znt,xlat,xlong,z,z_at_w,&
-               numchem,                                &
+               numgas,                                                    &
                ids,ide, jds,jde, kds,kde,                                 &
                ims,ime, jms,jme, kms,kme,                                 &
                its,ite, jts,jte, kts,kte                                  )
   USE module_configure
   USE module_state_description
   IMPLICIT NONE
-   INTEGER,      INTENT(IN   ) :: id,julday, ne_area,  &
+   INTEGER,      INTENT(IN   ) :: id,julday, ne_area,                     &
                                   ids,ide, jds,jde, kds,kde,              &
                                   ims,ime, jms,jme, kms,kme,              &
-                                  its,ite, jts,jte, kts,kte,numchem
+                                  its,ite, jts,jte, kts,kte,numgas
    INTEGER,      INTENT(IN   ) ::                                         &
                                   ktau
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_moist ),               &
@@ -71,8 +71,8 @@ MODULE module_bioemi_simple
 !     INTEGER, PARAMETER ::  nlu = 25,  &
 !       nseason = 1, nseasons = 2
 !     REAL :: aefiso(nlu), aefmter(nlu), aefovoc(nlu), aef_n(nlu),  &
-!       emiss_bio(numchem)
-      REAL :: emiss_bio(numchem)
+!       emiss_bio(numgas)
+      REAL :: emiss_bio(numgas)
       LOGICAL :: highnh3, rainflag, vegflag, wetflag
       CHARACTER (4) :: luse_typ
 ! ..
@@ -105,7 +105,7 @@ MODULE module_bioemi_simple
 !     print *,tsk(i,j),gsw(i,j),vegfra(i,j),p_phy(i,kts,j),moist(i,kts,j,p_qc), &
 !             ust(i,j),znt(i,j),z_at_w(i,kts,j),z_at_w(i,kts+1,j)
       iland = ivgtyp(i,j)
-      ta = tsk(i,j)      
+!      ta = tsk(i,j)      
       ta = t_phy(i,kts,j)      
       rad = gsw(i,j)
       vegfrac = vegfra(i,j)
@@ -143,13 +143,13 @@ MODULE module_bioemi_simple
 !     endif
 
 !     PRINT *, eiso, emter, eovoc, e_n, eisoc, eovocc                 
-      CALL biosplit(iland,eiso,emter,eovoc,e_n,emiss_bio,numchem,vegfrac, &
+      CALL biosplit(iland,eiso,emter,eovoc,e_n,emiss_bio,numgas,vegfrac, &
         luse_typ,vegflag)
 !     PRINT *, 'emiss_bio(liso)  emiss_bio(lald)  emiss_bio(lhcho) ', &
 !       ' emiss_bio(lhc3)'
 !     PRINT *, emiss_bio(liso), emiss_bio(lald), emiss_bio(lhcho), &
 !       emiss_bio(lhc3)
-      DO n = 1, numchem-2
+      DO n = 1, numgas-2
         e_bio(i,j,n) = emiss_bio(n)
 !       if(i.eq.5.and.j.eq.5)print *,emiss_bio(n)
       END DO
@@ -1161,7 +1161,7 @@ END SUBROUTINE bio_emissions
 ! **********************************************************************
 ! ***********************  SUBROUTINE BIOSPLIT *************************
 ! **********************************************************************
-      SUBROUTINE biosplit(iland,eiso,emter,eovoc,e_n,emiss_bio,numchem, &
+      SUBROUTINE biosplit(iland,eiso,emter,eovoc,e_n,emiss_bio,numgas, &
           vegfrc,mminlu,vegflag)
 !     THIS PROGRAMM SPLITS THE BIOGENIC EMISSION RATES FOR
 !     MONOTERPENES AND OTHER ORGANIC COMPOUNDS INTO THE
@@ -1217,12 +1217,12 @@ END SUBROUTINE bio_emissions
 !***********************************************************************
 ! .. Scalar Arguments ..
         REAL :: eiso, emter, eovoc, e_n, vegfrc
-        INTEGER :: iland, numchem
+        INTEGER :: iland, numgas
 !       INTEGER :: lald, lhc3, lhc5, lhc8, lhcho, liso, lket, lno, &
 !         loli, lolt, lora1, lora2, lxyl
 ! ..
 ! .. Array Arguments ..
-        REAL :: emiss_bio(numchem)
+        REAL :: emiss_bio(numgas)
 !       INTEGER :: ixxxlu(nlu)
 ! ..
 ! .. Local Scalars ..

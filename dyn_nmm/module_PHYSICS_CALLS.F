@@ -148,7 +148,7 @@
      &                                  ,HBOTR,HTOPR,CUPPTR
 !
 !
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: AER_DRY,AER_WATER      &
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: PM2_5_DRY,PM2_5_WATER  &
      &                                          ,DZ,P8W,P_PHY,PI_PHY    &
      &                                          ,RR,T8W,THRATEN         &
      &                                          ,THRATENLW,THRATENSW    &
@@ -224,8 +224,8 @@
           THRATEN(I,K,J)=0.
           THRATENLW(I,K,J)=0.
           THRATENSW(I,K,J)=0.
-          AER_DRY(I,K,J)=0.
-          AER_WATER(I,K,J)=0.
+          PM2_5_DRY(I,K,J)=0.
+          PM2_5_WATER(I,K,J)=0.
 !
 !-----------------------------------------------------------------------
 !***  DECOMPOSE CLOUDS TO CLOUD LIQUID, RAIN, AND CLOUD ICE + SNOW.
@@ -315,7 +315,7 @@
      &                 ,J_START=GRID%J_START,J_END=GRID%J_END           &
      &                 ,KTS=KTS,KTE=KTE,NUM_TILES=GRID%NUM_TILES        &
      &                 ,ITIMESTEP=NTSD,DT=DT                            &
-     &                 ,AER_DRY=AER_DRY,AER_WATER=AER_WATER             &
+     &                 ,PM2_5_DRY=PM2_5_DRY,PM2_5_WATER=PM2_5_WATER     &
      &                 ,RTHRATENLW=THRATENLW,RTHRATENSW=THRATENSW       &
      &                 ,RTHRATEN=THRATEN                                &
      &                 ,GLW=TOTLWDN,GSW=SWNETDN,SWDOWN=TOTSWDN          &

@@ -57,12 +57,12 @@ dimspec    n      2     namelist=kemit            z          emissions_zdim
 ################################################################################
 ################################################################################
 
-# Lines that start with the word 'state' form a table that is                                           
-# used by the script use_registry to generate module_state_descript.F                                           
-# and other files.  Also see documentation in use_registry.                                             
+# Lines that start with the word 'state' form a table that is
+# used by the script use_registry to generate module_state_descript.F
+# and other files.  Also see documentation in use_registry.
 #                                               
-# table entries are of the form                                         
-#<Table> <Type> <Sym>         <Dims>   <Use>   <NumTLev> <Stagger> <IO>     <DNAME>             <DESCRIP>     <UNITS>   
+# table entries are of the form
+#<Table> <Type> <Sym>         <Dims>   <Use>   <NumTLev> <Stagger> <IO>     <DNAME>             <DESCRIP>     <UNITS>
 #
 
 # It is required that LU_INDEX appears before any variable that is
@@ -158,7 +158,7 @@ state    real   ht_coarse       ij     misc        1   -     -                - 
 
 
 # TKE
-state    real   tke            ikj     dyn_em      2         -       r        "tke"          "TURBULENCE KINETIC ENERGY"     "m2 s-2"
+state    real   tke            ikj     dyn_em      2         -       r       "tke"          "TURBULENCE KINETIC ENERGY"     "m2 s-2"
 i1       real   tke_tend       ikj     dyn_em      1         -      
 
 # Pressure and Density
@@ -227,14 +227,10 @@ state   real    cf1            -        misc      -         -     irh       "cf1
 state   real    cf2            -        misc      -         -     irh       "cf2"                   "2nd order extrapolation constant"         ""      
 state   real    cf3            -        misc      -         -     irh       "cf3"                   "2nd order extrapolation constant"         ""      
 state   integer number_at_same_level    -        -          -         -     -        "number_at_same_level"  ""         ""      
-
-# State for derived time quantities.  
 state   integer itimestep      -        -          -         -     rh         "itimestep"             ""         ""      
-state   real    xtime          -        -          -         -     rh         "xtime"                 "minutes since simulation start"         ""      
-state   real    julian         -        -          -         -     -          "julian"                "day of year"         ""      
 
 # Output file descriptor for a domain                                           
-state   integer oid            -        -          -         -     -         "oid"                   ""         ""      
+state   integer oid            -        -          -         -     -         "oid"                   ""         ""
 state   integer auxhist1_oid   -        -          -         -     -         "auxhist1_oid"          ""         ""
 state   integer auxhist2_oid   -        -          -         -     -         "auxhist2_oid"          ""         ""
 state   integer auxhist3_oid   -        -          -         -     -         "auxhist3_oid"          ""         ""
@@ -248,11 +244,11 @@ state   integer auxinput4_oid  -        -          -         -     -         "au
 state   integer auxinput5_oid  -        -          -         -     -         "auxinput5_oid"         ""         ""
 state   integer emissframes    -        -          -         -     -         "emissframes"           ""         ""
 # input file descriptor for lbcs on parent domain                                               
-state   integer lbc_fid        -        -          -         -     -         "lbc_fid"               ""         ""      
+state   integer lbc_fid        -        -          -         -     -         "lbc_fid"               ""         ""
 # indicates if tiling has been computed                                         
-state   logical tiled          -        -          -         -     -         "tiled"                 ""         ""      
+state   logical tiled          -        -          -         -     -         "tiled"                 ""         ""
 # indicates if patches have been computed                                               
-state   logical patched        -        -          -         -     -         "patched"               ""         ""      
+state   logical patched        -        -          -         -     -         "patched"               ""         ""
 # indicates whether to read input from file or generate                                         
 #state   logical input_from_file        -        -          -         -     -         "input_from_file"         ""         ""    
 
@@ -443,7 +439,7 @@ state    real  ketp         ikj     eh+em        1         -      r        "ketp
 # Moist Scalars
 #                                               
 # The first line ensures that there will be identifiers named moist and                                         
-# moist_tend even if there are not any moist scalars (so the essentially                                                
+# moist_tend even if there are not any moist scalars (so the essentially
 # dry code will will still link properly)                                               
 #                                               
 state   real    -              ikjftb   moist       1         -     -    -
@@ -704,9 +700,8 @@ state   real   num_a08     ikjftb   chem        1         -   irhusdf=(bdy_inter
 
 
 # Other Scalars
-state   real    -              ikjftb  scalar      1         -     -    -                                       
-state   real    qni            ikjftb  scalar      1         -     \
-   i01rhusdf=(bdy_interp:dt)    "QNICE"         "Ice Number concentration" "# kg(-1)"
+state   real    -          ikjftb   scalar      1         -     -    -                                       
+state   real    qni        ikjftb   scalar      1         -   i01rhusdf=(bdy_interp:dt) "QNICE"        "Ice Number concentration" "# kg(-1)"
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -821,8 +816,8 @@ i1      real   BR             ij     misc        1         -     -         "BR" 
 
 # MYJ PBL variables
 state    real   tke_myj        ikj     misc        1         -      r        "tke_myj"               "TKE FROM MELLOR-YAMADA-JANJIC      "m2 s-2"
-state    real   EL_MYJ          ikj     misc        1         -     -        "el_myj"                "MIXING LENGTH FROM MELLOR-YAMADA-JANJIC"     "m"
-state    real   EXCH_H          ikj     misc        1         -     r          "EXCH_H"               "EXCHANGE COEFFICIENTS "
+state    real   EL_MYJ         ikj     misc        1         -      -        "el_myj"                "MIXING LENGTH FROM MELLOR-YAMADA-JANJIC"     "m"
+state    real   EXCH_H         ikj     misc        1         -      rh       "EXCH_H"                "EXCHANGE COEFFICIENTS "
 state    real  CT              ij      misc        1         -      r        "CT"                    "COUNTERGRADIENT TERM"    "K"
 state   real   THZ0             ij     misc        1         -      r        "THZ0"                  "POTENTIAL TEMPERATURE AT ZNT"                 "K"
 state    real  Z0               ij     misc        1         -      r        "Z0"                    "Background ROUGHNESS LENGTH"                  "m"
@@ -841,12 +836,8 @@ i1      real   Q10              ij     misc        1         -     -         "Q1
 i1      real   CHKLOWQ          ij     misc        1         -     -         "CHKLOWQ"               "SURFACE SATURATION FLAG"        ""
 
 # gfdl (eta) radiation State Variables
-state    real    HTOP            ij     misc        1         -      r        "HTOP"                 "TOP OF CONVECTION LEVEL"         ""
-state    real    HBOT            ij     misc        1         -      r        "HBOT"                 "BOT OF CONVECTION LEVEL"         ""
-state    real    HTOPR           ij     misc        1         -      r        "HTOPR"                "TOP OF CONVECTION LEVEL FOR RADIATION"    ""
-state    real    HBOTR           ij     misc        1         -      r        "HBOTR"                "BOT OF CONVECTION LEVEL FOR RADIATION"    ""
-state    real    CUTOP           ij     misc        1         -      r        "CUTOP"                "TOP OF CONVECTION LEVEL FROM CUMULUS PAR"    ""
-state    real    CUBOT           ij     misc        1         -      r        "CUBOT"                "BOT OF CONVECTION LEVEL FROM CUMULUS PAR"    ""
+state    real    HTOP            ij     misc        1         -      r        "HTOP"                 "TOP OF CONVECTION LELVEL"         ""
+state    real    HBOT            ij     misc        1         -      r        "HBOT"                 "BOT OF CONVECTION LELVEL"         ""
 state    REAL      CUPPT         ij     misc        1         -      r        "CUPPT"                "ACCUMULATED CONVECTIVE RAIN SINC LAST CALL TO THE RADIATION"         ""
 state  real   rswtoa    ij    misc        1    -    i
 state  real   rlwtoa    ij    misc        1    -    i
@@ -998,14 +989,6 @@ state    real  mp_restart_state   p      misc        1         -      r       "M
 state    real  tbpvs_state       p      misc        1         -      r        "TBPVS_STATE"           "STATE FOR ETAMPNEW MICROPHYSICS"
 state    real  tbpvs0_state      p      misc        1         -      r        "TBPVS0_STATE"          "STATE FOR ETAMPNEW MICROPHYSICS"
 
-# State variables for landuse_init, Must be declared state because the are read in and needed for restarts. Had been SAVE vars in
-# landuse_init (phys/module_physics_init.F)
-state    integer  landuse_isice   -      misc       -          -     r
-state    integer  landuse_lucats  -      misc       -          -     r
-state    integer  landuse_luseas  -      misc       -          -     r
-state    integer  landuse_isn     -      misc       -          -     r
-state    real     lu_state        p      misc       -          -     r
-
 i1       real  th_phy          ikj      misc        1         -                                          
 i1       real  pi_phy          ikj      misc        1         -                                          
 i1       real  p_phy           ikj      misc        1         -                                          
@@ -1110,14 +1093,14 @@ rconfig   integer frames_per_auxhist5     namelist,time_control		max_domains    
 rconfig   logical restart                 namelist,time_control		1             .false. h    "restart"              ""      ""
 rconfig   integer restart_interval        namelist,time_control		1              0       h     "restart_interval"       ""      "MINUTES"
 rconfig   integer frames_per_emissfile    namelist,time_control		1              12      h     "frames_per_emissfile"          ""      ""
+rconfig   integer     io_form_input       namelist,time_control		1              2       h     "io_form_input"                 ""      ""
+rconfig   integer     io_form_history     namelist,time_control		1              2       h     "io_form_history"               ""      ""
+rconfig   integer     io_form_restart     namelist,time_control		1              2       h     "io_form_restart"               ""      ""
+rconfig   integer     io_form_boundary    namelist,time_control		1              2       h     "io_form_boundary"               ""      ""
+rconfig   integer     io_form_emissions   namelist,time_control		1              2       h     "io_form_emissions"              ""      ""
 rconfig   integer io_style_emissions      namelist,time_control     1              1       -     "io_style_emissions"    ""      ""
-rconfig   integer     io_form_input       namelist,time_control		1              2       h        "io_form_input"                 ""      ""
-rconfig   integer     io_form_history     namelist,time_control		1              2       h        "io_form_history"               ""      ""
-rconfig   integer     io_form_restart     namelist,time_control		1              2       h        "io_form_restart"               ""      ""
-rconfig   integer     io_form_boundary    namelist,time_control		1              2       h        "io_form_boundary"               ""      ""
-rconfig   integer     io_form_emissions   namelist,time_control         1              2       h        "io_form_emissions"              ""      ""
-rconfig   integer debug_level             namelist,time_control		1             0       -      "debug_level"           ""      ""
-rconfig   logical self_test_domain        namelist,time_control		1              .false. -      "self_test_domain"           ""      ""
+
+rconfig   integer debug_level             namelist,time_control		1              0       -     "debug_level"           ""      ""
 
 rconfig   character  history_outname   namelist,time_control		1  "wrfout_d<domain>_<date>"     -     "name of history outfile"  ""      ""
 rconfig   character  auxhist1_outname  namelist,time_control		1  "auxhist1_d<domain>_<date>"   -     "name of auxhist1 outfile" ""      ""
@@ -1224,7 +1207,7 @@ rconfig   integer auxinput4_interval        namelist,time_control	max_domains   
 rconfig   integer auxinput5_interval_mo     namelist,time_control	max_domains    0       h     "auxinput5_interval_mo"       ""      "MONTHS"
 rconfig   integer auxinput5_interval_d      namelist,time_control	max_domains    0       h     "auxinput5_interval_d"       ""      "DAYS"
 rconfig   integer auxinput5_interval_h      namelist,time_control	max_domains    0       h     "auxinput5_interval_h"       ""      "HOURS"
-rconfig   integer auxinput5_interval_m      namelist,time_control	max_domains    0       h     "auxinput5_interval_m"       ""      "MINUTES"
+rconfig   integer auxinput5_interval_m      namelist,time_control	max_domains    60      h     "auxinput5_interval_m"       ""      "MINUTES"
 rconfig   integer auxinput5_interval_s      namelist,time_control	max_domains    0       h     "auxinput5_interval_s"       ""      "SECONDS"
 rconfig   integer auxinput5_interval        namelist,time_control	max_domains    0       h     "auxinput5_interval"       ""      "MINUTES"
 
@@ -1430,8 +1413,6 @@ rconfig   character  bdy_inname        namelist,time_control		1  "wrfbdy_d<domai
 rconfig   character  bdy_outname       namelist,time_control		1  "wrfbdy_d<domain>"            -     "name of boundary outfile" ""      ""
 rconfig   character  emi_inname        namelist,time_control		1  "wrfchemi_d<domain>_<date>"   -     "name of chem emissions infile"  ""    ""
 rconfig   character  emi_outname       namelist,time_control		1  "wrfchemi_d<domain>_<date>"   -     "name of chem emissions outfile" ""    ""
-rconfig   character  input_chem_inname       namelist,time_control		1  "wrf_chem_input_d<domain>_<date>"   -     "name of chem infile"  ""    ""
-rconfig   character  input_chem_outname      namelist,time_control		1  "wrf_chem_input_d<domain>_<date>"   -     "name of chem outfile" ""    ""
 rconfig   character  rst_inname        namelist,time_control		1  "wrfrst_d<domain>_<date>"     -     "name of restrt infile"    ""      ""
 rconfig   character  rst_outname       namelist,time_control		1  "wrfrst_d<domain>_<date>"     -     "name of restrt outfile"   ""      ""
 rconfig   logical write_input             namelist,time_control		1             .false. -    "write input data for 3dvar etc."              ""      ""
@@ -1460,7 +1441,6 @@ rconfig   integer parent_grid_ratio       namelist,domains	max_domains    1     
 rconfig   integer parent_time_step_ratio  namelist,domains	max_domains    1       h     "parent_time_step_ratio"                ""      ""
 rconfig   integer feedback                namelist,domains	1    1       h     "feedback"          ""      ""
 rconfig   integer smooth_option           namelist,domains	1    2       h     "smooth_option"          ""      ""
-rconfig   integer blend_width             namelist,domains	1    5       h     "blend_width"  "width of cg fg terrain blended zone"      ""
 rconfig   real    ztop                    namelist,domains	max_domains    15000.  h    "ztop"          ""      ""
 rconfig   integer moad_grid_ratio         namelist,domains	max_domains    1       h     "moad_grid_ratio"               ""      ""
 rconfig   integer moad_time_step_ratio    namelist,domains	max_domains    1       h     "moad_time_step_ratio"          ""      ""
@@ -1485,7 +1465,6 @@ rconfig   logical   swap_y          namelist,domains    max_domains    .false. r
 rconfig   logical   cycle_x         namelist,domains    max_domains    .false. rh    "cycle_x"            ""      ""
 rconfig   logical   cycle_y         namelist,domains    max_domains    .false. rh    "cycle_y"            ""      ""
 rconfig   logical   reorder_mesh    namelist,domains    1              .false. rh    "reorder_mesh"       ""      ""
-rconfig   logical   perturb_input   namelist,domains    1              .false. h     "" "" ""
 
 # Physics
 rconfig   integer     mp_physics          namelist,physics	max_domains    0       rh       "mp_physics"            ""      ""
@@ -1526,20 +1505,20 @@ rconfig   integer co2tf                   namelist,physics	1            0       
 
 # Dynamics
 # dynamics option (see package definitions, below)
-rconfig   integer dyn_opt                 namelist,dynamics	1             1       irh   "dyn_opt"               ""      ""
+rconfig   integer dyn_opt                 namelist,dynamics	1             2       irh   "dyn_opt"               ""      ""
 rconfig   integer rk_ord                  namelist,dynamics	1             3       irh   "rk_order"               ""      ""
 rconfig   integer w_damping               namelist,dynamics	1             0       irh    "w_damping"             ""      ""
 # diff_opt 1=old diffusion, 2=new
 rconfig   integer diff_opt                namelist,dynamics	1             1       irh    "diff_opt"              ""      ""
 # km_opt   1=old coefs, 2=tke, 3=Smagorinksy
 rconfig   integer km_opt                  namelist,dynamics	1             1       irh    "km_opt"                ""      ""
-rconfig   integer damp_opt                namelist,dynamics	1             1       irh    "damp_opt"              ""      ""
+rconfig   integer damp_opt                namelist,dynamics	1             0       irh    "damp_opt"              ""      ""
 rconfig   real    zdamp                   namelist,dynamics	max_domains    5000.   h    "zdamp"         ""      ""
-rconfig   real    dampcoef                namelist,dynamics     max_domains    0.2     h    "dampcoef"              ""      ""
+rconfig   real    dampcoef                namelist,dynamics     max_domains    0.      h    "dampcoef"              ""      ""
 rconfig   real    khdif                   namelist,dynamics	max_domains    0       h    "khdif"         ""      ""
 rconfig   real    kvdif                   namelist,dynamics	max_domains    0       h    "kvdif"         ""      ""
-rconfig   real    smdiv                   namelist,dynamics	max_domains    0.      h    "smdiv"         ""      ""
-rconfig   real    emdiv                   namelist,dynamics	max_domains    0.      h    "emdiv"         ""      ""
+rconfig   real    smdiv                   namelist,dynamics	max_domains    0.1     h    "smdiv"         ""      ""
+rconfig   real    emdiv                   namelist,dynamics	max_domains    0.01    h    "emdiv"         ""      ""
 rconfig   real    epssm                   namelist,dynamics	max_domains    .1      h    "epssm"         ""      ""
 rconfig   logical non_hydrostatic         namelist,dynamics	max_domains  .true.   irh  "non_hydrostatic"    ""   ""
 rconfig   integer time_step_sound         namelist,dynamics	max_domains    0       h     "time_step_sound"               ""      ""
@@ -1553,10 +1532,10 @@ rconfig   integer     phot_opt            namelist,dynamics     max_domains    0
 rconfig   integer     drydep_opt          namelist,dynamics     max_domains    0       rh       "drydep_opt"      ""      ""
 rconfig   integer     bio_emiss_opt       namelist,dynamics     max_domains    0       rh       "bio_emiss_opt"   ""      ""
 rconfig   integer     emiss_inpt_opt      namelist,dynamics     max_domains    0       rh       "emiss_inpt_opt"  ""      ""
-rconfig   integer     gas_bc_opt          namelist,dynamics     max_domains    1       rh       "gas_bc_opt"      ""      ""
-rconfig   integer     gas_ic_opt          namelist,dynamics     max_domains    1       rh       "gas_ic_opt"      ""      ""
-rconfig   integer     aer_bc_opt          namelist,dynamics     max_domains    1       rh       "aer_bc_opt"      ""      ""
-rconfig   integer     aer_ic_opt          namelist,dynamics     max_domains    1       rh       "aer_ic_opt"      ""      ""
+rconfig   integer     gas_bc_opt          namelist,dynamics     max_domains    0       rh       "gas_bc_opt"      ""      ""
+rconfig   integer     gas_ic_opt          namelist,dynamics     max_domains    0       rh       "gas_ic_opt"      ""      ""
+rconfig   integer     aer_bc_opt          namelist,dynamics     max_domains    0       rh       "aer_bc_opt"      ""      ""
+rconfig   integer     aer_ic_opt          namelist,dynamics     max_domains    0       rh       "aer_ic_opt"      ""      ""
 rconfig   real    mix_cr_len              namelist,dynamics	max_domains    200.    h    "mix_cr_len"            ""      ""
 rconfig   real    tke_upper_bound         namelist,dynamics	max_domains    1000.   h    "tke_upper_bound"            ""      ""
 rconfig   real    kh_tke_upper_bound      namelist,dynamics	max_domains    1000.   h    "kh_tke_upper_bound"         ""      ""
@@ -1596,7 +1575,7 @@ rconfig   real    truelat2                derived                  max_domains  
 rconfig   real    moad_cen_lat            derived                  max_domains    0       -        "moad_cen_lat"             "center latitude of the most coarse grid"      "degrees, negative is south"
 rconfig   real    stand_lon               derived                  max_domains    0       -        "stand_lon"             "standard longitude, parallel to j-direction, perpendicular to i-direction "      "degrees, negative is west"
 rconfig   real    bdyfrq                  derived                  max_domains    0       -        "bdyfrq"               "lateral boundary input frequency"      "seconds"
-rconfig   real    emifrq                  derived                  max_domains    0       -        "emifrq"               "chem emissions input frequency"      "seconds"
+rconfig   real    emifrq                  derived                  max_domains    3600    -        "emifrq"               "chem emissions input frequency"      "seconds"
 rconfig   integer iswater                 derived                  max_domains    0       -        "iswater"              "land use index of water"      "index category"
 rconfig   integer isice                   derived                  max_domains    0       -        "isice"                "land use index of ice"        "index category"
 rconfig   integer isurban                 derived                  max_domains    0       -        "isurban"              "land use index for 'urban and built-up"     "index category"
@@ -1693,7 +1672,7 @@ package   bmjscheme      cu_physics==2               -             -
 package   gdscheme       cu_physics==3               -             -
 package   sasscheme      cu_physics==4               -             -
 package   kfscheme       cu_physics==99              -             -
-                                                
+
 # only need to specify these once; not for every io_form* variable
 package   io_intio    io_form_restart==1                     -             -
 package   io_netcdf   io_form_restart==2                     -             -

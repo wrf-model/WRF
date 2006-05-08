@@ -1,0 +1,2296 @@
+!**********************************************************************************  
+! This computer software was prepared by Battelle Memorial Institute, hereinafter
+! the Contractor, under Contract No. DE-AC05-76RL0 1830 with the Department of 
+! Energy (DOE). NEITHER THE GOVERNMENT NOR THE CONTRACTOR MAKES ANY WARRANTY,
+! EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.
+!
+! Aerosol Option:  MOSAIC (Model for Simulating Aerosol Interactions & Chemistry)
+! * Primary investigator: Rahul A. Zaveri
+! * Co-investigator: Richard C. Easter, William I. Gustafson Jr.
+! Last update: September 2005
+!
+! Contains:
+! ASTEEM (Adaptive Step Time-split Explicit Euler Method): Solves the dynamic
+!   dynamic partitioning of semi-volatile species between gas and particle phases.
+! MESA (Multicomponent Equilibrium Solver for Aerosols): Solves the multi-
+!   component solid-liquid equilibria within the aerosol phase.
+! MTEM (Multicomponent Taylor Expansion Method): Computes the multicomponent 
+!   activity coefficients of electrolytes in aqueous atmospheric aerosols.
+!
+! Contacts:
+! Rahul A. Zaveri, PhD                    Jerome D. Fast, PhD
+! Senior Research Scientist               Staff Scientist
+! Pacific Northwest National Laboratory   Pacific Northwest National Laboratory
+! P.O. Box 999, MSIN K9-30                P.O. Box 999, MSIN K9-30
+! Richland, WA 99352                      Richland, WA, 99352
+! Phone: (509) 372-6159                   Phone: (509) 372-6116
+! Email: Rahul.Zaveri@pnl.gov             Email: Jerome.Fast@pnl.gov
+!
+! Please report any bugs or problems to Rahul Zaveri, the primary author of the
+! code, or Jerome Fast, the WRF-chem implementation team leader for PNNL
+!
+! Terms of Use:
+!  1) MOSAIC and its sub-modules ASTEEM, MESA, and MTEM may not be included in 
+!     any commercial package or used for any commercial applications without the 
+!     primary author's prior consent.
+!  2) The MOSAIC source code is provided to the WRF modeling community; however, 
+!     no portion of MOSAIC can be used separately or in another code without the
+!     primary author's prior consent.
+!  3) The MOSAIC source code may be used for research, educational, and non-profit
+!     purposes only.  Any other usage must be first approved by the primary author.
+!  4) Publications resulting from the usage of MOSAIC must use one or more of the
+!     references below (depending on the application) for proper acknowledgment.
+!
+! References: 
+! * Zaveri R.A., R.C. Easter, and A.S. Wexler (2005), A new method for multi-
+!   component activity coefficients of electrolytes in aqueous atmospheric
+!   aerosols, J. Geophys. Res., 110, D02201, doi:10.1029/2004JD004681.
+! * Zaveri R.A., R.C. Easter, and L.K. Peters (2005), A computationally efficient
+!   multicomponent equilibrium solver for aerosols (MESA), In review, 
+!   J. Geophys. Res.
+! * Zaveri R.A., R.C. Easter, J.D. Fast, and L.K. Peters (2005), A new model
+!   for simulating aerosol interactions and chemistry (MOSAIC),  Manuscript in
+!   preparation. To be submitted to J. Geophys. Res.
+! * Fast, J.D., W.I. Gustafson Jr., R.C. Easter, R.A. Zaveri, J.C. Barnard, E.G.
+!   Chapman, G.A. Grell, and S.E. Peckham (2005), Evolution of ozone, particulates,
+!   and aerosol direct radiative forcing in the vicinity of Houston using a fully- 
+!   coupled meteorology-chemistry-aerosol model, Submitted to J. Geophys. Res.
+!
+! Contact Jerome Fast for updates on the status of manuscripts under review.  The  
+! third paper will be the main reference for MOSAIC when published. 
+!
+! Note that the version of MESA currently in WRF-chem does not contain some of 
+! the code associated with the numerical speed described in the second paper - 
+! a revised version of MESA will be included in the next release of MOSAIC.
+!
+! Additional information:
+! * www.pnl.gov/atmos_sciences/raz 
+! * www.pnl.gov/atmos_sciences/Jdf/wrfchem.html
+!
+! Support: 
+! Funding for developing and evaluating MOSAIC was provided by the U.S. Department
+! of Energy under the auspices of Atmospheric Science Program of the Office of
+! Biological and Environmental Research, the NASA Earth Sciences Enterprise under
+! grant NAGW 3367, and PNNL Laboratory Directed Research and Development program.
+!**********************************************************************************  
+	module module_mosaic_driver
+
+
+!
+!   *** NOTE - when the cw species are NOT in the registry, then
+!   then the p_xxx_cwnn variables are not in module_state_description,
+!   and the following cpp directive should be commented out
+!
+!#define cw_species_are_in_registry
+
+
+	contains
+
+!-----------------------------------------------------------------------
+!
+! rce 2005-feb-18 - one fix involving dcen_sect indices [now (isize,itype)]
+!
+! rce 2004-dec-03 - many changes associated with the new aerosol "pointer"
+!     variables in module_data_mosaic_asect
+!   nov-04 sg ! replaced amode with aer and expanded aerosol dimension 
+!     to include type and phase
+!
+! rce 11-sep-2004 - numerous changes
+!   eliminated use of the _wrfch pointers (lptr_xxx_a_wrfch,
+!	lwaterptr_wrfch, numptr_wrfch); use only the _aer pointers now
+!   aboxtest_... variables are now in module_data_mosaic_other
+!
+!-----------------------------------------------------------------------
+
+	subroutine mosaic_aerchem_driver(                         &
+		id, ktau, dtstep, ktauc, dtstepc, config_flags,   &
+		t_phy, rho_phy, p_phy,                            &
+		moist, chem,                                      &
+		ids,ide, jds,jde, kds,kde,                        &
+		ims,ime, jms,jme, kms,kme,                        &
+		its,ite, jts,jte, kts,kte                         )
+
+
+	use module_configure, only:  grid_config_rec_type,               &
+			p_qv,                                            &
+			p_so2, p_ho2, p_so4aj, p_corn, p_hcl, p_mtf,     &
+			p_so4_a01, p_water_a01, p_num_a01,               &
+			p_so4_a04, p_water_a04, p_num_a04
+
+	use module_state_description, only:  num_moist, num_chem
+
+	use module_data_mosaic_asect
+	use module_data_mosaic_other
+	use module_mosaic_therm, only:  aerchemistry, print_mosaic_stats
+	use module_peg_util, only:  peg_error_fatal, peg_message
+
+	implicit none
+
+!-----------------------------------------------------------------------
+! DESCRIPTION
+!
+! mosaic_aerchem_driver is the interface between wrf-chem and the
+!   mosaic aerosol-chemistry routine cat computes condensation/evaporation
+!   of trace gases to/from aerosol particles (AP).  It currently treats
+!   water vapor and the 4 inorganic trace gases (nh3, h2so4, hno3, and hcl).
+!   The aerosol-chemistry routine can work with either a sectional
+!   (multiple size bins) or modal (multiple modes) representation.  
+!
+!   In both cases, condensation/evaporation to/from each bins/mode is 
+!   first computed.  For sectional representation, AP mass and number 
+!   are then transferred between size bins as a result of AP 
+!   positive/negative growth.  Either a moving-center or two-moment
+!   algorithm can be used to compute this transfer.
+!
+! mosaic_aerchem_driver is organized as follows
+!   loop over j and i
+!	call mapaer_tofrom_host to map 1 column of gas and aerosol mixing 
+!	    ratios from the chem array to the rsub array (and convert units)
+!	call aerchemistry to do the aerosol chemistry calculations
+!	    for timestep = dtstepc
+!	call mapaer_tofrom_host to map 1 column of gas and aerosol mixing 
+!	    ratios from the rsub array back to the chem array
+!
+!-----------------------------------------------------------------------
+
+!   subr arguments
+	integer, intent(in) ::              &
+		id, ktau, ktauc,                &
+		ids, ide, jds, jde, kds, kde,   &
+		ims, ime, jms, jme, kms, kme,   &
+		its, ite, jts, jte, kts, kte
+!   id - domain index
+!   ktau - time step number
+!   ktauc - gas and aerosol chemistry time step number
+
+!   [ids:ide, kds:kde, jds:jde] - spatial (x,z,y) indices for "domain"
+!   [ims:ime, kms:kme, jms:jme] - spatial (x,z,y) indices for "memory"
+!	Most arrays that are arguments to chem_driver 
+!	are dimensioned with these spatial indices.
+!   [its:ite, kts:kte, jts:jte] - spatial (x,z,y) indices for "tile"
+!	chem_driver and routines under it do calculations
+!	over these spatial indices.
+
+	real, intent(in) :: dtstep, dtstepc
+!   dtstep - main model time step (s)
+!   dtstepc - time step for gas and aerosol chemistry(s)
+
+	real, intent(in),   &
+		dimension( ims:ime, kms:kme, jms:jme ) :: &
+		t_phy, rho_phy, p_phy
+!   t_phy - temperature (K)
+!   rho_phy - air density (kg/m^3)
+!   p_phy - air pressure (Pa)
+
+	real, intent(in),   &
+		dimension( ims:ime, kms:kme, jms:jme, 1:num_moist ) :: &
+		moist
+!   moist - mixing ratios of moisture species (water vapor, 
+!	cloud water, ...) (kg/kg for mass species, #/kg for number species)
+ 
+	real, intent(inout),   &
+		dimension( ims:ime, kms:kme, jms:jme, 1:num_chem ) :: &
+		chem
+!   chem - mixing ratios of trace gase (ppm) and aerosol species
+!	(ug/kg for mass species, #/kg for number species)
+
+	type(grid_config_rec_type), intent(in) :: config_flags
+!   config_flags - configuration and control parameters
+
+!-----------------------------------------------------------------------
+!   local variables
+	integer :: i, idum, it, j, jt, k, l, n
+	integer :: k_pegshift, kclm_calcbgn, kclm_calcend
+	integer :: ktmaps, ktmape
+	integer :: levdbg_err, levdbg_info
+	integer :: i_force_dump, mode_force_dump
+	integer :: idiagaa_dum, ijcount_dum
+	integer :: debug_level=0
+	
+	real :: dtchem
+	real :: dum
+
+	character*100 msg
+
+    if (debug_level .ge. 15) then
+!rcetestc diagnostics --------------------------------------------------
+!   if (kte .eq. -99887766) then
+    if (ktauc .le. 2) then
+    print 93010, ' '
+    print 93010, 'rcetestc diagnostics from mosaic_aerchem_driver'
+    print 93010, 'id, chem_opt, ktau, ktauc    ',   &
+         id, config_flags%chem_opt, ktau, ktauc
+    print 93020, 'dtstep, dtstepc                 ',   &
+         dtstep, dtstepc
+    print 93010, 'ims/e, j, k', ims, ime, jms, jme, kms, kme
+    print 93010, 'its/e, j, k', its, ite, jts, jte, kts, kte
+    print 93010, 'num_chem, p_so2, p_ho2       ', num_chem, p_so2, p_ho2
+    print 93010, 'p_so4aj, p_corn, p_hcl, p_mtf', p_so4aj, p_corn, p_hcl, p_mtf
+    print 93010, 'p_so4_a01, p_water, p_num_a01', p_so4_a01, p_water_a01, p_num_a01
+    print 93010, 'p_so4_a04, p_water, p_num_a04', p_so4_a04, p_water_a04, p_num_a04
+
+    k = kts
+	print 93020, 't, p, rho, qv at its/kts /jts', t_phy(its,k,jts),   &
+		p_phy(its,k,jts), rho_phy(its,k,jts), moist(its,k,jts,p_qv)
+	k = (kts + kte - 1)/2
+	print 93020, 't, p, rho, qv at its/ktmi/jts', t_phy(its,k,jts),   &
+		p_phy(its,k,jts), rho_phy(its,k,jts), moist(its,k,jts,p_qv)
+	k = kte-1
+	print 93020, 't, p, rho, qv at its/kte-/jts', t_phy(its,k,jts),   &
+		p_phy(its,k,jts), rho_phy(its,k,jts), moist(its,k,jts,p_qv)
+93010	format( a, 8(1x,i6) )
+93020	format( a, 8(1p,e14.6) )
+    end if
+!   end if
+!rcetestc diagnostics --------------------------------------------------
+    end if
+
+
+!   ktmaps,ktmape = first/last wrf kt for which aer chem is done
+	ktmaps = kts
+	ktmape = kte-1
+
+!   rce 2005-mar-09 - added kclm_calcbgn/end 
+!   kclm_calcbgn,kclm_calcend = first/last pegasus array k
+!   for which aer chem is done
+	k_pegshift = k_pegbegin - kts 
+	kclm_calcbgn = kts     + k_pegshift
+	kclm_calcend = (kte-1) + k_pegshift
+
+!   set some variables to their wrf-chem "standard" values
+	mode_force_dump = 0
+	levdbg_err = 0
+        levdbg_info = 15
+
+!   eventually iymdcur & ihmscur should be set to the correct date/time 
+!   using wrf timing routines
+	dum = dtstep*(ktau-1)
+	iymdcur = 1 + ifix( dum/86400.0 )
+        dum = mod( dum, 86400.0 )
+	ihmscur = nint( dum )
+
+	t = dtstep*(ktau-1)
+	ncorecnt = ktau - 1
+
+#if defined ( aboxtest_box_testing_active )
+! *** start of "box testing" code section ***
+!     these code lines should be inactive when running wrf-chem
+!
+!   get values for some "box test" variables
+ 	call aboxtest_get_extra_args( 20,   &
+ 		iymdcur, ihmscur,   &
+ 		idum, idum, idum, idum, idum, idum, idum,   &
+ 		t, dum )
+! ***  end  of "box testing" code section ***
+#endif
+
+
+!   set "pegasus" grid size variables
+	itot = ite
+	jtot = jte
+	nsubareas = 1
+
+	ijcount_dum = 0
+
+	call print_mosaic_stats( 0 )
+
+
+	do 2920 jt = jts, jte
+	do 2910 it = its, ite
+
+	ijcount_dum = ijcount_dum + 1
+	dtchem = dtstepc
+
+
+!   mode_force_dump selects a detailed dump of gaschem at either
+!   first ijk grid, first ij column, all ijk, or no ijk
+	i_force_dump = 0
+!	if (mode_force_dump .eq. 10) then
+!	    if ((it.eq.its) .and. (jt.eq.jts)) i_force_dump = 1
+!	else if (mode_force_dump .eq. 100) then
+!	    i_force_dump = 1
+!	else if (mode_force_dump .eq. 77) then
+!	    if ( (it .eq.  (its+ite)/2) .and.   &
+!	         (jt .eq.  (jts+jte)/2) ) i_force_dump = 1
+!	end if
+
+
+!	print 93010, 'calling mapaeraa - it, jt =', it, jt
+	call mapaer_tofrom_host( 0,                       &
+		ims,ime, jms,jme, kms,kme,                    &
+		its,ite, jts,jte, kts,kte,                    &
+		it,      jt,      ktmaps,ktmape,              &
+		num_moist, num_chem, moist, chem,             &
+		t_phy, p_phy, rho_phy                         )
+
+!rce 29-apr-2004 - following is for debugging texas 16 km run
+idiagaa_dum = 0
+!	if ((its.eq.38) .and. (jts.eq.38)   &
+!			.and. (ktau.eq.240)) idiagaa_dum = 1
+!	if ((it .eq.45) .and. (jt .eq.71)   &
+!			.and. (ktau.eq.240)) idiagaa_dum = 1
+!	if ( ijcount_dum > 169 .and. ktau > 2579 ) then !fastj crash
+!	if ( ijcount_dum > 300 .and. ktau > 2969 ) then !madronovich crash
+!       idiagaa_dum = 111
+!       i_force_dump = 1
+!    end if
+
+!	if (ijcount_dum .le. 1) i_force_dump = 1
+!	i_force_dump = 0
+
+	if (i_force_dump > 0) call aerchem_debug_dump( 1, it, jt, dtchem )
+
+!	if ((it .eq.45) .and. (jt .eq.71)   &
+!			.and. (ktau.eq.240)) then
+!	    call aerchem_debug_dump( 1, it, jt, dtchem )
+!	    call aerchem_debug_dump( 3, it, jt, dtchem )
+!	end if
+
+	if (idiagaa_dum > 0)   &
+ 	print 93010, 'calling aerchem - it,jt,maerchem =', it, jt, maerchem
+!	print 93010, 'calling aerchem - it,jt,maerchem =', it, jt, maerchem
+	call aerchemistry( it, jt, kclm_calcbgn, kclm_calcend,   &
+                           dtchem, idiagaa_dum )
+
+!  note units for aerosol is now ug/m3
+
+    call wrf_debug(200,"mosaic_aerchem_driver: back from aerchemistry")
+	if ((it .eq.45) .and. (jt .eq.71)   &
+			.and. (ktau.eq.240)) then
+	    call aerchem_debug_dump( 3, it, jt, dtchem )
+	end if
+
+	if (i_force_dump > 0) call aerchem_debug_dump( 3, it, jt, dtchem )
+
+	if (idiagaa_dum > 0)   &
+ 	print 93010, 'calling mapaerbb'
+!	print 93010, 'calling mapaerbb'
+	call mapaer_tofrom_host( 1,                       &
+		ims,ime, jms,jme, kms,kme,                    &
+		its,ite, jts,jte, kts,kte,                    &
+		it,      jt,      ktmaps,ktmape,              &
+		num_moist, num_chem, moist, chem,             &
+		t_phy, p_phy, rho_phy                         )
+
+!	print 93010, 'backfrm mapaerbb', it, jt
+2910	continue
+2920	continue
+
+
+!   rce 2005-apr-30 - added 2 calls to print_mosaic_stats
+	call print_mosaic_stats( 1 )
+	print 93010, 'leaving mosaic_aerchem_driver - ktau =', ktau
+
+	return
+	end subroutine mosaic_aerchem_driver
+
+
+!-----------------------------------------------------------------------
+   subroutine sum_pm_mosaic (                                         &
+         alt, chem,                                                    &
+         pm2_5_dry, pm2_5_water, pm2_5_dry_ec, pm10,                   &
+         ids,ide, jds,jde, kds,kde,                                    &
+         ims,ime, jms,jme, kms,kme,                                    &
+         its,ite, jts,jte, kts,kte                                     )
+
+   USE module_state_description, only: num_chem
+   USE module_data_mosaic_asect
+   IMPLICIT NONE
+
+   INTEGER,      INTENT(IN   )    ::                                   &
+                                      ids,ide, jds,jde, kds,kde,       &
+                                      ims,ime, jms,jme, kms,kme,       &
+                                      its,ite, jts,jte, kts,kte
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                       &
+         INTENT(IN) :: alt
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_chem ),             &
+         INTENT(IN ) :: chem
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                       &
+         INTENT(OUT) :: pm2_5_dry,pm2_5_water,pm2_5_dry_ec,pm10
+
+   INTEGER :: i,imax,j,jmax,k,kmax,n,itype,iphase
+
+   imax = min(ite,ide-1)
+   jmax = min(jte,jde-1)
+   kmax = kte-1
+!
+! Sum over bins with center diameter < 2.5e-4 cm for pm2_5_dry,
+! pm2_5_dry_ec, and pm2_5_water. All bins go into pm10
+!
+   pm2_5_dry(its:ite,kts:kte,jts:jte)    = 0.
+   pm2_5_dry_ec(its:ite,kts:kte,jts:jte) = 0.
+   pm2_5_water(its:ite,kts:kte,jts:jte)  = 0.
+   pm10(its:ite,kts:kte,jts:jte)         = 0.
+
+   do iphase=1,nphase_aer
+   do itype=1,ntype_aer
+   do n = 1, nsize_aer(itype)
+      if (dcen_sect(n,itype) .le. 2.5e-4) then
+         do j=jts,jmax
+            do k=kts,kmax
+               do i=its,imax
+                  pm2_5_dry(i,k,j) = pm2_5_dry(i,k,j)                  &
+                                     + chem(i,k,j,lptr_so4_aer(n,itype,iphase)) &
+                                     + chem(i,k,j,lptr_no3_aer(n,itype,iphase)) &
+                                     + chem(i,k,j,lptr_cl_aer(n,itype,iphase))  &
+                                     + chem(i,k,j,lptr_nh4_aer(n,itype,iphase)) &
+                                     + chem(i,k,j,lptr_na_aer(n,itype,iphase))  &
+                                     + chem(i,k,j,lptr_oin_aer(n,itype,iphase)) &
+                                     + chem(i,k,j,lptr_oc_aer(n,itype,iphase))  &
+                                     + chem(i,k,j,lptr_bc_aer(n,itype,iphase))
+ 
+                  pm2_5_dry_ec(i,k,j) = pm2_5_dry_ec(i,k,j)            &
+                                     + chem(i,k,j,lptr_bc_aer(n,itype,iphase))
+
+                  pm2_5_water(i,k,j) = pm2_5_water(i,k,j)              &
+                                       + chem(i,k,j,waterptr_aer(n,itype))
+
+                  pm10(i,k,j) = pm10(i,k,j) + pm2_5_dry(i,k,j)
+               enddo
+            enddo
+         enddo
+      else
+         do j=jts,jmax
+            do k=kts,kmax
+               do i=its,imax
+                  pm10(i,k,j) = pm10(i,k,j)                         &
+                                + chem(i,k,j,lptr_so4_aer(n,itype,iphase))   &
+                                + chem(i,k,j,lptr_no3_aer(n,itype,iphase))   &
+                                + chem(i,k,j,lptr_cl_aer(n,itype,iphase))    &
+                                + chem(i,k,j,lptr_nh4_aer(n,itype,iphase))   &
+                                + chem(i,k,j,lptr_na_aer(n,itype,iphase))    &
+                                + chem(i,k,j,lptr_oin_aer(n,itype,iphase))   &
+                                + chem(i,k,j,lptr_oc_aer(n,itype,iphase))    &
+                                + chem(i,k,j,lptr_bc_aer(n,itype,iphase))
+               enddo
+            enddo
+         enddo
+      endif
+   enddo ! size
+   enddo ! type
+   enddo ! phase
+
+   !Convert the units from mixing ratio to concentration (ug m^-3)
+   pm2_5_dry(its:imax,kts:kmax,jts:jmax) = pm2_5_dry(its:imax,kts:kmax,jts:jmax) &
+                                        / alt(its:imax,kts:kmax,jts:jmax)
+   pm2_5_dry_ec(its:imax,kts:kmax,jts:jmax) = pm2_5_dry_ec(its:imax,kts:kmax,jts:jmax) &
+                                           / alt(its:imax,kts:kmax,jts:jmax)
+   pm2_5_water(its:imax,kts:kmax,jts:jmax) = pm2_5_water(its:imax,kts:kmax,jts:jmax) &
+                                          / alt(its:imax,kts:kmax,jts:jmax)
+
+   end subroutine sum_pm_mosaic
+
+! ----------------------------------------------------------------------
+	subroutine mapaer_tofrom_host( imap,                  &
+		ims,ime, jms,jme, kms,kme,                    &
+		its,ite, jts,jte, kts,kte,                    &
+		it,      jt,      ktmaps,ktmape,              &
+		num_moist, num_chem, moist, chem,             &
+		t_phy, p_phy, rho_phy                         )
+
+        use module_configure, only:   &
+		p_qv, p_sulf, p_hno3, p_hcl, p_nh3, p_o3,   &
+		p_so2, p_h2o2, p_hcho, p_ora1, p_ho, p_ho2, p_no3,   &
+		p_no, p_no2, p_hono, p_pan, p_ch3o2, p_ch3oh, p_op1
+	use module_state_description, only:  param_first_scalar
+	use module_data_mosaic_asect
+	use module_data_mosaic_other
+	use module_mosaic_csuesat, only:  esat_gchm
+	use module_peg_util, only:  peg_error_fatal, peg_message
+
+	implicit none
+
+!   subr arguments
+
+!   imap determines mapping direction (chem-->rsub if <=0, rsub-->chem if >0)
+	integer, intent(in) :: imap
+!   wrf array dimensions
+	integer, intent(in) :: num_moist, num_chem
+	integer, intent(in) :: ims, ime, jms, jme, kms, kme
+	integer, intent(in) :: its, ite, jts, jte, kts, kte
+!   do mapping for wrf i,k,j grid points = [it,ktmaps:ktmape,jt]
+	integer, intent(in) :: it, jt, ktmaps, ktmape
+!   
+	real, intent(in), dimension( ims:ime, kms:kme, jms:jme ) :: &
+		t_phy, rho_phy, p_phy
+
+	real, intent(in), &
+		dimension( ims:ime, kms:kme, jms:jme, 1:num_moist ) :: &
+		moist
+ 
+	real, intent(inout), &
+		dimension( ims:ime, kms:kme, jms:jme, 1:num_chem ) :: &
+		chem
+
+
+!   local variables
+	integer ido_l, idum, iphase, itype,   &
+		k, k1, k2, kt, kt1, kt2, k_pegshift, l, n
+	integer p1st
+	real dum, dumesat, dumrsat, dumrelhum, onemeps
+	real factdens, factpres, factmoist, factgas,   &
+		factaerso4, factaerno3, factaercl, factaermsa,   &
+		factaerco3, factaernh4, factaerna, factaerca,   &
+		factaeroin, factaeroc, factaerbc,   &
+		factaerhysw, factaerwater, factaernum
+
+	real, parameter :: eps=0.622
+
+	character*80 msg
+
+
+!
+!   units conversion factors 
+!   wrf-chem value = pegasus value X factor
+!
+	factdens = 28.966e3      ! moleair/cm3 --> kgair/m3
+	factpres = 0.1           ! dyne/cm2 --> pa
+	factmoist = eps          ! moleh2o/moleair --> kgh2o/kgair
+	factgas = 1.0e6          ! mole/moleair --> ppm
+
+!wig 9-Nov-2004: Change to converting from concentration to converting
+!                from mixing ratio.
+!	factaernum = 40.9        ! #/moleair --> #/m3 at STP
+!! at 1 atm & 298 k,  1 m3 = 40.9 moleair,  1 liter = 0.0409 moleair
+	factaernum = 1000./28.966 ! 1 kg air = (1000/28.966) moleair
+
+	dum = factaernum*1.0e6   ! g/moleair --> ug/m3 at STP
+	factaerso4   = dum*mw_so4_aer
+	factaerno3   = dum*mw_no3_aer
+	factaercl    = dum*mw_cl_aer
+	factaermsa   = dum*mw_msa_aer
+	factaerco3   = dum*mw_co3_aer
+	factaernh4   = dum*mw_nh4_aer
+	factaerna    = dum*mw_na_aer
+	factaerca    = dum*mw_ca_aer
+	factaeroin   = dum
+	factaeroc    = dum
+	factaerbc    = dum
+	factaerhysw  = dum*mw_water_aer
+	factaerwater = dum*mw_water_aer
+
+!   If aboxtest_units_convert=10, turn off units conversions both here
+!   and in module_mosaic.  This is for testing, to allow exact agreements.
+	if (aboxtest_units_convert .eq. 10) then
+	    factdens = 1.0
+	    factpres = 1.0
+	    factmoist = 1.0
+	    factgas = 1.0
+	    factaernum = 1.0
+	    factaerso4   = 1.0
+	    factaerno3   = 1.0
+	    factaercl    = 1.0
+	    factaermsa   = 1.0
+	    factaerco3   = 1.0
+	    factaernh4   = 1.0
+	    factaerna    = 1.0
+	    factaerca    = 1.0
+	    factaeroin   = 1.0
+	    factaeroc    = 1.0
+	    factaerbc    = 1.0
+	    factaerhysw  = 1.0
+	    factaerwater = 1.0
+	end if
+
+
+!   rce 2005-mar-09 - set ktot in mapaer_tofrom_host;
+!	use k_pegshift for calc of ktot and k (=k_peg)
+!   k_pegshift = k index shift between wrf-chem and pegasus arrays
+	k_pegshift = k_pegbegin - kts
+
+!   set ktot = highest k index for pegasus arrays
+!   since kts=1 and k_pegbegin=1, get k_pegshift=0 and ktot=kte-1
+	ktot = (kte-1) + k_pegshift
+!   *** check that ktot and kte <= kmaxd ***
+	if ((kte > kmaxd) .or. (ktot > kmaxd) .or. (ktot <= 0)) then
+	    write( msg, '(a,4i5)' )   &
+		'*** subr mapaer_tofrom_host -- ' //   &
+		'ktot, kmaxd, kts, kte', ktot, kmaxd, kts, kte
+	    call peg_message( lunerr, msg )
+	    msg = '*** subr mosaic_aerchem_driver -- ' //   &
+		'kte>kmaxd OR ktot>kmaxd OR ktot<=0'
+	    call peg_error_fatal( lunerr, msg )
+	end if
+
+!   rce 2005-apr-28 - changed mapping loops to improve memory access
+!   now do rsub(l,k1:k2,m) <--> chem(it,kt1:kt2,jt,l) for each species
+	kt1 = ktmaps
+	kt2 = ktmape
+	k1 = kt1 + k_pegshift
+	k2 = kt2 + k_pegshift
+
+	if (imap .gt. 0) goto 2000
+ 
+!
+!   imap==0 -- map species and state variables from host arrays 
+!              to rsub, cairclm, ptotclm
+
+!   first zero everything (except relhumclm)
+	rsub(:,:,:) = 0.0
+	cairclm(:) = 0.0
+	ptotclm(:) = 0.0
+	afracsubarea(:,:) = 0.0
+	relhumclm(:) = aboxtest_min_relhum
+
+!   map gas and aerosol mixing ratios based on aboxtest_map_method
+!	1 - map aerosol species and h2so4/hno3/hcl/nh3 using the p_xxx
+!       2 - map 181 pegasus species using rsub(l) = chem(l+1)
+!       3 - do 2 followed by 1
+!	other - same as 1
+!   (2 and 3 are for box test purposes)
+	if ((aboxtest_map_method .eq. 2) .or.   &
+	    (aboxtest_map_method .eq. 3)) then
+	    do l = 2, num_chem
+		rsub(l,k1:k2,1) = chem(it,kt1:kt2,jt,l)/factgas
+	    end do
+	end if
+
+	p1st = param_first_scalar
+	if (aboxtest_map_method .ne. 2) then
+	    if (p_sulf .ge. p1st)   &
+		rsub(kh2so4,k1:k2,1) = chem(it,kt1:kt2,jt,p_sulf)/factgas
+	    if (p_hno3 .ge. p1st)   &
+		rsub(khno3,k1:k2,1)  = chem(it,kt1:kt2,jt,p_hno3)/factgas
+	    if (p_hcl .ge. p1st)   &
+		rsub(khcl,k1:k2,1)   = chem(it,kt1:kt2,jt,p_hcl)/factgas
+	    if (p_nh3 .ge. p1st)   &
+		rsub(knh3,k1:k2,1)   = chem(it,kt1:kt2,jt,p_nh3)/factgas
+
+!   rce 2005-apr-12 - added following species for cldchem, here and below:
+!   ko3, kso2, kh2o2, khcho, khcooh, koh, kho2, 
+!   kno3, kno, kno2, khono, kpan, kch3o2, kch3oh, kch3ooh
+	    if (p_o3 .ge. p1st)   &
+		rsub(ko3,k1:k2,1)   = chem(it,kt1:kt2,jt,p_o3)/factgas
+	    if (p_so2 .ge. p1st)   &
+		rsub(kso2,k1:k2,1)   = chem(it,kt1:kt2,jt,p_so2)/factgas
+	    if (p_h2o2 .ge. p1st)   &
+		rsub(kh2o2,k1:k2,1)   = chem(it,kt1:kt2,jt,p_h2o2)/factgas
+	    if (p_hcho .ge. p1st)   &
+		rsub(khcho,k1:k2,1)   = chem(it,kt1:kt2,jt,p_hcho)/factgas
+	    if (p_ora1 .ge. p1st)   &
+		rsub(khcooh,k1:k2,1)   = chem(it,kt1:kt2,jt,p_ora1)/factgas
+	    if (p_ho .ge. p1st)   &
+		rsub(koh,k1:k2,1)   = chem(it,kt1:kt2,jt,p_ho)/factgas
+	    if (p_ho2 .ge. p1st)   &
+		rsub(kho2,k1:k2,1)   = chem(it,kt1:kt2,jt,p_ho2)/factgas
+	    if (p_no3 .ge. p1st)   &
+		rsub(kno3,k1:k2,1)   = chem(it,kt1:kt2,jt,p_no3)/factgas
+	    if (p_no .ge. p1st)   &
+		rsub(kno,k1:k2,1)   = chem(it,kt1:kt2,jt,p_no)/factgas
+	    if (p_no2 .ge. p1st)   &
+		rsub(kno2,k1:k2,1)   = chem(it,kt1:kt2,jt,p_no2)/factgas
+	    if (p_hono .ge. p1st)   &
+		rsub(khono,k1:k2,1)   = chem(it,kt1:kt2,jt,p_hono)/factgas
+	    if (p_pan .ge. p1st)   &
+		rsub(kpan,k1:k2,1)   = chem(it,kt1:kt2,jt,p_pan)/factgas
+	    if (p_ch3o2 .ge. p1st)   &
+		rsub(kch3o2,k1:k2,1)   = chem(it,kt1:kt2,jt,p_ch3o2)/factgas
+	    if (p_ch3oh .ge. p1st)   &
+		rsub(kch3oh,k1:k2,1)   = chem(it,kt1:kt2,jt,p_ch3oh)/factgas
+	    if (p_op1 .ge. p1st)   &
+		rsub(kch3ooh,k1:k2,1)   = chem(it,kt1:kt2,jt,p_op1)/factgas
+
+	    do iphase=1,nphase_aer
+	    do itype=1,ntype_aer
+	    do n = 1, nsize_aer(itype)
+		rsub(lptr_so4_aer(n,itype,iphase),k1:k2,1) =   &
+		    chem(it,kt1:kt2,jt,lptr_so4_aer(n,itype,iphase))/factaerso4
+		rsub(numptr_aer(n,itype,iphase),k1:k2,1) =   &
+		    chem(it,kt1:kt2,jt,numptr_aer(n,itype,iphase))/factaernum
+
+		if (lptr_no3_aer(n,itype,iphase) .ge. p1st)   &
+		    rsub(lptr_no3_aer(n,itype,iphase),k1:k2,1) =   &
+		    chem(it,kt1:kt2,jt,lptr_no3_aer(n,itype,iphase))/factaerno3
+		if (lptr_cl_aer(n,itype,iphase) .ge. p1st)   &
+		    rsub(lptr_cl_aer(n,itype,iphase),k1:k2,1) =   &
+		    chem(it,kt1:kt2,jt,lptr_cl_aer(n,itype,iphase))/factaercl
+		if (lptr_msa_aer(n,itype,iphase) .ge. p1st)   &
+		    rsub(lptr_msa_aer(n,itype,iphase),k1:k2,1) =   &
+		    chem(it,kt1:kt2,jt,lptr_msa_aer(n,itype,iphase))/factaermsa
+		if (lptr_co3_aer(n,itype,iphase) .ge. p1st)   &
+		    rsub(lptr_co3_aer(n,itype,iphase),k1:k2,1) =   &
+		    chem(it,kt1:kt2,jt,lptr_co3_aer(n,itype,iphase))/factaerco3
+		if (lptr_nh4_aer(n,itype,iphase) .ge. p1st)   &
+		    rsub(lptr_nh4_aer(n,itype,iphase),k1:k2,1) =   &
+		    chem(it,kt1:kt2,jt,lptr_nh4_aer(n,itype,iphase))/factaernh4
+		if (lptr_na_aer(n,itype,iphase) .ge. p1st)   &
+		    rsub(lptr_na_aer(n,itype,iphase),k1:k2,1) =   &
+		    chem(it,kt1:kt2,jt,lptr_na_aer(n,itype,iphase))/factaerna
+		if (lptr_ca_aer(n,itype,iphase) .ge. p1st)   &
+		    rsub(lptr_ca_aer(n,itype,iphase),k1:k2,1) =   &
+		    chem(it,kt1:kt2,jt,lptr_ca_aer(n,itype,iphase))/factaerca
+		if (lptr_oin_aer(n,itype,iphase) .ge. p1st)   &
+		    rsub(lptr_oin_aer(n,itype,iphase),k1:k2,1) =   &
+		    chem(it,kt1:kt2,jt,lptr_oin_aer(n,itype,iphase))/factaeroin
+		if (lptr_oc_aer(n,itype,iphase) .ge. p1st)   &
+		    rsub(lptr_oc_aer(n,itype,iphase),k1:k2,1) =   &
+		    chem(it,kt1:kt2,jt,lptr_oc_aer(n,itype,iphase))/factaeroc
+		if (lptr_bc_aer(n,itype,iphase) .ge. p1st)   &
+		    rsub(lptr_bc_aer(n,itype,iphase),k1:k2,1) =   &
+		    chem(it,kt1:kt2,jt,lptr_bc_aer(n,itype,iphase))/factaerbc
+		if (hyswptr_aer(n,itype) .ge. p1st)   &
+		    rsub(hyswptr_aer(n,itype),k1:k2,1) =   &
+		    chem(it,kt1:kt2,jt,hyswptr_aer(n,itype))/factaerhysw
+		if (waterptr_aer(n,itype) .ge. p1st)   &
+		    rsub(waterptr_aer(n,itype),k1:k2,1) =   &
+		    chem(it,kt1:kt2,jt,waterptr_aer(n,itype))/factaerwater
+	    end do ! size
+	    end do ! type
+	    end do ! phase
+	end if
+
+!   map state variables
+	afracsubarea(k1:k2,1) = 1.0
+	rsub(ktemp,k1:k2,1) = t_phy(it,kt1:kt2,jt)
+	rsub(kh2o,k1:k2,1) = moist(it,kt1:kt2,jt,p_qv)/factmoist
+	cairclm(k1:k2) = rho_phy(it,kt1:kt2,jt)/factdens
+	ptotclm(k1:k2) = p_phy(it,kt1:kt2,jt)/factpres
+
+!   compute or get relative humidity, based on aboxtest_rh_method
+!	1 - compute from water vapor, temperature, and pressure
+!       2 - get from test driver via aboxtest_get_extra_args with iflag=30
+!       3 - do both, and use the relhum from test driver
+!	other positive - same as 1
+!	0 or negative - set to aboxtest_min_relhum
+
+#if defined ( aboxtest_box_testing_active )
+! *** start of "box testing" code section ***
+!     these code lines should be inactive when running wrf-chem
+!
+!   get relhumclm from box test driver
+ 	if ((aboxtest_rh_method .eq. 2) .or.   &
+ 	    (aboxtest_rh_method .eq. 3)) then
+ 	    do kt = ktmaps, ktmape
+ 		k = kt + k_pegshift
+ 		call aboxtest_get_extra_args( 30,   &
+ 		    it, jt, k, idum, idum, idum, idum, idum, idum,   &
+ 		    relhumclm(k), dum )
+ 	    end do
+ 	end if
+! ***  end  of "box testing" code section ***
+#endif
+
+!   compute relhumclm from water vapor, temperature, and pressure
+!   *** force relhum to between aboxtest_min/max_relhum
+	if ((aboxtest_rh_method .gt. 0) .and.   &
+	    (aboxtest_rh_method .ne. 2)) then
+	    do kt = ktmaps, ktmape
+		k = kt + k_pegshift
+		onemeps = 1.0 - 0.622
+		dumesat = esat_gchm( rsub(ktemp,k,1) )
+		dumrsat = dumesat / (ptotclm(k) - onemeps*dumesat)
+		dumrelhum = rsub(kh2o,k,1) / max( dumrsat, 1.e-20 )
+		dumrelhum = max( 0.0, min( 0.99, dumrelhum ) )
+
+		if (aboxtest_rh_method .eq. 3) then
+!		    write(msg,9720) k, relhumclm(k), dumrelhum,   &
+!			(dumrelhum-relhumclm(k))
+!9720		    format( 'k,rh1,rh2,2-1', i4, 3f14.10 )
+!		    call peg_message( lunerr, msg )
+		    continue
+		else
+		    relhumclm(k) = dumrelhum
+		end if
+		relhumclm(k) = max( relhumclm(k), aboxtest_min_relhum )
+		relhumclm(k) = min( relhumclm(k), aboxtest_max_relhum )
+	    end do
+	end if
+
+!   *** force temperature to be > aboxtest_min_temp
+	do kt = ktmaps, ktmape
+	    k = kt + k_pegshift
+	    rsub(ktemp,k,1) =   &
+		max( rsub(ktemp,k,1), aboxtest_min_temp )
+	end do
+
+	return
+
+
+!
+!   imap==1 -- map species from rsub back to host arrays 
+!   (map gas and aerosol mixing ratios based on aboxtest_map_method as above)
+!
+!   when aboxtest_gases_fixed==10, leave gases (h2so4,hno3,...) unchanged
+!
+2000	continue
+!   map gas and aerosol mixing ratios based on aboxtest_map_method
+!	1 - map aerosol species and h2so4/hno3/hcl/nh3 using the p_xxx
+!       2 - map 181 pegasus species using rsub(l) = chem(l+1)
+!       3 - do 2 followed by 1
+!	other - same as 1
+!   (2 and 3 are for box test purposes)
+	if ((aboxtest_map_method .eq. 2) .or.   &
+	    (aboxtest_map_method .eq. 3)) then
+	    do l = 2, num_chem
+		ido_l = 1
+		if (aboxtest_gases_fixed .eq. 10) then
+		    if ((l .eq. kh2so4  ) .or. (l .eq. khno3  ) .or.   &
+		        (l .eq. khcl    ) .or. (l .eq. knh3   ) .or.   &
+		        (l .eq. ko3     ) .or.                         &
+		        (l .eq. kso2    ) .or. (l .eq. kh2o2  ) .or.   &
+		        (l .eq. khcho   ) .or. (l .eq. khcooh ) .or.   &
+		        (l .eq. koh     ) .or. (l .eq. kho2   ) .or.   &
+		        (l .eq. kno3    ) .or. (l .eq. kno    ) .or.   &
+		        (l .eq. kno2    ) .or. (l .eq. khono  ) .or.   &
+		        (l .eq. kpan    ) .or. (l .eq. kch3o2 ) .or.   &
+		        (l .eq. kch3oh  ) .or. (l .eq. kch3ooh)) then
+			ido_l = 0
+		    end if
+		end if
+		if (ido_l .gt. 0) then
+		    chem(it,kt1:kt2,jt,l) = rsub(l,k1:k2,1)*factgas
+		end if
+	    end do
+	end if
+
+	p1st = param_first_scalar
+	if (aboxtest_map_method .ne. 2) then
+	  if (aboxtest_gases_fixed .ne. 10) then
+	    if (p_sulf .ge. p1st)   &
+		chem(it,kt1:kt2,jt,p_sulf) = rsub(kh2so4,k1:k2,1)*factgas
+	    if (p_hno3 .ge. p1st)   &
+		chem(it,kt1:kt2,jt,p_hno3)  = rsub(khno3,k1:k2,1)*factgas
+	    if (p_hcl .ge. p1st)   &
+		chem(it,kt1:kt2,jt,p_hcl)   = rsub(khcl,k1:k2,1)*factgas
+	    if (p_nh3 .ge. p1st)   &
+		chem(it,kt1:kt2,jt,p_nh3)  = rsub(knh3,k1:k2,1)*factgas
+
+	    if (p_o3 .ge. p1st)   &
+		chem(it,kt1:kt2,jt,p_o3)  = rsub(ko3,k1:k2,1)*factgas
+	    if (p_so2 .ge. p1st)   &
+		chem(it,kt1:kt2,jt,p_so2)  = rsub(kso2,k1:k2,1)*factgas
+	    if (p_h2o2 .ge. p1st)   &
+		chem(it,kt1:kt2,jt,p_h2o2)  = rsub(kh2o2,k1:k2,1)*factgas
+	    if (p_hcho .ge. p1st)   &
+		chem(it,kt1:kt2,jt,p_hcho)  = rsub(khcho,k1:k2,1)*factgas
+	    if (p_ora1 .ge. p1st)   &
+		chem(it,kt1:kt2,jt,p_ora1)  = rsub(khcooh,k1:k2,1)*factgas
+	    if (p_ho .ge. p1st)   &
+		chem(it,kt1:kt2,jt,p_ho)  = rsub(koh,k1:k2,1)*factgas
+	    if (p_ho2 .ge. p1st)   &
+		chem(it,kt1:kt2,jt,p_ho2)  = rsub(kho2,k1:k2,1)*factgas
+	    if (p_no3 .ge. p1st)   &
+		chem(it,kt1:kt2,jt,p_no3)  = rsub(kno3,k1:k2,1)*factgas
+	    if (p_no .ge. p1st)   &
+		chem(it,kt1:kt2,jt,p_no)  = rsub(kno,k1:k2,1)*factgas
+	    if (p_no2 .ge. p1st)   &
+		chem(it,kt1:kt2,jt,p_no2)  = rsub(kno2,k1:k2,1)*factgas
+	    if (p_hono .ge. p1st)   &
+		chem(it,kt1:kt2,jt,p_hono)  = rsub(khono,k1:k2,1)*factgas
+	    if (p_pan .ge. p1st)   &
+		chem(it,kt1:kt2,jt,p_pan)  = rsub(kpan,k1:k2,1)*factgas
+	    if (p_ch3o2 .ge. p1st)   &
+		chem(it,kt1:kt2,jt,p_ch3o2)  = rsub(kch3o2,k1:k2,1)*factgas
+	    if (p_ch3oh .ge. p1st)   &
+		chem(it,kt1:kt2,jt,p_ch3oh)  = rsub(kch3oh,k1:k2,1)*factgas
+	    if (p_op1 .ge. p1st)   &
+		chem(it,kt1:kt2,jt,p_op1)  = rsub(kch3ooh,k1:k2,1)*factgas
+	  end if
+
+	    do iphase=1,nphase_aer
+	    do itype=1,ntype_aer
+	    do n = 1, nsize_aer(itype)
+		chem(it,kt1:kt2,jt,lptr_so4_aer(n,itype,iphase)) =   &
+		    rsub(lptr_so4_aer(n,itype,iphase),k1:k2,1)*factaerso4
+		chem(it,kt1:kt2,jt,numptr_aer(n,itype,iphase)) =   &
+		    rsub(numptr_aer(n,itype,iphase),k1:k2,1)*factaernum
+
+		if (lptr_no3_aer(n,itype,iphase) .ge. p1st)   &
+		    chem(it,kt1:kt2,jt,lptr_no3_aer(n,itype,iphase)) =   &
+		    rsub(lptr_no3_aer(n,itype,iphase),k1:k2,1)*factaerno3
+		if (lptr_cl_aer(n,itype,iphase) .ge. p1st)   &
+		    chem(it,kt1:kt2,jt,lptr_cl_aer(n,itype,iphase)) =   &
+		    rsub(lptr_cl_aer(n,itype,iphase),k1:k2,1)*factaercl
+		if (lptr_msa_aer(n,itype,iphase) .ge. p1st)   &
+		    chem(it,kt1:kt2,jt,lptr_msa_aer(n,itype,iphase)) =   &
+		    rsub(lptr_msa_aer(n,itype,iphase),k1:k2,1)*factaermsa
+		if (lptr_co3_aer(n,itype,iphase) .ge. p1st)   &
+		    chem(it,kt1:kt2,jt,lptr_co3_aer(n,itype,iphase)) =   &
+		    rsub(lptr_co3_aer(n,itype,iphase),k1:k2,1)*factaerco3
+		if (lptr_nh4_aer(n,itype,iphase) .ge. p1st)   &
+		    chem(it,kt1:kt2,jt,lptr_nh4_aer(n,itype,iphase)) =   &
+		    rsub(lptr_nh4_aer(n,itype,iphase),k1:k2,1)*factaernh4
+		if (lptr_na_aer(n,itype,iphase) .ge. p1st)   &
+		    chem(it,kt1:kt2,jt,lptr_na_aer(n,itype,iphase)) =   &
+		    rsub(lptr_na_aer(n,itype,iphase),k1:k2,1)*factaerna
+		if (lptr_ca_aer(n,itype,iphase) .ge. p1st)   &
+		    chem(it,kt1:kt2,jt,lptr_ca_aer(n,itype,iphase)) =   &
+		    rsub(lptr_ca_aer(n,itype,iphase),k1:k2,1)*factaerca
+		if (lptr_oin_aer(n,itype,iphase) .ge. p1st)   &
+		    chem(it,kt1:kt2,jt,lptr_oin_aer(n,itype,iphase)) =   &
+		    rsub(lptr_oin_aer(n,itype,iphase),k1:k2,1)*factaeroin
+		if (lptr_oc_aer(n,itype,iphase) .ge. p1st)   &
+		    chem(it,kt1:kt2,jt,lptr_oc_aer(n,itype,iphase)) =   &
+		    rsub(lptr_oc_aer(n,itype,iphase),k1:k2,1)*factaeroc
+		if (lptr_bc_aer(n,itype,iphase) .ge. p1st)   &
+		    chem(it,kt1:kt2,jt,lptr_bc_aer(n,itype,iphase)) =   &
+		    rsub(lptr_bc_aer(n,itype,iphase),k1:k2,1)*factaerbc
+		if (hyswptr_aer(n,itype) .ge. p1st)   &
+		    chem(it,kt1:kt2,jt,hyswptr_aer(n,itype)) =   &
+		    rsub(hyswptr_aer(n,itype),k1:k2,1)*factaerhysw
+		if (waterptr_aer(n,itype) .ge. p1st)   &
+		    chem(it,kt1:kt2,jt,waterptr_aer(n,itype)) =   &
+		    rsub(waterptr_aer(n,itype),k1:k2,1)*factaerwater
+	    end do ! size
+	    end do ! type
+	    end do ! phase
+	end if
+
+
+	return
+
+	end subroutine mapaer_tofrom_host
+
+
+!-----------------------------------------------------------------------
+! *** note - eventually is_aerosol will be a subr argument
+!	subroutine init_data_mosaic_asect( is_aerosol )
+	subroutine init_data_mosaic_asect( )
+
+	use module_data_mosaic_asect
+	use module_data_mosaic_other, only:  lunerr, lunout,   &
+		aboxtest_testmode, aboxtest_units_convert,   &
+		aboxtest_rh_method, aboxtest_map_method,   &
+		aboxtest_gases_fixed, aboxtest_min_temp,   &
+		aboxtest_min_relhum, aboxtest_max_relhum
+	use module_data_mosaic_therm, only:  nbin_a, nbin_a_maxd
+	use module_mosaic_csuesat, only:  init_csuesat
+	use module_mosaic_movesect, only:  move_sections, test_move_sections
+	use module_peg_util, only:  peg_error_fatal
+
+
+#if defined ( cw_species_are_in_registry )
+	use module_configure, only:   &
+		p_so4_a01, p_so4_a02, p_so4_a03, p_so4_a04,   &
+		p_so4_a05, p_so4_a06, p_so4_a07, p_so4_a08,   &
+		p_so4_cw01
+#else
+	use module_configure, only:   &
+		p_so4_a01, p_so4_a02, p_so4_a03, p_so4_a04,   &
+		p_so4_a05, p_so4_a06, p_so4_a07, p_so4_a08
+#endif
+
+	use module_state_description, only:  param_first_scalar, num_chem
+
+	implicit none
+
+! *** note - eventually is_aerosol will be a subr argument
+!	logical, intent(out) :: is_aerosol(num_chem)
+        logical :: is_aerosol(num_chem)
+
+!   local variables
+	integer idum, itype, l, ldum, n, nhi, nsize_aer_dum
+	real dum
+	real, parameter :: pi = 3.14159265
+
+!
+!   set some "pegasus" control variables
+!
+	msectional = 20
+	maerocoag = -2
+	maerchem = 1
+	maeroptical = 1
+	maerchem_boxtest_output = -1
+
+!
+!   set ntype_aer = 1
+!
+	ntype_aer = 1
+
+!
+!   set number of aerosol bins using the wrf-chem sulfate pointers
+!
+	nsize_aer(:) = 0
+        itype=1
+	if (p_so4_a01 .ge. param_first_scalar) nsize_aer(itype) = 1
+	if (p_so4_a02 .ge. param_first_scalar) nsize_aer(itype) = 2
+	if (p_so4_a03 .ge. param_first_scalar) nsize_aer(itype) = 3
+	if (p_so4_a04 .ge. param_first_scalar) nsize_aer(itype) = 4
+	if (p_so4_a05 .ge. param_first_scalar) nsize_aer(itype) = 5
+	if (p_so4_a06 .ge. param_first_scalar) nsize_aer(itype) = 6
+	if (p_so4_a07 .ge. param_first_scalar) nsize_aer(itype) = 7
+	if (p_so4_a08 .ge. param_first_scalar) nsize_aer(itype) = 8
+
+	if (nsize_aer(itype) .le. 0) then
+	    call peg_error_fatal( lunerr,   &
+		'init_data_mosaic_asect - nsize_aer = 0' )
+	else if (nsize_aer(itype) .gt. maxd_asize) then
+	    call peg_error_fatal( lunerr,   &
+		'init_data_mosaic_asect - nsize_aer > maxd_asize' )
+	end if
+
+!
+!   set nbin_a to total number of aerosol bins (for all types)
+!
+	nbin_a = 0
+	do itype = 1, ntype_aer
+	    nbin_a = nbin_a + nsize_aer(itype)
+	end do
+	if (nbin_a .gt. nbin_a_maxd) then
+	    call peg_error_fatal( lunerr,   &
+		'init_data_mosaic_asect - nbin_a > nbin_a_maxd' )
+	end if
+
+!
+!   set nphase_aer (number of active aerosol species phases),
+!   the xx_phase, and maerosolincw
+!
+	nphase_aer = 0
+	maerosolincw = 0
+	if (nsize_aer(1) .gt. 0) then
+	    nphase_aer = 1
+	    ai_phase = 1
+
+#if defined ( cw_species_are_in_registry )
+	    if (p_so4_cw01 .ge. param_first_scalar) then
+		nphase_aer = 2
+		cw_phase = 2
+		maerosolincw = 1
+	    end if
+#endif
+	end if
+
+
+#if defined ( aboxtest_box_testing_active )
+! *** start of "box testing" code section ***
+!     these code lines should be inactive when running wrf-chem
+!
+!   set some variables to "box test" values
+ 	call aboxtest_get_extra_args( 10,   &
+ 		msectional, maerosolincw, maerocoag,   &
+ 		maerchem, maeroptical, maerchem_boxtest_output,   &
+ 		lunerr, lunout, idum, dum, dum )
+ 	call aboxtest_get_extra_args( 11,   &
+ 		aboxtest_testmode, aboxtest_units_convert,   &
+ 		aboxtest_rh_method, aboxtest_map_method,   &
+ 		aboxtest_gases_fixed, nsize_aer_dum,   &
+ 		idum, idum, idum, dum, dum )
+ 
+ 	itype = 1
+ 	if (nsize_aer_dum > 0) nsize_aer(itype) = nsize_aer_dum
+ 
+ 	aboxtest_min_temp = 0.0
+ 	aboxtest_min_relhum = 0.0
+ 	aboxtest_max_relhum = 1.0
+! ***  end  of "box testing" code section ***
+#endif
+
+
+!
+!   set master aerosol chemical types
+!
+	ntot_mastercomp_aer = 11
+
+	l = 1
+	mastercompindx_so4_aer = l
+	name_mastercomp_aer( l ) = 'sulfate'
+	dens_mastercomp_aer( l ) =  dens_so4_aer
+	mw_mastercomp_aer(   l ) =    mw_so4_aer
+	hygro_mastercomp_aer(l ) = hygro_so4_aer
+
+	l = 2
+	mastercompindx_no3_aer = l
+	name_mastercomp_aer( l ) = 'nitrate'
+	dens_mastercomp_aer( l ) =  dens_no3_aer
+	mw_mastercomp_aer(   l ) =    mw_no3_aer
+	hygro_mastercomp_aer(l ) = hygro_no3_aer
+
+	l = 3
+	mastercompindx_cl_aer = l
+	name_mastercomp_aer( l ) = 'chloride'
+	dens_mastercomp_aer( l ) =  dens_cl_aer
+	mw_mastercomp_aer(   l ) =    mw_cl_aer
+	hygro_mastercomp_aer(l ) = hygro_cl_aer
+
+	l = 4
+	mastercompindx_msa_aer = l
+	name_mastercomp_aer( l ) = 'msa'
+	dens_mastercomp_aer( l ) =  dens_msa_aer
+	mw_mastercomp_aer(   l ) =    mw_msa_aer
+	hygro_mastercomp_aer(l ) = hygro_msa_aer
+
+	l = 5
+	mastercompindx_co3_aer = l
+	name_mastercomp_aer( l ) = 'carbonate'
+	dens_mastercomp_aer( l ) =  dens_co3_aer
+	mw_mastercomp_aer(   l ) =    mw_co3_aer
+	hygro_mastercomp_aer(l ) = hygro_co3_aer
+
+	l = 6
+	mastercompindx_nh4_aer = l
+	name_mastercomp_aer( l ) = 'ammonium'
+	dens_mastercomp_aer( l ) =  dens_nh4_aer
+	mw_mastercomp_aer(   l ) =    mw_nh4_aer
+	hygro_mastercomp_aer(l ) = hygro_nh4_aer
+
+	l = 7
+	mastercompindx_na_aer = l
+	name_mastercomp_aer( l ) = 'sodium'
+	dens_mastercomp_aer( l ) =  dens_na_aer
+	mw_mastercomp_aer(   l ) =    mw_na_aer
+	hygro_mastercomp_aer(l ) = hygro_na_aer
+
+	l = 8
+	mastercompindx_ca_aer = l
+	name_mastercomp_aer( l ) = 'calcium'
+	dens_mastercomp_aer( l ) =  dens_ca_aer
+	mw_mastercomp_aer(   l ) =    mw_ca_aer
+	hygro_mastercomp_aer(l ) = hygro_ca_aer
+
+	l = 9
+	mastercompindx_oin_aer = l
+	name_mastercomp_aer( l ) = 'otherinorg'
+	dens_mastercomp_aer( l ) =  dens_oin_aer
+	mw_mastercomp_aer(   l ) =    mw_oin_aer
+	hygro_mastercomp_aer(l ) = hygro_oin_aer
+
+	l = 10
+	mastercompindx_oc_aer = l
+	name_mastercomp_aer( l ) = 'organic-c'
+	dens_mastercomp_aer( l ) =  dens_oc_aer
+	mw_mastercomp_aer(   l ) =    mw_oc_aer
+	hygro_mastercomp_aer(l ) = hygro_oc_aer
+
+	l = 11
+	mastercompindx_bc_aer = l
+	name_mastercomp_aer( l ) = 'black-c'
+	dens_mastercomp_aer( l ) =  dens_bc_aer
+	mw_mastercomp_aer(   l ) =    mw_bc_aer
+	hygro_mastercomp_aer(l ) = hygro_bc_aer
+
+
+!
+!   set section size arrays
+!
+        do itype = 1, ntype_aer
+	    nhi = nsize_aer(itype)
+	    dlo_sect(1,itype) = 3.90625e-6
+	    dhi_sect(nhi,itype) = 10.0e-4
+
+	    dum = alog( dhi_sect(nhi,itype)/dlo_sect(1,itype) ) / nhi
+	    do n = 2, nhi
+		dlo_sect(n,itype) = dlo_sect(1,itype) * exp( (n-1)*dum )
+		dhi_sect(n-1,itype) = dlo_sect(n,itype)
+	    end do
+	    do n = 1, nhi
+		dcen_sect(n,itype) = sqrt( dlo_sect(n,itype)*dhi_sect(n,itype) )
+		volumlo_sect(n,itype) = (pi/6.) * (dlo_sect(n,itype)**3)
+		volumhi_sect(n,itype) = (pi/6.) * (dhi_sect(n,itype)**3)
+		volumcen_sect(n,itype) = (pi/6.) * (dcen_sect(n,itype)**3)
+		sigmag_aer(n,itype) = alog(dhi_sect(n,itype)/dlo_sect(n,itype))
+	    end do
+	end do
+
+!
+!   set pointers to wrf chem-array species
+!
+	call init_data_mosaic_ptr( is_aerosol )
+
+!
+!   csuesat initialization
+!
+	call init_csuesat
+
+!
+!   move_sect initialization (and testing)
+!
+!	subr move_sections( iflag, iclm, jclm, k, m )
+	call move_sections(    -1,    1,    1, 1, 1 )
+
+	call test_move_sections( 1,   1,    1, 1, 1 )
+    
+
+	end subroutine init_data_mosaic_asect
+
+
+!-----------------------------------------------------------------------
+	subroutine init_data_mosaic_ptr( is_aerosol )
+
+	use module_configure
+	use module_state_description, only:  param_first_scalar,num_chem
+	use module_data_mosaic_asect
+	use module_data_mosaic_other, only:   &
+		kh2so4, khno3, khcl, knh3, ko3, kh2o, ktemp,   &
+		kso2, kh2o2, khcho, khcooh, koh, kho2,   &
+		kno3, kno, kno2, khono, kpan, kch3o2, kch3oh, kch3ooh,   &
+		lmaxd, l2maxd, ltot, ltot2, lunout, lunerr, name
+	use module_peg_util, only:  peg_error_fatal, peg_message
+
+	implicit none
+
+!   subr arguments
+        logical, intent(out) :: is_aerosol(num_chem)
+!   local variables
+	integer l, ll, n, p1st
+	integer iaddto_ncomp, iaddto_ncomp_plustracer
+	integer l_mastercomp, lptr_dum
+	integer mcindx_dum
+	integer isize, itype, iphase
+	integer nphasetxt, nsizetxt, nspectxt, ntypetxt
+	integer ncomp_dum(maxd_asize,maxd_aphase)
+	integer ncomp_plustracer_dum(maxd_asize,maxd_aphase)
+
+	integer y_so4, y_no3, y_cl, y_msa, y_co3, y_nh4, y_na,   &
+		y_ca, y_oin, y_oc, y_bc, y_hysw, y_water, y_num
+	integer y_cw_so4, y_cw_no3, y_cw_cl, y_cw_msa, y_cw_co3,   &
+		y_cw_nh4, y_cw_na,   &
+		y_cw_ca, y_cw_oin, y_cw_oc, y_cw_bc, y_cw_num
+
+	character*200 msg
+	character*8 phasetxt, sizetxt, spectxt, typetxt
+
+
+	p1st = param_first_scalar
+!
+!   set up pointers to aerosol species in the wrf-chem "chem" array
+!   note:  lptr=1 points to the first chem species which is "unused"
+!
+	itype=1
+	lptr_so4_aer(:,itype,:)      = 1
+	lptr_no3_aer(:,itype,:)      = 1
+	lptr_cl_aer(:,itype,:)       = 1
+	lptr_msa_aer(:,itype,:)      = 1
+	lptr_co3_aer(:,itype,:)      = 1
+	lptr_nh4_aer(:,itype,:)      = 1
+	lptr_na_aer(:,itype,:)       = 1
+	lptr_ca_aer(:,itype,:)       = 1
+	lptr_oin_aer(:,itype,:)      = 1
+	lptr_oc_aer(:,itype,:)       = 1
+	lptr_bc_aer(:,itype,:)       = 1
+	hyswptr_aer(:,itype)    = 1
+	waterptr_aer(:,itype)        = 1
+	numptr_aer(:,itype,:)        = 1
+
+
+	if (nsize_aer(itype) .ge. 1) then
+	    lptr_so4_aer(01,itype,ai_phase)      = p_so4_a01
+	    lptr_no3_aer(01,itype,ai_phase)      = p_no3_a01
+	    lptr_cl_aer(01,itype,ai_phase)       = p_cl_a01
+	    lptr_msa_aer(01,itype,ai_phase)      = p_msa_a01
+	    lptr_co3_aer(01,itype,ai_phase)      = p_co3_a01
+	    lptr_nh4_aer(01,itype,ai_phase)      = p_nh4_a01
+	    lptr_na_aer(01,itype,ai_phase)       = p_na_a01
+	    lptr_ca_aer(01,itype,ai_phase)       = p_ca_a01
+	    lptr_oin_aer(01,itype,ai_phase)      = p_oin_a01
+	    lptr_oc_aer(01,itype,ai_phase)       = p_oc_a01
+	    lptr_bc_aer(01,itype,ai_phase)       = p_bc_a01
+	    hyswptr_aer(01,itype)                = p_hysw_a01
+	    waterptr_aer(01,itype)               = p_water_a01
+	    numptr_aer(01,itype,ai_phase)        = p_num_a01
+	end if
+
+	if (nsize_aer(itype) .ge. 2) then
+	    lptr_so4_aer(02,itype,ai_phase)      = p_so4_a02
+	    lptr_no3_aer(02,itype,ai_phase)      = p_no3_a02
+	    lptr_cl_aer(02,itype,ai_phase)       = p_cl_a02
+	    lptr_msa_aer(02,itype,ai_phase)      = p_msa_a02
+	    lptr_co3_aer(02,itype,ai_phase)      = p_co3_a02
+	    lptr_nh4_aer(02,itype,ai_phase)      = p_nh4_a02
+	    lptr_na_aer(02,itype,ai_phase)       = p_na_a02
+	    lptr_ca_aer(02,itype,ai_phase)       = p_ca_a02
+	    lptr_oin_aer(02,itype,ai_phase)      = p_oin_a02
+	    lptr_oc_aer(02,itype,ai_phase)       = p_oc_a02
+	    lptr_bc_aer(02,itype,ai_phase)       = p_bc_a02
+	    hyswptr_aer(02,itype)                = p_hysw_a02
+	    waterptr_aer(02,itype)               = p_water_a02
+	    numptr_aer(02,itype,ai_phase)        = p_num_a02
+	end if
+
+	if (nsize_aer(itype) .ge. 3) then
+	    lptr_so4_aer(03,itype,ai_phase)      = p_so4_a03
+	    lptr_no3_aer(03,itype,ai_phase)      = p_no3_a03
+	    lptr_cl_aer(03,itype,ai_phase)       = p_cl_a03
+	    lptr_msa_aer(03,itype,ai_phase)      = p_msa_a03
+	    lptr_co3_aer(03,itype,ai_phase)      = p_co3_a03
+	    lptr_nh4_aer(03,itype,ai_phase)      = p_nh4_a03
+	    lptr_na_aer(03,itype,ai_phase)       = p_na_a03
+	    lptr_ca_aer(03,itype,ai_phase)       = p_ca_a03
+	    lptr_oin_aer(03,itype,ai_phase)      = p_oin_a03
+	    lptr_oc_aer(03,itype,ai_phase)       = p_oc_a03
+	    lptr_bc_aer(03,itype,ai_phase)       = p_bc_a03
+	    hyswptr_aer(03,itype)                = p_hysw_a03
+	    waterptr_aer(03,itype)               = p_water_a03
+	    numptr_aer(03,itype,ai_phase)        = p_num_a03
+	end if
+
+	if (nsize_aer(itype) .ge. 4) then
+	    lptr_so4_aer(04,itype,ai_phase)      = p_so4_a04
+	    lptr_no3_aer(04,itype,ai_phase)      = p_no3_a04
+	    lptr_cl_aer(04,itype,ai_phase)       = p_cl_a04
+	    lptr_msa_aer(04,itype,ai_phase)      = p_msa_a04
+	    lptr_co3_aer(04,itype,ai_phase)      = p_co3_a04
+	    lptr_nh4_aer(04,itype,ai_phase)      = p_nh4_a04
+	    lptr_na_aer(04,itype,ai_phase)       = p_na_a04
+	    lptr_ca_aer(04,itype,ai_phase)       = p_ca_a04
+	    lptr_oin_aer(04,itype,ai_phase)      = p_oin_a04
+	    lptr_oc_aer(04,itype,ai_phase)       = p_oc_a04
+	    lptr_bc_aer(04,itype,ai_phase)       = p_bc_a04
+	    hyswptr_aer(04,itype)                = p_hysw_a04
+	    waterptr_aer(04,itype)               = p_water_a04
+	    numptr_aer(04,itype,ai_phase)        = p_num_a04
+	end if
+
+	if (nsize_aer(itype) .ge. 5) then
+	    lptr_so4_aer(05,itype,ai_phase)      = p_so4_a05
+	    lptr_no3_aer(05,itype,ai_phase)      = p_no3_a05
+	    lptr_cl_aer(05,itype,ai_phase)       = p_cl_a05
+	    lptr_msa_aer(05,itype,ai_phase)      = p_msa_a05
+	    lptr_co3_aer(05,itype,ai_phase)      = p_co3_a05
+	    lptr_nh4_aer(05,itype,ai_phase)      = p_nh4_a05
+	    lptr_na_aer(05,itype,ai_phase)       = p_na_a05
+	    lptr_ca_aer(05,itype,ai_phase)       = p_ca_a05
+	    lptr_oin_aer(05,itype,ai_phase)      = p_oin_a05
+	    lptr_oc_aer(05,itype,ai_phase)       = p_oc_a05
+	    lptr_bc_aer(05,itype,ai_phase)       = p_bc_a05
+	    hyswptr_aer(05,itype)                = p_hysw_a05
+	    waterptr_aer(05,itype)               = p_water_a05
+	    numptr_aer(05,itype,ai_phase)        = p_num_a05
+	end if
+
+	if (nsize_aer(itype) .ge. 6) then
+	    lptr_so4_aer(06,itype,ai_phase)      = p_so4_a06
+	    lptr_no3_aer(06,itype,ai_phase)      = p_no3_a06
+	    lptr_cl_aer(06,itype,ai_phase)       = p_cl_a06
+	    lptr_msa_aer(06,itype,ai_phase)      = p_msa_a06
+	    lptr_co3_aer(06,itype,ai_phase)      = p_co3_a06
+	    lptr_nh4_aer(06,itype,ai_phase)      = p_nh4_a06
+	    lptr_na_aer(06,itype,ai_phase)       = p_na_a06
+	    lptr_ca_aer(06,itype,ai_phase)       = p_ca_a06
+	    lptr_oin_aer(06,itype,ai_phase)      = p_oin_a06
+	    lptr_oc_aer(06,itype,ai_phase)       = p_oc_a06
+	    lptr_bc_aer(06,itype,ai_phase)       = p_bc_a06
+	    hyswptr_aer(06,itype)                = p_hysw_a06
+	    waterptr_aer(06,itype)               = p_water_a06
+	    numptr_aer(06,itype,ai_phase)        = p_num_a06
+	end if
+
+	if (nsize_aer(itype) .ge. 7) then
+	    lptr_so4_aer(07,itype,ai_phase)      = p_so4_a07
+	    lptr_no3_aer(07,itype,ai_phase)      = p_no3_a07
+	    lptr_cl_aer(07,itype,ai_phase)       = p_cl_a07
+	    lptr_msa_aer(07,itype,ai_phase)      = p_msa_a07
+	    lptr_co3_aer(07,itype,ai_phase)      = p_co3_a07
+	    lptr_nh4_aer(07,itype,ai_phase)      = p_nh4_a07
+	    lptr_na_aer(07,itype,ai_phase)       = p_na_a07
+	    lptr_ca_aer(07,itype,ai_phase)       = p_ca_a07
+	    lptr_oin_aer(07,itype,ai_phase)      = p_oin_a07
+	    lptr_oc_aer(07,itype,ai_phase)       = p_oc_a07
+	    lptr_bc_aer(07,itype,ai_phase)       = p_bc_a07
+	    hyswptr_aer(07,itype)                = p_hysw_a07
+	    waterptr_aer(07,itype)               = p_water_a07
+	    numptr_aer(07,itype,ai_phase)        = p_num_a07
+	end if
+
+	if (nsize_aer(itype) .ge. 8) then
+	    lptr_so4_aer(08,itype,ai_phase)      = p_so4_a08
+	    lptr_no3_aer(08,itype,ai_phase)      = p_no3_a08
+	    lptr_cl_aer(08,itype,ai_phase)       = p_cl_a08
+	    lptr_msa_aer(08,itype,ai_phase)      = p_msa_a08
+	    lptr_co3_aer(08,itype,ai_phase)      = p_co3_a08
+	    lptr_nh4_aer(08,itype,ai_phase)      = p_nh4_a08
+	    lptr_na_aer(08,itype,ai_phase)       = p_na_a08
+	    lptr_ca_aer(08,itype,ai_phase)       = p_ca_a08
+	    lptr_oin_aer(08,itype,ai_phase)      = p_oin_a08
+	    lptr_oc_aer(08,itype,ai_phase)       = p_oc_a08
+	    lptr_bc_aer(08,itype,ai_phase)       = p_bc_a08
+	    hyswptr_aer(08,itype)                = p_hysw_a08
+	    waterptr_aer(08,itype)               = p_water_a08
+	    numptr_aer(08,itype,ai_phase)        = p_num_a08
+	end if
+
+
+#if defined ( cw_species_are_in_registry )
+!   this code is "active" only when cw species are in the registry
+	if (nsize_aer(itype) .ge. 1) then
+	  if (cw_phase .gt. 0) then
+	    lptr_so4_aer(01,itype,cw_phase)      = p_so4_cw01
+	    lptr_no3_aer(01,itype,cw_phase)      = p_no3_cw01
+	    lptr_cl_aer(01,itype,cw_phase)       = p_cl_cw01
+	    lptr_msa_aer(01,itype,cw_phase)      = p_msa_cw01
+	    lptr_co3_aer(01,itype,cw_phase)      = p_co3_cw01
+	    lptr_nh4_aer(01,itype,cw_phase)      = p_nh4_cw01
+	    lptr_na_aer(01,itype,cw_phase)       = p_na_cw01
+	    lptr_ca_aer(01,itype,cw_phase)       = p_ca_cw01
+	    lptr_oin_aer(01,itype,cw_phase)      = p_oin_cw01
+	    lptr_oc_aer(01,itype,cw_phase)       = p_oc_cw01
+	    lptr_bc_aer(01,itype,cw_phase)       = p_bc_cw01
+	    numptr_aer(01,itype,cw_phase)        = p_num_cw01
+	  end if
+	end if
+
+	if (nsize_aer(itype) .ge. 2) then
+	  if (cw_phase .gt. 0) then
+	    lptr_so4_aer(02,itype,cw_phase)      = p_so4_cw02
+	    lptr_no3_aer(02,itype,cw_phase)      = p_no3_cw02
+	    lptr_cl_aer(02,itype,cw_phase)       = p_cl_cw02
+	    lptr_msa_aer(02,itype,cw_phase)      = p_msa_cw02
+	    lptr_co3_aer(02,itype,cw_phase)      = p_co3_cw02
+	    lptr_nh4_aer(02,itype,cw_phase)      = p_nh4_cw02
+	    lptr_na_aer(02,itype,cw_phase)       = p_na_cw02
+	    lptr_ca_aer(02,itype,cw_phase)       = p_ca_cw02
+	    lptr_oin_aer(02,itype,cw_phase)      = p_oin_cw02
+	    lptr_oc_aer(02,itype,cw_phase)       = p_oc_cw02
+	    lptr_bc_aer(02,itype,cw_phase)       = p_bc_cw02
+	    numptr_aer(02,itype,cw_phase)        = p_num_cw02
+	  end if
+	end if
+
+	if (nsize_aer(itype) .ge. 3) then
+	  if (cw_phase .gt. 0) then
+	    lptr_so4_aer(03,itype,cw_phase)      = p_so4_cw03
+	    lptr_no3_aer(03,itype,cw_phase)      = p_no3_cw03
+	    lptr_cl_aer(03,itype,cw_phase)       = p_cl_cw03
+	    lptr_msa_aer(03,itype,cw_phase)      = p_msa_cw03
+	    lptr_co3_aer(03,itype,cw_phase)      = p_co3_cw03
+	    lptr_nh4_aer(03,itype,cw_phase)      = p_nh4_cw03
+	    lptr_na_aer(03,itype,cw_phase)       = p_na_cw03
+	    lptr_ca_aer(03,itype,cw_phase)       = p_ca_cw03
+	    lptr_oin_aer(03,itype,cw_phase)      = p_oin_cw03
+	    lptr_oc_aer(03,itype,cw_phase)       = p_oc_cw03
+	    lptr_bc_aer(03,itype,cw_phase)       = p_bc_cw03
+	    numptr_aer(03,itype,cw_phase)        = p_num_cw03
+	  end if
+	end if
+
+	if (nsize_aer(itype) .ge. 4) then
+	  if (cw_phase .gt. 0) then
+	    lptr_so4_aer(04,itype,cw_phase)      = p_so4_cw04
+	    lptr_no3_aer(04,itype,cw_phase)      = p_no3_cw04
+	    lptr_cl_aer(04,itype,cw_phase)       = p_cl_cw04
+	    lptr_msa_aer(04,itype,cw_phase)      = p_msa_cw04
+	    lptr_co3_aer(04,itype,cw_phase)      = p_co3_cw04
+	    lptr_nh4_aer(04,itype,cw_phase)      = p_nh4_cw04
+	    lptr_na_aer(04,itype,cw_phase)       = p_na_cw04
+	    lptr_ca_aer(04,itype,cw_phase)       = p_ca_cw04
+	    lptr_oin_aer(04,itype,cw_phase)      = p_oin_cw04
+	    lptr_oc_aer(04,itype,cw_phase)       = p_oc_cw04
+	    lptr_bc_aer(04,itype,cw_phase)       = p_bc_cw04
+	    numptr_aer(04,itype,cw_phase)        = p_num_cw04
+	  end if
+	end if
+
+	if (nsize_aer(itype) .ge. 5) then
+	  if (cw_phase .gt. 0) then
+	    lptr_so4_aer(05,itype,cw_phase)      = p_so4_cw05
+	    lptr_no3_aer(05,itype,cw_phase)      = p_no3_cw05
+	    lptr_cl_aer(05,itype,cw_phase)       = p_cl_cw05
+	    lptr_msa_aer(05,itype,cw_phase)      = p_msa_cw05
+	    lptr_co3_aer(05,itype,cw_phase)      = p_co3_cw05
+	    lptr_nh4_aer(05,itype,cw_phase)      = p_nh4_cw05
+	    lptr_na_aer(05,itype,cw_phase)       = p_na_cw05
+	    lptr_ca_aer(05,itype,cw_phase)       = p_ca_cw05
+	    lptr_oin_aer(05,itype,cw_phase)      = p_oin_cw05
+	    lptr_oc_aer(05,itype,cw_phase)       = p_oc_cw05
+	    lptr_bc_aer(05,itype,cw_phase)       = p_bc_cw05
+	    numptr_aer(05,itype,cw_phase)        = p_num_cw05
+	  end if
+	end if
+
+	if (nsize_aer(itype) .ge. 6) then
+	  if (cw_phase .gt. 0) then
+	    lptr_so4_aer(06,itype,cw_phase)      = p_so4_cw06
+	    lptr_no3_aer(06,itype,cw_phase)      = p_no3_cw06
+	    lptr_cl_aer(06,itype,cw_phase)       = p_cl_cw06
+	    lptr_msa_aer(06,itype,cw_phase)      = p_msa_cw06
+	    lptr_co3_aer(06,itype,cw_phase)      = p_co3_cw06
+	    lptr_nh4_aer(06,itype,cw_phase)      = p_nh4_cw06
+	    lptr_na_aer(06,itype,cw_phase)       = p_na_cw06
+	    lptr_ca_aer(06,itype,cw_phase)       = p_ca_cw06
+	    lptr_oin_aer(06,itype,cw_phase)      = p_oin_cw06
+	    lptr_oc_aer(06,itype,cw_phase)       = p_oc_cw06
+	    lptr_bc_aer(06,itype,cw_phase)       = p_bc_cw06
+	    numptr_aer(06,itype,cw_phase)        = p_num_cw06
+	  end if
+	end if
+
+	if (nsize_aer(itype) .ge. 7) then
+	  if (cw_phase .gt. 0) then
+	    lptr_so4_aer(07,itype,cw_phase)      = p_so4_cw07
+	    lptr_no3_aer(07,itype,cw_phase)      = p_no3_cw07
+	    lptr_cl_aer(07,itype,cw_phase)       = p_cl_cw07
+	    lptr_msa_aer(07,itype,cw_phase)      = p_msa_cw07
+	    lptr_co3_aer(07,itype,cw_phase)      = p_co3_cw07
+	    lptr_nh4_aer(07,itype,cw_phase)      = p_nh4_cw07
+	    lptr_na_aer(07,itype,cw_phase)       = p_na_cw07
+	    lptr_ca_aer(07,itype,cw_phase)       = p_ca_cw07
+	    lptr_oin_aer(07,itype,cw_phase)      = p_oin_cw07
+	    lptr_oc_aer(07,itype,cw_phase)       = p_oc_cw07
+	    lptr_bc_aer(07,itype,cw_phase)       = p_bc_cw07
+	    numptr_aer(07,itype,cw_phase)        = p_num_cw07
+	  end if
+	end if
+
+	if (nsize_aer(itype) .ge. 8) then
+	  if (cw_phase .gt. 0) then
+	    lptr_so4_aer(08,itype,cw_phase)      = p_so4_cw08
+	    lptr_no3_aer(08,itype,cw_phase)      = p_no3_cw08
+	    lptr_cl_aer(08,itype,cw_phase)       = p_cl_cw08
+	    lptr_msa_aer(08,itype,cw_phase)      = p_msa_cw08
+	    lptr_co3_aer(08,itype,cw_phase)      = p_co3_cw08
+	    lptr_nh4_aer(08,itype,cw_phase)      = p_nh4_cw08
+	    lptr_na_aer(08,itype,cw_phase)       = p_na_cw08
+	    lptr_ca_aer(08,itype,cw_phase)       = p_ca_cw08
+	    lptr_oin_aer(08,itype,cw_phase)      = p_oin_cw08
+	    lptr_oc_aer(08,itype,cw_phase)       = p_oc_cw08
+	    lptr_bc_aer(08,itype,cw_phase)       = p_bc_cw08
+	    numptr_aer(08,itype,cw_phase)        = p_num_cw08
+	  end if
+	end if
+#endif
+
+
+!
+!   define the massptr_aer and mastercompptr_aer pointers
+!   and the name() species names
+!
+
+!   first initialize
+	do l = 1, l2maxd
+	    write( name(l), '(a,i4.4,15x)' ) 'r', l
+	end do
+	massptr_aer(:,:,:,:) = -999888777
+	mastercompptr_aer(:,:) = -999888777
+
+	do 2800 itype = 1, ntype_aer
+
+	if (itype .eq. 1) then
+	    typetxt = ' '
+	    ntypetxt = 1
+	    if (ntype_aer .gt. 1) then
+		typetxt = '_t1'
+		ntypetxt = 3
+	    end if
+	else if (itype .le. 9) then
+	    write(typetxt,'(a,i1)') '_t', itype
+	    ntypetxt = 3
+	else if (itype .le. 99) then
+	    write(typetxt,'(a,i2)') '_t', itype
+	    ntypetxt = 4
+	else
+	    typetxt = '_t??'
+	    ntypetxt = 4
+	end if
+
+	ncomp_dum(:,:) = 0
+	ncomp_plustracer_dum(:,:) = 0
+
+	do 2700 isize = 1, nsize_aer(itype)
+	n =isize
+
+	if (isize .le. 9) then
+	    write(sizetxt,'(i1)') isize
+	    nsizetxt = 1
+	else if (isize .le. 99) then
+	    write(sizetxt,'(i2)') isize
+	    nsizetxt = 2
+	else if (isize .le. 999) then
+	    write(sizetxt,'(i3)') isize
+	    nsizetxt = 3
+	else
+	    sizetxt = '??'
+	    nsizetxt = 2
+	end if
+
+
+	do 2600 iphase = 1, nphase_aer
+
+	if (iphase .eq. ai_phase) then
+	    phasetxt = 'a'
+	    nphasetxt = 1
+	else if (iphase .eq. cw_phase) then
+	    phasetxt = 'cw'
+	    nphasetxt = 2
+	else 
+	    phasetxt = '??'
+	    nphasetxt = 2
+	end if
+
+
+	do 2500 l_mastercomp = -2, ntot_mastercomp_aer
+
+	iaddto_ncomp = 1
+	iaddto_ncomp_plustracer = 1
+
+	if (l_mastercomp .eq. -2) then
+	    iaddto_ncomp = 0
+	    iaddto_ncomp_plustracer = 0
+	    lptr_dum = numptr_aer(n,itype,iphase)
+	    mcindx_dum = -2
+	    spectxt = 'numb_'
+	    nspectxt = 5
+
+	else if (l_mastercomp .eq. -1) then
+	    if (iphase .ne. ai_phase) goto 2500
+	    iaddto_ncomp = 0
+	    iaddto_ncomp_plustracer = 0
+	    lptr_dum = waterptr_aer(n,itype)
+	    mcindx_dum = -1
+	    spectxt = 'water_'
+	    nspectxt = 6
+
+	else if (l_mastercomp .eq. 0) then
+	    if (iphase .ne. ai_phase) goto 2500
+	    iaddto_ncomp = 0
+	    iaddto_ncomp_plustracer = 0
+	    lptr_dum = hyswptr_aer(n,itype)
+	    mcindx_dum = 0
+	    spectxt = 'hysw_'
+	    nspectxt = 5
+
+	else if (l_mastercomp .eq. mastercompindx_so4_aer) then
+	    lptr_dum = lptr_so4_aer(n,itype,iphase)
+	    mcindx_dum = mastercompindx_so4_aer
+	    spectxt = 'so4_'
+	    nspectxt = 4
+
+	else if (l_mastercomp .eq. mastercompindx_no3_aer) then
+	    lptr_dum = lptr_no3_aer(n,itype,iphase)
+	    mcindx_dum = mastercompindx_no3_aer
+	    spectxt = 'no3_'
+	    nspectxt = 4
+
+	else if (l_mastercomp .eq. mastercompindx_cl_aer) then
+	    lptr_dum = lptr_cl_aer(n,itype,iphase)
+	    mcindx_dum = mastercompindx_cl_aer
+	    spectxt = 'cl_'
+	    nspectxt = 3
+
+	else if (l_mastercomp .eq. mastercompindx_msa_aer) then
+	    lptr_dum = lptr_msa_aer(n,itype,iphase)
+	    mcindx_dum = mastercompindx_msa_aer
+	    spectxt = 'msa_'
+	    nspectxt = 4
+
+	else if (l_mastercomp .eq. mastercompindx_co3_aer) then
+	    lptr_dum = lptr_co3_aer(n,itype,iphase)
+	    mcindx_dum = mastercompindx_co3_aer
+	    spectxt = 'co3_'
+	    nspectxt = 4
+
+	else if (l_mastercomp .eq. mastercompindx_nh4_aer) then
+	    lptr_dum = lptr_nh4_aer(n,itype,iphase)
+	    mcindx_dum = mastercompindx_nh4_aer
+	    spectxt = 'nh4_'
+	    nspectxt = 4
+
+	else if (l_mastercomp .eq. mastercompindx_na_aer) then
+	    lptr_dum = lptr_na_aer(n,itype,iphase)
+	    mcindx_dum = mastercompindx_na_aer
+	    spectxt = 'na_'
+	    nspectxt = 3
+
+	else if (l_mastercomp .eq. mastercompindx_ca_aer) then
+	    lptr_dum = lptr_ca_aer(n,itype,iphase)
+	    mcindx_dum = mastercompindx_ca_aer
+	    spectxt = 'ca_'
+	    nspectxt = 3
+
+	else if (l_mastercomp .eq. mastercompindx_oin_aer) then
+	    lptr_dum = lptr_oin_aer(n,itype,iphase)
+	    mcindx_dum = mastercompindx_oin_aer
+	    spectxt = 'oin_'
+	    nspectxt = 4
+
+	else if (l_mastercomp .eq. mastercompindx_oc_aer) then
+	    lptr_dum = lptr_oc_aer(n,itype,iphase)
+	    mcindx_dum = mastercompindx_oc_aer
+	    spectxt = 'oc_'
+	    nspectxt = 3
+
+	else if (l_mastercomp .eq. mastercompindx_bc_aer) then
+	    lptr_dum = lptr_bc_aer(n,itype,iphase)
+	    mcindx_dum = mastercompindx_bc_aer
+	    spectxt = 'bc_'
+	    nspectxt = 3
+
+	else
+	    goto 2500
+	end if
+	
+	    
+	if (lptr_dum .gt. lmaxd) then
+! rce 2005-mar-14 - added check for lptr_dum > lmaxd
+	    write( msg, '(a,3(1x,i4))' ) 'itype, isize, iphase =',   &
+		itype, isize, iphase
+	    call peg_message( lunout, msg )
+	    write( msg, '(a,3(1x,i4))' ) 'l_mastercomp, lptr_dum, lmaxd =',   &
+		l_mastercomp, lptr_dum, lmaxd
+	    call peg_message( lunout, msg )
+	    msg = '*** subr init_data_mosaic_ptr error - lptr_dum > lmaxd'
+	    call peg_error_fatal( lunerr, msg )
+
+	else if (lptr_dum .ge. p1st) then
+
+	    ncomp_dum(isize,iphase) = ncomp_dum(isize,iphase) + iaddto_ncomp
+	    ncomp_plustracer_dum(isize,iphase) =   &
+		ncomp_plustracer_dum(isize,iphase) + iaddto_ncomp_plustracer
+
+	    name(lptr_dum) =   &
+		spectxt(1:nspectxt) // phasetxt(1:nphasetxt) //   &
+		sizetxt(1:nsizetxt) //  typetxt(1:ntypetxt)
+
+	    if (l_mastercomp .eq. -2) then
+!		(numptr_aer is already set)
+		mprognum_aer(n,itype,iphase) = 1
+
+	    else if (l_mastercomp .eq. -1) then
+!		(waterptr_aer is already set)
+		continue
+
+	    else if (l_mastercomp .eq. 0) then
+!		(hyswptr_aer is already set)
+		continue
+
+	    else if (l_mastercomp .gt. 0) then
+		ll = ncomp_plustracer_dum(isize,iphase)
+		massptr_aer(ll,n,itype,iphase) = lptr_dum
+		mastercompptr_aer(ll,itype) = mcindx_dum
+
+		name_aer(ll,itype) = name_mastercomp_aer(mcindx_dum)
+		dens_aer(ll,itype) = dens_mastercomp_aer(mcindx_dum)
+		mw_aer(ll,itype) = mw_mastercomp_aer(mcindx_dum)
+
+	    end if
+
+	end if
+
+2500	continue	! l_mastercomp = -1, ntot_mastercomp_aer
+
+2600	continue	! iphase = 1, nphase_aer
+
+2700	continue	! isize = 1, nsize_aer(itype)
+
+
+!   now set ncomp_aer and ncomp_plustracer_aer, 
+!   *** and check that the values computed for each size and phase all match
+	ncomp_aer(itype) = ncomp_dum(1,ai_phase)
+	ncomp_plustracer_aer(itype) = ncomp_plustracer_dum(1,ai_phase)
+
+	do iphase = 1, nphase_aer
+	do isize = 1, nsize_aer(itype)
+	    if (ncomp_aer(itype) .ne. ncomp_dum(isize,iphase)) then
+	        msg =  '*** subr init_data_mosaic_ptr - ' //   &
+		    'ncomp_aer .ne. ncomp_dum'
+		call peg_message( lunerr, msg )
+		write(msg,9350) 'isize, itype, iphase =', isize, itype, iphase
+		call peg_message( lunerr, msg )
+		write(msg,9350) 'ncomp_aer, ncomp_dum =',   &
+		    ncomp_aer(itype), ncomp_dum(isize,iphase)
+		call peg_error_fatal( lunerr, msg )
+	    end if
+	    if (ncomp_plustracer_aer(itype) .ne.   &
+			ncomp_plustracer_dum(isize,iphase)) then
+	        msg = '*** subr init_data_mosaic_ptr - ' //   &
+		    'ncomp_plustracer_aer .ne. ncomp_plustracer_dum'
+		call peg_message( lunerr, msg )
+		write(msg,9350) 'isize, itype, iphase =', isize, itype, iphase
+		call peg_message( lunerr, msg )
+		write(msg,9350)   &
+		    'ncomp_plustracer_aer, ncomp_plustracer_dum =',   &
+		    ncomp_plustracer_aer(itype),   &
+		    ncomp_plustracer_dum(isize,iphase)
+		call peg_error_fatal( lunerr, msg )
+	    end if
+	end do
+	end do
+
+
+2800	continue	! itype = 1, ntype_aer
+
+
+9320	format( a, i1, i1, a, 8x )
+
+!
+!   output wrfch pointers
+!
+9350	format( a, 32(1x,i4) )
+	msg = ' '
+	call peg_message( lunout, msg )
+	msg = 'output from subr init_data_mosaic_ptr'
+	call peg_message( lunout, msg )
+	write(msg,9350) 'nphase_aer =     ', nphase_aer
+	call peg_message( lunout, msg )
+
+	do iphase=1,nphase_aer
+
+	write(msg,9350) 'iphase =     ', iphase
+	call peg_message( lunout, msg )
+	write(msg,9350) 'ntype_aer =     ', ntype_aer
+	call peg_message( lunout, msg )
+
+	do itype=1,ntype_aer
+
+	write(msg,9350) 'itype =     ', itype
+	call peg_message( lunout, msg )
+	write(msg,9350) 'nsize_aer = ', nsize_aer(itype)
+	call peg_message( lunout, msg )
+	write(msg,9350) 'lptr_so4_aer ',   &
+		(lptr_so4_aer(n,itype,iphase), n=1,nsize_aer(itype))
+	call peg_message( lunout, msg )
+	write(msg,9350) 'lptr_no3_aer ',   &
+		(lptr_no3_aer(n,itype,iphase), n=1,nsize_aer(itype))
+	call peg_message( lunout, msg )
+	write(msg,9350) 'lptr_cl_aer  ',   &
+		(lptr_cl_aer(n,itype,iphase), n=1,nsize_aer(itype))
+	call peg_message( lunout, msg )
+	write(msg,9350) 'lptr_msa_aer ',   &
+		(lptr_msa_aer(n,itype,iphase), n=1,nsize_aer(itype))
+	call peg_message( lunout, msg )
+	write(msg,9350) 'lptr_co3_aer ',   &
+		(lptr_co3_aer(n,itype,iphase), n=1,nsize_aer(itype))
+	call peg_message( lunout, msg )
+	write(msg,9350) 'lptr_nh4_aer ',   &
+		(lptr_nh4_aer(n,itype,iphase), n=1,nsize_aer(itype))
+	call peg_message( lunout, msg )
+	write(msg,9350) 'lptr_na_aer  ',   &
+		(lptr_na_aer(n,itype,iphase), n=1,nsize_aer(itype))
+	call peg_message( lunout, msg )
+	write(msg,9350) 'lptr_ca_aer  ',   &
+		(lptr_ca_aer(n,itype,iphase), n=1,nsize_aer(itype))
+	call peg_message( lunout, msg )
+	write(msg,9350) 'lptr_oin_aer ',   &
+		(lptr_oin_aer(n,itype,iphase), n=1,nsize_aer(itype))
+	call peg_message( lunout, msg )
+	write(msg,9350) 'lptr_oc_aer  ',   &
+		(lptr_oc_aer(n,itype,iphase), n=1,nsize_aer(itype))
+	call peg_message( lunout, msg )
+	write(msg,9350) 'lptr_bc_aer  ',   &
+		(lptr_bc_aer(n,itype,iphase), n=1,nsize_aer(itype))
+	call peg_message( lunout, msg )
+	write(msg,9350) 'hyswptr_aer',   &
+		(hyswptr_aer(n,itype), n=1,nsize_aer(itype))
+	call peg_message( lunout, msg )
+	write(msg,9350) 'waterptr_aer  ',   &
+		(waterptr_aer(n,itype), n=1,nsize_aer(itype))
+	call peg_message( lunout, msg )
+	write(msg,9350) 'numptr_aer     ',   &
+		(numptr_aer(n,itype,iphase), n=1,nsize_aer(itype))
+	call peg_message( lunout, msg )
+
+
+	do ll = 1, ncomp_plustracer_aer(itype)
+	    write(msg,9350) 'massptr_aer(), ll',   &
+		(massptr_aer(ll,n,itype,iphase), n=1,nsize_aer(itype)), ll
+	    call peg_message( lunout, msg )
+	end do
+	end do ! type
+	end do ! phase
+
+!
+!   check aerosol species pointers for "validity"
+!
+	do iphase=1,nphase_aer
+	do itype=1,ntype_aer
+	y_so4 = 0
+	y_no3 = 0
+	y_cl = 0
+	y_msa = 0
+	y_co3 = 0
+	y_nh4 = 0
+	y_na = 0
+	y_ca = 0
+	y_oin = 0
+	y_oc = 0
+	y_bc = 0
+	y_hysw = 0
+	y_water = 0
+	y_num = 0
+
+	do n = 1, nsize_aer(itype)
+	    if (lptr_so4_aer(n,itype,iphase) .ge. p1st) y_so4 = y_so4 + 1
+	    if (lptr_no3_aer(n,itype,iphase) .ge. p1st) y_no3 = y_no3 + 1
+	    if (lptr_cl_aer(n,itype,iphase)  .ge. p1st) y_cl  = y_cl + 1
+	    if (lptr_msa_aer(n,itype,iphase) .ge. p1st) y_msa = y_msa + 1
+	    if (lptr_co3_aer(n,itype,iphase) .ge. p1st) y_co3 = y_co3 + 1
+	    if (lptr_nh4_aer(n,itype,iphase) .ge. p1st) y_nh4 = y_nh4 + 1
+	    if (lptr_na_aer(n,itype,iphase)  .ge. p1st) y_na  = y_na + 1
+	    if (lptr_ca_aer(n,itype,iphase)  .ge. p1st) y_ca  = y_ca + 1
+	    if (lptr_oin_aer(n,itype,iphase) .ge. p1st) y_oin = y_oin + 1
+	    if (lptr_oc_aer(n,itype,iphase)  .ge. p1st) y_oc  = y_oc + 1
+	    if (lptr_bc_aer(n,itype,iphase)  .ge. p1st) y_bc  = y_bc + 1
+	    if (hyswptr_aer(n,itype)    .ge. p1st) y_hysw = y_hysw + 1
+	    if (waterptr_aer(n,itype)        .ge. p1st) y_water = y_water + 1
+	    if (numptr_aer(n,itype,iphase)   .ge. p1st) y_num = y_num + 1
+
+	end do
+
+!   these must be defined for all aerosol bins
+	if (y_so4 .ne. nsize_aer(itype)) then
+	    msg = '*** subr init_data_mosaic_ptr - ptr error for so4'
+	    call peg_message( lunerr, msg )
+	    write(msg,9350) 'phase, type=', iphase,itype
+	    call peg_error_fatal( lunerr, msg )
+	else if (y_water .ne. nsize_aer(itype)) then
+	    msg = '*** subr init_data_mosaic_ptr - ptr error for water'
+	    call peg_message( lunerr, msg )
+	    write(msg,9350) 'phase, type=', iphase,itype
+	    call peg_error_fatal( lunerr, msg )
+	else if (y_num .ne. nsize_aer(itype)) then
+	    msg = '*** subr init_data_mosaic_ptr - ptr error for num'
+	    call peg_message( lunerr, msg )
+	    write(msg,9350) 'phase, type=', iphase,itype
+	    call peg_error_fatal( lunerr, msg )
+	end if
+
+
+!   these must be defined for all aerosol bins
+!       or else undefined for all aerosol bins
+	if      ((y_no3 .ne. 0) .and.   &
+	         (y_no3 .ne. nsize_aer(itype))) then
+	    msg = '*** subr init_data_mosaic_ptr - ptr error for no3'
+	    call peg_message( lunerr, msg )
+	    write(msg,9350) 'phase, type=', iphase,itype
+	    call peg_error_fatal( lunerr, msg )
+	else if ((y_cl .ne. 0) .and.   &
+	         (y_cl .ne. nsize_aer(itype))) then
+	    msg = '*** subr init_data_mosaic_ptr - ptr error for cl'
+	    call peg_message( lunerr, msg )
+	    write(msg,9350) 'phase, type=', iphase,itype
+	    call peg_error_fatal( lunerr, msg )
+	else if ((y_msa .ne. 0) .and.   &
+	         (y_msa .ne. nsize_aer(itype))) then
+	    msg = '*** subr init_data_mosaic_ptr - ptr error for msa'
+	    call peg_message( lunerr, msg )
+	    write(msg,9350) 'phase, type=', iphase,itype
+	    call peg_error_fatal( lunerr, msg )
+	else if ((y_co3 .ne. 0) .and.   &
+	         (y_co3 .ne. nsize_aer(itype))) then
+	    msg = '*** subr init_data_mosaic_ptr - ptr error for co3'
+	    call peg_message( lunerr, msg )
+	    write(msg,9350) 'phase, type=', iphase,itype
+	    call peg_error_fatal( lunerr, msg )
+	else if ((y_nh4 .ne. 0) .and.   &
+	         (y_nh4 .ne. nsize_aer(itype))) then
+	    msg = '*** subr init_data_mosaic_ptr - ptr error for nh4'
+	    call peg_message( lunerr, msg )
+	    write(msg,9350) 'phase, type=', iphase,itype
+	    call peg_error_fatal( lunerr, msg )
+	else if ((y_na .ne. 0) .and.   &
+	         (y_na .ne. nsize_aer(itype))) then
+	    msg = '*** subr init_data_mosaic_ptr - ptr error for na'
+	    call peg_message( lunerr, msg )
+	    write(msg,9350) 'phase, type=', iphase,itype
+	    call peg_error_fatal( lunerr, msg )
+	else if ((y_ca .ne. 0) .and.   &
+	         (y_ca .ne. nsize_aer(itype))) then
+	    msg = '*** subr init_data_mosaic_ptr - ptr error for ca'
+	    call peg_message( lunerr, msg )
+	    write(msg,9350) 'phase, type=', iphase,itype
+	    call peg_error_fatal( lunerr, msg )
+	else if ((y_oin .ne. 0) .and.   &
+	         (y_oin .ne. nsize_aer(itype))) then
+	    msg = '*** subr init_data_mosaic_ptr - ptr error for oin'
+	    call peg_message( lunerr, msg )
+	    write(msg,9350) 'phase, type=', iphase,itype
+	    call peg_error_fatal( lunerr, msg )
+	else if ((y_oc .ne. 0) .and.   &
+	         (y_oc .ne. nsize_aer(itype))) then
+	    msg = '*** subr init_data_mosaic_ptr - ptr error for oc'
+	    call peg_message( lunerr, msg )
+	    write(msg,9350) 'phase, type=', iphase,itype
+	    call peg_error_fatal( lunerr, msg )
+	else if ((y_bc .ne. 0) .and.   &
+	         (y_bc .ne. nsize_aer(itype))) then
+	    msg = '*** subr init_data_mosaic_ptr - ptr error for bc'
+	    call peg_message( lunerr, msg )
+	    write(msg,9350) 'phase, type=', iphase,itype
+	    call peg_error_fatal( lunerr, msg )
+	else if ((y_hysw .ne. 0) .and.   &
+	         (y_hysw .ne. nsize_aer(itype))) then
+	    msg = '*** subr init_data_mosaic_ptr - ptr error for hysw'
+	    call peg_message( lunerr, msg )
+	    write(msg,9350) 'phase, type=', iphase,itype
+	    call peg_error_fatal( lunerr, msg )
+	end if
+
+	enddo ! type
+	enddo ! phase
+!
+!   set pointers for gases
+!   rce 2004-dec-02 - gases not required to be present
+!
+	if (p_sulf .ge. p1st) then
+	    kh2so4 = p_sulf
+!	else
+!	    msg = '*** subr init_data_mosaic_ptr - ptr error for h2so4'
+!	    call peg_error_fatal( lunerr, msg )
+	end if
+	if (p_hno3 .ge. p1st) then
+	    khno3 = p_hno3
+!	else
+!	    msg = '*** subr init_data_mosaic_ptr - ptr error for hno3'
+!	    call peg_error_fatal( lunerr, msg )
+	end if
+	if (p_hcl .ge. p1st) then
+	    khcl = p_hcl
+!	else
+!	    msg = '*** subr init_data_mosaic_ptr - ptr error for hcl'
+!	    call peg_error_fatal( lunerr, msg )
+	end if
+	if (p_nh3 .ge. p1st) then
+	    knh3 = p_nh3
+!	else
+!	    msg = '*** subr init_data_mosaic_ptr - ptr error for nh3'
+!	    call peg_error_fatal( lunerr, msg )
+	end if
+	if (p_o3 .ge. p1st) then
+	    ko3 = p_o3
+!	else
+!	    msg = '*** subr init_data_mosaic_ptr - ptr error for o3'
+!	    call peg_error_fatal( lunerr, msg )
+	end if
+
+!   rce 2005-apr-12 - added following species for cldchem, here and below:
+!   kso2, kh2o2, khcho, khcooh, koh, kho2, 
+!   kno3, kno, kno2, khono, kpan, kch3o2, kch3oh, kch3ooh
+	if (p_so2    .ge. p1st) kso2    = p_so2
+	if (p_h2o2   .ge. p1st) kh2o2   = p_h2o2
+	if (p_hcho   .ge. p1st) khcho   = p_hcho
+	if (p_ora1   .ge. p1st) khcooh  = p_ora1
+	if (p_ho     .ge. p1st) koh     = p_ho
+	if (p_ho2    .ge. p1st) kho2    = p_ho2
+	if (p_no3    .ge. p1st) kno3    = p_no3
+	if (p_no     .ge. p1st) kno     = p_no
+	if (p_no2    .ge. p1st) kno2    = p_no2
+	if (p_hono   .ge. p1st) khono   = p_hono
+	if (p_pan    .ge. p1st) kpan    = p_pan
+	if (p_ch3o2  .ge. p1st) kch3o2  = p_ch3o2
+	if (p_ch3oh  .ge. p1st) kch3oh  = p_ch3oh
+	if (p_op1    .ge. p1st) kch3ooh = p_op1
+
+!
+!   calc ltot, ltot2, kh2o, ktemp
+!
+	is_aerosol(:) = .false.
+	ltot = 0
+	ltot = max( ltot, kh2so4 )
+	ltot = max( ltot, khno3 )
+	ltot = max( ltot, khcl )
+	ltot = max( ltot, knh3 )
+	ltot = max( ltot, ko3 )
+	ltot = max( ltot, kso2    )
+	ltot = max( ltot, kh2o2   )
+	ltot = max( ltot, khcho   )
+	ltot = max( ltot, khcooh  )
+	ltot = max( ltot, koh     )
+	ltot = max( ltot, kho2    )
+	ltot = max( ltot, kno3    )
+	ltot = max( ltot, kno     )
+	ltot = max( ltot, kno2    )
+	ltot = max( ltot, khono   )
+	ltot = max( ltot, kpan    )
+	ltot = max( ltot, kch3o2  )
+	ltot = max( ltot, kch3oh  )
+	ltot = max( ltot, kch3ooh )
+	do iphase=1,nphase_aer
+	    do itype=1,ntype_aer
+		do n = 1, nsize_aer(itype)
+		    do ll = 1, ncomp_plustracer_aer(itype)
+		       ltot = max( ltot, massptr_aer(ll,n,itype,iphase) )
+		       is_aerosol(massptr_aer(ll,n,itype,iphase))=.true.
+		    end do
+		    ltot = max( ltot, hyswptr_aer(n,itype) )
+		    ltot = max( ltot, waterptr_aer(n,itype) )
+		    ltot = max( ltot, numptr_aer(n,itype,iphase) )
+		    l = hyswptr_aer(n,itype)
+		    if (l .ge. p1st) is_aerosol(l)=.true.
+		    l = waterptr_aer(n,itype)
+		    if (l .ge. p1st) is_aerosol(l)=.true.
+		    l = numptr_aer(n,itype,iphase)
+		    if (l .ge. p1st) is_aerosol(l)=.true.
+		end do
+	    end do
+	end do
+
+	kh2o = ltot + 1
+	ktemp = ltot + 2
+	ltot2 = ktemp
+
+	write( msg, '(a,4(1x,i4))' ) 'ltot, ltot2, lmaxd, l2maxd =',   &
+		ltot, ltot2, lmaxd, l2maxd
+	call peg_message( lunout, msg )
+	if ((ltot .gt. lmaxd) .or. (ltot2 .gt. l2maxd)) then
+	    msg = '*** subr init_data_mosaic_ptr - ltot/ltot2 too big'
+	    call peg_error_fatal( lunerr, msg )
+	end if
+
+	if (p_sulf   .ge. p1st) name(kh2so4 ) = 'h2so4'
+	if (p_hno3   .ge. p1st) name(khno3  ) = 'hno3'
+	if (p_hcl    .ge. p1st) name(khcl   ) = 'hcl'
+	if (p_nh3    .ge. p1st) name(knh3   ) = 'nh3'
+	if (p_o3     .ge. p1st) name(ko3    ) = 'o3'
+	if (p_so2    .ge. p1st) name(kso2   ) = 'so2'
+	if (p_h2o2   .ge. p1st) name(kh2o2  ) = 'h2o2'
+	if (p_hcho   .ge. p1st) name(khcho  ) = 'hcho'
+	if (p_ora1   .ge. p1st) name(khcooh ) = 'hcooh'
+	if (p_ho     .ge. p1st) name(koh    ) = 'oh'
+	if (p_ho2    .ge. p1st) name(kho2   ) = 'ho2'
+	if (p_no3    .ge. p1st) name(kno3   ) = 'no3'
+	if (p_no     .ge. p1st) name(kno    ) = 'no'
+	if (p_no2    .ge. p1st) name(kno2   ) = 'no2'
+	if (p_hono   .ge. p1st) name(khono  ) = 'hono'
+	if (p_pan    .ge. p1st) name(kpan   ) = 'pan'
+	if (p_ch3o2  .ge. p1st) name(kch3o2 ) = 'ch3o2'
+	if (p_ch3oh  .ge. p1st) name(kch3oh ) = 'ch3oh'
+	if (p_op1    .ge. p1st) name(kch3ooh) = 'ch3ooh'
+	name(ktemp)  = 'temp'
+	name(kh2o)   = 'h2o'
+
+
+	return
+	end subroutine init_data_mosaic_ptr
+
+
+!-----------------------------------------------------------------------
+	subroutine aerchem_debug_dump(   &
+      		iflag, iclm, jclm, dtchem )
+
+	use module_data_mosaic_asect
+	use module_data_mosaic_other
+	implicit none
+
+!	include 'v33com'
+!	include 'v33com2'
+!	include 'v33com9a'
+
+	integer iflag, iclm, jclm
+	real dtchem
+
+!   local variables
+	integer ientryno
+	save ientryno
+	integer iphase, itype, k, l, m, n
+
+	real dtchem_sv1
+	save dtchem_sv1
+	real rsub_sv1(l2maxd,kmaxd,nsubareamaxd)
+
+	data ientryno / -13579 /
+
+
+!   check for bypass based on some control variable ???
+
+
+!   do initial output when ientryno = -13579
+	if (ientryno .ne. -13579) goto 1000
+
+	ientryno = +1
+
+95010	format( a )
+95020	format( 8( 1x, i8 ) )
+95030	format( 4( 1pe18.10 ) )
+
+	print 95010, 'aerchem_debug_dump start'
+	print 95020, ltot, ltot2, itot, jtot, ktot
+	print 95010, (name(l), l=1,ltot2)
+
+	print 95020, maerocoag, maerchem, maeroptical
+	print 95020, msectional, maerosolincw
+	do iphase = 1, nphase_aer
+	do itype=1,ntype_aer
+	print 95020, iphase, itype, nsize_aer(itype),   &
+     		ncomp_plustracer_aer(itype)
+
+	do n = 1, ncomp_plustracer_aer(itype)
+	    print 95010,   &
+      		name_aer(n,itype)
+	    print 95030,   &
+      		dens_aer(n,itype),     mw_aer(n,itype)
+	end do
+
+	do n = 1, nsize_aer(itype)
+	    print 95020,   &
+      		ncomp_plustracer_aer(n),       ncomp_aer(n),   &
+      		waterptr_aer(n,itype),   numptr_aer(n,itype,iphase),    &
+      		mprognum_aer(n,itype,iphase)
+	    print 95020,   &
+      		(mastercompptr_aer(l,itype), massptr_aer(l,n,itype,iphase),    &
+      		l=1,ncomp_plustracer_aer(itype))
+	    print 95030,   &
+      		volumcen_sect(n,itype),     volumlo_sect(n,itype),   &
+      		volumhi_sect(n,itype),      dcen_sect(n,itype),   &
+      		dlo_sect(n,itype),          dhi_sect(n,itype)
+	    print 95020,   &
+      		lptr_so4_aer(n,itype,iphase),  lptr_msa_aer(n,itype,iphase),  &
+      		lptr_no3_aer(n,itype,iphase),  lptr_cl_aer(n,itype,iphase),   &
+      		lptr_co3_aer(n,itype,iphase),  lptr_nh4_aer(n,itype,iphase),  &
+      		lptr_na_aer(n,itype,iphase),   lptr_ca_aer(n,itype,iphase),   &
+      		lptr_oin_aer(n,itype,iphase),  lptr_oc_aer(n,itype,iphase),   &
+      		lptr_bc_aer(n,itype,iphase),   hyswptr_aer(n,itype)
+	end do ! size
+	end do ! type
+	end do ! phase
+	print 95010, 'aerchem_debug_dump end'
+
+!
+!   test iflag
+!
+1000	continue
+	if (iflag .eq. 1) goto 1010
+	if (iflag .eq. 2) goto 2000
+	if (iflag .eq. 3) goto 3000
+	return
+
+!
+!   iflag=1 -- save initial values
+!              AND FOR NOW do output too
+!
+1010	continue
+	dtchem_sv1 = dtchem
+	do m = 1, nsubareas
+	do k = 1, ktot
+	do l = 1, ltot2
+	    rsub_sv1(l,k,m) = rsub(l,k,m)
+	end do
+	end do
+	end do
+
+	print 95010, 'aerchem_debug_dump start'
+	do m = 1, nsubareas
+	do k = 1, ktot
+	    print 95020, iymdcur, ihmscur,   &
+		iclm, jclm, k, m, nsubareas, iflag
+	    print 95030, t, dtchem_sv1, cairclm(k), relhumclm(k),   &
+      		ptotclm(k), afracsubarea(k,m)
+	    print 95030, (rsub_sv1(l,k,m), rsub(l,k,m), l=1,ltot2)
+	end do
+	end do
+	print 95010, 'aerchem_debug_dump end'
+
+	return
+
+!
+!   iflag=2 -- save intermediate values before doing move_sections
+!   (this is deactivated for now)
+!
+2000	continue
+	return
+
+
+!
+!   iflag=3 -- do output
+!
+3000	continue
+	print 95010, 'aerchem_debug_dump start'
+	do m = 1, nsubareas
+	do k = 1, ktot
+	    print 95020, iymdcur, ihmscur,   &
+		iclm, jclm, k, m, nsubareas, iflag
+	    print 95030, t, dtchem_sv1, cairclm(k), relhumclm(k),   &
+      		ptotclm(k), afracsubarea(k,m)
+	    print 95030, (rsub_sv1(l,k,m), rsub(l,k,m), l=1,ltot2)
+	end do
+	end do
+	print 95010, 'aerchem_debug_dump end'
+
+
+	return
+	end subroutine aerchem_debug_dump 
+
+
+
+!-----------------------------------------------------------------------
+	end module module_mosaic_driver

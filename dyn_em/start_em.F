@@ -19,6 +19,10 @@
    USE module_tiles
 
    USE module_physics_init
+#ifdef WRF_CHEM
+   USE module_aerosols_sorgam, only: sum_pm_sorgam
+   USE module_mosaic_driver, only: sum_pm_mosaic
+#endif
 
 #ifdef DM_PARALLEL
    USE module_dm
@@ -47,7 +51,7 @@
                                   ips, ipe, jps, jpe, kps, kpe, &
                                   its, ite, jts, jte, kts, kte, &
                                   ij,i,j,k,ii,jj,kk,loop,error,l
-                                  
+
 ! These are used if -DDEREF_KLUDGE is compiled
 !  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
    INTEGER     :: sm31  , em31  , sm32  , em32  , sm33  , em33
@@ -60,6 +64,7 @@
 
    REAL :: qvf1, qvf2, qvf
    REAL :: MPDT
+   REAL :: spongeweight
    LOGICAL :: first_trip_for_this_domain
 
    REAL :: lat1 , lat2 , lat3 , lat4
@@ -136,11 +141,17 @@
    IF (config_flags%specified) THEN
 !
 ! Arrays for specified boundary conditions
-
+! wig: Add a combined exponential+linear weight on the mother boundaries
+!      following code changes by Ruby Leung. For the nested grid, there
+!      appears to be some problems when a sponge is used. The points where
+!      processors meet have problematic values.
 
      DO loop = grid%spec_zone + 1, grid%spec_zone + grid%relax_zone
        fcx(loop) = 0.1 / grid%dt * (grid%spec_zone + grid%relax_zone - loop) / (grid%relax_zone - 1)
        gcx(loop) = 1.0 / grid%dt / 50. * (grid%spec_zone + grid%relax_zone - loop) / (grid%relax_zone - 1)
+!      spongeweight=exp(-(loop-2)/3.)
+!      fcx(loop) = fcx(loop)*spongeweight
+!      gcx(loop) = gcx(loop)*spongeweight
      ENDDO
 
    ELSE IF (config_flags%nested) THEN
@@ -150,8 +161,11 @@
      DO loop = grid%spec_zone + 1, grid%spec_zone + grid%relax_zone
        fcx(loop) = 0.1 / grid%dt * (grid%spec_zone + grid%relax_zone - loop) / (grid%relax_zone - 1)
        gcx(loop) = 1.0 / grid%dt / 50. * (grid%spec_zone + grid%relax_zone - loop) / (grid%relax_zone - 1)
-!       fcx(loop) = 0.
-!       gcx(loop) = 0.
+!      spongeweight=exp(-(loop-2)/3.)
+!      fcx(loop) = fcx(loop)*spongeweight
+!      gcx(loop) = gcx(loop)*spongeweight
+!      fcx(loop) = 0.
+!      gcx(loop) = 0.
      ENDDO
 
      dtbc = 0.
@@ -759,39 +773,77 @@
 
    ENDIF
 
+#ifdef WRF_CHEM
+! Zero out the Mie arrays so they do not cause instabilities when not calling Fast-J.
+   if( .NOT. config_flags%restart ) then
+      do j=jts,jte
+         do k=kts,kte
+            do i=its,ite
+               tauaer1(i,k,j) = 0.
+               tauaer2(i,k,j) = 0.
+               tauaer3(i,k,j) = 0.
+               tauaer4(i,k,j) = 0.
+               gaer1(i,k,j) = 0.
+               gaer2(i,k,j) = 0.
+               gaer3(i,k,j) = 0.
+               gaer4(i,k,j) = 0.
+               waer1(i,k,j) = 0.
+               waer2(i,k,j) = 0.
+               waer3(i,k,j) = 0.
+               waer4(i,k,j) = 0.
+            end do
+         end do
+      end do
+   end if
+#endif
+
    IF (num_chem >= PARAM_FIRST_SCALAR ) THEN
 #ifdef WRF_CHEM
          CALL chem_init (grid%id,chem,grid%dt,grid%bioemdt,grid%photdt,grid%chemdt,           &
                          stepbioe,stepphot,stepchem,                        &
                          ph_2,phb,g,aerwrf,config_flags,                    &
                          alt,t_1,pb,p,t0,p1000mb,rcp,                       &
-                         aer_dry,aer_water,grid%chem_in_opt,                     &
-                         imicrogram,                                        &
+                         tauaer1,tauaer2,tauaer3,tauaer4,                   &
+                         gaer1,gaer2,gaer3,gaer4,                           &
+                         waer1,waer2,waer3,waer4,                           &
+                         pm2_5_dry,pm2_5_water,pm2_5_dry_ec,                &
+                         grid%chem_in_opt,                                  &
                                  ids , ide , jds , jde , kds , kde ,        &
                                  ims , ime , jms , jme , kms , kme ,        &
                                  its , ite , jts , jte , kts , kte          )
 !
 ! calculate initial pm
 !
-        print *,'calculating initial pm'
-        do j=jts,jte
-        jj=min(jde-1,j)
-        do k=kts,kte
-        kk=min(kde-1,k)
-        do i=its,ite
-        ii=min(ide-1,i)
+!       print *,'calculating initial pm'
+        select case (config_flags%chem_opt)
+        case (RADM2SORG, RACMSORG)
+           call sum_pm_sorgam (                                             &
+                alt, chem, h2oaj, h2oai,                                    &
+                pm2_5_dry, pm2_5_water, pm2_5_dry_ec, pm10,                 &
+                ids,ide, jds,jde, kds,kde,                                  &
+                ims,ime, jms,jme, kms,kme,                                  &
+                its,ite, jts,jte, kts,kte                                   )
 
-          pm2_5(i,k,j)=0.
-          do l=p_so4aj,p_p25i
-             pm2_5(i,k,j)=pm2_5(i,k,j)+chem(ii,kk,jj,l)
-          enddo
-          pm10(i,k,j)= pm2_5(i,k,j)                      &
-                      +chem(ii,kk,jj,p_antha)             &
-                      +chem(ii,kk,jj,p_soila)             &
-                      +chem(ii,kk,jj,p_seas)
-        enddo
-        enddo
-        enddo
+        case (CBMZ_MOSAIC_AA, CBMZ_MOSAIC_BB)
+           call sum_pm_mosaic (                                             &
+                alt, chem,                                                  &
+                pm2_5_dry, pm2_5_water, pm2_5_dry_ec, pm10,                 &
+                ids,ide, jds,jde, kds,kde,                                  &
+                ims,ime, jms,jme, kms,kme,                                  &
+                its,ite, jts,jte, kts,kte                                   )
+
+        case default
+           do j=jts,min(jte,jde-1)
+              do k=kts,min(kte,kde-1)
+                 do i=its,min(ite,ide-1)
+                    pm2_5_dry(i,k,j)    = 0.
+                    pm2_5_water(i,k,j)  = 0.
+                    pm2_5_dry_ec(i,k,j) = 0.
+                    pm10(i,k,j)         = 0.
+                 enddo
+              enddo
+           enddo
+        end select
 #endif
 
 ! use of (:,:,:,loop) not efficient on DEC, but (ims,kms,jms,loop) not portable to SGI/Cray

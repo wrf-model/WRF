@@ -86,6 +86,9 @@ CONTAINS
       mu_3d(i,k,j) = mu(i,j)
       u_phy(i,k,j) = 0.5*(u(i,k,j)+u(i+1,k,j))
       v_phy(i,k,j) = 0.5*(v(i,k,j)+v(i,k,j+1))
+!     if(i.eq.1.and.j.eq.1)then
+!      print *,rho(i,k,j),t_phy(i,k,j),p_phy(i,k,j),p(i,k,j),pb(i,k,j),alt(i,k,j),p1000mb,rcp
+!     endif
 
     enddo
     enddo

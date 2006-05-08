@@ -9,9 +9,9 @@ CONTAINS
 !
    subroutine add_anthropogenics(id,dtstep,dz8w,config_flags,rho_phy,chem, &
                e_iso,e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,        &
-               e_ol2,e_olt,  &
-               e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_pm25,e_pm10,  &
-               e_nh3,ids,ide, jds,jde, kds,kde,                   &
+               e_ol2,e_olt,e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,    &
+               e_pm25,e_pm10,e_nh3,                                        &
+               ids,ide, jds,jde, kds,kde,                                  &
                ims,ime, jms,jme, kms,kme,                                  &
                its,ite, jts,jte, kts,kte                                   )
 !----------------------------------------------------------------------
@@ -19,7 +19,11 @@ CONTAINS
   USE module_state_description
   USE module_data_radm2
    IMPLICIT NONE
-   INTEGER,      INTENT(IN   ) :: id,                             &
+
+! .. Parameters ..
+   TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
+
+   INTEGER,      INTENT(IN   ) :: id,                                      &
                                   ids,ide, jds,jde, kds,kde,               &
                                   ims,ime, jms,jme, kms,kme,               &
                                   its,ite, jts,jte, kts,kte
@@ -31,7 +35,8 @@ CONTAINS
 !
 ! emissions arrays
 !
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                           &
+!   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                           &
+   REAL, DIMENSION( ims:ime, kms:config_flags%kemit, jms:jme ),            &
          INTENT(IN ) ::                                                    &
            e_iso,e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,&
            e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_pm25,e_pm10,e_nh3
@@ -49,8 +54,6 @@ CONTAINS
     integer i,j,k
     real :: conv_rho
 !--- deposition and emissions stuff
-! .. Parameters ..
-   TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
 
 
 ! ..
@@ -64,22 +67,50 @@ CONTAINS
       do 100 j=jts,jte  
       do 100 i=its,ite  
 
-      DO k=kts,kte-1
+      DO k=kts,min(config_flags%kemit,kte-1)
         conv_rho=4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
 
-        chem(i,k,j,p_csl)  =  chem(i,k,j,p_csl)                         &
+#if (defined(CHEM_DBG_I) && defined(CHEM_DBG_J) && defined(CHEM_DBG_K))
+       if( (i <= CHEM_DBG_I .and. i >= CHEM_DBG_I) .and. &
+           (j <= CHEM_DBG_J .and. j >= CHEM_DBG_J) .and. &
+           (k <= CHEM_DBG_K .and. k >= CHEM_DBG_K)  ) then
+          print*
+          print*,"Converted emissions for RADM2:"
+          print*,"e_csl=",e_csl(i,k,j)*conv_rho
+          print*,"e_iso=",e_iso(i,k,j)*conv_rho
+          print*,"e_so2=",e_so2(i,k,j)*conv_rho
+          print*,"e_no=",e_no(i,k,j)*conv_rho
+          print*,"e_ald=",e_ald(i,k,j)*conv_rho
+          print*,"e_hcho=",e_hcho(i,k,j)*conv_rho
+          print*,"e_ora2=",e_ora2(i,k,j)*conv_rho
+          print*,"e_nh3=",e_nh3(i,k,j)*conv_rho
+          print*,"e_hc3=",e_hc3(i,k,j)*conv_rho
+          print*,"e_hc5=",e_hc5(i,k,j)*conv_rho
+          print*,"e_hc8=",e_hc8(i,k,j)*conv_rho
+          print*,"e_eth=",e_eth(i,k,j)*conv_rho
+          print*,"e_co=",e_co(i,k,j)*conv_rho
+          print*,"e_ol2=",e_ol2(i,k,j)*conv_rho
+          print*,"e_olt=",e_olt(i,k,j)*conv_rho
+          print*,"e_oli=",e_oli(i,k,j)*conv_rho
+          print*,"e_tol=",e_tol(i,k,j)*conv_rho
+          print*,"e_xyl=",e_xyl(i,k,j)*conv_rho
+          print*,"e_ket=",e_ket(i,k,j)*conv_rho
+       end if
+#endif
+
+        chem(i,k,j,p_csl)  =  chem(i,k,j,p_csl)                        &
                          +e_csl(i,k,j)*conv_rho
         chem(i,k,j,p_iso)  = chem(i,k,j,p_iso)                         &
                          +e_iso(i,k,j)*conv_rho
         chem(i,k,j,p_so2)  = chem(i,k,j,p_so2)                         &
                          +e_so2(i,k,j)*conv_rho
-        chem(i,k,j,p_no)   = chem(i,k,j,p_no)                         &
+        chem(i,k,j,p_no)   = chem(i,k,j,p_no)                          &
                          +e_no(i,k,j)*conv_rho
         chem(i,k,j,p_ald)  = chem(i,k,j,p_ald)                         &
                          +e_ald(i,k,j)*conv_rho
-        chem(i,k,j,p_hcho) = chem(i,k,j,p_hcho)                         &
+        chem(i,k,j,p_hcho) = chem(i,k,j,p_hcho)                        &
                          +e_hcho(i,k,j)*conv_rho
-        chem(i,k,j,p_ora2)  = chem(i,k,j,p_ora2)                         &
+        chem(i,k,j,p_ora2)  = chem(i,k,j,p_ora2)                       &
                          +e_ora2(i,k,j)*conv_rho
         chem(i,k,j,p_nh3)  = chem(i,k,j,p_nh3)                         &
                          +e_nh3(i,k,j)*conv_rho
@@ -91,7 +122,7 @@ CONTAINS
                          +e_hc8(i,k,j)*conv_rho
         chem(i,k,j,p_eth)  = chem(i,k,j,p_eth)                         &
                          +e_eth(i,k,j)*conv_rho
-        chem(i,k,j,p_co)  = chem(i,k,j,p_co)                         & 
+        chem(i,k,j,p_co)  = chem(i,k,j,p_co)                           &
                          +e_co(i,k,j)*conv_rho
         chem(i,k,j,p_ol2)  = chem(i,k,j,p_ol2)                         &
                          +e_ol2(i,k,j)*conv_rho
@@ -103,23 +134,22 @@ CONTAINS
                          +e_tol(i,k,j)*conv_rho
         chem(i,k,j,p_xyl)  = chem(i,k,j,p_xyl)                         &      
                          +e_xyl(i,k,j)*conv_rho
-        chem(i,k,j,p_ket)  =  chem(i,k,j,p_ket)                         &     
+        chem(i,k,j,p_ket)  =  chem(i,k,j,p_ket)                        &     
                          +e_ket(i,k,j)*conv_rho
       END DO                                                          
  100  continue
 
-!     STOP
     END subroutine add_anthropogenics
 !
 !
-         subroutine add_biogenics(id,dtstep,dz8w,config_flags,rho_phy,chem,&
-               e_bio,ne_area,                                              &
-         ebio_iso,ebio_oli,ebio_api,ebio_lim,ebio_xyl,                     &
-         ebio_hc3,ebio_ete,ebio_olt,ebio_ket,ebio_ald,                     &
-         ebio_hcho,ebio_eth,ebio_ora2,ebio_co,ebio_nr,ebio_no,             &
-               ids,ide, jds,jde, kds,kde,                                  &
-               ims,ime, jms,jme, kms,kme,                                  &
-               its,ite, jts,jte, kts,kte                                   )
+    subroutine add_biogenics(id,dtstep,dz8w,config_flags,rho_phy,chem, &
+         e_bio,ne_area,                                                &
+         ebio_iso,ebio_oli,ebio_api,ebio_lim,ebio_xyl,                 &
+         ebio_hc3,ebio_ete,ebio_olt,ebio_ket,ebio_ald,                 &
+         ebio_hcho,ebio_eth,ebio_ora2,ebio_co,ebio_nr,ebio_no,         &
+         ids,ide, jds,jde, kds,kde,                                    &
+         ims,ime, jms,jme, kms,kme,                                    &
+         its,ite, jts,jte, kts,kte                                     )
   USE module_configure
   USE module_state_description                                  
   USE module_data_radm2                               
@@ -129,7 +159,7 @@ CONTAINS
                                   ids,ide, jds,jde, kds,kde,               &
                                   ims,ime, jms,jme, kms,kme,               &
                                   its,ite, jts,jte, kts,kte
-      REAL,      INTENT(IN   ) ::                                          &
+   REAL,         INTENT(IN   ) ::                                          &
                              dtstep
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_chem ),                 &
          INTENT(INOUT ) ::                                   chem
@@ -142,15 +172,13 @@ CONTAINS
          ebio_hc3,ebio_ete,ebio_olt,ebio_ket,ebio_ald,                     &
          ebio_hcho,ebio_eth,ebio_ora2,ebio_co,ebio_nr,ebio_no
 
-         
 !
 ! 
 !
-      
-      
+
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,               &
           INTENT(IN   ) ::                                                 &
-                                          rho_phy,dz8w            
+                                          rho_phy,dz8w
     integer i,j,k,n
     real :: conv_rho
 !--- deposition and emissions stuff
@@ -160,7 +188,7 @@ CONTAINS
    bioem_select: SELECT CASE(config_flags%bio_emiss_opt)
      CASE (GUNTHER1)
      CALL wrf_debug(15,'adding biogenic emissions: Gunther1')
-!     DO n = 1, numchem-2
+!     DO n = 1, numgas-2
       do 100 j=jts,jte  
       do 100 i=its,ite  
         conv_rho=dtstep/(dz8w(i,kts,j)*60.)

@@ -6,16 +6,17 @@ CONTAINS
 
 !------------------------------------------------------------------
    SUBROUTINE SWRAD(dt,RTHRATEN,GSW,XLAT,XLONG,ALBEDO,            &
-                    aer_dry,aer_water,                            &
-   		    rho_phy,T3D,QV3D,QC3D,QR3D,                   &
+                    rho_phy,T3D,QV3D,QC3D,QR3D,                   &
                     QI3D,QS3D,QG3D,P3D,pi3D,dz8w,GMT,             &
                     R,CP,G,JULDAY,                                &
                     XTIME,DECLIN,SOLCON,                          &
                     F_QV,F_QC,F_QR,F_QI,F_QS,F_QG,                &
+                    pm2_5_dry,pm2_5_water,pm2_5_dry_ec,           &
                     RADFRQ,ICLOUD,DEGRAD,warm_rain,               &
                     ids,ide, jds,jde, kds,kde,                    & 
                     ims,ime, jms,jme, kms,kme,                    &
-                    its,ite, jts,jte, kts,kte                     ) 
+                    its,ite, jts,jte, kts,kte                     &
+                    )
 !------------------------------------------------------------------
    IMPLICIT NONE
 !------------------------------------------------------------------
@@ -31,11 +32,14 @@ CONTAINS
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          INTENT(IN    ) ::                                   P3D, &
-                                               aer_dry,aer_water, &
                                                             pi3D, &
                                                          rho_phy, &
                                                             dz8w, &
                                                              T3D
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL ,       &
+         INTENT(IN    ) ::                             pm2_5_dry, &
+                                                     pm2_5_water, &
+                                                    pm2_5_dry_ec
 
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
@@ -108,11 +112,22 @@ CONTAINS
 
             T1D(K)=T3D(I,NK,J)
             P1D(K)=P3D(I,NK,J)
-            aer_dry1(k)=aer_dry(i,nk,j)
-            aer_water1(k)=aer_water(i,nk,j)
             RHO01D(K)=rho_phy(I,NK,J)
             DZ(K)=dz8w(I,NK,J)
          ENDDO
+
+         IF( PRESENT(pm2_5_dry) .AND. PRESENT(pm2_5_water) )THEN
+            DO K=kts,kte
+               NK=kme-1-K+kms
+               aer_dry1(k)   = pm2_5_dry(i,nk,j)
+               aer_water1(k) = pm2_5_water(i,nk,j)
+            ENDDO
+         ELSE
+            DO K=kts,kte
+               aer_dry1(k)   = 0.
+               aer_water1(k) = 0.
+            ENDDO
+         ENDIF
 
          IF (PRESENT(F_QV) .AND. PRESENT(QV3D)) THEN
             IF (F_QV) THEN
@@ -265,6 +280,7 @@ CONTAINS
 
    REAL, DIMENSION( 4    ) ::                             XMUVAL
 
+   REAL :: beta
 !------------------------------------------------------------------
 
       DATA ALBTAB/0.,0.,0.,0., &
@@ -347,8 +363,12 @@ CONTAINS
 !     WATER VAPOR ABSORPTION AS IN LACIS AND HANSEN (1974)
          TOTABS=2.9*UGCM/((1.+141.5*UGCM)**0.635+5.925*UGCM)
 !     APPROXIMATE RAYLEIGH + AEROSOL SCATTERING
-         XSCA=1.E-5*XATP(K)/XMU
-!         XSCA=(1.E-5*XATP(K)+aer_dry1(K)*bext340+aer_water1(K)*bexth2o)/XMU   
+!        XSCA=1.E-5*XATP(K)/XMU
+!          XSCA=(1.E-5*XATP(K)+aer_dry1(K)*bext340+aer_water1(K)*bexth2o)/XMU
+         beta=0.4*(1.0-XMU)+0.1
+         XSCA=(1.E-5*XATP(K)+beta*aer_dry1(K)*bext340*DZ(K) &
+              +beta*aer_water1(K)*bexth2o*DZ(K))/XMU   
+
 !     LAYER VAPOR ABSORPTION DONE FIRST
          XABS=(TOTABS-OLDABS)*(SDOWN(1)-DSCLD-DSCA-DABSA)/SDOWN(K)
 !rs   AEROSOL ABSORB (would be elemental carbon). So far XABSA = 0.

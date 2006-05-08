@@ -63,7 +63,7 @@ dimspec    e      3     namelist=ensdim           z          ensemble dimension
 #<Table> <Type> <Sym>         <Dims>   <Use>   <NumTLev> <Stagger> <IO>     <DNAME>             <DESCRIP>     <UNITS>   
 #
 
-# It is reauired that LU_INDEX appears before any variable that is
+# It is required that LU_INDEX appears before any variable that is
 # interpolated with a mask, as lu_index supplies that mask.
 # this next 1 is for the HFSoLE/PET demo; writing these to auxhist1 output over MCEL for coupling
 # with wave model, only if compiled with -DMCELIO, JM 2003/05/29
@@ -447,10 +447,6 @@ state integer ncfrst    ij    misc        1    -    i
 state  real   acfrcv    ij    misc        1    -    i
 state integer ncfrcv    ij    misc        1    -    i
 
-# related to radiation for WRF chem
-state    real  aer_dry        ikj     misc        1         -      r        "MASS_AER_DRY"          "dry aerosol mass"                     "?"
-state    real  aer_water      ikj     misc        1         -      r        "MASS_AER_WATER"        "aerosol li quid water content"        "?"
-
 # new eta microphpysics State Variables
 state    real    F_ICE_PHY       ikj    misc        1         -      rdu      "F_ICE_PHY"            "FRACTION OF ICE"         ""
 state    real    F_RAIN_PHY      ikj    misc        1         -      rdu      "F_RAIN_PHY"           "FRACTION OF RAIN "         ""
@@ -488,7 +484,6 @@ state   real    v_frame        -       misc         1         -     ir        "v
 # resolve this how?  Have the real program throw a switch to tell the code to get it
 # from the metadata?  Otherwise it's a field?
 state   real    p_top          -       misc         -         -     irh       "p_top"                 "PRESSURE TOP OF THE MODEL"  "Pa"
-state   integer imicrogram     -       misc         -         -      r        "imicrogram"            "flag 0/1 0=mixratio, 1=mcrograms/m3"  ""
 state   real    lat_ll_t       -       dyn_em       -         -     irh       "lat_ll_t"              "latitude lower left, temp point" "degrees"
 state   real    lat_ul_t       -       dyn_em       -         -     irh       "lat_ul_t"              "latitude up left, temp point" "degrees"
 state   real    lat_ur_t       -       dyn_em       -         -     irh       "lat_ur_t"              "latitude up right, temp point" "degrees"

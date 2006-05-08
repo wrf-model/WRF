@@ -17,18 +17,20 @@ CONTAINS
 !-------------------------------------------------------------
    SUBROUTINE GRELLDRVCT(DT,itimestep,DX,                       &
               id,config_flags,rho_phy,RAINCV,chem,              &
-              U,V,t_phy,W,moist,dz8w,p_phy,                  &
+              U,V,t_phy,W,moist,dz8w,p_phy,                     &
               XLV,CP,G,r_v,z,cu_co_ten,                         &
-              ids,ide, jds,jde, kds,kde,     &
+              numgas,                                           &
+              ids,ide, jds,jde, kds,kde,                        &
               ims,ime, jms,jme, kms,kme,                        &
-              its,ite, jts,jte, kts,kte                        )
+              its,ite, jts,jte, kts,kte                         )
   USE module_configure
   USE module_state_description
 !-------------------------------------------------------------
    IMPLICIT NONE
 !-------------------------------------------------------------
    INTEGER,      INTENT(IN   ) ::                               &
-                               id,ids,ide, jds,jde, kds,kde,    & 
+                                  id, numgas,                   &
+                                  ids,ide, jds,jde, kds,kde,    & 
                                   ims,ime, jms,jme, kms,kme,    & 
                                   its,ite, jts,jte, kts,kte
 
@@ -132,7 +134,7 @@ CONTAINS
          IF(Q(I,K).LT.1.E-08)Q(I,K)=1.E-08
      ENDDO
      ENDDO
-     do nv=1,num_chem
+     do nv=1,numgas
      DO K=kts,ktf
      DO I=ITS,ITF
          tracer(i,k,nv)=max(epsilc,chem(i,k,j,nv))
@@ -140,7 +142,7 @@ CONTAINS
      ENDDO
      ENDDO
      ENDDO
-     do nv=1,p_ho2
+     do nv=1,numgas
      DO K=kts,ktf
      DO I=ITS,ITF
          if(nv.eq.p_co)cu_co_ten(i,k,j)=0.
@@ -172,7 +174,7 @@ CONTAINS
              enddo
       CALL neg_check_ct(pret,ktop,epsilc,dt,tracer,tracert,iopt,num_chem,   &
                         its,ite,kts,kte,itf,ktf)
-       do nv=1,p_ho2
+       do nv=1,num_chem
             DO I=its,itf
               if(pret(i).gt.0.)then
                  DO K=kts,ktf

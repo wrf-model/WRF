@@ -1,28 +1,28 @@
 !WRF:MODEL_LAYER:CHEMICS
 !
-    subroutine dry_dep_driver(id,ktau,dtstep, &
-               config_flags, &
-               gmt,julday,t_phy,moist,p8w,t8w,alt, &
-               p_phy,chem,rho_phy,dz8w,exch_h, &
+    subroutine dry_dep_driver(id,ktau,dtstep,config_flags,                &
+               gmt,julday,t_phy,moist,p8w,t8w,alt,                        &
+               p_phy,chem,rho_phy,dz8w,exch_h,                            &
                ivgtyp,tsk,gsw,vegfra,pbl,rmol,ust,znt,xlat,xlong,z,z_at_w,&
-               h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,cvaro2,    &
-               cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,dep_vel_o3, &
-               imicrogram,                                           &
-               ids,ide, jds,jde, kds,kde,                            &
-               ims,ime, jms,jme, kms,kme,                            &
-               its,ite, jts,jte, kts,kte                             )
+               h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,cvaro2,   &
+               cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,dep_vel_o3,      &
+               e_co,kemit,numgas,                                         &
+               ids,ide, jds,jde, kds,kde,                                 &
+               ims,ime, jms,jme, kms,kme,                                 &
+               its,ite, jts,jte, kts,kte                                  )
 !----------------------------------------------------------------------
   USE module_model_constants
   USE module_configure
   USE module_state_description
-! USE module_data_radm2
   USE module_dep_simple
   USE module_vertmx_wrf
   USE module_data_sorgam
   USE module_aerosols_sorgam
+  USE module_mosaic_drydep, only:  mosaic_drydep_driver
   IMPLICIT NONE
 
-   INTEGER,      INTENT(IN   ) :: id,julday,imicrogram,         &
+   INTEGER,      INTENT(IN   ) :: id,julday,                    &
+                                  numgas,                       &
                                   ids,ide, jds,jde, kds,kde,    &
                                   ims,ime, jms,jme, kms,kme,    &
                                   its,ite, jts,jte, kts,kte
@@ -33,6 +33,10 @@
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_chem ),         &
          INTENT(INOUT ) ::                                   chem
 
+   INTEGER,      INTENT(IN   ) :: kemit
+   REAL, DIMENSION( ims:ime, kms:kemit, jms:jme ),            &
+         INTENT(IN ) ::                                                    &
+          e_co
 
 
 
@@ -40,8 +44,9 @@
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,    &
           INTENT(IN   ) ::                                      &
                                                       t_phy,    &
+                                                        alt,    &
                                                       p_phy,    &
-                                                 alt, dz8w,     &
+                                                      dz8w,     &
                                               t8w,p8w,z_at_w ,  &
                                               exch_h,rho_phy,z
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,    &
@@ -67,14 +72,14 @@
                                                      dep_vel_o3
       REAL,      INTENT(IN   ) ::                               &
                              dtstep,gmt
+
 !--- deposition and emissions stuff
 ! .. Parameters ..
 ! ..
 ! .. Local Scalars ..
       REAL ::  clwchem,  dvfog, dvpart,  &
         rad, rhchem, ta, ustar, vegfrac, z1,zntt
-!  integer numchem
-!  parameter (numchem=p_ho2-1)
+
       INTEGER :: iland, iprt, iseason, jce, jcs,  &
                                               n, nr, ipr,jpr,nvr
       LOGICAL :: highnh3, rainflag, vegflag, wetflag
@@ -82,13 +87,10 @@
 ! ..
 ! .. Local Arrays ..
       REAL :: p(kts:kte-1)
-   REAL, DIMENSION( its:ite, jts:jte, p_ho2 ) ::   vgs
-!
-!
-   REAL, DIMENSION( its:ite, jts:jte, numaer ) ::   vgsa
+   REAL, DIMENSION( its:ite, jts:jte, num_chem ) ::   ddvel
+
 ! turbulent transport
       real :: pblst(kts:kte-1),ekmfull(kts:kte),zzfull(kts:kte),zz(kts:kte-1)
-      real :: vgsinp
       integer :: ii,jj,kk,i,j,k,nv
 !
 ! necessary for aerosols (module dependent)
@@ -101,54 +103,67 @@
 ! ..
 ! .. Intrinsic Functions ..
       INTRINSIC max, min
-!     numchem=p_ho2-1
-! ..
-   drydep_select: SELECT CASE(config_flags%drydep_opt)
-     CASE (WESELY)
-       CALL wrf_debug(15,'DOING DRY DEP VELOCITIES WITH WESELY METHOD')
-!      print *,'p_ho2-1'
-!      print *,p_ho2-1
-       call wesely_driver(id,ktau,dtstep, &
-               config_flags, &
-               gmt,julday,t_phy,moist,p8w,t8w, &
-               p_phy,chem,rho_phy,dz8w,vgs,aer_res, &
-               ivgtyp,tsk,gsw,vegfra,pbl,rmol,ust,znt,xlat,xlong,z,z_at_w,&
-               p_ho2,                             &
-               ids,ide, jds,jde, kds,kde,                            &
-               ims,ime, jms,jme, kms,kme,                            &
-               its,ite, jts,jte, kts,kte                             )
 
-     CASE DEFAULT 
+! ..
+   IF( config_flags%chem_opt /= CHEM_TRACER ) THEN
+      drydep_select: SELECT CASE(config_flags%drydep_opt)
+      CASE (WESELY)
+         CALL wrf_debug(15,'DOING DRY DEP VELOCITIES WITH WESELY METHOD')
+         call wesely_driver(id,ktau,dtstep,                                 &
+              config_flags,                                              &
+              gmt,julday,t_phy,moist,p8w,t8w,                            &
+              p_phy,chem,rho_phy,dz8w,ddvel,aer_res,                     &
+              ivgtyp,tsk,gsw,vegfra,pbl,rmol,ust,znt,xlat,xlong,z,z_at_w,&
+              numgas,                                                    &
+              ids,ide, jds,jde, kds,kde,                                 &
+              ims,ime, jms,jme, kms,kme,                                 &
+              its,ite, jts,jte, kts,kte                                  )
+
+      CASE DEFAULT 
                                                      
-   END SELECT drydep_select                              
+      END SELECT drydep_select
+   ELSE
+      !Set dry deposition velocity to zero when using the
+      !chemistry tracer mode.
+      ddvel(:,:,:) = 0.
+   END IF
+
    adrydep_select: SELECT CASE(config_flags%chem_opt)
-       CASE (RADM2SORG)
+     CASE (RADM2SORG)
        CALL wrf_debug(15,'DOING DRY DEP VELOCITIES FOR AEROSOLS/RADM')
-       if(imicrogram == 1 ) THEN
-          CALL wrf_error_fatal ( 'dry_dep_driver: IMICROGRAM==1')
-       endif
-       call sorgam_depdriver (id,ktau,dtstep, &
-               ust,t_phy,moist,p8w,t8w, & 
-               alt,p_phy,chem,rho_phy,dz8w,z,z_at_w,&
-               h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,cvaro2,    & 
-               cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,&
-               aer_res,vgsa,                                               &
-               imicrogram,                                                 &
-               ids,ide, jds,jde, kds,kde,                            &
-               ims,ime, jms,jme, kms,kme,                            &
-               its,ite, jts,jte, kts,kte                             )
-       CASE (RACMSORG)
+       call sorgam_depdriver (id,ktau,dtstep,                           &
+               ust,t_phy,moist,p8w,t8w,                                 &
+               alt,p_phy,chem,rho_phy,dz8w,z,z_at_w,                    &
+               h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,cvaro2, &
+               cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,               &
+               aer_res,ddvel(:,:,numgas+1:num_chem),                    &
+               num_chem-numgas,                                         &
+               ids,ide, jds,jde, kds,kde,                               &
+               ims,ime, jms,jme, kms,kme,                               &
+               its,ite, jts,jte, kts,kte                                )
+     CASE (RACMSORG)
        CALL wrf_debug(15,'DOING DRY DEP VELOCITIES FOR AEROSOLS/RACM')
-       call sorgam_depdriver (id,ktau,dtstep, &
-               ust,t_phy,moist,p8w,t8w, & 
-               alt,p_phy,chem,rho_phy,dz8w,z,z_at_w,&
-               h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,cvaro2,    & 
-               cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,&
-               aer_res,vgsa,                                               &
-               imicrogram,                                                 &
-               ids,ide, jds,jde, kds,kde,                            &
-               ims,ime, jms,jme, kms,kme,                            &
-               its,ite, jts,jte, kts,kte                             )
+       call sorgam_depdriver (id,ktau,dtstep,                           &
+               ust,t_phy,moist,p8w,t8w,                                 &
+               alt,p_phy,chem,rho_phy,dz8w,z,z_at_w,                    &
+               h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,cvaro2, &
+               cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,               &
+               aer_res,ddvel(:,:,numgas+1:num_chem),                    &
+               num_chem-numgas,                                         &
+               ids,ide, jds,jde, kds,kde,                               &
+               ims,ime, jms,jme, kms,kme,                               &
+               its,ite, jts,jte, kts,kte                                )
+     CASE ( CBMZ_MOSAIC_AA, CBMZ_MOSAIC_BB )
+       CALL wrf_debug(15,'DOING DRY DEP VELOCITIES FOR MOSAIC AEROSOLS')
+       call mosaic_drydep_driver(                                       &
+               id, ktau, dtstep, config_flags,                          &
+               gmt, julday,                                             &
+               t_phy, rho_phy, p_phy,                                   &
+               ust, aer_res,                                            &
+               moist, chem, ddvel,                                      &
+               ids,ide, jds,jde, kds,kde,                               &
+               ims,ime, jms,jme, kms,kme,                               &
+               its,ite, jts,jte, kts,kte                                )
      CASE DEFAULT 
                                                      
    END SELECT adrydep_select                              
@@ -166,11 +181,26 @@
 !-- start with vertical mixing
 !
       do k=kts,kte
-       zzfull(k)=z_at_w(i,k,j)-z_at_w(i,kts,j)
-       ekmfull(k)=max(1.e-6,exch_h(i,k,j))
+         zzfull(k)=z_at_w(i,k,j)-z_at_w(i,kts,j)
+         ekmfull(k)=max(1.e-6,exch_h(i,k,j))
       enddo
+
+!
+! --- Mix the emissions up several layers
+!     if e_co > 0., the grid cell should not be over water
+!     if e_co > 200, the grid cell should be over a large urban region
+!
+        if (e_co(i,kts,j) .gt. 0) then
+           ekmfull(kts:kts+10) = max(ekmfull(kts:kts+10),1.)
+        endif
+        if (e_co(i,kts,j) .gt. 200) then
+           ekmfull(kts:kte/2) = max(ekmfull(kts:kte/2),2.)
+        endif
+!
+!
+!
       do k=kts,kte-1
-       zz(k)=z(i,k,j)-z_at_w(i,kts,j)
+         zz(k)=z(i,k,j)-z_at_w(i,kts,j)
       enddo
       ekmfull(kts)=0.
       ekmfull(kte)=0.
@@ -182,28 +212,17 @@
 !   need to be careful here with that dumm tracer in spot 1
 !   do not need lho,lho2
 !
-      dep_vel_o3(i,j)=vgs(i,j,p_o3)
+      dep_vel_o3(i,j)=ddvel(i,j,p_o3)
       do nv=2,num_chem-0
-      do k=kts,kte-1
-       pblst(k)=max(epsilc,chem(i,k,j,nv))
-      enddo
-      if(p_nu0.gt.1.and.nv.gt.p_ho2)then
-         vgsinp=vgsa(i,j,nv-p_ho2)
-      elseif(p_nu0.gt.1.and.nv.le.p_ho2)then
-         vgsinp=vgs(i,j,nv)
-      elseif(p_nu0.eq.1.and.nv.gt.p_ho2)then
-         print *,'trying turbulent mixing in _driver'
-         CALL wrf_error_fatal ( 'dry_dep_driver: TURBULENT MIXING')
-      elseif(p_nu0.eq.1.and.nv.le.p_ho2)then      ! SEP
-         vgsinp=vgs(i,j,nv)
-      endif
+         do k=kts,kte-1
+            pblst(k)=max(epsilc,chem(i,k,j,nv))
+         enddo
 
-      call vertmx(dtstep,pblst,ekmfull,zzfull,zz,vgsinp,kts,kte-1)
+         call vertmx(dtstep,pblst,ekmfull,zzfull,zz,ddvel(i,j,nv),kts,kte-1)
 
-      do k=kts,kte-1
-       chem(i,k,j,nv)=max(epsilc,pblst(k))
-      enddo
+         do k=kts,kte-1
+            chem(i,k,j,nv)=max(epsilc,pblst(k))
+         enddo
       enddo
 100   continue
-
 END SUBROUTINE dry_dep_driver

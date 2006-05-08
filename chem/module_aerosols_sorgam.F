@@ -10,45 +10,53 @@ MODULE module_aerosols_sorgam
 
 CONTAINS
     SUBROUTINE sorgam_driver (id,ktau,dtstep,t_phy,moist,aerwrf,p8w,    &
-               t8w,alt,p_phy,chem,rho_phy,dz8w,z,z_at_w,             &
+               t8w,alt,p_phy,chem,rho_phy,dz8w,z,z_at_w,                &
                h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,cvaro2, &
                cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,vcsulf_old,    &
                e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_pm10,        &
                e_so4i,e_so4j,e_no3i,e_no3j,                             &
-               vdrog3,aer_dry,aer_water,                                &
-               imicrogram,                                              &
+               vdrog3,                                                  &
+               kemit,                                                   &
                ids,ide, jds,jde, kds,kde,                               &
                ims,ime, jms,jme, kms,kme,                               &
                its,ite, jts,jte, kts,kte                                )
+
    INTEGER,      INTENT(IN   )    ::                             &
                                       ids,ide, jds,jde, kds,kde, &
                                       ims,ime, jms,jme, kms,kme, &
                                       its,ite, jts,jte, kts,kte, &
+                                      kemit,                     &
                                       id,ktau
-   INTEGER,      INTENT(INOUT   )    :: imicrogram
-                                                                                               
+
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_moist ),        &
-         INTENT(IN ) ::                                   moist                                
+         INTENT(IN ) ::                                   moist
+
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_chem ),         &
-         INTENT(INOUT ) ::                                   chem                              
-!                                                                                              
-! following are aerosol arrays that are not advected                                           
-!                                                                                              
+         INTENT(INOUT ) ::                                   chem
+!
+! following are aerosol arrays that are not advected
+!
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                       &
          INTENT(INOUT ) ::                                             &
            h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,cvaro2,    &
+           cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2
+
+!   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                       &
+   REAL, DIMENSION( ims:ime, kms:kemit, jms:jme ),                     &
+         INTENT(INOUT ) ::                                             &
            e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_pm10,           &
-           e_so4i,e_so4j,e_no3i,e_no3j,                                &
-           cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,aer_dry,aer_water        
+           e_so4i,e_so4j,e_no3i,e_no3j
+
    REAL,  DIMENSION(ims:ime,kms:kme-0,jms:jme,ldrog),                  &
            INTENT(IN   ) ::                                            &
                                                   VDROG3               
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,           &
           INTENT(IN   ) ::                                             &
                                                       t_phy,           &
+                                                        alt,           &
                                                       p_phy,           &
                                                       dz8w,            &
-                                              alt,    z    ,           &
+                                                      z    ,           &
                                               t8w,p8w,z_at_w ,         &
                                                       aerwrf ,         &
                                                     rho_phy
@@ -56,15 +64,15 @@ CONTAINS
           INTENT(IN   ) ::                                             &
              vcsulf_old
       REAL,      INTENT(IN   ) ::                                      &
-                             dtstep                                                            
-                                                                                               
+                             dtstep
+
       REAL drog_in(ldrog)                                    ! anthropogenic AND
-                                                             !biogenic organic
-                                                             ! aerosol precursor [ ug m**-3 s**-1 
+                                                             ! biogenic organic
+                                                             ! aerosol precursor [ug m**-3 s**-1]
 
       REAL condvap_in(lspcv) !bs
                              !rs
-                             ! condensable vapors [ ug m**-3]
+                             ! condensable vapors [ug m**-3]
       REAL rgas
       DATA rgas/8.314510/
       REAL convfac,convfac2
@@ -179,15 +187,12 @@ CONTAINS
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-   INTEGER :: i,j,k,l,iprt,kk
-   real timer
-   timer=float(ktau)*dtstep/3600.
-!
-! convert advected aerosol variables to ug/m3 (imicrogram=1)
-!
-!  imicrogram=1
-!    write(0,*)'change imicrogram from 0 to 1 in sorgam'
+   INTEGER :: i,j,k,kk,l,debug_level=0
 
+!
+! convert advected aerosol variables to ug/m3 from mixing ratio
+! they will be converted back at the end of this driver
+!
    do l=p_so4aj,num_chem
       do j=jts,jte
          do k=kts,kte
@@ -210,12 +215,11 @@ CONTAINS
 !               rh(k) = .10
             enddo
             do k=kts,kte-1
-            iprt=0
 !           if(timer.gt.2.)then
 !                if((i.eq.12.and.j.eq.17.and.k.eq.1).or.       &
 !                   (i.eq.12.and.j.eq.7.and.k.eq.2).or.       &
 !                   (i.eq.1.and.j.eq.17.and.k.eq.2))iprt=1
-!                if(iprt.eq.1)print *,ktau,timer,i,j,k,p(k),t(k),dtstep,rgas,vcsulf_old(i,k,j),MWSO4,chem(i,k,j,p_sulf)
+!                if(debug_level.ge.1)print *,ktau,timer,i,j,k,p(k),t(k),dtstep,rgas,vcsulf_old(i,k,j),MWSO4,chem(i,k,j,p_sulf)
 !           endif
                cblk=0.
                do l=1,ldrog
@@ -311,20 +315,34 @@ CONTAINS
       cblk(1,VCVAPI2  ) =   0.
       cblk(1,VCVLIM1  ) =   0.
       cblk(1,VCVLIM2  ) =   0.
-!    SET EMISSIONS TO ZERO ????
-!     epm25i(1)   = 0.
-!     epm25j (1)  = 0.
-!     eeci_in = 0.
-!     eecj_in = 0.
-!     eorgi_in = 0.
-!     eorgj_in = 0.
-        epmcoarse(1)   =   e_pm10(i,k,j)/dz8w(i,k,j)
-        epm25i(1)   =   e_pm25i(i,k,j)/dz8w(i,k,j)
-        epm25j(1)   =   e_pm25j(i,k,j)/dz8w(i,k,j)
-        eeci_in     =   e_eci(i,k,j)/dz8w(i,k,j)
-        eecj_in     =   e_ecj(i,k,j)/dz8w(i,k,j)
-        eorgi_in    =   e_orgi(i,k,j)/dz8w(i,k,j)
-        eorgj_in    =   e_orgj(i,k,j)/dz8w(i,k,j)
+!
+! Set emissions to zero when above level kemit.
+!
+      if( k > kemit ) then
+         epmcoarse(1) = 0.
+         epm25i(1)    = 0.
+         epm25j (1)   = 0.
+         eeci_in      = 0.
+         eecj_in      = 0.
+         eorgi_in     = 0.
+         eorgj_in     = 0.
+         cblk(1,VSO4AJ   ) = chem(i,k,j,p_so4aj)
+         cblk(1,VSO4AI   ) = chem(i,k,j,p_so4ai)
+         cblk(1,VNO3AJ   ) = chem(i,k,j,p_no3aj)
+         cblk(1,VNO3AI   ) = chem(i,k,j,p_no3ai)
+      else
+         epmcoarse(1) = e_pm10(i,k,j)/dz8w(i,k,j)
+         epm25i(1)    = e_pm25i(i,k,j)/dz8w(i,k,j)
+         epm25j(1)    = e_pm25j(i,k,j)/dz8w(i,k,j)
+         eeci_in      = e_eci(i,k,j)/dz8w(i,k,j)
+         eecj_in      = e_ecj(i,k,j)/dz8w(i,k,j)
+         eorgi_in     = e_orgi(i,k,j)/dz8w(i,k,j)
+         eorgj_in     = e_orgj(i,k,j)/dz8w(i,k,j)
+         cblk(1,VSO4AJ   ) = chem(i,k,j,p_so4aj)+e_so4j(i,k,j)/dz8w(i,k,j)*dtstep
+         cblk(1,VSO4AI   ) = chem(i,k,j,p_so4ai)+e_so4i(i,k,j)/dz8w(i,k,j)*dtstep
+         cblk(1,VNO3AJ   ) = chem(i,k,j,p_no3aj)+e_no3j(i,k,j)/dz8w(i,k,j)*dtstep
+         cblk(1,VNO3AI   ) = chem(i,k,j,p_no3ai)+e_no3i(i,k,j)/dz8w(i,k,j)*dtstep
+      end if
 !rs. nitrate, nh3, sulf
       cblk(1,vsulf) = vsulf_in
       cblk(1,vhno3) = nitrate_in
@@ -333,14 +351,10 @@ CONTAINS
       cblk(1,VNH4AI   ) =   chem(i,k,j,p_nh4ai)
       cblk(1,VNU0     ) =   max(1.e7,chem(i,k,j,p_nu0))
       cblk(1,VAC0     ) =   max(1.e7,chem(i,k,j,p_ac0))
-!     cblk(1,VAC0     ) =   chem(i,k,j,p_ac0)
       cblk(1,VCORN    ) =   chem(i,k,j,p_corn)
-      cblk(1,VSO4AJ   ) =   chem(i,k,j,p_so4aj)+e_so4j(i,k,j)/dz8w(i,k,j)*dtstep
-      cblk(1,VSO4AI   ) =   chem(i,k,j,p_so4ai)+e_so4i(i,k,j)/dz8w(i,k,j)*dtstep
-      cblk(1,VNO3AJ   ) =   chem(i,k,j,p_no3aj)+e_no3j(i,k,j)/dz8w(i,k,j)*dtstep
-      cblk(1,VNO3AI   ) =   chem(i,k,j,p_no3ai)+e_no3i(i,k,j)/dz8w(i,k,j)*dtstep
 
-      if(iprt.eq.1)then
+
+      if(debug_level.ge.1)then
         print*,'in a_mechanisms',i,j,k
         print*,'NSPCSDA, BLKSIZE',NSPCSDA, BLKSIZE
         print*,'k,DTA,PRES,TEMP,RELHUM',k,DTstep,10.*P(k),T(k),RH(k)
@@ -355,10 +369,6 @@ CONTAINS
       CALL rpmmod3(nspcsda,blksize,k,dtstep,10.*p(k),t(k),rh(k),nitrate_in,nh3_in, &
         vsulf_in,so4rat_in,drog_in,ldrog,condvap_in,ncv,nacv,eeci_in,eecj_in, &
         eorgi_in,eorgj_in,epm25i,epm25j,epmcoarse,soilrat_in,cblk,i,j,k)
-!
-!  density is brought back in in solve_em (later in transport
-!  that will be called by solve_int
-!
       chem(i,k,j,p_so4aj) = cblk(1,VSO4AJ   )
       chem(i,k,j,p_so4ai) = cblk(1,VSO4AI   )
       chem(i,k,j,p_nh4aj) = cblk(1,VNH4AJ   )
@@ -412,99 +422,135 @@ CONTAINS
       chem(i,k,j,p_nh3)=max(epsilc,cblk(1,vnh3)/CONVFAC/MWNH3)
       enddo         ! k-loop
  100  continue      ! i,j-loop
-!
-! sum up variables for interaction with radiation and photolysis
-!
-      do j=jts,jte
-      do k=kts,kte-1
-      do i=its,ite
-      aer_dry(i,k,j)=0.
-      do l=p_so4aj,p_p25i
-        aer_dry(i,k,j)=aer_dry(i,k,j)+chem(i,k,j,l)
-      enddo
-      enddo
-      enddo
-      enddo
-      do j=jts,jte
-      do k=kts,kte-1
-      do i=its,ite
-        aer_water(i,k,j)=h2oaj(i,k,j)+h2oai(i,k,j)
-      enddo
-      enddo
-      enddo
-!
-!  put back units to mixing ratio
-!
 
-   if ( p_so4aj >= PARAM_FIRST_SCALAR ) then
-!  !$OMP PARALLEL DO   &
-!  !$OMP PRIVATE ( ij ,its,ite,jts,jte,kte)
-! aerosol_couple_loop :  DO ij = 1 , grid%num_tiles
-!      its = max(grid%i_start(ij),ids)
-!      ite = min(grid%i_end(ij),ide-1)
-!      jts = max(grid%j_start(ij),jds)
-!      jte = min(grid%j_end(ij),jde-1)
+!
+! convert aerosol variables back to mixing ratio from ug/m3
+!
       do l=p_so4aj,num_chem
+         do j=jts,jte
+            do k=kts,kte
+               kk=min(k,kte-1)
+               do i=its,ite
+                  chem(i,k,j,l)=max(epsilc,chem(i,kk,j,l)*alt(i,kk,j))
+               enddo
+            enddo
+         enddo
+      enddo
+
+    END SUBROUTINE sorgam_driver
+! ///////////////////////////////////////////////////
+    SUBROUTINE sum_pm_sorgam (                                         &
+         alt, chem, h2oaj, h2oai,                                      &
+         pm2_5_dry, pm2_5_water, pm2_5_dry_ec, pm10,                   &
+         ids,ide, jds,jde, kds,kde,                                    &
+         ims,ime, jms,jme, kms,kme,                                    &
+         its,ite, jts,jte, kts,kte                                     )
+
+   INTEGER,      INTENT(IN   )    ::                                   &
+                                      ids,ide, jds,jde, kds,kde,       &
+                                      ims,ime, jms,jme, kms,kme,       &
+                                      its,ite, jts,jte, kts,kte
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_chem ),             &
+         INTENT(IN ) :: chem
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                       &
+         INTENT(IN ) :: alt,h2oaj,h2oai
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                       &
+         INTENT(OUT) :: pm2_5_dry,pm2_5_water,pm2_5_dry_ec,pm10
+
+   INTEGER :: i,ii,j,jj,k,kk,n
+!
+! sum up pm2_5 and pm10 output
+!
+      pm2_5_dry(its:ite, kts:kte-1, jts:jte)    = 0.
+      pm2_5_water(its:ite, kts:kte-1, jts:jte)  = 0.
+      pm2_5_dry_ec(its:ite, kts:kte-1, jts:jte) = 0.
       do j=jts,jte
-!     do k=k_start,k_end
-      do k=kts,kte
-      kk=min(k,kde-1)
+         jj=min(jde-1,j)
+      do k=kts,kte-1
+         kk=min(kde-1,k)
       do i=its,ite
-        chem(i,k,j,l)=chem(i,kk,j,l)*alt(i,kk,j)
+         ii=min(ide-1,i)
+         do n=p_so4aj,p_p25i
+            pm2_5_dry(i,k,j) = pm2_5_dry(i,k,j)+chem(ii,kk,jj,n)
+         enddo
+         pm2_5_dry_ec(i,k,j) = pm2_5_dry_ec(i,k,j)+chem(ii,kk,jj,p_ecj) &
+                               + chem(ii,kk,jj,p_eci)
+         pm2_5_water(i,k,j) =  pm2_5_water(i,k,j)+h2oaj(i,k,j)       &
+                               + h2oai(i,k,j)
+
+         !Convert the units from mixing ratio to concentration (ug m^-3)
+         pm2_5_dry(i,k,j)    = pm2_5_dry(i,k,j) / alt(ii,kk,jj)
+         pm2_5_dry_ec(i,k,j) = pm2_5_dry_ec(i,k,j) / alt(ii,kk,jj)
+         pm2_5_water(i,k,j)  = pm2_5_water(i,k,j) / alt(ii,kk,jj)
       enddo
       enddo
       enddo
+      do j=jts,jte
+         jj=min(jde-1,j)
+         do k=kts,kte-1
+            kk=min(kde-1,k)
+            do i=its,ite
+               ii=min(ide-1,i)
+               pm10(i,k,j) = pm2_5_dry(i,k,j)                       &
+                           + ( chem(ii,kk,jj,p_antha)               &
+                           + chem(ii,kk,jj,p_soila)                 &
+                           + chem(ii,kk,jj,p_seas) ) / alt(ii,kk,jj)
+            enddo
+         enddo
       enddo
-!   enddo aerosol_couple_loop
-    endif
-                                                                     
-END SUBROUTINE sorgam_driver
-    SUBROUTINE sorgam_depdriver (id,ktau,dtstep,                           &
-               ust,t_phy,moist,p8w,t8w,                                    &
-               alt,p_phy,chem,rho_phy,dz8w,z,z_at_w,                       &
-               h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,cvaro2,    &
-               cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,                  &
-               aer_res,vgsa,                                               &
-               imicrogram,                                                 &
-               ids,ide, jds,jde, kds,kde,                                  &
-               ims,ime, jms,jme, kms,kme,                                  &
-               its,ite, jts,jte, kts,kte                                   )
+    END SUBROUTINE sum_pm_sorgam
+! ///////////////////////////////////////////////////
+    SUBROUTINE sorgam_depdriver (id,ktau,dtstep,                        &
+               ust,t_phy,moist,p8w,t8w,                                 &
+               alt,p_phy,chem,rho_phy,dz8w,z,z_at_w,                    &
+               h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,cvaro2, &
+               cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,               &
+               aer_res,vgsa,                                            &
+               numaer,                                                  &
+               ids,ide, jds,jde, kds,kde,                               &
+               ims,ime, jms,jme, kms,kme,                               &
+               its,ite, jts,jte, kts,kte                                )
    INTEGER,      INTENT(IN   )    ::                             &
-                                      ids,ide, jds,jde, kds,kde, &                             
-                                      ims,ime, jms,jme, kms,kme, &                             
-                                      its,ite, jts,jte, kts,kte, &                             
-                                      id,ktau,imicrogram
-                                                                                               
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_moist ),        &                           
-         INTENT(IN ) ::                                   moist                                
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_chem ),         &                           
-         INTENT(INOUT ) ::                                   chem                              
-!                                                                                              
-! following are aerosol arrays that are not advected                                           
-!                                                                                              
-   REAL, DIMENSION( its:ite, jts:jte, numaer ),                       &                       
-         INTENT(INOUT ) ::                                             &                       
+                                      numaer,                    &
+                                      ids,ide, jds,jde, kds,kde, &
+                                      ims,ime, jms,jme, kms,kme, &
+                                      its,ite, jts,jte, kts,kte, &
+                                      id,ktau
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_moist ),        &
+         INTENT(IN ) ::                                   moist
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_chem ),         &
+         INTENT(INOUT ) ::                                   chem
+!
+! following are aerosol arrays that are not advected
+!
+   REAL, DIMENSION( its:ite, jts:jte, numaer ),                       &
+         INTENT(INOUT ) ::                                             &
          vgsa
-   REAL, DIMENSION( its:ite, jts:jte ),                       &                       
-         INTENT(INOUT ) ::                                             &                       
+   REAL, DIMENSION( its:ite, jts:jte ),                       &
+         INTENT(INOUT ) ::                                             &
          aer_res
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                       &                       
-         INTENT(INOUT ) ::                                             &                       
-           h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,cvaro2,    &                       
-           cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2        
-   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,    &                              
-          INTENT(IN   ) ::                                      &                              
-                                                      t_phy,    &                              
-                                                      p_phy,    &                              
-                                                      dz8w,     &                              
-                                       alt,           z    ,    &                              
-                                       t8w,p8w,z_at_w ,  &                                     
-                                                    rho_phy                                    
-   REAL,  DIMENSION( ims:ime ,  jms:jme )         ,    &                              
-          INTENT(IN   ) ::                                      &                              
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                       &
+         INTENT(INOUT ) ::                                             &
+           h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,cvaro2,    &
+           cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2
+   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,    &
+          INTENT(IN   ) ::                                      &
+                                                      t_phy,    &
+                                                      alt,      &
+                                                      p_phy,    &
+                                                      dz8w,     &
+                                                      z    ,    &
+                                       t8w,p8w,z_at_w ,  &
+                                                    rho_phy
+   REAL,  DIMENSION( ims:ime ,  jms:jme )         ,    &
+          INTENT(IN   ) ::                                      &
                                                      ust
-      REAL,      INTENT(IN   ) ::                               &                              
-                             dtstep                                                            
+      REAL,      INTENT(IN   ) ::                               &
+                             dtstep
                                                                                                
       REAL rgas
       DATA rgas/8.314510/
@@ -668,7 +714,7 @@ END SUBROUTINE sorgam_driver
 
       do 100 j=jts,jte
          do 100 i=its,ite
-            cblk=epsilc  
+            cblk=epsilc
             do k=kts,kte-1
                t(k) = t_phy(i,k,j)
                p(k) = .001*p_phy(i,k,j)
@@ -3566,32 +3612,32 @@ END SUBROUTINE sorgam_depdriver
       DO lcell = 1, numcells
 
 ! *** Aitken-mode
-        cblk(lcell,vnu3) = max(conmin,(so4fac*cblk(lcell, &
+        cblk(lcell,vnu3) = so4fac*cblk(lcell, &
           vso4ai)+nh4fac*cblk(lcell,vnh4ai)+h2ofac*cblk(lcell, &
           vh2oai)+no3fac*cblk(lcell,vno3ai)+orgfac*cblk(lcell, &
           vorgaro1i)+orgfac*cblk(lcell,vorgaro2i)+orgfac*cblk(lcell, &
           vorgalk1i)+orgfac*cblk(lcell,vorgole1i)+orgfac*cblk(lcell, &
           vorgba1i)+orgfac*cblk(lcell,vorgba2i)+orgfac*cblk(lcell, &
           vorgba3i)+orgfac*cblk(lcell,vorgba4i)+orgfac*cblk(lcell, &
-          vorgpai)+anthfac*cblk(lcell,vp25ai)+anthfac*cblk(lcell,veci)))
+          vorgpai)+anthfac*cblk(lcell,vp25ai)+anthfac*cblk(lcell,veci)
 
 
 
 ! *** Accumulation-mode
 
-        cblk(lcell,vac3) = max(conmin,(so4fac*cblk(lcell, &
+        cblk(lcell,vac3) = so4fac*cblk(lcell, &
           vso4aj)+nh4fac*cblk(lcell,vnh4aj)+h2ofac*cblk(lcell, &
           vh2oaj)+no3fac*cblk(lcell,vno3aj)+orgfac*cblk(lcell, &
           vorgaro1j)+orgfac*cblk(lcell,vorgaro2j)+orgfac*cblk(lcell, &
           vorgalk1j)+orgfac*cblk(lcell,vorgole1j)+orgfac*cblk(lcell, &
           vorgba1j)+orgfac*cblk(lcell,vorgba2j)+orgfac*cblk(lcell, &
           vorgba3j)+orgfac*cblk(lcell,vorgba4j)+orgfac*cblk(lcell, &
-          vorgpaj)+anthfac*cblk(lcell,vp25aj)+anthfac*cblk(lcell,vecj)))
+          vorgpaj)+anthfac*cblk(lcell,vp25aj)+anthfac*cblk(lcell,vecj)
 
 ! *** coarse mode
 
-        cblk(lcell,vcor3) = max(conmin,(soilfac*cblk(lcell, &
-          vsoila)+seasfac*cblk(lcell,vseas)+anthfac*cblk(lcell,vantha)))
+        cblk(lcell,vcor3) = soilfac*cblk(lcell, &
+          vsoila)+seasfac*cblk(lcell,vseas)+anthfac*cblk(lcell,vantha)
 
 ! *** now get particle mass and density
 
@@ -3642,7 +3688,7 @@ END SUBROUTINE sorgam_depdriver
 ! *** 6.6328E-8 is the sea level values given in Table I.2.8
 ! *** on page 10 of U.S. Standard Atmosphere 1962
 
-! *** 	Calcualte dynamic viscosity [ kg m**-1 s**-1 ]:
+! *** 	Calculate dynamic viscosity [ kg m**-1 s**-1 ]:
 
 ! *** U.S. Standard Atmosphere 1962 page 14 expression
 !     for dynamic viscosity is:
@@ -6592,37 +6638,36 @@ END SUBROUTINE vdvg
 !
 !
     SUBROUTINE aerosols_sorgam_init(chem,                            &
-         alt,t,pb,p,t0,p1000mb,rcp,                                  &
-         aer_dry,aer_water,chem_in_opt,                              &
-         imicrogram,                                                 &
+         ph,phb,g,alt,t,pb,p,t0,p1000mb,rcp,                         &
+         pm2_5_dry,pm2_5_water,pm2_5_dry_ec,                         &
+         chem_in_opt,aer_ic_opt,                                     &
          ids,ide, jds,jde, kds,kde,                                  &
          ims,ime, jms,jme, kms,kme,                                  &
          its,ite, jts,jte, kts,kte                                   )
    implicit none
-   INTEGER,      INTENT(IN   ) :: chem_in_opt
-   INTEGER,      INTENT(INOUT) :: imicrogram
+   INTEGER,      INTENT(IN   ) :: chem_in_opt,aer_ic_opt
    INTEGER,      INTENT(IN   ) ::                               &
                                   ids,ide, jds,jde, kds,kde,    &
                                   ims,ime, jms,jme, kms,kme,    &
                                   its,ite, jts,jte, kts,kte
-   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme, num_chem ) ,    &
+   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme, num_chem ) ,     &
           INTENT(INOUT   ) ::                                      &
                               chem
-   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ) ,    &
-          INTENT(INOUT      ) ::                                      &
-                     aer_dry,aer_water
-   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ) ,    &
+   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ) ,               &
+          INTENT(INOUT      ) ::                                   &
+                     pm2_5_dry,pm2_5_water,pm2_5_dry_ec
+   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ) ,               &
           INTENT(IN      ) ::                                      &
-                            t,pb,p,alt
+                            ph,phb,t,pb,p,alt
    REAL,                                                           &
           INTENT(IN      ) ::                                      &
-                            t0,rcp
+                            g,t0,rcp
    REAL,                                                           &
           INTENT(IN      ) ::                                      &
                             p1000mb
      integer i,j,k,l,ii,jj,kk     
-     real tempfac,mwso4
-    real,dimension(its:ite,kts:kte,jts:jte) :: convfac
+     real tempfac,mwso4,zz
+     real,dimension(its:ite,kts:kte,jts:jte) :: convfac
       REAL splitfac
                         !between gas and aerosol phase
       REAL so4vaptoaer
@@ -6636,11 +6681,11 @@ END SUBROUTINE vdvg
       DATA splitfac/.98/
       DATA so4vaptoaer/.999/
 
-
+        pm2_5_dry(its:ite, kts:kte-1, jts:jte)    = 0.
+        pm2_5_water(its:ite, kts:kte-1, jts:jte)  = 0.
+        pm2_5_dry_ec(its:ite, kts:kte-1, jts:jte) = 0.
 
 ! *** Compute these once and they will all  be saved in COMMON
-        aer_dry=0.
-        aer_water=0.
         xxlsgn = log(sginin)
         xxlsga = log(sginia)
         xxlsgc = log(sginic)
@@ -6747,30 +6792,24 @@ END SUBROUTINE vdvg
 !  IF USING OLD SIMULATION, DO NOT REINITIALIZE!
 !
 !
-        if(chem_in_opt == 1 ) then
-          return
-        endif
-!       if(chem_in_opt == 1 ) then
-!         chem(ims:ime,kms:kme,jms:jme,p_nh3)=5.e-6
-!         chem(ims:ime,kms:kme,jms:jme,p_hno3)=7.e-5
-!         chem(ims:ime,kms:kme,jms:jme,p_sulf)=5.e-5
-!       endif
-!       do l=numchem,num_chem
+        if(chem_in_opt == 1 ) return
         do l=p_so4aj,num_chem
          chem(ims:ime,kms:kme,jms:jme,l)=epsilc
         enddo
         chem(ims:ime,kms:kme,jms:jme,p_nu0)=1.e8
         chem(ims:ime,kms:kme,jms:jme,p_ac0)=1.e8
-        print *,'ims,ime,ids,ide,its,ite = ',ims,ime,ids,ide,its,ite
         do j=jts,jte
         jj=min(jde-1,j)
         do k=kts,kte-1
         kk=min(kde-1,k)
         do i=its,ite
         ii=min(ide-1,i)
+
+!Option for alternate ic's
+        if( aer_ic_opt == AER_IC_DEFAULT ) then
           tempfac=(t(ii,kk,jj) + t0)*((p(ii,kk,jj) + pb(ii,kk,jj))/p1000mb)**rcp
           convfac(i,k,j) = (p(ii,kk,jj)+pb(ii,kk,jj))/rgasuniv/tempfac
-          if(i.eq.its.and.j.eq.jts)print *,k,kk,alt(i,kk,j),convfac(i,k,j)
+!         if(i.eq.its.and.j.eq.jts)print *,k,kk,alt(i,kk,j),convfac(i,k,j)
           chem(i,k,j,p_so4aj)=chem(ii,kk,jj,p_sulf)*CONVFAC(i,k,j)*MWSO4*splitfac*so4vaptoaer
           chem(i,k,j,p_so4ai)=chem(ii,kk,jj,p_sulf)*CONVFAC(i,k,j)*MWSO4* &
         (1.-splitfac)*so4vaptoaer
@@ -6779,15 +6818,15 @@ END SUBROUTINE vdvg
           chem(i,k,j,p_nh4ai) = 10.E-05
           chem(i,k,j,p_no3aj) = 10.E-05
           chem(i,k,j,p_no3ai) = 10.E-05
-!         if(i.eq.its.and.j.eq.jts)then
-!           if(k.eq.kts)print *,dginin,dginia,dginic
-!           if(k.eq.kts)print *,esn36,esa36,esc36
-!           print *,k,p(i,kk,j)+pb(i,kk,j),rgasuniv,chem(i,k,j,p_so4aj)
-!         endif
-!         if(i.eq.ite.and.j.eq.jte)then
-!           if(k.eq.kts)print *,i,j,k
-!           print *,k,p(i,kk,j)+pb(i,kk,j),rgasuniv,chem(i,k,j,p_so4aj)
-!         endif
+        elseif( aer_ic_opt == AER_IC_PNNL ) then
+           zz = (phb(i,k,j)+phb(i,k+1,j)+ph(i,k,j)+ph(i,k+1,j))*0.5/g
+           call sorgam_init_aer_ic_pnnl(   &
+                chem, zz, i,k,j, ims,ime,jms,jme,kms,kme )
+        else
+           call wrf_error_fatal(   &
+                "aerosols_sorgam_init: unable to parse aer_ic_opt" )
+        end if
+
 !... i-mode
       m3nuc = so4fac*chem(i,k,j,p_so4ai) + nh4fac*chem(i,k,j,p_nh4ai) + &
         no3fac*chem(i,k,j,p_no3ai) + orgfac*chem(i,k,j,p_orgaro1i) + &
@@ -6818,43 +6857,155 @@ END SUBROUTINE vdvg
         
       chem(i,k,j,p_corn) = m3cor/((dginic**3)*esc36)
 
+!jdf, added if statement, don't want to overide specified values for PNNL case
+        if( aer_ic_opt == AER_IC_DEFAULT ) then
           chem(i,k,j,p_so4aj)=chem(i,k,j,p_so4aj)
           chem(i,k,j,p_so4ai)=chem(i,k,j,p_so4ai)
           chem(i,k,j,p_nh4aj) = 10.E-05
           chem(i,k,j,p_nh4ai) = 10.E-05
           chem(i,k,j,p_no3aj) = 10.E-05
           chem(i,k,j,p_no3ai) = 10.E-05
-          if(i.eq.10.and.j.eq.10)then
-            if(k.eq.kts)print *,'initializing aerosols '
-            print *,k,convfac(i,k,j),chem(i,k,j,p_orgpaj),chem(i,k,j,p_so4aj),chem(i,k,j,p_nu0)
-          endif
+        endif
+!jdf
+        enddo
+        enddo
+        enddo
 
+!...Convert aerosols to mixing ratio        
+        do l=p_so4aj,num_chem
+           do j=jts,jte
+              do k=kts,kte
+                 kk = min(k,kte-1)
+                 do i=its,ite
+                    chem(i,k,j,l)=chem(i,kk,j,l)*alt(i,kk,j)
+                 enddo
+              enddo
+              do i=its,ite
+                 chem(i,kte,j,l)=chem(i,kte-1,j,l)
+              enddo
+           enddo
         enddo
-        enddo
-        enddo
-!
-!
-!  put back units to mixing ratio: This is only done when initializing from background startup
-!
 
-      do l=p_so4aj,num_chem
-         do j=jts,jte
-            do k=kts,kte
-               kk=min(k,kte-1)
-               do i=its,ite
-                 chem(i,k,j,l)=chem(i,kk,j,l)*alt(i,kk,j)
-               enddo
-            enddo
-            do i=its,ite
-              chem(i,kte,j,l)=chem(i,kte-1,j,l)
-            enddo
-         enddo
-      enddo
-        
         chem=max(chem,epsilc)
-        print*,'in sorgam init, nu0(ims:5,5,5)', chem(ims:5,5,5,p_nu0)
+!       print*,'in sorgam init, nu0(ims:5,5,5)', chem(ims:5,5,5,p_nu0)
 
 
     return
     END SUBROUTINE aerosols_sorgam_init
+
+!****************************************************************
+!                                                               *
+!   SUBROUTINE TO INITIALIZE AEROSOL VALUES USING THE           *
+!   aer_ic_opt == aer_ic_pnnl OPTION.                           *
+!                                                               *
+!   wig, 21-Apr-2004, original version	                        *
+!   rce, 25-apr-2004 - name changes for consistency with        *
+!                          new aer_ic constants in Registry     *
+!   wig,  7-May-2004, added height dependance                   *
+!                                                               *
+!   CALLS THE FOLLOWING SUBROUTINES: NONE                       *
+!                                                               *
+!   CALLED BY                      : aerosols_sorgam_init       *
+!                                                               *
+!****************************************************************
+    SUBROUTINE sorgam_init_aer_ic_pnnl(                  &
+         chem, z, i,k,j, ims,ime, jms,jme, kms,kme              )
+
+      USE module_configure,only:num_chem
+      implicit none
+
+      INTEGER,INTENT(IN   ) :: i,k,j,                           &
+                               ims,ime, jms,jme, kms,kme
+      REAL,  DIMENSION( ims:ime , kms:kme , jms:jme, num_chem ),&
+           INTENT(INOUT   ) :: chem
+
+      real, intent(in     ) :: z
+      real :: mult
+
+!
+! Determine height multiplier...
+! This should mimic the calculation in sorgam_set_aer_bc_pnnl,
+! mosaic_init_wrf_mixrats_opt2, and bdy_chem_value_mosaic
+!!$!    Height(m)     Multiplier
+!!$!    ---------     ----------
+!!$!    <=2000        1.0
+!!$!    2000<z<3000   linear transition zone to 0.5
+!!$!    3000<z<5000   linear transision zone to 0.25
+!!$!    >=3000        0.25
+!!$!
+!!$! which translates to:
+!!$!    2000<z<3000   mult = 1.0 + (z-2000.)*(0.5-1.0)/(3000.-2000.)
+!!$!    3000<z<5000   mult = 0.5 + (z-3000.)*(0.25-0.5)/(5000.-3000.)
+!!$! or in reduced form:
+!!$      if( z <= 2000. ) then
+!!$         mult = 1.0
+!!$      elseif( z > 2000. &
+!!$           .and. z <= 3000. ) then
+!!$         mult = 1.0 - 0.0005*(z-2000.)
+!!$      elseif( z > 3000. &
+!!$           .and. z <= 5000. ) then
+!!$         mult = 0.5 - 1.25e-4*(z-3000.)
+!!$      else
+!!$         mult = 0.25
+!!$      end if
+! Updated aerosol profile multiplier 1-Apr-2005:
+!    Height(m)     Multiplier
+!    ---------     ----------
+!    <=2000        1.0
+!    2000<z<3000   linear transition zone to 0.25
+!    3000<z<5000   linear transision zone to 0.125
+!    >=5000        0.125
+!
+! which translates to:
+!    2000<z<3000   mult = 1.00 + (z-2000.)*(0.25-1.0)/(3000.-2000.)
+!    3000<z<5000   mult = 0.25 + (z-3000.)*(0.125-0.25)/(5000.-3000.)
+! or in reduced form:
+        if( z <= 2000. ) then
+           mult = 1.0
+        elseif( z > 2000. &
+             .and. z <= 3000. ) then
+           mult = 1.0 - 0.00075*(z-2000.)
+        elseif( z > 3000. &
+             .and. z <= 5000. ) then
+           mult = 0.25 - 4.166666667e-5*(z-3000.)
+        else
+           mult = 0.125
+        end if
+
+! These should match what is in sorgam_set_aer_bc_pnnl.
+! Values as of 2-Dec-2004:
+      chem(i,k,j,p_sulf)     = mult*conmin
+      chem(i,k,j,p_so4aj)    = mult*2.375
+      chem(i,k,j,p_so4ai)    = mult*0.179
+      chem(i,k,j,p_nh4aj)    = mult*0.9604
+      chem(i,k,j,p_nh4ai)    = mult*0.0196
+      chem(i,k,j,p_no3aj)    = mult*0.0650
+      chem(i,k,j,p_no3ai)    = mult*0.0050
+      chem(i,k,j,p_ecj)      = mult*0.1630
+      chem(i,k,j,p_eci)      = mult*0.0120
+      chem(i,k,j,p_p25j)     = mult*0.6350
+      chem(i,k,j,p_p25i)     = mult*0.0490
+      chem(i,k,j,p_antha)    = mult*2.2970
+      chem(i,k,j,p_orgpaj)   = mult*0.9300
+      chem(i,k,j,p_orgpai)   = mult*0.0700
+      chem(i,k,j,p_orgaro1j) = conmin
+      chem(i,k,j,p_orgaro1i) = conmin
+      chem(i,k,j,p_orgaro2j) = conmin
+      chem(i,k,j,p_orgaro2i) = conmin
+      chem(i,k,j,p_orgalk1j) = conmin
+      chem(i,k,j,p_orgalk1i) = conmin
+      chem(i,k,j,p_orgole1j) = conmin
+      chem(i,k,j,p_orgole1i) = conmin
+      chem(i,k,j,p_orgba1j)  = conmin
+      chem(i,k,j,p_orgba1i)  = conmin
+      chem(i,k,j,p_orgba2j)  = conmin
+      chem(i,k,j,p_orgba2i)  = conmin
+      chem(i,k,j,p_orgba3j)  = conmin
+      chem(i,k,j,p_orgba3i)  = conmin
+      chem(i,k,j,p_orgba4j)  = conmin
+      chem(i,k,j,p_orgba4i)  = conmin
+      chem(i,k,j,p_seas)     = mult*0.229
+
+    END SUBROUTINE sorgam_init_aer_ic_pnnl
+
 END Module module_aerosols_sorgam

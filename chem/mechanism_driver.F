@@ -1,12 +1,13 @@
 !WRF:MODEL_LAYER:CHEMICS
 !
-    subroutine mechanism_driver(id,ktau,dtstep,config_flags,           &
-               gmt,julday,t_phy,moist,p8w,t8w,                         &
-               p_phy,chem,rho_phy,dz8w,z,z_at_w,vdrog3,vcsulf_old,&
+    subroutine mechanism_driver(id,ktau,dtstep,ktauc,dtstepc,          &
+               config_flags,gmt,julday,t_phy,moist,p8w,t8w,            &
+               p_phy,chem,rho_phy,dz8w,z,z_at_w,vdrog3,vcsulf_old,     &
                ph_macr,ph_o31d,ph_o33p,ph_no2,ph_no3o2,ph_no3o,ph_hno2,&
                ph_hno3,ph_hno4,ph_h2o2,ph_ch2or,ph_ch2om,ph_ch3cho,    &
                ph_ch3coch3,ph_ch3coc2h5,ph_hcocho,ph_ch3cocho,         &
                ph_hcochest,ph_ch3o2h,ph_ch3coo2h,ph_ch3ono2,ph_hcochob,&
+               ph_n2o5,ph_o2,                                          &
                addt,addx,addc,etep,oltp,olip,cslp,limp,hc5p,hc8p,tolp, &
                xylp,apip,isop,hc3p,ethp,o3p,tco3,mo2,o1d,olnn,rpho,xo2,&
                ketp,olnd,                                              &
@@ -22,6 +23,7 @@
   USE module_radm
   USE module_racm
   USE module_aerosols_sorgam
+  USE module_cbmz, only:	cbmz_driver
    IMPLICIT NONE
 
    INTEGER,      INTENT(IN   ) :: id,julday,                           &
@@ -29,9 +31,9 @@
                                   ims,ime, jms,jme, kms,kme,           &
                                   its,ite, jts,jte, kts,kte
    INTEGER,      INTENT(IN   ) ::                                      &
-                                  ktau
+                                  ktau,ktauc
       REAL,      INTENT(IN   ) ::                                      &
-                             dtstep,gmt
+                                  dtstep,dtstepc,gmt
 !
 ! advected moisture variables
 !
@@ -51,7 +53,8 @@
            ph_macr,ph_o31d,ph_o33p,ph_no2,ph_no3o2,ph_no3o,ph_hno2,    &
            ph_hno3,ph_hno4,ph_h2o2,ph_ch2or,ph_ch2om,ph_ch3cho,        &
            ph_ch3coch3,ph_ch3coc2h5,ph_hcocho,ph_ch3cocho,             &
-           ph_hcochest,ph_ch3o2h,ph_ch3coo2h,ph_ch3ono2,ph_hcochob
+           ph_hcochest,ph_ch3o2h,ph_ch3coo2h,ph_ch3ono2,ph_hcochob,    &
+           ph_n2o5,ph_o2
 !
 ! RACM radicals
 !
@@ -94,22 +97,8 @@
 !
    chem_select: SELECT CASE(config_flags%chem_opt)
      CASE (RADM2)
-       CALL wrf_debug(15,'calling radm2 from chem_driver')
-       call radm_driver(id,ktau,dtstep, config_flags,                  &
-               gmt,julday,t_phy,moist,p8w,t8w,                         &
-               p_phy,chem,rho_phy,dz8w,z,z_at_w,vdrog3,         &
-               ph_o31d,ph_o33p,ph_no2,ph_no3o2,ph_no3o,ph_hno2,  &
-               ph_hno3,ph_hno4,ph_h2o2,ph_ch2or,ph_ch2om,ph_ch3cho,    &
-               ph_ch3coch3,ph_ch3coc2h5,ph_hcocho,ph_ch3cocho,         &
-               ph_hcochest,ph_ch3o2h,ph_ch3coo2h,ph_ch3ono2,ph_hcochob,&
-               ids,ide, jds,jde, kds,kde,                              &
-               ims,ime, jms,jme, kms,kme,                              &
-               its,ite, jts,jte, kts,kte                               )
-
-     CASE (RADM2SORG)
-       CALL wrf_debug(15,'calling radm2 from chem_driver')
-       vcsulf_old(its:ite,kts:kte-1,jts:jte)=max(chem(its:ite,kts:kte-1,jts:jte,p_sulf),epsilc)
-       call radm_driver(id,ktau,dtstep, config_flags,                  &
+       CALL wrf_debug(15,'calling radm2 from mechanism_driver')
+       call radm_driver(id,ktauc,dtstepc,config_flags,                 &
                gmt,julday,t_phy,moist,p8w,t8w,                         &
                p_phy,chem,rho_phy,dz8w,z,z_at_w,vdrog3,                &
                ph_o31d,ph_o33p,ph_no2,ph_no3o2,ph_no3o,ph_hno2,        &
@@ -119,11 +108,27 @@
                ids,ide, jds,jde, kds,kde,                              &
                ims,ime, jms,jme, kms,kme,                              &
                its,ite, jts,jte, kts,kte                               )
+
+     CASE (RADM2SORG)
+       CALL wrf_debug(15,'calling radm2 from mechanism_driver')
+       vcsulf_old(its:ite,kts:kte-1,jts:jte) = &
+            max(chem(its:ite,kts:kte-1,jts:jte,p_sulf),epsilc)
+       call radm_driver(id,ktauc,dtstepc,config_flags,                 &
+               gmt,julday,t_phy,moist,p8w,t8w,                         &
+               p_phy,chem,rho_phy,dz8w,z,z_at_w,vdrog3,                &
+               ph_o31d,ph_o33p,ph_no2,ph_no3o2,ph_no3o,ph_hno2,        &
+               ph_hno3,ph_hno4,ph_h2o2,ph_ch2or,ph_ch2om,ph_ch3cho,    &
+               ph_ch3coch3,ph_ch3coc2h5,ph_hcocho,ph_ch3cocho,         &
+               ph_hcochest,ph_ch3o2h,ph_ch3coo2h,ph_ch3ono2,ph_hcochob,&
+               ids,ide, jds,jde, kds,kde,                              &
+               ims,ime, jms,jme, kms,kme,                              &
+               its,ite, jts,jte, kts,kte                               )
+
      CASE (RACM)
-       CALL wrf_debug(15,'calling racm from chem_driver')
-       call racm_driver(id,ktau,dtstep,config_flags,              &
+       CALL wrf_debug(15,'calling racm from mechanism_driver')
+       call racm_driver(id,ktauc,dtstepc,config_flags,                 &
                gmt,julday,t_phy,moist,p8w,t8w,                         &
-               p_phy,chem,rho_phy,dz8w,z,z_at_w,vdrog3,         &
+               p_phy,chem,rho_phy,dz8w,z,z_at_w,vdrog3,                &
                ph_macr,ph_o31d,ph_o33p,ph_no2,ph_no3o2,ph_no3o,ph_hno2,&
                ph_hno3,ph_hno4,ph_h2o2,ph_ch2or,ph_ch2om,ph_ch3cho,    &
                ph_ch3coch3,ph_ch3coc2h5,ph_hcocho,ph_ch3cocho,         &
@@ -134,12 +139,13 @@
                ids,ide, jds,jde, kds,kde,                              &
                ims,ime, jms,jme, kms,kme,                              &
                its,ite, jts,jte, kts,kte                               )
+
      CASE (RACMSORG)
-       CALL wrf_debug(15,'calling racm/sorgam from chem_driver')
-       vcsulf_old(its:ite,kts:kte-1,jts:jte)=max(chem(its:ite,kts:kte-1,jts:jte,p_sulf),epsilc)
-       call racm_driver(id,ktau,dtstep,config_flags,              &
+       CALL wrf_debug(15,'calling racm/sorgam from mechanism_driver')
+       vcsulf_old(its:ite,kts:kte-1,jts:jte) = max(chem(its:ite,kts:kte-1,jts:jte,p_sulf),epsilc)
+       call racm_driver(id,ktauc,dtstepc,config_flags,                 &
                gmt,julday,t_phy,moist,p8w,t8w,                         &
-               p_phy,chem,rho_phy,dz8w,z,z_at_w,vdrog3,         &
+               p_phy,chem,rho_phy,dz8w,z,z_at_w,vdrog3,                &
                ph_macr,ph_o31d,ph_o33p,ph_no2,ph_no3o2,ph_no3o,ph_hno2,&
                ph_hno3,ph_hno4,ph_h2o2,ph_ch2or,ph_ch2om,ph_ch3cho,    &
                ph_ch3coch3,ph_ch3coc2h5,ph_hcocho,ph_ch3cocho,         &
@@ -150,10 +156,23 @@
                ids,ide, jds,jde, kds,kde,                              &
                ims,ime, jms,jme, kms,kme,                              &
                its,ite, jts,jte, kts,kte                               )
-     CASE DEFAULT 
+
+     CASE (CBMZ, CBMZ_BB, CBMZ_MOSAIC_AA, CBMZ_MOSAIC_BB)
+       CALL wrf_debug(15,'calling cbmz_driver from mechanism_driver')
+       call cbmz_driver(id,ktau,dtstep,ktauc,dtstepc,                  &
+               config_flags,                                           &
+               gmt,julday,t_phy,moist,p8w,t8w,                         &
+               p_phy,chem,rho_phy,dz8w,z,z_at_w,vdrog3,                &
+               ph_o31d,ph_o33p,ph_no2,ph_no3o2,ph_no3o,ph_hno2,        &
+               ph_hno3,ph_hno4,ph_h2o2,ph_ch2or,ph_ch2om,              &
+               ph_ch3o2h,ph_n2o5,                                      &
+               ids,ide, jds,jde, kds,kde,                              &
+               ims,ime, jms,jme, kms,kme,                              &
+               its,ite, jts,jte, kts,kte                               )
+
+     CASE DEFAULT
                                                      
    END SELECT chem_select                              
 
 
-!     STOP
     END subroutine mechanism_driver

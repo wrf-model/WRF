@@ -109,7 +109,7 @@
 
 ! reorder                                                                                        
 !                                                                                                
-        if(iprt.eq.2)print *,'k,chem(i,k,j,p_sulf),vcinp(k,lsulf)'
+!       if(iprt.eq.2)print *,'k,chem(i,k,j,p_sulf),vcinp(k,lsulf)'
       do k=kts,kte-1                                                                             
         vcinp(k,lso2)  =  max(chem(i,k,j,p_so2),epsilc)
         vcinp(k,Lsulf) =  max(chem(i,k,j,p_sulf),epsilc)
@@ -154,9 +154,9 @@
         vcinp(k,Liso)  =  max(chem(i,k,j,p_iso),epsilc)
         vcinp(k,Lho)  =  max(chem(i,k,j,p_ho),epsilc)
         vcinp(k,Lho2)  =  max(chem(i,k,j,p_ho2),epsilc)
-        if(iprt.eq.2)then
-         print *,k,chem(i,k,j,p_sulf),vcinp(k,lsulf)
-        endif
+!       if(iprt.eq.2)then
+!        print *,k,chem(i,k,j,p_sulf),vcinp(k,lsulf)
+!       endif
         enddo
 !--- now do chemistry, need some input here
 
@@ -273,12 +273,12 @@
         VDROG3(i,k,j,POLT3) = VDROG1(k,POLT3)
         endif
       END DO
-        if(iprt.eq.2)then
-        print *,'after radm, k,chem(i,k,j,p_sulf),vcinp(k,lsulf)'
-        do k=kts,kte
-         print *,k,chem(i,k,j,p_sulf),vcinp(k,lsulf)
-        enddo
-        endif
+!       if(iprt.eq.2)then
+!       print *,'after radm, k,chem(i,k,j,p_sulf),vcinp(k,lsulf)'
+!       do k=kts,kte
+!        print *,k,chem(i,k,j,p_sulf),vcinp(k,lsulf)
+!       enddo
+!       endif
 100   continue
 
 
@@ -455,11 +455,11 @@ END SUBROUTINE radm_driver
           rk(j,1) = patmot1(j)*6.E-34*to300(j)**(-2.3)*patmot2(j)
           rk(j,12) = (2.2E-13*exp(620.*tin(j))+1.9E-33*patmot1(j)*exp(980.*tin &
             (j)))*patmot2(j)
-          IF (iprt==1 .AND. j==jce) THEN
-            PRINT *, j, tin(j), patmot1(j), patmot2(j), &
-              1.9E-33*patmot1(j)*exp(980.*tin(j))
-            PRINT *, rk(j,12), 2.2E-13*exp(620.*tin(j)), const(3), p(j,1)
-          END IF
+!         IF (iprt==1 .AND. j==jce) THEN
+!           PRINT *, j, tin(j), patmot1(j), patmot2(j), &
+!             1.9E-33*patmot1(j)*exp(980.*tin(j))
+!           PRINT *, rk(j,12), 2.2E-13*exp(620.*tin(j)), const(3), p(j,1)
+!         END IF
           xk0 = 7.2E-15*exp(785.*tin(j))
           xk2 = 4.1E-16*exp(1440.*tin(j))
           xk3 = 1.9E-33*exp(725.*tin(j))*patmot1(j)
@@ -596,26 +596,26 @@ END SUBROUTINE radm
         END DO
 !     K      = 1
 !     if(iprt.eq.1)print *,'in integ1'
-      if(iprt.eq.2)print *,'in integ1',lsulf,intgrt(lsulf),qdtc(lsulf)
+!     if(iprt.eq.2)print *,'in integ1',lsulf,intgrt(lsulf),qdtc(lsulf)
         inumho = 3
         inumhox = 3
         DO l = 1, lpred
           IF (intgrt(l)==1) THEN
 
             DO j = jcs, jce
-               if(iprt.eq.1.and.(l.eq.3.or.l.eq.7))then
-                print *,'i1',l,j,vc(j,1,l),loss(j,l),cmin(l)
-               endif
+!              if(iprt.eq.1.and.(l.eq.3.or.l.eq.7))then
+!               print *,'i1',l,j,vc(j,1,l),loss(j,l),cmin(l)
+!              endif
               tauinv(j) = (loss(j,l)/vc(j,1,l))*0.5
               vc(j,1,l) = (vc(j,1,l)*(1.-dtc*tauinv(j))+prod(j,l)*dtc)/ &
                 (1+dtc*tauinv(j))
               vc(j,1,l) = max(cmin(l),vc(j,1,l))
-               if(iprt.eq.1.and.(l.eq.3.or.l.eq.7))then
-                print *,'i1',l,j,vc(j,1,l),dtc
-               endif
-               if(iprt.eq.2.and.(l.eq.lsulf))then
-                print *,'i1',l,j,vc(j,1,l),dtc,loss(j,l),prod(j,l)
-               endif
+!              if(iprt.eq.1.and.(l.eq.3.or.l.eq.7))then
+!               print *,'i1',l,j,vc(j,1,l),dtc
+!              endif
+!              if(iprt.eq.2.and.(l.eq.lsulf))then
+!               print *,'i1',l,j,vc(j,1,l),dtc,loss(j,l),prod(j,l)
+!              endif
             END DO
           END IF
         END DO
@@ -686,10 +686,10 @@ END SUBROUTINE radm
 !*******[PAN]:
           vc(j,1,lpan) = vcl(j,lpao3) - vc(j,1,laco3)
           vc(j,1,lpan) = max(cmin(lpan),vc(j,1,lpan))
-          if(iprt.ge. 1.and.j.eq.jcs)then
-             print *,'i1,no',j,vc(j,1,lno),vc(j,1,lno2),EQNO,JPROD(J),JLOSS(J),rj(j,1), &
-                  vc(j,1,lno2),rj(j,8),vc(j,1,lno3),rj(j,4),vc(j,1,lhono)
-          endif
+!         if(iprt.ge. 1.and.j.eq.jcs)then
+!            print *,'i1,no',j,vc(j,1,lno),vc(j,1,lno2),EQNO,JPROD(J),JLOSS(J),rj(j,1), &
+!                 vc(j,1,lno2),rj(j,8),vc(j,1,lno3),rj(j,4),vc(j,1,lhono)
+!         endif
         END DO
 
         DO j = jcs, jce
@@ -717,7 +717,7 @@ END SUBROUTINE radm
             rk(j,51)*vc(j,1,lonit) + rk(j,52)*vc(j,1,liso)
           jbb(j) = rk(j,8)*vc(j,1,lo3) + rk(j,9)*vc(j,1,lno) + jloss(j)
         END DO
-        if(iprt.eq.1)print *,'jloss '
+!       if(iprt.eq.1)print *,'jloss '
 
         DO niter = 1, inumhox
           DO j = jcs, jce
@@ -785,7 +785,7 @@ END SUBROUTINE radm
             loss(j,lh2o2) = crji(9) + crki(14)
           END DO
 
-        if(iprt.eq.1)print *,'i1, hox,niter ',niter
+!       if(iprt.eq.1)print *,'i1, hox,niter ',niter
           DO j = jcs, jce
 !********[HOX]:
             taulinv(j) = (lossl(j,lhox)/hoxsv(j))
@@ -793,7 +793,7 @@ END SUBROUTINE radm
               (hoxsv(j)-prodl(j,lhox)/taulinv(j))*exp(-dtc*taulinv(j))
 !           vcl(j,lhox) = max(cmin(lhox),vcl(j,lhox))
               vcl(j,lhox)=max(1.e-9,vcl(j,lhox))
-            if(iprt.eq.2.and.j.eq.jcs)print *,lossl(j,lhox),hoxsv(j),prodl(j,lhox),cmin(lhox),vcl(j,lhox)
+!           if(iprt.eq.2.and.j.eq.jcs)print *,lossl(j,lhox),hoxsv(j),prodl(j,lhox),cmin(lhox),vcl(j,lhox)
             jc(j) = jprod(j) + (rk(j,9)*vc(j,1,lno)+rk(j,8)*vc(j,1,lo3))*vcl(j &
               ,lhox)
             jb(j) = jbb(j) + (rk(j,27)*vcl(j,lhox))
@@ -807,16 +807,16 @@ END SUBROUTINE radm
           END DO
 
 !********[HO]:
-        if(iprt.eq.1)print *,'i1, ho and ho2 '
+!       if(iprt.eq.1)print *,'i1, ho and ho2 '
           DO iter = 1, inumho
-          if(iprt.eq.2)print *,'i1, ho and ho2 iter = ',iter
+!         if(iprt.eq.2)print *,'i1, ho and ho2 iter = ',iter
             DO j = jcs, jce
               vc(j,1,lho) = vc(j,1,lho) - (rk(j,27)*(vc(j,1, &
                 lho)**2)-jb(j)*vc(j,1,lho)+jc(j))/(2*rk(j,27)*vc(j,1,lho)-jb(j &
                 ))
             vc(j,1,lho) = max(cmin(lho),vc(j,1,lho))
-            if(iprt.eq.2.and.j.eq.jcs)print *,vc(j,1,lho),cmin(lho),&
-                                          rk(j,27),jb(j),jc(j)
+!           if(iprt.eq.2.and.j.eq.jcs)print *,vc(j,1,lho),cmin(lho),&
+!                                         rk(j,27),jb(j),jc(j)
             END DO
           END DO
 
@@ -824,14 +824,14 @@ END SUBROUTINE radm
           DO j = jcs, jce
             vc(j,1,lho2) = vcl(j,lhox) - vc(j,1,lho)
             vc(j,1,lho2) = max(cmin(lho2),vc(j,1,lho2))
-            if(iprt.eq.2.and.j.eq.jcs)print *,vc(j,1,lho2),vcl(j,lhox),vc(j,1,lho),cmin(lho2)
+!           if(iprt.eq.2.and.j.eq.jcs)print *,vc(j,1,lho2),vcl(j,lhox),vc(j,1,lho),cmin(lho2)
           END DO
 
         END DO
 !
-        if(iprt.eq.1)print *,'i1, aerosols '
+!       if(iprt.eq.1)print *,'i1, aerosols '
         if(iaerosol_sorgam==1)then
-        if(iprt.eq.2)print *,'i1, aerosols '
+!       if(iprt.eq.2)print *,'i1, aerosols '
         DO L = 1, LDROG
            DO J = JCS, JCE
               VDROG( J, L ) = VDROG( J , L) + PRDROG( J, L ) * DTC
@@ -924,9 +924,9 @@ END SUBROUTINE radm
           crk(j,26) = rk(j,26)*vc(j,1,lho)*vc(j,1,lhno4)
           crk(j,27) = rk(j,27)*vc(j,1,lho)*vc(j,1,lho2)
           crk(j,28) = rk(j,28)*vc(j,1,lho)*vc(j,1,lso2)
-      if(iprt.eq.2.and.j.eq.jcs)then
-       print *,'in predate ',crk(j,28),rk(j,28),vc(j,1,lho),vc(j,1,lso2)
-      endif
+!     if(iprt.eq.2.and.j.eq.jcs)then
+!      print *,'in predate ',crk(j,28),rk(j,28),vc(j,1,lho),vc(j,1,lso2)
+!     endif
           crk(j,29) = rk(j,29)*vc(j,1,lco)*vc(j,1,lho)
           crk(j,30) = rk(j,30)*ch4*vc(j,1,lho)
           crk(j,31) = rk(j,31)*vc(j,1,leth)*vc(j,1,lho)
@@ -1016,14 +1016,14 @@ END SUBROUTINE radm
             (rk(j,73)*vc(j,k,lno)+rk(j,101)*vc(j,k,lho2)+ &
             rk(j,138)*dvc(j,lmo2)+rk(j,139)*vc(j,k,laco3)+ &
             rk(j,140)*dvc(j,loln))
-          IF (iprt==1 .AND. j==jce-1) THEN
-            PRINT *, dvc(j,loln), crk(j,80), crk(j,81), crk(j,82), crk(j,83), &
-              rk(j,73), vc(j,1,lno), rk(j,101), vc(j,1,lho2), rk(j,138), &
-              dvc(j,lmo2), rk(j,139), vc(j,1,laco3), rk(j,140), dvc(j,loln)
-            PRINT *, dvc(j,loln), crk(j,80), crk(j,81), crk(j,82), crk(j,83), &
-              rk(j,73), vc(j,k,lno), rk(j,101), vc(j,k,lho2), rk(j,138), &
-              dvc(j,lmo2), rk(j,139), vc(j,k,laco3), rk(j,140), dvc(j,loln)
-          END IF
+!         IF (iprt==1 .AND. j==jce-1) THEN
+!           PRINT *, dvc(j,loln), crk(j,80), crk(j,81), crk(j,82), crk(j,83), &
+!             rk(j,73), vc(j,1,lno), rk(j,101), vc(j,1,lho2), rk(j,138), &
+!             dvc(j,lmo2), rk(j,139), vc(j,1,laco3), rk(j,140), dvc(j,loln)
+!           PRINT *, dvc(j,loln), crk(j,80), crk(j,81), crk(j,82), crk(j,83), &
+!             rk(j,73), vc(j,k,lno), rk(j,101), vc(j,k,lho2), rk(j,138), &
+!             dvc(j,lmo2), rk(j,139), vc(j,k,laco3), rk(j,140), dvc(j,loln)
+!         END IF
 
         END DO
         DO j = jcs, jce
@@ -1085,10 +1085,10 @@ END SUBROUTINE radm
           crk(j,138) = rk(j,138)*dvc(j,lmo2)*dvc(j,loln)
           crk(j,139) = rk(j,139)*vc(j,k,laco3)*dvc(j,loln)
           crk(j,140) = rk(j,140)*dvc(j,loln)*dvc(j,loln)
-          IF (iprt==1 .AND. j==jce-1) THEN
-            PRINT *, 'crk(j,140),RK(J, 140),DVC(J,LOLN)'
-            PRINT *, crk(j,140), rk(j,140), dvc(j,loln)
-          END IF
+!         IF (iprt==1 .AND. j==jce-1) THEN
+!           PRINT *, 'crk(j,140),RK(J, 140),DVC(J,LOLN)'
+!           PRINT *, crk(j,140), rk(j,140), dvc(j,loln)
+!         END IF
 
           dvc(j,lmo2) = (crj(j,12)+crj(j,15)+crk(j,30)+.5*crk(j,47)+crk(j,67)+ &
             .22*crk(j,85)+.31*crk(j,86)+.22*crk(j,87)+.5*(crk(j,111)+crk(j, &
@@ -1123,16 +1123,16 @@ END SUBROUTINE radm
           crk(j,128) = rk(j,128)*dvc(j,lxo2)*dvc(j,lmo2)
           crk(j,134) = rk(j,134)*dvc(j,lxno2)*dvc(j,lmo2)
         END DO
-        if(iprt.eq.2)then
-          print *,'list of crks ',vc(jcs,1,lho2),vc(jcs,1,lho)
-          do l=1,140
-            print *,'crk at l ',l,crk(1,l)
-          enddo
-          print *,'list of crjs '
-          do l=1,21
-            print *,'crj at l ',l,crj(1,l)
-          enddo
-        endif
+!       if(iprt.eq.2)then
+!         print *,'list of crks ',vc(jcs,1,lho2),vc(jcs,1,lho)
+!         do l=1,140
+!           print *,'crk at l ',l,crk(1,l)
+!         enddo
+!         print *,'list of crjs '
+!         do l=1,21
+!           print *,'crj at l ',l,crj(1,l)
+!         enddo
+!       endif
 
         RETURN
       END SUBROUTINE predraten
@@ -1208,13 +1208,13 @@ END SUBROUTINE radm
             .76*crk(j,62) + crk(j,64) + crk(j,65) + crk(j,66) + crk(j,67) + &
             crk(j,68) + crk(j,69) + crk(j,70) + crk(j,71) + crk(j,72) + &
             crk(j,131) + crk(j,138) + crk(j,139) + 2.0*crk(j,140)
-          IF (iprt==1 .AND. j==jce) THEN
-!       print *,'CRK(J,58),CRK(J,60),CRK(J,62),CRK(J,64),CRK(J,66),'
-!    1         ,'CRK(J,71),CRK(J,138),CRK(J,139),CRK(J,140)'
-            PRINT *, 'CRK(J,58),CRK(J,60),CRK(J,62),CRK(J,64),..' 
-            PRINT *, crk(j,58), crk(j,60), crk(j,62), crk(j,64), crk(j,65), &
-              crk(j,66), crk(j,138), crk(j,139), crk(j,140)
-          END IF
+!          IF (iprt==1 .AND. j==jce) THEN
+!!       print *,'CRK(J,58),CRK(J,60),CRK(J,62),CRK(J,64),CRK(J,66),'
+!!    1         ,'CRK(J,71),CRK(J,138),CRK(J,139),CRK(J,140)'
+!            PRINT *, 'CRK(J,58),CRK(J,60),CRK(J,62),CRK(J,64),..' 
+!            PRINT *, crk(j,58), crk(j,60), crk(j,62), crk(j,64), crk(j,65), &
+!              crk(j,66), crk(j,138), crk(j,139), crk(j,140)
+!          END IF
         END DO
 
         DO j = jcs, jce
@@ -1473,7 +1473,7 @@ END SUBROUTINE radm
 
         DO j = jcs, jce
           prod(j,lsulf) = crk(j,28)
-          if(iprt==2)print *,' j,prod = ',j,prod(j,lsulf)
+!         if(iprt==2)print *,' j,prod = ',j,prod(j,lsulf)
         END DO
 
         DO j = jcs, jce

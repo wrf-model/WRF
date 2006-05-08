@@ -6,27 +6,31 @@ CONTAINS
 ! !IROUTINE: radiation_driver - interface to radiation physics options
 
 ! !INTERFACE:
-   SUBROUTINE radiation_driver (                                         &
-                       itimestep,dt ,lw_physics,sw_physics ,NPHS         &
-                      ,AER_DRY,AER_WATER                                 &
-                      ,RTHRATENLW,RTHRATENSW,RTHRATEN                    &
-                      ,GLW,GSW,SWDOWN,XLAT,XLONG,ALBEDO                  &
-                      ,EMISS ,rho ,p8w,p ,pi,dz8w,t,t8w,GMT              &
-                      ,XLAND,TSK,HTOP,HBOT,HTOPR,HBOTR,CUPPT,VEGFRA,SNOW &
-                      ,julyr ,JULDAY ,RADT,STEPRA,ICLOUD ,warm_rain      &
-                      ,julian, xtime                                     &
-                      ,RSWTOA,RLWTOA,CZMEAN                              &
-                      ,CFRACL,CFRACM,CFRACH                              &
-                      ,ACFRST,NCFRST,ACFRCV,NCFRCV                       &
-                      ,ids,ide, jds,jde, kds,kde                         &
-                      ,ims,ime, jms,jme, kms,kme                         &
-                      ,i_start,i_end,j_start,j_end,kts,kte,num_tiles     &
-                    ! Optional
-                      ,taucldi ,taucldc                                  &
-                      ,qv,qc,qr,qi,qs,qg                                 &
-                      ,f_qv,f_qc,f_qr,f_qi,f_qs,f_qg                     &
-                      ,SWDOWNC,CLDFRA ,Pb                                &
-                                                                         )
+   SUBROUTINE radiation_driver (                                          &
+               itimestep,dt ,lw_physics,sw_physics ,NPHS                  &
+              ,RTHRATENLW ,RTHRATENSW ,RTHRATEN                           &
+              ,GLW, GSW, SWDOWN, XLAT, XLONG, ALBEDO                      &
+              ,EMISS, rho, p8w, p , pi , dz8w ,t, t8w, GMT                &
+              ,XLAND, TSK, HTOP,HBOT,HTOPR,HBOTR, CUPPT, VEGFRA, SNOW     &
+              ,julyr, JULDAY, julian, RADT, STEPRA, ICLOUD, warm_rain     &
+              ,RSWTOA,RLWTOA, CZMEAN                                      &
+              ,CFRACL, CFRACM, CFRACH                                     &
+              ,ACFRST,NCFRST,ACFRCV,NCFRCV,SWDOWNC                        &
+              ,taucldi, taucldc, xtime                                    & ! Optional
+              ,ids, ide, jds, jde, kds, kde                               &
+              ,ims, ime, jms, jme, kms, kme                               &
+              ,i_start, i_end                                             &
+              ,j_start, j_end                                             &
+              ,kts, kte                                                   &
+              ,num_tiles                                                  &
+              ,qv,qc,qr,qi,qs,qg                                          &
+              ,f_qv,f_qc,f_qr,f_qi,f_qs,f_qg                              &
+              ,CLDFRA ,Pb                                         &
+              ,pm2_5_dry, pm2_5_water, pm2_5_dry_ec                       &
+              ,tauaer300, tauaer400, tauaer600, tauaer999                 & ! jcb
+              ,gaer300, gaer400, gaer600, gaer999                         & ! jcb
+              ,waer300, waer400, waer600, waer999                         & ! jcb
+                                                                          )
 
 !-------------------------------------------------------------------------
 
@@ -133,6 +137,9 @@ CONTAINS
 ! Qi         cloud ice mixing ratio (kg/kg)
 ! Qs         snow mixing ratio (kg/kg)
 !-----------------------------------------------------------------
+!-- PM2_5_DRY     Dry PM2.5 aerosol mass for all species (ug m^-3)
+!-- PM2_5_WATER   PM2.5 water mass (ug m^-3)
+!-- PM2_5_DRY_EC  Dry PM2.5 elemental carbon aersol mass (ug m^-3)
 !-- RTHRATEN      Theta tendency 
 !                 due to radiation (K/s)
 !-- RTHRATENLW    Theta tendency 
@@ -235,9 +242,19 @@ CONTAINS
                                                               pi, &
                                                                t, &
                                                              t8w, &
-                                                             rho, &
-                                                         aer_dry, &
-                                                       aer_water
+                                                             rho
+!
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL ,       &
+         INTENT(IN ) ::  tauaer300,tauaer400,tauaer600,tauaer999, & ! jcb
+                                 gaer300,gaer400,gaer600,gaer999, & ! jcb
+                                 waer300,waer400,waer600,waer999    ! jcb
+!
+! variables for aerosols (only if running with chemistry)
+!
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL ,       &
+         INTENT(IN ) ::                                pm2_5_dry, &
+                                                     pm2_5_water, &
+                                                    pm2_5_dry_ec
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          INTENT(INOUT)  ::                              RTHRATEN, &
@@ -466,7 +483,10 @@ CONTAINS
              CALL SWRAD(                                               &
                      DT=dt,RTHRATEN=rthraten,GSW=gsw                   &
                     ,XLAT=xlat,XLONG=xlong,ALBEDO=albedo               &
-                    ,AER_DRY=aer_dry,AER_WATER=aer_water               &
+#ifdef WRF_CHEM
+                    ,PM2_5_DRY=pm2_5_dry,PM2_5_WATER=pm2_5_water       &
+                    ,PM2_5_DRY_EC=pm2_5_dry_ec                         &
+#endif
                     ,RHO_PHY=rho,T3D=t                                 &
                     ,P3D=p,PI3D=pi,DZ8W=dz8w,GMT=gmt                   &
                     ,R=r_d,CP=cp,G=g,JULDAY=julday                     &
@@ -499,6 +519,14 @@ CONTAINS
                     ,RADFRQ=radt,DEGRAD=degrad                         &
                     ,TAUCLDI=taucldi,TAUCLDC=taucldc                   &
                     ,WARM_RAIN=warm_rain                               &
+#ifdef WRF_CHEM
+                    ,TAUAER300=tauaer300,TAUAER400=tauaer400           & ! jcb
+                    ,TAUAER600=tauaer600,TAUAER999=tauaer999           & ! jcb
+                    ,GAER300=gaer300,GAER400=gaer400                   & ! jcb
+                    ,GAER600=gaer600,GAER999=gaer999                   & ! jcb
+                    ,WAER300=waer300,WAER400=waer400                   & ! jcb
+                    ,WAER600=waer600,WAER999=waer999                   & ! jcb
+#endif
                     ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &     
                     ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                     ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &

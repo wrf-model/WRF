@@ -218,7 +218,6 @@ SUBROUTINE solve_em ( grid , config_flags , &
 #ifdef WRF_CHEM
 !
 !    prepare chem aerosols for advection before communication
-!    so far only for RADM2/SORGAM choice
 !
 
    kte=min(k_end,kde-1)
@@ -507,8 +506,7 @@ BENCH_END(phy_prep_tim)
          CALL wrf_debug ( 200 , ' call radiation_driver' )
 BENCH_START(rad_driver_tim)
          CALL radiation_driver(                                           &
-     &         ACFRCV=acfrcv      ,ACFRST=acfrst      ,AER_DRY=aer_dry    &
-     &        ,AER_WATER=aer_water                    ,ALBEDO=albedo      &
+     &         ACFRCV=acfrcv      ,ACFRST=acfrst      ,ALBEDO=albedo      &
      &        ,CFRACH=cfrach      ,CFRACL=cfracl      ,CFRACM=cfracm      &
      &        ,CUPPT=cuppt        ,CZMEAN=czmean      ,DT=grid%dt              &
      &        ,DZ8W=dz8w          ,EMISS=emiss        ,GLW=glw            &
@@ -544,6 +542,13 @@ BENCH_START(rad_driver_tim)
      &        , QI=moist(ims,kms,jms,P_QI), F_QI=F_QI                     &
      &        , QS=moist(ims,kms,jms,P_QS), F_QS=F_QS                     &
      &        , QG=moist(ims,kms,jms,P_QG), F_QG=F_QG                     &
+#ifdef WRF_CHEM
+     &        ,PM2_5_DRY=pm2_5_dry, PM2_5_WATER=pm2_5_water               &
+     &        ,PM2_5_DRY_EC=pm2_5_dry_ec                                  &
+     &        ,TAUAER300=tauaer1, TAUAER400=tauaer2, TAUAER600=tauaer3, TAUAER999=tauaer4 & ! jcb
+     &        ,GAER300=gaer1, GAER400=gaer2, GAER600=gaer3, GAER999=gaer4 & ! jcb
+     &        ,WAER300=waer1, WAER400=waer2, WAER600=waer3, WAER999=waer4 & ! jcb
+#endif
      &                                                              )
 
 BENCH_END(rad_driver_tim)
@@ -558,7 +563,7 @@ BENCH_START(surf_driver_tim)
      &         ACSNOM=acsnom      ,ACSNOW=acsnow      ,AKHS=akhs          &
      &        ,AKMS=akms          ,ALBBCK=albbck      ,ALBEDO=albedo      &
      &        ,BR=br              ,CANWAT=canwat      ,CHKLOWQ=chklowq    &
-     &        ,CT=ct              ,DT=grid%dt              ,DX=grid%dx              &
+     &        ,CT=ct              ,DT=grid%dt         ,DX=grid%dx         &
      &        ,DZ8W=dz8w          ,DZS=dzs            ,FLHC=flhc          &
      &        ,FLQC=flqc          ,GLW=glw            ,GRDFLX=grdflx      &
      &        ,GSW=gsw            ,GZ1OZ0=gz1oz0      ,HFX=hfx            &
@@ -1941,9 +1946,9 @@ BENCH_START(tke_adv_tim)
    END IF TKE_advance
 BENCH_END(tke_adv_tim)
 
+#ifdef WRF_CHEM
 !  next the chemical species
-
-
+BENCH_START(chem_adv_tim)
   chem_scalar_advance: IF (num_3d_c >= PARAM_FIRST_SCALAR)  THEN
 
    chem_variable_loop: do ic = PARAM_FIRST_SCALAR, num_3d_c
@@ -1953,8 +1958,8 @@ BENCH_END(tke_adv_tim)
 
    chem_tile_loop_1: DO ij = 1 , grid%num_tiles
 
-       CALL wrf_debug ( 200 , ' call rk_scalar_tend' )
-       CALL rk_scalar_tend ( ic, ic, config_flags,                  &
+       CALL wrf_debug ( 200 , ' call rk_scalar_tend in chem_tile_loop_1' )
+       CALL rk_scalar_tend ( ic, ic, config_flags,             &
                              rk_step, dt_rk,                   &
                              ru_m, rv_m, ww_m,                 &
                              mut, alt,                         &
@@ -1964,13 +1969,48 @@ BENCH_END(tke_adv_tim)
                              qv_base, .false., fnm, fnp,       &
                              msfu, msfv, msft,                 &
                              rdx, rdy, rdn, rdnw,              &
-                             grid%khdif, grid%kvdif, xkmhd,              &
+                             grid%khdif, grid%kvdif, xkmhd,    &
                              leapfrog,                         &
                              ids, ide, jds, jde, kds, kde,     &
                              ims, ime, jms, jme, kms, kme,     &
                              grid%i_start(ij), grid%i_end(ij), &
                              grid%j_start(ij), grid%j_end(ij), &
                              k_start    , k_end               )
+!
+! Currently, chemistry species with specified boundaries (i.e. the mother
+! domain)  are being over written by flow_dep_bdy_chem. So, relax_bdy and
+! spec_bdy are only called for nests. This will need to be modfied for
+! cycling of chem data between runs or if certain species are sent in
+! from a GCM. William.Gustafson@pnl.gov
+!
+     IF( ( config_flags%nested ) .and. rk_step == 1 ) THEN
+         CALL relax_bdy_scalar ( chem_tend(ims,kms,jms,ic),             &
+                                 chem(ims,kms,jms,ic),  mut,            &
+                                 chem_b(1,1,1,1,ic),                    &
+                                 chem_bt(1,1,1,1,ic),                   &
+                                 config_flags%spec_bdy_width, grid%spec_zone, grid%relax_zone, &
+                                 dtbc, fcx, gcx,             &
+                                 config_flags,               &
+                                 ijds, ijde,                 & ! min/max(id,jd)
+                                 ids,ide, jds,jde, kds,kde,  & ! domain dims
+                                 ims,ime, jms,jme, kms,kme,  & ! memory dims
+                                 ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+                                 grid%i_start(ij), grid%i_end(ij),      &
+                                 grid%j_start(ij), grid%j_end(ij),      &
+                                 k_start, k_end                         )
+         CALL spec_bdy_scalar  ( chem_tend(ims,kms,jms,ic),                 &
+                                 chem_b(1,1,1,1,ic),                        &
+                                 chem_bt(1,1,1,1,ic),                       &
+                                 config_flags%spec_bdy_width, grid%spec_zone,                 &
+                                 config_flags,               &
+                                 ijds, ijde,                 & ! min/max(id,jd)
+                                 ids,ide, jds,jde, kds,kde,  & ! domain dims
+                                 ims,ime, jms,jme, kms,kme,  & ! memory dims
+                                 ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+                                 grid%i_start(ij), grid%i_end(ij),          &
+                                 grid%j_start(ij), grid%j_end(ij),          &
+                                 k_start, k_end                             )
+     ENDIF
 
    ENDDO chem_tile_loop_1
 
@@ -2000,28 +2040,28 @@ BENCH_END(tke_adv_tim)
 
        IF( config_flags%specified ) THEN
 ! come back to this and figure out why two different routines are needed. JM 20041203
-#ifndef WRF_CHEM
-           CALL flow_dep_bdy  ( chem(ims,kms,jms,ic),     &
-                                ru_m, rv_m, config_flags,   &
-                                grid%spec_zone,                  &
-                                ids,ide, jds,jde, kds,kde,  & ! domain dims
-                                ims,ime, jms,jme, kms,kme,  & ! memory dims
-                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
-                                grid%i_start(ij), grid%i_end(ij),  &
-                                grid%j_start(ij), grid%j_end(ij),  &
-                                k_start, k_end                    )
-#else
-           CALL flow_dep_bdy_chem( chem(ims,kms,jms,ic),z,&
-                                ru_m, rv_m, config_flags,alt,   &
+!#ifndef WRF_CHEM
+!!$           CALL flow_dep_bdy  ( chem(ims,kms,jms,ic),       &
+!!$                                ru_m, rv_m, config_flags,   &
+!!$                                grid%spec_zone,             &
+!!$                                ids,ide, jds,jde, kds,kde,  & ! domain dims
+!!$                                ims,ime, jms,jme, kms,kme,  & ! memory dims
+!!$                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+!!$                                grid%i_start(ij), grid%i_end(ij),  &
+!!$                                grid%j_start(ij), grid%j_end(ij),  &
+!!$                                k_start, k_end                    )
+!#else
+           CALL flow_dep_bdy_chem( chem(ims,kms,jms,ic),z,          &
+                                ru_m, rv_m, config_flags,alt,       &
                                 t_1,pb,p,t0,p1000mb,rcp,ph_2,phb,g, &
-                                grid%spec_zone,ic,               &
+                                grid%spec_zone,ic,                  &
                                 ids,ide, jds,jde, kds,kde,  & ! domain dims
                                 ims,ime, jms,jme, kms,kme,  & ! memory dims
                                 ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
-                                grid%i_start(ij), grid%i_end(ij),  &
-                                grid%j_start(ij), grid%j_end(ij),  &
-                                k_start, k_end                    )
-#endif
+                                grid%i_start(ij), grid%i_end(ij),   &
+                                grid%j_start(ij), grid%j_end(ij),   &
+                                k_start, k_end                      )
+!#endif
        ENDIF
 
 
@@ -2031,6 +2071,8 @@ BENCH_END(tke_adv_tim)
    ENDDO chem_variable_loop
 
  ENDIF chem_scalar_advance
+BENCH_END(chem_adv_tim)
+#endif
 
 !  next the other scalar species
   other_scalar_advance: IF (num_3d_s >= PARAM_FIRST_SCALAR)  THEN

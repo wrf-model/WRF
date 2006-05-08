@@ -280,6 +280,9 @@ contains
       parameter (ckz = 0.001,zfmin = 1.e-8,aphi5 = 5.,aphi16 = 16.)
       parameter (gamcrt = 3.,gamcrq = 2.e-3)
       parameter (xka = 2.4e-5)
+!wig 16-sep-2005: Parameter added to set a minimum pbl height. To disable
+!                 this option, set hpblmin=0.
+      real, parameter :: hpblmin=0.
 !
       integer,  intent(in   )   ::      ids,ide, jds,jde, kds,kde, &
                                         ims,ime, jms,jme, kms,kme, &
@@ -389,7 +392,9 @@ contains
       integer ::  n,i,k,l,nzol,imvdif,ic
       integer ::  klpbl
 !
-      integer, dimension( its:ite )             ::           kpbl
+!wig 16-sep-2005: Added kmin for setting minimum pbl height
+      integer, dimension( its:ite )             ::           kpbl, &
+                                                             kmin
 !
       real    ::  zoln,x,y,thcon,tvcon,e1,dtstep
       real    ::  zl,tskv,dthvdz,dthvm,vconv,rzol
@@ -493,6 +498,19 @@ contains
         govrth(i) = g/thx(i,1)
       enddo
 !
+!wig 16-sep-2005: Determine the k level associated with hpblmin.
+      if( hpblmin >= 1. ) then
+         do i = its,ite
+            kmin(i) = 1
+            do k = kte-1,kts,-1
+               if( zq(i,k) <= hpblmin ) then
+                  kmin(i) = k
+                  exit
+               end if
+            end do
+         end do
+      end if
+!
 !-----initialize vertical tendencies and
 !
       do i = its,ite
@@ -582,7 +600,9 @@ contains
         thermal(i)= thvx(i,1)
         pblflg(i) = .true.
         sfcflg(i) = .true.
-        if(br(i).gt.0.0) sfcflg(i) = .false.
+!wig 12-aug-2004: Turn off check for sfc stability if using a minimum
+!                 pbl height > 0.
+        if(br(i).gt.0.0 .and. hpblmin<=1.) sfcflg(i) = .false.
       enddo
 !
 !     compute the first guess of pbl height
@@ -614,7 +634,15 @@ contains
           brint = (brcr-brdn(i))/(brup(i)-brdn(i))
         endif
         hpbl(i) = za(i,k-1)+brint*(za(i,k)-za(i,k-1))
-        if(hpbl(i).lt.zq(i,2)) kpbl(i) = 1
+
+!wig 16-sep-2005: rig a minimum PBL heigt
+        if( hpblmin >= 1. .and. hpbl(i).lt.hpblmin) then
+           kpbl(i) = kmin(i)
+           hpbl(i) = hpblmin
+        else
+           if(hpbl(i).lt.zq(i,2)) kpbl(i) = 1
+        end if
+
         if(kpbl(i).le.1) pblflg(i) = .false.
       enddo
 !
@@ -711,7 +739,15 @@ contains
             brint = (brcr-brdn(i))/(brup(i)-brdn(i))
           endif
           hpbl(i) = za(i,k-1)+brint*(za(i,k)-za(i,k-1))
-          if(hpbl(i).lt.zq(i,2)) kpbl(i) = 1
+
+!wig 16-sep-2005: rig a minimum PBL heigt
+          if(hpblmin >= 1. .and. hpbl(i).lt.hpblmin) then
+             kpbl(i) = kmin(i)
+             hpbl(i) = hpblmin
+          else
+             if(hpbl(i).lt.zq(i,2)) kpbl(i) = 1
+          end if
+
           if(kpbl(i).le.1) pblflg(i) = .false.
         endif
       enddo
@@ -803,7 +839,9 @@ contains
             xkzm(i,k) = max(xkzm(i,k),xkzmin)
             xkzh(i,k) = min(xkzh(i,k),xkzmax)
             xkzh(i,k) = max(xkzh(i,k),xkzmin)
-            exch_hx(i,k) = xkzh(i,k)
+!wig 16-sep-2005: This code is unnecessary. exch_hx will get overwritten
+!                 with the same values further down in this routine
+!            exch_hx(i,k) = xkzh(i,k)
           endif
         enddo
       enddo
@@ -852,7 +890,10 @@ contains
             xkzh(i,k) = max(xkzh(i,k),xkzmin)
             xkzml(i,k) = xkzm(i,k)
             xkzhl(i,k) = xkzh(i,k)
-            exch_hx(i,k) = xkzh(i,k)
+!wig 16-sep-2005: This code is unnecessary. exch_hx will get overwritten
+!                 further down in this routine after adjustments are made
+!                 for entrainment.
+!            exch_hx(i,k) = xkzh(i,k)
           endif
         enddo
       enddo

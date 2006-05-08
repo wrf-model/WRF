@@ -2,7 +2,7 @@
 !
     MODULE module_data_radm2
       IMPLICIT NONE
-      REAL, PARAMETER ::  epsilc = 1.E-12
+      REAL, PARAMETER ::  epsilc = 1.E-16
 
 !--- for radm solver
 ! .. Parameters ..

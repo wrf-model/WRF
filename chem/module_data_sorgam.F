@@ -6,8 +6,8 @@ MODULE module_data_sorgam
       IMPLICIT NONE
       INTEGER NP                !bs maximum expected value of N
       PARAMETER (NP = 8)
-      integer numaer
-      parameter (numaer=50)
+!      integer numaer
+!      parameter (numaer=50)
 
       INTEGER MAXITS            !bs maximum number of iterations
       PARAMETER (MAXITS = 100)

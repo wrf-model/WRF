@@ -56,14 +56,8 @@ SUBROUTINE solve_interface ( grid )
                )
 
 # ifdef WRF_CHEM
-   IF ( config_flags%chem_opt == RADM2  ) THEN
-     CALL chem_driver  ( grid , config_flags , &
-!
-# include <em_actual_args.inc>
-!
-               )
-   ENDIF
-   IF ( config_flags%chem_opt == RADM2SORG ) THEN
+   IF ( config_flags%chem_opt > 0  ) THEN
+
      CALL chem_driver  ( grid , config_flags , &
 !
 # include <em_actual_args.inc>

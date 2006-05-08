@@ -1154,18 +1154,18 @@
       ! END MODULE module_data_photmad
 !
     CONTAINS
-      subroutine madronich1_driver(id,ktau,dtstep,&
-               gmt,julday,t_phy,moist,aerwrf,p8w,t8w,p_phy,&
-               chem,rho_phy,dz8w, &
-               xlat,xlong,z,z_at_w,&
-               ph_macr,ph_o31d,ph_o33p,ph_no2,ph_no3o2,ph_no3o,ph_hno2,&
-               ph_hno3,ph_hno4,ph_h2o2,ph_ch2or,ph_ch2om,ph_ch3cho,  &
-               ph_ch3coch3,ph_ch3coc2h5,ph_hcocho,ph_ch3cocho,       &
-               ph_hcochest,ph_ch3o2h,ph_ch3coo2h,ph_ch3ono2,ph_hcochob,&
-               aer_dry,aer_water,                                      &
-               ids,ide, jds,jde, kds,kde,                            &
-               ims,ime, jms,jme, kms,kme,                            &
-               its,ite, jts,jte, kts,kte                             )
+      subroutine madronich1_driver(id,ktau,dtstep,config_flags,haveaer, &
+               gmt,julday,t_phy,moist,aerwrf,p8w,t8w,p_phy,             &
+               chem,rho_phy,dz8w,                                       &
+               xlat,xlong,z,z_at_w,                                     &
+               ph_macr,ph_o31d,ph_o33p,ph_no2,ph_no3o2,ph_no3o,ph_hno2, &
+               ph_hno3,ph_hno4,ph_h2o2,ph_ch2or,ph_ch2om,ph_ch3cho,     &
+               ph_ch3coch3,ph_ch3coc2h5,ph_hcocho,ph_ch3cocho,          &
+               ph_hcochest,ph_ch3o2h,ph_ch3coo2h,ph_ch3ono2,ph_hcochob, &
+               pm2_5_dry,pm2_5_water,                                   &
+               ids,ide, jds,jde, kds,kde,                               &
+               ims,ime, jms,jme, kms,kme,                               &
+               its,ite, jts,jte, kts,kte                                )
    USE module_configure
    USE module_state_description
    USE module_model_constants
@@ -1180,11 +1180,11 @@
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_moist ),        &
          INTENT(IN ) ::                                   moist
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                   &
-         INTENT(INOUT ) ::                                            &
-               aer_dry,aer_water
+         INTENT(INOUT ) ::                                         &
+               pm2_5_dry,pm2_5_water
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                   &
-         INTENT(INOUT ) ::                                            &
-           ph_macr,ph_o31d,ph_o33p,ph_no2,ph_no3o2,ph_no3o,ph_hno2,  &
+         INTENT(INOUT ) ::                                         &
+           ph_macr,ph_o31d,ph_o33p,ph_no2,ph_no3o2,ph_no3o,ph_hno2,&
            ph_hno3,ph_hno4,ph_h2o2,ph_ch2or,ph_ch2om,ph_ch3cho,    &
            ph_ch3coch3,ph_ch3coc2h5,ph_hcocho,ph_ch3cocho,         &
            ph_hcochest,ph_ch3o2h,ph_ch3coo2h,ph_ch3ono2,ph_hcochob
@@ -1205,6 +1205,10 @@
                                                      xlong
       REAL,      INTENT(IN   ) ::                               &
                              dtstep,gmt
+
+   TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
+
+   LOGICAL, INTENT(IN) :: haveaer
 !         
 !                                                    
 ! LOCAL  VAR
@@ -1218,14 +1222,14 @@
       real :: zenith,zenita,azimuth,dobsi
       real :: bext340,bexth2o,ctr
       integer :: naerspec
-      print *,'gmt,julday in madronich1= ',gmt,julday
+!     print *,'gmt,julday in madronich1= ',gmt,julday
       xtime=ktau*dtstep/60.
       ixhour=ifix(gmt+.01)+ifix(xtime/60.)
       xhour=float(ixhour)
       xmin=60.*gmt+(xtime-xhour*60.)
       gmtp=mod(xhour,24.)
       gmtp=gmtp+xmin/60.
-      print *,'gmtp = ',gmtp,xhour,xmin
+!     print *,'gmtp = ',gmtp,xhour,xmin
       do 100 j=jts,jte
       do 100 i=its,ite
         do k=kts,kte
@@ -1233,6 +1237,7 @@
           phot1(n,k)=0.
         END DO
         END DO
+        iprt = 0
         zenith=0.
         zenita=0.
         azimuth=0.
@@ -1273,16 +1278,12 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           bext340=5.E-6
           bexth2o=5.E-6
-! SEP     if(p_nu0.gt.1.and.ktau.gt.1)then
-          if(p_nu0.gt.100.and.ktau.gt.1)then
+          if(haveaer.and.ktau.gt.1)then
 
 ! dry aerosol mass
-!              do l=1,naerspec
-!                   ctr=ctr+chem(i,j,k,numchem+1+l)
-!              enddo
 !rf check ki (or ki+1 or ki-1 ???)
-                aerext(k)=aer_dry(i,k,j)*bext340+ &
-                   aer_water(i,k,j)*bexth2o
+                aerext(k)=pm2_5_dry(i,k,j)*bext340+ &
+                   pm2_5_water(i,k,j)*bexth2o
                 aerext(k)=aerext(k)*1.E3
 !                if(i.eq.70.and.j.eq.70) write(06,*) 'aerext',k,aerext(k)
 
@@ -1301,9 +1302,9 @@
           if(qll(k+1).lt.1.e6*epsilc)qll(k+1) = 0.
 !         qll(k+1) = 0.
           phizz(k+1) = z_at_w(i,k+1,j)*.001-z_at_w(i,1,j)*.001
-!         if((i.eq.87.and.j.eq.66).or.(i.eq.105.and.j.eq.70))then
+!         if((i.eq.17.and.j.eq.16))then
 !            print *,k,rhoa(k+1),phizz(k+1),qll(k+1),aerext(k+1), &
-!            o33(k+1),tt(k+1),aer_dry(i,k,j),aer_water(i,k,j)
+!            o33(k+1),tt(k+1),pm2_5_dry(i,k,j),pm2_5_water(i,k,j)
 !         endif
 !         write(0,*)k+1,z_at_w(i,k+1,j),z_at_w(i,1,j),tt(k+1),o33(k+1),qll(k+1),rhoa(k+1)
         END DO
@@ -1318,17 +1319,16 @@
 ! if you have aerosols....
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-! SEP    if(p_nu0.gt.1)then
-        if(p_nu0.gt.100)then
-              aerext(1)=aer_dry(i,1,j)*bext340+ &
-              aer_water(i,1,j)*bexth2o
+        if(haveaer)then
+              aerext(1)=pm2_5_dry(i,1,j)*bext340+ &
+              pm2_5_water(i,1,j)*bexth2o
               aerext(1)=aerext(1)*1.e3
         endif
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         rhoa(1)=p8w(i,kts,j)/t8w(i,kts,j)/r_d
         dobsi=350.
 !         if((i.eq.87.and.j.eq.66).or.(i.eq.105.and.j.eq.70))then
-!            print *,'before photmad, i,j = ',i,j,aer_dry(i,1,j),aer_water(i,1,j)
+!            print *,'before photmad, i,j = ',i,j,pm2_5_dry(i,1,j),pm2_5_water(i,1,j)
 !            print *,k,rhoa(1),phizz(1),qll(1),aerext(1),o33(1),tt(1),zenita
 !         endif
 !write(0,*)'calling photolysis_mad --------',i,j
@@ -3195,8 +3195,8 @@ END SUBROUTINE madronich1_driver
             DO k = kts, kte
               phizz(k) = .001*z(k)
               aerext(k) = 0.
-              ! if(i.eq.its.and.j.eq.jts)print *,phizz(k),aerstd(k),kts,kte
-              ! print *,phizz(k),kts,kte,ite,jte
+!               if(i.eq.its.and.j.eq.jts)print *,phizz(k),aerstd(k),kts,kte
+!               print *,phizz(k),kts,kte,ite,jte
             END DO
 
             IF (phizz(kte-1)>20.) THEN
@@ -3207,8 +3207,8 @@ END SUBROUTINE madronich1_driver
 
             DO k = kts, kte
               aerwrf(i,k,j) = aerext(k)
-              ! if(i.eq.its)print *,k,i,j,aerext(k),phizz(k)
-              ! print *,k,i,j,aerext(k),phizz(k)
+!               if(i.eq.its)print *,k,i,j,aerext(k),phizz(k)
+!               print *,k,i,j,aerext(k),phizz(k)
             END DO
 
 10          CONTINUE

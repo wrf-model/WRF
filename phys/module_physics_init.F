@@ -256,6 +256,7 @@ integer myproc
       QFX(i,j)=0.
       RAINBL(i,j)=0.
       RAINNCV(i,j)=0.
+      ACSNOW(i,j)=0.
    ENDDO
    ENDDO
    ENDIF

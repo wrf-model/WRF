@@ -501,7 +501,7 @@
                       RTHRATEN,RTHRATENLW,RTHRATENSW,         &
                       STEPBL,STEPRA,STEPCU,                   &
                       W0AVG, RAINNC, RAINC, RAINCV, RAINNCV,  &
-                      NCA,                                    &
+                      NCA,grid%swrad_scat,                    &
                       CLDEFI,LOWLYR,                          &
                       MASS_FLUX,                              &
                       RTHFTEN, RQVFTEN,                       &

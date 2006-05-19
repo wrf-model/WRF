@@ -269,6 +269,7 @@ Namelist variables for controling the automatic moving nest:
                                                   (only works for ra_sw_physics = 1 and ra_lw_physics = 1)
                                                   1 = with cloud effect
                                                   0 = without cloud effect
+ swrad_scat                          = 1.       ; scattering tuning parameter (default 1. is 1.e-5 m2/kg)
  surface_input_source                = 1,	; where landuse and soil category data come from:
                                                   1 = SI/gridgen
                                                   2 = GRIB data from another model (only possible

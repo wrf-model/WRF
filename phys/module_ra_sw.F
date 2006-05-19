@@ -2,6 +2,8 @@
 !
 MODULE module_ra_sw
 
+      REAL,PRIVATE,SAVE :: CSSCA
+
 CONTAINS
 
 !------------------------------------------------------------------
@@ -366,7 +368,8 @@ CONTAINS
 !        XSCA=1.E-5*XATP(K)/XMU
 !          XSCA=(1.E-5*XATP(K)+aer_dry1(K)*bext340+aer_water1(K)*bexth2o)/XMU
          beta=0.4*(1.0-XMU)+0.1
-         XSCA=(1.E-5*XATP(K)+beta*aer_dry1(K)*bext340*DZ(K) &
+!     CSSCA - CLEAR-SKY SCATTERING SET FROM NAMELIST SWRAD_SCAT
+         XSCA=(cssca*XATP(K)+beta*aer_dry1(K)*bext340*DZ(K) &
               +beta*aer_water1(K)*bexth2o*DZ(K))/XMU   
 
 !     LAYER VAPOR ABSORPTION DONE FIRST
@@ -434,7 +437,7 @@ CONTAINS
    END SUBROUTINE SWPARA
 
 !====================================================================
-   SUBROUTINE swinit(RTHRATEN,RTHRATENSW,restart,                   &
+   SUBROUTINE swinit(RTHRATEN,RTHRATENSW,swrad_scat,restart,        &
                      allowed_to_read ,                              &
                      ids, ide, jds, jde, kds, kde,                  &
                      ims, ime, jms, jme, kms, kme,                  &
@@ -451,11 +454,15 @@ CONTAINS
    REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::        &
                                                           RTHRATEN, &
                                                         RTHRATENSW
+   REAL , INTENT(IN)              :: swrad_scat
    INTEGER :: i, j, k, itf, jtf, ktf
 
    jtf=min0(jte,jde-1)
    ktf=min0(kte,kde-1)
    itf=min0(ite,ide-1)
+
+!     CSSCA - CLEAR-SKY SCATTERING SET FROM NAMELIST SWRAD_SCAT
+   cssca = swrad_scat * 1.e-5
 
    IF(.not.restart)THEN
      DO j=jts,jtf

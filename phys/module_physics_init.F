@@ -35,7 +35,7 @@ CONTAINS
                          RTHRATEN,RTHRATENLW,RTHRATENSW,         &
                          STEPBL,STEPRA,STEPCU,                   &
                          W0AVG, RAINNC, RAINC, RAINCV, RAINNCV,  &
-                         NCA,                                    &
+                         NCA,swrad_scat,                         &
                          CLDEFI,LOWLYR,                          &
                          MASS_FLUX,                              &
                          RTHFTEN, RQVFTEN,                       &
@@ -76,6 +76,7 @@ CONTAINS
 
    REAL,     INTENT(IN)        :: DT, p_top, DX, DY
    REAL,     INTENT(IN)        :: RADT,BLDT,CUDT,MPDT
+   REAL,     INTENT(IN)        :: swrad_scat
 
    REAL,     DIMENSION( kms:kme ) , INTENT(IN) :: zfull, zhalf
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(IN) :: TSK, XLAT, XLONG
@@ -324,7 +325,7 @@ integer myproc
 
    CALL ra_init(grid,STEPRA,RADT,DT,RTHRATEN,RTHRATENLW,             &
                 RTHRATENSW,CLDFRA,EMISS,cen_lat,JULYR,JULDAY,GMT,    &
-                sfull,shalf,pptop,                              &
+                sfull,shalf,pptop,swrad_scat,                   &
                 config_flags,restart,                           & 
                 allowed_to_read ,                                   &
                 ids, ide, jds, jde, kds, kde,                   &
@@ -618,7 +619,7 @@ integer myproc
 !=====================================================================
    SUBROUTINE ra_init(grid,STEPRA,RADT,DT,RTHRATEN,RTHRATENLW,       & 
                       RTHRATENSW,CLDFRA,EMISS,cen_lat,JULYR,JULDAY,GMT,    &
-                      sfull,shalf,pptop,                             &
+                      sfull,shalf,pptop,swrad_scat,                  &
                       config_flags,restart,                          & 
                       allowed_to_read ,                              &
                       ids, ide, jds, jde, kds, kde,                  &
@@ -643,7 +644,8 @@ integer myproc
                                      its, ite, jts, jte, kts, kte
 
    INTEGER , INTENT(IN)           :: JULDAY,JULYR
-   REAL ,    INTENT(IN)           :: DT, RADT, cen_lat, GMT, pptop
+   REAL ,    INTENT(IN)           :: DT, RADT, cen_lat, GMT, pptop,  &
+                                     swrad_scat
 
    INTEGER , INTENT(INOUT)        :: STEPRA
    INTEGER :: isn
@@ -706,6 +708,7 @@ integer myproc
 
         CASE (SWRADSCHEME)
              CALL swinit(RTHRATEN,RTHRATENSW,              &
+                         swrad_scat,                       &
                          restart,                          &
                          allowed_to_read ,                 &
                          ids, ide, jds, jde, kds, kde,     &

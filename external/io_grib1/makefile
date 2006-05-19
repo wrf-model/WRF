@@ -46,9 +46,9 @@ LOCAL_LIBS :
 .FORCE:
 
 superclean: clean
-	/bin/rm *.a; \
-	cd MEL_grib1; rm *.a; make clean; cd ..;\
-	cd grib1_util; rm *.a; make clean; cd ..
+	/bin/rm -f *.a; \
+	cd MEL_grib1; /bin/rm -f *.a; make clean; cd ..;\
+	cd grib1_util; /bin/rm -f *.a; make clean; cd ..
 
 clean:  
 	/bin/rm -f  *.f *.o *.mod; \

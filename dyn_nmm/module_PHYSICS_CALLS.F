@@ -1282,7 +1282,7 @@
 !-----------------------------------------------------------------------
 !
         TWBS(I,J)=-TWBS(I,J)
-        QWBS(I,J)=-QWBS(I,J)*XLV
+        QWBS(I,J)=-QWBS(I,J)*XLV*CHKLOWQ(I,J)
 !
 !-----------------------------------------------------------------------
 !***  ACCUMULATED QUANTITIES.
@@ -2164,7 +2164,7 @@
 !
         DO K=KTS,KTE
           TNEW=TH_PHY(I,K,J)*PI_PHY(I,K,J)
-          TRAIN(I,K,J)=(TNEW-T(I,K,J))*RDTPHS
+          TRAIN(I,K,J)=TRAIN(I,K,J)+(TNEW-T(I,K,J))*RDTPHS
           T(I,K,J)=TNEW
           Q(I,K,J)=WATER(I,K,J,P_QV)/(1.+WATER(I,K,J,P_QV)) !To s.h.
           CWM(I,K,J)=WATER(I,K,J,P_QC)

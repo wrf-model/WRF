@@ -34,11 +34,12 @@ int    gribhdr2file ( gh, stream, errmsg)
 {
   int fd;
   int stat;
+  char *func= "gribhdr2file";
 
   fd = fileno(stream);
   if (fd == -1) 
     {
-      DPRINT1 ("%s: Invalid file stream encountered.\n", gribhdr2file);
+      DPRINT1 ("%s: Invalid file stream encountered.\n", func);
       return 1;
       
     }

@@ -4,7 +4,9 @@
 
 /* check Compiler,  prototypes needed for ANSI-C */
 
-#if defined( __cplusplus ) || defined( __STDC__ ) || defined( __GNUC__ )
+/*#if defined( __cplusplus ) || defined( __STDC__ ) || defined( __GNUC__ )*/
+/* Changed by Todd Hutchinson to force the need for PROTOTYPE */
+#if 1
 
 #define PROTOTYPE_NEEDED 1
 
@@ -58,7 +60,7 @@ void make_default_grbfn (DATA_INPUT,USER_INPUT,char *);
 int map_lvl (char *,DATA_INPUT *,float *,float *,char *);
 int map_parm (char *,DATA_INPUT *,float *,float *,char *);
 int pack_spatial (long *,unsigned short *,float *,float *,
-		unsigned int **,short,long *,char *);
+		unsigned long **,short,long *,char *);
 void prt_inp_struct (PDS_INPUT *,grid_desc_sec *, BMS_INPUT *,
 		struct BDS_HEAD_INPUT *,float **);
 void upd_child_errmsg (char *,char *);

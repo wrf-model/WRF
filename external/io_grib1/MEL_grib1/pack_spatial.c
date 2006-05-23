@@ -42,7 +42,7 @@ int	pack_spatial ( long   		*pt_cnt,
 			unsigned short	*bit_cnt,
 			float		*pack_null,
 			float 		*fbuff,
-			unsigned int  	**ppbitstream,
+			unsigned long 	**ppbitstream,
 			short   	dec_scl_fctr,
 			long    	*BDSlength,
 			char    	*errmsg)
@@ -54,7 +54,7 @@ int	pack_spatial (  pt_cnt, bit_cnt, pack_null, fbuff, ppbitstream,
 			unsigned short	*bit_cnt;
 			float		*pack_null;
 			float 		*fbuff;
-			unsigned int  	**ppbitstream;
+			unsigned long  	**ppbitstream;
 			short   	dec_scl_fctr;
 			long    	*BDSlength;
 			char    	*errmsg;
@@ -67,13 +67,8 @@ int	pack_spatial (  pt_cnt, bit_cnt, pack_null, fbuff, ppbitstream,
     int empty;			/* number of empty bits in word */ 
     int diff;			/* difference of empty - bit1 */ 
     long max_value;		/* max value storable in bit_cnt bits */
-#if 0
     unsigned long itemp;	/* temporary unsigned integer */
     unsigned long *bstr;	/* pointer running across bitstream */
-#else
-    unsigned int itemp;	/* temporary unsigned integer */
-    unsigned int *bstr;	/* pointer running across bitstream */
-#endif
     int pack_bit_cnt;		/* count of bits to pack parameter values */ 
     int unused_bit_cnt; 	/* count of unused bits for i2 words */
     /*long byte4_cnt;		/- count of bytes using i4 words */
@@ -84,11 +79,14 @@ int	pack_spatial (  pt_cnt, bit_cnt, pack_null, fbuff, ppbitstream,
     float reference;		/* reference = minimum value in grid */
     float max_grid;		/* maximum value in grid */
     float ftemp;		/* temporary float containing grid value */
-    unsigned int *pBitstream;
+    unsigned long *pBitstream;
     unsigned long grib_local_ibm();
     int wordnum;
     int zero_cnt;
     int prec_too_high = 0;
+    unsigned char bdshdr[14];   /* Character array to temporarily hold bds
+                                 *   header */
+    int hdrwords;
 
     DPRINT1 ( "Entering %s....\n", func );
 
@@ -265,6 +263,7 @@ int	pack_spatial (  pt_cnt, bit_cnt, pack_null, fbuff, ppbitstream,
 *                        into available bit width
 */
        max_value = (long) pow(2., (double) pack_bit_cnt) - 1;
+       if (max_value < 2) max_value = 2;
        scl_fctr	= -(short) floor(log10((double) (max_value-1) / 
 		  	  (double) max_grid) / log10(2.));
        pow_scl 	= pow(2., (double) -scl_fctr); 
@@ -299,12 +298,8 @@ int	pack_spatial (  pt_cnt, bit_cnt, pack_null, fbuff, ppbitstream,
 *              RETURN Stat= 999;
 *           ENDIF
 */ 
-
-/* This was being allocated way too small, in bytes instead of longs.
-   Causing seg faults on free of buffer later on.  Fixed by multiplying
-   byte2_cnt by the size of an unsigned long.  Not sure how or why this 
-   ever worked. JM 20050720 */
-    pBitstream = ( unsigned int * ) malloc ( sizeof( unsigned long ) * byte2_cnt );
+    pBitstream = ( unsigned long * ) malloc ( sizeof( unsigned long ) * 
+					      byte2_cnt );
     if ( !pBitstream )
     {
        DPRINT1 ("%s:  MAlloc failed pBitstream\n", func );
@@ -343,6 +338,41 @@ int	pack_spatial (  pt_cnt, bit_cnt, pack_null, fbuff, ppbitstream,
 *           Octet 12   = Bitstream starts (bit 25 of word 3)
 */
 
+
+   set_bytes_u(byte2_cnt, 3, bdshdr);
+
+   itemp = unused_bit_cnt;
+   set_bytes_u(itemp, 1, bdshdr+3);
+
+   set_bytes_u(scl_fctr, 2, bdshdr+4);
+
+   DPRINT1 ("  Reference (%f) ", reference);
+   reference   =  floor((double) reference + .5);
+   DPRINT1 ("truncated to DSF precision= %lf\n", reference);
+   itemp        = grib_local_ibm(reference);
+   DPRINT1 ("  Reference converted to local IBM format= 0x%x\n", itemp);
+
+   set_bytes_u(itemp, 4, bdshdr+6);
+
+   set_bytes_u(pack_bit_cnt, 1, bdshdr+10);
+
+   bit1 = 25;
+
+   memcpy(bstr,bdshdr,11);
+
+   /* 
+    * For non-internet byte order machines (i.e., linux), 
+    * We reverse the order of the last byte in the bds header, since
+    *   it will be reversed once again below.
+    */
+   hdrwords = 11/(WORD_BIT_CNT/BYTE_BIT_CNT);
+   set_bytes_u(bstr[hdrwords], WORD_BIT_CNT/BYTE_BIT_CNT,
+              (char *)(bstr+hdrwords) );
+
+   bstr += hdrwords;
+
+
+/*
     itemp	= unused_bit_cnt;
     *bstr	= (byte2_cnt << 8) | itemp;
     bstr++;
@@ -357,7 +387,7 @@ int	pack_spatial (  pt_cnt, bit_cnt, pack_null, fbuff, ppbitstream,
     *bstr	= (*bstr << 16) | (itemp >> 16);
     bstr++;
     *bstr	= (itemp << 16) | (pack_bit_cnt << 8);
-    bit1	= 25;  		/* starting bit within current bstr word */	
+    bit1	= 25;  	*/	 /* starting bit within current bstr word */
 
 /*
 *
@@ -380,15 +410,7 @@ int	pack_spatial (  pt_cnt, bit_cnt, pack_null, fbuff, ppbitstream,
 /*
 * A.13.2       FOR (each point in bitstream) DO
 */
-  	for (ipt = 0; ipt < *pt_cnt; ipt++) {
-
-/* Check for overwriting the buffer.
-   Note that C pointer arithmetic takes care of the conversion of
-   byte2_cnt to represent size of of the offset in longs, JM 20050720 */
-if ( bstr >= pBitstream + byte2_cnt ) {
-sprintf(errmsg,"would overflow %d %16lx %16lx %16lx\n",ipt, pBitstream, bstr, pBitstream + byte2_cnt ) ;
-return(-1) ;
-}
+	for (ipt = 0; ipt < *pt_cnt; ipt++) {
 
 /*
 * A.13.2.1         IF ( data value < pack_null) THEN
@@ -463,12 +485,13 @@ return(-1) ;
     }
 
 /* For little endian machines, swap the bytes in the bstr pointer */
-#if ( BYTE_ORDER == LITTLE_ENDIAN )
-    for (wordnum = 0; wordnum < ceil(byte2_cnt/(float)sizeof(long)); 
+    /*    for (wordnum = 0; */
+    for (wordnum = hdrwords;
+	 wordnum < ceil(byte2_cnt/(float)(WORD_BIT_CNT/BYTE_BIT_CNT)); 
 	 wordnum++) {
-      pBitstream[wordnum] = htonl(pBitstream[wordnum]);
+      set_bytes_u(pBitstream[wordnum], WORD_BIT_CNT/BYTE_BIT_CNT, 
+		  (char *)(pBitstream+wordnum) );
     }
-#endif
 
 /*
 *

@@ -227,6 +227,7 @@ int rg_setup_gribinfo_f(GribInfo *gribinfo, FILE *fp, int use_fcst)
   GRIB_HDR *gh1;
   long tmpoffset=0;
   int century;
+  int year4d;
   int fcsttime1=0;
   int fcsttime2=0;
   int factor=0;
@@ -404,7 +405,6 @@ int rg_setup_gribinfo_f(GribInfo *gribinfo, FILE *fp, int use_fcst)
 		     gribinfo->elements[gribinfo->num_elements].pds->usHour,
 		     fcsttime1,
 		     gribinfo->elements[gribinfo->num_elements].pds->usFcst_unit_id);
-
     } 
     else {
       gribinfo->elements[gribinfo->num_elements].date = 
@@ -416,10 +416,13 @@ int rg_setup_gribinfo_f(GribInfo *gribinfo, FILE *fp, int use_fcst)
     gribinfo->elements[gribinfo->num_elements].century = 
       gribinfo->elements[gribinfo->num_elements].pds->usCentury;
     
+    year4d = 
+	(gribinfo->elements[gribinfo->num_elements].pds->usCentury - 1) * 100
+	+ gribinfo->elements[gribinfo->num_elements].pds->usYear;
+
     sprintf(gribinfo->elements[gribinfo->num_elements].initdate,
-	    "%02d%02d%02d%02d%02d%02d%02d",
-	    gribinfo->elements[gribinfo->num_elements].pds->usCentury-1,
-	    gribinfo->elements[gribinfo->num_elements].pds->usYear,
+	    "%04d%02d%02d%02d%02d%02d",
+	    year4d,
 	    gribinfo->elements[gribinfo->num_elements].pds->usMonth,
 	    gribinfo->elements[gribinfo->num_elements].pds->usDay,
 	    gribinfo->elements[gribinfo->num_elements].pds->usHour,
@@ -1843,9 +1846,12 @@ int advance_time(int *century, int year, int month, int day, int hour,
     }
   }
 
+  if (year > 100) {
+    (*century)++;
+  }
+
   if (year >= 100) {
     year -= 100;
-    (*century)++;
   }
 
   date = hour*1 + day*100 + month*10000 + year*1000000;
@@ -1881,6 +1887,10 @@ char *advance_time_str(char startdatein[], int amount, char enddate[])
   while (strlen(startdate) < 14) {
     strcpy(startdate+(strlen(startdate)),"0");
   }
+
+  /* This forces all calculations to use GMT time */
+  putenv("TZ=GMT0");
+  tzset();
 
   sscanf(startdate,"%4d%2d%2d%2d%2d%2d",&(starttp.tm_year),&(starttp.tm_mon),
 	 &(starttp.tm_mday),&(starttp.tm_hour),&(starttp.tm_min),

@@ -42,16 +42,11 @@
 ************************************************************************
 */
 
-#ifdef NCARIBM_NOC99
 /*
 NCAR AIX does not have lrint, make one up.
 */
-long lrint(double value)
-{
-  long retval;
-  retval=(long) rint(value);
-  return retval;
-}
+#ifdef NCARIBM_NOC99
+#define lrint(dbl) ((long)rint(dbl))
 #endif
 
 #if PROTOTYPE_NEEDED
@@ -293,12 +288,7 @@ GDS_LATLON_INPUT *mp;
 *
 * A.8       STORE Gds length in the True Grib GDS block too
 */
-#if ( BYTE_ORDER == LITTLE_ENDIAN )
-  tempsz = (htonl(gh->gds_len)) >> 8;
-#else
-  tempsz = gh->gds_len << 8;
-#endif
-  memcpy ((void*)pGDS_Head->achGDS_length, (void *)&tempsz, 3);
+  set_bytes(gh->gds_len, 3, pGDS_Head->achGDS_length);
 
 /*
 *
@@ -847,7 +837,7 @@ int   inp2grib_Lambert (ppvGDS_Proj_Input, pLambert, lProj_size, errmsg)
 * E.2       DEBUG printing
 */
    GDS_LAM_INPUT     *vProjInp = 0;
-   int               lTemp = 0;
+   long              lTemp = 0;
    int               nStatus = 0;
    char		     *func= "inp2grib_Lambert";
    long              tmp_byte4;
@@ -877,112 +867,43 @@ int   inp2grib_Lambert (ppvGDS_Proj_Input, pLambert, lProj_size, errmsg)
 * E.5       FILL local block type LAMBERT
 */
   
-#if ( BYTE_ORDER == LITTLE_ENDIAN )
-      lTemp = (htonl(vProjInp->iNx)) >> 16;
-#else
-      lTemp = vProjInp->iNx << 16;
-#endif
-      memcpy ((void *) pLambert->achNx, (void *)&lTemp, 2);
+      set_bytes(vProjInp->iNx, 2, pLambert->achNx);
       
-#if ( BYTE_ORDER == LITTLE_ENDIAN )
-      lTemp = (htonl(vProjInp->iNy) >> 16);
-#else
-      lTemp = vProjInp->iNy << 16;
-#endif
-      memcpy ((void *) pLambert->achNy, (void *)&lTemp, 2);
+      set_bytes(vProjInp->iNy, 2, pLambert->achNy);
 
 /* convert lLat1 to 3chars */
-#if ( BYTE_ORDER == LITTLE_ENDIAN )
-      lTemp = (htonl(abs(vProjInp->lLat1))) >> 8;
-#else
-      lTemp = abs ( vProjInp->lLat1 ) << 8;
-#endif
-      memcpy ((void *)  pLambert->achLat1, (void *)&lTemp, 3 );
-      if ( vProjInp->lLat1 < 0 ) pLambert->achLat1[0] |= 0x0080;
+      set_bytes(vProjInp->lLat1, 3, pLambert->achLat1);
 
 /* convert lLon1 to 3chars */
-#if ( BYTE_ORDER == LITTLE_ENDIAN )
-      lTemp = (htonl(abs(vProjInp->lLon1))) >> 8;
-#else
-      lTemp = abs ( vProjInp->lLon1 ) << 8;
-#endif
-      memcpy ((void *) pLambert->achLon1, (void *)&lTemp, 3 );
-      if ( vProjInp->lLon1 < 0 ) pLambert->achLon1[0] |= 0x0080;
+      set_bytes(vProjInp->lLon1, 3, pLambert->achLon1);
 
       pLambert->chRes_flag = ( unsigned char ) vProjInp->usRes_flag;
 
 /* convert lLon_orient to 3 bytes */
-#if ( BYTE_ORDER == LITTLE_ENDIAN )
-      lTemp = (htonl(abs(vProjInp->lLon_orient))) >> 8;
-#else
-      lTemp = abs(vProjInp->lLon_orient) << 8;
-#endif
-      memcpy ((void *) pLambert->achLon_orient, (void *)&lTemp, 3 );
-      if ( vProjInp->lLon_orient < 0 ) pLambert->achLon_orient[0] |= 0x0080;
+      set_bytes(vProjInp->lLon_orient, 3, pLambert->achLon_orient);
 
 /* convert ulDx to 3 bytes */
-#if ( BYTE_ORDER == LITTLE_ENDIAN )
-      lTemp = (htonl(vProjInp->ulDx)) >> 8;
-#else
-      lTemp=   vProjInp->ulDx  << 8;
-#endif
-      memcpy ((void *) pLambert->achDx, (void *)&lTemp, 3 );
+      set_bytes(vProjInp->ulDx, 3, pLambert->achDx);
    
 /* convert ulDy to 3 bytes */
-#if ( BYTE_ORDER == LITTLE_ENDIAN )
-      lTemp = (htonl(vProjInp->ulDy)) >> 8;
-#else
-      lTemp= vProjInp->ulDy  << 8;
-#endif
-      memcpy ((void *) pLambert->achDy, (void *)&lTemp, 3 );
+      set_bytes(vProjInp->ulDy, 3, pLambert->achDy);
 
       pLambert->chProj_flag = ( unsigned char ) vProjInp->usProj_flag;
       pLambert->chScan_mode = ( unsigned char ) vProjInp->usScan_mode;
 
 /* convert lLat_cut1 to 3 chars */
-#if ( BYTE_ORDER == LITTLE_ENDIAN )
-      lTemp = (htonl(abs(vProjInp->lLat_cut1))) >> 8;
-#else
-      lTemp = abs (vProjInp->lLat_cut1) << 8;
-#endif
-      memcpy ((void *) pLambert->achLat_cut1, (void *)&lTemp, 3 );
-      if ( vProjInp->lLat_cut1 < 0 ) pLambert->achLat_cut1[0] |= 0x0080;
+      set_bytes(vProjInp->lLat_cut1, 3, pLambert->achLat_cut1);
 
 /* convert lLat_cut2 to 3 chars */
-#if ( BYTE_ORDER == LITTLE_ENDIAN )
-      lTemp = (htonl(abs(vProjInp->lLat_cut2))) >> 8;
-#else
-      lTemp = abs ( vProjInp->lLat_cut2 ) << 8;
-#endif
-      memcpy ((void *) pLambert->achLat_cut2, (void *)&lTemp, 3 );
-      if ( vProjInp->lLat_cut2 < 0 ) pLambert->achLat_cut2[0] |= 0x0080;
+      set_bytes(vProjInp->lLat_cut2, 3, pLambert->achLat_cut2);
 
 /* convert lLat_southpole to 3chars */
-#if ( BYTE_ORDER == LITTLE_ENDIAN )
-      lTemp = (htonl(abs(vProjInp->lLat_southpole))) >> 8;
-#else
-      lTemp = abs ( vProjInp->lLat_southpole ) << 8;
-#endif
-      memcpy ((void *) pLambert->achLat_southpole, (void *)&lTemp, 3 );
-      if ( vProjInp->lLat_southpole < 0 ) 
-		pLambert->achLat_southpole[0] |= 0x0080;
+      set_bytes(vProjInp->lLat_southpole, 3, pLambert->achLat_southpole);
 
 /* convert lLon_southpole to 3 chars */
-#if ( BYTE_ORDER == LITTLE_ENDIAN )
-      lTemp = (htonl(abs(vProjInp->lLon_southpole))) >> 8;
-#else
-      lTemp = abs ( vProjInp->lLon_southpole ) << 8;
-#endif
-      memcpy ((void *) pLambert->achLon_southpole, (void *)&lTemp, 3 );
-      if ( vProjInp->lLon_southpole < 0 )
-         	pLambert->achLon_southpole[0] |= 0x0080;
+      set_bytes(vProjInp->lLon_southpole, 3, pLambert->achLon_southpole);
 
-#if ( BYTE_ORDER == LITTLE_ENDIAN )
-      lTemp = (htonl(vProjInp->usZero)) >> 16;
-#else
-      lTemp = vProjInp->usZero << 16;      /* usZero is type INT */
-#endif
-      memcpy ((void *) pLambert->achZero, (void *)&lTemp, 2);
+      set_bytes(vProjInp->usZero, 2, pLambert->achZero);
 
 /*
 *
@@ -1112,65 +1033,27 @@ int   inp2grib_PolarSt  (ppvGDS_Proj_Input, Polar, lProj_size , errmsg)
 * F.4        FILL local struct from pProjInp
 */
 /* convert usNx to 2 chars */
-#if ( BYTE_ORDER == LITTLE_ENDIAN )
-      lTemp = (htonl(abs(pProjInp->usNx))) >> 16;
-#else
-      lTemp= abs (pProjInp->usNx) << 16;
-#endif
-      memcpy ((void*) Polar->achNx, (void*)&lTemp, 2);
+      set_bytes(pProjInp->usNx, 2, Polar->achNx);
    
 /* convert usNy to 2 chars */
-#if ( BYTE_ORDER == LITTLE_ENDIAN )
-      lTemp = (htonl(abs(pProjInp->usNy))) >> 16;
-#else
-      lTemp= abs(pProjInp->usNy) << 16;
-#endif
-      memcpy ((void*) Polar->achNy, (void*)&lTemp, 2);
+      set_bytes(pProjInp->usNy, 2, Polar->achNy);
 
 /* convert lLat1 to 3 chars */
-#if ( BYTE_ORDER == LITTLE_ENDIAN )
-      lTemp = (htonl(abs(pProjInp->lLat1))) >> 8;
-#else
-      lTemp = abs ( pProjInp->lLat1 ) << 8;
-#endif
-      memcpy ((void *)  Polar->achLat1, (void *)&lTemp, 3 );
-      if ( pProjInp->lLat1 < 0 ) Polar->achLat1[0] |= 0x0080;
+      set_bytes(pProjInp->lLat1, 3, Polar->achLat1);
 
 /* convert lLon1 to 3 chars */
-#if ( BYTE_ORDER == LITTLE_ENDIAN )
-      lTemp = (htonl(abs(pProjInp->lLon1))) >> 8;
-#else
-      lTemp = abs ( pProjInp->lLon1 ) << 8;
-#endif
-      memcpy ((void *) Polar->achLon1, (void *)&lTemp, 3 );
-      if ( pProjInp->lLon1 < 0 ) Polar->achLon1[0] |= 0x0080;
+      set_bytes(pProjInp->lLon1, 3, Polar->achLon1);
 
       Polar->chRes_flag = ( unsigned char ) pProjInp->usRes_flag;
 
 /* convert lLon_orient to 3 chars */
-#if ( BYTE_ORDER == LITTLE_ENDIAN )
-      lTemp = (htonl(abs(pProjInp->lLon_orient))) >> 8;
-#else
-      lTemp = abs ( pProjInp->lLon_orient ) << 8;
-#endif
-      memcpy ((void *)  Polar->achLon_orient, (void *)&lTemp, 3 );
-      if ( pProjInp->lLon_orient < 0 )  Polar->achLon_orient[0] |= 0x0080;
+      set_bytes(pProjInp->lLon_orient, 3, Polar->achLon_orient);
 
 /* convert ulDx to 3 char */
-#if ( BYTE_ORDER == LITTLE_ENDIAN )
-      lTemp = (htonl(pProjInp->ulDx)) >> 8;
-#else
-      lTemp= ( pProjInp->ulDx << 8);
-#endif
-      memcpy ((void *)  Polar->achDx, (void *)&lTemp, 3 );
+      set_bytes(pProjInp->ulDx, 3, Polar->achDx);
    
 /* convert ulDy to 3chars */
-#if ( BYTE_ORDER == LITTLE_ENDIAN )
-      lTemp = (htonl(pProjInp->ulDy)) >> 8;
-#else
-      lTemp=  ( pProjInp->ulDy << 8);
-#endif
-      memcpy ((void *)  Polar->achDy, (void *)&lTemp, 3 );
+      set_bytes(pProjInp->ulDy, 3, Polar->achDy);
 
       Polar->chProj_flag = ( unsigned char ) pProjInp->usProj_flag;
       Polar->chScan_mode = ( unsigned char ) pProjInp->usScan_mode;
@@ -1310,73 +1193,29 @@ int    inp2grib_Latlon  (ppvGDS_Proj_Input, pLatlon, lProj_size, errmsg)
 * G.4       FILL local struct from Inp
 */
 /* convert usNi & usNj to 2 chars */
-#if ( BYTE_ORDER == LITTLE_ENDIAN )
-      lTemp = (htonl(Inp->usNi)) >> 16;
-#else
-      lTemp= Inp->usNi << 16;
-#endif
-      memcpy ((void*) pLatlon->achNi, (void*)&lTemp, 2);
+      set_bytes(Inp->usNi, 2, pLatlon->achNi);
 
-#if ( BYTE_ORDER == LITTLE_ENDIAN )
-      lTemp = (htonl(Inp->usNj)) >> 16;
-#else
-      lTemp = Inp->usNj << 16;
-#endif
-      memcpy ((void*) pLatlon->achNj, (void*)&lTemp, 2);
+      set_bytes(Inp->usNj, 2, pLatlon->achNj);
    
 /* convert lLat1 to 3chars */
-#if ( BYTE_ORDER == LITTLE_ENDIAN )
-      lTemp = (htonl(abs(Inp->lLat1))) >> 8;
-#else
-      lTemp=  abs ( Inp->lLat1 )<< 8;
-#endif
-      memcpy ((void *) pLatlon->achLat1, (void *)&lTemp, 3 );
-      if ( Inp->lLat1 < 0 ) pLatlon->achLat1[0] |= 0x0080;
+      set_bytes(Inp->lLat1, 3, pLatlon->achLat1);
 
 /* convert lLon1 to 3chars */
-#if ( BYTE_ORDER == LITTLE_ENDIAN )
-      lTemp = (htonl(abs(Inp->lLon1))) >> 8;
-#else
-      lTemp = abs ( Inp->lLon1 ) << 8;
-#endif
-      memcpy ((void *) pLatlon->achLon1, (void *)&lTemp, 3 );
-      if ( Inp->lLon1 < 0 ) pLatlon->achLon1[0] |= 0x0080;
+      set_bytes(Inp->lLon1, 3, pLatlon->achLon1);
 
       pLatlon->chRes_flag = ( unsigned char ) Inp->usRes_flag;
 
 /* convert lLat2 to 3chars */
-#if ( BYTE_ORDER == LITTLE_ENDIAN )
-      lTemp = (htonl(abs(Inp->lLat2))) >> 8;
-#else
-      lTemp = abs ( Inp->lLat2 ) << 8;
-#endif
-      memcpy ((void *) pLatlon->achLat2, (void *)&lTemp, 3 );
-      if ( Inp->lLat2 < 0 ) pLatlon->achLat2[0] |= 0x0080;
+      set_bytes(Inp->lLat2, 3, pLatlon->achLat2);
 
 /* convert lLon2 to 3chars */
-#if ( BYTE_ORDER == LITTLE_ENDIAN )
-      lTemp = (htonl(abs(Inp->lLon2))) >> 8;
-#else
-      lTemp = abs ( Inp->lLon2 ) << 8;
-#endif
-      memcpy ((void *) pLatlon->achLon2, (void *)&lTemp, 3 );
-      if ( Inp->lLon2 < 0 ) pLatlon->achLon2[0] |= 0x0080;
+      set_bytes(Inp->lLon2, 3, pLatlon->achLon2);
 
 /* convert lon increment to 2chars */
-#if ( BYTE_ORDER == LITTLE_ENDIAN )
-      lTemp = (htonl(Inp->iDi)) >> 16;
-#else
-      lTemp = Inp->iDi  << 16;
-#endif
-      memcpy ((void *) pLatlon->achDi, (void *)&lTemp, 2);
+      set_bytes(Inp->iDi, 2, pLatlon->achDi);
 
 /* convert lat increment to 2chars */
-#if ( BYTE_ORDER == LITTLE_ENDIAN )
-      lTemp = (htonl(Inp->iDj)) >> 16;
-#else
-      lTemp = Inp->iDj << 16;
-#endif
-      memcpy ((void *)  pLatlon->achDj, (void *)&lTemp, 2);
+      set_bytes(Inp->iDj, 2, pLatlon->achDj);
 
 /* 1 byte scan mode */
       pLatlon->chScan_mode = ( unsigned char ) Inp->usScan_mode;
@@ -1385,56 +1224,22 @@ int    inp2grib_Latlon  (ppvGDS_Proj_Input, pLatlon, lProj_size, errmsg)
       memset ((void*)pLatlon->achZero, '\0', 4);
 
 /* convert lLat_southpole to 3chars */
-#if ( BYTE_ORDER == LITTLE_ENDIAN )
-      lTemp = (htonl(abs(Inp->lLat_southpole))) >> 8;
-#else
-      lTemp = abs ( Inp->lLat_southpole ) << 8;
-#endif
-      memcpy ((void *) pLatlon->achLat_southpole, (void *)&lTemp, 3 );
-      if ( Inp->lLat_southpole < 0) pLatlon->achLat_southpole[0] |=0x080;
+      set_bytes(Inp->lLat_southpole, 3, pLatlon->achLat_southpole);
 
 /* convert lLon_southpole to 3chars */
-#if ( BYTE_ORDER == LITTLE_ENDIAN )
-      lTemp = (htonl(abs(Inp->lLon_southpole))) >> 8;
-#else
-      lTemp = abs ( Inp->lLon_southpole ) << 8;
-#endif
-      memcpy ((void *)  pLatlon->achLon_southpole, (void *)&lTemp, 3 );
-      if ( Inp->lLon_southpole < 0) pLatlon->achLon_southpole[0] |=0x080;
+      set_bytes(Inp->lLon_southpole, 3, pLatlon->achLon_southpole);
 
 /* convert lRotate to 4chars */
-#if ( BYTE_ORDER == LITTLE_ENDIAN )
-      lTemp = (htonl(abs(Inp->lRotate)));
-#else
-      lTemp = abs ( Inp->lRotate );
-#endif
-      memcpy ((void *) pLatlon->achRotate, (void *)&lTemp, 4 );
+      set_bytes(Inp->lRotate, 4, pLatlon->achRotate);
 
 /* convert lPole_lat to 3chars */
-#if ( BYTE_ORDER == LITTLE_ENDIAN )
-      lTemp = (htonl(abs(Inp->lPole_lat))) >> 8;
-#else
-      lTemp = abs ( Inp->lPole_lat ) << 8;
-#endif
-      memcpy ((void *) pLatlon->achPole_lat, (void *)&lTemp, 3 );
-      if (  Inp->lPole_lat < 0) pLatlon->achPole_lat[0] |= 0x0080;
+      set_bytes(Inp->lPole_lat, 3, pLatlon->achPole_lat);
 
 /* convert lPole_lon to 3chars */
-#if ( BYTE_ORDER == LITTLE_ENDIAN )
-      lTemp = (htonl(abs(Inp->lPole_lon))) >> 8;
-#else
-      lTemp = abs ( Inp->lPole_lon ) << 8;
-#endif
-      memcpy ((void *) pLatlon->achPole_lon, (void *)&lTemp, 3 );
-      if (  Inp->lPole_lon < 0) pLatlon->achPole_lon[0] |= 0x0080;
+      set_bytes(Inp->lPole_lon, 3, pLatlon->achPole_lon);
 
 /* convert lStretch to 4 chars */
-#if ( BYTE_ORDER == LITTLE_ENDIAN )
-      lTemp = (htonl(Inp->lStretch));
-#else
-      lTemp = Inp->lStretch;
-#endif
-      memcpy ((void *) pLatlon->achStretch, (void*)&lTemp, 4 );
+      set_bytes(Inp->lStretch, 4, pLatlon->achStretch);
 
 /*
 *
@@ -1567,67 +1372,27 @@ int   inp2grib_Mercator (ppvGDS_Proj_Input, Mercator, lProj_size , errmsg)
 * F.4        FILL local struct from pProjInp
 */
 /* convert cols to 2 chars */
-#if ( BYTE_ORDER == LITTLE_ENDIAN )
-      lTemp = (htonl(abs(ProjInp->cols))) >> 16;
-#else
-      lTemp= abs (ProjInp->cols) << 16;
-#endif
-      memcpy ((void*) Mercator->achNi, (void*)&lTemp, 2);
+      set_bytes(ProjInp->cols, 2, Mercator->achNi);
    
 /* convert rows to 2 chars */
-#if ( BYTE_ORDER == LITTLE_ENDIAN )
-      lTemp = (htonl(abs(ProjInp->rows))) >> 16;
-#else
-      lTemp= abs(ProjInp->rows) << 16;
-#endif
-      memcpy ((void*) Mercator->achNj, (void*)&lTemp, 2);
+      set_bytes(ProjInp->rows, 2, Mercator->achNj);
 
 /* convert first_lat to 3 chars */
-#if ( BYTE_ORDER == LITTLE_ENDIAN )
-      lTemp = (htonl(abs(ProjInp->first_lat))) >> 8;
-#else
-      lTemp = abs ( ProjInp->first_lat ) << 8;
-#endif
-      memcpy ((void *)  Mercator->achLat1, (void *)&lTemp, 3 );
-      if ( ProjInp->first_lat < 0 ) Mercator->achLat1[0] |= 0x0080;
+      set_bytes(ProjInp->first_lat, 3, Mercator->achLat1);
 
 /* convert first_lon to 3 chars */
-#if ( BYTE_ORDER == LITTLE_ENDIAN )
-      lTemp = (htonl(abs(ProjInp->first_lon))) >> 8;
-#else
-      lTemp = abs ( ProjInp->first_lon ) << 8;
-#endif
-      memcpy ((void *) Mercator->achLon1, (void *)&lTemp, 3 );
-      if ( ProjInp->first_lon < 0 ) Mercator->achLon1[0] |= 0x0080;
+      set_bytes(ProjInp->first_lon, 3, Mercator->achLon1);
 
       Mercator->chRes_flag = ( unsigned char ) ProjInp->usRes_flag;
 
 /* convert La2 to 3 chars */
-#if ( BYTE_ORDER == LITTLE_ENDIAN )
-      lTemp = (htonl(abs(ProjInp->La2))) >> 8;
-#else
-      lTemp = abs ( ProjInp->La2 ) << 8;
-#endif
-      memcpy ((void *)  Mercator->achLat2, (void *)&lTemp, 3 );
-      if ( ProjInp->La2 < 0 ) Mercator->achLat2[0] |= 0x0080;
+      set_bytes(ProjInp->La2, 3, Mercator->achLat2);
 
 /* convert Lo2 to 3 chars */
-#if ( BYTE_ORDER == LITTLE_ENDIAN )
-      lTemp = (htonl(abs(ProjInp->Lo2))) >> 8;
-#else
-      lTemp = abs ( ProjInp->Lo2 ) << 8;
-#endif
-      memcpy ((void *) Mercator->achLon2, (void *)&lTemp, 3 );
-      if ( ProjInp->Lo2 < 0 ) Mercator->achLon2[0] |= 0x0080;
+      set_bytes(ProjInp->Lo2, 3, Mercator->achLon2);
 
 /* convert lLon_orient to 3 chars */
-#if ( BYTE_ORDER == LITTLE_ENDIAN )
-      lTemp = (htonl(abs(ProjInp->latin))) >> 8;
-#else
-      lTemp = abs ( ProjInp->latin ) << 8;
-#endif
-      memcpy ((void *)  Mercator->achLatin, (void *)&lTemp, 3 );
-      if ( ProjInp->latin < 0 )  Mercator->achLatin[0] |= 0x0080;
+      set_bytes(ProjInp->latin, 3, Mercator->achLatin);
 
 /* convert zero fill */
       Mercator->achZero1 = ( unsigned char ) ProjInp->usZero1;
@@ -1635,20 +1400,10 @@ int   inp2grib_Mercator (ppvGDS_Proj_Input, Mercator, lProj_size , errmsg)
       Mercator->chScan_mode = ( unsigned char ) ProjInp->usScan_mode;
 
 /* convert ulDx to 3 char */
-#if ( BYTE_ORDER == LITTLE_ENDIAN )
-      lTemp = (htonl((long)ProjInp->lon_inc)) >> 8;
-#else
-      lTemp= ( (long)ProjInp->lon_inc << 8);
-#endif
-      memcpy ((void *)  Mercator->achDi, (void *)&lTemp, 3 );
+      set_bytes(ProjInp->lon_inc, 3, Mercator->achDi);
 
 /* convert ulDy to 3chars */
-#if ( BYTE_ORDER == LITTLE_ENDIAN )
-      lTemp = (htonl((long)ProjInp->lat_inc)) >> 8;
-#else
-      lTemp=  ( (long)ProjInp->lat_inc << 8);
-#endif
-      memcpy ((void *)  Mercator->achDj, (void *)&lTemp, 3 );
+      set_bytes(ProjInp->lat_inc, 3, Mercator->achDj);
 
       Mercator->chScan_mode = ( unsigned char ) ProjInp->usScan_mode;
 

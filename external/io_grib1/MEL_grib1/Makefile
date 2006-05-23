@@ -12,7 +12,7 @@
 # Specity location for Makefiles that are included.
 #
 INCLUDEDIRS = -I. -I.. -I../grib1_util
-BUILD_DIR = ../build
+BUILD_DIR = ../../io_grib_share/build
 #
 # Specify directory that output library is to be put in.
 #
@@ -25,6 +25,7 @@ LIB_DEST = ..
 #
 C_INCLUDES   = -I.
 CXX_INCLUDES = -I.
+ARFLAGS      = ruv
 
 #
 #  SPECIFY any subdirectories containing libraries that may be dynamically
@@ -82,7 +83,8 @@ OBJS =  FTP_getfile.o \
 	upd_child_errmsg.o \
 	prt_badmsg.o \
 	swap.o\
-	grib_uthin.o
+	grib_uthin.o\
+	set_bytes.o
 
 # 
 # List the header files that should be installed.
@@ -91,13 +93,10 @@ HDRS =	gribfuncs.h \
 	grib.h \
 	input.h
 
-.c.o:
-	$(CC) -c $(CFLAGS) $(INCLUDEDIRS) $(DEBUG) $*.c
-
 #
 #  Include the boilerplate rules for building library modules.
 #
-include ../build/library_rules.mk
+include $(BUILD_DIR)/library_rules.mk
 
 #
 #  Compile dependencies.  These are appended to this file by make depend. 

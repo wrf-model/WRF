@@ -8,6 +8,8 @@
 $sw_perl_path = perl ;
 $sw_netcdf_path = "" ;
 $sw_phdf5_path=""; 
+$sw_jasperlib_path=""; 
+$sw_jasperinc_path=""; 
 $sw_ldflags=""; 
 $sw_compileflags=""; 
 $WRFCHEM = 0 ;
@@ -60,6 +62,22 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
   }
   shift @ARGV ;
  }
+
+# The jasper library is required to build Grib2 I/O.  User must set 
+# environment variables JASPERLIB and JASPERINC to paths to library and 
+# include files to enable this feature prior to running configure.  
+ if ( $ENV{JASPERLIB} && $ENV{JASPERINC} )
+   {
+   printf "Configuring to use jasper library to build Grib2 I/O...\n" ;
+   printf("  \$JASPERLIB = %s\n",$ENV{JASPERLIB});
+   printf("  \$JASPERINC = %s\n",$ENV{JASPERINC});
+   $sw_jasperlib_path = $ENV{JASPERLIB}; 
+   $sw_jasperinc_path = $ENV{JASPERINC}; 
+   }
+ else
+   {
+   printf "\$JASPERLIB or \$JASPERINC not found in environment, configuring to build without grib2 I/O...\n" ;
+   }
 
 # parse the configure.wrf file
 
@@ -142,6 +160,20 @@ while ( <CONFIGURE_DEFAULTS> )
 	$_ =~ s:CONFIGURE_PHDF5_FLAG::g ;
 	$_ =~ s:CONFIGURE_PHDF5_LIB_PATH::g ;
 	 }
+
+    if ( $sw_jasperlib_path && $sw_jasperinc_path ) 
+      { $_ =~ s/CONFIGURE_WRFIO_GRIB2/wrfio_grib2/g ;
+        $_ =~ s:CONFIGURE_GRIB2_FLAG:-DGRIB2:g ;
+        $_ =~ s:CONFIGURE_GRIB2_INC:-I$sw_jasperinc_path:g ;
+        $_ =~ s:CONFIGURE_GRIB2_LIB:-L../external/io_grib2 -lio_grib2 -L$sw_jasperlib_path -ljasper:g ;
+      }
+    else                   
+      { $_ =~ s/CONFIGURE_WRFIO_GRIB2//g ;
+        $_ =~ s:CONFIGURE_GRIB2_FLAG::g ;
+        $_ =~ s:CONFIGURE_GRIB2_INC::g ;
+        $_ =~ s:CONFIGURE_GRIB2_LIB::g ;
+      }
+
     @machopts = ( @machopts, $_ ) ;
     if ( substr( $_, 0, 10 ) eq "ENVCOMPDEF" )
     {

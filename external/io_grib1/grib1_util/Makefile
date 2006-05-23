@@ -10,7 +10,7 @@
 
 # Specity location for Makefiles that are included.
 #
-BUILD_DIR = ../build
+BUILD_DIR = ../../io_grib_share/build
 INCLUDEDIRS = -I. -I.. -I ../MEL_grib1
 #
 # Specify directory that output library is to be put in.
@@ -24,6 +24,7 @@ LIB_DEST = ..
 #
 C_INCLUDES   = -I. -I../MEL_grib1
 CXX_INCLUDES = -I. -I../MEL_grib1
+ARFLAGS      = ruv
 #
 #  SPECIFY any subdirectories containing libraries that may be dynamically
 #          linked by this library.
@@ -51,9 +52,6 @@ DEP_LIBS =  -L$(LIB_DEST) -lMEL_grib1
 OBJS =  alloc_2d.o \
 	read_grib.o \
 	write_grib.o
-
-.c.o:
-	$(CC) -c $(CFLAGS) $(INCLUDEDIRS) $(DEBUG) $*.c
 
 #
 #  Include the boilerplate rules for building library modules.

@@ -89,7 +89,7 @@ int grib_enc   (Data_Input, User_Input, Geom_In, pfData_Array, gh, errmsg)
    char 		*Sevens= "7777";
    int                  gdsbms_flag= 0;		/* whether to include them */
    unsigned char	*px;			/* working ptr w/in EntireMsg */
-   int			lTemp;			/* working var */
+   long			lTemp;			/* working var */
    int			n,Stat= 1;		/* default to error */
 
    DPRINT1 ("Entering %s...\n", func);
@@ -262,6 +262,7 @@ int grib_enc   (Data_Input, User_Input, Geom_In, pfData_Array, gh, errmsg)
 	   upd_child_errmsg (func, errmsg); 
 	   goto BYE; 
 	 }
+
        gh->eds_ptr= px;
        gh->eds_len= 4;
        gh->msg_length += gh->eds_len;
@@ -540,13 +541,10 @@ int grib_enc   (Data_Input, User_Input, Geom_In, pfData_Array, gh, errmsg)
 *
 * A.4          UPDATE Total Msg Length in Grib Hdr's Ident Data Sect
 */
-#if ( BYTE_ORDER == LITTLE_ENDIAN )
-   lTemp = (htonl(gh->msg_length)) >> 8;
-   *((char *)(&lTemp)+3)=1;	                /* 1 is for the Edition  1 */
-#else
-   lTemp= (gh->msg_length << 8) + 1;	/* 1 is for the Edition  1 */
-#endif
-   memcpy ((void *)(gh->ids_ptr + 4), (void *)&lTemp, sizeof( int ) );
+   set_bytes(gh->msg_length, 3, gh->ids_ptr+4);
+   
+   /* 1 is for the Edition  1 */   
+   set_bytes(1,1,gh->ids_ptr+7);
 
 /*
 *

@@ -2083,7 +2083,7 @@ SUBROUTINE wrf_read_field1 ( DataHandle , DateStr , VarName , Field , FieldType 
           Status = 0
       END SELECT
     ELSE
-      CALL wrf_error_fatal('module_io.F: wrf_read_field: input_servers not inplemented yet')
+      CALL wrf_error_fatal('module_io.F: wrf_read_field: input_servers not implemented yet')
     ENDIF
   ELSE
     Status = WRF_ERR_FATAL_BAD_FILE_STATUS

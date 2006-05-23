@@ -6,33 +6,19 @@
 04/22/98/atn:  + extension flag;
 */
 
-/* these things should be defined in machine.h which gets included
-   in the grib code via the includes of netinet/in.h. However, in 
-   case it doesn't, make a guess and hope it's big-endian. Todd H.
-   is working on a better way to do this. JM 20050722 */
-#ifndef LITTLE_ENDIAN
-#  define LITTLE_ENDIAN 1234
-#endif
-#ifndef BIG_ENDIAN
-#  define BIG_ENDIAN  4321
-#endif
-#ifndef BYTE_ORDER
-#  define BYTE_ORDER BIG_ENDIAN
-#endif
-
 #define EXTENSION_FLAG 99	/* Implies extensions if equals PDS Oct41 */
 #define DEF_MSG_LEN    50000		/* size of GRIB HDR 's entire_msg */
-#define MAX_PROJ_SIZE  300               /* MaxSize of GDS minus 6 bytes*/
-                                /* had been 46, bumped up to avoid a 
-                                   bad reference that trashed heap on IBM
-                                   found with electric fence.  JM 20050720 */
-                                /* See http://perens.com/FreeSoftware/ElectricFence JM */
-                                /* Bruce Perens is the man. */
-
+#define MAX_PROJ_SIZE  46               /* MaxSize of GDS minus 6 bytes*/
 					/* Currently set to LATLON; */
-#define MAX_INP_PROJ_SIZE 300	        /* Size of Max Input GDS block, */
-                                /* this one was originally 72. 300 seems nice. JM */
+/*#define MAX_INP_PROJ_SIZE 72*/	/* Size of Max Input GDS block, */
 					/* currently set to GDS_LATLON_INPUT */
+/* Todd Hutchinson 8/11/05 */
+/*
+ * The above definition for MAX_INP_PROJ_SIZE only works with machines that
+ *    have 4 byte long ints.  Here, we will quadruple this to handle up to 
+ *    16 byte long ints.  This was an issue on the IBM in 64 bit mode.
+ */
+#define MAX_INP_PROJ_SIZE 288
 
 /* WMO projection codes 
 	***  MUST keep parallel to 'prjn_name' array       *** 
@@ -293,11 +279,11 @@ typedef struct PDS_GRIB {              /* PDS -Product Definition Section 1     
    * The following was removed by Todd Hutchinson, WSI, 4/11/2002 
    *   The extended pds section is now replaced with the values above
    */
-  /* unsigned char    chExt_flag;          /* Oct-41: Grib extensions usage flag*/
-  /* unsigned char    chSecond;            /* Second of Minute                       */
-  /* unsigned char    chTrack_num[2];         /* Tracking ID for data set               */
-  /* unsigned char    chParm_sub;          /* Sub-Table Entry for parameter and unit (Table 2) */
-  /* unsigned char    chSub_tbl;           /* Sub-Table Version number */
+  /* unsigned char    chExt_flag;          Oct-41: Grib extensions usage flag*/
+  /* unsigned char    chSecond;            Second of Minute                       */
+  /* unsigned char    chTrack_num[2];      Tracking ID for data set               */
+  /* unsigned char    chParm_sub;          Sub-Table Entry for parameter and unit (Table 2) */
+  /* unsigned char    chSub_tbl;           Sub-Table Version number */
 } PDS_GRIB;
 
 typedef struct GDS_HEAD {              /* GDS header                              */

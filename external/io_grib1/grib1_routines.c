@@ -433,13 +433,14 @@ int find_time(Times *times, char valid_time[15])
 int GET_METADATA_VALUE(FileIndex *fileindex, char ElementIn[], 
 		       char DateStrIn[], char VarNameIn[], char Value[], 
 		       int *stat, int strlen1, int strlen2, int strlen3, 
-		       int strlen4)
+		       int strlen4, int strlen5)
 {
   int elemidx;
   int elemnum;
   char VarName[200];
   char DateStr[200];
   char Element[200];
+  int Value_Len;
 
   *stat = 0;
 
@@ -449,6 +450,7 @@ int GET_METADATA_VALUE(FileIndex *fileindex, char ElementIn[],
   DateStr[strlen3] = '\0';
   strncpy(VarName,VarNameIn,strlen4);
   VarName[strlen4] = '\0';
+  Value_Len = strlen5;
 
   elemnum = -1;
   for (elemidx = 0; elemidx < fileindex->metadata->num_elements; elemidx++)
@@ -470,12 +472,11 @@ int GET_METADATA_VALUE(FileIndex *fileindex, char ElementIn[],
 
   if (elemnum != -1)
     {
-      strcpy(Value,fileindex->metadata->elements[elemnum].Value);
+      strncpy(Value, fileindex->metadata->elements[elemnum].Value, Value_Len);
     } 
   else
     {
-      /*      strcpy(Value,""); */
-      strcpy(Value,"none");
+      strncpy(Value, "none", Value_Len);
       *stat = 1;
     }
 
@@ -483,8 +484,11 @@ int GET_METADATA_VALUE(FileIndex *fileindex, char ElementIn[],
    * Pad end of string with one space.  This allows Fortran internal
    *   read function to work properly.
    */
-  strcpy(Value+strlen(Value)," ");
-  
+  if (strlen(Value) < Value_Len) 
+    {
+      strcpy(Value + strlen(Value), " ");
+    }
+
   return elemidx;
 }
 
@@ -705,7 +709,7 @@ int GET_GRID_INFO_SIZE(int *size)
 
 int LOAD_GRID_INFO(char *varnameIn, char *initdateIn, int *leveltype, 
 		   int *level1, int *level2, float *fcst_time, 
-		   float *accum_period, int *grid_id, int *projection, 
+		   int *accum_period, int *grid_id, int *projection, 
 		   int *xpoints, int *ypoints, float *center_lat, 
 		   float *center_lon, float *Di, float *Dj,float *central_lon,
 		   int *proj_center_flag, float *latin1, 
@@ -800,118 +804,6 @@ int READ_GRIB(FileIndex *fileindex, int *fid, int *index, float *data)
 
   return status;
 }
-
-/****************************************************************************
- *
- * This function calculates the center lat and lon of a region within a larger
- *   domain.  It is useful for calculating the center of the boundary regions
- *   in a domain.
- *
- ****************************************************************************/
-int GET_REGION_CENTER(char *MemoryOrderIn, int *projection, 
-		      float *domain_center_lat, 
-		      float *domain_center_lon, int *full_xsize, 
-		      int *full_ysize, float *dx, float *dy, 
-		      float *proj_central_lon, 
-		      int *proj_center_flag, float *truelat1, 
-		      float *truelat2, int *region_xsize, int *region_ysize, 
-		      float *region_center_lat, float *region_center_lon, 
-		      int strlen1)
-{
-
-  char *MemoryOrder;
-  int grid_projection;
-  float full_xcenter, full_ycenter;
-  float region_xcenter, region_ycenter;
-  int status;
-  int orig;
-  int x_pos, y_pos;
-  GridNav gridnav;
-
-  MemoryOrder = (char *)malloc((strlen1+1)*sizeof(char));
-  memcpy(MemoryOrder,MemoryOrderIn,strlen1);
-  MemoryOrder[strlen1] = '\0';
-
-  grid_projection = get_gridnav_projection(*projection);
-
-  full_xcenter = (*full_xsize - 1) / 2.;
-  full_ycenter = (*full_ysize - 1) / 2.;
-  region_xcenter = (*region_xsize - 1) / 2.;
-  region_ycenter = (*region_ysize - 1) / 2.;
-
-  orig = 0;
-
-  if (strncmp(MemoryOrder,"XS", 2) == 0) 
-    {
-      x_pos = region_xcenter;
-      y_pos = full_ycenter;
-    }
-  else if (strncmp(MemoryOrder,"XE", 2) == 0)
-    {
-      x_pos = (*full_xsize - 1) - region_xcenter;
-      y_pos = full_ycenter;
-    }
-  else if (strncmp(MemoryOrder,"YS", 2) == 0) 
-    {
-      x_pos = full_xcenter;
-      y_pos = region_ycenter;
-    }
-  else if (strncmp(MemoryOrder,"YE", 2) == 0) 
-    {
-      x_pos = full_xcenter;
-      y_pos = (*full_ysize - 1) - region_ycenter;
-    }
-  else
-    {
-      orig = 1;
-    }
-
-  if (orig == 1)
-    {
-      *region_center_lat = *domain_center_lat;
-      *region_center_lon = *domain_center_lon;
-      status = 0;
-    } 
-  else
-    {
-      /* Initialize grid structure */
-      /*
-      status = GRID_init(grid_info->center_lat, grid_info->central_lon, 
-			 grid_projection,
-			 grid_info->latin1, grid_info->latin2, 
-			 grid_info->xpoints, grid_info->ypoints, 
-			 grid_info->Di, grid_info->Dj,
-			 grid_info->center_lat, grid_info->center_lon, 
-			 x_center, y_center,
-			 &gridnav);
-      */
-      status = GRID_init(*domain_center_lat, *proj_central_lon, 
-			 grid_projection,
-			 *truelat1, *truelat2, 
-			 *full_xsize, *full_ysize, *dx, *dy,
-			 *domain_center_lat, *domain_center_lon, 
-			 full_xcenter, full_ycenter,
-			 &gridnav);
-      if (!status)
-	{
-	  fprintf(stderr,"get_region_center: error from GRID_init\n");
-	}
-
-      /* get lat/lon of center of region */
-      status = GRID_to_latlon(&gridnav, x_pos, y_pos, region_center_lat, 
-			      region_center_lon);
-      if (!status)
-	{
-	  fprintf(stderr,
-		  "get_region_cneter: error from GRID_to_latlon for first lat/lon\n");
-	}
-      
-    }
-
-  return status;
-
-}
-
 
 #define WRF_LATLON 0
 #define WRF_LAMBERT 1
@@ -1036,7 +928,8 @@ int WRITE_GRIB(Grid_Info *grid_info, int *filefd, float *data)
 
   /* Read the grib parameter table */
   status = GET_GRIB_PARAM(grid_info->grib_tables, varname2, &center,
-			   &subcenter, &parmtbl, &tablenum, &table_index);
+			   &subcenter, &parmtbl, &tablenum, &table_index,
+			  1,strlen(varname2));
   if (table_index < 0)
     {
       fprintf(stderr,\
@@ -1132,19 +1025,13 @@ int WRITE_GRIB(Grid_Info *grid_info, int *filefd, float *data)
     grid_info->grib_tables->grib_table_info[tablenum].subcenter;
   data_input.usLevel_id = grid_info->leveltype;
 
-  /*
-   * There is no need to flip the two levels for things such as soil moisture, temperature,
-   * We want the two levels to be 0 and 10 cm, not 10 and 0 cm, for example.
   if (grid_info->leveltype == 112) {
     data_input.nLvl_1 = grid_info->level2;
     data_input.nLvl_2 = grid_info->level1;
   } else {
-   */
     data_input.nLvl_1 = grid_info->level1;
     data_input.nLvl_2 = grid_info->level2;
-  /*
   }
-   */
 
   data_input.nYear = year;
   data_input.nMonth = month;
@@ -1368,37 +1255,6 @@ int get_byte(int input_int, int bytenum)
   int out;
   out = ((input_int >> (bytenum-1)*8) & ~(~0 <<8));
   return out;
-}
-
-/******************************************************************************
- * translates the grid projection identifier from the WRF id to the grib id.
- *****************************************************************************/
-
-int get_gridnav_projection(int wrf_projection)
-{
-  int gridnav_projection;
-
-  /* Set the grid projection in the gridnav units */
-  switch (wrf_projection) 
-    {
-    case WRF_LATLON:
-      gridnav_projection = GRID_LATLON;
-      break;
-    case WRF_MERCATOR:
-      gridnav_projection = GRID_MERCATOR;
-      break;
-    case WRF_LAMBERT:
-      gridnav_projection = GRID_LAMCON;
-      break;
-    case WRF_POLAR_STEREO:
-      gridnav_projection = GRID_POLSTR;
-      break;
-    default:
-      fprintf(stderr,"Error, invalid projection: %d\n",wrf_projection);
-      gridnav_projection = -1;
-    }
-  
-  return gridnav_projection;
 }
 
 /*************************************************************************

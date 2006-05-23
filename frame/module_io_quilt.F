@@ -1238,7 +1238,7 @@ MODULE module_wrf_quilt
       INCLUDE 'mpif.h'
       INTEGER i
       NAMELIST /namelist_quilt/ nio_tasks_per_group, nio_groups
-      INTEGER ntasks, mytask, ierr
+      INTEGER ntasks, mytask, ierr, io_status
       LOGICAL mpi_inited
 
       quilting_enabled = .FALSE.
@@ -1266,7 +1266,12 @@ MODULE module_wrf_quilt
         OPEN ( unit=27, file="namelist.input", form="formatted", status="old" )
         nio_groups = 1
         nio_tasks_per_group  = 0
-        READ ( 27 , namelist_quilt )
+        READ ( 27 , NML = namelist_quilt, IOSTAT=io_status )
+        IF (io_status > 0) THEN
+          CALL wrf_error_fatal( "ERROR reading namelist namelist_quilt" )
+        ELSE IF (io_status < 0) THEN
+          PRINT *,'frame/module_io_quilt: Warning: Did not find namelist_quilt in namelist.input, using defaults'
+        ENDIF
         CLOSE ( 27 )
       ENDIF
       CALL mpi_bcast( nio_tasks_per_group  , 1 , MPI_INTEGER , 0 , MPI_COMM_WORLD, ierr )

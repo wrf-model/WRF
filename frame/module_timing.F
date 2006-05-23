@@ -23,7 +23,7 @@ CONTAINS
 
       cn = cn + 1
       IF ( cn .gt. cnmax ) THEN
-        CALL wrf_message( 'module_timing: clock nesting error (too many nests)' )
+        CALL wrf_error_fatal( 'module_timing: clock nesting error (too many nests)' )
         RETURN
       ENDIF
       CALL SYSTEM_CLOCK ( count_int1(cn) , count_rate_int1(cn) , count_max_int1(cn) )
@@ -39,8 +39,9 @@ CONTAINS
       CHARACTER *(*) :: string
 
       IF ( cn .lt. 1 ) THEN
-        CALL wrf_message( 'module_timing: clock nesting error' ) 
-        RETURN
+        CALL wrf_error_fatal( 'module_timing: clock nesting error, cn<1' ) 
+      ELSE IF ( cn .gt. cnmax ) THEN
+        CALL wrf_error_fatal( 'module_timing: clock nesting error, cn>cnmax' ) 
       ENDIF
 
       CALL SYSTEM_CLOCK ( count_int2(cn) , count_rate_int2(cn) , count_max_int2(cn) )
@@ -68,3 +69,4 @@ CONTAINS
    END SUBROUTINE end_timing
 
 END MODULE module_timing
+

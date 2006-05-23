@@ -32,7 +32,6 @@
 #      define GET_GRIB_SUBCENTER get_grib_subcenter
 #      define GET_GRIB_TBLVERSION get_grib_tblversion
 #      define GET_GRIB_PROCID get_grib_procid
-#      define GET_REGION_CENTER get_region_center
 # else
 #   ifdef F2CSTYLE
 #      define GET_FILEINDEX_SIZE get_fileindex_size__
@@ -62,7 +61,6 @@
 #      define GET_GRIB_SUBCENTER get_grib_subcenter__
 #      define GET_GRIB_TBLVERSION get_grib_tblversion__
 #      define GET_GRIB_PROCID get_grib_procid__
-#      define GET_REGION_CENTER get_region_center__
 #   else
 #      define GET_FILEINDEX_SIZE get_fileindex_size_
 #      define INDEX_FILE index_file_
@@ -92,7 +90,6 @@
 #      define GET_GRIB_SUBCENTER get_grib_subcenter_
 #      define GET_GRIB_TBLVERSION get_grib_tblversion_
 #      define GET_GRIB_PROCID get_grib_procid_
-#      define GET_REGION_CENTER get_region_center_
 #   endif
 # endif
 #endif
@@ -128,10 +125,10 @@ typedef struct {
   char varname[200];
   char initdate[20];
   int leveltype;
-  float level1;
-  float level2;
+  int level1;
+  int level2;
   float fcst_time;
-  float accum_period;
+  int accum_period;
   int grid_id;
   int projection;
   int xpoints;
@@ -156,7 +153,7 @@ int INDEX_FILE(int *fid, FileIndex *fileindex);
 
 int GET_METADATA_VALUE(FileIndex *fileindex, char Element[], char DateStr[], 
 		       char VarName[], char Value[], int *stat, int strlen1, 
-		       int strlen2, int strlen3, int strlen4);
+		       int strlen2, int strlen3, int strlen4, int strlen5);
 
 int GET_GRIB_INDEX(FileIndex *fileindex,
 		   int *center, int *subcenter, int *parmtbl,
@@ -184,7 +181,7 @@ int GET_GRID_INFO_SIZE(int *size);
 
 int LOAD_GRID_INFO(char *varname, char *initdate, int *leveltype, 
 		   int *level1, int *level2, float *fcst_time, 
-		   float *accum_period, int *grid_id, int *projection, 
+		   int *accum_period, int *grid_id, int *projection, 
 		   int *xpoints, int *ypoints, float *center_lat, 
 		   float *center_lon, float *Di, float *Dj,float *central_lon,
 		   int *proj_center_flag, float *latin1, 

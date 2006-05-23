@@ -24,6 +24,18 @@
 #include "gribfuncs.h"		/* prototypes */
 #include "isdb.h"		/* WORD_BIT_CNT defn */
 
+/* Added by Todd Hutchinson, 8/10/05*/
+/* 
+ * gbyte requires the word bit count to be 32.  In order for this to work
+ *    on platforms with 8 byte longs, we must set WORD_BIT_CNT to 32 for
+ *    gbyte.
+ */
+
+#ifdef WORD_BIT_CNT
+#undef WORD_BIT_CNT
+#endif
+#define WORD_BIT_CNT 32  /* gbyte.c requires the word bit count to be 32! */
+
 /*
 *
 *****************************************************************

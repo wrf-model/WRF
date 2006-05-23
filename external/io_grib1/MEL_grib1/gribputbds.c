@@ -175,7 +175,7 @@ int  n, stat=1;
                     &(pBDS_Head_Input->usBit_pack_num),
                     &(pBDS_Head_Input->fPack_null),
                     pfData_Array, 
-		    (unsigned int **) &pvbstr, 
+		    (unsigned long **) &pvbstr, 
 		    sDec_sc_fctr, &lBDS_length, errmsg)) )
           {
           DPRINT2 ("%s:  Pack Spatial returned err=%d\n", func, n);

@@ -258,7 +258,8 @@ int READ_GRIBMAP (char *filename, Grib1_Tables *grib_tables, int *ret)
  *****************************************************************************/
 
 int GET_GRIB_PARAM (Grib1_Tables *grib_tables, char *varname, int *center, 
-		    int *subcenter, int *parmtbl, int *tablenum, int *index)
+		    int *subcenter, int *parmtbl, int *tablenum, int *index,
+		    int strlen1, int strlen2)
 {
   int idx;
   int prm_idx;
@@ -267,7 +268,8 @@ int GET_GRIB_PARAM (Grib1_Tables *grib_tables, char *varname, int *center,
   
   *index = -1;
 
-  strcpy(varnametmp,varname);
+  strncpy(varnametmp,varname,strlen2);
+  varnametmp[strlen2] = '\0';
   trim(varnametmp);
   for (tableidx = 0; tableidx < grib_tables->num_tables ;tableidx++)
     {
@@ -390,10 +392,14 @@ int GET_GRIB1_TABLES_SIZE (int *size)
  ******************************************************************************/
 
 int LOAD_GRIB1_TABLES (char filename[], 
-		       Grib1_Tables *grib_tables, int *ret)
+		       Grib1_Tables *grib_tables, int *ret, int strlen1)
 {
 
-  READ_GRIBMAP(filename, grib_tables, ret);
+  char tmpfilename[300];
+  strncpy(tmpfilename,filename,strlen1);
+  tmpfilename[strlen1] = '\0';
+
+  READ_GRIBMAP(tmpfilename, grib_tables, ret);
 
   return *ret;
 }

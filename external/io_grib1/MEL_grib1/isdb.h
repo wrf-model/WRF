@@ -16,7 +16,7 @@
 				/* (for bug fixes) 			   */
 
 #define BYTE_BIT_CNT  8		/* count of bits per byte */
-#define WORD_BIT_CNT  32 	/* count of bits per word */
+#define WORD_BIT_CNT  sizeof(long)*BYTE_BIT_CNT /* count of bits per word */
 #define WORD_BYTE_CNT 4		/* count of bytes per word */
  
 #define	OPN_RD    1		/* open database for read only */

@@ -71,11 +71,11 @@ MODULE module_wrf_quilt
   INTEGER          :: reduced(2), reduced_dummy(2)
   LOGICAL, EXTERNAL :: wrf_dm_on_monitor
 
+  INTEGER nio_groups
 #ifdef DM_PARALLEL
   INTEGER mpi_comm_local
   INTEGER mpi_comm_io_groups(100)
   INTEGER nio_tasks_in_group
-  INTEGER nio_groups
   INTEGER nio_tasks_per_group
   INTEGER ncompute_tasks
   INTEGER ntasks

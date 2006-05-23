@@ -25,7 +25,8 @@
 #  Note that in this case, $test_case is left off if not specified as an 
 #  argument.  
 #
-#  This script must be run from the directory in which it resides.  
+#  This script must be run using a fully-qualified path as it deduces the 
+#  location of correct test results from this path.  
 #
 #  EXAMPLE (running from test/em_real):
 #   >> ../../tools/DOMAIN_TIME_TEST/DOMAIN_TIME_TEST.csh rsl.out.0000 jan00_12hr

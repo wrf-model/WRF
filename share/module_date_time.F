@@ -791,6 +791,25 @@ END MODULE module_date_time
 
 
 
+   ! Converts an WRFU_TimeInterval object into a time-interval string.  
+   SUBROUTINE wrf_timeinttoa ( timeinterval, str )
+      USE module_utility
+      TYPE(WRFU_TimeInterval),   INTENT( IN) :: timeinterval
+      CHARACTER (LEN=*), INTENT(OUT) :: str
+      INTEGER rc
+      CHARACTER (LEN=256) :: mess
+      CALL WRFU_TimeIntervalGet( timeinterval, timeString=str, rc=rc )
+      CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                            'WRFU_TimeIntervalGet() in wrf_timeinttoa() FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
+      WRITE (mess,*) 'DEBUG wrf_timeinttoa():  returning with str = [',TRIM(str),']'
+      CALL wrf_debug ( 150 , TRIM(mess) )
+      RETURN
+   END SUBROUTINE wrf_timeinttoa
+
+
+
    ! Debug routine to print key clock information.  
    ! Every printed line begins with pre_str.  
    SUBROUTINE wrf_clockprint ( level, clock, pre_str )
@@ -801,12 +820,14 @@ END MODULE module_date_time
       INTEGER rc
       INTEGER :: debug_level
       TYPE(WRFU_Time) :: currTime, startTime, stopTime
-      CHARACTER (LEN=25) :: currTime_str, startTime_str, stopTime_str
+      TYPE(WRFU_TimeInterval) :: timeStep
+      CHARACTER (LEN=64) :: currTime_str, startTime_str, stopTime_str
+      CHARACTER (LEN=64) :: timeStep_str
       CHARACTER (LEN=256) :: mess
       CALL get_wrf_debug_level( debug_level )
       IF ( level .LE. debug_level ) THEN
         CALL WRFU_ClockGet( clock, CurrTime=currTime, StartTime=startTime, &
-                                   StopTime=stopTime, rc=rc )
+                                   StopTime=stopTime, TimeStep=timeStep, rc=rc )
         CALL wrf_check_error( WRFU_SUCCESS, rc, &
                               'wrf_clockprint:  WRFU_ClockGet() FAILED', &
                               __FILE__ , &
@@ -814,11 +835,14 @@ END MODULE module_date_time
         CALL wrf_timetoa( currTime, currTime_str )
         CALL wrf_timetoa( startTime, startTime_str )
         CALL wrf_timetoa( stopTime, stopTime_str )
+        CALL wrf_timeinttoa( timeStep, timeStep_str )
         WRITE (mess,*) TRIM(pre_str),'  clock start time = ',TRIM(startTime_str)
         CALL wrf_message(TRIM(mess))
         WRITE (mess,*) TRIM(pre_str),'  clock current time = ',TRIM(currTime_str)
         CALL wrf_message(TRIM(mess))
         WRITE (mess,*) TRIM(pre_str),'  clock stop time = ',TRIM(stopTime_str)
+        CALL wrf_message(TRIM(mess))
+        WRITE (mess,*) TRIM(pre_str),'  clock time step = ',TRIM(timeStep_str)
         CALL wrf_message(TRIM(mess))
       ENDIF
       RETURN

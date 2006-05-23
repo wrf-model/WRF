@@ -27,6 +27,8 @@ SUBROUTINE ext_esmf_open_for_write_begin( FileName , Comm_compute, Comm_io, SysD
     CALL wrf_error_fatal("ext_esmf_open_for_write:  ESMF_ExportStateGetCurrent failed" )
   ENDIF
   ! For now, If the export state is not empty, whine and die.
+!$$$ Eventually, use nested states to allow than one auxhist stream 
+!$$$ to be supported via ESMF.  
 !$$$ Eventually, get smart about interacting with "needed" and "optional" 
 !$$$ named state items
   CALL ESMF_StateGet( exportstate, itemCount=itemCount, &
@@ -38,7 +40,7 @@ SUBROUTINE ext_esmf_open_for_write_begin( FileName , Comm_compute, Comm_io, SysD
     CALL wrf_error_fatal("ext_esmf_open_for_write:  not an export state" )
   ENDIF
   IF ( itemCount /= 0 ) THEN
-    CALL wrf_error_fatal("ext_esmf_open_for_write:  export state not empty" )
+    CALL wrf_error_fatal("ext_esmf_open_for_write:  export state not empty, io_esmf is currently limited to only one auxhist stream" )
   ENDIF
 
   Status = 0

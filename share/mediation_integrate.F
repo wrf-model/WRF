@@ -40,6 +40,11 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
   ! Local
    INTEGER                                    :: rc
 
+ ! Note that when grid%return_after_training_io == .TRUE. this routine 
+ ! will return after the training phase for all auxiliary I/O streams.  
+ ! Nothing else will be done.  This ugly hack is only needed for ESMF 
+ ! coupling.  grid%return_after_training_io == .FALSE. in all other cases.  
+ IF ( .NOT. grid%return_after_training_io ) THEN
    IF( WRFU_AlarmIsRinging( grid%alarms( HISTORY_ALARM ), rc=rc ) ) THEN
      CALL med_hist_out ( grid , 0, config_flags )
      CALL WRFU_AlarmRingerOff( grid%alarms( HISTORY_ALARM ), rc=rc )
@@ -49,6 +54,7 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
      CALL med_filter_out  ( grid , config_flags )
      CALL WRFU_AlarmRingerOff( grid%alarms( INPUTOUT_ALARM ), rc=rc )
    ENDIF
+ ENDIF
 
 ! - AUX HISTORY OUTPUT 
    IF( WRFU_AlarmIsRinging( grid%alarms( AUXHIST1_ALARM ), rc=rc ) ) THEN
@@ -117,6 +123,7 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
 #endif
   ENDIF
 
+ IF ( .NOT. grid%return_after_training_io ) THEN
 ! - RESTART OUTPUT
    IF( WRFU_AlarmIsRinging( grid%alarms( RESTART_ALARM ), rc=rc ) ) THEN
      IF ( grid%id .EQ. 1 ) THEN
@@ -130,6 +137,9 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
 
 ! - Look for boundary data after writing out history and restart files
    CALL med_latbound_in ( grid , config_flags )
+ ELSE
+   CALL wrf_debug ( 1 , 'DEBUG:  med_before_solve_io():  returned after training aux I/O' )
+ ENDIF
 
    RETURN
 END SUBROUTINE med_before_solve_io
@@ -910,66 +920,71 @@ SUBROUTINE med_hist_out ( grid , stream, config_flags )
        CALL wrf_message( message )
      ENDIF
    END IF
-   SELECT CASE( stream )
-     CASE ( 0 )
-       CALL output_history ( grid%oid, grid , config_flags , ierr )
-     CASE ( 1 )
-       CALL output_aux_hist1 ( grid%auxhist1_oid, grid , config_flags , ierr )
-     CASE ( 2 )
-       CALL output_aux_hist2 ( grid%auxhist2_oid, grid , config_flags , ierr )
-     CASE ( 3 )
-       CALL output_aux_hist3 ( grid%auxhist3_oid, grid , config_flags , ierr )
-     CASE ( 4 )
-       CALL output_aux_hist4 ( grid%auxhist4_oid, grid , config_flags , ierr )
-     CASE ( 5 )
-       CALL output_aux_hist5 ( grid%auxhist5_oid, grid , config_flags , ierr )
-   END SELECT
 
-   grid%nframes(stream) = grid%nframes(stream) + 1
+   ! early return after training
+   IF ( .NOT. grid%return_after_training_io ) THEN
+     SELECT CASE( stream )
+       CASE ( 0 )
+         CALL output_history ( grid%oid, grid , config_flags , ierr )
+       CASE ( 1 )
+         CALL output_aux_hist1 ( grid%auxhist1_oid, grid , config_flags , ierr )
+       CASE ( 2 )
+         CALL output_aux_hist2 ( grid%auxhist2_oid, grid , config_flags , ierr )
+       CASE ( 3 )
+         CALL output_aux_hist3 ( grid%auxhist3_oid, grid , config_flags , ierr )
+       CASE ( 4 )
+         CALL output_aux_hist4 ( grid%auxhist4_oid, grid , config_flags , ierr )
+       CASE ( 5 )
+         CALL output_aux_hist5 ( grid%auxhist5_oid, grid , config_flags , ierr )
+     END SELECT
 
-   SELECT CASE( stream )
-     CASE ( 0 )
-       IF ( grid%nframes(stream) >= config_flags%frames_per_outfile ) THEN
-         CALL close_dataset ( grid%oid , config_flags , "DATASET=HISTORY" ) 
-         grid%oid = 0
-         grid%nframes(stream) = 0
-       ENDIF
-     CASE ( 1 )
-       IF ( grid%nframes(stream) >= config_flags%frames_per_auxhist1 ) THEN
-         CALL close_dataset ( grid%auxhist1_oid , config_flags , n2 ) 
-         grid%auxhist1_oid = 0
-         grid%nframes(stream) = 0
-       ENDIF
-     CASE ( 2 )
-       IF ( grid%nframes(stream) >= config_flags%frames_per_auxhist2 ) THEN
-         CALL close_dataset ( grid%auxhist2_oid , config_flags , n2 ) 
-         grid%auxhist2_oid = 0
-         grid%nframes(stream) = 0
-       ENDIF
-     CASE ( 3 )
-       IF ( grid%nframes(stream) >= config_flags%frames_per_auxhist3 ) THEN
-         CALL close_dataset ( grid%auxhist3_oid , config_flags , n2 ) 
-         grid%auxhist3_oid = 0
-         grid%nframes(stream) = 0
-       ENDIF
-     CASE ( 4 )
-       IF ( grid%nframes(stream) >= config_flags%frames_per_auxhist4 ) THEN
-         CALL close_dataset ( grid%auxhist4_oid , config_flags , n2 ) 
-         grid%auxhist4_oid = 0
-         grid%nframes(stream) = 0
-       ENDIF
-     CASE ( 5 )
-       IF ( grid%nframes(stream) >= config_flags%frames_per_auxhist5 ) THEN
-         CALL close_dataset ( grid%auxhist5_oid , config_flags , n2 ) 
-         grid%auxhist5_oid = 0
-         grid%nframes(stream) = 0
-       ENDIF
-   END SELECT
-   IF ( wrf_dm_on_monitor() ) THEN
-     WRITE ( message , FMT = '("Writing ",A30," for domain ",I8)' )TRIM(fname),grid%id
-     CALL end_timing ( TRIM(message) )
-   END IF
-   RETURN
+     grid%nframes(stream) = grid%nframes(stream) + 1
+
+     SELECT CASE( stream )
+       CASE ( 0 )
+         IF ( grid%nframes(stream) >= config_flags%frames_per_outfile ) THEN
+           CALL close_dataset ( grid%oid , config_flags , "DATASET=HISTORY" ) 
+           grid%oid = 0
+           grid%nframes(stream) = 0
+         ENDIF
+       CASE ( 1 )
+         IF ( grid%nframes(stream) >= config_flags%frames_per_auxhist1 ) THEN
+           CALL close_dataset ( grid%auxhist1_oid , config_flags , n2 ) 
+           grid%auxhist1_oid = 0
+           grid%nframes(stream) = 0
+         ENDIF
+       CASE ( 2 )
+         IF ( grid%nframes(stream) >= config_flags%frames_per_auxhist2 ) THEN
+           CALL close_dataset ( grid%auxhist2_oid , config_flags , n2 ) 
+           grid%auxhist2_oid = 0
+           grid%nframes(stream) = 0
+         ENDIF
+       CASE ( 3 )
+         IF ( grid%nframes(stream) >= config_flags%frames_per_auxhist3 ) THEN
+           CALL close_dataset ( grid%auxhist3_oid , config_flags , n2 ) 
+           grid%auxhist3_oid = 0
+           grid%nframes(stream) = 0
+         ENDIF
+       CASE ( 4 )
+         IF ( grid%nframes(stream) >= config_flags%frames_per_auxhist4 ) THEN
+           CALL close_dataset ( grid%auxhist4_oid , config_flags , n2 ) 
+           grid%auxhist4_oid = 0
+           grid%nframes(stream) = 0
+         ENDIF
+       CASE ( 5 )
+         IF ( grid%nframes(stream) >= config_flags%frames_per_auxhist5 ) THEN
+           CALL close_dataset ( grid%auxhist5_oid , config_flags , n2 ) 
+           grid%auxhist5_oid = 0
+           grid%nframes(stream) = 0
+         ENDIF
+     END SELECT
+     IF ( wrf_dm_on_monitor() ) THEN
+       WRITE ( message , FMT = '("Writing ",A30," for domain ",I8)' )TRIM(fname),grid%id
+       CALL end_timing ( TRIM(message) )
+     END IF
+   ELSE
+     CALL wrf_debug( 1, 'DEBUG:  med_hist_out() returned after training' )
+   ENDIF
 
    RETURN
 END SUBROUTINE med_hist_out
@@ -1115,18 +1130,23 @@ SUBROUTINE med_auxinput_in ( grid , stream, config_flags )
        CALL wrf_message( message )
      ENDIF
    END IF
-   SELECT CASE( stream )
-     CASE ( 1 )
-       CALL input_aux_model_input1 ( grid%auxinput1_oid, grid , config_flags , ierr )
-     CASE ( 2 )
-       CALL input_aux_model_input2 ( grid%auxinput2_oid, grid , config_flags , ierr )
-     CASE ( 3 )
-       CALL input_aux_model_input3 ( grid%auxinput3_oid, grid , config_flags , ierr )
-     CASE ( 4 )
-       CALL input_aux_model_input4 ( grid%auxinput4_oid, grid , config_flags , ierr )
-     CASE ( 5 )
-       CALL input_aux_model_input5 ( grid%auxinput5_oid, grid , config_flags , ierr )
-   END SELECT
+   ! early return after training
+   IF ( .NOT. grid%return_after_training_io ) THEN
+     SELECT CASE( stream )
+       CASE ( 1 )
+         CALL input_aux_model_input1 ( grid%auxinput1_oid, grid , config_flags , ierr )
+       CASE ( 2 )
+         CALL input_aux_model_input2 ( grid%auxinput2_oid, grid , config_flags , ierr )
+       CASE ( 3 )
+         CALL input_aux_model_input3 ( grid%auxinput3_oid, grid , config_flags , ierr )
+       CASE ( 4 )
+         CALL input_aux_model_input4 ( grid%auxinput4_oid, grid , config_flags , ierr )
+       CASE ( 5 )
+         CALL input_aux_model_input5 ( grid%auxinput5_oid, grid , config_flags , ierr )
+     END SELECT
+   ELSE
+     CALL wrf_debug( 1, 'DEBUG:  med_auxinput_in() returned after training' )
+   ENDIF
    RETURN
 END SUBROUTINE med_auxinput_in
 

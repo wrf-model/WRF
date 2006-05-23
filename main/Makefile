@@ -16,9 +16,10 @@ $(SOLVER)_wrf : wrf.o
 	$(RANLIB) libwrflib.a
 	$(LD) -o wrf.exe $(LDFLAGS) wrf.o libwrflib.a $(LIB)
 
-$(SOLVER)_wrf_ESMFApp : wrf_ESMFApp.o
+$(SOLVER)_wrf_ESMFApp : wrf_ESMFMod.o wrf_ESMFApp.o wrf_SST_ESMF.o
 	$(RANLIB) libwrflib.a
-	$(LD) -o wrf_ESMFApp.exe $(LDFLAGS) wrf_ESMFApp.o libwrflib.a $(LIB)
+	$(LD) -o wrf_ESMFApp.exe $(LDFLAGS) wrf_ESMFApp.o wrf_ESMFMod.o libwrflib.a $(LIB)
+	$(LD) -o wrf_SST_ESMF.exe $(LDFLAGS) wrf_SST_ESMF.o wrf_ESMFMod.o libwrflib.a $(LIB)
 
 $(SOLVER)_ideal : module_initialize ideal.o
 	$(RANLIB) libwrflib.a
@@ -148,6 +149,10 @@ real_em.o: \
 
 wrf.o:  ../share/module_wrf_top.o
 
-wrf_ESMFApp.o:  ../share/module_wrf_top.o
+wrf_ESMFMod.o:  ../share/module_wrf_top.o
+
+wrf_ESMFApp.o:  wrf_ESMFMod.o
+
+wrf_SST_ESMF.o:  wrf_ESMFMod.o
 
 # DO NOT DELETE

@@ -10,240 +10,6 @@
 !</DESCRIPTION>
 
 
-MODULE module_wrf_component_top
-!<DESCRIPTION>
-! This module defines wrf_component_init(), wrf_component_run(), and 
-! wrf_component_finalize() routines that are called when WRF is run as an 
-! ESMF component.  
-!</DESCRIPTION>
-
-   USE module_wrf_top
-   USE ESMF_Mod
-   USE module_esmf_extensions
-
-
-   IMPLICIT NONE
-
-
-CONTAINS
-
-
-   SUBROUTINE wrf_component_init( gcomp, importState, exportState, clock, rc )
-     TYPE(ESMF_GridComp), TARGET, INTENT(INOUT) :: gcomp
-     TYPE(ESMF_State),    TARGET, INTENT(INOUT) :: importState
-     TYPE(ESMF_State),    TARGET, INTENT(INOUT) :: exportState
-     TYPE(ESMF_Clock),    TARGET, INTENT(INOUT) :: clock
-     INTEGER,                     INTENT(  OUT) :: rc
-!<DESCRIPTION>
-!     WRF component init routine.
-!
-!     The arguments are:
-!       gcomp           Component
-!       importState     Importstate
-!       exportState     Exportstate
-!       clock           External clock
-!       rc              Return code; equals ESMF_SUCCESS if there are no errors,
-!                       otherwise ESMF_FAILURE.
-!</DESCRIPTION>
-
-     ! Local variables
-     TYPE(ESMF_GridComp), POINTER :: p_gcomp
-     TYPE(ESMF_State),    POINTER :: p_importState
-     TYPE(ESMF_State),    POINTER :: p_exportState
-     TYPE(ESMF_Clock),    POINTER :: p_clock
-     p_gcomp => gcomp
-     p_importState => importState
-     p_exportState => exportState
-     p_clock => clock
-     ! NOTE:  It will be possible to remove this call once ESMF supports 
-     !        interfaces ESMF_ClockGetCurrent(), ESMF_ImportStateGetCurrent(), 
-     !        ESMF_ExportStateGetCurrent(), and ESMF_GridCompGetCurrent().  
-     CALL ESMF_SetCurrent( gcomp=p_gcomp, importState=p_importState, &
-                           exportState=p_exportState, clock=p_clock )
-
-     ! Call WRF "init" routine
-     ! Call WRF "init" routine, suppressing call to init_modules(1) since 
-     ! it was already done by the AppDriver.  
-     CALL wrf_init( no_init1=.TRUE. )
-
-!$$$here...  TBH:  Need to connect head_grid%start_subtime and head_grid%stop_subtime to 
-!$$$here...  TBH:  clock when building with ESMF library...  
-!$$$here...  build an interface...  
-     head_grid%start_subtime = domain_get_start_time ( head_grid )
-     head_grid%stop_subtime = domain_get_stop_time ( head_grid )
-
-     rc = ESMF_SUCCESS
-
-   END SUBROUTINE wrf_component_init
-
-
-
-   SUBROUTINE wrf_component_run( gcomp, importState, exportState, clock, rc )
-     TYPE(ESMF_GridComp), TARGET, INTENT(INOUT) :: gcomp
-     TYPE(ESMF_State),    TARGET, INTENT(INOUT) :: importState, exportState
-     TYPE(ESMF_Clock),    TARGET, INTENT(INOUT) :: clock
-     INTEGER,                     INTENT(  OUT) :: rc
-!<DESCRIPTION>
-!     WRF component run routine.
-!
-!     The arguments are:
-!       gcomp           Component
-!       importState     Importstate
-!       exportState     Exportstate
-!       clock           External clock
-!       rc              Return code; equals ESMF_SUCCESS if there are no errors,
-!                       otherwise ESMF_FAILURE.
-!</DESCRIPTION>
-
-     ! Local variables
-     TYPE(ESMF_GridComp), POINTER :: p_gcomp
-     TYPE(ESMF_State),    POINTER :: p_importState
-     TYPE(ESMF_State),    POINTER :: p_exportState
-     TYPE(ESMF_Clock),    POINTER :: p_clock
-     p_gcomp => gcomp
-     p_importState => importState
-     p_exportState => exportState
-     p_clock => clock
-     ! NOTE:  It will be possible to remove this call once ESMF supports 
-     !        interfaces ESMF_ClockGetCurrent(), ESMF_ImportStateGetCurrent(), 
-     !        ESMF_ExportStateGetCurrent(), and ESMF_GridCompGetCurrent().  
-     CALL ESMF_SetCurrent( gcomp=p_gcomp, importState=p_importState, &
-                           exportState=p_exportState, clock=p_clock )
-
-     ! Call WRF "run" routine
-     CALL wrf_run( )
-
-     rc = ESMF_SUCCESS
-
-   END SUBROUTINE wrf_component_run
-
-
-
-   SUBROUTINE wrf_component_finalize( gcomp, importState, exportState, clock, rc )
-     TYPE(ESMF_GridComp), TARGET, INTENT(INOUT) :: gcomp
-     TYPE(ESMF_State),    TARGET, INTENT(INOUT) :: importState, exportState
-     TYPE(ESMF_Clock),    TARGET, INTENT(INOUT) :: clock
-     INTEGER,                     INTENT(  OUT) :: rc
-!<DESCRIPTION>
-!     WRF component finalize routine.
-!
-!     The arguments are:
-!       gcomp           Component
-!       importState     Importstate
-!       exportState     Exportstate
-!       clock           External clock
-!       rc              Return code; equals ESMF_SUCCESS if there are no errors,
-!                       otherwise ESMF_FAILURE.
-!</DESCRIPTION>
-
-     ! Local variables
-     TYPE(ESMF_GridComp), POINTER :: p_gcomp
-     TYPE(ESMF_State),    POINTER :: p_importState
-     TYPE(ESMF_State),    POINTER :: p_exportState
-     TYPE(ESMF_Clock),    POINTER :: p_clock
-     p_gcomp => gcomp
-     p_importState => importState
-     p_exportState => exportState
-     p_clock => clock
-     ! NOTE:  It will be possible to remove this call once ESMF supports 
-     !        interfaces ESMF_ClockGetCurrent(), ESMF_ImportStateGetCurrent(), 
-     !        ESMF_ExportStateGetCurrent(), and ESMF_GridCompGetCurrent().  
-     CALL ESMF_SetCurrent( gcomp=p_gcomp, importState=p_importState, &
-                           exportState=p_exportState, clock=p_clock )
-
-     ! Call WRF "finalize" routine, suppressing call to MPI_FINALIZE so 
-     ! ESMF can do it (if needed) during ESMF_Finalize().  
-     CALL wrf_finalize( no_shutdown=.TRUE. )
-
-     rc = ESMF_SUCCESS
-
-   END SUBROUTINE wrf_component_finalize
-
-
-END MODULE module_wrf_component_top
-
-
-
-
-MODULE module_wrf_setservices
-!<DESCRIPTION>
-! This module defines WRF "Set Services" method wrf_register() 
-! used for ESMF coupling.  
-!</DESCRIPTION>
-
-   USE module_wrf_component_top, ONLY: wrf_component_init, wrf_component_run, &
-                                       wrf_component_finalize
-   USE ESMF_Mod
-
-   IMPLICIT NONE
-
-   ! everything is private by default
-   PRIVATE
-
-   ! Public entry point for ESMF_GridCompSetServices()
-   PUBLIC WRF_register
-
-
-CONTAINS
-
-
-   SUBROUTINE wrf_register(gcomp, rc)
-     TYPE(ESMF_GridComp), INTENT(INOUT) :: gcomp
-     INTEGER, INTENT(OUT) :: rc
-     INTEGER :: finalrc
-     CHARACTER*256 :: msg
-!
-!<DESCRIPTION>
-!     WRF_register - Externally visible registration routine
-!
-!     User-supplied SetServices routine.
-!     The Register routine sets the subroutines to be called
-!     as the init, run, and finalize routines.  Note that these are
-!     private to the module.
-!
-!     The arguments are:
-!       gcomp           Component
-!       rc              Return code; equals ESMF_SUCCESS if there are no errors,
-!                       otherwise ESMF_FAILURE.
-!</DESCRIPTION>
-
-     finalrc = ESMF_SUCCESS
-     ! Register the callback routines.
-     call ESMF_GridCompSetEntryPoint(gcomp, ESMF_SETINIT, &
-                                     wrf_component_init, ESMF_SINGLEPHASE, rc)
-     IF ( rc /= ESMF_SUCCESS) THEN
-        WRITE(msg,*) 'ESMF_GridCompSetEntryPoint(wrf_component_init) failed with rc = ', rc
-        CALL ESMF_LogWrite( TRIM(msg), ESMF_LOG_ERROR )
-        finalrc = rc
-     ENDIF
-     call ESMF_GridCompSetEntryPoint(gcomp, ESMF_SETRUN, &
-                                     wrf_component_run, ESMF_SINGLEPHASE, rc)
-     IF ( rc /= ESMF_SUCCESS) THEN
-        WRITE(msg,*) 'ESMF_GridCompSetEntryPoint(wrf_component_run) failed with rc = ', rc
-        CALL ESMF_LogWrite( TRIM(msg), ESMF_LOG_ERROR )
-        finalrc = rc
-     ENDIF
-     call ESMF_GridCompSetEntryPoint(gcomp, ESMF_SETFINAL, &
-                                     wrf_component_finalize, ESMF_SINGLEPHASE, rc)
-     IF ( rc /= ESMF_SUCCESS) THEN
-        WRITE(msg,*) 'ESMF_GridCompSetEntryPoint(wrf_component_finalize) failed with rc = ', rc
-        CALL ESMF_LogWrite( TRIM(msg), ESMF_LOG_ERROR )
-        finalrc = rc
-     ENDIF
-     WRITE(msg,*) 'WRF:  Registered Initialize, Run, and Finalize routines'
-     CALL ESMF_LogWrite( TRIM(msg), ESMF_LOG_INFO )
-
-     rc = finalrc
-
-   END SUBROUTINE wrf_register
-
-END MODULE module_wrf_setservices
-
-
-
-
-
-
 PROGRAM wrf_ESMFApp
 
 !<DESCRIPTION>
@@ -258,13 +24,15 @@ PROGRAM wrf_ESMFApp
    USE ESMF_Mod
    ! Not-yet-implemented ESMF features
    USE module_esmf_extensions
+   ! Component-independent utilities
+   USE module_metadatautils, ONLY: GetTimesFromStates
 
    IMPLICIT NONE
 
    ! Local variables
 
    ! Components
-   TYPE(ESMF_GridComp) :: compGridded
+   TYPE(ESMF_GridComp) :: WRFcompGridded   ! WRF
 
    ! State, Virtual Machine, and DELayout
    TYPE(ESMF_VM) :: vm
@@ -274,12 +42,11 @@ PROGRAM wrf_ESMFApp
    TYPE(ESMF_Clock) :: driverClock
    TYPE(ESMF_Time) :: startTime
    TYPE(ESMF_Time) :: stopTime
-   TYPE(ESMF_TimeInterval) :: timeStep
+   TYPE(ESMF_TimeInterval) :: couplingInterval
 
    ! Return codes for error checks
    INTEGER :: rc
-   CHARACTER*256 :: msg
-        
+
    ! Warn users that this is not yet ready for general use.  
    PRINT *, '                      W A R N I N G                          '
    PRINT *, '  ESMF COUPLING CAPABILITY IS EXPERIMENTAL AND UNSUPPORTED   '
@@ -293,72 +60,153 @@ PROGRAM wrf_ESMFApp
    ! Initialize ESMF, get the default Global VM, and set
    ! the default calendar to be Gregorian.
    CALL ESMF_Initialize( vm=vm, defaultCalendar=ESMF_CAL_GREGORIAN, rc=rc )
+   IF ( rc /= ESMF_SUCCESS ) THEN
+     CALL wrf_error_fatal( 'ESMF_Initialize failed' )
+   ENDIF
    CALL ESMF_SetInitialized()   ! eliminate this once ESMF does it internally
-   WRITE(msg,*) 'ESMF_Initialize returned rc=', rc
-   CALL ESMF_LogWrite( TRIM(msg), ESMF_LOG_INFO )
+!TBH:  these cause hangs on bluesky, PET* files never get written...  
+!TBH:   CALL ESMF_LogSet( maxElements=1, verbose=ESMF_TRUE, flush=ESMF_TRUE, rc=rc )
+!TBH:   CALL ESMF_LogSet( maxElements=1, rc=rc )
+!TBH:   IF ( rc /= ESMF_SUCCESS ) THEN
+!TBH:     CALL wrf_error_fatal( 'ESMF_LogSet failed' )
+!TBH:   ENDIF
 
    ! Create the top level Gridded Component, passing in the default VM.
-   compGridded = ESMF_GridCompCreate(vm, "WRF Model", rc=rc)
-   WRITE(msg,*) 'ESMF_GridCompCreate returned rc=', rc
-   CALL ESMF_LogWrite( TRIM(msg), ESMF_LOG_INFO )
+   WRFcompGridded = ESMF_GridCompCreate(vm, "WRF Model", rc=rc)
+   IF ( rc /= ESMF_SUCCESS ) THEN
+     CALL wrf_error_fatal( 'ESMF_GridCompCreate failed' )
+   ENDIF
 
    ! Create empty import and export states
-   importState = ESMF_StateCreate("WRF Import State", rc=rc)
-   WRITE(msg,*) 'ESMF_StateCreate(WRF Import State) returned rc=', rc
-   CALL ESMF_LogWrite( TRIM(msg), ESMF_LOG_INFO )
-   exportState = ESMF_StateCreate("WRF Export State", rc=rc)
-   WRITE(msg,*) 'ESMF_StateCreate(WRF Export State) returned rc=', rc
-   CALL ESMF_LogWrite( TRIM(msg), ESMF_LOG_INFO )
+   importState = ESMF_StateCreate("WRF Import State", statetype=ESMF_STATE_IMPORT, rc=rc)
+   IF ( rc /= ESMF_SUCCESS ) THEN
+     CALL wrf_error_fatal( 'ESMF_StateCreate(importState) failed' )
+   ENDIF
+   exportState = ESMF_StateCreate("WRF Export State", statetype=ESMF_STATE_EXPORT, rc=rc)
+   IF ( rc /= ESMF_SUCCESS ) THEN
+     CALL wrf_error_fatal( 'ESMF_StateCreate(exportState) failed' )
+   ENDIF
 
-   ! Create "dummy" clock (for now)
-!$$$here...  this is completely bogus - fix it!!  
+   ! Create top-level clock.  There is no way to create an "empty" clock, so 
+   ! stuff in bogus values for start time, stop time, and time step and fix 
+   ! them after "WRF Init" returns.  
    CALL ESMF_TimeSet(startTime, yy=2000, mm=1, dd=1, &
                      h=0, m=0, s=0, rc=rc)
+   IF ( rc /= ESMF_SUCCESS ) THEN
+     CALL wrf_error_fatal( 'ESMF_TimeSet(startTime) failed' )
+   ENDIF
    CALL ESMF_TimeSet(stopTime, yy=2000, mm=1, dd=1, &
                      h=12, m=0, s=0, rc=rc)
-   CALL ESMF_TimeIntervalSet(timeStep, s=2, rc=rc)
-   driverClock = ESMF_ClockCreate(timeStep=timeStep, startTime=startTime, &
+   IF ( rc /= ESMF_SUCCESS ) THEN
+     CALL wrf_error_fatal( 'ESMF_TimeSet(stopTime) failed' )
+   ENDIF
+   CALL ESMF_TimeIntervalSet(couplingInterval, s=2, rc=rc)
+   IF ( rc /= ESMF_SUCCESS ) THEN
+     CALL wrf_error_fatal( 'ESMF_TimeIntervalSet(couplingInterval) failed' )
+   ENDIF
+   driverClock = ESMF_ClockCreate(timeStep=couplingInterval, startTime=startTime, &
                                   stopTime=stopTime, rc=rc)
-
+   IF ( rc /= ESMF_SUCCESS ) THEN
+     CALL wrf_error_fatal( 'ESMF_ClockCreate failed' )
+   ENDIF
 
    ! Register the top level Gridded Component
-   CALL ESMF_GridCompSetServices(compGridded, WRF_register, rc)
-   WRITE(msg,*) 'ESMF_GridCompSetServices returned rc=', rc
-   CALL ESMF_LogWrite( TRIM(msg), ESMF_LOG_INFO )
+   CALL ESMF_GridCompSetServices(WRFcompGridded, WRF_register, rc)
+   IF ( rc /= ESMF_SUCCESS ) THEN
+     CALL wrf_error_fatal( 'ESMF_GridCompSetServices(WRFcompGridded) failed' )
+   ENDIF
 
    ! Init, Run, and Finalize section
-   CALL ESMF_GridCompInitialize(compGridded, importState, exportState, &
-                                driverClock, rc=rc)
-   WRITE(msg,*) 'ESMF_GridCompInitialize returned rc=', rc
-   CALL ESMF_LogWrite( TRIM(msg), ESMF_LOG_INFO )
+   ! Phase 1 init returns WRF time and decomposition information as 
+   ! exportState metadata.  
+   CALL ESMF_GridCompInitialize(WRFcompGridded, importState, exportState, &
+                                driverClock, phase=1, rc=rc)
+   IF ( rc /= ESMF_SUCCESS ) THEN
+     CALL wrf_error_fatal( 'ESMF_GridCompInitialize(WRFcompGridded phase 1) failed' )
+   ENDIF
 
-   CALL ESMF_GridCompRun(compGridded, importState, exportState, &
-                         driverClock, rc=rc)
-   WRITE(msg,*) 'ESMF_GridCompRun returned rc=', rc
-   CALL ESMF_LogWrite( TRIM(msg), ESMF_LOG_INFO )
+   ! For now, use settings from WRF component intialization to set up 
+   ! top-level clock.  Per suggestion from ESMF Core team, these are passed 
+   ! back from "WRF init" as attributes on exportState.  
+   CALL GetTimesFromStates( exportState, startTime, stopTime, couplingInterval )
+   ! update driver clock
+   CALL ESMF_ClockDestroy(driverClock, rc)
+   IF ( rc /= ESMF_SUCCESS ) THEN
+     CALL wrf_error_fatal( 'ESMF_ClockDestroy failed' )
+   ENDIF
+   driverClock = ESMF_ClockCreate(timeStep=couplingInterval, startTime=startTime, &
+                                  stopTime=stopTime, rc=rc)
+   IF ( rc /= ESMF_SUCCESS ) THEN
+     CALL wrf_error_fatal( 'ESMF_ClockCreate(driverClock) failed' )
+   ENDIF
+   CALL wrf_clockprint ( 150, driverClock, 'driverClock before phase 2 WRF init' )
 
-   CALL ESMF_GridCompFinalize(compGridded, importState, exportState, &
+   ! Phase 2 init sets up WRF importState and exportState.  
+   CALL ESMF_GridCompInitialize(WRFcompGridded, importState, exportState, &
+                                driverClock, phase=2, rc=rc)
+   IF ( rc /= ESMF_SUCCESS ) THEN
+     CALL wrf_error_fatal( 'ESMF_GridCompInitialize(WRFcompGridded phase 2) failed' )
+   ENDIF
+
+   CALL wrf_debug ( 150, 'wrf_ESMFApp:  begin time stepping...' )
+   ! main time-stepping loop
+   DO WHILE ( .NOT. ESMF_ClockIsStopTime(driverClock, rc) )
+
+     IF ( rc /= ESMF_SUCCESS ) THEN
+       CALL wrf_error_fatal( 'ESMF_ClockIsStopTime failed' )
+     ENDIF
+
+     ! Run WRF
+     CALL wrf_debug ( 150, 'wrf_ESMFApp:  calling ESMF_GridCompRun(WRFcompGridded)...' )
+     CALL ESMF_GridCompRun(WRFcompGridded, importState, exportState, &
+                           driverClock, rc=rc)
+     IF ( rc /= ESMF_SUCCESS ) THEN
+       CALL wrf_error_fatal( 'ESMF_GridCompRun failed' )
+     ENDIF
+     CALL wrf_debug ( 150, 'wrf_ESMFApp:  back from ESMF_GridCompRun(WRFcompGridded)...' )
+
+     ! advance clock to next coupling time step
+     CALL ESMF_ClockAdvance( driverClock, rc=rc )
+     IF ( rc /= ESMF_SUCCESS ) THEN
+       CALL wrf_error_fatal( 'ESMF_ClockAdvance failed' )
+     ENDIF
+     CALL wrf_clockprint ( 150, driverClock, 'driverClock after ESMF_ClockAdvance' )
+
+   ENDDO
+   CALL wrf_debug ( 150, 'wrf_ESMFApp:  done time stepping...' )
+
+   CALL wrf_debug ( 150, 'wrf_ESMFApp:  calling ESMF_GridCompFinalize(WRFcompGridded)...' )
+   ! clean up WRF
+   CALL ESMF_GridCompFinalize(WRFcompGridded, importState, exportState, &
                               driverClock, rc=rc)
-   WRITE(msg,*) 'ESMF_GridCompFinalize returned rc=', rc
-   CALL ESMF_LogWrite( TRIM(msg), ESMF_LOG_INFO )
- 
+   IF ( rc /= ESMF_SUCCESS ) THEN
+     CALL wrf_error_fatal( 'ESMF_GridCompFinalize failed' )
+   ENDIF
+   CALL wrf_debug ( 150, 'wrf_ESMFApp:  back from ESMF_GridCompFinalize(WRFcompGridded)...' )
  
    ! Clean up
 
-   CALL ESMF_GridCompDestroy(compGridded, rc)
-   WRITE(msg,*) 'ESMF_GridCompDestroy returned rc=', rc
-   CALL ESMF_LogWrite( TRIM(msg), ESMF_LOG_INFO )
+   CALL wrf_debug ( 150, 'wrf_ESMFApp:  cleaning up ESMF objects...' )
+   CALL ESMF_GridCompDestroy(WRFcompGridded, rc)
+   IF ( rc /= ESMF_SUCCESS ) THEN
+     CALL wrf_error_fatal( 'ESMF_GridCompDestroy failed' )
+   ENDIF
    CALL ESMF_StateDestroy(importState, rc)
-   WRITE(msg,*) 'ESMF_StateDestroy(importState) returned rc=', rc
-   CALL ESMF_LogWrite( TRIM(msg), ESMF_LOG_INFO )
+   IF ( rc /= ESMF_SUCCESS ) THEN
+     CALL wrf_error_fatal( 'ESMF_StateDestroy(importState) failed' )
+   ENDIF
    CALL ESMF_StateDestroy(exportState, rc)
-   WRITE(msg,*) 'ESMF_StateDestroy(exportState) returned rc=', rc
-   CALL ESMF_LogWrite( TRIM(msg), ESMF_LOG_INFO )
+   IF ( rc /= ESMF_SUCCESS ) THEN
+     CALL wrf_error_fatal( 'ESMF_StateDestroy(exportState) failed' )
+   ENDIF
    CALL ESMF_ClockDestroy(driverClock, rc)
-   WRITE(msg,*) 'ESMF_ClockDestroy returned rc=', rc
-   CALL ESMF_LogWrite( TRIM(msg), ESMF_LOG_INFO )
+   IF ( rc /= ESMF_SUCCESS ) THEN
+     CALL wrf_error_fatal( 'ESMF_Destroy(driverClock) failed' )
+   ENDIF
 
+   CALL wrf_debug ( 150, 'wrf_ESMFApp:  calling ESMF_Finalize()...' )
    CALL ESMF_Finalize( rc=rc )
+   CALL wrf_debug ( 150, 'wrf_ESMFApp:  back from ESMF_Finalize()...' )
 
 END PROGRAM wrf_ESMFApp
 

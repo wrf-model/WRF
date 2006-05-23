@@ -233,6 +233,7 @@ CONTAINS
 #endif
    END IF
 
+   ! set default values for subtimes
    head_grid%start_subtime = domain_get_start_time ( head_grid )
    head_grid%stop_subtime = domain_get_stop_time ( head_grid )
 

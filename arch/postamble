@@ -1,3 +1,10 @@
+
+# These sub-directory builds are identical across all architectures
+wrfio_esmf :
+	( cd ../external/io_esmf ; \
+	make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS) $(ESMF_MOD_INC)" RANLIB="$(RANLIB)" CPP="$(CPP) $(POUND_DEF) " )
+
+
 #
 #	Macros, these should be generic for all machines
 

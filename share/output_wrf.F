@@ -61,11 +61,17 @@
     INTEGER :: start_year , start_month , start_day , start_hour , start_minute , start_second
     LOGICAL :: adjust
 
+    WRITE(wrf_err_message,*)'output_wrf: begin, fid = ',fid
+    CALL wrf_debug( 300 , wrf_err_message )
+
     CALL wrf_inquire_filename ( fid , fname , filestate , ierr )
     IF ( ierr /= 0 ) THEN
       WRITE(wrf_err_message,*)'module_io_wrf: output_wrf: wrf_inquire_filename Status = ',ierr
       CALL wrf_error_fatal( wrf_err_message )
     ENDIF
+
+    WRITE(wrf_err_message,*)'output_wrf: fid,filestate = ',fid,filestate
+    CALL wrf_debug( 300 , wrf_err_message )
 
     ! io_form is used to determine if multi-file I/O is enabled and to 
     ! control writing of format-specific time-independent metadata
@@ -412,6 +418,8 @@
        CALL wrf_debug ( 300 , 'output_wrf: back from wrf_iosync ' )
     ENDIF
 
-    CALL wrf_debug ( 300 , 'output_wrf: returning from ' )
+    WRITE(wrf_err_message,*)'output_wrf: end, fid = ',fid
+    CALL wrf_debug( 300 , wrf_err_message )
+
     RETURN
   END SUBROUTINE output_wrf

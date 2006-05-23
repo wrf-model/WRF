@@ -33,7 +33,7 @@ module_internal_header_util.o :
 			/bin/rm -f module_internal_header_util.b
 
 diffwrf:                diffwrf.F ../../frame/pack_utils.o ../../frame/module_machine.o ../../frame/module_wrf_error.o \
-				libwrfio_int.a ../esmf_time_f90/libesmf_time.a
+				libwrfio_int.a $(ESMF_MOD_DEPENDENCE)
 			if [ -f ../../frame/pack_utils.o ] ; then \
 			mv diffwrf.F diffwrf.F90    ; \
 			$(CPP1) diffwrf.F90 > diffwrf.f  ; \
@@ -43,11 +43,11 @@ diffwrf:                diffwrf.F ../../frame/pack_utils.o ../../frame/module_ma
                         ../../frame/pack_utils.o ../../frame/module_internal_header_util.o \
                         ../../frame/module_driver_constants.o \
 			../../frame/module_machine.o ../../frame/module_wrf_error.o \
-			-L../esmf_time_f90 -lesmf_time ; fi
+			$(ESMF_IO_LIB_EXT) ; fi
 
 ../../frame/pack_utils.o ../../frame/internal_header_util.o ../../frame/module_machine.o ../../frame/module_wrf_error.o \
-../esmf_time_f90/libesmf_time.a :
-			@echo "Diffwrf will be built later on in this compile. No need to rerun compile. "
+$(ESMF_MOD_DEPENDENCE) :
+			@echo "Diffwrf io_int will be built later on in this compile. No need to rerun compile. "
 
 superclean:
 			/bin/rm -f *.f *.o *.mod libwrfio_int.a diffwrf 

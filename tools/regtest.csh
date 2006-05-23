@@ -315,17 +315,31 @@ set RSL_LITE = FALSE
 set ESMF_LIB = TRUE
 set ESMF_LIB = FALSE
 
+# serial and OMP are not tested with ESMF so always start with env vars cleared
+unsetenv ESMFLIB
+unsetenv ESMFINC
+
 if ( $ESMF_LIB == TRUE ) then
-	if ( ( `uname` == AIX ) && \
-             ( ( `hostname | cut -c 1-2` == bs ) || \
-               ( `hostname | cut -c 1-2` == bv ) ) ) then
+	if ( ( `uname` == AIX ) && ( `hostname | cut -c 1-2` == bs ) ) then
 		echo "A separately installed version of the latest ESMF library"
 		echo "(NOT the ESMF library included in the WRF tarfile) will"
-		echo "be used for some tests"
+		echo "be used for MPI tests"
 		setenv OBJECT_MODE 32
+		set ESMFLIBSAVE = /home/bluesky/hender/esmf/lib/libO/AIX.default.32.default
+		set ESMFINCSAVE = /home/bluesky/hender/esmf/mod/modO/AIX.default.32.default
+		echo "Setting ESMFLIB = ${ESMFLIBSAVE}"
+		echo "Setting ESMFINC = ${ESMFINCSAVE}"
 	else
 		echo "Only the ESMF library included in the WRF tarfile is"
 		echo "tested on this machine"
+		exit ( 3 ) 
+	endif
+	if ( $NESTED == TRUE ) then
+		echo "The ESMF library does not work with nesting."
+		exit ( 3 ) 
+	endif
+	if ( $RSL_LITE == TRUE ) then
+		echo "The ESMF library does not work with RSL_LITE."
 		exit ( 3 ) 
 	endif
 endif
@@ -863,14 +877,12 @@ if ( $ARCH[1] == AIX ) then
 	endif
 	if ( ! -d $TMPDIR ) mkdir $TMPDIR
 	set MAIL                = /usr/bin/mailx
-	if      ( ( $NESTED != TRUE ) && ( $ESMF_LIB == TRUE ) ) then
-		set COMPOPTS    = ( 1 2 9 )
-	else if ( ( $NESTED == TRUE ) && ( $RSL_LITE != TRUE ) ) then
-		set COMPOPTS	= ( 10 11 4 )
+	if      ( ( $NESTED == TRUE ) && ( $RSL_LITE != TRUE ) ) then
+		set COMPOPTS	= ( 9 10 4 )
 	else if ( ( $NESTED != TRUE ) && ( $RSL_LITE != TRUE ) ) then
 		set COMPOPTS    = ( 1 2 4 )
 	else if ( ( $NESTED == TRUE ) && ( $RSL_LITE == TRUE ) ) then
-		set COMPOPTS	= ( 10 11 3 )
+		set COMPOPTS	= ( 9 10 3 )
 	else if ( ( $NESTED != TRUE ) && ( $RSL_LITE == TRUE ) ) then
 		set COMPOPTS	= ( 1 2 3 )
 	endif
@@ -1328,7 +1340,9 @@ endif
 if ( $ESMF_LIB == TRUE ) then
 	echo "A separately installed version of the latest ESMF library" >>! ${DEF_DIR}/wrftest.output
 	echo "(NOT the ESMF library included in the WRF tarfile) will" >>! ${DEF_DIR}/wrftest.output
-	echo "be used for some tests" >>! ${DEF_DIR}/wrftest.output
+	echo "be used for MPI tests" >>! ${DEF_DIR}/wrftest.output
+	echo "Setting ESMFLIB = ${ESMFLIBSAVE}" >>! ${DEF_DIR}/wrftest.output
+	echo "Setting ESMFINC = ${ESMFINCSAVE}" >>! ${DEF_DIR}/wrftest.output
 	echo " " >>! ${DEF_DIR}/wrftest.output
 endif
 if ( $QUILT == TRUE ) then
@@ -1471,11 +1485,17 @@ banner 6
 		#	Print info about use of separately installed ESMF library.  
 		set esmf_lib_str = " - - - - - - - - - - - - - "
 		if ( $ESMF_LIB == TRUE ) then
+			# only test ESMF with MPI
 			if ( $compopt == $COMPOPTS[3] ) then
 				echo "A separately installed version of the latest ESMF library" >>! ${DEF_DIR}/wrftest.output
 				echo "(NOT the ESMF library included in the WRF tarfile) is" >>! ${DEF_DIR}/wrftest.output
 				echo "being used for this test of $core parallel $compopt..." >>! ${DEF_DIR}/wrftest.output
 				set esmf_lib_str = "using separate ESMF library"
+				setenv ESMFLIB $ESMFLIBSAVE
+				setenv ESMFINC $ESMFINCSAVE
+			else
+				unsetenv ESMFLIB
+				unsetenv ESMFINC
 			endif
 		endif
 	

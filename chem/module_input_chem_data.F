@@ -1857,7 +1857,7 @@ SUBROUTINE med_read_bin_chem_emiss ( grid , config_flags ,intime, itime_max)
    TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
   !INTEGER , INTENT(IN)                       :: start_step , step , end_step
 !  Type (ESMF_Time )                          :: start_time, stop_time, CurrTime
-!   TYPE(WRF_UTIL_TimeInterval) :: time_interval
+!   TYPE(WRFU_TimeInterval) :: time_interval
 
 
   ! Local data

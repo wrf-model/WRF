@@ -8,6 +8,11 @@ MODULE module_ext_esmf
 
   TYPE grid_ptr
     TYPE(ESMF_Grid), POINTER :: ptr
+    ! use these for error-checking for now...
+    INTEGER :: ide_save
+    INTEGER :: jde_save
+    INTEGER :: kde_save
+    LOGICAL :: in_use
   END TYPE grid_ptr
 
   ! TBH:  should package this state into an object...  
@@ -98,10 +103,81 @@ END SUBROUTINE get_value
       IMPLICIT NONE
       INTEGER :: i
       DO i = 1, int_num_handles
-        NULLIFY( grid( i )%ptr )
+        WRITE( msg,* ) 'init_module_ext_esmf:  calling ioesmf_nullify_grid(',i,')'
+        CALL wrf_debug ( 5, TRIM(msg) )
+        CALL ioesmf_nullify_grid( i )
       ENDDO
       RETURN
     END SUBROUTINE init_module_ext_esmf
+
+
+  ! allgather for integers, ESMF_style (since ESMF does not do this yet)
+  SUBROUTINE GatherIntegerScalars_ESMF( inval, pe, numprocs, outvals )
+    INTEGER, INTENT(IN   ) :: inval                 ! input scalar on this task
+    INTEGER, INTENT(IN   ) :: pe                    ! task id
+    INTEGER, INTENT(IN   ) :: numprocs              ! number of tasks
+    INTEGER, INTENT(  OUT) :: outvals(0:numprocs-1) ! gathered output vector
+    ! Local declarations
+    TYPE(ESMF_VM) :: vm
+    INTEGER(ESMF_KIND_I4) :: allSnd(0:numprocs-1)
+    INTEGER(ESMF_KIND_I4) :: allRcv(0:numprocs-1)
+    INTEGER :: rc
+
+    ! get current ESMF virtual machine for communication
+    CALL ESMF_VMGetCurrent(vm, rc)
+    IF ( rc /= ESMF_SUCCESS ) THEN
+      WRITE( msg,* ) 'Error in ESMF_VMGetCurrent', &
+                     __FILE__ ,                    &
+                     ', line',                     &
+                     __LINE__
+      CALL wrf_error_fatal ( msg )
+    ENDIF
+    allSnd = 0_ESMF_KIND_I4
+    allSnd(pe) = inval
+    ! Hack due to lack of ESMF_VMAllGather().  
+    CALL ESMF_VMAllReduce(vm, allSnd, allRcv, numprocs, ESMF_SUM, rc=rc )
+    IF ( rc /= ESMF_SUCCESS ) THEN
+      WRITE( msg,* ) 'Error in ESMF_VMAllReduce', &
+                     __FILE__ ,                     &
+                     ', line',                      &
+                     __LINE__
+      CALL wrf_error_fatal ( msg )
+    ENDIF
+    outvals = allRcv
+
+  END SUBROUTINE GatherIntegerScalars_ESMF
+
+
+END MODULE module_ext_esmf
+
+
+
+  ! Indexes for non-staggered variables come in at one-less than
+  ! domain dimensions, but io_esmf is currently hacked to use full 
+  ! domain spec, so adjust if not staggered.  
+  ! $$$ TBD:  remove this hackery once ESMF can support staggered 
+  ! $$$ TBD:  grids in regional models
+  SUBROUTINE ioesmf_endfullhack( numdims, DomainEnd, PatchEnd, Stagger, &
+                                 DomainEndFull, PatchEndFull )
+    IMPLICIT NONE
+    INTEGER,       INTENT(IN   ) :: numdims
+    INTEGER,       INTENT(IN   ) :: DomainEnd(numdims)
+    INTEGER,       INTENT(IN   ) :: PatchEnd(numdims)
+    CHARACTER*(*), INTENT(IN   ) :: Stagger
+    INTEGER,       INTENT(  OUT) :: DomainEndFull(numdims)
+    INTEGER,       INTENT(  OUT) :: PatchEndFull(numdims)
+    LOGICAL, EXTERNAL :: has_char
+    DomainEndFull(1:numdims) = DomainEnd(1:numdims)
+    IF ( .NOT. has_char( Stagger, 'x' ) ) DomainEndFull(1) = DomainEndFull(1) + 1
+    IF ( .NOT. has_char( Stagger, 'y' ) ) DomainEndFull(2) = DomainEndFull(2) + 1
+    PatchEndFull(1:numdims) = PatchEnd(1:numdims)
+    IF ( .NOT. has_char( Stagger, 'x' ) ) THEN
+      IF ( DomainEnd(1) == PatchEnd(1) ) PatchEndFull(1) = DomainEndFull(1)
+    ENDIF
+    IF ( .NOT. has_char( Stagger, 'y' ) ) THEN
+      IF ( DomainEnd(2) == PatchEnd(2) ) PatchEndFull(2) = DomainEndFull(2)
+    ENDIF
+  END SUBROUTINE ioesmf_endfullhack
 
 
   ! Create the ESMF_Grid associated with index DataHandle.  
@@ -111,30 +187,116 @@ END SUBROUTINE get_value
   ! TBH:  Note that lat/lon coordinates are not supported by this interface 
   ! TBH:  since general curvilinear coordindates (needed for map projections 
   ! TBH:  used by WRF such as polar stereographic, mercator, lambert conformal)
-  ! TBH:  are not supported by ESMF as of ESMF 2.2.0.  Once they are supported, 
+  ! TBH:  are not supported by ESMF as of ESMF 2.1.1.  Once they are supported, 
   ! TBH:  add them via the "sieve" method used in ../io_mcel/.  
-  SUBROUTINE create_grid( DataHandle, MemoryOrder, Stagger, &
-                          DomainStart, DomainEnd,           &
-                          MemoryStart, MemoryEnd,           &
-                          PatchStart, PatchEnd )
+  SUBROUTINE ioesmf_create_grid( DataHandle, numdims,    &
+                                 MemoryOrder, Stagger,   &
+                                 DomainStart, DomainEnd, &
+                                 MemoryStart, MemoryEnd, &
+                                 PatchStart, PatchEnd )
+    USE module_ext_esmf
+    IMPLICIT NONE
     INTEGER,       INTENT(IN   ) :: DataHandle
-    CHARACTER*(*), INTENT(IN   ) :: MemoryOrder
+    INTEGER,       INTENT(IN   ) :: numdims
+    CHARACTER*(*), INTENT(IN   ) :: MemoryOrder            ! not used yet
     CHARACTER*(*), INTENT(IN   ) :: Stagger
-    INTEGER,       INTENT(IN   ) :: DomainStart(:), DomainEnd(:)
-    INTEGER,       INTENT(IN   ) :: MemoryStart(:), MemoryEnd(:)
-    INTEGER,       INTENT(IN   ) :: PatchStart(:),  PatchEnd(:)
+    INTEGER,       INTENT(IN   ) :: DomainStart(numdims), DomainEnd(numdims)
+    INTEGER,       INTENT(IN   ) :: MemoryStart(numdims), MemoryEnd(numdims)
+    INTEGER,       INTENT(IN   ) :: PatchStart(numdims),  PatchEnd(numdims)
+    INTEGER :: DomainEndFull(numdims)
+    INTEGER :: PatchEndFull(numdims)
+
+    WRITE( msg,* ) 'DEBUG ioesmf_create_grid:  begin, DataHandle = ', DataHandle
+    CALL wrf_debug ( 5, TRIM(msg) )
+    ! For now, blindly create a new grid if it does not already exist for 
+    ! this DataHandle
+! TBH:  Note that this approach will result in duplicate ESMF_Grids when 
+! TBH:  io_esmf is used for input and output.  The first ESMF_Grid will 
+! TBH:  be associated with the input handle and the second will be associated 
+! TBH:  with the output handle.  
+    IF ( .NOT. grid( DataHandle )%in_use ) THEN
+      IF ( ASSOCIATED( grid( DataHandle )%ptr ) ) THEN
+        CALL wrf_error_fatal ( 'ASSERTION ERROR:  grid(',DataHandle,') should be NULL' )
+      ENDIF
+      IF ( numdims /= 2 ) THEN
+        CALL wrf_error_fatal ( 'ERROR:  only 2D arrays supported so far with io_esmf' )
+      ELSE
+        WRITE( msg,* ) 'DEBUG ioesmf_create_grid:  creating grid(',DataHandle,')%ptr'
+        CALL wrf_debug ( 5, TRIM(msg) )
+        ALLOCATE( grid( DataHandle )%ptr )
+        grid( DataHandle )%in_use = .TRUE.
+        ! The non-staggered variables come in at one-less than
+        ! domain dimensions, but io_esmf is currently hacked to use full 
+        ! domain spec, so adjust if not staggered.  
+        ! $$$ TBD:  remove this hackery once ESMF can support staggered 
+        ! $$$ TBD:  grids in regional models
+        CALL ioesmf_endfullhack( numdims, DomainEnd, PatchEnd, Stagger, &
+                                 DomainEndFull, PatchEndFull )
+! $$$ TBD:  at the moment this is hard-coded for 2D arrays
+! $$$ TBD:  use MemoryOrder to set these properly!
+! $$$ TBD:  also, set these once only
+! $$$ TBD:  maybe even rip this out since it depends on a hack in input_wrf.F ...
+        grid( DataHandle )%ide_save = DomainEndFull(1)
+        grid( DataHandle )%jde_save = DomainEndFull(2)
+        grid( DataHandle )%kde_save = 1
+        WRITE( msg,* ) 'DEBUG ioesmf_create_grid:  DomainEndFull = ', DomainEndFull
+        CALL wrf_debug ( 5, TRIM(msg) )
+        WRITE( msg,* ) 'DEBUG ioesmf_create_grid:  PatchEndFull = ', PatchEndFull
+        CALL wrf_debug ( 5, TRIM(msg) )
+        CALL wrf_debug ( 5 , 'DEBUG ioesmf_create_grid:  Calling ioesmf_create_grid_int()' )
+        CALL ioesmf_create_grid_int( grid( DataHandle )%ptr,     &
+                              numdims,                    &
+                              DomainStart, DomainEndFull, &
+                              MemoryStart, MemoryEnd,     &
+                              PatchStart, PatchEndFull )
+        CALL wrf_debug ( 5 , 'DEBUG ioesmf_create_grid:  back from ioesmf_create_grid_int()' )
+        WRITE( msg,* ) 'DEBUG ioesmf_create_grid:  done creating grid(',DataHandle,')%ptr'
+        CALL wrf_debug ( 5, TRIM(msg) )
+      ENDIF
+    ENDIF
+    WRITE( msg,* ) 'DEBUG ioesmf_create_grid:  end'
+    CALL wrf_debug ( 5, TRIM(msg) )
+
+  END SUBROUTINE ioesmf_create_grid
+
+
+
+  ! Create an ESMF_Grid that matches a WRF decomposition.  
+  ! TBH:  Note that periodicity is not supported by this interface.  If 
+  ! TBH:  periodicity is needed, pass in via SysDepInfo in the call to 
+  ! TBH:  ext_esmf_ioinit().  
+  ! TBH:  Note that lat/lon coordinates are not supported by this interface 
+  ! TBH:  since general curvilinear coordindates (needed for map projections 
+  ! TBH:  used by WRF such as polar stereographic, mercator, lambert conformal)
+  ! TBH:  are not supported by ESMF as of ESMF 2.1.1.  Once they are supported, 
+  ! TBH:  add them via the "sieve" method used in ../io_mcel/.  
+  ! $$$ TBD:  Note that DomainEnd and PatchEnd must currently include "extra" 
+  ! $$$ TBD:  points for non-periodic staggered arrays.  It may be possible to 
+  ! $$$ TBD:  remove this hackery once ESMF can support staggered 
+  ! $$$ TBD:  grids in regional models.  
+  SUBROUTINE ioesmf_create_grid_int( esmfgrid, numdims,      &
+                              DomainStart, DomainEnd, &
+                              MemoryStart, MemoryEnd, &
+                              PatchStart, PatchEnd )
+    USE module_ext_esmf
+    IMPLICIT NONE
+    TYPE(ESMF_Grid), INTENT(INOUT) :: esmfgrid
+    INTEGER,         INTENT(IN   ) :: numdims
+    INTEGER,         INTENT(IN   ) :: DomainStart(numdims), DomainEnd(numdims)
+    INTEGER,         INTENT(IN   ) :: MemoryStart(numdims), MemoryEnd(numdims)
+    INTEGER,         INTENT(IN   ) :: PatchStart(numdims),  PatchEnd(numdims)
     ! Local declarations
     INTEGER :: numprocs     ! total number of tasks
     INTEGER, ALLOCATABLE :: ipatchStarts(:), jpatchStarts(:)
     INTEGER :: numprocsX    ! number of tasks in "i" dimension
     INTEGER :: numprocsY    ! number of tasks in "j" dimension
     INTEGER, ALLOCATABLE :: permuteTasks(:)
-    INTEGER :: globalXcount ! non-staggered domain count in "i" dimension
-    INTEGER :: globalYcount ! non-staggered domain count in "j" dimension
+    INTEGER :: globalXcount ! staggered domain count in "i" dimension
+    INTEGER :: globalYcount ! staggered domain count in "j" dimension
     INTEGER :: myXstart     ! task-local start in "i" dimension
     INTEGER :: myYstart     ! task-local start in "j" dimension
-    INTEGER :: myXend       ! non-staggered task-local end in "i" dimension
-    INTEGER :: myYend       ! non-staggered task-local end in "j" dimension
+    INTEGER :: myXend       ! staggered task-local end in "i" dimension
+    INTEGER :: myYend       ! staggered task-local end in "j" dimension
     INTEGER, ALLOCATABLE :: allXStart(:)
     INTEGER, ALLOCATABLE :: allXCount(:)
     INTEGER, ALLOCATABLE :: dimXCount(:)
@@ -155,9 +317,23 @@ END SUBROUTINE get_value
     TYPE(ESMF_VM) :: vm
     TYPE(ESMF_DELayout) :: taskLayout
     CHARACTER (32) :: gridname
+    INTEGER, SAVE :: gridID = 0
 
-    IF ( .NOT. ASSOCIATED( grid( DataHandle )%ptr ) ) THEN
-      ALLOCATE( grid( DataHandle )%ptr )
+      CALL wrf_debug ( 5 , 'DEBUG ioesmf_create_grid_int:  begin...' )
+      WRITE( msg,* ) 'DEBUG ioesmf_create_grid_int:  numdims = ',numdims
+      CALL wrf_debug ( 5 , TRIM(msg) )
+      WRITE( msg,* ) 'DEBUG ioesmf_create_grid_int:  DomainStart = ',DomainStart(1:numdims)
+      CALL wrf_debug ( 5 , TRIM(msg) )
+      WRITE( msg,* ) 'DEBUG ioesmf_create_grid_int:  DomainEnd = ',DomainEnd(1:numdims)
+      CALL wrf_debug ( 5 , TRIM(msg) )
+      WRITE( msg,* ) 'DEBUG ioesmf_create_grid_int:  MemoryStart = ',MemoryStart(1:numdims)
+      CALL wrf_debug ( 5 , TRIM(msg) )
+      WRITE( msg,* ) 'DEBUG ioesmf_create_grid_int:  MemoryEnd = ',MemoryEnd(1:numdims)
+      CALL wrf_debug ( 5 , TRIM(msg) )
+      WRITE( msg,* ) 'DEBUG ioesmf_create_grid_int:  PatchStart = ',PatchStart(1:numdims)
+      CALL wrf_debug ( 5 , TRIM(msg) )
+      WRITE( msg,* ) 'DEBUG ioesmf_create_grid_int:  PatchEnd = ',PatchEnd(1:numdims)
+      CALL wrf_debug ( 5 , TRIM(msg) )
       ! First, determine number of tasks and number of tasks in each decomposed 
       ! dimension (ESMF 2.2.0 is restricted to simple task layouts)
       ! get current ESMF virtual machine and inquire...  
@@ -208,12 +384,23 @@ END SUBROUTINE get_value
       pe = 0
       DO j = 0, numprocsY-1
         DO i = 0, numprocsX-1
+! (/ 0 2 1 3 /)
         permuteTasks(pe) = (i*numprocsY) + j
+! (/ 0 1 2 3 /)
+!        permuteTasks(pe) = pe
         pe = pe + 1
         ENDDO
       ENDDO
-      WRITE( msg,* ) 'DEBUG:  permuteTasks = ',permuteTasks
-      CALL wrf_debug ( 5 , msg )
+!$$$DEBUG
+!      CALL wrf_debug ( 5 , 'DEBUG ioesmf_create_grid_int:  calling ESMF_VMPrint' )
+!      CALL ESMF_VMPrint( vm=vm, rc=rc )
+!      CALL wrf_debug ( 5 , 'DEBUG ioesmf_create_grid_int:  back from ESMF_VMPrint' )
+!$$$END DEBUG
+      WRITE( msg,* ) 'DEBUG ioesmf_create_grid_int:  numprocsXY = ',numprocsXY
+      CALL wrf_debug ( 5 , TRIM(msg) )
+      WRITE( msg,* ) 'DEBUG ioesmf_create_grid_int:  permuteTasks = ',permuteTasks
+      CALL wrf_debug ( 5 , TRIM(msg) )
+      CALL wrf_debug ( 5 , 'DEBUG ioesmf_create_grid_int:  calling ESMF_DELayoutCreate' )
       taskLayout = ESMF_DELayoutCreate( vm, numprocsXY, petList=permuteTasks, rc=rc ) 
       IF ( rc /= ESMF_SUCCESS ) THEN
         WRITE( msg,* ) 'Error in ESMF_DELayoutCreate', &
@@ -222,50 +409,62 @@ END SUBROUTINE get_value
                        __LINE__
         CALL wrf_error_fatal ( msg )
       ENDIF
+      CALL wrf_debug ( 5 , 'DEBUG ioesmf_create_grid_int:  back from ESMF_DELayoutCreate' )
       DEALLOCATE( permuteTasks )
-      ! compute indices for non-staggered grids cause thats the way ESMF likes 
-      ! it
+!$$$DEBUG
+      CALL wrf_debug ( 5 , 'DEBUG ioesmf_create_grid_int:  calling ESMF_DELayoutPrint 1' )
+      CALL ESMF_DELayoutPrint( taskLayout, rc=rc )
+      CALL wrf_debug ( 5 , 'DEBUG ioesmf_create_grid_int:  back from ESMF_DELayoutPrint 1' )
+!$$$END DEBUG
+      ! Compute indices for staggered grids because ESMF does not yet support addition of 
+      ! extra data points for staggered dimensions as is common in regional models.  
+      ! $$$ TBD:  Remove this hack once ESMF can handle it.  
       ! the [ij][dp][se] bits are for convenience...  
       ids = DomainStart(1); ide = DomainEnd(1); 
       jds = DomainStart(2); jde = DomainEnd(2); 
       ips = PatchStart(1);  ipe = PatchEnd(1); 
       jps = PatchStart(2);  jpe = PatchEnd(2); 
-      globalXcount = (ide-1) - ids + 1
-      globalYcount = (jde-1) - jds + 1
-      ! task-local numbers of points in patch for non-staggered arrays
+      globalXcount = ide - ids + 1
+      globalYcount = jde - jds + 1
+      ! task-local numbers of points in patch for staggered arrays
       myXstart = ips
       myYstart = jps
-      myXend = min(ipe, ide-1)
-      myYend = min(jpe, jde-1)
+      ! staggered-only for now
+      myXend = ipe
+      myYend = jpe
+!      myXend = min(ipe, ide-1)
+!      myYend = min(jpe, jde-1)
       myXcount = myXend - myXstart + 1
       myYcount = myYend - myYstart + 1
-      WRITE( msg,* ) 'DEBUG:  WRF non-staggered     ips = ', ips
-      CALL wrf_debug ( 5 , msg )
-      WRITE( msg,* ) 'DEBUG:  WRF non-staggered     ipe = ', min(ipe, ide-1)
-      CALL wrf_debug ( 5 , msg )
-      WRITE( msg,* ) 'DEBUG:  WRF non-staggered i count = ', myXCount
-      CALL wrf_debug ( 5 , msg )
-      WRITE( msg,* ) 'DEBUG:  WRF non-staggered     jps = ', jps
-      CALL wrf_debug ( 5 , msg )
-      WRITE( msg,* ) 'DEBUG:  WRF non-staggered     jpe = ', min(jpe, jde-1)
-      CALL wrf_debug ( 5 , msg )
-      WRITE( msg,* ) 'DEBUG:  WRF non-staggered j count = ', myYCount
-      CALL wrf_debug ( 5 , msg )
+!      WRITE( msg,* ) 'DEBUG:  WRF non-staggered     ips = ', ips
+!      CALL wrf_debug ( 5 , TRIM(msg) )
+!      WRITE( msg,* ) 'DEBUG:  WRF non-staggered     ipe = ', min(ipe, ide-1)
+!      CALL wrf_debug ( 5 , TRIM(msg) )
+!      WRITE( msg,* ) 'DEBUG:  WRF non-staggered i count = ', myXCount
+!      CALL wrf_debug ( 5 , TRIM(msg) )
+!      WRITE( msg,* ) 'DEBUG:  WRF non-staggered     jps = ', jps
+!      CALL wrf_debug ( 5 , TRIM(msg) )
+!      WRITE( msg,* ) 'DEBUG:  WRF non-staggered     jpe = ', min(jpe, jde-1)
+!      CALL wrf_debug ( 5 , TRIM(msg) )
+!      WRITE( msg,* ) 'DEBUG:  WRF non-staggered j count = ', myYCount
+!      CALL wrf_debug ( 5 , TRIM(msg) )
       WRITE( msg,* ) 'DEBUG:  WRF     staggered     ips = ', ips
-      CALL wrf_debug ( 5 , msg )
+      CALL wrf_debug ( 5 , TRIM(msg) )
       WRITE( msg,* ) 'DEBUG:  WRF     staggered     ipe = ', ipe
-      CALL wrf_debug ( 5 , msg )
+      CALL wrf_debug ( 5 , TRIM(msg) )
       WRITE( msg,* ) 'DEBUG:  WRF     staggered i count = ', ipe-ips+1
-      CALL wrf_debug ( 5 , msg )
+      CALL wrf_debug ( 5 , TRIM(msg) )
       WRITE( msg,* ) 'DEBUG:  WRF     staggered     jps = ', jps
-      CALL wrf_debug ( 5 , msg )
+      CALL wrf_debug ( 5 , TRIM(msg) )
       WRITE( msg,* ) 'DEBUG:  WRF     staggered     jpe = ', jpe
-      CALL wrf_debug ( 5 , msg )
+      CALL wrf_debug ( 5 , TRIM(msg) )
       WRITE( msg,* ) 'DEBUG:  WRF     staggered j count = ', jpe-jps+1
-      CALL wrf_debug ( 5 , msg )
+      CALL wrf_debug ( 5 , TRIM(msg) )
       ! gather task-local information on all tasks since 
       ! ESMF_GridDistribute[Block] interface require global knowledge to set up 
       ! decompositions (@#$%)
+      ! Recall that coordX and coordY are coordinates of *vertices*, not cell centers.  
+      ! Thus they must be 1 bigger than the number of cells.  
       ALLOCATE( allXStart(0:numprocs-1),  allXCount(0:numprocs-1),  &
                 allYStart(0:numprocs-1),  allYCount(0:numprocs-1),  &
                 dimXCount(0:numprocsX-1), dimYCount(0:numprocsY-1), &
@@ -287,15 +486,18 @@ END SUBROUTINE get_value
       CALL wrf_message( 'WARNING:  ESMF coupling interpolation will be incorrect' )
       CALL wrf_message( 'WARNING:  unless grid points in the coupled components' )
       CALL wrf_message( 'WARNING:  are co-located.  This limitation will be removed' )
-      CALL wrf_message( 'WARNING:  once ESMF coupling supports common map projections.' )
+      CALL wrf_message( 'WARNING:  once ESMF coupling supports generalized' )
+      CALL wrf_message( 'WARNING:  curvilinear coordintates needed to represent' )
+      CALL wrf_message( 'WARNING:  common map projections used by WRF and other' )
+      CALL wrf_message( 'WARNING:  regional models.' )
       ! Note that ESMF defines coordinates at *vertices*
       coordX(1) = 0.0
-      DO i = 2, globalXcount+1
+      DO i = 2, SIZE(coordX)
         coordX(i) = coordX(i-1) + 1.0
       ENDDO
       coordY(1) = 0.0
-      DO i = 2, globalYcount+1
-        coordY(i) = coordY(i-1) + 1.0
+      DO j = 2, SIZE(coordY)
+        coordY(j) = coordY(j-1) + 1.0
       ENDDO
       ! Create an ESMF_Grid
       ! For now we create only a 2D grid suitable for simple coupling of 2D 
@@ -303,13 +505,33 @@ END SUBROUTINE get_value
 !TBH $$$:  NOTE that we'll have to use ESMF_GRID_HORZ_STAGGER_E_?? for NMM.  
 !TBH $$$:  E-grid is not yet supported by ESMF.  Eventually pass staggering 
 !TBH $$$:  info into this routine.  For now, hard-code it for WRF-ARW.  
-      WRITE ( gridname,'(a,i0)' ) 'WRF_grid_', DataHandle
-      grid( DataHandle )%ptr = ESMF_GridCreateHorzXY(                     &
-                                 coord1=coordX, coord2=coordY,            &
-                                 horzstagger=ESMF_GRID_HORZ_STAGGER_C_SW, &
+      gridID = gridID + 1
+      WRITE ( gridname,'(a,i0)' ) 'WRF_grid_', gridID
+!$$$DEBUG
+CALL wrf_debug ( 5 , 'DEBUG WRF:  Calling ESMF_GridCreateHorzXY()' )
+WRITE( msg,* ) 'DEBUG WRF:  SIZE(coordX) = ', SIZE(coordX)
+CALL wrf_debug ( 5 , TRIM(msg) )
+WRITE( msg,* ) 'DEBUG WRF:  SIZE(coordY) = ', SIZE(coordY)
+CALL wrf_debug ( 5 , TRIM(msg) )
+DO i = 1, SIZE(coordX)
+  WRITE( msg,* ) 'DEBUG WRF:  coord1(',i,') = ', coordX(i)
+  CALL wrf_debug ( 5 , TRIM(msg) )
+ENDDO
+DO j = 1, SIZE(coordY)
+  WRITE( msg,* ) 'DEBUG WRF:  coord2(',j,') = ', coordY(j)
+  CALL wrf_debug ( 5 , TRIM(msg) )
+ENDDO
+WRITE( msg,* ) 'DEBUG WRF:  horzstagger = ', ESMF_GRID_HORZ_STAGGER_C_SW
+CALL wrf_debug ( 5 , TRIM(msg) )
+WRITE( msg,* ) 'DEBUG WRF:  name = ', TRIM(gridname)
+CALL wrf_debug ( 5 , TRIM(msg) )
+!$$$END DEBUG
+      esmfgrid = ESMF_GridCreateHorzXY(                     &
+                   coord1=coordX, coord2=coordY,            &
+                   horzstagger=ESMF_GRID_HORZ_STAGGER_C_SW, &
 ! use this for 3D Grids once it is stable
-!                            coordorder=ESMF_COORD_ORDER_XZY,         &
-                             name=TRIM(gridname), rc=rc )
+!                  coordorder=ESMF_COORD_ORDER_XZY,         &
+                   name=TRIM(gridname), rc=rc )
       IF ( rc /= ESMF_SUCCESS ) THEN
         WRITE( msg,* ) 'Error in ESMF_GridCreateHorzXY', &
                        __FILE__ ,                        &
@@ -317,6 +539,7 @@ END SUBROUTINE get_value
                        __LINE__
         CALL wrf_error_fatal ( msg )
       ENDIF
+CALL wrf_debug ( 5 , 'DEBUG WRF:  back OK from ESMF_GridCreateHorzXY()' )
       ! distribute the ESMF_Grid
       ! ignore repeated values
       is_min = MINVAL(allXStart)
@@ -324,13 +547,13 @@ END SUBROUTINE get_value
       i = 0
       j = 0
       WRITE( msg,* ) 'DEBUG:  is_min = ',is_min,'  allXStart = ',allXStart
-      CALL wrf_debug ( 5 , msg )
+      CALL wrf_debug ( 5 , TRIM(msg) )
       WRITE( msg,* ) 'DEBUG:  js_min = ',js_min,'  allYStart = ',allYStart
-      CALL wrf_debug ( 5 , msg )
+      CALL wrf_debug ( 5 , TRIM(msg) )
       WRITE( msg,* ) 'DEBUG:  allXCount = ',allXCount
-      CALL wrf_debug ( 5 , msg )
+      CALL wrf_debug ( 5 , TRIM(msg) )
       WRITE( msg,* ) 'DEBUG:  allYCount = ',allYCount
-      CALL wrf_debug ( 5 , msg )
+      CALL wrf_debug ( 5 , TRIM(msg) )
       DO pe = 0, numprocs-1
         IF (allXStart(pe) == is_min) THEN
           IF (j >= numprocsY) THEN
@@ -340,8 +563,8 @@ END SUBROUTINE get_value
                            __LINE__
             CALL wrf_error_fatal ( msg )
           ENDIF
-      WRITE( msg,* ) 'DEBUG:  dimYCount(',j,') = allYCount(',pe,')'
-      CALL wrf_debug ( 5 , msg )
+      WRITE( msg,* ) 'DEBUG:  dimYCount(',j,') == allYCount(',pe,')'
+      CALL wrf_debug ( 5 , TRIM(msg) )
           dimYCount(j) = allYCount(pe)
           j = j + 1
         ENDIF
@@ -353,28 +576,47 @@ END SUBROUTINE get_value
                            __LINE__
             CALL wrf_error_fatal ( msg )
           ENDIF
-      WRITE( msg,* ) 'DEBUG:  dimXCount(',i,') = allXCount(',pe,')'
-      CALL wrf_debug ( 5 , msg )
+      WRITE( msg,* ) 'DEBUG:  dimXCount(',i,') == allXCount(',pe,')'
+      CALL wrf_debug ( 5 , TRIM(msg) )
           dimXCount(i) = allXCount(pe)
           i = i + 1
         ENDIF
       ENDDO
       WRITE( msg,* ) 'DEBUG:  i = ',i,'  dimXCount = ',dimXCount
-      CALL wrf_debug ( 5 , msg )
+      CALL wrf_debug ( 5 , TRIM(msg) )
       WRITE( msg,* ) 'DEBUG:  j = ',j,'  dimYCount = ',dimYCount
-      CALL wrf_debug ( 5 , msg )
-      CALL ESMF_GridDistribute( grid( DataHandle )%ptr,    &
+      CALL wrf_debug ( 5 , TRIM(msg) )
+!$$$DEBUG
+      CALL wrf_debug ( 5 , 'DEBUG ioesmf_create_grid_int:  calling ESMF_DELayoutPrint 2' )
+      CALL ESMF_DELayoutPrint( taskLayout, rc=rc )
+      CALL wrf_debug ( 5 , 'DEBUG ioesmf_create_grid_int:  back from ESMF_DELayoutPrint 2' )
+!$$$END DEBUG
+! $$$  crashes here with "-g" ...
+      CALL ESMF_GridDistribute( esmfgrid,                  &
                                 delayout=taskLayout,       &
                                 countsPerDEDim1=dimXCount, &
                                 countsPerDEDim2=dimYCount, &
                                 rc=rc )
       IF ( rc /= ESMF_SUCCESS ) THEN
-        WRITE( msg,* ) 'Error in ESMF_GridDistribute', &
-                       __FILE__ ,                      &
-                       ', line',                       &
-                       __LINE__
+        WRITE( msg,* ) 'Error in ESMF_GridDistribute ', &
+                       __FILE__ ,                       &
+                       ', line ',                       &
+                       __LINE__ ,                       &
+                       ', error code = ',rc
         CALL wrf_error_fatal ( msg )
       ENDIF
+CALL wrf_debug ( 5 , 'DEBUG WRF:  Calling ESMF_GridValidate()' )
+      CALL ESMF_GridValidate( esmfgrid, rc=rc )
+      IF ( rc /= ESMF_SUCCESS ) THEN
+        WRITE( msg,* ) 'Error in ESMF_GridValidate ',   &
+                       __FILE__ ,                       &
+                       ', line ',                       &
+                       __LINE__ ,                       &
+                       ', error code = ',rc
+! TBH:  debugging error exit here...  
+        CALL wrf_error_fatal ( msg )
+      ENDIF
+CALL wrf_debug ( 5 , 'DEBUG WRF:  back OK from ESMF_GridValidate()' )
       DEALLOCATE( allXStart, allXCount, allYStart, allYCount, &
                   dimXCount, dimYCount, coordX, coordY )
 
@@ -382,51 +624,51 @@ END SUBROUTINE get_value
       ! decomposition info.  
       ALLOCATE( cellCounts(0:numprocs-1,2), globalStarts(0:numprocs-1,2) )
 
-      CALL ESMF_GridGet( grid( DataHandle )%ptr,                 &
-                         horzrelloc=ESMF_CELL_CENTER,            &
-                         globalStartPerDEPerDim=globalStarts,    &
-                         cellCountPerDEPerDim=cellCounts,        &
-                         globalCellCountPerDim=globalCellCounts, &
-                         rc=rc )
-      IF ( rc /= ESMF_SUCCESS ) THEN
-        WRITE( msg,* ) 'Error in ESMF_GridGet', &
-                       __FILE__ ,               &
-                       ', line',                &
-                       __LINE__
-        CALL wrf_error_fatal ( msg )
-      ENDIF
+!      CALL ESMF_GridGet( esmfgrid,                               &
+!                         horzrelloc=ESMF_CELL_CENTER,            &
+!                         globalStartPerDEPerDim=globalStarts,    &
+!                         cellCountPerDEPerDim=cellCounts,        &
+!                         globalCellCountPerDim=globalCellCounts, &
+!                         rc=rc )
+!      IF ( rc /= ESMF_SUCCESS ) THEN
+!        WRITE( msg,* ) 'Error in ESMF_GridGet', &
+!                       __FILE__ ,               &
+!                       ', line',                &
+!                       __LINE__
+!        CALL wrf_error_fatal ( msg )
+!      ENDIF
 ! note that global indices in ESMF_Grid always start at zero
-      WRITE( msg,* ) 'DEBUG:  ESMF task-id = ',myPE
-      CALL wrf_debug ( 5 , msg )
-      WRITE( msg,* ) 'DEBUG:  ESMF non-staggered     ips = ',1+globalStarts(myPE,1)
-      CALL wrf_debug ( 5 , msg )
-      WRITE( msg,* ) 'DEBUG:  ESMF non-staggered     ipe = ',1+globalStarts(myPE,1) + cellCounts(myPE,1) - 1
-      CALL wrf_debug ( 5 , msg )
-      WRITE( msg,* ) 'DEBUG:  ESMF non-staggered i count = ',  cellCounts(myPE,1)
-      CALL wrf_debug ( 5 , msg )
-      WRITE( msg,* ) 'DEBUG:  ESMF non-staggered     jps = ',1+globalStarts(myPE,2)
-      CALL wrf_debug ( 5 , msg )
-      WRITE( msg,* ) 'DEBUG:  ESMF non-staggered     jpe = ',1+globalStarts(myPE,2) + cellCounts(myPE,2) - 1
-      CALL wrf_debug ( 5 , msg )
-      WRITE( msg,* ) 'DEBUG:  ESMF non-staggered j count = ',  cellCounts(myPE,2)
-      CALL wrf_debug ( 5 , msg )
-      is_min = globalStarts(0,1)
-      js_min = globalStarts(0,2)
-      ie_max = globalStarts(0,1) + cellCounts(0,1) - 1
-      je_max = globalStarts(0,2) + cellCounts(0,2) - 1
-      DO pe = 1, (numprocsX*numprocsY)-1
-        js = globalStarts(pe,2)
-        je = globalStarts(pe,2) + cellCounts(pe,2) - 1
-        IF ( js < js_min ) js_min = js
-        IF ( je > je_max ) je_max = je
-        is = globalStarts(pe,1)
-        ie = globalStarts(pe,1) + cellCounts(pe,1) - 1
-        IF ( is < is_min ) is_min = is
-        IF ( ie > ie_max ) ie_max = ie
-      ENDDO
+!      WRITE( msg,* ) 'DEBUG:  ESMF task-id = ',myPE
+!      CALL wrf_debug ( 5 , TRIM(msg) )
+!      WRITE( msg,* ) 'DEBUG:  ESMF non-staggered     ips = ',1+globalStarts(myPE,1)
+!      CALL wrf_debug ( 5 , TRIM(msg) )
+!      WRITE( msg,* ) 'DEBUG:  ESMF non-staggered     ipe = ',1+globalStarts(myPE,1) + cellCounts(myPE,1) - 1
+!      CALL wrf_debug ( 5 , TRIM(msg) )
+!      WRITE( msg,* ) 'DEBUG:  ESMF non-staggered i count = ',  cellCounts(myPE,1)
+!      CALL wrf_debug ( 5 , TRIM(msg) )
+!      WRITE( msg,* ) 'DEBUG:  ESMF non-staggered     jps = ',1+globalStarts(myPE,2)
+!      CALL wrf_debug ( 5 , TRIM(msg) )
+!      WRITE( msg,* ) 'DEBUG:  ESMF non-staggered     jpe = ',1+globalStarts(myPE,2) + cellCounts(myPE,2) - 1
+!      CALL wrf_debug ( 5 , TRIM(msg) )
+!      WRITE( msg,* ) 'DEBUG:  ESMF non-staggered j count = ',  cellCounts(myPE,2)
+!      CALL wrf_debug ( 5 , TRIM(msg) )
+!      is_min = globalStarts(0,1)
+!      js_min = globalStarts(0,2)
+!      ie_max = globalStarts(0,1) + cellCounts(0,1) - 1
+!      je_max = globalStarts(0,2) + cellCounts(0,2) - 1
+!      DO pe = 1, (numprocsX*numprocsY)-1
+!        js = globalStarts(pe,2)
+!        je = globalStarts(pe,2) + cellCounts(pe,2) - 1
+!        IF ( js < js_min ) js_min = js
+!        IF ( je > je_max ) je_max = je
+!        is = globalStarts(pe,1)
+!        ie = globalStarts(pe,1) + cellCounts(pe,1) - 1
+!        IF ( is < is_min ) is_min = is
+!        IF ( ie > ie_max ) ie_max = ie
+!      ENDDO
 
       ! extract information about staggered grids for debugging
-      CALL ESMF_GridGet( grid( DataHandle )%ptr,                 &
+      CALL ESMF_GridGet( esmfgrid,                               &
                          horzrelloc=ESMF_CELL_WFACE,             &
                          globalStartPerDEPerDim=globalStarts,    &
                          cellCountPerDEPerDim=cellCounts,        &
@@ -441,12 +683,12 @@ END SUBROUTINE get_value
       ENDIF
 ! note that global indices in ESMF_Grid always start at zero
       WRITE( msg,* ) 'DEBUG:  ESMF     staggered     ips = ',1+globalStarts(myPE,1)
-      CALL wrf_debug ( 5 , msg )
+      CALL wrf_debug ( 5 , TRIM(msg) )
       WRITE( msg,* ) 'DEBUG:  ESMF     staggered     ipe = ',1+globalStarts(myPE,1) + cellCounts(myPE,1) - 1
-      CALL wrf_debug ( 5 , msg )
+      CALL wrf_debug ( 5 , TRIM(msg) )
       WRITE( msg,* ) 'DEBUG:  ESMF     staggered i count = ',  cellCounts(myPE,1)
-      CALL wrf_debug ( 5 , msg )
-      CALL ESMF_GridGet( grid( DataHandle )%ptr,                 &
+      CALL wrf_debug ( 5 , TRIM(msg) )
+      CALL ESMF_GridGet( esmfgrid,                               &
                          horzrelloc=ESMF_CELL_SFACE,             &
                          globalStartPerDEPerDim=globalStarts,    &
                          cellCountPerDEPerDim=cellCounts,        &
@@ -461,30 +703,44 @@ END SUBROUTINE get_value
       ENDIF
 ! note that global indices in ESMF_Grid always start at zero
       WRITE( msg,* ) 'DEBUG:  ESMF     staggered     jps = ',1+globalStarts(myPE,2)
-      CALL wrf_debug ( 5 , msg )
+      CALL wrf_debug ( 5 , TRIM(msg) )
       WRITE( msg,* ) 'DEBUG:  ESMF     staggered     jpe = ',1+globalStarts(myPE,2) + cellCounts(myPE,2) - 1
-      CALL wrf_debug ( 5 , msg )
+      CALL wrf_debug ( 5 , TRIM(msg) )
       WRITE( msg,* ) 'DEBUG:  ESMF     staggered j count = ',  cellCounts(myPE,2)
-      CALL wrf_debug ( 5 , msg )
+      CALL wrf_debug ( 5 , TRIM(msg) )
 
       DEALLOCATE( cellCounts, globalStarts )
 
-    ENDIF
+      CALL wrf_debug ( 100 , 'DEBUG ioesmf_create_grid_int:  print esmfgrid BEGIN...' )
+      CALL ESMF_GridPrint( esmfgrid, rc=rc )
+      IF ( rc /= ESMF_SUCCESS ) THEN
+        WRITE( msg,* ) 'Error in ESMF_GridPrint', &
+                       __FILE__ ,                        &
+                       ', line',                         &
+                       __LINE__
+        CALL wrf_error_fatal ( msg )
+      ENDIF
+      CALL wrf_debug ( 100 , 'DEBUG ioesmf_create_grid_int:  print esmfgrid END' )
 
-  END SUBROUTINE create_grid
+      CALL wrf_debug ( 5 , 'DEBUG ioesmf_create_grid_int:  returning...' )
+
+  END SUBROUTINE ioesmf_create_grid_int
 
 
 
   ! Destroy the ESMF_Grid associated with index DataHandle.  
   ! grid( DataHandle )%ptr is DEALLOCATED (NULLIFIED)
-  SUBROUTINE destroy_grid( DataHandle )
+  SUBROUTINE ioesmf_destroy_grid( DataHandle )
+    USE module_ext_esmf
+    IMPLICIT NONE
     INTEGER, INTENT(IN   ) :: DataHandle
     ! Local declarations
     INTEGER :: id, rc
     TYPE(ESMF_DELayout) :: taskLayout
     LOGICAL :: noneLeft
-
-    IF ( ASSOCIATED( grid( DataHandle )%ptr ) ) THEN
+    IF ( grid( DataHandle )%in_use ) THEN
+WRITE( msg,* ) 'DEBUG:  ioesmf_destroy_grid( ',DataHandle,' ) begin...'
+CALL wrf_debug ( 5 , TRIM(msg) )
       CALL ESMF_GridGet( grid( DataHandle )%ptr, delayout=taskLayout, rc=rc )
       IF ( rc /= ESMF_SUCCESS ) THEN
         WRITE( msg,* ) 'Error in ESMF_GridGet', &
@@ -511,103 +767,90 @@ END SUBROUTINE get_value
         CALL wrf_error_fatal ( msg )
       ENDIF
       DEALLOCATE( grid( DataHandle )%ptr )
-      NULLIFY( grid( DataHandle )%ptr )
+      CALL ioesmf_nullify_grid( DataHandle )
+WRITE( msg,* ) 'DEBUG:  ioesmf_destroy_grid( ',DataHandle,' ) end'
+CALL wrf_debug ( 5 , TRIM(msg) )
     ENDIF
 
-  END SUBROUTINE destroy_grid
+  END SUBROUTINE ioesmf_destroy_grid
 
 
-  ! allgather for integers, ESMF_style (since ESMF does not do this yet)
-  SUBROUTINE GatherIntegerScalars_ESMF( inval, pe, numprocs, outvals )
-    INTEGER, INTENT(IN   ) :: inval                 ! input scalar on this task
-    INTEGER, INTENT(IN   ) :: pe                    ! task id
-    INTEGER, INTENT(IN   ) :: numprocs              ! number of tasks
-    INTEGER, INTENT(  OUT) :: outvals(0:numprocs-1) ! gathered output vector
-    ! Local declarations
-    TYPE(ESMF_VM) :: vm
-    INTEGER(ESMF_KIND_I4) :: allSnd(0:numprocs-1)
-    INTEGER(ESMF_KIND_I4) :: allRcv(0:numprocs-1)
-    INTEGER :: rc
-
-    ! get current ESMF virtual machine for communication
-    CALL ESMF_VMGetCurrent(vm, rc)
-    IF ( rc /= ESMF_SUCCESS ) THEN
-      WRITE( msg,* ) 'Error in ESMF_VMGetCurrent', &
-                     __FILE__ ,                    &
-                     ', line',                     &
-                     __LINE__
-      CALL wrf_error_fatal ( msg )
-    ENDIF
-    allSnd = 0_ESMF_KIND_I4
-    allSnd(pe) = inval
-    ! Hack due to lack of ESMF_VMAllGather().  
-    CALL ESMF_VMAllReduce(vm, allSnd, allRcv, numprocs, ESMF_SUM, rc=rc )
-    IF ( rc /= ESMF_SUCCESS ) THEN
-      WRITE( msg,* ) 'Error in ESMF_VMAllReduce', &
-                     __FILE__ ,                     &
-                     ', line',                      &
-                     __LINE__
-      CALL wrf_error_fatal ( msg )
-    ENDIF
-    outvals = allRcv
-
-  END SUBROUTINE GatherIntegerScalars_ESMF
-
-
-END MODULE module_ext_esmf
+  ! Nullify the grid_ptr associated with index DataHandle.  
+  ! grid( DataHandle )%ptr must not be associated
+  ! DataHandle must be in a valid range
+  SUBROUTINE ioesmf_nullify_grid( DataHandle )
+    USE module_ext_esmf
+    IMPLICIT NONE
+    INTEGER, INTENT(IN   ) :: DataHandle
+    NULLIFY( grid( DataHandle )%ptr )
+    grid( DataHandle )%in_use = .FALSE.
+    grid( DataHandle )%ide_save = 0
+    grid( DataHandle )%jde_save = 0
+    grid( DataHandle )%kde_save = 0
+  END SUBROUTINE ioesmf_nullify_grid
 
 
 !$$$here...  use generic explicit interfaces?  if not, why not?  
  !$$$ remove duplication!
- SUBROUTINE ext_esmf_extract_data_real( data_esmf_real, Field,      &
+ SUBROUTINE ioesmf_extract_data_real( data_esmf_real, Field,      &
                                       ips, ipe, jps, jpe, kps, kpe, &
                                       ims, ime, jms, jme, kms, kme )
    USE module_ext_esmf
+   IMPLICIT NONE
    INTEGER,            INTENT(IN   ) :: ips, ipe, jps, jpe, kps, kpe
    INTEGER,            INTENT(IN   ) :: ims, ime, jms, jme, kms, kme
    REAL(ESMF_KIND_R4), INTENT(IN   ) :: data_esmf_real( ips:ipe, jps:jpe )
    REAL,               INTENT(  OUT) :: Field( ims:ime, jms:jme, kms:kme )
    Field( ips:ipe, jps:jpe, kms ) = data_esmf_real( ips:ipe, jps:jpe )
- END SUBROUTINE ext_esmf_extract_data_real
+ END SUBROUTINE ioesmf_extract_data_real
 
 
  !$$$ remove duplication!
- SUBROUTINE ext_esmf_extract_data_int( esmf_data_int, Field,         &
-                                       ips, ipe, jps, jpe, kps, kpe, &
-                                       ims, ime, jms, jme, kms, kme )
+ SUBROUTINE ioesmf_extract_data_int( data_esmf_int, Field,         &
+                                     ips, ipe, jps, jpe, kps, kpe, &
+                                     ims, ime, jms, jme, kms, kme )
    USE module_ext_esmf
+   IMPLICIT NONE
    INTEGER,               INTENT(IN   ) :: ips, ipe, jps, jpe, kps, kpe
    INTEGER,               INTENT(IN   ) :: ims, ime, jms, jme, kms, kme
-   INTEGER(ESMF_KIND_I4), INTENT(IN   ) :: esmf_data_int( ips:ipe, jps:jpe )
+   INTEGER(ESMF_KIND_I4), INTENT(IN   ) :: data_esmf_int( ips:ipe, jps:jpe )
    INTEGER,               INTENT(  OUT) :: Field( ims:ime, jms:jme, kms:kme )
-   Field( ips:ipe, jps:jpe, kms ) = esmf_data_int( ips:ipe, jps:jpe )
- END SUBROUTINE ext_esmf_extract_data_int
+   Field( ips:ipe, jps:jpe, kms ) = data_esmf_int( ips:ipe, jps:jpe )
+ END SUBROUTINE ioesmf_extract_data_int
 
 
  !$$$ remove duplication!
- SUBROUTINE ext_esmf_insert_data_real( Field, data_esmf_real,        &
-                                       ips, ipe, jps, jpe, kps, kpe, &
-                                       ims, ime, jms, jme, kms, kme )
+ SUBROUTINE ioesmf_insert_data_real( Field, data_esmf_real,        &
+                                     ips, ipe, jps, jpe, kps, kpe, &
+                                     ims, ime, jms, jme, kms, kme )
    USE module_ext_esmf
+   IMPLICIT NONE
    INTEGER,               INTENT(IN   ) :: ips, ipe, jps, jpe, kps, kpe
    INTEGER,               INTENT(IN   ) :: ims, ime, jms, jme, kms, kme
    REAL,                  INTENT(IN   ) :: Field( ims:ime, jms:jme, kms:kme )
    REAL(ESMF_KIND_R4),    INTENT(  OUT) :: data_esmf_real( ips:ipe, jps:jpe )
+   ! $$$ TBD:  Remove this hack once we no longer have to store non-staggered 
+   ! $$$ TBD:  arrays in space dimensioned for staggered arrays.  
+   data_esmf_real = 0.0_ESMF_KIND_R4
    data_esmf_real( ips:ipe, jps:jpe ) = Field( ips:ipe, jps:jpe, kms )
- END SUBROUTINE ext_esmf_insert_data_real
+ END SUBROUTINE ioesmf_insert_data_real
 
 
  !$$$ remove duplication!
- SUBROUTINE ext_esmf_insert_data_int( Field, esmf_data_int,         &
-                                      ips, ipe, jps, jpe, kps, kpe, &
-                                      ims, ime, jms, jme, kms, kme )
+ SUBROUTINE ioesmf_insert_data_int( Field, data_esmf_int,         &
+                                    ips, ipe, jps, jpe, kps, kpe, &
+                                    ims, ime, jms, jme, kms, kme )
    USE module_ext_esmf
+   IMPLICIT NONE
    INTEGER,               INTENT(IN   ) :: ips, ipe, jps, jpe, kps, kpe
    INTEGER,               INTENT(IN   ) :: ims, ime, jms, jme, kms, kme
    INTEGER,               INTENT(IN   ) :: Field( ims:ime, jms:jme, kms:kme )
-   INTEGER(ESMF_KIND_I4), INTENT(  OUT) :: esmf_data_int( ips:ipe, jps:jpe )
-   esmf_data_int( ips:ipe, jps:jpe ) = Field( ips:ipe, jps:jpe, kms )
- END SUBROUTINE ext_esmf_insert_data_int
+   INTEGER(ESMF_KIND_I4), INTENT(  OUT) :: data_esmf_int( ips:ipe, jps:jpe )
+   ! $$$ TBD:  Remove this hack once we no longer have to store non-staggered 
+   ! $$$ TBD:  arrays in space dimensioned for staggered arrays.  
+   data_esmf_int = 0.0_ESMF_KIND_I4
+   data_esmf_int( ips:ipe, jps:jpe ) = Field( ips:ipe, jps:jpe, kms )
+ END SUBROUTINE ioesmf_insert_data_int
 
 
 !--------------
@@ -631,7 +874,8 @@ SUBROUTINE ext_esmf_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo
   CHARACTER*(*) :: SysDepInfo
   INTEGER ,       INTENT(OUT) :: DataHandle
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_error_fatal('ext_esmf_open_for_read not supported yet')
+  CALL wrf_message('ext_esmf_open_for_read not supported yet')
+  Status = WRF_WARN_NOTSUPPORTED
   RETURN  
 END SUBROUTINE ext_esmf_open_for_read
 
@@ -647,37 +891,30 @@ SUBROUTINE ext_esmf_inquire_opened ( DataHandle, FileName , FileStatus, Status )
 
   Status = 0
 
-  FileStatus = WRF_FILE_NOT_OPENED
-  IF ( DataHandle .GE. 1 .AND. DataHandle .LE. int_num_handles ) THEN
-    IF      ( int_handle_in_use( DataHandle ) .AND. opened_for_read ( DataHandle ) ) THEN
-      IF ( okay_to_read ( DataHandle ) ) THEN
-        FileStatus = WRF_FILE_OPENED_FOR_READ
-      ELSE
-        FileStatus = WRF_FILE_OPENED_NOT_COMMITTED
-      ENDIF
-    ELSE IF ( int_handle_in_use( DataHandle ) .AND. opened_for_write ( DataHandle ) ) THEN
-      IF ( okay_to_write ( DataHandle ) ) THEN
-        FileStatus = WRF_FILE_OPENED_FOR_WRITE
-      ELSE
-        FileStatus = WRF_FILE_OPENED_NOT_COMMITTED
-      ENDIF
-    ENDIF
-  ENDIF
-  Status = 0
-  
-  RETURN
-END SUBROUTINE ext_esmf_inquire_opened
+  WRITE( msg,* ) 'DEBUG ext_esmf_inquire_opened:  begin, DataHandle = ', DataHandle
+  CALL wrf_debug ( 5 , TRIM(msg) )
+  WRITE( msg,* ) 'DEBUG ext_esmf_inquire_opened:  int_valid_handle(',DataHandle,') = ', &
+                 int_valid_handle( DataHandle )
+  CALL wrf_debug ( 5 , TRIM(msg) )
+  WRITE( msg,* ) 'DEBUG ext_esmf_inquire_opened:  int_handle_in_use(',DataHandle,') = ', &
+                 int_handle_in_use( DataHandle )
+  CALL wrf_debug ( 5 , TRIM(msg) )
+  WRITE( msg,* ) 'DEBUG ext_esmf_inquire_opened:  opened_for_read(',DataHandle,') = ', &
+                 opened_for_read( DataHandle )
+  CALL wrf_debug ( 5 , TRIM(msg) )
+  WRITE( msg,* ) 'DEBUG ext_esmf_inquire_opened:  okay_to_read(',DataHandle,') = ', &
+                 okay_to_read( DataHandle )
+  CALL wrf_debug ( 5 , TRIM(msg) )
+  WRITE( msg,* ) 'DEBUG ext_esmf_inquire_opened:  opened_for_write(',DataHandle,') = ', &
+                 opened_for_write( DataHandle )
+  CALL wrf_debug ( 5 , TRIM(msg) )
+  WRITE( msg,* ) 'DEBUG ext_esmf_inquire_opened:  okay_to_write(',DataHandle,') = ', &
+                 okay_to_write( DataHandle )
+  CALL wrf_debug ( 5 , TRIM(msg) )
 
-!--- inquire_filename
-SUBROUTINE ext_esmf_inquire_filename ( DataHandle, FileName , FileStatus, Status )
-  USE module_ext_esmf
-  IMPLICIT NONE
-  INTEGER ,       INTENT(IN)  :: DataHandle
-  CHARACTER*(*) :: FileName
-  INTEGER ,       INTENT(OUT) :: FileStatus
-  INTEGER ,       INTENT(OUT) :: Status
-  CHARACTER *80   SysDepInfo
-  Status = 0
+!$$$ need to cache file name and match with FileName argument and return 
+!$$$ FileStatus = WRF_FILE_NOT_OPENED if they do not match
+
   FileStatus = WRF_FILE_NOT_OPENED
   IF ( int_valid_handle( DataHandle ) ) THEN
     IF ( int_handle_in_use( DataHandle ) ) THEN
@@ -697,10 +934,80 @@ SUBROUTINE ext_esmf_inquire_filename ( DataHandle, FileName , FileStatus, Status
         FileStatus = WRF_FILE_NOT_OPENED
       ENDIF
     ENDIF
+    WRITE( msg,* ) 'ERROR ext_esmf_inquire_opened:  file handle ',DataHandle,' is invalid'
+    CALL wrf_error_fatal ( TRIM(msg) )
   ENDIF
-  ! need to cache file names before this routine will work properly
-  CALL wrf_error_fatal( "ext_esmf_inquire_filename() not supported yet")
+
+  WRITE( msg,* ) 'DEBUG ext_esmf_inquire_opened:  end, FileStatus = ', FileStatus
+  CALL wrf_debug ( 5 , TRIM(msg) )
+
   Status = 0
+  
+  RETURN
+END SUBROUTINE ext_esmf_inquire_opened
+
+!--- inquire_filename
+SUBROUTINE ext_esmf_inquire_filename ( DataHandle, FileName , FileStatus, Status )
+  USE module_ext_esmf
+  IMPLICIT NONE
+  INTEGER ,       INTENT(IN)  :: DataHandle
+  CHARACTER*(*) :: FileName
+  INTEGER ,       INTENT(OUT) :: FileStatus
+  INTEGER ,       INTENT(OUT) :: Status
+  CHARACTER *80   SysDepInfo
+  Status = 0
+
+  WRITE( msg,* ) 'DEBUG ext_esmf_inquire_filename:  begin, DataHandle = ', DataHandle
+  CALL wrf_debug ( 5 , TRIM(msg) )
+  WRITE( msg,* ) 'DEBUG ext_esmf_inquire_filename:  int_valid_handle(',DataHandle,') = ', &
+                 int_valid_handle( DataHandle )
+  CALL wrf_debug ( 5 , TRIM(msg) )
+  WRITE( msg,* ) 'DEBUG ext_esmf_inquire_filename:  int_handle_in_use(',DataHandle,') = ', &
+                 int_handle_in_use( DataHandle )
+  CALL wrf_debug ( 5 , TRIM(msg) )
+  WRITE( msg,* ) 'DEBUG ext_esmf_inquire_filename:  opened_for_read(',DataHandle,') = ', &
+                 opened_for_read( DataHandle )
+  CALL wrf_debug ( 5 , TRIM(msg) )
+  WRITE( msg,* ) 'DEBUG ext_esmf_inquire_filename:  okay_to_read(',DataHandle,') = ', &
+                 okay_to_read( DataHandle )
+  CALL wrf_debug ( 5 , TRIM(msg) )
+  WRITE( msg,* ) 'DEBUG ext_esmf_inquire_filename:  opened_for_write(',DataHandle,') = ', &
+                 opened_for_write( DataHandle )
+  CALL wrf_debug ( 5 , TRIM(msg) )
+  WRITE( msg,* ) 'DEBUG ext_esmf_inquire_filename:  okay_to_write(',DataHandle,') = ', &
+                 okay_to_write( DataHandle )
+  CALL wrf_debug ( 5 , TRIM(msg) )
+
+!$$$ need to cache file name and return via FileName argument
+
+  FileStatus = WRF_FILE_NOT_OPENED
+  IF ( int_valid_handle( DataHandle ) ) THEN
+    IF ( int_handle_in_use( DataHandle ) ) THEN
+      IF ( opened_for_read ( DataHandle ) ) THEN
+        IF ( okay_to_read( DataHandle ) ) THEN
+           FileStatus = WRF_FILE_OPENED_FOR_READ
+        ELSE
+           FileStatus = WRF_FILE_OPENED_NOT_COMMITTED
+        ENDIF
+      ELSE IF ( opened_for_write( DataHandle ) ) THEN
+        IF ( okay_to_write( DataHandle ) ) THEN
+           FileStatus = WRF_FILE_OPENED_FOR_WRITE
+        ELSE
+           FileStatus = WRF_FILE_OPENED_NOT_COMMITTED
+        ENDIF
+      ELSE
+        FileStatus = WRF_FILE_NOT_OPENED
+      ENDIF
+    ENDIF
+    WRITE( msg,* ) 'ERROR ext_esmf_inquire_filename:  file handle ',DataHandle,' is invalid'
+    CALL wrf_error_fatal ( TRIM(msg) )
+  ENDIF
+
+  WRITE( msg,* ) 'DEBUG ext_esmf_inquire_filename:  end, FileStatus = ', FileStatus
+  CALL wrf_debug ( 5 , TRIM(msg) )
+
+  Status = 0
+  RETURN
 END SUBROUTINE ext_esmf_inquire_filename
 
 !--- sync
@@ -718,11 +1025,108 @@ SUBROUTINE ext_esmf_ioclose ( DataHandle, Status )
   USE module_ext_esmf
   IMPLICIT NONE
   INTEGER DataHandle, Status
+  ! locals
+  TYPE state_ptr
+    TYPE(ESMF_State), POINTER :: stateptr
+  END TYPE state_ptr
+  TYPE(state_ptr) :: states(2)
+  TYPE(ESMF_State), POINTER :: state
+  INTEGER :: numItems, numFields, i, istate
+  TYPE(ESMF_StateItemType), ALLOCATABLE :: itemTypes(:)
+  TYPE(ESMF_Field) :: tmpField
+  REAL, POINTER :: tmp_ptr(:,:)
+  CHARACTER (len=ESMF_MAXSTR), ALLOCATABLE :: itemNames(:)
+  CHARACTER (len=ESMF_MAXSTR) :: str
+  INTEGER :: rc
+
+! TODO:  The code below hangs with this error message:  
+! TODO:  "ext_esmf_ioclose:  ESMF_FieldGetDataPointer( LANDMASK) failed"
+! TODO:  Fix this so ESMF objects actually get destroyed to avoid memory 
+! TODO:  leaks and other extraordinary nastiness.  
+  CALL wrf_debug( 5, 'ext_esmf_ioclose:  WARNING:  not destroying ESMF objects' )
+#if 0
+  ! $$$ Need to upgrade this to use nested ESMF_States if we want support 
+  ! $$$ more than one auxin and one auxhist stream for ESMF.  
   IF ( int_valid_handle (DataHandle) ) THEN
     IF ( int_handle_in_use( DataHandle ) ) THEN
-      CALL destroy_grid( DataHandle )
+      ! Iterate through importState *and* exportState, find each ESMF_Field, 
+      ! extract its data pointer and deallocate it, then destroy the 
+      ! ESMF_Field.  
+      CALL ESMF_ImportStateGetCurrent(states(1)%stateptr, rc)
+      IF ( rc /= ESMF_SUCCESS ) THEN
+        CALL wrf_error_fatal( 'ext_esmf_ioclose:  ESMF_ImportStateGetCurrent failed' )
+      ENDIF
+      CALL ESMF_ExportStateGetCurrent(states(2)%stateptr, rc)
+      IF ( rc /= ESMF_SUCCESS ) THEN
+        CALL wrf_error_fatal( 'ext_esmf_ioclose:  ESMF_ExportStateGetCurrent failed' )
+      ENDIF
+      DO istate=1, 2
+        state => states(istate)%stateptr   ! all this to avoid assignment (@#$%)
+        ! Since there are no convenient iterators for ESMF_State (@#$%),
+        ! write a lot of code...
+        ! Figure out how many items are in the ESMF_State
+        CALL ESMF_StateGet(state, itemCount=numItems, rc=rc)
+        IF ( rc /= ESMF_SUCCESS) THEN
+          CALL wrf_error_fatal ( 'ext_esmf_ioclose:  ESMF_StateGet(numItems) failed' )
+        ENDIF
+        ! allocate an array to hold the types of all items
+        ALLOCATE( itemTypes(numItems) )
+        ! allocate an array to hold the names of all items
+        ALLOCATE( itemNames(numItems) )
+        ! get the item types and names
+        CALL ESMF_StateGet(state, stateitemtypeList=itemTypes, &
+                           itemNameList=itemNames, rc=rc)
+        IF ( rc /= ESMF_SUCCESS) THEN
+          WRITE(str,*) 'ext_esmf_ioclose:  ESMF_StateGet itemTypes failed with rc = ', rc
+          CALL wrf_error_fatal ( str )
+        ENDIF
+        ! count how many items are ESMF_Fields
+        numFields = 0
+        DO i=1,numItems
+          IF ( itemTypes(i) == ESMF_STATEITEM_FIELD ) THEN
+            numFields = numFields + 1
+          ENDIF
+        ENDDO
+        IF ( numFields > 0) THEN
+          ! finally, extract nested ESMF_Fields by name, if there are any
+          ! (should be able to do this by index at least -- @#%$)
+          DO i=1,numItems
+            IF ( itemTypes(i) == ESMF_STATEITEM_FIELD ) THEN
+              CALL ESMF_StateGetField( state, TRIM(itemNames(i)), &
+                                       tmpField, rc=rc )
+              IF ( rc /= ESMF_SUCCESS) THEN
+                WRITE(str,*) 'ext_esmf_ioclose:  ESMF_StateGetField(',TRIM(itemNames(i)),') failed'
+                CALL wrf_error_fatal ( str )
+              ENDIF
+              ! destroy pointer in field
+              CALL ESMF_FieldGetDataPointer( tmpField, tmp_ptr, rc=rc )
+              IF (rc /= ESMF_SUCCESS) THEN
+                WRITE( str , * )                                   &
+                  'ext_esmf_ioclose:  ESMF_FieldGetDataPointer( ', &
+                  TRIM(itemNames(i)),') failed'
+                CALL wrf_error_fatal ( TRIM(str) )
+              ENDIF
+              DEALLOCATE( tmp_ptr )
+              ! destroy field
+              CALL ESMF_FieldDestroy( tmpField, rc=rc )
+              IF (rc /= ESMF_SUCCESS) THEN
+                WRITE( str , * )                            &
+                  'ext_esmf_ioclose:  ESMF_FieldDestroy( ', &
+                  TRIM(itemNames(i)),') failed'
+                CALL wrf_error_fatal ( TRIM(str) )
+              ENDIF
+            ENDIF
+          ENDDO
+        ENDIF
+        ! deallocate locals
+        DEALLOCATE( itemTypes )
+        DEALLOCATE( itemNames )
+      ENDDO
+      ! destroy ESMF_Grid associated with DataHandle
+      CALL ioesmf_destroy_grid( DataHandle )
     ENDIF
   ENDIF
+#endif
   Status = 0
   RETURN
 END SUBROUTINE ext_esmf_ioclose
@@ -733,13 +1137,22 @@ SUBROUTINE ext_esmf_ioexit( Status )
   IMPLICIT NONE
   INTEGER ,       INTENT(OUT) :: Status
   INTEGER :: i
-  DO i = 1, int_num_handles
-    CALL destroy_grid( i )
-  ENDDO
-!$$$ clean up import and export states here!!  
-  CALL wrf_debug ( 5 , &
-    'ext_esmf_ioexit:  DEBUG:  add code to clean up lingering ESMF objects here' )
   Status = 0
+! TODO:  The code below causes ext_ncd_ioclose() to fail in the 
+! TODO:  SST component for reasons as-yet unknown.  
+! TODO:  Fix this so ESMF objects actually get destroyed to avoid memory 
+! TODO:  leaks and other extraordinary nastiness.  
+  CALL wrf_debug( 5, 'ext_esmf_ioexit:  WARNING:  not destroying ESMF objects' )
+#if 0
+  DO i = 1, int_num_handles
+    ! close any remaining open DataHandles
+    CALL ext_esmf_ioclose ( i, Status )
+    ! destroy ESMF_Grid for this DataHandle
+    CALL ioesmf_destroy_grid( i )
+  ENDDO
+  CALL wrf_debug ( 5 , &
+    'ext_esmf_ioexit:  DEBUG:  done cleaning up ESMF objects' )
+#endif
   RETURN  
 END SUBROUTINE ext_esmf_ioexit
 
@@ -756,7 +1169,8 @@ SUBROUTINE ext_esmf_get_next_time ( DataHandle, DateStr, Status )
   IF ( .NOT. int_handle_in_use( DataHandle ) ) THEN
     CALL wrf_error_fatal("io_esmf.F90: ext_esmf_get_next_time: DataHandle not opened" )
   ENDIF
-  CALL wrf_error_fatal( "ext_esmf_get_next_time() not supported yet")
+  CALL wrf_message( "ext_esmf_get_next_time() not supported yet")
+  Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_get_next_time
 
@@ -767,7 +1181,8 @@ SUBROUTINE ext_esmf_set_time ( DataHandle, DateStr, Status )
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: DateStr
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_error_fatal( "ext_esmf_set_time() not supported yet")
+  CALL wrf_message( "ext_esmf_set_time() not supported yet")
+  Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_set_time
 
@@ -791,7 +1206,8 @@ SUBROUTINE ext_esmf_get_var_info ( DataHandle , VarName , NDim , MemoryOrder , S
   IF ( .NOT. int_handle_in_use( DataHandle ) ) THEN
     CALL wrf_error_fatal("io_esmf.F90: ext_esmf_get_var_info: DataHandle not opened" )
   ENDIF
-  CALL wrf_error_fatal( "ext_esmf_get_var_info() not supported yet")
+  CALL wrf_message( "ext_esmf_get_var_info() not supported yet")
+  Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_get_var_info
 
@@ -809,7 +1225,8 @@ SUBROUTINE ext_esmf_get_next_var ( DataHandle, VarName, Status )
   IF ( .NOT. int_handle_in_use( DataHandle ) ) THEN
     CALL wrf_error_fatal("external/io_esmf/io_esmf.F90: ext_esmf_get_next_var: DataHandle not opened" )
   ENDIF
-  CALL wrf_error_fatal( "ext_esmf_get_next_var() not supported yet")
+  CALL wrf_message( "ext_esmf_get_next_var() not supported yet")
+  Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_get_next_var
 
@@ -823,7 +1240,8 @@ SUBROUTINE ext_esmf_get_dom_ti_real ( DataHandle,Element,   Data, Count, Outcoun
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Outcount
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_error_fatal( "ext_esmf_get_dom_ti_real() not supported yet")
+  CALL wrf_message( "ext_esmf_get_dom_ti_real() not supported yet")
+  Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_get_dom_ti_real 
 
@@ -836,12 +1254,14 @@ SUBROUTINE ext_esmf_put_dom_ti_real ( DataHandle,Element,   Data, Count,  Status
   real ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_error_fatal( "ext_esmf_put_dom_ti_real() not supported yet")
+  CALL wrf_message( "ext_esmf_put_dom_ti_real() not supported yet")
+  Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_put_dom_ti_real 
 
 !--- get_dom_ti_double
 SUBROUTINE ext_esmf_get_dom_ti_double ( DataHandle,Element,   Data, Count, Outcount, Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -850,11 +1270,13 @@ SUBROUTINE ext_esmf_get_dom_ti_double ( DataHandle,Element,   Data, Count, Outco
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
   CALL wrf_message('ext_esmf_get_dom_ti_double not supported yet')
+  Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_get_dom_ti_double 
 
 !--- put_dom_ti_double
 SUBROUTINE ext_esmf_put_dom_ti_double ( DataHandle,Element,   Data, Count,  Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -862,6 +1284,7 @@ SUBROUTINE ext_esmf_put_dom_ti_double ( DataHandle,Element,   Data, Count,  Stat
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
   CALL wrf_message('ext_esmf_put_dom_ti_double not supported yet')
+  Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_put_dom_ti_double 
 
@@ -875,7 +1298,22 @@ SUBROUTINE ext_esmf_get_dom_ti_integer ( DataHandle,Element,   Data, Count, Outc
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_message('ext_esmf_get_dom_ti_integer not supported yet')
+
+  Status = 0
+  IF      ( Element == 'WEST-EAST_GRID_DIMENSION' ) THEN
+    Data(1) = grid( DataHandle )%ide_save
+    Outcount = 1
+  ELSE IF ( Element == 'SOUTH-NORTH_GRID_DIMENSION' ) THEN
+    Data(1) = grid( DataHandle )%jde_save
+    Outcount = 1
+  ELSE IF ( Element == 'BOTTOM-TOP_GRID_DIMENSION' ) THEN
+    Data(1) = grid( DataHandle )%kde_save
+    Outcount = 1
+  ELSE
+    CALL wrf_message('ext_esmf_get_dom_ti_integer not fully supported yet')
+    Status = WRF_WARN_NOTSUPPORTED
+  ENDIF
+
   RETURN
 END SUBROUTINE ext_esmf_get_dom_ti_integer 
 
@@ -889,11 +1327,13 @@ SUBROUTINE ext_esmf_put_dom_ti_integer ( DataHandle,Element,   Data, Count,  Sta
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
   CALL wrf_message('ext_esmf_put_dom_ti_integer not supported yet')
+  Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_put_dom_ti_integer 
 
 !--- get_dom_ti_logical
 SUBROUTINE ext_esmf_get_dom_ti_logical ( DataHandle,Element,   Data, Count, Outcount, Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -902,11 +1342,13 @@ SUBROUTINE ext_esmf_get_dom_ti_logical ( DataHandle,Element,   Data, Count, Outc
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
   CALL wrf_message('ext_esmf_get_dom_ti_logical not supported yet')
+  Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_get_dom_ti_logical 
 
 !--- put_dom_ti_logical
 SUBROUTINE ext_esmf_put_dom_ti_logical ( DataHandle,Element,   Data, Count,  Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -914,6 +1356,7 @@ SUBROUTINE ext_esmf_put_dom_ti_logical ( DataHandle,Element,   Data, Count,  Sta
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
   CALL wrf_message('ext_esmf_put_dom_ti_logical not supported yet')
+  Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_put_dom_ti_logical 
 
@@ -926,6 +1369,7 @@ SUBROUTINE ext_esmf_get_dom_ti_char ( DataHandle,Element,   Data,  Status )
   CHARACTER*(*) :: Data
   INTEGER ,       INTENT(OUT) :: Status
   CALL wrf_message('ext_esmf_get_dom_ti_char not supported yet')
+  Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_get_dom_ti_char 
 
@@ -938,11 +1382,13 @@ SUBROUTINE ext_esmf_put_dom_ti_char ( DataHandle, Element,  Data,  Status )
   CHARACTER*(*) :: Data
   INTEGER ,       INTENT(OUT) :: Status
   CALL wrf_message('ext_esmf_put_dom_ti_char not supported yet')
+  Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_put_dom_ti_char 
 
 !--- get_dom_td_real
 SUBROUTINE ext_esmf_get_dom_td_real ( DataHandle,Element, DateStr,  Data, Count, Outcount, Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -952,11 +1398,13 @@ SUBROUTINE ext_esmf_get_dom_td_real ( DataHandle,Element, DateStr,  Data, Count,
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
   CALL wrf_message('ext_esmf_get_dom_td_real not supported yet')
+  Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_get_dom_td_real 
 
 !--- put_dom_td_real
 SUBROUTINE ext_esmf_put_dom_td_real ( DataHandle,Element, DateStr,  Data, Count,  Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -965,11 +1413,13 @@ SUBROUTINE ext_esmf_put_dom_td_real ( DataHandle,Element, DateStr,  Data, Count,
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
   CALL wrf_message('ext_esmf_put_dom_td_real not supported yet')
+  Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_put_dom_td_real 
 
 !--- get_dom_td_double
 SUBROUTINE ext_esmf_get_dom_td_double ( DataHandle,Element, DateStr,  Data, Count, Outcount, Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -979,11 +1429,13 @@ SUBROUTINE ext_esmf_get_dom_td_double ( DataHandle,Element, DateStr,  Data, Coun
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
   CALL wrf_message('ext_esmf_get_dom_td_double not supported yet')
+  Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_get_dom_td_double 
 
 !--- put_dom_td_double
 SUBROUTINE ext_esmf_put_dom_td_double ( DataHandle,Element, DateStr,  Data, Count,  Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -992,11 +1444,13 @@ SUBROUTINE ext_esmf_put_dom_td_double ( DataHandle,Element, DateStr,  Data, Coun
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
   CALL wrf_message('ext_esmf_put_dom_td_double not supported yet')
+  Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_put_dom_td_double 
 
 !--- get_dom_td_integer
 SUBROUTINE ext_esmf_get_dom_td_integer ( DataHandle,Element, DateStr,  Data, Count, Outcount, Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -1006,11 +1460,13 @@ SUBROUTINE ext_esmf_get_dom_td_integer ( DataHandle,Element, DateStr,  Data, Cou
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
   CALL wrf_message('ext_esmf_get_dom_td_integer not supported yet')
+  Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_get_dom_td_integer 
 
 !--- put_dom_td_integer
 SUBROUTINE ext_esmf_put_dom_td_integer ( DataHandle,Element, DateStr,  Data, Count,  Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -1019,11 +1475,13 @@ SUBROUTINE ext_esmf_put_dom_td_integer ( DataHandle,Element, DateStr,  Data, Cou
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
   CALL wrf_message('ext_esmf_put_dom_td_integer not supported yet')
+  Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_put_dom_td_integer 
 
 !--- get_dom_td_logical
 SUBROUTINE ext_esmf_get_dom_td_logical ( DataHandle,Element, DateStr,  Data, Count, Outcount, Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -1033,11 +1491,13 @@ SUBROUTINE ext_esmf_get_dom_td_logical ( DataHandle,Element, DateStr,  Data, Cou
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
   CALL wrf_message('ext_esmf_get_dom_td_logical not supported yet')
+  Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_get_dom_td_logical 
 
 !--- put_dom_td_logical
 SUBROUTINE ext_esmf_put_dom_td_logical ( DataHandle,Element, DateStr,  Data, Count,  Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -1046,11 +1506,13 @@ SUBROUTINE ext_esmf_put_dom_td_logical ( DataHandle,Element, DateStr,  Data, Cou
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
   CALL wrf_message('ext_esmf_put_dom_td_logical not supported yet')
+  Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_put_dom_td_logical 
 
 !--- get_dom_td_char
 SUBROUTINE ext_esmf_get_dom_td_char ( DataHandle,Element, DateStr,  Data,  Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -1058,11 +1520,13 @@ SUBROUTINE ext_esmf_get_dom_td_char ( DataHandle,Element, DateStr,  Data,  Statu
   CHARACTER*(*) :: Data
   INTEGER ,       INTENT(OUT) :: Status
   CALL wrf_message('ext_esmf_get_dom_td_char not supported yet')
+  Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_get_dom_td_char 
 
 !--- put_dom_td_char
 SUBROUTINE ext_esmf_put_dom_td_char ( DataHandle,Element, DateStr,  Data,  Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -1070,11 +1534,13 @@ SUBROUTINE ext_esmf_put_dom_td_char ( DataHandle,Element, DateStr,  Data,  Statu
   CHARACTER*(*) :: Data
   INTEGER ,       INTENT(OUT) :: Status
   CALL wrf_message('ext_esmf_put_dom_td_char not supported yet')
+  Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_put_dom_td_char 
 
 !--- get_var_ti_real
 SUBROUTINE ext_esmf_get_var_ti_real ( DataHandle,Element,  Varname, Data, Count, Outcount, Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -1084,11 +1550,13 @@ SUBROUTINE ext_esmf_get_var_ti_real ( DataHandle,Element,  Varname, Data, Count,
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
   CALL wrf_message('ext_esmf_get_var_ti_real not supported yet')
+  Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_get_var_ti_real 
 
 !--- put_var_ti_real
 SUBROUTINE ext_esmf_put_var_ti_real ( DataHandle,Element,  Varname, Data, Count,  Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -1097,11 +1565,13 @@ SUBROUTINE ext_esmf_put_var_ti_real ( DataHandle,Element,  Varname, Data, Count,
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
   CALL wrf_message('ext_esmf_put_var_ti_real not supported yet')
+  Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_put_var_ti_real 
 
 !--- get_var_ti_double
 SUBROUTINE ext_esmf_get_var_ti_double ( DataHandle,Element,  Varname, Data, Count, Outcount, Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -1111,11 +1581,13 @@ SUBROUTINE ext_esmf_get_var_ti_double ( DataHandle,Element,  Varname, Data, Coun
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
   CALL wrf_message('ext_esmf_get_var_ti_double not supported yet')
+  Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_get_var_ti_double 
 
 !--- put_var_ti_double
 SUBROUTINE ext_esmf_put_var_ti_double ( DataHandle,Element,  Varname, Data, Count,  Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -1124,11 +1596,13 @@ SUBROUTINE ext_esmf_put_var_ti_double ( DataHandle,Element,  Varname, Data, Coun
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
   CALL wrf_message('ext_esmf_put_var_ti_double not supported yet')
+  Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_put_var_ti_double 
 
 !--- get_var_ti_integer
 SUBROUTINE ext_esmf_get_var_ti_integer ( DataHandle,Element,  Varname, Data, Count, Outcount, Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -1138,11 +1612,13 @@ SUBROUTINE ext_esmf_get_var_ti_integer ( DataHandle,Element,  Varname, Data, Cou
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
   CALL wrf_message('ext_esmf_get_var_ti_integer not supported yet')
+  Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_get_var_ti_integer 
 
 !--- put_var_ti_integer
 SUBROUTINE ext_esmf_put_var_ti_integer ( DataHandle,Element,  Varname, Data, Count,  Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -1151,11 +1627,13 @@ SUBROUTINE ext_esmf_put_var_ti_integer ( DataHandle,Element,  Varname, Data, Cou
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
   CALL wrf_message('ext_esmf_put_var_ti_integer not supported yet')
+  Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_put_var_ti_integer 
 
 !--- get_var_ti_logical
 SUBROUTINE ext_esmf_get_var_ti_logical ( DataHandle,Element,  Varname, Data, Count, Outcount, Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -1165,11 +1643,13 @@ SUBROUTINE ext_esmf_get_var_ti_logical ( DataHandle,Element,  Varname, Data, Cou
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
   CALL wrf_message('ext_esmf_get_var_ti_logical not supported yet')
+  Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_get_var_ti_logical 
 
 !--- put_var_ti_logical
 SUBROUTINE ext_esmf_put_var_ti_logical ( DataHandle,Element,  Varname, Data, Count,  Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -1178,6 +1658,7 @@ SUBROUTINE ext_esmf_put_var_ti_logical ( DataHandle,Element,  Varname, Data, Cou
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
   CALL wrf_message('ext_esmf_put_var_ti_logical not supported yet')
+  Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_put_var_ti_logical 
 
@@ -1192,8 +1673,8 @@ SUBROUTINE ext_esmf_get_var_ti_char ( DataHandle,Element,  Varname, Data,  Statu
   INTEGER ,       INTENT(OUT) :: Status
   INTEGER locDataHandle, code
   CHARACTER*132 locElement, locVarName
-  Status = 0
   CALL wrf_message('ext_esmf_get_var_ti_char not supported yet')
+  Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_get_var_ti_char 
 
@@ -1208,13 +1689,14 @@ SUBROUTINE ext_esmf_put_var_ti_char ( DataHandle,Element,  Varname, Data,  Statu
   INTEGER ,       INTENT(OUT) :: Status
   REAL dummy
   INTEGER                 :: Count
-  Status = 0
   CALL wrf_message('ext_esmf_put_var_ti_char not supported yet')
+  Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_put_var_ti_char 
 
 !--- get_var_td_real
 SUBROUTINE ext_esmf_get_var_td_real ( DataHandle,Element,  DateStr,Varname, Data, Count, Outcount, Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -1225,11 +1707,13 @@ SUBROUTINE ext_esmf_get_var_td_real ( DataHandle,Element,  DateStr,Varname, Data
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
   CALL wrf_message('ext_esmf_get_var_td_real not supported yet')
+  Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_get_var_td_real 
 
 !--- put_var_td_real
 SUBROUTINE ext_esmf_put_var_td_real ( DataHandle,Element,  DateStr,Varname, Data, Count,  Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -1239,11 +1723,13 @@ SUBROUTINE ext_esmf_put_var_td_real ( DataHandle,Element,  DateStr,Varname, Data
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
   CALL wrf_message('ext_esmf_put_var_td_real not supported yet')
+  Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_put_var_td_real 
 
 !--- get_var_td_double
 SUBROUTINE ext_esmf_get_var_td_double ( DataHandle,Element,  DateStr,Varname, Data, Count, Outcount, Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -1254,11 +1740,13 @@ SUBROUTINE ext_esmf_get_var_td_double ( DataHandle,Element,  DateStr,Varname, Da
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
   CALL wrf_message('ext_esmf_get_var_td_double not supported yet')
+  Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_get_var_td_double 
 
 !--- put_var_td_double
 SUBROUTINE ext_esmf_put_var_td_double ( DataHandle,Element,  DateStr,Varname, Data, Count,  Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -1268,11 +1756,13 @@ SUBROUTINE ext_esmf_put_var_td_double ( DataHandle,Element,  DateStr,Varname, Da
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
   CALL wrf_message('ext_esmf_put_var_td_double not supported yet')
+  Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_put_var_td_double 
 
 !--- get_var_td_integer
 SUBROUTINE ext_esmf_get_var_td_integer ( DataHandle,Element,  DateStr,Varname, Data, Count, Outcount, Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -1283,11 +1773,13 @@ SUBROUTINE ext_esmf_get_var_td_integer ( DataHandle,Element,  DateStr,Varname, D
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
   CALL wrf_message('ext_esmf_get_var_td_integer not supported yet')
+  Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_get_var_td_integer 
 
 !--- put_var_td_integer
 SUBROUTINE ext_esmf_put_var_td_integer ( DataHandle,Element,  DateStr,Varname, Data, Count,  Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -1297,11 +1789,13 @@ SUBROUTINE ext_esmf_put_var_td_integer ( DataHandle,Element,  DateStr,Varname, D
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
   CALL wrf_message('ext_esmf_put_var_td_integer not supported yet')
+  Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_put_var_td_integer 
 
 !--- get_var_td_logical
 SUBROUTINE ext_esmf_get_var_td_logical ( DataHandle,Element,  DateStr,Varname, Data, Count, Outcount, Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -1312,11 +1806,13 @@ SUBROUTINE ext_esmf_get_var_td_logical ( DataHandle,Element,  DateStr,Varname, D
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
   CALL wrf_message('ext_esmf_get_var_td_logical not supported yet')
+  Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_get_var_td_logical 
 
 !--- put_var_td_logical
 SUBROUTINE ext_esmf_put_var_td_logical ( DataHandle,Element,  DateStr,Varname, Data, Count,  Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -1326,11 +1822,13 @@ SUBROUTINE ext_esmf_put_var_td_logical ( DataHandle,Element,  DateStr,Varname, D
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
   CALL wrf_message('ext_esmf_put_var_td_logical not supported yet')
+  Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_put_var_td_logical 
 
 !--- get_var_td_char
 SUBROUTINE ext_esmf_get_var_td_char ( DataHandle,Element,  DateStr,Varname, Data,  Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -1339,11 +1837,13 @@ SUBROUTINE ext_esmf_get_var_td_char ( DataHandle,Element,  DateStr,Varname, Data
   CHARACTER*(*) :: Data
   INTEGER ,       INTENT(OUT) :: Status
   CALL wrf_message('ext_esmf_get_var_td_char not supported yet')
+  Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_get_var_td_char 
 
 !--- put_var_td_char
 SUBROUTINE ext_esmf_put_var_td_char ( DataHandle,Element,  DateStr,Varname, Data,  Status )
+  USE module_ext_esmf
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
@@ -1352,6 +1852,7 @@ SUBROUTINE ext_esmf_put_var_td_char ( DataHandle,Element,  DateStr,Varname, Data
   CHARACTER*(*) :: Data
   INTEGER ,       INTENT(OUT) :: Status
   CALL wrf_message('ext_esmf_put_var_td_char not supported yet')
+  Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_put_var_td_char 
 

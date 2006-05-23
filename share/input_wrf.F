@@ -68,6 +68,9 @@
 ! 
 !</DESCRIPTION>
 
+    WRITE(wrf_err_message,*)'input_wrf: begin, fid = ',fid
+    CALL wrf_debug( 300 , wrf_err_message )
+
     ierr = 0
 
     CALL get_ijk_from_grid (  grid ,                        &
@@ -334,11 +337,17 @@
 ! If this was not a training read (dry run) check for erroneous values.  
     CALL wrf_inquire_filename ( fid , fname , filestate , ierr )
     IF ( ierr /= 0 ) THEN
-      WRITE(wrf_err_message,*)'module_io_wrf: output_wrf: wrf_inquire_filename Status = ',ierr
+      WRITE(wrf_err_message,*)'module_io_wrf: input_wrf: wrf_inquire_filename Status = ',ierr
       CALL wrf_error_fatal( wrf_err_message )
     ENDIF
 
+    WRITE(wrf_err_message,*)'input_wrf: fid,filestate = ',fid,filestate
+    CALL wrf_debug( 300 , wrf_err_message )
+
     dryrun        = ( filestate .EQ. WRF_FILE_OPENED_NOT_COMMITTED )
+
+    WRITE(wrf_err_message,*)'input_wrf: dryrun = ',dryrun
+    CALL wrf_debug( 300 , wrf_err_message )
 
     check_if_dryrun : IF ( .NOT. dryrun ) THEN
 
@@ -350,9 +359,17 @@
        IF ( ( ide .NE. ide_compare    ) .OR. &
             ( kde .NE. kde_compare    ) .OR. &
             ( jde .NE. jde_compare    ) ) THEN
-         WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  namelist ide,jde,kde=',ide,jde,kde,&
-                                 '; input data ide,jde,kde=',ide_compare , jde_compare , kde_compare
-         CALL wrf_error_fatal( wrf_err_message )
+! a hack for sure
+#ifndef ESMFIO
+          WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  namelist ide,jde,kde=',ide,jde,kde,&
+                                  '; input data ide,jde,kde=',ide_compare , jde_compare , kde_compare
+          CALL wrf_error_fatal( wrf_err_message )
+#else
+          WRITE(wrf_err_message,*)'DEBUG input_wrf.F switch = ',switch, &
+                                  ': namelist ide,jde,kde=',ide,jde,kde,&
+                                  '; input data ide,jde,kde=',ide_compare , jde_compare , kde_compare
+          CALL wrf_debug( 100, wrf_err_message )
+#endif
        ENDIF
     ENDIF
 
@@ -463,6 +480,9 @@
 #else
     CALL wrf_message ( "ALL I/O DISABLED IN share/module_io_wrf.F")
 #endif
+
+    WRITE(wrf_err_message,*)'input_wrf: end, fid = ',fid
+    CALL wrf_debug( 300 , wrf_err_message )
 
     RETURN
   END SUBROUTINE input_wrf

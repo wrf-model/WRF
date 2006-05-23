@@ -1564,6 +1564,9 @@ banner 9
 			if ( ! -e main/ideal.exe ) set ok = 1
 		endif
 
+                if ( ! -x external/io_netcdf/diffwrf ) set ok = 1
+                if ( ! -x external/io_int/diffwrf ) set ok = 1
+
 		if ( $ok != 0 ) then
 			echo "SUMMARY compilation    for $core           parallel $compopt $esmf_lib_str FAIL" >>! ${DEF_DIR}/wrftest.output
 			$MAIL -s "REGRESSION FAILURE $ARCH[1] " $FAIL_MAIL < ${DEF_DIR}/wrftest.output

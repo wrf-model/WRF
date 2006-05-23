@@ -18,6 +18,7 @@ SUBROUTINE microphysics_driver(                                          &
                       ,qv_curr,qc_curr,qr_curr,qi_curr,qs_curr,qg_curr   &
                       ,qni_curr                                          &
                       ,f_qv,f_qc,f_qr,f_qi,f_qs,f_qg,f_qni               &
+                      ,qt_curr,f_qt                                      &
                       ,mp_restart_state,tbpvs_state,tbpvs0_state          & ! for etampnew
                       ,w ,z                                              &
                       ,rainnc, rainncv                                   &
@@ -204,7 +205,7 @@ SUBROUTINE microphysics_driver(                                          &
          INTENT(INOUT ) ::                                        &
                   w, z                                            & 
                  ,qv_curr,qc_curr,qr_curr,qi_curr,qs_curr,qg_curr &
-                 ,qni_curr
+                 ,qt_curr,qni_curr
 
 !
    REAL, DIMENSION( ims:ime , jms:jme ),                          &
@@ -220,7 +221,7 @@ SUBROUTINE microphysics_driver(                                          &
                                          ,tbpvs_state,tbpvs0_state
 !
 
-   LOGICAL, OPTIONAL ::             f_qv,f_qc,f_qr,f_qi,f_qs,f_qg,f_qni
+   LOGICAL, OPTIONAL ::      f_qv,f_qc,f_qr,f_qi,f_qs,f_qg,f_qni,f_qt
 
 
 ! LOCAL  VAR
@@ -447,7 +448,9 @@ SUBROUTINE microphysics_driver(                                          &
         CASE (ETAMPNEW)
              CALL wrf_debug ( 100 , 'microphysics_driver: calling etampnew')
 
-             IF ( PRESENT( qv_curr ) .AND. PRESENT( qc_curr ) .AND. &
+             IF ( PRESENT( qv_curr ) .AND. PRESENT( qt_curr ) .AND. &
+                  PRESENT( qc_curr ) .AND. PRESENT( qr_curr ) .AND. &
+                  PRESENT( qs_curr ) .AND.                          &
                   PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) .AND.  &
                   PRESENT( mp_restart_state )                  .AND. &
                   PRESENT( tbpvs_state )                      .AND. &
@@ -457,6 +460,9 @@ SUBROUTINE microphysics_driver(                                          &
                  ,DZ8W=dz8w,RHO_PHY=rho,P_PHY=p,PI_PHY=pi_phy,TH_PHY=th &
                  ,QV=qv_curr                                        &
                  ,QC=qc_curr                                        &
+                 ,QS=qs_curr                                        &
+                 ,QR=qr_curr                                        &
+                 ,QT=qt_curr                                        &
                  ,LOWLYR=LOWLYR,SR=SR                               &
                  ,F_ICE_PHY=F_ICE_PHY,F_RAIN_PHY=F_RAIN_PHY         &
                  ,F_RIMEF_PHY=F_RIMEF_PHY                           &

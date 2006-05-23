@@ -85,9 +85,10 @@ MODULE module_mp_etanew
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
       SUBROUTINE ETAMP_NEW (itimestep,DT,DX,DY,                         &
-     &                      dz8w,rho_phy,p_phy,pi_phy,th_phy,qv,qc,     &
+     &                      dz8w,rho_phy,p_phy,pi_phy,th_phy,qv,qt,     &
      &                      LOWLYR,SR,                                  &
      &                      F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,           &
+     &                      QC,QR,QS,                                   &
      &                      mp_restart_state,tbpvs_state,tbpvs0_state,  &
      &                      RAINNC,RAINNCV,                             &
      &                      ids,ide, jds,jde, kds,kde,		        &
@@ -107,7 +108,9 @@ MODULE module_mp_etanew
       REAL, INTENT(IN),     DIMENSION(ims:ime, kms:kme, jms:jme)::      &
      &                      dz8w,p_phy,pi_phy,rho_phy
       REAL, INTENT(INOUT),  DIMENSION(ims:ime, kms:kme, jms:jme)::      &
-     &                      th_phy,qv,qc
+     &                      th_phy,qv,qt
+      REAL, INTENT(INOUT),  DIMENSION(ims:ime, kms:kme, jms:jme ) ::    &
+     &                      qc,qr,qs
       REAL, INTENT(INOUT),  DIMENSION(ims:ime, kms:kme, jms:jme ) ::    &
      &                      F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY
       REAL, INTENT(INOUT),  DIMENSION(ims:ime,jms:jme)           ::     &
@@ -144,6 +147,7 @@ MODULE module_mp_etanew
       REAL,  DIMENSION(its:ite, kts:kte, jts:jte):: t_phy
 
       INTEGER :: I,J,K,KFLIP
+      REAL :: WC
 !
 !-----------------------------------------------------------------------
 !**********************************************************************
@@ -217,7 +221,7 @@ MODULE module_mp_etanew
 
       CALL EGCP01DRV(DT,LOWLYR,                                         &
      &               APREC,PREC,ACPREC,SR,NSTATS,QMAX,QTOT,	        &
-     &               dz8w,rho_phy,qc,t_phy,qv,F_ICE_PHY,P_PHY,          &
+     &               dz8w,rho_phy,qt,t_phy,qv,F_ICE_PHY,P_PHY,          &
      &               F_RAIN_PHY,F_RIMEF_PHY,TLATGS_PHY,TRAIN_PHY,       &
      &               ids,ide, jds,jde, kds,kde,		                &
      &               ims,ime, jms,jme, kms,kme,		                &
@@ -229,6 +233,28 @@ MODULE module_mp_etanew
 	DO i = its,ite
   	   th_phy(i,k,j) = t_phy(i,k,j)/pi_phy(i,k,j)
            qv(i,k,j)=qv(i,k,j)/(1.-qv(i,k,j))  !Convert to mixing ratio
+           WC=qt(I,K,J)
+           QS(I,K,J)=0.
+           QR(I,K,J)=0.
+           QC(I,K,J)=0.
+           IF(F_ICE_PHY(I,K,J)>=1.)THEN
+             QS(I,K,J)=WC
+           ELSEIF(F_ICE_PHY(I,K,J)<=0.)THEN
+             QC(I,K,J)=WC
+           ELSE
+             QS(I,K,J)=F_ICE_PHY(I,K,J)*WC
+             QC(I,K,J)=WC-QS(I,K,J)
+           ENDIF
+!
+           IF(QC(I,K,J)>0..AND.F_RAIN_PHY(I,K,J)>0.)THEN
+             IF(F_RAIN_PHY(I,K,J).GE.1.)THEN
+               QR(I,K,J)=QC(I,K,J)
+               QC(I,K,J)=0.
+             ELSE
+               QR(I,K,J)=F_RAIN_PHY(I,K,J)*QC(I,K,J)
+               QC(I,K,J)=QC(I,K,J)-QR(I,K,J)
+             ENDIF
+           ENDIF
 	ENDDO
         ENDDO
      ENDDO
@@ -271,7 +297,7 @@ MODULE module_mp_etanew
      &  its,ite, jts,jte, kts,kte)
 !-----------------------------------------------------------------------
 ! DTPH           Physics time step (s)
-! CWM_PHY (qc)   Mixing ratio of the total condensate. kg/kg
+! CWM_PHY (qt)   Mixing ratio of the total condensate. kg/kg
 ! Q_PHY          Mixing ratio of water vapor. kg/kg
 ! F_RAIN_PHY     Fraction of rain. 
 ! F_ICE_PHY      Fraction of ice.

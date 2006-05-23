@@ -171,7 +171,7 @@ CONTAINS
 !-----------------------------------------------------------------------
       SUBROUTINE ETARA(DT,THRATEN,THRATENLW,THRATENSW,CLDFRA,PI3D       & 
      &                ,XLAND,P8W,DZ8W,RHO_PHY,P_PHY,T                   &
-     &                ,QV,QW,QI                                         & 
+     &                ,QV,QW,QI,QS                                      & 
      &                ,TSK2D,GLW,RSWIN,GSW,RSWINC                       &
      &                ,RSWTOA,RLWTOA,CZMEAN                             & 
      &                ,GLAT,GLON,HTOP,HBOT,HTOPR,HBOTR,ALBEDO,CUPPT     &
@@ -216,9 +216,10 @@ CONTAINS
       REAL,INTENT(OUT),DIMENSION(ims:ime, jms:jme):: CZMEAN             &
      &                                           ,RSWIN,RSWINC        &
      &                                           ,CFRACL,CFRACM,CFRACH
-      REAL, INTENT(IN), DIMENSION(ims:ime, kms:kme, jms:jme):: QI,QV,   &
+      REAL, INTENT(IN), DIMENSION(ims:ime, kms:kme, jms:jme):: QS,QV,   &
      &                                                         QW,T
       LOGICAL, INTENT(IN) :: gfdl_lw,gfdl_sw
+      REAL, OPTIONAL, INTENT(IN), DIMENSION(ims:ime, kms:kme, jms:jme):: QI
 
       REAL, DIMENSION(its:ite, kms:kme, jts:jte):: PFLIP,QIFLIP,QFLIP,  &
      &                                             QWFLIP,TFLIP
@@ -276,7 +277,10 @@ CONTAINS
           TFLIP (I,K,J)=T(I,KFLIP,J)
           QFLIP (I,K,J)=MAX(0.,QV(I,KFLIP,J)/(1.+QV(I,KFLIP,J)))
           QWFLIP(I,K,J)=QW(I,KFLIP,J)      !Modified
-          QIFLIP(I,K,J)=QI(I,KFLIP,J)      !Added QI
+! Note that QIFLIP will contain QS+QI if both are passed in, otherwise just QS 
+!     Eta MP now outputs QS instead of QI (JD 2006-05-12)
+          QIFLIP(I,K,J)=QS(I,KFLIP,J)      !Added QS
+          IF(PRESENT(QI))QIFLIP(I,K,J)=QIFLIP(I,K,J)+QI(I,KFLIP,J)      !Added QI
 !         PFLIP (I,K,J)=P_PHY(I,KFLIP,J)
 !
 !***  USE MONOTONIC HYDROSTATIC PRESSURE INTERPOLATED TO MID-LEVEL

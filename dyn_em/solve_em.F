@@ -1749,6 +1749,8 @@ BENCH_END(small_step_finish_tim)
 
    moist_variable_loop: do im = PARAM_FIRST_SCALAR, num_3d_m
 
+   if (adv_moist_cond .or. (im==p_qv) ) then
+
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij )
 
@@ -1854,6 +1856,8 @@ BENCH_END(flow_depbdy_tim)
 
    ENDDO moist_tile_loop_2
    !$OMP END PARALLEL DO
+
+     ENDIF  !-- if (adv_moist_cond .or. (im==p_qv) ) then
 
    ENDDO moist_variable_loop
 
@@ -2563,6 +2567,7 @@ BENCH_START(micro_driver_tim)
      &        , QS_CURR=moist(ims,kms,jms,P_QS), F_QS=F_QS              &
      &        , QG_CURR=moist(ims,kms,jms,P_QG), F_QG=F_QG              &
      &        , QNI_CURR=scalar(ims,kms,jms,P_QNI), F_QNI=F_QNI         &
+     &        , QT_CURR=scalar(ims,kms,jms,P_QT), F_QT=F_QT             &
                                                                           )
 BENCH_END(micro_driver_tim)
 

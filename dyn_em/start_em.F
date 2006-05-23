@@ -510,6 +510,7 @@
                       TMN,XLAND,ZNT,Z0,UST,MOL,PBLH,TKE_MYJ,     &
                       EXCH_H,THC,SNOWC,MAVAIL,HFX,QFX,RAINBL, &
                       TSLB,ZS,DZS,config_flags%num_soil_layers,warm_rain,  &
+                      adv_moist_cond,                         &
                       APR_GR,APR_W,APR_MC,APR_ST,APR_AS,      &
                       APR_CAPMA,APR_CAPME,APR_CAPMI,          &
                       XICE,VEGFRA,SNOW,CANWAT,SMSTAV,         &

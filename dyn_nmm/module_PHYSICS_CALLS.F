@@ -175,7 +175,7 @@
       DO J=MYJS,MYJE
       DO K=KTS,KTE
       DO I=MYIS,MYIE
-        WATER(I,K,J,P_QS)=0.
+        WATER(I,K,J,P_QI)=0.
         WATER(I,K,J,P_QG)=0.
       ENDDO
       ENDDO
@@ -230,6 +230,9 @@
 !-----------------------------------------------------------------------
 !***  DECOMPOSE CLOUDS TO CLOUD LIQUID, RAIN, AND CLOUD ICE + SNOW.
 !-----------------------------------------------------------------------
+! THIS CODE WILL NOT BE NEEDED IN THE FUTURE SINCE THE ETAMPNEW SCHEME NOW FILLS
+! THE MOIST ARRAY WITH DECOMPOSED SPECIES, BUT MOIST IS NOT YET PASSED THROUGH
+! THE NMM DRIVERS (JD 060328) AND THE LOCAL WATER ARRAY IS USED
 !
           WC=CWM(I,K,J)
           QI=0.
@@ -259,7 +262,7 @@
 !
           WATER(I,K,J,P_QC)=QW
           WATER(I,K,J,P_QR)=QR
-          WATER(I,K,J,P_QI)=QI
+          WATER(I,K,J,P_QS)=QI
         ENDDO
 !
         DO K=KTS+1,KTE
@@ -874,7 +877,7 @@
           ENDIF 
 !
           WATER(I,K,J,P_QC)=QW
-          WATER(I,K,J,P_QI)=QI
+          WATER(I,K,J,P_QS)=QI
           WATER(I,K,J,P_QR)=QR
 !
           EXNER(I,K,J)=(1.E5/PLYR)**CAPA
@@ -1057,7 +1060,7 @@
      &               ,U_FRAME=U_FRAME,V_FRAME=V_FRAME                 &
      &               ,RUBLTEN=DUDT,RVBLTEN=DVDT,RTHBLTEN=RTHBLTEN     &
      &               ,RQVBLTEN=RQVBLTEN,RQCBLTEN=RQCBLTEN             &
-     &               ,RQIBLTEN=RQIBLTEN                               &
+     &               ,RQSBLTEN=RQIBLTEN                               &
      &               ,TSK=TSFC,XLAND=XLAND,ZNT=Z0,HT=SFCZ             &
      &               ,UST=USTAR, PBLH=PBLH                            &
      &               ,HFX=TWBS,QFX=QWBS,  GRDFLX=GRNFLX               &
@@ -1245,7 +1248,7 @@
           Q(I,K,J)=RATIOMX/(1.+RATIOMX)
 !         Q(I,K,J)=MAX(Q(I,K,J),EPSQ)
           QW=WATER(I,K,J,P_QC)+RQCBLTEN(I,K,J)*DTPHS  
-          QI=WATER(I,K,J,P_QI)+RQIBLTEN(I,K,J)*DTPHS  
+          QI=WATER(I,K,J,P_QS)+RQIBLTEN(I,K,J)*DTPHS  
           QR=WATER(I,K,J,P_QR)  
           CWM(I,K,J)=QW+QI+QR  
 !
@@ -1677,7 +1680,7 @@
 !
           WATER(I,K,J,P_QC)=QW
           WATER(I,K,J,P_QR)=QR
-          WATER(I,K,J,P_QI)=QI
+          WATER(I,K,J,P_QS)=QI
 
           TH_PHY(I,K,J)=TL(K)*(1.E5/PLYR)**CAPA
 !!!       P8W(I,KFLIP,J)=PINT(I,K+1,J)
@@ -2041,7 +2044,7 @@
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME,N_MOIST) :: WATER
 !
-      LOGICAL :: E_BDY,WARM_RAIN
+      LOGICAL :: E_BDY,WARM_RAIN,F_QT
 !
 !-----------------------------------------------------------------------
 !***********************************************************************
@@ -2085,7 +2088,8 @@
           RR(I,K,J)=PLYR/(R_D*TL(K)*(P608*QL(K)+1.))
           T_PHY(I,K,J)=TL(K)
           WATER(I,K,J,P_QV)=QL(K)/(1.-QL(K))  !Convert to mixing ratio 
-          WATER(I,K,J,P_QC)=CWM(I,K,J)
+!     THE FOLLOWING IS REMOVED BECAUSE CWM WILL BE PASSED INTO QT_CURR (SCALAR)
+!          WATER(I,K,J,P_QC)=CWM(I,K,J)
           PI_PHY(I,K,J)=(PLYR*1.E-5)**CAPA
           TH_PHY(I,K,J)=TL(K)/PI_PHY(I,K,J)
 !!!       P8W(I,KFLIP,J)=PINT(I,K+1,J)
@@ -2124,6 +2128,7 @@
      &                 ,QI_CURR=WATER(IMS,KMS,JMS,P_QI),F_QI=F_QI       &
      &                 ,QS_CURR=WATER(IMS,KMS,JMS,P_QS),F_QS=F_QS       &
      &                 ,QG_CURR=WATER(IMS,KMS,JMS,P_QG),F_QG=F_QG       &
+     &                 ,QT_CURR=CWM,F_QT=F_QT       &
      &                 ,MP_RESTART_STATE=MP_RESTART_STATE               &
      &                 ,TBPVS_STATE=TBPVS_STATE                         &
      &                 ,TBPVS0_STATE=TBPVS0_STATE                       &
@@ -2167,7 +2172,8 @@
           TRAIN(I,K,J)=TRAIN(I,K,J)+(TNEW-T(I,K,J))*RDTPHS
           T(I,K,J)=TNEW
           Q(I,K,J)=WATER(I,K,J,P_QV)/(1.+WATER(I,K,J,P_QV)) !To s.h.
-          CWM(I,K,J)=WATER(I,K,J,P_QC)
+!      THE FOLLOWING LINE IS NO LONGER NEEDED BECAUSE CWM IS NOT IN WATER
+!          CWM(I,K,J)=WATER(I,K,J,P_QC)
         ENDDO
 !
 !***  UPDATE PRECIPITATION

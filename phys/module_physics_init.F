@@ -44,6 +44,7 @@ CONTAINS
                          TMN,XLAND,ZNT,Z0,UST,MOL,PBLH,TKE_MYJ,  &
                          EXCH_H,THC,SNOWC,MAVAIL,HFX,QFX,RAINBL, &
                          TSLB,ZS,DZS,num_soil_layers,warm_rain,  & 
+                         adv_moist_cond,                         &
                          APR_GR,APR_W,APR_MC,APR_ST,APR_AS,      &
                          APR_CAPMA,APR_CAPME,APR_CAPMI,          &
                          XICE,VEGFRA,SNOW,CANWAT,SMSTAV,         &
@@ -65,7 +66,7 @@ CONTAINS
    TYPE (grid_config_rec_type)              :: config_flags
 
    INTEGER , INTENT(IN)        :: id
-   LOGICAL , INTENT(OUT)       :: warm_rain
+   LOGICAL , INTENT(OUT)       :: warm_rain, adv_moist_cond
 !   LOGICAL , INTENT (IN)       :: FNDSOILW, FNDSNOWH
    LOGICAL, PARAMETER          :: FNDSOILW=.true., FNDSNOWH=.true.
    INTEGER , INTENT(IN)        :: ids, ide, jds, jde, kds, kde,  &
@@ -370,6 +371,7 @@ integer myproc
    CALL wrf_debug ( 200 , 'module_start: phy_init: Before call to mp_init' )
 
    CALL mp_init(RAINNC,config_flags,restart,warm_rain,          &
+                adv_moist_cond,                                 &
                 MPDT, DT, DX, DY, LOWLYR,                       & 
                 F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,               &
                 mp_restart_state,tbpvs_state,tbpvs0_state,       &
@@ -1121,6 +1123,7 @@ integer myproc
 
 !==================================================================
    SUBROUTINE mp_init(RAINNC,config_flags,restart,warm_rain,      &
+                      adv_moist_cond,                             & ! for eta mp
                       MPDT, DT, DX, DY, LOWLYR,                   & ! for eta mp
                       F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,           & ! for eta mp
                       mp_restart_state,tbpvs_state,tbpvs0_state,   & ! eta mp
@@ -1142,7 +1145,7 @@ integer myproc
 ! Arguments
    TYPE (grid_config_rec_type) ::     config_flags
    LOGICAL , INTENT(IN)        :: restart
-   LOGICAL , INTENT(OUT)       :: warm_rain
+   LOGICAL , INTENT(OUT)       :: warm_rain, adv_moist_cond
    REAL    , INTENT(IN)        :: MPDT, DT, DX, DY
 
    INTEGER , INTENT(IN)        :: ids, ide, jds, jde, kds, kde,   &
@@ -1160,6 +1163,7 @@ integer myproc
    INTEGER :: i, j, itf, jtf
 
    warm_rain = .false.
+   adv_moist_cond = .true.
    itf=min0(ite,ide-1)
    jtf=min0(jte,jde-1)
 
@@ -1182,6 +1186,7 @@ integer myproc
      CASE (WSM6SCHEME)
           CALL wsm6init(rhoair0,rhowater,rhosnow,cliq,cv, allowed_to_read )
      CASE (ETAMPNEW)
+         adv_moist_cond = .false.
          CALL etanewinit (MPDT,DT,DX,DY,LOWLYR,restart,           &
                           F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,       &
                           mp_restart_state,tbpvs_state,tbpvs0_state,&

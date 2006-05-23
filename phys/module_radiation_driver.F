@@ -424,14 +424,14 @@ CONTAINS
 
              CALL wrf_debug (100, 'CALL gfdllw')
 
-             IF ( PRESENT(F_QV) .AND. PRESENT(F_QC) .AND. PRESENT(F_QI) .AND. &
-                  PRESENT(qv)   .AND. PRESENT(qc)   .AND. PRESENT(qi)  ) THEN
-               IF ( F_QV .AND. F_QC .AND. F_QI ) THEN
+             IF ( PRESENT(F_QV) .AND. PRESENT(F_QC) .AND. PRESENT(F_QS) .AND. &
+                  PRESENT(qv)   .AND. PRESENT(qc)   .AND. PRESENT(qs)  ) THEN
+               IF ( F_QV .AND. F_QC .AND. F_QS ) THEN
                  gfdl_lw  = .true.
                  CALL ETARA(                                        &
                   DT=dt,XLAND=xland                                 &
                  ,P8W=p8w,DZ8W=dz8w,RHO_PHY=rho,P_PHY=p,T=t         &
-                 ,QV=qv,QW=qc,QI=qi                                 &
+                 ,QV=qv,QW=qc,QI=qi,QS=qs                           &
                  ,TSK2D=tsk,GLW=GLW,RSWIN=SWDOWN,GSW=GSW            &
                  ,RSWINC=SWDOWNC,CLDFRA=CLDFRA,PI3D=pi              &
                  ,GLAT=glat,GLON=glon,HTOP=htop,HBOT=hbot           &
@@ -544,14 +544,14 @@ CONTAINS
 
              CALL wrf_debug (100, 'CALL gfdlsw')
 
-             IF ( PRESENT(F_QV) .AND. PRESENT(F_QC) .AND. PRESENT(F_QI) .AND. &
-                  PRESENT(qv)   .AND. PRESENT(qc)   .AND. PRESENT(qi)  ) THEN
-               IF ( F_QV .AND. F_QC .AND. F_QI ) THEN
+             IF ( PRESENT(F_QV) .AND. PRESENT(F_QC) .AND. PRESENT(F_QS) .AND. &
+                  PRESENT(qv)   .AND. PRESENT(qc)   .AND. PRESENT(qs)  ) THEN
+               IF ( F_QV .AND. F_QC .AND. F_QS ) THEN
                  gfdl_sw = .true.
                  CALL ETARA(                                        &
                   DT=dt,XLAND=xland                                 &
                  ,P8W=p8w,DZ8W=dz8w,RHO_PHY=rho,P_PHY=p,T=t         &
-                 ,QV=qv,QW=qc,QI=qi                                 &
+                 ,QV=qv,QW=qc,QI=qi,QS=qs                           &
                  ,TSK2D=tsk,GLW=GLW,RSWIN=SWDOWN,GSW=GSW            &
                  ,RSWINC=SWDOWNC,CLDFRA=CLDFRA,PI3D=pi              &
                  ,GLAT=glat,GLON=glon,HTOP=htop,HBOT=hbot           &

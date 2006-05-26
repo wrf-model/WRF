@@ -494,6 +494,15 @@ CONTAINS
         PSIM2(I)=AMAX1(PSIM2(I),-10.)                              
         PSIH2(I)=PSIM2(I)                                         
 
+!       1.0 over Monin-Obukhov length
+        IF(UST(I).LT.0.01)THEN
+           RMOL(I)=BR(I)*GZ1OZ0(I) !ZA/L
+        ELSE
+           RMOL(I)=KARMAN*GOVRTH(I)*ZA(I)*MOL(I)/(UST(I)*UST(I)) !ZA/L
+        ENDIF
+        RMOL(I)=AMIN1(RMOL(I),9.999) ! ZA/L
+        RMOL(I) = RMOL(I)/ZA(I) !1.0/L
+
         GOTO 320                                                                 
 !                                                                                
 !-----CLASS 2; DAMPED MECHANICAL TURBULENCE:                                     
@@ -511,6 +520,25 @@ CONTAINS
         PSIM2(I)=2./ZA(I)*PSIM(I)
         PSIM2(I)=AMAX1(PSIM2(I),-10.)                              
         PSIH2(I)=PSIM2(I)                                         
+
+        ! Linear form: PSIM = -0.5*ZA/L; e.g, see eqn 16 of
+        ! Blackadar, Modeling the nocturnal boundary layer, Preprints,
+        ! Third Symposium on Atmospheric Turbulence Diffusion and Air Quality,
+        ! Raleigh, NC, 1976
+        ZOL(I) = BR(I)*GZ1OZ0(I)/(1.00001-5.0*BR(I))
+
+        if ( ZOL(I) .GT. 0.5 ) then ! linear form ok
+           ! Holtslag and de Bruin, J. App. Meteor 27, 689-704, 1988;
+           ! see also, Launiainen, Boundary-Layer Meteor 76,165-179, 1995
+           ! Eqn (8) of Launiainen, 1995
+           ZOL(I) = ( 1.89*GZ1OZ0(I) + 44.2 ) * BR(I)*BR(I)    &
+                + ( 1.18*GZ1OZ0(I) - 1.37 ) * BR(I)
+           ZOL(I)=AMIN1(ZOL(I),9.999)
+        end if
+
+        ! 1.0 over Monin-Obukhov length
+        RMOL(I)= ZOL(I)/ZA(I)
+
         GOTO 320                                                                 
 !                                                                                
 !-----CLASS 3; FORCED CONVECTION:                                                
@@ -529,6 +557,8 @@ CONTAINS
         ELSE                                                                     
           ZOL(I)=KARMAN*GOVRTH(I)*ZA(I)*MOL(I)/(UST(I)*UST(I)) 
         ENDIF                                                                    
+
+        RMOL(I) = ZOL(I)/ZA(I)  
 
         GOTO 320                                                                 
 !                                                                                
@@ -570,6 +600,9 @@ CONTAINS
         PSIM(I)=AMIN1(PSIM(I),0.9*GZ1OZ0(I))
         PSIH2(I)=AMIN1(PSIH2(I),0.9*GZ2OZ0(I))
         PSIM10(I)=AMIN1(PSIM10(I),0.9*GZ10OZ0(I))
+
+        RMOL(I) = ZOL(I)/ZA(I)  
+
   320 CONTINUE                                                                   
 !                                                                                
 !-----COMPUTE THE FRICTIONAL VELOCITY:                                           
@@ -691,13 +724,13 @@ CONTAINS
                                                                         
   410 CONTINUE                                                                   
 !jdf
-      DO I=its,ite
-        IF(UST(I).GE.0.1) THEN
-          RMOL(I)=RMOL(I)*(-FLHC(I))/(UST(I)*UST(I)*UST(I))
-        ELSE
-          RMOL(I)=RMOL(I)*(-FLHC(I))/(0.1*0.1*0.1)
-        ENDIF
-      ENDDO
+!     DO I=its,ite
+!       IF(UST(I).GE.0.1) THEN
+!         RMOL(I)=RMOL(I)*(-FLHC(I))/(UST(I)*UST(I)*UST(I))
+!       ELSE
+!         RMOL(I)=RMOL(I)*(-FLHC(I))/(0.1*0.1*0.1)
+!       ENDIF
+!     ENDDO
 !jdf
 
 !                                                                                

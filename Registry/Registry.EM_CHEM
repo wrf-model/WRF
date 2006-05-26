@@ -152,9 +152,9 @@ i1       real   mu_save         ij     dyn_em      1          -
 i1       real   mu_tend         ij     dyn_em      1          -     
 
 #diagnostic for looking at nest position in output. A mungy version of terrain height.
-state    real   nest_pos        ij     misc        1   -   hu=(mark_domain)  "NEST_POS"
-state    real   nest_mask       ij     misc        1   -   u=(mark_domain)   "NEST_MASK"     "LOCATION OF NEST IF ANY"
-state    real   ht_coarse       ij     misc        1   -     -                -              "STORAGE FOR LOW-RES TERRAIN"
+state    real   nest_pos        ij     misc        1   -   rhu=(mark_domain)  "NEST_POS"
+state    real   nest_mask       ij     misc        1   -   ru=(mark_domain)   "NEST_MASK"     "LOCATION OF NEST IF ANY"
+state    real   ht_coarse       ij     misc        1   -     r                -              "STORAGE FOR LOW-RES TERRAIN"
 
 
 # TKE
@@ -164,7 +164,7 @@ i1       real   tke_tend       ikj     dyn_em      1         -
 # Pressure and Density
 state    real   p              ikj     dyn_em      1         -      rh        "p"           "perturbation pressure"         "Pa"
 state    real   al             ikj     dyn_em      1         -      r         "al"          "inverse perturbation density"  "m3 kg-1"
-state    real   alt            ikj     dyn_em      1         -      rh        "alt"         "inverse density"               "m3 kg-1"
+state    real   alt            ikj     dyn_em      1         -      r         "alt"         "inverse density"               "m3 kg-1"
 state    real   alb            ikj     dyn_em      1         -      rdus      "alb"         "inverse base density"          "m3 kg-1"
 state    real   zx             ikj     dyn_em      1         X      -         " "  " "  " "    
 state    real   zy             ikj     dyn_em      1         Y      -         " "  " "  " "   
@@ -259,7 +259,12 @@ state   logical patched        -        -          -         -     -         "pa
 state    integer imask_nostag         ij      misc     1     -
 state    integer imask_xstag          ij      misc     1     X
 state    integer imask_ystag          ij      misc     1     Y
-state    integer imask_xystag         ij      misc     1     XY 
+state    integer imask_xystag         ij      misc     1     XY
+# vortex center indices; need for restarts of moving nests
+state    real    xi                   -       misc     -     -    r
+state    real    xj                   -       misc     -     -    r
+state    real    vc_i                 -       misc     -     -    r
+state    real    vc_j                 -       misc     -     -    r
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Chemistry Variables  (all shared at this point)
@@ -701,9 +706,8 @@ state   real   hysw_a08    ikjftb   chem        1         -   irhusdf=(bdy_inter
 state   real   water_a08   ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "water_a08"     "Water, aerosol bin 08"   "ug/kg-dryair"
 state   real   num_a08     ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "num_a08"       "Number, aerosol bin 08"     "#/kg-dryair"
 
-
 # Other Scalars
-state   real    -              ikjftb  scalar      1         -     -    -                                       
+state   real    -              ikjftb  scalar      1         -     -   -
 state   real    qni            ikjftb  scalar      1         -     \
    i01rhusdf=(bdy_interp:dt)    "QNICE"         "Ice Number concentration" "# kg(-1)"
 state   real    qt             ikjftb  scalar      1         -     \
@@ -997,8 +1001,8 @@ state    real  RQIBLTEN        ikj      misc        1         -      r        "R
 
 # State vector for etampnew microphysics. Must be declared state because it is not read-once and is needed for restarting.
 state    real  mp_restart_state   p      misc        1         -      r       "MP_RESTART_STATE"       "STATE VECTOR FOR MICROPHYSICS RESTARTS"
-state    real  tbpvs_state       p      misc        1         -      r        "TBPVS_STATE"           "STATE FOR ETAMPNEW MICROPHYSICS"
-state    real  tbpvs0_state      p      misc        1         -      r        "TBPVS0_STATE"          "STATE FOR ETAMPNEW MICROPHYSICS"
+state    real  tbpvs_state        p      misc        1         -      r        "TBPVS_STATE"           "STATE FOR ETAMPNEW MICROPHYSICS"
+state    real  tbpvs0_state       p      misc        1         -      r        "TBPVS0_STATE"          "STATE FOR ETAMPNEW MICROPHYSICS"
 
 # State variables for landuse_init, Must be declared state because the are read in and needed for restarts. Had been SAVE vars in
 # landuse_init (phys/module_physics_init.F)
@@ -1051,19 +1055,19 @@ state integer  STEPBL          -        misc        1         -      r        "S
 state    real  taucldi         ikj      misc        1         -      r        "TAUCLDI"               "CLOUD OPTICAL THICKNESS FOR ICE"              ""
 state    real  taucldc         ikj      misc        1         -      r        "TAUCLDC"               "CLOUD OPTICAL THICKNESS FOR WATER"            ""
                                                 
-state   real  defor11          ikj      misc        1         -     -         "defor11"               "DEFORMATION 11"              "s-1"      
-state   real  defor22          ikj      misc        1         -     -         "defor22"               "DEFORMATION 22"              "s-1"      
-state   real  defor12          ikj      misc        1         -     -         "defor12"               "DEFORMATION 12"              "s-1"      
-state   real  defor33          ikj      misc        1         z     -         "defor33"               "DEFORMATION 33"              "s-1"      
-state   real  defor13          ikj      misc        1         z     -         "defor13"               "DEFORMATION 13"              "s-1"      
-state   real  defor23          ikj      misc        1         z     -         "defor23"               "DEFORMATION 23"              "s-1"      
-state   real   xkmv            ikj      misc        1         -     -         "xkmv"                  "VERTICAL EDDY VISCOSITY"     "m2 s-1"      
-state   real   xkmh            ikj      misc        1         -     -         "xkmh"                  "HORIZONTAL EDDY VISCOSITY"   "m2 s-1"      
-state   real   xkmhd           ikj      misc        1         -     -         "xkmhd"                 "VERTICAL EDDY DIFFUSIVITY OF HEAT (FOR UPPER DAMPING LAYER)"     "m2 s-1"      
-state   real   xkhv            ikj      misc        1         -     -         "xkhv"                  "VERTICAL EDDY DIFFUSIVITY OF HEAT"                               "m2 s-1"      
-state   real   xkhh            ikj      misc        1         -     -         "xkhh"                  "HORIZONTAL EDDY DIFFUSIVITY OF HEAT"                             "m2 s-1"      
-state   real    div            ikj      misc        1         -     -         "div"                   "DIVERGENCE"                                                      "s-1"
-state   real    BN2            ikj      misc        1         -     -         "BN2"                   "BRUNT-VAISALA FREQUENCY"                                         "s-2"
+state   real  defor11          ikj      misc        1         -     r         "defor11"               "DEFORMATION 11"              "s-1"      
+state   real  defor22          ikj      misc        1         -     r         "defor22"               "DEFORMATION 22"              "s-1"      
+state   real  defor12          ikj      misc        1         -     r         "defor12"               "DEFORMATION 12"              "s-1"      
+state   real  defor33          ikj      misc        1         z     r         "defor33"               "DEFORMATION 33"              "s-1"      
+state   real  defor13          ikj      misc        1         z     r         "defor13"               "DEFORMATION 13"              "s-1"      
+state   real  defor23          ikj      misc        1         z     r         "defor23"               "DEFORMATION 23"              "s-1"      
+state   real   xkmv            ikj      misc        1         -     r         "xkmv"                  "VERTICAL EDDY VISCOSITY"     "m2 s-1"      
+state   real   xkmh            ikj      misc        1         -     r         "xkmh"                  "HORIZONTAL EDDY VISCOSITY"   "m2 s-1"      
+state   real   xkmhd           ikj      misc        1         -     r         "xkmhd"                 "HORIZONTAL EDDY DIFFUSIVITY" "m2 s-1"      
+state   real   xkhv            ikj      misc        1         -     r         "xkhv"                  "VERTICAL EDDY DIFFUSIVITY OF HEAT"                               "m2 s-1"      
+state   real   xkhh            ikj      misc        1         -     r         "xkhh"                  "HORIZONTAL EDDY DIFFUSIVITY OF HEAT"                             "m2 s-1"      
+state   real    div            ikj      misc        1         -     r         "div"                   "DIVERGENCE"                                                      "s-1"
+state   real    BN2            ikj      misc        1         -     r         "BN2"                   "BRUNT-VAISALA FREQUENCY"                                         "s-2"
 state  logical warm_rain        -       misc        1         -     -         "warm_rain"              "WARM_RAIN_LOGICAL"
 state  logical adv_moist_cond   -       misc        1         -     -         "adv_moist_cond"         "ADVECT MOIST CONDENSATES LOGICAL"
 
@@ -1530,26 +1534,26 @@ rconfig   integer co2tf                   namelist,physics	1            0       
 
 # Dynamics
 # dynamics option (see package definitions, below)
-rconfig   integer dyn_opt                 namelist,dynamics	1             1       irh   "dyn_opt"               ""      ""
+rconfig   integer dyn_opt                 namelist,dynamics	1             2       irh   "dyn_opt"               ""      ""
 rconfig   integer rk_ord                  namelist,dynamics	1             3       irh   "rk_order"               ""      ""
 rconfig   integer w_damping               namelist,dynamics	1             0       irh    "w_damping"             ""      ""
 # diff_opt 1=old diffusion, 2=new
 rconfig   integer diff_opt                namelist,dynamics	1             1       irh    "diff_opt"              ""      ""
 # km_opt   1=old coefs, 2=tke, 3=Smagorinksy
 rconfig   integer km_opt                  namelist,dynamics	1             1       irh    "km_opt"                ""      ""
-rconfig   integer damp_opt                namelist,dynamics	1             1       irh    "damp_opt"              ""      ""
+rconfig   integer damp_opt                namelist,dynamics	1             0       irh    "damp_opt"              ""      ""
 rconfig   real    zdamp                   namelist,dynamics	max_domains    5000.   h    "zdamp"         ""      ""
-rconfig   real    dampcoef                namelist,dynamics     max_domains    0.2     h    "dampcoef"              ""      ""
+rconfig   real    dampcoef                namelist,dynamics     max_domains    0.      h    "dampcoef"              ""      ""
 rconfig   real    khdif                   namelist,dynamics	max_domains    0       h    "khdif"         ""      ""
 rconfig   real    kvdif                   namelist,dynamics	max_domains    0       h    "kvdif"         ""      ""
-rconfig   real    smdiv                   namelist,dynamics	max_domains    0.      h    "smdiv"         ""      ""
-rconfig   real    emdiv                   namelist,dynamics	max_domains    0.      h    "emdiv"         ""      ""
+rconfig   real    smdiv                   namelist,dynamics	max_domains    0.1     h    "smdiv"         ""      ""
+rconfig   real    emdiv                   namelist,dynamics	max_domains    0.01    h    "emdiv"         ""      ""
 rconfig   real    epssm                   namelist,dynamics	max_domains    .1      h    "epssm"         ""      ""
 rconfig   logical non_hydrostatic         namelist,dynamics	max_domains  .true.   irh  "non_hydrostatic"    ""   ""
 rconfig   integer time_step_sound         namelist,dynamics	max_domains    0       h     "time_step_sound"               ""      ""
-rconfig   integer     h_mom_adv_order     namelist,dynamics	max_domains    3       rh       "h_mom_adv_order"               ""      ""
+rconfig   integer     h_mom_adv_order     namelist,dynamics	max_domains    5       rh       "h_mom_adv_order"               ""      ""
 rconfig   integer     v_mom_adv_order     namelist,dynamics	max_domains    3       rh       "v_mom_adv_order"               ""      ""
-rconfig   integer     h_sca_adv_order     namelist,dynamics	max_domains    3       rh       "h_sca_adv_order"               ""      ""
+rconfig   integer     h_sca_adv_order     namelist,dynamics	max_domains    5       rh       "h_sca_adv_order"               ""      ""
 rconfig   integer     v_sca_adv_order     namelist,dynamics	max_domains    3       rh       "v_sca_adv_order"               ""      ""
 rconfig   logical top_radiation           namelist,dynamics	max_domains    .false. rh    "top_radiation"         ""      ""
 rconfig   integer     chem_in_opt         namelist,dynamics     max_domains    0       rh       "chem_in_opt"     ""      ""
@@ -1565,8 +1569,8 @@ rconfig   real    mix_cr_len              namelist,dynamics	max_domains    200. 
 rconfig   real    tke_upper_bound         namelist,dynamics	max_domains    1000.   h    "tke_upper_bound"            ""      ""
 rconfig   real    kh_tke_upper_bound      namelist,dynamics	max_domains    1000.   h    "kh_tke_upper_bound"         ""      ""
 rconfig   real    kv_tke_upper_bound      namelist,dynamics	max_domains    1000.   h    "kv_tke_upper_bound"         ""      ""
-rconfig   real    tke_drag_coefficient      namelist,dynamics	max_domains    0.      h    "tke_drag_coefficient"       ""      ""
-rconfig   real    tke_heat_flux           namelist,dynamics	max_domains    0.      h    "tke_heat_flux"              ""      ""
+rconfig   real    tke_drag_coefficient    namelist,dynamics	max_domains    0.      h    "tke_drag_coefficient"       ""      "dimensionless"
+rconfig   real    tke_heat_flux           namelist,dynamics	max_domains    0.      h    "tke_heat_flux"              ""      "K m s-1"
 rconfig   logical pert_coriolis           namelist,dynamics	max_domains  .false.  irh  "pert_coriolis"    ""   ""
 rconfig   logical mix_full_fields         namelist,dynamics     max_domains  .false.  irh  "mix_full_field"   ""   ""
 rconfig   real    base_pres               namelist,dynamics	1          100000.     h    "base_pres"  "Base state pressure - do not change (10^5 Pa), real only"      "Pa"
@@ -1592,10 +1596,10 @@ rconfig   logical open_ye                 namelist,bdy_control	max_domains    .f
 rconfig   logical nested                  namelist,bdy_control	max_domains    .false. rh    "nested"                ""      ""
 rconfig   integer real_data_init_type     namelist,bdy_control		1                 1    irh   "real_data_init_type"   "REAL DATA INITIALIZATION OPTIONS: 1=SI, 2=MM5, 3=GENERIC" "PRE-PROCESSOR TYPES"
 
-rconfig   integer background_proc_id      namelist,grib2 	        1     255    rh    "background_proc_id"    "Background processing id for grib2"  ""
-rconfig   integer forecast_proc_id        namelist,grib2 	        1     255    rh    "forecast_proc_id"      "Analysis and forecast processing id for grib2"  ""
-rconfig   integer production_status       namelist,grib2 	        1     255    rh    "production_status"     "Background processing id for grib2"  ""
-rconfig   integer compression             namelist,grib2 	        1      40    rh    "compression"           "grib2 compression, 40 for JPEG2000 or 41 for PNG"  ""
+rconfig   integer background_proc_id      namelist,grib2                1     255    rh    "background_proc_id"    "Background processing id for grib2"  ""
+rconfig   integer forecast_proc_id        namelist,grib2                1     255    rh    "forecast_proc_id"      "Analysis and forecast processing id for grib2"  ""
+rconfig   integer production_status       namelist,grib2                1     255    rh    "production_status"     "Background processing id for grib2"  ""
+rconfig   integer compression             namelist,grib2                1      40    rh    "compression"           "grib2 compression, 40 for JPEG2000 or 41 for PNG"  ""
 
 # NAMELIST DERIVED
 rconfig   real    cen_lat                 derived                  max_domains    0       -        "cen_lat"              "center latitude"      "degrees, negative is south"

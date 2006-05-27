@@ -1,4 +1,3 @@
-# $Date$ $Revision$
 #------------------------------------------------------------------------------
 #  Makefile for producing libdbclient.so 
 #

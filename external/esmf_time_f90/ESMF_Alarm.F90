@@ -1,4 +1,3 @@
-! $Id$
 !
 ! Earth System Modeling Framework
 ! Copyright 2002-2003, University Corporation for Atmospheric Research,
@@ -41,7 +40,8 @@
       use ESMF_BaseMod
 
       ! associated derived types
-      use ESMF_TimeIntervalMod, only : ESMF_TimeInterval
+      use ESMF_TimeIntervalMod, only : ESMF_TimeInterval, &
+                                       ESMF_TimeIntervalAbsValue
       use ESMF_TimeMod,         only : ESMF_Time
 
       implicit none
@@ -116,11 +116,6 @@
       private ESMF_AlarmEQ
 !EOPI
 
-!------------------------------------------------------------------------------
-! The following line turns the CVS identifier string into a printable variable.
-      character(*), parameter, private :: version = &
-      '$Id$'
-
 !==============================================================================
 !
 ! INTERFACE BLOCKS
@@ -194,7 +189,9 @@
         alarm%alarmint%RingIntervalSet = .FALSE.
         alarm%alarmint%StopTimeSet = .FALSE.
         IF ( PRESENT( RingInterval ) ) THEN
-          alarm%alarmint%RingInterval = RingInterval
+          ! force RingInterval to be positive
+          alarm%alarmint%RingInterval = &
+            ESMF_TimeIntervalAbsValue( RingInterval )
           alarm%alarmint%RingIntervalSet = .TRUE.
         ENDIF
         IF ( PRESENT( RingTime ) ) THEN

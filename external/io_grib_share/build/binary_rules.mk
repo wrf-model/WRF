@@ -1,4 +1,3 @@
-# $Date: 2006/05/20 23:36:06 $ $Revision: 1.1 $
 #------------------------------------------------------------------------------
 #  Make rules for installing binary files to a specified destination
 #

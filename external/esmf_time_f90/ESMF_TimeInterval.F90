@@ -1,4 +1,3 @@
-! $Id$
 !
 ! Earth System Modeling Framework
 ! Copyright 2002-2003, University Corporation for Atmospheric Research,
@@ -86,6 +85,10 @@
 !!!!!!!!! renamed to simplify testing 20060320, TH
       public ESMF_TimeIntervalDIVQuot 
 
+      ! This convenience routine is only used by other modules in 
+      ! esmf_time_f90.  
+      public ESMF_TimeIntervalIsPositive
+
 
 ! !PRIVATE MEMBER FUNCTIONS:
  
@@ -123,11 +126,6 @@
       public operator(.GE.)
       private ESMF_TimeIntervalGE
 !EOPI
-
-!------------------------------------------------------------------------------
-! The following line turns the CVS identifier string into a printable variable.
-      character(*), parameter, private :: version = &
-      '$Id$'
 
 !==============================================================================
 !
@@ -1213,6 +1211,48 @@
       call c_ESMC_BaseTimeIntGE(timeinterval1, timeinterval2, ESMF_TimeIntervalGE)
 
       end function ESMF_TimeIntervalGE
+
+
+!------------------------------------------------------------------------------
+!BOP
+! !IROUTINE:  ESMF_TimeIntervalIsPositive - Time interval greater than zero?
+
+! !INTERFACE:
+      function ESMF_TimeIntervalIsPositive(timeinterval)
+!
+! !RETURN VALUE:
+      logical :: ESMF_TimeIntervalIsPositive
+
+! !ARGUMENTS:
+      type(ESMF_TimeInterval), intent(in) :: timeinterval
+
+! !LOCALS:
+      type(ESMF_TimeInterval) :: zerotimeint
+      integer :: rcint
+
+! !DESCRIPTION:
+!     Return true if time interval is greater than zero,  
+!     false otherwise. 
+!
+!     The arguments are:
+!     \begin{description}
+!     \item[timeinterval]
+!          Time interval to compare
+!     \end{description}
+!EOP
+      CALL timeintchecknormalized( timeinterval, &
+                                   'ESMF_TimeIntervalIsPositive arg' )
+
+      CALL ESMF_TimeIntervalSet ( zerotimeint, rc=rcint )
+      IF ( rcint /= ESMF_SUCCESS ) THEN
+        CALL wrf_error_fatal( &
+          'ESMF_TimeIntervalIsPositive:  ESMF_TimeIntervalSet failed' )
+      ENDIF
+! hack for bug in PGI 5.1-x
+!      ESMF_TimeIntervalIsPositive = timeinterval > zerotimeint
+      ESMF_TimeIntervalIsPositive = ESMF_TimeIntervalGT( timeinterval, &
+                                                         zerotimeint )
+      end function ESMF_TimeIntervalIsPositive
 
       end module ESMF_TimeIntervalMod
 

@@ -29,7 +29,6 @@
 !   following funcs from pegasus file csuesat01.f (timestamp = 09-apr-2002)
 !-----------------------------------------------------------------------
 !   file csuesat01.f - from stratcld.F,v on 8-oct-97
-!	c$Id: module_mosaic_csuesat.F,v 1.1 2006/05/06 17:02:11 gill Exp $
 !   routines and common blocks renamed to allow running either
 !	standalone gchm or coupled gchm-ccm2
 !-----------------------------------------------------------------------

@@ -1557,6 +1557,41 @@ CONTAINS
 
 
 
+      FUNCTION domain_clockisstopsubtime ( grid ) RESULT ( is_stop_subtime ) 
+        IMPLICIT NONE
+! <DESCRIPTION>
+! This convenience function returns .TRUE. iff grid%clock has reached its 
+! grid%stop_subtime.  
+!
+! </DESCRIPTION>
+        TYPE(domain), INTENT(IN) :: grid
+        ! result
+        LOGICAL :: is_stop_subtime
+        INTEGER :: rc
+        TYPE(WRFU_TimeInterval) :: timeStep
+        TYPE(WRFU_Time) :: currentTime
+        LOGICAL :: positive_timestep
+        is_stop_subtime = .FALSE.
+        CALL domain_clock_get( grid, time_step=timeStep, &
+                                     current_time=currentTime )
+        positive_timestep = ESMF_TimeIntervalIsPositive( timeStep )
+        IF ( positive_timestep ) THEN
+! hack for bug in PGI 5.1-x
+!        IF ( currentTime .GE. grid%stop_subtime ) THEN
+          IF ( ESMF_TimeGE( currentTime, grid%stop_subtime ) ) THEN
+            is_stop_subtime = .TRUE.
+          ENDIF
+        ELSE
+! hack for bug in PGI 5.1-x
+!        IF ( currentTime .LE. grid%stop_subtime ) THEN
+          IF ( ESMF_TimeLE( currentTime, grid%stop_subtime ) ) THEN
+            is_stop_subtime = .TRUE.
+          ENDIF
+        ENDIF
+      END FUNCTION domain_clockisstopsubtime
+
+
+
 
       FUNCTION domain_get_sim_start_time ( grid ) RESULT ( simulationStartTime ) 
         IMPLICIT NONE

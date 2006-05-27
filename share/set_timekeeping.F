@@ -6,7 +6,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
    TYPE(domain), POINTER :: grid
 ! Local
    TYPE(WRFU_TimeInterval) :: begin_time, end_time, zero_time, one_minute, one_hour, padding_interval
-   TYPE(WRFU_TimeInterval) :: interval, run_length, chem_interval
+   TYPE(WRFU_TimeInterval) :: interval, run_length
    TYPE(WRFU_Time) :: startTime, stopTime
    TYPE(WRFU_TimeInterval) :: stepTime
    INTEGER :: start_year,start_month,start_day,start_hour,start_minute,start_second
@@ -158,7 +158,6 @@ SUBROUTINE Setup_Timekeeping ( grid )
                          'WRFU_TimeIntervalSet(one_hour) FAILED', &
                          __FILE__ , &
                          __LINE__  )
-   padding_interval = one_hour
 
    CALL nl_get_start_year(grid%id,start_year)
    CALL nl_get_start_month(grid%id,start_month)
@@ -201,6 +200,11 @@ SUBROUTINE Setup_Timekeeping ( grid )
                            __FILE__ , &
                            __LINE__  )
      run_length = stopTime - startTime
+   ENDIF
+   IF ( run_length .GT. zero_time ) THEN
+     padding_interval = one_hour
+   ELSE
+     padding_interval = zero_time - one_hour
    ENDIF
 
    IF ( grid%id .EQ. head_grid%id ) THEN
@@ -1056,10 +1060,10 @@ SUBROUTINE Setup_Timekeeping ( grid )
 
    CALL domain_alarm_create( grid, AUXINPUT5_ALARM, interval, begin_time, end_time )
 
-!TBH:  Should be OK to remove the "#ifndef WRF_CHEM" and the code it contains 
+!TBH:  Should be OK to remove the "#else" section and the code it contains 
 !TBH:  because later code overwrites grid%alarms( AUXINPUT5_ALARM )...  
 !TBH:  In fact, by setting namelist values for auxinput5 correctly, it ought 
-!TBH:  to be possible to get rid of all WRF_CHEM bits...  
+!TBH:  to be possible to get rid of all "#ifdef WRF_CHEM" bits in this file...  
 #ifndef WRF_CHEM
    IF ( interval .NE. run_length + padding_interval .AND. begin_time .EQ. zero_time ) THEN
      CALL WRFU_AlarmRingerOn( grid%alarms( AUXINPUT5_ALARM ),  rc=rc )

@@ -1,4 +1,3 @@
-# $Date: 2006/05/20 23:36:08 $ $Revision: 1.1 $
 #------------------------------------------------------------------------------
 #  Make rules for installing tcl scripts and script-modules. 
 #

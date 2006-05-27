@@ -1,4 +1,3 @@
-! $Id$
 !
 ! Earth System Modeling Framework
 ! Copyright 2002-2003, University Corporation for Atmospheric Research,
@@ -116,11 +115,6 @@
       public ESMF_TimeGE
 
 !EOPI
-
-!------------------------------------------------------------------------------
-! The following line turns the CVS identifier string into a printable variable.
-      character(*), parameter, private :: version = &
-      '$Id$'
 
 !==============================================================================
 !

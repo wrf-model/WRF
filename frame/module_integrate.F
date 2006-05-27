@@ -275,7 +275,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
       IF ( .NOT. grid%return_after_training_io ) THEN
          CALL domain_clockprint ( 150, grid, 'DEBUG:  top of integrate(),' )
       ENDIF
-      DO WHILE ( domain_get_current_time(grid) .LT. grid%stop_subtime )
+      DO WHILE ( .NOT. domain_clockisstopsubtime(grid) )
          IF ( .NOT. grid%return_after_training_io ) THEN
             IF ( wrf_dm_on_monitor() ) THEN
               CALL start_timing

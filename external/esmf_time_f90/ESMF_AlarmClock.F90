@@ -1,4 +1,3 @@
-! $Id$
 !
 ! Earth System Modeling Framework
 ! Copyright 2002-2003, University Corporation for Atmospheric Research,
@@ -15,7 +14,7 @@
 !
 !==============================================================================
 !
-! This file contains the AlarmCreae method.
+! This file contains the AlarmCreate method.
 !
 !------------------------------------------------------------------------------
 ! INCLUDES
@@ -54,11 +53,6 @@
 
 ! !PUBLIC MEMBER FUNCTIONS:
       public ESMF_AlarmCreate
-
-!------------------------------------------------------------------------------
-! The following line turns the CVS identifier string into a printable variable.
-      character(*), parameter, private :: version = &
-      '$Id$'
 
 !==============================================================================
 

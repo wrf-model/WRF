@@ -1,4 +1,3 @@
-# $Date: 2006/05/20 23:36:07 $ $Revision: 1.1 $
 #------------------------------------------------------------------------------
 #  Make rules for installing optional configuration files. 
 #

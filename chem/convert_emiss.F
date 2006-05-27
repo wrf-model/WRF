@@ -391,7 +391,7 @@ PROGRAM convert_emiss
 
      print *,' Date &  time ',Trim(current_date)
 
-     CALL WRFU_ClockAdvance( grid%domain_clock, rc=rc )
+     CALL domain_clockadvance( grid )
 
      if( debug_level >= 100) print *,' Read emissions ',emi_frame
      !CALL med_conv_emissions ( grid, config_flags, emi_frame-1, nemi_frames-1) 

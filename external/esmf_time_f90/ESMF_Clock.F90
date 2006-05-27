@@ -1,4 +1,3 @@
-! $Id$
 !
 ! Earth System Modeling Framework
 ! Copyright 2002-2003, University Corporation for Atmospheric Research,
@@ -39,7 +38,8 @@
       use ESMF_BaseMod
 
       ! associated derived types
-      use ESMF_TimeIntervalMod   ! , only : ESMF_TimeInterval
+      use ESMF_TimeIntervalMod   ! , only : ESMF_TimeInterval, &
+                                 !          ESMF_TimeIntervalIsPositive
       use ESMF_TimeMod           ! , only : ESMF_Time
       use ESMF_AlarmMod,        only : ESMF_Alarm
 
@@ -122,11 +122,6 @@
       public ESMF_ClockValidate
       public ESMF_ClockPrint
 !EOPI
-
-!------------------------------------------------------------------------------
-! The following line turns the CVS identifier string into a printable variable.
-      character(*), parameter, private :: version = &
-      '$Id$'
 
 !==============================================================================
 
@@ -776,10 +771,13 @@
         CALL wrf_error_fatal ( &
                'ESMF_ClockAddAlarm:  alarm not created' )
       ELSE
-!TBH:  why do all this initialization here?  
         IF ( Alarm%alarmint%RingTimeSet ) THEN
            Alarm%alarmint%PrevRingTime = Alarm%alarmint%RingTime
         ELSE
+!TBH:  This has the nasty side-effect of forcing us to explicitly turn on 
+!TBH:  alarms that are created with RingInterval only, if we want them to start 
+!TBH:  ringing right away.  And this is done (see 
+!TBH:  COMPUTE_VORTEX_CENTER_ALARM).  Straighten this out...  
            Alarm%alarmint%PrevRingTime = clock%clockint%CurrTime
         ENDIF
         Alarm%alarmint%Ringing = .FALSE.
@@ -908,6 +906,7 @@ use esmf_timemod
       logical pred1, pred2, pred3
       integer i, n
       type(ESMF_Alarm) :: alarm
+      logical :: positive_timestep
 !   
 ! !DESCRIPTION:
 !     Advance an {\tt ESMF\_Clock}'s current time by one time step
@@ -932,6 +931,7 @@ use esmf_timemod
 !                                clock%clockint%TimeStep
       clock%clockint%CurrTime = ESMF_TimeInc( clock%clockint%CurrTime, &
                                               clock%clockint%TimeStep )
+      positive_timestep = ESMF_TimeIntervalIsPositive( clock%clockint%TimeStep )
 
       IF ( Present(NumRingingAlarms) ) NumRingingAlarms = 0
       clock%clockint%AdvanceCount = clock%clockint%AdvanceCount + 1
@@ -945,43 +945,99 @@ use esmf_timemod
           IF ( alarm%alarmint%Enabled ) THEN
             IF ( alarm%alarmint%RingIntervalSet ) THEN
               pred1 = .FALSE. ; pred2 = .FALSE. ; pred3 = .FALSE.
+              ! alarm cannot ring if clock has passed the alarms stop time
               IF ( alarm%alarmint%StopTimeSet ) THEN
+                IF ( positive_timestep ) THEN
 ! hack for bug in PGI 5.1-x
-!                PRED1 = clock%clockint%CurrTime > alarm%alarmint%StopTime
-                PRED1 = ESMF_TimeGT( clock%clockint%CurrTime, &
-                                     alarm%alarmint%StopTime )
+!                  PRED1 = clock%clockint%CurrTime > alarm%alarmint%StopTime
+                  PRED1 = ESMF_TimeGT( clock%clockint%CurrTime, &
+                                       alarm%alarmint%StopTime )
+                ELSE
+                  ! in this case time step is negative and stop time is 
+                  ! less than start time
+!                  PRED1 = clock%clockint%CurrTime < alarm%alarmint%StopTime
+                  PRED1 = ESMF_TimeLT( clock%clockint%CurrTime, &
+                                       alarm%alarmint%StopTime )
+                ENDIF
               ENDIF
+              ! one-shot alarm:  check for ring time 
+! TBH:  Need to remove duplicated code.  Need to enforce only one of 
+! TBH:  alarm%alarmint%RingTimeSet or alarm%alarmint%RingIntervalSet ever 
+! TBH:  being .TRUE. and simplify the logic.  Also, the simpler 
+! TBH:  implementation in the duplicated code below should be sufficient.  
               IF ( alarm%alarmint%RingTimeSet ) THEN
+                IF ( positive_timestep ) THEN
 ! hack for bug in PGI 5.1-x
-!                 PRED2 = ( alarm%alarmint%RingTime <= clock%clockint%CurrTime     &
-!                        .AND. clock%clockint%CurrTime < alarm%alarmint%RingTime + &
-!                              clock%clockint%TimeStep )
-                 PRED2 = ( ESMF_TimeLE( alarm%alarmint%RingTime,       &
-                                        clock%clockint%CurrTime )      &
-                           .AND. ESMF_TimeLT( clock%clockint%CurrTime, &
-                             ESMF_TimeInc( alarm%alarmint%RingTime,    &
-                                           clock%clockint%TimeStep ) ) )
+!                   PRED2 = ( alarm%alarmint%RingTime <= clock%clockint%CurrTime     &
+!                          .AND. clock%clockint%CurrTime < alarm%alarmint%RingTime + &
+!                                clock%clockint%TimeStep )
+                   PRED2 = ( ESMF_TimeLE( alarm%alarmint%RingTime,       &
+                                          clock%clockint%CurrTime )      &
+                             .AND. ESMF_TimeLT( clock%clockint%CurrTime, &
+                               ESMF_TimeInc( alarm%alarmint%RingTime,    &
+                                             clock%clockint%TimeStep ) ) )
+                ELSE
+                  ! in this case time step is negative and stop time is 
+                  ! less than start time
+! hack for bug in PGI 5.1-x
+!                   PRED2 = ( alarm%alarmint%RingTime >= clock%clockint%CurrTime     &
+!                          .AND. clock%clockint%CurrTime > alarm%alarmint%RingTime + &
+!                                clock%clockint%TimeStep )
+                   PRED2 = ( ESMF_TimeGE( alarm%alarmint%RingTime,       &
+                                          clock%clockint%CurrTime )      &
+                             .AND. ESMF_TimeGT( clock%clockint%CurrTime, &
+                               ESMF_TimeInc( alarm%alarmint%RingTime,    &
+                                             clock%clockint%TimeStep ) ) )
+                ENDIF
               ENDIF
+              ! repeating alarm:  check for ring interval
               IF ( alarm%alarmint%RingIntervalSet ) THEN
+                IF ( positive_timestep ) THEN
 ! hack for bug in PGI 5.1-x
-!                 PRED3 = ( alarm%alarmint%PrevRingTime + alarm%alarmint%RingInterval <= &
-!                           clock%clockint%CurrTime )
+!                   PRED3 = ( alarm%alarmint%PrevRingTime + alarm%alarmint%RingInterval <= &
+!                             clock%clockint%CurrTime )
 
-                 PRED3 = ( ESMF_TimeLE( ESMF_TimeInc(                  &
-                                        alarm%alarmint%PrevRingTime,   &
-                                        alarm%alarmint%RingInterval ), &
-                           clock%clockint%CurrTime ) )
+                   PRED3 = ( ESMF_TimeLE( ESMF_TimeInc(                  &
+                                          alarm%alarmint%PrevRingTime,   &
+                                          alarm%alarmint%RingInterval ), &
+                             clock%clockint%CurrTime ) )
+                ELSE
+                  ! in this case time step is negative and stop time is 
+                  ! less than start time
+                  ! ring interval must always be positive
+! hack for bug in PGI 5.1-x
+!                   PRED3 = ( alarm%alarmint%PrevRingTime - alarm%alarmint%RingInterval >= &
+!                             clock%clockint%CurrTime )
+
+                   PRED3 = ( ESMF_TimeGE( ESMF_TimeDec(                  &
+                                          alarm%alarmint%PrevRingTime,   &
+                                          alarm%alarmint%RingInterval ), &
+                             clock%clockint%CurrTime ) )
+                ENDIF
               ENDIF
               IF ( ( .NOT. ( pred1 ) ) .AND. &
                    ( ( pred2 ) .OR. ( pred3 ) ) ) THEN
                  alarm%alarmint%Ringing = .TRUE.
+                 IF ( positive_timestep ) THEN
 ! hack for bug in PGI 5.1-x
-!                 IF ( PRED3) alarm%alarmint%PrevRingTime = alarm%alarmint%PrevRingTime + &
-!                                                  alarm%alarmint%RingInterval
-                 IF ( PRED3 )                                   &
-                   alarm%alarmint%PrevRingTime =                &
-                     ESMF_TimeInc( alarm%alarmint%PrevRingTime, &
-                                   alarm%alarmint%RingInterval )
+!                   IF ( PRED3) alarm%alarmint%PrevRingTime = alarm%alarmint%PrevRingTime + &
+!                                                    alarm%alarmint%RingInterval
+                   IF ( PRED3 )                                   &
+                     alarm%alarmint%PrevRingTime =                &
+                       ESMF_TimeInc( alarm%alarmint%PrevRingTime, &
+                                     alarm%alarmint%RingInterval )
+                 ELSE
+                   ! in this case time step is negative and stop time is 
+                   ! less than start time
+                   ! ring interval must always be positive
+! hack for bug in PGI 5.1-x
+!                   IF ( PRED3) alarm%alarmint%PrevRingTime = alarm%alarmint%PrevRingTime - &
+!                                                    alarm%alarmint%RingInterval
+                   IF ( PRED3 )                                   &
+                     alarm%alarmint%PrevRingTime =                &
+                       ESMF_TimeDec( alarm%alarmint%PrevRingTime, &
+                                     alarm%alarmint%RingInterval )
+                 ENDIF
                  IF ( PRESENT( RingingAlarmList ) .AND. &
                       PRESENT ( NumRingingAlarms ) ) THEN
                    NumRingingAlarms = NumRingingAlarms + 1
@@ -989,19 +1045,40 @@ use esmf_timemod
                  ENDIF
               ENDIF
             ELSE IF ( alarm%alarmint%RingTimeSet ) THEN
+! TBH:  Need to remove duplicated code.  Need to enforce only one of 
+! TBH:  alarm%alarmint%RingTimeSet or alarm%alarmint%RingIntervalSet ever 
+! TBH:  being .TRUE. and simplify the logic.  Also, the simpler 
+! TBH:  implementation in here should be sufficient.  
+              IF ( positive_timestep ) THEN
 ! hack for bug in PGI 5.1-x
-!              IF ( alarm%alarmint%RingTime <= clock%clockint%CurrTime ) THEN
-              IF ( ESMF_TimeLE( alarm%alarmint%RingTime, &
-                                clock%clockint%CurrTime ) ) THEN
-                 alarm%alarmint%Ringing = .TRUE.
-                 IF ( PRESENT( RingingAlarmList ) .AND. &
-                      PRESENT ( NumRingingAlarms ) ) THEN
-                   NumRingingAlarms = NumRingingAlarms + 1
-                   RingingAlarmList( NumRingingAlarms ) = alarm
-                 ENDIF
+!                IF ( alarm%alarmint%RingTime <= clock%clockint%CurrTime ) THEN
+                IF ( ESMF_TimeLE( alarm%alarmint%RingTime, &
+                                  clock%clockint%CurrTime ) ) THEN
+                   alarm%alarmint%Ringing = .TRUE.
+                   IF ( PRESENT( RingingAlarmList ) .AND. &
+                        PRESENT ( NumRingingAlarms ) ) THEN
+                     NumRingingAlarms = NumRingingAlarms + 1
+                     RingingAlarmList( NumRingingAlarms ) = alarm
+                   ENDIF
+                ENDIF
+              ELSE
+                ! in this case time step is negative and stop time is 
+                ! less than start time
+! hack for bug in PGI 5.1-x
+!                IF ( alarm%alarmint%RingTime >= clock%clockint%CurrTime ) THEN
+                IF ( ESMF_TimeGE( alarm%alarmint%RingTime, &
+                                  clock%clockint%CurrTime ) ) THEN
+                   alarm%alarmint%Ringing = .TRUE.
+                   IF ( PRESENT( RingingAlarmList ) .AND. &
+                        PRESENT ( NumRingingAlarms ) ) THEN
+                     NumRingingAlarms = NumRingingAlarms + 1
+                     RingingAlarmList( NumRingingAlarms ) = alarm
+                   ENDIF
+                ENDIF
               ENDIF
             ENDIF
             IF ( alarm%alarmint%StopTimeSet ) THEN
+! TBH:  what is this for???  
             ENDIF
           ENDIF
         ENDIF
@@ -1039,6 +1116,7 @@ use esmf_timemod
 ! !ARGUMENTS:
       type(ESMF_Clock), intent(in) :: clock
       integer, intent(out), optional :: rc
+      logical :: positive_timestep
 
 ! !DESCRIPTION:
 !     Return true if {\tt ESMF\_Clock} has reached its stop time, false 
@@ -1056,14 +1134,26 @@ use esmf_timemod
 !     TMG3.5.6
 !EOP
 
+      positive_timestep = ESMF_TimeIntervalIsPositive( clock%clockint%TimeStep )
+      IF ( positive_timestep ) THEN
 ! hack for bug in PGI 5.1-x
-!      if ( clock%clockint%CurrTime .GE. clock%clockint%StopTime ) THEN
-      if ( ESMF_TimeGE( clock%clockint%CurrTime, &
-                        clock%clockint%StopTime ) ) THEN
-        ESMF_ClockIsStopTime = .TRUE.
-      else
-        ESMF_ClockIsStopTime = .FALSE.
-      endif
+!        if ( clock%clockint%CurrTime .GE. clock%clockint%StopTime ) THEN
+        if ( ESMF_TimeGE( clock%clockint%CurrTime, &
+                          clock%clockint%StopTime ) ) THEN
+          ESMF_ClockIsStopTime = .TRUE.
+        else
+          ESMF_ClockIsStopTime = .FALSE.
+        endif
+      ELSE
+! hack for bug in PGI 5.1-x
+!        if ( clock%clockint%CurrTime .LE. clock%clockint%StopTime ) THEN
+        if ( ESMF_TimeLE( clock%clockint%CurrTime, &
+                          clock%clockint%StopTime ) ) THEN
+          ESMF_ClockIsStopTime = .TRUE.
+        else
+          ESMF_ClockIsStopTime = .FALSE.
+        endif
+      ENDIF
       IF ( PRESENT( rc ) ) rc = ESMF_SUCCESS
     
       end function ESMF_ClockIsStopTime

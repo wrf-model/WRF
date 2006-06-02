@@ -6607,11 +6607,16 @@ CONTAINS
       ,O3HI(10,25) &
       ,RSTD(81),RBAR(NL),RDATA(81) &
       ,PHALF(NL),P(81),PH(82)
+       REAL   :: PXX(81),PYY(82)                       !  fix for nesting: gopal's
 !----------------------------------------------------------------------
+!gopal                           EQUIVALENCE &
+!gopal       (O3HI1(1,1),O3HI(1,1)),(O3HI2(1,1),O3HI(1,17)) &
+!gopal      ,(PH1(1),PH(1)),(PH2(1),PH(46)) &
+!gopal      ,(P1(1),P(1)),(P2(1),P(49))
                            EQUIVALENCE &
        (O3HI1(1,1),O3HI(1,1)),(O3HI2(1,1),O3HI(1,17)) &
-      ,(PH1(1),PH(1)),(PH2(1),PH(46)) &
-      ,(P1(1),P(1)),(P2(1),P(49))
+      ,(PH1(1),PYY(1)),(PH2(1),PYY(46)) &               ! fix for nesting: gopal's doing 
+      ,(P1(1),PXX(1)),(P2(1),PXX(49))                   ! fix for nesting: gopal's doing 
 !----------------------------------------------------------------------
 !                          EQUIVALENCE &
 !      (XRAD1(1),XDUO3N(1,1),O3O3(1,1,1)) &
@@ -6771,11 +6776,14 @@ CONTAINS
 !***  AND PSFC=1013.25 MB    ......K.A.C. DEC94
 !***
       DO K=1,NK
-        PH(K)=PH(K)*1013250.
-        P(K)=P(K)*1013250.
+!        PH(K)=PH(K)*1013250.
+!        P(K)=P(K)*1013250.
+        PH(K)=PYY(K)*1013250.         ! fix for nesting: gopal's doing 
+        P(K)=PXX(K)*1013250.          ! fix for nesting: gopal's doing
       ENDDO
 !
-      PH(NKP)=PH(NKP)*1013250.
+!      PH(NKP)=PH(NKP)*1013250.
+      PH(NKP)=PYY(NKP)*1013250.       ! fix for nesting: gopal's doing
 !
       DO K=1,NL
         PSTD(K)=P(K)
@@ -9485,6 +9493,41 @@ CONTAINS
 !     EQUIVALENCE (CDT51(1,1),CO2D2D(1,1,1)),(CO251(1,1),CO2D2D(1,1,2))
 !     EQUIVALENCE (C2D51(1,1),CO2D2D(1,1,3)),(CDT58(1,1),CO2D2D(1,1,4))
 !     EQUIVALENCE (CO258(1,1),CO2D2D(1,1,5)),(C2D58(1,1),CO2D2D(1,1,6))
+
+!
+!    This is gopal's doing
+!    Deallocate before reading. This is required for nested domain init.
+!
+      IF(ALLOCATED (CO251))DEALLOCATE(CO251)
+      IF(ALLOCATED (CDT51))DEALLOCATE(CDT51)
+      IF(ALLOCATED (C2D51))DEALLOCATE(C2D51)
+      IF(ALLOCATED (CO258))DEALLOCATE(CO258)
+      IF(ALLOCATED (CDT58))DEALLOCATE(CDT58)
+      IF(ALLOCATED (C2D58))DEALLOCATE(C2D58)
+      IF(ALLOCATED (STEMP))DEALLOCATE(STEMP)
+      IF(ALLOCATED (GTEMP))DEALLOCATE(GTEMP)
+      IF(ALLOCATED (CO231))DEALLOCATE(CO231)
+      IF(ALLOCATED (CDT31))DEALLOCATE(CDT31)
+      IF(ALLOCATED (C2D31))DEALLOCATE(C2D31)
+      IF(ALLOCATED (CO238))DEALLOCATE(CO238)
+      IF(ALLOCATED (CDT38))DEALLOCATE(CDT38)
+      IF(ALLOCATED (C2D38))DEALLOCATE(C2D38)
+      IF(ALLOCATED (CO271))DEALLOCATE(CO271)
+      IF(ALLOCATED (CDT71))DEALLOCATE(CDT71)
+      IF(ALLOCATED (C2D71))DEALLOCATE(C2D71)
+      IF(ALLOCATED (CO278))DEALLOCATE(CO278)
+      IF(ALLOCATED (CDT78))DEALLOCATE(CDT78)
+      IF(ALLOCATED (C2D78))DEALLOCATE(C2D78)
+      IF(ALLOCATED (CO2M51))DEALLOCATE(CO2M51)
+      IF(ALLOCATED (CDTM51))DEALLOCATE(CDTM51)
+      IF(ALLOCATED (C2DM51))DEALLOCATE(C2DM51)
+      IF(ALLOCATED (CO2M58))DEALLOCATE(CO2M58)
+      IF(ALLOCATED (CDTM58))DEALLOCATE(CDTM58)
+      IF(ALLOCATED (C2DM58))DEALLOCATE(C2DM58)
+!
+!    End of gopal's doing
+!
+
       ALLOCATE(CO251(LP1,LP1))
       ALLOCATE(CDT51(LP1,LP1))
       ALLOCATE(C2D51(LP1,LP1))
@@ -9931,6 +9974,41 @@ CONTAINS
         ENDDO
 !
       ENDDO
+
+!
+!    This is gopal's doing
+!    Deallocate before reading. This is required for nested domain init.
+!
+      IF(ALLOCATED (CO251))DEALLOCATE(CO251)
+      IF(ALLOCATED (CDT51))DEALLOCATE(CDT51)
+      IF(ALLOCATED (C2D51))DEALLOCATE(C2D51)
+      IF(ALLOCATED (CO258))DEALLOCATE(CO258)
+      IF(ALLOCATED (CDT58))DEALLOCATE(CDT58)
+      IF(ALLOCATED (C2D58))DEALLOCATE(C2D58)
+      IF(ALLOCATED (STEMP))DEALLOCATE(STEMP)
+      IF(ALLOCATED (GTEMP))DEALLOCATE(GTEMP)
+      IF(ALLOCATED (CO231))DEALLOCATE(CO231)
+      IF(ALLOCATED (CDT31))DEALLOCATE(CDT31)
+      IF(ALLOCATED (C2D31))DEALLOCATE(C2D31)
+      IF(ALLOCATED (CO238))DEALLOCATE(CO238)
+      IF(ALLOCATED (CDT38))DEALLOCATE(CDT38)
+      IF(ALLOCATED (C2D38))DEALLOCATE(C2D38)
+      IF(ALLOCATED (CO271))DEALLOCATE(CO271)
+      IF(ALLOCATED (CDT71))DEALLOCATE(CDT71)
+      IF(ALLOCATED (C2D71))DEALLOCATE(C2D71)
+      IF(ALLOCATED (CO278))DEALLOCATE(CO278)
+      IF(ALLOCATED (CDT78))DEALLOCATE(CDT78)
+      IF(ALLOCATED (C2D78))DEALLOCATE(C2D78)
+      IF(ALLOCATED (CO2M51))DEALLOCATE(CO2M51)
+      IF(ALLOCATED (CDTM51))DEALLOCATE(CDTM51)
+      IF(ALLOCATED (C2DM51))DEALLOCATE(C2DM51)
+      IF(ALLOCATED (CO2M58))DEALLOCATE(CO2M58)
+      IF(ALLOCATED (CDTM58))DEALLOCATE(CDTM58)
+      IF(ALLOCATED (C2DM58))DEALLOCATE(C2DM58)
+!
+!    End of gopal's doing
+!
+
 !
 !----------------------------------------------------------------------
 !

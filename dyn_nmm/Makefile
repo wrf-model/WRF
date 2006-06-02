@@ -9,6 +9,7 @@ MODULES =                 		\
         module_ADVECTION.o         	\
         module_BC_NMM.o         	\
         module_BNDRY_COND.o         	\
+        module_NEST_UTIL.o              \
         module_CTLBLK.o         	\
         module_DIFFUSION_NMM.o         	\
         module_IGWAVE_ADJUST.o         	\
@@ -38,7 +39,8 @@ OBJS    = 		          	\
 	RDTEMP.o    			\
 	BUCKETS.o 			\
         DSTRB.o                         \
-	CLTEND.o
+	CLTEND.o                        \
+        NMM_NEST_UTILS1.o
 
 
 LIBTARGET    =  dyn_nmm

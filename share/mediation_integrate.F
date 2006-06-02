@@ -600,6 +600,223 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
 
 #endif
 
+#if (NMM_CORE == 1 && NMM_NEST == 1)
+!===================================================================================
+!  Added for the NMM core. This is gopal's doing.
+!===================================================================================
+  ! Local
+   INTEGER                  :: i,j,k,idum1 , idum2 , fid, ierr
+   INTEGER                  :: IDS,IDE,JDS,JDE,KDS,KDE   ! gopal
+   INTEGER                  :: IMS,IME,JMS,JME,KMS,KME
+   INTEGER                  :: ITS,ITE,JTS,JTE,KTS,KTE
+
+   INTERFACE
+
+     SUBROUTINE med_nest_egrid_configure ( parent , nest )
+        USE module_domain
+        TYPE(domain) , POINTER                 :: parent , nest
+     END SUBROUTINE med_nest_egrid_configure 
+
+     SUBROUTINE med_construct_egrid_weights ( parent , nest )
+        USE module_domain
+        TYPE(domain) , POINTER                 :: parent , nest
+     END SUBROUTINE med_construct_egrid_weights
+
+     SUBROUTINE BASE_STATE_PARENT ( Z3d,Q3d,T3d,PSTD,        &
+                                    PINT,T,Q,CWM,            &
+                                    FIS,QS,PD,PDTOP,PTOP,    &
+                                    ETA1,ETA2,               &
+                                    DETA1,DETA2,             &
+                                    IDS,IDE,JDS,JDE,KDS,KDE, &
+                                    IMS,IME,JMS,JME,KMS,KME, &
+                                    ITS,ITE,JTS,JTE,KTS,KTE  )
+!
+
+         USE MODULE_MODEL_CONSTANTS
+         IMPLICIT NONE
+         INTEGER,    INTENT(IN   )                            :: IDS,IDE,JDS,JDE,KDS,KDE
+         INTEGER,    INTENT(IN   )                            :: IMS,IME,JMS,JME,KMS,KME
+         INTEGER,    INTENT(IN   )                            :: ITS,ITE,JTS,JTE,KTS,KTE
+         REAL,       INTENT(IN   )                            :: PDTOP,PTOP
+         REAL, DIMENSION(KMS:KME),                 INTENT(IN) :: ETA1,ETA2,DETA1,DETA2
+         REAL, DIMENSION(IMS:IME,JMS:JME),         INTENT(IN) :: FIS,PD,QS
+         REAL, DIMENSION(IMS:IME,KMS:KME,JMS:JME), INTENT(IN) :: PINT,T,Q,CWM
+         REAL, DIMENSION(KMS:KME)                , INTENT(OUT):: PSTD
+         REAL, DIMENSION(IMS:IME,KMS:KME,JMS:JME), INTENT(OUT):: Z3d,Q3d,T3d
+
+     END SUBROUTINE BASE_STATE_PARENT
+
+     SUBROUTINE NEST_TERRAIN ( HRES_TOPO,                         &
+                               HLAT,HLON,                         &
+                               IDS,IDE,JDS,JDE,KDS,KDE,           & !
+                               IMS,IME,JMS,JME,KMS,KME,           & ! nested grid configuration
+                               ITS,ITE,JTS,JTE,KTS,KTE,           &
+                               i_parent_start, j_parent_start,    &
+                               parent_grid_ratio, pide, pjde, pid ) 
+
+       USE module_domain
+       USE module_configure
+       USE module_timing
+
+       IMPLICIT NONE
+ 
+       LOGICAL, EXTERNAL                             :: wrf_dm_on_monitor
+       INTEGER, INTENT(IN   )                        :: IDS,IDE,JDS,JDE,KDS,KDE
+       INTEGER, INTENT(IN   )                        :: IMS,IME,JMS,JME,KMS,KME
+       INTEGER, INTENT(IN   )                        :: ITS,ITE,JTS,JTE,KTS,KTE
+       INTEGER, INTENT(IN   )                        :: i_parent_start, j_parent_start
+       INTEGER, INTENT(IN   )                        :: parent_grid_ratio,pide,pjde,pid
+       REAL, DIMENSION(IMS:IME,JMS:JME), INTENT(IN)  :: HLAT,HLON
+       REAL, DIMENSION(IMS:IME,JMS:JME), INTENT(OUT) :: HRES_TOPO
+
+     END SUBROUTINE NEST_TERRAIN
+
+    SUBROUTINE med_interp_domain ( parent , nest )
+        USE module_domain
+        TYPE(domain) , POINTER                 :: parent , nest
+    END SUBROUTINE med_interp_domain
+
+    SUBROUTINE med_init_domain_constants_nmm ( parent, nest )
+        USE module_domain
+        TYPE(domain) , POINTER                    :: parent , nest
+    END SUBROUTINE med_init_domain_constants_nmm
+
+    SUBROUTINE start_domain ( grid , allowed_to_move )
+        USE module_domain
+        TYPE(domain) :: grid
+        LOGICAL, INTENT(IN) :: allowed_to_move
+    END SUBROUTINE start_domain
+
+   END INTERFACE
+
+!----------------------------------------------------------------------------
+!  initialize nested domain configurations including setting up wbd,sbd, etc 
+!----------------------------------------------------------------------------
+
+   CALL med_nest_egrid_configure ( parent , nest )
+
+!-------------------------------------------------------------------------
+!  initialize lat-lons and determine weights 
+!-------------------------------------------------------------------------
+
+    CALL med_construct_egrid_weights ( parent, nest )
+!
+!
+!  De-reference dimension information stored in the grid data structure.
+!
+!  From the hybrid, construct the GPMs on isobaric surfaces and then interpolate those
+!  values on to the nested domain. 23 standard prssure levels are assumed here. For
+!  levels below ground, lapse rate atmosphere is assumed before the use of vertical
+!  spline interpolation 
+!
+
+
+    IDS = parent%sd31
+    IDE = parent%ed31
+    KDS = parent%sd32
+    KDE = parent%ed32
+    JDS = parent%sd33
+    JDE = parent%ed33
+
+    IMS = parent%sm31
+    IME = parent%em31
+    KMS = parent%sm32
+    KME = parent%em32
+    JMS = parent%sm33
+    JME = parent%em33
+
+    ITS = parent%sp31
+    ITE = parent%ep31
+    KTS = parent%sp32
+    KTE = parent%ep32
+    JTS = parent%sp33
+    JTE = parent%ep33
+
+    CALL BASE_STATE_PARENT ( parent%nmm_Z3d,parent%nmm_Q3d,parent%nmm_T3d,parent%nmm_PSTD,  &
+                             parent%nmm_PINT,parent%nmm_T,parent%nmm_Q,parent%nmm_CWM,      &
+                             parent%nmm_FIS,parent%nmm_QS,parent%nmm_PD,parent%nmm_pdtop,parent%nmm_pt,   &
+                             parent%nmm_ETA1,parent%nmm_ETA2,                               &
+                             parent%nmm_DETA1,parent%nmm_DETA2,                             &
+                             IDS,IDE,JDS,JDE,KDS,KDE,                                       &
+                             IMS,IME,JMS,JME,KMS,KME,                                       &
+                             ITS,ITE,JTS,JTE,KTS,KTE                                        )
+
+!  
+!   Set new terrain. Since some terrain adjustment is done within the interpolation calls
+!   at the next step, the new terrain over the nested domain has to be called here.
+!
+    IDS = nest%sd31
+    IDE = nest%ed31
+    KDS = nest%sd32
+    KDE = nest%ed32
+    JDS = nest%sd33
+    JDE = nest%ed33
+
+    IMS = nest%sm31
+    IME = nest%em31
+    KMS = nest%sm32
+    KME = nest%em32
+    JMS = nest%sm33
+    JME = nest%em33
+
+    ITS = nest%sp31
+    ITE = nest%ep31
+    KTS = nest%sp32
+    KTE = nest%ep32
+    JTS = nest%sp33
+    JTE = nest%ep33
+
+
+    CALL NEST_TERRAIN ( nest%nmm_hres_fis,                                     &
+                        nest%nmm_hlat,nest%nmm_hlon,                           &
+                        IDS,IDE,JDS,JDE,KDS,KDE,                               & !
+                        IMS,IME,JMS,JME,KMS,KME,                               & ! nested grid configuration
+                        ITS,ITE,JTS,JTE,KTS,KTE,                               &
+                        nest%i_parent_start, nest%j_parent_start,              &
+                        nest%parent_grid_ratio,parent%ed31,parent%ed33,parent%id )
+
+
+!   Initialize some more constants required especially for terrain adjustment processes
+
+    nest%nmm_PSTD=parent%nmm_PSTD
+    nest%nmm_KZMAX=KME
+    parent%nmm_KZMAX=KME  ! just for safety
+
+    DO J = JTS, MIN(JTE,JDE-1)
+      DO I = ITS, MIN(ITE,IDE-1)
+       nest%nmm_fis(I,J)=nest%nmm_hres_fis(I,J)
+     ENDDO
+    ENDDO
+
+!--------------------------------------------------------------------------
+!  interpolation call
+!--------------------------------------------------------------------------
+
+! initialize nest with interpolated data from the parent
+
+    nest%imask_nostag = 0 
+    nest%imask_xstag  = 0 
+    nest%imask_ystag  = 0 
+    nest%imask_xystag = 0 
+
+   CALL med_interp_domain( parent, nest )
+
+!------------------------------------------------------------------------------
+!  set up constants (module_initialize_real.F for nested nmm domain)
+!-----------------------------------------------------------------------------
+
+    CALL med_init_domain_constants_nmm ( parent, nest )    
+
+!--------------------------------------------------------------------------------------
+! set some other initial fields, fill out halos, etc. 
+!--------------------------------------------------------------------------------------
+
+    CALL start_domain ( nest, .TRUE.)
+
+!===================================================================================
+!  Added for the NMM core. End of gopal's doing.
+!===================================================================================
+#endif
   RETURN
 END SUBROUTINE med_nest_initial
 
@@ -635,6 +852,12 @@ SUBROUTINE med_nest_force ( parent , nest )
   ! Local
    INTEGER                                    :: idum1 , idum2 , fid, rc
 
+#if (NMM_CORE == 1 && NMM_NEST == 1)
+   INTEGER                  :: IDS,IDE,JDS,JDE,KDS,KDE     ! gopal
+   INTEGER                  :: IMS,IME,JMS,JME,KMS,KME
+   INTEGER                  :: ITS,ITE,JTS,JTE,KTS,KTE
+#endif
+
    INTERFACE
      SUBROUTINE med_force_domain ( parent , nest )
         USE module_domain
@@ -644,7 +867,74 @@ SUBROUTINE med_nest_force ( parent , nest )
         USE module_domain
         TYPE(domain) , POINTER                 :: parent , nest
      END SUBROUTINE med_interp_domain
+#if (NMM_CORE == 1 && NMM_NEST == 1)
+!===================================================================================
+!  Added for the NMM core. This is gopal's doing.
+!===================================================================================
+
+     SUBROUTINE BASE_STATE_PARENT ( Z3d,Q3d,T3d,PSTD,        &
+                                    PINT,T,Q,CWM,            &
+                                    FIS,QS,PD,PDTOP,PTOP,    &
+                                    ETA1,ETA2,               &
+                                    DETA1,DETA2,             &
+                                    IDS,IDE,JDS,JDE,KDS,KDE, &
+                                    IMS,IME,JMS,JME,KMS,KME, &
+                                    ITS,ITE,JTS,JTE,KTS,KTE  )
+!
+
+         USE MODULE_MODEL_CONSTANTS
+         IMPLICIT NONE
+         INTEGER,    INTENT(IN   )                            :: IDS,IDE,JDS,JDE,KDS,KDE
+         INTEGER,    INTENT(IN   )                            :: IMS,IME,JMS,JME,KMS,KME
+         INTEGER,    INTENT(IN   )                            :: ITS,ITE,JTS,JTE,KTS,KTE
+         REAL,       INTENT(IN   )                            :: PDTOP,PTOP
+         REAL, DIMENSION(KMS:KME),                 INTENT(IN) :: ETA1,ETA2,DETA1,DETA2
+         REAL, DIMENSION(IMS:IME,JMS:JME),         INTENT(IN) :: FIS,PD,QS
+         REAL, DIMENSION(IMS:IME,KMS:KME,JMS:JME), INTENT(IN) :: PINT,T,Q,CWM
+         REAL, DIMENSION(KMS:KME)                , INTENT(OUT):: PSTD
+         REAL, DIMENSION(IMS:IME,KMS:KME,JMS:JME), INTENT(OUT):: Z3d,Q3d,T3d
+
+     END SUBROUTINE BASE_STATE_PARENT
+
+#endif
    END INTERFACE
+
+#if (NMM_CORE == 1 && NMM_NEST == 1)
+
+!  De-reference dimension information stored in the grid data structure.
+
+    IDS = parent%sd31
+    IDE = parent%ed31
+    KDS = parent%sd32
+    KDE = parent%ed32
+    JDS = parent%sd33
+    JDE = parent%ed33
+
+    IMS = parent%sm31
+    IME = parent%em31
+    KMS = parent%sm32
+    KME = parent%em32
+    JMS = parent%sm33
+    JME = parent%em33
+
+    ITS = parent%sp31
+    ITE = parent%ep31
+    KTS = parent%sp32
+    KTE = parent%ep32
+    JTS = parent%sp33
+    JTE = parent%ep33
+
+
+    CALL BASE_STATE_PARENT ( parent%nmm_Z3d,parent%nmm_Q3d,parent%nmm_T3d,parent%nmm_PSTD, &
+                             parent%nmm_PINT,parent%nmm_T,parent%nmm_Q,parent%nmm_CWM,     &
+                             parent%nmm_FIS,parent%nmm_QS,parent%nmm_PD,parent%nmm_pdtop,parent%nmm_pt,  &
+                             parent%nmm_ETA1,parent%nmm_ETA2,                              &
+                             parent%nmm_DETA1,parent%nmm_DETA2,                            &
+                             IDS,IDE,JDS,JDE,KDS,KDE,                                      &
+                             IMS,IME,JMS,JME,KMS,KME,                                      &
+                             ITS,ITE,JTS,JTE,KTS,KTE                                       )
+
+#endif
 
    IF ( .NOT. WRFU_ClockIsStopTime(nest%domain_clock ,rc=rc) ) THEN
 ! initialize nest with interpolated data from the parent
@@ -697,6 +987,8 @@ SUBROUTINE med_nest_feedback ( parent , nest , config_flags )
                                 ids, ide, jds, jde, kds, kde,    &
                                 ims, ime, jms, jme, kms, kme,    &
                                 ips, ipe, jps, jpe, kps, kpe    )
+! gopal's change- added ifdef
+#if ( EM_CORE == 1 )
       DO j = jps, MIN(jpe,jde-1)
       DO i = ips, MIN(ipe,ide-1)
         IF      ( parent%nest_pos(i,j) .EQ. 9021000. ) THEN
@@ -708,6 +1000,7 @@ SUBROUTINE med_nest_feedback ( parent , nest , config_flags )
         ENDIF
       ENDDO
       ENDDO
+#endif
 #endif
     END IF
 

@@ -904,7 +904,7 @@ CONTAINS
        lqmi(1:num_soil_top_cat) = &
        (/0.045, 0.057, 0.065, 0.067, 0.034, 0.078, 0.10,     &
          0.089, 0.095, 0.10,  0.070, 0.068, 0.078, 0.0,      &
-         0.004, 0.065, 0.020, 0.004, 0.008 /)
+         0.004, 0.065 /) !dusan , 0.020, 0.004, 0.008 /)
 
 !  At the initial time we care about values of soil moisture and temperature, other times are
 !  ignored by the model, so we ignore them, too.

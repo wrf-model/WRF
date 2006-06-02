@@ -1,6 +1,6 @@
 #makefile to build a wrf_io with netCDF
 
-OBJSL   = wrf_io.o field_routines.o
+OBJSL   = wrf_io.o field_routines.o module_wrfsi_static.o
 OBJS    = $(OBJSL)
 CODE    = ext_ncd_get_dom_ti.code ext_ncd_get_var_td.code ext_ncd_get_var_ti.code ext_ncd_put_dom_ti.code ext_ncd_put_var_td.code ext_ncd_put_var_ti.code transpose.code 
 FFLAGS  =  $(FCFLAGS) -I$(NETCDFPATH)/include -I../ioapi_share
@@ -21,6 +21,10 @@ libwrfio_nf.a:		$(OBJS) $(CODE)
 wrf_io.o:               wrf_io.F90 $(CODE)
 			$(CPP1) wrf_io.F90 | $(M4) - > wrf_io.f
 			$(FC) $(FFLAGS) -c wrf_io.f
+
+module_wrfsi_static.o:  module_wrfsi_static.F90
+			$(CPP1) module_wrfsi_static.F90 > module_wrfsi_static.f
+			$(FC) $(FFLAGS) -c module_wrfsi_static.f
 
 diffwrf:                diffwrf.F90
 			$(CPP1) diffwrf.F90 > diffwrf.f

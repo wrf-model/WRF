@@ -4,6 +4,3414 @@
 #define MM5_SINT
 !#define DUMBCOPY
 
+#if ( NMM_CORE == 1 )
+!=======================================================================================
+!  E grid interpolation for mass with addition of terrain adjustments. First routine
+!  pertains to initial conditions and the next one corresponds to boundary conditions 
+!  This is gopal's doing
+!=======================================================================================
+
+ SUBROUTINE interp_mass_nmm (cfld,                                 &  ! CD field
+                             cids, cide, ckds, ckde, cjds, cjde,   &
+                             cims, cime, ckms, ckme, cjms, cjme,   &
+                             cits, cite, ckts, ckte, cjts, cjte,   &
+                             nfld,                                 &  ! ND field
+                             nids, nide, nkds, nkde, njds, njde,   &
+                             nims, nime, nkms, nkme, njms, njme,   &
+                             nits, nite, nkts, nkte, njts, njte,   &
+                             shw,                                  &  ! stencil half width for interp
+                             imask,                                &  ! interpolation mask
+                             xstag, ystag,                         &  ! staggering of field
+                             ipos, jpos,                           &  ! Position of lower left of nest in CD
+                             nri, nrj,                             &  ! nest ratios                         
+                             CII, IIH, CJJ, JJH, CBWGT1, HBWGT1,   &  ! south-western grid locs and weights 
+                             CBWGT2, HBWGT2, CBWGT3, HBWGT3,       &  ! note that "C"ourse grid ones are
+                             CBWGT4, HBWGT4,                       &  ! dummys for weights
+                             CZ3d, Z3d,                            &  ! Z3d interpolated from CZ3d
+                             CFIS,FIS,                             &  ! CFIS dummy on fine domain
+                             CSM,SM,                               &  ! CSM is dummy
+                             CPDTOP,PDTOP,                         &
+                             CPTOP,PTOP,                           &
+                             CPSTD,PSTD,                           &
+                             CKZMAX,KZMAX                          ) 
+
+   USE MODULE_MODEL_CONSTANTS
+   USE module_timing
+   IMPLICIT NONE
+
+   LOGICAL,INTENT(IN) :: xstag, ystag
+   INTEGER,INTENT(IN) :: ckzmax,kzmax 
+   INTEGER,INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
+                         cims, cime, ckms, ckme, cjms, cjme,   &
+                         cits, cite, ckts, ckte, cjts, cjte,   &
+                         nids, nide, nkds, nkde, njds, njde,   &
+                         nims, nime, nkms, nkme, njms, njme,   &
+                         nits, nite, nkts, nkte, njts, njte,   &
+                         shw,ipos,jpos,nri,nrj               
+
+   INTEGER,DIMENSION(nims:nime,njms:njme),          INTENT(IN)           :: IMASK
+
+!  parent domain
+
+   INTEGER,DIMENSION(cims:cime,cjms:cjme),          INTENT(IN)           :: CII,CJJ     ! dummy
+   REAL,DIMENSION(cims:cime,cjms:cjme),             INTENT(IN)           :: CBWGT1,CBWGT2,CBWGT3
+   REAL,DIMENSION(cims:cime,cjms:cjme),             INTENT(IN)           :: CBWGT4,CFIS,CSM
+   REAL,DIMENSION(cims:cime,ckms:ckme,cjms:cjme),   INTENT(IN)           :: CFLD
+   REAL,DIMENSION(cims:cime,1:KZMAX,cjms:cjme ),INTENT(IN)               :: CZ3d
+   REAL,DIMENSION(1:KZMAX),                     INTENT(IN)               :: CPSTD
+   REAL,INTENT(IN)                                                       :: CPDTOP,CPTOP
+
+!  nested domain
+
+   INTEGER,DIMENSION(nims:nime,njms:njme),          INTENT(IN)           :: IIH,JJH
+   REAL,DIMENSION(nims:nime,njms:njme),             INTENT(IN)           :: HBWGT1,HBWGT2,HBWGT3
+   REAL,DIMENSION(nims:nime,njms:njme),             INTENT(IN)           :: HBWGT4
+   REAL,DIMENSION(nims:nime,njms:njme),             INTENT(IN)           :: FIS,SM
+   REAL,DIMENSION(nims:nime,nkms:nkme,njms:njme),   INTENT(INOUT)        :: NFLD
+   REAL,DIMENSION(1:KZMAX),                                   INTENT(IN) :: PSTD
+   REAL,DIMENSION(nims:nime,1:KZMAX,njms:njme ),INTENT(OUT)              :: Z3d
+   REAL,INTENT(IN)                                                       :: PDTOP,PTOP
+
+!  local
+
+   INTEGER,PARAMETER                                          :: JTB=134
+   REAL, PARAMETER                                            :: LAPSR=6.5E-3,GI=1./G, D608=0.608
+   REAL, PARAMETER                                            :: COEF3=R_D*GI*LAPSR
+   INTEGER                                                    :: I,J,K,IDUM
+   REAL                                                       :: dlnpdz,tvout,pmo
+   REAL,DIMENSION(nims:nime,njms:njme)                        :: ZS,DUM2d 
+   REAL,DIMENSION(JTB)                                        :: PIN,ZIN,Y2,PIO,ZOUT,DUM1,DUM2 
+!-----------------------------------------------------------------------------------------------------
+!
+!*** CHECK DOMAIN BOUNDS BEFORE INTERPOLATION
+!
+     DO J=NJTS,MIN(NJTE,NJDE-1)
+     DO I=NITS,MIN(NITE,NIDE-1)
+       IF(IIH(i,j).LT.(CIDS-shw) .OR. IIH(i,j).GT.(CIDE+shw)) &
+           CALL wrf_error_fatal ('mass points:check domain bounds along x' )
+       IF(JJH(i,j).LT.(CJDS-shw) .OR. JJH(i,j).GT.(CJDE+shw)) &
+           CALL wrf_error_fatal ('mass points:check domain bounds along y' )
+     ENDDO
+    ENDDO
+
+    IF(KZMAX .GT. (JTB-10)) &
+        CALL wrf_error_fatal ('mass points: increase JTB in interp_mass_nmm')
+
+!    WRITE(21,*)'------------- MED NEST INITIAL 1 ----------------'
+!    DO J=NJTS,MIN(NJTE,NJDE-1)
+!      DO I=NITS,MIN(NITE,NIDE-1)
+!         WRITE(21,*)I,J,IMASK(I,J),NFLD(I,1,J)
+!      ENDDO
+!    ENDDO
+!    WRITE(21,*)
+
+!
+!*** DEFINE LOCAL TOPOGRAPHY ON THE BASIS OF FIS. ALSO CHECK IF SM IS LAND (SM=0) OVER TOPO
+!*** YOU DON'T WANT MOUNTAINS INSIDE WATER BODIES! 
+!
+
+    DO J=NJTS,MIN(NJTE,NJDE-1)
+      DO I=NITS,MIN(NITE,NIDE-1)
+         ZS(I,J)=FIS(I,J)/G
+      ENDDO
+    ENDDO
+
+!
+!*** Interpolate GPMs DERIVED FROM STANDARD ATMOSPHERIC LAPSE RATE FROM THE PARENT TO
+!*** THE NESTED DOMAIN
+!
+!*** INDEX CONVENTIONS
+!***                     HBWGT4
+!***                      4
+!***
+!***
+!***
+!***                   h
+!***             1                 2
+!***            HBWGT1             HBWGT2
+!***
+!***
+!***                      3
+!***                     HBWGT3
+
+    Z3d=0.0
+    DO J=NJTS,MIN(NJTE,NJDE-1)
+      DO K=NKTS,KZMAX                ! Please note that we are still in isobaric surfaces 
+        DO I=NITS,MIN(NITE,NIDE-1)
+!
+           IF(MOD(JJH(I,J),2) .NE. 0)THEN    ! 1,3,5,7
+               Z3d(I,K,J) = HBWGT1(I,J)*CZ3d(IIH(I,J),  K,  JJH(I,J)  )    &
+                          + HBWGT2(I,J)*CZ3d(IIH(I,J)+1,K,  JJH(I,J)  )    &
+                          + HBWGT3(I,J)*CZ3d(IIH(I,J),  K,  JJH(I,J)-1)    &
+                          + HBWGT4(I,J)*CZ3d(IIH(I,J),  K,  JJH(I,J)+1)
+           ELSE
+               Z3d(I,K,J) = HBWGT1(I,J)*CZ3d(IIH(I,J),  K,  JJH(I,J)  )  &
+                          + HBWGT2(I,J)*CZ3d(IIH(I,J)+1,K,  JJH(I,J)  )  &
+                          + HBWGT3(I,J)*CZ3d(IIH(I,J)+1,K,  JJH(I,J)-1)  &
+                          + HBWGT4(I,J)*CZ3d(IIH(I,J)+1,K,  JJH(I,J)+1)
+
+           ENDIF  
+!
+        ENDDO
+      ENDDO
+    ENDDO
+
+!  RECONSTRUCT PDs ON THE BASIS OF TOPOGRAPHY AND THE INTERPOLATED HEIGHTS
+
+    DO J=NJTS,MIN(NJTE,NJDE-1)
+      DO I=NITS,MIN(NITE,NIDE-1)
+!
+          IF (ZS(I,J) .LT. Z3d(I,1,J)) THEN
+            dlnpdz     = (log(PSTD(1))-log(PSTD(2)) )/(Z3d(i,1,j)-Z3d(i,2,j))
+            dum2d(i,j) = exp(log(PSTD(1)) + dlnpdz*(ZS(I,J) - Z3d(i,1,j)))
+            dum2d(i,j) = dum2d(i,j) - PDTOP -PTOP
+            IF(J==10)WRITE(0,*)I,J,K,ZS(I,J),Z3d(I,K,J),Z3d(I,K+1,J),dum2d(i,j),PDTOP,PTOP
+          ELSE                                           ! target level bounded by input levels
+            DO K =NKTS,KZMAX-1                           ! still in the isobaric surfaces
+             IF(ZS(I,J) .GE. Z3d(I,K,J) .AND. ZS(I,J) .LT. Z3d(i,K+1,j))THEN
+               dlnpdz     = (log(PSTD(K))-log(PSTD(K+1)) ) /(Z3d(i,K,j)-Z3d(i,K+1,j))
+               dum2d(i,j) = exp(log(PSTD(K)) + dlnpdz*(ZS(I,J)- Z3d(i,K,j)))
+               dum2d(i,j) = dum2d(i,j) - PDTOP -PTOP
+!              IF(I==1)WRITE(0,*)I,J,K,ZS(I,J),Z3d(I,K,J),Z3d(I,K+1,J),dum2d(i,j),PDTOP,PTOP
+             ENDIF
+            ENDDO
+          ENDIF
+          IF(ZS(I,J) .GE. Z3d(I,KZMAX,J))THEN
+             WRITE(0,*)'I=',I,'J=',J,'K=',KZMAX,'TERRAIN HEIGHT',ZS(I,J),'Z3d',Z3d(I,KZMAX,J)
+             CALL wrf_error_fatal3 ( "interp_fcn.b" , 176 , "MOUNTAIN TOO HIGH TO FIT THE MODEL DEPTH")
+          ENDIF
+!       
+      ENDDO
+    ENDDO
+
+    DO J=NJTS,MIN(NJTE,NJDE-1)
+      DO K=NKDS,NKDE                       ! NKTE is 1, nevertheless let us pretend religious 
+       DO I=NITS,MIN(NITE,NIDE-1)
+         IF(IMASK(I,J) .NE. 1)THEN
+           NFLD(I,K,J)= dum2d(i,j)         ! PD defined in the nested domain
+         ENDIF
+       ENDDO
+      ENDDO
+    ENDDO
+
+!
+  END SUBROUTINE interp_mass_nmm 
+!
+!--------------------------------------------------------------------------------------
+
+ SUBROUTINE nmm_bdymass_hinterp ( cfld,                              &  ! CD field
+                               cids, cide, ckds, ckde, cjds, cjde,   &
+                               cims, cime, ckms, ckme, cjms, cjme,   &
+                               cits, cite, ckts, ckte, cjts, cjte,   &
+                               nfld,                                 &  ! ND field
+                               nids, nide, nkds, nkde, njds, njde,   &
+                               nims, nime, nkms, nkme, njms, njme,   &
+                               nits, nite, nkts, nkte, njts, njte,   &
+                               shw,                                  &  ! stencil half width
+                               imask,                                &  ! interpolation mask
+                               xstag, ystag,                         &  ! staggering of field
+                               ipos, jpos,                           &  ! Position of lower left of nest in CD
+                               nri, nrj,                             &  ! nest ratios
+                               cbdy, nbdy,                           &
+                               cbdy_t, nbdy_t,                       &
+                               cdt, ndt,                             &
+                               CTEMP_B,NTEMP_B,                      &  ! These temp arrays should be removed
+                               CTEMP_BT,NTEMP_BT,                    &  ! later on
+                               CII, IIH, CJJ, JJH, CBWGT1, HBWGT1,   &  ! south-western grid locs and weights
+                               CBWGT2, HBWGT2, CBWGT3, HBWGT3,       &  ! note that "C"ourse grid ones are
+                               CBWGT4, HBWGT4,                       &  ! dummys
+                               CZ3d, Z3d,                            &  ! Z3d dummy on nested domain
+                               CFIS,FIS,                             &  ! CFIS dummy on fine domain
+                               CSM,SM,                               &  ! CSM is dummy
+                               CPDTOP,PDTOP,                         &
+                               CPTOP,PTOP,                           &
+                               CPSTD,PSTD,                           &
+                               CKZMAX,KZMAX                          ) 
+
+
+     USE module_configure
+     USE module_wrf_error
+
+     IMPLICIT NONE
+
+
+     INTEGER, INTENT(IN) :: ckzmax,kzmax
+     INTEGER, INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
+                            cims, cime, ckms, ckme, cjms, cjme,   &
+                            cits, cite, ckts, ckte, cjts, cjte,   &
+                            nids, nide, nkds, nkde, njds, njde,   &
+                            nims, nime, nkms, nkme, njms, njme,   &
+                            nits, nite, nkts, nkte, njts, njte,   &
+                            shw,                                  &
+                            ipos, jpos,                           &
+                            nri, nrj
+
+
+   REAL, INTENT(INOUT)                                                :: cdt, ndt
+
+   REAL, DIMENSION ( cims:cime, ckms:ckme, cjms:cjme ), INTENT(OUT) :: ctemp_b,ctemp_bt
+   REAL, DIMENSION ( nims:nime, nkms:nkme, njms:njme ), INTENT(OUT) :: ntemp_b,ntemp_bt
+   LOGICAL, INTENT(IN) :: xstag, ystag
+   REAL,  DIMENSION( * ), INTENT(INOUT) :: cbdy, cbdy_t, nbdy, nbdy_t
+
+!  parent domain
+
+   INTEGER,DIMENSION(nims:nime,njms:njme),          INTENT(IN)           :: IMASK
+   INTEGER,DIMENSION(cims:cime,cjms:cjme),          INTENT(IN)           :: CII,CJJ     ! dummy
+   REAL,DIMENSION(cims:cime,cjms:cjme),             INTENT(IN)           :: CBWGT1,CBWGT2,CBWGT3
+   REAL,DIMENSION(cims:cime,cjms:cjme),             INTENT(IN)           :: CBWGT4,CFIS,CSM
+   REAL,DIMENSION(cims:cime,ckms:ckme,cjms:cjme),   INTENT(IN)           :: CFLD
+   REAL,DIMENSION(cims:cime,1:KZMAX,cjms:cjme ),    INTENT(IN)           :: CZ3d
+   REAL,DIMENSION(1:KZMAX),                         INTENT(IN)           :: CPSTD
+   REAL,INTENT(IN)                                                       :: CPDTOP,CPTOP
+
+!  nested domain
+
+   INTEGER,DIMENSION(nims:nime,njms:njme),          INTENT(IN)           :: IIH,JJH
+   REAL,DIMENSION(nims:nime,njms:njme),             INTENT(IN)           :: HBWGT1,HBWGT2,HBWGT3
+   REAL,DIMENSION(nims:nime,njms:njme),             INTENT(IN)           :: HBWGT4
+   REAL,DIMENSION(nims:nime,njms:njme),             INTENT(IN)           :: FIS,SM
+   REAL,DIMENSION(nims:nime,nkms:nkme,njms:njme),   INTENT(INOUT)        :: NFLD
+   REAL,DIMENSION(1:KZMAX),                         INTENT(IN)           :: PSTD
+   REAL,DIMENSION(nims:nime,1:KZMAX,njms:njme ),INTENT(OUT)              :: Z3d
+   REAL,INTENT(IN)                                                       :: PDTOP,PTOP
+
+! Local
+
+     INTEGER                                     :: nijds, nijde, spec_bdy_width,i,j,k
+     REAL                                        :: dlnpdz,dum2d
+     REAL,DIMENSION(nims:nime,njms:njme)         :: zs
+
+     nijds = min(nids, njds)
+     nijde = max(nide, njde)
+     CALL nl_get_spec_bdy_width( 1, spec_bdy_width )
+
+
+     CALL nmm_bdymass_interp1( cfld,                             &  ! CD field
+                           cids, cide, ckds, ckde, cjds, cjde,   &
+                           cims, cime, ckms, ckme, cjms, cjme,   &
+                           cits, cite, ckts, ckte, cjts, cjte,   &
+                           nfld,                                 &  ! ND field
+                           nijds, nijde , spec_bdy_width ,       &  
+                           nids, nide, nkds, nkde, njds, njde,   &
+                           nims, nime, nkms, nkme, njms, njme,   &
+                           nits, nite, nkts, nkte, njts, njte,   &
+                           shw, imask,                           &
+                           xstag, ystag,                         &  ! staggering of field
+                           ipos, jpos,                           &  ! Position of lower left of nest in CD
+                           nri, nrj,                             &
+                           cdt, ndt,                             &
+                           CTEMP_B,NTEMP_B,                      &  ! These temp arrays should be removed
+                           CTEMP_BT,NTEMP_BT,                    &  ! later on
+                           CII, IIH, CJJ, JJH, CBWGT1, HBWGT1,   &  ! south-western grid locs and weights
+                           CBWGT2, HBWGT2, CBWGT3, HBWGT3,       &  ! note that "C"ourse grid ones are
+                           CBWGT4, HBWGT4,                       &  ! dummys
+                           CZ3d, Z3d,                            &  ! Z3d dummy on nested domain
+                           CFIS,FIS,                             &  ! CFIS dummy on fine domain
+                           CSM,SM,                               &  ! CSM is dummy
+                           CPDTOP,PDTOP,                         &
+                           CPTOP,PTOP,                           &
+                           CPSTD,PSTD,                           &
+                           CKZMAX,KZMAX                          ) 
+
+    RETURN
+
+   END SUBROUTINE nmm_bdymass_hinterp 
+!
+!---------------------------------------------------------------------
+!
+   SUBROUTINE nmm_bdymass_interp1( cfld,                                 &  ! CD field 
+                                   cids, cide, ckds, ckde, cjds, cjde,   &
+                                   cims, cime, ckms, ckme, cjms, cjme,   &
+                                   cits, cite, ckts, ckte, cjts, cjte,   &
+                                   nfld,                                 &  ! ND field
+                                   nijds, nijde, spec_bdy_width ,        &
+                                   nids, nide, nkds, nkde, njds, njde,   &
+                                   nims, nime, nkms, nkme, njms, njme,   &
+                                   nits, nite, nkts, nkte, njts, njte,   &
+                                   shw1,                                 &
+                                   imask,                                & ! interpolation mask
+                                   xstag, ystag,                         & ! staggering of field
+                                   ipos, jpos,                           & ! lower left of nest in CD
+                                   nri, nrj,                             &
+                                   cdt, ndt,                             &
+                                   CTEMP_B,NTEMP_B,                      &  ! to be removed 
+                                   CTEMP_BT,NTEMP_BT,                    &  ! later on
+                                   CII, IIH, CJJ, JJH, CBWGT1, HBWGT1,   &  ! SW grid locs and weights
+                                   CBWGT2, HBWGT2, CBWGT3, HBWGT3,       &  ! note that "C"ourse grid ones 
+                                   CBWGT4, HBWGT4,                       &  ! are just  dummys
+                                   CZ3d, Z3d,                            &  ! Z3d dummy on nested domain
+                                   CFIS,FIS,                             &  ! CFIS dummy on fine domain
+                                   CSM,SM,                               &  ! CSM is dummy
+                                   CPDTOP,PDTOP,                         &
+                                   CPTOP,PTOP,                           &
+                                   CPSTD,PSTD,                           & 
+                                   CKZMAX,KZMAX                          )                       
+
+   USE MODULE_MODEL_CONSTANTS
+   use module_state_description
+   IMPLICIT NONE
+
+   INTEGER, INTENT(IN) :: ckzmax,kzmax
+   INTEGER, INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
+                          cims, cime, ckms, ckme, cjms, cjme,   &
+                          cits, cite, ckts, ckte, cjts, cjte,   &
+                          nids, nide, nkds, nkde, njds, njde,   &
+                          nims, nime, nkms, nkme, njms, njme,   &
+                          nits, nite, nkts, nkte, njts, njte,   &
+                          shw1, ipos, jpos, nri, nrj
+
+   INTEGER, INTENT(IN) :: nijds, nijde, spec_bdy_width
+   LOGICAL, INTENT(IN) :: xstag, ystag
+
+   REAL, INTENT(INOUT)                                                :: cdt, ndt
+   REAL, DIMENSION ( cims:cime, ckms:ckme, cjms:cjme ), INTENT(OUT) :: ctemp_b,ctemp_bt
+   REAL, DIMENSION ( nims:nime, nkms:nkme, njms:njme ), INTENT(OUT) :: ntemp_b,ntemp_bt
+
+!  parent domain
+
+   INTEGER,DIMENSION(nims:nime,njms:njme),          INTENT(IN)           :: IMASK
+   INTEGER,DIMENSION(cims:cime,cjms:cjme),          INTENT(IN)           :: CII,CJJ     ! dummy
+   REAL,DIMENSION(cims:cime,cjms:cjme),             INTENT(IN)           :: CBWGT1,CBWGT2,CBWGT3
+   REAL,DIMENSION(cims:cime,cjms:cjme),             INTENT(IN)           :: CBWGT4,CFIS,CSM
+   REAL,DIMENSION(cims:cime,ckms:ckme,cjms:cjme),   INTENT(IN)           :: CFLD
+   REAL,DIMENSION(cims:cime,1:KZMAX,cjms:cjme ),INTENT(IN)               :: CZ3d
+   REAL,DIMENSION(1:KZMAX),                     INTENT(IN)               :: CPSTD
+   REAL,INTENT(IN)                                                       :: CPDTOP,CPTOP
+
+!  nested domain
+
+   INTEGER,DIMENSION(nims:nime,njms:njme),          INTENT(IN)           :: IIH,JJH
+   REAL,DIMENSION(nims:nime,njms:njme),             INTENT(IN)           :: HBWGT1,HBWGT2,HBWGT3
+   REAL,DIMENSION(nims:nime,njms:njme),             INTENT(IN)           :: HBWGT4
+   REAL,DIMENSION(nims:nime,njms:njme),             INTENT(IN)           :: FIS,SM
+   REAL,DIMENSION(nims:nime,nkms:nkme,njms:njme),   INTENT(INOUT)        :: NFLD
+   REAL,DIMENSION(1:KZMAX),                         INTENT(IN)           :: PSTD
+   REAL,DIMENSION(nims:nime,1:KZMAX,njms:njme ),INTENT(OUT)              :: Z3d
+   REAL,INTENT(IN)                                                       :: PDTOP,PTOP
+
+! local
+
+  INTEGER,PARAMETER                                                :: JTB=134
+  INTEGER                                                          :: i,j,k,ii,jj
+  REAL                                                             :: dlnpdz,dum2d
+  REAL, DIMENSION (nims:nime,njms:njme)                            :: zs
+  REAL, DIMENSION (nims:nime,njms:njme)                            :: CWK1,CWK2,CWK3,CWK4 
+
+!
+!*** DEFINE LOCAL TOPOGRAPHY ON THE BASIS OF FIS. ASLO CHECK IF SM IS LAND (SM=0) OVER TOPO
+!*** YOU DON'T WANT MOUNTAINS INSIDE WATER BODIES!
+!
+
+    DO J=NJTS,MIN(NJTE,NJDE-1)
+      DO I=NITS,MIN(NITE,NIDE-1)
+         ZS(I,J)=FIS(I,J)/G
+      ENDDO
+    ENDDO
+
+!    X start boundary
+
+       NMM_XS: IF(NITS .EQ. NIDS)THEN
+!      WRITE(0,*)'ENTERING X1 START BOUNDARY AT MASS POINTS',NJTS,MIN(NJTE,NJDE-1)
+        I = NIDS
+
+        DO J = NJTS,MIN(NJTE,NJDE-1)
+          DO K=NKTS,KZMAX
+            IF(MOD(JJH(I,J),2) .NE. 0)THEN      ! 1,3,5,7 of the parent domain
+              Z3d(I,K,J) = HBWGT1(I,J)*CZ3d(IIH(I,J),  K,  JJH(I,J)  )    &
+                         + HBWGT2(I,J)*CZ3d(IIH(I,J)+1,K,  JJH(I,J)  )    &
+                         + HBWGT3(I,J)*CZ3d(IIH(I,J),  K,  JJH(I,J)-1)    &
+                         + HBWGT4(I,J)*CZ3d(IIH(I,J),  K,  JJH(I,J)+1)
+            ELSE
+              Z3d(I,K,J) = HBWGT1(I,J)*CZ3d(IIH(I,J),  K,  JJH(I,J)  )  &
+                         + HBWGT2(I,J)*CZ3d(IIH(I,J)+1,K,  JJH(I,J)  )  &
+                         + HBWGT3(I,J)*CZ3d(IIH(I,J)+1,K,  JJH(I,J)-1)  &
+                         + HBWGT4(I,J)*CZ3d(IIH(I,J)+1,K,  JJH(I,J)+1)
+!
+!            IF(J==13 .AND. K==1)WRITE(0,*)IIH(I,J),IIH(I,J)+1,JJH(I,J)-1,JJH(I,J),JJH(I,J)+1
+!            IF(J==13 .AND. K==1)WRITE(0,*)HBWGT1(I,J),HBWGT2(I,J),HBWGT3(I,J),HBWGT4(I,J),  &
+!                                CZ3d(IIH(I,J),  K,  JJH(I,J)  ),                   &
+!                                CZ3d(IIH(I,J)+1,K,  JJH(I,J)  ),                   &
+!                                CZ3d(IIH(I,J),  K,  JJH(I,J)-1),                   &
+!                                CZ3d(IIH(I,J),  K,  JJH(I,J)+1)
+!
+            ENDIF
+          END DO
+        END DO
+
+        DO J = NJTS,MIN(NJTE,NJDE-1)
+          IF(MOD(J,2) .NE. 0)THEN
+            IF (ZS(I,J) .LT. Z3d(I,2,J)) THEN              ! level 2 has to be changed
+               dlnpdz     = (log(PSTD(1))-log(PSTD(2)) )/(Z3d(i,1,j)-Z3d(i,2,j))
+               dum2d      = exp(log(PSTD(1)) + dlnpdz*(ZS(I,J) - Z3d(i,1,j)))
+               CWK1(I,J)  = dum2d -PDTOP -PTOP
+!               WRITE(0,*)I,J,ZS(I,J),Z3d(i,1,j),Z3d(i,2,j),CWK1(I,J)
+            ELSE ! target level bounded by input levels
+              DO K =NKTS,KZMAX-1
+               IF(ZS(I,J) .GE. Z3d(i,K,j) .AND. ZS(I,J) .LT. Z3d(i,K+1,j))THEN
+                 dlnpdz     = (log(PSTD(K))-log(PSTD(K+1)) ) /(Z3d(i,K,j)-Z3d(i,K+1,j))
+                 dum2d      = exp(log(PSTD(K)) + dlnpdz*(ZS(I,J)- Z3d(i,K,j)))
+                 CWK1(I,J)  = dum2d -PDTOP -PTOP
+!                 WRITE(0,*)I,J,ZS(I,J),Z3d(i,K,j),Z3d(i,K+1,j),CWK1(I,J)
+               ENDIF
+              ENDDO
+            ENDIF
+            IF(ZS(I,J) .GE. Z3d(I,KZMAX,J))THEN
+               WRITE(0,*)'I=',I,'J=',J,'K=',K,'TERRAIN HEIGHT',ZS(I,J),'Z3d',Z3d(I,KZMAX,J) 
+               CALL wrf_error_fatal("BC:MOUNTAIN TOO HIGH TO FIT THE MODEL DEPTH")
+            ENDIF           
+          ELSE
+           CWK1(I,J)=0.
+          ENDIF
+        ENDDO
+
+        DO J = NJTS,MIN(NJTE,NJDE-1)
+         DO K = NKDS,NKDE
+           ntemp_b(i,k,j)     = CWK1(I,J) 
+           ntemp_bt(i,k,j)    = 0.0
+!          bdy(J,K,I,P_XSB)   = CWK1(I,J)         ! This will not work for NMM since 
+!          bdy_t(J,K,I,P_XSB) = 0.0               ! NMM requires BC halo exchanges
+         END DO
+        END DO
+       ENDIF NMM_XS
+
+!    X end boundary
+
+       NMM_XE: IF(NITE-1 .EQ. NIDE-1)THEN
+!       WRITE(0,*)'ENTERING X END BOUNDARY AT MASS POINTS',NJTS,MIN(NJTE,NJDE-1)
+       I = NIDE-1
+       II = NIDE - I
+
+       DO J=NJTS,MIN(NJTE,NJDE-1)
+         DO K=NKTS,KZMAX
+             IF(MOD(JJH(I,J),2) .NE. 0)THEN    ! 1,3,5,7
+                 Z3d(I,K,J) = HBWGT1(I,J)*CZ3d(IIH(I,J),  K,  JJH(I,J)  )    &
+                            + HBWGT2(I,J)*CZ3d(IIH(I,J)+1,K,  JJH(I,J)  )    &
+                            + HBWGT3(I,J)*CZ3d(IIH(I,J),  K,  JJH(I,J)-1)    &
+                            + HBWGT4(I,J)*CZ3d(IIH(I,J),  K,  JJH(I,J)+1)
+
+!                IF(J==151)WRITE(0,*)'CRASH1',K,HBWGT1(I,J),HBWGT2(I,J),HBWGT3(I,J),HBWGT4(I,J)
+!                IF(J==151)WRITE(0,*)'CRASH2',K,Z3d(I,K,J),CZ3d(IIH(I,J),  K,  JJH(I,J)  ),  &
+!                                     CZ3d(IIH(I,J)+1,K,  JJH(I,J)  ),                      &
+!                                     CZ3d(IIH(I,J),  K,  JJH(I,J)-1),                      &
+!                                     CZ3d(IIH(I,J),  K,  JJH(I,J)+1)
+             ELSE
+                 Z3d(I,K,J) = HBWGT1(I,J)*CZ3d(IIH(I,J),  K,  JJH(I,J)  )  &
+                            + HBWGT2(I,J)*CZ3d(IIH(I,J)+1,K,  JJH(I,J)  )  &
+                            + HBWGT3(I,J)*CZ3d(IIH(I,J)+1,K,  JJH(I,J)-1)  &
+                            + HBWGT4(I,J)*CZ3d(IIH(I,J)+1,K,  JJH(I,J)+1)
+
+!                 IF(J==151)WRITE(0,*)'CRASH3',K,HBWGT1(I,J),HBWGT2(I,J),HBWGT3(I,J),HBWGT4(I,J)
+!                 IF(J==151)WRITE(0,*)'CRASH4',K,Z3d(I,K,J),CZ3d(IIH(I,J),  K,  JJH(I,J)  ), &
+!                           CZ3d(IIH(I,J)+1,K,  JJH(I,J)  ), CZ3d(IIH(I,J)+1,K,  JJH(I,J)-1), &
+!                           CZ3d(IIH(I,J)+1,K,  JJH(I,J)+1)
+
+             ENDIF
+         ENDDO
+       ENDDO
+
+        DO J = NJTS,MIN(NJTE,NJDE-1)
+          IF(MOD(J,2) .NE.0)THEN                ! 1,3,5,7 of nested domain
+            IF (ZS(I,J) .LT. Z3d(I,2,J)) THEN              ! level 2 has to be changed
+               dlnpdz     = (log(PSTD(1))-log(PSTD(2)) )/(Z3d(i,1,j)-Z3d(i,2,j))
+               dum2d      = exp(log(PSTD(1)) + dlnpdz*(ZS(I,J) - Z3d(i,1,j)))
+               CWK2(I,J)  = dum2d -PDTOP -PTOP
+!               WRITE(0,*)I,J,ZS(I,J),Z3d(i,1,j),Z3d(i,2,j),CWK2(I,J)
+            ELSE ! target level bounded by input levels
+              DO K =NKTS,KZMAX-1
+               IF(ZS(I,J) .GE. Z3d(i,K,j) .AND. ZS(I,J) .LT. Z3d(i,K+1,j))THEN
+                 dlnpdz     = (log(PSTD(K))-log(PSTD(K+1)) ) /(Z3d(i,K,j)-Z3d(i,K+1,j))
+                 dum2d      = exp(log(PSTD(K)) + dlnpdz*(ZS(I,J)- Z3d(i,K,j)))
+                 CWK2(I,J)  = dum2d -PDTOP -PTOP
+!                 WRITE(0,*)I,J,ZS(I,J),Z3d(i,K,j),Z3d(i,K+1,j),CWK2(I,J)
+               ENDIF
+              ENDDO
+            ENDIF
+            IF(ZS(I,J) .GE. Z3d(I,KZMAX,J))THEN
+               WRITE(0,*)'I=',I,'J=',J,'K=',K,'TERRAIN HEIGHT',ZS(I,J),'Z3d',Z3d(I,KZMAX,J)
+               CALL wrf_error_fatal("BC:MOUNTAIN TOO HIGH TO FIT THE MODEL DEPTH")
+            ENDIF
+          ELSE
+              CWK2(I,J) = 0.0
+          ENDIF
+        ENDDO
+
+        DO J = NJTS,MIN(NJTE,NJDE-1)
+         DO K = NKDS,NKDE
+           ntemp_b(i,k,j)     = CWK2(I,J)
+           ntemp_bt(i,k,j)    = 0.0
+!          bdy(J,K,II,P_XEB)  = CWK2(I,J)      ! This will not work for NMM since
+!          bdy_t(J,K,II,P_XEB)= 0.0            ! NMM core requires BC halo exchanges 
+         END DO
+        END DO
+       ENDIF NMM_XE
+
+!  Y start boundary
+
+       NMM_YS: IF(NJTS .EQ. NJDS)THEN
+!       WRITE(20,*)'ENTERING Y START BOUNDARY AT MASS POINTS',NITS,MIN(NITE,NIDE-1)
+        J = NJDS
+        DO K=NKTS,KZMAX
+         DO I = NITS,MIN(NITE,NIDE-1)
+            IF(MOD(JJH(I,J),2) .NE. 0)THEN    ! 1,3,5,7
+                Z3d(I,K,J) = HBWGT1(I,J)*CZ3d(IIH(I,J),  K,  JJH(I,J)  )    &
+                           + HBWGT2(I,J)*CZ3d(IIH(I,J)+1,K,  JJH(I,J)  )    &
+                           + HBWGT3(I,J)*CZ3d(IIH(I,J),  K,  JJH(I,J)-1)    &
+                           + HBWGT4(I,J)*CZ3d(IIH(I,J),  K,  JJH(I,J)+1)
+            ELSE
+                Z3d(I,K,J) = HBWGT1(I,J)*CZ3d(IIH(I,J),  K,  JJH(I,J)  )  &
+                           + HBWGT2(I,J)*CZ3d(IIH(I,J)+1,K,  JJH(I,J)  )  &
+                           + HBWGT3(I,J)*CZ3d(IIH(I,J)+1,K,  JJH(I,J)-1)  &
+                           + HBWGT4(I,J)*CZ3d(IIH(I,J)+1,K,  JJH(I,J)+1)
+            ENDIF
+         END DO
+        END DO
+
+        DO I = NITS,MIN(NITE,NIDE-1)
+          IF (ZS(I,J) .LT. Z3d(I,2,J)) THEN              ! level 2 has to be changed
+               dlnpdz     = (log(PSTD(1))-log(PSTD(2)) )/(Z3d(i,1,j)-Z3d(i,2,j))
+               dum2d      = exp(log(PSTD(1)) + dlnpdz*(ZS(I,J) - Z3d(i,1,j)))
+               CWK3(I,J)  = dum2d -PDTOP -PTOP
+!               WRITE(20,*)I,J,ZS(I,J),Z3d(i,1,j),Z3d(i,2,j),CWK3(I,J)
+          ELSE ! target level bounded by input levels
+              DO K =NKTS,KZMAX-1
+               IF(ZS(I,J) .GE. Z3d(i,K,j) .AND. ZS(I,J) .LT. Z3d(i,K+1,j))THEN
+                 dlnpdz     = (log(PSTD(K))-log(PSTD(K+1)) ) /(Z3d(i,K,j)-Z3d(i,K+1,j))
+                 dum2d      = exp(log(PSTD(K)) + dlnpdz*(ZS(I,J)- Z3d(i,K,j)))
+                 CWK3(I,J)  = dum2d -PDTOP -PTOP
+!                 WRITE(20,*)I,J,ZS(I,J),Z3d(i,K,j),Z3d(i,K+1,j),CWK3(I,J)
+               ENDIF
+              ENDDO
+          ENDIF
+          IF(ZS(I,J) .GE. Z3d(I,KZMAX,J))THEN
+             WRITE(0,*)'I=',I,'J=',J,'K=',K,'TERRAIN HEIGHT',ZS(I,J),'Z3d',Z3d(I,KZMAX,J)
+             CALL wrf_error_fatal("BC:MOUNTAIN TOO HIGH TO FIT THE MODEL DEPTH")
+          ENDIF
+        ENDDO
+
+        DO K = NKDS, NKDE
+         DO I = NITS,MIN(NITE,NIDE-1)
+           ntemp_b(i,k,j)     = CWK3(I,J)
+           ntemp_bt(i,k,j)    = 0.0
+!          bdy(I,K,J,P_YSB)   = CWK3(I,J)      ! This will not work for the NMM core
+!          bdy_t(I,K,J,P_YSB) = 0.0            ! since NMM core requires BC halo exchanges
+         END DO
+        END DO
+       END IF NMM_YS
+
+! Y end boundary
+
+       NMM_YE: IF(NJTE-1 .EQ. NJDE-1)THEN
+!        WRITE(20,*)'ENTERING Y END BOUNDARY AT MASS POINTS',NITS,MIN(NITE,NIDE-1)
+        J = NJDE-1
+        JJ = NJDE - J
+        DO K=NKTS,KZMAX
+         DO I = NITS,MIN(NITE,NIDE-1)
+             IF(MOD(JJH(I,J),2) .NE. 0)THEN    ! 1,3,5,7
+                 Z3d(I,K,J) = HBWGT1(I,J)*CZ3d(IIH(I,J),  K,  JJH(I,J)  )    &
+                            + HBWGT2(I,J)*CZ3d(IIH(I,J)+1,K,  JJH(I,J)  )    &
+                            + HBWGT3(I,J)*CZ3d(IIH(I,J),  K,  JJH(I,J)-1)    &
+                            + HBWGT4(I,J)*CZ3d(IIH(I,J),  K,  JJH(I,J)+1)
+             ELSE
+                 Z3d(I,K,J) = HBWGT1(I,J)*CZ3d(IIH(I,J),  K,  JJH(I,J)  )  &
+                            + HBWGT2(I,J)*CZ3d(IIH(I,J)+1,K,  JJH(I,J)  )  &
+                            + HBWGT3(I,J)*CZ3d(IIH(I,J)+1,K,  JJH(I,J)-1)  &
+                            + HBWGT4(I,J)*CZ3d(IIH(I,J)+1,K,  JJH(I,J)+1)
+             ENDIF
+         END DO
+        END DO
+
+        DO I = NITS,MIN(NITE,NIDE-1)
+          IF (ZS(I,J) .LT. Z3d(I,2,J)) THEN              ! level 2 has to be changed
+               dlnpdz     = (log(PSTD(1))-log(PSTD(2)) )/(Z3d(i,1,j)-Z3d(i,2,j))
+               dum2d      = exp(log(PSTD(1)) + dlnpdz*(ZS(I,J) - Z3d(i,1,j)))
+               CWK4(I,J)  = dum2d -PDTOP -PTOP
+!               WRITE(20,*)I,J,ZS(I,J),Z3d(i,1,j),Z3d(i,2,j),CWK4(I,J)
+          ELSE ! target level bounded by input levels
+              DO K =NKTS,KZMAX-1
+               IF(ZS(I,J) .GE. Z3d(i,K,j) .AND. ZS(I,J) .LT. Z3d(i,K+1,j))THEN
+                 dlnpdz     = (log(PSTD(K))-log(PSTD(K+1)) ) /(Z3d(i,K,j)-Z3d(i,K+1,j))
+                 dum2d      = exp(log(PSTD(K)) + dlnpdz*(ZS(I,J)- Z3d(i,K,j)))
+                 CWK4(I,J)  = dum2d -PDTOP -PTOP
+!                 WRITE(20,*)I,J,ZS(I,J),Z3d(i,K,j),Z3d(i,K+1,j),CWK4(I,J)
+               ENDIF
+              ENDDO
+          ENDIF
+          IF(ZS(I,J) .GE. Z3d(I,KZMAX,J))THEN
+             WRITE(0,*)'I=',I,'J=',J,'K=',K,'TERRAIN HEIGHT',ZS(I,J),'Z3d',Z3d(I,KZMAX,J)
+             CALL wrf_error_fatal("BC:MOUNTAIN TOO HIGH TO FIT THE MODEL DEPTH")
+          ENDIF
+        ENDDO
+
+        DO K = NKDS,NKDE
+         DO I = NITS,MIN(NITE,NIDE-1)
+              ntemp_b(i,k,j)     = CWK4(I,J)
+              ntemp_bt(i,k,j)    = 0.0
+!             bdy(I,K,JJ,P_YEB) = CWK4(I,J)     ! This will not work for the NMM core
+!             bdy_t(I,K,JJ,P_YEB) = 0.0         ! since NMM core requires BC halo exchanges
+         END DO
+        END DO
+       END IF NMM_YE
+
+     RETURN
+
+   END SUBROUTINE nmm_bdymass_interp1
+!
+!==========================================================================================
+!  E grid vertical interpolation: Heights (Z3d) originally obtained on the mother domains 
+!  on isobaric levels are first horizontally interpolated in interp_mass_nmm on to the 
+!  the nested domain. Now heights on isobaric surfaces must be interpolated on to the
+!  new hybrid surfaces that include the high resolution topography. After obtaining 
+!  heights in the modified hybrid surfaces, we use the hyposmetric equation to recover 
+!  the temperature fields. The following routine returns the temperature fields in the
+!  nested domain. First routine pertains to initial conditions and the next one
+!  corresponds to boundary conditions.
+!=======================================================================================
+!
+ SUBROUTINE interp_p2hyb_nmm (cfld,                               &  ! CD field
+                              cids,cide,ckds,ckde,cjds,cjde,      &
+                              cims,cime,ckms,ckme,cjms,cjme,      &
+                              cits,cite,ckts,ckte,cjts,cjte,      &
+                              nfld,                               &  ! ND field
+                              nids,nide,nkds,nkde,njds,njde,      &
+                              nims,nime,nkms,nkme,njms,njme,      &
+                              nits,nite,nkts,nkte,njts,njte,      &
+                              shw,                                &  ! stencil half width for interp
+                              imask,                              &  ! interpolation mask
+                              xstag,ystag,                        &  ! staggering of field
+                              ipos,jpos,                          &  ! Position of lower left of nest in CD
+                              nri,nrj,                            &  ! nest ratios                         
+                              CII, IIH, CJJ, JJH, CBWGT1, HBWGT1, &  ! south-western grid locs and weights
+                              CBWGT2, HBWGT2, CBWGT3, HBWGT3,     &  ! note that "C"ourse grid ones are
+                              CBWGT4, HBWGT4,                     &  ! dummys for weights
+                              CZ3d,Z3d,                           &  ! Z3d interpolated from CZ3d
+                              CQ,Q,                               &  ! CQ not used 
+                              CFIS,FIS,                           &  ! CFIS dummy on fine domain
+                              CPD,PD,                             &
+                              CPSTD,PSTD,                         &
+                              CPDTOP,PDTOP,                       &
+                              CPTOP,PTOP,                         &
+                              CETA1,ETA1,CETA2,ETA2,              &
+                              CDETA1,DETA1,CDETA2,DETA2           ) 
+
+   USE MODULE_MODEL_CONSTANTS
+   USE module_timing
+   IMPLICIT NONE
+
+   LOGICAL,INTENT(IN) :: xstag, ystag
+   INTEGER,INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
+                         cims, cime, ckms, ckme, cjms, cjme,   &
+                         cits, cite, ckts, ckte, cjts, cjte,   &
+                         nids, nide, nkds, nkde, njds, njde,   &
+                         nims, nime, nkms, nkme, njms, njme,   &
+                         nits, nite, nkts, nkte, njts, njte,   &
+                         shw,ipos,jpos,nri,nrj               
+
+   INTEGER,DIMENSION(nims:nime,njms:njme),        INTENT(IN) :: IMASK
+
+!  parent domain
+
+   INTEGER,DIMENSION(cims:cime,cjms:cjme),        INTENT(IN) :: CII,CJJ   ! dummy
+   REAL,DIMENSION(cims:cime,cjms:cjme),           INTENT(IN) :: CBWGT1,CBWGT2
+   REAL,DIMENSION(cims:cime,cjms:cjme),           INTENT(IN) :: CBWGT3,CBWGT4
+
+   REAL,DIMENSION(cims:cime,ckms:ckme,cjms:cjme), INTENT(IN) :: CFLD
+   REAL,DIMENSION(cims:cime,ckms:ckme,cjms:cjme), INTENT(IN) :: CZ3d,CQ
+   REAL,DIMENSION(cims:cime,cjms:cjme),           INTENT(IN) :: CFIS,CPD
+   REAL,DIMENSION(ckms:ckme),                     INTENT(IN) :: CPSTD
+   REAL,DIMENSION(ckms:ckme),                     INTENT(IN) :: CETA1,CETA2
+   REAL,DIMENSION(ckms:ckme),                     INTENT(IN) :: CDETA1,CDETA2
+   REAL,                                          INTENT(IN) :: CPDTOP,CPTOP
+
+!  nested domain
+
+   INTEGER,DIMENSION(nims:nime,njms:njme),        INTENT(IN) :: IIH,JJH
+   REAL,DIMENSION(nims:nime,njms:njme),           INTENT(IN) :: HBWGT1,HBWGT2
+   REAL,DIMENSION(nims:nime,njms:njme),           INTENT(IN) :: HBWGT3,HBWGT4
+
+   REAL,DIMENSION(nims:nime,nkms:nkme,njms:njme), INTENT(OUT):: NFLD  ! This is T, here
+   REAL,DIMENSION(nims:nime,nkms:nkme,njms:njme), INTENT(IN) :: Z3d,Q
+   REAL,DIMENSION(nims:nime,njms:njme ),          INTENT(IN) :: FIS,PD
+   REAL,DIMENSION(nkms:nkme),                     INTENT(IN) :: PSTD
+   REAL,DIMENSION(nkms:nkme),                     INTENT(IN) :: ETA1,ETA2
+   REAL,DIMENSION(nkms:nkme),                     INTENT(IN) :: DETA1,DETA2
+   REAL,INTENT(IN)                                           :: PDTOP,PTOP
+
+!  local
+
+   INTEGER,PARAMETER                                         :: JTB=134
+   REAL, PARAMETER                                           :: LAPSR=6.5E-3,GI=1./G, D608=0.608
+   REAL, PARAMETER                                           :: TRG=2.0*R_D*GI,COEF3=R_D*GI*LAPSR
+   INTEGER                                                   :: I,J,K
+   REAL                                                      :: TVOUT,PMO
+   REAL,DIMENSION(nims:nime,njms:njme)                       :: ZS
+   REAL,DIMENSION(JTB)                                       :: PIN,ZIN,Y2,PIO,ZOUT,DUM1,DUM2
+!  REAL,DIMENSION(nims:nime,nkms:nkme,njms:njme)             :: TOUT
+!-----------------------------------------------------------------------------------------------------
+!
+!
+!   *** CHECK VERTICAL BOUNDS BEFORE USING SPLINE INTERPOLATION 
+!
+    IF(nkme .GT. (JTB-10) .OR. NKDE .GT. (JTB-10)) &
+      CALL wrf_error_fatal ('mass points: increase JTB in interp_mass_nmm')
+
+
+!    WRITE(22,*)'------------- MED NEST INITIAL 2 ----------------'
+!    DO J=NJTS,MIN(NJTE,NJDE-1)
+!      DO I=NITS,MIN(NITE,NIDE-1)
+!         WRITE(22,*)I,J,IMASK(I,J),NFLD(I,1,J)
+!      ENDDO
+!    ENDDO
+!    WRITE(22,*)
+
+!
+!    direct horizontal interpolation may work in the absence of terrain especially at
+!    the boundaries
+!
+!     DO J=NJTS,MIN(NJTE,NJDE-1)
+!       DO K=NKDS,NKDE
+!        DO I=NITS,MIN(NITE,NIDE-1)
+!          IF(MOD(JJH(I,J),2) .NE. 0)THEN    ! 1,3,5,7
+!             NFLD(I,K,J) = HBWGT1(I,J)*CFLD(IIH(I,J),  K,  JJH(I,J)  )    &
+!                         + HBWGT2(I,J)*CFLD(IIH(I,J)+1,K,  JJH(I,J)  )    &
+!                         + HBWGT3(I,J)*CFLD(IIH(I,J),  K,  JJH(I,J)-1)    &
+!                         + HBWGT4(I,J)*CFLD(IIH(I,J),  K,  JJH(I,J)+1)
+!          ELSE
+!             NFLD(I,K,J) = HBWGT1(I,J)*CFLD(IIH(I,J),  K,  JJH(I,J)  )  &
+!                         + HBWGT2(I,J)*CFLD(IIH(I,J)+1,K,  JJH(I,J)  )  &
+!                         + HBWGT3(I,J)*CFLD(IIH(I,J)+1,K,  JJH(I,J)-1)  &
+!                         + HBWGT4(I,J)*CFLD(IIH(I,J)+1,K,  JJH(I,J)+1)
+!          ENDIF
+!        ENDDO
+!       ENDDO
+!     ENDDO
+
+!
+!   Interpolate Z3d to the new pressure levels, determine Temperature in the nested domain
+!   from hydrostatic equation. This is important for terrain adjustments in nested domains 
+!
+
+    DO J=NJTS,MIN(NJTE,NJDE-1)
+     DO I=NITS,MIN(NITE,NIDE-1)
+        IF(IMASK(I,J) .NE. 1)THEN
+         ZS(I,J)=FIS(I,J)*GI
+        ENDIF
+     ENDDO
+    ENDDO
+
+    DO J=NJTS,MIN(NJTE,NJDE-1)
+     DO I=NITS,MIN(NITE,NIDE-1)
+      IF(IMASK(I,J) .NE. 1)THEN
+!
+!        clean local array before use of spline
+
+         ZIN=0.;PIN=0.;Y2=0;PIO=0.;ZOUT=0.;DUM1=0.;DUM2=0.
+!     
+         DO K=NKDS,NKDE                    ! inputs at standard interface levels
+           PIN(K) = PSTD(NKDE-K+1)         ! please don't remove this from IJ loop;redefined later   
+           ZIN(K) = Z3d(I,NKDE-K+1,J)
+         ENDDO
+!
+         Y2(1   )=0.
+         Y2(NKDE)=0.
+!
+         DO K=NKDS,NKDE                         ! target points in model interface levels (pint)
+           PIO(K) = ETA1(K)*PDTOP + ETA2(K)*PD(I,J) + PTOP   
+         ENDDO
+!
+         IF(PIO(1) .GE. PSTD(1))THEN            ! if lower boundary is higher than 1000. mb
+           PIN(NKDE) = PIO(1)                   ! re-set lower boundary to be consistent with target
+           ZIN(NKDE) = ZS(I,J)
+         ENDIF
+
+         CALL SPLINE2(I,J,JTB,NKDE,PIN,ZIN,Y2,NKDE,PIO,ZOUT,DUM1,DUM2)  ! interpolate 
+
+         DO K=NKDS,NKDE-1
+           PMO   = (PIO(K+1)+PIO(K))/(DETA1(K)*PDTOP+DETA2(K)*PD(I,J))
+           TVOUT = (ZOUT(K+1)-ZOUT(K))*PMO/TRG 
+           NFLD(I,K,J)= TVOUT/(1.0+Q(I,K,J)*P608)  ! temperature in the nested domain
+!           IF(I==2 .and. J==3)WRITE(0,*)K,PIN(K),Z3d(I,K,J),PIO(K),ZOUT(K),TVOUT,Q(I,K,J),NFLD(I,K,J)
+         ENDDO
+!
+      ENDIF
+     ENDDO
+    ENDDO
+
+!
+  END SUBROUTINE interp_p2hyb_nmm 
+!
+!===================================================================================================
+!
+ SUBROUTINE  nmm_bdy_p2hyb   (cfld,                               &  ! CD field
+                              cids,cide,ckds,ckde,cjds,cjde,      &
+                              cims,cime,ckms,ckme,cjms,cjme,      &
+                              cits,cite,ckts,ckte,cjts,cjte,      &
+                              nfld,                               &  ! ND field
+                              nids,nide,nkds,nkde,njds,njde,      &
+                              nims,nime,nkms,nkme,njms,njme,      &
+                              nits,nite,nkts,nkte,njts,njte,      &
+                              shw,                                &  ! stencil half width for interp
+                              imask,                              &  ! interpolation mask
+                              xstag,ystag,                        &  ! staggering of field
+                              ipos,jpos,                          &  ! Position of lower left of nest in CD
+                              nri,nrj,                            &  ! nest ratios
+                              cbdy, nbdy,                         &
+                              cbdy_t, nbdy_t,                     &
+                              cdt, ndt,                           &
+                              CTEMP_B,NTEMP_B,                    &  ! to be removed
+                              CTEMP_BT,NTEMP_BT,                  &
+                              CZ3d,Z3d,                           &  ! Z3d interpolated from CZ3d
+                              CQ,Q,                               &  ! CQ not used 
+                              CFIS,FIS,                           &  ! CFIS dummy on fine domain
+                              CPD,PD,                             &
+                              CPSTD,PSTD,                         &
+                              CPDTOP,PDTOP,                       &
+                              CPTOP,PTOP,                         &
+                              CETA1,ETA1,CETA2,ETA2,              &
+                              CDETA1,DETA1,CDETA2,DETA2           )
+
+   USE MODULE_MODEL_CONSTANTS
+   USE module_timing
+   IMPLICIT NONE
+
+   LOGICAL,INTENT(IN)                                               :: xstag, ystag
+   REAL, INTENT(INOUT)                                              :: cdt, ndt
+   INTEGER,INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
+                         cims, cime, ckms, ckme, cjms, cjme,   &
+                         cits, cite, ckts, ckte, cjts, cjte,   &
+                         nids, nide, nkds, nkde, njds, njde,   &
+                         nims, nime, nkms, nkme, njms, njme,   &
+                         nits, nite, nkts, nkte, njts, njte,   &
+                         shw,ipos,jpos,nri,nrj               
+   REAL, DIMENSION ( cims:cime, ckms:ckme, cjms:cjme ), INTENT(OUT) :: ctemp_b,ctemp_bt
+   REAL, DIMENSION ( nims:nime, nkms:nkme, njms:njme ), INTENT(OUT) :: ntemp_b,ntemp_bt
+
+   INTEGER,DIMENSION(nims:nime,njms:njme),        INTENT(IN) :: IMASK
+   REAL,  DIMENSION( * ), INTENT(INOUT) :: cbdy, cbdy_t, nbdy, nbdy_t
+
+!  parent domain
+
+   REAL,DIMENSION(cims:cime,ckms:ckme,cjms:cjme), INTENT(IN) :: CFLD
+   REAL,DIMENSION(cims:cime,ckms:ckme,cjms:cjme), INTENT(IN) :: CZ3d,CQ
+   REAL,DIMENSION(cims:cime,cjms:cjme),           INTENT(IN) :: CFIS,CPD
+   REAL,DIMENSION(ckms:ckme),                     INTENT(IN) :: CPSTD
+   REAL,DIMENSION(ckms:ckme),                     INTENT(IN) :: CETA1,CETA2
+   REAL,DIMENSION(ckms:ckme),                     INTENT(IN) :: CDETA1,CDETA2
+   REAL,                                          INTENT(IN) :: CPDTOP,CPTOP
+
+!  nested domain
+
+   REAL,DIMENSION(nims:nime,nkms:nkme,njms:njme), INTENT(OUT):: NFLD  ! This is T, here
+   REAL,DIMENSION(nims:nime,nkms:nkme,njms:njme), INTENT(IN) :: Z3d,Q
+   REAL,DIMENSION(nims:nime,njms:njme ),          INTENT(IN) :: FIS,PD
+   REAL,DIMENSION(nkms:nkme),                     INTENT(IN) :: PSTD
+   REAL,DIMENSION(nkms:nkme),                     INTENT(IN) :: ETA1,ETA2
+   REAL,DIMENSION(nkms:nkme),                     INTENT(IN) :: DETA1,DETA2
+   REAL,INTENT(IN)                                           :: PDTOP,PTOP
+
+!  local
+
+   INTEGER,PARAMETER                                         :: JTB=134
+   REAL, PARAMETER                                           :: LAPSR=6.5E-3,GI=1./G, D608=0.608
+   REAL, PARAMETER                                           :: TRG=2.0*R_D*GI,COEF3=R_D*GI*LAPSR
+   INTEGER                                                   :: I,J,K,II,JJ
+   REAL                                                      :: TVOUT,PMO
+   REAL,DIMENSION(nims:nime,njms:njme)                       :: ZS
+   REAL,DIMENSION(JTB)                                       :: PIN,ZIN,Y2,PIO,ZOUT,DUM1,DUM2
+   REAL, DIMENSION (nims:nime,nkms:nkme,njms:njme)           :: CWK1,CWK2,CWK3,CWK4
+!-----------------------------------------------------------------------------------------------------
+!
+
+!
+!   *** CHECK VERTICAL BOUNDS BEFORE USING SPLINE INTERPOLATION 
+!
+    IF(nkme .GT. (JTB-10) .OR. NKDE .GT. (JTB-10)) &
+      CALL wrf_error_fatal ('mass points: increase JTB in interp_mass_nmm')
+
+    DO J=NJTS,MIN(NJTE,NJDE-1)
+     DO I=NITS,MIN(NITE,NIDE-1)
+        ZS(I,J)=FIS(I,J)*GI
+     ENDDO
+    ENDDO
+
+
+!   X start boundary
+
+    NMM_XS: IF(NITS .EQ. NIDS)THEN
+!     WRITE(0,*)'ENTERING X1 START BOUNDARY AT T POINTS',NJTS,MIN(NJTE,NJDE-1)
+      I = NIDS
+      DO J=NJTS,MIN(NJTE,NJDE-1)
+       IF(MOD(J,2) .NE. 0)THEN
+        ZIN=0.;Y2=0;PIO=0.;ZOUT=0.;DUM1=0.;DUM2=0. !     clean local array before use of spline
+!     
+        DO K=NKTS,NKDE                    ! inputs at standard interface levels
+          PIN(K) = PSTD(NKDE-K+1)         ! please don't remove this from IJ loop; redifined later   
+          ZIN(K) = Z3d(I,NKDE-K+1,J)
+        ENDDO
+!
+        Y2(1   )=0.
+        Y2(NKDE)=0.
+!
+        DO K=NKDS,NKDE                         ! target points in model interface levels (pint)
+          PIO(K) = ETA1(K)*PDTOP + ETA2(K)*PD(I,J) + PTOP   
+        ENDDO
+!
+        IF(PIO(1) .GE. PSTD(1))THEN            ! if lower boundary is higher than 1000. mb
+          PIN(NKDE) = PIO(1)                   ! re-set lower boundary to be consistent with target
+          ZIN(NKDE) = ZS(I,J)
+        ENDIF
+
+        CALL SPLINE2(I,J,JTB,NKDE,PIN,ZIN,Y2,NKDE,PIO,ZOUT,DUM1,DUM2)  ! interpolate 
+
+        DO K=NKDS,NKDE-1
+         PMO   = (PIO(K+1)+PIO(K))/(DETA1(K)*PDTOP+DETA2(K)*PD(I,J))
+         TVOUT = (ZOUT(K+1)-ZOUT(K))*PMO/TRG
+         CWK1(I,K,J)= TVOUT/(1.0+Q(I,K,J)*P608)  ! temperature defined in the nested domain
+        ENDDO
+
+       ELSE
+         DO K=NKDS,NKDE-1
+          CWK1(I,K,J)=0.0
+         ENDDO
+       ENDIF
+      ENDDO
+
+      DO J = NJTS,MIN(NJTE,NJDE-1)
+       DO K = NKDS,NKDE-1
+         ntemp_b(i,k,j)     = CWK1(I,K,J)
+         ntemp_bt(i,k,j)    = 0.0
+!        bdy(J,K,I,P_XSB)   = CWK1(I,K,J)         ! This will not work for NMM since
+!        bdy_t(J,K,I,P_XSB) = 0.0                 ! NMM requires BC halo exchanges
+       END DO
+      END DO
+
+    ENDIF NMM_XS
+
+
+!    X end boundary
+
+
+    NMM_XE: IF(NITE-1 .EQ. NIDE-1)THEN
+!    WRITE(0,*)'ENTERING X END BOUNDARY AT T POINTS',NJTS,MIN(NJTE,NJDE-1)
+     I = NIDE-1
+     II = NIDE - I
+     DO J=NJTS,MIN(NJTE,NJDE-1)
+      IF(MOD(J,2) .NE. 0)THEN
+       ZIN=0.;Y2=0;PIO=0.;ZOUT=0.;DUM1=0.;DUM2=0. !     clean local array before use of spline
+!
+        DO K=NKTS,NKDE                    ! inputs at standard interface levels;redifined later
+          PIN(K) = PSTD(NKDE-K+1)         ! please don't remove this from IJ loop
+          ZIN(K) = Z3d(I,NKDE-K+1,J)
+        ENDDO
+!
+        Y2(1   )=0.
+        Y2(NKDE)=0.
+!
+        DO K=NKDS,NKDE                         ! target points in model interface levels (pint)
+          PIO(K) = ETA1(K)*PDTOP + ETA2(K)*PD(I,J) + PTOP
+        ENDDO
+!
+        IF(PIO(1) .GE. PSTD(1))THEN            ! if lower boundary is higher than 1000. mb
+          PIN(NKDE) = PIO(1)                   ! re-set lower boundary to be consistent with target
+          ZIN(NKDE) = ZS(I,J)
+        ENDIF
+ 
+        CALL SPLINE2(I,J,JTB,NKDE,PIN,ZIN,Y2,NKDE,PIO,ZOUT,DUM1,DUM2)  ! interpolate
+ 
+        DO K=NKDS,NKDE-1
+          PMO   = (PIO(K+1)+PIO(K))/(DETA1(K)*PDTOP+DETA2(K)*PD(I,J))
+          TVOUT = (ZOUT(K+1)-ZOUT(K))*PMO/TRG
+          CWK2(I,K,J)= TVOUT/(1.0+Q(I,K,J)*P608)  ! temperature defined in the nested domain
+        ENDDO
+      
+      ELSE
+           DO K=NKDS,NKDE-1
+            CWK2(I,K,J)=0.0
+           ENDDO 
+      ENDIF
+     ENDDO
+
+       DO J = NJTS,MIN(NJTE,NJDE-1)
+        DO K = NKDS,NKDE-1
+          ntemp_b(i,k,j)     = CWK2(I,K,J)
+          ntemp_bt(i,k,j)    = 0.0
+!         bdy(J,K,I,P_XSB)   = CWK2(I,K,J)         ! This will not work for NMM since
+!         bdy_t(J,K,I,P_XSB) = 0.0                 ! NMM requires BC halo exchanges
+!          if(k==1)WRITE(0,*)J,ntemp_b(i,k,j)
+        END DO
+       END DO
+
+    ENDIF NMM_XE
+
+!  Y start boundary
+
+    NMM_YS: IF(NJTS .EQ. NJDS)THEN
+!    WRITE(0,*)'ENTERING Y START BOUNDARY AT T POINTS',NITS,MIN(NITE,NIDE-1)
+     J = NJDS
+     DO I=NITS,MIN(NITE,NIDE-1)
+      ZIN=0.;Y2=0;PIO=0.;ZOUT=0.;DUM1=0.;DUM2=0.  !     clean local array before use of spline
+!
+       DO K=NKDS,NKDE                    ! inputs at standard interface levels;redifined later
+         PIN(K) = PSTD(NKDE-K+1)         ! please don't remove this from IJ loop
+         ZIN(K) = Z3d(I,NKDE-K+1,J)
+       ENDDO
+!
+       Y2(1   )=0.
+       Y2(NKDE)=0.
+!
+       DO K=NKDS,NKDE                         ! target points in model interface levels (pint)
+         PIO(K) = ETA1(K)*PDTOP + ETA2(K)*PD(I,J) + PTOP
+       ENDDO
+!
+       IF(PIO(1) .GE. PSTD(1))THEN            ! if lower boundary is higher than 1000. mb
+         PIN(NKDE) = PIO(1)                   ! re-set lower boundary to be consistent with target
+         ZIN(NKDE) = ZS(I,J)
+       ENDIF
+
+       CALL SPLINE2(I,J,JTB,NKDE,PIN,ZIN,Y2,NKDE,PIO,ZOUT,DUM1,DUM2)  ! interpolate
+
+       DO K=NKDS,NKDE-1
+         PMO   = (PIO(K+1)+PIO(K))/(DETA1(K)*PDTOP+DETA2(K)*PD(I,J))
+         TVOUT = (ZOUT(K+1)-ZOUT(K))*PMO/TRG 
+         CWK3(I,K,J)= TVOUT/(1.0+Q(I,K,J)*P608)  ! temperature defined in the nested domain
+       ENDDO
+
+     ENDDO
+
+     DO K = NKDS,NKDE-1
+      DO I = NITS,MIN(NITE,NIDE-1)
+        ntemp_b(i,k,j)     = CWK3(I,K,J)
+        ntemp_bt(i,k,j)    = 0.0
+!       bdy(J,K,I,P_XSB)   = CWK3(I,K,J)         ! This will not work for NMM since
+!       bdy_t(J,K,I,P_XSB) = 0.0                 ! NMM requires BC halo exchanges
+!        if(k==1)WRITE(0,*)I,ntemp_b(i,k,j)
+      END DO
+      END DO
+
+    ENDIF NMM_YS
+
+! Y end boundary
+
+    NMM_YE: IF(NJTE-1 .EQ. NJDE-1)THEN
+!    WRITE(0,*)'ENTERING Y END BOUNDARY AT T POINTS',NITS,MIN(NITE,NIDE-1)
+     J = NJDE-1
+     JJ = NJDE - J
+     DO I=NITS,MIN(NITE,NIDE-1)
+      ZIN=0.;Y2=0;PIO=0.;ZOUT=0.;DUM1=0.;DUM2=0.  !     clean local array before use of spline
+!
+       DO K=NKDS,NKDE                    ! inputs at standard interface levels;redifined later
+         PIN(K) = PSTD(NKDE-K+1)         ! please don't remove this from IJ loop
+         ZIN(K) = Z3d(I,NKDE-K+1,J)
+       ENDDO
+!
+       Y2(1   )=0.
+       Y2(NKDE)=0.
+!
+       DO K=NKDS,NKDE                         ! target points in model interface levels (pint)
+         PIO(K) = ETA1(K)*PDTOP + ETA2(K)*PD(I,J) + PTOP
+       ENDDO
+!
+       IF(PIO(1) .GE. PSTD(1))THEN            ! if lower boundary is higher than 1000. mb
+         PIN(NKDE) = PIO(1)                   ! re-set lower boundary to be consistent with target
+         ZIN(NKDE) = ZS(I,J)
+       ENDIF
+
+       CALL SPLINE2(I,J,JTB,NKDE,PIN,ZIN,Y2,NKDE,PIO,ZOUT,DUM1,DUM2)  ! interpolate
+
+       DO K=NKDS,NKDE-1
+         PMO   = (PIO(K+1)+PIO(K))/(DETA1(K)*PDTOP+DETA2(K)*PD(I,J))
+         TVOUT = (ZOUT(K+1)-ZOUT(K))*PMO/TRG
+         CWK4(I,K,J)= TVOUT/(1.0+Q(I,K,J)*P608)  ! temperature defined in the nested domain
+       ENDDO
+
+     ENDDO
+
+     DO K = NKDS,NKDE-1
+      DO I = NITS,MIN(NITE,NIDE-1)
+        ntemp_b(i,k,j)     = CWK4(I,K,J)
+        ntemp_bt(i,k,j)    = 0.0
+!       bdy(J,K,I,P_XSB)   = CWK4(I,K,J)         ! This will not work for NMM since
+!       bdy_t(J,K,I,P_XSB) = 0.0                 ! NMM requires BC halo exchanges
+!        if(k==1)WRITE(0,*)I,ntemp_b(i,k,j)
+      END DO
+      END DO
+
+    ENDIF NMM_YE
+!
+  END SUBROUTINE nmm_bdy_p2hyb 
+
+!=======================================================================================
+!
+!  ADDED FOR INCLUDING MOISTURE AND THERMODYNAMIC ENERGY BALANCE
+!
+!=======================================================================================
+
+ SUBROUTINE interp_scalar_nmm (cfld,                               &  ! CD field
+                               cids,cide,ckds,ckde,cjds,cjde,      &
+                               cims,cime,ckms,ckme,cjms,cjme,      &
+                               cits,cite,ckts,ckte,cjts,cjte,      &
+                               nfld,                               &  ! ND field
+                               nids,nide,nkds,nkde,njds,njde,      &
+                               nims,nime,nkms,nkme,njms,njme,      &
+                               nits,nite,nkts,nkte,njts,njte,      &
+                               shw,                                &  ! stencil half width for interp
+                               imask,                              &  ! interpolation mask
+                               xstag,ystag,                        &  ! staggering of field
+                               ipos,jpos,                          &  ! Position of lower left of nest in CD
+                               nri,nrj,                            &  ! nest ratios
+                               CII, IIH, CJJ, JJH, CBWGT1, HBWGT1, &  ! south-western grid locs and weights
+                               CBWGT2, HBWGT2, CBWGT3, HBWGT3,     &  ! note that "C"ourse grid ones are
+                               CBWGT4, HBWGT4,                     &  ! dummys for weights
+                               CC3d,C3d,                           &  
+                               CPD,PD,                             &
+                               CPSTD,PSTD,                         &
+                               CPDTOP,PDTOP,                       &
+                               CPTOP,PTOP,                         &
+                               CETA1,ETA1,CETA2,ETA2               )
+
+   USE MODULE_MODEL_CONSTANTS
+   USE module_timing
+   IMPLICIT NONE
+
+   LOGICAL,INTENT(IN) :: xstag, ystag
+   INTEGER,INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
+                         cims, cime, ckms, ckme, cjms, cjme,   &
+                         cits, cite, ckts, ckte, cjts, cjte,   &
+                         nids, nide, nkds, nkde, njds, njde,   &
+                         nims, nime, nkms, nkme, njms, njme,   &
+                         nits, nite, nkts, nkte, njts, njte,   &
+                         shw,ipos,jpos,nri,nrj
+
+   INTEGER,DIMENSION(nims:nime,njms:njme),   INTENT(IN)      :: IMASK
+
+!  parent domain
+
+   INTEGER,DIMENSION(cims:cime,cjms:cjme),        INTENT(IN) :: CII,CJJ   ! dummy
+   REAL,DIMENSION(cims:cime,cjms:cjme),           INTENT(IN) :: CBWGT1,CBWGT2
+   REAL,DIMENSION(cims:cime,cjms:cjme),           INTENT(IN) :: CBWGT3,CBWGT4
+
+   REAL,DIMENSION(cims:cime,ckms:ckme,cjms:cjme), INTENT(IN) :: CFLD
+   REAL,DIMENSION(cims:cime,ckms:ckme,cjms:cjme), INTENT(IN) :: CC3d  ! scalar input on constant pressure levels
+   REAL,DIMENSION(ckms:ckme),                     INTENT(IN) :: CPSTD
+   REAL,DIMENSION(cims:cime,cjms:cjme),           INTENT(IN) :: CPD
+   REAL,DIMENSION(ckms:ckme),                     INTENT(IN) :: CETA1,CETA2
+   REAL,                                          INTENT(IN) :: CPDTOP,CPTOP 
+
+!  nested domain
+
+   INTEGER,DIMENSION(nims:nime,njms:njme),        INTENT(IN) :: IIH,JJH
+   REAL,DIMENSION(nims:nime,njms:njme),           INTENT(IN) :: HBWGT1,HBWGT2
+   REAL,DIMENSION(nims:nime,njms:njme),           INTENT(IN) :: HBWGT3,HBWGT4
+
+   REAL,DIMENSION(nims:nime,nkms:nkme,njms:njme), INTENT(OUT):: NFLD  ! This is scalar on hybrid levels
+   REAL,DIMENSION(nims:nime,nkms:nkme,njms:njme), INTENT(OUT):: C3d   ! Scalar on constant pressure levels
+   REAL,DIMENSION(nkms:nkme),                     INTENT(IN) :: PSTD
+   REAL,DIMENSION(nims:nime,njms:njme ),          INTENT(IN) :: PD
+   REAL,DIMENSION(nkms:nkme),                     INTENT(IN) :: ETA1,ETA2
+   REAL,INTENT(IN)                                           :: PDTOP,PTOP
+
+!  local
+
+   INTEGER,PARAMETER                                         :: JTB=134
+   INTEGER                                                   :: I,J,K
+   REAL,DIMENSION(JTB)                                       :: PIN,CIN,Y2,PIO,PTMP,COUT,DUM1,DUM2
+
+!-----------------------------------------------------------------------------------------------------
+!
+!
+!   *** CHECK VERTICAL BOUNDS BEFORE USING SPLINE OR LINEAR INTERPOLATION
+!
+    IF(nkme .GT. (JTB-10) .OR. NKDE .GT. (JTB-10)) &
+      CALL wrf_error_fatal ('mass points: increase JTB in interp_mass_nmm')
+
+!
+!   FIRST, HORIZONTALLY INTERPOLATE MOISTURE NOW AVAILABLE ON CONSTANT PRESSURE SURFACE (LEVELS) FROM THE
+!   PARENT TO THE NESTED DOMAIN
+!
+!*** INDEX CONVENTIONS
+!***                     HBWGT4
+!***                      4
+!***
+!***
+!***
+!***                   h
+!***             1                 2
+!***            HBWGT1             HBWGT2
+!***
+!***
+!***                      3
+!***                     HBWGT3
+
+    C3d=0.0
+    DO J=NJTS,MIN(NJTE,NJDE-1)
+      DO K=NKDS,NKDE-1                ! Please note that we are still in isobaric surfaces
+        DO I=NITS,MIN(NITE,NIDE-1)
+         IF(IMASK(I,J) .NE. 1)THEN
+           IF(MOD(JJH(I,J),2) .NE. 0)THEN    ! 1,3,5,7
+               C3d(I,K,J) = HBWGT1(I,J)*CC3d(IIH(I,J),  K,  JJH(I,J)  )    &
+                          + HBWGT2(I,J)*CC3d(IIH(I,J)+1,K,  JJH(I,J)  )    &
+                          + HBWGT3(I,J)*CC3d(IIH(I,J),  K,  JJH(I,J)-1)    &
+                          + HBWGT4(I,J)*CC3d(IIH(I,J),  K,  JJH(I,J)+1)
+
+           ELSE
+               C3d(I,K,J) = HBWGT1(I,J)*CC3d(IIH(I,J),  K,  JJH(I,J)  )  &
+                          + HBWGT2(I,J)*CC3d(IIH(I,J)+1,K,  JJH(I,J)  )  &
+                          + HBWGT3(I,J)*CC3d(IIH(I,J)+1,K,  JJH(I,J)-1)  &
+                          + HBWGT4(I,J)*CC3d(IIH(I,J)+1,K,  JJH(I,J)+1)
+
+           ENDIF
+         ENDIF
+        ENDDO
+      ENDDO
+    ENDDO
+
+!
+!   RECOVER THE SCALARS FROM CONSTANT PRESSURE SURFACES (LEVELS) ON TO HYBRID SURFACES
+!
+    DO J=NJTS,MIN(NJTE,NJDE-1)
+     DO I=NITS,MIN(NITE,NIDE-1)
+      IF(IMASK(I,J) .NE. 1)THEN
+!
+!        clean local array before use of spline or linear interpolation
+
+         CIN=0.;PIN=0.;Y2=0;PIO=0.;PTMP=0.;COUT=0.;DUM1=0.;DUM2=0.
+!    
+         DO K=NKDS+1,NKDE                    ! inputs at standard  levels
+           PIN(K-1) = EXP((ALOG(PSTD(NKDE-K+1))+ALOG(PSTD(NKDE-K+2)))*0.5)
+           CIN(K-1) = C3d(I,NKDE-K+1,J)
+         ENDDO
+!
+         Y2(1   )=0.
+         Y2(NKDE-1)=0.
+!
+         DO K=NKDS,NKDE                         ! target points in model interface levels (pint)
+           PTMP(K) = ETA1(K)*PDTOP + ETA2(K)*PD(I,J) + PTOP
+         ENDDO
+
+         DO K=NKDS,NKDE-1                        ! target points in model levels
+           PIO(K) = EXP((ALOG(PTMP(K))+ALOG(PTMP(K+1)))*0.5)
+         ENDDO
+!
+
+         IF(PTMP(1) .GE. PSTD(1))THEN           ! if lower boundary is higher than PMSL(1) re-set lower boundary
+           PIN(NKDE-1) = PIO(1)                 ! be consistent with target. This may not happen at all
+           WRITE(0,*)'WARNING: NESTED DOMAIN PRESSURE AT LOWEST LEVEL HIGHER THAN PSTD'
+           WRITE(0,*)'I,J,PIO(1),PSTD(1)',I,J,PIO(1),PSTD(1)
+         ENDIF
+
+         CALL SPLINE2(I,J,JTB,NKDE-1,PIN,CIN,Y2,NKDE-1,PIO,COUT,DUM1,DUM2)  ! interpolate
+
+         DO K=1,NKDE-1
+           NFLD(I,K,J)= COUT(K)  ! scalar in the nested domain
+         ENDDO
+
+!         IF(I==1 .AND. J==1)THEN
+!          WRITE(0,*)
+!          WRITE(0,*)'IPOS=',IPOS,'JPOS=',JPOS
+!          DO K=NKTS,NKDE-1
+!           WRITE(0,*)'T and Q AFTER BALANCING',K,CFLD(IPOS,K,JPOS),NFLD(I,K,J), &
+!                                               CFLD(IPOS,K,JPOS)-NFLD(I,K,J)
+!          ENDDO
+!         ENDIF
+!
+      ENDIF
+     ENDDO
+    ENDDO
+
+ END SUBROUTINE interp_scalar_nmm
+!
+!===========================================================================================
+!
+ SUBROUTINE  nmm_bdy_scalar (cfld,                               &  ! CD field
+                             cids,cide,ckds,ckde,cjds,cjde,      &
+                             cims,cime,ckms,ckme,cjms,cjme,      &
+                             cits,cite,ckts,ckte,cjts,cjte,      &
+                             nfld,                               &  ! ND field
+                             nids,nide,nkds,nkde,njds,njde,      &
+                             nims,nime,nkms,nkme,njms,njme,      &
+                             nits,nite,nkts,nkte,njts,njte,      &
+                             shw,                                &  ! stencil half width for interp
+                             imask,                              &  ! interpolation mask
+                             xstag,ystag,                        &  ! staggering of field
+                             ipos,jpos,                          &  ! Position of lower left of nest in CD
+                             nri,nrj,                            &  ! nest ratios
+                             cbdy, nbdy,                         &
+                             cbdy_t, nbdy_t,                     &
+                             cdt, ndt,                           &
+                             CTEMP_B,NTEMP_B,                    &  ! to be removed
+                             CTEMP_BT,NTEMP_BT,                  &
+                             CII, IIH, CJJ, JJH, CBWGT1, HBWGT1, &  ! south-western grid locs and weights
+                             CBWGT2, HBWGT2, CBWGT3, HBWGT3,     &  ! note that "C"ourse grid ones are
+                             CBWGT4, HBWGT4,                     &  ! dummys for weights
+                             CC3d,C3d,                           &
+                             CPD,PD,                             &
+                             CPSTD,PSTD,                         &
+                             CPDTOP,PDTOP,                       &
+                             CPTOP,PTOP,                         &
+                             CETA1,ETA1,CETA2,ETA2               )
+   USE MODULE_MODEL_CONSTANTS
+   USE module_timing
+   IMPLICIT NONE
+
+   LOGICAL,INTENT(IN)                                               :: xstag, ystag
+   REAL, INTENT(INOUT)                                              :: cdt, ndt
+   INTEGER,INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
+                         cims, cime, ckms, ckme, cjms, cjme,   &
+                         cits, cite, ckts, ckte, cjts, cjte,   &
+                         nids, nide, nkds, nkde, njds, njde,   &
+                         nims, nime, nkms, nkme, njms, njme,   &
+                         nits, nite, nkts, nkte, njts, njte,   &
+                         shw,ipos,jpos,nri,nrj               
+   REAL, DIMENSION ( cims:cime, ckms:ckme, cjms:cjme ), INTENT(OUT) :: ctemp_b,ctemp_bt
+   REAL, DIMENSION ( nims:nime, nkms:nkme, njms:njme ), INTENT(OUT) :: ntemp_b,ntemp_bt
+   REAL,  DIMENSION( * ), INTENT(INOUT) :: cbdy, cbdy_t, nbdy, nbdy_t
+
+   INTEGER,DIMENSION(nims:nime,njms:njme),        INTENT(IN) :: IMASK
+
+!  parent domain
+
+   INTEGER,DIMENSION(cims:cime,cjms:cjme),        INTENT(IN) :: CII,CJJ   ! dummy
+   REAL,DIMENSION(cims:cime,cjms:cjme),           INTENT(IN) :: CBWGT1,CBWGT2
+   REAL,DIMENSION(cims:cime,cjms:cjme),           INTENT(IN) :: CBWGT3,CBWGT4
+   REAL,DIMENSION(cims:cime,ckms:ckme,cjms:cjme), INTENT(IN) :: CFLD
+   REAL,DIMENSION(cims:cime,ckms:ckme,cjms:cjme), INTENT(IN) :: CC3d ! scalar input on constant pressure levels
+   REAL,DIMENSION(ckms:ckme),                     INTENT(IN) :: CPSTD
+   REAL,DIMENSION(cims:cime,cjms:cjme),           INTENT(IN) :: CPD
+   REAL,DIMENSION(ckms:ckme),                     INTENT(IN) :: CETA1,CETA2
+   REAL,                                          INTENT(IN) :: CPDTOP,CPTOP
+
+!  nested domain
+
+   INTEGER,DIMENSION(nims:nime,njms:njme),        INTENT(IN) :: IIH,JJH
+   REAL,DIMENSION(nims:nime,njms:njme),           INTENT(IN) :: HBWGT1,HBWGT2
+   REAL,DIMENSION(nims:nime,njms:njme),           INTENT(IN) :: HBWGT3,HBWGT4
+   REAL,DIMENSION(nims:nime,nkms:nkme,njms:njme), INTENT(OUT):: NFLD 
+   REAL,DIMENSION(nims:nime,nkms:nkme,njms:njme), INTENT(OUT):: C3d   !Scalar on constant pressure levels
+   REAL,DIMENSION(nkms:nkme),                     INTENT(IN) :: PSTD
+   REAL,DIMENSION(nims:nime,njms:njme ),          INTENT(IN) :: PD
+   REAL,DIMENSION(nkms:nkme),                     INTENT(IN) :: ETA1,ETA2
+   REAL,INTENT(IN)                                           :: PDTOP,PTOP
+
+!  local
+
+   INTEGER,PARAMETER                                       :: JTB=134
+   INTEGER                                                 :: I,J,K,II,JJ
+   REAL,DIMENSION(JTB)                                     :: PIN,CIN,Y2,PIO,PTMP,COUT,DUM1,DUM2
+   REAL, DIMENSION (nims:nime,nkms:nkme,njms:njme)         :: CWK1,CWK2,CWK3,CWK4
+!-----------------------------------------------------------------------------------------------------
+!
+!
+!   *** CHECK VERTICAL BOUNDS BEFORE USING SPLINE INTERPOLATION 
+!
+    IF(nkme .GT. (JTB-10) .OR. NKDE .GT. (JTB-10)) &
+      CALL wrf_error_fatal ('mass points: increase JTB in interp_mass_nmm')
+
+!   X start boundary
+
+    NMM_XS: IF(NITS .EQ. NIDS)THEN
+!     WRITE(0,*)'ENTERING X1 START BOUNDARY AT T POINTS',NJTS,MIN(NJTE,NJDE-1)
+      I = NIDS
+      DO J = NJTS,MIN(NJTE,NJDE-1)
+         DO K=NKDS,NKDE-1                ! Please note that we are still in isobaric surfaces
+          IF(MOD(JJH(I,J),2) .NE. 0)THEN      ! 1,3,5,7 of the parent domain
+            C3d(I,K,J) = HBWGT1(I,J)*CC3d(IIH(I,J),  K,  JJH(I,J)  )    &
+                       + HBWGT2(I,J)*CC3d(IIH(I,J)+1,K,  JJH(I,J)  )    &
+                       + HBWGT3(I,J)*CC3d(IIH(I,J),  K,  JJH(I,J)-1)    &
+                       + HBWGT4(I,J)*CC3d(IIH(I,J),  K,  JJH(I,J)+1)
+          ELSE
+            C3d(I,K,J) = HBWGT1(I,J)*CC3d(IIH(I,J),  K,  JJH(I,J)  )  &
+                       + HBWGT2(I,J)*CC3d(IIH(I,J)+1,K,  JJH(I,J)  )  &
+                       + HBWGT3(I,J)*CC3d(IIH(I,J)+1,K,  JJH(I,J)-1)  &
+                       + HBWGT4(I,J)*CC3d(IIH(I,J)+1,K,  JJH(I,J)+1)
+          ENDIF
+        ENDDO
+      ENDDO
+!
+      DO J=NJTS,MIN(NJTE,NJDE-1)
+       IF(MOD(J,2) .NE. 0)THEN
+         CIN=0.;PIN=0.;Y2=0;PIO=0.;PTMP=0.;COUT=0.;DUM1=0.;DUM2=0. ! clean up local array
+         DO K=NKDS+1,NKDE                    ! inputs at standard  levels
+           PIN(K-1) = EXP((ALOG(PSTD(NKDE-K+1))+ALOG(PSTD(NKDE-K+2)))*0.5)
+           CIN(K-1) = C3d(I,NKDE-K+1,J)
+         ENDDO
+         Y2(1   )=0.
+         Y2(NKDE-1)=0.
+         DO K=NKDS,NKDE                         ! target points in model interface levels (pint)
+           PTMP(K) = ETA1(K)*PDTOP + ETA2(K)*PD(I,J) + PTOP
+         ENDDO
+         DO K=NKDS,NKDE-1                        ! target points in model levels
+           PIO(K) = EXP((ALOG(PTMP(K))+ALOG(PTMP(K+1)))*0.5)
+         ENDDO
+         IF(PTMP(1) .GE. PSTD(1))THEN           ! if lower boundary is higher than PMSL(1) re-set lower boundary
+           PIN(NKDE-1) = PIO(1)                 ! be consistent with target. This may not happen at all
+           WRITE(0,*)'WARNING: NESTED DOMAIN PRESSURE AT LOWEST LEVEL HIGHER THAN PSTD'
+           WRITE(0,*)'I,J,PIO(1),PSTD(1)',I,J,PIO(1),PSTD(1)
+         ENDIF
+
+         CALL SPLINE2(I,J,JTB,NKDE-1,PIN,CIN,Y2,NKDE-1,PIO,COUT,DUM1,DUM2)  ! interpolate
+
+         DO K=1,NKDE-1
+           CWK1(I,K,J)= COUT(K)  ! scalar in the nested domain
+         ENDDO
+       ELSE
+         DO K=NKDS,NKDE-1
+          CWK1(I,K,J)=0.0
+         ENDDO
+       ENDIF
+      ENDDO
+
+      DO J = NJTS,MIN(NJTE,NJDE-1)
+       DO K = NKDS,NKDE-1
+         ntemp_b(i,k,j)     = CWK1(I,K,J)
+         ntemp_bt(i,k,j)    = 0.0
+!        bdy(J,K,I,P_XSB)   = CWK1(I,K,J)         ! This will not work for NMM since
+!        bdy_t(J,K,I,P_XSB) = 0.0                 ! NMM requires BC halo exchanges
+       END DO
+      END DO
+
+    ENDIF NMM_XS
+
+
+!   X end boundary
+
+    NMM_XE: IF(NITE-1 .EQ. NIDE-1)THEN
+!    WRITE(0,*)'ENTERING X END BOUNDARY AT T POINTS',NJTS,MIN(NJTE,NJDE-1)
+     I = NIDE-1
+      DO J = NJTS,MIN(NJTE,NJDE-1)
+         DO K=NKDS,NKDE-1                ! Please note that we are still in isobaric surfaces
+          IF(MOD(JJH(I,J),2) .NE. 0)THEN      ! 1,3,5,7 of the parent domain
+            C3d(I,K,J) = HBWGT1(I,J)*CC3d(IIH(I,J),  K,  JJH(I,J)  )    &
+                       + HBWGT2(I,J)*CC3d(IIH(I,J)+1,K,  JJH(I,J)  )    &
+                       + HBWGT3(I,J)*CC3d(IIH(I,J),  K,  JJH(I,J)-1)    &
+                       + HBWGT4(I,J)*CC3d(IIH(I,J),  K,  JJH(I,J)+1)
+          ELSE
+            C3d(I,K,J) = HBWGT1(I,J)*CC3d(IIH(I,J),  K,  JJH(I,J)  )  &
+                       + HBWGT2(I,J)*CC3d(IIH(I,J)+1,K,  JJH(I,J)  )  &
+                       + HBWGT3(I,J)*CC3d(IIH(I,J)+1,K,  JJH(I,J)-1)  &
+                       + HBWGT4(I,J)*CC3d(IIH(I,J)+1,K,  JJH(I,J)+1)
+
+          ENDIF
+        ENDDO
+      ENDDO
+
+     DO J=NJTS,MIN(NJTE,NJDE-1)
+      IF(MOD(J,2) .NE. 0)THEN
+         CIN=0.;PIN=0.;Y2=0;PIO=0.;PTMP=0.;COUT=0.;DUM1=0.;DUM2=0. ! clean up local array
+         DO K=NKDS+1,NKDE                    ! inputs at standard  levels
+           PIN(K-1) = EXP((ALOG(PSTD(NKDE-K+1))+ALOG(PSTD(NKDE-K+2)))*0.5)
+           CIN(K-1) = C3d(I,NKDE-K+1,J)
+         ENDDO
+         Y2(1   )=0.
+         Y2(NKDE-1)=0.
+         DO K=NKDS,NKDE                         ! target points in model interface levels (pint)
+           PTMP(K) = ETA1(K)*PDTOP + ETA2(K)*PD(I,J) + PTOP
+         ENDDO
+         DO K=NKDS,NKDE-1                        ! target points in model levels
+           PIO(K) = EXP((ALOG(PTMP(K))+ALOG(PTMP(K+1)))*0.5)
+         ENDDO
+         IF(PTMP(1) .GE. PSTD(1))THEN           ! if lower boundary is higher than PMSL(1) re-set lower boundary
+           PIN(NKDE-1) = PIO(1)                 ! be consistent with target. This may not happen at all
+           WRITE(0,*)'WARNING: NESTED DOMAIN PRESSURE AT LOWEST LEVEL HIGHER THAN PSTD'
+           WRITE(0,*)'I,J,PIO(1),PSTD(1)',I,J,PIO(1),PSTD(1)
+         ENDIF
+
+         CALL SPLINE2(I,J,JTB,NKDE-1,PIN,CIN,Y2,NKDE-1,PIO,COUT,DUM1,DUM2)  ! interpolate
+
+         DO K=1,NKDE-1
+           CWK2(I,K,J)= COUT(K)  ! scalar in the nested domain
+         ENDDO      
+      ELSE
+         DO K=NKDS,NKDE-1
+           CWK2(I,K,J)=0.0
+         ENDDO 
+      ENDIF
+     ENDDO
+
+       DO J = NJTS,MIN(NJTE,NJDE-1)
+        DO K = NKDS,MIN(NKTE,NKDE-1)
+          ntemp_b(i,k,j)     = CWK2(I,K,J)
+          ntemp_bt(i,k,j)    = 0.0
+!         bdy(J,K,I,P_XSB)   = CWK2(I,K,J)         ! This will not work for NMM since
+!         bdy_t(J,K,I,P_XSB) = 0.0                 ! NMM requires BC halo exchanges
+!          if(k==1)WRITE(0,*)J,ntemp_b(i,k,j)
+        END DO
+       END DO
+
+    ENDIF NMM_XE
+
+!  Y start boundary
+
+    NMM_YS: IF(NJTS .EQ. NJDS)THEN
+!    WRITE(0,*)'ENTERING Y START BOUNDARY AT T POINTS',NITS,MIN(NITE,NIDE-1)
+     J = NJDS
+      DO K=NKDS,NKDE-1
+       DO I = NITS,MIN(NITE,NIDE-1)       
+          IF(MOD(JJH(I,J),2) .NE. 0)THEN      ! 1,3,5,7 of the parent domain
+            C3d(I,K,J) = HBWGT1(I,J)*CC3d(IIH(I,J),  K,  JJH(I,J)  )    &
+                       + HBWGT2(I,J)*CC3d(IIH(I,J)+1,K,  JJH(I,J)  )    &
+                       + HBWGT3(I,J)*CC3d(IIH(I,J),  K,  JJH(I,J)-1)    &
+                       + HBWGT4(I,J)*CC3d(IIH(I,J),  K,  JJH(I,J)+1)
+          ELSE
+            C3d(I,K,J) = HBWGT1(I,J)*CC3d(IIH(I,J),  K,  JJH(I,J)  )  &
+                       + HBWGT2(I,J)*CC3d(IIH(I,J)+1,K,  JJH(I,J)  )  &
+                       + HBWGT3(I,J)*CC3d(IIH(I,J)+1,K,  JJH(I,J)-1)  &
+                       + HBWGT4(I,J)*CC3d(IIH(I,J)+1,K,  JJH(I,J)+1)
+
+          ENDIF
+        ENDDO
+      ENDDO
+!
+     DO I=NITS,MIN(NITE,NIDE-1)
+         CIN=0.;PIN=0.;Y2=0;PIO=0.;PTMP=0.;COUT=0.;DUM1=0.;DUM2=0. ! clean up local array
+         DO K=NKDS+1,NKDE                    ! inputs at standard  levels
+           PIN(K-1) = EXP((ALOG(PSTD(NKDE-K+1))+ALOG(PSTD(NKDE-K+2)))*0.5)
+           CIN(K-1) = C3d(I,NKDE-K+1,J)
+         ENDDO
+         Y2(1   )=0.
+         Y2(NKDE-1)=0.
+         DO K=NKDS,NKDE                         ! target points in model interface levels (pint)
+           PTMP(K) = ETA1(K)*PDTOP + ETA2(K)*PD(I,J) + PTOP
+         ENDDO
+         DO K=NKDS,NKDE-1                        ! target points in model levels
+           PIO(K) = EXP((ALOG(PTMP(K))+ALOG(PTMP(K+1)))*0.5)
+         ENDDO
+         IF(PTMP(1) .GE. PSTD(1))THEN           ! if lower boundary is higher than PMSL(1) re-set lower boundary
+           PIN(NKDE-1) = PIO(1)                 ! be consistent with target. This may not happen at all
+           WRITE(0,*)'WARNING: NESTED DOMAIN PRESSURE AT LOWEST LEVEL HIGHER THAN PSTD'
+           WRITE(0,*)'I,J,PIO(1),PSTD(1)',I,J,PIO(1),PSTD(1)
+         ENDIF
+
+         CALL SPLINE2(I,J,JTB,NKDE-1,PIN,CIN,Y2,NKDE-1,PIO,COUT,DUM1,DUM2)  ! interpolate
+
+         DO K=1,NKDE-1
+           CWK3(I,K,J)= COUT(K)  ! scalar in the nested domain
+         ENDDO
+     ENDDO
+
+     DO K = NKDS,NKDE-1
+      DO I = NITS,MIN(NITE,NIDE-1)
+        ntemp_b(i,k,j)     = CWK3(I,K,J)
+        ntemp_bt(i,k,j)    = 0.0
+!       bdy(J,K,I,P_XSB)   = CWK3(I,K,J)         ! This will not work for NMM since
+!       bdy_t(J,K,I,P_XSB) = 0.0                 ! NMM requires BC halo exchanges
+      ENDDO
+      ENDDO
+
+
+    ENDIF NMM_YS
+
+! Y end boundary
+
+    NMM_YE: IF(NJTE-1 .EQ. NJDE-1)THEN
+!    WRITE(0,*)'ENTERING Y END BOUNDARY AT T POINTS',NITS,MIN(NITE,NIDE-1)
+     J = NJDE-1
+      DO K=NKDS,NKDE-1
+        DO I = NITS,MIN(NITE,NIDE-1)
+          IF(MOD(JJH(I,J),2) .NE. 0)THEN      ! 1,3,5,7 of the parent domain
+            C3d(I,K,J) = HBWGT1(I,J)*CC3d(IIH(I,J),  K,  JJH(I,J)  )    &
+                       + HBWGT2(I,J)*CC3d(IIH(I,J)+1,K,  JJH(I,J)  )    &
+                       + HBWGT3(I,J)*CC3d(IIH(I,J),  K,  JJH(I,J)-1)    &
+                       + HBWGT4(I,J)*CC3d(IIH(I,J),  K,  JJH(I,J)+1)
+          ELSE
+            C3d(I,K,J) = HBWGT1(I,J)*CC3d(IIH(I,J),  K,  JJH(I,J)  )  &
+                       + HBWGT2(I,J)*CC3d(IIH(I,J)+1,K,  JJH(I,J)  )  &
+                       + HBWGT3(I,J)*CC3d(IIH(I,J)+1,K,  JJH(I,J)-1)  &
+                       + HBWGT4(I,J)*CC3d(IIH(I,J)+1,K,  JJH(I,J)+1)
+
+          ENDIF
+        ENDDO
+      ENDDO
+
+     DO I=NITS,MIN(NITE,NIDE-1)
+         CIN=0.;PIN=0.;Y2=0;PIO=0.;PTMP=0.;COUT=0.;DUM1=0.;DUM2=0. ! clean up local array
+         DO K=NKDS+1,NKDE                    ! inputs at standard  levels
+           PIN(K-1) = EXP((ALOG(PSTD(NKDE-K+1))+ALOG(PSTD(NKDE-K+2)))*0.5)
+           CIN(K-1) = C3d(I,NKDE-K+1,J)
+         ENDDO
+         Y2(1   )=0.
+         Y2(NKDE-1)=0.
+         DO K=NKDS,NKDE                         ! target points in model interface levels (pint)
+           PTMP(K) = ETA1(K)*PDTOP + ETA2(K)*PD(I,J) + PTOP
+         ENDDO
+         DO K=NKDS,NKDE-1                        ! target points in model levels
+           PIO(K) = EXP((ALOG(PTMP(K))+ALOG(PTMP(K+1)))*0.5)
+         ENDDO
+         IF(PTMP(1) .GE. PSTD(1))THEN           ! if lower boundary is higher than PMSL(1) re-set lower boundary
+           PIN(NKDE-1) = PIO(1)                 ! be consistent with target. This may not happen at all
+           WRITE(0,*)'WARNING: NESTED DOMAIN PRESSURE AT LOWEST LEVEL HIGHER THAN PSTD'
+           WRITE(0,*)'I,J,PIO(1),PSTD(1)',I,J,PIO(1),PSTD(1)
+         ENDIF
+
+         CALL SPLINE2(I,J,JTB,NKDE-1,PIN,CIN,Y2,NKDE-1,PIO,COUT,DUM1,DUM2)  ! interpolate
+
+         DO K=1,NKDE-1
+           CWK4(I,K,J)= COUT(K)  ! scalar in the nested domain
+         ENDDO
+     ENDDO
+
+     DO K = NKDS,NKDE-1
+      DO I = NITS,MIN(NITE,NIDE-1)
+        ntemp_b(i,k,j)     = CWK4(I,K,J)
+        ntemp_bt(i,k,j)    = 0.0
+!       bdy(J,K,I,P_XSB)   = CWK4(I,K,J)         ! This will not work for NMM since
+!       bdy_t(J,K,I,P_XSB) = 0.0                 ! NMM requires BC halo exchanges
+!        if(k==1)WRITE(0,*)I,ntemp_b(i,k,j)
+      END DO
+      END DO
+
+    ENDIF NMM_YE
+
+!
+  END SUBROUTINE nmm_bdy_scalar
+!
+!
+!=======================================================================================
+ SUBROUTINE SPLINE2(I,J,JTBX,NOLD,XOLD,YOLD,Y2,NNEW,XNEW,YNEW,P,Q)
+!
+!   ******************************************************************
+!   *                                                                *
+!   *  THIS IS A ONE-DIMENSIONAL CUBIC SPLINE FITTING ROUTINE        *
+!   *  PROGRAMED FOR A SMALL SCALAR MACHINE.                         *
+!   *                                                                *
+!   *  PROGRAMER Z. JANJIC                                           *
+!   *                                                                *
+!   *  NOLD - NUMBER OF GIVEN VALUES OF THE FUNCTION.  MUST BE GE 3. *
+!   *  XOLD - LOCATIONS OF THE POINTS AT WHICH THE VALUES OF THE     *
+!   *         FUNCTION ARE GIVEN.  MUST BE IN ASCENDING ORDER.       *
+!   *  YOLD - THE GIVEN VALUES OF THE FUNCTION AT THE POINTS XOLD.   *
+!   *  Y2   - THE SECOND DERIVATIVES AT THE POINTS XOLD.  IF NATURAL *
+!   *         SPLINE IS FITTED Y2(1)=0. AND Y2(NOLD)=0. MUST BE      *
+!   *         SPECIFIED.                                             *
+!   *  NNEW - NUMBER OF VALUES OF THE FUNCTION TO BE CALCULATED.     *
+!   *  XNEW - LOCATIONS OF THE POINTS AT WHICH THE VALUES OF THE     *
+!   *         FUNCTION ARE CALCULATED.  XNEW(K) MUST BE GE XOLD(1)   *
+!   *         AND LE XOLD(NOLD).                                     *
+!   *  YNEW - THE VALUES OF THE FUNCTION TO BE CALCULATED.           *
+!   *  P, Q - AUXILIARY VECTORS OF THE LENGTH NOLD-2.                *
+!   *                                                                *
+!   ******************************************************************
+!---------------------------------------------------------------------
+      IMPLICIT NONE
+!---------------------------------------------------------------------
+      INTEGER,INTENT(IN) :: I,J,JTBX,NNEW,NOLD
+      REAL,DIMENSION(JTBX),INTENT(IN) :: XNEW,XOLD,YOLD
+      REAL,DIMENSION(JTBX),INTENT(INOUT) :: P,Q,Y2
+      REAL,DIMENSION(JTBX),INTENT(OUT) :: YNEW
+!
+      INTEGER :: II,JJ,K,K1,K2,KOLD,NOLDM1
+      REAL :: AK,BK,CK,DEN,DX,DXC,DXL,DXR,DYDXL,DYDXR                 &
+             ,RDX,RTDXC,X,XK,XSQ,Y2K,Y2KP1
+!---------------------------------------------------------------------
+
+!     debug
+
+      II=9999
+      JJ=9999
+      IF(I.eq.II.and.J.eq.JJ)THEN
+        WRITE(0,*)'DEBUG in SPLINE2: I,J',I,J
+        WRITE(0,*)'DEBUG in SPLINE2:HSO= ',xnew(1:nold)
+        DO K=1,NOLD
+         WRITE(0,*)'DEBUG in SPLINE2:L,ZETAI,PINTI= ' &
+                        ,K,YOLD(K),XOLD(K)
+        ENDDO 
+      ENDIF 
+
+!
+      NOLDM1=NOLD-1
+!
+      DXL=XOLD(2)-XOLD(1)
+      DXR=XOLD(3)-XOLD(2)
+      DYDXL=(YOLD(2)-YOLD(1))/DXL
+      DYDXR=(YOLD(3)-YOLD(2))/DXR
+      RTDXC=0.5/(DXL+DXR)
+!
+      P(1)= RTDXC*(6.*(DYDXR-DYDXL)-DXL*Y2(1))
+      Q(1)=-RTDXC*DXR
+!
+      IF(NOLD.EQ.3)GO TO 150
+!---------------------------------------------------------------------
+      K=3
+!
+  100 DXL=DXR
+      DYDXL=DYDXR
+      DXR=XOLD(K+1)-XOLD(K)
+      DYDXR=(YOLD(K+1)-YOLD(K))/DXR
+      DXC=DXL+DXR
+      DEN=1./(DXL*Q(K-2)+DXC+DXC)
+!
+      P(K-1)= DEN*(6.*(DYDXR-DYDXL)-DXL*P(K-2))
+      Q(K-1)=-DEN*DXR
+!
+      K=K+1
+      IF(K.LT.NOLD)GO TO 100
+!-----------------------------------------------------------------------
+  150 K=NOLDM1
+!
+  200 Y2(K)=P(K-1)+Q(K-1)*Y2(K+1)
+!
+      K=K-1
+      IF(K.GT.1)GO TO 200
+!-----------------------------------------------------------------------
+      K1=1
+!
+  300 XK=XNEW(K1)
+!
+      DO 400 K2=2,NOLD
+!
+      IF(XOLD(K2).GT.XK)THEN
+        KOLD=K2-1
+        GO TO 450
+      ENDIF
+!
+  400 CONTINUE
+!
+      YNEW(K1)=YOLD(NOLD)
+      GO TO 600
+!
+  450 IF(K1.EQ.1)GO TO 500
+      IF(K.EQ.KOLD)GO TO 550
+!
+  500 K=KOLD
+!
+      Y2K=Y2(K)
+      Y2KP1=Y2(K+1)
+      DX=XOLD(K+1)-XOLD(K)
+      RDX=1./DX
+!
+      AK=.1666667*RDX*(Y2KP1-Y2K)
+      BK=0.5*Y2K
+      CK=RDX*(YOLD(K+1)-YOLD(K))-.1666667*DX*(Y2KP1+Y2K+Y2K)
+!
+  550 X=XK-XOLD(K)
+      XSQ=X*X
+!
+      YNEW(K1)=AK*XSQ*X+BK*XSQ+CK*X+YOLD(K)
+
+!  debug
+
+      IF(I.eq.II.and.J.eq.JJ)THEN
+        WRITE(0,*) 'DEBUG:: k1,xnew(k1),ynew(k1): ', K1,XNEW(k1),YNEW(k1)
+      ENDIF 
+
+!
+  600 K1=K1+1
+      IF(K1.LE.NNEW)GO TO 300
+
+      RETURN
+
+      END SUBROUTINE SPLINE2
+
+!=======================================================================================
+!  E grid interpolation for H and V points 
+!=======================================================================================
+
+  SUBROUTINE interp_h_nmm (cfld,                                 &  ! CD field
+                           cids, cide, ckds, ckde, cjds, cjde,   &
+                           cims, cime, ckms, ckme, cjms, cjme,   &
+                           cits, cite, ckts, ckte, cjts, cjte,   &
+                           nfld,                                 &  ! ND field
+                           nids, nide, nkds, nkde, njds, njde,   &
+                           nims, nime, nkms, nkme, njms, njme,   &
+                           nits, nite, nkts, nkte, njts, njte,   &
+                           shw,                                  &  ! stencil half width for interp
+                           imask,                                &  ! interpolation mask
+                           xstag, ystag,                         &  ! staggering of field
+                           ipos, jpos,                           &  ! Position of lower left of nest in CD
+                           nri, nrj,                             &  ! nest ratios                           
+                           CII, IIH, CJJ, JJH, CBWGT1, HBWGT1,   &  ! south-western grid locs and weights 
+                           CBWGT2, HBWGT2, CBWGT3, HBWGT3,       &  ! note that "C"ourse grid ones are
+                           CBWGT4, HBWGT4                        )  ! dummys for weights
+     USE module_timing
+     IMPLICIT NONE
+
+     INTEGER, INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
+                            cims, cime, ckms, ckme, cjms, cjme,   &
+                            cits, cite, ckts, ckte, cjts, cjte,   &
+                            nids, nide, nkds, nkde, njds, njde,   &
+                            nims, nime, nkms, nkme, njms, njme,   &
+                            nits, nite, nkts, nkte, njts, njte,   &
+                            shw,                                  &
+                            ipos, jpos,                           &
+                            nri, nrj
+     LOGICAL, INTENT(IN) :: xstag, ystag
+
+     REAL, DIMENSION ( cims:cime, ckms:ckme, cjms:cjme ) :: cfld
+     REAL, DIMENSION ( nims:nime, nkms:nkme, njms:njme ) :: nfld
+     REAL,    DIMENSION ( cims:cime, cjms:cjme ), INTENT(IN) :: CBWGT1,CBWGT2,CBWGT3,CBWGT4    ! dummy
+     REAL,    DIMENSION ( nims:nime, njms:njme ), INTENT(IN) :: HBWGT1,HBWGT2,HBWGT3,HBWGT4
+     INTEGER, DIMENSION ( cims:cime, cjms:cjme ), INTENT(IN) :: CII,CJJ                        ! dummy
+     INTEGER, DIMENSION ( nims:nime, njms:njme ), INTENT(IN) :: IIH,JJH
+     INTEGER, DIMENSION ( nims:nime, njms:njme ) :: imask
+
+!    local
+     INTEGER i,j,k
+!
+!*** CHECK DOMAIN BOUNDS BEFORE INTERPOLATION
+!
+    DO J=NJTS,MIN(NJTE,NJDE-1)
+     DO I=NITS,MIN(NITE,NIDE-1)
+       IF(IIH(i,j).LT.(CIDS-shw) .OR. IIH(i,j).GT.(CIDE+shw)) &
+           CALL wrf_error_fatal ('hpoints:check domain bounds along x' )
+       IF(JJH(i,j).LT.(CJDS-shw) .OR. JJH(i,j).GT.(CJDE+shw)) &
+           CALL wrf_error_fatal ('hpoints:check domain bounds along y' )
+     ENDDO
+    ENDDO
+
+!    WRITE(23,*)'------------- MED NEST INITIAL 3 ----------------'
+!    DO J=NJTS,MIN(NJTE,NJDE-1)
+!      DO I=NITS,MIN(NITE,NIDE-1)
+!         WRITE(23,*)I,J,IMASK(I,J),NFLD(I,1,J)
+!      ENDDO
+!    ENDDO
+!    WRITE(23,*)
+
+!
+!*** INDEX CONVENTIONS
+!***                     HBWGT4
+!***                      4
+!***
+!***
+!***
+!***                   h
+!***             1                 2
+!***            HBWGT1             HBWGT2
+!***
+!***
+!***                      3
+!***                     HBWGT3
+
+     DO J=NJTS,MIN(NJTE,NJDE-1)
+       DO K=NKDS,NKDE
+        DO I=NITS,MIN(NITE,NIDE-1)
+         IF(IMASK(I,J) .NE. 1)THEN
+!
+           IF(MOD(JJH(I,J),2) .NE. 0)THEN    ! 1,3,5,7 
+               NFLD(I,K,J) = HBWGT1(I,J)*CFLD(IIH(I,J),  K,  JJH(I,J)  )    & 
+                           + HBWGT2(I,J)*CFLD(IIH(I,J)+1,K,  JJH(I,J)  )    &
+                           + HBWGT3(I,J)*CFLD(IIH(I,J),  K,  JJH(I,J)-1)    &  
+                           + HBWGT4(I,J)*CFLD(IIH(I,J),  K,  JJH(I,J)+1)
+           ELSE
+               NFLD(I,K,J) = HBWGT1(I,J)*CFLD(IIH(I,J),  K,  JJH(I,J)  )  &
+                           + HBWGT2(I,J)*CFLD(IIH(I,J)+1,K,  JJH(I,J)  )  &
+                           + HBWGT3(I,J)*CFLD(IIH(I,J)+1,K,  JJH(I,J)-1)  &
+                           + HBWGT4(I,J)*CFLD(IIH(I,J)+1,K,  JJH(I,J)+1)
+           ENDIF
+!     
+         ENDIF
+        ENDDO
+       ENDDO
+     ENDDO
+
+  END SUBROUTINE interp_h_nmm 
+!
+  SUBROUTINE interp_v_nmm (cfld,                                 &  ! CD field
+                           cids, cide, ckds, ckde, cjds, cjde,   &
+                           cims, cime, ckms, ckme, cjms, cjme,   &
+                           cits, cite, ckts, ckte, cjts, cjte,   &
+                           nfld,                                 &  ! ND field
+                           nids, nide, nkds, nkde, njds, njde,   &
+                           nims, nime, nkms, nkme, njms, njme,   &
+                           nits, nite, nkts, nkte, njts, njte,   &
+                           shw,                                  &  ! stencil half width for interp
+                           imask,                                &  ! interpolation mask
+                           xstag, ystag,                         &  ! staggering of field
+                           ipos, jpos,                           &  ! Position of lower left of nest in CD
+                           nri, nrj,                             &  ! nest ratios
+                           CII, IIV, CJJ, JJV, CBWGT1, VBWGT1,   &  ! south-western grid locs and weights
+                           CBWGT2, VBWGT2, CBWGT3, VBWGT3,       &  ! note that "C"ourse grid ones are
+                           CBWGT4, VBWGT4                        )  ! dummys
+     USE module_timing
+     IMPLICIT NONE
+
+     INTEGER, INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
+                            cims, cime, ckms, ckme, cjms, cjme,   &
+                            cits, cite, ckts, ckte, cjts, cjte,   &
+                            nids, nide, nkds, nkde, njds, njde,   &
+                            nims, nime, nkms, nkme, njms, njme,   &
+                            nits, nite, nkts, nkte, njts, njte,   &
+                            shw,                                  &
+                            ipos, jpos,                           &
+                            nri, nrj
+     LOGICAL, INTENT(IN) :: xstag, ystag
+
+     REAL, DIMENSION ( cims:cime, ckms:ckme, cjms:cjme ) :: cfld
+     REAL, DIMENSION ( nims:nime, nkms:nkme, njms:njme ) :: nfld
+     REAL,    DIMENSION ( cims:cime, cjms:cjme ), INTENT(IN) :: CBWGT1,CBWGT2,CBWGT3,CBWGT4    ! dummy
+     REAL,    DIMENSION ( nims:nime, njms:njme ), INTENT(IN) :: VBWGT1,VBWGT2,VBWGT3,VBWGT4
+     INTEGER, DIMENSION ( cims:cime, cjms:cjme ), INTENT(IN) :: CII,CJJ                        ! dummy
+     INTEGER, DIMENSION ( nims:nime, njms:njme ), INTENT(IN) :: IIV,JJV
+     INTEGER, DIMENSION ( nims:nime, njms:njme ) :: imask
+
+!    local
+     INTEGER i,j,k
+
+
+!
+!*** CHECK DOMAIN BOUNDS BEFORE INTERPOLATION
+!
+    DO J=NJTS,MIN(NJTE,NJDE-1)
+     DO I=NITS,MIN(NITE,NIDE-1)
+       IF(IIV(i,j).LT.(CIDS-shw) .OR. IIV(i,j).GT.(CIDE+shw)) &
+           CALL wrf_error_fatal ('vpoints:check domain bounds along x' )
+       IF(JJV(i,j).LT.(CJDS-shw) .OR. JJV(i,j).GT.(CJDE+shw)) &
+           CALL wrf_error_fatal ('vpoints:check domain bounds along y' ) 
+     ENDDO
+    ENDDO
+
+!    WRITE(24,*)'------------- MED NEST INITIAL 4 ----------------'
+!    DO J=NJTS,MIN(NJTE,NJDE-1)
+!      DO I=NITS,MIN(NITE,NIDE-1)
+!         WRITE(24,*)I,J,IMASK(I,J),NFLD(I,1,J)
+!      ENDDO
+!    ENDDO
+!    WRITE(24,*)
+
+!
+!*** INDEX CONVENTIONS
+!***                     VBWGT4
+!***                      4
+!***
+!***
+!***
+!***                   h
+!***             1                 2
+!***            VBWGT1             VBWGT2
+!***
+!***
+!***                      3
+!***                     VBWGT3
+
+
+     DO J=NJTS,MIN(NJTE,NJDE-1)
+       DO K=NKDS,NKDE
+        DO I=NITS,MIN(NITE,NIDE-1)
+         IF(IMASK(I,J) .NE. 1)THEN 
+!
+            IF(MOD(JJV(I,J),2) .NE. 0)THEN    ! 1,3,5,7
+                NFLD(I,K,J) = VBWGT1(I,J)*CFLD(IIV(I,J),  K,  JJV(I,J)  )    &
+                           + VBWGT2(I,J)*CFLD(IIV(I,J)+1,K,  JJV(I,J)  )    &
+                           + VBWGT3(I,J)*CFLD(IIV(I,J)+1,K,  JJV(I,J)-1)    &
+                           + VBWGT4(I,J)*CFLD(IIV(I,J)+1,K,  JJV(I,J)+1)
+            ELSE
+                NFLD(I,K,J) = VBWGT1(I,J)*CFLD(IIV(I,J),  K,JJV(I,J)  )      &
+                            + VBWGT2(I,J)*CFLD(IIV(I,J)+1,K,JJV(I,J)  )      &
+                            + VBWGT3(I,J)*CFLD(IIV(I,J),  K,JJV(I,J)-1)      & 
+                            + VBWGT4(I,J)*CFLD(IIV(I,J),  K,JJV(I,J)+1) 
+            ENDIF
+!
+         ENDIF     
+        ENDDO
+       ENDDO
+     ENDDO
+
+  END SUBROUTINE interp_v_nmm
+!
+!=======================================================================================
+!  E grid nearest neighbour interpolation for H points
+!=======================================================================================
+!
+  SUBROUTINE interp_hnear_nmm (cfld,                                 &  ! CD field
+                               cids, cide, ckds, ckde, cjds, cjde,   &
+                               cims, cime, ckms, ckme, cjms, cjme,   &
+                               cits, cite, ckts, ckte, cjts, cjte,   &
+                               nfld,                                 &  ! ND field
+                               nids, nide, nkds, nkde, njds, njde,   &
+                               nims, nime, nkms, nkme, njms, njme,   &
+                               nits, nite, nkts, nkte, njts, njte,   &
+                               shw,                                  &  ! stencil half width for interp
+                               imask,                                &  ! interpolation mask
+                               xstag, ystag,                         &  ! staggering of field
+                               ipos, jpos,                           &  ! Position of lower left of nest in CD
+                               nri, nrj,                             &  ! nest ratios                         
+                               CII, IIH, CJJ, JJH, CBWGT1, HBWGT1,   &  ! south-western grid locs and weights 
+                               CBWGT2, HBWGT2, CBWGT3, HBWGT3,       &  ! note that "C"ourse grid ones are
+                               CBWGT4, HBWGT4                        )  ! just dummys
+     USE module_timing
+     IMPLICIT NONE
+
+     INTEGER, INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
+                            cims, cime, ckms, ckme, cjms, cjme,   &
+                            cits, cite, ckts, ckte, cjts, cjte,   &
+                            nids, nide, nkds, nkde, njds, njde,   &
+                            nims, nime, nkms, nkme, njms, njme,   &
+                            nits, nite, nkts, nkte, njts, njte,   &
+                            shw,                                  &
+                            ipos, jpos,                           &
+                            nri, nrj
+     LOGICAL, INTENT(IN) :: xstag, ystag
+
+     REAL, DIMENSION ( cims:cime, ckms:ckme, cjms:cjme ) :: cfld
+     REAL, DIMENSION ( nims:nime, nkms:nkme, njms:njme ) :: nfld
+     REAL,    DIMENSION ( cims:cime, cjms:cjme ), INTENT(IN) :: CBWGT1,CBWGT2,CBWGT3,CBWGT4    ! dummy
+     REAL,    DIMENSION ( nims:nime, njms:njme ), INTENT(IN) :: HBWGT1,HBWGT2,HBWGT3,HBWGT4
+     INTEGER, DIMENSION ( cims:cime, cjms:cjme ), INTENT(IN) :: CII,CJJ                        ! dummy
+     INTEGER, DIMENSION ( nims:nime, njms:njme ), INTENT(IN) :: IIH,JJH
+     INTEGER, DIMENSION ( nims:nime, njms:njme ) :: imask
+
+!    local
+
+     LOGICAL  FLIP 
+     INTEGER  i,j,k,n
+     REAL     SUM,AMAXVAL
+     REAL,    DIMENSION (4, nims:nime, njms:njme ) :: NBWGT
+
+
+!    WRITE(25,*)'------------- MED NEST INITIAL 5 ----------------'
+!    DO J=NJTS,MIN(NJTE,NJDE-1)
+!      DO I=NITS,MIN(NITE,NIDE-1)
+!         WRITE(25,*)I,J,IMASK(I,J),NFLD(I,1,J)
+!      ENDDO
+!    ENDDO
+!    WRITE(25,*)
+
+!
+!*** INDEX CONVENTIONS
+!***                     NBWGT4=0
+!***                      4
+!***
+!***
+!***
+!***                   h
+!***             1                 2
+!***            NBWGT1=1           NBWGT2=0
+!***
+!***
+!***                      3
+!***                     NBWGT3=0
+
+     DO J=NJTS,MIN(NJTE,NJDE-1)
+      DO I=NITS,MIN(NITE,NIDE-1)
+       IF(IMASK(I,J) .NE. 1)THEN
+         NBWGT(1,I,J)=HBWGT1(I,J)
+         NBWGT(2,I,J)=HBWGT2(I,J)
+         NBWGT(3,I,J)=HBWGT3(I,J)
+         NBWGT(4,I,J)=HBWGT4(I,J)
+       ENDIF
+      ENDDO
+     ENDDO
+
+     DO J=NJTS,MIN(NJTE,NJDE-1)
+      DO I=NITS,MIN(NITE,NIDE-1)
+       IF(IMASK(I,J) .NE. 1)THEN    
+!
+          AMAXVAL=0.
+          DO N=1,4
+            AMAXVAL=amax1(NBWGT(N,I,J),AMAXVAL) 
+          ENDDO
+!
+          FLIP=.TRUE.
+          SUM=0.0
+          DO N=1,4
+             IF(AMAXVAL .EQ. NBWGT(N,I,J) .AND. FLIP)THEN
+               NBWGT(N,I,J)=1.0
+               FLIP=.FALSE.
+             ELSE
+               NBWGT(N,I,J)=0.0
+             ENDIF
+             SUM=SUM+NBWGT(N,I,J)
+             IF(SUM .GT. 1.0)CALL wrf_error_fatal ( "horizontal interp error - interp_hnear_nmm" )
+          ENDDO
+! 
+       ENDIF
+      ENDDO
+     ENDDO
+
+     DO J=NJTS,MIN(NJTE,NJDE-1)
+       DO K=NKDS,NKDE
+        DO I=NITS,MIN(NITE,NIDE-1)
+         IF(IMASK(I,J) .NE. 1)THEN 
+            IF(MOD(JJH(I,J),2) .NE. 0)THEN    ! 1,3,5,7 
+                NFLD(I,K,J) = NBWGT(1,I,J)*CFLD(IIH(I,J),  K,  JJH(I,J)  )    & 
+                            + NBWGT(2,I,J)*CFLD(IIH(I,J)+1,K,  JJH(I,J)  )    &
+                            + NBWGT(3,I,J)*CFLD(IIH(I,J),  K,  JJH(I,J)-1)    &  
+                            + NBWGT(4,I,J)*CFLD(IIH(I,J),  K,  JJH(I,J)+1) 
+            ELSE
+                NFLD(I,K,J) = NBWGT(1,I,J)*CFLD(IIH(I,J),  K,  JJH(I,J)  )  &
+                            + NBWGT(2,I,J)*CFLD(IIH(I,J)+1,K,  JJH(I,J)  )  &
+                            + NBWGT(3,I,J)*CFLD(IIH(I,J)+1,K,  JJH(I,J)-1)  &
+                            + NBWGT(4,I,J)*CFLD(IIH(I,J)+1,K,  JJH(I,J)+1)
+
+            ENDIF      
+!
+         ENDIF 
+        ENDDO
+       ENDDO
+     ENDDO
+
+  END SUBROUTINE interp_hnear_nmm 
+!
+!=======================================================================================
+!  E grid nearest neighbour interpolation for integer H points
+!=======================================================================================
+!
+  SUBROUTINE interp_int_hnear_nmm (cfld,                                 &  ! CD field; integers
+                                   cids, cide, ckds, ckde, cjds, cjde,   &
+                                   cims, cime, ckms, ckme, cjms, cjme,   &
+                                   cits, cite, ckts, ckte, cjts, cjte,   &
+                                   nfld,                                 &  ! ND field; integers
+                                   nids, nide, nkds, nkde, njds, njde,   &
+                                   nims, nime, nkms, nkme, njms, njme,   &
+                                   nits, nite, nkts, nkte, njts, njte,   &
+                                   shw,                                  &  ! stencil half width for interp
+                                   imask,                                &  ! interpolation mask
+                                   xstag, ystag,                         &  ! staggering of field
+                                   ipos, jpos,                           &  ! lower left of nest in CD
+                                   nri, nrj,                             &  ! nest ratios                      
+                                   CII, IIH, CJJ, JJH, CBWGT1, HBWGT1,   &  ! s-w grid locs and weights 
+                                   CBWGT2, HBWGT2, CBWGT3, HBWGT3,       &  ! note that "C"ourse grid ones are
+                                   CBWGT4, HBWGT4                        )  ! just dummys
+     USE module_timing
+     IMPLICIT NONE
+
+     INTEGER, INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
+                            cims, cime, ckms, ckme, cjms, cjme,   &
+                            cits, cite, ckts, ckte, cjts, cjte,   &
+                            nids, nide, nkds, nkde, njds, njde,   &
+                            nims, nime, nkms, nkme, njms, njme,   &
+                            nits, nite, nkts, nkte, njts, njte,   &
+                            shw,                                  &
+                            ipos, jpos,                           &
+                            nri, nrj
+     LOGICAL, INTENT(IN) :: xstag, ystag
+
+     INTEGER, DIMENSION ( cims:cime, ckms:ckme, cjms:cjme ) :: cfld
+     INTEGER, DIMENSION ( nims:nime, nkms:nkme, njms:njme ) :: nfld
+     REAL,    DIMENSION ( cims:cime, cjms:cjme ), INTENT(IN) :: CBWGT1,CBWGT2,CBWGT3,CBWGT4    ! dummy
+     REAL,    DIMENSION ( nims:nime, njms:njme ), INTENT(IN) :: HBWGT1,HBWGT2,HBWGT3,HBWGT4
+     INTEGER, DIMENSION ( cims:cime, cjms:cjme ), INTENT(IN) :: CII,CJJ                        ! dummy
+     INTEGER, DIMENSION ( nims:nime, njms:njme ), INTENT(IN) :: IIH,JJH
+     INTEGER, DIMENSION ( nims:nime, njms:njme ) :: imask
+
+!    local
+
+     LOGICAL  FLIP 
+     INTEGER  i,j,k,n
+     REAL     SUM,AMAXVAL
+     REAL,    DIMENSION (4, nims:nime, njms:njme ) :: NBWGT
+
+
+
+!    WRITE(26,*)'------------- MED NEST INITIAL 6 ----------------'
+!    DO J=NJTS,MIN(NJTE,NJDE-1)
+!      DO I=NITS,MIN(NITE,NIDE-1)
+!         WRITE(26,*)I,J,IMASK(I,J),NFLD(I,1,J)
+!      ENDDO
+!    ENDDO
+!    WRITE(26,*)
+
+!
+!*** INDEX CONVENTIONS
+!***                     NBWGT4=0
+!***                      4
+!***
+!***
+!***
+!***                   h
+!***             1                 2
+!***            NBWGT1=1           NBWGT2=0
+!***
+!***
+!***                      3
+!***                     NBWGT3=0
+
+     DO J=NJTS,MIN(NJTE,NJDE-1)
+       DO I=NITS,MIN(NITE,NIDE-1)
+        IF(IMASK(I,J) .NE. 1)THEN
+          NBWGT(1,I,J)=HBWGT1(I,J)
+          NBWGT(2,I,J)=HBWGT2(I,J)
+          NBWGT(3,I,J)=HBWGT3(I,J)
+          NBWGT(4,I,J)=HBWGT4(I,J)
+        ENDIF
+       ENDDO
+     ENDDO
+
+     DO J=NJTS,MIN(NJTE,NJDE-1)
+      DO I=NITS,MIN(NITE,NIDE-1)
+       IF(IMASK(I,J) .NE. 1)THEN
+!
+          AMAXVAL=0.
+          DO N=1,4
+            AMAXVAL=amax1(NBWGT(N,I,J),AMAXVAL) 
+          ENDDO
+!
+          FLIP=.TRUE.
+          SUM=0.0
+          DO N=1,4
+             IF(AMAXVAL .EQ. NBWGT(N,I,J) .AND. FLIP)THEN
+               NBWGT(N,I,J)=1.0
+               FLIP=.FALSE.
+             ELSE
+               NBWGT(N,I,J)=0.0
+             ENDIF
+             SUM=SUM+NBWGT(N,I,J)
+             IF(SUM .GT. 1.0)CALL wrf_error_fatal ( "horizontal interp error - interp_hnear_nmm" )
+          ENDDO
+! 
+       ENDIF
+      ENDDO
+     ENDDO
+
+     DO J=NJTS,MIN(NJTE,NJDE-1)
+       DO K=NKTS,NKTS
+        DO I=NITS,MIN(NITE,NIDE-1)
+!
+         IF(IMASK(I,J) .NE. 1)THEN  
+           IF(MOD(JJH(I,J),2) .NE. 0)THEN    ! 1,3,5,7 
+               NFLD(I,K,J) = NBWGT(1,I,J)*CFLD(IIH(I,J),  K,  JJH(I,J)  )    & 
+                           + NBWGT(2,I,J)*CFLD(IIH(I,J)+1,K,  JJH(I,J)  )    &
+                           + NBWGT(3,I,J)*CFLD(IIH(I,J),  K,  JJH(I,J)-1)    &  
+                           + NBWGT(4,I,J)*CFLD(IIH(I,J),  K,  JJH(I,J)+1) 
+           ELSE
+               NFLD(I,K,J) = NBWGT(1,I,J)*CFLD(IIH(I,J),  K,  JJH(I,J)  )  &
+                           + NBWGT(2,I,J)*CFLD(IIH(I,J)+1,K,  JJH(I,J)  )  &
+                           + NBWGT(3,I,J)*CFLD(IIH(I,J)+1,K,  JJH(I,J)-1)  &
+                           + NBWGT(4,I,J)*CFLD(IIH(I,J)+1,K,  JJH(I,J)+1)
+
+           ENDIF     
+!
+         ENDIF 
+        ENDDO
+       ENDDO
+     ENDDO
+
+  END SUBROUTINE interp_int_hnear_nmm 
+!
+!--------------------------------------------------------------------------------------
+
+   SUBROUTINE nmm_bdy_hinterp (cfld,                                 &  ! CD field
+                               cids, cide, ckds, ckde, cjds, cjde,   &
+                               cims, cime, ckms, ckme, cjms, cjme,   &
+                               cits, cite, ckts, ckte, cjts, cjte,   &
+                               nfld,                                 &  ! ND field
+                               nids, nide, nkds, nkde, njds, njde,   &
+                               nims, nime, nkms, nkme, njms, njme,   &
+                               nits, nite, nkts, nkte, njts, njte,   &
+                               shw,                                  &  ! stencil half width
+                               imask,                                &  ! interpolation mask
+                               xstag, ystag,                         &  ! staggering of field
+                               ipos, jpos,                           &  ! Position of lower left of nest in CD
+                               nri, nrj,                             &  ! nest ratios
+                               cbdy, nbdy,                           &
+                               cbdy_t, nbdy_t,                       &
+                               cdt, ndt,                             &
+                               CTEMP_B,NTEMP_B,                      &  ! These temp arrays should be removed
+                               CTEMP_BT,NTEMP_BT,                    &  ! later on
+                               CII, IIH, CJJ, JJH, CBWGT1, HBWGT1,   &  ! south-western grid locs and weights
+                               CBWGT2, HBWGT2, CBWGT3, HBWGT3,       &  ! note that "C"ourse grid ones are
+                               CBWGT4, HBWGT4                        )  ! dummys
+
+     USE module_configure
+     USE module_wrf_error
+
+     IMPLICIT NONE
+
+
+     INTEGER, INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
+                            cims, cime, ckms, ckme, cjms, cjme,   &
+                            cits, cite, ckts, ckte, cjts, cjte,   &
+                            nids, nide, nkds, nkde, njds, njde,   &
+                            nims, nime, nkms, nkme, njms, njme,   &
+                            nits, nite, nkts, nkte, njts, njte,   &
+                            shw,                                  &
+                            ipos, jpos,                           &
+                            nri, nrj
+
+     LOGICAL, INTENT(IN) :: xstag, ystag
+
+     REAL, DIMENSION ( cims:cime, ckms:ckme, cjms:cjme ) :: cfld
+     REAL, DIMENSION ( nims:nime, nkms:nkme, njms:njme ) :: nfld
+!
+     REAL, DIMENSION ( cims:cime, ckms:ckme, cjms:cjme ) :: ctemp_b,ctemp_bt
+     REAL, DIMENSION ( nims:nime, nkms:nkme, njms:njme ) :: ntemp_b,ntemp_bt
+!
+     INTEGER, DIMENSION ( nims:nime, njms:njme ) :: imask
+     REAL,  DIMENSION( * ), INTENT(INOUT) :: cbdy, cbdy_t, nbdy, nbdy_t
+     REAL cdt, ndt
+     REAL,    DIMENSION ( cims:cime, cjms:cjme ), INTENT(IN) :: CBWGT1,CBWGT2,CBWGT3,CBWGT4    ! dummy
+     REAL,    DIMENSION ( nims:nime, njms:njme ), INTENT(IN) :: HBWGT1,HBWGT2,HBWGT3,HBWGT4
+     INTEGER, DIMENSION ( cims:cime, cjms:cjme ), INTENT(IN) :: CII,CJJ                        ! dummy
+     INTEGER, DIMENSION ( nims:nime, njms:njme ), INTENT(IN) :: IIH,JJH
+! Local
+
+     INTEGER nijds, nijde, spec_bdy_width,i,j,k
+
+     nijds = min(nids, njds)
+     nijde = max(nide, njde)
+     CALL nl_get_spec_bdy_width( 1, spec_bdy_width )
+
+
+     CALL nmm_bdy_interp1( cfld,                                 &  ! CD field
+                           cids, cide, ckds, ckde, cjds, cjde,   &
+                           cims, cime, ckms, ckme, cjms, cjme,   &
+                           cits, cite, ckts, ckte, cjts, cjte,   &
+                           nfld,                                 &  ! ND field
+                           nijds, nijde , spec_bdy_width ,       &
+                           nids, nide, nkds, nkde, njds, njde,   &
+                           nims, nime, nkms, nkme, njms, njme,   &
+                           nits, nite, nkts, nkte, njts, njte,   &
+                           shw, imask,                           &
+                           xstag, ystag,                         &  ! staggering of field
+                           ipos, jpos,                           &  ! Position of lower left of nest in CD
+                           nri, nrj,                             &
+                           cdt, ndt,                             &
+                           CTEMP_B,NTEMP_B,                      &  ! These temp arrays should be removed
+                           CTEMP_BT,NTEMP_BT,                    &  ! later on
+                           CII, IIH, CJJ, JJH, CBWGT1, HBWGT1,   &  ! south-western grid locs and weights
+                           CBWGT2, HBWGT2, CBWGT3, HBWGT3,       &  ! note that "C"ourse grid ones are
+                           CBWGT4, HBWGT4                        )  ! dummys
+
+    RETURN
+
+   END SUBROUTINE nmm_bdy_hinterp
+
+!----------------------------------------------------------------------------------------------------
+   SUBROUTINE nmm_bdy_interp1( cfld,                             &  ! CD field 
+                           cids, cide, ckds, ckde, cjds, cjde,   &
+                           cims, cime, ckms, ckme, cjms, cjme,   &
+                           cits, cite, ckts, ckte, cjts, cjte,   &
+                           nfld,                                 &  ! ND field
+                           nijds, nijde, spec_bdy_width ,        &
+                           nids, nide, nkds, nkde, njds, njde,   &
+                           nims, nime, nkms, nkme, njms, njme,   &
+                           nits, nite, nkts, nkte, njts, njte,   &
+                           shw1,                                 &
+                           imask,                                &  ! interpolation mask
+                           xstag, ystag,                         &  ! staggering of field
+                           ipos, jpos,                           &  ! Position of lower left of nest in CD
+                           nri, nrj,                             &
+                           cdt, ndt,                             &
+                           CTEMP_B,NTEMP_B,                      &  ! These temp arrays should be removed
+                           CTEMP_BT,NTEMP_BT,                    &  ! later on
+                           CII, IIH, CJJ, JJH, CBWGT1, HBWGT1,   &  ! south-western grid locs and weights
+                           CBWGT2, HBWGT2, CBWGT3, HBWGT3,       &  ! note that "C"ourse grid ones are
+                           CBWGT4, HBWGT4                        )  ! dummys
+
+     use module_state_description
+     IMPLICIT NONE
+
+     INTEGER, INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
+                            cims, cime, ckms, ckme, cjms, cjme,   &
+                            cits, cite, ckts, ckte, cjts, cjte,   &
+                            nids, nide, nkds, nkde, njds, njde,   &
+                            nims, nime, nkms, nkme, njms, njme,   &
+                            nits, nite, nkts, nkte, njts, njte,   &
+                            shw1,                                 &  ! ignore
+                            ipos, jpos,                           &
+                            nri, nrj
+     INTEGER, INTENT(IN) :: nijds, nijde, spec_bdy_width
+     LOGICAL, INTENT(IN) :: xstag, ystag
+
+     REAL, DIMENSION ( cims:cime, ckms:ckme, cjms:cjme ), INTENT(INOUT) :: cfld
+     REAL, DIMENSION ( nims:nime, nkms:nkme, njms:njme ), INTENT(INOUT) :: nfld
+!
+     REAL, DIMENSION ( cims:cime, ckms:ckme, cjms:cjme ), INTENT(INOUT) :: ctemp_b,ctemp_bt
+     REAL, DIMENSION ( nims:nime, nkms:nkme, njms:njme ), INTENT(INOUT) :: ntemp_b,ntemp_bt
+!
+     INTEGER, DIMENSION ( nims:nime, njms:njme ) :: imask
+     REAL                                 :: cdt, ndt
+     REAL,    DIMENSION ( cims:cime, cjms:cjme ), INTENT(IN) :: CBWGT1,CBWGT2,CBWGT3,CBWGT4    ! dummy
+     REAL,    DIMENSION ( nims:nime, njms:njme ), INTENT(IN) :: HBWGT1,HBWGT2,HBWGT3,HBWGT4
+     INTEGER, DIMENSION ( cims:cime, cjms:cjme ), INTENT(IN) :: CII,CJJ                        ! dummy
+     INTEGER, DIMENSION ( nims:nime, njms:njme ), INTENT(IN) :: IIH,JJH
+
+!    local
+
+     INTEGER :: i,j,k,ii,jj
+     REAL, DIMENSION ( nims:nime, nkms:nkme, njms:njme )    :: cwk1,cwk2,cwk3,cwk4
+
+!    X start boundary
+
+       NMM_XS: IF(NITS .EQ. NIDS)THEN
+!        WRITE(0,*)'ENTERING X1 START BOUNDARY AT MASS POINTS',NJTS,MIN(NJTE,NJDE-1)
+        I = NIDS
+        DO J = NJTS,MIN(NJTE,NJDE-1)
+         DO K = NKDS,NKDE
+              IF(MOD(J,2) .NE.0)THEN                ! 1,3,5,7 of nested domain
+                IF(MOD(JJH(I,J),2) .NE. 0)THEN      ! 1,3,5,7 of the parent domain
+                   CWK1(I,K,J) = HBWGT1(I,J)*CFLD(IIH(I,J),  K,  JJH(I,J)  )    &
+                               + HBWGT2(I,J)*CFLD(IIH(I,J)+1,K,  JJH(I,J)  )    &
+                               + HBWGT3(I,J)*CFLD(IIH(I,J),  K,  JJH(I,J)-1)    &
+                               + HBWGT4(I,J)*CFLD(IIH(I,J),  K,  JJH(I,J)+1)
+
+
+                ELSE
+                   CWK1(I,K,J) = HBWGT1(I,J)*CFLD(IIH(I,J),  K,  JJH(I,J)  )  &
+                               + HBWGT2(I,J)*CFLD(IIH(I,J)+1,K,  JJH(I,J)  )  &
+                               + HBWGT3(I,J)*CFLD(IIH(I,J)+1,K,  JJH(I,J)-1)  &
+                               + HBWGT4(I,J)*CFLD(IIH(I,J)+1,K,  JJH(I,J)+1)
+                ENDIF
+              ELSE
+                CWK1(I,K,J) = 0.0      ! even rows at mass points of the nested domain
+              ENDIF
+              ntemp_b(i,k,j)     = CWK1(I,K,J)
+              ntemp_bt(i,k,j)    = 0.0
+!             bdy(J,K,I,P_XSB)   = CWK1(I,K,J)    ! This will not work for NMM core
+!             bdy_t(J,K,I,P_XSB) = 0.0            ! since NMM requires BC halos
+         END DO
+        END DO
+       ENDIF NMM_XS
+
+!    X end boundary
+
+       NMM_XE: IF(NITE-1 .EQ. NIDE-1)THEN
+!       WRITE(0,*)'ENTERING X END BOUNDARY AT MASS POINTS',NJTS,MIN(NJTE,NJDE-1)
+        I = NIDE-1
+        DO J = NJTS,MIN(NJTE,NJDE-1)
+         DO K = NKDS,NKDE
+              IF(MOD(J,2) .NE.0)THEN                ! 1,3,5,7 of the nested domain 
+                IF(MOD(JJH(I,J),2) .NE. 0)THEN    ! 1,3,5,7 of the parent domain
+                   CWK2(I,K,J) = HBWGT1(I,J)*CFLD(IIH(I,J),  K,  JJH(I,J)  )    &
+                               + HBWGT2(I,J)*CFLD(IIH(I,J)+1,K,  JJH(I,J)  )    &
+                               + HBWGT3(I,J)*CFLD(IIH(I,J),  K,  JJH(I,J)-1)    &
+                               + HBWGT4(I,J)*CFLD(IIH(I,J),  K,  JJH(I,J)+1)
+                ELSE
+                   CWK2(I,K,J) = HBWGT1(I,J)*CFLD(IIH(I,J),  K,  JJH(I,J)  )  &
+                               + HBWGT2(I,J)*CFLD(IIH(I,J)+1,K,  JJH(I,J)  )  &
+                               + HBWGT3(I,J)*CFLD(IIH(I,J)+1,K,  JJH(I,J)-1)  &
+                               + HBWGT4(I,J)*CFLD(IIH(I,J)+1,K,  JJH(I,J)+1)
+
+                ENDIF
+              ELSE
+                CWK2(I,K,J) = 0.0      ! even rows at mass points
+              ENDIF
+              II = NIDE - I
+              ntemp_b(i,k,j)     = CWK2(I,K,J)
+              ntemp_bt(i,k,j)    = 0.0
+!              bdy(J,K,II,P_XEB)  = CWK2(I,K,J)
+!              bdy_t(J,K,II,P_XEB)= 0.0
+         END DO
+        END DO
+       ENDIF NMM_XE
+
+!  Y start boundary
+
+       NMM_YS: IF(NJTS .EQ. NJDS)THEN
+!        WRITE(0,*)'ENTERING Y START BOUNDARY AT MASS POINTS',NITS,MIN(NITE,NIDE-1)
+        J = NJDS
+        DO K = NKDS, NKDE 
+         DO I = NITS,MIN(NITE,NIDE-1)
+              IF(MOD(JJH(I,J),2) .NE. 0)THEN    ! 1,3,5,7
+                 CWK3(I,K,J) = HBWGT1(I,J)*CFLD(IIH(I,J),  K,  JJH(I,J)  )    &
+                             + HBWGT2(I,J)*CFLD(IIH(I,J)+1,K,  JJH(I,J)  )    &
+                             + HBWGT3(I,J)*CFLD(IIH(I,J),  K,  JJH(I,J)-1)    &
+                             + HBWGT4(I,J)*CFLD(IIH(I,J),  K,  JJH(I,J)+1)
+              ELSE
+                 CWK3(I,K,J) = HBWGT1(I,J)*CFLD(IIH(I,J),  K,  JJH(I,J)  )  &
+                             + HBWGT2(I,J)*CFLD(IIH(I,J)+1,K,  JJH(I,J)  )  &
+                             + HBWGT3(I,J)*CFLD(IIH(I,J)+1,K,  JJH(I,J)-1)  &
+                             + HBWGT4(I,J)*CFLD(IIH(I,J)+1,K,  JJH(I,J)+1)
+
+              ENDIF
+              ntemp_b(i,k,j)     = CWK3(I,K,J)
+              ntemp_bt(i,k,j)    = 0.0
+!             bdy(I,K,J,P_YSB)   = CWK3(I,K,J)
+!             bdy_t(I,K,J,P_YSB) = 0.0
+         END DO
+        END DO
+       END IF NMM_YS 
+
+! Y end boundary
+
+       NMM_YE: IF(NJTE-1 .EQ. NJDE-1)THEN
+!        WRITE(0,*)'ENTERING Y END BOUNDARY AT MASS POINTS',NITS,MIN(NITE,NIDE-1)
+        J = NJDE-1
+        DO K = NKDS,NKDE 
+         DO I = NITS,MIN(NITE,NIDE-1)
+              IF(MOD(JJH(I,J),2) .NE. 0)THEN    ! 1,3,5,7
+                 CWK4(I,K,J) = HBWGT1(I,J)*CFLD(IIH(I,J),  K,  JJH(I,J)  )    &
+                             + HBWGT2(I,J)*CFLD(IIH(I,J)+1,K,  JJH(I,J)  )    &
+                             + HBWGT3(I,J)*CFLD(IIH(I,J),  K,  JJH(I,J)-1)    &
+                             + HBWGT4(I,J)*CFLD(IIH(I,J),  K,  JJH(I,J)+1)
+              ELSE
+                 CWK4(I,K,J) = HBWGT1(I,J)*CFLD(IIH(I,J),  K,  JJH(I,J)  )  &
+                             + HBWGT2(I,J)*CFLD(IIH(I,J)+1,K,  JJH(I,J)  )  &
+                             + HBWGT3(I,J)*CFLD(IIH(I,J)+1,K,  JJH(I,J)-1)  &
+                             + HBWGT4(I,J)*CFLD(IIH(I,J)+1,K,  JJH(I,J)+1)
+
+              ENDIF
+              JJ = NJDE - J 
+              ntemp_b(i,k,j)     = CWK4(I,K,J)
+              ntemp_bt(i,k,j)    = 0.0
+!             bdy(I,K,JJ,P_YEB) = CWK4(I,K,J)
+!             bdy_t(I,K,JJ,P_YEB) = 0.0
+         END DO
+        END DO
+       END IF NMM_YE 
+
+     RETURN
+
+   END SUBROUTINE nmm_bdy_interp1
+
+!--------------------------------------------------------------------------------------
+
+   SUBROUTINE nmm_bdy_vinterp ( cfld,                                 &  ! CD field
+                               cids, cide, ckds, ckde, cjds, cjde,   &
+                               cims, cime, ckms, ckme, cjms, cjme,   &
+                               cits, cite, ckts, ckte, cjts, cjte,   &
+                               nfld,                                 &  ! ND field
+                               nids, nide, nkds, nkde, njds, njde,   &
+                               nims, nime, nkms, nkme, njms, njme,   &
+                               nits, nite, nkts, nkte, njts, njte,   &
+                               shw,                                  &  ! stencil half width
+                               imask,                                &  ! interpolation mask
+                               xstag, ystag,                         &  ! staggering of field
+                               ipos, jpos,                           &  ! Position of lower left of nest in CD
+                               nri, nrj,                             &  ! nest ratios
+                               cbdy, nbdy,                           &
+                               cbdy_t, nbdy_t,                       &
+                               cdt, ndt,                             &
+                               CTEMP_B,NTEMP_B,                      &  ! These temp arrays should be removed
+                               CTEMP_BT,NTEMP_BT,                    &  ! later on
+                               CII, IIV, CJJ, JJV, CBWGT1, VBWGT1,   &  ! south-western grid locs and weights
+                               CBWGT2, VBWGT2, CBWGT3, VBWGT3,       &  ! note that "C"ourse grid ones are
+                               CBWGT4, VBWGT4                        )  ! dummys
+
+     USE module_configure
+     USE module_wrf_error
+
+     IMPLICIT NONE
+
+
+     INTEGER, INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
+                            cims, cime, ckms, ckme, cjms, cjme,   &
+                            cits, cite, ckts, ckte, cjts, cjte,   &
+                            nids, nide, nkds, nkde, njds, njde,   &
+                            nims, nime, nkms, nkme, njms, njme,   &
+                            nits, nite, nkts, nkte, njts, njte,   &
+                            shw,                                  &
+                            ipos, jpos,                           &
+                            nri, nrj
+
+     LOGICAL, INTENT(IN) :: xstag, ystag
+
+     REAL, DIMENSION ( cims:cime, ckms:ckme, cjms:cjme ) :: cfld
+     REAL, DIMENSION ( nims:nime, nkms:nkme, njms:njme ) :: nfld
+!
+     REAL, DIMENSION ( cims:cime, ckms:ckme, cjms:cjme ) :: ctemp_b,ctemp_bt
+     REAL, DIMENSION ( nims:nime, nkms:nkme, njms:njme ) :: ntemp_b,ntemp_bt
+!
+     INTEGER, DIMENSION ( nims:nime, njms:njme ) :: imask
+     REAL,  DIMENSION( * ), INTENT(INOUT) :: cbdy, cbdy_t, nbdy, nbdy_t
+     REAL cdt, ndt
+     REAL,    DIMENSION ( cims:cime, cjms:cjme ), INTENT(IN) :: CBWGT1,CBWGT2,CBWGT3,CBWGT4    ! dummy
+     REAL,    DIMENSION ( nims:nime, njms:njme ), INTENT(IN) :: VBWGT1,VBWGT2,VBWGT3,VBWGT4
+     INTEGER, DIMENSION ( cims:cime, cjms:cjme ), INTENT(IN) :: CII,CJJ                        ! dummy
+     INTEGER, DIMENSION ( nims:nime, njms:njme ), INTENT(IN) :: IIV,JJV
+
+! Local
+
+     INTEGER nijds, nijde, spec_bdy_width
+
+     nijds = min(nids, njds)
+     nijde = max(nide, njde)
+     CALL nl_get_spec_bdy_width( 1, spec_bdy_width )
+
+     CALL nmm_bdy_interp2( cfld,                                     &  ! CD field
+                           cids, cide, ckds, ckde, cjds, cjde,   &
+                           cims, cime, ckms, ckme, cjms, cjme,   &
+                           cits, cite, ckts, ckte, cjts, cjte,   &
+                           nfld,                                 &  ! ND field
+                           nijds, nijde , spec_bdy_width ,       &  
+                           nids, nide, nkds, nkde, njds, njde,   &
+                           nims, nime, nkms, nkme, njms, njme,   &
+                           nits, nite, nkts, nkte, njts, njte,   &
+                           shw, imask,                           &
+                           xstag, ystag,                         &  ! staggering of field
+                           ipos, jpos,                           &  ! Position of lower left of nest in CD
+                           nri, nrj,                             &
+                           cdt, ndt,                             &
+                           CTEMP_B,NTEMP_B,                      &  ! These temp arrays should be removed
+                           CTEMP_BT,NTEMP_BT,                    &  ! later on
+                           CII, IIV, CJJ, JJV, CBWGT1, VBWGT1,   &  ! south-western grid locs and weights
+                           CBWGT2, VBWGT2, CBWGT3, VBWGT3,       &  ! note that "C"ourse grid ones are
+                           CBWGT4, VBWGT4                        )  ! dummys
+    RETURN
+
+   END SUBROUTINE nmm_bdy_vinterp 
+
+!----------------------------------------------------------------------------------------------------
+   SUBROUTINE nmm_bdy_interp2( cfld,                             &  ! CD field 
+                           cids, cide, ckds, ckde, cjds, cjde,   &
+                           cims, cime, ckms, ckme, cjms, cjme,   &
+                           cits, cite, ckts, ckte, cjts, cjte,   &
+                           nfld,                                 &  ! ND field
+                           nijds, nijde, spec_bdy_width ,        &
+                           nids, nide, nkds, nkde, njds, njde,   &
+                           nims, nime, nkms, nkme, njms, njme,   &
+                           nits, nite, nkts, nkte, njts, njte,   &
+                           shw1,                                 &
+                           imask,                                &  ! interpolation mask
+                           xstag, ystag,                         &  ! staggering of field
+                           ipos, jpos,                           &  ! Position of lower left of nest in CD
+                           nri, nrj,                             &
+                           cdt, ndt,                             &
+                           CTEMP_B,NTEMP_B,                      &  ! These temp arrays should be removed
+                           CTEMP_BT,NTEMP_BT,                    &  ! later on
+                           CII, IIV, CJJ, JJV, CBWGT1, VBWGT1,   &  ! south-western grid locs and weights
+                           CBWGT2, VBWGT2, CBWGT3, VBWGT3,       &  ! note that "C"ourse grid ones are
+                           CBWGT4, VBWGT4                        )
+
+     use module_state_description
+     IMPLICIT NONE
+
+     INTEGER, INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
+                            cims, cime, ckms, ckme, cjms, cjme,   &
+                            cits, cite, ckts, ckte, cjts, cjte,   &
+                            nids, nide, nkds, nkde, njds, njde,   &
+                            nims, nime, nkms, nkme, njms, njme,   &
+                            nits, nite, nkts, nkte, njts, njte,   &
+                            shw1,                                 &  ! ignore
+                            ipos, jpos,                           &
+                            nri, nrj
+     INTEGER, INTENT(IN) :: nijds, nijde, spec_bdy_width
+     LOGICAL, INTENT(IN) :: xstag, ystag
+
+     REAL, DIMENSION ( cims:cime, ckms:ckme, cjms:cjme ), INTENT(INOUT) :: cfld
+     REAL, DIMENSION ( nims:nime, nkms:nkme, njms:njme ), INTENT(INOUT) :: nfld
+!
+     REAL, DIMENSION ( cims:cime, ckms:ckme, cjms:cjme ), INTENT(INOUT) :: ctemp_b,ctemp_bt
+     REAL, DIMENSION ( nims:nime, nkms:nkme, njms:njme ), INTENT(INOUT) :: ntemp_b,ntemp_bt
+!
+     INTEGER, DIMENSION ( nims:nime, njms:njme ) :: imask
+     REAL                                 :: cdt, ndt
+     REAL,    DIMENSION ( cims:cime, cjms:cjme ), INTENT(IN) :: CBWGT1,CBWGT2,CBWGT3,CBWGT4    ! dummy
+     REAL,    DIMENSION ( nims:nime, njms:njme ), INTENT(IN) :: VBWGT1,VBWGT2,VBWGT3,VBWGT4
+     INTEGER, DIMENSION ( cims:cime, cjms:cjme ), INTENT(IN) :: CII,CJJ                        ! dummy
+     INTEGER, DIMENSION ( nims:nime, njms:njme ), INTENT(IN) :: IIV,JJV
+
+!    local
+
+     INTEGER :: i,j,k,ii,jj
+     REAL, DIMENSION ( nims:nime, nkms:nkme, njms:njme )    :: cwk1,cwk2,cwk3,cwk4
+
+!    X start boundary
+
+       NMM_XS: IF(NITS .EQ. NIDS)THEN
+!      WRITE(0,*)'ENTERING X START BOUNDARY AT VELOCITY POINTS',NITS,NIDS,NJTS,MIN(NJTE,NJDE-1)
+        I = NIDS
+        DO J = NJTS,MIN(NJTE,NJDE-1)
+         DO K = NKDS,NKDE
+              IF(MOD(J,2) .EQ.0)THEN                ! 1,3,5,7 of nested domain
+                IF(MOD(JJV(I,J),2) .NE. 0)THEN      ! 1,3,5,7 of the parent domain
+                      CWK1(I,K,J) = VBWGT1(I,J)*CFLD(IIV(I,J),  K,  JJV(I,J)  )    &
+                                  + VBWGT2(I,J)*CFLD(IIV(I,J)+1,K,  JJV(I,J)  )    &
+                                  + VBWGT3(I,J)*CFLD(IIV(I,J)+1,K,  JJV(I,J)-1)    &
+                                  + VBWGT4(I,J)*CFLD(IIV(I,J)+1,K,  JJV(I,J)+1)
+                ELSE
+                      CWK1(I,K,J) = VBWGT1(I,J)*CFLD(IIV(I,J),  K,JJV(I,J)  )      &
+                                  + VBWGT2(I,J)*CFLD(IIV(I,J)+1,K,JJV(I,J)  )      &
+                                  + VBWGT3(I,J)*CFLD(IIV(I,J),  K,JJV(I,J)-1)      &
+                                  + VBWGT4(I,J)*CFLD(IIV(I,J),  K,JJV(I,J)+1)
+                ENDIF
+              ELSE
+                CWK1(I,K,J) = 0.0 ! odd rows along J, at mass points have zero velocity  
+              ENDIF
+              ntemp_b(i,k,j)     = CWK1(I,K,J)
+              ntemp_bt(i,k,j)    = 0.0
+!             bdy(J,K,I,P_XSB)   = CWK1(I,K,J)
+!             bdy_t(J,K,I,P_XSB) = 0.0
+!             IF(k==1)WRITE(0,*)IIV(I,J),JJV(I,J),i,j,VBWGT1(I,J),VBWGT2(I,J),VBWGT3(I,J),VBWGT4(I,J)
+!             IF(k==1)WRITE(0,*)i,j,ntemp_b(i,k,j)
+         END DO
+        END DO
+       ENDIF NMM_XS
+
+!    X end boundary
+
+       NMM_XE: IF(NITE-1 .EQ. NIDE-1)THEN
+!        WRITE(0,*)'ENTERING X END BOUNDARY AT VELOCITY POINTS',NITE-1,NIDE-1,NJTS,MIN(NJTE,NJDE-1)
+        I = NIDE-1
+        DO J = NJTS,MIN(NJTE,NJDE-1)
+         DO K = NKDS,NKDE
+              IF(MOD(J,2) .EQ.0)THEN                ! 1,3,5,7 of the nested domain
+                IF(MOD(JJV(I,J),2) .NE. 0)THEN      ! 1,3,5,7 of the parent domain
+                   CWK2(I,K,J) = VBWGT1(I,J)*CFLD(IIV(I,J),  K,  JJV(I,J)  )    &
+                               + VBWGT2(I,J)*CFLD(IIV(I,J)+1,K,  JJV(I,J)  )    &
+                               + VBWGT3(I,J)*CFLD(IIV(I,J)+1,K,  JJV(I,J)-1)    &
+                               + VBWGT4(I,J)*CFLD(IIV(I,J)+1,K,  JJV(I,J)+1)
+                ELSE
+                   CWK2(I,K,J) = VBWGT1(I,J)*CFLD(IIV(I,J),  K,JJV(I,J)  )      &
+                               + VBWGT2(I,J)*CFLD(IIV(I,J)+1,K,JJV(I,J)  )      &
+                               + VBWGT3(I,J)*CFLD(IIV(I,J),  K,JJV(I,J)-1)      &
+                               + VBWGT4(I,J)*CFLD(IIV(I,J),  K,JJV(I,J)+1)
+                ENDIF
+              ELSE
+                CWK2(I,K,J) = 0.0      ! odd rows at mass points
+              ENDIF
+              II = NIDE - I
+              ntemp_b(i,k,j)     = CWK2(I,K,J)
+              ntemp_bt(i,k,j)    = 0.0
+!             bdy(J,K,II,P_XEB)  = CWK2(I,K,J)
+!             bdy_t(J,K,II,P_XEB)= 0.0
+!             IF(k==1)WRITE(0,*)IIV(I,J),JJV(I,J),i,j,VBWGT1(I,J),VBWGT2(I,J),VBWGT3(I,J),VBWGT4(I,J)
+!             IF(k==1)WRITE(0,*)i,j,ntemp_b(i,k,j)
+         END DO
+        END DO
+       ENDIF NMM_XE
+
+!  Y start boundary
+
+       NMM_YS: IF(NJTS .EQ. NJDS)THEN
+!        WRITE(0,*)'ENTERING Y START BOUNDARY AT VELOCITY POINTS',NJTS,NJDS,NITS,MIN(NITE,NIDE-1)
+        J = NJDS
+        DO K = NKDS, NKDE
+         DO I = NITS,MIN(NITE,NIDE-2)     ! NIDE-1 SHOULD NOT MATTER IF WE FILL UP PHANTOM CELL 
+              IF(MOD(JJV(I,J),2) .NE. 0)THEN    ! 1,3,5,7
+                 CWK3(I,K,J) = VBWGT1(I,J)*CFLD(IIV(I,J),  K,  JJV(I,J)  )    &
+                             + VBWGT2(I,J)*CFLD(IIV(I,J)+1,K,  JJV(I,J)  )    &
+                             + VBWGT3(I,J)*CFLD(IIV(I,J)+1,K,  JJV(I,J)-1)    &
+                             + VBWGT4(I,J)*CFLD(IIV(I,J)+1,K,  JJV(I,J)+1)
+              ELSE
+                 CWK3(I,K,J) = VBWGT1(I,J)*CFLD(IIV(I,J),  K,JJV(I,J)  )      &
+                             + VBWGT2(I,J)*CFLD(IIV(I,J)+1,K,JJV(I,J)  )      &
+                             + VBWGT3(I,J)*CFLD(IIV(I,J),  K,JJV(I,J)-1)      &
+                             + VBWGT4(I,J)*CFLD(IIV(I,J),  K,JJV(I,J)+1)
+              ENDIF
+              ntemp_b(i,k,j)     = CWK3(I,K,J)
+              ntemp_bt(i,k,j)    = 0.0
+!             bdy(I,K,J,P_YSB)   = CWK3(I,K,J)
+!             bdy_t(I,K,J,P_YSB) = 0.0
+!             IF(k==1)WRITE(0,*)IIV(I,J),JJV(I,J),i,j,VBWGT1(I,J),VBWGT2(I,J),VBWGT3(I,J),VBWGT4(I,J)
+         END DO
+        END DO
+       END IF NMM_YS
+
+! Y end boundary
+
+       NMM_YE: IF(NJTE-1 .EQ. NJDE-1)THEN
+!       WRITE(0,*)'ENTERING Y END BOUNDARY AT VELOCITY POINTS',NJTE-1,NJDE-1,NITS,MIN(NITE,NIDE-1)
+        J = NJDE-1
+        DO K = NKDS,NKDE
+         DO I = NITS,MIN(NITE,NIDE-2)   ! NIDE-1 SHOULD NOT MATTER IF WE FILL UP PHANTOM CELL
+              IF(MOD(JJV(I,J),2) .NE. 0)THEN    ! 1,3,5,7
+                 CWK4(I,K,J) = VBWGT1(I,J)*CFLD(IIV(I,J),  K,  JJV(I,J)  )    &
+                             + VBWGT2(I,J)*CFLD(IIV(I,J)+1,K,  JJV(I,J)  )    &
+                             + VBWGT3(I,J)*CFLD(IIV(I,J)+1,K,  JJV(I,J)-1)    &
+                             + VBWGT4(I,J)*CFLD(IIV(I,J)+1,K,  JJV(I,J)+1)
+              ELSE
+                 CWK4(I,K,J) = VBWGT1(I,J)*CFLD(IIV(I,J),  K,JJV(I,J)  )      &
+                             + VBWGT2(I,J)*CFLD(IIV(I,J)+1,K,JJV(I,J)  )      &
+                             + VBWGT3(I,J)*CFLD(IIV(I,J),  K,JJV(I,J)-1)      &
+                             + VBWGT4(I,J)*CFLD(IIV(I,J),  K,JJV(I,J)+1)
+              ENDIF
+              JJ = NJDE - J
+              ntemp_b(i,k,j)     = CWK4(I,K,J)
+              ntemp_bt(i,k,j)    = 0.0
+!             bdy(I,K,JJ,P_YEB) = CWK4(I,K,J)
+!             bdy_t(I,K,JJ,P_YEB) = 0.0
+!             IF(k==1)WRITE(0,*)IIV(I,J),JJV(I,J),i,j,VBWGT1(I,J),VBWGT2(I,J),VBWGT3(I,J),VBWGT4(I,J)
+         END DO
+        END DO
+       END IF NMM_YE
+
+     RETURN
+
+   END SUBROUTINE nmm_bdy_interp2
+
+!
+!=======================================================================================
+! E grid interpolation: simple copy from parent to mother domain
+!=======================================================================================
+!
+!--------------------------------------------------------------------------------------
+!
+!
+   SUBROUTINE nmm_copy      ( cfld,                                 &  ! CD field
+                              cids, cide, ckds, ckde, cjds, cjde,   &
+                              cims, cime, ckms, ckme, cjms, cjme,   &
+                              cits, cite, ckts, ckte, cjts, cjte,   &
+                              nfld,                                 &  ! ND field
+                              nids, nide, nkds, nkde, njds, njde,   &
+                              nims, nime, nkms, nkme, njms, njme,   &
+                              nits, nite, nkts, nkte, njts, njte,   &
+                              shw,                                  &  ! stencil half width
+                              imask,                                &  ! interpolation mask
+                              xstag, ystag,                         &  ! staggering of field
+                              ipos, jpos,                           &  ! Position of lower left of nest in CD
+                              nri, nrj,                             &  ! nest ratios
+                              CII, IIH, CJJ, JJH                    )  
+
+     USE module_timing
+     IMPLICIT NONE
+
+     LOGICAL, INTENT(IN) :: xstag, ystag
+     INTEGER, INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
+                            cims, cime, ckms, ckme, cjms, cjme,   &
+                            cits, cite, ckts, ckte, cjts, cjte,   &
+                            nids, nide, nkds, nkde, njds, njde,   &
+                            nims, nime, nkms, nkme, njms, njme,   &
+                            nits, nite, nkts, nkte, njts, njte,   &
+                            shw,                                  &
+                            ipos, jpos,                           &
+                            nri, nrj
+     REAL, DIMENSION ( cims:cime, ckms:ckme, cjms:cjme ), INTENT(IN)    :: cfld
+     REAL, DIMENSION ( nims:nime, nkms:nkme, njms:njme ), INTENT(INOUT) :: nfld
+     INTEGER, DIMENSION ( nims:nime, njms:njme ), INTENT(IN) :: imask
+     INTEGER, DIMENSION ( cims:cime, cjms:cjme ), INTENT(IN) :: CII,CJJ                        ! dummy
+     INTEGER, DIMENSION ( nims:nime, njms:njme ), INTENT(IN) :: IIH,JJH
+
+!    local
+     INTEGER i,j,k
+
+
+     DO J=NJTS,MIN(NJTE,NJDE-1)
+       DO K=NKTS,NKTE
+        DO I=NITS,MIN(NITE,NIDE-1)
+           NFLD(I,K,J) = CFLD(IIH(I,J),K,JJH(I,J))
+        ENDDO
+       ENDDO
+     ENDDO
+
+  RETURN
+
+  END SUBROUTINE nmm_copy
+!
+!=======================================================================================
+!  E grid interpolation for terrain: In order to be consistent with the quasi-hydrostatic  
+!  balance at the boundaries, a four point average of the terrain is done at the second 
+!  and the penaltimate rows and columns around the boundaries.
+!=======================================================================================
+!
+  SUBROUTINE interp_topo_nmm (cfld,                                 &  ! CD field
+                           cids, cide, ckds, ckde, cjds, cjde,   &
+                           cims, cime, ckms, ckme, cjms, cjme,   &
+                           cits, cite, ckts, ckte, cjts, cjte,   &
+                           nfld,                                 &  ! ND field
+                           nids, nide, nkds, nkde, njds, njde,   &
+                           nims, nime, nkms, nkme, njms, njme,   &
+                           nits, nite, nkts, nkte, njts, njte,   &
+                           shw,                                  &  ! stencil half width for interp
+                           imask,                                &  ! interpolation mask
+                           xstag, ystag,                         &  ! staggering of field
+                           ipos, jpos,                           &  ! Position of lower left of nest in CD
+                           nri, nrj,                             &  ! nest ratios                           
+                           CII, IIH, CJJ, JJH, CBWGT1, HBWGT1,   &  ! south-western grid locs and weights 
+                           CBWGT2, HBWGT2, CBWGT3, HBWGT3,       &  ! note that "C"ourse grid ones are
+                           CBWGT4, HBWGT4                        )  ! dummys for weights
+     USE module_timing
+     IMPLICIT NONE
+
+     INTEGER, INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
+                            cims, cime, ckms, ckme, cjms, cjme,   &
+                            cits, cite, ckts, ckte, cjts, cjte,   &
+                            nids, nide, nkds, nkde, njds, njde,   &
+                            nims, nime, nkms, nkme, njms, njme,   &
+                            nits, nite, nkts, nkte, njts, njte,   &
+                            shw,                                  &
+                            ipos, jpos,                           &
+                            nri, nrj
+     LOGICAL, INTENT(IN) :: xstag, ystag
+
+     REAL, DIMENSION ( cims:cime, ckms:ckme, cjms:cjme ) :: cfld
+     REAL, DIMENSION ( nims:nime, nkms:nkme, njms:njme ) :: nfld
+     REAL,    DIMENSION ( cims:cime, cjms:cjme ), INTENT(IN) :: CBWGT1,CBWGT2,CBWGT3,CBWGT4    ! dummy
+     REAL,    DIMENSION ( nims:nime, njms:njme ), INTENT(IN) :: HBWGT1,HBWGT2,HBWGT3,HBWGT4
+     INTEGER, DIMENSION ( cims:cime, cjms:cjme ), INTENT(IN) :: CII,CJJ                        ! dummy
+     INTEGER, DIMENSION ( nims:nime, njms:njme ), INTENT(IN) :: IIH,JJH
+     INTEGER, DIMENSION ( nims:nime, njms:njme ) :: imask
+
+!    local
+     INTEGER i,j,k
+!
+!*** CHECK DOMAIN BOUNDS BEFORE INTERPOLATION
+!
+    DO J=NJTS,MIN(NJTE,NJDE-1)
+     DO I=NITS,MIN(NITE,NIDE-1)
+       IF(IIH(i,j).LT.(CIDS-shw) .OR. IIH(i,j).GT.(CIDE+shw)) &
+           CALL wrf_error_fatal ('hpoints:check domain bounds along x' )
+       IF(JJH(i,j).LT.(CJDS-shw) .OR. JJH(i,j).GT.(CJDE+shw)) &
+           CALL wrf_error_fatal ('hpoints:check domain bounds along y' )
+     ENDDO
+    ENDDO
+
+
+!
+!*** INDEX CONVENTIONS
+!***                     HBWGT4
+!***                      4
+!***
+!***
+!***
+!***                   h
+!***             1                 2
+!***            HBWGT1             HBWGT2
+!***
+!***
+!***                      3
+!***                     HBWGT3
+
+     WRITE(0,*)'HALO WEIGHTS: interp_fcn.F','NITS to MIN(NITE,NIDE-1)=',NITS,MIN(NITE,NIDE-1)
+     WRITE(0,*)'HALO WEIGHTS: interp_fcn.F','NJTS to MIN(NJTE,NJDE-1)=',NJTS,MIN(NJTE,NJDE-1)
+
+     DO J=MAX(NJTS-1,NJDS),MIN(NJTE+1,NJDE-1)
+      DO K=NKDS,NKDE
+       DO I=MAX(NITS-1,NIDS),MIN(NITE+1,NIDE-1)
+        IF(IMASK(I,J) .NE. 1)THEN
+!
+           IF(I==1 .AND. K==1)WRITE(0,*)'HALO WEIGHTS: interp_fcn.F', I,J, &
+                              HBWGT1(I,J)+HBWGT2(I,J)+HBWGT3(I,J)+HBWGT4(I,J), &
+                              IIH(I,J),JJH(I,J)
+
+           IF(MOD(JJH(I,J),2) .NE. 0)THEN    ! 1,3,5,7
+               NFLD(I,K,J) = HBWGT1(I,J)*CFLD(IIH(I,J),  K,  JJH(I,J)  )    &
+                           + HBWGT2(I,J)*CFLD(IIH(I,J)+1,K,  JJH(I,J)  )    &
+                           + HBWGT3(I,J)*CFLD(IIH(I,J),  K,  JJH(I,J)-1)    &
+                           + HBWGT4(I,J)*CFLD(IIH(I,J),  K,  JJH(I,J)+1)
+           ELSE
+               NFLD(I,K,J) = HBWGT1(I,J)*CFLD(IIH(I,J),  K,  JJH(I,J)  )  &
+                           + HBWGT2(I,J)*CFLD(IIH(I,J)+1,K,  JJH(I,J)  )  &
+                           + HBWGT3(I,J)*CFLD(IIH(I,J)+1,K,  JJH(I,J)-1)  &
+                           + HBWGT4(I,J)*CFLD(IIH(I,J)+1,K,  JJH(I,J)+1)
+          ENDIF
+!
+        ENDIF
+       ENDDO
+      ENDDO
+     ENDDO
+
+
+  END SUBROUTINE interp_topo_nmm 
+!
+!=======================================================================================
+!  E grid test for mass point coincidence
+!=======================================================================================
+!
+  SUBROUTINE test_nmm (cfld,                                 &  ! CD field
+                       cids, cide, ckds, ckde, cjds, cjde,   &
+                       cims, cime, ckms, ckme, cjms, cjme,   &
+                       cits, cite, ckts, ckte, cjts, cjte,   &
+                       nfld,                                 &  ! ND field
+                       nids, nide, nkds, nkde, njds, njde,   &
+                       nims, nime, nkms, nkme, njms, njme,   &
+                       nits, nite, nkts, nkte, njts, njte,   &
+                       shw,                                  & ! stencil half width for interp
+                       imask,                                & ! interpolation mask
+                       xstag, ystag,                         & ! staggering of field
+                       ipos, jpos,                           & ! Position of lower left of nest in CD
+                       nri, nrj,                             & ! nest ratios                        
+                       CII, IIH, CJJ, JJH, CBWGT1, HBWGT1,   & ! south-western grid locs and weights 
+                       CBWGT2, HBWGT2, CBWGT3, HBWGT3,       & ! note that "C"ourse grid ones are
+                       CBWGT4, HBWGT4                        ) ! dummys for weights
+     USE module_timing
+     IMPLICIT NONE
+
+     INTEGER, INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
+                            cims, cime, ckms, ckme, cjms, cjme,   &
+                            cits, cite, ckts, ckte, cjts, cjte,   &
+                            nids, nide, nkds, nkde, njds, njde,   &
+                            nims, nime, nkms, nkme, njms, njme,   &
+                            nits, nite, nkts, nkte, njts, njte,   &
+                            shw,                                  &
+                            ipos, jpos,                           &
+                            nri, nrj
+     LOGICAL, INTENT(IN) :: xstag, ystag
+
+     REAL, DIMENSION ( cims:cime, ckms:ckme, cjms:cjme ) :: cfld
+     REAL, DIMENSION ( nims:nime, nkms:nkme, njms:njme ) :: nfld
+     REAL,    DIMENSION ( cims:cime, cjms:cjme ), INTENT(IN) :: CBWGT1,CBWGT2,CBWGT3,CBWGT4    ! dummy
+     REAL,    DIMENSION ( nims:nime, njms:njme ), INTENT(IN) :: HBWGT1,HBWGT2,HBWGT3,HBWGT4
+     INTEGER, DIMENSION ( cims:cime, cjms:cjme ), INTENT(IN) :: CII,CJJ                        ! dummy
+     INTEGER, DIMENSION ( nims:nime, njms:njme ), INTENT(IN) :: IIH,JJH
+     INTEGER, DIMENSION ( nims:nime, njms:njme ) :: imask
+
+!    local
+     INTEGER i,j,k
+     REAL,PARAMETER                                :: error=0.0001,error1=1.0 
+     REAL                                          :: diff   
+!
+!*** CHECK DOMAIN BOUNDS BEFORE INTERPOLATION
+!
+    DO J=NJTS,MIN(NJTE,NJDE-1)
+     DO I=NITS,MIN(NITE,NIDE-1)
+       IF(IIH(i,j).LT.(CIDS-shw) .OR. IIH(i,j).GT.(CIDE+shw)) &
+           CALL wrf_error_fatal ('hpoints:check domain bounds along x' )
+       IF(JJH(i,j).LT.(CJDS-shw) .OR. JJH(i,j).GT.(CJDE+shw)) &
+           CALL wrf_error_fatal ('hpoints:check domain bounds along y' )
+     ENDDO
+    ENDDO
+
+!
+!*** INDEX CONVENTIONS
+!***                     HBWGT4
+!***                      4
+!***
+!***
+!***
+!***                   h
+!***             1                 2
+!***            HBWGT1             HBWGT2
+!***
+!***
+!***                      3
+!***                     HBWGT3
+
+
+!    WRITE(0,*)NITS,MIN(NITE,NIDE-1),CITS,CITE
+     DO J=NJTS,MIN(NJTE,NJDE-1)
+       DO K=NKDS,NKDE
+        DO I=NITS,MIN(NITE,NIDE-1)
+          IF(ABS(1.0-HBWGT1(I,J)) .LE. ERROR)THEN
+             DIFF=ABS(NFLD(I,K,J)-CFLD(IIH(I,J),K,JJH(I,J)))
+             IF(DIFF .GT. ERROR)THEN
+              CALL wrf_debug(1,"dyn_nmm: NON-COINCIDENT, NESTED MASS POINT") 
+              WRITE(0,*)I,IIH(I,J),J,JJH(I,J),HBWGT1(I,J),NFLD(I,K,J),CFLD(IIH(I,J),K,JJH(I,J)),DIFF 
+             ENDIF
+             IF(DIFF .GT. ERROR1)THEN
+              WRITE(0,*)I,IIH(I,J),J,JJH(I,J),HBWGT1(I,J),NFLD(I,K,J),CFLD(IIH(I,J),K,JJH(I,J)),DIFF
+              CALL wrf_error_fatal ('dyn_nmm: NON-COINCIDENT, NESTED MASS POINT')
+             ENDIF
+          ENDIF     
+        ENDDO
+       ENDDO
+     ENDDO
+
+  END SUBROUTINE test_nmm 
+
+!==================================
+! this is the default function used in nmm feedback at mass points.
+
+   SUBROUTINE nmm_feedback ( cfld,                                 &  ! CD field
+                           cids, cide, ckds, ckde, cjds, cjde,   &
+                           cims, cime, ckms, ckme, cjms, cjme,   &
+                           cits, cite, ckts, ckte, cjts, cjte,   &
+                           nfld,                                 &  ! ND field
+                           nids, nide, nkds, nkde, njds, njde,   &
+                           nims, nime, nkms, nkme, njms, njme,   &
+                           nits, nite, nkts, nkte, njts, njte,   &
+                           shw,                                  &  ! stencil half width for interp
+                           imask,                                &  ! interpolation mask
+                           xstag, ystag,                         &  ! staggering of field
+                           ipos, jpos,                           &  ! Position of lower left of nest in CD
+                           nri, nrj,                             &  ! nest ratios 
+                           CII, IIH, CJJ, JJH,                   &
+                           CBWGT1, HBWGT1, CBWGT2, HBWGT2,       &
+                           CBWGT3, HBWGT3, CBWGT4, HBWGT4        ) 
+     USE module_configure
+     IMPLICIT NONE
+
+
+     INTEGER, INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
+                            cims, cime, ckms, ckme, cjms, cjme,   &
+                            cits, cite, ckts, ckte, cjts, cjte,   &
+                            nids, nide, nkds, nkde, njds, njde,   &
+                            nims, nime, nkms, nkme, njms, njme,   &
+                            nits, nite, nkts, nkte, njts, njte,   &
+                            shw,                                  &
+                            ipos, jpos,                           &
+                            nri, nrj
+     INTEGER,DIMENSION(cims:cime,cjms:cjme),  INTENT(IN)    :: CII,CJJ     ! dummy
+     INTEGER,DIMENSION(nims:nime,njms:njme),  INTENT(IN)    :: IIH,JJH
+     REAL,DIMENSION(cims:cime,cjms:cjme),     INTENT(IN)    :: CBWGT1,CBWGT2,CBWGT3,CBWGT4
+     REAL,DIMENSION(nims:nime,njms:njme),     INTENT(IN)    :: HBWGT1,HBWGT2,HBWGT3,HBWGT4
+     LOGICAL, INTENT(IN)                                    :: xstag, ystag
+
+     REAL, DIMENSION ( cims:cime, ckms:ckme, cjms:cjme ), INTENT(OUT) :: cfld
+     REAL, DIMENSION ( nims:nime, nkms:nkme, njms:njme ), INTENT(IN)  :: nfld
+     INTEGER, DIMENSION ( nims:nime, njms:njme ),INTENT(IN)           :: imask
+
+     ! Local
+
+     INTEGER ci, cj, ck, ni, nj, nk, ip, jp, ioff, joff, ioffa, joffa
+     INTEGER :: icmin,icmax,jcmin,jcmax
+     INTEGER :: is, ipoints,jpoints,ijpoints
+     INTEGER , PARAMETER :: passes = 2
+     REAL    :: AVGH
+
+!=====================================================================================
+!
+
+   IF(nri .ne. 3 .OR. nrj .ne. 3)               & 
+    CALL wrf_error_fatal ('Feedback works for only 1:3 ratios, currently. Modify the namelist' )
+
+!  WRITE(0,*)'SIMPLE FEED BACK IS SWITCHED ON FOR MASS'
+
+   CFLD = 9999.0
+
+   DO cj = MAX(jpos+1,cjts),MIN(jpos+(njde-njds)/nrj-1,cjte)  ! exclude top and bottom BCs
+    nj = (cj-jpos)*nrj + 1
+    if(mod(cj,2) .eq. 0)THEN   
+     is=0 ! even rows for mass points (2,4,6,8)
+    else
+     is=1 ! odd rows for mass points  (1,3,5,7)
+    endif
+    DO ck = ckts, ckte
+     nk = ck
+     DO ci = MAX(ipos+is,cits),MIN(ipos+(nide-nids)/nri-1,cite) ! excludes LBCs
+       ni = (ci-ipos)*nri + 2 -is
+         IF(IS==0)THEN    ! (2,4,6,8)
+          AVGH = NFLD(NI,NK,NJ+1)  + NFLD(NI,NK,NJ-1)  + NFLD(NI+1,NK,NJ+1)+ NFLD(NI+1,NK,NJ-1)  &
+               + NFLD(NI+1,NK,NJ)  + NFLD(NI-1,NK,NJ)  + NFLD(NI,NK,NJ+2)  + NFLD(NI,NK,NJ-2)    &
+               + NFLD(NI+1,NK,NJ+2)+ NFLD(NI-1,NK,NJ+2)+ NFLD(NI+1,NK,NJ-2)+ NFLD(NI-1,NK,NJ-2)
+         ELSE
+          AVGH = NFLD(NI,NK,NJ+1)  + NFLD(NI,NK,NJ-1)  + NFLD(NI-1,NK,NJ+1)+ NFLD(NI-1,NK,NJ-1)  &
+               + NFLD(NI+1,NK,NJ)  + NFLD(NI-1,NK,NJ)  + NFLD(NI,NK,NJ+2)  + NFLD(NI,NK,NJ-2)    &
+               + NFLD(NI+1,NK,NJ+2)+ NFLD(NI-1,NK,NJ+2)+ NFLD(NI+1,NK,NJ-2)+ NFLD(NI-1,NK,NJ-2)
+         ENDIF
+!dusan         CFLD(CI,CK,CJ) = 0.5*CFLD(CI,CK,CJ) + 0.5*(NFLD(NI,NK,NJ)+AVGH)/13.0
+         CFLD(CI,CK,CJ) = (NFLD(NI,NK,NJ)+AVGH)/13.0
+     ENDDO
+    ENDDO
+   ENDDO
+ 
+   END SUBROUTINE nmm_feedback 
+
+!===========================================================================================
+
+   SUBROUTINE nmm_vfeedback ( cfld,                              &  ! CD field
+                           cids, cide, ckds, ckde, cjds, cjde,   &
+                           cims, cime, ckms, ckme, cjms, cjme,   &
+                           cits, cite, ckts, ckte, cjts, cjte,   &
+                           nfld,                                 &  ! ND field
+                           nids, nide, nkds, nkde, njds, njde,   &
+                           nims, nime, nkms, nkme, njms, njme,   &
+                           nits, nite, nkts, nkte, njts, njte,   &
+                           shw,                                  &  ! stencil half width for interp
+                           imask,                                &  ! interpolation mask
+                           xstag, ystag,                         &  ! staggering of field
+                           ipos, jpos,                           &  ! Position of lower left of nest in CD
+                           nri, nrj,                             &  ! nest ratios 
+                           CII, IIV, CJJ, JJV,                   &
+                           CBWGT1, VBWGT1, CBWGT2, VBWGT2,       &
+                           CBWGT3, VBWGT3, CBWGT4, VBWGT4        ) 
+     USE module_configure
+     IMPLICIT NONE
+
+
+     INTEGER, INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
+                            cims, cime, ckms, ckme, cjms, cjme,   &
+                            cits, cite, ckts, ckte, cjts, cjte,   &
+                            nids, nide, nkds, nkde, njds, njde,   &
+                            nims, nime, nkms, nkme, njms, njme,   &
+                            nits, nite, nkts, nkte, njts, njte,   &
+                            shw,                                  &
+                            ipos, jpos,                           &
+                            nri, nrj
+     INTEGER,DIMENSION(cims:cime,cjms:cjme),  INTENT(IN)    :: CII,CJJ     ! dummy
+     INTEGER,DIMENSION(nims:nime,njms:njme),  INTENT(IN)    :: IIV,JJV
+     REAL,DIMENSION(cims:cime,cjms:cjme),     INTENT(IN)    :: CBWGT1,CBWGT2,CBWGT3,CBWGT4
+     REAL,DIMENSION(nims:nime,njms:njme),     INTENT(IN)    :: VBWGT1,VBWGT2,VBWGT3,VBWGT4
+     LOGICAL, INTENT(IN)                                    :: xstag, ystag
+
+     REAL, DIMENSION ( cims:cime, ckms:ckme, cjms:cjme ), INTENT(OUT) :: cfld
+     REAL, DIMENSION ( nims:nime, nkms:nkme, njms:njme ), INTENT(IN)  :: nfld
+     INTEGER, DIMENSION ( nims:nime, njms:njme ),INTENT(IN)           :: imask
+
+     ! Local
+
+     INTEGER ci, cj, ck, ni, nj, nk, ip, jp, ioff, joff, ioffa, joffa
+     INTEGER :: icmin,icmax,jcmin,jcmax
+     INTEGER :: is, ipoints,jpoints,ijpoints
+     INTEGER , PARAMETER :: passes = 2
+     REAL :: AVGV
+
+!=====================================================================================
+!
+
+    IF(nri .ne. 3 .OR. nrj .ne. 3)               &
+      CALL wrf_error_fatal ('Feedback works for only 1:3 ratios, currently. Modify the namelist')
+
+!   WRITE(0,*)'SIMPLE FEED BACK IS SWITCHED ON FOR VELOCITY'
+
+   CFLD = 9999.0
+
+   DO cj = MAX(jpos+1,cjts),MIN(jpos+(njde-njds)/nrj-1,cjte)  ! exclude top and bottom BCs
+    nj = (cj-jpos)*nrj + 1
+    if(mod(cj,2) .eq. 0)THEN
+     is=1 ! even rows for velocity points (2,4,6,8) 
+    else
+     is=0 ! odd rows for velocity points (1,3,5,7) 
+    endif
+    DO ck = ckts, ckte
+     nk = ck
+     DO ci = MAX(ipos+is,cits),MIN(ipos+(nide-nids)/nri-1,cite) ! excludes LBCs
+       ni = (ci-ipos)*nri + 2 -is
+         IF(IS==0)THEN    ! (1,3,5,7)
+          AVGV = NFLD(NI,NK,NJ+1)  + NFLD(NI,NK,NJ-1)  + NFLD(NI+1,NK,NJ+1)+ NFLD(NI+1,NK,NJ-1)  &
+               + NFLD(NI+1,NK,NJ)  + NFLD(NI-1,NK,NJ)  + NFLD(NI,NK,NJ+2)  + NFLD(NI,NK,NJ-2)    &
+               + NFLD(NI+1,NK,NJ+2)+ NFLD(NI-1,NK,NJ+2)+ NFLD(NI+1,NK,NJ-2)+ NFLD(NI-1,NK,NJ-2)
+         ELSE
+          AVGV = NFLD(NI,NK,NJ+1)  + NFLD(NI,NK,NJ-1)  + NFLD(NI-1,NK,NJ+1)+ NFLD(NI-1,NK,NJ-1)  &
+               + NFLD(NI+1,NK,NJ)  + NFLD(NI-1,NK,NJ)  + NFLD(NI,NK,NJ+2)  + NFLD(NI,NK,NJ-2)    &
+               + NFLD(NI+1,NK,NJ+2)+ NFLD(NI-1,NK,NJ+2)+ NFLD(NI+1,NK,NJ-2)+ NFLD(NI-1,NK,NJ-2)
+         ENDIF
+!dusan         CFLD(CI,CK,CJ) = 0.5*CFLD(CI,CK,CJ) + 0.5*(NFLD(NI,NK,NJ)+AVGV)/13.0
+         CFLD(CI,CK,CJ) = (NFLD(NI,NK,NJ)+AVGV)/13.0
+     ENDDO
+    ENDDO
+   ENDDO
+
+   END SUBROUTINE nmm_vfeedback 
+
+
+   SUBROUTINE nmm_smoother ( cfld , &
+                             cids, cide, ckds, ckde, cjds, cjde,   &
+                             cims, cime, ckms, ckme, cjms, cjme,   &
+                             cits, cite, ckts, ckte, cjts, cjte,   &
+                             nids, nide, nkds, nkde, njds, njde,   &
+                             nims, nime, nkms, nkme, njms, njme,   &
+                             nits, nite, nkts, nkte, njts, njte,   &
+                             xstag, ystag,                         &
+                             ipos, jpos,                           &
+                             nri, nrj                              &
+                             )
+
+      USE module_configure
+      IMPLICIT NONE
+
+      REAL, DIMENSION ( cims:cime, ckms:ckme, cjms:cjme ), INTENT(INOUT) :: cfld
+      INTEGER, INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
+                             cims, cime, ckms, ckme, cjms, cjme,   &
+                             cits, cite, ckts, ckte, cjts, cjte,   &
+                             nids, nide, nkds, nkde, njds, njde,   &
+                             nims, nime, nkms, nkme, njms, njme,   &
+                             nits, nite, nkts, nkte, njts, njte,   &
+                             nri, nrj,                             &
+                             ipos, jpos
+      LOGICAL, INTENT(IN) :: xstag, ystag
+
+
+      ! Local
+
+      INTEGER             :: feedback
+      INTEGER, PARAMETER  :: smooth_passes = 5
+
+      REAL, DIMENSION ( cims:cime, ckms:ckme, cjms:cjme ) :: cfldnew
+      INTEGER :: ci, cj, ck
+      INTEGER :: is, npass
+      REAL    :: AVGH
+
+      RETURN
+      !  If there is no feedback, there can be no smoothing.
+
+      CALL nl_get_feedback       ( 1, feedback  )
+      IF ( feedback == 0 ) RETURN
+
+      WRITE(0,*)'SIMPLE SMOOTHER IS SWITCHED ON FOR HEIGHT'
+
+      DO npass = 1, smooth_passes
+
+      DO cj = MAX(jpos+1,cjts),MIN(jpos+(njde-njds)/nrj-1,cjte)  ! exclude top and bottom BCs
+       if(mod(cj,2) .eq. 0)THEN
+        is=0 ! even rows for mass points (2,4,6,8)
+       else
+        is=1 ! odd rows for mass points  (1,3,5,7)
+       endif
+       DO ck = ckts, ckte
+        DO ci = MAX(ipos+is,cits),MIN(ipos+(nide-nids)/nri-1,cite) ! excludes LBCs
+            IF(IS==0)THEN    ! (2,4,6,8)
+             AVGH = CFLD(CI,CK,CJ+1) + CFLD(CI,CK,CJ-1) + CFLD(CI+1,CK,CJ+1) + CFLD(CI+1,CK,CJ-1)
+            ELSE
+             AVGH = CFLD(CI,CK,CJ+1) + CFLD(CI,CK,CJ-1) + CFLD(CI-1,CK,CJ+1) + CFLD(CI-1,CK,CJ-1)
+            ENDIF
+            CFLDNEW(CI,CK,CJ) = (AVGH + 4*CFLD(CI,CK,CJ)) / 8.0
+        ENDDO
+       ENDDO
+      ENDDO
+
+      DO cj = MAX(jpos+1,cjts),MIN(jpos+(njde-njds)/nrj-1,cjte)  ! exclude top and bottom BCs
+       if(mod(cj,2) .eq. 0)THEN
+        is=0 ! even rows for mass points (2,4,6,8)
+       else
+        is=1 ! odd rows for mass points  (1,3,5,7)
+       endif
+       DO ck = ckts, ckte
+        DO ci = MAX(ipos+is,cits),MIN(ipos+(nide-nids)/nri-1,cite) ! excludes LBCs
+           CFLD(CI,CK,CJ) = CFLDNEW(CI,CK,CJ)
+        ENDDO
+       ENDDO
+      ENDDO
+
+      ENDDO   ! do npass
+
+   END SUBROUTINE nmm_smoother
+
+
+   SUBROUTINE nmm_vsmoother ( cfld , &
+                             cids, cide, ckds, ckde, cjds, cjde,   &
+                             cims, cime, ckms, ckme, cjms, cjme,   &
+                             cits, cite, ckts, ckte, cjts, cjte,   &
+                             nids, nide, nkds, nkde, njds, njde,   &
+                             nims, nime, nkms, nkme, njms, njme,   &
+                             nits, nite, nkts, nkte, njts, njte,   &
+                             xstag, ystag,                         &
+                             ipos, jpos,                           &
+                             nri, nrj                              &
+                             )
+
+      USE module_configure
+      IMPLICIT NONE
+
+      REAL, DIMENSION ( cims:cime, ckms:ckme, cjms:cjme ), INTENT(INOUT) :: cfld
+      INTEGER, INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
+                             cims, cime, ckms, ckme, cjms, cjme,   &
+                             cits, cite, ckts, ckte, cjts, cjte,   &
+                             nids, nide, nkds, nkde, njds, njde,   &
+                             nims, nime, nkms, nkme, njms, njme,   &
+                             nits, nite, nkts, nkte, njts, njte,   &
+                             nri, nrj,                             &
+                             ipos, jpos
+      LOGICAL, INTENT(IN) :: xstag, ystag
+
+
+      ! Local
+
+      INTEGER             :: feedback
+      INTEGER, PARAMETER  :: smooth_passes = 5
+
+      REAL, DIMENSION ( cims:cime, ckms:ckme, cjms:cjme ) :: cfldnew
+      INTEGER :: ci, cj, ck
+      INTEGER :: is, npass
+      REAL    :: AVGV
+
+      RETURN
+      !  If there is no feedback, there can be no smoothing.
+
+      CALL nl_get_feedback       ( 1, feedback  )
+      IF ( feedback == 0 ) RETURN
+
+      WRITE(0,*)'SIMPLE SMOOTHER IS SWITCHED ON FOR VELOCITY'
+
+      DO npass = 1, smooth_passes
+
+      DO cj = MAX(jpos+1,cjts),MIN(jpos+(njde-njds)/nrj-1,cjte)  ! exclude top and bottom BCs
+       if(mod(cj,2) .eq. 0)THEN
+        is=1 ! even rows for mass points (2,4,6,8)
+       else
+        is=0 ! odd rows for mass points  (1,3,5,7)
+       endif
+       DO ck = ckts, ckte
+        DO ci = MAX(ipos+is,cits),MIN(ipos+(nide-nids)/nri-1,cite) ! excludes LBCs
+            IF(IS==0)THEN    ! (2,4,6,8)
+             AVGV = CFLD(CI,CK,CJ+1) + CFLD(CI,CK,CJ-1) + CFLD(CI+1,CK,CJ+1) + CFLD(CI+1,CK,CJ-1)
+            ELSE
+             AVGV = CFLD(CI,CK,CJ+1) + CFLD(CI,CK,CJ-1) + CFLD(CI-1,CK,CJ+1) + CFLD(CI-1,CK,CJ-1)
+            ENDIF
+            CFLDNEW(CI,CK,CJ) = (AVGV + 4*CFLD(CI,CK,CJ)) / 8.0
+        ENDDO
+       ENDDO
+      ENDDO
+
+      DO cj = MAX(jpos+1,cjts),MIN(jpos+(njde-njds)/nrj-1,cjte)  ! exclude top and bottom BCs
+       if(mod(cj,2) .eq. 0)THEN
+        is=1 ! even rows for mass points (2,4,6,8)
+       else
+        is=0 ! odd rows for mass points  (1,3,5,7)
+       endif
+       DO ck = ckts, ckte
+        DO ci = MAX(ipos+is,cits),MIN(ipos+(nide-nids)/nri-1,cite) ! excludes LBCs
+           CFLD(CI,CK,CJ) = CFLDNEW(CI,CK,CJ)
+        ENDDO
+       ENDDO
+      ENDDO
+
+      ENDDO
+
+   END SUBROUTINE nmm_vsmoother
+!======================================================================================
+!   End of gopal's doing
+!======================================================================================
+#endif
+
    SUBROUTINE interp_fcn ( cfld,                                 &  ! CD field
                            cids, cide, ckds, ckde, cjds, cjde,   &
                            cims, cime, ckms, ckme, cjms, cjme,   &

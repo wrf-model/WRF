@@ -319,7 +319,7 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
 !	write(0,*) 'trim(si_inpname):'  TRIM(si_inpname)
 
         CALL open_r_dataset ( idsi, TRIM(si_inpname) , &
-                              grid , config_flags , "DATASET=INPUT", ierr )
+                              grid , config_flags , "DATASET=AUXINPUT1", ierr )
 	write(0,*) 'ierr from open: ', ierr
 
 !      IF ( ( ierr .NE. 0 ) .AND. ( grid%dyn_opt .EQ. dyn_em ) ) THEN
@@ -390,7 +390,7 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
 
       CALL       wrf_debug ( 100 , 'med_sidata_input: back from init_domain' )
 
-      CALL close_dataset ( idsi , config_flags , "DATASET=INPUT" )
+      CALL close_dataset ( idsi , config_flags , "DATASET=AUXINPUT1" )
 
 !!! not sure about this, but doesnt seem like needs to be called each time
 	if (loop .eq. 1) then

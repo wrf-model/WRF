@@ -77,7 +77,41 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
 ! ----------------------------------------------------------
 !    Interface definitions for NMM (placeholder)
 ! ----------------------------------------------------------
-#if (NMM_CORE == 1)
+#if (NMM_CORE == 1 && NMM_NEST ==1)
+!=======================================================================
+!  Added for the NMM core. This is gopal's doing.
+!=======================================================================
+
+      SUBROUTINE interp_domain_nmm_part1 ( grid, intermediate_grid, ngrid, config_flags ,  &
+!
+# include "nmm_dummy_args.inc"
+!
+                 )
+         USE module_domain
+         USE module_configure
+         TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
+         TYPE(domain), POINTER :: intermediate_grid
+         TYPE(domain), POINTER :: ngrid
+         TYPE (grid_config_rec_type)            :: config_flags
+# include <nmm_dummy_decl.inc>
+      END SUBROUTINE interp_domain_nmm_part1
+
+      SUBROUTINE force_domain_nmm_part2 ( grid, nested_grid, config_flags ,  &
+!
+# include "nmm_dummy_args.inc"
+!
+                 )
+         USE module_domain
+         USE module_configure
+         TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
+         TYPE(domain), POINTER :: nested_grid
+         TYPE (grid_config_rec_type)            :: config_flags
+
+# include <nmm_dummy_decl.inc>
+      END SUBROUTINE force_domain_nmm_part2
+!=======================================================================
+!  End of gopal's doing.
+!=======================================================================
 #endif
 ! ----------------------------------------------------------
 !    Interface definitions for COAMPS (placeholder)
@@ -185,7 +219,74 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
 ! ------------------------------------------------------
 !    Forcing calls for NMM. (Placeholder)
 ! ------------------------------------------------------
-# if (NMM_CORE == 1)
+# if (NMM_CORE == 1 && NMM_NEST == 1)
+!=======================================================================
+!  Added for the NMM core. This is gopal's doing.
+!=======================================================================
+
+   CALL model_to_grid_config_rec ( nested_grid%id , model_config_rec , config_flags )
+   IF ( config_flags%dyn_opt == DYN_NMM ) THEN
+
+    grid => nested_grid%intermediate_grid
+!dusan orig    CALL alloc_space_field ( grid, grid%id , 1 , 2 ,  .TRUE. ,    &
+    CALL alloc_space_field ( grid, grid%id , 1 , 3 ,  .FALSE. ,    &
+                             grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &
+                             grid%sm31,  grid%em31,  grid%sm32,  grid%em32,  grid%sm33,  grid%em33, &
+                             grid%sm31x, grid%em31x, grid%sm32x, grid%em32x, grid%sm33x, grid%em33x, &   ! x-xpose
+                             grid%sm31y, grid%em31y, grid%sm32y, grid%em32y, grid%sm33y, grid%em33y  &   ! y-xpose
+      )
+
+     ! couple parent domain
+     grid => parent_grid
+     ! swich config_flags to point to parent rconfig info
+     CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
+#    include "deref_kludge.h"
+
+     ! on restart do not force the nest the first time since it has already been forced
+     ! prior to the writing of the restart file
+     IF ( .NOT. ( config_flags%restart .AND. nested_grid%first_force ) ) THEN
+        ! couple nested domain
+        grid => nested_grid
+        CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
+#       include "deref_kludge.h"
+        ! perform first part: transfer data from parent to intermediate domain
+        ! at the same resolution but on the same decomposition as the nest
+        ! note that this will involve communication on multiple DM procs
+        grid => parent_grid
+        CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
+#       include "deref_kludge.h"
+        CALL interp_domain_nmm_part1 ( grid , nested_grid%intermediate_grid, nested_grid, config_flags ,  &
+!
+#         include "nmm_actual_args.inc"
+!
+                                     )
+     ENDIF ! not restart and first force
+
+     grid => nested_grid%intermediate_grid
+     IF ( .NOT. ( config_flags%restart .AND. nested_grid%first_force ) ) THEN
+        ! perform 2nd part: run interpolation on the intermediate domain
+        ! and compute the values for the nest boundaries
+        ! note that this is all local (no communication)
+        CALL model_to_grid_config_rec ( nested_grid%id , model_config_rec , config_flags )
+#       include "deref_kludge.h"
+        CALL force_domain_nmm_part2 ( grid, nested_grid, config_flags ,  &
+!
+#         include "nmm_actual_args.inc"
+!
+                                    )
+     ENDIF ! not restart and first_force
+
+     IF ( nested_grid%first_force ) THEN
+        nested_grid%first_force = .FALSE.
+     ENDIF
+     nested_grid%dtbc = 0.
+!
+     grid => nested_grid%intermediate_grid
+     CALL dealloc_space_field ( grid )
+   ENDIF
+!=======================================================================
+!  End of gopal's doing.
+!=======================================================================
 # endif
 ! ------------------------------------------------------
 !    End of Forcing calls for NMM.

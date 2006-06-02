@@ -586,7 +586,7 @@ CONTAINS
           TSK(I,J)=T1K
           T2K=T1K-HFX(I,J)/(RHO(I)*CPM(I)*CHS2(I))
           TH2(I,J)=T2K*(1.E5/SFCPRS)**ROVCP                                  
-          Q2M=Q1K-QFX(I,J)/(RHO(I)*CHS2(I))                            
+!dusan          Q2M=Q1K-QFX(I,J)/(RHO(I)*CHS2(I))                   ! Q1K undefined in SFLX
 !!!!!!    Q2(I,J)=Q2M
 !!!!!!    Q2(I,J)=Q2K
 !        t2k=th2k/(1.E5/SFCPRS)**ROVCP                                  

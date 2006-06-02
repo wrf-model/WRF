@@ -24,7 +24,7 @@
       CONTAINS
 !
 !***********************************************************************
-      SUBROUTINE BOCOH(NTSD,DT0,NEST,NBC,NBOCO,LAST_TIME,TSPH           &
+      SUBROUTINE BOCOH(GRIDID,NTSD,DT0,NEST,NBC,NBOCO,LAST_TIME,TSPH    &  ! GRIDID ADDED BY GOPAL
      &                ,LB,ETA1,ETA2,PDTOP,PT,RES,HTM                    &
      &                ,PD_B,T_B,Q_B,U_B,V_B,Q2_B,CWM_B                  &
      &                ,PD_BT,T_BT,Q_BT,U_BT,V_BT,Q2_BT,CWM_BT           &
@@ -103,6 +103,7 @@
 !-----------------------------------------------------------------------
       INTEGER,DIMENSION(-3:3,NMM_MAX_DIM,0:6),INTENT(IN) :: INDX3_WRK
 !
+      INTEGER,INTENT(IN) :: GRIDID
       INTEGER,INTENT(IN) :: LB,NBC,NTSD
       LOGICAL,INTENT(IN) :: LAST_TIME
       INTEGER,INTENT(INOUT) :: NBOCO
@@ -141,6 +142,7 @@
       LOGICAL :: E_BDY,W_BDY,N_BDY,S_BDY
 !
       REAL :: BCHR,RHTM,SHTM,DT
+      REAL :: CWK
 !-----------------------------------------------------------------------
 !***********************************************************************
 !-----------------------------------------------------------------------
@@ -290,12 +292,25 @@
 !
       IF(N_BDY)THEN
         DO I=MYIS,MYIE1
+          CWK=PD(I,JJM-1)
           SHTM=HTM(I,KTE,JJM-2)+HTM(I+1,KTE,JJM-2)+HTM(I,KTE,JJM)       &
      &                                          +HTM(I+1,KTE,JJM)
           PD(I,JJM-1)=(PD(I,JJM-2)*HTM(I,KTE,JJM-2)                     &
      &                +PD(I+1,JJM-2)*HTM(I+1,KTE,JJM-2)                 &
      &                +PD(I,JJM)*HTM(I,KTE,JJM)                         &
      &                +PD(I+1,JJM)*HTM(I+1,KTE,JJM))/SHTM
+
+! test. This is gopal's doing
+
+          IF(I.LE.IDE-1 .AND. ABS(CWK-PD(I,JJM-1)) .GT. 300.)THEN
+            WRITE(0,*)'PSEUDO HYDROSTATIC IMBALANCE AT THE NORTHERN BOUNDARY AT',I,JJM-1,'GRID #',GRIDID
+            WRITE(0,*)'             ',CWK/100.
+            WRITE(0,*)PD(I,JJM)/100.,'               ',PD(I+1,JJM)/100.
+            WRITE(0,*)'             ',PD(I,JJM-1)/100.
+            WRITE(0,*)PD(I,JJM-2)/100.,'             ',PD(I+1,JJM-2)/100.
+            WRITE(0,*)
+          ENDIF
+
         ENDDO
       ENDIF
 !
@@ -306,6 +321,7 @@
 !
           IF(W_BDY.AND.J>=MY_JS_GLB-JBPAD1                              &
      &            .AND.J<=MY_JE_GLB+JTPAD1)THEN
+            CWK=PD(1,J)
             JJ=J
             SHTM=HTM(1,KTE,JJ-1)+HTM(2,KTE,JJ-1)+HTM(1,KTE,JJ+1)        &
      &                                          +HTM(2,KTE,JJ+1)
@@ -313,6 +329,18 @@
      &               +PD(2,JJ-1)*HTM(2,KTE,JJ-1)                        &
      &               +PD(1,JJ+1)*HTM(1,KTE,JJ+1)                        &
      &               +PD(2,JJ+1)*HTM(2,KTE,JJ+1))/SHTM
+
+! test: this is gopal's doing
+
+             IF(ABS(CWK-PD(1,JJ)) .GT. 300.)THEN
+              WRITE(0,*)'PSEUDO HYDROSTATIC IMBALANCE AT THE WESTERN BOUNDARY AT',J,1,'GRID #',GRIDID
+              WRITE(0,*)'             ',CWK/100.
+              WRITE(0,*)PD(1,JJ+1)/100.,'               ',PD(2,JJ+1)/100.
+              WRITE(0,*)'             ',PD(1,JJ)/100.
+              WRITE(0,*)PD(1,JJ-1)/100,'               ',PD(2,JJ-1)/100.
+              WRITE(0,*)
+            ENDIF
+
           ENDIF
 !
         ENDDO
@@ -478,7 +506,7 @@
       END SUBROUTINE BOCOH
 !-----------------------------------------------------------------------
 !***********************************************************************
-      SUBROUTINE BOCOV(NTSD,DT,LB,VTM,U_B,V_B,U_BT,V_BT                 &
+      SUBROUTINE BOCOV(GRIDID,NTSD,DT,LB,VTM,U_B,V_B,U_BT,V_BT          &  ! GRIDID ADDED BY GOPAL
      &                ,U,V                                              &
      &                ,IJDS,IJDE,SPEC_BDY_WIDTH                         &  ! min/max(id,jd)
      &                ,IHE,IHW,IVE,IVW,INDX3_WRK                        &
@@ -548,6 +576,7 @@
 !-----------------------------------------------------------------------
       INTEGER,DIMENSION(-3:3,NMM_MAX_DIM,0:6),INTENT(IN) :: INDX3_WRK
 !
+      INTEGER,INTENT(IN) :: GRIDID
       INTEGER,INTENT(IN) :: LB,NTSD
 !
       REAL,INTENT(IN) :: DT
@@ -675,7 +704,12 @@
 !
 !-----------------------------------------------------------------------
 !***  EXTRAPOLATION OF TANGENTIAL VELOCITY AT OUTFLOW POINTS
+!***  BASED ON SOME DISCUSSIONS WITH ZAVISA, AND MY EXPERIMENTS
+!***  ON GRAVITY PULSE FOR NESTED DOMAIN I AM COMMENTING THIS.
+!***  THIS IS gopal's DOING
 !-----------------------------------------------------------------------
+!
+      IF(GRIDID .NE. 1)GO TO 201
 !
 !-----------------------------------------------------------------------
 !
@@ -738,6 +772,8 @@
 !-----------------------------------------------------------------------
 !
   200 CONTINUE
+
+  201 CONTINUE
 !
 !-----------------------------------------------------------------------
 !

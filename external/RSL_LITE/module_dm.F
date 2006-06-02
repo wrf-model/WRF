@@ -24,6 +24,10 @@ MODULE module_dm
      MODULE PROCEDURE wrf_dm_maxval_real , wrf_dm_maxval_integer, wrf_dm_maxval_doubleprecision
    END INTERFACE
 
+   INTERFACE wrf_dm_minval                       ! gopal's doing
+     MODULE PROCEDURE wrf_dm_minval_real , wrf_dm_minval_integer, wrf_dm_minval_doubleprecision
+   END INTERFACE
+
 CONTAINS
 
 
@@ -714,6 +718,101 @@ write(0,*)'reordering mesh'
         ENDIF
       ENDDO
    END SUBROUTINE wrf_dm_maxval_integer
+
+!  For HWRF some additional computation is required. This is gopal's doing
+
+   SUBROUTINE wrf_dm_minval_real ( val, idex, jdex )
+      IMPLICIT NONE
+      REAL val, val_all( ntasks )
+      INTEGER idex, jdex, ierr
+      INTEGER dex(2)
+      INTEGER dex_all (2,ntasks)
+! <DESCRIPTION>
+! Collective operation. Each processor calls passing a local value and its index; on return
+! all processors are passed back the maximum of all values passed and its index.
+!
+! </DESCRIPTION>
+      INTEGER i, comm
+#ifndef STUBMPI
+      INCLUDE 'mpif.h'
+
+      CALL wrf_get_dm_communicator ( comm )
+      dex(1) = idex ; dex(2) = jdex
+      CALL mpi_allgather ( dex, 2, MPI_INTEGER, dex_all , 2, MPI_INTEGER, comm, ierr )
+      CALL mpi_allgather ( val, 1, MPI_REAL, val_all , 1, MPI_REAL, comm, ierr )
+      val = val_all(1)
+      idex = dex_all(1,1) ; jdex = dex_all(2,1)
+      DO i = 2, ntasks
+        IF ( val_all(i) .LT. val ) THEN
+           val = val_all(i)
+           idex = dex_all(1,i)
+           jdex = dex_all(2,i)
+        ENDIF
+      ENDDO
+#endif
+   END SUBROUTINE wrf_dm_minval_real
+
+   SUBROUTINE wrf_dm_minval_doubleprecision ( val, idex, jdex )
+      IMPLICIT NONE
+      DOUBLE PRECISION val, val_all( ntasks )
+      INTEGER idex, jdex, ierr
+      INTEGER dex(2)
+      INTEGER dex_all (2,ntasks)
+! <DESCRIPTION>
+! Collective operation. Each processor calls passing a local value and its index; on return
+! all processors are passed back the maximum of all values passed and its index.
+!
+! </DESCRIPTION>
+      INTEGER i, comm
+#ifndef STUBMPI
+      INCLUDE 'mpif.h'
+
+      CALL wrf_get_dm_communicator ( comm )
+      dex(1) = idex ; dex(2) = jdex
+      CALL mpi_allgather ( dex, 2, MPI_INTEGER, dex_all , 2, MPI_INTEGER, comm, ierr )
+      CALL mpi_allgather ( val, 1, MPI_DOUBLE_PRECISION, val_all , 1, MPI_DOUBLE_PRECISION, comm, ierr )
+      val = val_all(1)
+      idex = dex_all(1,1) ; jdex = dex_all(2,1)
+      DO i = 2, ntasks
+        IF ( val_all(i) .LT. val ) THEN
+           val = val_all(i)
+           idex = dex_all(1,i)
+           jdex = dex_all(2,i)
+        ENDIF
+      ENDDO
+#endif
+   END SUBROUTINE wrf_dm_minval_doubleprecision
+
+   SUBROUTINE wrf_dm_minval_integer ( val, idex, jdex )
+      IMPLICIT NONE
+      INTEGER val, val_all( ntasks )
+      INTEGER idex, jdex, ierr
+      INTEGER dex(2)
+      INTEGER dex_all (2,ntasks)
+! <DESCRIPTION>
+! Collective operation. Each processor calls passing a local value and its index; on return
+! all processors are passed back the maximum of all values passed and its index.
+!
+! </DESCRIPTION>
+      INTEGER i, comm
+#ifndef STUBMPI
+      INCLUDE 'mpif.h'
+
+      CALL wrf_get_dm_communicator ( comm )
+      dex(1) = idex ; dex(2) = jdex
+      CALL mpi_allgather ( dex, 2, MPI_INTEGER, dex_all , 2, MPI_INTEGER, comm, ierr )
+      CALL mpi_allgather ( val, 1, MPI_INTEGER, val_all , 1, MPI_INTEGER, comm, ierr )
+      val = val_all(1)
+      idex = dex_all(1,1) ; jdex = dex_all(2,1)
+      DO i = 2, ntasks
+        IF ( val_all(i) .LT. val ) THEN
+           val = val_all(i)
+           idex = dex_all(1,i)
+           jdex = dex_all(2,i)
+        ENDIF
+      ENDDO
+#endif
+   END SUBROUTINE wrf_dm_minval_integer     ! End of gopal's doing
 
    SUBROUTINE init_module_dm
       IMPLICIT NONE
@@ -2352,6 +2451,581 @@ integer myproc
 #include <em_scalar_derefs.inc>
       RETURN
    END SUBROUTINE feedback_domain_em_part2
+#endif
+
+#if ( NMM_CORE == 1 && NMM_NEST == 1 )
+!==============================================================================
+! NMM nesting infrastructure extended from EM core. This is gopal's doing.
+!==============================================================================
+
+   SUBROUTINE interp_domain_nmm_part1 ( grid, intermediate_grid, ngrid, config_flags ,  &
+!
+#include "nmm_dummy_args.inc"
+!
+                 )
+      USE module_domain
+      USE module_configure
+      USE module_dm
+      USE module_timing
+      IMPLICIT NONE
+!
+      TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
+      TYPE(domain), POINTER :: intermediate_grid
+      TYPE(domain), POINTER :: ngrid
+#include <nmm_dummy_decl.inc>
+      INTEGER nlev, msize
+      INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
+      INTEGER iparstrt,jparstrt,sw
+      TYPE (grid_config_rec_type)            :: config_flags
+      REAL xv(500)
+      INTEGER       ::          cids, cide, cjds, cjde, ckds, ckde,    &
+                                cims, cime, cjms, cjme, ckms, ckme,    &
+                                cips, cipe, cjps, cjpe, ckps, ckpe
+      INTEGER       ::          iids, iide, ijds, ijde, ikds, ikde,    &
+                                iims, iime, ijms, ijme, ikms, ikme,    &
+                                iips, iipe, ijps, ijpe, ikps, ikpe
+      INTEGER       ::          nids, nide, njds, njde, nkds, nkde,    &
+                                nims, nime, njms, njme, nkms, nkme,    &
+                                nips, nipe, njps, njpe, nkps, nkpe
+
+      INTEGER icoord, jcoord, idim_cd, jdim_cd, pgr
+      INTEGER local_comm, myproc, nproc
+
+      CALL wrf_get_dm_communicator ( local_comm )
+      CALL wrf_get_myproc( myproc )
+      CALL wrf_get_nproc( nproc )
+
+#define COPY_IN
+#include <nmm_scalar_derefs.inc>
+
+      CALL get_ijk_from_grid (  grid ,                   &
+                                cids, cide, cjds, cjde, ckds, ckde,    &
+                                cims, cime, cjms, cjme, ckms, ckme,    &
+                                cips, cipe, cjps, cjpe, ckps, ckpe    )
+      CALL get_ijk_from_grid (  intermediate_grid ,              &
+                                iids, iide, ijds, ijde, ikds, ikde,    &
+                                iims, iime, ijms, ijme, ikms, ikme,    &
+                                iips, iipe, ijps, ijpe, ikps, ikpe    )
+      CALL get_ijk_from_grid (  ngrid ,              &
+                                nids, nide, njds, njde, nkds, nkde,    &
+                                nims, nime, njms, njme, nkms, nkme,    &
+                                nips, nipe, njps, njpe, nkps, nkpe    )
+
+      CALL nl_get_parent_grid_ratio ( ngrid%id, pgr )
+      CALL nl_get_i_parent_start ( intermediate_grid%id, iparstrt )
+      CALL nl_get_j_parent_start ( intermediate_grid%id, jparstrt )
+      CALL nl_get_shw            ( intermediate_grid%id, sw )
+      icoord =    iparstrt - sw
+      jcoord =    jparstrt - sw
+      idim_cd = iide - iids + 1
+      jdim_cd = ijde - ijds + 1
+
+      nlev  = ckde - ckds + 1
+
+#  include "nmm_nest_interpdown_pack.inc"
+
+      CALL rsl_lite_bcast_msgs( myproc, nproc, local_comm )
+
+#define COPY_OUT
+#include <nmm_scalar_derefs.inc>
+      RETURN
+   END SUBROUTINE interp_domain_nmm_part1
+
+!------------------------------------------------------------------
+
+   SUBROUTINE interp_domain_nmm_part2 ( grid, ngrid, config_flags ,  &
+!
+#include "nmm_dummy_args.inc"
+!
+                 )
+      USE module_domain
+      USE module_configure
+      USE module_dm
+      IMPLICIT NONE
+!
+      TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
+      TYPE(domain), POINTER :: ngrid
+#include <nmm_dummy_decl.inc>
+!#include <em_i1_decl.inc>
+      INTEGER nlev, msize
+      INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
+      TYPE (grid_config_rec_type)            :: config_flags
+      REAL xv(500)
+      INTEGER       ::          cids, cide, cjds, cjde, ckds, ckde,    &
+                                cims, cime, cjms, cjme, ckms, ckme,    &
+                                cips, cipe, cjps, cjpe, ckps, ckpe
+      INTEGER       ::          nids, nide, njds, njde, nkds, nkde,    &
+                                nims, nime, njms, njme, nkms, nkme,    &
+                                nips, nipe, njps, njpe, nkps, nkpe
+      INTEGER       ::          ids, ide, jds, jde, kds, kde,    &
+                                ims, ime, jms, jme, kms, kme,    &
+                                ips, ipe, jps, jpe, kps, kpe
+      INTEGER myproc
+      INTEGER ierr
+
+#ifdef DEREF_KLUDGE
+!  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
+   INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
+   INTEGER     :: sm31x, em31x, sm32x, em32x, sm33x, em33x
+   INTEGER     :: sm31y, em31y, sm32y, em32y, sm33y, em33y
+#endif
+#include "deref_kludge.h"
+
+#define COPY_IN
+#include <nmm_scalar_derefs.inc>
+      CALL get_ijk_from_grid (  grid ,                   &
+                                cids, cide, cjds, cjde, ckds, ckde,    &
+                                cims, cime, cjms, cjme, ckms, ckme,    &
+                                cips, cipe, cjps, cjpe, ckps, ckpe    )
+      CALL get_ijk_from_grid (  ngrid ,              &
+                                nids, nide, njds, njde, nkds, nkde,    &
+                                nims, nime, njms, njme, nkms, nkme,    &
+                                nips, nipe, njps, njpe, nkps, nkpe    )
+
+      nlev  = ckde - ckds + 1 
+
+#  include "nmm_nest_interpdown_unpack.inc"
+
+      CALL get_ijk_from_grid (  grid ,              &
+                                ids, ide, jds, jde, kds, kde,    &
+                                ims, ime, jms, jme, kms, kme,    &
+                                ips, ipe, jps, jpe, kps, kpe    )
+
+#include "HALO_NMM_INTERP_DOWN1.inc"
+
+#  include "nmm_nest_interpdown_interp.inc"
+
+#define COPY_OUT
+#include <nmm_scalar_derefs.inc>
+
+      RETURN
+   END SUBROUTINE interp_domain_nmm_part2
+
+!------------------------------------------------------------------
+
+   SUBROUTINE force_domain_nmm_part1 ( grid, intermediate_grid, config_flags ,  &
+!
+#include "nmm_dummy_args.inc"
+!
+                 )
+      USE module_domain
+      USE module_configure
+      USE module_dm
+      USE module_timing
+!
+      TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
+      TYPE(domain), POINTER :: intermediate_grid
+#include <nmm_dummy_decl.inc>
+      INTEGER nlev, msize
+      INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
+      TYPE (grid_config_rec_type)            :: config_flags
+      REAL xv(500)
+      INTEGER       ::          cids, cide, cjds, cjde, ckds, ckde,    &
+                                cims, cime, cjms, cjme, ckms, ckme,    &
+                                cips, cipe, cjps, cjpe, ckps, ckpe
+      INTEGER       ::          nids, nide, njds, njde, nkds, nkde,    &
+                                nims, nime, njms, njme, nkms, nkme,    &
+                                nips, nipe, njps, njpe, nkps, nkpe
+#define COPY_IN
+#include <nmm_scalar_derefs.inc>
+!
+      CALL get_ijk_from_grid (  grid ,                   &
+                                cids, cide, cjds, cjde, ckds, ckde,    &
+                                cims, cime, cjms, cjme, ckms, ckme,    &
+                                cips, cipe, cjps, cjpe, ckps, ckpe    )
+
+      CALL get_ijk_from_grid (  intermediate_grid ,              &
+                                nids, nide, njds, njde, nkds, nkde,    &
+                                nims, nime, njms, njme, nkms, nkme,    &
+                                nips, nipe, njps, njpe, nkps, nkpe    )
+
+      nlev  = ckde - ckds + 1
+
+#  include "nmm_nest_forcedown_pack.inc"
+
+!   WRITE(0,*)'I have completed PACKING of BCs data successfully'
+
+#define COPY_OUT
+#include <nmm_scalar_derefs.inc>
+      RETURN
+   END SUBROUTINE force_domain_nmm_part1
+
+!==============================================================================================
+
+   SUBROUTINE force_domain_nmm_part2 ( grid, ngrid, config_flags ,  &
+!
+#include "nmm_dummy_args.inc"
+!
+                 )
+      USE module_domain
+      USE module_configure
+      USE module_dm
+      IMPLICIT NONE
+!
+      TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
+      TYPE(domain), POINTER :: ngrid
+#include <nmm_dummy_decl.inc>
+!#include <nmm_i1_decl.inc>
+      INTEGER nlev, msize
+      INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
+      TYPE (grid_config_rec_type)            :: config_flags
+      REAL xv(500)
+      INTEGER       ::          cids, cide, cjds, cjde, ckds, ckde,    &
+                                cims, cime, cjms, cjme, ckms, ckme,    &
+                                cips, cipe, cjps, cjpe, ckps, ckpe
+      INTEGER       ::          nids, nide, njds, njde, nkds, nkde,    &
+                                nims, nime, njms, njme, nkms, nkme,    &
+                                nips, nipe, njps, njpe, nkps, nkpe
+      INTEGER       ::          ids, ide, jds, jde, kds, kde,    &
+                                ims, ime, jms, jme, kms, kme,    &
+                                ips, ipe, jps, jpe, kps, kpe
+integer myproc
+
+#ifdef DEREF_KLUDGE
+!  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
+   INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
+   INTEGER     :: sm31x, em31x, sm32x, em32x, sm33x, em33x
+   INTEGER     :: sm31y, em31y, sm32y, em32y, sm33y, em33y
+#endif
+#include "deref_kludge.h"
+
+#define COPY_IN
+#include <nmm_scalar_derefs.inc>
+
+      CALL get_ijk_from_grid (  grid ,                   &
+                                cids, cide, cjds, cjde, ckds, ckde,    &
+                                cims, cime, cjms, cjme, ckms, ckme,    &
+                                cips, cipe, cjps, cjpe, ckps, ckpe    )
+      CALL get_ijk_from_grid (  ngrid ,              &
+                                nids, nide, njds, njde, nkds, nkde,    &
+                                nims, nime, njms, njme, nkms, nkme,    &
+                                nips, nipe, njps, njpe, nkps, nkpe    )
+
+      nlev  = ckde - ckds + 1
+
+#  include "nmm_nest_interpdown_unpack.inc"
+
+      CALL get_ijk_from_grid (  grid ,              &
+                                ids, ide, jds, jde, kds, kde,    &
+                                ims, ime, jms, jme, kms, kme,    &
+                                ips, ipe, jps, jpe, kps, kpe    )
+
+#include "HALO_NMM_FORCE_DOWN1.inc"
+
+      ! code here to interpolate the data into the nested domain
+#  include "nmm_nest_forcedown_interp.inc"
+
+#define COPY_OUT
+#include <nmm_scalar_derefs.inc>
+
+      RETURN
+   END SUBROUTINE force_domain_nmm_part2
+
+!================================================================================
+!
+! This routine exists only to call a halo on a domain (the nest)
+! gets called from feedback_domain_em_part1, below.  This is needed
+! because the halo code expects the fields being exchanged to have
+! been dereferenced from the grid data structure, but in feedback_domain_em_part1
+! the grid data structure points to the coarse domain, not the nest.
+! And we want the halo exchange on the nest, so that the code in
+! em_nest_feedbackup_interp.inc will work correctly on multi-p. JM 20040308
+!
+
+   SUBROUTINE feedback_nest_prep_nmm ( grid, config_flags ,  &
+!
+#include "nmm_dummy_args.inc"
+!
+)
+      USE module_domain
+      USE module_configure
+      USE module_dm
+      USE module_state_description
+      IMPLICIT NONE
+!
+      TYPE(domain), TARGET :: grid          ! name of the grid being dereferenced (must be "grid")
+      TYPE (grid_config_rec_type) :: config_flags ! configureation flags, has vertical dim of
+                                                  ! soil temp, moisture, etc., has vertical dim
+                                                  ! of soil categories
+#include <nmm_dummy_decl.inc>
+
+      INTEGER       ::          ids, ide, jds, jde, kds, kde,    &
+                                ims, ime, jms, jme, kms, kme,    &
+                                ips, ipe, jps, jpe, kps, kpe
+
+      INTEGER       :: idum1, idum2
+
+
+#ifdef DEREF_KLUDGE
+!  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
+   INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
+   INTEGER     :: sm31x, em31x, sm32x, em32x, sm33x, em33x
+   INTEGER     :: sm31y, em31y, sm32y, em32y, sm33y, em33y
+#endif
+#include "deref_kludge.h"
+
+#define COPY_IN
+#include <nmm_scalar_derefs.inc>
+
+      CALL get_ijk_from_grid (  grid ,              &
+                                ids, ide, jds, jde, kds, kde,    &
+                                ims, ime, jms, jme, kms, kme,    &
+                                ips, ipe, jps, jpe, kps, kpe    )
+
+#ifdef DM_PARALLEL
+# include "HALO_NMM_WEIGHTS.inc"
+#endif
+
+#define COPY_OUT
+#include <nmm_scalar_derefs.inc>
+
+   END SUBROUTINE feedback_nest_prep_nmm
+
+!------------------------------------------------------------------
+
+   SUBROUTINE feedback_domain_nmm_part1 ( grid, ngrid, config_flags ,  &
+!
+#include "nmm_dummy_args.inc"
+!
+                 )
+      USE module_domain
+      USE module_configure
+      USE module_dm
+      IMPLICIT NONE
+!
+      TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
+      TYPE(domain), POINTER :: ngrid
+#include <nmm_dummy_decl.inc>
+      INTEGER nlev, msize
+      INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
+      TYPE(domain), POINTER :: xgrid
+      TYPE (grid_config_rec_type)            :: config_flags, nconfig_flags
+      REAL xv(500)
+      INTEGER       ::          cids, cide, cjds, cjde, ckds, ckde,    &
+                                cims, cime, cjms, cjme, ckms, ckme,    &
+                                cips, cipe, cjps, cjpe, ckps, ckpe
+      INTEGER       ::          nids, nide, njds, njde, nkds, nkde,    &
+                                nims, nime, njms, njme, nkms, nkme,    &
+                                nips, nipe, njps, njpe, nkps, nkpe
+      INTEGER local_comm, myproc, nproc, idum1, idum2
+
+#ifdef DEREF_KLUDGE
+!  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
+   INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
+   INTEGER     :: sm31x, em31x, sm32x, em32x, sm33x, em33x
+   INTEGER     :: sm31y, em31y, sm32y, em32y, sm33y, em33y
+#endif
+
+      INTERFACE
+          SUBROUTINE feedback_nest_prep_nmm ( grid, config_flags ,  &
+!
+#include "nmm_dummy_args.inc"
+!
+)
+             USE module_domain
+             USE module_configure
+             USE module_dm
+             USE module_state_description
+!
+             TYPE (grid_config_rec_type)            :: config_flags
+             TYPE(domain), TARGET                   :: grid
+#include <nmm_dummy_decl.inc>
+          END SUBROUTINE feedback_nest_prep_nmm
+      END INTERFACE
+!
+#define COPY_IN
+#include <nmm_scalar_derefs.inc>
+
+      CALL wrf_get_dm_communicator ( local_comm )
+      CALL wrf_get_myproc( myproc )
+      CALL wrf_get_nproc( nproc )
+
+
+!
+! intermediate grid
+      CALL get_ijk_from_grid (  grid ,                   &
+                                cids, cide, cjds, cjde, ckds, ckde,    &
+                                cims, cime, cjms, cjme, ckms, ckme,    &
+                                cips, cipe, cjps, cjpe, ckps, ckpe    )
+! nest grid
+      CALL get_ijk_from_grid (  ngrid ,                  &
+                                nids, nide, njds, njde, nkds, nkde,    &
+                                nims, nime, njms, njme, nkms, nkme,    &
+                                nips, nipe, njps, njpe, nkps, nkpe    )
+
+      nlev  = ckde - ckds + 1
+
+      ips_save = ngrid%i_parent_start  ! +1 not used in ipe_save & jpe_save
+      jps_save = ngrid%j_parent_start  !  because of one extra namelist point
+      ipe_save = ngrid%i_parent_start + (nide-nids) / ngrid%parent_grid_ratio
+      jpe_save = ngrid%j_parent_start + (njde-njds) / ngrid%parent_grid_ratio
+
+! feedback_nest_prep invokes a halo exchange on the ngrid. It is done this way
+! in a separate routine because the HALOs need the data to be dereference from the
+! grid data structure and, in this routine, the dereferenced fields are related to
+! the intermediate domain, not the nest itself. Save the current grid pointer to intermediate
+! domain, switch grid to point to ngrid, invoke feedback_nest_prep,  then restore grid
+! to point to intermediate domain.
+
+      CALL model_to_grid_config_rec ( ngrid%id , model_config_rec , nconfig_flags )
+      CALL set_scalar_indices_from_config ( ngrid%id , idum1 , idum2 )
+      xgrid => grid
+      grid => ngrid
+#include "deref_kludge.h"
+      CALL feedback_nest_prep_nmm ( grid, config_flags ,  &
+!
+#include "nmm_actual_args.inc"
+!
+)
+
+! put things back so grid is intermediate grid
+
+      grid => xgrid
+      CALL set_scalar_indices_from_config ( grid%id , idum1 , idum2 )
+
+! "interp" (basically copy) ngrid onto intermediate grid
+
+#  include "nmm_nest_feedbackup_interp.inc"
+
+#define COPY_OUT
+#include <nmm_scalar_derefs.inc>
+      RETURN
+   END SUBROUTINE feedback_domain_nmm_part1
+
+!------------------------------------------------------------------
+
+   SUBROUTINE feedback_domain_nmm_part2 ( grid, intermediate_grid, ngrid , config_flags ,  &
+!
+#include "nmm_dummy_args.inc"
+!
+                 )
+      USE module_domain
+      USE module_configure
+      USE module_dm
+      USE module_utility
+      IMPLICIT NONE
+
+!
+      TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
+      TYPE(domain), POINTER :: intermediate_grid
+      TYPE(domain), POINTER :: ngrid
+
+#include <nmm_dummy_decl.inc>
+!#include <nmm_i1_decl.inc>
+      INTEGER nlev, msize
+      INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
+      TYPE (grid_config_rec_type)            :: config_flags
+      REAL xv(500)
+      INTEGER       ::          cids, cide, cjds, cjde, ckds, ckde,    &
+                                cims, cime, cjms, cjme, ckms, ckme,    &
+                                cips, cipe, cjps, cjpe, ckps, ckpe
+      INTEGER       ::          nids, nide, njds, njde, nkds, nkde,    &
+                                nims, nime, njms, njme, nkms, nkme,    &
+                                nips, nipe, njps, njpe, nkps, nkpe
+      INTEGER       ::          ids, ide, jds, jde, kds, kde,    &
+                                ims, ime, jms, jme, kms, kme,    &
+                                ips, ipe, jps, jpe, kps, kpe
+      INTEGER icoord, jcoord, idim_cd, jdim_cd
+      INTEGER local_comm, myproc, nproc
+      INTEGER iparstrt, jparstrt, sw
+
+      character*256 :: timestr
+      integer ierr
+
+      REAL    nest_influence
+      LOGICAL, EXTERNAL  :: nmm_cd_feedback_mask
+#ifdef DEREF_KLUDGE
+!  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
+   INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
+   INTEGER     :: sm31x, em31x, sm32x, em32x, sm33x, em33x
+   INTEGER     :: sm31y, em31y, sm32y, em32y, sm33y, em33y
+#endif
+#include "deref_kludge.h"
+
+#define COPY_IN
+#include <nmm_scalar_derefs.inc>
+
+! On entry to this routine,
+!  "grid" refers to the parent domain
+!  "intermediate_grid" refers to local copy of parent domain that overlies this patch of nest
+!  "ngrid" refers to the nest, which is only needed for smoothing on the parent because
+!          the nest feedback data has already been transferred during em_nest_feedbackup_interp
+!          in part1, above.
+! The way these settings c and n dimensions are set, below, looks backwards but from the point
+! of view of the RSL routine rsl_lite_to_parent_info(), call to which is included by
+! em_nest_feedbackup_pack, the "n" domain represents the parent domain and the "c" domain
+! represents the intermediate domain. The backwards lookingness should be fixed in the gen_comms.c
+! registry routine that accompanies RSL_LITE but, just as it's sometimes easier to put up a road
+! sign that says "DIP" than fix the dip,  at this point it was easier just to write this comment. JM
+!
+
+      nest_influence = 0.5
+#define NEST_INFLUENCE(A,B) A = nest_influence*(B) + (1.0-nest_influence)*(A)
+
+
+      CALL domain_clock_get( grid, current_timestr=timestr )
+
+      CALL get_ijk_from_grid (  intermediate_grid ,                   &
+                                cids, cide, cjds, cjde, ckds, ckde,    &
+                                cims, cime, cjms, cjme, ckms, ckme,    &
+                                cips, cipe, cjps, cjpe, ckps, ckpe    )
+      CALL get_ijk_from_grid (  grid ,              &
+                                nids, nide, njds, njde, nkds, nkde,    &
+                                nims, nime, njms, njme, nkms, nkme,    &
+                                nips, nipe, njps, njpe, nkps, nkpe    )
+
+      nide = nide - 1   !dusan
+      njde = njde - 1   !dusan
+
+      CALL nl_get_i_parent_start ( intermediate_grid%id, iparstrt )
+      CALL nl_get_j_parent_start ( intermediate_grid%id, jparstrt )
+      CALL nl_get_shw            ( intermediate_grid%id, sw )
+      icoord =    iparstrt  - sw
+      jcoord =    jparstrt  - sw
+      idim_cd = cide - cids + 1
+      jdim_cd = cjde - cjds + 1
+
+      nlev  = ckde - ckds + 1
+
+#  include "nmm_nest_feedbackup_pack.inc"
+
+      CALL wrf_get_dm_communicator ( local_comm )
+      CALL wrf_get_myproc( myproc )
+      CALL wrf_get_nproc( nproc )
+
+      CALL rsl_lite_merge_msgs( myproc, nproc, local_comm )
+
+#  include "nmm_nest_feedbackup_unpack.inc"
+
+
+      ! smooth coarse grid
+
+      CALL get_ijk_from_grid (  ngrid,                                 &
+                                nids, nide, njds, njde, nkds, nkde,    &
+                                nims, nime, njms, njme, nkms, nkme,    &
+                                nips, nipe, njps, njpe, nkps, nkpe     )
+      CALL get_ijk_from_grid (  grid ,              &
+                                ids, ide, jds, jde, kds, kde,    &
+                                ims, ime, jms, jme, kms, kme,    &
+                                ips, ipe, jps, jpe, kps, kpe    )
+
+#  include "HALO_NMM_INTERP_UP.inc"
+
+      CALL get_ijk_from_grid (  grid ,                   &
+                                cids, cide, cjds, cjde, ckds, ckde,    &
+                                cims, cime, cjms, cjme, ckms, ckme,    &
+                                cips, cipe, cjps, cjpe, ckps, ckpe    )
+
+#  include "nmm_nest_feedbackup_smooth.inc"
+
+#define COPY_OUT
+#include <nmm_scalar_derefs.inc>
+      RETURN
+   END SUBROUTINE feedback_domain_nmm_part2
+
+!=================================================================================
+!   End of gopal's doing
+!=================================================================================
 #endif
 
 !------------------------------------------------------------------

@@ -27,6 +27,7 @@
       USE MODULE_PHYSICS_CALLS
       USE MODULE_EXT_INTERNAL
       USE MODULE_PRECIP_ADJUST
+      USE MODULE_NEST_UTIL !gopal
 !-----------------------------------------------------------------------
 !
       IMPLICIT NONE
@@ -71,7 +72,8 @@
       INTEGER :: I,ICLTEND,IDF,IJDE,IJDS,IRTN,J,JC,JDF,K,KDF,LB,N_MOIST &
      &          ,NTSD_current
       INTEGER,SAVE :: NTSD_restart
-      INTEGER :: MPI_COMM_COMP,MYPE,MYPROC,NPES
+!dusan      INTEGER :: MPI_COMM_COMP,MYPE,MYPROC,NPES
+      INTEGER :: MYPROC
       INTEGER :: RC, NTSD_rad
 !
       CHARACTER*80 :: MESSAGE
@@ -304,6 +306,42 @@
 !
       CALL WRF_GET_DM_COMMUNICATOR(MPI_COMM_COMP)
       CALL WRF_GET_NPROC(NPES)
+!
+#if (NMM_NEST == 1)
+!-----------------------------------------------------------------------------
+!***  PATCHING NESTED BOUNDARIES. This is gopal's doing
+!-----------------------------------------------------------------------------
+!
+      CALL wrf_debug ( 100 , 'nmm: in patch' )
+
+      btimx=timef()
+#ifdef DM_PARALLEL
+#    include "HALO_NMM_ZZ.inc"
+#endif
+
+      IF(grid%id .NE. 1)THEN
+!
+         CALL NESTBC_PATCH (PD_B,T_B,Q_B,U_B,V_B,Q2_B,CWM_B                                    &
+                           ,PD_BT,T_BT,Q_BT,U_BT,V_BT,Q2_BT,CWM_BT                             &
+                           ,PDNEST_B,TNEST_B,QNEST_B,UNEST_B,VNEST_B,Q2NEST_B,CWMNEST_B        &
+                           ,PDNEST_BT,TNEST_BT,QNEST_BT,UNEST_BT,VNEST_BT,Q2NEST_BT,CWMNEST_BT &
+                           ,IJDS,IJDE,GRID%SPEC_BDY_WIDTH                                      &
+                           ,IDS,IDF,JDS,JDF,KDS,KDE                                            &
+                           ,IMS,IME,JMS,JME,KMS,KME                                            &
+                           ,ITS,ITE,JTS,JTE,KTS,KTE                                            )
+         CALL wrf_debug ( 100 , 'nmm: out of patch' )
+!
+#ifdef MOVE_NESTS
+
+     IF(grid%id .NE. 1 .AND. MOD(NTSD,1)==0 .AND. grid%num_moves.EQ.-99)THEN
+          XLOC_1=(IDE-1)/2     ! This manuvares the storm to the center of the nest quickly
+          YLOC_1=(JDE-1)/2     ! This manuvares the storm to the center of the nest quickly
+      ENDIF
+#endif
+
+      ENDIF
+! end of gopal's doing
+#endif
 !
 !-----------------------------------------------------------------------
 !***  ALLOCATE PPTDAT ARRAY (PRECIP ASSIM):
@@ -915,7 +953,7 @@
 !
       btimx=timef()
 !
-      CALL BOCOH(NTSD,GRID%DT,NEST,NUNIT_NBC,NBOCO,LAST_TIME,TSPH      &
+      CALL BOCOH(GRID%ID,NTSD,GRID%DT,NEST,NUNIT_NBC,NBOCO,LAST_TIME,TSPH      & ! GRID%ID ADDED BY GOPAL
      &          ,LB,ETA1,ETA2,PDTOP,PT,RES,HTM                         &
      &          ,PD_B,T_B,Q_B,U_B,V_B,Q2_B,CWM_B                       &
      &          ,PD_BT,T_BT,Q_BT,U_BT,V_BT,Q2_BT,CWM_BT                &
@@ -1035,7 +1073,7 @@
 !
       btimx=timef()
 !
-      CALL BOCOV(NTSD,GRID%DT,LB,VTM,U_B,V_B,U_BT,V_BT                 &
+      CALL BOCOV(GRID%ID,NTSD,GRID%DT,LB,VTM,U_B,V_B,U_BT,V_BT                 & ! GRID%ID ADDED BY GOPAL
      &          ,U,V                                                   &
      &          ,IJDS,IJDE,GRID%SPEC_BDY_WIDTH                         &
      &          ,IHE,IHW,IVE,IVW,INDX3_WRK                             &

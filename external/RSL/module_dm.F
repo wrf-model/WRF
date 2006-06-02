@@ -4514,6 +4514,144 @@ END
 
 !------------------------------------------------------------------
 
+#if ( NMM_CORE == 1 )
+!==============================================================================
+! NMM nesting infrastructure extended from EM core. This is gopal's doing.
+!==============================================================================
+
+   SUBROUTINE interp_domain_nmm_part1 ( grid, intermediate_grid, ngrid, config_flags ,  &
+!
+#include "nmm_dummy_args.inc"
+!
+                 )
+      USE module_domain
+      USE module_configure
+      USE module_dm
+      USE module_timing
+      IMPLICIT NONE
+!
+      TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
+      TYPE(domain), POINTER :: intermediate_grid
+      TYPE(domain), POINTER :: ngrid
+#include <nmm_dummy_decl.inc>
+      TYPE (grid_config_rec_type)            :: config_flags
+
+      CALL wrf_error_fatal ( 'module_dm: NMM nesting does not support RSL' )
+
+      RETURN
+   END SUBROUTINE interp_domain_nmm_part1
+
+   SUBROUTINE interp_domain_nmm_part2 ( grid, ngrid, config_flags ,  &
+!
+#include "nmm_dummy_args.inc"
+!
+                 )
+      USE module_domain
+      USE module_configure
+      USE module_dm
+      IMPLICIT NONE
+!
+      TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
+      TYPE(domain), POINTER :: ngrid
+#include <nmm_dummy_decl.inc>
+      TYPE (grid_config_rec_type)            :: config_flags
+
+      CALL wrf_error_fatal ( 'module_dm: NMM nesting does not support RSL' )
+
+      RETURN
+   END SUBROUTINE interp_domain_nmm_part2
+
+   SUBROUTINE force_domain_nmm_part1 ( grid, intermediate_grid, config_flags ,  &
+!
+#include "nmm_dummy_args.inc"
+!
+                 )
+      USE module_domain
+      USE module_configure
+      USE module_dm
+      USE module_timing
+!
+      TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
+      TYPE(domain), POINTER :: intermediate_grid
+#include <nmm_dummy_decl.inc>
+      TYPE (grid_config_rec_type)            :: config_flags
+
+      CALL wrf_error_fatal ( 'module_dm: NMM nesting does not support RSL' )
+
+      RETURN
+   END SUBROUTINE force_domain_nmm_part1
+
+   SUBROUTINE force_domain_nmm_part2 ( grid, ngrid, config_flags ,  &
+!
+#include "nmm_dummy_args.inc"
+!
+                 )
+      USE module_domain
+      USE module_configure
+      USE module_dm
+      IMPLICIT NONE
+!
+      TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
+      TYPE(domain), POINTER :: ngrid
+#include <nmm_dummy_decl.inc>
+      TYPE (grid_config_rec_type)            :: config_flags
+
+      CALL wrf_error_fatal ( 'module_dm: NMM nesting does not support RSL' )
+
+      RETURN
+   END SUBROUTINE force_domain_nmm_part2
+
+   SUBROUTINE feedback_domain_nmm_part1 ( grid, ngrid, config_flags ,  &
+!
+#include "nmm_dummy_args.inc"
+!
+                 )
+      USE module_domain
+      USE module_configure
+      USE module_dm
+      IMPLICIT NONE
+!
+      TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
+      TYPE(domain), POINTER :: ngrid
+#include <nmm_dummy_decl.inc>
+      TYPE (grid_config_rec_type)            :: config_flags, nconfig_flags
+
+      CALL wrf_error_fatal ( 'module_dm: NMM nesting does not support RSL' )
+
+      RETURN
+   END SUBROUTINE feedback_domain_nmm_part1
+
+   SUBROUTINE feedback_domain_nmm_part2 ( grid, intermediate_grid, ngrid , config_flags ,  &
+!
+#include "nmm_dummy_args.inc"
+!
+                 )
+      USE module_domain
+      USE module_configure
+      USE module_dm
+      USE module_utility
+      IMPLICIT NONE
+
+!
+      TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
+      TYPE(domain), POINTER :: intermediate_grid
+      TYPE(domain), POINTER :: ngrid
+
+#include <nmm_dummy_decl.inc>
+      TYPE (grid_config_rec_type)            :: config_flags
+
+      CALL wrf_error_fatal ( 'module_dm: NMM nesting does not support RSL' )
+
+      RETURN
+   END SUBROUTINE feedback_domain_nmm_part2
+
+!=================================================================================
+!   End of gopal's doing
+!=================================================================================
+#endif
+
+
+
 #ifndef STUBMPI
 
    SUBROUTINE wrf_gatherv_real (Field, field_ofst,            &

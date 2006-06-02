@@ -69,7 +69,39 @@ SUBROUTINE med_feedback_domain ( parent_grid , nested_grid )
 ! ----------------------------------------------------------
 !    Interface definitions for NMM (placeholder)
 ! ----------------------------------------------------------
-#if (NMM_CORE == 1 )
+#if (NMM_CORE == 1 && NMM_NEST == 1)
+! ------------------------------------------------------
+!    These routines are supplied by module_dm.F from the
+!    external communication package (e.g. external/RSL)
+!    This is gopal's extension for the NMM core
+! ------------------------------------------------------
+      SUBROUTINE feedback_domain_nmm_part1 ( grid, nested_grid, config_flags ,  &
+!
+#          include "nmm_dummy_args.inc"
+!
+                                          )
+         USE module_domain
+         USE module_configure
+         TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
+         TYPE(domain), POINTER :: nested_grid
+         TYPE (grid_config_rec_type)            :: config_flags
+#        include <nmm_dummy_decl.inc>
+      END SUBROUTINE feedback_domain_nmm_part1
+!
+      SUBROUTINE feedback_domain_nmm_part2 ( grid, intermediate_grid , nested_grid, config_flags ,  &
+!
+#          include "nmm_dummy_args.inc"
+!
+                                          )
+         USE module_domain
+         USE module_configure
+         TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
+         TYPE(domain), POINTER :: intermediate_grid
+         TYPE(domain), POINTER :: nested_grid
+         TYPE (grid_config_rec_type)            :: config_flags
+#        include <nmm_dummy_decl.inc>
+
+      END SUBROUTINE feedback_domain_nmm_part2
 #endif
 ! ----------------------------------------------------------
 !    Interface definitions for COAMPS (placeholder)
@@ -132,7 +164,42 @@ SUBROUTINE med_feedback_domain ( parent_grid , nested_grid )
 ! ------------------------------------------------------
 !    Feedback calls for NMM. (Placeholder)
 ! ------------------------------------------------------
-#if (NMM_CORE == 1)
+#if (NMM_CORE == 1 && NMM_NEST == 1)
+! ------------------------------------------------------
+!    This is gopal's extension for the NMM core
+! ------------------------------------------------------
+
+   CALL model_to_grid_config_rec ( nested_grid%id , model_config_rec , config_flags )
+   IF ( config_flags%dyn_opt == DYN_NMM ) THEN
+
+     grid => nested_grid%intermediate_grid
+!dusan orig     CALL alloc_space_field ( grid, grid%id , 1 , 2 , .TRUE. ,     &
+     CALL alloc_space_field ( grid, grid%id , 1 , 3 , .FALSE. ,     &
+                              grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &
+                              grid%sm31,  grid%em31,  grid%sm32,  grid%em32,  grid%sm33,  grid%em33, &
+                              grid%sm31x, grid%em31x, grid%sm32x, grid%em32x, grid%sm33x, grid%em33x, &   ! x-xpose
+                              grid%sm31y, grid%em31y, grid%sm32y, grid%em32y, grid%sm33y, grid%em33y  &   ! y-xpose
+       )
+
+     grid => nested_grid%intermediate_grid
+#    include "deref_kludge.h"
+     CALL feedback_domain_nmm_part1 ( grid, nested_grid, config_flags ,  &
+!
+#      include "nmm_actual_args.inc"
+!
+                                   )
+     grid => parent_grid
+#    include "deref_kludge.h"
+
+!
+     CALL feedback_domain_nmm_part2 ( grid , nested_grid%intermediate_grid, nested_grid , config_flags ,  &
+!
+#      include "nmm_actual_args.inc"
+!
+                                   )
+     grid => nested_grid%intermediate_grid
+     CALL dealloc_space_field ( grid )
+   ENDIF
 #endif
 ! ------------------------------------------------------
 !    End of Feedback calls for NMM.

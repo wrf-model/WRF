@@ -53,6 +53,10 @@ NATIVE_RWORDSIZE = 4
 #### Default sed command and script for Fortran source files ####
 SED_FTN = sed -f ../arch/standard.sed
 
+# Hack to work around $(PWD) not changing during OSF1 build.  
+# $(IO_GRIB_SHARE_DIR) is reset during the OSF1 build only.  
+IO_GRIB_SHARE_DIR = 
+
 #### ESMF switches                 ####
 #### These are set up by Config.pl ####
 # switch to use separately installed ESMF library for coupling:  1==true

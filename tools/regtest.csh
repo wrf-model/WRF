@@ -1562,6 +1562,11 @@ banner 8
 #set ans = "$<"
 #DAVE###################################################
 	
+		# The WRF_SRC_ROOT_DIR hack is only used by the OSF1 build.  
+		# It works around the annoying fact that in OSF1 $(PWD) does 
+		# not change during execution of regtest.csh, despite the "cd" 
+		# and "pushd" commands.  
+		setenv WRF_SRC_ROOT_DIR "${DEF_DIR}/regression_test/WRFV2"
 		#	Build this executable
 		
 		./compile $core

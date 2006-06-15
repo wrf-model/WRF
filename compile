@@ -187,7 +187,14 @@ else
   echo "."
   echo " "
 
-  make $arglist A2DCASE="$A2DCASE"
+  # This incredible hackery due to OSF1 $(PWD) not changing during 
+  # build via regtest.csh ...  
+  # Note that $WRF_SRC_ROOT_DIR is only used by the OSF1 build.  
+  if ( $?WRF_SRC_ROOT_DIR ) then
+    make $arglist A2DCASE="$A2DCASE" WRF_SRC_ROOT_DIR="$WRF_SRC_ROOT_DIR"
+  else
+    make $arglist A2DCASE="$A2DCASE" WRF_SRC_ROOT_DIR="$PWD"
+  endif
 
 endif
 

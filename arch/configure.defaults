@@ -2519,15 +2519,15 @@ wrfio_int :
 
 wrfio_grib_share :
 	( cd ../external/io_grib_share ; \
-          make BUILD_DIR_PRE="$(PWD)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " archive)
+          make IO_GRIB_SHARE_DIR="$(WRF_SRC_ROOT_DIR)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " archive)
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make BUILD_DIR_PRE="$(PWD)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " archive)
+          make IO_GRIB_SHARE_DIR="$(WRF_SRC_ROOT_DIR)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " archive)
 
 wrfio_grib2 :
 	( cd ../external/io_grib2 ; \
-          make BUILD_DIR_PRE="$(PWD)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " archive)
+          make IO_GRIB_SHARE_DIR="$(WRF_SRC_ROOT_DIR)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " archive)
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -2666,15 +2666,15 @@ wrfio_int :
 
 wrfio_grib_share :
 	( cd ../external/io_grib_share ; \
-          make BUILD_DIR_PRE="$(PWD)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " archive)
+          make IO_GRIB_SHARE_DIR="$(WRF_SRC_ROOT_DIR)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " archive)
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make BUILD_DIR_PRE="$(PWD)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " archive )
+          make IO_GRIB_SHARE_DIR="$(WRF_SRC_ROOT_DIR)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " archive )
 
 wrfio_grib2 :
 	( cd ../external/io_grib2 ; \
-          make BUILD_DIR_PRE="$(PWD)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " archive )
+          make IO_GRIB_SHARE_DIR="$(WRF_SRC_ROOT_DIR)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " archive )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -2805,15 +2805,15 @@ wrfio_int :
 
 wrfio_grib_share :
 	( cd ../external/io_grib_share ; \
-          make BUILD_DIR_PRE="$(PWD)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " archive)
+          make IO_GRIB_SHARE_DIR="$(WRF_SRC_ROOT_DIR)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " archive)
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make BUILD_DIR_PRE="$(PWD)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w " archive)
+          make IO_GRIB_SHARE_DIR="$(WRF_SRC_ROOT_DIR)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w " archive)
 
 wrfio_grib2 :
 	( cd ../external/io_grib2 ; \
-          make BUILD_DIR_PRE="$(PWD)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w " archive)
+          make IO_GRIB_SHARE_DIR="$(WRF_SRC_ROOT_DIR)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w " archive)
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -2953,15 +2953,15 @@ wrfio_int :
 
 wrfio_grib_share :
 	( cd ../external/io_grib_share ; \
-          make BUILD_DIR_PRE="$(PWD)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " archive)
+          make IO_GRIB_SHARE_DIR="$(WRF_SRC_ROOT_DIR)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " archive)
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make BUILD_DIR_PRE="$(PWD)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w " archive )
+          make IO_GRIB_SHARE_DIR="$(WRF_SRC_ROOT_DIR)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w " archive )
 
 wrfio_grib2 :
 	( cd ../external/io_grib2 ; \
-          make BUILD_DIR_PRE="$(PWD)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w " archive )
+          make IO_GRIB_SHARE_DIR="$(WRF_SRC_ROOT_DIR)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w " archive )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -3104,15 +3104,15 @@ wrfio_int :
 
 wrfio_grib_share :
 	( cd ../external/io_grib_share ; \
-          make BUILD_DIR_PRE="$(PWD)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " archive)
+          make IO_GRIB_SHARE_DIR="$(WRF_SRC_ROOT_DIR)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " archive)
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make BUILD_DIR_PRE="$(PWD)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " archive )
+          make IO_GRIB_SHARE_DIR="$(WRF_SRC_ROOT_DIR)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " archive )
 
 wrfio_grib2 :
 	( cd ../external/io_grib2 ; \
-          make BUILD_DIR_PRE="$(PWD)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " archive )
+          make IO_GRIB_SHARE_DIR="$(WRF_SRC_ROOT_DIR)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " archive )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -3256,15 +3256,15 @@ wrfio_int :
 
 wrfio_grib_share :
 	( cd ../external/io_grib_share ; \
-          make BUILD_DIR_PRE="$(PWD)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " archive)
+          make IO_GRIB_SHARE_DIR="$(WRF_SRC_ROOT_DIR)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " archive)
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make BUILD_DIR_PRE="$(PWD)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " archive)
+          make IO_GRIB_SHARE_DIR="$(WRF_SRC_ROOT_DIR)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " archive)
 
 wrfio_grib2 :
 	( cd ../external/io_grib2 ; \
-          make BUILD_DIR_PRE="$(PWD)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " archive)
+          make IO_GRIB_SHARE_DIR="$(WRF_SRC_ROOT_DIR)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " archive)
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -3408,15 +3408,15 @@ wrfio_int :
 
 wrfio_grib_share :
 	( cd ../external/io_grib_share ; \
-          make BUILD_DIR_PRE="$(PWD)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " archive)
+          make IO_GRIB_SHARE_DIR="$(WRF_SRC_ROOT_DIR)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " archive)
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make BUILD_DIR_PRE="$(PWD)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w " archive )
+          make IO_GRIB_SHARE_DIR="$(WRF_SRC_ROOT_DIR)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w " archive )
 
 wrfio_grib2 :
 	( cd ../external/io_grib2 ; \
-          make BUILD_DIR_PRE="$(PWD)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w " archive )
+          make IO_GRIB_SHARE_DIR="$(WRF_SRC_ROOT_DIR)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w " archive )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -3560,15 +3560,15 @@ wrfio_int :
 
 wrfio_grib_share :
 	( cd ../external/io_grib_share ; \
-          make BUILD_DIR_PRE="$(PWD)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " archive)
+          make IO_GRIB_SHARE_DIR="$(WRF_SRC_ROOT_DIR)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " archive)
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make BUILD_DIR_PRE="$(PWD)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w " archive )
+          make IO_GRIB_SHARE_DIR="$(WRF_SRC_ROOT_DIR)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w " archive )
 
 wrfio_grib2 :
 	( cd ../external/io_grib2 ; \
-          make BUILD_DIR_PRE="$(PWD)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w " archive )
+          make IO_GRIB_SHARE_DIR="$(WRF_SRC_ROOT_DIR)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCREAL8OMP) -convert big_endian -automatic -cpp -free -w " archive )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -3712,15 +3712,15 @@ wrfio_int :
 
 wrfio_grib_share :
 	( cd ../external/io_grib_share ; \
-          make BUILD_DIR_PRE="$(PWD)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " archive)
+          make IO_GRIB_SHARE_DIR="$(WRF_SRC_ROOT_DIR)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " archive)
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make BUILD_DIR_PRE="$(PWD)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " archive )
+          make IO_GRIB_SHARE_DIR="$(WRF_SRC_ROOT_DIR)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " archive )
 
 wrfio_grib2 :
 	( cd ../external/io_grib2 ; \
-          make BUILD_DIR_PRE="$(PWD)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " archive )
+          make IO_GRIB_SHARE_DIR="$(WRF_SRC_ROOT_DIR)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " archive )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -3864,15 +3864,15 @@ wrfio_int :
 
 wrfio_grib_share :
 	( cd ../external/io_grib_share ; \
-          make BUILD_DIR_PRE="$(PWD)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " archive)
+          make IO_GRIB_SHARE_DIR="$(WRF_SRC_ROOT_DIR)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " archive)
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make BUILD_DIR_PRE="$(PWD)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " archive )
+          make IO_GRIB_SHARE_DIR="$(WRF_SRC_ROOT_DIR)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " archive )
 
 wrfio_grib2 :
 	( cd ../external/io_grib2 ; \
-          make BUILD_DIR_PRE="$(PWD)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " archive )
+          make IO_GRIB_SHARE_DIR="$(WRF_SRC_ROOT_DIR)/external/io_grib_share/" CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -convert big_endian -automatic -cpp -free -w " archive )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \

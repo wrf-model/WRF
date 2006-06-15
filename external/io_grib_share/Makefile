@@ -11,7 +11,7 @@
 # Specity location for Makefiles that are included.
 #
 INCLUDEDIRS = -I.
-BUILD_DIR = $(BUILD_DIR_PRE)./build
+BUILD_DIR = $(IO_GRIB_SHARE_DIR)./build
 #
 # Specify directory that output library is to be put in.
 #

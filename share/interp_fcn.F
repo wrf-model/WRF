@@ -3258,7 +3258,6 @@
       USE module_configure
       IMPLICIT NONE
 
-      REAL, DIMENSION ( cims:cime, ckms:ckme, cjms:cjme ), INTENT(INOUT) :: cfld
       INTEGER, INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
                              cims, cime, ckms, ckme, cjms, cjme,   &
                              cits, cite, ckts, ckte, cjts, cjte,   &
@@ -3267,6 +3266,7 @@
                              nits, nite, nkts, nkte, njts, njte,   &
                              nri, nrj,                             &
                              ipos, jpos
+      REAL, DIMENSION ( cims:cime, ckms:ckme, cjms:cjme ), INTENT(INOUT) :: cfld
       LOGICAL, INTENT(IN) :: xstag, ystag
 
 
@@ -3341,7 +3341,6 @@
       USE module_configure
       IMPLICIT NONE
 
-      REAL, DIMENSION ( cims:cime, ckms:ckme, cjms:cjme ), INTENT(INOUT) :: cfld
       INTEGER, INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
                              cims, cime, ckms, ckme, cjms, cjme,   &
                              cits, cite, ckts, ckte, cjts, cjte,   &
@@ -3350,6 +3349,7 @@
                              nits, nite, nkts, nkte, njts, njte,   &
                              nri, nrj,                             &
                              ipos, jpos
+      REAL, DIMENSION ( cims:cime, ckms:ckme, cjms:cjme ), INTENT(INOUT) :: cfld
       LOGICAL, INTENT(IN) :: xstag, ystag
 
 

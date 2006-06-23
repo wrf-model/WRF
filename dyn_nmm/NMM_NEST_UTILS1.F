@@ -3025,4 +3025,7 @@ LOGICAL FUNCTION nmm_cd_feedback_mask( pig, ips_save, ipe_save , pjg, jps_save, 
 END FUNCTION nmm_cd_feedback_mask
 
 !----------------------------------------------------------------------------
+#else
+SUBROUTINE stub_nmm_nest_stub
+END SUBROUTINE stub_nmm_nest_stub
 #endif

@@ -70,6 +70,19 @@ EXE_DIRS =
 SUB_DIRS = $(LIB_DIRS) $(EXE_DIRS)
 
 #
+#  Clean up old build files
+#
+superclean:
+	/bin/rm -f *.o > /dev/null 2>&1
+	/bin/rm -f *.f > /dev/null 2>&1
+	/bin/rm -f *.mod > /dev/null 2>&1
+	/bin/rm -f *.a > /dev/null 2>&1
+	/bin/rm -f wgrid > /dev/null 2>&1
+	( cd grib1_util ; make clean )
+	( cd MEL_grib1 ; make clean )
+	( cd WGRIB ; make clean )
+
+#
 #  Include the boilerplate rules for building library modules.
 #
 include $(BUILD_DIR)/library_rules.mk

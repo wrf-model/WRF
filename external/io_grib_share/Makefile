@@ -67,6 +67,16 @@ EXE_DIRS =
 SUB_DIRS = $(LIB_DIRS) $(EXE_DIRS)
 
 #
+#  Clean up old build files
+#
+superclean:
+	/bin/rm -f *.o > /dev/null 2>&1
+	/bin/rm -f *.f > /dev/null 2>&1
+	/bin/rm -f *.mod > /dev/null 2>&1
+	/bin/rm -f *.a > /dev/null 2>&1
+
+
+#
 #  Include the boilerplate rules for building library modules.
 #
 include $(BUILD_DIR)/library_rules.mk

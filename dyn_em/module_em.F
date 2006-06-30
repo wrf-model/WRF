@@ -169,6 +169,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                          msfu, msfv, msft, f, e, sina, cosa,              &
                          fnm, fnp, rdn, rdnw,                             &
                          dt, rdx, rdy, khdif, kvdif, xkmhd,               &
+                         diff_6th_opt, diff_6th_rate,                     &
                          dampcoef,zdamp,damp_opt,                         &
                          cf1, cf2, cf3, cfn, cfn1, n_moist,               &
                          non_hydrostatic, leapfrog,                       &
@@ -269,6 +270,8 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                                                                 dt,      &
                                                                 khdif,   &
                                                                 kvdif
+   INTEGER, INTENT( IN ) :: diff_6th_opt
+   REAL,    INTENT( IN ) :: diff_6th_rate
 
    INTEGER, INTENT( IN ) :: damp_opt
 
@@ -601,14 +604,14 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
 
         CALL horizontal_diffusion ('u', u_old, ru_tendf, mut, config_flags, &
                                         msfu, msfv, msft,                   &
-                                        khdif, xkmhd, rdx, rdy,                    &
+                                        khdif, xkmhd, rdx, rdy,             &
                                         ids, ide, jds, jde, kds, kde,       &
                                         ims, ime, jms, jme, kms, kme,       &
                                         its, ite, jts, jte, kts, kte       )
 
         CALL horizontal_diffusion ('v', v_old, rv_tendf, mut, config_flags, &
                                         msfu, msfv, msft,                   &
-                                        khdif, xkmhd, rdx, rdy,                    &
+                                        khdif, xkmhd, rdx, rdy,             &
                                         ids, ide, jds, jde, kds, kde,       &
                                         ims, ime, jms, jme, kms, kme,       &
                                         its, ite, jts, jte, kts, kte       )
@@ -616,7 +619,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
         IF (non_hydrostatic)                                                &
         CALL horizontal_diffusion ('w', w_old, rw_tendf, mut, config_flags, &
                                         msfu, msfv, msft,                   &
-                                        khdif, xkmhd, rdx, rdy,                    &
+                                        khdif, xkmhd, rdx, rdy,             &
                                         ids, ide, jds, jde, kds, kde,       &
                                         ims, ime, jms, jme, kms, kme,       &
                                         its, ite, jts, jte, kts, kte       )
@@ -625,7 +628,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
         CALL horizontal_diffusion_3dmp ( 'm', t_old, t_tendf, mut,     &
                                          config_flags, t_init,         &
                                          msfu, msfv, msft,             &
-                                         khdq , xkmhd, rdx, rdy,              &
+                                         khdq, xkmhd, rdx, rdy,        &
                                          ids, ide, jds, jde, kds, kde, &
                                          ims, ime, jms, jme, kms, kme, &
                                          its, ite, jts, jte, kts, kte )
@@ -664,6 +667,39 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
       END IF leapfrog_test
         
     END IF diff_opt1
+
+    IF ( diff_6th_opt .NE. 0 ) THEN
+
+      CALL sixth_order_diffusion( 'u', u, ru_tendf, mut, dt,          &
+                                       config_flags,                  &
+                                       diff_6th_opt, diff_6th_rate,   &
+                                       ids, ide, jds, jde, kds, kde,  &
+                                       ims, ime, jms, jme, kms, kme,  &
+                                       its, ite, jts, jte, kts, kte )
+
+      CALL sixth_order_diffusion( 'v', v, rv_tendf, mut, dt,          &
+                                       config_flags,                  &
+                                       diff_6th_opt, diff_6th_rate,   &
+                                       ids, ide, jds, jde, kds, kde,  &
+                                       ims, ime, jms, jme, kms, kme,  &
+                                       its, ite, jts, jte, kts, kte )
+
+      IF (non_hydrostatic)                                            & 
+      CALL sixth_order_diffusion( 'w', w, rw_tendf, mut, dt,          &
+                                       config_flags,                  &
+                                       diff_6th_opt, diff_6th_rate,   &
+                                       ids, ide, jds, jde, kds, kde,  &
+                                       ims, ime, jms, jme, kms, kme,  &
+                                       its, ite, jts, jte, kts, kte )
+
+      CALL sixth_order_diffusion( 'm', t,  t_tendf, mut, dt,          &
+                                       config_flags,                  &
+                                       diff_6th_opt, diff_6th_rate,   &
+                                       ids, ide, jds, jde, kds, kde,  &
+                                       ims, ime, jms, jme, kms, kme,  &
+                                       its, ite, jts, jte, kts, kte )
+
+    ENDIF
 
     IF( damp_opt .eq. 2 )                                      &
        CALL rk_rayleigh_damp( ru_tendf, rv_tendf,              &
@@ -803,6 +839,7 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,    &
                             msfu, msfv, msft,             &
                             rdx, rdy, rdn, rdnw,          &
                             khdif, kvdif, xkmhd,          &
+                            diff_6th_opt, diff_6th_rate,  &
                             leapfrog,                     &
                             ids, ide, jds, jde, kds, kde, &
                             ims, ime, jms, jme, kms, kme, &
@@ -855,6 +892,9 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,    &
                                                                   khdif,   &
                                                                   kvdif
 
+   INTEGER, INTENT( IN ) :: diff_6th_opt
+   REAL,    INTENT( IN ) :: diff_6th_rate
+
    REAL ,                                        INTENT(IN   ) :: dt
 
    LOGICAL, INTENT(IN   ) :: leapfrog
@@ -902,10 +942,9 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,    &
                        its, ite, jts, jte, kts, kte      )
      ENDIF
 
-     diff_opt1 : IF (config_flags%diff_opt .eq. 1) THEN
+     rk_step_1: IF( rk_step == 1 ) THEN
 
-       rk_step_1: IF( rk_step == 1 ) THEN
-
+       diff_opt1 : IF (config_flags%diff_opt .eq. 1) THEN
 
        CALL horizontal_diffusion ( 'm', scalar(ims,kms,jms,im),            &
                                         scalar_tends(ims,kms,jms,im), mut, &
@@ -941,9 +980,18 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,    &
 
       ENDIF pbl_test
 
-    ENDIF rk_step_1
+    ENDIF diff_opt1
 
-  ENDIF diff_opt1
+    IF ( diff_6th_opt .NE. 0 )                                        &
+      CALL sixth_order_diffusion( 'm', scalar(ims,kms,jms,im),        &
+                                       scalar_tends(ims,kms,jms,im),  &
+                                       mut, dt, config_flags,         &
+                                       diff_6th_opt, diff_6th_rate,   &
+                                       ids, ide, jds, jde, kds, kde,  &
+                                       ims, ime, jms, jme, kms, kme,  &
+                                       its, ite, jts, jte, kts, kte )
+
+  ENDIF rk_step_1
 
  END DO scalar_loop
 

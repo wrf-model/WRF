@@ -321,6 +321,10 @@
    IF ( .NOT. config_flags%restart .AND. &
         (( config_flags%input_from_hires ) .OR. ( config_flags%input_from_file ))) THEN
 
+      IF ( config_flags%map_proj .EQ. 0 ) THEN
+         CALL wrf_error_fatal ( 'start_domain: Idealized case cannot have a separate nested input file' )
+      END IF 
+
       CALL nl_get_base_pres  ( 1 , p00 )
       CALL nl_get_base_temp  ( 1 , t00 )
       CALL nl_get_base_lapse ( 1 , a   )
@@ -391,6 +395,20 @@
 
 !  reconstitute base-state fields
 
+    IF(config_flags%max_dom .EQ. 1)THEN
+! with single domain, t_init from wrfinput is OK to use
+     DO j = jts,min(jte,jde-1)
+     DO k = kts,kte-1
+     DO i = its, min(ite,ide-1)
+       IF ( imask_nostag(i,j) .EQ. 1 ) THEN
+         pb(i,k,j) = znu(k)*mub(i,j)+p_top
+         alb(i,k,j) = (r_d/p1000mb)*(t_init(i,k,j)+t0)*(pb(i,k,j)/p1000mb)**cvpm
+       ENDIF
+     ENDDO
+     ENDDO
+     ENDDO
+    ELSE
+! with nests, t_init generally needs recomputations (since it is not interpolated)
      DO j = jts,min(jte,jde-1)
      DO k = kts,kte-1
      DO i = its, min(ite,ide-1)
@@ -402,6 +420,7 @@
      ENDDO
      ENDDO
      ENDDO
+    ENDIF
 
      DO j = jts,min(jte,jde-1)
 

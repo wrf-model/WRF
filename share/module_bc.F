@@ -386,6 +386,8 @@ CONTAINS
 
             DO j = MAX(jds,jts-1), MIN(jte+1,jde+jstag)
               data(ids-1,j) = data(ids,j) !  here, data(0) = data(1)
+              data(ids-2,j) = data(ids,j)
+              data(ids-3,j) = data(ids,j)
             ENDDO
 
         ENDIF open_xs
@@ -401,13 +403,17 @@ CONTAINS
           IF ( variable /= 'u' .and. variable /= 'x') THEN
 
             DO j = MAX(jds,jts-1), MIN(jte+1,jde+jstag)
-              data(ide,j) = data(ide-1,j) 
+              data(ide  ,j) = data(ide-1,j) 
+              data(ide+1,j) = data(ide-1,j) 
+              data(ide+2,j) = data(ide-1,j) 
             ENDDO
 
           ELSE
 
             DO j = MAX(jds,jts-1), MIN(jte+1,jde+jstag)
               data(ide+1,j) = data(ide,j)
+              data(ide+2,j) = data(ide,j)
+              data(ide+3,j) = data(ide,j)
             ENDDO
 
           END IF 
@@ -528,6 +534,8 @@ CONTAINS
 
             DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
               data(i,jds-1) = data(i,jds) 
+              data(i,jds-2) = data(i,jds) 
+              data(i,jds-3) = data(i,jds) 
             ENDDO
 
         ENDIF open_ys
@@ -542,13 +550,17 @@ CONTAINS
           IF  (variable /= 'v' .and. variable /= 'y' ) THEN
 
             DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
-              data(i,jde) = data(i,jde-1) 
+              data(i,jde  ) = data(i,jde-1) 
+              data(i,jde+1) = data(i,jde-1) 
+              data(i,jde+2) = data(i,jde-1) 
             ENDDO                               
 
           ELSE
 
             DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
               data(i,jde+1) = data(i,jde) 
+              data(i,jde+2) = data(i,jde) 
+              data(i,jde+3) = data(i,jde) 
             ENDDO                               
 
           ENDIF
@@ -825,6 +837,8 @@ CONTAINS
             DO j = jts-bdyzone, MIN(jte,jde+jstag)+bdyzone
             DO k = kts, k_end
               data(ids-1,k,j) = data(ids,k,j) !  here, data(0) = data(1), etc
+              data(ids-2,k,j) = data(ids,k,j)
+              data(ids-3,k,j) = data(ids,k,j)
             ENDDO
             ENDDO
 
@@ -842,7 +856,9 @@ CONTAINS
 
             DO j = jts-bdyzone, MIN(jte,jde+jstag)+bdyzone
             DO k = kts, k_end
-              data(ide,k,j) = data(ide-1,k,j)
+              data(ide  ,k,j) = data(ide-1,k,j)
+              data(ide+1,k,j) = data(ide-1,k,j)
+              data(ide+2,k,j) = data(ide-1,k,j)
             ENDDO
             ENDDO
 
@@ -852,6 +868,8 @@ CONTAINS
             DO j = MAX(jds,jts-1)-bdyzone, MIN(jte+1,jde+jstag)+bdyzone
             DO k = kts, k_end
               data(ide+1,k,j) = data(ide,k,j)
+              data(ide+2,k,j) = data(ide,k,j)
+              data(ide+3,k,j) = data(ide,k,j)
             ENDDO
             ENDDO
 
@@ -989,6 +1007,8 @@ CONTAINS
             DO k = kts, k_end
             DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
               data(i,k,jds-1) = data(i,k,jds) 
+              data(i,k,jds-2) = data(i,k,jds) 
+              data(i,k,jds-3) = data(i,k,jds) 
             ENDDO
             ENDDO
 
@@ -1005,7 +1025,9 @@ CONTAINS
 
             DO k = kts, k_end
             DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
-              data(i,k,jde) = data(i,k,jde-1) 
+              data(i,k,jde  ) = data(i,k,jde-1) 
+              data(i,k,jde+1) = data(i,k,jde-1) 
+              data(i,k,jde+2) = data(i,k,jde-1) 
             ENDDO                               
             ENDDO
 
@@ -1014,6 +1036,8 @@ CONTAINS
             DO k = kts, k_end
             DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
               data(i,k,jde+1) = data(i,k,jde) 
+              data(i,k,jde+2) = data(i,k,jde) 
+              data(i,k,jde+3) = data(i,k,jde) 
             ENDDO                               
             ENDDO
 

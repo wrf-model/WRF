@@ -4877,4 +4877,284 @@ END SUBROUTINE set_tend
 
     END SUBROUTINE rk_rayleigh_damp
 
+!==============================================================================
+!==============================================================================
+                                                                                
+      SUBROUTINE sixth_order_diffusion( name, field, tendency, mu, dt,  &
+                                        config_flags,                   &
+                                        diff_6th_opt, diff_6th_rate,    &
+                                        ids, ide, jds, jde, kds, kde,   &
+                                        ims, ime, jms, jme, kms, kme,   &
+                                        its, ite, jts, jte, kts, kte )
+                                                                                
+! History:       07 Jun 2006   Revised and generalized by Jason Knievel  
+!                25 Apr 2005   Original code by Jason Knievel, NCAR
+                                                                                
+! Purpose:       Apply 6th-order, monotonic (flux-limited), numerical
+!                diffusion to 3-d velocity and to scalars.
+                                                                                
+! References:    Ming Xue (MWR Aug 2000)
+!                Durran ("Numerical Methods for Wave Equations..." 1999)
+!                George Bryan (personal communication)
+ 
+!------------------------------------------------------------------------------
+! Begin: Declarations.
+
+    IMPLICIT NONE
+
+    INTEGER, INTENT(IN)  &
+    :: ids, ide, jds, jde, kds, kde,   &
+       ims, ime, jms, jme, kms, kme,   &
+       its, ite, jts, jte, kts, kte
+ 
+    TYPE(grid_config_rec_type), INTENT(IN)  &
+    :: config_flags
+ 
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT)  &
+    :: tendency
+ 
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN)  &
+    :: field
+ 
+    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN)  &
+    :: mu
+ 
+    REAL, INTENT(IN)  &
+    :: dt
+
+    REAL, INTENT(IN)  &
+    :: diff_6th_rate
+
+    INTEGER, INTENT(IN)  &
+    :: diff_6th_opt
+
+    CHARACTER(LEN=1) , INTENT(IN)  &
+    :: name
+
+    INTEGER  &
+    :: i, j, k,         &
+       i_start, i_end,  &
+       j_start, j_end,  &
+       k_start, k_end,  &
+       ktf
+ 
+    REAL  &
+    :: dflux_x_p0, dflux_y_p0,  &
+       dflux_x_p1, dflux_y_p1,  &
+       tendency_x, tendency_y,  &
+       mu_avg_p0, mu_avg_p1,    &
+       diff_6th_coef
+
+    LOGICAL  &
+    :: specified
+ 
+! End: Declarations.
+!------------------------------------------------------------------------------
+
+!------------------------------------------------------------------------------
+! Begin: Translate the diffusion rate into a diffusion coefficient.  See
+! Durran's text, section 2.4.3, then adjust for sixth-order diffusion (not
+! fourth) and for diffusion in two dimensions (not one).  For reference, a
+! rate of 1.0 would mean complete diffusion of a 2dx wave in one time step,
+! although application of the flux limiter reduces somewhat the effects of
+! diffusion for a given coefficient.
+
+    diff_6th_coef = diff_6th_rate * 0.015625 / ( 2.0 * dt )  
+
+! End: Translate diffusion rate.
+!------------------------------------------------------------------------------
+
+!------------------------------------------------------------------------------
+! Begin: Assign limits of spatial loops depending on variable to be diffused.
+! The halo regions are already filled with values by the time this subroutine
+! is called, which allows the stencil to extend beyond the domains' edges.
+
+    ktf = MIN( kte, kde-1 )
+
+    IF ( name .EQ. 'u' ) THEN
+
+      i_start = its
+      i_end   = ite
+      j_start = jts
+      j_end   = MIN(jde-1,jte)
+      k_start = kts
+      k_end   = ktf
+
+    ELSE IF ( name .EQ. 'v' ) THEN
+ 
+      i_start = its
+      i_end   = MIN(ide-1,ite)
+      j_start = jts
+      j_end   = jte
+      k_start = kts
+      k_end   = ktf
+ 
+    ELSE IF ( name .EQ. 'w' ) THEN
+
+      i_start = its
+      i_end   = MIN(ide-1,ite)
+      j_start = jts
+      j_end   = MIN(jde-1,jte)
+      k_start = kts+1
+      k_end   = ktf
+
+    ELSE
+
+      i_start = its
+      i_end   = MIN(ide-1,ite)
+      j_start = jts
+      j_end   = MIN(jde-1,jte)
+      k_start = kts
+      k_end   = ktf
+ 
+    ENDIF
+
+! End: Assignment of limits of spatial loops.
+!------------------------------------------------------------------------------
+
+!------------------------------------------------------------------------------
+! Begin: Loop across spatial dimensions.
+
+    DO j = j_start, j_end
+    DO k = k_start, k_end
+    DO i = i_start, i_end
+
+!------------------------------------------------------------------------------
+! Begin: Diffusion in x (i index).
+ 
+! Calculate the diffusive flux in x direction (from Xue's eq. 3).
+ 
+      dflux_x_p0 = (  10.0 * ( field(i,  k,j) - field(i-1,k,j) )    &
+                     - 5.0 * ( field(i+1,k,j) - field(i-2,k,j) )    &
+                     +       ( field(i+2,k,j) - field(i-3,k,j) ) )
+ 
+      dflux_x_p1 = (  10.0 * ( field(i+1,k,j) - field(i  ,k,j) )    &
+                     - 5.0 * ( field(i+2,k,j) - field(i-1,k,j) )    &
+                     +       ( field(i+3,k,j) - field(i-2,k,j) ) )
+ 
+! If requested in the namelist (diff_6th_opt=2), prohibit up-gradient diffusion
+! (variation on Xue's eq. 10).
+
+      IF ( diff_6th_opt .EQ. 2 ) THEN
+ 
+        IF ( dflux_x_p0 * ( field(i  ,k,j)-field(i-1,k,j) ) .LE. 0.0 ) THEN
+          dflux_x_p0 = 0.0
+        END IF
+ 
+        IF ( dflux_x_p1 * ( field(i+1,k,j)-field(i  ,k,j) ) .LE. 0.0 ) THEN
+          dflux_x_p1 = 0.0
+        END IF
+
+      END IF
+
+! Apply 6th-order diffusion in x direction.
+ 
+      IF      ( name .EQ. 'u' ) THEN
+        mu_avg_p0 = mu(i-1,j)
+        mu_avg_p1 = mu(i  ,j)
+      ELSE IF ( name .EQ. 'v' ) THEN
+        mu_avg_p0 = 0.25 * (       &
+                    mu(i-1,j-1) +  &
+                    mu(i  ,j-1) +  &
+                    mu(i-1,j  ) +  &
+                    mu(i  ,j  ) )
+        mu_avg_p1 = 0.25 * (       &
+                    mu(i  ,j-1) +  &
+                    mu(i+1,j-1) +  &
+                    mu(i  ,j  ) +  &
+                    mu(i+1,j  ) )
+      ELSE
+        mu_avg_p0 = 0.5 * (        &
+                    mu(i-1,j) +    &
+                    mu(i  ,j) )
+        mu_avg_p1 = 0.5 * (        &
+                    mu(i  ,j) +    &
+                    mu(i+1,j) )
+      END IF
+ 
+      tendency_x = diff_6th_coef *  &
+                 ( ( mu_avg_p1 * dflux_x_p1 ) - ( mu_avg_p0 * dflux_x_p0 ) )
+ 
+! End: Diffusion in x.
+!------------------------------------------------------------------------------
+ 
+!------------------------------------------------------------------------------
+! Begin: Diffusion in y (j index).
+ 
+! Calculate the diffusive flux in y direction (from Xue's eq. 3).
+ 
+      dflux_y_p0 = (  10.0 * ( field(i,k,j  ) - field(i,k,j-1) )    &
+                     - 5.0 * ( field(i,k,j+1) - field(i,k,j-2) )    &
+                     +       ( field(i,k,j+2) - field(i,k,j-3) ) )
+ 
+      dflux_y_p1 = (  10.0 * ( field(i,k,j+1) - field(i,k,j  ) )    &
+                     - 5.0 * ( field(i,k,j+2) - field(i,k,j-1) )    &
+                     +       ( field(i,k,j+3) - field(i,k,j-2) ) )
+ 
+! If requested in the namelist (diff_6th_opt=2), prohibit up-gradient diffusion
+! (variation on Xue's eq. 10).
+
+      IF ( diff_6th_opt .EQ. 2 ) THEN
+ 
+        IF ( dflux_y_p0 * ( field(i,k,j  )-field(i,k,j-1) ) .LE. 0.0 ) THEN
+          dflux_y_p0 = 0.0
+        END IF
+ 
+        IF ( dflux_y_p1 * ( field(i,k,j+1)-field(i,k,j  ) ) .LE. 0.0 ) THEN
+          dflux_y_p1 = 0.0
+        END IF
+
+      END IF
+ 
+! Apply 6th-order diffusion in y direction.
+ 
+      IF      ( name .EQ. 'u' ) THEN
+        mu_avg_p0 = 0.25 * (       &
+                    mu(i-1,j-1) +  &
+                    mu(i  ,j-1) +  &
+                    mu(i-1,j  ) +  &
+                    mu(i  ,j  ) )
+        mu_avg_p1 = 0.25 * (       &
+                    mu(i-1,j  ) +  &
+                    mu(i  ,j  ) +  &
+                    mu(i-1,j+1) +  &
+                    mu(i  ,j+1) )
+      ELSE IF ( name .EQ. 'v' ) THEN
+        mu_avg_p0 = mu(i,j-1)
+        mu_avg_p1 = mu(i,j  )
+      ELSE
+        mu_avg_p0 = 0.5 * (      &
+                    mu(i,j-1) +  &
+                    mu(i,j  ) )
+        mu_avg_p1 = 0.5 * (      &
+                    mu(i,j  ) +  &
+                    mu(i,j+1) )
+      END IF
+ 
+      tendency_y = diff_6th_coef *  &
+                 ( ( mu_avg_p1 * dflux_y_p1 ) - ( mu_avg_p0 * dflux_y_p0 ) )
+ 
+! End: Diffusion in y.
+!------------------------------------------------------------------------------
+ 
+!------------------------------------------------------------------------------
+! Begin: Combine diffusion in x and y.
+     
+      tendency(i,k,j) = tendency(i,k,j) + tendency_x + tendency_y
+ 
+! End: Combine diffusion in x and y.
+!------------------------------------------------------------------------------
+
+    ENDDO
+    ENDDO
+    ENDDO
+
+! End: Loop across spatial dimensions.
+!------------------------------------------------------------------------------
+ 
+    END SUBROUTINE sixth_order_diffusion
+ 
+!==============================================================================
+!==============================================================================
+
 END MODULE module_big_step_utilities_em

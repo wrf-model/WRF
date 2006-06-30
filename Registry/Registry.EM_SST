@@ -123,7 +123,7 @@ i1       real   ph_save        ikj     dyn_em      1         Z
 state    real   t              ikjb     dyn_em      2         -     \
        i01rhusdf=(bdy_interp:dt)   "t"      "perturbation potential temperature (theta-t0)" "K"
 
-state    real   t_init         ikj     dyn_em      1         -      r        "t_init" "initial potential temperature" "K"
+state    real   t_init         ikj     dyn_em      1         -      ir       "t_init" "initial potential temperature" "K"
 i1       real   t_tend         ikj     dyn_em      1         -  
 i1       real   t_tendf        ikj     dyn_em      1         -  
 state    real   tp             ikj     dyn_em      2         -  
@@ -591,7 +591,7 @@ state    real  mp_restart_state   p      misc        1         -      r       "M
 state    real  tbpvs_state        p      misc        1         -      r        "TBPVS_STATE"           "STATE FOR ETAMPNEW MICROPHYSICS"
 state    real  tbpvs0_state       p      misc        1         -      r        "TBPVS0_STATE"          "STATE FOR ETAMPNEW MICROPHYSICS"
 
-# State variables for landuse_init, Must be declared state because the are read in and needed for restarts. Had been SAVE vars in 
+# State variables for landuse_init, Must be declared state because they are read in and needed for restarts. Had been SAVE vars in
 # landuse_init (phys/module_physics_init.F)
 state    integer  landuse_isice   -      misc       -          -     r
 state    integer  landuse_lucats  -      misc       -          -     r
@@ -650,7 +650,7 @@ state   real  defor13          ikj      misc        1         z     r         "d
 state   real  defor23          ikj      misc        1         z     r         "defor23"               "DEFORMATION 23"              "s-1"      
 state   real   xkmv            ikj      misc        1         -     r         "xkmv"                  "VERTICAL EDDY VISCOSITY"     "m2 s-1"      
 state   real   xkmh            ikj      misc        1         -     r         "xkmh"                  "HORIZONTAL EDDY VISCOSITY"   "m2 s-1"      
-state   real   xkmhd           ikj      misc        1         -     r         "xkmhd"                 "HORIZONTAL EDDY DIFFUSIVITY"     "m2 s-1"      
+state   real   xkmhd           ikj      misc        1         -     r         "xkmhd"                 "HORIZONTAL EDDY DIFFUSIVITY" "m2 s-1"      
 state   real   xkhv            ikj      misc        1         -     r         "xkhv"                  "VERTICAL EDDY DIFFUSIVITY OF HEAT"                               "m2 s-1"      
 state   real   xkhh            ikj      misc        1         -     r         "xkhh"                  "HORIZONTAL EDDY DIFFUSIVITY OF HEAT"                             "m2 s-1"      
 state   real    div            ikj      misc        1         -     r         "div"                   "DIVERGENCE"                                                      "s-1"
@@ -1123,6 +1123,8 @@ rconfig   real    zdamp                   namelist,dynamics	max_domains    5000.
 rconfig   real    dampcoef                namelist,dynamics     max_domains    0.      h    "dampcoef"              ""      ""
 rconfig   real    khdif                   namelist,dynamics	max_domains    0       h    "khdif"         ""      ""
 rconfig   real    kvdif                   namelist,dynamics	max_domains    0       h    "kvdif"         ""      ""
+rconfig   real    diff_6th_rate           namelist,dynamics     max_domains    0.12    h    "diff_6th_rate" "rate 6th-order numerical diffusion"
+rconfig   integer diff_6th_opt            namelist,dynamics     max_domains    0      irh   "diff_6th_opt" "switch for 6th-order numerical diffusion"
 rconfig   real    smdiv                   namelist,dynamics	max_domains    0.1     h    "smdiv"         ""      ""
 rconfig   real    emdiv                   namelist,dynamics	max_domains    0.01    h    "emdiv"         ""      ""
 rconfig   real    epssm                   namelist,dynamics	max_domains    .1      h    "epssm"         ""      ""
@@ -1137,7 +1139,7 @@ rconfig   real    mix_cr_len              namelist,dynamics	max_domains    200. 
 rconfig   real    tke_upper_bound         namelist,dynamics	max_domains    1000.   h    "tke_upper_bound"            ""      ""
 rconfig   real    kh_tke_upper_bound      namelist,dynamics	max_domains    1000.   h    "kh_tke_upper_bound"         ""      ""
 rconfig   real    kv_tke_upper_bound      namelist,dynamics	max_domains    1000.   h    "kv_tke_upper_bound"         ""      ""
-rconfig   real    tke_drag_coefficient      namelist,dynamics	max_domains    0.      h    "tke_drag_coefficient"       ""      "dimensionless"
+rconfig   real    tke_drag_coefficient    namelist,dynamics	max_domains    0.      h    "tke_drag_coefficient"       ""      "dimensionless"
 rconfig   real    tke_heat_flux           namelist,dynamics	max_domains    0.      h    "tke_heat_flux"              ""      "K m s-1"
 rconfig   logical pert_coriolis           namelist,dynamics	max_domains  .false.  irh  "pert_coriolis"    ""   ""
 rconfig   logical mix_full_fields         namelist,dynamics     max_domains  .false.  irh  "mix_full_field"   ""   ""

@@ -1088,6 +1088,7 @@ BENCH_START(rk_tend_tim)
                          msfu, msfv, msft, f, e, sina, cosa,              &
                          fnm, fnp, rdn, rdnw,                             &
                          grid%dt, rdx, rdy, grid%khdif, grid%kvdif, xkmhd,               &
+                         grid%diff_6th_opt, grid%diff_6th_rate,           &
                          grid%dampcoef,grid%zdamp,config_flags%damp_opt,                         &
                          cf1, cf2, cf3, cfn, cfn1, num_3d_m,              &
                          config_flags%non_hydrostatic, leapfrog,                       &
@@ -1770,6 +1771,7 @@ BENCH_START(rk_scalar_tend_tim)
                               msfu, msfv, msft,                 &
                               rdx, rdy, rdn, rdnw, grid%khdif,       &
                               grid%kvdif, xkmhd,                     &
+                              grid%diff_6th_opt, grid%diff_6th_rate, &
                               leapfrog,                         &
                               ids, ide, jds, jde, kds, kde,     &
                               ims, ime, jms, jme, kms, kme,     &
@@ -1894,6 +1896,7 @@ BENCH_START(tke_adv_tim)
                            msfu, msfv, msft,                 &
                            rdx, rdy, rdn, rdnw, grid%khdif,       &
                            grid%kvdif, xkmhd,                     &
+                           grid%diff_6th_opt, grid%diff_6th_rate, &
                            leapfrog,                         &
                            ids, ide, jds, jde, kds, kde,     &
                            ims, ime, jms, jme, kms, kme,     &
@@ -1974,6 +1977,7 @@ BENCH_START(chem_adv_tim)
                              msfu, msfv, msft,                 &
                              rdx, rdy, rdn, rdnw,              &
                              grid%khdif, grid%kvdif, xkmhd,    &
+                             grid%diff_6th_opt, grid%diff_6th_rate,      &
                              leapfrog,                         &
                              ids, ide, jds, jde, kds, kde,     &
                              ims, ime, jms, jme, kms, kme,     &
@@ -2099,6 +2103,7 @@ BENCH_END(chem_adv_tim)
                              msfu, msfv, msft,                 &
                              rdx, rdy, rdn, rdnw,              &
                              grid%khdif, grid%kvdif, xkmhd,              &
+                             grid%diff_6th_opt, grid%diff_6th_rate,      &
                              leapfrog,                         &
                              ids, ide, jds, jde, kds, kde,     &
                              ims, ime, jms, jme, kms, kme,     &

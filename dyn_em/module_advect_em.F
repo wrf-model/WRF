@@ -187,20 +187,20 @@ SUBROUTINE advect_u   ( u, u_old, tendency,            &
    REAL    :: q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua, vel
 
    flux4(q_im2, q_im1, q_i, q_ip1, ua) =                         &
-            (7./12.)*(q_i + q_im1) - (1./12.)*(q_ip1 + q_im2)
+          ( 7.*(q_i + q_im1) - (q_ip1 + q_im2) )/12.0
 
    flux3(q_im2, q_im1, q_i, q_ip1, ua) =                         &
             flux4(q_im2, q_im1, q_i, q_ip1, ua) +                &
-            sign(1.,ua)*(1./12.)*((q_ip1 - q_im2)-3.*(q_i-q_im1))
+            sign(1.,ua)*((q_ip1 - q_im2)-3.*(q_i-q_im1))/12.0
 
    flux6(q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua) =           &
-            (37./60.)*(q_i+q_im1) - (2./15.)*(q_ip1+q_im2)       &
-            +(1./60.)*(q_ip2+q_im3)
+                      ( 37.*(q_i+q_im1) - 8.*(q_ip1+q_im2)       &
+                     +(q_ip2+q_im3) )/60.0
 
    flux5(q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua) =           &
            flux6(q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua)     &
-            -sign(1.,ua)*(1./60.)*(                              &
-              (q_ip2-q_im3)-5.*(q_ip1-q_im2)+10.*(q_i-q_im1) )
+            -sign(1.,ua)*(                              &
+              (q_ip2-q_im3)-5.*(q_ip1-q_im2)+10.*(q_i-q_im1) )/60.0
 
 
    LOGICAL :: specified
@@ -1476,20 +1476,20 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
    REAL    :: q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua, vel
 
    flux4(q_im2, q_im1, q_i, q_ip1, ua) =                     &
-            (7./12.)*(q_i + q_im1) - (1./12.)*(q_ip1 + q_im2)
+          ( 7.*(q_i + q_im1) - (q_ip1 + q_im2) )/12.0
 
    flux3(q_im2, q_im1, q_i, q_ip1, ua) =                     &
            flux4(q_im2, q_im1, q_i, q_ip1, ua) +                &
-           sign(1.,ua)*(1./12.)*((q_ip1 - q_im2)-3.*(q_i-q_im1))
+           sign(1.,ua)*((q_ip1 - q_im2)-3.*(q_i-q_im1))/12.0
 
    flux6(q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua) =       &
-            (37./60.)*(q_i+q_im1) - (2./15.)*(q_ip1+q_im2)      &
-            +(1./60.)*(q_ip2+q_im3)
+                      ( 37.*(q_i+q_im1) - 8.*(q_ip1+q_im2)   &
+                     +(q_ip2+q_im3) )/60.0
 
    flux5(q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua) =       &
            flux6(q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua)    &
-            -sign(1.,ua)*(1./60.)*(                             &
-              (q_ip2-q_im3)-5.*(q_ip1-q_im2)+10.*(q_i-q_im1) )
+            -sign(1.,ua)*(                             &
+              (q_ip2-q_im3)-5.*(q_ip1-q_im2)+10.*(q_i-q_im1) )/60.0
 
 
 
@@ -2783,20 +2783,20 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
    REAL    :: q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua, vel
 
       flux4(q_im2, q_im1, q_i, q_ip1, ua) =                     &
-            (7./12.)*(q_i + q_im1) - (1./12.)*(q_ip1 + q_im2)
+          ( 7.*(q_i + q_im1) - (q_ip1 + q_im2) )/12.0
 
       flux3(q_im2, q_im1, q_i, q_ip1, ua) =                     &
            flux4(q_im2, q_im1, q_i, q_ip1, ua) +                &
-           sign(1.,ua)*(1./12.)*((q_ip1 - q_im2)-3.*(q_i-q_im1))
+           sign(1.,ua)*((q_ip1 - q_im2)-3.*(q_i-q_im1))/12.0
 
       flux6(q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua) =       &
-            (37./60.)*(q_i+q_im1) - (2./15.)*(q_ip1+q_im2)      &
-            +(1./60.)*(q_ip2+q_im3)
+          ( 37.*(q_i+q_im1) - 8.*(q_ip1+q_im2)                  &
+            +(q_ip2+q_im3) )/60.0
 
       flux5(q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua) =       &
            flux6(q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua)    &
-            -sign(1.,ua)*(1./60.)*(                             &
-              (q_ip2-q_im3)-5.*(q_ip1-q_im2)+10.*(q_i-q_im1) )
+            -sign(1.,ua)*(                             &
+              (q_ip2-q_im3)-5.*(q_ip1-q_im2)+10.*(q_i-q_im1) )/60.0
 
 
    LOGICAL :: specified
@@ -3953,20 +3953,20 @@ SUBROUTINE advect_w    ( w, w_old, tendency,            &
    REAL    :: q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua, vel
 
       flux4(q_im2, q_im1, q_i, q_ip1, ua) =                     &
-            (7./12.)*(q_i + q_im1) - (1./12.)*(q_ip1 + q_im2)
+          ( 7.*(q_i + q_im1) - (q_ip1 + q_im2) )/12.0
 
       flux3(q_im2, q_im1, q_i, q_ip1, ua) =                     &
            flux4(q_im2, q_im1, q_i, q_ip1, ua) +                &
-           sign(1.,ua)*(1./12.)*((q_ip1 - q_im2)-3.*(q_i-q_im1))
+           sign(1.,ua)*((q_ip1 - q_im2)-3.*(q_i-q_im1))/12.0
 
       flux6(q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua) =       &
-            (37./60.)*(q_i+q_im1) - (2./15.)*(q_ip1+q_im2)      &
-            +(1./60.)*(q_ip2+q_im3)
+                      ( 37.*(q_i+q_im1) - 8.*(q_ip1+q_im2)      &
+                     +(q_ip2+q_im3) )/60.0
 
       flux5(q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua) =       &
            flux6(q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua)    &
-            -sign(1.,ua)*(1./60.)*(                             &
-              (q_ip2-q_im3)-5.*(q_ip1-q_im2)+10.*(q_i-q_im1) )
+            -sign(1.,ua)*(                             &
+              (q_ip2-q_im3)-5.*(q_ip1-q_im2)+10.*(q_i-q_im1) )/60.0
 
 
    LOGICAL :: specified

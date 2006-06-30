@@ -10,14 +10,16 @@ SUBROUTINE microphysics_zero_out (                                       &
                       ,ims,ime, jms,jme, kms,kme                         &
                       ,its,ite, jts,jte, kts,kte                         )
 
+
    USE module_state_description
    USE module_configure
    USE module_wrf_error
 
+   IMPLICIT NONE
    TYPE (grid_config_rec_type) , INTENT(IN)          :: config_flags
    INTEGER,      INTENT(IN   )    ::       ids,ide, jds,jde, kds,kde
    INTEGER,      INTENT(IN   )    ::       ims,ime, jms,jme, kms,kme
-   INTEGER,      INTENT(IN   )    ::                         kts,kte
+   INTEGER,      INTENT(IN   )    ::       its,ite, jts,jte, kts,kte
 
    INTEGER,      INTENT(IN   )    :: n_moist
 

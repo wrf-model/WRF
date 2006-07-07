@@ -30,8 +30,8 @@
 #BSUB -o reg.out                        # output filename (%J to add job id)
 #BSUB -e reg.err                        # error filename
 #BSUB -J reg.test                       # job name
-# #BSUB -q premium                        # queue
-#BSUB -q share                          # queue
+#BSUB -q premium                        # queue
+#BSUB -W 6:00                           # wallclock time
 
 # QSUB -q ded_4             # submit to 4 proc
 # QSUB -l mpp_p=4           # request 4 processors

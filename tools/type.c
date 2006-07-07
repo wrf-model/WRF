@@ -158,6 +158,12 @@ get_entry_r ( char * name , char * use , node_t * node )
     t1 = NULL ;
     if ((t1 = index(tmp,'%'))!= NULL ) *t1 = '\0' ;
 
+    /* first check for exact match */
+    if ( !strcmp( p->name , tmp ) )
+    {
+      return(p) ;
+    }
+
     if ( p->ntl > 1 )
     {
       if (( t2 = rindex( tmp , '_' )) != NULL ) 
@@ -167,6 +173,17 @@ get_entry_r ( char * name , char * use , node_t * node )
          if ((*(t2+1) >= '0' && *(t2+1) <= '9') && *(t2+2)=='\0') *t2 = '\0' ; 
       }
     }
+
+    /* also allow _tend */
+    if (( t2 = rindex( tmp , '_' )) != NULL ) {
+         if (!strcmp(t2,"_tend")) *t2 = '\0' ;
+    }
+
+    /* also allow _tend */
+    if (( t2 = rindex( tmp , '_' )) != NULL ) {
+         if (!strcmp(t2,"_old")) *t2 = '\0' ;
+    }
+
     if ( !strcmp( p->name , tmp ) )
     {
       if ( t1 != NULL ) return( get_entry_r( t1+1 , use , p->type->fields ) ) ;

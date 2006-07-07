@@ -36,6 +36,7 @@
    !
    !  Definitions of dummy arguments to solve
 #include <em_dummy_decl.inc>
+#define NO_I1_OLD
 #include <em_i1_decl.inc>
 
    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags

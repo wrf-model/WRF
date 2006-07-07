@@ -66,16 +66,6 @@ SUBROUTINE solve_em ( grid , config_flags , &
 ! storage for tendencies and decoupled state (generated from Registry)
 #include <em_i1_decl.inc>
 
-! Previous time level of tracer arrays now defined as i1 variables;
-! the state 4d arrays now redefined as 1-time level arrays in Registry.
-! Benefit: save memory in nested runs, since only 1 domain is active at a
-! time.  Potential problem on stack-limited architectures: increases
-! amount of data on program stack by making these automatic arrays.
-
-   REAL ,DIMENSION(grid%sm31:grid%em31,grid%sm32:grid%em32,grid%sm33:grid%em33,num_moist)  :: moist_old
-   REAL ,DIMENSION(grid%sm31:grid%em31,grid%sm32:grid%em32,grid%sm33:grid%em33,num_chem)   :: chem_old
-   REAL ,DIMENSION(grid%sm31:grid%em31,grid%sm32:grid%em32,grid%sm33:grid%em33,num_scalar) :: scalar_old
-
    INTEGER :: rc 
    INTEGER :: number_of_small_timesteps, rk_step
    INTEGER :: klevel,ijm,ijp,i,j,k,size1,size2    ! for prints/plots only

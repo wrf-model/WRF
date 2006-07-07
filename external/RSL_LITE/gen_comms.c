@@ -314,7 +314,7 @@ fprintf(fp,"CALL wrf_debug(3,wrf_err_message)\n") ;
                     fprintf(fp,"ips, ipe, jps, jpe, %d, %d              )\n",dimd->coord_start,dimd->coord_end) ;
                   }
                 }
-              } else {
+              } else if ( q->ndims == 2 ) {
 #if 0
 fprintf(fp,"write(wrf_err_message,*)' d ',ids, ide, jds, jde, 1, 1\n" ) ;
 fprintf(fp,"CALL wrf_debug(3,wrf_err_message)\n") ;
@@ -328,6 +328,8 @@ fprintf(fp,"CALL wrf_debug(3,wrf_err_message)\n") ;
                 fprintf(fp,"ids, ide, jds, jde, 1  , 1  ,             &\n") ;
                 fprintf(fp,"ims, ime, jms, jme, 1  , 1  ,             &\n") ;
                 fprintf(fp,"ips, ipe, jps, jpe, 1  , 1                )\n") ;
+              } else {
+                fprintf(stderr,"Registry WARNING: %s is neither 2 nor 3 dimensional\n",t2) ;
               }
 #if 0
 fprintf(fp,"CALL wrf_debug(3,'back from %s')\n", packname) ;

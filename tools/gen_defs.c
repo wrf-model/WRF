@@ -107,6 +107,18 @@ gen_i1_decls ( char * dn )
                     dimspec ,
                     "" ,
                     fname ) ;
+	sprintf(fname,"%s_old",p->name) ;
+        sprintf(post,",num_%s)",p->name) ;
+	dimspec=dimension_with_ranges( "grid%",",DIMENSION(",t2,p,post,"" ) ;
+        /*          type dim pdecl   name */
+        fprintf(fp, "#ifndef NO_I1_OLD\n") ;
+        fprintf(fp, "%-10s%-20s%-10s :: %s\n",
+                    field_type( t1, p ) ,
+                    dimspec ,
+                    "" ,
+                    fname ) ;
+        fprintf(fp, "#endif\n") ;
+
       }
     }
     close_the_file( fp ) ;

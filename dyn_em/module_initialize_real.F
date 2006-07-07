@@ -196,6 +196,18 @@ integer::oops1,oops2
 
       grid%real_data_init_type = model_config_rec%real_data_init_type
 
+      !  Protect against bad tsk values over water by supplying sst (if it is 
+      !  available, and if the sst is reasonable).
+
+      DO j = jts, MIN(jde-1,jte)
+         DO i = its, MIN(ide-1,ite)
+            IF ( ( landmask(i,j) .LT. 0.5 ) .AND. ( flag_sst .EQ. 1 ) .AND. &
+                 ( sst(i,j) .GT. 200. ) .AND. ( sst(i,j) .LT. 350. ) ) THEN
+               tsk(i,j) = sst(i,j)
+            ENDIF            
+         END DO
+      END DO
+
       !  Save the TSK field for later use in the sea ice surface temperature
       !  for the Noah LSM scheme.
 
@@ -474,7 +486,8 @@ integer::oops1,oops2
       lqmi(1:num_soil_top_cat) = &
       (/0.045, 0.057, 0.065, 0.067, 0.034, 0.078, 0.10,     &
         0.089, 0.095, 0.10,  0.070, 0.068, 0.078, 0.0,      &
-        0.004, 0.065, 0.020, 0.004, 0.008 /)
+        0.004, 0.065 /)
+!       0.004, 0.065, 0.020, 0.004, 0.008 /)  !  has extra levels for playa, lava, and white sand
 
       !  At the initial time we care about values of soil moisture and temperature, other times are
       !  ignored by the model, so we ignore them, too.  

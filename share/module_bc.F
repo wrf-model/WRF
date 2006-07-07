@@ -251,7 +251,7 @@ CONTAINS
       IF ((variable == 'u') .or. (variable == 'v') .or.  &
           (variable == 'w') .or. (variable == 't') .or.  &
           (variable == 'x') .or. (variable == 'y') .or.  &
-          (variable == 'r')                        ) open_bc_copy = .true.
+          (variable == 'r') .or. (variable == 'p') ) open_bc_copy = .true.
 
 !  begin, first set a staggering variable
 
@@ -666,7 +666,8 @@ CONTAINS
           (variable == 'w') .or. (variable == 't') .or.     &
           (variable == 'd') .or. (variable == 'e') .or. &
           (variable == 'x') .or. (variable == 'y') .or. &
-          (variable == 'f') .or. (variable == 'r') ) open_bc_copy = .true.
+          (variable == 'f') .or. (variable == 'r') .or. &
+          (variable == 'p')                        ) open_bc_copy = .true.
 
 !  begin, first set a staggering variable
 

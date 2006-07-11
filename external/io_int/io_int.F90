@@ -1237,11 +1237,38 @@ SUBROUTINE ext_int_get_var_ti_char ( DataHandle,Element,  Varname, Data,  Status
   IF ( int_valid_handle (DataHandle) ) THEN
     IF ( int_handle_in_use( DataHandle ) ) THEN
       READ( unit=DataHandle ) hdrbuf
+print *,'DAVE ==========================='
+print *,'DAVE int_var_ti_real, int_var_ti_logical, int_var_ti_char , int_var_ti_double=',&
+              int_var_ti_real, int_var_ti_logical, int_var_ti_char , int_var_ti_double
+print *,'DAVE hdrbuf (2) = ',hdrbuf(2)
       IF ( hdrbuf(2) .EQ. int_var_ti_char ) THEN
         CALL int_get_ti_header_char( hdrbuf, hdrbufsize, itypesize, &
                                 locDataHandle, locElement, locVarName, Data, code )
+        IF ( .NOT. ( code .EQ. int_var_ti_real    .OR.   code .EQ. int_var_ti_logical .OR. &
+                     code .EQ. int_var_ti_char    .OR.   code .EQ. int_var_ti_double ) ) THEN 
+print *,'DAVE code = ',code
+print *,'in backspace #1'
+print *,'DAVE DataHandle=',DataHandle
+            BACKSPACE ( unit=DataHandle )
+            Status = 1
+print *,'DAVE return #1'
+            return
+        ENDIF
+      ELSE
+print *,'in backspace #2'
+print *,'DAVE DataHandle=',DataHandle
+        BACKSPACE ( unit=DataHandle )
+        Status = 1
+print *,'DAVE return #2'
+        return
       ENDIF
+    ELSE
+      Status = 1
+      return
     ENDIF
+  ELSE
+    Status = 1
+    return
   ENDIF
   Status = 0
 RETURN

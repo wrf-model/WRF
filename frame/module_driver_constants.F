@@ -42,6 +42,10 @@ MODULE module_driver_constants
 
    INTEGER , PARAMETER :: max_moves       =   50
 
+   !  The maximum number of eta levels
+
+   INTEGER , PARAMETER :: max_eta         =   501
+
    !  2. Following related to driver leve data structures for DM_PARALLEL communications
 
 #ifdef DM_PARALLEL

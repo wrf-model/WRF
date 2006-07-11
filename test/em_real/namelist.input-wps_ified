@@ -1,0 +1,132 @@
+ &time_control
+ run_days                            = 0,
+ run_hours                           = 1, 
+ run_minutes                         = 0,
+ run_seconds                         = 0,
+ start_year                          = 2006, 2006, 2000,
+ start_month                         = 06,   06,   01,
+ start_day                           = 19,   19,   24,
+ start_hour                          = 12,   12,   12,
+ start_minute                        = 00,   00,   00,
+ start_second                        = 00,   00,   00,
+ end_year                            = 2006, 2006, 2000,
+ end_month                           = 06,   06,   01,
+ end_day                             = 20,   20,   25,
+ end_hour                            = 12,   12,   12,
+ end_minute                          = 00,   00,   00,
+ end_second                          = 00,   00,   00,
+ interval_seconds                    = 21600
+ input_from_file                     = .true.,.false.,.false.,
+ history_interval                    = 60,   60,   60,
+ frames_per_outfile                  = 1, 1, 1000,
+ restart                             = .false.,
+ restart_interval                    = 5000,
+ auxinput1_inname                    = "met_em.d<domain>.<date>"
+ io_form_history                     = 2
+ io_form_restart                     = 2
+ io_form_input                       = 2
+ io_form_auxinput1                   = 2
+ io_form_boundary                    = 2
+ debug_level                         = 0
+ /
+ auxinput1_inname                    = "wrf_real_input_em.d<domain>.<date>"
+
+ &domains
+ time_step                           = 180
+ time_step_fract_num                 = 0,
+ time_step_fract_den                 = 1,
+ max_dom                             = 1,
+ s_we                                = 1,     1,     1,
+ e_we                                = 100,   100,   94,
+ s_sn                                = 1,     1,     1,
+ e_sn                                = 80,    100,   91,
+ s_vert                              = 1,     1,     1,
+ e_vert                              = 35,    35,    35,
+ num_vert_levels                     = 40
+ dx                                  = 30000, 10000,  3333,
+ dy                                  = 30000, 10000,  3333,
+ grid_id                             = 1,     2,     3,
+ parent_id                           = 0,     1,     2,
+ i_parent_start                      = 0,     33,    30,
+ j_parent_start                      = 0,     27,    30,
+ parent_grid_ratio                   = 1,     3,     3,
+ parent_time_step_ratio              = 1,     3,     3,
+ feedback                            = 1,
+ smooth_option                       = 0
+ /
+ eta_levels                          = 1.000, 0.993, 0.983, 0.970, 0.954, 
+                                       0.934, 0.909, 0.880, 0.845, 0.807, 
+                                       0.765, 0.719, 0.672, 0.622, 0.571, 
+                                       0.520, 0.468, 0.420, 0.376, 0.335, 
+                                       0.298, 0.263, 0.231, 0.202, 0.175, 
+                                       0.150, 0.127, 0.106, 0.088, 0.070, 
+                                       0.055, 0.040, 0.026, 0.013, 0.000
+
+ &physics
+ mp_physics                          = 3,     3,     3,
+ ra_lw_physics                       = 1,     1,     1,
+ ra_sw_physics                       = 1,     1,     1,
+ radt                                = 30,    30,    30,
+ sf_sfclay_physics                   = 1,     1,     1,
+ sf_surface_physics                  = 2,     1,     1,
+ bl_pbl_physics                      = 1,     1,     1,
+ bldt                                = 0,     0,     0,
+ cu_physics                          = 0,     1,     0,
+ cudt                                = 5,     5,     5,
+ isfflx                              = 1,
+ ifsnow                              = 0,
+ icloud                              = 1,
+ surface_input_source                = 1,
+ num_soil_layers                     = 4,
+ maxiens                             = 1,
+ maxens                              = 1,
+ maxens2                             = 1,
+ maxens3                             = 1,
+ ensdim                              = 1,
+ /
+
+ &dynamics
+ dyn_opt                             = 2,
+ rk_ord                              = 3,
+ w_damping                           = 0,
+ diff_opt                            = 0,
+ km_opt                              = 1,
+ damp_opt                            = 0,
+ base_temp                           = 290.
+ zdamp                               = 5000.,  5000.,  5000.,
+ dampcoef                            = 0.01,   0.01,   0.01
+ khdif                               = 0,      0,      0,
+ kvdif                               = 0,      0,      0,
+ smdiv                               = 0.1,    0.1,    0.1,
+ emdiv                               = 0.01,   0.01,   0.01,
+ epssm                               = 0.1,    0.1,    0.1
+ non_hydrostatic                     = .true., .true., .true.,
+ time_step_sound                     = 4,      4,      4,
+ h_mom_adv_order                     = 5,      5,      5,
+ v_mom_adv_order                     = 3,      3,      3,
+ h_sca_adv_order                     = 5,      5,      5,
+ v_sca_adv_order                     = 3,      3,      3,
+ /
+
+ &bdy_control
+ spec_bdy_width                      = 5,
+ spec_zone                           = 1,
+ relax_zone                          = 4,
+ specified                           = .true., .false.,.false.,
+ periodic_x                          = .false.,.false.,.false.,
+ symmetric_xs                        = .false.,.false.,.false.,
+ symmetric_xe                        = .false.,.false.,.false.,
+ open_xs                             = .false.,.false.,.false.,
+ open_xe                             = .false.,.false.,.false.,
+ periodic_y                          = .false.,.false.,.false.,
+ symmetric_ys                        = .false.,.false.,.false.,
+ symmetric_ye                        = .false.,.false.,.false.,
+ open_ys                             = .false.,.false.,.false.,
+ open_ye                             = .false.,.false.,.false.,
+ nested                              = .false., .true., .true.,
+ /
+
+ &namelist_quilt
+ nio_tasks_per_group = 0,
+ nio_groups = 1,
+ /

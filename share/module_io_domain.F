@@ -482,7 +482,7 @@ SUBROUTINE construct_filename2( result , basename , fld1 , len1 , date_char )
   RETURN
 END SUBROUTINE construct_filename2
 
-! this version looks for <date> and <domain> in the basenmae and replaces with the arguments
+! this version looks for <date> and <domain> in the basename and replaces with the arguments
 
 SUBROUTINE construct_filename2a( result , basename , fld1 , len1 , date_char )
   IMPLICIT NONE
@@ -535,6 +535,68 @@ SUBROUTINE construct_filename3 ( result , basename , fld1 , len1 , fld2 , len2, 
   RETURN
 END SUBROUTINE construct_filename3
 
+SUBROUTINE construct_filename4( result , basename , fld1 , len1 , date_char , io_form )
+  IMPLICIT NONE
+  CHARACTER*(*) :: result
+  CHARACTER*(*) :: basename
+  CHARACTER*(*) :: date_char
+
+  INTEGER , INTENT(IN) :: fld1 , len1 , io_form
+  CHARACTER*64         :: t1, zeros
+  CHARACTER*4          :: ext
+  CALL zero_pad ( t1 , fld1 , len1 )
+  IF      ( io_form .EQ. 1 ) THEN
+     ext = '.int'
+  ELSE IF ( io_form .EQ. 2 ) THEN
+     ext = '.nc '
+  ELSE IF ( io_form .EQ. 5 ) THEN
+     ext = '.gb '
+  ELSE
+     CALL wrf_error_fatal ('improper io_form')
+  END IF
+  result = TRIM(basename) // ".d" // TRIM(t1) // "." // TRIM(date_char) // TRIM(ext)
+  RETURN
+END SUBROUTINE construct_filename4
+
+! this version looks for <date> and <domain> in the basename and replaces with the arguments
+
+SUBROUTINE construct_filename4a( result , basename , fld1 , len1 , date_char , io_form )
+  IMPLICIT NONE
+  CHARACTER*(*) :: result
+  CHARACTER*(*) :: basename
+  CHARACTER*(*) :: date_char
+
+  INTEGER , INTENT(IN) :: fld1 , len1 , io_form
+  CHARACTER*64         :: t1, zeros
+  CHARACTER*4          :: ext
+  INTEGER   i, j, l
+  result=basename
+  CALL zero_pad ( t1 , fld1 , len1 )
+  IF      ( io_form .EQ. 1 ) THEN
+     ext = '.int'
+  ELSE IF ( io_form .EQ. 2 ) THEN
+     ext = '.nc '
+  ELSE IF ( io_form .EQ. 5 ) THEN
+     ext = '.gb '
+  ELSE
+     CALL wrf_error_fatal ('improper io_form')
+  END IF
+  l = len(trim(basename))
+  result = basename(1:l) // TRIM(ext)
+  i = index( result , '<domain>' )
+  l = len(trim(result))
+  IF ( i .GT. 0 ) THEN
+    result = result(1:i-1) // TRIM(t1) // result(i+8:l)
+  ENDIF
+  i = index( result , '<date>' )
+  l = len(trim(result))
+  IF ( i .GT. 0 ) THEN
+    result = result(1:i-1) // TRIM(date_char) // result(i+6:l)
+  ENDIF
+  
+  RETURN
+END SUBROUTINE construct_filename4a
+
 SUBROUTINE append_to_filename ( result , basename , fld1 , len1 )
   IMPLICIT NONE
   CHARACTER*(*) :: result
@@ -546,7 +608,6 @@ SUBROUTINE append_to_filename ( result , basename , fld1 , len1 )
   result = TRIM(basename) // "_" // TRIM(t1)
   RETURN
 END SUBROUTINE append_to_filename
-
 
 SUBROUTINE zero_pad ( result , fld1 , len1 )
   IMPLICIT NONE

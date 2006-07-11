@@ -49,6 +49,8 @@ dimspec    s      2     namelist=num_soil_cat     z          soil_cat
 dimspec    p      -     constant=7501             c          microphysics_rstrt_state
 dimspec    w      -     namelist=spec_bdy_width   c          spec_bdy_width
 dimspec    e      3     namelist=ensdim           z          ensemble dimension
+dimspec    g      2     namelist=num_vert_levels  z          num_vert_levels
+dimspec    m      2     constant=12               z          months_per_year
 
 
 ################################################################################
@@ -70,6 +72,34 @@ dimspec    e      3     namelist=ensdim           z          ensemble dimension
 state    real  LU_INDEX         ij      misc        1         -     irh01d=(interp_fcnm)u=(copy_fcnm)   "LU_INDEX"              "LAND USE CATEGORY"         ""
 state    real  LU_MASK          ij      misc        1         -     i3h1     "LU_MASK"              "0 land 1 water"         ""
 
+#
+# Variables from HINTERP
+#
+state    real   u_gc           igj      dyn_em      1        X     i1  "U"     "x-wind component"    "m s-1"
+state    real   v_gc           igj      dyn_em      1        Y     i1  "V"     "y-wind component"    "m s-1"
+state    real   t_gc           igj      dyn_em      1        -     i1  "T"     "temperature"         "K"
+state    real   rh_gc          igj      dyn_em      1        -     i1  "RH"    "relative humidity"   "%"
+state    real   ght_gc         igj      dyn_em      1        -     i1  "GHT"   "geopotential height" "m"
+state    real   p_gc           igj      dyn_em      1        -     i1  "P"     "pressure"            "Pa"
+state    real   xlat_gc        ij       dyn_em      1        -     i1  "XLAT_M" "latitude, positive north" "degrees"
+state    real   xlong_gc       ij       dyn_em      1        -     i1  "XLONG_M" "longitude, positive east" "degrees"
+state    real   ht_gc          ij       dyn_em      1        -     i1  "HGT_M" "topography elevation" "m"
+state    real   tsk_gc         ij       dyn_em      1        -     i1  "SKINTEMP"  "skin temperature"  "K"
+state    real   tmn_gc         ij       dyn_em      1        -     i1  "SOILTEMP"  "annual mean deep soil temperature"  "K"
+#state   real   landmask_gc    ij       dyn_em      1        -     i1  "LANDSEA"    "input landmask"   "0 1 flag"
+state   integer landmask_gc    ij       dyn_em      1        -     i1  "LANDMASK"    "input landmask"   "0 1 flag"
+state    real   pslv_gc        ij       dyn_em      1        -     i1  "PMSL"  "sea level pressure"  "Pa"
+state    real   greenfrac      imj      dyn_em      1        -     i1  "GREENFRAC" "monthly greenness fraction" "0 - 1 fraction"
+state    real   albedo12m      imj      dyn_em      1        -     i1  "ALBEDO12M" "background albedo" "0 - 1 fraction"
+state    real   pd_gc          igj      dyn_em      1        -     -   "PD"    "dry pressure"        "Pa"
+state    real   q_gc           igj      dyn_em      1        -     -   "Q"     "mixing ratio"        "kg kg-1"
+state    real   intq_gc        ij       dyn_em      1        -     -   "INTQ"  "integrated mixing ratio" "Pa"
+state    real   pdhs           ij       dyn_em      1        -     -   "PDHS"  "hydrostatic dry surface pressure" "Pa"
+#state    real   qr_gc          igj      dyn_em      1        -     i1  "QRAIN"    "rain water mixing ratio"   "kg kg-1"
+#state    real   qc_gc          igj      dyn_em      1        -     i1  "QCLOUD"    "cloud water mixing ratio"   "kg kg-1"
+#state    real   qs_gc          igj      dyn_em      1        -     i1  "QSNOW"    "snow mixing ratio"   "kg kg-1"
+#state    real   qi_gc          igj      dyn_em      1        -     i1  "QICE"    "cloud ice mixing ratio"   "kg kg-1"
+#state    real   qg_gc          igj      dyn_em      1        -     i1  "QGRAUPEL"    "graupel mixing ratio"   "kg kg-1"
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 #                                               
@@ -725,7 +755,7 @@ rconfig   character  auxinput3_outname  namelist,time_control            1  "aux
 rconfig   character  auxinput4_outname  namelist,time_control            1  "auxinput4_d<domain>_<date>"   -     "name of auxinput4 outfile" ""      ""
 rconfig   character  auxinput5_outname  namelist,time_control            1  "auxinput5_d<domain>_<date>"   -     "name of auxinput5 outfile" ""      ""
 
-rconfig   character  auxinput1_inname   namelist,time_control            1  "auxinput1_d<domain>"   -     "name of auxinput1 infile" ""      ""
+rconfig   character  auxinput1_inname   namelist,time_control            1  "hinterp.d<domain>.<date>"   -     "name of auxinput1 infile" ""      ""
 rconfig   character  auxinput2_inname   namelist,time_control            1  "auxinput2_d<domain>"   -     "name of auxinput2 infile" ""      ""
 rconfig   character  auxinput3_inname   namelist,time_control            1  "auxinput3_d<domain>"   -     "name of auxinput3 infile" ""      ""
 rconfig   character  auxinput4_inname   namelist,time_control            1  "auxinput4_d<domain>"   -     "name of auxinput4 infile" ""      ""
@@ -1033,6 +1063,10 @@ rconfig   integer s_sn                    namelist,domains	max_domains    1     
 rconfig   integer e_sn                    namelist,domains	max_domains    32      irh    "e_sn"          ""      ""
 rconfig   integer s_vert                  namelist,domains	max_domains    1       irh    "s_vert"                ""      ""
 rconfig   integer e_vert                  namelist,domains	max_domains    31      irh    "e_vert"                ""      ""
+rconfig   integer num_vert_levels         namelist,domains	1              27      irh    "num_vert_levels"                ""      ""
+rconfig   integer interp_type             namelist,domains	1              1       irh    "interp_type"                ""      ""
+rconfig   logical lowest_lev_from_sfc     namelist,domains	1             .false.  irh    "lowest_lev_from_sfc"                ""      ""
+rconfig   integer lagrange_order          namelist,domains	1              1       irh    "lagrange_order"   "1=linear, 2=quadratic vertical interpolation"      ""
 rconfig   real    dx                      namelist,domains     max_domains    200     h     "dx"        "X HORIZONTAL RESOLUTION"   "METERS"
 rconfig   real    dy                      namelist,domains   	max_domains    200     h     "dy"        "Y HORIZONTAL RESOLUTION"   "METERS"
 rconfig   integer grid_id                 namelist,domains	max_domains    1       irh    "id"            ""      ""
@@ -1069,6 +1103,7 @@ rconfig   logical   cycle_x         namelist,domains    max_domains    .false. r
 rconfig   logical   cycle_y         namelist,domains    max_domains    .false. rh    "cycle_y"            ""      ""
 rconfig   logical   reorder_mesh    namelist,domains    1              .false. rh    "reorder_mesh"       ""      ""
 rconfig   logical   perturb_input   namelist,domains    1              .false. h     "" "" ""
+rconfig   real      eta_levels      namelist,domains    max_eta        -1.
 
 # Physics
 rconfig   integer     mp_physics          namelist,physics	max_domains    0       rh       "mp_physics"            ""      ""
@@ -1263,6 +1298,7 @@ halo      HALO_EM_INIT_2 dyn_em 48:t_1,t_2,mu_1,mu_2,tke_1,tke_2,ww,phb
 halo      HALO_EM_INIT_3 dyn_em 48:ph0,php,t_init,mub,mu0,p,al,alt,alb
 halo      HALO_EM_INIT_4 dyn_em 48:pb,h_diabatic,msft,msfu,msfv,f,e,sina,cosa,ht
 halo      HALO_EM_INIT_5 dyn_em 48:moist,chem,scalar
+halo      HALO_EM_VINTERP_UV_1 dyn_em 8:pd_gc,pb
 halo      HALO_EM_A dyn_em  8:ru,rv,rw,ww,php,alt,al,p,muu,muv,mut
 halo      HALO_EM_PHYS_A  dyn_em 4:u_2,v_2
 halo      HALO_EM_PHYS_PBL dyn_em        4:rublten,rvblten

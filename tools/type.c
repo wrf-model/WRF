@@ -155,8 +155,6 @@ get_entry_r ( char * name , char * use , node_t * node )
     }
 
     strcpy( tmp, name ) ;
-    t1 = NULL ;
-    if ((t1 = index(tmp,'%'))!= NULL ) *t1 = '\0' ;
 
     /* first check for exact match */
     if ( !strcmp( p->name , tmp ) )
@@ -164,13 +162,16 @@ get_entry_r ( char * name , char * use , node_t * node )
       return(p) ;
     }
 
+    t1 = NULL ;
+    if ((t1 = index(tmp,'%'))!= NULL ) *t1 = '\0' ;
+
     if ( p->ntl > 1 )
     {
-      if (( t2 = rindex( tmp , '_' )) != NULL ) 
-      {  
+      if (( t2 = rindex( tmp , '_' )) != NULL )
+      {
          /* be sure it really is an integer that follows the _ and that */
          /* that is that is the last character                          */
-         if ((*(t2+1) >= '0' && *(t2+1) <= '9') && *(t2+2)=='\0') *t2 = '\0' ; 
+         if ((*(t2+1) >= '0' && *(t2+1) <= '9') && *(t2+2)=='\0') *t2 = '\0' ;
       }
     }
 
@@ -192,6 +193,7 @@ get_entry_r ( char * name , char * use , node_t * node )
   }
   return(NULL) ;
 }
+
 
 node_t *
 get_dimnode_for_coord ( node_t * node , int coord_axis )

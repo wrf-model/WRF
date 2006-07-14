@@ -169,8 +169,11 @@ gen_get_nl_config ( char * dirname )
 	    } else if ( !strcmp( p->nentries, "max_moves" )) {
               fprintf(fp,"  IF ( id_id .LT. 1 .OR. id_id .GT. model_config_rec%%num_moves ) THEN\n") ;
               fprintf(fp,"    WRITE(emess,*)'nl_%s_%s: Out of range move number: ',id_id\n",gs,p->name) ;
+	    } else if ( !strcmp( p->nentries, "max_eta" )) {
+              fprintf(fp,"  IF ( id_id .LT. 1 .OR. id_id .GT. model_config_rec%%e_vert(1) ) THEN\n") ;
+              fprintf(fp,"    WRITE(emess,*)'nl_%s_%s: Out of range eta_level number: ',id_id\n",gs,p->name) ;
 	    } else {
-	      fprintf(stderr,"Registry WARNING: multi element rconfig entry must be either max_domains or max_moves\n") ;
+	      fprintf(stderr,"Registry WARNING: multi element rconfig entry must be either max_domains, max_moves, or max_eta \n") ;
 	    }
             fprintf(fp,"    CALL wrf_error_fatal(emess)\n") ;
             fprintf(fp,"  ENDIF\n" ) ;
@@ -200,8 +203,11 @@ gen_get_nl_config ( char * dirname )
 	    } else if ( !strcmp( p->nentries, "max_moves" )) {
               fprintf(fp,"  IF ( id_id .LT. 1 .OR. id_id .GT. model_config_rec%%num_moves ) THEN\n") ;
               fprintf(fp,"    WRITE(emess,*)'nl_%s_%s: Out of range move number: ',id_id\n",gs,p->name) ;
+	    } else if ( !strcmp( p->nentries, "max_eta" )) {
+              fprintf(fp,"  IF ( id_id .LT. 1 .OR. id_id .GT. model_config_rec%%e_vert(1) ) THEN\n") ;
+              fprintf(fp,"    WRITE(emess,*)'nl_%s_%s: Out of range eta_level number: ',id_id\n",gs,p->name) ;
 	    } else {
-	      fprintf(stderr,"Registry WARNING: multi element rconfig entry must be either max_domains or max_moves\n") ;
+	      fprintf(stderr,"Registry WARNING: multi element rconfig entry must be either max_domains, max_moves, or max_eta \n") ;
 	    }
             fprintf(fp,"    CALL wrf_error_fatal(emess)\n") ;
             fprintf(fp,"  ENDIF\n" ) ;

@@ -426,14 +426,14 @@ RSL_REGISTER_F90 ( base )
 #define BASE_TABLE_PADDING sizeof(double) ;
 RSL_REGISTER_F90_BASE_AND_SIZE ( base , size )
   char * base ;
-  int size ;
+  int * size ;
 {
   if ( base_table_cursor < MAX_BASE_TABLE_ENTRIES )
   {
     f90_base_table[ base_table_cursor ].base = base ;
-    f90_base_table[ base_table_cursor ].size_in_bytes = size ;
-    f90_base_table[ base_table_cursor ].virt_base = 
-           f90_base_table[ base_table_cursor-1 ].virt_base + 
+    f90_base_table[ base_table_cursor ].size_in_bytes = * size ;
+    f90_base_table[ base_table_cursor ].virt_base =
+           f90_base_table[ base_table_cursor-1 ].virt_base +
            f90_base_table[ base_table_cursor-1 ].size_in_bytes + BASE_TABLE_PADDING ;
     base_table_cursor++ ;
   }

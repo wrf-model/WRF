@@ -755,7 +755,7 @@ rconfig   character  auxinput3_outname  namelist,time_control            1  "aux
 rconfig   character  auxinput4_outname  namelist,time_control            1  "auxinput4_d<domain>_<date>"   -     "name of auxinput4 outfile" ""      ""
 rconfig   character  auxinput5_outname  namelist,time_control            1  "auxinput5_d<domain>_<date>"   -     "name of auxinput5 outfile" ""      ""
 
-rconfig   character  auxinput1_inname   namelist,time_control            1  "hinterp.d<domain>.<date>"   -     "name of auxinput1 infile" ""      ""
+rconfig   character  auxinput1_inname   namelist,time_control            1  "met_em.d<domain>.<date>"   -     "name of auxinput1 infile" ""      ""
 rconfig   character  auxinput2_inname   namelist,time_control            1  "auxinput2_d<domain>"   -     "name of auxinput2 infile" ""      ""
 rconfig   character  auxinput3_inname   namelist,time_control            1  "auxinput3_d<domain>"   -     "name of auxinput3 infile" ""      ""
 rconfig   character  auxinput4_inname   namelist,time_control            1  "auxinput4_d<domain>"   -     "name of auxinput4 infile" ""      ""
@@ -1064,7 +1064,7 @@ rconfig   integer e_sn                    namelist,domains	max_domains    32    
 rconfig   integer s_vert                  namelist,domains	max_domains    1       irh    "s_vert"                ""      ""
 rconfig   integer e_vert                  namelist,domains	max_domains    31      irh    "e_vert"                ""      ""
 rconfig   integer num_vert_levels         namelist,domains	1              27      irh    "num_vert_levels"                ""      ""
-rconfig   integer interp_type             namelist,domains	1              1       irh    "interp_type"                ""      ""
+rconfig   integer interp_type             namelist,domains	1              1       irh    "interp_type"  "1=interp in pressure, 2=interp in LOG pressure"      ""
 rconfig   logical lowest_lev_from_sfc     namelist,domains	1             .false.  irh    "lowest_lev_from_sfc"                ""      ""
 rconfig   integer lagrange_order          namelist,domains	1              1       irh    "lagrange_order"   "1=linear, 2=quadratic vertical interpolation"      ""
 rconfig   real    dx                      namelist,domains     max_domains    200     h     "dx"        "X HORIZONTAL RESOLUTION"   "METERS"

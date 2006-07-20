@@ -121,7 +121,6 @@
        CALL wrf_get_dom_ti_integer ( fid , 'BOTTOM-TOP_GRID_DIMENSION' ,   kde_compare , 1 , icnt , ierr3 ) 
        ierr = max( ierr, ierr3 )
 !      IF ( ierr3 .NE. 0 ) CALL wrf_error_fatal( 'wrf_get_dom_ti_integer getting dimension information from dataset' )
-print *,'ide_compare ,jde_compare , kde_compare = ', ide_compare ,jde_compare , kde_compare
        IF ( ierr3 .NE. 0 ) CALL wrf_debug( 'wrf_get_dom_ti_integer getting dimension information from dataset' )
    
        !  Test to make sure that the grid distances are the right size.

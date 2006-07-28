@@ -22,6 +22,8 @@ SUBROUTINE microphysics_driver(                                          &
                       ,mp_restart_state,tbpvs_state,tbpvs0_state          & ! for etampnew
                       ,w ,z                                              &
                       ,rainnc, rainncv                                   &
+                      ,snownc, snowncv                                   &
+                      ,graupelnc, graupelncv                             &
                                                                          )
 ! Framework
    USE module_state_description, ONLY :                                  &
@@ -109,6 +111,10 @@ SUBROUTINE microphysics_driver(                                          &
 !-- p             pressure                 (Pa)
 !-- RAINNC        grid scale precipitation (mm)
 !-- RAINNCV       one time step grid scale precipitation (mm/step)
+!-- SNOWNC        grid scale snow and ice (mm)
+!-- SNOWNCV       one time step grid scale snow and ice (mm/step)
+!-- GRAUPELNC     grid scale graupel (mm)
+!-- GRAUPELNCV    one time step grid scale graupel (mm/step)
 !-- SR            one time step mass ratio of snow to total precip
 !-- z             Height above sea level   (m)
 !-- dt            Time step              (s)
@@ -212,7 +218,11 @@ SUBROUTINE microphysics_driver(                                          &
          INTENT(INOUT),                                           &
          OPTIONAL   ::                                            &
                                                            RAINNC &
-                                                         ,RAINNCV
+                                                         ,RAINNCV &
+                                                          ,SNOWNC &
+                                                         ,SNOWNCV &
+                                                       ,GRAUPELNC &
+                                                      ,GRAUPELNCV
 
    REAL , DIMENSION( ims:ime , jms:jme ) , OPTIONAL ,             &
          INTENT(IN)   ::                                       ht
@@ -362,6 +372,7 @@ SUBROUTINE microphysics_driver(                                          &
              IF ( PRESENT( QV_CURR ) .AND. PRESENT ( QC_CURR ) .AND.  &
                   PRESENT( QR_CURR ) .AND.                            &
                   PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) .AND.  &
+                  PRESENT( SNOWNC  ) .AND. PRESENT ( SNOWNCV ) .AND.  &
                   PRESENT( W       )                            ) THEN
              CALL wsm3(                                             &
                   TH=th                                             &
@@ -376,6 +387,7 @@ SUBROUTINE microphysics_driver(                                          &
                  ,DEN0=rhoair0, DENR=rhowater                       &
                  ,CLIQ=cliq,CICE=cice,PSAT=psat                     &
                  ,RAIN=rainnc ,RAINNCV=rainncv                      &
+                 ,SNOW=snownc ,SNOWNCV=snowncv                      &
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
@@ -390,6 +402,7 @@ SUBROUTINE microphysics_driver(                                          &
                   PRESENT( QR_CURR ) .AND. PRESENT ( QI_CURR ) .AND.  &
                   PRESENT( QS_CURR ) .AND.                            &
                   PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) .AND.  &
+                  PRESENT( SNOWNC  ) .AND. PRESENT ( SNOWNCV ) .AND.  &
                   PRESENT( W       )                            ) THEN
              CALL wsm5(                                             &
                   TH=th                                             &
@@ -406,6 +419,7 @@ SUBROUTINE microphysics_driver(                                          &
                  ,DEN0=rhoair0, DENR=rhowater                       &
                  ,CLIQ=cliq,CICE=cice,PSAT=psat                     &
                  ,RAIN=rainnc ,RAINNCV=rainncv                      &
+                 ,SNOW=snownc ,SNOWNCV=snowncv                      &
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
@@ -420,6 +434,8 @@ SUBROUTINE microphysics_driver(                                          &
                   PRESENT( QR_CURR ) .AND. PRESENT ( QI_CURR ) .AND.  &
                   PRESENT( QS_CURR ) .AND. PRESENT ( QG_CURR ) .AND.  &
                   PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) .AND.  &
+                  PRESENT( SNOWNC  ) .AND. PRESENT ( SNOWNCV ) .AND.  &
+                  PRESENT( GRAUPELNC  ) .AND. PRESENT ( GRAUPELNCV ) .AND.  &
                   PRESENT( W       )                            ) THEN
              CALL wsm6(                                             &
                   TH=th                                             &
@@ -437,6 +453,8 @@ SUBROUTINE microphysics_driver(                                          &
                  ,DEN0=rhoair0, DENR=rhowater                       &
                  ,CLIQ=cliq,CICE=cice,PSAT=psat                     &
                  ,RAIN=rainnc ,RAINNCV=rainncv                      &
+                 ,SNOW=snownc ,SNOWNCV=snowncv                      &
+                 ,GRAUPEL=graupelnc ,GRAUPELNCV=graupelncv          &
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &

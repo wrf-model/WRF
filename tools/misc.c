@@ -37,17 +37,31 @@ char *
 dimension_with_ones( char * pre , char * tmp , node_t * p , char * post )
 {
   int i ;
+  char r[NAMELEN],s[NAMELEN],four_d[NAMELEN] ;
+  char *pp ;
   if ( p == NULL ) return("") ;
   if ( p->ndims <= 0 && ! p->boundary_array ) return("") ;
   strcpy(tmp,"") ;
   if ( pre != NULL ) strcat(tmp,pre) ;
+
   if ( p->boundary_array )
   {
-    if ( !strcmp( p->use , "_4d_bdy_array_" ) ) {
-      strcat( tmp, "1,1,1,1,1" ) ;  /* boundary array for 4d tracer array */
+
+    if ( !strcmp( p->use , "_4d_bdy_array_" ) ) {   /* if a boundary array for a 4d tracer */
+      strcpy(s, p->name ) ;  /* copy the name and then remove everything after last underscore */
+      if ((pp=rindex( s, '_' )) != NULL ) *pp = '\0' ;
+      sprintf( four_d, "num_%s,", s  ) ;
     } else {
-      strcat( tmp, "1,1,1,1" ) ;  /* most always have four dimensions */
+      strcpy( four_d, "" ) ;
     }
+
+    if ( !strcmp( p->use , "_4d_bdy_array_" ) ) {
+      sprintf( r, "1,1,1,1,%s", four_d ) ;  /* boundary array for 4d tracer array */
+      strcat( tmp, r ) ;
+    } else {
+      strcat( tmp, "1,1,1,1," ) ;  /* most always have four dimensions */
+    }
+    tmp[strlen(tmp)-1] = '\0' ;
   }
   else
   {
@@ -58,7 +72,6 @@ dimension_with_ones( char * pre , char * tmp , node_t * p , char * post )
   if ( post != NULL ) strcat(tmp,post)  ;
   return(tmp) ;
 }
-
 
 char *
 dimension_with_ranges( char * refarg , char * pre ,

@@ -3030,8 +3030,8 @@ print *,'VERT EXTRAP = ', vert_extrap
          k700 = 0                              !            P=700
          k500 = 0                              !            P=500
    
-         i = 1
-         j = 1
+         i = its
+         j = jts
          DO k = kts+1 , kte
             IF      (NINT(p(i,k,j)) .EQ. 85000) THEN
                k850 = k

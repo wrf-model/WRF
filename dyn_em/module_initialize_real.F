@@ -117,6 +117,7 @@ CONTAINS
       LOGICAL :: stretch_grid, dry_sounding, debug
       INTEGER IICOUNT
 
+      REAL :: p_top_requested
       INTEGER :: num_vert_levels
       REAL , DIMENSION(max_eta) :: eta_levels
 
@@ -243,6 +244,10 @@ endif
    
          num_vert_levels = grid%num_vert_levels
 
+         !  The requested ptop for real data cases.
+
+         p_top_requested = grid%p_top_requested
+
          !  Compute the top pressure, p_top.  For isobaric data, this is just the
          !  top level.  For the generalized vertical coordinate data, we find the
          !  max pressure on the top level.  We have to be careful of two things:
@@ -258,7 +263,25 @@ endif
 #ifdef DM_PARALLEL
             p_top = wrf_dm_max_real ( p_top )
 #endif
+
+            !  Compare the requested p_top with the value available from the input data.
+
+            IF ( p_top_requested .LT. p_top ) THEN
+               CALL wrf_error_fatal ( 'p_top_requested < p_top possible from data' )
+            END IF
+
+            !  The p_top valus is the max of what is available from the data and the
+            !  requested value.  We have already compared <, so p_top is directly set to
+            !  the value in the namelist.
+
+            p_top = p_top_requested
+
+            !  For subsequent times, we have to remember what the p_top for the first
+            !  time was.  Why?  If we have a generalized vert coordinate, the p_top value
+            !  could fluctuate.
+
             p_top_save = p_top
+
          ELSE
             CALL find_p_top ( p_gc , p_top , &
                               ids , ide , jds , jde , 1   , num_vert_levels , &

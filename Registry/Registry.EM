@@ -1064,6 +1064,7 @@ rconfig   integer e_sn                    namelist,domains	max_domains    32    
 rconfig   integer s_vert                  namelist,domains	max_domains    1       irh    "s_vert"                ""      ""
 rconfig   integer e_vert                  namelist,domains	max_domains    31      irh    "e_vert"                ""      ""
 rconfig   integer num_vert_levels         namelist,domains	1              27      irh    "num_vert_levels"                ""      ""
+rconfig   real    p_top_requested         namelist,domains      1              5000    irh    "p_top_requested" "Pa"      ""
 rconfig   integer interp_type             namelist,domains	1              1       irh    "interp_type"  "1=interp in pressure, 2=interp in LOG pressure"      ""
 rconfig   logical lowest_lev_from_sfc     namelist,domains	1             .false.  irh    "lowest_lev_from_sfc"                ""      ""
 rconfig   integer lagrange_order          namelist,domains	1              1       irh    "lagrange_order"   "1=linear, 2=quadratic vertical interpolation"      ""

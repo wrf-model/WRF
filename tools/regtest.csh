@@ -307,6 +307,14 @@ set thedatanmm = $WRFREGDATANMM
 set RSL_LITE = TRUE
 set RSL_LITE = FALSE
 
+set COMBO_NEST_RSL_LITE = TRUE
+set COMBO_NEST_RSL_LITE = FALSE
+
+if ( $COMBO_NEST_RSL_LITE == TRUE ) then
+	set NESTED = TRUE
+	set RSL_LITE = TRUE
+endif
+
 #	A separately installed version of the latest ESMF library (NOT the 
 #	ESMF library included in the WRF tarfile) can be tested by setting 
 #	"ESMF_LIB" to "TRUE" below.  This test is not supported on all 

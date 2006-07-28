@@ -51,6 +51,7 @@ set NAME     = ( "Standard"             "NESTED=FALSE"        "NESTED=FALSE"    
                  "Binary_IO"            "IO_FORM=2"           "IO_FORM=1"           "NONE"  	8	\
                  "GriB1_Output"         "IO_FORM=2"           "IO_FORM=5"           "NONE"  	9	\
                  "REAL8_Floats"         "REAL8=FALSE"         "REAL8=TRUE"          "NONE"  	10	\
+                 "Moving_Nest2"         "COMBO_NEST_RSL_LITE=FALSE"        "COMBO_NEST_RSL_LITE=TRUE"         "NONE"  	11	\
                )
 
 #	Where are we located.

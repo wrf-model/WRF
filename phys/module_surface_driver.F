@@ -521,7 +521,7 @@ CONTAINS
               tsk,qsfc,thz0,qz0,uz0,vz0,                           &
               lowlyr,                                              &
               xland,                                               &
-              ust,znt,pblh,mavail,rmol,                            &
+              ust,znt,z0,pblh,mavail,rmol,                         &
               akhs,akms,                                           &
               chs,chs2,cqs2,hfx,qfx,lh,flhc,flqc,qgh,cpm,ct,       &
               u10,v10,tshltr,th10,qshltr,q10,pshltr,               &

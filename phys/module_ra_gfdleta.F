@@ -61,6 +61,9 @@ MODULE MODULE_RA_GFDLETA
      &   TRAD_ice=0.5*T_ice      & !--- Very tunable parameter
      &,  ABSCOEF_W=800.          & !--- Very tunable parameter
      &,  ABSCOEF_I=500.          & !--- Very tunable parameter
+     &,  SECANG=-1.66            & !--- Very tunable parameter
+     &,  CLDCOEF_LW=1.5          & !--- Enhance LW cloud depths
+     &,  ABSCOEF_LW=SECANG*CLDCOEF_LW  & !--- Final factor for cloud emissivities
      &,  Qconv=0.1e-3            & !--- Very tunable parameter
      &,  CTauCW=ABSCOEF_W*Qconv  &
      &,  CTauCI=ABSCOEF_I*Qconv
@@ -1338,7 +1341,8 @@ CONTAINS
           ENDIF      !--- End IF(LL.GE.KTOP(I,NC) ....
         ENDDO        !--- End DO LL
 !
-        IF(BITX)EMIS(I,NC)=1.0-EXP(-0.75*TauC)
+!!!     IF(BITX)EMIS(I,NC)=1.0-EXP(-0.75*TauC)
+        IF(BITX)EMIS(I,NC)=1.0-EXP(ABSCOEF_LW*TauC)
         IF(QSUM.GE.EPSQ1)THEN
 !
           DO 570 NBAND=1,NB

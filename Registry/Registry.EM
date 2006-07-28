@@ -1021,6 +1021,8 @@ rconfig   logical write_restart_at_0h     namelist,time_control		1             .
 rconfig   logical adjust_output_times     namelist,time_control         1             .false. -    "adjust_output_times"
 rconfig   logical adjust_input_times      namelist,time_control         1             .false. -    "adjust_input_times"
 
+rconfig   logical nocolons                namelist,time_control         1             .false. -    "nocolons"
+
 
 # Domains
 rconfig   integer time_step               namelist,domains	1             -       ih   "time_step"     

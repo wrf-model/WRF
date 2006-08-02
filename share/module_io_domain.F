@@ -466,6 +466,7 @@ SUBROUTINE construct_filename1( result , basename , fld1 , len1 )
   
   CALL zero_pad ( t1 , fld1 , len1 )
   result = TRIM(basename) // "_d" // TRIM(t1)
+  CALL maybe_remove_colons(result)
   RETURN
 END SUBROUTINE construct_filename1
 
@@ -479,6 +480,7 @@ SUBROUTINE construct_filename2( result , basename , fld1 , len1 , date_char )
   CHARACTER*64         :: t1, zeros
   CALL zero_pad ( t1 , fld1 , len1 )
   result = TRIM(basename) // ".d" // TRIM(t1) // "." // TRIM(date_char)
+  CALL maybe_remove_colons(result)
   RETURN
 END SUBROUTINE construct_filename2
 
@@ -505,6 +507,7 @@ SUBROUTINE construct_filename2a( result , basename , fld1 , len1 , date_char )
   IF ( i .GT. 0 ) THEN
     result = result(1:i-1) // TRIM(date_char) // result(i+6:l)
   ENDIF
+  CALL maybe_remove_colons(result)
   RETURN
 END SUBROUTINE construct_filename2a
 
@@ -518,6 +521,7 @@ SUBROUTINE construct_filename ( result , basename , fld1 , len1 , fld2 , len2 )
   CALL zero_pad ( t1 , fld1 , len1 )
   CALL zero_pad ( t2 , fld2 , len2 )
   result = TRIM(basename) // "_d" // TRIM(t1) // "_" // TRIM(t2)
+  CALL maybe_remove_colons(result)
   RETURN
 END SUBROUTINE construct_filename
 
@@ -532,6 +536,7 @@ SUBROUTINE construct_filename3 ( result , basename , fld1 , len1 , fld2 , len2, 
   CALL zero_pad ( t2 , fld2 , len2 )
   CALL zero_pad ( t3 , fld3 , len3 )
   result = TRIM(basename) // "_d" // TRIM(t1) // "_" // TRIM(t2) // "_" // TRIM(t3)
+  CALL maybe_remove_colons(result)
   RETURN
 END SUBROUTINE construct_filename3
 
@@ -606,6 +611,7 @@ SUBROUTINE append_to_filename ( result , basename , fld1 , len1 )
   
   CALL zero_pad ( t1 , fld1 , len1 )
   result = TRIM(basename) // "_" // TRIM(t1)
+  CALL maybe_remove_colons(result)
   RETURN
 END SUBROUTINE append_to_filename
 
@@ -661,4 +667,29 @@ SUBROUTINE adjust_io_timestr ( TI, CT, ST, timestr )
    CALL wrf_timetoa( OT, timestr )           ! generate string
    RETURN
 END SUBROUTINE adjust_io_timestr
+
+! Modify the filename to remove things like ':' from the file name
+! unless it is a drive number. Convert to '_' instead.
+
+SUBROUTINE maybe_remove_colons( FileName )
+  USE module_configure
+  CHARACTER*(*) FileName
+  CHARACTER c, d
+  INTEGER i, l
+  LOGICAL nocolons
+  l = LEN(TRIM(FileName))
+! do not change first two characters (naive way of dealing with
+! possiblity of drive name in a microsoft path
+  CALL nl_get_nocolons(1,nocolons)
+  IF ( nocolons ) THEN
+    DO i = 3, l
+      IF ( FileName(i:i) .EQ. ':' ) THEN
+        FileName(i:i) = '_'
+      ENDIF
+    ENDDO
+  ENDIF
+  RETURN
+END
+
+
 

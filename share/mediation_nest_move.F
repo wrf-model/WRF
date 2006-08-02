@@ -21,6 +21,7 @@ SUBROUTINE med_nest_move ( parent, nest )
    LOGICAL saved_restart_value
    TYPE (grid_config_rec_type)   :: config_flags
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
+   LOGICAL, EXTERNAL :: should_not_move
 
    INTERFACE
      SUBROUTINE med_interp_domain ( parent , nest )
@@ -105,6 +106,11 @@ SUBROUTINE med_nest_move ( parent, nest )
 #include "deref_kludge.h"
 
    CALL nl_get_dyn_opt ( 1, dyn_opt )
+
+   IF ( should_not_move( nest%id ) ) THEN
+      CALL wrf_message( 'Nest movement is disabled because of namelist settings' )
+      RETURN
+   ENDIF
 
 ! if the nest has stopped don't do all this
    IF ( WRFU_ClockIsStopTime(nest%domain_clock ,rc=ierr) ) RETURN
@@ -458,8 +464,11 @@ write(0,*)'   is, ids-1,  ie,  ide-1 ', is, ids-1, ie, ide-1
 write(0,*)'   js, jds-1,  je,  jde-1 ', js, jds-1, je, jde-1
 #  endif
 
+       imploc = -1
+       jmploc = -1
+
        ! find minimum psfc
-       pmin = 100000.0
+       pmin = 99999999.0     ! make this very large to be sure we find a minumum
        DO j = js, je
        DO i = is, ie
          IF ( psfc(i,j) .LT. pmin ) THEN
@@ -470,9 +479,20 @@ write(0,*)'   js, jds-1,  je,  jde-1 ', js, jds-1, je, jde-1
        ENDDO
        ENDDO
 
+       IF ( imploc .EQ. -1 .OR. jmploc .EQ. -1 ) THEN  ! if we fail to find a min there is something seriously wrong
+         WRITE(mess,*)'i,j,is,ie,js,je,imploc,jmploc ',i,j,is,ie,js,je,imploc,jmploc
+         CALL wrf_message(mess)
+         CALL wrf_error_fatal('time_for_move2: Method failure searching for minimum psfc.')
+       ENDIF
+
+       imloc = -1
+       jmloc = -1
+       maxi = -1
+       maxj = -1
+
        ! find local min, max
-       vmin =  1000000.0
-       vmax = -1000000.0
+       vmin =  99999999.0
+       vmax = -99999999.0
        DO j = js, je
        DO i = is, ie
          IF ( height(i,j) .LT. vmin ) THEN
@@ -487,6 +507,12 @@ write(0,*)'   js, jds-1,  je,  jde-1 ', js, jds-1, je, jde-1
          ENDIF
        ENDDO
        ENDDO
+
+       IF ( imloc .EQ. -1 .OR. jmloc .EQ. -1 .OR. maxi .EQ. -1 .OR. maxj .EQ. -1 ) THEN
+         WRITE(mess,*)'i,j,is,ie,js,je,imloc,jmloc,maxi,maxj ',i,j,is,ie,js,je,imloc,jmloc,maxi,maxj
+         CALL wrf_message(mess)
+         CALL wrf_error_fatal('time_for_move2: Method failure searching max/min of height.')
+       ENDIF
 
        fimloc = imloc
        fjmloc = jmloc
@@ -844,4 +870,24 @@ USE module_timing
    RETURN
 #endif
 END FUNCTION time_for_move
+
+! Put any tests for non-moving options or conditions in here
+LOGICAL FUNCTION should_not_move ( id ) 
+  USE module_state_description
+  USE module_configure
+  IMPLICIT NONE
+  INTEGER, INTENT(IN) :: id
+ ! Local
+  LOGICAL retval
+  INTEGER cu_physics
+
+  retval = .FALSE.
+! check for GD ensemble cumulus, which can not move
+  CALL nl_get_cu_physics( id , cu_physics )
+  IF ( cu_physics .EQ. GDSCHEME ) THEN
+    CALL wrf_message('Grell cumulus can not be specified with moving nests. Movement disabled.')
+    retval = .TRUE.
+  ENDIF
+  should_not_move = retval
+END FUNCTION
 

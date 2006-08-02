@@ -130,7 +130,7 @@ print *,'tried to allocate ',number_of_eligible_files,' eligible files, (look at
             READ ( 111 , FMT='(A)' ) eligible_file_name(loop)
 print *,TRIM(eligible_file_name(loop))
          END DO
-         CLOSE ( 112 )
+         CLOSE ( 111 )
 
          !   We clean up our own messes.
 

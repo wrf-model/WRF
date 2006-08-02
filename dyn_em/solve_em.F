@@ -2551,6 +2551,8 @@ BENCH_START(micro_driver_tim)
      &        ,NUM_TILES=grid%num_tiles                                   &
                  ! Optional
      &        , RAINNC=rainnc, RAINNCV=rainncv                            &
+     &        , SNOWNC=snownc, SNOWNCV=snowncv                            &
+     &        , GRAUPELNC=graupelnc, GRAUPELNCV=graupelncv                &
      &        , W=w_2, Z=z, HT=ht                                         &
      &        , MP_RESTART_STATE=mp_restart_state                         &
      &        , TBPVS_STATE=tbpvs_state                                   & ! etampnew

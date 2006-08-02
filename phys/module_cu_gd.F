@@ -114,7 +114,7 @@ CONTAINS
 ! LOCAL VARS
      real,    dimension ( ims:ime , jms:jme , 1:ensdim) ::      &
         massfln,xf_ens,pr_ens
-     real,    dimension (its:ite,kts:kte) ::                    &
+     real,    dimension (its:ite,kts:kte+1) ::                    &
         OUTT,OUTQ,OUTQC,phf,phh
      real,    dimension (its:ite)         ::                    &
         pret, ter11, aa0, fp
@@ -131,7 +131,7 @@ CONTAINS
 ! omega (omeg), windspeed (us,vs), and a flag (aaeq) to turn off
 ! convection for this call only and at that particular gridpoint
 !
-     real,    dimension (its:ite,kts:kte) ::                    &
+     real,    dimension (its:ite,kts:kte+1) ::                    &
         T2d,TN,q2d,qo,PO,P2d,US,VS,omeg
      real, dimension (its:ite)            ::                    &
         Z1,PSUR,AAEQ,direction,mconv,cuten,umean,vmean,pmean

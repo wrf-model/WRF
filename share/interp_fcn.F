@@ -3462,12 +3462,6 @@
      ! Iterate over the ND tile and compute the values
      ! from the CD tile. 
 
-!write(0,'("cids:cide, ckds:ckde, cjds:cjde ",6i4)')cids,cide, ckds,ckde, cjds,cjde
-!write(0,'("cims:cime, ckms:ckme, cjms:cjme ",6i4)')cims,cime, ckms,ckme, cjms,cjme
-!write(0,'("cits:cite, ckts:ckte, cjts:cjte ",6i4)')cits,cite, ckts,ckte, cjts,cjte
-!write(0,'("nims:nime, nkms:nkme, njms:njme ",6i4)')nims,nime, nkms,nkme, njms,njme
-!write(0,'("nits:nite, nkts:nkte, njts:njte ",6i4)')nits,nite, nkts,nkte, njts,njte
-
 #ifdef MM5_SINT
 
      ioff  = 0 ; joff  = 0
@@ -3488,9 +3482,9 @@
         icmask = .FALSE.
         DO nf = 1,nfx
            DO j = cjms,cjme
-              nj = (j-jpos) * nrj + 2   ! j point on nest
+              nj = (j-jpos) * nrj + ( nrj / 2 + 1 )  ! j point on nest
               DO i = cims,cime
-                ni = (i-ipos) * nri + 2   ! i point on nest
+                ni = (i-ipos) * nri + ( nri / 2 + 1 )    ! i point on nest
                 if ( ni .ge. nits-nioff-1 .and. ni .le. nite+nioff+1 .and. nj .ge. njts-njoff-1 .and. nj .le. njte+njoff+1 ) then
                   if ( imask(ni,nj) .eq. 1 .or. imask(ni-nioff,nj-njoff) .eq. 1 ) then
                     icmask( i, j ) = .TRUE.
@@ -4207,9 +4201,9 @@
 
         DO nf = 1,nfx
            DO j = cjms,cjme
-              nj = (j-jpos) * nrj + 2   ! j point on nest
+              nj = (j-jpos) * nrj + ( nrj / 2 + 1 )  ! j point on nest
               DO i = cims,cime
-                ni = (i-ipos) * nri + 2   ! i point on nest
+                ni = (i-ipos) * nri + ( nri / 2 + 1 )   ! i point on nest
                 psca1(i,j,nf) = cfld(i,k,j)
               ENDDO
            ENDDO
@@ -5192,3 +5186,4 @@
      ENDDO
 
    END SUBROUTINE mark_domain
+

@@ -144,6 +144,18 @@
    INTEGER     :: sm31y, em31y, sm32y, em32y, sm33y, em33y
 #endif
 
+! z0base new
+ 
+      REAL,DIMENSION(0:30) :: VZ0TBL_24
+      VZ0TBL_24= (/0.,                                                 &
+     &            1.00,  0.07,  0.07,  0.07,  0.07,  0.15,             &
+     &            0.08,  0.03,  0.05,  0.86,  0.80,  0.85,             &
+     &            2.65,  1.09,  0.80,  0.001, 0.04,  0.05,             &
+     &            0.01,  0.04,  0.06,  0.05,  0.03,  0.001,            &
+     &            0.000, 0.000, 0.000, 0.000, 0.000, 0.000/)
+ 
+! end z0base new
+
 #include "deref_kludge.h"
 
 !
@@ -533,6 +545,16 @@
           TRAIN(I,K,J)=0.
           TCUCN(I,K,J)=0.
         ENDDO
+        ENDDO
+        ENDDO
+!
+!***
+!***  INITIALIZE MAX/MIN TEMPERATURES.
+!***
+        DO J=JFS,JFE
+        DO I=IFS,IFE
+          TLMAX(I,J)=T(I,KPS,J)
+          TLMIN(I,J)=T(I,KPS,J)
         ENDDO
         ENDDO
 !
@@ -1541,7 +1563,24 @@
       ENDDO
       ENDDO
          ENDIF
-
+!
+!     always define the quantity Z0BASE
+                                                                                                                                              
+      DO J=MYJS,MYJE
+      DO I=MYIS,MYIE
+                                                                                                                                              
+! fancy veg based
+!      if (SM(I,J) .eq. 0 .and. SICE(I,J) .eq. 0) then
+      if (SM(I,J) .eq. 0) then
+         Z0BASE(I,J)=MAX(VZ0TBL_24(IVGTYP(I,J)),0.1)
+      else
+         Z0BASE(I,J)=VZ0TBL_24(IVGTYP(I,J))
+      endif
+                                                                                                                                              
+                                                                                                                                              
+      ENDDO
+      ENDDO
+!
 ! Several arguments are RCONFIG entries in Registry.NMM. Registry no longer
 ! includes these as dummy arguments or declares them.  Access them from 
 ! GRID.  JM 20050819

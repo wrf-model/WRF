@@ -117,9 +117,10 @@ CONTAINS
       LOGICAL :: stretch_grid, dry_sounding, debug
       INTEGER IICOUNT
 
-      REAL :: p_top_requested
+      REAL :: p_top_requested , temp
       INTEGER :: num_vert_levels
       REAL , DIMENSION(max_eta) :: eta_levels
+      REAL :: max_dz
 
 !      INTEGER , PARAMETER :: nl_max = 1000
 !      REAL , DIMENSION(nl_max) :: dn
@@ -396,11 +397,14 @@ endif
    
          !  Compute the eta levels if not defined already.
    
-         IF ( znw(1) .LT. 1 ) THEN
+         IF ( znw(1) .NE. 1.0 ) THEN
    
             eta_levels(1:kde) = model_config_rec%eta_levels(1:kde)
+            max_dz            = model_config_rec%max_dz
+
             CALL compute_eta ( znw , &
-                               eta_levels , max_eta , &
+                               eta_levels , max_eta , max_dz , &
+                               p_top , g , p00 , cvpm , a , r_d , cp , t00 , p1000mb , t0 , &
                                ids , ide , jds , jde , kds , kde , &
                                ims , ime , jms , jme , kms , kme , &
                                its , ite , jts , jte , kts , kte )
@@ -1147,7 +1151,9 @@ endif
 
             DO k = 1, kte-1
                pb(i,k,j) = znu(k)*(p_surf - p_top) + p_top
-               t_init(i,k,j) = (t00 + A*LOG(pb(i,k,j)/p00))*(p00/pb(i,k,j))**(r_d/cp) - t0
+!              temp = MAX ( 200., t00 + A*LOG(pb(i,k,j)/p00) )
+               temp =             t00 + A*LOG(pb(i,k,j)/p00)
+               t_init(i,k,j) = temp*(p00/pb(i,k,j))**(r_d/cp) - t0
                alb(i,k,j) = (r_d/p1000mb)*(t_init(i,k,j)+t0)*(pb(i,k,j)/p1000mb)**cvpm
             END DO
        
@@ -1632,6 +1638,12 @@ endif
       REAL , DIMENSION(1:generic) :: ordered_porig , ordered_forig
       REAL , DIMENSION(kts:kte) :: ordered_pnew , ordered_fnew
 
+      !  Define "too close" as 1 mb.  Any time you have a level closer than this (usually
+      !  to the surface, as the surface crosses through that layer), then this level is
+      !  removed from the vertical interpolation so that the surface value has precedence.
+
+      REAL , PARAMETER :: close_levels = 100
+
       !  Horiontal loop bounds for different variable types.
 
       IF      ( var_type .EQ. 'U' ) THEN
@@ -1819,7 +1831,7 @@ endif
                !  instance, we toss out the offending level (NOT the surface one) by simply
                !  decrementing the accumulating loop counter.
 
-               IF ( ordered_porig(count-1) - porig(i,1,j) .LT. 500 ) THEN
+               IF ( ordered_porig(count-1) - porig(i,1,j) .LT. close_levels ) THEN
                   count = count -1
                   zap = 1
                END IF
@@ -1835,7 +1847,7 @@ endif
                !  instance, we toss out the offending level above the surface (NOT the surface one) by simply
                !  incrementing the loop counter.
 
-               IF ( ordered_porig(count-1) - porig(i,ko_above_sfc(i),j) .LT. 500 ) THEN
+               IF ( ordered_porig(count-1) - porig(i,ko_above_sfc(i),j) .LT. close_levels ) THEN
                   kst =  ko_above_sfc(i)+1
                   zap = zap + 1
                ELSE
@@ -1856,7 +1868,7 @@ endif
                ordered_forig(1) = forig(i,1,j)
                count = 2
                DO ko = 2 , generic
-                  IF ( ordered_porig(count-1) - porig(i,ko,j) .LT. 500 ) THEN
+                  IF ( ordered_porig(count-1) - porig(i,ko,j) .LT. close_levels ) THEN
                      zap = zap + 1
                      CYCLE
                   END IF
@@ -2725,24 +2737,40 @@ print *,'VERT EXTRAP = ', vert_extrap
 !---------------------------------------------------------------------
 
    SUBROUTINE compute_eta ( znw , &
-                           eta_levels , max_eta , &
+                           eta_levels , max_eta , max_dz , &
+                           p_top , g , p00 , cvpm , a , r_d , cp , t00 , p1000mb , t0 , &
                            ids , ide , jds , jde , kds , kde , &
                            ims , ime , jms , jme , kms , kme , &
                            its , ite , jts , jte , kts , kte )
    
+      !  Compute eta levels, either using given values from the namelist (hardly
+      !  a computation, yep, I know), or assuming a constant dz above the PBL,
+      !  knowing p_top and the number of eta levels.
+
       IMPLICIT NONE
 
       INTEGER , INTENT(IN)        :: ids , ide , jds , jde , kds , kde , &
                                      ims , ime , jms , jme , kms , kme , &
                                      its , ite , jts , jte , kts , kte
-      REAL , DIMENSION (kts:kte) , INTENT(OUT) :: znw
-
+      REAL , INTENT(IN)           :: max_dz
+      REAL , INTENT(IN)           :: p_top , g , p00 , cvpm , a , r_d , cp , t00 , p1000mb , t0
       INTEGER , INTENT(IN)        :: max_eta
       REAL , DIMENSION (max_eta) , INTENT(IN)  :: eta_levels
+
+      REAL , DIMENSION (kts:kte) , INTENT(OUT) :: znw
 
       !  Local vars
 
       INTEGER :: k 
+      REAL :: mub , t_init , p_surf , pb, ztop, ztop_pbl , dz , temp
+      REAL , DIMENSION(kts:kte) :: dnw
+
+      INTEGER , PARAMETER :: prac_levels = 17
+      INTEGER :: loop , loop1
+      REAL , DIMENSION(prac_levels) :: znw_prac , znu_prac , dnw_prac
+      REAL , DIMENSION(kts:kte) :: alb , phb
+
+      !  Gee, do the eta levels come in from the namelist?
 
       IF ( ABS(eta_levels(1)+1.) .GT. 0.0000001 ) THEN
 
@@ -2754,116 +2782,134 @@ print *,'VERT EXTRAP = ', vert_extrap
             znw(  1) = 1.
             znw(kde) = 0.
          ELSE
-            CALL wrf_error_fatal ( 'First eta level should be 1.0 and the last 0.0' )
+            CALL wrf_error_fatal ( 'First eta level should be 1.0 and the last 0.0 in namelist' )
          END IF
 
+      !  Compute eta levels assuming a constant delta z above the PBL.
+
       ELSE
-         IF      ( kte .EQ. 28 ) THEN
-            znw( 1) = 1.000
-            znw( 2) = 0.990
-            znw( 3) = 0.978
-            znw( 4) = 0.964
-            znw( 5) = 0.946
-            znw( 6) = 0.922
-            znw( 7) = 0.894
-            znw( 8) = 0.860
-            znw( 9) = 0.817
-            znw(10) = 0.766
-            znw(11) = 0.707
-            znw(12) = 0.644
-            znw(13) = 0.576
-            znw(14) = 0.507
-            znw(15) = 0.444
-            znw(16) = 0.380
-            znw(17) = 0.324
-            znw(18) = 0.273
-            znw(19) = 0.228
-            znw(20) = 0.188
-            znw(21) = 0.152
-            znw(22) = 0.121
-            znw(23) = 0.093
-            znw(24) = 0.069
-            znw(25) = 0.048
-            znw(26) = 0.029
-            znw(27) = 0.014
-            znw(28) = 0.000
-#if 0
-         ELSE IF ( kte .EQ. 35 ) THEN
-            znw( 1) = 1.00000
-            znw( 2) = 0.99258
-            znw( 3) = 0.98275
-            znw( 4) = 0.96996
-            znw( 5) = 0.95372
-            znw( 6) = 0.93357
-            znw( 7) = 0.90913
-            znw( 8) = 0.87957
-            znw( 9) = 0.84531
-            znw(10) = 0.80683
-            znw(11) = 0.76467
-            znw(12) = 0.71940
-            znw(13) = 0.67163
-            znw(14) = 0.62198
-            znw(15) = 0.57108
-            znw(16) = 0.51956
-            znw(17) = 0.46803
-            znw(18) = 0.42030
-            znw(19) = 0.37613
-            znw(20) = 0.33532
-            znw(21) = 0.29764
-            znw(22) = 0.26290
-            znw(23) = 0.23092
-            znw(24) = 0.20152
-            znw(25) = 0.17452
-            znw(26) = 0.14978
-            znw(27) = 0.12714
-            znw(28) = 0.10646
-            znw(29) = 0.08761
-            znw(30) = 0.07045
-            znw(31) = 0.05466
-            znw(32) = 0.03981
-            znw(33) = 0.02580
-            znw(34) = 0.01258
-            znw(35) = 0.00000
-#endif
-         ELSE IF ( kte .EQ. 35 ) THEN
-            znw( 1) = 1.000
-            znw( 2) = 0.993
-            znw( 3) = 0.983
-            znw( 4) = 0.970
-            znw( 5) = 0.954
-            znw( 6) = 0.934
-            znw( 7) = 0.909
-            znw( 8) = 0.880
-            znw( 9) = 0.845
-            znw(10) = 0.807
-            znw(11) = 0.765
-            znw(12) = 0.719
-            znw(13) = 0.672
-            znw(14) = 0.622
-            znw(15) = 0.571
-            znw(16) = 0.520
-            znw(17) = 0.468
-            znw(18) = 0.420
-            znw(19) = 0.376
-            znw(20) = 0.335
-            znw(21) = 0.298
-            znw(22) = 0.263
-            znw(23) = 0.231
-            znw(24) = 0.202
-            znw(25) = 0.175
-            znw(26) = 0.150
-            znw(27) = 0.127
-            znw(28) = 0.106
-            znw(29) = 0.088
-            znw(30) = 0.070
-            znw(31) = 0.055
-            znw(32) = 0.040
-            znw(33) = 0.026
-            znw(34) = 0.013
-            znw(35) = 0.000
-         ELSE
-            CALL wrf_error_fatal ( 'umm, just use 28 or 35 levels for now' )
+
+         !  Compute top of the atmosphere with some silly levels.  We just want to
+         !  integrate to get a reasonable value for ztop.  We use the planned PBL-esque
+         !  levels, and then just coarse resolution above that.  We know p_top, and we
+         !  have the base state vars.
+
+         p_surf = p00 
+
+         znw_prac = (/ 1.000 , 0.993 , 0.983 , 0.970 , 0.954 , 0.934 , 0.909 , &
+                       0.88 , 0.8 , 0.7 , 0.6 , 0.5 , 0.4 , 0.3 , 0.2 , 0.1 , 0.0 /)
+
+         DO k = 1 , prac_levels - 1
+            znu_prac(k) = ( znw_prac(k) + znw_prac(k+1) ) * 0.5
+            dnw_prac(k) = znw_prac(k+1) - znw_prac(k)
+         END DO
+
+         DO k = 1, prac_levels-1
+            pb = znu_prac(k)*(p_surf - p_top) + p_top
+!           temp = MAX ( 200., t00 + A*LOG(pb/p00) )
+            temp =             t00 + A*LOG(pb/p00)
+            t_init = temp*(p00/pb)**(r_d/cp) - t0
+            alb(k) = (r_d/p1000mb)*(t_init+t0)*(pb/p1000mb)**cvpm
+         END DO
+       
+         !  Base state mu is defined as base state surface pressure minus p_top
+
+         mub = p_surf - p_top
+       
+         !  Integrate base geopotential, starting at terrain elevation.
+
+         phb(1) = 0.
+         DO k  = 2,prac_levels
+               phb(k) = phb(k-1) - dnw_prac(k-1)*mub*alb(k-1)
+         END DO
+
+         !  So, now we know the model top in meters.  Get the average depth above the PBL
+         !  of each of the remaining levels.  We are going for a constant delta z thickness.
+
+         ztop     = phb(prac_levels) / g
+         ztop_pbl = phb(8          ) / g
+         dz = ( ztop - ztop_pbl ) / REAL ( kde - 8 )
+
+         !  Standard levels near the surface so no one gets in trouble.
+
+         DO k = 1 , 8
+            znw(k) = znw_prac(k)
+         END DO
+
+         !  Using d phb(k)/ d eta(k) = -mub * alb(k), eqn 2.9 
+         !  Skamarock et al, NCAR TN 468.  Use full levels, so
+         !  use twice the thickness.
+
+         DO k = 8, kte-1
+            pb = znw(k) * (p_surf - p_top) + p_top
+!           temp = MAX ( 200., t00 + A*LOG(pb/p00) )
+            temp =             t00 + A*LOG(pb/p00)
+            t_init = temp*(p00/pb)**(r_d/cp) - t0
+            alb(k) = (r_d/p1000mb)*(t_init+t0)*(pb/p1000mb)**cvpm
+            znw(k+1) = znw(k) - dz*g / ( mub*alb(k) )
+         END DO
+         znw(kte) = 0.000
+
+         !  There is some iteration.  We want the top level, ztop, to be
+         !  consistent with the delta z, and we want the half level values
+         !  to be consistent with the eta levels.  The inner loop to 10 gets
+         !  the eta levels very accurately, but has a residual at the top, due
+         !  to dz changing.  We reset dz five times, and then things seem OK.
+
+         DO loop1 = 1 , 5
+            DO loop = 1 , 10
+               DO k = 8, kte-1
+                  pb = (znw(k)+znw(k+1))*0.5 * (p_surf - p_top) + p_top
+!                 temp = MAX ( 200., t00 + A*LOG(pb/p00) )
+                  temp =             t00 + A*LOG(pb/p00)
+                  t_init = temp*(p00/pb)**(r_d/cp) - t0
+                  alb(k) = (r_d/p1000mb)*(t_init+t0)*(pb/p1000mb)**cvpm
+                  znw(k+1) = znw(k) - dz*g / ( mub*alb(k) )
+               END DO
+               IF ( ( loop1 .EQ. 5 ) .AND. ( loop .EQ. 10 ) ) THEN
+                  print *,'Converged znw(kte) should be 0.0 = ',znw(kte)
+               END IF
+               znw(kte) = 0.000
+            END DO
+
+            !  Here is where we check the eta levels values we just computed.
+
+            DO k = 1, kde-1
+               pb = (znw(k)+znw(k+1))*0.5 * (p_surf - p_top) + p_top
+!              temp = MAX ( 200., t00 + A*LOG(pb/p00) )
+               temp =             t00 + A*LOG(pb/p00)
+               t_init = temp*(p00/pb)**(r_d/cp) - t0
+               alb(k) = (r_d/p1000mb)*(t_init+t0)*(pb/p1000mb)**cvpm
+            END DO
+
+            phb(1) = 0.
+            DO k  = 2,kde
+                  phb(k) = phb(k-1) - (znw(k)-znw(k-1)) * mub*alb(k-1)
+            END DO
+
+            !  Reset the model top and the dz, and iterate.
+
+            ztop = phb(kde)/g
+            ztop_pbl = phb(8)/g
+            dz = ( ztop - ztop_pbl ) / REAL ( kde - 8 ) 
+         END DO
+
+         IF ( dz .GT. max_dz ) THEN
+print *,'z (m)            = ',phb(1)/g
+do k = 2 ,kte
+print *,'z (m) and dz (m) = ',phb(k)/g,(phb(k)-phb(k-1))/g
+end do
+print *,'dz (m) above fixed eta levels = ',dz
+print *,'namelist max_dz (m) = ',max_dz
+print *,'namelist p_top (Pa) = ',p_top
+            CALL wrf_debug ( 'You need one of three things:' )
+            CALL wrf_debug ( '1) More eta levels to reduce the dz: e_vert' )
+            CALL wrf_debug ( '2) A lower p_top so your total height is reduced: p_top_requested')
+            CALL wrf_debug ( '3) Increase the maximum allowable eta thickness: max_dz')
+            CALL wrf_debug ( 'All are namelist options')
+            CALL wrf_error_fatal ( 'dz above fixed eta levels is too large')
          END IF
+
       END IF
 
    END SUBROUTINE compute_eta
@@ -3236,7 +3282,8 @@ print *,'VERT EXTRAP = ', vert_extrap
       REAL , DIMENSION(target_dim) , INTENT(OUT) :: target_y
 
       !  Brought in for debug purposes.
-integer,intent(in) :: i,j
+
+      INTEGER , INTENT(IN) :: i,j
 
       !  Local vars
 

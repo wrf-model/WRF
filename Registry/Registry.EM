@@ -1105,6 +1105,7 @@ rconfig   logical   cycle_y         namelist,domains    max_domains    .false. r
 rconfig   logical   reorder_mesh    namelist,domains    1              .false. rh    "reorder_mesh"       ""      ""
 rconfig   logical   perturb_input   namelist,domains    1              .false. h     "" "" ""
 rconfig   real      eta_levels      namelist,domains    max_eta        -1.
+rconfig   real      max_dz          namelist,domains    1               1000.
 
 # Physics
 rconfig   integer     mp_physics          namelist,physics	max_domains    0       rh       "mp_physics"            ""      ""

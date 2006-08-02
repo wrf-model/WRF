@@ -40,7 +40,14 @@ CONTAINS
                          MASS_FLUX,                              &
                          RTHFTEN, RQVFTEN,                       &
                          CLDFRA,GLW,GSW,EMISS,LU_INDEX,          &
-                         XLAT,XLONG,ALBEDO,ALBBCK,GMT,JULYR,JULDAY,&
+                         XLAT,XLONG,ALBEDO,ALBBCKS,ALBBCKW,GMT,JULYR,JULDAY,&
+                         ozmixm,pin,levsiz,n_ozmixm,                    &
+                         m_ps_1,m_ps_2,m_hybi,aerosolc_1,aerosolc_2,&
+                         paerlev,n_aerosolc,                     &
+                         ACSWUPT,ACSWUPTC,ACSWDNT,ACSWDNTC,      &
+                         ACSWUPB,ACSWUPBC,ACSWDNB,ACSWDNBC,      &
+                         ACLWUPT,ACLWUPTC,ACLWDNT,ACLWDNTC,      &
+                         ACLWUPB,ACLWUPBC,ACLWDNB,ACLWDNBC,      &
                          TMN,XLAND,ZNT,Z0,UST,MOL,PBLH,TKE_MYJ,  &
                          EXCH_H,THC,SNOWC,MAVAIL,HFX,QFX,RAINBL,        &
                          TSLB,ZS,DZS,num_soil_layers,warm_rain,  & 
@@ -50,6 +57,7 @@ CONTAINS
                          SMSTOT, SFCRUNOFF,UDRUNOFF,GRDFLX,ACSNOW,&
                          ACSNOM,IVGTYP,ISLTYP, SFCEVP, SMOIS,    &
                          SH2O, SNOWH, SMFR3D,                    &  ! temporary
+                         ACHFX,ACLHF,ACGRDFLX,                   &
                          DX,DY,F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY, &
                          mp_restart_state,tbpvs_state,tbpvs0_state,&
                          allowed_to_read, moved,                 &
@@ -80,6 +88,19 @@ CONTAINS
    REAL,     DIMENSION( kms:kme ) , INTENT(IN) :: zfull, zhalf
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(IN) :: TSK, XLAT, XLONG
 
+   INTEGER,      INTENT(IN   )    ::   levsiz, n_ozmixm
+   INTEGER,      INTENT(IN   )    ::   paerlev, n_aerosolc
+
+   REAL,  DIMENSION( ims:ime, levsiz, jms:jme, n_ozmixm ),      &
+          INTENT(INOUT) ::                                  OZMIXM
+
+   REAL,  DIMENSION(levsiz), INTENT(INOUT)  ::                   PIN
+
+   REAL,  DIMENSION(ims:ime,jms:jme), INTENT(INOUT)  ::      m_ps_1,m_ps_2
+   REAL,  DIMENSION(paerlev), INTENT(INOUT)  ::               m_hybi
+   REAL,  DIMENSION( ims:ime, paerlev, jms:jme, n_aerosolc ),      &
+          INTENT(INOUT) ::                    aerosolc_1, aerosolc_2
+
    REAL,     DIMENSION( ims:ime , 1:num_soil_layers , jms:jme ),&
                  INTENT(INOUT) :: SMOIS, SH2O,TSLB
    REAL,     DIMENSION( ims:ime , 1:num_soil_layers , jms:jme ), INTENT(OUT) :: SMFR3D
@@ -94,6 +115,9 @@ CONTAINS
                                                      SFCRUNOFF, &
                                                       UDRUNOFF, &
                                                         SFCEVP, &
+                                                         ACHFX, &
+                                                         ACLHF, &
+                                                      ACGRDFLX, &
                                                         GRDFLX, &
                                                         ACSNOW, &
                                                           XICE, &
@@ -110,7 +134,11 @@ CONTAINS
              RTHRATEN, RTHRATENLW, RTHRATENSW, CLDFRA
 
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) ::         &
-             GSW,ALBEDO,ALBBCK,GLW,EMISS
+             GSW,ALBEDO,ALBBCKS,ALBBCKW,GLW,EMISS,               &
+                         ACSWUPT,ACSWUPTC,ACSWDNT,ACSWDNTC,      &
+                         ACSWUPB,ACSWUPBC,ACSWDNB,ACSWDNBC,      &
+                         ACLWUPT,ACLWUPTC,ACLWDNT,ACLWDNTC,      &
+                         ACLWUPB,ACLWUPBC,ACLWDNB,ACLWDNBC
 
    REAL,     INTENT(INOUT) :: GMT
 
@@ -264,7 +292,8 @@ integer myproc
    DO j=jts,jtf
    DO i=its,itf
      IF(XLAND(i,j) .LT. 1.5)THEN
-       IF(mminlu_loc .EQ. '    ') ALBBCK(i,j)=ALBLND
+       IF(mminlu_loc .EQ. '    ') ALBBCKS(i,j)=ALBLND
+       IF(mminlu_loc .EQ. '    ') ALBBCKW(i,j)=ALBLND
        ALBEDO(i,j)=ALBLND
        EMISS(i,j)=0.85
        THC(i,j)=THINLD
@@ -274,7 +303,8 @@ integer myproc
 #endif
        MAVAIL(i,j)=XMAVA
      ELSE
-       IF(mminlu_loc .EQ. '    ') ALBBCK(i,j)=0.08
+       IF(mminlu_loc .EQ. '    ') ALBBCKS(i,j)=0.08
+       IF(mminlu_loc .EQ. '    ') ALBBCKW(i,j)=0.08
        ALBEDO(i,j)=0.08
        EMISS(i,j)=0.98
        THC(i,j)=THINLD
@@ -292,7 +322,7 @@ integer myproc
    IF(mminlu_loc .ne. '    ')THEN
 !-- initialize surface properties
 
-     CALL landuse_init(lu_index, snowc, albedo, albbck, mavail, emiss,      &
+     CALL landuse_init(lu_index, snowc, albedo, albbcks, albbckw, mavail, emiss,      &
                 znt, Z0, thc, xland, xice, julday, cen_lat, iswater, mminlu_loc,  &
                 allowed_to_read , usebgalb ,                        &
                 ids, ide, jds, jde, kds, kde,                       &
@@ -318,6 +348,13 @@ integer myproc
 
    CALL ra_init(grid,STEPRA,RADT,DT,RTHRATEN,RTHRATENLW,             &
                 RTHRATENSW,CLDFRA,EMISS,cen_lat,JULYR,JULDAY,GMT,    &
+                ozmixm,pin,levsiz,XLAT,n_ozmixm,                       &
+                m_ps_1,m_ps_2,m_hybi,aerosolc_1,aerosolc_2,     &
+                paerlev,n_aerosolc,                             &
+                         ACSWUPT,ACSWUPTC,ACSWDNT,ACSWDNTC,      &
+                         ACSWUPB,ACSWUPBC,ACSWDNB,ACSWDNBC,      &
+                         ACLWUPT,ACLWUPTC,ACLWDNT,ACLWDNTC,      &
+                         ACLWUPB,ACLWUPBC,ACLWDNB,ACLWDNBC,      &
                 sfull,shalf,pptop,                              &
                 config_flags,restart,                           & 
                 allowed_to_read ,                                   &
@@ -341,6 +378,7 @@ integer myproc
                 ZNT,XLAND,XICE,                                 &
 #endif
                 SFCEVP,GRDFLX,                                  &
+                         ACHFX,ACLHF,ACGRDFLX,                   &
                 allowed_to_read ,                                   &
                 ids, ide, jds, jde, kds, kde,                   &
                 ims, ime, jms, jme, kms, kme,                   &
@@ -377,7 +415,7 @@ integer myproc
    END SUBROUTINE phy_init
 
 !=====================================================================
-   SUBROUTINE landuse_init(lu_index, snowc, albedo, albbck, mavail, emiss,  &
+   SUBROUTINE landuse_init(lu_index, snowc, albedo, albbcks, albbckw, mavail, emiss,  &
                 znt,Z0,thc,xland, xice, julday, cen_lat, iswater, mminlu, &
                 allowed_to_read , usebgalb ,                        &
                 ids, ide, jds, jde, kds, kde,                       &
@@ -397,7 +435,7 @@ integer myproc
    CHARACTER*4, INTENT(IN)        :: mminlu
    LOGICAL,  INTENT(IN)           :: allowed_to_read , usebgalb
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(IN   ) :: lu_index, snowc, xice
-   REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(OUT  ) :: albedo, albbck, mavail, emiss, &
+   REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(OUT  ) :: albedo, albbcks,albbckw, mavail, emiss, &
                                                          znt, Z0, thc, xland
 
 !---------------------------------------------------------------------
@@ -527,9 +565,10 @@ integer myproc
           IF(IS.EQ.0)THEN                                                
             IS=ISWATER                                                  
           ENDIF                                                        
-          IF(.NOT.usebgalb)ALBBCK(I,J)=ALBD(IS,ISN)/100.                                  
-          ALBEDO(I,J)=ALBBCK(I,J)
-          IF(SNOWC(I,J) .GT. 0.5)ALBEDO(I,J)=ALBBCK(I,J)*(1.+SCFX(IS))
+          IF(.NOT.usebgalb)ALBBCKS(I,J)=ALBD(IS,1)/100.
+          IF(.NOT.usebgalb)ALBBCKW(I,J)=ALBD(IS,2)/100.
+          ALBEDO(I,J)=ALBD(IS,ISN)/100.
+          IF(SNOWC(I,J) .GT. 0.5)ALBEDO(I,J)=ALBBCKW(I,J)*(1.+SCFX(IS))
           THC(I,J)=THERIN(IS,ISN)/100.                               
           Z0(I,J)=SFZ0(IS,ISN)/100.                                
           ZNT(I,J)=Z0(I,J)
@@ -543,8 +582,9 @@ integer myproc
 !    SET SEA-ICE POINTS TO LAND WITH ICE/SNOW SURFACE PROPERTIES
           IF(XICE(I,J).GT.0.5)THEN
             XLAND(I,J)=1.0
-            ALBBCK(I,J)=ALBD(ISICE,ISN)/100.
-            ALBEDO(I,J)=ALBBCK(I,J)
+            ALBBCKS(I,J)=ALBD(ISICE,1)/100.
+            ALBBCKW(I,J)=ALBD(ISICE,2)/100.
+            ALBEDO(I,J)=ALBD(ISICE,ISN)/100.
             THC(I,J)=THERIN(ISICE,ISN)/100.                              
             Z0(I,J)=SFZ0(ISICE,ISN)/100.                               
             ZNT(I,J)=Z0(I,J)
@@ -565,6 +605,13 @@ integer myproc
 !===================================================================== 
    SUBROUTINE ra_init(grid,STEPRA,RADT,DT,RTHRATEN,RTHRATENLW,       & 
                       RTHRATENSW,CLDFRA,EMISS,cen_lat,JULYR,JULDAY,GMT,    &
+                      ozmixm,pin,levsiz,XLAT,n_ozmixm,               &
+                      m_ps_1,m_ps_2,m_hybi,aerosolc_1,aerosolc_2,    &
+                      paerlev, n_aerosolc,                           &
+                         ACSWUPT,ACSWUPTC,ACSWDNT,ACSWDNTC,      &
+                         ACSWUPB,ACSWUPBC,ACSWDNB,ACSWDNBC,      &
+                         ACLWUPT,ACLWUPTC,ACLWDNT,ACLWDNTC,      &
+                         ACLWUPB,ACLWUPBC,ACLWDNB,ACLWDNBC,      &
                       sfull,shalf,pptop,                             &
                       config_flags,restart,                          & 
                       allowed_to_read ,                              &
@@ -573,6 +620,7 @@ integer myproc
                       its, ite, jts, jte, kts, kte                   )
 !---------------------------------------------------------------------
    USE module_ra_rrtm
+   USE module_ra_cam
    USE module_ra_sw
    USE module_ra_gsfcsw
    USE module_ra_gfdleta
@@ -592,8 +640,23 @@ integer myproc
    INTEGER , INTENT(IN)           :: JULDAY,JULYR
    REAL ,    INTENT(IN)           :: DT, RADT, cen_lat, GMT, pptop
 
+   INTEGER,      INTENT(IN   )    ::   levsiz, n_ozmixm
+   INTEGER,      INTENT(IN   )    ::   paerlev, n_aerosolc
+
+   REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(IN) ::  XLAT
+
+   REAL,  DIMENSION( ims:ime, levsiz, jms:jme, n_ozmixm ),      &
+          INTENT(INOUT) ::                                  OZMIXM
+
+   REAL,  DIMENSION(ims:ime,jms:jme), INTENT(INOUT)  ::      m_ps_1,m_ps_2
+   REAL,  DIMENSION(paerlev), INTENT(INOUT)  ::               m_hybi
+   REAL,  DIMENSION( ims:ime, paerlev, jms:jme, n_aerosolc ),      &
+          INTENT(INOUT) ::                      aerosolc_1, aerosolc_2
+
+   REAL,  DIMENSION(levsiz), INTENT(INOUT)  ::                   PIN
+
    INTEGER , INTENT(INOUT)        :: STEPRA
-   INTEGER :: isn
+   INTEGER :: isn,i,j
 
    REAL , DIMENSION( kms:kme ) , INTENT(IN) :: sfull, shalf
    REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::           &
@@ -601,8 +664,15 @@ integer myproc
                                                          RTHRATENLW, &
                                                          RTHRATENSW, &
                                                              CLDFRA
-   REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) :: EMISS
+
+
+   REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) :: EMISS, &
+                         ACSWUPT,ACSWUPTC,ACSWDNT,ACSWDNTC,      &
+                         ACSWUPB,ACSWUPBC,ACSWDNB,ACSWDNBC,      &
+                         ACLWUPT,ACLWUPTC,ACLWDNT,ACLWDNTC,      &
+                         ACLWUPB,ACLWUPBC,ACLWDNB,ACLWDNBC
    LOGICAL :: etalw = .false.
+   LOGICAL :: camlw = .false.
    integer :: month,iday
 !---------------------------------------------------------------------
 
@@ -610,6 +680,31 @@ integer myproc
 
     STEPRA = nint(RADT*60./DT)
     STEPRA = max(STEPRA,1)
+
+!-- initialization
+
+   IF(.not.restart)THEN
+     DO j=jts,jte
+     DO i=its,ite
+        ACSWUPT(i,j)=0.
+        ACSWUPTC(i,j)=0.
+        ACSWDNT(i,j)=0.
+        ACSWDNTC(i,j)=0.
+        ACSWUPB(i,j)=0.
+        ACSWUPBC(i,j)=0.
+        ACSWDNB(i,j)=0.
+        ACSWDNBC(i,j)=0.
+        ACLWUPT(i,j)=0.
+        ACLWUPTC(i,j)=0.
+        ACLWDNT(i,j)=0.
+        ACLWDNTC(i,j)=0.
+        ACLWUPB(i,j)=0.
+        ACLWUPBC(i,j)=0.
+        ACLWDNB(i,j)=0.
+        ACLWDNBC(i,j)=0.
+     ENDDO
+     ENDDO
+   ENDIF
 
 
 !-- chose long wave radiation scheme
@@ -623,6 +718,24 @@ integer myproc
                            ids, ide, jds, jde, kds, kde,    &
                            ims, ime, jms, jme, kms, kme,    &
                            its, ite, jts, jte, kts, kte     )
+
+        CASE (CAMLWSCHEME)
+        print *,'before camradinit 1'
+             CALL camradinit(RTHRATEN,RTHRATENLW,RTHRATENSW,   &
+                         restart,                              &
+                         R_D,R_V,CP,G,STBOLT,EP_2,shalf,pptop, &
+                         ozmixm,pin,levsiz,XLAT,n_ozmixm,      &
+                         m_ps_1,m_ps_2,m_hybi,aerosolc_1,aerosolc_2,&
+                         paerlev, n_aerosolc,              &
+                         P_SUL, P_SSLT, P_DUST1, P_DUST2,  &
+                         P_DUST3, P_DUST4, P_OCPHO, P_BCPHO,  &
+                         P_OCPHI, P_BCPHI, P_BG, P_VOLC,  &
+                         ids, ide, jds, jde, kds, kde,     &
+                         ims, ime, jms, jme, kms, kme,     &
+                         its, ite, jts, jte, kts, kte      )
+        print *,'after camradinit 1'
+             camlw = .true.
+
         CASE (GFDLLWSCHEME)
              CALL nl_get_start_month(grid%id,month)
              CALL nl_get_start_day(grid%id,iday)
@@ -647,6 +760,22 @@ integer myproc
                          ids, ide, jds, jde, kds, kde,     &
                          ims, ime, jms, jme, kms, kme,     &
                          its, ite, jts, jte, kts, kte      )
+
+        CASE (CAMSWSCHEME)
+             IF(.not.camlw)THEN
+             CALL camradinit(RTHRATEN,RTHRATENLW,RTHRATENSW,          &
+                         restart,                          &
+                         R_D,R_V,CP,G,STBOLT,EP_2,shalf,pptop,               &
+                         ozmixm,pin,levsiz,XLAT,n_ozmixm,     &
+                         m_ps_1,m_ps_2,m_hybi,aerosolc_1,aerosolc_2,&
+                         paerlev, n_aerosolc,              &
+                         P_SUL, P_SSLT, P_DUST1, P_DUST2,  &
+                         P_DUST3, P_DUST4, P_OCPHO, P_BCPHO,  &
+                         P_OCPHI, P_BCPHI, P_BG, P_VOLC,  &
+                         ids, ide, jds, jde, kds, kde,     &
+                         ims, ime, jms, jme, kms, kme,     &
+                         its, ite, jts, jte, kts, kte      )
+             ENDIF
 
         CASE (GSFCSWSCHEME)
              CALL gsfc_swinit(cen_lat, allowed_to_read )
@@ -683,6 +812,7 @@ integer myproc
                 ZNT,XLAND,XICE,                                 &
 #endif
                 SFCEVP,GRDFLX,                                  &
+                         ACHFX,ACLHF,ACGRDFLX,                   &
                 allowed_to_read,                                &
                 ids, ide, jds, jde, kds, kde,                   &
                 ims, ime, jms, jme, kms, kme,                   &
@@ -734,6 +864,9 @@ integer myproc
                                                         VEGFRA, &
                                                         ACSNOM, &
                                                         SFCEVP, &
+                                                         ACHFX, &
+                                                         ACLHF, &
+                                                      ACGRDFLX, &
                                                         GRDFLX, &
                                                            UST, &
 #if ( NMM_CORE == 1 )
@@ -765,13 +898,26 @@ integer myproc
    REAL,  DIMENSION( ims:ime , jms:jme ) , INTENT(IN) ::     TSK
    REAL,  DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) ::  TMN
    LOGICAL,  INTENT(IN)           :: allowed_to_read
-   INTEGER :: isn, isfc
+   INTEGER :: isn, isfc, i, j
 !--------------------------------------------------------------------
 
 !-- calculate pbl time step
 
    STEPBL = nint(BLDT*60./DT)
    STEPBL = max(STEPBL,1)
+
+!-- initialization
+
+   IF(.not.restart)THEN
+     DO j=jts,jte
+     DO i=its,ite
+        ACHFX(i,j)=0.
+        ACLHF(i,j)=0.
+        ACGRDFLX(i,j)=0.
+        SFCEVP(i,j)=0.
+     ENDDO
+     ENDDO
+   ENDIF
 
 
 !-- initialize surface layer scheme

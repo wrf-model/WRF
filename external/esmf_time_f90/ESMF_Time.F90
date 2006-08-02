@@ -58,7 +58,6 @@
 
 !     ! Equivalent sequence and kind to C++:
 
-#ifdef F90_STANDALONE
      type ESMF_Time
        sequence
        type(ESMF_BaseTime) :: basetime           ! inherit base class
@@ -68,19 +67,9 @@
        integer :: DD
        type(ESMF_Calendar), pointer :: calendar  ! associated calendar
      end type
-#else
-     type ESMF_Time
-     sequence                           ! match C++ storage order
-     private                            !   (members opaque on F90 side)
-       type(ESMF_BaseTime) :: basetime           ! inherit base class
-       type(ESMF_Calendar), pointer :: calendar  ! associated calendar
-       integer :: YR
-       integer :: MM
-       integer :: DD
-       integer :: timezone                       ! local timezone
-       integer :: pad                            ! to satisfy halem compiler
-     end type
-#endif
+!------------------------------------------------------------------------------
+! !PUBLIC DATA:
+   TYPE(ESMF_Calendar), public, save, pointer :: defaultCal   ! Default Calendar
 
 
 !------------------------------------------------------------------------------
@@ -109,6 +98,7 @@
 !      public ESMF_TimeWrite
       public ESMF_TimeValidate
       public ESMF_TimePrint
+      public ESMF_TimeCopy
 
 ! !PRIVATE MEMBER FUNCTIONS:
 
@@ -146,6 +136,7 @@
 
       public operator(.GE.)
       private ESMF_TimeGE
+
 !EOPI
 
 !------------------------------------------------------------------------------
@@ -216,6 +207,20 @@
 
 ! !DESCRIPTION:
 !     This interface overloads the + operator for the {\tt ESMF\_Time} class
+!
+!EOP
+      end interface
+!
+!------------------------------------------------------------------------------
+!BOP
+! !INTERFACE:
+      interface assignment (=)
+
+! !PRIVATE MEMBER FUNCTIONS:
+      module procedure ESMF_TimeCopy
+
+! !DESCRIPTION:
+!     This interface overloads the = operator for the {\tt ESMF\_Time} class
 !
 !EOP
       end interface
@@ -349,7 +354,7 @@
 ! !INTERFACE:
       subroutine ESMF_TimeGet(time, YY, YRl, MM, DD, D, Dl, H, M, S, Sl, MS, &
                               US, NS, d_, h_, m_, s_, ms_, us_, ns_, Sn, Sd, &
-                              dayOfYear, timeString, rc)
+                              dayOfYear, dayOfYear_intvl, timeString, rc)
 
 ! !ARGUMENTS:
       type(ESMF_Time), intent(in) :: time
@@ -377,7 +382,10 @@
       integer, intent(out), optional :: Sd
       integer, intent(out), optional :: dayOfYear
       character (len=*), intent(out), optional :: timeString
+      type(ESMF_TimeInterval), intent(out), optional :: dayOfYear_intvl
       integer, intent(out), optional :: rc
+
+      type(ESMF_TimeInterval) :: day_step
       integer :: ierr
 
 ! !DESCRIPTION:
@@ -446,8 +454,9 @@
 ! !REQUIREMENTS:
 !     TMG2.1, TMG2.5.1, TMG2.5.6
 !EOP
+      TYPE(ESMF_Time) :: begofyear
+      INTEGER :: yr
 
-#ifdef F90_STANDALONE
       ierr = ESMF_SUCCESS
 
       IF ( PRESENT( YY ) ) THEN
@@ -461,13 +470,13 @@
       ENDIF
 !
       IF ( PRESENT( H ) ) THEN
-        H = time%basetime%S / 3600 
+        H = time%basetime%S / SECONDS_PER_HOUR
       ENDIF
       IF ( PRESENT( M ) ) THEN
-        M = mod( time%basetime%S / 60 , 60 )
+        M = mod( time%basetime%S / SECONDS_PER_MINUTE , SECONDS_PER_MINUTE )
       ENDIF
       IF ( PRESENT( S ) ) THEN
-        S = mod( time%basetime%S , 3600 )
+        S = mod( time%basetime%S , SECONDS_PER_HOUR )
       ENDIF
       ! TBH:  HACK to allow DD and S to behave as in ESMF 2.1.0+ when 
       ! TBH:  both are present and H and M are not.  
@@ -489,11 +498,21 @@
       IF ( PRESENT( timeString ) ) THEN
         CALL ESMFold_TimeGetString( time, timeString, rc=ierr )
       ENDIF
+      IF ( PRESENT( dayOfYear_intvl ) ) THEN
+        yr = time%YR
+        CALL ESMF_TimeSet( begofyear, yy=yr, mm=1, dd=1, s=0, &
+                           calendar=time%calendar, rc=ierr )
+        IF ( ierr == ESMF_FAILURE)THEN
+           rc = ierr
+           RETURN
+        END IF
+        CALL ESMF_TimeIntervalSet( day_step, d=1, s=0, rc=ierr )
+        dayOfYear_intvl = time - begofyear + day_step
+      ENDIF
 
       IF ( PRESENT( rc ) ) THEN
         rc = ierr
       ENDIF
-#endif
 
       end subroutine ESMF_TimeGet
 
@@ -504,10 +523,10 @@
 ! !INTERFACE:
       subroutine ESMF_TimeSet(time, YY, YRl, MM, DD, D, Dl, H, M, S, Sl, &
                               MS, US, NS, d_, h_, m_, s_, ms_, us_, ns_, &
-                              Sn, Sd, cal, tz, rc)
+                              Sn, Sd, calendar, rc)
 
 ! !ARGUMENTS:
-      type(ESMF_Time), intent(out) :: time
+      type(ESMF_Time), intent(inout) :: time
       integer, intent(in), optional :: YY
       integer(ESMF_KIND_I8), intent(in), optional :: YRl
       integer, intent(in), optional :: MM
@@ -530,8 +549,7 @@
       double precision, intent(in), optional :: ns_
       integer, intent(in), optional :: Sn
       integer, intent(in), optional :: Sd
-      type(ESMF_Calendar), intent(in), optional :: cal
-      integer, intent(in), optional :: tz
+      type(ESMF_Calendar), intent(in), target, optional :: calendar
       integer, intent(out), optional :: rc
 
 ! !DESCRIPTION:
@@ -605,7 +623,7 @@
 !     TMGn.n.n
 !EOP
 
-#ifdef F90_STANDALONE
+      IF ( PRESENT( rc ) ) rc = ESMF_FAILURE
       time%instant = .true.
       time%YR = 0
       IF ( PRESENT( YY ) ) THEN
@@ -622,10 +640,10 @@
 !
       time%basetime%S = 0
       IF ( PRESENT( H ) ) THEN
-	time%basetime%S = time%basetime%S + H * 3600
+	time%basetime%S = time%basetime%S + H * SECONDS_PER_HOUR
       ENDIF
       IF ( PRESENT( M ) ) THEN
-	time%basetime%S = time%basetime%S + M * 60
+	time%basetime%S = time%basetime%S + M * SECONDS_PER_MINUTE
       ENDIF
       IF ( PRESENT( S ) ) THEN
 	time%basetime%S = time%basetime%S + S
@@ -638,7 +656,7 @@
       ELSE IF ( PRESENT( Sd ) .AND. PRESENT( Sn ) ) THEN
 	time%basetime%Sn = Sn
 	time%basetime%Sd = Sd
-	if ( abs( Sn ) .GE. Sd ) THEN
+	IF ( abs( Sn ) .GE. Sd ) THEN
 	  IF ( Sn .GE. 0 ) THEN
 	    time%basetime%S = time%basetime%S + Sn / Sd
 	  ELSE
@@ -651,13 +669,24 @@
 	ENDIF
 	time%basetime%MS = NINT( Sn*1.0D0 / Sd*1.0D0  * 1000 )
       ENDIF
+      IF ( PRESENT(calendar) )THEN
+        IF ( .not. ESMF_CalendarInitialized( calendar ) )THEN
+           call wrf_error_fatal( "Error:: ESMF_CalendarCreate not "// &
+                                 "called on input Calendar")
+        END IF
+	time%Calendar => calendar
+      ELSE
+        IF ( .not. ESMF_CalendarInitialized( defaultCal ) )THEN
+           call wrf_error_fatal( "Error:: ESMF_Initialize not called")
+        END IF
+	time%Calendar => defaultCal
+      END IF
 
       CALL normalize_time( time )
 
       IF ( PRESENT( rc ) ) THEN
         rc = ESMF_SUCCESS
       ENDIF
-#endif
 
       end subroutine ESMF_TimeSet
 
@@ -690,7 +719,7 @@
 !     TMGn.n.n
 !EOP
 
-      call c_ESMC_TimeGetCalendarCopy(time, cal, rc)
+!      call c_ESMC_TimeGetCalendarCopy(time, cal, rc)
 
       end subroutine ESMF_TimeGetCalendarCopy
 
@@ -723,7 +752,7 @@
 !     TMGn.n.n
 !EOP
 
-      call c_ESMC_TimeGetCalendarPtr(time, cal, rc)
+!      call c_ESMC_TimeGetCalendarPtr(time, cal, rc)
     
       end subroutine ESMF_TimeGetCalendarPtr
 
@@ -756,7 +785,7 @@
 !     TMGn.n.n
 !EOP
 
-      call c_ESMC_TimeSetCalendarPtr(time, cal, rc)
+!      call c_ESMC_TimeSetCalendarPtr(time, cal, rc)
     
       end subroutine ESMF_TimeSetCalendarPtr
 
@@ -790,7 +819,7 @@
 !     TMGn.n.n
 !EOP
 
-      call c_ESMC_TimeSetCalendarPtrPtr(time, cal, rc)
+!      call c_ESMC_TimeSetCalendarPtrPtr(time, cal, rc)
     
       end subroutine ESMF_TimeSetCalendarPtrPtr
 
@@ -860,7 +889,7 @@
 !     TMG2.5.1
 !EOP
 
-      call c_ESMC_TimeGetTimezone(time, Timezone, rc)
+!      call c_ESMC_TimeGetTimezone(time, Timezone, rc)
 
       end subroutine ESMF_TimeGetTimezone
 
@@ -893,7 +922,7 @@
 !     TMG2.5.1
 !EOP
 
-      call c_ESMC_TimeSetTimezone(time, Timezone, rc)
+!      call c_ESMC_TimeSetTimezone(time, Timezone, rc)
 
       end subroutine ESMF_TimeSetTimezone
 
@@ -926,18 +955,13 @@
 !     TMG2.4.7
 !EOP
 
-#ifdef F90_STANDALONE
-
       write(TimeString,'(I4.4"-"I2.2"-"I2.2"_"I2.2":"I2.2":"I2.2)') &
              time%YR,time%MM,time%DD, &
-             time%basetime%S / 3600 , &
-             mod( time%basetime%S / 60 , 60 ), &
-             mod( time%basetime%S  , 60 )
+             time%basetime%S / SECONDS_PER_HOUR, &
+             mod( time%basetime%S / SECONDS_PER_MINUTE , SECONDS_PER_MINUTE ), &
+             mod( time%basetime%S  , SECONDS_PER_MINUTE )
 
       rc = ESMF_SUCCESS
-#else
-      call c_ESMC_TimeGetString(time, TimeString, rc)
-#endif
 
       end subroutine ESMFold_TimeGetString
 
@@ -972,7 +996,7 @@
 !     TMG2.5.2
 !EOP
 
-      call c_ESMC_TimeGetDayOfYearDouble(time, DayOfYear, rc)
+!      call c_ESMC_TimeGetDayOfYearDouble(time, DayOfYear, rc)
 
       end subroutine ESMF_TimeGetDayOfYearDouble
 
@@ -1005,7 +1029,7 @@
 ! !REQUIREMENTS:
 !EOP
 
-      call c_ESMC_TimeGetDayOfYearInteger(time, DayOfYear, rc)
+!      call c_ESMC_TimeGetDayOfYearInteger(time, DayOfYear, rc)
 
       CALL compute_dayinyear(time%YR,time%MM,time%DD,DayOfYear)  ! defined in Meat.F90
 
@@ -1041,7 +1065,7 @@
 ! !REQUIREMENTS:
 !EOP
 
-      call c_ESMC_TimeGetDayOfYearTimeInt(time, DayOfYear, rc)
+!      call c_ESMC_TimeGetDayOfYearTimeInt(time, DayOfYear, rc)
 
       end subroutine ESMF_TimeGetDayOfYearTimeInt
 
@@ -1075,7 +1099,7 @@
 !     TMG2.5.3
 !EOP
     
-      call c_ESMC_TimeGetDayOfWeek(time, DayOfWeek, rc)
+!      call c_ESMC_TimeGetDayOfWeek(time, DayOfWeek, rc)
 
       end subroutine ESMF_TimeGetDayOfWeek
 
@@ -1108,7 +1132,7 @@
 !     TMG2.5.4
 !EOP
 
-      call c_ESMC_TimeGetDayOfMonth(time, DayOfMonth, rc)
+!      call c_ESMC_TimeGetDayOfMonth(time, DayOfMonth, rc)
 
       end subroutine ESMF_TimeGetDayOfMonth
 
@@ -1142,7 +1166,7 @@
 !     TMG2.5.5
 !EOP
 
-      call c_ESMC_TimeGetMidMonth(time, MidMonth, rc)
+!      call c_ESMC_TimeGetMidMonth(time, MidMonth, rc)
 
       end subroutine ESMF_TimeGetMidMonth
 
@@ -1173,7 +1197,7 @@
 !     TMG2.5.7
 !EOP
 
-      call c_ESMC_TimeGetRealTime(time, rc)
+!      call c_ESMC_TimeGetRealTime(time, rc)
 
       end subroutine ESMF_TimeGetRealTime
 
@@ -1577,7 +1601,7 @@
 !     TMGn.n.n
 !EOP
    
-      call c_ESMC_TimeRead(time, S, Sn, Sd, cal, tz, rc)
+!      call c_ESMC_TimeRead(time, S, Sn, Sd, cal, tz, rc)
 
       end subroutine ESMF_TimeRead
 
@@ -1622,7 +1646,7 @@
 !     TMGn.n.n
 !EOP
    
-      call c_ESMC_TimeWrite(time, S, Sn, Sd, cal, tz, rc)
+!      call c_ESMC_TimeWrite(time, S, Sn, Sd, cal, tz, rc)
 
       end subroutine ESMF_TimeWrite
 
@@ -1658,6 +1682,38 @@
       call c_ESMC_TimeValidate(time, opts, rc)
 
       end subroutine ESMF_TimeValidate
+
+!------------------------------------------------------------------------------
+!BOP
+! !IROUTINE:  ESMF_TimeCopy - Copy a time-instance
+
+! !INTERFACE:
+      subroutine ESMF_TimeCopy(timeout, timein)
+
+! !ARGUMENTS:
+      type(ESMF_Time), intent(out) :: timeout
+      type(ESMF_Time), intent(in) :: timein
+
+! !DESCRIPTION:
+!     Copy a time-instance to a new instance.
+!
+!     \item[{[rc]}]
+!          Return code; equals {\tt ESMF\_SUCCESS} if there are no errors.
+!     \end{description}
+!
+! !REQUIREMENTS:
+!     TMGn.n.n
+!EOP
+   
+      timeout%basetime = timein%basetime
+      timeout%instant  = timein%instant
+      timeout%YR       = timein%YR
+      timeout%MM       = timein%MM
+      timeout%DD       = timein%DD
+      timeout%Calendar => timein%Calendar
+
+      end subroutine ESMF_TimeCopy
+
 
 !------------------------------------------------------------------------------
 !BOP

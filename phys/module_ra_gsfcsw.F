@@ -10,11 +10,13 @@ MODULE module_ra_gsfcsw
 CONTAINS
 
 !------------------------------------------------------------------
-   SUBROUTINE GSFCSWRAD(rthraten,gsw,xlat,xlong                   &
+   SUBROUTINE GSFCSWRAD(rthraten,swup,swdn,swupclear,swdnclear    &
+                   ,gsw,swcf,xlat,xlong                           &
+                   ,dz8w,rho_phy                                  &
                    ,alb,t3d,qv3d,qc3d,qr3d                        &
                    ,qi3d,qs3d,qg3d,p3d,p8w3d,pi3d,cldfra3d        &
                    ,gmt,cp,g,julday,xtime,declin,solcon           &
-                   ,radfrq,degrad,taucldi,taucldc,warm_rain       &
+                   ,radfrq,degrad,coszr,taucldi,taucldc,warm_rain &
                    ,f_qv,f_qc,f_qr,f_qi,f_qs,f_qg                 &
                    ,ids,ide, jds,jde, kds,kde                     & 
                    ,ims,ime, jms,jme, kms,kme                     &
@@ -40,14 +42,33 @@ CONTAINS
                                                            P8W3D, &
                                                             pi3D, &
                                                              T3D, &
+                                                            dz8w, &
+                                                         rho_phy, &
                                                         CLDFRA3D
 
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          INTENT(INOUT)  ::                              RTHRATEN
+
+! Added downward/upward total and clear sky fluxes
+! Note that these fluxes are defined at the half levels, 
+! with 1 being the half level below the model lowest level
+! and kts+1 being the half level above the model highest level
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                &
+         INTENT(INOUT)  ::                                  SWUP, &
+                                                            SWDN
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme),                 &
+         INTENT(INOUT) ::                              SWUPCLEAR, &
+                                                       SWDNCLEAR
+! Added shortwave cloud forcing at TOA
+   REAL, DIMENSION( ims:ime, jms:jme),                            &
+         INTENT(INOUT) ::                                   SWCF       
+
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          INTENT(INOUT)  ::                               taucldi, &
                                                          taucldc
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT) ::      coszr
 !
    REAL, DIMENSION( ims:ime, jms:jme ),                           &
          INTENT(IN   )  ::                                  XLAT, &
@@ -96,6 +117,12 @@ CONTAINS
 
    REAL, DIMENSION( its:ite, kts-1:kte+1 )  ::               flx, &
                                                             flxd
+
+! added fluxes for calculating upward and downward clearsky and total shortwave fluxes
+   REAL, DIMENSION( its:ite, kts-1:kte+1 )  ::               flxu, &
+                                                             flxc, &
+                                                            flxcu, &
+                                                            flxcd
 !
    REAL, DIMENSION( its:ite, kts-1:kte ) ::                     O3
 !
@@ -115,6 +142,9 @@ CONTAINS
                                                              P2D, &
                                                              T2D, &
                                                           fcld2D
+
+   real, DIMENSION( its:ite , kts:kte+1 ) :: phyd
+   real, DIMENSION( its:ite , kts:kte   ) :: phydmid
 
    REAL, DIMENSION( np, 5 ) ::                              pres, &
                                                            ozone
@@ -409,12 +439,23 @@ CONTAINS
          p(k)=pres(k,iprof)
       ENDDO
 
+      do k = kts,kte+1
+      do i = its,ite
+      if(k.eq.kts)then
+        phyd(i,k)=p8w3d(i,kts,j)
+      else
+        phyd(i,k)=phyd(i,k-1) - g*rho_phy(i,k-1,j)*dz8w(i,k-1,j)
+        phydmid(i,k-1)=0.5*(phyd(i,k-1)+phyd(i,k))
+      endif
+      enddo
+      enddo
+
 ! reverse vars 
 !
       DO K=kts,kte+1
       DO I=its,ite
          NK=kme-K+kms
-         P8W2D(I,K)=P8W3D(I,NK,J)*0.01   ! P8w2D is in mb
+         P8W2D(I,K)=phyd(I,NK)*0.01   ! P8w2D is in mb
       ENDDO
       ENDDO
 
@@ -434,8 +475,19 @@ CONTAINS
          cwc(I,K,2)=QC3D(I,NK,J)
          cwc(I,K,2)=max(0.,cwc(I,K,2))
 
-         P2D(I,K)=P3D(I,NK,J)*0.01      ! P2D is in mb
+         P2D(I,K)=phydmid(I,NK)*0.01      ! P2D is in mb
          fcld2D(I,K)=CLDFRA3D(I,NK,J)
+      ENDDO
+      ENDDO
+
+! Initialize fluxes to zero
+
+      DO K=kts,kte
+      DO I=its,ite
+      SWUP(I,K,J)=0.
+      SWUPCLEAR(I,K,J)=0.
+      SWDN(I,K,J)=0.
+      SWDNCLEAR(I,K,J)=0.
       ENDDO
       ENDDO
 
@@ -542,6 +594,10 @@ CONTAINS
       do i = its,ite
          flx(i,k)   = 0.
          flxd(i,k)  = 0.
+         flxu(i,k)  = 0.
+         flxc(i,k) = 0.0
+         flxcu(i,k) = 0.0
+         flxcd(i,k) = 0.0
       end do
       end do
 !
@@ -554,6 +610,7 @@ CONTAINS
         xxlat = XLAT(i,j) * degrad
         cosz(i) = sin(xxlat) * sin(declin) + &
                   cos(xxlat) * cos(declin) * cos(hrang)
+        coszr(i,j)=cosz(i)
         rsuvbm(i) = ALB(i,j)
         rsuvdf(i) = ALB(i,j)
         rsirbm(i) = ALB(i,j)
@@ -564,7 +621,7 @@ CONTAINS
                   overcast,cldwater,cwc,taucld,reff,fcld2D,ict,icb,&
                   taual,ssaal,asyal,                               &
                   cosz,rsuvbm,rsuvdf,rsirbm,rsirdf,                &
-                  flx,flxd)
+                  flx,flxd,flxu,flxc,flxcd,flxcu)
 !
 ! ... Convert the units of flx and flc from fraction to w/m^2
 !
@@ -582,6 +639,11 @@ CONTAINS
             flx(i,k) = 0.
           else
             flx(i,k) = flx(i,k) * SOLCON * cosz(i)
+!           flxu(i,k) = flxu(i,k) * SOLCON * cosz(i)    ! Find flux up and down
+!           flxd(i,k) = flxd(i,k) * SOLCON * cosz(i)
+!           flxc(i,k) = flxc(i,k) * SOLCON * cosz(i)
+!           flxcu(i,k) = flxcu(i,k) * SOLCON * cosz(i)  ! Find flux up and down
+!           flxcd(i,k) = flxcd(i,k) * SOLCON * cosz(i)
           endif
         end do
       end do
@@ -594,6 +656,11 @@ CONTAINS
          if (cosz(i) .gt. thresh) then
              TTEN2D(i,k) = - fac * (flx(i,k) - flx(i,k+1))/ &
                            (p8w2d(i,k)-p8w2d(i,k+1))
+! ... Find the flux at the middle of the layer
+!            UPHALF(i,k) = SOLCON * cosz(i)*(flxu(i,k) + flxu(i,k+1)) / 2.0
+!            DNHALF(i,k) = SOLCON * cosz(i)*(flxd(i,k) + flxd(i,k+1)) / 2.0
+!            UPHALFCLEAR(i,k) = SOLCON * cosz(i)*(flxcu(i,k) + flxcu(i,k+1)) / 2.0
+!            DNHALFCLEAR(i,k) = SOLCON * cosz(i)*(flxcd(i,k) + flxcd(i,k+1)) / 2.0
          endif
       end do
       end do
@@ -604,8 +671,10 @@ CONTAINS
       do i = its, ite
         if (cosz(i) .le. thresh) then
           GSW(i,j) = 0.
+          SWCF(i,j) = 0.
         else
           GSW(i,j) = (1. - rsuvbm(i)) * flxd(i,kte+1) * SOLCON * cosz(i)
+          SWCF(i,j) = (flxd(i,0) - flxcd(i,0)) * SOLCON * cosz(i)
         endif
       end do
 
@@ -613,6 +682,23 @@ CONTAINS
          NK=kme-1-K+kms
          DO I=its,ite          
             RTHRATEN(I,K,J)=RTHRATEN(I,K,J)+TTEN2D(I,NK)/pi3D(I,K,J)
+         ENDDO
+      ENDDO
+
+      DO K=kts,kte+1
+         NK=kme-1-K+kms+1
+         DO I=its,ite
+         if (cosz(i) .gt. thresh) then
+            SWUP(I,K,J) = SOLCON * cosz(i)*flxu(i,nk)
+            SWUPCLEAR(I,K,J) = SOLCON * cosz(i)*flxcu(i,nk)
+            SWDN(I,K,J) = SOLCON * cosz(i)*flxd(i,nk)
+            SWDNCLEAR(I,K,J) = SOLCON * cosz(i)*flxcd(i,nk)
+            if(i.eq.its.and.j.eq.jts) then
+!           print *, i,j,k,nk,swup(i,k,j)/(solcon*cosz(i)),swdn(i,k,j)/(solcon*cosz(i)),  &
+!                    flxu(i,nk),flxu(i,nk+1),flxd(i,nk),flxd(i,nk+1)
+!           if(k.eq.kte) print *, 'top ', kts,kms,kte,kme,flxu(i,0),flxd(i,0)
+            endif
+         endif
          ENDDO
       ENDDO
 !
@@ -626,7 +712,7 @@ CONTAINS
                         overcast,cldwater,cwc,taucld,reff,fcld,ict,icb, &
                         taual,ssaal,asyal,                              &
                         cosz,rsuvbm,rsuvdf,rsirbm,rsirdf,               &
-                        flx,flxd)
+                        flx,flxd,flxu,flc,flcd,flcu)
 
 !************************************************************************
 !
@@ -800,6 +886,7 @@ CONTAINS
 
       real flx(m,ndim,np+1),flc(m,ndim,np+1)
       real flxu(m,ndim,np+1),flxd(m,ndim,np+1)
+      real flcu(m,ndim,np+1),flcd(m,ndim,np+1)
       real fdiruv (m,ndim),fdifuv (m,ndim)
       real fdirpar(m,ndim),fdifpar(m,ndim)
       real fdirir (m,ndim),fdifir (m,ndim)
@@ -811,6 +898,7 @@ CONTAINS
       real dp(m,n,np),wh(m,n,np),oh(m,n,np),scal(m,n,np)
       real swh(m,n,np+1),so2(m,n,np+1),df(m,n,np+1)
       real sdf(m,n),sclr(m,n),csm(m,n),x
+      real taucld1(m,n,np,2)
  
       do j= 1, n 
        do i= 1, m 
@@ -878,6 +966,8 @@ CONTAINS
           flc(i,j,k)=0.
           flxu(i,j,k)=0.
           flxd(i,j,k)=0.
+          flcu(i,j,k)=0.0
+          flcd(i,j,k)=0.0
           df(i,j,k)=0.
         enddo
        enddo
@@ -888,14 +978,34 @@ CONTAINS
       call soluv (m,n,ndim,np,oh,dp,overcast,cldwater,  &
                   cwp,taucld,reff,ict,icb,fcld,cosz,    &
                   taual,ssaal,asyal,csm,rsuvbm,rsuvdf,  &
-                  flx,flc,flxu,flxd,fdiruv,fdifuv,fdirpar,fdifpar)
+                  flx,flc,flxu,flcu,flxd,flcd,fdiruv,fdifuv,fdirpar,fdifpar)
+
+      do k=1, np
+       do j=1, n
+        do i=1, m
+          taucld1(i,j,k,1)=taucld(i,j,k,1)
+          taucld1(i,j,k,2)=taucld(i,j,k,2)
+        enddo
+       enddo
+      enddo
 
 !-----compute and update solar ir fluxes
 
       call solir (m,n,ndim,np,wh,overcast,cldwater,     &
                   cwp,taucld,reff,ict,icb,fcld,cosz,    &
                   taual,ssaal,asyal,csm,rsirbm,rsirdf,  &
-                  flx,flc,flxu,flxd,fdirir,fdifir)
+                  flx,flc,flxu,flcu,flxd,flcd,fdirir,fdifir)
+
+!-----save the uv (not ir) cloud optical depth for isccp simulator
+                                                                                                                                                           
+      do k=1, np
+       do j=1, n
+        do i=1, m
+          taucld(i,j,k,1)=taucld1(i,j,k,1)
+          taucld(i,j,k,2)=taucld1(i,j,k,2)
+        enddo
+       enddo
+      enddo
 
 !-----compute scaled o2 amount, unit is (cm-atm)stp.
 
@@ -941,6 +1051,8 @@ CONTAINS
        do j= 1, n
         do i= 1, m
           flc(i,j,k)=flc(i,j,k)-df(i,j,k)
+          flcd(i,j,k)=flcd(i,j,k)-df(i,j,k)
+          flcu(i,j,k)=flcu(i,j,k)-df(i,j,k)
         enddo
        enddo
       enddo
@@ -980,6 +1092,8 @@ CONTAINS
       do j= 1, n
        do i= 1, m
         flc(i,j,np+1)=flc(i,j,np+1)+df(i,j,np+1)*rsirbm(i,j)
+        flcd(i,j,np+1)=flcd(i,j,np+1)+df(i,j,np+1)*rsirbm(i,j)
+        flcu(i,j,np+1)=flcu(i,j,np+1)+df(i,j,np+1)*rsirbm(i,j)
         flx(i,j,np+1)=flx(i,j,np+1)+(sdf(i,j)+ &
                          df(i,j,np+1)*sclr(i,j))*rsirbm(i,j)
         flxu(i,j,np+1)=flxu(i,j,np+1)+(sdf(i,j)+ &
@@ -997,7 +1111,7 @@ CONTAINS
       subroutine soluv (m,n,ndim,np,oh,dp,overcast,cldwater,            &
                 cwp,taucld,reff,ict,icb,fcld,cosz,                      &
                 taual,ssaal,asyal,csm,rsuvbm,rsuvdf,                    &
-                flx,flc,flxu,flxd,fdiruv,fdifuv,fdirpar,fdifpar)
+                flx,flc,flxu,flcu,flxd,flcd,fdiruv,fdifuv,fdirpar,fdifpar)
 
 !************************************************************************
 !  compute solar fluxes in the uv+par region. the spectrum is
@@ -1096,6 +1210,7 @@ CONTAINS
 
       real flx(m,ndim,np+1),flc(m,ndim,np+1)
       real flxu(m,ndim,np+1),flxd(m,ndim,np+1)
+      real flcu(m,ndim,np+1),flcd(m,ndim,np+1)
       real fdiruv (m,ndim),fdifuv (m,ndim)
       real fdirpar(m,ndim),fdifpar(m,ndim)
 
@@ -1116,6 +1231,7 @@ CONTAINS
              rs(m,n,np+1,2),ts(m,n,np+1,2)
       real fall(m,n,np+1),fclr(m,n,np+1),fsdir(m,n),fsdif(m,n)
       real fallu(m,n,np+1),falld(m,n,np+1)
+      real fclru(m,n,np+1),fclrd(m,n,np+1)
       real asyclt(m,n)
       real rr1t(m,n),tt1t(m,n),td1t(m,n),rs1t(m,n),ts1t(m,n)
       real rr2t(m,n),tt2t(m,n),td2t(m,n),rs2t(m,n),ts2t(m,n)
@@ -1384,7 +1500,7 @@ CONTAINS
 !-----flux calculations
  
         call cldflx (m,n,np,ict,icb,overcast,cc,rr,tt,td,rs,ts, &
-                     fclr,fall,fallu,falld,fsdir,fsdif)
+                     fclr,fall,fallu,falld,fsdir,fsdif,fclru,fclrd)
 
        do k= 1, np+1
         do j= 1, n
@@ -1397,6 +1513,8 @@ CONTAINS
         do j= 1, n
          do i= 1, m
           flc(i,j,k)=flc(i,j,k)+fclr(i,j,k)*hk(ib)
+          flcu(i,j,k)=flcu(i,j,k)+fclru(i,j,k)*hk(ib)
+          flcd(i,j,k)=flcd(i,j,k)+fclrd(i,j,k)*hk(ib)
          enddo
         enddo
        enddo
@@ -1428,7 +1546,7 @@ CONTAINS
       subroutine solir (m,n,ndim,np,wh,overcast,cldwater,               &
                         cwp,taucld,reff,ict,icb,fcld,cosz,              &
                         taual,ssaal,asyal,csm,rsirbm,rsirdf,            &
-                        flx,flc,flxu,flxd,fdirir,fdifir)
+                        flx,flc,flxu,flcu,flxd,flcd,fdirir,fdifir)
 
 !************************************************************************
 !  compute solar flux in the infrared region. The spectrum is divided
@@ -1510,6 +1628,7 @@ CONTAINS
 
       real flx(m,ndim,np+1),flc(m,ndim,np+1)
       real flxu(m,ndim,np+1),flxd(m,ndim,np+1)
+      real flcu(m,ndim,np+1),flcd(m,ndim,np+1)
       real fdirir(m,ndim),fdifir(m,ndim)
 
 !-----static parameters
@@ -1528,6 +1647,7 @@ CONTAINS
              rs(m,n,np+1,2),ts(m,n,np+1,2)
       real fall(m,n,np+1),fclr(m,n,np+1)
       real fallu(m,n,np+1),falld(m,n,np+1)
+      real fclru(m,n,np+1),fclrd(m,n,np+1)
       real fsdir(m,n),fsdif(m,n)
 
       real tauwv,tausto,ssatau,asysto,tauto,ssato,asyto
@@ -1866,7 +1986,7 @@ CONTAINS
 !-----flux calculations
 
         call cldflx (m,n,np,ict,icb,overcast,cc,rr,tt,td,rs,ts, &
-                     fclr,fall,fallu,falld,fsdir,fsdif)
+                     fclr,fall,fallu,falld,fsdir,fsdif,fclru,fclrd)
 
        do k= 1, np+1
         do j= 1, n
@@ -1879,6 +1999,8 @@ CONTAINS
         do j= 1, n
          do i= 1, m
           flc(i,j,k) = flc(i,j,k)+fclr(i,j,k)*hk(ib,ik)
+          flcu(i,j,k) = flcu(i,j,k)+fclru(i,j,k)*hk(ib,ik)
+          flcd(i,j,k) = flcd(i,j,k)+fclrd(i,j,k)*hk(ib,ik)
          enddo
         enddo
        enddo
@@ -2399,7 +2521,7 @@ CONTAINS
 !*******************************************************************
 
       subroutine cldflx (m,n,np,ict,icb,overcast,cc,rr,tt,td,rs,ts,&
-                 fclr,fall,fallu,falld,fsdir,fsdif)
+                 fclr,fall,fallu,falld,fsdir,fsdif,fclru,fclrd)
 
 !*******************************************************************
 !  compute upward and downward fluxes using a two-stream adding method
@@ -2459,6 +2581,7 @@ CONTAINS
 
       real fclr(m,n,np+1),fall(m,n,np+1)
       real fallu(m,n,np+1),falld(m,n,np+1)
+      real fclru(m,n,np+1),fclrd(m,n,np+1)
       real fsdir(m,n),fsdif(m,n)
 
 !-----initialize all-sky flux (fall) and surface downward fluxes
@@ -2470,6 +2593,8 @@ CONTAINS
            fall(i,j,k)=0.0
            fallu(i,j,k)=0.0
            falld(i,j,k)=0.0
+           fclru(i,j,k)=0.0
+           fclrd(i,j,k)=0.0
         enddo
        enddo
       enddo
@@ -2740,6 +2865,8 @@ CONTAINS
          do i=1,m
            if(ih.eq.1 .and. im.eq.1 .and. is.eq.1) then
              fclr(i,j,k)=flxdn(i,j,k)
+             fclru(i,j,k) = flxdnu(i,j,k)
+             fclrd(i,j,k) = flxdnd(i,j,k)
            endif
              fall(i,j,k)=fall(i,j,k)+flxdn(i,j,k)*ct(i,j)
              fallu(i,j,k)=fallu(i,j,k)+flxdnu(i,j,k)*ct(i,j)

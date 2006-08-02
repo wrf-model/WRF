@@ -4,10 +4,11 @@ MODULE module_surface_driver
 CONTAINS
 
    SUBROUTINE surface_driver(                                         &
-     &           acsnom,acsnow,akhs,akms,albedo,br,canwat             &
+     &           acgrdflx,achfx,aclhf                                 &
+     &          ,acsnom,acsnow,akhs,akms,albedo,br,canwat             &
      &          ,chklowq,dt,dx,dz8w,dzs,glw                           &
      &          ,grdflx,gsw,gz1oz0,hfx,ht,ifsnow,isfflx               &
-     &          ,isltyp,itimestep,ivgtyp,lowlyr,mavail,rmol           &
+     &          ,isltyp,itimestep,julian_in,ivgtyp,lowlyr,mavail,rmol    &
      &          ,num_soil_layers,p8w,pblh,pi_phy,pshltr,psih          &
      &          ,psim,p_phy,q10,q2,qfx,qsfc,qshltr,qz0                &
      &          ,raincv,rho,sfcevp,sfcexc,sfcrunoff                   &
@@ -15,13 +16,16 @@ CONTAINS
      &          ,th10,th2,thz0,th_phy,tmn,tshltr,tsk,tslb             &
      &          ,t_phy,u10,udrunoff,ust,uz0,u_frame,u_phy,v10,vegfra  &
      &          ,vz0,v_frame,v_phy,warm_rain,wspd,xice,xland,z,znt,zs &
-     &          ,ct,tke_myj                                           &
-     &          ,albbck,lh,sh2o,shdmax,shdmin,z0                      &
-     &          ,flqc,flhc,psfc,sst,sst_update                        &
+     &          ,ct,tke_myj,albbck                                    &
+     &          ,albbcks,albbckw,lh,sh2o,shdmax,shdmin,z0,vegfmo      &
+     &          ,flqc,flhc,psfc                                       &
+     &          ,xlat,julday,gmt                                      & 
+     &          ,sst,sst_update                                       &
      &          ,sf_sfclay_physics,sf_surface_physics,ra_lw_physics   &
      &          , ids,ide,jds,jde,kds,kde                             &
      &          , ims,ime,jms,jme,kms,kme                             &
      &          , i_start,i_end,j_start,j_end,kts,kte,num_tiles       &
+     &          , num_months                                          &
              !  Optional moisture tracers
      &           ,qv_curr, qc_curr, qr_curr                           &
      &           ,qi_curr, qs_curr, qg_curr                           &
@@ -117,6 +121,7 @@ CONTAINS
 ! Qs         snow mixing ratio (kg/kg)
 !-----------------------------------------------------------------
 !-- itimestep     number of time steps
+!-- JULIAN_in        the current day of year (Julian day) expressed as REAL and including fractional days
 !-- GLW           downward long wave flux at ground surface (W/m^2)
 !-- GSW           downward short wave flux at ground surface (W/m^2)
 !-- EMISS         surface emissivity (between 0 and 1)
@@ -201,7 +206,7 @@ CONTAINS
    INTEGER, INTENT(IN) ::                                             &
      &           ids,ide,jds,jde,kds,kde                              &
      &          ,ims,ime,jms,jme,kms,kme                              &
-     &          ,kts,kte,num_tiles
+     &          ,kts,kte,num_tiles,num_months
 
    INTEGER, INTENT(IN) :: sf_sfclay_physics,sf_surface_physics,ra_lw_physics,sst_update
 
@@ -214,6 +219,7 @@ CONTAINS
    INTEGER, INTENT(IN )::   IFSNOW
    INTEGER, INTENT(IN )::   ISFFLX
    INTEGER, INTENT(IN )::   ITIMESTEP
+   REAL,    INTENT(IN )::   JULIAN_in
    INTEGER, INTENT(IN )::   NUM_SOIL_LAYERS
    INTEGER, INTENT(IN )::   STEPBL
    LOGICAL, INTENT(IN )::   WARM_RAIN
@@ -221,15 +227,17 @@ CONTAINS
    REAL , INTENT(IN )::   V_FRAME
    REAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), INTENT(INOUT)::   SMOIS
    REAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), INTENT(INOUT)::   TSLB
+   REAL, DIMENSION( ims:ime , 1:num_months, jms:jme ), INTENT(IN)::   VEGFMO
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   GLW
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   GSW
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   HT
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   RAINCV
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   SST
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   TMN
-   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   VEGFRA
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   VEGFRA
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   XICE
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   XLAND
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   XLAT
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   MAVAIL
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   SNOALB
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   ACSNOW
@@ -277,6 +285,9 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   PSFC
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)::   ACSNOM
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)::   SFCEVP
+   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   ACHFX
+   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   ACLHF
+   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   ACGRDFLX
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)::   SFCEXC
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)::   FLHC
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)::   FLQC
@@ -296,10 +307,14 @@ CONTAINS
    REAL, DIMENSION(1:num_soil_layers), INTENT(IN)::   ZS
    REAL, INTENT(IN )::   DT
    REAL, INTENT(IN )::   DX
+   REAL, INTENT(IN )::   GMT
+   INTEGER, INTENT(IN  ) ::  JULDAY
 
 !  arguments for NCAR surface physics
 
-   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT )::   ALBBCK  ! INOUT needed for NMM
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT )::   ALBBCK ! current background albedo
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   ALBBCKS ! summer background albedo
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   ALBBCKW ! winter background albedo
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT )::   LH
    REAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), INTENT(INOUT)::   SH2O
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   SHDMAX
@@ -373,6 +388,7 @@ CONTAINS
 !
    INTEGER :: i,J,K,NK,jj,ij
    LOGICAL :: radiation
+   REAL    :: xtime,oldjulian,julian
    CHARACTER*256 :: message
 !
 !
@@ -432,6 +448,44 @@ CONTAINS
       ENDDO
       ENDDO
     ENDDO
+    !$OMP END PARALLEL DO
+  ENDIF
+! Update landuse parameters
+!  Only call this once per day
+  IF(MOD(itimestep,NINT(86400./dt)) .eq. 1)THEN
+   JULIAN = julian_in + (dt/(60.*60.*24.))    ! offset by one timestep
+   ! horrific hack to limit range of JULIAN
+   IF ( JULIAN < 1.0 ) THEN
+     JULIAN = 1.0 + (JULIAN - INT(JULIAN))
+   ENDIF
+   IF ( JULIAN >= 366.0 ) THEN
+     JULIAN = 1.0 + (JULIAN - INT(JULIAN))
+   ENDIF
+   XTIME=float(itimestep)*dt/60.
+   oldJULIAN=FLOAT(JULDAY)+(XTIME/60.+GMT)/24.
+! julian = 1.0 at 00z Jan 1st
+   oldJULIAN=oldJULIAN-int(oldJULIAN/365.)*365.
+   IF ( oldJULIAN .NE. JULIAN ) THEN
+     WRITE( message , * ) 'surface_driver:  JULIAN DATE MISMATCH:  JULIAN = ',JULIAN, &
+       '  oldJULIAN,JULDAY,XTIME,GMT,itimestep,dt = ',oldJULIAN,JULDAY,XTIME,GMT,itimestep,dt
+     CALL wrf_debug ( 50, TRIM(message) )
+   ENDIF
+!$$$DEBUG
+!JULIAN = oldJULIAN
+!$$$END DEBUG
+!  print *, 'check time values', dt,itimestep,gmt,xtime,julian,julday
+     !$OMP PARALLEL DO   &
+     !$OMP PRIVATE ( ij, i, j, k )
+     DO ij = 1 , num_tiles
+       CALL wrf_debug( 100, 'in LANDUSE_UPDATE' )
+        CALL landuse_update(ivgtyp, albedo, albbck, albbcks, albbckw, mavail, emiss,             &
+                znt, thc, xland, xlat, julian,                      &
+                vegfmo, num_months, vegfra,                         &
+                ids, ide, jds, jde, kds, kde,                       &
+                ims, ime, jms, jme, kms, kme,                       &
+                i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte   ) 
+     ENDDO
+     !$OMP END PARALLEL DO
   ENDIF
 
   IF (itimestep .eq. 1 .or. mod(itimestep,STEPBL) .eq. 0) THEN
@@ -469,6 +523,7 @@ CONTAINS
        ENDDO
      ENDDO
      !$OMP END PARALLEL DO
+
 
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij, i, j, k )
@@ -739,7 +794,127 @@ CONTAINS
 
    ENDIF
 
+    !$OMP PARALLEL DO   &
+    !$OMP PRIVATE ( ij, i, j, k )
+    DO ij = 1 , num_tiles
+      DO j=j_start(ij),j_end(ij)
+      DO i=i_start(ij),i_end(ij)
+        ACHFX(I,J)=ACHFX(I,J) + HFX(I,J)*DT
+        ACLHF(I,J)=ACLHF(I,J) + LH(I,J)*DT
+        SFCEVP(I,J)=SFCEVP(I,J) + QFX(I,J)*DT
+        ACGRDFLX(I,J)=ACGRDFLX(I,J) + GRDFLX(I,J)*DT
+! if(i.eq.100.and.j.eq.30)print *,' achfx =',ACHFX(I,J),HFX(I,J),DT
+! if(i.eq.100.and.j.eq.30)print *,ACLHF(I,J),SFCEVP(I,J),ACGRDFLX(I,J),' ACLHF,SFCEVP,ACGRDFLX'
+      ENDDO
+      ENDDO
+    ENDDO
+    !$OMP END PARALLEL DO
+
    END SUBROUTINE surface_driver
+
+   SUBROUTINE landuse_update(ivgtyp, albedo, albbck, albbcks, albbckw, mavail, emiss,         &
+                znt, thc, xland, xlat, julian,                      &
+                vegfmo, num_months, vegfra,                         &
+                ids, ide, jds, jde, kds, kde,                       &
+                ims, ime, jms, jme, kms, kme,                       &
+                its, ite, jts, jte, kts, kte                       )
+
+   USE module_wrf_error
+   IMPLICIT NONE
+
+!---------------------------------------------------------------------
+   INTEGER , INTENT(IN)           :: ids, ide, jds, jde, kds, kde,   &
+                                     ims, ime, jms, jme, kms, kme,   &
+                                     its, ite, jts, jte, kts, kte, num_months
+
+   REAL,     INTENT(IN)           :: julian
+   REAL,     DIMENSION( ims:ime , num_months, jms:jme ) , INTENT(IN   ) :: vegfmo
+   REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(IN   ) :: albedo, albbcks, albbckw
+   REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(IN   ) :: xlat
+   INTEGER,  DIMENSION( ims:ime , jms:jme ) , INTENT(IN   ) :: ivgtyp
+   REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT  ) :: albbck
+   REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT  ) :: vegfra
+   REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(IN  ) :: mavail, emiss, &
+                                                         znt, thc, xland
+!---------------------------------------------------------------------
+! Local
+   INTEGER  :: i, j, is, isn, m, nm1,np1, julm, julp
+   integer  :: ifirst, ifirst1
+   INTEGER , PARAMETER :: max_cats = 100 , max_seas = 12
+   REAL :: a, b, jul
+   REAL, DIMENSION( max_cats, max_seas ) :: ALBD, SLMO, SFEM, SFZ0, THERIN
+   logical :: finddate
+   integer, dimension(12) ::  date_val(12)
+!---------------------------------------------------------------------
+   data date_val/16, 45, 75, 105, 136, 166, 197, 228, 258, 289, 319, 350/
+ 
+! ISN: summer=1, winter=2
+
+      ifirst=0
+      ifirst1=0
+      DO j = jts, jte
+        DO i = its, ite
+          if(julian.lt.183.) then
+          a=julian-1.
+          b=183.-julian
+          else
+          a=365.-julian
+          b=julian-183.
+          endif
+          ISN=1
+          if(xlat(i,j).lt.0.0) ISN=2
+!         IS=ivgtyp(i,j)
+          IF((XLAND(I,J)-1.5).LT.0.)THEN
+          if(ifirst.eq.0) then
+!         print *, 'check vegfra before', i,j,is,isn,julian,albedo(i,j)
+          ifirst=1
+          endif
+          ALBBCK(I,J)=(1./182.)*(a*ALBBCKS(I,J)+b*ALBBCKW(I,J))
+          if(isn.eq.2) ALBBCK(I,J)=(1./182.)*(a*ALBBCKW(I,J)+b*ALBBCKS(I,J))
+          if(ifirst1.eq.0) then
+          ifirst1=1
+          endif
+!         THC(I,J)=(0.01/182.)*(a*THERIN(IS,ISN)+b*THERIN(IS,3-ISN))
+!         ZNT(I,J)=(0.01/182.)*(a*SFZ0(IS,ISN)+b*SFZ0(IS,3-ISN))
+!         EMISS(I,J)=(a*SFEM(IS,ISN)+b*SFEM(IS,3-ISN))/182.
+!         MAVAIL(I,J)=(a*SLMO(IS,ISN)+b*SLMO(IS,3-ISN))/182.
+          ENDIF
+        ENDDO
+      ENDDO
+
+! Monthly data goes here. Assumed valid at mid-month.
+   np1=1
+   nm1=12
+   jul=julian
+   finddate=.false.
+   do m=1,12
+   if(date_val(m).gt.julian.and..not.finddate) then
+     np1=m
+     finddate=.true.
+   endif
+   enddo
+   if(np1.gt.1)then
+      nm1=np1-1
+      julp=date_val(np1)
+      julm=date_val(nm1)
+   else
+      nm1=12
+      julp=date_val(np1) + 365
+      julm=date_val(nm1)
+      if(julian .lt. date_val(12))jul = jul + 365.
+   endif
+   a = (julp - jul)/(julp - julm)
+   b = (jul - julm)/(julp - julm)
+
+      DO j = jts, jte
+        DO i = its, ite
+           vegfra(i,j) = a*vegfmo(i,nm1,j) + b*vegfmo(i,np1,j) 
+        enddo
+      ENDDO
+    RETURN
+
+   END SUBROUTINE landuse_update
+
 
 END MODULE module_surface_driver
 

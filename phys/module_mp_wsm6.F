@@ -73,6 +73,7 @@ CONTAINS
                  ,ims,ime, jms,jme, kms,kme                        &
                  ,its,ite, jts,jte, kts,kte                        &
                                                                    )
+   USE module_wrf_error
 !-------------------------------------------------------------------
   IMPLICIT NONE
 !-------------------------------------------------------------------
@@ -141,10 +142,15 @@ CONTAINS
   REAL, DIMENSION( its:ite , kts:kte, 2 ) ::   qci
   REAL, DIMENSION( its:ite , kts:kte, 3 ) ::   qrs
   INTEGER ::               i,j,k
+  CHARACTER*1024 :: message
 !-------------------------------------------------------------------
       DO j=jts,jte
          DO k=kts,kte
          DO i=its,ite
+            if(den(i,k,j).le.0.) then
+            WRITE(message,*)'den(i,k,j),i,k,j ',den(i,k,j),i,k,j
+            CALL wrf_debug(50,message)
+            end if
             t(i,k)=th(i,k,j)*pii(i,k,j)
             qci(i,k,1) = qc(i,k,j)
             qci(i,k,2) = qi(i,k,j)
@@ -191,6 +197,8 @@ CONTAINS
                    ,ims,ime, jms,jme, kms,kme                     &
                    ,its,ite, jts,jte, kts,kte                     &
                                                                   )
+   USE module_wrf_error
+
 !-------------------------------------------------------------------
   IMPLICIT NONE
 !-------------------------------------------------------------------
@@ -264,6 +272,7 @@ CONTAINS
   REAL  :: holdc, holdci
   INTEGER :: i, j, k, mstepmax,                                   &
             iprt, latd, lond, loop, loops, ifsat, n
+  CHARACTER*1024 :: message
 #ifdef INL
 ! Temporaries used for inlining fpvs function
   REAL  :: dldti, xb, xai, tr, xbi, xa, hvap, cvap, hsub, dldt, ttp
@@ -479,7 +488,12 @@ CONTAINS
             rslope2(i,k,1) = rsloper2max
             rslope3(i,k,1) = rsloper3max
           else
+!         WRITE(message,*)'qrs(i,k,1),den(i,k),pidn0r',qrs(i,k,1),den(i,k),pidn0r
+!         CALL wrf_debug(50,message)
+
             rslope(i,k,1) = 1./lamdar(qrs(i,k,1),den(i,k))
+!         WRITE(message,*)'rslope(i,k,1)',rslope(i,k,1)
+!         CALL wrf_debug(50,message)
             rslopeb(i,k,1) = rslope(i,k,1)**bvtr
             rslope2(i,k,1) = rslope(i,k,1)*rslope(i,k,1)
             rslope3(i,k,1) = rslope2(i,k,1)*rslope(i,k,1)

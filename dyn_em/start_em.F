@@ -60,6 +60,7 @@
 
    REAL :: qvf1, qvf2, qvf
    REAL :: MPDT
+   REAL :: weight
    LOGICAL :: first_trip_for_this_domain
 
    REAL :: lat1 , lat2 , lat3 , lat4
@@ -139,8 +140,13 @@
 
 
      DO loop = grid%spec_zone + 1, grid%spec_zone + grid%relax_zone
-       fcx(loop) = 0.1 / grid%dt * (grid%spec_zone + grid%relax_zone - loop) / (grid%relax_zone - 1)
-       gcx(loop) = 1.0 / grid%dt / 50. * (grid%spec_zone + grid%relax_zone - loop) / (grid%relax_zone - 1)
+       weight=exp(-(loop-2)/3.)
+       fcx(loop) = 0.1 / grid%dt * (grid%spec_zone + grid%relax_zone - loop)/(grid%relax_zone - 1)
+       gcx(loop) = 1.0 / grid%dt / 50. * (grid%spec_zone + grid%relax_zone - loop)/(grid%relax_zone - 1)
+       fcx(loop) = fcx(loop)*weight
+       gcx(loop) = gcx(loop)*weight
+!      fcx(loop) = 0.1 / grid%dt * (grid%spec_zone + grid%relax_zone - loop) / (grid%relax_zone - 1)
+!      gcx(loop) = 1.0 / grid%dt / 50. * (grid%spec_zone + grid%relax_zone - loop) / (grid%relax_zone - 1)
      ENDDO
 
    ELSE IF (config_flags%nested) THEN
@@ -492,7 +498,15 @@
                       MASS_FLUX,                              &
                       RTHFTEN, RQVFTEN,                       &
                       CLDFRA,GLW,GSW,EMISS,LU_INDEX,          &
-                      XLAT,XLONG,ALBEDO,ALBBCK,grid%GMT,grid%JULYR,grid%JULDAY,     &
+                      XLAT,XLONG,ALBEDO,ALBBCKS,ALBBCKW,      &
+                      grid%GMT,grid%JULYR,grid%JULDAY,        &
+                      ozmixm,pin,grid%levsiz,num_ozmixm,      &
+                      m_ps_1,m_ps_2,m_hybi,aerosolc_1,aerosolc_2,&
+                      grid%paerlev,num_aerosolc,              &
+                         ACSWUPT,ACSWUPTC,ACSWDNT,ACSWDNTC,      &
+                         ACSWUPB,ACSWUPBC,ACSWDNB,ACSWDNBC,      &
+                         ACLWUPT,ACLWUPTC,ACLWDNT,ACLWDNTC,      &
+                         ACLWUPB,ACLWUPBC,ACLWDNB,ACLWDNBC,      &
                       TMN,XLAND,ZNT,Z0,UST,MOL,PBLH,TKE_MYJ,     &
                       EXCH_H,THC,SNOWC,MAVAIL,HFX,QFX,RAINBL, &
                       TSLB,ZS,DZS,config_flags%num_soil_layers,warm_rain,  &
@@ -502,6 +516,7 @@
                       SMSTOT, SFCRUNOFF,UDRUNOFF,GRDFLX,ACSNOW,      &
                       ACSNOM,IVGTYP,ISLTYP, SFCEVP,SMOIS,     &
                       SH2O, SNOWH, SMFR3D,                    &
+                         ACHFX,ACLHF,ACGRDFLX,                   &
                       grid%DX,grid%DY,F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY, &
                       mp_restart_state,tbpvs_state,tbpvs0_state,&
                       allowed_to_read, moved ,                &

@@ -86,7 +86,8 @@ SUBROUTINE solve_em ( grid , config_flags , &
    REAL :: dt_rk, dts_rk, dtm, wmax
    LOGICAL :: leapfrog
    INTEGER :: l,kte,kk
-
+!-- JULIAN the current day of year (Julian day) expressed as REAL and including fractional days
+   REAL :: julian
 
 ! These are used if -DDEREF_KLUDGE is compiled
 !  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
@@ -189,6 +190,7 @@ SUBROUTINE solve_em ( grid , config_flags , &
   CALL set_tiles ( grid , ids , ide , jds , jde , ips , ipe , jps , jpe )
 
   itimestep = itimestep + 1
+  CALL domain_clock_get( grid, currentDayOfYearReal=julian )
 
 !**********************************************************************
 !
@@ -515,7 +517,8 @@ BENCH_START(rad_driver_tim)
      &        ,DZ8W=dz8w          ,EMISS=emiss        ,GLW=glw            &
      &        ,GMT=grid%gmt            ,GSW=gsw            ,HBOT=hbot          &
      &        ,HTOP=htop          ,ICLOUD=config_flags%icloud                          &
-     &        ,ITIMESTEP=itimestep                    ,JULDAY=grid%julday      &
+     &        ,RESTART=grid%restart                                       &
+     &        ,ITIMESTEP=itimestep,JULDAY=grid%julday,JULIAN=julian       &
      &        ,JULYR=grid%julyr        ,LW_PHYSICS=config_flags%ra_lw_physics  &
      &        ,NCFRCV=ncfrcv      ,NCFRST=ncfrst      ,NPHS=1             &
      &        ,P8W=p8w            ,P=p_phy            ,PI=pi_phy          &
@@ -523,11 +526,37 @@ BENCH_START(rad_driver_tim)
      &        ,RSWTOA=rswtoa      ,RTHRATEN=rthraten                      &
      &        ,RTHRATENLW=rthratenlw                                      &
      &        ,RTHRATENSW=rthratensw                  ,SNOW=snow          &
+     &        ,SWUP=swup          ,SWDN=swdn                              &
+     &        ,SWUPCLEAR=swupclear                                        &
+     &        ,SWDNCLEAR=swdnclear                                        &
+     &        ,LWUP=lwup          ,LWDN=lwdn                              &
+     &        ,LWUPCLEAR=lwupclear                                        &
+     &        ,LWDNCLEAR=lwdnclear                                        &
+     &        ,ACSWUPT=acswupt    ,ACSWUPTC=acswuptc                      &
+     &        ,ACSWDNT=acswdnt    ,ACSWDNTC=acswdntc                      &
+     &        ,ACSWUPB=acswupb    ,ACSWUPBC=acswupbc                      &
+     &        ,ACSWDNB=acswdnb    ,ACSWDNBC=acswdnbc                      &
+     &        ,ACLWUPT=aclwupt    ,ACLWUPTC=aclwuptc                      &
+     &        ,ACLWDNT=aclwdnt    ,ACLWDNTC=aclwdntc                      &
+     &        ,ACLWUPB=aclwupb    ,ACLWUPBC=aclwupbc                      &
+     &        ,ACLWDNB=aclwdnb    ,ACLWDNBC=aclwdnbc                      &
+     &        ,LWCF=lwcf                                                  &
+     &        ,SWCF=swcf                                                  &
+     &        ,OLR=olr                                                    &
      &        ,STEPRA=stepra      ,SWDOWN=swdown      ,SWDOWNC=swdownc    &
      &        ,SW_PHYSICS=config_flags%ra_sw_physics  ,T8W=t8w            &
      &        ,T=t_phy            ,TAUCLDC=taucldc    ,TAUCLDI=taucldi    &
-     &        ,TSK=tsk            ,VEGFRA=vegfra     ,WARM_RAIN=warm_rain &
+     &                                                ,TSK=tsk            &
+     &        ,VEGFRA=vegfra      ,WARM_RAIN=warm_rain,XICE=xice          &
      &        ,XLAND=xland        ,XLAT=xlat          ,XLONG=xlong        &
+     &        ,Z=z                ,ZNU=znu            ,ZNW=znw            &
+     &        ,OZMIXM=ozmixm, PIN=pin, LEVSIZ=grid%levsiz, N_OZMIXM=num_ozmixm &
+     &        ,M_PS_1=m_ps_1, M_PS_2=m_ps_2, AEROSOLC_1=aerosolc_1        &
+     &        ,AEROSOLC_2=aerosolc_2, M_HYBI0=m_hybi, N_AEROSOLC=num_aerosolc &
+     &        ,PAERLEV=grid%paerlev                                       &
+     &        ,CPTOP=cptop, CTAUCLD=ctaucld                               &
+     &        ,CTTOP=cttop                                                &
+     &        ,ABSTOT=abstot, ABSNXT=absnxt, EMSTOT=emstot                &
             ! indexes
      &        ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde          &
      &        ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme          &
@@ -536,8 +565,9 @@ BENCH_START(rad_driver_tim)
      &        ,kts=k_start, kte=min(k_end,kde-1)                          &
      &        ,num_tiles=grid%num_tiles                                   &
             ! Optional                          
-     &        , CLDFRA=CLDFRA                                             &
+     &        , CLDFRA=CLDFRA, CONCLD=concld                              &
      &        , Pb=pb                                                     &
+     &        , F_ICE_PHY=f_ice_phy,F_RAIN_PHY=f_rain_phy                 &
      &        , QV=moist(ims,kms,jms,P_QV), F_QV=F_QV                     &
      &        , QC=moist(ims,kms,jms,P_QC), F_QC=F_QC                     &
      &        , QR=moist(ims,kms,jms,P_QR), F_QR=F_QR                     &
@@ -555,19 +585,21 @@ BENCH_START(surf_driver_tim)
 
       CALL wrf_debug ( 200 , ' call surface_driver' )
       CALL surface_driver(                                                &
-     &         ACSNOM=acsnom      ,ACSNOW=acsnow      ,AKHS=akhs          &
-     &        ,AKMS=akms          ,ALBBCK=albbck      ,ALBEDO=albedo      &
+     &         ACGRDFLX=acgrdflx  ,ACHFX=achfx        ,ACLHF=aclhf        &
+     &        ,ACSNOM=acsnom      ,ACSNOW=acsnow      ,AKHS=akhs          &
+     &        ,AKMS=akms          ,ALBEDO=albedo                          &
      &        ,BR=br              ,CANWAT=canwat      ,CHKLOWQ=chklowq    &
      &        ,CT=ct              ,DT=grid%dt              ,DX=grid%dx              &
      &        ,DZ8W=dz8w          ,DZS=dzs            ,FLHC=flhc          &
      &        ,FLQC=flqc          ,GLW=glw            ,GRDFLX=grdflx      &
      &        ,GSW=gsw            ,GZ1OZ0=gz1oz0      ,HFX=hfx            &
      &        ,HT=ht              ,IFSNOW=config_flags%ifsnow      ,ISFFLX=config_flags%isfflx      &
-     &        ,ISLTYP=isltyp      ,ITIMESTEP=itimestep                    &
-     &        ,IVGTYP=ivgtyp      ,LH=lh              ,LOWLYR=lowlyr      &
+     &        ,ISLTYP=isltyp      ,ITIMESTEP=itimestep,JULIAN_in=julian      &
+     &,IVGTYP=ivgtyp,ALBBCK=albbck,ALBBCKS=albbcks,ALBBCKW=albbckw,LH=lh,LOWLYR=lowlyr  &
      &        ,MAVAIL=mavail      ,NUM_SOIL_LAYERS=config_flags%num_soil_layers        &
      &        ,P8W=p8w            ,PBLH=pblh          ,PI_PHY=pi_phy      &
-     &        ,PSFC=psfc          ,PSHLTR=pshltr      ,PSIH=psih          &
+     &        ,PSFC=psfc,XLAT=xlat,JULDAY=grid%julday,GMT=grid%gmt        & 
+     &        ,PSHLTR=pshltr      ,PSIH=psih                              &
      &        ,PSIM=psim          ,P_PHY=p_phy        ,Q10=q10            &
      &        ,Q2=q2              ,QFX=qfx            ,QSFC=qsfc          &
      &        ,QSHLTR=qshltr      ,QZ0=qz0            ,RAINCV=raincv      &
@@ -586,6 +618,7 @@ BENCH_START(surf_driver_tim)
      &        ,TSLB=tslb          ,T_PHY=t_phy        ,U10=u10            &
      &        ,UDRUNOFF=udrunoff  ,UST=ust            ,UZ0=uz0            &
      &        ,U_FRAME=u_frame    ,U_PHY=u_phy        ,V10=v10            &
+     &        ,VEGFMO=vegfmo                                              &
      &        ,VEGFRA=vegfra      ,VZ0=vz0            ,V_FRAME=v_frame    &
      &        ,V_PHY=v_phy        ,WARM_RAIN=warm_rain                    &
      &        ,WSPD=wspd          ,XICE=xice          ,XLAND=xland        &
@@ -598,6 +631,7 @@ BENCH_START(surf_driver_tim)
      &        , J_START=grid%j_start,J_END=min(grid%j_end, jde-1)         &
      &        , KTS=k_start, KTE=min(k_end,kde-1)                         &
      &        , NUM_TILES=grid%num_tiles                                  &
+     &        , NUM_MONTHS=grid%num_months                                &
            ! Optional
      &        ,QV_CURR=moist(ims,kms,jms,P_QV), F_QV=F_QV                 &
      &        ,QC_CURR=moist(ims,kms,jms,P_QC), F_QC=F_QC                 &
@@ -694,6 +728,7 @@ BENCH_START(cu_driver_tim)
      &             ,NUM_TILES=grid%num_tiles                              &
                  ! Moisture tendency arguments
      &             ,RQVCUTEN=rqvcuten , RQCCUTEN=rqccuten                 &
+     &             ,RQSCUTEN=rqscuten , RQICUTEN=rqicuten                 &
      &             ,RQRCUTEN=rqrcuten , RQVBLTEN=rqvblten                 &
      &             ,RQVFTEN=rqvften                                       &
                  ! Other tendency arguments
@@ -2592,7 +2627,7 @@ BENCH_END(moist_phys_end_tim)
    chem_tile_loop_3: DO ij = 1 , grid%num_tiles
 
           CALL wrf_debug ( 200 , ' call scalar_tile_loop_2' )
-
+          CALL wrf_debug ( 200 , ' in phoney chem call loop' )
      IF ( num_3d_c >= PARAM_FIRST_SCALAR ) then
 
 !
@@ -2632,6 +2667,8 @@ BENCH_END(time_filt_tim)
    !$OMP END PARALLEL DO
 
     END IF
+
+         CALL wrf_debug ( 200 , ' after leapfrog loop' )
 
    !  We're finished except for boundary condition (and patch) update
 
@@ -2681,7 +2718,7 @@ BENCH_END(time_filt_tim)
 ! scalar                         x
 !----------------------------------------------------------
 
-
+   CALL wrf_debug ( 200 , ' before HALO_EM_D3_5.inc' )
 #ifdef DM_PARALLEL
    IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
 #    include "HALO_EM_D3_3.inc"
@@ -2691,6 +2728,8 @@ BENCH_END(time_filt_tim)
      WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
      CALL wrf_error_fatal(TRIM(wrf_err_message))
    ENDIF
+   CALL wrf_debug ( 200 , ' after HALO_EM_D3_5.inc' )
+
 #  include "PERIOD_BDY_EM_D3.inc"
 #  include "PERIOD_BDY_EM_MOIST.inc"
 #  include "PERIOD_BDY_EM_CHEM.inc"
@@ -2698,7 +2737,7 @@ BENCH_END(time_filt_tim)
 #endif
 
 !  now set physical b.c on a patch
-
+   CALL wrf_debug ( 200 , ' before physical bc' )
 BENCH_START(bc_2d_tim)
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij )
@@ -2773,6 +2812,8 @@ BENCH_START(bc_2d_tim)
    END DO tile_bc_loop_2
    !$OMP END PARALLEL DO
 BENCH_END(bc_2d_tim)
+
+   CALL wrf_debug ( 200 , ' after physical bc' )
 
    IF( config_flags%specified .or. config_flags%nested ) THEN 
      dtbc = dtbc + grid%dt

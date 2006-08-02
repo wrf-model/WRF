@@ -22,12 +22,14 @@ CONTAINS
    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
    CHARACTER*128             :: DataSet
    LOGICAL                   :: anyway
+write(0,*)'opening ',trim(fname)
    CALL wrf_open_for_read ( fname ,                     &
                             grid%communicator ,         &
                             grid%iocommunicator ,       &
                             sysdepinfo ,                &
                             id ,                        &
                             ierr )
+write(0,*)' ierr = ',ierr
    RETURN
   END SUBROUTINE open_r_dataset
 

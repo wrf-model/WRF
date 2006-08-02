@@ -53,17 +53,10 @@
 
       type ESMF_BaseTime
       sequence                        ! for C++ interoperability
-#ifndef F90_STANDALONE
-      private
-        integer(ESMF_KIND_I8) :: S   ! whole seconds
-#else
         integer                :: S   ! whole seconds
-#endif
         integer                :: Sn  ! fractional seconds, numerator
         integer                :: Sd  ! fractional seconds, denominator
-#ifdef F90_STANDALONE
         integer                :: MS  ! milliseconds
-#endif
         integer                :: pad1  ! to match halem C++ <vtbl> long[4]*
         integer                :: pad2  ! to match halem C++ <vtbl> long[6]*
       end type

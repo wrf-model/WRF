@@ -58,6 +58,7 @@ col_on_comm ( int * Fcomm, int * typesize ,
   int *displace ;
   int noutbuf_loc ;
   int root_task ;
+int i ;
   MPI_Comm *comm, dummy_comm ;
 
   comm = &dummy_comm ;
@@ -69,7 +70,13 @@ col_on_comm ( int * Fcomm, int * typesize ,
   root_task = ( sw == 0 ) ? 0 : ntasks-1 ;
 
   /* collect up recvcounts */
+#if 0
+fprintf(stderr,"calling MPI_Gather mytask %d ninbuf %d ntasks %d\n",mytask, *ninbuf, ntasks ) ;
+#endif
   MPI_Gather( ninbuf , 1 , MPI_INT , recvcounts , 1 , MPI_INT , root_task , *comm ) ;
+#if 0
+fprintf(stderr,"back from MPI_Gather \n") ;
+#endif
 
   if ( mytask == root_task ) {
 
@@ -94,9 +101,15 @@ col_on_comm ( int * Fcomm, int * typesize ,
     }
   }
 
+#if 0
+fprintf(stderr,"calling MPI_Gatherv\n") ;
+#endif
   MPI_Gatherv( inbuf  , *ninbuf * *typesize  , MPI_CHAR ,
                outbuf , recvcounts , displace, MPI_CHAR ,
                root_task , *comm ) ;
+#if 0
+fprintf(stderr,"back from MPI_Gatherv\n") ;
+#endif
 
   free(recvcounts) ;
   free(displace) ;

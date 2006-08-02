@@ -1518,11 +1518,12 @@ CONTAINS
       END FUNCTION domain_last_time_step
 
 
-      SUBROUTINE domain_clock_get( grid, current_time,          &
-                                         current_timestr,       &
-                                         start_time, stop_time, &
-                                         stop_timestr,          &
-                                         time_step, advanceCount )
+      SUBROUTINE domain_clock_get( grid, current_time,            &
+                                         current_timestr,         &
+                                         start_time, stop_time,   &
+                                         stop_timestr,            &
+                                         time_step, advanceCount, &
+                                         currentDayOfYearReal )
         IMPLICIT NONE
         TYPE(domain),            INTENT(IN)              :: grid
         TYPE(WRFU_Time),         INTENT(  OUT), OPTIONAL :: current_time
@@ -1532,6 +1533,8 @@ CONTAINS
         CHARACTER (LEN=*),       INTENT(  OUT), OPTIONAL :: stop_timestr
         TYPE(WRFU_TimeInterval), INTENT(  OUT), OPTIONAL :: time_step
         INTEGER,                 INTENT(  OUT), OPTIONAL :: advanceCount
+        ! currentDayOfYearReal = 1.0 at 0Z on 1 January, 1.5 at 12Z on 1 January, etc.
+        REAL,                    INTENT(  OUT), OPTIONAL :: currentDayOfYearReal
 ! <DESCRIPTION>
 ! This convenience routine returns clock information for domain grid in 
 ! various forms.  The caller is responsible for ensuring that character 
@@ -1540,6 +1543,9 @@ CONTAINS
 ! </DESCRIPTION>
         ! Locals
         TYPE(WRFU_Time) :: tmpTime
+        INTEGER :: h, m, s
+        INTEGER :: idayofyear, rc
+        REAL :: rh, rm, rs, rday
         IF ( PRESENT( start_time ) ) THEN
           start_time = domain_get_start_time ( grid )
         ENDIF
@@ -1568,6 +1574,22 @@ CONTAINS
         IF ( PRESENT( stop_timestr ) ) THEN
           tmpTime = domain_get_stop_time ( grid )
           CALL wrf_timetoa ( tmpTime, stop_timestr )
+        ENDIF
+        IF ( PRESENT( currentDayOfYearReal ) ) THEN
+!$$$ shove this down into time manager where it belongs!!!  (what a hack)
+          tmpTime = domain_get_current_time ( grid )
+          CALL WRFU_TimeGet( tmpTime, dayOfYear=idayofyear, H=h, M=m, S=s, rc=rc )
+          IF ( rc /= WRFU_SUCCESS ) THEN
+            CALL wrf_error_fatal ( 'domain_clock_get:  WRFU_ClockGet failed' )
+          ENDIF
+          s = mod( s, 60 )   ! incredible hack
+          rs = s
+          rm = m
+          rh = h
+          rday = idayofyear
+          rm = rm + ( rs/60. )
+          rh = rh + ( rm/60. )
+          currentDayOfYearReal = rday + ( rh/24. )
         ENDIF
         RETURN
       END SUBROUTINE domain_clock_get

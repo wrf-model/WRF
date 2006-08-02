@@ -40,4 +40,11 @@ by both C++ and F90 compilers.
 ! grow-as-you-go AlarmList in ESMF_Clock...  
 #define MAX_ALARMS 20
 
+! TBH:  TODO:  Hook this into the WRF build so WRF can use either "no-leap" or 
+! TBH:         Gregorian calendar.  Now WRF is hard-wired to use Gregorian.  
+#undef NO_LEAP_CALENDAR
+#ifdef COUP_CSM
+#define NO_LEAP_CALENDAR
+#endif
+
 #endif

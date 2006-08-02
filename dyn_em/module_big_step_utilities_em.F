@@ -994,6 +994,7 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist,                &
                             ims, ime, jms, jme, kms, kme,  &
                             its, ite, jts, jte, kts, kte  )
 
+  USE module_wrf_error
   IMPLICIT NONE
    
    ! Input data
@@ -1027,6 +1028,7 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist,                &
   INTEGER :: i, j, k, itf, jtf, ktf, ispe
   REAL    :: qvf, qtot, qf1, qf2
   REAL, DIMENSION( its:ite) :: temp,cpovcv_v
+  CHARACTER*1024 :: message
 
 
 !<DESCRIPTION>
@@ -1060,6 +1062,10 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist,                &
           qvf = 1.+rvovrd*moist(i,k,j,P_QV)
           al(i,k,j)=-1./muts(i,j)*(alb(i,k,j)*mu(i,j)  &
                      +rdnw(k)*(ph(i,k+1,j)-ph(i,k,j)))
+        if(al(i,k,j)+alb(i,k,j) .lt. 0.) then
+        WRITE(message,*)'neg alpha i,k,j,al(i,k,j),alb(i,k,j),ph(i,k+1,j),ph(i,k,j)',i,k,j,al(i,k,j),alb(i,k,j),ph(i,k+1,j),ph(i,k,j)  
+        CALL wrf_debug(30,message)
+        end if
           temp(i)=(r_d*(t0+t(i,k,j))*qvf)/                 &
                         (p0*(al(i,k,j)+alb(i,k,j)))
         ENDDO

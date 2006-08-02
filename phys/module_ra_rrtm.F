@@ -1727,7 +1727,8 @@ MODULE module_ra_rrtm
 CONTAINS
 
 !------------------------------------------------------------------
-   SUBROUTINE RRTMLWRAD(rthraten,glw,emiss                        &
+   SUBROUTINE RRTMLWRAD(rthraten,lwup,lwdn,lwupclear,lwdnclear    &
+                       ,glw,lwcf,olr,emiss,cemiss                 &
                        ,p8w,p3d,pi3d                              &
                        ,dz8w,t3d,t8w,rho3d,r,g                    &
                        ,icloud, warm_rain                         &
@@ -1760,9 +1761,24 @@ CONTAINS
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
          INTENT(INOUT)  ::                              RTHRATEN
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
+         INTENT(INOUT)  ::                              LWUP, &
+                                                        LWDN, &
+                                                     LWUPCLEAR, &
+                                                     LWDNCLEAR
+   REAL, DIMENSION( 0:kte+1) ::                           LWUP1D, &
+                                                          LWDN1D, &
+                                                     LWUPCLEAR1D, &
+                                                     LWDNCLEAR1D
+
+   REAL, DIMENSION( ims:ime, jms:jme )                          , &
+         INTENT(OUT  )  ::                                  LWCF, &
+                                                             OLR 
 !
    REAL, DIMENSION( ims:ime, jms:jme )                          , &
          INTENT(IN   )  ::                                 EMISS
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
+         INTENT(OUT   )  ::                                CEMISS        ! cloud emissivity for isccp
 !
    REAL, DIMENSION( ims:ime, jms:jme )                          , &
          INTENT(INOUT)  ::                                   GLW
@@ -1802,6 +1818,7 @@ CONTAINS
                                                             QI1D, &
                                                             QS1D, &
                                                             QG1D
+   REAL, DIMENSION( kms:kme ) ::                           CEMIS
 !
     REAL   ::                                   TSFC,GLW0,EMISS0,FP
 !
@@ -1858,6 +1875,10 @@ CONTAINS
          DO K=kts,kte
             NK=kme-1-K+kms
             TTEN1D(K)=0.
+            LWUP1D(K)=0.0
+            LWDN1D(k)=0.0
+            LWUPCLEAR1D(K) = 0.0
+            LWDNCLEAR1D(K) = 0.0
             T1D(K)=T3D(I,NK,J)
 !           P1D(K)=P3D(I,NK,J)/100.
             P1D(K)=PHYDMID(NK)/100.
@@ -1947,9 +1968,10 @@ CONTAINS
          GLW0=0. 
          TSFC=Tw1D(kme)
 
-         CALL RRTM(tten1d,glw0,tsfc,cldfra1d,t1d,tw1d,qv1d,qc1d,   &
+         CALL RRTM(tten1d,lwup1d,lwdn1d,lwupclear1d,lwdnclear1d,   &
+                   glw0,tsfc,cldfra1d,t1d,tw1d,qv1d,qc1d,          &
                    qr1d,qi1d,qs1d,qg1d,p1d,pW1d,dz1d,              &
-                   emiss0,r,g,                                     &
+                   emiss0,cemis,r,g,                               &
                    kts,kte                                         )
  
          GLW(I,J)=GLW0
@@ -1957,7 +1979,24 @@ CONTAINS
          DO K=kts,kte
             nk=kme-1-k+kms
             rthraten(i,k,j)=rthraten(i,k,j)+tten1d(nk)/pi3d(i,k,j)
+            CEMISS(I,K,J) = CEMIS(K)    ! note that CEMIS was not inverted in RRTM like TTEN1D
          ENDDO
+
+         DO K=kts,kte+1
+            nk=kme-1-k+kms+1
+            LWUP(I,K,J) = LWUP1D(NK)
+            LWDN(I,K,J) = LWDN1D(NK)
+            LWUPCLEAR(I,K,J) = LWUPCLEAR1D(NK)
+            LWDNCLEAR(I,K,J) = LWDNCLEAR1D(NK)
+            if(i.eq.its.and.j.eq.jts) then
+!           print *, i,j,k,nk,lwup1d(nk),lwdn1d(nk)
+!           if(k.eq.kte+1) print *, 'top ', kts,kms,kte,kme,lwup1d(0),lwdn1d(0)
+!           if(k.eq.1) print *, 'bottom ', kts,kms,kte,kme,lwup1d(kte+1),lwdn1d(kte+1)
+            endif
+         ENDDO
+
+         LWCF(I,J)=LWUPCLEAR1D(kte+1)-LWUP1D(kte+1)
+         OLR(I,J) =LWUP1D(kte+1)
 
       END DO i_loop
    END DO j_loop                                           
@@ -2003,9 +2042,10 @@ CONTAINS
 ! *** transfer (based on a code for interface with CCM model by M. J. Iacono)    
 ! *** J. Dudhia ; March, 1999                                                    
 !---------------------------------------------------------------------
-   SUBROUTINE RRTM(TTEN,GLW,TSFC,CLDFRA,T,Tw,QV,QC,                  &
+   SUBROUTINE RRTM(TTEN,LWUP1D,LWDN1D,LWUPCLEAR1D,LWDNCLEAR1D,       &
+                   GLW,TSFC,CLDFRA,T,Tw,QV,QC,                       &
                    QR,QI,QS,QG,P,Pw,DZ,                              &
-                   EMISS,R,G,                                        &
+                   EMISS,CEMIS,R,G,                                  &
                    kts,kte                                           )
 !---------------------------------------------------------------------
 ! *** This program is the driver for RRTM, the AER LW radiation model.           
@@ -2041,8 +2081,13 @@ CONTAINS
                                                                  QG
 !
       REAL, DIMENSION( kts:kte ), INTENT(INOUT)::              TTEN
+      REAL, DIMENSION( 0:kte+1 ) ::                           LWUP1D, &
+                                                              LWDN1D, &
+                                                        LWUPCLEAR1D, &
+                                                        LWDNCLEAR1D
 !   
       REAL, INTENT(IN  )   ::                           R, G, EMISS
+      REAL, DIMENSION( kts:kte+1 ), INTENT(OUT)::               CEMIS
 !
       REAL, INTENT(INOUT)  ::                              TSFC,GLW
 
@@ -2088,7 +2133,10 @@ CONTAINS
 
       REAL, DIMENSION(   0:kte+1 )  ::                           PZ, &
                                                                  TZ, &
+                                                           TOTUFLUX, &
                                                            TOTDFLUX, &
+                                                           TOTUCLFL, &
+                                                           TOTDCLFL, &
                                                                 HTR
 !     
       INTEGER ::  I,K,ktep1
@@ -2196,7 +2244,8 @@ CONTAINS
 !  Call the radiative transfer routine.                                          
                                                                                  
            CALL RTRN(kts,ktep1,                                  &
-                     TAVEL, PZ, TZ, CLDFRAC, TAUCLOUD, TOTDFLUX, &
+                     TAVEL, PZ, TZ, CLDFRAC, TAUCLOUD, CEMIS,    &
+                     TOTUFLUX, TOTDFLUX, TOTUCLFL, TOTDCLFL,     &
                      HTR, ICLDLYR, ITR, PFRAC, TBOUND,SEMISS     )
                                                                                  
 !  Pass total sky up and down flux profiles to CCM output arrays and             
@@ -2207,12 +2256,20 @@ CONTAINS
                                                                                  
 !          flntc(iiplon) = CLRNTTOA*1.e3                                         
 !          flnsc(iiplon) = CLRNTSRF*1.e3                                         
-!           do 2400 k = 0, NLAYERS-1                                             
+               LWUP1D(0) = TOTUFLUX(NLAYERS)                   ! Keep mks units
+               LWDN1D(0) = TOTDFLUX(NLAYERS)
+               LWUPCLEAR1D(0) = TOTUCLFL(NLAYERS)
+               LWDNCLEAR1D(0) = TOTDCLFL(NLAYERS)
+            do 2400 k = 0, NLAYERS-1                                             
 !              fulc(k+1) = TOTUCLFL(NLAYERS-1-k)*1.e3                            
 !              fdlc(k+1) = TOTDCLFL(NLAYERS-1-k)*1.e3                            
 !              ful(k+1) = TOTUFLUX(NLAYERS-1-k)*1.e3                             
 !              fdl(k+1) = TOTDFLUX(NLAYERS-1-k)*1.e3                             
-! 2400      continue                                                             
+               LWUP1D(k+1) = TOTUFLUX(NLAYERS-1-k)             ! Keep mks units
+               LWDN1D(k+1) = TOTDFLUX(NLAYERS-1-k)
+               LWUPCLEAR1D(k+1) = TOTUCLFL(NLAYERS-1-k)
+               LWDNCLEAR1D(k+1) = TOTDCLFL(NLAYERS-1-k)
+  2400      continue                                                             
            do 2450 k = 1, NLAYERS-1                                              
 !              qrlc(k) = HTRC(NLAYERS-1-k)/86400.                                
 !              qrl(k) = HTR(NLAYERS-1-k)/86400.                                  
@@ -5923,7 +5980,8 @@ CONTAINS
 
 !-------------------------------------------------------------------------
       SUBROUTINE RTRN(kts,ktep1,                                         &
-                      TAVEL, PZ, TZ, CLDFRAC, TAUCLOUD, TOTDFLUX,        &
+                      TAVEL, PZ, TZ, CLDFRAC, TAUCLOUD, CEMIS,           &
+                      TOTUFLUX, TOTDFLUX, TOTUCLFL, TOTDCLFL,            &
                       HTR, ICLDLYR, ITR, PFRAC, TBOUND,SEMISS            )
 !-------------------------------------------------------------------------
 !  RRTM Longwave Radiative Transfer Model                                        
@@ -5957,7 +6015,10 @@ CONTAINS
                                                 TAUCLOUD
 
       REAL, DIMENSION(   0:ktep1 ),INTENT(INOUT)::        &
-                                                TOTDFLUX
+                                                TOTDFLUX, &
+                                                TOTUFLUX, &
+                                                TOTUCLFL, &
+                                                TOTDCLFL
 
       REAL, DIMENSION(   0:ktep1 ), INTENT(INOUT) ::        &
                                                      HTR  
@@ -5970,13 +6031,14 @@ CONTAINS
 
       REAL, INTENT(IN   )        ::               TBOUND
       REAL, DIMENSION(NBANDS), INTENT(IN   ) ::   SEMISS
+      REAL, DIMENSION(kts:ktep1),INTENT(OUT  ) ::    CEMIS
 
 ! LOCAL VAR
 
-      REAL, DIMENSION(   0:ktep1 )              ::        &
-                                                TOTUCLFL, &
-                                                TOTDCLFL, &
-                                                TOTUFLUX
+!!!      REAL, DIMENSION(   0:ktep1 )              ::        &
+!!!                                                TOTUCLFL, &
+!!!                                                TOTDCLFL, &
+!!!                                                TOTUFLUX
 
       REAL, DIMENSION(   0:ktep1 )              ::        &
                                                     FNET, &
@@ -6073,6 +6135,7 @@ CONTAINS
  200  CONTINUE                                                                   
                                                                                  
       DO 220 LEV = 1, NLAYERS                                                    
+         CEMIS(LEV)=0.
                                                                                  
          IF (ICLDLYR(LEV).EQ.1) THEN                                             
             INDLAY(LEV) = TAVEL(LEV) - 159.                                      
@@ -6081,6 +6144,7 @@ CONTAINS
             ODCLD(LEV) = SECANG * TAUCLOUD(LEV)                                  
             TRANSCLD = EXP(-ODCLD(LEV))                                          
             ABSCLD(LEV) = 1. - TRANSCLD                                          
+            CEMIS(LEV) = ABSCLD(LEV)
             EFCLFRAC(LEV) = ABSCLD(LEV) * CLDFRAC(LEV)                           
 !  Get clear sky optical depth from TAU lookup table                             
             DO 250 IPR = 1, NGPT                                                 

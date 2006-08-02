@@ -126,6 +126,7 @@ if  test -z "$NETCDF"  ; then
         ( cd ./netcdf_links ; ln -s /usr/local/lib32/r4i4 ./lib ; \
                               ln -s /usr/local/include ./include )
       else
+#        ( cd ./netcdf_links ; ln -s /usr/local/apps/netcdf-3.6.0-beta6/lib64/r4i4 ./lib ; \
         ( cd ./netcdf_links ; ln -s /usr/local/lib64/r4i4 ./lib ; \
                               ln -s /usr/local/include ./include )
       fi

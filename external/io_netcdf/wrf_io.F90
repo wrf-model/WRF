@@ -1180,7 +1180,8 @@ SUBROUTINE ext_ncd_open_for_write_begin(FileName,Comm,IOComm,SysDepInfo,DataHand
   endif
   DH%TimeIndex = 0
   DH%Times     = ZeroDate
-  stat = NF_CREATE(FileName, NF_CLOBBER, DH%NCID)
+!stat = NF_CREATE(FileName, NF_CLOBBER, DH%NCID)
+  stat = NF_CREATE(FileName,OR(NF_CLOBBER,NF_64BIT_OFFSET), DH%NCID)
   call netcdf_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
     write(msg,*) 'NetCDF error in ext_ncd_open_for_write_begin ',__FILE__,', line', __LINE__
@@ -2834,6 +2835,7 @@ subroutine ext_ncd_get_next_time(DataHandle, DateStr, Status)
   type(wrf_data_handle) ,pointer        :: DH
 
   call GetDH(DataHandle,DH,Status)
+write(0,*)'ext_ncd_get_next_time: DH%FileStatus', DH%FileStatus
   if(Status /= WRF_NO_ERR) then
     write(msg,*) 'Warning Status = ',Status,' in ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg))

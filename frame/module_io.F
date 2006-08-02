@@ -489,6 +489,7 @@ SUBROUTINE wrf_open_for_read_begin( FileName , Comm_compute, Comm_io, SysDepInfo
   INTEGER                     :: Hndl
   INTEGER, EXTERNAL           :: use_package
   LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+  LOGICAL                     :: for_out
 
   CHARACTER*128     :: LocFilename   ! for appending the process ID if necessary
   INTEGER     myproc
@@ -532,7 +533,8 @@ SUBROUTINE wrf_open_for_read_begin( FileName , Comm_compute, Comm_io, SysDepInfo
 
   Status = 0
   Hndl = -1
-  IF ( .NOT. use_output_servers() ) THEN
+  for_out = .FALSE.
+!  IF ( .NOT. use_output_servers() ) THEN
     SELECT CASE ( use_package(io_form) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -568,6 +570,7 @@ SUBROUTINE wrf_open_for_read_begin( FileName , Comm_compute, Comm_io, SysDepInfo
 #endif
 #ifdef MCELIO
       CASE ( IO_MCEL )
+        for_out = .TRUE.
         IF ( wrf_dm_on_monitor() ) THEN
           
         WRITE(fhand,'(a,i0)')"filter_",filtno
@@ -628,10 +631,10 @@ tstr = TRIM(SysDepInfo) // ',' // 'READ_MODE=UPDATE,LAT_R=XLAT,LON_R=XLONG,LANDM
         ENDIF
         Status = WRF_FILE_NOT_OPENED
     END SELECT
-  ELSE
-    Status = 0
-  ENDIF
-  CALL add_new_handle( Hndl, io_form, .TRUE., DataHandle )
+!  ELSE
+!    Status = 0
+!  ENDIF
+  CALL add_new_handle( Hndl, io_form, for_out, DataHandle )
 END SUBROUTINE wrf_open_for_read_begin
 
 !--- open_for_read_commit

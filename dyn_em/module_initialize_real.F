@@ -364,6 +364,25 @@ integer::oops1,oops2
          END DO
       END DO
 
+      !  Fill monthly vegetation fraction array with 2d input (MM5 inputs)
+
+      DO j = jts, MIN(jde-1,jte)
+         DO i = its, MIN(ide-1,ite)
+            vegfmo(i,1,j) = vegfrc01(i,j)
+            vegfmo(i,2,j) = vegfrc02(i,j)
+            vegfmo(i,3,j) = vegfrc03(i,j)
+            vegfmo(i,4,j) = vegfrc04(i,j)
+            vegfmo(i,5,j) = vegfrc05(i,j)
+            vegfmo(i,6,j) = vegfrc06(i,j)
+            vegfmo(i,7,j) = vegfrc07(i,j)
+            vegfmo(i,8,j) = vegfrc08(i,j)
+            vegfmo(i,9,j) = vegfrc09(i,j)
+            vegfmo(i,10,j) = vegfrc10(i,j)
+            vegfmo(i,11,j) = vegfrc11(i,j)
+            vegfmo(i,12,j) = vegfrc12(i,j)
+         END DO
+      END DO
+
       !  Adjust the various soil temperature values depending on the difference in
       !  in elevation between the current model's elevation and the incoming data's
       !  orography.

@@ -263,6 +263,8 @@ else
 
       start_index = 1
       end_index = 1
+      start_index2 = 1
+      end_index2 = 1
 
       call ext_ncd_get_var_info (dh1,VarName,ndim,ordering,staggering,start_index,end_index, WrfType, ierr )
       call ext_ncd_get_var_info (dh2,VarName,ndim2,ordering2,staggering2,start_index2,end_index2, WrfType2, ierr )

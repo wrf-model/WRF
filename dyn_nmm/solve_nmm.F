@@ -27,7 +27,7 @@
       USE MODULE_PHYSICS_CALLS
       USE MODULE_EXT_INTERNAL
       USE MODULE_PRECIP_ADJUST
-      USE MODULE_NEST_UTIL !gopal
+      USE MODULE_NEST_UTIL
 !-----------------------------------------------------------------------
 !
       IMPLICIT NONE
@@ -309,7 +309,7 @@
 !
 #if (NMM_NEST == 1)
 !-----------------------------------------------------------------------------
-!***  PATCHING NESTED BOUNDARIES. This is gopal's doing
+!***  PATCHING NESTED BOUNDARIES.
 !-----------------------------------------------------------------------------
 !
       CALL wrf_debug ( 100 , 'nmm: in patch' )
@@ -340,7 +340,6 @@
 #endif
 
       ENDIF
-! end of gopal's doing
 #endif
 !
 !-----------------------------------------------------------------------
@@ -378,7 +377,9 @@
 !***  ZERO OUT ACCUMULATED QUANTITIES WHEN NEEDED.
 !-----------------------------------------------------------------------
 !
-      CALL BUCKETS(NTSD,NPREC,NSRFC,NRDSW,NRDLW,NCLOD,NHEAT,GRID%NPHS   &
+      CALL BUCKETS(NTSD,NPREC,NSRFC,NRDSW,NRDLW                         &
+     &            ,GRID%RESTART,GRID%TSTART                             &
+     &            ,NCLOD,NHEAT,GRID%NPHS,TSPH                           &
      &            ,ACPREC,CUPREC,ACSNOW,ACSNOM,SSROFF,BGROFF            &
      &            ,SFCEVP,POTEVP,SFCSHX,SFCLHX,SUBSHX,SNOPCX            &
      &            ,SFCUVX,POTFLX                                        &
@@ -387,6 +388,7 @@
      &            ,ACFRST,NCFRST,ACFRCV,NCFRCV                          &
      &            ,AVCNVC,AVRAIN,TCUCN,TRAIN                            &
      &            ,ASRFC                                                &
+     &            ,T,TLMAX,TLMIN                                        &
      &            ,IDS,IDE,JDS,JDE,KDS,KDE                              &
      &            ,IMS,IME,JMS,JME,KMS,KME                              &
      &            ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -953,7 +955,7 @@
 !
       btimx=timef()
 !
-      CALL BOCOH(GRID%ID,NTSD,GRID%DT,NEST,NUNIT_NBC,NBOCO,LAST_TIME,TSPH      & ! GRID%ID ADDED BY GOPAL
+      CALL BOCOH(GRID%ID,NTSD,GRID%DT,NEST,NUNIT_NBC,NBOCO,LAST_TIME,TSPH & 
      &          ,LB,ETA1,ETA2,PDTOP,PT,RES,HTM                         &
      &          ,PD_B,T_B,Q_B,U_B,V_B,Q2_B,CWM_B                       &
      &          ,PD_BT,T_BT,Q_BT,U_BT,V_BT,Q2_BT,CWM_BT                &
@@ -1073,7 +1075,7 @@
 !
       btimx=timef()
 !
-      CALL BOCOV(GRID%ID,NTSD,GRID%DT,LB,VTM,U_B,V_B,U_BT,V_BT                 & ! GRID%ID ADDED BY GOPAL
+      CALL BOCOV(GRID%ID,NTSD,GRID%DT,LB,VTM,U_B,V_B,U_BT,V_BT         & 
      &          ,U,V                                                   &
      &          ,IJDS,IJDE,GRID%SPEC_BDY_WIDTH                         &
      &          ,IHE,IHW,IVE,IVW,INDX3_WRK                             &

@@ -278,7 +278,7 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
    INTEGER :: time_loop_max , loop, rc
    INTEGER :: julyr , julday 
    REAL :: gmt
-real::t1,t2
+real::t1,t2,t3,t4
 
    grid%input_from_file = .true.
    grid%input_from_file = .false.
@@ -321,8 +321,10 @@ real::t1,t2
 
    !!!!!!!  Loop over each time period to process.
 
+   CALL cpu_time ( t1 )
    DO loop = 1 , time_loop_max
 
+      internal_time_loop = loop
       IF ( ( grid%id .GT. 1 ) .AND. ( loop .GT. 1 ) ) EXIT
 
       print *,' '
@@ -342,23 +344,37 @@ real::t1,t2
       CALL nl_set_julyr (grid%id, config_flags%julyr)
       CALL nl_set_julday (grid%id, config_flags%julday)
 
-      !  Open the wrfinput file.
+      !  Open the input file for real.  This is either the "new" one or the "old" one.  The "new" one could have
+      !  a suffix for the type of the data format.  Check to see if either is around.
 
+      CALL cpu_time ( t3 )
       IF ( grid%dyn_opt .EQ. dyn_em ) THEN
-         CALL       wrf_debug ( 100 , 'med_sidata_input: calling open_r_dataset for wrf_real_input_em' )
-         CALL construct_filename2( si_inpname , 'wrf_real_input_em' , grid%id , 2 , current_date_char )
+         WRITE ( wrf_err_message , FMT='(A,A)' )'med_sidata_input: calling open_r_dataset for ',TRIM(config_flags%auxinput1_inname)
+         CALL wrf_debug ( 100 , wrf_err_message )
+         CALL construct_filename4a( si_inpname , config_flags%auxinput1_inname , grid%id , 2 , current_date_char , config_flags%io_form_input )
+         CALL open_r_dataset ( idsi, TRIM(si_inpname) , grid , config_flags , "DATASET=AUXINPUT1", ierr )
+         IF ( ierr .NE. 0 ) THEN
+            CALL wrf_debug( 0 , 'error opening ' // TRIM(si_inpname) // ' for input; bad date in namelist or file not in directory' )
+            CALL wrf_debug( 0 , 'will try again without the extension' )
+            CALL construct_filename2a( si_inpname , config_flags%auxinput1_inname , grid%id , 2 , current_date_char )
+            CALL open_r_dataset ( idsi, TRIM(si_inpname) , grid , config_flags , "DATASET=AUXINPUT1", ierr )
+            IF ( ierr .NE. 0 ) THEN
+               CALL wrf_error_fatal( 'error opening ' // TRIM(si_inpname) // ' for input; bad date in namelist or file not in directory' )
+            ENDIF
+         ENDIF
       END IF
-      CALL open_r_dataset ( idsi, TRIM(si_inpname) , grid , config_flags , "DATASET=AUXINPUT1", ierr )
-      IF ( ( ierr .NE. 0 ) .AND. ( grid%dyn_opt .EQ. dyn_em ) ) THEN
-        CALL wrf_error_fatal( 'error opening ' // TRIM(si_inpname) // ' for input; bad date in namelist or file not in directory' )
-      ENDIF
 
       !  Input data.
 
-      CALL       wrf_debug ( 100 , 'med_sidata_input: calling input_aux_model_input1' )
+      CALL wrf_debug ( 100 , 'med_sidata_input: calling input_aux_model_input1' )
       CALL input_aux_model_input1 ( idsi ,   grid , config_flags , ierr )
+      CALL cpu_time ( t4 )
+      WRITE ( wrf_err_message , FMT='(A,I10,A)' ) 'Timing for input ',NINT(t4-t3) ,' s.'
+      CALL wrf_debug( 0, wrf_err_message )
 
       !  Possible optional SI input.  This sets flags used by init_domain.
+
+      CALL cpu_time ( t3 )
       IF ( loop .EQ. 1 ) THEN
          already_been_here = .FALSE.
          CALL       wrf_debug ( 100 , 'med_sidata_input: calling init_module_optional_si_input' )
@@ -372,6 +388,9 @@ real::t1,t2
       CALL       wrf_debug ( 100 , 'med_sidata_input: calling init_domain' )
       grid%input_from_file = .true.
       CALL init_domain (  grid )
+      CALL cpu_time ( t4 )
+      WRITE ( wrf_err_message , FMT='(A,I10,A)' ) 'Timing for processing ',NINT(t4-t3) ,' s.'
+      CALL wrf_debug( 0, wrf_err_message )
       CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
 
       !  Close this file that is output from the SI and input to this pre-proc.
@@ -418,23 +437,30 @@ real::t1,t2
       ENDIF
 #endif
 
+      CALL cpu_time ( t3 )
       CALL assemble_output ( grid , config_flags , loop , time_loop_max )
+      CALL cpu_time ( t4 )
+      WRITE ( wrf_err_message , FMT='(A,I10,A)' ) 'Timing for output ',NINT(t4-t3) ,' s.'
+      CALL wrf_debug( 0, wrf_err_message )
+      CALL cpu_time ( t2 )
+      WRITE ( wrf_err_message , FMT='(A,I4,A,I10,A)' ) 'Timing for loop # ',loop,' = ',NINT(t2-t1) ,' s.'
+      CALL wrf_debug( 0, wrf_err_message )
 
-      !  Here we define the next time that we are going to process.
+      !  If this is not the last time, we define the next time that we are going to process.
 
-      CALL geth_newdate ( current_date_char , start_date_char , loop * model_config_rec%interval_seconds )
-      current_date =  current_date_char // '.0000'
-      CALL domain_clockprint ( 150, grid, &
-             'DEBUG med_sidata_input:  clock before current_date set,' )
-      WRITE (wrf_err_message,*) &
-        'DEBUG med_sidata_input:  before currTime set, current_date = ',TRIM(current_date)
-      CALL wrf_debug ( 150 , wrf_err_message )
-      CALL domain_clock_set( grid, current_date(1:19) )
-      CALL domain_clockprint ( 150, grid, &
-             'DEBUG med_sidata_input:  clock after current_date set,' )
-if (loop.ne.time_loop_max )then
-print *,'set clock to ',current_date(1:19)
-endif
+      IF ( loop .NE. time_loop_max ) THEN
+         CALL geth_newdate ( current_date_char , start_date_char , loop * model_config_rec%interval_seconds )
+         current_date =  current_date_char // '.0000'
+         CALL domain_clockprint ( 150, grid, &
+                'DEBUG med_sidata_input:  clock before current_date set,' )
+         WRITE (wrf_err_message,*) &
+           'DEBUG med_sidata_input:  before currTime set, current_date = ',TRIM(current_date)
+         CALL wrf_debug ( 150 , wrf_err_message )
+         CALL domain_clock_set( grid, current_date(1:19) )
+         CALL domain_clockprint ( 150, grid, &
+                'DEBUG med_sidata_input:  clock after current_date set,' )
+      END IF
+      CALL cpu_time ( t1 )
    END DO
 
 END SUBROUTINE med_sidata_input

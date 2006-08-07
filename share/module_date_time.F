@@ -23,6 +23,32 @@ CONTAINS
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+   SUBROUTINE get_julgmt(date_str,julyr,julday,gmt)
+     IMPLICIT NONE
+! Arguments
+     CHARACTER (LEN=24) , INTENT(IN) :: date_str
+     INTEGER, INTENT(OUT  ) :: julyr
+     INTEGER, INTENT(OUT  ) :: julday
+     REAL   , INTENT(OUT  ) :: gmt
+! Local
+     INTEGER :: ny , nm , nd , nh , ni , ns , nt
+     INTEGER :: my1, my2, my3, monss
+     INTEGER, DIMENSION(12) :: mmd
+     DATA MMD/31,28,31,30,31,30,31,31,30,31,30,31/
+     CALL split_date_char ( date_str , ny , nm , nd , nh , ni , ns , nt )
+     GMT=nh+FLOAT(ni)/60.+FLOAT(ns)/3600.
+     MY1=MOD(ny,4)
+     MY2=MOD(ny,100)
+     MY3=MOD(ny,400)
+     IF(MY1.EQ.0.AND.MY2.NE.0.OR.MY3.EQ.0)MMD(2)=29
+     JULDAY=nd
+     JULYR=ny
+     DO MONSS=1,nm-1
+       JULDAY=JULDAY+MMD(MONSS)
+     ENDDO
+   END SUBROUTINE get_julgmt
+
+
    SUBROUTINE geth_julgmt(julyr,julday, gmt)
      IMPLICIT NONE
 ! Arguments

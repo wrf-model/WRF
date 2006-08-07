@@ -1240,8 +1240,24 @@ SUBROUTINE ext_int_get_var_ti_char ( DataHandle,Element,  Varname, Data,  Status
       IF ( hdrbuf(2) .EQ. int_var_ti_char ) THEN
         CALL int_get_ti_header_char( hdrbuf, hdrbufsize, itypesize, &
                                 locDataHandle, locElement, locVarName, Data, code )
+        IF ( .NOT. ( code .EQ. int_var_ti_real    .OR.   code .EQ. int_var_ti_logical .OR. &
+                     code .EQ. int_var_ti_char    .OR.   code .EQ. int_var_ti_double ) ) THEN 
+            BACKSPACE ( unit=DataHandle )
+            Status = 1
+            return
+        ENDIF
+      ELSE
+        BACKSPACE ( unit=DataHandle )
+        Status = 1
+        return
       ENDIF
+    ELSE
+      Status = 1
+      return
     ENDIF
+  ELSE
+    Status = 1
+    return
   ENDIF
   Status = 0
 RETURN

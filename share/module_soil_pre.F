@@ -270,6 +270,9 @@ CONTAINS
       INTEGER , PARAMETER :: iswater_soil = 14
       INTEGER :: iforce
       CHARACTER (LEN=132) :: message
+integer :: change_water , change_land
+change_water = 0 
+change_land = 0
 
       !  Sanity check on the 50/50 points
 
@@ -326,16 +329,18 @@ CONTAINS
             END IF
             IF      ( dominant_index .EQ. iswater ) THEN
 if(landmask(i,j).gt.lwthresh) then
-print *,'changing to water at point ',i,j
-print '(24(i3,1x))',1, 2, 3, 4, 5, 6, 7, 8, 9, 10,11,12, 13, 14, 15, 16, 17,18,19,20,21, 22, 23,24
-print '(24(i3,1x))',nint(landuse_frac(i,:,j)*100)
+!print *,'changing to water at point ',i,j
+!print '(24(i3,1x))',1, 2, 3, 4, 5, 6, 7, 8, 9, 10,11,12, 13, 14, 15, 16, 17,18,19,20,21, 22, 23,24
+!print '(24(i3,1x))',nint(landuse_frac(i,:,j)*100)
+change_water=change_water+1
 endif
                landmask(i,j) = 0
             ELSE IF ( dominant_index .NE. iswater ) THEN
 if(landmask(i,j).lt.lwthresh) then
-print *,'changing to land at point ',i,j
-print '(24(i3,1x))',1, 2, 3, 4, 5, 6, 7, 8, 9, 10,11,12, 13, 14, 15, 16, 17,18,19,20,21, 22, 23,24
-print '(24(i3,1x))',nint(landuse_frac(i,:,j)*100)
+!print *,'changing to land at point ',i,j
+!print '(24(i3,1x))',1, 2, 3, 4, 5, 6, 7, 8, 9, 10,11,12, 13, 14, 15, 16, 17,18,19,20,21, 22, 23,24
+!print '(24(i3,1x))',nint(landuse_frac(i,:,j)*100)
+change_land=change_land+1
 endif
                landmask(i,j) = 1
             END IF
@@ -383,6 +388,8 @@ WRITE(message,FMT='(A,I4,A,I6)' ) &
 (MIN(ide-1,ite)-its+1)*(MIN(jde-1,jte)-jts+1)
 CALL wrf_debug(0,message)
 endif
+print *,'LAND  CHANGE = ',change_land
+print *,'WATER CHANGE = ',change_water
 
    END SUBROUTINE process_percent_cat_new
 

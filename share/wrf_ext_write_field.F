@@ -45,8 +45,9 @@
     CHARACTER*80 , DIMENSION(3) :: dimnames
 
     integer                       ,intent(inout)   :: Status
-    LOGICAL for_out
+    LOGICAL for_out, horiz_stagger
     INTEGER Hndl, io_form
+    LOGICAL, EXTERNAL :: has_char
 
     IF ( wrf_at_debug_level( 500 ) ) THEN
       call start_timing
@@ -104,7 +105,8 @@
 
     CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 
-    IF ( dryrun .and. io_form .EQ. IO_NETCDF) THEN
+    IF ( ( dryrun .AND. ( io_form .EQ. IO_NETCDF ) ) .OR. &
+                        ( io_form .EQ. IO_PHDF5  )   ) THEN
       CALL wrf_put_var_ti_char( &
                        DataHandle                 &  ! DataHandle
                       ,"description"              &  ! Element
@@ -123,27 +125,52 @@
                       ,Var                        &  ! Data Name
                       ,Stagger                    &  ! Data
                       ,Status )
-    ENDIF
-
-    IF ( io_form .EQ. IO_PHDF5) THEN
-      CALL wrf_put_var_ti_char( &
-                       DataHandle                 &  ! DataHandle
-                      ,"description"              &  ! Element
-                      ,Var                        &  ! Data Name
-                      ,Desc                       &  ! Data
-                      ,Status )
-      CALL wrf_put_var_ti_char( &
-                       DataHandle                 &  ! DataHandle
-                      ,"units"                    &  ! Element
-                      ,Var                        &  ! Data Name
-                      ,Units                      &  ! Data
-                      ,Status )
-      CALL wrf_put_var_ti_char( &
-                       DataHandle                 &  ! DataHandle
-                      ,"stagger"                  &  ! Element
-                      ,Var                        &  ! Data Name
-                      ,Stagger                    &  ! Data
-                      ,Status )
+#if (EM_CORE == 1)
+! TBH:  Added "coordinates" metadata for GIS folks in RAL.  It is a step 
+! TBH:  towards CF.  This change was requested by Jennifer Boehnert based 
+! TBH:  upon a suggestion from Nawajish Noman.  
+! TBH:  TODO:  This code depends upon longitude and latitude arrays being 
+! TBH:         named "XLONG", "XLAT", "XLONG_U", "XLAT_U", "XLONG_V", and 
+! TBH:         "XLAT_V" for EM_CORE.  We need a more general way to handle 
+! TBH:         this, possibly via the Registry.  
+! TBH:  TODO:  Leave this on all the time or make it namelist-selectable?  
+! TBH:  TODO:  Use dimnames(*) == south_north || west_east instead of 
+! TBH:         MemoryOrder and Stagger?  It would also work for both ARW 
+! TBH:         and NMM and be easier to handle via Registry...  
+      IF ( ( ( MemoryOrder(1:2) == 'XY' ) .OR. &
+             ( MemoryOrder(1:3) == 'XZY' ) ) .AND. &
+           ( Var(1:5) /= 'XLONG' ) .AND. &
+           ( Var(1:4) /= 'XLAT'  ) ) THEN
+        horiz_stagger = .FALSE.
+        IF ( LEN_TRIM(Stagger) == 1 ) THEN
+          IF ( has_char( Stagger, 'x' ) ) THEN
+            horiz_stagger = .TRUE.
+            CALL wrf_put_var_ti_char( &
+                             DataHandle                 &  ! DataHandle
+                            ,"coordinates"              &  ! Element
+                            ,Var                        &  ! Data Name
+                            ,"XLONG_U XLAT_U"           &  ! Data
+                            ,Status )
+          ELSE IF ( has_char( Stagger, 'y' ) ) THEN
+            horiz_stagger = .TRUE.
+            CALL wrf_put_var_ti_char( &
+                             DataHandle                 &  ! DataHandle
+                            ,"coordinates"              &  ! Element
+                            ,Var                        &  ! Data Name
+                            ,"XLONG_V XLAT_V"           &  ! Data
+                            ,Status )
+          ENDIF
+        ENDIF
+        IF ( .NOT. horiz_stagger ) THEN
+          CALL wrf_put_var_ti_char( &
+                           DataHandle                 &  ! DataHandle
+                          ,"coordinates"              &  ! Element
+                          ,Var                        &  ! Data Name
+                          ,"XLONG XLAT"               &  ! Data
+                          ,Status )
+        ENDIF
+      ENDIF
+#endif
     ENDIF
 
     IF ( wrf_at_debug_level(300) ) THEN

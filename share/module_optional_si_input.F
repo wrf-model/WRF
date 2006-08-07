@@ -1,5 +1,7 @@
 MODULE module_optional_si_input
 
+   INTEGER :: flag_metgrid
+
    INTEGER :: flag_qc       , flag_qr       , flag_qi       , flag_qs       , flag_qg
 
    INTEGER :: flag_st000010 , flag_st010040 , flag_st040100 , flag_st100200 , flag_st010200 , &
@@ -109,6 +111,11 @@ CONTAINS
                                  ims, ime, jms, jme, kms, kme, &
                                  its, ite, jts, jte, kts, kte  )
 
+      CALL optional_metgrid    ( grid , fid , &
+                                 ids, ide, jds, jde, kds, kde, &
+                                 ims, ime, jms, jme, kms, kme, &
+                                 its, ite, jts, jte, kts, kte  )
+
       CALL optional_sst        ( grid , fid , &
                                  ids, ide, jds, jde, kds, kde, &
                                  ims, ime, jms, jme, kms, kme, &
@@ -194,6 +201,39 @@ USE module_io_domain
       END IF
     
    END SUBROUTINE optional_moist
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+   SUBROUTINE optional_metgrid ( grid , fid , &
+                                 ids, ide, jds, jde, kds, kde, &
+                                 ims, ime, jms, jme, kms, kme, &
+                                 its, ite, jts, jte, kts, kte  )
+
+      USE module_io_wrf
+      USE module_domain
+USE module_configure
+USE module_io_domain
+
+      IMPLICIT NONE 
+
+      TYPE ( domain ) :: grid
+      INTEGER , INTENT(IN) :: fid
+
+      INTEGER :: ids, ide, jds, jde, kds, kde, &
+                 ims, ime, jms, jme, kms, kme, &
+                 its, ite, jts, jte, kts, kte
+
+      INTEGER :: itmp , icnt , ierr
+
+      flag_metgrid = 0 
+
+      flag_name(1:8) = 'METGRID '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_metgrid  = itmp
+      END IF
+    
+   END SUBROUTINE optional_metgrid
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 

@@ -136,6 +136,7 @@
       integer :: i_t=096,j_t=195,n_t=11
       integer :: i_u=49,j_u=475,n_u=07
       integer :: i_v=49,j_v=475,n_v=07
+      integer :: num_ozmixm, num_aerosolc
 
 #ifdef DEREF_KLUDGE
 !  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
@@ -1581,6 +1582,10 @@
       ENDDO
       ENDDO
 !
+! when allocating CAM radiation 4d arrays (ozmixm, aerosolc) these are not needed
+      num_ozmixm=1
+      num_aerosolc=1
+
 ! Several arguments are RCONFIG entries in Registry.NMM. Registry no longer
 ! includes these as dummy arguments or declares them.  Access them from 
 ! GRID.  JM 20050819
@@ -1600,6 +1605,7 @@
      &             ,CLDFRA,GLW,GSW,EMISS,LU_INDEX                       &
      &             ,XLAT,XLONG,ALBEDO,ALBBCK                            &
      &             ,GRID%GMT,GRID%JULYR,GRID%JULDAY                     &
+     &             ,grid%levsiz, num_ozmixm, num_aerosolc, grid%paerlev &
      &             ,TMN,XLAND,ZNT,Z0,USTAR,MOL,PBLH,TKE_MYJ             &
      &             ,EXCH_H,THC,SNOWC,MAVAIL,HFX,QFX,RAINBL              &
      &             ,TSLB,ZS,DZS,GRID%num_soil_layers,warm_rain          &
@@ -1615,7 +1621,9 @@
      &             ,.TRUE.,.FALSE.                                      &
      &             ,ids, ide, jds, jde, kds, kde                        &
      &             ,ims, ime, jms, jme, kms, kme                        &
-     &             ,its, ite, jts, jte, kts, kte)
+     &             ,its, ite, jts, jte, kts, kte                        &
+     &                )
+
 !-----------------------------------------------------------------------
 !
 !mp replace F*_PHY with values defined in module_initialize_real.F?

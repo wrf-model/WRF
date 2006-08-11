@@ -44,6 +44,7 @@
      &                    ,CFRACL,CFRACM,CFRACH,SIGT4                   &
      &                    ,ACFRST,NCFRST,ACFRCV,NCFRCV                  &
      &                    ,CUPPT,VEGFRC,SNOW,HTOP,HBOT                  &
+     &                    ,Z,SICE,NUM_AEROSOLC,NUM_OZMIXM               &
      &                    ,GRID,CONFIG_FLAGS                            &
      &                    ,IDS,IDE,JDS,JDE,KDS,KDE                      &
      &                    ,IMS,IME,JMS,JME,KMS,KME                      &
@@ -83,7 +84,7 @@
      &                     ,IMS,IME,JMS,JME,KMS,KME                     &
      &                     ,ITS,ITE,JTS,JTE,KTS,KTE                     &
      &                     ,IHRST,JULDAY,JULYR                          &
-     &                     ,N_MOIST,NPHS,NRADL,NRADS,NTSD
+     &                     ,N_MOIST,NPHS,NRADL,NRADS,NTSD,NUM_AEROSOLC,NUM_OZMIXM
 !
       INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: NCFRCV,NCFRST
 !
@@ -99,10 +100,10 @@
      &                                             ,EPSR,GLAT,GLON      &
      &                                             ,HBM2                &
      &                                             ,PD,RES,SM           &
-     &                                             ,SNOW,THS,VEGFRC
+     &                                             ,SNOW,THS,VEGFRC,SICE
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: CWM,F_ICE   &
-     &                                                     ,F_RAIN,Q,T
+     &                                                     ,F_RAIN,Q,T,Z
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: ACFRCV,ACFRST    &
      &                                                ,RLWIN,RLWTOA     &
@@ -323,7 +324,12 @@
      &                 ,RTHRATEN=THRATEN                                &
      &                 ,GLW=TOTLWDN,GSW=SWNETDN,SWDOWN=TOTSWDN          &
      &                 ,XLAT=XLAT,XLONG=XLON,ALBEDO=ALBEDO,EMISS=EPSR   &
-     &                 ,XLAND=XLAND,TSK=TSFC                            &
+     &                 ,XICE=SICE,XLAND=XLAND,Z=Z,TSK=TSFC              &
+     &                 ,N_AEROSOLC=NUM_AEROSOLC,PAERLEV=GRID%PAERLEV    &
+     &                 ,CAM_ABS_DIM1=GRID%CAM_ABS_DIM1                  &
+     &                 ,CAM_ABS_DIM2=GRID%CAM_ABS_DIM2                  &
+     &                 ,CAM_ABS_FREQ_S=GRID%CAM_ABS_FREQ_S              &
+     &                 ,LEVSIZ=GRID%LEVSIZ,N_OZMIXM=NUM_OZMIXM          &
      &                 ,HTOP=HTOP,HBOT=HBOT,CUPPT=CUPPTR                &
      &                 ,HTOPR=HTOPR,HBOTR=HBOTR                         &
      &                 ,VEGFRA=VEGFRC,SNOW=SNOW                         &
@@ -333,7 +339,8 @@
      &                 ,JULIAN=JULIAN,XTIME=XTIME                       &
      &                 ,LW_PHYSICS=CONFIG_FLAGS%RA_LW_PHYSICS           &
      &                 ,SW_PHYSICS=CONFIG_FLAGS%RA_SW_PHYSICS           &
-     &                 ,RADT=RADT,STEPRA=NRAD,ICLOUD=ICLOUD             &
+     &                 ,RADT=RADT,RA_CALL_OFFSET=GRID%RA_CALL_OFFSET    &
+     &                 ,STEPRA=NRAD,ICLOUD=ICLOUD                       &
      &                 ,WARM_RAIN=WARM_RAIN                             & 
      &                 ,SWDOWNC=TOTSWDNC,CLDFRA=CLFR                    &
      &                 ,RSWTOA=RSWTOA,RLWTOA=RLWTOA                     &
@@ -341,6 +348,7 @@
      &                 ,CFRACM=CFRACM,CFRACH=CFRACH                     &
      &                 ,ACFRST=ACFRST,NCFRST=NCFRST                     &
      &                 ,ACFRCV=ACFRCV,NCFRCV=NCFRCV                     &
+     &                 ,F_ICE_PHY=F_ICE,F_RAIN_PHY=F_RAIN               &
      &                 ,QV=WATER(IMS,KMS,JMS,P_QV),F_QV=F_QV            &
      &                 ,QC=WATER(IMS,KMS,JMS,P_QC),F_QC=F_QC            &
      &                 ,QR=WATER(IMS,KMS,JMS,P_QR),F_QR=F_QR            &

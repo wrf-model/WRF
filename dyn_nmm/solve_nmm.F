@@ -75,6 +75,7 @@
 !dusan      INTEGER :: MPI_COMM_COMP,MYPE,MYPROC,NPES
       INTEGER :: MYPROC
       INTEGER :: RC, NTSD_rad
+      integer :: num_ozmixm, num_aerosolc
 !
       CHARACTER*80 :: MESSAGE
 !
@@ -652,6 +653,10 @@
 !***  RADIATION
 !----------------------------------------------------------------------
 !
+! when allocating CAM radiation 4d arrays (ozmixm, aerosolc) these are not needed
+      num_ozmixm=1
+      num_aerosolc=1
+
       IF(NTSD<=0)THEN
         NTSD_rad=NTSD
       ELSE
@@ -679,6 +684,7 @@
      &                ,CFRACL,CFRACM,CFRACH,SIGT4                      &
      &                ,ACFRST,NCFRST,ACFRCV,NCFRCV                     &
      &                ,CUPPT,VEGFRC,SNO,HTOP,HBOT                      &
+     &                ,Z,SICE,NUM_AEROSOLC,NUM_OZMIXM                  &
      &                ,GRID,CONFIG_FLAGS                               &
      &                ,IDS,IDF,JDS,JDF,KDS,KDE                         &
      &                ,IMS,IME,JMS,JME,KMS,KME                         &

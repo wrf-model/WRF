@@ -181,12 +181,14 @@ Namelist variables for controling the automatic moving nest:
  ra_lw_physics (max_dom)             longwave radiation option
                                      = 0, no longwave radiation
                                      = 1, rrtm scheme
+                                     = 3, cam scheme
                                      = 99, GFDL (Eta) longwave (semi-supported)
 
  ra_sw_physics (max_dom)             shortwave radiation option
                                      = 0, no shortwave radiation
                                      = 1, Dudhia scheme
                                      = 2, Goddard short wave
+                                     = 3, cam scheme
                                      = 99, GFDL (Eta) longwave (semi-supported)
 
  radt (max_dom)                      = 30,	; minutes between radiation physics calls
@@ -206,6 +208,15 @@ Namelist variables for controling the automatic moving nest:
  co2tf                               CO2 transmission function flag only for GFDL radiation
                                      = 0, read CO2 function data from pre-generated file
                                      = 1, generate CO2 functions internally in the forecast
+
+ ra_call_offset                      radiation call offset
+                                     = 0 (no offset), =-1 (old offset)
+
+ cam_abs_freq_s                      = 21600 CAM clearsky longwave absorption calculation frequency
+ levsiz                              = 59 for CAM radiation input ozone levels
+ paerlev                             = 29 for CAM radiation input aerosol levels
+ cam_abs_dim1                        = 4 for CAM absorption save array
+ cam_abs_dim2                        = e_vert for CAM 2nd absorption save array
 
  sf_sfclay_physics (max_dom)         surface-layer option (old bl_sfclay_physics option)
                                      = 0, no surface-layer

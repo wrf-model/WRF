@@ -41,6 +41,7 @@ CONTAINS
                          RTHFTEN, RQVFTEN,                       &
                          CLDFRA,GLW,GSW,EMISS,LU_INDEX,          &
                          XLAT,XLONG,ALBEDO,ALBBCK,GMT,JULYR,JULDAY,&
+                         levsiz, n_ozmixm, n_aerosolc, paerlev,  &
                          TMN,XLAND,ZNT,Z0,UST,MOL,PBLH,TKE_MYJ,  &
                          EXCH_H,THC,SNOWC,MAVAIL,HFX,QFX,RAINBL, &
                          TSLB,ZS,DZS,num_soil_layers,warm_rain,  & 
@@ -56,7 +57,10 @@ CONTAINS
                          allowed_to_read, moved,                 &
                          ids, ide, jds, jde, kds, kde,           &
                          ims, ime, jms, jme, kms, kme,           &
-                         its, ite, jts, jte, kts, kte           )
+                         its, ite, jts, jte, kts, kte,           &
+                         ozmixm,pin,                             &    ! Optional
+                         m_ps_1,m_ps_2,m_hybi,aerosolc_1,aerosolc_2 & ! Optional
+                         )
 
 !-----------------------------------------------------------------
    USE module_wrf_error
@@ -81,6 +85,19 @@ CONTAINS
 
    REAL,     DIMENSION( kms:kme ) , INTENT(IN) :: zfull, zhalf
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(IN) :: TSK, XLAT, XLONG
+
+   INTEGER,      INTENT(IN   )    ::   levsiz, n_ozmixm
+   INTEGER,      INTENT(IN   )    ::   paerlev, n_aerosolc
+
+   REAL,  DIMENSION( ims:ime, levsiz, jms:jme, n_ozmixm ), OPTIONAL, &
+          INTENT(INOUT) ::                                  OZMIXM
+
+   REAL,  DIMENSION(levsiz), OPTIONAL, INTENT(INOUT)  ::        PIN
+
+   REAL,  DIMENSION(ims:ime,jms:jme), OPTIONAL, INTENT(INOUT)  :: m_ps_1,m_ps_2
+   REAL,  DIMENSION(paerlev), OPTIONAL,INTENT(INOUT)  ::          m_hybi
+   REAL,  DIMENSION( ims:ime, paerlev, jms:jme, n_aerosolc ), OPTIONAL, &
+          INTENT(INOUT) ::                    aerosolc_1, aerosolc_2
 
    REAL,     DIMENSION( ims:ime , 1:num_soil_layers , jms:jme ),&
                  INTENT(INOUT) :: SMOIS, SH2O,TSLB
@@ -326,6 +343,10 @@ integer myproc
 
    CALL ra_init(grid,STEPRA,RADT,DT,RTHRATEN,RTHRATENLW,             &
                 RTHRATENSW,CLDFRA,EMISS,cen_lat,JULYR,JULDAY,GMT,    &
+                levsiz,XLAT,n_ozmixm,                           &
+                ozmixm,pin,                                     & ! Optional
+                m_ps_1,m_ps_2,m_hybi,aerosolc_1,aerosolc_2,     & ! Optional
+                paerlev,n_aerosolc,                             &
                 sfull,shalf,pptop,swrad_scat,                   &
                 config_flags,restart,                           & 
                 allowed_to_read ,                                   &
@@ -621,6 +642,10 @@ integer myproc
 !=====================================================================
    SUBROUTINE ra_init(grid,STEPRA,RADT,DT,RTHRATEN,RTHRATENLW,       & 
                       RTHRATENSW,CLDFRA,EMISS,cen_lat,JULYR,JULDAY,GMT,    &
+                      levsiz,XLAT,n_ozmixm,                           &
+                      ozmixm,pin,                                     & ! Optional
+                      m_ps_1,m_ps_2,m_hybi,aerosolc_1,aerosolc_2,     & ! Optional
+                      paerlev,n_aerosolc,                             &
                       sfull,shalf,pptop,swrad_scat,                  &
                       config_flags,restart,                          & 
                       allowed_to_read ,                              &
@@ -629,6 +654,7 @@ integer myproc
                       its, ite, jts, jte, kts, kte                   )
 !---------------------------------------------------------------------
    USE module_ra_rrtm
+   USE module_ra_cam
    USE module_ra_sw
    USE module_ra_gsfcsw
    USE module_ra_gfdleta
@@ -649,6 +675,21 @@ integer myproc
    REAL ,    INTENT(IN)           :: DT, RADT, cen_lat, GMT, pptop,  &
                                      swrad_scat
 
+   INTEGER,      INTENT(IN   )    ::   levsiz, n_ozmixm
+   INTEGER,      INTENT(IN   )    ::   paerlev, n_aerosolc
+
+   REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(IN) ::  XLAT
+
+   REAL,  DIMENSION( ims:ime, levsiz, jms:jme, n_ozmixm ), OPTIONAL,      &
+          INTENT(INOUT) ::                                  OZMIXM
+
+   REAL,  DIMENSION(ims:ime,jms:jme), OPTIONAL, INTENT(INOUT)  :: m_ps_1,m_ps_2
+   REAL,  DIMENSION(paerlev), OPTIONAL, INTENT(INOUT)  ::         m_hybi
+   REAL,  DIMENSION( ims:ime, paerlev, jms:jme, n_aerosolc ), OPTIONAL,     &
+          INTENT(INOUT) ::                      aerosolc_1, aerosolc_2
+
+   REAL,  DIMENSION(levsiz), OPTIONAL, INTENT(INOUT)  ::          PIN
+
    INTEGER , INTENT(INOUT)        :: STEPRA
    INTEGER :: isn
 
@@ -660,6 +701,7 @@ integer myproc
                                                              CLDFRA
    REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) :: EMISS
    LOGICAL :: etalw = .false.
+   LOGICAL :: camlw = .false.
    LOGICAL :: etamp = .false.
    integer :: month,iday
 !---------------------------------------------------------------------
@@ -689,6 +731,27 @@ integer myproc
                            ids, ide, jds, jde, kds, kde,    &
                            ims, ime, jms, jme, kms, kme,    &
                            its, ite, jts, jte, kts, kte     )
+
+        CASE (CAMLWSCHEME)
+             IF ( PRESENT( OZMIXM ) .AND. PRESENT( PIN ) .AND. &
+                  PRESENT(M_PS_1) .AND. PRESENT(M_PS_2) .AND.  &
+                  PRESENT(M_HYBI) .AND. PRESENT(AEROSOLC_1)    &
+                  .AND. PRESENT(AEROSOLC_2)) THEN
+             CALL camradinit(RTHRATEN,RTHRATENLW,RTHRATENSW,   &
+                         restart,                              &
+                         R_D,R_V,CP,G,STBOLT,EP_2,shalf,pptop, &
+                         ozmixm,pin,levsiz,XLAT,n_ozmixm,      &
+                         m_ps_1,m_ps_2,m_hybi,aerosolc_1,aerosolc_2,&
+                         paerlev, n_aerosolc,              &
+                         ids, ide, jds, jde, kds, kde,     &
+                         ims, ime, jms, jme, kms, kme,     &
+                         its, ite, jts, jte, kts, kte      )
+             ELSE
+                CALL wrf_error_fatal ( 'arguments not present for calling cam radiation' )
+             ENDIF
+
+             camlw = .true.
+
         CASE (GFDLLWSCHEME)
             if(.not. etamp)CALL wrf_error_fatal &
             ( 'module_physics_init: use Ferrier mp scheme for this lw radiation option' )
@@ -716,6 +779,19 @@ integer myproc
                          ids, ide, jds, jde, kds, kde,     &
                          ims, ime, jms, jme, kms, kme,     &
                          its, ite, jts, jte, kts, kte      )
+
+        CASE (CAMSWSCHEME)
+             IF(.not.camlw)THEN
+             CALL camradinit(RTHRATEN,RTHRATENLW,RTHRATENSW,          &
+                         restart,                          &
+                         R_D,R_V,CP,G,STBOLT,EP_2,shalf,pptop,               &
+                         ozmixm,pin,levsiz,XLAT,n_ozmixm,     &
+                         m_ps_1,m_ps_2,m_hybi,aerosolc_1,aerosolc_2,&
+                         paerlev, n_aerosolc,              &
+                         ids, ide, jds, jde, kds, kde,     &
+                         ims, ime, jms, jme, kms, kme,     &
+                         its, ite, jts, jte, kts, kte      )
+             ENDIF
 
         CASE (GSFCSWSCHEME)
              CALL gsfc_swinit(cen_lat, allowed_to_read )

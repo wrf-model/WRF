@@ -27,6 +27,7 @@ MODULES = \
 	module_ra_sw.o  \
 	module_ra_gsfcsw.o \
 	module_ra_rrtm.o  \
+	module_ra_cam.o  \
 	module_ra_gfdleta.o \
 	module_sf_sfclay.o \
 	module_sf_gfs.o \
@@ -103,6 +104,9 @@ module_ra_gfdleta.o:  ../frame/module_dm.o
 module_ra_rrtm.o: ../frame/module_wrf_error.o \
 		../frame/module_dm.o
 
+module_ra_cam.o: ../frame/module_wrf_error.o \
+		../frame/module_dm.o
+
 module_mp_lin.o : ../frame/module_wrf_error.o
 
 module_sf_lsm_nmm.o: ../share/module_model_constants.o \
@@ -127,6 +131,7 @@ module_physics_addtendc.o: \
 
 module_physics_init.o : \
 		module_ra_rrtm.o		\
+		module_ra_cam.o		\
 		module_ra_sw.o			\
 		module_ra_gsfcsw.o		\
 		module_ra_gfdleta.o		\
@@ -194,6 +199,7 @@ module_radiation_driver.o: \
 		module_ra_sw.o \
 		module_ra_gsfcsw.o \
 		module_ra_rrtm.o \
+		module_ra_cam.o \
 		module_ra_gfdleta.o \
 		../frame/module_state_description.o \
 		../frame/module_wrf_error.o \

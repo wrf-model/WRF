@@ -176,6 +176,7 @@ SUBROUTINE solve_em ( grid , config_flags , &
 !  Compute these starting and stopping locations for each tile and number of tiles.
 !  See: http://www.mmm.ucar.edu/wrf/WG2/topics/settiles
   CALL set_tiles ( grid , ids , ide , jds , jde , ips , ipe , jps , jpe )
+!print *,julian,grid%julday,' julian,grid%julday in solve'
 
   itimestep = itimestep + 1
 
@@ -506,7 +507,8 @@ BENCH_START(rad_driver_tim)
      &        ,JULYR=grid%julyr        ,LW_PHYSICS=config_flags%ra_lw_physics  &
      &        ,NCFRCV=ncfrcv      ,NCFRST=ncfrst      ,NPHS=1             &
      &        ,P8W=p8w            ,P=p_phy            ,PI=pi_phy          &
-     &        ,RADT=grid%radt          ,RHO=rho            ,RLWTOA=rlwtoa      &
+     &        ,RADT=grid%radt     ,RA_CALL_OFFSET=grid%ra_call_offset     &
+     &        ,RHO=rho            ,RLWTOA=rlwtoa                          &
      &        ,RSWTOA=rswtoa      ,RTHRATEN=rthraten                      &
      &        ,RTHRATENLW=rthratenlw                                      &
      &        ,RTHRATENSW=rthratensw                  ,SNOW=snow          &
@@ -514,7 +516,14 @@ BENCH_START(rad_driver_tim)
      &        ,SW_PHYSICS=config_flags%ra_sw_physics  ,T8W=t8w            &
      &        ,T=t_phy            ,TAUCLDC=taucldc    ,TAUCLDI=taucldi    &
      &        ,TSK=tsk            ,VEGFRA=vegfra     ,WARM_RAIN=warm_rain &
+     &        ,XICE=xice                                                  &
      &        ,XLAND=xland        ,XLAT=xlat          ,XLONG=xlong        &
+     &        ,Z=z                                                        &
+     &        ,LEVSIZ=grid%levsiz, N_OZMIXM=num_ozmixm                    &
+     &        ,N_AEROSOLC=num_aerosolc                                    &
+     &        ,PAERLEV=grid%paerlev                                       &
+     &        ,CAM_ABS_DIM1=grid%cam_abs_dim1, CAM_ABS_DIM2=grid%cam_abs_dim2 &
+     &        ,CAM_ABS_FREQ_S=grid%cam_abs_freq_s                         &
      &        ,XTIME=xtime                                                &
             ! indexes
      &        ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde          &
@@ -526,12 +535,36 @@ BENCH_START(rad_driver_tim)
             ! Optional                          
      &        , CLDFRA=CLDFRA                                             &
      &        , Pb=pb                                                     &
+     &        , F_ICE_PHY=f_ice_phy,F_RAIN_PHY=f_rain_phy                 &
      &        , QV=moist(ims,kms,jms,P_QV), F_QV=F_QV                     &
      &        , QC=moist(ims,kms,jms,P_QC), F_QC=F_QC                     &
      &        , QR=moist(ims,kms,jms,P_QR), F_QR=F_QR                     &
      &        , QI=moist(ims,kms,jms,P_QI), F_QI=F_QI                     &
      &        , QS=moist(ims,kms,jms,P_QS), F_QS=F_QS                     &
      &        , QG=moist(ims,kms,jms,P_QG), F_QG=F_QG                     &
+     &        ,ACSWUPT=acswupt    ,ACSWUPTC=acswuptc                      &
+     &        ,ACSWDNT=acswdnt    ,ACSWDNTC=acswdntc                      &
+     &        ,ACSWUPB=acswupb    ,ACSWUPBC=acswupbc                      &
+     &        ,ACSWDNB=acswdnb    ,ACSWDNBC=acswdnbc                      &
+     &        ,ACLWUPT=aclwupt    ,ACLWUPTC=aclwuptc                      &
+     &        ,ACLWDNT=aclwdnt    ,ACLWDNTC=aclwdntc                      &
+     &        ,ACLWUPB=aclwupb    ,ACLWUPBC=aclwupbc                      &
+     &        ,ACLWDNB=aclwdnb    ,ACLWDNBC=aclwdnbc                      &
+     &        ,SWUPT=swupt    ,SWUPTC=swuptc                              &
+     &        ,SWDNT=swdnt    ,SWDNTC=swdntc                              &
+     &        ,SWUPB=swupb    ,SWUPBC=swupbc                              &
+     &        ,SWDNB=swdnb    ,SWDNBC=swdnbc                              &
+     &        ,LWUPT=lwupt    ,LWUPTC=lwuptc                              &
+     &        ,LWDNT=lwdnt    ,LWDNTC=lwdntc                              &
+     &        ,LWUPB=lwupb    ,LWUPBC=lwupbc                              &
+     &        ,LWDNB=lwdnb    ,LWDNBC=lwdnbc                              &
+     &        ,LWCF=lwcf                                                  &
+     &        ,SWCF=swcf                                                  &
+     &        ,OLR=olr                                                    &
+     &        ,OZMIXM=ozmixm, PIN=pin                                     &
+     &        ,M_PS_1=m_ps_1, M_PS_2=m_ps_2, AEROSOLC_1=aerosolc_1        &
+     &        ,AEROSOLC_2=aerosolc_2, M_HYBI0=m_hybi                      &
+     &        ,ABSTOT=abstot, ABSNXT=absnxt, EMSTOT=emstot                &
 #ifdef WRF_CHEM
      &        ,PM2_5_DRY=pm2_5_dry, PM2_5_WATER=pm2_5_water               &
      &        ,PM2_5_DRY_EC=pm2_5_dry_ec                                  &

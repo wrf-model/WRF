@@ -526,6 +526,7 @@
                       RTHFTEN, RQVFTEN,                       &
                       CLDFRA,GLW,GSW,EMISS,LU_INDEX,          &
                       XLAT,XLONG,ALBEDO,ALBBCK,grid%GMT,grid%JULYR,grid%JULDAY,     &
+                      grid%levsiz, num_ozmixm, num_aerosolc, grid%paerlev,  &
                       TMN,XLAND,ZNT,Z0,UST,MOL,PBLH,TKE_MYJ,     &
                       EXCH_H,THC,SNOWC,MAVAIL,HFX,QFX,RAINBL, &
                       TSLB,ZS,DZS,config_flags%num_soil_layers,warm_rain,  &
@@ -541,7 +542,10 @@
                       allowed_to_read, moved ,                &
                       ids, ide, jds, jde, kds, kde,           &
                       ims, ime, jms, jme, kms, kme,           &
-                      grid%i_start(ij), grid%i_end(ij), grid%j_start(ij), grid%j_end(ij), kts, kte           )
+                      grid%i_start(ij), grid%i_end(ij), grid%j_start(ij), grid%j_end(ij), kts, kte, &
+                      ozmixm,pin,                             &     ! Optional
+                      m_ps_1,m_ps_2,m_hybi,aerosolc_1,aerosolc_2 &  ! Optional
+                      )
 
    ENDDO
 

@@ -9249,7 +9249,7 @@ PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
 CFLAGS          =       -DNOUNDERSCORE -DLANDREAD_STUB -I /usr/include/sys -DMACOS
 FCOPTIM         =       -O3 -qarch=auto #-qfloat=nomaf
 FCDEBUG         =       # -qnoopt -qfullpath
-FCBASEOPTS      =       -qsave $(FCDEBUG) -qmaxmem=32767 -w 
+FCBASEOPTS      =       -qsave $(FCDEBUG) -qmaxmem=32767 -qspillsize=32767 -w 
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS  =       
@@ -9387,7 +9387,7 @@ PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
 CFLAGS          =       -DNOUNDERSCORE -DLANDREAD_STUB -I /usr/include/sys -DMACOS
 FCOPTIM         =       -O2 -qarch=auto -qunroll=yes #-qfloat=nomaf
 FCDEBUG         =       # -qnoopt -qfullpath
-FCBASEOPTS      =       -w -qsave $(FCDEBUG) -qmaxmem=32767 #-qflttrap=zerodivide:invalid:enable -qsigtrap
+FCBASEOPTS      =       -w -qsave $(FCDEBUG) -qmaxmem=32767 -qspillsize=32767 #-qflttrap=zerodivide:invalid:enable -qsigtrap
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS  =       

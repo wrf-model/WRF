@@ -53,6 +53,11 @@ dimspec    g      2     namelist=num_metgrid_levels  z          num_metgrid_leve
 dimspec    m      2     constant=12                  z          months_per_year
 dimspec    o      3     namelist=ne_area             z          emissions dimension
 dimspec    n      2     namelist=kemit               z          emissions_zdim
+dimspec    a      -     namelist=cam_abs_dim1     c          cam_abs_dim1
+dimspec    c      -     namelist=cam_abs_dim2     z          cam_abs_dim2
+dimspec    q      2     namelist=levsiz           z          levsiz
+dimspec    d      2     namelist=paerlev          z          paerlev
+
 
 
 ################################################################################
@@ -894,6 +899,38 @@ state integer ncfrst    ij    misc        1    -    i
 state  real   acfrcv    ij    misc        1    -    i
 state integer ncfrcv    ij    misc        1    -    i
 
+# cam radiation variables
+state  real    -       iqjf ozmixm      1    -   -     -
+state  real   mth01    iqjf ozmixm      1    -   -     -
+state  real   mth02    iqjf ozmixm      1    -   -     -
+state  real   mth03    iqjf ozmixm      1    -   -     -
+state  real   mth04    iqjf ozmixm      1    -   -     -
+state  real   mth05    iqjf ozmixm      1    -   -     -
+state  real   mth06    iqjf ozmixm      1    -   -     -
+state  real   mth07    iqjf ozmixm      1    -   -     -
+state  real   mth08    iqjf ozmixm      1    -   -     -
+state  real   mth09    iqjf ozmixm      1    -   -     -
+state  real   mth10    iqjf ozmixm      1    -   -     -
+state  real   mth11    iqjf ozmixm      1    -   -     -
+state  real   mth12    iqjf ozmixm      1    -   -     -
+state  real   pin       o     misc      1    -   -      "PIN"             "PRESSURE LEVEL OF OZONE MIXING RATIO"  "millibar"
+state  real   m_ps       ij   misc      2    -   -      "m_ps"            "PS from MATCH on WRF grids"
+state  real    -       idjf aerosolc    2    -   -       -
+state  real   SUL      idjf aerosolc    2    -   -     "SUL"        "SUL aerosol concentration"
+state  real   SSLT     idjf aerosolc    2    -   -     "SSLT"        "SSLT aerosol concentration"
+state  real   DUST1    idjf aerosolc    2    -   -     "DUST1"        "DUST1 aerosol concentration"
+state  real   DUST2    idjf aerosolc    2    -   -     "DUST2"        "DUST2 aerosol concentration"
+state  real   DUST3    idjf aerosolc    2    -   -     "DUST3"        "DUST3 aerosol concentration"
+state  real   DUST4    idjf aerosolc    2    -   -     "DUST4"        "DUST4 aerosol concentration"
+state  real   OCPHO    idjf aerosolc    2    -   -     "OCPHO"        "OCPHO aerosol concentration"
+state  real   BCPHO    idjf aerosolc    2    -   -     "BCPHO"        "BCPHO aerosol concentration"
+state  real   OCPHI    idjf aerosolc    2    -   -     "OCPHI"        "OCPHI aerosol concentration"
+state  real   BCPHI    idjf aerosolc    2    -   -     "BCPHI"        "BCPHI aerosol concentration"
+state  real   BG       idjf aerosolc    2    -   -     "BG"        "BG aerosol concentration"
+state  real   VOLC     idjf aerosolc    2    -   -     "VOLC"        "VOLC aerosol concentration"
+state  real   m_hybi    d     misc      1    -   -     "m_hybi"         "MATCH hybi"
+
+
 # new eta microphpysics State Variables
 state    real    F_ICE_PHY       ikj    misc        1         -      rdu      "F_ICE_PHY"            "FRACTION OF ICE"         ""
 state    real    F_RAIN_PHY      ikj    misc        1         -      rdu      "F_RAIN_PHY"           "FRACTION OF RAIN "         ""
@@ -1015,6 +1052,44 @@ state    real  SWDOWNC          ij      misc        1         -      -        "S
 state    real  GSW              ij      misc        1         -      r        "GSW"                   "NET SHORT WAVE FLUX AT GROUND SURFACE"           "W m-2"      
 state    real  GLW              ij      misc        1         -      rh       "GLW"                   "DOWNWARD LONG WAVE FLUX AT GROUND SURFACE"            "W m-2"      
 
+# upward and downward clearsky and total diagnostic fluxes for CAM radiation
+state    real  ACSWUPT          ij      misc        1         -      rhdu     "ACSWUPT"               "ACCUMULATED UPWELLING SHORTWAVE FLUX AT TOP"          "J m-2"
+state    real  ACSWUPTC         ij      misc        1         -      rhdu     "ACSWUPTC"              "ACCUMULATED UPWELLING CLEAR SKY SHORTWAVE FLUX AT TOP" "J m-2"
+state    real  ACSWDNT          ij      misc        1         -      rhdu     "ACSWDNT"               "ACCUMULATED DOWNWELLING SHORTWAVE FLUX AT TOP"          "J m-2"
+state    real  ACSWDNTC         ij      misc        1         -      rhdu     "ACSWDNTC"              "ACCUMULATED DOWNWELLING CLEAR SKY SHORTWAVE FLUX AT TOP" "J m-2"
+state    real  ACSWUPB          ij      misc        1         -      rhdu     "ACSWUPB"               "ACCUMULATED UPWELLING SHORTWAVE FLUX AT BOTTOM"          "J m-2"
+state    real  ACSWUPBC         ij      misc        1         -      rhdu     "ACSWUPBC"              "ACCUMULATED UPWELLING CLEAR SKY SHORTWAVE FLUX AT BOTTOM" "J m-2"
+state    real  ACSWDNB          ij      misc        1         -      rhdu     "ACSWDNB"               "ACCUMULATED DOWNWELLING SHORTWAVE FLUX AT BOTTOM"          "J m-2"
+state    real  ACSWDNBC         ij      misc        1         -      rhdu     "ACSWDNBC"              "ACCUMULATED DOWNWELLING CLEAR SKY SHORTWAVE FLUX AT BOTTOM" "J m-2"
+state    real  ACLWUPT          ij      misc        1         -      rhdu     "ACLWUPT"               "ACCUMULATED UPWELLING LONGWAVE FLUX AT TOP"          "J m-2"
+state    real  ACLWUPTC         ij      misc        1         -      rhdu     "ACLWUPTC"              "ACCUMULATED UPWELLING CLEAR SKY LONGWAVE FLUX AT TOP" "J m-2"
+state    real  ACLWDNT          ij      misc        1         -      rhdu     "ACLWDNT"               "ACCUMULATED DOWNWELLING LONGWAVE FLUX AT TOP"          "J m-2"
+state    real  ACLWDNTC         ij      misc        1         -      rhdu     "ACLWDNTC"              "ACCUMULATED DOWNWELLING CLEAR SKY LONGWAVE FLUX AT TOP" "J m-2"
+state    real  ACLWUPB          ij      misc        1         -      rhdu     "ACLWUPB"               "ACCUMULATED UPWELLING LONGWAVE FLUX AT BOTTOM"          "J m-2"
+state    real  ACLWUPBC         ij      misc        1         -      rhdu     "ACLWUPBC"              "ACCUMULATED UPWELLING CLEAR SKY LONGWAVE FLUX AT BOTTOM" "J m-2"
+state    real  ACLWDNB          ij      misc        1         -      rhdu     "ACLWDNB"               "ACCUMULATED DOWNWELLING LONGWAVE FLUX AT BOTTOM"          "J m-2"
+state    real  ACLWDNBC         ij      misc        1         -      rhdu     "ACLWDNBC"              "ACCUMULATED DOWNWELLING CLEAR SKY LONGWAVE FLUX AT BOTTOM" "J m-2"
+state    real  SWUPT            ij      misc        1         -      rhdu     "SWUPT"                 "INSTANTANEOUS UPWELLING SHORTWAVE FLUX AT TOP"          "J m-2"
+state    real  SWUPTC           ij      misc        1         -      rhdu     "SWUPTC"                "INSTANTANEOUS UPWELLING CLEAR SKY SHORTWAVE FLUX AT TOP" "J m-2"
+state    real  SWDNT            ij      misc        1         -      rhdu     "SWDNT"                 "INSTANTANEOUS DOWNWELLING SHORTWAVE FLUX AT TOP"          "J m-2"
+state    real  SWDNTC           ij      misc        1         -      rhdu     "SWDNTC"                "INSTANTANEOUS DOWNWELLING CLEAR SKY SHORTWAVE FLUX AT TOP" "J m-2"
+state    real  SWUPB            ij      misc        1         -      rhdu     "SWUPB"                 "INSTANTANEOUS UPWELLING SHORTWAVE FLUX AT BOTTOM"          "J m-2"
+state    real  SWUPBC           ij      misc        1         -      rhdu     "SWUPBC"                "INSTANTANEOUS UPWELLING CLEAR SKY SHORTWAVE FLUX AT BOTTOM" "J m-2"
+state    real  SWDNB            ij      misc        1         -      rhdu     "SWDNB"                 "INSTANTANEOUS DOWNWELLING SHORTWAVE FLUX AT BOTTOM"          "J m-2"
+state    real  SWDNBC           ij      misc        1         -      rhdu     "SWDNBC"                "INSTANTANEOUS DOWNWELLING CLEAR SKY SHORTWAVE FLUX AT BOTTOM" "J m-2"
+state    real  LWUPT            ij      misc        1         -      rhdu     "LWUPT"                 "INSTANTANEOUS UPWELLING LONGWAVE FLUX AT TOP"          "J m-2"
+state    real  LWUPTC           ij      misc        1         -      rhdu     "LWUPTC"                "INSTANTANEOUS UPWELLING CLEAR SKY LONGWAVE FLUX AT TOP" "J m-2"
+state    real  LWDNT            ij      misc        1         -      rhdu     "LWDNT"                 "INSTANTANEOUS DOWNWELLING LONGWAVE FLUX AT TOP"          "J m-2"
+state    real  LWDNTC           ij      misc        1         -      rhdu     "LWDNTC"                "INSTANTANEOUS DOWNWELLING CLEAR SKY LONGWAVE FLUX AT TOP" "J m-2"
+state    real  LWUPB            ij      misc        1         -      rhdu     "LWUPB"                 "INSTANTANEOUS UPWELLING LONGWAVE FLUX AT BOTTOM"          "J m-2"
+state    real  LWUPBC           ij      misc        1         -      rhdu     "LWUPBC"                "INSTANTANEOUS UPWELLING CLEAR SKY LONGWAVE FLUX AT BOTTOM" "J m-2"
+state    real  LWDNB            ij      misc        1         -      rhdu     "LWDNB"                 "INSTANTANEOUS DOWNWELLING LONGWAVE FLUX AT BOTTOM"          "J m-2"
+state    real  LWDNBC           ij      misc        1         -      rhdu     "LWDNBC"                "INSTANTANEOUS DOWNWELLING CLEAR SKY LONGWAVE FLUX AT BOTTOM" "J m-2"
+
+state    real  SWCF             ij      misc        1         -      rh        "SWCF"                  "SHORT WAVE CLOUD FORCING AT TOA"                     "W m-2"
+state    real  LWCF             ij      misc        1         -      rh        "LWCF"                  "LONG WAVE CLOUD FORCING AT TOA"                      "W m-2"
+state    real  OLR              ij      misc        1         -      rh        "OLR"                   "TOA OUTGOING LONG WAVE"                              "W m-2"
+
 # these next 2 are for the HFSoLE/PET demo; writing these to auxhist1 output over MCEL for coupling
 # with wave model, only if compiled with -DMCELIO, JM 2003/05/29
 state    real  XLAT             ij      misc        1         -     i0123rh01du=(copy_fcnm)      "XLAT"                "LATITUDE, SOUTH IS NEGATIVE"                                          "degree_north"
@@ -1112,6 +1187,10 @@ state  logical adv_moist_cond   -       misc        1         -     -         "a
 # flag for nest movement
 state  logical moved            -       misc        1         -     -          
 
+# special cam radiation restart arrays
+state  real   abstot   ikcj   misc      1    Z   -     ""   ""  " "
+state  real   absnxt   ikaj   misc      1    -   -     ""   ""  " "
+state  real   emstot   ikj    misc      1    Z   -     ""   ""  " "
 #
 #---------------------------------------------------------------------------------------------------------------------------------------
 #                                               
@@ -1562,6 +1641,7 @@ rconfig   integer ICLOUD                  namelist,physics	1             1      
 rconfig   real    swrad_scat              namelist,physics	1             1       irh    "SWRAD_SCAT" "SCATTERING FACTOR IN SWRAD"      ""
 rconfig   integer surface_input_source    namelist,physics	1             1       irh    "surface_input_source"          "1=static (fractional), 2=time dependent (dominant), 3=hybrid (not yet implemented)"      ""
 rconfig   integer num_soil_layers         namelist,physics	1             5       irh    "num_soil_layers"               ""      ""
+rconfig   integer num_months              namelist,physics      1            12       irh    "num_months"               ""      ""
 rconfig   integer maxiens                 namelist,physics	1             1       irh    "maxiens"                    ""      ""
 rconfig   integer maxens                  namelist,physics	1             3       irh    "maxens"                    ""      ""
 rconfig   integer maxens2                 namelist,physics	1             3       irh    "maxens2"                    ""      ""
@@ -1576,7 +1656,13 @@ rconfig   integer mp_zero_out             namelist,physics	1             0      
 rconfig   real mp_zero_out_thresh         namelist,physics	1          1.e-8      -      "mp_zero_out_thresh"  "minimum threshold for non-Qv moist fields, below are set to zero"  "kg/kg"
 rconfig   real    seaice_threshold        namelist,physics	1            271       h    "seaice_threshold"  "tsk below which which water points are set to sea ice for slab scheme"   "K"
 rconfig   integer sst_update              namelist,physics	1            0         h    "sst_update"  "update sst from wrflowinp file  0=no, 1=yes"   ""
-rconfig   integer co2tf                   namelist,physics	1            0         -    "GFDL radiation co2 flag"  ""   ""
+rconfig   integer co2tf                   namelist,physics      1            0         -    "co2tf" "GFDL radiation co2 flag" ""
+rconfig   integer ra_call_offset          namelist,physics      1            0         -    "ra_call_offset" "radiation call offset in timesteps (-1=old, 0=new offset)" ""
+rconfig   real    cam_abs_freq_s          namelist,physics      1         21600.      -      "cam_abs_freq_s" "CAM radiation frequency for clear-sky longwave calculations" "s"
+rconfig   integer levsiz                  namelist,physics      1             1       -      "levsiz" "Number of ozone data levels for CAM radiation (59)"  ""
+rconfig   integer paerlev                 namelist,physics      1             1       -      "paerlev" "Number of aerosol data levels for CAM radiation (29)"  ""
+rconfig   integer cam_abs_dim1            namelist,physics      1             1       -      "cam_abs_dim1" "dimension for absnxt in CAM radiation"  ""
+rconfig   integer cam_abs_dim2            namelist,physics      1             1       -      "cam_abs_dim2" "dimension for abstot in CAM radiation"  ""
 
 
 # Dynamics
@@ -1733,10 +1819,12 @@ package   ncepcloud5    mp_physics==99               -             moist:qv,qc,q
 package   thompson       mp_physics==8               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni
 
 package   rrtmscheme    ra_lw_physics==1             -             -
+package   camlwscheme   ra_lw_physics==3             -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;aerosolc:sul,sslt,dust1,dust2,dust3,dust4,ocpho,bcpho,ocphi,bcphi,bg,volc
 package   gfdllwscheme  ra_lw_physics==99            -             -
 
 package   swradscheme   ra_sw_physics==1             -             -
 package   gsfcswscheme  ra_sw_physics==2             -             -
+package   camswscheme   ra_sw_physics==3             -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;aerosolc:sul,sslt,dust1,dust2,dust3,dust4,ocpho,bcpho,ocphi,bcphi,bg,volc
 package   gfdlswscheme  ra_sw_physics==99            -             -
 
 package   sfclayscheme   sf_sfclay_physics==1        -             -

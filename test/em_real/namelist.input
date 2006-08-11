@@ -1,6 +1,6 @@
  &time_control
  run_days                            = 0,
- run_hours                           = 12,
+ run_hours                           = 3,
  run_minutes                         = 0,
  run_seconds                         = 0,
  start_year                          = 2001, 2001, 2001,
@@ -17,10 +17,11 @@
  end_second                          = 00,   00,   00,
  interval_seconds                    = 10800
  input_from_file                     = .true.,.false.,.false.,
+ auxinput1_inname                    = "wrf_real_input_em.d<domain>.<date>"
  history_interval                    = 180,  60,   60,
  frames_per_outfile                  = 1000, 1000, 1000,
  restart                             = .false.,
- restart_interval                    = 5000,
+ restart_interval                    = 360,
  io_form_history                     = 2
  io_form_restart                     = 2
  io_form_input                       = 2
@@ -54,8 +55,8 @@
 
  &physics
  mp_physics                          = 2,     2,     2,
- ra_lw_physics                       = 1,     1,     1,
- ra_sw_physics                       = 1,     1,     1,
+ ra_lw_physics                       = 3,     1,     1,
+ ra_sw_physics                       = 3,     1,     1,
  radt                                = 10,    10,    10,
  sf_sfclay_physics                   = 1,     1,     1,
  sf_surface_physics                  = 2,     2,     2,
@@ -63,6 +64,7 @@
  bldt                                = 0,     0,     0,
  cu_physics                          = 1,     1,     0,
  cudt                                = 5,     5,     5,
+ ra_call_offset                      = 0,
  isfflx                              = 1,
  ifsnow                              = 0,
  icloud                              = 1,
@@ -74,6 +76,12 @@
  maxens2                             = 3,
  maxens3                             = 16,
  ensdim                              = 144,
+ levsiz                              = 59,
+ paerlev                             = 29,   
+ cam_abs_freq_s                      = 21600.,
+ cam_abs_dim1                        = 4,
+ cam_abs_dim2                        = 28,
+
  /
 
  &dynamics

@@ -178,6 +178,11 @@ em_real : wrf
 	( cd test/em_real ; /bin/rm -f ETAMPNEW_DATA RRTM_DATA ;    \
              ln -sf ../../run/ETAMPNEW_DATA . ;                     \
              ln -sf ../../run/RRTM_DATA . ;                         \
+             ln -sf ../../run/CAM_ABS_DATA . ;                         \
+             ln -sf ../../run/CAM_AEROPT_DATA . ;                         \
+             ln -sf ../../run/ozone.formatted . ;                         \
+             ln -sf ../../run/ozone_lat.formatted . ;                         \
+             ln -sf ../../run/ozone_plev.formatted . ;                         \
              if [ $(RWORDSIZE) -eq 8 ] ; then                       \
                 ln -sf ../../run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA ;  \
                 ln -sf ../../run/RRTM_DATA_DBL RRTM_DATA ;          \

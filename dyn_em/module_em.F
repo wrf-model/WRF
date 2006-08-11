@@ -862,7 +862,7 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,    &
                                          INTENT(INOUT)  :: scalar
 
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme , scs:sce ),                      &
-                                         INTENT(  OUT)  :: scalar_tends
+                                         INTENT(INOUT)  :: scalar_tends
                                                     
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme  ) :: advect_tend
 

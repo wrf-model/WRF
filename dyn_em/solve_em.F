@@ -542,6 +542,7 @@ BENCH_START(rad_driver_tim)
      &        , QI=moist(ims,kms,jms,P_QI), F_QI=F_QI                     &
      &        , QS=moist(ims,kms,jms,P_QS), F_QS=F_QS                     &
      &        , QG=moist(ims,kms,jms,P_QG), F_QG=F_QG                     &
+#ifdef ACFLUX
      &        ,ACSWUPT=acswupt    ,ACSWUPTC=acswuptc                      &
      &        ,ACSWDNT=acswdnt    ,ACSWDNTC=acswdntc                      &
      &        ,ACSWUPB=acswupb    ,ACSWUPBC=acswupbc                      &
@@ -558,6 +559,7 @@ BENCH_START(rad_driver_tim)
      &        ,LWDNT=lwdnt    ,LWDNTC=lwdntc                              &
      &        ,LWUPB=lwupb    ,LWUPBC=lwupbc                              &
      &        ,LWDNB=lwdnb    ,LWDNBC=lwdnbc                              &
+#endif
      &        ,LWCF=lwcf                                                  &
      &        ,SWCF=swcf                                                  &
      &        ,OLR=olr                                                    &

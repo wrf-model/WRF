@@ -784,6 +784,40 @@ CONTAINS
 
    ENDIF Radiation_step
 
+     accumulate_lw_select: SELECT CASE(lw_physics)
+
+     CASE (CAMLWSCHEME)
+   IF(PRESENT(LWUPTC))THEN
+   !$OMP PARALLEL DO   &
+   !$OMP PRIVATE ( ij ,i,j,k,its,ite,jts,jte)
+
+   DO ij = 1 , num_tiles
+     its = i_start(ij)
+     ite = i_end(ij)
+     jts = j_start(ij)
+     jte = j_end(ij)
+
+        DO j=jts,jte
+        DO i=its,ite
+           ACLWUPT(I,J) = ACLWUPT(I,J) + LWUPT(I,J)*DT
+           ACLWUPTC(I,J) = ACLWUPTC(I,J) + LWUPTC(I,J)*DT
+           ACLWDNT(I,J) = ACLWDNT(I,J) + LWDNT(I,J)*DT
+           ACLWDNTC(I,J) = ACLWDNTC(I,J) + LWDNTC(I,J)*DT
+           ACLWUPB(I,J) = ACLWUPB(I,J) + LWUPB(I,J)*DT
+           ACLWUPBC(I,J) = ACLWUPBC(I,J) + LWUPBC(I,J)*DT
+           ACLWDNB(I,J) = ACLWDNB(I,J) + LWDNB(I,J)*DT
+           ACLWDNBC(I,J) = ACLWDNBC(I,J) + LWDNBC(I,J)*DT
+        ENDDO
+        ENDDO
+   ENDDO
+   !$OMP END PARALLEL DO
+   ENDIF
+     CASE DEFAULT
+     END SELECT accumulate_lw_select
+
+     accumulate_sw_select: SELECT CASE(sw_physics)
+
+     CASE (CAMSWSCHEME)
    IF(PRESENT(SWUPTC))THEN
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij ,i,j,k,its,ite,jts,jte)
@@ -800,23 +834,17 @@ CONTAINS
            ACSWUPTC(I,J) = ACSWUPTC(I,J) + SWUPTC(I,J)*DT
            ACSWDNT(I,J) = ACSWDNT(I,J) + SWDNT(I,J)*DT
            ACSWDNTC(I,J) = ACSWDNTC(I,J) + SWDNTC(I,J)*DT
-           ACLWUPT(I,J) = ACLWUPT(I,J) + LWUPT(I,J)*DT
-           ACLWUPTC(I,J) = ACLWUPTC(I,J) + LWUPTC(I,J)*DT
-           ACLWDNT(I,J) = ACLWDNT(I,J) + LWDNT(I,J)*DT
-           ACLWDNTC(I,J) = ACLWDNTC(I,J) + LWDNTC(I,J)*DT
            ACSWUPB(I,J) = ACSWUPB(I,J) + SWUPB(I,J)*DT
            ACSWUPBC(I,J) = ACSWUPBC(I,J) + SWUPBC(I,J)*DT
            ACSWDNB(I,J) = ACSWDNB(I,J) + SWDNB(I,J)*DT
            ACSWDNBC(I,J) = ACSWDNBC(I,J) + SWDNBC(I,J)*DT
-           ACLWUPB(I,J) = ACLWUPB(I,J) + LWUPB(I,J)*DT
-           ACLWUPBC(I,J) = ACLWUPBC(I,J) + LWUPBC(I,J)*DT
-           ACLWDNB(I,J) = ACLWDNB(I,J) + LWDNB(I,J)*DT
-           ACLWDNBC(I,J) = ACLWDNBC(I,J) + LWDNBC(I,J)*DT
         ENDDO
         ENDDO
    ENDDO
    !$OMP END PARALLEL DO
    ENDIF
+     CASE DEFAULT
+     END SELECT accumulate_sw_select
 
    END SUBROUTINE radiation_driver
 

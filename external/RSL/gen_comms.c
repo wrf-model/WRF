@@ -523,11 +523,16 @@ int said_it = 0 ;
 
     for ( p = Domain.fields ; p != NULL ; p = p->next )
     {
-if ( !strcmp( p->name , "xf_ens" ) || !strcmp( p->name,"pr_ens" ) )  {
+
+/* special cases in WRF */
+if ( !strcmp( p->name , "xf_ens" ) || !strcmp( p->name,"pr_ens" ) ||
+     !strcmp( p->name , "abstot" ) || !strcmp( p->name,"absnxt" ) || !strcmp( p->name, "emstot" ) )  {
   if ( sw_move && ! said_it ) { fprintf(stderr,"Info only - not an error: Moving nests not implemented for Grell Ens. Cumulus\n") ;
+                                fprintf(stderr,"Info only - not an error: Moving nests not implemented for CAM radiation\n") ;
   said_it = 1 ; }
   continue ;
 }
+
       if (( p->node_kind & (FIELD | FOURD) ) && p->ndims >= 2 && ! p->boundary_array &&
 	  ((!strncmp(p->use,"dyn_",4) && !strcmp(corename,p->use+4)) || strncmp(p->use,"dyn_",4)))
       {
@@ -605,9 +610,13 @@ if ( !strcmp( p->name , "xf_ens" ) || !strcmp( p->name,"pr_ens" ) )  {
 
     for ( p = Domain.fields ; p != NULL ; p = p->next )
     {
-if ( !strcmp( p->name , "xf_ens" ) || !strcmp( p->name,"pr_ens" ) )  {
+
+/* special cases in WRF */
+if ( !strcmp( p->name , "xf_ens" ) || !strcmp( p->name,"pr_ens" ) ||
+     !strcmp( p->name , "abstot" ) || !strcmp( p->name,"absnxt" ) || !strcmp( p->name, "emstot" ) )  {
   continue ;
 }
+
       if (( p->node_kind & (FIELD | FOURD) ) && p->ndims >= 2 && ! p->boundary_array &&
 	  ((!strncmp(p->use,"dyn_",4) && !strcmp(corename,p->use+4)) || strncmp(p->use,"dyn_",4)))
       {

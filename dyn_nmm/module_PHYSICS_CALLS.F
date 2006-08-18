@@ -609,7 +609,7 @@
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: GRNFLX,QWBS,RADOT  &
                                                     ,SFCEXC,SMSTAV      &
-                                                    ,SMSTOT,SOILTB,TWBS
+                                                    ,SOILTB,TWBS
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: ACSNOM,ACSNOW    &
      &                                                ,AKHS,AKMS        &
@@ -619,7 +619,8 @@
      &                                                ,POTFLX,PREC      &
      &                                                ,QS,QZ0,SFCEVP    &
      &                                                ,SFCLHX,SFCSHX    &
-     &                                                ,SI,SNO,SNOPCX    &
+     &                                                ,SI,SMSTOT        &
+     &                                                ,SNO,SNOPCX       &
      &                                                ,SSROFF,SUBSHX    &
      &                                                ,THS,THZ0,TSFC    &
      &                                                ,USTAR,UZ0,UZ0H   &

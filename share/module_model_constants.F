@@ -85,8 +85,8 @@
    REAL    , PARAMETER ::  w_beta  = 1.0 ! activation cfl number
 
        REAL , PARAMETER ::  pq0=379.90516
-!      REAL , PARAMETER ::  epsq2=0.2
-       REAL , PARAMETER ::  epsq2=0.02
+       REAL , PARAMETER ::  epsq2=0.2
+!      REAL , PARAMETER ::  epsq2=0.02
        REAL , PARAMETER ::  a2=17.2693882
        REAL , PARAMETER ::  a3=273.16
        REAL , PARAMETER ::  a4=35.86

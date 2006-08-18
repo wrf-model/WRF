@@ -872,20 +872,31 @@ USE module_timing
 END FUNCTION time_for_move
 
 ! Put any tests for non-moving options or conditions in here
-LOGICAL FUNCTION should_not_move ( id ) 
+LOGICAL FUNCTION should_not_move ( id )
   USE module_state_description
   USE module_configure
   IMPLICIT NONE
   INTEGER, INTENT(IN) :: id
  ! Local
   LOGICAL retval
-  INTEGER cu_physics
+  INTEGER cu_physics, ra_sw_physics, ra_lw_physics
 
   retval = .FALSE.
 ! check for GD ensemble cumulus, which can not move
   CALL nl_get_cu_physics( id , cu_physics )
   IF ( cu_physics .EQ. GDSCHEME ) THEN
     CALL wrf_message('Grell cumulus can not be specified with moving nests. Movement disabled.')
+    retval = .TRUE.
+  ENDIF
+! check for CAM radiation scheme , which can not move
+  CALL nl_get_ra_sw_physics( id , ra_sw_physics )
+  IF ( ra_sw_physics .EQ. CAMSWSCHEME ) THEN
+    CALL wrf_message('CAM SW radiation can not be specified with moving nests. Movement disabled.')
+    retval = .TRUE.
+  ENDIF
+  CALL nl_get_ra_lw_physics( id , ra_lw_physics )
+  IF ( ra_lw_physics .EQ. CAMLWSCHEME ) THEN
+    CALL wrf_message('CAM LW radiation can not be specified with moving nests. Movement disabled.')
     retval = .TRUE.
   ENDIF
   should_not_move = retval

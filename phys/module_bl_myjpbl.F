@@ -31,7 +31,7 @@
       REAL,PARAMETER :: CAPA=R_D/CP
       REAL,PARAMETER :: RLIVWV=XLS/XLV,ELOCP=2.72E6/CP
       REAL,PARAMETER :: EPS1=1.E-12,EPS2=0.
-      REAL,PARAMETER :: EPSL=0.10,EPSRU=1.E-7,EPSRS=1.E-7               &
+      REAL,PARAMETER :: EPSL=0.32,EPSRU=1.E-7,EPSRS=1.E-7               &
      &                 ,EPSTRB=1.E-24
       REAL,PARAMETER :: EPSA=1.E-8,EPSIT=1.E-4,EPSU2=1.E-4,EPSUST=0.07  &
      &                 ,FH=1.01 

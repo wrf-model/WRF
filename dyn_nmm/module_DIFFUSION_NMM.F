@@ -25,7 +25,7 @@
 !***********************************************************************
       SUBROUTINE HDIFF(NTSD,DT,FIS,DY,HDAC,HDACV                        &
      &                ,HTM,HBM2,VTM,DETA1,SIGMA                         &
-     &                ,T,Q,U,V,Q2,Z,W                                   &
+     &                ,T,Q,U,V,Q2,Z,W,SM,SICE                           &
      &                ,IHE,IHW,IVE,IVW,INDX3_WRK                        &
      &                ,IDS,IDE,JDS,JDE,KDS,KDE                          &
      &                ,IMS,IME,JMS,JME,KMS,KME                          &
@@ -55,6 +55,7 @@
 !   02-09-06  WOLFE      -
 !   03-05-27  JANJIC     - ADDED SLOPE ADJUSTMENT
 !   04-11-18  BLACK      - THREADED
+!   06-08-15  JANJIC     - ENHANCEMENT AT SLOPING SEA COAST
 !     
 ! USAGE: CALL HDIFF FROM SUBROUTINE SOLVE_RUNSTREAM
 !
@@ -93,7 +94,8 @@
       REAL,DIMENSION(KMS:KME),INTENT(IN) :: DETA1
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: FIS,HBM2            &
-     &                                             ,HDAC,HDACV
+     &                                             ,HDAC,HDACV          &
+     &                                             ,SM,SICE
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: HTM,VTM,Z,W
 !
@@ -116,6 +118,8 @@
 !-----------------------------------------------------------------------
 !
 !***  LOCAL VARIABLES
+!
+      LOGICAL :: CILINE,WATSLOP
 !
       INTEGER :: I,J,J1_P1,J1_P2,J2_00,J2_M1,J2_P1,J3_00,J3_P1,J3_P2    &
      &          ,J4_00,J4_M1,J4_M2,J4_P1,J4_P2,JJ,JKNT,JSTART,K,KS
@@ -262,7 +266,14 @@
             ELSE
               DO I=MYIS_P1,MYIE1_P1
                 SLOP=ABS((Z(I+IHE(JJ),K,JJ+1)-Z(I,K,JJ))*RDY)
-                IF(SLOP<SLOPHC)THEN
+!
+                CILINE=((SM(I+IHE(JJ),JJ+1)/=SM(I,JJ)) .OR.             &
+                        (SICE(I+IHE(JJ),JJ+1)/=SICE(I,JJ)))
+!
+                WATSLOP=(SM(I+IHE(JJ),JJ+1)==1.0 .AND.                  &
+                         SM(I,JJ)==1.0 .AND. SLOP/=0.)
+!
+                IF(SLOP<SLOPHC .OR. CILINE .OR. WATSLOP)THEN
                   SNE(I,K)=1.
                 ELSE
                   SNE(I,K)=0.
@@ -322,12 +333,20 @@
             ELSE
               DO I=MYIS_P1,MYIE1_P1
                 SLOP=ABS((Z(I+IHE(JJ),K,JJ-1)-Z(I,K,JJ))*RDY)
-                IF(SLOP<SLOPHC)THEN
+!
+                CILINE=((SM(I+IHE(JJ),JJ-1)/=SM(I,JJ)) .OR.             &
+                        (SICE(I+IHE(JJ),JJ-1)/=SICE(I,JJ)))
+!
+                WATSLOP=(SM(I+IHE(JJ),JJ-1)==1.0 .AND.                  &
+                         SM(I,JJ)==1.0 .AND. SLOP/=0.) 
+!
+                IF(SLOP<SLOPHC .OR. CILINE .OR. WATSLOP)THEN
                   SSE(I,K)=1.
                 ELSE
                   SSE(I,K)=0.
                 ENDIF
               ENDDO
+!
             ENDIF
 !
           ENDDO
@@ -386,8 +405,10 @@
 !-----------------------------------------------------------------------
 !
       DO 600 KS=1,KSMUD
+	
 !
       JKNT=0
+
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
 !***  MAIN VERTICAL INTEGRATION LOOP
@@ -433,7 +454,9 @@
 !$omp& private(i,k,slop)
         DO K=KTS,KTE
 !
+!-----------------------------------------------------------------------
 !***  PRESSURE DOMAIN
+!-----------------------------------------------------------------------
 !
           IF(DETA1(K)>0.)THEN
             DO I=MYIS_P1,MYIE1_P1
@@ -441,19 +464,35 @@
               SSE(I,K)=1.
             ENDDO
 !
+!-----------------------------------------------------------------------
 !***  SIGMA DOMAIN
+!-----------------------------------------------------------------------
 !
           ELSE
             DO I=MYIS_P1,MYIE1_P1
               SLOP=ABS((Z(I+IHE(J+1),K,J+2)-Z(I,K,J+1))*RDY)
-              IF(SLOP<SLOPHC)THEN
+!
+              CILINE=((SM(I+IHE(J+1),J+2)/=SM(I,J+1)) .OR.              &
+                      (SICE(I+IHE(J+1),J+2)/=SICE(I,J+1)))
+!
+              WATSLOP=(SM(I+IHE(J+1),J+2)==1.0 .AND.                    &
+                       SM(I,J+1)==1.0 .AND. SLOP/=0.)
+!
+              IF(SLOP<SLOPHC .OR. CILINE .OR. WATSLOP)THEN
                 SNE(I,K)=1.
               ELSE
                 SNE(I,K)=0.
               ENDIF
 !
               SLOP=ABS((Z(I+IHE(J+2),K,J+1)-Z(I,K,J+2))*RDY)
-              IF(SLOP<SLOPHC)THEN
+!
+              CILINE=((SM(I+IHE(J+2),J+1)/=SM(I,J+2)) .OR.              &
+                      (SICE(I+IHE(J+2),J+1)/=SICE(I,J+2)))
+!
+              WATSLOP=(SM(I+IHE(J+2),J+1)==1.0 .AND.                    &
+                       SM(I,J+2)==1.0 .AND. SLOP/=0.)
+
+              IF(SLOP<SLOPHC .OR. CILINE .OR. WATSLOP)THEN
                 SSE(I,K)=1.
               ELSE
                 SSE(I,K)=0.
@@ -721,3 +760,4 @@
       END SUBROUTINE HDIFF
 !-----------------------------------------------------------------------
       END MODULE MODULE_DIFFUSION_NMM
+!-----------------------------------------------------------------------

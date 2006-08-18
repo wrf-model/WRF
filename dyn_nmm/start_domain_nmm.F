@@ -1554,31 +1554,33 @@
 !
 !-----------------------------------------------------------------------
 
-       LU_INDEX=IVGTYP
+      LU_INDEX=IVGTYP
 
-         IF (.NOT. RESTRT) THEN
-      DO J=MYJS,MYJE
-      DO I=MYIS,MYIE
-	Z0_DUM(I,J)=Z0(I,J) ! hold
-        ALBEDO_DUM(I,J)=ALBEDO(I,J) ! Save albedos
-      ENDDO
-      ENDDO
-         ENDIF
+      IF(.NOT.RESTRT)THEN
+        DO J=MYJS,MYJE
+        DO I=MYIS,MYIE
+          Z0_DUM(I,J)=Z0(I,J) ! hold
+          ALBEDO_DUM(I,J)=ALBEDO(I,J) ! Save albedos
+        ENDDO
+        ENDDO
+      ENDIF
 !
 !     always define the quantity Z0BASE
                                                                                                                                               
       DO J=MYJS,MYJE
       DO I=MYIS,MYIE
                                                                                                                                               
-! fancy veg based
-!      if (SM(I,J) .eq. 0 .and. SICE(I,J) .eq. 0) then
-      if (SM(I,J) .eq. 0) then
-         Z0BASE(I,J)=MAX(VZ0TBL_24(IVGTYP(I,J)),0.1)
-      else
-         Z0BASE(I,J)=VZ0TBL_24(IVGTYP(I,J))
-      endif
-                                                                                                                                              
-                                                                                                                                              
+! topo based
+!       Z0BASE(I,J)=SM(I,J)*Z0SEA+(1.-SM(I,J))*  &
+!    &             (FIS(I,J)*(FCM/3.)+Z0LAND)
+!
+        IF(SM(I,J)==0)then
+!         Z0BASE(I,J)=MAX(VZ0TBL_24(IVGTYP(I,J)),0.1)
+          Z0BASE(I,J)=VZ0TBL_24(IVGTYP(I,J))+Z0LAND
+        ELSE
+          Z0BASE(I,J)=VZ0TBL_24(IVGTYP(I,J))+Z0SEA
+        ENDIF
+!
       ENDDO
       ENDDO
 !

@@ -384,7 +384,7 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
 !                                                            lwdn, &
 !                                                       lwdnclear
 
-   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)  ::         &
+   REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT) ::&
                     SWUPT,SWUPTC,SWDNT,SWDNTC,                    &
                     LWUPT,LWUPTC,LWDNT,LWDNTC,                    &
                     SWUPB,SWUPBC,SWDNB,SWDNBC,                    &
@@ -745,6 +745,7 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
       enddo
       endif
 
+      IF(PRESENT(SWUPT))THEN
 ! Added shortwave and longwave upward/downward total and clear sky fluxes
       do k = kts,kte+1
       kk = kte +1 - k + kts
@@ -785,6 +786,7 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
 !            endif
       enddo
       enddo
+      ENDIF
 
       do i = its,ite
       ii = i - its + 1
@@ -6066,6 +6068,7 @@ USE module_dm
    integer tmax                  ! maximum path temperature
    integer itype                 ! type of sat. pressure (=0 -> H2O only)
    integer i
+   real(r8) tdbl
 
       LOGICAL                 :: opened
       LOGICAL , EXTERNAL      :: wrf_dm_on_monitor
@@ -6159,7 +6162,9 @@ USE module_dm
       tmax = nint(max_tp_h2o)+1
       itype = 0
       do t = tmin, tmax
-         call gffgch(dble(t),estblh2o(t-tmin),itype)
+!        call gffgch(dble(t),estblh2o(t-tmin),itype)
+         tdbl = t
+         call gffgch(tdbl,estblh2o(t-tmin),itype)
       end do
 
      RETURN

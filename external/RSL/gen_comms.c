@@ -718,6 +718,8 @@ gen_datacalls1 ( FILE * fp , char * corename , char * structname , int mask , no
   int i, member_number ;
   char tmp[NAMELEN],tmp2[NAMELEN], tc ;
   char indices[NAMELEN], post[NAMELEN] ;
+  char s0[NAMELEN], s1[NAMELEN], s2[NAMELEN] ;
+  char e0[NAMELEN], e1[NAMELEN], e2[NAMELEN] ;
 
   for ( p = node ; p != NULL ; p = p->next )
   {
@@ -739,8 +741,16 @@ gen_datacalls1 ( FILE * fp , char * corename , char * structname , int mask , no
             member_number = 0 ;
             for ( q = p->members ; q != NULL ; q = q->next )
             {
-              sprintf(tmp, "(grid%%sm31,grid%%sm32,grid%%sm33,1+%d)", member_number ) ;
-              sprintf(tmp2, "(grid%%em31-grid%%sm31+1)*(grid%%em32-grid%%sm32+1)*(grid%%em33-grid%%sm33+1)*%cWORDSIZE",tc) ;
+              get_elem( "grid%", "", s0, 0, p , 0 ) ;
+              get_elem( "grid%", "", s1, 1, p , 0 ) ;
+              get_elem( "grid%", "", s2, 2, p , 0 ) ;
+
+              get_elem( "grid%", "", e0, 0, p , 1 ) ;
+              get_elem( "grid%", "", e1, 1, p , 1 ) ;
+              get_elem( "grid%", "", e2, 2, p , 1 ) ;
+
+              sprintf(tmp, "(%s,%s,%s,1+%d)", s0, s1, s2, member_number ) ;
+              sprintf(tmp2, "(%s-%s+1)*(%s-%s+1)*(%s-%s+1)*%cWORDSIZE",e0,s0,e1,s1,e2,s2,tc) ;
               if ( p->ntl > 1 ) fprintf(fp," IF(1+%d.LE.num_%s)CALL rsl_register_f90_base_and_size ( %s%s_%d %s , &\n %s  )\n",
                                              member_number,p->name,structname,p->name,i,tmp,tmp2) ;
               else              fprintf(fp," IF(1+%d.LE.num_%s)CALL rsl_register_f90_base_and_size ( %s%s %s, &\n %s )\n",

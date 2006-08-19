@@ -55,7 +55,6 @@ SUBROUTINE med_initialdata_input ( grid , config_flags )
    CALL nl_get_restart( 1, restart )
    IF ( .NOT. restart ) THEN
      !  Initialize the mother domain.
-     CALL start_timing
      grid%input_from_file = .true.
      IF ( grid%input_from_file ) THEN
 

@@ -108,6 +108,8 @@ int gen_namelist_defaults ( char * dirname ) ;
 
 int gen_model_data_ord ( char * dirname ) ;
 
+int get_elem ( char * structname , char * nlstructname , char * tx , int i , node_t * p , int first_last ) ;
+
 #define PROTOS_H
 #endif
 

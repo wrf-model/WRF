@@ -134,47 +134,26 @@ dimension_with_ranges( char * refarg , char * pre ,
   {
     for ( i = 0 ; i < p->ndims ; i++ )
     {
-      if ( p->dims[i] != NULL )
-      {
-        if      ( p->dims[i]->len_defined_how == DOMAIN_STANDARD )
-	{
-	  char *ornt ;
-	  if      ( p->proc_orient == ALL_X_ON_PROC ) ornt = "x" ;
-	  else if ( p->proc_orient == ALL_Y_ON_PROC ) ornt = "y" ;
-	  else                                        ornt = "" ;
-          sprintf(tx,"%ssm3%d%s:%sem3%d%s,",r,p->dims[i]->dim_order,ornt,r,p->dims[i]->dim_order,ornt) ;
-	}
-        else if ( p->dims[i]->len_defined_how == NAMELIST )
-	{
-#if 0
-          if (!strcmp(p->dims[i]->assoc_nl_var_s,"1"))
-            sprintf(tx,"%s%s,",r,p->dims[i]->assoc_nl_var_e ) ;
-          else
-            sprintf(tx,"%s%s:%s%s,",r,p->dims[i]->assoc_nl_var_s,r,p->dims[i]->assoc_nl_var_e ) ;
-#else
-          if (!strcmp(p->dims[i]->assoc_nl_var_s,"1"))
-            sprintf(tx,"%s%s%s,",nlstructname,r,p->dims[i]->assoc_nl_var_e ) ;
-          else
-            sprintf(tx,"%s%s%s:%s%s%s,",nlstructname,r,p->dims[i]->assoc_nl_var_s,
-                                        nlstructname,r,p->dims[i]->assoc_nl_var_e ) ;
-#endif
-        }
-        else if ( p->dims[i]->len_defined_how == CONSTANT )
-	{
-          sprintf(tx,"%d:%d,",p->dims[i]->coord_start,p->dims[i]->coord_end) ;
-	}
-        strcat(tmp,tx) ;
-      }
-      else
-      {
-	fprintf(stderr,"WARNING: %s %d: something wrong with internal representation for dim %d\n",__FILE__,__LINE__,i) ;
-      }
+      range_of_dimension( r, tx , i , p , nlstructname ) ;
+      strcat(tmp,tx) ;
+      strcat(tmp,",") ;
     }
   }
   tmp[strlen(tmp)-1] = '\0' ;
   if ( post != NULL ) strcat(tmp,post)  ;
 
   return(tmp) ;
+}
+
+int
+range_of_dimension ( char * r , char * tx , int i , node_t * p , char * nlstructname )
+{
+   char s[NAMELEN], e[NAMELEN] ;
+
+   get_elem( r , nlstructname , s , i , p , 0 ) ;
+   get_elem( r , nlstructname , e , i , p , 1 ) ;
+   sprintf(tx,"%s:%s", s , e ) ;
+
 }
 
 char *
@@ -215,41 +194,57 @@ index_with_firstelem( char * pre , char * dref , char * tmp , node_t * p , char 
   {
     for ( i = 0 ; i < p->ndims ; i++ )
     {
-      if ( p->dims[i] != NULL )
-      {
-        switch ( p->dims[i]->len_defined_how )
-	{
-          case (DOMAIN_STANDARD) :
-            {
-            char *ornt ;
-            if      ( p->proc_orient == ALL_X_ON_PROC ) ornt = "x" ;
-            else if ( p->proc_orient == ALL_Y_ON_PROC ) ornt = "y" ;
-            else                                        ornt = "" ;
-              sprintf(tx,"%ssm3%d%s,",dref,p->dims[i]->dim_order,ornt) ;
-              strcat(tmp,tx) ;
-            }
-	    break ;
-          case (NAMELIST) :
-	    strcat(tmp,p->dims[i]->assoc_nl_var_s) ;
-	    strcat(tmp,",") ;
-	    break ;
-          case (CONSTANT) :
-            sprintf(tmp2,"%d",p->dims[i]->coord_start) ;
-	    strcat(tmp,tmp2) ;
-	    strcat(tmp,",") ;
-	    break ;
-          default : break ;
-	}
-      }
-      else
-      {
-	fprintf(stderr,"WARNING: %s %d: something wrong with internal representation for dim %d\n",__FILE__,__LINE__,i) ;
-      }
+      get_elem( dref, "", tx, i, p , 0 ) ;
+      strcat( tmp, tx ) ;
+      strcat(tmp,",") ;
     }
   }
   tmp[strlen(tmp)-1] = '\0' ;  /* remove trailing comma */
   if ( post != NULL ) strcat(tmp,post)  ;
   return(tmp) ;
+}
+
+get_elem ( char * structname , char * nlstructname , char * tx , int i , node_t * p , int first_last )
+{
+   char dref[NAMELEN], nlstruct[NAMELEN] ;
+
+   if ( structname == NULL ) { strcpy( dref, "" ) ;}
+   else                      { strcpy( dref, structname ) ; }
+   if ( nlstructname == NULL ) { strcpy( nlstruct, "" ) ;}
+   else                        { strcpy( nlstruct, nlstructname ) ; }
+   if ( p->dims[i] != NULL )
+   {
+     switch ( p->dims[i]->len_defined_how )
+     {
+       case (DOMAIN_STANDARD) :
+         {
+         char *ornt ;
+         if      ( p->proc_orient == ALL_X_ON_PROC ) ornt = "x" ;
+         else if ( p->proc_orient == ALL_Y_ON_PROC ) ornt = "y" ;
+         else                                        ornt = "" ;
+           sprintf(tx,"%s%cm3%d%s",dref,first_last==0?'s':'e',p->dims[i]->dim_order,ornt) ;
+         }
+         break ;
+       case (NAMELIST) :
+         if ( first_last == 0 ) { if ( !strcmp( p->dims[i]->assoc_nl_var_s , "1" ) ) {
+                                    sprintf(tx,"%s",p->dims[i]->assoc_nl_var_s) ;
+                                  } else {
+                                    sprintf(tx,"%s%s%s",nlstructname,structname,p->dims[i]->assoc_nl_var_s) ; 
+                                  }
+                                }
+         else                   { sprintf(tx,"%s%s%s",nlstructname,structname,p->dims[i]->assoc_nl_var_e) ; }
+         break ;
+       case (CONSTANT) :
+         if ( first_last == 0 ) { sprintf(tx,"%d",p->dims[i]->coord_start) ; }
+         else                   { sprintf(tx,"%d",p->dims[i]->coord_end) ; }
+         break ;
+       default : break ;
+     }
+   }
+   else
+   {
+     fprintf(stderr,"WARNING: %s %d: something wrong with internal representation for dim %d\n",__FILE__,__LINE__,i) ;
+   }
 }
 
 char *

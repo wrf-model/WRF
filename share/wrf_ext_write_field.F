@@ -137,10 +137,15 @@
 ! TBH:  TODO:  Use dimnames(*) == south_north || west_east instead of 
 ! TBH:         MemoryOrder and Stagger?  It would also work for both ARW 
 ! TBH:         and NMM and be easier to handle via Registry...  
-      IF ( ( ( MemoryOrder(1:2) == 'XY' ) .OR. &
-             ( MemoryOrder(1:3) == 'XZY' ) ) .AND. &
-           ( Var(1:5) /= 'XLONG' ) .AND. &
-           ( Var(1:4) /= 'XLAT'  ) ) THEN
+!      IF ( ( ( MemoryOrder(1:2) == 'XY' ) .OR. &
+!             ( MemoryOrder(1:3) == 'XZY' ) ) .AND. &
+!           ( Var(1:5) /= 'XLONG' ) .AND. &
+!           ( Var(1:4) /= 'XLAT'  ) ) THEN
+! JM used trim instead, to avoid spurious errors when bounds checking on
+      IF ( ( ( TRIM(MemoryOrder) == 'XY' ) .OR. &
+             ( TRIM(MemoryOrder) == 'XZY' ) ) .AND. &
+           ( TRIM(Var) /= 'XLONG' ) .AND. &
+           ( TRIM(Var) /= 'XLAT'  ) ) THEN
         horiz_stagger = .FALSE.
         IF ( LEN_TRIM(Stagger) == 1 ) THEN
           IF ( has_char( Stagger, 'x' ) ) THEN

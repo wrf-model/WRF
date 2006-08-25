@@ -1287,6 +1287,7 @@ mediation_feedback_domain.o : mediation_feedback_domain.F
 convert_nmm.o : convert_nmm.F
 module_configure.o : module_configure.F
 solve_interface.o : solve_interface.F
+solve_em.o : solve_em.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -1298,6 +1299,7 @@ mediation_interp_domain.o \
 module_configure.o                                             \
 solve_interface.o                                              \
 shift_domain_em.o                                              \
+solve_em.o							\
 convert_nmm.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -1317,7 +1319,7 @@ mediation_force_domain.o start_domain.o :
 ###########################################################
 #ARCH   AIX SM          (OpenMP, no nesting)
 #
-OMP             =       -qsmp=noauto
+OMP             =       -qsmp=noauto:noopt
 OMPCPP          =       -D_OPENMP
 FC              =       xlf90_r
 SFC		=	$(FC)
@@ -1513,6 +1515,7 @@ mediation_feedback_domain.o : mediation_feedback_domain.F
 convert_nmm.o : convert_nmm.F
 solve_interface.o : solve_interface.F
 shift_domain_em.o : shift_domain_em.F
+solve_em.o : solve_em.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -1525,6 +1528,7 @@ mediation_interp_domain.o \
 mediation_feedback_domain.o \
 solve_interface.o                                              \
 shift_domain_em.o                                              \
+solve_em.o                                              \
 convert_nmm.o    :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -1637,6 +1641,7 @@ mediation_feedback_domain.o : mediation_feedback_domain.F
 convert_nmm.o : convert_nmm.F
 solve_interface.o : solve_interface.F
 shift_domain_em.o : shift_domain_em.F
+solve_em.o : solve_em.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -1649,6 +1654,7 @@ mediation_interp_domain.o \
 mediation_feedback_domain.o \
 solve_interface.o                                              \
 shift_domain_em.o                                              \
+solve_em.o                                              \
 convert_nmm.o    :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -1764,6 +1770,7 @@ mediation_feedback_domain.o : mediation_feedback_domain.F
 convert_nmm.o : convert_nmm.F
 solve_interface.o : solve_interface.F
 shift_domain_em.o : shift_domain_em.F
+solve_em.o : solve_em.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -1776,6 +1783,7 @@ mediation_interp_domain.o \
 mediation_feedback_domain.o \
 solve_interface.o                                              \
 shift_domain_em.o                                              \
+solve_em.o                                              \
 convert_nmm.o    :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -1891,6 +1899,7 @@ mediation_feedback_domain.o : mediation_feedback_domain.F
 convert_nmm.o : convert_nmm.F
 solve_interface.o : solve_interface.F
 shift_domain_em.o : shift_domain_em.F
+solve_em.o : solve_em.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -1903,6 +1912,7 @@ mediation_interp_domain.o \
 mediation_feedback_domain.o \
 solve_interface.o                                              \
 shift_domain_em.o                                              \
+solve_em.o                                              \
 convert_nmm.o    :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -1917,7 +1927,7 @@ convert_nmm.o    :
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
 #
 DMPARALLEL      =       1
-OMP             =       -qsmp=noauto
+OMP             =       -qsmp=noauto:noopt
 OMPCPP          =       -D_OPENMP
 SFC		=	xlf90_r
 SCC             =       cc_r
@@ -2016,6 +2026,7 @@ mediation_feedback_domain.o : mediation_feedback_domain.F
 convert_nmm.o : convert_nmm.F
 module_configure.o : module_configure.F
 shift_domain_em.o : shift_domain_em.F
+solve_em.o : solve_em.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -2026,6 +2037,7 @@ convert_nmm.o \
 module_configure.o                                             \
 solve_interface.o                                              \
 shift_domain_em.o                                              \
+solve_em.o                                              \
 mediation_integrate.o \
 mediation_interp_domain.o :
 	$(RM) $@
@@ -2171,6 +2183,7 @@ mediation_feedback_domain.o : mediation_feedback_domain.F
 convert_nmm.o : convert_nmm.F
 solve_interface.o : solve_interface.F
 shift_domain_em.o : shift_domain_em.F
+solve_em.o : solve_em.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -2183,6 +2196,7 @@ mediation_interp_domain.o \
 mediation_feedback_domain.o \
 solve_interface.o                                              \
 shift_domain_em.o                                              \
+solve_em.o                                              \
 convert_nmm.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -2297,6 +2311,7 @@ mediation_feedback_domain.o : mediation_feedback_domain.F
 convert_nmm.o : convert_nmm.F
 solve_interface.o : solve_interface.F
 shift_domain_em.o : shift_domain_em.F
+solve_em.o : solve_em.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -2309,6 +2324,7 @@ mediation_interp_domain.o \
 mediation_feedback_domain.o \
 solve_interface.o                                              \
 shift_domain_em.o                                              \
+solve_em.o                                              \
 convert_nmm.o    :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -2322,7 +2338,7 @@ convert_nmm.o    :
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
 #
-OMP             =       -qsmp=noauto
+OMP             =       -qsmp=noauto:noopt
 OMPCPP          =       -D_OPENMP
 DMPARALLEL      =       1
 SFC             =       xlf90_r
@@ -2418,6 +2434,7 @@ start_domain.o : start_domain.F
 convert_nmm.o : convert_nmm.F
 solve_interface.o : solve_interface.F
 shift_domain_em.o : shift_domain_em.F
+solve_em.o : solve_em.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -2426,6 +2443,7 @@ module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 start_domain.o \
 solve_interface.o                                              \
 shift_domain_em.o                                              \
+solve_em.o                                              \
 convert_nmm.o    :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 

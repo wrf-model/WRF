@@ -554,6 +554,7 @@ CONTAINS
                  ,ALBEDO=albedo,CUPPT=cuppt                         &
                  ,VEGFRA=vegfra,SNOW=snow,G=g,GMT=gmt               &
                  ,NSTEPRA=stepra,NPHS=nphs,ITIMESTEP=itimestep      &
+                 ,XTIME=xtime,JULIAN=julian                         &
                  ,JULYR=julyr,JULDAY=julday                         &
                  ,GFDL_LW=gfdl_lw,GFDL_SW=gfdl_sw                   &
                  ,CFRACL=cfracl,CFRACM=cfracm,CFRACH=cfrach         &
@@ -736,6 +737,7 @@ CONTAINS
                  ,ALBEDO=albedo,CUPPT=cuppt                         &
                  ,VEGFRA=vegfra,SNOW=snow,G=g,GMT=gmt               &
                  ,NSTEPRA=stepra,NPHS=nphs,ITIMESTEP=itimestep      &
+                 ,XTIME=xtime,JULIAN=julian                         &
                  ,JULYR=julyr,JULDAY=julday                         &
                  ,GFDL_LW=gfdl_lw,GFDL_SW=gfdl_sw                   &
                  ,CFRACL=cfracl,CFRACM=cfracm,CFRACH=cfrach         &

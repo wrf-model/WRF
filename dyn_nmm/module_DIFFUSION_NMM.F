@@ -127,7 +127,7 @@
       REAL :: DEF_J,DEFSK,DEFTK,HKNE_J,HKSE_J,Q2L,RDY,SLOP,SLOPHC       &
      &       ,UTK,VKNE_J,VKSE_J,VTK,DEF1,DEF2,DEF3,DEF4
 !
-      REAL,DIMENSION(ITS-5:ITE+5,KTS:KTE) :: SNE,SSE
+      REAL,DIMENSION(ITS-5:ITE+5,KTS:KTE) :: Q2L_IK,SNE,SSE
 !
 !***  TYPE 1 WORKING ARRAY (SEE PFDHT)
 !
@@ -219,6 +219,7 @@
           DEFSK=U(I,K,JJ+1)-U(I,K,JJ-1)                                 &
      &         +V(I+IHE(JJ),K,JJ)-V(I+IHW(JJ),K,JJ)
           Q2L=MAX(Q2(I,K,JJ),EPSQ2)
+          IF(Q2L<=EPSQ2)Q2L=0.
 !
           DEF1=W(I+IHW(JJ),K,JJ-1)-W(I,K,JJ)
           DEF2=W(I+IHE(JJ),K,JJ-1)-W(I,K,JJ)
@@ -507,7 +508,17 @@
 !-----------------------------------------------------------------------
 !
 !$omp parallel do                                                       &
-!$omp& private(def_j,def1,def2,def3,def4,defsk,deftk,i,k,q2l,slop)
+!$omp& private(i,k,q2l)
+      DO K=KTS,KTE
+      DO I=MYIS_P1,MYIE_P1
+        Q2L=Q2(I,K,J+2)
+        IF(Q2L<=EPSQ2)Q2L=0.
+        Q2L_IK(I,K)=Q2L
+      ENDDO
+      ENDDO
+!
+!$omp parallel do                                                       &
+!$omp& private(def_j,def1,def2,def3,def4,defsk,deftk,i,k,q2l)
       DO K=KTS,KTE
       DO I=MYIS_P1,MYIE_P1
 !
@@ -519,9 +530,8 @@
         DEF2=W(I+IHE(J+2),K,J+1)-W(I,K,J+2)
         DEF3=W(I+IHW(J+2),K,J+3)-W(I,K,J+2)
         DEF4=W(I+IHE(J+2),K,J+3)-W(I,K,J+2)
-        Q2L=MAX(Q2(I,K,J+2),EPSQ2)
         DEF_J=DEFTK*DEFTK+DEFSK*DEFSK+DEF1*DEF1+DEF2*DEF2               & 
-     &       +DEF3*DEF3+DEF4*DEF4+SCQ2*Q2L
+     &       +DEF3*DEF3+DEF4*DEF4+SCQ2*Q2L_IK(I,K)
         DEF_J=SQRT(DEF_J+DEF_J)*HBM2(I,J+2)
         DEF_J=MAX(DEF_J,DEFC)
         DEF_J=MIN(DEF_J,DEFM)

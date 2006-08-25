@@ -12,6 +12,7 @@ MODULE module_initialize
    USE module_domain
    USE module_io_domain
    USE module_model_constants
+!   USE module_si_io_nmm
    USE module_state_description
    USE module_timing
    USE module_soil_pre
@@ -157,10 +158,8 @@ CONTAINS
 
         REAL:: TERM1,APH
 
-
-
         INTEGER:: KHH,KVH,JAM,JA, IHL, IHH, L
-        INTEGER:: II,JJ,ISRCH,ISUM,ival,jval,ITER
+        INTEGER:: II,JJ,ISRCH,ISUM,ITER
 
         REAL, PARAMETER:: DTR=0.01745329
         REAL, PARAMETER:: W_NMM=0.08
@@ -251,11 +250,6 @@ CONTAINS
         
         grid%DT=float(grid%TIME_STEP)
 
-        
-
-!       NNXP=IDE-1
-!       NNYP=JDE-1
-
         NNXP=min(ITE,IDE-1)
         NNYP=min(JTE,JDE-1)
 
@@ -264,7 +258,6 @@ CONTAINS
 
         JAM=6+2*(JDE-JDS-10)
 
-!!!!!   ALLOCATE(ADUM2D(grid%sm31:grid%em31,grid%sm33:grid%em33))
         ALLOCATE(ADUM2D(grid%sm31:grid%em31,jms:jme))
         ALLOCATE(KHL2(JTS:NNYP),KVL2(JTS:NNYP),KHH2(JTS:NNYP),KVH2(JTS:NNYP))
         ALLOCATE(DXJ(JTS:NNYP),WPDARJ(JTS:NNYP),CPGFUJ(JTS:NNYP),CURVJ(JTS:NNYP))
@@ -279,7 +272,6 @@ CONTAINS
 
         write(0,*) 'cen_lat: ', config_flags%cen_lat
         write(0,*) 'cen_lon: ', config_flags%cen_lon
-!       write(0,*) 'truelat?: ', config_flags%moad_stand_lats(1)
         write(0,*) 'dx: ', config_flags%dx
         write(0,*) 'dy: ', config_flags%dy
         write(0,*) 'config_flags%start_year: ', config_flags%start_year
@@ -287,22 +279,14 @@ CONTAINS
         write(0,*) 'config_flags%start_day: ', config_flags%start_day
         write(0,*) 'config_flags%start_hour: ', config_flags%start_hour
 
-
         write(start_date,435) config_flags%start_year, config_flags%start_month, &
                 config_flags%start_day, config_flags%start_hour
   435   format(I4,'-',I2.2,'-',I2.2,'_',I2.2,':00:00')
         
         dlmd=config_flags%dx
         dphd=config_flags%dy
-
-!       tph0d=global_meta%moad_known_lat
-!       tlm0d=global_meta%moad_known_lon
-
         tph0d=config_flags%cen_lat
         tlm0d=config_flags%cen_lon
-
-        ival=ite-15
-        jval=jte-15
 
 !==========================================================================
 
@@ -321,16 +305,6 @@ CONTAINS
       !  Pull in the info in the namelist to compare it to the input data.
 
       grid%real_data_init_type = model_config_rec%real_data_init_type
-
-!       DO j = jts, MIN(jte,jde-1)
-!        DO k = kts, kde-1
-!         DO i = its, MIN(ite,ide-1)
-!        HTM(I,K,J)=1.
-!        VTM(I,K,J)=1.
-!         ENDDO
-!        ENDDO
-!       ENDDO
-
 
 !!! WEASD has "snow water equivalent" in mm
 
@@ -354,7 +328,7 @@ CONTAINS
                  SI(I,J)=0.
                  SICE(I,J)=1.
                  GFFC(I,J)=0. ! just leave zero as irrelevant
-                ALBEDO(I,J)=.60
+                 ALBEDO(I,J)=.60
                  ALBASE(I,J)=.60
               ENDIF
            ELSE
@@ -397,12 +371,7 @@ CONTAINS
         ENDDO
       ENDDO
 
-!new seaice stuff
-
-!       write(0,*) 'skip seaice'
-
 #ifdef DM_PARALLEL
-
 
         ALLOCATE(SM_G(IDS:IDE,JDS:JDE),SICE_G(IDS:IDE,JDS:JDE))
 
@@ -421,12 +390,9 @@ CONTAINS
      &,                                ITS,ITE,JTS,JTE,1,1 )
 
 
-
-
         IF (WRF_DM_ON_MONITOR()) THEN
 
   637   format(40(f3.0,1x))
-
 
         allocate(IHE_G(JDS:JDE-1),IHW_G(JDS:JDE-1))
        DO j = JDS, JDE-1
@@ -437,7 +403,6 @@ CONTAINS
       DO ITER=1,10
        DO j = jds+1, (jde-1)-1
          DO i = ids+1, (ide-1)-1
-
 
 ! any sea ice around point in question?
 
@@ -502,8 +467,7 @@ CONTAINS
 
 
 #else
-
-        write(0,*) 'shouldnt be here!'
+! serial sea ice reprocessing
 
        DO j = jts, MIN(jte,jde-1)
           IHE(J)=MOD(J+1,2)
@@ -542,11 +506,6 @@ CONTAINS
 
 #endif
 
-        
-
-
-!new new seaice stuff
-
 ! this block meant to guarantee land/sea agreement between SM and landmask
 
        DO j = jts, MIN(jte,jde-1)
@@ -576,16 +535,7 @@ CONTAINS
                soiltb(i,j) = st000010(i,j)
             END DO
          END DO
-!      ELSE IF ( ( model_config_rec%sf_surface_physics(grid%id) .EQ. 1 ) .AND. &
-!                ( flag_soilt020 .EQ. 1 ) ) THEN
-!         DO j = jts , MIN(jde-1,jte)
-!            DO i = its , MIN(ide-1,ite)
-!               soiltb(i,j) = soilt020(i,j)
-!            END DO
-!         END DO
       END IF
-!     write(0,*)' init_domain_nmm flag_toposoil=',flag_toposoil
-
 
   !  Adjust the various soil temperature values depending on the difference in
   !  in elevation between the current model's elevation and the incoming data's
@@ -604,14 +554,14 @@ CONTAINS
         END DO
            
 !       if (maxval(toposoil) .gt. 100.) then
-
-!  being avoided.   Something to revisit eventually.
+!
+!  Being avoided.   Something to revisit eventually.
 !
 !1219 might be simply a matter of including TOPOSOIL 
 !
 !    CODE NOT TESTED AT NCEP USING THIS FUNCTIONALITY, 
 !    SO TO BE SAFE WILL AVOID FOR RETRO RUNS.
-
+!
 !       write(0,*) 'calling adjust_soil_temp_new'
 !        CALL adjust_soil_temp_new ( soiltb , 2 , &
 !                       nmm_tsk , ht , toposoil , landmask, flag_toposoil , &
@@ -637,12 +587,8 @@ CONTAINS
          num_soil_top_cat = SIZE ( soilctop , DIM=2 )
          num_soil_bot_cat = SIZE ( soilcbot , DIM=2 )
 
-
-
 !       sm (1=water, 0=land)
 !       landmask(0=water, 1=land)
-
-
 
          CALL process_percent_cat_new ( landmask , &
                          landusef , soilctop , soilcbot , &
@@ -652,7 +598,6 @@ CONTAINS
                          ims , ime , jms , jme , kms , kme , &
                          its , ite , jts , jte , kts , kte , &
                          model_config_rec%iswater(grid%id) )
-
 
         DO j = jts, MIN(jde-1,jte)
             DO i = its, MIN(ide-1,ite)
@@ -700,7 +645,6 @@ CONTAINS
 ! MOVE HERE
 
         write(0,*) 'flag_sst before define is: ', flag_sst
-!     write(0,*)' init_domain_nmm flag_sst=',flag_sst
         FLAG_SST=1
 
          DO j = jts, MIN(jde-1,jte)
@@ -740,7 +684,6 @@ CONTAINS
 
   635   format(20(f5.1,1x))
 
-
          DO j = jts, MIN(jde-1,jte)
             DO i = its, MIN(ide-1,ite)
                IF ( ( landmask(i,j) .LT. 0.5 ) .AND. ( flag_sst .EQ. 1 ) ) THEN
@@ -754,10 +697,7 @@ CONTAINS
 
 !      END IF
 
-
-
 ! END MOVE HERE
-
 
    !  Land use categories, dominant soil and vegetation types (if available).
 
@@ -767,17 +707,14 @@ CONTAINS
             DO i = its, MIN(ide-1,ite)
                lu_index(i,j) = ivgtyp(i,j)
             END DO
-         END DO
+          END DO
 
       END IF
-
 
         if (flag_sst .eq. 1) log_flag_sst=.true.
         if (flag_sst .eq. 0) log_flag_sst=.false.
 
-!       write(0,*) 'st_levels_input: ', st_levels_input
-!       write(0,*) 'num_st_levels_input: ', num_st_levels_input
-
+	write(0,*) 'st_input dimensions: ', size(st_input,dim=1),size(st_input,dim=2),size(st_input,dim=3)
 
         write(0,*) 'maxval st_input(1): ', maxval(st_input(:,1,:))
         write(0,*) 'maxval st_input(2): ', maxval(st_input(:,2,:))
@@ -785,17 +722,12 @@ CONTAINS
         write(0,*) 'maxval st_input(4): ', maxval(st_input(:,4,:))
 
 !!!!!!!!!!!!!!!!!!!!!!!!!
-!!!!!!!!!!!!!!!!!!!!!!!!!
 
-!!!!!   ALLOCATE(TG_ALT(grid%sm31:grid%em31,grid%sm33:grid%em33))
         ALLOCATE(TG_ALT(grid%sm31:grid%em31,jms:jme))
 
-
       TPH0=TPH0D*DTR
-!     WBD=-((nnxp-1)*DLMD)
       WBD=-(((ide-1)-1)*DLMD)
       WB= WBD*DTR
-!     SBD=-((nnyp/2)*DPHD)
       SBD=-(((jde-1)/2)*DPHD)
       SB= SBD*DTR
       DLM=DLMD*DTR
@@ -804,7 +736,6 @@ CONTAINS
       TDPH=DPH+DPH
       WBI=WB+TDLM
       SBI=SB+TDPH
-!     EBI=WB+(nnxp-2)*TDLM
       EBI=WB+(ide-2)*TDLM
       ANBI=SB+(jde-2)*DPH
       STPH0=SIN(TPH0)
@@ -846,8 +777,6 @@ CONTAINS
              TG_ALT(I,J)=TG0+TGA*COS(APH)-FIS(I,J)/3333.
            ENDDO
          ENDDO
-
-
 
             DO j = jts, MIN(jde-1,jte)
                DO i = its, MIN(ide-1,ite)
@@ -908,7 +837,6 @@ CONTAINS
 !  At the initial time we care about values of soil moisture and temperature, other times are
 !  ignored by the model, so we ignore them, too.
 
-
           account_for_zero_soil_moisture : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
 
              CASE ( LSMSCHEME , NMMLSMSCHEME)
@@ -961,7 +889,6 @@ CONTAINS
 
           END SELECT account_for_zero_soil_moisture
 
-
 !!!     zero out NMM_TSK at water points again
 
          DO j = jts, MIN(jde-1,jte)
@@ -971,7 +898,6 @@ CONTAINS
         endif
             END DO
          END DO
-
 
 !!      check on STC
 
@@ -996,20 +922,26 @@ CONTAINS
         do L=1, grid%num_soil_layers
         do II=I-1,I+1
 
-        STC(I,L,J)=amax1(STC(I,L,J),STC(II,L,JJ))
-!       write(0,*) 'possible SMC value: ',II,JJ, SMC(II,L,JJ)
+	if (II .ge. its .and. II .le. MIN(ide-1,ite) .and. &
+            JJ .ge. jts .and. JJ .le. MIN(jde-1,jte)) then
 
+        STC(I,L,J)=amax1(STC(I,L,J),STC(II,L,JJ))
         cur_smc=SMC(I,L,J)
 
-        if ( SMC(II,L,JJ) .gt. 0. .and. SMC(II,L,JJ) .lt. 1.0) aposs_smc=SMC(II,L,JJ)
+        if ( SMC(II,L,JJ) .gt. 0.005 .and. SMC(II,L,JJ) .lt. 1.0) then 
+		aposs_smc=SMC(II,L,JJ)
 
         if ( cur_smc .eq. 0 ) then
                 cur_smc=aposs_smc
                 SMC(I,L,J)=cur_smc
         else
                 cur_smc=amin1(cur_smc,aposs_smc)
+                cur_smc=amin1(cur_smc,aposs_smc)
                 SMC(I,L,J)=cur_smc
         endif
+	endif
+
+	endif ! bounds check
 
         enddo
         enddo
@@ -1052,21 +984,14 @@ CONTAINS
         write(0,*) 'RTDPTH: ', RTDPTH(1:4)
 
 !!! main body of nmm_specific starts here
-
 !
-! Gopal's doing's : LMH and LMV should be flipped for start_domain_nmm.F
-!                   this is consistent with Tom's version
-!
-
-       do J=jts,min(jte,jde-1)
+        do J=jts,min(jte,jde-1)
         do I=its,min(ite,ide-1)
          LMH(I,J)= kme-1        !1
          LMV(I,J)= kme-1        !1
          RES(I,J)=1.
         enddo
         enddo
-
-
 
 !! HBM2
 
@@ -1075,7 +1000,6 @@ CONTAINS
        do J=jts,min(jte,jde-1)
         do I=its,min(ite,ide-1)
 
-
         IF ( (J .ge. 3 .and. J .le. (jde-1)-2) .AND. &
              (I .ge. 2 .and. I .le. (ide-1)-2+mod(J,2)) ) THEN
        HBM2(I,J)=1.
@@ -1083,13 +1007,8 @@ CONTAINS
        enddo
        enddo
 
-
-  636   format(60(f2.0))
-
-
 !! HBM3
         HBM3=0.
-
 
 !!      LOOP OVER LOCAL DIMENSIONS
 
@@ -1103,7 +1022,6 @@ CONTAINS
             enddo
           ENDIF
         enddo
-
 
 !! VBM2
 
@@ -1131,17 +1049,13 @@ CONTAINS
 
         IF ( (J .ge. 4 .and. J .le. (jde-1)-3)  .AND.  &
              (I .ge. 3-mod(J,2) .and. I .le. (ide-1)-2) ) THEN
-
-       VBM3(I,J)=1.
-
+         VBM3(I,J)=1.
         ENDIF
 
        enddo
        enddo
 
-!       DTAD=1 in const.f of intrst code
       DTAD=1.0
-
 !       IDTCF=DTCF, IDTCF=4
       DTCF=4.0 ! used?
 
@@ -1149,7 +1063,6 @@ CONTAINS
       CPGFV=-GRID%DT/(48.*DY_NMM)
       EN= GRID%DT/( 4.*DY_NMM)*DTAD
       ENT=GRID%DT/(16.*DY_NMM)*DTAD
-
 
         DO J=jts,nnyp
          KHL2(J)=(IDE-1)*(J-1)-(J-1)/2+2
@@ -1160,9 +1073,7 @@ CONTAINS
 
         TPH=SB-DPH
 
-!        DO J=jts,NNYP
         DO J=jts,min(jte,jde-1)
-!       DO J=jds,jde-1
          TPH=SB+float(J-1)*DPH
          DXP=ERAD*DLM*COS(TPH)
          DXJ(J)=DXP
@@ -1185,7 +1096,6 @@ CONTAINS
         ENDDO
 
 !!! wrf_dm_on_monitor block was here, but was causing problems for unknown reasons
-
 
           DO J=JTS,min(JTE,JDE-1)
            TLM=WB-TDLM+MOD(J,2)*DLM
@@ -1212,12 +1122,10 @@ CONTAINS
       F4Q =   -GRID%DT*DTAD
       F4D =-.5*GRID%DT*DTAD
 
-!       DO L=KDS,KDE
        DO L=KDS,KDE-1
         RDETA(L)=1./DETA(L)
         F4Q2(L)=-.25*GRID%DT*DTAD/DETA(L)
        ENDDO
-
 
 ! shouldnt need to be done globally, right?
         DO J=JTS,min(JTE,JDE-1)
@@ -1229,15 +1137,10 @@ CONTAINS
           FCP(I,J)=FCPJ(J)*HBM2(I,J)
           FDIV(I,J)=FDIVJ(J)*HBM2(I,J)
           FAD(I,J)=FADJ(J)
-!       if (mod(I,5) .eq. 0 .and. mod(J,5) .eq. 0) then
-!       write(0,*) 'I,J,FADJ,FAD(I,J): ', I,J,FADJ(J),FAD(I,J)
-!       endif
           HDACV(I,J)=HDACJ(J)*VBM2(I,J)
           HDAC(I,J)=HDACJ(J)*1.25*HBM2(I,J)
         ENDDO
         ENDDO
-
-
 
 !      DO J=3,(JDE-1)-2
         DO J=JTS, MIN(JDE-1,JTE)
@@ -1270,7 +1173,6 @@ CONTAINS
                ENDDO
         ENDIF
       ENDDO
-
 
       DO J=JTS,min(JTE,JDE-1)
       DO I=ITS,min(ITE,IDE-1)
@@ -1340,10 +1242,11 @@ CONTAINS
           enddo
         enddo
 
-
 !!!! MOVE MONITOR BLOCK HERE
 
 !!!   compute EMT, EM on global domain, and only on task 0.
+
+!!!   this block also inhibits running as a serial job, it would seem.
 
         IF (wrf_dm_on_monitor()) THEN   !!!! NECESSARY TO LIMIT THIS TO TASK ZERO?
 
@@ -1602,21 +1505,6 @@ CONTAINS
 
 !-------------------------------------------------------------------
 
-        subroutine zero2d(adum2d,nnxp,nnyp)
-
-        integer I,J,NNXP,NNYP
-        real adum2d(nnxp,nnyp)
-
-        do J=1,nnyp
-        do I=1,nnxp
-        adum2d(I,J)=0.
-        enddo
-        enddo
-
-        end subroutine zero2d
-
-
-!-------------------------------------------------------------------
       FUNCTION FRH2O_init(TKELV,SMC,SH2O,SMCMAX,B,PSIS)
 
       IMPLICIT NONE
@@ -1781,19 +1669,6 @@ CONTAINS
 
 
 !--------------------------------------------------------------------
-
-   SUBROUTINE const_module_initialize ( p00 , t00 , a ) 
-      IMPLICIT NONE
-      REAL , PARAMETER :: sea_level_pressure_base    = 100000.
-      REAL , PARAMETER :: sea_level_temperature_base =    290.
-      REAL , PARAMETER :: temp_diff_1000_to_300_mb   =     50.
-      REAL , INTENT(OUT) :: p00 , t00 , a
-      p00 = sea_level_pressure_base
-      t00 = sea_level_temperature_base
-      a   = temp_diff_1000_to_300_mb
-   END SUBROUTINE const_module_initialize
-
-!---------------------------------------------------------------------
 
    SUBROUTINE init_module_initialize
    END SUBROUTINE init_module_initialize

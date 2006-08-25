@@ -181,6 +181,7 @@ CONTAINS
      &                ,VEGFRA,SNOW,G,GMT                                &
 !BSF => for NAMX changes, pass in surface emissivity (SFCEMS) [different for snow]
      &                ,NSTEPRA,NPHS,ITIMESTEP                           &
+     &                ,XTIME,JULIAN                                     &
      &                ,JULYR,JULDAY,GFDL_LW,GFDL_SW                     &
      &                ,CFRACL,CFRACM,CFRACH                             &
      &                ,ACFRST,NCFRST,ACFRCV,NCFRCV                      &
@@ -198,7 +199,7 @@ CONTAINS
       INTEGER,INTENT(IN) :: julyr,julday   
       INTEGER,INTENT(INOUT),DIMENSION(ims:ime,jms:jme) :: NCFRST        & !Added
                                                          ,NCFRCV          !Added
-      REAL,INTENT(IN) :: DT,GMT,G
+      REAL,INTENT(IN) :: DT,GMT,G,XTIME,JULIAN
 
       REAL,INTENT(INOUT),DIMENSION(ims:ime, kms:kme, jms:jme)::         &
                                     THRATEN,THRATENLW,THRATENSW,CLDFRA  !Added CLDFRA
@@ -314,7 +315,7 @@ CONTAINS
      &            ACFRCV,NCFRCV,ACFRST,NCFRST,                          &
      &            VEGFRA,SNOW,GLW,GSW,RSWIN,RSWINC,                     &
 !BSF => for NAMX changes, pass in surface emissivity (SFCEMS) [different for snow]
-     &            IDAT,IHRST,                                           &
+     &            IDAT,IHRST,XTIME,JULIAN,                              &
      &            NSTEPRA,NSTEPRA,NPHS,ITIMESTEP,                       &
      &            TENDS,TENDL,CLDFRA,RSWTOA,RLWTOA,CZMEAN,              &
      &            CFRACL,CFRACM,CFRACH,                                 &
@@ -400,7 +401,7 @@ CONTAINS
      &                 ACFRCV,NCFRCV,ACFRST,NCFRST,                     &
      &                 VEGFRC,SNO,GLW,GSW,RSWIN,RSWINC,                 & 
 !BSF => for NAMX changes, pass in surface emissivity (SFCEMS) [different for snow]
-     &                 IDAT,IHRST,                                      &
+     &                 IDAT,IHRST,XTIME,JULIAN,                         &
      &                 NRADS,NRADL,NPHS,NTSD,                           &
      &                 TENDS,TENDL,CLDFRA,RSWTOA,RLWTOA,CZMEAN,         &
      &                 CFRACL,CFRACM,CFRACH,                            &
@@ -500,6 +501,10 @@ CONTAINS
 
 ! CFRACL,CFRACM,CFRACH : low, middle, & high (diagnosed) cloud fractions
 
+! XTIME : time since simulation start (minutes)
+                                                                                                                                              
+! JULIAN: Day of year (0.0 at 00Z Jan 1st)
+
 !**********************************************************************
 !****************************** NOTE **********************************
 !**********************************************************************
@@ -516,7 +521,7 @@ CONTAINS
      &                              its,ite, jts,jte, kts,kte
       INTEGER, INTENT(IN)        :: NRADS,NRADL,NTSD,NPHS 
 !     LOGICAL, INTENT(IN)        :: RESTRT
-      REAL   , INTENT(IN)        :: DT
+      REAL   , INTENT(IN)        :: DT,XTIME,JULIAN
 !     REAL   , INTENT(IN), DIMENSION(37,NL) :: XDUO3N,XDO3N2,XDO3N3,XDO3N4
       INTEGER, INTENT(IN), DIMENSION(3) :: IDAT
 !-----------------------------------------------------------------------
@@ -683,7 +688,8 @@ CONTAINS
 !***  BETWEEN THE CURRENT TIME AND THE NEXT TIME RADIATION IS
 !***  CALLED.  ONLY AVERAGE IF THE SUN IS ABOVE THE HORIZON.
 !***
-      TIME=NTSD*DT
+!     TIME=NTSD*DT
+      TIME=XTIME*60.
 !-----------------------------------------------------------------------
       CALL ZENITH(TIME,DAYI,HOUR,IDAT,IHRST,GLON,GLAT,CZEN,             &
      &            MYIS,MYIE,MYJS,MYJE,                                  &
@@ -709,7 +715,8 @@ CONTAINS
         ENDDO
 !
         DO II=0,NRADS,NPHS
-          TIMES=NTSD*DT+II*DT
+!         TIMES=NTSD*DT+II*DT
+          TIMES=XTIME*60.+II*DT
           CALL ZENITH(TIMES,DAYI,HOUR,IDAT,IHRST,GLON,GLAT,CZEN,        &
      &                MYIS,MYIE,MYJS,MYJE,                              &
      &                ids,ide, jds,jde, kds,kde,                        &
@@ -6611,16 +6618,16 @@ CONTAINS
       ,O3HI(10,25) &
       ,RSTD(81),RBAR(NL),RDATA(81) &
       ,PHALF(NL),P(81),PH(82)
-       REAL   :: PXX(81),PYY(82)                       !  fix for nesting: gopal's
+       REAL   :: PXX(81),PYY(82)                       !  fix for nesting
 !----------------------------------------------------------------------
-!gopal                           EQUIVALENCE &
-!gopal       (O3HI1(1,1),O3HI(1,1)),(O3HI2(1,1),O3HI(1,17)) &
-!gopal      ,(PH1(1),PH(1)),(PH2(1),PH(46)) &
-!gopal      ,(P1(1),P(1)),(P2(1),P(49))
+!nesting                         EQUIVALENCE &
+!nesting     (O3HI1(1,1),O3HI(1,1)),(O3HI2(1,1),O3HI(1,17)) &
+!nesting    ,(PH1(1),PH(1)),(PH2(1),PH(46)) &
+!nesting    ,(P1(1),P(1)),(P2(1),P(49))
                            EQUIVALENCE &
        (O3HI1(1,1),O3HI(1,1)),(O3HI2(1,1),O3HI(1,17)) &
-      ,(PH1(1),PYY(1)),(PH2(1),PYY(46)) &               ! fix for nesting: gopal's doing 
-      ,(P1(1),PXX(1)),(P2(1),PXX(49))                   ! fix for nesting: gopal's doing 
+      ,(PH1(1),PYY(1)),(PH2(1),PYY(46)) &               ! fix for nesting
+      ,(P1(1),PXX(1)),(P2(1),PXX(49))                   ! fix for nesting
 !----------------------------------------------------------------------
 !                          EQUIVALENCE &
 !      (XRAD1(1),XDUO3N(1,1),O3O3(1,1,1)) &
@@ -6782,12 +6789,12 @@ CONTAINS
       DO K=1,NK
 !        PH(K)=PH(K)*1013250.
 !        P(K)=P(K)*1013250.
-        PH(K)=PYY(K)*1013250.         ! fix for nesting: gopal's doing 
-        P(K)=PXX(K)*1013250.          ! fix for nesting: gopal's doing
+        PH(K)=PYY(K)*1013250.         ! fix for nesting
+        P(K)=PXX(K)*1013250.          ! fix for nesting
       ENDDO
 !
 !      PH(NKP)=PH(NKP)*1013250.
-      PH(NKP)=PYY(NKP)*1013250.       ! fix for nesting: gopal's doing
+      PH(NKP)=PYY(NKP)*1013250.       ! fix for nesting
 !
       DO K=1,NL
         PSTD(K)=P(K)
@@ -9499,7 +9506,6 @@ CONTAINS
 !     EQUIVALENCE (CO258(1,1),CO2D2D(1,1,5)),(C2D58(1,1),CO2D2D(1,1,6))
 
 !
-!    This is gopal's doing
 !    Deallocate before reading. This is required for nested domain init.
 !
       IF(ALLOCATED (CO251))DEALLOCATE(CO251)
@@ -9529,9 +9535,6 @@ CONTAINS
       IF(ALLOCATED (CDTM58))DEALLOCATE(CDTM58)
       IF(ALLOCATED (C2DM58))DEALLOCATE(C2DM58)
 !
-!    End of gopal's doing
-!
-
       ALLOCATE(CO251(LP1,LP1))
       ALLOCATE(CDT51(LP1,LP1))
       ALLOCATE(C2D51(LP1,LP1))
@@ -9980,7 +9983,6 @@ CONTAINS
       ENDDO
 
 !
-!    This is gopal's doing
 !    Deallocate before reading. This is required for nested domain init.
 !
       IF(ALLOCATED (CO251))DEALLOCATE(CO251)
@@ -10009,10 +10011,6 @@ CONTAINS
       IF(ALLOCATED (CO2M58))DEALLOCATE(CO2M58)
       IF(ALLOCATED (CDTM58))DEALLOCATE(CDTM58)
       IF(ALLOCATED (C2DM58))DEALLOCATE(C2DM58)
-!
-!    End of gopal's doing
-!
-
 !
 !----------------------------------------------------------------------
 !

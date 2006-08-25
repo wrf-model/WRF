@@ -160,12 +160,9 @@ PROGRAM real_data
 
    CALL       wrf_debug (   0 , 'real_nmm: SUCCESS COMPLETE REAL_NMM INIT' )
 
-	write(0,*) 'to wrf_dm_shutdown call'
-
 #ifdef DM_PARALLEL
     CALL wrf_dm_shutdown
 #endif
-	write(0,*) 'done done'
 
    CALL WRFU_Finalize( rc=rc )
 
@@ -181,6 +178,8 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
    USE module_initialize
    USE module_optional_si_input
 
+   USE module_si_io_nmm
+
    USE module_date_time
 
    IMPLICIT NONE
@@ -188,7 +187,7 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
 
   ! Interface 
    INTERFACE
-     SUBROUTINE start_domain ( grid , allowed_to_read )  ! comes from module_start in appropriate dyn_ directory
+     SUBROUTINE start_domain ( grid , allowed_to_read )
        USE module_domain
        TYPE (domain) grid
        LOGICAL, INTENT(IN) :: allowed_to_read
@@ -210,8 +209,15 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
    INTEGER :: time_loop_max , loop
    INTEGER :: julyr , julday , LEN
 
+   INTEGER :: io_form_auxinput1
+   INTEGER, EXTERNAL :: use_package
+
    REAL :: gmt
    REAL :: t1,t2
+
+   INTEGER :: numx_sm_levels_input,numx_st_levels_input
+   REAL,DIMENSION(100) :: smx_levels_input,stx_levels_input
+
 
 #ifdef DEREF_KLUDGE
 !  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
@@ -227,23 +233,20 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
    grid%input_from_file = .false.
 
    CALL compute_si_start_and_end ( model_config_rec%start_year  (grid%id) , &
-                            model_config_rec%start_month (grid%id) , &
-                            model_config_rec%start_day   (grid%id) , &
-                            model_config_rec%start_hour  (grid%id) , &
-                            model_config_rec%start_minute(grid%id) , &
-                            model_config_rec%start_second(grid%id) , &
-                            model_config_rec%  end_year  (grid%id) , & 
-                            model_config_rec%  end_month (grid%id) , &
-                            model_config_rec%  end_day   (grid%id) , &
-                            model_config_rec%  end_hour  (grid%id) , &
-                            model_config_rec%  end_minute(grid%id) , &
-                            model_config_rec%  end_second(grid%id) , &
-                            model_config_rec%interval_seconds      , &
-                            model_config_rec%real_data_init_type   , &
-                            start_date_char , end_date_char , time_loop_max )
-
-
-	write(0,*) 'return si_start_and_end'
+                                   model_config_rec%start_month (grid%id) , &
+                                   model_config_rec%start_day   (grid%id) , &
+                                   model_config_rec%start_hour  (grid%id) , &
+                                   model_config_rec%start_minute(grid%id) , &
+                                   model_config_rec%start_second(grid%id) , &
+                                   model_config_rec%  end_year  (grid%id) , & 
+                                   model_config_rec%  end_month (grid%id) , &
+                                   model_config_rec%  end_day   (grid%id) , &
+                                   model_config_rec%  end_hour  (grid%id) , &
+                                   model_config_rec%  end_minute(grid%id) , &
+                                   model_config_rec%  end_second(grid%id) , &
+                                   model_config_rec%interval_seconds      , &
+                                   model_config_rec%real_data_init_type   , &
+                                   start_date_char , end_date_char , time_loop_max )
 
    !  Here we define the initial time to process, for later use by the code.
 
@@ -254,14 +257,12 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
 
    CALL nl_set_bdyfrq ( grid%id , REAL(model_config_rec%interval_seconds) )
 
-	write(0,*) 'past set_bdyfrq'
-
    !  Loop over each time period to process.
 
-	write(0,*) 'time_loop_max: ', time_loop_max
+   write(0,*) 'time_loop_max: ', time_loop_max
    DO loop = 1 , time_loop_max
 
-	write(0,*) 'loop=', loop
+      write(0,*) 'loop=', loop
 
       print *,'-----------------------------------------------------------'
       print *,' '
@@ -273,9 +274,6 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
       CALL geth_julgmt ( config_flags%julyr , config_flags%julday , &
                                               config_flags%gmt )
 
-	write(0,*) 'config_flags%julday: ', config_flags%julday
-	write(0,*) 'config_flags%gmt: ', config_flags%gmt
-
       !  Now that the specific Julian info is available, 
       !  save these in the model config record.
 
@@ -283,124 +281,101 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
       CALL nl_set_julyr (grid%id, config_flags%julyr)
       CALL nl_set_julday (grid%id, config_flags%julday)
 
-	write(0,*) 'past set_julday, open the file'
+      CALL nl_get_io_form_auxinput1( 1, io_form_auxinput1 )
+      write(0,*)" io_form_auxinput1 = ",io_form_auxinput1
+
+      SELECT CASE ( use_package(io_form_auxinput1) )
+#ifdef NETCDF
+      CASE ( IO_NETCDF   )
+
       !  Open the wrfinput file.
 
-	write(0,*) 'grid%dyn_opt= ', grid%dyn_opt
-	write(0,*) 'dyn_nmm= ', dyn_nmm
-
-!      IF ( grid%dyn_opt .EQ. dyn_em ) THEN
-!         CALL  wrf_debug ( 100 , &
-!   'med_sidata_input: calling open_r_dataset for wrf_real_input_em')
-!
-!         CALL construct_filename2( si_inpname , 'wrf_real_input_em' , &
-!                                        grid%id , 2 , current_date_char )
-!      ELSE IF ( grid%dyn_opt .EQ. dyn_eh ) THEN
-!         CALL  wrf_debug ( 100 , &
-!   'med_sidata_input: calling open_r_dataset for wrf_real_input_eh' )
-!
-!         CALL construct_filename2( si_inpname , 'wrf_real_input_eh' , &
-!                                         grid%id , 2 , current_date_char )
-
-       IF ( grid%dyn_opt .EQ. dyn_nmm ) THEN
-         CALL  wrf_debug ( 100 , &
-   'med_sidata_input: calling open_r_dataset for wrf_real_input_nm' )
-	current_date_char(11:11)='_'
+      IF ( grid%dyn_opt .EQ. dyn_nmm ) THEN
+         CALL  wrf_debug ( 100 , 'med_sidata_input: calling open_r_dataset for wrf_real_input_nm' )
+         current_date_char(11:11)='_'
          CALL construct_filename2( si_inpname , 'wrf_real_input_nm' , &
                                          grid%id , 2 , current_date_char )
-	current_date_char(11:11)='T'
-	ELSE
-	write(0,*) 'dont know what to do'
-	write(0,*) 'dont know about this dyn_opt'
-	write(0,*) 'grid%dyn_opt= ', grid%dyn_opt
-        CALL wrf_error_fatal('real: error cant handle this grid%dyn_opt' )
+         current_date_char(11:11)='T'
+      ELSE
+         CALL wrf_error_fatal('real: error cant handle this grid%dyn_opt' )
       END IF
 
-!	write(0,*) 'trim(si_inpname):'  TRIM(si_inpname)
+      CALL open_r_dataset ( idsi, TRIM(si_inpname), grid, config_flags, "DATASET=AUXINPUT1", ierr )
 
-        CALL open_r_dataset ( idsi, TRIM(si_inpname) , &
-                              grid , config_flags , "DATASET=AUXINPUT1", ierr )
-	write(0,*) 'ierr from open: ', ierr
-
-!      IF ( ( ierr .NE. 0 ) .AND. ( grid%dyn_opt .EQ. dyn_em ) ) THEN
-!        CALL wrf_error_fatal('real: error opening wrf_real_input_em for read' )
-!      ELSE IF ( ( ierr .NE. 0 ) .AND. ( grid%dyn_opt .EQ. dyn_eh ) ) THEN
-!        CALL wrf_error_fatal('real: error opening wrf_real_input_eh for read' )
-!      ENDIF
+      IF ( ( ierr .NE. 0 ) .AND. ( grid%dyn_opt .EQ. dyn_nmm ) ) THEN
+        CALL wrf_error_fatal('real: error opening wrf_real_input_nm for read '//TRIM(si_inpname) )
+      ENDIF
 
       !  Input data.
 
       CALL wrf_debug (100, 'med_sidata_input: call input_aux_model_input1_wrf')
 
-!!!
-!!!	input from netCDF SI output.  Adapt as needed
-!!!
-
-	write(0,*) 'call input_aux_model_input1_wrf'
-!	write(0,*) 'ide,ite: ', ide,ite
-!	write(0,*) 'jde,jte: ', jde,jte
-
-!===========================================================================
-!  Dave: All variables are read in from SI
-!===========================================================================
-
-	grid%nmm_islope=1
-
-      CALL input_aux_model_input1 ( idsi ,   grid , config_flags , ierr )
-
-!tmp
-	grid%vegfra=grid%nmm_vegfrc
-	grid%nmm_dfrlg=grid%nmm_dfl/9.81
-!tmp
-
-	write(0,*) 'max of grid%nmm_islope: ', maxval(grid%nmm_islope)
-!!!
-!!!
+      CALL input_aux_model_input1 ( idsi, grid, config_flags, ierr )
 
       !  Possible optional SI input.  This sets flags used by init_domain.
 
-!!!
-!!!	anything important input through "optional" SI input?
-!!!
       IF ( loop .EQ. 1 ) THEN
-  CALL  wrf_debug (100, 'med_sidata_input: call init_module_optional_si_input' )
+         CALL  wrf_debug (100, 'med_sidata_input: call init_module_optional_si_input' )
          CALL init_module_optional_si_input ( grid , config_flags )
       END IF
-      CALL  wrf_debug ( 100 , 'med_sidata_input: calling optional_si_input' )
+      CALL wrf_debug ( 100 , 'med_sidata_input: calling optional_si_input' )
 !
-      CALL  optional_si_input ( grid , idsi )
+      CALL optional_si_input ( grid , idsi )
+	write(0,*) 'maxval st_input(1) within real_nmm: ', maxval(st_input(:,1,:))
 !
-	write(0,*) 'num_st_levels_input: ', num_st_levels_input
+      CALL close_dataset ( idsi , config_flags , "DATASET=AUXINPUT1" )
+
+#endif
+#ifdef INTIO
+      CASE ( IO_INTIO )
+
+      !  Possible optional SI input.  This sets flags used by init_domain.
+
+      IF ( loop .EQ. 1 ) THEN
+         CALL  wrf_debug (100, 'med_sidata_input: call init_module_optional_si_input' )
+         CALL init_module_optional_si_input ( grid , config_flags )
+      END IF
+
+      current_date_char(11:11)='_'
+      CALL read_si ( grid, current_date_char )
+      current_date_char(11:11)='T'
+
+#endif
+      CASE DEFAULT
+        CALL wrf_error_fatal('real: not valid io_form_auxinput1')
+      END SELECT
+
+      grid%nmm_islope=1
+      grid%vegfra=grid%nmm_vegfrc
+      grid%nmm_dfrlg=grid%nmm_dfl/9.81
+
+      grid%isurban=1
+      grid%isoilwater=14
 
       !  Initialize the mother domain for this time period with input data.
 
-      CALL       wrf_debug ( 100 , 'med_sidata_input: calling init_domain' )
+      CALL wrf_debug ( 100 , 'med_sidata_input: calling init_domain' )
       grid%input_from_file = .true.
 
-!!!
-!!! init_domain will call init_domain_nmm in module_intialize_real.  
-!!! Fills a bunch of NHB-style (static) variables
-!!!
-
-        CALL init_domain (  grid )
+      CALL init_domain ( grid )
 
       CALL model_to_grid_config_rec ( grid%id, model_config_rec, config_flags )
 
       !  Close this file that is output from the SI and input to this pre-proc.
 
-      CALL       wrf_debug ( 100 , 'med_sidata_input: back from init_domain' )
+      CALL wrf_debug ( 100 , 'med_sidata_input: back from init_domain' )
 
-      CALL close_dataset ( idsi , config_flags , "DATASET=AUXINPUT1" )
 
 !!! not sure about this, but doesnt seem like needs to be called each time
-	if (loop .eq. 1) then
+      IF ( loop .EQ. 1 ) THEN
 	write(0,*) 'call start_domain'
         CALL start_domain ( grid , .TRUE.)
-	endif
+      END IF
 
-	write(0,*) 'call assemble_output'
-        CALL assemble_output ( grid , config_flags , loop , time_loop_max )
-	write(0,*) 'return assemble_output'
+      config_flags%isurban=1
+      config_flags%isoilwater=14
+
+      CALL assemble_output ( grid , config_flags , loop , time_loop_max )
 
       !  Here we define the next time that we are going to process.
 
@@ -410,7 +385,7 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
 
       CALL domain_clock_set( grid, current_date(1:19) )
 
-	write(0,*) 'current_date= ', current_date
+      write(0,*) 'current_date= ', current_date
 
    END DO
 END SUBROUTINE med_sidata_input

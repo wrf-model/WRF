@@ -103,6 +103,21 @@
                                   simulation_start_date(1:19)
           CALL wrf_debug ( 300 , TRIM(wrf_err_message ) )
         ENDIF
+      ELSE
+        CALL nl_get_start_year   ( grid%id , simulation_start_year   )
+        CALL nl_get_start_month  ( grid%id , simulation_start_month  )
+        CALL nl_get_start_day    ( grid%id , simulation_start_day    )
+        CALL nl_get_start_hour   ( grid%id , simulation_start_hour   )
+        CALL nl_get_start_minute ( grid%id , simulation_start_minute )
+        CALL nl_get_start_second ( grid%id , simulation_start_second )
+        CALL nl_set_simulation_start_year   ( grid%id , simulation_start_year   )
+        CALL nl_set_simulation_start_month  ( grid%id , simulation_start_month  )
+        CALL nl_set_simulation_start_day    ( grid%id , simulation_start_day    )
+        CALL nl_set_simulation_start_hour   ( grid%id , simulation_start_hour   )
+        CALL nl_set_simulation_start_minute ( grid%id , simulation_start_minute )
+        CALL nl_set_simulation_start_second ( grid%id , simulation_start_second )
+        CALL wrf_message('input_wrf: SIMULATION_START_DATE not avaialbe in input')
+        CALL wrf_message('will use namelist information') 
       ENDIF
     ENDIF
 

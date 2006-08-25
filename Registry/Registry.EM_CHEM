@@ -82,9 +82,9 @@ state    real  LU_MASK          ij      misc        1         -     i3h1     "LU
 #
 # Variables from HINTERP
 #
-state    real   u_gc           igj      dyn_em      1        X     i1  "U"     "x-wind component"    "m s-1"
-state    real   v_gc           igj      dyn_em      1        Y     i1  "V"     "y-wind component"    "m s-1"
-state    real   t_gc           igj      dyn_em      1        -     i1  "T"     "temperature"         "K"
+state    real   u_gc           igj      dyn_em      1        X     i1  "UU"     "x-wind component"    "m s-1"
+state    real   v_gc           igj      dyn_em      1        Y     i1  "VV"     "y-wind component"    "m s-1"
+state    real   t_gc           igj      dyn_em      1        -     i1  "TT"     "temperature"         "K"
 state    real   rh_gc          igj      dyn_em      1        -     i1  "RH"    "relative humidity"   "%"
 state    real   ght_gc         igj      dyn_em      1        -     i1  "GHT"   "geopotential height" "m"
 state    real   p_gc           igj      dyn_em      1        -     i1  "P"     "pressure"            "Pa"
@@ -94,7 +94,7 @@ state    real   ht_gc          ij       dyn_em      1        -     i1  "HGT_M" "
 state    real   tsk_gc         ij       dyn_em      1        -     i1  "SKINTEMP"  "skin temperature"  "K"
 state    real   tmn_gc         ij       dyn_em      1        -     i1  "SOILTEMP"  "annual mean deep soil temperature"  "K"
 #state   real   landmask_gc    ij       dyn_em      1        -     i1  "LANDSEA"    "input landmask"   "0 1 flag"
-state   integer landmask_gc    ij       dyn_em      1        -     i1  "LANDMASK"    "input landmask"   "0 1 flag"
+#state   integer landmask_gc    ij       dyn_em      1        -     i1  "LANDMASK"    "input landmask"   "0 1 flag"
 state    real   pslv_gc        ij       dyn_em      1        -     i1  "PMSL"  "sea level pressure"  "Pa"
 state    real   greenfrac      imj      dyn_em      1        -     i1  "GREENFRAC" "monthly greenness fraction" "0 - 1 fraction"
 state    real   albedo12m      imj      dyn_em      1        -     i1  "ALBEDO12M" "background albedo" "0 - 1 fraction"

@@ -221,7 +221,7 @@ integer::oops1,oops2
 
          DO j = jts, MIN(jte,jde-1)
            DO i = its, MIN(ite,ide-1)
-              landmask(i,j) = landmask_gc(i,j)
+!             landmask(i,j) = landmask_gc(i,j)
               tsk(i,j) = tsk_gc(i,j)
               tmn(i,j) = tmn_gc(i,j)
               xlat(i,j) = xlat_gc(i,j)

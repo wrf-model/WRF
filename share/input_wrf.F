@@ -116,7 +116,7 @@
         CALL nl_set_simulation_start_hour   ( grid%id , simulation_start_hour   )
         CALL nl_set_simulation_start_minute ( grid%id , simulation_start_minute )
         CALL nl_set_simulation_start_second ( grid%id , simulation_start_second )
-        CALL wrf_message('input_wrf: SIMULATION_START_DATE not avaialbe in input')
+        CALL wrf_message('input_wrf: SIMULATION_START_DATE not available in input')
         CALL wrf_message('will use namelist information') 
       ENDIF
     ENDIF

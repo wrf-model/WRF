@@ -910,6 +910,13 @@ if ( $ARCH[1] == AIX ) then
 	else if ( $CHEM == FALSE ) then
 		set ZAP_OPENMP		= FALSE
 	endif
+# check compiler version, JM
+        lslpp -i | grep xlf | grep ' xlfcmp ' | head -1
+        set xlfvers=`lslpp -i | grep xlf | grep ' xlfcmp ' | head -1 | awk '{print $2}' | sed 's/\...*$//'`
+        if ( $xlfvers < 10 ) then
+		set ZAP_OPENMP		= TRUE
+        endif
+# end of compiler check, JM
 	echo "Compiler version info: " >! version_info
 	echo "FORTRAN:        " `lslpp -l | grep xlfrte | head -1 | awk '{print $1 "   " $2}'` >>! version_info
 	echo " " >>! version_info

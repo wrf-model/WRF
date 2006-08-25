@@ -9,6 +9,8 @@
 
 #define DUMMY 1
 #define ACTUAL 2 
+#define DUMMY_NEW 3
+#define ACTUAL_NEW 4 
 
 int
 gen_actual_args ( char * dirname )
@@ -20,6 +22,17 @@ gen_actual_args ( char * dirname )
   return(0) ;
 }
 
+/* only generate actual args for the 4d arrays */
+int
+gen_actual_args_new ( char * dirname )
+{
+  int i ;
+
+  for ( i = 0 ; i < get_num_cores() ; i++ )
+    gen_args ( dirname , get_corename_i(i) , ACTUAL_NEW ) ;
+  return(0) ;
+}
+
 int
 gen_dummy_args ( char * dirname )
 {
@@ -27,6 +40,17 @@ gen_dummy_args ( char * dirname )
  
   for ( i = 0 ; i < get_num_cores() ; i++ )
     gen_args ( dirname , get_corename_i(i) , DUMMY ) ;
+  return(0) ;
+}
+
+/* only generate dummy args for the 4d arrays */
+int
+gen_dummy_args_new ( char * dirname )
+{
+  int i ;
+
+  for ( i = 0 ; i < get_num_cores() ; i++ )
+    gen_args ( dirname , get_corename_i(i) , DUMMY_NEW ) ;
   return(0) ;
 }
 
@@ -42,17 +66,17 @@ gen_args ( char * dirname , char * corename , int sw )
 
   if ( dirname == NULL || corename == NULL ) return(1) ;
   if ( strlen(dirname) > 0 ) 
-   { sprintf(fname,"%s/%s%s%s",dirname,corename,
-             (sw==ACTUAL)?"_actual":"_dummy",fn) ; }
+   { sprintf(fname,"%s/%s%s%s%s",dirname,corename,
+             (sw==ACTUAL||sw==ACTUAL_NEW)?"_actual":"_dummy",(sw==ACTUAL_NEW||sw==DUMMY_NEW)?"_new":"",fn) ; }
   else                       
-   { sprintf(fname,"%s%s%s",corename,
-             (sw==ACTUAL)?"_actual":"_dummy",fn) ; }
+   { sprintf(fname,"%s%s%s%s",corename,
+             (sw==ACTUAL||sw==ACTUAL_NEW)?"_actual":"_dummy",(sw==ACTUAL_NEW||sw==DUMMY_NEW)?"_new":"",fn) ; }
 
   if ((fp = fopen( fname , "w" )) == NULL ) return(1) ;
   print_warning(fp,fname) ;
   linelen = 0 ;
   strcpy(outstr,"") ;
-  gen_args1 ( fp , outstr, (sw==ACTUAL)?"grid%":"", corename ,
+  gen_args1 ( fp , outstr, (sw==ACTUAL||sw==ACTUAL_NEW)?"grid%":"", corename ,
               &Domain , &linelen , sw , 0 ) ;
   /* remove trailing comma */
   if ((p=rindex(outstr,','))!=NULL) *p = '\0' ;
@@ -72,6 +96,10 @@ gen_args1 ( FILE * fp , char * outstr , char * structname , char * corename ,
   char x[NAMELEN], y[NAMELEN] ;
   char indices[NAMELEN] ;
   int lenarg ; 
+  int only4d = 0 ;
+
+  if ( sw == ACTUAL_NEW ) { sw = ACTUAL ; only4d = 1 ; }
+  if ( sw == DUMMY_NEW )  { sw = DUMMY  ; only4d = 1 ; }
 
   if ( node == NULL ) return(1) ;
   for ( p = node->fields ; p != NULL ; p = p->next )
@@ -93,26 +121,28 @@ gen_args1 ( FILE * fp , char * outstr , char * structname , char * corename ,
                          )
        )
     {
-      if      ( p->node_kind & FOURD ) { sprintf(post,",1)") ; }
-      else if ( p->boundary_array )     { sprintf(post,")") ; }
-      else                              { sprintf(post,")") ; }
-      for ( tag = 1 ; tag <= p->ntl ; tag++ )
-      {
-        /* if this is a core-specific variable, prepend the name of the core to */
-        /* the variable at the driver level */
-        if (!strcmp( corename , p->use+4 ) && sw==ACTUAL)
-          sprintf(fname,"%s_%s",corename,field_name(t4,p,(p->ntl>1)?tag:0)) ;
-        else
-          strcpy(fname,field_name(t4,p,(p->ntl>1)?tag:0)) ;
-	strcpy(indices,"") ;
-        if ( sw_deref_kludge && sw==ACTUAL ) 
-	  sprintf(indices, "%s",index_with_firstelem("(","",t2,p,post)) ;
-        /* generate argument */
-	strcpy(y,structname) ; strcat(y,fname) ; strcat(y,indices) ; strcat(y,",") ;
-	lenarg = strlen(y) ;
-	if ( lenarg+*linelen > MAX_ARGLINE ) { strcat(outstr," &\n") ; *linelen = 0 ; }
-	strcat(outstr,y) ;
-	*linelen += lenarg ;
+      if ( !only4d || (p->node_kind & FOURD) || ( p->boundary_array ) ) {
+        if      ( p->node_kind & FOURD ) { sprintf(post,",1)") ; }
+        else if ( p->boundary_array )     { sprintf(post,")") ; }
+        else                              { sprintf(post,")") ; }
+        for ( tag = 1 ; tag <= p->ntl ; tag++ )
+        {
+          /* if this is a core-specific variable, prepend the name of the core to */
+          /* the variable at the driver level */
+          if (!strcmp( corename , p->use+4 ) && sw==ACTUAL)
+            sprintf(fname,"%s_%s",corename,field_name(t4,p,(p->ntl>1)?tag:0)) ;
+          else
+            strcpy(fname,field_name(t4,p,(p->ntl>1)?tag:0)) ;
+	  strcpy(indices,"") ;
+          if ( sw_deref_kludge && sw==ACTUAL ) 
+	    sprintf(indices, "%s",index_with_firstelem("(","",t2,p,post)) ;
+          /* generate argument */
+	  strcpy(y,structname) ; strcat(y,fname) ; strcat(y,indices) ; strcat(y,",") ;
+	  lenarg = strlen(y) ;
+	  if ( lenarg+*linelen > MAX_ARGLINE ) { strcat(outstr," &\n") ; *linelen = 0 ; }
+	  strcat(outstr,y) ;
+	  *linelen += lenarg ;
+        }
       }
     }
     if ( p->type != NULL )

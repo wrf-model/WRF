@@ -142,8 +142,11 @@ main( int argc, char *argv[], char *env[] )
   gen_scalar_indices( "inc" ) ;
   gen_module_state_description( "frame" ) ;
   gen_actual_args( "inc" ) ;
+  gen_actual_args_new( "inc" ) ;
   gen_dummy_args( "inc" ) ;
+  gen_dummy_args_new( "inc" ) ;
   gen_dummy_decls( "inc" ) ;
+  gen_dummy_decls_new( "inc" ) ;
   gen_i1_decls( "inc" ) ;
   gen_namelist_statements("inc") ;
   gen_namelist_defines ( "inc", 0 ) ;  /* without dimension statements  */

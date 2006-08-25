@@ -192,6 +192,7 @@ gen_packs ( FILE *fp , node_t *p, int shw, int xy /* 0=y,1=x */ , int pu /* 0=pa
   char commuse[NAMELEN] ;
   int maxstenwidth, stenwidth ;
   char * t1, * t2 , *wordsize ;
+  char varref[NAMELEN] ;
   char * pos1 , * pos2 ;
   char indices[NAMELEN], post[NAMELEN], memord[NAMELEN] ;
   int zdex ;
@@ -211,6 +212,18 @@ gen_packs ( FILE *fp , node_t *p, int shw, int xy /* 0=y,1=x */ , int pu /* 0=pa
           { fprintf(stderr,"WARNING 1 : %s in halo spec %s (%s) is not defined in registry.\n",t2,p->name, commuse) ; }
         else
         {
+
+          strcpy( varref, t2 ) ;
+          if ( q->node_kind & FIELD  && ! (q->node_kind & I1) ) {
+             if ( !strncmp( q->use,  "dyn_", 4 )) {
+                  char * core ;
+                  core = q->use+4 ;
+                  sprintf(varref,"grid%%%s_%s",core,t2) ;
+             } else {
+                  sprintf(varref,"grid%%%s",t2) ;
+             }
+          }
+
           if      (  strcmp( q->type->name, "real") && strcmp( q->type->name, "integer") && strcmp( q->type->name, "doubleprecision") ) { ; }
           else if ( q->boundary_array ) { ; }
           else
@@ -226,7 +239,7 @@ gen_packs ( FILE *fp , node_t *p, int shw, int xy /* 0=y,1=x */ , int pu /* 0=pa
               {
                 set_mem_order( q->members, memord , NAMELEN) ;
 fprintf(fp,"DO itrace = PARAM_FIRST_SCALAR, num_%s\n",q->name ) ;
-fprintf(fp," CALL %s ( %s,%s ( grid%%sm31,grid%%sm32,grid%%sm33,itrace), %d, %s, %d, %d, '%s', %d, &\n",
+fprintf(fp," CALL %s ( %s,grid%%%s ( grid%%sm31,grid%%sm32,grid%%sm33,itrace), %d, %s, %d, %d, '%s', %d, &\n",
                        packname, commname, t2 , shw, wordsize, xy, pu, memord, q->stag_x?1:0 ) ;
 fprintf(fp,"mytask, ntasks, ntasks_x, ntasks_y,       &\n") ;
 fprintf(fp,"ids, ide, jds, jde, kds, kde,             &\n") ;
@@ -268,7 +281,7 @@ fprintf(fp,"CALL wrf_debug(3,wrf_err_message)\n") ;
 fprintf(fp,"write(wrf_err_message,*)' p ',ips, ipe, jps, jpe, kps, kpe\n" ) ;
 fprintf(fp,"CALL wrf_debug(3,wrf_err_message)\n") ;
 #endif
-                    fprintf(fp,"CALL %s ( %s, %s, %d, %s, %d, %d, '%s', %d, &\n", packname, commname, t2, shw, wordsize, xy, pu, memord, q->stag_x?1:0 ) ;
+                    fprintf(fp,"CALL %s ( %s, %s, %d, %s, %d, %d, '%s', %d, &\n", packname, commname, varref, shw, wordsize, xy, pu, memord, q->stag_x?1:0 ) ;
                     fprintf(fp,"mytask, ntasks, ntasks_x, ntasks_y,       &\n") ;
                     fprintf(fp,"ids, ide, jds, jde, kds, kde,             &\n") ;
                     fprintf(fp,"ims, ime, jms, jme, kms, kme,             &\n") ;
@@ -291,7 +304,7 @@ fprintf(fp,"CALL wrf_debug(3,wrf_err_message)\n") ;
 fprintf(fp,"write(wrf_err_message,*)' p ',ips, ipe, jps, jpe, %s, %s\n",s,e ) ;
 fprintf(fp,"CALL wrf_debug(3,wrf_err_message)\n") ;
 #endif
-                    fprintf(fp,"CALL %s ( %s, %s, %d, %s, %d, %d, '%s', %d, &\n", packname, commname, t2, shw, wordsize, xy, pu, memord, q->stag_x?1:0 ) ;
+                    fprintf(fp,"CALL %s ( %s, %s, %d, %s, %d, %d, '%s', %d, &\n", packname, commname, varref, shw, wordsize, xy, pu, memord, q->stag_x?1:0 ) ;
                     fprintf(fp,"mytask, ntasks, ntasks_x, ntasks_y,       &\n") ;
                     fprintf(fp,"ids, ide, jds, jde, %s, %s,             &\n",s,e) ;
                     fprintf(fp,"ims, ime, jms, jme, %s, %s,             &\n",s,e) ;
@@ -307,7 +320,7 @@ fprintf(fp,"CALL wrf_debug(3,wrf_err_message)\n") ;
 fprintf(fp,"write(wrf_err_message,*)' p ',ips, ipe, jps, jpe, %d, %d\n",dimd->coord_start,dimd->coord_end ) ;
 fprintf(fp,"CALL wrf_debug(3,wrf_err_message)\n") ;
 #endif
-                    fprintf(fp,"CALL %s ( %s, %s, %d, %s, %d, %d, '%s', %d, &\n", packname, commname, t2, shw, wordsize, xy, pu, memord, q->stag_x?1:0 ) ;
+                    fprintf(fp,"CALL %s ( %s, %s, %d, %s, %d, %d, '%s', %d, &\n", packname, commname, varref, shw, wordsize, xy, pu, memord, q->stag_x?1:0 ) ;
                     fprintf(fp,"mytask, ntasks, ntasks_x, ntasks_y,       &\n") ;
                     fprintf(fp,"ids, ide, jds, jde, %d, %d,             &\n",dimd->coord_start,dimd->coord_end) ;
                     fprintf(fp,"ims, ime, jms, jme, %d, %d,             &\n",dimd->coord_start,dimd->coord_end) ;
@@ -323,7 +336,7 @@ fprintf(fp,"CALL wrf_debug(3,wrf_err_message)\n") ;
 fprintf(fp,"write(wrf_err_message,*)' p ',ips, ipe, jps, jpe, 1, 1\n" ) ;
 fprintf(fp,"CALL wrf_debug(3,wrf_err_message)\n") ;
 #endif
-                fprintf(fp,"CALL %s ( %s, %s, %d, %s, %d, %d, '%s', %d, &\n", packname, commname, t2, shw, wordsize, xy, pu, memord, q->stag_x?1:0 ) ;
+                fprintf(fp,"CALL %s ( %s, %s, %d, %s, %d, %d, '%s', %d, &\n", packname, commname, varref, shw, wordsize, xy, pu, memord, q->stag_x?1:0 ) ;
                 fprintf(fp,"mytask, ntasks, ntasks_x, ntasks_y,       &\n") ;
                 fprintf(fp,"ids, ide, jds, jde, 1  , 1  ,             &\n") ;
                 fprintf(fp,"ims, ime, jms, jme, 1  , 1  ,             &\n") ;
@@ -356,6 +369,7 @@ gen_periods ( char * dirname , node_t * periods )
   int maxperwidth, perwidth ;
   FILE * fp ;
   char * t1, * t2 ;
+  char varref[NAMELEN] ;
   char * pos1 , * pos2 ;
   char indices[NAMELEN], post[NAMELEN] ;
   int zdex ;
@@ -418,6 +432,7 @@ fprintf(fp,"CALL wrf_debug(2,'calling %s')\n",fname) ;
           { fprintf(stderr,"WARNING 1 : %s in peridod spec %s (%s) is not defined in registry.\n",t2,commname, commuse) ; }
         else
         {
+
           if      (  strcmp( q->type->name, "real") && strcmp( q->type->name, "integer") && strcmp( q->type->name, "doubleprecision") )
             { fprintf(stderr,"WARNING: only type 'real', 'doubleprecision', or 'integer' can be part of period exchange. %s in %s is %s\n",t2,commname,q->type->name) ; }
           else if ( q->boundary_array )

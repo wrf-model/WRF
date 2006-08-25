@@ -23,7 +23,7 @@ gen_halos ( char * dirname )
   FILE * fp ;
   char * t1, * t2 ;
   char * pos1 , * pos2 ;
-  char indices[NAMELEN], post[NAMELEN] ;
+  char indices[NAMELEN], post[NAMELEN], varref[NAMELEN] ;
   int zdex ;
 
   if ( dirname == NULL ) return(1) ;
@@ -85,6 +85,18 @@ gen_halos ( char * dirname )
         }
         else
         {
+
+          strcpy( varref, t2 ) ;
+          if ( q->node_kind & FIELD  && ! (q->node_kind & I1) ) {
+             if ( !strncmp( q->use,  "dyn_", 4 )) {
+                  char * core ;
+                  core = q->use+4 ;
+                  sprintf(varref,"grid%%%s_%s",core,t2) ;
+             } else {
+                  sprintf(varref,"grid%%%s",t2) ;
+             }
+          }
+
           if      (  strcmp( q->type->name, "real") && strcmp( q->type->name, "integer") && strcmp( q->type->name, "doubleprecision") )
           {
             fprintf(stderr,"WARNING: only type 'real', 'doubleprecision', or 'integer' can be part of halo exchange. %s in %s is %s\n",t2,commname,q->type->name) ;
@@ -141,11 +153,11 @@ gen_halos ( char * dirname )
                 else if ( dimd->len_defined_how == CONSTANT )
                     sprintf(dimstrg,"(%d - %d + 1)",dimd->coord_end,dimd->coord_start) ;
 
-                fprintf(fp,"  CALL add_msg_%dpt_%s ( %s%s , %s )\n", stenwidth, q->type->name, t2, indices, dimstrg ) ;
+                fprintf(fp,"  CALL add_msg_%dpt_%s ( %s%s , %s )\n", stenwidth, q->type->name, varref, indices, dimstrg ) ;
               }
               else if ( q->ndims == 2 )  /* 2d */
               {
-                fprintf(fp,"  CALL add_msg_%dpt_%s ( %s%s , %s )\n", stenwidth, q->type->name, t2, indices, "1" ) ;
+                fprintf(fp,"  CALL add_msg_%dpt_%s ( %s%s , %s )\n", stenwidth, q->type->name, varref, indices, "1" ) ;
               }
             }
           }
@@ -171,7 +183,7 @@ gen_periods ( char * dirname )
   node_t * p, * q ;
   char commname[NAMELEN] ;
   char fname[NAMELEN] ;
-  char indices[NAMELEN], post[NAMELEN] ;
+  char indices[NAMELEN], post[NAMELEN], varref[NAMELEN] ;
   char tmp[4096], tmp2[4096], tmp3[4096], commuse[4096] ;
   int maxperwidth, perwidth ;
   FILE * fp ;
@@ -244,6 +256,17 @@ gen_periods ( char * dirname )
           else
           {
 
+            strcpy( varref, t2 ) ;
+            if ( q->node_kind & FIELD  && ! (q->node_kind & I1) ) {
+               if ( !strncmp( q->use,  "dyn_", 4 )) {
+                    char * core ;
+                    core = q->use+4 ;
+                    sprintf(varref,"grid%%%s_%s",core,t2) ;
+               } else {
+                    sprintf(varref,"grid%%%s",t2) ;
+               }
+            }
+
             if ( q->node_kind & FOURD )
             {
               node_t *member ;
@@ -290,11 +313,11 @@ gen_periods ( char * dirname )
                 else if ( dimd->len_defined_how == CONSTANT )
                     sprintf(dimstrg,"(%d - %d + 1)",dimd->coord_end,dimd->coord_start) ;
 
-                fprintf(fp,"  CALL add_msg_period_%s ( %s%s , %s )\n", q->type->name, t2, indices, dimstrg ) ;
+                fprintf(fp,"  CALL add_msg_period_%s ( %s%s , %s )\n", q->type->name, varref, indices, dimstrg ) ;
               }
               else if ( q->ndims == 2 )  /* 2d */
               {
-                fprintf(fp,"  CALL add_msg_period_%s ( %s%s , %s )\n", q->type->name, t2, indices, "1" ) ;
+                fprintf(fp,"  CALL add_msg_period_%s ( %s%s , %s )\n", q->type->name, varref, indices, "1" ) ;
               }
             }
           }
@@ -333,7 +356,7 @@ gen_xposes ( char * dirname )
   char * pos1 , * pos2 ;
   char *xposedir[] = { "z2x" , "x2z" , "x2y" , "y2x" , "z2y" , "y2z" , 0L } ;
   char ** x ;
-  char indices[NAMELEN], post[NAMELEN] ;
+  char indices[NAMELEN], post[NAMELEN], varname[NAMELEN], varref[NAMELEN] ;
 
   if ( dirname == NULL ) return(1) ;
 
@@ -373,6 +396,16 @@ gen_xposes ( char * dirname )
         t2 = strtok_rentr(tmp2,",", &pos2) ;
         if ((q = get_entry_r( t2, commuse, Domain.fields )) == NULL )    
          { fprintf(stderr,"WARNING 3 : %s in xpose spec %s (%s) is not defined in registry.\n",t2,commname,commuse) ; goto skiperific ; }
+        strcpy( varref, t2 ) ;
+        if ( q->node_kind & FIELD  && ! (q->node_kind & I1) ) {
+           if ( !strncmp( q->use,  "dyn_", 4 )) {
+                char * core ;
+                core = q->use+4 ;
+                sprintf(varref,"grid%%%s_%s",core,t2) ;
+           } else {
+                sprintf(varref,"grid%%%s",t2) ;
+           }
+        }
         if ( q->proc_orient != ALL_Z_ON_PROC ) 
          { fprintf(stderr,"WARNING: %s in xpose spec %s is not ALL_Z_ON_PROC.\n",t2,commname) ; goto skiperific ; }
         if ( q->ndims != 3 )
@@ -385,13 +418,23 @@ gen_xposes ( char * dirname )
           sprintf(post,")") ;
           sprintf(indices, "%s",index_with_firstelem("(","",tmp3,q,post)) ;
         }
-        fprintf(fp," CALL add_msg_xpose_%s ( %s%s ,", q->type->name, t2,indices ) ;
+        fprintf(fp," CALL add_msg_xpose_%s ( %s%s ,", q->type->name, varref,indices ) ;
         q->subject_to_communication = 1 ;         /* Indicate that this field may be communicated */
 
 /* X array */
         t2 = strtok_rentr( NULL , "," , &pos2 ) ;
         if ((q = get_entry_r( t2, commuse, Domain.fields )) == NULL )    
          { fprintf(stderr,"WARNING 4 : %s in xpose spec %s (%s) is not defined in registry.\n",t2,commname,commuse) ; goto skiperific ; }
+        strcpy( varref, t2 ) ;
+        if ( q->node_kind & FIELD  && ! (q->node_kind & I1) ) {
+           if ( !strncmp( q->use,  "dyn_", 4 )) {
+                char * core ;
+                core = q->use+4 ;
+                sprintf(varref,"grid%%%s_%s",core,t2) ;
+           } else {
+                sprintf(varref,"grid%%%s",t2) ;
+           }
+        }
         if ( q->proc_orient != ALL_X_ON_PROC ) 
          { fprintf(stderr,"WARNING: %s in xpose spec %s is not ALL_X_ON_PROC.\n",t2,commname) ; goto skiperific ; }
         if ( q->ndims != 3 )
@@ -404,13 +447,23 @@ gen_xposes ( char * dirname )
           sprintf(post,")") ;
           sprintf(indices, "%s",index_with_firstelem("(","",tmp3,q,post)) ;
         }
-        fprintf(fp," %s%s ,", t2, indices ) ;
+        fprintf(fp," %s%s ,", varref, indices ) ;
         q->subject_to_communication = 1 ;         /* Indicate that this field may be communicated */
 
 /* Y array */
         t2 = strtok_rentr( NULL , "," , &pos2 ) ;
         if ((q = get_entry_r( t2, commuse, Domain.fields )) == NULL )    
          { fprintf(stderr,"WARNING 5 : %s in xpose spec %s (%s)is not defined in registry.\n",t2,commname,commuse) ; goto skiperific ; }
+        strcpy( varref, t2 ) ;
+        if ( q->node_kind & FIELD  && ! (q->node_kind & I1) ) {
+           if ( !strncmp( q->use,  "dyn_", 4 )) {
+                char * core ;
+                core = q->use+4 ;
+                sprintf(varref,"grid%%%s_%s",core,t2) ;
+           } else {
+                sprintf(varref,"grid%%%s",t2) ;
+           }
+        }
         if ( q->proc_orient != ALL_Y_ON_PROC ) 
          { fprintf(stderr,"WARNING: %s in xpose spec %s is not ALL_Y_ON_PROC.\n",t2,commname) ; goto skiperific ; }
         if ( q->ndims != 3 )
@@ -423,7 +476,7 @@ gen_xposes ( char * dirname )
           sprintf(post,")") ;
           sprintf(indices, "%s",index_with_firstelem("(","",tmp3,q,post)) ;
         }
-        fprintf(fp," %s%s , 3 )\n", t2, indices ) ;
+        fprintf(fp," %s%s , 3 )\n", varref, indices ) ;
         q->subject_to_communication = 1 ;         /* Indicate that this field may be communicated */
         t1 = strtok_rentr( NULL , ";" , &pos1 ) ;
       }
@@ -700,7 +753,8 @@ gen_datacalls ( char * dirname )
     print_warning(fp,fname) ;
     fprintf(fp," CALL rsl_start_register_f90\n") ;
     parent_type = SIMPLE;
-    gen_datacalls1( fp , corename, "", FIELD | FOURD , Domain.fields ) ;
+    gen_datacalls1( fp , corename, "grid%", FIELD , Domain.fields ) ;
+    gen_datacalls1( fp , corename, "", FOURD , Domain.fields ) ;
     fprintf(fp,"#ifdef REGISTER_I1\n") ;
     gen_datacalls1( fp , corename, "", I1 , Domain.fields ) ;
     fprintf(fp,"#endif\n") ;
@@ -760,18 +814,21 @@ gen_datacalls1 ( FILE * fp , char * corename , char * structname , int mask , no
           }
           else
           {
+            char ca[NAMELEN] ;
             strcpy (indices,"");
-            if ( sw_deref_kludge ) /* && parent_type == DERIVED )  */
+            if ( sw_deref_kludge )
             {
               sprintf(post,")") ;
               sprintf(indices, "%s",index_with_firstelem("(","",tmp,p,post)) ;
             }
-            if ( p->ntl > 1 ) fprintf(fp," CALL rsl_register_f90_base_and_size ( %s%s_%d%s , SIZE( %s%s_%d ) * %cWORDSIZE )\n",
-                                                                                   structname,p->name,i,indices,
-                                                                                   structname,p->name,i,tc ) ;
-            else              fprintf(fp," CALL rsl_register_f90_base_and_size ( %s%s%s , SIZE( %s%s  ) * %cWORDSIZE )\n",
-                                                                                   structname,p->name,indices,
-                                                                                   structname,p->name, tc) ;
+            strcpy( ca, "" ) ;
+            if (!strncmp( p->use , "dyn_", 4 )) { char * cb ;  cb = p->use+4 ; sprintf(ca,"%s_", cb) ; }
+            if ( p->ntl > 1 ) fprintf(fp," CALL rsl_register_f90_base_and_size ( %s%s%s_%d%s , SIZE( %s%s%s_%d ) * %cWORDSIZE )\n",
+                                                                                   structname,ca,p->name,i,indices,
+                                                                                   structname,ca,p->name,i,tc ) ;
+            else              fprintf(fp," CALL rsl_register_f90_base_and_size ( %s%s%s%s , SIZE( %s%s%s  ) * %cWORDSIZE )\n",
+                                                                                   structname,ca,p->name,indices,
+                                                                                   structname,ca,p->name, tc) ;
           }
         }
       }

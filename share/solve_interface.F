@@ -51,7 +51,7 @@ SUBROUTINE solve_interface ( grid )
    ELSE IF ( config_flags%dyn_opt == DYN_EM  ) THEN
      CALL solve_em  ( grid , config_flags , &
 !
-# include <em_actual_args.inc>
+# include <em_actual_new_args.inc>
 !
                )
 

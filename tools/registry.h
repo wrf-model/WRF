@@ -35,6 +35,7 @@ enum proc_orient     { ALL_Z_ON_PROC , ALL_X_ON_PROC , ALL_Y_ON_PROC } ;
 #define CYCLE   2048
 #define XPOSE   4096
 #define FOURD1  8192
+#define BDYONLY 16384
 
 /* I/O mask settings */
 #define HISTORY          2

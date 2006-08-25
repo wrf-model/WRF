@@ -73,6 +73,32 @@ gen_dummy_decls ( char * dn )
 }
 
 int
+gen_dummy_decls_new ( char * dn )
+{
+  int i ;
+  FILE * fp ;
+  char fname[NAMELEN] ;
+  char corename[NAMELEN] ;
+  char * fn = "_dummy_new_decl.inc" ;
+
+  if ( dn == NULL ) return(1) ;
+  for ( i = 0 ; i < get_num_cores() ; i++ )
+  {
+    strcpy( corename , get_corename_i(i) ) ;
+    if ( strlen(dn) > 0 ) { sprintf(fname,"%s/%s%s",dn,corename,fn) ; }
+    else                  { sprintf(fname,"%s%s",corename,fn) ; }
+    if ((fp = fopen( fname , "w" )) == NULL ) continue ;
+    print_warning(fp,fname) ;
+    gen_decls ( fp, corename, &Domain , GRIDREF , NOPOINTERDECL , FOURD | FIELD | BDYONLY , MEDIATION_LAYER ) ;
+    fprintf(fp,"#undef COPY_IN\n") ;
+    fprintf(fp,"#undef COPY_OUT\n") ;
+    close_the_file( fp ) ;
+  }
+  return(0);
+}
+
+
+int
 gen_i1_decls ( char * dn )
 {
   int i ;
@@ -133,8 +159,11 @@ gen_decls ( FILE * fp , char * corename , node_t * node , int sw_ranges, int sw_
   int tag, ipass ;
   char fname[NAMELEN], post[NAMELEN] ;
   char * dimspec ;
+  int bdyonly = 0 ;
 
   if ( node == NULL ) return(1) ;
+
+  bdyonly = mask & BDYONLY ;
 
 /* make two passes; the first is for scalars, second for arrays.                     */
 /* do it this way so that the scalars get declared first (some compilers complain    */
@@ -182,6 +211,7 @@ gen_decls ( FILE * fp , char * corename , node_t * node , int sw_ranges, int sw_
 
         if ( !strcmp( dimspec, "" ) && ipass == 1 ) continue ; /* short circuit scalars on 2nd pass  */
         if (  strcmp( dimspec, "" ) && ipass == 0 ) continue ; /* short circuit arrays on 2nd pass   */
+        if ( bdyonly && p->node_kind & FIELD && ! p->boundary_array )  continue ;  /* short circuit all fields except bdy arrrays */
 
         /*          type dim pdecl   name */
         fprintf(fp, "%-10s%-20s%-10s :: %s\n",

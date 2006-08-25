@@ -1630,13 +1630,23 @@ CONTAINS
                            S=simulation_start_second, &
                            rc=rc )
         IF ( rc /= WRFU_SUCCESS ) THEN
-          CALL wrf_error_fatal ( &
-            'domain_get_sim_start_time:  WRFU_TimeSet(simulationStartTime) failed' )
+          CALL nl_get_start_year   ( grid%id, simulation_start_year   )
+          CALL nl_get_start_month  ( grid%id, simulation_start_month  )
+          CALL nl_get_start_day    ( grid%id, simulation_start_day    )
+          CALL nl_get_start_hour   ( grid%id, simulation_start_hour   )
+          CALL nl_get_start_minute ( grid%id, simulation_start_minute )
+          CALL nl_get_start_second ( grid%id, simulation_start_second )
+          CALL WRFU_TimeSet( simulationStartTime,       &
+                             YY=simulation_start_year,  &
+                             MM=simulation_start_month, &
+                             DD=simulation_start_day,   &
+                             H=simulation_start_hour,   &
+                             M=simulation_start_minute, &
+                             S=simulation_start_second, &
+                             rc=rc )
         ENDIF
         RETURN
       END FUNCTION domain_get_sim_start_time
-
-
 
       FUNCTION domain_get_time_since_sim_start ( grid ) RESULT ( time_since_sim_start ) 
         IMPLICIT NONE
@@ -1810,8 +1820,6 @@ CONTAINS
         ENDIF
         RETURN
       END SUBROUTINE domain_clock_get
-
-
 
       FUNCTION domain_clockisstarttime ( grid ) RESULT ( is_start_time ) 
         IMPLICIT NONE

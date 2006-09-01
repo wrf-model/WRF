@@ -75,6 +75,9 @@
  ensdim                              = 144,
  /
 
+ &fdda
+ /
+
  &dynamics
  dyn_opt                             = 2,
  rk_ord                              = 3,

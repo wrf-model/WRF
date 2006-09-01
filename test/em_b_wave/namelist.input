@@ -67,6 +67,9 @@
  num_soil_layers                     = 5,
  /
 
+ &fdda
+ /
+
  &dynamics
  dyn_opt                             = 2,
  rk_ord                              = 3,

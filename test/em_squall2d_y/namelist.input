@@ -60,6 +60,9 @@
  mp_zero_out                         = 0, 
  /
 
+ &fdda
+ /
+
  &dynamics
  dyn_opt                             = 2,
  rk_ord                              = 3,

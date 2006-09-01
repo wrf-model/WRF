@@ -646,29 +646,9 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
 
      END SUBROUTINE BASE_STATE_PARENT
 
-     SUBROUTINE NEST_TERRAIN ( HRES_TOPO,                         &
-                               HLAT,HLON,                         &
-                               IDS,IDE,JDS,JDE,KDS,KDE,           & !
-                               IMS,IME,JMS,JME,KMS,KME,           & ! nested grid configuration
-                               ITS,ITE,JTS,JTE,KTS,KTE,           &
-                               i_parent_start, j_parent_start,    &
-                               parent_grid_ratio, pide, pjde, pid ) 
-
+     SUBROUTINE NEST_TERRAIN ( nest )
        USE module_domain
-       USE module_configure
-       USE module_timing
-
-       IMPLICIT NONE
- 
-       LOGICAL, EXTERNAL                             :: wrf_dm_on_monitor
-       INTEGER, INTENT(IN   )                        :: IDS,IDE,JDS,JDE,KDS,KDE
-       INTEGER, INTENT(IN   )                        :: IMS,IME,JMS,JME,KMS,KME
-       INTEGER, INTENT(IN   )                        :: ITS,ITE,JTS,JTE,KTS,KTE
-       INTEGER, INTENT(IN   )                        :: i_parent_start, j_parent_start
-       INTEGER, INTENT(IN   )                        :: parent_grid_ratio,pide,pjde,pid
-       REAL, DIMENSION(IMS:IME,JMS:JME), INTENT(IN)  :: HLAT,HLON
-       REAL, DIMENSION(IMS:IME,JMS:JME), INTENT(OUT) :: HRES_TOPO
-
+       TYPE(domain) , POINTER                        :: nest
      END SUBROUTINE NEST_TERRAIN
 
     SUBROUTINE med_interp_domain ( parent , nest )
@@ -767,14 +747,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
     JTE = nest%ep33
 
 
-    CALL NEST_TERRAIN ( nest%nmm_hres_fis,                                     &
-                        nest%nmm_hlat,nest%nmm_hlon,                           &
-                        IDS,IDE,JDS,JDE,KDS,KDE,                               & !
-                        IMS,IME,JMS,JME,KMS,KME,                               & ! nested grid configuration
-                        ITS,ITE,JTS,JTE,KTS,KTE,                               &
-                        nest%i_parent_start, nest%j_parent_start,              &
-                        nest%parent_grid_ratio,parent%ed31,parent%ed33,parent%id )
-
+    CALL NEST_TERRAIN ( nest )
 
 !   Initialize some more constants required especially for terrain adjustment processes
 

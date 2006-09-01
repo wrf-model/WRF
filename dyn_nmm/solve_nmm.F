@@ -77,9 +77,6 @@
       INTEGER :: KVH,NTSD_rad,RC
       INTEGER :: NUM_OZMIXM,NUM_AEROSOLC
 !
-      REAL :: DDFC
-      REAL,ALLOCATABLE,SAVE:: DDMPU_LOC(:,:),DDMPV_LOC(:,:)
-!
       CHARACTER*80 :: MESSAGE
 !
 !  For precip assimilation:
@@ -1038,62 +1035,8 @@
 !
       btimx=timef()
 !
-!-----------------
-      border: IF(FIRST.AND.NTSD==0)THEN
-!
-        DDFC=8.0
-!
-        ALLOCATE(DDMPU_LOC(IMS:IME,JMS:JME))
-        ALLOCATE(DDMPV_LOC(IMS:IME,JMS:JME))
-!
-        DO J=JTS,MIN(JTE,JDE-1)
-        DO I=ITS,MIN(ITE,IDE-1)
-          DDMPU_LOC(I,J)=DDMPU(I,J)
-          DDMPV_LOC(I,J)=DDMPV(I,J)
-        ENDDO
-        ENDDO
-                                                                                                                                              
-        jloop: DO J=JTS,MIN(JTE,JDE-1)
-!
-          IF(J<=JDS+4.OR.J>=JDE-1-4)THEN
-            KVH=(IDE-1)-1-MOD(J,2)
-!
-            DO I=ITS,MIN(IDE-1,ITE)
-              IF(I>=IDS+1.AND.I<=KVH)THEN
-                DDMPU_LOC(I,J)=DDMPU(I,J)*DDFC
-                DDMPV_LOC(I,J)=DDMPV(I,J)*DDFC
-              ENDIF
-            ENDDO
-!
-          ELSE ! not near N/S boundaries
-!
-!***  West boundary
-            KVH=3-MOD(J,2)
-            DO I=ITS,MIN(IDE-1,ITE)
-              IF(I>=IDS+1.AND.I<=KVH)THEN
-                DDMPU_LOC(I,J)=DDMPU(I,J)*DDFC
-                DDMPV_LOC(I,J)=DDMPV(I,J)*DDFC
-              ENDIF
-            ENDDO
-!
-!***  East boundary
-            KVH=(IDE-1)-1-MOD(J,2) ! like KVH definition in hiresw intrst CNSTS_HYB code
-            DO I=ITS,MIN(IDE-1,ITE)
-              IF(I>=(IDE-1)-2.AND.I<=KVH)THEN
-                DDMPU_LOC(I,J)=DDMPU(I,J)*DDFC
-                DDMPV_LOC(I,J)=DDMPV(I,J)*DDFC
-              ENDIF
-            ENDDO
-!
-          ENDIF
-!
-        ENDDO jloop
-!
-      ENDIF border
-!-----------------
-!
       CALL DDAMP(NTSD,GRID%DT,DETA1,DETA2,PDSL,PDTOP,DIV,HBM2,VTM      &
-     &          ,T,U,V,DDMPU_LOC,DDMPV_LOC                             &
+     &          ,T,U,V,DDMPU,DDMPV                                     &
      &          ,IHE,IHW,IVE,IVW,INDX3_WRK                             &
      &          ,IDS,IDF,JDS,JDF,KDS,KDE                               &
      &          ,IMS,IME,JMS,JME,KMS,KME                               &

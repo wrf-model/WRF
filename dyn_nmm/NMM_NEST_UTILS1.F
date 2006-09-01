@@ -75,8 +75,11 @@ SUBROUTINE med_nest_egrid_configure ( parent , nest )
 
 !   grid configuration
 
-    parent%wbd0 = -(IDE-2)*parent%dx     ! WBD0: in degrees;factor 2 takes care of dummy last column
-    parent%sbd0 = -((JDE-1)/2)*parent%dy ! SBD0: in degrees; note that JDE-1 should be odd  
+    ! calculate wbd0 and sbd0 only for MOAD i.e. grid with parent_id == 0
+    if (parent%parent_id == 0 ) then        ! Dusan's doing
+       parent%wbd0 = -(IDE-2)*parent%dx     ! WBD0: in degrees;factor 2 takes care of dummy last column
+       parent%sbd0 = -((JDE-1)/2)*parent%dy ! SBD0: in degrees; note that JDE-1 should be odd  
+    end if
     nest%wbd0   = parent%wbd0 + (nest%i_parent_start-1)*2.*parent%dx + mod(nest%j_parent_start+1,2)*parent%dx
     nest%sbd0   = parent%sbd0 + (nest%j_parent_start-1)*parent%dy
     nest%dx     = parent%dx/nest%parent_grid_ratio
@@ -103,6 +106,10 @@ SUBROUTINE med_nest_egrid_configure ( parent , nest )
 !
     CALL nl_set_cen_lat ( nest%id , nest%cen_lat)  ! for output purpose
     CALL nl_set_cen_lon ( nest%id , nest%cen_lon)  ! for output purpose
+
+    write(0,*)" - nest%cen_lat   = ",nest%cen_lat
+    write(0,*)" - nest%cen_lon   = ",nest%cen_lon
+
 
 !   soil configuration
 
@@ -183,7 +190,7 @@ SUBROUTINE med_construct_egrid_weights ( parent , nest )
  INTEGER                            :: ITS,ITE,JTS,JTE,KTS,KTE
  INTEGER                            :: I,J,II,JJ,NII,NJJ
  REAL                               :: parent_CLAT,parent_CLON,parent_WBD,parent_SBD,parent_DLMD,parent_DPHD
- REAL                               :: nest_CLAT,nest_CLON,nest_WBD,nest_SBD,nest_DLMD,nest_DPHD
+ REAL                               :: nest_WBD,nest_SBD,nest_DLMD,nest_DPHD
  REAL                               :: SW_LATD,SW_LOND
  REAL                               :: ADDSUM1,ADDSUM2
  REAL                               :: xr,zr,xc
@@ -257,8 +264,6 @@ SUBROUTINE med_construct_egrid_weights ( parent , nest )
     KTE  = nest%ep32
     JTS  = nest%sp33
     JTE  = nest%ep33
-
-    write(0,*)'Nested grid configuration KDE,KME,KTE =   ',KDE,KME,KTE
 !
     nest_DLMD = nest%dx
     nest_DPHD = nest%dy
@@ -276,7 +281,6 @@ SUBROUTINE med_construct_egrid_weights ( parent , nest )
                         IDS,IDE,JDS,JDE,KDS,KDE,                                 & ! nested domain dimension
                         IMS,IME,JMS,JME,KMS,KME,                                 &
                         ITS,ITE,JTS,JTE,KTS,KTE                                  )
-
 
 !   Determine the weights of nested grid h points nearest to H points of parent domain 
 
@@ -323,64 +327,6 @@ SUBROUTINE med_construct_egrid_weights ( parent , nest )
                        IMS,IME,JMS,JME,KMS,KME,                               & ! nested grid configuration
                        ITS,ITE,JTS,JTE,KTS,KTE                                )
 
-
-
-!*** JUST A TRACER TEST
-!
-!     do j=1,parent%ed33-1
-!      zr=(j-(0.5*parent%ed33-1))/15.
-!      do k=1,parent%ed32
-!       do i=1,parent%ed31
-!        xr=(i-(0.5*(parent%ed31-1)))/5.
-!        xc=(zr**2 + xr**2)/2.
-!        xc=MIN(15.,xc)
-!        parent%nmm_q(i,k,j)=100.*EXP(-xc) 
-!       enddo
-!      enddo
-!     enddo
-
-!    TEST (Valid on one processor only for ratio of 1:3) 
-
-     IF (wrf_dm_on_monitor()) THEN   !!!! NECESSARY TO LIMIT THIS TO TASK ZERO
-      WRITE(50,*)'WARNING: TROUBLESOME NON-COINCIDENT POINTS'
-      JJ=nest%j_parent_start
-      NJJ=1
-!      DO J=JDS,JDE-1
-!        if(MOD(J+1,2) .eq. 0)then
-!          II=nest%i_parent_start
-!          NII=1 
-!          DO I=IDS,IDE-1
-!           if(II .LE. 69 .AND. JJ .LE. 146)then
-!             if(abs(parent%nmm_HLON(II,JJ)-nest%nmm_HLON(NII  ,NJJ)).ge. 0.00001 .or.  &
-!                abs(parent%nmm_VLON(II,JJ)-nest%nmm_VLON(NII+1,NJJ)).ge. 0.00001 .or.  &
-!                abs(parent%nmm_HLAT(II,JJ)-nest%nmm_HLAT(NII  ,NJJ)).ge. 0.00001 .or.  &
-!                abs(parent%nmm_VLAT(II,JJ)-nest%nmm_VLAT(NII+1,NJJ)).ge. 0.00001       )then
-!
-!                 WRITE(50,*)II,JJ,NII,NJJ,parent%nmm_HLON(II,JJ),nest%nmm_HLON(NII,NJJ), &
-!                                             parent%nmm_VLON(II,JJ),nest%nmm_VLON(NII+1,NJJ), &
-!                                             parent%nmm_HLAT(II,JJ),nest%nmm_HLAT(NII,NJJ), &
-!                                             parent%nmm_VLAT(II,JJ),nest%nmm_VLAT(NII+1,NJJ)
-!
-!                 WRITE(50,*)II,JJ,NII,NJJ,parent%nmm_HLON(II,JJ)-nest%nmm_HLON(NII,NJJ), &
-!                                             parent%nmm_VLON(II,JJ)-nest%nmm_VLON(NII+1,NJJ), &
-!                                             parent%nmm_HLAT(II,JJ)-nest%nmm_HLAT(NII,NJJ), &
-!                                             parent%nmm_VLAT(II,JJ)-nest%nmm_VLAT(NII+1,NJJ)
-!              endif 
-!
-!
-!            NII=NII+3
-!            II =II+1  
-!           endif
-!          ENDDO
-!          NJJ=NJJ+6
-!          JJ=73 +J+1 
-!        else
-!       endif
-!     ENDDO
-
-1003 format(4I6,6f15.8)
-
-     ENDIF
 !------------------------------------------------------------------------------------------
 
 END SUBROUTINE med_construct_egrid_weights 
@@ -433,10 +379,10 @@ SUBROUTINE EARTH_LATLON ( HLAT,HLON,VLAT,VLON,     & !Earth lat,lon at H and V p
       STPH0 = SIN(TPH0)
       CTPH0 = COS(TPH0)
 
-      WRITE(0,*) 'WB,SB,DLM,DPH,DTR: ',WBD1,SBD1,DLM,DPH,DTR    
-      WRITE(0,*) 'IMS,IME,JMS,JME,KMS,KME',IMS,IME,JMS,JME,KMS,KME 
-      WRITE(0,*) 'IDS,IDE,JDS,JDE,KDS,KDE',IDS,IDE,JDS,JDE,KDS,KDE
-      WRITE(0,*) 'ITS,ITE,JTS,JTE,KTS,KTE',ITS,ITE,JTS,JTE,KTS,KTE 
+!      WRITE(0,*) 'WB,SB,DLM,DPH,DTR: ',WBD1,SBD1,DLM,DPH,DTR    
+!      WRITE(0,*) 'IMS,IME,JMS,JME,KMS,KME',IMS,IME,JMS,JME,KMS,KME 
+!      WRITE(0,*) 'IDS,IDE,JDS,JDE,KDS,KDE',IDS,IDE,JDS,JDE,KDS,KDE
+!      WRITE(0,*) 'ITS,ITE,JTS,JTE,KTS,KTE',ITS,ITE,JTS,JTE,KTS,KTE 
 
                                                 !    .H
       DO J = JTS,MIN(JTE,JDE-1)                 ! H./    This loop takes care of zig-zag 
@@ -587,16 +533,17 @@ END SUBROUTINE EARTH_LATLON
       TLAT=R2D*ATAN(Z/SQRT(X*X+Y*Y))
       TLON=R2D*ATAN(Y/X)
 
-!     
-      ROW=TLAT/DPHD1+JMT         ! JMT IS THE CENTRAL ROW OF THE PARENT DOMAIN
-      COL=TLON/DLMD1+P_IDE-1     ! (P_IDE-1) IS THE CENTRAL COLUMN OF THE PARENT DOMAIN 
+!      ROW=TLAT/DPHD1+JMT         ! JMT IS THE CENTRAL ROW OF THE PARENT DOMAIN
+!      COL=TLON/DLMD1+P_IDE-1     ! (P_IDE-1) IS THE CENTRAL COLUMN OF THE PARENT DOMAIN 
+
+      ROW=(TLAT-SBD1)/DPHD1+1     ! Dusan's doing
+      COL=(TLON-WBD1)/DLMD1+1     ! Dusan's doing
+
       NROW=INT(ROW + 0.001)     ! ROUND-OFF IS AVOIDED WITHOUT USING NINT ON PURPOSE
       NCOL=INT(COL + 0.001)     
       TLAT=TLAT*D2R
       TLON=TLON*D2R
 
-!      WRITE(60,*)'============================================================'
-!      WRITE(60,*)'              ','i=',i,'j=',j
 !***  
 !***
 !***  FIRST CONSIDER THE SITUATION WHERE THE POINT h IS AT
@@ -963,7 +910,6 @@ END SUBROUTINE EARTH_LATLON
 !      write(0,105)"H WEIGHTS:",I,J,HBWGT1(I,J),HBWGT2(I,J),HBWGT3(I,J),HBWGT4(I,J), &
 !                               HBWGT1(I,J)+HBWGT2(I,J)+HBWGT3(I,J)+HBWGT4(I,J),IIH(i,j),JJH(i,j)
 ! 105  format(a,2i4,5f7.3,2i4)
-!
 
    ENDDO
   ENDDO
@@ -1057,17 +1003,16 @@ END SUBROUTINE EARTH_LATLON
       TLAT=R2D*ATAN(Z/SQRT(X*X+Y*Y))
       TLON=R2D*ATAN(Y/X)
 
-!     WRITE(59,*)i,j,GLAT,(GLON-TLM0),COS(GLAT),SIN(GLON-TLM0)
-!
-      ROW=TLAT/DPHD1+JMT         ! JMT IS THE CENTRAL ROW OF THE PARENT DOMAIN
-      COL=TLON/DLMD1+P_IDE-1     ! (P_IDE-1) IS THE CENTRAL COLUMN OF THE PARENT DOMAIN
+!      ROW=TLAT/DPHD1+JMT         ! JMT IS THE CENTRAL ROW OF THE PARENT DOMAIN
+!      COL=TLON/DLMD1+P_IDE-1     ! (P_IDE-1) IS THE CENTRAL COLUMN OF THE PARENT DOMAIN
+
+      ROW=(TLAT-SBD1)/DPHD1+1     ! Dusan's doing
+      COL=(TLON-WBD1)/DLMD1+1     ! Dusan's doing
+
       NROW=INT(ROW + 0.001)     ! ROUND-OFF IS AVOIDED WITHOUT USING NINT ON PURPOSE
       NCOL=INT(COL + 0.001)
       TLAT=TLAT*D2R
       TLON=TLON*D2R
-
-!      WRITE(61,*)'========================================================'
-!      WRITE(61,*)'              ','i=',i,'j=',j
 
 !***
 !***
@@ -1892,13 +1837,7 @@ END SUBROUTINE BASE_STATE_PARENT
       END SUBROUTINE SPLINE1
 !---------------------------------------------------------------------
 
-SUBROUTINE NEST_TERRAIN ( HRES_TOPO,                              &
-                          HLAT,HLON,                              &
-                          IDS,IDE,JDS,JDE,KDS,KDE,                & !
-                          IMS,IME,JMS,JME,KMS,KME,                & ! nested grid configuration
-                          ITS,ITE,JTS,JTE,KTS,KTE,                &
-                          i_parent_start, j_parent_start,         &
-                          parent_grid_ratio, pide, pjde, parentid ) 
+SUBROUTINE NEST_TERRAIN ( nest )
 
  USE module_domain
  USE module_configure
@@ -1908,30 +1847,58 @@ SUBROUTINE NEST_TERRAIN ( HRES_TOPO,                              &
 
  IMPLICIT NONE
 
- LOGICAL, EXTERNAL                             :: wrf_dm_on_monitor
- INTEGER, INTENT(IN   )                        :: IDS,IDE,JDS,JDE,KDS,KDE
- INTEGER, INTENT(IN   )                        :: IMS,IME,JMS,JME,KMS,KME
- INTEGER, INTENT(IN   )                        :: ITS,ITE,JTS,JTE,KTS,KTE 
- INTEGER, INTENT(IN   )                        :: i_parent_start, j_parent_start
- INTEGER, INTENT(IN   )                        :: parent_grid_ratio,pide,pjde,parentid
- REAL, DIMENSION(IMS:IME,JMS:JME), INTENT(IN)  :: HLAT,HLON
- REAL, DIMENSION(IMS:IME,JMS:JME), INTENT(OUT) :: HRES_TOPO 
+ TYPE(domain) , POINTER                        :: nest
 
 !
- LOGICAL                             :: opened
- INTEGER                             :: I,J,II,JJ,NNXP,NNYP,ntopo_unit1
- REAL,  ALLOCATABLE, DIMENSION(:,:)  :: DATA1,DATA2     ! FOR HIGHRES TOPO AND LAND SEA MASK
- REAL,  ALLOCATABLE, DIMENSION(:,:)  :: avc_big, lnd_big, lah_big, loh_big
- REAL,  ALLOCATABLE, DIMENSION(:,:)  :: avc_nest, lnd_nest, lah_nest, loh_nest
- INTEGER                             :: im_big, jm_big
- INTEGER                             :: im, jm, i_big_start, j_big_start
+! Local variables
+!
+
+ LOGICAL, EXTERNAL                 :: wrf_dm_on_monitor
+ INTEGER                           :: ids,ide,jds,jde,kds,kde
+ INTEGER                           :: ims,ime,jms,jme,kms,kme
+ INTEGER                           :: its,ite,jts,jte,kts,kte 
+ INTEGER                           :: i_parent_start, j_parent_start
+ INTEGER                           :: parent_grid_ratio
+ INTEGER                           :: i,j,ii,jj,nnxp,nnyp
+ INTEGER                           :: i_start,j_start,level
+ REAL, ALLOCATABLE, DIMENSION(:,:) :: data1     ! for highres topo
+ REAL, ALLOCATABLE, DIMENSION(:,:) :: avc_big, lnd_big, lah_big, loh_big
+ REAL, ALLOCATABLE, DIMENSION(:,:) :: avc_nest, lnd_nest, lah_nest, loh_nest
+ INTEGER                           :: im_big, jm_big, i_add
+ INTEGER                           :: im, jm
+ CHARACTER(LEN=6)                  :: nestpath
  
 !----------------------------------------------------------------------------------
+
+      IDS = nest%sd31
+      IDE = nest%ed31
+      KDS = nest%sd32
+      KDE = nest%ed32
+      JDS = nest%sd33
+      JDE = nest%ed33
+
+      IMS = nest%sm31
+      IME = nest%em31
+      KMS = nest%sm32
+      KME = nest%em32
+      JMS = nest%sm33
+      JME = nest%em33
+
+      ITS = nest%sp31
+      ITE = nest%ep31
+      KTS = nest%sp32
+      KTE = nest%ep32
+      JTS = nest%sp33
+      JTE = nest%ep33
+
+      i_parent_start = nest%i_parent_start
+      j_parent_start = nest%j_parent_start
+      parent_grid_ratio = nest%parent_grid_ratio
 
       NNXP=IDE-1
       NNYP=JDE-1
 
-      ALLOCATE(DATA1(1:NNXP,1:NNYP),DATA2(1:NNXP,1:NNYP))
+      ALLOCATE(DATA1(1:NNXP,1:NNYP))
 !
 !
 !--- Read in high resolution topography
@@ -1940,51 +1907,24 @@ SUBROUTINE NEST_TERRAIN ( HRES_TOPO,                              &
 !
 !      This part of the code is Dusan's doing. Extended by gopal for multiple nest (Feb 19,2005)
 !
+       call find_ijstart_level (nest,i_start,j_start,level)
+       write(0,*)" nest%id =", nest%id , " i_start,j_start,level =", i_start,j_start,level
 
-       IF(PARENTID == 1)THEN 
-          CALL get_wrfsi_static_dims("nest1/", im_big, jm_big)
+       write(nestpath,"(a4,i1,a1)") 'nest',level,'/'
+
+       if ( level > 0 ) then
+          CALL get_wrfsi_static_dims(nestpath, im_big, jm_big)
           ALLOCATE (avc_big(im_big,jm_big))
           ALLOCATE (lnd_big(im_big,jm_big))
           ALLOCATE (lah_big(im_big,jm_big))
           ALLOCATE (loh_big(im_big,jm_big))
-          CALL get_wrfsi_static_2d("nest1/", 'avc', avc_big)
-          CALL get_wrfsi_static_2d("nest1/", 'lnd', lnd_big)
-          CALL get_wrfsi_static_2d("nest1/", 'lah', lah_big)
-          CALL get_wrfsi_static_2d("nest1/", 'loh', loh_big)
-
-          IF ((parent_grid_ratio*(pide-1)-2) .NE. im_big .OR.     &
-              (parent_grid_ratio*(pjde-1)-2) .NE. jm_big)THEN
-              write(0,*)'PARENT ID=',PARENTID
-              write(0,*)'PARENT IDE=',PIDE,'3*PARENT IDE-2=',im_big
-              write(0,*)'PARENT JDE=',PJDE,'3*PARENT JDE-2=',jm_big 
-              CALL wrf_error_fatal('TERRAIN MISCONFIGURATION FOR 3:1 RATIO: ERROR IN READING HIGHRES DATA')
-          ENDIF
-
-
-        ELSE IF(PARENTID == 2)THEN
-
-          CALL get_wrfsi_static_dims("nest2/", im_big, jm_big)
-          ALLOCATE (avc_big(im_big,jm_big))
-          ALLOCATE (lnd_big(im_big,jm_big))
-          ALLOCATE (lah_big(im_big,jm_big))
-          ALLOCATE (loh_big(im_big,jm_big))
-          CALL get_wrfsi_static_2d("nest2/", 'avc', avc_big)
-          CALL get_wrfsi_static_2d("nest2/", 'lnd', lnd_big)
-          CALL get_wrfsi_static_2d("nest2/", 'lah', lah_big)
-          CALL get_wrfsi_static_2d("nest2/", 'loh', loh_big)
-
-          IF ((parent_grid_ratio*parent_grid_ratio*(pide-1)-2) .NE. im_big .OR.     &
-              (parent_grid_ratio*parent_grid_ratio*(pjde-1)-2) .NE. jm_big)THEN
-              write(0,*)'PARENT ID=',PARENTID
-              write(0,*)'PARENT IDE=',PIDE,'3*PARENT IDE-2=',im_big
-              write(0,*)'PARENT JDE=',PJDE,'3*PARENT JDE-2=',jm_big
-              CALL wrf_error_fatal('TERRAIN MISCONFIGURATION FOR 9:1 RATIO: ERROR IN READING HIGHRES DATA')
-          ENDIF
-
-        ELSE IF(PARENTID .GE. 3)THEN
-          write(0,*)'set parent_id to 0,1,2 to obtain, for instance, 9:3:1 nest'
-          CALL wrf_error_fatal('CHECK PARENT_ID IN NAMELIST: A NEST CAN HAVE ONLY ONE SIBLING')   
-        ENDIF
+          CALL get_wrfsi_static_2d(nestpath, 'avc', avc_big)
+          CALL get_wrfsi_static_2d(nestpath, 'lnd', lnd_big)
+          CALL get_wrfsi_static_2d(nestpath, 'lah', lah_big)
+          CALL get_wrfsi_static_2d(nestpath, 'loh', loh_big)
+       else
+          CALL wrf_error_fatal('this routine NEST_TERRAIN should nou be called for top-level domain')
+       end if
 
 ! select subdomain from big fine grid
 
@@ -1996,28 +1936,29 @@ SUBROUTINE NEST_TERRAIN ( HRES_TOPO,                              &
         ALLOCATE (lah_nest(im,jm))
         ALLOCATE (loh_nest(im,jm))
 
-        i_big_start=i_parent_start*parent_grid_ratio -2
-        j_big_start=j_parent_start*parent_grid_ratio -2
+        i_add = mod(j_start+1,2) 
+        DO j=1,jm
+        DO i=1,im
+           avc_nest(i,j) = avc_big(i_start+i-1 + mod(j+1,2)*i_add, j_start+j-1)
+           lnd_nest(i,j) = lnd_big(i_start+i-1 + mod(j+1,2)*i_add, j_start+j-1)
+           lah_nest(i,j) = lah_big(i_start+i-1 + mod(j+1,2)*i_add, j_start+j-1)
+           loh_nest(i,j) = loh_big(i_start+i-1 + mod(j+1,2)*i_add, j_start+j-1)
+        END DO
+        END DO
 
-        avc_nest(1:im,1:jm) = avc_big(i_big_start:i_big_start+im-1,j_big_start:j_big_start+jm-1)
-        lnd_nest(1:im,1:jm) = lnd_big(i_big_start:i_big_start+im-1,j_big_start:j_big_start+jm-1)
-        lah_nest(1:im,1:jm) = lah_big(i_big_start:i_big_start+im-1,j_big_start:j_big_start+jm-1)
-        loh_nest(1:im,1:jm) = loh_big(i_big_start:i_big_start+im-1,j_big_start:j_big_start+jm-1)
-
-        WRITE(0,*)'SOME MATCHING TEST',i_parent_start,j_parent_start
+        WRITE(0,*)'SOME MATCHING TEST i_parent_start, j_parent_start',i_parent_start,j_parent_start
         WRITE(0,*)'WRFSI LAT      COMPUTED LAT'
-        WRITE(0,*)lah_nest(1,1),HLAT(1,1)
+        WRITE(0,*)lah_nest(1,1),nest%nmm_hlat(1,1)
         WRITE(0,*)'WRFSI LON      COMPUTED LON'
-        WRITE(0,*)loh_nest(1,1),HLON(1,1)
+        WRITE(0,*)loh_nest(1,1),nest%nmm_hlon(1,1)
 
-        IF(ABS(lah_nest(1,1)-HLAT(1,1)) .GE. 0.3 .OR.  & 
-           ABS(loh_nest(1,1)-HLON(1,1)) .GE. 0.3)THEN 
+        IF(ABS(lah_nest(1,1)-nest%nmm_hlat(1,1)) .GE. 0.5 .OR.  & 
+           ABS(loh_nest(1,1)-nest%nmm_hlon(1,1)) .GE. 0.5)THEN 
             WRITE(0,*)'CHECK WRFSI CONFIGURATION AND INPUT HIGH RESOLUTION TOPOGRAPHY AND/OR GRID RATIO' 
             CALL wrf_error_fatal('LATLON MISMATCH: ERROR READING static.wrfsi.rotlat FOR THE NEST')
         ENDIF
 
         call smdhld(im,jm,avc_nest,1.0-lnd_nest,12,12)
-      WRITE(0,*)'after smdhld'
 
 !-------------4-point averaging of mountains along inner boundary-------
 
@@ -2052,19 +1993,17 @@ SUBROUTINE NEST_TERRAIN ( HRES_TOPO,                              &
 !
       ENDIF
 
-      WRITE(0,*)'before wrf_dm_bcast_bytes'
       CALL wrf_dm_bcast_bytes (DATA1,NNXP*NNYP*RWORDSIZE)
 
       DO J=JDS,JDE
        DO I =IDS,IDE
         IF(I.GE.ITS .AND. I .LE. MIN(ide-1,ite) .AND. J.GE.JTS  .AND. J .LE. MIN(jde-1,jte))THEN
-          HRES_TOPO(I,J)=DATA1(I,J)
-!         WRITE(0,*)I,J,HRES_TOPO(I,J)
+          nest%nmm_hres_fis(I,J)=DATA1(I,J)
         ENDIF
        ENDDO
       ENDDO
 
-      DEALLOCATE(DATA1,DATA2)
+      DEALLOCATE(DATA1)
       WRITE(0,*)'end of NEST_TERRAIN'
 
 END SUBROUTINE NEST_TERRAIN
@@ -2162,7 +2101,7 @@ SUBROUTINE med_initialize_nest_nmm( grid, &
 
  LOGICAL, EXTERNAL                   :: wrf_dm_on_monitor
  INTEGER                             :: KHH,KVH,JAM,JA,IHL, IHH, L
- INTEGER                             :: II,JJ,ISRCH,ISUM,ntopo_unit1
+ INTEGER                             :: II,JJ,ISRCH,ISUM
  INTEGER, ALLOCATABLE, DIMENSION(:)  :: KHL2,KVL2,KHH2,KVH2,KHLA,KHHA,KVLA,KVHA
  INTEGER,PARAMETER                   :: KNUM=SELECTED_REAL_KIND(13)
 !
@@ -2736,7 +2675,6 @@ END SUBROUTINE med_initialize_nest_nmm
 !======================================================================
 
       subroutine smdhld(ime,jme,h,s,lines,nsmud)
-!      parameter(ime=im+2,jme=jm+4)
       dimension ihw(jme),ihe(jme)
       dimension h(ime,jme),s(ime,jme) &
      &         ,hbms(ime,jme),hne(ime,jme),hse(ime,jme)
@@ -3029,3 +2967,37 @@ END FUNCTION nmm_cd_feedback_mask
 SUBROUTINE stub_nmm_nest_stub
 END SUBROUTINE stub_nmm_nest_stub
 #endif
+
+RECURSIVE SUBROUTINE find_ijstart_level ( grid, i_start, j_start, level )
+
+! Dusan Jovic
+
+   USE module_domain
+
+   IMPLICIT NONE
+
+   !  Input data.
+
+   TYPE(domain) :: grid
+   INTEGER, INTENT (OUT) :: i_start, j_start, level
+   INTEGER :: iadd
+
+      if (grid%parent_id == 0 ) then
+         i_start = 1
+         j_start = 1
+         level = 0
+      else
+         call find_ijstart_level ( grid%parents(1)%ptr, i_start, j_start, level )
+         if (level > 0) then
+             iadd = (i_start-1)*3
+             if ( mod(j_start,2).ne.0 .and. mod(grid%j_parent_start,2).ne.0 ) iadd = iadd - 1
+             if ( mod(j_start,2).eq.0 .and. mod(grid%j_parent_start,2).eq.0 ) iadd = iadd + 2
+         else
+             iadd = -mod(grid%j_parent_start,2)
+         end if
+         i_start = iadd + grid%i_parent_start*3 - 1
+         j_start = ( (j_start-1) + (grid%j_parent_start-1) ) * 3 + 1
+         level = level + 1
+      end if
+
+END SUBROUTINE find_ijstart_level

@@ -512,7 +512,7 @@
 
      CALL phy_init (  grid,                                   &  
                       grid%id , config_flags, grid%DT, znw, znu,   &
-                      p_top, TSK, grid%RADT,grid%BLDT,grid%CUDT, MPDT,       &
+                      p_top, TSK, grid%RADT,grid%BLDT,grid%CUDT, MPDT, &
                       RTHCUTEN, RQVCUTEN, RQRCUTEN,           &
                       RQCCUTEN, RQSCUTEN, RQICUTEN,           &
                       RUBLTEN,RVBLTEN,RTHBLTEN,               &
@@ -544,7 +544,10 @@
                       ims, ime, jms, jme, kms, kme,           &
                       grid%i_start(ij), grid%i_end(ij), grid%j_start(ij), grid%j_end(ij), kts, kte, &
                       ozmixm,pin,                             &     ! Optional
-                      m_ps_1,m_ps_2,m_hybi,aerosolc_1,aerosolc_2 &  ! Optional
+                      m_ps_1,m_ps_2,m_hybi,aerosolc_1,aerosolc_2,&  ! Optional
+                      RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,         &     ! Optional
+                      RQVNDGDTEN,RMUNDGDTEN,                  &     ! Optional
+                      grid%FGDT,STEPFG                        &     ! Optional
                       )
 
    ENDDO

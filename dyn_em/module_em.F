@@ -720,7 +720,8 @@ END SUBROUTINE rk_tendency
 
 SUBROUTINE rk_addtend_dry ( ru_tend, rv_tend, rw_tend, ph_tend, t_tend,      &
                             ru_tendf, rv_tendf, rw_tendf, ph_tendf, t_tendf, &
-                            u_save, v_save, w_save, ph_save, t_save, rk_step,&
+                            u_save, v_save, w_save, ph_save, t_save,         &
+                            mu_tend, mu_tendf, rk_step,                      &
                             h_diabatic, mut, msft, msfu, msfv,               &
                             ids,ide, jds,jde, kds,kde,                       &
                             ims,ime, jms,jme, kms,kme,                       &
@@ -747,6 +748,9 @@ SUBROUTINE rk_addtend_dry ( ru_tend, rv_tend, rw_tend, ph_tend, t_tend,      &
                                                                       rw_tendf, &
                                                                       ph_tendf, &
                                                                       t_tendf
+
+   REAL , DIMENSION( ims:ime , jms:jme  ) , INTENT(INOUT) :: mu_tend, &
+                                                             mu_tendf
 
    REAL , DIMENSION( ims:ime , kms:kme, jms:jme  ) , INTENT(IN   ) ::  u_save,  &
                                                                        v_save,  &
@@ -822,6 +826,13 @@ SUBROUTINE rk_addtend_dry ( ru_tend, rv_tend, rw_tend, ph_tend, t_tend,      &
      t_tend(i,k,j) =  t_tend(i,k,j) +  t_tendf(i,k,j)/msft(i,j)  &
                                      +  mut(i,j)*h_diabatic(i,k,j)/msft(i,j)
    ENDDO
+   ENDDO
+   ENDDO
+
+   DO j = jts,MIN(jte,jde-1)
+   DO i = its,MIN(ite,ide-1)
+! mu tendencies not coupled with 1/msf
+      mu_tend(i,j) =  mu_tend(i,j) +  mu_tendf(i,j)
    ENDDO
    ENDDO
 
@@ -1310,7 +1321,7 @@ END SUBROUTINE time_filter
 !-----------------------------------------------------------------------
 
 SUBROUTINE init_zero_tendency(ru_tendf, rv_tendf, rw_tendf, ph_tendf,  &
-                              t_tendf,  tke_tendf,                     &
+                              t_tendf,  tke_tendf, mu_tendf,           &
                               moist_tendf,chem_tendf,scalar_tendf,     &
                               n_moist,n_chem,n_scalar,rk_step,         &
                               ids, ide, jds, jde, kds, kde,            &
@@ -1333,6 +1344,8 @@ SUBROUTINE init_zero_tendency(ru_tendf, rv_tendf, rw_tendf, ph_tendf,  &
                                                              ph_tendf, &
                                                               t_tendf, &
                                                             tke_tendf
+
+   REAL , DIMENSION( ims:ime , jms:jme  ) , INTENT(INOUT) ::  mu_tendf
 
    REAL , DIMENSION(ims:ime, kms:kme, jms:jme, n_moist),INTENT(INOUT)::&
                                                           moist_tendf
@@ -1384,6 +1397,11 @@ SUBROUTINE init_zero_tendency(ru_tendf, rv_tendf, rw_tendf, ph_tendf,  &
                     ids, ide, jds, jde, kds, kde,    &
                     ims, ime, jms, jme, kms, kme,    &
                     its, ite, jts, jte, kts, kte     )
+
+   CALL zero_tend ( mu_tendf,                        &
+                    ids, ide, jds, jde, kds, kds,    &
+                    ims, ime, jms, jme, kms, kms,    &
+                    its, ite, jts, jte, kts, kts     )
 
 !   DO im=PARAM_FIRST_SCALAR,n_moist
    DO im=1,n_moist                      ! make sure first one is zero too
@@ -1450,12 +1468,14 @@ end subroutine dump_data
 
 !-----------------------------------------------------------------------
 
-SUBROUTINE calculate_phy_tend (config_flags,mu,pi3d,                   &
+SUBROUTINE calculate_phy_tend (config_flags,mu,muu,muv,pi3d,           &
                      RTHRATEN,                                         &
                      RUBLTEN,RVBLTEN,RTHBLTEN,                         &
                      RQVBLTEN,RQCBLTEN,RQIBLTEN,                       &
                      RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,              &
                      RQICUTEN,RQSCUTEN,                                &
+                     RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,RQVNDGDTEN,        &
+                     RMUNDGDTEN,                                       &
                      ids,ide, jds,jde, kds,kde,                        &
                      ims,ime, jms,jme, kms,kme,                        &
                      its,ite, jts,jte, kts,kte                         )
@@ -1472,7 +1492,9 @@ SUBROUTINE calculate_phy_tend (config_flags,mu,pi3d,                   &
                 INTENT(IN   )   ::                               pi3d
                                                                  
       REAL,     DIMENSION( ims:ime, jms:jme )                        , &
-                INTENT(IN   )   ::                                 mu
+                INTENT(IN   )   ::                                 mu, &
+                                                                  muu, &
+                                                                  muv
       
                                                            
 ! radiation
@@ -1500,8 +1522,18 @@ SUBROUTINE calculate_phy_tend (config_flags,mu,pi3d,                   &
                                                              RQCBLTEN, &
                                                              RQIBLTEN
 
+! fdda
+
+      REAL,     DIMENSION( ims:ime, kms:kme, jms:jme )               , &
+                INTENT(INOUT)   ::                            RUNDGDTEN, &
+                                                              RVNDGDTEN, &
+                                                             RTHNDGDTEN, &
+                                                             RQVNDGDTEN
+      REAL,     DIMENSION( ims:ime, jms:jme )               , &
+                INTENT(INOUT)   ::                           RMUNDGDTEN
+
       INTEGER :: i,k,j
-      INTEGER :: itf,ktf,jtf
+      INTEGER :: itf,ktf,jtf,itsu,jtsv
 
 !-----------------------------------------------------------------------
 
@@ -1516,6 +1548,8 @@ SUBROUTINE calculate_phy_tend (config_flags,mu,pi3d,                   &
       itf=MIN(ite,ide-1)
       jtf=MIN(jte,jde-1)
       ktf=MIN(kte,kde-1)
+      itsu=MAX(its,ids+1)
+      jtsv=MAX(jts,jds+1)
 
 ! radiation
 
@@ -1625,6 +1659,59 @@ SUBROUTINE calculate_phy_tend (config_flags,mu,pi3d,                   &
          DO K=kts,ktf
          DO I=its,itf
             RQIBLTEN(I,K,J)=mu(I,J)*RQIBLTEN(I,K,J)
+         ENDDO
+         ENDDO
+         ENDDO
+      ENDIF
+
+    ENDIF
+
+! fdda
+! note fdda u and v tendencies are staggered, also only interior points have muu/muv,
+!   so only couple those
+
+   IF (config_flags%grid_fdda .gt. 0) THEN
+
+      DO J=jts,jtf
+      DO K=kts,ktf
+      DO I=itsu,itf
+!     if( i == itf/2 .AND. j == jtf/2 .AND. k == ktf/2 ) &
+!     write(*,'(a,3i6,e15.5)') 'u_ten before=',i,k,j, RUNDGDTEN(i,k,j)
+         RUNDGDTEN(I,K,J) =muu(I,J)*RUNDGDTEN(I,K,J)
+!        if( i == itf/2 .AND. j == jtf/2 .AND. k==ktf/2 ) &
+!          write(*,'(a,2f15.5)') 'mu, muu=',mu(i,j), muu(i,j)
+!     if( i == itf/2 .AND. j == jtf/2 .AND. k == ktf/2 ) &
+!     write(*,'(a,3i6,e15.5)') 'u_ten after=',i,k,j, RUNDGDTEN(i,k,j)
+!     if( RUNDGDTEN(i,k,j) > 30.0 ) write(*,*) 'IKJ=',i,k,j
+      ENDDO
+      ENDDO
+      ENDDO
+!     write(*,'(a,e15.5)') 'u_ten MAXIMUM after=', maxval(RUNDGDTEN)
+      DO J=jtsv,jtf
+      DO K=kts,ktf
+      DO I=its,itf
+         RVNDGDTEN(I,K,J) =muv(I,J)*RVNDGDTEN(I,K,J)
+      ENDDO
+      ENDDO
+      ENDDO
+      DO J=jts,jtf
+      DO K=kts,ktf
+      DO I=its,itf
+!     if( i == itf/2 .AND. j == jtf/2 .AND. k == ktf/2 ) &
+!     write(*,'(a,3i6,e15.5)') 'th before=',i,k,j, RTHNDGDTEN(I,K,J)
+         RTHNDGDTEN(I,K,J)=mu(I,J)*RTHNDGDTEN(I,K,J)
+!        RMUNDGDTEN(I,J) - no coupling
+!     if( i == itf/2 .AND. j == jtf/2 .AND. k == ktf/2 ) &
+!     write(*,'(a,3i6,e15.5)') 'th after=',i,k,j, RTHNDGDTEN(I,K,J)
+      ENDDO
+      ENDDO
+      ENDDO
+
+      IF (P_QV .ge. PARAM_FIRST_SCALAR) THEN
+         DO J=jts,jtf
+         DO K=kts,ktf
+         DO I=its,itf
+            RQVNDGDTEN(I,K,J)=mu(I,J)*RQVNDGDTEN(I,K,J)
          ENDDO
          ENDDO
          ENDDO

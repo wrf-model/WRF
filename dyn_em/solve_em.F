@@ -32,6 +32,7 @@ SUBROUTINE solve_em ( grid , config_flags , &
    USE module_microphysics_driver
    USE module_microphysics_zero_out
    USE module_pbl_driver
+   USE module_fddagd_driver
 #ifdef WRF_CHEM
    USE module_input_chem_data
    USE module_chem_utilities
@@ -409,6 +410,7 @@ BENCH_START(init_zero_tend_tim)
         CALL wrf_debug ( 200 , ' call init_zero_tendency' )
         CALL init_zero_tendency ( ru_tendf, rv_tendf, rw_tendf,     &
                                   ph_tendf, t_tendf, tke_tend,      &
+                                  mu_tendf,                         &
                                   moist_tend,chem_tend,scalar_tend, &
                                   num_3d_m,num_3d_c,num_3d_s,       &
                                   rk_step,                          &
@@ -449,7 +451,7 @@ BENCH_START(phy_prep_tim)
 
          CALL wrf_debug ( 200 , ' call phy_prep' )
          CALL phy_prep ( config_flags,                           &
-                         grid%em_mut, grid%em_u_2, grid%em_v_2, grid%em_p, grid%em_pb, grid%em_alt,              &
+                         grid%em_mut, grid%em_muu, grid%em_muv, grid%em_u_2, grid%em_v_2, grid%em_p, grid%em_pb, grid%em_alt,              &
                          grid%em_ph_2, grid%em_phb, grid%em_t_2, grid%tsk, moist, num_3d_m,   &
                          mu_3d, rho,                             &
                          th_phy, p_phy, pi_phy, u_phy, v_phy,    &
@@ -461,6 +463,8 @@ BENCH_START(phy_prep_tim)
                          grid%rthcuten, grid%rqvcuten, grid%rqccuten,           &
                          grid%rqrcuten, grid%rqicuten, grid%rqscuten,           &
                          grid%rthften,  grid%rqvften,                      &
+                         grid%RUNDGDTEN, grid%RVNDGDTEN, grid%RTHNDGDTEN,       &
+                         grid%RQVNDGDTEN, grid%RMUNDGDTEN,                 &
                          ids, ide, jds, jde, kds, kde,           &
                          ims, ime, jms, jme, kms, kme,           &
                          grid%i_start(ij), grid%i_end(ij),       &
@@ -725,6 +729,39 @@ BENCH_START(cu_driver_tim)
      &                                                          )
 BENCH_END(cu_driver_tim)
 
+! fdda
+
+          CALL wrf_debug ( 200 , ' call fddagd_driver' )
+
+BENCH_START(fdda_driver_tim)
+   CALL fddagd_driver(itimestep=grid%itimestep,dt=grid%dt,xtime=grid%XTIME,         &
+                  RUNDGDTEN=grid%rundgdten,RVNDGDTEN=grid%rvndgdten,                &
+                  RTHNDGDTEN=grid%rthndgdten,RQVNDGDTEN=grid%rqvndgdten,            &
+                  RMUNDGDTEN=grid%rmundgdten,                                  &
+                  u_ndg_old=fdda3d(ims,kms,jms,P_u_ndg_old),              &
+                  v_ndg_old=fdda3d(ims,kms,jms,P_v_ndg_old),              &
+                  t_ndg_old=fdda3d(ims,kms,jms,P_t_ndg_old),              &
+                  q_ndg_old=fdda3d(ims,kms,jms,P_q_ndg_old),              &
+                  mu_ndg_old=fdda2d(ims,1,jms,P_mu_ndg_old),              &
+                  u_ndg_new=fdda3d(ims,kms,jms,P_u_ndg_new),              &
+                  v_ndg_new=fdda3d(ims,kms,jms,P_v_ndg_new),              &
+                  t_ndg_new=fdda3d(ims,kms,jms,P_t_ndg_new),              &
+                  q_ndg_new=fdda3d(ims,kms,jms,P_q_ndg_new),              &
+                  mu_ndg_new=fdda2d(ims,1,jms,P_mu_ndg_new),              &
+                  u3d=grid%em_u_2,v3d=grid%em_v_2,th_phy=th_phy,rho=rho,moist=moist,      &
+                  p_phy=p_phy,pi_phy=pi_phy,p8w=p8w,t_phy=t_phy,          &
+                  dz8w=dz8w,z=grid%em_z,z_at_w=z_at_w,                            &
+                  config_flags=config_flags,dx=grid%DX,n_moist=num_3d_m,  &
+                  STEPFG=grid%STEPFG,                                          &
+                  pblh=grid%pblh,ht=grid%ht,                                        &
+                    IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde     &
+                   ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme     &
+                   ,I_START=grid%i_start,I_END=min(grid%i_end, ide-1)     &
+                   ,J_START=grid%j_start,J_END=min(grid%j_end, jde-1)     &
+                   ,KTS=k_start, KTE=min(k_end,kde-1)                     &
+                   , num_tiles=grid%num_tiles                             )
+BENCH_END(fdda_driver_tim)
+
 ! calculate_phy_tend
 
 BENCH_START(cal_phy_tend)
@@ -734,12 +771,14 @@ BENCH_START(cal_phy_tend)
       DO ij = 1 , grid%num_tiles
 
           CALL wrf_debug ( 200 , ' call calculate_phy_tend' )
-          CALL calculate_phy_tend (config_flags,grid%em_mut,pi_phy,            &
+          CALL calculate_phy_tend (config_flags,grid%em_mut,grid%em_muu,grid%em_muv,pi_phy,            &
                      grid%rthraten,                                         &
                      grid%rublten,grid%rvblten,grid%rthblten,                         &
                      grid%rqvblten,grid%rqcblten,grid%rqiblten,                       &
                      grid%rthcuten,grid%rqvcuten,grid%rqccuten,grid%rqrcuten,              &
                      grid%rqicuten,grid%rqscuten,                                &
+                     grid%RUNDGDTEN,grid%RVNDGDTEN,grid%RTHNDGDTEN,grid%RQVNDGDTEN,        &
+                     grid%RMUNDGDTEN,                                       &
                      ids,ide, jds,jde, kds,kde,                        &
                      ims,ime, jms,jme, kms,kme,                        &
                      grid%i_start(ij), min(grid%i_end(ij),ide-1),      &
@@ -888,6 +927,9 @@ BENCH_END(calc_tke_tim)
 
 #ifdef DM_PARALLEL
 #      include "PERIOD_BDY_EM_PHY_BC.inc"
+      IF ( config_flags%grid_fdda .eq. 1) THEN
+#      include "PERIOD_BDY_EM_FDDA_BC.inc"
+      ENDIF
 #      include "PERIOD_BDY_EM_CHEM.inc"
 #endif
 
@@ -944,6 +986,9 @@ BENCH_END(phy_bc_tim)
       IF ( config_flags%bl_pbl_physics .ge. 1 ) THEN
 #      include "HALO_EM_PHYS_PBL.inc"
       ENDIF
+      IF ( config_flags%grid_fdda .eq. 1) THEN
+#      include "HALO_EM_FDDA.inc"
+      ENDIF
       IF ( config_flags%diff_opt .ge. 1 ) THEN
 #      include "HALO_EM_PHYS_DIFFUSION.inc"
       ENDIF
@@ -966,9 +1011,12 @@ BENCH_START(update_phy_ten_tim)
 
           CALL wrf_debug ( 200 , ' call update_phy_ten' )
         CALL update_phy_ten(t_tendf, ru_tendf, rv_tendf,moist_tend,        &
+                          mu_tendf,                                        &
                           grid%rthraten,grid%rthblten,grid%rthcuten,grid%rublten,grid%rvblten,      &
                           grid%rqvblten,grid%rqcblten,grid%rqiblten,                      &
                           grid%rqvcuten,grid%rqccuten,grid%rqrcuten,grid%rqicuten,grid%rqscuten,    &
+                          grid%RUNDGDTEN,grid%RVNDGDTEN,grid%RTHNDGDTEN,grid%RQVNDGDTEN,       &
+                          grid%RMUNDGDTEN,                                      &
                           num_3d_m,config_flags,rk_step,                   &
                           ids, ide, jds, jde, kds, kde,                    &
                           ims, ime, jms, jme, kms, kme,                    &
@@ -1142,7 +1190,8 @@ BENCH_START(relax_bdy_dry_tim)
 
      CALL rk_addtend_dry( grid%em_ru_tend,  grid%em_rv_tend,  rw_tend,  ph_tend,  t_tend,  &
                           ru_tendf, rv_tendf, rw_tendf, ph_tendf, t_tendf, &
-                          grid%em_u_save, grid%em_v_save, w_save, ph_save, grid%em_t_save, rk_step,&
+                          grid%em_u_save, grid%em_v_save, w_save, ph_save, grid%em_t_save, &
+                          mu_tend, mu_tendf, rk_step,                      &
                           grid%h_diabatic, grid%em_mut, grid%msft, grid%msfu, grid%msfv,               &
                           ids,ide, jds,jde, kds,kde,                       &
                           ims,ime, jms,jme, kms,kme,                       &

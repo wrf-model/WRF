@@ -583,7 +583,7 @@ CONTAINS
              IF ( PRESENT( OZMIXM ) .AND. PRESENT( PIN ) .AND. &
                   PRESENT(M_PS_1) .AND. PRESENT(M_PS_2) .AND.  &
                   PRESENT(M_HYBI0) .AND. PRESENT(AEROSOLC_1)    &
-                  .AND. PRESENT(AEROSOLC_2) .AND. PRESENT(SWUPTC)) THEN
+                  .AND. PRESENT(AEROSOLC_2) ) THEN
              CALL CAMRAD(RTHRATENLW=RTHRATEN,RTHRATENSW=RTHRATENSW,    &
                      SWUPT=SWUPT,SWUPTC=SWUPTC,                        &
                      SWDNT=SWDNT,SWDNTC=SWDNTC,                        &

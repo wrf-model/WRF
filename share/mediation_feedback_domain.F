@@ -123,6 +123,7 @@ SUBROUTINE med_feedback_domain ( parent_grid , nested_grid )
 #if !defined(MAC_KLUDGE)
    CALL model_to_grid_config_rec ( nested_grid%id , model_config_rec , config_flags )
    IF ( config_flags%dyn_opt == DYN_EM ) THEN
+     parent_grid%ht_coarse = parent_grid%ht
      grid => nested_grid%intermediate_grid
      CALL alloc_space_field ( grid, grid%id , 1 , 2 , .TRUE. ,     &
                               grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &

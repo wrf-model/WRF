@@ -552,11 +552,12 @@ BENCH_START(rad_driver_tim)
      &        ,AEROSOLC_2=grid%aerosolc_2, M_HYBI0=grid%m_hybi                      &
      &        ,ABSTOT=grid%abstot, ABSNXT=grid%absnxt, EMSTOT=grid%emstot                &
 #ifdef WRF_CHEM
-     &        ,PM2_5_DRY=pm2_5_dry, PM2_5_WATER=pm2_5_water               &
-     &        ,PM2_5_DRY_EC=pm2_5_dry_ec                                  &
-     &        ,TAUAER300=tauaer1, TAUAER400=tauaer2, TAUAER600=tauaer3, TAUAER999=tauaer4 & ! jcb
-     &        ,GAER300=gaer1, GAER400=gaer2, GAER600=gaer3, GAER999=gaer4 & ! jcb
-     &        ,WAER300=waer1, WAER400=waer2, WAER600=waer3, WAER999=waer4 & ! jcb
+     &        ,PM2_5_DRY=grid%pm2_5_dry, PM2_5_WATER=grid%pm2_5_water               &
+     &        ,PM2_5_DRY_EC=grid%pm2_5_dry_ec                                  &
+     &        ,TAUAER300=grid%tauaer1, TAUAER400=grid%tauaer2 & ! jcb
+     &        ,TAUAER600=grid%tauaer3, TAUAER999=grid%tauaer4 & ! jcb
+     &        ,GAER300=grid%gaer1, GAER400=grid%gaer2, GAER600=grid%gaer3, GAER999=grid%gaer4 & ! jcb
+     &        ,WAER300=grid%waer1, WAER400=grid%waer2, WAER600=grid%waer3, WAER999=grid%waer4 & ! jcb
 #endif
      &                                                              )
 

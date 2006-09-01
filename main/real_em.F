@@ -325,7 +325,7 @@ real::t1,t2,t3,t4
    DO loop = 1 , time_loop_max
 
       internal_time_loop = loop
-      IF ( ( grid%id .GT. 1 ) .AND. ( loop .GT. 1 ) ) EXIT
+      IF ( ( grid%id .GT. 1 ) .AND. ( loop .GT. 1 ) .AND. (model_config_rec%grid_fdda(grid%id) .EQ. 0) ) EXIT
 
       print *,' '
       print *,'-----------------------------------------------------------------------------'
@@ -538,8 +538,8 @@ SUBROUTINE assemble_output ( grid , config_flags , loop , time_loop_max )
    INTEGER :: ijds , ijde , spec_bdy_width
    INTEGER :: i , j , k , idts
 
-   INTEGER :: id1 , interval_seconds , ierr, rc, sst_update
-   INTEGER , SAVE :: id, id5 
+   INTEGER :: id1 , interval_seconds , ierr, rc, sst_update, grid_fdda
+   INTEGER , SAVE :: id, id2,  id5 
    CHARACTER (LEN=80) :: inpname , bdyname
    CHARACTER(LEN= 4) :: loop_char
 character *19 :: temp19
@@ -582,8 +582,8 @@ real::t1,t2
    spec_bdy_width = model_config_rec%spec_bdy_width
    interval_seconds = model_config_rec%interval_seconds
    sst_update = model_config_rec%sst_update
+   grid_fdda = model_config_rec%grid_fdda(grid%id)
 
-print *,'spec_bdy_width, interval_seconds, loop=',spec_bdy_width , interval_seconds,loop
 
    IF ( loop .EQ. 1 ) THEN
 
@@ -657,6 +657,28 @@ print *,'spec_bdy_width, interval_seconds, loop=',spec_bdy_width , interval_seco
          END DO
       END DO
 
+      IF(grid_fdda .EQ. 1)THEN
+! for fdda
+         DO j = jps , jpe
+            DO k = kps , kpe
+               DO i = ips , ipe
+                  grid%fdda3d(i,k,j,p_u_ndg_old) = grid%em_u_2(i,k,j)
+                  grid%fdda3d(i,k,j,p_v_ndg_old) = grid%em_v_2(i,k,j)
+                  grid%fdda3d(i,k,j,p_t_ndg_old) = grid%em_t_2(i,k,j)
+                  grid%fdda3d(i,k,j,p_q_ndg_old) = grid%moist(i,k,j,P_QV)
+                  grid%fdda3d(i,k,j,p_ph_ndg_old) = grid%em_ph_2(i,k,j)
+               END DO
+            END DO
+         END DO
+
+         DO j = jps , jpe
+            DO i = ips , ipe
+               grid%fdda2d(i,1,j,p_mu_ndg_old) = grid%em_mu_2(i,j)
+            END DO
+         END DO
+      ENDIF
+
+
       !  There are 2 components to the lateral boundaries.  First, there is the starting
       !  point of this time period - just the outer few rows and columns.
 
@@ -696,11 +718,21 @@ print *,'spec_bdy_width, interval_seconds, loop=',spec_bdy_width , interval_seco
 
 
       IF ( loop .eq. 2 ) THEN
+       IF(grid%id .eq. 1)THEN
          CALL construct_filename1( bdyname , 'wrfbdy' , grid%id , 2 )
          CALL open_w_dataset ( id, TRIM(bdyname) , grid , config_flags , output_boundary , "DATASET=BOUNDARY", ierr )
          IF ( ierr .NE. 0 ) THEN
                CALL wrf_error_fatal( 'real: error opening wrfbdy for writing' )
          ENDIF
+       ENDIF
+       IF(grid_fdda .EQ. 1)THEN
+! for fdda
+         CALL construct_filename1( inpname , 'wrffdda' , grid%id , 2 )
+         CALL open_w_dataset ( id2, TRIM(inpname) , grid , config_flags , output_aux_model_input4 , "DATASET=AUXINPUT4", ierr )
+         IF ( ierr .NE. 0 ) THEN
+               CALL wrf_error_fatal( 'real: error opening wrffdda for writing' )
+         ENDIF
+       ENDIF
       ELSE
          IF ( .NOT. domain_clockisstoptime(grid) ) THEN
             CALL domain_clockadvance( grid )
@@ -728,6 +760,27 @@ print *,'spec_bdy_width, interval_seconds, loop=',spec_bdy_width , interval_seco
             mbdy2dtemp2(i,1,j) = grid%em_mu_2(i,j)
          END DO
       END DO
+
+      IF(grid_fdda .EQ. 1)THEN
+! for fdda
+         DO j = jps , jpe
+            DO k = kps , kpe
+               DO i = ips , ipe
+                  grid%fdda3d(i,k,j,p_u_ndg_new) = grid%em_u_2(i,k,j)
+                  grid%fdda3d(i,k,j,p_v_ndg_new) = grid%em_v_2(i,k,j)
+                  grid%fdda3d(i,k,j,p_t_ndg_new) = grid%em_t_2(i,k,j)
+                  grid%fdda3d(i,k,j,p_q_ndg_new) = grid%moist(i,k,j,P_QV)
+                  grid%fdda3d(i,k,j,p_ph_ndg_new) = grid%em_ph_2(i,k,j)
+               END DO
+            END DO
+         END DO
+
+         DO j = jps , jpe
+            DO i = ips , ipe
+               grid%fdda2d(i,1,j,p_mu_ndg_new) = grid%em_mu_2(i,j)
+            END DO
+         END DO
+      ENDIF
 
       !  During all of the loops after the first loop, we first compute the boundary
       !  tendencies with the current data values (*bdy3dtemp2 arrays) and the previously 
@@ -793,8 +846,12 @@ print *,'spec_bdy_width, interval_seconds, loop=',spec_bdy_width , interval_seco
       CALL domain_clock_set( grid, current_date(1:19) )
       CALL domain_clockprint ( 150, grid, &
              'DEBUG assemble_output:  clock after 2nd current_date set,' )
-print *,'LBC valid between these times ',current_date, ' ',start_date
-      CALL output_boundary ( id, grid , config_flags , ierr )
+      IF(grid%id .EQ. 1)THEN
+        print *,'LBC valid between these times ',current_date, ' ',start_date
+        CALL output_boundary ( id, grid , config_flags , ierr )
+      ENDIF
+! for fdda
+      IF(grid_fdda .EQ. 1)CALL output_aux_model_input4 ( id2, grid , config_flags , ierr )
       current_date = temp24
       start_date = temp24b
       CALL domain_clockprint ( 150, grid, &
@@ -844,6 +901,27 @@ print *,'LBC valid between these times ',current_date, ' ',start_date
             END DO
          END DO
 
+      IF(grid_fdda .EQ. 1)THEN
+! for fdda
+         DO j = jps , jpe
+            DO k = kps , kpe
+               DO i = ips , ipe
+                  grid%fdda3d(i,k,j,p_u_ndg_old) = grid%fdda3d(i,k,j,p_u_ndg_new)
+                  grid%fdda3d(i,k,j,p_v_ndg_old) = grid%fdda3d(i,k,j,p_v_ndg_new)
+                  grid%fdda3d(i,k,j,p_t_ndg_old) = grid%fdda3d(i,k,j,p_t_ndg_new)
+                  grid%fdda3d(i,k,j,p_q_ndg_old) = grid%fdda3d(i,k,j,p_q_ndg_new)
+                  grid%fdda3d(i,k,j,p_ph_ndg_old) = grid%fdda3d(i,k,j,p_ph_ndg_new)
+               END DO
+            END DO
+         END DO
+
+         DO j = jps , jpe
+            DO i = ips , ipe
+               grid%fdda2d(i,1,j,p_mu_ndg_old) = grid%fdda2d(i,1,j,p_mu_ndg_new)
+            END DO
+         END DO
+      ENDIF
+
          !  There are 2 components to the lateral boundaries.  First, there is the starting
          !  point of this time period - just the outer few rows and columns.
 
@@ -876,7 +954,8 @@ print *,'LBC valid between these times ',current_date, ' ',start_date
 
          !  If this is the last time through here, we need to close the files.
 
-         CALL close_dataset ( id , config_flags , "DATASET=BOUNDARY" )
+         IF(grid%id .EQ. 1)CALL close_dataset ( id , config_flags , "DATASET=BOUNDARY" )
+         IF(grid_fdda .EQ. 1)CALL close_dataset ( id2 , config_flags , "DATASET=AUXINPUT4" )
         IF(sst_update .EQ. 1)THEN
          CALL close_dataset ( id5 , config_flags , "DATASET=AUXINPUT5" )
         ENDIF

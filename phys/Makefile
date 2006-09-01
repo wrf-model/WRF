@@ -48,7 +48,9 @@ MODULES = \
 	module_microphysics_driver.o \
 	module_microphysics_zero_out.o \
 	module_radiation_driver.o \
-	module_surface_driver.o
+	module_surface_driver.o \
+	module_fdda_psufddagd.o \
+	module_fddagd_driver.o
   
 OBJS    =
 
@@ -155,6 +157,7 @@ module_physics_init.o : \
 		module_mp_wsm5.o		\
 		module_mp_wsm6.o		\
 		module_mp_etanew.o		\
+		module_fdda_psufddagd.o		\
 		module_mp_thompson.o            \
 		../frame/module_state_description.o \
 		../frame/module_configure.o \
@@ -218,5 +221,10 @@ module_surface_driver.o: \
 		../frame/module_configure.o \
 		../share/module_model_constants.o  \
  		module_sf_lsm_nmm.o
+module_fddagd_driver.o: \
+		../frame/module_state_description.o \
+		../frame/module_configure.o \
+		../share/module_model_constants.o  \
+		module_fdda_psufddagd.o
 
 # DO NOT DELETE

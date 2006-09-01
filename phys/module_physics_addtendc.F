@@ -26,9 +26,12 @@ MODULE module_physics_addtendc
 CONTAINS
 
 SUBROUTINE update_phy_ten(rt_tendf,ru_tendf,rv_tendf,moist_tendf,  &
+                      mu_tendf,                                    &
                       RTHRATEN,RTHBLTEN,RTHCUTEN,RUBLTEN,RVBLTEN,  &
                       RQVBLTEN,RQCBLTEN,RQIBLTEN,                  &
                       RQVCUTEN,RQCCUTEN,RQRCUTEN,RQICUTEN,RQSCUTEN,&
+                      RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,RQVNDGDTEN,   &
+                      RMUNDGDTEN,                                  &
                       n_moist,config_flags,rk_step,                &
                       ids, ide, jds, jde, kds, kde,                &
                       ims, ime, jms, jme, kms, kme,                &
@@ -49,6 +52,8 @@ SUBROUTINE update_phy_ten(rt_tendf,ru_tendf,rv_tendf,moist_tendf,  &
                                                          rv_tendf, &
                                                          rt_tendf
 
+   REAL , DIMENSION(ims:ime , jms:jme),INTENT(INOUT) ::  mu_tendf
+
    REAL , DIMENSION(ims:ime, kms:kme, jms:jme, n_moist),           &
           INTENT(INOUT)     ::                        moist_tendf
 
@@ -65,7 +70,13 @@ SUBROUTINE update_phy_ten(rt_tendf,ru_tendf,rv_tendf,moist_tendf,  &
                                                        RQCCUTEN, &
                                                        RQRCUTEN, &
                                                        RQICUTEN, &
-                                                       RQSCUTEN
+                                                       RQSCUTEN, &
+                                                     RTHNDGDTEN, &
+                                                     RQVNDGDTEN, &
+                                                      RUNDGDTEN, &
+                                                      RVNDGDTEN
+
+   REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN  ) :: RMUNDGDTEN
 !------------------------------------------------------------------
 
 !  set up loop bounds for this grid's boundary conditions
@@ -90,6 +101,16 @@ SUBROUTINE update_phy_ten(rt_tendf,ru_tendf,rv_tendf,moist_tendf,  &
       CALL phy_cu_ten(config_flags,rk_step,n_moist,rt_tendf,  &
                       RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,     &
                       RQICUTEN,RQSCUTEN,moist_tendf,           &
+                      ids, ide, jds, jde, kds, kde,            &
+                      ims, ime, jms, jme, kms, kme,            &
+                      its, ite, jts, jte, kts, kte             )
+
+   if (config_flags%grid_fdda .gt. 0)                     &
+      CALL phy_fg_ten(config_flags,rk_step,n_moist,            &
+                      rt_tendf,ru_tendf,rv_tendf,              &
+                      mu_tendf, moist_tendf,                   &
+                      RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,          &
+                      RQVNDGDTEN,RMUNDGDTEN,                   &
                       ids, ide, jds, jde, kds, kde,            &
                       ims, ime, jms, jme, kms, kme,            &
                       its, ite, jts, jte, kts, kte             )
@@ -506,6 +527,88 @@ SUBROUTINE phy_cu_ten(config_flags,rk_step,n_moist,rt_tendf,    &
 
 END SUBROUTINE phy_cu_ten
 
+!=================================================================
+SUBROUTINE phy_fg_ten(config_flags,rk_step,n_moist,            &
+                      rt_tendf,ru_tendf,rv_tendf,              &
+                      mu_tendf, moist_tendf,                   &
+                      RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,          &
+                      RQVNDGDTEN,RMUNDGDTEN,                   &
+                      ids, ide, jds, jde, kds, kde,              &
+                      ims, ime, jms, jme, kms, kme,              &
+                      its, ite, jts, jte, kts, kte               )
+!-----------------------------------------------------------------
+   IMPLICIT NONE
+!-----------------------------------------------------------------
+   TYPE(grid_config_rec_type) ,     INTENT(IN   ) :: config_flags
+
+   INTEGER , INTENT(IN)        ::  ids, ide, jds, jde, kds, kde, &
+                                   ims, ime, jms, jme, kms, kme, &
+                                   its, ite, jts, jte, kts, kte, &
+                                   n_moist, rk_step
+
+   REAL , DIMENSION(ims:ime, kms:kme, jms:jme, n_moist),         &
+          INTENT(INOUT)     ::                      moist_tendf
+
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN  ) ::   &
+                                                       RTHNDGDTEN, &
+                                                        RUNDGDTEN, &
+                                                        RVNDGDTEN, &
+                                                       RQVNDGDTEN
+
+   REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN  ) ::  RMUNDGDTEN
+
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT)::   &
+                                                       rt_tendf, &
+                                                       ru_tendf, &
+                                                       rv_tendf
+
+   REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)::  mu_tendf
+
+! LOCAL VARS
+
+   INTEGER :: i,j,k,IBGN,IEND,JBGN,JEND
+
+!-----------------------------------------------------------------
+
+   SELECT CASE(config_flags%grid_fdda)
+
+      CASE (PSUFDDAGD)
+
+           CALL add_a2a(rt_tendf,RTHNDGDTEN,config_flags,        &
+                ids,ide, jds, jde, kds, kde,                     &
+                ims, ime, jms, jme, kms, kme,                    &
+                its, ite, jts, jte, kts, kte                     )
+
+! note fdda u and v tendencies are staggered
+           CALL add_c2c_u(ru_tendf,RUNDGDTEN,config_flags,       &
+                ids,ide, jds, jde, kds, kde,                     &
+                ims, ime, jms, jme, kms, kme,                    &
+                its, ite, jts, jte, kts, kte                     )
+
+           CALL add_c2c_v(rv_tendf,RVNDGDTEN,config_flags,       &
+                ids,ide, jds, jde, kds, kde,                     &
+                ims, ime, jms, jme, kms, kme,                    &
+                its, ite, jts, jte, kts, kte                     )
+
+           CALL add_a2a(mu_tendf,RMUNDGDTEN,config_flags,      &
+                ids,ide, jds, jde, kds, kds,                     &
+                ims, ime, jms, jme, kms, kms,                    &
+                its, ite, jts, jte, kts, kts                     )
+
+        if (P_QV .ge. PARAM_FIRST_SCALAR)                                         &
+           CALL add_a2a(moist_tendf(ims,kms,jms,P_QV),RQVNDGDTEN,  &
+                config_flags,                                    &
+                ids,ide, jds, jde, kds, kde,                     &
+                ims, ime, jms, jme, kms, kme,                    &
+                its, ite, jts, jte, kts, kte                     )
+
+
+      CASE DEFAULT
+
+   END SELECT
+
+END SUBROUTINE phy_fg_ten
+
 !----------------------------------------------------------------------
 SUBROUTINE advance_ppt(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,           &
                      RQICUTEN,RQSCUTEN,RAINC,RAINCV,NCA,              &
@@ -832,7 +935,112 @@ SUBROUTINE add_a2c_v(lvar,rvar,config_flags,                &
 
 END SUBROUTINE add_a2c_v
 
-! end of ifdef for EM_CORE == 1 -- this module actually belongs in the dyn_em directory
+!------------------------------------------------------------
+SUBROUTINE add_c2c_u(lvar,rvar,config_flags,                &
+                   ids,ide, jds, jde, kds, kde,             &
+                   ims, ime, jms, jme, kms, kme,            &
+                   its, ite, jts, jte, kts, kte             )
+!------------------------------------------------------------
+!------------------------------------------------------------
+   IMPLICIT NONE
+!------------------------------------------------------------
+
+   TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
+
+   INTEGER , INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
+                              ims, ime, jms, jme, kms, kme, &
+                              its, ite, jts, jte, kts, kte
+
+   REAL, DIMENSION(ims:ime,kms:kme,jms:jme),INTENT(IN   ) ::&
+                                                      rvar
+   REAL, DIMENSION(ims:ime,kms:kme,jms:jme),INTENT(INOUT) ::&
+                                                      lvar
+
+! LOCAL VARS
+
+   INTEGER :: i,j,k,i_start,i_end,j_start,j_end,ktf
+
+   ktf=min(kte,kde-1)
+
+   i_start = its
+   i_end   = ite
+   j_start = jts
+   j_end   = MIN(jte,jde-1)
+
+
+   IF ( config_flags%specified .or. &
+        config_flags%nested) i_start = MAX(ids+1,its)
+   IF ( config_flags%specified .or. &
+        config_flags%nested) i_end   = MIN(ide-1,ite)
+   IF ( config_flags%specified .or. &
+        config_flags%nested) j_start = MAX(jds+1,jts)
+   IF ( config_flags%specified .or. &
+        config_flags%nested) j_end   = MIN(jde-2,jte)
+
+!  write(*,'(a,6i4)') 'call c2cu, i_start, i_end, j_start, j_end=', i_start, i_end, j_start, j_end
+
+   DO j = j_start,j_end
+   DO k = kts,ktf
+   DO i = i_start,i_end
+      lvar(i,k,j) = lvar(i,k,j) + rvar(i,k,j)
+   ENDDO
+   ENDDO
+   ENDDO
+
+END SUBROUTINE add_c2c_u
+
+SUBROUTINE add_c2c_v(lvar,rvar,config_flags,                &
+                   ids,ide, jds, jde, kds, kde,             &
+                   ims, ime, jms, jme, kms, kme,            &
+                   its, ite, jts, jte, kts, kte             )
+!------------------------------------------------------------
+!------------------------------------------------------------
+   IMPLICIT NONE
+!------------------------------------------------------------
+
+   TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
+
+   INTEGER , INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
+                              ims, ime, jms, jme, kms, kme, &
+                              its, ite, jts, jte, kts, kte
+
+   REAL, DIMENSION(ims:ime,kms:kme,jms:jme),INTENT(IN   ) ::&
+                                                      rvar
+   REAL, DIMENSION(ims:ime,kms:kme,jms:jme),INTENT(INOUT) ::&
+                                                      lvar
+
+! LOCAL VARS
+
+   INTEGER :: i,j,k,i_start,i_end,j_start,j_end,ktf
+
+   ktf=min(kte,kde-1)
+
+   i_start = its
+   i_end   = MIN(ite,ide-1)
+   j_start = jts
+   j_end   = jte
+
+   IF ( config_flags%specified .or. &
+        config_flags%nested) i_start = MAX(ids+1,its)
+   IF ( config_flags%specified .or. &
+        config_flags%nested) i_end   = MIN(ide-2,ite)
+   IF ( config_flags%specified .or. &
+        config_flags%nested) j_start = MAX(jds+1,jts)
+   IF ( config_flags%specified .or. &
+        config_flags%nested) j_end   = MIN(jde-1,jte)
+
+!  write(*,'(a,6i4)') 'call c2cv, i_start, i_end, j_start, j_end=', i_start, i_end, j_start, j_end
+
+   DO j = j_start,j_end
+   DO k = kts,kte
+   DO i = i_start,i_end
+      lvar(i,k,j) = lvar(i,k,j) + rvar(i,k,j)
+   ENDDO
+   ENDDO
+   ENDDO
+
+END SUBROUTINE add_c2c_v
+
 #endif
 
 END MODULE module_physics_addtendc

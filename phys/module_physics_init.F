@@ -59,7 +59,10 @@ CONTAINS
                          ims, ime, jms, jme, kms, kme,           &
                          its, ite, jts, jte, kts, kte,           &
                          ozmixm,pin,                             &    ! Optional
-                         m_ps_1,m_ps_2,m_hybi,aerosolc_1,aerosolc_2 & ! Optional
+                         m_ps_1,m_ps_2,m_hybi,aerosolc_1,aerosolc_2,& ! Optional
+                         RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,         &    ! Optional
+                         RQVNDGDTEN,RMUNDGDTEN,                  &    ! Optional
+                         FGDT,STEPFG                             &    ! Optional
                          )
 
 !-----------------------------------------------------------------
@@ -179,6 +182,14 @@ CONTAINS
              F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY
    REAL, DIMENSION(:), INTENT(INOUT)   :: mp_restart_state,tbpvs_state,tbpvs0_state
    LOGICAL,  INTENT(IN)  :: allowed_to_read, moved
+
+!fdda
+   REAL,     OPTIONAL, INTENT(IN) :: FGDT
+   INTEGER , OPTIONAL, INTENT(OUT) :: STEPFG
+   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , OPTIONAL, INTENT(OUT) ::    &
+             RUNDGDTEN, RVNDGDTEN, RTHNDGDTEN, RQVNDGDTEN
+   REAL,     DIMENSION( ims:ime , jms:jme ) , OPTIONAL, INTENT(OUT) ::    &
+             RMUNDGDTEN
 
 ! Local data
 
@@ -403,6 +414,18 @@ integer myproc
 
    write(message,*)'STEPRA,STEPCU,STEPBL',STEPRA,STEPCU,STEPBL
    CALL wrf_message( message )
+
+#if  ( EM_CORE == 1 )
+   CALL wrf_debug ( 200 , 'module_start: phy_init: Before call to fg_init' )
+
+   CALL fg_init(STEPFG,FGDT,DT,RUNDGDTEN,RVNDGDTEN,             &
+                RTHNDGDTEN,RQVNDGDTEN,RMUNDGDTEN,               &
+                config_flags,restart,                           &
+                allowed_to_read ,                               &
+                ids, ide, jds, jde, kds, kde,                   &
+                ims, ime, jms, jme, kms, kme,                   &
+                its, ite, jts, jte, kts, kte                    )
+#endif
 
    END SUBROUTINE phy_init
 
@@ -1282,6 +1305,67 @@ integer myproc
    END SELECT mp_select
 
    END SUBROUTINE mp_init
+
+#if  ( EM_CORE == 1 )
+!==========================================================
+   SUBROUTINE fg_init(STEPFG,FGDT,DT,RUNDGDTEN,RVNDGDTEN,       &
+                RTHNDGDTEN,RQVNDGDTEN,RMUNDGDTEN,               &
+                config_flags,restart,                           &
+                allowed_to_read ,                               &
+                ids, ide, jds, jde, kds, kde,                   &
+                ims, ime, jms, jme, kms, kme,                   &
+                its, ite, jts, jte, kts, kte                    )
+
+
+!--------------------------------------------------------------------
+   USE module_fdda_psufddagd
+!--------------------------------------------------------------------
+   IMPLICIT NONE
+!--------------------------------------------------------------------
+   TYPE (grid_config_rec_type) ::     config_flags
+   LOGICAL , INTENT(IN)        :: restart
+
+   INTEGER , INTENT(IN)        ::     ids, ide, jds, jde, kds, kde, &
+                                      ims, ime, jms, jme, kms, kme, &
+                                      its, ite, jts, jte, kts, kte
+
+   REAL ,    INTENT(IN)        ::     DT, FGDT
+   INTEGER , INTENT(INOUT)     ::     STEPFG
+   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::       &
+                                                           RUNDGDTEN, &
+                                                           RVNDGDTEN, &
+                                                          RTHNDGDTEN, &
+                                                          RQVNDGDTEN
+   REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(OUT) :: RMUNDGDTEN
+
+   LOGICAL,  INTENT(IN)           :: allowed_to_read
+!--------------------------------------------------------------------
+
+!-- calculate pbl time step
+
+   STEPFG = nint(FGDT*60./DT)
+   STEPFG = max(STEPFG,1)
+
+
+!-- initialize fdda scheme
+
+   fdda_select: SELECT CASE(config_flags%grid_fdda)
+
+      CASE (PSUFDDAGD)
+           CALL fddagdinit(rundgdten,rvndgdten,rthndgdten,rqvndgdten,rmundgdten,&
+                      restart, allowed_to_read,                    &
+                      ids, ide, jds, jde, kds, kde,                &
+                      ims, ime, jms, jme, kms, kme,                &
+                      its, ite, jts, jte, kts, kte                 )
+      CASE DEFAULT
+
+   END SELECT fdda_select
+
+
+   END SUBROUTINE fg_init
+
+#endif
+
 
    SUBROUTINE z2sigma(zf,zh,sf,sh,p_top,pptop,config_flags, &
                 allowed_to_read , &

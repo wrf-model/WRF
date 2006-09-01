@@ -307,6 +307,31 @@ Namelist variables for controling the automatic moving nest:
                                                 ; namelist must include  auxinput5_interval,  auxinput5_end_h, and
                                                 ; auxinput5_inname = "wrflowinp_d<domain>"
 
+ &fdda
+ grid_fdda (max_dom)                 = 1        ; grid-nudging fdda on (=0 off) for each domain
+                                                  also need to set auxinput4_interval, auxinput4_end_h, and
+                                                  auxinput4_inname = "wrffdda_d<domain>" in time_control namelist
+                                                  and run real with grid_fdda =1 to create wrffdda file
+
+ fgdt (max_dom)                      = 0        ; calculation frequency (minutes) for grid-nudging (0=every step)
+ if_no_pbl_nudging_uv (max_dom)      = 0        ; 0= no nudging of u and v in the pbl, 1=nudging in the pbl
+ if_no_pbl_nudging_t (max_dom)       = 0        ; 0= no nudging of temp in the pbl, 1=nudging in the pbl
+ if_no_pbl_nudging_q (max_dom)       = 0        ; 0= no nudging of qvapor in the pbl, 1=nudging in the pbl
+ if_zfac_uv (max_dom)                = 0        ; 0= nudge u and v all layers, 1= limit nudging to levels above k_zfac_uv
+  k_zfac_uv (max_dom)                = 10       ; 10=model level below which nudging is switched off for u and v
+ if_zfac_t (max_dom)                 = 0        ; 0= nudge temp all layers, 1= limit nudging to levels above k_zfac_t
+  k_zfac_t (max_dom)                 = 10       ; 10=model level below which nudging is switched off for temp
+ if_zfac_q (max_dom)                 = 0        ; 0= nudge qvapor all layers, 1= limit nudging to levels above k_zfac_q
+  k_zfac_q (max_dom)                 = 10       ; 10=model level below which nudging is switched off for qvapor
+ guv (max_dom)                       = 0.0003   ; nudging coefficient for u and v (sec-1)
+ gt (max_dom)                        = 0.0003   ; nudging coefficient for temp (sec-1)
+ gq (max_dom)                        = 0.0003   ; nudging coefficient for qvapor (sec-1)
+ idynin                              = 0        ; 0= nudging ends as a step function, 1= ramping nudging down at end of period
+ dtramp_min                          = 120.0    ; time (min) for ramping function, 120.0=ramping starts at last analysis time, 
+                                                                                  -120.0=ramping ends at last analysis time
+ /
+
+
 
  &dynamics
  dyn_opt                             = 2,	; dynamical core option: advanced research WRF core (Eulerian mass)

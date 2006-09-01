@@ -53,8 +53,9 @@ dimspec    g      2     namelist=num_metgrid_levels  z          num_metgrid_leve
 dimspec    m      2     constant=12                  z          months_per_year
 dimspec    a      -     namelist=cam_abs_dim1     c          cam_abs_dim1
 dimspec    c      -     namelist=cam_abs_dim2     z          cam_abs_dim2
-dimspec    o      2     namelist=levsiz           z          levsiz
+dimspec    q      2     namelist=levsiz           z          levsiz
 dimspec    d      2     namelist=paerlev          z          paerlev
+dimspec    v      -     constant=1                z          one
 
 
 ################################################################################
@@ -182,6 +183,7 @@ state    real   muts            ij     dyn_em      1          -                 
 i1       real   muave           ij     dyn_em      1          -     
 i1       real   mu_save         ij     dyn_em      1          -     
 i1       real   mu_tend         ij     dyn_em      1          -     
+i1       real   mu_tendf        ij     dyn_em      1          -     
 
 #diagnostic for looking at nest position in output. A mungy version of terrain height.
 state    real   nest_pos        ij     misc        1   -   rhu=(mark_domain)  "NEST_POS"
@@ -483,20 +485,20 @@ state  real   acfrcv    ij    misc        1    -    i
 state integer ncfrcv    ij    misc        1    -    i
 
 # cam radiation variables
-state  real    -       iojf ozmixm      1    -   -     -
-state  real   mth01    iojf ozmixm      1    -   -     -
-state  real   mth02    iojf ozmixm      1    -   -     -
-state  real   mth03    iojf ozmixm      1    -   -     -
-state  real   mth04    iojf ozmixm      1    -   -     -
-state  real   mth05    iojf ozmixm      1    -   -     -
-state  real   mth06    iojf ozmixm      1    -   -     -
-state  real   mth07    iojf ozmixm      1    -   -     -
-state  real   mth08    iojf ozmixm      1    -   -     -
-state  real   mth09    iojf ozmixm      1    -   -     -
-state  real   mth10    iojf ozmixm      1    -   -     -
-state  real   mth11    iojf ozmixm      1    -   -     -
-state  real   mth12    iojf ozmixm      1    -   -     -
-state  real   pin       o     misc      1    -   -      "PIN"             "PRESSURE LEVEL OF OZONE MIXING RATIO"  "millibar"
+state  real    -       iqjf ozmixm      1    -   -     -
+state  real   mth01    iqjf ozmixm      1    -   -     -
+state  real   mth02    iqjf ozmixm      1    -   -     -
+state  real   mth03    iqjf ozmixm      1    -   -     -
+state  real   mth04    iqjf ozmixm      1    -   -     -
+state  real   mth05    iqjf ozmixm      1    -   -     -
+state  real   mth06    iqjf ozmixm      1    -   -     -
+state  real   mth07    iqjf ozmixm      1    -   -     -
+state  real   mth08    iqjf ozmixm      1    -   -     -
+state  real   mth09    iqjf ozmixm      1    -   -     -
+state  real   mth10    iqjf ozmixm      1    -   -     -
+state  real   mth11    iqjf ozmixm      1    -   -     -
+state  real   mth12    iqjf ozmixm      1    -   -     -
+state  real   pin       q     misc      1    -   -      "PIN"             "PRESSURE LEVEL OF OZONE MIXING RATIO"  "millibar"
 state  real   m_ps       ij   misc      2    -   -      "m_ps"            "PS from MATCH on WRF grids"
 state  real    -       idjf aerosolc    2    -   -       -
 state  real   SUL      idjf aerosolc    2    -   -     "SUL"        "SUL aerosol concentration"
@@ -762,6 +764,30 @@ state   real    div            ikj      misc        1         -     r         "d
 state   real    BN2            ikj      misc        1         -     r         "BN2"                   "BRUNT-VAISALA FREQUENCY"                                         "s-2"
 state  logical warm_rain        -       misc        1         -     -         "warm_rain"              "WARM_RAIN_LOGICAL"
 state  logical adv_moist_cond   -       misc        1         -     -         "adv_moist_cond"         "ADVECT MOIST CONDENSATES LOGICAL"
+
+## FDDA variables
+
+state integer  STEPFG            -        misc        1         -      r        "STEPFG"                "NUMBER OF FUNDAMENTAL TIMESTEPS BETWEEN FDDA GRID CALLS" ""
+state    real  RUNDGDTEN         ikj      misc        1         X      r        "RUNDGDTEN"               "COUPLED X WIND TENDENCY DUE TO FDDA GRID NUDGING"  "Pa m s-2"
+state    real  RVNDGDTEN         ikj      misc        1         Y      r        "RVNDGDTEN"               "COUPLED Y WIND TENDENCY DUE TO FDDA GRID NUDGING"  "Pa m s-2"
+state    real  RTHNDGDTEN        ikj      misc        1         -      r        "RTHNDGDTEN"              "COUPLED THETA TENDENCY DUE TO FDDA GRID NUDGING"   "Pa K s-1"
+state    real  RQVNDGDTEN        ikj      misc        1         -      r        "RQVNDGDTEN"              "COUPLED Q_V TENDENCY DUE TO FDDA GRID NUDGING"     "Pa kg kg-1 s-1"
+state    real  RMUNDGDTEN        ij       misc        1         -      r        "RMUNDGDTEN"              "MU TENDENCY DUE TO FDDA GRID NUDGING"     "Pa s-1"
+state    real    -               ikjf     fdda3d      1         -     -    -
+state    real  U_NDG_NEW         ikjf     fdda3d      1         X      i4r      "U_NDG_NEW"               "NEW X WIND FOR FDDA GRID NUDGING"  "m s-1"
+state    real  V_NDG_NEW         ikjf     fdda3d      1         Y      i4r      "V_NDG_NEW"               "NEW Y WIND FOR FDDA GRID NUDGING"  "m s-1"
+state    real  T_NDG_NEW         ikjf     fdda3d      1         -      i4r      "T_NDG_NEW"               "NEW PERT POT TEMP FOR FDDA GRID NUDGING"  "K"
+state    real  Q_NDG_NEW         ikjf     fdda3d      1         -      i4r      "Q_NDG_NEW"               "NEW WATER VAPOR MIX RATIO FOR FDDA GRID NUDGING"  "kg/kg"
+state    real  PH_NDG_NEW        ikjf     fdda3d      1         Z      i4r      "PH_NDG_NEW"              "NEW PERT GEOPOTENTIAL FOR FDDA GRID NUDGING"  "kg/kg"
+state    real  U_NDG_OLD         ikjf     fdda3d      1         X      i4r      "U_NDG_OLD"               "OLD X WIND FOR FDDA GRID NUDGING"  "m s-1"
+state    real  V_NDG_OLD         ikjf     fdda3d      1         Y      i4r      "V_NDG_OLD"               "OLD Y WIND FOR FDDA GRID NUDGING"  "m s-1"
+state    real  T_NDG_OLD         ikjf     fdda3d      1         -      i4r      "T_NDG_OLD"               "OLD PERT POT TEMP FOR FDDA GRID NUDGING"  "K"
+state    real  Q_NDG_OLD         ikjf     fdda3d      1         -      i4r      "Q_NDG_OLD"               "OLD WATER VAPOR MIX RATIO FOR FDDA GRID NUDGING"  "kg/kg"
+state    real  PH_NDG_OLD        ikjf     fdda3d      1         Z      i4r      "PH_NDG_OLD"              "OLD PERT GEOPOTENTIAL FOR FDDA GRID NUDGING"  "kg/kg"
+state    real    -               ivjf     fdda2d      1         Z     -    -
+state    real  MU_NDG_NEW        ivjf     fdda2d      1         Z      i4r      "MU_NDG_NEW"              "NEW PERT COLUMN DRY MASS FOR FDDA GRID NUDGING"  "Pa"
+state    real  MU_NDG_OLD        ivjf     fdda2d      1         Z      i4r      "MU_NDG_OLD"              "OLD PERT COLUMN DRY MASS FOR FDDA GRID NUDGING"  "Pa"
+
 
 # flag for nest movement
 state  logical moved            -       misc        1         -     -          
@@ -1233,6 +1259,23 @@ rconfig   integer paerlev                 namelist,physics      1             1 
 rconfig   integer cam_abs_dim1            namelist,physics      1             1       -      "cam_abs_dim1" "dimension for absnxt in CAM radiation"  ""
 rconfig   integer cam_abs_dim2            namelist,physics      1             1       -      "cam_abs_dim2" "dimension for abstot in CAM radiation"  ""
 
+#FDDA namelist parameters
+rconfig   real    FGDT                    namelist,fdda         max_domains    0       h        "FGDT"          ""      ""
+rconfig   integer  grid_fdda              namelist,fdda         max_domains    0       rh       "grid_fdda"            ""      ""
+rconfig   integer  if_no_pbl_nudging_uv   namelist,fdda         max_domains    0       rh       "grid_fdda"            ""      ""
+rconfig   integer  if_no_pbl_nudging_t    namelist,fdda         max_domains    0       rh       "grid_fdda"            ""      ""
+rconfig   integer  if_no_pbl_nudging_q    namelist,fdda         max_domains    0       rh       "grid_fdda"            ""      ""
+rconfig   integer  if_zfac_uv             namelist,fdda         max_domains    0       rh       "grid_fdda"            ""      ""
+rconfig   integer   k_zfac_uv             namelist,fdda         max_domains    0       rh       "grid_fdda"            ""      ""
+rconfig   integer  if_zfac_t              namelist,fdda         max_domains    0       rh       "grid_fdda"            ""      ""
+rconfig   integer   k_zfac_t              namelist,fdda         max_domains    0       rh       "grid_fdda"            ""      ""
+rconfig   integer  if_zfac_q              namelist,fdda         max_domains    0       rh       "grid_fdda"            ""      ""
+rconfig   integer   k_zfac_q              namelist,fdda         max_domains    0       rh       "grid_fdda"            ""      ""
+rconfig   real        guv                 namelist,fdda         max_domains    0       rh       "grid_fdda"            ""      ""
+rconfig   real        gt                  namelist,fdda         max_domains    0       rh       "grid_fdda"            ""      ""
+rconfig   real        gq                  namelist,fdda         max_domains    0       rh       "grid_fdda"            ""      ""
+rconfig   real    dtramp_min              namelist,fdda         1              0       h        "grid_fdda"            ""      ""
+rconfig   integer idynin                  namelist,fdda         1              0       h        "grid_fdda"            ""      ""
 
 # Dynamics
 # dynamics option (see package definitions, below)
@@ -1369,6 +1412,8 @@ package   gdscheme       cu_physics==3               -             -
 package   sasscheme      cu_physics==4               -             -
 package   kfscheme       cu_physics==99              -             -
 
+package   psufddagd      grid_fdda==1                -             fdda3d:u_ndg_old,v_ndg_old,t_ndg_old,q_ndg_old,ph_ndg_old,u_ndg_new,v_ndg_new,t_ndg_new,q_ndg_new,ph_ndg_new;fdda2d:mu_ndg_old,mu_ndg_new
+
 # only need to specify these once; not for every io_form* variable
 package   io_intio    io_form_restart==1                     -             -
 package   io_netcdf   io_form_restart==2                     -             -
@@ -1400,6 +1445,7 @@ halo      HALO_EM_VINTERP_UV_1 dyn_em 8:pd_gc,pb
 halo      HALO_EM_A dyn_em  8:ru,rv,rw,ww,php,alt,al,p,muu,muv,mut
 halo      HALO_EM_PHYS_A  dyn_em 4:u_2,v_2
 halo      HALO_EM_PHYS_PBL dyn_em        4:rublten,rvblten
+halo      HALO_EM_FDDA dyn_em            4:rundgdten,rvndgdten
 halo      HALO_EM_PHYS_DIFFUSION dyn_em  4:defor11,defor22,defor12,defor13,defor23,div,xkmv,xkmh,xkmhd,xkhv,xkhh,tke_1,tke_2
 halo      HALO_EM_TKE_ADVECT_3 dyn_em 24:tke_2
 halo      HALO_EM_TKE_ADVECT_5 dyn_em 48:tke_2
@@ -1453,6 +1499,7 @@ period    PERIOD_BDY_EM_SCALAR2 dyn_em 3:scalar
 period    PERIOD_BDY_EM_A dyn_em 2:ru,rv,rw,ww,php,alt,p,muu,muv,mut,ph_2,al
 period    PERIOD_BDY_EM_A1  dyn_em 3:rdzw,rdz,z,zx,zy
 period    PERIOD_BDY_EM_PHY_BC dyn_em 2:rublten,rvblten,xkmh,xkmhd,xkmv,xkhh,xkhv,div,defor11,defor22,defor12,defor13,defor23,defor33,tke_2
+period    PERIOD_BDY_EM_FDDA_BC dyn_em 2:rundgdten,rvndgdten
 period    PERIOD_BDY_EM_B dyn_em 2:ru_tend,rv_tend,ph_2,al,p,t_1,t_save,u_save,v_save,mu_1,mu_2,mudf,php,alt,pb
 period    PERIOD_BDY_EM_B3 dyn_em 2:ph_2,al,p,mu_2,muts,mudf
 period    PERIOD_BDY_EM_B2 dyn_em 2:ru_tend,rv_tend

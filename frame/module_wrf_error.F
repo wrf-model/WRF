@@ -58,8 +58,8 @@ SUBROUTINE wrf_debug( level , str )
 END SUBROUTINE wrf_debug
 
 SUBROUTINE wrf_message( str )
-  USE module_wrf_error
-  USE module_utility
+!TBH  USE module_wrf_error
+!TBH  USE module_utility
   IMPLICIT NONE
   CHARACTER*(*) str
 #if defined( DM_PARALLEL ) && ! defined( STUBMPI) 
@@ -77,8 +77,8 @@ END SUBROUTINE wrf_message
 
 ! intentionally write to stderr only
 SUBROUTINE wrf_message2( str )
-  USE module_wrf_error
-  USE module_utility
+!TBH  USE module_wrf_error
+!TBH  USE module_utility
   IMPLICIT NONE
   CHARACTER*(*) str
   write(0,*) str

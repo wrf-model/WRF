@@ -1,7 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef XT3_Catamount
+#include <features.h>
+#undef htonl
+#define htonl(x)     swap_byte4(x)
+#else
 #include <netinet/in.h>
+#endif
 #include "dprints.h"		/* for dprints */
 #include "gribfuncs.h"		/* prototypes */
 #include <math.h>

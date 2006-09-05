@@ -1288,6 +1288,7 @@ convert_nmm.o : convert_nmm.F
 module_configure.o : module_configure.F
 solve_interface.o : solve_interface.F
 solve_em.o : solve_em.F
+module_integrate.o : module_integrate.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -1309,7 +1310,7 @@ convert_nmm.o :
 
 # to prevent having to call our service representative
 mediation_feedback_domain.o \
-mediation_force_domain.o start_domain.o :
+mediation_force_domain.o start_domain.o module_integrate.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f

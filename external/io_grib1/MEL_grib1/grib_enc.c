@@ -6,7 +6,13 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#ifdef XT3_Catamount
+#include <features.h>
+#undef htonl
+#define htonl(x)     swap_byte4(x)
+#else
 #include <netinet/in.h>
+#endif
 #include "dprints.h"		/* for dprints */
 #include "grib_lookup.h"	/* parm/model/lvl defn */
 #include "gribfuncs.h"		/* prototypes */

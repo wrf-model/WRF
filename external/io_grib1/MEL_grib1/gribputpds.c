@@ -3,7 +3,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdlib.h>
+#ifdef XT3_Catamount
+#include <features.h>
+#else
 #include <netinet/in.h>
+#endif
 #include "dprints.h"		/* for dprints */
 #include "gribfuncs.h"		/* prototypes */
 

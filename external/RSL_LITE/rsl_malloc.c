@@ -98,7 +98,7 @@ int bbb ;
 
 static char zero_length_storage[] = "" ;
 
-#if !(defined(vpp) || defined(vpp2) || defined(SUN))
+#if !(defined(vpp) || defined(vpp2) || defined(SUN) || defined(XT3_Catamount))
 static struct mallinfo minf ;
 #endif
 
@@ -152,7 +152,7 @@ EF_PROTECT_FREE = 1 ;
 "rsl_malloc failed allocating %d bytes, called %s, line %d, try %d\n",
        s,f,l,tries) ;
        perror(mess) ;
-#if !(defined(vpp) || defined(vpp2) || defined(SUN))
+#if !(defined(vpp) || defined(vpp2) || defined(SUN) || defined(XT3_Catamount))
        minf = mallinfo() ;
        fprintf(stderr,"mallinfo: arena %d\n",minf.arena)  ;
        fprintf(stderr,"mallinfo: ordblks %d\n",minf.ordblks)  ;

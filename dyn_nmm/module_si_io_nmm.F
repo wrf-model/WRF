@@ -33,6 +33,12 @@ MODULE module_si_io_nmm
 
       REAL , DIMENSION(:,:,:), ALLOCATABLE :: st_inputx , sm_inputx, sw_inputx
 
+      !  Local input arrays
+
+      REAL,DIMENSION(:,:),ALLOCATABLE :: dum2d
+      INTEGER,DIMENSION(:,:),ALLOCATABLE :: idum2d
+      REAL,DIMENSION(:,:,:),ALLOCATABLE :: dum3d
+
       LOGICAL , SAVE :: first_time_in = .TRUE.
 
       INTEGER :: flag_soilt010 , flag_soilt100 , flag_soilt200 , &
@@ -172,10 +178,6 @@ CONTAINS
                 ,ims,ime,jms,jme,kms,kme           &
                 ,its,ite,jts,jte,kts,kte
 
-      REAL,DIMENSION(:,:),ALLOCATABLE :: dum2d
-      INTEGER,DIMENSION(:,:),ALLOCATABLE :: idum2d
-      REAL,DIMENSION(:,:,:),ALLOCATABLE :: dum3d
-
       INTEGER :: i , j , k , loop, IMAX, JMAX
 
       REAL :: dummy
@@ -229,10 +231,6 @@ CONTAINS
             jts = grid%sp33 ; jte = grid%ep33 ; ! tile is entire patch
 
       END SELECT
-
-      ALLOCATE (dum2d(IDS:IDE-1,JDS:JDE-1))
-      ALLOCATE (idum2d(IDS:IDE-1,JDS:JDE-1))
-      ALLOCATE (dum3d(IDS:IDE-1,JDS:JDE-1,KDS:KDE-1))
 
       !  Initialize what soil temperature and moisture is available.
 
@@ -416,6 +414,11 @@ CONTAINS
 
         IF (.NOT. ALLOCATED (lat_wind)          ) ALLOCATE (lat_wind(its:ite,jts:jte))
         IF (.NOT. ALLOCATED (lon_wind)          ) ALLOCATE (lon_wind(its:ite,jts:jte))
+
+        !  Local arrays
+        IF (.NOT. ALLOCATED (dum2d)             ) ALLOCATE (dum2d(IDS:IDE-1,JDS:JDE-1))
+        IF (.NOT. ALLOCATED (idum2d)            ) ALLOCATE (idum2d(IDS:IDE-1,JDS:JDE-1))
+        IF (.NOT. ALLOCATED (dum3d)             ) ALLOCATE (dum3d(IDS:IDE-1,JDS:JDE-1,KDS:KDE-1))
 
 
       END IF

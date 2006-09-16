@@ -435,6 +435,14 @@ state    integer imask_xystag         ij      misc     XY
 # SI - start variables from netCDF format from Standard Initialization, most eventually for use in LSM schemes
 #---------------------------------------------------------------------------------------------------------------------------------
 
+state   real   sm000007            ij    misc          1     -     i1      "SM000007"      "LAYER SOIL MOISTURE" "m3 m-3"
+state   real   sm007028            ij    misc          1     -     i1      "SM007028"      "LAYER SOIL MOISTURE" "m3 m-3"
+state   real   sm028100            ij    misc          1     -     i1      "SM028100"      "LAYER SOIL MOISTURE" "m3 m-3"
+state   real   sm100255            ij    misc          1     -     i1      "SM100255"      "LAYER SOIL MOISTURE" "m3 m-3"
+state   real   st000007            ij    misc          1     -     i1      "ST000007"      "LAYER SOIL TEMPERATURE" "K"
+state   real   st007028            ij    misc          1     -     i1      "ST007028"      "LAYER SOIL TEMPERATURE" "K"
+state   real   st028100            ij    misc          1     -     i1      "ST028100"      "LAYER SOIL TEMPERATURE" "K"
+state   real   st100255            ij    misc          1     -     i1      "ST100255"      "LAYER SOIL TEMPERATURE" "K"
 state   real   sm000010            ij    misc          1     -     i1      "SM000010"      "description"  "units"
 state   real   sm010040            ij    misc          1     -     i1      "SM010040 "     "description"  "units"
 state   real   sm040100            ij    misc          1     -     i1      "SM040100 "     "description"  "units"

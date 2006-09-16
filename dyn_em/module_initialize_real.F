@@ -127,8 +127,11 @@ CONTAINS
 
 integer::oops1,oops2
 
+      REAL    :: zap_close_levels
+      INTEGER :: force_sfc_in_vinterp
       INTEGER :: interp_type , lagrange_order
       LOGICAL :: lowest_lev_from_sfc
+      LOGICAL :: we_have_tavgsfc
 
 !-- Carsel and Parrish [1988]
         REAL , DIMENSION(100) :: lqmi
@@ -221,7 +224,6 @@ integer::oops1,oops2
 
          DO j = jts, MIN(jte,jde-1)
            DO i = its, MIN(ite,ide-1)
-!             landmask(i,j) = landmask_gc(i,j)
               tsk(i,j) = tsk_gc(i,j)
               tmn(i,j) = tmn_gc(i,j)
               xlat(i,j) = xlat_gc(i,j)
@@ -258,6 +260,8 @@ integer::oops1,oops2
             !  Compare the requested p_top with the value available from the input data.
 
             IF ( p_top_requested .LT. p_top ) THEN
+               print *,'p_top_requested = ',p_top_requested
+               print *,'allowable p_top in data   = ',p_top
                CALL wrf_error_fatal ( 'p_top_requested < p_top possible from data' )
             END IF
 
@@ -283,6 +287,8 @@ integer::oops1,oops2
             p_top = wrf_dm_max_real ( p_top )
 #endif
             IF ( p_top .GT. p_top_save ) THEN
+               print *,'p_top from last time period = ',p_top_save
+               print *,'p_top from this time period = ',p_top
                CALL wrf_error_fatal ( 'p_top > previous value' )
             END IF
             p_top = p_top_save
@@ -334,10 +340,12 @@ integer::oops1,oops2
    
          !  Compute the mixing ratio from the input relative humidity.
    
-         CALL rh_to_mxrat (rh_gc, t_gc, p_gc, q_gc , .TRUE. , &
-                           ids , ide , jds , jde , 1   , num_metgrid_levels , &
-                           ims , ime , jms , jme , 1   , num_metgrid_levels , &
-                           its , ite , jts , jte , 1   , num_metgrid_levels )
+         IF ( flag_qv .NE. 1 ) THEN
+            CALL rh_to_mxrat (rh_gc, t_gc, p_gc, qv_gc , .TRUE. , &
+                              ids , ide , jds , jde , 1   , num_metgrid_levels , &
+                              ims , ime , jms , jme , 1   , num_metgrid_levels , &
+                              its , ite , jts , jte , 1   , num_metgrid_levels )
+         END IF
          
          !  Swap low-res geopot surface with the input topography.
    
@@ -349,8 +357,9 @@ integer::oops1,oops2
 
          !  Compute total surface pressure from input sea level pressure and hi-res topography.
 
-         CALL sfcprs (t_gc, q_gc, ght_gc, pslv_gc, ht, st000010, p_gc, &
-                      psfc, 0, .FALSE., &
+         we_have_tavgsfc = ( flag_tavgsfc == 1 ) 
+         CALL sfcprs (t_gc, qv_gc, ght_gc, pslv_gc, ht, tavgsfc, p_gc, &
+                      psfc, we_have_tavgsfc, &
                       ids , ide , jds , jde , 1   , num_metgrid_levels , &
                       ims , ime , jms , jme , 1   , num_metgrid_levels , &
                       its , ite , jts , jte , 1   , num_metgrid_levels )
@@ -365,7 +374,7 @@ integer::oops1,oops2
    
          !  Integrate the mixing ratio to get the vapor pressure.
    
-         CALL integ_moist ( q_gc , p_gc , pd_gc , t_gc , ght_gc , intq_gc , &
+         CALL integ_moist ( qv_gc , p_gc , pd_gc , t_gc , ght_gc , intq_gc , &
                             ids , ide , jds , jde , 1   , num_metgrid_levels , &
                             ims , ime , jms , jme , 1   , num_metgrid_levels , &
                             its , ite , jts , jte , 1   , num_metgrid_levels )
@@ -425,10 +434,13 @@ integer::oops1,oops2
          interp_type = grid%interp_type
          lagrange_order = grid%lagrange_order
          lowest_lev_from_sfc = grid%lowest_lev_from_sfc
+         zap_close_levels = grid%zap_close_levels
+         force_sfc_in_vinterp = grid%force_sfc_in_vinterp
 
-         CALL vert_interp ( q_gc , pd_gc , moist(:,:,:,P_QV) , pb , &
+         CALL vert_interp ( qv_gc , pd_gc , moist(:,:,:,P_QV) , pb , &
                             num_metgrid_levels , 'Q' , &
                             interp_type , lagrange_order , lowest_lev_from_sfc , &
+                            zap_close_levels , force_sfc_in_vinterp , &
                             ids , ide , jds , jde , kds , kde , &
                             ims , ime , jms , jme , kms , kme , &
                             its , ite , jts , jte , kts , kte )
@@ -436,6 +448,7 @@ integer::oops1,oops2
          CALL vert_interp ( t_gc , pd_gc , t_2               , pb , &
                             num_metgrid_levels , 'T' , &
                             interp_type , lagrange_order , lowest_lev_from_sfc , &
+                            zap_close_levels , force_sfc_in_vinterp , &
                             ids , ide , jds , jde , kds , kde , &
                             ims , ime , jms , jme , kms , kme , &
                             its , ite , jts , jte , kts , kte )
@@ -449,6 +462,7 @@ integer::oops1,oops2
                   CALL vert_interp ( qr_gc , pd_gc , moist(:,:,:,P_QR) , pb , &
                                      num_metgrid_levels , 'Q' , &
                                      interp_type , lagrange_order , lowest_lev_from_sfc , &
+                                     zap_close_levels , force_sfc_in_vinterp , &
                                      ids , ide , jds , jde , kds , kde , &
                                      ims , ime , jms , jme , kms , kme , &
                                      its , ite , jts , jte , kts , kte )
@@ -462,6 +476,7 @@ integer::oops1,oops2
                   CALL vert_interp ( qc_gc , pd_gc , moist(:,:,:,P_QC) , pb , &
                                      num_metgrid_levels , 'Q' , &
                                      interp_type , lagrange_order , lowest_lev_from_sfc , &
+                                     zap_close_levels , force_sfc_in_vinterp , &
                                      ids , ide , jds , jde , kds , kde , &
                                      ims , ime , jms , jme , kms , kme , &
                                      its , ite , jts , jte , kts , kte )
@@ -475,6 +490,7 @@ integer::oops1,oops2
                   CALL vert_interp ( qi_gc , pd_gc , moist(:,:,:,P_QI) , pb , &
                                      num_metgrid_levels , 'Q' , &
                                      interp_type , lagrange_order , lowest_lev_from_sfc , &
+                                     zap_close_levels , force_sfc_in_vinterp , &
                                      ids , ide , jds , jde , kds , kde , &
                                      ims , ime , jms , jme , kms , kme , &
                                      its , ite , jts , jte , kts , kte )
@@ -488,6 +504,7 @@ integer::oops1,oops2
                   CALL vert_interp ( qs_gc , pd_gc , moist(:,:,:,P_QS) , pb , &
                                      num_metgrid_levels , 'Q' , &
                                      interp_type , lagrange_order , lowest_lev_from_sfc , &
+                                     zap_close_levels , force_sfc_in_vinterp , &
                                      ids , ide , jds , jde , kds , kde , &
                                      ims , ime , jms , jme , kms , kme , &
                                      its , ite , jts , jte , kts , kte )
@@ -501,6 +518,7 @@ integer::oops1,oops2
                   CALL vert_interp ( qg_gc , pd_gc , moist(:,:,:,P_QG) , pb , &
                                      num_metgrid_levels , 'Q' , &
                                      interp_type , lagrange_order , lowest_lev_from_sfc , &
+                                     zap_close_levels , force_sfc_in_vinterp , &
                                      ids , ide , jds , jde , kds , kde , &
                                      ims , ime , jms , jme , kms , kme , &
                                      its , ite , jts , jte , kts , kte )
@@ -524,6 +542,7 @@ integer::oops1,oops2
          CALL vert_interp ( u_gc , pd_gc , u_2               , pb , &
                             num_metgrid_levels , 'U' , &
                             interp_type , lagrange_order , lowest_lev_from_sfc , &
+                            zap_close_levels , force_sfc_in_vinterp , &
                             ids , ide , jds , jde , kds , kde , &
                             ims , ime , jms , jme , kms , kme , &
                             its , ite , jts , jte , kts , kte )
@@ -531,6 +550,7 @@ integer::oops1,oops2
          CALL vert_interp ( v_gc , pd_gc , v_2               , pb , &
                             num_metgrid_levels , 'V' , &
                             interp_type , lagrange_order , lowest_lev_from_sfc , &
+                            zap_close_levels , force_sfc_in_vinterp , &
                             ids , ide , jds , jde , kds , kde , &
                             ims , ime , jms , jme , kms , kme , &
                             its , ite , jts , jte , kts , kte )
@@ -620,8 +640,15 @@ integer::oops1,oops2
                      tmn(i,j) = soilt020(i,j)
                   END DO
                END DO
+            ELSE IF ( flag_st007028 .EQ. 1 ) THEN
+               DO j = jts , MIN(jde-1,jte)
+                  DO i = its , MIN(ide-1,ite)
+                     tmn(i,j) = st007028(i,j)
+                  END DO
+               END DO
             ELSE
-               CALL wrf_error_fatal ( 'No 10-40 cm, 0-10 cm, or 20 cm soil temperature data for TMN')
+               CALL wrf_debug ( 0 , 'No 10-40 cm, 0-10 cm, 7-28, or 20 cm soil temperature data for TMN')
+               CALL wrf_debug ( 0 , 'Using 1 degree static annual mean temps' )
             END IF
 
          CASE (LSMSCHEME)
@@ -733,6 +760,8 @@ integer::oops1,oops2
                                            tsk , ht , toposoil , landmask , flag_toposoil , &
                                            st000010 , st010040 , st040100 , st100200 , st010200 , &
                                            flag_st000010 , flag_st010040 , flag_st040100 , flag_st100200 , flag_st010200 , &
+                                           st000007 , st007028 , st028100 , st100255 , &
+                                           flag_st000007 , flag_st007028 , flag_st028100 , flag_st100255 , &
                                            soilt000 , soilt005 , soilt020 , soilt040 , soilt160 , soilt300 , &
                                            flag_soilt000 , flag_soilt005 , flag_soilt020 , flag_soilt040 , &
                                            flag_soilt160 , flag_soilt300 , &
@@ -750,7 +779,8 @@ integer::oops1,oops2
          CASE ( SLABSCHEME , LSMSCHEME , RUCLSMSCHEME )
             DO j = jts, MIN(jde-1,jte)
                DO i = its, MIN(ide-1,ite)
-                  IF ( ( landmask(i,j) .LT. 0.5 ) .AND. ( flag_sst .EQ. 1 ) ) THEN
+                  IF ( ( landmask(i,j) .LT. 0.5 ) .AND. ( flag_sst .EQ. 1 ) .AND. &
+                       ( sst(i,j) .GT. 240. ) .AND. ( sst(i,j) .LT. 350. ) ) THEN
                      tmn(i,j) = sst(i,j)
                      tsk(i,j) = sst(i,j)
                   ELSE IF ( landmask(i,j) .LT. 0.5 ) THEN
@@ -1583,9 +1613,10 @@ endif
 
 !---------------------------------------------------------------------
 
-   SUBROUTINE vert_interp ( forig , po , fnew , pnu , &
+   SUBROUTINE vert_interp ( fo , po , fnew , pnu , &
                             generic , var_type , &
                             interp_type , lagrange_order , lowest_lev_from_sfc , &
+                            zap_close_levels , force_sfc_in_vinterp , &
                             ids , ide , jds , jde , kds , kde , &
                             ims , ime , jms , jme , kms , kme , &
                             its , ite , jts , jte , kts , kte )
@@ -1597,6 +1628,8 @@ endif
 
       INTEGER , INTENT(IN)        :: interp_type , lagrange_order
       LOGICAL , INTENT(IN)        :: lowest_lev_from_sfc
+      REAL    , INTENT(IN)        :: zap_close_levels
+      INTEGER , INTENT(IN)        :: force_sfc_in_vinterp
       INTEGER , INTENT(IN)        :: ids , ide , jds , jde , kds , kde , &
                                      ims , ime , jms , jme , kms , kme , &
                                      its , ite , jts , jte , kts , kte
@@ -1604,16 +1637,16 @@ endif
 
       CHARACTER (LEN=1) :: var_type 
 
-      REAL , DIMENSION(ims:ime,generic,jms:jme) , INTENT(IN)     :: forig , po
+      REAL , DIMENSION(ims:ime,generic,jms:jme) , INTENT(IN)     :: fo , po
       REAL , DIMENSION(ims:ime,kms:kme,jms:jme) , INTENT(IN)     :: pnu
       REAL , DIMENSION(ims:ime,kms:kme,jms:jme) , INTENT(OUT)    :: fnew
 
-      REAL , DIMENSION(ims:ime,generic,jms:jme)                  :: porig
+      REAL , DIMENSION(ims:ime,generic,jms:jme)                  :: forig , porig
       REAL , DIMENSION(ims:ime,kms:kme,jms:jme)                  :: pnew
 
       !  Local vars
 
-      INTEGER :: i , j , k , ko , kn , k1 , k2 , ko_1 , ko_2
+      INTEGER :: i , j , k , ko , kn , k1 , k2 , ko_1 , ko_2 , knext
       INTEGER :: istart , iend , jstart , jend , kstart , kend 
       INTEGER , DIMENSION(ims:ime,kms:kme        )               :: k_above , k_below
       INTEGER , DIMENSION(ims:ime                )               :: ks
@@ -1622,15 +1655,9 @@ endif
 
       LOGICAL :: any_below_ground
 
-      REAL :: p1 , p2 , pn
+      REAL :: p1 , p2 , pn, hold
       REAL , DIMENSION(1:generic) :: ordered_porig , ordered_forig
       REAL , DIMENSION(kts:kte) :: ordered_pnew , ordered_fnew
-
-      !  Define "too close" as 1 mb.  Any time you have a level closer than this (usually
-      !  to the surface, as the surface crosses through that layer), then this level is
-      !  removed from the vertical interpolation so that the surface value has precedence.
-
-      REAL , PARAMETER :: close_levels = 100
 
       !  Horiontal loop bounds for different variable types.
 
@@ -1777,6 +1804,31 @@ endif
       END IF
 
       DO j = jstart , jend
+
+         !  The lowest level is the surface.  Levels 2 through "generic" are supposed to
+         !  be "bottom-up".  Flip if they are not.  This is based on the input pressure 
+         !  array.
+
+         IF      ( porig(its,2,j) .LT. porig(its,generic,j) ) THEN
+            DO kn = 2 , ( generic + 1 ) / 2
+               DO i = istart , iend
+                  hold                    = porig(i,kn,j) 
+                  porig(i,kn,j)           = porig(i,generic+2-kn,j)
+                  porig(i,generic+2-kn,j) = hold
+                  forig(i,kn,j)           = fo   (i,generic+2-kn,j)
+                  forig(i,generic+2-kn,j) = fo   (i,kn,j)
+               END DO
+               DO i = istart , iend
+                  forig(i,1,j)           = fo   (i,1,j)
+               END DO
+            END DO
+         ELSE
+            DO kn = 1 , generic
+               DO i = istart , iend
+                  forig(i,kn,j)          = fo   (i,kn,j)
+               END DO
+            END DO
+         END IF
     
          !  Skip all of the levels below ground in the original data based upon the surface pressure.
          !  The ko_above_sfc is the index in the pressure array that is above the surface.  If there
@@ -1802,10 +1854,21 @@ endif
          DO i = istart , iend
 
             !  If the surface value is in the middle of the array, three steps: 1) do the
-            !  values below the ground, do the surface, then add in the levels that are above
-            !  the surface.
+            !  values below the ground (this is just to catch the occasional value that is
+            !  inconsistently below the surface based on input data), 2) do the surface level, then 
+            !  3) add in the levels that are above the surface.  For the levels next to the surface,
+            !  we check to remove any levels that are "too close".  When building the column of input
+            !  pressures, we also attend to the request for forcing the surface analysis to be used
+            !  in a few lower eta-levels.
+
+            !  How many levels have we skipped in the input column.
 
             zap = 0
+
+            !  Fill in the column from up to the level just below the surface with the input
+            !  presssure and the input field (orig or old, which ever).  For an isobaric input
+            !  file, this data is isobaric.
+
             IF (  ko_above_sfc(i) .GT. 2 ) THEN
                count = 1
                DO ko = 2 , ko_above_sfc(i)-1
@@ -1819,7 +1882,7 @@ endif
                !  instance, we toss out the offending level (NOT the surface one) by simply
                !  decrementing the accumulating loop counter.
 
-               IF ( ordered_porig(count-1) - porig(i,1,j) .LT. close_levels ) THEN
+               IF ( ordered_porig(count-1) - porig(i,1,j) .LT. zap_close_levels ) THEN
                   count = count -1
                   zap = 1
                END IF
@@ -1830,16 +1893,51 @@ endif
                ordered_forig(count) = forig(i,1,j)
                count = count + 1
 
+               !  A usual way to do the vertical interpolation is to pay more attention to the 
+               !  surface data.  Why?  Well it has about 20x the density as the upper air, so we 
+               !  hope the analysis is better there.  We more strongly use this data by artificially
+               !  tossing out levels above the surface that are beneath a certain number of prescribed
+               !  eta levels at this (i,j).  The "zap" value is how many levels of input we are 
+               !  removing, which is used to tell the interpolator how many valid values are in 
+               !  the column.  The "count" value is the increment to the index of levels, and is
+               !  only used for assignments.
+
+               IF ( force_sfc_in_vinterp .GT. 0 ) THEN
+
+                  !  Get the pressure at the eta level.  We want to remove all input pressure levels
+                  !  between the level above the surface to the pressure at this eta surface.  That 
+                  !  forces the surface value to be used through the selected eta level.  Keep track
+                  !  of two things: the level to use above the eta levels, and how many levels we are
+                  !  skipping.
+
+                  knext = ko_above_sfc(i)
+                  find_level : DO ko = ko_above_sfc(i) , generic
+                     IF ( porig(i,ko,j) .LE. pnew(i,force_sfc_in_vinterp,j) ) THEN
+                        knext = ko
+                        exit find_level
+                     ELSE
+                        zap = zap + 1
+                     END IF
+                  END DO find_level
+
+               !  No request for special interpolation, so we just assign the next level to use
+               !  above the surface as, ta da, the first level above the surface.  I know, wow.
+
+               ELSE
+                  knext = ko_above_sfc(i)
+               END IF
+
                !  One more time, make sure the pressure just above the surface is not "too close", this
                !  will cause havoc with the higher order interpolators.  In case of a "too close"
                !  instance, we toss out the offending level above the surface (NOT the surface one) by simply
-               !  incrementing the loop counter.
+               !  incrementing the loop counter.  Here, count-1 is the surface level and knext is either
+               !  the next level up OR it is the level above the prescribed number of eta surfaces.
 
-               IF ( ordered_porig(count-1) - porig(i,ko_above_sfc(i),j) .LT. close_levels ) THEN
-                  kst =  ko_above_sfc(i)+1
+               IF ( ordered_porig(count-1) - porig(i,knext,j) .LT. zap_close_levels ) THEN
+                  kst = knext+1
                   zap = zap + 1
                ELSE
-                  kst =  ko_above_sfc(i)
+                  kst = knext
                END IF
    
                DO ko = kst , generic
@@ -1848,15 +1946,50 @@ endif
                   count = count + 1
                END DO
 
-            !  This is easy, the surface is the lowest level, just stick them in, in this order.
+            !  This is easy, the surface is the lowest level, just stick them in, in this order.  OK,
+            !  there are a couple of subtleties.  We have to check for that special interpolation that
+            !  skips some input levels so that the surface is used for the lowest few eta levels.  Also,
+            !  we must macke sure that we still do not have levels that are "too close" together.
             
             ELSE
+        
+               !  Initialize no input levels have yet been removed from consideration.
+
                zap = 0
+
+               !  The surface is the lowest level, so it gets set right away to location 1.
+
                ordered_porig(1) = porig(i,1,j)
                ordered_forig(1) = forig(i,1,j)
+
+               !  We start filling in the array at loc 2, as in just above the level we just stored.
+
                count = 2
-               DO ko = 2 , generic
-                  IF ( ordered_porig(count-1) - porig(i,ko,j) .LT. close_levels ) THEN
+
+               !  Are we forcing the interpolator to skip valid input levels so that the
+               !  surface data is used through more levels?  Essentially as above.
+
+               IF ( force_sfc_in_vinterp .GT. 0 ) THEN
+                  knext = 2
+                  find_level2: DO ko = 2 , generic
+                     IF ( porig(i,ko,j) .LE. pnew(i,force_sfc_in_vinterp,j) ) THEN
+                        knext = ko
+                        exit find_level2
+                     ELSE
+                        zap = zap + 1
+                     END IF
+                  END DO find_level2
+               ELSE
+                  knext = 2
+               END IF
+
+               !  Fill in the data above the surface.  The "knext" index is either the one
+               !  just above the surface OR it is the index associated with the level that
+               !  is just above the pressure at this (i,j) of the top eta level that is to
+               !  be directly impacted with the surface level in interpolation.
+
+               DO ko = knext , generic
+                  IF ( ordered_porig(count-1) - porig(i,ko,j) .LT. zap_close_levels ) THEN
                      zap = zap + 1
                      CYCLE
                   END IF
@@ -1867,7 +2000,7 @@ endif
 
             END IF
 
-            !  Now get the column of the "new" pressure data.
+            !  Now get the column of the "new" pressure data.  So, this one is easy.
 
             DO kn = kstart , kend
                ordered_pnew(kn) = pnew(i,kn,j)
@@ -1894,7 +2027,7 @@ endif
             !  the isobaric original field has the surface from 2-m T and RH, and 10-m U and V).
 
             IF ( lowest_lev_from_sfc ) THEN
-               fnew(i,1,j) = forig(i,ko_above_sfc(i),j)
+               fnew(i,1,j) = forig(i,ko_above_sfc(i)-1,j)
             END IF
 
          END DO
@@ -1908,6 +2041,7 @@ endif
    SUBROUTINE vert_interp_old ( forig , po , fnew , pnu , &
                             generic , var_type , &
                             interp_type , lagrange_order , lowest_lev_from_sfc , &
+                            zap_close_levels , force_sfc_in_vinterp , &
                             ids , ide , jds , jde , kds , kde , &
                             ims , ime , jms , jme , kms , kme , &
                             its , ite , jts , jte , kts , kte )
@@ -1919,6 +2053,8 @@ endif
 
       INTEGER , INTENT(IN)        :: interp_type , lagrange_order
       LOGICAL , INTENT(IN)        :: lowest_lev_from_sfc
+      REAL    , INTENT(IN)        :: zap_close_levels
+      INTEGER , INTENT(IN)        :: force_sfc_in_vinterp
       INTEGER , INTENT(IN)        :: ids , ide , jds , jde , kds , kde , &
                                      ims , ime , jms , jme , kms , kme , &
                                      its , ite , jts , jte , kts , kte
@@ -2426,9 +2562,20 @@ print *,'VERT EXTRAP = ', vert_extrap
 
       !  Local vars
 
-      INTEGER :: i , j , k 
+      INTEGER :: i , j , k, min_lev
 
-      k = kte
+      i = its
+      j = jts
+      p_top = p(i,2,j)
+      min_lev = 2
+      DO k = 2 , kte
+         IF ( p_top .GT. p(i,k,j) ) THEN
+            p_top = p(i,k,j)
+            min_lev = k
+         END IF
+      END DO
+
+      k = min_lev
       p_top = p(its,k,jts)
       DO j = jts , MIN ( jde-1 , jte )
          DO i = its , MIN (ide-1 , ite )
@@ -2476,7 +2623,7 @@ print *,'VERT EXTRAP = ', vert_extrap
 
 !---------------------------------------------------------------------
 
-   SUBROUTINE integ_moist ( q , p , pd , t , ght , intq , &
+   SUBROUTINE integ_moist ( q_in , p_in , pd_out , t_in , ght_in , intq , &
                             ids , ide , jds , jde , kds , kde , &
                             ims , ime , jms , jme , kms , kme , &
                             its , ite , jts , jte , kts , kte )
@@ -2491,8 +2638,8 @@ print *,'VERT EXTRAP = ', vert_extrap
                                      ims , ime , jms , jme , kms , kme , &
                                      its , ite , jts , jte , kts , kte
 
-      REAL , DIMENSION(ims:ime,kms:kme,jms:jme) , INTENT(IN)     :: q , p , t , ght
-      REAL , DIMENSION(ims:ime,kms:kme,jms:jme) , INTENT(OUT)    :: pd
+      REAL , DIMENSION(ims:ime,kms:kme,jms:jme) , INTENT(IN)     :: q_in , p_in , t_in , ght_in
+      REAL , DIMENSION(ims:ime,kms:kme,jms:jme) , INTENT(OUT)    :: pd_out
       REAL , DIMENSION(ims:ime,        jms:jme) , INTENT(OUT)    :: intq
 
       !  Local vars
@@ -2500,9 +2647,12 @@ print *,'VERT EXTRAP = ', vert_extrap
       INTEGER :: i , j , k 
       INTEGER , DIMENSION(ims:ime) :: level_above_sfc
       REAL , DIMENSION(ims:ime,jms:jme) :: psfc , tsfc , qsfc, zsfc
+      REAL , DIMENSION(ims:ime,kms:kme) :: q , p , t , ght, pd
 
       REAL :: rhobar , qbar , dz
       REAL :: p1 , p2 , t1 , t2 , q1 , q2 , z1, z2
+  
+      LOGICAL :: upside_down
 
       REAL , PARAMETER :: Rd = 287.
       REAL , PARAMETER :: g  =   9.8
@@ -2511,12 +2661,18 @@ print *,'VERT EXTRAP = ', vert_extrap
 
       DO j = jts , MIN ( jde-1 , jte )
          DO i = its , MIN (ide-1 , ite )
-            psfc(i,j) = p(i,1,j)
-            tsfc(i,j) = t(i,1,j)
-            qsfc(i,j) = q(i,1,j)
-            zsfc(i,j) = ght(i,1,j)
+            psfc(i,j) = p_in(i,kts,j)
+            tsfc(i,j) = t_in(i,kts,j)
+            qsfc(i,j) = q_in(i,kts,j)
+            zsfc(i,j) = ght_in(i,kts,j)
          END DO
       END DO
+
+      IF ( p_in(its,kts+1,jts) .LT. p_in(its,kte,jts) ) THEN
+         upside_down = .TRUE.
+      ELSE
+         upside_down = .FALSE.
+      END IF
 
       DO j = jts , MIN ( jde-1 , jte )
 
@@ -2526,22 +2682,49 @@ print *,'VERT EXTRAP = ', vert_extrap
             intq(i,j) = 0.
          END DO
 
+         IF ( upside_down ) THEN
+            DO i = its , MIN (ide-1 , ite )
+               p(i,kts) = p_in(i,kts,j)
+               t(i,kts) = t_in(i,kts,j)
+               q(i,kts) = q_in(i,kts,j)
+               ght(i,kts) = ght_in(i,kts,j)
+               DO k = kts+1,kte
+                  p(i,k) = p_in(i,kte+2-k,j)
+                  t(i,k) = t_in(i,kte+2-k,j)
+                  q(i,k) = q_in(i,kte+2-k,j)
+                  ght(i,k) = ght_in(i,kte+2-k,j)
+               END DO
+            END DO
+         ELSE
+            DO i = its , MIN (ide-1 , ite )
+               DO k = kts+1,kte
+                  p(i,k) = p_in(i,k      ,j)
+                  t(i,k) = t_in(i,k      ,j)
+                  q(i,k) = q_in(i,k      ,j)
+                  ght(i,k) = ght_in(i,k      ,j)
+               END DO
+            END DO
+         END IF
+
          !  Find the first level above the ground.  If all of the levels are above ground, such as
          !  a terrain following lower coordinate, then the first level above ground is index #2.
 
          DO i = its , MIN (ide-1 , ite )
             level_above_sfc(i) = -1
-            IF ( p(i,kts+1,j) .LT. psfc(i,j) ) THEN
+            IF ( p(i,kts+1) .LT. psfc(i,j) ) THEN
                level_above_sfc(i) = kts+1
             ELSE
                find_k : DO k = kts+1,kte-1
-                  IF ( ( p(i,k  ,j)-psfc(i,j) .GE. 0. ) .AND. &
-                       ( p(i,k+1,j)-psfc(i,j) .LT. 0. ) ) THEN 
+                  IF ( ( p(i,k  )-psfc(i,j) .GE. 0. ) .AND. &
+                       ( p(i,k+1)-psfc(i,j) .LT. 0. ) ) THEN 
                      level_above_sfc(i) = k+1
                      EXIT find_k
                   END IF
                END DO find_k
                IF ( level_above_sfc(i) .EQ. -1 ) THEN
+print *,'i,j = ',i,j
+print *,'p = ',p(i,:)
+print *,'p sfc = ',psfc(i,j)
                   CALL wrf_error_fatal ( 'Could not find level above ground')
                END IF
             END IF
@@ -2551,40 +2734,57 @@ print *,'VERT EXTRAP = ', vert_extrap
 
             !  Account for the moisture above the ground.
 
+            pd(i,kte) = p(i,kte)
             DO k = kte-1,level_above_sfc(i),-1
-                  rhobar = ( p(i,k  ,j) / ( Rd * t(i,k  ,j) ) + &
-                             p(i,k+1,j) / ( Rd * t(i,k+1,j) ) ) * 0.5
-                  qbar   = ( q(i,k  ,j) + q(i,k+1,j) ) * 0.5
-                  dz     = ght(i,k+1,j) - ght(i,k,j)
+                  rhobar = ( p(i,k  ) / ( Rd * t(i,k  ) ) + &
+                             p(i,k+1) / ( Rd * t(i,k+1) ) ) * 0.5
+                  qbar   = ( q(i,k  ) + q(i,k+1) ) * 0.5
+                  dz     = ght(i,k+1) - ght(i,k)
                   intq(i,j) = intq(i,j) + g * qbar * rhobar / (1. + qbar) * dz
-                  pd(i,k+1,j) = p(i,k+1,j) - intq(i,j)
+                  pd(i,k) = p(i,k) - intq(i,j)
             END DO
 
             !  Account for the moisture between the surface and the first level up.
 
-            IF ( ( p(i,level_above_sfc(i)-1,j)-psfc(i,j) .GE. 0. ) .AND. &
-                 ( p(i,level_above_sfc(i)  ,j)-psfc(i,j) .LT. 0. ) .AND. &
+            IF ( ( p(i,level_above_sfc(i)-1)-psfc(i,j) .GE. 0. ) .AND. &
+                 ( p(i,level_above_sfc(i)  )-psfc(i,j) .LT. 0. ) .AND. &
                  ( level_above_sfc(i) .GT. kts ) ) THEN
-                  p1 = psfc(i,j)
-                  p2 = p(i,level_above_sfc(i),j)
-                  t1 = tsfc(i,j)
-                  t2 = t(i,level_above_sfc(i),j)
-                  q1 = qsfc(i,j)
-                  q2 = q(i,level_above_sfc(i),j)
-                  z1 = zsfc(i,j)
-                  z2 = ght(i,level_above_sfc(i),j)
-                  rhobar = ( p1 / ( Rd * t1 ) + &
-                             p2 / ( Rd * t2 ) ) * 0.5
-                  qbar   = ( q1 + q2 ) * 0.5
-                  dz     = z2 - z1
-                  intq(i,j) = intq(i,j) + g * qbar * rhobar / (1. + qbar) * dz
-                  pd(i,level_above_sfc(i),j) = p(i,level_above_sfc(i),j) - intq(i,j)
-                  DO k = level_above_sfc(i)-1,1,-1
-                     pd(i,k,j) = p(i,k,j) - intq(i,j)
-                  END DO
+               p1 = psfc(i,j)
+               p2 = p(i,level_above_sfc(i))
+               t1 = tsfc(i,j)
+               t2 = t(i,level_above_sfc(i))
+               q1 = qsfc(i,j)
+               q2 = q(i,level_above_sfc(i))
+               z1 = zsfc(i,j)
+               z2 = ght(i,level_above_sfc(i))
+               rhobar = ( p1 / ( Rd * t1 ) + &
+                          p2 / ( Rd * t2 ) ) * 0.5
+               qbar   = ( q1 + q2 ) * 0.5
+               dz     = z2 - z1
+               intq(i,j) = intq(i,j) + g * qbar * rhobar / (1. + qbar) * dz
+               DO k = level_above_sfc(i),kts+1,-1
+                  pd(i,k) = p(i,k) - intq(i,j)
+               END DO
             END IF
+            pd(i,kts) = psfc(i,j) - intq(i,j)
 
          END DO
+
+         IF ( upside_down ) THEN
+            DO i = its , MIN (ide-1 , ite )
+               pd_out(i,kts,j) = pd(i,kts)
+               DO k = kts+1,kte
+                  pd_out(i,kte+2-k,j) = pd(i,k)
+               END DO
+            END DO
+         ELSE
+            DO i = its , MIN (ide-1 , ite )
+               DO k = kts,kte
+                  pd_out(i,k,j) = pd(i,k)
+               END DO
+            END DO
+         END IF
+
       END DO
 
    END SUBROUTINE integ_moist
@@ -3010,7 +3210,7 @@ print *,'namelist p_top (Pa) = ',p_top
 !---------------------------------------------------------------------
 
    SUBROUTINE sfcprs (t, q, height, pslv, ter, avgsfct, p, &
-                      psfc, psfc_method, less_than_24h, &
+                      psfc, ez_method, &
                       ids , ide , jds , jde , kds , kde , &
                       ims , ime , jms , jme , kms , kme , &
                       its , ite , jts , jte , kts , kte )
@@ -3035,9 +3235,7 @@ print *,'namelist p_top (Pa) = ',p_top
       INTEGER , INTENT(IN) ::  ids , ide , jds , jde , kds , kde , &
                                ims , ime , jms , jme , kms , kme , &
                                its , ite , jts , jte , kts , kte 
-      INTEGER , INTENT ( IN ) :: psfc_method
-
-      LOGICAL , INTENT ( IN ) :: less_than_24h
+      LOGICAL , INTENT ( IN ) :: ez_method
 
       REAL , DIMENSION (ims:ime,kms:kme,jms:jme) , INTENT(IN ):: t, q, height, p
       REAL , DIMENSION (ims:ime,        jms:jme) , INTENT(IN ):: pslv ,  ter, avgsfct 
@@ -3046,13 +3244,12 @@ print *,'namelist p_top (Pa) = ',p_top
       INTEGER                     :: i
       INTEGER                     :: j
       INTEGER                     :: k
-      INTEGER                     :: k500
-      INTEGER                     :: k700
-      INTEGER                     :: k850
+      INTEGER , DIMENSION (its:ite,jts:jte) :: k500 , k700 , k850
 
       LOGICAL                     :: l1
       LOGICAL                     :: l2
       LOGICAL                     :: l3
+      LOGICAL                     :: OK
 
       REAL                        :: gamma78     ( its:ite,jts:jte )
       REAL                        :: gamma57     ( its:ite,jts:jte )
@@ -3071,7 +3268,7 @@ print *,'namelist p_top (Pa) = ',p_top
       !  surface temperature (what we will call the "other way").  Both are essentially 
       !  corrections to a sea level pressure with a high-resolution topography field.
 
-      IF ( ( psfc_method .eq. 1 ) .AND. ( .NOT. less_than_24h ) ) THEN
+      IF ( ez_method ) THEN
 
          DO j = jts , MIN(jde-1,jte)
             DO i = its , MIN(ide-1,ite)
@@ -3091,28 +3288,72 @@ print *,'namelist p_top (Pa) = ',p_top
          j = jts
          DO k = kts+1 , kte
             IF      (NINT(p(i,k,j)) .EQ. 85000) THEN
-               k850 = k
+               k850(i,j) = k
             ELSE IF (NINT(p(i,k,j)) .EQ. 70000) THEN
-               k700 = k
+               k700(i,j) = k
             ELSE IF (NINT(p(i,k,j)) .EQ. 50000) THEN
-               k500 = k
+               k500(i,j) = k
             END IF
          END DO
    
-         IF ( ( k850 .EQ. 0 ) .OR. ( k700 .EQ. 0 ) .OR. ( k500 .EQ. 0 ) ) THEN
-            PRINT '(A)','Error in finding p level for 850, 700 or 500 hPa.'
-            DO K = kts+1 , kte
-               PRINT '(A,I3,A,F10.2,A)','K = ',k,'  PRESSURE = ',p(i,k,j),' Pa'
+         IF ( ( k850(i,j) .EQ. 0 ) .OR. ( k700(i,j) .EQ. 0 ) .OR. ( k500(i,j) .EQ. 0 ) ) THEN
+
+            !  Possibly it is just that we have a generalized vertical coord, so we do not
+            !  have the values exactly.  Do a simple assignment to a close vertical level.
+
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  DO k = kts+1 , kte-1
+                     IF ( ( p(i,k,j) - 85000. )  * ( p(i,k+1,j) - 85000. ) .LE. 0.0 ) THEN
+                        k850(i,j) = k
+                     END IF
+                     IF ( ( p(i,k,j) - 70000. )  * ( p(i,k+1,j) - 70000. ) .LE. 0.0 ) THEN
+                        k700(i,j) = k
+                     END IF
+                     IF ( ( p(i,k,j) - 50000. )  * ( p(i,k+1,j) - 50000. ) .LE. 0.0 ) THEN
+                        k500(i,j) = k
+                     END IF
+                  END DO
+               END DO
             END DO
-            PRINT '(A)','Expected 850, 700, and 500 mb values, at least.'
-            CALL wrf_error_fatal ( 'wrong pressure levels' )
+
+            !  If we *still* do not have the k levels, punt.  I mean, we did try.
+
+            OK = .TRUE.
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  IF ( ( k850(i,j) .EQ. 0 ) .OR. ( k700(i,j) .EQ. 0 ) .OR. ( k500(i,j) .EQ. 0 ) ) THEN
+                     OK = .FALSE.
+                     PRINT '(A)','(i,j) = ',i,j,'  Error in finding p level for 850, 700 or 500 hPa.'
+                     DO K = kts+1 , kte
+                        PRINT '(A,I3,A,F10.2,A)','K = ',k,'  PRESSURE = ',p(i,k,j),' Pa'
+                     END DO
+                     PRINT '(A)','Expected 850, 700, and 500 mb values, at least.'
+                  END IF
+               END DO
+            END DO
+            IF ( .NOT. OK ) THEN
+               CALL wrf_error_fatal ( 'wrong pressure levels' )
+            END IF
+
+         !  We are here if the data is isobaric and we found the levels for 850, 700,
+         !  and 500 mb right off the bat.
+
+         ELSE
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  k850(i,j) = k850(its,jts)
+                  k700(i,j) = k700(its,jts)
+                  k500(i,j) = k500(its,jts)
+               END DO
+            END DO
          END IF
        
          !  The 850 hPa level of geopotential height is called something special.
    
          DO j = jts , MIN(jde-1,jte)
             DO i = its , MIN(ide-1,ite)
-               ht(i,j) = height(i,k850,j)
+               ht(i,j) = height(i,k850(i,j),j)
             END DO
          END DO
    
@@ -3130,7 +3371,7 @@ print *,'namelist p_top (Pa) = ',p_top
    
          DO j = jts , MIN(jde-1,jte)
             DO i = its , MIN(ide-1,ite)
-               psfc(i,j) = pslv(i,j) * (pslv(i,j) / 85000.) ** ht(i,j)
+               psfc(i,j) = pslv(i,j) * (pslv(i,j) / p(i,k850(i,j),j)) ** ht(i,j)
             END DO
          END DO
    
@@ -3156,9 +3397,9 @@ print *,'namelist p_top (Pa) = ',p_top
    
          DO j = jts , MIN(jde-1,jte)
             DO i = its , MIN(ide-1,ite)
-               t850(i,j) = t(i,k850,j) * (1. + 0.608 * q(i,k850,j))
-               t700(i,j) = t(i,k700,j) * (1. + 0.608 * q(i,k700,j))
-               t500(i,j) = t(i,k500,j) * (1. + 0.608 * q(i,k500,j))
+               t850(i,j) = t(i,k850(i,j),j) * (1. + 0.608 * q(i,k850(i,j),j))
+               t700(i,j) = t(i,k700(i,j),j) * (1. + 0.608 * q(i,k700(i,j),j))
+               t500(i,j) = t(i,k500(i,j),j) * (1. + 0.608 * q(i,k500(i,j),j))
             END DO
          END DO
    
@@ -3167,8 +3408,8 @@ print *,'namelist p_top (Pa) = ',p_top
    
          DO j = jts , MIN(jde-1,jte)
             DO i = its , MIN(ide-1,ite)
-               gamma78(i,j) = ALOG(t850(i,j) / t700(i,j))  / ALOG (85000. / 70000.)
-               gamma57(i,j) = ALOG(t700(i,j) / t500(i,j))  / ALOG (70000. / 50000.)
+               gamma78(i,j) = ALOG(t850(i,j) / t700(i,j))  / ALOG (p(i,k850(i,j),j) / p(i,k700(i,j),j) )
+               gamma57(i,j) = ALOG(t700(i,j) / t500(i,j))  / ALOG (p(i,k700(i,j),j) / p(i,k500(i,j),j) )
             END DO
          END DO
    
@@ -3177,9 +3418,9 @@ print *,'namelist p_top (Pa) = ',p_top
                IF      ( ( psfc(i,j) - 95000. ) .GE. 0. ) THEN
                   t1(i,j) = t850(i,j)
                ELSE IF ( ( psfc(i,j) - 85000. ) .GE. 0. ) THEN
-                  t1(i,j) = t700(i,j) * (p1(i,j) / 70000.) ** gamma78(i,j)
+                  t1(i,j) = t700(i,j) * (p1(i,j) / (p(i,k700(i,j),j))) ** gamma78(i,j)
                ELSE IF ( ( psfc(i,j) - 70000. ) .GE. 0.) THEN 
-                  t1(i,j) = t500(i,j) * (p1(i,j) / 50000.) ** gamma57(i,j)
+                  t1(i,j) = t500(i,j) * (p1(i,j) / (p(i,k500(i,j),j))) ** gamma57(i,j)
                ELSE
                   t1(i,j) = t500(i,j)
                ENDIF

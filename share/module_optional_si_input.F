@@ -1,12 +1,15 @@
 MODULE module_optional_si_input
 
-   INTEGER :: flag_metgrid
+   INTEGER :: flag_metgrid  , flag_tavgsfc
 
-   INTEGER :: flag_qc       , flag_qr       , flag_qi       , flag_qs       , flag_qg
+   INTEGER :: flag_qv       , flag_qc       , flag_qr       , flag_qi       , flag_qs       , flag_qg
 
    INTEGER :: flag_st000010 , flag_st010040 , flag_st040100 , flag_st100200 , flag_st010200 , &
               flag_sm000010 , flag_sm010040 , flag_sm040100 , flag_sm100200 , flag_sm010200 , &
               flag_sw000010 , flag_sw010040 , flag_sw040100 , flag_sw100200 , flag_sw010200
+
+   INTEGER :: flag_st000007 , flag_st007028 , flag_st028100 , flag_st100255 , &
+              flag_sm000007 , flag_sm007028 , flag_sm028100 , flag_sm100255
 
    INTEGER :: flag_soilt000 , flag_soilt005 , flag_soilt020 , flag_soilt040 , flag_soilt160 , flag_soilt300 , &
               flag_soilm000 , flag_soilm005 , flag_soilm020 , flag_soilm040 , flag_soilm160 , flag_soilm300 , &
@@ -106,6 +109,11 @@ CONTAINS
       jts = grid%sp33 ; jte = grid%ep33 ;   ! note that tile is entire patch
 
 
+      CALL optional_tavgsfc    ( grid , fid , &
+                                 ids, ide, jds, jde, kds, kde, &
+                                 ims, ime, jms, jme, kms, kme, &
+                                 its, ite, jts, jte, kts, kte  )
+
       CALL optional_moist      ( grid , fid , &
                                  ids, ide, jds, jde, kds, kde, &
                                  ims, ime, jms, jme, kms, kme, &
@@ -168,12 +176,18 @@ USE module_io_domain
 
       INTEGER :: itmp , icnt , ierr
 
+      flag_qv       = 0
       flag_qc       = 0
       flag_qr       = 0
       flag_qi       = 0
       flag_qs       = 0
       flag_qg       = 0
 
+      flag_name(1:8) = 'QV      '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_qv       = itmp
+      END IF
       flag_name(1:8) = 'QC      '
       CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
       IF ( ierr .EQ. 0 ) THEN
@@ -268,6 +282,39 @@ USE module_io_domain
     
    END SUBROUTINE optional_sst
 
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+   SUBROUTINE optional_tavgsfc ( grid , fid , &
+                                 ids, ide, jds, jde, kds, kde, &
+                                 ims, ime, jms, jme, kms, kme, &
+                                 its, ite, jts, jte, kts, kte  )
+
+      USE module_io_wrf
+      USE module_domain
+USE module_configure
+USE module_io_domain
+
+      IMPLICIT NONE 
+
+      TYPE ( domain ) :: grid
+      INTEGER , INTENT(IN) :: fid
+
+      INTEGER :: ids, ide, jds, jde, kds, kde, &
+                 ims, ime, jms, jme, kms, kme, &
+                 its, ite, jts, jte, kts, kte
+
+      INTEGER :: itmp , icnt , ierr
+
+      flag_tavgsfc  = 0 
+
+      flag_name(1:8) = 'TAVGSFC '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_tavgsfc  = itmp
+      END IF
+    
+   END SUBROUTINE optional_tavgsfc
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -377,6 +424,16 @@ USE module_io_domain
       flag_sw040100 = 0
       flag_sw100200 = 0
       flag_sw010200 = 0
+
+      flag_st000007 = 0 
+      flag_st007028 = 0
+      flag_st028100 = 0
+      flag_st100255 = 0
+
+      flag_sm000007 = 0
+      flag_sm007028 = 0
+      flag_sm028100 = 0
+      flag_sm100255 = 0
 
       flag_soilt000 = 0 
       flag_soilt005 = 0 
@@ -585,6 +642,102 @@ USE module_io_domain
          DO j = jts , MIN(jde-1,jte)
             DO i = its , MIN(ide-1,ite)
                sw_input(i,num_sw_levels_input + 1,j) = grid%sw010200(i,j)
+            END DO
+         END DO
+      END IF
+      flag_name(1:8) = 'ST000007'
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_st000007 = itmp
+         num_st_levels_input = num_st_levels_input + 1
+         st_levels_input(num_st_levels_input) = char2int2(flag_name(3:8))
+         DO j = jts , MIN(jde-1,jte)
+            DO i = its , MIN(ide-1,ite)
+               st_input(i,num_st_levels_input + 1,j) = grid%st000007(i,j)
+            END DO
+         END DO
+      END IF
+      flag_name(1:8) = 'ST007028'
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_st007028 = itmp
+         num_st_levels_input = num_st_levels_input + 1
+         st_levels_input(num_st_levels_input) = char2int2(flag_name(3:8))
+         DO j = jts , MIN(jde-1,jte)
+            DO i = its , MIN(ide-1,ite)
+               st_input(i,num_st_levels_input + 1,j) = grid%st007028(i,j)
+            END DO
+         END DO
+      END IF
+      flag_name(1:8) = 'ST028100'
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_st028100 = itmp
+         num_st_levels_input = num_st_levels_input + 1
+         st_levels_input(num_st_levels_input) = char2int2(flag_name(3:8))
+         DO j = jts , MIN(jde-1,jte)
+            DO i = its , MIN(ide-1,ite)
+               st_input(i,num_st_levels_input + 1,j) = grid%st028100(i,j)
+            END DO
+         END DO
+      END IF
+      flag_name(1:8) = 'ST100255'
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_st100255 = itmp
+         num_st_levels_input = num_st_levels_input + 1
+         st_levels_input(num_st_levels_input) = char2int2(flag_name(3:8))
+         DO j = jts , MIN(jde-1,jte)
+            DO i = its , MIN(ide-1,ite)
+               st_input(i,num_st_levels_input + 1,j) = grid%st100255(i,j)
+            END DO
+         END DO
+      END IF
+      flag_name(1:8) = 'SM000007'
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_sm000007 = itmp
+         num_sm_levels_input = num_sm_levels_input + 1
+         sm_levels_input(num_sm_levels_input) = char2int2(flag_name(3:8))
+         DO j = jts , MIN(jde-1,jte)
+            DO i = its , MIN(ide-1,ite)
+               sm_input(i,num_sm_levels_input + 1,j) = grid%sm000007(i,j)
+            END DO
+         END DO
+      END IF
+      flag_name(1:8) = 'SM007028'
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_sm007028 = itmp
+         num_sm_levels_input = num_sm_levels_input + 1
+         sm_levels_input(num_sm_levels_input) = char2int2(flag_name(3:8))
+         DO j = jts , MIN(jde-1,jte)
+            DO i = its , MIN(ide-1,ite)
+               sm_input(i,num_sm_levels_input + 1,j) = grid%sm007028(i,j)
+            END DO
+         END DO
+      END IF
+      flag_name(1:8) = 'SM028100'
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_sm028100 = itmp
+         num_sm_levels_input = num_sm_levels_input + 1
+         sm_levels_input(num_sm_levels_input) = char2int2(flag_name(3:8))
+         DO j = jts , MIN(jde-1,jte)
+            DO i = its , MIN(ide-1,ite)
+               sm_input(i,num_sm_levels_input + 1,j) = grid%sm028100(i,j)
+            END DO
+         END DO
+      END IF
+      flag_name(1:8) = 'SM100255'
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_sm100255 = itmp
+         num_sm_levels_input = num_sm_levels_input + 1
+         sm_levels_input(num_sm_levels_input) = char2int2(flag_name(3:8))
+         DO j = jts , MIN(jde-1,jte)
+            DO i = its , MIN(ide-1,ite)
+               sm_input(i,num_sm_levels_input + 1,j) = grid%sm100255(i,j)
             END DO
          END DO
       END IF

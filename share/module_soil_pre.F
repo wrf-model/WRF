@@ -539,6 +539,8 @@ print *,'WATER CHANGE = ',change_water
                                  tsk , ter , toposoil , landmask , flag_toposoil , &
                                       st000010 ,      st010040 ,      st040100 ,      st100200 ,      st010200 , &
                                  flag_st000010 , flag_st010040 , flag_st040100 , flag_st100200 , flag_st010200 , & 
+                                      st000007 ,      st007028 ,      st028100 ,      st100255 , &
+                                 flag_st000007 , flag_st007028 , flag_st028100 , flag_st100255 , &
                                       soilt000 ,      soilt005 ,      soilt020 ,      soilt040 ,      soilt160 ,      soilt300 , &
                                  flag_soilt000 , flag_soilt005 , flag_soilt020 , flag_soilt040 , flag_soilt160 , flag_soilt300 , &
                                  ids , ide , jds , jde , kds , kde , &
@@ -554,9 +556,11 @@ print *,'WATER CHANGE = ',change_water
       REAL , DIMENSION(ims:ime,jms:jme) , INTENT(IN)    :: ter , toposoil , landmask
       REAL , DIMENSION(ims:ime,jms:jme) , INTENT(INOUT) :: tmn , tsk
       REAL , DIMENSION(ims:ime,jms:jme) , INTENT(INOUT) :: st000010 , st010040 , st040100 , st100200 , st010200
+      REAL , DIMENSION(ims:ime,jms:jme) , INTENT(INOUT) :: st000007 , st007028 , st028100 , st100255
       REAL , DIMENSION(ims:ime,jms:jme) , INTENT(INOUT) :: soilt000 , soilt005 , soilt020 , soilt040 , soilt160 , soilt300
 
       INTEGER , INTENT(IN) :: flag_st000010 , flag_st010040 , flag_st040100 , flag_st100200 , flag_st010200
+      INTEGER , INTENT(IN) :: flag_st000007 , flag_st007028 , flag_st028100 , flag_st100255
       INTEGER , INTENT(IN) :: flag_soilt000 , flag_soilt005 , flag_soilt020 , flag_soilt040 , flag_soilt160 , flag_soilt300
       INTEGER , INTENT(IN) :: sf_surface_physics , flag_toposoil
  
@@ -636,6 +640,19 @@ cycle
                   END IF
                   IF ( flag_st010200 .EQ. 1 ) THEN
                      st010200(i,j) = st010200(i,j) - 0.0065 * ( ter(i,j) - toposoil(i,j) )
+                  END IF
+
+                  IF ( flag_st000007 .EQ. 1 ) THEN
+                     st000007(i,j) = st000007(i,j) - 0.0065 * ( ter(i,j) - toposoil(i,j) )
+                  END IF
+                  IF ( flag_st007028 .EQ. 1 ) THEN
+                     st007028(i,j) = st007028(i,j) - 0.0065 * ( ter(i,j) - toposoil(i,j) )
+                  END IF
+                  IF ( flag_st028100 .EQ. 1 ) THEN
+                     st028100(i,j) = st028100(i,j) - 0.0065 * ( ter(i,j) - toposoil(i,j) )
+                  END IF
+                  IF ( flag_st100255 .EQ. 1 ) THEN
+                     st100255(i,j) = st100255(i,j) - 0.0065 * ( ter(i,j) - toposoil(i,j) )
                   END IF
       
                   IF ( flag_soilt000 .EQ. 1 ) THEN

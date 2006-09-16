@@ -78,7 +78,7 @@ state    real  LU_INDEX         ij      misc        1         -     irh01d=(inte
 state    real  LU_MASK          ij      misc        1         -     i3h1     "LU_MASK"              "0 land 1 water"         ""
 
 #
-# Variables from HINTERP
+# Variables from WPS
 #
 state    real   u_gc           igj      dyn_em      1        X     i1  "UU"     "x-wind component"    "m s-1"
 state    real   v_gc           igj      dyn_em      1        Y     i1  "VV"     "y-wind component"    "m s-1"
@@ -90,21 +90,20 @@ state    real   xlat_gc        ij       dyn_em      1        -     i1  "XLAT_M" 
 state    real   xlong_gc       ij       dyn_em      1        -     i1  "XLONG_M" "longitude, positive east" "degrees"
 state    real   ht_gc          ij       dyn_em      1        -     i1  "HGT_M" "topography elevation" "m"
 state    real   tsk_gc         ij       dyn_em      1        -     i1  "SKINTEMP"  "skin temperature"  "K"
+state    real   tavgsfc        ij       dyn_em      1        -     i1  "TAVGSFC"  "daily mean of surface air temperature"  "K"
 state    real   tmn_gc         ij       dyn_em      1        -     i1  "SOILTEMP"  "annual mean deep soil temperature"  "K"
-#state   real   landmask_gc    ij       dyn_em      1        -     i1  "LANDSEA"    "input landmask"   "0 1 flag"
-#state   integer landmask_gc    ij       dyn_em      1        -     i1  "LANDMASK"    "input landmask"   "0 1 flag"
 state    real   pslv_gc        ij       dyn_em      1        -     i1  "PMSL"  "sea level pressure"  "Pa"
 state    real   greenfrac      imj      dyn_em      1        -     i1  "GREENFRAC" "monthly greenness fraction" "0 - 1 fraction"
 state    real   albedo12m      imj      dyn_em      1        -     i1  "ALBEDO12M" "background albedo" "0 - 1 fraction"
 state    real   pd_gc          igj      dyn_em      1        -     -   "PD"    "dry pressure"        "Pa"
-state    real   q_gc           igj      dyn_em      1        -     -   "Q"     "mixing ratio"        "kg kg-1"
+state    real   qv_gc          igj      dyn_em      1        -     i1  "QV"     "mixing ratio"        "kg kg-1"
 state    real   intq_gc        ij       dyn_em      1        -     -   "INTQ"  "integrated mixing ratio" "Pa"
 state    real   pdhs           ij       dyn_em      1        -     -   "PDHS"  "hydrostatic dry surface pressure" "Pa"
-#state    real   qr_gc          igj      dyn_em      1        -     i1  "QRAIN"    "rain water mixing ratio"   "kg kg-1"
-#state    real   qc_gc          igj      dyn_em      1        -     i1  "QCLOUD"    "cloud water mixing ratio"   "kg kg-1"
-#state    real   qs_gc          igj      dyn_em      1        -     i1  "QSNOW"    "snow mixing ratio"   "kg kg-1"
-#state    real   qi_gc          igj      dyn_em      1        -     i1  "QICE"    "cloud ice mixing ratio"   "kg kg-1"
-#state    real   qg_gc          igj      dyn_em      1        -     i1  "QGRAUPEL"    "graupel mixing ratio"   "kg kg-1"
+#state    real   qr_gc          igj      dyn_em      1        -     i1  "QR"    "rain water mixing ratio"   "kg kg-1"
+#state    real   qc_gc          igj      dyn_em      1        -     i1  "QC"    "cloud water mixing ratio"   "kg kg-1"
+#state    real   qs_gc          igj      dyn_em      1        -     i1  "QS"    "snow mixing ratio"   "kg kg-1"
+#state    real   qi_gc          igj      dyn_em      1        -     i1  "QI"    "cloud ice mixing ratio"   "kg kg-1"
+#state    real   qg_gc          igj      dyn_em      1        -     i1  "QG"    "graupel mixing ratio"   "kg kg-1"
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 #                                               
@@ -349,6 +348,14 @@ state    real   dtbc            -        misc     -         -      ir       "dtb
 # SI - start variables from netCDF format from Standard Initialization, most eventually for use in LSM schemes
 #-------------------------------------------------------------------------------------------------------------------------------------------
 
+state   real   sm000007            ij    misc          1     -     i1      "SM000007"      "LAYER SOIL MOISTURE" "m3 m-3"
+state   real   sm007028            ij    misc          1     -     i1      "SM007028"      "LAYER SOIL MOISTURE" "m3 m-3"
+state   real   sm028100            ij    misc          1     -     i1      "SM028100"      "LAYER SOIL MOISTURE" "m3 m-3"
+state   real   sm100255            ij    misc          1     -     i1      "SM100255"      "LAYER SOIL MOISTURE" "m3 m-3"
+state   real   st000007            ij    misc          1     -     i1      "ST000007"      "LAYER SOIL TEMPERATURE" "K"
+state   real   st007028            ij    misc          1     -     i1      "ST007028"      "LAYER SOIL TEMPERATURE" "K"
+state   real   st028100            ij    misc          1     -     i1      "ST028100"      "LAYER SOIL TEMPERATURE" "K"
+state   real   st100255            ij    misc          1     -     i1      "ST100255"      "LAYER SOIL TEMPERATURE" "K"
 state   real   sm000010            ij    misc          1     -     i1      "SM000010"      "LAYER SOIL MOISTURE" "m3 m-3"
 state   real   sm010040            ij    misc          1     -     i1      "SM010040 "     "LAYER SOIL MOISTURE" "m3 m-3"
 state   real   sm040100            ij    misc          1     -     i1      "SM040100 "     "LAYER SOIL MOISTURE" "m3 m-3"
@@ -1181,6 +1188,8 @@ rconfig   real    p_top_requested         namelist,domains      1              5
 rconfig   integer interp_type             namelist,domains	1              1       irh    "interp_type"  "1=interp in pressure, 2=interp in LOG pressure"      ""
 rconfig   logical lowest_lev_from_sfc     namelist,domains	1             .false.  irh    "lowest_lev_from_sfc"                ""      ""
 rconfig   integer lagrange_order          namelist,domains	1              1       irh    "lagrange_order"   "1=linear, 2=quadratic vertical interpolation"      ""
+rconfig   integer force_sfc_in_vinterp    namelist,domains	1              0       irh    "force_sfc_in_vinterp"   "number of eta levels forced to use sfc in vert interp"      ""
+rconfig   real    zap_close_levels        namelist,domains	1              500     irh    "zap_close_levels"   "delta p where level is removed in vert interp"      "Pa"
 rconfig   real    dx                      namelist,domains     max_domains    200     h     "dx"        "X HORIZONTAL RESOLUTION"   "METERS"
 rconfig   real    dy                      namelist,domains   	max_domains    200     h     "dy"        "Y HORIZONTAL RESOLUTION"   "METERS"
 rconfig   integer grid_id                 namelist,domains	max_domains    1       irh    "id"            ""      ""

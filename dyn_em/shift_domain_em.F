@@ -1,6 +1,6 @@
 SUBROUTINE shift_domain_em ( grid , disp_x, disp_y, &
 !
-# include <em_dummy_args.inc>
+# include <em_dummy_new_args.inc>
 !
                            )
    USE module_domain
@@ -19,20 +19,12 @@ SUBROUTINE shift_domain_em ( grid , disp_x, disp_y, &
                                       ims , ime , jms , jme , kms , kme , &
                                       ips , ipe , jps , jpe , kps , kpe
    TYPE (grid_config_rec_type)  :: config_flags
-#ifdef DEREF_KLUDGE
-! see <a href="www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm">here</a>
-   INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
-   INTEGER     :: sm31x, em31x, sm32x, em32x, sm33x, em33x
-   INTEGER     :: sm31y, em31y, sm32y, em32y, sm33y, em33y
-#endif
 
    !  Definitions of dummy arguments to solve
-#include <em_dummy_decl.inc>
+#include <em_dummy_new_decl.inc>
 
 #ifdef MOVE_NESTS
 
-#define COPY_IN
-#include <em_scalar_derefs.inc>
 #include "deref_kludge.h"
 #ifdef DM_PARALLEL
 #      include <em_data_calls.inc>
@@ -48,15 +40,15 @@ SUBROUTINE shift_domain_em ( grid , disp_x, disp_y, &
    px = isign(config_flags%parent_grid_ratio,disp_x)
    py = isign(config_flags%parent_grid_ratio,disp_y)
 
-   imask_nostag = 1
-   imask_xstag = 1
-   imask_ystag = 1
-   imask_xystag = 1
+   grid%imask_nostag = 1
+   grid%imask_xstag = 1
+   grid%imask_ystag = 1
+   grid%imask_xystag = 1
 
-   imask_nostag(ips:min(ide-1,ipe),jps:min(jde-1,jpe)) = 0
-   imask_xstag(ips:ipe,jps:min(jde-1,jpe)) = 0
-   imask_ystag(ips:min(ide-1,ipe),jps:jpe) = 0
-   imask_xystag(ips:ipe,jps:jpe) = 0
+   grid%imask_nostag(ips:min(ide-1,ipe),jps:min(jde-1,jpe)) = 0
+   grid%imask_xstag(ips:ipe,jps:min(jde-1,jpe)) = 0
+   grid%imask_ystag(ips:min(ide-1,ipe),jps:jpe) = 0
+   grid%imask_xystag(ips:ipe,jps:jpe) = 0
 
 #if 1
 
@@ -71,9 +63,6 @@ SUBROUTINE shift_domain_em ( grid , disp_x, disp_y, &
    enddo
 
 #endif
-
-#define COPY_OUT
-#include <em_scalar_derefs.inc>
 
 #endif
 

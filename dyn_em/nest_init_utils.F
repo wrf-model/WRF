@@ -270,7 +270,7 @@ END SUBROUTINE input_terrain_rsmas
 
 SUBROUTINE update_after_feedback_em ( grid , &
 !
-#include "em_dummy_args.inc"
+#include "em_dummy_new_args.inc"
 !
                  )
 !
@@ -297,26 +297,13 @@ SUBROUTINE update_after_feedback_em ( grid , &
    TYPE(domain) , TARGET         :: grid
 
    !  Definitions of dummy arguments
-#include <em_dummy_decl.inc>
+#include <em_dummy_new_decl.inc>
 
    INTEGER                         :: ids , ide , jds , jde , kds , kde , &
                                       ims , ime , jms , jme , kms , kme , &
                                       ips , ipe , jps , jpe , kps , kpe
 
-! These are used if -DDEREF_KLUDGE is compiled
-!  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
-   INTEGER     :: sm31  , em31  , sm32  , em32  , sm33  , em33
-   INTEGER     :: sm31x , em31x , sm32x , em32x , sm33x , em33x
-   INTEGER     :: sm31y , em31y , sm32y , em32y , sm33y , em33y
-
   CALL wrf_debug( 500, "entering update_after_feedback_em" )
-
-! Trick problematic compilers into not performing copy-in/copy-out by adding
-! indices to array arguments in the CALL statements in this routine.
-! It has the effect of passing only the first element of the array, rather
-! than the entire array.  See:
-! http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
-#include "deref_kludge.h"
 
 #ifdef DM_PARALLEL
 #    define REGISTER_I1

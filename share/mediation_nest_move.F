@@ -36,7 +36,7 @@ SUBROUTINE med_nest_move ( parent, nest )
 #if ( EM_CORE == 1 )
      SUBROUTINE shift_domain_em ( grid, disp_x, disp_y,  &
 !
-# include <em_dummy_args.inc>
+# include <em_dummy_new_args.inc>
 !
                            )
         USE module_domain
@@ -45,7 +45,7 @@ SUBROUTINE med_nest_move ( parent, nest )
         IMPLICIT NONE
         INTEGER disp_x, disp_y
         TYPE(domain) , POINTER                 :: grid
-# include <em_dummy_decl.inc>
+# include <em_dummy_new_decl.inc>
      END SUBROUTINE shift_domain_em
 #endif
 #if ( NMM_CORE == 1 )
@@ -94,16 +94,8 @@ SUBROUTINE med_nest_move ( parent, nest )
      END SUBROUTINE store_terrain
    END INTERFACE
 
-#ifdef DEREF_KLUDGE
-! see <a href="www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm">here</a>
-   INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
-   INTEGER     :: sm31x, em31x, sm32x, em32x, sm33x, em33x
-   INTEGER     :: sm31y, em31y, sm32y, em32y, sm33y, em33y
-#endif
-
   ! set grid pointer for code in deref_kludge (if used)
    grid => nest
-#include "deref_kludge.h"
 
    CALL nl_get_dyn_opt ( 1, dyn_opt )
 
@@ -148,7 +140,7 @@ SUBROUTINE med_nest_move ( parent, nest )
      IF ( dyn_opt .EQ. DYN_EM ) THEN
        CALL shift_domain_em( grid, dx, dy,  &
 !
-# include <em_actual_args.inc>
+# include <em_actual_new_args.inc>
 !
                            )
      ENDIF

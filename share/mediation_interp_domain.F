@@ -30,7 +30,7 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
 ! ----------------------------------------------------------
       SUBROUTINE interp_domain_em_part1 ( grid, intermediate_grid, ngrid, config_flags ,  &
 !
-#        include "em_dummy_args.inc"
+#        include "em_dummy_new_args.inc"
 !
                  )
          USE module_domain
@@ -39,12 +39,12 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
          TYPE(domain), POINTER :: intermediate_grid
          TYPE(domain), POINTER :: ngrid
          TYPE (grid_config_rec_type)            :: config_flags
-#        include <em_dummy_decl.inc>
+#        include <em_dummy_new_decl.inc>
       END SUBROUTINE interp_domain_em_part1
 
       SUBROUTINE interp_domain_em_part2 ( grid, nested_grid, config_flags ,  &
 !
-#        include "em_dummy_args.inc"
+#        include "em_dummy_new_args.inc"
 !
                  )
          USE module_domain
@@ -52,7 +52,7 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
          TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
          TYPE(domain), POINTER :: nested_grid
          TYPE (grid_config_rec_type)            :: config_flags
-#        include <em_dummy_decl.inc>
+#        include <em_dummy_new_decl.inc>
       END SUBROUTINE interp_domain_em_part2
 #endif
 ! ----------------------------------------------------------
@@ -126,21 +126,17 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
 
     grid => parent_grid
 
-#   include "deref_kludge.h"
-
-
     CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
     CALL interp_domain_em_part1 ( grid , nested_grid%intermediate_grid, nested_grid, config_flags ,  &
 !
-#     include "em_actual_args.inc"
+#     include "em_actual_new_args.inc"
 !
                                 )
     grid => nested_grid%intermediate_grid
     CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
-#   include "deref_kludge.h"
     CALL interp_domain_em_part2 ( grid, nested_grid, config_flags ,  &
 !
-#     include "em_actual_args.inc"
+#     include "em_actual_new_args.inc"
 !
                                 )
 

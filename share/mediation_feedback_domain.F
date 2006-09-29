@@ -31,7 +31,7 @@ SUBROUTINE med_feedback_domain ( parent_grid , nested_grid )
 ! ------------------------------------------------------
       SUBROUTINE feedback_domain_em_part1 ( grid, nested_grid, config_flags ,  &
 !
-#          include "em_dummy_args.inc"
+#          include "em_dummy_new_args.inc"
 !
                                           )
          USE module_domain
@@ -39,11 +39,11 @@ SUBROUTINE med_feedback_domain ( parent_grid , nested_grid )
          TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
          TYPE(domain), POINTER :: nested_grid
          TYPE (grid_config_rec_type)            :: config_flags
-#        include <em_dummy_decl.inc>
+#        include <em_dummy_new_decl.inc>
       END SUBROUTINE feedback_domain_em_part1
       SUBROUTINE feedback_domain_em_part2 ( grid, intermediate_grid , nested_grid, config_flags ,  &
 !
-#          include "em_dummy_args.inc"
+#          include "em_dummy_new_args.inc"
 !
                                           )
          USE module_domain
@@ -56,13 +56,13 @@ SUBROUTINE med_feedback_domain ( parent_grid , nested_grid )
       END SUBROUTINE feedback_domain_em_part2
       SUBROUTINE update_after_feedback_em ( grid,  &
 !
-#          include "em_dummy_args.inc"
+#          include "em_dummy_new_args.inc"
 !
                                           )
          USE module_domain
          USE module_configure
          TYPE(domain), TARGET :: grid          ! name of the grid being dereferenced (must be "grid")
-#        include <em_dummy_decl.inc>
+#        include <em_dummy_new_decl.inc>
       END SUBROUTINE update_after_feedback_em
 #endif
 #endif
@@ -135,7 +135,7 @@ SUBROUTINE med_feedback_domain ( parent_grid , nested_grid )
 #    include "deref_kludge.h"
      CALL feedback_domain_em_part1 ( grid, nested_grid, config_flags ,  &
 !
-#      include "em_actual_args.inc"
+#      include "em_actual_new_args.inc"
 !
                                    )
      grid => parent_grid
@@ -144,13 +144,13 @@ SUBROUTINE med_feedback_domain ( parent_grid , nested_grid )
      grid%nest_mask = 0.
      CALL feedback_domain_em_part2 ( grid , nested_grid%intermediate_grid, nested_grid , config_flags ,  &
 !
-#      include "em_actual_args.inc"
+#      include "em_actual_new_args.inc"
 
                                    )
      WHERE   ( grid%nest_pos .NE. 9021000.  ) grid%ht = grid%ht_coarse
      CALL update_after_feedback_em ( grid , &
 !
-#      include "em_actual_args.inc"
+#      include "em_actual_new_args.inc"
 !
                                    )
      grid => nested_grid%intermediate_grid

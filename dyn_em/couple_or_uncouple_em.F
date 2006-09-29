@@ -2,7 +2,7 @@
 
 SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple, &
 !
-#include "em_dummy_args.inc"
+#include "em_dummy_new_args.inc"
 !
                  )
 
@@ -28,7 +28,7 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple, &
    TYPE(domain) , TARGET         :: grid
 
    !  Definitions of dummy arguments to solve
-#include <em_dummy_decl.inc>
+#include <em_dummy_new_decl.inc>
 
    !  WRF state bcs
    TYPE (grid_config_rec_type) , INTENT(IN)          :: config_flags
@@ -48,21 +48,12 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple, &
 
    REAL, DIMENSION(grid%sm31:grid%em31,grid%sm33:grid%em33) :: mut_2, muut_2, muvt_2, muwt_2
 
-#ifdef DEREF_KLUDGE
-!  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
-   INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
-   INTEGER     :: sm31x, em31x, sm32x, em32x, sm33x, em33x
-   INTEGER     :: sm31y, em31y, sm32y, em32y, sm33y, em33y
-#endif
-
-#include "deref_kludge.h"
-
 !  De-reference dimension information stored in the grid data structure.
 
-  CALL get_ijk_from_grid (  grid ,                   &
-                            ids, ide, jds, jde, kds, kde,    &
-                            ims, ime, jms, jme, kms, kme,    &
-                            ips, ipe, jps, jpe, kps, kpe    )
+   CALL get_ijk_from_grid (  grid ,                   &
+                             ids, ide, jds, jde, kds, kde,    &
+                             ims, ime, jms, jme, kms, kme,    &
+                             ips, ipe, jps, jpe, kps, kpe    )
 
    num_3d_m        = num_moist
    num_3d_c        = num_chem
@@ -89,20 +80,21 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple, &
 #      include <em_data_calls.inc>
 #endif
 
+
    IF ( config_flags%periodic_x .OR. config_flags%periodic_y ) THEN
-     CALL set_physical_bc2d( mub, 't',  &
+     CALL set_physical_bc2d( grid%em_mub, 't',  &
                              config_flags,           &
                              ids,ide, jds,jde,   & ! domain dims
                              ims,ime, jms,jme,   & ! memory dims
                              ips,ipe, jps,jpe,   & ! patch  dims
                              ips,ipe, jps,jpe   )
-     CALL set_physical_bc2d( mu_1, 't',  &
+     CALL set_physical_bc2d( grid%em_mu_1, 't',  &
                              config_flags,           &
                              ids,ide, jds,jde,   & ! domain dims
                              ims,ime, jms,jme,   & ! memory dims
                              ips,ipe, jps,jpe,   & ! patch  dims
                              ips,ipe, jps,jpe   )
-     CALL set_physical_bc2d( mu_2, 't',  &
+     CALL set_physical_bc2d( grid%em_mu_2, 't',  &
                              config_flags,           &
                              ids,ide, jds,jde,   & ! domain dims
                              ims,ime, jms,jme,   & ! memory dims
@@ -124,8 +116,8 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple, &
 
      DO j = max(jds,jps),min(jde-1,jpe)
      DO i = max(ids,ips),min(ide-1,ipe)
-       mut_2(i,j) = mub(i,j) + mu_2(i,j)
-       muwt_2(i,j) = (mub(i,j) + mu_2(i,j))/msft(i,j)
+       mut_2(i,j) = grid%em_mub(i,j) + grid%em_mu_2(i,j)
+       muwt_2(i,j) = (grid%em_mub(i,j) + grid%em_mu_2(i,j))/grid%msft(i,j)
      ENDDO
      ENDDO
 
@@ -135,8 +127,8 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple, &
 
      DO j = max(jds,jps),min(jde-1,jpe)
      DO i = max(ids,ips),min(ide-1,ipe)
-       muut_2(i,j) = 0.5*(mub(i,j)+mub(i-1,j) + mu_2(i,j) + mu_2(i-1,j))/msfu(i,j)
-       muvt_2(i,j) = 0.5*(mub(i,j)+mub(i,j-1) + mu_2(i,j) + mu_2(i,j-1))/msfv(i,j)
+       muut_2(i,j) = 0.5*(grid%em_mub(i,j)+grid%em_mub(i-1,j) + grid%em_mu_2(i,j) + grid%em_mu_2(i-1,j))/grid%msfu(i,j)
+       muvt_2(i,j) = 0.5*(grid%em_mub(i,j)+grid%em_mub(i,j-1) + grid%em_mu_2(i,j) + grid%em_mu_2(i,j-1))/grid%msfv(i,j)
      ENDDO
      ENDDO
 
@@ -145,13 +137,13 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple, &
        IF ( jpe .eq. jde ) THEN
          j = jde
          DO i = max(ids,ips),min(ide-1,ipe)
-           muvt_2(i,j) = (mub(i,j-1) + mu_2(i,j-1))/msfv(i,j)
+           muvt_2(i,j) = (grid%em_mub(i,j-1) + grid%em_mu_2(i,j-1))/grid%msfv(i,j)
          ENDDO
        ENDIF
        IF ( ipe .eq. ide .AND. .NOT. config_flags%periodic_x ) THEN
          i = ide
          DO j = max(jds,jps),min(jde-1,jpe)
-           muut_2(i,j) = (mub(i-1,j) + mu_2(i-1,j))/msfu(i,j)
+           muut_2(i,j) = (grid%em_mub(i-1,j) + grid%em_mu_2(i-1,j))/grid%msfu(i,j)
          ENDDO
        ENDIF
 
@@ -160,13 +152,13 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple, &
        IF ( jpe .eq. jde ) THEN
          j = jde
          DO i = max(ids,ips),min(ide-1,ipe)
-           muvt_2(i,j) = 0.5*(mub(i,j)+mub(i,j-1) + mu_2(i,j) + mu_2(i,j-1))/msfv(i,j)
+           muvt_2(i,j) = 0.5*(grid%em_mub(i,j)+grid%em_mub(i,j-1) + grid%em_mu_2(i,j) + grid%em_mu_2(i,j-1))/grid%msfv(i,j)
          ENDDO
        ENDIF
        IF ( ipe .eq. ide ) THEN
          i = ide       
          DO j = max(jds,jps),min(jde-1,jpe)
-           muut_2(i,j) = 0.5*(mub(i,j)+mub(i-1,j) + mu_2(i,j) + mu_2(i-1,j))/msfu(i,j)
+           muut_2(i,j) = 0.5*(grid%em_mub(i,j)+grid%em_mub(i-1,j) + grid%em_mu_2(i,j) + grid%em_mu_2(i-1,j))/grid%msfu(i,j)
          ENDDO
        ENDIF
 
@@ -178,8 +170,8 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple, &
 
      DO j = max(jds,jps),min(jde-1,jpe)
      DO i = max(ids,ips),min(ide-1,ipe)
-       mut_2(i,j) = 1./(mub(i,j) + mu_2(i,j))
-       muwt_2(i,j) = msft(i,j)/(mub(i,j) + mu_2(i,j))
+       mut_2(i,j) = 1./(grid%em_mub(i,j) + grid%em_mu_2(i,j))
+       muwt_2(i,j) = grid%msft(i,j)/(grid%em_mub(i,j) + grid%em_mu_2(i,j))
      ENDDO
      ENDDO
 
@@ -187,13 +179,13 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple, &
 
      DO j = max(jds,jps),min(jde-1,jpe)
      DO i = max(ids,ips),min(ide-1,ipe)
-       muut_2(i,j) = 2.*msfu(i,j)/(mub(i,j)+mub(i-1,j) + mu_2(i,j) + mu_2(i-1,j))
+       muut_2(i,j) = 2.*grid%msfu(i,j)/(grid%em_mub(i,j)+grid%em_mub(i-1,j) + grid%em_mu_2(i,j) + grid%em_mu_2(i-1,j))
      ENDDO
      ENDDO
 
      DO j = max(jds,jps),min(jde-1,jpe)
      DO i = max(ids,ips),min(ide-1,ipe)
-       muvt_2(i,j) = 2.*msfv(i,j)/(mub(i,j)+mub(i,j-1) + mu_2(i,j) + mu_2(i,j-1))
+       muvt_2(i,j) = 2.*grid%msfv(i,j)/(grid%em_mub(i,j)+grid%em_mub(i,j-1) + grid%em_mu_2(i,j) + grid%em_mu_2(i,j-1))
      ENDDO
      ENDDO
 
@@ -202,13 +194,13 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple, &
        IF ( jpe .eq. jde ) THEN
          j = jde 
          DO i = max(ids,ips),min(ide-1,ipe)
-           muvt_2(i,j) = msfv(i,j)/(mub(i,j-1) + mu_2(i,j-1))
+           muvt_2(i,j) = grid%msfv(i,j)/(grid%em_mub(i,j-1) + grid%em_mu_2(i,j-1))
          ENDDO
        ENDIF
        IF ( ipe .eq. ide .AND. .NOT. config_flags%periodic_x ) THEN
          i = ide
          DO j = max(jds,jps),min(jde-1,jpe)
-           muut_2(i,j) = msfu(i,j)/(mub(i-1,j) + mu_2(i-1,j))
+           muut_2(i,j) = grid%msfu(i,j)/(grid%em_mub(i-1,j) + grid%em_mu_2(i-1,j))
          ENDDO
        ENDIF
 
@@ -217,13 +209,13 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple, &
        IF ( jpe .eq. jde ) THEN
          j = jde
          DO i = max(ids,ips),min(ide-1,ipe)
-           muvt_2(i,j) = 2.*msfv(i,j)/(mub(i,j)+mub(i,j-1) + mu_2(i,j) + mu_2(i,j-1))
+           muvt_2(i,j) = 2.*grid%msfv(i,j)/(grid%em_mub(i,j)+grid%em_mub(i,j-1) + grid%em_mu_2(i,j) + grid%em_mu_2(i,j-1))
          ENDDO
        ENDIF
        IF ( ipe .eq. ide ) THEN
          i = ide       
          DO j = max(jds,jps),min(jde-1,jpe)
-           muut_2(i,j) = 2.*msfu(i,j)/(mub(i,j)+mub(i-1,j) + mu_2(i,j) + mu_2(i-1,j))
+           muut_2(i,j) = 2.*grid%msfu(i,j)/(grid%em_mub(i,j)+grid%em_mub(i-1,j) + grid%em_mu_2(i,j) + grid%em_mu_2(i-1,j))
          ENDDO
        ENDIF
 
@@ -239,14 +231,14 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple, &
 
      DO k = kps,kpe
      DO i = max(ids,ips),min(ide-1,ipe)
-       ph_2(i,k,j) = ph_2(i,k,j)*mut_2(i,j)
-       w_2(i,k,j)  =  w_2(i,k,j)*muwt_2(i,j)
+       grid%em_ph_2(i,k,j) = grid%em_ph_2(i,k,j)*mut_2(i,j)
+       grid%em_w_2(i,k,j)  =  grid%em_w_2(i,k,j)*muwt_2(i,j)
      ENDDO
      ENDDO
 
      DO k = kps,kpe-1
      DO i = max(ids,ips),min(ide-1,ipe)
-       t_2(i,k,j)  =  t_2(i,k,j)*mut_2(i,j)
+       grid%em_t_2(i,k,j)  =  grid%em_t_2(i,k,j)*mut_2(i,j)
      ENDDO
      ENDDO
 
@@ -284,7 +276,7 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple, &
 
      DO k = kps,kpe-1
      DO i = max(ids,ips),min(ide,ipe)
-       u_2(i,k,j)  =  u_2(i,k,j)*muut_2(i,j)
+       grid%em_u_2(i,k,j)  =  grid%em_u_2(i,k,j)*muut_2(i,j)
      ENDDO
      ENDDO
 
@@ -296,68 +288,68 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple, &
    DO j = max(jds,jps),min(jde,jpe)
      DO k = kps,kpe-1
      DO i = max(ids,ips),min(ide-1,ipe)
-       v_2(i,k,j)  =  v_2(i,k,j)*muvt_2(i,j)
+       grid%em_v_2(i,k,j)  =  grid%em_v_2(i,k,j)*muvt_2(i,j)
      ENDDO
      ENDDO
    ENDDO
    !$OMP END PARALLEL DO
 
    IF ( config_flags%periodic_x .OR. config_flags%periodic_y ) THEN
-     CALL set_physical_bc3d( ph_1, 'w',        &
+     CALL set_physical_bc3d( grid%em_ph_1, 'w',        &
                              config_flags,                   &
                              ids,ide, jds,jde, kds,kde,  & ! domain dims
                              ims,ime, jms,jme, kms,kme,  & ! memory dims
                              ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
                              ips,ipe, jps,jpe, kps,kpe )
-     CALL set_physical_bc3d( ph_2, 'w',        &
+     CALL set_physical_bc3d( grid%em_ph_2, 'w',        &
                              config_flags,                   &
                              ids,ide, jds,jde, kds,kde,  & ! domain dims
                              ims,ime, jms,jme, kms,kme,  & ! memory dims
                              ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
                              ips,ipe, jps,jpe, kps,kpe )
-     CALL set_physical_bc3d( w_1, 'w',        &
+     CALL set_physical_bc3d( grid%em_w_1, 'w',        &
                              config_flags,                   &
                              ids,ide, jds,jde, kds,kde,  & ! domain dims
                              ims,ime, jms,jme, kms,kme,  & ! memory dims
                              ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
                              ips,ipe, jps,jpe, kps,kpe )
-     CALL set_physical_bc3d( w_2, 'w',        &
+     CALL set_physical_bc3d( grid%em_w_2, 'w',        &
                              config_flags,                   &
                              ids,ide, jds,jde, kds,kde,  & ! domain dims
                              ims,ime, jms,jme, kms,kme,  & ! memory dims
                              ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
                              ips,ipe, jps,jpe, kps,kpe )
-     CALL set_physical_bc3d( t_1, 't',        &
+     CALL set_physical_bc3d( grid%em_t_1, 't',        &
                              config_flags,                   &
                              ids,ide, jds,jde, kds,kde,  & ! domain dims
                              ims,ime, jms,jme, kms,kme,  & ! memory dims
                              ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
                              ips,ipe, jps,jpe, kps,kpe )
-     CALL set_physical_bc3d( t_2, 't',        &
+     CALL set_physical_bc3d( grid%em_t_2, 't',        &
                              config_flags,                   &
                              ids,ide, jds,jde, kds,kde,  & ! domain dims
                              ims,ime, jms,jme, kms,kme,  & ! memory dims
                              ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
                              ips,ipe, jps,jpe, kps,kpe )
-     CALL set_physical_bc3d( u_1, 'u',        &
+     CALL set_physical_bc3d( grid%em_u_1, 'u',        &
                              config_flags,                   &
                              ids,ide, jds,jde, kds,kde,  & ! domain dims
                              ims,ime, jms,jme, kms,kme,  & ! memory dims
                              ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
                              ips,ipe, jps,jpe, kps,kpe )
-     CALL set_physical_bc3d( u_2, 'u',        &
+     CALL set_physical_bc3d( grid%em_u_2, 'u',        &
                              config_flags,                   &
                              ids,ide, jds,jde, kds,kde,  & ! domain dims
                              ims,ime, jms,jme, kms,kme,  & ! memory dims
                              ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
                              ips,ipe, jps,jpe, kps,kpe )
-     CALL set_physical_bc3d( v_1, 'v',        &
+     CALL set_physical_bc3d( grid%em_v_1, 'v',        &
                              config_flags,                   &
                              ids,ide, jds,jde, kds,kde,  & ! domain dims
                              ims,ime, jms,jme, kms,kme,  & ! memory dims
                              ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
                              ips,ipe, jps,jpe, kps,kpe )
-     CALL set_physical_bc3d( v_2, 'v',        &
+     CALL set_physical_bc3d( grid%em_v_2, 'v',        &
                              config_flags,                   &
                              ids,ide, jds,jde, kds,kde,  & ! domain dims
                              ims,ime, jms,jme, kms,kme,  & ! memory dims

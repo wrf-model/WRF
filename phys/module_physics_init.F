@@ -575,7 +575,7 @@ integer myproc
             ENDIF                                                         
           ENDDO                                                          
         ENDDO                                                           
-        IF(NSN.EQ.1) THEN
+        IF(NSN.EQ.1.AND.FOUND_LU) THEN
            ISN = 1
         END IF
         CALL wrf_dm_bcast_bytes (albd,   max_cats * max_seas * RWORDSIZE )

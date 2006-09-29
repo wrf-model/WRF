@@ -239,8 +239,8 @@ gen_packs ( FILE *fp , node_t *p, int shw, int xy /* 0=y,1=x */ , int pu /* 0=pa
               {
                 set_mem_order( q->members, memord , NAMELEN) ;
 fprintf(fp,"DO itrace = PARAM_FIRST_SCALAR, num_%s\n",q->name ) ;
-fprintf(fp," CALL %s ( %s,grid%%%s ( grid%%sm31,grid%%sm32,grid%%sm33,itrace), %d, %s, %d, %d, '%s', %d, &\n",
-                       packname, commname, t2 , shw, wordsize, xy, pu, memord, q->stag_x?1:0 ) ;
+fprintf(fp," CALL %s ( %s,%s ( grid%%sm31,grid%%sm32,grid%%sm33,itrace), %d, %s, %d, %d, '%s', %d, &\n",
+                       packname, commname, varref , shw, wordsize, xy, pu, memord, q->stag_x?1:0 ) ;
 fprintf(fp,"mytask, ntasks, ntasks_x, ntasks_y,       &\n") ;
 fprintf(fp,"ids, ide, jds, jde, kds, kde,             &\n") ;
 fprintf(fp,"ims, ime, jms, jme, kms, kme,             &\n") ;
@@ -859,7 +859,7 @@ gen_shift (  char * dirname )
   char * corename ;
   char **direction ;
   char *directions[] = { "x", "y", 0L } ;
-  char fname[NAMELEN], vname[NAMELEN] ;
+  char fname[NAMELEN], vname[NAMELEN], vname2[NAMELEN], core[NAMELEN] ;
   char indices[NAMELEN], post[NAMELEN], tmp3[NAMELEN] ;
   int zdex ;
   node_t Shift ;
@@ -924,19 +924,31 @@ if ( !strcmp( p->name , "xf_ens" ) || !strcmp( p->name,"pr_ens" ) ||
       if (( p->node_kind & (FIELD | FOURD) ) && p->ndims >= 2 && ! p->boundary_array &&
 	  ((!strncmp(p->use,"dyn_",4) && !strcmp(corename,p->use+4)) || strncmp(p->use,"dyn_",4)))
       {
+
+        if ( p->node_kind & FOURD ) {
+          if (!strncmp( p->members->next->use, "dyn_", 4))   sprintf(core,"%s_",corename) ;
+          else                                               sprintf(core,"") ;
+        } else {
+          if (!strncmp( p->use, "dyn_", 4))   sprintf(core,"%s_",corename) ;
+          else                                sprintf(core,"") ;
+        }
+
 	if ( p->type->type_type == SIMPLE )
 	{
 	  for ( i = 1 ; i <= p->ntl ; i++ )
 	  {
+            
             if ( p->ntl > 1 ) sprintf(vname,"%s_%d",p->name,i ) ;
             else              sprintf(vname,"%s",p->name ) ;
+            if ( p->ntl > 1 ) sprintf(vname2,"%s%s_%d",core,p->name,i ) ;
+            else              sprintf(vname2,"%s%s",core,p->name ) ;
+
 	    if ( p->node_kind & FOURD )
             {
               node_t *member ;
               zdex = get_index_for_coord( p , COORD_Z ) ;
               if ( zdex >=1 && zdex <= 3 )
               {
-#if 1
                     if ( !strcmp( *direction, "x" ) )
                     {
 fprintf(fp, "  DO itrace = PARAM_FIRST_SCALAR, num_%s\n", p->name ) ;
@@ -952,26 +964,6 @@ fprintf(fp, "   %s ( ims:ime,:,jps:min(jde%s,jpe),itrace) = %s (ims:ime,:,jps+py
 fprintf(fp, "  ENDDO\n" ) ;
                     }
 
-#else
-                for ( member = p->members ; member != NULL ; member = member->next )
-                {
-                  if ( strcmp( member->name, "-" ) )
-                  {
-                    if ( !strcmp( *direction, "x" ) )
-                    {
-                      fprintf(fp,
-   "  if ( P_%s .GT. 1 ) %s ( ips:min(ide%s,ipe),:,jms:jme,P_%s) = %s (ips+px:min(ide%s,ipe)+px,:,jms:jme,P_%s)\n",
-                       member->name, vname, member->stag_x?"":"-1", member->name, vname, member->stag_x?"":"-1", member->name ) ;
-                    }
-                    else
-                    {
-                      fprintf(fp,
-   "  if ( P_%s .GT. 1 ) %s ( ims:ime,:,jps:min(jde%s,jpe),P_%s) = %s (ims:ime,:,jps+py:min(jde%s,jpe)+py,P_%s)\n",
-                       member->name, vname, member->stag_y?"":"-1", member->name, vname, member->stag_y?"":"-1", member->name ) ;
-                    }
-                  }
-                }
-#endif
               }
               else
               {
@@ -985,11 +977,11 @@ fprintf(fp, "  ENDDO\n" ) ;
 	      if ( p->ndims == 3 ) vdim = ":," ;
               if ( !strcmp( *direction, "x" ) )
               {
-                fprintf(fp,"%s (ips:min(ide%s,ipe),%sjms:jme) = %s (ips+px:min(ide%s,ipe)+px,%sjms:jme)\n", vname,  p->stag_x?"":"-1", vdim, vname, p->stag_x?"":"-1", vdim ) ;
+                fprintf(fp,"grid%%%s (ips:min(ide%s,ipe),%sjms:jme) = grid%%%s (ips+px:min(ide%s,ipe)+px,%sjms:jme)\n", vname2,  p->stag_x?"":"-1", vdim, vname2, p->stag_x?"":"-1", vdim ) ;
               }
               else
 	      {
-                fprintf(fp,"%s (ims:ime,%sjps:min(jde%s,jpe)) = %s (ims:ime,%sjps+py:min(jde%s,jpe)+py)\n", vname, vdim,  p->stag_y?"":"-1", vname, vdim, p->stag_y?"":"-1" ) ;
+                fprintf(fp,"grid%%%s (ims:ime,%sjps:min(jde%s,jpe)) = grid%%%s (ims:ime,%sjps+py:min(jde%s,jpe)+py)\n", vname2, vdim,  p->stag_y?"":"-1", vname2, vdim, p->stag_y?"":"-1" ) ;
               }
             }
 	  }
@@ -1201,6 +1193,7 @@ gen_nest_packunpack ( FILE *fp , node_t * node , char * corename, int dir, int d
   node_t *p, *p1, *dim ;
   int d2, d3, xdex, ydex, zdex ;
   int io_mask ;
+  char * grid ; 
   char ddim[3][2][NAMELEN] ;
   char mdim[3][2][NAMELEN] ;
   char pdim[3][2][NAMELEN] ;
@@ -1283,8 +1276,10 @@ gen_nest_packunpack ( FILE *fp , node_t * node , char * corename, int dir, int d
             sprintf(vname2,"%s%s(%s)",p->name,tag,dexes) ;
         }
 
+        grid = "grid%" ;
         if ( p->node_kind & FOURD )
 	{
+           grid = "" ;
 fprintf(fp,"DO itrace =  PARAM_FIRST_SCALAR, num_%s\n", p->name) ;
 	}
 
@@ -1300,19 +1295,19 @@ fprintf(fp,"CALL rsl_lite_from_child_msg(RWORDSIZE,xv)\n" ) ;
 fprintf(fp,"IF ( %s_cd_feedback_mask( pig, ips_save, ipe_save , pjg, jps_save, jpe_save, %s, %s ) ) THEN\n",
                  corename, p->stag_x?".TRUE.":".FALSE." ,p->stag_y?".TRUE.":".FALSE." ) ;
             if ( zdex >= 0 ) {
-fprintf(fp,"DO k = %s,%s\nNEST_INFLUENCE(%s,xv(k))\nENDDO\n", ddim[zdex][0], ddim[zdex][1], vname, vname) ;
+fprintf(fp,"DO k = %s,%s\nNEST_INFLUENCE(%s%s,xv(k))\nENDDO\n", ddim[zdex][0], ddim[zdex][1], grid, vname2 ) ;
             } else {
-fprintf(fp,"%s = xv(1) ;\n", vname) ;
+              fprintf(fp,"%s%s = xv(1) ;\n", grid,vname2) ;
             }
 fprintf(fp,"ENDIF\n") ;
           }
           else
           {
             if ( zdex >= 0 ) {
-fprintf(fp,"CALL rsl_lite_from_parent_msg(((%s)-(%s)+1)*RWORDSIZE,xv)\nDO k = %s,%s\n%s = xv(k)\nENDDO\n",
-                                    ddim[zdex][1], ddim[zdex][0], ddim[zdex][0], ddim[zdex][1], vname) ;
+fprintf(fp,"CALL rsl_lite_from_parent_msg(((%s)-(%s)+1)*RWORDSIZE,xv)\nDO k = %s,%s\n%s%s = xv(k)\nENDDO\n",
+                                    ddim[zdex][1], ddim[zdex][0], ddim[zdex][0], ddim[zdex][1], grid, vname2) ;
             } else {
-fprintf(fp,"CALL rsl_lite_from_parent_msg(RWORDSIZE,xv)\n%s = xv(1)\n", vname) ;
+fprintf(fp,"CALL rsl_lite_from_parent_msg(RWORDSIZE,xv)\n%s%s = xv(1)\n", grid, vname2) ;
             }
           }
         }
@@ -1330,10 +1325,10 @@ fprintf(fp,"xv(1)= intermediate_grid%%%s\nCALL rsl_lite_to_parent_msg(RWORDSIZE,
           else
           {
             if ( zdex >= 0 ) {
-fprintf(fp,"DO k = %s,%s\nxv(k)= %s\nENDDO\nCALL rsl_lite_to_child_msg(((%s)-(%s)+1)*RWORDSIZE,xv)\n",
-                           ddim[zdex][0], ddim[zdex][1], vname, ddim[zdex][1], ddim[zdex][0] ) ;
+fprintf(fp,"DO k = %s,%s\nxv(k)= %s%s\nENDDO\nCALL rsl_lite_to_child_msg(((%s)-(%s)+1)*RWORDSIZE,xv)\n",
+                           ddim[zdex][0], ddim[zdex][1], grid, vname2, ddim[zdex][1], ddim[zdex][0] ) ;
             } else {
-fprintf(fp,"xv(1)=%s\nCALL rsl_lite_to_child_msg(RWORDSIZE,xv)\n", vname) ;
+fprintf(fp,"xv(1)=%s%s\nCALL rsl_lite_to_child_msg(RWORDSIZE,xv)\n", grid, vname2) ;
             }
           }
         }

@@ -4113,7 +4113,7 @@ END
 
    SUBROUTINE force_domain_em_part2 ( grid, ngrid, config_flags ,  &
 !
-#include "em_dummy_args.inc"
+#include "em_dummy_new_args.inc"
 !
                  )
       USE module_domain
@@ -4122,7 +4122,7 @@ END
 !
       TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
       TYPE(domain), POINTER :: ngrid
-#include <em_dummy_decl.inc>
+#include <em_dummy_new_decl.inc>
 #include <em_i1_decl.inc>
       INTEGER nlev, msize
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
@@ -4138,16 +4138,6 @@ END
 ! Description is to do...
 ! </DESCRIPTION>
 
-#ifdef DEREF_KLUDGE
-!  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
-   INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
-   INTEGER     :: sm31x, em31x, sm32x, em32x, sm33x, em33x
-   INTEGER     :: sm31y, em31y, sm32y, em32y, sm33y, em33y
-#endif
-#include "deref_kludge.h"
-
-#define COPY_IN
-#include <em_scalar_derefs.inc>
 #ifdef DM_PARALLEL
 #    define REGISTER_I1
 #      include <em_data_calls.inc>
@@ -4171,8 +4161,6 @@ END
       ! code here to interpolate the data into the nested domain
 #  include "em_nest_forcedown_interp.inc"
 
-#define COPY_OUT
-#include <em_scalar_derefs.inc>
       RETURN
    END SUBROUTINE force_domain_em_part2
 
@@ -4182,7 +4170,7 @@ END
 
    SUBROUTINE interp_domain_em_part1 ( grid, intermediate_grid, ngrid, config_flags ,  &
 !
-#include "em_dummy_args.inc"
+#include "em_dummy_new_args.inc"
 !
                  )
       USE module_domain
@@ -4193,7 +4181,7 @@ END
       TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
       TYPE(domain), POINTER :: intermediate_grid
       TYPE(domain), POINTER :: ngrid
-#include <em_dummy_decl.inc>
+#include <em_dummy_new_decl.inc>
       INTEGER nlev, msize
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
       TYPE (grid_config_rec_type)            :: config_flags
@@ -4205,8 +4193,6 @@ END
                                 nims, nime, njms, njme, nkms, nkme,    &
                                 nips, nipe, njps, njpe, nkps, nkpe
 
-#define COPY_IN
-#include <em_scalar_derefs.inc>
 !
 
       CALL get_ijk_from_grid (  grid ,                   &
@@ -4224,14 +4210,12 @@ END
 
       CALL rsl_bcast_msgs
 
-#define COPY_OUT
-#include <em_scalar_derefs.inc>
       RETURN
    END SUBROUTINE interp_domain_em_part1
 
    SUBROUTINE interp_domain_em_part2 ( grid, ngrid, config_flags ,  &
 !
-#include "em_dummy_args.inc"
+#include "em_dummy_new_args.inc"
 !
                  )
       USE module_domain
@@ -4240,7 +4224,7 @@ END
 !
       TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
       TYPE(domain), POINTER :: ngrid
-#include <em_dummy_decl.inc>
+#include <em_dummy_new_decl.inc>
 #include <em_i1_decl.inc>
       INTEGER nlev, msize
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
@@ -4253,16 +4237,6 @@ END
                                 nims, nime, njms, njme, nkms, nkme,    &
                                 nips, nipe, njps, njpe, nkps, nkpe
 
-#ifdef DEREF_KLUDGE
-!  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
-   INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
-   INTEGER     :: sm31x, em31x, sm32x, em32x, sm33x, em33x
-   INTEGER     :: sm31y, em31y, sm32y, em32y, sm33y, em33y
-#endif
-#include "deref_kludge.h"
-
-#define COPY_IN
-#include <em_scalar_derefs.inc>
 #ifdef DM_PARALLEL
 #    define REGISTER_I1
 #      include <em_data_calls.inc>
@@ -4285,8 +4259,6 @@ END
 
 #  include "em_nest_interpdown_interp.inc"
 
-#define COPY_OUT
-#include <em_scalar_derefs.inc>
       RETURN
    END SUBROUTINE interp_domain_em_part2
 
@@ -4301,7 +4273,7 @@ END
 !
    SUBROUTINE feedback_nest_prep ( grid, config_flags ,  &
 !
-#include "em_dummy_args.inc"
+#include "em_dummy_new_args.inc"
 !
 )
       USE module_domain
@@ -4313,18 +4285,7 @@ END
       TYPE (grid_config_rec_type) :: config_flags ! configureation flags, has vertical dim of 
                                                   ! soil temp, moisture, etc., has vertical dim
                                                   ! of soil categories
-#include <em_dummy_decl.inc>
-
-#ifdef DEREF_KLUDGE
-!  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
-   INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
-   INTEGER     :: sm31x, em31x, sm32x, em32x, sm33x, em33x
-   INTEGER     :: sm31y, em31y, sm32y, em32y, sm33y, em33y
-#endif
-#include "deref_kludge.h"
-
-#define COPY_IN
-#include <em_scalar_derefs.inc>
+#include <em_dummy_new_decl.inc>
 
 #ifdef DM_PARALLEL
 #      include <em_data_calls.inc>
@@ -4334,14 +4295,11 @@ END
 # include "HALO_EM_INTERP_UP.inc"
 #endif
 
-#define COPY_OUT
-#include <em_scalar_derefs.inc>
-
    END SUBROUTINE feedback_nest_prep
 
    SUBROUTINE feedback_domain_em_part1 ( grid, ngrid, config_flags ,  &
 !
-#include "em_dummy_args.inc"
+#include "em_dummy_new_args.inc"
 !
                  )
       USE module_domain
@@ -4350,7 +4308,7 @@ END
 !
       TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
       TYPE(domain), POINTER :: ngrid
-#include <em_dummy_decl.inc>
+#include <em_dummy_new_decl.inc>
       INTEGER nlev, msize
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
       TYPE(domain), POINTER :: xgrid
@@ -4365,7 +4323,7 @@ END
       INTERFACE 
           SUBROUTINE feedback_nest_prep ( grid, config_flags ,  &
 !
-#include "em_dummy_args.inc"
+#include "em_dummy_new_args.inc"
 !
 )
              USE module_domain
@@ -4375,22 +4333,10 @@ END
 !
              TYPE (grid_config_rec_type)            :: config_flags
              TYPE(domain), TARGET                   :: grid
-#include <em_dummy_decl.inc>
+#include <em_dummy_new_decl.inc>
           END SUBROUTINE feedback_nest_prep
 
       END INTERFACE
-
-#ifdef DEREF_KLUDGE
-!  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
-   INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
-   INTEGER     :: sm31x, em31x, sm32x, em32x, sm33x, em33x
-   INTEGER     :: sm31y, em31y, sm32y, em32y, sm33y, em33y
-#endif
-
-#include "deref_kludge.h"
-
-#define COPY_IN
-#include <em_scalar_derefs.inc>
 
       CALL get_ijk_from_grid (  grid ,                   &
                                 cids, cide, cjds, cjde, ckds, ckde,    &
@@ -4414,10 +4360,9 @@ END
       xgrid => grid
       grid => ngrid 
 
-#include "deref_kludge.h"
       CALL feedback_nest_prep ( grid, nconfig_flags ,  &
 !
-#include "em_actual_args.inc"
+#include "em_actual_new_args.inc"
 !
 )
 
@@ -4426,8 +4371,6 @@ END
 
 #  include "em_nest_feedbackup_interp.inc"
 
-#define COPY_OUT
-#include <em_scalar_derefs.inc>
       RETURN
    END SUBROUTINE feedback_domain_em_part1
 
@@ -4435,7 +4378,7 @@ END
 
    SUBROUTINE feedback_domain_em_part2 ( grid, intermediate_grid, ngrid , config_flags ,  &
 !
-#include "em_dummy_args.inc"
+#include "em_dummy_new_args.inc"
 !
                  )
       USE module_domain
@@ -4445,7 +4388,7 @@ END
       TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
       TYPE(domain), POINTER :: intermediate_grid
       TYPE(domain), POINTER :: ngrid
-#include <em_dummy_decl.inc>
+#include <em_dummy_new_decl.inc>
 #include <em_i1_decl.inc>
       INTEGER nlev, msize
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
@@ -4460,16 +4403,6 @@ END
       REAL          :: nest_influence
       LOGICAL, EXTERNAL  :: em_cd_feedback_mask
 
-#ifdef DEREF_KLUDGE
-!  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
-   INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
-   INTEGER     :: sm31x, em31x, sm32x, em32x, sm33x, em33x
-   INTEGER     :: sm31y, em31y, sm32y, em32y, sm33y, em33y
-#endif
-#include "deref_kludge.h"
-
-#define COPY_IN
-#include <em_scalar_derefs.inc>
 #ifdef DM_PARALLEL
 #    define REGISTER_I1
 #      include <em_data_calls.inc>
@@ -4505,8 +4438,6 @@ END
 #  include "HALO_EM_INTERP_UP.inc"
 #  include "em_nest_feedbackup_smooth.inc"
 
-#define COPY_OUT
-#include <em_scalar_derefs.inc>
       RETURN
    END SUBROUTINE feedback_domain_em_part2
 

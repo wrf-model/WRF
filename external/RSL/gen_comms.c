@@ -552,7 +552,7 @@ gen_shift (  char * dirname )
   char * corename ;
   char **direction ;
   char *directions[] = { "x", "y", 0L } ;
-  char fname[NAMELEN], vname[NAMELEN] ;
+  char fname[NAMELEN], vname[NAMELEN], vname2[NAMELEN], core[NAMELEN] ;
   char indices[NAMELEN], post[NAMELEN], tmp3[NAMELEN] ;
   int zdex ;
 int said_it = 0 ;
@@ -589,12 +589,23 @@ if ( !strcmp( p->name , "xf_ens" ) || !strcmp( p->name,"pr_ens" ) ||
       if (( p->node_kind & (FIELD | FOURD) ) && p->ndims >= 2 && ! p->boundary_array &&
 	  ((!strncmp(p->use,"dyn_",4) && !strcmp(corename,p->use+4)) || strncmp(p->use,"dyn_",4)))
       {
+
+        if ( p->node_kind & FOURD ) {
+          if (!strncmp( p->members->next->use, "dyn_", 4))   sprintf(core,"%s_",corename) ;
+          else                                               sprintf(core,"") ;
+        } else {
+          if (!strncmp( p->use, "dyn_", 4))   sprintf(core,"%s_",corename) ;
+          else                                sprintf(core,"") ;
+        }
+
 	if ( p->type->type_type == SIMPLE )
 	{
 	  for ( i = 1 ; i <= p->ntl ; i++ )
 	  {
             if ( p->ntl > 1 ) sprintf(vname,"%s_%d",p->name,i ) ;
             else              sprintf(vname,"%s",p->name ) ;
+            if ( p->ntl > 1 ) sprintf(vname2,"%s%s_%d",core,p->name,i ) ;
+            else              sprintf(vname2,"%s%s",core,p->name ) ;
 	    if ( p->node_kind & FOURD )
             {
               node_t *member ;
@@ -643,12 +654,12 @@ if ( !strcmp( p->name , "xf_ens" ) || !strcmp( p->name,"pr_ens" ) ||
                 else if ( dimd->len_defined_how == CONSTANT )
                     sprintf(dimstrg,"(%d - %d + 1)",dimd->coord_end,dimd->coord_start) ;
 
-                fprintf(fp,"  CALL add_msg_%s_shift_%s ( %s%s , %s )\n", *direction, p->type->name, vname, indices, dimstrg ) ;
+                fprintf(fp,"  CALL add_msg_%s_shift_%s ( grid%%%s%s , %s )\n", *direction, p->type->name, vname2, indices, dimstrg ) ;
                 p->subject_to_communication = 1 ;
               }
               else if ( p->ndims == 2 )  /* 2d */
               {
-                fprintf(fp,"  CALL add_msg_%s_shift_%s ( %s%s , %s )\n", *direction, p->type->name, vname, indices, "1" ) ;
+                fprintf(fp,"  CALL add_msg_%s_shift_%s ( grid%%%s%s , %s )\n", *direction, p->type->name, vname2, indices, "1" ) ;
                 p->subject_to_communication = 1 ;
               }
             }
@@ -669,6 +680,13 @@ if ( !strcmp( p->name , "xf_ens" ) || !strcmp( p->name,"pr_ens" ) ||
      !strcmp( p->name , "abstot" ) || !strcmp( p->name,"absnxt" ) || !strcmp( p->name, "emstot" ) )  {
   continue ;
 }
+      if ( p->node_kind & FOURD ) {
+        if (!strncmp( p->members->next->use, "dyn_", 4))   sprintf(core,"%s_",corename) ;
+        else                                               sprintf(core,"") ;
+      } else {
+        if (!strncmp( p->use, "dyn_", 4))   sprintf(core,"%s_",corename) ;
+        else                                sprintf(core,"") ;
+      }
 
       if (( p->node_kind & (FIELD | FOURD) ) && p->ndims >= 2 && ! p->boundary_array &&
 	  ((!strncmp(p->use,"dyn_",4) && !strcmp(corename,p->use+4)) || strncmp(p->use,"dyn_",4)))
@@ -679,6 +697,9 @@ if ( !strcmp( p->name , "xf_ens" ) || !strcmp( p->name,"pr_ens" ) ||
 	  {
             if ( p->ntl > 1 ) sprintf(vname,"%s_%d",p->name,i ) ;
             else              sprintf(vname,"%s",p->name ) ;
+            if ( p->ntl > 1 ) sprintf(vname2,"%s%s_%d",core,p->name,i ) ;
+            else              sprintf(vname2,"%s%s",core,p->name ) ;
+
 	    if ( p->node_kind & FOURD )
             {
               node_t *member ;
@@ -716,11 +737,11 @@ if ( !strcmp( p->name , "xf_ens" ) || !strcmp( p->name,"pr_ens" ) ||
 	      if ( p->ndims == 3 ) vdim = ":," ;
               if ( !strcmp( *direction, "x" ) )
               {
-                fprintf(fp,"%s (ips:min(ide%s,ipe),%sjms:jme) = %s (ips+px:min(ide%s,ipe)+px,%sjms:jme)\n", vname,  p->stag_x?"":"-1", vdim, vname, p->stag_x?"":"-1", vdim ) ;
+                fprintf(fp,"grid%%%s (ips:min(ide%s,ipe),%sjms:jme) = grid%%%s (ips+px:min(ide%s,ipe)+px,%sjms:jme)\n", vname2,  p->stag_x?"":"-1", vdim, vname2, p->stag_x?"":"-1", vdim ) ;
               }
               else
 	      {
-                fprintf(fp,"%s (ims:ime,%sjps:min(jde%s,jpe)) = %s (ims:ime,%sjps+py:min(jde%s,jpe)+py)\n", vname, vdim,  p->stag_y?"":"-1", vname, vdim, p->stag_y?"":"-1" ) ;
+                fprintf(fp,"grid%%%s (ims:ime,%sjps:min(jde%s,jpe)) = grid%%%s (ims:ime,%sjps+py:min(jde%s,jpe)+py)\n", vname2, vdim,  p->stag_y?"":"-1", vname2, vdim, p->stag_y?"":"-1" ) ;
               }
             }
 	  }
@@ -835,7 +856,7 @@ gen_datacalls1 ( FILE * fp , char * corename , char * structname , int mask , no
       else if ( p->type->type_type == DERIVED )
       {
         parent_type = DERIVED;
-        sprintf( tmp , "%s%%", p->name ) ; 
+        sprintf( tmp , "grid%%%s%%", p->name ) ; 
         gen_datacalls1 ( fp , corename , tmp , mask, p->type->fields ) ;
       }
     }
@@ -1109,19 +1130,19 @@ fprintf(fp,"CALL rsl_from_child_msg(RWORDSIZE,xv)\n" ) ;
 fprintf(fp,"IF ( %s_cd_feedback_mask( pig, ips_save, ipe_save , pjg, jps_save, jpe_save, %s, %s ) ) THEN\n",
                  corename, p->stag_x?".TRUE.":".FALSE." ,p->stag_y?".TRUE.":".FALSE." ) ;
             if ( zdex >= 0 ) {
-fprintf(fp,"DO k = %s,%s\nNEST_INFLUENCE(%s,xv(k))\nENDDO\n", ddim[zdex][0], ddim[zdex][1], vname, vname) ;
+fprintf(fp,"DO k = %s,%s\nNEST_INFLUENCE(grid%%%s,xv(k))\nENDDO\n", ddim[zdex][0], ddim[zdex][1], vname2 ) ;
             } else {
-fprintf(fp,"%s = xv(1) ;\n", vname) ;
+fprintf(fp,"grid%%%s = xv(1) ;\n", vname2) ;
             }
 fprintf(fp,"ENDIF\n") ;
           }
           else
           {
             if ( zdex >= 0 ) {
-fprintf(fp,"CALL rsl_from_parent_msg(((%s)-(%s)+1)*RWORDSIZE,xv)\nDO k = %s,%s\n%s = xv(k)\nENDDO\n",
-                                    ddim[zdex][1], ddim[zdex][0], ddim[zdex][0], ddim[zdex][1], vname) ;
+fprintf(fp,"CALL rsl_from_parent_msg(((%s)-(%s)+1)*RWORDSIZE,xv)\nDO k = %s,%s\ngrid%%%s = xv(k)\nENDDO\n",
+                                    ddim[zdex][1], ddim[zdex][0], ddim[zdex][0], ddim[zdex][1], vname2) ;
             } else {
-fprintf(fp,"CALL rsl_from_parent_msg(RWORDSIZE,xv)\n%s = xv(1)\n", vname) ;
+fprintf(fp,"CALL rsl_from_parent_msg(RWORDSIZE,xv)\ngrid%%%s = xv(1)\n", vname2) ;
             }
           }
         }
@@ -1139,10 +1160,10 @@ fprintf(fp,"xv(1)= intermediate_grid%%%s\nCALL rsl_to_parent_msg(RWORDSIZE,xv)\n
           else
           {
             if ( zdex >= 0 ) {
-fprintf(fp,"DO k = %s,%s\nxv(k)= %s\nENDDO\nCALL rsl_to_child_msg(((%s)-(%s)+1)*RWORDSIZE,xv)\n",
-                           ddim[zdex][0], ddim[zdex][1], vname, ddim[zdex][1], ddim[zdex][0] ) ;
+fprintf(fp,"DO k = %s,%s\nxv(k)= grid%%%s\nENDDO\nCALL rsl_to_child_msg(((%s)-(%s)+1)*RWORDSIZE,xv)\n",
+                           ddim[zdex][0], ddim[zdex][1], vname2, ddim[zdex][1], ddim[zdex][0] ) ;
             } else {
-fprintf(fp,"xv(1)=%s\nCALL rsl_to_child_msg(RWORDSIZE,xv)\n", vname) ;
+fprintf(fp,"xv(1)=grid%%%s\nCALL rsl_to_child_msg(RWORDSIZE,xv)\n", vname2) ;
             }
           }
         }

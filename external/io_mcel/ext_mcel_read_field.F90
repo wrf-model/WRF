@@ -50,7 +50,6 @@ integer myproc
   integer ii,jj,kk,myrank,ierr, mcel_type
   real*8 data_time
   character*14 timestr
-  character*80 mess
   
 
 

@@ -147,7 +147,7 @@ gen_args1 ( FILE * fp , char * outstr , char * structname , char * corename ,
     }
     if ( p->type != NULL )
     {
-      if ( p->type->type_type == DERIVED )
+      if ( p->type->type_type == DERIVED && !only4d )
       {
         if ( deep )
         {

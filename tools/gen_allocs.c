@@ -182,7 +182,6 @@ gen_ddt_write ( char * dirname , char * corename )
   return(0) ;
 }
 
-
 int
 gen_ddt_write1 ( FILE * fp , char * structname , char * corename , node_t * node )
 {
@@ -196,7 +195,7 @@ gen_ddt_write1 ( FILE * fp , char * structname , char * corename , node_t * node
 
   for ( p = node->fields ; p != NULL ; p = p->next )
   {
-    if ( (p->ndims > 0 || p->boundary_array) && (  /* any array or a boundary array and...   */
+    if ( (p->ndims > 1 && ! p->boundary_array) && (  /* any array or a boundary array and...   */
           (p->node_kind & FOURD) ||                /* scalar arrays or...                    */
                                                    /* if it's a core specific field and we're doing that core or...  */
           (p->node_kind & FIELD && (!strncmp("dyn_",p->use,4)&&!strcmp(corename,p->use+4))) ||
@@ -215,10 +214,16 @@ gen_ddt_write1 ( FILE * fp , char * structname , char * corename , node_t * node
         else
           strcpy(fname,field_name(t4,p,(p->ntl>1)?tag:0)) ;
 
-       fprintf(fp, "write(iunit)%s%s\n",structname,fname) ;
+       if ( p->node_kind & FOURD ) {
+         fprintf(fp, "write(0,*)'%s',%s%s(IDEBUG,KDEBUG,JDEBUG,2)\n",fname,structname,fname) ;
+       } else {
+         if ( p->ndims == 2 ) fprintf(fp, "write(0,*)'%s',%s%s(IDEBUG,JDEBUG)\n",fname,structname,fname) ;
+         if ( p->ndims == 3 ) fprintf(fp, "write(0,*)'%s',%s%s(IDEBUG,KDEBUG,JDEBUG)\n",fname,structname,fname) ;
+       }
 
       }
     }
+#if 0
     if ( p->type != NULL )
     {
       if ( p->type->type_type == SIMPLE && p->ndims == 0 &&
@@ -240,6 +245,7 @@ gen_ddt_write1 ( FILE * fp , char * structname , char * corename , node_t * node
           fprintf(fp, "write(iunit)%s%s\n",structname,fname) ;
       }
     }
+#endif
   }
   return(0) ;
 }

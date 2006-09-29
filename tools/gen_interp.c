@@ -126,6 +126,7 @@ gen_nest_interp1 ( FILE * fp , node_t * node, char * corename , char * fourdname
   char dexes[NAMELEN] ;
   char ndexes[NAMELEN] ;
   char *maskstr ;
+  char *grid ;
 
 
   for ( p1 = node ;  p1 != NULL ; p1 = p1->next )
@@ -191,6 +192,7 @@ if ( ! contains_tok ( halo_define , vname  , ":," ) ) {
         }
 
         if ( p1->node_kind & FOURD ) {
+          grid = "" ;
           set_dim_strs ( p->members->next , ddim , mdim , pdim , "c", 1 ) ;
           set_dim_strs ( p->members->next , ddim2 , mdim2 , pdim2 , "c", 0 ) ;
           set_dim_strs ( p->members->next , nddim , nmdim , npdim , "n", 1 ) ;
@@ -210,6 +212,7 @@ if ( ! contains_tok ( halo_define , vname  , ":," ) ) {
 	    maskstr = "_nostag" ;
 	  }
         } else {
+          grid = "grid%" ;
           set_dim_strs ( p , ddim , mdim , pdim , "c", 1 ) ;
           set_dim_strs ( p , ddim2 , mdim2 , pdim2 , "c", 0 ) ;
           set_dim_strs ( p , nddim , nmdim , npdim , "n", 1 ) ;
@@ -241,7 +244,7 @@ fprintf(fp,"CALL %s (                                                           
 
 /* note this is only good for IKJ */
 
-fprintf(fp,"                  %s,                                                           &         ! CD field\n",  vname) ;
+fprintf(fp,"                  %s%s,                                                           &         ! CD field\n", grid, (p->node_kind & FOURD)?vname:vname2) ;
 fprintf(fp,"                 %s, %s, %s, %s, %s, %s,   &         ! CD dims\n",
                 ddim[0][0], ddim[0][1], ddim[1][0], ddim[1][1], ddim[2][0], ddim[2][1] ) ;
 fprintf(fp,"                 %s, %s, %s, %s, %s, %s,   &         ! CD dims\n",
@@ -262,7 +265,7 @@ fprintf(fp,"                 %s, %s, %s, %s, %s, %s,   &         ! ND dims\n",
 
 /* note this is only good for IKJ */
 
-fprintf(fp,"                  %s,                                                           &         ! CD field\n",  vname) ;
+fprintf(fp,"                  %s%s,                                                           &         ! CD field\n", grid, (p->node_kind & FOURD)?vname:vname2) ;
 fprintf(fp,"                 %s, %s, %s, %s, %s, %s,   &         ! CD dims\n",
                 ddim[0][0], ddim[0][1],          "1",         "1", ddim[1][0], ddim[1][1] ) ;
 fprintf(fp,"                 %s, %s, %s, %s, %s, %s,   &         ! CD dims\n",
@@ -326,11 +329,15 @@ fprintf(fp,"                  ngrid%%parent_grid_ratio, ngrid%%parent_grid_ratio
                if (( nd = get_entry ( p1 , Domain.fields )) != NULL )
                {
   	         if (!strncmp( nd->use, "dyn_", 4))   sprintf(core2,"%s_",corename,vname) ;
-	         else                                sprintf(core2,"") ;
-                 if ( strcmp( nd->use , "_4d_bdy_array_" ) ) {
-                   fprintf(fp,",grid%%%s%s,ngrid%%%s%s  &\n", core2, nd->name, core2, nd->name ) ;
+	         else                                 sprintf(core2,"") ;
+                 if ( nd->boundary_array ) {
+                   if ( strcmp( nd->use , "_4d_bdy_array_" ) ) {
+                     fprintf(fp,",%s,ngrid%%%s%s  &\n", nd->name, core2, nd->name ) ;
+                   } else {
+                     fprintf(fp,",%s%s(1,1,1,1,itrace),ngrid%%%s%s(1,1,1,1,itrace)  &\n", core2, nd->name, core2, nd->name ) ;
+                   }
                  } else {
-                   fprintf(fp,",grid%%%s%s(1,1,1,1,itrace),ngrid%%%s%s(1,1,1,1,itrace)  &\n", core2, nd->name, core2, nd->name ) ;
+                   fprintf(fp,",grid%%%s%s,ngrid%%%s%s  &\n", core2, nd->name, core2, nd->name ) ;
                  }
                }
                else

@@ -172,7 +172,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                          diff_6th_opt, diff_6th_rate,                     &
                          dampcoef,zdamp,damp_opt,                         &
                          cf1, cf2, cf3, cfn, cfn1, n_moist,               &
-                         non_hydrostatic, leapfrog,                       &
+                         non_hydrostatic,                                 &
                          ids, ide, jds, jde, kds, kde,                    &
                          ims, ime, jms, jme, kms, kme,                    &
                          its, ite, jts, jte, kts, kte                    )
@@ -187,7 +187,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                                             ims, ime, jms, jme, kms, kme, &
                                             its, ite, jts, jte, kts, kte
 
-   LOGICAL ,               INTENT(IN   ) :: non_hydrostatic, leapfrog
+   LOGICAL ,               INTENT(IN   ) :: non_hydrostatic
 
    INTEGER ,               INTENT(IN   ) :: n_moist, rk_step
 
@@ -360,8 +360,6 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                     ims, ime, jms, jme, 1, 1, &
                     its, ite, jts, jte, 1, 1 )
 
-   IF (.not. leapfrog ) THEN
-
      !  advection tendencies
 
      CALL advect_u ( u, u , ru_tend, ru, rv, ww,   &
@@ -420,54 +418,6 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                   ims, ime, jms, jme, kms, kme,      &
                   its, ite, jts, jte, kts, kte      )
 
-  ELSE  ! leapfrog option
-
-    CALL advect_u ( u, u_old, ru_tend, ru, rv, ww, &
-                    mut, config_flags,             &
-                    msfu, msfv, msft,              &
-                    fnm, fnp, rdx, rdy, rdnw,      &
-                    ids, ide, jds, jde, kds, kde,  &
-                    ims, ime, jms, jme, kms, kme,  &
-                    its, ite, jts, jte, kts, kte  )
-
-    CALL advect_v ( v, v_old, rv_tend, ru, rv, ww, &
-                    mut, config_flags,             &
-                    msfu, msfv, msft,              &
-                    fnm, fnp, rdx, rdy, rdnw,      &
-                    ids, ide, jds, jde, kds, kde,  &
-                    ims, ime, jms, jme, kms, kme,  &
-                    its, ite, jts, jte, kts, kte  )
-
-    IF (non_hydrostatic)                           &
-    CALL advect_w ( w, w_old, rw_tend, ru, rv, ww, &
-                    mut, config_flags,             &
-                    msfu, msfv, msft,              &
-                    fnm, fnp, rdx, rdy, rdn,       &
-                    ids, ide, jds, jde, kds, kde,  &
-                    ims, ime, jms, jme, kms, kme,  &
-                    its, ite, jts, jte, kts, kte  )
-
-!  theta flux divergence
-
-    CALL advect_scalar ( t, t_old, t_tend, ru, rv, ww, &
-                         mut, config_flags,            &
-                         msfu, msfv, msft, fnm, fnp,   &
-                         rdx, rdy, rdnw,               &
-                         ids, ide, jds, jde, kds, kde, &
-                         ims, ime, jms, jme, kms, kme, &
-                         its, ite, jts, jte, kts, kte )
-
-    CALL rhs_ph( ph_tend, u, v, ww, ph, ph_old, phb, w, &
-                 mut, muu, muv,                         &
-                 fnm, fnp,                              &
-                 rdnw, cfn, cfn1, rdx, rdy, msft,       &
-                 non_hydrostatic,                       &
-                 config_flags,                          &
-                 ids, ide, jds, jde, kds, kde,          &
-                 ims, ime, jms, jme, kms, kme,          &
-                 its, ite, jts, jte, kts, kte          )
-
-  END IF
 
   CALL horizontal_pressure_gradient( ru_tend,rv_tend,                &
                                      ph,alt,p,pb,al,php,cqu,cqv,     &
@@ -534,8 +484,6 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
 
     diff_opt1 : IF (config_flags%diff_opt .eq. 1) THEN
    
-      leapfrog_test : IF( .not. leapfrog ) THEN
-
         CALL horizontal_diffusion ('u', u, ru_tendf, mut, config_flags, &
                                         msfu, msfv, msft,               &
                                         khdif, xkmhd, rdx, rdy,         &
@@ -600,72 +548,6 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
 
    !  Theta tendency computations.
 
-      ELSE ! leapfrog diffusion
-
-        CALL horizontal_diffusion ('u', u_old, ru_tendf, mut, config_flags, &
-                                        msfu, msfv, msft,                   &
-                                        khdif, xkmhd, rdx, rdy,             &
-                                        ids, ide, jds, jde, kds, kde,       &
-                                        ims, ime, jms, jme, kms, kme,       &
-                                        its, ite, jts, jte, kts, kte       )
-
-        CALL horizontal_diffusion ('v', v_old, rv_tendf, mut, config_flags, &
-                                        msfu, msfv, msft,                   &
-                                        khdif, xkmhd, rdx, rdy,             &
-                                        ids, ide, jds, jde, kds, kde,       &
-                                        ims, ime, jms, jme, kms, kme,       &
-                                        its, ite, jts, jte, kts, kte       )
-
-        IF (non_hydrostatic)                                                &
-        CALL horizontal_diffusion ('w', w_old, rw_tendf, mut, config_flags, &
-                                        msfu, msfv, msft,                   &
-                                        khdif, xkmhd, rdx, rdy,             &
-                                        ids, ide, jds, jde, kds, kde,       &
-                                        ims, ime, jms, jme, kms, kme,       &
-                                        its, ite, jts, jte, kts, kte       )
-
-        khdq = 3.*khdif
-        CALL horizontal_diffusion_3dmp ( 'm', t_old, t_tendf, mut,     &
-                                         config_flags, t_init,         &
-                                         msfu, msfv, msft,             &
-                                         khdq, xkmhd, rdx, rdy,        &
-                                         ids, ide, jds, jde, kds, kde, &
-                                         ims, ime, jms, jme, kms, kme, &
-                                         its, ite, jts, jte, kts, kte )
-
-        pbl_test_lf : IF (config_flags%bl_pbl_physics .eq. 0) THEN
-
-          CALL vertical_diffusion_u ( u_old, ru_tendf, config_flags,      &
-                                      u_base,                             &
-                                      alt, muu, rdn, rdnw, kvdif,         &
-                                      ids, ide, jds, jde, kds, kde,       &
-                                      ims, ime, jms, jme, kms, kme,       &
-                                      its, ite, jts, jte, kts, kte       )
-
-          CALL vertical_diffusion_v ( v_old, rv_tendf, config_flags,      &
-                                      v_base,                             &
-                                      alt, muv, rdn, rdnw, kvdif,         &
-                                      ids, ide, jds, jde, kds, kde,       &
-                                      ims, ime, jms, jme, kms, kme,       &
-                                      its, ite, jts, jte, kts, kte       )
-
-          IF (non_hydrostatic)                                              &
-          CALL vertical_diffusion ( 'w', w_old, rw_tendf, config_flags,     &
-                                    alt, mut, rdn, rdnw, kvdif,             &
-                                    ids, ide, jds, jde, kds, kde,           &
-                                    ims, ime, jms, jme, kms, kme,           &
-                                    its, ite, jts, jte, kts, kte           )
-
-          kvdq = 3.*kvdif
-          CALL vertical_diffusion_3dmp ( t_old, t_tendf, config_flags, t_init, &
-                                         alt, mut, rdn, rdnw, kvdq ,           &
-                                         ids, ide, jds, jde, kds, kde,         &
-                                         ims, ime, jms, jme, kms, kme,         &
-                                         its, ite, jts, jte, kts, kte         )
-        ENDIF pbl_test_lf
-
-      END IF leapfrog_test
-        
     END IF diff_opt1
 
     IF ( diff_6th_opt .NE. 0 ) THEN
@@ -852,7 +734,6 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,       &
                             rdx, rdy, rdn, rdnw,          &
                             khdif, kvdif, xkmhd,          &
                             diff_6th_opt, diff_6th_rate,  &
-                            leapfrog,                     &
                             pd_advection,                 &
                             ids, ide, jds, jde, kds, kde, &
                             ims, ime, jms, jme, kms, kme, &
@@ -911,7 +792,6 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,       &
 
    REAL ,                                        INTENT(IN   ) :: dt
 
-   LOGICAL, INTENT(IN   ) :: leapfrog
    LOGICAL, INTENT(IN   ) :: pd_advection
 
    ! Local data
@@ -1034,7 +914,7 @@ SUBROUTINE rk_update_scalar( scs, sce,                      &
                              advect_tend, msft,             &
                              mu_old, mu_new, mu_base,       &
                              rk_step, dt, spec_zone,        &
-                             epsts, leapfrog, config_flags, &
+                             config_flags,                  &
                              ids, ide, jds, jde, kds, kde,  &
                              ims, ime, jms, jme, kms, kme,  &
                              its, ite, jts, jte, kts, kte  )
@@ -1050,7 +930,7 @@ SUBROUTINE rk_update_scalar( scs, sce,                      &
                                              ims, ime, jms, jme, kms, kme, &
                                              its, ite, jts, jte, kts, kte
 
-   REAL,                    INTENT(IN   ) :: dt, epsts
+   REAL,                    INTENT(IN   ) :: dt
 
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme , scs:sce),                &
          INTENT(INOUT)                                  :: scalar_1,    &
@@ -1064,8 +944,6 @@ SUBROUTINE rk_update_scalar( scs, sce,                      &
                                                           mu_new,  &
                                                           mu_base, &
                                                           msft
-
-   LOGICAL, INTENT(IN   ) :: leapfrog
 
    INTEGER :: i,j,k,im
    REAL    :: sc_middle, msfsq
@@ -1335,127 +1213,6 @@ SUBROUTINE rk_update_scalar_pd( scs, sce,                      &
 END SUBROUTINE rk_update_scalar_pd
 
 !------------------------------------------------------------
-
-SUBROUTINE time_filter  ( u_1, u_2, u_save,             &
-                          v_1, v_2, v_save,             &
-                          w_1, w_2, w_save,             &
-                          t_1, t_2, t_save,             &
-                          ph_1, ph_2, ph_save,          &
-                          mu_1, mu_2, mu_save,          &
-                          epsts,                        & 
-                          ids, ide, jds, jde, kds, kde, &
-                          ims, ime, jms, jme, kms, kme, &
-                          its, ite, jts, jte, kts, kte )
-
-   IMPLICIT NONE
-
-   !  Input data.
-
-
-   INTEGER ,       INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
-                                    ims, ime, jms, jme, kms, kme, &
-                                    its, ite, jts, jte, kts, kte
-
-   REAL , DIMENSION(  ims:ime , kms:kme, jms:jme ) ,                        &
-                                               INTENT(INOUT) ::  u_1,       &
-                                                                 v_1,       &
-                                                                 w_1,       &
-                                                                 t_1,       &
-                                                                 ph_1,      &
-                                                                 u_2,       &
-                                                                 v_2,       &
-                                                                 w_2,       &
-                                                                 t_2,       &
-                                                                 ph_2
-
-
-   REAL , DIMENSION(  ims:ime , kms:kme, jms:jme ) ,                           &
-                                               INTENT(IN   ) ::  u_save,       &
-                                                                 v_save,       &
-                                                                 w_save,       &
-                                                                 t_save,       &
-                                                                 ph_save
-
-
-   REAL , DIMENSION(  ims:ime , jms:jme ) ,                                  &
-                                               INTENT(INOUT) ::  mu_1,       &
-                                                                 mu_2
-
-   REAL , DIMENSION(  ims:ime , jms:jme ) ,                                  &
-                                               INTENT(IN   ) ::  mu_save
-
-   REAL , INTENT(IN   )  :: epsts
-
-   INTEGER :: i,j,k
-
-!<DESCRIPTION>
-!
-!  Asselin timefilter for momentum, theta, geopotential, and mu.
-!  Used with leapfrog option.
-!
-!</DESCRIPTION>
-
-      DO  j = jts, min(jte,jde-1)
-      DO  k = kts, min(kte,kde-1)
-      DO  i = its, ite
-
-      u_1(i,k,j) = u_save(i,k,j) + epsts*( u_1(i,k,j)       &
-                                          -2*u_save(i,k,j)  &
-                                           +u_2(i,k,j)      )
-      ENDDO
-      ENDDO
-      ENDDO
-
-      DO  j = jts, jde
-      DO  k = kts, min(kte,kde-1)
-      DO  i = its, min(ite,ide-1)
-
-      v_1(i,k,j) = v_save(i,k,j) + epsts*( v_1(i,k,j)       &
-                                          -2*v_save(i,k,j)  &
-                                          +v_2(i,k,j)      )
-      ENDDO
-      ENDDO
-      ENDDO
-
-      DO  j = jts, min(jte,jde-1)
-      DO  k = kts, kte
-      DO  i = its, min(ite,ide-1)
-
-      w_1(i,k,j) = w_save(i,k,j) + epsts*( w_1(i,k,j)       &
-                                          -2*w_save(i,k,j)  &
-                                          +w_2(i,k,j)      )
-      ph_1(i,k,j) = ph_save(i,k,j) + epsts*( ph_1(i,k,j)     &
-                                          -2*ph_save(i,k,j)  &
-                                          +ph_2(i,k,j)      )
-      ENDDO
-      ENDDO
-      ENDDO
-
-      DO  j = jts, min(jte,jde-1)
-      DO  k = kts, min(kte,kde-1)
-      DO  i = its, min(ite,ide-1)
-
-      t_1(i,k,j) = t_save(i,k,j) + epsts*( t_1(i,k,j)       &
-                                          -2*t_save(i,k,j)  &
-                                          +t_2(i,k,j)      )
-
-      ENDDO
-      ENDDO
-      ENDDO
-
-      DO  j = jts, min(jte,jde-1)
-      DO  i = its, min(ite,ide-1)
-
-      mu_1(i,j) = mu_save(i,j) + epsts*( mu_1(i,j)       &
-                                          -2*mu_save(i,j)  &
-                                          +mu_2(i,j)      )
-
-      ENDDO
-      ENDDO
-
-END SUBROUTINE time_filter
-
-!-----------------------------------------------------------------------
 
 SUBROUTINE init_zero_tendency(ru_tendf, rv_tendf, rw_tendf, ph_tendf,  &
                               t_tendf,  tke_tendf, mu_tendf,           &

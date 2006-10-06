@@ -13,7 +13,6 @@ SUBROUTINE init_domain_constants_em ( parent , nest )
    nest%p_top   = parent%p_top
    nest%cfn     = parent%cfn
    nest%cfn1    = parent%cfn1
-   nest%epsts   = parent%epsts
    nest%rdx     = 1./nest%dx
    nest%rdy     = 1./nest%dy
 !  nest%dts     = nest%dt/float(nest%time_step_sound)

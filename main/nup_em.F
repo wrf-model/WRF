@@ -478,7 +478,6 @@ SUBROUTINE nup ( nested_grid, parent_grid , in_id, out_id, newly_opened )
 
   parent_grid%cfn       = nested_grid%cfn 
   parent_grid%cfn1      = nested_grid%cfn1
-  parent_grid%epsts     = nested_grid%epsts
 
 #ifdef WRF_CHEM
   parent_grid%chem_opt    = nested_grid%chem_opt

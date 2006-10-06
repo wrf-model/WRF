@@ -111,8 +111,8 @@ SUBROUTINE med_nest_move ( parent, nest )
 
    check_for_move: IF ( time_for_move ( parent , nest , dx, dy ) ) THEN
 
-     IF ( (dx .gt. 1 .and. dx .lt. -1 ) .or.  &
-          (dy .gt. 1 .and. dy .lt. -1 ) ) THEN
+     IF ( (dx .gt. 1 .or. dx .lt. -1 ) .or.  &
+          (dy .gt. 1 .or. dy .lt. -1 ) ) THEN
        WRITE(mess,*)' invalid move: dx, dy ', dx, dy
        CALL wrf_error_fatal( mess )
      ENDIF

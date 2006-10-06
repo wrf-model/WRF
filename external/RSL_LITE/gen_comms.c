@@ -19,6 +19,10 @@ gen_halos ( char * dirname , char * incname , node_t * halos )
   char fname[NAMELEN] ;
   char tmp[NAMELEN], tmp2[NAMELEN], tmp3[NAMELEN] ;
   char commuse[NAMELEN] ;
+#define MAX_VDIMS 100
+  char vdims[MAX_VDIMS][2][80] ;
+  char s[NAMELEN], e[NAMELEN] ;
+  int vdimcurs ;
   int maxstenwidth, stenwidth ;
   FILE * fp ;
   char * t1, * t2 ;
@@ -29,7 +33,7 @@ gen_halos ( char * dirname , char * incname , node_t * halos )
   int n2dI, n3dI ;
   int n2dD, n3dD ;
   int n4d ;
-  int i ;
+  int i, foundvdim ;
 #define MAX_4DARRAYS 1000
   char name_4d[MAX_4DARRAYS][NAMELEN] ;
 
@@ -83,6 +87,7 @@ fprintf(fp,"CALL wrf_debug(2,'calling %s')\n",fname) ;
     n2dI = 0 ; n3dI = 0 ;
     n2dD = 0 ; n3dD = 0 ;
     n4d = 0 ;
+    vdimcurs = 0 ;
     strcpy( tmp, p->comm_define ) ;
     strcpy( commuse, p->use ) ;
     t1 = strtok_rentr( tmp , ";" , &pos1 ) ;
@@ -105,6 +110,49 @@ fprintf(fp,"CALL wrf_debug(2,'calling %s')\n",fname) ;
             { fprintf(stderr,"WARNING: boundary array %s cannot be member of halo spec %s.\n",t2,commname) ; }
           else
           {
+
+            /* 20061004 -- collect all the vertical dimensions so we can use a MAX
+	       on them when calling RSL_LITE_INIT_EXCH */
+
+            if ( q->ndims == 3 || q->node_kind & FOURD ) {
+              dimd = get_dimnode_for_coord( q , COORD_Z ) ;
+              zdex = get_index_for_coord( q , COORD_Z ) ;
+              if      ( dimd->len_defined_how == DOMAIN_STANDARD ) {
+                strcpy(s,"kps") ; 
+                strcpy(e,"kpe") ;
+              }
+              else if ( dimd->len_defined_how == NAMELIST ) {
+                if ( !strcmp(dimd->assoc_nl_var_s,"1") ) {
+                  strcpy(s,"1") ;
+                  sprintf(e,"config_flags%%%s",dimd->assoc_nl_var_e) ;
+                } else {
+                  sprintf(s,"config_flags%%%s",dimd->assoc_nl_var_s) ;
+                  sprintf(e,"config_flags%%%s",dimd->assoc_nl_var_e) ;
+                }
+              }
+              else if ( dimd->len_defined_how == CONSTANT ) {
+                sprintf(s,"%d",dimd->coord_start) ;
+                sprintf(e,"%d",dimd->coord_end) ;
+              }
+	      for ( i = 0, foundvdim = 0 ; i < vdimcurs ; i++ ) {
+		if ( !strcmp( vdims[i][1], e ) ) {
+		  foundvdim = 1 ; break ;
+		}
+	      }
+	      if ( ! foundvdim ) {
+		if (vdimcurs < 100 ) {
+		  strcpy( vdims[vdimcurs][0], s ) ;
+		  strcpy( vdims[vdimcurs][1], e ) ;
+		  vdimcurs++ ;
+		} else {
+                  fprintf(stderr,"REGISTRY ERROR: too many different vertical dimensions (> %d).\n", MAX_VDIMS ) ;
+                  fprintf(stderr,"That seems like a lot, but if you are sure, increase MAX_VDIMS\n" ) ;
+                  fprintf(stderr,"in external/RSL_LITE/gen_comms.c and recompile\n") ;
+                  exit(5) ;
+		}
+	      }
+            }
+
             if ( q->node_kind & FOURD ) {
               if ( n4d < MAX_4DARRAYS ) {
                 strcpy( name_4d[n4d], q->name ) ;
@@ -154,7 +202,11 @@ fprintf(fp,"CALL wrf_debug(3,'calling RSL_LITE_INIT_EXCH %d for Y %s')\n",maxste
     fprintf(fp,"     %d, %d, DWORDSIZE, &\n", n3dD, n2dD ) ;
     fprintf(fp,"      0,  0, LWORDSIZE, &\n" ) ;
     fprintf(fp,"      mytask, ntasks, ntasks_x, ntasks_y,   &\n" ) ;
-    fprintf(fp,"      ips, ipe, jps, jpe, kps, kpe    )\n") ;
+    fprintf(fp,"      ips, ipe, jps, jpe, kps, MAX(1,1&\n") ;
+    for ( i = 0 ; i < vdimcurs ; i++ ) {
+      fprintf(fp,",%s &\n",vdims[i][1] ) ;
+    }
+    fprintf(fp,"))\n") ;
 
 /* generate packs prior to stencil exchange in Y */
     gen_packs( fp, p, maxstenwidth, 0, 0, "RSL_LITE_PACK", "local_communicator" ) ;
@@ -170,7 +222,11 @@ fprintf(fp,"CALL wrf_debug(3,'calling RSL_LITE_INIT_EXCH %d for Y %s')\n",maxste
     fprintf(fp,"     %d, %d, DWORDSIZE, &\n", n3dD, n2dD ) ;
     fprintf(fp,"      0,  0, LWORDSIZE, &\n" ) ;
     fprintf(fp,"      mytask, ntasks, ntasks_x, ntasks_y,   &\n" ) ;
-    fprintf(fp,"      ips, ipe, jps, jpe, kps, kpe    )\n") ;
+    fprintf(fp,"      ips, ipe, jps, jpe, kps, MAX(1,1&\n") ;
+    for ( i = 0 ; i < vdimcurs ; i++ ) {
+      fprintf(fp,",%s &\n",vdims[i][1] ) ;
+    }
+    fprintf(fp,"))\n") ;
 /* generate packs prior to stencil exchange in X */
     gen_packs( fp, p, maxstenwidth, 1, 0, "RSL_LITE_PACK", "local_communicator" ) ;
 /* generate stencil exchange in X */
@@ -926,8 +982,7 @@ if ( !strcmp( p->name , "xf_ens" ) || !strcmp( p->name,"pr_ens" ) ||
       {
 
         if ( p->node_kind & FOURD ) {
-          if (!strncmp( p->members->next->use, "dyn_", 4))   sprintf(core,"%s_",corename) ;
-          else                                               sprintf(core,"") ;
+          sprintf(core,"") ;
         } else {
           if (!strncmp( p->use, "dyn_", 4))   sprintf(core,"%s_",corename) ;
           else                                sprintf(core,"") ;

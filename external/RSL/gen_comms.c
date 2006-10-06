@@ -591,8 +591,7 @@ if ( !strcmp( p->name , "xf_ens" ) || !strcmp( p->name,"pr_ens" ) ||
       {
 
         if ( p->node_kind & FOURD ) {
-          if (!strncmp( p->members->next->use, "dyn_", 4))   sprintf(core,"%s_",corename) ;
-          else                                               sprintf(core,"") ;
+          sprintf(core,"") ;
         } else {
           if (!strncmp( p->use, "dyn_", 4))   sprintf(core,"%s_",corename) ;
           else                                sprintf(core,"") ;
@@ -681,8 +680,7 @@ if ( !strcmp( p->name , "xf_ens" ) || !strcmp( p->name,"pr_ens" ) ||
   continue ;
 }
       if ( p->node_kind & FOURD ) {
-        if (!strncmp( p->members->next->use, "dyn_", 4))   sprintf(core,"%s_",corename) ;
-        else                                               sprintf(core,"") ;
+        sprintf(core,"") ;
       } else {
         if (!strncmp( p->use, "dyn_", 4))   sprintf(core,"%s_",corename) ;
         else                                sprintf(core,"") ;

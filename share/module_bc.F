@@ -27,7 +27,7 @@ MODULE module_bc
 !  set the bdyzone.  We are hardwiring this here and we'll
 !  decide later where it should be set and stored
 
-   INTEGER, PARAMETER            :: bdyzone = 3
+   INTEGER, PARAMETER            :: bdyzone = 4
    INTEGER, PARAMETER            :: bdyzone_x = bdyzone
    INTEGER, PARAMETER            :: bdyzone_y = bdyzone
 

@@ -17,7 +17,7 @@ MODULE module_bioemi_simple
                config_flags,                                              &
                gmt,julday,t_phy,moist,p8w,t8w,                            &
                e_bio,p_phy,chem,rho_phy,dz8w,ne_area,                     &
-               ivgtyp,tsk,gsw,vegfra,pbl,rmol,ust,znt,xlat,xlong,z,z_at_w,&
+               ivgtyp,gsw,vegfra,rmol,ust,znt,xlat,xlong,z_at_w,          &
                numgas,                                                    &
                ids,ide, jds,jde, kds,kde,                                 &
                ims,ime, jms,jme, kms,kme,                                 &
@@ -42,7 +42,6 @@ MODULE module_bioemi_simple
                                                       t_phy,              &
                                                       p_phy,              &
                                                       dz8w,               &
-                                                      z    ,              &
                                               t8w,p8w,z_at_w ,            &
                                                     rho_phy
    INTEGER,DIMENSION( ims:ime , jms:jme )                  ,              &
@@ -50,10 +49,8 @@ MODULE module_bioemi_simple
                                                      ivgtyp
    REAL,  DIMENSION( ims:ime , jms:jme )                   ,              &
           INTENT(IN   ) ::                                                &
-                                                     tsk,                 &
                                                      gsw,                 &
                                                   vegfra,                 &
-                                                     pbl,                 &
                                                      rmol,                &
                                                      ust,                 &
                                                      xlat,                &
@@ -101,11 +98,7 @@ MODULE module_bioemi_simple
       CALL bioemiin(iseason,luse_typ,vegflag) 
       do 100 j=jts,jte  
       do 100 i=its,ite  
-!     print *,i,j,ivgtyp(i,j)
-!     print *,tsk(i,j),gsw(i,j),vegfra(i,j),p_phy(i,kts,j),moist(i,kts,j,p_qc), &
-!             ust(i,j),znt(i,j),z_at_w(i,kts,j),z_at_w(i,kts+1,j)
       iland = ivgtyp(i,j)
-!      ta = tsk(i,j)      
       ta = t_phy(i,kts,j)      
       rad = gsw(i,j)
       vegfrac = vegfra(i,j)

@@ -380,6 +380,7 @@ MODULE module_bioemi_beis311
           pi, ra, rdecl, reqt, rlt, rml, rphi, rra, ssw, sw, tab, w, wr, &
           yt, zpt, zr
         INTEGER :: jd
+        CHARACTER*256   ::   mesg
         ! .. Intrinsic Functions ..
         INTRINSIC acos, atan, cos, min, sin, tan
         ! convert to radians
@@ -578,7 +579,7 @@ MODULE module_bioemi_beis311
 
         END SUBROUTINE getpar
 
-      SUBROUTINE hrno( julday, growagno, ngrowagno, nonagno, tairin, e_no)
+   SUBROUTINE hrno( julday, growagno, ngrowagno, nonagno, tairin, e_no)
 
 !***********************************************************************
 !  subroutine body starts at line  150

@@ -26,7 +26,7 @@
 !wig 10-May-2004, added phb, ph, g
 	subroutine mosaic_init_wrf_mixrats(  &
 		iflagaa, config_flags,       &
-		chem, alt, phb, ph, g,       &
+		chem, alt, z_at_w, g,        &
 		ids,ide, jds,jde, kds,kde,   &
 		ims,ime, jms,jme, kms,kme,   &
 		its,ite, jts,jte, kts,kte    )
@@ -63,7 +63,7 @@
 !wig 10-May-2004, added phb, ph, g
 	real, intent(in),      &
 		dimension( ims:ime, kms:kme, jms:jme ) :: &
-        alt, phb, ph
+        alt, z_at_w
     real, intent(in) :: g
 
 !   local variables
@@ -73,7 +73,7 @@
 !wig 10-May-2004, added phb, ph, g
 	    call mosaic_init_wrf_mixrats_opt2(   &
 		iflagaa, config_flags,           &
-		chem, phb, ph, g,                &
+		chem, z_at_w, g,                 &
 		ids,ide, jds,jde, kds,kde,       &
 		ims,ime, jms,jme, kms,kme,       &
 		its,ite, jts,jte, kts,kte        )
@@ -571,7 +571,7 @@
 !wig 10-May-2004, added phb, ph, g
 	subroutine mosaic_init_wrf_mixrats_opt2(   &
 		iflagaa, config_flags,             &
-		chem, phb, ph, g,                  &
+		chem, z_at_w, g,                   &
 		ids,ide, jds,jde, kds,kde,         &
 		ims,ime, jms,jme, kms,kme,         &
 		its,ite, jts,jte, kts,kte          )
@@ -608,7 +608,7 @@
 !wig 10-May-2004, added phb, ph, g
         real, intent(in),        &
 		dimension( ims:ime, kms:kme, jms:jme ) :: &
-                phb, ph
+                z_at_w
         real :: g
 
 !   local variables
@@ -664,8 +664,7 @@
         do it = its, ite
            do kt = kts, kte-1
               do jt = jts, jte
-                 z(it,kt,jt) = (phb(it,kt,jt)+phb(it,kt+1,jt)+ &
-                                 ph(it,kt,jt)+ ph(it,kt+1,jt))*0.5/g
+                 z(it,kt,jt) = (z_at_w(it,kt,jt)+z_at_w(it,kt+1,jt))*0.5
               end do
            end do
         end do

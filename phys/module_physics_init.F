@@ -73,7 +73,7 @@ CONTAINS
    TYPE (grid_config_rec_type)              :: config_flags
 
    INTEGER , INTENT(IN)        :: id
-   LOGICAL , INTENT(OUT)       :: warm_rain, adv_moist_cond
+   LOGICAL , INTENT(OUT)       :: warm_rain,adv_moist_cond
 !   LOGICAL , INTENT (IN)       :: FNDSOILW, FNDSNOWH
    LOGICAL, PARAMETER          :: FNDSOILW=.true., FNDSNOWH=.true.
    INTEGER , INTENT(IN)        :: ids, ide, jds, jde, kds, kde,  &
@@ -296,7 +296,7 @@ integer myproc
    DO i=its,itf
      IF(XLAND(i,j) .LT. 1.5)THEN
        IF(mminlu_loc .EQ. '    ') ALBBCK(i,j)=ALBLND
-       ALBEDO(i,j)=ALBLND
+       ALBEDO(i,j)=ALBBCK(i,j)
        EMISS(i,j)=0.85
        THC(i,j)=THINLD
        ZNT(i,j)=ZZLND
@@ -306,7 +306,7 @@ integer myproc
        MAVAIL(i,j)=XMAVA
      ELSE
        IF(mminlu_loc .EQ. '    ') ALBBCK(i,j)=0.08
-       ALBEDO(i,j)=0.08
+       ALBEDO(i,j)=ALBBCK(i,j)
        EMISS(i,j)=0.98
        THC(i,j)=THINLD
        ZNT(i,j)=ZZWTR
@@ -373,7 +373,7 @@ integer myproc
                 num_soil_layers,TKE_MYJ,EXCH_H,VEGFRA,          &
                 SNOW,SNOWC, CANWAT,SMSTAV,                      &
                 SMSTOT, SFCRUNOFF,UDRUNOFF,ACSNOW,ACSNOM,       &
-                IVGTYP,ISLTYP,SMOIS,SMFR3D,                     &
+                IVGTYP,ISLTYP,SMOIS,SMFR3D,MAVAIL,              &
                 SNOWH,SH2O,FNDSOILW, FNDSNOWH,                  &
 #if (NMM_CORE == 1)
                 Z0,XLAND,XICE,                                  &
@@ -776,8 +776,6 @@ integer myproc
              camlw = .true.
 
         CASE (GFDLLWSCHEME)
-            if(.not. etamp)CALL wrf_error_fatal &
-            ( 'module_physics_init: use Ferrier mp scheme for this lw radiation option' )
              CALL nl_get_start_month(grid%id,month)
              CALL nl_get_start_day(grid%id,iday)
              CALL gfdletainit(emiss,sfull,shalf,pptop,      &
@@ -820,8 +818,6 @@ integer myproc
              CALL gsfc_swinit(cen_lat, allowed_to_read )
 
         CASE (GFDLSWSCHEME)
-            if(.not. etamp)CALL wrf_error_fatal &
-            ( 'module_physics_init: use Ferrier mp scheme for this sw radiation option' )
              IF(.not.etalw)THEN
              CALL nl_get_start_month(grid%id,month)
              CALL nl_get_start_day(grid%id,iday)
@@ -845,7 +841,7 @@ integer myproc
                 num_soil_layers,TKE_MYJ,EXCH_H,VEGFRA,          &
                 SNOW,SNOWC, CANWAT,SMSTAV,                      &
                 SMSTOT, SFCRUNOFF,UDRUNOFF,ACSNOW,ACSNOM,       &
-                IVGTYP,ISLTYP,SMOIS,SMFR3D,                     &
+                IVGTYP,ISLTYP,SMOIS,SMFR3D,mavail,              &
                 SNOWH,SH2O,FNDSOILW, FNDSNOWH,                  &
 #if  ( NMM_CORE == 1 )
                 Z0,XLAND,XICE,                                  &
@@ -896,6 +892,7 @@ integer myproc
                                                          SNOWH, &
                                                          SNOWC, &
                                                         CANWAT, &
+                                                        MAVAIL, &
                                                         SMSTAV, &
                                                         SMSTOT, &
                                                      SFCRUNOFF, &
@@ -1024,7 +1021,7 @@ integer myproc
       CASE (RUCLSMSCHEME)
 !          if(isfc .ne. 2)CALL wrf_error_fatal &
 !           ( 'module_physics_init: use myjsfc and myjpbl scheme for this lsm option' )
-           CALL lsmrucinit( SMFR3D,TSLB,SMOIS,ISLTYP,              &
+           CALL lsmrucinit( SMFR3D,TSLB,SMOIS,ISLTYP,mavail,       &
                      num_soil_layers, restart,                     &
                      allowed_to_read ,                             &
                      ids,ide, jds,jde, kds,kde,                    &
@@ -1222,7 +1219,7 @@ integer myproc
 
 !==================================================================
    SUBROUTINE mp_init(RAINNC,config_flags,restart,warm_rain,      &
-                      adv_moist_cond,                             & ! for eta mp
+                      adv_moist_cond,                             &
                       MPDT, DT, DX, DY, LOWLYR,                   & ! for eta mp
                       F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,           & ! for eta mp
                       mp_restart_state,tbpvs_state,tbpvs0_state,   & ! eta mp
@@ -1244,7 +1241,7 @@ integer myproc
 ! Arguments
    TYPE (grid_config_rec_type) ::     config_flags
    LOGICAL , INTENT(IN)        :: restart
-   LOGICAL , INTENT(OUT)       :: warm_rain, adv_moist_cond
+   LOGICAL , INTENT(OUT)       :: warm_rain,adv_moist_cond
    REAL    , INTENT(IN)        :: MPDT, DT, DX, DY
 
    INTEGER , INTENT(IN)        :: ids, ide, jds, jde, kds, kde,   &
@@ -1294,7 +1291,7 @@ integer myproc
                           ims, ime, jms, jme, kms, kme,           &
                           its, ite, jts, jte, kts, kte            )
      CASE (THOMPSON)
-         CALL thomp_init
+         CALL thompson_init
      CASE (NCEPCLOUD3)
           CALL ncloud3init(rhoair0,rhowater,rhosnow,cliq,cv, allowed_to_read )
      CASE (NCEPCLOUD5)

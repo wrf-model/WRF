@@ -13,6 +13,7 @@
 !
 !-----------------------------------------------------------------------
       USE MODULE_STATE_DESCRIPTION
+      USE MODULE_MODEL_CONSTANTS
 !-----------------------------------------------------------------------
 #ifdef DM_PARALLEL
       INCLUDE "mpif.h"
@@ -28,8 +29,11 @@
      &                ,LB,ETA1,ETA2,PDTOP,PT,RES,HTM                    &
      &                ,PD_B,T_B,Q_B,U_B,V_B,Q2_B,CWM_B                  &
      &                ,PD_BT,T_BT,Q_BT,U_BT,V_BT,Q2_BT,CWM_BT           &
-     &                ,PD,T,Q,Q2,CWM,PINT                               &
-     &                ,IJDS,IJDE,SPEC_BDY_WIDTH                         &  ! min/max(id,jd)
+     &                ,PD,T,Q,Q2,CWM,PINT,MOIST,N_MOIST,SCALAR,N_SCALAR &
+#ifdef WRF_CHEM
+     &                ,CHEM,NUM_CHE,CONFIG_FLAGS                        &
+#endif
+     &                ,IJDS,IJDE,SPEC_BDY_WIDTH,Z                       &  ! min/max(id,jd)
      &                ,IHE,IHW,IVE,IVW,INDX3_WRK                        &
      &                ,IDS,IDE,JDS,JDE,KDS,KDE                          &
      &                ,IMS,IME,JMS,JME,KMS,KME                          &
@@ -83,6 +87,10 @@
 !$$$  
 !***********************************************************************
 !-----------------------------------------------------------------------
+#ifdef WRF_CHEM
+    USE MODULE_INPUT_CHEM_DATA
+#endif
+!-----------------------------------------------------------------------
 !
       IMPLICIT NONE
 !
@@ -93,6 +101,10 @@
      &                     ,IMS,IME,JMS,JME,KMS,KME                     &
      &                     ,ITS,ITE,JTS,JTE,KTS,KTE
       INTEGER,INTENT(IN) :: IJDS,IJDE,SPEC_BDY_WIDTH
+      INTEGER,INTENT(IN) :: N_MOIST, N_SCALAR
+#ifdef WRF_CHEM
+      INTEGER,INTENT(IN) :: NUM_CHE
+#endif
 !
       INTEGER,DIMENSION(JMS:JME),INTENT(IN) :: IHE,IHW,IVE,IVW
 !-----------------------------------------------------------------------
@@ -129,24 +141,39 @@
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) :: CWM      &
      &                                                        ,PINT,Q   &
-     &                                                        ,Q2,T
+     &                                                        ,Q2,T,Z
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME,NUM_MOIST),INTENT(INOUT) :: MOIST
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME,NUM_SCALAR),INTENT(INOUT) :: SCALAR
+#ifdef WRF_CHEM
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME,1:NUM_CHEM),INTENT(INOUT) :: CHEM
+      TYPE(GRID_CONFIG_REC_TYPE),INTENT(IN) :: CONFIG_FLAGS
+#endif
+
+
 !-----------------------------------------------------------------------
 !
 !***  LOCAL VARIABLES
 !
       INTEGER :: BF,I,IB,IBDY,II,IIM,IM,IRTN,ISIZ1,ISIZ2                &
-     &          ,J,JB,JJ,JJM,JM,K,N,NN,NREC,REC
+     &          ,J,JB,JJ,JJM,JM,K,N,NN,NREC,REC,NV
       INTEGER :: MY_IS_GLB,MY_JS_GLB,MY_IE_GLB,MY_JE_GLB  
-      INTEGER :: ILPAD1,IRPAD1,JBPAD1,JTPAD1
+      INTEGER :: I_M,ILPAD1,IRPAD1,JBPAD1,JTPAD1
 !
       LOGICAL :: E_BDY,W_BDY,N_BDY,S_BDY
 !
       REAL :: BCHR,RHTM,SHTM,DT
+      REAL :: CONVFAC,RRI,PLYR
+      INTEGER KK,NUMGAS
       REAL :: CWK
 !-----------------------------------------------------------------------
 !***********************************************************************
 !-----------------------------------------------------------------------
 !
+#ifdef WRF_CHEM
+   ! DETERMINE THE INDEX OF THE LAST GAS SPECIES
+     NUMGAS=P_HO2                     
+!   NUMGAS = GET_LAST_GAS(CONFIG_FLAGS%CHEM_OPT)       
+#endif
       IM=IDE-IDS+1
       JM=JDE-JDS+1
       IIM=IM
@@ -219,6 +246,59 @@
      &                    +ETA2(K)*PD(I,JJ)*RES(I,JJ)+PT
             ENDDO
           ENDDO
+          DO I_M=1,N_MOIST
+            IF(I_M==P_QV)THEN
+!$omp parallel do                                                       &
+!$omp& private(i,k)
+              DO K=KTS,KTE
+              DO I=MAX(ITS-1,IDS),MIN(ITE+1,IDE)
+                MOIST(I,K,JJ,I_M)=Q(I,K,JJ)/(1.-Q(I,K,JJ))
+              ENDDO
+              ENDDO
+            ELSE
+!$omp parallel do                                                       &
+!$omp& private(i,k)
+              DO K=KTS,KTE
+              DO I=MAX(ITS-1,IDS),MIN(ITE+1,IDE)
+                MOIST(I,K,JJ,I_M)=0.
+              ENDDO
+              ENDDO
+            ENDIF
+          ENDDO
+          DO I_M=2,N_SCALAR
+!$omp parallel do                                                       &
+!$omp& private(i,k)
+            DO K=KTS,KTE
+            DO I=MAX(ITS-1,IDS),MIN(ITE+1,IDE)
+              SCALAR(I,K,JJ,I_M)=0.
+            ENDDO
+            ENDDO
+          ENDDO
+#ifdef WRF_CHEM
+!$omp parallel do                                                       &
+!$omp& private(i,k,nv)
+          DO NV=P_SO2,P_HO2
+          DO K=KTS,KTE
+            DO I=MAX(ITS-1,IDS),MIN(ITE+1,IDE)
+              CALL BDY_CHEM_VALUE (CHEM(I,K,JJ,NV), Z(I,K,JJ), NV,NUMGAS)
+            ENDDO
+          ENDDO
+          ENDDO
+!$omp parallel do                                                       &
+!$omp& private(i,k,nv)
+          DO NV=P_HO2+1,NUM_CHEM
+          DO K=KTS,KTE
+          KK=MIN(K+1,KTE)
+            DO I=MAX(ITS-1,IDS),MIN(ITE+1,IDE)
+              PLYR=(PINT(I,K,JJ)+PINT(I,KK,JJ))*0.5
+              RRI=R_D*T(I,K,JJ)*(1.+.608*Q(I,K,JJ))/PLYR
+              CONVFAC=PLYR/RGASUNIV/T(I,K,JJ)
+              CALL BDY_CHEM_VALUE_SORGAM (CHEM(I,K,JJ,NV), Z(I,K,JJ), NV, &
+                                          CONFIG_FLAGS,RRI,CONVFAC,G)
+            ENDDO
+          ENDDO
+          ENDDO
+#endif
         ENDIF
       ENDDO
 !
@@ -270,6 +350,68 @@
 !
             ENDDO
           ENDDO
+!
+          DO I_M=1,N_MOIST
+            IF(I_M==P_QV)THEN
+!$omp parallel do                                                       &
+!$omp& private(j,k)
+              DO K=KTS,KTE
+              DO J=MAX(JTS-1,JDS+3-1),MIN(JTE+1,JDE-2)
+                IF(MOD(J,2)==1)THEN
+                  MOIST(II,K,J,I_M)=Q(II,K,J)/(1.-Q(II,K,J))
+                ENDIF
+              ENDDO
+              ENDDO
+!
+            ELSE
+!$omp parallel do                                                       &
+!$omp& private(j,k)
+              DO K=KTS,KTE
+              DO J=MAX(JTS-1,JDS+3-1),MIN(JTE+1,JDE-2)
+                IF(MOD(J,2)==1)THEN
+                  MOIST(II,K,J,I_M)=0.
+                ENDIF
+              ENDDO
+              ENDDO
+!
+            ENDIF
+          ENDDO
+!
+          DO I_M=2,N_SCALAR
+!$omp parallel do                                                       &
+!$omp& private(j,k)
+            DO K=KTS,KTE
+            DO J=MAX(JTS-1,JDS+3-1),MIN(JTE+1,JDE-2)
+              IF(MOD(J,2)==1)THEN
+                SCALAR(II,K,J,I_M)=0.
+              ENDIF
+            ENDDO
+            ENDDO
+          ENDDO
+!
+#ifdef WRF_CHEM
+!$omp parallel do                                                       &
+!$omp& private(nv,j,k)
+          DO K=KTS,KTE
+            DO J=MAX(JTS-1,JDS+3-1),MIN(JTE+1,JDE-2)
+              IF(MOD(J,2)==1)THEN
+                 DO NV=P_SO2,P_HO2
+                   CALL BDY_CHEM_VALUE (CHEM(II,K,J,NV), Z(II,K,J), NV,NUMGAS)
+                 ENDDO
+!$omp parallel do                                                       &
+!$omp& private(nv)
+                 DO NV=P_HO2+1,NUM_CHEM
+                    PLYR=(PINT(II,K,J)+PINT(II,KK,J))*0.5
+                    RRI=R_D*T(II,K,J)*(1.+P608*Q(II,K,J))/PLYR
+                    CONVFAC=PLYR/RGASUNIV/T(II,K,J)
+                    CALL BDY_CHEM_VALUE_SORGAM (CHEM(II,K,J,NV), Z(II,K,J), NV, &
+     &                                          CONFIG_FLAGS,RRI,CONVFAC,G)
+                 ENDDO
+               ENDIF
+            ENDDO
+          ENDDO
+
+#endif
         ENDIF
       ENDDO
 !
@@ -300,9 +442,9 @@
      &                +PD(I,JJM)*HTM(I,KTE,JJM)                         &
      &                +PD(I+1,JJM)*HTM(I+1,KTE,JJM))/SHTM
 
-! test. This is gopal's doing
+! test. 
 
-          IF(I.LE.IDE-1 .AND. ABS(CWK-PD(I,JJM-1)) .GT. 300.)THEN
+          IF(I<=IDE-1.AND.ABS(CWK-PD(I,JJM-1))>=300.)THEN
             WRITE(0,*)'PSEUDO HYDROSTATIC IMBALANCE AT THE NORTHERN BOUNDARY AT',I,JJM-1,'GRID #',GRIDID
             WRITE(0,*)'             ',CWK/100.
             WRITE(0,*)PD(I,JJM)/100.,'               ',PD(I+1,JJM)/100.
@@ -330,9 +472,9 @@
      &               +PD(1,JJ+1)*HTM(1,KTE,JJ+1)                        &
      &               +PD(2,JJ+1)*HTM(2,KTE,JJ+1))/SHTM
 
-! test: this is gopal's doing
+! test.
 
-             IF(ABS(CWK-PD(1,JJ)) .GT. 300.)THEN
+             IF(ABS(CWK-PD(1,JJ))>300.)THEN
               WRITE(0,*)'PSEUDO HYDROSTATIC IMBALANCE AT THE WESTERN BOUNDARY AT',J,1,'GRID #',GRIDID
               WRITE(0,*)'             ',CWK/100.
               WRITE(0,*)PD(1,JJ+1)/100.,'               ',PD(2,JJ+1)/100.
@@ -392,6 +534,32 @@
      &               *RHTM
           PINT(I,K,2)=ETA1(K)*PDTOP+ETA2(K)*PD(I,2)*RES(I,2)+PT
         ENDDO
+        DO I_M=1,N_MOIST
+          IF(I_M==P_QV)THEN
+            DO I=MYIS,MYIE1
+              MOIST(I,K,2,I_M)=Q(I,K,2)/(1.-Q(I,K,2))
+            ENDDO
+          ELSE
+            DO I=MYIS,MYIE1
+              MOIST(I,K,2,I_M)=(MOIST(I,K,1,I_M)*HTM(I,K,1)             &
+     &                         +MOIST(I+1,K,1,I_M)*HTM(I+1,K,1)         &
+     &                         +MOIST(I,K,3,I_M)*HTM(I,K,3)             &
+     &                         +MOIST(I+1,K,3,I_M)*HTM(I+1,K,3))        &
+     &                          *RHTM
+            ENDDO
+          ENDIF
+        ENDDO
+!
+        DO I_M=2,N_SCALAR
+          DO I=MYIS,MYIE1
+            SCALAR(I,K,2,I_M)=(SCALAR(I,K,1,I_M)*HTM(I,K,1)             &
+     &                        +SCALAR(I+1,K,1,I_M)*HTM(I+1,K,1)         &
+     &                        +SCALAR(I,K,3,I_M)*HTM(I,K,3)             &
+     &                        +SCALAR(I+1,K,3,I_M)*HTM(I+1,K,3))        &
+     &                         *RHTM
+          ENDDO
+        ENDDO
+!
       ENDIF
 !
 !***  ONE ROW SOUTH OF NORTHERN BOUNDARY
@@ -423,6 +591,33 @@
           PINT(I,K,JJM-1)=ETA1(K)*PDTOP                                 &
      &                   +ETA2(K)*PD(I,JJM-1)*RES(I,JJM-1)+PT
         ENDDO
+        DO I_M=1,N_MOIST
+          IF(I_M==P_QV)THEN
+            DO I=MYIS,MYIE1
+              MOIST(I,K,JJM-1,I_M)=Q(I,K,JJM-1)/(1.-Q(I,K,JJM-1))
+            ENDDO
+          ELSE
+            DO I=MYIS,MYIE1
+              MOIST(I,K,JJM-1,I_M)=(MOIST(I,K,JJM-2,I_M)*HTM(I,K,JJM-2) &
+     &                             +MOIST(I+1,K,JJM-2,I_M)*HTM(I+1,K,JJM-2) &
+     &                             +MOIST(I,K,JJM,I_M)*HTM(I,K,JJM)     &
+     &                             +MOIST(I+1,K,JJM,I_M)*HTM(I+1,K,JJM)) &
+     &                              *RHTM
+            ENDDO
+
+          ENDIF
+        ENDDO
+!
+        DO I_M=2,N_SCALAR
+          DO I=MYIS,MYIE1
+            SCALAR(I,K,JJM-1,I_M)=(SCALAR(I,K,JJM-2,I_M)*HTM(I,K,JJM-2) &
+     &                            +SCALAR(I+1,K,JJM-2,I_m)*HTM(I+1,K,JJM-2) &
+     &                            +SCALAR(I,K,JJM,I_M)*HTM(I,K,JJM)     &
+     &                            +SCALAR(I+1,K,JJM,I_M)*HTM(I+1,K,JJM)) &
+     &                             *RHTM
+          ENDDO
+        ENDDO
+!
       ENDIF
 !
 !***  ONE ROW EAST OF WESTERN BOUNDARY
@@ -457,9 +652,30 @@
      &                  *RHTM
             PINT(1,K,JJ)=ETA1(K)*PDTOP                                  &
      &                  +ETA2(K)*PD(1,JJ)*RES(1,JJ)+PT
+            DO I_M=1,N_MOIST
+              IF(I_M==P_QV)THEN
+                MOIST(1,K,JJ,I_M)=Q(1,K,JJ)/(1.-Q(1,K,JJ))     
+              ELSE  
+                MOIST(1,K,JJ,I_M)=(MOIST(1,K,JJ-1,I_M)*HTM(1,K,JJ-1)    &
+     &                            +MOIST(2,K,JJ-1,I_M)*HTM(2,K,JJ-1)    &
+     &                            +MOIST(1,K,JJ+1,I_M)*HTM(1,K,JJ+1)    &
+     &                            +MOIST(2,K,JJ+1,I_M)*HTM(2,K,JJ+1))   &
+     &                             *RHTM
+              ENDIF
+            ENDDO    
+!
+            DO I_M=2,N_SCALAR
+              SCALAR(1,K,JJ,I_M)=(SCALAR(1,K,JJ-1,I_M)*HTM(1,K,JJ-1)    &
+     &                           +SCALAR(2,K,JJ-1,I_M)*HTM(2,K,JJ-1)    &
+     &                           +SCALAR(1,K,JJ+1,I_M)*HTM(1,K,JJ+1)    &
+     &                           +SCALAR(2,K,JJ+1,I_M)*HTM(2,K,JJ+1))   &
+     &                            *RHTM
+            ENDDO
+!
           ENDIF
 !
         ENDDO
+!
       ENDIF
 !
 !***  ONE ROW WEST OF EASTERN BOUNDARY
@@ -494,6 +710,27 @@
      &                      *RHTM
             PINT(IIM-1,K,JJ)=ETA1(K)*PDTOP                              &
      &                      +ETA2(K)*PD(IIM-1,JJ)*RES(IIM-1,JJ)+PT
+!
+            DO I_M=1,N_MOIST
+              IF(I_M==P_QV)THEN
+                MOIST(IIM-1,K,JJ,I_M)=Q(IIM-1,K,JJ)/(1.-Q(IIM-1,K,JJ))
+              ELSE
+                MOIST(IIM-1,K,JJ,I_M)=(MOIST(IIM-1,K,JJ-1,I_M)*HTM(IIM-1,K,JJ-1) &
+     &                                +MOIST(IIM,K,JJ-1,I_M)*HTM(IIM,K,JJ-1)     &
+     &                                +MOIST(IIM-1,K,JJ+1,I_M)*HTM(IIM-1,K,JJ+1) &
+     &                                +MOIST(IIM,K,JJ+1,I_M)*HTM(IIM,K,JJ+1))    &
+     &                                 *RHTM
+                ENDIF
+              ENDDO
+!
+              DO I_M=2,N_SCALAR
+                SCALAR(IIM-1,K,JJ,I_M)=(SCALAR(IIM-1,K,JJ-1,I_M)*HTM(IIM-1,K,JJ-1)  &
+     &                                 +SCALAR(IIM,K,JJ-1,I_M)*HTM(IIM,K,JJ-1)      &
+     &                                 +SCALAR(IIM-1,K,JJ+1,I_M)*HTM(IIM-1,K,JJ+1)  &
+     &                                 +SCALAR(IIM,K,JJ+1,I_M)*HTM(IIM,K,JJ+1))     &
+     &                                  *RHTM
+              ENDDO
+!
           ENDIF
 !
         ENDDO
@@ -704,12 +941,11 @@
 !
 !-----------------------------------------------------------------------
 !***  EXTRAPOLATION OF TANGENTIAL VELOCITY AT OUTFLOW POINTS
-!***  BASED ON SOME DISCUSSIONS WITH ZAVISA, AND MY EXPERIMENTS
-!***  ON GRAVITY PULSE FOR NESTED DOMAIN I AM COMMENTING THIS.
-!***  THIS IS gopal's DOING
+!***  BASED ON SOME DISCUSSIONS WITH ZAVISA AND EXPERIMENTS
+!***  ON GRAVITY PULSE FOR NESTED DOMAIN.
 !-----------------------------------------------------------------------
 !
-      IF(GRIDID .NE. 1)GO TO 201
+      IF(GRIDID/=1)GO TO 201
 !
 !-----------------------------------------------------------------------
 !

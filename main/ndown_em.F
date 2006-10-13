@@ -58,7 +58,7 @@ PROGRAM ndown_em
    INTEGER :: ips , ipe , jps , jpe , kps , kpe
    INTEGER :: its , ite , jts , jte , kts , kte
    INTEGER :: ijds , ijde , spec_bdy_width
-   INTEGER :: i , j , k
+   INTEGER :: i , j , k , nvchem
    INTEGER :: time_loop_max , time_loop
    INTEGER :: total_time_sec , file_counter
    INTEGER :: julyr , julday , iswater , map_proj
@@ -71,6 +71,8 @@ PROGRAM ndown_em
    REAL , DIMENSION(:,:,:) , ALLOCATABLE :: mbdy2dtemp1
    REAL , DIMENSION(:,:,:) , ALLOCATABLE :: ubdy3dtemp2 , vbdy3dtemp2 , tbdy3dtemp2 , pbdy3dtemp2 , qbdy3dtemp2
    REAL , DIMENSION(:,:,:) , ALLOCATABLE :: mbdy2dtemp2
+   REAL , DIMENSION(:,:,:) , ALLOCATABLE :: cbdy3dtemp1 , cbdy3dtemp2 
+   REAL , DIMENSION(:,:,:,:) , ALLOCATABLE :: cbdy3dtemp0
 
    CHARACTER(LEN=19) :: start_date_char , current_date_char , end_date_char
    CHARACTER(LEN=19) :: stopTimeStr
@@ -435,6 +437,9 @@ nested_grid%chem_in_opt = parent_grid%chem_in_opt
          ALLOCATE ( pbdy3dtemp2(ims:ime,kms:kme,jms:jme) )
          ALLOCATE ( qbdy3dtemp2(ims:ime,kms:kme,jms:jme) )
          ALLOCATE ( mbdy2dtemp2(ims:ime,1:1,    jms:jme) )
+         ALLOCATE ( cbdy3dtemp0(ims:ime,kms:kme,jms:jme,1:num_chem) )
+         ALLOCATE ( cbdy3dtemp1(ims:ime,kms:kme,jms:jme) )
+         ALLOCATE ( cbdy3dtemp2(ims:ime,kms:kme,jms:jme) )
 
       END IF
 
@@ -562,27 +567,28 @@ nested_grid%chem_in_opt = parent_grid%chem_in_opt
          print *,'current_date = ',current_date
          CALL domain_clock_set( nested_grid, &
                                 current_timestr=current_date(1:19) )
+#ifdef WRF_CHEM
 !
 ! SEP     Put in chemistry data
 !
-#ifdef WRF_CHEM
          IF( nested_grid%chem_opt .NE. 0 ) then
-            IF( nested_grid%chem_in_opt .EQ. 0 ) then
+!           IF( nested_grid%chem_in_opt .EQ. 0 ) then
              ! Read the chemistry data from a previous wrf forecast (wrfout file)
               ! Generate chemistry data from a idealized vertical profile
-              message = 'STARTING WITH BACKGROUND CHEMISTRY '
+!             message = 'STARTING WITH BACKGROUND CHEMISTRY '
               CALL  wrf_message ( message )
 
-              CALL input_chem_profile ( nested_grid )
+!             CALL input_chem_profile ( nested_grid )
 
-              message = 'READING BEIS3.11 EMISSIONS DATA'
-              CALL  wrf_message ( message )
-
-              CALL med_read_wrf_chem_bioemiss ( nested_grid , config_flags)
-            ELSE
-              message = 'RUNNING WITHOUT CHEMISTRY INITIALIZATION'
-              CALL  wrf_message ( message )
-            ENDIF
+              if( nested_grid%bio_emiss_opt .eq. 2 )then
+                 message = 'READING BEIS3.11 EMISSIONS DATA'
+                 CALL  wrf_message ( message )
+                 CALL med_read_wrf_chem_bioemiss ( nested_grid , config_flags)
+              endif
+!           ELSE
+!             message = 'RUNNING WITHOUT CHEMISTRY INITIALIZATION'
+!             CALL  wrf_message ( message )
+!           ENDIF
          ENDIF
 #endif
 
@@ -677,7 +683,26 @@ print *,'gmt=',gmt
                                                                            ids , ide , jds , jde , 1 , 1 , &
                                                                            ims , ime , jms , jme , 1 , 1 , &
                                                                            ips , ipe , jps , jpe , 1 , 1 )
-
+#ifdef WRF_CHEM
+         do nvchem=1,num_chem
+!        if(nvchem.eq.p_o3)then
+!          write(0,*)'fill ch_b',cbdy3dtemp1(5,1,5),nvchem
+!        endif
+         cbdy3dtemp1(ips:ipe,kps:kpe,jps:jpe)=nested_grid%chem(ips:ipe,kps:kpe,jps:jpe,nvchem)
+!        if(nvchem.eq.p_o3)then
+!          write(0,*)'fill ch_b',cbdy3dtemp1(5,1,5)
+!        endif
+         CALL stuff_bdy     ( cbdy3dtemp1 , nested_grid%chem_b(:,:,:,:,nvchem)                                  &
+                                                                   , 'T' , ijds , ijde , spec_bdy_width      , &
+                                                                           ids , ide , jds , jde , kds , kde , &
+                                                                           ims , ime , jms , jme , kms , kme , &
+                                                                           ips , ipe , jps , jpe , kps , kpe )
+           cbdy3dtemp0(ips:ipe,kps:kpe,jps:jpe,nvchem)=cbdy3dtemp1(ips:ipe,kps:kpe,jps:jpe)
+!        if(nvchem.eq.p_o3)then
+!          write(0,*)'filled ch_b',time_loop,cbdy3dtemp1(ips,kps,jps),cbdy3dtemp0(ips,kps,jps,nvchem)
+!        endif
+         enddo
+#endif
       ELSE IF ( ( time_loop .GT. 1 ) .AND. ( time_loop .LT. time_loop_max ) ) THEN
 
          CALL couple ( nested_grid%em_mu_2 , nested_grid%em_mub , ubdy3dtemp2 , nested_grid%em_u_2                 , &
@@ -736,6 +761,24 @@ print *,'gmt=',gmt
                                                                   ids , ide , jds , jde , 1 , 1 , &
                                                                   ims , ime , jms , jme , 1 , 1 , &
                                                                   ips , ipe , jps , jpe , 1 , 1 )
+#ifdef WRF_CHEM
+         do nvchem=1,num_chem
+         cbdy3dtemp1(ips:ipe,kps:kpe,jps:jpe)=cbdy3dtemp0(ips:ipe,kps:kpe,jps:jpe,nvchem) 
+         cbdy3dtemp2(ips:ipe,kps:kpe,jps:jpe)=nested_grid%chem(ips:ipe,kps:kpe,jps:jpe,nvchem)
+!        if(nvchem.eq.p_o3)then
+!          write(0,*)'fill 1ch_b2',time_loop,cbdy3dtemp1(ips,kps,jps),cbdy3dtemp0(ips,kps,jps,nvchem),cbdy3dtemp2(ips,kps,jps)
+!        endif
+         CALL stuff_bdytend ( cbdy3dtemp2 , cbdy3dtemp1 , new_bdy_frq , nested_grid%chem_bt(:,:,:,:,nvchem), 'T' , &
+                                                                  ijds , ijde , spec_bdy_width      , &
+                                                                  ids , ide , jds , jde , kds , kde , &
+                                                                  ims , ime , jms , jme , kms , kme , &
+                                                                  ips , ipe , jps , jpe , kps , kpe )
+         cbdy3dtemp0(ips:ipe,kps:kpe,jps:jpe,nvchem)=cbdy3dtemp2(ips:ipe,kps:kpe,jps:jpe) 
+!        if(nvchem.eq.p_o3)then
+!          write(0,*)'fill 2ch_b2',cbdy3dtemp1(ips,kps,jps),cbdy3dtemp0(ips,kps,jps,nvchem),cbdy3dtemp2(ips,kps,jps)
+!        endif
+         enddo
+#endif
          IF ( time_loop .EQ. 2 ) THEN
    
             !  Generate an output file from this program, which will be an input file to WRF.
@@ -825,6 +868,23 @@ print *,'bdy time = ',time_loop-1,'  bdy date = ',current_date,' ',start_date
                                                                            ids , ide , jds , jde , kds , kde , &
                                                                            ims , ime , jms , jme , kms , kme , &
                                                                            ips , ipe , jps , jpe , kps , kpe )
+#ifdef WRF_CHEM
+         do nvchem=1,num_chem
+         cbdy3dtemp1(ips:ipe,kps:kpe,jps:jpe)=cbdy3dtemp0(ips:ipe,kps:kpe,jps:jpe,nvchem) 
+!        if(nvchem.eq.p_o3)then
+!          write(0,*)'fill 2ch_b3',cbdy3dtemp1(ips,kps,jps),cbdy3dtemp0(ips,kps,jps,nvchem)
+!        endif
+         CALL stuff_bdy     ( cbdy3dtemp1 , nested_grid%chem_b(:,:,:,:,nvchem)                                  &
+                                                                   , 'T' , ijds , ijde , spec_bdy_width      , &
+                                                                           ids , ide , jds , jde , kds , kde , &
+                                                                           ims , ime , jms , jme , kms , kme , &
+                                                                           ips , ipe , jps , jpe , kps , kpe )
+!          cbdy3dtemp0(ips:ipe,kps:kpe,jps:jpe,nvchem)=cbdy3dtemp1(ips:ipe,kps:kpe,jps:jpe)
+!        if(nvchem.eq.p_o3)then
+!          write(0,*)'fill 2ch_b3',cbdy3dtemp1(ips,kps,jps),cbdy3dtemp0(ips,kps,jps,nvchem)
+!        endif
+         enddo
+#endif
          CALL stuff_bdy     ( mbdy2dtemp1 , nested_grid%em_mu_b    , 'M' , ijds , ijde , spec_bdy_width      , &
                                                                            ids , ide , jds , jde , 1 , 1 , &
                                                                            ims , ime , jms , jme , 1 , 1 , &
@@ -852,6 +912,24 @@ print *,'bdy time = ',time_loop-1,'  bdy date = ',current_date,' ',start_date
          !  During all of the loops after the first loop, we first compute the boundary
          !  tendencies with the current data values and the previously save information
          !  stored in the *bdy3dtemp1 arrays.
+#ifdef WRF_CHEM
+         do nvchem=1,num_chem
+         cbdy3dtemp1(ips:ipe,kps:kpe,jps:jpe)=cbdy3dtemp0(ips:ipe,kps:kpe,jps:jpe,nvchem) 
+         cbdy3dtemp2(ips:ipe,kps:kpe,jps:jpe)=nested_grid%chem(ips:ipe,kps:kpe,jps:jpe,nvchem)
+!        if(nvchem.eq.p_o3)then
+!          write(0,*)'fill 1ch_b4',cbdy3dtemp1(ips,kps,jps),cbdy3dtemp0(ips,kps,jps,nvchem),cbdy3dtemp2(ips,kps,jps)
+!        endif
+         CALL stuff_bdytend ( cbdy3dtemp2 , cbdy3dtemp1 , new_bdy_frq , nested_grid%chem_bt(:,:,:,:,nvchem), 'T' , &
+                                                                  ijds , ijde , spec_bdy_width      , &
+                                                                  ids , ide , jds , jde , kds , kde , &
+                                                                  ims , ime , jms , jme , kms , kme , &
+                                                                  ips , ipe , jps , jpe , kps , kpe )
+         cbdy3dtemp0(ips:ipe,kps:kpe,jps:jpe,nvchem)=cbdy3dtemp2(ips:ipe,kps:kpe,jps:jpe) 
+!        if(nvchem.eq.p_o3)then
+!          write(0,*)'fill 2ch_b4',cbdy3dtemp1(ips,kps,jps),cbdy3dtemp0(ips,kps,jps,nvchem),cbdy3dtemp2(ips,kps,jps)
+!        endif
+         enddo
+#endif
 
          CALL stuff_bdytend ( ubdy3dtemp2 , ubdy3dtemp1 , new_bdy_frq , nested_grid%em_u_bt  , 'U'  , &
                                                                   ijds , ijde , spec_bdy_width      , &

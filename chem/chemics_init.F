@@ -1,8 +1,8 @@
 !WRF:MODEL_LAYER:INITIALIZATION
 !
    subroutine chem_init (id,chem,dt,bioemdt,photdt,chemdt,stepbioe,  &
-               stepphot,stepchem,ph,phb,g,aerwrf,config_flags,       &
-               alt,t,pb,p,t0,p1000mb,rcp,                            &
+               stepphot,stepchem,z_at_w,g,aerwrf,config_flags,       &
+               alt,t,p,CONVFAC,                                      &
                tauaer1,tauaer2,tauaer3,tauaer4,                      &
                gaer1,gaer2,gaer3,gaer4,                              &
                waer1,waer2,waer3,waer4,                              &
@@ -37,20 +37,20 @@
                                waer1,waer2,waer3,waer4
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,         &
           INTENT(IN   ) ::                                           &
-                               ph,phb,t,pb,p,alt
+                               z_at_w,t,p,alt,convfac
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme, num_chem ) ,       &
           INTENT(INOUT   ) ::                                        &
                               chem 
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,         &
           INTENT(INOUT   ) ::                                        &
                                aerwrf
-   real, INTENT (IN) :: g,rcp,t0,p1000mb
+   real, INTENT (IN) :: g
    integer, intent(out) :: stepbioe,stepphot,stepchem
    TYPE (grid_config_rec_type) , INTENT (in) ::     config_flags
 !
 ! local stuff
 !
-   integer :: i,j,k,numgas
+   integer :: i,j,k,l,numgas
 
 #ifdef CHEM_DBG_I
     call print_chem_species_index( config_flags%chem_opt )
@@ -78,7 +78,7 @@
    phot_select: SELECT CASE(config_flags%phot_opt)
      CASE (PHOTMAD)
      CALL wrf_debug(15,'call madronich phot initialization')
-       call photmad_init(ph,phb,aerwrf,g,                            &
+       call photmad_init(z_at_w,aerwrf,g,                            &
                ids,ide, jds,jde, kds,kde,                            &
                ims,ime, jms,jme, kms,kme,                            &
                its,ite, jts,jte, kts,kte                             )
@@ -109,16 +109,76 @@
 !
 ! initialization for aerosols
 !
+   kpp_select: SELECT CASE(config_flags%chem_opt)
+     CASE (RACM_KPP,RACMSORG_KPP, RACM_MIM_KPP)
+          do j=jts,jte
+             do k=kts,kte
+                do i=its,ite
+                   chem(i,k,j,p_co2)=370.
+                   chem(i,k,j,p_ch4)=1.7
+                   chem(i,k,j,p_ete)=chem(i,k,j,p_olt)
+                   chem(i,k,j,p_ete)=epsilc
+                   chem(i,k,j,p_udd)=chem(i,k,j,p_ete)
+                   chem(i,k,j,p_hket)=chem(i,k,j,p_ete)
+                   chem(i,k,j,p_api)=chem(i,k,j,p_ete)
+                   chem(i,k,j,p_lim)=chem(i,k,j,p_ete)
+                   chem(i,k,j,p_dien)=chem(i,k,j,p_ete)
+                   chem(i,k,j,p_macr)=chem(i,k,j,p_ete)
+                enddo
+             enddo
+          enddo
+   END SELECT kpp_select
    aer_select: SELECT CASE(config_flags%chem_opt)
-     CASE (RADM2SORG, RACMSORG)
+     CASE (RADM2SORG, RADM2SORG_KPP, RACMSORG,RACMSORG_KPP)
        CALL wrf_debug(15,'call MADE/SORGAM aerosols initialization')
-       call aerosols_sorgam_init(chem,                               &
-               ph,phb,g,alt,t,pb,p,t0,p1000mb,rcp,                   &
+#if ( NMM_CORE == 1 )
+!  do j=jts,jte
+!     jj=min(jde-1,j)
+!     do k=kts,kte-1
+!         kk=min(kde-1,k)
+!         do i=its,ite
+!             ii=min(ide-1,i)
+!             convfac(i,k,j) = p(ii,kk,jj)/rgasuniv/t(ii,kk,jj)
+!             if(i.eq.its.and.j.eq.jts)write(0,*) 'before aerinit',k,p(ii,kk,jj),convfac(i,k,j),t(ii,kk,jj)
+!         enddo
+!     enddo
+!  enddo
+#endif
+#if ( EM_CORE == 1 )
+!  do j=jts,jte
+!     jj=min(jde-1,j)
+!     do k=kts,kte-1
+!         kk=min(kde-1,k)
+!         do i=its,ite
+!             ii=min(ide-1,i)
+!             tempfac=(t(ii,kk,jj) + t0)*((p(ii,kk,jj) + pb(ii,kk,jj))/p1000mb)**rcp
+!             convfac(i,k,j) = (p(ii,kk,jj)+pb(ii,kk,jj))/rgasuniv/tempfac
+!             if(i.eq.its.and.j.eq.jts)print *,k,kk,alt(i,kk,j),convfac(i,k,j)
+!         enddo
+!     enddo
+!  enddo
+#endif
+
+       call aerosols_sorgam_init(chem,convfac,z_at_w,                &
                pm2_5_dry,pm2_5_water,pm2_5_dry_ec,                   &
                chem_in_opt,config_flags%aer_ic_opt,                  &
                ids,ide, jds,jde, kds,kde,                            &
                ims,ime, jms,jme, kms,kme,                            &
                its,ite, jts,jte, kts,kte                             )
+!...Convert aerosols to mixing ratio
+        do l=p_so4aj,num_chem
+           do j=jts,jte
+              do k=kts,kte
+                 kk = min(k,kte-1)
+                 do i=its,ite
+                    chem(i,k,j,l)=chem(i,kk,j,l)*alt(i,kk,j)
+                 enddo
+              enddo
+           enddo
+        enddo
+
+        chem=max(chem,epsilc)
+
 
      CASE (CBMZ_MOSAIC_AA, CBMZ_MOSAIC_BB) 
        call wrf_debug(15,'call MOSAIC aerosols initialization')
@@ -126,7 +186,7 @@
        if( .NOT. config_flags%restart ) &
             call mosaic_init_wrf_mixrats(                            &
                0, config_flags,                                      &
-               chem, alt, phb, ph, g,                                &
+               chem, alt, z_at_w, g,                                 &
                ids,ide, jds,jde, kds,kde,                            &
                ims,ime, jms,jme, kms,kme,                            &
                its,ite, jts,jte, kts,kte                             )
@@ -158,7 +218,7 @@
        CALL wrf_debug(15,'initializing cbmz gas-phase chemistry')
        if( .NOT. config_flags%restart ) &
             call cbmz_init_wrf_mixrats(config_flags,   &
-               ph, phb, g,                             &
+               z_at_w, g,                              &
                chem, numgas,                           &
                ids,ide, jds,jde, kds,kde,              &
                ims,ime, jms,jme, kms,kme,              &
@@ -180,7 +240,7 @@ subroutine print_chem_species_index( chem_opt )
 ! Gas species...
 !
   select case (chem_opt)
-  case (RADM2, RADM2SORG)
+  case (RADM2, RADM2SORG, RADM2_KPP,RADM2SORG_KPP)
      print*,p_so2,"so2"
      print*,p_sulf,"sulf"
      print*,p_no2,"no2"
@@ -222,7 +282,7 @@ subroutine print_chem_species_index( chem_opt )
      print*,p_iso,"iso"
      print*,p_ho,"ho"
      print*,p_ho2,"ho2"
-  case (RACM, RACMSORG)
+  case (RACM, RACMSORG,RACM_KPP,RACMSORG_KPP)
      print*,p_so2,"so2"
      print*,p_sulf,"sulf"
      print*,p_no2,"no2"
@@ -412,7 +472,7 @@ subroutine print_chem_species_index( chem_opt )
 ! Aerosol species...
 !
   select case (chem_opt)
-  case (RADM2SORG, RACMSORG)
+  case (RADM2SORG, RADM2SORG_KPP, RACMSORG, RACMSORG_KPP)
      print*,p_so4aj,"so4aj"
      print*,p_so4ai,"so4ai"
      print*,p_nh4aj,"nh4aj"

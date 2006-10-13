@@ -9,6 +9,7 @@ foreach dir ( frame chem share dyn_em dyn_exp dyn_nmm phys main tools )
                       wrfdata whatiread rsl.* show_domain* )
 end
 
+
 ( cd tools/CodeBase ; make clean )
 
 ( cd inc ; /bin/rm -f *.inc namelist.default )
@@ -35,3 +36,9 @@ if ( "$1" == '-a' ) then
 	*/RRTM_DATA */SOILPARM.TBL */VEGPARM.TBL */grib2map.tbl \
 	*/gribmap.txt */tr??t?? ) >& /dev/null
 endif
+
+#cms++
+if ( -e chem/KPP )then
+  ( cd chem/KPP; clean_kpp ) 
+endif
+#cms--

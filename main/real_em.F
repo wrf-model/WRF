@@ -387,7 +387,7 @@ real::t1,t2,t3,t4
 
       CALL       wrf_debug ( 100 , 'med_sidata_input: calling init_domain' )
       grid%input_from_file = .true.
-      CALL init_domain (  grid )
+      CALL init_domain ( grid )
       CALL cpu_time ( t4 )
       WRITE ( wrf_err_message , FMT='(A,I10,A)' ) 'Timing for processing ',NINT(t4-t3) ,' s.'
       CALL wrf_debug( 0, wrf_err_message )

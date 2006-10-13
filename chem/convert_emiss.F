@@ -94,13 +94,11 @@ PROGRAM convert_emiss
    CALL disable_quilting
 #endif
 
-   print *,' init modules '
 !  CALL init_modules
    CALL       wrf_debug ( 100 , 'convert_emiss: calling init_modules ' )
    CALL init_modules(1)   ! Phase 1 returns after MPI_INIT() (if it is called)
    CALL WRFU_Initialize( defaultCalendar=WRFU_CAL_GREGORIAN, rc=rc )
    CALL init_modules(2)   ! Phase 2 resumes after MPI_INIT() (if it is called)
-   print *,' past init modules '
 
 #ifdef DM_PARALLEL
    IF ( wrf_dm_on_monitor() ) THEN
@@ -111,7 +109,6 @@ PROGRAM convert_emiss
    ENDIF
    CALL wrf_dm_initialize
 #else
-   print *,' initial config '
    CALL initial_config
 #endif
 
@@ -124,33 +121,40 @@ PROGRAM convert_emiss
 
 !     !  Get the grid info from the wrfinput file
 
-   print *,' allocate for wrfinput_d01 '
+   write(message,FMT='(A)') ' allocate for wrfinput_d01 '
+   CALL  wrf_debug ( 100, message )
    NULLIFY( null_domain )
    CALL alloc_and_configure_domain ( domain_id  = 1           , &
                                      grid       = head_grid   , &
                                      parent     = null_domain , &
                                      kid        = -1            )
-   print *,' pointer for wrfinput_d01 '
+   write(message,FMT='(A)') ' pointer for wrfinput_d01 '
+   CALL  wrf_debug ( 100, message )
    grid => head_grid
-   print *,' set scalars for wrfinput_d01 '
+   write(message,FMT='(A)') ' set scalars for wrfinput_d01 '
+   CALL  wrf_debug ( 100, message )
    CALL set_scalar_indices_from_config ( grid%id , idum1, idum2 )
 
-   print *,' construct filename for wrfinput_d01 '
+   write(message,FMT='(A)') ' construct filename for wrfinput_d01 '
+   CALL  wrf_debug ( 100, message )
    CALL construct_filename1( wrfinname , 'wrfinput' , grid%id , 2 )
 
-   print *,' open file ',TRIM(wrfinname)
+   write(message,FMT='(A,A)')' open file ',TRIM(wrfinname)
+   CALL  wrf_debug ( 100, message )
    CALL open_r_dataset ( fid, TRIM(wrfinname) , grid , config_flags , "DATASET=INPUT", ierr )
 
    CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
 
 
-   print *,' wrfinput open error check '
+   write(message,FMT='(A)') ' wrfinput open error check '
+   CALL  wrf_debug ( 100, message )
    IF ( ierr .NE. 0 ) THEN
       WRITE( wrf_err_message , FMT='(A,A,A,I8)' )  &
           'program convert_emiss: error opening ',TRIM(wrfinname),' for reading ierr=',ierr
       CALL WRF_ERROR_FATAL ( wrf_err_message )
    ENDIF
-   print *,' past opening wrfinput_d01 '
+   write(message,FMT='(A)') ' past opening wrfinput_d01 '
+   CALL  wrf_debug ( 100, message )
 
       CALL wrf_get_dom_ti_integer ( fid , 'MAP_PROJ' ,  map_proj , 1 , idum1 , ierr )
       CALL wrf_get_dom_ti_real    ( fid , 'CEN_LAT' , cen_lat , 1 , idum1 , ierr )
@@ -193,12 +197,12 @@ PROGRAM convert_emiss
 
    CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
 
-   print *,'start date=',model_config_rec%start_year(grid%id),model_config_rec%start_month(grid%id),&
-   model_config_rec%start_day(grid%id),model_config_rec%start_hour(grid%id)
-   print *,'end   date=',model_config_rec%end_year(grid%id),model_config_rec%end_month(grid%id),&
-   model_config_rec%end_day(grid%id),model_config_rec%end_hour(grid%id)
-   print *,'interval  =',model_config_rec%interval_seconds
-   print *,'init_typ  =',model_config_rec%real_data_init_type
+!  print *,'start date=',model_config_rec%start_year(grid%id),model_config_rec%start_month(grid%id),&
+!  model_config_rec%start_day(grid%id),model_config_rec%start_hour(grid%id)
+!  print *,'end   date=',model_config_rec%end_year(grid%id),model_config_rec%end_month(grid%id),&
+!  model_config_rec%end_day(grid%id),model_config_rec%end_hour(grid%id)
+!  print *,'interval  =',model_config_rec%interval_seconds
+!  print *,'init_typ  =',model_config_rec%real_data_init_type
 
    !  Figure out the starting and ending dates in a character format.
 
@@ -228,27 +232,33 @@ PROGRAM convert_emiss
    !  Figure out our loop count for the processing times.
 
    time_loop = 1
-   PRINT '(A,I4,A,A,A)','Time period #',time_loop,' to process = ',start_date_char,'.'
+   write(message,FMT='(A,I4,A,A)') 'Time period #',time_loop,' to process = ',start_date_char
+   CALL  wrf_message ( message )
    current_date_char = start_date_char
    loop_count : DO
       CALL geth_newdate ( next_date_char , current_date_char , interval_seconds )
       IF      ( next_date_char .LT. end_date_char ) THEN
          time_loop = time_loop + 1 
-         PRINT '(A,I4,A,A,A)','Time period #',time_loop,' to process = ',next_date_char,'.'
+         write(message,FMT='(A,I4,A,A)') 'Time period #',time_loop,' to process = ',next_date_char
+         CALL  wrf_message ( message )
          current_date_char = next_date_char
       ELSE IF ( next_date_char .EQ. end_date_char ) THEN
          time_loop = time_loop + 1 
-         PRINT '(A,I4,A,A,A)','Time period #',time_loop,' to process = ',next_date_char,'.'
-         PRINT '(A,I4,A)','Total analysis times to input = ',time_loop,'.'
+         write(message,FMT='(A,I4,A,A)') 'Time period #',time_loop,' to process = ',next_date_char
+         CALL  wrf_message ( message )
+         write(message,FMT='(A,I4)') 'Total analysis times to input = ',time_loop
+         CALL  wrf_message ( message )
          time_loop_max = time_loop
          EXIT loop_count
       ELSE IF ( next_date_char .GT. end_date_char ) THEN
-         PRINT '(A,I4,A)','Total analysis times to input = ',time_loop,'.'
+         write(message,FMT='(A,I4)') 'Total analysis times to input = ',time_loop
+         CALL  wrf_message ( message )
          time_loop_max = time_loop
          EXIT loop_count
       END IF
    END DO loop_count
-   PRINT '(A,I4,A,I4)','Total number of times to input = ',time_loop,' ',time_loop_max
+   write(message,FMT='(A,I4,A,I4)') 'Total number of times to input = ',time_loop,' ',time_loop_max
+   CALL  wrf_message ( message )
 
    !  Here we define the initial time to process, for later use by the code.
 
@@ -269,23 +279,28 @@ PROGRAM convert_emiss
 #endif
 
    ihour = start_hour
-   if( debug_level >= 100) print *,' READ EMISSIONS 1'
+   write(message,FMT='(A)') ' READ EMISSIONS 1'
+   CALL  wrf_debug ( 100, message )
    CALL med_read_bin_chem_emiss ( grid , config_flags, ihour, time_loop )
-   if( debug_level >= 100) print *,' PAST READ EMISSIONS 1'
+   write(message,FMT='(A)') ' PAST READ EMISSIONS 1'
+   CALL  wrf_debug ( 100, message )
 
    grid%input_from_file = .false.
 
-   if( debug_level >= 100) print *,' OPEN EMISSIONS WRF file '
+   write(message,FMT='(A)') ' OPEN EMISSIONS WRF file '
+   CALL  wrf_debug ( 100, message )
 
    CALL construct_filename1( inpname , 'wrfchemi' , grid%id , 2 )
    CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_aux_model_input5 , "DATASET=AUXINPUT5", ierr )
    CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
-   print *,' EMISSIONS file name: ',TRIM(inpname)
+   write(message,FMT='(A,A)') ' EMISSIONS file name: ',TRIM(inpname)
+   CALL  wrf_message ( message )
    IF ( ierr .NE. 0 ) THEN
      CALL wrf_error_fatal( 'real: error opening wrfchem emissions file for writing' )
    ENDIF
 
-   if( debug_level >= 100) print *,' PAST OPEN EMISSIONS WRF file '
+   write(message,FMT='(A)') ' PAST OPEN EMISSIONS WRF file '
+   CALL  wrf_debug ( 100, message )
 
    CALL calc_current_date ( grid%id , 0. )
    CALL geth_newdate ( current_date_char, current_date, 3600 )
@@ -298,10 +313,6 @@ PROGRAM convert_emiss
       if( moad_cen_lat  == 0. ) then
          moad_cen_lat = cen_lat
       endif
-
-      print *,map_proj,cen_lat,cen_lon,truelat1,truelat2
-      print *,gmt, julyr,julday,iswater
-
 
 !  CALL output_aux_model_input5 ( id1 , grid , config_flags , ierr )
 
@@ -326,52 +337,7 @@ PROGRAM convert_emiss
   config_flags%moad_cen_lat = moad_cen_lat
 ! config_flags%mminlu = TRIM(chlanduse) 
 
-  print *,' map_proj ', grid%map_proj, map_proj, config_flags%map_proj
-  print *,' cen_lat  ', grid%cen_lat , cen_lat, config_flags%cen_lat
-  print *,' cen_lon  ', grid%cen_lon , cen_lon, config_flags%cen_lon
-
   CALL output_aux_model_input5 ( id1 , grid , config_flags, ierr )
-
-
-!   idum1 = 1
-!   call wrf_put_dom_ti_char    ( id1 , 'START_DATE' ,TRIM(start_date_char) , ierr )
-
-!    ibuf(1) = map_proj
-!    CALL wrf_put_dom_ti_integer ( id1 , 'MAP_PROJ'        , ibuf    , 1 , ierr )
-!    rbuf(1) = moad_cen_lat
-!    CALL wrf_put_dom_ti_real    ( id1 , 'MOAD_CEN_LAT'    , rbuf    , 1 , ierr )
-!    rbuf(1) = cen_lat
-!    CALL wrf_put_dom_ti_real    ( id1 , 'CEN_LAT'         , rbuf    , 1 , ierr )
-!    rbuf(1) = cen_lon
-!    CALL wrf_put_dom_ti_real    ( id1 , 'CEN_LON'         , rbuf    , 1 , ierr )
-!    rbuf(1) = stand_lon
-!    CALL wrf_put_dom_ti_real    ( id1 , 'STAND_LON'       , rbuf    , 1 , ierr )
-!    rbuf(1) = truelat1
-!    CALL wrf_put_dom_ti_real    ( id1 , 'TRUELAT1'        , rbuf    , 1 , ierr )
-!    rbuf(1) = truelat2
-!    CALL wrf_put_dom_ti_real    ( id1 , 'TRUELAT2'        , rbuf    , 1 , ierr )
-!    rbuf(1) = gmt
-!    CALL wrf_put_dom_ti_real    ( id1 , 'GMT'             , rbuf    , 1 , ierr )
-!    ibuf(1) = julyr
-!    CALL wrf_put_dom_ti_integer ( id1 , 'JULYR'           , ibuf    , 1 , ierr )
-!    ibuf(1) = julday
-!    CALL wrf_put_dom_ti_integer ( id1 , 'JULDAY'          , ibuf    , 1 , ierr )
-! !   ibuf(1) = chem_opt
-! !   CALL wrf_put_dom_ti_integer ( id1 , 'CHEM_OPT'        , ibuf    , 1 , ierr )
-!    ibuf(1) = iswater
-!    CALL wrf_put_dom_ti_integer ( id1 , 'ISWATER'         , ibuf    , 1 , ierr )
-!    ibuf(1) = isice
-!    CALL wrf_put_dom_ti_integer ( id1 , 'ISICE  '         , ibuf    , 1 , ierr )
-!    ibuf(1) = isurban
-!    CALL wrf_put_dom_ti_integer ( id1 , 'ISURBAN'         , ibuf    , 1 , ierr )
-!    ibuf(1) = isoilwater
-!    CALL wrf_put_dom_ti_integer ( id1 , 'ISOILWATER'      , ibuf    , 1 , ierr )
-!
-!    CALL wrf_put_dom_ti_char    ( id1 , 'MMINLU'          , TRIM(chlanduse)   , ierr )
-
-! print *,' map_proj ', grid%map_proj, map_proj, config_flags_in%map_proj
-! print *,' cen_lat  ', grid%cen_lat , cen_lat, config_flags_in%cen_lat
-! print *,' cen_lon  ', grid%cen_lon , cen_lon, config_flags_in%cen_lon
 
     current_date_char = start_date_char
     current_date = current_date_char
@@ -380,27 +346,30 @@ PROGRAM convert_emiss
    if( debug_level >= -100) print *,'NEMI_FRAMES ', nemi_frames,time_loop
 
    DO emi_frame = 2,nemi_frames
-!  DO emi_frame = 2,1
-     if( debug_level >= 100) print *,'emi_frame ', emi_frame
+     write(message,FMT='(A,I4)') 'emi_frame: ',emi_frame
+     CALL  wrf_debug ( 100, message )
      CALL domain_clock_get ( grid, current_timestr=message )
-     if( debug_level >= 100) print *,' Current time ',Trim(message)
+     write(message,FMT='(A,A)') ' Current time ',Trim(message)
+     CALL  wrf_debug ( 100, message )
 
      current_date_char = current_date(1:19)
      CALL geth_newdate ( next_date_char, current_date_char, int(interval_seconds) )
      current_date = next_date_char // '.0000'
 
-     print *,' Date &  time ',Trim(current_date)
+     write(message,FMT='(A,A)') ' Date &  time ',Trim(current_date)
+     CALL  wrf_message ( message )
 
      CALL domain_clockadvance( grid )
 
-     if( debug_level >= 100) print *,' Read emissions ',emi_frame
-     !CALL med_conv_emissions ( grid, config_flags, emi_frame-1, nemi_frames-1) 
+     write(message,FMT='(A,I4)') ' Read emissions ',emi_frame
+     CALL  wrf_debug ( 100, message )
      ihour = mod(ihour + 1,24)
      CALL med_read_bin_chem_emiss ( grid , config_flags, ihour, nemi_frames-1 )
 
    ! write global atributes into wrf emissions file
 
-     if( debug_level >= 100) print *,' Output emissions '
+     write(message,FMT='(A)') ' Output emissions '
+     CALL  wrf_debug ( 100, message )
      CALL output_aux_model_input5 ( id1 , grid , config_flags , ierr )
 
 !   idum1 = 1
@@ -423,18 +392,16 @@ PROGRAM convert_emiss
 !    CALL wrf_put_dom_ti_char    ( id1 , 'MMINLU'          , TRIM(chlanduse)   , ierr )
 
 
-! grid%map_proj = map_proj
-! grid%cen_lat = cen_lat
-! grid%cen_lon = cen_lon
-  print *,' map_proj ', config_flags%map_proj, map_proj
-  print *,' cen_lat  ', config_flags%cen_lat , cen_lat
-  print *,' cen_lon  ', config_flags%cen_lon , cen_lon
+! print *,' map_proj ', config_flags%map_proj, map_proj
+! print *,' cen_lat  ', config_flags%cen_lat , cen_lat
+! print *,' cen_lon  ', config_flags%cen_lon , cen_lon
 
    END DO
 
    CALL close_dataset ( id1 , config_flags , "DATASET=AUXOUTPUT5" )
 
-    print *,' EMISSIONS: end of program '
+    write(message,FMT='(A)') 'CONVERT EMISSIONS: end of program '
+    CALL  wrf_message ( message )
 
     CALL wrf_shutdown
     CALL WRFU_Finalize( rc=rc )

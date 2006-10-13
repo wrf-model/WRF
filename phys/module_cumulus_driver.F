@@ -15,8 +15,8 @@ CONTAINS
                  ! --Other arguments
                      ,itimestep,dt,dx                                 &
                      ,rainc,raincv,nca                                &
-                     ,dz8w,p8w                                        &
-                     ,w0avg,stepcu                                    &
+                     ,dz8w,p8w,forcet,forceq                          &
+                     ,w0avg,stepcu,gsw                                &
                      ,cldefi,lowlyr,xland,cu_act_flag,warm_rain       &
                      ,htop,hbot,kpbl,ht                               &  
                      ,ensdim,maxiens,maxens,maxens2,maxens3           &
@@ -31,6 +31,7 @@ CONTAINS
                      ,apr_gr,apr_w,apr_mc,apr_st,apr_as,apr_capma     &
                      ,apr_capme,apr_capmi                             &
                      ,mass_flux,xf_ens,pr_ens                         &
+                     ,gd_cloud,gd_cloud2      &
                  ! Optional moisture and other tendencies
                      ,rqvcuten,rqccuten,rqrcuten                      &
                      ,rqicuten,rqscuten,rqgcuten                      &
@@ -227,7 +228,7 @@ CONTAINS
                                                           W0AVG
 
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN) ::           &
-                                                       HT,XLAND
+                                                 GSW,HT,XLAND
 
    REAL, DIMENSION( ims:ime , jms:jme ),                         &
           INTENT(INOUT) ::                                RAINC  &
@@ -263,6 +264,8 @@ CONTAINS
                      ,rqicuten,rqscuten,rqgcuten                 &
                      ,rqvblten,rqvften                           &
                      ,rthraten,rthblten                          &
+                                                      ,   forcet &
+                                                      ,   forceq &
                      ,rthften,rthcuten
 
    REAL, DIMENSION( ims:ime , jms:jme ),                         &
@@ -271,7 +274,9 @@ CONTAINS
                 apr_gr,apr_w,apr_mc,apr_st,apr_as,apr_capma      &
                ,apr_capme,apr_capmi                              &
                                                     , MASS_FLUX
-
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
+         OPTIONAL, INTENT(INOUT) ::                              &
+                  GD_CLOUD,GD_CLOUD2
    REAL, DIMENSION( ims:ime , jms:jme , 1:ensdim ),              &
           OPTIONAL,                                              &
           INTENT(INOUT) ::                       XF_ENS, PR_ENS
@@ -402,18 +407,25 @@ CONTAINS
                ,APR_CAPMA=apr_capma,APR_CAPME=apr_capme         &
                ,APR_CAPMI=apr_capmi,MASS_FLUX=mass_flux         &
                ,XF_ENS=xf_ens,PR_ENS=pr_ens,HT=ht               &
+               ,xland=xland,gsw=gsw                             &
+               ,GDC=gd_cloud,GDC2=gd_cloud2 &
                ,ENSDIM=ensdim,MAXIENS=maxiens,MAXENS=maxens     &
                ,MAXENS2=maxens2,MAXENS3=maxens3                 &
-               ,STEPCU=STEPCU                                   &
+               ,STEPCU=STEPCU,htop=htop,hbot=hbot               &
                ,CU_ACT_FLAG=CU_ACT_FLAG,warm_rain=warm_rain     &
                ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
               ! optionals
+#if (NMM_CORE == 1 )
+               ,RTHCUTEN=RTHCUTEN ,RTHFTEN=forcet               & 
+               ,RQICUTEN=RQICUTEN ,RQVFTEN=forceq               &
+#else
                ,RTHCUTEN=RTHCUTEN ,RTHFTEN=RTHFTEN              & 
+               ,RQICUTEN=RQICUTEN ,RQVFTEN=RQVFTEN              &
+#endif
                ,RTHRATEN=RTHRATEN,RTHBLTEN=RTHBLTEN             &
                ,RQVCUTEN=RQVCUTEN,RQCCUTEN=RQCCUTEN             &
-               ,RQICUTEN=RQICUTEN ,RQVFTEN=RQVFTEN              &
                ,RQVBLTEN=RQVBLTEN                               &
                ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                   &
                ,F_QI=f_qi,F_QS=f_qs                             &

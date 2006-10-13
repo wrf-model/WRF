@@ -66,7 +66,13 @@ SUBROUTINE solve_em ( grid , config_flags , &
 
 
 ! storage for tendencies and decoupled state (generated from Registry)
+
 #include <em_i1_decl.inc>
+! Previous time level of tracer arrays now defined as i1 variables;
+! the state 4d arrays now redefined as 1-time level arrays in Registry.
+! Benefit: save memory in nested runs, since only 1 domain is active at a
+! time.  Potential problem on stack-limited architectures: increases
+! amount of data on program stack by making these automatic arrays.
 
    INTEGER :: rc 
    INTEGER :: number_of_small_timesteps, rk_step
@@ -214,6 +220,7 @@ SUBROUTINE solve_em ( grid , config_flags , &
  ENDIF
 
  grid%dts = grid%dt/float(grid%time_step_sound)
+
 
  Runge_Kutta_loop:  DO rk_step = 1, rk_order
 
@@ -460,6 +467,7 @@ BENCH_END(phy_prep_tim)
 
          CALL wrf_debug ( 200 , ' call radiation_driver' )
 BENCH_START(rad_driver_tim)
+
          CALL radiation_driver(                                           &
      &         ACFRCV=grid%acfrcv      ,ACFRST=grid%acfrst      ,ALBEDO=grid%albedo      &
      &        ,CFRACH=grid%cfrach      ,CFRACL=grid%cfracl      ,CFRACM=grid%cfracm      &
@@ -501,9 +509,9 @@ BENCH_START(rad_driver_tim)
      &        , PB=grid%em_pb                                                     &
      &        , F_ICE_PHY=grid%f_ice_phy,F_RAIN_PHY=grid%f_rain_phy                 &
      &        , QV=moist(ims,kms,jms,P_QV), F_QV=F_QV                     &
-     &        , QC=moist(ims,kms,jms,P_QC), F_QC=F_QC                     &
+     &        , QC=moist(ims,kms,jms,P_QC), F_QC=F_QC                                        &
      &        , QR=moist(ims,kms,jms,P_QR), F_QR=F_QR                     &
-     &        , QI=moist(ims,kms,jms,P_QI), F_QI=F_QI                     &
+     &        , QI=moist(ims,kms,jms,P_QI), F_QI=F_QI                                        &
      &        , QS=moist(ims,kms,jms,P_QS), F_QS=F_QS                     &
      &        , QG=moist(ims,kms,jms,P_QG), F_QG=F_QG                     &
 #ifdef ACFLUX
@@ -532,6 +540,7 @@ BENCH_START(rad_driver_tim)
      &        ,AEROSOLC_2=grid%aerosolc_2, M_HYBI0=grid%m_hybi                      &
      &        ,ABSTOT=grid%abstot, ABSNXT=grid%absnxt, EMSTOT=grid%emstot                &
 #ifdef WRF_CHEM
+     &        ,QC_ADJUST=grid%GD_CLOUD , QI_ADJUST=grid%GD_CLOUD2         &
      &        ,PM2_5_DRY=grid%pm2_5_dry, PM2_5_WATER=grid%pm2_5_water               &
      &        ,PM2_5_DRY_EC=grid%pm2_5_dry_ec                                  &
      &        ,TAUAER300=grid%tauaer1, TAUAER400=grid%tauaer2 & ! jcb
@@ -601,10 +610,12 @@ BENCH_START(surf_driver_tim)
      &        ,QS_CURR=moist(ims,kms,jms,P_QS), F_QS=F_QS                 &
      &        ,QG_CURR=moist(ims,kms,jms,P_QG), F_QG=F_QG                 &
      &        ,CAPG=grid%capg, EMISS=grid%emiss, HOL=hol,MOL=grid%mol                    &
-     &        ,RAINBL=grid%rainbl                                              &
+     &        ,RAINBL=grid%rainbl,SR=grid%em_sr                                              &
      &        ,RAINNCV=grid%rainncv,REGIME=regime,T2=grid%t2,THC=grid%thc                &
      &        ,QSG=grid%qsg,QVG=grid%qvg,QCG=grid%qcg,SOILT1=grid%soilt1,TSNAV=grid%tsnav          & ! ruc lsm
      &        ,SMFR3D=grid%smfr3d,KEEPFR3DFLAG=grid%keepfr3dflag                    & ! ruc lsm
+     &        ,POTEVP=grid%em_POTEVP, SNOPCX=grid%em_SNOPCX, SOILTB=grid%em_SOILTB                & ! Louisa ruc lsm
+
      &                                                              )
 BENCH_END(surf_driver_tim)
 
@@ -678,6 +689,7 @@ BENCH_START(cu_driver_tim)
      &             ,ENSDIM=config_flags%ensdim ,MAXIENS=config_flags%maxiens ,MAXENS=config_flags%maxens         &
      &             ,MAXENS2=config_flags%maxens2                ,MAXENS3=config_flags%maxens3       &
      &             ,CU_ACT_FLAG=cu_act_flag   ,WARM_RAIN=grid%warm_rain        &
+     &             ,GSW=grid%gsw                                               &
                  ! Selection flag
      &             ,CU_PHYSICS=config_flags%cu_physics                    &
                  ! Dimension arguments
@@ -702,6 +714,9 @@ BENCH_START(cu_driver_tim)
      &             ,QI_CURR=moist(ims,kms,jms,P_QI), F_QI=F_QI            &
      &             ,QS_CURR=moist(ims,kms,jms,P_QS), F_QS=F_QS            &
      &             ,QG_CURR=moist(ims,kms,jms,P_QG), F_QG=F_QG            &
+#ifdef WRF_CHEM
+     &             ,GD_CLOUD=grid%GD_CLOUD,GD_CLOUD2=grid%GD_CLOUD2                          &
+#endif
      &                                                          )
 BENCH_END(cu_driver_tim)
 
@@ -2082,7 +2097,7 @@ BENCH_END(small_step_finish_tim)
 
    moist_variable_loop: do im = PARAM_FIRST_SCALAR, num_3d_m
 
-   if (grid%adv_moist_cond .or. (im==p_qv) ) then
+   if (grid%adv_moist_cond .or. im==p_qv ) then
 
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij )
@@ -2195,7 +2210,7 @@ BENCH_END(flow_depbdy_tim)
    ENDDO moist_tile_loop_2
    !$OMP END PARALLEL DO
 
-     ENDIF  !-- if (grid%adv_moist_cond .or. (im==p_qv) ) then
+     ENDIF  !-- if (grid%adv_moist_cond .or. im==p_qv ) then
 
    ENDDO moist_variable_loop
 
@@ -2327,11 +2342,12 @@ BENCH_START(chem_adv_tim)
 !
 ! Currently, chemistry species with specified boundaries (i.grid%e. the mother
 ! domain)  are being over written by flow_dep_bdy_chem. So, relax_bdy and
-! spec_bdy are only called for nests. This will need to be modfied for
-! cycling of chem data between runs or if certain species are sent in
-! from a GCM. William.Gustafson@pnl.gov
+! spec_bdy are only called for nests. For boundary conditions from global model or larger domain,
+! chem is uncoupled, and only used for one row/column on inflow (if have_bcs_chem=.true.) 
 !
      IF( ( config_flags%nested ) .and. rk_step == 1 ) THEN
+       if(ic.eq.1)CALL wrf_debug ( 10 , ' have_bcs_chem' )
+
          CALL relax_bdy_scalar ( chem_tend(ims,kms,jms,ic),             &
                                  chem(ims,kms,jms,ic),  grid%em_mut,            &
                                  chem_b(1,1,1,1,ic),                    &
@@ -2386,7 +2402,7 @@ BENCH_START(chem_adv_tim)
                               k_start    , k_end               )
 
 
-       IF( config_flags%specified ) THEN
+       IF( config_flags%specified  ) THEN
 ! come back to this and figure out why two different routines are needed. JM 20041203
 !#ifndef WRF_CHEM
 !!$           CALL flow_dep_bdy  ( chem(ims,kms,jms,ic),       &
@@ -2399,7 +2415,11 @@ BENCH_START(chem_adv_tim)
 !!$                                grid%j_start(ij), grid%j_end(ij),  &
 !!$                                k_start, k_end                    )
 !#else
-           CALL flow_dep_bdy_chem( chem(ims,kms,jms,ic),grid%em_z,          &
+           CALL flow_dep_bdy_chem( chem(ims,kms,jms,ic),            &
+                                chem_b(1,1,1,1,ic),                 &
+                                chem_bt(1,1,1,1,ic), dt_rk,         &
+                                config_flags%spec_bdy_width,grid%em_z,      &
+                                ijds, ijde,grid%have_bcs_chem,      &
                                 grid%em_ru_m, grid%em_rv_m, config_flags,grid%em_alt,       &
                                 grid%em_t_1,grid%em_pb,grid%em_p,t0,p1000mb,rcp,grid%em_ph_2,grid%em_phb,g, &
                                 grid%spec_zone,ic,                  &
@@ -2880,7 +2900,7 @@ BENCH_END(moist_physics_prep_tim)
 
        CALL wrf_debug ( 200 , ' call microphysics_driver' )
 
-       grid%sr = 0.
+       grid%em_sr = 0.
        specified_bdy = config_flags%specified .OR. config_flags%nested
        channel_bdy = config_flags%specified .AND. config_flags%periodic_x
 
@@ -2903,7 +2923,7 @@ BENCH_START(micro_driver_tim)
      &        ,ITIMESTEP=grid%itimestep                    ,LOWLYR=grid%lowlyr      &
      &        ,P8W=p8w            ,P=p_phy            ,PI_PHY=pi_phy      &
      &        ,RHO=rho            ,SPEC_ZONE=grid%spec_zone                    &
-     &        ,SR=grid%sr              ,TH=th_phy                              &
+     &        ,SR=grid%em_sr              ,TH=th_phy                              &
      &        ,WARM_RAIN=grid%warm_rain                    ,XLAND=grid%xland        &
      &        ,SPECIFIED=specified_bdy, CHANNEL_SWITCH=channel_bdy        &
      &        ,F_RAIN_PHY=grid%f_rain_phy                                      &

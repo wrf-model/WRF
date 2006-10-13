@@ -124,7 +124,9 @@ CONTAINS
                          +e_eth(i,k,j)*conv_rho
         chem(i,k,j,p_co)  = chem(i,k,j,p_co)                           &
                          +e_co(i,k,j)*conv_rho
-        chem(i,k,j,p_ol2)  = chem(i,k,j,p_ol2)                         &
+        if(p_ol2.gt.1)chem(i,k,j,p_ol2)  = chem(i,k,j,p_ol2)           &
+                         +e_ol2(i,k,j)*conv_rho
+        if(p_ete.gt.1)chem(i,k,j,p_ete)  = chem(i,k,j,p_ete)           &
                          +e_ol2(i,k,j)*conv_rho
         chem(i,k,j,p_olt)  = chem(i,k,j,p_olt)                         &
                          +e_olt(i,k,j)*conv_rho

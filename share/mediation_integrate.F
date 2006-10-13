@@ -1723,8 +1723,8 @@ SUBROUTINE med_read_wrf_chem_emiss ( grid , config_flags )
             tupdate = 1.
          ENDIF
 
-         print *,' EMISSIONS UPDATE TIME ',time,TRIM(current_date_char(12:13))
-         print *,tupdate
+!        write(message,FMT='(A,F10.1,A)') ' EMISSIONS UPDATE TIME ',time,TRIM(current_date_char(12:13))
+!        CALL wrf_message( TRIM(message) )
 
          IF ( tupdate .EQ. 0. .AND.  current_date_char(12:13) .EQ. '00' ) THEN
             CALL construct_filename1 ( inpname , 'wrfchemi_00z' , grid%id , 2 )
@@ -1758,14 +1758,15 @@ SUBROUTINE med_read_wrf_chem_emiss ( grid , config_flags )
             ENDIF
          ENDIF
 
-         print *,' HOURLY EMISSIONS UPDATE TIME ',time,mod(time,3600.)
-!         print *, currentTime + stepTime, stopTime
+         WRITE( message, '(A,2F10.1)' ) ' HOURLY EMISSIONS UPDATE TIME ',time,mod(time,3600.)
+         CALL wrf_message( TRIM(message) )
+!
 ! hourly updates to emissions
-         IF ( ( mod( time, 3600. ) .EQ. 0   ) .AND. &
+         IF ( ( mod( time, 3600. ) .LT. 0.001   ) .AND. &
               ( currentTime + stepTime .LT. stopTime ) ) THEN
 !           IF ( wrf_dm_on_monitor() ) CALL start_timing
 
-            WRITE(message,*)'mediation_integrate: med_read_wrf_chem_emissions: Read emissions for time ',TRIM(current_date_char)
+            WRITE(message,'(A,A)')'mediation_integrate: med_read_wrf_chem_emissions: Read emissions for time ',TRIM(current_date_char)
             CALL wrf_message( TRIM(message) )
 
             CALL wrf_debug (100 , 'mediation_integrate: calling input_aux_model_input5' )
@@ -1860,7 +1861,7 @@ SUBROUTINE med_read_wrf_chem_bioemiss ( grid , config_flags )
    CHARACTER (LEN=80)                     :: inpname
 
 #include <wrf_io_flags.h>
-    IF ( grid%id .EQ. 1 ) THEN
+!   IF ( grid%id .EQ. 1 ) THEN
 
       CALL domain_clock_get( grid, current_timestr=current_date_char )
 
@@ -1888,7 +1889,7 @@ SUBROUTINE med_read_wrf_chem_bioemiss ( grid , config_flags )
 
          CALL close_dataset ( grid%auxinput4_oid , config_flags , "DATASET=AUXINPUT4" )
 
-   ENDIF
+!  ENDIF
    CALL wrf_debug (100 , 'mediation_integrate: med_read_wrf_chem_bioemissions: exit' )
 
 END SUBROUTINE med_read_wrf_chem_bioemiss

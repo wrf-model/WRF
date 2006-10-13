@@ -24,8 +24,8 @@
       REAL,PARAMETER :: CAPA=R_D/CP,ELOCP=2.72E6/CP,RCAP=1./CAPA
       REAL,PARAMETER :: GOCP02=G/CP*2.,GOCP10=G/CP*10.
 !      REAL,PARAMETER :: EPSU2=1.E-4,EPSUST=0.07,EPSZT=1.E-5
-!	ECMWF sets lower limit on ln(Z0h)=-20 --> EPSZT=2.E-9
-      REAL,PARAMETER :: EPSU2=1.E-6,EPSUST=1.E-9,EPSZT=1.E-28
+!	ECMWF sets lower limit on ln(Z0h)=-20 --> EPSZT=2.e-9
+      REAL,PARAMETER :: EPSU2=1.E-6,EPSUST=1.e-9,EPSZT=1.E-28
       REAL,PARAMETER :: A2S=17.2693882,A3S=273.16,A4S=35.86
       REAL,PARAMETER :: SEAFC=0.98,PQ0SEA=PQ0*SEAFC
       REAL,PARAMETER :: BETA=1./273.,CZIL=0.1,EXCML=0.0001,EXCMS=0.0001  &
@@ -34,7 +34,7 @@
      &                 ,QVISC=2.1E-5,RIC=0.505,SMALL=0.35              &
      &                 ,SQPR=0.84,SQSC=0.84,SQVISC=258.2,TVISC=2.1E-5  &
      &                 ,USTC=0.7,USTR=0.225,VISC=1.5E-5,FH=1.01        &
-     &                 ,WWST=1.2,ZTFC=1.,TOPOFAC=9.0E-6
+     &                 ,WWST=1.2,ZTFC=1.,TOPOFAC=9.0e-6
 !
       REAL,PARAMETER :: BTG=BETA*G,CZIV=SMALL*GLKBS                    &
      &                 ,GRRS=GLKBR/GLKBS                               &
@@ -71,7 +71,7 @@ CONTAINS
      &                 ,AKHS,AKMS                                      &
      &                 ,CHS,CHS2,CQS2,HFX,QFX,FLX_LH,FLHC,FLQC         &
      &                 ,QGH,CPM,CT                                     &
-     &                 ,U10,V10,TSHLTR,TH10,QSHLTR,Q10,PSHLTR          &
+     &                 ,U10,V10,T02,TH02,TSHLTR,TH10,Q02,QSHLTR,Q10,PSHLTR          &
      &                 ,IDS,IDE,JDS,JDE,KDS,KDE                        &
      &                 ,IMS,IME,JMS,JME,KMS,KME                        &
      &                 ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -99,8 +99,8 @@ CONTAINS
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: FLX_LH,HFX,PSHLTR &
      &                                              ,QFX,Q10,QSHLTR    &
-     &                                              ,TH10,TSHLTR       &
-     &                                              ,U10,V10
+     &                                              ,TH10,TSHLTR,T02       &
+     &                                              ,U10,V10,TH02,Q02
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: AKHS,AKMS       &
      &                                                ,PBLH,QSFC
@@ -176,7 +176,12 @@ CONTAINS
 !
       NTSD=ITIMESTEP
 !
-      IF(NTSD==1)THEN
+#if ( NMM_CORE == 1 )
+     if(NTSD+1.eq.1) then
+#else
+     IF(NTSD==1)THEN
+#endif
+!tgs       IF(NTSD==1)THEN
         DO J=JTS,JTE
         DO I=ITS,ITE
           USTAR(I,J)=0.1
@@ -277,7 +282,17 @@ CONTAINS
           VLOW=VK(LMH)
           ZSL=(ZHK(LMH)-ZHK(LMH+1))*0.5
           APESFC=(PSFC*1.E-5)**CAPA
+!tgs - in ARW THZ0 is not initialized when MYJSFC is called first time
+#if ( NMM_CORE == 1 )
+     if(NTSD+1.eq.1) then
+#else
+     IF(NTSD==1)THEN
+#endif
+!       if(itimestep.le.1) then
+          TZ0=TSK(I,J)
+       else
           TZ0=THZ0(I,J)*APESFC
+       endif
 !
           CALL SFCDIF(NTSD,SEAMASK,THSK(I,J),QSFC(I,J),PSFC            &
      &               ,UZ0(I,J),VZ0(I,J),TZ0,THZ0(I,J),QZ0(I,J)         &
@@ -299,12 +314,15 @@ CONTAINS
           RAPA=APESFC
           TH02P=TSHLTR(I,J)
           TH10P=TH10(I,J)
+          TH02(I,J)=TSHLTR(I,J)
 !
           RAPA02=RAPA-GOCP02/TH02P
           RAPA10=RAPA-GOCP10/TH10P
 !
           T02P=TH02P*RAPA02
           T10P=TH10P*RAPA10
+! 1 may 06 tgs         T02(I,J) = T02P
+          T02(I,J) = TH02(I,J)*APESFC
 !
           P02P=(RAPA02**RCAP)*1.E5
           P10P=(RAPA10**RCAP)*1.E5
@@ -314,6 +332,7 @@ CONTAINS
 !
           IF(QSHLTR(I,J)>QS02)QSHLTR(I,J)=QS02
           IF(Q10   (I,J)>QS10)Q10   (I,J)=QS10
+          Q02(I,J)=QSHLTR(I,J)/(1.-QSHLTR(I,J))
 !----------------------------------------------------------------------
 !
         ENDDO
@@ -417,7 +436,12 @@ CONTAINS
 !
             IF(USTAR<USTR)THEN
 !
-              IF(NTSD==1)THEN
+#if ( NMM_CORE == 1 )
+     if(NTSD+1.eq.1) then
+#else
+     IF(NTSD==1)THEN
+#endif
+!tgs              IF(NTSD==1)THEN
                 AKMS=CXCHS
                 AKHS=CXCHS
                 QS=QLOW
@@ -434,7 +458,12 @@ CONTAINS
               WGHTT=AKHS*ZT*RTVISC
               WGHTQ=AKHS*ZQ*RQVISC
 !
-              IF(NTSD>1)THEN
+#if ( NMM_CORE == 1 )
+     if(NTSD+1>1) then
+#else
+     IF(NTSD>1)THEN
+#endif
+!tgs              IF(NTSD>1)THEN
                 THZ0=((WGHTT*THLOW+THS)/(WGHTT+1.)+THZ0)*0.5
                 QZ0=((WGHTQ*QLOW+QS)/(WGHTQ+1.)+QZ0)*0.5
               ELSE
@@ -454,7 +483,13 @@ CONTAINS
               WGHTT=AKHS*ZT*RTVISC
               WGHTQ=AKHS*ZQ*RQVISC
 !
-              IF(NTSD>1)THEN
+#if ( NMM_CORE == 1 )
+     if(NTSD+1>1) then
+#else
+     IF(NTSD>1)THEN
+#endif
+
+!tgs              IF(NTSD>1)THEN
                 THZ0=((WGHTT*THLOW+THS)/(WGHTT+1.)+THZ0)*0.5
                 QZ0=((WGHTQ*QLOW+QS)/(WGHTQ+1.)+QZ0)*0.5
               ELSE
@@ -1005,7 +1040,7 @@ CONTAINS
      &            0.08,  0.03,  0.05,  0.86,  0.80,  0.85,             &
      &            2.65,  1.09,  0.80,  0.001, 0.04,  0.05,             &
      &            0.01,  0.04,  0.06,  0.05,  0.03,  0.001,            &
-     &            0.000, 0.000, 0.000, 0.000, 0.000, 0.000/)
+     &            0.000, 0.000, 0.000, 0.000, 0.000, 0.000 /)
 
 !----------------------------------------------------------------------
 !
@@ -1057,6 +1092,7 @@ CONTAINS
         ENDIF ! Vegtype check
 !
       ENDIF ! Restart check
+
 #endif
 !----------------------------------------------------------------------
       IF(.NOT.RESTART)THEN

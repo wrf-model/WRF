@@ -57,7 +57,7 @@
           INTENT(IN   ) ::                                      &
                                                      ivgtyp
    REAL,  DIMENSION( ims:ime , jms:jme )                   ,    &
-          INTENT(IN   ) ::                                      &
+          INTENT(INOUT) ::                                      &
                                                      tsk,       &
                                                      gsw,       &
                                                   vegfra,       &
@@ -105,6 +105,7 @@
       INTRINSIC max, min
 
 ! ..
+   ddvel(:,:,:) = 0.
    IF( config_flags%chem_opt /= CHEM_TRACER ) THEN
       drydep_select: SELECT CASE(config_flags%drydep_opt)
       CASE (WESELY)
@@ -125,11 +126,10 @@
    ELSE
       !Set dry deposition velocity to zero when using the
       !chemistry tracer mode.
-      ddvel(:,:,:) = 0.
    END IF
 
    adrydep_select: SELECT CASE(config_flags%chem_opt)
-     CASE (RADM2SORG)
+     CASE (RADM2SORG,RADM2SORG_KPP)
        CALL wrf_debug(15,'DOING DRY DEP VELOCITIES FOR AEROSOLS/RADM')
        call sorgam_depdriver (id,ktau,dtstep,                           &
                ust,t_phy,moist,p8w,t8w,                                 &
@@ -141,7 +141,7 @@
                ids,ide, jds,jde, kds,kde,                               &
                ims,ime, jms,jme, kms,kme,                               &
                its,ite, jts,jte, kts,kte                                )
-     CASE (RACMSORG)
+     CASE (RACMSORG,RACMSORG_KPP)
        CALL wrf_debug(15,'DOING DRY DEP VELOCITIES FOR AEROSOLS/RACM')
        call sorgam_depdriver (id,ktau,dtstep,                           &
                ust,t_phy,moist,p8w,t8w,                                 &
@@ -171,8 +171,6 @@
 !
 !
       dep_vel_o3=0.
-!     kts=k_start
-!     kte=k_end
       do 100 j=jts,jte
       do 100 i=its,ite
       pblst=0.
@@ -204,9 +202,6 @@
       enddo
       ekmfull(kts)=0.
       ekmfull(kte)=0.
-!     do k=kts+1,kte-1
-!       ekmfull(k)=ekmfull(k)*(zzfull(k)-zzfull(k-1))
-!     enddo
 !
 !   vertical mixing routine (including deposition)
 !   need to be careful here with that dumm tracer in spot 1
@@ -217,10 +212,14 @@
          do k=kts,kte-1
             pblst(k)=max(epsilc,chem(i,k,j,nv))
          enddo
+!        if(ktau.ge.20)then
+!           write(0,*)i,j,nv,ddvel(i,j,nv),e_co(i,kts,j)
+!        endif
 
          call vertmx(dtstep,pblst,ekmfull,zzfull,zz,ddvel(i,j,nv),kts,kte-1)
 
-         do k=kts,kte-1
+         do k=kts,kte-2
+
             chem(i,k,j,nv)=max(epsilc,pblst(k))
          enddo
       enddo

@@ -17,7 +17,7 @@ CONTAINS
      &          ,vz0,v_frame,v_phy,warm_rain,wspd,xice,xland,z,znt,zs &
      &          ,ct,tke_myj                                           &
      &          ,albbck,lh,sh2o,shdmax,shdmin,z0                      &
-     &          ,flqc,flhc,psfc,sst,sst_update                        &
+     &          ,flqc,flhc,psfc,sst,sst_update,t2,emiss                        &
      &          ,sf_sfclay_physics,sf_surface_physics,ra_lw_physics   &
      &          , ids,ide,jds,jde,kds,kde                             &
      &          , ims,ime,jms,jme,kms,kme                             &
@@ -29,8 +29,8 @@ CONTAINS
      &           ,f_qv,f_qc,f_qr                                      &
      &           ,f_qi,f_qs,f_qg                                      &
              !  Other optionals (more or less em specific)
-     &          ,capg,emiss,hol,mol                                   &
-     &          ,rainncv,rainbl,regime,t2,thc                         &
+     &          ,capg,hol,mol                                   &
+     &          ,rainncv,rainbl,regime,thc                         &
      &          ,qsg,qvg,qcg,soilt1,tsnav                             &
      &          ,smfr3d,keepfr3dflag                                  &
              !  Other optionals (more or less nmm specific)
@@ -348,7 +348,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT)::   potevp ! NMM LSM
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT)::   snopcx ! NMM LSM
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT)::   soiltb ! NMM LSM
-   REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(IN)::      sr ! NMM LSM
+   REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT)::   sr ! NMM and RUC LSM
    REAL, DIMENSION( ims:ime, 1:num_soil_layers, jms:jme ), OPTIONAL, INTENT(INOUT)::   smfr3d
    REAL, DIMENSION( ims:ime, 1:num_soil_layers, jms:jme ), OPTIONAL, INTENT(INOUT)::   keepfr3dflag
 
@@ -356,6 +356,7 @@ CONTAINS
 
    REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ) ::v_phytmp
    REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ) ::u_phytmp
+   REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ) ::qt_tmp
 
    REAL,       DIMENSION( ims:ime, jms:jme )          ::  TSKOLD, &
                                                           USTOLD, &
@@ -372,7 +373,7 @@ CONTAINS
    REAL    :: DTMIN,DTBL
 !
    INTEGER :: i,J,K,NK,jj,ij
-   LOGICAL :: radiation
+   LOGICAL :: radiation, myj,frpcpn
    CHARACTER*256 :: message
 !
 !
@@ -383,6 +384,7 @@ CONTAINS
 
   v_phytmp = 0.
   u_phytmp = 0.
+  qt_tmp = 0.
   TSKOLD = 0.
   USTOLD = 0.
   ZNTOLD = 0.
@@ -438,6 +440,9 @@ CONTAINS
   IF (itimestep .eq. 1 .or. mod(itimestep,STEPBL) .eq. 0) THEN
 
   radiation = .false.
+  myj = .false.
+  frpcpn = .false.
+
   IF (ra_lw_physics .gt. 0) radiation = .true.
 
 !---- 
@@ -513,18 +518,74 @@ CONTAINS
       CASE (MYJSFCSCHEME)
        IF (PRESENT(qv_curr)    .AND.  PRESENT(qc_curr) .AND.    &
                                                       .TRUE. ) THEN
+
+! Fill temporary condensate variable depending on micro package (G. Thompson 07 Mar 2006)
+     if(PRESENT(qc_curr)) then
+        DO j=j_start(ij),j_end(ij)
+        DO k=kts,kte
+        DO i=i_start(ij),i_end(ij)
+           qt_tmp(I,K,J)=qc_curr(I,K,J)
+        ENDDO
+        ENDDO
+        ENDDO
+     endif
+     if(PRESENT(qi_curr)) then
+        DO j=j_start(ij),j_end(ij)
+        DO k=kts,kte
+        DO i=i_start(ij),i_end(ij)
+           qt_tmp(I,K,J) = qt_tmp(I,K,J) + qi_curr(I,K,J)
+        ENDDO
+        ENDDO
+        ENDDO
+     endif
+     if(PRESENT(qr_curr)) then
+        DO j=j_start(ij),j_end(ij)
+        DO k=kts,kte
+        DO i=i_start(ij),i_end(ij)
+           qt_tmp(I,K,J) = qt_tmp(I,K,J) + qr_curr(I,K,J)
+        ENDDO
+        ENDDO
+        ENDDO
+     endif
+     if(PRESENT(qs_curr)) then
+        DO j=j_start(ij),j_end(ij)
+        DO k=kts,kte
+        DO i=i_start(ij),i_end(ij)
+           qt_tmp(I,K,J) = qt_tmp(I,K,J) + qs_curr(I,K,J)
+        ENDDO
+        ENDDO
+        ENDDO
+     endif
+     if(PRESENT(qg_curr)) then
+        DO j=j_start(ij),j_end(ij)
+        DO k=kts,kte
+        DO i=i_start(ij),i_end(ij)
+           qt_tmp(I,K,J) = qt_tmp(I,K,J) + qg_curr(I,K,J)
+        ENDDO
+        ENDDO
+        ENDDO
+     endif
+
+        myj =.true.
+
+!fix
+           MAVAIL=1.
+!fix
+
             CALL wrf_debug(100,'in MYJSFC')
-            CaLL MYJSFC(itimestep,ht,dz8w,                         &
+            CALL MYJSFC(itimestep,ht,dz8w,                         &
               p_phy,p8w,th_phy,t_phy,                              &
-              qv_curr,qc_curr,                                     &
+              qv_curr,qc_curr,                                      &
+!              qv_curr,qt_tmp,                                      &
               u_phy,v_phy,tke_myj,                                 &
               tsk,qsfc,thz0,qz0,uz0,vz0,                           &
               lowlyr,                                              &
               xland,                                               &
               ust,znt,z0,pblh,mavail,rmol,                         &
+!compilefail              ust,znt,z0,pblh,1.,rmol,                         &
               akhs,akms,                                           &
               chs,chs2,cqs2,hfx,qfx,lh,flhc,flqc,qgh,cpm,ct,       &
-              u10,v10,tshltr,th10,qshltr,q10,pshltr,               &
+              u10,v10,t2,th2,tshltr,th10,q2,qshltr,q10,pshltr,               &
               ids,ide, jds,jde, kds,kde,                           &
               ims,ime, jms,jme, kms,kme,                           &
               i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
@@ -571,8 +632,9 @@ CONTAINS
      CASE (SLABSCHEME)
 
        IF (PRESENT(qv_curr)                            .AND.    &
-           PRESENT(capg)       .AND.  PRESENT(emiss )  .AND.    &
-           PRESENT(t2  )                               .AND.    &
+           PRESENT(capg)        .AND.    &
+!           PRESENT(capg)       .AND.  PRESENT(emiss )  .AND.    &
+!           PRESENT(t2  )                               .AND.    &
                                                       .TRUE. ) THEN
            DO j=j_start(ij),j_end(ij)
            DO i=i_start(ij),i_end(ij)
@@ -633,7 +695,7 @@ CONTAINS
      CASE (LSMSCHEME)
 
        IF (PRESENT(qv_curr)    .AND.  PRESENT(rainbl)  .AND.    &
-           PRESENT(emiss)      .AND.  PRESENT(t2)      .AND.    &
+!           PRESENT(emiss)      .AND.  PRESENT(t2)      .AND.    &
                                                       .TRUE. ) THEN
 !------------------------------------------------------------------
          CALL wrf_debug(100,'in NOAH LSM')
@@ -671,15 +733,22 @@ CONTAINS
 
      CASE (RUCLSMSCHEME)
        IF (PRESENT(qv_curr)    .AND.  PRESENT(qc_curr) .AND.    &
-           PRESENT(emiss)      .AND.  PRESENT(t2)      .AND.    &
+!           PRESENT(emiss)      .AND.  PRESENT(t2)      .AND.    &
            PRESENT(qsg)        .AND.  PRESENT(qvg)     .AND.    &
            PRESENT(qcg)        .AND.  PRESENT(soilt1)  .AND.    &
            PRESENT(tsnav)      .AND.  PRESENT(smfr3d)  .AND.    &
            PRESENT(keepfr3dflag) .AND. PRESENT(rainbl) .AND.    &
                                                       .TRUE. ) THEN
+
+           IF( PRESENT(sr) ) THEN
+               frpcpn=.true.
+           ELSE
+               SR = 1.
+           ENDIF
+
            CALL wrf_debug(100,'in RUC LSM')
            CALL LSMRUC(dtbl,itimestep,num_soil_layers,          &
-                zs,rainbl,snow,snowh,snowc,                     &
+                zs,rainbl,snow,snowh,snowc,sr,frpcpn,           &
                 dz8w,p8w,t_phy,qv_curr,qc_curr,rho,             & !p8w in [pa]
                 glw,gsw,emiss,chklowq,                          &
                 flqc,flhc,mavail,canwat,vegfra,albedo,znt,      &
@@ -690,21 +759,20 @@ CONTAINS
                 sfcrunoff,udrunoff,sfcexc,                      &
                 sfcevp,grdflx,acsnow,                           &
                 smfr3d,keepfr3dflag,                            &
+                myj,                                            &
                 ids,ide, jds,jde, kds,kde,                      &
                 ims,ime, jms,jme, kms,kme,                      &
                 i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
 
-           DO j=j_start(ij),j_end(ij)
-           DO i=i_start(ij),i_end(ij)
-              CHKLOWQ(I,J)= 1.0
-           ENDDO
-           ENDDO
+         IF(.not. MYJ) then
 
-          CALL SFCDIAGS(HFX,QFX,TSK,QSFC,CHS2,CQS2,T2,TH2,Q2,      &
+          CALL SFCDIAGS(HFX,QFX,TSK,QVG,CHS2,CQS2,T2,TH2,Q2,      &
                      PSFC,CP,R_d,RCP,                              &
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
              i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
+         ENDIF
+ 
 
        ELSE
          CALL wrf_error_fatal('Lacking arguments for RUCLSM in surface driver')

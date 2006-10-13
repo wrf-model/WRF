@@ -2940,5 +2940,788 @@
       END SUBROUTINE HAD2_DRY
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
+!^L
+! New routines added by Georg Grell to handle advection more like ARW
+! core.  Instead of VAD2/HAD2 that advect TKE, specific humidity, and
+! condensed water species all in one routine, we call VAD2/HAD2_SCAL
+! with multidimensioned arrays to advect each variable.  For purposes
+! here, solve_nmm.F calls this routine once for TKE, then again for
+! all the species held in the moist array (qv, qc, qi, qr, qs, qg),
+! then call again for number concentrations held in scalar array (qni).
+! The dummy argument lstart is the starting index of the multidimensioned
+! array for starting the advection since the 1st index of moist and
+! scalar are actually empty placeholders (and the 2nd element is vapor,
+! then qc, etc.)  When calling with single 3D array (like TKE), just
+! set NUM_SCAL=1 and lstart=1.  The variable to advect is called SCAL
+! herein.
+!***********************************************************************
+      SUBROUTINE VAD2_SCAL(NTSD,DT,IDTAD,DX,DY                               &
+     &               ,AETA1,AETA2,DETA1,DETA2,PDSL,PDTOP                &
+     &               ,HBM2,LMH                                          &
+     &               ,SCAL,PETDT                                        &
+     &               ,N_IUP_H,N_IUP_V                                   &
+     &               ,N_IUP_ADH,N_IUP_ADV                               &
+     &               ,IUP_H,IUP_V,IUP_ADH,IUP_ADV                       &
+     &               ,IHE,IHW,IVE,IVW,INDX3_WRK                         &
+     &               ,NUM_SCAL,lstart                                   &
+     &               ,IDS,IDE,JDS,JDE,KDS,KDE                           &
+     &               ,IMS,IME,JMS,JME,KMS,KME                           &
+     &               ,ITS,ITE,JTS,JTE,KTS,KTE)
+!***********************************************************************
+!$$$  SUBPROGRAM DOCUMENTATION BLOCK
+!                .      .    .
+! SUBPROGRAM:    VAD2_SCAL   VERTICAL ADVECTION OF SCALARS
+!
+!   PRGRMMR: JANJIC          ORG: W/NP22     DATE: 96-07-19
+!            GRELL,PECKHAM   ORG: NOAA/FSL   DATE: 05-02-03
+!     
+! ABSTRACT:          
+!     VAD2_SCAL CALCULATES THE CONTRIBUTION OF THE VERTICAL ADVECTION   
+!     TO THE TENDENCIES OF SCALAR SUBSTANCES AND THEN UPDATES           
+!     THOSE VARIABLES.  AN ANTI-FILTERING TECHNIQUE IS USED.            
+!    
+! PROGRAM HISTORY LOG:
+!   96-07-19  JANJIC           - ORIGINATOR
+!   05-02-03  GRELL,PECKHAM    - MODIFIED FOR SCALARS                   
+!    
+! USAGE: CALL VAD2_SCAL FROM SUBROUTINE SOLVE_NMM                       
+!   INPUT ARGUMENT LIST:
+!
+!   OUTPUT ARGUMENT LIST
+!                
+!   OUTPUT FILES:
+!       NONE
+!   SUBPROGRAMS CALLED:      
+!
+!     UNIQUE: NONE
+!
+!     LIBRARY: NONE
+!
+! ATTRIBUTES:
+!   LANGUAGE: FORTRAN 90
+!   MACHINE : IBM SP
+!$$$
+!***********************************************************************
+!----------------------------------------------------------------------
+!
+      IMPLICIT NONE
+!
+!----------------------------------------------------------------------
+!
+      INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                     &
+     &                     ,IMS,IME,JMS,JME,KMS,KME                     &
+                           ,ITS,ITE,JTS,JTE,KTS,KTE
+
+      INTEGER,INTENT(IN) :: NUM_SCAL, lstart
+!
+      INTEGER,DIMENSION(JMS:JME),INTENT(IN) :: IHE,IHW,IVE,IVW
+      INTEGER,DIMENSION(JMS:JME),INTENT(IN) :: N_IUP_H,N_IUP_V          &
+     &                                        ,N_IUP_ADH,N_IUP_ADV
+      INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: IUP_H,IUP_V      &
+     &                                                ,IUP_ADH,IUP_ADV
+! NMM_MAX_DIM is set in configure.wrf and must agree with
+! the value of dimspec q in the Registry/Registry
+      INTEGER,DIMENSION(-3:3,NMM_MAX_DIM,0:6),INTENT(IN) :: INDX3_WRK
+!
+      INTEGER,INTENT(IN) :: IDTAD,NTSD
+!
+      INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: LMH
+!
+      REAL,INTENT(IN) :: DT,DY,PDTOP
+!    
+      REAL,DIMENSION(KMS:KME),INTENT(IN) :: AETA1,AETA2,DETA1,DETA2
+!
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: DX,HBM2,PDSL
+!
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: PETDT
+!
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME,1:NUM_SCAL),INTENT(INOUT) :: SCAL
+!
+!----------------------------------------------------------------------
+!
+!***  LOCAL VARIABLES
+!
+      REAL,PARAMETER :: FF1=0.525
+!
+      LOGICAL :: BOT,TOP
+!
+      INTEGER :: I,IRECV,J,JFP,JFQ,K,KOFF,LAP,LLAP, L
+!
+      INTEGER,DIMENSION(KTS:KTE) :: LA
+!
+      REAL*8 :: ADDT,AFRP,D2PQE,D2PQQ,D2PQW,DEP,DETAP,DPDN,DPUP,DQP     &
+     &       ,DWP,E00,E4P,EP,EP0,HADDT,HBM2IJ                           &
+     &       ,Q00,Q4P,QP,QP0                                            &
+     &       ,RFACEK,RFACQK,RFACWK,RFC,RR                               &
+     &       ,SUMNE,SUMNQ,SUMNW,SUMPE,SUMPQ,SUMPW                       &
+     &       ,W00,W4P,WP,WP0
+      REAL,DIMENSION(KTS:KTE) :: AFR,DEL,DQL,DWL,E3,E4,PETDTK           &
+     &                          ,RFACE,RFACQ,RFACW,Q3,Q4,W3,W4
+!
+!***********************************************************************
+!-----------------------------------------------------------------------
+!     
+      ADDT=REAL(IDTAD)*DT
+!     
+!-----------------------------------------------------------------------
+!     
+!$omp parallel do                                                       &
+!$omp& private(afr,afrp,bot,d2pqe,d2pqq,d2pqw,del,dep,detap,dpdn,dpup   &
+!$omp&        ,dql,dqp,dwl,dwp,e00,e3,e4,e4p,ep,ep0,haddt,i,j,k,koff    &
+!$omp&        ,la,lap,llap,petdtk,q00,q3,q4,q4p,qp,qp0,rfacek,rfacqk    &
+!$omp&        ,rfacwk,rfc,rr,sumne,sumnq,sumnw,sumpe,sumpq,sumpw,top    &
+!$omp&        ,w00,w3,w4,w4p,wp,wp0)
+
+      scalar_loop : DO L=lstart,NUM_SCAL
+      main_integration : DO J=MYJS2,MYJE2
+!
+      DO I=MYIS1_P1,MYIE1_P1
+!-----------------------------------------------------------------------
+        KOFF=KTE-LMH(I,J)
+!
+        DO K=KOFF+1,KTE
+!         Q3(K)=MAX(SCAL(I,K,J,L),EPSILSCALAR)
+          Q3(K)=SCAL(I,K,J,L)
+          Q4(K)=Q3(K)
+        ENDDO
+!
+        PETDTK(KTE)=PETDT(I,KTE-1,J)*0.5
+!
+        DO K=KTE-1,KOFF+2,-1
+          PETDTK(K)=(PETDT(I,K,J)+PETDT(I,K-1,J))*0.5
+        ENDDO
+!
+        PETDTK(KOFF+1)=PETDT(I,KOFF+1,J)*0.5
+!-----------------------------------------------------------------------
+        HADDT=-ADDT*HBM2(I,J)
+!
+        DO K=KTE,KOFF+1,-1
+          RR=PETDTK(K)*HADDT
+!
+          IF(RR<0.)THEN
+            LAP=1
+          ELSE
+            LAP=-1
+          ENDIF
+!
+          LA(K)=LAP
+          LLAP=K+LAP
+!
+          TOP=.FALSE.
+          BOT=.FALSE.
+!
+          IF(LLAP>KOFF.AND.LLAP<KTE+1.AND.LAP/=0)THEN
+            RR=ABS(RR/((AETA1(LLAP)-AETA1(K))*PDTOP                     &
+     &                +(AETA2(LLAP)-AETA2(K))*PDSL(I,J)))
+!
+            AFR(K)=(((FF4*RR+FF3)*RR+FF2)*RR+FF1)*RR
+            DQP=(Q3(LLAP)-Q3(K))*RR
+            DQL(K)=DQP
+          ELSE
+            TOP=LLAP==KTE+1
+            BOT=LLAP==KOFF
+!
+            RR=0.
+            AFR(K)=0.
+            DQL(K)=0.
+          ENDIF
+        ENDDO
+!-----------------------------------------------------------------------
+        IF(TOP)THEN
+          IF(LA(KTE-1)>0)THEN
+            RFC=(DETA1(KTE-1)*PDTOP+DETA2(KTE-1)*PDSL(I,J))             &
+     &         /(DETA1(KTE  )*PDTOP+DETA2(KTE  )*PDSL(I,J))
+            DQL(KTE)=-DQL(KTE+1)*RFC
+          ENDIF
+        ENDIF
+!       
+        IF(BOT)THEN
+          IF(LA(KOFF+2)<0)THEN
+            RFC=(DETA1(KOFF+2)*PDTOP+DETA2(KOFF+2)*PDSL(I,J))           &
+     &         /(DETA1(KOFF+1)*PDTOP+DETA2(KOFF+1)*PDSL(I,J))
+            DQL(KOFF+1)=-DQL(KOFF+2)*RFC
+          ENDIF
+        ENDIF
+!       
+        DO K=KOFF+1,KTE
+          Q4(K)=Q3(K)+DQL(K)
+        ENDDO
+!-----------------------------------------------------------------------
+!***  ANTI-FILTERING STEP
+!-----------------------------------------------------------------------
+        SUMPQ=0.
+        SUMNQ=0.
+!
+!***  ANTI-FILTERING LIMITERS
+!       
+        DO 50 K=KTE-1,KOFF+2,-1
+!       
+        DETAP=DETA1(K)*PDTOP+DETA2(K)*PDSL(I,J)
+!       
+        Q4P=Q4(K)
+!       
+        LAP=LA(K)
+!       
+        IF(LAP.NE.0)THEN
+          DPDN=(AETA1(K+LAP)-AETA1(K))*PDTOP                            &
+     &        +(AETA2(K+LAP)-AETA2(K))*PDSL(I,J)
+          DPUP=(AETA1(K)-AETA1(K-LAP))*PDTOP                            &
+     &        +(AETA2(K)-AETA2(K-LAP))*PDSL(I,J)
+!
+          AFRP=2.*AFR(K)*DPDN*DPDN/(DPDN+DPUP)
+          D2PQQ=((Q4(K+LAP)-Q4P)/DPDN                                   &
+     &          -(Q4P-Q4(K-LAP))/DPUP)*AFRP
+        ELSE
+          D2PQQ=0.
+        ENDIF
+!
+        QP=Q4P-D2PQQ
+!
+        Q00=Q3(K)
+        QP0=Q3(K+LAP)
+!
+        IF(LAP/=0)THEN
+          QP=MAX(QP,MIN(Q00,QP0))
+          QP=MIN(QP,MAX(Q00,QP0))
+        ENDIF
+!
+        DQP=QP-Q00
+!
+        DQL(K)=DQP
+!
+        DQP=DQP*DETAP
+!
+        IF(DQP>0.)THEN
+          SUMPQ=SUMPQ+DQP
+        ELSE
+          SUMNQ=SUMNQ+DQP
+        ENDIF
+!
+   50   CONTINUE
+!-----------------------------------------------------------------------
+        DQL(KOFF+1)=0.
+!
+        DQL(KTE)=0.
+!-----------------------------------------------------------------------
+!***  FIRST MOMENT CONSERVING FACTOR
+!-----------------------------------------------------------------------
+        IF(SUMPQ>1.E-9)THEN
+          RFACQK=-SUMNQ/SUMPQ
+        ELSE  
+          RFACQK=1.
+        ENDIF
+!         
+        IF(RFACQK<CONSERVE_MIN.OR.RFACQK>CONSERVE_MAX)RFACQK=1.
+!-----------------------------------------------------------------------
+!***  IMPOSE CONSERVATION ON ANTI-FILTERING
+!-----------------------------------------------------------------------
+        DO K=KTE,KOFF+1,-1
+          DQP=DQL(K)
+          IF(DQP>=0.)DQP=DQP*RFACQK
+          SCAL(I,K,J,L)=Q3(K)+DQP
+        ENDDO
+!
+!       HBM2IJ=HBM2(I,J)
+!-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
+      ENDDO
+
+!       
+      ENDDO main_integration
+      ENDDO scalar_loop
+!-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
+      END SUBROUTINE VAD2_SCAL
+!-----------------------------------------------------------------------
+!         
+!***********************************************************************
+      SUBROUTINE HAD2_SCAL(                                             &
+#if defined(DM_PARALLEL)
+     &                domdesc ,                                         &
+#endif  
+     &                NTSD,DT,IDTAD,DX,DY                               &
+     &               ,AETA1,AETA2,DETA1,DETA2,PDSL,PDTOP                &
+     &               ,HTM,HBM2,HBM3,LMH                                 &
+     &               ,SCAL,U,V,Z,HYDRO                              &
+     &               ,N_IUP_H,N_IUP_V                                   &
+     &               ,N_IUP_ADH,N_IUP_ADV                               &
+     &               ,IUP_H,IUP_V,IUP_ADH,IUP_ADV                       &
+     &               ,IHE,IHW,IVE,IVW,INDX3_WRK                         &
+     &               ,NUM_SCAL,lstart                                   &
+     &               ,IDS,IDE,JDS,JDE,KDS,KDE                           &
+     &               ,IMS,IME,JMS,JME,KMS,KME                           &
+     &               ,ITS,ITE,JTS,JTE,KTS,KTE)
+!***********************************************************************
+!$$$  SUBPROGRAM DOCUMENTATION BLOCK
+!                .      .    .
+! SUBPROGRAM:    HAD2_SCAL   HORIZONTAL ADVECTION OF SCALAR
+!   PRGRMMR: JANJIC          ORG: W/NP22     DATE: 96-07-19
+!            GRELL,PECKHAM   ORG: NOAA/FSL   DATE: 05-02-03
+!
+! ABSTRACT:
+!     HAD2_SCAL CALCULATES THE CONTRIBUTION OF THE HORIZONTAL ADVECTION
+!     TO THE TENDENCIES OF SCALAR SUBSTANCES AND THEN
+!     UPDATES THOSE VARIABLES.  AN ANTI-FILTERING TECHNIQUE IS USED.
+!
+! PROGRAM HISTORY LOG:
+!   96-07-19  JANJIC           - ORIGINATOR
+!   05-01-03  GRELL,PECKKHAM   - MODIFIED FOR SCALAR
+!
+! USAGE: CALL HAD2_SCAL FROM SUBROUTINE SOLVE_NMM
+!   INPUT ARGUMENT LIST:
+!
+!   OUTPUT ARGUMENT LIST
+!
+!   OUTPUT FILES:
+!       NONE
+!   SUBPROGRAMS CALLED:
+!
+!     UNIQUE: NONE
+!
+!     LIBRARY: NONE
+!
+! ATTRIBUTES:
+!   LANGUAGE: FORTRAN 90
+!   MACHINE : IBM SP
+!$$$
+!***********************************************************************
+!-----------------------------------------------------------------------
+!    
+      IMPLICIT NONE  
+!    
+!-----------------------------------------------------------------------
+!    
+      INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                     &
+     &                     ,IMS,IME,JMS,JME,KMS,KME                     &
+     &                     ,ITS,ITE,JTS,JTE,KTS,KTE
+
+      INTEGER,INTENT(IN) :: NUM_SCAL, lstart
+!   
+      INTEGER,DIMENSION(JMS:JME),INTENT(IN) :: IHE,IHW,IVE,IVW
+      INTEGER,DIMENSION(JMS:JME),INTENT(IN) :: N_IUP_H,N_IUP_V          &
+     &                                        ,N_IUP_ADH,N_IUP_ADV
+      INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: IUP_H,IUP_V      &
+     &                                                ,IUP_ADH,IUP_ADV
+!-----------------------------------------------------------------------
+!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! NMM_MAX_DIM is set in configure.wrf and must agree with the value of
+! dimspec q in Registry/Registry.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!-----------------------------------------------------------------------
+      INTEGER,DIMENSION(-3:3,NMM_MAX_DIM,0:6),INTENT(IN) :: INDX3_WRK
+!   
+      INTEGER,INTENT(IN) :: IDTAD,NTSD
+!   
+      INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: LMH
+!   
+      REAL,INTENT(IN) :: DT,DY,PDTOP
+!   
+      REAL,DIMENSION(KMS:KME),INTENT(IN) :: AETA1,AETA2,DETA1,DETA2
+!     
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: DX,HBM2,HBM3,PDSL
+!     
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: HTM,U,V,Z
+! 
+!!!!!   q is local. CORRECT DIMENSION???
+!jjjj
+!!!!!      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME)               :: Q
+      REAL,DIMENSION(ITS-5:ITE+5,KTS:KTE,JTS-5:JTE+5) :: Q
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME,NUM_SCAL),INTENT(INOUT) :: SCAL
+!
+      LOGICAL,INTENT(IN) :: HYDRO
+!
+!-----------------------------------------------------------------------
+!
+!***  LOCAL VARIABLES
+!
+      REAL,PARAMETER :: FF1=0.530
+!
+#ifdef DM_PARALLEL
+      INTEGER :: DOMDESC
+#endif
+!
+#if defined(BIT_FOR_BIT) && defined(DM_PARALLEL)
+      LOGICAL,EXTERNAL :: WRF_DM_ON_MONITOR
+      INTEGER :: N
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME,6) :: XSUMS_L
+      REAL,DIMENSION(IDS:IDE,KDS:KDE,JDS:JDE,6) :: XSUMS_G
+#endif
+!
+      LOGICAL :: BOT,TOP
+!
+      INTEGER :: I,IRECV,J,JFP,JFQ,K,KOFF,LAP,LLAP,MPI_COMM_COMP, L
+!
+      INTEGER,DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: IFPA,IFPF           &
+     &                                             ,IFQA,IFQF           &
+     &                                             ,JFPA,JFPF           &
+     &                                             ,JFQA,JFQF
+!
+      REAL :: ADDT,AFRP,CRIT,D2PQE,D2PQQ,D2PQW,DEP,DESTIJ,DQP,DQSTIJ    &
+     &       ,DVOLP,DWP,DWSTIJ,DZA,DZB,E00,E0Q,E1X,E2IJ,E4P,ENH,EP,EP0  &
+     &       ,ESTIJ,FPQ,HAFP,HAFQ,HBM2IJ,HM,HTMIKJ,PP,PPQ00,Q00,Q0Q     &
+     &       ,Q1IJ,Q4P,QP,QP0,QSTIJ,RDY,RFACEK,RFACQK,RFACWK,RFC        &
+     &       ,RFEIJ,RFQIJ,RFWIJ,RR,SLOPAC,SPP,SQP,SSA,SSB,SUMNE,SUMNQ   &
+     &       ,SUMNW,SUMPE,SUMPQ,SUMPW,TTA,TTB,W00,W0Q,W1IJ,W4P,WP,WP0   &
+     &       ,WSTIJ
+!
+      DOUBLE PRECISION,DIMENSION(6,KTE-KTS+1) :: GSUMS,XSUMS
+!
+      REAL,DIMENSION(KTS:KTE) :: AFR,DEL,DQL,DWL,E3,E4                  &
+     &                          ,RFACE,RFACQ,RFACW,Q3,Q4,W3,W4
+!
+      REAL,DIMENSION(IMS:IME,JMS:JME) :: DARE,EMH
+!
+      REAL,DIMENSION(ITS-5:ITE+5,KTS:KTE,JTS-5:JTE+5) :: AFP,AFQ,DEST   &
+     &                                                  ,DQST,DVOL,DWST &
+     &                                                  ,E1,E2,Q1,W1
+      integer :: nunit,ier
+      save nunit
+!***********************************************************************
+!-----------------------------------------------------------------------
+!     
+      RDY=1./DY
+      SLOPAC=SLOPHT*SQRT(2.)*0.5*50.
+      CRIT=SLOPAC*REAL(IDTAD)*DT*RDY*1000.
+!     
+      ADDT=REAL(IDTAD)*DT
+      ENH=ADDT/(08.*DY)
+!     
+!-----------------------------------------------------------------------
+!
+      SCALAR_LOOP :  DO L=lstart,NUM_SCAL
+!
+!-----------------------------------------------------------------------
+!$omp parallel do                                                       &
+!$omp& private(i,j)
+      DO J=MYJS_P3,MYJE_P3                         
+      DO I=MYIS_P2,MYIE_P2                         
+        EMH (I,J)=ADDT/(08.*DX(I,J))               
+        DARE(I,J)=HBM3(I,J)*DX(I,J)*DY
+!       E1(I,KTE,J)=MAX(Q2(I,KTE,J)*0.5,EPSQ2)
+!       E2(I,KTE,J)=E1(I,KTE,J)
+      ENDDO  
+      ENDDO  
+!-----------------------------------------------------------------------
+!    
+!$omp parallel do                                                       &
+!$omp& private(e1x,htmikj,i,j,k)
+      DO J=MYJS_P3,MYJE_P3
+        DO K=KTS,KTE
+        DO I=MYIS_P2,MYIE_P2
+          DVOL(I,K,J)=DARE(I,J)*(DETA1(K)*PDTOP+DETA2(K)*PDSL(I,J))
+          HTMIKJ=HTM(I,K,J)
+!         Q  (I,K,J)=MAX(SCAL(I,K,J,L),EPSILSCALAR)*HTMIKJ
+          Q  (I,K,J)=SCAL(I,K,J,L)*HTMIKJ
+          Q1  (I,K,J)=Q  (I,K,J)
+        ENDDO
+        ENDDO
+!
+      ENDDO
+!-----------------------------------------------------------------------
+!$omp parallel do                                                       &
+!$omp& private(dza,dzb,fpq,i,j,jfp,jfq,k,pp,qp,ssa,ssb,spp,sqp,tta,ttb)
+      DO J=MYJS2_P1,MYJE2_P1
+      DO K=KTS,KTE
+      DO I=MYIS1_P1,MYIE1_P1
+!
+        TTA=(U(I,K,J-1)+U(I+IHW(J),K,J)+U(I+IHE(J),K,J)+U(I,K,J+1))     &
+     &      *EMH(I,J)*HBM2(I,J)
+        TTB=(V(I,K,J-1)+V(I+IHW(J),K,J)+V(I+IHE(J),K,J)+V(I,K,J+1))     &
+     &      *ENH*HBM2(I,J)
+!
+        SPP=-TTA-TTB
+        SQP= TTA-TTB
+!
+        IF(SPP<0.)THEN
+          JFP=-1
+        ELSE
+          JFP=1
+        ENDIF
+        IF(SQP<0.)THEN
+          JFQ=-1
+        ELSE
+          JFQ=1
+        ENDIF
+!
+        IFPA(I,K,J)=IHE(J)+I+( JFP-1)/2
+        IFQA(I,K,J)=IHE(J)+I+(-JFQ-1)/2
+!
+        JFPA(I,K,J)=J+JFP
+        JFQA(I,K,J)=J+JFQ
+!
+        IFPF(I,K,J)=IHE(J)+I+(-JFP-1)/2
+        IFQF(I,K,J)=IHE(J)+I+( JFQ-1)/2
+!         
+        JFPF(I,K,J)=J-JFP
+        JFQF(I,K,J)=J-JFQ
+!       
+!-----------------------------------------------------------------------
+        IF(.NOT.HYDRO)THEN ! z currently not available for hydro=.true.
+          DZA=(Z(IFPA(I,K,J),K,JFPA(I,K,J))-Z(I,K,J))*RDY
+          DZB=(Z(IFQA(I,K,J),K,JFQA(I,K,J))-Z(I,K,J))*RDY
+!
+          IF(ABS(DZA)>SLOPAC)THEN
+            SSA=DZA*SPP
+            IF(SSA>CRIT)THEN
+              SPP=0. !spp*.1
+            ENDIF
+          ENDIF
+!    
+          IF(ABS(DZB)>SLOPAC)THEN
+            SSB=DZB*SQP
+            IF(SSB>CRIT)THEN
+              SQP=0. !sqp*.1
+            ENDIF
+          ENDIF
+!       
+        ENDIF
+!-----------------------------------------------------------------------
+        SPP=SPP*HTM(IFPA(I,K,J),K,JFPA(I,K,J))
+        SQP=SQP*HTM(IFQA(I,K,J),K,JFQA(I,K,J))
+        FPQ=SPP*SQP*HTM(I,K,J-2)*HTM(I-1,K,J)                           &
+     &             *HTM(I+1,K,J)*HTM(I,K,J+2)*0.25
+        PP=ABS(SPP)
+        QP=ABS(SQP)
+!       
+        AFP(I,K,J)=(((FF4*PP+FF3)*PP+FF2)*PP+FF1)*PP
+        AFQ(I,K,J)=(((FF4*QP+FF3)*QP+FF2)*QP+FF1)*QP
+!       
+        Q1(I,K,J)=(Q  (IFPA(I,K,J),K,JFPA(I,K,J))-Q  (I,K,J))*PP        &
+     &           +(Q  (IFQA(I,K,J),K,JFQA(I,K,J))-Q  (I,K,J))*QP        &
+     &           +(Q  (I,K,J-2)+Q  (I,K,J+2)                            &
+     &            -Q  (I-1,K,J)-Q  (I+1,K,J))*FPQ                       &
+     &           +Q(I,K,J)
+!
+      ENDDO
+      ENDDO
+      ENDDO
+!
+!-----------------------------------------------------------------------
+!***  ANTI-FILTERING STEP
+!-----------------------------------------------------------------------
+!
+      DO K=KTS,KTE
+        XSUMS(1,K)=0.
+        XSUMS(2,K)=0.
+        XSUMS(3,K)=0.
+        XSUMS(4,K)=0.
+        XSUMS(5,K)=0.
+        XSUMS(6,K)=0.
+      ENDDO
+!-----------------------------------------------------------------------
+!
+!***  ANTI-FILTERING LIMITERS
+!
+!-----------------------------------------------------------------------
+#if defined(BIT_FOR_BIT) && defined(DM_PARALLEL)
+      DO N=1,6
+!
+!$omp parallel do                                                       &
+!$omp& private(i,j,k)
+        DO J=JMS,JME
+        DO K=KMS,KME
+        DO I=IMS,IME
+          XSUMS_L(I,K,J,N)=0.
+        ENDDO
+        ENDDO
+        ENDDO
+!
+!$omp parallel do                                                       &
+!$omp& private(i,j,k)
+        DO J=JDS,JDE
+        DO K=KDS,KDE
+        DO I=IDS,IDE
+          XSUMS_G(I,K,J,N)=0.
+        ENDDO
+        ENDDO
+        ENDDO
+!     
+      ENDDO
+!
+#endif
+!-----------------------------------------------------------------------
+      DO 150 J=MYJS2,MYJE2
+      DO 150 K=KTS,KTE
+      DO 150 I=MYIS1,MYIE1
+!       
+      DVOLP=DVOL(I,K,J)
+      Q1IJ =Q1(I,K,J)
+      W1IJ =W1(I,K,J)
+      E2IJ =E2(I,K,J)
+!     
+      HAFP=HTM(IFPF(I,K,J),K,JFPF(I,K,J))*AFP(I,K,J)
+      HAFQ=HTM(IFQF(I,K,J),K,JFQF(I,K,J))*AFQ(I,K,J)
+!
+      D2PQQ=(Q1(IFPA(I,K,J),K,JFPA(I,K,J))-Q1IJ                         &
+     &      -Q1IJ+Q1(IFPF(I,K,J),K,JFPF(I,K,J)))                        &
+     &      *HAFP                                                       &
+     &     +(Q1(IFQA(I,K,J),K,JFQA(I,K,J))-Q1IJ                         &
+     &      -Q1IJ+Q1(IFQF(I,K,J),K,JFQF(I,K,J)))                        &
+     &      *HAFQ                                                       
+!
+      QSTIJ=Q1IJ-D2PQQ
+!       
+      Q00=Q  (I          ,K          ,J)
+      QP0=Q  (IFPA(I,K,J),K,JFPA(I,K,J))
+      Q0Q=Q  (IFQA(I,K,J),K,JFQA(I,K,J))
+!       
+      QSTIJ=MAX(QSTIJ,MIN(Q00,QP0,Q0Q))
+      QSTIJ=MIN(QSTIJ,MAX(Q00,QP0,Q0Q))
+!
+      DQSTIJ=QSTIJ-Q(I,K,J)
+!       
+      DQST(I,K,J)=DQSTIJ
+!       
+      DQSTIJ=DQSTIJ*DVOLP
+!
+#if defined(BIT_FOR_BIT) && defined(DM_PARALLEL)
+      DO N=1,6
+        XSUMS_L(I,K,J,N)=0.
+      ENDDO
+!
+      IF(DQSTIJ>0.)THEN
+        XSUMS_L(I,K,J,1)=DQSTIJ
+      ELSE
+        XSUMS_L(I,K,J,2)=DQSTIJ
+      ENDIF
+!
+#else
+      IF(DQSTIJ>0.)THEN
+        XSUMS(1,K)=XSUMS(1,K)+DQSTIJ
+      ELSE
+        XSUMS(2,K)=XSUMS(2,K)+DQSTIJ
+      ENDIF
+!
+#endif
+!
+  150 CONTINUE
+!
+!-----------------------------------------------------------------------
+#if defined(BIT_FOR_BIT) && defined(DM_PARALLEL)
+      DO N=1,6
+        CALL WRF_PATCH_TO_GLOBAL_REAL( XSUMS_L(IMS,KMS,JMS,N)           &
+     &,                                XSUMS_G(1,1,1,N),DOMDESC         &
+     &,                               'xyz','xzy'                       &
+     &,                                IDS,IDE,KDS,KDE,JDS,JDE          &
+     &,                                IMS,IME,KMS,KME,JMS,JME          &
+     &,                                ITS,ITE,KTS,KTE,JTS,JTE )
+      ENDDO
+!
+      GSUMS=0.
+!
+      IF(WRF_DM_ON_MONITOR())THEN
+        DO N=1,6
+!$omp parallel do                                                       &
+!$omp& private(i,j,k)
+          DO J=JDS,JDE
+          DO K=KDS,KDE
+          DO I=IDS,IDE
+            GSUMS(N,K)=GSUMS(N,K)+XSUMS_G(I,K,J,N)
+          ENDDO
+          ENDDO
+          ENDDO
+        ENDDO
+      ENDIF
+      
+      CALL WRF_DM_BCAST_BYTES(GSUMS,2*RWORDSIZE*6*(KDE-KDS+1) )
+      
+#else
+!-----------------------------------------------------------------------
+!     
+!-----------------------------------------------------------------------
+!***  GLOBAL REDUCTION
+!-----------------------------------------------------------------------
+!     
+# ifdef DM_PARALLEL
+      CALL WRF_GET_DM_COMMUNICATOR(MPI_COMM_COMP)
+      CALL MPI_ALLREDUCE(XSUMS,GSUMS,6*(KTE-KTS+1)                      &
+     &                  ,MPI_DOUBLE_PRECISION,MPI_SUM                   &
+     &                  ,MPI_COMM_COMP,IRECV)
+# else
+      GSUMS=XSUMS
+# endif
+#endif  
+!    
+!-----------------------------------------------------------------------
+!***  END OF GLOBAL REDUCTION          
+!-----------------------------------------------------------------------
+!    
+!     if(mype==0)then
+!       if(ntsd==0)then
+!!        call int_get_fresh_handle(nunit)
+!!        close(nunit)
+!         nunit=56
+!         open(unit=nunit,file='gsums',form='unformatted',iostat=ier)
+!       endif
+!     endif
+      DO K=KTS,KTE
+!       if(mype==0)then
+!         write(nunit)(gsums(i,k),i=1,6)
+!       endif
+!
+!-----------------------------------------------------------------------
+        SUMPQ=GSUMS(1,K)
+        SUMNQ=GSUMS(2,K)
+!
+!-----------------------------------------------------------------------
+!***  FIRST MOMENT CONSERVING FACTOR
+!-----------------------------------------------------------------------
+!
+        IF(SUMPQ>1.)THEN
+          RFACQK=-SUMNQ/SUMPQ
+        ELSE
+          RFACQK=1.
+        ENDIF
+!
+        IF(RFACQK<CONSERVE_MIN.OR.RFACQK>CONSERVE_MAX)RFACQK=1.
+!
+        RFACQ(K)=RFACQK
+!
+      ENDDO
+!     if(mype==0.and.ntsd==181)close(nunit)
+!
+!-----------------------------------------------------------------------
+!***  IMPOSE CONSERVATION ON ANTI-FILTERING
+!-----------------------------------------------------------------------
+!$omp parallel do                                                       &
+!$omp& private(dqstij,i,j,k,rfacqk,rfqij)
+      DO J=MYJS2,MYJE2
+        DO K=KTS,KTE
+          RFACQK=RFACQ(K)
+          IF(RFACQK<1.)THEN
+            DO I=MYIS1,MYIE1
+              DQSTIJ=DQST(I,K,J)
+              RFQIJ=HBM2(I,J)*(RFACQK-1.)+1.
+              IF(DQSTIJ>=0.)DQSTIJ=DQSTIJ*RFQIJ
+              Q(I,K,J)=Q(I,K,J)+DQSTIJ
+            ENDDO
+          ELSE
+            DO I=MYIS1,MYIE1
+              DQSTIJ=DQST(I,K,J)
+              RFQIJ=HBM2(I,J)*(RFACQK-1.)+1.
+              IF(DQSTIJ<0.)DQSTIJ=DQSTIJ/RFQIJ
+              Q(I,K,J)=Q(I,K,J)+DQSTIJ
+            ENDDO
+          ENDIF
+        ENDDO
+      ENDDO
+!-----------------------------------------------------------------------
+!$omp parallel do                                                       &
+!$omp& private(i,j,k)
+      DO J=MYJS,MYJE
+      DO K=KTS,KTE
+      DO I=MYIS,MYIE
+!       SCAL(I,K,J,L)=MAX(Q (I,K,J),EPSILSCALAR)*HTM(I,K,J)
+        SCAL(I,K,J,L)=Q (I,K,J)*HTM(I,K,J)
+      ENDDO
+      ENDDO
+      ENDDO
+        
+      ENDDO   SCALAR_LOOP
+!-----------------------------------------------------------------------
+      END SUBROUTINE HAD2_SCAL
+!-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
       END MODULE MODULE_ADVECTION
 !-----------------------------------------------------------------------
+

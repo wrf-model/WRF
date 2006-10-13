@@ -14,7 +14,7 @@
       USE MODULE_DM
       USE MODULE_CONFIGURE
       USE MODULE_TILES
-      USE MODULE_STATE_DESCRIPTION,ONLY : P_QV,P_QC,P_QR,P_QI,P_QS,P_QG
+      USE MODULE_STATE_DESCRIPTION,ONLY : P_QV,P_QC,P_QR,P_QI,P_QS,P_QG,P_QNI
       USE MODULE_MODEL_CONSTANTS
       USE MODULE_RA_GFDLETA,ONLY : CAL_MON_DAY,ZENITH
       USE MODULE_RADIATION_DRIVER
@@ -36,8 +36,11 @@
      &                    ,IHRST,NPHS,GLAT,GLON                         &
      &                    ,NRADS,NRADL                                  &
      &                    ,DETA1,DETA2,AETA1,AETA2,ETA1,ETA2,PDTOP,PT   &
-     &                    ,PD,RES,PINT,T,Q,CWM,THS,ALBEDO,EPSR          &
+     &                    ,PD,RES,PINT,T,Q,MOIST,THS,ALBEDO,EPSR        &
      &                    ,F_ICE,F_RAIN                                 &
+#ifdef WRF_CHEM
+     &                    ,GD_CLOUD,GD_CLOUD2                           &
+#endif
      &                    ,SM,HBM2,LMH,CLDFRA,N_MOIST,RESTRT            &
      &                    ,RLWTT,RSWTT,RLWIN,RSWIN,RSWINC,RSWOUT        &
      &                    ,RLWTOA,RSWTOA,CZMEAN                         &
@@ -46,6 +49,13 @@
      &                    ,CUPPT,VEGFRC,SNOW,HTOP,HBOT                  &
      &                    ,Z,SICE,NUM_AEROSOLC,NUM_OZMIXM               &
      &                    ,GRID,CONFIG_FLAGS                            &
+     &                    ,RTHRATEN                                     &
+#ifdef WRF_CHEM
+     &                    ,PM2_5_DRY, PM2_5_WATER, PM2_5_DRY_EC         &
+     &                    ,TAUAER1, TAUAER2, TAUAER3, TAUAER4           &
+     &                    ,GAER1, GAER2, GAER3, GAER4                   &
+     &                    ,WAER1, WAER2, WAER3, WAER4                   &
+#endif
      &                    ,IDS,IDE,JDS,JDE,KDS,KDE                      &
      &                    ,IMS,IME,JMS,JME,KMS,KME                      &
      &                    ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -84,7 +94,8 @@
      &                     ,IMS,IME,JMS,JME,KMS,KME                     &
      &                     ,ITS,ITE,JTS,JTE,KTS,KTE                     &
      &                     ,IHRST,JULDAY,JULYR                          &
-     &                     ,N_MOIST,NPHS,NRADL,NRADS,NTSD,NUM_AEROSOLC,NUM_OZMIXM
+     &                     ,N_MOIST,NPHS,NRADL,NRADS,NTSD               &
+     &                     ,NUM_AEROSOLC,NUM_OZMIXM
 !
       INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: NCFRCV,NCFRST
 !
@@ -96,14 +107,21 @@
 !
       REAL,DIMENSION(KMS:KME),INTENT(IN) :: ETA1,ETA2
 !
-      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: ALBEDO,CUPPT        &
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: ALBEDO              &
      &                                             ,EPSR,GLAT,GLON      &
      &                                             ,HBM2                &
      &                                             ,PD,RES,SM           &
      &                                             ,SNOW,THS,VEGFRC,SICE
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: CUPPT            
+
 !
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: CWM,F_ICE   &
-     &                                                     ,F_RAIN,Q,T,Z
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: F_ICE       &
+     &                                                     ,F_RAIN      &
+     &                                                     ,Q,T,Z
+!
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) :: RTHRATEN
+!
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME,N_MOIST),INTENT(INOUT) :: MOIST
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: ACFRCV,ACFRST    &
      &                                                ,RLWIN,RLWTOA     &
@@ -115,11 +133,19 @@
      &                                                        ,RLWTT    &
      &                                                        ,RSWTT
 !
-      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: CFRACH,CFRACL      &
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: CFRACH,CFRACL      &
      &                                              ,CFRACM,CZMEAN      &
      &                                              ,SIGT4
+#ifdef WRF_CHEM
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME ),INTENT(IN) ::            &
+     &                              GAER1,GAER2,GAER3,GAER4,            &
+     &                              GD_CLOUD,GD_CLOUD2,                 &
+     &                              PM2_5_DRY,PM2_5_WATER,PM2_5_DRY_EC, &
+     &                              TAUAER1,TAUAER2,TAUAER3,TAUAER4,    &
+     &                              WAER1,WAER2,WAER3,WAER4
+#endif
 !
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(OUT) :: CLDFRA
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) :: CLDFRA
 !
       LOGICAL,INTENT(IN) :: RESTRT
 !
@@ -149,13 +175,15 @@
      &                                  ,HBOTR,HTOPR,CUPPTR
 !
 !
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: PM2_5_DRY,PM2_5_WATER  &
-     &                                          ,DZ,P8W,P_PHY,PI_PHY    &
-     &                                          ,RR,T8W,THRATEN         &
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: DZ,P8W,P_PHY,PI_PHY    &
+     &                                          ,RR,T8W                 &
      &                                          ,THRATENLW,THRATENSW    &
      &                                          ,TH_PHY,T_PHY,CLFR
 !
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME,N_MOIST) :: WATER
+!
+!***  Different way to include cloud effects in radiation.
+!
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: QC1R,QI1R
 !
       LOGICAL :: WARM_RAIN
 !
@@ -171,20 +199,9 @@
 !-----------------------------------------------------------------------
       CAPA=R_D/CP
 !-----------------------------------------------------------------------
-!$omp parallel do                                                       &
-!$omp& private(i,j,k)
-      DO J=MYJS,MYJE
-      DO K=KTS,KTE
-      DO I=MYIS,MYIE
-        WATER(I,K,J,P_QI)=0.
-        WATER(I,K,J,P_QG)=0.
-      ENDDO
-      ENDDO
-      ENDDO
-!-----------------------------------------------------------------------
 !
 !$omp parallel do                                                       &
-!$omp& private(dpl,fice,frain,i,j,k,pdsl,plyr,qi,ql,qr,qw,tl,wc)
+!$omp& private(dpl,fice,frain,i,j,k,pdsl,plyr,ql,tl)
       DO J=MYJS2,MYJE2
       DO I=MYIS1,MYIE1
 !
@@ -211,7 +228,6 @@
 !
           RR(I,K,J)=PLYR/(R_D*TL(K)*(1.+P608*QL(K)))
           T_PHY(I,K,J)=TL(K)
-          WATER(I,K,J,P_QV)=QL(K)/(1.-QL(K))
           TH_PHY(I,K,J)=TL(K)*(1.E5/PLYR)**CAPA
           P8W(I,K+1,J)=ETA1(K+1)*PDTOP+ETA2(K+1)*PDSL+PT
           P_PHY(I,K,J)=PLYR
@@ -222,48 +238,12 @@
 !!!  &                 *ALOG(P8W(I,KFLIP,J)/P8W(I,KFLIP+1,J))/G         &
 !!!  &                 *ALOG(PINT(I,K+1,J)/PINT(I,K,J))/G               &
 !
-          THRATEN(I,K,J)=0.
+          RTHRATEN(I,K,J)=0.
           THRATENLW(I,K,J)=0.
           THRATENSW(I,K,J)=0.
-          PM2_5_DRY(I,K,J)=0.
-          PM2_5_WATER(I,K,J)=0.
-!
-!-----------------------------------------------------------------------
-!***  DECOMPOSE CLOUDS TO CLOUD LIQUID, RAIN, AND CLOUD ICE + SNOW.
-!-----------------------------------------------------------------------
-! THIS CODE WILL NOT BE NEEDED IN THE FUTURE SINCE THE ETAMPNEW SCHEME NOW FILLS
-! THE MOIST ARRAY WITH DECOMPOSED SPECIES, BUT MOIST IS NOT YET PASSED THROUGH
-! THE NMM DRIVERS (JD 060328) AND THE LOCAL WATER ARRAY IS USED
-!
-          WC=CWM(I,K,J)
-          QI=0.
-          QR=0.
-          QW=0.
-          FICE=F_ICE(I,K,J)
-          FRAIN=F_RAIN(I,K,J)
-!
-          IF(FICE>=1.)THEN
-            QI=WC
-          ELSEIF(FICE<=0.)THEN
-            QW=WC
-          ELSE
-            QI=FICE*WC
-            QW=WC-QI
-          ENDIF
-!
-          IF(QW>0..AND.FRAIN>0.)THEN
-            IF(FRAIN.GE.1.)THEN
-              QR=QW
-              QW=0.
-            ELSE
-              QR=FRAIN*QW
-              QW=QW-QR
-            ENDIF
-          ENDIF
-!
-          WATER(I,K,J,P_QC)=QW
-          WATER(I,K,J,P_QR)=QR
-          WATER(I,K,J,P_QS)=QI
+!         PM2_5_DRY(I,K,J)=0.
+!         PM2_5_WATER(I,K,J)=0.
+
         ENDDO
 !
         DO K=KTS+1,KTE
@@ -284,6 +264,23 @@
 !
 !-----------------------------------------------------------------------
 !
+      DO J=JMS,JME
+      DO K=KMS,KME
+      DO I=IMS,IME
+        QC1R(I,K,J)=0.
+        QI1R(I,K,J)=0.
+      ENDDO
+      ENDDO
+      ENDDO
+!
+      DO J=MYJS2,MYJE2
+        DO K=KTS,KTE
+          DO I=MYIS1,MYIE1
+            QC1R(I,K,J)=MOIST(I,K,J,P_QC)
+            QI1R(I,K,J)=MOIST(I,K,J,P_QI)
+          ENDDO
+        ENDDO
+      ENDDO
       DO J=JMS,JME
         DO K=KMS,KME
         DO I=IMS,IME
@@ -319,9 +316,17 @@
      &                 ,J_START=GRID%J_START,J_END=GRID%J_END           &
      &                 ,KTS=KTS,KTE=KTE,NUM_TILES=GRID%NUM_TILES        &
      &                 ,ITIMESTEP=NTSD,DT=DT                            &
-     &                 ,PM2_5_DRY=PM2_5_DRY,PM2_5_WATER=PM2_5_WATER     &
+     &                 ,cu_rad_feedback=config_flags%cu_rad_feedback    &
+#ifdef WRF_CHEM
+     &        ,PM2_5_DRY=pm2_5_dry, PM2_5_WATER=pm2_5_water               &
+     &        ,PM2_5_DRY_EC=pm2_5_dry_ec                                  &
+     &        ,TAUAER300=tauaer1, TAUAER400=tauaer2, TAUAER600=tauaer3, TAUAER999=tauaer4 & ! jcb
+     &        ,GAER300=gaer1, GAER400=gaer2, GAER600=gaer3, GAER999=gaer4 & ! jcb
+     &        ,WAER300=waer1, WAER400=waer2, WAER600=waer3, WAER999=waer4 & ! jcb
+     &        ,qc_adjust=GD_CLOUD,qi_adjust=GD_CLOUD2                   &
+#endif
      &                 ,RTHRATENLW=THRATENLW,RTHRATENSW=THRATENSW       &
-     &                 ,RTHRATEN=THRATEN                                &
+     &                 ,RTHRATEN=RTHRATEN                               &
      &                 ,GLW=TOTLWDN,GSW=SWNETDN,SWDOWN=TOTSWDN          &
      &                 ,XLAT=XLAT,XLONG=XLON,ALBEDO=ALBEDO,EMISS=EPSR   &
      &                 ,XICE=SICE,XLAND=XLAND,Z=Z,TSK=TSFC              &
@@ -349,12 +354,13 @@
      &                 ,ACFRST=ACFRST,NCFRST=NCFRST                     &
      &                 ,ACFRCV=ACFRCV,NCFRCV=NCFRCV                     &
      &                 ,F_ICE_PHY=F_ICE,F_RAIN_PHY=F_RAIN               &
-     &                 ,QV=WATER(IMS,KMS,JMS,P_QV),F_QV=F_QV            &
-     &                 ,QC=WATER(IMS,KMS,JMS,P_QC),F_QC=F_QC            &
-     &                 ,QR=WATER(IMS,KMS,JMS,P_QR),F_QR=F_QR            &
-     &                 ,QI=WATER(IMS,KMS,JMS,P_QI),F_QI=F_QI            &
-     &                 ,QS=WATER(IMS,KMS,JMS,P_QS),F_QS=F_QS            &
-     &                 ,QG=WATER(IMS,KMS,JMS,P_QG),F_QG=F_QG          )
+     &                 ,QV=MOIST(IMS,KMS,JMS,P_QV),F_QV=F_QV            &
+     &                 ,QC=MOIST(IMS,KMS,JMS,P_QC),F_QC=F_QC                               &
+     &                 ,QR=MOIST(IMS,KMS,JMS,P_QR),F_QR=F_QR            &
+     &                 ,QI=MOIST(IMS,KMS,JMS,P_QI),F_QI=F_QI                               &
+     &                 ,QS=MOIST(IMS,KMS,JMS,P_QS),F_QS=F_QS            &
+     &                 ,QG=MOIST(IMS,KMS,JMS,P_QG),F_QG=F_QG          )
+
 !
 !-----------------------------------------------------------------------
 !
@@ -517,19 +523,22 @@
      &                ,PD,RES,PINT,T,Q,CWM,F_ICE,F_RAIN,SR              &
      &                ,Q2,U,V,THS,TSFC,SST,PREC,SNO,ZERO_3D             &
      &                ,FIS,Z0,Z0BASE,USTAR,PBLH,LPBL,EL_MYJ             &
+     &                ,MOIST,RMOL                                       &
      &                ,EXCH_H,AKHS,AKMS,AKHS_OUT,AKMS_OUT               &
-     &                ,THZ0,QZ0,UZ0,VZ0,QS                              &
+     &                ,THZ0,QZ0,UZ0,VZ0,QS,MAVAIL                       &
      &                ,STC,SMC,CMC,SMSTAV,SMSTOT,SSROFF,BGROFF          &
      &                ,IVGTYP,ISLTYP,VEGFRC,SHDMIN,SHDMAX,GRNFLX        &
      &                ,SFCEXC,ACSNOW,ACSNOM,SNOPCX,SICE,TG,SOILTB       &
      &                ,ALBASE,MXSNAL,ALBEDO,SH2O,SI,EPSR                &
      &                ,U10,V10,TH10,Q10,TSHLTR,QSHLTR,PSHLTR            &
+     &                ,T2,QSG,QVG,QCG,SOILT1,TSNAV,SMFR3D,KEEPFR3DFLAG  &
      &                ,TWBS,QWBS,SFCSHX,SFCLHX,SFCEVP                   &
      &                ,POTEVP,POTFLX,SUBSHX                             &
      &                ,APHTIM,ARDSW,ARDLW,ASRFC                         &
      &                ,RSWOUT,RSWTOA,RLWTOA                             &
      &                ,ASWIN,ASWOUT,ASWTOA,ALWIN,ALWOUT,ALWTOA          &
      &                ,UZ0H,VZ0H,DUDT,DVDT                              & 
+     &                ,RTHBLTEN,RQVBLTEN                                & 
      &                ,PCPFLG,DDATA                                     & ! PRECIP ASSIM
      &                ,GRID,CONFIG_FLAGS                                &
      &                ,IHE,IHW,IVE,IVW                                  &
@@ -596,16 +605,16 @@
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: CZEN,CZMEAN         &
      &                                             ,DX_ARRAY            &
-     &                                             ,EPSR,FIS,HBM2       &
+     &                                             ,FIS,HBM2            &
      &                                             ,PD,RES              &
      &                                             ,RLWIN,RLWTOA        &
      &                                             ,RSWIN,RSWOUT,RSWTOA &
      &                                             ,SHDMIN,SHDMAX       &
 !    &                                             ,SICE,SIGT4,SM,SR    & !Bandaid
-     &                                             ,SICE,SIGT4   ,SR    &
+     &                                             ,SICE,SIGT4          &
      &                                             ,SST,TG,VBM2,VEGFRC
 !
-      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: SM   !Bandaid
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: SM,EPSR,SR         !Bandaid
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: GRNFLX,QWBS,RADOT  &
                                                     ,SFCEXC,SMSTAV      &
@@ -614,15 +623,20 @@
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: ACSNOM,ACSNOW    &
      &                                                ,AKHS,AKMS        &
      &                                                ,ALBEDO           &
+     &                                                ,MAVAIL           &
      &                                                ,BGROFF,CMC       &
      &                                                ,PBLH,POTEVP      &
      &                                                ,POTFLX,PREC      &
-     &                                                ,QS,QZ0,SFCEVP    &
+     &                                                ,QCG,QS,QSG       &
+     &                                                ,QVG,QZ0          &
+     &                                                ,SFCEVP           &
      &                                                ,SFCLHX,SFCSHX    &
      &                                                ,SI,SMSTOT        &
      &                                                ,SNO,SNOPCX       &
+     &                                                ,SOILT1           &
      &                                                ,SSROFF,SUBSHX    &
-     &                                                ,THS,THZ0,TSFC    &
+     &                                                ,T2,THS,THZ0      &
+     &                                                ,TSFC,TSNAV       &
      &                                                ,USTAR,UZ0,UZ0H   &
      &                                                ,VZ0,VZ0H         &
      &                                                ,Z0,Z0BASE
@@ -643,6 +657,8 @@
      &                                                        ,F_RAIN   &
      &                                                        ,Q,Q2     &
      &                                                        ,T,U,V
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) :: RQVBLTEN,RTHBLTEn
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME,N_MOIST),INTENT(INOUT) :: MOIST
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: HTM,VTM
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: PINT
@@ -653,8 +669,9 @@
 !
       REAL,DIMENSION(NSOIL),INTENT(IN) :: DZSOIL,SLDPTH
 !
-      REAL,DIMENSION(IMS:IME,NSOIL,JMS:JME),INTENT(INOUT) :: SH2O,SMC   &
-     &                                                      ,STC
+      REAL,DIMENSION(IMS:IME,NSOIL,JMS:JME),INTENT(INOUT) :: KEEPFR3DFLAG &
+     &                                                      ,SH2O,SMC     &
+     &                                                      ,SMFR3D,STC
 !
       LOGICAL,INTENT(IN) :: RESTRT
 !
@@ -671,7 +688,7 @@
 !***  LOCAL VARIABLES
 !***
 !-----------------------------------------------------------------------
-      INTEGER :: I,IDUMMY,IEND,ISFFLX,ISTR,J,K,KOUNT_ALL,LENGTH_ROW     &
+      INTEGER :: I,I_M,IDUMMY,IEND,ISFFLX,ISTR,J,K,KOUNT_ALL,LENGTH_ROW &
      &          ,LLIJ,LLMH,LLYR,N,SST_UPDATE
 !
       INTEGER,DIMENSION(IMS:IME,JMS:JME) :: KPBL,LOWLYR
@@ -680,8 +697,8 @@
 !
       REAL :: ALTITUDE,CWML,DQDT,DTDT,DTPHS,DX,DZHALF,FACTR,FACTRL      &
      &       ,G_INV,PDSL,PLYR,PSFC,QI,QL,QOLD,QR,QW,RATIOMX,RDTPHS      &
-     &       ,ROG,RWMSK,SDEPTH,TL,TLMH,TLMH4,TNEW,TSFC2,U_FRAME,V_FRAME &
-     &       ,WMSK,XLVRW
+     &       ,ROG,RWMSK,SDEPTH,SNO_FACTR,TL,TLMH,TLMH4,TNEW,TSFC2       &
+     &       ,U_FRAME,V_FRAME,WMSK,XLVRW
 !
       REAL :: APES,CKLQ,FACTOR,FFS,PQ0X,Q2SAT,QFC1,QLOWX,RLIVWV         &
      &       ,THBOT
@@ -694,18 +711,17 @@
      &                                  ,RSW_DN_SFC                     &
      &                                  ,SFCEVPX,SFCZ,SNOW,SNOWC,SNOWH  &
      &                                  ,TH2X,THLOW,TLOW,VGFRCK         &
-     &                                  ,WSPD,XLAND,ZERO_2D
+     &                                  ,WSPD,XLAND,ZERO_2D,EMISS
 !
       REAL,DIMENSION(IMS:IME,KMS:KME-1,JMS:JME) :: EXNER
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: DZ,P8W                 &
      &                                          ,P_PHY,PI_PHY           &
      &                                          ,RQCBLTEN,RQIBLTEN      &
-     &                                          ,RQVBLTEN,RR,RTHBLTEN   &
+     &                                          ,RR   &
+!    &                                          ,RQVBLTEN,RR,RTHBLTEN   &
      &                                          ,T_PHY,TH_PHY,TKE       &
      &                                          ,U_PHY,V_PHY,Z
-!
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME,N_MOIST) :: WATER
 !
       REAL,DIMENSION(IMS:IME,NSOIL,JMS:JME) :: ZERO_SOIL
 !
@@ -737,6 +753,12 @@
       ENDDO
       ENDDO
 !
+      IF(MODEL_CONFIG_REC%SF_SURFACE_PHYSICS(GRID%ID)==99)THEN
+        SNO_FACTR=1.
+      ELSE
+        SNO_FACTR=0.001
+      ENDIF
+!
 !$omp parallel do                                                       &
 !$omp& private(i,j)
       DO J=MYJS,MYJE
@@ -744,8 +766,10 @@
         LOWLYR(I,J)=1
         VGFRCK(I,J)=100.*VEGFRC(I,J)
         SNOW(I,J)=SNO(I,J)
-        SNOWH(I,J)=SI(I,J)
+        SNOWH(I,J)=SI(I,J)*SNO_FACTR
         XLAND(I,J)=SM(I,J)+1.
+        T2(I,J)=TSFC(I,J)
+        EMISS(I,J)=EPSR(I,J)
       ENDDO
       ENDDO
 !
@@ -756,7 +780,6 @@
         DO I=MYIS,MYIE
           Z0BASE(I,J)=Z0(I,J)
           IF(SM(I,J)>0.5.AND.SICE(I,J)>0.5)THEN  !Bandaid
-            write(0,*)'mask mismatch at (',i,',',j,')  sice=',sice(i,j),' sm=',sm(i,j)
             SM(I,J)=0.        
           ENDIF              
         ENDDO
@@ -855,39 +878,6 @@
 !
           RR(I,K,J)=PLYR/(R_D*TL)
           T_PHY(I,K,J)=TL
-!
-!-----------------------------------------------------------------------
-!***  WATER VAPOR, CLOUD LIQUID AND ICE
-!-----------------------------------------------------------------------
-!
-          WATER(I,K,J,P_QV)=QL/(1.-QL) !Need to pass mixing ratio
-!
-          QW=0.
-          QI=0.
-          QR=0.
-!
-          IF(F_ICE(I,K,J)>=1.)THEN
-            QI=CWML
-          ELSEIF(F_ICE(I,K,J)<=0.)THEN
-            QW=CWML
-          ELSE
-            QI=F_ICE(I,K,J)*CWML
-            QW=CWML-QI
-          ENDIF
-!
-          IF(QW>0..AND.F_RAIN(I,K,J)>0.)THEN
-            IF(F_RAIN(I,K,J)>=1.)THEN
-              QR=QW
-              QW=0.
-            ELSE
-              QR=F_RAIN(I,K,J)*QW
-              QW=QW-QR
-            ENDIF
-          ENDIF 
-!
-          WATER(I,K,J,P_QC)=QW
-          WATER(I,K,J,P_QS)=QI
-          WATER(I,K,J,P_QR)=QR
 !
           EXNER(I,K,J)=(1.E5/PLYR)**CAPA
           PI_PHY(I,K,J)=1./EXNER(I,K,J)
@@ -989,31 +979,45 @@
 !
       CALL SET_TILES(GRID,IDS,IDE-1,JDS+1,JDE-1,ITS,ITE,JTS,JTE)
 !
+      DO J=JTS,JTS
+      DO I=ITS,ITE
+        IF(MODEL_CONFIG_REC%SF_SURFACE_PHYSICS(GRID%ID)==99)THEN
+          ONE(I,J)=1.
+        ELSE
+!tgs  -  MAVAIL should not be equal to 1. for other LSMs
+          ONE(I,J)=MAVAIL(I,J)
+        ENDIF 
+      ENDDO
+      ENDDO
+!
       CALL SURFACE_DRIVER(                                              &
      &           ACSNOM=ACSNOM,ACSNOW=ACSNOW,AKHS=AKHS,AKMS=AKMS        &
      &          ,ALBEDO=ALBEDO,BR=BR,CANWAT=CMC,CHKLOWQ=CHKLOWQ         &
-     &          ,DT=DT,DX=DX,DZ8W=DZ,DZS=SLDPTH,GLW=RLW_DN_SFC          &
+     &          ,DT=DT,DX=DX,DZ8W=DZ,DZS=DZSOIL,GLW=RLW_DN_SFC          &
+!tgs &          ,DT=DT,DX=DX,DZ8W=DZ,DZS=SLDPTH,GLW=RLW_DN_SFC          &
+!     &          ,GRDFLX=GRNFLX,GSW=RSW_NET_SFC,GZ1OZ0=GZ1OZ0,HFX=TWBS    &
      &          ,GRDFLX=GRNFLX,GSW=RSW_DN_SFC,GZ1OZ0=GZ1OZ0,HFX=TWBS    &
      &          ,HT=SFCZ,IFSNOW=IDUMMY,ISFFLX=ISFFLX,ISLTYP=ISLTYP      &
      &          ,ITIMESTEP=NTSD,IVGTYP=IVGTYP,LOWLYR=LOWLYR             &
-     &          ,MAVAIL=ONE,RMOL=RMOL,NUM_SOIL_LAYERS=NSOIL,P8W=P8W     &
+     &          ,MAVAIL=ONE,RMOL=RMOL,NUM_SOIL_LAYERS=NSOIL,P8W=P8W &
      &          ,PBLH=PBLH,PI_PHY=PI_PHY,PSHLTR=PSHLTR,PSIH=PSIH        &
      &          ,PSIM=PSIM,P_PHY=P_PHY,Q10=Q10,Q2=Q2X,QFX=QWBS,QSFC=QS  &
      &          ,QSHLTR=QSHLTR,QZ0=QZ0,RAINCV=RAIN                      &
      &          ,RHO=RR,SFCEVP=SFCEVPX,SFCEXC=SFCEXC,SFCRUNOFF=SSROFF   &
      &          ,SMOIS=SMC,SMSTAV=SMSTAV,SMSTOT=SMSTOT,SNOALB=MXSNAL    &
      &          ,SNOW=SNOW,SNOWC=SNOWC,SNOWH=SNOWH,STEPBL=NPHS          &
-     &          ,SST=sst            ,SST_UPDATE=sst_update              &
-     &          ,TH10=TH10,TH2=TH2X,THZ0=THZ0,TH_PHY=TH_PHY             &
+     &          ,SST=SST,SST_UPDATE=SST_UPDATE                          &
+     &          ,TH10=TH10,TH2=TH2X,T2=T2,THZ0=THZ0,TH_PHY=TH_PHY       &
      &          ,TMN=TG,TSHLTR=TSHLTR,TSK=TSFC,TSLB=STC,T_PHY=T_PHY     &
      &          ,U10=U10,UDRUNOFF=BGROFF,UST=USTAR,UZ0=UZ0H             &
      &          ,U_FRAME=U_FRAME,U_PHY=U_PHY,V10=V10,VEGFRA=VGFRCK      &
      &          ,VZ0=VZ0H,V_FRAME=V_FRAME,V_PHY=V_PHY                   &
      &          ,WARM_RAIN=WARM_RAIN,WSPD=WSPD,XICE=SICE                &
-     &          ,XLAND=XLAND,Z=Z,ZNT=Z0,ZS=DZSOIL,CT=CT,TKE_MYJ=TKE     &
+     &          ,XLAND=XLAND,Z=Z,ZNT=Z0,ZS=SLDPTH,CT=CT,TKE_MYJ=TKE     &
+!tgs ZS -levels     &          ,XLAND=XLAND,Z=Z,ZNT=Z0,ZS=DZSOIL,CT=CT,TKE_MYJ=TKE     &
      &          ,ALBBCK=ALBASE,LH=ELFLX,SH2O=SH2O,SHDMAX=SHDMAX         &
      &          ,SHDMIN=SHDMIN,Z0=Z0BASE,FLQC=FLQC,FLHC=FLHC            &
-     &          ,PSFC=PSFC_OUT                                          &
+     &          ,PSFC=PSFC_OUT,EMISS=EPSR                               &
      &          ,SF_SFCLAY_PHYSICS=CONFIG_FLAGS%SF_SFCLAY_PHYSICS       &
      &          ,SF_SURFACE_PHYSICS=CONFIG_FLAGS%SF_SURFACE_PHYSICS     &
      &          ,RA_LW_PHYSICS=CONFIG_FLAGS%RA_LW_PHYSICS               &
@@ -1023,13 +1027,16 @@
      &          ,J_START=GRID%J_START,J_END=GRID%J_END                  &
      &          ,KTS=KTS,KTE=KTE,NUM_TILES=GRID%NUM_TILES               &
            ! Optional args
-     &          ,QV_CURR=WATER(IMS,KMS,JMS,P_QV),F_QV=F_QV              &
-     &          ,QC_CURR=WATER(IMS,KMS,JMS,P_QC),F_QC=F_QC              &
-     &          ,QR_CURR=WATER(IMS,KMS,JMS,P_QR),F_QR=F_QR              &
-     &          ,QI_CURR=WATER(IMS,KMS,JMS,P_QI),F_QI=F_QI              &
-     &          ,QS_CURR=WATER(IMS,KMS,JMS,P_QS),F_QS=F_QS              &
-     &          ,QG_CURR=WATER(IMS,KMS,JMS,P_QG),F_QG=F_QG              &
+     &          ,QV_CURR=MOIST(IMS,KMS,JMS,P_QV),F_QV=F_QV              &
+     &          ,QC_CURR=MOIST(IMS,KMS,JMS,P_QC),F_QC=F_QC              &
+     &          ,QR_CURR=MOIST(IMS,KMS,JMS,P_QR),F_QR=F_QR              &
+     &          ,QI_CURR=MOIST(IMS,KMS,JMS,P_QI),F_QI=F_QI              &
+     &          ,QS_CURR=MOIST(IMS,KMS,JMS,P_QS),F_QS=F_QS              & 
+     &          ,QG_CURR=MOIST(IMS,KMS,JMS,P_QG),F_QG=F_QG              &
      &          ,RAINBL=RAINBL                                          &
+! for RUCLSM
+     &          ,QSG=QSG, QVG=QVG, QCG=QCG, SOILT1=SOILT1               &
+     &          ,TSNAV=TSNAV, SMFR3D=SMFR3D, KEEPFR3DFLAG=KEEPFR3DFLAG  &
      &          ,POTEVP=POTEVP,SNOPCX=SNOPCX,SOILTB=SOILTB,SR=SR)
 !
 !-----------------------------------------------------------------------
@@ -1091,12 +1098,12 @@
      &               ,J_START=GRID%J_START,J_END=GRID%J_END           &
      &               ,KTS=KTS,KTE=KTE,NUM_TILES=GRID%NUM_TILES        &
                 ! Optional args
-     &               ,QV_CURR=WATER(IMS,KMS,JMS,P_QV) , F_QV=F_QV     &
-     &               ,QC_CURR=WATER(IMS,KMS,JMS,P_QC) , F_QC=F_QC     &
-     &               ,QR_CURR=WATER(IMS,KMS,JMS,P_QR) , F_QR=F_QR     &
-     &               ,QI_CURR=WATER(IMS,KMS,JMS,P_QI) , F_QI=F_QI     &
-     &               ,QS_CURR=WATER(IMS,KMS,JMS,P_QS) , F_QS=F_QS     &
-     &               ,QG_CURR=WATER(IMS,KMS,JMS,P_QG) , F_QG=F_QG   )
+     &               ,QV_CURR=moist(IMS,KMS,JMS,P_QV) , F_QV=F_QV     &
+     &               ,QC_CURR=moist(IMS,KMS,JMS,P_QC) , F_QC=F_QC     &
+     &               ,QR_CURR=moist(IMS,KMS,JMS,P_QR) , F_QR=F_QR     &
+     &               ,QI_CURR=moist(IMS,KMS,JMS,P_QI) , F_QI=F_QI     &
+     &               ,QS_CURR=moist(IMS,KMS,JMS,P_QS) , F_QS=F_QS     &
+     &               ,QG_CURR=moist(IMS,KMS,JMS,P_QG) , F_QG=F_QG   )
 !
 !***  NOTE THAT THE EXCHANGE COEFFICIENTS FOR HEAT EXCH_H COMING OUT OF
 !***  PBL_DRIVER ARE DEFINED AT THE TOPS OF THE LAYERS KTS TO KTE-1
@@ -1203,12 +1210,18 @@
         ENDDO
       ENDIF
 !
+      IF(MODEL_CONFIG_REC%SF_SURFACE_PHYSICS(GRID%ID)==99)THEN
+        SNO_FACTR=1.
+      ELSE
+        SNO_FACTR=1000.
+      ENDIF
+!
 !$omp parallel do                                                       &
 !$omp& private(i,j)
       DO J=MYJS2,MYJE2
       DO I=MYIS1,MYIE1
         SNO(I,J)=SNOW(I,J)
-        SI(I,J)=SNOWH(I,J)
+        SI(I,J)=SNOWH(I,J)*SNO_FACTR
         LPBL(I,J)=KTE-KPBL(I,J)+1
       ENDDO
       ENDDO
@@ -1242,7 +1255,7 @@
       E_BDY=(ITE>=IDE)
 !
 !$omp parallel do                                                       &
-!$omp& private(dqdt,dtdt,i,iend,j,k,qi,qold,qr,qw,ratiomx)
+!$omp& private(dqdt,dtdt,i,iend,j,k,qi,qold,qr,qw,ratiomx,i_m)
       DO J=MYJS2,MYJE2
         IEND=MYIE1
         IF(E_BDY.AND.MOD(J,2)==0)IEND=IEND-1
@@ -1256,21 +1269,42 @@
           RATIOMX=QOLD/(1.-QOLD)+DQDT*DTPHS
           Q(I,K,J)=RATIOMX/(1.+RATIOMX)
 !         Q(I,K,J)=MAX(Q(I,K,J),EPSQ)
-          QW=WATER(I,K,J,P_QC)+RQCBLTEN(I,K,J)*DTPHS  
-          QI=WATER(I,K,J,P_QS)+RQIBLTEN(I,K,J)*DTPHS  
-          QR=WATER(I,K,J,P_QR)  
-          CWM(I,K,J)=QW+QI+QR  
+          QW=max(0.,MOIST(I,K,J,P_QC)+RQCBLTEN(I,K,J)*DTPHS )
+          QI=max(0.,MOIST(I,K,J,P_QS)+RQIBLTEN(I,K,J)*DTPHS )
+          QR=max(0.,MOIST(I,K,J,P_QR) )
+!          CWM(I,K,J)=QW+QI+QR
+          CWM(I,K,J)=0. 
 !
-          IF(QI<=EPSQ)THEN  
-            F_ICE(I,K,J)=0.  
-          ELSE  
-            F_ICE(I,K,J)=MAX(0.,MIN(1.,QI/CWM(I,K,J)))  
-          ENDIF 
-          IF(QR<=EPSQ)THEN  
-            F_RAIN(I,K,J)=0.  
-          ELSE  
-            F_RAIN(I,K,J)=QR/(QW+QR)  
-          ENDIF  
+          DO I_M=1,N_MOIST
+             IF(I_M/=P_QV)THEN
+               CWM(I,K,J)=CWM(I,K,J)+MOIST(I,K,J,I_M)
+             ENDIF
+             IF(I_M==P_QV)THEN
+               MOIST(I,K,J,P_QV)=MAX(EPSQ,(MOIST(I,K,J,P_QV) + RQVBLTEN(I,K,J)*DTPHS) )
+             ELSEIF (I_M==P_QC)THEN
+                CWM(I,K,J)=MAX(0., (CWM(I,K,J) + RQCBLTEN(I,K,J)*DTPHS) )
+             ELSEIF(I_M==P_QI)THEN
+                CWM(I,K,J)=MAX(0., (CWM(I,K,J) + RQIBLTEN(I,K,J)*DTPHS) )
+             ENDIF
+          ENDDO
+!
+          MOIST(I,K,J,P_QC)=QW
+          MOIST(I,K,J,P_QS)=QI
+          MOIST(I,K,J,P_QR)=QR
+!
+          IF(CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW)THEN
+            IF(QI<=EPSQ)THEN  
+              F_ICE(I,K,J)=0.
+            ELSE
+              F_ICE(I,K,J)=MAX(0.,MIN(1.,QI/CWM(I,K,J)))
+            ENDIF
+!
+            IF(QR<=EPSQ)THEN
+              F_RAIN(I,K,J)=0.
+            ELSE
+              F_RAIN(I,K,J)=QR/(QW+QR)
+            ENDIF
+          ENDIF
 !
           Q2(I,K,J)=2.*TKE(I,K,J)
         ENDDO
@@ -1438,15 +1472,26 @@
 !***********************************************************************
       SUBROUTINE CUCNVC(NTSD,DT,NCNVC,NRADS,NRADL                       &
      &                 ,GPS,RESTRT,HYDRO                                &
-!    &                 ,CLDEFI,LMH,WATER,N_MOIST,ENSDIM                 &
      &                 ,CLDEFI,LMH,N_MOIST,ENSDIM                       &
+     &                 ,MOIST                                           &
      &                 ,DETA1,DETA2,AETA1,AETA2,ETA1,ETA2               &
      &                 ,F_ICE,F_RAIN                                    &
+!***  Changes for other cu-schemes, most for gd scheme
+     &                 ,APR_GR,APR_W,APR_MC,TTEN,QTEN                   &
+     &                 ,APR_ST,APR_AS,APR_CAPMA                         &
+     &                 ,APR_CAPME          ,APR_CAPMI                   &
+     &                 ,MASS_FLUX         ,XF_ENS                       &
+     &                 ,PR_ENS,GSW                                      &
+#ifdef WRF_CHEM
+     &                 ,GD_CLOUD,GD_CLOUD2                              &
+#endif
+!
      &                 ,PDTOP,PT,PD,RES,PINT,T,Q,CWM,TCUCN              &
      &                 ,OMGALF,U,V,VTM,WINT,Z,FIS,W0AVG                 &
      &                 ,PREC,ACPREC,CUPREC,CUPPT,CPRATE                 &
      &                 ,SM,HBM2,LPBL,CNVBOT,CNVTOP                      &
      &                 ,HTOP,HBOT,HTOPD,HBOTD,HTOPS,HBOTS               &
+     &                 ,RTHBLTEN,RQVBLTEN,RTHRATEN                      & 
      &                 ,AVCNVC,ACUTIM,ZERO_3D,IHE,IHW                   &
      &                 ,GRID,CONFIG_FLAGS                               &
      &                 ,IDS,IDE,JDS,JDE,KDS,KDE                         &
@@ -1502,10 +1547,17 @@
      &                                                ,HBOT,HTOP        &
      &                                                ,HBOTD,HTOPD      &
      &                                                ,HBOTS,HTOPS      &
-     &                                                ,PREC,CPRATE
+     &                 ,APR_GR,APR_W,APR_MC                             &
+     &                 ,APR_ST,APR_AS,APR_CAPMA                         &
+     &                 ,APR_CAPME          ,APR_CAPMI                   &
+     &                 ,MASS_FLUX                                       &
+     &                 ,GSW  ,PREC,CPRATE
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: F_ICE       &
      &                                                     ,F_RAIN
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) :: TTEN     &
+     &                                                     ,QTEN        &
+     &                                       ,RTHBLTEN,RQVBLTEN,RTHRATEN
 
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) :: Q,T      &
@@ -1519,9 +1571,16 @@
      &                                                     ,VTM,Z
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) :: ZERO_3D
-!
-!     REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME,N_MOIST)                   &
-!    &                                           ,INTENT(INOUT) :: WATER
+      REAL,DIMENSION(IMS:IME,jMS:jME,1:ENSDIM),INTENT(INOUT) ::          &
+     &                         XF_ENS                                    &
+     &                        ,PR_ENS
+      
+!    
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME,N_MOIST)                   &
+     &                                           ,INTENT(INOUT) :: moist
+#ifdef WRF_CHEM
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) :: GD_CLOUD,GD_CLOUD2
+#endif
 !
       LOGICAL,INTENT(IN) :: HYDRO,RESTRT
 !
@@ -1555,8 +1614,6 @@
      &                                          ,RQVCUTEN,RR,RTHCUTEN   &
      &                                          ,T_PHY,TH_PHY           &
      &                                          ,U_PHY,V_PHY
-!
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME,N_MOIST) :: WATER
 !
       REAL,DIMENSION(IMS:IME,JMS:JME)        :: ZERO_2D
       REAL,DIMENSION(IMS:IME,JMS:JME,ENSDIM) :: ZERO_GD
@@ -1626,7 +1683,7 @@
       G_INV=1./G
 !
 !$omp parallel do                                                       &
-!$omp& private(dpl,fice,frain,i,j,k,pdsl,plyr,qi,ql,qr,qw,tl,wc)
+!$omp& private(dpl,fice,frain,i,j,k,pdsl,plyr,ql,tl)
       DO J=MYJS2,MYJE2
       DO I=MYIS1,MYIE1
 !
@@ -1655,41 +1712,6 @@
 !
           RR(I,K,J)=PLYR/(R_D*TL(K)*(P608*QL(K)+1.))
           T_PHY(I,K,J)=TL(K)
-
-          WATER(I,K,J,P_QV)=QL(K)/(1.-QL(K))
-
-!
-!***  DECOMPOSE CLOUDS TO CLOUD LIQUID, RAIN, AND CLOUD ICE + SNOW.
-!
-          WC=CWM(I,K,J)
-          QI=0.
-          QR=0.
-          QW=0.
-          FICE=F_ICE(I,K,J)
-          FRAIN=F_RAIN(I,K,J)
-!
-          IF(FICE>=1.)THEN
-            QI=WC
-          ELSEIF(FICE<=0.)THEN
-            QW=WC
-          ELSE
-            QI=FICE*WC
-            QW=WC-QI
-          ENDIF
-!
-          IF(QW>0..AND.FRAIN>0.)THEN
-            IF(FRAIN>=1.)THEN
-              QR=QW
-              QW=0.
-            ELSE
-              QR=FRAIN*QW
-              QW=QW-QR
-            ENDIF
-          ENDIF
-!
-          WATER(I,K,J,P_QC)=QW
-          WATER(I,K,J,P_QR)=QR
-          WATER(I,K,J,P_QS)=QI
 
           TH_PHY(I,K,J)=TL(K)*(1.E5/PLYR)**CAPA
 !!!       P8W(I,KFLIP,J)=PINT(I,K+1,J)
@@ -1820,25 +1842,36 @@
                   ! Others
      &                 ,ITIMESTEP=NTSD,DT=DT,DX=GPS                     &
      &                 ,RAINC=RAINC,RAINCV=RAINCV,NCA=NCA               &
-     &                 ,DZ8W=DZ,P8W=P8W                                 &
+     &                 ,DZ8W=DZ,P8W=P8W,FORCET=TTEN,FORCEQ=QTEN         &
      &                 ,CLDEFI=cldefi,LOWLYR=lowlyr,XLAND=xland         &
      &                 ,CU_ACT_FLAG=cu_act_flag,WARM_RAIN=warm_rain     &
-     &                 ,STEPCU=NSTEP_CNV                                &
+     &                 ,STEPCU=NSTEP_CNV,GSW=gsw                        &
      &                 ,HTOP=CUTOP,HBOT=CUBOT,KPBL=KPBL,HT=SFCZ         &   
-     &                 ,ENSDIM=ENSDIM,maxiens=1,maxens=1                &
-     &                 ,maxens2=1,maxens3=1                             &
+     &                 ,APR_GR=apr_gr,APR_W=apr_w,APR_MC=apr_mc         &
+     &                 ,APR_ST=apr_st,APR_AS=apr_as,APR_CAPMA=apr_capma &
+     &                 ,APR_CAPME=apr_capme,APR_CAPMI=apr_capmi         &
+     &                 ,MASS_FLUX=mass_flux,XF_ENS=xf_ens               &
+     &                 ,PR_ENS=pr_ens                                   &
+#ifdef WRF_CHEM
+     &                 ,gd_cloud=gd_cloud,gd_cloud2=gd_cloud2           &
+#endif
+
+     &                 ,ENSDIM=ENSDIM,MAXIENS=1,MAXENS=3                &
+     &                 ,MAXENS2=3,MAXENS3=16                            &
      &                 ,RTHCUTEN=RTHCUTEN ,RQVCUTEN=RQVCUTEN            &
      &                 ,RQCCUTEN=RQCCUTEN ,RQRCUTEN=RQRCUTEN            &
      &                 ,RQICUTEN=RQICUTEN ,RQSCUTEN=RQSCUTEN            &
+     &                 ,RTHBLTEN=RTHBLTEN,RQVBLTEN=RQVBLTEN             & 
+     &                 ,RTHRATEN=RTHRATEN                               & 
                   ! Selection argument
      &                 ,CU_PHYSICS=CONFIG_FLAGS%CU_PHYSICS              &
                   ! Moisture tracer arguments
-     &                 ,QV_CURR=WATER(IMS,KMS,JMS,P_QV),F_QV=F_QV       &
-     &                 ,QC_CURR=WATER(IMS,KMS,JMS,P_QC),F_QC=F_QC       &
-     &                 ,QR_CURR=WATER(IMS,KMS,JMS,P_QR),F_QR=F_QR       &
-     &                 ,QI_CURR=WATER(IMS,KMS,JMS,P_QI),F_QI=F_QI       &
-     &                 ,QS_CURR=WATER(IMS,KMS,JMS,P_QS),F_QS=F_QS       &
-     &                 ,QG_CURR=WATER(IMS,KMS,JMS,P_QG),F_QG=F_QG      )
+     &                 ,QV_CURR=MOIST(IMS,KMS,JMS,P_QV),F_QV=F_QV       &
+     &                 ,QC_CURR=MOIST(IMS,KMS,JMS,P_QC),F_QC=F_QC       &
+     &                 ,QR_CURR=MOIST(IMS,KMS,JMS,P_QR),F_QR=F_QR       &
+     &                 ,QI_CURR=MOIST(IMS,KMS,JMS,P_QI),F_QI=F_QI       &
+     &                 ,QS_CURR=MOIST(IMS,KMS,JMS,P_QS),F_QS=F_QS       &
+     &                 ,QG_CURR=MOIST(IMS,KMS,JMS,P_QG),F_QG=F_QG      )
 !
 !-----------------------------------------------------------------------
 !
@@ -1886,18 +1919,27 @@
 !***  RQVCUTEN IN BMJDRV IS THE MIXING RATIO TENDENCY,
 !***  SO RETRIEVE DQDT BY CONVERTING TO SPECIFIC HUMIDITY.
 !
-          DQDT=RQVCUTEN(I,K,J)/(1.+WATER(I,K,J,P_QV))**2
+          DQDT=RQVCUTEN(I,K,J)/(1.+MOIST(I,K,J,P_QV))**2
 !
 !***  RTHCUTEN IN BMJDRV IS DTDT OVER PI.
 !
           DTDT=RTHCUTEN(I,K,J)*PI_PHY(I,K,J)
           T(I,K,J)=T(I,K,J)+DTDT*DTCNVC
           Q(I,K,J)=Q(I,K,J)+DQDT*DTCNVC
+          MOIST(I,K,J,P_QV)=Q(I,K,J)/(1.-Q(I,K,J))       !Convert to mixing ratio
+!tgs - added next two lines
+          cps_select: SELECT CASE(config_flags%cu_physics)
+!
+          CASE (KFSCHEME,KFETASCHEME,GDSCHEME,SASSCHEME)
+             MOIST(I,K,J,P_QS)=MAX(0.,MOIST(I,K,J,P_QS)+RQICUTEN(I,K,J)*DTCNVC)
+             MOIST(I,K,J,P_QC)=MAX(0.,MOIST(I,K,J,P_QC)+RQCCUTEN(I,K,J)*DTCNVC)
+          END SELECT cps_select
+!
           TCUCN(I,K,J)=TCUCN(I,K,J)+DTDT
 !
           TCHANGE=DTDT*DTCNVC
 	  IF(ABS(TCHANGE)>DTEMP_CHECK)THEN
-            WRITE(0,*)'BIG T CHANGE BY CONVECTION:',TCHANGE
+            WRITE(0,*)'BIG T CHANGE BY CONVECTION:  I,J,K,NTSD',TCHANGE,I,J,K,NTSD
 	  ENDIF
 !
         ENDDO
@@ -1959,6 +2001,7 @@
      &                   ,DX,DY,LMH,SM,HBM2,FIS                         &
      &                   ,DETA1,DETA2,AETA1,AETA2,ETA1,ETA2             &
      &                   ,PDTOP,PT,PD,RES,PINT,T,Q,CWM,TRAIN            &
+     &                   ,MOIST,SCALAR,N_SCALAR                         &
      &                   ,F_ICE,F_RAIN,F_RIMEF,SR                       &
      &                   ,PREC,ACPREC,AVRAIN,ZERO_3D                    &
      &                   ,MP_RESTART_STATE                              &
@@ -1996,7 +2039,7 @@
       INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                     &
      &                     ,IMS,IME,JMS,JME,KMS,KME                     &
      &                     ,ITS,ITE,JTS,JTE,KTS,KTE                     &
-     &                     ,N_MOIST,NPHS,NTSD
+     &                     ,N_MOIST,N_SCALAR,NPHS,NTSD
 !
       INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: LMH
 !
@@ -2020,8 +2063,13 @@
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) :: F_ICE    &
      &                                                        ,F_RAIN   &
      &                                                        ,F_RIMEF
-!  state var for etampnew microphysics (JM, 2005 05 02)
-      REAL,DIMENSION(:),INTENT(INOUT) ::                MP_RESTART_STATE &
+
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME,n_moist),INTENT(INOUT) :: MOIST
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME,n_scalar),INTENT(INOUT) :: SCALAR
+!
+!***  State var for etampnew microphysics (JM, 2005 05 02)
+!
+      REAL,DIMENSION(:),INTENT(INOUT) ::               MP_RESTART_STATE &
      &                                                     ,TBPVS_STATE &
      &                                                    ,TBPVS0_STATE
 
@@ -2037,7 +2085,7 @@
 !***  LOCAL VARIABLES
 !***
 !-----------------------------------------------------------------------
-      INTEGER :: I,IENDX,J,K,IJ
+      INTEGER :: I,I_M,IENDX,J,K,IJ
 !
       INTEGER,DIMENSION(IMS:IME,JMS:JME) :: LOWLYR
 !
@@ -2051,13 +2099,17 @@
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: DZ,P8W,P_PHY,PI_PHY    &
      &                                          ,RR,T_PHY,TH_PHY
 !
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME,N_MOIST) :: WATER
-!
-      LOGICAL :: E_BDY,WARM_RAIN,F_QT
+      LOGICAL :: E_BDY,F_QT,QT_PRESENT,WARM_RAIN
 !
 !-----------------------------------------------------------------------
 !***********************************************************************
 !-----------------------------------------------------------------------
+!
+      IF(CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW)THEN
+        QT_PRESENT=.TRUE.
+      ELSE
+        QT_PRESENT=.FALSE.
+      ENDIF
 !
       DTPHS=NPHS*DT
       RDTPHS=1./DTPHS
@@ -2096,9 +2148,6 @@
 !
           RR(I,K,J)=PLYR/(R_D*TL(K)*(P608*QL(K)+1.))
           T_PHY(I,K,J)=TL(K)
-          WATER(I,K,J,P_QV)=QL(K)/(1.-QL(K))  !Convert to mixing ratio 
-!     THE FOLLOWING IS REMOVED BECAUSE CWM WILL BE PASSED INTO QT_CURR (SCALAR)
-!          WATER(I,K,J,P_QC)=CWM(I,K,J)
           PI_PHY(I,K,J)=(PLYR*1.E-5)**CAPA
           TH_PHY(I,K,J)=TL(K)/PI_PHY(I,K,J)
 !!!       P8W(I,KFLIP,J)=PINT(I,K+1,J)
@@ -2118,10 +2167,8 @@
       CALL SET_TILES(GRID,IDS+1,IDE-1,JDS+2,JDE-2,ITS,ITE,JTS,JTE)
 !
       CALL MICROPHYSICS_DRIVER(                                         &
-     &                  TH=TH_PHY                                       &
-     &                 ,RHO=RR,PI_PHY=PI_PHY,P=P_PHY                    &
-     &                 ,RAINNC=RAINNC                                   &
-     &                 ,RAINNCV=RAINNCV                                 &
+     &                  TH=TH_PHY,RHO=RR,PI_PHY=PI_PHY,P=P_PHY          &
+     &                 ,RAINNC=RAINNC,RAINNCV=RAINNCV                   &
      &                 ,DZ8W=DZ,P8W=P8W,DT=DTPHS,DX=DX,DY=DY            &
      &                 ,MP_PHYSICS=CONFIG_FLAGS%MP_PHYSICS              &
      &                 ,SPECIFIED=CONFIG_FLAGS%SPECIFIED                &
@@ -2131,13 +2178,14 @@
      &                 ,F_ICE_PHY=F_ICE,F_RAIN_PHY=F_RAIN               &
      &                 ,F_RIMEF_PHY=F_RIMEF                             &
      &                 ,LOWLYR=LOWLYR,SR=SR                             &
-     &                 ,QV_CURR=WATER(IMS,KMS,JMS,P_QV),F_QV=F_QV       &
-     &                 ,QC_CURR=WATER(IMS,KMS,JMS,P_QC),F_QC=F_QC       &
-     &                 ,QR_CURR=WATER(IMS,KMS,JMS,P_QR),F_QR=F_QR       &
-     &                 ,QI_CURR=WATER(IMS,KMS,JMS,P_QI),F_QI=F_QI       &
-     &                 ,QS_CURR=WATER(IMS,KMS,JMS,P_QS),F_QS=F_QS       &
-     &                 ,QG_CURR=WATER(IMS,KMS,JMS,P_QG),F_QG=F_QG       &
-     &                 ,QT_CURR=CWM,F_QT=F_QT       &
+     &                 ,QV_CURR=MOIST(IMS,KMS,JMS,P_QV),F_QV=F_QV       &
+     &                 ,QC_CURR=MOIST(IMS,KMS,JMS,P_QC),F_QC=F_QC       &
+     &                 ,QR_CURR=MOIST(IMS,KMS,JMS,P_QR),F_QR=F_QR       &
+     &                 ,QI_CURR=MOIST(IMS,KMS,JMS,P_QI),F_QI=F_QI       &
+     &                 ,QS_CURR=MOIST(IMS,KMS,JMS,P_QS),F_QS=F_QS       &
+     &                 ,QG_CURR=MOIST(IMS,KMS,JMS,P_QG),F_QG=F_QG       &
+     &                 ,QNI_CURR=SCALAR(IMS,KMS,JMS,P_QNI),F_QNI=F_QNI  &
+     &                 ,QT_CURR=CWM,F_QT=qt_present                     &
      &                 ,MP_RESTART_STATE=MP_RESTART_STATE               &
      &                 ,TBPVS_STATE=TBPVS_STATE                         &
      &                 ,TBPVS0_STATE=TBPVS0_STATE                       &
@@ -2152,7 +2200,7 @@
 !$omp& private(ij)
       DO IJ=1,GRID%NUM_TILES
         CALL MICROPHYSICS_ZERO_OUT(                                     &
-                     WATER,N_MOIST,CONFIG_FLAGS                         &
+                     MOIST,N_MOIST,CONFIG_FLAGS                         &
                     ,IDS,IDE,JDS,JDE,KDS,KDE                            &
                     ,IMS,IME,JMS,JME,KMS,KME                            &
                     ,GRID%I_START(IJ),GRID%I_END(IJ)                    &
@@ -2168,7 +2216,7 @@
       E_BDY=(ITE>=IDE)
 !
 !$omp parallel do                                                       &
-!$omp& private(i,iendx,j,k,pcpcol,tnew)
+!$omp& private(i,iendx,j,k,pcpcol,tnew,i_m)
       DO J=MYJS2,MYJE2
       IENDX=MYIE1
       IF(E_BDY.AND.MOD(J,2)==0)IENDX=IENDX-1
@@ -2180,9 +2228,13 @@
           TNEW=TH_PHY(I,K,J)*PI_PHY(I,K,J)
           TRAIN(I,K,J)=TRAIN(I,K,J)+(TNEW-T(I,K,J))*RDTPHS
           T(I,K,J)=TNEW
-          Q(I,K,J)=WATER(I,K,J,P_QV)/(1.+WATER(I,K,J,P_QV)) !To s.h.
-!      THE FOLLOWING LINE IS NO LONGER NEEDED BECAUSE CWM IS NOT IN WATER
-!          CWM(I,K,J)=WATER(I,K,J,P_QC)
+          Q(I,K,J)=moist(I,K,J,P_QV)/(1.+moist(I,K,J,P_QV)) !To s.h.
+!         CWM(I,K,J)=0.
+!         DO I_M=2,N_MOIST
+!           IF(I_M/=P_QV)THEN
+!             CWM(I,K,J)=CWM(I,K,J)+MOIST(I,K,J,I_M)
+!           ENDIF
+!         ENDDO
         ENDDO
 !
 !***  UPDATE PRECIPITATION

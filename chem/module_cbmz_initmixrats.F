@@ -22,7 +22,7 @@
 !-----------------------------------------------------------------------
       subroutine cbmz_init_wrf_mixrats(   &
                config_flags,              &
-               ph, phb, g,                &
+               z_at_w, g,                 &
                chem, numgas,              &
                ids,ide, jds,jde, kds,kde, &
                ims,ime, jms,jme, kms,kme, &
@@ -66,7 +66,7 @@
 
 ! perturbation and base geopotential at layer boundaries
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), &
-         INTENT(IN) :: ph, phb
+         INTENT(IN) :: z_at_w
 
 ! advected chemical tracers
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_chem ), &
@@ -88,8 +88,7 @@
        do k = kts, kte
           kp1 = min(k+1, kte)
           do j = jts, jte
-             z(i,k,j) = (phb(i,k,j)+phb(i,kp1,j)+ &
-                  ph(i,k,j)+ ph(i,kp1,j))*0.5/g
+             z(i,k,j) = (z_at_w(i,k,j)+z_at_w(i,kp1,j))*0.5
           end do
        end do
     end do

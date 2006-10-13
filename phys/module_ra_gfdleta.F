@@ -1,11 +1,14 @@
 !WRF:MODEL_RA:RADIATION
 !
+#define FERRIER_GFDL
 MODULE MODULE_RA_GFDLETA
       USE MODULE_CONFIGURE,ONLY : GRID_CONFIG_REC_TYPE
       USE MODULE_MODEL_CONSTANTS
+#ifdef FERRIER_GFDL
       USE MODULE_MP_ETANEW, ONLY :                                      &
      & RHgrd,T_ICE,FPVS,QAUT0,XMImax,XMIexp,MDImin,MDImax,MASSI,        &
      & FLARGE1,FLARGE2,NLImin,NLImax
+#endif
       INTEGER,PARAMETER :: NL=81
       INTEGER,PARAMETER :: NBLY=15
       REAL,PARAMETER :: RTHRESH=1.E-15,DTR=1./DEGRAD
@@ -53,6 +56,13 @@ MODULE MODULE_RA_GFDLETA
       REAL, DIMENSION(NXSD),PRIVATE,SAVE :: AXSD
       REAL, PRIVATE :: RSQR
       LOGICAL, PRIVATE,SAVE :: SDprint=.FALSE.
+
+
+#ifndef FERRIER_GFDL
+      REAL, PRIVATE, PARAMETER :: RHgrd=1.0
+      REAL, PRIVATE, PARAMETER :: T_ice=-30.0
+#endif
+
 !
 !--- Important parameters for cloud properties - see extensive comments in
 !    DO 580 loop within subroutine RADTN 
@@ -162,9 +172,9 @@ CONTAINS
 !! !***
 !!         SDM=-0.03-0.00015*DX+0.02*LOG(DX)  ! meso SD
 !!         if (SDprint) print *,'DX, SDM=',DX,SDM
-       if (SDprint) print *,                                            &
-     & 'RHgrd,T_ICE,NLImin,NLImax,FLARGE1,FLARGE2,MDImin,MDImax=',&
-     &  RHgrd,T_ICE,NLImin,NLImax,FLARGE1,FLARGE2,MDImin,MDImax
+!       if (SDprint) print *,                                            &
+!     & 'RHgrd,T_ICE,NLImin,NLImax,FLARGE1,FLARGE2,MDImin,MDImax=',&
+!     &  RHgrd,T_ICE,NLImin,NLImax,FLARGE1,FLARGE2,MDImin,MDImax
 !
 !-----------------------------------------------------------------------
       END SUBROUTINE GFDLETAINIT
@@ -873,7 +883,11 @@ CONTAINS
     !
     !--- Saturation vapor pressure w/r/t water ( >=0C ) or ice ( <0C )
     !
+#ifdef FERRIER_GFDL
             ESAT=1000.*FPVS(TMID(I,LL))         !--- Saturation vapor pressure (Pa)
+#else
+            ESAT=FPVS_new(TMID(I,LL))           !--- Saturation vapor pressure (Pa)
+#endif
             QSAT=EP_2*ESAT/(PMID(I,LL)-ESAT)    !--- Saturation mixing ratio
             RHUM=WV/QSAT                        !--- Relative humidity
     !
@@ -10114,6 +10128,81 @@ CONTAINS
      CALL wrf_error_fatal(errmess)
 !----------------------------------------------------------------------
       END SUBROUTINE CONRAD
+!+---+-----------------------------------------------------------------+
+! Replacement routine to compute saturation vapor pressure over
+! water/ice.  This is needed here in case we run microphysics other
+! than ETAMPNEW (Ferrier) because it initializes a lookup table to
+! facilitate calculations of FVPS.  For speed, we use the polynomial
+! expansion of Flatau & Walko, 1989.
+!+---+-----------------------------------------------------------------+
+      REAL FUNCTION FPVS_new(T)
+
+      IMPLICIT NONE
+      REAL, INTENT(IN):: T
+
+      if (T .ge. 273.16) then
+         FPVS_new = e_sub_l(T)
+      else
+         FPVS_new = e_sub_i(T)
+      endif
+
+      END FUNCTION FPVS_new
+!
+!+---+-----------------------------------------------------------------+
+! THIS FUNCTION CALCULATES THE LIQUID SATURATION PRESSURE AS
+! A FUNCTION OF TEMPERATURE.
+!
+      REAL FUNCTION e_sub_l(T)
+
+      IMPLICIT NONE
+      REAL, INTENT(IN):: T
+      REAL:: ESL,X
+      REAL, PARAMETER:: C0= .611583699E03
+      REAL, PARAMETER:: C1= .444606896E02
+      REAL, PARAMETER:: C2= .143177157E01
+      REAL, PARAMETER:: C3= .264224321E-1
+      REAL, PARAMETER:: C4= .299291081E-3
+      REAL, PARAMETER:: C5= .203154182E-5
+      REAL, PARAMETER:: C6= .702620698E-8
+      REAL, PARAMETER:: C7= .379534310E-11
+      REAL, PARAMETER:: C8=-.321582393E-13
+
+      X=AMAX1(-80.,T-273.16)
+
+      ESL=C0+X*(C1+X*(C2+X*(C3+X*(C4+X*(C5+X*(C6+X*(C7+X*C8)))))))
+
+      e_sub_l = ESL
+
+      END FUNCTION e_sub_l
+!
+!+---+-----------------------------------------------------------------+
+! THIS FUNCTION CALCULATES THE ICE SATURATION VAPOR PRESSURE AS A
+! FUNCTION OF TEMPERATURE.
+!
+      REAL FUNCTION e_sub_i(T)
+
+      IMPLICIT NONE
+      REAL, INTENT(IN):: T
+      REAL:: ESI,X
+      REAL, PARAMETER:: C0= .609868993E03
+      REAL, PARAMETER:: C1= .499320233E02
+      REAL, PARAMETER:: C2= .184672631E01
+      REAL, PARAMETER:: C3= .402737184E-1
+      REAL, PARAMETER:: C4= .565392987E-3
+      REAL, PARAMETER:: C5= .521693933E-5
+      REAL, PARAMETER:: C6= .307839583E-7
+      REAL, PARAMETER:: C7= .105785160E-9
+      REAL, PARAMETER:: C8= .161444444E-12
+
+      X=AMAX1(-80.,T-273.16)
+      ESI=C0+X*(C1+X*(C2+X*(C3+X*(C4+X*(C5+X*(C6+X*(C7+X*C8)))))))
+
+      e_sub_i = ESI
+
+      END FUNCTION e_sub_i
+
+!
+
 !----------------------------------------------------------------------
 !
       END MODULE module_RA_GFDLETA

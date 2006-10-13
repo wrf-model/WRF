@@ -10,6 +10,10 @@ PROGRAM real_data
    USE module_driver_constants
    USE module_configure
    USE module_timing
+#ifdef WRF_CHEM
+   USE module_input_chem_data
+   USE module_input_chem_bioemiss
+#endif
    USE module_utility
 #ifdef DM_PARALLEL
    USE module_dm
@@ -177,6 +181,10 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
    USE module_bc_time_utilities
    USE module_initialize
    USE module_optional_si_input
+#ifdef WRF_CHEM
+   USE module_input_chem_data
+   USE module_input_chem_bioemiss
+#endif
 
    USE module_si_io_nmm
 
@@ -371,6 +379,49 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
 	write(0,*) 'call start_domain'
         CALL start_domain ( grid , .TRUE.)
       END IF
+
+#ifdef WRF_CHEM
+      IF ( loop == 1 ) THEN
+         IF ( ( grid%chem_opt .EQ. RADM2     ) .OR. &
+              ( grid%chem_opt .EQ. RADM2SORG ) .OR. &
+              ( grid%chem_opt .EQ. RACM      ) .OR. &
+              ( grid%chem_opt .EQ. RACMSORG  ) ) THEN
+           ! Read the chemistry data from a previous wrf forecast (wrfout file)
+           IF(grid%chem_in_opt == 1 ) THEN
+              message = 'INITIALIZING CHEMISTRY WITH OLD SIMULATION'
+              CALL  wrf_message ( message )
+
+              CALL input_ext_chem_file( grid )
+
+              IF(grid%bio_emiss_opt == BEIS311 ) THEN
+                 message = 'READING BEIS3.11 EMISSIONS DATA'
+                 CALL  wrf_message ( message )
+                 CALL med_read_wrf_chem_bioemiss ( grid , config_flags)
+              END IF
+
+           ELSEIF(grid%chem_in_opt == 0)then
+              ! Generate chemistry data from a idealized vertical profile
+              message = 'STARTING WITH BACKGROUND CHEMISTRY '
+              CALL  wrf_message ( message )
+
+              print *,' ETA1 '
+              print *, grid%nmm_eta1
+
+              CALL input_chem_profile ( grid )
+
+              IF(grid%bio_emiss_opt == BEIS311 ) THEN
+                 message = 'READING BEIS3.11 EMISSIONS DATA'
+                 CALL  wrf_message ( message )
+                 CALL med_read_wrf_chem_bioemiss ( grid , config_flags)
+              END IF
+
+           ELSE
+             message = 'RUNNING WITHOUT CHEMISTRY INITIALIZATION'
+             CALL  wrf_message ( message )
+           ENDIF
+         ENDIF
+      ENDIF
+#endif
 
       config_flags%isurban=1
       config_flags%isoilwater=14

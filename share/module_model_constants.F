@@ -44,7 +44,7 @@
    REAL    , PARAMETER :: cvovcp       = 1./cpovcv
    REAL    , PARAMETER :: rvovrd       = r_v/r_d
 
-   REAL    , PARAMETER :: reradius     = 1./6370.e03 
+   REAL    , PARAMETER :: reradius     = 1./6370.0e03 
 
    REAL    , PARAMETER :: asselin      = .025
 !   REAL    , PARAMETER :: asselin      = .0

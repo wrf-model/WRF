@@ -761,23 +761,33 @@ cycle
    SUBROUTINE init_soil_depth_3 ( zs , dzs , num_soil_layers )
 
       IMPLICIT NONE
-   
+
       INTEGER, INTENT(IN) :: num_soil_layers
-   
+
       REAL, DIMENSION(1:num_soil_layers), INTENT(OUT)  ::  zs,dzs
-   
+
       INTEGER                   ::      l
 
+      CHARACTER (LEN=132) :: message
+
+! in RUC LSM ZS - soil levels, and DZS - soil layer thicknesses, not used
+! ZS is specified in the namelist: num_soil_layers = 6 or 9.
+! Other options with number of levels are possible, but
+! WRF users should change consistently the namelist entry with the
+!    ZS array in this subroutine.
+
+     IF ( num_soil_layers .EQ. 6) THEN
       zs  = (/ 0.00 , 0.05 , 0.20 , 0.40 , 1.60 , 3.00 /)
-      dzs = (/ 0.00 , 0.125, 0.175 , 0.70 , 1.30 , 1.40 /)
+!      dzs = (/ 0.00 , 0.125, 0.175 , 0.70 , 1.30 , 1.40 /)
+     ELSEIF ( num_soil_layers .EQ. 9) THEN
+      zs  = (/ 0.00 , 0.05 , 0.20 , 0.40 , 0.60, 1.00, 1.60 , 2.20, 3.00 /)
+!      dzs = (/ 0.00 , 0.125, 0.175 , 0.70 , 1.30 , 1.40 /)
+     ENDIF
 
-      IF ( num_soil_layers .NE. 6 ) THEN
-         PRINT '(A)','Usually, the RUC LSM uses 6 layers.  Change this in the namelist.'
-         CALL wrf_error_fatal ( 'LSM_uses_6_layers' )
+      IF ( num_soil_layers .EQ. 4 .OR. num_soil_layers .EQ. 5 ) THEN
+         write (message, FMT='(A)') 'The RUC LSM uses 6, 9 or more levels.  Change this in the namelist.'
+         CALL wrf_error_fatal ( message )
       END IF
-
-!print *,'RUCLSM dzs=',dzs
-!print *,'RUCLSM zs =',zs
 
    END SUBROUTINE init_soil_depth_3
 
@@ -1253,18 +1263,22 @@ cycle
       INTEGER :: i , j , l , lout , lin , lwant , lhave
       REAL :: temp
 
+      CHARACTER (LEN=132) :: message
+
       !  Allocate the soil layer array used for interpolating.
 
       IF ( ( num_st_levels_input .LE. 0 ) .OR. & 
            ( num_sm_levels_input .LE. 0 ) ) THEN
-         PRINT '(A)','No input soil level data (either temperature or moisture, or both are missing).  Required for RUC LSM.'
-         CALL wrf_error_fatal ( 'no soil data' )
+         write (message, FMT='(A)')'No input soil level data (either temperature or moisture, or both are missing).  Required for RUC LSM.' 
+         CALL wrf_error_fatal ( message )
       ELSE
          IF ( flag_soilt000 .eq. 1 ) THEN
-           PRINT '(A)',' Assume RUC LSM 6-level input'
+           write(message, FMT='(A)') ' Assume RUC LSM 6-level input'
+           CALL wrf_message ( message )
            ALLOCATE ( zhave( MAX(num_st_levels_input,num_sm_levels_input)  ) )
          ELSE
-           PRINT '(A)',' Assume non-RUC LSM input'
+           write(message, FMT='(A)') ' Assume non-RUC LSM input'
+           CALL wrf_message ( message )
            ALLOCATE ( zhave( MAX(num_st_levels_input,num_soil_layers)  ) )
          END IF
       END IF
@@ -1715,7 +1729,8 @@ CONTAINS
                DO l = 1 , num_veg_cat
                   IF ( l .EQ. iswater ) CYCLE
                   IF ( landuse_frac(i,l,j) .EQ. lwthresh ) THEN
-                     PRINT *,i,j,' water and category ',l,' both at 50%, landmask is ',landmask(i,j)
+                write(message, FMT='(I4,I4,A,I4,A,I4)') i,j,' water and category ',l,' both at 50%, landmask is ',landmask(i,j)
+                call wrf_message ( message )
                      landuse_frac(i,l,j) = lwthresh - .01
                      landuse_frac(i,iswater,j) = 1. - (lwthresh + 0.01)
                   END IF
@@ -2109,6 +2124,8 @@ cycle
    
       INTEGER                   ::      l
 
+      CHARACTER (LEN=132) :: message
+
       !  Define layers (top layer = 0.01 m).  Double the thicknesses at each step (dzs values).
       !  The distance from the ground level to the midpoint of the layer is given by zs.
 
@@ -2135,8 +2152,8 @@ cycle
       !    -----------------------------------  \/   dzs(3) = 0.04 m
 
       IF ( num_soil_layers .NE. 5 ) THEN
-         PRINT '(A)','Usually, the 5-layer diffusion uses 5 layers.  Change this in the namelist.'
-         CALL wrf_error_fatal ( '5-layer_diffusion_uses_5_layers' )
+         write(message,FMT= '(A)') 'Usually, the 5-layer diffusion uses 5 layers.  Change this in the namelist.'
+         CALL wrf_error_fatal ( message )
       END IF
    
       dzs(1)=.01
@@ -2159,11 +2176,13 @@ cycle
    
       INTEGER                   ::      l
 
+      CHARACTER (LEN=132) :: message
+
       dzs = (/ 0.1 , 0.3 , 0.6 , 1.0 /)
 
       IF ( num_soil_layers .NE. 4 ) THEN
-         PRINT '(A)','Usually, the LSM uses 4 layers.  Change this in the namelist.'
-         CALL wrf_error_fatal ( 'LSM_uses_4_layers' )
+         write(message,FMT='(A)') 'Usually, the LSM uses 4 layers.  Change this in the namelist.'
+         CALL wrf_error_fatal ( message )
       END IF
 
       zs(1)=.5*dzs(1)
@@ -2184,16 +2203,26 @@ cycle
    
       INTEGER                   ::      l
 
+      CHARACTER (LEN=132) :: message
+
+! in RUC LSM ZS - soil levels, and DZS - soil layer thicknesses, not used
+! ZS is specified in the namelist: num_soil_layers = 6 or 9.
+! Other options with number of levels are possible, but
+! WRF users should change consistently the namelist entry with the
+!    ZS array in this subroutine.
+
+     IF ( num_soil_layers .EQ. 6) THEN
       zs  = (/ 0.00 , 0.05 , 0.20 , 0.40 , 1.60 , 3.00 /)
-      dzs = (/ 0.00 , 0.125, 0.175 , 0.70 , 1.30 , 1.40 /)
+!      dzs = (/ 0.00 , 0.125, 0.175 , 0.70 , 1.30 , 1.40 /)
+     ELSEIF ( num_soil_layers .EQ. 9) THEN
+      zs  = (/ 0.00 , 0.05 , 0.20 , 0.40 , 0.60, 1.00, 1.60 , 2.20, 3.00 /)
+!      dzs = (/ 0.00 , 0.125, 0.175 , 0.70 , 1.30 , 1.40 /)
+     ENDIF
 
-      IF ( num_soil_layers .NE. 6 ) THEN
-         PRINT '(A)','Usually, the RUC LSM uses 6 layers.  Change this in the namelist.'
-         CALL wrf_error_fatal ( 'LSM_uses_6_layers' )
+      IF ( num_soil_layers .EQ. 4 .OR. num_soil_layers .EQ. 5 ) THEN
+         WRITE(message,FMT= '(A)')'Usually, the RUC LSM uses 6, 9 or more levels.  Change this in the namelist.'
+         CALL wrf_error_fatal ( message )
       END IF
-
-!print *,'RUCLSM dzs=',dzs
-!print *,'RUCLSM zs =',zs
 
    END SUBROUTINE init_soil_depth_3
 
@@ -2380,14 +2409,14 @@ cycle
 
 #if ( NMM_CORE == 1 )
 !new
-	write(0,*) 'st_input(1) in init_soil_2_real'
+!       write(0,*) 'st_input(1) in init_soil_2_real'
 	DO J=MIN(jde-1,jte),JTS, -MIN(jde-1,jte)/15
-	write(0,616) (st_input(I,1,J),I=its , MIN(ide-1,ite),MIN(ide-1,ite)/10)
+!       write(0,616) (st_input(I,1,J),I=its , MIN(ide-1,ite),MIN(ide-1,ite)/10)
 	ENDDO
 
-	write(0,*) 'st_input(2) in init_soil_2_real'
+!       write(0,*) 'st_input(2) in init_soil_2_real'
 	DO J=MIN(jde-1,jte),JTS, -MIN(jde-1,jte)/15
-	write(0,616) (st_input(I,2,J),I=its , MIN(ide-1,ite),MIN(ide-1,ite)/10)
+!       write(0,616) (st_input(I,2,J),I=its , MIN(ide-1,ite),MIN(ide-1,ite)/10)
 	ENDDO
 
   616	format(20(f4.0,1x))

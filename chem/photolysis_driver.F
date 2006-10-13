@@ -2,7 +2,7 @@
 !
       SUBROUTINE photolysis_driver (id,ktau,dtstep, config_flags,haveaer,&
                gmt,julday,t_phy,moist,aerwrf,p8w,t8w,p_phy,              &
-               chem,rho_phy,dz8w,xlat,xlong,z,z_at_w,                    &
+               chem,rho_phy,dz8w,xlat,xlong,z_at_w,gd_cloud,gd_cloud2,   &
                ph_macr,ph_o31d,ph_o33p,ph_no2,ph_no3o2,ph_no3o,ph_hno2,  &
                ph_hno3,ph_hno4,ph_h2o2,ph_ch2or,ph_ch2om,ph_ch3cho,      &
                ph_ch3coch3,ph_ch3coc2h5,ph_hcocho,ph_ch3cocho,           &
@@ -11,7 +11,7 @@
                tauaer1,tauaer2,tauaer3,tauaer4,                          &
                gaer1,gaer2,gaer3,gaer4,                                  &
                waer1,waer2,waer3,waer4,                                  &
-               pm2_5_dry,pm2_5_water,                                    &
+               pm2_5_dry,pm2_5_water,uvrad,                              &
                ids,ide, jds,jde, kds,kde,                                &
                ims,ime, jms,jme, kms,kme,                                &
                its,ite, jts,jte, kts,kte                                 )
@@ -52,6 +52,9 @@
            ph_ch3coch3,ph_ch3coc2h5,ph_hcocho,ph_ch3cocho,             &  
            ph_hcochest,ph_ch3o2h,ph_ch3coo2h,ph_ch3ono2,ph_hcochob,    &
            ph_n2o5,ph_o2
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                       &  
+         INTENT(INOUT ) ::                                             &
+           gd_cloud,gd_cloud2
 !
 ! arrays that hold the aerosol optical properties
 !
@@ -73,9 +76,10 @@
                                                       t_phy,           &
                                                       p_phy,           &
                                                       dz8w,            &
-                                                      z    ,           &
                                               t8w,p8w,z_at_w ,         &
                                                     rho_phy
+   REAL,  DIMENSION( ims:ime , jms:jme )                   ,           &
+          INTENT(INOUT   ) ::  uvrad
    REAL,  DIMENSION( ims:ime , jms:jme )                   ,           &
           INTENT(IN   ) ::                                             &
                                                      xlat,             &
@@ -100,12 +104,12 @@
        CALL wrf_debug(15,'calling madronich1_driver')
        call madronich1_driver(id,ktau,dtstep,config_flags,haveaer,     & 
                gmt,julday,t_phy,moist,aerwrf,p8w,t8w,p_phy,            &
-               chem,rho_phy,dz8w,xlat,xlong,z,z_at_w,                  &
+               chem,rho_phy,dz8w,xlat,xlong,z_at_w,gd_cloud,gd_cloud2, &
                ph_macr,ph_o31d,ph_o33p,ph_no2,ph_no3o2,ph_no3o,ph_hno2,&
                ph_hno3,ph_hno4,ph_h2o2,ph_ch2or,ph_ch2om,ph_ch3cho,    &
                ph_ch3coch3,ph_ch3coc2h5,ph_hcocho,ph_ch3cocho,         &
                ph_hcochest,ph_ch3o2h,ph_ch3coo2h,ph_ch3ono2,ph_hcochob,&
-               pm2_5_dry,pm2_5_water,                                  &
+               pm2_5_dry,pm2_5_water,uvrad,                            &
                ids,ide, jds,jde, kds,kde,                              &
                ims,ime, jms,jme, kms,kme,                              &
                its,ite, jts,jte, kts,kte                               )

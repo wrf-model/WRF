@@ -8,6 +8,7 @@ CONTAINS
 ! !INTERFACE:
    SUBROUTINE radiation_driver (                                          &
                itimestep,dt ,lw_physics,sw_physics ,NPHS                  &
+
               ,RTHRATENLW ,RTHRATENSW ,RTHRATEN                           &
               ,ACSWUPT,ACSWUPTC,ACSWDNT,ACSWDNTC                          & ! Optional
               ,ACSWUPB,ACSWUPBC,ACSWDNB,ACSWDNBC                          & ! Optional
@@ -46,6 +47,9 @@ CONTAINS
               ,tauaer300, tauaer400, tauaer600, tauaer999                 & ! jcb
               ,gaer300, gaer400, gaer600, gaer999                         & ! jcb
               ,waer300, waer400, waer600, waer999                         & ! jcb
+              ,qc_adjust ,qi_adjust                                       & ! jm
+              ,cu_rad_feedback                                            & ! jm
+
                                                                           )
 
 !-------------------------------------------------------------------------
@@ -280,7 +284,11 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL ,       &
          INTENT(IN ) ::  tauaer300,tauaer400,tauaer600,tauaer999, & ! jcb
                                  gaer300,gaer400,gaer600,gaer999, & ! jcb
-                                 waer300,waer400,waer600,waer999    ! jcb
+                                 waer300,waer400,waer600,waer999, & ! jcb
+                                 qc_adjust, qi_adjust
+
+   LOGICAL, OPTIONAL :: cu_rad_feedback
+
 !
 ! variables for aerosols (only if running with chemistry)
 !
@@ -383,7 +391,7 @@ CONTAINS
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          OPTIONAL,                                                &
-         INTENT(IN ) ::                                           &
+         INTENT(INOUT ) ::                                        &
                                                                pb &
                                                ,qv,qc,qr,qi,qs,qg
 
@@ -408,6 +416,9 @@ CONTAINS
 
    REAL    ::    OBECL,SINOB,SXLONG,ARG,DECDEG,                  &
                  DJUL,RJUL,ECCFAC
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qi_temp,qc_temp
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qi_save,qc_save
+
 !------------------------------------------------------------------
 
    if (lw_physics .eq. 0 .and. sw_physics .eq. 0)         return
@@ -466,6 +477,60 @@ CONTAINS
      ENDDO
      ENDDO
      ENDDO
+
+! temporarily modify hydrometeors (currently only done for GD scheme and WRF-Chem)
+!
+     IF ( PRESENT( cu_rad_feedback ) ) THEN
+       IF ( PRESENT( qc  ) .AND. PRESENT( qc_adjust ) ) THEN
+          DO j=jts,jte
+          DO k=kts,kte
+          DO i=its,ite
+            qc_save(i,k,j) = qc(i,k,j)
+            qc(i,k,j) = qc(i,k,j) + qc_adjust(i,k,j)
+          ENDDO
+          ENDDO
+          ENDDO
+       ENDIF
+       IF ( PRESENT( qi        ) .AND. PRESENT( qi_adjust ) ) THEN
+          DO j=jts,jte
+          DO k=kts,kte
+          DO i=its,ite
+            qi_save(i,k,j) = qi(i,k,j)
+            qi(i,k,j) = qi(i,k,j) + qi_adjust(i,k,j)
+          ENDDO
+          ENDDO
+          ENDDO
+       ENDIF
+     ENDIF
+
+
+! Fill temporary water variable depending on micro package (tgs 25 Apr 2006)
+     if(PRESENT(qc) .and. PRESENT(F_QC)) then
+        DO j=jts,jte
+        DO k=kts,kte
+        DO i=its,ite
+           qc_temp(I,K,J)=qc(I,K,J)
+        ENDDO
+        ENDDO
+        ENDDO
+     else
+        DO j=jts,jte
+        DO k=kts,kte
+        DO i=its,ite
+           qc_temp(I,K,J)=0.
+        ENDDO
+        ENDDO
+        ENDDO
+     endif
+     if(PRESENT(qr) .and. PRESENT(F_QR)) then
+        DO j=jts,jte
+        DO k=kts,kte
+        DO i=its,ite
+           qc_temp(I,K,J) = qc_temp(I,K,J) + qr(I,K,J)
+        ENDDO
+        ENDDO
+        ENDDO
+     endif
 
 !---------------
 ! Calculate constant for short wave radiation
@@ -539,14 +604,15 @@ CONTAINS
 
              CALL wrf_debug (100, 'CALL gfdllw')
 
-             IF ( PRESENT(F_QV) .AND. PRESENT(F_QC) .AND. PRESENT(F_QS) .AND. &
-                  PRESENT(qv)   .AND. PRESENT(qc)   .AND. PRESENT(qs)  ) THEN
-               IF ( F_QV .AND. F_QC .AND. F_QS ) THEN
+             IF ( PRESENT(F_QV) .AND. PRESENT(F_QC) .AND.                     &
+                  PRESENT(F_QS) .AND. PRESENT(qs)   .AND.                     &
+                  PRESENT(qv)   .AND. PRESENT(qc)   ) THEN
+               IF ( F_QV .AND. F_QC .AND. F_QS) THEN
                  gfdl_lw  = .true.
                  CALL ETARA(                                        &
                   DT=dt,XLAND=xland                                 &
                  ,P8W=p8w,DZ8W=dz8w,RHO_PHY=rho,P_PHY=p,T=t         &
-                 ,QV=qv,QW=qc,QI=qi,QS=qs                           &
+                 ,QV=qv,QW=qc_temp,QI=qi,QS=qs                      &
                  ,TSK2D=tsk,GLW=GLW,RSWIN=SWDOWN,GSW=GSW            &
                  ,RSWINC=SWDOWNC,CLDFRA=CLDFRA,PI3D=pi              &
                  ,GLAT=glat,GLON=glon,HTOP=htop,HBOT=hbot           &
@@ -722,14 +788,15 @@ CONTAINS
 
              CALL wrf_debug (100, 'CALL gfdlsw')
 
-             IF ( PRESENT(F_QV) .AND. PRESENT(F_QC) .AND. PRESENT(F_QS) .AND. &
-                  PRESENT(qv)   .AND. PRESENT(qc)   .AND. PRESENT(qs)  ) THEN
+             IF ( PRESENT(F_QV) .AND. PRESENT(F_QC) .AND.                     &
+                  PRESENT(F_QS) .AND. PRESENT(qs)   .AND.                     &
+                  PRESENT(qv)   .AND. PRESENT(qc) ) THEN
                IF ( F_QV .AND. F_QC .AND. F_QS ) THEN
                  gfdl_sw = .true.
                  CALL ETARA(                                        &
                   DT=dt,XLAND=xland                                 &
                  ,P8W=p8w,DZ8W=dz8w,RHO_PHY=rho,P_PHY=p,T=t         &
-                 ,QV=qv,QW=qc,QI=qi,QS=qs                           &
+                 ,QV=qv,QW=qc_temp,QI=qi,QS=qs                      &
                  ,TSK2D=tsk,GLW=GLW,RSWIN=SWDOWN,GSW=GSW            &
                  ,RSWINC=SWDOWNC,CLDFRA=CLDFRA,PI3D=pi              &
                  ,GLAT=glat,GLON=glon,HTOP=htop,HBOT=hbot           &
@@ -847,6 +914,29 @@ CONTAINS
    ENDIF
      CASE DEFAULT
      END SELECT accumulate_sw_select
+!
+!*** Restore the saved values of the input Q arrays before exiting
+
+     IF ( PRESENT( cu_rad_feedback ) ) THEN
+       IF ( PRESENT( qc     )  ) THEN
+          DO j=jts,jte
+          DO k=kts,kte
+          DO i=its,ite
+            qc(i,k,j) = qc_save(i,k,j)
+          ENDDO
+          ENDDO
+          ENDDO
+       ENDIF
+       IF ( PRESENT( qi ) ) THEN
+          DO j=jts,jte
+          DO k=kts,kte
+          DO i=its,ite
+            qi(i,k,j) = qi_save(i,k,j)
+          ENDDO
+          ENDDO
+          ENDDO
+       ENDIF
+     ENDIF
 
    END SUBROUTINE radiation_driver
 

@@ -74,6 +74,7 @@ MODULE module_input_chem_data
     REAL, DIMENSION(logg)                        :: fracref
     REAL, DIMENSION(kx)                          :: dens
     REAL, DIMENSION(kx+1)                        :: zfa
+    REAL, DIMENSION(kx+1)                        :: zfa_bdy
     REAL, DIMENSION(lo  ,kx)                     :: xl
     REAL                                         :: so4vaptoaer
     DATA so4vaptoaer/.999/
@@ -159,9 +160,30 @@ MODULE module_input_chem_data
                 2.342E+19, 2.384E+19, 2.414E+19, 2.434E+19  /
 
 !     Profile heights in meters
+!     DATA ZFA/    0.,   85.,  212.,  385.,  603.,  960., 1430., 2010., &
+!               2850., 4010., 5340., 6900., 8510.,10200.,12100.,16000., &
+!              21000./
+#if ( ! EM_CORE == 0 )
+      DATA ZFA_BDY/    0.,   85.,  212.,  385.,  603.,  960., 1430., 2010., &
+                2850., 4010., 5340., 6900., 8510.,10200.,12100.,16000., &
+               21000./
+
+!     Profile heights in meters
       DATA ZFA/    0.,   85.,  212.,  385.,  603.,  960., 1430., 2010., &
                 2850., 4010., 5340., 6900., 8510.,10200.,12100.,16000., &
                21000./
+#endif
+#if ( ! NMM_CORE == 0 )
+
+      DATA ZFA_BDY/    0.,   85.,  212.,  385.,  603.,  960., 1430., 2010., &
+                2850., 4010., 5340., 6900., 8510.,10200.,12100.,16000., &
+               21000./
+
+!     Profile pressure in hpa
+      DATA ZFA/ 100000.,  98500.,  98000.,  96000.,  94000.,  90000., 85000., 75000., &
+                 71000.,  65000.,  52000.,  48000.,  45000.,  30000., 25000., 20000., &
+                  5000./
+#endif
 
 !wig: To match the xl profile to the correct species, match WRF's p_<species>
 !     flag with iref(p_<species>-1) to get the value of the first index in xl,
@@ -325,6 +347,10 @@ SUBROUTINE input_ext_chem_file (si_grid)
    INTEGER :: debug_level
    INTEGER :: si_year,si_month,si_day,si_hour,si_min,si_sec
    INTEGER :: total_time_sec , file_counter
+#if ( ! NMM_CORE == 0 )
+   REAL, ALLOCATABLE, DIMENSION(:,:,:) :: pint
+   REAL, ALLOCATABLE, DIMENSION(:,:) :: pdsl
+#endif
 
    LOGICAL :: input_from_file , need_new_file
 
@@ -378,10 +404,21 @@ SUBROUTINE input_ext_chem_file (si_grid)
    CALL       wrf_debug ( 100 , 'wrfchem:input_chem: calling alloc_and_configure_domain 1' )
    ! Note that this is *not* the intended use of alloc_and_configure_domain()
    ! It does not seem to hurt anything, yet...  
+
+!   if( si_grid%id .EQ. 1) then
    CALL alloc_and_configure_domain ( domain_id  = 1           , &
                                      grid       = chem_grid   , &
                                      parent     = null_domain , &
                                      kid        = -1            )
+
+!    else
+!     CALL alloc_and_configure_domain ( domain_id  = 2 ,                  &
+!                                       grid       = chem_grid ,        &
+!                                       parent     = parent_grid ,        &
+!                                       kid        = 1                   )
+!    endif
+
+
 
    CALL       wrf_debug ( 100 , 'wrfchem:input_chem: set pointer for domain 1' )
    chgrid => chem_grid
@@ -481,7 +518,7 @@ SUBROUTINE input_ext_chem_file (si_grid)
 
 ! Make sure the right date and time for the chemin data has been found
 
-   write(message,'(A,A)') 'Subroutine input_chem: use_date, num_steps(1) = ',use_date,num_steps(1)
+   write(message,'(A,A20,A,I9)') 'Subroutine input_chem: use_date, num_steps(1) = ',use_date,num_steps(1)
    if( num_steps(1) > 0 ) then
       write(message,'(A,A)') 'Subroutine input_chem: extracting data at date/time: ',use_date
       CALL  wrf_message ( TRIM( message ) )
@@ -493,6 +530,11 @@ SUBROUTINE input_ext_chem_file (si_grid)
    !  There has to be a more elegant way to get to the beginning of the file, but this will do.
 
    CALL close_dataset      ( fid , config_flags , "DATASET=INPUT" )
+
+   CALL construct_filename2a (inpname , chgrid%input_chem_inname, chgrid%id , 2, extract_date)
+   write(message,'(A,A)') 'Subroutine input_chem: Opening data file ',TRIM(inpname)
+   CALL wrf_message( TRIM(message) )
+
    CALL open_r_dataset     ( fid, TRIM(inpname) , chgrid , config_flags , "DATASET=INPUT", ierr )
    IF ( ierr .NE. 0 ) THEN
       WRITE( wrf_err_message , FMT='(A,A,A,I8)' ) 'subroutine chemin: error opening ',TRIM(inpname),' for reading ierr=',ierr
@@ -521,9 +563,79 @@ SUBROUTINE input_ext_chem_file (si_grid)
           ALLOCATE( ch_zsigf(ims:ime,kms:kme,jms:jme) )
           ALLOCATE(  si_zsig(ims:ime,kms:kme,jms:jme) )
           ALLOCATE(  ch_zsig(ims:ime,kms:kme,jms:jme) )
-
+#if ( EM_CORE == 1 )
           si_zsigf = (si_grid%em_ph_1 + si_grid%em_phb) / grav
           ch_zsigf = ( chgrid%em_ph_1 +  chgrid%em_phb) / grav
+#endif
+
+#if ( NMM_CORE == 1 )
+
+   ! Get scalar grid point heights
+   ALLOCATE(  pint(ips:ipe,kps:kpe,jps:jpe) )
+   ALLOCATE(  pdsl(ips:ipe,jps:jpe) )
+
+       IF(chgrid%sigma.EQ. 1)THEN
+         do j=jps,jpe
+         do i=ips,ipe
+           pdsl(i,j)=chgrid%nmm_pd(i,j)
+         ENDDO
+         ENDDO
+       ELSE
+         do j=jps,jpe
+         do i=ips,ipe
+           pdsl(i,j)=chgrid%nmm_res(i,j)*chgrid%nmm_pd(i,j)
+         enddo
+         enddO
+       ENDIF
+!!
+!!!!!    SHOULD PINT,Z,W BE REDEFINED IF RESTRT?
+!
+      do j=jps,jpe
+        do k=kps,kpe
+        do i=ips,ipe
+          pint(i,k,j)=si_grid%nmm_eta1(k)*chgrid%nmm_pdtop+si_grid%nmm_eta2(k)*pdsl(i,j)+chgrid%nmm_pt
+          ch_zsigf(i,k,j)=pint(i,k,j)
+        ENDDO
+        ENDDO
+      ENDDO
+
+          CALL wrf_debug (0, message)
+
+       IF(si_grid%sigma.EQ. 1)THEN
+         do j=jps,jpe
+         do i=ips,ipe
+           pdsl(i,j)=si_grid%nmm_pd(i,j)
+         ENDDO
+         ENDDO
+       ELSE
+         do j=jps,jpe
+         do i=ips,ipe
+           pdsl(i,j)=si_grid%nmm_res(i,j)*si_grid%nmm_pd(i,j)
+         enddo
+         enddO
+       ENDIF
+!         write(message,'(1e15.6,i6)') pdsl(ips,jps), si_grid%sigma
+!!
+!!!!!    SHOULD PINT,Z,W BE REDEFINED IF RESTRT?
+!
+      do j=jps,jpe
+        do k=kps,kpe
+        do i=ips,ipe
+          pint(i,k,j)=si_grid%nmm_eta1(k)*si_grid%nmm_pdtop+si_grid%nmm_eta2(k)*pdsl(i,j)+si_grid%nmm_pt
+!         if (i.EQ. ips .and. j .EQ. jps) then
+!         print *,k,pint(i,k,j),si_grid%nmm_eta1(k),si_grid%nmm_pdtop,si_grid%nmm_eta2(k),pdsl(i,j),si_grid%nmm_pt
+!         endif
+          si_zsigf(i,k,j)=pint(i,k,j)
+        ENDDO
+        ENDDO
+      ENDDO
+
+!         write(message,'(4e15.6)') si_zsigf(1,1:4,1)
+!         CALL wrf_error_fatal (message)
+
+          DEALLOCATE( pint); DEALLOCATE( pdsl )
+#endif
+
 
           do k=1,kde-1
             si_zsig(:,k,:) = 0.5 * ( si_zsigf(:,k,:) + si_zsigf(:,k+1,:) ) 
@@ -647,6 +759,7 @@ SUBROUTINE input_ext_chem_file (si_grid)
         DO i = nx1, nx2
 
           output_loop: DO k = nz1, nz_out
+#if ( EM_CORE == 1 )
 
             desired_z = z_out(i,k,j)
             IF (desired_z .LT. z_in(i,1,j)) THEN
@@ -713,6 +826,75 @@ SUBROUTINE input_ext_chem_file (si_grid)
               ENDDO input_loop
 
             ENDIF
+#endif
+#if ( NMM_CORE == 1 )
+
+            desired_z = z_out(i,k,j)
+            IF (desired_z .GT. z_in(i,1,j)) THEN
+
+              IF ((desired_z - z_in(i,1,j)).GT. 0.0001) THEN
+                 data_out(i,k,j,l) = data_in(i,1,j,l)
+              ELSE
+                IF (extrapolate) THEN
+                  ! Extrapolate upward because desired pressure level is above
+                  ! the highest level in our input data.  Extrapolate using simple
+                  ! 1st derivative of value with respect to height for the bottom 2
+                  ! input layers.
+
+                  ! Add a check to make sure we are not using the gradient of 
+                  ! a very thin layer
+
+                  IF ( (z_in(i,1,j) - z_in(i,2,j)) .LT. 0.001) THEN
+                    dvaldz = (data_in(i,2,j,l) - data_in(i,1,j,l)) / &
+                              (z_in(i,2,j)  - z_in(i,1,j) )
+                  ELSE
+                    dvaldz = (data_in(i,3,j,l) - data_in(i,1,j,l)) / &
+                              (z_in(i,3,j)  - z_in(i,1,j) )
+                  ENDIF
+                  data_out(i,k,j,l) = MAX( data_in(i,1,j,l) + &
+                                 dvaldz * (desired_z-z_in(i,1,j)), 0.)
+                ELSE
+                  data_out(i,k,j,l) = data_in(i,1,j,l)
+                ENDIF
+              ENDIF
+            ELSE IF (desired_z .LT. z_in(i,nz_in,j)) THEN
+              IF ( (z_in(i,nz_in,j) - desired_z) .LT. 0.0001) THEN
+                 data_out(i,k,j,l) = data_in(i,nz_in,j,l)
+              ELSE
+                IF (extrapolate) THEN
+                  ! Extrapolate upward
+                  IF ( (z_in(i,nz_in-1,j)-z_in(i,nz_in,j)) .LT. 0.0005) THEN
+                    dvaldz = (data_in(i,nz_in,j,l) - data_in(i,nz_in-1,j,l)) / &
+                               (z_in(i,nz_in,j)  - z_in(i,nz_in-1,j))
+                  ELSE
+                    dvaldz = (data_in(i,nz_in,j,l) - data_in(i,nz_in-2,j,l)) / &
+                               (z_in(i,nz_in,j)  - z_in(i,nz_in-2,j))
+                  ENDIF
+                  data_out(i,k,j,l) =  MAX( data_in(i,nz_in,j,l) + &
+                           dvaldz * (z_in(i,nz_in,j) - desired_z), 0.)
+                ELSE
+                  data_out(i,k,j,l) = data_in(i,nz_in,j,l)
+                ENDIF
+              ENDIF
+            ELSE
+              ! We can trap between two levels and linearly interpolate
+
+              input_loop:  DO kk = 1, nz_in-1
+                IF (desired_z .EQ. z_in(i,kk,j) )THEN
+                  data_out(i,k,j,l) = data_in(i,kk,j,l)
+                  EXIT input_loop
+                ELSE IF ( (desired_z .LT. z_in(i,kk,j)) .AND. & 
+                          (desired_z .GT. z_in(i,kk+1,j)) ) THEN
+                  wgt0 = (desired_z - z_in(i,kk+1,j)) / &
+                         (z_in(i,kk,j)-z_in(i,kk+1,j))
+                  data_out(i,k,j,l) = MAX( wgt0*data_in(i,kk,j,l) + &
+                                    (1.-wgt0)*data_in(i,kk+1,j,l), 0.)
+                  EXIT input_loop
+                ENDIF        
+              ENDDO input_loop
+
+            ENDIF
+#endif
           ENDDO output_loop
         ENDDO 
       ENDDO 
@@ -736,6 +918,11 @@ SUBROUTINE input_chem_profile (si_grid)
 
    REAL, ALLOCATABLE, DIMENSION(:,:,:) :: si_zsigf, si_zsig
 
+#if ( ! NMM_CORE == 0 )
+   REAL, ALLOCATABLE, DIMENSION(:,:,:) :: pint
+   REAL, ALLOCATABLE, DIMENSION(:,:) :: pdsl
+#endif
+
    CHARACTER (LEN=80) :: inpname, message
 
    write(message,'(A)') 'Subroutine input_chem_profile: '
@@ -756,7 +943,59 @@ SUBROUTINE input_chem_profile (si_grid)
    ALLOCATE( si_zsigf(ims:ime,kms:kme,jms:jme) )
    ALLOCATE(  si_zsig(ims:ime,kms:kme,jms:jme) )
 
-   si_zsigf = (si_grid%em_ph_1 + si_grid%em_phb) / grav
+#if ( ! EM_CORE == 0 )
+     write(message,'(A)') 'WRF_EM_CORE  '
+     si_zsigf = (si_grid%em_ph_1 + si_grid%em_phb) / grav
+#endif
+#if ( ! NMM_CORE == 0 )
+   ! Get scalar grid point heights
+   ALLOCATE(  pint(ims:ime,kms:kme,jms:jme) )
+   ALLOCATE(  pdsl(ims:ime,jms:jme) )
+
+     write(message,'(A)') 'WRF_NMM_CORE  '
+     CALL  wrf_message ( message )
+
+       IF(si_grid%sigma.EQ. 1)THEN
+         do j=jps,jpe
+         do i=ips,ipe
+           pdsl(i,j)=si_grid%nmm_pd(i,j)
+         ENDDO
+         ENDDO
+       ELSE
+         do j=jps,jpe
+         do i=ips,ipe
+           pdsl(i,j)=si_grid%nmm_res(i,j)*si_grid%nmm_pd(i,j)
+         enddo
+         enddO
+       ENDIF
+!!
+!!***
+!!
+!!
+!!!!!    SHOULD PINT,Z,W BE REDEFINED IF RESTRT?
+!
+!     print *,' ips=',ips,' ipe=',ipe
+!     print *,' jps=',jps,' jpe=',jpe
+!     print *,' kps=',kps,' kpe=',kpe
+!     print *,' sigma=',si_grid%sigma
+!     print *,' pdtop=',si_grid%nmm_pdtop,' pt=',si_grid%nmm_pt
+
+      do j=jps,jpe
+        do k=kps,kpe
+        do i=ips,ipe
+          pint(i,k,j)=si_grid%nmm_eta1(k)*si_grid%nmm_pdtop+si_grid%nmm_eta2(k)*pdsl(i,j)+si_grid%nmm_pt
+          si_zsigf(i,k,j)=pint(i,k,j)
+        ENDDO
+        ENDDO
+      ENDDO
+!       do k=kps,kpe
+!          print *,k,pint(1,k,1),si_grid%nmm_eta1(k),si_grid%nmm_pdtop,si_grid%nmm_eta2(k),pdsl(1,1),si_grid%nmm_pt
+!       enddo
+!
+!  si_zsigf = si_grid%z
+#endif
+
+!  si_zsigf = (si_grid%em_ph_1 + si_grid%em_phb) / grav
 
    do k=1,kde-1
      si_zsig(:,k,:) = 0.5 * ( si_zsigf(:,k,:) + si_zsigf(:,k+1,:) ) 
@@ -774,7 +1013,8 @@ SUBROUTINE input_chem_profile (si_grid)
    ! be set to match the values in bdy_chem_value_tracer so that the boundaries
    ! and interior match each other.
    IF ( si_grid%chem_opt == CHEM_TRACER ) THEN
-      si_grid%chem(ims:ime,kms:kme,jms:jme,p_so2) = 0.0001
+      si_grid%chem(ims:ime,kms:kme,jms:jme,1:numgas) = 0.0001
+!     si_grid%chem(ims:ime,kms:kme,jms:jme,p_so2) = 0.0001
       si_grid%chem(ims:ime,kms:kme,jms:jme,p_co ) = 0.08
    ELSE
       CALL make_chem_profile (ims, ime, jms, jme, kms, kme, num_chem, numgas, &
@@ -829,9 +1069,9 @@ SUBROUTINE input_chem_profile (si_grid)
 !
 ! return xl to previous value for next time... 
 !   34 chemicals (lo), 16 vertical levels (kx)
-      DO i=lo-6,lo               
-        xl(i,1:kx)=xl(i,1:kx)*dens(1:kx)
-      ENDDO
+!     DO i=lo-6,lo               
+!       xl(i,1:kx)=xl(i,1:kx)*dens(1:kx)
+!     ENDDO
 
 ! Change number concentrations to mixing ratios for short-lived NALROM species
       do k=1,kx
@@ -868,7 +1108,7 @@ SUBROUTINE input_chem_profile (si_grid)
 ! this is a kludge routine as of now....
 !
   SUBROUTINE bdy_chem_value_sorgam (chem, z, nch, config_flags, &
-                                      alt,t,pb,p,t0,p1000mb,rcp,ph,phb,g)
+                                      alt,convfac,g)
   USE module_data_sorgam
   USE module_aerosols_sorgam
     IMPLICIT NONE
@@ -876,9 +1116,8 @@ SUBROUTINE input_chem_profile (si_grid)
     REAL,    intent(OUT)  :: chem
     REAL,    intent(IN)   :: z          ! 3D height array
     INTEGER, intent(IN)   :: nch        ! index number of chemical species
-    REAL,  INTENT(IN   ) ::                                           &
-                               ph,phb,t,pb,p,alt
-    real, INTENT (IN) :: g,rcp,t0,p1000mb
+    REAL,  INTENT(IN   ) ::   alt, convfac
+    real, INTENT (IN) :: g
     TYPE (grid_config_rec_type), intent(in) :: config_flags
 
     INTEGER :: i, k, l
@@ -889,7 +1128,7 @@ SUBROUTINE input_chem_profile (si_grid)
     REAL                 :: wgt0
 
     real :: chemsulf_radm,chem_so4aj,chem_so4ai
-     real convfac,tempfac
+     real tempfac
       REAL :: splitfac
                         !between gas and aerosol phase
 
@@ -917,8 +1156,8 @@ SUBROUTINE input_chem_profile (si_grid)
 
 ! do default calculation of sorgam aerosol bc values
        chem=conmin
-       tempfac=(t+t0)*((p+pb)/p1000mb)**rcp
-       convfac=(p+pb)/rgasuniv/tempfac
+!      tempfac=(t+t0)*((p+pb)/p1000mb)**rcp
+!      convfac=(p+pb)/rgasuniv/tempfac
 !
 !--- units for advection....
 !
@@ -942,7 +1181,7 @@ SUBROUTINE input_chem_profile (si_grid)
       !     (this isn't really needed in this subr)
       ! Convert species 28-34 (lo-6:lo) from (molecules/cm3) to (mol/mol)
       DO k = 1,kx 
-        zprof(k) = 0.5*(zfa(k)+zfa(k+1))
+        zprof(k) = 0.5*(zfa_bdy(k)+zfa_bdy(k+1))
         DO l = 1,lo-7
            cprof(l+1,k) = xl(l,kx+1-k)
         END DO
@@ -1075,7 +1314,7 @@ SUBROUTINE input_chem_profile (si_grid)
     INTEGER, intent(IN)   :: nch        ! index number of chemical species
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    if( nch == p_so2 ) then
+    if( nch .ne. p_co  ) then
        chem = 0.0001
     else if( nch == p_co ) then
        chem = 0.08
@@ -1087,6 +1326,92 @@ SUBROUTINE input_chem_profile (si_grid)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  SUBROUTINE bdy_chem_value_racm ( chem, z, nch, numgas,p_co2 )
+                                  
+    IMPLICIT NONE
+
+    REAL,    intent(OUT)  :: chem
+    REAL,    intent(IN)   :: z          ! 3D height array
+    INTEGER, intent(IN)   :: nch,p_co2  ! index number of chemical species
+    INTEGER, intent(IN)   :: numgas     ! index number of last gas species
+
+    INTEGER :: i, k, irefcur
+
+    REAL, DIMENSION(kx):: cprof         ! chemical profile, diff. index order
+
+    REAL, DIMENSION(1:kx):: zprof
+    REAL                 :: stor
+    REAL                 :: wgt0
+
+    CHARACTER (LEN=80) :: message
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+! Check the number of species
+!     if((nch-1).gt.logg)return
+     if (nch.eq.p_co2)then
+       chem=370.
+       return
+     endif
+     if (nch.eq.p_co2+1)then
+       chem=1.7
+       return
+     endif
+     if (nch.ge.p_co2+2)return
+    
+
+!    if( nch .GT. logg+1) then
+     if( nch .GT. numgas) then
+       message = ' Input_chem_profile: wrong number of chemical species'
+       return
+!       CALL WRF_ERROR_FATAL ( message )
+     endif
+
+      ! Vertically flip the chemistry data as it is given top down 
+      !     and heights in zfa are bottom up
+      ! Fill 1D chemical profile array cprof
+      ! Convert species 28-34 (lo-6:lo) from (molecules/cm3) to (mol/mol)
+      irefcur = iref(nch-1)
+      DO k = 1,kx 
+        zprof(k) = 0.5*(zfa_bdy(k)+zfa_bdy(k+1))
+        if (irefcur .lt. lo-6) then
+          cprof(k) = xl(irefcur,kx+1-k)
+        else
+          cprof(k) = xl(irefcur,kx+1-k)/dens(kx+1-k)
+        end if
+      ENDDO
+
+      ! Interpolate temp 3D chemical profile array to WRF field
+      IF (z .LT. zprof(1)) THEN 
+        stor = cprof(1) 
+      ELSE IF (z .GT. zprof(kx)) THEN
+        stor = cprof(kx)
+      ELSE
+        ! We can trap between two levels and linearly interpolate
+        input_loop:  DO k = 1, kx-1
+          IF (z .EQ. zprof(k) )THEN 
+            stor = cprof(k)
+            EXIT input_loop
+          ELSE IF ( (z .GT. zprof(k)) .AND. &
+                    (z .LT. zprof(k+1)) ) THEN
+            wgt0 = (z   - zprof(k+1)) / &
+                   (zprof(k) - zprof(k+1))
+            stor = MAX( wgt0 *cprof(k  ) + &
+                     (1.-wgt0)*cprof(k+1), 0.)
+            EXIT input_loop
+          ENDIF  
+        ENDDO input_loop
+      ENDIF 
+
+      ! Here is where the chemistry value is constructed
+      chem = fracref(nch-1)*stor*1.E6
+
+      ! special code for sulfate/h2so4
+      if(nch.eq.p_sulf.and.p_nu0.gt.1)then
+        chem=chem*(1.-so4vaptoaer)
+      endif
+
+      RETURN
+  END SUBROUTINE bdy_chem_value_racm
   SUBROUTINE bdy_chem_value ( chem, z, nch, numgas )
                                   
     IMPLICIT NONE
@@ -1123,7 +1448,7 @@ SUBROUTINE input_chem_profile (si_grid)
       ! Convert species 28-34 (lo-6:lo) from (molecules/cm3) to (mol/mol)
       irefcur = iref(nch-1)
       DO k = 1,kx 
-        zprof(k) = 0.5*(zfa(k)+zfa(k+1))
+        zprof(k) = 0.5*(zfa_bdy(k)+zfa_bdy(k+1))
         if (irefcur .lt. lo-6) then
           cprof(k) = xl(irefcur,kx+1-k)
         else
@@ -1165,7 +1490,9 @@ SUBROUTINE input_chem_profile (si_grid)
   END SUBROUTINE bdy_chem_value
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-   SUBROUTINE flow_dep_bdy_chem  (  chem, z,                 &
+   SUBROUTINE flow_dep_bdy_chem  (  chem, chem_b,chem_bt,dt,                    &
+                               spec_bdy_width,z,                                &
+                               ijds, ijde,have_bcs_chem,                        & 
                                u, v, config_flags, alt, & 
                                t,pb,p,t0,p1000mb,rcp,ph,phb,g, &
                                spec_zone, ic,           &
@@ -1186,10 +1513,14 @@ SUBROUTINE input_chem_profile (si_grid)
       INTEGER,      INTENT(IN   )    :: ims,ime, jms,jme, kms,kme
       INTEGER,      INTENT(IN   )    :: ips,ipe, jps,jpe, kps,kpe
       INTEGER,      INTENT(IN   )    :: its,ite, jts,jte, kts,kte
-      INTEGER,      INTENT(IN   )    :: spec_zone, ic
+      INTEGER,      INTENT(IN   )    :: ijds,ijde
+      INTEGER,      INTENT(IN   )    :: spec_zone,spec_bdy_width,ic
+      REAL,         INTENT(IN   )    :: dt
 
 
       REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(INOUT) :: chem
+      REAL,  DIMENSION( ijds:ijde , kds:kde , spec_bdy_width, 4 ), INTENT(IN   ) :: chem_b
+      REAL,  DIMENSION( ijds:ijde , kds:kde , spec_bdy_width, 4 ), INTENT(IN   ) :: chem_bt
       REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(IN   ) :: z
       REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(IN   ) :: alt
       REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(IN   ) :: u
@@ -1205,7 +1536,9 @@ SUBROUTINE input_chem_profile (si_grid)
       INTEGER    :: i_inner, j_inner
       INTEGER    :: b_dist
       integer    :: itestbc, i_bdy_method
+      real tempfac,convfac
       real       :: chem_bv_def
+      logical    :: have_bcs_chem
 
       chem_bv_def = conmin
       numgas = get_last_gas(config_flags%chem_opt)
@@ -1234,6 +1567,15 @@ SUBROUTINE input_chem_profile (si_grid)
       i_bdy_method = 0
       if ((ic .ge. p_so2) .and. (ic .le. p_ho2)) then
           i_bdy_method = 1
+
+        if (config_flags%chem_opt == RACM_KPP .or.          &
+            config_flags%chem_opt == RACMSORG_KPP .or.      &
+            config_flags%chem_opt == RACM_MIM_KPP .or.      &
+            config_flags%chem_opt == RACMSORG_KPP ) then
+          i_bdy_method = 9
+        end if
+
+
       else if ((ic .ge. p_so4aj) .and. (ic .le. p_corn)) then
           i_bdy_method = 2
       else if ((ic .ge. p_hcl) .and. (ic .le. p_isopo2)) then
@@ -1259,6 +1601,7 @@ SUBROUTINE input_chem_profile (si_grid)
       else if (config_flags%chem_opt == CHEM_TRACER) then
           i_bdy_method = 5
       end if
+      if (have_bcs_chem) i_bdy_method =6
       if (ic .lt. param_first_scalar) i_bdy_method = 0
 
 !----------------------------------------------------------------------
@@ -1279,6 +1622,10 @@ SUBROUTINE input_chem_profile (si_grid)
 !90020 format( a, 1p, 2e12.2 )
 !----------------------------------------------------------------------
 
+!     if(ic.eq.p_O3)THEN
+!     write(0,*)'in flow_chem ',jts,jbs,spec_zone
+!     write(0,*)'in flow_chem ',its,ibs,b_dist,i_bdy_method,ic
+!     endif
       IF (jts - jbs .lt. spec_zone) THEN
 ! Y-start boundary
         DO j = jts, min(jtf,jbs+spec_zone-1)
@@ -1289,15 +1636,23 @@ SUBROUTINE input_chem_profile (si_grid)
               i_inner = min(i_inner,ibe-spec_zone)
               IF(v(i,k,j) .lt. 0.)THEN
                 chem(i,k,j) = chem(i_inner,k,jbs+spec_zone)
+!               if(j.eq.jts+1.and.k.eq.kts.and.ic.eq.p_o3)then
+!                  write(0,*)'Yflow',i,j,k,i_bdy_method
+!                  write(0,*)chem(i_inner,k,jbs+spec_zone),v(i,k,j)
+!               endif
               ELSE
                 if (i_bdy_method .eq. 1) then
                    CALL bdy_chem_value (   &
                         chem(i,k,j), z(i,k,j), ic, numgas )
+                else if (i_bdy_method .eq. 9) then
+                   CALL bdy_chem_value_racm(   &
+                        chem(i,k,j), z(i,k,j), ic, numgas,p_co2 )
                 else if (i_bdy_method .eq. 2) then
+                   tempfac=(t(i,k,j)+t0)*((p(i,k,j) + pb(i,k,j))/p1000mb)**rcp
+                   convfac=(p(i,k,j)+pb(i,k,j))/rgasuniv/tempfac
                    CALL bdy_chem_value_sorgam (   &
                         chem(i,k,j), z(i,k,j), ic, config_flags,   &
-                        alt(i,k,j),t(i,k,j),pb(i,k,j),p(i,k,j),t0,p1000mb,rcp,   &
-                        ph(i,k,j),phb(i,k,j),g )
+                        alt(i,k,j),convfac,g)
                 else if (i_bdy_method .eq. 3) then
                    CALL bdy_chem_value_cbmz (   &
                         chem(i,k,j), z(i,k,j), ic, config_flags, numgas )
@@ -1306,6 +1661,12 @@ SUBROUTINE input_chem_profile (si_grid)
                         chem(i,k,j), alt(i,k,j), z(i,k,j), ic, config_flags )
                 else if (i_bdy_method .eq. 5) then
                    CALL bdy_chem_value_tracer ( chem(i,k,j), ic )
+                else if (i_bdy_method .eq. 6) then
+                   CALL bdy_chem_value_gcm ( chem(i,k,j),chem_b(i,k,1,P_YSB),chem_bt(i,k,1,P_YSB),dt,ic)
+!               if(k.eq.kts.and.ic.eq.p_o3)then
+!                  write(0,*)'Ygcm',i,j,k,i_bdy_method
+!                  write(0,*)chem(i,k,j),chem_b(i,k,1,P_YSB),chem_bt(i,k,1,P_YSB),dt
+!               endif
                 else
                    chem(i,k,j) = chem_bv_def
                 endif
@@ -1328,11 +1689,15 @@ SUBROUTINE input_chem_profile (si_grid)
                 if (i_bdy_method .eq. 1) then
                    CALL bdy_chem_value (   &
                         chem(i,k,j), z(i,k,j), ic, numgas )
+                else if (i_bdy_method .eq. 9) then
+                   CALL bdy_chem_value_racm (   &
+                        chem(i,k,j), z(i,k,j), ic, numgas,p_co2 )
                 else if (i_bdy_method .eq. 2) then
+                   tempfac=(t(i,k,j)+t0)*((p(i,k,j) + pb(i,k,j))/p1000mb)**rcp
+                   convfac=(p(i,k,j)+pb(i,k,j))/rgasuniv/tempfac
                    CALL bdy_chem_value_sorgam (   &
                         chem(i,k,j), z(i,k,j), ic, config_flags,   &
-                        alt(i,k,j),t(i,k,j),pb(i,k,j),p(i,k,j),t0,p1000mb,rcp,   &
-                        ph(i,k,j),phb(i,k,j),g )
+                        alt(i,k,j),convfac,g)
                 else if (i_bdy_method .eq. 3) then
                    CALL bdy_chem_value_cbmz (   &
                         chem(i,k,j), z(i,k,j), ic, config_flags, numgas )
@@ -1341,6 +1706,8 @@ SUBROUTINE input_chem_profile (si_grid)
                         chem(i,k,j), alt(i,k,j), z(i,k,j), ic, config_flags )
                 else if (i_bdy_method .eq. 5) then
                    CALL bdy_chem_value_tracer ( chem(i,k,j), ic )
+                else if (i_bdy_method .eq. 6) then
+                   CALL bdy_chem_value_gcm ( chem(i,k,j),chem_b(i,k,1,P_YEB),chem_bt(i,k,1,P_YEB),dt,ic)
                 else
                    chem(i,k,j) = chem_bv_def
                 endif
@@ -1364,11 +1731,15 @@ SUBROUTINE input_chem_profile (si_grid)
                 if (i_bdy_method .eq. 1) then
                    CALL bdy_chem_value (   &
                         chem(i,k,j), z(i,k,j), ic, numgas )
+                else if (i_bdy_method .eq. 9) then
+                   CALL bdy_chem_value_racm (   &
+                        chem(i,k,j), z(i,k,j), ic, numgas,p_co2 )
                 else if (i_bdy_method .eq. 2) then
+                   tempfac=(t(i,k,j)+t0)*((p(i,k,j) + pb(i,k,j))/p1000mb)**rcp
+                   convfac=(p(i,k,j)+pb(i,k,j))/rgasuniv/tempfac
                    CALL bdy_chem_value_sorgam (   &
                         chem(i,k,j), z(i,k,j), ic, config_flags,   &
-                        alt(i,k,j),t(i,k,j),pb(i,k,j),p(i,k,j),t0,p1000mb,rcp,   &
-                        ph(i,k,j),phb(i,k,j),g )
+                        alt(i,k,j),convfac,g)
                 else if (i_bdy_method .eq. 3) then
                    CALL bdy_chem_value_cbmz (   &
                         chem(i,k,j), z(i,k,j), ic, config_flags, numgas )
@@ -1377,6 +1748,8 @@ SUBROUTINE input_chem_profile (si_grid)
                         chem(i,k,j), alt(i,k,j), z(i,k,j), ic, config_flags )
                 else if (i_bdy_method .eq. 5) then
                    CALL bdy_chem_value_tracer ( chem(i,k,j), ic )
+                else if (i_bdy_method .eq. 6) then
+                   CALL bdy_chem_value_gcm ( chem(i,k,j),chem_b(i,k,1,P_XSB),chem_bt(i,k,1,P_XSB),dt,ic)
                 else
                    chem(i,k,j) = chem_bv_def
                 endif
@@ -1400,11 +1773,15 @@ SUBROUTINE input_chem_profile (si_grid)
                 if (i_bdy_method .eq. 1) then
                    CALL bdy_chem_value (   &
                         chem(i,k,j), z(i,k,j), ic, numgas )
+                else if (i_bdy_method .eq. 9) then
+                   CALL bdy_chem_value_racm (   &
+                        chem(i,k,j), z(i,k,j), ic, numgas,p_co2 )
                 else if (i_bdy_method .eq. 2) then
+                   tempfac=(t(i,k,j)+t0)*((p(i,k,j) + pb(i,k,j))/p1000mb)**rcp
+                   convfac=(p(i,k,j)+pb(i,k,j))/rgasuniv/tempfac
                    CALL bdy_chem_value_sorgam (   &
                         chem(i,k,j), z(i,k,j), ic, config_flags,   &
-                        alt(i,k,j),t(i,k,j),pb(i,k,j),p(i,k,j),t0,p1000mb,rcp,   &
-                        ph(i,k,j),phb(i,k,j),g )
+                        alt(i,k,j),convfac,g)
                 else if (i_bdy_method .eq. 3) then
                    CALL bdy_chem_value_cbmz (   &
                         chem(i,k,j), z(i,k,j), ic, config_flags,numgas )
@@ -1413,6 +1790,8 @@ SUBROUTINE input_chem_profile (si_grid)
                         chem(i,k,j), alt(i,k,j), z(i,k,j), ic, config_flags )
                 else if (i_bdy_method .eq. 5) then
                    CALL bdy_chem_value_tracer ( chem(i,k,j), ic )
+                else if (i_bdy_method .eq. 6) then
+                   CALL bdy_chem_value_gcm ( chem(i,k,j),chem_b(i,k,1,P_XEB),chem_bt(i,k,1,P_XEB),dt,ic)
                 else
                    chem(i,k,j) = chem_bv_def
                 endif
@@ -1423,6 +1802,36 @@ SUBROUTINE input_chem_profile (si_grid)
       ENDIF 
 
    END SUBROUTINE flow_dep_bdy_chem
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  SUBROUTINE bdy_chem_value_gcm ( chem, chem_b, chem_bt, dt,ic)
+                                  
+    IMPLICIT NONE
+
+    REAL,    intent(OUT)  :: chem
+    REAL,    intent(IN)   :: chem_b
+    REAL,    intent(IN)   :: chem_bt
+    REAL,    intent(IN)   :: dt
+    INTEGER, intent(IN)   :: ic
+
+
+    CHARACTER (LEN=80) :: message
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!     if( nch .GT. numgas) then
+!       message = ' Input_chem_profile: wrong number of chemical species'
+!       return
+!       CALL WRF_ERROR_FATAL ( message )
+!     endif
+
+
+      !print*,'before',chem,chem_bt ,dt, ic
+     
+      chem=max(epsilc,chem_b + chem_bt * dt)
+      !print*,'after',chem
+      RETURN
+  END SUBROUTINE bdy_chem_value_gcm
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    SUBROUTINE cv_mmdd_jday ( YY, MM, DD, JDAY)
 !
@@ -1467,7 +1876,7 @@ SUBROUTINE input_chem_profile (si_grid)
      select case (chem_opt)
      case (0)
         get_last_gas = 0
-     case (RADM2,RADM2SORG,RACM,RACMSORG)
+     case (RADM2,RADM2_KPP,RADM2SORG,RADM2SORG_KPP,RACM,RACMSORG,RACM_KPP,RACMSORG_KPP, RACM_MIM_KPP)
         get_last_gas = p_ho2
 
      case (CBMZ)
@@ -1878,7 +2287,7 @@ SUBROUTINE med_read_bin_chem_emiss ( grid , config_flags ,intime, itime_max)
 
 #include <wrf_io_flags.h>
 
-   write(message, '(A,A)') 'call read emissions', intime
+   write(message, '(A,I9)') 'call read emissions', intime
    call wrf_message( TRIM( message ) )
 
    IF(intime == 0 ) THEN
@@ -1906,84 +2315,84 @@ SUBROUTINE med_read_bin_chem_emiss ( grid , config_flags ,intime, itime_max)
                              ims, ime, jms, jme, kms, kme,    &
                              ips, ipe, jps, jpe, kps, kpe    )
 
-   ALLOCATE (dumc0(ids:ide-1,kds:kde-1,jds:jde-1))
+   ALLOCATE (dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1))
 
-     write(message, '(7A)') ' I am reading emissions, dims: =',ids, ide-1, jds, jde-1, kds, kde-1
+     write(message, '(A,6I6)') ' I am reading emissions, dims: =',ids, ide-1, jds, jde-1, kds, grid%kemit
      call wrf_message( TRIM( message ) )
 
    IF(intime == 0 .or. intime == 12) then
      read(91)nv
      read(91)ename
-     write(message, '(2A)') ' Number of emissions: ',nv
+     write(message, '(A,I10)') ' Number of emissions: ',nv
      call wrf_message( TRIM( message ) )
 
-     write(message, '(2A)') ' Array names : ',ename
-     call wrf_message( TRIM( message ) )
+!    write(message, '(A,30A10)') ' Array names : ',ename
+!    call wrf_message( TRIM( message ) )
    ENDIF
        read(91)itime
-     write(message, '(4A)') ' EMISSIONS INPUT FILE TIME PERIOD (GMT): ',itime-1,' TO ',itime
+     write(message, '(A,I8,A,I8)') ' EMISSIONS INPUT FILE TIME PERIOD (GMT): ',itime-1,' TO ',itime
      call wrf_message( TRIM( message ) )
 
          read(91)dumc0
-         grid%e_so2(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         grid%e_so2(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
          read(91)dumc0
-         grid%e_no(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         grid%e_no(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
          read(91)dumc0
-         grid%e_ald(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         grid%e_ald(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
          read(91)dumc0
-         grid%e_hcho(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         grid%e_hcho(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
          read(91)dumc0
-         grid%e_ora2(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         grid%e_ora2(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
          read(91)dumc0
-         grid%e_nh3(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         grid%e_nh3(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
          read(91)dumc0
-         grid%e_hc3(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         grid%e_hc3(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
          read(91)dumc0
-         grid%e_hc5(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         grid%e_hc5(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
          read(91)dumc0
-         grid%e_hc8(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         grid%e_hc8(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
          read(91)dumc0
-         grid%e_eth(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         grid%e_eth(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
          read(91)dumc0
-         grid%e_co(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         grid%e_co(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
          read(91)dumc0
-         grid%e_ol2(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         grid%e_ol2(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
          read(91)dumc0
-         grid%e_olt(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         grid%e_olt(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
          read(91)dumc0
-         grid%e_oli(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         grid%e_oli(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
          read(91)dumc0
-         grid%e_tol(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         grid%e_tol(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
          read(91)dumc0
-         grid%e_xyl(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         grid%e_xyl(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
          read(91)dumc0
-         grid%e_ket(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         grid%e_ket(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
          read(91)dumc0
-         grid%e_csl(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         grid%e_csl(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
          read(91)dumc0
-         grid%e_iso(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         grid%e_iso(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
          read(91)dumc0
-         grid%e_pm25i(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         grid%e_pm25i(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
          read(91)dumc0
-         grid%e_pm25j(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         grid%e_pm25j(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
          read(91)dumc0
-         grid%e_so4i(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         grid%e_so4i(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
          read(91)dumc0
-         grid%e_so4j(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         grid%e_so4j(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
          read(91)dumc0
-         grid%e_no3i(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         grid%e_no3i(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
          read(91)dumc0
-         grid%e_no3j(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         grid%e_no3j(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
          read(91)dumc0
-         grid%e_orgi(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         grid%e_orgi(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
          read(91)dumc0
-         grid%e_orgj(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         grid%e_orgj(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
          read(91)dumc0
-         grid%e_eci(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         grid%e_eci(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
          read(91)dumc0
-         grid%e_ecj(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         grid%e_ecj(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
          read(91)dumc0
-         grid%e_pm10(ids:ide-1,kds:kde-1,jds:jde-1)=dumc0
+         grid%e_pm10(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
 
     DEALLOCATE ( dumc0 )
    RETURN

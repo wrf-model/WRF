@@ -1157,12 +1157,12 @@
       subroutine madronich1_driver(id,ktau,dtstep,config_flags,haveaer, &
                gmt,julday,t_phy,moist,aerwrf,p8w,t8w,p_phy,             &
                chem,rho_phy,dz8w,                                       &
-               xlat,xlong,z,z_at_w,                                     &
+               xlat,xlong,z_at_w,gd_cloud,gd_cloud2,                    &
                ph_macr,ph_o31d,ph_o33p,ph_no2,ph_no3o2,ph_no3o,ph_hno2, &
                ph_hno3,ph_hno4,ph_h2o2,ph_ch2or,ph_ch2om,ph_ch3cho,     &
                ph_ch3coch3,ph_ch3coc2h5,ph_hcocho,ph_ch3cocho,          &
                ph_hcochest,ph_ch3o2h,ph_ch3coo2h,ph_ch3ono2,ph_hcochob, &
-               pm2_5_dry,pm2_5_water,                                   &
+               pm2_5_dry,pm2_5_water,uvrad,                             &
                ids,ide, jds,jde, kds,kde,                               &
                ims,ime, jms,jme, kms,kme,                               &
                its,ite, jts,jte, kts,kte                                )
@@ -1181,7 +1181,7 @@
          INTENT(IN ) ::                                   moist
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                   &
          INTENT(INOUT ) ::                                         &
-               pm2_5_dry,pm2_5_water
+               pm2_5_dry,pm2_5_water,gd_cloud,gd_cloud2
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                   &
          INTENT(INOUT ) ::                                         &
            ph_macr,ph_o31d,ph_o33p,ph_no2,ph_no3o2,ph_no3o,ph_hno2,&
@@ -1195,7 +1195,6 @@
                                                       t_phy,    &
                                                       p_phy,    &
                                                       dz8w,     &
-                                                      z    ,    &
                                               t8w,p8w,z_at_w ,  &     
                                                       aerwrf ,  &     
                                                     rho_phy           
@@ -1203,6 +1202,8 @@
           INTENT(IN   ) ::                                      &     
                                                      xlat,      &
                                                      xlong
+   REAL,  DIMENSION( ims:ime , jms:jme )                   ,    &     
+          INTENT(INOUT   ) ::                               uvrad
       REAL,      INTENT(IN   ) ::                               &
                              dtstep,gmt
 
@@ -1218,7 +1219,7 @@
 !
       real tt(kts:kte),o33(kts:kte),rhoa(kts:kte),aerext(kts:kte),qll(kts:kte),    &
            phizz(kts:kte),phot1(nreakj-1,kts:kte)
-      real :: xtime,xhour,xmin,gmtp
+      real :: xtime,xhour,xmin,gmtp,uvb_dd1,uvb_du1,uvb_dir1
       real :: zenith,zenita,azimuth,dobsi
       real :: bext340,bexth2o,ctr
       integer :: naerspec
@@ -1232,6 +1233,7 @@
 !     print *,'gmtp = ',gmtp,xhour,xmin
       do 100 j=jts,jte
       do 100 i=its,ite
+!     write(0,*)i,j
         do k=kts,kte
         do n=1,nreakj-1
           phot1(n,k)=0.
@@ -1244,7 +1246,7 @@
         call calc_zenith(xlat(i,j),-xlong(i,j),julday,gmtp,azimuth,zenith)
 ! if nighttime, skip radiative transfer calculation
         if(zenith.eq.90.) zenith = 89.9
-        if(zenith.ge.96.) go to 199
+        if(zenith.ge.90.) go to 199
         zenita = cos(zenith*pi/180.)
         if(zenith.gt.75.)   zenita=1./chap(zenith)
 ! photmad berechnet photolysefrequenzen nach Madronich in folgender Reihenfolge
@@ -1293,20 +1295,15 @@
           tt(k+1) = t_phy(i,k,j)
           rhoa(k+1) = rho_phy(i,k,j)
           o33(k+1) = max(1.e-3,chem(i,k,j,p_o3))
-!         if(p_qi.gt.1)then
-!         qll(k+1) = 1.e3*(moist(i,k,j,p_qc)                   &
-!                      +moist(i,k,j,p_qi))*rho_phy(i,k,j)
-!         else
-          qll(k+1) = 1.e3*moist(i,k,j,p_qc)*rho_phy(i,k,j)
-!         endif
-          if(qll(k+1).lt.1.e6*epsilc)qll(k+1) = 0.
-!         qll(k+1) = 0.
+          qll(k+1) = 1.e3*(moist(i,k,j,p_qc)+moist(i,k,j,p_qi)+      &
+                           gd_cloud(i,k,j)+gd_cloud2(i,k,j))         &
+                     *rho_phy(i,k,j)
+          if(qll(k+1).lt.1.e-5)qll(k+1) = 0.
           phizz(k+1) = z_at_w(i,k+1,j)*.001-z_at_w(i,1,j)*.001
-!         if((i.eq.17.and.j.eq.16))then
-!            print *,k,rhoa(k+1),phizz(k+1),qll(k+1),aerext(k+1), &
-!            o33(k+1),tt(k+1),pm2_5_dry(i,k,j),pm2_5_water(i,k,j)
-!         endif
+!         if((i.eq.1.and.j.eq.17))then
+!            write(0,*)k+1,phizz(k+1),qll(k+1),moist(i,k,j,p_qc),moist(i,k,j,p_qi),rqccuten(i,k,j),rqicuten(i,k,j),rho_phy(i,k,j)
 !         write(0,*)k+1,z_at_w(i,k+1,j),z_at_w(i,1,j),tt(k+1),o33(k+1),qll(k+1),rhoa(k+1)
+!         endif
         END DO
         tt(1)=t8w(i,kts,j)
         o33(1)=max(1.e-3,chem(i,kts,j,p_o3))
@@ -1333,9 +1330,10 @@
 !         endif
 !write(0,*)'calling photolysis_mad --------',i,j
         call photolysis_mad(kte-1,zenita,phizz,tt,rhoa,o33,aerext,qll,dobsi,phot1, &
-             nreacj,iprt)
+             nreacj,iprt,uvb_dd1,uvb_du1,uvb_dir1)
 !write(0,*)'back from photolysis_mad ---------------------------- '
 !       print *,'after photmad, i,j = ',i,j
+        uvrad(i,j)=uvb_dd1+uvb_dir1-uvb_du1
         do k=kts,kte-1
         do n=1,nreakj-1
           phot1(n,k)=60.*phot1(n,k)
@@ -1374,7 +1372,7 @@
 END SUBROUTINE madronich1_driver
 
       SUBROUTINE photolysis_mad(mkxcc,a,zmm5,tmm5,pmm5,o3mm5,aerext,wlmm5, &
-          dobsnew,phot1,nrtest,iprt)
+          dobsnew,phot1,nrtest,iprt,uvb_dd1,uvb_du1,uvb_dir1)
         ! Note that nreakj can differ from nreacj in csolve1!!!!!!
         ! ----- INPUT ------------------------------------------------
         ! Input from MM5
@@ -1420,7 +1418,7 @@ END SUBROUTINE madronich1_driver
         ! -----------------------------------------------------------------------
         ! xnkg: Molecules per kg air
         ! .. Scalar Arguments ..
-        REAL :: a, dobsnew
+        REAL :: a, dobsnew,uvb_dd1,uvb_du1,uvb_dir1
         INTEGER :: iprt, mkxcc, nrtest
         ! .. Local Scalars ..
         REAL :: aeru, airu, bextn, df, dj, dz, ff, gaer, gcld, gray, haer, &
@@ -1672,6 +1670,19 @@ END SUBROUTINE madronich1_driver
               dj = df*s(lev,kl,nr)*qy(lev,kl,nr)
               d(nr,lev) = d(nr,lev) + dj
 50      CONTINUE
+         uvb_dd1=0.
+         uvb_du1=0.
+         uvb_dir1=0.   
+        do  kl = 38,54 
+!        radfakt=fext(kl) ! photons/cm**2/s/bin
+!                         ! UV in Photonen/cm**2/s
+         radfakt=fext(kl)*1e4 * 6.63e-34 * 2.9979e8 / (wl(kl)*1e-9)
+                          ! UV in W/m**2
+         uvb_dd1=uvb_dd1+radfakt*endn(1,kl)
+         uvb_du1=uvb_du1+radfakt*enup(1,kl)
+         uvb_dir1=uvb_dir1+radfakt*endir(1,kl)
+        enddo
+
         ! print *,'d(4,1) = ',d(4,1)
 
         DO nr = 1, nreakj - 1
@@ -3159,7 +3170,7 @@ END SUBROUTINE madronich1_driver
 
       END SUBROUTINE trapez
 
-      SUBROUTINE photmad_init(ph,phb,aerwrf,g,ids,ide,jds,jde,kds,kde,ims,ime, &
+      SUBROUTINE photmad_init(z_at_w,aerwrf,g,ids,ide,jds,jde,kds,kde,ims,ime, &
           jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
         ! local stuff
         ! .. Scalar Arguments ..
@@ -3168,8 +3179,7 @@ END SUBROUTINE madronich1_driver
           jms, jte, jts, kde, kds, kme, kms, kte, kts
         ! .. Array Arguments ..
         REAL, INTENT (INOUT) :: aerwrf(ims:ime,kms:kme,jms:jme)
-        REAL, INTENT (IN) :: ph(ims:ime,kms:kme,jms:jme), &
-          phb(ims:ime,kms:kme,jms:jme)
+        REAL, INTENT (IN) :: z_at_w(ims:ime,kms:kme,jms:jme)
         ! .. Local Scalars ..
         REAL :: z1
         INTEGER :: i, j, k
@@ -3186,10 +3196,11 @@ END SUBROUTINE madronich1_driver
 
             ! z at w points
 
-            z1 = (ph(i,1,j)+phb(i,1,j))/g
+            z1 = z_at_w(i,kts,j)
+            z(kts)=0.
 
-            DO k = kts, kte
-              z(k) = (ph(i,k,j)+phb(i,k,j))/g - z1
+            DO k = kts+1, kte
+              z(k) = z_at_w(i,k,j) - z1
             END DO
 
             DO k = kts, kte
@@ -3199,9 +3210,9 @@ END SUBROUTINE madronich1_driver
 !               print *,phizz(k),kts,kte,ite,jte
             END DO
 
-            IF (phizz(kte-1)>20.) THEN
-              CALL wrf_error_fatal ( 'phizz(kte-1)>20., set kl0 to 1')
-            END IF
+!           IF (phizz(kte-1)>20.) THEN
+!             CALL wrf_error_fatal ( 'phizz(kte-1)>20., set kl0 to 1')
+!           END IF
 
             CALL trapez(zstd,aerstd,1,51,phizz,aerext,kts,kte,51,51,kte,kte)
 

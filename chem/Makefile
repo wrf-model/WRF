@@ -39,6 +39,7 @@ MODULES =                           \
   module_fastj_data.o               \
   module_fastj_mie.o                \
   module_phot_fastj.o               \
+  module_ctrans_aqchem.o            \
   module_ctrans_grell.o             \
   module_emissions_anthropogenics.o \
   module_cbmz_initmixrats.o         \
@@ -52,7 +53,7 @@ OBJS    =                           \
         mechanism_driver.o          \
         emissions_driver.o          \
         dry_dep_driver.o            \
-        aerosol_driver.o 
+        aerosol_driver.o                
 
 
 LIBTARGET    =  chemics
@@ -140,6 +141,8 @@ module_fastj_data.o:
 module_fastj_mie.o:
 
 module_ctrans_grell.o:
+
+module_ctrans_aqchem.o:
 
 chem_driver.o: module_radm.o module_racm.o module_data_racm.o module_chem_utilities.o module_data_radm2.o module_dep_simple.o module_bioemi_simple.o module_vertmx_wrf.o module_phot_mad.o module_aerosols_sorgam.o module_data_cbmz.o module_cbmz.o
 

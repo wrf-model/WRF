@@ -60,9 +60,9 @@ CONTAINS
 
       IF ( .NOT. already_been_here ) THEN
 
-         num_st_levels_alloc = config_flags%num_soil_layers * 2
-         num_sm_levels_alloc = config_flags%num_soil_layers * 2
-         num_sw_levels_alloc = config_flags%num_soil_layers * 2
+         num_st_levels_alloc = config_flags%num_soil_layers * 3 ! used to be 2
+         num_sm_levels_alloc = config_flags%num_soil_layers * 3
+         num_sw_levels_alloc = config_flags%num_soil_layers * 3
 
          IF ( ALLOCATED ( st_input ) ) DEALLOCATE ( st_input )
          IF ( ALLOCATED ( sm_input ) ) DEALLOCATE ( sm_input )

@@ -101,7 +101,8 @@ CONTAINS
                                      ids, ide, jds, jde, kds, kde, &
                                      ims, ime, jms, jme, kms, kme, &
                                      its, ite, jts, jte, kts, kte, &
-                                     i, j, k, NNXP, NNYP, ICOUNT
+                                     i, j, k, NNXP, NNYP, ICOUNT, &
+                                     FLAG_RUC_SNOW, FLAG_NAM_SNOW
 
       !  Local data
 
@@ -279,6 +280,8 @@ CONTAINS
         write(0,*) 'config_flags%start_day: ', config_flags%start_day
         write(0,*) 'config_flags%start_hour: ', config_flags%start_hour
 
+	write(0,*) 'writing to start_date'
+
         write(start_date,435) config_flags%start_year, config_flags%start_month, &
                 config_flags%start_day, config_flags%start_hour
   435   format(I4,'-',I2.2,'-',I2.2,'_',I2.2,':00:00')
@@ -287,6 +290,8 @@ CONTAINS
         dphd=config_flags%dy
         tph0d=config_flags%cen_lat
         tlm0d=config_flags%cen_lon
+
+	write(0,*) 'dlmd, dphd, tph0d, tlm0d: ', dlmd, dphd, tph0d, tlm0d
 
 !==========================================================================
 
@@ -307,6 +312,11 @@ CONTAINS
       grid%real_data_init_type = model_config_rec%real_data_init_type
 
 !!! WEASD has "snow water equivalent" in mm
+
+	FLAG_RUC_SNOW=0
+	FLAG_NAM_SNOW=0
+    IF(maxval(snow).gt.0.) FLAG_RUC_SNOW=1
+    IF(maxval(weasd).gt.0.) FLAG_NAM_SNOW=1
 
        DO j = jts, MIN(jte,jde-1)
          DO i = its, MIN(ite,ide-1)
@@ -333,12 +343,29 @@ CONTAINS
               ENDIF
            ELSE
 
-        SI(I,J)=5.0*WEASD(I,J)/1000.
-!  LAND
+! LAND
+    IF(FLAG_RUC_SNOW .eq. 1) THEN
+! RUC variable for snow is SNOW
+        SI(I,J)=SNOW(I,J)/RHOSN(I,J)
         EPSR(I,J)=1.0
         GFFC(I,J)=0.0 ! just leave zero as irrelevant
         SICE(I,J)=0.
-        SNO(I,J)=SI(I,J)*.20
+        SNO(I,J)=SNOW(I,J)/1000.
+
+     ELSEIF (FLAG_NAM_SNOW .eq. 1) THEN
+!  NAM variable for snow is WEASD
+        SI(I,J)=5.0*WEASD(I,J)/1000.
+        EPSR(I,J)=1.0
+        GFFC(I,J)=0.0 ! just leave zero as irrelevant
+        SICE(I,J)=0.
+        SNO(I,J)=WEASD(I,J)/1000.
+     ELSE
+        SI(I,J)=0.
+        EPSR(I,J)=1.0
+        GFFC(I,J)=0.0 ! just leave zero as irrelevant
+        SICE(I,J)=0.
+        SNO(I,J)=0.
+     ENDIF
            ENDIF
         ENDDO
         ENDDO
@@ -366,8 +393,19 @@ CONTAINS
                + (1.0-VEGFRA(I,J))*SNOFAC*(MXSNAL(I,J)-ALBASE(I,J))
             ENDIF
           END IF
+    IF(FLAG_RUC_SNOW .eq. 1) then
+        SI(I,J)=SNOW(I,J)/RHOSN(I,J)*1000.
+        SNO(I,J)=SNOW(I,J)
+!          SNO(I,J)=SNOW(I,J)
+!          SNO(I,J)=WEASD(I,J)
+    ELSEIF (FLAG_NAM_SNOW .eq. 1) then
+
           SI(I,J)=5.0*WEASD(I,J)
           SNO(I,J)=WEASD(I,J)
+    ELSE
+        SI(I,J)=0.
+        SNO(I,J)=0.
+    ENDIF
         ENDDO
       ENDDO
 
@@ -907,6 +945,12 @@ CONTAINS
         IF (SICE(I,J) .eq. 1.0) then
           DO L = 1, grid%num_soil_layers
             STC(I,L,J)=271.16    ! TG value used by Eta/NMM
+!tgs - initialize sea ice temp profile if needed
+!           mid_point_depth=(3./grid%num_soil_layers)/2. + &
+!                             (l-1)*(3./grid%num_soil_layers) 
+!          stc(i,l,j) = ( (3.-mid_point_depth)*nmm_tsk(i,j) + & 
+!                           mid_point_depth*271.16 ) / 3.
+
           END DO
         END IF
                 
@@ -974,14 +1018,14 @@ CONTAINS
         RTDPTH(2)=0.3
         RTDPTH(3)=0.6
 
-        SLDPTH=0.
-        SLDPTH(1)=0.1
-        SLDPTH(2)=0.3
-        SLDPTH(3)=0.6
-        SLDPTH(4)=1.0
+!        SLDPTH=0.
+!        SLDPTH(1)=0.1
+!        SLDPTH(2)=0.3
+!        SLDPTH(3)=0.6
+!        SLDPTH(4)=1.0
 
-        write(0,*) 'SLDPTH: ', SLDPTH(1:4)
-        write(0,*) 'RTDPTH: ', RTDPTH(1:4)
+!        write(0,*) 'SLDPTH: ', SLDPTH(1:4)
+!        write(0,*) 'RTDPTH: ', RTDPTH(1:4)
 
 !!! main body of nmm_specific starts here
 !
@@ -1311,8 +1355,10 @@ CONTAINS
         ENDIF ! wrf_dm_on_monitor
 
 
-      call NMM_SH2O(IMS,IME,JMS,JME,ITS,NNXP,JTS,NNYP,4,ISLTYP, &
+     if(model_config_rec%sf_surface_physics(grid%id).EQ.99) then
+      call NMM_SH2O(IMS,IME,JMS,JME,ITS,NNXP,JTS,NNYP,grid%num_soil_layers,ISLTYP, &
                              SM,SICE,STC,SMC,SH2O)
+     endif
 
 !! must be a better place to put this, but will eliminate "phantom"
 !! wind points here (no wind point on eastern boundary of odd numbered rows)
@@ -1414,6 +1460,23 @@ CONTAINS
         DATA SMCMAX/0.339, 0.421, 0.434, 0.476, 0.476, 0.439,  &
                     0.404, 0.464, 0.465, 0.406, 0.468, 0.468,  &
                     0.439, 1.000, 0.200, 0.421, 0.468, 0.200, 0.339/
+
+!tgs - the following table values are from REDPRM_USGS in NMM LSM
+!      DATA PSIS /0.0350, 0.0363, 0.1413, 0.7586, 0.7586, 0.3548,   &
+!                  0.1349, 0.6166, 0.2630, 0.0977, 0.3236, 0.4677,   &
+!                  0.3548, 0.0000, 0.0350, 0.0363, 0.4677, 0.0350,   &
+!                  0.0350 /
+
+!      DATA BETA    /4.05,  4.26,  4.74,  5.33,  5.33,  5.25,    &
+!                  6.77,  8.72,  8.17, 10.73, 10.39, 11.55,    &
+!                  5.25,  0.00,  4.05,  4.26, 11.55,  4.05,    &
+!                  4.05 /
+
+!      DATA SMCMAX/0.395, 0.421, 0.434, 0.476, 0.476, 0.439,  &
+!                  0.404, 0.464, 0.465, 0.406, 0.468, 0.457,  &
+!                  0.464, 0.000, 0.200, 0.421, 0.457, 0.200,  &
+!                  0.395 /
+
 
         write(0,*) 'define SH2O over IM,JM: ', IM,JM
         DO K=1,NSOIL

@@ -73,6 +73,16 @@ SUBROUTINE solve_interface ( grid )
 # include <nmm_actual_args.inc>
 !
                )
+# ifdef WRF_CHEM
+   IF ( config_flags%chem_opt > 0  ) THEN
+
+     CALL chem_driver  ( grid , config_flags , &
+!
+# include <nmm_actual_args.inc>
+!  
+               )
+   ENDIF
+# endif
 #endif
 #if (COAMPS_CORE == 1)
    ELSE IF ( config_flags%dyn_opt == DYN_COAMPS  ) THEN

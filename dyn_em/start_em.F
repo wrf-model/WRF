@@ -52,9 +52,16 @@
                                   its, ite, jts, jte, kts, kte, &
                                   ij,i,j,k,ii,jj,kk,loop,error,l
 
-   INTEGER     :: hr, mn, sec, ms, rc
+   INTEGER     :: hr, mn, sec, ms, rc, i_m
 
    REAL        :: p00, t00, a, p_surf, pd_surf
+#ifdef WRF_CHEM
+   REAL        RGASUNIV ! universal gas constant [ J/mol-K ]
+   PARAMETER ( RGASUNIV = 8.314510 )
+      REAL,DIMENSION(grid%sm31:grid%em31,grid%sm32:grid%em32,grid%sm33:grid%em33) :: &
+                      z_at_w,convfac
+   REAL :: tempfac
+#endif
 
    REAL :: qvf1, qvf2, qvf
    REAL :: MPDT
@@ -529,6 +536,8 @@
 
    ENDDO
 
+
+ 
    CALL wrf_debug ( 100 , 'module_start: start_domain_rk: After call to phy_init' )
 
 #ifdef MCELIO
@@ -803,18 +812,35 @@
 
    IF (num_chem >= PARAM_FIRST_SCALAR ) THEN
 #ifdef WRF_CHEM
-         CALL chem_init (grid%id,chem,grid%dt,grid%bioemdt,grid%photdt,grid%chemdt,           &
+!
+!   we do this here, so we only have one chem_init routine for either core....
+!
+         do j=jts,min(jte,jde-1)
+            do i=its,min(ite,ide-1)
+               do k=kts,kte
+                 z_at_w(i,k,j)=(grid%em_ph_2(i,k,j)+grid%em_phb(i,k,j))/g
+               enddo
+               do k=kts,min(kte,kde-1)
+                 tempfac=(grid%em_t_1(i,k,j) + t0)*((grid%em_p(i,k,j) + grid%em_pb(i,k,j))/p1000mb)**rcp
+                 convfac(i,k,j) = (grid%em_p(i,k,j)+grid%em_pb(i,k,j))/rgasuniv/tempfac
+               enddo
+            enddo
+         enddo
+
+         CALL chem_init (grid%id,chem,grid%dt,grid%bioemdt,grid%photdt,     &
+                         grid%chemdt,                                       &
                          grid%stepbioe,grid%stepphot,grid%stepchem,                        &
-                         grid%em_ph_2,grid%em_phb,g,grid%aerwrf,config_flags,                    &
-                         grid%em_alt,grid%em_t_1,grid%em_pb,grid%em_p,t0,p1000mb,rcp,                       &
+                         z_at_w,g,grid%aerwrf,config_flags,                               &
+                         grid%em_alt,grid%em_t_1,grid%em_p,convfac,                              &
                          grid%tauaer1,grid%tauaer2,grid%tauaer3,grid%tauaer4,                   &
                          grid%gaer1,grid%gaer2,grid%gaer3,grid%gaer4,                           &
                          grid%waer1,grid%waer2,grid%waer3,grid%waer4,                           &
                          grid%pm2_5_dry,grid%pm2_5_water,grid%pm2_5_dry_ec,                &
                          grid%chem_in_opt,                                  &
-                                 ids , ide , jds , jde , kds , kde ,        &
-                                 ims , ime , jms , jme , kms , kme ,        &
-                                 its , ite , jts , jte , kts , kte          )
+                         ids , ide , jds , jde , kds , kde ,                &
+                         ims , ime , jms , jme , kms , kme ,                &
+                         its , ite , jts , jte , kts , kte                  )
+
 !
 ! calculate initial pm
 !

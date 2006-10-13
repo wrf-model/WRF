@@ -82,7 +82,7 @@
           INTENT(IN   ) ::                                                &
                                                      ivgtyp
    REAL,  DIMENSION( ims:ime , jms:jme )                   ,              &
-          INTENT(IN   ) ::                                                &
+          INTENT(INOUT   ) ::                                                &
                                                      tsk,                 &
                                                      gsw,                 &
                                                   vegfra,                 &
@@ -131,6 +131,7 @@
       clwchem = moist(i,kts,j,p_qc)
       ustar = ust(i,j)
       zntt = znt(i,j)
+      
       z1 = z_at_w(i,kts+1,j)-z_at_w(i,kts,j)
 
 !     Set logical default values
@@ -152,6 +153,7 @@
 !     if(snowc(i,j).gt.0.)iseason=4
       CALL rc(rcx,ta,rad,rhchem,iland,iseason,numgas,      &
         wetflag,rainflag,highnh3,iprt,p_o3,p_so2,p_nh3)
+      srfres=0.
       DO n = 1, numgas-2
         srfres(n) = rcx(n)
       END DO
@@ -160,11 +162,11 @@
       aer_res(i,j)=0.
       CALL landusevg(ddvel0d,ustar,rmol(i,j),zntt,z1,dvpart,iland,        &
            numgas,srfres,aer_res(i,j),p_sulf)
-      ddvel(i,j,1:numgas)=ddvel0d(1:numgas)
+      ddvel(i,j,1:numgas-2)=ddvel0d(1:numgas-2)
 
 100   continue
 !
-! For the additional CBMZ species, assign "similar" RADM counter parts for
+! For the additional CBMZ species, assign similar RADM counter parts for
 ! now. Short lived species get a zero velocity since dry dep should be
 ! unimportant.  **ALSO**, treat p_sulf as h2so4 vapor, not aerosol sulfate
 !
@@ -1331,10 +1333,10 @@ END SUBROUTINE wesely_driver
 !     For desert k = 500 is taken according to measurements
 !     on bare soil by
 !     J. Fontan, A. Lopez, E. Lamaud and A. Druilhet (1997)
-!     "Vertical Flux Measurements of the Submicronic Aerosol Particles
-!     and Parametrisation of the Dry Deposition Velocity"
-!     in: "Biosphere-Atmosphere Exchange of Pollutants
-!     and Trace Substances"
+!     Vertical Flux Measurements of the Submicronic Aerosol Particles
+!     and Parametrisation of the Dry Deposition Velocity
+!     in: Biosphere-Atmosphere Exchange of Pollutants
+!     and Trace Substances
 !     Editor: S. Slanina. Springer-Verlag Berlin, Heidelberg, 1997
 !     pp. 381-390
 
@@ -1353,8 +1355,8 @@ END SUBROUTINE wesely_driver
 !     For gras, model calculations of Davidson et al. support
 !     the value of 500.
 !     C. I. Davidson, J. M. Miller and M. A. Pleskov
-!     "The Influence of Surface Structure on Predicted Particles
-!     Dry Deposition to Natural Gras Canopies"
+!     The Influence of Surface Structure on Predicted Particles
+!     Dry Deposition to Natural Gras Canopies
 !     Water, Air, and Soil Pollution 18 (1982) 25-43
 
 !     Snow covered surface: The experiment of Ibrahim et al. (1983)
@@ -1365,8 +1367,8 @@ END SUBROUTINE wesely_driver
 !     Atmospheric Environment 17 (1983), 781-788
 
 !     J. B. Milford and C. I. Davidson
-!     "The Sizes of Particulate Sulfate and Nitrate in the Atmosphere
-!     - A Review"
+!     The Sizes of Particulate Sulfate and Nitrate in the Atmosphere
+!     - A Review
 !     JAPCA 37 (1987), 125-134
 ! no data                                  
 !       WRITE (0,*) ' return from rcread '

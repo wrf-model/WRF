@@ -187,7 +187,7 @@ CONTAINS
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-   INTEGER :: i,j,k,kk,l,debug_level=0
+   INTEGER :: i,j,k,kk,l,debug_level
 
 !
 ! convert advected aerosol variables to ug/m3 from mixing ratio
@@ -205,6 +205,7 @@ CONTAINS
    enddo
       do 100 j=jts,jte
          do 100 i=its,ite
+           debug_level=0
             do k=kts,kte-1
                t(k) = t_phy(i,k,j)
                p(k) = .001*p_phy(i,k,j)
@@ -354,18 +355,18 @@ CONTAINS
       cblk(1,VCORN    ) =   chem(i,k,j,p_corn)
 
 
-      if(debug_level.ge.1)then
-        print*,'in a_mechanisms',i,j,k
-        print*,'NSPCSDA, BLKSIZE',NSPCSDA, BLKSIZE
-        print*,'k,DTA,PRES,TEMP,RELHUM',k,DTstep,10.*P(k),T(k),RH(k)
-        print*,'nitrate_in, nh3_in, vsulf_in, so4rat_in', &
-                nitrate_in, nh3_in, vsulf_in, so4rat_in
-        print*,'drog_in,ldrog',drog_in,ldrog
-        print*,'condvap_in,NCV,NACV',condvap_in,NCV,NACV
-        print*,'eeci_in, eecj_in, eorgi_in, eorgj_in,convfac' &
-            ,eeci_in, eecj_in, eorgi_in, eorgj_in,convfac
-        print*,'CBLK',CBLK
-       endif
+!     if(debug_level.ge.1)then
+!       print*,'in a_mechanisms',i,j,k
+!       print*,'NSPCSDA, BLKSIZE',NSPCSDA, BLKSIZE
+!       print*,'k,DTA,PRES,TEMP,RELHUM',k,DTstep,10.*P(k),T(k),RH(k)
+!       print*,'nitrate_in, nh3_in, vsulf_in, so4rat_in', &
+!               nitrate_in, nh3_in, vsulf_in, so4rat_in
+!       print*,'drog_in,ldrog',drog_in,ldrog
+!       print*,'condvap_in,NCV,NACV',condvap_in,NCV,NACV
+!       print*,'eeci_in, eecj_in, eorgi_in, eorgj_in,convfac' &
+!           ,eeci_in, eecj_in, eorgi_in, eorgj_in,convfac
+!       print*,'CBLK',CBLK
+!      endif
       CALL rpmmod3(nspcsda,blksize,k,dtstep,10.*p(k),t(k),rh(k),nitrate_in,nh3_in, &
         vsulf_in,so4rat_in,drog_in,ldrog,condvap_in,ncv,nacv,eeci_in,eecj_in, &
         eorgi_in,eorgj_in,epm25i,epm25j,epmcoarse,soilrat_in,cblk,i,j,k)
@@ -711,7 +712,14 @@ CONTAINS
    INTEGER :: i,j,k,l
 !
 !     print *,'in sorgdepdriver ',its,ite,jts,jte
-
+      do l=1,numaer
+      do i=its,ite
+      do j=jts,jte
+      vgsa(i,j,l)=0.
+      enddo
+      enddo
+      enddo
+      vdep=0.
       do 100 j=jts,jte
          do 100 i=its,ite
             cblk=epsilc
@@ -735,6 +743,7 @@ CONTAINS
         BLKTA(BLKSIZE)   = T(K)         ! temperature in K
         BLKDENS(BLKSIZE)=BLKPRS(BLKSIZE)/(RDGAS * BLKTA(BLKSIZE))
         USTAR(BLKSIZE) = max(1.e-8,UST(i,j))
+        WSTAR(BLKSIZE) = 0.
       convfac2=1./alt(i,k,j)
       cblk(1,vsulf) = max(epsilc,vsulf_in)
       cblk(1,vhno3) = max(epsilc,nitrate_in)
@@ -1090,12 +1099,12 @@ END SUBROUTINE sorgam_depdriver
           END DO
         END DO
 
-        xmsg = 'Ionic strength is zero...returning zero activities'
-        WRITE (6,*) xmsg
+!       xmsg = 'Ionic strength is zero...returning zero activities'
+!       WRITE (6,*) xmsg
         RETURN
 
       ELSE IF (i<0.0) THEN
-        xmsg = 'Ionic strength below zero...negative concentrations'
+!       xmsg = 'Ionic strength below zero...negative concentrations'
         CALL wrf_error_fatal ( xmsg )
       END IF
 
@@ -1174,8 +1183,8 @@ END SUBROUTINE sorgam_depdriver
 
           IF (trm>30.0) THEN
             gama(icat,ian) = 1.0E+30
-            xmsg = 'Multicomponent activity coefficient is extremely large'
-            WRITE (6,*) xmsg
+!           xmsg = 'Multicomponent activity coefficient is extremely large'
+!           WRITE (6,*) xmsg
           ELSE
             gama(icat,ian) = 10.0**trm
           END IF
@@ -6637,8 +6646,7 @@ END SUBROUTINE sorgam_depdriver
 END SUBROUTINE vdvg
 !
 !
-    SUBROUTINE aerosols_sorgam_init(chem,                            &
-         ph,phb,g,alt,t,pb,p,t0,p1000mb,rcp,                         &
+    SUBROUTINE aerosols_sorgam_init(chem,convfac,z_at_w,             &
          pm2_5_dry,pm2_5_water,pm2_5_dry_ec,                         &
          chem_in_opt,aer_ic_opt,                                     &
          ids,ide, jds,jde, kds,kde,                                  &
@@ -6658,16 +6666,13 @@ END SUBROUTINE vdvg
                      pm2_5_dry,pm2_5_water,pm2_5_dry_ec
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ) ,               &
           INTENT(IN      ) ::                                      &
-                            ph,phb,t,pb,p,alt
-   REAL,                                                           &
-          INTENT(IN      ) ::                                      &
-                            g,t0,rcp
-   REAL,                                                           &
-          INTENT(IN      ) ::                                      &
-                            p1000mb
+                   convfac
+   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ) ,               &
+          INTENT(IN         ) ::                                   &
+                     z_at_w
      integer i,j,k,l,ii,jj,kk     
      real tempfac,mwso4,zz
-     real,dimension(its:ite,kts:kte,jts:jte) :: convfac
+!    real,dimension(its:ite,kts:kte,jts:jte) :: convfac
       REAL splitfac
                         !between gas and aerosol phase
       REAL so4vaptoaer
@@ -6807,9 +6812,6 @@ END SUBROUTINE vdvg
 
 !Option for alternate ic's
         if( aer_ic_opt == AER_IC_DEFAULT ) then
-          tempfac=(t(ii,kk,jj) + t0)*((p(ii,kk,jj) + pb(ii,kk,jj))/p1000mb)**rcp
-          convfac(i,k,j) = (p(ii,kk,jj)+pb(ii,kk,jj))/rgasuniv/tempfac
-!         if(i.eq.its.and.j.eq.jts)print *,k,kk,alt(i,kk,j),convfac(i,k,j)
           chem(i,k,j,p_so4aj)=chem(ii,kk,jj,p_sulf)*CONVFAC(i,k,j)*MWSO4*splitfac*so4vaptoaer
           chem(i,k,j,p_so4ai)=chem(ii,kk,jj,p_sulf)*CONVFAC(i,k,j)*MWSO4* &
         (1.-splitfac)*so4vaptoaer
@@ -6819,7 +6821,7 @@ END SUBROUTINE vdvg
           chem(i,k,j,p_no3aj) = 10.E-05
           chem(i,k,j,p_no3ai) = 10.E-05
         elseif( aer_ic_opt == AER_IC_PNNL ) then
-           zz = (phb(i,k,j)+phb(i,k+1,j)+ph(i,k,j)+ph(i,k+1,j))*0.5/g
+           zz = (z_at_w(i,k,j)+z_at_w(i,k+1,j))*0.5
            call sorgam_init_aer_ic_pnnl(   &
                 chem, zz, i,k,j, ims,ime,jms,jme,kms,kme )
         else
@@ -6870,24 +6872,6 @@ END SUBROUTINE vdvg
         enddo
         enddo
         enddo
-
-!...Convert aerosols to mixing ratio        
-        do l=p_so4aj,num_chem
-           do j=jts,jte
-              do k=kts,kte
-                 kk = min(k,kte-1)
-                 do i=its,ite
-                    chem(i,k,j,l)=chem(i,kk,j,l)*alt(i,kk,j)
-                 enddo
-              enddo
-              do i=its,ite
-                 chem(i,kte,j,l)=chem(i,kte-1,j,l)
-              enddo
-           enddo
-        enddo
-
-        chem=max(chem,epsilc)
-!       print*,'in sorgam init, nu0(ims:5,5,5)', chem(ims:5,5,5,p_nu0)
 
 
     return

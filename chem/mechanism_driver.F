@@ -140,6 +140,8 @@
                ims,ime, jms,jme, kms,kme,                              &
                its,ite, jts,jte, kts,kte                               )
 
+     CASE (RACMSORG_KPP,RADM2SORG_KPP)
+       vcsulf_old(its:ite,kts:kte-1,jts:jte) = max(chem(its:ite,kts:kte-1,jts:jte,p_sulf),epsilc)
      CASE (RACMSORG)
        CALL wrf_debug(15,'calling racm/sorgam from mechanism_driver')
        vcsulf_old(its:ite,kts:kte-1,jts:jte) = max(chem(its:ite,kts:kte-1,jts:jte,p_sulf),epsilc)

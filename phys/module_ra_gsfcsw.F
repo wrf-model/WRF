@@ -636,22 +636,22 @@ CONTAINS
 
             call wrf_message("Diagnostics 1: k, tauaer300, tauaer400, tauaer600, tauaer999")
             do k=kts,kte
-               write(msg,'(i4,4f8.2)') k, tauaer300(i,k,ib), tauaer400(i,k,ib), &
-                    tauaer600(i,k,ib), tauaer999(i,k,ib)
+               write(msg,'(i4,4f8.2)') k, tauaer300(i,k,j), tauaer400(i,k,j), &
+                    tauaer600(i,k,j), tauaer999(i,k,j)
                call wrf_message(msg)
             end do
 
             call wrf_message("Diagnostics 2: k, gaer300, gaer400, gaer600, gaer999")
             do k=kts,kte
-               write(msg,'(i4,4f8.2)') k, gaer300(i,k,ib), gaer400(i,k,ib), &
-                    gaer600(i,k,ib), gaer999(i,k,ib)
+               write(msg,'(i4,4f8.2)') k, gaer300(i,k,j), gaer400(i,k,j), &
+                    gaer600(i,k,j), gaer999(i,k,j)
                call wrf_message(msg)
             end do
 
             call wrf_message("Diagnostics 3: k, waer300, waer400, waer600, waer999")
             do k=kts,kte
-               write(msg,'(i4,4f8.2)') k, waer300(i,k,ib), waer400(i,k,ib), &
-                    waer600(i,k,ib), waer999(i,k,ib)
+               write(msg,'(i4,4f8.2)') k, waer300(i,k,j), waer400(i,k,j), &
+                    waer600(i,k,j), waer999(i,k,j)
                call wrf_message(msg)
             end do
 

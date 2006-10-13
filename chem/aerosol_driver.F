@@ -177,7 +177,7 @@
 !
    cps_select: SELECT CASE(config_flags%chem_opt)
 
-   CASE (RADM2SORG)
+   CASE (RADM2SORG,RADM2SORG_KPP)
        CALL wrf_debug(15,'aerosols_driver calling sorgam_driver')
        do ii=its,ite
           do kk=kts,kte
@@ -200,7 +200,7 @@
                ims,ime, jms,jme, kms,kme,                               &
                its,ite, jts,jte, kts,kte                                )
 
-   CASE (RACMSORG)
+   CASE (RACMSORG,RACMSORG_KPP)
        CALL wrf_debug(15,'aerosols_driver calling sorgam_driver')
        do ii=its,ite
           do kk=kts,kte
@@ -274,7 +274,7 @@
 !
    sum_pm_select: SELECT CASE(config_flags%chem_opt)
 
-   CASE (RADM2SORG, RACMSORG)
+   CASE (RADM2SORG, RACMSORG,RADM2SORG_KPP,RACMSORG_KPP)
        CALL wrf_debug(15,'sum_pm_driver: calling sum_pm_sorgam')
        CALL sum_pm_sorgam (                                            &
             alt, chem, h2oaj, h2oai,                                   &

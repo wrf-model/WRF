@@ -684,9 +684,9 @@ ESMF_LIB_FLAGS  =
 ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
-                        -I../frame -I../share -I../phys -I../inc \
+                        -I../frame -I../share -I../phys -I../inc -I../chem \
 			-M../external/io_netcdf -M../external/io_int -M../external/esmf_time_f90 \
-			-M../frame -M../share -M../phys -M../inc \
+			-M../frame -M../share -M../phys -M../inc -M../chem \
 			-M../dyn_em 
 ARCHFLAGS       =       -DINTIO -DGRIB1 CONFIGURE_GRIB2_FLAG -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   \
@@ -830,9 +830,9 @@ ESMF_LIB_FLAGS  =
 ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
-                        -I../frame -I../share -I../phys -I../inc \
+                        -I../frame -I../share -I../phys -I../inc -I../chem \
                         -M../external/io_netcdf -M../external/io_int -M../external/esmf_time_f90 \
-                        -M../frame -M../share -M../phys -M../inc \
+                        -M../frame -M../share -M../phys -M../inc -M../chem \
                         -M../dyn_em
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
@@ -963,9 +963,9 @@ ESMF_LIB_FLAGS  =
 ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
-                        -I../frame -I../share -I../phys -I../inc \
+                        -I../frame -I../share -I../phys -I../inc -I../chem \
 			-M../external/io_netcdf -M../external/io_int -M../external/esmf_time_f90 \
-			-M../frame -M../share -M../phys -M../inc \
+			-M../frame -M../share -M../phys -M../inc -M../chem \
 			-M../dyn_em 
 ARCHFLAGS       =       -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   \
@@ -1094,9 +1094,9 @@ ESMF_LIB_FLAGS  =
 ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
-                        -I../frame -I../share -I../phys -I../inc \
+                        -I../frame -I../share -I../phys -I../inc -I../chem \
                         -M../external/io_netcdf -M../external/io_int -M../external/esmf_time_f90 \
-                        -M../frame -M../share -M../phys -M../inc \
+                        -M../frame -M../share -M../phys -M../inc -M../chem \ 
                         -M../dyn_em
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
@@ -1817,7 +1817,7 @@ ESMF_LIB_FLAGS  =       -lC
 ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -I../external/io_netcdf  -I../external/io_phdf5 -I../external/io_int  -I../external/esmf_time_f90 \
-                        -I../frame -I../share -I../phys -I../inc
+                        -I../frame -I../share -I../phys -I../inc -I../chem
 ARCHFLAGS       =       -DRSL_LITE -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) \
                         -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG CONFIGURE_PHDF5_FLAG -DTRIEDNTRUE   -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO \
 			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DNATIVE_MASSV
@@ -3844,7 +3844,7 @@ ESMF_LIB_FLAGS  =
 ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
-                        -I../frame -I../share -I../phys -I../inc
+                        -I../frame -I../share -I../phys -I../inc -I../chem
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int \
@@ -4540,7 +4540,7 @@ ESMF_LIB_FLAGS  =
 ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
-                        -I../external -I../frame -I../share -I../phys -I../inc
+                        -I../external -I../frame -I../share -I../phys -I../inc -I../chem
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
@@ -4793,7 +4793,7 @@ ESMF_LIB_FLAGS  =
 ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
-                        -I../external -I../frame -I../share -I../phys -I../inc
+                        -I../external -I../frame -I../share -I../phys -I../inc -I../chem
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
@@ -5322,7 +5322,7 @@ ESMF_LIB_FLAGS  =
 ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES = ../main -I../external/io_int -I../external/esmf_time_f90 \
-                  -I../external -I../frame -I../share -I../phys -I../inc
+                  -I../external -I../frame -I../share -I../phys -I../inc -I../chem
 PERL = perl
 REGISTRY = Registry
 LIB = -L../external/io_netcdf -lwrfio_nf $(OMP) -LCONFIGURE_NETCDF_PATH/lib -lnetcdf \
@@ -5449,7 +5449,7 @@ ESMF_LIB_FLAGS  =
 ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
-                        -I../frame -I../share -I../phys -I../inc
+                        -I../frame -I../share -I../phys -I../inc -I../chem
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH \
@@ -5567,7 +5567,7 @@ ESMF_LIB_FLAGS  =
 ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
-                        -I../external -I../frame -I../share -I../phys -I../inc
+                        -I../external -I../frame -I../share -I../phys -I../inc -I../chem
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
@@ -5691,7 +5691,7 @@ ESMF_LIB_FLAGS  =
 ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
-                        -I../external -I../frame -I../share -I../phys -I../inc
+                        -I../external -I../frame -I../share -I../phys -I../inc -I../chem
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL_LITE -lrsl_lite \
@@ -5939,7 +5939,7 @@ ESMF_LIB_FLAGS  =
 ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES = ../main -I../external/io_int -I../external/esmf_time_f90 \
-                  -I../external -I../frame -I../share -I../phys -I../inc   \
+                  -I../external -I../frame -I../share -I../phys -I../inc  -I../chem \
                   -I/usr/lib/mpi/mpi_intel/include
 PERL = perl
 REGISTRY = Registry
@@ -6069,7 +6069,7 @@ ESMF_LIB_FLAGS  =
 ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES = ../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
--I../external -I../frame -I../share -I../phys -I../inc
+-I../external -I../frame -I../share -I../phys -I../inc -I../chem
 PERL = perl
 REGISTRY = Registry
 LIB = -Vaxlib -L../external/io_netcdf -lwrfio_nf $(OMP) -L/u/ncsa/straka/AUGUST.test/WRFV1/netcdfintel7/lib -lnetcdf -L../external/RSL/RSL -lrsl \
@@ -6311,7 +6311,7 @@ ESMF_LIB_FLAGS  =
 ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
-                        -I../external -I../frame -I../share -I../phys -I../inc
+                        -I../external -I../frame -I../share -I../phys -I../inc -I../chem
 ARCHFLAGS       =        -DLIMIT_ARGS -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) \
                         -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DTRIEDNTRUE -DIFORT_KLUDGE
 LD		=	$(FC)
@@ -6452,7 +6452,7 @@ ESMF_LIB_FLAGS  =
 ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
-                        -I../external -I../frame -I../share -I../phys -I../inc
+                        -I../external -I../frame -I../share -I../phys -I../inc -I../chem
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
@@ -6584,7 +6584,7 @@ ESMF_LIB_FLAGS  =
 ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -I ../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
-                        -I../frame -I../share -I../phys -I../inc
+                        -I../frame -I../share -I../phys -I../inc -I../chem
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH \
@@ -6713,7 +6713,7 @@ ESMF_LIB_FLAGS  =
 ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
-                        -I../external -I../frame -I../share -I../phys -I../inc
+                        -I../external -I../frame -I../share -I../phys -I../inc -I../chem
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
@@ -6847,7 +6847,7 @@ ESMF_LIB_FLAGS  =
 ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
-                        -I../external -I../frame -I../share -I../phys -I../inc
+                        -I../external -I../frame -I../share -I../phys -I../inc -I../chem
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
@@ -6981,7 +6981,7 @@ ESMF_LIB_FLAGS  =
 ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
-                        -I../external -I../frame -I../share -I../phys -I../inc
+                        -I../external -I../frame -I../share -I../phys -I../inc -I../chem
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
@@ -7300,7 +7300,7 @@ ESMF_LIB_FLAGS  =
 ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES   = -I../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
-                    -I../external -I../frame -I../share -I../phys -I../inc
+                    -I../external -I../frame -I../share -I../phys -I../inc -I../chem
 PERL              = perl
 REGISTRY          = Registry
 LIB               = -L../external/io_netcdf -lwrfio_nf $(OMP) \
@@ -7459,7 +7459,7 @@ ESMF_LIB_FLAGS  =
 ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES   = -I../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
-                    -I../external -I../frame -I../share -I../phys -I../inc
+                    -I../external -I../frame -I../share -I../phys -I../inc -I../chem
 PERL              = perl
 REGISTRY          = Registry
 LIB               = -L../external/io_netcdf -lwrfio_nf $(OMP) \
@@ -7616,7 +7616,7 @@ ESMF_LIB_FLAGS  =
 ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES   = -I../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
-                    -I../external -I../frame -I../share -I../phys -I../inc
+                    -I../external -I../frame -I../share -I../phys -I../inc -I../chem
 PERL              = perl
 REGISTRY          = Registry
 LIB               = -L../external/io_netcdf -lwrfio_nf $(OMP) \
@@ -7771,7 +7771,7 @@ ESMF_LIB_FLAGS  =
 ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES   = -I../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
-                    -I../external -I../frame -I../share -I../phys -I../inc
+                    -I../external -I../frame -I../share -I../phys -I../inc -I../chem
 PERL              = perl
 REGISTRY          = Registry
 LIB               = -L../external/io_netcdf -lwrfio_nf $(OMP) \
@@ -7911,7 +7911,7 @@ ESMF_LIB_FLAGS  =
 ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES   = -I../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
-                    -I../external -I../frame -I../share -I../phys -I../inc
+                    -I../external -I../frame -I../share -I../phys -I../inc -I../chem
 PERL              = perl
 REGISTRY          = Registry
 LIB               = -L../external/io_netcdf -lwrfio_nf $(OMP) \
@@ -8041,7 +8041,7 @@ ESMF_LIB_FLAGS  =
 ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES   = -I../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
-                    -I../external -I../frame -I../share -I../phys -I../inc
+                    -I../external -I../frame -I../share -I../phys -I../inc -I../chem
 PERL              = perl
 REGISTRY          = Registry
 LIB               = -L../external/io_netcdf -lwrfio_nf \
@@ -8179,9 +8179,9 @@ ESMF_LIB_FLAGS  =
 ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
-                        -I../frame -I../share -I../phys -I../inc \
+                        -I../frame -I../share -I../phys -I../inc  -I../chem \
 			-p../external/io_netcdf -p../external/io_int -p../frame \
-                        -p../frame -I ../frame -p../share -p../phys -p../inc \
+                        -p../frame -I ../frame -p../share -p../phys -p../inc -p../chem \
                         -p../dyn_em -p../dyn_eh -p../dyn_exp -p ../external/esmf_time_f90
 ARCHFLAGS       =       -DRSL_LITE -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) \
                         -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DTRIEDNTRUE  -DINTIO \
@@ -8329,9 +8329,9 @@ ESMF_LIB_FLAGS  =
 ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
-                        -I../frame -I../share -I../phys -I../inc \
+                        -I../frame -I../share -I../phys -I../inc -I../chem \
 			-p../external/io_netcdf -p../external/io_int -p../frame \
-                        -p../frame -I ../frame -p../share -p../phys -p../inc \
+                        -p../frame -I ../frame -p../share -p../phys -p../inc -p../chem \
                         -p../dyn_em -p../dyn_eh -p../dyn_exp -p ../external/esmf_time_f90
 ARCHFLAGS       =       -D_OPENMP -DRSL_LITE -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) \
                         -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DTRIEDNTRUE  -DINTIO \
@@ -8467,7 +8467,7 @@ ESMF_LIB_FLAGS  =
 ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
-                        -I../frame -I../share -I../phys -I../inc
+                        -I../frame -I../share -I../phys -I../inc -I../chem
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int \
@@ -8580,7 +8580,7 @@ ESMF_LIB_FLAGS  =
 ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
-                        -I../frame -I../share -I../phys -I../inc
+                        -I../frame -I../share -I../phys -I../inc -I../chem
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL/ -lrsl -L../external/io_int -lwrfio_int \
@@ -8697,7 +8697,7 @@ ESMF_LIB_FLAGS  =
 ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
-                        -I../frame -I../share -I../phys -I../inc
+                        -I../frame -I../share -I../phys -I../inc -I../chem
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int \
@@ -8809,7 +8809,7 @@ ESMF_LIB_FLAGS  =
 ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
-                        -I../frame -I../share -I../phys -I../inc
+                        -I../frame -I../share -I../phys -I../inc -I../chem
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int \
@@ -8918,7 +8918,7 @@ ESMF_LIB_FLAGS  =
 ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
-                        -I../frame -I../share -I../phys -I../inc
+                        -I../frame -I../share -I../phys -I../inc -I../chem
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int \
@@ -9033,7 +9033,7 @@ ESMF_LIB_FLAGS  =
 ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
-                        -I../frame -I../share -I../phys -I../inc
+                        -I../frame -I../share -I../phys -I../inc -I../chem
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int -L../external/RSL/RSL -lrsl \
@@ -9158,7 +9158,7 @@ ESMF_LIB_FLAGS  =
 ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
-                        -I../frame -I../share -I../phys -I../inc
+                        -I../frame -I../share -I../phys -I../inc -I../chem
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int -L../external/RSL/RSL -lrsl \
@@ -9277,7 +9277,7 @@ ESMF_LIB_FLAGS  =
 ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
-                        -I../frame -I../share -I../phys -I../inc
+                        -I../frame -I../share -I../phys -I../inc -I../chem
 ARCHFLAGS       =       -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   \
 			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DLANDREAD_STUB -DMAC_KLUDGE
@@ -9406,7 +9406,7 @@ ESMF_LIB_FLAGS  =
 ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
-                        -I../frame -I../share -I../phys -I../inc
+                        -I../frame -I../share -I../phys -I../inc -I../chem
 ARCHFLAGS       =       -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   \
 			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DLANDREAD_STUB -DMACOS -DMAC_KLUDGE
@@ -9620,7 +9620,7 @@ ESMF_LIB_FLAGS  =
 ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
-                        -I../external -I../frame -I../share -I../phys -I../inc
+                        -I../external -I../frame -I../share -I../phys -I../inc -I../chem
 EXTRAMODULES    =
 PERL            =       perl
 REGISTRY        =       Registry

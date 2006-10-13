@@ -1,4 +1,5 @@
 !WRF:MEDIATION_LAYER:PHYSICS
+! *** add new modules of schemes here
 !
 MODULE module_microphysics_driver
 CONTAINS
@@ -19,7 +20,7 @@ SUBROUTINE microphysics_driver(                                          &
                       ,qni_curr                                          &
                       ,f_qv,f_qc,f_qr,f_qi,f_qs,f_qg,f_qni               &
                       ,qt_curr,f_qt                                      &
-                      ,mp_restart_state,tbpvs_state,tbpvs0_state          & ! for etampnew
+                      ,mp_restart_state,tbpvs_state,tbpvs0_state         & ! for etampnew
                       ,w ,z                                              &
                       ,rainnc, rainncv                                   &
                       ,snownc, snowncv                                   &
@@ -211,7 +212,7 @@ SUBROUTINE microphysics_driver(                                          &
          INTENT(INOUT ) ::                                        &
                   w, z                                            & 
                  ,qv_curr,qc_curr,qr_curr,qi_curr,qs_curr,qg_curr &
-                 ,qt_curr,qni_curr
+                 ,qt_curr,qni_curr                                
 
 !
    REAL, DIMENSION( ims:ime , jms:jme ),                          &
@@ -303,35 +304,29 @@ SUBROUTINE microphysics_driver(                                          &
              IF ( PRESENT( QV_CURR ) .AND. PRESENT ( QC_CURR ) .AND.  &
                   PRESENT( QR_CURR ) .AND. PRESENT ( QI_CURR ) .AND.  &
                   PRESENT( QS_CURR ) .AND. PRESENT ( QG_CURR ) .AND.  &
-                  PRESENT( QR_CURR ) .AND. PRESENT ( QI_CURR ) .AND.  &
                                            PRESENT ( QNI_CURR ).AND.  &
-                  PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) .AND.  &
-                  PRESENT( Z       ) .AND. PRESENT ( W       )  ) THEN
-             CALL mp_thomp(                              &
-                     ITIMESTEP=itimestep,                &
-                     TH=th,                              &
+                  PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) ) THEN
+             CALL mp_gt_driver(                          &
                      QV=qv_curr,                         &
-                     QL=qc_curr,                         &
+                     QC=qc_curr,                         &
                      QR=qr_curr,                         &
                      QI=qi_curr,                         &
                      QS=qs_curr,                         &
                      QG=qg_curr,                         &
-                     QNI=qni_curr,                       &
-                     RHO=rho,                            &
+                     NI=qni_curr,                        &
+                     TH=th,                              &
                      PII=pi_phy,                         &
                      P=p,                                &
+                     DZ=dz8w,                            &
                      DT_IN=dt,                           &
-                     Z=z,                                &
-                     HT=ht,                              &
-                     DZ8W=dz8w,                          &
-                     W=w                                 &
-                    ,RAINNC=RAINNC                       &
-                    ,RAINNCV=RAINNCV                     &
+                     ITIMESTEP=itimestep,                &
+                     RAINNC=RAINNC,                      &
+                     RAINNCV=RAINNCV,                    &
+                     SR=SR                               &
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
-                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
-                                                                    )
-             ELSE 
+                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte)
+             ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling thompson_et_al' )
              ENDIF
 !
@@ -467,8 +462,6 @@ SUBROUTINE microphysics_driver(                                          &
              CALL wrf_debug ( 100 , 'microphysics_driver: calling etampnew')
 
              IF ( PRESENT( qv_curr ) .AND. PRESENT( qt_curr ) .AND. &
-                  PRESENT( qc_curr ) .AND. PRESENT( qr_curr ) .AND. &
-                  PRESENT( qs_curr ) .AND.                          &
                   PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) .AND.  &
                   PRESENT( mp_restart_state )                  .AND. &
                   PRESENT( tbpvs_state )                      .AND. &
@@ -478,7 +471,7 @@ SUBROUTINE microphysics_driver(                                          &
                  ,DZ8W=dz8w,RHO_PHY=rho,P_PHY=p,PI_PHY=pi_phy,TH_PHY=th &
                  ,QV=qv_curr                                        &
                  ,QC=qc_curr                                        &
-                 ,QS=qs_curr                                        &
+                 ,QS=qs_curr                                        & 
                  ,QR=qr_curr                                        &
                  ,QT=qt_curr                                        &
                  ,LOWLYR=LOWLYR,SR=SR                               &

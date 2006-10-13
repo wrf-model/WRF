@@ -116,31 +116,38 @@ PROGRAM convert_bioemiss
 
 !     !  Get the grid info from the wrfinput file
 
-   print *,' allocate for wrfinput_d01 '
+   write(message,FMT='(A)') ' allocate for wrfinput_d01 '
+   CALL  wrf_message ( program_name )
    NULLIFY( null_domain )
    CALL alloc_and_configure_domain ( domain_id  = 1           , &
                                      grid       = head_grid   , &
                                      parent     = null_domain , &
                                      kid        = -1            )
-   print *,' pointer for wrfinput_d01 '
+   write(message,FMT='(A)') ' pointer for wrfinput_d01 '
+   CALL  wrf_debug ( 100, message )
    grid => head_grid
-   print *,' set scalars for wrfinput_d01 '
+   write(message,FMT='(A)') ' set scalars for wrfinput_d01 '
+   CALL  wrf_debug ( 100, message )
    CALL set_scalar_indices_from_config ( grid%id , idum1, idum2 )
 
-   print *,' construct filename for wrfinput_d01 '
+   write(message,FMT='(A)') ' construct filename for wrfinput_d01 '
+   CALL  wrf_debug ( 100, message )
    CALL construct_filename1( wrfinname , 'wrfinput' , grid%id , 2 )
 
-   print *,' open file ',TRIM(wrfinname)
+   write(message,FMT='(A,A)') ' open file ',TRIM(wrfinname)
+   CALL  wrf_message ( message )
    CALL open_r_dataset ( fid, TRIM(wrfinname) , grid , config_flags , "DATASET=INPUT", ierr )
 
 
-   print *,' wrfinput open error check '
+   write(message,FMT='(A)') ' wrfinput open error check '
+   CALL  wrf_debug ( 100, message )
    IF ( ierr .NE. 0 ) THEN
       WRITE( wrf_err_message , FMT='(A,A,A,I8)' )  &
           'program convert_emiss: error opening ',TRIM(wrfinname),' for reading ierr=',ierr
       CALL WRF_ERROR_FATAL ( wrf_err_message )
    ENDIF
-   print *,' past opening wrfinput_d01 '
+   write(message,FMT='(A)') ' past opening wrfinput_d01 '
+   CALL  wrf_debug ( 100, message )
 
       CALL wrf_get_dom_ti_integer ( fid , 'MAP_PROJ' ,  map_proj , 1 , idum1 , ierr )
       CALL wrf_get_dom_ti_real    ( fid , 'CEN_LAT' , cen_lat , 1 , idum1 , ierr )
@@ -169,16 +176,17 @@ PROGRAM convert_bioemiss
    CALL domain_clock_set( grid, &
                           time_step_seconds=model_config_rec%interval_seconds )
    CALL domain_clock_get ( grid, current_timestr=message )
-   if( debug_level >= 100) print *,' current_time ',Trim(message)
+   write(message,FMT='(A,A)') ' current_time ',Trim(message)
+   CALL  wrf_debug ( 100, message )
 
    CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
 
-   print *,'start date=',model_config_rec%start_year(grid%id),model_config_rec%start_month(grid%id),&
-   model_config_rec%start_day(grid%id),model_config_rec%start_hour(grid%id)
-   print *,'end   date=',model_config_rec%end_year(grid%id),model_config_rec%end_month(grid%id),&
-   model_config_rec%end_day(grid%id),model_config_rec%end_hour(grid%id)
-   print *,'interval  =',model_config_rec%interval_seconds
-   print *,'init_typ  =',model_config_rec%real_data_init_type
+!  print *,'start date=',model_config_rec%start_year(grid%id),model_config_rec%start_month(grid%id),&
+!  model_config_rec%start_day(grid%id),model_config_rec%start_hour(grid%id)
+!  print *,'end   date=',model_config_rec%end_year(grid%id),model_config_rec%end_month(grid%id),&
+!  model_config_rec%end_day(grid%id),model_config_rec%end_hour(grid%id)
+!  print *,'interval  =',model_config_rec%interval_seconds
+!  print *,'init_typ  =',model_config_rec%real_data_init_type
 
    !  Figure out the starting and ending dates in a character format.
 
@@ -217,23 +225,28 @@ PROGRAM convert_bioemiss
 #endif
 
    ihour = start_hour
-   if( debug_level >= 100) print *,' READ BIOGENIC EMISSIONS '
+   write(message,FMT='(A)') ' READ BIOGENIC EMISSIONS '
+   CALL  wrf_debug ( 100, message )
    CALL input_ext_chem_beis3_file ( grid )
-   if( debug_level >= 100) print *,' PAST READ BIOGENIC EMISSIONS '
-   if( debug_level >= 100) print *, grid%e_iso
+   write(message,FMT='(A)') ' PAST READ BIOGENIC EMISSIONS '
+   CALL  wrf_debug ( 100, message )
 
    grid%input_from_file = .false.
 
-   if( debug_level >= 100) print *,' OPEN BIOGENIC EMISSIONS WRF file '
+   write(message,FMT='(A)') ' OPEN BIOGENIC EMISSIONS WRF file'
+   CALL  wrf_debug ( 100, message )
 
    CALL construct_filename1( inpname , 'wrfbiochemi' , grid%id , 2 )
    CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_aux_model_input4 , "DATASET=AUXINPUT4", ierr )
-   print *,' BIOGENIC EMISSIONS file name: ',TRIM(inpname)
+   write(message,FMT='(A,A)') ' BIOGENIC EMISSIONS file name: ',TRIM(inpname)
+   CALL  wrf_message ( message )
+   
    IF ( ierr .NE. 0 ) THEN
      CALL wrf_error_fatal( 'real: error opening wrfchem emissions file for writing' )
    ENDIF
 
-   if( debug_level >= 100) print *,' PAST OPEN BIOGENIC EMISSIONS WRF file '
+   write(message,FMT='(A)') ' PAST OPEN BIOGENIC EMISSIONS WRF file '
+   CALL  wrf_debug ( 100, message )
 
    CALL calc_current_date ( grid%id , 0. )
    CALL geth_newdate ( current_date_char, current_date, 3600 )
@@ -247,13 +260,10 @@ PROGRAM convert_bioemiss
          moad_cen_lat = cen_lat
       endif
 
-!     print *,map_proj,cen_lat,cen_lon,truelat1,truelat2
-!     print *,gmt, julyr,julday,iswater
-
-
    CALL output_aux_model_input4 ( id1 , grid , config_flags , ierr )
 
-    print *,' BIOGENIC EMISSIONS: fix global attributes '
+   write(message,FMT='(A)') ' BIOGENIC EMISSIONS: fix global attributes '
+   CALL  wrf_debug ( 100, message )
 
    ! write global atributes into wrf emissions file
 
@@ -279,7 +289,8 @@ PROGRAM convert_bioemiss
 
    CALL close_dataset ( id1 , config_flags , "DATASET=AUXOUTPUT4" )
 
-    print *,' BIOGENIC EMISSIONS: end of program '
+   write(message,FMT='(A)') ' BIOGENIC EMISSIONS: end of program '
+   CALL  wrf_message ( message )
 
 
     CALL wrf_shutdown
@@ -288,7 +299,6 @@ PROGRAM convert_bioemiss
 !#ifdef DM_PARALLEL
 !   CALL wrf_dm_shutdown
 !#endif
-   STOP
 
    STOP
 

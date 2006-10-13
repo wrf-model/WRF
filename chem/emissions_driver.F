@@ -7,8 +7,8 @@
          e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_pm25,e_pm10,e_nh3,  &
          e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_no2,e_ch3oh,          &
          e_c2h5oh,e_so4j,e_so4c,e_no3j,e_no3c,e_orgc,e_ecc,                &
-         u10,v10,ivgtyp,tsk,gsw,vegfra,pbl,rmol,ust,znt,                   &
-         xland,xlat,xlong,z,z_at_w,                                        &
+         u10,v10,ivgtyp,gsw,vegfra,rmol,ust,znt,                           &
+         xland,xlat,xlong,z_at_w,                                          &
          sebio_iso,sebio_oli,sebio_api,sebio_lim,sebio_xyl,                &
          sebio_hc3,sebio_ete,sebio_olt,sebio_ket,sebio_ald,                &   
          sebio_hcho,sebio_eth,sebio_ora2,sebio_co,sebio_nr,                &
@@ -62,7 +62,6 @@
                                                       t_phy,               &
                                                       p_phy,               &
                                                       dz8w,                &
-                                                      z    ,               &
                                               t8w,p8w,z_at_w ,             &
                                                     rho_phy
    INTEGER,DIMENSION( ims:ime , jms:jme )                  ,               &
@@ -72,10 +71,8 @@
           INTENT(IN   ) ::                                                 &
                                                      u10,                  &
                                                      v10,                  &
-                                                     tsk,                  &
                                                      gsw,                  &
                                                   vegfra,                  &
-                                                     pbl,                  &
                                                      rmol,                 &
                                                      ust,                  &
                                                      xland,                &
@@ -113,7 +110,7 @@
          call bio_emissions(id,ktau,dtstep,DX,config_flags,                &
                gmt,julday,t_phy,moist,p8w,t8w,                             &
                e_bio,p_phy,chem,rho_phy,dz8w,ne_area,                      &
-               ivgtyp,tsk,gsw,vegfra,pbl,rmol,ust,znt,xlat,xlong,z,z_at_w, &
+               ivgtyp,gsw,vegfra,rmol,ust,znt,xlat,xlong,z_at_w,           &
                numgas-1,                                                   &
                ids,ide, jds,jde, kds,kde,                                  &
                ims,ime, jms,jme, kms,kme,                                  &
@@ -121,8 +118,10 @@
        endif
      CASE (BEIS311)
        if(ktau.eq.1.or.mod(ktau,stepbioe).eq.0)then
-         if(config_flags%chem_opt > RACMSORG) CALL wrf_error_fatal( &
+         if(config_flags%chem_opt > RACMSORG .AND. config_flags%chem_opt < 100  ) then !<100: kpp mechs, e.g. RACMSORG_KPP
+             CALL wrf_error_fatal( &
               "emissions_driver: beis3.1.1 biogenic emis. not currently implemented for CBMZ")
+         endif
          CALL wrf_debug(15,'biogenic emissions: calling beis3.1.1')
          call bio_emissions_beis311(id,config_flags,ktau,dtstep,       &
                julday,gmt,xlat,xlong,t_phy,p_phy,gsw,                  &
@@ -147,7 +146,7 @@
     END SELECT bioem_select
 
     gas_addemiss_select: SELECT CASE(config_flags%chem_opt)
-    CASE (RADM2, RADM2SORG, RACM, RACMSORG)
+    CASE (RADM2, RADM2_KPP, RADM2SORG, RACM, RACMSORG,RACM_KPP,RACMSORG_KPP, RACM_MIM_KPP,RADM2SORG_KPP)
        IF(config_flags%kemit .GT. kte-1) THEN
          message = ' EMISSIONS_DRIVER: KEMIT > KME '
          CALL WRF_ERROR_FATAL (message)
@@ -200,6 +199,14 @@
                 chem(i,k,j,p_so2)  = chem(i,k,j,p_so2)                   &
                      +e_so2(i,k,j)*conv
                 chem(i,k,j,p_co)  = chem(i,k,j,p_co)                     &
+                     +e_co(i,k,j)*conv
+                chem(i,k,j,p_no)  = chem(i,k,j,p_no)                     &
+                     +e_co(i,k,j)*conv
+                chem(i,k,j,p_ald)  = chem(i,k,j,p_ald)                   &
+                     +e_co(i,k,j)*conv
+                chem(i,k,j,p_hcho)  = chem(i,k,j,p_hcho)                 &
+                     +e_co(i,k,j)*conv
+                chem(i,k,j,p_ora2)  = chem(i,k,j,p_ora2)                 &
                      +e_co(i,k,j)*conv
              end do
           end do

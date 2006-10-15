@@ -979,7 +979,6 @@
 !
       CALL SET_TILES(GRID,IDS,IDE-1,JDS+1,JDE-1,ITS,ITE,JTS,JTE)
 !
-<<<<<<< .mine
       DO J=JTS,JTE  !jm was JTS
       DO I=ITS,ITE
         IF(MODEL_CONFIG_REC%SF_SURFACE_PHYSICS(GRID%ID)==99)THEN
@@ -991,19 +990,6 @@
       ENDDO
       ENDDO
 !
-=======
-      DO J=JTS,JTS
-      DO I=ITS,ITE
-        IF(MODEL_CONFIG_REC%SF_SURFACE_PHYSICS(GRID%ID)==99)THEN
-          ONE(I,J)=1.
-        ELSE
-!tgs  -  MAVAIL should not be equal to 1. for other LSMs
-          ONE(I,J)=MAVAIL(I,J)
-        ENDIF 
-      ENDDO
-      ENDDO
-!
->>>>>>> .r1981
       CALL SURFACE_DRIVER(                                              &
      &           ACSNOM=ACSNOM,ACSNOW=ACSNOW,AKHS=AKHS,AKMS=AKMS        &
      &          ,ALBEDO=ALBEDO,BR=BR,CANWAT=CMC,CHKLOWQ=CHKLOWQ         &

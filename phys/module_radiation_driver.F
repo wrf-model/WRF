@@ -481,7 +481,7 @@ CONTAINS
 ! temporarily modify hydrometeors (currently only done for GD scheme and WRF-Chem)
 !
      IF ( PRESENT( cu_rad_feedback ) ) THEN
-       IF ( PRESENT( qc  ) .AND. PRESENT( qc_adjust ) ) THEN
+       IF ( PRESENT( qc ) .AND. PRESENT( qc_adjust ) .AND. cu_rad_feedback ) THEN
           DO j=jts,jte
           DO k=kts,kte
           DO i=its,ite
@@ -491,7 +491,7 @@ CONTAINS
           ENDDO
           ENDDO
        ENDIF
-       IF ( PRESENT( qi        ) .AND. PRESENT( qi_adjust ) ) THEN
+       IF ( PRESENT( qi ) .AND. PRESENT( qi_adjust ) .AND. cu_rad_feedback ) THEN
           DO j=jts,jte
           DO k=kts,kte
           DO i=its,ite
@@ -918,7 +918,7 @@ CONTAINS
 !*** Restore the saved values of the input Q arrays before exiting
 
      IF ( PRESENT( cu_rad_feedback ) ) THEN
-       IF ( PRESENT( qc     )  ) THEN
+       IF ( PRESENT( qc  ) .AND. PRESENT( qc_adjust ) .AND. cu_rad_feedback ) THEN
           DO j=jts,jte
           DO k=kts,kte
           DO i=its,ite
@@ -927,7 +927,7 @@ CONTAINS
           ENDDO
           ENDDO
        ENDIF
-       IF ( PRESENT( qi ) ) THEN
+       IF ( PRESENT( qi  ) .AND. PRESENT( qi_adjust ) .AND. cu_rad_feedback ) THEN
           DO j=jts,jte
           DO k=kts,kte
           DO i=its,ite

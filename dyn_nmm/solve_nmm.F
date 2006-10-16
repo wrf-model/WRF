@@ -691,9 +691,9 @@
      &                  ,ITS,ITE,JTS,JTE,KTS,KTE)
 !
 
-          DO J=MYJS2,MYJE2
+          DO J=MYJS,MYJE
           DO K=KTS,KTE
-          DO i=MYIS1,MYIE1
+          DO i=MYIS,MYIE
             Q(I,K,J)=MOIST(I,K,J,P_QV)/(1.+MOIST(I,K,J,P_QV))
           ENDDO
           ENDDO   
@@ -779,9 +779,9 @@
 !
 !***  UPDATE MOIST ARRAY
 !
-          DO J=MYJS2,MYJE2
+          DO J=MYJS,MYJE
           DO K=KTS,KTE
-          DO I=MYIS1,MYIE1
+          DO I=MYIS,MYIE
             MOIST(I,K,J,P_QV)=Q(I,K,J)/(1.-Q(I,K,J))
             WC = CWM(I,K,J)
             QI = 0.
@@ -873,9 +873,9 @@
      &                  ,IMS,IME,JMS,JME,KMS,KME                       &
      &                  ,ITS,ITE,JTS,JTE,KTS,KTE)                             
 !    
-          DO J=MYJS2,MYJE2
+          DO J=MYJS,MYJE
           DO K=KTS,KTE 
-          DO I=MYIS1,MYIE1
+          DO I=MYIS,MYIE
             Q(I,K,J)=MOIST(I,K,J,P_QV)/(1.+MOIST(I,K,J,P_QV))           
           ENDDO
           ENDDO    
@@ -1283,9 +1283,9 @@
      &          ,IMS,IME,JMS,JME,KMS,KME                               &
      &          ,ITS,ITE,JTS,JTE,KTS,KTE)
 !
-      DO J=MYJS2,MYJE2
+      DO J=MYJS,MYJE
       DO K=KTS,KTE
-      DO I=MYIS1,MYIE1
+      DO I=MYIS,MYIE
 !!!      MOIST(I,K,J,P_QV)=MAX(0.,Q(I,K,J)/(1.-Q(I,K,J)))
          MOIST(I,K,J,P_QV)=Q(I,K,J)/(1.-Q(I,K,J))
       ENDDO

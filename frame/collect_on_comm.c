@@ -166,9 +166,8 @@ dst_on_comm ( int * Fcomm, int * typesize ,
   return(0) ;
 }
 
-#include <malloc.h>
-
 #ifndef MACOS
+#  include <malloc.h>
 #  include <sys/resource.h>
 #endif
 

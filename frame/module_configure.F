@@ -28,8 +28,6 @@ MODULE module_configure
 
    CHARACTER (LEN=4) :: mminlu = '    '         ! character string for landuse table
 
-   PRIVATE read_namelist_data
-
 CONTAINS
 
 

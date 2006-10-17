@@ -60,7 +60,7 @@ CONTAINS
                                           ) THEN
         CALL init_domain_rk( grid, &
 !
-#include <em_actual_args.inc>
+#include "em_actual_args.inc"
 !
       )
 
@@ -75,7 +75,7 @@ CONTAINS
 
    SUBROUTINE init_domain_rk ( grid, &
 !
-# include <em_dummy_args.inc>
+#include "em_dummy_args.inc"
 !
    )
 
@@ -87,7 +87,7 @@ CONTAINS
 !     TYPE (domain), POINTER :: grid
       TYPE (domain)          :: grid
 
-# include <em_dummy_decl.inc>
+#include "em_dummy_decl.inc"
 
       TYPE (grid_config_rec_type)              :: config_flags
 
@@ -146,9 +146,9 @@ integer::oops1,oops2
 #include "deref_kludge.h"
 
 #define COPY_IN
-#include <em_scalar_derefs.inc>
+#include "em_scalar_derefs.inc"
 #ifdef DM_PARALLEL
-#    include <em_data_calls.inc>
+#    include "em_data_calls.inc"
 #endif
 
       SELECT CASE ( model_data_order )
@@ -1317,7 +1317,7 @@ endif
 #endif
 
 #define COPY_OUT
-#include <em_scalar_derefs.inc>
+#include "em_scalar_derefs.inc"
       RETURN
 
    END SUBROUTINE init_domain_rk
@@ -1353,7 +1353,7 @@ endif
 
       CALL rebalance( grid, &
 !
-#include <em_actual_args.inc>
+#include "em_actual_args.inc"
 !
       )
 
@@ -1363,14 +1363,14 @@ endif
 
    SUBROUTINE rebalance ( grid , &
 !
-#include <em_dummy_args.inc>
+#include "em_dummy_args.inc"
 !
                         )
       IMPLICIT NONE
 
       TYPE (domain)          :: grid
 
-#include <em_dummy_decl.inc>
+#include "em_dummy_decl.inc"
 
       TYPE (grid_config_rec_type)              :: config_flags
 
@@ -1400,9 +1400,9 @@ endif
 #include "deref_kludge.h"
 
 #define COPY_IN
-#include <em_scalar_derefs.inc>
+#include "em_scalar_derefs.inc"
 #ifdef DM_PARALLEL
-#    include <em_data_calls.inc>
+#    include "em_data_calls.inc"
 #endif
 
       SELECT CASE ( model_data_order )

@@ -639,7 +639,8 @@ CONTAINS
      ENDDO
    ENDDO
    IF ( errflag .EQ. 1 ) THEN
-      CALL wrf_error_fatal( "module_sf_noahlsm.F: lsminit: out of range value of ISLTYP. Is this field in the input?" )
+      CALL wrf_error_fatal( "module_sf_noahlsm.F: lsminit: out of range value "// &
+                            "of ISLTYP. Is this field in the input?" )
    ENDIF
 
 ! initialize soil liquid water content SH2O

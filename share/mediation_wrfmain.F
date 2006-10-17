@@ -12,7 +12,7 @@ SUBROUTINE med_initialdata_input_ptr ( grid , config_flags )
          USE module_domain
          USE module_configure
          TYPE (domain) :: grid
-         TYPE (grid_config_rec_type) :: config_flags
+         TYPE (grid_config_rec_type) , INTENT(IN) :: config_flags
       END SUBROUTINE med_initialdata_input
    END INTERFACE
    CALL  med_initialdata_input ( grid , config_flags )

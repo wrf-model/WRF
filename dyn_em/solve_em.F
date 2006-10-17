@@ -45,7 +45,7 @@ SUBROUTINE solve_em ( grid , config_flags , &
    TYPE(domain) , TARGET          :: grid
 
    !  Definitions of dummy arguments to this routine (generated from Registry).
-#include <em_dummy_new_decl.inc>
+#include "em_dummy_new_decl.inc"
 
    !  Structure that contains run-time configuration (namelist) data for domain
    TYPE (grid_config_rec_type) , INTENT(IN)          :: config_flags
@@ -95,7 +95,7 @@ SUBROUTINE solve_em ( grid , config_flags , &
 ! I1 data to be communicated in this routine if necessary.
 #ifdef DM_PARALLEL
 #    define REGISTER_I1
-#      include <em_data_calls.inc>
+#      include "em_data_calls.inc"
 #endif
 
 !<DESCRIPTION>
@@ -220,7 +220,6 @@ SUBROUTINE solve_em ( grid , config_flags , &
  ENDIF
 
  grid%dts = grid%dt/float(grid%time_step_sound)
-
 
  Runge_Kutta_loop:  DO rk_step = 1, rk_order
 

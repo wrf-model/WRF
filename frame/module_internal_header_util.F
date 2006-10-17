@@ -726,7 +726,6 @@ SUBROUTINE int_get_ti_header_char( hdrbuf, hdrbufsize, itypesize, &
 !Local
   INTEGER i, n, DummyCount, typesize
   CHARACTER * 132  dummyData
-  logical, external :: debug_foo
 !
   CALL int_get_ti_header_c ( hdrbuf, hdrbufsize, n, itypesize, typesize, &
                            DataHandle, dummyData, DummyCount, code )

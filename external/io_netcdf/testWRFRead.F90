@@ -1,8 +1,8 @@
 program testread_john
   use wrf_data
   implicit none
-  include 'wrf_status_codes.h'
-  include 'netcdf.inc'
+#include "wrf_status_codes.h"
+#include <netcdf.inc>
   character (80) FileName
   integer Comm
   character (80) SysDepInfo

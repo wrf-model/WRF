@@ -529,7 +529,7 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
       ! units of minutes
       ! JULIAN is in days
       ! RADT is in minutes
-      XT24=AMOD(XTIME+RADT*0.5,1440.)
+      XT24=MOD(XTIME+RADT*0.5,1440.)
       TLOCTM=GMT+XT24/60.+XLONG(I,J)/15.
       HRANG=15.*(TLOCTM-12.)*DEGRAD
       XXLAT=XLAT(I,J)*DEGRAD

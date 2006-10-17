@@ -631,7 +631,11 @@ fprintf(fp, "ENDDO\n") ;
               fprintf(fp,"                       '%s'               , &  ! Data Name \n", dname ) ;
               fprintf(fp,"                       %s%s%s%s(1,kds,1,%d,P_%s)     , &  ! Field \n" , structname , core , fourdname, tend_tag, ibdy, p->name ) ;
             }
-            fprintf(fp,"                       WRF_%s             , &  ! FieldType \n" , p->type->name ) ;
+            if (!strncmp(p->type->name,"real",4)) {
+              fprintf(fp,"                       WRF_FLOAT             , &  ! FieldType \n") ;
+            } else {
+              fprintf(fp,"                       WRF_%s             , &  ! FieldType \n" , p->type->name ) ;
+            }
             fprintf(fp,"                       grid%%communicator , &  ! Comm\n") ;
             fprintf(fp,"                       grid%%iocommunicator , &  ! Comm\n") ;
             fprintf(fp,"                       grid%%domdesc      , &  ! Comm\n") ;
@@ -671,7 +675,11 @@ fprintf(fp, "ENDDO\n") ;
               fprintf(fp,"                       '%s'               , &  ! Data Name \n", dname ) ;
               fprintf(fp,"                       %s%s%s%s(1,kds,1,%d,P_%s)     , &  ! Field \n" , structname , core , fourdname, tend_tag, ibdy, p->name ) ;
             }
-            fprintf(fp,"                       WRF_%s             , &  ! FieldType \n" , p->type->name ) ;
+            if (!strncmp(p->type->name,"real",4)) {
+              fprintf(fp,"                       WRF_FLOAT          , &  ! FieldType \n") ;
+            } else {
+              fprintf(fp,"                       WRF_%s             , &  ! FieldType \n" , p->type->name ) ;
+            }
             fprintf(fp,"                       grid%%communicator , &  ! Comm\n") ;
             fprintf(fp,"                       grid%%iocommunicator , &  ! Comm\n") ;
             fprintf(fp,"                       grid%%domdesc      , &  ! Comm\n") ;
@@ -901,7 +909,13 @@ if ( pass == 0 )
 	      fprintf(fp,"                       globbuf_%s               , &  ! Field \n" , p->type->name ) ;
             else
 	      fprintf(fp,"                       %s%s%s               , &  ! Field \n" , structname , vname , indices) ;
-	    fprintf(fp,"                       WRF_%s             , &  ! FieldType \n" , p->type->name ) ;
+
+            if (!strncmp(p->type->name,"real",4)) {
+              fprintf(fp,"                       WRF_FLOAT             , &  ! FieldType \n") ;
+            } else {
+              fprintf(fp,"                       WRF_%s             , &  ! FieldType \n" , p->type->name ) ;
+            }
+
 	    fprintf(fp,"                       grid%%communicator  , &  ! Comm\n") ;
 	    fprintf(fp,"                       grid%%iocommunicator  , &  ! Comm\n") ;
 	    fprintf(fp,"                       grid%%domdesc       , &  ! Comm\n") ;
@@ -1117,7 +1131,11 @@ if ( pass == 0 )
 	      fprintf(fp,"                       globbuf_%s               , &  ! Field \n" , p->type->name ) ;
             else
 	      fprintf(fp,"                       %s%s%s               , &  ! Field \n" , structname , vname , indices ) ;
-	    fprintf(fp,"                       WRF_%s             , &  ! FieldType \n" , p->type->name ) ;
+            if (!strncmp(p->type->name,"real",4)) {
+              fprintf(fp,"                       WRF_FLOAT          , &  ! FieldType \n") ;
+            } else {
+              fprintf(fp,"                       WRF_%s             , &  ! FieldType \n" , p->type->name ) ;
+            }
 	    fprintf(fp,"                       grid%%communicator  , &  ! Comm\n") ;
 	    fprintf(fp,"                       grid%%iocommunicator  , &  ! Comm\n") ;
 	    fprintf(fp,"                       grid%%domdesc       , &  ! Comm\n") ;

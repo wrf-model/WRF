@@ -45,7 +45,7 @@ module wrf_phdf5_data
   integer                , parameter      :: MemOrdLen        = 3
   character (DateStrLen) , parameter      :: ZeroDate = '0000-00-00-00:00:00'
 
-  include 'wrf_io_flags.h'
+#include "wrf_io_flags.h"
 ! This is a hack.  WRF IOAPI no longer supports WRF_CHARACTER.  Rip this out!  
   integer, parameter  :: WRF_CHARACTER                        = 1080
 
@@ -117,7 +117,7 @@ CONTAINS
 
     use wrf_phdf5_data
     use HDF5
-    include 'wrf_status_codes.h'
+  #include "wrf_status_codes.h"
 
     integer              ,intent(out) :: DataHandle
     type(wrf_phdf5_data_handle),pointer:: DH
@@ -278,7 +278,7 @@ CONTAINS
   subroutine GetDH(DataHandle,DH,Status)
 
     use wrf_phdf5_data
-    include 'wrf_status_codes.h'
+  #include "wrf_status_codes.h"
     integer               ,intent(in)          :: DataHandle
     type(wrf_phdf5_data_handle) ,pointer        :: DH
     integer               ,intent(out)         :: Status
@@ -302,7 +302,7 @@ CONTAINS
     use wrf_phdf5_data
     use HDF5
     implicit none
-    include 'wrf_status_codes.h'
+  #include "wrf_status_codes.h"
     integer(hid_t)              ,intent(out)  :: enum_type
     integer                     ,intent(out)  :: Status
     integer                                   :: hdf5err
@@ -344,7 +344,7 @@ CONTAINS
 ! returned.
 LOGICAL FUNCTION phdf5_ok_to_put_dom_ti( DataHandle )
     use wrf_phdf5_data
-    include 'wrf_status_codes.h'
+  #include "wrf_status_codes.h"
     INTEGER, INTENT(IN) :: DataHandle
     CHARACTER*80 :: fname
     INTEGER :: filestate
@@ -370,7 +370,7 @@ END FUNCTION phdf5_ok_to_put_dom_ti
 ! returned.
 LOGICAL FUNCTION phdf5_ok_to_get_dom_ti( DataHandle )
     use wrf_phdf5_data
-    include 'wrf_status_codes.h'
+  #include "wrf_status_codes.h"
     INTEGER, INTENT(IN) :: DataHandle
     CHARACTER*80 :: fname
     INTEGER :: filestate
@@ -394,7 +394,7 @@ END FUNCTION phdf5_ok_to_get_dom_ti
 ! referenced by DataHandle.  If DataHandle is invalid, .FALSE. is returned.
 LOGICAL FUNCTION phdf5_is_first_operation( DataHandle )
     use wrf_phdf5_data
-    INCLUDE 'wrf_status_codes.h'
+  #include "wrf_status_codes.h"
     INTEGER, INTENT(IN) :: DataHandle
     TYPE(wrf_phdf5_data_handle) ,POINTER :: DH
     INTEGER :: Status
@@ -447,7 +447,7 @@ end module ext_phdf5_support_routines
 ! check the date, only use the length 
 subroutine DateCheck(Date,Status)
   use wrf_phdf5_data
-  include 'wrf_status_codes.h'
+#include "wrf_status_codes.h"
   character*(*) ,intent(in)      :: Date
   integer       ,intent(out)     :: Status
 
@@ -463,7 +463,7 @@ end subroutine DateCheck
 subroutine GetName(Element,Var,Name,Status)
 
   use wrf_phdf5_data
-  include 'wrf_status_codes.h'
+#include "wrf_status_codes.h"
   character*(*) ,intent(in)     :: Element
   character*(*) ,intent(in)     :: Var
   character*(*) ,intent(out)    :: Name
@@ -492,7 +492,7 @@ subroutine GetDataTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
   use ext_phdf5_support_routines
 
   implicit none
-  include 'wrf_status_codes.h'
+#include "wrf_status_codes.h"
 
   character (*)         ,intent(in)          :: IO
   integer               ,intent(in)          :: DataHandle
@@ -748,7 +748,7 @@ subroutine GetAttrTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
   use ext_phdf5_support_routines
 
   implicit none
-  include 'wrf_status_codes.h'
+#include "wrf_status_codes.h"
 
   character (*)         ,intent(in)          :: IO
   integer               ,intent(in)          :: DataHandle
@@ -969,7 +969,7 @@ end subroutine GetAttrTimeIndex
 ! Obtain the rank of the dimension
 subroutine GetDim(MemoryOrder,NDim,Status)
 
-  include 'wrf_status_codes.h'
+#include "wrf_status_codes.h"
   character*(*) ,intent(in)  :: MemoryOrder
   integer       ,intent(out) :: NDim
   integer       ,intent(out) :: Status
@@ -1017,7 +1017,7 @@ end subroutine GetIndices
 ! shuffling the memory order to XYZ order
 subroutine ExtOrder(MemoryOrder,Vector,Status)
   use wrf_phdf5_data
-  include 'wrf_status_codes.h'
+#include "wrf_status_codes.h"
   character*(*)              ,intent(in)    :: MemoryOrder
   integer,dimension(*)       ,intent(inout) :: Vector
   integer                    ,intent(out)   :: Status
@@ -1065,7 +1065,7 @@ end subroutine ExtOrder
 ! shuffling the dimensional name order
 subroutine ExtOrderStr(MemoryOrder,Vector,ROVector,Status)
   use wrf_phdf5_data
-  include 'wrf_status_codes.h'
+#include "wrf_status_codes.h"
   character*(*)                    ,intent(in)    :: MemoryOrder
   character*(*),dimension(*)       ,intent(in)    :: Vector
   character(256),dimension(NVarDims),intent(out)   :: ROVector

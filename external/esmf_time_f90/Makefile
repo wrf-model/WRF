@@ -65,6 +65,8 @@ Test1_WRFU.exe : libesmf_time.a Test1_WRFU.o
 	$(RM) $*.b
 	$(FC) -c $*.f
 
+clean : testclean
+
 testclean: 
 	$(RM) *.b *.f *.o libesmf_time.a *.mod Test1*.exe
 

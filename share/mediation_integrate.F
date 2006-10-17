@@ -277,7 +277,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
      SUBROUTINE med_initialdata_input_ptr( nest , config_flags )
         USE module_domain
         USE module_configure
-        TYPE (grid_config_rec_type) :: config_flags
+        TYPE (grid_config_rec_type), INTENT(IN) :: config_flags
         TYPE(domain) , POINTER :: nest
      END SUBROUTINE med_initialdata_input_ptr
 
@@ -285,7 +285,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
        USE module_domain
        USE module_configure
        TYPE (domain), POINTER ::  nest , parent
-       TYPE (grid_config_rec_type) config_flags
+       TYPE (grid_config_rec_type), INTENT(IN) :: config_flags
      END SUBROUTINE med_nest_feedback
 
      SUBROUTINE start_domain ( grid , allowed_to_move )

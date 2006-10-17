@@ -48,7 +48,7 @@ MODULE module_ext_internal
     END FUNCTION int_valid_handle
 
     SUBROUTINE int_get_fresh_handle( retval )
-      include 'wrf_io_flags.h'
+#include "wrf_io_flags.h"
       INTEGER i, retval
       retval = -1
 ! dont use first 8 handles
@@ -69,7 +69,7 @@ MODULE module_ext_internal
     END SUBROUTINE int_get_fresh_handle
 
     SUBROUTINE release_handle( i )
-      include 'wrf_io_flags.h'
+#include "wrf_io_flags.h"
       INTEGER, INTENT(IN) :: i
       IF ( i .LT. 8 .OR. i .GT. int_num_handles ) RETURN
       IF ( .NOT. int_handle_in_use(i) ) RETURN
@@ -94,7 +94,7 @@ MODULE module_ext_internal
 ! file referenced by DataHandle.  If DataHandle is invalid, .FALSE. is 
 ! returned.  
 LOGICAL FUNCTION int_ok_to_put_dom_ti( DataHandle )
-    include 'wrf_io_flags.h'
+#include "wrf_io_flags.h"
     INTEGER, INTENT(IN) :: DataHandle 
     CHARACTER*256 :: fname
     INTEGER :: filestate
@@ -121,7 +121,7 @@ END FUNCTION int_ok_to_put_dom_ti
 ! file referenced by DataHandle.  If DataHandle is invalid, .FALSE. is 
 ! returned.  
 LOGICAL FUNCTION int_ok_to_get_dom_ti( DataHandle )
-    include 'wrf_io_flags.h'
+#include "wrf_io_flags.h"
     INTEGER, INTENT(IN) :: DataHandle 
     CHARACTER*256 :: fname
     INTEGER :: filestate
@@ -188,7 +188,7 @@ SUBROUTINE ext_int_open_for_write_begin( FileName , Comm_compute, Comm_io, SysDe
   USE module_ext_internal
   IMPLICIT NONE
   INCLUDE 'intio_tags.h'
-  INCLUDE 'wrf_io_flags.h'
+#include "wrf_io_flags.h"
   CHARACTER*(*) :: FileName
   INTEGER ,       INTENT(IN)  :: Comm_compute , Comm_io
   CHARACTER*(*) :: SysDepInfo
@@ -223,7 +223,7 @@ SUBROUTINE ext_int_open_for_write_commit( DataHandle , Status )
   USE module_ext_internal
   IMPLICIT NONE
   INCLUDE 'intio_tags.h'
-  INCLUDE 'wrf_io_flags.h'
+#include "wrf_io_flags.h"
   INTEGER ,       INTENT(IN ) :: DataHandle
   INTEGER ,       INTENT(OUT) :: Status
   REAL dummy
@@ -247,7 +247,7 @@ SUBROUTINE ext_int_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo,
                                DataHandle , Status )
   USE module_ext_internal
   IMPLICIT NONE
-  INCLUDE 'wrf_io_flags.h'
+#include "wrf_io_flags.h"
   CHARACTER*(*) :: FileName
   INTEGER ,       INTENT(IN)  :: Comm_compute , Comm_io
   CHARACTER*(*) :: SysDepInfo
@@ -276,7 +276,7 @@ END SUBROUTINE ext_int_open_for_read
 SUBROUTINE ext_int_inquire_opened ( DataHandle, FileName , FileStatus, Status )
   USE module_ext_internal
   IMPLICIT NONE
-  include 'wrf_io_flags.h'
+#include "wrf_io_flags.h"
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: FileName
   INTEGER ,       INTENT(OUT) :: FileStatus
@@ -299,7 +299,7 @@ END SUBROUTINE ext_int_inquire_opened
 SUBROUTINE ext_int_inquire_filename ( DataHandle, FileName , FileStatus, Status )
   USE module_ext_internal
   IMPLICIT NONE
-  include 'wrf_io_flags.h'
+#include "wrf_io_flags.h"
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: FileName
   INTEGER ,       INTENT(OUT) :: FileStatus
@@ -1429,7 +1429,7 @@ SUBROUTINE ext_int_read_field ( DataHandle , DateStr , VarName , Field , FieldTy
                             Status )
   USE module_ext_internal
   IMPLICIT NONE
-  include 'wrf_io_flags.h'
+#include "wrf_io_flags.h"
   include 'intio_tags.h'
   INTEGER ,       INTENT(IN)    :: DataHandle 
   CHARACTER*(*) :: DateStr
@@ -1530,7 +1530,7 @@ SUBROUTINE ext_int_write_field ( DataHandle , DateStr , VarName , Field , FieldT
                              Status )
   USE module_ext_internal
   IMPLICIT NONE
-  include 'wrf_io_flags.h'
+#include "wrf_io_flags.h"
   INTEGER ,       INTENT(IN)    :: DataHandle 
   CHARACTER*(*) :: DateStr
   CHARACTER*(*) :: VarName

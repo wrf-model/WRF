@@ -25,8 +25,8 @@ MODULE module_ext_esmf
   ! convenience...
   CHARACTER (256) :: msg
 
-  INCLUDE 'wrf_io_flags.h'
-  INCLUDE 'wrf_status_codes.h'
+#include "wrf_io_flags.h"
+#include "wrf_status_codes.h"
 
   CONTAINS
 

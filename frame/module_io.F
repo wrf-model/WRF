@@ -42,7 +42,7 @@ MODULE module_io
 !
 !</PRE>
 !</DESCRIPTION>
-#include <md_calls.inc>
+#include "md_calls.inc"
 
 !--- ioinit
 
@@ -176,7 +176,7 @@ SUBROUTINE wrf_open_for_write_begin( FileName , Comm_compute, Comm_io, SysDepInf
 !</DESCRIPTION>
   USE module_state_description
   IMPLICIT NONE
-#include <wrf_io_flags.h>
+#include "wrf_io_flags.h"
   CHARACTER*(*) :: FileName
   INTEGER ,       INTENT(IN)  :: Comm_compute , Comm_io
   CHARACTER*(*), INTENT(INOUT):: SysDepInfo
@@ -386,7 +386,7 @@ SUBROUTINE wrf_open_for_write_commit( DataHandle , Status )
   LOGICAL                     :: for_out
   INTEGER, EXTERNAL           :: use_package
   LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
-#include <wrf_io_flags.h>
+#include "wrf_io_flags.h"
 
   CALL wrf_debug( DEBUG_LVL, 'module_io.F: in wrf_open_for_write_commit' )
 
@@ -477,7 +477,7 @@ SUBROUTINE wrf_open_for_read_begin( FileName , Comm_compute, Comm_io, SysDepInfo
 !</DESCRIPTION>
   USE module_state_description
   IMPLICIT NONE
-#include <wrf_io_flags.h>
+#include "wrf_io_flags.h"
   CHARACTER*(*) :: FileName
   INTEGER ,       INTENT(IN)  :: Comm_compute , Comm_io
   CHARACTER*(*) :: SysDepInfo
@@ -655,7 +655,7 @@ SUBROUTINE wrf_open_for_read_commit( DataHandle , Status )
   LOGICAL                     :: for_out
   INTEGER, EXTERNAL           :: use_package
   LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
-#include <wrf_io_flags.h>
+#include "wrf_io_flags.h"
 
   CALL wrf_debug( DEBUG_LVL, 'module_io.F: in wrf_open_for_read_commit' )
 
@@ -907,8 +907,8 @@ SUBROUTINE wrf_inquire_opened ( DataHandle, FileName , FileStatus, Status )
   LOGICAL                     :: for_out
   INTEGER, EXTERNAL           :: use_package
   LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
-#include <wrf_io_flags.h>
-#include <wrf_status_codes.h>
+#include "wrf_io_flags.h"
+#include "wrf_status_codes.h"
 
   INTEGER io_form , Hndl
 
@@ -990,7 +990,7 @@ SUBROUTINE wrf_inquire_filename ( DataHandle, FileName , FileStatus, Status )
   CHARACTER*(*) :: FileName
   INTEGER ,       INTENT(OUT) :: FileStatus
   INTEGER ,       INTENT(OUT) :: Status
-#include <wrf_status_codes.h>
+#include "wrf_status_codes.h"
   INTEGER, EXTERNAL           :: use_package
   LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
   LOGICAL                     :: for_out
@@ -1071,7 +1071,7 @@ SUBROUTINE wrf_iosync ( DataHandle, Status )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   INTEGER ,       INTENT(OUT) :: Status
-#include <wrf_status_codes.h>
+#include "wrf_status_codes.h"
   INTEGER, EXTERNAL           :: use_package
   LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
   LOGICAL                     :: for_out
@@ -1144,7 +1144,7 @@ SUBROUTINE wrf_ioclose ( DataHandle, Status )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   INTEGER ,       INTENT(OUT) :: Status
-#include <wrf_status_codes.h>
+#include "wrf_status_codes.h"
   INTEGER, EXTERNAL           :: use_package
   LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
   INTEGER io_form , Hndl
@@ -1230,7 +1230,7 @@ SUBROUTINE wrf_get_next_time ( DataHandle, DateStr, Status )
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: DateStr
   INTEGER ,       INTENT(OUT) :: Status
-#include <wrf_status_codes.h>
+#include "wrf_status_codes.h"
 
   INTEGER, EXTERNAL           :: use_package
   LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
@@ -1328,7 +1328,7 @@ SUBROUTINE wrf_get_previous_time ( DataHandle, DateStr, Status )
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: DateStr
   INTEGER ,       INTENT(OUT) :: Status
-#include <wrf_status_codes.h>
+#include "wrf_status_codes.h"
 
   INTEGER, EXTERNAL           :: use_package
   LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
@@ -1419,7 +1419,7 @@ SUBROUTINE wrf_set_time ( DataHandle, DateStr, Status )
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: DateStr
   INTEGER ,       INTENT(OUT) :: Status
-#include <wrf_status_codes.h>
+#include "wrf_status_codes.h"
 
   INTEGER, EXTERNAL           :: use_package
   LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
@@ -1498,7 +1498,7 @@ SUBROUTINE wrf_get_next_var ( DataHandle, VarName, Status )
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: VarName
   INTEGER ,       INTENT(OUT) :: Status
-#include <wrf_status_codes.h>
+#include "wrf_status_codes.h"
 
   INTEGER, EXTERNAL           :: use_package
   LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
@@ -1579,7 +1579,7 @@ SUBROUTINE wrf_get_var_info ( DataHandle , VarName , NDim , MemoryOrder , Stagge
   CHARACTER*(*)         ,INTENT(OUT)    :: Stagger
   INTEGER ,dimension(*) ,INTENT(OUT)    :: DomainStart, DomainEnd
   INTEGER               ,INTENT(OUT)    :: Status
-#include <wrf_status_codes.h>
+#include "wrf_status_codes.h"
   INTEGER io_form , Hndl
   LOGICAL                     :: for_out
   INTEGER, EXTERNAL           :: use_package
@@ -1882,8 +1882,8 @@ SUBROUTINE wrf_read_field ( DataHandle , DateStr , VarName , Field , FieldType ,
   INTEGER ,dimension(*)         ,INTENT(IN)    :: MemoryStart, MemoryEnd
   INTEGER ,dimension(*)         ,INTENT(IN)    :: PatchStart,  PatchEnd
   INTEGER                       ,INTENT(OUT)   :: Status
-#include <wrf_status_codes.h>
-#include <wrf_io_flags.h>
+#include "wrf_status_codes.h"
+#include "wrf_io_flags.h"
   INTEGER, ALLOCATABLE        :: ICAST(:)
   LOGICAL perturb_input
   IF ( FieldType .EQ. WRF_LOGICAL ) THEN
@@ -1907,7 +1907,7 @@ SUBROUTINE wrf_read_field ( DataHandle , DateStr , VarName , Field , FieldType ,
                            PatchStart , PatchEnd ,                                      &
                            Status )
     CALL nl_get_perturb_input( 1, perturb_input )
-    IF ( perturb_input .AND. FieldType .EQ. WRF_REAL .AND. TRIM(MemoryOrder) .EQ. 'XZY' ) THEN
+    IF ( perturb_input .AND. FieldType .EQ. WRF_FLOAT .AND. TRIM(MemoryOrder) .EQ. 'XZY' ) THEN
        CALL perturb_real ( Field, DomainStart, DomainEnd,        &
                                   MemoryStart, MemoryEnd,        &
                                   PatchStart, PatchEnd )
@@ -1948,7 +1948,7 @@ SUBROUTINE wrf_read_field1 ( DataHandle , DateStr , VarName , Field , FieldType 
   INTEGER ,dimension(*)         ,INTENT(IN)    :: MemoryStart, MemoryEnd
   INTEGER ,dimension(*)         ,INTENT(IN)    :: PatchStart,  PatchEnd
   INTEGER                       ,INTENT(OUT)   :: Status
-#include <wrf_status_codes.h>
+#include "wrf_status_codes.h"
   INTEGER io_form , Hndl
   LOGICAL                     :: for_out
   INTEGER, EXTERNAL           :: use_package
@@ -2124,8 +2124,8 @@ SUBROUTINE wrf_write_field ( DataHandle , DateStr , VarName , Field , FieldType 
   INTEGER ,dimension(*)         ,INTENT(IN)    :: MemoryStart, MemoryEnd
   INTEGER ,dimension(*)         ,INTENT(IN)    :: PatchStart,  PatchEnd
   INTEGER                       ,INTENT(OUT)   :: Status
-#include <wrf_status_codes.h>
-#include <wrf_io_flags.h>
+#include "wrf_status_codes.h"
+#include "wrf_io_flags.h"
   INTEGER, ALLOCATABLE        :: ICAST(:)
   IF ( FieldType .EQ. WRF_LOGICAL ) THEN
       ALLOCATE(ICAST((MemoryEnd(1)-MemoryStart(1)+1)*(MemoryEnd(2)-MemoryStart(2)+1)*(MemoryEnd(3)-MemoryStart(3)+1)))
@@ -2186,7 +2186,7 @@ SUBROUTINE wrf_write_field1 ( DataHandle , DateStr , VarName , Field , FieldType
   INTEGER ,dimension(*)         ,INTENT(IN)    :: MemoryStart, MemoryEnd
   INTEGER ,dimension(*)         ,INTENT(IN)    :: PatchStart,  PatchEnd
   INTEGER                       ,INTENT(OUT)   :: Status
-#include <wrf_status_codes.h>
+#include "wrf_status_codes.h"
   INTEGER io_form , Hndl
   LOGICAL                     :: for_out
   INTEGER, EXTERNAL           :: use_package
@@ -2439,7 +2439,7 @@ SUBROUTINE collect_fld_and_call_pkg (    fcn, donotcollect_arg,                 
 !</PRE>
 !</DESCRIPTION>
   IMPLICIT NONE
-  include 'wrf_io_flags.h'
+#include "wrf_io_flags.h"
   EXTERNAL fcn
   LOGICAL,        INTENT(IN)    :: donotcollect_arg
   INTEGER ,       INTENT(IN)    :: Hndl
@@ -2484,7 +2484,7 @@ SUBROUTINE collect_fld_and_call_pkg (    fcn, donotcollect_arg,                 
                PatchStart , PatchEnd ,                                      &
                Status )
 
-  ELSE IF ( FieldType .EQ. WRF_REAL ) THEN
+  ELSE IF ( FieldType .EQ. WRF_FLOAT ) THEN
 
      CALL collect_real_and_call_pkg ( fcn,                                        &
                Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
@@ -2773,7 +2773,7 @@ SUBROUTINE collect_generic_and_call_pkg ( fcn, globbuf,                         
   USE module_state_description
   USE module_driver_constants
   IMPLICIT NONE
-  include 'wrf_io_flags.h'
+#include "wrf_io_flags.h"
 #if defined( DM_PARALLEL ) && ! defined(STUBMPI)
 include "mpif.h"
 #endif
@@ -2852,7 +2852,7 @@ include "mpif.h"
            DomainStart(1), DomainEnd(1), DomainStart(2), DomainEnd(2), DomainStart(3), DomainEnd(3), &
            MemoryStart(1), MemoryEnd(1), MemoryStart(2), MemoryEnd(2), MemoryStart(3), MemoryEnd(3), &
            PatchStart(1) , PatchEnd(1) , PatchStart(2) , PatchEnd(2) , PatchStart(3) , PatchEnd(3) )
-      ELSE IF ( FieldType .EQ. WRF_REAL ) THEN
+      ELSE IF ( FieldType .EQ. WRF_FLOAT ) THEN
         CALL wrf_patch_to_global_real ( Field  , globbuf , DomainDesc, Stagger, MemOrd ,             &
            DomainStart(1), DomainEnd(1), DomainStart(2), DomainEnd(2), DomainStart(3), DomainEnd(3), &
            MemoryStart(1), MemoryEnd(1), MemoryStart(2), MemoryEnd(2), MemoryStart(3), MemoryEnd(3), &
@@ -2907,7 +2907,7 @@ include "mpif.h"
                              communicator                   , &    ! communicator
                              ierr )
 
-           ELSE IF ( FieldType .EQ. WRF_REAL ) THEN
+           ELSE IF ( FieldType .EQ. WRF_FLOAT ) THEN
 
              CALL wrf_gatherv_real ( Field, PatchStart(1)+idx , &
                              my_count ,                       &    ! sendcount
@@ -2967,7 +2967,7 @@ include "mpif.h"
                              communicator                   , &    ! communicator
                              ierr )
 
-           ELSE IF ( FieldType .EQ. WRF_REAL ) THEN
+           ELSE IF ( FieldType .EQ. WRF_FLOAT ) THEN
 
              CALL wrf_gatherv_real ( Field, PatchStart(1)+idx , &
                              my_count ,                       &    ! sendcount
@@ -3030,7 +3030,7 @@ include "mpif.h"
                              communicator                   , &    ! communicator
                              ierr )
 
-           ELSE IF ( FieldType .EQ. WRF_REAL ) THEN
+           ELSE IF ( FieldType .EQ. WRF_FLOAT ) THEN
 
              CALL wrf_gatherv_real( Field, PatchStart(1)+idx ,      &    ! sendbuf
                              my_count                       , &    ! sendcount
@@ -3091,7 +3091,7 @@ include "mpif.h"
                              communicator                   , &    ! communicator
                              ierr )
 
-           ELSE IF ( FieldType .EQ. WRF_REAL ) THEN
+           ELSE IF ( FieldType .EQ. WRF_FLOAT ) THEN
 
              CALL wrf_gatherv_real( Field, PatchStart(1)+idx ,      &    ! sendbuf
                              my_count                       , &    ! sendcount
@@ -3159,7 +3159,7 @@ SUBROUTINE call_pkg_and_dist (       fcn, donotdist_arg, update_arg,            
 !</PRE>
 !</DESCRIPTION>
   IMPLICIT NONE
-  include 'wrf_io_flags.h'
+#include "wrf_io_flags.h"
   EXTERNAL fcn
   LOGICAL,        INTENT(IN)    :: donotdist_arg, update_arg  ! update means collect old field update it and dist
   INTEGER ,       INTENT(IN)    :: Hndl
@@ -3203,7 +3203,7 @@ SUBROUTINE call_pkg_and_dist (       fcn, donotdist_arg, update_arg,            
                PatchStart , PatchEnd ,                                      &
                Status )
 
-  ELSE IF (FieldType .EQ. WRF_REAL) THEN
+  ELSE IF (FieldType .EQ. WRF_FLOAT) THEN
 
      CALL call_pkg_and_dist_real ( fcn, update_arg,                            &
                Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
@@ -3478,7 +3478,7 @@ SUBROUTINE call_pkg_and_dist_generic (   fcn, globbuf , update_arg ,            
 !</DESCRIPTION>
   USE module_driver_constants
   IMPLICIT NONE
-#include <wrf_io_flags.h>
+#include "wrf_io_flags.h"
   EXTERNAL fcn
   REAL, DIMENSION(*) ::  globbuf
   INTEGER ,       INTENT(IN)    :: Hndl
@@ -3569,7 +3569,7 @@ SUBROUTINE call_pkg_and_dist_generic (   fcn, globbuf , update_arg ,            
                DomainStart(1), DomainEnd(1), DomainStart(2), DomainEnd(2), DomainStart(3), DomainEnd(3), &
                MemoryStart(1), MemoryEnd(1), MemoryStart(2), MemoryEnd(2), MemoryStart(3), MemoryEnd(3), &
                PatchStart(1) , PatchEnd(1) , PatchStart(2) , PatchEnd(2) , PatchStart(3) , PatchEnd(3) )
-          ELSE IF (  FieldType .EQ. WRF_REAL ) THEN
+          ELSE IF (  FieldType .EQ. WRF_FLOAT ) THEN
             CALL wrf_patch_to_global_real ( Field  , globbuf , DomainDesc, Stagger, MemOrd ,             &
                DomainStart(1), DomainEnd(1), DomainStart(2), DomainEnd(2), DomainStart(3), DomainEnd(3), &
                MemoryStart(1), MemoryEnd(1), MemoryStart(2), MemoryEnd(2), MemoryStart(3), MemoryEnd(3), &
@@ -3617,7 +3617,7 @@ SUBROUTINE call_pkg_and_dist_generic (   fcn, globbuf , update_arg ,            
            PatchStart(1) , PatchEnd(1) , PatchStart(2) , PatchEnd(2) , 1            , 1   )
       END SELECT
 
-    ELSE IF ( FieldType .EQ. WRF_REAL ) THEN
+    ELSE IF ( FieldType .EQ. WRF_FLOAT ) THEN
 
       SELECT CASE (MemOrd)
       CASE ( 'xzy','xyz','yxz','zxy' )
@@ -3676,7 +3676,7 @@ SUBROUTINE call_pkg_and_dist_generic (   fcn, globbuf , update_arg ,            
     memsize = (MemoryEnd(1)-MemoryStart(1)+1)*(MemoryEnd(2)-MemoryStart(2)+1)*(MemoryEnd(3)-MemoryStart(3)+1)
     IF ( FieldType .EQ. WRF_DOUBLE ) THEN 
       CALL wrf_dm_bcast_bytes( Field , DWORDSIZE*memsize )
-    ELSE IF ( FieldType .EQ. WRF_REAL) THEN
+    ELSE IF ( FieldType .EQ. WRF_FLOAT) THEN
       CALL wrf_dm_bcast_bytes( Field , RWORDSIZE*memsize )
     ELSE IF ( FieldType .EQ. WRF_INTEGER ) THEN
       CALL wrf_dm_bcast_bytes( Field , IWORDSIZE*memsize )

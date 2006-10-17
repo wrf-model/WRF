@@ -687,7 +687,7 @@ CONTAINS
 ! ... Solar zenith angle
 !
       do i = its,ite
-        xt24 = amod(xtime + radfrq * 0.5, 1440.)
+        xt24 = mod(xtime + radfrq * 0.5, 1440.)
         tloctm = GMT + xt24 / 60. + XLONG(i,j) / 15.
         hrang = 15. * (tloctm - 12.) * degrad
         xxlat = XLAT(i,j) * degrad

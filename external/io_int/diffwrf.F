@@ -65,8 +65,8 @@ end module read_util_module
   use read_util_module
   use module_ext_internal
   implicit none
-  include 'wrf_status_codes.h'
-  include 'wrf_io_flags.h'
+#include "wrf_status_codes.h"
+#include "wrf_io_flags.h"
   character(len=120) :: flnm
   character(len=120) :: flnm2
   character(len=120) :: arg3

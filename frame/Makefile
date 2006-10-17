@@ -24,6 +24,7 @@ MODULES =       module_driver_constants.o  \
 
 OBJS    =       wrf_num_bytes_between.o    \
                 wrf_shutdown.o             \
+                wrf_debug.o                \
                 libmassv.o                 \
                 collect_on_comm.o
 
@@ -120,5 +121,8 @@ module_timing.o: \
 module_wrf_error.o: \
 		wrf_shutdown.o \
 		$(ESMF_MOD_DEPENDENCE)
+
+wrf_debug.o: \
+		module_wrf_error.o
 
 # DO NOT DELETE

@@ -7,7 +7,7 @@ MODULE module_dm
    USE module_state_description
    USE module_wrf_error
 
-#include <rsl.inc>
+#include "rsl.inc"
 
    INTEGER msg_z, msg_x, msg_y
    INTEGER msg,messages(168)
@@ -3342,7 +3342,7 @@ SUBROUTINE wrf_get_myproc( myproc )
 ! Pass back the task number (usually MPI rank) on this process.
 !
 ! </DESCRIPTION>
-# include <rsl.inc>
+# include "rsl.inc"
   INTEGER myproc
   myproc = rsl_myproc
   RETURN
@@ -3350,7 +3350,7 @@ END SUBROUTINE wrf_get_myproc
 
 SUBROUTINE wrf_get_nproc( nproc )
   IMPLICIT NONE
-# include <rsl.inc>
+# include "rsl.inc"
   INTEGER nproc
 ! <DESCRIPTION>
 ! Pass back the number of distributed-memory tasks.
@@ -3362,7 +3362,7 @@ END SUBROUTINE wrf_get_nproc
 
 SUBROUTINE wrf_get_nprocx( nprocx )
   IMPLICIT NONE
-# include <rsl.inc>
+# include "rsl.inc"
   INTEGER nprocx
 ! <DESCRIPTION>
 ! Pass back the number of distributed-memory tasks decomposing the X dimension of the domain.
@@ -3374,7 +3374,7 @@ END SUBROUTINE wrf_get_nprocx
 
 SUBROUTINE wrf_get_nprocy( nprocy )
   IMPLICIT NONE
-# include <rsl.inc>
+# include "rsl.inc"
   INTEGER nprocy
 ! <DESCRIPTION>
 ! Pass back the number of distributed-memory tasks decomposing the Y dimension of the domain.
@@ -3540,7 +3540,7 @@ SUBROUTINE wrf_dm_boundary ( domdesc , comms , period_id , &
    IMPLICIT NONE
    INTEGER domdesc , comms(*) , period_id
    LOGICAL , INTENT(IN)      :: periodic_x, periodic_y
-# include <rsl.inc>
+# include "rsl.inc"
 
    IF ( periodic_x ) THEN
      CALL rsl_exch_period ( domdesc , comms( period_id ) , RSL_M )
@@ -3598,7 +3598,7 @@ SUBROUTINE write_68( grid, v , s , &
           ims, ime, jms, jme, kms, kme, &
           its, ite, jts, jte, kts, kte
   REAL, DIMENSION( ims:ime , kms:kme, jms:jme ) :: v
-# include <rsl.inc>
+# include "rsl.inc"
 
   INTEGER i,j,k
 
@@ -3650,7 +3650,7 @@ END
    END SUBROUTINE wrf_abort
 
    SUBROUTINE wrf_dm_shutdown
-# include <rsl.inc>
+# include "rsl.inc"
 ! <DESCRIPTION>
 ! Shutdown (gracefully) the underlying comm layer.
 !
@@ -3722,7 +3722,7 @@ END
                                        MS1,ME1,MS2,ME2,MS3,ME3,&
                                        PS1,PE1,PS2,PE2,PS3,PE3 )
        IMPLICIT NONE
-#include <rsl.inc>
+#include "rsl.inc"
        INTEGER                         DS1,DE1,DS2,DE2,DS3,DE3,&
                                        MS1,ME1,MS2,ME2,MS3,ME3,&
                                        PS1,PE1,PS2,PE2,PS3,PE3
@@ -3749,7 +3749,7 @@ END
                                        MS1,ME1,MS2,ME2,MS3,ME3,&
                                        PS1,PE1,PS2,PE2,PS3,PE3 )
        IMPLICIT NONE
-#include <rsl.inc>
+#include "rsl.inc"
        INTEGER                         DS1,DE1,DS2,DE2,DS3,DE3,&
                                        MS1,ME1,MS2,ME2,MS3,ME3,&
                                        PS1,PE1,PS2,PE2,PS3,PE3
@@ -3777,7 +3777,7 @@ END
                                        MS1,ME1,MS2,ME2,MS3,ME3,&
                                        PS1,PE1,PS2,PE2,PS3,PE3 )
        IMPLICIT NONE
-#include <rsl.inc>
+#include "rsl.inc"
        INTEGER                         DS1,DE1,DS2,DE2,DS3,DE3,&
                                        MS1,ME1,MS2,ME2,MS3,ME3,&
                                        PS1,PE1,PS2,PE2,PS3,PE3
@@ -3804,7 +3804,7 @@ END
                                        MS1,ME1,MS2,ME2,MS3,ME3,&
                                        PS1,PE1,PS2,PE2,PS3,PE3 )
        IMPLICIT NONE
-#include <rsl.inc>
+#include "rsl.inc"
        INTEGER                         DS1,DE1,DS2,DE2,DS3,DE3,&
                                        MS1,ME1,MS2,ME2,MS3,ME3,&
                                        PS1,PE1,PS2,PE2,PS3,PE3
@@ -3838,7 +3838,7 @@ END
        USE module_timing
        USE module_wrf_error
        IMPLICIT NONE
-#include <rsl.inc>
+#include "rsl.inc"
        INTEGER                         DS1a,DE1a,DS2a,DE2a,DS3a,DE3a,&
                                        MS1a,ME1a,MS2a,ME2a,MS3a,ME3a,&
                                        PS1a,PE1a,PS2a,PE2a,PS3a,PE3A 
@@ -3925,7 +3925,7 @@ END
                                        MS1,ME1,MS2,ME2,MS3,ME3,&
                                        PS1,PE1,PS2,PE2,PS3,PE3 )
        IMPLICIT NONE
-#include <rsl.inc>
+#include "rsl.inc"
        INTEGER                         DS1,DE1,DS2,DE2,DS3,DE3,&
                                        MS1,ME1,MS2,ME2,MS3,ME3,&
                                        PS1,PE1,PS2,PE2,PS3,PE3
@@ -3951,7 +3951,7 @@ END
                                        MS1,ME1,MS2,ME2,MS3,ME3,&
                                        PS1,PE1,PS2,PE2,PS3,PE3 )
        IMPLICIT NONE
-#include <rsl.inc>
+#include "rsl.inc"
        INTEGER                         DS1,DE1,DS2,DE2,DS3,DE3,&
                                        MS1,ME1,MS2,ME2,MS3,ME3,&
                                        PS1,PE1,PS2,PE2,PS3,PE3
@@ -3978,7 +3978,7 @@ END
                                        MS1,ME1,MS2,ME2,MS3,ME3,&
                                        PS1,PE1,PS2,PE2,PS3,PE3 )
        IMPLICIT NONE
-#include <rsl.inc>
+#include "rsl.inc"
        INTEGER                         DS1,DE1,DS2,DE2,DS3,DE3,&
                                        MS1,ME1,MS2,ME2,MS3,ME3,&
                                        PS1,PE1,PS2,PE2,PS3,PE3
@@ -4004,7 +4004,7 @@ END
                                        MS1,ME1,MS2,ME2,MS3,ME3,&
                                        PS1,PE1,PS2,PE2,PS3,PE3 )
        IMPLICIT NONE
-#include <rsl.inc>
+#include "rsl.inc"
        INTEGER                         DS1,DE1,DS2,DE2,DS3,DE3,&
                                        MS1,ME1,MS2,ME2,MS3,ME3,&
                                        PS1,PE1,PS2,PE2,PS3,PE3
@@ -4035,7 +4035,7 @@ END
                                        PS1a,PE1a,PS2a,PE2a,PS3a,PE3a )
        USE module_driver_constants
        IMPLICIT NONE
-#include <rsl.inc>
+#include "rsl.inc"
        INTEGER                         DS1a,DE1a,DS2a,DE2a,DS3a,DE3a,&
                                        MS1a,ME1a,MS2a,ME2a,MS3a,ME3a,&
                                        PS1a,PE1a,PS2a,PE2a,PS3a,PE3A 
@@ -4122,8 +4122,8 @@ END
 !
       TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
       TYPE(domain), POINTER :: ngrid
-#include <em_dummy_new_decl.inc>
-#include <em_i1_decl.inc>
+#include "em_dummy_new_decl.inc"
+#include "em_i1_decl.inc"
       INTEGER nlev, msize
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
       TYPE (grid_config_rec_type)            :: config_flags
@@ -4140,7 +4140,7 @@ END
 
 #ifdef DM_PARALLEL
 #    define REGISTER_I1
-#      include <em_data_calls.inc>
+#      include "em_data_calls.inc"
 #endif
 
       CALL get_ijk_from_grid (  grid ,                   &
@@ -4181,7 +4181,7 @@ END
       TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
       TYPE(domain), POINTER :: intermediate_grid
       TYPE(domain), POINTER :: ngrid
-#include <em_dummy_new_decl.inc>
+#include "em_dummy_new_decl.inc"
       INTEGER nlev, msize
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
       TYPE (grid_config_rec_type)            :: config_flags
@@ -4224,8 +4224,8 @@ END
 !
       TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
       TYPE(domain), POINTER :: ngrid
-#include <em_dummy_new_decl.inc>
-#include <em_i1_decl.inc>
+#include "em_dummy_new_decl.inc"
+#include "em_i1_decl.inc"
       INTEGER nlev, msize
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
       TYPE (grid_config_rec_type)            :: config_flags
@@ -4239,7 +4239,7 @@ END
 
 #ifdef DM_PARALLEL
 #    define REGISTER_I1
-#      include <em_data_calls.inc>
+#      include "em_data_calls.inc"
 #endif
       CALL get_ijk_from_grid (  grid ,                   &
                                 cids, cide, cjds, cjde, ckds, ckde,    &
@@ -4285,10 +4285,10 @@ END
       TYPE (grid_config_rec_type) :: config_flags ! configureation flags, has vertical dim of 
                                                   ! soil temp, moisture, etc., has vertical dim
                                                   ! of soil categories
-#include <em_dummy_new_decl.inc>
+#include "em_dummy_new_decl.inc"
 
 #ifdef DM_PARALLEL
-#      include <em_data_calls.inc>
+#      include "em_data_calls.inc"
 #endif
 
 #ifdef DM_PARALLEL
@@ -4308,7 +4308,7 @@ END
 !
       TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
       TYPE(domain), POINTER :: ngrid
-#include <em_dummy_new_decl.inc>
+#include "em_dummy_new_decl.inc"
       INTEGER nlev, msize
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
       TYPE(domain), POINTER :: xgrid
@@ -4333,7 +4333,7 @@ END
 !
              TYPE (grid_config_rec_type)            :: config_flags
              TYPE(domain), TARGET                   :: grid
-#include <em_dummy_new_decl.inc>
+#include "em_dummy_new_decl.inc"
           END SUBROUTINE feedback_nest_prep
 
       END INTERFACE
@@ -4388,8 +4388,8 @@ END
       TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
       TYPE(domain), POINTER :: intermediate_grid
       TYPE(domain), POINTER :: ngrid
-#include <em_dummy_new_decl.inc>
-#include <em_i1_decl.inc>
+#include "em_dummy_new_decl.inc"
+#include "em_i1_decl.inc"
       INTEGER nlev, msize
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
       TYPE (grid_config_rec_type)            :: config_flags
@@ -4405,7 +4405,7 @@ END
 
 #ifdef DM_PARALLEL
 #    define REGISTER_I1
-#      include <em_data_calls.inc>
+#      include "em_data_calls.inc"
 #endif
 
       nest_influence = 1.
@@ -4464,7 +4464,7 @@ END
       TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
       TYPE(domain), POINTER :: intermediate_grid
       TYPE(domain), POINTER :: ngrid
-#include <nmm_dummy_decl.inc>
+#include "nmm_dummy_decl.inc"
       TYPE (grid_config_rec_type)            :: config_flags
 
       CALL wrf_error_fatal ( 'module_dm: NMM nesting does not support RSL' )
@@ -4484,7 +4484,7 @@ END
 !
       TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
       TYPE(domain), POINTER :: ngrid
-#include <nmm_dummy_decl.inc>
+#include "nmm_dummy_decl.inc"
       TYPE (grid_config_rec_type)            :: config_flags
 
       CALL wrf_error_fatal ( 'module_dm: NMM nesting does not support RSL' )
@@ -4504,7 +4504,7 @@ END
 !
       TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
       TYPE(domain), POINTER :: intermediate_grid
-#include <nmm_dummy_decl.inc>
+#include "nmm_dummy_decl.inc"
       TYPE (grid_config_rec_type)            :: config_flags
 
       CALL wrf_error_fatal ( 'module_dm: NMM nesting does not support RSL' )
@@ -4524,7 +4524,7 @@ END
 !
       TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
       TYPE(domain), POINTER :: ngrid
-#include <nmm_dummy_decl.inc>
+#include "nmm_dummy_decl.inc"
       TYPE (grid_config_rec_type)            :: config_flags
 
       CALL wrf_error_fatal ( 'module_dm: NMM nesting does not support RSL' )
@@ -4544,7 +4544,7 @@ END
 !
       TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
       TYPE(domain), POINTER :: ngrid
-#include <nmm_dummy_decl.inc>
+#include "nmm_dummy_decl.inc"
       TYPE (grid_config_rec_type)            :: config_flags, nconfig_flags
 
       CALL wrf_error_fatal ( 'module_dm: NMM nesting does not support RSL' )
@@ -4568,7 +4568,7 @@ END
       TYPE(domain), POINTER :: intermediate_grid
       TYPE(domain), POINTER :: ngrid
 
-#include <nmm_dummy_decl.inc>
+#include "nmm_dummy_decl.inc"
       TYPE (grid_config_rec_type)            :: config_flags
 
       CALL wrf_error_fatal ( 'module_dm: NMM nesting does not support RSL' )

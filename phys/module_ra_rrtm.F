@@ -4523,7 +4523,7 @@ CONTAINS
          IF (SPECPARM .GE. ONEMINUS) SPECPARM = ONEMINUS                         
          SPECMULT = 8.*(SPECPARM)                                                
          JS = 1 + INT(SPECMULT)                                                  
-         FS = AMOD(SPECMULT,1.0)                                                 
+         FS = MOD(SPECMULT,1.0)                                                 
          IF (JS .EQ. 8) THEN                                                     
             IF (FS .GE. 0.9) THEN                                                
                JS = 9                                                            
@@ -4587,7 +4587,7 @@ CONTAINS
          IF (SPECPARM .GE. ONEMINUS) SPECPARM = ONEMINUS                         
          SPECMULT = 4.*(SPECPARM)                                                
          JS = 1 + INT(SPECMULT)                                                  
-         FS = AMOD(SPECMULT,1.0)                                                 
+         FS = MOD(SPECMULT,1.0)                                                 
          NS = JS + INT(FS + 0.5)                                                 
          FP = FAC01(LAY) + FAC11(LAY)                                            
          FAC000 = (1. - FS) * FAC00(LAY)                                         
@@ -4685,7 +4685,7 @@ CONTAINS
          IF (SPECPARM .GE. ONEMINUS) SPECPARM = ONEMINUS                         
          SPECMULT = 8.*(SPECPARM)                                                
          JS = 1 + INT(SPECMULT)                                                  
-         FS = AMOD(SPECMULT,1.0)                                                 
+         FS = MOD(SPECMULT,1.0)                                                 
          FAC000 = (1. - FS) * FAC00(LAY)                                         
          FAC010 = (1. - FS) * FAC10(LAY)                                         
          FAC100 = FS * FAC00(LAY)                                                
@@ -4725,7 +4725,7 @@ CONTAINS
          IF (SPECPARM .GE. ONEMINUS) SPECPARM = ONEMINUS                         
          SPECMULT = 4.*(SPECPARM)                                                
          JS = 1 + INT(SPECMULT)                                                  
-         FS = AMOD(SPECMULT,1.0)                                                 
+         FS = MOD(SPECMULT,1.0)                                                 
          IF (JS .GT. 1) THEN                                                     
             JS = JS + 1                                                          
          ELSEIF (FS .GE. 0.0024) THEN                                            
@@ -4819,7 +4819,7 @@ CONTAINS
          IF (SPECPARM .GE. ONEMINUS) SPECPARM = ONEMINUS                         
          SPECMULT = 8.*(SPECPARM)                                                
          JS = 1 + INT(SPECMULT)                                                  
-         FS = AMOD(SPECMULT,1.0)                                                 
+         FS = MOD(SPECMULT,1.0)                                                 
          FAC000 = (1. - FS) * FAC00(LAY)                                         
          FAC010 = (1. - FS) * FAC10(LAY)                                         
          FAC100 = FS * FAC00(LAY)                                                
@@ -4860,7 +4860,7 @@ CONTAINS
          IF (SPECPARM .GE. ONEMINUS) SPECPARM = ONEMINUS                         
          SPECMULT = 4.*(SPECPARM)                                                
          JS = 1 + INT(SPECMULT)                                                  
-         FS = AMOD(SPECMULT,1.0)                                                 
+         FS = MOD(SPECMULT,1.0)                                                 
          FAC000 = (1. - FS) * FAC00(LAY)                                         
          FAC010 = (1. - FS) * FAC10(LAY)                                         
          FAC100 = FS * FAC00(LAY)                                                
@@ -5020,7 +5020,7 @@ CONTAINS
          IF (SPECPARM .GE. ONEMINUS) SPECPARM = ONEMINUS                         
          SPECMULT = 8.*SPECPARM                                                  
          JS = 1 + INT(SPECMULT)                                                  
-         FS = AMOD(SPECMULT,1.0)                                                 
+         FS = MOD(SPECMULT,1.0)                                                 
          FAC000 = (1. - FS) * FAC00(LAY)                                         
          FAC010 = (1. - FS) * FAC10(LAY)                                         
          FAC100 = FS * FAC00(LAY)                                                
@@ -5289,7 +5289,7 @@ CONTAINS
          SPECMULT = 8.*(SPECPARM)                                                
          JS = 1 + INT(SPECMULT)                                                  
          JFRAC = JS                                                              
-         FS = AMOD(SPECMULT,1.0)                                                 
+         FS = MOD(SPECMULT,1.0)                                                 
          FFRAC = FS                                                              
          IF (JS .EQ. 8) THEN                                                     
             IF (FS .LE. 0.68) THEN                                               
@@ -5561,7 +5561,7 @@ CONTAINS
          IF (SPECPARM .GE. ONEMINUS) SPECPARM = ONEMINUS                         
          SPECMULT = 8.*(SPECPARM)                                                
          JS = 1 + INT(SPECMULT)                                                  
-         FS = AMOD(SPECMULT,1.0)                                                 
+         FS = MOD(SPECMULT,1.0)                                                 
          FAC000 = (1. - FS) * FAC00(LAY)                                         
          FAC010 = (1. - FS) * FAC10(LAY)                                         
          FAC100 = FS * FAC00(LAY)                                                
@@ -5652,7 +5652,7 @@ CONTAINS
          IF (SPECPARM .GE. ONEMINUS) SPECPARM = ONEMINUS                         
          SPECMULT = 8.*(SPECPARM)                                                
          JS = 1 + INT(SPECMULT)                                                  
-         FS = AMOD(SPECMULT,1.0)                                                 
+         FS = MOD(SPECMULT,1.0)                                                 
          FAC000 = (1. - FS) * FAC00(LAY)                                         
          FAC010 = (1. - FS) * FAC10(LAY)                                         
          FAC100 = FS * FAC00(LAY)                                                
@@ -5815,7 +5815,7 @@ CONTAINS
          IF (SPECPARM .GE. ONEMINUS) SPECPARM = ONEMINUS                         
          SPECMULT = 8.*(SPECPARM)                                                
          JS = 1 + INT(SPECMULT)                                                  
-         FS = AMOD(SPECMULT,1.0)                                                 
+         FS = MOD(SPECMULT,1.0)                                                 
          FAC000 = (1. - FS) * FAC00(LAY)                                         
          FAC010 = (1. - FS) * FAC10(LAY)                                         
          FAC100 = FS * FAC00(LAY)                                                
@@ -5904,7 +5904,7 @@ CONTAINS
          IF (SPECPARM .GE. ONEMINUS) SPECPARM = ONEMINUS                         
          SPECMULT = 8.*(SPECPARM)                                                
          JS = 1 + INT(SPECMULT)                                                  
-         FS = AMOD(SPECMULT,1.0)                                                 
+         FS = MOD(SPECMULT,1.0)                                                 
          FAC000 = (1. - FS) * FAC00(LAY)                                         
          FAC010 = (1. - FS) * FAC10(LAY)                                         
          FAC100 = FS * FAC00(LAY)                                                
@@ -6397,7 +6397,10 @@ CONTAINS
 !    BPADE                        ! Pade approximation constant (=1./0.278)      
 !    ITR(NGPT,MXLAY)              ! Integer lookup table index                   
 !                                                                                
-! Parameters                                                                     
+! Parameters                              
+
+      IMPLICIT NONE
+                                       
       REAL, PARAMETER :: SECANG=1.66                                                    
 
       INTEGER, INTENT(IN )   ::  kts,ktep1
@@ -6437,6 +6440,9 @@ CONTAINS
                                                       JT, &
                                                      JT1, &
                                                  INDSELF
+
+      INTEGER :: lay,ipr
+      REAL    :: odepth,tff
 
 ! This compiler directive was added to insure private common block storage       
 ! in multi-tasked mode on a CRAY or SGI for all commons except those that        
@@ -6564,6 +6570,7 @@ CONTAINS
 
 USE module_wrf_error
 USE module_dm
+IMPLICIT NONE
 
 !  RRTM Longwave Radiative Transfer Model                                        
 !  Atmospheric and Environmental Research, Inc., Cambridge, MA                   
@@ -6587,11 +6594,13 @@ USE module_dm
 !     TRANS   Transmittance                                                      
 !     BPADE   Inverse of the Pade approximation constant (= 1./0.278)            
 
-! Local                                         
+! Local                                    
+      INTEGER :: i,itre,igcsm,ibnd,igc,ind,ig,ipr,iprsm
+      REAL :: tfn,fp,rtfp,wtsum                                        
       LOGICAL                 :: opened
       LOGICAL , EXTERNAL      :: wrf_dm_on_monitor
 
-      DIMENSION WTSM(MG)                       
+      REAL :: WTSM(MG)                       
       CHARACTER*80 errmess
       INTEGER rrtm_unit
 
@@ -6608,7 +6617,8 @@ USE module_dm
       ENDIF
       CALL wrf_dm_bcast_bytes ( rrtm_unit , IWORDSIZE )
       IF ( rrtm_unit < 0 ) THEN
-        CALL wrf_error_fatal ( 'module_ra_rrtm: rrtm_lookuptable: Can not find unused fortran unit to read in lookup table.' )
+        CALL wrf_error_fatal ( 'module_ra_rrtm: rrtm_lookuptable: Can not '// &
+                               'find unused fortran unit to read in lookup table.' )
       ENDIF
 
 ! start data 1
@@ -6627,6 +6637,10 @@ USE module_dm
 !  weighted using a mapping procedure in routine RRTMINIT to reduce              
 !  the total number of g-points from 256 to 140 for use in the CCM.              
 ! **************************************************************************     
+#ifdef G95
+! JRB hardwire unit to 98 to ensure it is read big endian by g95
+      rrtm_unit=98
+#endif
         IF ( wrf_dm_on_monitor() ) THEN
           OPEN(rrtm_unit,FILE='RRTM_DATA',                  &
                FORM='UNFORMATTED',STATUS='OLD',ERR=9009)

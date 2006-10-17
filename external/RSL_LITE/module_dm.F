@@ -1990,7 +1990,7 @@ END
 
       nlev  = ckde - ckds + 1
 
-#  include "em_nest_interpdown_unpack.inc"
+#include "em_nest_interpdown_unpack.inc"
 
       CALL get_ijk_from_grid (  grid ,              &
                                 ids, ide, jds, jde, kds, kde,    &
@@ -2068,7 +2068,7 @@ END
 
       nlev  = ckde - ckds + 1
 
-#  include "em_nest_interpdown_pack.inc"
+#include "em_nest_interpdown_pack.inc"
 
       CALL rsl_lite_bcast_msgs( myproc, nproc, local_comm )
 
@@ -2117,7 +2117,7 @@ END
 
       nlev  = ckde - ckds + 1 
 
-#  include "em_nest_interpdown_unpack.inc"
+#include "em_nest_interpdown_unpack.inc"
 
       CALL get_ijk_from_grid (  grid ,              &
                                 ids, ide, jds, jde, kds, kde,    &
@@ -2163,7 +2163,7 @@ END
                                 ips, ipe, jps, jpe, kps, kpe    )
 
 #ifdef DM_PARALLEL
-# include "HALO_EM_INTERP_UP.inc"
+#include "HALO_EM_INTERP_UP.inc"
 #endif
 
    END SUBROUTINE feedback_nest_prep
@@ -2262,7 +2262,7 @@ END
 
 ! "interp" (basically copy) ngrid onto intermediate grid
 
-#  include "em_nest_feedbackup_interp.inc"
+#include "em_nest_feedbackup_interp.inc"
 
       RETURN
    END SUBROUTINE feedback_domain_em_part1
@@ -2345,7 +2345,7 @@ END
 
       nlev  = ckde - ckds + 1
 
-#  include "em_nest_feedbackup_pack.inc"
+#include "em_nest_feedbackup_pack.inc"
 
       CALL wrf_get_dm_communicator ( local_comm )
       CALL wrf_get_myproc( myproc )
@@ -2354,7 +2354,7 @@ END
       CALL rsl_lite_merge_msgs( myproc, nproc, local_comm )
 
 #define NEST_INFLUENCE(A,B) A = B
-#  include "em_nest_feedbackup_unpack.inc"
+#include "em_nest_feedbackup_unpack.inc"
 
       ! smooth coarse grid
       CALL get_ijk_from_grid (  ngrid,                           &
@@ -2366,14 +2366,14 @@ END
                                 ims, ime, jms, jme, kms, kme,    &
                                 ips, ipe, jps, jpe, kps, kpe    )
 
-#  include "HALO_EM_INTERP_UP.inc"
+#include "HALO_EM_INTERP_UP.inc"
 
       CALL get_ijk_from_grid (  grid ,                   &
                                 cids, cide, cjds, cjde, ckds, ckde,    &
                                 cims, cime, cjms, cjme, ckms, ckme,    &
                                 cips, cipe, cjps, cjpe, ckps, ckpe    )
 
-#  include "em_nest_feedbackup_smooth.inc"
+#include "em_nest_feedbackup_smooth.inc"
 
       RETURN
    END SUBROUTINE feedback_domain_em_part2
@@ -2448,7 +2448,7 @@ END
 
       nlev  = ckde - ckds + 1
 
-#  include "nmm_nest_interpdown_pack.inc"
+#include "nmm_nest_interpdown_pack.inc"
 
       CALL rsl_lite_bcast_msgs( myproc, nproc, local_comm )
 
@@ -2509,7 +2509,7 @@ END
 
       nlev  = ckde - ckds + 1 
 
-#  include "nmm_nest_interpdown_unpack.inc"
+#include "nmm_nest_interpdown_unpack.inc"
 
       CALL get_ijk_from_grid (  grid ,              &
                                 ids, ide, jds, jde, kds, kde,    &
@@ -2518,7 +2518,7 @@ END
 
 #include "HALO_NMM_INTERP_DOWN1.inc"
 
-#  include "nmm_nest_interpdown_interp.inc"
+#include "nmm_nest_interpdown_interp.inc"
 
 #define COPY_OUT
 #include <nmm_scalar_derefs.inc>
@@ -2566,7 +2566,7 @@ END
 
       nlev  = ckde - ckds + 1
 
-#  include "nmm_nest_forcedown_pack.inc"
+#include "nmm_nest_forcedown_pack.inc"
 
 !   WRITE(0,*)'I have completed PACKING of BCs data successfully'
 
@@ -2627,7 +2627,7 @@ integer myproc
 
       nlev  = ckde - ckds + 1
 
-#  include "nmm_nest_interpdown_unpack.inc"
+#include "nmm_nest_interpdown_unpack.inc"
 
       CALL get_ijk_from_grid (  grid ,              &
                                 ids, ide, jds, jde, kds, kde,    &
@@ -2637,7 +2637,7 @@ integer myproc
 #include "HALO_NMM_FORCE_DOWN1.inc"
 
       ! code here to interpolate the data into the nested domain
-#  include "nmm_nest_forcedown_interp.inc"
+#include "nmm_nest_forcedown_interp.inc"
 
 #define COPY_OUT
 #include <nmm_scalar_derefs.inc>
@@ -2697,7 +2697,7 @@ integer myproc
                                 ips, ipe, jps, jpe, kps, kpe    )
 
 #ifdef DM_PARALLEL
-# include "HALO_NMM_WEIGHTS.inc"
+#include "HALO_NMM_WEIGHTS.inc"
 #endif
 
 #define COPY_OUT
@@ -2809,7 +2809,7 @@ integer myproc
 
 ! "interp" (basically copy) ngrid onto intermediate grid
 
-#  include "nmm_nest_feedbackup_interp.inc"
+#include "nmm_nest_feedbackup_interp.inc"
 
 #define COPY_OUT
 #include <nmm_scalar_derefs.inc>
@@ -2910,7 +2910,7 @@ integer myproc
 
       nlev  = ckde - ckds + 1
 
-#  include "nmm_nest_feedbackup_pack.inc"
+#include "nmm_nest_feedbackup_pack.inc"
 
       CALL wrf_get_dm_communicator ( local_comm )
       CALL wrf_get_myproc( myproc )
@@ -2918,7 +2918,7 @@ integer myproc
 
       CALL rsl_lite_merge_msgs( myproc, nproc, local_comm )
 
-#  include "nmm_nest_feedbackup_unpack.inc"
+#include "nmm_nest_feedbackup_unpack.inc"
 
 
       ! smooth coarse grid
@@ -2932,14 +2932,14 @@ integer myproc
                                 ims, ime, jms, jme, kms, kme,    &
                                 ips, ipe, jps, jpe, kps, kpe    )
 
-#  include "HALO_NMM_INTERP_UP.inc"
+#include "HALO_NMM_INTERP_UP.inc"
 
       CALL get_ijk_from_grid (  grid ,                   &
                                 cids, cide, cjds, cjde, ckds, ckde,    &
                                 cims, cime, cjms, cjme, ckms, ckme,    &
                                 cips, cipe, cjps, cjpe, ckps, ckpe    )
 
-#  include "nmm_nest_feedbackup_smooth.inc"
+#include "nmm_nest_feedbackup_smooth.inc"
 
 #define COPY_OUT
 #include <nmm_scalar_derefs.inc>

@@ -329,8 +329,8 @@ MODULE module_wrf_quilt
       USE module_quilt_outbuf_ops
       IMPLICIT NONE
       INCLUDE 'mpif.h'
-      INCLUDE 'intio_tags.h'
-      INCLUDE 'wrf_io_flags.h'
+#include "intio_tags.h"
+#include "wrf_io_flags.h"
       INTEGER itag, ninbuf, ntasks_io_group, ntasks_local_group, mytask_local, ierr
       INTEGER istat
       INTEGER mytask_io_group
@@ -1017,9 +1017,9 @@ MODULE module_wrf_quilt
 !                   WRITE(*,*)'>>> ',TRIM(DateStr), ' ', TRIM(VarName), ' ', TRIM(MemoryOrder), ' ', &
 !                        (PatchEnd(1)-PatchStart(1)+1)*(PatchEnd(2)-PatchStart(2)+1)*(PatchEnd(3)-PatchStart(3)+1)
 
-                    IF ( FieldType .EQ. WRF_REAL .OR. FieldType .EQ. WRF_DOUBLE)  THEN
+                    IF ( FieldType .EQ. WRF_FLOAT .OR. FieldType .EQ. WRF_DOUBLE)  THEN
                       ! Note that the WRF_DOUBLE branch of this IF statement must come first since 
-                      ! WRF_REAL is set equal to WRF_DOUBLE during autopromotion builds.  
+                      ! WRF_FLOAT is set equal to WRF_DOUBLE during autopromotion builds.  
                       IF ( FieldType .EQ. WRF_DOUBLE)  THEN
 ! this branch has not been tested TBH: 20050406
                         CALL mpi_type_size( MPI_DOUBLE_PRECISION, ftypesize, ierr )
@@ -1253,7 +1253,8 @@ MODULE module_wrf_quilt
 
       CALL MPI_INITIALIZED( mpi_inited, ierr )
       IF ( mpi_inited ) THEN
-        CALL wrf_error_fatal("frame/module_io_quilt.F: quilt initialization must be called before MPI_Init") ;
+        CALL wrf_error_fatal("frame/module_io_quilt.F: quilt initialization "// &
+                             "must be called before MPI_Init") ;
       ENDIF
 
       CALL mpi_init ( ierr )
@@ -1344,7 +1345,7 @@ SUBROUTINE wrf_quilt_open_for_write_begin( FileName , Comm_compute, Comm_io, Sys
   USE module_wrf_quilt
   IMPLICIT NONE
   INCLUDE 'mpif.h'
-  INCLUDE 'intio_tags.h'
+#include "intio_tags.h"
   CHARACTER *(*), INTENT(IN)  :: FileName
   INTEGER ,       INTENT(IN)  :: Comm_compute , Comm_io
   CHARACTER *(*), INTENT(IN)  :: SysDepInfo
@@ -1415,7 +1416,7 @@ SUBROUTINE wrf_quilt_open_for_write_commit( DataHandle , Status )
   USE module_wrf_quilt
   IMPLICIT NONE
   INCLUDE 'mpif.h'
-  INCLUDE 'intio_tags.h'
+#include "intio_tags.h"
   INTEGER ,       INTENT(IN ) :: DataHandle
   INTEGER ,       INTENT(OUT) :: Status
   INTEGER i, itypesize, tasks_in_group, ierr, comm_io_group
@@ -1491,7 +1492,7 @@ SUBROUTINE wrf_quilt_inquire_opened ( DataHandle, FileName , FileStatus, Status 
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   USE module_wrf_quilt
   IMPLICIT NONE
-  include 'wrf_io_flags.h'
+#include "wrf_io_flags.h"
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER *(*), INTENT(IN)  :: FileName
   INTEGER ,       INTENT(OUT) :: FileStatus
@@ -1527,7 +1528,7 @@ SUBROUTINE wrf_quilt_inquire_filename ( DataHandle, FileName , FileStatus, Statu
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   USE module_wrf_quilt
   IMPLICIT NONE
-  include 'wrf_io_flags.h'
+#include "wrf_io_flags.h"
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER *(*), INTENT(OUT) :: FileName
   INTEGER ,       INTENT(OUT) :: FileStatus
@@ -1645,7 +1646,7 @@ SUBROUTINE wrf_quilt_ioclose ( DataHandle, Status )
   USE module_timing
   IMPLICIT NONE
   INCLUDE 'mpif.h'
-  INCLUDE 'intio_tags.h'
+#include "intio_tags.h"
   INTEGER ,       INTENT(IN)  :: DataHandle
   INTEGER ,       INTENT(OUT) :: Status
   INTEGER i, itypesize, tasks_in_group, comm_io_group, ierr
@@ -1715,7 +1716,7 @@ SUBROUTINE wrf_quilt_ioexit( Status )
   USE module_wrf_quilt
   IMPLICIT NONE
   INCLUDE 'mpif.h'
-  INCLUDE 'intio_tags.h'
+#include "intio_tags.h"
   INTEGER ,       INTENT(OUT) :: Status
   INTEGER                     :: DataHandle
   INTEGER i, itypesize, tasks_in_group, comm_io_group, me, ierr 
@@ -1792,7 +1793,7 @@ SUBROUTINE wrf_quilt_set_time ( DataHandle, Data,  Status )
   USE module_wrf_quilt
   IMPLICIT NONE
   INCLUDE 'mpif.h'
-  INCLUDE 'intio_tags.h'
+#include "intio_tags.h"
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Data
   INTEGER                     :: Status
@@ -1885,7 +1886,7 @@ SUBROUTINE wrf_quilt_put_dom_ti_real ( DataHandle,Element,   Data, Count,  Statu
   USE module_wrf_quilt
   IMPLICIT NONE
   INCLUDE 'mpif.h'
-  INCLUDE 'intio_tags.h'
+#include "intio_tags.h"
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
   real ,            INTENT(IN) :: Data(*)
@@ -2024,7 +2025,7 @@ SUBROUTINE wrf_quilt_put_dom_ti_integer ( DataHandle,Element,   Data, Count,  St
   USE module_wrf_quilt
   IMPLICIT NONE
   INCLUDE 'mpif.h'
-  INCLUDE 'intio_tags.h'
+#include "intio_tags.h"
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
   INTEGER ,       INTENT(IN) :: Data(*)
@@ -2162,7 +2163,7 @@ SUBROUTINE wrf_quilt_put_dom_ti_char ( DataHandle, Element,  Data,  Status )
   USE module_wrf_quilt
   IMPLICIT NONE
   INCLUDE 'mpif.h'
-  INCLUDE 'intio_tags.h'
+#include "intio_tags.h"
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
   CHARACTER*(*) , INTENT(IN)  :: Data
@@ -2692,7 +2693,7 @@ SUBROUTINE wrf_quilt_put_var_ti_char ( DataHandle,Element,  Varname, Data,  Stat
   USE module_wrf_quilt
   IMPLICIT NONE
   INCLUDE 'mpif.h'
-  INCLUDE 'intio_tags.h'
+#include "intio_tags.h"
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
   CHARACTER*(*) , INTENT(IN)  :: VarName 
@@ -3051,8 +3052,8 @@ SUBROUTINE wrf_quilt_write_field ( DataHandle , DateStr , VarName , Field , Fiel
   USE module_state_description
   USE module_wrf_quilt
   IMPLICIT NONE
-  include 'mpif.h'
-  include 'wrf_io_flags.h'
+  INCLUDE 'mpif.h'
+#include "wrf_io_flags.h"
   INTEGER ,       INTENT(IN)    :: DataHandle 
   CHARACTER*(*) , INTENT(IN)    :: DateStr
   CHARACTER*(*) , INTENT(IN)    :: VarName
@@ -3094,10 +3095,10 @@ SUBROUTINE wrf_quilt_write_field ( DataHandle , DateStr , VarName , Field , Fiel
 
   CALL mpi_type_size( MPI_INTEGER, inttypesize, ierr )
   ! Note that the WRF_DOUBLE branch of this IF statement must come first since 
-  ! WRF_REAL is set equal to WRF_DOUBLE during autopromotion builds.  
+  ! WRF_FLOAT is set equal to WRF_DOUBLE during autopromotion builds.  
   IF ( FieldType .EQ. WRF_DOUBLE ) THEN
     CALL mpi_type_size( MPI_DOUBLE_PRECISION, typesize, ierr )
-  ELSE IF ( FieldType .EQ. WRF_REAL ) THEN
+  ELSE IF ( FieldType .EQ. WRF_FLOAT ) THEN
     CALL mpi_type_size( MPI_REAL, typesize, ierr )
   ELSE IF ( FieldType .EQ. WRF_INTEGER ) THEN
     CALL mpi_type_size( MPI_INTEGER, typesize, ierr )

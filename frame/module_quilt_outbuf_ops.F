@@ -57,7 +57,7 @@ CONTAINS
 !</DESCRIPTION>
     USE module_state_description
     IMPLICIT NONE
-    INCLUDE 'wrf_io_flags.h'
+#include "wrf_io_flags.h"
     INTEGER , INTENT(IN)  :: DataHandle, io_form_arg
     INTEGER               :: ii,ds1,de1,ds2,de2,ds3,de3
     INTEGER               :: Comm, IOComm, DomainDesc ! dummy
@@ -78,7 +78,7 @@ CONTAINS
 #ifdef NETCDF
         CASE ( IO_NETCDF   )
 
-          IF ( outbuf_table(ii)%FieldType .EQ. WRF_REAL ) THEN
+          IF ( outbuf_table(ii)%FieldType .EQ. WRF_FLOAT ) THEN
 
           CALL ext_ncd_write_field ( DataHandle ,                                     &
                                  TRIM(outbuf_table(ii)%DateStr),                      &
@@ -119,7 +119,7 @@ CONTAINS
 #ifdef YYY
       CASE ( IO_YYY   )
 
-          IF ( outbuf_table(ii)%FieldType .EQ. WRF_REAL ) THEN
+          IF ( outbuf_table(ii)%FieldType .EQ. WRF_FLOAT ) THEN
 
           CALL ext_yyy_write_field ( DataHandle ,                                     &
                                  TRIM(outbuf_table(ii)%DateStr),                      &
@@ -160,7 +160,7 @@ CONTAINS
 #ifdef GRIB1
       CASE ( IO_GRIB1   )
 
-          IF ( outbuf_table(ii)%FieldType .EQ. WRF_REAL ) THEN
+          IF ( outbuf_table(ii)%FieldType .EQ. WRF_FLOAT ) THEN
 
           CALL ext_gr1_write_field ( DataHandle ,                                   &
                                  TRIM(outbuf_table(ii)%DateStr),                      &
@@ -201,7 +201,7 @@ CONTAINS
 #ifdef GRIB2
       CASE ( IO_GRIB2   )
 
-          IF ( outbuf_table(ii)%FieldType .EQ. WRF_REAL ) THEN
+          IF ( outbuf_table(ii)%FieldType .EQ. WRF_FLOAT ) THEN
 
           CALL ext_gr2_write_field ( DataHandle ,                                   &
                                  TRIM(outbuf_table(ii)%DateStr),                      &
@@ -241,7 +241,7 @@ CONTAINS
 #endif
 #ifdef INTIO
         CASE ( IO_INTIO  )
-          IF ( outbuf_table(ii)%FieldType .EQ. WRF_REAL ) THEN
+          IF ( outbuf_table(ii)%FieldType .EQ. WRF_FLOAT ) THEN
 
           CALL ext_int_write_field ( DataHandle ,                                     &
                                  TRIM(outbuf_table(ii)%DateStr),                      &
@@ -317,7 +317,7 @@ END MODULE module_quilt_outbuf_ops
 !</DESCRIPTION>
     USE module_quilt_outbuf_ops
     IMPLICIT NONE
-    INCLUDE 'wrf_io_flags.h'
+#include "wrf_io_flags.h"
     INTEGER ,                INTENT(IN) :: FieldType
     REAL    , DIMENSION(*) , INTENT(IN) :: inbuf_r
     INTEGER , DIMENSION(*) , INTENT(IN) :: inbuf_i
@@ -349,7 +349,7 @@ END MODULE module_quilt_outbuf_ops
     ENDDO
     IF ( .NOT. found ) THEN
       num_entries = num_entries + 1
-      IF      ( FieldType .EQ. WRF_REAL ) THEN
+      IF      ( FieldType .EQ. WRF_FLOAT ) THEN
         ALLOCATE( outbuf_table(num_entries)%rptr(DomainStart(1):DomainEnd(1), &
                                                  DomainStart(2):DomainEnd(2),DomainStart(3):DomainEnd(3)) )
       ELSE IF ( FieldType .EQ. WRF_INTEGER ) THEN
@@ -372,7 +372,7 @@ END MODULE module_quilt_outbuf_ops
       ii = num_entries
     ENDIF
     jj = 1
-    IF (  FieldType .EQ. WRF_REAL ) THEN
+    IF (  FieldType .EQ. WRF_FLOAT ) THEN
       DO n = PatchStart(3),PatchEnd(3)
         DO m = PatchStart(2),PatchEnd(2)
           DO l = PatchStart(1),PatchEnd(1)

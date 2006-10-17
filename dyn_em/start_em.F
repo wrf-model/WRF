@@ -2,7 +2,7 @@
 
    SUBROUTINE start_domain_em ( grid, allowed_to_read , &
 ! Actual arguments generated from Registry
-# include <em_dummy_new_args.inc>
+# include "em_dummy_new_args.inc"
 !
 )
 
@@ -39,7 +39,7 @@
    LOGICAL , INTENT(IN)   :: allowed_to_read
 
    !  Definitions of dummy arguments to this routine (generated from Registry).
-# include <em_dummy_new_decl.inc>
+# include "em_dummy_new_decl.inc"
 
    !  Structure that contains run-time configuration (namelist) data for domain
    TYPE (grid_config_rec_type)              :: config_flags
@@ -78,7 +78,7 @@
 ! generated from the registry.  The definition of REGISTER_I1 allows
 ! I1 data to be communicated in this routine if necessary.
 #ifdef DM_PARALLEL
-#    include <em_data_calls.inc>
+#    include "em_data_calls.inc"
 #endif
    CALL get_ijk_from_grid (  grid ,                   &
                              ids, ide, jds, jde, kds, kde,    &

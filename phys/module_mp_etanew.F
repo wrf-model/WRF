@@ -2180,7 +2180,8 @@ nsteps = 0
         CALL wrf_dm_bcast_bytes ( etampnew_unit1 , IWORDSIZE )
 !
         IF ( etampnew_unit1 < 0 ) THEN
-          CALL wrf_error_fatal ( 'module_mp_etanew: etanewinit: Can not find unused fortran unit to read in lookup table.' )
+          CALL wrf_error_fatal ( 'module_mp_etanew: etanewinit: Can not find '// &
+                                 'unused fortran unit to read in lookup table.' )
         ENDIF
 !
         IF ( wrf_dm_on_monitor() ) THEN

@@ -50,7 +50,7 @@ module wrf_data
   character (8)          , parameter      :: NO_NAME          = 'NULL'
   character (DateStrLen) , parameter      :: ZeroDate = '0000-00-00-00:00:00'
 
-  include 'wrf_io_flags.h'
+#include "wrf_io_flags.h"
 
   character (256)                         :: msg
   logical                                 :: WrfIOnotInitialized = .true.
@@ -647,23 +647,25 @@ VCount(:) = 1
   VCount(1:NDim) = Length(1:NDim)
   VStart(NDim+1) = TimeIndex
   VCount(NDim+1) = 1
-  select case (FieldType)
-    case (WRF_REAL)
-      call ext_ncd_RealFieldIO    (IO,NCID,VarID,VStart,VCount,XField,Status)
-    case (WRF_DOUBLE)
-      call ext_ncd_DoubleFieldIO  (IO,NCID,VarID,VStart,VCount,XField,Status)
-    case (WRF_INTEGER)
-      call ext_ncd_IntFieldIO     (IO,NCID,VarID,VStart,VCount,XField,Status)
-    case (WRF_LOGICAL)
-      call ext_ncd_LogicalFieldIO (IO,NCID,VarID,VStart,VCount,XField,Status)
-      if(Status /= WRF_NO_ERR) return
-    case default
+
+  ! Do not use SELECT statement here as sometimes WRF_REAL=WRF_DOUBLE
+  IF (FieldType == WRF_REAL) THEN
+    call ext_ncd_RealFieldIO    (IO,NCID,VarID,VStart,VCount,XField,Status)
+  ELSE IF (FieldType == WRF_DOUBLE) THEN
+    call ext_ncd_DoubleFieldIO  (IO,NCID,VarID,VStart,VCount,XField,Status)
+  ELSE IF (FieldType == WRF_INTEGER) THEN
+    call ext_ncd_IntFieldIO     (IO,NCID,VarID,VStart,VCount,XField,Status)
+  ELSE IF (FieldType == WRF_LOGICAL) THEN
+    call ext_ncd_LogicalFieldIO (IO,NCID,VarID,VStart,VCount,XField,Status)
+    if(Status /= WRF_NO_ERR) return
+  ELSE
 !for wrf_complex, double_complex
       Status = WRF_WARN_DATA_TYPE_NOT_FOUND
       write(msg,*) 'Warning DATA TYPE NOT FOUND in ',__FILE__,', line', __LINE__
       call wrf_debug ( WARN , TRIM(msg))
       return
-  end select
+  END IF
+
   return
 end subroutine FieldIO
 
@@ -2376,21 +2378,23 @@ subroutine ext_ncd_write_field(DataHandle,DateStr,Var,Field,FieldType,Comm, &
       DH%VarDimLens(j,NVar) = Length(j)
     enddo
     VDimIDs(NDim+1) = DH%DimUnlimID
-    select case (FieldType)
-      case (WRF_REAL)
-        XType = NF_FLOAT
-      case (WRF_DOUBLE)
-        Xtype = NF_DOUBLE
-      case (WRF_INTEGER)
-        XType = NF_INT
-      case (WRF_LOGICAL)
-        XType = NF_INT
-      case default
+
+    ! Do not use SELECT statement here as sometimes WRF_REAL=WRF_DOUBLE
+    IF (FieldType == WRF_REAL) THEN
+      XType = NF_FLOAT
+    ELSE IF (FieldType == WRF_DOUBLE) THEN
+      Xtype = NF_DOUBLE
+    ELSE IF (FieldType == WRF_INTEGER) THEN
+      XType = NF_INT
+    ELSE IF (FieldType == WRF_LOGICAL) THEN
+      XType = NF_INT
+    ELSE
         Status = WRF_WARN_DATA_TYPE_NOT_FOUND
         write(msg,*) 'Warning DATA TYPE NOT FOUND in ',__FILE__,', line', __LINE__ 
         call wrf_debug ( WARN , TRIM(msg))
         return
-    end select
+    END IF
+
     stat = NF_DEF_VAR(NCID,VarName,XType,NDim+1,VDimIDs,VarID)
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
@@ -2616,33 +2620,35 @@ subroutine ext_ncd_read_field(DataHandle,DateStr,Var,Field,FieldType,Comm,  &
       call wrf_debug ( WARN , TRIM(msg))
       return
     endif      
-    select case (FieldType)
-      case (WRF_REAL)
+      
+    ! Do not use SELECT statement here as sometimes WRF_REAL=WRF_DOUBLE
+    IF (FieldType == WRF_REAL) THEN
 ! allow coercion between double and single prec real
         if(.NOT. (XType == NF_FLOAT .OR. XType == NF_DOUBLE) )  then
           Status = WRF_WARN_TYPE_MISMATCH
           write(msg,*) 'Warning REAL TYPE MISMATCH in ',__FILE__,', line', __LINE__
         endif
-      case (WRF_DOUBLE)
+    ELSE IF (FieldType == WRF_DOUBLE) THEN
 ! allow coercion between double and single prec real
         if(.NOT. (XType == NF_FLOAT .OR. XType == NF_DOUBLE) )  then
           Status = WRF_WARN_TYPE_MISMATCH
           write(msg,*) 'Warning DOUBLE TYPE MISMATCH in ',__FILE__,', line', __LINE__
         endif
-      case (WRF_INTEGER)
+    ELSE IF (FieldType == WRF_INTEGER) THEN
         if(XType /= NF_INT)  then 
           Status = WRF_WARN_TYPE_MISMATCH
           write(msg,*) 'Warning INTEGER TYPE MISMATCH in ',__FILE__,', line', __LINE__
         endif
-      case (WRF_LOGICAL)
+    ELSE IF (FieldType == WRF_LOGICAL) THEN
         if(XType /= NF_INT)  then
           Status = WRF_WARN_TYPE_MISMATCH
           write(msg,*) 'Warning LOGICAL TYPE MISMATCH in ',__FILE__,', line', __LINE__
         endif
-      case default
+    ELSE
         Status = WRF_WARN_DATA_TYPE_NOT_FOUND
         write(msg,*) 'Warning DATA TYPE NOT FOUND in ',__FILE__,', line', __LINE__
-    end select
+    END IF
+
     if(Status /= WRF_NO_ERR) then
       call wrf_debug ( WARN , TRIM(msg))
       return

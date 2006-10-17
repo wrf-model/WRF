@@ -1,5 +1,14 @@
 file README.io_esmf
-Tom Henderson                                           5/21/06
+Tom Henderson                                          10/10/06
+
+This version of WRF has been tested with ESMF 2.2.0rp1.  Since ESMF interfaces 
+are still changing with each new release, it is quite likely that this version 
+of WRF will not work with other versions of ESMF.  
+
+NOTE:  ESMF 3.0.0 is available at the time of this writing.  However, 
+       ESMF 3.0.0 fails to build with IBM's xlf 10.1 compiler.  (The ESMF core 
+       team expects this problem to be resolved by a later release of xlf.)  
+       Therefore WRF was not tested with ESMF 3.0.0.  
 
 New environment variables ESMFLIB and ESMFINC may be set to trigger 
 build using a separately installed ESMF library instead of the default 

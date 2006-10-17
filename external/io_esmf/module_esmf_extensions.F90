@@ -84,6 +84,13 @@ MODULE module_esmf_extensions
   ! move these to a common shared location later...  
   PUBLIC fraction_to_string
 
+  ! hack for bug in PGI 5.1-x
+  PUBLIC ESMF_TimeLE
+  PUBLIC ESMF_TimeGE
+
+  ! convenience function
+  PUBLIC ESMF_TimeIntervalIsPositive
+
 CONTAINS
 
 
@@ -298,6 +305,35 @@ CONTAINS
     ENDIF
   END SUBROUTINE ESMF_SetCurrent
 !------------------------------------------------------------------------------
+
+
+
+! begin hack for bug in PGI 5.1-x
+  function ESMF_TimeLE(time1, time2)
+    logical :: ESMF_TimeLE
+    type(ESMF_Time), intent(in) :: time1
+    type(ESMF_Time), intent(in) :: time2
+    ESMF_TimeLE = (time1.LE.time2)
+  end function ESMF_TimeLE
+  function ESMF_TimeGE(time1, time2)
+    logical :: ESMF_TimeGE
+    type(ESMF_Time), intent(in) :: time1
+    type(ESMF_Time), intent(in) :: time2
+    ESMF_TimeGE = (time1.GE.time2)
+  end function ESMF_TimeGE
+! end hack for bug in PGI 5.1-x
+
+! convenience function
+  function ESMF_TimeIntervalIsPositive(timeinterval)
+    logical :: ESMF_TimeIntervalIsPositive
+    type(ESMF_TimeInterval), intent(in) :: timeinterval
+    type(ESMF_TimeInterval) :: zerotimeint
+    integer :: rcint
+    CALL ESMF_TimeIntervalSet ( zerotimeint, rc=rcint )
+    ESMF_TimeIntervalIsPositive = (timeinterval .GT. zerotimeint)
+  end function ESMF_TimeIntervalIsPositive
+
+
 
 
 ! Note:  this implementation is largely duplicated from external/esmf_time_f90

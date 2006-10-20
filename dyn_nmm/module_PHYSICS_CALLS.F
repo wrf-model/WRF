@@ -727,8 +727,12 @@
 !
       LOGICAL :: E_BDY,WARM_RAIN
 !
+      INTEGER :: ucmcall
+!
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
+     ucmcall=config_flags%ucmcall
+!
       DTPHS=NPHS*DT
       RDTPHS=1./DTPHS
       G_INV=1./G
@@ -1021,6 +1025,7 @@
      &          ,SF_SFCLAY_PHYSICS=CONFIG_FLAGS%SF_SFCLAY_PHYSICS       &
      &          ,SF_SURFACE_PHYSICS=CONFIG_FLAGS%SF_SURFACE_PHYSICS     &
      &          ,RA_LW_PHYSICS=CONFIG_FLAGS%RA_LW_PHYSICS               &
+     &          ,UCMCALL=ucmcall                                        &
      &          ,IDS=IDS,IDE=IDE,JDS=JDS,JDE=JDE,KDS=KDS,KDE=KDE        &
      &          ,IMS=IMS,IME=IME,JMS=JMS,JME=JME,KMS=KMS,KME=KME        &
      &          ,I_START=GRID%I_START,I_END=GRID%I_END                  &

@@ -532,6 +532,18 @@
                       grid%rundgdten,grid%rvndgdten,grid%rthndgdten,         &     ! Optional
                       grid%rqvndgdten,grid%rmundgdten,                  &     ! Optional
                       grid%FGDT,grid%stepfg                        &     ! Optional
+# if (WRF_CHEM != 1)
+!                      num_roof_layers,num_wall_layers,        & !Optional urban
+!                      num_road_layers,                        & !Optional urban
+                      ,grid%DZR, grid%DZB, grid%DZG,                          & !Optional urban
+                      grid%TR_URB2D,grid%TB_URB2D,grid%TG_URB2D,grid%TC_URB2D,    & !Optional urban
+                      grid%QC_URB2D, grid%XXXR_URB2D,grid%XXXB_URB2D,        & !Optional urban
+                      grid%XXXG_URB2D, grid%XXXC_URB2D,                 & !Optional urban
+                      grid%TRL_URB3D, grid%TBL_URB3D, grid%TGL_URB3D,        & !Optional urban
+                      grid%SH_URB2D, grid%LH_URB2D, grid%G_URB2D, grid%RN_URB2D,  & !Optional urban
+                      grid%TS_URB2D, grid%FRC_URB2D, grid%UTYPE_URB2D       & !Optional urban
+# endif
+
                       )
 
    ENDDO

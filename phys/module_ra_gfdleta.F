@@ -180,6 +180,9 @@ CONTAINS
       END SUBROUTINE GFDLETAINIT
 !-----------------------------------------------------------------------
 !
+!------------------------------------------------------------------
+! urban related variable are added to arguments of etara
+!---------------------------------------------------------------------
 !
 !-----------------------------------------------------------------------
       SUBROUTINE ETARA(DT,THRATEN,THRATENLW,THRATENSW,CLDFRA,PI3D       & 
@@ -192,6 +195,7 @@ CONTAINS
 !BSF => for NAMX changes, pass in surface emissivity (SFCEMS) [different for snow]
      &                ,NSTEPRA,NPHS,ITIMESTEP                           &
      &                ,XTIME,JULIAN                                     &
+     &                ,COSZ_URB2D,OMG_URB2D                             & ! urban
      &                ,JULYR,JULDAY,GFDL_LW,GFDL_SW                     &
      &                ,CFRACL,CFRACM,CFRACH                             &
      &                ,ACFRST,NCFRST,ACFRCV,NCFRCV                      &
@@ -242,6 +246,12 @@ CONTAINS
       REAL, DIMENSION(ims:ime, jms:jme):: CUTOP,CUBOT
       INTEGER :: IDAT(3),Jmonth,Jday
       INTEGER :: I,J,K,KFLIP,IHRST
+
+!-------------------------------------------------
+! urban related variables are added to declaration
+!-------------------------------------------------
+      REAL, OPTIONAL, INTENT(OUT), DIMENSION(ims:ime,jms:jme)  :: COSZ_URB2D  !urban
+      REAL, OPTIONAL, INTENT(OUT), DIMENSION(ims:ime,jms:jme)  :: OMG_URB2D   !urban
 ! begin debugging radiation
       integer :: imd,jmd
       real :: FSWrat
@@ -329,6 +339,8 @@ CONTAINS
      &            NSTEPRA,NSTEPRA,NPHS,ITIMESTEP,                       &
      &            TENDS,TENDL,CLDFRA,RSWTOA,RLWTOA,CZMEAN,              &
      &            CFRACL,CFRACM,CFRACH,                                 &
+!     &            COSZ2D,OMG2D,                                         & !urban
+     &            COSZ_URB2D,OMG_URB2D,                                 & !urban
      &            IDS,IDE,JDS,JDE,KDS,KDE,                              &
      &            IMS,IME,JMS,JME,KMS,KME,                              &
      &            ITS,ITE,JTS,JTE,KTS,KTE                              )
@@ -415,6 +427,7 @@ CONTAINS
      &                 NRADS,NRADL,NPHS,NTSD,                           &
      &                 TENDS,TENDL,CLDFRA,RSWTOA,RLWTOA,CZMEAN,         &
      &                 CFRACL,CFRACM,CFRACH,                            &
+     &                 COSZ_URB2D,OMG_URB2D,                            & !urban
      &                 ids,ide, jds,jde, kds,kde,                       &
      &                 ims,ime, jms,jme, kms,kme,                       &
      &                 its,ite, jts,jte, kts,kte                       )
@@ -637,6 +650,13 @@ CONTAINS
       INTEGER :: LCNVB,LCNVT
       INTEGER :: NLVL,MALVL,LLTOP,LLBOT,KBT2,KTH1,KBT1,KTH2,KTOP1,KFLIP
       INTEGER :: NBAND,NCLD,LBASE,NKTP,NBTM,KS,MYJS1,MYJS2,MYJE2,MYJE1
+
+!-------------------------------------------------
+! urban related variables are added to declaration
+!-------------------------------------------------
+      REAL, OPTIONAL, INTENT(OUT), DIMENSION(ims:ime,jms:jme)  :: COSZ_URB2D  !urban
+      REAL, OPTIONAL, INTENT(OUT), DIMENSION(ims:ime,jms:jme)  :: OMG_URB2D   !urban
+
       INTEGER :: INDEXS,IXSD
       DATA    CC/0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0/
       DATA    PPT/0.,.14,.31,.70,1.6,3.4,7.7,17.,38.,85./
@@ -705,7 +725,8 @@ CONTAINS
      &            MYIS,MYIE,MYJS,MYJE,                                  &
      &            ids,ide, jds,jde, kds,kde,                            &
      &            ims,ime, jms,jme, kms,kme,                            &
-     &            its,ite, jts,jte, kts,kte                         )
+     &            its,ite, jts,jte, kts,kte,                            & 
+     &            OMG_URB2d=OMG_URB2D                                   ) !Optional urban
 !-----------------------------------------------------------------------
 !     write(0,*)'1st ZEN ',TIME,DAYI,HOUR,IDAT,IHRST,CZEN(ITS,JTS)
       ADDL=0.
@@ -725,13 +746,13 @@ CONTAINS
         ENDDO
 !
         DO II=0,NRADS,NPHS
-!         TIMES=NTSD*DT+II*DT
           TIMES=XTIME*60.+II*DT
-          CALL ZENITH(TIMES,DAYI,HOUR,IDAT,IHRST,GLON,GLAT,CZEN,        &
+      CALL ZENITH(TIME,DAYI,HOUR,IDAT,IHRST,GLON,GLAT,CZEN,             &
      &                MYIS,MYIE,MYJS,MYJE,                              &
      &                ids,ide, jds,jde, kds,kde,                        &
      &                ims,ime, jms,jme, kms,kme,                        &
-     &                its,ite, jts,jte, kts,kte                       )
+     &                its,ite, jts,jte, kts,kte,                        & 
+     &                OMG_URB2D)                                         !Optional urban
 !         write(0,*)'2nd ZEN ',TIMES,DAYI,HOUR,IDAT,IHRST,CZEN(ITS,JTS),&
 !    &                II,NRADS,NPHS,NTSD,DT
           DO J=MYJS,MYJE
@@ -749,6 +770,16 @@ CONTAINS
         ENDDO
         ENDDO
       ENDIF
+
+!--------------------------------------------
+! COSZ2D is calculated for urban
+!--------------------------------------------
+      DO J=MYJS,MYJE              !urban
+      DO I=MYIS,MYIE              !urban
+      if(present(COSZ_URB2D)) COSZ_URB2D(I,J)=CZEN(I,J)   !urban
+      ENDDO                       !urban
+      ENDDO                       !urban
+!
 !
 !***  Do not modify pressure for ozone concentrations below the top layer
 !***
@@ -1562,7 +1593,8 @@ CONTAINS
                         MYIS,MYIE,MYJS,MYJE,                           &
                         IDS,IDE, JDS,JDE, KDS,KDE,                     &
                         IMS,IME, JMS,JME, KMS,KME,                     &
-                        ITS,ITE, JTS,JTE, KTS,KTE)
+                        ITS,ITE, JTS,JTE, KTS,KTE,                     &
+                        OMG_URB2D)                                       !Optional urban
 !----------------------------------------------------------------------
       IMPLICIT NONE
 !----------------------------------------------------------------------
@@ -1578,6 +1610,7 @@ CONTAINS
       INTEGER, INTENT(IN), DIMENSION(3) :: IDAT 
       REAL,    INTENT(IN), DIMENSION(IMS:IME,JMS:JME) :: GLAT,GLON
       REAL,    INTENT(OUT), DIMENSION(IMS:IME,JMS:JME) :: CZEN
+      REAL,   OPTIONAL,  INTENT(OUT), DIMENSION(ims:ime,jms:jme)  :: OMG_URB2D !Optional urban
 
       REAL,    PARAMETER :: GSTC1=24110.54841,GSTC2=8640184.812866,    &
                             GSTC3=9.3104E-2,GSTC4=-6.2E-6,             &
@@ -1688,6 +1721,7 @@ CONTAINS
        COS(GLAT(I,J))
       IF(SINALT.LT.0.)SINALT=0.
       CZEN(I,J)=SINALT
+      if(present(OMG_URB2D))OMG_URB2D(I,J)=HRLCL  !urban
   100 CONTINUE
 !***
 !***  IF THE FORECAST IS IN A DIFFERENT YEAR THAN THE START TIME,

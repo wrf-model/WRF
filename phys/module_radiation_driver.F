@@ -8,7 +8,6 @@ CONTAINS
 ! !INTERFACE:
    SUBROUTINE radiation_driver (                                          &
                itimestep,dt ,lw_physics,sw_physics ,NPHS                  &
-
               ,RTHRATENLW ,RTHRATENSW ,RTHRATEN                           &
               ,ACSWUPT,ACSWUPTC,ACSWDNT,ACSWDNTC                          & ! Optional
               ,ACSWUPB,ACSWUPBC,ACSWDNB,ACSWDNBC                          & ! Optional
@@ -22,8 +21,9 @@ CONTAINS
               ,GLW, GSW, SWDOWN, XLAT, XLONG, ALBEDO                      &
               ,EMISS, rho, p8w, p , pi , dz8w ,t, t8w, GMT                &
               ,XLAND, XICE, TSK, HTOP,HBOT,HTOPR,HBOTR, CUPPT, VEGFRA, SNOW     &
-              ,julyr, JULDAY, julian, xtime, RADT, STEPRA, ICLOUD, warm_rain    &
-              ,ra_call_offset,RSWTOA,RLWTOA,CZMEAN                        &
+              ,julyr, JULDAY, julian, xtime, RADT, STEPRA, ICLOUD, warm_rain     &
+              ,declin_urb,COSZ_URB2D, omg_urb2d                           & !Optional urban
+              ,ra_call_offset,RSWTOA,RLWTOA, CZMEAN                       &
               ,CFRACL, CFRACM, CFRACH                                     &
               ,ACFRST,NCFRST,ACFRCV,NCFRCV,SWDOWNC                        &
               ,z                                                          &
@@ -420,6 +420,12 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qi_save,qc_save
 
 !------------------------------------------------------------------
+! urban related variables are added to declaration
+!-------------------------------------------------
+   REAL, OPTIONAL, INTENT(OUT) :: DECLIN_URB  !urban
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme), INTENT(OUT) :: COSZ_URB2D  !urban
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme), INTENT(OUT) :: omg_urb2d   !urban
+!------------------------------------------------------------------
 
    if (lw_physics .eq. 0 .and. sw_physics .eq. 0)         return
 
@@ -538,6 +544,8 @@ CONTAINS
      CALL radconst(XTIME,DECLIN,SOLCON,JULIAN,               &
                    DEGRAD,DPD                                )
 
+     if(present(DECLIN_URB))DECLIN_URB=DECLIN  ! urban
+
      lwrad_cldfra_select: SELECT CASE(lw_physics)
 
         CASE (GFDLLWSCHEME)
@@ -621,6 +629,7 @@ CONTAINS
                  ,VEGFRA=vegfra,SNOW=snow,G=g,GMT=gmt               &
                  ,NSTEPRA=stepra,NPHS=nphs,ITIMESTEP=itimestep      &
                  ,XTIME=xtime,JULIAN=julian                         &
+                 ,COSZ_URB2D=COSZ_URB2D  ,OMG_URB2D=omg_urb2d       &
                  ,JULYR=julyr,JULDAY=julday                         &
                  ,GFDL_LW=gfdl_lw,GFDL_SW=gfdl_sw                   &
                  ,CFRACL=cfracl,CFRACM=cfracm,CFRACH=cfrach         &
@@ -725,11 +734,13 @@ CONTAINS
                     ,P3D=p,PI3D=pi,DZ8W=dz8w,GMT=gmt                   &
                     ,R=r_d,CP=cp,G=g,JULDAY=julday                     &
                     ,XTIME=xtime,DECLIN=declin,SOLCON=solcon           &
+!                    ,COSZ_URB2D=COSZ_URB2D ,OMG_URB2D=omg_urb2d            & !urban
                     ,RADFRQ=radt,ICLOUD=icloud,DEGRAD=degrad           &
                     ,warm_rain=warm_rain                               &
                     ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &     
                     ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                     ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
+                    ,COSZ_URB2D=COSZ_URB2D ,OMG_URB2D=omg_urb2d        & !urban
                     ,QV3D=qv                                           &
                     ,QC3D=qc                                           &
                     ,QR3D=qr                                           &
@@ -748,6 +759,7 @@ CONTAINS
                     ,DZ8W=dz8w,RHO_PHY=rho                             &
                     ,CLDFRA3D=cldfra                                   &
                     ,GMT=gmt,CP=cp,G=g                                 &
+!                    ,COSZ_URB2D=COSZ_URB2D ,OMG_URB2D=omg_urb2d            & !urban
                     ,JULDAY=julday,XTIME=xtime                         &
                     ,DECLIN=declin,SOLCON=solcon                       &
                     ,RADFRQ=radt,DEGRAD=degrad                         &
@@ -764,6 +776,7 @@ CONTAINS
                     ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &     
                     ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                     ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
+                    ,COSZ_URB2D=COSZ_URB2D ,OMG_URB2D=omg_urb2d        & !urban
                     ,QV3D=qv                                           &
                     ,QC3D=qc                                           &
                     ,QR3D=qr                                           &
@@ -805,6 +818,7 @@ CONTAINS
                  ,VEGFRA=vegfra,SNOW=snow,G=g,GMT=gmt               &
                  ,NSTEPRA=stepra,NPHS=nphs,ITIMESTEP=itimestep      &
                  ,XTIME=xtime,JULIAN=julian                         &
+                 ,COSZ_URB2D=COSZ_URB2D ,OMG_URB2D=omg_urb2d        &
                  ,JULYR=julyr,JULDAY=julday                         &
                  ,GFDL_LW=gfdl_lw,GFDL_SW=gfdl_sw                   &
                  ,CFRACL=cfracl,CFRACM=cfracm,CFRACH=cfrach         &

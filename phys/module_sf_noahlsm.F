@@ -2,7 +2,10 @@ MODULE module_sf_noahlsm
  
   USE module_model_constants
 
-  INTEGER, PARAMETER   :: NSOLD=20
+!-------------------------------
+  USE module_sf_urban
+!-------------------------------
+
 !   REAL, PARAMETER    :: CP = 1004.5
   REAL, PARAMETER      :: RD = 287.04, SIGMA = 5.67E-8,                 &
                           CPH2O = 4.218E+3,CPICE = 2.106E+3,            &
@@ -37,7 +40,8 @@ MODULE module_sf_noahlsm
 !
 CONTAINS
 !
-
+!----------------------------------------------------------------
+! Urban related variable are added to arguments - urban
 !----------------------------------------------------------------
    SUBROUTINE lsm(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   HFX,QFX,LH,GRDFLX, QGH,GSW,GLW,SMSTAV,SMSTOT, &
@@ -48,11 +52,27 @@ CONTAINS
                   SMOIS,TSLB,SNOW,CANWAT,                       &
                   CHS,CHS2,CQS2,CPM,ROVCP,                      & !H   
                   SH2O,SNOWH,                                   & !H 
+                  U_PHY,V_PHY,                                  & !I
                   SNOALB,SHDMIN,SHDMAX,                         & !I
                   ACSNOM,ACSNOW,                                & !O  
                   ids,ide, jds,jde, kds,kde,                    &
                   ims,ime, jms,jme, kms,kme,                    &
-                  its,ite, jts,jte, kts,kte                     )
+                  its,ite, jts,jte, kts,kte,                    &
+                  ucmcall,                                      &
+!Optional Urban
+                  TR_URB2D,TB_URB2D,TG_URB2D,TC_URB2D,QC_URB2D, & !H urban
+                  UC_URB2D,                                     & !H urban
+                  XXXR_URB2D,XXXB_URB2D,XXXG_URB2D,XXXC_URB2D,  & !H urban
+                  TRL_URB3D,TBL_URB3D,TGL_URB3D,                & !H urban
+                  SH_URB2D,LH_URB2D,G_URB2D,RN_URB2D,TS_URB2D,  & !H urban
+                  PSIM_URB2D,PSIH_URB2D,U10_URB2D,V10_URB2D,    & !O urban
+                  GZ1OZ0_URB2D,  AKMS_URB2D,                    & !O urban
+                  TH2_URB2D,Q2_URB2D, UST_URB2D,                & !O urban
+                  DECLIN_URB,COSZ_URB2D,OMG_URB2D,              & !I urban
+                  XLAT_URB2D,                                   & !I urban
+                  num_roof_layers, num_wall_layers,             & !I urban
+                  num_road_layers, DZR, DZB, DZG,               & !I urban
+                  FRC_URB2D,UTYPE_URB2D)                          !O
 !----------------------------------------------------------------
     IMPLICIT NONE
 !----------------------------------------------------------------              
@@ -183,6 +203,8 @@ CONTAINS
                                     ims,ime, jms,jme, kms,kme,  &
                                     its,ite, jts,jte, kts,kte
 
+   INTEGER,  INTENT(IN   )   ::  ucmcall                        !urban
+
    REAL,    DIMENSION( ims:ime, jms:jme )                     , &
             INTENT(IN   )    ::                            TMN, &
                                                          XLAND, &
@@ -232,8 +254,8 @@ CONTAINS
                                                             LH, &
                                                         GRDFLX, &
                                                           QSFC,&     
-                                                          CQS2,&     
-                                                          CHS2,&     
+                                                          CQS2,&
+                                                          CHS2,&
                                                           SNOW, & 
                                                          SNOWC, & 
                                                          SNOWH, & !new
@@ -271,7 +293,6 @@ CONTAINS
       INTEGER :: NROOT
       INTEGER :: KZ ,K
       INTEGER :: NS 
-      INTEGER, PARAMETER :: NSOLD = 30
 ! ----------------------------------------------------------------------
 ! DECLARATIONS - REAL
 ! ----------------------------------------------------------------------
@@ -293,14 +314,127 @@ CONTAINS
 !
       REAL, DIMENSION(1:num_soil_layers)::  SLDPTH, STC,SMC,SWC
 !
-      REAL, DIMENSION(1:NSOLD) ::     ZSOIL, RTDIS   
+      REAL, DIMENSION(1:num_soil_layers) ::     ZSOIL, RTDIS   
       REAL, PARAMETER  :: TRESH=.95E0, A2=17.67,A3=273.15,A4=29.65,   &
                           T0=273.16E0, ELWV=2.50E6,  A23M4=A2*(A3-A4)
 
+! ----------------------------------------------------------------------
+! DECLARATIONS START - urban
+! ----------------------------------------------------------------------
+
+! input variables surface_driver --> lsm
+     INTEGER, INTENT(IN) :: num_roof_layers
+     INTEGER, INTENT(IN) :: num_wall_layers
+     INTEGER, INTENT(IN) :: num_road_layers
+     REAL, OPTIONAL, DIMENSION(1:num_roof_layers), INTENT(IN) :: DZR
+     REAL, OPTIONAL, DIMENSION(1:num_wall_layers), INTENT(IN) :: DZB
+     REAL, OPTIONAL, DIMENSION(1:num_road_layers), INTENT(IN) :: DZG
+     REAL, OPTIONAL, INTENT(IN) :: DECLIN_URB
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: COSZ_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: OMG_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: XLAT_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN) :: U_PHY
+     REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN) :: V_PHY
+
+! input variables lsm --> urban
+     INTEGER :: UTYPE_URB ! urban type [urban=1, suburban=2, rural=3]
+     REAL :: TA_URB       ! potential temp at 1st atmospheric level [K]
+     REAL :: QA_URB       ! mixing ratio at 1st atmospheric level  [kg/kg]
+     REAL :: UA_URB       ! wind speed at 1st atmospheric level    [m/s]
+     REAL :: U1_URB       ! u at 1st atmospheric level             [m/s]
+     REAL :: V1_URB       ! v at 1st atmospheric level             [m/s]
+     REAL :: SSG_URB      ! downward total short wave radiation    [W/m/m]
+     REAL :: LLG_URB      ! downward long wave radiation           [W/m/m]
+     REAL :: RAIN_URB     ! precipitation                          [mm/h]
+     REAL :: RHOO_URB     ! air density                            [kg/m^3]
+     REAL :: ZA_URB       ! first atmospheric level                [m]
+     REAL :: DELT_URB     ! time step                              [s]
+     REAL :: SSGD_URB     ! downward direct short wave radiation   [W/m/m]
+     REAL :: SSGQ_URB     ! downward diffuse short wave radiation  [W/m/m]
+     REAL :: XLAT_URB     ! latitude                               [deg]
+     REAL :: COSZ_URB     ! cosz
+     REAL :: OMG_URB      ! hour angle
+     REAL :: ZNT_URB      ! roughness length                       [m]
+     REAL :: TR_URB
+     REAL :: TB_URB
+     REAL :: TG_URB
+     REAL :: TC_URB
+     REAL :: QC_URB
+     REAL :: UC_URB
+     REAL :: XXXR_URB
+     REAL :: XXXB_URB
+     REAL :: XXXG_URB
+     REAL :: XXXC_URB
+     REAL, DIMENSION(1:num_roof_layers) :: TRL_URB  ! roof layer temp [K]
+     REAL, DIMENSION(1:num_wall_layers) :: TBL_URB  ! wall layer temp [K]
+     REAL, DIMENSION(1:num_road_layers) :: TGL_URB  ! road layer temp [K]
+     LOGICAL  :: LSOLAR_URB
+! state variable surface_driver <--> lsm <--> urban
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TR_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TB_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TG_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TC_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: QC_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: UC_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: XXXR_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: XXXB_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: XXXG_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: XXXC_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: SH_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LH_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: G_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: RN_URB2D
+!
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TS_URB2D
+
+     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_roof_layers, jms:jme ), INTENT(INOUT) :: TRL_URB3D
+     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_wall_layers, jms:jme ), INTENT(INOUT) :: TBL_URB3D
+     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_road_layers, jms:jme ), INTENT(INOUT) :: TGL_URB3D
+
+! output variable lsm --> surface_driver
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT) :: PSIM_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT) :: PSIH_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT) :: GZ1OZ0_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT) :: U10_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT) :: V10_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT) :: TH2_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT) :: Q2_URB2D
+!
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT) :: AKMS_URB2D
+!
+     REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT) :: UST_URB2D
+     REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT) :: FRC_URB2D
+     INTEGER, DIMENSION( ims:ime, jms:jme ), INTENT(OUT) :: UTYPE_URB2D
+
+
+! output variables urban --> lsm
+     REAL :: TS_URB     ! surface radiative temperature    [K]
+     REAL :: QS_URB     ! surface humidity                 [-]
+     REAL :: SH_URB     ! sensible heat flux               [W/m/m]
+     REAL :: LH_URB     ! latent heat flux                 [W/m/m]
+     REAL :: LH_KINEMATIC_URB ! latent heat flux, kinetic  [kg/m/m/s]
+     REAL :: SW_URB     ! upward short wave radiation flux [W/m/m]
+     REAL :: ALB_URB    ! time-varying albedo            [fraction]
+     REAL :: LW_URB     ! upward long wave radiation flux  [W/m/m]
+     REAL :: G_URB      ! heat flux into the ground        [W/m/m]
+     REAL :: RN_URB     ! net radiation                    [W/m/m]
+     REAL :: PSIM_URB   ! shear f for momentum             [-]
+     REAL :: PSIH_URB   ! shear f for heat                 [-]
+     REAL :: GZ1OZ0_URB   ! shear f for heat                 [-]
+     REAL :: U10_URB    ! wind u component at 10 m         [m/s]
+     REAL :: V10_URB    ! wind v component at 10 m         [m/s]
+     REAL :: TH2_URB    ! potential temperature at 2 m     [K]
+     REAL :: Q2_URB     ! humidity at 2 m                  [-]
+     REAL :: CHS_URB
+     REAL :: CHS2_URB
+     REAL :: UST_URB
+
+! ----------------------------------------------------------------------
+! DECLARATIONS END - urban
+! ----------------------------------------------------------------------
 
 ! debug printout
          IPRINT=.false.
-!FEI: temporaray arrays below need to be changed later by using SI
 
       SLOPETYP=2
 !      SHDMIN=0.00           
@@ -379,7 +513,7 @@ CONTAINS
         
 
 !***                                                                    
-        IF((XLAND(I,J)-1.5).GE.0.)THEN                 
+        IF((XLAND(I,J)-1.5).GE.0.)THEN                                  ! begining of land/sea if block
 ! Open water points
 !CC     Q2SAT=PQ0/SFCPRS*EXP(A2*(TGDSA(I)-A3)/(TGDSA(I)-A4))
 !          HFX(I,J)=CHFF*(TGDSA(I)-TH(I))
@@ -438,9 +572,26 @@ CONTAINS
           if ( (SNEQV.ne.0..AND.SNOWHK.eq.0.).or.(SNOWHK.le.SNEQV) )THEN
             SNOWHK= 5.*SNEQV
           endif
-!           print *, 'BEFORE SFLX, in Noahlsm_driver'
-!           print*, 'EMISSI', EMISSI
 !
+
+!Fei: urban. for urban surface, if calling UCM, redefine urban as 5: Cropland/Grassland Mosaic
+	 
+	   IF(UCMCALL == 1 ) THEN
+                IF( IVGTYP(I,J) == 1 .or. IVGTYP(I,J) == 31 .or. &
+                  IVGTYP(I,J) == 32 .or. IVGTYP(I,J) == 33) THEN
+		 VEGTYP = 5
+                 SHDFAC = 0.8 
+                 ALBEDOK =0.2
+                 ALBBRD  =0.2
+           T1= ( TSK(I,J) -FRC_URB2D(I,J) * TS_URB2D (I,J) )/ (1-FRC_URB2D(I,J))
+                ENDIF
+           ELSE
+                 IF( IVGTYP(I,J) == 1 .or. IVGTYP(I,J) == 31 .or. &
+                  IVGTYP(I,J) == 32 .or. IVGTYP(I,J) == 33) THEN
+                  VEGTYP = 1 
+           	 ENDIF
+           ENDIF
+
           IF(IPRINT) THEN 
 !                                                                       
        print*, 'BEFORE SFLX, in Noahlsm_driver'
@@ -465,6 +616,7 @@ CONTAINS
           'SMCREF',SMCREF,'SMCMAX',SMCMAX,'NROOT',NROOT
            endif
 
+
        CALL SFLX (ICE,DT,ZLVL,NSOIL,SLDPTH,                       &    !C
                  LOCAL,                                           &    !L
                  LUTYPE, SLTYPE,                                  &    !CL
@@ -485,10 +637,8 @@ CONTAINS
                  SMCWLT,SMCDRY,SMCREF,SMCMAX,NROOT)
 
 
-!           print *, 'AFTER SFLX, in Noahlsm_driver'
-!           print*, 'EMISSI', EMISSI
-
           IF(IPRINT) THEN 
+
        print*, 'AFTER SFLX, in Noahlsm_driver'
        print*, 'ICE', ICE, 'DT',DT, 'ZLVL',ZLVL, 'NSOIL', NSOIL,   &
        'SLDPTH', SLDPTH, 'LOCAL',LOCAL, 'LUTYPE',&
@@ -539,6 +689,186 @@ CONTAINS
            SH2O(I,NS,J)=SWC(NS)
    80     CONTINUE                                                      
 !       ENDIF                                                           
+
+        IF (UCMCALL == 1 ) THEN                                              ! Beginning of UCM CALL if block
+!--------------------------------------
+! URBAN CANOPY MODEL START - urban
+!--------------------------------------
+! Input variables lsm --> urban
+
+
+          IF( IVGTYP(I,J) == 1 .or. IVGTYP(I,J) == 31 .or. &
+              IVGTYP(I,J) == 32 .or. IVGTYP(I,J) == 33 ) THEN
+
+! Call urban
+
+!
+            UTYPE_URB = UTYPE_URB2D(I,J) !urban type (low, high or industrial) 
+
+            TA_URB    = SFCTMP           ! [K]
+            QA_URB    = Q2K              ! [kg/kg]
+            UA_URB    = SQRT(U_PHY(I,1,J)**2.+V_PHY(I,1,J)**2.)
+            U1_URB    = U_PHY(I,1,J)
+            V1_URB    = V_PHY(I,1,J)
+            IF(UA_URB < 1.) UA_URB=1.    ! [m/s]
+            SSG_URB   = SOLDN            ! [W/m/m]
+            SSGD_URB  = 0.8*SOLDN        ! [W/m/m]
+            SSGQ_URB  = SSG_URB-SSGD_URB ! [W/m/m]
+            LLG_URB   = LWDN             ! [W/m/m]
+            RAIN_URB  = RAINBL(I,J)      ! [mm]
+            RHOO_URB  = SFCPRS / (287.04 * SFCTMP * (1.0+ 0.61 * Q2K)) ![kg/m/m/m]
+            ZA_URB    = ZLVL             ! [m]
+            DELT_URB  = DT               ! [sec]
+            XLAT_URB  = XLAT_URB2D(I,J)  ! [deg]
+            COSZ_URB  = COSZ_URB2D(I,J)  !
+            OMG_URB   = OMG_URB2D(I,J)   !
+            ZNT_URB   = ZNT(I,J)
+
+            LSOLAR_URB = .FALSE.
+
+            TR_URB = TR_URB2D(I,J)
+            TB_URB = TB_URB2D(I,J)
+            TG_URB = TG_URB2D(I,J)
+            TC_URB = TC_URB2D(I,J)
+            QC_URB = QC_URB2D(I,J)
+            UC_URB = UC_URB2D(I,J)
+
+            DO K = 1,num_roof_layers
+              TRL_URB(K) = TRL_URB3D(I,K,J)
+            END DO
+            DO K = 1,num_wall_layers
+              TBL_URB(K) = TBL_URB3D(I,K,J)
+            END DO
+            DO K = 1,num_road_layers
+              TGL_URB(K) = TGL_URB3D(I,K,J)
+            END DO
+
+            XXXR_URB = XXXR_URB2D(I,J)
+            XXXB_URB = XXXB_URB2D(I,J)
+            XXXG_URB = XXXG_URB2D(I,J)
+            XXXC_URB = XXXC_URB2D(I,J)
+!
+            CHS_URB  = CHS(I,J)
+            CHS2_URB = CHS2(I,J)
+!
+           
+! Call urban
+
+
+            CALL urban(LSOLAR_URB,                                      & ! I
+                       num_roof_layers,num_wall_layers,num_road_layers, & ! C
+                       DZR,DZB,DZG,                                     & ! C
+                       UTYPE_URB,TA_URB,QA_URB,UA_URB,U1_URB,V1_URB,SSG_URB, & ! I
+                       SSGD_URB,SSGQ_URB,LLG_URB,RAIN_URB,RHOO_URB,     & ! I
+                       ZA_URB,DECLIN_URB,COSZ_URB,OMG_URB,              & ! I
+                       XLAT_URB,DELT_URB,ZNT_URB,                       & ! I
+                       CHS_URB, CHS2_URB,                               & ! I
+                       TR_URB, TB_URB, TG_URB, TC_URB, QC_URB,UC_URB,   & ! H
+                       TRL_URB,TBL_URB,TGL_URB,                         & ! H
+                       XXXR_URB, XXXB_URB, XXXG_URB, XXXC_URB,          & ! H
+                       TS_URB,QS_URB,SH_URB,LH_URB,LH_KINEMATIC_URB,    & ! O
+                       SW_URB,ALB_URB,LW_URB,G_URB,RN_URB,PSIM_URB,PSIH_URB, & ! O
+                       GZ1OZ0_URB,                                      & !O
+                       U10_URB, V10_URB, TH2_URB, Q2_URB,               & ! O
+                       UST_URB)                                           !O
+
+
+          IF(IPRINT) THEN
+
+       print*, 'AFTER CALL URBAN'
+       print*,'num_roof_layers',num_roof_layers, 'num_wall_layers',  &
+        num_wall_layers,                                             &
+       'DZR',DZR,'DZB',DZB,'DZG',DZG,'UTYPE_URB',UTYPE_URB,'TA_URB', &
+        TA_URB,                                                      &
+        'QA_URB',QA_URB,'UA_URB',UA_URB,'U1_URB',U1_URB,'V1_URB',    &
+         V1_URB,                                                     &
+         'SSG_URB',SSG_URB,'SSGD_URB',SSGD_URB,'SSGQ_URB',SSGQ_URB,  &
+        'LLG_URB',LLG_URB,'RAIN_URB',RAIN_URB,'RHOO_URB',RHOO_URB,   &
+        'ZA_URB',ZA_URB, 'DECLIN_URB',DECLIN_URB,'COSZ_URB',COSZ_URB,&
+        'OMG_URB',OMG_URB,'XLAT_URB',XLAT_URB,'DELT_URB',DELT_URB,   &
+         'ZNT_URB',ZNT_URB,'TR_URB',TR_URB, 'TB_URB',TB_URB,'TG_URB',&
+         TG_URB,'TC_URB',TC_URB,'QC_URB',QC_URB,'TRL_URB',TRL_URB,   &
+          'TBL_URB',TBL_URB,'TGL_URB',TGL_URB,'XXXR_URB',XXXR_URB,   &
+         'XXXB_URB',XXXB_URB,'XXXG_URB',XXXG_URB,'XXXC_URB',XXXC_URB,&
+         'TS_URB',TS_URB,'QS_URB',QS_URB,'SH_URB',SH_URB,'LH_URB',   &
+         LH_URB, 'LH_KINEMATIC_URB',LH_KINEMATIC_URB,'SW_URB',SW_URB,&
+         'ALB_URB',ALB_URB,'LW_URB',LW_URB,'G_URB',G_URB,'RN_URB',   &
+          RN_URB, 'PSIM_URB',PSIM_URB,'PSIH_URB',PSIH_URB,          &
+         'U10_URB',U10_URB,'V10_URB',V10_URB,'TH2_URB',TH2_URB,      &
+          'Q2_URB',Q2_URB,'CHS_URB',CHS_URB,'CHS2_URB',CHS2_URB
+           endif
+
+            TS_URB2D(I,J) = TS_URB
+             
+            ALBEDO(I,J) = FRC_URB2D(I,J)*ALB_URB+(1-FRC_URB2D(I,J))*ALBEDOK   ![-]
+            HFX(I,J) = FRC_URB2D(I,J)*SH_URB+(1-FRC_URB2D(I,J))*SHEAT         ![W/m/m]
+            QFX(I,J) = FRC_URB2D(I,J)*LH_KINEMATIC_URB &
+                     + (1-FRC_URB2D(I,J))*ETA_KINEMATIC                ![kg/m/m/s]
+            LH(I,J) = FRC_URB2D(I,J)*LH_URB+(1-FRC_URB2D(I,J))*ETA            ![W/m/m]
+            GRDFLX(I,J) = FRC_URB2D(I,J)*G_URB+(1-FRC_URB2D(I,J))*SSOIL       ![W/m/m]
+            TSK(I,J) = FRC_URB2D(I,J)*TS_URB+(1-FRC_URB2D(I,J))*T1            ![K]
+            QSFC(I,J)= FRC_URB2D(I,J)*QS_URB+(1-FRC_URB2D(I,J))*Q1            ![-]
+
+    IF(IPRINT)THEN
+
+    print*, ' FRC_URB2D', FRC_URB2D,                        &
+    'ALB_URB',ALB_URB, 'ALBEDOK',ALBEDOK, &
+    'ALBEDO(I,J)',  ALBEDO(I,J),                  &
+    'SH_URB',SH_URB,'SHEAT',SHEAT, 'HFX(I,J)',HFX(I,J),  &
+    'LH_KINEMATIC_URB',LH_KINEMATIC_URB,'ETA_KINEMATIC',  &
+     ETA_KINEMATIC, 'QFX(I,J)',QFX(I,J),                  &
+    'LH_URB',LH_URB, 'ETA',ETA, 'LH(I,J)',LH(I,J),        &
+    'G_URB',G_URB,'SSOIL',SSOIL,'GRDFLX(I,J)', GRDFLX(I,J),&
+    'TS_URB',TS_URB,'T1',T1,'TSK(I,J)',TSK(I,J),          &
+    'QS_URB',QS_URB,'Q1',Q1,'QSFC(I,J)',QSFC(I,J) 
+     endif
+       
+
+    
+
+! Renew Urban State Varialbes
+
+            TR_URB2D(I,J) = TR_URB
+            TB_URB2D(I,J) = TB_URB
+            TG_URB2D(I,J) = TG_URB
+            TC_URB2D(I,J) = TC_URB
+            QC_URB2D(I,J) = QC_URB
+            UC_URB2D(I,J) = UC_URB
+
+            DO K = 1,num_roof_layers
+              TRL_URB3D(I,K,J) = TRL_URB(K)
+            END DO
+            DO K = 1,num_wall_layers
+              TBL_URB3D(I,K,J) = TBL_URB(K)
+            END DO
+            DO K = 1,num_road_layers
+              TGL_URB3D(I,K,J) = TGL_URB(K)
+            END DO
+            XXXR_URB2D(I,J) = XXXR_URB
+            XXXB_URB2D(I,J) = XXXB_URB
+            XXXG_URB2D(I,J) = XXXG_URB
+            XXXC_URB2D(I,J) = XXXC_URB
+
+            SH_URB2D(I,J)    = SH_URB
+            LH_URB2D(I,J)    = LH_URB
+            G_URB2D(I,J)     = G_URB
+            RN_URB2D(I,J)    = RN_URB
+            PSIM_URB2D(I,J)  = PSIM_URB
+            PSIH_URB2D(I,J)  = PSIH_URB
+            GZ1OZ0_URB2D(I,J)= GZ1OZ0_URB
+            U10_URB2D(I,J)   = U10_URB
+            V10_URB2D(I,J)   = V10_URB
+            TH2_URB2D(I,J)   = TH2_URB
+            Q2_URB2D(I,J)    = Q2_URB
+            UST_URB2D(I,J)   = UST_URB
+            AKMS_URB2D(I,J)  = KARMAN * UST_URB2D(I,J)/(GZ1OZ0_URB2D(I,J)-PSIM_URB2D(I,J)) 
+
+          END IF
+
+         ENDIF                                   ! end of UCM CALL if block
+!--------------------------------------
+! Urban Part End - urban
+!--------------------------------------
 
 !***  DIAGNOSTICS                                                       
           SMSTAV(I,J)=SOILW                                            
@@ -1209,7 +1539,7 @@ CONTAINS
       REAL, DIMENSION(1:NSOIL), INTENT(IN) :: SLDPTH      
       REAL, DIMENSION(1:NSOIL), INTENT(OUT):: ET          
       REAL, DIMENSION(1:NSOIL), INTENT(INOUT) ::  SH2O, SMC, STC
-      REAL,DIMENSION(1:NSOLD)::   RTDIS, ZSOIL                                     
+      REAL,DIMENSION(1:NSOIL)::   RTDIS, ZSOIL                                     
 
       REAL,INTENT(OUT)   :: ETA_KINEMATIC,BETA,DEW,DRIP,EC,EDIR,ESNOW,ETA,  & 
                             ETP,FLX1,FLX2,FLX3,SHEAT,PC,RUNOFF1,RUNOFF2,    & 
@@ -1763,7 +2093,7 @@ CONTAINS
       REAL,DIMENSION(1:NSOIL), INTENT(IN) :: SMC,ZSOIL
       REAL,    INTENT(OUT):: PC,RC,RCQ,RCS,RCSOIL,RCT
       REAL                :: DELTA,FF,GX,P,RR
-      REAL, DIMENSION(1:NSOLD) ::  PART
+      REAL, DIMENSION(1:NSOIL) ::  PART
       REAL, PARAMETER     :: SLV = 2.501000E6
 
                                                                                  
@@ -2185,7 +2515,7 @@ CONTAINS
       REAL, DIMENSION(1:NSOIL), INTENT(IN)   :: SMC,STC,ZSOIL
       REAL, DIMENSION(1:NSOIL), INTENT(INOUT):: SH2O
       REAL, DIMENSION(1:NSOIL), INTENT(OUT)  :: RHSTS
-      REAL, DIMENSION(1:NSOLD), INTENT(OUT)  :: AI, BI,CI
+      REAL, DIMENSION(1:NSOIL), INTENT(OUT)  :: AI, BI,CI
       REAL                 :: DDZ, DDZ2, DENOM, DF1N, DF1K, DTSDZ,       &
                               DTSDZ2,HCPCT,QTOT,SSOIL,SICE,TAVG,TBK,     &
                               TBK1,TSNSR,TSURF,CSOIL_LOC
@@ -2430,7 +2760,7 @@ CONTAINS
       INTEGER                :: K
 
       REAL,    INTENT(IN)    :: DF1,YY,ZZ1
-      REAL, DIMENSION(1:NSOLD), INTENT(OUT):: AI, BI,CI
+      REAL, DIMENSION(1:NSOIL), INTENT(OUT):: AI, BI,CI
       REAL, DIMENSION(1:NSOIL), INTENT(IN) :: STC, ZSOIL
       REAL, DIMENSION(1:NSOIL), INTENT(OUT):: RHSTS
       REAL                   :: DDZ,DDZ2,DENOM,DTSDZ,DTSDZ2,SSOIL,       &
@@ -2542,9 +2872,9 @@ CONTAINS
       REAL, DIMENSION(1:NSOIL), INTENT(IN):: STCIN
       REAL, DIMENSION(1:NSOIL), INTENT(OUT):: STCOUT
       REAL, DIMENSION(1:NSOIL), INTENT(INOUT):: RHSTS
-      REAL, DIMENSION(1:NSOLD), INTENT(INOUT):: AI,BI,CI
+      REAL, DIMENSION(1:NSOIL), INTENT(INOUT):: AI,BI,CI
       REAL, DIMENSION(1:NSOIL) :: RHSTSin
-      REAL, DIMENSION(1:NSOLD) :: CIin
+      REAL, DIMENSION(1:NSOIL) :: CIin
       REAL                 :: DT
                                                                                  
 ! ----------------------------------------------------------------------         
@@ -2562,7 +2892,7 @@ CONTAINS
       DO K = 1,NSOIL                                                             
          RHSTSin (K) = RHSTS (K)                                                 
       END DO                                                                     
-      DO K = 1,NSOLD                                                             
+      DO K = 1,NSOIL                                                             
          CIin (K) = CI (K)                                                       
       END DO                                                                     
 ! ----------------------------------------------------------------------         
@@ -3005,8 +3335,8 @@ CONTAINS
                  SHDFAC = SHDTBL(VEGTYP)                                         
                ENDIF                                                             
                                                                                  
-               IF (VEGTYP .eq. BARE) SHDFAC = 0.0                                
-               IF (NROOT .gt. NSOIL) THEN                                        
+               IF (VEGTYP .eq. BARE) SHDFAC = 0.0
+               IF (NROOT .gt. NSOIL) THEN
                   WRITE (err_message,*) 'Error: too many root layers ',  &
                                                  NSOIL,NROOT
                   CALL wrf_error_fatal ( err_message )
@@ -3125,7 +3455,7 @@ CONTAINS
       REAL, DIMENSION(1:NSOIL), INTENT(IN)    :: SMC,ZSOIL 
       REAL, DIMENSION(1:NSOIL), INTENT(INOUT) :: SH2O 
       REAL, DIMENSION(1:NSOIL), INTENT(INOUT) :: STC 
-      REAL, DIMENSION(1:NSOLD)             :: AI, BI, CI, STCF,RHSTS
+      REAL, DIMENSION(1:NSOIL)             :: AI, BI, CI, STCF,RHSTS
       REAL, PARAMETER       :: T0 = 273.15
                                                                                  
 ! ----------------------------------------------------------------------         
@@ -3200,7 +3530,7 @@ CONTAINS
       REAL, INTENT(INOUT)   :: CMC
       REAL, DIMENSION(1:NSOIL), INTENT(IN)   :: ET,ZSOIL
       REAL, DIMENSION(1:NSOIL), INTENT(INOUT):: SMC, SH2O
-      REAL, DIMENSION(1:NSOLD)             :: AI, BI, CI, STCF,RHSTS, RHSTT, &
+      REAL, DIMENSION(1:NSOIL)             :: AI, BI, CI, STCF,RHSTS, RHSTT, &
                                               SICE, SH2OA, SH2OFG
       REAL                  :: DUMMY, EXCESS,FRZFACT,PCPDRP,RHSCT,TRHSCT
                                                                                  
@@ -4048,8 +4378,8 @@ CONTAINS
       REAL, DIMENSION(1:NSOIL), INTENT(IN)   :: ET, SH2O, SH2OA, SICE,  &
                                                 ZSOIL
       REAL, DIMENSION(1:NSOIL), INTENT(OUT)  :: RHSTT
-      REAL, DIMENSION(1:NSOLD), INTENT(OUT)  :: AI, BI, CI
-      REAL, DIMENSION(1:NSOLD)  :: DMAX
+      REAL, DIMENSION(1:NSOIL), INTENT(OUT)  :: AI, BI, CI
+      REAL, DIMENSION(1:NSOIL)  :: DMAX
       REAL                      :: ACRT, DD, DDT, DDZ, DDZ2, DENOM,     &
                                    DENOM2,DICE, DSMDZ, DSMDZ2, DT1,     &
                                    FCR,INFMAX,MXSMC,MXSMC2,NUMER,PDDUM, &
@@ -4300,9 +4630,9 @@ CONTAINS
       REAL, DIMENSION(1:NSOIL), INTENT(IN)     :: SH2OIN, SICE, ZSOIL
       REAL, DIMENSION(1:NSOIL), INTENT(OUT)    :: SH2OOUT
       REAL, DIMENSION(1:NSOIL), INTENT(INOUT)  :: RHSTT, SMC
-      REAL, DIMENSION(1:NSOLD), INTENT(INOUT)  :: AI, BI, CI
+      REAL, DIMENSION(1:NSOIL), INTENT(INOUT)  :: AI, BI, CI
       REAL, DIMENSION(1:NSOIL)  :: RHSTTin
-      REAL, DIMENSION(1:NSOLD)  :: CIin
+      REAL, DIMENSION(1:NSOIL)  :: CIin
       REAL                      :: DDZ, RHSCT, STOT, WPLUS
 
 ! ----------------------------------------------------------------------         
@@ -4321,7 +4651,7 @@ CONTAINS
       DO K = 1,NSOIL                                                             
          RHSTTin (K) = RHSTT (K)                                                 
       END DO                                                                     
-      DO K = 1,NSOLD                                                             
+      DO K = 1,NSOIL                                                             
          CIin (K) = CI (K)                                                       
       END DO                                                                     
 ! ----------------------------------------------------------------------         

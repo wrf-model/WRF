@@ -83,6 +83,9 @@ SUBROUTINE solve_em ( grid , config_flags , &
    REAL :: dt_rk, dts_rk, dtm, wmax
    INTEGER :: l,kte,kk
 
+! urban related variables
+   INTEGER :: NUM_ROOF_LAYERS, NUM_WALL_LAYERS, NUM_ROAD_LAYERS   ! urban
+
 ! Define benchmarking timers if -DBENCH is compiled
 #include <bench_solve_em_def.h>
 
@@ -464,6 +467,10 @@ BENCH_END(phy_prep_tim)
 ! Open MP loops are in physics drivers
 ! radiation
 
+!-----------------------------------------------------------------
+! urban related variable are added to arguments of radiation_driver
+!-----------------------------------------------------------------
+
          CALL wrf_debug ( 200 , ' call radiation_driver' )
 BENCH_START(rad_driver_tim)
 
@@ -489,6 +496,12 @@ BENCH_START(rad_driver_tim)
      &        ,TSK=grid%tsk            ,VEGFRA=grid%vegfra     ,WARM_RAIN=grid%warm_rain &
      &        ,XICE=grid%xice                                                  &
      &        ,XLAND=grid%xland        ,XLAT=grid%xlat          ,XLONG=grid%xlong        &
+!Optional urban
+# if (WRF_CHEM != 1)
+     &        ,DECLIN_URB=grid%declin_urb        ,COSZ_URB2D=grid%cosz_urb2d        &
+     &        ,OMG_URB2D=grid%omg_urb2d                                        &
+# endif
+!
      &        ,Z=grid%em_z                                                        &
      &        ,LEVSIZ=grid%levsiz, N_OZMIXM=num_ozmixm                    &
      &        ,N_AEROSOLC=num_aerosolc                                    &
@@ -556,6 +569,15 @@ BENCH_END(rad_driver_tim)
 
 BENCH_START(surf_driver_tim)
 
+!-----------------------------------------------------------------
+! urban related variable are added to arguments of surface_driver
+!-----------------------------------------------------------------
+# if (WRF_CHEM != 1)
+      NUM_ROOF_LAYERS = grid%num_soil_layers !urban
+      NUM_WALL_LAYERS = grid%num_soil_layers !urban
+      NUM_ROAD_LAYERS = grid%num_soil_layers !urban
+# endif
+
       CALL wrf_debug ( 200 , ' call surface_driver' )
       CALL surface_driver(                                                &
      &         ACSNOM=grid%acsnom      ,ACSNOW=grid%acsnow      ,AKHS=grid%akhs          &
@@ -594,6 +616,30 @@ BENCH_START(surf_driver_tim)
      &        ,WSPD=wspd          ,XICE=grid%xice          ,XLAND=grid%xland        &
      &        ,Z0=grid%z0              ,Z=grid%em_z                ,ZNT=grid%znt            &
      &        ,ZS=grid%zs                                                      &
+# if (WRF_CHEM != 1)
+     &        ,DECLIN_URB=grid%declin_urb  ,COSZ_URB2D=grid%cosz_urb2d              & !I urban
+     &        ,OMG_URB2D=grid%omg_urb2d    ,xlat_urb2d=grid%XLAT                    & !I urban
+     &        ,NUM_ROOF_LAYERS=num_roof_layers                            & !I urban
+     &        ,NUM_WALL_LAYERS=num_wall_layers                            & !I urban
+     &        ,NUM_ROAD_LAYERS=num_road_layers                            &
+     &        ,DZR=grid%dzr ,DZB=grid%dzb ,DZG=grid%dzg                   & !I urban
+     &        ,TR_URB2D=grid%tr_urb2d ,TB_URB2D=grid%tb_urb2d             &
+     &        ,TG_URB2D=grid%tg_urb2d                                     & !H urban
+     &        ,TC_URB2D=grid%tc_urb2d ,QC_URB2D=grid%qc_urb2d             & !H urban
+     &        ,UC_URB2D=grid%uc_urb2d                                     & !H urban
+     &        ,XXXR_URB2D=grid%xxxr_urb2d                                 &
+     &        ,XXXB_URB2D=grid%xxxb_urb2d                                 & !H urban
+     &        ,XXXG_URB2D=grid%xxxg_urb2d                                 &
+     &        ,XXXC_URB2D=grid%xxxc_urb2d                                 & !H urban
+     &        ,TRL_URB3D=grid%trl_urb3d   ,TBL_URB3D=grid%tbl_urb3d       & !H urban
+     &        ,TGL_URB3D=grid%tgl_urb3d                                   & !H urban
+     &        ,SH_URB2D=grid%sh_urb2d     ,LH_URB2D=grid%lh_urb2d         &
+     &        ,G_URB2D=grid%g_urb2d                                       & !H urban
+     &        ,RN_URB2D=grid%rn_urb2d     , TS_URB2D=grid%ts_urb2d        & !H urban 
+     &        ,FRC_URB2D=grid%frc_urb2d                                   & !H urban
+     &        ,UTYPE_URB2D=grid%utype_urb2d                               & !H urban
+# endif
+     &        ,ucmcall=grid%ucmcall                                       & !H urban
            ! Indexes
      &        ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde          &
      &        ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme          &

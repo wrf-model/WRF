@@ -1,0 +1,89 @@
+Urban Parameters depending on Urban type 
+USGS 
+3, 'ZR[m] Z0C[m] Z0HC[m] ZDC[m] SVF    R      RW     HGT    CDS   AS    AH    BETR  BETB  BETG  FRC_URB  UrbanType' 
+1,  10.,  1.0,   1.0,    2.0,   0.48,  0.50,  0.50,  0.50,  0.1,  0.4,  0.0,  0.0,  0.0,  0.0   0.95    'Commercial' 
+2,  7.5,  0.75,  0.75,   1.5,   0.56,  0.50,  0.50,  0.40,  0.1,  0.3,  0.0,  0.0,  0.0,  0.0   0.9     'High Intensity Res' 
+3,  5.,   0.5,   0.5,    1.0,   0.62,  0.50,  0.50,  0.30,  0.1,  0.2,  0.0,  0.0,  0.0,  0.0   0.5     'Low Intensity Res' 
+CAPR [cal/cm/cm/cm/degC] 
+0.50 
+CAPB [cal/cm/cm/cm/degC] 
+0.50 
+CAPG [cal/cm/cm/cm/degC] 
+0.50 
+AKSR [cal/cm/sec/degC] 
+0.004 
+AKSB [cal/cm/sec/degC] 
+0.004 
+AKSG [cal/cm/sec/degC] 
+0.004 
+ALBR [-] 
+0.10 
+ALBB [-] 
+0.10 
+ALBG [-] 
+0.10 
+EPSR [-] 
+0.97 
+EPSB [-] 
+0.97 
+EPSG [-] 
+0.97 
+Z0R [m] 
+0.1 
+Z0B [m] 
+0.1 
+Z0G [m] 
+0.1 
+Z0HR [m] 
+0.1 
+Z0HB [m] 
+0.1 
+Z0HG [m] 
+0.1 
+Num_Roof_Layers [-] 
+4 
+Num_Wall_Layers [-] 
+4 
+Num_Road_Layers [-] 
+4 
+DDZR(1) [cm] 
+5. 
+DDZR(2) [cm] 
+5. 
+DDZR(3) [cm] 
+5. 
+DDZR(4) [cm] 
+5. 
+DDZB(1) [cm] 
+5. 
+DDZB(2) [cm] 
+5. 
+DDZB(3) [cm] 
+5. 
+DDZB(4) [cm] 
+5. 
+DDZG(1) [cm] 
+5. 
+DDZG(2) [cm] 
+25. 
+DDZG(3) [cm] 
+50. 
+DDZG(4) [cm] 
+75. 
+Lower Boundary Condition for Roof Layer Temp [1: Zero-Flux,  2: T = Constant] 
+1 
+Lower Boundary Condition for Wall Layer Temp [1: Zero-Flux,  2: T = Constant] 
+1 
+Lower Boundary Condition for Road Layer Temp [1: Zero-Flux,  2: T = Constant] 
+1 
+TRLEND [K] 
+300.15 
+TBLEND [K] 
+300.15 
+TGLEND [K] 
+300.15 
+Ch of Wall and Road [1: M-O Similarity Theory,  2: Empirical Form (recommend)] 
+2 
+Surface and Layer Temperatures [1: 4-layer model,  2: Force-Restore method] 
+1 
+ 

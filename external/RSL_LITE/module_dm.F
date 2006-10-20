@@ -610,6 +610,9 @@ write(0,*)'reordering mesh'
       ELSE
         CALL wrf_error_fatal ( 'RWORDSIZE or DWORDSIZE does not match any MPI type' )
       ENDIF
+#else
+! required dummy initialization for function that is never called
+      getrealmpitype = 1
 #endif
       RETURN
    END FUNCTION getrealmpitype

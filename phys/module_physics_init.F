@@ -62,7 +62,16 @@ CONTAINS
                          m_ps_1,m_ps_2,m_hybi,aerosolc_1,aerosolc_2,& ! Optional
                          RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,         &    ! Optional
                          RQVNDGDTEN,RMUNDGDTEN,                  &    ! Optional
-                         FGDT,STEPFG                             &    ! Optional
+                         FGDT,STEPFG,                            &    ! Optional
+!                        num_roof_layers,num_wall_layers,        & !Optional urban
+!                        num_road_layers,                        & !Optional urban
+                         DZR, DZB, DZG,                          & !Optional urban
+                         TR_URB2D,TB_URB2D,TG_URB2D,TC_URB2D,    & !Optional urban
+                         QC_URB2D, XXXR_URB2D,XXXB_URB2D,        & !Optional urban
+                         XXXG_URB2D, XXXC_URB2D,                 & !Optional urban
+                         TRL_URB3D, TBL_URB3D, TGL_URB3D,        & !Optional urban
+                         SH_URB2D, LH_URB2D, G_URB2D, RN_URB2D,  & !Optional urban
+                         TS_URB2D, FRC_URB2D, UTYPE_URB2D        & !Optional urban
                          )
 
 !-----------------------------------------------------------------
@@ -191,6 +200,40 @@ CONTAINS
    REAL,     DIMENSION( ims:ime , jms:jme ) , OPTIONAL, INTENT(OUT) ::    &
              RMUNDGDTEN
 
+!URBAN
+!   REAL, DIMENSION(1:num_roof_layers), INTENT(INOUT) :: DZR   !urban
+!   REAL, DIMENSION(1:num_wall_layers), INTENT(INOUT) :: DZB   !urban
+!   REAL, DIMENSION(1:num_road_layers), INTENT(INOUT) :: DZG   !urban
+   REAL, OPTIONAL, DIMENSION(1:num_soil_layers), INTENT(INOUT) :: DZR    !urban
+   REAL, OPTIONAL, DIMENSION(1:num_soil_layers), INTENT(INOUT) :: DZB    !urban
+   REAL, OPTIONAL, DIMENSION(1:num_soil_layers), INTENT(INOUT) :: DZG    !urban
+
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TR_URB2D !urban
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TB_URB2D !urban
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TG_URB2D !urban
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TC_URB2D !urban
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: QC_URB2D !urban
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: XXXR_URB2D !urban
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: XXXB_URB2D !urban
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: XXXG_URB2D !urban
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: XXXC_URB2D !urban
+
+!   REAL, DIMENSION(ims:ime, 1:num_roof_layers, jms:jme), INTENT(INOUT) :: TRL_URB3D !urban
+!   REAL, DIMENSION(ims:ime, 1:num_wall_layers, jms:jme), INTENT(INOUT) :: TBL_URB3D !urban
+!   REAL, DIMENSION(ims:ime, 1:num_road_layers, jms:jme), INTENT(INOUT) :: TGL_URB3D !urban
+   REAL, OPTIONAL, DIMENSION(ims:ime, 1:num_soil_layers, jms:jme), INTENT(INOUT) :: TRL_URB3D  !urban
+   REAL, OPTIONAL, DIMENSION(ims:ime, 1:num_soil_layers, jms:jme), INTENT(INOUT) :: TBL_URB3D  !urban
+   REAL, OPTIONAL, DIMENSION(ims:ime, 1:num_soil_layers, jms:jme), INTENT(INOUT) :: TGL_URB3D  !urban
+
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: SH_URB2D !urban
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LH_URB2D !urban
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: G_URB2D !urban
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: RN_URB2D !urban
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TS_URB2D !urban
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FRC_URB2D !urban
+   INTEGER, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: UTYPE_URB2D !urban
+
+
 ! Local data
 
    REAL    :: ALBLND,ZZLND,ZZWTR,THINLD,XMAVA,CEN_LAT,pptop 
@@ -199,6 +242,7 @@ CONTAINS
    CHARACTER*4 :: MMINLU_loc
    CHARACTER*80 :: message
    INTEGER :: ISWATER
+   INTEGER :: ucmcall
 ! to be added to namelist: option to use climatological monthly albedo
    LOGICAL :: usebgalb
 
@@ -209,6 +253,7 @@ integer myproc
    TYPE (WRFU_Time) :: currentTime
 
 !-----------------------------------------------------------------
+   ucmcall=config_flags%ucmcall
 
 !-- should be from the namelist
 
@@ -381,7 +426,13 @@ integer myproc
                 ZNT,XLAND,XICE,                                 &
 #endif
                 SFCEVP,GRDFLX,                                  &
-                allowed_to_read ,                                   &
+                allowed_to_read ,                               &
+                DZR, DZB, DZG,                                  & !Optional urban
+                TR_URB2D,TB_URB2D,TG_URB2D,TC_URB2D,QC_URB2D,   & !Optional urban
+                XXXR_URB2D,XXXB_URB2D,XXXG_URB2D,XXXC_URB2D,    & !Optional urban
+                TRL_URB3D, TBL_URB3D, TGL_URB3D,                & !Optional urban
+                SH_URB2D, LH_URB2D, G_URB2D, RN_URB2D,          & !Optional urban
+                TS_URB2D, FRC_URB2D, UTYPE_URB2D, UCMCALL,      & !Optional urban
                 ids, ide, jds, jde, kds, kde,                   &
                 ims, ime, jms, jme, kms, kme,                   &
                 its, ite, jts, jte, kts, kte                    )
@@ -476,6 +527,7 @@ integer myproc
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
 
 !---------------------------------------------------------------------
+
    CALL wrf_debug( 100 , 'top of landuse_init' )
 
 ! recover LU variables from state
@@ -850,6 +902,13 @@ integer myproc
 #endif
                 SFCEVP,GRDFLX,                                  &
                 allowed_to_read,                                &
+!                num_roof_layers,num_wall_layers,num_road_layers,& !Optional urban
+                DZR, DZB, DZG,                                  & !Optional urban
+                TR_URB2D,TB_URB2D,TG_URB2D,TC_URB2D,QC_URB2D,   & !Optional urban
+                XXXR_URB2D,XXXB_URB2D,XXXG_URB2D,XXXC_URB2D,    & !Optional urban
+                TRL_URB3D, TBL_URB3D, TGL_URB3D,                & !Optional urban
+                SH_URB2D,LH_URB2D,G_URB2D,RN_URB2D,             & !Optional urban
+                TS_URB2D, FRC_URB2D, UTYPE_URB2D,UCMCALL,       & !Optional urban
                 ids, ide, jds, jde, kds, kde,                   &
                 ims, ime, jms, jme, kms, kme,                   &
                 its, ite, jts, jte, kts, kte                    )
@@ -861,6 +920,7 @@ integer myproc
    USE module_bl_gfs
    USE module_sf_myjsfc
    USE module_sf_noahlsm
+   USE module_sf_urban
    USE module_sf_ruclsm
    USE module_bl_myjpbl
 #if (NMM_CORE == 1)
@@ -877,6 +937,7 @@ integer myproc
                                       ims, ime, jms, jme, kms, kme, &
                                       its, ite, jts, jte, kts, kte
    INTEGER , INTENT(IN)        ::     num_soil_layers
+   INTEGER , INTENT(IN)        ::     UCMCALL 
 
    REAL ,    INTENT(IN)        ::     DT, BLDT
    INTEGER , INTENT(INOUT)     ::     STEPBL
@@ -933,7 +994,37 @@ integer myproc
    REAL,  DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) ::  TMN
    LOGICAL,  INTENT(IN)           :: allowed_to_read
    INTEGER :: isn, isfc
-!--------------------------------------------------------------------
+
+!URBAN
+!   REAL, DIMENSION(1:num_roof_layers), INTENT(INOUT) :: DZR  !Optional urban
+!   REAL, DIMENSION(1:num_wall_layers), INTENT(INOUT) :: DZB  !Optional urban
+!   REAL, DIMENSION(1:num_road_layers), INTENT(INOUT) :: DZG  !Optional urban
+    REAL, OPTIONAL, DIMENSION(1:num_soil_layers), INTENT(INOUT) :: DZR  !Optional urban
+    REAL, OPTIONAL, DIMENSION(1:num_soil_layers), INTENT(INOUT) :: DZB  !Optional urban
+    REAL, OPTIONAL, DIMENSION(1:num_soil_layers), INTENT(INOUT) :: DZG  !Optional urban
+    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TR_URB2D !Optional urban
+    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TB_URB2D !Optional urban
+    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TG_URB2D !Optional urban
+    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TC_URB2D !Optional urban
+    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: QC_URB2D !Optional urban
+    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: XXXR_URB2D !Optional urban
+    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: XXXB_URB2D !Optional urban
+    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: XXXG_URB2D !Optional urban
+    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: XXXC_URB2D !Optional urban
+    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: SH_URB2D !Optional urban
+    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LH_URB2D !Optional urban
+    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: G_URB2D !Optional urban
+    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: RN_URB2D !Optional urban
+    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TS_URB2D !Optional urban
+    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FRC_URB2D !Optional urban
+    INTEGER, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: UTYPE_URB2D !Optional urban
+!    REAL, DIMENSION( ims:ime, 1:num_roof_layers, jms:jme ), INTENT(INOUT) :: TRL_URB3D !Optional urban
+!    REAL, DIMENSION( ims:ime, 1:num_wall_layers, jms:jme ), INTENT(INOUT) :: TBL_URB3D !Optional urban
+!    REAL, DIMENSION( ims:ime, 1:num_road_layers, jms:jme ), INTENT(INOUT) :: TGL_URB3D !Optional urban
+    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_soil_layers, jms:jme ), INTENT(INOUT) :: TRL_URB3D !Optional urban
+    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_soil_layers, jms:jme ), INTENT(INOUT) :: TBL_URB3D !Optional urban
+    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_soil_layers, jms:jme ), INTENT(INOUT) :: TGL_URB3D !Optional urban
+
 
 !-- calculate pbl time step
 
@@ -1017,6 +1108,28 @@ integer myproc
                      ids,ide, jds,jde, kds,kde,                &
                      ims,ime, jms,jme, kms,kme,                &
                      its,ite, jts,jte, kts,kte                 )
+
+!URBAN
+             IF ( PRESENT( FRC_URB2D ) .AND. PRESENT( UTYPE_URB2D ))          &
+                  THEN
+
+          IF(UCMCALL.eq.1) THEN
+          CALL urban_param_init(DZR,DZB,DZG,num_soil_layers                    & !urban
+                                )
+!                                num_roof_layers,num_wall_layers,road_soil_layers)   !urban
+          CALL urban_var_init(TSK,TSLB,TMN,IVGTYP,                             & !urban
+                              ims,ime,jms,jme,num_soil_layers,                 & !urban
+!                              num_roof_layers,num_wall_layers,num_road_layers, & !urban
+                              XXXR_URB2D,XXXB_URB2D,XXXG_URB2D,XXXC_URB2D,     & !urban
+                              TR_URB2D,TB_URB2D,TG_URB2D,TC_URB2D,QC_URB2D,    & !urban
+                              TRL_URB3D,TBL_URB3D,TGL_URB3D,                   & !urban
+                              SH_URB2D,LH_URB2D,G_URB2D,RN_URB2D, TS_URB2D,    & ! urban
+                              FRC_URB2D, UTYPE_URB2D)                            !urban
+          ENDIF
+             ELSE
+                CALL wrf_error_fatal ( 'arguments not present for calling urban model' )
+             ENDIF
+
 
       CASE (RUCLSMSCHEME)
 !          if(isfc .ne. 2)CALL wrf_error_fatal &

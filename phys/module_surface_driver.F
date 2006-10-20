@@ -19,6 +19,19 @@ CONTAINS
      &          ,albbck,lh,sh2o,shdmax,shdmin,z0                      &
      &          ,flqc,flhc,psfc,sst,sst_update,t2,emiss                        &
      &          ,sf_sfclay_physics,sf_surface_physics,ra_lw_physics   &
+            !  Optional urban 
+     &          ,declin_urb,cosz_urb2d,omg_urb2d,xlat_urb2d           & !I urban
+     &          ,num_roof_layers, num_wall_layers                     & !I urban
+     &          ,num_road_layers, dzr, dzb, dzg                       & !I urban
+     &          ,tr_urb2d,tb_urb2d,tg_urb2d,tc_urb2d,qc_urb2d         & !H urban
+     &          ,uc_urb2d                                             & !H urban
+     &          ,xxxr_urb2d,xxxb_urb2d,xxxg_urb2d,xxxc_urb2d          & !H urban
+     &          ,trl_urb3d,tbl_urb3d,tgl_urb3d                        & !H urban
+     &          ,sh_urb2d,lh_urb2d,g_urb2d,rn_urb2d,ts_urb2d          & !H urban
+     &          ,frc_urb2d, utype_urb2d                               & !H urban
+            !
+     &          ,ucmcall                                              & ! urban
+            !
      &          , ids,ide,jds,jde,kds,kde                             &
      &          , ims,ime,jms,jme,kms,kme                             &
      &          , i_start,i_end,j_start,j_end,kts,kte,num_tiles       &
@@ -205,6 +218,8 @@ CONTAINS
 
    INTEGER, INTENT(IN) :: sf_sfclay_physics,sf_surface_physics,ra_lw_physics,sst_update
 
+   INTEGER, INTENT(IN) :: ucmcall                                     !urban
+
    INTEGER, DIMENSION(num_tiles), INTENT(IN) ::                       &
      &           i_start,i_end,j_start,j_end
 
@@ -373,10 +388,59 @@ CONTAINS
    REAL    :: DTMIN,DTBL
 !
    INTEGER :: i,J,K,NK,jj,ij
-   LOGICAL :: radiation, myj,frpcpn
+   LOGICAL :: radiation, myj, frpcpn
+!-------------------------------------------------
+! urban related variables are added to declaration
+!-------------------------------------------------
+     REAL, OPTIONAL, INTENT(IN) :: DECLIN_URB                                 !urban
+     REAL, OPTIONAL , DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: COSZ_URB2D  !urban
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: OMG_URB2D   !urban
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: XLAT_URB2D  !urban
+     INTEGER,  OPTIONAL, INTENT(IN) :: num_roof_layers                         !urban
+     INTEGER,  OPTIONAL, INTENT(IN) :: num_wall_layers                         !urban
+     INTEGER,  OPTIONAL, INTENT(IN) :: num_road_layers                         !urban
+     REAL, OPTIONAL, DIMENSION(1:num_soil_layers), INTENT(IN) :: DZR          !urban
+     REAL, OPTIONAL, DIMENSION(1:num_soil_layers), INTENT(IN) :: DZB          !urban
+     REAL, OPTIONAL, DIMENSION(1:num_soil_layers), INTENT(IN) :: DZG          !urban
+
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)  :: TR_URB2D !urban
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)  :: TB_URB2D !urban
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)  :: TG_URB2D !urban
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT):: TC_URB2D !urban
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT):: QC_URB2D !urban
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT):: UC_URB2D !urban
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT):: XXXR_URB2D !urban
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT):: XXXB_URB2D !urban
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT):: XXXG_URB2D !urban
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT):: XXXC_URB2D !urban
+     REAL, OPTIONAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), &       !urban
+           INTENT(INOUT)  :: TRL_URB3D                                 !urban
+     REAL, OPTIONAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), &       !urban
+           INTENT(INOUT)  :: TBL_URB3D                                 !urban
+     REAL, OPTIONAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), &       !urban
+           INTENT(INOUT)  :: TGL_URB3D                                 !urban
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)  :: SH_URB2D !urban
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT):: LH_URB2D !urban
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT):: G_URB2D  !urban
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT):: RN_URB2D !urban
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT):: TS_URB2D !urban
+!
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)  :: FRC_URB2D  !urban 
+     INTEGER, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)  :: UTYPE_URB2D  !urban 
+
+     REAL,  DIMENSION( ims:ime, jms:jme )  :: PSIM_URB2D  !urban local var
+     REAL,  DIMENSION( ims:ime, jms:jme )  :: PSIH_URB2D  !urban local var
+     REAL,  DIMENSION( ims:ime, jms:jme )  :: GZ1OZ0_URB2D  !urban local var
+!m     REAL, DIMENSION( ims:ime, jms:jme ) :: AKHS_URB2D  !urban local var
+     REAL,  DIMENSION( ims:ime, jms:jme )  :: AKMS_URB2D  !urban local var
+     REAL,  DIMENSION( ims:ime, jms:jme )  :: U10_URB2D   !urban local var
+     REAL,  DIMENSION( ims:ime, jms:jme )  :: V10_URB2D   !urban local var
+     REAL,  DIMENSION( ims:ime, jms:jme )  :: TH2_URB2D   !urban local var
+     REAL,  DIMENSION( ims:ime, jms:jme )  :: Q2_URB2D    !urban local var
+     REAL,  DIMENSION( ims:ime, jms:jme )  :: UST_URB2D  !urban local var
+
+!------------------------------------------------------------------
    CHARACTER*256 :: message
-!
-!
 !------------------------------------------------------------------
 !
 
@@ -633,8 +697,6 @@ CONTAINS
 
        IF (PRESENT(qv_curr)                            .AND.    &
            PRESENT(capg)        .AND.    &
-!           PRESENT(capg)       .AND.  PRESENT(emiss )  .AND.    &
-!           PRESENT(t2  )                               .AND.    &
                                                       .TRUE. ) THEN
            DO j=j_start(ij),j_end(ij)
            DO i=i_start(ij),i_end(ij)
@@ -694,8 +756,23 @@ CONTAINS
 
      CASE (LSMSCHEME)
 
-       IF (PRESENT(qv_curr)    .AND.  PRESENT(rainbl)  .AND.    &
-!           PRESENT(emiss)      .AND.  PRESENT(t2)      .AND.    &
+       IF (PRESENT(qv_curr)    .AND.  PRESENT(rainbl)        .AND.    &
+!          PRESENT(emiss)      .AND.  PRESENT(t2)            .AND.    &
+!          PRESENT(declin_urb) .AND.  PRESENT(cosz_urb2d)    .AND.    &
+!          PRESENT(omg_urb2d)  .AND. PRESENT( xlat_urb2d)    .AND.    &       
+!          PRESENT(dzr)       .AND.    & 
+!          PRESENT( dzb)            .AND. PRESENT(dzg)       .AND.    &
+!          PRESENT(tr_urb2d) .AND. PRESENT(tb_urb2d)         .AND.    &
+!          PRESENT(tg_urb2d) .AND. PRESENT(tc_urb2d) .AND.            &
+!          PRESENT(qc_urb2d) .AND. PRESENT(uc_urb2d) .AND.            & 
+!          PRESENT(xxxr_urb2d) .AND. PRESENT(xxxb_urb2d) .AND.        & 
+!          PRESENT(xxxg_urb2d) .AND.                                  &
+!          PRESENT(xxxc_urb2d) .AND. PRESENT(trl_urb3d) .AND.         &
+!          PRESENT(tbl_urb3d)   .AND. PRESENT(tgl_urb3d)  .AND.       &         
+!          PRESENT(sh_urb2d) .AND. PRESENT(lh_urb2d)  .AND.           &
+!          PRESENT(g_urb2d)   .AND. PRESENT(rn_urb2d) .AND.           &
+!          PRESENT(ts_urb2d)                          .AND.           & 
+!          PRESENT(frc_urb2d) .AND. PRESENT(utype_urb2d)   .AND.      &          
                                                       .TRUE. ) THEN
 !------------------------------------------------------------------
          CALL wrf_debug(100,'in NOAH LSM')
@@ -708,11 +785,31 @@ CONTAINS
                 smois,tslb,snow,canwat,                         &
                 chs, chs2, cqs2, cpm,rcp,                       &    
                 sh2o,snowh,                                     & !h  
+                u_phy,v_phy,                                    & !I
                 snoalb,shdmin,shdmax,                           & !i
                 acsnom,acsnow,                                  & !o 
                 ids,ide, jds,jde, kds,kde,                      &
                 ims,ime, jms,jme, kms,kme,                      &
-                i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
+                i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,    &
+                ucmcall                                         &
+#if ( WRF_CHEM != 1 )
+!Optional urban
+                ,tr_urb2d,tb_urb2d,tg_urb2d,tc_urb2d,qc_urb2d,  & !H urban
+                uc_urb2d,                                       & !H urban
+                xxxr_urb2d,xxxb_urb2d,xxxg_urb2d,xxxc_urb2d,    & !H urban
+                trl_urb3d,tbl_urb3d,tgl_urb3d,                  & !H urban
+                sh_urb2d,lh_urb2d,g_urb2d,rn_urb2d,ts_urb2d,    & !H urban
+                psim_urb2d,psih_urb2d,u10_urb2d,v10_urb2d,      & !O urban
+                GZ1OZ0_urb2d, AKMS_URB2D,                       & !O urban
+                th2_urb2d,q2_urb2d,ust_urb2d,                   & !O urban
+                declin_urb,cosz_urb2d,omg_urb2d,                & !I urban
+                xlat_urb2d,                                     & !I urban
+                num_roof_layers, num_wall_layers,               & !I urban
+                num_road_layers, DZR, DZB, DZG,                 & !I urban
+                FRC_URB2D, UTYPE_URB2D                          & ! urban
+#endif
+                )
+
 
            DO j=j_start(ij),j_end(ij)
            DO i=i_start(ij),i_end(ij)
@@ -725,6 +822,32 @@ CONTAINS
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
              i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
+
+!urban
+     IF(UCMCALL.eq.1) THEN
+       DO j=j_start(ij),j_end(ij)                             !urban
+         DO i=i_start(ij),i_end(ij)                           !urban
+          IF( IVGTYP(I,J) == 1 .or. IVGTYP(I,J) == 31 .or. &  !urban
+              IVGTYP(I,J) == 32 .or. IVGTYP(I,J) == 33 ) THEN !urban
+!             TH2(I,J)  = TH2_URB2D(I,J)                       !urban
+!             T2(I,J)   = TH2_URB2D(I,J)/(1.E5/PSFC(I,J))**RCP !urban
+!m             T2(I,J)   = TH2_URB2D(I,J)                       !urban
+             T2(I,J)   = FRC_URB2D(i,j)*TH2_URB2D(I,J) + (1-FRC_URB2D(i,j))*T2(I,J) !urban
+             TH2(I,J) = T2(I,J)*(1.E5/PSFC(I,J))**RCP                               !urban
+!m             Q2(I,J)   = Q2_URB2D(I,J)                                            !urban
+             Q2(I,J)   = FRC_URB2D(i,j)*Q2_URB2D(I,J) +(1-FRC_URB2D(i,j))* Q2(I,J)  !urban
+             U10(I,J)  = U10_URB2D(I,J)                       !urban
+             V10(I,J)  = V10_URB2D(I,J)                       !urban
+             PSIM(I,J) = PSIM_URB2D(I,J)                      !urban
+             PSIH(I,J) = PSIH_URB2D(I,J)                      !urban
+             GZ1OZ0(I,J) = GZ1OZ0_URB2D(I,J)                  !urban
+!m             AKHS(I,J) = AKHS_URB2D(I,J)                    !urban
+             AKHS(I,J) = CHS(I,J)                             !urban
+             AKMS(I,J) = AKMS_URB2D(I,J)                      !urban
+           END IF                                             !urban
+         ENDDO                                                !urban
+       ENDDO                                                  !urban
+     ENDIF
 !------------------------------------------------------------------
 
        ELSE

@@ -871,7 +871,7 @@ LOGICAL FUNCTION should_not_move ( id )
   INTEGER, INTENT(IN) :: id
  ! Local
   LOGICAL retval
-  INTEGER cu_physics, ra_sw_physics, ra_lw_physics
+  INTEGER cu_physics, ra_sw_physics, ra_lw_physics, ucmcall
 
   retval = .FALSE.
 ! check for GD ensemble cumulus, which can not move
@@ -889,6 +889,12 @@ LOGICAL FUNCTION should_not_move ( id )
   CALL nl_get_ra_lw_physics( id , ra_lw_physics )
   IF ( ra_lw_physics .EQ. CAMLWSCHEME ) THEN
     CALL wrf_message('CAM LW radiation can not be specified with moving nests. Movement disabled.')
+    retval = .TRUE.
+  ENDIF
+! check for urban canopy Noah LSM, which can not move
+  CALL nl_get_ucmcall( id , ucmcall )
+  IF ( ucmcall .EQ. 1 ) THEN
+    CALL wrf_message('UCM Noah LSM can not be specified with moving nests. Movement disabled.')
     retval = .TRUE.
   ENDIF
   should_not_move = retval

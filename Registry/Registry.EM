@@ -417,6 +417,11 @@ state    real   TSLB           ilj       misc      1         Z     i02rhd=(inter
 state    real   ZS              l        misc      -         Z     irh       "ZS"                    "DEPTHS OF CENTERS OF SOIL LAYERS"         "m"
 state    real   DZS             l        misc      -         Z     irh       "DZS"                   "THICKNESSES OF SOIL LAYERS"               "m"
 
+# urban model variables
+state    real   DZR             l        em      -            Z     r        "DZR"            "THICKNESSES OF ROOF LAYERS"                      "m"
+state    real   DZB             l        em      -            Z     r        "DZB"            "THICKNESSES OF WALL LAYERS"                      "m"
+state    real   DZG             l        em      -            Z     r        "DZG"            "THICKNESSES OF ROAD LAYERS"                      "m"
+
 # lsm State Variables
 
 state    real   SMOIS            ilj     -          1         Z     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "SMOIS"            "SOIL MOISTURE"     "m3 m-3"
@@ -444,11 +449,40 @@ state    real   SST              ij     misc        1         -     i0125rhd=(in
 state  integer  IFNDSNOWH        -      misc        1         -     i         "FNDSNOWH" "SNOWH_LOGICAL"
 state  integer  IFNDSOILW        -      misc        1         -     i         "FNDSOILW" "SOILW_LOGICAL"
 
+# urban state variables 2005-09-19
+state    real   TR_URB2D         ij     misc        1         -     rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)     "TR_URB"              "URBAN ROOF SKIN TEMPERATURE"        "K"
+state    real   TB_URB2D         ij     misc        1         -     rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)     "TB_URB"              "URBAN WALL SKIN TEMPERATURE"        "K" 
+state    real   TG_URB2D         ij     misc        1         -     rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)     "TG_URB"              "URBAN ROAD SKIN TEMPERATURE"        "K" 
+state    real   TC_URB2D         ij     misc        1         -     rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)     "TC_URB"              "URBAN CANOPY TEMPERATURE"           "K"
+state    real   QC_URB2D         ij     misc        1         -     rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)     "QC_URB"              "URBAN CANOPY HUMIDITY"          "kg kg{-1}"
+state    real   UC_URB2D         ij     misc        1         -     rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)     "UC_URB"              "URBAN CANOPY WIND"          "m s{-1}"
+state    real   XXXR_URB2D       ij     misc        1         -     rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)      "XXXR_URB" "M-O LENGTH ABOVE URBAN ROOF"   "dimensionless"
+state    real   XXXB_URB2D       ij    misc        1         -      rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)      "XXXB_URB" "M-O LENGTH ABOVE URBAN WALL"   "dimensionless"
+state    real   XXXG_URB2D       ij    misc        1         -      rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)       "XXXG_URB" "M-O LENGTH ABOVE URBAN ROAD"   "dimensionless"
+state    real   XXXC_URB2D       ij    misc        1         -      rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)       "XXXC_URB" "M-O LENGTH ABOVE URBAN CANOPY" "dimensionless"
+state    real   TRL_URB3D        ilj    misc        1         Z     rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)      "TRL_URB" "ROOF LAYER TEMPERATURE"          "K"
+state    real   TBL_URB3D        ilj    misc        1         Z     rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)      "TBL_URB" "WALL LAYER TEMPERATURE"          "K"
+state    real   TGL_URB3D        ilj    misc        1         Z     rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)      "TGL_URB" "ROAD LAYER TEMPERATURE"          "K"
+state    real   SH_URB2D        ij    misc        1         -     rh       "SH_URB"  "SENSIBLE HEAT FLUX FROM URBAN SFC"  "W m{-2}"
+state    real   LH_URB2D        ij    misc        1         -     rh       "LH_URB"  "LATENT HEAT FLUX FROM URBAN SFC"    "W m{-2}"
+state    real   G_URB2D         ij    misc        1         -     rh        "G_URB"   "GROUND HEAT FLUX INTO URBAN"        "W m{-2}"
+state    real   RN_URB2D        ij    misc        1         -     rh       "RN_URB"  "NET RADIATION ON URBAN SFC"         "W m{-2}"
+state    real   TS_URB2D        ij    misc        1         -     r       "TS_URB"  "SKIN TEMPERATURE"          "K"
+state    real   FRC_URB2D       ij    misc        1         -     rhd=(interp_fcnm)u=(copy_fcnm)       "FRC_URB"  "URBAN FRACTION"         "dimensionless"
+state    integer   UTYPE_URB2D  ij    misc        1         -     rhd=(interp_fcnm)u=(copy_fcnm)       "UTYPE_URB"  "URBAN TYPE"         "dimensionless"
+
+
+# urban variables from radiation model
+state    real   COSZ_URB2D       ij     misc        1         -      r       "COSZ_URB"  "COS of SOLAR ZENITH ANGLE"         "dimensionless"
+state    real   OMG_URB2D        ij     misc        1         -      r       "OMG_URB"   "SOLAR HOUR ANGLE"         "dimensionless"
+state    real   DECLIN_URB       -     misc        1         -       r       "DECLIN_URB"  "SOLAR DECLINATION"         "dimensionless"
+
+
 # RUC LSM
 state    real   SMFR3D           ilj    misc        1         Z      r        "SMFR3D"               "SOIL ICE" ""
 state    real   KEEPFR3DFLAG     ilj    misc        1         Z      r        "KEEPFR3DFLAG          "FLAG - 1. FROZEN SOIL YES, 0 - NO"             ""
 
-# MRF PBL variables***25Aug 2002*****
+# MRF PBL variables
 i1      real   PSIM           ij     misc        1         -     -         "PSIM"                "SIMILARITY FUNCTION FOR MOMENTUM"     ""
 i1      real   PSIH           ij     misc        1         -     -         "PSIH"                "SIMILARITY FUNCTION FOR HEAT"         ""
 i1      real   WSPD           ij     misc        1         -     -         "WSPD"                "Wind speed"                           "m s-1"
@@ -731,7 +765,7 @@ i1    logical  CU_ACT_FLAG     ij       misc        1         -
 state    real  TMN              ij      misc        1         -     i012rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)     "TMN"                   "SOIL TEMPERATURE AT LOWER BOUNDARY"           "K"
 state    real  XLAND            ij      misc        1         -     i02rhd=(interp_fcnm)u=(copy_fcnm)       "XLAND"                 "LAND MASK (1 FOR LAND, 2 FOR WATER)"          ""      
 state    real  ZNT              ij      misc        1         -      i3r      "ZNT"                   "TIME-VARYING ROUGHNESS LENGTH"                "m"      
-state    real  UST              ij      misc        1         -      r        "UST"                   "U* IN SIMILARITY THEORY"                      "m s-1"      
+state    real  UST              ij      misc        1         -      rh       "UST"                   "U* IN SIMILARITY THEORY"                      "m s-1"      
 i1       real  HOL              ij      misc        1         -      -        "HOL"                   "PBL HEIGHT OVER MONIN-OBUKHOV LENGTH"         ""
 state    real  RMOL             ij      misc        1         -     rh       "RMOL"                   "1./Monin Ob. Length"                      ""
 state    real  MOL              ij      misc        1         -      r        "MOL"                   "T* IN SIMILARITY THEORY"                      "K"      
@@ -1262,6 +1296,7 @@ rconfig   integer mp_zero_out             namelist,physics	1             0      
 rconfig   real mp_zero_out_thresh         namelist,physics	1          1.e-8      -      "mp_zero_out_thresh"  "minimum threshold for non-Qv moist fields, below are set to zero"  "kg/kg"
 rconfig   real    seaice_threshold        namelist,physics	1            271       h    "seaice_threshold"  "tsk below which which water points are set to sea ice for slab scheme"   "K"
 rconfig   integer sst_update              namelist,physics	1            0         h    "sst_update"  "update sst from wrflowinp file  0=no, 1=yes"   ""
+rconfig   integer ucmcall                 namelist,physics      1            0         h    "ucmcall"     "activate urban model  0=no, 1=yes"   ""
 rconfig   integer co2tf                   namelist,physics	1            0         -    "co2tf" "GFDL radiation co2 flag" ""
 rconfig   integer ra_call_offset          namelist,physics	1            0         -    "ra_call_offset" "radiation call offset in timesteps (-1=old, 0=new offset)" ""
 rconfig   real    cam_abs_freq_s          namelist,physics      1         21600.      -      "cam_abs_freq_s" "CAM radiation frequency for clear-sky longwave calculations" "s"

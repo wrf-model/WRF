@@ -1,3 +1,11 @@
+#if ( RWORDSIZE == 4 )
+#  define VREC vsrec
+#  define VSQRT vssqrt
+#else
+#  define VREC vrec
+#  define VSQRT vsqrt
+#endif
+
 !Including inline expansion statistical function 
 MODULE module_mp_wsm5
 !
@@ -329,11 +337,11 @@ CONTAINS
 !       enddo
 !     enddo
       do k = kts, kte
-        CALL vsrec( tvec1(its), den(its,k), ite-its+1)
+        CALL VREC( tvec1(its), den(its,k), ite-its+1)
         do i = its, ite
           tvec1(i) = tvec1(i)*den0
         enddo
-        CALL vssqrt( denfac(its,k), tvec1(its), ite-its+1)
+        CALL VSQRT( denfac(its,k), tvec1(its), ite-its+1)
       enddo
 !
 ! Inline expansion for fpvs

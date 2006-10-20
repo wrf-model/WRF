@@ -4892,7 +4892,7 @@ END SUBROUTINE phy_bc
     END DO
     END DO
 
-!MARTA: add the drug at the surface; WCS 040331
+!MARTA: add the drag at the surface; WCS 040331
     K=KTS
 
     cd0 = config_flags%tke_drag_coefficient  ! drag coefficient set 
@@ -4945,13 +4945,15 @@ END SUBROUTINE phy_bc
     END DO
     END DO
 
-!MARTA: add the drug at the surface; WCS 040331
+!MARTA: add the drag at the surface; WCS 040331
     K=KTS
 
     cd0 = config_flags%tke_drag_coefficient   ! constant drag coefficient 
                                               ! set in namelist.input
     DO j = j_start, j_end   
     DO i = i_start, i_end
+
+      absU=0.5*sqrt((u(i,k,j)+u(i+1,k,j))**2+(v(i,k,j)+v(i,k,j+1))**2)
 
       tendency(i,k,j) = tendency(i,k,j) +       &
            mu(i,j)*( (v(i,k,j)+v(i,k,j+1))*0.5* &

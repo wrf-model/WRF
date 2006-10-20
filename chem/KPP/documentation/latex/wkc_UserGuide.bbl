@@ -1,0 +1,32 @@
+\begin{thebibliography}{}
+
+\bibitem[\protect\citename{Damian {\em et~al.}, }2002]{dam02}
+Damian, V., Sandu, A., Damian, M., Potra, F., and Carmichael, G.~R., 2002:
+\newblock The kinetic preprocessor {KPP} -- {A} software environment for
+  solving chemical kinetics.
+\newblock {\em Computers and Chemical Engineering}, 26, 1567 -- 1579.
+
+\bibitem[\protect\citename{Geiger {\em et~al.}, }2003]{gei03}
+Geiger, H., Barnes, I., Benter, T., and Spitteler, M., 2003:
+\newblock The tropospheric degradation of isoprene: An updated module for the
+  {R}egional {A}tmospheric {C}hemistry {M}echanism.
+\newblock 37, 1503--1519.
+
+\bibitem[\protect\citename{Sandu and Sander, }2006]{s+s06}
+Sandu, A., and Sander, R., 2006:
+\newblock Technical note: Simulating chemical systems in Fortran90 and Matlab
+  with the Kinetic PreProcessor {KPP-2.1}.
+\newblock 6, 187--195.
+
+\bibitem[\protect\citename{Sandu {\em et~al.}, }2003]{sandu03}
+Sandu, A., Daescu, D., and Carmichael, G.~R., 2003:
+\newblock Direct and Adjoint Sensitivity Analysis of Chemical Kinetic Systems
+  with {KPP}: {I} -- {T}heory and Software Tools.
+\newblock 37, 5083--5096.
+
+\bibitem[\protect\citename{Stockwell {\em et~al.}, }1997]{sto97}
+Stockwell, W.~R., Kirchner, F., Kuhn, M., and Seefeld, S., 1997:
+\newblock A new mechanism for regional atmospheric chemistry modeling.
+\newblock 102, 25847--25879.
+
+\end{thebibliography}

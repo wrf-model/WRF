@@ -1,0 +1,14 @@
+\contentsline {section}{\numberline {1}Preface}{3}{section.1}
+\contentsline {section}{\numberline {2}Requirements for running KPP}{3}{section.2}
+\contentsline {section}{\numberline {3}Compiling and Running KPP together with WKC}{3}{section.3}
+\contentsline {section}{\numberline {4}Using mechanisms already implemented with WKC}{3}{section.4}
+\contentsline {section}{\numberline {5}Layout of WKC}{4}{section.5}
+\contentsline {section}{\numberline {6}Code produced by WKC, User Modifications}{5}{section.6}
+\contentsline {section}{\numberline {7}Available integrators}{6}{section.7}
+\contentsline {section}{\numberline {8}Adding additional mechanisms with WKC}{6}{section.8}
+\contentsline {subsection}{\numberline {8.1}Adding a package to the Registry}{7}{subsection.8.1}
+\contentsline {subsection}{\numberline {8.2}Adapting KPP equation files and using the wrf\_kpp\_equiv file for mapping species names}{7}{subsection.8.2}
+\contentsline {section}{\numberline {9}Adapting additional KPP integrators for WKC}{8}{section.9}
+\contentsline {section}{\numberline {10}Installing WKC into an existing WRF-Chem version}{9}{section.10}
+\contentsline {section}{\numberline {11}Final Remarks}{10}{section.11}
+\contentsline {section}{Bibliography}{10}{section*.3}

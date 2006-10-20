@@ -1,0 +1,59 @@
+#include small_strato.spc
+#include small_strato.eqn
+ 
+
+//#LANGUAGE Fortran77          {Output Language}
+//#DOUBLE ON                   {Double Precision}
+//#JACOBIAN SPARSE_LU_ROW      {Use Sparse DATA STRUCTURES}
+ 
+//#INTEGRATOR rodas3
+//#DRIVER general
+
+
+#LOOKATALL                     {File Output}
+#MONITOR O3;N;O2;O;NO;O1D;NO2; {Screen Output}
+
+#CHECK O; N;                   {Check Mass Balance}
+ 
+#INITVALUES                    {Initial Values}
+ 
+CFACTOR = 1.    ;              {Conversion Factor} 
+O1D = 9.906E+01 ; 
+O   = 6.624E+08 ; 
+O3  = 5.326E+11 ; 
+O2  = 1.697E+16 ;
+NO  = 8.725E+08 ; 
+NO2 = 2.240E+08 ; 
+M   = 8.120E+16 ;
+ 
+#INLINE F77_INIT
+       	TSTART = (12*3600)
+        TEND = TSTART + (3*24*3600)
+        DT = 0.25*3600  
+        TEMP = 270
+#ENDINLINE         
+ 
+#INLINE F90_INIT
+        TSTART = (12*3600)
+        TEND = TSTART + (3*24*3600)
+        DT = 0.25*3600  
+        TEMP = 270
+#ENDINLINE         
+ 
+#INLINE MATLAB_INIT
+  global TSTART TEND DT TEMP
+  TSTART = (12*3600);
+  TEND = TSTART + (3*24*3600);
+  DT = 0.25*3600;  
+  TEMP = 270;
+#ENDINLINE         
+
+
+#INLINE C_INIT
+        TSTART = (12*3600);
+        TEND = TSTART + (3*24*3600);
+        DT = 0.25*3600;
+        TEMP = 270;
+#ENDINLINE
+
+

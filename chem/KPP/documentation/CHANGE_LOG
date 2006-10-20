@@ -1,0 +1,23 @@
+date (yy/mm/dd)  who? what?
+
+2006-08-30  ms  added kpp_mechd_ibu_"my_mechanism".inc
+2006-08-30  ms  util/Makefile: changed spaces to tabs
+2006-08-30  ms  kpp/kpp-2.1/src/gen.c:  moved the line:
+                bprintf( "#include <extra_decls_update_rconst_%s.inc>\n",rootFileName );
+2006-08-30  ms  implemented radm2 (based on version from EURAD, WRF-Chem implementation not checked and not tested!!)
+2006-08-31  ms  v1.0.0a
+2006-09-01  ms  changed compile mechanism for kpp and wkc to make wkc more portable (e.g. to IBM AIX) 
+                (the new script configure_kpp generates a file called configure.kpp,
+                 which is included in the KPP Makefile (as Makefile.defs) and the in th wkc Makefile 
+                 in util/wkc  
+2006-09-01  ms  changed CFLAGS in chem/KPP/kpp/kpp-2.1/Makefile
+2006-09-01  ms  added blank line at the end of kpp_mechanism_driver.F (see gen_kpp_mech_dr.c)
+2006-09-01  ms  v1.0.0b
+2006-09-27  ms  path to flex library now set by environment variable FLEX_LIB_DIR
+2006-09-01  ms  v1.0.0c
+
+TODO:
+   pass down more options to the KPP solver from the interface
+   and add initialization routines
+   ....
+ 

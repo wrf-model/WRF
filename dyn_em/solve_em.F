@@ -586,7 +586,7 @@ BENCH_START(surf_driver_tim)
      &        ,CT=grid%ct              ,DT=grid%dt         ,DX=grid%dx         &
      &        ,DZ8W=dz8w          ,DZS=grid%dzs            ,FLHC=grid%flhc          &
      &        ,FLQC=grid%flqc          ,GLW=grid%glw            ,GRDFLX=grid%grdflx      &
-     &        ,GSW=grid%gsw            ,GZ1OZ0=gz1oz0      ,HFX=grid%hfx            &
+     &        ,GSW=grid%gsw    ,SWDOWN=grid%swdown        ,GZ1OZ0=gz1oz0      ,HFX=grid%hfx              &
      &        ,HT=grid%ht              ,IFSNOW=config_flags%ifsnow      ,ISFFLX=config_flags%isfflx      &
      &        ,ISLTYP=grid%isltyp      ,ITIMESTEP=grid%itimestep                    &
      &        ,IVGTYP=grid%ivgtyp      ,LH=grid%lh              ,LOWLYR=grid%lowlyr      &

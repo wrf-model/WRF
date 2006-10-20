@@ -1,0 +1,14 @@
+\BOOKMARK [1][-]{section.1}{Preface}{}
+\BOOKMARK [1][-]{section.2}{Requirements for running KPP}{}
+\BOOKMARK [1][-]{section.3}{Compiling and Running KPP together with WKC}{}
+\BOOKMARK [1][-]{section.4}{Using mechanisms already implemented with WKC}{}
+\BOOKMARK [1][-]{section.5}{Layout of WKC}{}
+\BOOKMARK [1][-]{section.6}{Code produced by WKC, User Modifications}{}
+\BOOKMARK [1][-]{section.7}{Available integrators}{}
+\BOOKMARK [1][-]{section.8}{Adding additional mechanisms with WKC}{}
+\BOOKMARK [2][-]{subsection.8.1}{Adding a package to the Registry}{section.8}
+\BOOKMARK [2][-]{subsection.8.2}{Adapting KPP equation files and using the wrf\137kpp\137equiv file for mapping species names}{section.8}
+\BOOKMARK [1][-]{section.9}{Adapting additional KPP integrators for WKC}{}
+\BOOKMARK [1][-]{section.10}{Installing WKC into an existing WRF-Chem version}{}
+\BOOKMARK [1][-]{section.11}{Final Remarks}{}
+\BOOKMARK [1][-]{section*.3}{Bibliography}{}

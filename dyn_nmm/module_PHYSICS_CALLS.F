@@ -998,9 +998,8 @@
      &           ACSNOM=ACSNOM,ACSNOW=ACSNOW,AKHS=AKHS,AKMS=AKMS        &
      &          ,ALBEDO=ALBEDO,BR=BR,CANWAT=CMC,CHKLOWQ=CHKLOWQ         &
      &          ,DT=DT,DX=DX,DZ8W=DZ,DZS=DZSOIL,GLW=RLW_DN_SFC          &
-!tgs &          ,DT=DT,DX=DX,DZ8W=DZ,DZS=SLDPTH,GLW=RLW_DN_SFC          &
-!     &          ,GRDFLX=GRNFLX,GSW=RSW_NET_SFC,GZ1OZ0=GZ1OZ0,HFX=TWBS    &
-     &          ,GRDFLX=GRNFLX,GSW=RSW_DN_SFC,GZ1OZ0=GZ1OZ0,HFX=TWBS    &
+     &          ,GRDFLX=GRNFLX,GSW=RSW_NET_SFC,SWDOWN=RSW_DN_SFC        &
+     &          ,GZ1OZ0=GZ1OZ0,HFX=TWBS                                 &
      &          ,HT=SFCZ,IFSNOW=IDUMMY,ISFFLX=ISFFLX,ISLTYP=ISLTYP      &
      &          ,ITIMESTEP=NTSD,IVGTYP=IVGTYP,LOWLYR=LOWLYR             &
      &          ,MAVAIL=ONE,RMOL=RMOL,NUM_SOIL_LAYERS=NSOIL,P8W=P8W &
@@ -1018,7 +1017,6 @@
      &          ,VZ0=VZ0H,V_FRAME=V_FRAME,V_PHY=V_PHY                   &
      &          ,WARM_RAIN=WARM_RAIN,WSPD=WSPD,XICE=SICE                &
      &          ,XLAND=XLAND,Z=Z,ZNT=Z0,ZS=SLDPTH,CT=CT,TKE_MYJ=TKE     &
-!tgs ZS -levels     &          ,XLAND=XLAND,Z=Z,ZNT=Z0,ZS=DZSOIL,CT=CT,TKE_MYJ=TKE     &
      &          ,ALBBCK=ALBASE,LH=ELFLX,SH2O=SH2O,SHDMAX=SHDMAX         &
      &          ,SHDMIN=SHDMIN,Z0=Z0BASE,FLQC=FLQC,FLHC=FLHC            &
      &          ,PSFC=PSFC_OUT,EMISS=EPSR                               &

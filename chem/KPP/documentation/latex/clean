@@ -1,0 +1,6 @@
+#!/bin/csh -f
+
+rm -f *.aux *.bbl *.blg *~ *.toc *.out *.log
+
+exit 0
+

@@ -6,7 +6,7 @@ CONTAINS
    SUBROUTINE surface_driver(                                         &
      &           acsnom,acsnow,akhs,akms,albedo,br,canwat             &
      &          ,chklowq,dt,dx,dz8w,dzs,glw                           &
-     &          ,grdflx,gsw,gz1oz0,hfx,ht,ifsnow,isfflx               &
+     &          ,grdflx,gsw,swdown,gz1oz0,hfx,ht,ifsnow,isfflx        &
      &          ,isltyp,itimestep,ivgtyp,lowlyr,mavail,rmol           &
      &          ,num_soil_layers,p8w,pblh,pi_phy,pshltr,psih          &
      &          ,psim,p_phy,q10,q2,qfx,qsfc,qshltr,qz0                &
@@ -131,7 +131,8 @@ CONTAINS
 !-----------------------------------------------------------------
 !-- itimestep     number of time steps
 !-- GLW           downward long wave flux at ground surface (W/m^2)
-!-- GSW           downward short wave flux at ground surface (W/m^2)
+!-- GSW           net short wave flux at ground surface (W/m^2)
+!-- SWDOWN        downward short wave flux at ground surface (W/m^2)
 !-- EMISS         surface emissivity (between 0 and 1)
 !-- TSK           surface temperature (K)
 !-- TMN           soil temperature at lower boundary (K)
@@ -237,7 +238,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), INTENT(INOUT)::   SMOIS
    REAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), INTENT(INOUT)::   TSLB
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   GLW
-   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   GSW
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   GSW,SWDOWN
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   HT
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   RAINCV
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   SST
@@ -632,10 +633,6 @@ CONTAINS
 
         myj =.true.
 
-!fix
-           MAVAIL=1.
-!fix
-
             CALL wrf_debug(100,'in MYJSFC')
             CALL MYJSFC(itimestep,ht,dz8w,                         &
               p_phy,p8w,th_phy,t_phy,                              &
@@ -646,7 +643,6 @@ CONTAINS
               lowlyr,                                              &
               xland,                                               &
               ust,znt,z0,pblh,mavail,rmol,                         &
-!compilefail              ust,znt,z0,pblh,1.,rmol,                         &
               akhs,akms,                                           &
               chs,chs2,cqs2,hfx,qfx,lh,flhc,flqc,qgh,cpm,ct,       &
               u10,v10,t2,th2,tshltr,th10,q2,qshltr,q10,pshltr,               &
@@ -736,7 +732,7 @@ CONTAINS
            CALL wrf_debug(100,'in NMM LSM')
            CALL nmmlsm(dz8w,qv_curr,p8w,rho,                    &
                 t_phy,th_phy,tsk,chs,                           &
-                hfx,qfx,qgh,gsw,glw,lh,rmol,                    &
+                hfx,qfx,qgh,swdown,glw,lh,rmol,                 &
                 smstav,smstot,sfcrunoff,                        &
                 udrunoff,ivgtyp,isltyp,vegfra,sfcevp,potevp,    &
                 grdflx,sfcexc,acsnow,acsnom,snopcx,             &

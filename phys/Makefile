@@ -163,11 +163,9 @@ module_physics_init.o : \
 		module_mp_thompson.o            \
 		../frame/module_state_description.o \
 		../frame/module_configure.o \
-		../frame/module_domain.o \
 		../frame/module_wrf_error.o \
 		../frame/module_dm.o \
 		../share/module_model_constants.o \
-		../share/module_date_time.o  \
 		module_sf_lsm_nmm.o	
 
 module_microphysics_driver.o: \

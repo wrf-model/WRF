@@ -236,12 +236,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
    ! Set default value for SIMULATION_START_DATE.  
    ! This is overwritten later in input_wrf(), if needed.  
    IF ( grid%id .EQ. head_grid%id ) THEN
-      CALL nl_set_simulation_start_year   ( grid%id , start_year   )
-      CALL nl_set_simulation_start_month  ( grid%id , start_month  )
-      CALL nl_set_simulation_start_day    ( grid%id , start_day    )
-      CALL nl_set_simulation_start_hour   ( grid%id , start_hour   )
-      CALL nl_set_simulation_start_minute ( grid%id , start_minute )
-      CALL nl_set_simulation_start_second ( grid%id , start_second )
+      CALL nl_set_simulation_start_year   ( 1 , start_year   )
+      CALL nl_set_simulation_start_month  ( 1 , start_month  )
+      CALL nl_set_simulation_start_day    ( 1 , start_day    )
+      CALL nl_set_simulation_start_hour   ( 1 , start_hour   )
+      CALL nl_set_simulation_start_minute ( 1 , start_minute )
+      CALL nl_set_simulation_start_second ( 1 , start_second )
    ENDIF
 
 ! HISTORY INTERVAL

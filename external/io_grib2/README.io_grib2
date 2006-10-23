@@ -72,7 +72,9 @@ VI. Comparison between file formats.
 VII. New namelist variables for Grib2 I/O:  
   The following new namelist variables may be optionally used to control 
   Grib2 I/O.  They are defined in new namelist "&grib2".  Note that the 
-  entire &grib2 namelist may be omitted without error.  
+  &grib2 namelist must be included in file "namelist.input" even if empty.  
+  (This annoyance is ultimately due to problems with old OSF1 Fortran90 
+  compilers.)  
 
   background_proc_id - Background generating process identifier, typically
   defined by the originating center to identify the background data that

@@ -1268,10 +1268,8 @@ MODULE module_wrf_quilt
         nio_groups = 1
         nio_tasks_per_group  = 0
         READ ( 27 , NML = namelist_quilt, IOSTAT=io_status )
-        IF (io_status > 0) THEN
+        IF (io_status .NE. 0) THEN
           CALL wrf_error_fatal( "ERROR reading namelist namelist_quilt" )
-        ELSE IF (io_status < 0) THEN
-          PRINT *,'frame/module_io_quilt: Warning: Did not find namelist_quilt in namelist.input, using defaults'
         ENDIF
         CLOSE ( 27 )
       ENDIF

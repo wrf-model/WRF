@@ -78,7 +78,7 @@
                               ims, ime, jms, jme, kms, kme,    &
                               ips, ipe, jps, jpe, kps, kpe    )
 
-! simulation start time
+! simulation start time is a Singleton maintained by head_grid
     IF ( ( switch .EQ.     model_input_only  ) .OR. &
          ( switch .EQ.          restart_only ) ) THEN
       CALL wrf_get_dom_ti_char ( fid , 'SIMULATION_START_DATE' , simulation_start_date , ierr )
@@ -88,12 +88,12 @@
                simulation_start_year,   simulation_start_month,                     &
                simulation_start_day,    simulation_start_hour,                      &
                simulation_start_minute, simulation_start_second
-        CALL nl_set_simulation_start_year   ( grid%id , simulation_start_year   )
-        CALL nl_set_simulation_start_month  ( grid%id , simulation_start_month  )
-        CALL nl_set_simulation_start_day    ( grid%id , simulation_start_day    )
-        CALL nl_set_simulation_start_hour   ( grid%id , simulation_start_hour   )
-        CALL nl_set_simulation_start_minute ( grid%id , simulation_start_minute )
-        CALL nl_set_simulation_start_second ( grid%id , simulation_start_second )
+        CALL nl_set_simulation_start_year   ( 1 , simulation_start_year   )
+        CALL nl_set_simulation_start_month  ( 1 , simulation_start_month  )
+        CALL nl_set_simulation_start_day    ( 1 , simulation_start_day    )
+        CALL nl_set_simulation_start_hour   ( 1 , simulation_start_hour   )
+        CALL nl_set_simulation_start_minute ( 1 , simulation_start_minute )
+        CALL nl_set_simulation_start_second ( 1 , simulation_start_second )
         IF ( switch .EQ. model_input_only  ) THEN
           WRITE(wrf_err_message,*)fid,' input_wrf, model_input_only:  SIMULATION_START_DATE = ', &
                                   simulation_start_date(1:19)
@@ -104,21 +104,25 @@
           CALL wrf_debug ( 300 , TRIM(wrf_err_message ) )
         ENDIF
       ELSE
-        CALL nl_get_start_year   ( grid%id , simulation_start_year   )
-        CALL nl_get_start_month  ( grid%id , simulation_start_month  )
-        CALL nl_get_start_day    ( grid%id , simulation_start_day    )
-        CALL nl_get_start_hour   ( grid%id , simulation_start_hour   )
-        CALL nl_get_start_minute ( grid%id , simulation_start_minute )
-        CALL nl_get_start_second ( grid%id , simulation_start_second )
-        CALL nl_set_simulation_start_year   ( grid%id , simulation_start_year   )
-        CALL nl_set_simulation_start_month  ( grid%id , simulation_start_month  )
-        CALL nl_set_simulation_start_day    ( grid%id , simulation_start_day    )
-        CALL nl_set_simulation_start_hour   ( grid%id , simulation_start_hour   )
-        CALL nl_set_simulation_start_minute ( grid%id , simulation_start_minute )
-        CALL nl_set_simulation_start_second ( grid%id , simulation_start_second )
+        CALL nl_get_start_year   ( 1 , simulation_start_year   )
+        CALL nl_get_start_month  ( 1 , simulation_start_month  )
+        CALL nl_get_start_day    ( 1 , simulation_start_day    )
+        CALL nl_get_start_hour   ( 1 , simulation_start_hour   )
+        CALL nl_get_start_minute ( 1 , simulation_start_minute )
+        CALL nl_get_start_second ( 1 , simulation_start_second )
+        CALL nl_set_simulation_start_year   ( 1 , simulation_start_year   )
+        CALL nl_set_simulation_start_month  ( 1 , simulation_start_month  )
+        CALL nl_set_simulation_start_day    ( 1 , simulation_start_day    )
+        CALL nl_set_simulation_start_hour   ( 1 , simulation_start_hour   )
+        CALL nl_set_simulation_start_minute ( 1 , simulation_start_minute )
+        CALL nl_set_simulation_start_second ( 1 , simulation_start_second )
         CALL wrf_message('input_wrf: SIMULATION_START_DATE not available in input')
-        CALL wrf_message('will use namelist information') 
+        CALL wrf_message('will use head_grid start time from namelist') 
       ENDIF
+      ! Initialize derived time quantity in grid%xtime.  
+      ! Note that this call is also made in setup_timekeeping().  
+      ! Ugh, what a hack.  Simplify all this later...  
+      CALL domain_clock_get( grid, minutesSinceSimulationStart=grid%xtime )
     ENDIF
 
 #if (EM_CORE == 1)

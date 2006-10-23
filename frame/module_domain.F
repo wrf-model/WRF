@@ -1599,11 +1599,11 @@ CONTAINS
 ! This convenience routine returns simulation start time for domain grid as 
 ! a time instant.  
 !
-! If this is not a restart run, the start_time of grid%clock is returned 
+! If this is not a restart run, the start_time of head_grid%clock is returned 
 ! instead.  
 !
 ! Note that simulation start time remains constant through restarts while 
-! the start_time of grid%clock always refers to the start time of the 
+! the start_time of head_grid%clock always refers to the start time of the 
 ! current run (restart or otherwise).  
 !
 ! </DESCRIPTION>
@@ -1615,12 +1615,12 @@ CONTAINS
         INTEGER :: simulation_start_year,   simulation_start_month, &
                    simulation_start_day,    simulation_start_hour , &
                    simulation_start_minute, simulation_start_second
-        CALL nl_get_simulation_start_year   ( grid%id, simulation_start_year   )
-        CALL nl_get_simulation_start_month  ( grid%id, simulation_start_month  )
-        CALL nl_get_simulation_start_day    ( grid%id, simulation_start_day    )
-        CALL nl_get_simulation_start_hour   ( grid%id, simulation_start_hour   )
-        CALL nl_get_simulation_start_minute ( grid%id, simulation_start_minute )
-        CALL nl_get_simulation_start_second ( grid%id, simulation_start_second )
+        CALL nl_get_simulation_start_year   ( 1, simulation_start_year   )
+        CALL nl_get_simulation_start_month  ( 1, simulation_start_month  )
+        CALL nl_get_simulation_start_day    ( 1, simulation_start_day    )
+        CALL nl_get_simulation_start_hour   ( 1, simulation_start_hour   )
+        CALL nl_get_simulation_start_minute ( 1, simulation_start_minute )
+        CALL nl_get_simulation_start_second ( 1, simulation_start_second )
         CALL WRFU_TimeSet( simulationStartTime,       &
                            YY=simulation_start_year,  &
                            MM=simulation_start_month, &
@@ -1630,12 +1630,13 @@ CONTAINS
                            S=simulation_start_second, &
                            rc=rc )
         IF ( rc /= WRFU_SUCCESS ) THEN
-          CALL nl_get_start_year   ( grid%id, simulation_start_year   )
-          CALL nl_get_start_month  ( grid%id, simulation_start_month  )
-          CALL nl_get_start_day    ( grid%id, simulation_start_day    )
-          CALL nl_get_start_hour   ( grid%id, simulation_start_hour   )
-          CALL nl_get_start_minute ( grid%id, simulation_start_minute )
-          CALL nl_get_start_second ( grid%id, simulation_start_second )
+          CALL nl_get_start_year   ( 1, simulation_start_year   )
+          CALL nl_get_start_month  ( 1, simulation_start_month  )
+          CALL nl_get_start_day    ( 1, simulation_start_day    )
+          CALL nl_get_start_hour   ( 1, simulation_start_hour   )
+          CALL nl_get_start_minute ( 1, simulation_start_minute )
+          CALL nl_get_start_second ( 1, simulation_start_second )
+          CALL wrf_debug( 150, "WARNING:  domain_get_sim_start_time using head_grid start time from namelist" )
           CALL WRFU_TimeSet( simulationStartTime,       &
                              YY=simulation_start_year,  &
                              MM=simulation_start_month, &
@@ -1683,7 +1684,8 @@ CONTAINS
                                          currentDayOfYearReal,        &
                                          minutesSinceSimulationStart, &
                                          timeSinceSimulationStart,    &
-                                         simulationStartTime )
+                                         simulationStartTime,         &
+                                         simulationStartTimeStr )
         IMPLICIT NONE
         TYPE(domain),            INTENT(IN)              :: grid
         TYPE(WRFU_Time),         INTENT(  OUT), OPTIONAL :: current_time
@@ -1703,6 +1705,7 @@ CONTAINS
         ! Time at which simulation started.  If this is not a restart run, 
         ! start_time is returned instead.  
         TYPE(WRFU_Time),         INTENT(  OUT), OPTIONAL :: simulationStartTime
+        CHARACTER (LEN=*),       INTENT(  OUT), OPTIONAL :: simulationStartTimeStr
         ! time interval since start of simulation, includes effects of 
         ! restarting even when restart uses a different timestep
         TYPE(WRFU_TimeInterval), INTENT(  OUT), OPTIONAL :: timeSinceSimulationStart
@@ -1716,6 +1719,7 @@ CONTAINS
 ! </DESCRIPTION>
         ! Locals
         TYPE(WRFU_Time) :: lcl_currtime, lcl_stoptime, lcl_starttime
+        TYPE(WRFU_Time) :: lcl_simulationStartTime
         TYPE(WRFU_TimeInterval) :: lcl_time_step, lcl_timeSinceSimulationStart
         INTEGER :: days, seconds, Sn, Sd, rc
         CHARACTER (LEN=256) :: tmp_str
@@ -1798,6 +1802,10 @@ CONTAINS
         ENDIF
         IF ( PRESENT( simulationStartTime ) ) THEN
           simulationStartTime = domain_get_sim_start_time( grid )
+        ENDIF
+        IF ( PRESENT( simulationStartTimeStr ) ) THEN
+          lcl_simulationStartTime = domain_get_sim_start_time( grid )
+          CALL wrf_timetoa ( lcl_simulationStartTime, simulationStartTimeStr )
         ENDIF
         IF ( PRESENT( timeSinceSimulationStart ) ) THEN
           timeSinceSimulationStart = domain_get_time_since_sim_start( grid )
@@ -2030,11 +2038,37 @@ CONTAINS
       END SUBROUTINE domain_clockadvance
 
 
-!TBH: what to do about grid%gmt?        LEAVE AS-IS FOR NOW
-!TBH: what to do about grid%julday?     LEAVE AS-IS FOR NOW
-!TBH: what to do about grid%julyr?      LEAVE AS-IS FOR NOW
-!TBH:  Eventually need to re-implement module_date_time using 
-!TBH:  time manager...  
+
+      ! Set grid%gmt, grid%julday, and grid%julyr from simulation-start-date.  
+      SUBROUTINE domain_setgmtetc ( grid )
+        IMPLICIT NONE
+        TYPE (domain), INTENT(INOUT) :: grid
+        ! locals
+        CHARACTER (LEN=132)          :: message
+        TYPE(WRFU_Time)              :: simStartTime
+        INTEGER                      :: hr, mn, sec, ms, rc
+        CALL domain_clockprint(150, grid, &
+          'DEBUG domain_setgmtetc():  get simStartTime from clock,')
+        CALL domain_clock_get( grid, simulationStartTime=simStartTime, &
+                                     simulationStartTimeStr=message )
+        CALL WRFU_TimeGet( simStartTime, YY=grid%julyr, dayOfYear=grid%julday, &
+                           H=hr, M=mn, S=sec, MS=ms, rc=rc)
+        IF ( rc /= WRFU_SUCCESS ) THEN
+          CALL wrf_error_fatal ( &
+            'domain_setgmtetc:  WRFU_TimeGet() failed' )
+        ENDIF
+        WRITE( wrf_err_message , * ) 'DEBUG domain_setgmtetc():  simulation start time = [',TRIM( message ),']'
+        CALL wrf_debug( 150, TRIM(wrf_err_message) )
+        grid%gmt=hr+real(mn)/60.+real(sec)/3600.+real(ms)/(1000*3600)
+        WRITE( wrf_err_message , * ) 'DEBUG domain_setgmtetc():  julyr,hr,mn,sec,ms,julday = ', &
+                                     grid%julyr,hr,mn,sec,ms,grid%julday
+        CALL wrf_debug( 150, TRIM(wrf_err_message) )
+        WRITE( wrf_err_message , * ) 'DEBUG domain_setgmtetc():  gmt = ',grid%gmt
+        CALL wrf_debug( 150, TRIM(wrf_err_message) )
+        RETURN
+      END SUBROUTINE domain_setgmtetc
+     
+
 
       ! Set pointer to current grid.  
       ! To begin with, current grid is not set.  
@@ -2205,8 +2239,7 @@ CONTAINS
           ! routine is called.  
           IF ( .NOT. one_time_tests_done ) THEN
             one_time_tests_done = .TRUE.
-            CALL domain_clock_get( grid, simulationStartTime=simulationStartTime )
-            CALL wrf_timetoa ( simulationStartTime, res_str )
+            CALL domain_clock_get( grid, simulationStartTimeStr=res_str )
             CALL domain_time_test_print( pre_str, 'simulationStartTime', res_str )
             CALL domain_clock_get( grid, start_timestr=res_str )
             CALL domain_time_test_print( pre_str, 'start_timestr', res_str )

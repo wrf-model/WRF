@@ -307,11 +307,8 @@ gen_config_reads ( char * dirname )
         }
 	if (sym_get( p2 ) == NULL)  /* not in table yet */
 	{
-          fprintf(fp," READ  ( UNIT = NAMELIST_READ_UNIT , NML = %s , IOSTAT=io_status )\n",p2) ;
-	  fprintf(fp," if (io_status .gt. 0) goto NAMELIST_READ_ERROR_LABEL\n");
-	  fprintf(fp," if (io_status .lt. 0) then\n");
-	  fprintf(fp,"   call wrf_message( 'module_configure: initial_config: Warning: Did not find namelist \"%s\" in namelist.input, using defaults' )\n",p2);
-	  fprintf(fp," endif\n");
+          fprintf(fp," REWIND  ( UNIT = NAMELIST_READ_UNIT )\n") ;
+          fprintf(fp," READ  ( UNIT = NAMELIST_READ_UNIT , NML = %s , ERR = NAMELIST_READ_ERROR_LABEL )\n",p2) ;
           fprintf(fp,"#ifndef NO_NAMELIST_PRINT\n") ;
           fprintf(fp," WRITE ( UNIT = *                  , NML = %s )\n",p2) ;
           fprintf(fp,"#endif\n") ;

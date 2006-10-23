@@ -277,6 +277,17 @@ while ( <ARCH_POSTAMBLE> ) { print CONFIGURE_WRF } ;
 close ARCH_POSTAMBLE ;
 close CONFIGURE_WRF ;
 
+# Die if attempting to configure with both RSL_LITE and a separately-installed ESMF library
+open CONFIGURE_WRF, "< configure.wrf" or die "cannot open configure.wrf" ;
+while ( <CONFIGURE_WRF> )
+  {
+  if ( $_ =~ /DRSL_LITE/ )
+    {
+    die "cannot use a separately-installed ESMF library with RSL_LITE.  Please reconfigure to use RSL instead." ;
+    }
+  }
+close CONFIGURE_WRF ;
+
 printf "Configuration successful. To build the model type compile . \n" ;
 printf "------------------------------------------------------------------------\n" ;
 

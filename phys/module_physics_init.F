@@ -10,13 +10,11 @@
 
 MODULE module_physics_init
 
-   USE module_domain
 !  USE module_io_domain
    USE module_state_description
    USE module_model_constants
 !  USE module_timing
    USE module_configure
-   USE module_date_time
 #ifdef DM_PARALLEL
    USE module_dm
 #endif
@@ -25,8 +23,7 @@ CONTAINS
 
 
 !=================================================================
-   SUBROUTINE phy_init ( grid,                                   &
-                         id, config_flags, DT, zfull, zhalf,     &
+   SUBROUTINE phy_init ( id, config_flags, DT, restart, zfull, zhalf,     &
                          p_top, TSK,RADT,BLDT,CUDT,MPDT,         &
                          RTHCUTEN, RQVCUTEN, RQRCUTEN,           &
                          RQCCUTEN, RQSCUTEN, RQICUTEN,           &
@@ -40,6 +37,9 @@ CONTAINS
                          MASS_FLUX,                              &
                          RTHFTEN, RQVFTEN,                       &
                          CLDFRA,GLW,GSW,EMISS,LU_INDEX,          &
+                         landuse_ISICE, landuse_LUCATS,          &
+                         landuse_LUSEAS, landuse_ISN,            &
+                         lu_state,                               &
                          XLAT,XLONG,ALBEDO,ALBBCK,GMT,JULYR,JULDAY,&
                          levsiz, n_ozmixm, n_aerosolc, paerlev,  &
                          TMN,XLAND,ZNT,Z0,UST,MOL,PBLH,TKE_MYJ,  &
@@ -78,7 +78,6 @@ CONTAINS
    USE module_wrf_error
    IMPLICIT NONE
 !-----------------------------------------------------------------
-   TYPE (domain), INTENT(INOUT)             :: grid
    TYPE (grid_config_rec_type)              :: config_flags
 
    INTEGER , INTENT(IN)        :: id
@@ -92,6 +91,7 @@ CONTAINS
    INTEGER , INTENT(IN)        :: num_soil_layers
 
    REAL,     INTENT(IN)        :: DT, p_top, DX, DY
+   LOGICAL,  INTENT(IN)        :: restart
    REAL,     INTENT(IN)        :: RADT,BLDT,CUDT,MPDT
    REAL,     INTENT(IN)        :: swrad_scat
 
@@ -143,10 +143,10 @@ CONTAINS
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) ::         &
              GSW,ALBEDO,ALBBCK,GLW,EMISS
 
-   REAL,     INTENT(INOUT) :: GMT
+   REAL,     INTENT(IN) :: GMT
 
    INTEGER , INTENT(OUT) :: STEPRA, STEPBL, STEPCU
-   INTEGER , INTENT(INOUT) :: JULYR, JULDAY
+   INTEGER , INTENT(IN) :: JULYR, JULDAY
 
 ! cps
 
@@ -183,6 +183,9 @@ CONTAINS
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) ::         &
              XLAND,ZNT,Z0,UST,MOL,LU_INDEX,                         &
              PBLH,THC,MAVAIL,HFX,QFX,RAINBL
+   INTEGER , INTENT(INOUT)  :: landuse_ISICE, landuse_LUCATS
+   INTEGER , INTENT(INOUT)  :: landuse_LUSEAS, landuse_ISN
+   REAL    , INTENT(INOUT)  , DIMENSION( : ) :: lu_state
 
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) :: TMN
 
@@ -247,10 +250,7 @@ CONTAINS
    LOGICAL :: usebgalb
 
    INTEGER :: i, j, itf, jtf
-   LOGICAL :: restart
-   INTEGER :: hr, min, sec, ms, rc
 integer myproc
-   TYPE (WRFU_Time) :: currentTime
 
 !-----------------------------------------------------------------
    ucmcall=config_flags%ucmcall
@@ -264,43 +264,6 @@ integer myproc
 
    itf=min0(ite,ide-1)
    jtf=min0(jte,jde-1)
-
-   IF ( .NOT. grid%restart ) THEN
-     restart = .false.
-     CALL domain_clockprint(150, grid, &
-            'DEBUG phy_init():  get currentTime from grid')
-     CALL domain_clock_get( grid, current_time=currentTime, &
-                            current_timestr=message )
-     CALL WRFU_TimeGet( currentTime, YY=julyr, dayOfYear=julday, H=hr, M=min, S=sec, MS=ms, rc=rc)
-     WRITE( wrf_err_message , * ) 'DEBUG phy_init():  currentTime = [',TRIM( message ),']'
-     CALL wrf_debug( 150, TRIM(wrf_err_message) )
-     gmt=hr+real(min)/60.+real(sec)/3600.+real(ms)/(1000*3600)
-     WRITE( wrf_err_message , * ) 'DEBUG phy_init():  julyr,hr,min,sec,ms,julday = ', &
-                                  julyr,hr,min,sec,ms,julday
-     CALL wrf_debug( 150, TRIM(wrf_err_message) )
-     WRITE( wrf_err_message , * ) 'DEBUG phy_init():  gmt = ',gmt
-     CALL wrf_debug( 150, TRIM(wrf_err_message) )
-   ELSE
-     restart = .true.
-     CALL nl_get_julyr (id, julyr)
-     CALL nl_get_julday (id, julday)
-     CALL nl_get_gmt (id, gmt)
-#if (NMM_CORE == 1)
-     CALL domain_clockprint(150, grid, &
-            'DEBUG phy_init():  get currentTime from grid')
-     CALL domain_clock_get( grid, current_time=currentTime, &
-                            current_timestr=message )
-     CALL WRFU_TimeGet( currentTime, YY=julyr, dayOfYear=julday, H=hr, M=min, S=sec, MS=ms, rc=rc)
-     WRITE( wrf_err_message , * ) 'DEBUG phy_init():  currentTime = [',TRIM( message ),']'
-     CALL wrf_debug( 150, TRIM(wrf_err_message) )
-     gmt=hr+real(min)/60.+real(sec)/3600.+real(ms)/(1000*3600)
-     WRITE( wrf_err_message , * ) 'DEBUG phy_init():  julyr,hr,min,sec,ms,julday = ', &
-                                  julyr,hr,min,sec,ms,julday
-     CALL wrf_debug( 150, TRIM(wrf_err_message) )
-     WRITE( wrf_err_message , * ) 'DEBUG phy_init():  gmt = ',gmt
-     CALL wrf_debug( 150, TRIM(wrf_err_message) )
-#endif
-   END IF
 
    ZZLND=0.1
    ZZWTR=0.0001
@@ -371,9 +334,9 @@ integer myproc
 
      CALL landuse_init(lu_index, snowc, albedo, albbck, mavail, emiss,      &
                 znt, Z0, thc, xland, xice, julday, cen_lat, iswater, mminlu_loc,  &
-                grid%landuse_ISICE, grid%landuse_LUCATS,            &
-                grid%landuse_LUSEAS, grid%landuse_ISN,              &
-                grid%lu_state,                                      &
+                landuse_ISICE, landuse_LUCATS,                      &
+                landuse_LUSEAS, landuse_ISN,                        &
+                lu_state,                                           &
                 allowed_to_read , usebgalb ,                        &
                 ids, ide, jds, jde, kds, kde,                       &
                 ims, ime, jms, jme, kms, kme,                       &
@@ -397,7 +360,7 @@ integer myproc
 
    CALL wrf_debug ( 200 , 'module_start: phy_init: Before call to ra_init' )
 
-   CALL ra_init(grid,STEPRA,RADT,DT,RTHRATEN,RTHRATENLW,             &
+   CALL ra_init(id,STEPRA,RADT,DT,RTHRATEN,RTHRATENLW,             &
                 RTHRATENSW,CLDFRA,EMISS,cen_lat,JULYR,JULDAY,GMT,    &
                 levsiz,XLAT,n_ozmixm,                           &
                 ozmixm,pin,                                     & ! Optional
@@ -715,7 +678,7 @@ integer myproc
    END SUBROUTINE landuse_init 
 
 !=====================================================================
-   SUBROUTINE ra_init(grid,STEPRA,RADT,DT,RTHRATEN,RTHRATENLW,       & 
+   SUBROUTINE ra_init(id,STEPRA,RADT,DT,RTHRATEN,RTHRATENLW,       & 
                       RTHRATENSW,CLDFRA,EMISS,cen_lat,JULYR,JULDAY,GMT,    &
                       levsiz,XLAT,n_ozmixm,                           &
                       ozmixm,pin,                                     & ! Optional
@@ -737,7 +700,7 @@ integer myproc
 !---------------------------------------------------------------------
    IMPLICIT NONE
 !---------------------------------------------------------------------
-   TYPE (domain)                  :: grid
+   INTEGER,  INTENT(IN)           :: id
    TYPE (grid_config_rec_type)    :: config_flags
    LOGICAL , INTENT(IN)           :: restart
    LOGICAL,  INTENT(IN)           :: allowed_to_read
@@ -828,8 +791,8 @@ integer myproc
              camlw = .true.
 
         CASE (GFDLLWSCHEME)
-             CALL nl_get_start_month(grid%id,month)
-             CALL nl_get_start_day(grid%id,iday)
+             CALL nl_get_start_month(id,month)
+             CALL nl_get_start_day(id,iday)
              CALL gfdletainit(emiss,sfull,shalf,pptop,      &
                               julyr,month,iday,gmt,         &
                               config_flags,allowed_to_read, &
@@ -871,8 +834,8 @@ integer myproc
 
         CASE (GFDLSWSCHEME)
              IF(.not.etalw)THEN
-             CALL nl_get_start_month(grid%id,month)
-             CALL nl_get_start_day(grid%id,iday)
+             CALL nl_get_start_month(id,month)
+             CALL nl_get_start_day(id,iday)
              CALL gfdletainit(emiss,sfull,shalf,pptop,      &
                               julyr,month,iday,gmt,         &
                               config_flags,allowed_to_read, &

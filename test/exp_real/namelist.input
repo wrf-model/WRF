@@ -106,6 +106,9 @@
  &namelist_05
  real_data_init_type                 = 1 /
 
+ &grib2
+ /
+
  &namelist_quilt
  nio_tasks_per_group = 0,
  nio_groups = 1,

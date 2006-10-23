@@ -179,12 +179,12 @@
     IF ( switch .EQ. model_input_only) THEN
        CALL wrf_put_dom_ti_char ( fid , 'SIMULATION_START_DATE', TRIM(start_date) , ierr )
     ELSE IF ( ( switch .EQ. restart_only ) .OR. ( switch .EQ. history_only ) ) THEN
-       CALL nl_get_simulation_start_year   ( grid%id, simulation_start_year   )
-       CALL nl_get_simulation_start_month  ( grid%id, simulation_start_month  )
-       CALL nl_get_simulation_start_day    ( grid%id, simulation_start_day    )
-       CALL nl_get_simulation_start_hour   ( grid%id, simulation_start_hour   )
-       CALL nl_get_simulation_start_minute ( grid%id, simulation_start_minute )
-       CALL nl_get_simulation_start_second ( grid%id, simulation_start_second )
+       CALL nl_get_simulation_start_year   ( 1, simulation_start_year   )
+       CALL nl_get_simulation_start_month  ( 1, simulation_start_month  )
+       CALL nl_get_simulation_start_day    ( 1, simulation_start_day    )
+       CALL nl_get_simulation_start_hour   ( 1, simulation_start_hour   )
+       CALL nl_get_simulation_start_minute ( 1, simulation_start_minute )
+       CALL nl_get_simulation_start_second ( 1, simulation_start_second )
        WRITE ( simulation_start_date , FMT = '(I4.4,"-",I2.2,"-",I2.2,"_",I2.2,":",I2.2,":",I2.2)' ) &
                simulation_start_year,simulation_start_month,simulation_start_day,&
                simulation_start_hour,simulation_start_minute,simulation_start_second

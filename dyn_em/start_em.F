@@ -15,7 +15,6 @@
    USE module_bc_em
 !  USE module_timing
    USE module_configure
-   USE module_date_time
    USE module_tiles
 
    USE module_physics_init
@@ -52,7 +51,7 @@
                                   its, ite, jts, jte, kts, kte, &
                                   ij,i,j,k,ii,jj,kk,loop,error,l
 
-   INTEGER     :: hr, mn, sec, ms, rc, i_m
+   INTEGER     :: i_m
 
    REAL        :: p00, t00, a, p_surf, pd_surf
 #ifdef WRF_CHEM
@@ -72,7 +71,6 @@
    REAL :: lon1 , lon2 , lon3 , lon4
    INTEGER :: num_points_lat_lon , iloc , jloc
    CHARACTER (LEN=132) :: message
-   TYPE(WRFU_Time) :: CurrTime
 
 ! Needed by some comm layers, grid%e.g. RSL. If needed, nmm_data_calls.inc is
 ! generated from the registry.  The definition of REGISTER_I1 allows
@@ -467,26 +465,7 @@
 ! set GMT outside of phy_init because phy_init may not be called on this
 ! process if, for example, it is a moving nest and if this part of the domain is not
 ! being initialized (not the leading edge).
-   IF ( .NOT. config_flags%restart ) THEN
-     CALL domain_clockprint(150, grid, &
-       'DEBUG phy_init():  get currTime from clock,')
-     CALL domain_clock_get ( grid, current_time=CurrTime, &
-                                   current_timestr=message )
-     CALL WRFU_TimeGet( CurrTime, YY=grid%julyr, dayOfYear=grid%julday, &
-                        H=hr, M=mn, S=sec, MS=ms, rc=rc)
-     WRITE( wrf_err_message , * ) 'DEBUG start_em():  currTime = [',TRIM( message ),']'
-     CALL wrf_debug( 150, TRIM(wrf_err_message) )
-     grid%gmt=hr+real(mn)/60.+real(sec)/3600.+real(ms)/(1000*3600)
-     WRITE( wrf_err_message , * ) 'DEBUG start_em():  julyr,hr,mn,sec,ms,julday = ', &
-                                  grid%julyr,hr,mn,sec,ms,grid%julday
-     CALL wrf_debug( 150, TRIM(wrf_err_message) )
-     WRITE( wrf_err_message , * ) 'DEBUG start_em():  gmt = ',grid%gmt
-     CALL wrf_debug( 150, TRIM(wrf_err_message) )
-   ELSE
-     CALL nl_get_julyr (grid%id, grid%julyr)
-     CALL nl_get_julday (grid%id, grid%julday)
-     CALL nl_get_gmt (grid%id, grid%gmt)
-   END IF
+   CALL domain_setgmtetc( grid )
 
    CALL set_tiles ( grid , grid%imask_nostag, ims, ime, jms, jme, ips, ipe, jps, jpe )
 
@@ -494,8 +473,7 @@
 ! The tiling is to handle the fact that we may be masking off part of the computation.
    DO ij = 1, grid%num_tiles
 
-     CALL phy_init (  grid,                                   &  
-                      grid%id , config_flags, grid%DT, grid%em_znw, grid%em_znu,   &
+     CALL phy_init (  grid%id , config_flags, grid%DT, grid%RESTART, grid%em_znw, grid%em_znu,   &
                       grid%p_top, grid%tsk, grid%RADT,grid%BLDT,grid%CUDT, MPDT, &
                       grid%rthcuten, grid%rqvcuten, grid%rqrcuten,           &
                       grid%rqccuten, grid%rqscuten, grid%rqicuten,           &
@@ -509,6 +487,9 @@
                       grid%mass_flux,                              &
                       grid%rthften, grid%rqvften,                       &
                       grid%cldfra,grid%glw,grid%gsw,grid%emiss,grid%lu_index,          &
+                      grid%landuse_ISICE, grid%landuse_LUCATS,            &
+                      grid%landuse_LUSEAS, grid%landuse_ISN,              &
+                      grid%lu_state,                                      &
                       grid%xlat,grid%xlong,grid%albedo,grid%albbck,grid%GMT,grid%JULYR,grid%JULDAY,     &
                       grid%levsiz, num_ozmixm, num_aerosolc, grid%paerlev,  &
                       grid%tmn,grid%xland,grid%znt,grid%z0,grid%ust,grid%mol,grid%pblh,grid%tke_myj,     &

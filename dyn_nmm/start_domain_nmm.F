@@ -1605,10 +1605,18 @@
       num_ozmixm=1
       num_aerosolc=1
 
+! Set GMT, JULDAY, and JULYR outside of phy_init because it is no longer 
+! called inside phy_init due to moving nest changes.  (When nests move 
+! phy_init may not be called on a process if, for example, it is a moving 
+! nest and if this part of the domain is not being initialized (not the 
+! leading edge).)  Calling domain_setgmtetc() here will avoid this problem 
+! when NMM moves to moving nests.  
+      CALL domain_setgmtetc( grid )
+
 ! Several arguments are RCONFIG entries in Registry.NMM. Registry no longer
 ! includes these as dummy arguments or declares them.  Access them from 
 ! GRID.  JM 20050819
-      CALL PHY_INIT(GRID,GRID%ID,CONFIG_FLAGS,GRID%DT,sfull,smid        &
+      CALL PHY_INIT(GRID%ID,CONFIG_FLAGS,GRID%DT,GRID%RESTART,sfull,smid&
      &             ,PT,TSFC,GRID%RADT,GRID%BLDT,GRID%CUDT,GRID%GSMDT    &
      &             ,RTHCUTEN, RQVCUTEN, RQRCUTEN                        &
      &             ,RQCCUTEN, RQSCUTEN, RQICUTEN                        &
@@ -1622,6 +1630,9 @@
      &             ,MASS_FLUX                                           &
      &             ,RTHFTEN, RQVFTEN                                    &
      &             ,CLDFRA,GLW,GSW,EMISS,LU_INDEX                       &
+     &             ,GRID%LANDUSE_ISICE, GRID%LANDUSE_LUCATS             &
+     &             ,GRID%LANDUSE_LUSEAS, GRID%LANDUSE_ISN               &
+     &             ,GRID%LU_STATE                                       &
      &             ,XLAT,XLONG,ALBEDO,ALBBCK                            &
      &             ,GRID%GMT,GRID%JULYR,GRID%JULDAY                     &
      &             ,GRID%LEVSIZ, NUM_OZMIXM, NUM_AEROSOLC, GRID%PAERLEV &

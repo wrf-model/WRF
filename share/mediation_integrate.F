@@ -235,12 +235,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
 #if (EM_CORE == 1)
   ! Local
 #ifdef MOVE_NESTS
-   TYPE (WRFU_Time) :: simStartTime, StartTime
    TYPE (WRFU_TimeInterval) :: interval, TimeSinceStart
-   INTEGER :: simulation_start_year, simulation_start_month, simulation_start_day, &
-              simulation_start_hour, simulation_start_minute, simulation_start_second
-   INTEGER :: start_year, start_month, start_day, &
-              start_hour, start_minute, start_second
    INTEGER :: vortex_interval , n
 #endif
    INTEGER                                    :: idum1 , idum2 , fid, ierr
@@ -508,31 +503,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
      CALL nl_get_vortex_interval ( nest%id , vortex_interval )
      CALL WRFU_TimeIntervalSet( interval, M=vortex_interval, rc=rc )
 
-     CALL nl_get_simulation_start_year   ( nest%id, simulation_start_year   )
-     CALL nl_get_simulation_start_month  ( nest%id, simulation_start_month  )
-     CALL nl_get_simulation_start_day    ( nest%id, simulation_start_day    )
-     CALL nl_get_simulation_start_hour   ( nest%id, simulation_start_hour   )
-     CALL nl_get_simulation_start_minute ( nest%id, simulation_start_minute )
-     CALL nl_get_simulation_start_second ( nest%id, simulation_start_second )
-     CALL WRFU_TimeSet( simStartTime , YY=simulation_start_year,  &
-                                       MM=simulation_start_month, &
-                                       DD=simulation_start_day,   &
-                                       H=simulation_start_hour,   &
-                                       M=simulation_start_minute, &
-                                       S=simulation_start_second, rc=rc )
-     CALL nl_get_start_year   ( nest%id, start_year   )
-     CALL nl_get_start_month  ( nest%id, start_month  )
-     CALL nl_get_start_day    ( nest%id, start_day    )
-     CALL nl_get_start_hour   ( nest%id, start_hour   )
-     CALL nl_get_start_minute ( nest%id, start_minute )
-     CALL nl_get_start_second ( nest%id, start_second )
-     CALL WRFU_TimeSet( StartTime , YY=start_year,  &
-                                    MM=start_month, &
-                                    DD=start_day,   &
-                                    H=start_hour,   &
-                                    M=start_minute, &
-                                    S=start_second, rc=rc )
-     TimeSinceStart = StartTime - simStartTime
+     CALL domain_clock_get( nest, timeSinceSimulationStart=TimeSinceStart )
      n = WRFU_TimeIntervalDIVQuot( TimeSinceStart , interval )
      IF ( ( interval * n ) .NE. TimeSinceStart ) THEN
        CALL wrf_message('WARNING: Restart is not on a vortex_interval time boundary.')
@@ -559,34 +530,10 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
      CALL nl_get_vortex_interval ( nest%id , vortex_interval )
      CALL WRFU_TimeIntervalSet( interval, M=vortex_interval, rc=rc )
 
-     CALL nl_get_simulation_start_year   ( nest%id, simulation_start_year   )
-     CALL nl_get_simulation_start_month  ( nest%id, simulation_start_month  )
-     CALL nl_get_simulation_start_day    ( nest%id, simulation_start_day    )
-     CALL nl_get_simulation_start_hour   ( nest%id, simulation_start_hour   )
-     CALL nl_get_simulation_start_minute ( nest%id, simulation_start_minute )
-     CALL nl_get_simulation_start_second ( nest%id, simulation_start_second )
-     CALL WRFU_TimeSet( simStartTime , YY=simulation_start_year,  &
-                                       MM=simulation_start_month, &
-                                       DD=simulation_start_day,   &
-                                       H=simulation_start_hour,   &
-                                       M=simulation_start_minute, &
-                                       S=simulation_start_second, rc=rc )
-     CALL nl_get_start_year   ( nest%id, start_year   )
-     CALL nl_get_start_month  ( nest%id, start_month  )
-     CALL nl_get_start_day    ( nest%id, start_day    )
-     CALL nl_get_start_hour   ( nest%id, start_hour   )
-     CALL nl_get_start_minute ( nest%id, start_minute )
-     CALL nl_get_start_second ( nest%id, start_second )
-     CALL WRFU_TimeSet( StartTime , YY=start_year,  &
-                                    MM=start_month, &
-                                    DD=start_day,   &
-                                    H=start_hour,   &
-                                    M=start_minute, &
-                                    S=start_second, rc=rc )
+     CALL domain_clock_get( nest, timeSinceSimulationStart=TimeSinceStart )
+
      CALL domain_alarm_create( nest,  COMPUTE_VORTEX_CENTER_ALARM, interval  )
      CALL WRFU_AlarmEnable( nest%alarms( COMPUTE_VORTEX_CENTER_ALARM ), rc=rc )
-
-     TimeSinceStart = StartTime - simStartTime
      n = WRFU_TimeIntervalDIVQuot( TimeSinceStart , interval )
      IF ( ( interval * n ) .EQ. TimeSinceStart ) THEN
        CALL WRFU_AlarmRingerOn( nest%alarms( COMPUTE_VORTEX_CENTER_ALARM ), rc=rc )

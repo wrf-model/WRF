@@ -804,8 +804,7 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
 
 end subroutine camrad
 !====================================================================
-   SUBROUTINE camradinit(RTHRATEN, RTHRATENLW, RTHRATENSW,          &
-                         restart,                       &
+   SUBROUTINE camradinit(                                           &
                          R_D,R_V,CP,G,STBOLT,EP_2,shalf,pptop,               &
                          ozmixm,pin,levsiz,XLAT,num_months,         &
                          m_psp,m_psn,m_hybi,aerosolcp,aerosolcn,    &
@@ -820,7 +819,6 @@ end subroutine camrad
 !--------------------------------------------------------------------
    IMPLICIT NONE
 !--------------------------------------------------------------------
-   LOGICAL , INTENT(IN)           :: restart
    INTEGER , INTENT(IN)           :: ids, ide, jds, jde, kds, kde,  &
                                      ims, ime, jms, jme, kms, kme,  &
                                      its, ite, jts, jte, kts, kte
@@ -828,11 +826,6 @@ end subroutine camrad
    REAL, INTENT(IN)               :: R_D,R_V,CP,G,STBOLT,EP_2
 
    REAL,     DIMENSION( kms:kme )  :: shalf
-
-   REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::        &
-                                                          RTHRATEN, &
-                                                        RTHRATENLW, &
-                                                        RTHRATENSW
 
    INTEGER,      INTENT(IN   )    ::   levsiz, num_months
    INTEGER,      INTENT(IN   )    ::   paerlev, naer_c
@@ -848,13 +841,9 @@ end subroutine camrad
    REAL,  DIMENSION( ims:ime, paerlev, jms:jme, naer_c ),      &
           INTENT(INOUT) ::                             aerosolcp,aerosolcn
 
-   INTEGER :: i, j, k, itf, jtf, ktf
    REAL(r8)    :: pstd
    REAL(r8)    :: rh2o, cpair
 
-   jtf=min0(jte,jde-1)
-   ktf=min0(kte,kde-1)
-   itf=min0(ite,ide-1)
    ozncyc = .true.
    dosw = .true.
    dolw = .true.
@@ -908,17 +897,6 @@ end subroutine camrad
                      ids, ide, jds, jde, kds, kde,                  &
                      ims, ime, jms, jme, kms, kme,                  &
                      its, ite, jts, jte, kts, kte)
-   IF(.not.restart)THEN
-     DO j=jts,jtf
-     DO k=kts,ktf
-     DO i=its,itf
-        RTHRATEN(i,k,j)=0.
-        RTHRATENLW(i,k,j)=0.
-        RTHRATENSW(i,k,j)=0.
-     ENDDO
-     ENDDO
-     ENDDO
-   ENDIF
 
    END SUBROUTINE camradinit
 

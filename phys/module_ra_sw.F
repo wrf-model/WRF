@@ -465,7 +465,7 @@ CONTAINS
    END SUBROUTINE SWPARA
 
 !====================================================================
-   SUBROUTINE swinit(RTHRATEN,RTHRATENSW,swrad_scat,restart,        &
+   SUBROUTINE swinit(swrad_scat,                                    &
                      allowed_to_read ,                              &
                      ids, ide, jds, jde, kds, kde,                  &
                      ims, ime, jms, jme, kms, kme,                  &
@@ -473,37 +473,16 @@ CONTAINS
 !--------------------------------------------------------------------
    IMPLICIT NONE
 !--------------------------------------------------------------------
-   LOGICAL , INTENT(IN)           :: restart
    LOGICAL , INTENT(IN)           :: allowed_to_read 
    INTEGER , INTENT(IN)           :: ids, ide, jds, jde, kds, kde,  &
                                      ims, ime, jms, jme, kms, kme,  &
                                      its, ite, jts, jte, kts, kte
 
-   REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::        &
-                                                          RTHRATEN, &
-                                                        RTHRATENSW
    REAL , INTENT(IN)              :: swrad_scat
-   INTEGER :: i, j, k, itf, jtf, ktf
-
-   jtf=min0(jte,jde-1)
-   ktf=min0(kte,kde-1)
-   itf=min0(ite,ide-1)
 
 !     CSSCA - CLEAR-SKY SCATTERING SET FROM NAMELIST SWRAD_SCAT
    cssca = swrad_scat * 1.e-5
 
-   IF(.not.restart)THEN
-     DO j=jts,jtf
-     DO k=kts,ktf
-     DO i=its,itf
-        RTHRATEN(i,k,j)=0.
-        RTHRATENSW(i,k,j)=0.
-     ENDDO
-     ENDDO
-     ENDDO
-   ENDIF
-
    END SUBROUTINE swinit
-
 
 END MODULE module_ra_sw

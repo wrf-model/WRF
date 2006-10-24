@@ -54,7 +54,7 @@ CONTAINS
                          SH2O, SNOWH, SMFR3D,                    &  ! temporary
                          DX,DY,F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY, &
                          mp_restart_state,tbpvs_state,tbpvs0_state,&
-                         allowed_to_read, moved,                 &
+                         allowed_to_read, moved, xtime,          &
                          ids, ide, jds, jde, kds, kde,           &
                          ims, ime, jms, jme, kms, kme,           &
                          its, ite, jts, jte, kts, kte,           &
@@ -90,6 +90,7 @@ CONTAINS
 
    INTEGER , INTENT(IN)        :: num_soil_layers
 
+   REAL,     INTENT(IN)        :: xtime
    REAL,     INTENT(IN)        :: DT, p_top, DX, DY
    LOGICAL,  INTENT(IN)        :: restart
    REAL,     INTENT(IN)        :: RADT,BLDT,CUDT,MPDT
@@ -368,7 +369,7 @@ integer myproc
                 paerlev,n_aerosolc,                             &
                 sfull,shalf,pptop,swrad_scat,                   &
                 config_flags,restart,                           & 
-                allowed_to_read ,                                   &
+                allowed_to_read, xtime,                         &
                 ids, ide, jds, jde, kds, kde,                   &
                 ims, ime, jms, jme, kms, kme,                   &
                 its, ite, jts, jte, kts, kte                    )
@@ -409,7 +410,7 @@ integer myproc
                 RTHFTEN, RQVFTEN,                               &
                 APR_GR,APR_W,APR_MC,APR_ST,APR_AS,              &
                 APR_CAPMA,APR_CAPME,APR_CAPMI,                  &
-                allowed_to_read ,                                   &
+                allowed_to_read, xtime,                         &
                 ids, ide, jds, jde, kds, kde,                   &
                 ims, ime, jms, jme, kms, kme,                   &
                 its, ite, jts, jte, kts, kte                    )
@@ -421,7 +422,7 @@ integer myproc
                 MPDT, DT, DX, DY, LOWLYR,                       & 
                 F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,               &
                 mp_restart_state,tbpvs_state,tbpvs0_state,       &
-                allowed_to_read ,                               &
+                allowed_to_read, xtime,                         &
                 ids, ide, jds, jde, kds, kde,                   &
                 ims, ime, jms, jme, kms, kme,                   &
                 its, ite, jts, jte, kts, kte                    )
@@ -686,7 +687,7 @@ integer myproc
                       paerlev,n_aerosolc,                             &
                       sfull,shalf,pptop,swrad_scat,                  &
                       config_flags,restart,                          & 
-                      allowed_to_read ,                              &
+                      allowed_to_read, xtime,                        &
                       ids, ide, jds, jde, kds, kde,                  &
                       ims, ime, jms, jme, kms, kme,                  &
                       its, ite, jts, jte, kts, kte                   )
@@ -711,7 +712,7 @@ integer myproc
 
    INTEGER , INTENT(IN)           :: JULDAY,JULYR
    REAL ,    INTENT(IN)           :: DT, RADT, cen_lat, GMT, pptop,  &
-                                     swrad_scat
+                                     swrad_scat, xtime
 
    INTEGER,      INTENT(IN   )    ::   levsiz, n_ozmixm
    INTEGER,      INTENT(IN   )    ::   paerlev, n_aerosolc
@@ -742,12 +743,34 @@ integer myproc
    LOGICAL :: camlw = .false.
    LOGICAL :: etamp = .false.
    integer :: month,iday
+   INTEGER :: i, j, k, itf, jtf, ktf
+!---------------------------------------------------------------------
+
+   jtf=min0(jte,jde-1)
+   ktf=min0(kte,kde-1)
+   itf=min0(ite,ide-1)
+
 !---------------------------------------------------------------------
 
 !-- calculate radiation time step
 
     STEPRA = nint(RADT*60./DT)
     STEPRA = max(STEPRA,1)
+
+!-- initialization
+
+   IF(xtime.eq.0.)THEN
+     DO j=jts,jtf
+     DO k=kts,ktf
+     DO i=its,itf
+        RTHRATEN(i,k,j)=0.
+        RTHRATENLW(i,k,j)=0.
+        RTHRATENSW(i,k,j)=0.
+        CLDFRA(i,k,j)=0.
+     ENDDO
+     ENDDO
+     ENDDO
+   ENDIF
 
 !-- find out which microphysics option is used first
 
@@ -763,8 +786,7 @@ integer myproc
    lwrad_select: SELECT CASE(config_flags%ra_lw_physics)
 
         CASE (RRTMSCHEME)
-             CALL rrtminit(RTHRATEN,RTHRATENLW,CLDFRA,      &
-                           restart,                         &
+             CALL rrtminit(                                 &
                            allowed_to_read ,                &
                            ids, ide, jds, jde, kds, kde,    &
                            ims, ime, jms, jme, kms, kme,    &
@@ -775,8 +797,7 @@ integer myproc
                   PRESENT(M_PS_1) .AND. PRESENT(M_PS_2) .AND.  &
                   PRESENT(M_HYBI) .AND. PRESENT(AEROSOLC_1)    &
                   .AND. PRESENT(AEROSOLC_2)) THEN
-             CALL camradinit(RTHRATEN,RTHRATENLW,RTHRATENSW,   &
-                         restart,                              &
+             CALL camradinit(                                  &
                          R_D,R_V,CP,G,STBOLT,EP_2,shalf,pptop, &
                          ozmixm,pin,levsiz,XLAT,n_ozmixm,      &
                          m_ps_1,m_ps_2,m_hybi,aerosolc_1,aerosolc_2,&
@@ -808,9 +829,8 @@ integer myproc
    swrad_select: SELECT CASE(config_flags%ra_sw_physics)
 
         CASE (SWRADSCHEME)
-             CALL swinit(RTHRATEN,RTHRATENSW,              &
+             CALL swinit(                                  &
                          swrad_scat,                       &
-                         restart,                          &
                          allowed_to_read ,                 &
                          ids, ide, jds, jde, kds, kde,     &
                          ims, ime, jms, jme, kms, kme,     &
@@ -818,8 +838,7 @@ integer myproc
 
         CASE (CAMSWSCHEME)
              IF(.not.camlw)THEN
-             CALL camradinit(RTHRATEN,RTHRATENLW,RTHRATENSW,          &
-                         restart,                          &
+             CALL camradinit(                              &
                          R_D,R_V,CP,G,STBOLT,EP_2,shalf,pptop,               &
                          ozmixm,pin,levsiz,XLAT,n_ozmixm,     &
                          m_ps_1,m_ps_2,m_hybi,aerosolc_1,aerosolc_2,&
@@ -1169,7 +1188,7 @@ integer myproc
                       RTHFTEN, RQVFTEN,                           &
                       APR_GR,APR_W,APR_MC,APR_ST,APR_AS,          &
                       APR_CAPMA,APR_CAPME,APR_CAPMI,              &
-                      allowed_to_read ,                           &
+                      allowed_to_read, xtime,                     &
                       ids, ide, jds, jde, kds, kde,               &
                       ims, ime, jms, jme, kms, kme,               &
                       its, ite, jts, jte, kts, kte                )
@@ -1190,7 +1209,7 @@ integer myproc
                                   ims, ime, jms, jme, kms, kme,   &
                                   its, ite, jts, jte, kts, kte
 
-   REAL ,    INTENT(IN)        :: DT, CUDT
+   REAL ,    INTENT(IN)        :: DT, CUDT, xtime
    LOGICAL , INTENT(IN)        :: allowed_to_read
    INTEGER , INTENT(INOUT)     :: STEPCU
 
@@ -1231,7 +1250,7 @@ integer myproc
 
 !-- initialization
 
-   IF(.not.restart)THEN
+   IF(xtime.eq.0.)THEN
      DO j=jts,jtf
      DO i=its,itf
         RAINC(i,j)=0.
@@ -1299,7 +1318,7 @@ integer myproc
                       MPDT, DT, DX, DY, LOWLYR,                   & ! for eta mp
                       F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,           & ! for eta mp
                       mp_restart_state,tbpvs_state,tbpvs0_state,   & ! eta mp
-                      allowed_to_read ,                           &
+                      allowed_to_read, xtime,                     &
                       ids, ide, jds, jde, kds, kde,               &
                       ims, ime, jms, jme, kms, kme,               &
                       its, ite, jts, jte, kts, kte                )
@@ -1318,7 +1337,7 @@ integer myproc
    TYPE (grid_config_rec_type) ::     config_flags
    LOGICAL , INTENT(IN)        :: restart
    LOGICAL , INTENT(OUT)       :: warm_rain,adv_moist_cond
-   REAL    , INTENT(IN)        :: MPDT, DT, DX, DY
+   REAL    , INTENT(IN)        :: MPDT, DT, DX, DY, xtime
 
    INTEGER , INTENT(IN)        :: ids, ide, jds, jde, kds, kde,   &
                                   ims, ime, jms, jme, kms, kme,   &
@@ -1339,7 +1358,7 @@ integer myproc
    itf=min0(ite,ide-1)
    jtf=min0(jte,jde-1)
 
-   IF(.not.restart)THEN
+   IF(xtime.eq.0.)THEN
      DO j=jts,jtf
      DO i=its,itf
         RAINNC(i,j) = 0.

@@ -6515,7 +6515,7 @@ CONTAINS
    END SUBROUTINE GASABS
 
 !====================================================================
-   SUBROUTINE rrtminit(RTHRATEN,RTHRATENLW,CLDFRA,restart,          &
+   SUBROUTINE rrtminit(                                             &
                        allowed_to_read ,                            &
                        ids, ide, jds, jde, kds, kde,                &
                        ims, ime, jms, jme, kms, kme,                &
@@ -6524,34 +6524,12 @@ CONTAINS
    IMPLICIT NONE
 !--------------------------------------------------------------------
 
-   LOGICAL , INTENT(IN)           :: restart, allowed_to_read
+   LOGICAL , INTENT(IN)           :: allowed_to_read
    INTEGER , INTENT(IN)           :: ids, ide, jds, jde, kds, kde,  &
                                      ims, ime, jms, jme, kms, kme,  &
                                      its, ite, jts, jte, kts, kte
 
-   REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::        &
-                                                          RTHRATEN, &
-                                                        RTHRATENLW, &
-                                                            CLDFRA
    REAL :: pi
-
-   INTEGER :: i, j, k, itf, jtf, ktf
-
-   jtf=min0(jte,jde-1)
-   ktf=min0(kte,kde-1)
-   itf=min0(ite,ide-1)
-
-   IF(.not.restart)THEN
-     DO j=jts,jtf
-     DO k=kts,ktf
-     DO i=its,itf
-        RTHRATEN(i,k,j)=0.
-        RTHRATENLW(i,k,j)=0.
-        CLDFRA(i,k,j)=0.
-     ENDDO
-     ENDDO
-     ENDDO
-   ENDIF
 
    PI = 2.*ASIN(1.) 
    FLUXFAC  = PI   * 2.D4                     

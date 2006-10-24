@@ -21,36 +21,36 @@ wrf_ioapi_includes :
 .F.i:
 	$(RM) $@
 	$(CPP) -I../inc $(CPPFLAGS) $*.F > $@
-	mv $*.i $(DEVTOP)/pick/$*.f
+	mv $*.i $(DEVTOP)/pick/$*.f90
 	cp $*.F $(DEVTOP)/pick
 
 .F.o:
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(FCFLAGS) $(MODULE_DIRS) $(PROMOTION) $*.f
+	$(FC) -c $(FCFLAGS) $(MODULE_DIRS) $(PROMOTION) $(FCSUFFIX) $*.f90
 #PGI	if [ ! -e $@ ] ; then \
-#PGI	sleep 10 ; $(FC) -c $(FCFLAGS) $(MODULE_DIRS) $(PROMOTION) $*.f ; \
+#PGI	sleep 10 ; $(FC) -c $(FCFLAGS) $(MODULE_DIRS) $(PROMOTION) $(FCSUFFIX) $*.f90 ; \
 #PGI	fi
 #PGI	if [ ! -e $@ ] ; then \
-#PGI	sleep 10 ; $(FC) -c $(FCFLAGS) $(MODULE_DIRS) $(PROMOTION) $*.f ; \
+#PGI	sleep 10 ; $(FC) -c $(FCFLAGS) $(MODULE_DIRS) $(PROMOTION) $(FCSUFFIX) $*.f90 ; \
 #PGI	fi
 
-.F.f:
+.F.f90:
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $@
 	$(RM) $*.b
 
-.f.o:
+.f90.o:
 	$(RM) $@
-	$(FC) -c $(FCFLAGS) $(PROMOTION) $*.f
+	$(FC) -c $(FCFLAGS) $(PROMOTION) $(FCSUFFIX) $*.f90
 #PGI	if [ ! -e $@ ] ; then \
-#PGI	sleep 10 ; $(FC) -c $(FCFLAGS) $(PROMOTION) $*.f ; \
+#PGI	sleep 10 ; $(FC) -c $(FCFLAGS) $(PROMOTION) $(FCSUFFIX) $*.f90 ; \
 #PGI	fi
 #PGI	if [ ! -e $@ ] ; then \
-#PGI	sleep 10 ; $(FC) -c $(FCFLAGS) $(PROMOTION) $*.f ; \
+#PGI	sleep 10 ; $(FC) -c $(FCFLAGS) $(PROMOTION) $(FCSUFFIX) $*.f90 ; \
 #PGI	fi
 
 .c.o:

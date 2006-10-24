@@ -151,7 +151,7 @@ exe:
 #      object files.
 #
 thisdir_clean: thisdir_clean_lib
-	@/bin/rm -f *.o *.mod *.f core so_locations Makefile.bak *~ #*#
+	@/bin/rm -f *.o *.mod *.f90 core so_locations Makefile.bak *~ #*#
 	@/bin/rm -fr ii_files
 	@if [ -d utest ] ; then \
 		echo "        Doing make clean on utest subdirectory"; \

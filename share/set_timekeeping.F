@@ -36,6 +36,20 @@ SUBROUTINE Setup_Timekeeping ( grid )
               auxhist4_interval_m, auxhist5_interval_m, &
               auxhist4_interval_s, auxhist5_interval_s
 
+   INTEGER :: auxhist6_interval  , auxhist7_interval  , auxhist8_interval  , &
+              auxhist6_interval_mo, auxhist7_interval_mo, auxhist8_interval_mo, &
+              auxhist6_interval_d, auxhist7_interval_d, auxhist8_interval_d, &
+              auxhist6_interval_h, auxhist7_interval_h, auxhist8_interval_h, &
+              auxhist6_interval_m, auxhist7_interval_m, auxhist8_interval_m, &
+              auxhist6_interval_s, auxhist7_interval_s, auxhist8_interval_s
+
+   INTEGER :: auxhist9_interval  , auxhist10_interval  , auxhist11_interval  , &
+              auxhist9_interval_mo, auxhist10_interval_mo, auxhist11_interval_mo, &
+              auxhist9_interval_d, auxhist10_interval_d, auxhist11_interval_d, &
+              auxhist9_interval_h, auxhist10_interval_h, auxhist11_interval_h, &
+              auxhist9_interval_m, auxhist10_interval_m, auxhist11_interval_m, &
+              auxhist9_interval_s, auxhist10_interval_s, auxhist11_interval_s
+
    INTEGER :: auxinput1_interval  , auxinput2_interval  , auxinput3_interval  , &
               auxinput1_interval_mo, auxinput2_interval_mo, auxinput3_interval_mo, &
               auxinput1_interval_d, auxinput2_interval_d, auxinput3_interval_d, &
@@ -49,6 +63,20 @@ SUBROUTINE Setup_Timekeeping ( grid )
               auxinput4_interval_h, auxinput5_interval_h, &
               auxinput4_interval_m, auxinput5_interval_m, &
               auxinput4_interval_s, auxinput5_interval_s
+
+   INTEGER :: auxinput6_interval  , auxinput7_interval  , auxinput8_interval  , &
+              auxinput6_interval_mo, auxinput7_interval_mo, auxinput8_interval_mo, &
+              auxinput6_interval_d, auxinput7_interval_d, auxinput8_interval_d, &
+              auxinput6_interval_h, auxinput7_interval_h, auxinput8_interval_h, &
+              auxinput6_interval_m, auxinput7_interval_m, auxinput8_interval_m, &
+              auxinput6_interval_s, auxinput7_interval_s, auxinput8_interval_s
+
+   INTEGER :: auxinput9_interval  , auxinput10_interval  , auxinput11_interval  , &
+              auxinput9_interval_mo, auxinput10_interval_mo, auxinput11_interval_mo, &
+              auxinput9_interval_d, auxinput10_interval_d, auxinput11_interval_d, &
+              auxinput9_interval_h, auxinput10_interval_h, auxinput11_interval_h, &
+              auxinput9_interval_m, auxinput10_interval_m, auxinput11_interval_m, &
+              auxinput9_interval_s, auxinput10_interval_s, auxinput11_interval_s
 
    INTEGER :: history_begin  , restart_begin  ,  &
               history_begin_y, restart_begin_y,  &
@@ -74,6 +102,22 @@ SUBROUTINE Setup_Timekeeping ( grid )
               auxhist4_begin_m, auxhist5_begin_m, &
               auxhist4_begin_s, auxhist5_begin_s
 
+   INTEGER :: auxhist6_begin  , auxhist7_begin  , auxhist8_begin  , &
+              auxhist6_begin_y, auxhist7_begin_y, auxhist8_begin_y, &
+              auxhist6_begin_mo, auxhist7_begin_mo, auxhist8_begin_mo, &
+              auxhist6_begin_d, auxhist7_begin_d, auxhist8_begin_d, &
+              auxhist6_begin_h, auxhist7_begin_h, auxhist8_begin_h, &
+              auxhist6_begin_m, auxhist7_begin_m, auxhist8_begin_m, &
+              auxhist6_begin_s, auxhist7_begin_s, auxhist8_begin_s
+
+   INTEGER :: auxhist9_begin  , auxhist10_begin  , auxhist11_begin  , &
+              auxhist9_begin_y, auxhist10_begin_y, auxhist11_begin_y, &
+              auxhist9_begin_mo, auxhist10_begin_mo, auxhist11_begin_mo, &
+              auxhist9_begin_d, auxhist10_begin_d, auxhist11_begin_d, &
+              auxhist9_begin_h, auxhist10_begin_h, auxhist11_begin_h, &
+              auxhist9_begin_m, auxhist10_begin_m, auxhist11_begin_m, &
+              auxhist9_begin_s, auxhist10_begin_s, auxhist11_begin_s
+
    INTEGER :: inputout_begin  ,  inputout_end,    inputout_interval ,    &
               inputout_begin_y,  inputout_end_y,  inputout_interval_y ,    &
               inputout_begin_mo, inputout_end_mo, inputout_interval_mo ,   &
@@ -97,6 +141,22 @@ SUBROUTINE Setup_Timekeeping ( grid )
               auxinput4_begin_h, auxinput5_begin_h, &
               auxinput4_begin_m, auxinput5_begin_m, &
               auxinput4_begin_s, auxinput5_begin_s
+
+   INTEGER :: auxinput6_begin  , auxinput7_begin  , auxinput8_begin  , &
+              auxinput6_begin_y, auxinput7_begin_y, auxinput8_begin_y, &
+              auxinput6_begin_mo, auxinput7_begin_mo, auxinput8_begin_mo, &
+              auxinput6_begin_d, auxinput7_begin_d, auxinput8_begin_d, &
+              auxinput6_begin_h, auxinput7_begin_h, auxinput8_begin_h, &
+              auxinput6_begin_m, auxinput7_begin_m, auxinput8_begin_m, &
+              auxinput6_begin_s, auxinput7_begin_s, auxinput8_begin_s
+
+   INTEGER :: auxinput9_begin  , auxinput10_begin  , auxinput11_begin  , &
+              auxinput9_begin_y, auxinput10_begin_y, auxinput11_begin_y, &
+              auxinput9_begin_mo, auxinput10_begin_mo, auxinput11_begin_mo, &
+              auxinput9_begin_d, auxinput10_begin_d, auxinput11_begin_d, &
+              auxinput9_begin_h, auxinput10_begin_h, auxinput11_begin_h, &
+              auxinput9_begin_m, auxinput10_begin_m, auxinput11_begin_m, &
+              auxinput9_begin_s, auxinput10_begin_s, auxinput11_begin_s
 
    INTEGER :: history_end  , restart_end  ,  &
               history_end_y, restart_end_y,  &
@@ -122,6 +182,22 @@ SUBROUTINE Setup_Timekeeping ( grid )
               auxhist4_end_m, auxhist5_end_m, &
               auxhist4_end_s, auxhist5_end_s
 
+   INTEGER :: auxhist6_end  , auxhist7_end  , auxhist8_end  , &
+              auxhist6_end_y, auxhist7_end_y, auxhist8_end_y, &
+              auxhist6_end_mo, auxhist7_end_mo, auxhist8_end_mo, &
+              auxhist6_end_d, auxhist7_end_d, auxhist8_end_d, &
+              auxhist6_end_h, auxhist7_end_h, auxhist8_end_h, &
+              auxhist6_end_m, auxhist7_end_m, auxhist8_end_m, &
+              auxhist6_end_s, auxhist7_end_s, auxhist8_end_s
+
+   INTEGER :: auxhist9_end  , auxhist10_end  , auxhist11_end  , &
+              auxhist9_end_y, auxhist10_end_y, auxhist11_end_y, &
+              auxhist9_end_mo, auxhist10_end_mo, auxhist11_end_mo, &
+              auxhist9_end_d, auxhist10_end_d, auxhist11_end_d, &
+              auxhist9_end_h, auxhist10_end_h, auxhist11_end_h, &
+              auxhist9_end_m, auxhist10_end_m, auxhist11_end_m, &
+              auxhist9_end_s, auxhist10_end_s, auxhist11_end_s
+
    INTEGER :: auxinput1_end  , auxinput2_end  , auxinput3_end  , &
               auxinput1_end_y, auxinput2_end_y, auxinput3_end_y, &
               auxinput1_end_mo, auxinput2_end_mo, auxinput3_end_mo, &
@@ -137,6 +213,22 @@ SUBROUTINE Setup_Timekeeping ( grid )
               auxinput4_end_h, auxinput5_end_h, &
               auxinput4_end_m, auxinput5_end_m, &
               auxinput4_end_s, auxinput5_end_s
+
+   INTEGER :: auxinput6_end  , auxinput7_end  , auxinput8_end  , &
+              auxinput6_end_y, auxinput7_end_y, auxinput8_end_y, &
+              auxinput6_end_mo, auxinput7_end_mo, auxinput8_end_mo, &
+              auxinput6_end_d, auxinput7_end_d, auxinput8_end_d, &
+              auxinput6_end_h, auxinput7_end_h, auxinput8_end_h, &
+              auxinput6_end_m, auxinput7_end_m, auxinput8_end_m, &
+              auxinput6_end_s, auxinput7_end_s, auxinput8_end_s
+
+   INTEGER :: auxinput9_end  , auxinput10_end  , auxinput11_end  , &
+              auxinput9_end_y, auxinput10_end_y, auxinput11_end_y, &
+              auxinput9_end_mo, auxinput10_end_mo, auxinput11_end_mo, &
+              auxinput9_end_d, auxinput10_end_d, auxinput11_end_d, &
+              auxinput9_end_h, auxinput10_end_h, auxinput11_end_h, &
+              auxinput9_end_m, auxinput10_end_m, auxinput11_end_m, &
+              auxinput9_end_s, auxinput10_end_s, auxinput11_end_s
 
    INTEGER :: run_days, run_hours, run_minutes, run_seconds
    INTEGER :: time_step, time_step_fract_num, time_step_fract_den
@@ -723,6 +815,397 @@ SUBROUTINE Setup_Timekeeping ( grid )
      CALL WRFU_AlarmRingerOn( grid%alarms( AUXHIST5_ALARM ),  rc=rc )
    ENDIF
 
+! AUXHIST6_ INTERVAL
+! auxhist6_interval is left there (and means minutes) for consistency, but
+! auxhist6_interval_m will take precedence if specified
+   CALL nl_get_auxhist6_interval( grid%id, auxhist6_interval )   ! same as minutes
+   CALL nl_get_auxhist6_interval_mo( grid%id, auxhist6_interval_mo )
+   CALL nl_get_auxhist6_interval_d( grid%id, auxhist6_interval_d )
+   CALL nl_get_auxhist6_interval_h( grid%id, auxhist6_interval_h )
+   CALL nl_get_auxhist6_interval_m( grid%id, auxhist6_interval_m )
+   CALL nl_get_auxhist6_interval_s( grid%id, auxhist6_interval_s )
+   IF ( auxhist6_interval_m .EQ. 0 ) auxhist6_interval_m = auxhist6_interval
+
+   IF ( MAX( auxhist6_interval_mo, auxhist6_interval_d,   &
+             auxhist6_interval_h, auxhist6_interval_m , auxhist6_interval_s   ) .GT. 0 ) THEN
+     CALL WRFU_TimeIntervalSet( interval, MM=auxhist6_interval_mo, D=auxhist6_interval_d, &
+                                        H=auxhist6_interval_h, M=auxhist6_interval_m, S=auxhist6_interval_s, rc=rc )
+     CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                           'WRFU_TimeIntervalSet(auxhist6_interval) FAILED', &
+                           __FILE__ , &
+                           __LINE__  )
+   ELSE
+     interval = run_length + padding_interval
+   ENDIF
+
+   CALL nl_get_auxhist6_begin_y( grid%id, auxhist6_begin_y )
+   CALL nl_get_auxhist6_begin_mo( grid%id, auxhist6_begin_mo )
+   CALL nl_get_auxhist6_begin_d( grid%id, auxhist6_begin_d )
+   CALL nl_get_auxhist6_begin_h( grid%id, auxhist6_begin_h )
+   CALL nl_get_auxhist6_begin_m( grid%id, auxhist6_begin_m )
+   CALL nl_get_auxhist6_begin_s( grid%id, auxhist6_begin_s )
+   IF ( MAX( auxhist6_begin_y, auxhist6_begin_mo, auxhist6_begin_d,   &
+             auxhist6_begin_h, auxhist6_begin_m , auxhist6_begin_s   ) .GT. 0 ) THEN
+      CALL WRFU_TimeIntervalSet( begin_time , MM=auxhist6_begin_mo, D=auxhist6_begin_d, &
+                                      H=auxhist6_begin_h, M=auxhist6_begin_m, S=auxhist6_begin_s, rc=rc )
+      CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                            'WRFU_TimeIntervalSet(auxhist6_begin) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
+   ELSE
+      begin_time = zero_time
+   ENDIF
+
+   CALL nl_get_auxhist6_end_y( grid%id, auxhist6_end_y )
+   CALL nl_get_auxhist6_end_mo( grid%id, auxhist6_end_mo )
+   CALL nl_get_auxhist6_end_d( grid%id, auxhist6_end_d )
+   CALL nl_get_auxhist6_end_h( grid%id, auxhist6_end_h )
+   CALL nl_get_auxhist6_end_m( grid%id, auxhist6_end_m )
+   CALL nl_get_auxhist6_end_s( grid%id, auxhist6_end_s )
+   IF ( MAX( auxhist6_end_y, auxhist6_end_mo, auxhist6_end_d,   &
+             auxhist6_end_h, auxhist6_end_m , auxhist6_end_s   ) .GT. 0 ) THEN
+      CALL WRFU_TimeIntervalSet( end_time , MM=auxhist6_end_mo, D=auxhist6_end_d, &
+                                     H=auxhist6_end_h, M=auxhist6_end_m, S=auxhist6_end_s, rc=rc )
+      CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                            'WRFU_TimeIntervalSet(auxhist6_end) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
+   ELSE
+      end_time = run_length + padding_interval
+   ENDIF
+
+   CALL domain_alarm_create( grid, AUXHIST6_ALARM, interval, begin_time, end_time )
+
+   IF ( interval .NE. run_length + padding_interval .AND. begin_time .EQ. zero_time ) THEN
+     CALL WRFU_AlarmRingerOn( grid%alarms( AUXHIST6_ALARM ),  rc=rc )
+   ENDIF
+
+
+! AUXHIST7_ INTERVAL
+! auxhist7_interval is left there (and means minutes) for consistency, but
+! auxhist7_interval_m will take precedence if specified
+   CALL nl_get_auxhist7_interval( grid%id, auxhist7_interval )   ! same as minutes
+   CALL nl_get_auxhist7_interval_mo( grid%id, auxhist7_interval_mo )
+   CALL nl_get_auxhist7_interval_d( grid%id, auxhist7_interval_d )
+   CALL nl_get_auxhist7_interval_h( grid%id, auxhist7_interval_h )
+   CALL nl_get_auxhist7_interval_m( grid%id, auxhist7_interval_m )
+   CALL nl_get_auxhist7_interval_s( grid%id, auxhist7_interval_s )
+   IF ( auxhist7_interval_m .EQ. 0 ) auxhist7_interval_m = auxhist7_interval
+
+   IF ( MAX( auxhist7_interval_mo, auxhist7_interval_d,   &
+             auxhist7_interval_h, auxhist7_interval_m , auxhist7_interval_s   ) .GT. 0 ) THEN
+     CALL WRFU_TimeIntervalSet( interval, MM=auxhist7_interval_mo, D=auxhist7_interval_d, &
+                                        H=auxhist7_interval_h, M=auxhist7_interval_m, S=auxhist7_interval_s, rc=rc )
+     CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                           'WRFU_TimeIntervalSet(auxhist7_interval) FAILED', &
+                           __FILE__ , &
+                           __LINE__  )
+   ELSE
+     interval = run_length + padding_interval
+   ENDIF
+
+   CALL nl_get_auxhist7_begin_y( grid%id, auxhist7_begin_y )
+   CALL nl_get_auxhist7_begin_mo( grid%id, auxhist7_begin_mo )
+   CALL nl_get_auxhist7_begin_d( grid%id, auxhist7_begin_d )
+   CALL nl_get_auxhist7_begin_h( grid%id, auxhist7_begin_h )
+   CALL nl_get_auxhist7_begin_m( grid%id, auxhist7_begin_m )
+   CALL nl_get_auxhist7_begin_s( grid%id, auxhist7_begin_s )
+   IF ( MAX( auxhist7_begin_y, auxhist7_begin_mo, auxhist7_begin_d,   &
+             auxhist7_begin_h, auxhist7_begin_m , auxhist7_begin_s   ) .GT. 0 ) THEN
+      CALL WRFU_TimeIntervalSet( begin_time , MM=auxhist7_begin_mo, D=auxhist7_begin_d, &
+                                      H=auxhist7_begin_h, M=auxhist7_begin_m, S=auxhist7_begin_s, rc=rc )
+      CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                            'WRFU_TimeIntervalSet(auxhist7_begin) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
+   ELSE
+      begin_time = zero_time
+   ENDIF
+
+   CALL nl_get_auxhist7_end_y( grid%id, auxhist7_end_y )
+   CALL nl_get_auxhist7_end_mo( grid%id, auxhist7_end_mo )
+   CALL nl_get_auxhist7_end_d( grid%id, auxhist7_end_d )
+   CALL nl_get_auxhist7_end_h( grid%id, auxhist7_end_h )
+   CALL nl_get_auxhist7_end_m( grid%id, auxhist7_end_m )
+   CALL nl_get_auxhist7_end_s( grid%id, auxhist7_end_s )
+   IF ( MAX( auxhist7_end_y, auxhist7_end_mo, auxhist7_end_d,   &
+             auxhist7_end_h, auxhist7_end_m , auxhist7_end_s   ) .GT. 0 ) THEN
+      CALL WRFU_TimeIntervalSet( end_time , MM=auxhist7_end_mo, D=auxhist7_end_d, &
+                                     H=auxhist7_end_h, M=auxhist7_end_m, S=auxhist7_end_s, rc=rc )
+      CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                            'WRFU_TimeIntervalSet(auxhist7_end) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
+   ELSE
+      end_time = run_length + padding_interval
+   ENDIF
+
+   CALL domain_alarm_create( grid, AUXHIST7_ALARM, interval, begin_time, end_time )
+
+   IF ( interval .NE. run_length + padding_interval .AND. begin_time .EQ. zero_time ) THEN
+     CALL WRFU_AlarmRingerOn( grid%alarms( AUXHIST7_ALARM ),  rc=rc )
+   ENDIF
+
+! AUXHIST8_ INTERVAL
+! auxhist8_interval is left there (and means minutes) for consistency, but
+! auxhist8_interval_m will take precedence if specified
+   CALL nl_get_auxhist8_interval( grid%id, auxhist8_interval )   ! same as minutes
+   CALL nl_get_auxhist8_interval_mo( grid%id, auxhist8_interval_mo )
+   CALL nl_get_auxhist8_interval_d( grid%id, auxhist8_interval_d )
+   CALL nl_get_auxhist8_interval_h( grid%id, auxhist8_interval_h )
+   CALL nl_get_auxhist8_interval_m( grid%id, auxhist8_interval_m )
+   CALL nl_get_auxhist8_interval_s( grid%id, auxhist8_interval_s )
+   IF ( auxhist8_interval_m .EQ. 0 ) auxhist8_interval_m = auxhist8_interval
+
+   IF ( MAX( auxhist8_interval_mo, auxhist8_interval_d,   &
+             auxhist8_interval_h, auxhist8_interval_m , auxhist8_interval_s   ) .GT. 0 ) THEN
+     CALL WRFU_TimeIntervalSet( interval, MM=auxhist8_interval_mo, D=auxhist8_interval_d, &
+                                        H=auxhist8_interval_h, M=auxhist8_interval_m, S=auxhist8_interval_s, rc=rc )
+     CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                           'WRFU_TimeIntervalSet(auxhist8_interval) FAILED', &
+                           __FILE__ , &
+                           __LINE__  )
+   ELSE
+     interval = run_length + padding_interval
+   ENDIF
+
+   CALL nl_get_auxhist8_begin_y( grid%id, auxhist8_begin_y )
+   CALL nl_get_auxhist8_begin_mo( grid%id, auxhist8_begin_mo )
+   CALL nl_get_auxhist8_begin_d( grid%id, auxhist8_begin_d )
+   CALL nl_get_auxhist8_begin_h( grid%id, auxhist8_begin_h )
+   CALL nl_get_auxhist8_begin_m( grid%id, auxhist8_begin_m )
+   CALL nl_get_auxhist8_begin_s( grid%id, auxhist8_begin_s )
+   IF ( MAX( auxhist8_begin_y, auxhist8_begin_mo, auxhist8_begin_d,   &
+             auxhist8_begin_h, auxhist8_begin_m , auxhist8_begin_s   ) .GT. 0 ) THEN
+      CALL WRFU_TimeIntervalSet( begin_time , MM=auxhist8_begin_mo, D=auxhist8_begin_d, &
+                                      H=auxhist8_begin_h, M=auxhist8_begin_m, S=auxhist8_begin_s, rc=rc )
+      CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                            'WRFU_TimeIntervalSet(auxhist8_begin) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
+   ELSE
+      begin_time = zero_time
+   ENDIF
+
+   CALL nl_get_auxhist8_end_y( grid%id, auxhist8_end_y )
+   CALL nl_get_auxhist8_end_mo( grid%id, auxhist8_end_mo )
+   CALL nl_get_auxhist8_end_d( grid%id, auxhist8_end_d )
+   CALL nl_get_auxhist8_end_h( grid%id, auxhist8_end_h )
+   CALL nl_get_auxhist8_end_m( grid%id, auxhist8_end_m )
+   CALL nl_get_auxhist8_end_s( grid%id, auxhist8_end_s )
+   IF ( MAX( auxhist8_end_y, auxhist8_end_mo, auxhist8_end_d,   &
+             auxhist8_end_h, auxhist8_end_m , auxhist8_end_s   ) .GT. 0 ) THEN
+      CALL WRFU_TimeIntervalSet( end_time , MM=auxhist8_end_mo, D=auxhist8_end_d, &
+                                     H=auxhist8_end_h, M=auxhist8_end_m, S=auxhist8_end_s, rc=rc )
+      CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                            'WRFU_TimeIntervalSet(auxhist8_end) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
+   ELSE
+      end_time = run_length + padding_interval
+   ENDIF
+
+   CALL domain_alarm_create( grid, AUXHIST8_ALARM, interval, begin_time, end_time )
+
+   IF ( interval .NE. run_length + padding_interval .AND. begin_time .EQ. zero_time ) THEN
+     CALL WRFU_AlarmRingerOn( grid%alarms( AUXHIST8_ALARM ),  rc=rc )
+   ENDIF
+
+! AUXHIST9_ INTERVAL
+! auxhist9_interval is left there (and means minutes) for consistency, but
+! auxhist9_interval_m will take precedence if specified
+   CALL nl_get_auxhist9_interval( grid%id, auxhist9_interval )   ! same as minutes
+   CALL nl_get_auxhist9_interval_mo( grid%id, auxhist9_interval_mo )
+   CALL nl_get_auxhist9_interval_d( grid%id, auxhist9_interval_d )
+   CALL nl_get_auxhist9_interval_h( grid%id, auxhist9_interval_h )
+   CALL nl_get_auxhist9_interval_m( grid%id, auxhist9_interval_m )
+   CALL nl_get_auxhist9_interval_s( grid%id, auxhist9_interval_s )
+   IF ( auxhist9_interval_m .EQ. 0 ) auxhist9_interval_m = auxhist9_interval
+
+   IF ( MAX( auxhist9_interval_mo, auxhist9_interval_d,   &
+             auxhist9_interval_h, auxhist9_interval_m , auxhist9_interval_s   ) .GT. 0 ) THEN
+     CALL WRFU_TimeIntervalSet( interval, MM=auxhist9_interval_mo, D=auxhist9_interval_d, &
+                                        H=auxhist9_interval_h, M=auxhist9_interval_m, S=auxhist9_interval_s, rc=rc )
+     CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                           'WRFU_TimeIntervalSet(auxhist9_interval) FAILED', &
+                           __FILE__ , &
+                           __LINE__  )
+   ELSE
+     interval = run_length + padding_interval
+   ENDIF
+
+   CALL nl_get_auxhist9_begin_y( grid%id, auxhist9_begin_y )
+   CALL nl_get_auxhist9_begin_mo( grid%id, auxhist9_begin_mo )
+   CALL nl_get_auxhist9_begin_d( grid%id, auxhist9_begin_d )
+   CALL nl_get_auxhist9_begin_h( grid%id, auxhist9_begin_h )
+   CALL nl_get_auxhist9_begin_m( grid%id, auxhist9_begin_m )
+   CALL nl_get_auxhist9_begin_s( grid%id, auxhist9_begin_s )
+   IF ( MAX( auxhist9_begin_y, auxhist9_begin_mo, auxhist9_begin_d,   &
+             auxhist9_begin_h, auxhist9_begin_m , auxhist9_begin_s   ) .GT. 0 ) THEN
+      CALL WRFU_TimeIntervalSet( begin_time , MM=auxhist9_begin_mo, D=auxhist9_begin_d, &
+                                      H=auxhist9_begin_h, M=auxhist9_begin_m, S=auxhist9_begin_s, rc=rc )
+      CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                            'WRFU_TimeIntervalSet(auxhist9_begin) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
+   ELSE
+      begin_time = zero_time
+   ENDIF
+
+   CALL nl_get_auxhist9_end_y( grid%id, auxhist9_end_y )
+   CALL nl_get_auxhist9_end_mo( grid%id, auxhist9_end_mo )
+   CALL nl_get_auxhist9_end_d( grid%id, auxhist9_end_d )
+   CALL nl_get_auxhist9_end_h( grid%id, auxhist9_end_h )
+   CALL nl_get_auxhist9_end_m( grid%id, auxhist9_end_m )
+   CALL nl_get_auxhist9_end_s( grid%id, auxhist9_end_s )
+   IF ( MAX( auxhist9_end_y, auxhist9_end_mo, auxhist9_end_d,   &
+             auxhist9_end_h, auxhist9_end_m , auxhist9_end_s   ) .GT. 0 ) THEN
+      CALL WRFU_TimeIntervalSet( end_time , MM=auxhist9_end_mo, D=auxhist9_end_d, &
+                                     H=auxhist9_end_h, M=auxhist9_end_m, S=auxhist9_end_s, rc=rc )
+      CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                            'WRFU_TimeIntervalSet(auxhist9_end) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
+   ELSE
+      end_time = run_length + padding_interval
+   ENDIF
+
+   CALL domain_alarm_create( grid, AUXHIST9_ALARM, interval, begin_time, end_time )
+
+   IF ( interval .NE. run_length + padding_interval .AND. begin_time .EQ. zero_time ) THEN
+     CALL WRFU_AlarmRingerOn( grid%alarms( AUXHIST9_ALARM ),  rc=rc )
+   ENDIF
+
+! AUXHIST10_ INTERVAL
+! auxhist10_interval is left there (and means minutes) for consistency, but
+! auxhist10_interval_m will take precedence if specified
+   CALL nl_get_auxhist10_interval( grid%id, auxhist10_interval )   ! same as minutes
+   CALL nl_get_auxhist10_interval_mo( grid%id, auxhist10_interval_mo )
+   CALL nl_get_auxhist10_interval_d( grid%id, auxhist10_interval_d )
+   CALL nl_get_auxhist10_interval_h( grid%id, auxhist10_interval_h )
+   CALL nl_get_auxhist10_interval_m( grid%id, auxhist10_interval_m )
+   CALL nl_get_auxhist10_interval_s( grid%id, auxhist10_interval_s )
+   IF ( auxhist10_interval_m .EQ. 0 ) auxhist10_interval_m = auxhist10_interval
+
+   IF ( MAX( auxhist10_interval_mo, auxhist10_interval_d,   &
+             auxhist10_interval_h, auxhist10_interval_m , auxhist10_interval_s   ) .GT. 0 ) THEN
+     CALL WRFU_TimeIntervalSet( interval, MM=auxhist10_interval_mo, D=auxhist10_interval_d, &
+                                        H=auxhist10_interval_h, M=auxhist10_interval_m, S=auxhist10_interval_s, rc=rc )
+     CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                           'WRFU_TimeIntervalSet(auxhist10_interval) FAILED', &
+                           __FILE__ , &
+                           __LINE__  )
+   ELSE
+     interval = run_length + padding_interval
+   ENDIF
+
+   CALL nl_get_auxhist10_begin_y( grid%id, auxhist10_begin_y )
+   CALL nl_get_auxhist10_begin_mo( grid%id, auxhist10_begin_mo )
+   CALL nl_get_auxhist10_begin_d( grid%id, auxhist10_begin_d )
+   CALL nl_get_auxhist10_begin_h( grid%id, auxhist10_begin_h )
+   CALL nl_get_auxhist10_begin_m( grid%id, auxhist10_begin_m )
+   CALL nl_get_auxhist10_begin_s( grid%id, auxhist10_begin_s )
+   IF ( MAX( auxhist10_begin_y, auxhist10_begin_mo, auxhist10_begin_d,   &
+             auxhist10_begin_h, auxhist10_begin_m , auxhist10_begin_s   ) .GT. 0 ) THEN
+      CALL WRFU_TimeIntervalSet( begin_time , MM=auxhist10_begin_mo, D=auxhist10_begin_d, &
+                                      H=auxhist10_begin_h, M=auxhist10_begin_m, S=auxhist10_begin_s, rc=rc )
+      CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                            'WRFU_TimeIntervalSet(auxhist10_begin) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
+   ELSE
+      begin_time = zero_time
+   ENDIF
+
+   CALL nl_get_auxhist10_end_y( grid%id, auxhist10_end_y )
+   CALL nl_get_auxhist10_end_mo( grid%id, auxhist10_end_mo )
+   CALL nl_get_auxhist10_end_d( grid%id, auxhist10_end_d )
+   CALL nl_get_auxhist10_end_h( grid%id, auxhist10_end_h )
+   CALL nl_get_auxhist10_end_m( grid%id, auxhist10_end_m )
+   CALL nl_get_auxhist10_end_s( grid%id, auxhist10_end_s )
+   IF ( MAX( auxhist10_end_y, auxhist10_end_mo, auxhist10_end_d,   &
+             auxhist10_end_h, auxhist10_end_m , auxhist10_end_s   ) .GT. 0 ) THEN
+      CALL WRFU_TimeIntervalSet( end_time , MM=auxhist10_end_mo, D=auxhist10_end_d, &
+                                     H=auxhist10_end_h, M=auxhist10_end_m, S=auxhist10_end_s, rc=rc )
+      CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                            'WRFU_TimeIntervalSet(auxhist10_end) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
+   ELSE
+      end_time = run_length + padding_interval
+   ENDIF
+
+   CALL domain_alarm_create( grid, AUXHIST10_ALARM, interval, begin_time, end_time )
+
+   IF ( interval .NE. run_length + padding_interval .AND. begin_time .EQ. zero_time ) THEN
+     CALL WRFU_AlarmRingerOn( grid%alarms( AUXHIST10_ALARM ),  rc=rc )
+   ENDIF
+
+! AUXHIST11_ INTERVAL
+! auxhist11_interval is left there (and means minutes) for consistency, but
+! auxhist11_interval_m will take precedence if specified
+   CALL nl_get_auxhist11_interval( grid%id, auxhist11_interval )   ! same as minutes
+   CALL nl_get_auxhist11_interval_mo( grid%id, auxhist11_interval_mo )
+   CALL nl_get_auxhist11_interval_d( grid%id, auxhist11_interval_d )
+   CALL nl_get_auxhist11_interval_h( grid%id, auxhist11_interval_h )
+   CALL nl_get_auxhist11_interval_m( grid%id, auxhist11_interval_m )
+   CALL nl_get_auxhist11_interval_s( grid%id, auxhist11_interval_s )
+   IF ( auxhist11_interval_m .EQ. 0 ) auxhist11_interval_m = auxhist11_interval
+
+   IF ( MAX( auxhist11_interval_mo, auxhist11_interval_d,   &
+             auxhist11_interval_h, auxhist11_interval_m , auxhist11_interval_s   ) .GT. 0 ) THEN
+     CALL WRFU_TimeIntervalSet( interval, MM=auxhist11_interval_mo, D=auxhist11_interval_d, &
+                                        H=auxhist11_interval_h, M=auxhist11_interval_m, S=auxhist11_interval_s, rc=rc )
+     CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                           'WRFU_TimeIntervalSet(auxhist11_interval) FAILED', &
+                           __FILE__ , &
+                           __LINE__  )
+   ELSE
+     interval = run_length + padding_interval
+   ENDIF
+
+   CALL nl_get_auxhist11_begin_y( grid%id, auxhist11_begin_y )
+   CALL nl_get_auxhist11_begin_mo( grid%id, auxhist11_begin_mo )
+   CALL nl_get_auxhist11_begin_d( grid%id, auxhist11_begin_d )
+   CALL nl_get_auxhist11_begin_h( grid%id, auxhist11_begin_h )
+   CALL nl_get_auxhist11_begin_m( grid%id, auxhist11_begin_m )
+   CALL nl_get_auxhist11_begin_s( grid%id, auxhist11_begin_s )
+   IF ( MAX( auxhist11_begin_y, auxhist11_begin_mo, auxhist11_begin_d,   &
+             auxhist11_begin_h, auxhist11_begin_m , auxhist11_begin_s   ) .GT. 0 ) THEN
+      CALL WRFU_TimeIntervalSet( begin_time , MM=auxhist11_begin_mo, D=auxhist11_begin_d, &
+                                      H=auxhist11_begin_h, M=auxhist11_begin_m, S=auxhist11_begin_s, rc=rc )
+      CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                            'WRFU_TimeIntervalSet(auxhist11_begin) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
+   ELSE
+      begin_time = zero_time
+   ENDIF
+
+   CALL nl_get_auxhist11_end_y( grid%id, auxhist11_end_y )
+   CALL nl_get_auxhist11_end_mo( grid%id, auxhist11_end_mo )
+   CALL nl_get_auxhist11_end_d( grid%id, auxhist11_end_d )
+   CALL nl_get_auxhist11_end_h( grid%id, auxhist11_end_h )
+   CALL nl_get_auxhist11_end_m( grid%id, auxhist11_end_m )
+   CALL nl_get_auxhist11_end_s( grid%id, auxhist11_end_s )
+   IF ( MAX( auxhist11_end_y, auxhist11_end_mo, auxhist11_end_d,   &
+             auxhist11_end_h, auxhist11_end_m , auxhist11_end_s   ) .GT. 0 ) THEN
+      CALL WRFU_TimeIntervalSet( end_time , MM=auxhist11_end_mo, D=auxhist11_end_d, &
+                                     H=auxhist11_end_h, M=auxhist11_end_m, S=auxhist11_end_s, rc=rc )
+      CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                            'WRFU_TimeIntervalSet(auxhist11_end) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
+   ELSE
+      end_time = run_length + padding_interval
+   ENDIF
+
+   CALL domain_alarm_create( grid, AUXHIST11_ALARM, interval, begin_time, end_time )
+
+   IF ( interval .NE. run_length + padding_interval .AND. begin_time .EQ. zero_time ) THEN
+     CALL WRFU_AlarmRingerOn( grid%alarms( AUXHIST11_ALARM ),  rc=rc )
+   ENDIF
+
 ! AUXINPUT1_ INTERVAL
 ! auxinput1_interval is left there (and means minutes) for consistency, but
 ! auxinput1_interval_m will take precedence if specified
@@ -1101,6 +1584,423 @@ SUBROUTINE Setup_Timekeeping ( grid )
 ! end for wrf chem emiss input
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #endif
+
+! AUXINPUT6_ INTERVAL
+! auxinput6_interval is left there (and means minutes) for consistency, but
+! auxinput6_interval_m will take precedence if specified
+   CALL nl_get_auxinput6_interval( grid%id, auxinput6_interval )   ! same as minutes
+   CALL nl_get_auxinput6_interval_mo( grid%id, auxinput6_interval_mo )
+   CALL nl_get_auxinput6_interval_d( grid%id, auxinput6_interval_d )
+   CALL nl_get_auxinput6_interval_h( grid%id, auxinput6_interval_h )
+   CALL nl_get_auxinput6_interval_m( grid%id, auxinput6_interval_m )
+   CALL nl_get_auxinput6_interval_s( grid%id, auxinput6_interval_s )
+   IF ( auxinput6_interval_m .EQ. 0 ) auxinput6_interval_m = auxinput6_interval
+
+   IF ( MAX( auxinput6_interval_mo, auxinput6_interval_d,   &
+             auxinput6_interval_h, auxinput6_interval_m , auxinput6_interval_s   ) .GT. 0 ) THEN
+     CALL WRFU_TimeIntervalSet( interval, MM=auxinput6_interval_mo, D=auxinput6_interval_d, &
+                                        H=auxinput6_interval_h, M=auxinput6_interval_m, S=auxinput6_interval_s, rc=rc )
+     CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                           'WRFU_TimeIntervalSet(auxinput6_interval) FAILED', &
+                           __FILE__ , &
+                           __LINE__  )
+   ELSE
+     interval = run_length + padding_interval
+   ENDIF
+
+   CALL nl_get_auxinput6_begin_y( grid%id, auxinput6_begin_y )
+   CALL nl_get_auxinput6_begin_mo( grid%id, auxinput6_begin_mo )
+   CALL nl_get_auxinput6_begin_d( grid%id, auxinput6_begin_d )
+   CALL nl_get_auxinput6_begin_h( grid%id, auxinput6_begin_h )
+   CALL nl_get_auxinput6_begin_m( grid%id, auxinput6_begin_m )
+   CALL nl_get_auxinput6_begin_s( grid%id, auxinput6_begin_s )
+   IF ( MAX( auxinput6_begin_y, auxinput6_begin_mo, auxinput6_begin_d,   &
+             auxinput6_begin_h, auxinput6_begin_m , auxinput6_begin_s   ) .GT. 0 ) THEN
+      CALL WRFU_TimeIntervalSet( begin_time , MM=auxinput6_begin_mo, D=auxinput6_begin_d, &
+                                      H=auxinput6_begin_h, M=auxinput6_begin_m, S=auxinput6_begin_s, rc=rc )
+      CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                            'WRFU_TimeIntervalSet(auxinput6_begin) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
+   ELSE
+      begin_time = zero_time
+   ENDIF
+
+   CALL nl_get_auxinput6_end_y( grid%id, auxinput6_end_y )
+   CALL nl_get_auxinput6_end_mo( grid%id, auxinput6_end_mo )
+   CALL nl_get_auxinput6_end_d( grid%id, auxinput6_end_d )
+   CALL nl_get_auxinput6_end_h( grid%id, auxinput6_end_h )
+   CALL nl_get_auxinput6_end_m( grid%id, auxinput6_end_m )
+   CALL nl_get_auxinput6_end_s( grid%id, auxinput6_end_s )
+   IF ( MAX( auxinput6_end_y, auxinput6_end_mo, auxinput6_end_d,   &
+             auxinput6_end_h, auxinput6_end_m , auxinput6_end_s   ) .GT. 0 ) THEN
+      CALL WRFU_TimeIntervalSet( end_time , MM=auxinput6_end_mo, D=auxinput6_end_d, &
+                                     H=auxinput6_end_h, M=auxinput6_end_m, S=auxinput6_end_s, rc=rc )
+      CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                            'WRFU_TimeIntervalSet(auxinput6_end) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
+   ELSE
+      end_time = run_length + padding_interval
+   ENDIF
+
+   CALL domain_alarm_create( grid, AUXINPUT6_ALARM, interval, begin_time, end_time )
+
+   IF ( interval .NE. run_length + padding_interval .AND. begin_time .EQ. zero_time ) THEN
+     CALL WRFU_AlarmRingerOn( grid%alarms( AUXINPUT6_ALARM ),  rc=rc )
+     CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                           'WRFU_AlarmRingerOn(AUXINPUT6_ALARM) FAILED', &
+                           __FILE__ , &
+                           __LINE__  )
+   ENDIF
+
+
+! AUXINPUT7_ INTERVAL
+! auxinput7_interval is left there (and means minutes) for consistency, but
+! auxinput7_interval_m will take precedence if specified
+   CALL nl_get_auxinput7_interval( grid%id, auxinput7_interval )   ! same as minutes
+   CALL nl_get_auxinput7_interval_mo( grid%id, auxinput7_interval_mo )
+   CALL nl_get_auxinput7_interval_d( grid%id, auxinput7_interval_d )
+   CALL nl_get_auxinput7_interval_h( grid%id, auxinput7_interval_h )
+   CALL nl_get_auxinput7_interval_m( grid%id, auxinput7_interval_m )
+   CALL nl_get_auxinput7_interval_s( grid%id, auxinput7_interval_s )
+   IF ( auxinput7_interval_m .EQ. 0 ) auxinput7_interval_m = auxinput7_interval
+
+   IF ( MAX( auxinput7_interval_mo, auxinput7_interval_d,   &
+             auxinput7_interval_h, auxinput7_interval_m , auxinput7_interval_s   ) .GT. 0 ) THEN
+     CALL WRFU_TimeIntervalSet( interval, MM=auxinput7_interval_mo, D=auxinput7_interval_d, &
+                                        H=auxinput7_interval_h, M=auxinput7_interval_m, S=auxinput7_interval_s, rc=rc )
+     CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                           'WRFU_TimeIntervalSet(auxinput7_interval) FAILED', &
+                           __FILE__ , &
+                           __LINE__  )
+   ELSE
+     interval = run_length + padding_interval
+   ENDIF
+
+   CALL nl_get_auxinput7_begin_y( grid%id, auxinput7_begin_y )
+   CALL nl_get_auxinput7_begin_mo( grid%id, auxinput7_begin_mo )
+   CALL nl_get_auxinput7_begin_d( grid%id, auxinput7_begin_d )
+   CALL nl_get_auxinput7_begin_h( grid%id, auxinput7_begin_h )
+   CALL nl_get_auxinput7_begin_m( grid%id, auxinput7_begin_m )
+   CALL nl_get_auxinput7_begin_s( grid%id, auxinput7_begin_s )
+   IF ( MAX( auxinput7_begin_y, auxinput7_begin_mo, auxinput7_begin_d,   &
+             auxinput7_begin_h, auxinput7_begin_m , auxinput7_begin_s   ) .GT. 0 ) THEN
+      CALL WRFU_TimeIntervalSet( begin_time , MM=auxinput7_begin_mo, D=auxinput7_begin_d, &
+                                      H=auxinput7_begin_h, M=auxinput7_begin_m, S=auxinput7_begin_s, rc=rc )
+      CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                            'WRFU_TimeIntervalSet(auxinput7_begin) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
+   ELSE
+      begin_time = zero_time
+   ENDIF
+
+   CALL nl_get_auxinput7_end_y( grid%id, auxinput7_end_y )
+   CALL nl_get_auxinput7_end_mo( grid%id, auxinput7_end_mo )
+   CALL nl_get_auxinput7_end_d( grid%id, auxinput7_end_d )
+   CALL nl_get_auxinput7_end_h( grid%id, auxinput7_end_h )
+   CALL nl_get_auxinput7_end_m( grid%id, auxinput7_end_m )
+   CALL nl_get_auxinput7_end_s( grid%id, auxinput7_end_s )
+   IF ( MAX( auxinput7_end_y, auxinput7_end_mo, auxinput7_end_d,   &
+             auxinput7_end_h, auxinput7_end_m , auxinput7_end_s   ) .GT. 0 ) THEN
+      CALL WRFU_TimeIntervalSet( end_time , MM=auxinput7_end_mo, D=auxinput7_end_d, &
+                                     H=auxinput7_end_h, M=auxinput7_end_m, S=auxinput7_end_s, rc=rc )
+      CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                            'WRFU_TimeIntervalSet(auxinput7_end) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
+   ELSE
+      end_time = run_length + padding_interval
+   ENDIF
+
+   CALL domain_alarm_create( grid, AUXINPUT7_ALARM, interval, begin_time, end_time )
+
+   IF ( interval .NE. run_length + padding_interval .AND. begin_time .EQ. zero_time ) THEN
+     CALL WRFU_AlarmRingerOn( grid%alarms( AUXINPUT7_ALARM ),  rc=rc )
+     CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                           'WRFU_AlarmRingerOn(AUXINPUT7_ALARM) FAILED', &
+                           __FILE__ , &
+                           __LINE__  )
+   ENDIF
+
+
+
+! AUXINPUT8_ INTERVAL
+! auxinput8_interval is left there (and means minutes) for consistency, but
+! auxinput8_interval_m will take precedence if specified
+   CALL nl_get_auxinput8_interval( grid%id, auxinput8_interval )   ! same as minutes
+   CALL nl_get_auxinput8_interval_mo( grid%id, auxinput8_interval_mo )
+   CALL nl_get_auxinput8_interval_d( grid%id, auxinput8_interval_d )
+   CALL nl_get_auxinput8_interval_h( grid%id, auxinput8_interval_h )
+   CALL nl_get_auxinput8_interval_m( grid%id, auxinput8_interval_m )
+   CALL nl_get_auxinput8_interval_s( grid%id, auxinput8_interval_s )
+   IF ( auxinput8_interval_m .EQ. 0 ) auxinput8_interval_m = auxinput8_interval
+
+   IF ( MAX( auxinput8_interval_mo, auxinput8_interval_d,   &
+             auxinput8_interval_h, auxinput8_interval_m , auxinput8_interval_s   ) .GT. 0 ) THEN
+     CALL WRFU_TimeIntervalSet( interval, MM=auxinput8_interval_mo, D=auxinput8_interval_d, &
+                                        H=auxinput8_interval_h, M=auxinput8_interval_m, S=auxinput8_interval_s, rc=rc )
+     CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                           'WRFU_TimeIntervalSet(auxinput8_interval) FAILED', &
+                           __FILE__ , &
+                           __LINE__  )
+   ELSE
+     interval = run_length + padding_interval
+   ENDIF
+
+   CALL nl_get_auxinput8_begin_y( grid%id, auxinput8_begin_y )
+   CALL nl_get_auxinput8_begin_mo( grid%id, auxinput8_begin_mo )
+   CALL nl_get_auxinput8_begin_d( grid%id, auxinput8_begin_d )
+   CALL nl_get_auxinput8_begin_h( grid%id, auxinput8_begin_h )
+   CALL nl_get_auxinput8_begin_m( grid%id, auxinput8_begin_m )
+   CALL nl_get_auxinput8_begin_s( grid%id, auxinput8_begin_s )
+   IF ( MAX( auxinput8_begin_y, auxinput8_begin_mo, auxinput8_begin_d,   &
+             auxinput8_begin_h, auxinput8_begin_m , auxinput8_begin_s   ) .GT. 0 ) THEN
+      CALL WRFU_TimeIntervalSet( begin_time , MM=auxinput8_begin_mo, D=auxinput8_begin_d, &
+                                      H=auxinput8_begin_h, M=auxinput8_begin_m, S=auxinput8_begin_s, rc=rc )
+      CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                            'WRFU_TimeIntervalSet(auxinput8_begin) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
+   ELSE
+      begin_time = zero_time
+   ENDIF
+
+   CALL nl_get_auxinput8_end_y( grid%id, auxinput8_end_y )
+   CALL nl_get_auxinput8_end_mo( grid%id, auxinput8_end_mo )
+   CALL nl_get_auxinput8_end_d( grid%id, auxinput8_end_d )
+   CALL nl_get_auxinput8_end_h( grid%id, auxinput8_end_h )
+   CALL nl_get_auxinput8_end_m( grid%id, auxinput8_end_m )
+   CALL nl_get_auxinput8_end_s( grid%id, auxinput8_end_s )
+   IF ( MAX( auxinput8_end_y, auxinput8_end_mo, auxinput8_end_d,   &
+             auxinput8_end_h, auxinput8_end_m , auxinput8_end_s   ) .GT. 0 ) THEN
+      CALL WRFU_TimeIntervalSet( end_time , MM=auxinput8_end_mo, D=auxinput8_end_d, &
+                                     H=auxinput8_end_h, M=auxinput8_end_m, S=auxinput8_end_s, rc=rc )
+      CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                            'WRFU_TimeIntervalSet(auxinput8_end) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
+   ELSE
+      end_time = run_length + padding_interval
+   ENDIF
+
+   CALL domain_alarm_create( grid, AUXINPUT8_ALARM, interval, begin_time, end_time )
+
+   IF ( interval .NE. run_length + padding_interval .AND. begin_time .EQ. zero_time ) THEN
+     CALL WRFU_AlarmRingerOn( grid%alarms( AUXINPUT8_ALARM ),  rc=rc )
+     CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                           'WRFU_AlarmRingerOn(AUXINPUT8_ALARM) FAILED', &
+                           __FILE__ , &
+                           __LINE__  )
+   ENDIF
+
+! AUXINPUT9_ INTERVAL
+! auxinput9_interval is left there (and means minutes) for consistency, but
+! auxinput9_interval_m will take precedence if specified
+   CALL nl_get_auxinput9_interval( grid%id, auxinput9_interval )   ! same as minutes
+   CALL nl_get_auxinput9_interval_mo( grid%id, auxinput9_interval_mo )
+   CALL nl_get_auxinput9_interval_d( grid%id, auxinput9_interval_d )
+   CALL nl_get_auxinput9_interval_h( grid%id, auxinput9_interval_h )
+   CALL nl_get_auxinput9_interval_m( grid%id, auxinput9_interval_m )
+   CALL nl_get_auxinput9_interval_s( grid%id, auxinput9_interval_s )
+   IF ( auxinput9_interval_m .EQ. 0 ) auxinput9_interval_m = auxinput9_interval
+
+   IF ( MAX( auxinput9_interval_mo, auxinput9_interval_d,   &
+             auxinput9_interval_h, auxinput9_interval_m , auxinput9_interval_s   ) .GT. 0 ) THEN
+     CALL WRFU_TimeIntervalSet( interval, MM=auxinput9_interval_mo, D=auxinput9_interval_d, &
+                                        H=auxinput9_interval_h, M=auxinput9_interval_m, S=auxinput9_interval_s, rc=rc )
+     CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                           'WRFU_TimeIntervalSet(auxinput9_interval) FAILED', &
+                           __FILE__ , &
+                           __LINE__  )
+   ELSE
+     interval = run_length + padding_interval
+   ENDIF
+
+   CALL nl_get_auxinput9_begin_y( grid%id, auxinput9_begin_y )
+   CALL nl_get_auxinput9_begin_mo( grid%id, auxinput9_begin_mo )
+   CALL nl_get_auxinput9_begin_d( grid%id, auxinput9_begin_d )
+   CALL nl_get_auxinput9_begin_h( grid%id, auxinput9_begin_h )
+   CALL nl_get_auxinput9_begin_m( grid%id, auxinput9_begin_m )
+   CALL nl_get_auxinput9_begin_s( grid%id, auxinput9_begin_s )
+   IF ( MAX( auxinput9_begin_y, auxinput9_begin_mo, auxinput9_begin_d,   &
+             auxinput9_begin_h, auxinput9_begin_m , auxinput9_begin_s   ) .GT. 0 ) THEN
+      CALL WRFU_TimeIntervalSet( begin_time , MM=auxinput9_begin_mo, D=auxinput9_begin_d, &
+                                      H=auxinput9_begin_h, M=auxinput9_begin_m, S=auxinput9_begin_s, rc=rc )
+      CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                            'WRFU_TimeIntervalSet(auxinput9_begin) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
+   ELSE
+      begin_time = zero_time
+   ENDIF
+
+   CALL nl_get_auxinput9_end_y( grid%id, auxinput9_end_y )
+   CALL nl_get_auxinput9_end_mo( grid%id, auxinput9_end_mo )
+   CALL nl_get_auxinput9_end_d( grid%id, auxinput9_end_d )
+   CALL nl_get_auxinput9_end_h( grid%id, auxinput9_end_h )
+   CALL nl_get_auxinput9_end_m( grid%id, auxinput9_end_m )
+   CALL nl_get_auxinput9_end_s( grid%id, auxinput9_end_s )
+   IF ( MAX( auxinput9_end_y, auxinput9_end_mo, auxinput9_end_d,   &
+             auxinput9_end_h, auxinput9_end_m , auxinput9_end_s   ) .GT. 0 ) THEN
+      CALL WRFU_TimeIntervalSet( end_time , MM=auxinput9_end_mo, D=auxinput9_end_d, &
+                                     H=auxinput9_end_h, M=auxinput9_end_m, S=auxinput9_end_s, rc=rc )
+      CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                            'WRFU_TimeIntervalSet(auxinput9_end) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
+   ELSE
+      end_time = run_length + padding_interval
+   ENDIF
+
+   CALL domain_alarm_create( grid, AUXINPUT9_ALARM, interval, begin_time, end_time )
+
+   IF ( interval .NE. run_length + padding_interval .AND. begin_time .EQ. zero_time ) THEN
+     CALL WRFU_AlarmRingerOn( grid%alarms( AUXINPUT9_ALARM ),  rc=rc )
+     CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                           'WRFU_AlarmRingerOn(AUXINPUT9_ALARM) FAILED', &
+                           __FILE__ , &
+                           __LINE__  )
+   ENDIF
+
+! AUXINPUT10_ INTERVAL
+! auxinput10_interval is left there (and means minutes) for consistency, but
+! auxinput10_interval_m will take precedence if specified
+   CALL nl_get_auxinput10_interval( grid%id, auxinput10_interval )   ! same as minutes
+   CALL nl_get_auxinput10_interval_mo( grid%id, auxinput10_interval_mo )
+   CALL nl_get_auxinput10_interval_d( grid%id, auxinput10_interval_d )
+   CALL nl_get_auxinput10_interval_h( grid%id, auxinput10_interval_h )
+   CALL nl_get_auxinput10_interval_m( grid%id, auxinput10_interval_m )
+   CALL nl_get_auxinput10_interval_s( grid%id, auxinput10_interval_s )
+   IF ( auxinput10_interval_m .EQ. 0 ) auxinput10_interval_m = auxinput10_interval
+
+   IF ( MAX( auxinput10_interval_mo, auxinput10_interval_d,   &
+             auxinput10_interval_h, auxinput10_interval_m , auxinput10_interval_s   ) .GT. 0 ) THEN
+     CALL WRFU_TimeIntervalSet( interval, MM=auxinput10_interval_mo, D=auxinput10_interval_d, &
+                                        H=auxinput10_interval_h, M=auxinput10_interval_m, S=auxinput10_interval_s, rc=rc )
+     CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                           'WRFU_TimeIntervalSet(auxinput10_interval) FAILED', &
+                           __FILE__ , &
+                           __LINE__  )
+   ELSE
+     interval = run_length + padding_interval
+   ENDIF
+
+   CALL nl_get_auxinput10_begin_y( grid%id, auxinput10_begin_y )
+   CALL nl_get_auxinput10_begin_mo( grid%id, auxinput10_begin_mo )
+   CALL nl_get_auxinput10_begin_d( grid%id, auxinput10_begin_d )
+   CALL nl_get_auxinput10_begin_h( grid%id, auxinput10_begin_h )
+   CALL nl_get_auxinput10_begin_m( grid%id, auxinput10_begin_m )
+   CALL nl_get_auxinput10_begin_s( grid%id, auxinput10_begin_s )
+   IF ( MAX( auxinput10_begin_y, auxinput10_begin_mo, auxinput10_begin_d,   &
+             auxinput10_begin_h, auxinput10_begin_m , auxinput10_begin_s   ) .GT. 0 ) THEN
+      CALL WRFU_TimeIntervalSet( begin_time , MM=auxinput10_begin_mo, D=auxinput10_begin_d, &
+                                      H=auxinput10_begin_h, M=auxinput10_begin_m, S=auxinput10_begin_s, rc=rc )
+      CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                            'WRFU_TimeIntervalSet(auxinput10_begin) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
+   ELSE
+      begin_time = zero_time
+   ENDIF
+
+   CALL nl_get_auxinput10_end_y( grid%id, auxinput10_end_y )
+   CALL nl_get_auxinput10_end_mo( grid%id, auxinput10_end_mo )
+   CALL nl_get_auxinput10_end_d( grid%id, auxinput10_end_d )
+   CALL nl_get_auxinput10_end_h( grid%id, auxinput10_end_h )
+   CALL nl_get_auxinput10_end_m( grid%id, auxinput10_end_m )
+   CALL nl_get_auxinput10_end_s( grid%id, auxinput10_end_s )
+   IF ( MAX( auxinput10_end_y, auxinput10_end_mo, auxinput10_end_d,   &
+             auxinput10_end_h, auxinput10_end_m , auxinput10_end_s   ) .GT. 0 ) THEN
+      CALL WRFU_TimeIntervalSet( end_time , MM=auxinput10_end_mo, D=auxinput10_end_d, &
+                                     H=auxinput10_end_h, M=auxinput10_end_m, S=auxinput10_end_s, rc=rc )
+      CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                            'WRFU_TimeIntervalSet(auxinput10_end) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
+   ELSE
+      end_time = run_length + padding_interval
+   ENDIF
+
+   CALL domain_alarm_create( grid, AUXINPUT10_ALARM, interval, begin_time, end_time )
+
+   IF ( interval .NE. run_length + padding_interval .AND. begin_time .EQ. zero_time ) THEN
+     CALL WRFU_AlarmRingerOn( grid%alarms( AUXINPUT10_ALARM ),  rc=rc )
+     CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                           'WRFU_AlarmRingerOn(AUXINPUT10_ALARM) FAILED', &
+                           __FILE__ , &
+                           __LINE__  )
+   ENDIF
+
+! AUXINPUT11_ INTERVAL
+! auxinput11_interval is left there (and means minutes) for consistency, but
+! auxinput11_interval_m will take precedence if specified
+   CALL nl_get_auxinput11_interval( grid%id, auxinput11_interval )   ! same as minutes
+   CALL nl_get_auxinput11_interval_mo( grid%id, auxinput11_interval_mo )
+   CALL nl_get_auxinput11_interval_d( grid%id, auxinput11_interval_d )
+   CALL nl_get_auxinput11_interval_h( grid%id, auxinput11_interval_h )
+   CALL nl_get_auxinput11_interval_m( grid%id, auxinput11_interval_m )
+   CALL nl_get_auxinput11_interval_s( grid%id, auxinput11_interval_s )
+   IF ( auxinput11_interval_m .EQ. 0 ) auxinput11_interval_m = auxinput11_interval
+
+   IF ( MAX( auxinput11_interval_mo, auxinput11_interval_d,   &
+             auxinput11_interval_h, auxinput11_interval_m , auxinput11_interval_s   ) .GT. 0 ) THEN
+     CALL WRFU_TimeIntervalSet( interval, MM=auxinput11_interval_mo, D=auxinput11_interval_d, &
+                                        H=auxinput11_interval_h, M=auxinput11_interval_m, S=auxinput11_interval_s, rc=rc )
+     CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                           'WRFU_TimeIntervalSet(auxinput11_interval) FAILED', &
+                           __FILE__ , &
+                           __LINE__  )
+   ELSE
+     interval = run_length + padding_interval
+   ENDIF
+
+   CALL nl_get_auxinput11_begin_y( grid%id, auxinput11_begin_y )
+   CALL nl_get_auxinput11_begin_mo( grid%id, auxinput11_begin_mo )
+   CALL nl_get_auxinput11_begin_d( grid%id, auxinput11_begin_d )
+   CALL nl_get_auxinput11_begin_h( grid%id, auxinput11_begin_h )
+   CALL nl_get_auxinput11_begin_m( grid%id, auxinput11_begin_m )
+   CALL nl_get_auxinput11_begin_s( grid%id, auxinput11_begin_s )
+   IF ( MAX( auxinput11_begin_y, auxinput11_begin_mo, auxinput11_begin_d,   &
+             auxinput11_begin_h, auxinput11_begin_m , auxinput11_begin_s   ) .GT. 0 ) THEN
+      CALL WRFU_TimeIntervalSet( begin_time , MM=auxinput11_begin_mo, D=auxinput11_begin_d, &
+                                      H=auxinput11_begin_h, M=auxinput11_begin_m, S=auxinput11_begin_s, rc=rc )
+      CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                            'WRFU_TimeIntervalSet(auxinput11_begin) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
+   ELSE
+      begin_time = zero_time
+   ENDIF
+
+   CALL nl_get_auxinput11_end_y( grid%id, auxinput11_end_y )
+   CALL nl_get_auxinput11_end_mo( grid%id, auxinput11_end_mo )
+   CALL nl_get_auxinput11_end_d( grid%id, auxinput11_end_d )
+   CALL nl_get_auxinput11_end_h( grid%id, auxinput11_end_h )
+   CALL nl_get_auxinput11_end_m( grid%id, auxinput11_end_m )
+   CALL nl_get_auxinput11_end_s( grid%id, auxinput11_end_s )
+   IF ( MAX( auxinput11_end_y, auxinput11_end_mo, auxinput11_end_d,   &
+             auxinput11_end_h, auxinput11_end_m , auxinput11_end_s   ) .GT. 0 ) THEN
+      CALL WRFU_TimeIntervalSet( end_time , MM=auxinput11_end_mo, D=auxinput11_end_d, &
+                                     H=auxinput11_end_h, M=auxinput11_end_m, S=auxinput11_end_s, rc=rc )
+      CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                            'WRFU_TimeIntervalSet(auxinput11_end) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
+   ELSE
+      end_time = run_length + padding_interval
+   ENDIF
+
+   CALL domain_alarm_create( grid, AUXINPUT11_ALARM, interval, begin_time, end_time )
+
+   IF ( interval .NE. run_length + padding_interval .AND. begin_time .EQ. zero_time ) THEN
+     CALL WRFU_AlarmRingerOn( grid%alarms( AUXINPUT11_ALARM ),  rc=rc )
+     CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                           'WRFU_AlarmRingerOn(AUXINPUT11_ALARM) FAILED', &
+                           __FILE__ , &
+                           __LINE__  )
+   ENDIF
 
 #ifdef MOVE_NESTS
 ! This is the interval at which the code in time_for_move in share/mediation_integrate.F

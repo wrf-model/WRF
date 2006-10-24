@@ -99,9 +99,9 @@ module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o  start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
 
 
 ###########################################################
@@ -204,9 +204,9 @@ module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
 #ARCH       SGI 64 bit machine IRIX64     (single-threaded, no nesting)
@@ -313,9 +313,9 @@ module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o  start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
 #ARCH	SGI O2K IRIX
@@ -419,9 +419,9 @@ module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
 #ARCH       SGI 64 bit machine IRIX64     (OpenMP, no nesting)
@@ -530,9 +530,9 @@ module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o  start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
 #ARCH	SGI O2K DM IRIX64     DM-Parallel        (RSL, SGI-MPI, allows nesting)
@@ -659,9 +659,9 @@ module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
 #ARCH	Sun  SunOS      (single-threaded, no nesting)
@@ -747,8 +747,8 @@ esmf_time :
 
 solve_interface.o : solve_interface.F
 	$(RM) $@
-	$(CPP) -I../inc $(CPPFLAGS) $*.F > $*.f
-	$(FC) -c $(FCBASEOPTS) -I. $(PROMOTION) $(MODULE_DIRS) $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.F > $*.f90
+	$(FC) -c $(FCBASEOPTS) -I. $(PROMOTION) $(MODULE_DIRS) $*.f90
 
 # compile these without high optimization to speed compile
 shift_domain_em.o : shift_domain_em.F
@@ -792,9 +792,9 @@ module_initialize_real.o mediation_interp_domain.o \
 mediation_force_domain.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
 #ARCH	Sun  SunOS      (single-threaded, nesting using RSL and no MPI)
@@ -935,9 +935,9 @@ module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f90
 
 ###########################################################
 #ARCH	Sun  SunOS SM   (OpenMP, no nesting)
@@ -1025,8 +1025,8 @@ esmf_time :
 
 solve_interface.o : solve_interface.F
 	$(RM) $@
-	$(CPP) -I../inc $(CPPFLAGS) $*.F > $*.f
-	$(FC) -c $(FCBASEOPTS) -I. $(PROMOTION) $(MODULE_DIRS) $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.F > $*.f90
+	$(FC) -c $(FCBASEOPTS) -I. $(PROMOTION) $(MODULE_DIRS) $*.f90
 
 # compile these without high optimization to speed compile
 shift_domain_em.o : shift_domain_em.F
@@ -1055,9 +1055,9 @@ module_configure.o                                             \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
 #ARCH	Sun  SunOS SM   (OpenMP, nesting using RSL and no MPI)
@@ -1186,9 +1186,9 @@ module_configure.o                                             \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f90
 
 ###########################################################
 #ARCH   AIX             (single-threaded, no nesting)
@@ -1206,6 +1206,7 @@ FCDEBUG         =       # -qnoopt -qfullpath
 FCBASEOPTS      =       -qspill=20000 $(FCDEBUG) -qmaxmem=32767 -w #-qflttrap=zerodivide:invalid:enable -qsigtrap
 FCFIXED         =       -qfixed
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
+FCSUFFIX        =       -qsuffix=f=f90
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS  =       -lC
 ESMF_IO_LIB     =       ESMFIOLIB
@@ -1249,15 +1250,15 @@ wrfio_int :
 
 wrfio_grib_share :
 	( cd ../external/io_grib_share ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" archive)
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCSUFFIX) $(FCSUFFIX) -qarch=auto -qzerosize" archive)
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" archive )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCSUFFIX) -qarch=auto -qzerosize" archive )
 
 wrfio_grib2 :
 	( cd ../external/io_grib2 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC -qcpluscmt" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" FREE="" FIXED="-qfixed" archive )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC -qcpluscmt" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCSUFFIX) -qarch=auto -qzerosize" FREE="" FIXED="-qfixed" archive )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -1287,6 +1288,7 @@ convert_nmm.o : convert_nmm.F
 module_configure.o : module_configure.F
 solve_interface.o : solve_interface.F
 solve_em.o : solve_em.F
+solve_nmm.o : solve_nmm.F
 module_integrate.o : module_integrate.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
@@ -1300,21 +1302,22 @@ module_configure.o                                             \
 solve_interface.o                                              \
 shift_domain_em.o                                              \
 solve_em.o							\
+solve_nmm.o                                                     \
 convert_nmm.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) $*.f90
 
 # to prevent having to call our service representative
 mediation_feedback_domain.o \
 mediation_force_domain.o start_domain.o module_integrate.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c -g $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt $*.f
+	$(FC) -c -g $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) -qnoopt $*.f90
 
 ###########################################################
 #ARCH   AIX SM          (OpenMP, no nesting)
@@ -1333,6 +1336,7 @@ FCOPTIM         =       -O2 -qarch=auto
 FCDEBUG         =       # -qnoopt -qfullpath
 FCBASEOPTS      =       -w -qspill=20000 $(FCDEBUG) -qmaxmem=32767 #-qflttrap=zerodivide:invalid:enable -qsigtrap
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
+FCSUFFIX        =       -qsuffix=f=f90
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS  =       -lC
 ESMF_IO_LIB     =       ESMFIOLIB
@@ -1375,15 +1379,15 @@ wrfio_int :
 
 wrfio_grib_share :
 	( cd ../external/io_grib_share ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" archive)
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCSUFFIX) -qarch=auto -qzerosize" archive)
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" archive )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCSUFFIX) -qarch=auto -qzerosize" archive )
 
 wrfio_grib2 :
 	( cd ../external/io_grib2 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC -qcpluscmt" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" FREE="" FIXED="-qfixed" archive )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC -qcpluscmt" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCSUFFIX) -qarch=auto -qzerosize" FREE="" FIXED="-qfixed" archive )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -1398,17 +1402,17 @@ convert_nmm.o   : convert_nmm.F
 module_sm.o module_tiles.o solve_em.o solve_exp.o convert_nmm.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $(OMPCPP) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $(OMPCPP) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c -g $(PROMOTION) $(OMP) $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt $*.f
+	$(FC) -c -g $(PROMOTION) $(OMP) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) -qnoopt $*.f90
 
 #	Compiled WITHOUT ANY SMP, needed Mar 2005
 module_domain.o : module_domain.F
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c -g $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt $*.f
+	$(FC) -c -g $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) -qnoopt $*.f90
 
 ###########################################################
 #ARCH	AIX DM-Parallel          (RSL_LITE, IBM-MPI, Allows nesting)
@@ -1430,6 +1434,7 @@ FCOPTIM         =       -O2 -qarch=auto
 FCDEBUG         =       # -qnoopt -qfullpath
 FCBASEOPTS      =       -w -qspill=20000 $(FCDEBUG) -qmaxmem=32767 #-qflttrap=zerodivide:invalid:enable -qsigtrap
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
+FCSUFFIX        =       -qsuffix=f=f90
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS  =       -lC
 ESMF_IO_LIB     =       ESMFIOLIB
@@ -1476,15 +1481,15 @@ wrfio_int :
 
 wrfio_grib_share :
 	( cd ../external/io_grib_share ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" archive)
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCSUFFIX) -qarch=auto -qzerosize" archive)
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" archive )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCSUFFIX) -qarch=auto -qzerosize" archive )
 
 wrfio_grib2 :
 	( cd ../external/io_grib2 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC -qcpluscmt" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" FREE="" FIXED="-qfixed" archive )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC -qcpluscmt" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCSUFFIX) -qarch=auto -qzerosize" FREE="" FIXED="-qfixed" archive )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -1516,6 +1521,7 @@ convert_nmm.o : convert_nmm.F
 solve_interface.o : solve_interface.F
 shift_domain_em.o : shift_domain_em.F
 solve_em.o : solve_em.F
+solve_nmm.o : solve_nmm.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -1529,12 +1535,13 @@ mediation_feedback_domain.o \
 solve_interface.o                                              \
 shift_domain_em.o                                              \
 solve_em.o                                              \
+solve_nmm.o                                                     \
 convert_nmm.o    :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) -qnoopt $*.f90
 
 ###########################################################
 #ARCH	AIX DM-Parallel          (RSL, IBM-MPI, allows nesting)
@@ -1557,6 +1564,7 @@ FCDEBUG         =       # -qnoopt -qfullpath
 FCBASEOPTS      =       -w -qspill=20000 $(FCDEBUG) -qmaxmem=32767 #-qflttrap=zerodivide:invalid:enable -qsigtrap
 FCFIXED         =       -qfixed
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
+FCSUFFIX        =       -qsuffix=f=f90
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS  =       -lC
 ESMF_IO_LIB     =       ESMFIOLIB
@@ -1603,15 +1611,15 @@ wrfio_int :
 
 wrfio_grib_share :
 	( cd ../external/io_grib_share ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" archive)
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCSUFFIX) -qarch=auto -qzerosize" archive)
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" archive )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCSUFFIX) -qarch=auto -qzerosize" archive )
 
 wrfio_grib2 :
 	( cd ../external/io_grib2 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC -qcpluscmt" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" FREE="" FIXED="-qfixed" archive )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC -qcpluscmt" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCSUFFIX) -qarch=auto -qzerosize" FREE="" FIXED="-qfixed" archive )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -1643,6 +1651,7 @@ convert_nmm.o : convert_nmm.F
 solve_interface.o : solve_interface.F
 shift_domain_em.o : shift_domain_em.F
 solve_em.o : solve_em.F
+solve_nmm.o : solve_nmm.F
 start_domain_nmm.o : start_domain_nmm.F
 couple_or_uncouple_em.o : couple_or_uncouple_em.F
 nest_init_utils.o : nest_init_utils.F
@@ -1659,15 +1668,16 @@ mediation_feedback_domain.o \
 solve_interface.o                                              \
 shift_domain_em.o                                              \
 solve_em.o                                              \
+solve_nmm.o                                                     \
 start_domain_nmm.o                                     \
 couple_or_uncouple_em.o                                              \
-nest_init_utils.o \
+nest_init_utils.o                                              \
 convert_nmm.o    :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) -qnoopt $*.f90
 
 ###########################################################
 #ARCH	AIX DM-Parallel          (RSL, IBM-MPI, allows nesting )(PARALLEL HDF5)
@@ -1689,6 +1699,7 @@ FCOPTIM         =       -O2 -qarch=auto
 FCDEBUG         =       # -qnoopt -qfullpath
 FCBASEOPTS      =       -w -qspill=20000 $(FCDEBUG) -qmaxmem=-1 #-qflttrap=zerodivide:invalid:enable -qsigtrap
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
+FCSUFFIX        =       -qsuffix=f=f90
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS  =       -lC
 ESMF_IO_LIB     =       ESMFIOLIB
@@ -1730,7 +1741,7 @@ wrfio_nf :
 	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 wrfio_phdf5 : 
-	( cd ../external/io_phdf5 ; make PHDF5PATH=CONFIGURE_PHDF5_PATH FC="$(FC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qfree=F90 -qzerosize" ; /bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc )
+	( cd ../external/io_phdf5 ; make PHDF5PATH=CONFIGURE_PHDF5_PATH FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCSUFFIX) -qarch=auto -qfree=F90 -qzerosize" ; /bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -1738,15 +1749,15 @@ wrfio_int :
 
 wrfio_grib_share :
 	( cd ../external/io_grib_share ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" archive)
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCSUFFIX) -qarch=auto -qzerosize" archive)
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" archive )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCSUFFIX) -qarch=auto -qzerosize" archive )
 
 wrfio_grib2 :
 	( cd ../external/io_grib2 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC -qcpluscmt" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" FREE="" FIXED="-qfixed" archive )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC -qcpluscmt" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCSUFFIX) -qarch=auto -qzerosize" FREE="" FIXED="-qfixed" archive )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -1778,6 +1789,7 @@ convert_nmm.o : convert_nmm.F
 solve_interface.o : solve_interface.F
 shift_domain_em.o : shift_domain_em.F
 solve_em.o : solve_em.F
+solve_nmm.o : solve_nmm.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -1791,12 +1803,13 @@ mediation_feedback_domain.o \
 solve_interface.o                                              \
 shift_domain_em.o                                              \
 solve_em.o                                              \
+solve_nmm.o                                                     \
 convert_nmm.o    :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) -qnoopt $*.f90
 
 ###########################################################
 #ARCH	AIX DM-Parallel          (RSL_LITE, IBM-MPI, Allows nesting )(PARALLEL HDF5)
@@ -1818,6 +1831,7 @@ FCOPTIM         =       -O2 -qarch=auto
 FCDEBUG         =       # -qnoopt -qfullpath
 FCBASEOPTS      =       -w -qspill=20000 $(FCDEBUG) -qmaxmem=-1 #-qflttrap=zerodivide:invalid:enable -qsigtrap
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
+FCSUFFIX        =       -qsuffix=f=f90
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS  =       -lC
 ESMF_IO_LIB     =       ESMFIOLIB
@@ -1859,7 +1873,7 @@ wrfio_nf :
 	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 wrfio_phdf5 : 
-	( cd ../external/io_phdf5 ; make PHDF5PATH=CONFIGURE_PHDF5_PATH FC="$(FC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qfree=F90 -qzerosize" ; /bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc )
+	( cd ../external/io_phdf5 ; make PHDF5PATH=CONFIGURE_PHDF5_PATH FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCSUFFIX) -qarch=auto -qfree=F90 -qzerosize" ; /bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -1867,15 +1881,15 @@ wrfio_int :
 
 wrfio_grib_share :
 	( cd ../external/io_grib_share ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" archive)
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCSUFFIX) -qarch=auto -qzerosize" archive)
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" archive )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCSUFFIX) -qarch=auto -qzerosize" archive )
 
 wrfio_grib2 :
 	( cd ../external/io_grib2 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC -qcpluscmt" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" FREE="" FIXED="-qfixed" archive )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC -qcpluscmt" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCSUFFIX) -qarch=auto -qzerosize" FREE="" FIXED="-qfixed" archive )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -1907,6 +1921,7 @@ convert_nmm.o : convert_nmm.F
 solve_interface.o : solve_interface.F
 shift_domain_em.o : shift_domain_em.F
 solve_em.o : solve_em.F
+solve_nmm.o : solve_nmm.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -1920,12 +1935,13 @@ mediation_feedback_domain.o \
 solve_interface.o                                              \
 shift_domain_em.o                                              \
 solve_em.o                                              \
+solve_nmm.o                                                     \
 convert_nmm.o    :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) -qnoopt $*.f90
 
 ###########################################################
 #ARCH	AIX DM-Parallel/SM-Parallel (not recommended)  (RSL, IBM-MPI, OpenMP, allows nesting)
@@ -1949,6 +1965,7 @@ FCOPTIM         =       -O2 -qarch=auto
 FCDEBUG         =       # -qnoopt -qfullpath
 FCBASEOPTS      =       -w -qspill=20000 $(FCDEBUG) -qmaxmem=32767 #-qflttrap=zerodivide:invalid:enable -qsigtrap
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
+FCSUFFIX        =       -qsuffix=f=f90
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS  =       -lC
 ESMF_IO_LIB     =       ESMFIOLIB
@@ -1995,15 +2012,15 @@ wrfio_int :
 
 wrfio_grib_share :
 	( cd ../external/io_grib_share ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" archive)
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCSUFFIX) -qarch=auto -qzerosize" archive)
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" archive )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCSUFFIX) -qarch=auto -qzerosize" archive )
 
 wrfio_grib2 :
 	( cd ../external/io_grib2 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC -qcpluscmt" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" FREE="" FIXED="-qfixed" archive )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC -qcpluscmt" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCSUFFIX) -qarch=auto -qzerosize" FREE="" FIXED="-qfixed" archive )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -2034,6 +2051,7 @@ convert_nmm.o : convert_nmm.F
 module_configure.o : module_configure.F
 shift_domain_em.o : shift_domain_em.F
 solve_em.o : solve_em.F
+solve_nmm.o : solve_nmm.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -2045,30 +2063,31 @@ module_configure.o                                             \
 solve_interface.o                                              \
 shift_domain_em.o                                              \
 solve_em.o                                              \
+solve_nmm.o                                                     \
 mediation_integrate.o \
 mediation_interp_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) -qnoopt $*.f90
 
 # to prevent having to call our service representative
 mediation_feedback_domain.o \
 mediation_force_domain.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c -g $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt $*.f
+	$(FC) -c -g $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) -qnoopt $*.f90
 
 #	Compiled WITHOUT ANY SMP, needed Mar 2005
 module_domain.o : module_domain.F
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c -g $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt $*.f
+	$(FC) -c -g $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) -qnoopt $*.f90
 
 ###########################################################
 #ARCH	AIX DM-Parallel          (RSL, IBM-MPI, MCEL)   May 2003, EXPERIMENTAL
@@ -2091,6 +2110,7 @@ FCOPTIM         =       -O2 -qarch=auto
 FCDEBUG         =       # -qnoopt -qfullpath
 FCBASEOPTS      =       -w -qspill=20000 $(FCDEBUG) -qmaxmem=32767 #-qflttrap=zerodivide:invalid:enable -qsigtrap
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
+FCSUFFIX        =       -qsuffix=f=f90
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS  =       -lC
 ESMF_IO_LIB     =       ESMFIOLIB
@@ -2144,15 +2164,15 @@ wrfio_int :
 
 wrfio_grib_share :
 	( cd ../external/io_grib_share ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" archive)
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCSUFFIX) -qarch=auto -qzerosize" archive)
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" archive )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCSUFFIX) -qarch=auto -qzerosize" archive )
 
 wrfio_grib2 :
 	( cd ../external/io_grib2 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC -qcpluscmt" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" FREE="" FIXED="-qfixed" archive )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC -qcpluscmt" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCSUFFIX) -qarch=auto -qzerosize" FREE="" FIXED="-qfixed" archive )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -2191,6 +2211,7 @@ convert_nmm.o : convert_nmm.F
 solve_interface.o : solve_interface.F
 shift_domain_em.o : shift_domain_em.F
 solve_em.o : solve_em.F
+solve_nmm.o : solve_nmm.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -2204,12 +2225,13 @@ mediation_feedback_domain.o \
 solve_interface.o                                              \
 shift_domain_em.o                                              \
 solve_em.o                                              \
+solve_nmm.o                                                     \
 convert_nmm.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) -qnoopt $*.f90
 
 ###########################################################
 #ARCH	AIX                      (single-threaded, nesting using RSL without MPI)
@@ -2231,6 +2253,7 @@ FCOPTIM         =       -O2 -qarch=auto
 FCDEBUG         =       # -qnoopt -qfullpath
 FCBASEOPTS      =       -w -qspill=20000 $(FCDEBUG) -qmaxmem=32767 #-qflttrap=zerodivide:invalid:enable -qsigtrap
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
+FCSUFFIX        =       -qsuffix=f=f90
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS  =       -lC
 ESMF_IO_LIB     =       ESMFIOLIB
@@ -2277,15 +2300,15 @@ wrfio_int :
 
 wrfio_grib_share :
 	( cd ../external/io_grib_share ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" archive)
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCSUFFIX) -qarch=auto -qzerosize" archive)
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" archive)
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCSUFFIX) -qarch=auto -qzerosize" archive)
 
 wrfio_grib2 :
 	( cd ../external/io_grib2 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC -qcpluscmt" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" FREE="" FIXED="-qfixed" archive)
+          make CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC -qcpluscmt" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCSUFFIX) -qarch=auto -qzerosize" FREE="" FIXED="-qfixed" archive)
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -2319,6 +2342,7 @@ convert_nmm.o : convert_nmm.F
 solve_interface.o : solve_interface.F
 shift_domain_em.o : shift_domain_em.F
 solve_em.o : solve_em.F
+solve_nmm.o : solve_nmm.F
 couple_or_uncouple_em.o : couple_or_uncouple_em.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
@@ -2334,12 +2358,13 @@ solve_interface.o                                              \
 shift_domain_em.o                                              \
 couple_or_uncouple_em.o \
 solve_em.o                                              \
+solve_nmm.o                                                     \
 convert_nmm.o    :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) -qnoopt $*.f90
 
 ###########################################################
 #ARCH	AIX                      (OpenMP, nesting using RSL without MPI)
@@ -2363,6 +2388,7 @@ FCOPTIM         =       -O2 -qarch=auto
 FCDEBUG         =       # -qnoopt -qfullpath
 FCBASEOPTS      =       -w -qspill=20000 $(FCDEBUG) -qmaxmem=32767 #-qflttrap=zerodivide:invalid:enable -qsigtrap
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
+FCSUFFIX        =       -qsuffix=f=f90
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS  =       -lC
 ESMF_IO_LIB     =       ESMFIOLIB
@@ -2409,15 +2435,15 @@ wrfio_int :
 
 wrfio_grib_share :
 	( cd ../external/io_grib_share ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" archive)
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCSUFFIX) -qarch=auto -qzerosize" archive)
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" archive )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCSUFFIX) -qarch=auto -qzerosize" archive )
 
 wrfio_grib2 :
 	( cd ../external/io_grib2 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC -qcpluscmt" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" FREE="" FIXED="-qfixed" archive )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC -qcpluscmt" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCSUFFIX) -qarch=auto -qzerosize" FREE="" FIXED="-qfixed" archive )
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -2444,6 +2470,7 @@ convert_nmm.o : convert_nmm.F
 solve_interface.o : solve_interface.F
 shift_domain_em.o : shift_domain_em.F
 solve_em.o : solve_em.F
+solve_nmm.o : solve_nmm.F
 
 module_io_mm5.o module_si_io.o module_io_wrf.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
@@ -2453,12 +2480,13 @@ start_domain.o \
 solve_interface.o                                              \
 shift_domain_em.o                                              \
 solve_em.o                                              \
+solve_nmm.o                                                     \
 convert_nmm.o    :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $(OMPCPP) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $(OMPCPP) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(OMP) $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt $*.f
+	$(FC) -c $(PROMOTION) $(OMP) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) -qnoopt $*.f90
 
 #	Compiled WITHOUT ANY SMP, needed Mar 2005
 module_domain.o : module_domain.F
@@ -2478,9 +2506,9 @@ mediation_feedback_domain.o \
 module_initialize_real.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c -g $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt $*.f
+	$(FC) -c -g $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) -qnoopt $*.f90
 
 ###########################################################
 #ARCH       Compaq OSF1 alpha          (single-threaded, no nesting)
@@ -2565,9 +2593,9 @@ module_optional_si_input.o : module_optional_si_input.F
 nest_init_utils.o module_optional_si_input.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) -w -convert big_endian -automatic -cpp -free -I. -arch host $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) -w -convert big_endian -automatic -cpp -free -I. -arch host $(MODULE_DIRS) $*.f90
 
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
@@ -2599,9 +2627,9 @@ mediation_feedback_domain.o  \
 module_initialize_real.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f90
 
 mediation_integrate.o : mediation_integrate.F
 module_dm.o : module_dm.F
@@ -2610,9 +2638,9 @@ mediation_wrfmain.o : mediation_wrfmain.F
 mediation_integrate.o module_dm.o mediation_wrfmain.o : 
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS_ESMF) $(MODULE_DIRS) -O0 $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS_ESMF) $(MODULE_DIRS) -O0 $*.f90
 
 ###########################################################
 #ARCH       Compaq OSF1 alpha          (single-threaded, nesting using RSL without MPI )
@@ -2716,9 +2744,9 @@ module_optional_si_input.o : module_optional_si_input.F
 nest_init_utils.o module_optional_si_input.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) -w -convert big_endian -automatic -cpp -free -I. -arch host $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) -w -convert big_endian -automatic -cpp -free -I. -arch host $(MODULE_DIRS) $*.f90
 
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
@@ -2750,9 +2778,9 @@ mediation_feedback_domain.o  \
 module_initialize_real.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f90
 
 mediation_integrate.o : mediation_integrate.F
 module_dm.o : module_dm.F
@@ -2761,9 +2789,9 @@ mediation_wrfmain.o : mediation_wrfmain.F
 mediation_integrate.o module_dm.o mediation_wrfmain.o : 
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS_ESMF) $(MODULE_DIRS) -O0 $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS_ESMF) $(MODULE_DIRS) -O0 $*.f90
 
 ###########################################################
 #ARCH       Compaq OSF1 alpha SM       (OpenMP, no nesting)
@@ -2849,9 +2877,9 @@ module_optional_si_input.o : module_optional_si_input.F
 nest_init_utils.o module_optional_si_input.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) -w -convert big_endian -automatic -cpp -free -I. -arch host $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) -w -convert big_endian -automatic -cpp -free -I. -arch host $(MODULE_DIRS) $*.f90
 
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
@@ -2883,9 +2911,9 @@ mediation_feedback_domain.o  \
 module_initialize_real.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f90
 
 mediation_integrate.o : mediation_integrate.F
 module_dm.o : module_dm.F
@@ -2894,9 +2922,9 @@ mediation_wrfmain.o : mediation_wrfmain.F
 mediation_integrate.o module_dm.o mediation_wrfmain.o : 
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS_ESMF) $(MODULE_DIRS) -O0 $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS_ESMF) $(MODULE_DIRS) -O0 $*.f90
 
 ###########################################################
 #ARCH       Compaq OSF1 alpha SM-Parallel       (OpenMP, nesting using RSL without MPI )
@@ -3001,9 +3029,9 @@ module_optional_si_input.o : module_optional_si_input.F
 nest_init_utils.o module_optional_si_input.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) -w -convert big_endian -automatic -cpp -free -I. -arch host $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) -w -convert big_endian -automatic -cpp -free -I. -arch host $(MODULE_DIRS) $*.f90
 
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
@@ -3035,9 +3063,9 @@ mediation_feedback_domain.o  \
 module_initialize_real.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f90
 
 mediation_integrate.o : mediation_integrate.F
 module_dm.o : module_dm.F
@@ -3046,9 +3074,9 @@ mediation_wrfmain.o : mediation_wrfmain.F
 mediation_integrate.o module_dm.o mediation_wrfmain.o : 
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS_ESMF) $(MODULE_DIRS) -O0 $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS_ESMF) $(MODULE_DIRS) -O0 $*.f90
 
 ###########################################################
 #ARCH     Compaq OSF1 alpha DM-Parallel       (RSL_LITE, MPICH, allows nesting)
@@ -3151,9 +3179,9 @@ module_IGWAVE_ADJUST.o : module_IGWAVE_ADJUST.F
 nest_init_utils.o module_optional_si_input.o module_IGWAVE_ADJUST.o:
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) -w -convert big_endian -automatic -cpp -free -I. -arch host $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) -w -convert big_endian -automatic -cpp -free -I. -arch host $(MODULE_DIRS) $*.f90
 
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
@@ -3187,9 +3215,9 @@ mediation_feedback_domain.o  \
 module_initialize_real.o start_domain.o start_domain_nmm.o solve_em.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f90
 
 mediation_integrate.o : mediation_integrate.F
 module_dm.o : module_dm.F
@@ -3198,9 +3226,9 @@ mediation_wrfmain.o : mediation_wrfmain.F
 mediation_integrate.o module_dm.o mediation_wrfmain.o : 
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS_ESMF) $(MODULE_DIRS) -O0 $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS_ESMF) $(MODULE_DIRS) -O0 $*.f90
 
 ###########################################################
 #ARCH       Compaq OSF1 alpha DM-Parallel       (RSL, MPICH, allows nesting)
@@ -3303,9 +3331,9 @@ module_optional_si_input.o : module_optional_si_input.F
 nest_init_utils.o module_optional_si_input.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) -w -convert big_endian -automatic -cpp -free -I. -arch host $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) -w -convert big_endian -automatic -cpp -free -I. -arch host $(MODULE_DIRS) $*.f90
 
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
@@ -3337,9 +3365,9 @@ mediation_feedback_domain.o  \
 module_initialize_real.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f90
 
 mediation_integrate.o : mediation_integrate.F
 module_dm.o : module_dm.F
@@ -3348,9 +3376,9 @@ mediation_wrfmain.o : mediation_wrfmain.F
 mediation_integrate.o module_dm.o mediation_wrfmain.o : 
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS_ESMF) $(MODULE_DIRS) -O0 $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS_ESMF) $(MODULE_DIRS) -O0 $*.f90
 
 ###########################################################
 #ARCH       Compaq OSF1 alpha DM-Parallel/SM-Parallel    (RSL, MPICH, OpenMP, allows nesting)
@@ -3454,9 +3482,9 @@ module_optional_si_input.o : module_optional_si_input.F
 nest_init_utils.o module_optional_si_input.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) -w -convert big_endian -automatic -cpp -free -I. -arch host $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) -w -convert big_endian -automatic -cpp -free -I. -arch host $(MODULE_DIRS) $*.f90
 
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
@@ -3488,9 +3516,9 @@ mediation_feedback_domain.o  \
 module_initialize_real.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f90
 
 mediation_integrate.o : mediation_integrate.F
 module_dm.o : module_dm.F
@@ -3499,9 +3527,9 @@ mediation_wrfmain.o : mediation_wrfmain.F
 mediation_integrate.o module_dm.o mediation_wrfmain.o : 
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS_ESMF) $(MODULE_DIRS) -O0 $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS_ESMF) $(MODULE_DIRS) -O0 $*.f90
 
 ###########################################################
 #ARCH       Compaq OSF1 alpha DM-Parallel/SM-Parallel    (RSL, DECMPI, OpenMP, allows nesting)
@@ -3605,9 +3633,9 @@ module_optional_si_input.o : module_optional_si_input.F
 nest_init_utils.o module_optional_si_input.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) -w -convert big_endian -automatic -cpp -free -I. -arch host $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) -w -convert big_endian -automatic -cpp -free -I. -arch host $(MODULE_DIRS) $*.f90
 
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
@@ -3639,9 +3667,9 @@ mediation_feedback_domain.o  \
 module_initialize_real.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f90
 
 mediation_integrate.o : mediation_integrate.F
 module_dm.o : module_dm.F
@@ -3650,9 +3678,9 @@ mediation_wrfmain.o : mediation_wrfmain.F
 mediation_integrate.o module_dm.o mediation_wrfmain.o : 
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS_ESMF) $(MODULE_DIRS) -O0 $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS_ESMF) $(MODULE_DIRS) -O0 $*.f90
 
 ###########################################################
 #ARCH       Compaq OSF1 alpha DM-Parallel       (RSL, MPICH, MCEL EXPERIMENTAL)
@@ -3761,9 +3789,9 @@ module_optional_si_input.o : module_optional_si_input.F
 nest_init_utils.o module_optional_si_input.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) -w -convert big_endian -automatic -cpp -free -I. -arch host $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) -w -convert big_endian -automatic -cpp -free -I. -arch host $(MODULE_DIRS) $*.f90
 
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
@@ -3795,9 +3823,9 @@ mediation_feedback_domain.o  \
 module_initialize_real.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f90
 
 mediation_integrate.o : mediation_integrate.F
 module_dm.o : module_dm.F
@@ -3806,9 +3834,9 @@ mediation_wrfmain.o : mediation_wrfmain.F
 mediation_integrate.o module_dm.o mediation_wrfmain.o : 
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS_ESMF) $(MODULE_DIRS) -O0 $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS_ESMF) $(MODULE_DIRS) -O0 $*.f90
 
 ###########################################################
 #ARCH       Compaq OSF1 alpha DM/SM    (BUILD FOR AUTODOC ONLY -- DO NOT USE TO COMPILE CODE)
@@ -3925,9 +3953,9 @@ module_configure.o                                             \
 module_initialize_real.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -O0 $*.f90
 
 mediation_integrate.o : mediation_integrate.F
 module_dm.o : module_dm.F
@@ -3936,9 +3964,9 @@ mediation_wrfmain.o : mediation_wrfmain.F
 mediation_integrate.o module_dm.o mediation_wrfmain.o : 
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS_ESMF) $(MODULE_DIRS) -O0 $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS_ESMF) $(MODULE_DIRS) -O0 $*.f90
 
 ###########################################################
 #ARCH       Alpha Linux alpha DM  (single-threaded, no nesting)
@@ -4042,9 +4070,9 @@ module_configure.o                                             \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASENOINL) $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) $(FCBASENOINL) $(MODULE_DIRS) $*.f90
 
 ###########################################################
 #ARCH       Alpha Linux alpha SM  (DOES NOT WORK ON JET! No nesting)
@@ -4147,9 +4175,9 @@ module_configure.o                                             \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASENOINL) $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) $(FCBASENOINL) $(MODULE_DIRS) $*.f90
 
 ###########################################################
 #ARCH       Alpha Linux alpha DM-Parallel  (RSL, MPICH, Allows nesting)
@@ -4270,9 +4298,9 @@ module_configure.o                                             \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASENOINL) $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) $(FCBASENOINL) $(MODULE_DIRS) $*.f90
 
 ###########################################################
 #ARCH       VPP UNIX_System_V F300 5000
@@ -4386,8 +4414,8 @@ wrfio_grib2 :
 
 solve_interface.o : solve_interface.F
 	$(RM) $@
-	$(CPP) -I../inc $(CPPFLAGS) $*.F > $*.f
-	$(FC) -c -O 0 $(PROMOTION) $(FCFLAGS) $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.F > $*.f90
+	$(FC) -c -O 0 $(PROMOTION) $(FCFLAGS) $*.f90
 
 ###########################################################
 #ARCH    PC Linux i486 i586 i686, PGI compiler  (Single-threaded, no nesting)
@@ -4493,17 +4521,17 @@ module_configure.o                                             \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
 #PGI	if [ ! -e $@ ] ; then \
-#PGI	sleep 10 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
+#PGI	sleep 10 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90 ; \
 #PGI	fi
 #PGI	if [ ! -e $@ ] ; then \
-#PGI	sleep 30 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
+#PGI	sleep 30 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90 ; \
 #PGI	fi
 #PGI	if [ ! -e $@ ] ; then \
-#PGI	sleep 300 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
+#PGI	sleep 300 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90 ; \
 #PGI	fi
 
 ###########################################################
@@ -4623,17 +4651,17 @@ mediation_integrate.o \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
 #PGI	if [ ! -e $@ ] ; then \
-#PGI	sleep 10 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
+#PGI	sleep 10 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90 ; \
 #PGI	fi
 #PGI	if [ ! -e $@ ] ; then \
-#PGI	sleep 30 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
+#PGI	sleep 30 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90 ; \
 #PGI	fi
 #PGI	if [ ! -e $@ ] ; then \
-#PGI	sleep 300 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
+#PGI	sleep 300 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90 ; \
 #PGI	fi
 
 ###########################################################
@@ -4742,17 +4770,17 @@ mediation_integrate.o \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
 #PGI	if [ ! -e $@ ] ; then \
-#PGI	sleep 10 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
+#PGI	sleep 10 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90 ; \
 #PGI	fi
 #PGI	if [ ! -e $@ ] ; then \
-#PGI	sleep 30 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
+#PGI	sleep 30 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90 ; \
 #PGI	fi
 #PGI	if [ ! -e $@ ] ; then \
-#PGI	sleep 300 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
+#PGI	sleep 300 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90 ; \
 #PGI	fi
 
 ###########################################################
@@ -4874,17 +4902,17 @@ mediation_integrate.o \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
 #PGI	if [ ! -e $@ ] ; then \
-#PGI	sleep 10 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
+#PGI	sleep 10 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90 ; \
 #PGI	fi
 #PGI	if [ ! -e $@ ] ; then \
-#PGI	sleep 30 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
+#PGI	sleep 30 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90 ; \
 #PGI	fi
 #PGI	if [ ! -e $@ ] ; then \
-#PGI	sleep 300 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
+#PGI	sleep 300 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90 ; \
 #PGI	fi
 
 ###########################################################
@@ -5004,17 +5032,17 @@ mediation_integrate.o \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
 #PGI	if [ ! -e $@ ] ; then \
-#PGI	sleep 10 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
+#PGI	sleep 10 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90 ; \
 #PGI	fi
 #PGI	if [ ! -e $@ ] ; then \
-#PGI	sleep 30 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
+#PGI	sleep 30 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90 ; \
 #PGI	fi
 #PGI	if [ ! -e $@ ] ; then \
-#PGI	sleep 300 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
+#PGI	sleep 300 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90 ; \
 #PGI	fi
 
 ###########################################################
@@ -5135,17 +5163,17 @@ mediation_integrate.o \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
 #PGI	if [ ! -e $@ ] ; then \
-#PGI	sleep 10 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
+#PGI	sleep 10 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90 ; \
 #PGI	fi
 #PGI	if [ ! -e $@ ] ; then \
-#PGI	sleep 30 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
+#PGI	sleep 30 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90 ; \
 #PGI	fi
 #PGI	if [ ! -e $@ ] ; then \
-#PGI	sleep 300 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
+#PGI	sleep 300 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90 ; \
 #PGI	fi
 
 ###########################################################
@@ -5271,9 +5299,9 @@ module_configure.o                                             \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCNOOPTS) $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) $(FCNOOPTS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
 #ARCH      Intel Itanium2 ia64 Linux (eg. Jacaranda), ifort compiler (RSL, no-MPI, allows nesting)
@@ -5411,9 +5439,9 @@ module_configure.o                                             \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCNOOPTS) $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) $(FCNOOPTS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
 #ARCH    PC Linux x86_64 (IA64 and Opteron), PGI compiler 5.2 or higher  (Single-threaded, no nesting)
@@ -5520,9 +5548,9 @@ module_configure.o                                             \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
 #ARCH    PC Linux x86_64 (IA64 and Opteron), PGI 5.2 or higher, DM-Parallel  (RSL, MPICH, Allows nesting)
@@ -5644,9 +5672,9 @@ module_configure.o                                             \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
 #ARCH    PC Linux x86_64 (IA64 and Opteron), PGI 5.2 or higher DM-Parallel   (RSL_LITE, MPICH, Allows nesting, No periodic LBCs)
@@ -5767,9 +5795,9 @@ module_configure.o                                             \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
 
@@ -5880,17 +5908,17 @@ mediation_integrate.o \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
 #	if [ ! -e $@ ] ; then \
-#	sleep 10 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
+#	sleep 10 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90 ; \
 #	fi
 #	if [ ! -e $@ ] ; then \
-#	sleep 30 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
+#	sleep 30 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90 ; \
 #	fi
 #	if [ ! -e $@ ] ; then \
-#	sleep 300 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
+#	sleep 300 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90 ; \
 #	fi
 
 ###########################################################
@@ -6017,9 +6045,9 @@ module_configure.o                                             \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCNOOPTS) $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) $(FCNOOPTS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
 #ARCH titan.ncsa.uiuc.edu specific Intel Itanium2 ia64 mckinley Linux, efc compiler DM-Parallel (RSL, VMI, allows nesting) 
@@ -6149,9 +6177,9 @@ module_configure.o                                             \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
 #ARCH titan.ncsa.uiuc.edu specific Intel Itanium2 ia64 mckinley Linux, efc compiler DM-Parallel (RSL_LITE, VMI, allows nesting)
@@ -6273,9 +6301,9 @@ module_configure.o                                             \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
 #ARCH Intel xeon i686 ia32 Xeon Linux, ifort compiler (single-threaded, no nesting)
@@ -6390,9 +6418,9 @@ module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o  start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
 
 module_dm.o : module_dm.F
 module_configure.o : module_configure.F
@@ -6401,9 +6429,9 @@ module_configure.o \
 module_dm.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -g -O0 $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -g -O0 $*.f90
 
 ###########################################################
 #ARCH    Intel xeon i686 ia32 Xeon Linux, ifort compiler  (single threaded, allows nesting using RSL without MPI)
@@ -6526,9 +6554,9 @@ mediation_integrate.o \
 module_initialize_real.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
 
 module_dm.o : module_dm.F
 module_configure.o : module_configure.F
@@ -6537,9 +6565,9 @@ module_configure.o \
 module_dm.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -g -O0 $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -g -O0 $*.f90
 
 ###########################################################
 #ARCH   Intel xeon i686 ia32 Xeon Linux, ifort compiler (OpenMP)
@@ -6648,9 +6676,9 @@ mediation_integrate.o \
 module_initialize_real.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
 
 module_dm.o : module_dm.F
 module_configure.o : module_configure.F
@@ -6659,9 +6687,9 @@ module_configure.o \
 module_dm.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -g -O0 $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -g -O0 $*.f90
 
 ###########################################################
 #ARCH    Intel xeon i686 ia32 Xeon Linux, ifort compiler SM-Parallel (OpenMP, allows nesting using RSL without MPI)
@@ -6783,9 +6811,9 @@ mediation_integrate.o \
 module_initialize_real.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
 
 module_dm.o : module_dm.F
 module_configure.o : module_configure.F
@@ -6794,9 +6822,9 @@ module_configure.o \
 module_dm.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -g -O0 $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -g -O0 $*.f90
 
 ###########################################################
 #ARCH    Intel xeon i686 ia32 Xeon Linux, ifort+icc compiler  DM-Parallel (RSL, MPICH, allows nesting)
@@ -6917,9 +6945,9 @@ mediation_integrate.o \
 module_initialize_real.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
 
 module_dm.o : module_dm.F
 module_configure.o : module_configure.F
@@ -6928,9 +6956,9 @@ module_configure.o \
 module_dm.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -g -O0 $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -g -O0 $*.f90
 
 ###########################################################
 #ARCH    Intel xeon i686 ia32 Xeon Linux, ifort+gcc compiler  DM-Parallel (RSL, MPICH, allows nesting)
@@ -7051,9 +7079,9 @@ mediation_integrate.o \
 module_initialize_real.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
 
 module_dm.o : module_dm.F
 module_configure.o : module_configure.F
@@ -7062,9 +7090,9 @@ module_configure.o \
 module_dm.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -g -O0 $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -g -O0 $*.f90
 
 ###########################################################
 
@@ -7224,9 +7252,9 @@ module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o  start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCFLAGS) $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) $(FCFLAGS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
 #ARCH   SGI Altix, Intel Itanium2 ia64 Linux, ifort DM-Parallel (RSL, SGI MPI, Intel MKL, allows nesting)
@@ -7385,9 +7413,9 @@ shift_domain_em.o                                              \
 mediation_force_domain.o:
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
-	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(FCBASEOPTS) -O0 $(MODULE_DIRS) $*.f
+	$(FC) -c $(FCBASEOPTS) -O0 $(MODULE_DIRS) $*.f90
 
 ###########################################################
 #ARCH   SGI Altix, Intel Itanium2 ia64 Linux, ifort DM-Parallel (RSL_LITE, VMI, SGI MPI, Intel MKL, Allows nesting)
@@ -7542,9 +7570,9 @@ shift_domain_em.o                                              \
 mediation_force_domain.o:
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
-	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(FCBASEOPTS) -O0 $(MODULE_DIRS) $*.f
+	$(FC) -c $(FCBASEOPTS) -O0 $(MODULE_DIRS) $*.f90
 
 ###########################################################
 #ARCH   SGI Altix, Intel Itanium2 ia64 Linux, ifort DM-Parallel (RSL, SGI MPI, allows nesting)
@@ -7699,9 +7727,9 @@ shift_domain_em.o                                              \
 mediation_force_domain.o:
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
-	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(FCBASEOPTS) -O0 $(MODULE_DIRS) $*.f
+	$(FC) -c $(FCBASEOPTS) -O0 $(MODULE_DIRS) $*.f90
 
 ###########################################################
 #ARCH   SGI Altix, Intel Itanium2 ia64 Linux, ifort DM-Parallel (RSL_LITE, VMI, SGI MPI, Allows nesting)
@@ -7851,9 +7879,9 @@ shift_domain_em.o                                              \
 mediation_force_domain.o:
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
-	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(FCBASEOPTS) -O0 $(MODULE_DIRS) $*.f
+	$(FC) -c $(FCBASEOPTS) -O0 $(MODULE_DIRS) $*.f90
 
 
 ###########################################################
@@ -7983,9 +8011,9 @@ shift_domain_em.o module_bl_mrf.o                              \
 mediation_force_domain.o:
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
-	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(FCBASEOPTS) -O0 $(MODULE_DIRS) $*.f
+	$(FC) -c $(FCBASEOPTS) -O0 $(MODULE_DIRS) $*.f90
 
 
 ###########################################################
@@ -8111,9 +8139,9 @@ shift_domain_em.o                                              \
 mediation_force_domain.o:
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
-	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(FCBASEOPTS) -O0 $(MODULE_DIRS) $*.f
+	$(FC) -c $(FCBASEOPTS) -O0 $(MODULE_DIRS) $*.f90
 
 
 ###########################################################
@@ -8257,9 +8285,9 @@ mediation_force_domain.o \
 convert_nmm.o    :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS)  $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS)  $*.f90
 
 # compile at intermediate opt
 # for MSP (non-CSD) mode
@@ -8270,9 +8298,9 @@ module_sf_slab.o: module_sf_slab.F
 module_sf_slab.o:
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(FCFLAGS2) $(MODULE_DIRS)  $*.f
+	$(FC) -c $(FCFLAGS2) $(MODULE_DIRS)  $*.f90
 
 ###########################################################
 #ARCH   UNICOS/mp  machine crayx1 (RSL_LITE, MPI, OpenMP)
@@ -8406,9 +8434,9 @@ mediation_force_domain.o \
 convert_nmm.o    :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS)  $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS)  $*.f90
 
 # compile at intermediate opt
 module_pbl_driver.o: module_pbl_driver.F
@@ -8418,9 +8446,9 @@ solve_em.o \
 module_pbl_driver.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(FCFLAGS2) $(MODULE_DIRS)  $*.f
+	$(FC) -c $(FCFLAGS2) $(MODULE_DIRS)  $*.f90
 
 ###########################################################
 #ARCH	HP-UX	PA8600	32bit   (single-threaded, no nesting)
@@ -8526,9 +8554,9 @@ module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o mediation_integrate.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCFLAGS) $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) $(FCFLAGS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
 #ARCH	HP-UX	PA8600	32bit   (single-threaded, nesting using RSL without MPI)
@@ -8648,9 +8676,9 @@ module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o mediation_integrate.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCFLAGS) $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) $(FCFLAGS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
 #ARCH	HP-UX	Itanium2	(single-threaded, no nesting)
@@ -8757,9 +8785,9 @@ module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o mediation_integrate.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCFLAGS) $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) $(FCFLAGS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
 #ARCH	HP-UX	Itanium2	(single-threaded, nesting using RSL without MPI)
@@ -8869,9 +8897,9 @@ module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o mediation_integrate.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCFLAGS) $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) $(FCFLAGS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
 #ARCH	HP-UX	PA8600		32bit   (openmp, no nesting)
@@ -8978,9 +9006,9 @@ module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o mediation_integrate.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCFLAGS) $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) $(FCFLAGS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
 #ARCH	HP-UX	PA8600	 DM-Parallel	(RSL, MPICH, nesting)
@@ -9103,9 +9131,9 @@ module_initialize_squall2d_x.o module_initialize_squall2d_y.o \
 module_initialize_real.o module_dm.o mediation_integrate.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCFLAGS) $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) $(FCFLAGS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
 #ARCH	HP-UX	Itanium2    DM-Parallel	(RSL, MPICH, nesting)
@@ -9228,9 +9256,9 @@ module_initialize_squall2d_x.o module_initialize_squall2d_y.o \
 module_initialize_real.o module_dm.o mediation_integrate.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCFLAGS) $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) $(FCFLAGS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
 #ARCH Darwin		(single-threaded, no nesting)
@@ -9252,6 +9280,7 @@ FCOPTIM         =       -O3 -qarch=auto #-qfloat=nomaf
 FCDEBUG         =       # -qnoopt -qfullpath
 FCBASEOPTS      =       -qsave $(FCDEBUG) -qmaxmem=32767 -qspillsize=32767 -w 
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
+FCSUFFIX        =       -qsuffix=f=f90
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS  =       
 ESMF_IO_LIB     =       ESMFIOLIB
@@ -9298,15 +9327,15 @@ wrfio_int :
 
 wrfio_grib_share :
 	( cd ../external/io_grib_share ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" archive)
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCSUFFIX) -qarch=auto -qzerosize" archive)
 
 wrfio_grib1 :
 	( cd ../external/io_grib1 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" archive)
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCSUFFIX) -qarch=auto -qzerosize" archive)
 
 wrfio_grib2 :
 	( cd ../external/io_grib2 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC -qcpluscmt" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" FREE="" FIXED="-qfixed" archive)
+          make CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC -qcpluscmt" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCSUFFIX) -qarch=auto -qzerosize" FREE="" FIXED="-qfixed" archive)
 
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
@@ -9314,10 +9343,8 @@ esmf_time :
 
 solve_interface.o : solve_interface.F
 	$(RM) $@
-	mv $*.F $*.F90
-	$(CPP) -I../inc $(CPPFLAGS) $*.F90 > $*.f
-	$(FC) -c -qfree=f90 -qspillsize=32767 -I. $(PROMOTION) $(MODULE_DIRS) $*.f
-	mv $*.F90 $*.F
+	$(CPP) -I../inc $(CPPFLAGS) $*.F > $*.f90
+	$(FC) -c -qfree=f90 -qspillsize=32767 -I. $(PROMOTION) $(MODULE_DIRS) $(FCSUFFIX) $*.f90
 
 # compile these without high optimization to speed compile
 shift_domain_em.o : shift_domain_em.F
@@ -9353,12 +9380,10 @@ module_configure.o                                             \
 solve_em.o \
 convert_nmm.o :
 	$(RM) $@
-	mv $*.F $*.F90
-	$(SED_FTN) $*.F90 > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(SED_FTN) $*.F > $*.b 
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
-	mv $*.F90 $*.F
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) $*.f90
 
 ###########################################################
 #ARCH Darwin		(OpenMP, no nesting)
@@ -9381,6 +9406,7 @@ FCOPTIM         =       -O2 -qarch=auto -qunroll=yes #-qfloat=nomaf
 FCDEBUG         =       # -qnoopt -qfullpath
 FCBASEOPTS      =       -w -qsave $(FCDEBUG) -qmaxmem=32767 -qspillsize=32767 #-qflttrap=zerodivide:invalid:enable -qsigtrap
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
+FCSUFFIX        =       -qsuffix=f=f90
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS  =       
 ESMF_IO_LIB     =       ESMFIOLIB
@@ -9448,21 +9474,17 @@ convert_nmm.o   : convert_nmm.F
 
 module_configure.o module_sm.o module_tiles.o solve_em.o solve_exp.o convert_nmm.o :
 	$(RM) $@
-	mv $*.F $*.F90
-	$(SED_FTN) $*.F90 > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $(OMPCPP) $*.b  > $*.f
+	$(SED_FTN) $*.F > $*.b 
+	$(CPP) -I../inc $(CPPFLAGS) $(OMPCPP) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c -g $(PROMOTION) $(OMP) $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt -qnohot $*.f
-	mv $*.F90 $*.F
+	$(FC) -c -g $(PROMOTION) $(OMP) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) -qnoopt -qnohot $*.f90
 
 module_domain.o :
 	$(RM) $@
-	mv $*.F $*.F90
 	$(SED_FTN) $*.F90 > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $(OMPCPP) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $(OMPCPP) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c -g $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt -qnohot $*.f
-	mv $*.F90 $*.F
+	$(FC) -c -g $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) -qnoopt -qnohot $*.f90
 
 ###########################################################
 #ARCH    PC Linux x86_64 (IA64 and Opteron), PathScale 2.1 or higher (Single-threaded, no nesting)
@@ -9568,9 +9590,9 @@ module_configure.o                                             \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
 #ARCH    PC Linux x86_64 (IA64 and Opteron), PathScale 2.1 or higher DM-Parallel   (RSL_LITE, PathScale MPICH, No periodic LBCs)
@@ -9689,9 +9711,9 @@ module_configure.o                                             \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f
+	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
 #ARCH    NEC SX-8, NEC SX cross compiler DM-Parallel (RSL, Allows nesting)
@@ -9806,17 +9828,17 @@ mediation_integrate.o \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
 #	if [ ! -e $@ ] ; then \
-#	sleep 10 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
+#	sleep 10 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90 ; \
 #	fi
 #	if [ ! -e $@ ] ; then \
-#	sleep 30 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
+#	sleep 30 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90 ; \
 #	fi
 #	if [ ! -e $@ ] ; then \
-#	sleep 300 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
+#	sleep 300 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90 ; \
 #	fi
 
 ###########################################################
@@ -9932,17 +9954,17 @@ mediation_integrate.o \
 module_initialize_real.o module_dm.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
 #	if [ ! -e $@ ] ; then \
-#	sleep 10 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
+#	sleep 10 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90 ; \
 #	fi
 #	if [ ! -e $@ ] ; then \
-#	sleep 30 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
+#	sleep 30 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90 ; \
 #	fi
 #	if [ ! -e $@ ] ; then \
-#	sleep 300 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f ; \
+#	sleep 300 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90 ; \
 #	fi
 
 ##################################################################

@@ -66,7 +66,7 @@ OBJS =  \
 #
 superclean:
 	/bin/rm -f *.o > /dev/null 2>&1
-	/bin/rm -f *.f > /dev/null 2>&1
+	/bin/rm -f *.f90 > /dev/null 2>&1
 	/bin/rm -f *.mod > /dev/null 2>&1
 	/bin/rm -f *.a > /dev/null 2>&1
 	( cd bacio-1.3 ; make clean )

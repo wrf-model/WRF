@@ -37,26 +37,40 @@ enum proc_orient     { ALL_Z_ON_PROC , ALL_X_ON_PROC , ALL_Y_ON_PROC } ;
 #define FOURD1  8192
 #define BDYONLY 16384
 
-/* I/O mask settings */
-#define HISTORY          2
-#define AUXHIST1         4
-#define AUXHIST2         8
-#define AUXHIST3        16
-#define AUXHIST4        32
-#define AUXHIST5        64
-#define INPUT          128
-#define AUXINPUT1      256
-#define AUXINPUT2      512
-#define AUXINPUT3     1024
-#define AUXINPUT4     2048
-#define AUXINPUT5     4096
-#define RESTART       8192
-#define BOUNDARY      16384
-#define INTERP_DOWN (16384*2)
-#define FORCE_DOWN  (16384*4)
-#define INTERP_UP   (16384*8)
-#define SMOOTH_UP   (16384*16)
-#define METADATA    (16384*32)
+/* I/O mask settings                     bit  */
+#define HISTORY       0x00000001      /*    1 */
+#define AUXHIST1      0x00000002      /*    2 */
+#define AUXHIST2      0x00000004      /*    3 */
+#define AUXHIST3      0x00000008      /*    4 */
+#define AUXHIST4      0x00000010      /*    5 */
+#define AUXHIST5      0x00000020      /*    6 */
+#define AUXHIST6      0x00000040      /*    7 */
+#define AUXHIST7      0x00000080      /*    8 */
+#define AUXHIST8      0x00000100      /*    9 */
+#define AUXHIST9      0x00000200      /*   10 */
+#define AUXHIST10     0x00000400      /*   11 */
+#define AUXHIST11     0x00000800      /*   12 */
+#define INPUT         0x00001000      /*   13 */
+#define AUXINPUT1     0x00002000      /*   14 */
+#define AUXINPUT2     0x00004000      /*   15 */
+#define AUXINPUT3     0x00008000      /*   16 */
+#define AUXINPUT4     0x00010000      /*   17 */
+#define AUXINPUT5     0x00020000      /*   18 */
+#define AUXINPUT6     0x00040000      /*   19 */
+#define AUXINPUT7     0x00080000      /*   20 */
+#define AUXINPUT8     0x00100000      /*   21 */
+#define AUXINPUT9     0x00200000      /*   22 */
+#define AUXINPUT10    0x00400000      /*   23 */
+#define AUXINPUT11    0x00800000      /*   24 */
+#define RESTART       0x01000000      /*   25 */
+#define BOUNDARY      0x02000000      /*   26 */
+#define INTERP_DOWN   0x04000000      /*   27 */
+#define FORCE_DOWN    0x08000000      /*   28 */
+#define INTERP_UP     0x10000000      /*   29 */
+#define SMOOTH_UP     0x20000000      /*   30 */
+#define METADATA      0x40000000      /*   31 */
+/* room for one more, honey */        /*   32 */
+
 
 #define REGISTRY_H
 #endif

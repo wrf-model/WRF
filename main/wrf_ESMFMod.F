@@ -920,6 +920,74 @@ CONTAINS
        ENDIF
      ENDIF
      IF ( .NOT. foundcoupling ) THEN
+       CALL nl_get_io_form_auxinput6( 1, io_form )
+       IF ( use_package( io_form ) == IO_ESMF ) THEN
+         CALL ESMF_AlarmGet( head_grid%alarms( AUXINPUT6_ALARM ), &
+                             RingInterval=couplingInterval, rc=rc )
+         IF ( rc /= ESMF_SUCCESS ) THEN
+           CALL wrf_error_fatal ( 'wrf_findCouplingInterval:  ESMF_AlarmGet(AUXINPUT6_ALARM) failed' )
+         ENDIF
+         foundcoupling = .TRUE.
+       ENDIF
+     ENDIF
+     IF ( .NOT. foundcoupling ) THEN
+       CALL nl_get_io_form_auxinput7( 1, io_form )
+       IF ( use_package( io_form ) == IO_ESMF ) THEN
+         CALL ESMF_AlarmGet( head_grid%alarms( AUXINPUT7_ALARM ), &
+                             RingInterval=couplingInterval, rc=rc )
+         IF ( rc /= ESMF_SUCCESS ) THEN
+           CALL wrf_error_fatal ( 'wrf_findCouplingInterval:  ESMF_AlarmGet(AUXINPUT7_ALARM) failed' )
+         ENDIF
+         foundcoupling = .TRUE.
+       ENDIF
+     ENDIF
+     IF ( .NOT. foundcoupling ) THEN
+       CALL nl_get_io_form_auxinput8( 1, io_form )
+       IF ( use_package( io_form ) == IO_ESMF ) THEN
+         CALL ESMF_AlarmGet( head_grid%alarms( AUXINPUT8_ALARM ), &
+                             RingInterval=couplingInterval, rc=rc )
+         IF ( rc /= ESMF_SUCCESS ) THEN
+           CALL wrf_error_fatal ( 'wrf_findCouplingInterval:  ESMF_AlarmGet(AUXINPUT8_ALARM) failed' )
+         ENDIF
+         foundcoupling = .TRUE.
+       ENDIF
+     ENDIF
+     IF ( .NOT. foundcoupling ) THEN
+       CALL nl_get_io_form_auxinput9( 1, io_form )
+       IF ( use_package( io_form ) == IO_ESMF ) THEN
+         CALL ESMF_AlarmGet( head_grid%alarms( AUXINPUT9_ALARM ), &
+                             RingInterval=couplingInterval, rc=rc )
+         IF ( rc /= ESMF_SUCCESS ) THEN
+           CALL wrf_error_fatal ( 'wrf_findCouplingInterval:  ESMF_AlarmGet(AUXINPUT9_ALARM) failed' )
+         ENDIF
+         foundcoupling = .TRUE.
+       ENDIF
+     ENDIF
+     IF ( .NOT. foundcoupling ) THEN
+       CALL nl_get_io_form_auxinput10( 1, io_form )
+       IF ( use_package( io_form ) == IO_ESMF ) THEN
+         CALL ESMF_AlarmGet( head_grid%alarms( AUXINPUT10_ALARM ), &
+                             RingInterval=couplingInterval, rc=rc )
+         IF ( rc /= ESMF_SUCCESS ) THEN
+           CALL wrf_error_fatal ( 'wrf_findCouplingInterval:  ESMF_AlarmGet(AUXINPUT10_ALARM) failed' )
+         ENDIF
+         foundcoupling = .TRUE.
+       ENDIF
+     ENDIF
+     IF ( .NOT. foundcoupling ) THEN
+       CALL nl_get_io_form_auxinput11( 1, io_form )
+       IF ( use_package( io_form ) == IO_ESMF ) THEN
+         CALL ESMF_AlarmGet( head_grid%alarms( AUXINPUT11_ALARM ), &
+                             RingInterval=couplingInterval, rc=rc )
+         IF ( rc /= ESMF_SUCCESS ) THEN
+           CALL wrf_error_fatal ( 'wrf_findCouplingInterval:  ESMF_AlarmGet(AUXINPUT11_ALARM) failed' )
+         ENDIF
+         foundcoupling = .TRUE.
+       ENDIF
+     ENDIF
+
+
+     IF ( .NOT. foundcoupling ) THEN
        CALL nl_get_io_form_auxhist1( 1, io_form )
        IF ( use_package( io_form ) == IO_ESMF ) THEN
          CALL ESMF_AlarmGet( head_grid%alarms( AUXHIST1_ALARM ), &
@@ -974,6 +1042,73 @@ CONTAINS
          foundcoupling = .TRUE.
        ENDIF
      ENDIF
+     IF ( .NOT. foundcoupling ) THEN
+       CALL nl_get_io_form_auxhist6( 1, io_form )
+       IF ( use_package( io_form ) == IO_ESMF ) THEN
+         CALL ESMF_AlarmGet( head_grid%alarms( AUXHIST6_ALARM ), &
+                             RingInterval=couplingInterval, rc=rc )
+         IF ( rc /= ESMF_SUCCESS ) THEN
+           CALL wrf_error_fatal ( 'wrf_findCouplingInterval:  ESMF_AlarmGet(AUXHIST6_ALARM) failed' )
+         ENDIF
+         foundcoupling = .TRUE.
+       ENDIF
+     ENDIF
+     IF ( .NOT. foundcoupling ) THEN
+       CALL nl_get_io_form_auxhist7( 1, io_form )
+       IF ( use_package( io_form ) == IO_ESMF ) THEN
+         CALL ESMF_AlarmGet( head_grid%alarms( AUXHIST7_ALARM ), &
+                             RingInterval=couplingInterval, rc=rc )
+         IF ( rc /= ESMF_SUCCESS ) THEN
+           CALL wrf_error_fatal ( 'wrf_findCouplingInterval:  ESMF_AlarmGet(AUXHIST7_ALARM) failed' )
+         ENDIF
+         foundcoupling = .TRUE.
+       ENDIF
+     ENDIF
+     IF ( .NOT. foundcoupling ) THEN
+       CALL nl_get_io_form_auxhist8( 1, io_form )
+       IF ( use_package( io_form ) == IO_ESMF ) THEN
+         CALL ESMF_AlarmGet( head_grid%alarms( AUXHIST8_ALARM ), &
+                             RingInterval=couplingInterval, rc=rc )
+         IF ( rc /= ESMF_SUCCESS ) THEN
+           CALL wrf_error_fatal ( 'wrf_findCouplingInterval:  ESMF_AlarmGet(AUXHIST8_ALARM) failed' )
+         ENDIF
+         foundcoupling = .TRUE.
+       ENDIF
+     ENDIF
+     IF ( .NOT. foundcoupling ) THEN
+       CALL nl_get_io_form_auxhist9( 1, io_form )
+       IF ( use_package( io_form ) == IO_ESMF ) THEN
+         CALL ESMF_AlarmGet( head_grid%alarms( AUXHIST9_ALARM ), &
+                             RingInterval=couplingInterval, rc=rc )
+         IF ( rc /= ESMF_SUCCESS ) THEN
+           CALL wrf_error_fatal ( 'wrf_findCouplingInterval:  ESMF_AlarmGet(AUXHIST9_ALARM) failed' )
+         ENDIF
+         foundcoupling = .TRUE.
+       ENDIF
+     ENDIF
+     IF ( .NOT. foundcoupling ) THEN
+       CALL nl_get_io_form_auxhist10( 1, io_form )
+       IF ( use_package( io_form ) == IO_ESMF ) THEN
+         CALL ESMF_AlarmGet( head_grid%alarms( AUXHIST10_ALARM ), &
+                             RingInterval=couplingInterval, rc=rc )
+         IF ( rc /= ESMF_SUCCESS ) THEN
+           CALL wrf_error_fatal ( 'wrf_findCouplingInterval:  ESMF_AlarmGet(AUXHIST10_ALARM) failed' )
+         ENDIF
+         foundcoupling = .TRUE.
+       ENDIF
+     ENDIF
+     IF ( .NOT. foundcoupling ) THEN
+       CALL nl_get_io_form_auxhist11( 1, io_form )
+       IF ( use_package( io_form ) == IO_ESMF ) THEN
+         CALL ESMF_AlarmGet( head_grid%alarms( AUXHIST11_ALARM ), &
+                             RingInterval=couplingInterval, rc=rc )
+         IF ( rc /= ESMF_SUCCESS ) THEN
+           CALL wrf_error_fatal ( 'wrf_findCouplingInterval:  ESMF_AlarmGet(AUXHIST11_ALARM) failed' )
+         ENDIF
+         foundcoupling = .TRUE.
+       ENDIF
+     ENDIF
+
      ! look for erroneous use of io_form...  
      CALL nl_get_io_form_restart( 1, io_form )
      IF ( use_package( io_form ) == IO_ESMF ) THEN

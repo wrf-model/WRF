@@ -46,17 +46,21 @@ MODULE module_domain
 
    INTEGER, PARAMETER :: HISTORY_ALARM=1, AUXHIST1_ALARM=2, AUXHIST2_ALARM=3,     &
                          AUXHIST3_ALARM=4, AUXHIST4_ALARM=5, AUXHIST5_ALARM=6,    &
-                         AUXINPUT1_ALARM=7, AUXINPUT2_ALARM=8, AUXINPUT3_ALARM=9, &
-                         AUXINPUT4_ALARM=10, AUXINPUT5_ALARM=11,                  &
-                         RESTART_ALARM=12, BOUNDARY_ALARM=13, INPUTOUT_ALARM=14,  &  ! for outputing input (e.g. for 3dvar)
-                         ALARM_SUBTIME=15,                                        &
+                         AUXHIST6_ALARM=7, AUXHIST7_ALARM=8, AUXHIST8_ALARM=9,    &
+                         AUXHIST9_ALARM=10, AUXHIST10_ALARM=11, AUXHIST11_ALARM=12,    &
+                         AUXINPUT1_ALARM=13, AUXINPUT2_ALARM=14, AUXINPUT3_ALARM=15, &
+                         AUXINPUT4_ALARM=16, AUXINPUT5_ALARM=17,                  &
+                         AUXINPUT6_ALARM=18, AUXINPUT7_ALARM=19, AUXINPUT8_ALARM=20, &
+                         AUXINPUT9_ALARM=21, AUXINPUT10_ALARM=22, AUXINPUT11_ALARM=23, &
+                         RESTART_ALARM=24, BOUNDARY_ALARM=25, INPUTOUT_ALARM=26,  &  ! for outputing input (e.g. for 3dvar)
+                         ALARM_SUBTIME=27,                                        &
 #ifdef MOVE_NESTS
-                         COMPUTE_VORTEX_CENTER_ALARM=16,                          &
-                         MAX_WRF_ALARMS=16  ! WARNING:  MAX_WRF_ALARMS must be 
+                         COMPUTE_VORTEX_CENTER_ALARM=28,                          &
+                         MAX_WRF_ALARMS=28  ! WARNING:  MAX_WRF_ALARMS must be 
                                             ! large enough to include all of 
                                             ! the alarms declared above.  
 #else
-                         MAX_WRF_ALARMS=15  ! WARNING:  MAX_WRF_ALARMS must be 
+                         MAX_WRF_ALARMS=27  ! WARNING:  MAX_WRF_ALARMS must be 
                                             ! large enough to include all of 
                                             ! the alarms declared above.  
 #endif

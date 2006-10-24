@@ -87,6 +87,19 @@
       CALL nl_get_io_form_auxinput4( 1, io_form )
     ELSE IF ( switch .EQ. aux_model_input5_only ) THEN
       CALL nl_get_io_form_auxinput5( 1, io_form )
+    ELSE IF ( switch .EQ. aux_model_input6_only ) THEN
+      CALL nl_get_io_form_auxinput6( 1, io_form )
+    ELSE IF ( switch .EQ. aux_model_input7_only ) THEN
+      CALL nl_get_io_form_auxinput7( 1, io_form )
+    ELSE IF ( switch .EQ. aux_model_input8_only ) THEN
+      CALL nl_get_io_form_auxinput8( 1, io_form )
+    ELSE IF ( switch .EQ. aux_model_input9_only ) THEN
+      CALL nl_get_io_form_auxinput9( 1, io_form )
+    ELSE IF ( switch .EQ. aux_model_input10_only ) THEN
+      CALL nl_get_io_form_auxinput10( 1, io_form )
+    ELSE IF ( switch .EQ. aux_model_input11_only ) THEN
+      CALL nl_get_io_form_auxinput11( 1, io_form )
+
     ELSE IF ( switch .EQ. history_only ) THEN
       CALL nl_get_io_form_history( 1, io_form )
     ELSE IF ( switch .EQ. aux_hist1_only ) THEN

@@ -36,6 +36,12 @@ typedef struct node_struct {
   int             auxhist3 ;
   int             auxhist4 ;
   int             auxhist5 ;
+  int             auxhist6 ;
+  int             auxhist7 ;
+  int             auxhist8 ;
+  int             auxhist9 ;
+  int             auxhist10 ;
+  int             auxhist11 ;
   int           restart ;
   int           input   ;
   int             auxinput1   ;
@@ -43,6 +49,12 @@ typedef struct node_struct {
   int             auxinput3   ;
   int             auxinput4   ;
   int             auxinput5   ;
+  int             auxinput6   ;
+  int             auxinput7   ;
+  int             auxinput8   ;
+  int             auxinput9   ;
+  int             auxinput10   ;
+  int             auxinput11   ;
   int           boundary   ;
   int           namelist   ;
   char    namelistsection[NAMELEN] ;

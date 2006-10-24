@@ -300,7 +300,6 @@ CONTAINS
 
    REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ) ::v_phytmp
    REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ) ::u_phytmp
-   REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ) ::qt_tmp
 
    REAL,       DIMENSION( ims:ime, jms:jme )          ::  TSKOLD, &
                                                           USTOLD, &
@@ -362,7 +361,6 @@ CONTAINS
          DO k=kts,kte
             v_phytmp(i,k,j)=v_phy(i,k,j)+v_frame
             u_phytmp(i,k,j)=u_phy(i,k,j)+u_frame
-            qt_tmp(i,k,j)=0.
          ENDDO
 
 ! PSFC : in Pa
@@ -498,59 +496,11 @@ CONTAINS
                 PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
                                                         .TRUE.  ) THEN
 
-! Fill temporary condensate variable depending on micro package (G. Thompson 07 Mar 2006)
-     if(PRESENT(qc_curr)) then
-        DO j=jts,jte
-        DO k=kts,kte
-        DO i=its,ite
-           qt_tmp(I,K,J)=qc_curr(I,K,J)
-        ENDDO
-        ENDDO
-        ENDDO
-     endif
-     if(PRESENT(qi_curr)) then
-        DO j=jts,jte
-        DO k=kts,kte
-        DO i=its,ite
-           qt_tmp(I,K,J) = qt_tmp(I,K,J) + qi_curr(I,K,J)
-        ENDDO
-        ENDDO
-        ENDDO
-     endif
-     if(PRESENT(qr_curr)) then
-        DO j=jts,jte
-        DO k=kts,kte
-        DO i=its,ite
-           qt_tmp(I,K,J) = qt_tmp(I,K,J) + qr_curr(I,K,J)
-        ENDDO
-        ENDDO
-        ENDDO
-     endif
-     if(PRESENT(qs_curr)) then
-        DO j=jts,jte
-        DO k=kts,kte
-        DO i=its,ite
-           qt_tmp(I,K,J) = qt_tmp(I,K,J) + qs_curr(I,K,J)
-        ENDDO
-        ENDDO
-        ENDDO
-     endif
-     if(PRESENT(qg_curr)) then
-        DO j=jts,jte
-        DO k=kts,kte
-        DO i=its,ite
-           qt_tmp(I,K,J) = qt_tmp(I,K,J) + qg_curr(I,K,J)
-        ENDDO
-        ENDDO
-        ENDDO
-     endif
-
              CALL wrf_debug(100,'in MYJPBL')
              CALL myjpbl(                                           &
                DT=dt,STEPBL=stepbl,HT=ht,DZ=dz8w                    &
               ,PMID=p_phy,PINT=p8w,TH=th_phy,T=t_phy,EXNER=pi_phy   &
               ,QV=qv_curr, CWM=qc_curr                               &
-!              ,QV=qv_curr, CWM=qt_tmp                               &
               ,U=u_phy,V=v_phy,RHO=rho                              &
               ,TSK=tsk,QSFC=qsfc,CHKLOWQ=chklowq,THZ0=thz0          &
               ,QZ0=qz0,UZ0=uz0,VZ0=vz0                              &

@@ -11,7 +11,7 @@ CPP     = /lib/cpp -C -P $(TRADFLAG)
 M4      = m4 -Uinclude -Uindex -Ulen
 AR      = ar
 
-.SUFFIXES:      .F90 .f .o .code
+.SUFFIXES:      .F90 .f90 .o .code
 
 all : libwrfio_phdf5.a 
 
@@ -21,18 +21,19 @@ libwrfio_phdf5.a:		$(OBJS)
 			$(RANLIB) libwrfio_phdf5.a
 
 wrf-phdf5support.o:      wrf-phdf5support.F90 
-			$(CPP) wrf-phdf5support.F90 | $(M4) - > wrf-phdf5support.f
-			$(FC) $(FFLAGS) -c wrf-phdf5support.f
+			$(CPP) wrf-phdf5support.F90 | $(M4) - > wrf-phdf5support.f90
+			$(FC) $(FFLAGS) -c wrf-phdf5support.f90
 wrf-phdf5attr.o:         wrf-phdf5attr.F90 wrf-phdf5support.o
-			$(CPP) wrf-phdf5attr.F90 | $(M4) - > wrf-phdf5attr.f
-			$(FC) $(FFLAGS) -c wrf-phdf5attr.f
+			$(CPP) wrf-phdf5attr.F90 | $(M4) - > wrf-phdf5attr.f90
+			$(FC) $(FFLAGS) -c wrf-phdf5attr.f90
 
 wrf-phdf5.o:             wrf-phdf5.F90 wrf-phdf5attr.o wrf-phdf5support.o
-			$(CPP) wrf-phdf5.F90 | $(M4) - > wrf-phdf5.f
-			$(FC) $(FFLAGS) -c wrf-phdf5.f
+			$(CPP) wrf-phdf5.F90 | $(M4) - > wrf-phdf5.f90
+			$(FC) $(FFLAGS) -c wrf-phdf5.f90
 
 clean:
-	/bin/rm -f *.f *.o *.mod
+	/bin/rm -f *.f90 *.o *.mod
 
 superclean: clean
 	/bin/rm -f libwrfio_phdf5.a
+

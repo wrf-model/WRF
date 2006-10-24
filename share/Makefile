@@ -40,12 +40,24 @@ OBJS    = 		\
         wrf_auxinput3out.o		\
         wrf_auxinput4out.o		\
         wrf_auxinput5out.o		\
+        wrf_auxinput6out.o		\
+        wrf_auxinput7out.o		\
+        wrf_auxinput8out.o		\
+        wrf_auxinput9out.o		\
+        wrf_auxinput10out.o		\
+        wrf_auxinput11out.o		\
         wrf_histout.o			\
         wrf_auxhist1out.o		\
         wrf_auxhist2out.o		\
         wrf_auxhist3out.o		\
         wrf_auxhist4out.o		\
         wrf_auxhist5out.o		\
+        wrf_auxhist6out.o		\
+        wrf_auxhist7out.o		\
+        wrf_auxhist8out.o		\
+        wrf_auxhist9out.o		\
+        wrf_auxhist10out.o		\
+        wrf_auxhist11out.o		\
         wrf_restartout.o		\
         wrf_bdyout.o			\
         wrf_inputin.o         	  	\
@@ -54,11 +66,23 @@ OBJS    = 		\
         wrf_auxhist3in.o                \
         wrf_auxhist4in.o                \
         wrf_auxhist5in.o                \
+        wrf_auxhist6in.o                \
+        wrf_auxhist7in.o                \
+        wrf_auxhist8in.o                \
+        wrf_auxhist9in.o                \
+        wrf_auxhist10in.o                \
+        wrf_auxhist11in.o                \
         wrf_auxinput1in.o               \
         wrf_auxinput2in.o               \
         wrf_auxinput3in.o               \
         wrf_auxinput4in.o               \
         wrf_auxinput5in.o               \
+        wrf_auxinput6in.o               \
+        wrf_auxinput7in.o               \
+        wrf_auxinput8in.o               \
+        wrf_auxinput9in.o               \
+        wrf_auxinput10in.o               \
+        wrf_auxinput11in.o               \
         wrf_bdyin.o             	\
         wrf_histin.o            	\
         wrf_restartin.o                 \

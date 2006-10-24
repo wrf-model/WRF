@@ -499,6 +499,20 @@ print *,'dx_compare,dy_compare = ',dx_compare,dy_compare
       CALL wrf_auxinput4in( fid , grid , config_flags , switch , ierr )
     ELSE IF ( switch .EQ. aux_model_input5_only ) THEN
       CALL wrf_auxinput5in( fid , grid , config_flags , switch , ierr )
+    ELSE IF ( switch .EQ. aux_model_input6_only ) THEN
+      CALL wrf_auxinput6in( fid , grid , config_flags , switch , ierr )
+    ELSE IF ( switch .EQ. aux_model_input7_only ) THEN
+      CALL wrf_auxinput7in( fid , grid , config_flags , switch , ierr )
+    ELSE IF ( switch .EQ. aux_model_input8_only ) THEN
+      CALL wrf_auxinput8in( fid , grid , config_flags , switch , ierr )
+    ELSE IF ( switch .EQ. aux_model_input9_only ) THEN
+      CALL wrf_auxinput9in( fid , grid , config_flags , switch , ierr )
+    ELSE IF ( switch .EQ. aux_model_input10_only ) THEN
+      CALL wrf_auxinput10in( fid , grid , config_flags , switch , ierr )
+    ELSE IF ( switch .EQ. aux_model_input11_only ) THEN
+      CALL wrf_auxinput11in( fid , grid , config_flags , switch , ierr )
+
+
     ELSE IF ( switch .EQ. aux_hist1_only ) THEN
       CALL wrf_auxhist1in( fid , grid , config_flags , switch , ierr )
     ELSE IF ( switch .EQ. aux_hist2_only ) THEN
@@ -509,6 +523,18 @@ print *,'dx_compare,dy_compare = ',dx_compare,dy_compare
       CALL wrf_auxhist4in( fid , grid , config_flags , switch , ierr )
     ELSE IF ( switch .EQ. aux_hist5_only ) THEN
       CALL wrf_auxhist5in( fid , grid , config_flags , switch , ierr )
+    ELSE IF ( switch .EQ. aux_hist6_only ) THEN
+      CALL wrf_auxhist6in( fid , grid , config_flags , switch , ierr )
+    ELSE IF ( switch .EQ. aux_hist7_only ) THEN
+      CALL wrf_auxhist7in( fid , grid , config_flags , switch , ierr )
+    ELSE IF ( switch .EQ. aux_hist8_only ) THEN
+      CALL wrf_auxhist8in( fid , grid , config_flags , switch , ierr )
+    ELSE IF ( switch .EQ. aux_hist9_only ) THEN
+      CALL wrf_auxhist9in( fid , grid , config_flags , switch , ierr )
+    ELSE IF ( switch .EQ. aux_hist10_only ) THEN
+      CALL wrf_auxhist10in( fid , grid , config_flags , switch , ierr )
+    ELSE IF ( switch .EQ. aux_hist11_only ) THEN
+      CALL wrf_auxhist11in( fid , grid , config_flags , switch , ierr )
 
     ELSE IF ( switch .EQ. restart_only ) THEN
       CALL wrf_restartin( fid , grid , config_flags , switch , ierr )

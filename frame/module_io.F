@@ -196,6 +196,7 @@ SUBROUTINE wrf_open_for_write_begin( FileName , Comm_compute, Comm_io, SysDepInf
   CALL wrf_debug( DEBUG_LVL, 'module_io.F: in wrf_open_for_write_begin' )
 
   CALL get_value_from_pairs ( "DATASET" , SysDepInfo , DataSet )
+
   IF      ( DataSet .eq. 'RESTART' ) THEN
     CALL nl_get_io_form_restart( 1, io_form )
   ELSE IF ( DataSet .eq. 'INPUT' ) THEN
@@ -210,6 +211,19 @@ SUBROUTINE wrf_open_for_write_begin( FileName , Comm_compute, Comm_io, SysDepInf
     CALL nl_get_io_form_auxinput4( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXINPUT5' ) THEN
     CALL nl_get_io_form_auxinput5( 1, io_form )
+  ELSE IF ( DataSet .eq. 'AUXINPUT6' ) THEN
+    CALL nl_get_io_form_auxinput6( 1, io_form )
+  ELSE IF ( DataSet .eq. 'AUXINPUT7' ) THEN
+    CALL nl_get_io_form_auxinput7( 1, io_form )
+  ELSE IF ( DataSet .eq. 'AUXINPUT8' ) THEN
+    CALL nl_get_io_form_auxinput8( 1, io_form )
+  ELSE IF ( DataSet .eq. 'AUXINPUT9' ) THEN
+    CALL nl_get_io_form_auxinput9( 1, io_form )
+  ELSE IF ( DataSet .eq. 'AUXINPUT10' ) THEN
+    CALL nl_get_io_form_auxinput10( 1, io_form )
+  ELSE IF ( DataSet .eq. 'AUXINPUT11' ) THEN
+    CALL nl_get_io_form_auxinput11( 1, io_form )
+
   ELSE IF ( DataSet .eq. 'HISTORY' ) THEN
     CALL nl_get_io_form_history( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXHIST1' ) THEN
@@ -222,6 +236,19 @@ SUBROUTINE wrf_open_for_write_begin( FileName , Comm_compute, Comm_io, SysDepInf
     CALL nl_get_io_form_auxhist4( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXHIST5' ) THEN
     CALL nl_get_io_form_auxhist5( 1, io_form )
+  ELSE IF ( DataSet .eq. 'AUXHIST6' ) THEN
+    CALL nl_get_io_form_auxhist6( 1, io_form )
+  ELSE IF ( DataSet .eq. 'AUXHIST7' ) THEN
+    CALL nl_get_io_form_auxhist7( 1, io_form )
+  ELSE IF ( DataSet .eq. 'AUXHIST8' ) THEN
+    CALL nl_get_io_form_auxhist8( 1, io_form )
+  ELSE IF ( DataSet .eq. 'AUXHIST9' ) THEN
+    CALL nl_get_io_form_auxhist9( 1, io_form )
+  ELSE IF ( DataSet .eq. 'AUXHIST10' ) THEN
+    CALL nl_get_io_form_auxhist10( 1, io_form )
+  ELSE IF ( DataSet .eq. 'AUXHIST11' ) THEN
+    CALL nl_get_io_form_auxhist11( 1, io_form )
+
   ELSE IF ( DataSet .eq. 'BOUNDARY' ) THEN
     CALL nl_get_io_form_boundary( 1, io_form )
   ELSE  ! default if nothing is set in SysDepInfo; use history
@@ -512,6 +539,19 @@ SUBROUTINE wrf_open_for_read_begin( FileName , Comm_compute, Comm_io, SysDepInfo
     CALL nl_get_io_form_auxinput4( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXINPUT5' ) THEN
     CALL nl_get_io_form_auxinput5( 1, io_form )
+  ELSE IF ( DataSet .eq. 'AUXINPUT6' ) THEN
+    CALL nl_get_io_form_auxinput6( 1, io_form )
+  ELSE IF ( DataSet .eq. 'AUXINPUT7' ) THEN
+    CALL nl_get_io_form_auxinput7( 1, io_form )
+  ELSE IF ( DataSet .eq. 'AUXINPUT8' ) THEN
+    CALL nl_get_io_form_auxinput8( 1, io_form )
+  ELSE IF ( DataSet .eq. 'AUXINPUT9' ) THEN
+    CALL nl_get_io_form_auxinput9( 1, io_form )
+  ELSE IF ( DataSet .eq. 'AUXINPUT10' ) THEN
+    CALL nl_get_io_form_auxinput10( 1, io_form )
+  ELSE IF ( DataSet .eq. 'AUXINPUT11' ) THEN
+    CALL nl_get_io_form_auxinput11( 1, io_form )
+
   ELSE IF ( DataSet .eq. 'HISTORY' ) THEN
     CALL nl_get_io_form_history( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXHIST1' ) THEN
@@ -524,6 +564,19 @@ SUBROUTINE wrf_open_for_read_begin( FileName , Comm_compute, Comm_io, SysDepInfo
     CALL nl_get_io_form_auxhist4( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXHIST5' ) THEN
     CALL nl_get_io_form_auxhist5( 1, io_form )
+  ELSE IF ( DataSet .eq. 'AUXHIST6' ) THEN
+    CALL nl_get_io_form_auxhist6( 1, io_form )
+  ELSE IF ( DataSet .eq. 'AUXHIST7' ) THEN
+    CALL nl_get_io_form_auxhist7( 1, io_form )
+  ELSE IF ( DataSet .eq. 'AUXHIST8' ) THEN
+    CALL nl_get_io_form_auxhist8( 1, io_form )
+  ELSE IF ( DataSet .eq. 'AUXHIST9' ) THEN
+    CALL nl_get_io_form_auxhist9( 1, io_form )
+  ELSE IF ( DataSet .eq. 'AUXHIST10' ) THEN
+    CALL nl_get_io_form_auxhist10( 1, io_form )
+  ELSE IF ( DataSet .eq. 'AUXHIST11' ) THEN
+    CALL nl_get_io_form_auxhist11( 1, io_form )
+
   ELSE IF ( DataSet .eq. 'BOUNDARY' ) THEN
     CALL nl_get_io_form_boundary( 1, io_form )
   ELSE  ! default if nothing is set in SysDepInfo; use history
@@ -758,6 +811,20 @@ SUBROUTINE wrf_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo, &
     CALL nl_get_io_form_auxinput4( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXINPUT5' ) THEN
     CALL nl_get_io_form_auxinput5( 1, io_form )
+  ELSE IF ( DataSet .eq. 'AUXINPUT6' ) THEN
+    CALL nl_get_io_form_auxinput6( 1, io_form )
+  ELSE IF ( DataSet .eq. 'AUXINPUT7' ) THEN
+    CALL nl_get_io_form_auxinput7( 1, io_form )
+  ELSE IF ( DataSet .eq. 'AUXINPUT8' ) THEN
+    CALL nl_get_io_form_auxinput8( 1, io_form )
+  ELSE IF ( DataSet .eq. 'AUXINPUT9' ) THEN
+    CALL nl_get_io_form_auxinput9( 1, io_form )
+  ELSE IF ( DataSet .eq. 'AUXINPUT10' ) THEN
+    CALL nl_get_io_form_auxinput10( 1, io_form )
+  ELSE IF ( DataSet .eq. 'AUXINPUT11' ) THEN
+    CALL nl_get_io_form_auxinput11( 1, io_form )
+
+    CALL nl_get_io_form_auxinput5( 1, io_form )
   ELSE IF ( DataSet .eq. 'HISTORY' ) THEN
     CALL nl_get_io_form_history( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXHIST1' ) THEN
@@ -770,6 +837,19 @@ SUBROUTINE wrf_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo, &
     CALL nl_get_io_form_auxhist4( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXHIST5' ) THEN
     CALL nl_get_io_form_auxhist5( 1, io_form )
+  ELSE IF ( DataSet .eq. 'AUXHIST6' ) THEN
+    CALL nl_get_io_form_auxhist6( 1, io_form )
+  ELSE IF ( DataSet .eq. 'AUXHIST7' ) THEN
+    CALL nl_get_io_form_auxhist7( 1, io_form )
+  ELSE IF ( DataSet .eq. 'AUXHIST8' ) THEN
+    CALL nl_get_io_form_auxhist8( 1, io_form )
+  ELSE IF ( DataSet .eq. 'AUXHIST9' ) THEN
+    CALL nl_get_io_form_auxhist9( 1, io_form )
+  ELSE IF ( DataSet .eq. 'AUXHIST10' ) THEN
+    CALL nl_get_io_form_auxhist10( 1, io_form )
+  ELSE IF ( DataSet .eq. 'AUXHIST11' ) THEN
+    CALL nl_get_io_form_auxhist11( 1, io_form )
+
   ELSE IF ( DataSet .eq. 'BOUNDARY' ) THEN
     CALL nl_get_io_form_boundary( 1, io_form )
   ELSE  ! default if nothing is set in SysDepInfo; use history

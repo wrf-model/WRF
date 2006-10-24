@@ -3,18 +3,20 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <unistd.h>
+#include <string.h>
+#include <strings.h>
 
 #define DEFINE_GLOBALS
 #include "protos.h"
 #include "registry.h"
 #include "data.h"
+#include "sym.h"
 
 main( int argc, char *argv[], char *env[] )
 {
-  char fname_in[NAMELEN], fname_tmp[NAMELEN], command[NAMELEN] ;
+  char fname_in[NAMELEN], dir[NAMELEN], fname_tmp[NAMELEN], command[NAMELEN] ;
   FILE * fp_in, *fp_tmp ;
   char * thisprog  ;
-  char * strcpy() ;
   int mypid ;
   struct rlimit rlim ;
 
@@ -42,9 +44,16 @@ main( int argc, char *argv[], char *env[] )
 
   setrlimit ( RLIMIT_STACK , &rlim ) ;
 
+  sym_forget() ;
   thisprog = *argv ;
   while (*argv) {
     if (*argv[0] == '-') {  /* an option */
+      if (!strncmp(*argv,"-D",2)) {
+        char * p ;
+        p = *argv ;
+        sym_add(p+2) ;
+      }
+   
       if (!strcmp(*argv,"-DDEREF_KLUDGE")) {
         sw_deref_kludge = 1 ;
       }
@@ -118,7 +127,16 @@ main( int argc, char *argv[], char *env[] )
     exit(2) ;
   }
 
-  pre_parse( fp_in, fp_tmp ) ;
+  { char *e ;
+    strcpy( dir , fname_in ) ;
+    if ( ( e = rindex ( dir , '/' ) ) != NULL ) { *e = '\0' ; } else { strcpy( dir, "." ) ; } 
+  }
+
+  if ( pre_parse( dir, fp_in, fp_tmp ) ) {
+    fprintf(stderr,"Problem with Registry File %s\n", fname_in ) ;
+    goto cleanup ;
+  }
+  sym_forget() ;
 
   fclose(fp_in) ;
   fclose(fp_tmp) ;
@@ -126,7 +144,7 @@ main( int argc, char *argv[], char *env[] )
   if (( fp_tmp = fopen( fname_tmp , "r" )) == NULL )
   {
     fprintf(stderr,"Registry program cannot open %s for reading. Ending.\n", fname_tmp ) ;
-    exit(2) ;
+    goto cleanup ;
   }
 
   reg_parse(fp_tmp) ;

@@ -7,15 +7,20 @@ subroutine dummy_interp_em
 end
 
 #else
+
+! Note: since nesting is not supported single-processor except with
+! the non-MPI configurations using RSL, this is basically dead-code.
+! Needs to be here for linking purposes only.
+
 SUBROUTINE interp_domain_em_part1 ( grid, ngrid, config_flags ,  &
 !
-#include "em_dummy_args.inc"
+#include "em_dummy_new_args.inc"
 !
                  )
          USE module_domain
          USE module_configure
          TYPE(domain), POINTER :: grid , ngrid
-#include "em_dummy_decl.inc"
+#include <em_dummy_new_decl.inc>
 
       INTEGER nlev
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,k
@@ -26,9 +31,6 @@ SUBROUTINE interp_domain_em_part1 ( grid, ngrid, config_flags ,  &
       INTEGER       ::          nids, nide, njds, njde, nkds, nkde,    &
                                 nims, nime, njms, njme, nkms, nkme,    &
                                 nips, nipe, njps, njpe, nkps, nkpe
-
-#define COPY_IN
-#include "em_scalar_derefs.inc"
 
       CALL get_ijk_from_grid (  grid ,                   &
                                 cids, cide, cjds, cjde, ckds, ckde,    &
@@ -44,8 +46,6 @@ SUBROUTINE interp_domain_em_part1 ( grid, ngrid, config_flags ,  &
       ! code here to interpolate the data into the nested domain
 #  include "em_nest_interpdown_interp.inc"
 
-#define COPY_OUT
-#include "em_scalar_derefs.inc"
       RETURN
 
 END SUBROUTINE interp_domain_em_part1

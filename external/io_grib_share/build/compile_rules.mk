@@ -19,12 +19,12 @@ SHELL=/bin/sh
 #  Define all the extensions and include directories we will handle in the 
 #  compile rules. Currently it is just C and C++.
 #
-SRC_EXTENSIONS=.C .c .cpp .cxx .F90 .F .f
+SRC_EXTENSIONS=.C .c .cpp .cxx .F90 .F .f90
 
 #
 #  RULES for compilation of C and C++ code
 #
-.SUFFIXES: .c .C .cpp .cxx .F90 .F .f
+.SUFFIXES: .c .C .cpp .cxx .F90 .F .f90
 .C.o:
 	$(CXX) $(SYS_CXX_INCLUDES) $(SYS_C_INCLUDES) $(CXX_INCLUDES) $(CXXFLAGS) $(SYS_DEFINES) $(DEBUG) -c $<
 .c.o:
@@ -39,8 +39,8 @@ SRC_EXTENSIONS=.C .c .cpp .cxx .F90 .F .f
 
 .F.o:
 	$(RM) $@
-	$(CPP) $(CPPFLAGS) $(SYS_F_INCLUDES) $(F_INCLUDES) $*.F > $*.f
-	$(FC) $(SYS_F_INCLUDES) $(F_INCLUDES) $(FCFLAGS) $(SYS_DEFINES) $(DEBUG) $(FORMAT) -c $*.f
+	$(CPP) $(CPPFLAGS) $(SYS_F_INCLUDES) $(F_INCLUDES) $*.F > $*.f90
+	$(FC) $(SYS_F_INCLUDES) $(F_INCLUDES) $(FCFLAGS) $(SYS_DEFINES) $(DEBUG) $(FORMAT) -c $*.f90
 
-.f.o:
+.f90.o:
 	$(FC) $(SYS_F_INCLUDES) $(F_INCLUDES) $(FCFLAGS) $(SYS_DEFINES) $(DEBUG) $(FORMAT) -c $<

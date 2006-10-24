@@ -11,7 +11,7 @@
 # @ node		= 1
 # @ total_tasks		= 4
 ###################  NCAR  ########################
-# @ ja_report		= yes
+# @ ja_report		= no
 # @ class               = share
 ###################  NCAR  ########################
 ###################  NCEP  ########################
@@ -97,6 +97,7 @@ if      ( ( `uname` == AIX ) || ( `hostname` == tempest ) || ( `hostname | cut -
         set argv = ( -D today )
 	set argv = ( -env )
 	set WRFREGFILE = /mmm/users/gill/wrf.tar
+	set WRFREGFILE = /mmm/users/michalak/wrf.tar
 	if ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` != bs ) && ( `hostname | cut -c 1-2` != bv ) ) ) then
 		set argv = ( -f /nbns/meso/wx22tb/regression_tests/wrf.tar )
 	else
@@ -437,6 +438,7 @@ else if ( ( $NESTED == TRUE ) && ( $RSL_LITE == TRUE ) ) then
 	set CORES = ( em_real )
 else if ( ( $NESTED != TRUE ) && ( $RSL_LITE != TRUE ) ) then
 	set CORES = ( em_real em_b_wave em_quarter_ss nmm_real )
+	set CORES = ( nmm_real )
 	if ( $CHEM == TRUE ) then
 		set CORES = ( em_real em_real )
 	endif
@@ -1092,6 +1094,7 @@ EOF
 	echo " " >>! version_info
 else if ( ( $ARCH[1] == Linux ) && ( `hostname` == bay-mmm ) ) then
 	set DEF_DIR	= /data3/mp/${user}/`hostname`
+	set DEF_DIR	= /data6/md/${user}/`hostname`
 	if ( ! -d $DEF_DIR ) mkdir $DEF_DIR
 	set TMPDIR		= .
 	set MAIL		= /bin/mail

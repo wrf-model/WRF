@@ -6,6 +6,7 @@
 #include "registry.h"
 #include "protos.h"
 #include "data.h"
+#include "sym.h"
 
 /* read in the Registry file and build the internal representation of the registry */
 
@@ -78,9 +79,8 @@
 #define COMM_USE           2
 #define COMM_DEFINE        3
 
-
 int
-pre_parse( FILE * infile, FILE * outfile )
+pre_parse( char * dir, FILE * infile, FILE * outfile )
 {
   char inln[4096], parseline[4096], parseline_save[4096] ;
   int ntracers = 0 ;
@@ -91,11 +91,83 @@ pre_parse( FILE * infile, FILE * outfile )
   int i, ii, len_of_tok ;
   char x, xstr[NAMELEN] ;
   int is4d, wantstend, wantsbdy ;
+  int ifdef_stack_ptr = 0 ;
+  int ifdef_stack[100] ;
+  int inquote, retval ;
+
+  ifdef_stack[0] = 1 ;
+  retval = 0 ;
 
   parseline[0] = '\0' ;
 /* main parse loop over registry lines */
   while ( fgets ( inln , 4096 , infile ) != NULL )
   {
+
+/*** preprocessing directives ****/
+    /* look for an include statement */
+    for ( p = inln ; ( *p == ' ' || *p == '	' ) && *p != '\0' ; p++ ) ;
+    if ( !strncmp( p , "include", 7 ) &&  ! ( ifdef_stack_ptr >= 0 && ! ifdef_stack[ifdef_stack_ptr] ) ) {
+      FILE *include_fp ;
+      char include_file_name[128] ;
+      p += 7 ; for ( ; ( *p == ' ' || *p == '	' ) && *p != '\0' ; p++ ) ;
+      if ( strlen( p ) > 127 ) { fprintf(stderr,"Registry warning: invalid include file name: %s\n", p ) ; }
+      else {
+        sprintf( include_file_name , "%s/%s", dir , p ) ;
+        if ( (p=index(include_file_name,'\n')) != NULL ) *p = '\0' ;
+        fprintf(stderr,"opening %s\n",include_file_name) ;
+        if (( include_fp = fopen( include_file_name , "r" )) != NULL ) {
+
+fprintf(stderr,"including %s\n",include_file_name ) ;
+
+          pre_parse( dir , include_fp , outfile ) ;
+
+fprintf(stderr,"back from including %s\n",include_file_name ) ;
+
+          fclose( include_fp ) ;
+        } else {
+          fprintf(stderr,"Registry warning: cannot open %s. Ignoring.\n", include_file_name ) ;
+        } 
+      }
+    }
+    else if ( !strncmp( p , "ifdef", 5 ) ) {
+      char value[32] ;
+      p += 5 ; for ( ; ( *p == ' ' || *p == '	' ) && *p != '\0' ; p++ ) ;
+      strncpy(value, p, 31 ) ; value[31] = '\0' ;
+      if ( (p=index(value,'\n')) != NULL ) *p = '\0' ;
+      if ( (p=index(value,' ')) != NULL ) *p = '\0' ; if ( (p=index(value,'	')) != NULL ) *p = '\0' ; 
+      ifdef_stack_ptr++ ;
+      ifdef_stack[ifdef_stack_ptr] = ( sym_get(value) != NULL && ifdef_stack[ifdef_stack_ptr-1] ) ;
+      if ( ifdef_stack_ptr >= 100 ) { fprintf(stderr,"Registry fatal: too many nested ifdefs\n") ; exit(1) ; }
+      continue ;
+    }
+    else if ( !strncmp( p , "ifndef", 6 ) ) {
+      char value[32] ;
+      p += 6 ; for ( ; ( *p == ' ' || *p == '	' ) && *p != '\0' ; p++ ) ;
+      strncpy(value, p, 31 ) ; value[31] = '\0' ;
+      if ( (p=index(value,'\n')) != NULL ) *p = '\0' ;
+      if ( (p=index(value,' ')) != NULL ) *p = '\0' ; if ( (p=index(value,'	')) != NULL ) *p = '\0' ; 
+      ifdef_stack_ptr++ ;
+      ifdef_stack[ifdef_stack_ptr] = ( sym_get(value) == NULL && ifdef_stack[ifdef_stack_ptr-1] ) ;
+      if ( ifdef_stack_ptr >= 100 ) { fprintf(stderr,"Registry fatal: too many nested ifdefs\n") ; exit(1) ; }
+      continue ;
+    }
+    else if ( !strncmp( p , "endif", 5 ) ) {
+      ifdef_stack_ptr-- ; 
+      if ( ifdef_stack_ptr < 0 ) { fprintf(stderr,"Registry fatal: unmatched endif\n") ; exit(1) ; }
+      continue ;
+    }
+    else if ( !strncmp( p , "define", 6 ) ) {
+      char value[32] ;
+      p += 6 ; for ( ; ( *p == ' ' || *p == '	' ) && *p != '\0' ; p++ ) ;
+      strncpy(value, p, 31 ) ; value[31] = '\0' ;
+      if ( (p=index(value,'\n')) != NULL ) *p = '\0' ;
+      if ( (p=index(value,' ')) != NULL ) *p = '\0' ; if ( (p=index(value,'	')) != NULL ) *p = '\0' ; 
+      sym_add( value ) ;
+      continue ;
+    }
+    if ( ifdef_stack_ptr >= 0 && ! ifdef_stack[ifdef_stack_ptr] ) continue ;
+/*** end of preprocessing directives ****/
+
     strcat( parseline , inln ) ;
 
     /* allow \ to continue the end of a line */
@@ -108,10 +180,19 @@ pre_parse( FILE * infile, FILE * outfile )
       }
     }
     make_lower( parseline ) ;
-    make_lower( parseline ) ;
 
-    if (( p = index( parseline , '#' ))  != NULL  ) *p = '\0' ; /* discard comments (dont worry about quotes for now) */
     if (( p = index( parseline , '\n' )) != NULL  ) *p = '\0' ; /* discard newlines */
+
+    /* check line and zap any # characters that are in double quotes */
+
+    for ( p = parseline, inquote = 0 ; *p ; p++ ) {
+      if      ( *p == '"' && inquote ) inquote = 0 ;
+      else if ( *p == '"' && !inquote ) inquote = 1 ;
+      else if ( *p == '#' && inquote ) *p = ' ' ;
+      else if ( *p == '#' && !inquote ) { *p = '\0' ; break ; }
+    }
+    if ( inquote ) { retval=1 ; fprintf(stderr,"Registry error: unbalanced quotes in line:\n%s\n",parseline) ;}
+
     for ( i = 0 ; i < MAXTOKENS ; i++ ) tokens[i] = NULL ;
     i = 0 ;
 
@@ -207,7 +288,7 @@ normal:
     fprintf(outfile,"%s\n",parseline_save) ;
     parseline[0] = '\0' ;  /* reset parseline */
   }
-  return(0) ;
+  return(retval) ;
 }
 
 int
@@ -374,7 +455,7 @@ reg_parse( FILE * infile )
         for ( i = 0 ; i < (len_of_tok = strlen(tokens[FIELD_IO])) ; i++ )
         {
 	  x = tolower(tokens[FIELD_IO][i]) ;
-	  if ( x >= 'a' && x <= 'z' ) {
+	  if ( x >= 'a' && x <= 'z' && ! ( x == 'g' || x == 'o' ) ) {
 	    if ( x == 'h' ) {field_struct->history  = 10 ; field_struct->io_mask |= HISTORY ;}
 	    if ( x == 'i' ) {field_struct->input    = 10 ; field_struct->io_mask |= INPUT   ;}
 	    if ( x == 'r' ) {field_struct->restart  = 10 ; field_struct->io_mask |= RESTART ;}
@@ -443,7 +524,7 @@ reg_parse( FILE * infile )
                                }
             }
 	    prev = x ;
-	  } else if ( x >= '0' && x <= '9' )
+	  } else if ( x >= '0' && x <= '9' || x == 'g' || x == 'o' )
 	  {
 	    if ( prev  == 'i' )
 	    {
@@ -455,6 +536,12 @@ reg_parse( FILE * infile )
 	      if ( x == '3' ) field_struct->auxinput3 = 1 ;
 	      if ( x == '4' ) field_struct->auxinput4 = 1 ;
 	      if ( x == '5' ) field_struct->auxinput5 = 1 ;
+	      if ( x == '6' ) field_struct->auxinput6 = 1 ;
+	      if ( x == '7' ) field_struct->auxinput7 = 1 ;
+	      if ( x == '8' ) field_struct->auxinput8 = 1 ;
+	      if ( x == '9' ) field_struct->auxinput9 = 1 ;
+	      if ( x == 'g' ) field_struct->auxinput10 = 1 ;
+	      if ( x == 'o' ) field_struct->auxinput11 = 1 ;
 	    }
 	    if ( prev  == 'h' )
 	    {
@@ -466,6 +553,12 @@ reg_parse( FILE * infile )
 	      if ( x == '3' ) field_struct->auxhist3 = 1 ;
 	      if ( x == '4' ) field_struct->auxhist4 = 1 ;
 	      if ( x == '5' ) field_struct->auxhist5 = 1 ;
+	      if ( x == '6' ) field_struct->auxhist6 = 1 ;
+	      if ( x == '7' ) field_struct->auxhist7 = 1 ;
+	      if ( x == '8' ) field_struct->auxhist8 = 1 ;
+	      if ( x == '9' ) field_struct->auxhist9 = 1 ;
+	      if ( x == 'g' ) field_struct->auxhist10 = 1 ;
+	      if ( x == 'o' ) field_struct->auxhist11 = 1 ;
 	    }
 	  }
         }
@@ -475,6 +568,12 @@ reg_parse( FILE * infile )
 	if ( field_struct->auxhist3  > 0 ) { field_struct->auxhist3  = 1 ; field_struct->io_mask |= AUXHIST3  ; }
 	if ( field_struct->auxhist4  > 0 ) { field_struct->auxhist4  = 1 ; field_struct->io_mask |= AUXHIST4  ; }
 	if ( field_struct->auxhist5  > 0 ) { field_struct->auxhist5  = 1 ; field_struct->io_mask |= AUXHIST5  ; }
+	if ( field_struct->auxhist6  > 0 ) { field_struct->auxhist6  = 1 ; field_struct->io_mask |= AUXHIST6  ; }
+	if ( field_struct->auxhist7  > 0 ) { field_struct->auxhist7  = 1 ; field_struct->io_mask |= AUXHIST7  ; }
+	if ( field_struct->auxhist8  > 0 ) { field_struct->auxhist8  = 1 ; field_struct->io_mask |= AUXHIST8  ; }
+	if ( field_struct->auxhist9  > 0 ) { field_struct->auxhist9  = 1 ; field_struct->io_mask |= AUXHIST9  ; }
+	if ( field_struct->auxhist10  > 0 ) { field_struct->auxhist10  = 1 ; field_struct->io_mask |= AUXHIST10  ; }
+	if ( field_struct->auxhist11  > 0 ) { field_struct->auxhist11  = 1 ; field_struct->io_mask |= AUXHIST11  ; }
 
 	if ( field_struct->input     > 0 ) { field_struct->input     = 1 ; field_struct->io_mask |= INPUT     ; }
 	if ( field_struct->auxinput1 > 0 ) { field_struct->auxinput1 = 1 ; field_struct->io_mask |= AUXINPUT1 ; }
@@ -482,6 +581,12 @@ reg_parse( FILE * infile )
 	if ( field_struct->auxinput3 > 0 ) { field_struct->auxinput3 = 1 ; field_struct->io_mask |= AUXINPUT3 ; }
 	if ( field_struct->auxinput4 > 0 ) { field_struct->auxinput4 = 1 ; field_struct->io_mask |= AUXINPUT4 ; }
 	if ( field_struct->auxinput5 > 0 ) { field_struct->auxinput5 = 1 ; field_struct->io_mask |= AUXINPUT5 ; }
+	if ( field_struct->auxinput6 > 0 ) { field_struct->auxinput6 = 1 ; field_struct->io_mask |= AUXINPUT6 ; }
+	if ( field_struct->auxinput7 > 0 ) { field_struct->auxinput7 = 1 ; field_struct->io_mask |= AUXINPUT7 ; }
+	if ( field_struct->auxinput8 > 0 ) { field_struct->auxinput8 = 1 ; field_struct->io_mask |= AUXINPUT8 ; }
+	if ( field_struct->auxinput9 > 0 ) { field_struct->auxinput9 = 1 ; field_struct->io_mask |= AUXINPUT9 ; }
+	if ( field_struct->auxinput10 > 0 ) { field_struct->auxinput10 = 1 ; field_struct->io_mask |= AUXINPUT10 ; }
+	if ( field_struct->auxinput11 > 0 ) { field_struct->auxinput11 = 1 ; field_struct->io_mask |= AUXINPUT11 ; }
 
 	if ( field_struct->restart   > 0 ) { field_struct->restart   = 1 ; field_struct->io_mask |= RESTART   ; }
 	if ( field_struct->boundary  > 0 ) { field_struct->boundary  = 1 ; field_struct->io_mask |= BOUNDARY  ; }

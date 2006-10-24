@@ -2274,7 +2274,7 @@ CONTAINS
       DO K = 1,NSOIL
          RHSTSin(K) = RHSTS(K)
       END DO
-      DO K = 1,NSOLD
+      DO K = 1,NSOIL
         CIin(K) = CI(K)
       END DO
 
@@ -4705,7 +4705,7 @@ CONTAINS
       DO K = 1,NSOIL
         RHSTTin(K) = RHSTT(K)
       END DO
-      DO K = 1,NSOLD
+      DO K = 1,NSOIL
         CIin(K) = CI(K)
       END DO
 

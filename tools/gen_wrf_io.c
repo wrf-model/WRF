@@ -61,9 +61,29 @@ gen_wrf_io ( char * dirname )
   OP_F(fp,"wrf_auxhist4out.inc") ;
   gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXHIST4 , GEN_OUTPUT ) ;
   close_the_file(fp) ;
+
   OP_F(fp,"wrf_auxhist5out.inc") ;
   gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXHIST5 , GEN_OUTPUT ) ;
   close_the_file(fp) ;
+  OP_F(fp,"wrf_auxhist6out.inc") ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXHIST6 , GEN_OUTPUT ) ;
+  close_the_file(fp) ;
+  OP_F(fp,"wrf_auxhist7out.inc") ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXHIST7 , GEN_OUTPUT ) ;
+  close_the_file(fp) ;
+  OP_F(fp,"wrf_auxhist8out.inc") ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXHIST8 , GEN_OUTPUT ) ;
+  close_the_file(fp) ;
+  OP_F(fp,"wrf_auxhist9out.inc") ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXHIST9 , GEN_OUTPUT ) ;
+  close_the_file(fp) ;
+  OP_F(fp,"wrf_auxhist10out.inc") ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXHIST10 , GEN_OUTPUT ) ;
+  close_the_file(fp) ;
+  OP_F(fp,"wrf_auxhist11out.inc") ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXHIST11 , GEN_OUTPUT ) ;
+  close_the_file(fp) ;
+
   OP_F(fp,"wrf_inputout.inc") ;
   gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , INPUT   , GEN_OUTPUT ) ;
   close_the_file(fp) ;
@@ -81,6 +101,24 @@ gen_wrf_io ( char * dirname )
   close_the_file(fp) ;
   OP_F(fp,"wrf_auxinput5out.inc") ;
   gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXINPUT5   , GEN_OUTPUT ) ;
+  close_the_file(fp) ;
+  OP_F(fp,"wrf_auxinput6out.inc") ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXINPUT6   , GEN_OUTPUT ) ;
+  close_the_file(fp) ;
+  OP_F(fp,"wrf_auxinput7out.inc") ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXINPUT7   , GEN_OUTPUT ) ;
+  close_the_file(fp) ;
+  OP_F(fp,"wrf_auxinput8out.inc") ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXINPUT8   , GEN_OUTPUT ) ;
+  close_the_file(fp) ;
+  OP_F(fp,"wrf_auxinput9out.inc") ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXINPUT9   , GEN_OUTPUT ) ;
+  close_the_file(fp) ;
+  OP_F(fp,"wrf_auxinput10out.inc") ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXINPUT10   , GEN_OUTPUT ) ;
+  close_the_file(fp) ;
+  OP_F(fp,"wrf_auxinput11out.inc") ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXINPUT11   , GEN_OUTPUT ) ;
   close_the_file(fp) ;
   OP_F(fp,"wrf_restartout.inc") ;
   gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , RESTART , GEN_OUTPUT ) ;
@@ -125,6 +163,24 @@ gen_wrf_io ( char * dirname )
   OP_F(fp,"wrf_auxhist5in.inc") ;
   gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXHIST5 , GEN_INPUT ) ;
   close_the_file(fp) ;
+  OP_F(fp,"wrf_auxhist6in.inc") ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXHIST6 , GEN_INPUT ) ;
+  close_the_file(fp) ;
+  OP_F(fp,"wrf_auxhist7in.inc") ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXHIST7 , GEN_INPUT ) ;
+  close_the_file(fp) ;
+  OP_F(fp,"wrf_auxhist8in.inc") ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXHIST8 , GEN_INPUT ) ;
+  close_the_file(fp) ;
+  OP_F(fp,"wrf_auxhist9in.inc") ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXHIST9 , GEN_INPUT ) ;
+  close_the_file(fp) ;
+  OP_F(fp,"wrf_auxhist10in.inc") ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXHIST10 , GEN_INPUT ) ;
+  close_the_file(fp) ;
+  OP_F(fp,"wrf_auxhist11in.inc") ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXHIST11 , GEN_INPUT ) ;
+  close_the_file(fp) ;
   OP_F(fp,"wrf_inputin.inc") ;
   gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , INPUT   , GEN_INPUT ) ;
   close_the_file(fp) ;
@@ -142,6 +198,24 @@ gen_wrf_io ( char * dirname )
   close_the_file(fp) ;
   OP_F(fp,"wrf_auxinput5in.inc") ;
   gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXINPUT5   , GEN_INPUT ) ;
+  close_the_file(fp) ;
+  OP_F(fp,"wrf_auxinput6in.inc") ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXINPUT6   , GEN_INPUT ) ;
+  close_the_file(fp) ;
+  OP_F(fp,"wrf_auxinput7in.inc") ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXINPUT7   , GEN_INPUT ) ;
+  close_the_file(fp) ;
+  OP_F(fp,"wrf_auxinput8in.inc") ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXINPUT8   , GEN_INPUT ) ;
+  close_the_file(fp) ;
+  OP_F(fp,"wrf_auxinput9in.inc") ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXINPUT9   , GEN_INPUT ) ;
+  close_the_file(fp) ;
+  OP_F(fp,"wrf_auxinput10in.inc") ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXINPUT10   , GEN_INPUT ) ;
+  close_the_file(fp) ;
+  OP_F(fp,"wrf_auxinput11in.inc") ;
+  gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , AUXINPUT11   , GEN_INPUT ) ;
   close_the_file(fp) ;
   OP_F(fp,"wrf_restartin.inc") ;
   gen_wrf_io2 ( fp , fname, "grid%" , NULL, Domain.fields , RESTART , GEN_INPUT ) ;
@@ -276,6 +350,12 @@ gen_wrf_io2 ( FILE * fp , char * fname, char * structname , char * fourdname, no
                                                         (io_mask&AUXHIST3) ||
                                                         (io_mask&AUXHIST4) ||
                                                         (io_mask&AUXHIST5) ||
+                                                        (io_mask&AUXHIST6) ||
+                                                        (io_mask&AUXHIST7) ||
+                                                        (io_mask&AUXHIST8) ||
+                                                        (io_mask&AUXHIST9) ||
+                                                        (io_mask&AUXHIST10) ||
+                                                        (io_mask&AUXHIST11) ||
                                                         (io_mask&RESTART))) ;
 
   if ( node == NULL ) return(1) ;

@@ -372,7 +372,6 @@ CONTAINS
 
    REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ) ::v_phytmp
    REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ) ::u_phytmp
-   REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ) ::qt_tmp
 
    REAL,       DIMENSION( ims:ime, jms:jme )          ::  TSKOLD, &
                                                           USTOLD, &
@@ -449,7 +448,6 @@ CONTAINS
 
   v_phytmp = 0.
   u_phytmp = 0.
-  qt_tmp = 0.
   TSKOLD = 0.
   USTOLD = 0.
   ZNTOLD = 0.
@@ -584,60 +582,12 @@ CONTAINS
        IF (PRESENT(qv_curr)    .AND.  PRESENT(qc_curr) .AND.    &
                                                       .TRUE. ) THEN
 
-! Fill temporary condensate variable depending on micro package (G. Thompson 07 Mar 2006)
-     if(PRESENT(qc_curr)) then
-        DO j=j_start(ij),j_end(ij)
-        DO k=kts,kte
-        DO i=i_start(ij),i_end(ij)
-           qt_tmp(I,K,J)=qc_curr(I,K,J)
-        ENDDO
-        ENDDO
-        ENDDO
-     endif
-     if(PRESENT(qi_curr)) then
-        DO j=j_start(ij),j_end(ij)
-        DO k=kts,kte
-        DO i=i_start(ij),i_end(ij)
-           qt_tmp(I,K,J) = qt_tmp(I,K,J) + qi_curr(I,K,J)
-        ENDDO
-        ENDDO
-        ENDDO
-     endif
-     if(PRESENT(qr_curr)) then
-        DO j=j_start(ij),j_end(ij)
-        DO k=kts,kte
-        DO i=i_start(ij),i_end(ij)
-           qt_tmp(I,K,J) = qt_tmp(I,K,J) + qr_curr(I,K,J)
-        ENDDO
-        ENDDO
-        ENDDO
-     endif
-     if(PRESENT(qs_curr)) then
-        DO j=j_start(ij),j_end(ij)
-        DO k=kts,kte
-        DO i=i_start(ij),i_end(ij)
-           qt_tmp(I,K,J) = qt_tmp(I,K,J) + qs_curr(I,K,J)
-        ENDDO
-        ENDDO
-        ENDDO
-     endif
-     if(PRESENT(qg_curr)) then
-        DO j=j_start(ij),j_end(ij)
-        DO k=kts,kte
-        DO i=i_start(ij),i_end(ij)
-           qt_tmp(I,K,J) = qt_tmp(I,K,J) + qg_curr(I,K,J)
-        ENDDO
-        ENDDO
-        ENDDO
-     endif
-
         myj =.true.
 
             CALL wrf_debug(100,'in MYJSFC')
             CALL MYJSFC(itimestep,ht,dz8w,                         &
               p_phy,p8w,th_phy,t_phy,                              &
               qv_curr,qc_curr,                                      &
-!              qv_curr,qt_tmp,                                      &
               u_phy,v_phy,tke_myj,                                 &
               tsk,qsfc,thz0,qz0,uz0,vz0,                           &
               lowlyr,                                              &

@@ -1771,6 +1771,7 @@
         DO J=MYJS2,MYJE2
           DO I=MYIS1,MYIE1
             WMID(I,KTS)=-OMGALF(I,KTS,J)*CP/(G*DT)
+            PDSL=PD(I,J)*RES(I,J)
             PLYR=AETA1(KTS)*PDTOP+AETA2(KTS)*PDSL+PT
             DZ(I,KTS,J)=T(I,KTS,J)*(P608*Q(I,KTS,J)+1.)*R_D             &
      &                 *(P8W(I,KTS,J)-P8W(I,KTS+1,J))                   &

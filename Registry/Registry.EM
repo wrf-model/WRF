@@ -825,6 +825,13 @@ state  logical moved            -       misc        1         -     -
 state  real   abstot   ikcj   misc      1    Z   -     ""   ""  " "
 state  real   absnxt   ikaj   misc      1    -   -     ""   ""  " "
 state  real   emstot   ikj    misc      1    Z   -     ""   ""  " "
+
+# model diagnostics
+state   real  dpsdt            ij       misc        1         -     -         "dpsdt"           "surface pressure tendency"                         "Pa/sec"
+state   real  dmudt            ij       misc        1         -     -         "dmudt"           "mu tendency"                                       "Pa/sec"
+state   real  pk1m             ij       misc        1         -     -         "pk1m"            "surface pressure at previous step"                 "Pa"
+state   real  mu_2m            ij       misc        1         -     -         "mu_2m"           "mu_2 at previous step"                             "Pa"
+
 #
 #---------------------------------------------------------------------------------------------------------------------------------------
 #                                               
@@ -875,6 +882,7 @@ rconfig   logical write_restart_at_0h     namelist,time_control		1             .
 rconfig   logical adjust_output_times     namelist,time_control         1             .false. -    "adjust_output_times"
 rconfig   logical adjust_input_times      namelist,time_control         1             .false. -    "adjust_input_times"
 
+rconfig   integer diag_print              namelist,time_control         1              0      -    "print out time series of model diagnostics"
 rconfig   logical nocolons                namelist,time_control         1             .false. -    "nocolons"
 
 # Domains

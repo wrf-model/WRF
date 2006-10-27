@@ -50,6 +50,7 @@ MODULES = \
 	module_microphysics_zero_out.o \
 	module_radiation_driver.o \
 	module_surface_driver.o \
+	module_diagnostics.o \
 	module_fdda_psufddagd.o \
 	module_fddagd_driver.o
   
@@ -221,6 +222,9 @@ module_surface_driver.o: \
 		../frame/module_configure.o \
 		../share/module_model_constants.o  \
  		module_sf_lsm_nmm.o
+
+module_diagnostics.o: ../frame/module_dm.o
+
 module_fddagd_driver.o: \
 		../frame/module_state_description.o \
 		../frame/module_configure.o \

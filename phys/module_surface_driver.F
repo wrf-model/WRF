@@ -662,6 +662,12 @@ CONTAINS
              ims,ime, jms,jme, kms,kme,                           &
              i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
 
+           DO j=j_start(ij),j_end(ij)
+           DO i=i_start(ij),i_end(ij)
+              SFCEVP(I,J)= SFCEVP(I,J) + QFX(I,J)*DTBL
+           ENDDO
+           ENDDO
+
         CALL wrf_debug(100,'in SFCDIAGS')
           CALL SFCDIAGS(hfx,qfx,tsk,qsfc,chs2,cqs2,t2,th2,q2,      &
                      psfc,cp,r_d,rcp,                              &
@@ -758,6 +764,7 @@ CONTAINS
            DO j=j_start(ij),j_end(ij)
            DO i=i_start(ij),i_end(ij)
               CHKLOWQ(I,J)= 1.0
+              SFCEVP(I,J)= SFCEVP(I,J) + QFX(I,J)*DTBL
            ENDDO
            ENDDO
          

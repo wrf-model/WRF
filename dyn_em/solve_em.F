@@ -33,6 +33,7 @@ SUBROUTINE solve_em ( grid , config_flags , &
    USE module_microphysics_zero_out
    USE module_pbl_driver
    USE module_fddagd_driver
+   USE module_diagnostics
 #ifdef WRF_CHEM
    USE module_input_chem_data
    USE module_chem_utilities
@@ -3227,6 +3228,32 @@ BENCH_END(bc_2d_tim)
    IF( config_flags%specified .or. config_flags%nested ) THEN 
      grid%dtbc = grid%dtbc + grid%dt
    ENDIF
+
+! calculate some model diagnostics.
+
+         CALL wrf_debug ( 200 , ' call diagnostic_driver' )
+   
+         CALL diagnostics(                                                &
+     &              DPSDT=grid%dpsdt   ,DMUDT=grid%dmudt                  &
+     &             ,P_PHY=p_phy   ,PK1M=grid%pk1m                         &
+     &             ,MU_2=grid%em_mu_2  ,MU_2M=grid%mu_2m                  &
+     &             ,U=grid%em_u_2    ,V=grid%em_v_2                       &
+     &             ,RAINCV=grid%raincv    ,RAINNCV=grid%rainncv           &
+     &             ,RAINC=grid%rainc    ,RAINNC=grid%rainnc               &
+     &             ,HFX=grid%hfx   ,SFCEVP=grid%sfcevp    ,LH=grid%lh     &
+     &             ,DT=grid%dt      ,SBW=config_flags%spec_bdy_width      &
+     &             ,XTIME=grid%xtime                                      &
+                 ! Selection flag
+     &             ,DIAG_PRINT=config_flags%diag_print                    &
+                 ! Dimension arguments
+     &             ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde     &
+     &             ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme     &
+     &             ,IPS=ips,IPE=ipe, JPS=jps,JPE=jpe, KPS=kps,KPE=kpe     &
+     &             ,I_START=grid%i_start,I_END=min(grid%i_end, ide-1)     &
+     &             ,J_START=grid%j_start,J_END=min(grid%j_end, jde-1)     &
+     &             ,KTS=k_start, KTE=min(k_end,kde-1)                     &
+     &             ,NUM_TILES=grid%num_tiles                              &
+     &                                                          )
 
 #ifdef DM_PARALLEL
 !-----------------------------------------------------------------------

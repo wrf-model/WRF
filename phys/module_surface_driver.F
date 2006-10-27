@@ -738,7 +738,6 @@ CONTAINS
                 ims,ime, jms,jme, kms,kme,                      &
                 i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,    &
                 ucmcall                                         &
-#if ( WRF_CHEM != 1 )
 !Optional urban
                 ,tr_urb2d,tb_urb2d,tg_urb2d,tc_urb2d,qc_urb2d,  & !H urban
                 uc_urb2d,                                       & !H urban
@@ -753,7 +752,6 @@ CONTAINS
                 num_roof_layers, num_wall_layers,               & !I urban
                 num_road_layers, DZR, DZB, DZG,                 & !I urban
                 FRC_URB2D, UTYPE_URB2D                          & ! urban
-#endif
                 )
 
 

@@ -122,12 +122,11 @@
      &                                    ,RQSCUTEN,RQVCUTEN,RTHCUTEN   &
      &                                    ,RTHRATEN                     &
      &                                    ,RTHRATENLW,RTHRATENSW
-      REAL,ALLOCATABLE,DIMENSION(:,:) :: EMISS,GLW,GSW,HFX              &
-     &                                  ,NCA                     &
+      REAL,ALLOCATABLE,DIMENSION(:,:) :: EMISS,GLW,HFX                  &
+     &                                  ,NCA                            &
      &                                  ,QFX,RAINBL,RAINC,RAINNC        &
-     &                                  ,RAINCV,RAINNCV                 &
-     &                                  ,SNOWC,THC,TMN,TSFC             &
-     &                                  ,XLAND,XLAT,XLONG
+     &                                  ,RAINNCV                        &
+     &                                  ,SNOWC,THC,TMN,TSFC
 
       REAL,ALLOCATABLE,DIMENSION(:,:) :: Z0_DUM, ALBEDO_DUM
 !
@@ -1463,7 +1462,6 @@
       ALLOCATE(SMID(KMS:KME),STAT=I)            ; SMID     = 0.
       ALLOCATE(EMISS(IMS:IME,JMS:JME),STAT=I)   ; EMISS    = 0.
       ALLOCATE(GLW(IMS:IME,JMS:JME),STAT=I)     ; GLW      = 0.
-      ALLOCATE(GSW(IMS:IME,JMS:JME),STAT=I)     ; GSW      = 0.
       ALLOCATE(HFX(IMS:IME,JMS:JME),STAT=I)     ; HFX      = 0.
       ALLOCATE(LOWLYR(IMS:IME,JMS:JME),STAT=I)  ; LOWLYR   = 0.
 !     ALLOCATE(MAVAIL(IMS:IME,JMS:JME),STAT=I)  ; MAVAIL   = 0.
@@ -1471,7 +1469,6 @@
       ALLOCATE(QFX(IMS:IME,JMS:JME),STAT=I)     ; QFX      = 0.
       ALLOCATE(RAINBL(IMS:IME,JMS:JME),STAT=I)  ; RAINBL   = 0.
       ALLOCATE(RAINC(IMS:IME,JMS:JME),STAT=I)   ; RAINC    = 0.
-      ALLOCATE(RAINCV(IMS:IME,JMS:JME),STAT=I)  ; RAINCV   = 0.
       ALLOCATE(RAINNC(IMS:IME,JMS:JME),STAT=I)  ; RAINNC   = 0.
       ALLOCATE(RAINNCV(IMS:IME,JMS:JME),STAT=I) ; RAINNCV  = 0.
 
@@ -1480,9 +1477,6 @@
       ALLOCATE(THC(IMS:IME,JMS:JME),STAT=I)     ; THC      = 0.
       ALLOCATE(TMN(IMS:IME,JMS:JME),STAT=I)     ; TMN      = 0.
       ALLOCATE(TSFC(IMS:IME,JMS:JME),STAT=I)    ; TSFC     = 0.
-      ALLOCATE(XLAND(IMS:IME,JMS:JME),STAT=I)   ; XLAND    = 0.
-      ALLOCATE(XLAT(IMS:IME,JMS:JME),STAT=I)    ; XLAT     = 0.
-      ALLOCATE(XLONG(IMS:IME,JMS:JME),STAT=I)   ; XLONG    = 0.
       ALLOCATE(Z0_DUM(IMS:IME,JMS:JME),STAT=I)  ; Z0_DUM   = 0.
       ALLOCATE(ALBEDO_DUM(IMS:IME,JMS:JME),STAT=I)  ; ALBEDO_DUM   = 0.
 
@@ -1856,7 +1850,6 @@
       DEALLOCATE(DZS)
       DEALLOCATE(EMISS)
       DEALLOCATE(GLW)
-      DEALLOCATE(GSW)
       DEALLOCATE(HFX)
       DEALLOCATE(LOWLYR)
 !     DEALLOCATE(MAVAIL)
@@ -1864,7 +1857,6 @@
       DEALLOCATE(QFX)
       DEALLOCATE(RAINBL)
       DEALLOCATE(RAINC)
-      DEALLOCATE(RAINCV)
       DEALLOCATE(RAINNC)
       DEALLOCATE(RAINNCV)
       DEALLOCATE(RQCBLTEN)
@@ -1890,9 +1882,6 @@
       DEALLOCATE(THC)
       DEALLOCATE(TMN)
       DEALLOCATE(TSFC)
-      DEALLOCATE(XLAND)
-      DEALLOCATE(XLAT)
-      DEALLOCATE(XLONG)
       DEALLOCATE(ZS)
 #if 0
       DEALLOCATE(W0AVG)

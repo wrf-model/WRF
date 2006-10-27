@@ -572,6 +572,15 @@ state    real   SMOIS            ilj     -          1         Z     rh       "SM
                                                 
 
                                                 
+#################################################################
+# variables added for CHEMISTRY compatibility with ARW core - kludge
+#################################################################
+state    real   GSW             ij     misc        1         -      -       ""                 ""
+state    real   XLAT            ij     misc        1         -      -       ""                 ""
+state    real   XLONG           ij     misc        1         -      -       ""                 ""
+state    real   XLAND           ij     misc        1         -      -       ""                 ""
+state    real   RAINCV          ij     misc        1         -      -       ""                 ""
+
 
 #################################################################
 # other misc variables (all cores)

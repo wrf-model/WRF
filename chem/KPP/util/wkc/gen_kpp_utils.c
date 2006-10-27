@@ -96,6 +96,32 @@ int gen_kpp_argl( FILE * ofile, knode_t * nl  )
 
 
 
+int gen_kpp_argl_new( FILE * ofile, knode_t * nl  )
+{
+ knode_t * pml;
+ int countit;
+ int max_per_line=4;
+
+             fprintf(ofile,"            ");
+
+	         countit=0;   
+              for ( pml = nl -> members;  pml != NULL ; pml = pml->next ) {
+                 fprintf(ofile," grid%%%s,", pml->name);
+		 countit = countit+1;
+                  if ( countit % max_per_line ==  0) {
+		   fprintf(ofile," & \n            ");
+		   } 
+		 }   
+
+
+		 fprintf(ofile,"  & \n"); 
+
+
+}
+
+
+
+
 
 int  gen_kpp_argd ( FILE * ofile )
 {

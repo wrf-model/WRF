@@ -39,6 +39,7 @@ int gen_kpp_warning( FILE * ofile, char * gen_by_name, char * cchar );
 int gen_kpp_pass_down ( FILE * ofile );
 int gen_kpp_decl ( FILE * ofile );
 int gen_kpp_argl( FILE * ofile ,  knode_t * nl  );
+int gen_kpp_argl_new( FILE * ofile ,  knode_t * nl  );
 int gen_kpp_argd ( FILE * ofile );
 int gen_kpp_decld ( FILE * ofile );
 int gen_kpp_decl3d( FILE * ofile, knode_t * nl  );

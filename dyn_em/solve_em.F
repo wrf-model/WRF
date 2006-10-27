@@ -497,10 +497,8 @@ BENCH_START(rad_driver_tim)
      &        ,XICE=grid%xice                                                  &
      &        ,XLAND=grid%xland        ,XLAT=grid%xlat          ,XLONG=grid%xlong        &
 !Optional urban
-# if (WRF_CHEM != 1)
      &        ,DECLIN_URB=grid%declin_urb        ,COSZ_URB2D=grid%cosz_urb2d        &
      &        ,OMG_URB2D=grid%omg_urb2d                                        &
-# endif
 !
      &        ,Z=grid%em_z                                                        &
      &        ,LEVSIZ=grid%levsiz, N_OZMIXM=num_ozmixm                    &
@@ -572,11 +570,9 @@ BENCH_START(surf_driver_tim)
 !-----------------------------------------------------------------
 ! urban related variable are added to arguments of surface_driver
 !-----------------------------------------------------------------
-# if (WRF_CHEM != 1)
       NUM_ROOF_LAYERS = grid%num_soil_layers !urban
       NUM_WALL_LAYERS = grid%num_soil_layers !urban
       NUM_ROAD_LAYERS = grid%num_soil_layers !urban
-# endif
 
       CALL wrf_debug ( 200 , ' call surface_driver' )
       CALL surface_driver(                                                &
@@ -616,7 +612,6 @@ BENCH_START(surf_driver_tim)
      &        ,WSPD=wspd          ,XICE=grid%xice          ,XLAND=grid%xland        &
      &        ,Z0=grid%z0              ,Z=grid%em_z                ,ZNT=grid%znt            &
      &        ,ZS=grid%zs                                                      &
-# if (WRF_CHEM != 1)
      &        ,DECLIN_URB=grid%declin_urb  ,COSZ_URB2D=grid%cosz_urb2d              & !I urban
      &        ,OMG_URB2D=grid%omg_urb2d    ,xlat_urb2d=grid%XLAT                    & !I urban
      &        ,NUM_ROOF_LAYERS=num_roof_layers                            & !I urban
@@ -638,7 +633,6 @@ BENCH_START(surf_driver_tim)
      &        ,RN_URB2D=grid%rn_urb2d     , TS_URB2D=grid%ts_urb2d        & !H urban 
      &        ,FRC_URB2D=grid%frc_urb2d                                   & !H urban
      &        ,UTYPE_URB2D=grid%utype_urb2d                               & !H urban
-# endif
      &        ,ucmcall=grid%ucmcall                                       & !H urban
            ! Indexes
      &        ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde          &

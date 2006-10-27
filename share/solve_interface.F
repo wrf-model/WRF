@@ -60,7 +60,7 @@ SUBROUTINE solve_interface ( grid )
 
      CALL chem_driver  ( grid , config_flags , &
 !
-# include <em_actual_args.inc>
+# include <em_actual_new_args.inc>
 !
                )
    ENDIF
@@ -78,7 +78,7 @@ SUBROUTINE solve_interface ( grid )
 
      CALL chem_driver  ( grid , config_flags , &
 !
-# include <nmm_actual_args.inc>
+# include <nmm_actual_new_args.inc>
 !  
                )
    ENDIF

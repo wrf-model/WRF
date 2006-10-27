@@ -6,9 +6,9 @@ MODULE module_chem_utilities
 
 CONTAINS
    SUBROUTINE chem_prep ( config_flags,                                &  ! input
-                         mu, u, v, p, pb, alt, ph,                    &  ! input
-                         phb, t, tsk, moist, n_moist,                 &  ! input
-                         mu_3d, rho, th_phy, p_phy ,          &  ! output
+                         u, v, p, pb, alt, ph,                    &  ! input
+                         phb, t, moist, n_moist,                 &  ! input
+                         rho, p_phy ,          &  ! output
                          u_phy, v_phy, p8w, t_phy, t8w,               &  ! output
                          z, z_at_w, dz8w,                             &  ! output
                          fzm, fzp,                                    &  ! params
@@ -28,7 +28,6 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme , jms:jme , n_moist ), INTENT(IN) :: moist
 
 
-   REAL , DIMENSION( ims:ime, jms:jme ), INTENT(IN   )   ::     TSK, mu
 
    REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) ,                 &
           INTENT(  OUT)                                  ::   u_phy, &
@@ -36,9 +35,7 @@ CONTAINS
                                                               p_phy, &
                                                                 p8w, &
                                                               t_phy, &
-                                                             th_phy, &
                                                                 t8w, &
-                                                              mu_3d, &
                                                                 rho, &
                                                                   z, &
                                                                dz8w, &
@@ -79,16 +76,11 @@ CONTAINS
     do k = k_start, k_end
     do i = i_start, i_end
 
-      th_phy(i,k,j) = t(i,k,j) + t0
       p_phy(i,k,j) = p(i,k,j) + pb(i,k,j)
-      t_phy(i,k,j) = th_phy(i,k,j)*(p_phy(i,k,j)/p1000mb)**rcp
+      t_phy(i,k,j) = (t(i,k,j)+t0)*(p_phy(i,k,j)/p1000mb)**rcp
       rho(i,k,j) = 1./alt(i,k,j)*(1.+moist(i,k,j,P_QV))
-      mu_3d(i,k,j) = mu(i,j)
       u_phy(i,k,j) = 0.5*(u(i,k,j)+u(i+1,k,j))
       v_phy(i,k,j) = 0.5*(v(i,k,j)+v(i,k,j+1))
-!     if(i.eq.1.and.j.eq.1)then
-!      print *,rho(i,k,j),t_phy(i,k,j),p_phy(i,k,j),p(i,k,j),pb(i,k,j),alt(i,k,j),p1000mb,rcp
-!     endif
 
     enddo
     enddo

@@ -128,11 +128,11 @@ knode_t * p1, * p2, * p3, * p4, * pm1, * pm3, * pm4;
 
  
     /* pass down all radicals */ 
-    gen_kpp_argl( kpp_cmd,  WRFC_radicals );
+    gen_kpp_argl_new( kpp_cmd,  WRFC_radicals );
 
 
     /* pass down jvals */ 
-    gen_kpp_argl( kpp_cmd,  WRFC_jvals );
+    gen_kpp_argl_new( kpp_cmd,  WRFC_jvals );
 
 
 

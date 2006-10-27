@@ -473,6 +473,7 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
    real(r8), dimension(its:ite,kts:kte+1)           :: emstot ! Total emissivity
    CHARACTER(LEN=256) :: msgstr
 
+#if !defined(MAC_KLUDGE)
    lchnk = 1
    begchunk = ims
    endchunk = ime
@@ -801,6 +802,7 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
 
     enddo    ! j-loop
 
+#endif
 
 end subroutine camrad
 !====================================================================
@@ -844,6 +846,7 @@ end subroutine camrad
    REAL(r8)    :: pstd
    REAL(r8)    :: rh2o, cpair
 
+#if !defined(MAC_KLUDGE)
    ozncyc = .true.
    dosw = .true.
    dolw = .true.
@@ -898,8 +901,11 @@ end subroutine camrad
                      ims, ime, jms, jme, kms, kme,                  &
                      its, ite, jts, jte, kts, kte)
 
+#endif
+
    END SUBROUTINE camradinit
 
+#if !defined(MAC_KLUDGE)
 subroutine oznini(ozmixm,pin,levsiz,num_months,XLAT,                &
                      ids, ide, jds, jde, kds, kde,                  &
                      ims, ime, jms, jme, kms, kme,                  &
@@ -11535,7 +11541,7 @@ function findvalue(ix,n,ain,indxa)
    end do
 end function findvalue
 
-
+#endif
 
 
 

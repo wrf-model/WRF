@@ -793,6 +793,9 @@ integer myproc
                            its, ite, jts, jte, kts, kte     )
 
         CASE (CAMLWSCHEME)
+#ifdef MAC_KLUDGE
+             CALL wrf_error_fatal ( 'CAM radiation scheme not supported under the chosen build configuration' )
+#endif
              IF ( PRESENT( OZMIXM ) .AND. PRESENT( PIN ) .AND. &
                   PRESENT(M_PS_1) .AND. PRESENT(M_PS_2) .AND.  &
                   PRESENT(M_HYBI) .AND. PRESENT(AEROSOLC_1)    &
@@ -837,6 +840,9 @@ integer myproc
                          its, ite, jts, jte, kts, kte      )
 
         CASE (CAMSWSCHEME)
+#ifdef MAC_KLUDGE
+             CALL wrf_error_fatal ( 'CAM radiation scheme not supported under the chosen build configuration' )
+#endif
              IF(.not.camlw)THEN
              CALL camradinit(                              &
                          R_D,R_V,CP,G,STBOLT,EP_2,shalf,pptop,               &

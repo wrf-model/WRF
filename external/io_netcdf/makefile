@@ -19,7 +19,7 @@ libwrfio_nf.a:		$(OBJS) $(CODE)
 			$(RANLIB) libwrfio_nf.a
 
 wrf_io.o:               wrf_io.F90 $(CODE)
-			$(CPP1) wrf_io.F90 -I$(NETCDFPATH)/include -I../ioapi_share | $(M4) - > wrf_io.f
+			$(CPP1) wrf_io.F90 -I../ioapi_share | $(M4) - > wrf_io.f
 			$(FC) $(FFLAGS) -c wrf_io.f
 
 module_wrfsi_static.o:  module_wrfsi_static.F90
@@ -27,7 +27,7 @@ module_wrfsi_static.o:  module_wrfsi_static.F90
 			$(FC) $(FFLAGS) -c module_wrfsi_static.f
 
 diffwrf:                diffwrf.F90
-			$(CPP1) diffwrf.F90 -I../ioapi_share > diffwrf.f
+			$(CPP1) diffwrf.F90 -I$(NETCDFPATH)/include -I../ioapi_share > diffwrf.f
 			$(FC) -c $(FFLAGS) diffwrf.f
 			@if [ \( -f ../../frame/wrf_debug.o \) -a \( -f ../../frame/module_wrf_error.o \) -a \( -f $(ESMF_MOD_DEPENDENCE) \) ] ; then \
 			echo "diffwrf io_netcdf is being built now. "; \

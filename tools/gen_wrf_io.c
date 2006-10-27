@@ -402,7 +402,11 @@ fprintf(fp,"                       globbuf_%s               , &  ! Field \n",p->
         } else {
 fprintf(fp,"          grid%%%s%s(ims,kms,jms,itrace)  , &  ! Field\n",p->name,tl) ;
         }
-fprintf(fp,"          WRF_%s             , &  ! FieldType \n" , p->members->type->name ) ;
+        if (!strncmp(p->members->type->name,"real",4)) {
+          fprintf(fp,"                       WRF_FLOAT             , &  ! FieldType \n") ;
+        } else {
+          fprintf(fp,"                       WRF_%s             , &  ! FieldType \n" , p->members->type->name ) ;
+        }
 fprintf(fp,"          grid%%communicator  , &  ! Comm\n") ;
 fprintf(fp,"          grid%%iocommunicator  , &  ! Comm\n") ;
 fprintf(fp,"          grid%%domdesc       , &  ! Comm\n") ;
@@ -557,7 +561,11 @@ fprintf(fp,"                       globbuf_%s               , &  ! Field \n",p->
               strncat(bdytag2,bdytag, pass+2) ;
 fprintf(fp,"          grid%%%s%s(1,kds,1,%d,itrace)  , &  ! Field\n",p->name,bdytag2,ibdy) ;
             }
-fprintf(fp,"          WRF_%s             , &  ! FieldType \n" , p->members->type->name ) ;
+            if (!strncmp(p->members->type->name,"real",4)) {
+              fprintf(fp,"                       WRF_FLOAT             , &  ! FieldType \n") ;
+            } else {
+              fprintf(fp,"                       WRF_%s             , &  ! FieldType \n" , p->members->type->name ) ;
+            }
 fprintf(fp,"          grid%%communicator  , &  ! Comm\n") ;
 fprintf(fp,"          grid%%iocommunicator  , &  ! Comm\n") ;
 fprintf(fp,"          grid%%domdesc       , &  ! Comm\n") ;

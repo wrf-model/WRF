@@ -105,7 +105,7 @@
 
     CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 
-    IF ( ( dryrun .AND. ( io_form .EQ. IO_NETCDF ) ) .OR. &
+    IF ( ( dryrun .AND. ( io_form .EQ. IO_NETCDF .OR. io_form .EQ. IO_PNETCDF ) ) .OR. &
                         ( io_form .EQ. IO_PHDF5  )   ) THEN
       CALL wrf_put_var_ti_char( &
                        DataHandle                 &  ! DataHandle

@@ -151,12 +151,6 @@ CONTAINS
    CALL wrf_error_fatal( &
      'nesting requires either an MPI build or use of the -DSTUBMPI option' ) 
 #endif
-#if ( defined ( MOVE_NESTS ) )
-   CALL wrf_message( '                      W A R N I N G                          ' )
-   CALL wrf_message( '  MOVING NEST CAPABILITY IS EXPERIMENTAL AND UNSUPPORTED     ' )
-   CALL wrf_message( '                 IN THIS VERSION OF WRF                      ' )
-   CALL wrf_message( '          U S E   A T   Y O U R   O W N   R I S K            ' )
-#endif
    END IF
 
 !<DESCRIPTION>

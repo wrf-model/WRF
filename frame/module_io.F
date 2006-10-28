@@ -72,6 +72,9 @@ SUBROUTINE wrf_ioinit( Status )
 #ifdef PHDF5
   CALL ext_phdf5_ioinit( SysDepInfo, ierr(3) )
 #endif
+#ifdef PNETCDF
+  CALL ext_pnc_ioinit( SysDepInfo, ierr(3) )
+#endif
 #ifdef MCELIO
   CALL ext_mcel_ioinit(  SysDepInfo, ierr(4) )
 #endif
@@ -129,6 +132,9 @@ SUBROUTINE wrf_ioexit( Status )
 #endif
 #ifdef PHDF5
   CALL ext_phdf5_ioexit(ierr(3) )
+#endif
+#ifdef PNETCDF
+  CALL ext_pnc_ioexit(ierr(3) )
 #endif
 #ifdef MCELIO
   CALL ext_mcel_ioexit( ierr(4) )
@@ -279,6 +285,11 @@ SUBROUTINE wrf_open_for_write_begin( FileName , Comm_compute, Comm_io, SysDepInf
 #ifdef PHDF5
       CASE (IO_PHDF5  )
         CALL ext_phdf5_open_for_write_begin( FileName, Comm_compute, Comm_io, SysDepInfo, &
+                                            Hndl, Status)
+#endif
+#ifdef PNETCDF
+      CASE (IO_PNETCDF  )
+        CALL ext_pnc_open_for_write_begin( FileName, Comm_compute, Comm_io, SysDepInfo, &
                                             Hndl, Status)
 #endif
 #ifdef XXX
@@ -444,6 +455,10 @@ SUBROUTINE wrf_open_for_write_commit( DataHandle , Status )
 #ifdef PHDF5
       CASE ( IO_PHDF5  )
         CALL ext_phdf5_open_for_write_commit ( Hndl , Status )
+#endif
+#ifdef PNETCDF
+      CASE ( IO_PNETCDF  )
+        CALL ext_pnc_open_for_write_commit ( Hndl , Status )
 #endif
 #ifdef XXX
       CASE ( IO_XXX   )
@@ -882,6 +897,11 @@ SUBROUTINE wrf_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo, &
       CALL ext_phdf5_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo, &
                                Hndl , Status )
 #endif
+#ifdef PNETCDF
+    CASE ( IO_PNETCDF  )
+      CALL ext_pnc_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo, &
+                               Hndl , Status )
+#endif
 #ifdef XXX
     CASE ( IO_XXX   )
       CALL ext_xxx_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo, &
@@ -1009,6 +1029,10 @@ SUBROUTINE wrf_inquire_opened ( DataHandle, FileName , FileStatus, Status )
       CASE ( IO_PHDF5   )
           CALL ext_phdf5_inquire_opened ( Hndl, FileName , FileStatus, Status )
 #endif
+#ifdef PNETCDF
+      CASE ( IO_PNETCDF   )
+          CALL ext_pnc_inquire_opened ( Hndl, FileName , FileStatus, Status )
+#endif
 #ifdef XXX
       CASE ( IO_XXX   )
           CALL ext_xxx_inquire_opened ( Hndl, FileName , FileStatus, Status )
@@ -1093,6 +1117,10 @@ SUBROUTINE wrf_inquire_filename ( DataHandle, FileName , FileStatus, Status )
 #ifdef PHDF5
         CASE ( IO_PHDF5   )
           CALL ext_phdf5_inquire_filename ( Hndl, FileName , FileStatus, Status )
+#endif
+#ifdef PNETCDF
+        CASE ( IO_PNETCDF   )
+          CALL ext_pnc_inquire_filename ( Hndl, FileName , FileStatus, Status )
 #endif
 #ifdef XXX
         CASE ( IO_XXX   )
@@ -1246,6 +1274,10 @@ SUBROUTINE wrf_ioclose ( DataHandle, Status )
         CASE ( IO_PHDF5  )
           CALL ext_phdf5_ioclose( Hndl, Status )
 #endif
+#ifdef PNETCDF
+        CASE ( IO_PNETCDF  )
+          CALL ext_pnc_ioclose( Hndl, Status )
+#endif
 #ifdef XXX
         CASE ( IO_XXX   )
           CALL ext_xxx_ioclose( Hndl, Status )
@@ -1336,6 +1368,10 @@ SUBROUTINE wrf_get_next_time ( DataHandle, DateStr, Status )
 #ifdef PHDF5
         CASE ( IO_PHDF5   )
           CALL ext_phdf5_get_next_time( Hndl, DateStr, Status )
+#endif
+#ifdef PNETCDF
+        CASE ( IO_PNETCDF   )
+          CALL ext_pnc_get_next_time( Hndl, DateStr, Status )
 #endif
 #ifdef XXX
         CASE ( IO_XXX   )
@@ -1435,6 +1471,10 @@ SUBROUTINE wrf_get_previous_time ( DataHandle, DateStr, Status )
         CASE ( IO_PHDF5   )
           CALL ext_phdf5_get_previous_time( Hndl, DateStr, Status )
 #endif
+#ifdef PNETCDF
+        CASE ( IO_PNETCDF   )
+          CALL ext_pnc_get_previous_time( Hndl, DateStr, Status )
+#endif
 #ifdef XXX
         CASE ( IO_XXX   )
           CALL ext_xxx_get_previous_time( Hndl, DateStr, Status )
@@ -1521,6 +1561,10 @@ SUBROUTINE wrf_set_time ( DataHandle, DateStr, Status )
 #ifdef PHDF5
         CASE ( IO_PHDF5  )
           CALL ext_phdf5_set_time( Hndl, DateStr, Status )
+#endif
+#ifdef PNETCDF
+        CASE ( IO_PNETCDF  )
+          CALL ext_pnc_set_time( Hndl, DateStr, Status )
 #endif
 #ifdef XXX
         CASE ( IO_XXX   )
@@ -1686,6 +1730,13 @@ SUBROUTINE wrf_get_var_info ( DataHandle , VarName , NDim , MemoryOrder , Stagge
                                       DomainStart , DomainEnd ,                &
                                       Status )
 #endif
+#ifdef PNETCDF
+        CASE ( IO_PNETCDF)
+          CALL ext_pnc_get_var_info ( Hndl , VarName , NDim ,            &
+                                      MemoryOrder , Stagger ,                  &
+                                      DomainStart , DomainEnd ,                &
+                                      Status )
+#endif
 #ifdef XXX
         CASE ( IO_XXX )
           CALL ext_xxx_get_var_info ( Hndl , VarName , NDim ,            &
@@ -1779,6 +1830,8 @@ SUBROUTINE add_new_handle( Hndl, Hopened, for_out, DataHandle )
     SELECT CASE ( use_package( Hopened ) )
       CASE ( IO_PHDF5  )
         CALL wrf_error_fatal( 'add_new_handle:  multiple output files not supported for PHDF5' )
+      CASE ( IO_PNETCDF  )
+        CALL wrf_error_fatal( 'add_new_handle:  multiple output files not supported for PNETCDF' )
 #ifdef MCELIO
       CASE ( IO_MCEL   )
         CALL wrf_error_fatal( 'add_new_handle:  multiple output files not supported for MCEL' )
@@ -2090,6 +2143,16 @@ SUBROUTINE wrf_read_field1 ( DataHandle , DateStr , VarName , Field , FieldType 
                                      PatchStart , PatchEnd ,                                      &
                                      Status )
 #endif
+#ifdef PNETCDF
+        CASE ( IO_PNETCDF)
+          CALL ext_pnc_read_field   (                   &
+                                     Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
+                                     DomainDesc , MemoryOrder , Stagger , DimNames ,              &
+                                     DomainStart , DomainEnd ,                                    &
+                                     MemoryStart , MemoryEnd ,                                    &
+                                     PatchStart , PatchEnd ,                                      &
+                                     Status )
+#endif
 #ifdef MCELIO
         CASE ( IO_MCEL   )
           CALL call_pkg_and_dist   ( ext_mcel_read_field, multi_files(io_form), .true. ,         &
@@ -2267,8 +2330,10 @@ SUBROUTINE wrf_write_field1 ( DataHandle , DateStr , VarName , Field , FieldType
   INTEGER ,dimension(*)         ,INTENT(IN)    :: PatchStart,  PatchEnd
   INTEGER                       ,INTENT(OUT)   :: Status
 #include "wrf_status_codes.h"
+  INTEGER, DIMENSION(3) :: starts, ends
   INTEGER io_form , Hndl
-  LOGICAL                     :: for_out
+  CHARACTER*3 MemOrd
+  LOGICAL                     :: for_out, okay_to_call
   INTEGER, EXTERNAL           :: use_package
   LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
 #ifdef NETCDF
@@ -2342,6 +2407,31 @@ SUBROUTINE wrf_write_field1 ( DataHandle , DateStr , VarName , Field , FieldType
                                      MemoryStart , MemoryEnd ,                                    &
                                      PatchStart , PatchEnd ,                                      &
                                      Status )
+#endif
+#ifdef PNETCDF
+        CASE ( IO_PNETCDF )
+          CALL lower_case( MemoryOrder, MemOrd )
+          okay_to_call = .TRUE.
+          IF ((TRIM(MemOrd).EQ.'xsz' .OR. TRIM(MemOrd).EQ.'xs').AND. .NOT. bdy_mask(P_XSB)) okay_to_call = .FALSE.
+          IF ((TRIM(MemOrd).EQ.'xez' .OR. TRIM(MemOrd).EQ.'xe').AND. .NOT. bdy_mask(P_XEB)) okay_to_call = .FALSE.
+          IF ((TRIM(MemOrd).EQ.'ysz' .OR. TRIM(MemOrd).EQ.'ys').AND. .NOT. bdy_mask(P_YSB)) okay_to_call = .FALSE.
+          IF ((TRIM(MemOrd).EQ.'yez' .OR. TRIM(MemOrd).EQ.'ye').AND. .NOT. bdy_mask(P_YEB)) okay_to_call = .FALSE.
+          IF ( okay_to_call ) THEN
+             starts(1:3) = PatchStart(1:3) ; ends(1:3) = PatchEnd(1:3)
+          ELSE
+             starts(1:3) = PatchStart(1:3) ; ends(1:3) = PatchStart(1:3)-1
+          ENDIF
+
+write(0,*)'calling ext_pnc_write_field ',Trim(VarName),starts(1:3),ends(1:3),TRIM(MemoryOrder),' ',TRIM(Stagger)
+write(0,*)'                            ',bdy_mask(P_XSB),bdy_mask(P_XEB),bdy_mask(P_YSB),bdy_mask(P_YEB)
+
+               CALL ext_pnc_write_field(                  &
+                                       Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
+                                       DomainDesc , MemoryOrder , Stagger , DimNames ,              &
+                                       DomainStart , DomainEnd ,                                    &
+                                       MemoryStart , MemoryEnd ,                                    &
+                                       starts , ends ,                                      &
+                                       Status )
 #endif
 #ifdef XXX
         CASE ( IO_XXX )

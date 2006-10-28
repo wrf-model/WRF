@@ -299,28 +299,28 @@ RSL_READ ( unit_p, iotag_p, base, d_p, type_p, glen, llen  )
     break ;
   case IO3D_IJK :
     RSL_TEST_ERR(glen[2] > llen[2],
-       "rsl_write: global len of K dim is greater than local len") ;
+       "rsl_read: global len of K dim is greater than local len") ;
     request.ndim = 3 ;
     minelems = request.glen[0] ;
     majelems = request.glen[1] ;
     break ;
   case IO3D_JIK :
     RSL_TEST_ERR(glen[2] > llen[2],
-       "rsl_write: global len of K dim is greater than local len") ;
+       "rsl_read: global len of K dim is greater than local len") ;
     request.ndim = 3 ;
     minelems = request.glen[1] ;
     majelems = request.glen[0] ;
     break ;
   case IO3D_KIJ :
     RSL_TEST_ERR(glen[0] > llen[0],
-       "rsl_write: global len of K dim is greater than local len") ;
+       "rsl_read: global len of K dim is greater than local len") ;
     request.ndim = 3 ;
     minelems = request.glen[1] ;
     majelems = request.glen[2] ;
     break ;
   case IO3D_IKJ :
     RSL_TEST_ERR(glen[1] > llen[1],
-       "rsl_write: global len of K dim is greater than local len") ;
+       "rsl_read: global len of K dim is greater than local len") ;
     request.ndim = 3 ;
     minelems = request.glen[0] ;
     majelems = request.glen[2] ;

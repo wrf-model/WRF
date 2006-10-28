@@ -231,6 +231,13 @@ else
   echo "Will configure for use without NetCDF"
 fi
 
+if [ -n "$PNETCDF" ] ; then
+  echo "Will use PNETCDF in dir: $PNETCDF"
+# experimental, so don't tease the user if it is not there
+#else
+#  echo "Will configure for use without NetCDF"
+fi
+
 if [ -n "$PHDF5" ] ; then
   echo "Will use PHDF5 in dir: $PHDF5"
 else
@@ -299,7 +306,7 @@ fi
 
 # Found perl, so proceed with configuration
 if test -n "$PERL" ; then
-   $PERL arch/Config.pl -perl=$PERL -netcdf=$NETCDF -phdf5=$PHDF5 -os=$os -mach=$mach -ldflags=$ldflags \
+   $PERL arch/Config.pl -perl=$PERL -netcdf=$NETCDF -pnetcdf=$PNETCDF -phdf5=$PHDF5 -os=$os -mach=$mach -ldflags=$ldflags \
    -compileflags=$compileflags
 fi
 

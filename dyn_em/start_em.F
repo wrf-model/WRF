@@ -65,7 +65,7 @@
    REAL :: qvf1, qvf2, qvf
    REAL :: MPDT
    REAL :: spongeweight
-   LOGICAL :: first_trip_for_this_domain
+   LOGICAL :: first_trip_for_this_domain, start_of_simulation
 
    REAL :: lat1 , lat2 , lat3 , lat4
    REAL :: lon1 , lon2 , lon3 , lon4
@@ -465,7 +465,7 @@
 ! set GMT outside of phy_init because phy_init may not be called on this
 ! process if, for example, it is a moving nest and if this part of the domain is not
 ! being initialized (not the leading edge).
-   CALL domain_setgmtetc( grid )
+   CALL domain_setgmtetc( grid, start_of_simulation )
 
    CALL set_tiles ( grid , grid%imask_nostag, ims, ime, jms, jme, ips, ipe, jps, jpe )
 
@@ -504,7 +504,7 @@
                       grid%sh2o, grid%snowh, grid%smfr3d,                    &
                       grid%DX,grid%DY,grid%f_ice_phy,grid%f_rain_phy,grid%f_rimef_phy, &
                       grid%mp_restart_state,grid%tbpvs_state,grid%tbpvs0_state,&
-                      allowed_to_read, grid%moved, grid%xtime,               &
+                      allowed_to_read, grid%moved, start_of_simulation,               &
                       ids, ide, jds, jde, kds, kde,           &
                       ims, ime, jms, jme, kms, kme,           &
                       grid%i_start(ij), grid%i_end(ij), grid%j_start(ij), grid%j_end(ij), kts, kte, &

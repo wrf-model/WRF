@@ -123,6 +123,9 @@
       ! Note that this call is also made in setup_timekeeping().  
       ! Ugh, what a hack.  Simplify all this later...  
       CALL domain_clock_get( grid, minutesSinceSimulationStart=grid%xtime )
+      ! Note that it is NOT necessary to reset grid%julian here.  
+      WRITE(wrf_err_message,*) 'input_wrf:  set xtime to ',grid%xtime
+      CALL wrf_debug ( 100, TRIM(wrf_err_message) )
     ENDIF
 
 #if (EM_CORE == 1)

@@ -308,6 +308,9 @@ fi
 if test -n "$PERL" ; then
    $PERL arch/Config.pl -perl=$PERL -netcdf=$NETCDF -pnetcdf=$PNETCDF -phdf5=$PHDF5 -os=$os -mach=$mach -ldflags=$ldflags \
    -compileflags=$compileflags
+  if test ! -f configure.wrf ; then
+    exit 1
+  fi
 fi
 
 if [ "$arg1" = "-d" ] ; then

@@ -1849,6 +1849,22 @@ CONTAINS
         is_start_time = ( current_time == start_time )
       END FUNCTION domain_clockisstarttime
 
+      FUNCTION domain_clockissimstarttime ( grid ) RESULT ( is_sim_start_time ) 
+        IMPLICIT NONE
+! <DESCRIPTION>
+! This convenience function returns .TRUE. iff grid%clock is at the 
+! simulation start time.  (It returns .FALSE. during a restart run.)  
+!
+! </DESCRIPTION>
+        TYPE(domain), INTENT(IN) :: grid
+        ! result
+        LOGICAL :: is_sim_start_time
+        TYPE(WRFU_Time) :: simulationStartTime, current_time
+        CALL domain_clock_get( grid, current_time=current_time, &
+                                     simulationStartTime=simulationStartTime )
+        is_sim_start_time = ( current_time == simulationStartTime )
+      END FUNCTION domain_clockissimstarttime
+
 
 
 
@@ -2044,9 +2060,11 @@ CONTAINS
 
 
       ! Set grid%gmt, grid%julday, and grid%julyr from simulation-start-date.  
-      SUBROUTINE domain_setgmtetc ( grid )
+      ! Set start_of_simulation to TRUE iff current_time == simulation_start_time
+      SUBROUTINE domain_setgmtetc ( grid, start_of_simulation )
         IMPLICIT NONE
         TYPE (domain), INTENT(INOUT) :: grid
+        LOGICAL,       INTENT(  OUT) :: start_of_simulation
         ! locals
         CHARACTER (LEN=132)          :: message
         TYPE(WRFU_Time)              :: simStartTime
@@ -2069,6 +2087,7 @@ CONTAINS
         CALL wrf_debug( 150, TRIM(wrf_err_message) )
         WRITE( wrf_err_message , * ) 'DEBUG domain_setgmtetc():  gmt = ',grid%gmt
         CALL wrf_debug( 150, TRIM(wrf_err_message) )
+        start_of_simulation = domain_ClockIsSimStartTime(grid)
         RETURN
       END SUBROUTINE domain_setgmtetc
      

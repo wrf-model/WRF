@@ -136,6 +136,7 @@
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: W0AVG
 #endif
       LOGICAL :: E_BDY,N_BDY,S_BDY,W_BDY,WARM_RAIN,ADV_MOIST_COND
+      LOGICAL :: START_OF_SIMULATION
       integer :: jam,retval
       character(20) :: seeout="hi08.t00z.nhbmeso"
       real :: dummyx(791)
@@ -1605,7 +1606,7 @@
 ! nest and if this part of the domain is not being initialized (not the 
 ! leading edge).)  Calling domain_setgmtetc() here will avoid this problem 
 ! when NMM moves to moving nests.  
-      CALL domain_setgmtetc( grid )
+      CALL domain_setgmtetc( GRID, START_OF_SIMULATION )
 
 ! Several arguments are RCONFIG entries in Registry.NMM. Registry no longer
 ! includes these as dummy arguments or declares them.  Access them from 
@@ -1642,7 +1643,7 @@
      &             ,SH2O, SNOWH, SMFR3D                                 &  ! temporary
      &             ,GRID%DX,GRID%DY,F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY    &
      &             ,MP_RESTART_STATE,TBPVS_STATE,TBPVS0_STATE           &
-     &             ,.TRUE.,.FALSE.,GRID%XTIME                           &
+     &             ,.TRUE.,.FALSE.,START_OF_SIMULATION                  &
      &             ,IDS, IDE, JDS, JDE, KDS, KDE                        &
      &             ,IMS, IME, JMS, JME, KMS, KME                        &
      &             ,ITS, ITE, JTS, JTE, KTS, KTE                        &

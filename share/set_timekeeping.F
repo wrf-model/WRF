@@ -2027,12 +2027,16 @@ SUBROUTINE Setup_Timekeeping ( grid )
 
    grid%time_set = .TRUE.
 
-   CALL wrf_debug ( 100 , 'setup_timekeeping:  returning...' )
-
    ! Initialize derived time quantities in grid state.  
    ! These are updated in domain_clockadvance().  
    CALL domain_clock_get( grid, minutesSinceSimulationStart=grid%xtime )
    CALL domain_clock_get( grid, currentDayOfYearReal=grid%julian )
+   WRITE(wrf_err_message,*) 'setup_timekeeping:  set xtime to ',grid%xtime
+   CALL wrf_debug ( 100, TRIM(wrf_err_message) )
+   WRITE(wrf_err_message,*) 'setup_timekeeping:  set julian to ',grid%julian
+   CALL wrf_debug ( 100, TRIM(wrf_err_message) )
+
+   CALL wrf_debug ( 100 , 'setup_timekeeping:  returning...' )
 
 END SUBROUTINE Setup_Timekeeping
 

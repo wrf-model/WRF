@@ -219,8 +219,7 @@ i1       real   cqu            ikj     dyn_em      1         -     -
 i1       real   cqv            ikj     dyn_em      1         -     -
 i1       real   cqw            ikj     dyn_em      1         -     -
 i1       real   pm1            ikj     dyn_em      1         -     -
-state    real   sr             ij      dyn_em      1         -      irh         "sr" "fraction
- of frozen precipitation"
+state    real   sr             ij      dyn_em      1         -      irh         "sr" "fraction of frozen precipitation"
 state    real   potevp         ij      dyn_em      1         -        h         "potevp" "whatever"
 state    real   snopcx         ij      dyn_em      1         -        h         "snopcx" "whatever"
 state    real   soiltb         ij      dyn_em      1         -        h         "soiltb" "whatever"
@@ -267,6 +266,7 @@ state   integer number_at_same_level    -        -          -         -     -   
 state   integer itimestep      -        -          -         -     rh         "itimestep"             ""         ""      
 state   real    xtime          -        -          -         -     rh         "xtime"                 "minutes since simulation start"         ""      
 state   real    julian         -        -          -         -     -          "julian"                "day of year"         ""      
+
 
 # input file descriptor for lbcs on parent domain                                               
 state   integer lbc_fid        -        -          -         -     -         "lbc_fid"               ""         ""      
@@ -469,11 +469,12 @@ state    real   COSZ_URB2D       ij     misc        1         -      r       "CO
 state    real   OMG_URB2D        ij     misc        1         -      r       "OMG_URB"   "SOLAR HOUR ANGLE"         "dimensionless"
 state    real   DECLIN_URB       -     misc        1         -       r       "DECLIN_URB"  "SOLAR DECLINATION"         "dimensionless"
 
+
 # RUC LSM
 state    real   SMFR3D           ilj    misc        1         Z      r        "SMFR3D"               "SOIL ICE" ""
 state    real   KEEPFR3DFLAG     ilj    misc        1         Z      r        "KEEPFR3DFLAG"          "FLAG - 1. FROZEN SOIL YES, 0 - NO"             ""
 
-# MRF PBL variables***25Aug 2002*****
+# MRF PBL variables
 i1      real   PSIM           ij     misc        1         -     -         "PSIM"                "SIMILARITY FUNCTION FOR MOMENTUM"     ""
 i1      real   PSIH           ij     misc        1         -     -         "PSIH"                "SIMILARITY FUNCTION FOR HEAT"         ""
 i1      real   WSPD           ij     misc        1         -     -         "WSPD"                "Wind speed"                           "m s-1"
@@ -657,15 +658,15 @@ state    real  RQVFTEN          ikj     misc        1         -      r        "R
 
 state integer  STEPCU          -        misc        1         -      r        "STEPCU"                "NUMBER OF FUNDAMENTAL TIMESTEPS BETWEEN CONVECTION CALLS"  ""
                                                 
-state    real  RTHRATEN        ikj      misc        1         -      r        "RTHRATEN"              "COUPLED THETA TENDENCY DUE TO RADIATION"              "Pa K s-1"
+state    real  RTHRATEN        ikj      misc        1         -      rd       "RTHRATEN"              "COUPLED THETA TENDENCY DUE TO RADIATION"              "Pa K s-1"
 state    real  RTHRATENLW      ikj      misc        1         -      r        "RTHRATLW"              "COUPLED THETA TENDENCY DUE TO LONG WAVE RADIATION"    "Pa K s-1"
 state    real  RTHRATENSW      ikj      misc        1         -      r        "RTHRATSW"              "COUPLED THETA TENDENCY DUE TO SHORT WAVE RADIATION"   "Pa K s-1"
 state    real  CLDFRA          ikj      misc        1         -      r        "CLDFRA"                "CLOUD FRACTION"                                       ""
 
-state    real  SWDOWN           ij      misc        1         -      rh       "SWDOWN"                "DOWNWARD SHORT WAVE FLUX AT GROUND SURFACE"           "W m-2"      
+state    real  SWDOWN           ij      misc        1         -      rhd      "SWDOWN"                "DOWNWARD SHORT WAVE FLUX AT GROUND SURFACE"           "W m-2"      
 state    real  SWDOWNC          ij      misc        1         -      -        "SWDOWNC"               "DOWNWARD CLEAR-SKY SHORT WAVE FLUX AT GROUND SURFACE"           "W m-2"      
-state    real  GSW              ij      misc        1         -      r        "GSW"                   "NET SHORT WAVE FLUX AT GROUND SURFACE"           "W m-2"      
-state    real  GLW              ij      misc        1         -      rh       "GLW"                   "DOWNWARD LONG WAVE FLUX AT GROUND SURFACE"            "W m-2"      
+state    real  GSW              ij      misc        1         -      rd       "GSW"                   "NET SHORT WAVE FLUX AT GROUND SURFACE"           "W m-2"      
+state    real  GLW              ij      misc        1         -      rhd      "GLW"                   "DOWNWARD LONG WAVE FLUX AT GROUND SURFACE"            "W m-2"      
 
 # upward and downward clearsky and total diagnostic fluxes for CAM radiation
 #state    real  ACSWUPT          ij      misc        1         -      rhdu     "ACSWUPT"               "ACCUMULATED UPWELLING SHORTWAVE FLUX AT TOP"          "J m-2"
@@ -808,19 +809,19 @@ state    real  RTHNDGDTEN        ikj      misc        1         -      r        
 state    real  RQVNDGDTEN        ikj      misc        1         -      r        "RQVNDGDTEN"              "COUPLED Q_V TENDENCY DUE TO FDDA GRID NUDGING"     "Pa kg kg-1 s-1"
 state    real  RMUNDGDTEN        ij       misc        1         -      r        "RMUNDGDTEN"              "MU TENDENCY DUE TO FDDA GRID NUDGING"     "Pa s-1"
 state    real    -               ikjf     fdda3d      1         -     -    -
-state    real  U_NDG_NEW         ikjf     fdda3d      1         X      i4r      "U_NDG_NEW"               "NEW X WIND FOR FDDA GRID NUDGING"  "m s-1"
-state    real  V_NDG_NEW         ikjf     fdda3d      1         Y      i4r      "V_NDG_NEW"               "NEW Y WIND FOR FDDA GRID NUDGING"  "m s-1"
-state    real  T_NDG_NEW         ikjf     fdda3d      1         -      i4r      "T_NDG_NEW"               "NEW PERT POT TEMP FOR FDDA GRID NUDGING"  "K"
-state    real  Q_NDG_NEW         ikjf     fdda3d      1         -      i4r      "Q_NDG_NEW"               "NEW WATER VAPOR MIX RATIO FOR FDDA GRID NUDGING"  "kg/kg"
-state    real  PH_NDG_NEW        ikjf     fdda3d      1         Z      i4r      "PH_NDG_NEW"              "NEW PERT GEOPOTENTIAL FOR FDDA GRID NUDGING"  "kg/kg"
-state    real  U_NDG_OLD         ikjf     fdda3d      1         X      i4r      "U_NDG_OLD"               "OLD X WIND FOR FDDA GRID NUDGING"  "m s-1"
-state    real  V_NDG_OLD         ikjf     fdda3d      1         Y      i4r      "V_NDG_OLD"               "OLD Y WIND FOR FDDA GRID NUDGING"  "m s-1"
-state    real  T_NDG_OLD         ikjf     fdda3d      1         -      i4r      "T_NDG_OLD"               "OLD PERT POT TEMP FOR FDDA GRID NUDGING"  "K"
-state    real  Q_NDG_OLD         ikjf     fdda3d      1         -      i4r      "Q_NDG_OLD"               "OLD WATER VAPOR MIX RATIO FOR FDDA GRID NUDGING"  "kg/kg"
-state    real  PH_NDG_OLD        ikjf     fdda3d      1         Z      i4r      "PH_NDG_OLD"              "OLD PERT GEOPOTENTIAL FOR FDDA GRID NUDGING"  "kg/kg"
+state    real  U_NDG_NEW         ikjf     fdda3d      1         X      igr      "U_NDG_NEW"               "NEW X WIND FOR FDDA GRID NUDGING"  "m s-1"
+state    real  V_NDG_NEW         ikjf     fdda3d      1         Y      igr      "V_NDG_NEW"               "NEW Y WIND FOR FDDA GRID NUDGING"  "m s-1"
+state    real  T_NDG_NEW         ikjf     fdda3d      1         -      igr      "T_NDG_NEW"               "NEW PERT POT TEMP FOR FDDA GRID NUDGING"  "K"
+state    real  Q_NDG_NEW         ikjf     fdda3d      1         -      igr      "Q_NDG_NEW"               "NEW WATER VAPOR MIX RATIO FOR FDDA GRID NUDGING"  "kg/kg"
+state    real  PH_NDG_NEW        ikjf     fdda3d      1         Z      igr      "PH_NDG_NEW"              "NEW PERT GEOPOTENTIAL FOR FDDA GRID NUDGING"  "kg/kg"
+state    real  U_NDG_OLD         ikjf     fdda3d      1         X      igr      "U_NDG_OLD"               "OLD X WIND FOR FDDA GRID NUDGING"  "m s-1"
+state    real  V_NDG_OLD         ikjf     fdda3d      1         Y      igr      "V_NDG_OLD"               "OLD Y WIND FOR FDDA GRID NUDGING"  "m s-1"
+state    real  T_NDG_OLD         ikjf     fdda3d      1         -      igr      "T_NDG_OLD"               "OLD PERT POT TEMP FOR FDDA GRID NUDGING"  "K"
+state    real  Q_NDG_OLD         ikjf     fdda3d      1         -      igr      "Q_NDG_OLD"               "OLD WATER VAPOR MIX RATIO FOR FDDA GRID NUDGING"  "kg/kg"
+state    real  PH_NDG_OLD        ikjf     fdda3d      1         Z      igr      "PH_NDG_OLD"              "OLD PERT GEOPOTENTIAL FOR FDDA GRID NUDGING"  "kg/kg"
 state    real    -               ivjf     fdda2d      1         Z     -    -
-state    real  MU_NDG_NEW        ivjf     fdda2d      1         Z      i4r      "MU_NDG_NEW"              "NEW PERT COLUMN DRY MASS FOR FDDA GRID NUDGING"  "Pa"
-state    real  MU_NDG_OLD        ivjf     fdda2d      1         Z      i4r      "MU_NDG_OLD"              "OLD PERT COLUMN DRY MASS FOR FDDA GRID NUDGING"  "Pa"
+state    real  MU_NDG_NEW        ivjf     fdda2d      1         Z      igr      "MU_NDG_NEW"              "NEW PERT COLUMN DRY MASS FOR FDDA GRID NUDGING"  "Pa"
+state    real  MU_NDG_OLD        ivjf     fdda2d      1         Z      igr      "MU_NDG_OLD"              "OLD PERT COLUMN DRY MASS FOR FDDA GRID NUDGING"  "Pa"
 
 
 # flag for nest movement
@@ -888,7 +889,6 @@ rconfig   logical adjust_input_times      namelist,time_control         1       
 
 rconfig   integer diag_print              namelist,time_control         1              0      -    "print out time series of model diagnostics"
 rconfig   logical nocolons                namelist,time_control         1             .false. -    "nocolons"
-
 
 # Domains
 rconfig   integer time_step               namelist,domains	1             -       ih   "time_step"     

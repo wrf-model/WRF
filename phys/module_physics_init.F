@@ -54,7 +54,7 @@ CONTAINS
                          SH2O, SNOWH, SMFR3D,                    &  ! temporary
                          DX,DY,F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY, &
                          mp_restart_state,tbpvs_state,tbpvs0_state,&
-                         allowed_to_read, moved, xtime,          &
+                         allowed_to_read, moved, start_of_simulation,&
                          ids, ide, jds, jde, kds, kde,           &
                          ims, ime, jms, jme, kms, kme,           &
                          its, ite, jts, jte, kts, kte,           &
@@ -90,7 +90,7 @@ CONTAINS
 
    INTEGER , INTENT(IN)        :: num_soil_layers
 
-   REAL,     INTENT(IN)        :: xtime
+   LOGICAL,  INTENT(IN)        :: start_of_simulation
    REAL,     INTENT(IN)        :: DT, p_top, DX, DY
    LOGICAL,  INTENT(IN)        :: restart
    REAL,     INTENT(IN)        :: RADT,BLDT,CUDT,MPDT
@@ -263,6 +263,9 @@ integer myproc
 
    CALL wrf_debug(100,'top of phy_init')
 
+   WRITE(wrf_err_message,*) 'phy_init:  start_of_simulation = ',start_of_simulation
+   CALL wrf_debug ( 100, TRIM(wrf_err_message) )
+
    itf=min0(ite,ide-1)
    jtf=min0(jte,jde-1)
 
@@ -369,7 +372,7 @@ integer myproc
                 paerlev,n_aerosolc,                             &
                 sfull,shalf,pptop,swrad_scat,                   &
                 config_flags,restart,                           & 
-                allowed_to_read, xtime,                         &
+                allowed_to_read, start_of_simulation,           &
                 ids, ide, jds, jde, kds, kde,                   &
                 ims, ime, jms, jme, kms, kme,                   &
                 its, ite, jts, jte, kts, kte                    )
@@ -410,7 +413,7 @@ integer myproc
                 RTHFTEN, RQVFTEN,                               &
                 APR_GR,APR_W,APR_MC,APR_ST,APR_AS,              &
                 APR_CAPMA,APR_CAPME,APR_CAPMI,                  &
-                allowed_to_read, xtime,                         &
+                allowed_to_read, start_of_simulation,           &
                 ids, ide, jds, jde, kds, kde,                   &
                 ims, ime, jms, jme, kms, kme,                   &
                 its, ite, jts, jte, kts, kte                    )
@@ -422,7 +425,7 @@ integer myproc
                 MPDT, DT, DX, DY, LOWLYR,                       & 
                 F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,               &
                 mp_restart_state,tbpvs_state,tbpvs0_state,       &
-                allowed_to_read, xtime,                         &
+                allowed_to_read, start_of_simulation,           &
                 ids, ide, jds, jde, kds, kde,                   &
                 ims, ime, jms, jme, kms, kme,                   &
                 its, ite, jts, jte, kts, kte                    )
@@ -687,7 +690,7 @@ integer myproc
                       paerlev,n_aerosolc,                             &
                       sfull,shalf,pptop,swrad_scat,                  &
                       config_flags,restart,                          & 
-                      allowed_to_read, xtime,                        &
+                      allowed_to_read, start_of_simulation,          &
                       ids, ide, jds, jde, kds, kde,                  &
                       ims, ime, jms, jme, kms, kme,                  &
                       its, ite, jts, jte, kts, kte                   )
@@ -712,7 +715,8 @@ integer myproc
 
    INTEGER , INTENT(IN)           :: JULDAY,JULYR
    REAL ,    INTENT(IN)           :: DT, RADT, cen_lat, GMT, pptop,  &
-                                     swrad_scat, xtime
+                                     swrad_scat
+   LOGICAL,  INTENT(IN)           :: start_of_simulation
 
    INTEGER,      INTENT(IN   )    ::   levsiz, n_ozmixm
    INTEGER,      INTENT(IN   )    ::   paerlev, n_aerosolc
@@ -759,7 +763,7 @@ integer myproc
 
 !-- initialization
 
-   IF(xtime.eq.0.)THEN
+   IF(start_of_simulation)THEN
      DO j=jts,jtf
      DO k=kts,ktf
      DO i=its,itf
@@ -1194,7 +1198,7 @@ integer myproc
                       RTHFTEN, RQVFTEN,                           &
                       APR_GR,APR_W,APR_MC,APR_ST,APR_AS,          &
                       APR_CAPMA,APR_CAPME,APR_CAPMI,              &
-                      allowed_to_read, xtime,                     &
+                      allowed_to_read, start_of_simulation,       &
                       ids, ide, jds, jde, kds, kde,               &
                       ims, ime, jms, jme, kms, kme,               &
                       its, ite, jts, jte, kts, kte                )
@@ -1215,7 +1219,8 @@ integer myproc
                                   ims, ime, jms, jme, kms, kme,   &
                                   its, ite, jts, jte, kts, kte
 
-   REAL ,    INTENT(IN)        :: DT, CUDT, xtime
+   REAL ,    INTENT(IN)        :: DT, CUDT
+   LOGICAL , INTENT(IN)        :: start_of_simulation
    LOGICAL , INTENT(IN)        :: allowed_to_read
    INTEGER , INTENT(INOUT)     :: STEPCU
 
@@ -1256,7 +1261,7 @@ integer myproc
 
 !-- initialization
 
-   IF(xtime.eq.0.)THEN
+   IF(start_of_simulation)THEN
      DO j=jts,jtf
      DO i=its,itf
         RAINC(i,j)=0.
@@ -1324,7 +1329,7 @@ integer myproc
                       MPDT, DT, DX, DY, LOWLYR,                   & ! for eta mp
                       F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,           & ! for eta mp
                       mp_restart_state,tbpvs_state,tbpvs0_state,   & ! eta mp
-                      allowed_to_read, xtime,                     &
+                      allowed_to_read, start_of_simulation,       &
                       ids, ide, jds, jde, kds, kde,               &
                       ims, ime, jms, jme, kms, kme,               &
                       its, ite, jts, jte, kts, kte                )
@@ -1343,7 +1348,8 @@ integer myproc
    TYPE (grid_config_rec_type) ::     config_flags
    LOGICAL , INTENT(IN)        :: restart
    LOGICAL , INTENT(OUT)       :: warm_rain,adv_moist_cond
-   REAL    , INTENT(IN)        :: MPDT, DT, DX, DY, xtime
+   REAL    , INTENT(IN)        :: MPDT, DT, DX, DY
+   LOGICAL , INTENT(IN)        :: start_of_simulation
 
    INTEGER , INTENT(IN)        :: ids, ide, jds, jde, kds, kde,   &
                                   ims, ime, jms, jme, kms, kme,   &
@@ -1364,7 +1370,7 @@ integer myproc
    itf=min0(ite,ide-1)
    jtf=min0(jte,jde-1)
 
-   IF(xtime.eq.0.)THEN
+   IF(start_of_simulation)THEN
      DO j=jts,jtf
      DO i=its,itf
         RAINNC(i,j) = 0.

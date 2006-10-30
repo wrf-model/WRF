@@ -1149,6 +1149,7 @@ SUBROUTINE ext_gr1_read_field ( DataHandle , DateStr , VarName , Field , &
   enddo
 
   Status = WRF_NO_ERR
+  if (grb_index < 0) Status = WRF_WARN_VAR_NF
   call wrf_debug ( DEBUG , 'Leaving ext_gr1_read_field')
 
   RETURN

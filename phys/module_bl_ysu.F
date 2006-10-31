@@ -534,26 +534,6 @@ contains
         enddo
       enddo
 !
-!-----compute the frictional velocity:
-!     za(1982) eqs(2.60),(2.61).
-      do i = its,ite
-        dtg = thx(i,1)-thgb(i)
-        psix = gz1oz0(i)-psim(i)
-        if((xland(i)-1.5).ge.0)then
-          zl = znt(i)
-        else
-          zl = 0.01
-        endif
-        psiq = alog(karman*ust(i)*za(i,1)/xka+za(i,1)/zl)-psih(i)
-        ust(i) = karman*wspd(i)/psix
-        ustm = amax1(ust(i),0.1)
-        if((xland(i)-1.5).ge.0)then
-          ust(i) = ust(i)
-        else
-          ust(i) = ustm
-        endif
-      enddo
-!
       do i = its,ite
         wspd1(i) = sqrt(ux(i,1)*ux(i,1)+vx(i,1)*vx(i,1))+1.e-9
       enddo

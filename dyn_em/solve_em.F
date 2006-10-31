@@ -766,6 +766,7 @@ BENCH_END(cu_driver_tim)
 
 BENCH_START(fdda_driver_tim)
    CALL fddagd_driver(itimestep=grid%itimestep,dt=grid%dt,xtime=grid%XTIME,         &
+                  id=grid%id,      &
                   RUNDGDTEN=grid%rundgdten,RVNDGDTEN=grid%rvndgdten,                &
                   RTHNDGDTEN=grid%rthndgdten,RQVNDGDTEN=grid%rqvndgdten,            &
                   RMUNDGDTEN=grid%rmundgdten,                                  &

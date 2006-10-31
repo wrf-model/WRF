@@ -436,7 +436,7 @@ integer myproc
 #if  ( EM_CORE == 1 )
    CALL wrf_debug ( 200 , 'module_start: phy_init: Before call to fg_init' )
 
-   CALL fg_init(STEPFG,FGDT,DT,RUNDGDTEN,RVNDGDTEN,             &
+   CALL fg_init(STEPFG,FGDT,DT,id,RUNDGDTEN,RVNDGDTEN,          &
                 RTHNDGDTEN,RQVNDGDTEN,RMUNDGDTEN,               &
                 config_flags,restart,                           &
                 allowed_to_read ,                               &
@@ -1412,7 +1412,7 @@ integer myproc
 
 #if  ( EM_CORE == 1 )
 !==========================================================
-   SUBROUTINE fg_init(STEPFG,FGDT,DT,RUNDGDTEN,RVNDGDTEN,       &
+   SUBROUTINE fg_init(STEPFG,FGDT,DT,id,RUNDGDTEN,RVNDGDTEN,    &
                 RTHNDGDTEN,RQVNDGDTEN,RMUNDGDTEN,               &
                 config_flags,restart,                           &
                 allowed_to_read ,                               &
@@ -1434,6 +1434,7 @@ integer myproc
                                       its, ite, jts, jte, kts, kte
 
    REAL ,    INTENT(IN)        ::     DT, FGDT
+   INTEGER , INTENT(IN)        ::     id
    INTEGER , INTENT(INOUT)     ::     STEPFG
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::       &
                                                            RUNDGDTEN, &
@@ -1456,7 +1457,21 @@ integer myproc
    fdda_select: SELECT CASE(config_flags%grid_fdda)
 
       CASE (PSUFDDAGD)
-           CALL fddagdinit(rundgdten,rvndgdten,rthndgdten,rqvndgdten,rmundgdten,&
+           CALL fddagdinit(id,rundgdten,rvndgdten,rthndgdten,rqvndgdten,rmundgdten,&
+               config_flags%run_hours, &
+               config_flags%if_no_pbl_nudging_uv, &
+               config_flags%if_no_pbl_nudging_t, &
+               config_flags%if_no_pbl_nudging_q, &
+               config_flags%if_zfac_uv, &
+               config_flags%k_zfac_uv, &
+               config_flags%if_zfac_t, &
+               config_flags%k_zfac_t, &
+               config_flags%if_zfac_q, &
+               config_flags%k_zfac_q, &
+               config_flags%guv, &
+               config_flags%gt, config_flags%gq, &
+               config_flags%if_ramping, config_flags%dtramp_min, &
+               config_flags%auxinput4_end_h+NINT(config_flags%auxinput4_interval/60.0), &
                       restart, allowed_to_read,                    &
                       ids, ide, jds, jde, kds, kde,                &
                       ims, ime, jms, jme, kms, kme,                &

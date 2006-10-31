@@ -6,6 +6,7 @@ CONTAINS
 
 !------------------------------------------------------------------
    SUBROUTINE fddagd_driver(itimestep,dt,xtime,                   &
+                  id,  &
                   RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,                 &
                   RQVNDGDTEN,RMUNDGDTEN,                          &
                   u_ndg_old,v_ndg_old,t_ndg_old,q_ndg_old,mu_ndg_old,       &
@@ -105,7 +106,7 @@ CONTAINS
    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
 !
 
-
+   INTEGER , INTENT(IN)         ::     id
 
    INTEGER,    INTENT(IN   )    ::     ids,ide, jds,jde, kds,kde, &
                                        ims,ime, jms,jme, kms,kme, &
@@ -231,8 +232,9 @@ CONTAINS
       CASE (PSUFDDAGD)
         CALL wrf_debug(100,'in PSU FDDA scheme')
            CALL FDDAGD(itimestep,dt,xtime, &
+               id, &
                config_flags%auxinput4_interval, &
-               config_flags%auxinput4_end_h, &
+               config_flags%auxinput4_end_h+NINT(config_flags%auxinput4_interval/60.0), &
                config_flags%if_no_pbl_nudging_uv, &
                config_flags%if_no_pbl_nudging_t, &
                config_flags%if_no_pbl_nudging_q, &
@@ -244,7 +246,7 @@ CONTAINS
                config_flags%k_zfac_q, &
                config_flags%guv, &
                config_flags%gt, config_flags%gq, &
-               config_flags%idynin, config_flags%dtramp_min, &
+               config_flags%if_ramping, config_flags%dtramp_min, &
                u3d,v3d,th_phy,t_phy,                 &
                moist(ims,kms,jms,P_QV),     &
                p_phy,pi_phy,                &

@@ -1450,7 +1450,7 @@ rconfig   real        guv                 namelist,fdda         max_domains    0
 rconfig   real        gt                  namelist,fdda         max_domains    0       rh       "grid_fdda"            ""      ""
 rconfig   real        gq                  namelist,fdda         max_domains    0       rh       "grid_fdda"            ""      ""
 rconfig   real    dtramp_min              namelist,fdda         1              0       h        "grid_fdda"            ""      ""
-rconfig   integer idynin                  namelist,fdda         1              0       h        "grid_fdda"            ""      ""
+rconfig   integer if_ramping              namelist,fdda         1              0       h        "grid_fdda"            ""      ""
 
 # Dynamics
 # dynamics option (see package definitions, below)

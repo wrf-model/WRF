@@ -7,10 +7,10 @@ CONTAINS
 !
 !-------------------------------------------------------------------
 !
-   SUBROUTINE fddagd(itimestep,dt,xtime,analysis_interval, end_fdda_hour, &
+   SUBROUTINE fddagd(itimestep,dt,xtime,id,analysis_interval, end_fdda_hour, &
                if_no_pbl_nudging_uv, if_no_pbl_nudging_t, if_no_pbl_nudging_q, &
                if_zfac_uv, k_zfac_uv, if_zfac_t, k_zfac_t, if_zfac_q, k_zfac_q, &
-               guv, gt, gq, idynin, dtramp_min,  &
+               guv, gt, gq, if_ramping, dtramp_min,  &
                u3d,v3d,th3d,t3d,                 &
                qv3d,     &
                p3d,pi3d,                &
@@ -68,8 +68,9 @@ CONTAINS
                                   if_no_pbl_nudging_q
    INTEGER,  INTENT(IN)   ::      if_zfac_uv, if_zfac_t, if_zfac_q
    INTEGER,  INTENT(IN)   ::      k_zfac_uv,  k_zfac_t,  k_zfac_q
-   INTEGER,  INTENT(IN)   ::      idynin
+   INTEGER,  INTENT(IN)   ::      if_ramping
 
+   INTEGER , INTENT(IN)   ::      id
    REAL,     INTENT(IN)   ::      DT, xtime, dtramp_min
 
    INTEGER,  INTENT(IN)   ::      ids,ide, jds,jde, kds,kde, &
@@ -118,17 +119,28 @@ CONTAINS
    REAL, INTENT(IN)    :: guv, gt, gq
 
    INTEGER             :: i, j, k, itsu, jtsv, itf, jtf, ktf
-   REAL                :: xtime_old, xtime_new, xtime_prev, coef, val_analysis
+   REAL                :: xtime_old, xtime_new, coef, val_analysis
    INTEGER             :: kpbl
 
-   REAL                :: zpbl, zagl, zagl_bot, zagl_top, dtr, tfac, actual_end_fdda_min
+   REAL                :: zpbl, zagl, zagl_bot, zagl_top, tfac, actual_end_fdda_min
    REAL, DIMENSION( its:ite, kts:kte, jts:jte, 4 ) :: wpbl  ! 1: u, 2: v, 3: t, 4: q
    REAL, DIMENSION( kts:kte, 4 )                   :: wzfac ! 1: u, 2: v, 3: t, 4: q
 
-   xtime_prev = (itimestep-1)*dt/60.0
    xtime_old = FLOOR(xtime/analysis_interval) * analysis_interval * 1.0
    xtime_new = xtime_old + analysis_interval
    coef = (xtime-xtime_old)/(xtime_new-xtime_old)
+
+   IF( xtime-xtime_old < 0.5*dt/60.0 ) THEN
+!       WRITE(wrf_err_message,'(a,f10.3,a)') &
+        WRITE(*,'(a,i1,a,f10.3,a)') &
+           'D0',id,' Analysis nudging read in new data at time = ', xtime, ' min.'
+!       CALL wrf_debug(0, wrf_err_message)
+!       WRITE(wrf_err_message,'(a,f10.4,a,f10.4)') &
+        WRITE(*,'(a,i1,a,f10.4,a,f10.4)') &
+           '    D0',id,' Sample values:   u_ndg_old(5,5,5)=', u_ndg_old(5,5,5), &
+           '     u_ndg_new(5,5,5)=', u_ndg_new(5,5,5)
+!       CALL wrf_debug(100, wrf_err_message)
+   ENDIF
 
    jtsv=MAX0(jts,jds+1)
    itsu=MAX0(its,ids+1)
@@ -136,7 +148,6 @@ CONTAINS
    jtf=MIN0(jte,jde-1)
    ktf=MIN0(kte,kde-1)
    itf=MIN0(ite,ide-1)
-   IF( itimestep == 1 ) PRINT*, 'Analysis nudging is on and Guv, Gt, Gq = ', guv, gt, gq
 !
 ! If the user-defined namelist switches (if_no_pbl_nudging_uv, if_no_pbl_nudging_t, 
 ! if_no_pbl_nudging_q swithes) are set to 1, compute the weighting function, wpbl(:,k,:,:), 
@@ -146,9 +157,6 @@ CONTAINS
    wpbl(:,:,:,:) = 1.0
 
    IF( if_no_pbl_nudging_uv == 1 ) THEN
-
-     IF( itimestep == 1 ) &
-       PRINT*, 'Analysis nudging for wind is turned off within the PBL.'
 
      DO j=jts,jtf 
      DO i=itsu,itf
@@ -165,8 +173,6 @@ CONTAINS
            EXIT loop_ku
          ENDIF
        ENDDO loop_ku
-
-!      if( j==30 .and. i==30 ) print*, 'kpbl in u branch= ', kpbl
 
        DO k=kts,ktf 
          IF( k <= kpbl   ) wpbl(i, k, j, 1) = 0.0
@@ -193,8 +199,6 @@ CONTAINS
          ENDIF
        ENDDO loop_kv
 
-!      if( j==30 .and. i==30 ) print*, 'kpbl in v branch= ', kpbl
-
        DO k=kts,ktf
          IF( k <= kpbl   ) wpbl(i, k, j, 2) = 0.0
          IF( k == kpbl+1 ) wpbl(i, k, j, 2) = 0.1
@@ -204,16 +208,10 @@ CONTAINS
      ENDDO
      ENDDO
 
-     print*, 'itimestep, xtime, pblh= ', itimestep, xtime, pblh(30,30), end_fdda_hour, &
-             idynin, dtramp_min
-
    ENDIF
 
    IF( if_no_pbl_nudging_t == 1 ) THEN
    
-     IF( itimestep == 1 ) &
-       PRINT*, 'Analysis nudging for temperature is turned off within the PBL.'
-
      DO j=jts,jtf
      DO i=its,itf
 
@@ -230,8 +228,6 @@ CONTAINS
          ENDIF
        ENDDO loop_kt
 
-!      if( j==30 .and. i==30 ) print*, 'kpbl in t branch= ', kpbl
-        
        DO k=kts,ktf
          IF( k <= kpbl   ) wpbl(i, k, j, 3) = 0.0
          IF( k == kpbl+1 ) wpbl(i, k, j, 3) = 0.1
@@ -245,9 +241,6 @@ CONTAINS
 
    IF( if_no_pbl_nudging_q == 1 ) THEN
    
-     IF( itimestep == 1 ) &
-       PRINT*, 'Analysis nudging for water vapor mixing ratio is turned off within the PBL.'
-        
      DO j=jts,jtf
      DO i=its,itf
 
@@ -263,8 +256,6 @@ CONTAINS
            EXIT loop_kq
          ENDIF
        ENDDO loop_kq
-
-!      if( j==30 .and. i==30 ) print*, 'kpbl in q branch= ', kpbl
 
        DO k=kts,ktf
          IF( k <= kpbl   ) wpbl(i, k, j, 4) = 0.0
@@ -287,9 +278,6 @@ CONTAINS
 
    IF( if_zfac_uv == 1 ) THEN
 
-     IF( itimestep == 1 ) &
-       PRINT*, 'Analysis nudging for wind is turned off below layer ', k_zfac_uv 
-
      DO j=jts,jtf
      DO i=itsu,itf
      DO k=kts,ktf
@@ -303,9 +291,6 @@ CONTAINS
    ENDIF
 
    IF( if_zfac_t == 1 ) THEN
-
-     IF( itimestep == 1 ) &
-       PRINT*, 'Analysis nudging for temperature is turned off below layer ', k_zfac_t
 
      DO j=jts,jtf
      DO i=itsu,itf
@@ -321,9 +306,6 @@ CONTAINS
 
    IF( if_zfac_q == 1 ) THEN
        
-     IF( itimestep == 1 ) &
-       PRINT*, 'Analysis nudging for water vapor mixing ratio is turned off below layer ', k_zfac_q
-
      DO j=jts,jtf
      DO i=itsu,itf 
      DO k=kts,ktf
@@ -336,32 +318,37 @@ CONTAINS
 
    ENDIF
 !
-! Comput a time weighting function for analysis nudging so that at the end of the
-! nudging period we ramp down the nudging coefficient.
+! If if_ramping and dtramp_min are defined by user, comput a time weighting function, tfac,
+! for analysis nudging so that at the end of the nudging period (which has to be at a
+! analysis time) we ramp down the nudging coefficient, based on the use-defined sign of dtramp_min.
+!
+! When dtramp_min is negative, ramping ends at end_fdda_hour and starts at
+! end_fdda_hour-ABS(dtramp_min).
+!
+! When dtramp_min is positive, ramping starts at end_fdda_hour and ends at
+! end_fdda_hour+ABS(dtramp_min). In this case, the obs values are extrapolated using
+! the obs tendency saved from the previous FDDA wondow.  More specifically for extrapolation,
+! coef (see codes below) is recalculated to reflect extrapolation during the ramping period.
+!
 !
    tfac = 1.0
 
-   IF( idynin == 1 ) THEN
+   IF( if_ramping == 1 .AND. ABS(dtramp_min) > 0.0 ) THEN
  
-     actual_end_fdda_min = end_fdda_hour*60.0
-
-     dtr = ABS( dtramp_min )
-
-     IF( itimestep == 1 ) THEN
-       PRINT*, 'Allowing nudging ramping down near the end of the nudging period.'
-       PRINT*, 'and ramping down starts at hour ', (actual_end_fdda_min - dtr)/60.0, &
-               ' and end at hour ', actual_end_fdda_min/60.0
+     IF( dtramp_min <= 0.0 ) THEN
+       actual_end_fdda_min = end_fdda_hour*60.0
+     ELSE
+       actual_end_fdda_min = end_fdda_hour*60.0 + dtramp_min
      ENDIF
 
-     IF( xtime < actual_end_fdda_min - dtr )THEN 
+     IF( xtime < actual_end_fdda_min-ABS(dtramp_min) )THEN
        tfac = 1.0
-     ELSEIF( xtime >= actual_end_fdda_min - dtr .AND. xtime <= actual_end_fdda_min )THEN
-       tfac = ( actual_end_fdda_min - xtime ) / dtr
+     ELSEIF( xtime >= actual_end_fdda_min-ABS(dtramp_min) .AND. xtime <= actual_end_fdda_min )THEN
+       tfac = ( actual_end_fdda_min - xtime ) / ABS(dtramp_min)
+       IF( dtramp_min > 0.0 ) coef = (xtime-xtime_old+analysis_interval*60.0)/(analysis_interval*60.0)
      ELSE                                                     
        tfac = 0.0
      ENDIF
-
-!     print*, 'xtime, tfac=', xtime, tfac, actual_end_fdda_min
 
    ENDIF                                                  
 !
@@ -404,7 +391,11 @@ CONTAINS
    END SUBROUTINE fddagd
 
 
-   SUBROUTINE fddagdinit(rundgdten,rvndgdten,rthndgdten,rqvndgdten,rmundgdten,&
+   SUBROUTINE fddagdinit(id,rundgdten,rvndgdten,rthndgdten,rqvndgdten,rmundgdten,&
+               run_hours,  &
+               if_no_pbl_nudging_uv, if_no_pbl_nudging_t, if_no_pbl_nudging_q, &
+               if_zfac_uv, k_zfac_uv, if_zfac_t, k_zfac_t, if_zfac_q, k_zfac_q, &
+               guv, gt, gq, if_ramping, dtramp_min, end_fdda_hour, &
                       restart, allowed_to_read,                    &
                       ids, ide, jds, jde, kds, kde,                &
                       ims, ime, jms, jme, kms, kme,                &
@@ -413,7 +404,8 @@ CONTAINS
    IMPLICIT NONE
 !-------------------------------------------------------------------
 !
-   LOGICAL, INTENT(IN)          :: restart, allowed_to_read
+   INTEGER , INTENT(IN)         ::  id
+   LOGICAL, INTENT(IN)          ::  restart, allowed_to_read
    INTEGER, INTENT(IN)          ::  ids, ide, jds, jde, kds, kde, &
                                     ims, ime, jms, jme, kms, kme, &
                                     its, ite, jts, jte, kts, kte
@@ -422,10 +414,50 @@ CONTAINS
                                                        rvndgdten, &
                                                       rthndgdten, &
                                                       rqvndgdten
+   INTEGER,  INTENT(IN)   ::      run_hours
+   INTEGER,  INTENT(IN)   ::      if_no_pbl_nudging_uv, if_no_pbl_nudging_t, &
+                                  if_no_pbl_nudging_q, end_fdda_hour
+   INTEGER,  INTENT(IN)   ::      if_zfac_uv, if_zfac_t, if_zfac_q
+   INTEGER,  INTENT(IN)   ::      k_zfac_uv,  k_zfac_t,  k_zfac_q
+   INTEGER,  INTENT(IN)   ::      if_ramping
+   REAL,     INTENT(IN)   ::      dtramp_min
+   REAL, INTENT(IN)       :: guv, gt, gq
+   REAL                   :: actual_end_fdda_min
+
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(OUT) :: rmundgdten
    INTEGER :: i, j, k
-!
-!
+
+   WRITE(*,'(a,i1,a,3e12.4)') &
+         'D0',id,' Analysis nudging is on and Guv, Gt, Gq = ', guv, gt, gq
+   IF( if_no_pbl_nudging_uv == 1 ) WRITE(*,'(a,i1,a)') &
+         'D0',id,' Analysis nudging for wind is turned off within the PBL.'
+   IF( if_no_pbl_nudging_t == 1 ) WRITE(*,'(a,i1,a)') &
+         'D0',id,' Analysis nudging for temperature is turned off within the PBL.'
+   IF( if_no_pbl_nudging_q == 1 ) WRITE(*,'(a,i1,a)') &
+         'D0',id,' Analysis nudging for water vapor mixing ratio is turned off within the PBL.'
+   IF( if_zfac_uv == 1 ) WRITE(*,'(a,i1,a,i3)') &
+         'D0',id,' Analysis nudging for wind is turned off below layer', k_zfac_uv
+   IF( if_zfac_t == 1 ) WRITE(*,'(a,i1,a,i3)') &
+         'D0',id,' Analysis nudging for temperature is turned off below layer', k_zfac_t
+   IF( if_zfac_q == 1 ) WRITE(*,'(a,i1,a,i3)') &
+         'D0',id,' Analysis nudging for water vapor mixing ratio is turned off below layer', &
+         k_zfac_q
+   IF( if_ramping == 1 .AND. ABS(dtramp_min) > 0.0 ) THEN
+     IF( dtramp_min <= 0.0 ) THEN
+       actual_end_fdda_min = end_fdda_hour*60.0
+     ELSE
+       actual_end_fdda_min = end_fdda_hour*60.0 + ABS(dtramp_min)
+     ENDIF
+
+     IF( actual_end_fdda_min < run_hours*60. ) THEN
+        WRITE(*,'(a,i1,a)') &
+           'D0',id,' Analysis nudging is ramped down near the end of the nudging period,'
+        WRITE(*,'(a,f6.2,a,f6.2,a)') &
+           '      starting at ', (actual_end_fdda_min - ABS(dtramp_min))/60.0, &
+           'h, ending at ', actual_end_fdda_min/60.0,'h.'
+     ENDIF
+   ENDIF
+
    IF(.not.restart) THEN
      DO j = jts,jte
      DO k = kts,kte

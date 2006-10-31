@@ -373,10 +373,7 @@ CONTAINS
    REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ) ::v_phytmp
    REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ) ::u_phytmp
 
-   REAL,       DIMENSION( ims:ime, jms:jme )          ::  TSKOLD, &
-                                                          USTOLD, &
-                                                          ZNTOLD, &
-                                                             ZOL
+   REAL,       DIMENSION( ims:ime, jms:jme )          ::  ZOL
 
    REAL,       DIMENSION( ims:ime, jms:jme )          ::          &
                                                              QGH, &
@@ -448,9 +445,6 @@ CONTAINS
 
   v_phytmp = 0.
   u_phytmp = 0.
-  TSKOLD = 0.
-  USTOLD = 0.
-  ZNTOLD = 0.
   ZOL = 0.
   QGH = 0.
   CHS = 0.
@@ -524,9 +518,6 @@ CONTAINS
      DO ij = 1 , num_tiles
        DO j=j_start(ij),j_end(ij)
        DO i=i_start(ij),i_end(ij)
-          TSKOLD(i,j)=TSK(i,j)
-          USTOLD(i,j)=UST(i,j)
-          ZNTOLD(i,j)=ZNT(i,j)
 ! PSFC : in Pa
           PSFC(I,J)=p8w(I,kts,J)
 ! REVERSE ORDER IN THE VERTICAL DIRECTION
@@ -555,7 +546,7 @@ CONTAINS
          CALL wrf_debug( 100, 'in SFCLAY' )
          CALL SFCLAY(u_phytmp,v_phytmp,t_phy,qv_curr,&
                p_phy,dz8w,cp,g,rcp,r_d,xlv,psfc,chs,chs2,cqs2,cpm, &
-               zntold,ustold,pblh,mavail,zol,mol,regime,psim,psih, &
+               znt,ust,pblh,mavail,zol,mol,regime,psim,psih,       &
                xland,hfx,qfx,lh,tsk,flhc,flqc,qgh,qsfc,rmol,       &
                u10,v10,th2,t2,q2,                                  &
                gz1oz0,wspd,br,isfflx,dx,                           &
@@ -567,14 +558,6 @@ CONTAINS
          CALL wrf_error_fatal('Lacking arguments for SFCLAY in surface driver')
        ENDIF
 
-! SET NEW VALUES
-
-       DO j=j_start(ij),j_end(ij)
-       DO i=i_start(ij),i_end(ij)
-          UST(i,j)=USTOLD(i,j)
-          ZNT(i,j)=ZNTOLD(i,j)
-       ENDDO
-       ENDDO
 #else
        CALL wrf_error_fatal('SFCLAY cannot be used with NMM')
 #endif
@@ -608,7 +591,6 @@ CONTAINS
        CALL wrf_debug( 100, 'in GFSSFC' )
          CALL SF_GFS(u_phytmp,v_phytmp,t_phy,qv_curr,              &
                p_phy,CP,RCP,R_d,XLV,PSFC,CHS,CHS2,CQS2,CPM,        &
-!               ZNTOLD,USTOLD,PSIM,PSIH,                           &
                ZNT,UST,PSIM,PSIH,                                  &
                XLAND,HFX,QFX,LH,TSK,FLHC,FLQC,                     &
                QGH,QSFC,U10,V10,                                   &

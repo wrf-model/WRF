@@ -393,6 +393,10 @@ Namelist variables for controling the automatic moving nest:
  v_mom_adv_order (max_dom)           = 3,       ; vertical momentum advection order
  h_sca_adv_order (max_dom)           = 5,       ; horizontal scalar advection order
  v_sca_adv_order (max_dom)           = 3,       ; vertical scalar advection order
+ pd_moist                            = F        ; positive definite advection of moisture
+ pd_scalar                           = F        ; positive definite advection of scalars
+ pd_chem                             = F        ; positive definite advection of chem variables
+ pd_tke                              = F        ; positive definite advection of tke
  time_step_sound (max_dom)           = 4 /	; number of sound steps per time-step (0=set automatically)
                                                   (if using a time_step much larger than 6*dx (in km),
                                                   proportionally increase number of sound steps - also

@@ -2788,7 +2788,7 @@ BENCH_END(bc_end_tim)
 #         include "HALO_EM_TKE_5.inc"
         ENDIF
       ELSE
-        WRITE(wrf_err_message,*)'solve_em: invalid h_sca_adv_order = ',config_flags%h_mom_adv_order
+        WRITE(wrf_err_message,*)'solve_em: invalid h_sca_adv_order = ',config_flags%h_sca_adv_order
         CALL wrf_error_fatal(TRIM(wrf_err_message))
       ENDIF
 
@@ -2812,7 +2812,7 @@ BENCH_END(bc_end_tim)
 #        include "HALO_EM_MOIST_E_5.inc"
        END IF
      ELSE
-       WRITE(wrf_err_message,*)'solve_em: invalid h_sca_adv_order = ',config_flags%h_mom_adv_order
+       WRITE(wrf_err_message,*)'solve_em: invalid h_sca_adv_order = ',config_flags%h_sca_adv_order
        CALL wrf_error_fatal(TRIM(wrf_err_message))
      ENDIF
    endif
@@ -2830,7 +2830,7 @@ BENCH_END(bc_end_tim)
 #        include "HALO_EM_CHEM_E_5.inc"
        END IF
      ELSE
-       WRITE(wrf_err_message,*)'solve_em: invalid h_sca_adv_order = ',config_flags%h_mom_adv_order
+       WRITE(wrf_err_message,*)'solve_em: invalid h_sca_adv_order = ',config_flags%h_sca_adv_order
        CALL wrf_error_fatal(TRIM(wrf_err_message))
      ENDIF
    endif
@@ -2848,7 +2848,7 @@ BENCH_END(bc_end_tim)
 #        include "HALO_EM_SCALAR_E_5.inc"
        END IF
      ELSE
-       WRITE(wrf_err_message,*)'solve_em: invalid h_sca_adv_order = ',config_flags%h_mom_adv_order
+       WRITE(wrf_err_message,*)'solve_em: invalid h_sca_adv_order = ',config_flags%h_sca_adv_order
        CALL wrf_error_fatal(TRIM(wrf_err_message))
      ENDIF
    endif

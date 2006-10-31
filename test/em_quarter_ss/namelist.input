@@ -1,7 +1,7 @@
  &time_control
  run_days                            = 0,
  run_hours                           = 0,
- run_minutes                         = 120,
+ run_minutes                         = 60,
  run_seconds                         = 0,
  start_year                          = 0001, 0001, 0001,
  start_month                         = 01,   01,   01,
@@ -91,6 +91,10 @@
  v_mom_adv_order                     = 3,      3,      3,
  h_sca_adv_order                     = 5,      5,      5,
  v_sca_adv_order                     = 3,      3,      3,
+ pd_moist                            = .false., .false., .false.,
+ pd_scalar                           = .false., .false., .false.,
+ pd_chem                             = .false., .false., .false.,
+ pd_tke                              = .false., .false., .false.,
  /
 
  &bdy_control

@@ -39,6 +39,8 @@
 # here.
 #
 
+# Available characters for dimspec: 0123456789@%+=|?.!&[{}]
+
 #<Table>  <Dim>  <Order> <How defined>         <Coord-axis>  <Dimname in Datasets>
 dimspec    i      1     standard_domain              x          west_east
 dimspec    j      3     standard_domain              y          south_north
@@ -49,6 +51,9 @@ dimspec    s      2     namelist=num_soil_cat        z          soil_cat
 dimspec    p      -     constant=7501                c          microphysics_rstrt_state
 dimspec    w      -     namelist=spec_bdy_width      c          spec_bdy_width
 dimspec    e      3     namelist=ensdim              z          ensemble dimension
+dimspec    z      -     namelist=max_obs          c          max_obs
+dimspec    h      -     namelist=nobs_err_flds    c          nobs_err_flds
+dimspec    r      -     namelist=nobs_ndg_vars    c          nobs_ndg_vars
 dimspec    g      2     namelist=num_metgrid_levels  z          num_metgrid_levels
 dimspec    m      2     constant=12                  z          months_per_year
 dimspec    a      -     namelist=cam_abs_dim1     c          cam_abs_dim1
@@ -80,12 +85,13 @@ state    real  LU_MASK          ij      misc        1         -     i3h1     "LU
 #
 # Variables from WPS
 #
-state    real   u_gc           igj      dyn_em      1        X     i1  "UU"     "x-wind component"    "m s-1"
-state    real   v_gc           igj      dyn_em      1        Y     i1  "VV"     "y-wind component"    "m s-1"
-state    real   t_gc           igj      dyn_em      1        -     i1  "TT"     "temperature"         "K"
-state    real   rh_gc          igj      dyn_em      1        -     i1  "RH"    "relative humidity"   "%"
-state    real   ght_gc         igj      dyn_em      1        -     i1  "GHT"   "geopotential height" "m"
-state    real   p_gc           igj      dyn_em      1        -     i1  "P"     "pressure"            "Pa"
+
+state    real   u_gc           igj      dyn_em      1        XZ    i1  "UU"     "x-wind component"    "m s-1"
+state    real   v_gc           igj      dyn_em      1        YZ    i1  "VV"     "y-wind component"    "m s-1"
+state    real   t_gc           igj      dyn_em      1        Z     i1  "TT"     "temperature"         "K"
+state    real   rh_gc          igj      dyn_em      1        Z     i1  "RH"    "relative humidity"   "%"
+state    real   ght_gc         igj      dyn_em      1        Z     i1  "GHT"   "geopotential height" "m"
+state    real   p_gc           igj      dyn_em      1        Z     i1  "PRES"   "pressure"            "Pa"
 state    real   xlat_gc        ij       dyn_em      1        -     i1  "XLAT_M" "latitude, positive north" "degrees"
 state    real   xlong_gc       ij       dyn_em      1        -     i1  "XLONG_M" "longitude, positive east" "degrees"
 state    real   ht_gc          ij       dyn_em      1        -     i1  "HGT_M" "topography elevation" "m"
@@ -93,17 +99,18 @@ state    real   tsk_gc         ij       dyn_em      1        -     i1  "SKINTEMP
 state    real   tavgsfc        ij       dyn_em      1        -     i1  "TAVGSFC"  "daily mean of surface air temperature"  "K"
 state    real   tmn_gc         ij       dyn_em      1        -     i1  "SOILTEMP"  "annual mean deep soil temperature"  "K"
 state    real   pslv_gc        ij       dyn_em      1        -     i1  "PMSL"  "sea level pressure"  "Pa"
-state    real   greenfrac      imj      dyn_em      1        -     i1  "GREENFRAC" "monthly greenness fraction" "0 - 1 fraction"
-state    real   albedo12m      imj      dyn_em      1        -     i1  "ALBEDO12M" "background albedo" "0 - 1 fraction"
-state    real   pd_gc          igj      dyn_em      1        -     -   "PD"    "dry pressure"        "Pa"
-state    real   qv_gc          igj      dyn_em      1        -     i1  "QV"     "mixing ratio"        "kg kg-1"
+state    real   greenfrac      imj      dyn_em      1        Z     i1  "GREENFRAC" "monthly greenness fraction" "0 - 1 fraction"
+state    real   albedo12m      imj      dyn_em      1        Z     i1  "ALBEDO12M" "background albedo" "0 - 1 fraction"
+state    real   pd_gc          igj      dyn_em      1        Z     -   "PD"    "dry pressure"        "Pa"
+state    real   psfc_gc        ij       dyn_em      1        -      -  "PSFC_GC"     "surface pressure"            "Pa"
 state    real   intq_gc        ij       dyn_em      1        -     -   "INTQ"  "integrated mixing ratio" "Pa"
 state    real   pdhs           ij       dyn_em      1        -     -   "PDHS"  "hydrostatic dry surface pressure" "Pa"
-#state    real   qr_gc          igj      dyn_em      1        -     i1  "QR"    "rain water mixing ratio"   "kg kg-1"
-#state    real   qc_gc          igj      dyn_em      1        -     i1  "QC"    "cloud water mixing ratio"   "kg kg-1"
-#state    real   qs_gc          igj      dyn_em      1        -     i1  "QS"    "snow mixing ratio"   "kg kg-1"
-#state    real   qi_gc          igj      dyn_em      1        -     i1  "QI"    "cloud ice mixing ratio"   "kg kg-1"
-#state    real   qg_gc          igj      dyn_em      1        -     i1  "QG"    "graupel mixing ratio"   "kg kg-1"
+state    real   qv_gc          igj      dyn_em      1        Z     i1  "QV"     "mixing ratio"        "kg kg-1"
+#state    real   qr_gc          igj      dyn_em      1        Z     i1  "QR"    "rain water mixing ratio"   "kg kg-1"
+#state    real   qc_gc          igj      dyn_em      1        Z     i1  "QC"    "cloud water mixing ratio"   "kg kg-1"
+#state    real   qs_gc          igj      dyn_em      1        Z     i1  "QS"    "snow mixing ratio"   "kg kg-1"
+#state    real   qi_gc          igj      dyn_em      1        Z     i1  "QI"    "cloud ice mixing ratio"   "kg kg-1"
+#state    real   qg_gc          igj      dyn_em      1        Z     i1  "QG"    "graupel mixing ratio"   "kg kg-1"
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 #                                               
@@ -243,12 +250,18 @@ state    integer step_number    -       misc      -         -     ir        "ste
 state    real   Q2               ij     misc        1         -     irhd      "Q2"                   "QV at 2 M"         "kg kg-1"
 state    real   T2               ij     misc        1         -     irhd      "T2"                   "TEMP at 2 M"       "K"
 state    real   TH2              ij     misc        1         -     irhd      "TH2"                  "POT TEMP at 2 M"   "K"
-state    real   PSFC             ij     misc        1         -     irh       "PSFC"                 "SFC PRESSURE"      "Pa"
+state    real   PSFC             ij     misc        1         -     i01rh     "PSFC"                 "SFC PRESSURE"      "Pa"
 
 # these next 2 are for the HFSoLE/PET demo; writing these to auxhist1 output over MCEL for coupling
 # with wave model, only if compiled with -DMCELIO, JM 2003/05/29
 state    real   U10              ij     misc        1         -     irh01d      "U10"                "U at 10 M"         "m s-1"
 state    real   V10              ij     misc        1         -     irh01d      "V10"                "V at 10 M"         "m s-1"
+
+# these next 4 are for observational nudging
+state    real   uratx           ij      misc        1         -     irh         "URATX"            "Ratio of U over U10 on mass points "         "dimensionless"
+state    real   vratx           ij      misc        1         -     irh         "VRATX"            "Ratio of V over V10 on mass points "         "dimensionless"
+state    real   tratx           ij      misc        1         -     irh         "TRATX"            "Ratio of T over TH2 on mass points "         "dimensionless"
+state    real   obs_savwt      hikj     dyn_em      1         X      -       "OBS_SAVWT"
 
 # Other
 state   real    rdx            -        misc      -         -     irh       "rdx"                   "INVERSE X GRID LENGTH"         ""      
@@ -901,13 +914,14 @@ rconfig   integer s_sn                    namelist,domains	max_domains    1     
 rconfig   integer e_sn                    namelist,domains	max_domains    32      irh    "e_sn"          ""      ""
 rconfig   integer s_vert                  namelist,domains	max_domains    1       irh    "s_vert"                ""      ""
 rconfig   integer e_vert                  namelist,domains	max_domains    31      irh    "e_vert"                ""      ""
-rconfig   integer num_metgrid_levels      namelist,domains	1              27      irh    "num_metgrid_levels"                ""      ""
+rconfig   integer num_metgrid_levels      namelist,domains      1              27      irh    "num_metgrid_levels"                ""      ""
 rconfig   real    p_top_requested         namelist,domains      1              5000    irh    "p_top_requested" "Pa"      ""
 rconfig   integer interp_type             namelist,domains	1              1       irh    "interp_type"  "1=interp in pressure, 2=interp in LOG pressure"      ""
 rconfig   logical lowest_lev_from_sfc     namelist,domains	1             .false.  irh    "lowest_lev_from_sfc"                ""      ""
 rconfig   integer lagrange_order          namelist,domains	1              1       irh    "lagrange_order"   "1=linear, 2=quadratic vertical interpolation"      ""
 rconfig   integer force_sfc_in_vinterp    namelist,domains	1              0       irh    "force_sfc_in_vinterp"   "number of eta levels forced to use sfc in vert interp"      ""
 rconfig   real    zap_close_levels        namelist,domains	1              500     irh    "zap_close_levels"   "delta p where level is removed in vert interp"      "Pa"
+rconfig   logical adjust_heights          namelist,domains	1              .false. irh    "adjust_heights"   "T/F adjust pressure level input to match 500 mb height"      "flag"
 rconfig   real    dx                      namelist,domains     max_domains    200     h     "dx"        "X HORIZONTAL RESOLUTION"   "METERS"
 rconfig   real    dy                      namelist,domains   	max_domains    200     h     "dy"        "Y HORIZONTAL RESOLUTION"   "METERS"
 rconfig   integer grid_id                 namelist,domains	max_domains    1       irh    "id"            ""      ""
@@ -1004,7 +1018,33 @@ rconfig   real        guv                 namelist,fdda         max_domains    0
 rconfig   real        gt                  namelist,fdda         max_domains    0       rh       "grid_fdda"            ""      ""
 rconfig   real        gq                  namelist,fdda         max_domains    0       rh       "grid_fdda"            ""      ""
 rconfig   real    dtramp_min              namelist,fdda         1              0       h        "grid_fdda"            ""      ""
-rconfig   integer idynin                  namelist,fdda         1              0       h        "grid_fdda"            ""      ""
+rconfig   integer if_ramping              namelist,fdda         1              0       h        "grid_fdda"            ""      ""
+#Observational Nudging
+rconfig   integer     obs_nudge_opt       namelist,fdda            max_domains    0       rh       "obs_nudge_opt"     "Obs-nudging flag for domain"          ""
+rconfig   integer     max_obs             namelist,fdda            1              0       h        "max_obs"           "Maximum number of observations"       ""
+rconfig   integer     nobs_ndg_vars       namelist,fdda            1              0       h        "num_ndg_vars"      "Number of nudging variables"          ""
+rconfig   integer     nobs_err_flds       namelist,fdda            1              0       h        "num_err_flds"      "Number of error fields"               ""
+rconfig   real        fdda_start          namelist,fdda            max_domains    0       rh       "fdda_start"        "Nudging start time for domain"        "min"
+rconfig   real        fdda_end            namelist,fdda            max_domains    0       rh       "fdda_end"          "Nudging end time for domain"          "min"
+rconfig   integer     obs_nudge_wind      namelist,fdda            max_domains    0       rh       "obs_nudge_wind"    "Wind-nudging flag for domain"         ""
+rconfig   real        obs_coef_wind       namelist,fdda            max_domains    0       rh       "obs_coef_wind"     "Wind-nudging coeficient for domain"   "s-1"
+rconfig   integer     obs_nudge_temp      namelist,fdda            max_domains    0       rh       "obs_nudge_temp"    "Temperature-nudging flag for domain"  ""
+rconfig   real        obs_coef_temp       namelist,fdda            max_domains    0       rh       "obs_coef_temp"     "Temperature-nudging coef for domain"  "s-1"
+rconfig   integer     obs_nudge_mois      namelist,fdda            max_domains    0       rh       "obs_nudge_mois"    "Moisture-nudging flag for domain"     ""
+rconfig   real        obs_coef_mois       namelist,fdda            max_domains    0       rh       "obs_coef_mois"     "Moisture-nudging coef for domain"     "s-1"
+rconfig   integer     obs_nudge_pstr      namelist,fdda            max_domains    0       rh       "obs_nudge_pstr"    "Not used"                             ""
+rconfig   real        obs_coef_pstr       namelist,fdda            max_domains    0       rh       "obs_coef_pstr"     "Not used"                             ""
+rconfig   real        obs_rinxy           namelist,fdda            max_domains    0       rh       "obs_rinxy"         "Horizontal radius of influence"       "km"
+rconfig   real        obs_rinsig          namelist,fdda            1              0       h        "obs_rinsig"        "Vertical radius of influence"         "sigma"
+rconfig   real        obs_twindo          namelist,fdda            1              0       h        "obs_twindo"        "Half-period time window for nudging"  "min"
+rconfig   integer     obs_npfi            namelist,fdda            1              0       h        "obs_npfi"          "Freq in cg timesteps for diag print"  ""
+rconfig   integer     obs_ionf            namelist,fdda            1              0       h        "obs_ionf"          "Freq in cg timesteps for obs input and error calc"   ""
+rconfig   integer     obs_idynin          namelist,fdda            1              0       h        "obs_idynin"        "Flag for dynamic initialization"      ""
+rconfig   real        obs_dtramp          namelist,fdda            1              0       h        "obs_dtramp"        "Time period for ramping (idynin)"     "min"
+rconfig   logical     obs_ipf_in4dob      namelist,fdda            1              .false. h        "obs_ipf_in4dob"    "Print obs input diagnostics"   "min"
+rconfig   logical     obs_ipf_errob       namelist,fdda            1              .false. h        "obs_ipf_errob"     "Print obs error diagnostics"   "min"
+rconfig   logical     obs_ipf_nudob       namelist,fdda            1              .false. h        "obs_ipf_nudob"     "Print obs nudge diagnostics"   "min"
+
 
 # Dynamics
 # dynamics option (see package definitions, below)
@@ -1238,6 +1278,9 @@ period    PERIOD_EM_COUPLE_B dyn_em 3:ph_1,ph_2,w_1,w_2,t_1,t_2,u_1,u_2,v_1,v_2,
 halo      em_shift_halo_y  dyn_em 48:imask_nostag,imask_xstag,imask_ystag,imask_xystag,u_2,v_2,t_2
 halo      em_shift_halo_x  dyn_em 48:imask_nostag,imask_xstag,imask_ystag,imask_xystag,u_2,v_2,t_2
 
+# For observational nudging
+halo      HALO_OBS_NUDGE dyn_em 24:pb,p,uratx,vratx,tratx
+
 # Periodic Boundary Communications
 
 period    PERIOD_BDY_EM_INIT dyn_em 3:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,t_init,phb,ph0,php,pb,al,alt,alb,mu_1,mu_2,mub,mu0,ht,msft,msfu,msfv,sina,cosa,e,f
@@ -1265,3 +1308,42 @@ period    PERIOD_BDY_EM_D3 dyn_em 3:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tk
 
 ##
 
+# FDDA (Observational-nudging) Variables
+typedef fdob_type integer domain_tot   # total number of domains to apply obs-nudging
+typedef fdob_type integer domain_init  # domain initialization flag
+typedef fdob_type integer IEODI        # end of obs data flag for current model step
+typedef fdob_type integer IWTSIG       # flag for nudging on pressure surfaces
+typedef fdob_type integer NSTAT        # number of obs stations used to nudge current model step
+typedef fdob_type integer KTAUR        # restart model step
+typedef fdob_type integer SN_MAXCG     # coarse domain grid dimension in south-north coordinate
+typedef fdob_type integer WE_MAXCG     # coarse domain grid dimension in west-east coordinate
+typedef fdob_type integer SN_END       # ending north-south grid index
+typedef fdob_type integer LEVIDN(max_domains)   # level of nest
+typedef fdob_type real    DS_CG        # coarse domain grid size
+typedef fdob_type real    WINDOW       # time window half-period for nudging (in minutes)
+typedef fdob_type real    RTLAST       # time in hours of last obs used in current model step
+typedef fdob_type real    DATEND       # time in minutes after which data are asuumed to have ended
+typedef fdob_type real    RINFMN       # minimum radius of influence
+typedef fdob_type real    RINFMX       # maximum radius of influence
+typedef fdob_type real    PFREE        # pressure level (cb) where terrain effect becomes small
+typedef fdob_type real    DCON         # 1/DPSMX
+typedef fdob_type real    DPSMX        # max pres change (cb) allowed within infl range of surf obs
+typedef fdob_type real    TFACI        # scale factor used for ramp-down in dynamic initialization
+typedef fdob_type real    XN           # cone factor for Lambert projection
+
+# table entries are of the form
+#      <Table>  <Type>  <Sym>                <Dims>   <Use>   <NumTLev> <Stagger> <IO>     <DNAME>             <DESCRIP>     <UNITS>
+#Grid variables
+typedef fdob_type real    varobs               rz       -         1        -       -       "varobs"          "observational values in each variable"
+typedef fdob_type real    errf                 hz       -         1        -       -       "errf"            "errors between model and obs values"
+typedef fdob_type real    timeob               z        -         1        -       -       "timeob"          "model times for each observation"          "hours"
+typedef fdob_type real    nlevs_ob             z        -         1        -       -       "nlevs_ob"        "numbers of levels in sounding obs"
+typedef fdob_type real    lev_in_ob            z        -         1        -       -       "lev_in_ob"       "level in sounding-type obs"
+typedef fdob_type real    plfo                 z        -         1        -       -       "plfo"            "index for type of obs-platform"
+typedef fdob_type real    elevob               z        -         1        -       -       "elevob"          "elevation of observation"                  "meters"
+typedef fdob_type real    rio                  z        -         1        -       -       "rio"             "west-east grid coordinate"
+typedef fdob_type real    rjo                  z        -         1        -       -       "rjo"             "south-north grid coordinate"
+typedef fdob_type real    rko                  z        -         1        -       -       "rko"             "vertical grid coordinate"
+
+state fdob_type fdob - -
+##

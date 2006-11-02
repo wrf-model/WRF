@@ -1,5 +1,6 @@
 !REAL:MODEL_LAYER:INITIALIZATION
 
+#ifndef VERT_UNIT
 !  This MODULE holds the routines which are used to perform various initializations
 !  for the individual domains, specifically for the Eulerian, mass-based coordinate.
 
@@ -133,6 +134,9 @@ integer::oops1,oops2
       LOGICAL :: lowest_lev_from_sfc
       LOGICAL :: we_have_tavgsfc
 
+      INTEGER :: lev500 , loop_count
+      REAL    :: zl , zu , pl , pu , z500 , dz500 , tvsfc , dpmu
+
 !-- Carsel and Parrish [1988]
         REAL , DIMENSION(100) :: lqmi
 
@@ -215,12 +219,52 @@ integer::oops1,oops2
    
       CALL const_module_initialize ( p00 , t00 , a ) 
 
+#if 0
+!KLUDGE, this is for testing only
+if ( flag_metgrid .eq. 1 ) then
+read (20+grid%id) ht_gc
+read (20+grid%id) xlat_gc
+read (20+grid%id) xlong_gc
+read (20+grid%id) msft
+read (20+grid%id) msfu
+read (20+grid%id) msfv
+read (20+grid%id) f
+read (20+grid%id) e
+read (20+grid%id) sina
+read (20+grid%id) cosa
+read (20+grid%id) landmask
+read (20+grid%id) landusef
+read (20+grid%id) soilctop
+read (20+grid%id) soilcbot
+read (20+grid%id) vegcat
+read (20+grid%id) soilcat
+else
+write (20+grid%id) ht
+write (20+grid%id) xlat
+write (20+grid%id) xlong
+write (20+grid%id) msft
+write (20+grid%id) msfu
+write (20+grid%id) msfv
+write (20+grid%id) f
+write (20+grid%id) e
+write (20+grid%id) sina
+write (20+grid%id) cosa
+write (20+grid%id) landmask
+write (20+grid%id) landusef
+write (20+grid%id) soilctop
+write (20+grid%id) soilcbot
+write (20+grid%id) vegcat
+write (20+grid%id) soilcat
+endif
+#endif
+
+
       !  Is there any vertical interpolation to do?  The "old" data comes in on the correct
       !  vertical locations already.
 
       IF ( flag_metgrid .EQ. 1 ) THEN  !   <----- START OF VERTICAL INTERPOLATION PART ---->
 
-         !  Variables that are named differently between old and new SI.
+         !  Variables that are named differently between SI and WPS.
 
          DO j = jts, MIN(jte,jde-1)
            DO i = its, MIN(ite,ide-1)
@@ -231,6 +275,64 @@ integer::oops1,oops2
               ht(i,j) = ht_gc(i,j)
            END DO
          END DO
+
+         !  If we have any input low-res surface pressure, we store it.
+
+         IF ( flag_psfc .EQ. 1 ) THEN
+            DO j = jts, MIN(jte,jde-1)
+              DO i = its, MIN(ite,ide-1)
+                 psfc_gc(i,j) = psfc(i,j)
+                 p_gc(i,1,j) = psfc(i,j)
+              END DO
+            END DO
+         END IF
+
+         !  If we have the low-resolution surface elevation, stick that in the
+         !  "input" locations of the 3d height.  We still have the "hi-res" topo
+         !  stuck in the ht array.  The landmask if test is required as some sources
+         !  have ZERO elevation over water (thank you very much).
+
+         IF ( flag_soilhgt .EQ. 1) THEN
+            DO j = jts, MIN(jte,jde-1)
+               DO i = its, MIN(ite,ide-1)
+                  IF ( landmask(i,j) .GT. 0.5 ) THEN
+                     ght_gc(i,1,j) = toposoil(i,j)
+                     ht_gc(i,j)= toposoil(i,j)
+                  END IF
+               END DO
+           END DO
+         END IF
+
+         !  Assign surface fields with original input values.  If this is hybrid data, 
+         !  the values are not exactly representative.  However - this is only for
+         !  plotting purposes and such at the 0h of the forecast, so we are not all that
+         !  worried.
+
+         DO j = jts, min(jde-1,jte)
+            DO i = its, min(ide,ite)
+               u10(i,j)=u_gc(i,1,j)
+            END DO
+         END DO
+   
+         DO j = jts, min(jde,jte)
+            DO i = its, min(ide-1,ite)
+               v10(i,j)=v_gc(i,1,j)
+            END DO
+         END DO
+   
+         DO j = jts, min(jde-1,jte)
+            DO i = its, min(ide-1,ite)
+               t2(i,j)=t_gc(i,1,j)
+            END DO
+         END DO
+
+         IF ( flag_qv .EQ. 1 ) THEN
+            DO j = jts, min(jde-1,jte)
+               DO i = its, min(ide-1,ite)
+                  q2(i,j)=qv_gc(i,1,j)
+               END DO
+            END DO
+         END IF
    
          !  The number of vertical levels in the input data.  There is no staggering for
          !  different variables.
@@ -346,32 +448,40 @@ integer::oops1,oops2
                               ims , ime , jms , jme , 1   , num_metgrid_levels , &
                               its , ite , jts , jte , 1   , num_metgrid_levels )
          END IF
-         
-         !  Swap low-res geopot surface with the input topography.
-   
-         DO j = jts, MIN(jte,jde-1)
-           DO i = its, MIN(ite,ide-1)
-              ght_gc(i,1,j) = ht(i,j)
-           END DO
-         END DO
 
-         !  Compute total surface pressure from input sea level pressure and hi-res topography.
+         !  Two ways to get the surface pressure.  1) If we have the low-res input surface
+         !  pressure and the low-res topography, then we can do a simple hydrostatic
+         !  relation.  2) Otherwise we compute the surface pressure from the sea-level
+         !  pressure.
+         !  Note that on output, psfc is now hi-res.  The low-res surface pressure and 
+         !  elevation are psfc_gc and ht_gc (same as ght_gc(k=1)).
 
          we_have_tavgsfc = ( flag_tavgsfc == 1 ) 
-         CALL sfcprs (t_gc, qv_gc, ght_gc, pslv_gc, ht, tavgsfc, p_gc, &
-                      psfc, we_have_tavgsfc, &
-                      ids , ide , jds , jde , 1   , num_metgrid_levels , &
-                      ims , ime , jms , jme , 1   , num_metgrid_levels , &
-                      its , ite , jts , jte , 1   , num_metgrid_levels )
+         IF ( ( flag_psfc .EQ. 1 ) .AND. ( flag_soilhgt .EQ. 1 ) ) THEN
+            CALL sfcprs2(t_gc, qv_gc, ght_gc, psfc_gc, ht, tavgsfc, p_gc, &
+                         psfc, we_have_tavgsfc, &
+                         ids , ide , jds , jde , 1   , num_metgrid_levels , &
+                         ims , ime , jms , jme , 1   , num_metgrid_levels , &
+                         its , ite , jts , jte , 1   , num_metgrid_levels )
+         ELSE
+            CALL sfcprs (t_gc, qv_gc, ght_gc, pslv_gc, ht, tavgsfc, p_gc, &
+                         psfc, we_have_tavgsfc, &
+                         ids , ide , jds , jde , 1   , num_metgrid_levels , &
+                         ims , ime , jms , jme , 1   , num_metgrid_levels , &
+                         its , ite , jts , jte , 1   , num_metgrid_levels )
+ 
+            !  If we have no input surface pressure, we'd better stick something in there.
+
+            IF ( flag_psfc .NE. 1 ) THEN
+               DO j = jts, MIN(jte,jde-1)
+                 DO i = its, MIN(ite,ide-1)
+                    psfc_gc(i,j) = psfc(i,j)
+                    p_gc(i,1,j) = psfc(i,j)
+                 END DO
+               END DO
+            END IF
+         END IF
          
-         !  Swap low-res surface pressure for computed value.
-   
-         DO j = jts, MIN(jte,jde-1)
-           DO i = its, MIN(ite,ide-1)
-              p_gc(i,1,j) = psfc(i,j)
-           END DO
-         END DO
-   
          !  Integrate the mixing ratio to get the vapor pressure.
    
          CALL integ_moist ( qv_gc , p_gc , pd_gc , t_gc , ght_gc , intq_gc , &
@@ -382,7 +492,7 @@ integer::oops1,oops2
          !  Compute the difference between the dry, total surface pressure (input) and the 
          !  dry top pressure (constant).
    
-         CALL p_dts ( mu0 , intq_gc , p_gc , p_top , &
+         CALL p_dts ( mu0 , intq_gc , psfc , p_top , &
                       ids , ide , jds , jde , 1   , num_metgrid_levels , &
                       ims , ime , jms , jme , 1   , num_metgrid_levels , &
                       its , ite , jts , jte , 1   , num_metgrid_levels )
@@ -622,7 +732,13 @@ integer::oops1,oops2
       fix_bottom_level_for_temp : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
 
          CASE (SLABSCHEME)
-            IF      ( flag_st010040 .EQ. 1 ) THEN
+            IF      ( flag_tavgsfc  .EQ. 1 ) THEN
+               DO j = jts , MIN(jde-1,jte)
+                  DO i = its , MIN(ide-1,ite)
+                     tmn(i,j) = tavgsfc(i,j)
+                  END DO
+               END DO
+            ELSE IF ( flag_st010040 .EQ. 1 ) THEN
                DO j = jts , MIN(jde-1,jte)
                   DO i = its , MIN(ide-1,ite)
                      tmn(i,j) = st010040(i,j)
@@ -752,12 +868,12 @@ integer::oops1,oops2
       !  in elevation between the current model's elevation and the incoming data's
       !  orography.
          
-      IF ( flag_toposoil .EQ. 1 ) THEN
+      IF ( flag_soilhgt .EQ. 1 ) THEN
          adjust_soil : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
 
             CASE ( SLABSCHEME , LSMSCHEME , RUCLSMSCHEME )
                CALL adjust_soil_temp_new ( tmn , model_config_rec%sf_surface_physics(grid%id) , &
-                                           tsk , ht , toposoil , landmask , flag_toposoil , &
+                                           tsk , ht , toposoil , landmask , flag_soilhgt , &
                                            st000010 , st010040 , st040100 , st100200 , st010200 , &
                                            flag_st000010 , flag_st010040 , flag_st040100 , flag_st100200 , flag_st010200 , &
                                            st000007 , st007028 , st028100 , st100255 , &
@@ -825,10 +941,13 @@ integer::oops1,oops2
       DO j = jts, MIN(jde-1,jte)
          DO i = its, MIN(ide-1,ite)
             IF ( ( ( tmn(i,j) .LT. 170. ) .OR. ( tmn(i,j) .GT. 400. ) ) .AND. ( landmask(i,j) .GT. 0.5 ) ) THEN
+               IF ( model_config_rec%sf_surface_physics(grid%id) .NE. LSMSCHEME ) THEN
                   print *,'error in the TMN'
                   print *,'i,j=',i,j
                   print *,'landmask=',landmask(i,j)
                   print *,'tsk, sst, tmn=',tsk(i,j),sst(i,j),tmn(i,j)
+               END IF
+
                if(tsk(i,j).gt.170. .and. tsk(i,j).lt.400.)then
                   tmn(i,j)=tsk(i,j)
                else if(sst(i,j).gt.170. .and. sst(i,j).lt.400.)then
@@ -945,16 +1064,19 @@ integer::oops1,oops2
          DO j = jts, MIN(jde-1,jte)
             DO i = its, MIN(ide-1,ite)
                IF ( ( ( tslb(i,1,j) .LT. 170. ) .OR. ( tslb(i,1,j) .GT. 400. ) ) .AND. ( landmask(i,j) .GT. 0.5 ) ) THEN
-                     print *,'error in the TSLB'
-                     print *,'i,j=',i,j
-                     print *,'landmask=',landmask(i,j)
-                     print *,'tsk, sst, tmn=',tsk(i,j),sst(i,j),tmn(i,j)
-                     print *,'tslb = ',tslb(i,:,j)
-                     print *,'old smois = ',smois(i,:,j)
-                     smois(i,1,j) = 0.3
-                     smois(i,2,j) = 0.3
-                     smois(i,3,j) = 0.3
-                     smois(i,4,j) = 0.3
+                     IF ( ( model_config_rec%sf_surface_physics(grid%id) .NE. LSMSCHEME    ) .AND. &
+                          ( model_config_rec%sf_surface_physics(grid%id) .NE. RUCLSMSCHEME ) ) THEN
+                        print *,'error in the TSLB'
+                        print *,'i,j=',i,j
+                        print *,'landmask=',landmask(i,j)
+                        print *,'tsk, sst, tmn=',tsk(i,j),sst(i,j),tmn(i,j)
+                        print *,'tslb = ',tslb(i,:,j)
+                        print *,'old smois = ',smois(i,:,j)
+                        smois(i,1,j) = 0.3
+                        smois(i,2,j) = 0.3
+                        smois(i,3,j) = 0.3
+                        smois(i,4,j) = 0.3
+                     END IF
    
                      IF ( (tsk(i,j).GT.170. .AND. tsk(i,j).LT.400.) .AND. &
                           (tmn(i,j).GT.170. .AND. tmn(i,j).LT.400.) ) THEN
@@ -1168,6 +1290,7 @@ endif
 
 
             DO k = 1, kte-1
+               php(i,k,j) = znw(k)*(p_surf - p_top) + p_top ! temporary, full lev base pressure
                pb(i,k,j) = znu(k)*(p_surf - p_top) + p_top
 !              temp = MAX ( 200., t00 + A*LOG(pb(i,k,j)/p00) )
                temp =             t00 + A*LOG(pb(i,k,j)/p00)
@@ -1183,11 +1306,6 @@ endif
             !  computed from the dry pressure).  Here the dry pressure is just reconstituted.
 
             pd_surf = mu0(i,j) + p_top
-       
-            !  Compute the perturbation mass and the full mass from the base surface pressure
-            !  (a function of elevation) and the dry surface pressure.
-       
-            mu_2(i,j) = pd_surf-p_surf
 
             !  Integrate base geopotential, starting at terrain elevation.  This assures that 
             !  the base state is in exact hydrostatic balance with respect to the model equations.
@@ -1233,7 +1351,32 @@ endif
          END DO
       END DO
       END IF
+       
+      !  Compute the perturbation dry pressure (mub + mu_2 + ptop = dry psfc).
 
+      DO j = jts, min(jde-1,jte)
+         DO i = its, min(ide-1,ite)
+            mu_2(i,j) = mu0(i,j) - mub(i,j)
+         END DO
+      END DO
+
+      !  Fill in the outer rows and columns to allow us to be sloppy.
+
+      IF ( ite .EQ. ide ) THEN
+      i = ide
+      DO j = jts, MIN(jde-1,jte)
+         mu_2(i,j) = mu_2(i-1,j)
+      END DO
+      END IF
+
+      IF ( jte .EQ. jde ) THEN
+      j = jde
+      DO i = its, ite
+         mu_2(i,j) = mu_2(i,j-1)
+      END DO
+      END IF
+
+      lev500 = 0 
       DO j = jts, min(jde-1,jte)
          DO i = its, min(ide-1,ite)
 
@@ -1243,69 +1386,175 @@ endif
             DO k =  1 , kde-1
                t_2(i,k,j)          = t_2(i,k,j) - t0
             END DO
+
+            dpmu = 10001.
+            loop_count = 0
+
+            DO WHILE ( ( ABS(dpmu) .GT. 10. ) .AND. &
+                       ( loop_count .LT. 5 ) )  
+
+               loop_count = loop_count + 1
       
-            !  Integrate the hydrostatic equation (from the RHS of the bigstep vertical momentum 
-            !  equation) down from the top to get the pressure perturbation.  First get the pressure
-            !  perturbation, moisture, and inverse density (total and perturbation) at the top-most level.
-      
-            k = kte-1
-      
-            qvf1 = 0.5*(moist(i,k,j,P_QV)+moist(i,k,j,P_QV))
-            qvf2 = 1./(1.+qvf1)
-            qvf1 = qvf1*qvf2
-      
-            p(i,k,j) = - 0.5*(mu_2(i,j)+qvf1*mub(i,j))/rdnw(k)/qvf2
-            qvf = 1. + rvovrd*moist(i,k,j,P_QV)
-            alt(i,k,j) = (r_d/p1000mb)*(t_2(i,k,j)+t0)*qvf*(((p(i,k,j)+pb(i,k,j))/p1000mb)**cvpm)
-            al(i,k,j) = alt(i,k,j) - alb(i,k,j)
-      
-            !  Now, integrate down the column to compute the pressure perturbation, and diagnose the two
-            !  inverse density fields (total and perturbation).
-      
-            DO k=kte-2,1,-1
-               qvf1 = 0.5*(moist(i,k,j,P_QV)+moist(i,k+1,j,P_QV))
+               !  Integrate the hydrostatic equation (from the RHS of the bigstep vertical momentum 
+               !  equation) down from the top to get the pressure perturbation.  First get the pressure
+               !  perturbation, moisture, and inverse density (total and perturbation) at the top-most level.
+         
+               k = kte-1
+         
+               qvf1 = 0.5*(moist(i,k,j,P_QV)+moist(i,k,j,P_QV))
                qvf2 = 1./(1.+qvf1)
                qvf1 = qvf1*qvf2
-               p(i,k,j) = p(i,k+1,j) - (mu_2(i,j) + qvf1*mub(i,j))/qvf2/rdn(k+1)
+         
+               p(i,k,j) = - 0.5*(mu_2(i,j)+qvf1*mub(i,j))/rdnw(k)/qvf2
                qvf = 1. + rvovrd*moist(i,k,j,P_QV)
-               alt(i,k,j) = (r_d/p1000mb)*(t_2(i,k,j)+t0)*qvf* &
-                           (((p(i,k,j)+pb(i,k,j))/p1000mb)**cvpm)
+               alt(i,k,j) = (r_d/p1000mb)*(t_2(i,k,j)+t0)*qvf*(((p(i,k,j)+pb(i,k,j))/p1000mb)**cvpm)
                al(i,k,j) = alt(i,k,j) - alb(i,k,j)
-            END DO
+         
+               !  Now, integrate down the column to compute the pressure perturbation, and diagnose the two
+               !  inverse density fields (total and perturbation).
+         
+               DO k=kte-2,1,-1
+                  qvf1 = 0.5*(moist(i,k,j,P_QV)+moist(i,k+1,j,P_QV))
+                  qvf2 = 1./(1.+qvf1)
+                  qvf1 = qvf1*qvf2
+                  p(i,k,j) = p(i,k+1,j) - (mu_2(i,j) + qvf1*mub(i,j))/qvf2/rdn(k+1)
+                  qvf = 1. + rvovrd*moist(i,k,j,P_QV)
+                  alt(i,k,j) = (r_d/p1000mb)*(t_2(i,k,j)+t0)*qvf* &
+                              (((p(i,k,j)+pb(i,k,j))/p1000mb)**cvpm)
+                  al(i,k,j) = alt(i,k,j) - alb(i,k,j)
+               END DO
+         
+               !  This is the hydrostatic equation used in the model after the small timesteps.  In 
+               !  the model, al (inverse density) is computed from the geopotential.
+         
+               DO k  = 2,kte
+                  ph_2(i,k,j) = ph_2(i,k-1,j) - &
+                                dnw(k-1) * ( (mub(i,j)+mu_2(i,j))*al(i,k-1,j) + mu_2(i,j)*alb(i,k-1,j) )
+                  ph0(i,k,j) = ph_2(i,k,j) + phb(i,k,j)
+               END DO
+   
+               !  Adjust the column pressure so that the computed 500 mb height is close to the
+               !  input value (of course, not when we are doing hybrid input).
+   
+               IF ( ( flag_metgrid .EQ. 1 ) .AND. ( i .EQ. its ) .AND. ( j .EQ. jts ) ) THEN
+                  DO k = 1 , num_metgrid_levels
+                     IF ( ABS ( p_gc(i,k,j) - 50000. ) .LT. 1. ) THEN
+                        lev500 = k
+                        EXIT
+                     END IF
+                  END DO
+               END IF
+           
+               !  We only do the adjustment of height if we have the input data on pressure
+               !  surfaces, and folks have asked to do this option.
+   
+               IF ( ( flag_metgrid .EQ. 1 ) .AND. &
+                    ( config_flags%adjust_heights ) .AND. &
+                    ( lev500 .NE. 0 ) ) THEN
+   
+                  DO k = 2 , kte-1
       
-            !  This is the hydrostatic equation used in the model after the small timesteps.  In 
-            !  the model, al (inverse density) is computed from the geopotential.
+                     !  Get the pressures on the full eta levels (php is defined above as 
+                     !  the full-lev base pressure, an easy array to use for 3d space).
       
-            DO k  = 2,kte
-               ph_2(i,k,j) = ph_2(i,k-1,j) - &
-                             dnw(k-1) * ( (mub(i,j)+mu_2(i,j))*al(i,k-1,j) + mu_2(i,j)*alb(i,k-1,j) )
-               ph0(i,k,j) = ph_2(i,k,j) + phb(i,k,j)
+                     pl = php(i,k  ,j) + &
+                          ( p(i,k-1  ,j) * ( znw(k    ) - znu(k  ) ) + &             
+                            p(i,k    ,j) * ( znu(k-1  ) - znw(k  ) ) ) / &
+                          ( znu(k-1  ) - znu(k  ) )
+                     pu = php(i,k+1,j) + &
+                          ( p(i,k-1+1,j) * ( znw(k  +1) - znu(k+1) ) + &             
+                            p(i,k  +1,j) * ( znu(k-1+1) - znw(k+1) ) ) / &
+                          ( znu(k-1+1) - znu(k+1) )
+                   
+                     !  If these pressure levels trap 500 mb, use them to interpolate
+                     !  to the 500 mb level of the computed height.
+       
+                     IF ( ( pl .GE. 50000. ) .AND. ( pu .LT. 50000. ) ) THEN
+                        zl = ( ph_2(i,k  ,j) + phb(i,k  ,j) ) / g
+                        zu = ( ph_2(i,k+1,j) + phb(i,k+1,j) ) / g
+      
+                        z500 = ( zl * ( LOG(50000.) - LOG(pu    ) ) + &
+                                 zu * ( LOG(pl    ) - LOG(50000.) ) ) / &
+                               ( LOG(pl) - LOG(pu) ) 
+!                       z500 = ( zl * (    (50000.) -    (pu    ) ) + &
+!                                zu * (    (pl    ) -    (50000.) ) ) / &
+!                              (    (pl) -    (pu) ) 
+      
+                        !  Compute the difference of the 500 mb heights (computed minus input), and
+                        !  then the change in mu_2.  The php is still full-levels, base pressure.
+      
+                        dz500 = z500 - ght_gc(i,lev500,j)
+                        tvsfc = ((t_2(i,1,j)+t0)*((p(i,1,j)+php(i,1,j))/p1000mb)**(r_d/cp)) * &
+                                (1.+0.6*moist(i,1,j,P_QV))
+                        dpmu = ( php(i,1,j) + p(i,1,j) ) * EXP ( g * dz500 / ( r_d * tvsfc ) )
+                        dpmu = dpmu - ( php(i,1,j) + p(i,1,j) )
+                        mu_2(i,j) = mu_2(i,j) - dpmu
+                        EXIT
+                     END IF
+      
+                  END DO
+               ELSE
+                  dpmu = 0.
+               END IF
+
             END DO
        
          END DO
       END DO
 
-      DO j = jts, min(jde-1,jte)
-         DO i = its, min(ide,ite)
-            u10(i,j)=u_2(i,1,j)
-         END DO
-      END DO
+      !  If this is data from the SI, then we probably do not have the original
+      !  surface data laying around.  Note that these are all the lowest levels
+      !  of the respective 3d arrays.  For surface pressure, we assume that the
+      !  vertical gradient of p prime is zilch.  This is not all that important.
+      !  These are filled in so that the various plotting routines have something
+      !  to play with at the initial time for the model.
 
-      DO j = jts, min(jde,jte)
-         DO i = its, min(ide-1,ite)
-            v10(i,j)=v_2(i,1,j)
+      IF ( flag_metgrid .NE. 1 ) THEN
+         DO j = jts, min(jde-1,jte)
+            DO i = its, min(ide,ite)
+               u10(i,j)=u_2(i,1,j)
+            END DO
          END DO
-      END DO
+   
+         DO j = jts, min(jde,jte)
+            DO i = its, min(ide-1,ite)
+               v10(i,j)=v_2(i,1,j)
+            END DO
+         END DO
 
-      DO j = jts, min(jde-1,jte)
-         DO i = its, min(ide-1,ite)
-            p_surf = p00 * EXP ( -t00/a + ( (t00/a)**2 - 2.*g*ht(i,j)/a/r_d ) **0.5 ) 
-            psfc(i,j)=p_surf + p(i,1,j)
-            q2(i,j)=moist(i,1,j,P_QV)
-            th2(i,j)=t_2(i,1,j)+300.
-            t2(i,j)=th2(i,j)*(((p(i,1,j)+pb(i,1,j))/p00)**(r_d/cp))
+         DO j = jts, min(jde-1,jte)
+            DO i = its, min(ide-1,ite)
+               p_surf = p00 * EXP ( -t00/a + ( (t00/a)**2 - 2.*g*ht(i,j)/a/r_d ) **0.5 ) 
+               psfc(i,j)=p_surf + p(i,1,j)
+               q2(i,j)=moist(i,1,j,P_QV)
+               th2(i,j)=t_2(i,1,j)+300.
+               t2(i,j)=th2(i,j)*(((p(i,1,j)+pb(i,1,j))/p00)**(r_d/cp))
+            END DO
          END DO
-      END DO
+
+      !  If this data is from WPS, then we have previously assigned the surface
+      !  data for u, v, and t.  If we have an input qv, welp, we assigned that one,
+      !  too.  Now we pick up the left overs, and if RH came in - we assign the 
+      !  mixing ratio.
+
+      ELSE IF ( flag_metgrid .EQ. 1 ) THEN
+
+         DO j = jts, min(jde-1,jte)
+            DO i = its, min(ide-1,ite)
+               p_surf = p00 * EXP ( -t00/a + ( (t00/a)**2 - 2.*g*ht(i,j)/a/r_d ) **0.5 ) 
+               psfc(i,j)=p_surf + p(i,1,j)
+               th2(i,j)=t2(i,j)*(p00/(p(i,1,j)+pb(i,1,j)))**(r_d/cp)
+            END DO
+         END DO
+         IF ( flag_qv .NE. 1 ) THEN
+            DO j = jts, min(jde-1,jte)
+               DO i = its, min(ide-1,ite)
+                  q2(i,j)=moist(i,1,j,P_QV)
+               END DO
+            END DO
+         END IF
+
+      END IF
 
       ips = its ; ipe = ite ; jps = jts ; jpe = jte ; kps = kts ; kpe = kte
 #ifdef DM_PARALLEL
@@ -1610,6 +1859,222 @@ endif
       END DO
 
    END SUBROUTINE find_my_parent
+
+#endif
+
+!---------------------------------------------------------------------
+
+#ifdef VERT_UNIT
+
+!This is a main program for a small unit test for the vertical interpolation.
+
+program vint
+
+   implicit none 
+
+   integer , parameter :: ij = 3
+   integer , parameter :: keta = 30
+   integer , parameter :: kgen =20 
+
+   integer :: ids , ide , jds , jde , kds , kde , &
+              ims , ime , jms , jme , kms , kme , &
+              its , ite , jts , jte , kts , kte
+
+   integer :: generic
+
+   real , dimension(1:ij,kgen,1:ij) :: fo , po
+   real , dimension(1:ij,1:keta,1:ij) :: fn_calc , fn_interp , pn
+
+   integer, parameter :: interp_type          = 1 ! 2
+!  integer, parameter :: lagrange_order       = 2 ! 1
+   integer            :: lagrange_order
+   logical, parameter :: lowest_lev_from_sfc  = .FALSE. ! .TRUE.
+   real   , parameter :: zap_close_levels     = 500. ! 100.
+   integer, parameter :: force_sfc_in_vinterp = 0 ! 6
+
+   integer :: k 
+
+   ids = 1 ; ide = ij ; jds = 1 ; jde = ij ; kds = 1 ; kde = keta
+   ims = 1 ; ime = ij ; jms = 1 ; jme = ij ; kms = 1 ; kme = keta
+   its = 1 ; ite = ij ; jts = 1 ; jte = ij ; kts = 1 ; kte = keta
+
+   generic = kgen
+
+   print *,' '
+   print *,'------------------------------------'
+   print *,'UNIT TEST FOR VERTICAL INTERPOLATION'
+   print *,'------------------------------------'
+   print *,' '
+   do lagrange_order = 1 , 2
+      print *,' '
+      print *,'------------------------------------'
+      print *,'Lagrange Order = ',lagrange_order
+      print *,'------------------------------------'
+      print *,' '
+      call fillitup ( fo , po , fn_calc , pn , &
+                    ids , ide , jds , jde , kds , kde , &
+                    ims , ime , jms , jme , kms , kme , &
+                    its , ite , jts , jte , kts , kte , &
+                    generic , lagrange_order )
+   
+      print *,' ' 
+      print *,'Level   Pressure     Field'
+      print *,'          (Pa)      (generic)'
+      print *,'------------------------------------'
+      print *,' ' 
+      do k = 1 , generic
+      write (*,fmt='(i2,2x,f12.3,1x,g15.8)' ) &
+         k,po(2,k,2),fo(2,k,2)
+      end do
+      print *,' '
+   
+      call vert_interp ( fo , po , fn_interp , pn , &
+                         generic , 'T' , &
+                         interp_type , lagrange_order , lowest_lev_from_sfc , &
+                         zap_close_levels , force_sfc_in_vinterp , &
+                         ids , ide , jds , jde , kds , kde , &
+                         ims , ime , jms , jme , kms , kme , &
+                         its , ite , jts , jte , kts , kte )
+   
+      print *,'Multi-Order Interpolator'
+      print *,'------------------------------------'
+      print *,' '
+      print *,'Level  Pressure      Field           Field         Field'
+      print *,'         (Pa)        Calc            Interp        Diff'
+      print *,'------------------------------------'
+      print *,' '
+      do k = kts , kte-1
+      write (*,fmt='(i2,2x,f12.3,1x,3(g15.7))' ) &
+         k,pn(2,k,2),fn_calc(2,k,2),fn_interp(2,k,2),fn_calc(2,k,2)-fn_interp(2,k,2)
+      end do
+   
+      call vert_interp_old ( fo , po , fn_interp , pn , &
+                         generic , 'T' , &
+                         interp_type , lagrange_order , lowest_lev_from_sfc , &
+                         zap_close_levels , force_sfc_in_vinterp , &
+                         ids , ide , jds , jde , kds , kde , &
+                         ims , ime , jms , jme , kms , kme , &
+                         its , ite , jts , jte , kts , kte )
+   
+      print *,'Linear Interpolator'
+      print *,'------------------------------------'
+      print *,' '
+      print *,'Level  Pressure      Field           Field         Field'
+      print *,'         (Pa)        Calc            Interp        Diff'
+      print *,'------------------------------------'
+      print *,' '
+      do k = kts , kte-1
+      write (*,fmt='(i2,2x,f12.3,1x,3(g15.7))' ) &
+         k,pn(2,k,2),fn_calc(2,k,2),fn_interp(2,k,2),fn_calc(2,k,2)-fn_interp(2,k,2)
+      end do
+   end do
+
+end program vint
+
+subroutine wrf_error_fatal (string)
+   character (len=*) :: string
+   print *,string
+   stop
+end subroutine wrf_error_fatal
+
+subroutine fillitup ( fo , po , fn , pn , &
+                    ids , ide , jds , jde , kds , kde , &
+                    ims , ime , jms , jme , kms , kme , &
+                    its , ite , jts , jte , kts , kte , &
+                    generic , lagrange_order )
+
+   implicit none
+
+   integer , intent(in) :: ids , ide , jds , jde , kds , kde , &
+              ims , ime , jms , jme , kms , kme , &
+              its , ite , jts , jte , kts , kte
+
+   integer , intent(in) :: generic , lagrange_order
+
+   real , dimension(ims:ime,generic,jms:jme) , intent(out) :: fo , po
+   real , dimension(ims:ime,kms:kme,jms:jme) , intent(out) :: fn , pn
+
+   integer :: i , j , k
+   
+   real , parameter :: piov2 = 3.14159265358 / 2.
+
+   k = 1
+   do j = jts , jte
+   do i = its , ite
+      po(i,k,j) = 102000.
+   end do
+   end do
+   
+   do k = 2 , generic
+   do j = jts , jte
+   do i = its , ite
+      po(i,k,j) = ( 5000. * ( 1 - (k-1) ) + 100000. * ( (k-1) - (generic-1) ) ) / (1. - real(generic-1) )
+   end do
+   end do
+   end do
+
+   if ( lagrange_order .eq. 1 ) then
+      do k = 1 , generic
+      do j = jts , jte
+      do i = its , ite
+         fo(i,k,j) = po(i,k,j)
+!        fo(i,k,j) = sin(po(i,k,j) * piov2 / 102000. )
+      end do
+      end do
+      end do
+   else if ( lagrange_order .eq. 2 ) then
+      do k = 1 , generic
+      do j = jts , jte
+      do i = its , ite
+         fo(i,k,j) = (((po(i,k,j)-5000.)/102000.)*((102000.-po(i,k,j))/102000.))*102000.
+!        fo(i,k,j) = sin(po(i,k,j) * piov2 / 102000. )
+      end do
+      end do
+      end do
+   end if
+
+!!!!!!!!!!!!
+   
+   do k = kts , kte
+   do j = jts , jte
+   do i = its , ite
+      pn(i,k,j) = ( 5000. * ( 0 - (k-1) ) + 102000. * ( (k-1) - (kte-1) ) ) / (-1. *  real(kte-1) )
+   end do
+   end do
+   end do
+   
+   do k = kts , kte-1
+   do j = jts , jte
+   do i = its , ite
+      pn(i,k,j) = ( pn(i,k,j) + pn(i,k+1,j) ) /2.
+   end do
+   end do
+   end do
+
+
+   if ( lagrange_order .eq. 1 ) then
+      do k = kts , kte-1
+      do j = jts , jte
+      do i = its , ite
+         fn(i,k,j) = pn(i,k,j)
+!        fn(i,k,j) = sin(pn(i,k,j) * piov2 / 102000. )
+      end do
+      end do
+      end do
+   else if ( lagrange_order .eq. 2 ) then
+      do k = kts , kte-1
+      do j = jts , jte
+      do i = its , ite
+         fn(i,k,j) = (((pn(i,k,j)-5000.)/102000.)*((102000.-pn(i,k,j))/102000.))*102000.
+!        fn(i,k,j) = sin(pn(i,k,j) * piov2 / 102000. )
+      end do
+      end do
+      end do
+   end if
+
+end subroutine fillitup
+
+#endif
 
 !---------------------------------------------------------------------
 
@@ -2009,11 +2474,13 @@ endif
             !  The polynomials are either in pressure or LOG(pressure).
 
             IF ( interp_type .EQ. 1 ) THEN
-               CALL lagrange_setup (     ordered_porig                 , ordered_forig , generic-zap   , lagrange_order , &
-                                         ordered_pnew                  , ordered_fnew  , kend-kstart+1 ,i,j)
+               CALL lagrange_setup ( var_type , &
+                   ordered_porig                 , ordered_forig , generic-zap   , lagrange_order , &
+                   ordered_pnew                  , ordered_fnew  , kend-kstart+1 ,i,j)
             ELSE
-               CALL lagrange_setup ( LOG(ordered_porig(1:generic-zap)) , ordered_forig , generic-zap   , lagrange_order , &
-                                     LOG(ordered_pnew(kstart:kend))    , ordered_fnew  , kend-kstart+1 ,i,j)
+               CALL lagrange_setup ( var_type , &
+               LOG(ordered_porig(1:generic-zap)) , ordered_forig , generic-zap   , lagrange_order , &
+               LOG(ordered_pnew(kstart:kend))    , ordered_fnew  , kend-kstart+1 ,i,j)
             END IF
 
             !  Save the computed data.
@@ -2432,6 +2899,182 @@ print *,'VERT EXTRAP = ', vert_extrap
 
 !---------------------------------------------------------------------
 
+   SUBROUTINE lagrange_setup ( var_type , all_x , all_y , all_dim , n , target_x , target_y , target_dim ,i,j)
+
+      !  We call a Lagrange polynomial interpolator.  The parallel concerns are put off as this
+      !  is initially set up for vertical use.  The purpose is an input column of pressure (all_x),
+      !  and the associated pressure level data (all_y).  These are assumed to be sorted (ascending
+      !  or descending, no matter).  The locations to be interpolated to are the pressures in
+      !  target_x, probably the new vertical coordinate values.  The field that is output is the
+      !  target_y, which is defined at the target_x location.  Mostly we expect to be 2nd order
+      !  overlapping polynomials, with only a single 2nd order method near the top and bottom.
+      !  When n=1, this is linear; when n=2, this is a second order interpolator.
+
+      IMPLICIT NONE
+
+      CHARACTER (LEN=1) :: var_type
+      INTEGER , INTENT(IN) :: all_dim , n , target_dim
+      REAL, DIMENSION(all_dim) , INTENT(IN) :: all_x , all_y
+      REAL , DIMENSION(target_dim) , INTENT(IN) :: target_x
+      REAL , DIMENSION(target_dim) , INTENT(OUT) :: target_y
+
+      !  Brought in for debug purposes, all of the computations are in a single column.
+
+      INTEGER , INTENT(IN) :: i,j
+
+      !  Local vars
+
+      REAL , DIMENSION(n+1) :: x , y 
+      REAL :: target_y_1 , target_y_2
+      LOGICAL :: found_loc
+      INTEGER :: loop , loc_center_left , loc_center_right , ist , iend , target_loop
+
+      IF ( all_dim .LT. n+1 ) THEN
+print *,'all_dim = ',all_dim
+print *,'order = ',n
+print *,'i,j = ',i,j
+print *,'p array = ',all_x
+print *,'f array = ',all_y
+print *,'p target= ',target_x
+         CALL wrf_error_fatal ( 'troubles, the interpolating order is too large for this few input values' )
+      END IF
+
+      IF ( n .LT. 1 ) THEN
+         CALL wrf_error_fatal ( 'pal, linear is about as low as we go' )
+      END IF
+
+      !  Loop over the list of target x and y values.
+
+      DO target_loop = 1 , target_dim
+
+         !  Find the two trapping x values, and keep the indices.
+   
+         found_loc = .FALSE.
+         find_trap : DO loop = 1 , all_dim -1
+            IF ( ( target_x(target_loop) - all_x(loop) ) * ( target_x(target_loop) - all_x(loop+1) ) .LE. 0.0 ) THEN
+               loc_center_left  = loop
+               loc_center_right = loop+1
+               found_loc = .TRUE.
+               EXIT find_trap
+            END IF
+         END DO find_trap
+   
+         IF ( ( .NOT. found_loc ) .AND. ( target_x(target_loop) .GT. all_x(1) ) ) THEN
+            IF ( var_type .EQ. 'T' ) THEN
+write(6,fmt='(A,2i5,2f11.3)') &
+' --> extrapolating TEMPERATURE near sfc: i,j,psfc, p target = ',&
+i,j,all_x(1),target_x(target_loop)
+               target_y(target_loop) = ( all_y(1) * ( target_x(target_loop) - all_x(2) ) + &
+                                         all_y(2) * ( all_x(1) - target_x(target_loop) ) ) / &
+                                       ( all_x(1) - all_x(2) ) 
+            ELSE 
+!write(6,fmt='(A,2i5,2f11.3)') &
+!' --> extrapolating zero gradient near sfc: i,j,psfc, p target = ',&
+!i,j,all_x(1),target_x(target_loop)
+               target_y(target_loop) = all_y(1)
+            END IF
+            CYCLE
+         ELSE IF ( .NOT. found_loc ) THEN
+            print *,'i,j = ',i,j
+            print *,'target pressure and value = ',target_x(target_loop),target_y(target_loop)
+            DO loop = 1 , all_dim
+               print *,'column of pressure and value = ',all_x(loop),all_y(loop)
+            END DO
+            CALL wrf_error_fatal ( 'troubles, could not find trapping x locations' )
+         END IF
+   
+         !  Even or odd order?  We can put the value in the middle if this is
+         !  an odd order interpolator.  For the even guys, we'll do it twice
+         !  and shift the range one index, then get an average.
+   
+         IF      ( MOD(n,2) .NE. 0 ) THEN
+            IF ( ( loc_center_left -(((n+1)/2)-1) .GE.       1 ) .AND. &
+                 ( loc_center_right+(((n+1)/2)-1) .LE. all_dim ) ) THEN
+               ist  = loc_center_left -(((n+1)/2)-1)
+               iend = iend + n
+               CALL lagrange_interp ( all_x(ist:iend) , all_y(ist:iend) , n , target_x(target_loop) , target_y(target_loop) )
+            ELSE
+               IF ( .NOT. found_loc ) THEN
+                  CALL wrf_error_fatal ( 'I doubt this will happen, I will only do 2nd order for now' )
+               END IF
+            END IF
+   
+         ELSE IF ( MOD(n,2) .EQ. 0 ) THEN
+            IF      ( ( loc_center_left -(((n  )/2)-1) .GE.       1 ) .AND. &
+                      ( loc_center_right+(((n  )/2)  ) .LE. all_dim ) .AND. &
+                      ( loc_center_left -(((n  )/2)  ) .GE.       1 ) .AND. &
+                      ( loc_center_right+(((n  )/2)-1) .LE. all_dim ) ) THEN
+               ist  = loc_center_left -(((n  )/2)-1)
+               iend = ist + n
+               CALL lagrange_interp ( all_x(ist:iend) , all_y(ist:iend) , n , target_x(target_loop) , target_y_1              )
+               ist  = loc_center_left -(((n  )/2)  )
+               iend = ist + n
+               CALL lagrange_interp ( all_x(ist:iend) , all_y(ist:iend) , n , target_x(target_loop) , target_y_2              )
+               target_y(target_loop) = ( target_y_1 + target_y_2 ) * 0.5
+   
+            ELSE IF ( ( loc_center_left -(((n  )/2)-1) .GE.       1 ) .AND. &
+                      ( loc_center_right+(((n  )/2)  ) .LE. all_dim ) ) THEN
+               ist  = loc_center_left -(((n  )/2)-1)
+               iend = ist + n
+               CALL lagrange_interp ( all_x(ist:iend) , all_y(ist:iend) , n , target_x(target_loop) , target_y(target_loop)   )
+            ELSE IF ( ( loc_center_left -(((n  )/2)  ) .GE.       1 ) .AND. &
+                      ( loc_center_right+(((n  )/2)-1) .LE. all_dim ) ) THEN
+               ist  = loc_center_left -(((n  )/2)  )
+               iend = ist + n
+               CALL lagrange_interp ( all_x(ist:iend) , all_y(ist:iend) , n , target_x(target_loop) , target_y(target_loop)   )
+            ELSE
+               CALL wrf_error_fatal ( 'unauthorized area, you should not be here' )
+            END IF
+               
+         END IF
+
+      END DO
+
+   END SUBROUTINE lagrange_setup 
+
+!---------------------------------------------------------------------
+
+   SUBROUTINE lagrange_interp ( x , y , n , target_x , target_y )
+
+      !  Interpolation using Lagrange polynomials.
+      !  P(x) = f(x0)Ln0(x) + ... + f(xn)Lnn(x)
+      !  where Lnk(x) = (x -x0)(x -x1)...(x -xk-1)(x -xk+1)...(x -xn)
+      !                 ---------------------------------------------
+      !                 (xk-x0)(xk-x1)...(xk-xk-1)(xk-xk+1)...(xk-xn)
+
+      IMPLICIT NONE
+
+      INTEGER , INTENT(IN) :: n
+      REAL , DIMENSION(0:n) , INTENT(IN) :: x , y
+      REAL , INTENT(IN) :: target_x
+
+      REAL , INTENT(OUT) :: target_y
+
+      !  Local vars
+
+      INTEGER :: i , k
+      REAL :: numer , denom , Px
+      REAL , DIMENSION(0:n) :: Ln
+
+      Px = 0.
+      DO i = 0 , n
+         numer = 1.         
+         denom = 1.         
+         DO k = 0 , n
+            IF ( k .EQ. i ) CYCLE
+            numer = numer * ( target_x  - x(k) )
+            denom = denom * ( x(i)  - x(k) )
+         END DO
+         Ln(i) = y(i) * numer / denom
+         Px = Px + Ln(i)
+      END DO
+      target_y = Px
+
+   END SUBROUTINE lagrange_interp
+
+#ifndef VERT_UNIT
+!---------------------------------------------------------------------
+
    SUBROUTINE p_dry ( mu0 , eta , pdht , pdry , &
                              ids , ide , jds , jde , kds , kde , &
                              ims , ime , jms , jme , kms , kme , &
@@ -2471,7 +3114,7 @@ print *,'VERT EXTRAP = ', vert_extrap
 
 !---------------------------------------------------------------------
 
-   SUBROUTINE p_dts ( pdts , intq , p , p_top , &
+   SUBROUTINE p_dts ( pdts , intq , psfc , p_top , &
                       ids , ide , jds , jde , kds , kde , &
                       ims , ime , jms , jme , kms , kme , &
                       its , ite , jts , jte , kts , kte )
@@ -2485,9 +3128,9 @@ print *,'VERT EXTRAP = ', vert_extrap
                                      its , ite , jts , jte , kts , kte
 
       REAL , INTENT(IN) :: p_top
-      REAL , DIMENSION(ims:ime,kms:kme,jms:jme) , INTENT(IN)     :: p
-      REAL , DIMENSION(ims:ime,        jms:jme) , INTENT(IN)     :: intq
-      REAL , DIMENSION(ims:ime,        jms:jme) , INTENT(OUT)    :: pdts
+      REAL , DIMENSION(ims:ime,jms:jme) , INTENT(IN)     :: psfc
+      REAL , DIMENSION(ims:ime,jms:jme) , INTENT(IN)     :: intq
+      REAL , DIMENSION(ims:ime,jms:jme) , INTENT(OUT)    :: pdts
 
       !  Local vars
 
@@ -2495,7 +3138,7 @@ print *,'VERT EXTRAP = ', vert_extrap
 
       DO j = jts , MIN ( jde-1 , jte )
          DO i = its , MIN (ide-1 , ite )
-               pdts(i,j) = p(i,1,j) - intq(i,j) - p_top
+               pdts(i,j) = psfc(i,j) - intq(i,j) - p_top
          END DO
       END DO
 
@@ -2761,8 +3404,13 @@ print *,'p sfc = ',psfc(i,j)
                           p2 / ( Rd * t2 ) ) * 0.5
                qbar   = ( q1 + q2 ) * 0.5
                dz     = z2 - z1
-               intq(i,j) = intq(i,j) + g * qbar * rhobar / (1. + qbar) * dz
-               DO k = level_above_sfc(i),kts+1,-1
+               IF ( dz .GT. 0.1 ) THEN
+                  intq(i,j) = intq(i,j) + g * qbar * rhobar / (1. + qbar) * dz
+               END IF
+              
+               !  Fix the underground values.
+
+               DO k = level_above_sfc(i)-1,kts+1,-1
                   pd(i,k) = p(i,k) - intq(i,j)
                END DO
             END IF
@@ -3492,157 +4140,64 @@ print *,'namelist p_top (Pa) = ',p_top
 
 !---------------------------------------------------------------------
 
-   SUBROUTINE lagrange_setup ( all_x , all_y , all_dim , n , target_x , target_y , target_dim ,i,j)
+   SUBROUTINE sfcprs2(t, q, height, psfc_in, ter, avgsfct, p, &
+                      psfc, ez_method, &
+                      ids , ide , jds , jde , kds , kde , &
+                      ims , ime , jms , jme , kms , kme , &
+                      its , ite , jts , jte , kts , kte )
 
-      !  We call a Lagrange polynomial interpolator.  The parallel concerns are put off as this
-      !  is initially set up for vertical use.  The purpose is an input column of pressure (all_x),
-      !  and the associated pressure level data (all_y).  These are assumed to be sorted (ascending
-      !  or descending, no matter).  The locations to be interpolated to are the pressures in
-      !  target_x, probably the new vertical coordinate values.  The field that is output is the
-      !  target_y, which is defined at the target_x location.  Mostly we expect to be 2nd order
-      !  overlapping polynomials, with only a single 2nd order method near the top and bottom.
-      !  When n=1, this is linear; when n=2, this is a second order interpolator.
 
-      IMPLICIT NONE
-
-      INTEGER , INTENT(IN) :: all_dim , n , target_dim
-      REAL, DIMENSION(all_dim) , INTENT(IN) :: all_x , all_y
-      REAL , DIMENSION(target_dim) , INTENT(IN) :: target_x
-      REAL , DIMENSION(target_dim) , INTENT(OUT) :: target_y
-
-      !  Brought in for debug purposes.
-
-      INTEGER , INTENT(IN) :: i,j
-
-      !  Local vars
-
-      REAL , DIMENSION(n+1) :: x , y 
-      REAL :: target_y_1 , target_y_2
-      LOGICAL :: found_loc
-      INTEGER :: loop , loc_center_left , loc_center_right , ist , iend , target_loop
-
-      IF ( all_dim .LT. n+1 ) THEN
-print *,'all_dim = ',all_dim
-print *,'order = ',n
-print *,'i,j = ',i,j
-print *,'p array = ',all_x
-print *,'f array = ',all_y
-print *,'p target= ',target_x
-         CALL wrf_error_fatal ( 'troubles, the interpolating order is too large for this few input values' )
-      END IF
-
-      IF ( n .LT. 1 ) THEN
-         CALL wrf_error_fatal ( 'pal, linear is about as low as we go' )
-      END IF
-
-      !  Loop over the list of target x and y values.
-
-      DO target_loop = 1 , target_dim
-
-         !  Find the two trapping x values, and keep the indices.
-   
-         found_loc = .FALSE.
-         find_trap : DO loop = 1 , all_dim -1
-            IF ( ( target_x(target_loop) - all_x(loop) ) * ( target_x(target_loop) - all_x(loop+1) ) .LE. 0.0 ) THEN
-               loc_center_left  = loop
-               loc_center_right = loop+1
-               found_loc = .TRUE.
-               EXIT find_trap
-            END IF
-         END DO find_trap
-   
-         IF ( .NOT. found_loc ) THEN
-            CALL wrf_error_fatal ( 'troubles, could not find trapping x locations' )
-         END IF
-   
-         !  Even or odd order?  We can put the value in the middle if this is
-         !  an odd order interpolator.  For the even guys, we'll do it twice
-         !  and shift the range one index, then get an average.
-   
-         IF      ( MOD(n,2) .NE. 0 ) THEN
-            IF ( ( loc_center_left -(((n+1)/2)-1) .GE.       1 ) .AND. &
-                 ( loc_center_right+(((n+1)/2)-1) .LE. all_dim ) ) THEN
-               ist  = loc_center_left -(((n+1)/2)-1)
-               iend = iend + n
-               CALL lagrange_interp ( all_x(ist:iend) , all_y(ist:iend) , n , target_x(target_loop) , target_y(target_loop) )
-            ELSE
-               IF ( .NOT. found_loc ) THEN
-                  CALL wrf_error_fatal ( 'I doubt this will happen, I will only do 2nd order for now' )
-               END IF
-            END IF
-   
-         ELSE IF ( MOD(n,2) .EQ. 0 ) THEN
-            IF      ( ( loc_center_left -(((n  )/2)-1) .GE.       1 ) .AND. &
-                      ( loc_center_right+(((n  )/2)  ) .LE. all_dim ) .AND. &
-                      ( loc_center_left -(((n  )/2)  ) .GE.       1 ) .AND. &
-                      ( loc_center_right+(((n  )/2)-1) .LE. all_dim ) ) THEN
-               ist  = loc_center_left -(((n  )/2)-1)
-               iend = ist + n
-               CALL lagrange_interp ( all_x(ist:iend) , all_y(ist:iend) , n , target_x(target_loop) , target_y_1              )
-               ist  = loc_center_left -(((n  )/2)  )
-               iend = ist + n
-               CALL lagrange_interp ( all_x(ist:iend) , all_y(ist:iend) , n , target_x(target_loop) , target_y_2              )
-               target_y(target_loop) = ( target_y_1 + target_y_2 ) * 0.5
-   
-            ELSE IF ( ( loc_center_left -(((n  )/2)-1) .GE.       1 ) .AND. &
-                      ( loc_center_right+(((n  )/2)  ) .LE. all_dim ) ) THEN
-               ist  = loc_center_left -(((n  )/2)-1)
-               iend = ist + n
-               CALL lagrange_interp ( all_x(ist:iend) , all_y(ist:iend) , n , target_x(target_loop) , target_y(target_loop)   )
-            ELSE IF ( ( loc_center_left -(((n  )/2)  ) .GE.       1 ) .AND. &
-                      ( loc_center_right+(((n  )/2)-1) .LE. all_dim ) ) THEN
-               ist  = loc_center_left -(((n  )/2)  )
-               iend = ist + n
-               CALL lagrange_interp ( all_x(ist:iend) , all_y(ist:iend) , n , target_x(target_loop) , target_y(target_loop)   )
-            ELSE
-               CALL wrf_error_fatal ( 'unauthorized area, you should not be here' )
-            END IF
-               
-         END IF
-
-      END DO
-
-   END SUBROUTINE lagrange_setup 
-
-!---------------------------------------------------------------------
-
-   SUBROUTINE lagrange_interp ( x , y , n , target_x , target_y )
-
-      !  Interpolation using Lagrange polynomials.
-      !  P(x) = f(x0)Ln0(x) + ... + f(xn)Lnn(x)
-      !  where Lnk(x) = (x -x0)(x -x1)...(x -xk-1)(x -xk+1)...(x -xn)
-      !                 ---------------------------------------------
-      !                 (xk-x0)(xk-x1)...(xk-xk-1)(xk-xk+1)...(xk-xn)
+      !  Computes the surface pressure using the input height,
+      !  temperature and q (already computed from relative
+      !  humidity) on p surfaces.  Sea level pressure is used
+      !  to extrapolate a first guess.
 
       IMPLICIT NONE
 
-      INTEGER , INTENT(IN) :: n
-      REAL , DIMENSION(0:n) , INTENT(IN) :: x , y
-      REAL , INTENT(IN) :: target_x
+      REAL, PARAMETER    :: g         = 9.8
+      REAL, PARAMETER    :: Rd        = 287.
 
-      REAL , INTENT(OUT) :: target_y
+      INTEGER , INTENT(IN) ::  ids , ide , jds , jde , kds , kde , &
+                               ims , ime , jms , jme , kms , kme , &
+                               its , ite , jts , jte , kts , kte 
+      LOGICAL , INTENT ( IN ) :: ez_method
 
-      !  Local vars
+      REAL , DIMENSION (ims:ime,kms:kme,jms:jme) , INTENT(IN ):: t, q, height, p
+      REAL , DIMENSION (ims:ime,        jms:jme) , INTENT(IN ):: psfc_in ,  ter, avgsfct 
+      REAL , DIMENSION (ims:ime,        jms:jme) , INTENT(OUT):: psfc
+      
+      INTEGER                     :: i
+      INTEGER                     :: j
+      INTEGER                     :: k
 
-      INTEGER :: i , k
-      REAL :: numer , denom , Px
-      REAL , DIMENSION(0:n) :: Ln
+      REAL :: tv_sfc_avg , tv_sfc , del_z
 
-      Px = 0.
-      DO i = 0 , n
-         numer = 1.         
-         denom = 1.         
-         DO k = 0 , n
-            IF ( k .EQ. i ) CYCLE
-            numer = numer * ( target_x  - x(k) )
-            denom = denom * ( x(i)  - x(k) )
+      !  Compute the new surface pressure from the old surface pressure, and a
+      !  known change in elevation at the surface.
+
+      !  del_z = diff in surface topo, lo-res vs hi-res
+      !  psfc = psfc_in * exp ( g del_z / (Rd Tv_sfc ) )
+
+
+      IF ( ez_method ) THEN
+         DO j = jts , MIN(jde-1,jte)
+            DO i = its , MIN(ide-1,ite)
+               tv_sfc_avg = avgsfct(i,j) * (1. + 0.608 * q(i,1,j))
+               del_z = height(i,1,j) - ter(i,j)
+               psfc(i,j) = psfc_in(i,j) * EXP ( g * del_z / ( Rd * tv_sfc_avg ) )
+            END DO
          END DO
-         Ln(i) = y(i) * numer / denom
-         Px = Px + Ln(i)
-      END DO
-      target_y = Px
+      ELSE 
+         DO j = jts , MIN(jde-1,jte)
+            DO i = its , MIN(ide-1,ite)
+               tv_sfc = t(i,1,j) * (1. + 0.608 * q(i,1,j))
+               del_z = height(i,1,j) - ter(i,j)
+               psfc(i,j) = psfc_in(i,j) * EXP ( g * del_z / ( Rd * tv_sfc     ) )
+            END DO
+         END DO
+      END IF
 
-   END SUBROUTINE lagrange_interp
+   END SUBROUTINE sfcprs2
 
 !---------------------------------------------------------------------
 
@@ -3652,3 +4207,4 @@ print *,'p target= ',target_x
 !---------------------------------------------------------------------
 
 END MODULE module_initialize
+#endif

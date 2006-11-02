@@ -481,8 +481,7 @@ if      ( ( $CHEM != TRUE ) && ( $FDDA != TRUE ) && ( $NESTED != TRUE ) ) then
 else if ( ( $CHEM != TRUE ) && ( $FDDA != TRUE ) && ( $NESTED == TRUE ) ) then
 	set PHYSOPTS =	( 1 2 3 )
 else if ( ( $CHEM != TRUE ) && ( $FDDA == TRUE ) ) then
-	set PHYSOPTS =	( 1 2 )
-	set PHYSOPTS =	( 1   )
+	set PHYSOPTS =	( 1 2 3 )
 else if ( $CHEM == TRUE ) then
 	set PHYSOPTS =	( 1 2 3 4 5 6 )
 endif
@@ -734,17 +733,46 @@ cat >! fdda_real_1 << EOF
  guv                                 = 0.0003,     0.0003,     0.0003,
  gt                                  = 0.0003,     0.0003,     0.0003,
  gq                                  = 0.0003,     0.0003,     0.0003,
- idynin                              = 0,
+ if_ramping                          = 0,
  dtramp_min                          = 120.0,
 EOF
 
 cat >! fdda_real_time_1 << EOF
- auxinput4_inname                    = "wrffdda_d<domain>"
- auxinput4_interval                  = 360
- auxinput4_end_h                     = 6
+ auxinput10_inname                   = "wrffdda_d<domain>"
+ auxinput10_interval                 = 360
+ auxinput10_end_h                    = 6
+ io_form_auxinput10                  = 2
 EOF
 
 cat >! fdda_real_2 << EOF
+ obs_nudge_opt                       = 1,1,1,1,1
+ max_obs                             = 150000,
+ nobs_ndg_vars                       = 5,
+ nobs_err_flds                       = 9,
+ obs_nudge_wind                      = 1,1,1,1,1
+ obs_coef_wind                       = 6.E-4,6.E-4,6.E-4,6.E-4,6.E-4
+ obs_nudge_temp                      = 1,1,1,1,1
+ obs_coef_temp                       = 6.E-4,6.E-4,6.E-4,6.E-4,6.E-4
+ obs_nudge_mois                      = 1,1,1,1,1
+ obs_coef_mois                       = 6.E-4,6.E-4,6.E-4,6.E-4,6.E-4
+ obs_rinxy                           = 240.,240.,180.,180,180
+ obs_rinsig                          = 0.1,
+ obs_twindo                          = 40.
+ obs_npfi                            = 10,
+ obs_ionf                            = 2,
+ obs_idynin                          = 0,
+ obs_dtramp                          = 40.,
+ obs_ipf_errob                       = .true.
+ obs_ipf_nudob                       = .true.
+ obs_ipf_in4dob                      = .true.
+EOF
+
+cat >! fdda_real_time_2 << EOF
+ auxinput11_interval_s               = 180
+ auxinput11_end_h                    = 6
+EOF
+
+cat >! fdda_real_3 << EOF
  grid_fdda                           = 1,     1,     1,
  fgdt                                = 0,     0,     0,
  if_no_pbl_nudging_uv                = 0,     0,     1,
@@ -759,11 +787,37 @@ cat >! fdda_real_2 << EOF
  guv                                 = 0.0003,     0.0003,     0.0003,
  gt                                  = 0.0003,     0.0003,     0.0003,
  gq                                  = 0.0003,     0.0003,     0.0003,
- idynin                              = 0,
+ if_ramping                          = 0,
  dtramp_min                          = 120.0,
+ obs_nudge_opt                       = 1,1,1,1,1
+ max_obs                             = 150000,
+ nobs_ndg_vars                       = 5,
+ nobs_err_flds                       = 9,
+ obs_nudge_wind                      = 1,1,1,1,1
+ obs_coef_wind                       = 6.E-4,6.E-4,6.E-4,6.E-4,6.E-4
+ obs_nudge_temp                      = 1,1,1,1,1
+ obs_coef_temp                       = 6.E-4,6.E-4,6.E-4,6.E-4,6.E-4
+ obs_nudge_mois                      = 1,1,1,1,1
+ obs_coef_mois                       = 6.E-4,6.E-4,6.E-4,6.E-4,6.E-4
+ obs_rinxy                           = 240.,240.,180.,180,180
+ obs_rinsig                          = 0.1,
+ obs_twindo                          = 40.
+ obs_npfi                            = 10,
+ obs_ionf                            = 2,
+ obs_idynin                          = 0,
+ obs_dtramp                          = 40.,
+ obs_ipf_errob                       = .true.
+ obs_ipf_nudob                       = .true.
+ obs_ipf_in4dob                      = .true.
 EOF
 
-cat >! fdda_real_time_2 << EOF
+cat >! fdda_real_time_3 << EOF
+ auxinput10_inname                   = "wrffdda_d<domain>"
+ auxinput10_interval                 = 360
+ auxinput10_end_h                    = 6
+ io_form_auxinput10                  = 2
+ auxinput11_interval_s               = 180
+ auxinput11_end_h                    = 6
 EOF
 
 #	Tested options for ideal case em_b_wave.  Modifying these
@@ -1621,10 +1675,10 @@ banner 7
 		if ( $REG_TYPE == BIT4BIT ) then
 			if ( `uname` == AIX ) then
 				if ( ( $compopt == $COMPOPTS[1] ) || ( $compopt == $COMPOPTS[3] ) ) then
-					sed -e '/^OMP/d' -e '/^FCOPTIM/d' -e '/^FCDEBUG/s/#/-g -O0 /g' ./configure.wrf >! foo ; /bin/mv foo configure.wrf
+					sed -e '/^OMP/d' -e '/^FCOPTIM/d' -e '/^FCDEBUG/s/#/-O0 /g' ./configure.wrf >! foo ; /bin/mv foo configure.wrf
 				else
 					sed -e '/^OMP/s/noauto/noauto:noopt/' \
-					    -e '/^FCOPTIM/d' -e '/^FCDEBUG/s/#/-g -O0 /g' ./configure.wrf >! foo ; /bin/mv foo configure.wrf
+					    -e '/^FCOPTIM/d' -e '/^FCDEBUG/s/#/-O0 /g' ./configure.wrf >! foo ; /bin/mv foo configure.wrf
 				endif
 				sed -e 's/-lmassv//g'  -e 's/-lmass//g'  -e 's/-DNATIVE_MASSV//g' -e '/^FCBASEOPTS/s/#//g' ./configure.wrf >! foo ; /bin/mv foo configure.wrf
 			else if ( `uname` == Linux ) then

@@ -854,11 +854,11 @@ SUBROUTINE construct_filename4a( result , basename , fld1 , len1 , date_char , i
   INTEGER   i, j, l
   result=basename
   CALL zero_pad ( t1 , fld1 , len1 )
-  IF      ( io_form .EQ. 1 ) THEN
+  IF      ( MOD(io_form,100) .EQ. 1 ) THEN
      ext = '.int'
-  ELSE IF ( io_form .EQ. 2 ) THEN
+  ELSE IF ( MOD(io_form,100) .EQ. 2 ) THEN
      ext = '.nc '
-  ELSE IF ( io_form .EQ. 5 ) THEN
+  ELSE IF ( MOD(io_form,100) .EQ. 5 ) THEN
      ext = '.gb '
   ELSE
      CALL wrf_error_fatal ('improper io_form')

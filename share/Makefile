@@ -83,6 +83,7 @@ OBJS    = 		\
         wrf_auxinput9in.o               \
         wrf_auxinput10in.o               \
         wrf_auxinput11in.o               \
+	wrf_fddaobs_in.o		\
         wrf_bdyin.o             	\
         wrf_histin.o            	\
         wrf_restartin.o                 \
@@ -219,6 +220,18 @@ wrf_auxinput4out.o              : ../frame/module_domain.o \
                                 ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
 wrf_auxinput5out.o              : ../frame/module_domain.o \
                                 ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxinput6out.o              : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxinput7out.o              : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxinput8out.o              : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxinput9out.o              : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxinput10out.o              : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxinput11out.o              : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
 wrf_histout.o                   : ../frame/module_domain.o \
                                 ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
 wrf_auxhist1out.o               : ../frame/module_domain.o \
@@ -230,6 +243,18 @@ wrf_auxhist3out.o               : ../frame/module_domain.o \
 wrf_auxhist4out.o               : ../frame/module_domain.o \
                                 ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
 wrf_auxhist5out.o               : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxhist6out.o               : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxhist7out.o               : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxhist8out.o               : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxhist9out.o               : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxhist10out.o               : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxhist11out.o               : ../frame/module_domain.o \
                                 ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
 wrf_restartout.o                : ../frame/module_domain.o \
                                 ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
@@ -247,6 +272,18 @@ wrf_auxhist4in.o                : ../frame/module_domain.o \
                                 ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
 wrf_auxhist5in.o                : ../frame/module_domain.o \
                                 ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxhist6in.o                : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxhist7in.o                : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxhist8in.o                : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxhist9in.o                : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxhist10in.o                : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxhist11in.o                : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
 wrf_auxinput1in.o               : ../frame/module_domain.o \
                                 ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
 wrf_auxinput2in.o               : ../frame/module_domain.o \
@@ -256,6 +293,18 @@ wrf_auxinput3in.o               : ../frame/module_domain.o \
 wrf_auxinput4in.o               : ../frame/module_domain.o \
                                 ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
 wrf_auxinput5in.o               : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxinput6in.o               : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxinput7in.o               : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxinput8in.o               : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxinput9in.o               : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxinput10in.o               : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxinput11in.o               : ../frame/module_domain.o \
                                 ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
 wrf_bdyin.o                     : ../frame/module_domain.o \
                                 ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o

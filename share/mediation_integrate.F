@@ -168,7 +168,13 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
      CALL WRFU_AlarmRingerOff( grid%alarms( AUXINPUT10_ALARM ), rc=rc )
    ENDIF
    IF( WRFU_AlarmIsRinging( grid%alarms( AUXINPUT11_ALARM ), rc=rc ) ) THEN
+#if ( EM_CORE == 1 )
+     IF( config_flags%obs_nudge_opt .EQ. 1) THEN
+        CALL med_fddaobs_in ( grid , config_flags )
+     ENDIF
+#else
      CALL med_auxinput11_in ( grid , config_flags )
+#endif
      CALL WRFU_AlarmRingerOff( grid%alarms( AUXINPUT11_ALARM ), rc=rc )
    ENDIF
 
@@ -1137,7 +1143,7 @@ SUBROUTINE med_hist_out ( grid , stream, config_flags )
      CALL start_timing
    END IF
 
-   IF ( stream .LT. 0 .OR. stream .GT. 5 ) THEN
+   IF ( stream .LT. 0 .OR. stream .GT. 11 ) THEN
      WRITE(message,*)'med_hist_out: invalid history stream ',stream
      CALL wrf_error_fatal( message )
    ENDIF
@@ -1475,6 +1481,16 @@ SUBROUTINE med_auxinput11_in ( grid , config_flags )
    RETURN
 END SUBROUTINE med_auxinput11_in
 
+SUBROUTINE med_fddaobs_in ( grid , config_flags )
+   USE module_domain
+   USE module_configure
+   IMPLICIT NONE
+   TYPE(domain)                               :: grid
+   TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
+   CALL wrf_fddaobs_in( grid, config_flags )
+   RETURN
+END SUBROUTINE med_fddaobs_in
+
 SUBROUTINE med_auxinput_in ( grid , stream, config_flags )
   ! Driver layer
    USE module_domain
@@ -1503,8 +1519,8 @@ SUBROUTINE med_auxinput_in ( grid , stream, config_flags )
 
    CALL nl_get_adjust_input_times( grid%id, adjust )
 
-   IF ( stream .LT. 1 .OR. stream .GT. 5 ) THEN
-     WRITE(message,*)'med_auxinput_in: invalid inputory stream ',stream
+   IF ( stream .LT. 1 .OR. stream .GT. 11 ) THEN
+     WRITE(message,*)'med_auxinput_in: invalid input stream ',stream
      CALL wrf_error_fatal( message )
    ENDIF
    CALL domain_clock_get( grid, current_time=CT, start_time=ST, current_timestr=timestr )

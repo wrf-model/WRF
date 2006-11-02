@@ -29,9 +29,7 @@ CONTAINS
      &          ,trl_urb3d,tbl_urb3d,tgl_urb3d                        & !H urban
      &          ,sh_urb2d,lh_urb2d,g_urb2d,rn_urb2d,ts_urb2d          & !H urban
      &          ,frc_urb2d, utype_urb2d                               & !H urban
-            !
      &          ,ucmcall                                              & ! urban
-            !
      &          , ids,ide,jds,jde,kds,kde                             &
      &          , ims,ime,jms,jme,kms,kme                             &
      &          , i_start,i_end,j_start,j_end,kts,kte,num_tiles       &
@@ -48,6 +46,8 @@ CONTAINS
      &          ,smfr3d,keepfr3dflag                                  &
              !  Other optionals (more or less nmm specific)
      &          ,potevp,snopcx,soiltb,sr                              &
+             !  Optional observation nudging
+     &          ,uratx,vratx,tratx                                    &
                                                                       )
 
 #if ( ! NMM_CORE == 1 )
@@ -158,6 +158,9 @@ CONTAINS
 !-- uz0           u wind component at roughness length (m/s)
 !-- vz0           v wind component at roughness length (m/s)
 !-- qsfc          specific humidity at lower boundary (kg/kg)
+!-- uratx         ratio of u over u10 (Added for obs-nudging)
+!-- vratx         ratio of v over v10 (Added for obs-nudging)
+!-- tratx         ratio of t over th2 (Added for obs-nudging)
 !-- u10           diagnostic 10-m u component from surface layer
 !-- v10           diagnostic 10-m v component from surface layer
 !-- th2           diagnostic 2-m theta from surface layer and lsm
@@ -325,6 +328,13 @@ CONTAINS
 !
 ! Optional
 !
+
+!
+!  Observation nudging
+!
+   REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(OUT)::   uratx  !Added for obs-nudging
+   REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(OUT)::   vratx  !Added for obs-nudging
+   REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(OUT)::   tratx  !Added for obs-nudging
 !
 ! Flags relating to the optional tendency arrays declared above
 ! Models that carry the optional tendencies will provdide the
@@ -548,6 +558,7 @@ CONTAINS
                p_phy,dz8w,cp,g,rcp,r_d,xlv,psfc,chs,chs2,cqs2,cpm, &
                znt,ust,pblh,mavail,zol,mol,regime,psim,psih,       &
                xland,hfx,qfx,lh,tsk,flhc,flqc,qgh,qsfc,rmol,       &
+               uratx,vratx,tratx,                                  &
                u10,v10,th2,t2,q2,                                  &
                gz1oz0,wspd,br,isfflx,dx,                           &
                svp1,svp2,svp3,svpt0,ep_1,ep_2,karman,eomeg,stbolt, &

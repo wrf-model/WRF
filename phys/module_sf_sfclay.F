@@ -15,6 +15,7 @@ CONTAINS
                      CP,G,ROVCP,R,XLV,PSFC,CHS,CHS2,CQS2,CPM,      &
                      ZNT,UST,PBLH,MAVAIL,ZOL,MOL,REGIME,PSIM,PSIH, &
                      XLAND,HFX,QFX,LH,TSK,FLHC,FLQC,QGH,QSFC,RMOL, &
+                     uratx,vratx,tratx,                            &
                      U10,V10,TH2,T2,Q2,                            &
                      GZ1OZ0,WSPD,BR,ISFFLX,DX,                     &
                      SVP1,SVP2,SVP3,SVPT0,EP1,EP2,                 &
@@ -54,6 +55,9 @@ CONTAINS
 !-- FLHC        exchange coefficient for heat (m/s)
 !-- FLQC        exchange coefficient for moisture (m/s)
 !-- QGH         lowest-level saturated mixing ratio
+!-- uratx       ratio of surface U to U10
+!-- vratx       ratio of surface V to V10
+!-- tratx       ratio of surface T to TH2
 !-- U10         diagnostic 10m u wind
 !-- V10         diagnostic 10m v wind
 !-- TH2         diagnostic 2m theta (K)
@@ -121,6 +125,9 @@ CONTAINS
                                                                T2, &
                                                                Q2, &
                                                              QSFC
+
+      REAL,     DIMENSION( ims:ime, jms:jme )                    , &
+                INTENT(OUT)     ::              uratx,vratx,tratx
 !
       REAL,     DIMENSION( ims:ime, jms:jme )                    , &
                 INTENT(INOUT)               ::             REGIME, &
@@ -192,6 +199,7 @@ CONTAINS
                 ZNT(ims,j),UST(ims,j),MAVAIL(ims,j),ZOL(ims,j),    &
                 MOL(ims,j),REGIME(ims,j),PSIM(ims,j),PSIH(ims,j),  &
                 XLAND(ims,j),HFX(ims,j),QFX(ims,j),TSK(ims,j),     &
+                uratx(ims,j),vratx(ims,j),tratx(ims,j),            &
                 U10(ims,j),V10(ims,j),TH2(ims,j),T2(ims,j),        &
                 Q2(ims,j),FLHC(ims,j),FLQC(ims,j),QGH(ims,j),      &
                 QSFC(ims,j),LH(ims,j),                             &
@@ -211,6 +219,7 @@ CONTAINS
                      CP,G,ROVCP,R,XLV,PSFCPA,CHS,CHS2,CQS2,CPM,PBLH,RMOL, &
                      ZNT,UST,MAVAIL,ZOL,MOL,REGIME,PSIM,PSIH,      &
                      XLAND,HFX,QFX,TSK,                            &
+                     uratx,vratx,tratx,                            &
                      U10,V10,TH2,T2,Q2,FLHC,FLQC,QGH,              &
                      QSFC,LH,GZ1OZ0,WSPD,BR,ISFFLX,DX,             &
                      SVP1,SVP2,SVP3,SVPT0,EP1,EP2,                 &
@@ -273,6 +282,9 @@ CONTAINS
       REAL,     DIMENSION( ims:ime )                             , &
                 INTENT(OUT)     ::                        U10,V10, &
                                                 TH2,T2,Q2,QSFC,LH
+
+      REAL,     DIMENSION( ims:ime )                             , &
+                INTENT(OUT)     ::              uratx,vratx,tratx
                                     
       REAL,     INTENT(IN   )               ::   CP,G,ROVCP,R,XLV,DX
 
@@ -637,6 +649,10 @@ CONTAINS
 !       VA10(I,J) = V10(I)                                     
 !       write(*,1002)UST(I),KARMAN*WSPD(I),PSIX,KARMAN*WSPD(I)/PSIX
 !                                                                                
+        uratx(I) = UX(I)/U10(I)
+        vratx(I) = VX(I)/V10(I)
+        tratx(I) = THX(I)/TH2(I)
+
         USTM=AMAX1(UST(I),0.1)                                                 
         IF((XLAND(I)-1.5).GE.0)THEN                                            
           UST(I)=UST(I)                                                      

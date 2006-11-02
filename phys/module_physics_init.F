@@ -71,10 +71,15 @@ CONTAINS
                          XXXG_URB2D, XXXC_URB2D,                 & !Optional urban
                          TRL_URB3D, TBL_URB3D, TGL_URB3D,        & !Optional urban
                          SH_URB2D, LH_URB2D, G_URB2D, RN_URB2D,  & !Optional urban
-                         TS_URB2D, FRC_URB2D, UTYPE_URB2D        & !Optional urban
+                         TS_URB2D, FRC_URB2D, UTYPE_URB2D,       & !Optional urban
+                         itimestep                               & !Optional obs fdda
+#if ( EM_CORE == 1 )
+                         ,fdob                                   & !Optional obs fdda
+#endif
                          )
 
 !-----------------------------------------------------------------
+   USE module_domain
    USE module_wrf_error
    IMPLICIT NONE
 !-----------------------------------------------------------------
@@ -237,11 +242,17 @@ CONTAINS
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FRC_URB2D !urban
    INTEGER, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: UTYPE_URB2D !urban
 
+!obs fdda
+   INTEGER, OPTIONAL, INTENT(IN) :: itimestep
+#if ( EM_CORE == 1 ) 
+   TYPE(fdob_type), OPTIONAL, INTENT(INOUT) :: fdob
+#endif
 
 ! Local data
 
    REAL    :: ALBLND,ZZLND,ZZWTR,THINLD,XMAVA,CEN_LAT,pptop 
    REAL,     DIMENSION( kms:kme )  :: sfull, shalf
+   REAL :: obs_twindo
    
    CHARACTER*4 :: MMINLU_loc
    CHARACTER*80 :: message
@@ -255,6 +266,9 @@ integer myproc
 
 !-----------------------------------------------------------------
    ucmcall=config_flags%ucmcall
+#if ( EM_CORE == 1 ) 
+   obs_twindo=config_flags%obs_twindo
+#endif
 
 !-- should be from the namelist
 
@@ -424,7 +438,7 @@ integer myproc
                 adv_moist_cond,                                 &
                 MPDT, DT, DX, DY, LOWLYR,                       & 
                 F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,               &
-                mp_restart_state,tbpvs_state,tbpvs0_state,       &
+                mp_restart_state,tbpvs_state,tbpvs0_state,      &
                 allowed_to_read, start_of_simulation,           &
                 ids, ide, jds, jde, kds, kde,                   &
                 ims, ime, jms, jme, kms, kme,                   &
@@ -443,6 +457,26 @@ integer myproc
                 ids, ide, jds, jde, kds, kde,                   &
                 ims, ime, jms, jme, kms, kme,                   &
                 its, ite, jts, jte, kts, kte                    )
+
+   CALL wrf_debug ( 200 , 'module_start: phy_init: Before call to fdob_init' )
+
+   CALL fdob_init(model_config_rec%obs_nudge_opt,               &
+                  model_config_rec%max_dom,                     &
+                  id,                                           &
+                  model_config_rec%parent_id,                   &
+                  model_config_rec%dx(1),                       &
+                  config_flags%restart,                         &
+                  obs_twindo,                                   &
+                  itimestep,                                    &
+                  model_config_rec%s_sn(1),                     &
+                  model_config_rec%e_sn(1),                     &
+                  model_config_rec%s_we(1),                     &
+                  model_config_rec%e_we(1),                     &
+                  fdob,                                         &
+                  ids, ide, jds, jde, kds, kde,                 &
+                  ims, ime, jms, jme, kms, kme,                 &
+                  its, ite, jts, jte, kts, kte                  )
+
 #endif
 
    END SUBROUTINE phy_init
@@ -1471,7 +1505,7 @@ integer myproc
                config_flags%guv, &
                config_flags%gt, config_flags%gq, &
                config_flags%if_ramping, config_flags%dtramp_min, &
-               config_flags%auxinput4_end_h+NINT(config_flags%auxinput4_interval/60.0), &
+               config_flags%auxinput10_end_h+NINT(config_flags%auxinput10_interval/60.0), &
                       restart, allowed_to_read,                    &
                       ids, ide, jds, jde, kds, kde,                &
                       ims, ime, jms, jme, kms, kme,                &
@@ -1480,12 +1514,59 @@ integer myproc
 
    END SELECT fdda_select
 
-
    END SUBROUTINE fg_init
 
+!-------------------------------------------------------------------
+   SUBROUTINE fdob_init(obs_nudge_opt, maxdom, inest, parid,       &
+                        dx_coarse, restart, obs_twindo, itimestep, &
+                        s_sn_cg, e_sn_cg, s_we_cg, e_we_cg,  &
+                        fdob,                                      &
+                        ids, ide, jds, jde, kds, kde,              &
+                        ims, ime, jms, jme, kms, kme,              &
+                        its, ite, jts, jte, kts, kte               )
+
+
+!--------------------------------------------------------------------
+   USE module_domain
+   USE module_fddaobs_rtfdda
+!--------------------------------------------------------------------
+   IMPLICIT NONE
+!--------------------------------------------------------------------
+   INTEGER , INTENT(IN)    :: maxdom
+   INTEGER , INTENT(IN)    :: obs_nudge_opt(maxdom)
+   INTEGER , INTENT(IN)    :: ids,ide, jds,jde, kds,kde,           &
+                              ims,ime, jms,jme, kms,kme,           &
+                              its,ite, jts,jte, kts,kte
+   INTEGER , INTENT(IN)    :: inest
+   INTEGER , INTENT(IN)    :: parid(maxdom)
+   REAL    , INTENT(IN)    :: dx_coarse
+   LOGICAL , INTENT(IN)    :: restart
+   REAL    , INTENT(INOUT) :: obs_twindo
+   INTEGER , INTENT(IN)    :: itimestep
+   INTEGER, intent(in)     :: s_sn_cg      ! starting north-south coarse-grid index
+   INTEGER, intent(in)     :: e_sn_cg      ! ending   north-south coarse-grid index
+   INTEGER, intent(in)     :: s_we_cg      ! starting west-east   coarse-grid index
+   INTEGER, intent(in)     :: e_we_cg      ! ending   west-east   coarse-grid index
+
+   TYPE(fdob_type), INTENT(INOUT)  :: fdob
+
+   INTEGER                 :: e_sn         ! ending   north-south grid index
+!--------------------------------------------------------------------
+!-- initialize fdda obs-nudging scheme
+
+      e_sn = jde
+      CALL fddaobs_init(obs_nudge_opt, maxdom, inest, parid,       &  
+                        dx_coarse, restart, obs_twindo, itimestep, &
+                        e_sn, s_sn_cg, e_sn_cg, s_we_cg, e_we_cg,  &
+                        fdob,                                      &  
+                        ids,ide, jds,jde, kds,kde,                 &  
+                        ims,ime, jms,jme, kms,kme,                 &  
+                        its,ite, jts,jte, kts,kte)
+
+   END SUBROUTINE fdob_init
 #endif
 
-
+!--------------------------------------------------------------------
    SUBROUTINE z2sigma(zf,zh,sf,sh,p_top,pptop,config_flags, &
                 allowed_to_read , &
                 kds,kde,kms,kme,kts,kte)

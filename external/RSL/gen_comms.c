@@ -578,10 +578,12 @@ int said_it = 0 ;
     {
 
 /* special cases in WRF */
-if ( !strcmp( p->name , "xf_ens" ) || !strcmp( p->name,"pr_ens" ) ||
-     !strcmp( p->name , "abstot" ) || !strcmp( p->name,"absnxt" ) || !strcmp( p->name, "emstot" ) )  {
+if ( !strcmp( p->name , "xf_ens" ) || !strcmp( p->name , "pr_ens" ) ||
+     !strcmp( p->name , "abstot" ) || !strcmp( p->name , "absnxt" ) ||
+     !strcmp( p->name , "emstot" ) || !strcmp( p->name , "obs_savwt" ) ) {
   if ( sw_move && ! said_it ) { fprintf(stderr,"Info only - not an error: Moving nests not implemented for Grell Ens. Cumulus\n") ;
                                 fprintf(stderr,"Info only - not an error: Moving nests not implemented for CAM radiation\n") ;
+                                fprintf(stderr,"Info only - not an error: Moving nests not implemented for Observation Nudging\n") ;
   said_it = 1 ; }
   continue ;
 }
@@ -675,8 +677,9 @@ if ( !strcmp( p->name , "xf_ens" ) || !strcmp( p->name,"pr_ens" ) ||
     {
 
 /* special cases in WRF */
-if ( !strcmp( p->name , "xf_ens" ) || !strcmp( p->name,"pr_ens" ) ||
-     !strcmp( p->name , "abstot" ) || !strcmp( p->name,"absnxt" ) || !strcmp( p->name, "emstot" ) )  {
+if ( !strcmp( p->name , "xf_ens" ) || !strcmp( p->name , "pr_ens" ) ||
+     !strcmp( p->name , "abstot" ) || !strcmp( p->name , "absnxt" ) ||
+     !strcmp( p->name , "emstot" ) || !strcmp( p->name , "obs_savwt" ) ) {
   continue ;
 }
       if ( p->node_kind & FOURD ) {

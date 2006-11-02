@@ -52,7 +52,9 @@ MODULES = \
 	module_surface_driver.o \
 	module_diagnostics.o \
 	module_fdda_psufddagd.o \
-	module_fddagd_driver.o
+	module_fddagd_driver.o  \
+        module_fddaobs_rtfdda.o \
+	module_fddaobs_driver.o
   
 OBJS    =
 
@@ -161,6 +163,7 @@ module_physics_init.o : \
 		module_mp_wsm6.o		\
 		module_mp_etanew.o		\
 		module_fdda_psufddagd.o		\
+		module_fddaobs_rtfdda.o		\
 		module_mp_thompson.o            \
 		../frame/module_state_description.o \
 		../frame/module_configure.o \
@@ -230,5 +233,11 @@ module_fddagd_driver.o: \
 		../frame/module_configure.o \
 		../share/module_model_constants.o  \
 		module_fdda_psufddagd.o
+
+module_fddaobs_driver.o: \
+		../frame/module_domain.o \
+		../share/module_bc.o  \
+		../share/module_model_constants.o  \
+		module_fddaobs_rtfdda.o
 
 # DO NOT DELETE

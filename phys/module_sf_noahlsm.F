@@ -535,7 +535,9 @@ CONTAINS
           ELSE                                                          
             TBOT=271.16                                                
           ENDIF                                                         
-          IF(VEGTYP.EQ.25) SHDFAC=0.0001
+          IF(VEGTYP.EQ.25) SHDFAC=0.0000
+          IF(VEGTYP.EQ.26) SHDFAC=0.0000
+          IF(VEGTYP.EQ.27) SHDFAC=0.0000
           IF(SOILTYP.EQ.14.AND.XICE(I,J).EQ.0.)THEN                      
          IF(IPRINT)PRINT*,' SOIL TYPE FOUND TO BE WATER AT A LAND-POINT'          
          IF(IPRINT)PRINT*,i,j,'RESET SOIL in surfce.F'                      

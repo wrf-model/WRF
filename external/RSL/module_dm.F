@@ -3256,6 +3256,177 @@ messages(120)=  s5e5
       CALL rsl_move_nest ( parent%domdesc, nest%domdesc, dx, dy )
    END SUBROUTINE wrf_dm_move_nest
 
+!------------------------------------------------------------------------------
+   SUBROUTINE get_full_obs_vector( nsta, nerrf, niobf,          &
+                                   mp_local_uobmask,            &
+                                   mp_local_vobmask,            &
+                                   mp_local_cobmask, errf )
+
+!------------------------------------------------------------------------------
+!  PURPOSE: Do MPI allgatherv operation across processors to get the
+!           errors at each observation point on all processors. 
+!
+!------------------------------------------------------------------------------
+#ifndef STUBMPI
+    INCLUDE 'mpif.h'
+
+    INTEGER, INTENT(IN)   :: nsta                ! Observation index.
+    INTEGER, INTENT(IN)   :: nerrf               ! Number of error fields.
+    INTEGER, INTENT(IN)   :: niobf               ! Number of observations.
+    LOGICAL, INTENT(IN)   :: MP_LOCAL_UOBMASK(NIOBF)
+    LOGICAL, INTENT(IN)   :: MP_LOCAL_VOBMASK(NIOBF)
+    LOGICAL, INTENT(IN)   :: MP_LOCAL_COBMASK(NIOBF)
+    REAL, INTENT(INOUT)   :: errf(nerrf, niobf)
+
+! Local declarations
+    integer i, n, nlocal_dot, nlocal_crs
+    REAL UVT_BUFFER(NIOBF)    ! Buffer for holding U, V, or T
+    REAL QRK_BUFFER(NIOBF)    ! Buffer for holding Q or RKO
+    REAL SFP_BUFFER(NIOBF)    ! Buffer for holding Surface pressure
+    INTEGER N_BUFFER(NIOBF)
+    REAL FULL_BUFFER(NIOBF)
+    INTEGER IFULL_BUFFER(NIOBF)
+    INTEGER IDISPLACEMENT(1024)   ! HARD CODED MAX NUMBER OF PROCESSORS
+    INTEGER ICOUNT(1024)          ! HARD CODED MAX NUMBER OF PROCESSORS
+
+    INTEGER :: MPI_COMM_COMP      ! MPI group communicator
+    INTEGER :: NPROCS             ! Number of processors
+    INTEGER :: IERR               ! Error code from MPI routines
+
+! Get communicator for MPI operations.
+    CALL WRF_GET_DM_COMMUNICATOR(MPI_COMM_COMP)
+
+! Get rank of monitor processor and broadcast to others.
+    CALL MPI_COMM_SIZE( MPI_COMM_COMP, NPROCS, IERR )
+
+! DO THE U FIELD
+   NLOCAL_DOT = 0
+   DO N = 1, NSTA
+     IF ( MP_LOCAL_UOBMASK(N) ) THEN      ! USE U-POINT MASK
+       NLOCAL_DOT = NLOCAL_DOT + 1
+       UVT_BUFFER(NLOCAL_DOT) = ERRF(1,N)        ! U WIND COMPONENT
+       SFP_BUFFER(NLOCAL_DOT) = ERRF(7,N)        ! SURFACE PRESSURE
+       QRK_BUFFER(NLOCAL_DOT) = ERRF(9,N)        ! RKO
+       N_BUFFER(NLOCAL_DOT) = N
+     ENDIF
+   ENDDO
+   CALL MPI_ALLGATHER(NLOCAL_DOT,1,MPI_INTEGER, &
+                      ICOUNT,1,MPI_INTEGER,     &
+                      MPI_COMM_COMP,IERR)
+   I = 1
+
+   IDISPLACEMENT(1) = 0
+   DO I = 2, NPROCS
+     IDISPLACEMENT(I) = IDISPLACEMENT(I-1) + ICOUNT(I-1)
+   ENDDO
+   CALL MPI_ALLGATHERV( N_BUFFER, NLOCAL_DOT, MPI_INTEGER,    &
+                        IFULL_BUFFER, ICOUNT, IDISPLACEMENT,  &
+                        MPI_INTEGER, MPI_COMM_COMP, IERR)
+! U
+   CALL MPI_ALLGATHERV( UVT_BUFFER, NLOCAL_DOT, MPI_REAL,     &
+                        FULL_BUFFER, ICOUNT, IDISPLACEMENT,   &
+                        MPI_REAL, MPI_COMM_COMP, IERR)
+   DO N = 1, NSTA
+     ERRF(1,IFULL_BUFFER(N)) = FULL_BUFFER(N)
+   ENDDO
+! SURF PRESS AT U-POINTS
+   CALL MPI_ALLGATHERV( SFP_BUFFER, NLOCAL_DOT, MPI_REAL,     &
+                        FULL_BUFFER, ICOUNT, IDISPLACEMENT,   &
+                        MPI_REAL, MPI_COMM_COMP, IERR)
+   DO N = 1, NSTA
+     ERRF(7,IFULL_BUFFER(N)) = FULL_BUFFER(N)
+   ENDDO
+! RKO
+   CALL MPI_ALLGATHERV( QRK_BUFFER, NLOCAL_DOT, MPI_REAL,     &
+                        FULL_BUFFER, ICOUNT, IDISPLACEMENT,   &
+                        MPI_REAL, MPI_COMM_COMP, IERR)
+   DO N = 1, NSTA
+     ERRF(9,IFULL_BUFFER(N)) = FULL_BUFFER(N)
+   ENDDO
+
+! DO THE V FIELD
+   NLOCAL_DOT = 0
+   DO N = 1, NSTA
+     IF ( MP_LOCAL_VOBMASK(N) ) THEN         ! USE V-POINT MASK
+       NLOCAL_DOT = NLOCAL_DOT + 1
+       UVT_BUFFER(NLOCAL_DOT) = ERRF(2,N)    ! V WIND COMPONENT
+       SFP_BUFFER(NLOCAL_DOT) = ERRF(8,N)    ! SURFACE PRESSURE
+       N_BUFFER(NLOCAL_DOT) = N
+     ENDIF
+   ENDDO
+   CALL MPI_ALLGATHER(NLOCAL_DOT,1,MPI_INTEGER, &
+                      ICOUNT,1,MPI_INTEGER,     &
+                      MPI_COMM_COMP,IERR)
+   I = 1
+
+   IDISPLACEMENT(1) = 0
+   DO I = 2, NPROCS
+     IDISPLACEMENT(I) = IDISPLACEMENT(I-1) + ICOUNT(I-1)
+   ENDDO
+   CALL MPI_ALLGATHERV( N_BUFFER, NLOCAL_DOT, MPI_INTEGER,    &
+                        IFULL_BUFFER, ICOUNT, IDISPLACEMENT,  &
+                        MPI_INTEGER, MPI_COMM_COMP, IERR)
+! V
+   CALL MPI_ALLGATHERV( UVT_BUFFER, NLOCAL_DOT, MPI_REAL,     &
+                        FULL_BUFFER, ICOUNT, IDISPLACEMENT,   &
+                        MPI_REAL, MPI_COMM_COMP, IERR)
+   DO N = 1, NSTA
+     ERRF(2,IFULL_BUFFER(N)) = FULL_BUFFER(N)
+   ENDDO
+! SURF PRESS AT V-POINTS
+   CALL MPI_ALLGATHERV( SFP_BUFFER, NLOCAL_DOT, MPI_REAL,     &
+                        FULL_BUFFER, ICOUNT, IDISPLACEMENT,   &
+                        MPI_REAL, MPI_COMM_COMP, IERR)
+   DO N = 1, NSTA
+     ERRF(8,IFULL_BUFFER(N)) = FULL_BUFFER(N)
+   ENDDO
+
+! DO THE CROSS FIELDS, T AND Q
+   NLOCAL_CRS = 0
+   DO N = 1, NSTA
+     IF ( MP_LOCAL_COBMASK(N) ) THEN       ! USE MASS-POINT MASK
+       NLOCAL_CRS = NLOCAL_CRS + 1
+       UVT_BUFFER(NLOCAL_CRS) = ERRF(3,N)     ! TEMPERATURE
+       QRK_BUFFER(NLOCAL_CRS) = ERRF(4,N)     ! MOISTURE
+       SFP_BUFFER(NLOCAL_CRS) = ERRF(6,N)     ! SURFACE PRESSURE
+       N_BUFFER(NLOCAL_CRS) = N
+     ENDIF
+   ENDDO
+   CALL MPI_ALLGATHER(NLOCAL_CRS,1,MPI_INTEGER, &
+                      ICOUNT,1,MPI_INTEGER,     &
+                      MPI_COMM_COMP,IERR)
+   IDISPLACEMENT(1) = 0
+   DO I = 2, NPROCS
+     IDISPLACEMENT(I) = IDISPLACEMENT(I-1) + ICOUNT(I-1)
+   ENDDO
+   CALL MPI_ALLGATHERV( N_BUFFER, NLOCAL_CRS, MPI_INTEGER,    &
+                        IFULL_BUFFER, ICOUNT, IDISPLACEMENT,  &
+                        MPI_INTEGER, MPI_COMM_COMP, IERR)
+! T
+   CALL MPI_ALLGATHERV( UVT_BUFFER, NLOCAL_CRS, MPI_REAL,     &
+                        FULL_BUFFER, ICOUNT, IDISPLACEMENT,   &
+                        MPI_REAL, MPI_COMM_COMP, IERR)
+
+   DO N = 1, NSTA
+     ERRF(3,IFULL_BUFFER(N)) = FULL_BUFFER(N)
+   ENDDO
+! Q
+   CALL MPI_ALLGATHERV( QRK_BUFFER, NLOCAL_CRS, MPI_REAL,     &
+                        FULL_BUFFER, ICOUNT, IDISPLACEMENT,   &
+                        MPI_REAL, MPI_COMM_COMP, IERR)
+   DO N = 1, NSTA
+     ERRF(4,IFULL_BUFFER(N)) = FULL_BUFFER(N)
+   ENDDO
+! SURF PRESS AT MASS POINTS
+   CALL MPI_ALLGATHERV( SFP_BUFFER, NLOCAL_CRS, MPI_REAL,     &
+                        FULL_BUFFER, ICOUNT, IDISPLACEMENT,   &
+                        MPI_REAL, MPI_COMM_COMP, IERR)
+   DO N = 1, NSTA
+     ERRF(6,IFULL_BUFFER(N)) = FULL_BUFFER(N)
+   ENDDO
+#endif
+   END SUBROUTINE get_full_obs_vector
+
 END MODULE module_dm
 
 !=========================================================================

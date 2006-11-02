@@ -4589,6 +4589,7 @@ FCOPTIM		=	-O2 # -fast
 FCDEBUG		=	#-g
 #FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree -tp p6 $(FCDEBUG)
 FCBASEOPTS      =       -w -byteswapio -Mfree -tp p6 $(FCDEBUG) # -Mlfs
+#FCBASEOPTS      =       -w -byteswapio -Mfree -Mipa=fast,inline,safe  $(FCDEBUG) # -Mlfs
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 ARCHFLAGS       =       -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                          CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG \
@@ -5224,6 +5225,8 @@ FCOPTIM		=	-O2 # -fast
 FCDEBUG		=	#-g
 #FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree -tp p6 $(FCDEBUG)
 FCBASEOPTS      =       -w -byteswapio -Mfree -tp p6 $(FCDEBUG) # -Mlfs
+#Options for Debian Sarge systems
+#FCBASEOPTS      =       -w -byteswapio -Mfree -Mipa=fast,inline,safe  $(FCDEBUG) # -Mlfs
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 ARCHFLAGS       =       -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \

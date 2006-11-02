@@ -871,7 +871,7 @@ LOGICAL FUNCTION should_not_move ( id )
   INTEGER, INTENT(IN) :: id
  ! Local
   LOGICAL retval
-  INTEGER cu_physics, ra_sw_physics, ra_lw_physics, ucmcall
+  INTEGER cu_physics, ra_sw_physics, ra_lw_physics, ucmcall, obs_nudge_opt
 
   retval = .FALSE.
 ! check for GD ensemble cumulus, which can not move
@@ -895,6 +895,12 @@ LOGICAL FUNCTION should_not_move ( id )
   CALL nl_get_ucmcall( id , ucmcall )
   IF ( ucmcall .EQ. 1 ) THEN
     CALL wrf_message('UCM Noah LSM can not be specified with moving nests. Movement disabled.')
+    retval = .TRUE.
+  ENDIF
+! check for observation nudging, which can not move
+  CALL nl_get_obs_nudge_opt( id , obs_nudge_opt )
+  IF ( obs_nudge_opt .EQ. 1 ) THEN
+    CALL wrf_message('Observation nudging can not be specified with moving nests. Movement disabled.')
     retval = .TRUE.
   ENDIF
   should_not_move = retval

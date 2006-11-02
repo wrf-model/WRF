@@ -33,6 +33,7 @@ SUBROUTINE solve_em ( grid , config_flags , &
    USE module_microphysics_zero_out
    USE module_pbl_driver
    USE module_fddagd_driver
+   USE module_fddaobs_driver
    USE module_diagnostics
 #ifdef WRF_CHEM
    USE module_input_chem_data
@@ -606,15 +607,16 @@ BENCH_START(surf_driver_tim)
      &        ,THZ0=grid%thz0          ,TH_PHY=th_phy      ,TKE_MYJ=grid%tke_myj    &
      &        ,TMN=grid%tmn            ,TSHLTR=tshltr      ,TSK=grid%tsk            &
      &        ,TSLB=grid%tslb          ,T_PHY=t_phy        ,U10=grid%u10            &
-     &        ,UDRUNOFF=grid%udrunoff  ,UST=grid%ust            ,UZ0=grid%uz0            &
+     &        ,URATX=grid%uratx        ,VRATX=grid%vratx   ,TRATX=grid%tratx        &
+     &        ,UDRUNOFF=grid%udrunoff  ,UST=grid%ust       ,UZ0=grid%uz0            &
      &        ,U_FRAME=grid%u_frame    ,U_PHY=u_phy        ,V10=grid%v10            &
-     &        ,VEGFRA=grid%vegfra      ,VZ0=grid%vz0            ,V_FRAME=grid%v_frame    &
-     &        ,V_PHY=v_phy        ,WARM_RAIN=grid%warm_rain                    &
-     &        ,WSPD=wspd          ,XICE=grid%xice          ,XLAND=grid%xland        &
-     &        ,Z0=grid%z0              ,Z=grid%em_z                ,ZNT=grid%znt            &
-     &        ,ZS=grid%zs                                                      &
-     &        ,DECLIN_URB=grid%declin_urb  ,COSZ_URB2D=grid%cosz_urb2d              & !I urban
-     &        ,OMG_URB2D=grid%omg_urb2d    ,xlat_urb2d=grid%XLAT                    & !I urban
+     &        ,VEGFRA=grid%vegfra      ,VZ0=grid%vz0       ,V_FRAME=grid%v_frame    &
+     &        ,V_PHY=v_phy             ,WARM_RAIN=grid%warm_rain                    &
+     &        ,WSPD=wspd               ,XICE=grid%xice     ,XLAND=grid%xland        &
+     &        ,Z0=grid%z0              ,Z=grid%em_z        ,ZNT=grid%znt            &
+     &        ,ZS=grid%zs                                                           &
+     &        ,DECLIN_URB=grid%declin_urb  ,COSZ_URB2D=grid%cosz_urb2d    & !I urban
+     &        ,OMG_URB2D=grid%omg_urb2d    ,xlat_urb2d=grid%XLAT          & !I urban
      &        ,NUM_ROOF_LAYERS=num_roof_layers                            & !I urban
      &        ,NUM_WALL_LAYERS=num_wall_layers                            & !I urban
      &        ,NUM_ROAD_LAYERS=num_road_layers                            &
@@ -654,8 +656,7 @@ BENCH_START(surf_driver_tim)
      &        ,RAINNCV=grid%rainncv,REGIME=regime,T2=grid%t2,THC=grid%thc                &
      &        ,QSG=grid%qsg,QVG=grid%qvg,QCG=grid%qcg,SOILT1=grid%soilt1,TSNAV=grid%tsnav          & ! ruc lsm
      &        ,SMFR3D=grid%smfr3d,KEEPFR3DFLAG=grid%keepfr3dflag                    & ! ruc lsm
-     &        ,POTEVP=grid%em_POTEVP, SNOPCX=grid%em_SNOPCX, SOILTB=grid%em_SOILTB                & ! Louisa ruc lsm
-
+     &        ,POTEVP=grid%em_POTEVP, SNOPCX=grid%em_SNOPCX, SOILTB=grid%em_SOILTB                & ! ruc lsm
      &                                                              )
 BENCH_END(surf_driver_tim)
 
@@ -1154,6 +1155,72 @@ BENCH_START(hor_diff_tim)
 BENCH_END(hor_diff_tim)
 
      ENDIF
+
+!***********************************************************************
+! This section for obs nudging
+      !$OMP PARALLEL DO   &
+      !$OMP PRIVATE ( ij )
+
+# ifdef DM_PARALLEL
+#     include "HALO_OBS_NUDGE.inc"
+#endif
+      DO ij = 1 , grid%num_tiles
+
+         CALL fddaobs_driver (grid%grid_id, model_config_rec%grid_id,  &
+                  model_config_rec%parent_id, config_flags%restart,    &
+                  grid%obs_nudge_opt,                                  &
+                  grid%obs_ipf_errob,                                  &
+                  grid%obs_ipf_nudob,                                  &
+                  grid%fdda_start,                                     &
+                  grid%fdda_end,                                       &
+                  grid%obs_nudge_wind,                                 &
+                  grid%obs_nudge_temp,                                 &
+                  grid%obs_nudge_mois,                                 &
+                  grid%obs_nudge_pstr,                                 &
+                  grid%obs_coef_wind,                                  &
+                  grid%obs_coef_temp,                                  &
+                  grid%obs_coef_mois,                                  &
+                  grid%obs_coef_pstr,                                  &             
+                  grid%obs_rinxy,                                      &
+                  grid%obs_rinsig,                                     &
+                  grid%obs_twindo,                                     &
+                  grid%obs_npfi,                                       &
+                  grid%obs_ionf,                                       &
+                  grid%obs_idynin,                                     &
+                  grid%obs_dtramp,                                     &
+                  model_config_rec%cen_lat(1),                         &
+                  model_config_rec%cen_lon(1),                         &
+                  config_flags%truelat1,                               &
+                  config_flags%truelat2,                               &
+                  config_flags%map_proj,                               &
+                  model_config_rec%i_parent_start,                     &
+                  model_config_rec%j_parent_start,                     &
+                  grid%parent_grid_ratio,                              &
+                  grid%max_dom, grid%itimestep,                        &
+                  grid%dt, grid%gmt, grid%julday, grid%fdob,           &
+                  grid%max_obs,                                        &
+                  model_config_rec%nobs_ndg_vars,                      &
+                  model_config_rec%nobs_err_flds,                      &
+                  grid%fdob%nstat, grid%fdob%varobs, grid%fdob%errf,   &
+                  grid%dx, grid%KPBL,grid%HT,                          &
+                  grid%em_mut, grid%em_muu, grid%em_muv,               &
+                  grid%msft, grid%msfu, grid%msfv,                     &
+                  p_phy, t_tendf, t0,                                  &
+                  grid%em_u_2, grid%em_v_2, grid%em_t_2,               &
+                  moist(:,:,:,P_QV),                                   &
+                  grid%em_pb, grid%p_top, grid%em_p,                   &
+                  grid%uratx, grid%vratx, grid%tratx,                  &
+                  ru_tendf, rv_tendf,                                  &
+                  moist_tend(:,:,:,P_QV), grid%em_obs_savwt,           &
+                  ids,ide, jds,jde, kds,kde,                           &
+                  ims,ime, jms,jme, kms,kme,                           &
+                  grid%i_start(ij), min(grid%i_end(ij),ide-1),         &
+                  grid%j_start(ij), min(grid%j_end(ij),jde-1),         &
+                  k_start    , min(k_end,kde-1)                     )
+
+      ENDDO
+! 
+!***********************************************************************
 
      END IF rk_step_is_one
 

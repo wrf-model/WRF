@@ -728,7 +728,7 @@ real::t1,t2
        IF(grid_fdda .EQ. 1)THEN
 ! for fdda
          CALL construct_filename1( inpname , 'wrffdda' , grid%id , 2 )
-         CALL open_w_dataset ( id2, TRIM(inpname) , grid , config_flags , output_aux_model_input4 , "DATASET=AUXINPUT4", ierr )
+         CALL open_w_dataset ( id2, TRIM(inpname) , grid , config_flags , output_aux_model_input10 , "DATASET=AUXINPUT10", ierr )
          IF ( ierr .NE. 0 ) THEN
                CALL wrf_error_fatal( 'real: error opening wrffdda for writing' )
          ENDIF
@@ -851,7 +851,9 @@ real::t1,t2
         CALL output_boundary ( id, grid , config_flags , ierr )
       ENDIF
 ! for fdda
-      IF(grid_fdda .EQ. 1)CALL output_aux_model_input4 ( id2, grid , config_flags , ierr )
+      IF(grid_fdda .EQ. 1) THEN
+         CALL output_aux_model_input10 ( id2, grid , config_flags , ierr )
+      END IF
       current_date = temp24
       start_date = temp24b
       CALL domain_clockprint ( 150, grid, &
@@ -955,7 +957,7 @@ real::t1,t2
          !  If this is the last time through here, we need to close the files.
 
          IF(grid%id .EQ. 1)CALL close_dataset ( id , config_flags , "DATASET=BOUNDARY" )
-         IF(grid_fdda .EQ. 1)CALL close_dataset ( id2 , config_flags , "DATASET=AUXINPUT4" )
+         IF(grid_fdda .EQ. 1)CALL close_dataset ( id2 , config_flags , "DATASET=AUXINPUT10" )
         IF(sst_update .EQ. 1)THEN
          CALL close_dataset ( id5 , config_flags , "DATASET=AUXINPUT5" )
         ENDIF

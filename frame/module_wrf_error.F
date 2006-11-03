@@ -19,37 +19,19 @@ CONTAINS
 END MODULE module_wrf_error
 
 SUBROUTINE wrf_message( str )
-!TBH  USE module_wrf_error
-!TBH  USE module_utility
   IMPLICIT NONE
   CHARACTER*(*) str
 #if defined( DM_PARALLEL ) && ! defined( STUBMPI) 
   write(0,*) TRIM(str)
 #endif
   print*, TRIM(str)
-!TBH:  Calls to logwrite cut off str in ESMF 2.2.0.
-!TBH:  Restore this call once this ESMF bug is fixed.
-!TBH#ifdef USE_LOGERR
-!TBH  IF ( WRFU_IsInitialized() ) THEN
-!TBH    CALL WRFU_LogWrite( TRIM(str), WRFU_LOG_INFO )
-!TBH  ENDIF
-!TBH#endif
 END SUBROUTINE wrf_message
 
 ! intentionally write to stderr only
 SUBROUTINE wrf_message2( str )
-!TBH  USE module_wrf_error
-!TBH  USE module_utility
   IMPLICIT NONE
   CHARACTER*(*) str
   write(0,*) str
-!TBH:  Calls to logwrite cut off str in ESMF 2.2.0.
-!TBH:  Restore this call once this ESMF bug is fixed.
-!TBH#ifdef USE_LOGERR
-!TBH  IF ( WRFU_IsInitialized() ) THEN
-!TBH    CALL WRFU_LogWrite( str, WRFU_LOG_INFO )
-!TBH  ENDIF
-!TBH#endif
 END SUBROUTINE wrf_message2
 
 SUBROUTINE wrf_error_fatal3( file_str, line, str )

@@ -278,7 +278,7 @@ state   integer number_at_same_level    -        -          -         -     -   
 # State for derived time quantities.  
 state   integer itimestep      -        -          -         -     rh         "itimestep"             ""         ""      
 state   real    xtime          -        -          -         -     rh         "xtime"                 "minutes since simulation start"         ""      
-state   real    julian         -        -          -         -     -          "julian"                "day of year"         ""      
+state   real    julian         -        -          -         -     -          "julian"                "day of year, 0.0 at 0Z on 1 Jan."         "days"      
 
 
 # input file descriptor for lbcs on parent domain                                               

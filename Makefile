@@ -47,9 +47,6 @@ framework_only : configcheck
 	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" framework
 	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" shared
 
-#TBH:  for now, build wrf.exe, wrf_ESMFApp.exe, and wrf_SST_ESMF.exe when ESMF_COUPLING is set
-#TBH:  Either wrf.exe or wrf_ESMFApp.exe can be used for stand-alone testing in this case
-#TBH:  wrf_SST_ESMF.exe is a coupled application
 wrf : framework_only
 	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" physics
 	if [ $(WRF_CHEM) -eq 1 ]    ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" chemics ; fi
@@ -60,8 +57,6 @@ wrf : framework_only
 	( cd run ; /bin/rm -f wrf.exe ; ln -s ../main/wrf.exe . )
 	if [ $(ESMF_COUPLING) -eq 1 ] ; then \
 	  ( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em em_wrf_ESMFApp ) ; \
-	  ( cd run ; /bin/rm -f wrf_ESMFApp.exe ; ln -s ../main/wrf_ESMFApp.exe . ) ; \
-	  ( cd run ; /bin/rm -f wrf_SST_ESMF.exe ; ln -s ../main/wrf_SST_ESMF.exe . ) ; \
 	fi
 
 ### 3.a.  rules to build the framework and then the experimental core
@@ -79,17 +74,10 @@ nmm_wrf : wrf
 
 #  Eulerian mass coordinate initializations
 
-#TBH:  for now, link wrf.exe, wrf_ESMFApp.exe, and wrf_SST_ESMF.exe when ESMF_COUPLING is set
-#TBH:  Either wrf.exe or wrf_ESMFApp.exe can be used for stand-alone testing in this case
-#TBH:  wrf_SST_ESMF.exe is a coupled application
 em_quarter_ss : wrf
 	@ echo '--------------------------------------'
 	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=quarter_ss em_ideal )
 	( cd test/em_quarter_ss ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
-	if [ $(ESMF_COUPLING) -eq 1 ] ; then \
-	  ( cd test/em_quarter_ss ; /bin/rm -f wrf_ESMFApp.exe ; ln -s ../../main/wrf_ESMFApp.exe . ) ; \
-	  ( cd test/em_quarter_ss ; /bin/rm -f wrf_SST_ESMF.exe ; ln -s ../../main/wrf_SST_ESMF.exe . ) ; \
-	fi
 	( cd test/em_quarter_ss ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
 	( cd test/em_quarter_ss ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
 	( cd test/em_quarter_ss ; /bin/rm -f gribmap.txt ; ln -s ../../run/gribmap.txt . )
@@ -98,17 +86,10 @@ em_quarter_ss : wrf
 	( cd run ; /bin/rm -f namelist.input ; ln -s ../test/em_quarter_ss/namelist.input . )
 	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_quarter_ss/input_sounding . )
 
-#TBH:  for now, link wrf.exe, wrf_ESMFApp.exe, and wrf_SST_ESMF.exe when ESMF_COUPLING is set
-#TBH:  Either wrf.exe or wrf_ESMFApp.exe can be used for stand-alone testing in this case
-#TBH:  wrf_SST_ESMF.exe is a coupled application
 em_squall2d_x : wrf
 	@ echo '--------------------------------------'
 	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=squall2d_x em_ideal )
 	( cd test/em_squall2d_x ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
-	if [ $(ESMF_COUPLING) -eq 1 ] ; then \
-	  ( cd test/em_squall2d_x ; /bin/rm -f wrf_ESMFApp.exe ; ln -s ../../main/wrf_ESMFApp.exe . ) ; \
-	  ( cd test/em_squall2d_x ; /bin/rm -f wrf_SST_ESMF.exe ; ln -s ../../main/wrf_SST_ESMF.exe . ) ; \
-	fi
 	( cd test/em_squall2d_x ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
 	( cd test/em_squall2d_x ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
 	( cd test/em_squall2d_x ; /bin/rm -f gribmap.txt ; ln -s ../../run/gribmap.txt . )
@@ -117,17 +98,10 @@ em_squall2d_x : wrf
 	( cd run ; /bin/rm -f namelist.input ; ln -s ../test/em_squall2d_x/namelist.input . )
 	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_squall2d_x/input_sounding . )
 
-#TBH:  for now, link wrf.exe, wrf_ESMFApp.exe, and wrf_SST_ESMF.exe when ESMF_COUPLING is set
-#TBH:  Either wrf.exe or wrf_ESMFApp.exe can be used for stand-alone testing in this case
-#TBH:  wrf_SST_ESMF.exe is a coupled application
 em_squall2d_y : wrf
 	@ echo '--------------------------------------'
 	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=squall2d_y em_ideal )
 	( cd test/em_squall2d_y ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
-	if [ $(ESMF_COUPLING) -eq 1 ] ; then \
-	  ( cd test/em_squall2d_y ; /bin/rm -f wrf_ESMFApp.exe ; ln -s ../../main/wrf_ESMFApp.exe . ) ; \
-	  ( cd test/em_squall2d_y ; /bin/rm -f wrf_SST_ESMF.exe ; ln -s ../../main/wrf_SST_ESMF.exe . ) ; \
-	fi
 	( cd test/em_squall2d_y ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
 	( cd test/em_squall2d_y ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
 	( cd test/em_squall2d_y ; /bin/rm -f gribmap.txt ; ln -s ../../run/gribmap.txt . )
@@ -136,17 +110,10 @@ em_squall2d_y : wrf
 	( cd run ; /bin/rm -f namelist.input ; ln -s ../test/em_squall2d_y/namelist.input . )
 	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_squall2d_y/input_sounding . )
 
-#TBH:  for now, link wrf.exe, wrf_ESMFApp.exe, and wrf_SST_ESMF.exe when ESMF_COUPLING is set
-#TBH:  Either wrf.exe or wrf_ESMFApp.exe can be used for stand-alone testing in this case
-#TBH:  wrf_SST_ESMF.exe is a coupled application
 em_b_wave : wrf
 	@ echo '--------------------------------------'
 	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=b_wave em_ideal )
 	( cd test/em_b_wave ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
-	if [ $(ESMF_COUPLING) -eq 1 ] ; then \
-	  ( cd test/em_b_wave ; /bin/rm -f wrf_ESMFApp.exe ; ln -s ../../main/wrf_ESMFApp.exe . ) ; \
-	  ( cd test/em_b_wave ; /bin/rm -f wrf_SST_ESMF.exe ; ln -s ../../main/wrf_SST_ESMF.exe . ) ; \
-	fi
 	( cd test/em_b_wave ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
 	( cd test/em_b_wave ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
 	( cd test/em_b_wave ; /bin/rm -f gribmap.txt ; ln -s ../../run/gribmap.txt . )
@@ -160,16 +127,46 @@ convert_em : framework_only
             ( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" convert_em ) ; \
         fi
 
-#TBH:  for now, link wrf.exe, wrf_ESMFApp.exe, and wrf_SST_ESMF.exe when ESMF_COUPLING is set
-#TBH:  Either wrf.exe or wrf_ESMFApp.exe can be used for stand-alone testing in this case
-#TBH:  wrf_SST_ESMF.exe is a coupled application
+#TBH:  For now, link wrf.exe, wrf_ESMFApp.exe, and wrf_SST_ESMF.exe into 
+#TBH:  test/em_esmf_exp when ESMF_COUPLING is set.  Either wrf.exe or 
+#TBH:  wrf_ESMFApp.exe can be used for stand-alone testing in this case.  
+#TBH:  wrf_SST_ESMF.exe is a coupled application.  Note that single make 
+#TBH:  target $(SOLVER)_wrf_ESMFApp builds both wrf_ESMFApp.exe and 
+#TBH:  wrf_SST_ESMF.exe.  
+#TBH:  Is this a clear violation of the DRY principle?  Oh yeah, you bet.  
 em_real : wrf
 	@ echo '--------------------------------------'
 	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=real em_real )
 	( cd test/em_real ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
 	if [ $(ESMF_COUPLING) -eq 1 ] ; then \
-	  ( cd test/em_real ; /bin/rm -f wrf_ESMFApp.exe ; ln -s ../../main/wrf_ESMFApp.exe . ) ; \
-	  ( cd test/em_real ; /bin/rm -f wrf_SST_ESMF.exe ; ln -s ../../main/wrf_SST_ESMF.exe . ) ; \
+	  ( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=real em_wrf_ESMFApp ) ; \
+	  ( cd test/em_esmf_exp ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . ) ; \
+	  ( cd test/em_esmf_exp ; /bin/rm -f wrf_ESMFApp.exe ; ln -s ../../main/wrf_ESMFApp.exe . ) ; \
+	  ( cd test/em_esmf_exp ; /bin/rm -f wrf_SST_ESMF.exe ; ln -s ../../main/wrf_SST_ESMF.exe . ) ; \
+	  ( cd test/em_esmf_exp ; /bin/rm -f real.exe ; ln -s ../../main/real.exe . ) ; \
+	  ( cd test/em_esmf_exp ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . ) ; \
+	  ( cd test/em_esmf_exp ; /bin/rm -f ETAMPNEW_DATA RRTM_DATA ; \
+               ln -sf ../../run/ETAMPNEW_DATA . ;                      \
+               ln -sf ../../run/RRTM_DATA . ;                          \
+               ln -sf ../../run/CAM_ABS_DATA . ;                       \
+               ln -sf ../../run/CAM_AEROPT_DATA . ;                    \
+               ln -sf ../../run/ozone.formatted . ;                    \
+               ln -sf ../../run/ozone_lat.formatted . ;                \
+               ln -sf ../../run/ozone_plev.formatted . ;               \
+               if [ $(RWORDSIZE) -eq 8 ] ; then                        \
+                  ln -sf ../../run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA ;   \
+                  ln -sf ../../run/RRTM_DATA_DBL RRTM_DATA ;           \
+               fi ) ; \
+	  ( cd test/em_esmf_exp ; /bin/rm -f GENPARM.TBL ; ln -s ../../run/GENPARM.TBL . ) ; \
+	  ( cd test/em_esmf_exp ; /bin/rm -f LANDUSE.TBL ; ln -s ../../run/LANDUSE.TBL . ) ; \
+	  ( cd test/em_esmf_exp ; /bin/rm -f SOILPARM.TBL ; ln -s ../../run/SOILPARM.TBL . ) ; \
+	  ( cd test/em_esmf_exp ; /bin/rm -f urban_param.tbl ; ln -s ../../run/urban_param.tbl . ) ; \
+	  ( cd test/em_esmf_exp ; /bin/rm -f VEGPARM.TBL ; ln -s ../../run/VEGPARM.TBL . ) ; \
+	  ( cd test/em_esmf_exp ; /bin/rm -f tr49t67 ; ln -s ../../run/tr49t67 . ) ; \
+	  ( cd test/em_esmf_exp ; /bin/rm -f tr49t85 ; ln -s ../../run/tr49t85 . ) ; \
+	  ( cd test/em_esmf_exp ; /bin/rm -f tr67t85 ; ln -s ../../run/tr67t85 . ) ; \
+	  ( cd test/em_esmf_exp ; /bin/rm -f gribmap.txt ; ln -s ../../run/gribmap.txt . ) ; \
+	  ( cd test/em_esmf_exp ; /bin/rm -f grib2map.tbl ; ln -s ../../run/grib2map.tbl . ) ; \
 	fi
 	( cd test/em_real ; /bin/rm -f real.exe ; ln -s ../../main/real.exe . )
 	( cd test/em_real ; /bin/rm -f ndown.exe ; ln -s ../../main/ndown.exe . )
@@ -203,17 +200,10 @@ em_real : wrf
 	( cd run ; /bin/rm -f namelist.input ; ln -s ../test/em_real/namelist.input . )
 
 
-#TBH:  for now, link wrf.exe, wrf_ESMFApp.exe, and wrf_SST_ESMF.exe when ESMF_COUPLING is set
-#TBH:  Either wrf.exe or wrf_ESMFApp.exe can be used for stand-alone testing in this case
-#TBH:  wrf_SST_ESMF.exe is a coupled application
 em_hill2d_x : wrf
 	@ echo '--------------------------------------'
 	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=hill2d_x em_ideal )
 	( cd test/em_hill2d_x ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
-	if [ $(ESMF_COUPLING) -eq 1 ] ; then \
-	  ( cd test/em_hill2d_x ; /bin/rm -f wrf_ESMFApp.exe ; ln -s ../../main/wrf_ESMFApp.exe . ) ; \
-	  ( cd test/em_hill2d_x ; /bin/rm -f wrf_SST_ESMF.exe ; ln -s ../../main/wrf_SST_ESMF.exe . ) ; \
-	fi
 	( cd test/em_hill2d_x ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
 	( cd test/em_hill2d_x ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
 	( cd test/em_hill2d_x ; /bin/rm -f gribmap.txt ; ln -s ../../run/gribmap.txt . )
@@ -222,17 +212,10 @@ em_hill2d_x : wrf
 	( cd run ; /bin/rm -f namelist.input ; ln -s ../test/em_hill2d_x/namelist.input . )
 	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_hill2d_x/input_sounding . )
 
-#TBH:  for now, link wrf.exe, wrf_ESMFApp.exe, and wrf_SST_ESMF.exe when ESMF_COUPLING is set
-#TBH:  Either wrf.exe or wrf_ESMFApp.exe can be used for stand-alone testing in this case
-#TBH:  wrf_SST_ESMF.exe is a coupled application
 em_grav2d_x : wrf
 	@ echo '--------------------------------------'
 	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=grav2d_x em_ideal )
 	( cd test/em_grav2d_x ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
-	if [ $(ESMF_COUPLING) -eq 1 ] ; then \
-	  ( cd test/em_grav2d_x ; /bin/rm -f wrf_ESMFApp.exe ; ln -s ../../main/wrf_ESMFApp.exe . ) ; \
-	  ( cd test/em_grav2d_x ; /bin/rm -f wrf_SST_ESMF.exe ; ln -s ../../main/wrf_SST_ESMF.exe . ) ; \
-	fi
 	( cd test/em_grav2d_x ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
 	( cd test/em_grav2d_x ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
 	( cd test/em_grav2d_x ; /bin/rm -f gribmap.txt ; ln -s ../../run/gribmap.txt . )
@@ -261,17 +244,10 @@ bio_conv : wrf
 
 #### nmm converter
 
-#TBH:  for now, link wrf.exe, wrf_ESMFApp.exe, and wrf_SST_ESMF.exe when ESMF_COUPLING is set
-#TBH:  Either wrf.exe or wrf_ESMFApp.exe can be used for stand-alone testing in this case
-#TBH:  wrf_SST_ESMF.exe is a coupled application
 nmm_real : nmm_wrf
 	@ echo '--------------------------------------'
 	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=nmm IDEAL_CASE=real real_nmm )
 	( cd test/nmm_real ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
-	if [ $(ESMF_COUPLING) -eq 1 ] ; then \
-	  ( cd test/nmm_real ; /bin/rm -f wrf_ESMFApp.exe ; ln -s ../../main/wrf_ESMFApp.exe . ) ; \
-	  ( cd test/nmm_real ; /bin/rm -f wrf_SST_ESMF.exe ; ln -s ../../main/wrf_SST_ESMF.exe . ) ; \
-	fi
 	( cd test/nmm_real ; /bin/rm -f real_nmm.exe ; ln -s ../../main/real_nmm.exe . )
 	( cd test/nmm_real ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
 	( cd test/nmm_real ; /bin/rm -f ETAMPNEW_DATA RRTM_DATA ;    \

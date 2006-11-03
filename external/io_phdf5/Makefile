@@ -21,7 +21,7 @@ libwrfio_phdf5.a:		$(OBJS)
 			$(RANLIB) libwrfio_phdf5.a
 
 wrf-phdf5support.o:      wrf-phdf5support.F90 
-			$(CPP) wrf-phdf5support.F90 | $(M4) - > wrf-phdf5support.f90
+			$(CPP) -I../ioapi_share wrf-phdf5support.F90 | $(M4) - > wrf-phdf5support.f90
 			$(FC) $(FFLAGS) -c wrf-phdf5support.f90
 wrf-phdf5attr.o:         wrf-phdf5attr.F90 wrf-phdf5support.o
 			$(CPP) wrf-phdf5attr.F90 | $(M4) - > wrf-phdf5attr.f90

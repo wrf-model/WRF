@@ -388,7 +388,7 @@ state integer nodyn_dummy - dyn_nodyn -  -  -  "" "" ""
 
 # State for derived time quantities.  
 state   real    xtime          -        -          -         -     -        "xtime"                 "minutes since simulation start"         ""      
-state   real    julian         -        -          -         -     -        "julian"                "day of year"         ""      
+state   real    julian         -        -          -         -     -        "julian"                "day of year, 0.0 at 0Z on 1 Jan."         "days"      
 
 state    real   dtbc            -        misc     -         -      ir       "dtbc"                 "TIME SINCE BOUNDARY READ"         ""
 # input file descriptor for lbcs on parent domain

@@ -1152,7 +1152,7 @@ CONTAINS
 !     snow
 !
             value = max(qmin,qrs(i,k,2))
-            source = -(psdep(i,k)+psaut(i,k)-pgaut(i,k)              &
+            source = -(psdep(i,k)+psaut(i,k)-pgaut(i,k)+psacw(i,k)      &
                      +piacr(i,k)*delta3+praci(i,k)*delta3               &
                      -pracs(i,k)*(1.-delta2)+psacr(i,k)*delta2          &
                      +psaci(i,k)-pgacs(i,k) )*dtcld
@@ -1161,6 +1161,7 @@ CONTAINS
               psdep(i,k) = psdep(i,k)*factor
               psaut(i,k) = psaut(i,k)*factor
               pgaut(i,k) = pgaut(i,k)*factor
+              psacw(i,k) = psacw(i,k)*factor
               piacr(i,k) = piacr(i,k)*factor
               praci(i,k) = praci(i,k)*factor
               psaci(i,k) = psaci(i,k)*factor
@@ -1172,7 +1173,7 @@ CONTAINS
 !     graupel
 !
             value = max(qmin,qrs(i,k,3))
-            source = -(pgdep(i,k)+pgaut(i,k)+psacw(i,k)               &
+            source = -(pgdep(i,k)+pgaut(i,k)               &
                      +piacr(i,k)*(1.-delta3)+praci(i,k)*(1.-delta3)     &
                      +psacr(i,k)*(1.-delta2)+pracs(i,k)*(1.-delta2)     &
                      +pgaci(i,k)+pgacw(i,k)+pgacr(i,k)+pgacs(i,k))*dtcld
@@ -1180,7 +1181,6 @@ CONTAINS
               factor = value/source
               pgdep(i,k) = pgdep(i,k)*factor
               pgaut(i,k) = pgaut(i,k)*factor
-              psacw(i,k) = psacw(i,k)*factor
               piacr(i,k) = piacr(i,k)*factor
               praci(i,k) = praci(i,k)*factor
               psacr(i,k) = psacr(i,k)*factor
@@ -1203,13 +1203,13 @@ CONTAINS
             qci(i,k,2) = max(qci(i,k,2)-(psaut(i,k)+praci(i,k)          &
                            +psaci(i,k)+pgaci(i,k)-pigen(i,k)-pidep(i,k))   &
                            *dtcld,0.)
-            qrs(i,k,2) = max(qrs(i,k,2)+(psdep(i,k)+psaut(i,k)         &
+            qrs(i,k,2) = max(qrs(i,k,2)+(psdep(i,k)+psaut(i,k)+psacw(i,k)  &
                            -pgaut(i,k)+piacr(i,k)*delta3                &
                            +praci(i,k)*delta3+psaci(i,k)-pgacs(i,k)      &
                            -pracs(i,k)*(1.-delta2)+psacr(i,k)*delta2)    &
                            *dtcld,0.)
             qrs(i,k,3) = max(qrs(i,k,3)+(pgdep(i,k)+pgaut(i,k)         &
-                           +psacw(i,k)+piacr(i,k)*(1.-delta3)            &
+                           +piacr(i,k)*(1.-delta3)            &
                            +praci(i,k)*(1.-delta3)+psacr(i,k)*(1.-delta2)&
                            +pracs(i,k)*(1.-delta2)+pgaci(i,k)+pgacw(i,k) &
                            +pgacr(i,k)+pgacs(i,k))*dtcld,0.)

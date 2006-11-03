@@ -585,7 +585,11 @@ CONTAINS
                  SHDFAC = 0.8 
                  ALBEDOK =0.2
                  ALBBRD  =0.2
+		 IF ( FRC_URB2D(I,J) < 0.99 ) THEN
            T1= ( TSK(I,J) -FRC_URB2D(I,J) * TS_URB2D (I,J) )/ (1-FRC_URB2D(I,J))
+	         ELSE
+		 T1 = TSK(I,J)
+                 ENDIF
                 ENDIF
            ELSE
                  IF( IVGTYP(I,J) == 1 .or. IVGTYP(I,J) == 31 .or. &

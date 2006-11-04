@@ -645,6 +645,24 @@ cat >! phys_real_1  << EOF
  ensdim                              = 144,
 EOF
 
+cat >! dyn_real_SAFE  << EOF
+ pd_moist                            = .false., .false., .false.,
+ pd_scalar                           = .false., .false., .false.,
+ pd_chem                             = .false., .false., .false.,
+ pd_tke                              = .false., .false., .false.,
+EOF
+
+cat >! dyn_real_1  << EOF
+ pd_moist                            = .true.,  .true.,  .false.,
+ pd_scalar                           = .false., .false., .false.,
+ pd_chem                             = .false., .false., .false.,
+ pd_tke                              = .false., .false., .false.,
+EOF
+
+cat >! time_real_1  << EOF
+ auxinput1_inname                    = "met_em.d<domain>.<date>"
+EOF
+
 cat >! phys_real_2 << EOF
  mp_physics                          = 4,     4,     4,
  ra_lw_physics                       = 1,     1,     1,
@@ -667,6 +685,17 @@ cat >! phys_real_2 << EOF
  maxens2                             = 3,
  maxens3                             = 16,
  ensdim                              = 144,
+EOF
+
+cat >! dyn_real_2  << EOF
+ pd_moist                            = .true.,  .true.,  .false.,
+ pd_scalar                           = .false., .false., .false.,
+ pd_chem                             = .false., .false., .false.,
+ pd_tke                              = .false., .false., .false.,
+EOF
+
+cat >! time_real_2  << EOF
+ auxinput1_inname                    = "wrf_real_input_em.d<domain>.<date>"
 EOF
 
 cat >! phys_real_3 << EOF
@@ -693,6 +722,17 @@ cat >! phys_real_3 << EOF
  ensdim                              = 144,
 EOF
 
+cat >! dyn_real_3  << EOF
+ pd_moist                            = .false., .false., .false.,
+ pd_scalar                           = .false., .false., .false.,
+ pd_chem                             = .false., .false., .false.,
+ pd_tke                              = .false., .false., .false.,
+EOF
+
+cat >! time_real_3  << EOF
+ auxinput1_inname                    = "met_em.d<domain>.<date>"
+EOF
+
 cat >! phys_real_4 << EOF
  mp_physics                          = 4,     4,     4,
  ra_lw_physics                       = 1,     1,     1,
@@ -716,6 +756,17 @@ cat >! phys_real_4 << EOF
  maxens2                             = 3,
  maxens3                             = 16,
  ensdim                              = 144,
+EOF
+
+cat >! dyn_real_4  << EOF
+ pd_moist                            = .false., .false., .false.,
+ pd_scalar                           = .false., .false., .false.,
+ pd_chem                             = .false., .false., .false.,
+ pd_tke                              = .false., .false., .false.,
+EOF
+
+cat >! time_real_4  << EOF
+ auxinput1_inname                    = "wrf_real_input_em.d<domain>.<date>"
 EOF
 
 cat >! fdda_real_1 << EOF
@@ -1847,6 +1898,12 @@ banner 12
 
 				if ( $CHEM != TRUE ) then
 					cp ${CUR_DIR}/phys_real_${phys_option} phys_opt
+					if ( ( $RSL_LITE == TRUE ) && ( $NESTED != TRUE ) ) then
+						cp ${CUR_DIR}/dyn_real_${phys_option} dyn_opt
+					else
+						cp ${CUR_DIR}/dyn_real_SAFE dyn_opt
+					endif
+					cp ${CUR_DIR}/time_real_${phys_option} time_opt
 					cp ${CUR_DIR}/dom_real dom_real
 					if ( -e fdda_opt ) rm fdda_opt
 					cat " grid_fdda=0" > fdda_opt
@@ -1882,6 +1939,8 @@ EOF
 	
 					cp ${CUR_DIR}/io_format io_format
 					sed -e '/^ mp_physics/,/ensdim/d' -e '/^ &physics/r ./phys_opt' \
+					    -e '/^ pd_moist/,/pd_tke/d' -e '/^ v_sca_adv_order/r ./dyn_opt' \
+					    -e '/^ auxinput1_inname/d' -e '/^ debug_level/r ./time_opt' \
 					    -e '/^ time_step /,/^ smooth_option/d' -e '/^ &domains/r ./dom_real' \
 					    -e '/^ io_form_history /,/^ io_form_boundary/d' -e '/^ restart_interval/r ./io_format' \
 					    -e 's/ frames_per_outfile *= [0-9][0-9]*/ frames_per_outfile = 200/g' \

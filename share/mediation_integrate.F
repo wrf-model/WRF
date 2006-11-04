@@ -1623,8 +1623,8 @@ SUBROUTINE med_auxinput_in ( grid , stream, config_flags )
          CALL open_u_dataset ( grid%auxinput10_oid, TRIM(auxname), grid ,  &
                                config_flags , input_aux_model_input10 , n2, ierr )
        CASE ( 11 )
-         CALL open_u_dataset ( grid%auxinput10_oid, TRIM(auxname), grid ,  &
-                               config_flags , input_aux_model_input10 , n2, ierr )
+         CALL open_u_dataset ( grid%auxinput11_oid, TRIM(auxname), grid ,  &
+                               config_flags , input_aux_model_input11 , n2, ierr )
      END SELECT
      IF ( ierr .NE. 0 ) THEN
        CALL wrf_message( message )

@@ -3,7 +3,7 @@
 
 MODULE module_diagnostics
 CONTAINS
-   SUBROUTINE diagnostics(                                            &
+   SUBROUTINE diagnostic_output_calc(                                 &
                       ids,ide, jds,jde, kds,kde,                      &
                       ims,ime, jms,jme, kms,kme,                      &
                       ips,ipe, jps,jpe, kps,kpe,                      & ! patch  dims
@@ -251,6 +251,6 @@ CONTAINS
    ENDDO
    !$OMP END PARALLEL DO
 
-   END SUBROUTINE diagnostics
+   END SUBROUTINE diagnostic_output_calc
 
 END MODULE module_diagnostics

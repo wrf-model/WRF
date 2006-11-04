@@ -1156,14 +1156,14 @@ BENCH_END(hor_diff_tim)
 
      ENDIF
 
+# ifdef DM_PARALLEL
+#     include "HALO_OBS_NUDGE.inc"
+#endif
 !***********************************************************************
 ! This section for obs nudging
       !$OMP PARALLEL DO   &
       !$OMP PRIVATE ( ij )
 
-# ifdef DM_PARALLEL
-#     include "HALO_OBS_NUDGE.inc"
-#endif
       DO ij = 1 , grid%num_tiles
 
          CALL fddaobs_driver (grid%grid_id, model_config_rec%grid_id,  &
@@ -3301,7 +3301,7 @@ BENCH_END(bc_2d_tim)
 
          CALL wrf_debug ( 200 , ' call diagnostic_driver' )
    
-         CALL diagnostics(                                                &
+         CALL diagnostic_output_calc(                                     &
      &              DPSDT=grid%dpsdt   ,DMUDT=grid%dmudt                  &
      &             ,P_PHY=p_phy   ,PK1M=grid%pk1m                         &
      &             ,MU_2=grid%em_mu_2  ,MU_2M=grid%mu_2m                  &

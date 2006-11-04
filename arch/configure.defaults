@@ -9647,6 +9647,131 @@ module_domain.o :
 	$(FC) -c -g $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) -qnoopt -qnohot $*.f90
 
 ###########################################################
+#ARCH Darwin		(single-threaded, no nesting, USES: gcc-3.3, xlf cpp, SystemStubs)
+#     
+#     Using -qfloat=nomaf option can result in identical results with
+#           non-optimized and optimized results (suggested by Fovell of UCLA)
+#           One may turn on by uncommenting it in FCOPTIM line
+#
+FC              =       xlf90_r
+SFC		=	$(FC)
+LD              =       xlf90_r
+#CC              =       cc_r
+CC              =       gcc-3.3
+SCC		=	$(CC)
+RWORDSIZE       = $(NATIVE_RWORDSIZE)
+PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
+CFLAGS          =       -DNOUNDERSCORE -DLANDREAD_STUB -I /usr/include/sys -DMACOS
+FCOPTIM         =       -O3 -qarch=auto #-qfloat=nomaf
+FCDEBUG         =       # -qnoopt -qfullpath
+FCBASEOPTS      =       -qsave $(FCDEBUG) -qmaxmem=32767 -qspillsize=32767 -w 
+FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
+FCSUFFIX        =       -qsuffix=f=f90
+# machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
+ESMF_LIB_FLAGS  =       
+ESMF_IO_LIB     =       ESMFIOLIB
+ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
+INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
+                        -I../frame -I../share -I../phys -I../inc -I../chem
+ARCHFLAGS       =       -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+                        CONFIGURE_NETCDF_FLAG \
+			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DLANDREAD_STUB -DMAC_KLUDGE
+#			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DNATIVE_MASSV -DMACOS
+PERL            =       CONFIGURE_PERL_PATH
+REGISTRY        =       Registry
+#LIB             =       CONFIGURE_NETCDF_LIB_PATH -lmass -lmassv 
+LIB             =       CONFIGURE_NETCDF_LIB_PATH \
+                        -L../external/io_int -lwrfio_int \
+                        -L../external/io_grib1 -lio_grib1 \
+                        CONFIGURE_GRIB2_LIB \
+                        -L../external/io_grib_share -lio_grib_share \
+			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
+
+LDFLAGS         =	 -Wl,-stack_size,10000000,-stack_addr,0xc0000000 CONFIGURE_LDFLAGS -L/usr/lib -lSystemStubs
+ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
+CPP             =       /opt/ibmcmp/xlf/8.1/exe/cpp -C -P
+#CPP             =       /usr/bin/cpp  -C -P -xassembler-with-cpp
+POUND_DEF	=	-DNONSTANDARD_SYSTEM -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
+CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) $(COREDEFS) $(ENVCOMPDEFS) $(POUND_DEF) 
+AR              =       ar ru
+M4              =       m4 -B 14000
+RANLIB          =       ranlib
+NETCDFPATH	=	CONFIGURE_NETCDF_PATH
+CC_TOOLS        =       cc
+
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time
+
+module_dm.F :
+	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
+
+wrfio_nf : 
+	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" )
+
+wrfio_int : 
+	( cd ../external/io_int ; \
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" all )
+
+wrfio_grib_share :
+	( cd ../external/io_grib_share ; \
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCSUFFIX) -qarch=auto -qzerosize" archive)
+
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; \
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCSUFFIX) -qarch=auto -qzerosize" archive)
+
+wrfio_grib2 :
+	( cd ../external/io_grib2 ; \
+          make CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC -qcpluscmt" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCSUFFIX) -qarch=auto -qzerosize" FREE="" FIXED="-qfixed" archive)
+
+esmf_time : 
+	( cd ../external/esmf_time_f90 ; \
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+solve_interface.o : solve_interface.F
+	$(RM) $@
+	$(CPP) -I../inc $(CPPFLAGS) $*.F > $*.f90
+	$(FC) -c -qfree=f90 -qspillsize=32767 -I. $(PROMOTION) $(MODULE_DIRS) $(FCSUFFIX) $*.f90
+
+# compile these without high optimization to speed compile
+shift_domain_em.o : shift_domain_em.F
+module_io_mm5.o : module_io_mm5.F
+module_si_io.o : module_si_io.F
+module_io_wrf.o : module_io_wrf.F
+module_domain.o : module_domain.F
+module_start.o : module_start.F
+module_initialize.o : module_initialize.F
+module_initialize_b_wave.o : module_initialize_b_wave.F
+module_initialize_hill2d_x.o : module_initialize_hill2d_x.F
+module_initialize_quarter_ss.o : module_initialize_quarter_ss.F
+module_initialize_squall2d_x.o : module_initialize_squall2d_x.F
+module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
+module_initialize_real.o : module_initialize_real.F
+module_dm.o : module_dm.F
+start_domain.o : start_domain.F
+solve_em.o : solve_em.F
+mediation_interp_domain.o : mediation_interp_domain.F
+mediation_force_domain.o : mediation_force_domain.F
+mediation_feedback_domain.o : mediation_feedback_domain.F
+convert_nmm.o : convert_nmm.F
+module_configure.o : module_configure.F
+
+module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
+module_start.o module_initialize.o module_initialize_b_wave.o  \
+module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
+module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
+module_initialize_real.o module_dm.o \
+shift_domain_em.o                                              \
+mediation_interp_domain.o \
+module_configure.o                                             \
+solve_em.o \
+convert_nmm.o :
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b 
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
+	$(RM) $*.b
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) $*.f90
+
+###########################################################
 #ARCH    PC Linux x86_64 (IA64 and Opteron), PathScale 2.1 or higher (Single-threaded, no nesting)
 #
 FC              =       pathf90

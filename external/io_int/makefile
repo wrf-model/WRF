@@ -18,7 +18,7 @@ libwrfio_int.a:		$(OBJS)
 			$(RANLIB) libwrfio_int.a
 
 io_int.o:               io_int.F90 module_internal_header_util.o
-			$(CPP1) io_int.F90 -I../ioapi_share | $(M4) - > io_int.f
+			$(CPP1)  -I../ioapi_share io_int.F90 | $(M4) - > io_int.f
 			$(FC) $(FFLAGS) -I. -I../ioapi_share -c io_int.f
 			/bin/rm -f module_internal_header_util.o
 			/bin/rm -f intio_tags.h
@@ -28,7 +28,7 @@ module_internal_header_util.o :
 			cp ../../frame/module_internal_header_util.F module_internal_header_util.b
 			cp ../../inc/intio_tags.h intio_tags.h
 			/bin/rm -f module_internal_header_util.f
-			$(CPP1) module_internal_header_util.b -I../ioapi_share > module_internal_header_util.f
+			$(CPP1)  -I../ioapi_share module_internal_header_util.b > module_internal_header_util.f
 			$(FC) $(FFLAGS) -I. -c module_internal_header_util.f
 			/bin/rm -f module_internal_header_util.b
 
@@ -36,7 +36,7 @@ diffwrf:                diffwrf.F ../../frame/pack_utils.o ../../frame/module_ma
 				../../frame/wrf_debug.o libwrfio_int.a $(ESMF_MOD_DEPENDENCE)
 			if [ -f ../../frame/pack_utils.o ] ; then \
 			mv diffwrf.F diffwrf.F90    ; \
-			$(CPP1) diffwrf.F90 -I../ioapi_share > diffwrf.f  ; \
+			$(CPP1)  -I../ioapi_share diffwrf.F90 > diffwrf.f  ; \
 			$(SFC) -c $(FFLAGS) -I../ioapi_share diffwrf.f    ; \
 			mv diffwrf.F90 diffwrf.F ; \
 			$(SFC) $(FFLAGS) $(LDFLAGS) -o diffwrf diffwrf.o $(OBJSL) \

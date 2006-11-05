@@ -2422,9 +2422,6 @@ SUBROUTINE wrf_write_field1 ( DataHandle , DateStr , VarName , Field , FieldType
              starts(1:3) = PatchStart(1:3) ; ends(1:3) = PatchStart(1:3)-1
           ENDIF
 
-write(0,*)'calling ext_pnc_write_field ',Trim(VarName),starts(1:3),ends(1:3),TRIM(MemoryOrder),' ',TRIM(Stagger)
-write(0,*)'                            ',bdy_mask(P_XSB),bdy_mask(P_XEB),bdy_mask(P_YSB),bdy_mask(P_YEB)
-
                CALL ext_pnc_write_field(                  &
                                        Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
                                        DomainDesc , MemoryOrder , Stagger , DimNames ,              &

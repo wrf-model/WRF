@@ -53,9 +53,7 @@ subroutine ext_pnc_RealFieldIO(IO,NCID,VarID,VStart,VCount,Data,Status)
   VCount_mpi = VCount
 
   if(IO == 'write') then
-write(0,*)'calling NFMPI_PUT_VARA_REAL_ALL ',NCID,VarID,VStart_mpi,VCount_mpi
     stat = NFMPI_PUT_VARA_REAL_ALL(NCID,VarID,VStart_mpi,VCount_mpi,Data)
-write(0,*)'back from NFMPI_PUT_VARA_REAL_ALL ',stat
   else
     stat = NFMPI_GET_VARA_REAL_ALL(NCID,VarID,VStart_mpi,VCount_mpi,Data)
   endif
@@ -87,9 +85,7 @@ subroutine ext_pnc_DoubleFieldIO(IO,NCID,VarID,VStart,VCount,Data,Status)
   VCount_mpi = VCount
 
   if(IO == 'write') then
-write(0,*)'calling NFMPI_PUT_VARA_DOUBLE_ALL '
     stat = NFMPI_PUT_VARA_DOUBLE_ALL(NCID,VarID,VStart_mpi,VCount_mpi,Data)
-write(0,*)'back from NFMPI_PUT_VARA_DOUBLE_ALL ',stat
   else
     stat = NFMPI_GET_VARA_DOUBLE_ALL(NCID,VarID,VStart_mpi,VCount_mpi,Data)
   endif
@@ -121,9 +117,7 @@ subroutine ext_pnc_IntFieldIO(IO,NCID,VarID,VStart,VCount,Data,Status)
   VCount_mpi = VCount
 
   if(IO == 'write') then
-write(0,*)'calling NFMPI_PUT_VARA_INT_ALL '
     stat = NFMPI_PUT_VARA_INT_ALL(NCID,VarID,VStart_mpi,VCount_mpi,Data)
-write(0,*)'back from NFMPI_PUT_VARA_INT_ALL ',stat
   else
     stat = NFMPI_GET_VARA_INT_ALL(NCID,VarID,VStart_mpi,VCount_mpi,Data)
   endif
@@ -175,9 +169,7 @@ subroutine ext_pnc_LogicalFieldIO(IO,NCID,VarID,VStart,VCount,Data,Status)
         enddo
       enddo
     enddo
-write(0,*)'calling NFMPI_PUT_VARA_INT_ALL (logical)'
     stat = NFMPI_PUT_VARA_INT_ALL(NCID,VarID,VStart_mpi,VCount_mpi,Buffer)
-write(0,*)'back from NFMPI_PUT_VARA_INT_ALL (logical)',stat
   else
     stat = NFMPI_GET_VARA_INT_ALL(NCID,VarID,VStart_mpi,VCount_mpi,Buffer)
     Data = Buffer == 1

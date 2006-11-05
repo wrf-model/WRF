@@ -656,9 +656,6 @@ VCount(:) = 1
   VCount(1:NDim) = Length(1:NDim)
   VStart(NDim+1) = TimeIndex
   VCount(NDim+1) = 1
-write(0,*)'in FieldIO: Ndim: ',NDim
-write(0,*)'in FieldIO: VStart ',VStart(1:NDim+1)
-write(0,*)'in FieldIO: VCount ',VCount(1:NDim+1)
   select case (FieldType)
     case (WRF_REAL)
       call ext_pnc_RealFieldIO    (IO,NCID,VarID,VStart,VCount,XField,Status)
@@ -676,7 +673,6 @@ write(0,*)'in FieldIO: VCount ',VCount(1:NDim+1)
       call wrf_debug ( WARN , TRIM(msg))
       return
   end select
-write(0,*)'returning from FieldIO'
   return
 end subroutine FieldIO
 
@@ -1230,7 +1226,6 @@ SUBROUTINE ext_pnc_open_for_write_begin(FileName,Comm,IOComm,SysDepInfo,DataHand
   VDimIDs(1) = DH%DimIDs(1)
   VDimIDs(2) = DH%DimUnlimID
   stat = NFMPI_DEF_VAR(DH%NCID,DH%TimesName,NF_CHAR,2,VDimIDs,DH%TimesVarID)
-write(0,*)'ext_pnc_open_for_write_begin defining ',TRIM(DH%TimesName),' stat ',stat
   call netcdf_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
     write(msg,*) 'NetCDF error in ext_pnc_open_for_write_begin ',__FILE__,', line', __LINE__
@@ -2376,10 +2371,6 @@ subroutine ext_pnc_write_field(DataHandle,DateStr,Var,Field,FieldType,Comm, &
               stat = NFMPI_DEF_DIM(NCID,DH%DimNames(i),i2offset(Length_global(j)),DH%DimIDs(i))
               call netcdf_err(stat,Status)
               if(Status /= WRF_NO_ERR) then
-write(0,*)' i , j , stat ', i, j, stat
-write(0,*)'DH%DimNames(i) ',DH%DimNames(i)
-write(0,*)'Length_global(j) ',Length_global(j)
-write(0,*)'DH%DimIDs(i) ',DH%DimIDs(i)
                 write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__
                 call wrf_debug ( WARN , TRIM(msg))
                 return
@@ -2417,7 +2408,6 @@ write(0,*)'DH%DimIDs(i) ',DH%DimIDs(i)
 
 
     stat = NFMPI_DEF_VAR(NCID,VarName,XType,NDim+1,VDimIDs,VarID)
-write(0,*)'write_field: NFMPI_DEF_VAR: ',ncid,' ',trim(VarName),' XType ',XType,' NDim+1 ',NDim+1,' VDimIDs ',VDimIDs(1:NDim+1),' VarID ',VarID,' stat ',stat
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'ext_pnc_write_field: NetCDF error for ',TRIM(VarName),' in ',__FILE__,', line', __LINE__
@@ -2428,11 +2418,6 @@ write(0,*)'write_field: NFMPI_DEF_VAR: ',ncid,' ',trim(VarName),' XType ',XType,
     stat = NFMPI_PUT_ATT_INT(NCID,VarID,'FieldType',NF_INT,i2offset(1),FieldType)
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
-write(0,*)'NCID ',NCID
-write(0,*)'VarID ',VarID
-write(0,*)'NF_INT ',NF_INT
-write(0,*)'i2offset(1) ',i2offset(1)
-write(0,*)'FieldType ',FieldType
       write(msg,*) 'ext_pnc_write_field: NetCDF error in ',__FILE__,', line', __LINE__ 
       call wrf_debug ( WARN , TRIM(msg))
       return
@@ -2495,8 +2480,6 @@ write(0,*)'FieldType ',FieldType
                                                 ,i1,i2,j1,j2,k1,k2 )
     StoredStart(1:NDim) = PatchStart(1:NDim)
     call ExtOrder(MemoryOrder,StoredStart,Status)
-write(0,*)'calling FieldIO PatchStart ',StoredStart(1:3)
-write(0,*)'calling FieldIO Length     ',Length(1:3)
     call FieldIO('write',DataHandle,DateStr,StoredStart,Length,MemoryOrder, &
                   FieldType,NCID,VarID,XField,Status)
     if(Status /= WRF_NO_ERR) then

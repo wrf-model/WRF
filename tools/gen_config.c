@@ -308,7 +308,7 @@ gen_config_reads ( char * dirname )
 	if (sym_get( p2 ) == NULL)  /* not in table yet */
 	{
           fprintf(fp," REWIND  ( UNIT = NAMELIST_READ_UNIT )\n") ;
-          fprintf(fp," READ  ( UNIT = NAMELIST_READ_UNIT , NML = %s , ERR = NAMELIST_READ_ERROR_LABEL )\n",p2) ;
+          fprintf(fp," READ  ( UNIT = NAMELIST_READ_UNIT , NML = %s , ERR = NAMELIST_READ_ERROR_LABEL , END = NAMELIST_READ_ERROR_LABEL )\n",p2) ;
           fprintf(fp,"#ifndef NO_NAMELIST_PRINT\n") ;
           fprintf(fp," WRITE ( UNIT = *                  , NML = %s )\n",p2) ;
           fprintf(fp,"#endif\n") ;

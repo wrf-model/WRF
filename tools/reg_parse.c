@@ -117,11 +117,8 @@ pre_parse( char * dir, FILE * infile, FILE * outfile )
         fprintf(stderr,"opening %s\n",include_file_name) ;
         if (( include_fp = fopen( include_file_name , "r" )) != NULL ) {
 
-fprintf(stderr,"including %s\n",include_file_name ) ;
-
+          fprintf(stderr,"including %s\n",include_file_name ) ;
           pre_parse( dir , include_fp , outfile ) ;
-
-fprintf(stderr,"back from including %s\n",include_file_name ) ;
 
           fclose( include_fp ) ;
         } else {

@@ -1303,9 +1303,7 @@
 #endif
 !
 #ifdef DM_PARALLEL
-      IF(CONFIG_FLAGS%MP_PHYSICS/=ETAMPNEW)THEN
 #    include "HALO_NMM_L_3.inc"
-      ENDIF
 #endif
 !
 #ifdef WRF_CHEM

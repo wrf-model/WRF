@@ -507,7 +507,7 @@ state   real    qv             ikjft   moist       1         -     r       "QVAP
 state   real    qc             ikjft   moist       1         -     r       "QCLOUD"           "Cloud water mixing ratio"      "kg kg-1"
 state   real    qr             ikjft   moist       1         -     r       "QRAIN"            "Rain water mixing ratio"       "kg kg-1"
 state   real    qi             ikjft   moist       1         -     r       "QICE"             "Ice mixing ratio"              "kg kg-1"
-state   real    qs             ikjft   moist       1         -     r       "QSNOW"            "Snow mixing ratio"             "kg kg-1"
+state   real    qs             ikjft   moist       1         -     rh      "QSNOW"            "Snow mixing ratio"             "kg kg-1"
 state   real    qg             ikjft   moist       1         -     r       "QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
 #                                               
 # Other Scalars

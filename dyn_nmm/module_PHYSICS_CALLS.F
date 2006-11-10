@@ -446,7 +446,7 @@
 !$omp& private(i,iendx,j,k)
         DO J=MYJS2,MYJE2
           IENDX=MYIE1
-          IF(MOD(J,2)==0.AND.ITE+1==IDE)IENDX=IENDX-1
+          IF(MOD(J,2)==0.AND.ITE==IDE)IENDX=IENDX-1
           DO I=MYIS1,IENDX
 !
             RSWIN(I,J)=TOTSWDN(I,J)
@@ -472,7 +472,7 @@
 !$omp& private(i,iendx,j,k,lmhij)
         DO J=MYJS2,MYJE2
           IENDX=MYIE1
-          IF(MOD(J,2)==0.AND.ITE+1==IDE)IENDX=IENDX-1
+          IF(MOD(J,2)==0.AND.ITE==IDE)IENDX=IENDX-1
           DO I=MYIS1,IENDX
 !
             IF(HBM2(I,J)>0.5)THEN
@@ -496,7 +496,7 @@
 !
       DO J=MYJS2,MYJE2
         IENDX=MYIE1
-        IF(MOD(J,2)==0.AND.ITE+1==IDE)IENDX=IENDX-1
+        IF(MOD(J,2)==0.AND.ITE==IDE)IENDX=IENDX-1
         DO K=KTS,KTE
           DO I=MYIS1,IENDX
             CLDFRA(I,K,J)=CLFR(I,K,J)
@@ -507,6 +507,24 @@
           HTOP(I,J)=HTOPR(I,J)
         ENDDO
       ENDDO
+!-----------------------------------------------------------------------
+!***  ZERO OUT BOUNDARY ROWS.
+!-----------------------------------------------------------------------
+!
+      DO J=JTS,JTE
+      DO I=ITS,ITE
+        IF(HBM2(I,J)<0.5)THEN
+          ACFRST(I,J)=0.
+          ACFRCV(I,J)=0.
+          CFRACL(I,J)=0.
+          CFRACM(I,J)=0.
+          CFRACH(I,J)=0.
+          RSWTOA(I,J)=0.
+          RLWTOA(I,J)=0.
+        ENDIF
+      ENDDO
+      ENDDO
+!
 !-----------------------------------------------------------------------
 !
 
@@ -2232,7 +2250,7 @@
           TNEW=TH_PHY(I,K,J)*PI_PHY(I,K,J)
           TRAIN(I,K,J)=TRAIN(I,K,J)+(TNEW-T(I,K,J))*RDTPHS
           T(I,K,J)=TNEW
-          Q(I,K,J)=moist(I,K,J,P_QV)/(1.+moist(I,K,J,P_QV)) !To s.h.
+          Q(I,K,J)=MOIST(I,K,J,P_QV)/(1.+MOIST(I,K,J,P_QV)) !To s.h.
 !         CWM(I,K,J)=0.
 !         DO I_M=2,N_MOIST
 !           IF(I_M/=P_QV)THEN
@@ -2241,7 +2259,9 @@
 !         ENDDO
         ENDDO
 !
+!-----------------------------------------------------------------------
 !***  UPDATE PRECIPITATION
+!-----------------------------------------------------------------------
 !
         PCPCOL=RAINNCV(I,J)*1.E-3
         PREC(I,J)=PREC(I,J)+PCPCOL
@@ -2252,6 +2272,7 @@
       ENDDO
       ENDDO
 !
+!-----------------------------------------------------------------------
 !$omp parallel do                                                       &
 !$omp& private(i,j,k)
       DO J=JMS,JME

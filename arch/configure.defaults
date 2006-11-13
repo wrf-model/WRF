@@ -1265,6 +1265,14 @@ esmf_time :
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 # compile these without high optimization to speed compile
+wrf_bdyout.o : wrf_bdyout.F
+wrf_bdyin.o : wrf_bdyin.F
+wrf_restartout.o : wrf_restartout.F
+wrf_restartin.o : wrf_restartin.F
+wrf_inputin.o : wrf_inputin.F
+wrf_inputout.o : wrf_inputout.F
+wrf_histin.o : wrf_histin.F
+wrf_histout.o : wrf_histout.F
 shift_domain_em.o : shift_domain_em.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
@@ -1291,6 +1299,8 @@ solve_em.o : solve_em.F
 solve_nmm.o : solve_nmm.F
 module_integrate.o : module_integrate.F
 
+wrf_bdyout.o wrf_bdyin.o \
+wrf_restartout.o wrf_restartin.o wrf_inputin.o wrf_inputout.o wrf_histin.o wrf_histout.o \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
@@ -1404,7 +1414,7 @@ module_sm.o module_tiles.o solve_em.o solve_exp.o convert_nmm.o :
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $(OMPCPP) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c -g $(PROMOTION) $(OMP) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) -qnoopt $*.f90
+	$(FC) -c $(PROMOTION) $(OMP) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) -qnoopt $*.f90
 
 #	Compiled WITHOUT ANY SMP, needed Mar 2005
 module_domain.o : module_domain.F
@@ -1412,7 +1422,60 @@ module_domain.o : module_domain.F
 	$(SED_FTN) $*.F > $*.b
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c -g $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) -qnoopt $*.f90
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) -qnoopt $*.f90
+
+# compile these without high optimization to speed compile
+wrf_bdyout.o : wrf_bdyout.F
+wrf_bdyin.o : wrf_bdyin.F
+wrf_restartout.o : wrf_restartout.F
+wrf_restartin.o : wrf_restartin.F
+wrf_inputin.o : wrf_inputin.F
+wrf_inputout.o : wrf_inputout.F
+wrf_histin.o : wrf_histin.F
+wrf_histout.o : wrf_histout.F
+shift_domain_em.o : shift_domain_em.F
+module_io_mm5.o : module_io_mm5.F
+module_si_io.o : module_si_io.F
+module_io_wrf.o : module_io_wrf.F
+module_start.o : module_start.F
+module_initialize.o : module_initialize.F
+module_initialize_b_wave.o : module_initialize_b_wave.F
+module_initialize_hill2d_x.o : module_initialize_hill2d_x.F
+module_initialize_quarter_ss.o : module_initialize_quarter_ss.F
+module_initialize_squall2d_x.o : module_initialize_squall2d_x.F
+module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
+module_initialize_real.o : module_initialize_real.F
+module_dm.o : module_dm.F
+start_domain.o : start_domain.F
+mediation_integrate.o : mediation_integrate.F
+mediation_interp_domain.o : mediation_interp_domain.F
+mediation_force_domain.o : mediation_force_domain.F
+mediation_feedback_domain.o : mediation_feedback_domain.F
+convert_nmm.o : convert_nmm.F
+module_configure.o : module_configure.F
+solve_interface.o : solve_interface.F
+module_integrate.o : module_integrate.F
+
+wrf_bdyout.o wrf_bdyin.o \
+wrf_restartout.o wrf_restartin.o wrf_inputin.o wrf_inputout.o wrf_histin.o wrf_histout.o \
+module_io_mm5.o module_si_io.o module_io_wrf.o \
+module_start.o module_initialize.o module_initialize_b_wave.o  \
+module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
+module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
+module_initialize_real.o module_dm.o \
+mediation_integrate.o \
+mediation_interp_domain.o \
+module_configure.o                                             \
+solve_interface.o                                              \
+shift_domain_em.o                                              \
+convert_nmm.o :
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
+	$(RM) $*.b
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) $*.f90
+
+
 
 ###########################################################
 #ARCH	AIX DM-Parallel          (RSL_LITE, IBM-MPI, Allows nesting)
@@ -1506,6 +1569,14 @@ esmf_time :
 	( cd ../external/RSL_LITE ; make CFLAGS="$(CFLAGS)" CC="$(CC)" FC="$(SFC) $(PROMOTION) $(FCFLAGS)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
 
 # compile these without high optimization
+wrf_bdyout.o : wrf_bdyout.F
+wrf_bdyin.o : wrf_bdyin.F
+wrf_restartout.o : wrf_restartout.F
+wrf_restartin.o : wrf_restartin.F
+wrf_inputin.o : wrf_inputin.F
+wrf_inputout.o : wrf_inputout.F
+wrf_histin.o : wrf_histin.F
+wrf_histout.o : wrf_histout.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -1530,6 +1601,8 @@ shift_domain_em.o : shift_domain_em.F
 solve_em.o : solve_em.F
 solve_nmm.o : solve_nmm.F
 
+wrf_bdyout.o wrf_bdyin.o \
+wrf_restartout.o wrf_restartin.o wrf_inputin.o wrf_inputout.o wrf_histin.o wrf_histout.o \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
@@ -1642,6 +1715,14 @@ esmf_time :
 	( cd ../external/RSL/RSL ; make MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST sp2 )
 
 # compile these without high optimization
+wrf_bdyout.o : wrf_bdyout.F
+wrf_bdyin.o : wrf_bdyin.F
+wrf_restartout.o : wrf_restartout.F
+wrf_restartin.o : wrf_restartin.F
+wrf_inputin.o : wrf_inputin.F
+wrf_inputout.o : wrf_inputout.F
+wrf_histin.o : wrf_histin.F
+wrf_histout.o : wrf_histout.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -1669,6 +1750,8 @@ start_domain_nmm.o : start_domain_nmm.F
 couple_or_uncouple_em.o : couple_or_uncouple_em.F
 nest_init_utils.o : nest_init_utils.F
 
+wrf_bdyout.o wrf_bdyin.o \
+wrf_restartout.o wrf_restartin.o wrf_inputin.o wrf_inputout.o wrf_histin.o wrf_histout.o \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
@@ -1780,6 +1863,14 @@ esmf_time :
 	( cd ../external/RSL/RSL ; make MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST sp2 )
 
 # compile these without high optimization
+wrf_bdyout.o : wrf_bdyout.F
+wrf_bdyin.o : wrf_bdyin.F
+wrf_restartout.o : wrf_restartout.F
+wrf_restartin.o : wrf_restartin.F
+wrf_inputin.o : wrf_inputin.F
+wrf_inputout.o : wrf_inputout.F
+wrf_histin.o : wrf_histin.F
+wrf_histout.o : wrf_histout.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -1804,6 +1895,8 @@ shift_domain_em.o : shift_domain_em.F
 solve_em.o : solve_em.F
 solve_nmm.o : solve_nmm.F
 
+wrf_bdyout.o wrf_bdyin.o \
+wrf_restartout.o wrf_restartin.o wrf_inputin.o wrf_inputout.o wrf_histin.o wrf_histout.o \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
@@ -1912,6 +2005,14 @@ esmf_time :
 	( cd ../external/RSL_LITE ; make CC="$(CC)" CFLAGS="$(CFLAGS)" FC="$(SFC) $(PROMOTION) $(FCFLAGS)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
 
 # compile these without high optimization
+wrf_bdyout.o : wrf_bdyout.F
+wrf_bdyin.o : wrf_bdyin.F
+wrf_restartout.o : wrf_restartout.F
+wrf_restartin.o : wrf_restartin.F
+wrf_inputin.o : wrf_inputin.F
+wrf_inputout.o : wrf_inputout.F
+wrf_histin.o : wrf_histin.F
+wrf_histout.o : wrf_histout.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -1936,6 +2037,8 @@ shift_domain_em.o : shift_domain_em.F
 solve_em.o : solve_em.F
 solve_nmm.o : solve_nmm.F
 
+wrf_bdyout.o wrf_bdyin.o \
+wrf_restartout.o wrf_restartin.o wrf_inputin.o wrf_inputout.o wrf_histin.o wrf_histout.o \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
@@ -2043,6 +2146,14 @@ esmf_time :
 	( cd ../external/RSL/RSL ; make MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST sp2 )
 
 # compile these without high optimization to speed compile
+wrf_bdyout.o : wrf_bdyout.F
+wrf_bdyin.o : wrf_bdyin.F
+wrf_restartout.o : wrf_restartout.F
+wrf_restartin.o : wrf_restartin.F
+wrf_inputin.o : wrf_inputin.F
+wrf_inputout.o : wrf_inputout.F
+wrf_histin.o : wrf_histin.F
+wrf_histout.o : wrf_histout.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -2066,6 +2177,8 @@ shift_domain_em.o : shift_domain_em.F
 solve_em.o : solve_em.F
 solve_nmm.o : solve_nmm.F
 
+wrf_bdyout.o wrf_bdyin.o \
+wrf_restartout.o wrf_restartin.o wrf_inputin.o wrf_inputout.o wrf_histin.o wrf_histout.o \
 module_io_mm5.o module_si_io.o module_io_wrf.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
@@ -2092,7 +2205,7 @@ mediation_force_domain.o start_domain.o :
 	$(SED_FTN) $*.F > $*.b
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c -g $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) -qnoopt $*.f90
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) -qnoopt $*.f90
 
 #	Compiled WITHOUT ANY SMP, needed Mar 2005
 module_domain.o : module_domain.F
@@ -2100,7 +2213,7 @@ module_domain.o : module_domain.F
 	$(SED_FTN) $*.F > $*.b
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c -g $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) -qnoopt $*.f90
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) -qnoopt $*.f90
 
 ###########################################################
 #ARCH	AIX DM-Parallel          (RSL, IBM-MPI, MCEL)   May 2003, EXPERIMENTAL
@@ -2202,6 +2315,14 @@ wrfio_mcel :
           make MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST sp2 )
 
 # compile these without high optimization
+wrf_bdyout.o : wrf_bdyout.F
+wrf_bdyin.o : wrf_bdyin.F
+wrf_restartout.o : wrf_restartout.F
+wrf_restartin.o : wrf_restartin.F
+wrf_inputin.o : wrf_inputin.F
+wrf_inputout.o : wrf_inputout.F
+wrf_histin.o : wrf_histin.F
+wrf_histout.o : wrf_histout.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -2226,6 +2347,8 @@ shift_domain_em.o : shift_domain_em.F
 solve_em.o : solve_em.F
 solve_nmm.o : solve_nmm.F
 
+wrf_bdyout.o wrf_bdyin.o \
+wrf_restartout.o wrf_restartin.o wrf_inputin.o wrf_inputout.o wrf_histin.o wrf_histout.o \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
@@ -2333,6 +2456,14 @@ esmf_time :
                MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST stub )
 
 # compile these without high optimization
+wrf_bdyout.o : wrf_bdyout.F
+wrf_bdyin.o : wrf_bdyin.F
+wrf_restartout.o : wrf_restartout.F
+wrf_restartin.o : wrf_restartin.F
+wrf_inputin.o : wrf_inputin.F
+wrf_inputout.o : wrf_inputout.F
+wrf_histin.o : wrf_histin.F
+wrf_histout.o : wrf_histout.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -2358,6 +2489,8 @@ solve_em.o : solve_em.F
 solve_nmm.o : solve_nmm.F
 couple_or_uncouple_em.o : couple_or_uncouple_em.F
 
+wrf_bdyout.o wrf_bdyin.o \
+wrf_restartout.o wrf_restartin.o wrf_inputin.o wrf_inputout.o wrf_histin.o wrf_histout.o \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
@@ -2468,6 +2601,14 @@ esmf_time :
                MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST stub )
 
 # compile these without high optimization
+wrf_bdyout.o : wrf_bdyout.F
+wrf_bdyin.o : wrf_bdyin.F
+wrf_restartout.o : wrf_restartout.F
+wrf_restartin.o : wrf_restartin.F
+wrf_inputin.o : wrf_inputin.F
+wrf_inputout.o : wrf_inputout.F
+wrf_histin.o : wrf_histin.F
+wrf_histout.o : wrf_histout.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -2485,6 +2626,8 @@ shift_domain_em.o : shift_domain_em.F
 solve_em.o : solve_em.F
 solve_nmm.o : solve_nmm.F
 
+wrf_bdyout.o wrf_bdyin.o \
+wrf_restartout.o wrf_restartin.o wrf_inputin.o wrf_inputout.o wrf_histin.o wrf_histout.o \
 module_io_mm5.o module_si_io.o module_io_wrf.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
@@ -2521,7 +2664,7 @@ module_initialize_real.o :
 	$(SED_FTN) $*.F > $*.b
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c -g $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) -qnoopt $*.f90
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) -qnoopt $*.f90
 
 ###########################################################
 #ARCH       Linux ppc64 BG (Blue Gene, RSL_LITE, IBM-MPI) 
@@ -2591,7 +2734,7 @@ wrfio_nf :
 	( cd ../external/io_netcdf ; make NETCDFPATH="$(NETCDFPATH)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 wrfio_pnf :
-	( cd ../external/io_pnetcdf ; make NETCDFPATH=CONFIGURE_PNETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" )
+	( cd ../external/io_pnetcdf ; make NETCDFPATH=CONFIGURE_PNETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(MPI_INC) $(PROMOTION) $(FCDEBUG) -qarch=auto -qzerosize" )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -2610,10 +2753,18 @@ esmf_time :
 
 solve_interface.o : solve_interface.F
 	$(RM) $@
-	$(CPP) -I../inc $(CPPFLAGS) $*.F > $*.f
-	$(FC) -c -qfree=f90 -qspillsize=32767 -I. $(PROMOTION) $(MODULE_DIRS) $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.F > $*.f90
+	$(FC) -c -qfree=f90 -qspillsize=32767 -I. $(PROMOTION) $(MODULE_DIRS) $*.f90
 
 # compile these without high optimization to speed compile
+wrf_bdyout.o : wrf_bdyout.F
+wrf_bdyin.o : wrf_bdyin.F
+wrf_restartout.o : wrf_restartout.F
+wrf_restartin.o : wrf_restartin.F
+wrf_inputin.o : wrf_inputin.F
+wrf_inputout.o : wrf_inputout.F
+wrf_histin.o : wrf_histin.F
+wrf_histout.o : wrf_histout.F
 shift_domain_em.o : shift_domain_em.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
@@ -2635,10 +2786,11 @@ mediation_force_domain.o : mediation_force_domain.F
 mediation_feedback_domain.o : mediation_feedback_domain.F
 convert_nmm.o : convert_nmm.F
 module_configure.o : module_configure.F
-solve_interface.o : solve_interface.F
 solve_em.o : solve_em.F
 start_em.o : start_em.F
 
+wrf_bdyout.o wrf_bdyin.o \
+wrf_restartout.o wrf_restartin.o wrf_inputin.o wrf_inputout.o wrf_histin.o wrf_histout.o \
 module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
@@ -2647,25 +2799,24 @@ module_initialize_real.o module_dm.o \
 mediation_integrate.o \
 mediation_interp_domain.o \
 module_configure.o                                             \
-solve_interface.o                                              \
 solve_em.o                                              \
 start_em.o                                              \
 shift_domain_em.o                                              \
 convert_nmm.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
 
 # to prevent having to call our service representative
 mediation_feedback_domain.o \
 mediation_force_domain.o start_domain.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c -g $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt $*.f
+	$(FC) -c -g $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -qnoopt $*.f90
 
 ###########################################################
 #ARCH       Compaq OSF1 alpha          (single-threaded, no nesting)

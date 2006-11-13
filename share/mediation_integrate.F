@@ -1210,7 +1210,7 @@ SUBROUTINE med_hist_out ( grid , stream, config_flags )
      ELSE
        WRITE(n2,'("DATASET=AUXHIST",I1)')stream  ! may be overwritten, below, if stream is 0
      ENDIF
-     WRITE ( message , '("med_hist_out : opening ",A," for writing. ",I3)') TRIM ( fname ), ierr
+     WRITE ( message , '("med_hist_out : opening ",A," for writing. ")') TRIM ( fname )
      CALL wrf_debug( 1, message )
      SELECT CASE( stream )
        CASE ( 0 )
@@ -1251,6 +1251,7 @@ SUBROUTINE med_hist_out ( grid , stream, config_flags )
                                config_flags , output_aux_hist11 , n2, ierr )
      END SELECT
      IF ( ierr .NE. 0 ) THEN
+       WRITE ( message , '("med_hist_out : error opening ",A," for writing. ",I3)') TRIM ( fname ), ierr
        CALL wrf_message( message )
      ENDIF
    END IF

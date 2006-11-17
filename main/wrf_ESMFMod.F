@@ -964,7 +964,7 @@ CONTAINS
        ENDIF
      ENDIF
      IF ( .NOT. foundcoupling ) THEN
-       CALL nl_get_io_form_auxinput10( 1, io_form )
+       CALL nl_get_io_form_gfdda( 1, io_form )
        IF ( use_package( io_form ) == IO_ESMF ) THEN
          CALL ESMF_AlarmGet( head_grid%alarms( AUXINPUT10_ALARM ), &
                              RingInterval=couplingInterval, rc=rc )

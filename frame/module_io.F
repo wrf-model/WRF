@@ -226,7 +226,7 @@ SUBROUTINE wrf_open_for_write_begin( FileName , Comm_compute, Comm_io, SysDepInf
   ELSE IF ( DataSet .eq. 'AUXINPUT9' ) THEN
     CALL nl_get_io_form_auxinput9( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXINPUT10' ) THEN
-    CALL nl_get_io_form_auxinput10( 1, io_form )
+    CALL nl_get_io_form_gfdda( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXINPUT11' ) THEN
     CALL nl_get_io_form_auxinput11( 1, io_form )
 
@@ -563,7 +563,7 @@ SUBROUTINE wrf_open_for_read_begin( FileName , Comm_compute, Comm_io, SysDepInfo
   ELSE IF ( DataSet .eq. 'AUXINPUT9' ) THEN
     CALL nl_get_io_form_auxinput9( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXINPUT10' ) THEN
-    CALL nl_get_io_form_auxinput10( 1, io_form )
+    CALL nl_get_io_form_gfdda( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXINPUT11' ) THEN
     CALL nl_get_io_form_auxinput11( 1, io_form )
 
@@ -835,7 +835,7 @@ SUBROUTINE wrf_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo, &
   ELSE IF ( DataSet .eq. 'AUXINPUT9' ) THEN
     CALL nl_get_io_form_auxinput9( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXINPUT10' ) THEN
-    CALL nl_get_io_form_auxinput10( 1, io_form )
+    CALL nl_get_io_form_gfdda( 1, io_form )
   ELSE IF ( DataSet .eq. 'AUXINPUT11' ) THEN
     CALL nl_get_io_form_auxinput11( 1, io_form )
 

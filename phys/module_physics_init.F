@@ -1505,7 +1505,7 @@ integer myproc
                config_flags%guv, &
                config_flags%gt, config_flags%gq, &
                config_flags%if_ramping, config_flags%dtramp_min, &
-               config_flags%auxinput10_end_h+NINT(config_flags%auxinput10_interval/60.0), &
+               config_flags%gfdda_end_h, &
                       restart, allowed_to_read,                    &
                       ids, ide, jds, jde, kds, kde,                &
                       ims, ime, jms, jme, kms, kme,                &

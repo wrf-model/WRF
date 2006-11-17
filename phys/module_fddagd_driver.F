@@ -233,8 +233,8 @@ CONTAINS
         CALL wrf_debug(100,'in PSU FDDA scheme')
            CALL FDDAGD(itimestep,dt,xtime, &
                id, &
-               config_flags%auxinput10_interval, &
-               config_flags%auxinput10_end_h+NINT(config_flags%auxinput10_interval/60.0), &
+               config_flags%gfdda_interval_m, &
+               config_flags%gfdda_end_h, &
                config_flags%if_no_pbl_nudging_uv, &
                config_flags%if_no_pbl_nudging_t, &
                config_flags%if_no_pbl_nudging_q, &

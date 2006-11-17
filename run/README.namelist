@@ -149,6 +149,8 @@ Namelist variables specifically for the WPS input for real:
                                                 ; 0 = perform traditional trapping interpolation
                                                 ; n = first n eta levels directly use surface level
  p_top_requested                     = 5000     ; p_top (Pa) to use in the model
+ sfcp_to_sfcp                        = .false.  ; compute hi-res surface pressure using input
+                                                ; surface pressure from metgrid
  adjust_heights                      = .false.  ; modify mu prime to match 500 mb geopotential heights, only for
                                                 ; isobaric WPS data
                                                 ; T = perform adjustment

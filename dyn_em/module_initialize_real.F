@@ -456,8 +456,14 @@ endif
          !  Note that on output, psfc is now hi-res.  The low-res surface pressure and 
          !  elevation are psfc_gc and ht_gc (same as ght_gc(k=1)).
 
-         we_have_tavgsfc = ( flag_tavgsfc == 1 ) 
-         IF ( ( flag_psfc .EQ. 1 ) .AND. ( flag_soilhgt .EQ. 1 ) ) THEN
+         IF ( config_flags%adjust_heights ) THEN
+            we_have_tavgsfc = ( flag_tavgsfc == 1 ) 
+         ELSE
+            we_have_tavgsfc = .FALSE.
+         END IF
+
+         IF ( ( flag_psfc .EQ. 1 ) .AND. ( flag_soilhgt .EQ. 1 ) .AND. &
+              ( config_flags%sfcp_to_sfcp ) ) THEN
             CALL sfcprs2(t_gc, qv_gc, ght_gc, psfc_gc, ht, tavgsfc, p_gc, &
                          psfc, we_have_tavgsfc, &
                          ids , ide , jds , jde , 1   , num_metgrid_levels , &

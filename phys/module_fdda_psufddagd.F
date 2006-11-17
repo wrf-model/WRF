@@ -118,7 +118,7 @@ CONTAINS
 
    REAL, INTENT(IN)    :: guv, gt, gq
 
-   INTEGER             :: i, j, k, itsu, jtsv, itf, jtf, ktf
+   INTEGER             :: i, j, k, itsu, jtsv, itf, jtf, ktf, i0, k0, j0
    REAL                :: xtime_old, xtime_new, coef, val_analysis
    INTEGER             :: kpbl, dbg_level
 
@@ -136,7 +136,17 @@ CONTAINS
    IF( xtime-xtime_old < 0.5*dt/60.0 .AND. dbg_level .GE. 10 ) THEN
         WRITE(message,'(a,i1,a,f10.3,a)') &
            'D0',id,' Analysis nudging read in new data at time = ', xtime, ' min.'
-        CALL wrf_message(TRIM(message))
+        CALL wrf_message( TRIM(message) )      
+
+!  Find the mid point for the tile and print out the sample values
+        i0 = (ite-its)/2+its
+        k0 = (kte-kts)/2+kts
+        j0 = (jte-jts)/2+jts 
+   
+        WRITE(message,'(a,i1,a,3i4,a,f10.4,a,f10.4)') &
+           '    D0',id,' sample analysis values at i,k,j=', i0, k0, j0, &
+           ' u_ndg_old=', u_ndg_old(i0,k0,j0), ' u_ndg_new=', u_ndg_new(i0,k0,j0)
+        CALL wrf_message( TRIM(message) )
    ENDIF
 
    jtsv=MAX0(jts,jds+1)
@@ -502,4 +512,3 @@ CONTAINS
    END SUBROUTINE fddagdinit
 !-------------------------------------------------------------------
 END MODULE module_fdda_psufddagd
-

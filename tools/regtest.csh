@@ -769,8 +769,52 @@ cat >! time_real_4  << EOF
  auxinput1_inname                    = "wrf_real_input_em.d<domain>.<date>"
 EOF
 
+cat >! phys_real_5 << EOF
+ mp_physics                          = 4,     4,     4,
+ ra_lw_physics                       = 3,     3,     3,
+ ra_sw_physics                       = 3,     3,     3,
+ radt                                = 30,    30,    30,
+ sf_sfclay_physics                   = 2,     2,     2,
+ sf_surface_physics                  = 2,     2,     2,
+ bl_pbl_physics                      = 2,     2,     2,
+ bldt                                = 0,     0,     0,
+ cu_physics                          = 2,     2,     0,
+ cudt                                = 5,     5,     5,
+ isfflx                              = 1,
+ ifsnow                              = 0,
+ icloud                              = 1,
+ ucmcall                             = 1,
+ surface_input_source                = 1,
+ num_soil_layers                     = 4,
+ mp_zero_out                         = 0,
+ maxiens                             = 1,
+ maxens                              = 3,
+ maxens2                             = 3,
+ maxens3                             = 16,
+ ensdim                              = 144,
+ levsiz                              = 59
+ paerlev                             = 29
+ cam_abs_freq_s                      = 21600
+ cam_abs_dim1                        = 4
+ cam_abs_dim2                        = 28
+EOF
+
+cat >! dyn_real_5  << EOF
+ pd_moist                            = .false., .false., .false.,
+ pd_scalar                           = .false., .false., .false.,
+ pd_chem                             = .false., .false., .false.,
+ pd_tke                              = .false., .false., .false.,
+EOF
+
+cat >! time_real_5  << EOF
+ auxinput1_inname                    = "met_em.d<domain>.<date>"
+EOF
+
 cat >! fdda_real_1 << EOF
  grid_fdda                           = 1,     1,     1,
+ gfdda_inname                        = "wrffdda_d<domain>",
+ gfdda_end_h                         = 24,    24,    24,
+ gfdda_interval_m                    = 360,   360,   360,
  fgdt                                = 0,     0,     0,
  if_no_pbl_nudging_uv                = 0,     0,     1,
  if_no_pbl_nudging_t                 = 0,     0,     1,
@@ -784,15 +828,12 @@ cat >! fdda_real_1 << EOF
  guv                                 = 0.0003,     0.0003,     0.0003,
  gt                                  = 0.0003,     0.0003,     0.0003,
  gq                                  = 0.0003,     0.0003,     0.0003,
- if_ramping                          = 0,
- dtramp_min                          = 120.0,
+ if_ramping                          = 1,
+ dtramp_min                          = 360.0,
+ io_form_gfdda                       = 2,
 EOF
 
 cat >! fdda_real_time_1 << EOF
- auxinput10_inname                   = "wrffdda_d<domain>"
- auxinput10_interval                 = 360
- auxinput10_end_h                    = 6
- io_form_auxinput10                  = 2
 EOF
 
 cat >! fdda_real_2 << EOF
@@ -825,6 +866,9 @@ EOF
 
 cat >! fdda_real_3 << EOF
  grid_fdda                           = 1,     1,     1,
+ gfdda_inname                        = "wrffdda_d<domain>",
+ gfdda_end_h                         = 24,    24,    24,
+ gfdda_interval_m                    = 360,   360,   360,
  fgdt                                = 0,     0,     0,
  if_no_pbl_nudging_uv                = 0,     0,     1,
  if_no_pbl_nudging_t                 = 0,     0,     1,
@@ -838,8 +882,9 @@ cat >! fdda_real_3 << EOF
  guv                                 = 0.0003,     0.0003,     0.0003,
  gt                                  = 0.0003,     0.0003,     0.0003,
  gq                                  = 0.0003,     0.0003,     0.0003,
- if_ramping                          = 0,
- dtramp_min                          = 120.0,
+ if_ramping                          = 1,
+ dtramp_min                          = 360.0,
+ io_form_gfdda                       = 2,
  obs_nudge_opt                       = 1,1,1,1,1
  max_obs                             = 150000,
  nobs_ndg_vars                       = 5,
@@ -863,10 +908,6 @@ cat >! fdda_real_3 << EOF
 EOF
 
 cat >! fdda_real_time_3 << EOF
- auxinput10_inname                   = "wrffdda_d<domain>"
- auxinput10_interval                 = 360
- auxinput10_end_h                    = 6
- io_form_auxinput10                  = 2
  auxinput11_interval_s               = 180
  auxinput11_end_h                    = 6
 EOF

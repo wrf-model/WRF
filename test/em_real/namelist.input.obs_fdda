@@ -25,10 +25,10 @@
  io_form_restart                     = 2
  io_form_input                       = 2
  io_form_boundary                    = 2
+ auxinput11_interval_s               = 180
+ auxinput11_end_h                    = 6
  debug_level                         = 0
- auxinput1_inname                    = "met_em.d<domain>.<date>"
  /
- auxinput1_inname                    = "wrf_real_input_em.d<domain>.<date>"
 
  &domains
  time_step                           = 180,
@@ -53,27 +53,6 @@
  feedback                            = 1,
  smooth_option                       = 0
  /
- p_top_requested                     = 5000
- interp_type                         = 1
- lowest_lev_from_sfc                 = .false.
- lagrange_order                      = 1
- force_sfc_in_vinterp                = 3
- zap_close_levels                    = 500
- sfcp_to_sfcp                        = .false.
- adjust_heights                      = .false.
- eta_levels                          = 1.000, 0.990, 0.978, 0.964, 0.946, 
-                                       0.922, 0.894, 0.860, 0.817, 0.766, 
-                                       0.707, 0.644, 0.576, 0.507, 0.444, 
-                                       0.380, 0.324, 0.273, 0.228, 0.188, 
-                                       0.152, 0.121, 0.093, 0.069, 0.048, 
-                                       0.029, 0.014, 0.000, 
- eta_levels                          = 1.000, 0.993, 0.983, 0.970, 0.954,
-                                       0.934, 0.909, 0.880, 0.845, 0.807,
-                                       0.765, 0.719, 0.672, 0.622, 0.571,
-                                       0.520, 0.468, 0.420, 0.376, 0.335,
-                                       0.298, 0.263, 0.231, 0.202, 0.175,
-                                       0.150, 0.127, 0.106, 0.088, 0.070,
-                                       0.055, 0.040, 0.026, 0.013, 0.000
 
  &physics
  mp_physics                          = 3,     3,     3,
@@ -99,6 +78,26 @@
  /
 
  &fdda
+ obs_nudge_opt                       = 1,1,1,1,1
+ max_obs                             = 150000,
+ nobs_ndg_vars                       = 5,
+ nobs_err_flds                       = 9,
+ obs_nudge_wind                      = 1,1,1,1,1
+ obs_coef_wind                       = 6.E-4,6.E-4,6.E-4,6.E-4,6.E-4
+ obs_nudge_temp                      = 1,1,1,1,1
+ obs_coef_temp                       = 6.E-4,6.E-4,6.E-4,6.E-4,6.E-4
+ obs_nudge_mois                      = 1,1,1,1,1
+ obs_coef_mois                       = 6.E-4,6.E-4,6.E-4,6.E-4,6.E-4
+ obs_rinxy                           = 240.,240.,180.,180,180
+ obs_rinsig                          = 0.1,
+ obs_twindo                          = 40.
+ obs_npfi                            = 10,
+ obs_ionf                            = 2,
+ obs_idynin                          = 0,
+ obs_dtramp                          = 40.,
+ obs_ipf_errob                       = .true.
+ obs_ipf_nudob                       = .true.
+ obs_ipf_in4dob                      = .true.
  /
 
  &dynamics
@@ -122,6 +121,10 @@
  v_mom_adv_order                     = 3,      3,      3,
  h_sca_adv_order                     = 5,      5,      5,
  v_sca_adv_order                     = 3,      3,      3,
+ pd_moist                            = .false., .false., .false.,
+ pd_scalar                           = .false., .false., .false.,
+ pd_chem                             = .false., .false., .false.,
+ pd_tke                              = .false., .false., .false.,
  /
 
  &bdy_control

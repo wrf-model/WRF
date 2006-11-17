@@ -76,22 +76,6 @@
  /
 
  &fdda
- grid_fdda                           = 0,     0,     0,
- fgdt                                = 0,     0,     0,
- if_no_pbl_nudging_uv                = 0,     0,     1,
- if_no_pbl_nudging_t                 = 0,     0,     1,
- if_no_pbl_nudging_q                 = 0,     0,     1,
- if_zfac_uv                          = 0,     0,     1,
-  k_zfac_uv                          = 10,   10,     1,
- if_zfac_t                           = 0,     0,     1,
-  k_zfac_t                           = 10,   10,     1,
- if_zfac_q                           = 0,     0,     1,
-  k_zfac_q                           = 10,   10,     1,
- guv                                 = 0.0003,     0.0003,     0.0003,
- gt                                  = 0.0003,     0.0003,     0.0003,
- gq                                  = 0.0003,     0.0003,     0.0003,
- if_ramping                          = 0,
- dtramp_min                          = 120.0,
  /
 
  &dynamics

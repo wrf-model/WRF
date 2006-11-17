@@ -649,8 +649,16 @@ CONTAINS
 !       VA10(I,J) = V10(I)                                     
 !       write(*,1002)UST(I),KARMAN*WSPD(I),PSIX,KARMAN*WSPD(I)/PSIX
 !                                                                                
-        uratx(I) = UX(I)/U10(I)
-        vratx(I) = VX(I)/V10(I)
+        IF(ABS(U10(I)) .GT. 1.E-10) THEN
+           uratx(I) = UX(I)/U10(I)
+        ELSE
+           uratx(I) = 1.2
+        END IF
+        IF(ABS(V10(I)) .GT. 1.E-10) THEN
+           vratx(I) = VX(I)/V10(I)
+        ELSE
+           vratx(I) = 1.2 
+        END IF
         tratx(I) = THX(I)/TH2(I)
 
         USTM=AMAX1(UST(I),0.1)                                                 

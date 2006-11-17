@@ -77,14 +77,6 @@ Other output options:
  auxhist2_interval (max_dom)         = 10,      ; interval in minutes
  io_form_auxhist2                    = 2,       ; output in netCDF
 
-Gridded analysis FDDA options:
-
- auxinput10_inname                   = "wrffdda_d<domain>" ; defined name in real
- auxinput10_interval (max_dom)       = 360      ; time interval (min) between analysis times
- auxinput10_end_h (max_dom)          = 6        ; time (h) to stop nudging after start of forecast
- io_form_auxinput10                  = 2        ; analysis data io format
-
-
 Additional ones when running 3DVAR:
 
  write_input                         = t,       ; write input-formatted data as output
@@ -367,7 +359,10 @@ Namelist variables for controling the automatic moving nest:
                                                   also need to set auxinput4_interval, auxinput4_end_h, and
                                                   auxinput4_inname = "wrffdda_d<domain>" in time_control namelist
                                                   and run real with grid_fdda =1 to create wrffdda file
-
+ gfdda_inname                        = "wrffdda_d<domain>" ; defined name in real
+ gfdda_interval_m (max_dom)          = 360      ; time interval (min) between analysis times
+ gfdda_end_h (max_dom)               = 6        ; time (h) to stop nudging after start of forecast
+ io_form_gfdda                       = 2        ; analysis data io format (2 = netCDF)
  fgdt (max_dom)                      = 0        ; calculation frequency (minutes) for grid-nudging (0=every step)
  if_no_pbl_nudging_uv (max_dom)      = 0        ; 0= no nudging of u and v in the pbl, 1=nudging in the pbl
  if_no_pbl_nudging_t (max_dom)       = 0        ; 0= no nudging of temp in the pbl, 1=nudging in the pbl

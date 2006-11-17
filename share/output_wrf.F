@@ -96,7 +96,7 @@
     ELSE IF ( switch .EQ. aux_model_input9_only ) THEN
       CALL nl_get_io_form_auxinput9( 1, io_form )
     ELSE IF ( switch .EQ. aux_model_input10_only ) THEN
-      CALL nl_get_io_form_auxinput10( 1, io_form )
+      CALL nl_get_io_form_gfdda( 1, io_form )
     ELSE IF ( switch .EQ. aux_model_input11_only ) THEN
       CALL nl_get_io_form_auxinput11( 1, io_form )
 

@@ -71,12 +71,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
               auxinput6_interval_m, auxinput7_interval_m, auxinput8_interval_m, &
               auxinput6_interval_s, auxinput7_interval_s, auxinput8_interval_s
 
-   INTEGER :: auxinput9_interval  , auxinput10_interval  , auxinput11_interval  , &
-              auxinput9_interval_mo, auxinput10_interval_mo, auxinput11_interval_mo, &
-              auxinput9_interval_d, auxinput10_interval_d, auxinput11_interval_d, &
-              auxinput9_interval_h, auxinput10_interval_h, auxinput11_interval_h, &
-              auxinput9_interval_m, auxinput10_interval_m, auxinput11_interval_m, &
-              auxinput9_interval_s, auxinput10_interval_s, auxinput11_interval_s
+   INTEGER :: auxinput9_interval  , gfdda_interval  , auxinput11_interval  , &
+              auxinput9_interval_mo, gfdda_interval_mo, auxinput11_interval_mo, &
+              auxinput9_interval_d, gfdda_interval_d, auxinput11_interval_d, &
+              auxinput9_interval_h, gfdda_interval_h, auxinput11_interval_h, &
+              auxinput9_interval_m, gfdda_interval_m, auxinput11_interval_m, &
+              auxinput9_interval_s, gfdda_interval_s, auxinput11_interval_s
 
    INTEGER :: history_begin  , restart_begin  ,  &
               history_begin_y, restart_begin_y,  &
@@ -150,13 +150,13 @@ SUBROUTINE Setup_Timekeeping ( grid )
               auxinput6_begin_m, auxinput7_begin_m, auxinput8_begin_m, &
               auxinput6_begin_s, auxinput7_begin_s, auxinput8_begin_s
 
-   INTEGER :: auxinput9_begin  , auxinput10_begin  , auxinput11_begin  , &
-              auxinput9_begin_y, auxinput10_begin_y, auxinput11_begin_y, &
-              auxinput9_begin_mo, auxinput10_begin_mo, auxinput11_begin_mo, &
-              auxinput9_begin_d, auxinput10_begin_d, auxinput11_begin_d, &
-              auxinput9_begin_h, auxinput10_begin_h, auxinput11_begin_h, &
-              auxinput9_begin_m, auxinput10_begin_m, auxinput11_begin_m, &
-              auxinput9_begin_s, auxinput10_begin_s, auxinput11_begin_s
+   INTEGER :: auxinput9_begin  , gfdda_begin  , auxinput11_begin  , &
+              auxinput9_begin_y, gfdda_begin_y, auxinput11_begin_y, &
+              auxinput9_begin_mo, gfdda_begin_mo, auxinput11_begin_mo, &
+              auxinput9_begin_d, gfdda_begin_d, auxinput11_begin_d, &
+              auxinput9_begin_h, gfdda_begin_h, auxinput11_begin_h, &
+              auxinput9_begin_m, gfdda_begin_m, auxinput11_begin_m, &
+              auxinput9_begin_s, gfdda_begin_s, auxinput11_begin_s
 
    INTEGER :: history_end  , restart_end  ,  &
               history_end_y, restart_end_y,  &
@@ -222,13 +222,15 @@ SUBROUTINE Setup_Timekeeping ( grid )
               auxinput6_end_m, auxinput7_end_m, auxinput8_end_m, &
               auxinput6_end_s, auxinput7_end_s, auxinput8_end_s
 
-   INTEGER :: auxinput9_end  , auxinput10_end  , auxinput11_end  , &
-              auxinput9_end_y, auxinput10_end_y, auxinput11_end_y, &
-              auxinput9_end_mo, auxinput10_end_mo, auxinput11_end_mo, &
-              auxinput9_end_d, auxinput10_end_d, auxinput11_end_d, &
-              auxinput9_end_h, auxinput10_end_h, auxinput11_end_h, &
-              auxinput9_end_m, auxinput10_end_m, auxinput11_end_m, &
-              auxinput9_end_s, auxinput10_end_s, auxinput11_end_s
+   INTEGER :: auxinput9_end  , gfdda_end  , auxinput11_end  , &
+              auxinput9_end_y, gfdda_end_y, auxinput11_end_y, &
+              auxinput9_end_mo, gfdda_end_mo, auxinput11_end_mo, &
+              auxinput9_end_d, gfdda_end_d, auxinput11_end_d, &
+              auxinput9_end_h, gfdda_end_h, auxinput11_end_h, &
+              auxinput9_end_m, gfdda_end_m, auxinput11_end_m, &
+              auxinput9_end_s, gfdda_end_s, auxinput11_end_s
+
+   INTEGER :: grid_fdda
 
    INTEGER :: run_days, run_hours, run_minutes, run_seconds
    INTEGER :: time_step, time_step_fract_num, time_step_fract_den
@@ -1864,64 +1866,77 @@ SUBROUTINE Setup_Timekeeping ( grid )
                            __LINE__  )
    ENDIF
 
-! AUXINPUT10_ INTERVAL
-! auxinput10_interval is left there (and means minutes) for consistency, but
-! auxinput10_interval_m will take precedence if specified
-   CALL nl_get_auxinput10_interval( grid%id, auxinput10_interval )   ! same as minutes
-   CALL nl_get_auxinput10_interval_mo( grid%id, auxinput10_interval_mo )
-   CALL nl_get_auxinput10_interval_d( grid%id, auxinput10_interval_d )
-   CALL nl_get_auxinput10_interval_h( grid%id, auxinput10_interval_h )
-   CALL nl_get_auxinput10_interval_m( grid%id, auxinput10_interval_m )
-   CALL nl_get_auxinput10_interval_s( grid%id, auxinput10_interval_s )
-   IF ( auxinput10_interval_m .EQ. 0 ) auxinput10_interval_m = auxinput10_interval
+#if (EM_CORE == 1)
+  CALL nl_get_grid_fdda( grid%id, grid_fdda )
+#endif
 
-   IF ( MAX( auxinput10_interval_mo, auxinput10_interval_d,   &
-             auxinput10_interval_h, auxinput10_interval_m , auxinput10_interval_s   ) .GT. 0 ) THEN
-     CALL WRFU_TimeIntervalSet( interval, MM=auxinput10_interval_mo, D=auxinput10_interval_d, &
-                                        H=auxinput10_interval_h, M=auxinput10_interval_m, S=auxinput10_interval_s, rc=rc )
+! AUXINPUT10_ INTERVAL (GFDDA)
+! gfdda_interval is left there (and means minutes) for consistency, but
+! gfdda_interval_m will take precedence if specified
+   CALL nl_get_gfdda_interval( grid%id, gfdda_interval )   ! same as minutes
+   CALL nl_get_gfdda_interval_mo( grid%id, gfdda_interval_mo )
+   CALL nl_get_gfdda_interval_d( grid%id, gfdda_interval_d )
+   CALL nl_get_gfdda_interval_h( grid%id, gfdda_interval_h )
+   CALL nl_get_gfdda_interval_m( grid%id, gfdda_interval_m )
+   CALL nl_get_gfdda_interval_s( grid%id, gfdda_interval_s )
+   IF ( gfdda_interval_m .EQ. 0 ) gfdda_interval_m = gfdda_interval
+
+   IF ( MAX( gfdda_interval_mo, gfdda_interval_d,   &
+             gfdda_interval_h, gfdda_interval_m , gfdda_interval_s   ) .GT. 0 ) THEN
+     CALL WRFU_TimeIntervalSet( interval, MM=gfdda_interval_mo, D=gfdda_interval_d, &
+                                        H=gfdda_interval_h, M=gfdda_interval_m, S=gfdda_interval_s, rc=rc )
      CALL wrf_check_error( WRFU_SUCCESS, rc, &
-                           'WRFU_TimeIntervalSet(auxinput10_interval) FAILED', &
+                           'WRFU_TimeIntervalSet(gfdda_interval) FAILED', &
                            __FILE__ , &
                            __LINE__  )
    ELSE
      interval = run_length + padding_interval
    ENDIF
+#if (EM_CORE == 1)
+   IF( grid_fdda == 0 ) interval = run_length + padding_interval
+#endif
 
-   CALL nl_get_auxinput10_begin_y( grid%id, auxinput10_begin_y )
-   CALL nl_get_auxinput10_begin_mo( grid%id, auxinput10_begin_mo )
-   CALL nl_get_auxinput10_begin_d( grid%id, auxinput10_begin_d )
-   CALL nl_get_auxinput10_begin_h( grid%id, auxinput10_begin_h )
-   CALL nl_get_auxinput10_begin_m( grid%id, auxinput10_begin_m )
-   CALL nl_get_auxinput10_begin_s( grid%id, auxinput10_begin_s )
-   IF ( MAX( auxinput10_begin_y, auxinput10_begin_mo, auxinput10_begin_d,   &
-             auxinput10_begin_h, auxinput10_begin_m , auxinput10_begin_s   ) .GT. 0 ) THEN
-      CALL WRFU_TimeIntervalSet( begin_time , MM=auxinput10_begin_mo, D=auxinput10_begin_d, &
-                                      H=auxinput10_begin_h, M=auxinput10_begin_m, S=auxinput10_begin_s, rc=rc )
+   CALL nl_get_gfdda_begin_y( grid%id, gfdda_begin_y )
+   CALL nl_get_gfdda_begin_mo( grid%id, gfdda_begin_mo )
+   CALL nl_get_gfdda_begin_d( grid%id, gfdda_begin_d )
+   CALL nl_get_gfdda_begin_h( grid%id, gfdda_begin_h )
+   CALL nl_get_gfdda_begin_m( grid%id, gfdda_begin_m )
+   CALL nl_get_gfdda_begin_s( grid%id, gfdda_begin_s )
+   IF ( MAX( gfdda_begin_y, gfdda_begin_mo, gfdda_begin_d,   &
+             gfdda_begin_h, gfdda_begin_m , gfdda_begin_s   ) .GT. 0 ) THEN
+      CALL WRFU_TimeIntervalSet( begin_time , MM=gfdda_begin_mo, D=gfdda_begin_d, &
+                                      H=gfdda_begin_h, M=gfdda_begin_m, S=gfdda_begin_s, rc=rc )
       CALL wrf_check_error( WRFU_SUCCESS, rc, &
-                            'WRFU_TimeIntervalSet(auxinput10_begin) FAILED', &
+                            'WRFU_TimeIntervalSet(gfdda_begin) FAILED', &
                             __FILE__ , &
                             __LINE__  )
    ELSE
       begin_time = zero_time
    ENDIF
 
-   CALL nl_get_auxinput10_end_y( grid%id, auxinput10_end_y )
-   CALL nl_get_auxinput10_end_mo( grid%id, auxinput10_end_mo )
-   CALL nl_get_auxinput10_end_d( grid%id, auxinput10_end_d )
-   CALL nl_get_auxinput10_end_h( grid%id, auxinput10_end_h )
-   CALL nl_get_auxinput10_end_m( grid%id, auxinput10_end_m )
-   CALL nl_get_auxinput10_end_s( grid%id, auxinput10_end_s )
-   IF ( MAX( auxinput10_end_y, auxinput10_end_mo, auxinput10_end_d,   &
-             auxinput10_end_h, auxinput10_end_m , auxinput10_end_s   ) .GT. 0 ) THEN
-      CALL WRFU_TimeIntervalSet( end_time , MM=auxinput10_end_mo, D=auxinput10_end_d, &
-                                     H=auxinput10_end_h, M=auxinput10_end_m, S=auxinput10_end_s, rc=rc )
+   CALL nl_get_gfdda_end_y( grid%id, gfdda_end_y )
+   CALL nl_get_gfdda_end_mo( grid%id, gfdda_end_mo )
+   CALL nl_get_gfdda_end_d( grid%id, gfdda_end_d )
+   CALL nl_get_gfdda_end_h( grid%id, gfdda_end_h )
+#if (EM_CORE == 1)
+   IF( grid_fdda == 1 ) gfdda_end_h = gfdda_end_h - NINT( gfdda_interval_m/60.0 )
+#endif
+   CALL nl_get_gfdda_end_m( grid%id, gfdda_end_m )
+   CALL nl_get_gfdda_end_s( grid%id, gfdda_end_s )
+   IF ( MAX( gfdda_end_y, gfdda_end_mo, gfdda_end_d,   &
+             gfdda_end_h, gfdda_end_m , gfdda_end_s   ) .GT. 0 ) THEN
+      CALL WRFU_TimeIntervalSet( end_time , MM=gfdda_end_mo, D=gfdda_end_d, &
+                                     H=gfdda_end_h, M=gfdda_end_m, S=gfdda_end_s, rc=rc )
       CALL wrf_check_error( WRFU_SUCCESS, rc, &
-                            'WRFU_TimeIntervalSet(auxinput10_end) FAILED', &
+                            'WRFU_TimeIntervalSet(gfdda_end) FAILED', &
                             __FILE__ , &
                             __LINE__  )
    ELSE
       end_time = run_length + padding_interval
    ENDIF
+#if (EM_CORE == 1)
+   IF( grid_fdda == 0 ) end_time = run_length + padding_interval
+#endif
 
    CALL domain_alarm_create( grid, AUXINPUT10_ALARM, interval, begin_time, end_time )
 

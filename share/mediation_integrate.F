@@ -1750,7 +1750,7 @@ SUBROUTINE med_latbound_in ( grid , config_flags )
 
 #include <wrf_io_flags.h>
 
-   CALL wrf_debug ( 1 , 'in med_latbound_in' )
+   CALL wrf_debug ( 200 , 'in med_latbound_in' )
 
    IF ( grid%id .EQ. 1 .AND. config_flags%specified .AND. config_flags%io_form_boundary .GT. 0 ) THEN
 
@@ -1765,7 +1765,7 @@ SUBROUTINE med_latbound_in ( grid , config_flags )
        CALL wrf_debug( 100 , 'med_latbound_in: Skipping attempt to read lateral boundary file during last time step ' )
 
      ELSE IF ( WRFU_AlarmIsRinging( grid%alarms( BOUNDARY_ALARM ), rc=rc ) ) THEN
-       CALL wrf_debug ( 1 , 'in med_latbound_in preparing to read' )
+       CALL wrf_debug ( 100 , 'in med_latbound_in preparing to read' )
        CALL WRFU_AlarmRingerOff( grid%alarms( BOUNDARY_ALARM ), rc=rc )
        IF ( wrf_dm_on_monitor() ) CALL start_timing
 

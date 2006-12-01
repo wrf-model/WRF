@@ -169,7 +169,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                          msfu, msfv, msft, f, e, sina, cosa,              &
                          fnm, fnp, rdn, rdnw,                             &
                          dt, rdx, rdy, khdif, kvdif, xkmhd,               &
-                         diff_6th_opt, diff_6th_rate,                     &
+                         diff_6th_opt, diff_6th_factor,                   &
                          dampcoef,zdamp,damp_opt,                         &
                          cf1, cf2, cf3, cfn, cfn1, n_moist,               &
                          non_hydrostatic,                                 &
@@ -271,7 +271,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                                                                 khdif,   &
                                                                 kvdif
    INTEGER, INTENT( IN ) :: diff_6th_opt
-   REAL,    INTENT( IN ) :: diff_6th_rate
+   REAL,    INTENT( IN ) :: diff_6th_factor
 
    INTEGER, INTENT( IN ) :: damp_opt
 
@@ -554,14 +554,14 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
 
       CALL sixth_order_diffusion( 'u', u, ru_tendf, mut, dt,          &
                                        config_flags,                  &
-                                       diff_6th_opt, diff_6th_rate,   &
+                                       diff_6th_opt, diff_6th_factor, &
                                        ids, ide, jds, jde, kds, kde,  &
                                        ims, ime, jms, jme, kms, kme,  &
                                        its, ite, jts, jte, kts, kte )
 
       CALL sixth_order_diffusion( 'v', v, rv_tendf, mut, dt,          &
                                        config_flags,                  &
-                                       diff_6th_opt, diff_6th_rate,   &
+                                       diff_6th_opt, diff_6th_factor, &
                                        ids, ide, jds, jde, kds, kde,  &
                                        ims, ime, jms, jme, kms, kme,  &
                                        its, ite, jts, jte, kts, kte )
@@ -569,14 +569,14 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
       IF (non_hydrostatic)                                            & 
       CALL sixth_order_diffusion( 'w', w, rw_tendf, mut, dt,          &
                                        config_flags,                  &
-                                       diff_6th_opt, diff_6th_rate,   &
+                                       diff_6th_opt, diff_6th_factor, &
                                        ids, ide, jds, jde, kds, kde,  &
                                        ims, ime, jms, jme, kms, kme,  &
                                        its, ite, jts, jte, kts, kte )
 
       CALL sixth_order_diffusion( 'm', t,  t_tendf, mut, dt,          &
                                        config_flags,                  &
-                                       diff_6th_opt, diff_6th_rate,   &
+                                       diff_6th_opt, diff_6th_factor, &
                                        ids, ide, jds, jde, kds, kde,  &
                                        ims, ime, jms, jme, kms, kme,  &
                                        its, ite, jts, jte, kts, kte )
@@ -733,7 +733,7 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,       &
                             msfu, msfv, msft,             &
                             rdx, rdy, rdn, rdnw,          &
                             khdif, kvdif, xkmhd,          &
-                            diff_6th_opt, diff_6th_rate,  &
+                            diff_6th_opt, diff_6th_factor,&
                             pd_advection,                 &
                             ids, ide, jds, jde, kds, kde, &
                             ims, ime, jms, jme, kms, kme, &
@@ -788,7 +788,7 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,       &
                                                                   kvdif
 
    INTEGER, INTENT( IN ) :: diff_6th_opt
-   REAL,    INTENT( IN ) :: diff_6th_rate
+   REAL,    INTENT( IN ) :: diff_6th_factor
 
    REAL ,                                        INTENT(IN   ) :: dt
 
@@ -896,7 +896,7 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,       &
       CALL sixth_order_diffusion( 'm', scalar(ims,kms,jms,im),        &
                                        scalar_tends(ims,kms,jms,im),  &
                                        mut, dt, config_flags,         &
-                                       diff_6th_opt, diff_6th_rate,   &
+                                       diff_6th_opt, diff_6th_factor, &
                                        ids, ide, jds, jde, kds, kde,  &
                                        ims, ime, jms, jme, kms, kme,  &
                                        its, ite, jts, jte, kts, kte )

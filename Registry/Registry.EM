@@ -1056,7 +1056,7 @@ rconfig   real    zdamp                   namelist,dynamics	max_domains    5000.
 rconfig   real    dampcoef                namelist,dynamics     max_domains    0.      h    "dampcoef"              ""      ""
 rconfig   real    khdif                   namelist,dynamics	max_domains    0       h    "khdif"         ""      ""
 rconfig   real    kvdif                   namelist,dynamics	max_domains    0       h    "kvdif"         ""      ""
-rconfig   real    diff_6th_rate           namelist,dynamics     max_domains    0.12    h    "diff_6th_rate" "rate 6th-order numerical diffusion"
+rconfig   real    diff_6th_factor         namelist,dynamics     max_domains    0.12    h    "diff_6th_factor" "factor that controls rate of 6th-order numerical diffusion"
 rconfig   integer diff_6th_opt            namelist,dynamics     max_domains    0      irh   "diff_6th_opt" "switch for 6th-order numerical diffusion"
 rconfig   real    smdiv                   namelist,dynamics	max_domains    0.1     h    "smdiv"         ""      ""
 rconfig   real    emdiv                   namelist,dynamics	max_domains    0.01    h    "emdiv"         ""      ""

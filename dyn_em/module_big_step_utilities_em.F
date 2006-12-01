@@ -4934,12 +4934,13 @@ END SUBROUTINE set_tend
                                                                                 
       SUBROUTINE sixth_order_diffusion( name, field, tendency, mu, dt,  &
                                         config_flags,                   &
-                                        diff_6th_opt, diff_6th_rate,    &
+                                        diff_6th_opt, diff_6th_factor,  &
                                         ids, ide, jds, jde, kds, kde,   &
                                         ims, ime, jms, jme, kms, kme,   &
                                         its, ite, jts, jte, kts, kte )
                                                                                 
-! History:       07 Jun 2006   Revised and generalized by Jason Knievel  
+! History:       14 Nov 2006   Name of variable changed by Jason Knievel
+!                07 Jun 2006   Revised and generalized by Jason Knievel  
 !                25 Apr 2005   Original code by Jason Knievel, NCAR
                                                                                 
 ! Purpose:       Apply 6th-order, monotonic (flux-limited), numerical
@@ -4975,7 +4976,7 @@ END SUBROUTINE set_tend
     :: dt
 
     REAL, INTENT(IN)  &
-    :: diff_6th_rate
+    :: diff_6th_factor
 
     INTEGER, INTENT(IN)  &
     :: diff_6th_opt
@@ -5004,16 +5005,16 @@ END SUBROUTINE set_tend
 !------------------------------------------------------------------------------
 
 !------------------------------------------------------------------------------
-! Begin: Translate the diffusion rate into a diffusion coefficient.  See
+! Begin: Translate the diffusion factor into a diffusion coefficient.  See
 ! Durran's text, section 2.4.3, then adjust for sixth-order diffusion (not
 ! fourth) and for diffusion in two dimensions (not one).  For reference, a
-! rate of 1.0 would mean complete diffusion of a 2dx wave in one time step,
+! factor of 1.0 would mean complete diffusion of a 2dx wave in one time step,
 ! although application of the flux limiter reduces somewhat the effects of
 ! diffusion for a given coefficient.
 
-    diff_6th_coef = diff_6th_rate * 0.015625 / ( 2.0 * dt )  
+    diff_6th_coef = diff_6th_factor * 0.015625 / ( 2.0 * dt )  
 
-! End: Translate diffusion rate.
+! End: Translate diffusion factor.
 !------------------------------------------------------------------------------
 
 !------------------------------------------------------------------------------

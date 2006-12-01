@@ -418,7 +418,7 @@ Namelist variables for controling the automatic moving nest:
                                                   0 = no 6th-order diffusion (default)
                                                   1 = 6th-order numerical diffusion
                                                   2 = 6th-order numerical diffusion but prohibit up-gradient diffusion
- diff_6th_rate                       = 0.24,    ; 6th-order numerical diffusion non-dimensional rate (max value 1.0
+ diff_6th_factor                     = 0.12,    ; 6th-order numerical diffusion non-dimensional rate (max value 1.0
                                                       corresponds to complete removal of 2dx wave in one timestep)
  dampcoef (max_dom)                  = 0.,	; damping coefficient (see above)
  zdamp (max_dom)                     = 5000.,	; damping depth (m) from model top

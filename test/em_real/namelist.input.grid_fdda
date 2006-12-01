@@ -94,7 +94,7 @@
  gt                                  = 0.0003,     0.0003,     0.0003,
  gq                                  = 0.0003,     0.0003,     0.0003,
  if_ramping                          = 1,
- dtramp_min                          = 360.0,
+ dtramp_min                          = 60.0,
  io_form_gfdda                       = 2,
  /
 

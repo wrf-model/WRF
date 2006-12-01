@@ -33,9 +33,17 @@
     INTEGER dyn_opt, diff_opt, km_opt, damp_opt,  &
             mp_physics, ra_lw_physics, ra_sw_physics, sf_sfclay_physics, &
             sf_surface_physics, bl_pbl_physics, cu_physics
-    REAL    khdif, kvdif
+    REAL    khdif, kvdif, swrad_scat
+    INTEGER ucmcall, w_damping, smooth_option, feedback, surface_input_source, sst_update
 #if (EM_CORE == 1)
     INTEGER grid_id , parent_id , i_parent_start , j_parent_start , parent_grid_ratio
+    INTEGER diff_6th_opt
+    REAL    diff_6th_factor
+    INTEGER grid_fdda, gfdda_interval_m, gfdda_end_h, if_ramping, &
+            obs_nudge_opt, obs_nudge_wind, obs_nudge_temp, obs_nudge_mois, obs_nudge_pstr, obs_idynin, obs_ionf
+    REAL    fgdt, guv, gt, gq, dtramp_min, &
+            obs_coef_wind, obs_coef_temp, obs_coef_mois, obs_coef_pstr, obs_dtramp, fdda_end
+    LOGICAL pd_moist, pd_scalar, pd_tke
 #endif
     CHARACTER (len=19) simulation_start_date
     CHARACTER (len=len_current_date) current_date_save
@@ -157,6 +165,51 @@
     call nl_get_bl_pbl_physics     ( grid%id,  bl_pbl_physics     )
     call nl_get_cu_physics         ( grid%id,  cu_physics         )
 
+! add nml variables in 2.2
+    call nl_get_surface_input_source ( 1      ,  surface_input_source )
+    call nl_get_sst_update           ( 1      ,  sst_update           )
+    call nl_get_feedback             ( 1      ,  feedback             )
+    call nl_get_smooth_option        ( 1      ,  smooth_option        )
+    call nl_get_swrad_scat           ( 1      ,  swrad_scat           )
+    call nl_get_ucmcall              ( 1      ,  ucmcall              )
+    call nl_get_w_damping            ( 1      ,  w_damping            )
+
+#if (EM_CORE == 1)
+    CALL nl_get_pd_moist  ( grid%id , pd_moist )
+    CALL nl_get_pd_scalar ( grid%id , pd_scalar )
+    CALL nl_get_pd_tke    ( grid%id , pd_tke )
+    CALL nl_get_diff_6th_opt  ( grid%id , diff_6th_opt )
+    CALL nl_get_diff_6th_factor ( grid%id , diff_6th_factor )
+
+    CALL nl_get_grid_fdda  ( grid%id , grid_fdda )
+    IF ( grid_fdda == 1 ) THEN
+    CALL nl_get_fgdt       ( grid%id , fgdt )
+    CALL nl_get_gfdda_end_h( grid%id , gfdda_end_h )
+    CALL nl_get_gfdda_interval_m ( grid%id , gfdda_interval_m )
+    CALL nl_get_guv        ( grid%id , guv )
+    CALL nl_get_gt         ( grid%id , gt )
+    CALL nl_get_gq         ( grid%id , gq )
+    CALL nl_get_if_ramping ( 1       , if_ramping )
+    CALL nl_get_dtramp_min ( 1       , dtramp_min )
+    ENDIF
+
+    CALL nl_get_obs_nudge_opt  ( grid%id , obs_nudge_opt )
+    IF ( obs_nudge_opt == 1 ) THEN
+    CALL nl_get_fdda_end       ( grid%id , fdda_end )
+    CALL nl_get_obs_nudge_wind ( grid%id , obs_nudge_wind )
+    CALL nl_get_obs_coef_wind  ( grid%id , obs_coef_wind )
+    CALL nl_get_obs_nudge_temp ( grid%id , obs_nudge_temp )
+    CALL nl_get_obs_coef_temp  ( grid%id , obs_coef_temp )
+    CALL nl_get_obs_nudge_mois ( grid%id , obs_nudge_mois )
+    CALL nl_get_obs_coef_mois  ( grid%id , obs_coef_mois )
+    CALL nl_get_obs_nudge_pstr ( grid%id , obs_nudge_pstr )
+    CALL nl_get_obs_coef_pstr  ( grid%id , obs_coef_pstr )
+    CALL nl_get_obs_ionf       ( 1       , obs_ionf )
+    CALL nl_get_obs_idynin     ( 1       , obs_idynin )
+    CALL nl_get_obs_dtramp     ( 1       , obs_dtramp )
+    ENDIF
+#endif
+
 ! julday and gmt can be set in namelist_03 for ideal.exe run
     CALL nl_get_gmt (grid%id, gmt)
     CALL nl_get_julyr (grid%id, julyr)
@@ -276,6 +329,58 @@
     CALL wrf_put_dom_ti_integer ( fid , 'BL_PBL_PHYSICS' ,  ibuf , 1 , ierr )
     ibuf(1) = cu_physics
     CALL wrf_put_dom_ti_integer ( fid , 'CU_PHYSICS' ,  ibuf , 1 , ierr )
+
+    ! added netcdf-specific metadata:
+    IF ( ( use_package( io_form ) == IO_NETCDF ) .OR. &
+         ( use_package( io_form ) == IO_PHDF5  ) .OR. &
+         ( use_package( io_form ) == IO_PNETCDF ) ) THEN
+      CALL wrf_put_dom_ti_integer ( fid, 'SURFACE_INPUT_SOURCE', surface_input_source , 1 , ierr )
+      CALL wrf_put_dom_ti_integer ( fid, 'SST_UPDATE', sst_update , 1 , ierr )
+      CALL wrf_put_dom_ti_integer ( fid, 'GRID_FDDA', grid_fdda , 1 , ierr )
+      CALL wrf_put_dom_ti_integer ( fid, 'GFDDA_INTERVAL_M', gfdda_interval_m , 1 , ierr )
+      CALL wrf_put_dom_ti_integer ( fid, 'GFDDA_END_H', gfdda_end_h , 1 , ierr )
+
+      IF ( switch .EQ. history_only ) THEN
+      CALL wrf_put_dom_ti_integer ( fid, 'UCMCALL', ucmcall , 1 , ierr )
+      CALL wrf_put_dom_ti_integer ( fid, 'FEEDBACK', feedback , 1 , ierr )
+      CALL wrf_put_dom_ti_integer ( fid, 'SMOOTH_OPTION', smooth_option , 1 , ierr )
+      CALL wrf_put_dom_ti_real    ( fid, 'SWRAD_SCAT', swrad_scat , 1 , ierr )
+      CALL wrf_put_dom_ti_integer ( fid, 'W_DAMPING', w_damping , 1 , ierr )
+
+#if (EM_CORE == 1)
+      CALL wrf_put_dom_ti_logical ( fid, 'PD_MOIST', pd_moist , 1 , ierr )
+      CALL wrf_put_dom_ti_logical ( fid, 'PD_SCALAR', pd_scalar , 1 , ierr )
+      CALL wrf_put_dom_ti_logical ( fid, 'PD_TKE', pd_tke , 1 , ierr )
+      CALL wrf_put_dom_ti_integer ( fid, 'DIFF_6TH_OPT', diff_6th_opt , 1 , ierr )
+      CALL wrf_put_dom_ti_real    ( fid, 'DIFF_6TH_FACTOR', diff_6th_factor , 1 , ierr )
+
+      IF ( grid_fdda == 1 ) THEN
+        CALL wrf_put_dom_ti_real    ( fid, 'FGDT', fgdt , 1 , ierr )
+        CALL wrf_put_dom_ti_real    ( fid, 'GUV', guv , 1 , ierr )
+        CALL wrf_put_dom_ti_real    ( fid, 'GT', gt , 1 , ierr )
+        CALL wrf_put_dom_ti_real    ( fid, 'GQ', gq , 1 , ierr )
+        CALL wrf_put_dom_ti_integer ( fid, 'IF_RAMPING', if_ramping , 1 , ierr )
+        CALL wrf_put_dom_ti_real    ( fid, 'DTRAMP_MIN', dtramp_min , 1 , ierr )
+      ENDIF
+
+      CALL wrf_put_dom_ti_integer ( fid, 'OBS_NUDGE_OPT', obs_nudge_opt , 1 , ierr )
+      IF ( obs_nudge_opt == 1 ) THEN
+        CALL wrf_put_dom_ti_real    ( fid, 'FDDA_END', fdda_end , 1 , ierr )
+        CALL wrf_put_dom_ti_integer ( fid, 'OBS_NUDGE_WIND', obs_nudge_wind , 1 , ierr )
+        CALL wrf_put_dom_ti_real    ( fid, 'OBS_COEF_WIND', obs_coef_wind , 1 , ierr )
+        CALL wrf_put_dom_ti_integer ( fid, 'OBS_NUDGE_TEMP', obs_nudge_temp , 1 , ierr )
+        CALL wrf_put_dom_ti_real    ( fid, 'OBS_COEF_TEMP', obs_coef_temp , 1 , ierr )
+        CALL wrf_put_dom_ti_integer ( fid, 'OBS_NUDGE_MOIS', obs_nudge_mois , 1 , ierr )
+        CALL wrf_put_dom_ti_real    ( fid, 'OBS_COEF_MOIS', obs_coef_mois , 1 , ierr )
+        CALL wrf_put_dom_ti_integer ( fid, 'OBS_NUDGE_PSTR', obs_nudge_pstr , 1 , ierr )
+        CALL wrf_put_dom_ti_real    ( fid, 'OBS_COEF_PSTR', obs_coef_pstr , 1 , ierr )
+        CALL wrf_put_dom_ti_integer ( fid, 'OBS_IONF', obs_ionf , 1 , ierr )
+        CALL wrf_put_dom_ti_integer ( fid, 'OBS_IDYNIN', obs_idynin , 1 , ierr )
+        CALL wrf_put_dom_ti_real    ( fid, 'OBS_DTRAMP', obs_dtramp , 1 , ierr )
+      ENDIF
+#endif
+      ENDIF ! history_only
+    ENDIF
 
 ! added these fields for use by reassembly programs , 010831, JM
 ! modified these fields so "patch" == "domain" when multi-file output 

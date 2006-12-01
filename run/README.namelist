@@ -379,8 +379,8 @@ Namelist variables for controling the automatic moving nest:
  gt (max_dom)                        = 0.0003   ; nudging coefficient for temp (sec-1)
  gq (max_dom)                        = 0.0003   ; nudging coefficient for qvapor (sec-1)
  if_ramping                          = 0        ; 0= nudging ends as a step function, 1= ramping nudging down at end of period
- dtramp_min                          = 120.0    ; time (min) for ramping function, 120.0=ramping starts at last analysis time, 
-                                                                                  -120.0=ramping ends at last analysis time
+ dtramp_min                          = 60.0     ; time (min) for ramping function, 60.0=ramping starts at last analysis time, 
+                                                                                  -60.0=ramping ends at last analysis time
  /
 
 

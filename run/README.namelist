@@ -381,8 +381,33 @@ Namelist variables for controling the automatic moving nest:
  if_ramping                          = 0        ; 0= nudging ends as a step function, 1= ramping nudging down at end of period
  dtramp_min                          = 60.0     ; time (min) for ramping function, 60.0=ramping starts at last analysis time, 
                                                                                   -60.0=ramping ends at last analysis time
- /
 
+The following are for observation nudging:
+ obs_nudge_opt (max_dom)             = 1        ; obs nudging flag 
+ max_obs                             = 1        ; Max number of observations
+ num_ndg_vars                        = 1        ; number of nudged variables 
+ num_err_flds                        = 1        ; number of error fields 
+ fdda_start                          = 0        ; obs nudging start time in minutes
+ fdda_end                            = 180      ; obs nudging end time in minutes
+ obs_nudge_wind (max_dom)            = 0        ; whether to nudge wind: = 1, nudge wind
+ obs_coef_wind                       = 0.       ; nudging coefficient for wind, unit: s-1
+ obs_nudge_temp                      = 0        ; whether to nudge temperature: = 1, nudge wind
+ obs_coef_temp                       = 0.       ; nudging coefficient for temperature, unit: s-1
+ obs_nudge_mois                      = 0        ; whether to nudge specific humidity: = 1, nudge temp
+ obs_coef_mois                       = 0.       ; nudging coefficient for specific humidity, unit: s-1
+ obs_nudge_pstr                      = 0        ; not used
+ obs_coef_pstr                       = 0.       ; nudging coefficient for surface pressure, unit: s-1
+ obs_rinxy                           = 0.       ; horizonal radius of influence in km
+ obs_rinsig                          = 0.       ; vertical radius of influence in eta
+ obs_twindo                          = 0.       ; half-period time window
+ obs_npfi                            = 0        ; freq in coarse grid timesteps for diag prints
+ obs_ionf                            = 0        ; freq in coarse grid timesteps for obs input and err calc
+ obs_idynin                          = 0        ; flag for dynamic initialization
+ obs_dtramp                          = 0        ; time period for ramping
+ obs_ipf_in4dob                      = .false.  ; print obs input diagnostics (min)
+ obs_ipf_errob                       = .false.  ; print obs error diagnostics (min)
+ obs_ipf_nudob                       = .false.  ; print obs nudge diagnostics (min)
+ /
 
 
  &dynamics
@@ -409,11 +434,12 @@ Namelist variables for controling the automatic moving nest:
                                                       Note: option 2 and 3 are not recommended for DX > 2 km
                                                   4 = horizontal Smagorinsky first order closure
                                                       (recommended for real-data case when grid distance < 10 km)
- damp_opt                            = 0,	; upper level damping flag (do not use it for real-data case
-                                                      until further notice)
+ damp_opt                            = 0,	; upper level damping flag 
                                                   0 = without damping
-                                                  1 = with diffusive damping (dampcoef nondimensional ~0.01-0.1)
-                                                  2 = with Rayleigh  damping (dampcoef inverse time scale [1/s] e.g. .003)
+                                                  1 = with diffusive damping, maybe used for real-data cases 
+                                                      (dampcoef nondimensional ~0.01-0.1)
+                                                  2 = with Rayleigh  damping (dampcoef inverse time scale [1/s] e.g. .003; 
+                                                      not for real-data cases)
  diff_6th_opt                        = 0,       ; 6th-order numerical diffusion
                                                   0 = no 6th-order diffusion (default)
                                                   1 = 6th-order numerical diffusion

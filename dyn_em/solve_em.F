@@ -1219,6 +1219,8 @@ BENCH_END(hor_diff_tim)
                   k_start    , min(k_end,kde-1)                     )
 
       ENDDO
+
+     !$OMP END PARALLEL DO
 ! 
 !***********************************************************************
 

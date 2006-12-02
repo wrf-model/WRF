@@ -1,7 +1,7 @@
 OBJSL   = c_code.o buf_for_proc.o rsl_malloc.o rsl_bcast.o task_for_point.o period.o swap.o cycle.o f_pack.o
 OBJS    = $(OBJSL)
 OPTS    =
-FFLAGS  =  $(OPTS) -w
+FFLAGS  =  $(OPTS)
 LIBS    = 
 M4      = m4 -Uinclude -Uindex -Ulen
 AR      = ar

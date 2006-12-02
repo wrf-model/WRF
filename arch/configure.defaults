@@ -2686,7 +2686,7 @@ RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
 CFLAGS          =       -DNOUNDERSCORE -DNCARIBM_NOC99 $(MPI_INC) -I../external/RSL_LITE -DLANDREAD_STUB
 FCOPTIM         =       -O2 -qarch=440
-FCDEBUG         =       # -qnoopt -qfullpath
+FCDEBUG         =       # -qnoopt -qfullpath -qarch=440
 
 FCBASEOPTS      =       -qspill=20000 $(FCDEBUG) -qmaxmem=64000  $(MPI_INC) -w #-qflttrap=zerodivide:invalid:enable -qsigtrap
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)

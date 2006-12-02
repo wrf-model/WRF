@@ -4285,7 +4285,7 @@ END
 
 !------------------------------------------------------------------
 
-   SUBROUTINE force_domain_em_part2 ( grid, ngrid, config_flags ,  &
+   SUBROUTINE force_domain_em_part2 ( grid, ngrid, config_flags   &
 !
 #include "em_dummy_new_args.inc"
 !
@@ -4342,7 +4342,7 @@ END
 
 !------------------------------------------------------------------
 
-   SUBROUTINE interp_domain_em_part1 ( grid, intermediate_grid, ngrid, config_flags ,  &
+   SUBROUTINE interp_domain_em_part1 ( grid, intermediate_grid, ngrid, config_flags    &
 !
 #include "em_dummy_new_args.inc"
 !
@@ -4387,7 +4387,7 @@ END
       RETURN
    END SUBROUTINE interp_domain_em_part1
 
-   SUBROUTINE interp_domain_em_part2 ( grid, ngrid, config_flags ,  &
+   SUBROUTINE interp_domain_em_part2 ( grid, ngrid, config_flags    &
 !
 #include "em_dummy_new_args.inc"
 !
@@ -4445,7 +4445,7 @@ END
 ! And we want the halo exchange on the nest, so that the code in 
 ! em_nest_feedbackup_interp.inc will work correctly on multi-p. JM 20040308
 !
-   SUBROUTINE feedback_nest_prep ( grid, config_flags ,  &
+   SUBROUTINE feedback_nest_prep ( grid, config_flags    &
 !
 #include "em_dummy_new_args.inc"
 !
@@ -4471,7 +4471,7 @@ END
 
    END SUBROUTINE feedback_nest_prep
 
-   SUBROUTINE feedback_domain_em_part1 ( grid, ngrid, config_flags ,  &
+   SUBROUTINE feedback_domain_em_part1 ( grid, ngrid, config_flags    &
 !
 #include "em_dummy_new_args.inc"
 !
@@ -4495,7 +4495,7 @@ END
                                 nims, nime, njms, njme, nkms, nkme,    &
                                 nips, nipe, njps, njpe, nkps, nkpe
       INTERFACE 
-          SUBROUTINE feedback_nest_prep ( grid, config_flags ,  &
+          SUBROUTINE feedback_nest_prep ( grid, config_flags    &
 !
 #include "em_dummy_new_args.inc"
 !
@@ -4534,7 +4534,7 @@ END
       xgrid => grid
       grid => ngrid 
 
-      CALL feedback_nest_prep ( grid, nconfig_flags ,  &
+      CALL feedback_nest_prep ( grid, nconfig_flags    &
 !
 #include "em_actual_new_args.inc"
 !
@@ -4550,7 +4550,7 @@ END
 
 !------------------------------------------------------------------
 
-   SUBROUTINE feedback_domain_em_part2 ( grid, intermediate_grid, ngrid , config_flags ,  &
+   SUBROUTINE feedback_domain_em_part2 ( grid, intermediate_grid, ngrid , config_flags    &
 !
 #include "em_dummy_new_args.inc"
 !
@@ -4624,7 +4624,7 @@ END
 ! NMM nesting infrastructure extended from EM core. This is gopal's doing.
 !==============================================================================
 
-   SUBROUTINE interp_domain_nmm_part1 ( grid, intermediate_grid, ngrid, config_flags ,  &
+   SUBROUTINE interp_domain_nmm_part1 ( grid, intermediate_grid, ngrid, config_flags    &
 !
 #include "nmm_dummy_args.inc"
 !
@@ -4646,7 +4646,7 @@ END
       RETURN
    END SUBROUTINE interp_domain_nmm_part1
 
-   SUBROUTINE interp_domain_nmm_part2 ( grid, ngrid, config_flags ,  &
+   SUBROUTINE interp_domain_nmm_part2 ( grid, ngrid, config_flags    &
 !
 #include "nmm_dummy_args.inc"
 !
@@ -4666,7 +4666,7 @@ END
       RETURN
    END SUBROUTINE interp_domain_nmm_part2
 
-   SUBROUTINE force_domain_nmm_part1 ( grid, intermediate_grid, config_flags ,  &
+   SUBROUTINE force_domain_nmm_part1 ( grid, intermediate_grid, config_flags    &
 !
 #include "nmm_dummy_args.inc"
 !
@@ -4686,7 +4686,7 @@ END
       RETURN
    END SUBROUTINE force_domain_nmm_part1
 
-   SUBROUTINE force_domain_nmm_part2 ( grid, ngrid, config_flags ,  &
+   SUBROUTINE force_domain_nmm_part2 ( grid, ngrid, config_flags    &
 !
 #include "nmm_dummy_args.inc"
 !
@@ -4706,7 +4706,7 @@ END
       RETURN
    END SUBROUTINE force_domain_nmm_part2
 
-   SUBROUTINE feedback_domain_nmm_part1 ( grid, ngrid, config_flags ,  &
+   SUBROUTINE feedback_domain_nmm_part1 ( grid, ngrid, config_flags    &
 !
 #include "nmm_dummy_args.inc"
 !
@@ -4726,7 +4726,7 @@ END
       RETURN
    END SUBROUTINE feedback_domain_nmm_part1
 
-   SUBROUTINE feedback_domain_nmm_part2 ( grid, intermediate_grid, ngrid , config_flags ,  &
+   SUBROUTINE feedback_domain_nmm_part2 ( grid, intermediate_grid, ngrid , config_flags    &
 !
 #include "nmm_dummy_args.inc"
 !

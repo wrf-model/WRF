@@ -2126,7 +2126,7 @@ END
 
 !------------------------------------------------------------------
 
-   SUBROUTINE force_domain_em_part2 ( grid, ngrid, config_flags ,  &
+   SUBROUTINE force_domain_em_part2 ( grid, ngrid, config_flags    &
 !
 #include "em_dummy_new_args.inc"
 !
@@ -2181,7 +2181,7 @@ END
 
 !------------------------------------------------------------------
 
-   SUBROUTINE interp_domain_em_part1 ( grid, intermediate_grid, ngrid, config_flags ,  &
+   SUBROUTINE interp_domain_em_part1 ( grid, intermediate_grid, ngrid, config_flags    &
 !
 #include "em_dummy_new_args.inc"
 !
@@ -2251,7 +2251,7 @@ END
 
 !------------------------------------------------------------------
 
-   SUBROUTINE interp_domain_em_part2 ( grid, ngrid, config_flags ,  &
+   SUBROUTINE interp_domain_em_part2 ( grid, ngrid, config_flags    &
 !
 #include "em_dummy_new_args.inc"
 !
@@ -2307,7 +2307,7 @@ END
 
 !------------------------------------------------------------------
 
-   SUBROUTINE feedback_nest_prep ( grid, config_flags ,  &
+   SUBROUTINE feedback_nest_prep ( grid, config_flags    &
 !
 #include "em_dummy_new_args.inc"
 !
@@ -2344,7 +2344,7 @@ END
 
 !------------------------------------------------------------------
 
-   SUBROUTINE feedback_domain_em_part1 ( grid, ngrid, config_flags ,  &
+   SUBROUTINE feedback_domain_em_part1 ( grid, ngrid, config_flags    &
 !
 #include "em_dummy_new_args.inc"
 !
@@ -2371,7 +2371,7 @@ END
       INTEGER local_comm, myproc, nproc, idum1, idum2
 
       INTERFACE
-          SUBROUTINE feedback_nest_prep ( grid, config_flags ,  &
+          SUBROUTINE feedback_nest_prep ( grid, config_flags    &
 !
 #include "em_dummy_new_args.inc"
 !
@@ -2423,7 +2423,7 @@ END
       xgrid => grid
       grid => ngrid
 
-      CALL feedback_nest_prep ( grid, nconfig_flags ,  &
+      CALL feedback_nest_prep ( grid, nconfig_flags    &
 !
 #include "em_actual_new_args.inc"
 !
@@ -2443,7 +2443,7 @@ END
 
 !------------------------------------------------------------------
 
-   SUBROUTINE feedback_domain_em_part2 ( grid, intermediate_grid, ngrid , config_flags ,  &
+   SUBROUTINE feedback_domain_em_part2 ( grid, intermediate_grid, ngrid , config_flags    &
 !
 #include "em_dummy_new_args.inc"
 !
@@ -2558,7 +2558,7 @@ END
 ! NMM nesting infrastructure extended from EM core. This is gopal's doing.
 !==============================================================================
 
-   SUBROUTINE interp_domain_nmm_part1 ( grid, intermediate_grid, ngrid, config_flags ,  &
+   SUBROUTINE interp_domain_nmm_part1 ( grid, intermediate_grid, ngrid, config_flags    &
 !
 #include "nmm_dummy_args.inc"
 !
@@ -2633,7 +2633,7 @@ END
 
 !------------------------------------------------------------------
 
-   SUBROUTINE interp_domain_nmm_part2 ( grid, ngrid, config_flags ,  &
+   SUBROUTINE interp_domain_nmm_part2 ( grid, ngrid, config_flags    &
 !
 #include "nmm_dummy_args.inc"
 !
@@ -2702,7 +2702,7 @@ END
 
 !------------------------------------------------------------------
 
-   SUBROUTINE force_domain_nmm_part1 ( grid, intermediate_grid, config_flags ,  &
+   SUBROUTINE force_domain_nmm_part1 ( grid, intermediate_grid, config_flags    &
 !
 #include "nmm_dummy_args.inc"
 !
@@ -2751,7 +2751,7 @@ END
 
 !==============================================================================================
 
-   SUBROUTINE force_domain_nmm_part2 ( grid, ngrid, config_flags ,  &
+   SUBROUTINE force_domain_nmm_part2 ( grid, ngrid, config_flags    &
 !
 #include "nmm_dummy_args.inc"
 !
@@ -2830,7 +2830,7 @@ integer myproc
 ! em_nest_feedbackup_interp.inc will work correctly on multi-p. JM 20040308
 !
 
-   SUBROUTINE feedback_nest_prep_nmm ( grid, config_flags ,  &
+   SUBROUTINE feedback_nest_prep_nmm ( grid, config_flags    &
 !
 #include "nmm_dummy_args.inc"
 !
@@ -2881,7 +2881,7 @@ integer myproc
 
 !------------------------------------------------------------------
 
-   SUBROUTINE feedback_domain_nmm_part1 ( grid, ngrid, config_flags ,  &
+   SUBROUTINE feedback_domain_nmm_part1 ( grid, ngrid, config_flags    &
 !
 #include "nmm_dummy_args.inc"
 !
@@ -2915,7 +2915,7 @@ integer myproc
 #endif
 
       INTERFACE
-          SUBROUTINE feedback_nest_prep_nmm ( grid, config_flags ,  &
+          SUBROUTINE feedback_nest_prep_nmm ( grid, config_flags    &
 !
 #include "nmm_dummy_args.inc"
 !
@@ -2970,7 +2970,7 @@ integer myproc
       xgrid => grid
       grid => ngrid
 #include "deref_kludge.h"
-      CALL feedback_nest_prep_nmm ( grid, config_flags ,  &
+      CALL feedback_nest_prep_nmm ( grid, config_flags    &
 !
 #include "nmm_actual_args.inc"
 !
@@ -2992,7 +2992,7 @@ integer myproc
 
 !------------------------------------------------------------------
 
-   SUBROUTINE feedback_domain_nmm_part2 ( grid, intermediate_grid, ngrid , config_flags ,  &
+   SUBROUTINE feedback_domain_nmm_part2 ( grid, intermediate_grid, ngrid , config_flags    &
 !
 #include "nmm_dummy_args.inc"
 !

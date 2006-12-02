@@ -1136,14 +1136,14 @@ integer myproc
                      its,ite, jts,jte, kts,kte                 )
 
 !URBAN
-             IF ( PRESENT( FRC_URB2D ) .AND. PRESENT( UTYPE_URB2D ))          &
-                  THEN
-
           IF(UCMCALL.eq.1) THEN
-          CALL urban_param_init(DZR,DZB,DZG,num_soil_layers                    & !urban
+
+             IF ( PRESENT( FRC_URB2D ) .AND. PRESENT( UTYPE_URB2D )) THEN
+
+                CALL urban_param_init(DZR,DZB,DZG,num_soil_layers                    & !urban
                                 )
 !                                num_roof_layers,num_wall_layers,road_soil_layers)   !urban
-          CALL urban_var_init(TSK,TSLB,TMN,IVGTYP,                             & !urban
+                CALL urban_var_init(TSK,TSLB,TMN,IVGTYP,                             & !urban
                               ims,ime,jms,jme,num_soil_layers,                 & !urban
 !                              num_roof_layers,num_wall_layers,num_road_layers, & !urban
                               XXXR_URB2D,XXXB_URB2D,XXXG_URB2D,XXXC_URB2D,     & !urban
@@ -1151,10 +1151,10 @@ integer myproc
                               TRL_URB3D,TBL_URB3D,TGL_URB3D,                   & !urban
                               SH_URB2D,LH_URB2D,G_URB2D,RN_URB2D, TS_URB2D,    & ! urban
                               FRC_URB2D, UTYPE_URB2D)                            !urban
-          ENDIF
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling urban model' )
              ENDIF
+          ENDIF
 
 
       CASE (RUCLSMSCHEME)

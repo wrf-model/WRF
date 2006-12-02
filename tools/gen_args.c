@@ -75,7 +75,7 @@ gen_args ( char * dirname , char * corename , int sw )
   if ((fp = fopen( fname , "w" )) == NULL ) return(1) ;
   print_warning(fp,fname) ;
   linelen = 0 ;
-  strcpy(outstr,"") ;
+  strcpy(outstr,",") ;
   gen_args1 ( fp , outstr, (sw==ACTUAL||sw==ACTUAL_NEW)?"grid%":"", corename ,
               &Domain , &linelen , sw , 0 ) ;
   /* remove trailing comma */

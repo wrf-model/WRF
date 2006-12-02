@@ -60,7 +60,7 @@ CONTAINS
 
      ELSEIF ( dyn_opt .eq. 4 ) THEN
 
-        CALL init_domain_nmm (grid, &
+        CALL init_domain_nmm (grid &
 !
 #include <nmm_actual_args.inc>
 !
@@ -75,7 +75,7 @@ CONTAINS
 
 !-------------------------------------------------------------------
 !---------------------------------------------------------------------
-   SUBROUTINE init_domain_nmm ( grid, &
+   SUBROUTINE init_domain_nmm ( grid &
 !
 # include <nmm_dummy_args.inc>
 !

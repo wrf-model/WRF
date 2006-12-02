@@ -7,7 +7,7 @@
 #include "nmm_loop_macros.h"
 !-----------------------------------------------------------------------
 !
-      SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS,                           &
+      SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS                           &
 !
 #include "nmm_dummy_args.inc"
 !

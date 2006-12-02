@@ -1,7 +1,7 @@
 !WRF:MEDIATION_LAYER:
 !
 
-SUBROUTINE med_read_nmm ( grid , config_flags , ntsd, dt_from_file, tstart_from_file, tend_from_file, &
+SUBROUTINE med_read_nmm ( grid , config_flags , ntsd, dt_from_file, tstart_from_file, tend_from_file &
 !
 #include <nmm_dummy_args.inc>
 !
@@ -632,7 +632,7 @@ SUBROUTINE med_read_nmm ( grid , config_flags , ntsd, dt_from_file, tstart_from_
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!
-ENTRY med_read_nmm_bdy ( grid , config_flags , ntsd , dt_from_file, tstart_from_file, tend_from_file, &
+ENTRY med_read_nmm_bdy ( grid , config_flags , ntsd , dt_from_file, tstart_from_file, tend_from_file &
 !
 #include <nmm_dummy_args.inc>
 !

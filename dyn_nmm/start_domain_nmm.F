@@ -3,7 +3,7 @@
 !#define NO_UPSTREAM_ADVECTION
 !----------------------------------------------------------------------
 !
-      SUBROUTINE START_DOMAIN_NMM(GRID, allowed_to_read ,              &
+      SUBROUTINE START_DOMAIN_NMM(GRID, allowed_to_read                &
 !
 #include <nmm_dummy_args.inc>
 !

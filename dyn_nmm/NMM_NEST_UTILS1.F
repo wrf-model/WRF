@@ -2025,7 +2025,7 @@ SUBROUTINE med_init_domain_constants_nmm ( parent, nest)   !, config_flags)
 #endif
 !
    INTERFACE
-     SUBROUTINE med_initialize_nest_nmm ( grid,  &   
+     SUBROUTINE med_initialize_nest_nmm ( grid  &   
 !
 # include <nmm_dummy_args.inc>
 !
@@ -2069,7 +2069,7 @@ SUBROUTINE med_init_domain_constants_nmm ( parent, nest)   !, config_flags)
    em33y            = grid%em33y
 #endif
 
-   CALL med_initialize_nest_nmm( grid, &   
+   CALL med_initialize_nest_nmm( grid &   
 !
 # include <nmm_actual_args.inc>
 !
@@ -2077,7 +2077,7 @@ SUBROUTINE med_init_domain_constants_nmm ( parent, nest)   !, config_flags)
 
 END SUBROUTINE med_init_domain_constants_nmm
 
-SUBROUTINE med_initialize_nest_nmm( grid, &
+SUBROUTINE med_initialize_nest_nmm( grid &
 !
 # include <nmm_dummy_args.inc>
 !

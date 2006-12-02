@@ -3069,3 +3069,6 @@ rm -rf phys_quarter_* >& /dev/null
 rm -rf phys_b_wave_* >& /dev/null
 rm -rf version_info >& /dev/null
 rm -rf machfile >& /dev/null
+rm -rf fdda_real* >& /dev/null
+rm -rf time_real_* >& /dev/null
+rm -rf dyn_real_* >& /dev/null

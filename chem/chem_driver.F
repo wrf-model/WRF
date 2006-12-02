@@ -10,7 +10,7 @@
 !-----------------------------------------------------------------------
 #endif
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    subroutine chem_driver ( grid , config_flags , &
+    subroutine chem_driver ( grid , config_flags  &
 !
 #if ( EM_CORE == 1 )
 #include "em_dummy_new_args.inc"

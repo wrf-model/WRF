@@ -1,6 +1,6 @@
 !-------------------------------------------------------------------
 
-   SUBROUTINE start_domain_em ( grid, allowed_to_read , &
+   SUBROUTINE start_domain_em ( grid, allowed_to_read  &
 ! Actual arguments generated from Registry
 # include "em_dummy_new_args.inc"
 !

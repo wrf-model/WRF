@@ -50,7 +50,7 @@ CONTAINS
            .or. dyn_opt .eq. 2 &
            .or. dyn_opt .eq. 3 &
                                           ) THEN
-        CALL init_domain_rk( grid, &
+        CALL init_domain_rk( grid &
 !
 #include "em_actual_new_args.inc"
 !
@@ -65,7 +65,7 @@ CONTAINS
 
 !-------------------------------------------------------------------
 
-   SUBROUTINE init_domain_rk ( grid, &
+   SUBROUTINE init_domain_rk ( grid &
 !
 #include "em_dummy_new_args.inc"
 !
@@ -1575,7 +1575,7 @@ endif
 
       TYPE (domain)          :: grid 
 
-      CALL rebalance( grid, &
+      CALL rebalance( grid &
 !
 #include "em_actual_new_args.inc"
 !
@@ -1585,7 +1585,7 @@ endif
 
 !---------------------------------------------------------------------
 
-   SUBROUTINE rebalance ( grid , &
+   SUBROUTINE rebalance ( grid  &
 !
 #include "em_dummy_new_args.inc"
 !

@@ -1,4 +1,4 @@
-SUBROUTINE shift_domain_em ( grid , disp_x, disp_y, &
+SUBROUTINE shift_domain_em ( grid , disp_x, disp_y &
 !
 # include <em_dummy_new_args.inc>
 !

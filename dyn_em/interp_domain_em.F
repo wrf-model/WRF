@@ -12,7 +12,7 @@ end
 ! the non-MPI configurations using RSL, this is basically dead-code.
 ! Needs to be here for linking purposes only.
 
-SUBROUTINE interp_domain_em_part1 ( grid, ngrid, config_flags ,  &
+SUBROUTINE interp_domain_em_part1 ( grid, ngrid, config_flags   &
 !
 #include "em_dummy_new_args.inc"
 !

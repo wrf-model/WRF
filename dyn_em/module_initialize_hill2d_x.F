@@ -61,7 +61,7 @@ CONTAINS
         .or. dyn_opt .eq. 2 &
         .or. dyn_opt .eq. 3 &
                                        ) THEN
-     CALL init_domain_rk( grid, &
+     CALL init_domain_rk( grid &
 !
 #include <em_actual_new_args.inc>
 !
@@ -76,7 +76,7 @@ CONTAINS
 
 !-------------------------------------------------------------------
 
-   SUBROUTINE init_domain_rk ( grid, &
+   SUBROUTINE init_domain_rk ( grid &
 !
 # include <em_dummy_new_args.inc>
 !

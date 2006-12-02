@@ -267,7 +267,7 @@ enddo
                        
 END SUBROUTINE input_terrain_rsmas
 
-SUBROUTINE update_after_feedback_em ( grid , &
+SUBROUTINE update_after_feedback_em ( grid  &
 !
 #include "em_dummy_new_args.inc"
 !

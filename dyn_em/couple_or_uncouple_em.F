@@ -1,6 +1,6 @@
 !WRF:MEDIATION_LAYER:couple_uncouple_utility
 
-SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple, &
+SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple &
 !
 #include "em_dummy_new_args.inc"
 !

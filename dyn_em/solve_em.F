@@ -1,6 +1,6 @@
 !WRF:MEDIATION_LAYER:SOLVER
 
-SUBROUTINE solve_em ( grid , config_flags , &
+SUBROUTINE solve_em ( grid , config_flags  &
 ! Actual arguments generated from Registry
 #include "em_dummy_new_args.inc"
 !

@@ -29,7 +29,7 @@ SUBROUTINE med_feedback_domain ( parent_grid , nested_grid )
 !    These routines are supplied by module_dm.F from the
 !    external communication package (e.g. external/RSL)
 ! ------------------------------------------------------
-      SUBROUTINE feedback_domain_em_part1 ( grid, nested_grid, config_flags ,  &
+      SUBROUTINE feedback_domain_em_part1 ( grid, nested_grid, config_flags   &
 !
 #          include "em_dummy_new_args.inc"
 !
@@ -41,7 +41,7 @@ SUBROUTINE med_feedback_domain ( parent_grid , nested_grid )
          TYPE (grid_config_rec_type)            :: config_flags
 #        include <em_dummy_new_decl.inc>
       END SUBROUTINE feedback_domain_em_part1
-      SUBROUTINE feedback_domain_em_part2 ( grid, intermediate_grid , nested_grid, config_flags ,  &
+      SUBROUTINE feedback_domain_em_part2 ( grid, intermediate_grid , nested_grid, config_flags   &
 !
 #          include "em_dummy_new_args.inc"
 !
@@ -54,7 +54,7 @@ SUBROUTINE med_feedback_domain ( parent_grid , nested_grid )
          TYPE (grid_config_rec_type)            :: config_flags
 #        include <em_dummy_decl.inc>
       END SUBROUTINE feedback_domain_em_part2
-      SUBROUTINE update_after_feedback_em ( grid,  &
+      SUBROUTINE update_after_feedback_em ( grid  &
 !
 #          include "em_dummy_new_args.inc"
 !
@@ -75,7 +75,7 @@ SUBROUTINE med_feedback_domain ( parent_grid , nested_grid )
 !    external communication package (e.g. external/RSL)
 !    This is gopal's extension for the NMM core
 ! ------------------------------------------------------
-      SUBROUTINE feedback_domain_nmm_part1 ( grid, nested_grid, config_flags ,  &
+      SUBROUTINE feedback_domain_nmm_part1 ( grid, nested_grid, config_flags   &
 !
 #          include "nmm_dummy_args.inc"
 !
@@ -88,7 +88,7 @@ SUBROUTINE med_feedback_domain ( parent_grid , nested_grid )
 #        include <nmm_dummy_decl.inc>
       END SUBROUTINE feedback_domain_nmm_part1
 !
-      SUBROUTINE feedback_domain_nmm_part2 ( grid, intermediate_grid , nested_grid, config_flags ,  &
+      SUBROUTINE feedback_domain_nmm_part2 ( grid, intermediate_grid , nested_grid, config_flags   &
 !
 #          include "nmm_dummy_args.inc"
 !
@@ -133,7 +133,7 @@ SUBROUTINE med_feedback_domain ( parent_grid , nested_grid )
        )
      grid => nested_grid%intermediate_grid
 #    include "deref_kludge.h"
-     CALL feedback_domain_em_part1 ( grid, nested_grid, config_flags ,  &
+     CALL feedback_domain_em_part1 ( grid, nested_grid, config_flags   &
 !
 #      include "em_actual_new_args.inc"
 !
@@ -142,13 +142,13 @@ SUBROUTINE med_feedback_domain ( parent_grid , nested_grid )
 #    include "deref_kludge.h"
 
      grid%nest_mask = 0.
-     CALL feedback_domain_em_part2 ( grid , nested_grid%intermediate_grid, nested_grid , config_flags ,  &
+     CALL feedback_domain_em_part2 ( grid , nested_grid%intermediate_grid, nested_grid , config_flags   &
 !
 #      include "em_actual_new_args.inc"
 
                                    )
      WHERE   ( grid%nest_pos .NE. 9021000.  ) grid%ht = grid%ht_coarse
-     CALL update_after_feedback_em ( grid , &
+     CALL update_after_feedback_em ( grid  &
 !
 #      include "em_actual_new_args.inc"
 !
@@ -184,7 +184,7 @@ SUBROUTINE med_feedback_domain ( parent_grid , nested_grid )
 
      grid => nested_grid%intermediate_grid
 #    include "deref_kludge.h"
-     CALL feedback_domain_nmm_part1 ( grid, nested_grid, config_flags ,  &
+     CALL feedback_domain_nmm_part1 ( grid, nested_grid, config_flags    &
 !
 #      include "nmm_actual_args.inc"
 !
@@ -193,7 +193,7 @@ SUBROUTINE med_feedback_domain ( parent_grid , nested_grid )
 #    include "deref_kludge.h"
 
 !
-     CALL feedback_domain_nmm_part2 ( grid , nested_grid%intermediate_grid, nested_grid , config_flags ,  &
+     CALL feedback_domain_nmm_part2 ( grid , nested_grid%intermediate_grid, nested_grid , config_flags    &
 !
 #      include "nmm_actual_args.inc"
 !

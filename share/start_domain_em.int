@@ -1,5 +1,5 @@
 
-SUBROUTINE start_domain_em      ( grid ,    &
+SUBROUTINE start_domain_em      ( grid      &
 !
 #include <em_dummy_args.inc>
 !

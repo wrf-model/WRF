@@ -1,5 +1,5 @@
 
-SUBROUTINE solve_nmm      ( grid , config_flags ,   &
+SUBROUTINE solve_nmm      ( grid , config_flags     &
 !
 #include <nmm_dummy_args.inc>
 !

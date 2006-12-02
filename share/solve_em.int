@@ -1,4 +1,4 @@
-SUBROUTINE solve_em      ( grid , config_flags ,   &
+SUBROUTINE solve_em      ( grid , config_flags     &
 !
 #include <em_dummy_new_args.inc>
 !

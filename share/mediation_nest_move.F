@@ -34,7 +34,7 @@ SUBROUTINE med_nest_move ( parent, nest )
         LOGICAL, INTENT(IN) :: allowed_to_move
      END SUBROUTINE start_domain
 #if ( EM_CORE == 1 )
-     SUBROUTINE shift_domain_em ( grid, disp_x, disp_y,  &
+     SUBROUTINE shift_domain_em ( grid, disp_x, disp_y  &
 !
 # include <em_dummy_new_args.inc>
 !
@@ -138,7 +138,7 @@ SUBROUTINE med_nest_move ( parent, nest )
 
 #if ( EM_CORE == 1 )
      IF ( dyn_opt .EQ. DYN_EM ) THEN
-       CALL shift_domain_em( grid, dx, dy,  &
+       CALL shift_domain_em( grid, dx, dy  &
 !
 # include <em_actual_new_args.inc>
 !

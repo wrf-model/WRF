@@ -33,7 +33,7 @@ SUBROUTINE start_domain ( grid , allowed_to_read )
 #if ((EM_CORE == 1) && (DA_CORE != 1))
    ELSE IF (      dyn_opt .eq. DYN_EM ) THEN
 
-     CALL start_domain_em( grid, allowed_to_read , &
+     CALL start_domain_em( grid, allowed_to_read  &
 !
 # include <em_actual_new_args.inc>
 !
@@ -41,7 +41,7 @@ SUBROUTINE start_domain ( grid , allowed_to_read )
 #endif
 #if (NMM_CORE == 1)
    ELSE IF (      dyn_opt .eq. DYN_NMM ) THEN
-     CALL start_domain_nmm( grid, allowed_to_read , &
+     CALL start_domain_nmm( grid, allowed_to_read   &
 !
 # include <nmm_actual_args.inc>
 !
@@ -49,7 +49,7 @@ SUBROUTINE start_domain ( grid , allowed_to_read )
 #endif
 #if (COAMPS_CORE == 1)
    ELSE IF (      dyn_opt .eq. DYN_COAMPS ) THEN
-     CALL start_domain_coamps( grid, allowed_to_read , &
+     CALL start_domain_coamps( grid, allowed_to_read   &
 !
 # include <coamps_actual_args.inc>
 !

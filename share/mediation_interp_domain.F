@@ -28,7 +28,7 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
 !    These routines are supplied by module_dm.F from the 
 !    external communication package (e.g. external/RSL)
 ! ----------------------------------------------------------
-      SUBROUTINE interp_domain_em_part1 ( grid, intermediate_grid, ngrid, config_flags ,  &
+      SUBROUTINE interp_domain_em_part1 ( grid, intermediate_grid, ngrid, config_flags   &
 !
 #        include "em_dummy_new_args.inc"
 !
@@ -42,7 +42,7 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
 #        include <em_dummy_new_decl.inc>
       END SUBROUTINE interp_domain_em_part1
 
-      SUBROUTINE interp_domain_em_part2 ( grid, nested_grid, config_flags ,  &
+      SUBROUTINE interp_domain_em_part2 ( grid, nested_grid, config_flags   &
 !
 #        include "em_dummy_new_args.inc"
 !
@@ -63,7 +63,7 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
 !  Added for the NMM core. This is gopal's doing.
 !=======================================================================
 
-      SUBROUTINE interp_domain_nmm_part1 ( grid, intermediate_grid, ngrid, config_flags ,  &
+      SUBROUTINE interp_domain_nmm_part1 ( grid, intermediate_grid, ngrid, config_flags    &
 !
 # include "nmm_dummy_args.inc"
 !
@@ -77,7 +77,7 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
 # include <nmm_dummy_decl.inc>
       END SUBROUTINE interp_domain_nmm_part1
 
-      SUBROUTINE interp_domain_nmm_part2 ( grid, nested_grid, config_flags ,  &
+      SUBROUTINE interp_domain_nmm_part2 ( grid, nested_grid, config_flags    &
 !
 # include "nmm_dummy_args.inc"
 !
@@ -127,14 +127,14 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
     grid => parent_grid
 
     CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
-    CALL interp_domain_em_part1 ( grid , nested_grid%intermediate_grid, nested_grid, config_flags ,  &
+    CALL interp_domain_em_part1 ( grid , nested_grid%intermediate_grid, nested_grid, config_flags   &
 !
 #     include "em_actual_new_args.inc"
 !
                                 )
     grid => nested_grid%intermediate_grid
     CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
-    CALL interp_domain_em_part2 ( grid, nested_grid, config_flags ,  &
+    CALL interp_domain_em_part2 ( grid, nested_grid, config_flags   &
 !
 #     include "em_actual_new_args.inc"
 !
@@ -177,7 +177,7 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
 
     CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
 
-    CALL interp_domain_nmm_part1 ( grid , nested_grid%intermediate_grid, nested_grid, config_flags ,  &
+    CALL interp_domain_nmm_part1 ( grid , nested_grid%intermediate_grid, nested_grid, config_flags    &
 !
 #     include "nmm_actual_args.inc"
 !
@@ -186,7 +186,7 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
     CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
 #   include "deref_kludge.h"
 
-    CALL interp_domain_nmm_part2 ( grid, nested_grid, config_flags ,  &
+    CALL interp_domain_nmm_part2 ( grid, nested_grid, config_flags    &
 !
 #     include "nmm_actual_args.inc"
 !

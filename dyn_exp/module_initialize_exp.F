@@ -22,7 +22,7 @@ MODULE module_initialize
 
 CONTAINS
 
-   SUBROUTINE init_domain_exp ( grid, &
+   SUBROUTINE init_domain_exp ( grid &
 !
 # include <exp_dummy_args.inc>
 !
@@ -144,7 +144,7 @@ CONTAINS
    CALL set_scalar_indices_from_config ( head_grid%id , idum1, idum2 )
 
    IF ( dyn_opt .eq. DYN_EXP  ) THEN
-     CALL init_domain_exp( grid, &
+     CALL init_domain_exp( grid &
 !
 #include <exp_actual_args.inc>
 !

@@ -1,7 +1,7 @@
 !WRF:MEDIATION_LAYER:SOLVER
 !
 
-SUBROUTINE solve_exp ( grid ,               &
+SUBROUTINE solve_exp ( grid                &
 !
 #include "exp_dummy_args.inc"
 !

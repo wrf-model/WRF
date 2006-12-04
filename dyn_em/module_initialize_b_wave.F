@@ -214,7 +214,7 @@ CONTAINS
          grid%sina(i,j)     = 0.
          grid%cosa(i,j)     = 1.
          grid%e(i,j)        = 0.
-         grid%f(i,j)        = 1.grid%e-04
+         grid%f(i,j)        = 1.e-04
 
       END DO
    END DO

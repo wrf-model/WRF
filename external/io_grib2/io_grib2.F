@@ -3954,8 +3954,8 @@ subroutine gr2_addfield_w(cgrib, lcgrib, VarName, parmcat, parmnum, DecScl, &
   integer                  ,intent(in)      :: vert_sclFctr1, vert_sclFctr2
   integer                  ,intent(in)      :: numlevels
   integer, dimension(*)    ,intent(in)      :: levels
-  real                     ,intent(in)      :: fld(ngrdpts)
   integer                  ,intent(in)      :: ngrdpts
+  real                     ,intent(in)      :: fld(ngrdpts)
   integer                  ,intent(in)      :: background_proc_id
   integer                  ,intent(in)      :: forecast_proc_id
   integer                  ,intent(in)      :: compression

@@ -626,7 +626,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
 
      SUBROUTINE BASE_STATE_PARENT ( Z3d,Q3d,T3d,PSTD,        &
                                     PINT,T,Q,CWM,            &
-                                    FIS,QS,PD,PDTOP,PTOP,    &
+                                    FIS,QSH,PD,PDTOP,PTOP,   &
                                     ETA1,ETA2,               &
                                     DETA1,DETA2,             &
                                     IDS,IDE,JDS,JDE,KDS,KDE, &
@@ -641,7 +641,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
          INTEGER,    INTENT(IN   )                            :: ITS,ITE,JTS,JTE,KTS,KTE
          REAL,       INTENT(IN   )                            :: PDTOP,PTOP
          REAL, DIMENSION(KMS:KME),                 INTENT(IN) :: ETA1,ETA2,DETA1,DETA2
-         REAL, DIMENSION(IMS:IME,JMS:JME),         INTENT(IN) :: FIS,PD,QS
+         REAL, DIMENSION(IMS:IME,JMS:JME),         INTENT(IN) :: FIS,PD,QSH
          REAL, DIMENSION(IMS:IME,KMS:KME,JMS:JME), INTENT(IN) :: PINT,T,Q,CWM
          REAL, DIMENSION(KMS:KME)                , INTENT(OUT):: PSTD
          REAL, DIMENSION(IMS:IME,KMS:KME,JMS:JME), INTENT(OUT):: Z3d,Q3d,T3d
@@ -716,7 +716,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
 
     CALL BASE_STATE_PARENT ( parent%nmm_Z3d,parent%nmm_Q3d,parent%nmm_T3d,parent%nmm_PSTD,  &
                              parent%nmm_PINT,parent%nmm_T,parent%nmm_Q,parent%nmm_CWM,      &
-                             parent%nmm_FIS,parent%nmm_QS,parent%nmm_PD,parent%nmm_pdtop,parent%nmm_pt,   &
+                             parent%nmm_FIS,parent%nmm_QSH,parent%nmm_PD,parent%nmm_pdtop,parent%nmm_pt,   &
                              parent%nmm_ETA1,parent%nmm_ETA2,                               &
                              parent%nmm_DETA1,parent%nmm_DETA2,                             &
                              IDS,IDE,JDS,JDE,KDS,KDE,                                       &
@@ -849,7 +849,7 @@ SUBROUTINE med_nest_force ( parent , nest )
 
      SUBROUTINE BASE_STATE_PARENT ( Z3d,Q3d,T3d,PSTD,        &
                                     PINT,T,Q,CWM,            &
-                                    FIS,QS,PD,PDTOP,PTOP,    &
+                                    FIS,QSH,PD,PDTOP,PTOP,   &
                                     ETA1,ETA2,               &
                                     DETA1,DETA2,             &
                                     IDS,IDE,JDS,JDE,KDS,KDE, &
@@ -864,7 +864,7 @@ SUBROUTINE med_nest_force ( parent , nest )
          INTEGER,    INTENT(IN   )                            :: ITS,ITE,JTS,JTE,KTS,KTE
          REAL,       INTENT(IN   )                            :: PDTOP,PTOP
          REAL, DIMENSION(KMS:KME),                 INTENT(IN) :: ETA1,ETA2,DETA1,DETA2
-         REAL, DIMENSION(IMS:IME,JMS:JME),         INTENT(IN) :: FIS,PD,QS
+         REAL, DIMENSION(IMS:IME,JMS:JME),         INTENT(IN) :: FIS,PD,QSH
          REAL, DIMENSION(IMS:IME,KMS:KME,JMS:JME), INTENT(IN) :: PINT,T,Q,CWM
          REAL, DIMENSION(KMS:KME)                , INTENT(OUT):: PSTD
          REAL, DIMENSION(IMS:IME,KMS:KME,JMS:JME), INTENT(OUT):: Z3d,Q3d,T3d
@@ -902,7 +902,7 @@ SUBROUTINE med_nest_force ( parent , nest )
 
     CALL BASE_STATE_PARENT ( parent%nmm_Z3d,parent%nmm_Q3d,parent%nmm_T3d,parent%nmm_PSTD, &
                              parent%nmm_PINT,parent%nmm_T,parent%nmm_Q,parent%nmm_CWM,     &
-                             parent%nmm_FIS,parent%nmm_QS,parent%nmm_PD,parent%nmm_pdtop,parent%nmm_pt,  &
+                             parent%nmm_FIS,parent%nmm_QSH,parent%nmm_PD,parent%nmm_pdtop,parent%nmm_pt,  &
                              parent%nmm_ETA1,parent%nmm_ETA2,                              &
                              parent%nmm_DETA1,parent%nmm_DETA2,                            &
                              IDS,IDE,JDS,JDE,KDS,KDE,                                      &

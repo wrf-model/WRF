@@ -115,42 +115,43 @@ fprintf(fp,"CALL wrf_debug(2,'calling %s')\n",fname) ;
 	       on them when calling RSL_LITE_INIT_EXCH */
 
             if ( q->ndims == 3 || q->node_kind & FOURD ) {
-              dimd = get_dimnode_for_coord( q , COORD_Z ) ;
-              zdex = get_index_for_coord( q , COORD_Z ) ;
-              if      ( dimd->len_defined_how == DOMAIN_STANDARD ) {
-                strcpy(s,"kps") ; 
-                strcpy(e,"kpe") ;
-              }
-              else if ( dimd->len_defined_how == NAMELIST ) {
-                if ( !strcmp(dimd->assoc_nl_var_s,"1") ) {
-                  strcpy(s,"1") ;
-                  sprintf(e,"config_flags%%%s",dimd->assoc_nl_var_e) ;
-                } else {
-                  sprintf(s,"config_flags%%%s",dimd->assoc_nl_var_s) ;
-                  sprintf(e,"config_flags%%%s",dimd->assoc_nl_var_e) ;
+              if ((dimd = get_dimnode_for_coord( q , COORD_Z )) != NULL ) {
+                zdex = get_index_for_coord( q , COORD_Z ) ;
+                if      ( dimd->len_defined_how == DOMAIN_STANDARD ) { 
+                  strcpy(s,"kps") ;
+                  strcpy(e,"kpe") ;
+                }
+                else if ( dimd->len_defined_how == NAMELIST ) {
+                  if ( !strcmp(dimd->assoc_nl_var_s,"1") ) {
+                    strcpy(s,"1") ;
+                    sprintf(e,"config_flags%%%s",dimd->assoc_nl_var_e) ;
+                  } else {
+                    sprintf(s,"config_flags%%%s",dimd->assoc_nl_var_s) ;
+                    sprintf(e,"config_flags%%%s",dimd->assoc_nl_var_e) ;
+                  }
+                }
+                else if ( dimd->len_defined_how == CONSTANT ) {
+                  sprintf(s,"%d",dimd->coord_start) ;
+                  sprintf(e,"%d",dimd->coord_end) ; 
+                }
+                for ( i = 0, foundvdim = 0 ; i < vdimcurs ; i++ ) {
+                  if ( !strcmp( vdims[i][1], e ) ) {
+                    foundvdim = 1 ; break ;
+                  }
+                }
+                if ( ! foundvdim ) {
+                  if (vdimcurs < 100 ) {
+                    strcpy( vdims[vdimcurs][0], s ) ;
+                    strcpy( vdims[vdimcurs][1], e ) ;
+                    vdimcurs++ ;
+                  } else {
+                    fprintf(stderr,"REGISTRY ERROR: too many different vertical dimensions (> %d).\n", MAX_VDIMS ) ;
+                    fprintf(stderr,"That seems like a lot, but if you are sure, increase MAX_VDIMS\n" ) ;
+                    fprintf(stderr,"in external/RSL_LITE/gen_comms.c and recompile\n") ;
+                    exit(5) ;
+                  }
                 }
               }
-              else if ( dimd->len_defined_how == CONSTANT ) {
-                sprintf(s,"%d",dimd->coord_start) ;
-                sprintf(e,"%d",dimd->coord_end) ;
-              }
-	      for ( i = 0, foundvdim = 0 ; i < vdimcurs ; i++ ) {
-		if ( !strcmp( vdims[i][1], e ) ) {
-		  foundvdim = 1 ; break ;
-		}
-	      }
-	      if ( ! foundvdim ) {
-		if (vdimcurs < 100 ) {
-		  strcpy( vdims[vdimcurs][0], s ) ;
-		  strcpy( vdims[vdimcurs][1], e ) ;
-		  vdimcurs++ ;
-		} else {
-                  fprintf(stderr,"REGISTRY ERROR: too many different vertical dimensions (> %d).\n", MAX_VDIMS ) ;
-                  fprintf(stderr,"That seems like a lot, but if you are sure, increase MAX_VDIMS\n" ) ;
-                  fprintf(stderr,"in external/RSL_LITE/gen_comms.c and recompile\n") ;
-                  exit(5) ;
-		}
-	      }
             }
 
             if ( q->node_kind & FOURD ) {
@@ -948,15 +949,18 @@ if ( !strcmp( p->name , "xf_ens" ) || !strcmp( p->name , "pr_ens" ) ||
   continue ;
 }
 
-        if ( p->type->type_type == SIMPLE )
-        {
-          for ( i = 1 ; i <= p->ntl ; i++ )
+/* make sure that the only things we are shifting are arrays that have a decomposed X and a Y dimension */
+        if ( get_dimnode_for_coord( p , COORD_X ) && get_dimnode_for_coord( p , COORD_Y ) ) {
+          if ( p->type->type_type == SIMPLE )
           {
-            if ( p->ntl > 1 ) sprintf(vname,"%s_%d",p->name,i ) ;
-            else              sprintf(vname,"%s",p->name ) ;
+            for ( i = 1 ; i <= p->ntl ; i++ )
+            {
+              if ( p->ntl > 1 ) sprintf(vname,"%s_%d",p->name,i ) ;
+              else              sprintf(vname,"%s",p->name ) ;
 
-            strcat( Shift.comm_define, vname ) ;
-            strcat( Shift.comm_define, "," ) ;
+              strcat( Shift.comm_define, vname ) ;
+              strcat( Shift.comm_define, "," ) ;
+            }
           }
         }
       }

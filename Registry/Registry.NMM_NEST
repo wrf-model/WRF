@@ -252,13 +252,14 @@ state  real   ustar     ij    dyn_nmm   1    -     irhd=(interp_hnear_nmm:IIH,JJ
 state  real   z0        ij    dyn_nmm   1    -     i01rhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4) "Z0"       "Roughness height"                     "m"
 state  real   z0base    ij    dyn_nmm   1    -     ir       "Z0BASE"   "Base roughness height"                "m"
 state  real   ths       ij    dyn_nmm   1    -     irhd=(interp_h_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)  "THS"      "Surface potential temperature"        "K"
-state  real   qs        ij    dyn_nmm   1    -     irhd=(interp_h_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4) "QS"       "Surface specific humidity"            "kg kg-1"
+state  real   mavail    ij    dyn_nmm   1    -     i
+state  real   qsh       ij    dyn_nmm   1    -     irhd=(interp_h_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4) "QS"       "Surface specific humidity"            "kg kg-1"
 state  real   twbs      ij    dyn_nmm   1    -     irh      "TWBS"     "Instantaneous sensible heat flux"     "W m-2"
 state  real   qwbs      ij    dyn_nmm   1    -     irh      "QWBS"     "Instantaneous latent heat flux"       "W m-2"
 state  real   prec      ij    dyn_nmm   1    -     rh       "PREC"     "Precipitation in physics timestep"    "m"
 state  real   aprec     ij    dyn_nmm   1    -     rh
 state  real   acprec    ij    dyn_nmm   1    -     rhd=(interp_h_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4) "ACPREC"   "Accumulated total precipitation"      "m"
-state  real   cuprec    ij    dyn_nmm   1    -     r"   "Accumulated convective precipitation" "m"
+state  real   cuprec    ij    dyn_nmm   1    -     r        "CUPREC"   "Accumulated convective precipitation" "m"
 state  real   lspa      ij    dyn_nmm   1    -     h        "LSPA"     "Land Surface Precipitation Accumulation"   "kg m-2"
 state  real   ddata     ij    dyn_nmm   1    -     -        "DDATA"    "Observed precip to each physics timestep"  "kg m-2"
 state  real   accliq    ij    dyn_nmm   1    -     r
@@ -511,14 +512,14 @@ state   real    qs             ikjft   moist       1         -     rh      "QSNO
 state   real    qg             ikjft   moist       1         -     r       "QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
 #                                               
 # Other Scalars
-state   real    -              ikjftb  scalar      2         -     -    -
-state   real    qni            ikjftb  scalar      2         -     i01rusdf=(bdy_interp:dt)       "QNI"              "Ice Number concentration" "# kg(-1)"
+state   real    -              ikjftb  scalar      1         -     -    -
+state   real    qni            ikjftb  scalar      1         -     i01rusdf=(bdy_interp:dt)       "QNI"              "Ice Number concentration" "# kg(-1)"
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 ## Chem Scalars  - both height and mass coordinate models                                       
 #                                               
-state   real    -              ikjft   chem        2         -     -    -                                       
+state   real    -              ikjft   chem        1         -     -    -                                       
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -590,6 +591,7 @@ state    real   RAINCV          ij     misc        1         -      -       ""  
 state    real   PSFC             ij     misc        1         -      rh       "PSFC"                 "SFC PRESSURE"
 state    real   dtbc            -       misc     -         -      ir       "dtbc"                 "TIME SINCE BOUNDARY READ"         ""
 state    real   TH2              ij     misc        1         -     irh       "TH2"                  "POT TEMP at 2 M" ""
+state    real   T2               ij     misc        1         -     ir        "T2"                  "TEMP at 2 M" ""
 state    real   U10              ij     misc        1         -     irh       "U10"                  "U at 10 M"         " "
 state    real   V10              ij     misc        1         -     irh       "V10"                  "V at 10 M"         " "
 state    real   XICE             ij     misc        1         -     i01rd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)      "XICE"                 "SEA ICE"         ""
@@ -606,6 +608,7 @@ state    real   ALBBCK           ij     misc        1         -     i012r   "ALB
 state    real   SFCEXC           ij     misc        1         -     irh     "SFCEXC "              "SURFACE EXCHANGE COEFFICIENT"         ""
 state    real   ACSNOW           ij     misc        1         -     irh       "ACSNOW"               "ACCUMULATED SNOW" ""
 state    real   ACSNOM           ij     misc        1         -     irh       "ACSNOM"               "ACCUMULATED MELTED SNOW"         ""
+state    real   RMOL             ij     misc        1         -     ir       "RMOL"               ""         ""
 state    real   SNOW             ij     misc        1         -     irh       "SNOW"                 "SNOW WATER EQUIVALENT"         ""
 state    real   CANWAT           ij     misc        1         -     irh       "CANWAT"               "CANOPY WATER" ""
 state    real   SST              ij     misc        1         -     i01rhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4       "SST"                  "SEA SURFACE TEMPERATURE" "K"
@@ -620,7 +623,13 @@ state   real   THZ0             ij     misc        1         -     irhd=(interp_
 state   real   QZ0              ij     misc        1         -     irhd=(interp_h_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)       "QZ0"                   "SPECIFIC HUMIDITY AT ZNT"                     "kg kg-1"
 state   real   UZ0              ij     misc        1         -     irhd=(interp_v_nmm:IIV,JJV,VBWGT1,VBWGT2,VBWGT3,VBWGT4)       "UZ0"                   "U WIND COMPONENT AT ZNT"                      "m s-1"
 state   real   VZ0              ij     misc        1         -     irhd=(interp_v_nmm:IIV,JJV,VBWGT1,VBWGT2,VBWGT3,VBWGT4)       "VZ0"                   "V WIND COMPONENT AT ZNT"                      "m s-1"
-
+state    real  FLHC             ij      misc        1         -      r        "FLHC"                  "SURFACE EXCHANGE COEFFICIENT FOR HEAT"       ""
+state    real  FLQC             ij      misc        1         -      r        "FLQC"                  "SURFACE EXCHANGE COEFFICIENT FOR MOISTURE"   ""
+state    real  QSG              ij      misc        1         -      r        "QSG"                   "SURFACE SATURATION WATER VAPOR MIXING RATIO"   "kg kg-1"
+state    real  QVG              ij      misc        1         -      r        "QVG"                   "WATER VAPOR MIXING RATIO AT THE SURFACE"      "kg kg-1"
+state    real  QCG              ij      misc        1         -      r        "QCG"                   "CLOUD WATER MIXING RATIO AT THE SURFACE"      "kg kg-1"
+state    real  SOILT1           ij      misc        1         -      r        "SOILT1"                "TEMPERATURE INSIDE SNOW "    "K"
+state    real  TSNAV            ij      misc        1         -      r        "TSNAV"                 "AVERAGE SNOW TEMPERATURE "                    "C"
 # added as state for HALO_NMM_TURBL, jm
 state   real   UZ0h              ij     misc        1         -     -       
 state   real   VZ0h              ij     misc        1         -     -       
@@ -660,7 +669,9 @@ state    real  pr_ens           ije     misc        1         Z      r        "P
 state    real  RTHFTEN          ikj     misc        1         -      r       "RTHFTEN"               "TEMPERATURE TENDENCY USED IN GRELL CUMULUS SCHEME"         "K/sec"
 state    real  RQVFTEN          ikj     misc        1         -      r       "RQVFTEN"               "MOISTURE TENDENCY USED IN GRELL CUMULUS SCHEME"            "kg/sec"
 state    real   SNOWH            ij     misc        1         -     i01rhd=(interp_h_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)      "SNOWH"                 "PHYSICAL SNOW DEPTH"  ""
+state    real   RHOSN            ij     misc        1         -     i01rd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "RHOSN"            " SNOW DENSITY"      "kg m-3"
 state    real   SMFR3D           ilj    misc        1         Z      rh       "SMFR3D"               "SOIL ICE" ""
+state    real   KEEPFR3DFLAG     ilj    misc        1         Z      r         "KEEPFR3DFLAG"          "FLAG - 1. FROZEN SOIL YES, 0 - NO"             ""
 
 # added state for etampnew microphysics (needed for restarts)
 state    real  mp_restart_state   p      misc        1         -      r       "MP_RESTART_STATE"       "STATE VECTOR FOR MICROPHYSICS RESTARTS"
@@ -843,6 +854,8 @@ rconfig   integer levsiz                  namelist,physics      1             1 
 rconfig   integer paerlev                 namelist,physics      1             1       -      "paerlev" "Number of aerosol data levels for CAM radiation (29)"  ""
 rconfig   integer cam_abs_dim1            namelist,physics      1             1       -      "cam_abs_dim1" "dimension for absnxt in CAM radiation"  ""
 rconfig   integer cam_abs_dim2            namelist,physics      1             1       -      "cam_abs_dim2" "dimension for abstot in CAM radiation"  ""
+rconfig   logical cu_rad_feedback             namelist.physics      max_domains   .false.  -     "feedback cumulus to radiation"
+
 
 # Dynamics
 # dynamics option (see package definitions, below)
@@ -856,8 +869,7 @@ rconfig   integer km_opt                  namelist,dynamics	1             1     
 rconfig   integer damp_opt                namelist,dynamics	1             1       irh    "damp_opt"              ""      ""
 rconfig   real    zdamp                   namelist,dynamics	max_domains    5000.   h    "zdamp"         ""      ""
 rconfig   real    base_pres               namelist,dynamics     1          100000.     h    "base_pres"  "Base state pressure - do not change (10^5 Pa), real only"      "Pa"
-rconfig   real    base_temp               namelist,dynamics     1             290.     h    "base_temp"  "Base state sea level temperature, real
-only"      "K"
+rconfig   real    base_temp               namelist,dynamics     1             290.     h    "base_temp"  "Base state sea level temperature, real only"      "K"
 rconfig   real    base_lapse              namelist,dynamics     1              50.     h    "base_lapse" "Base state temperature difference between base pres and 1/e of atm depth - do not change, real only"      "K"
 rconfig   real    dampcoef                namelist,dynamics     max_domains    0.2     h    "dampcoef"              ""      ""
 rconfig   real    khdif                   namelist,dynamics	max_domains    0       h    "khdif"         ""      ""
@@ -1025,7 +1037,7 @@ halo HALO_NMM_INIT_15	dyn_nmm 120:CWM,TRAIN,TCUCN
 halo HALO_NMM_INIT_15B  dyn_nmm 120:moist,scalar
 halo HALO_NMM_INIT_16	dyn_nmm 120:RSWIN,RSWOUT,TG
 halo HALO_NMM_INIT_17	dyn_nmm 120:Z0,AKMS,CZEN
-halo HALO_NMM_INIT_18	dyn_nmm 120:AKHS,THS,QS
+halo HALO_NMM_INIT_18	dyn_nmm 120:AKHS,THS,QSH
 halo HALO_NMM_INIT_19	dyn_nmm 120:TWBS,QWBS,HBOT
 halo HALO_NMM_INIT_20	dyn_nmm 120:CFRACL,THZ0,QZ0
 halo HALO_NMM_INIT_21	dyn_nmm 120:UZ0,VZ0,USTAR
@@ -1073,7 +1085,7 @@ halo      HALO_NMM_TURBL_B  dyn_nmm 8:dudt,dvdt
 
 halo HALO_NMM_ZZ  dyn_nmm 8:pdnest_b,unest_b,vnest_b,tnest_b,qnest_b,cwmnest_b,q2nest_b,pdnest_bt,unest_bt,vnest_bt,tnest_bt,qnest_bt,cwmnest_bt,q2nest_bt
 halo HALO_NMM_TRACK dyn_nmm 120:sm,pdyn,mslp,sqws
-halo HALO_NMM_INTERP_DOWN1 dyn_nmm 120:sm,fis,t,u,v,q,q2,z3d,q3d,t3d,pd,albase,nmm_tsk,mxsnal,tg,islope,cmc,soiltb,vegfrc,sh2o,smc,stc,toposoil,xice,ivgtyp,isltyp,vegfra,sst,weasd,snowh,hlat,hlon,z0,landmask,cwm,ustar,ths,qs,cldefi,pshltr,dwdt,acprec,thz0,qz0,uz0,vz0,htop,hbot,cuppt,rlwtt,rswtt,t_adj,f_ice,f_rain,f_rimef
+halo HALO_NMM_INTERP_DOWN1 dyn_nmm 120:sm,fis,t,u,v,q,q2,z3d,q3d,t3d,pd,albase,nmm_tsk,mxsnal,tg,islope,cmc,soiltb,vegfrc,sh2o,smc,stc,toposoil,xice,ivgtyp,isltyp,vegfra,sst,weasd,snowh,hlat,hlon,z0,landmask,cwm,ustar,ths,qsh,cldefi,pshltr,dwdt,acprec,thz0,qz0,uz0,vz0,htop,hbot,cuppt,rlwtt,rswtt,t_adj,f_ice,f_rain,f_rimef
 halo HALO_NMM_FORCE_DOWN1 dyn_nmm 120:t,u,v,q,q2,cwm,z3d,q3d,t3d  #,qv,qc,qr,qi,qs,qg
 halo HALO_NMM_WEIGHTS dyn_nmm 48:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,IIV,JJV,VBWGT1,VBWGT2,VBWGT3,VBWGT4
 

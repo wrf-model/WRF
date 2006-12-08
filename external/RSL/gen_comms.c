@@ -599,69 +599,72 @@ if ( !strcmp( p->name , "xf_ens" ) || !strcmp( p->name , "pr_ens" ) ||
           else                                sprintf(core,"") ;
         }
 
-	if ( p->type->type_type == SIMPLE )
-	{
-	  for ( i = 1 ; i <= p->ntl ; i++ )
+/* make sure that the only things we are shifting are arrays that have a decomposed X and a Y dimension */
+        if ( get_dimnode_for_coord( p , COORD_X ) && get_dimnode_for_coord( p , COORD_Y ) ) {
+	  if ( p->type->type_type == SIMPLE )
 	  {
-            if ( p->ntl > 1 ) sprintf(vname,"%s_%d",p->name,i ) ;
-            else              sprintf(vname,"%s",p->name ) ;
-            if ( p->ntl > 1 ) sprintf(vname2,"%s%s_%d",core,p->name,i ) ;
-            else              sprintf(vname2,"%s%s",core,p->name ) ;
-	    if ( p->node_kind & FOURD )
-            {
-              node_t *member ;
-              zdex = get_index_for_coord( p , COORD_Z ) ;
-              if ( zdex >=1 && zdex <= 3 )
+	    for ( i = 1 ; i <= p->ntl ; i++ )
+	    {
+              if ( p->ntl > 1 ) sprintf(vname,"%s_%d",p->name,i ) ;
+              else              sprintf(vname,"%s",p->name ) ;
+              if ( p->ntl > 1 ) sprintf(vname2,"%s%s_%d",core,p->name,i ) ;
+              else              sprintf(vname2,"%s%s",core,p->name ) ;
+	      if ( p->node_kind & FOURD )
               {
-                for ( member = p->members ; member != NULL ; member = member->next )
+                node_t *member ;
+                zdex = get_index_for_coord( p , COORD_Z ) ;
+                if ( zdex >=1 && zdex <= 3 )
                 {
-                  if ( strcmp( member->name, "-" ) )
+                  for ( member = p->members ; member != NULL ; member = member->next )
                   {
-                    fprintf(fp,
+                    if ( strcmp( member->name, "-" ) )
+                    {
+                      fprintf(fp,
    "  if ( P_%s .GT. 1 ) CALL add_msg_%s_shift_%s ( %s ( grid%%sm31,grid%%sm32,grid%%sm33,P_%s), glen(%d) )\n",
-                       member->name, *direction, p->type->name, vname, member->name, zdex+1 ) ;
-                    p->subject_to_communication = 1 ;
+                         member->name, *direction, p->type->name, vname, member->name, zdex+1 ) ;
+                      p->subject_to_communication = 1 ;
+                    }
                   }
+                }
+                else
+                {
+                  fprintf(stderr,"WARNING: %d some dimension info missing for 4d array %s\n",zdex,t2) ;
                 }
               }
               else
-              {
-                fprintf(stderr,"WARNING: %d some dimension info missing for 4d array %s\n",zdex,t2) ;
-              }
-            }
-            else
-	    {
-              strcpy (indices,"");
-              if ( sw_deref_kludge ) /* &&  strchr (p->name, '%') != NULLCHARPTR ) */
-              {
-                sprintf(post,")") ;
-                sprintf(indices, "%s",index_with_firstelem("(","",tmp3,p,post)) ;
-              }
-              dimd = get_dimnode_for_coord( p , COORD_Z ) ;
-              zdex = get_index_for_coord( p , COORD_Z ) ;
-              if ( dimd != NULL )
-              {
-                char dimstrg[256] ;
-
-                if      ( dimd->len_defined_how == DOMAIN_STANDARD )
-                    sprintf(dimstrg,"(glen(%d))",zdex+1) ;
-                else if ( dimd->len_defined_how == NAMELIST )
+	      {
+                strcpy (indices,"");
+                if ( sw_deref_kludge ) /* &&  strchr (p->name, '%') != NULLCHARPTR ) */
                 {
-                  if ( !strcmp(dimd->assoc_nl_var_s,"1") )
-                    sprintf(dimstrg,"config_flags%%%s",dimd->assoc_nl_var_e) ;
-                  else
-                    sprintf(dimstrg,"(config_flags%%%s - config_flags%%%s + 1)",dimd->assoc_nl_var_e,dimd->assoc_nl_var_s) ;
+                  sprintf(post,")") ;
+                  sprintf(indices, "%s",index_with_firstelem("(","",tmp3,p,post)) ;
                 }
-                else if ( dimd->len_defined_how == CONSTANT )
-                    sprintf(dimstrg,"(%d - %d + 1)",dimd->coord_end,dimd->coord_start) ;
+                dimd = get_dimnode_for_coord( p , COORD_Z ) ;
+                zdex = get_index_for_coord( p , COORD_Z ) ;
+                if ( dimd != NULL )
+                {
+                  char dimstrg[256] ;
 
-                fprintf(fp,"  CALL add_msg_%s_shift_%s ( grid%%%s%s , %s )\n", *direction, p->type->name, vname2, indices, dimstrg ) ;
-                p->subject_to_communication = 1 ;
-              }
-              else if ( p->ndims == 2 )  /* 2d */
-              {
-                fprintf(fp,"  CALL add_msg_%s_shift_%s ( grid%%%s%s , %s )\n", *direction, p->type->name, vname2, indices, "1" ) ;
-                p->subject_to_communication = 1 ;
+                  if      ( dimd->len_defined_how == DOMAIN_STANDARD )
+                      sprintf(dimstrg,"(glen(%d))",zdex+1) ;
+                  else if ( dimd->len_defined_how == NAMELIST )
+                  {
+                    if ( !strcmp(dimd->assoc_nl_var_s,"1") )
+                      sprintf(dimstrg,"config_flags%%%s",dimd->assoc_nl_var_e) ;
+                    else
+                      sprintf(dimstrg,"(config_flags%%%s - config_flags%%%s + 1)",dimd->assoc_nl_var_e,dimd->assoc_nl_var_s) ;
+                  }
+                  else if ( dimd->len_defined_how == CONSTANT )
+                      sprintf(dimstrg,"(%d - %d + 1)",dimd->coord_end,dimd->coord_start) ;
+  
+                  fprintf(fp,"  CALL add_msg_%s_shift_%s ( grid%%%s%s , %s )\n", *direction, p->type->name, vname2, indices, dimstrg ) ;
+                  p->subject_to_communication = 1 ;
+                }
+                else if ( p->ndims == 2 )  /* 2d */
+                {
+                  fprintf(fp,"  CALL add_msg_%s_shift_%s ( grid%%%s%s , %s )\n", *direction, p->type->name, vname2, indices, "1" ) ;
+                  p->subject_to_communication = 1 ;
+                }
               }
             }
 	  }
@@ -692,57 +695,60 @@ if ( !strcmp( p->name , "xf_ens" ) || !strcmp( p->name , "pr_ens" ) ||
       if (( p->node_kind & (FIELD | FOURD) ) && p->ndims >= 2 && ! p->boundary_array &&
 	  ((!strncmp(p->use,"dyn_",4) && !strcmp(corename,p->use+4)) || strncmp(p->use,"dyn_",4)))
       {
-	if ( p->type->type_type == SIMPLE )
-	{
-	  for ( i = 1 ; i <= p->ntl ; i++ )
+/* make sure that the only things we are shifting are arrays that have a decomposed X and a Y dimension */
+        if ( get_dimnode_for_coord( p , COORD_X ) && get_dimnode_for_coord( p , COORD_Y ) ) {
+  	  if ( p->type->type_type == SIMPLE )
 	  {
-            if ( p->ntl > 1 ) sprintf(vname,"%s_%d",p->name,i ) ;
-            else              sprintf(vname,"%s",p->name ) ;
-            if ( p->ntl > 1 ) sprintf(vname2,"%s%s_%d",core,p->name,i ) ;
-            else              sprintf(vname2,"%s%s",core,p->name ) ;
+	    for ( i = 1 ; i <= p->ntl ; i++ )
+	    {
+              if ( p->ntl > 1 ) sprintf(vname,"%s_%d",p->name,i ) ;
+              else              sprintf(vname,"%s",p->name ) ;
+              if ( p->ntl > 1 ) sprintf(vname2,"%s%s_%d",core,p->name,i ) ;
+              else              sprintf(vname2,"%s%s",core,p->name ) ;
 
-	    if ( p->node_kind & FOURD )
-            {
-              node_t *member ;
-              zdex = get_index_for_coord( p , COORD_Z ) ;
-              if ( zdex >=1 && zdex <= 3 )
+	      if ( p->node_kind & FOURD )
               {
-                for ( member = p->members ; member != NULL ; member = member->next )
+                node_t *member ;
+                zdex = get_index_for_coord( p , COORD_Z ) ;
+                if ( zdex >=1 && zdex <= 3 )
                 {
-                  if ( strcmp( member->name, "-" ) )
+                  for ( member = p->members ; member != NULL ; member = member->next )
                   {
-                    if ( !strcmp( *direction, "x" ) )
+                    if ( strcmp( member->name, "-" ) )
                     {
-                      fprintf(fp,
+                      if ( !strcmp( *direction, "x" ) )
+                      {
+                        fprintf(fp,
    "  if ( P_%s .GT. 1 ) %s ( ips:min(ide%s,ipe),:,jms:jme,P_%s) = %s (ips+px:min(ide%s,ipe)+px,:,jms:jme,P_%s)\n",
-                       member->name, vname, member->stag_x?"":"-1", member->name, vname, member->stag_x?"":"-1", member->name ) ;
-                    }
-                    else
-                    {
-                      fprintf(fp,
+                         member->name, vname, member->stag_x?"":"-1", member->name, vname, member->stag_x?"":"-1", member->name ) ;
+                      }
+                      else
+                      {
+                        fprintf(fp,
    "  if ( P_%s .GT. 1 ) %s ( ims:ime,:,jps:min(jde%s,jpe),P_%s) = %s (ims:ime,:,jps+py:min(jde%s,jpe)+py,P_%s)\n",
-                       member->name, vname, member->stag_y?"":"-1", member->name, vname, member->stag_y?"":"-1", member->name ) ;
+                         member->name, vname, member->stag_y?"":"-1", member->name, vname, member->stag_y?"":"-1", member->name ) ;
+                      }
                     }
                   }
                 }
-              }
-              else
-              {
-                fprintf(stderr,"WARNING: %d some dimension info missing for 4d array %s\n",zdex,t2) ;
-              }
-            }
-            else
-	    {
-	      char * vdim ;
-	      vdim = "" ;
-	      if ( p->ndims == 3 ) vdim = ":," ;
-              if ( !strcmp( *direction, "x" ) )
-              {
-                fprintf(fp,"grid%%%s (ips:min(ide%s,ipe),%sjms:jme) = grid%%%s (ips+px:min(ide%s,ipe)+px,%sjms:jme)\n", vname2,  p->stag_x?"":"-1", vdim, vname2, p->stag_x?"":"-1", vdim ) ;
+                else
+                {
+                  fprintf(stderr,"WARNING: %d some dimension info missing for 4d array %s\n",zdex,t2) ;
+                }
               }
               else
 	      {
-                fprintf(fp,"grid%%%s (ims:ime,%sjps:min(jde%s,jpe)) = grid%%%s (ims:ime,%sjps+py:min(jde%s,jpe)+py)\n", vname2, vdim,  p->stag_y?"":"-1", vname2, vdim, p->stag_y?"":"-1" ) ;
+	        char * vdim ;
+	        vdim = "" ;
+	        if ( p->ndims == 3 ) vdim = ":," ;
+                if ( !strcmp( *direction, "x" ) )
+                {
+                  fprintf(fp,"grid%%%s (ips:min(ide%s,ipe),%sjms:jme) = grid%%%s (ips+px:min(ide%s,ipe)+px,%sjms:jme)\n", vname2,  p->stag_x?"":"-1", vdim, vname2, p->stag_x?"":"-1", vdim ) ;
+                }
+                else
+	        {
+                  fprintf(fp,"grid%%%s (ims:ime,%sjps:min(jde%s,jpe)) = grid%%%s (ims:ime,%sjps+py:min(jde%s,jpe)+py)\n", vname2, vdim,  p->stag_y?"":"-1", vname2, vdim, p->stag_y?"":"-1" ) ;
+                }
               }
             }
 	  }

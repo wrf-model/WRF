@@ -403,8 +403,8 @@ CONTAINS
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT) :: AKMS_URB2D
 !
      REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT) :: UST_URB2D
-     REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT) :: FRC_URB2D
-     INTEGER, DIMENSION( ims:ime, jms:jme ), INTENT(OUT) :: UTYPE_URB2D
+     REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: FRC_URB2D
+     INTEGER, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: UTYPE_URB2D
 
 
 ! output variables urban --> lsm

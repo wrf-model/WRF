@@ -120,13 +120,19 @@ The "ESMF" referred to below is version 2.2.0rp1.
        * Better yet, get rid of external/*/module_symbols_util.F90 altogether 
          as encapsulation moves to module_domain.  
      * Rip out WRF_CHEM from set_timekeeping.F and test...
++ Upgrade to ESMF 2.2.2r+
+   - Add an ESMF_LOG_NONE option to the "defaultLogType" argument 
+     of ESMF_Initialize() to turn off ESMF's default error logging.  
+   - Add an ESMF_KEEPMPI option to the "terminationflag" argument 
+     of ESMF_Finalize() to allow ESMF finalization without MPI 
+     shutdown.  Then clean up the current shutdown mess.  
 + Documentation:
    - General description of and guidelines for coupling WRF with another
      ESMF component.
-   - Description of WRF-CPL-SST "demo"
-     * Description of SST and CPL demo components
+   X Description of WRF-CPL-SST "demo"
+     X Description of SST and CPL demo components
      * Sequence diagram of component interactions
-     * Limitations of demo
+     X Limitations of demo
      * How to extend the demo
 + Testing
    - Add WRF-CPL-SST tests to regtest.csh.  

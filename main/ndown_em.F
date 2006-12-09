@@ -463,11 +463,11 @@ nested_grid%chem_in_opt = parent_grid%chem_in_opt
 
          !  Open the fine grid SI static file.
    
-         CALL construct_filename2( si_inpname , 'wrf_real_input_em' , nested_grid%id , 2 , start_date_char )
+         CALL construct_filename1( si_inpname , 'wrfndi' , nested_grid%id , 2 )
          CALL       wrf_debug ( 100 , 'med_sidata_input: calling open_r_dataset for ' // TRIM(si_inpname) )
          CALL open_r_dataset ( idsi, TRIM(si_inpname) , nested_grid , config_flags , "DATASET=INPUT", ierr )
          IF ( ierr .NE. 0 ) THEN
-            CALL wrf_error_fatal( 'real: error opening wrf_real_input_em for reading: ' // TRIM (si_inpname) )
+            CALL wrf_error_fatal( 'real: error opening FG input for reading: ' // TRIM (si_inpname) )
          END IF
 
          !  Input data.

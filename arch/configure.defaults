@@ -3686,8 +3686,10 @@ mediation_integrate.o : mediation_integrate.F
 module_dm.o : module_dm.F
 mediation_wrfmain.o : mediation_wrfmain.F
 solve_em.o : solve_em.F
+start_em.o : start_em.F
+start_domain_nmm.o : start_domain_nmm.F
 
-mediation_integrate.o module_dm.o mediation_wrfmain.o solve_em.o : 
+mediation_integrate.o module_dm.o mediation_wrfmain.o solve_em.o start_em.o start_domain_nmm.o : 
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90

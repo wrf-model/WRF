@@ -39,7 +39,7 @@ is working with IBM to resolve it.)
 
   Additional documentation that describes the SST component and provides 
 instructions for building WRF with ESMF can be found in 
-/u/home/hender/WRFV2_20060901/external/io_esmf/README.io_esmf.  Briefly, the 
+external/io_esmf/README.io_esmf.  Briefly, the 
 SST component simply reads SST data stored in a file (sstin_d01_000000), sends 
 it to WRF via CPL, receives SST data back from WRF via CPL, and verifies that 
 data received matches data sent.  Since ESMF coupling is implemented within 

@@ -45,7 +45,7 @@ end
 
 rm -f ../../Registry_tmp.*_wk*
 
-./documentation/latex/clean
+#./documentation/latex/clean
 
 
 # configure file

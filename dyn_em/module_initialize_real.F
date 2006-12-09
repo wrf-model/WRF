@@ -3304,7 +3304,7 @@ i,j,all_x(1),target_x(target_loop)
             END DO
          ELSE
             DO i = its , MIN (ide-1 , ite )
-               DO k = kts+1,kte
+               DO k = kts,kte
                   p(i,k) = p_in(i,k      ,j)
                   t(i,k) = t_in(i,k      ,j)
                   q(i,k) = q_in(i,k      ,j)
@@ -3910,6 +3910,15 @@ print *,'namelist p_top (Pa) = ',p_top
    
          IF ( ( k850(i,j) .EQ. 0 ) .OR. ( k700(i,j) .EQ. 0 ) .OR. ( k500(i,j) .EQ. 0 ) ) THEN
 
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  psfc(i,j) = pslv(i,j) * ( 1.0 + gamma * ter(i,j) / t(i,1,j) ) ** ( - g / ( Rd * gamma ) )
+               END DO
+            END DO
+            
+            RETURN
+#if 0
+
             !  Possibly it is just that we have a generalized vertical coord, so we do not
             !  have the values exactly.  Do a simple assignment to a close vertical level.
 
@@ -3947,6 +3956,7 @@ print *,'namelist p_top (Pa) = ',p_top
             IF ( .NOT. OK ) THEN
                CALL wrf_error_fatal ( 'wrong pressure levels' )
             END IF
+#endif
 
          !  We are here if the data is isobaric and we found the levels for 850, 700,
          !  and 500 mb right off the bat.

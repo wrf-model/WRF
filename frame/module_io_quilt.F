@@ -2098,7 +2098,7 @@ SUBROUTINE wrf_quilt_get_dom_ti_logical ( DataHandle,Element,   Data, Count, Out
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER                      :: OutCount
   INTEGER                     :: Status
-  CALL wrf_message('wrf_quilt_get_dom_ti_logical not supported yet')
+!  CALL wrf_message('wrf_quilt_get_dom_ti_logical not supported yet')
 #endif
 RETURN
 END SUBROUTINE wrf_quilt_get_dom_ti_logical 
@@ -2121,7 +2121,19 @@ SUBROUTINE wrf_quilt_put_dom_ti_logical ( DataHandle,Element,   Data, Count,  St
   logical ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER                     :: Status
-  CALL wrf_message('wrf_quilt_put_dom_ti_logical not supported yet')
+! Local
+  INTEGER i
+  INTEGER one_or_zero(Count)
+
+  DO i = 1, Count
+    IF ( Data(i) ) THEN
+      one_or_zero(i) = 1
+    ELSE
+      one_or_zero(i) = 0
+    ENDIF
+  ENDDO
+
+  CALL wrf_quilt_put_dom_ti_integer ( DataHandle,Element,   one_or_zero, Count,  Status )
 #endif
 RETURN
 END SUBROUTINE wrf_quilt_put_dom_ti_logical 

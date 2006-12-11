@@ -180,12 +180,12 @@
     CALL nl_get_pd_tke    ( grid%id , pd_tke )
     CALL nl_get_diff_6th_opt  ( grid%id , diff_6th_opt )
     CALL nl_get_diff_6th_factor ( grid%id , diff_6th_factor )
-
     CALL nl_get_grid_fdda  ( grid%id , grid_fdda )
-    IF ( grid_fdda == 1 ) THEN
-    CALL nl_get_fgdt       ( grid%id , fgdt )
     CALL nl_get_gfdda_end_h( grid%id , gfdda_end_h )
     CALL nl_get_gfdda_interval_m ( grid%id , gfdda_interval_m )
+
+    IF ( grid_fdda == 1 ) THEN
+    CALL nl_get_fgdt       ( grid%id , fgdt )
     CALL nl_get_guv        ( grid%id , guv )
     CALL nl_get_gt         ( grid%id , gt )
     CALL nl_get_gq         ( grid%id , gq )

@@ -79,12 +79,12 @@ RSL_LITE_INIT_PERIOD (
     MPI_Cart_coords( *comm0, me, 2, coords ) ;
     MPI_Cart_shift( *comm0, 1, 1, &xm, &xp ) ;
     if ( xm != MPI_PROC_NULL && coords[1] == np_x - 1 ) { /* process on right hand side of mesh */
-       buffer_for_proc ( xm , nbytes, RSL_RECVBUF ) ;
-       buffer_for_proc ( xm , nbytes, RSL_SENDBUF ) ;
+       buffer_for_proc ( xp , nbytes, RSL_RECVBUF ) ;
+       buffer_for_proc ( xp , nbytes, RSL_SENDBUF ) ;
     }
     if ( xp != MPI_PROC_NULL && coords[1] == 0 ) {        /* process on left hand side of mesh */
-       buffer_for_proc ( xp,  nbytes, RSL_RECVBUF ) ;
-       buffer_for_proc ( xp , nbytes, RSL_SENDBUF ) ;
+       buffer_for_proc ( xm,  nbytes, RSL_RECVBUF ) ;
+       buffer_for_proc ( xm , nbytes, RSL_SENDBUF ) ;
     }
   }
   yp_curs = 0 ; ym_curs = 0 ; xp_curs = 0 ; xm_curs = 0 ;

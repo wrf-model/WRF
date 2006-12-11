@@ -56,6 +56,7 @@ CONTAINS
                    , cliq,cice,psat                                &
                    , rain, rainncv                                 &
                    ,snow, snowncv                                  &
+                   ,sr                                             &
                    , ids,ide, jds,jde, kds,kde                     &
                    , ims,ime, jms,jme, kms,kme                     &
                    , its,ite, jts,jte, kts,kte                     &
@@ -123,7 +124,10 @@ CONTAINS
   REAL, DIMENSION( ims:ime , jms:jme ),                           &
         INTENT(INOUT) ::                                    rain, &
                                                          rainncv, &
-                                                            snow, &
+                                                              sr
+
+  REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,                &
+        INTENT(INOUT) ::                                    snow, &
                                                          snowncv
 
 ! LOCAL VAR
@@ -145,10 +149,11 @@ CONTAINS
                     ,cliq,cice,psat                                &
                     ,j                                             &
                     ,rain(ims,j), rainncv(ims,j)                   &
-                    ,snow(ims,j),snowncv(ims,j)                    &
+                    ,sr(ims,j)                                     &
                     ,ids,ide, jds,jde, kds,kde                     &
                     ,ims,ime, jms,jme, kms,kme                     &
                     ,its,ite, jts,jte, kts,kte                     &
+                    ,snow(ims,j),snowncv(ims,j)                    &
                                                                    )
          DO K=kts,kte
          DO I=its,ite
@@ -166,10 +171,11 @@ CONTAINS
                    ,cliq,cice,psat                                &
                    ,lat                                           &
                    ,rain, rainncv                                 &
-                   ,snow,snowncv                                  &
+                   ,sr                                            &
                    ,ids,ide, jds,jde, kds,kde                     &
                    ,ims,ime, jms,jme, kms,kme                     &
                    ,its,ite, jts,jte, kts,kte                     &
+                   ,snow,snowncv                                  &
                                                                   )
 !-------------------------------------------------------------------
   IMPLICIT NONE
@@ -212,7 +218,10 @@ CONTAINS
   REAL, DIMENSION( ims:ime ),                                     &
         INTENT(INOUT) ::                                    rain, &
                                                          rainncv, &
-                                                            snow, &
+                                                              sr
+
+  REAL, DIMENSION( ims:ime ),     OPTIONAL,                       &
+        INTENT(INOUT) ::                                    snow, &
                                                          snowncv
 ! LOCAL VAR
   REAL, DIMENSION( its:ite , kts:kte ) ::                         &
@@ -577,15 +586,21 @@ CONTAINS
         fallsum = fallsum+fallc(i,1)
         fallsum_qsi = fall(i,1)+fallc(i,1)
         endif
+        rainncv(i) = 0.
         if(fallsum.gt.0.) then
           rainncv(i) = fallsum*delz(i,1)/denr*dtcld*1000.
           rain(i) = fallsum*delz(i,1)/denr*dtcld*1000.                &
                   + rain(i)
         endif
+        IF ( PRESENT (snowncv) .AND. PRESENT (snow)) THEN
+        snowncv(i) = 0.
         if(fallsum_qsi.gt.0.) then
           snowncv(i) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000.
           snow(i) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000. + snow(i)
         endif
+        ENDIF
+        sr(i) = 0.
+        if(fallsum.gt.0.)sr(i)=fallsum_qsi*delz(i,kts)/denr*dtcld*1000./(rainncv(i)+1.e-12)
       enddo
 !
 !----------------------------------------------------------------

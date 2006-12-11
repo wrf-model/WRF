@@ -336,7 +336,7 @@ SUBROUTINE microphysics_driver(                                          &
                   PRESENT( QR_CURR ) .AND. PRESENT ( QI_CURR ) .AND.  &
                   PRESENT( QS_CURR )                           .AND.  &
                   PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) .AND.  &
-                  PRESENT( Z       ) .AND. PRESENT ( W       )  ) THEN
+                  PRESENT( Z       ) ) THEN
                CALL lin_et_al(                                      &
                   TH=th                                             &
                  ,QV=qv_curr                                        &
@@ -367,7 +367,6 @@ SUBROUTINE microphysics_driver(                                          &
              IF ( PRESENT( QV_CURR ) .AND. PRESENT ( QC_CURR ) .AND.  &
                   PRESENT( QR_CURR ) .AND.                            &
                   PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) .AND.  &
-                  PRESENT( SNOWNC  ) .AND. PRESENT ( SNOWNCV ) .AND.  &
                   PRESENT( W       )                            ) THEN
              CALL wsm3(                                             &
                   TH=th                                             &
@@ -383,6 +382,7 @@ SUBROUTINE microphysics_driver(                                          &
                  ,CLIQ=cliq,CICE=cice,PSAT=psat                     &
                  ,RAIN=rainnc ,RAINNCV=rainncv                      &
                  ,SNOW=snownc ,SNOWNCV=snowncv                      &
+                 ,SR=sr                                             &
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
@@ -396,9 +396,7 @@ SUBROUTINE microphysics_driver(                                          &
              IF ( PRESENT( QV_CURR ) .AND. PRESENT ( QC_CURR ) .AND.  &
                   PRESENT( QR_CURR ) .AND. PRESENT ( QI_CURR ) .AND.  &
                   PRESENT( QS_CURR ) .AND.                            &
-                  PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) .AND.  &
-                  PRESENT( SNOWNC  ) .AND. PRESENT ( SNOWNCV ) .AND.  &
-                  PRESENT( W       )                            ) THEN
+                  PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV )  ) THEN
              CALL wsm5(                                             &
                   TH=th                                             &
                  ,Q=qv_curr                                         &
@@ -406,7 +404,7 @@ SUBROUTINE microphysics_driver(                                          &
                  ,QR=qr_curr                                        &
                  ,QI=qi_curr                                        &
                  ,QS=qs_curr                                        &
-                 ,W=w,DEN=rho,PII=pi_phy,P=p,DELZ=dz8w              &
+                 ,DEN=rho,PII=pi_phy,P=p,DELZ=dz8w                  &
                  ,DELT=dt,G=g,CPD=cp,CPV=cpv                        &
                  ,RD=r_d,RV=r_v,T0C=svpt0                           &
                  ,EP1=ep_1, EP2=ep_2, QMIN=epsilon                  &
@@ -415,6 +413,7 @@ SUBROUTINE microphysics_driver(                                          &
                  ,CLIQ=cliq,CICE=cice,PSAT=psat                     &
                  ,RAIN=rainnc ,RAINNCV=rainncv                      &
                  ,SNOW=snownc ,SNOWNCV=snowncv                      &
+                 ,SR=sr                                             &
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
@@ -428,10 +427,7 @@ SUBROUTINE microphysics_driver(                                          &
              IF ( PRESENT( QV_CURR ) .AND. PRESENT ( QC_CURR ) .AND.  &
                   PRESENT( QR_CURR ) .AND. PRESENT ( QI_CURR ) .AND.  &
                   PRESENT( QS_CURR ) .AND. PRESENT ( QG_CURR ) .AND.  &
-                  PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) .AND.  &
-                  PRESENT( SNOWNC  ) .AND. PRESENT ( SNOWNCV ) .AND.  &
-                  PRESENT( GRAUPELNC  ) .AND. PRESENT ( GRAUPELNCV ) .AND.  &
-                  PRESENT( W       )                            ) THEN
+                  PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV )  ) THEN
              CALL wsm6(                                             &
                   TH=th                                             &
                  ,Q=qv_curr                                         &
@@ -440,7 +436,7 @@ SUBROUTINE microphysics_driver(                                          &
                  ,QI=qi_curr                                        &
                  ,QS=qs_curr                                        &
                  ,QG=qg_curr                                        &
-                 ,W=w,DEN=rho,PII=pi_phy,P=p,DELZ=dz8w              &
+                 ,DEN=rho,PII=pi_phy,P=p,DELZ=dz8w                  &
                  ,DELT=dt,G=g,CPD=cp,CPV=cpv                        &
                  ,RD=r_d,RV=r_v,T0C=svpt0                           &
                  ,EP1=ep_1, EP2=ep_2, QMIN=epsilon                  &
@@ -449,6 +445,7 @@ SUBROUTINE microphysics_driver(                                          &
                  ,CLIQ=cliq,CICE=cice,PSAT=psat                     &
                  ,RAIN=rainnc ,RAINNCV=rainncv                      &
                  ,SNOW=snownc ,SNOWNCV=snowncv                      &
+                 ,SR=sr                                             &
                  ,GRAUPEL=graupelnc ,GRAUPELNCV=graupelncv          &
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &

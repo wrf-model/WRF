@@ -54,13 +54,14 @@ CONTAINS
 !===================================================================
 !
   SUBROUTINE wsm5(th, q, qc, qr, qi, qs                            &
-                 ,w, den, pii, p, delz                             &
+                 ,den, pii, p, delz                                &
                  ,delt,g, cpd, cpv, rd, rv, t0c                    &
                  ,ep1, ep2, qmin                                   &
                  ,XLS, XLV0, XLF0, den0, denr                      &
                  ,cliq,cice,psat                                   &
                  ,rain, rainncv                                    &
                  ,snow, snowncv                                    &
+                 ,sr                                               &
                  ,ids,ide, jds,jde, kds,kde                        &
                  ,ims,ime, jms,jme, kms,kme                        &
                  ,its,ite, jts,jte, kts,kte                        &
@@ -103,7 +104,7 @@ CONTAINS
                                                               qr, &
                                                               qs
   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),                 &
-        INTENT(IN   ) ::                                       w, &
+        INTENT(IN   ) ::                                          &
                                                              den, &
                                                              pii, &
                                                                p, &
@@ -129,8 +130,12 @@ CONTAINS
   REAL, DIMENSION( ims:ime , jms:jme ),                           &
         INTENT(INOUT) ::                                    rain, &
                                                          rainncv, &
-                                                            snow, &
+                                                              sr
+
+  REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,                &
+        INTENT(INOUT) ::                                    snow, &
                                                          snowncv
+
 ! LOCAL VAR
   REAL, DIMENSION( its:ite , kts:kte ) ::   t
   REAL, DIMENSION( its:ite , kts:kte, 2 ) ::   qci, qrs
@@ -147,7 +152,7 @@ CONTAINS
          ENDDO
          ENDDO
          CALL wsm52D(t, q(ims,kms,j), qci, qrs                     &
-                    ,w(ims,kms,j), den(ims,kms,j)                  &
+                    ,den(ims,kms,j)                                &
                     ,p(ims,kms,j), delz(ims,kms,j)                 &
                     ,delt,g, cpd, cpv, rd, rv, t0c                 &
                     ,ep1, ep2, qmin                                &
@@ -155,10 +160,11 @@ CONTAINS
                     ,cliq,cice,psat                                &
                     ,j                                             &
                     ,rain(ims,j),rainncv(ims,j)                    &
-                    ,snow(ims,j),snowncv(ims,j)                    &
+                    ,sr(ims,j)                                     &
                     ,ids,ide, jds,jde, kds,kde                     &
                     ,ims,ime, jms,jme, kms,kme                     &
                     ,its,ite, jts,jte, kts,kte                     &
+                    ,snow(ims,j),snowncv(ims,j)                    &
                                                                    )
          DO K=kts,kte
          DO I=its,ite
@@ -173,17 +179,18 @@ CONTAINS
   END SUBROUTINE wsm5
 !===================================================================
 !
-  SUBROUTINE wsm52D(t, q, qci, qrs, w, den, p, delz                &
+  SUBROUTINE wsm52D(t, q, qci, qrs, den, p, delz                   &
                    ,delt,g, cpd, cpv, rd, rv, t0c                  &
                    ,ep1, ep2, qmin                                 &
                    ,XLS, XLV0, XLF0, den0, denr                    &
                    ,cliq,cice,psat                                 &
                    ,lat                                            &
                    ,rain,rainncv                                   &
-                   ,snow,snowncv                                   &
+                   ,sr                                             &
                    ,ids,ide, jds,jde, kds,kde                      &
                    ,ims,ime, jms,jme, kms,kme                      &
                    ,its,ite, jts,jte, kts,kte                      &
+                   ,snow,snowncv                                   &
                                                                    )
 !-------------------------------------------------------------------
   IMPLICIT NONE
@@ -203,7 +210,7 @@ CONTAINS
         INTENT(INOUT) ::                                          &
                                                                q
   REAL, DIMENSION( ims:ime , kms:kme ),                           &
-        INTENT(IN   ) ::                                       w, &
+        INTENT(IN   ) ::                                          &
                                                              den, &
                                                                p, &
                                                             delz
@@ -228,8 +235,12 @@ CONTAINS
   REAL, DIMENSION( ims:ime ),                                     &
         INTENT(INOUT) ::                                    rain, &
                                                          rainncv, &
-                                                            snow, &
+                                                              sr
+
+  REAL, DIMENSION( ims:ime ),     OPTIONAL,                       &
+        INTENT(INOUT) ::                                    snow, &
                                                          snowncv
+
 ! LOCAL VAR
   REAL, DIMENSION( its:ite , kts:kte , 2) ::                      &
         rh, qs, rslope, rslope2, rslope3, rslopeb,                &
@@ -594,14 +605,20 @@ CONTAINS
       do i = its, ite
         fallsum = fall(i,1,1)+fall(i,1,2)+fallc(i,1)
         fallsum_qsi = fall(i,1,2)+fallc(i,1)
+        rainncv(i) = 0.
         if(fallsum.gt.0.) then
           rainncv(i) = fallsum*delz(i,1)/denr*dtcld*1000.
           rain(i) = fallsum*delz(i,1)/denr*dtcld*1000. + rain(i)
         endif
+        IF ( PRESENT (snowncv) .AND. PRESENT (snow)) THEN
+        snowncv(i) = 0.
         if(fallsum_qsi.gt.0.) then
           snowncv(i) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000.
           snow(i) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000. + snow(i)
         endif
+        ENDIF
+        sr(i) = 0.
+        if(fallsum.gt.0.)sr(i)=fallsum_qsi*delz(i,kts)/denr*dtcld*1000./(rainncv(i)+1.e-12)
       enddo
 !
 !---------------------------------------------------------------

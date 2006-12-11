@@ -338,6 +338,7 @@ Namelist variables for controling the automatic moving nest:
                                                   = 5: thermal diffusion scheme
                                                   = 4: Noah landsurface model
                                                   = 6: RUC landsurface model
+ ucmcall                             = 0,       ; activate urban canopy model (in Noah LSM only) (0=no, 1=yes)
 
  maxiens                             = 1,       ; Grell-Devenyi only
  maxens                              = 3,       ; G-D only
@@ -384,26 +385,24 @@ Namelist variables for controling the automatic moving nest:
 
 The following are for observation nudging:
  obs_nudge_opt (max_dom)             = 1        ; obs nudging flag 
- max_obs                             = 1        ; Max number of observations
- num_ndg_vars                        = 1        ; number of nudged variables 
- num_err_flds                        = 1        ; number of error fields 
+ max_obs                             = 150000   ; Max number of observations
  fdda_start                          = 0        ; obs nudging start time in minutes
  fdda_end                            = 180      ; obs nudging end time in minutes
  obs_nudge_wind (max_dom)            = 0        ; whether to nudge wind: = 1, nudge wind
- obs_coef_wind                       = 0.       ; nudging coefficient for wind, unit: s-1
+ obs_coef_wind                       = 6.E-4,   ; nudging coefficient for wind, unit: s-1
  obs_nudge_temp                      = 0        ; whether to nudge temperature: = 1, nudge wind
- obs_coef_temp                       = 0.       ; nudging coefficient for temperature, unit: s-1
+ obs_coef_temp                       = 6.E-4,   ; nudging coefficient for temperature, unit: s-1
  obs_nudge_mois                      = 0        ; whether to nudge specific humidity: = 1, nudge temp
- obs_coef_mois                       = 0.       ; nudging coefficient for specific humidity, unit: s-1
+ obs_coef_mois                       = 6.E-4,   ; nudging coefficient for specific humidity, unit: s-1
  obs_nudge_pstr                      = 0        ; not used
  obs_coef_pstr                       = 0.       ; nudging coefficient for surface pressure, unit: s-1
- obs_rinxy                           = 0.       ; horizonal radius of influence in km
- obs_rinsig                          = 0.       ; vertical radius of influence in eta
- obs_twindo                          = 0.       ; half-period time window
- obs_npfi                            = 0        ; freq in coarse grid timesteps for diag prints
- obs_ionf                            = 0        ; freq in coarse grid timesteps for obs input and err calc
+ obs_rinxy                           = 200.,    ; horizonal radius of influence in km
+ obs_rinsig                          = 0.1,     ; vertical radius of influence in eta
+ obs_twindo                          = 40,      ; half-period time window
+ obs_npfi                            = 10,      ; freq in coarse grid timesteps for diag prints
+ obs_ionf                            = 2        ; freq in coarse grid timesteps for obs input and err calc
  obs_idynin                          = 0        ; flag for dynamic initialization
- obs_dtramp                          = 0        ; time period for ramping
+ obs_dtramp                          = 40       ; time period for ramping
  obs_ipf_in4dob                      = .false.  ; print obs input diagnostics (min)
  obs_ipf_errob                       = .false.  ; print obs error diagnostics (min)
  obs_ipf_nudob                       = .false.  ; print obs nudge diagnostics (min)

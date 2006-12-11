@@ -569,7 +569,7 @@ CONTAINS
         closure_n(i)=16.
         xland1(i)=1.
         if(xland(i,j).gt.1.5)xland1(i)=0.
-        cap_max_increment(i)=50.
+        cap_max_increment(i)=25.
       enddo
 !
 !--- specify entrainmentrate and detrainmentrate
@@ -613,7 +613,7 @@ CONTAINS
 !--- maximum depth (mb) of capping 
 !--- inversion (larger cap = no convection)
 !
-      cap_maxs=125.
+      cap_maxs=75.
 !sms$to_local(grid_dh: <1, mix :size>, <2, mjx :size>) begin
       DO 7 i=its,itf
         kbmax(i)=1
@@ -644,7 +644,7 @@ CONTAINS
 !          ids,ide, jds,jde, kds,kde, &
 !          ims,ime, jms,jme, kms,kme, &
 !          its,ite, jts,jte, kts,kte)
-          cap_max(i)=cap_maxs
+!         cap_max(i)=cap_maxs
        if(iresult.eq.1)then
           cap_max(i)=cap_maxs+20.
        endif

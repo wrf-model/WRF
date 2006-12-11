@@ -20,7 +20,7 @@
 !.. Remaining values should probably be left alone.
 !..
 !..Author: Greg Thompson, NCAR-RAL, gthompsn@ucar.edu, 303-497-2805
-!..Last modified: 11 Aug 2006
+!..Last modified: 26 Oct 2006
 !+---+-----------------------------------------------------------------+
 !wrft:model_layer:physics
 !+---+-----------------------------------------------------------------+
@@ -585,6 +585,10 @@
       REAL:: dt, pptrain, pptsnow, pptgraul, pptice
       REAL:: qc_max, qr_max, qs_max, qi_max, qg_max, ni_max
       INTEGER:: i, j, k
+      INTEGER:: imax_qc, imax_qr, imax_qi, imax_qs, imax_qg, imax_ni
+      INTEGER:: jmax_qc, jmax_qr, jmax_qi, jmax_qs, jmax_qg, jmax_ni
+      INTEGER:: kmax_qc, kmax_qr, kmax_qi, kmax_qs, kmax_qg, kmax_ni
+      CHARACTER*256:: mp_debug
 
 !+---+
 
@@ -596,6 +600,27 @@
       qi_max = 0.
       qg_max = 0
       ni_max = 0.
+      imax_qc = 0
+      imax_qr = 0
+      imax_qi = 0
+      imax_qs = 0
+      imax_qg = 0
+      imax_ni = 0
+      jmax_qc = 0
+      jmax_qr = 0
+      jmax_qi = 0
+      jmax_qs = 0
+      jmax_qg = 0
+      jmax_ni = 0
+      kmax_qc = 0
+      kmax_qr = 0
+      kmax_qi = 0
+      kmax_qs = 0
+      kmax_qg = 0
+      kmax_ni = 0
+      do i = 1, 256
+         mp_debug(i:i) = char(0)
+      enddo
   
       j_loop:  do j = jts, jte
       i_loop:  do i = its, ite   
@@ -623,14 +648,7 @@
          call mp_thompson(qv1d, qc1d, qi1d, qr1d, qs1d, qg1d, ni1d, &
                       t1d, p1d, dz1d, &
                       pptrain, pptsnow, pptgraul, pptice, &
-                      kts, kte, dt)
-
-! DEBUG - GT
-!        if (i.eq.140 .and. j.eq.241) then
-!         print*, i,j,itimestep,dt,dz1d(kts),dz1d(kts+1), &
-!                      pptrain,pptsnow,pptgraul,pptice
-!        endif
-! END DEBUG - GT
+                      kts, kte, dt, i, j)
 
          pcp_ra(i,j) = pptrain
          pcp_sn(i,j) = pptsnow
@@ -649,16 +667,81 @@
             qg(i,k,j) = qg1d(k)
             ni(i,k,j) = ni1d(k)
             th(i,k,j) = t1d(k)/pii(i,k,j)
-            qc_max = AMAX1(qc_max,qc1d(k))
-            qr_max = AMAX1(qr_max,qr1d(k))
-            qs_max = AMAX1(qs_max,qs1d(k))
-            qi_max = AMAX1(qi_max,qi1d(k))
-            qg_max = AMAX1(qg_max,qg1d(k))
-            ni_max = AMAX1(ni_max,ni1d(k))
+            if (qc1d(k) .gt. qc_max) then
+             imax_qc = i
+             jmax_qc = j
+             kmax_qc = k
+             qc_max = qc1d(k)
+            elseif (qc1d(k) .lt. 0.0) then
+             write(mp_debug,*) 'WARNING, negative qc ', qc1d(k),        &
+                        ' at i,j,k=', i,j,k
+             CALL wrf_debug(150, mp_debug)
+            endif
+            if (qr1d(k) .gt. qr_max) then
+             imax_qr = i
+             jmax_qr = j
+             kmax_qr = k
+             qr_max = qr1d(k)
+            elseif (qr1d(k) .lt. 0.0) then
+             write(mp_debug,*) 'WARNING, negative qr ', qr1d(k),        &
+                        ' at i,j,k=', i,j,k
+             CALL wrf_debug(150, mp_debug)
+            endif
+            if (qs1d(k) .gt. qs_max) then
+             imax_qs = i
+             jmax_qs = j
+             kmax_qs = k
+             qs_max = qs1d(k)
+            elseif (qs1d(k) .lt. 0.0) then
+             write(mp_debug,*) 'WARNING, negative qs ', qs1d(k),        &
+                        ' at i,j,k=', i,j,k
+             CALL wrf_debug(150, mp_debug)
+            endif
+            if (qi1d(k) .gt. qi_max) then
+             imax_qi = i
+             jmax_qi = j
+             kmax_qi = k
+             qi_max = qi1d(k)
+            elseif (qi1d(k) .lt. 0.0) then
+             write(mp_debug,*) 'WARNING, negative qi ', qi1d(k),        &
+                        ' at i,j,k=', i,j,k
+             CALL wrf_debug(150, mp_debug)
+            endif
+            if (qg1d(k) .gt. qg_max) then
+             imax_qg = i
+             jmax_qg = j
+             kmax_qg = k
+             qg_max = qg1d(k)
+            elseif (qg1d(k) .lt. 0.0) then
+             write(mp_debug,*) 'WARNING, negative qg ', qg1d(k),        &
+                        ' at i,j,k=', i,j,k
+             CALL wrf_debug(150, mp_debug)
+            endif
+            if (ni1d(k) .gt. ni_max) then
+             imax_ni = i
+             jmax_ni = j
+             kmax_ni = k
+             ni_max = ni1d(k)
+            elseif (ni1d(k) .lt. 0.0) then
+             write(mp_debug,*) 'WARNING, negative ni ', ni1d(k),        &
+                        ' at i,j,k=', i,j,k
+             CALL wrf_debug(150, mp_debug)
+            endif
          enddo
 
       enddo i_loop
       enddo j_loop
+
+! DEBUG - GT
+      write(mp_debug,'(a,6(a,e13.6,1x,a,i3,a,i3,a,i3,a,1x))') 'MP-GT:', &
+         'qc: ', qc_max, '(', imax_qc, ',', jmax_qc, ',', kmax_qc, ')', &
+         'qr: ', qr_max, '(', imax_qr, ',', jmax_qr, ',', kmax_qr, ')', &
+         'qi: ', qi_max, '(', imax_qi, ',', jmax_qi, ',', kmax_qi, ')', &
+         'qs: ', qs_max, '(', imax_qs, ',', jmax_qs, ',', kmax_qs, ')', &
+         'qg: ', qg_max, '(', imax_qg, ',', jmax_qg, ',', kmax_qg, ')', &
+         'ni: ', ni_max, '(', imax_ni, ',', jmax_ni, ',', kmax_ni, ')'
+      CALL wrf_debug(150, mp_debug)
+! END DEBUG - GT
 
       END SUBROUTINE mp_gt_driver
 
@@ -676,12 +759,12 @@
       subroutine mp_thompson (qv1d, qc1d, qi1d, qr1d, qs1d, qg1d, ni1d, &
                           t1d, p1d, dzq, &
                           pptrain, pptsnow, pptgraul, pptice, &
-                          kts, kte, dt)
+                          kts, kte, dt, ii, jj)
 
       implicit none
 
 !..Sub arguments
-      INTEGER, INTENT(IN):: kts, kte
+      INTEGER, INTENT(IN):: kts, kte, ii, jj
       REAL, DIMENSION(kts:kte), INTENT(INOUT):: &
                           qv1d, qc1d, qi1d, qr1d, qs1d, qg1d, ni1d, &
                           t1d, p1d
@@ -843,6 +926,7 @@
             rc(k) = qc1d(k)*rho(k)
             L_qc(k) = .true.
          else
+            qc1d(k) = 0.0
             rc(k) = R1
             L_qc(k) = .false.
          endif
@@ -852,6 +936,8 @@
             ni(k) = AMAX1(1., ni1d(k)*rho(k))
             L_qi(k) = .true.
          else
+            qi1d(k) = 0.0
+            ni1d(k) = 0.0
             ri(k) = R1
             ni(k) = 0.01
             L_qi(k) = .false.
@@ -861,14 +947,17 @@
             rr(k) = qr1d(k)*rho(k)
             L_qr(k) = .true.
          else
+            qr1d(k) = 0.0
             rr(k) = R1
             L_qr(k) = .false.
          endif
+         mvd_r(k) = D0r
          if (qs1d(k) .gt. R1) then
             no_micro = .false.
             rs(k) = qs1d(k)*rho(k)
             L_qs(k) = .true.
          else
+            qs1d(k) = 0.0
             rs(k) = R1
             L_qs(k) = .false.
          endif
@@ -877,6 +966,7 @@
             rg(k) = qg1d(k)*rho(k)
             L_qg(k) = .true.
          else
+            qg1d(k) = 0.0
             rg(k) = R1
             L_qg(k) = .false.
          endif
@@ -1406,11 +1496,6 @@
            prg_rfz(k) = tpg_qrfz(idx_r,idx_r1,idx_tc)*odts
            pri_rfz(k) = tpi_qrfz(idx_r,idx_r1,idx_tc)*odts
            pni_rfz(k) = tni_qrfz(idx_r,idx_r1,idx_tc)*odts
-          elseif (rr(k).gt. R1) then
-           pri_rfz(k) = tpg_qrfz(idx_r,idx_r1,idx_tc)*odts &
-                      + tpi_qrfz(idx_r,idx_r1,idx_tc)*odts
-           pri_rfz(k) = AMIN1(rr(k)*odts, pri_rfz(k))
-           pni_rfz(k) = pri_rfz(k)/(2.*xm0i)
           endif
           if (rc(k).gt. r_c(1)) then
            pri_wfz(k) = tpi_qcfz(idx_c,idx_tc)*odts
@@ -1439,14 +1524,15 @@
            Di = AMAX1(D0i, (bm_i + mu_i + 1.) * ilami)
            xmi = am_i*Di**bm_i
            oxmi = 1./xmi
-           A2 = ABER2(IT) 
-           A1 = ABER1(IT) * 0.001**(1.-A2)
-           pri_ide(k) = (qv(k)-qvsi(k))/(qvs(k)-qvsi(k)) &
-                  *A1*(am_i**A2) * ni(k)*oig1*cbg(IT)*ilami**(bm_i*A2)
-           if (temp(k).lt. (T_0-31.0) ) then
+!          if (temp(k).lt. (T_0-31.0) ) then
             pri_ide(k) = C_cube*t1_subl*diffu(k)*ssati(k)*rvs &
                   *oig1*cig(5)*ni(k)*ilami
-           endif
+!          else
+!           A2 = ABER2(IT) 
+!           A1 = ABER1(IT) * 0.001**(1.-A2)
+!           pri_ide(k) = (qv(k)-qvsi(k))/(qvs(k)-qvsi(k)) &
+!                  *A1*(am_i**A2) * ni(k)*oig1*cbg(IT)*ilami**(bm_i*A2)
+!          endif
 
            if (pri_ide(k) .lt. 0.0) then
             pri_ide(k) = AMAX1(-ri(k)*odts, pri_ide(k), rate_max)
@@ -2290,15 +2376,35 @@
       enddo
       endif
 
+!+---+-----------------------------------------------------------------+
+!.. All tendencies computed, apply and pass back final values to parent.
+!+---+-----------------------------------------------------------------+
       do k = kts, kte
          t1d(k)  = t1d(k) + tten(k)*DT
          qv1d(k) = AMAX1(1.E-10, qv1d(k) + qvten(k)*DT)
          qc1d(k) = qc1d(k) + qcten(k)*DT
          if (qc1d(k) .le. R1) qc1d(k) = 0.0
          qi1d(k) = qi1d(k) + qiten(k)*DT
+         ni1d(k) = ni1d(k) + niten(k)*DT
          if (qi1d(k) .le. R1) then
-            qi1d(k) = 0.0
-            ni1d(k) = 0.0
+           qi1d(k) = 0.0
+           ni1d(k) = 0.0
+         else
+           if (ni1d(k) .gt. 0.01) then
+            lami = (am_i*cig(2)*oig1*ni1d(k)/qi1d(k))**obmi
+            ilami = 1./lami
+            Di = (bm_i + mu_i + 1.) * ilami
+            if (Di.lt. 0.15*D0s) then
+             lami = cie(2)/(0.15*D0s)
+             ni1d(k) = AMIN1(5.E5, cig(1)*oig2*qi1d(k)/am_i*lami**bm_i)
+            elseif (Di.gt. 5.0*D0s) then
+             lami = cie(2)/(5.0*D0s)
+             ni1d(k) = cig(1)*oig2*qi1d(k)/am_i*lami**bm_i
+            endif
+           else
+            lami = cie(2)/(0.15*D0s)
+            ni1d(k) = AMIN1(5.E5, cig(1)*oig2*qi1d(k)/am_i*lami**bm_i)
+           endif
          endif
          qr1d(k) = qr1d(k) + qrten(k)*DT
          if (qr1d(k) .le. R1) qr1d(k) = 0.0
@@ -2306,10 +2412,6 @@
          if (qs1d(k) .le. R1) qs1d(k) = 0.0
          qg1d(k) = qg1d(k) + qgten(k)*DT
          if (qg1d(k) .le. R1) qg1d(k) = 0.0
-         ni1d(k) = ni1d(k) + niten(k)*DT
-         if (ni1d(k) .le. 1.) then
-            if (qi1d(k) .gt. 0.) ni1d(k) = 1.
-         endif
       enddo
 
       end subroutine mp_thompson

@@ -192,13 +192,10 @@ MODULE module_sf_urban
 !     Kusaka et al. (2001) Bound.-Layer Meteor., vol.101, p329-358
 !
 ! History:
-!     2006/06        modified by H. Kusaka (Univ. Tsukuba), M. Tewari 
-!     2005/10 - /26, modified by Fei Chen, Mukul Tewari
-!     2005/01 - /02, modified by Mukul Tewari, Fei Chen,  H. Kusaka
-!     2004/11/24 WRF , modified  by H. Kusaka of CRIEPI
+!     2006/06          modified by H. Kusaka (Univ. Tsukuba), M. Tewari 
+!     2005/10/26,      modified by Fei Chen, Mukul Tewari
 !     2003/07/21 WRF , modified  by H. Kusaka of CRIEPI (NCAR/MMM)
-!     2002/11/06 F90 , modified  by H. Kusaka of CRIEPI (NCAR/MMM)
-!     2001/08/26 PhD , modified  by H. Kusaka of CRIEPI
+!     2001/08/26 PhD , modified  by H. Kusaka of CRIEPI (Univ.Tsukuba)
 !     1999/08/25 LCM , developed by H. Kusaka of CRIEPI (Univ.Tsukuba)
 !
 !===============================================================================

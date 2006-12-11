@@ -4363,7 +4363,7 @@ END SUBROUTINE phy_bc
                        its, ite, jts, jte, kts, kte           )
 
     CALL tke_buoyancy( tendency, config_flags, mu,            &
-                       tke, xkhv, BN2, dt,                    &
+                       tke, xkhv, BN2, theta, dt,             &
                        ids, ide, jds, jde, kds, kde,          &
                        ims, ime, jms, jme, kms, kme,          &
                        its, ite, jts, jte, kts, kte           )
@@ -4408,7 +4408,7 @@ END SUBROUTINE phy_bc
 !=======================================================================
 
     SUBROUTINE tke_buoyancy( tendency, config_flags, mu,    &
-                             tke, xkhv, BN2, dt,            &
+                             tke, xkhv, BN2, theta, dt,     &
                              ids, ide, jds, jde, kds, kde,  &
                              ims, ime, jms, jme, kms, kme,  &
                              its, ite, jts, jte, kts, kte   )
@@ -4433,7 +4433,7 @@ END SUBROUTINE phy_bc
     :: tendency
 
     REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( IN )  &
-    :: xkhv, tke, BN2   
+    :: xkhv, tke, BN2, theta 
 
     REAL, DIMENSION( ims:ime, jms:jme ), INTENT( IN )  &
     :: mu
@@ -4501,8 +4501,7 @@ END SUBROUTINE phy_bc
    DO j = j_start, j_end
    DO i = i_start, i_end
       tendency(i,k,j)= tendency(i,k,j) - &
-
-                   mu(i,j)*((xkhv(i,k,j)*BN2(i,k,j))- heat_flux)/2.
+                   mu(i,j)*((xkhv(i,k,j)*BN2(i,k,j))- (g/theta(i,k,j))*heat_flux)/2.
 
    ENDDO
    ENDDO   

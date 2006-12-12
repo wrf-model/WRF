@@ -670,8 +670,8 @@ CONTAINS
           snow(i) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000. + snow(i)
         endif
         ENDIF
-        graupelncv(i) = 0.
         IF ( PRESENT (graupelncv) .AND. PRESENT (graupel)) THEN
+        graupelncv(i) = 0.
         if(fallsum_qg.gt.0.) then
           graupelncv(i) = fallsum_qg*delz(i,kts)/denr*dtcld*1000.
           graupel(i) = fallsum_qg*delz(i,kts)/denr*dtcld*1000. + graupel(i)

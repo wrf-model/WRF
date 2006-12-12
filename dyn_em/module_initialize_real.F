@@ -444,14 +444,14 @@ endif
 
          IF ( ( flag_psfc .EQ. 1 ) .AND. ( flag_soilhgt .EQ. 1 ) .AND. &
               ( config_flags%sfcp_to_sfcp ) ) THEN
-            CALL sfcprs2(grid%em_t_gc, grid%em_qv_gc, grid%em_ght_gc, grid%em_psfc_gc, grid%ht, grid%em_tavgsfc, grid%em_p_gc, &
-                         grid%psfc, we_have_tavgsfc, &
+            CALL sfcprs2(grid%em_t_gc, grid%em_qv_gc, grid%em_ght_gc, grid%em_psfc_gc, grid%ht, &
+                         grid%em_tavgsfc, grid%em_p_gc, grid%psfc, we_have_tavgsfc, &
                          ids , ide , jds , jde , 1   , num_metgrid_levels , &
                          ims , ime , jms , jme , 1   , num_metgrid_levels , &
                          its , ite , jts , jte , 1   , num_metgrid_levels )
          ELSE
-            CALL sfcprs (grid%em_t_gc, grid%em_qv_gc, grid%em_ght_gc, grid%em_pslv_gc, grid%ht, grid%em_tavgsfc, grid%em_p_gc, &
-                         grid%psfc, we_have_tavgsfc, &
+            CALL sfcprs (grid%em_t_gc, grid%em_qv_gc, grid%em_ght_gc, grid%em_pslv_gc, grid%ht, &
+                         grid%em_tavgsfc, grid%em_p_gc, grid%psfc, we_have_tavgsfc, &
                          ids , ide , jds , jde , 1   , num_metgrid_levels , &
                          ims , ime , jms , jme , 1   , num_metgrid_levels , &
                          its , ite , jts , jte , 1   , num_metgrid_levels )
@@ -864,7 +864,8 @@ endif
                                            flag_st000010 , flag_st010040 , flag_st040100 , flag_st100200 , flag_st010200 , &
                                            grid%st000007 , grid%st007028 , grid%st028100 , grid%st100255 , &
                                            flag_st000007 , flag_st007028 , flag_st028100 , flag_st100255 , &
-                                           grid%soilt000 , grid%soilt005 , grid%soilt020 , grid%soilt040 , grid%soilt160 , grid%soilt300 , &
+                                           grid%soilt000 , grid%soilt005 , grid%soilt020 , grid%soilt040 , grid%soilt160 , &
+                                           grid%soilt300 , &
                                            flag_soilt000 , flag_soilt005 , flag_soilt020 , flag_soilt040 , &
                                            flag_soilt160 , flag_soilt300 , &
                                            ids , ide , jds , jde , kds , kde , &
@@ -1049,7 +1050,8 @@ endif
       ELSE
          DO j = jts, MIN(jde-1,jte)
             DO i = its, MIN(ide-1,ite)
-               IF ( ( ( grid%tslb(i,1,j) .LT. 170. ) .OR. ( grid%tslb(i,1,j) .GT. 400. ) ) .AND. ( grid%landmask(i,j) .GT. 0.5 ) ) THEN
+               IF ( ( ( grid%tslb(i,1,j) .LT. 170. ) .OR. ( grid%tslb(i,1,j) .GT. 400. ) ) .AND. &
+                       ( grid%landmask(i,j) .GT. 0.5 ) ) THEN
                      IF ( ( model_config_rec%sf_surface_physics(grid%id) .NE. LSMSCHEME    ) .AND. &
                           ( model_config_rec%sf_surface_physics(grid%id) .NE. RUCLSMSCHEME ) ) THEN
                         print *,'error in the grid%tslb'
@@ -1069,12 +1071,14 @@ endif
                         fake_soil_temp : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
                            CASE ( SLABSCHEME )
                               DO ns = 1 , model_config_rec%num_soil_layers
-                                 grid%tslb(i,ns,j) = ( grid%tsk(i,j)*(3.0 - grid%zs(ns)) + grid%tmn(i,j)*(0.0 - grid%zs(ns)) ) /(3.0 - 0.0)
+                                 grid%tslb(i,ns,j) = ( grid%tsk(i,j)*(3.0 - grid%zs(ns)) + &
+                                                       grid%tmn(i,j)*(0.0 - grid%zs(ns)) ) /(3.0 - 0.0)
                               END DO
                            CASE ( LSMSCHEME , RUCLSMSCHEME )
                               CALL wrf_error_fatal ( 'Assigning constant soil moisture, bad idea')
                               DO ns = 1 , model_config_rec%num_soil_layers
-                                 grid%tslb(i,ns,j) = ( grid%tsk(i,j)*(3.0 - grid%zs(ns)) + grid%tmn(i,j)*(0.0 - grid%zs(ns)) ) /(3.0 - 0.0)
+                                 grid%tslb(i,ns,j) = ( grid%tsk(i,j)*(3.0 - grid%zs(ns)) + &
+                                                       grid%tmn(i,j)*(0.0 - grid%zs(ns)) ) /(3.0 - 0.0)
                               END DO
                         END SELECT fake_soil_temp
                      else if(grid%tsk(i,j).gt.170. .and. grid%tsk(i,j).lt.400.)then
@@ -1109,8 +1113,10 @@ endif
       CALL nl_get_seaice_threshold ( grid%id , grid%seaice_threshold ) 
       CALL nl_get_isice ( grid%id , grid%isice )
       CALL nl_get_iswater ( grid%id , grid%iswater )
-      CALL adjust_for_seaice_post ( grid%xice , grid%landmask , grid%tsk , grid%tsk_save , grid%ivgtyp , grid%vegcat , grid%lu_index , &
-                                    grid%xland , grid%landusef , grid%isltyp , grid%soilcat , grid%soilctop , &
+      CALL adjust_for_seaice_post ( grid%xice , grid%landmask , grid%tsk , grid%tsk_save , &
+                                    grid%ivgtyp , grid%vegcat , grid%lu_index , &
+                                    grid%xland , grid%landusef , grid%isltyp , grid%soilcat ,  &
+                                    grid%soilctop , &
                                     grid%soilcbot , grid%tmn , grid%vegfra , &
                                     grid%tslb , grid%smois , grid%sh2o , &
                                     grid%seaice_threshold , &
@@ -1128,8 +1134,10 @@ oops1=0
 oops2=0
       DO j = jts, MIN(jde-1,jte)
          DO i = its, MIN(ide-1,ite)
-            IF ( ( ( grid%landmask(i,j) .LT. 0.5 ) .AND. ( grid%ivgtyp(i,j) .NE. config_flags%iswater .OR. grid%isltyp(i,j) .NE. 14 ) ) .OR. &
-                 ( ( grid%landmask(i,j) .GT. 0.5 ) .AND. ( grid%ivgtyp(i,j) .EQ. config_flags%iswater .OR. grid%isltyp(i,j) .EQ. 14 ) ) ) THEN
+            IF ( ( ( grid%landmask(i,j) .LT. 0.5 ) .AND. &
+                   ( grid%ivgtyp(i,j) .NE. config_flags%iswater .OR. grid%isltyp(i,j) .NE. 14 ) ) .OR. &
+                 ( ( grid%landmask(i,j) .GT. 0.5 ) .AND. &
+                   ( grid%ivgtyp(i,j) .EQ. config_flags%iswater .OR. grid%isltyp(i,j) .EQ. 14 ) ) ) THEN
                IF ( grid%tslb(i,1,j) .GT. 1. ) THEN
 oops1=oops1+1
                   grid%ivgtyp(i,j) = 5
@@ -1393,7 +1401,8 @@ endif
          
                grid%em_p(i,k,j) = - 0.5*(grid%em_mu_2(i,j)+qvf1*grid%em_mub(i,j))/grid%em_rdnw(k)/qvf2
                qvf = 1. + rvovrd*moist(i,k,j,P_QV)
-               grid%em_alt(i,k,j) = (r_d/p1000mb)*(grid%em_t_2(i,k,j)+t0)*qvf*(((grid%em_p(i,k,j)+grid%em_pb(i,k,j))/p1000mb)**cvpm)
+               grid%em_alt(i,k,j) = (r_d/p1000mb)*(grid%em_t_2(i,k,j)+t0)*qvf&
+                                 *(((grid%em_p(i,k,j)+grid%em_pb(i,k,j))/p1000mb)**cvpm)
                grid%em_al(i,k,j) = grid%em_alt(i,k,j) - grid%em_alb(i,k,j)
          
                !  Now, integrate down the column to compute the pressure perturbation, and diagnose the two
@@ -1415,7 +1424,8 @@ endif
          
                DO k  = 2,kte
                   grid%em_ph_2(i,k,j) = grid%em_ph_2(i,k-1,j) - &
-                                grid%em_dnw(k-1) * ( (grid%em_mub(i,j)+grid%em_mu_2(i,j))*grid%em_al(i,k-1,j) + grid%em_mu_2(i,j)*grid%em_alb(i,k-1,j) )
+                                grid%em_dnw(k-1) * ( (grid%em_mub(i,j)+grid%em_mu_2(i,j))*grid%em_al(i,k-1,j) &
+                              + grid%em_mu_2(i,j)*grid%em_alb(i,k-1,j) )
                   grid%em_ph0(i,k,j) = grid%em_ph_2(i,k,j) + grid%em_phb(i,k,j)
                END DO
    
@@ -1775,7 +1785,8 @@ endif
       
             DO k  = 2,kte
                grid%em_ph_2(i,k,j) = grid%em_ph_2(i,k-1,j) - &
-                             grid%em_dnw(k-1) * ( (grid%em_mub(i,j)+grid%em_mu_2(i,j))*grid%em_al(i,k-1,j) + grid%em_mu_2(i,j)*grid%em_alb(i,k-1,j) )
+                             grid%em_dnw(k-1) * ( (grid%em_mub(i,j)+grid%em_mu_2(i,j))*grid%em_al(i,k-1,j) &
+                           + grid%em_mu_2(i,j)*grid%em_alb(i,k-1,j) )
                grid%em_ph0(i,k,j) = grid%em_ph_2(i,k,j) + grid%em_phb(i,k,j)
             END DO
        

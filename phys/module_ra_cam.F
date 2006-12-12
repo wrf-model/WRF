@@ -117,6 +117,7 @@ MODULE module_ra_cam
 !            Emissivity and Absorptivity Formulation for Water Vapor
 !            Journal of Geophysical Research, vol. 91., D8, pp 8649-8666
 !
+#ifndef G95
   real(r8):: coefh(2,4) = reshape(  &
          (/ (/5.46557e+01,-7.30387e-02/), &
             (/1.09311e+02,-1.46077e-01/), &
@@ -130,6 +131,12 @@ MODULE module_ra_cam
   real(r8):: coefk(3,2) = reshape( &
             (/ (/2.48852e-01,2.09667e-03,2.60377e-06/) , &
                (/1.03594e+00,6.58620e-03,4.04456e-06/) /), (/3,2/) )
+#else
+! this use of reshape does not work in g95, as of 20061212 jm
+  real(r8):: coefh(2,4)
+  real(r8):: coefj(3,2)
+  real(r8):: coefk(3,2)
+#endif
 
   integer, parameter :: ntemp = 192 ! Number of temperatures in H2O sat. table for Tp
   real(r8) :: estblh2o(0:ntemp)       ! saturation vapor pressure for H2O for Tp rang
@@ -147,6 +154,7 @@ MODULE module_ra_cam
 !
 ! Coefficients of polynomial for f_a in T_e
 !
+#ifndef G95
   real(r8), parameter:: fat(o_fa,nbands) = reshape( (/ &
        (/-1.06665373E-01,  2.90617375E-02, -2.70642049E-04,   &   ! 0-800&1200-2200 cm^-1
           1.07595511E-06, -1.97419681E-09,  1.37763374E-12/), &   !   0-800&1200-2200 cm^-1
@@ -162,6 +170,11 @@ MODULE module_ra_cam
       (/6.53851837E-01, -1.51240299E-02,  1.21846479E-04,   &   ! 800-1200 cm^-1
        -4.04970123E-07,  6.15368936E-10, -3.52415071E-13/) /) & !   800-1200 cm^-1
       , (/o_fa,nbands/) )
+#else
+! this use of reshape does not work in g95, as of 20061212 jm
+  real(r8):: fat(o_fa,nbands)
+  real(r8):: fet(o_fe,nbands)
+#endif
 
 
       real(r8) ::  gravit     ! Acceleration of gravity (cgs)
@@ -473,7 +486,7 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
    real(r8), dimension(its:ite,kts:kte+1)           :: emstot ! Total emissivity
    CHARACTER(LEN=256) :: msgstr
 
-#if !defined(MAC_KLUDGE)
+#if !defined(MAC_KLUDGE) && !defined(G95)
    lchnk = 1
    begchunk = ims
    endchunk = ime
@@ -846,7 +859,7 @@ end subroutine camrad
    REAL(r8)    :: pstd
    REAL(r8)    :: rh2o, cpair
 
-#if !defined(MAC_KLUDGE)
+#if !defined(MAC_KLUDGE) && !defined(G95)
    ozncyc = .true.
    dosw = .true.
    dolw = .true.
@@ -905,7 +918,7 @@ end subroutine camrad
 
    END SUBROUTINE camradinit
 
-#if !defined(MAC_KLUDGE)
+#if !defined(MAC_KLUDGE) && !defined(G95)
 subroutine oznini(ozmixm,pin,levsiz,num_months,XLAT,                &
                      ids, ide, jds, jde, kds, kde,                  &
                      ims, ime, jms, jme, kms, kme,                  &
@@ -1677,7 +1690,8 @@ subroutine get_rf_scales(scales)
 
 end subroutine get_rf_scales
 
-subroutine get_aerosol(c, julday, julian, dt, gmt, xtime, m_psp, m_psn, aerosoljp, aerosoljn, m_hybi, paerlev, naer_c, pint, pcols, pver, pverp, pverr, pverrp, AEROSOLt, scale)
+subroutine get_aerosol(c, julday, julian, dt, gmt, xtime, m_psp, m_psn, aerosoljp, &
+  aerosoljn, m_hybi, paerlev, naer_c, pint, pcols, pver, pverp, pverr, pverrp, AEROSOLt, scale)
 !------------------------------------------------------------------
 !
 !  Input:
@@ -2652,7 +2666,8 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
 
          call get_rf_scales(scales)
 
-         call get_aerosol(lchnk, julday, julian, dt, gmt, xtime, m_psp, m_psn, aerosoljp, aerosoljn, m_hybi, paerlev, naer, pint, pcols, pver, pverp, pverr, pverrp, aerosol, scales)
+         call get_aerosol(lchnk, julday, julian, dt, gmt, xtime, m_psp, m_psn, aerosoljp, &
+           aerosoljn, m_hybi, paerlev, naer, pint, pcols, pver, pverp, pverr, pverrp, aerosol, scales)
 
          ! overwrite with prognostics aerosols
 
@@ -2701,7 +2716,8 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
 
       call get_int_scales(scales)
 
-      call get_aerosol(lchnk, julday, julian, dt, gmt, xtime, m_psp, m_psn, aerosoljp, aerosoljn, m_hybi, paerlev, naer, pint, pcols, pver, pverp, pverr, pverrp, aerosol, scales)
+      call get_aerosol(lchnk, julday, julian, dt, gmt, xtime, m_psp, m_psn, aerosoljp, aerosoljn, &
+             m_hybi, paerlev, naer, pint, pcols, pver, pverp, pverr, pverrp, aerosol, scales)
 
       ! overwrite with prognostics aerosols
 !     call set_aerosol_from_prognostics (ncol, q, aerosol)

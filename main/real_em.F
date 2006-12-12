@@ -59,6 +59,7 @@ PROGRAM real_data
    INTEGER :: ips , ipe , jps , jpe , kps , kpe
    INTEGER :: ijds , ijde , spec_bdy_width
    INTEGER :: i , j , k , idts, rc
+   INTEGER :: sibling_count , parent_id_hold , dom_loop
 
    CHARACTER (LEN=80)     :: message
 
@@ -138,6 +139,7 @@ real::t1,t2
            ( domain_id .EQ. 1 ) ) THEN
 
          IF ( domain_id .GT. 1 ) THEN
+
             CALL nl_get_grid_id        ( domain_id, grid_id        )
             CALL nl_get_parent_id      ( domain_id, parent_id      )
             CALL nl_get_e_we           ( domain_id, e_we           )
@@ -168,12 +170,20 @@ real::t1,t2
             CALL nl_get_j_parent_start ( domain_id, j_parent_start )
             grid_ptr2 => head_grid
             found_the_id = .FALSE.
-            CALL find_my_parent ( grid_ptr2 , grid_ptr , parent_id , found_the_id )
+            CALL find_my_parent ( grid_ptr2 , grid_ptr , domain_id , parent_id , found_the_id )
             IF ( found_the_id ) THEN
+
+               sibling_count = 0
+               DO dom_loop = 2 , domain_id
+                 CALL nl_get_parent_id ( dom_loop, parent_id_hold )
+                 IF ( parent_id_hold .EQ. parent_id ) THEN
+                    sibling_count = sibling_count + 1
+                 END IF
+               END DO
                CALL alloc_and_configure_domain ( domain_id  = domain_id    , &
                                                  grid       = another_grid , &
                                                  parent     = grid_ptr     , &
-                                                 kid        = 1            )
+                                                 kid        = sibling_count )
                grid => another_grid
             ELSE
               CALL wrf_error_fatal( 'real_em.F: Could not find the parent domain')

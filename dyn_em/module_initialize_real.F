@@ -1796,13 +1796,13 @@ endif
 
 !---------------------------------------------------------------------
 
-   RECURSIVE SUBROUTINE find_my_parent ( grid_ptr_in , grid_ptr_out , id_wanted , found_the_id )
+   RECURSIVE SUBROUTINE find_my_parent ( grid_ptr_in , grid_ptr_out , id_i_am , id_wanted , found_the_id )
 
       USE module_domain
 
       TYPE(domain) , POINTER :: grid_ptr_in , grid_ptr_out
       TYPE(domain) , POINTER :: grid_ptr_sibling
-      INTEGER :: id_wanted
+      INTEGER :: id_wanted , id_i_am
       LOGICAL :: found_the_id
 
       found_the_id = .FALSE.
@@ -1815,7 +1815,7 @@ endif
             RETURN
          ELSE IF ( grid_ptr_sibling%num_nests .GT. 0 ) THEN
             grid_ptr_sibling => grid_ptr_sibling%nests(1)%ptr
-            CALL find_my_parent ( grid_ptr_sibling , grid_ptr_out , id_wanted , found_the_id )
+            CALL find_my_parent ( grid_ptr_sibling , grid_ptr_out , id_i_am , id_wanted , found_the_id )
          ELSE
             grid_ptr_sibling => grid_ptr_sibling%sibling
          END IF

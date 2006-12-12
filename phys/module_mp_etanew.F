@@ -1352,7 +1352,7 @@ MODULE module_mp_etanew
           PRLOSS=0.
           RQR=0.
           N0r=0.
-          INDEXR1=INDEXR    ! For debugging only
+          INDEXR1=0
           INDEXR=MDRmin
           IF (RAIN_logical) THEN
             IF (ARAIN .LE. 0.) THEN

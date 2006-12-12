@@ -144,7 +144,7 @@ Namelist variables specifically for the WPS input for real:
  lowest_lev_from_sfc                 = .false.  ; place the surface value into the lowest eta location
                                                 ; T = use surface value as lowest eta (u,v,t,q)
                                                 ; F = use traditional interpolation
- force_sfc_in_vinterp                = 0        ; use the surface level as the lower boundary when interpolating
+ force_sfc_in_vinterp                = 1        ; use the surface level as the lower boundary when interpolating
                                                 ; through this many eta levels
                                                 ; 0 = perform traditional trapping interpolation
                                                 ; n = first n eta levels directly use surface level

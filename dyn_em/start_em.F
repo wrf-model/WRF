@@ -647,13 +647,15 @@
 
    IF ( .not. config_flags%restart ) THEN 
    CALL set_w_surface(  config_flags,                                      &
-                        grid%em_w_1, grid%ht, grid%em_u_1, grid%em_v_1, grid%cf1, grid%cf2, grid%cf3, grid%rdx, grid%rdy, grid%msft,  &
+                        grid%em_w_1, grid%ht, grid%em_u_1, grid%em_v_1, grid%cf1, &
+                        grid%cf2, grid%cf3, grid%rdx, grid%rdy, grid%msft,        &
                         ids, ide, jds, jde, kds, kde,                      &
                         ips, ipe, jps, jpe, kps, kpe,                      &
                         its, ite, jts, jte, kts, kte,                      &
                         ims, ime, jms, jme, kms, kme                      )
    CALL set_w_surface(  config_flags,                                      &
-                        grid%em_w_2, grid%ht, grid%em_u_2, grid%em_v_2, grid%cf1, grid%cf2, grid%cf3, grid%rdx, grid%rdy, grid%msft,  &
+                        grid%em_w_2, grid%ht, grid%em_u_2, grid%em_v_2, grid%cf1, &
+                        grid%cf2, grid%cf3, grid%rdx, grid%rdy, grid%msft,        &
                         ids, ide, jds, jde, kds, kde,                      &
                         ips, ipe, jps, jpe, kps, kpe,                      &
                         its, ite, jts, jte, kts, kte,                      &

@@ -1269,7 +1269,8 @@ cycle
 
       IF ( ( num_st_levels_input .LE. 0 ) .OR. & 
            ( num_sm_levels_input .LE. 0 ) ) THEN
-         write (message, FMT='(A)')'No input soil level data (either temperature or moisture, or both are missing).  Required for RUC LSM.' 
+         write (message, FMT='(A)')&
+'No input soil level data (either temperature or moisture, or both are missing).  Required for RUC LSM.' 
          CALL wrf_error_fatal ( message )
       ELSE
          IF ( flag_soilt000 .eq. 1 ) THEN

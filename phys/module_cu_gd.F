@@ -822,43 +822,46 @@ CONTAINS
            ims,ime, jms,jme, kms,kme, &
            its,ite, jts,jte, kts,kte)
       DO 100 i=its,ite
-      IF(ierr(I).eq.0.)THEN
+        IF(ierr(I).eq.0.)THEN
 !
 !--- check whether it would have buoyancy, if there where
 !--- no entrainment/detrainment
 !
-101   continue
-      if(jmin(i)-1.lt.KDET(I))kdet(i)=jmin(i)-1
-      if(jmin(i).ge.Ktop(I)-1)jmin(i)=ktop(i)-2
-      ki=jmin(i)
-!     hcdo(i,ki)=heo_cup(i,ki)
-      hcdo(i,ki)=heso_cup(i,ki)
-      DZ=Zo_cup(i,Ki+1)-Zo_cup(i,Ki)
-      dh=dz*(HCDo(i,Ki)-heso_cup(i,ki))
-      dh=0.
-!
-      do k=ki-1,1,-1
-!        hcdo(i,k)=heo_cup(i,jmin(i))
-         hcdo(i,k)=heso_cup(i,jmin(i))
-         DZ=Zo_cup(i,K+1)-Zo_cup(i,K)
-         dh=dh+dz*(HCDo(i,K)-heso_cup(i,k))
-         if(dh.gt.0.)then
-           jmin(i)=jmin(i)-1
-           if(jmin(i).gt.3)then
-             go to 101
-           else if(jmin(i).le.3)then
-             ierr(i)=9
-             go to 100
-           endif
-         endif
-       enddo
-
-         IF(JMIN(I).LE.3)then
-            ierr(i)=4
-         endif
-
+!jm begin 20061212:  the following code replaces code that
+!   was too complex and causing problem for optimization.
+!   Done in consultation with G. Grell.
+        jmini = jmin(i)
+        keep_going = .TRUE.
+        DO WHILE ( keep_going )
+          keep_going = .FALSE.
+          if ( jmini - 1 .lt. kdet(i)   ) kdet(i) = jmini-1
+          if ( jmini     .ge. ktop(i)-1 ) jmini = ktop(i) - 2
+          ki = jmini
+          hcdo(i,ki)=heso_cup(i,ki)
+          DZ=Zo_cup(i,Ki+1)-Zo_cup(i,Ki)
+          dh=0.
+          DO k=ki-1,1,-1
+            hcdo(i,k)=heso_cup(i,jmini)
+            DZ=Zo_cup(i,K+1)-Zo_cup(i,K)
+            dh=dh+dz*(HCDo(i,K)-heso_cup(i,k))
+            IF(dh.gt.0.)THEN
+              jmini=jmini-1
+              IF ( jmini .gt. 3 ) THEN
+                keep_going = .TRUE.
+              ELSE
+                ierr(i) = 9
+                EXIT
+              ENDIF
+            ENDIF
+          ENDDO
+        ENDDO
+        jmin(i) = jmini
+        IF ( jmini .le. 3 ) THEN
+          ierr(i)=4
+        ENDIF
+!jm end 20061212
       ENDIF
-100   continue
+100   CONTINUE
 !
 ! - Must have at least depth_min m between cloud convective base
 !     and cloud top.

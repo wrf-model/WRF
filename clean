@@ -41,6 +41,6 @@ endif
 
 #cms++
 if ( -e chem/KPP )then
-  ( cd chem/KPP; clean_kpp ) 
+  ( cd chem/KPP; ./clean_kpp ) 
 endif
 #cms--

@@ -1,14 +1,15 @@
 #ifndef LANDREAD_H
 #define LANDREAD_H
 
-  int get_terrain__(       float *adx,
-			   float *xlat,
-			   float *xlon,
-			   float *terrain,
-			   int   *mix,
-			   int   *mjx,
-			   int   *iyyn,
-			   int   *jxxn);
+int GET_TERRAIN (        float *adx,
+                         float *xlat,
+                         float *xlon,
+                         float       *terrain,
+                         int   *mix,
+                         int   *mjx,
+                         int   *iyyn,
+                         int   *jxxn,
+                         int   *ipath , int * ipathlen) ;
 
 /* int    nint(const double x); */
 double aint(const double x);

@@ -438,7 +438,8 @@ BENCH_START(phy_prep_tim)
 
          CALL wrf_debug ( 200 , ' call phy_prep' )
          CALL phy_prep ( config_flags,                           &
-                         grid%em_mut, grid%em_muu, grid%em_muv, grid%em_u_2, grid%em_v_2, grid%em_p, grid%em_pb, grid%em_alt,              &
+                         grid%em_mut, grid%em_muu, grid%em_muv, grid%em_u_2, &
+                         grid%em_v_2, grid%em_p, grid%em_pb, grid%em_alt,              &
                          grid%em_ph_2, grid%em_phb, grid%em_t_2, grid%tsk, moist, num_3d_m,   &
                          mu_3d, rho,                             &
                          th_phy, p_phy, pi_phy, u_phy, v_phy,    &
@@ -1075,7 +1076,8 @@ BENCH_START(tke_rhs_tim)
                           grid%em_tke_2,grid%em_mut,                     &
                           th_phy,p_phy,p8w,t8w,grid%em_z,grid%em_fnm,grid%em_fnp,             &
                           grid%cf1,grid%cf2,grid%cf3,grid%msft,grid%xkmh,grid%xkmv,grid%xkhv,grid%rdx,grid%rdy,    &
-                          grid%dx,grid%dy,grid%dt,grid%em_zx,grid%em_zy,grid%em_rdz,grid%em_rdzw,grid%em_dn,grid%em_dnw,config_flags%mix_cr_len,  &
+                          grid%dx,grid%dy,grid%dt,grid%em_zx,grid%em_zy,grid%em_rdz,grid%em_rdzw,grid%em_dn,       &
+                          grid%em_dnw,config_flags%mix_cr_len,  &
                           ids, ide, jds, jde, kds, kde,               &
                           ims, ime, jms, jme, kms, kme,               &
                           grid%i_start(ij), grid%i_end(ij),           &

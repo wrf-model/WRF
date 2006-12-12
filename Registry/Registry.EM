@@ -913,7 +913,7 @@ rconfig   real    p_top_requested         namelist,domains      1              5
 rconfig   integer interp_type             namelist,domains	1              1       irh    "interp_type"  "1=interp in pressure, 2=interp in LOG pressure"      ""
 rconfig   logical lowest_lev_from_sfc     namelist,domains	1             .false.  irh    "lowest_lev_from_sfc"                ""      ""
 rconfig   integer lagrange_order          namelist,domains	1              1       irh    "lagrange_order"   "1=linear, 2=quadratic vertical interpolation"      ""
-rconfig   integer force_sfc_in_vinterp    namelist,domains	1              0       irh    "force_sfc_in_vinterp"   "number of eta levels forced to use sfc in vert interp"      ""
+rconfig   integer force_sfc_in_vinterp    namelist,domains	1              1       irh    "force_sfc_in_vinterp"   "number of eta levels forced to use sfc in vert interp"      ""
 rconfig   real    zap_close_levels        namelist,domains	1              500     irh    "zap_close_levels"   "delta p where level is removed in vert interp"      "Pa"
 rconfig   logical sfcp_to_sfcp            namelist,domains	1              .false. irh    "afcp_to_sfcp"   "T/F use incoming sfc pres to compute new sfc pres"      "flag"
 rconfig   logical adjust_heights          namelist,domains	1              .false. irh    "adjust_heights"   "T/F adjust pressure level input to match 500 mb height"      "flag"

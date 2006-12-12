@@ -558,6 +558,8 @@ CONTAINS
       massfld,dh,cap_maxs
 
      integer :: itf,jtf,ktf
+     integer :: jmini
+     logical :: keep_going
 
      itf=MIN(ite,ide-1)
      ktf=MIN(kte,kde-1)

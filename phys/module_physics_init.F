@@ -531,6 +531,8 @@ integer myproc
 
    CALL wrf_debug( 100 , 'top of landuse_init' )
 
+   NSN=-1  ! set this to suppress uninitalized data messages from tools
+
 ! recover LU variables from state
    IF ( 6*(max_cats*max_seas)+1*max_cats .GT. 7501 ) THEN
       WRITE(message,*)'landuse_init: lu_state overflow. Make Registry dimspec p > ',6*(max_cats*max_seas)+1*max_cats

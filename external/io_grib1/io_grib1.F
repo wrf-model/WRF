@@ -145,7 +145,10 @@ subroutine ext_gr1_ioexit(Status)
      DEALLOCATE(grib_tables, stat=istat)
      table_filled = .FALSE.
   endif
-  DEALLOCATE(grid_info, stat=istat)
+  IF ( ASSOCIATED ( grid_info ) ) THEN
+    DEALLOCATE(grid_info, stat=istat)
+  ENDIF
+  NULLIFY(grid_info)
 
   Status = WRF_NO_ERR
 

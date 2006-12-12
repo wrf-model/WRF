@@ -652,7 +652,8 @@ CONTAINS
              CALL wrf_debug(100, 'CALL camrad lw')
              IF(cam_abs_dim1 .ne. 4 .or. cam_abs_dim2 .ne. kde .or.  &
                 paerlev .ne. 29 .or. levsiz .ne. 59 )THEN
-               WRITE( wrf_err_message , * ) 'set paerlev=29, levsiz=59, cam_abs_dim1=4, and cam_abs_dim2=number of levels (e_vert) in physics namelist for CAM radiation option'
+               WRITE( wrf_err_message , * ) &
+'set paerlev=29, levsiz=59, cam_abs_dim1=4, and cam_abs_dim2=number of levels (e_vert) in physics namelist for CAM radiation'
                CALL wrf_error_fatal ( wrf_err_message )
              ENDIF
              IF ( PRESENT( OZMIXM ) .AND. PRESENT( PIN ) .AND. &

@@ -3713,11 +3713,11 @@ end do
 print *,'dz (m) above fixed eta levels = ',dz
 print *,'namelist max_dz (m) = ',max_dz
 print *,'namelist p_top (Pa) = ',p_top
-            CALL wrf_debug ( 'You need one of three things:' )
-            CALL wrf_debug ( '1) More eta levels to reduce the dz: e_vert' )
-            CALL wrf_debug ( '2) A lower p_top so your total height is reduced: p_top_requested')
-            CALL wrf_debug ( '3) Increase the maximum allowable eta thickness: max_dz')
-            CALL wrf_debug ( 'All are namelist options')
+            CALL wrf_debug ( 0, 'You need one of three things:' )
+            CALL wrf_debug ( 0, '1) More eta levels to reduce the dz: e_vert' )
+            CALL wrf_debug ( 0, '2) A lower p_top so your total height is reduced: p_top_requested')
+            CALL wrf_debug ( 0, '3) Increase the maximum allowable eta thickness: max_dz')
+            CALL wrf_debug ( 0, 'All are namelist options')
             CALL wrf_error_fatal ( 'dz above fixed eta levels is too large')
          END IF
 

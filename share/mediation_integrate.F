@@ -319,11 +319,6 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
         TYPE(domain) , POINTER                 :: parent , nest
      END SUBROUTINE med_interp_domain
 
-     SUBROUTINE med_init_domain_constants ( parent , nest )
-        USE module_domain
-        TYPE(domain) , POINTER                 :: parent , nest
-     END SUBROUTINE med_init_domain_constants
-
      SUBROUTINE med_initialdata_input_ptr( nest , config_flags )
         USE module_domain
         USE module_configure
@@ -800,12 +795,6 @@ SUBROUTINE init_domain_constants ( parent , nest )
    IMPLICIT NONE
    TYPE(domain) :: parent , nest
 #if (EM_CORE == 1)
-   INTERFACE 
-     SUBROUTINE med_init_domain_constants ( parent , nest )
-        USE module_domain
-        TYPE(domain) :: parent , nest
-     END SUBROUTINE med_init_domain_constants
-   END INTERFACE 
    CALL init_domain_constants_em ( parent, nest )
 #endif
 END SUBROUTINE init_domain_constants

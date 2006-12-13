@@ -34,7 +34,7 @@
 #
 #######################################################################################
 
-include ../Makefile.defs
+#include ../Makefile.defs
 
 
 #!cmsCFLAGS=`cat ../cflags` 

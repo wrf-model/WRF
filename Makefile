@@ -83,7 +83,8 @@ em_quarter_ss : wrf
 	( cd test/em_quarter_ss ; /bin/rm -f gribmap.txt ; ln -s ../../run/gribmap.txt . )
 	( cd test/em_quarter_ss ; /bin/rm -f grib2map.tbl ; ln -s ../../run/grib2map.tbl . )
 	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
-	( cd run ; /bin/rm -f namelist.input ; ln -s ../test/em_quarter_ss/namelist.input . )
+	( cd run ; /bin/cp -f namelist.input namelist.input.backup ; \
+		/bin/rm -f namelist.input ; ln -s ../test/em_quarter_ss/namelist.input . )
 	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_quarter_ss/input_sounding . )
 
 em_squall2d_x : wrf
@@ -95,7 +96,8 @@ em_squall2d_x : wrf
 	( cd test/em_squall2d_x ; /bin/rm -f gribmap.txt ; ln -s ../../run/gribmap.txt . )
 	( cd test/em_squall2d_x ; /bin/rm -f grib2map.tbl ; ln -s ../../run/grib2map.tbl . )
 	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
-	( cd run ; /bin/rm -f namelist.input ; ln -s ../test/em_squall2d_x/namelist.input . )
+	( cd run ; /bin/cp -f namelist.input namelist.input.backup ; \
+		/bin/rm -f namelist.input ; ln -s ../test/em_squall2d_x/namelist.input . )
 	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_squall2d_x/input_sounding . )
 
 em_squall2d_y : wrf
@@ -107,7 +109,8 @@ em_squall2d_y : wrf
 	( cd test/em_squall2d_y ; /bin/rm -f gribmap.txt ; ln -s ../../run/gribmap.txt . )
 	( cd test/em_squall2d_y ; /bin/rm -f grib2map.tbl ; ln -s ../../run/grib2map.tbl . )
 	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
-	( cd run ; /bin/rm -f namelist.input ; ln -s ../test/em_squall2d_y/namelist.input . )
+	( cd run ; /bin/cp -f namelist.input namelist.input.backup ; \
+		/bin/rm -f namelist.input ; ln -s ../test/em_squall2d_y/namelist.input . )
 	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_squall2d_y/input_sounding . )
 
 em_b_wave : wrf
@@ -119,7 +122,8 @@ em_b_wave : wrf
 	( cd test/em_b_wave ; /bin/rm -f gribmap.txt ; ln -s ../../run/gribmap.txt . )
 	( cd test/em_b_wave ; /bin/rm -f grib2map.tbl ; ln -s ../../run/grib2map.tbl . )
 	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
-	( cd run ; /bin/rm -f namelist.input ; ln -s ../test/em_b_wave/namelist.input . )
+	( cd run ; /bin/cp -f namelist.input namelist.input.backup ; \
+		/bin/rm -f namelist.input ; ln -s ../test/em_b_wave/namelist.input . )
 	( cd run ; /bin/rm -f input_jet ; ln -s ../test/em_b_wave/input_jet . )
 
 convert_em : framework_only
@@ -197,7 +201,8 @@ em_real : wrf
 	( cd run ; /bin/rm -f real.exe ; ln -s ../main/real.exe . )
 	( cd run ; /bin/rm -f ndown.exe ; ln -s ../main/ndown.exe . )
 	( cd run ; /bin/rm -f nup.exe ; ln -s ../main/nup.exe . )
-	( cd run ; /bin/rm -f namelist.input ; ln -s ../test/em_real/namelist.input . )
+	( cd run ; /bin/cp -f namelist.input namelist.input.backup ; \
+		/bin/rm -f namelist.input ; ln -s ../test/em_real/namelist.input . )
 
 
 em_hill2d_x : wrf
@@ -209,7 +214,8 @@ em_hill2d_x : wrf
 	( cd test/em_hill2d_x ; /bin/rm -f gribmap.txt ; ln -s ../../run/gribmap.txt . )
 	( cd test/em_hill2d_x ; /bin/rm -f grib2map.tbl ; ln -s ../../run/grib2map.tbl . )
 	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
-	( cd run ; /bin/rm -f namelist.input ; ln -s ../test/em_hill2d_x/namelist.input . )
+	( cd run ; /bin/cp -f namelist.input namelist.input.backup ; \
+		/bin/rm -f namelist.input ; ln -s ../test/em_hill2d_x/namelist.input . )
 	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_hill2d_x/input_sounding . )
 
 em_grav2d_x : wrf
@@ -221,7 +227,8 @@ em_grav2d_x : wrf
 	( cd test/em_grav2d_x ; /bin/rm -f gribmap.txt ; ln -s ../../run/gribmap.txt . )
 	( cd test/em_grav2d_x ; /bin/rm -f grib2map.tbl ; ln -s ../../run/grib2map.tbl . )
 	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
-	( cd run ; /bin/rm -f namelist.input ; ln -s ../test/em_grav2d_x/namelist.input . )
+	( cd run ; /bin/cp -f namelist.input namelist.input.backup ; \
+		/bin/rm -f namelist.input ; ln -s ../test/em_grav2d_x/namelist.input . )
 	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_grav2d_x/input_sounding . )
 
 #### anthropogenic emissions converter
@@ -231,7 +238,8 @@ emi_conv : wrf
 	( cd chem ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=real convert_emiss )
 	( cd test/em_real ; /bin/rm -f convert_emiss.exe ; ln -s ../../chem/convert_emiss.exe . )
 	( cd test/em_real ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
-	( cd run ; /bin/rm -f namelist.input ; ln -s ../test/em_real/namelist.input . )
+	( cd run ; /bin/cp -f namelist.input namelist.input.backup ; \
+		/bin/rm -f namelist.input ; ln -s ../test/em_real/namelist.input . )
 
 #### biogenic emissions converter
 
@@ -240,7 +248,8 @@ bio_conv : wrf
 	( cd chem ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=real convert_bioemiss )
 	( cd test/em_real ; /bin/rm -f convert_bioemiss.exe ; ln -s ../../chem/convert_bioemiss.exe . )
 	( cd test/em_real ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
-	( cd run ; /bin/rm -f namelist.input ; ln -s ../test/em_real/namelist.input . )
+	( cd run ; /bin/cp -f namelist.input namelist.input.backup ; \
+		/bin/rm -f namelist.input ; ln -s ../test/em_real/namelist.input . )
 
 #### nmm converter
 
@@ -267,7 +276,8 @@ nmm_real : nmm_wrf
 	( cd test/nmm_real ; /bin/rm -f gribmap.txt ; ln -s ../../run/gribmap.txt . )
 	( cd test/nmm_real ; /bin/rm -f grib2map.txt ; ln -s ../../run/grib2map.txt . )
 	( cd run ; /bin/rm -f real_nmm.exe ; ln -s ../main/real_nmm.exe . )
-	( cd run ; /bin/rm -f namelist.input ; ln -s ../test/nmm_real/namelist.input . )
+	( cd run ; /bin/cp -f namelist.input namelist.input.backup ; \
+		/bin/rm -f namelist.input ; ln -s ../test/nmm_real/namelist.input . )
 
 
 

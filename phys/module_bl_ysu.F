@@ -376,14 +376,16 @@ contains
 !
       real,    dimension( its:ite, kts:kte )    ::      xkzm,xkzh, &
 							    f1,f2, &
+							    r1,r2, &
                                                             ad,au, &
+                                                               cu, &
                                                                al, &
                                                              zfac, &
                                                              scr4
 !jdf added exch_hx
       real,    dimension( ims:ime, kms:kme )                     , &
                intent(inout)   ::                         exch_hx
-      real,    dimension( its:ite, kts:kte, ncloud)  ::        f3
+      real,    dimension( its:ite, kts:kte, ncloud)  ::     r3,f3
 !
       logical, dimension( its:ite )             ::         pblflg, &
 					                   sfcflg, &
@@ -962,10 +964,28 @@ contains
           enddo
         enddo
       endif
+
+! copies here to avoid duplicate input args for tridin
+
+      do k = kts,kte
+        do i = its,ite
+          cu(i,k) = au(i,k)
+          r1(i,k) = f1(i,k)
+        enddo
+      enddo
+!
+      do ic = 1,ncloud
+        do k = kts,kte
+          do i = its,ite
+            r3(i,k,ic) = f3(i,k,ic)
+          enddo
+        enddo
+      enddo
+!
 !
 !     solve tridiagonal problem for heat and moisture, and clouds
 !
-      call tridin(al,ad,au,f1,f3,au,f1,f3,                 &
+      call tridin(al,ad,cu,r1,r3,au,f1,f3,                 &
 		  its,ite,kts,kte,ncloud                   )
 !
 !     recover tendencies of heat and moisture
@@ -1047,10 +1067,21 @@ contains
           ad(i,k+1) = 1.-al(i,k)
         enddo
       enddo
+
+! copies here to avoid duplicate input args for tridin
+
+      do k = kts,kte
+        do i = its,ite
+          cu(i,k) = au(i,k)
+          r1(i,k) = f1(i,k)
+          r2(i,k) = f2(i,k)
+        enddo
+      enddo
+!
 !
 !     solve tridiagonal problem for momentum
 !
-      call tridin(al,ad,au,f1,f2,au,f1,f2,                 &
+      call tridin(al,ad,cu,r1,r2,au,f1,f2,                 &
 		  its,ite,kts,kte,1                         )
 !
 !     recover tendencies of momentum

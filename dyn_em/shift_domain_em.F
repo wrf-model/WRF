@@ -76,6 +76,11 @@ SUBROUTINE shift_domain_em ( grid , disp_x, disp_y &
 #include <em_shift_halo_x.inc>
    enddo
 
+   CALL shift_domain_em2 ( grid , disp_x, disp_y &
+!
+# include <em_dummy_new_args.inc>
+!
+                           )
 
 #endif
 

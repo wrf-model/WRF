@@ -73,6 +73,7 @@
  icloud                              = 1,
  surface_input_source                = 1,
  num_soil_layers                     = 4,
+ ucmcall                             = 0,
  mp_zero_out                         = 0,
  maxiens                             = 1,
  maxens                              = 3,
@@ -88,22 +89,6 @@
  /
 
  &fdda
- grid_fdda                           = 0,     0,     0,
- fgdt                                = 0,     0,     0,
- if_no_pbl_nudging_uv                = 0,     0,     1,
- if_no_pbl_nudging_t                 = 0,     0,     1,
- if_no_pbl_nudging_q                 = 0,     0,     1,
- if_zfac_uv                          = 0,     0,     1,
-  k_zfac_uv                          = 10,   10,     1,
- if_zfac_t                           = 0,     0,     1,
-  k_zfac_t                           = 10,   10,     1,
- if_zfac_q                           = 0,     0,     1,
-  k_zfac_q                           = 10,   10,     1,
- guv                                 = 0.0003,     0.0003,     0.0003,
- gt                                  = 0.0003,     0.0003,     0.0003,
- gq                                  = 0.0003,     0.0003,     0.0003,
- if_ramping                          = 0,
- dtramp_min                          = 120.0,
  /
 
  &dynamics
@@ -111,19 +96,22 @@
  diff_opt                            = 1,
  km_opt                              = 4,
  base_temp                           = 290.
+ diff_6th_opt                        = 0,
+ diff_6th_factor                     = 0.12,
  khdif                               = 0,      0,      0,
  kvdif                               = 0,      0,      0,
- diff_6th_opt                        = 0,
- diff_6th_rate                       = 0.24,
- non_hydrostatic                     = .true., .true., .true.,
- chem_in_opt                         = 1,     1,     1,
- phot_opt                            = 1,     1,     1,
- drydep_opt                          = 1,     1,     1,
- bio_emiss_opt                       = 2,     2,     1,
+ chem_in_opt                         = 1,      1,      1,
+ phot_opt                            = 1,      1,      1,
+ drydep_opt                          = 1,      1,      1,
+ bio_emiss_opt                       = 2,      2,      2,
  gas_bc_opt                          = 1,      1,      1,
  gas_ic_opt                          = 1,      1,      1,
  aer_bc_opt                          = 1,      1,      1,
  aer_ic_opt                          = 1,      1,      1,
+ non_hydrostatic                     = .true., .true., .true.,
+ pd_moist                            = .false., .false., .false.,
+ pd_scalar                           = .false., .false., .false.,
+ pd_chem                             = .false., .false., .false.,
  /
 
  &bdy_control

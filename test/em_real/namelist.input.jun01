@@ -68,6 +68,8 @@
  icloud                              = 1,
  surface_input_source                = 1,
  num_soil_layers                     = 4,
+ ucmcall                             = 0,
+ mp_zero_out                         = 0,
  maxiens                             = 1,
  maxens                              = 3,
  maxens2                             = 3,
@@ -93,12 +95,16 @@
  smdiv                               = 0.1,    0.1,    0.1,
  emdiv                               = 0.01,   0.01,   0.01,
  epssm                               = 0.1,    0.1,    0.1
- non_hydrostatic                     = .true., .true., .true.,
  time_step_sound                     = 4,      4,      4,
  h_mom_adv_order                     = 5,      5,      5,
  v_mom_adv_order                     = 3,      3,      3,
  h_sca_adv_order                     = 5,      5,      5,
  v_sca_adv_order                     = 3,      3,      3,
+ non_hydrostatic                     = .true., .true., .true.,
+ pd_moist                            = .false., .false., .false.,
+ pd_scalar                           = .false., .false., .false.,
+ pd_chem                             = .false., .false., .false.,
+ pd_tke                              = .false., .false., .false.,
  /
 
  &bdy_control

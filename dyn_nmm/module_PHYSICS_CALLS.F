@@ -1175,7 +1175,7 @@
 !$omp parallel do                                                       &
 !$omp& private(i,j)
         DO J=MYJE-1,MYJE
-        DO I=IDS,JDE
+        DO I=IDS,IDE
           IF (I>=MYIS.AND.I<=MYIE) THEN
             TH10(I,J)=TH10(I,MYJE-2)
             Q10(I,J)=Q10(I,MYJE-2)

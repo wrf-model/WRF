@@ -218,7 +218,15 @@ fprintf(fp,"CALL wrf_debug(3,'calling RSL_LITE_INIT_EXCH %d for Y %s')\n",maxste
 
 /* generate the stencil init statement for X transfer */
     fprintf(fp,"CALL RSL_LITE_INIT_EXCH ( local_communicator, %d , &\n",maxstenwidth) ;
-    fprintf(fp,"     %d, %d, RWORDSIZE, &\n", n3dR, n2dR ) ;
+    if ( n4d > 0 ) {
+      fprintf(fp,  "     %d  &\n", n3dR ) ;
+      for ( i = 0 ; i < n4d ; i++ ) {
+        fprintf(fp,"   + num_%s   &\n", name_4d[i] ) ;
+      }
+      fprintf(fp,"     , %d, RWORDSIZE, &\n", n2dR ) ;
+    } else {
+      fprintf(fp,"     %d, %d, RWORDSIZE, &\n", n3dR, n2dR ) ;
+    }
     fprintf(fp,"     %d, %d, IWORDSIZE, &\n", n3dI, n2dI ) ;
     fprintf(fp,"     %d, %d, DWORDSIZE, &\n", n3dD, n2dD ) ;
     fprintf(fp,"      0,  0, LWORDSIZE, &\n" ) ;

@@ -927,7 +927,8 @@ endif
 
       DO j = jts, MIN(jde-1,jte)
          DO i = its, MIN(ide-1,ite)
-            IF ( ( ( grid%tmn(i,j) .LT. 170. ) .OR. ( grid%tmn(i,j) .GT. 400. ) ) .AND. ( grid%landmask(i,j) .GT. 0.5 ) ) THEN
+            IF ( ( ( grid%tmn(i,j) .LT. 170. ) .OR. ( grid%tmn(i,j) .GT. 400. ) ) &
+               .AND. ( grid%landmask(i,j) .GT. 0.5 ) ) THEN
                IF ( model_config_rec%sf_surface_physics(grid%id) .NE. LSMSCHEME ) THEN
                   print *,'error in the grid%em_tmn'
                   print *,'i,j=',i,j
@@ -1763,7 +1764,8 @@ endif
       
             grid%em_p(i,k,j) = - 0.5*(grid%em_mu_2(i,j)+qvf1*grid%em_mub(i,j))/grid%em_rdnw(k)/qvf2
             qvf = 1. + rvovrd*moist(i,k,j,P_QV)
-            grid%em_alt(i,k,j) = (r_d/p1000mb)*(grid%em_t_2(i,k,j)+t0)*qvf*(((grid%em_p(i,k,j)+grid%em_pb(i,k,j))/p1000mb)**cvpm)
+            grid%em_alt(i,k,j) = (r_d/p1000mb)*(grid%em_t_2(i,k,j)+t0)*qvf* &
+                                 (((grid%em_p(i,k,j)+grid%em_pb(i,k,j))/p1000mb)**cvpm)
             grid%em_al(i,k,j) = grid%em_alt(i,k,j) - grid%em_alb(i,k,j)
       
             !  Now, integrate down the column to compute the pressure perturbation, and diagnose the two

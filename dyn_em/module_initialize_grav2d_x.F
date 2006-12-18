@@ -413,7 +413,8 @@ CONTAINS
     ENDDO
 
     if((i==2) .and. (j==2)) then
-     write(6,*) ' ph_1 calc ',grid%em_ph_1(2,1,2),grid%em_ph_1(2,2,2),grid%em_mu_1(2,2)+grid%em_mub(2,2),grid%em_mu_1(2,2), &
+     write(6,*) ' ph_1 calc ',grid%em_ph_1(2,1,2),grid%em_ph_1(2,2,2),&
+                              grid%em_mu_1(2,2)+grid%em_mub(2,2),grid%em_mu_1(2,2), &
                               grid%em_alb(2,1,2),grid%em_al(1,2,1),grid%em_rdnw(1)
     endif
 

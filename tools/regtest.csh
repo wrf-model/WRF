@@ -1179,7 +1179,7 @@ else if ( $ARCH[1] == OSF1 && $clrm == 0 ) then
 	else if ( ( $NESTED != TRUE ) && ( $RSL_LITE != TRUE ) ) then
 		set COMPOPTS    = ( 1 3 6 )
 	else if ( ( $NESTED == TRUE ) && ( $RSL_LITE == TRUE ) ) then
-		set COMPOPTS	= ( 2 4 5 )
+		set COMPOPTS	= ( 2 4 11 )
 	else if ( ( $NESTED != TRUE ) && ( $RSL_LITE == TRUE ) ) then
 		set COMPOPTS	= ( 1 3 5 )
 	endif

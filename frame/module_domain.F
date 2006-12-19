@@ -1023,7 +1023,7 @@ CONTAINS
 !  below this top-level of data allocation and management (in the solve routine
 !  and below).
 
-   SUBROUTINE alloc_space_field ( grid,   id, setinitval ,  tl_in , inter_domain_in ,   &
+   SUBROUTINE alloc_space_field ( grid,   id, setinitval_in ,  tl_in , inter_domain_in ,   &
                                   sd31, ed31, sd32, ed32, sd33, ed33, &
                                   sm31 , em31 , sm32 , em32 , sm33 , em33 , &
                                   sm31x, em31x, sm32x, em32x, sm33x, em33x, &
@@ -1038,7 +1038,7 @@ CONTAINS
 
       TYPE(domain)               , POINTER          :: grid
       INTEGER , INTENT(IN)            :: id
-      INTEGER , INTENT(IN)            :: setinitval   ! 3 = everything, 1 = arrays only, 0 = none
+      INTEGER , INTENT(IN)            :: setinitval_in   ! 3 = everything, 1 = arrays only, 0 = none
       INTEGER , INTENT(IN)            :: sd31, ed31, sd32, ed32, sd33, ed33
       INTEGER , INTENT(IN)            :: sm31, em31, sm32, em32, sm33, em33
       INTEGER , INTENT(IN)            :: sm31x, em31x, sm32x, em32x, sm33x, em33x
@@ -1061,6 +1061,7 @@ CONTAINS
       CHARACTER (LEN=256) message
       INTEGER tl
       LOGICAL inter_domain
+      INTEGER setinitval
 
       !declare ierr variable for error checking ALLOCATE calls
       INTEGER ierr
@@ -1079,6 +1080,12 @@ CONTAINS
       initial_data_value = 0.
 #else
       CALL get_initial_data_value ( initial_data_value )
+#endif
+
+#ifdef NO_INITIAL_DATA_VALUE
+      setinitval = 0
+#else
+      setinitval = setinitval_in
 #endif
 
       CALL nl_get_dyn_opt( 1, dyn_opt )

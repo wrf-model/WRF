@@ -1,0 +1,109 @@
+General description
+-------------------
+Features and advantages of observational nudging are discussed in (*) below. 
+The method uses relaxation terms based on the model error at observational 
+stations, and the relaxation is such as to reduce this error.
+Each observation has a radius of influence, a time window, and a relaxation 
+time scale determined by user-specified input. These determine where, when, 
+and how much it affects the model solution.  Typical model grid points may 
+be within the radius of influence of several observations, and their 
+contributions are weighted according to the distance from the observation(s). 
+Before performing obs-nudging, you will need to generate an observation 
+input file for each WRF domain. The observation file(s) contain chronological 
+lists of the 3D positions and values of each observation, in a specific format.
+It is critical that your observations be listed in chronological time order!
+
+*  Liu, Y., A. Bourgeois, T. Warner, S. Swerdlin and J. Hacker, 2005: An
+   implementation of obs-nudging-based FDDA into WRF for supporting
+   ATEC test operations. 2005 WRF user workshop. Paper 10.7.
+
+
+How to use the obs-data converter
+-------------------------------------
+A utility program for converting observation data to the format required by 
+WRF has been provided (RT_fdda_reformat_obsnud.pl). The converter assumes 
+that your observation data is in standard LITTLE_R format. 
+
+To convert your data that is in LITTLE_R format:
+
+   RT_fdda_reformat_obsnud.pl yourfilename
+
+where "yourfilename" is the obs-data in LITTLE_R format. The converter will 
+produce a file named yourfilename.obsnud, in the format required by the WRF
+model.
+
+Note that during the conversion process:
+
+   1). P,T,U,V and RH fields are extracted.
+
+   2). U and V are assumed to be the wind components rotated to
+       the model map-projection (see 3DVAR and MM5 Little_R).
+
+   3). SPD, DIR and Td fields are ignored.
+
+   4). For upper-air data, currently WRF nudging only takes
+       those data with valid pressure records. For obs with
+       height levels (e.g. wind profilers data), users need to
+       calculate or estimate the pressure value. Inaccurate
+       estimate of pressure will lead to bad data assimilation.
+
+
+Naming your obs-nudge input files
+---------------------------------
+After you have converted your obs data file to the proper format for WRF, 
+you will need to rename it according to the naming convention for the WRF
+domain on which the obs-nudging is to be performed. For example, for
+observations to be used in Domain 1, use the naming convention OBS_DOMAIN101,
+for Domain 2, OBS_DOMAIN201, etc. Note that you may split your obs data into
+hourly input for each domain. For example, observations with timestamps in
+the first model hour can be listed in file OBS_DOMAIN101, those with
+timestamps in the second model hour in file OBS_DOMAIN102, etc.
+
+These files must be present in your WRF run directory, along with the usual
+WRF input and boundary files.
+
+
+
+How to activate obs-nudging
+---------------------------
+To activate the observational nudging option in WRF, you will need to set
+the obs_nudge_opt flag(s) in the WRF "fdda" namelist. Note that there is
+a unique flag for each WRF domain in which you want to activate obs-nudging.
+To activate the print statements within the obs-nudging subroutines ERROB,
+NUDOB, and IN4DOB, set the respective print flags obs_ipf_errob, 
+obs_ipf_nudob, and obs_ipf_in4dob to ".true." You can then easily verify that 
+you have activated observational nudging by observing text in your WRF
+"standard out" that tell you how many obs stations are being processed at
+given model timesteps. This information will look something like:
+
+0****** CALL IN4DOB AT KTAU =     8 AND XTIME =      24.00:  NSTA =   11040 ******
+++++++CALL ERROB AT KTAU =     8 AND INEST =  1:  NSTA = 11040 ++++++
+
+These lines will print out for each nest in which you have activated nudging, 
+while nudging is active on that domain.
+
+Below is an example of a namelist set up to activate obs-nudging on domains
+1, 2, and 3:
+
+
+ &fdda
+ obs_nudge_opt                       = 1,1,1,0,0   
+ max_obs                             = 150000,
+ fdda_start                          =     0.,     0.,     0.,     0.,     0.
+ fdda_end                            = 99999., 99999., 99999., 99999., 99999.
+ obs_nudge_wind                      = 1,1,1,1,1
+ obs_coef_wind                       = 6.E-4,6.E-4,6.E-4,6.E-4,6.E-4
+ obs_nudge_temp                      = 1,1,1,1,1
+ obs_coef_temp                       = 6.E-4,6.E-4,6.E-4,6.E-4,6.E-4
+ obs_nudge_mois                      = 1,1,1,1,1
+ obs_coef_mois                       = 6.E-4,6.E-4,6.E-4,6.E-4,6.E-4
+ obs_rinxy                           = 240.,240.,180.,180,180
+ obs_rinsig                          = 0.1,
+ obs_twindo                          = 40.
+ obs_npfi                            = 10,
+ obs_ionf                            = 2,
+ obs_idynin                          = 0,
+ obs_dtramp                          = 40.,
+ obs_ipf_errob                       = .true.
+ obs_ipf_nudob                       = .true.
+ obs_ipf_in4dob                      = .true.

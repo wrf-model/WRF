@@ -1,4 +1,5 @@
-WRF Model Version 2.1.2 (January 2006)
+WRF Model Version 2.2 (December 2006)
+http://www.mmm.ucar.edu/wrf/users/
 
 ------------------------
 WRF PUBLIC DOMAIN NOTICE
@@ -23,11 +24,27 @@ infringement actions.
 
 
 ======================================
+This is the main directory for the WRF Version 2 source code release.
+======================================
+
+V2.2 Release Notes:
+------------------
+
+- For directions on compiling WRF, see below or Users Web page.
+- For more information on WRF V2.2 release, visit WRF Users home page
+  http://www.mmm.ucar.edu/wrf/users/
+- WRF V2.2 works with both WPS (new WRF Preprocessing System) and SI.
+  Please see User' Guide for WPS.
+- WRF V2.2 executable works with wrfinput/wrfbdy produced by previous version,
+  but pre-V2.2 WRF will NOT work with V2.2 wrfinput/wrfbdy files.
+- WRF V2.2's namelist has new additions. Edit with caution.
+
+For questions, send mail to wrfhelp@ucar.edu
+
+======================================
 
 V2.1 Release Notes:
------------------
-
-This is the main directory for the WRF Version 2 source code release.
+------------------
 
 - For directions on compiling WRF, see below or Users Web page.
 - For more information on WRF V2.1 release, visit WRF Users home page
@@ -36,8 +53,6 @@ This is the main directory for the WRF Version 2 source code release.
 - Must rerun real.exe to generate new wrfbdy_d01/wrfinput_d01 for wrf.exe.
 - WRF V2.1's namelist has some changes from 2.0.3.1. Edit with caution.
 - Need to have gribmap.txt in your run directory.
-
-For questions, send mail to wrfhelp@ucar.edu
 
 ======================================
 
@@ -50,6 +65,7 @@ V2 update history:
 - V2.1: August 4, 2005
 - V2.1.1: Nov 8, 2005
 - V2.1.2: Jan 27, 2006
+- V2.2: Dec 20, 2006
 
 ======================================
 
@@ -126,6 +142,7 @@ What is in WRF V2?
   * divergence damping option and vertical time off-centering
   * external-mode filtering option for mass model
   * hydrostatic option via namelist option
+  * positive-definite advection for moisture, scalar, tke and chemical tracers (since 2.2)
 
 - Two-way nesting:
   * multiple domains and multiple nest levels
@@ -141,17 +158,21 @@ What is in WRF V2?
 
 - Physics options:
   * microphysics (Kessler/ WRF Single Moment 3, 5 and 6 class / Lin et al./
-    Eta Ferrier / Thompson)
+    Eta Ferrier / Thompson [a new version in 2.2])
   * cumulus parameterization (Kain-Fritsch with shallow convection / 
     Betts-Miller-Janjic / Grell-Devenyi ensemble)
   * planetary boundary layer (Yosei University (S. Korea) / Mellor-Yamada-Janjic)
   * surface layer (similarity theory MM5 / Eta)
   * slab soil model (5-layer thermal diffusion / Noah land-surface model (4-level) /
     RUC LSM (6-level) )
-  * longwave radiation (RRTM)
-  * shortwave radiation (simple MM5 scheme / Goddard)
-  * sub-grid turbulence (constant K diffusion/ Smagorinsky/ predicted TKE)
+  * Urban canopy model (works with Noah LSM) (since 2.2)
+  * longwave radiation (RRTM, CAM)
+  * shortwave radiation (simple MM5 scheme / Goddard / CAM)
+  * sub-grid turbulence (constant K diffusion/ 2-D Smagorinsky/ predicted TKE /
+    2-D, 6th order diffusion)
   * land-use categories determine surface properties
+  * three-dimensional analysis nudging (since 2.2)
+  * observation nudging (since 2.2)
 
 - Software
 

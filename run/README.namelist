@@ -149,12 +149,6 @@ Namelist variables specifically for the WPS input for real:
                                                 ; 0 = perform traditional trapping interpolation
                                                 ; n = first n eta levels directly use surface level
  p_top_requested                     = 5000     ; p_top (Pa) to use in the model
- sfcp_to_sfcp                        = .false.  ; compute hi-res surface pressure using input
-                                                ; surface pressure from metgrid
- adjust_heights                      = .false.  ; modify mu prime to match 500 mb geopotential heights, only for
-                                                ; isobaric WPS data
-                                                ; T = perform adjustment
-                                                ; F = do not adjust mu prime adjustment to match height field
 
 Users may explicitly define full eta levels.  Given are two distributions for 28 and 35 levels.  The number
 of levels must agree with the number of eta surfaces allocated (e_vert).  Users may alternatively request 
@@ -231,14 +225,18 @@ Namelist variables for controling the automatic moving nest:
                                      = 0, no longwave radiation
                                      = 1, rrtm scheme
                                      = 3, cam scheme
+                                          also must set levsiz, paerlev, cam_abs_dim1/2 (see below)
                                      = 99, GFDL (Eta) longwave (semi-supported)
+                                          also must use co2tf = 1 for ARW
 
  ra_sw_physics (max_dom)             shortwave radiation option
                                      = 0, no shortwave radiation
                                      = 1, Dudhia scheme
                                      = 2, Goddard short wave
                                      = 3, cam scheme
+                                          also must set levsiz, paerlev, cam_abs_dim1/2 (see below)
                                      = 99, GFDL (Eta) longwave (semi-supported)
+                                          also must use co2tf = 1 for ARW
 
  radt (max_dom)                      = 30,	; minutes between radiation physics calls
                                            recommend 1 min per km of dx (e.g. 10 for 10 km)
@@ -262,6 +260,7 @@ Namelist variables for controling the automatic moving nest:
                                      = 0 (no offset), =-1 (old offset)
 
  cam_abs_freq_s                      = 21600 CAM clearsky longwave absorption calculation frequency
+                                            (recommended minimum value to speed scheme up)
  levsiz                              = 59 for CAM radiation input ozone levels
  paerlev                             = 29 for CAM radiation input aerosol levels
  cam_abs_dim1                        = 4 for CAM absorption save array
@@ -359,9 +358,6 @@ Namelist variables for controling the automatic moving nest:
 
  &fdda
  grid_fdda (max_dom)                 = 1        ; grid-nudging fdda on (=0 off) for each domain
-                                                  also need to set auxinput4_interval, auxinput4_end_h, and
-                                                  auxinput4_inname = "wrffdda_d<domain>" in time_control namelist
-                                                  and run real with grid_fdda =1 to create wrffdda file
  gfdda_inname                        = "wrffdda_d<domain>" ; defined name in real
  gfdda_interval_m (max_dom)          = 360      ; time interval (min) between analysis times
  gfdda_end_h (max_dom)               = 6        ; time (h) to stop nudging after start of forecast
@@ -384,28 +380,34 @@ Namelist variables for controling the automatic moving nest:
                                                                                   -60.0=ramping ends at last analysis time
 
 The following are for observation nudging:
- obs_nudge_opt (max_dom)             = 1        ; obs nudging flag 
- max_obs                             = 150000   ; Max number of observations
+ obs_nudge_opt (max_dom)             = 1        ; obs-nudging fdda on (=0 off) for each domain
+                                                  also need to set auxinput11_interval and auxinput11_end_h
+                                                  in time_control namelist
+ max_obs                             = 150000   ; max number of observations used on a domain during any 
+                                                  given time window
  fdda_start                          = 0        ; obs nudging start time in minutes
  fdda_end                            = 180      ; obs nudging end time in minutes
- obs_nudge_wind (max_dom)            = 0        ; whether to nudge wind: = 1, nudge wind
+ obs_nudge_wind (max_dom)            = 1        ; whether to nudge wind: (=0 off)
  obs_coef_wind                       = 6.E-4,   ; nudging coefficient for wind, unit: s-1
- obs_nudge_temp                      = 0        ; whether to nudge temperature: = 1, nudge wind
+ obs_nudge_temp                      = 1        ; whether to nudge temperature: (=0 off)
  obs_coef_temp                       = 6.E-4,   ; nudging coefficient for temperature, unit: s-1
- obs_nudge_mois                      = 0        ; whether to nudge specific humidity: = 1, nudge temp
- obs_coef_mois                       = 6.E-4,   ; nudging coefficient for specific humidity, unit: s-1
- obs_nudge_pstr                      = 0        ; not used
- obs_coef_pstr                       = 0.       ; nudging coefficient for surface pressure, unit: s-1
+ obs_nudge_mois                      = 1        ; whether to nudge water vapor mixing ratio: (=0 off)
+ obs_coef_mois                       = 6.E-4,   ; nudging coefficient for water vapor mixing ratio, unit: s-1
+ obs_nudge_pstr                      = 0        ; whether to nudge surface pressure (not used)
+ obs_coef_pstr                       = 0.       ; nudging coefficient for surface pressure, unit: s-1 (not used)
  obs_rinxy                           = 200.,    ; horizonal radius of influence in km
  obs_rinsig                          = 0.1,     ; vertical radius of influence in eta
- obs_twindo                          = 40,      ; half-period time window
+ obs_twindo                          = 40,      ; half-period time window over which an observation 
+                                                  will be used for nudging
  obs_npfi                            = 10,      ; freq in coarse grid timesteps for diag prints
  obs_ionf                            = 2        ; freq in coarse grid timesteps for obs input and err calc
- obs_idynin                          = 0        ; flag for dynamic initialization
- obs_dtramp                          = 40       ; time period for ramping
- obs_ipf_in4dob                      = .false.  ; print obs input diagnostics (min)
- obs_ipf_errob                       = .false.  ; print obs error diagnostics (min)
- obs_ipf_nudob                       = .false.  ; print obs nudge diagnostics (min)
+ obs_idynin                          = 0        ; for dynamic initialization using a ramp-down function to gradually
+                                                  turn off the FDDA before the pure forecast (=1 on)
+ obs_dtramp                          = 40       ; time period in minutes over which the nudging is ramped down 
+                                                  from one to zero.
+ obs_ipf_in4dob                      = .true.   ; print obs input diagnostics (=.false. off)
+ obs_ipf_errob                       = .true.   ; print obs error diagnostics (=.false. off)
+ obs_ipf_nudob                       = .true.   ; print obs nudge diagnostics (=.false. off)
  /
 
 

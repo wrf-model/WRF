@@ -3794,7 +3794,7 @@ print *,'namelist p_top (Pa) = ',p_top
       INTEGER :: i , j , l
       INTEGER , DIMENSION(0:13) :: middle
       INTEGER :: target_julyr , target_julday , target_date
-      INTEGER :: julyr , julday , int_month
+      INTEGER :: julyr , julday , int_month , month1 , month2
       REAL :: gmt
       CHARACTER (LEN=4) :: yr
       CHARACTER (LEN=2) :: mon , day15
@@ -3819,10 +3819,16 @@ print *,'namelist p_top (Pa) = ',p_top
          IF ( ( middle(l) .LT. target_date ) .AND. ( middle(l+1) .GE. target_date ) ) THEN
             DO j = jts , MIN ( jde-1 , jte )
                DO i = its , MIN (ide-1 , ite )
-                  int_month = MOD ( l , 12 )
-                  IF ( int_month .EQ. 0 ) int_month = 12
-                  field_out(i,j) =  ( field_in(i,int_month+1,j) * ( target_date - middle(l)   ) + &
-                                      field_in(i,int_month  ,j) * ( middle(l+1) - target_date ) ) / &
+                  int_month = l
+                  IF ( ( int_month .EQ. 0 ) .OR. ( int_month .EQ. 12 ) ) THEN
+                     month1 = 12
+                     month2 =  1
+                  ELSE
+                     month1 = int_month
+                     month2 = month1 + 1
+                  END IF
+                  field_out(i,j) =  ( field_in(i,month2,j) * ( target_date - middle(l)   ) + &
+                                      field_in(i,month1,j) * ( middle(l+1) - target_date ) ) / &
                                     ( middle(l+1) - middle(l) )
                END DO
             END DO

@@ -93,6 +93,33 @@ SUBROUTINE med_initialdata_input ( grid , config_flags )
            CALL wrf_debug              (   0 , 'med_initialdata_input: calling input_aux_model_input5' )
            CALL input_aux_model_input5 ( fid ,   grid , config_flags , ierr )
            CALL wrf_debug              ( 100 , 'med_initialdata_input: back from input_aux_model_input5' )
+        ELSE IF   ( config_flags%fine_input_stream .EQ. 6 ) THEN
+           CALL wrf_debug              (   0 , 'med_initialdata_input: calling input_aux_model_input6' )
+           CALL input_aux_model_input6 ( fid ,   grid , config_flags , ierr )
+           CALL wrf_debug              ( 100 , 'med_initialdata_input: back from input_aux_model_input6' )
+        ELSE IF   ( config_flags%fine_input_stream .EQ. 7 ) THEN
+           CALL wrf_debug              (   0 , 'med_initialdata_input: calling input_aux_model_input7' )
+           CALL input_aux_model_input7 ( fid ,   grid , config_flags , ierr )
+           CALL wrf_debug              ( 100 , 'med_initialdata_input: back from input_aux_model_input7' )
+        ELSE IF   ( config_flags%fine_input_stream .EQ. 8 ) THEN
+           CALL wrf_debug              (   0 , 'med_initialdata_input: calling input_aux_model_input8' )
+           CALL input_aux_model_input8 ( fid ,   grid , config_flags , ierr )
+           CALL wrf_debug              ( 100 , 'med_initialdata_input: back from input_aux_model_input8' )
+        ELSE IF   ( config_flags%fine_input_stream .EQ. 9 ) THEN
+           CALL wrf_debug              (   0 , 'med_initialdata_input: calling input_aux_model_input9' )
+           CALL input_aux_model_input9 ( fid ,   grid , config_flags , ierr )
+           CALL wrf_debug              ( 100 , 'med_initialdata_input: back from input_aux_model_input9' )
+        ELSE IF   ( config_flags%fine_input_stream .EQ. 10 ) THEN
+           CALL wrf_debug              (   0 , 'med_initialdata_input: calling input_aux_model_input10' )
+           CALL input_aux_model_input10 ( fid ,   grid , config_flags , ierr )
+           CALL wrf_debug              ( 100 , 'med_initialdata_input: back from input_aux_model_input10' )
+        ELSE IF   ( config_flags%fine_input_stream .EQ. 11 ) THEN
+           CALL wrf_debug              (   0 , 'med_initialdata_input: calling input_aux_model_input11' )
+           CALL input_aux_model_input11 ( fid ,   grid , config_flags , ierr )
+           CALL wrf_debug              ( 100 , 'med_initialdata_input: back from input_aux_model_input11' )
+        ELSE
+           WRITE( message , '("med_initialdata_input: bad fine_input_stream = ",I4,")') config_flags%fine_input_stream
+           CALL WRF_ERROR_FATAL ( message )
         END IF
         CALL close_dataset ( fid , config_flags , "DATASET=INPUT" )
 #ifdef MOVE_NESTS

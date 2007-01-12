@@ -671,6 +671,7 @@ rconfig   logical input_from_file         namelist,time_control		max_domains    
 rconfig   integer fine_input_stream       namelist,time_control         max_domains    0       irh    "fine_input_stream"      "0 THROUGH 11, WHAT INPUT STREAM IS FINE GRID IC FROM"  ""
 
 include registry.io_boilerplate
+include registry.io_boilerplate_NMM
 
 rconfig   integer JULYR                   namelist,time_control		max_domains    0       h    "JULYR"                 ""      ""
 rconfig   integer JULDAY                  namelist,time_control		max_domains    1       h    "JULDAY"                ""      ""

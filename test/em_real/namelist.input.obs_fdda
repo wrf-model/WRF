@@ -25,8 +25,8 @@
  io_form_restart                     = 2
  io_form_input                       = 2
  io_form_boundary                    = 2
- auxinput11_interval_s               = 180
- auxinput11_end_h                    = 6
+ auxinput11_interval_s               = 180 , 180 , 180
+ auxinput11_end_h                    = 6   , 6   , 6
  debug_level                         = 0
  /
 
@@ -90,7 +90,7 @@
  obs_coef_mois                       = 6.E-4,6.E-4,6.E-4,6.E-4,6.E-4
  obs_rinxy                           = 240.,240.,180.,180,180
  obs_rinsig                          = 0.1,
- obs_twindo                          = 40.
+ obs_twindo                          = 0.6666667,
  obs_npfi                            = 10,
  obs_ionf                            = 2,
  obs_idynin                          = 0,

@@ -416,6 +416,60 @@ print *,'dx_compare,dy_compare = ',dx_compare,dy_compare
 
 #endif
 
+#if (NMM_CORE == 1)
+       ierr = 0
+       ierr3 = 0
+       CALL wrf_get_dom_ti_integer ( fid , 'WEST-EAST_GRID_DIMENSION' ,    ide_compare , 1 , icnt , ierr3 )
+       ierr = max( ierr, ierr3 )
+       CALL wrf_get_dom_ti_integer ( fid , 'SOUTH-NORTH_GRID_DIMENSION' ,  jde_compare , 1 , icnt , ierr3 )
+       ierr = max( ierr, ierr3 )
+       CALL wrf_get_dom_ti_integer ( fid , 'BOTTOM-TOP_GRID_DIMENSION' ,   kde_compare , 1 , icnt , ierr3 )
+       ierr = max( ierr, ierr3 )
+       IF ( ierr3 .NE. 0 ) CALL wrf_debug( 'wrf_get_dom_ti_integer getting dim information from dataset' )
+
+    IF      ( ( switch .EQ. aux_model_input1_only  ) .AND. &
+              ( config_flags%auxinput1_inname(1:8) .EQ. 'wrf_real' ) ) THEN
+
+       CALL wrf_get_dom_ti_integer ( fid , 'BOTTOM-TOP_GRID_DIMSNSION' ,   kde_compare , 1 , icnt , ierr3 )
+
+       !  Test to make sure that the input data is the right size.
+
+       IF ( ( ide-1 .NE. ide_compare    ) .OR. &
+            ( kde   .NE. kde_compare    ) .OR. &
+            ( jde-1 .NE. jde_compare    ) .AND. ierr3 .EQ. 0 ) THEN
+! a hack for sure
+#ifndef ESMFIO
+          WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  namelist ide-1,jde-1,kde=',ide-1,jde-1,kde,&
+                                  '; input data ide,jde,kde=',ide_compare , jde_compare , kde_compare
+          CALL wrf_debug( 100, wrf_err_message )
+#else
+          WRITE(wrf_err_message,*)'DEBUG input_wrf.F switch = ',switch, &
+                                  ': namelist ide,jde,kde=',ide,jde,kde,&
+                                  '; input data ide,jde,kde=',ide_compare , jde_compare , kde_compare
+          CALL wrf_debug( 100, wrf_err_message )
+#endif
+       ENDIF
+
+       ELSEIF ( switch .EQ. aux_model_input1_only ) THEN          ! assume just WPS in this branch
+         IF ( ( ide-1                           .NE. ide_compare ) .OR. &
+            ( config_flags%num_metgrid_levels .NE. kde_compare ) .OR. &
+            ( jde-1                             .NE. jde_compare ) .AND. ierr3 .EQ. 0 ) THEN
+                WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  ',&
+                 'namelist ide-1,jde-1,num_metgrid_levels=',ide-1,jde-1,config_flags%num_metgrid_levels,&
+                 '; input data ide,jde,num_metgrid_levels=',ide_compare , jde_compare , kde_compare
+                IF (ide-1 .eq. ide_compare .AND. jde-1 .EQ. jde_compare) THEN
+                  CALL wrf_message(wrf_err_message)
+                  CALL wrf_error_fatal( "appears that the vertical dimension is wrong - quitting" )
+                ELSE
+                  CALL wrf_message(wrf_err_message)
+                  CALL wrf_error_fatal( "appears that I or J dimensions are wrong - quitting" )
+                ENDIF
+         ENDIF
+       ENDIF
+
+#endif
+
+
     IF ( dyn_opt_tmp .NE. dyn_opt .AND. switch .EQ. model_input_only ) THEN
       WRITE(wrf_err_message,*)'input_wrf: dyn_opt in file ',dyn_opt_tmp,' NE namelist ',dyn_opt
       CALL wrf_error_fatal( wrf_err_message )

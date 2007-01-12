@@ -49,8 +49,10 @@ dimspec    u      2     namelist=num_land_cat     z          land_cat
 dimspec    s      2     namelist=num_soil_cat     z          soil_cat
 dimspec    e      3     namelist=ensdim           z          gd ensemble dimension
 dimspec    p      -     constant=7501             c          microphysics_rstrt_state
+dimspec    g      2     namelist=num_metgrid_levels  z          num_metgrid_levels
+dimspec    m      2     constant=12                  z          months_per_year
 dimspec    a      -     namelist=cam_abs_dim1     c          cam_abs_dim1
-dimspec    g      -     namelist=cam_abs_dim2     z          cam_abs_dim2
+dimspec    c      -     namelist=cam_abs_dim2     z          cam_abs_dim2
 dimspec    o      2     namelist=levsiz           z          levsiz
 dimspec    d      2     namelist=paerlev          z          paerlev
 
@@ -76,6 +78,38 @@ state    real  LU_MASK          ij      misc        1         -     i3h1     "LU
 ################################################################################
 ################################################################################
 
+################################
+## WPS-specific Variables
+################################
+
+state    real   p_gc           ijg      dyn_nmm      1     -     i1      "PRES"     "pressure"            "Pa"
+state    real   p_gc_xzy       igj      dyn_nmm      1     -     -       "PRES"   "pressure"            "Pa"   # for RSL_LITE halo_exchange
+state    real   vegcat         ij       misc         1     -     i12     "VEGCAT"        "VEGETATION CAT DOMINANT TYPE" ""
+state    real   soilcat        ij       misc         1     -     i12     "SOILCAT"       "SOIL CAT DOMINANT TYPE" ""
+
+state    real   input_soil_cat ij       misc         1     -     i12     "SOIL_CAT"       "SOIL CAT DOMINANT TYPE" ""
+state    real   tsk_gc         ij       dyn_nmm      1     -     i1      "SKINTEMP"  "skin temperature"  "K"
+state    real   XICE_gc        ij       misc         1     -     i01r    "SEAICE"                 "SEA ICE"         ""
+state    real   ght_gc         ijg      dyn_nmm      1     -     i1      "GHT"   "geopotential height" "m"
+state    real   rh_gc          ijg      dyn_nmm      1     -     i1      "RH"    "relative humidity"   "%"
+state    real   v_gc           ijg      dyn_nmm      1     -     i1      "VV"     "y-wind component"    "m s-1"
+state    real   u_gc           ijg      dyn_nmm      1     -     i1      "UU"     "x-wind component"    "m s-1"
+state    real   t_gc           ijg      dyn_nmm      1     -     i1      "TT"     "temperature"         "K"
+state    real   snoalb         ij        misc        1     -     i012r   "SNOALB"        "ANNUAL MAX SNOW ALBEDO IN FRACTION" ""
+state    real   greenfrac_gc   ijm      dyn_nmm      1     -     i1      "GREENFRAC" "monthly greenness fraction" "0 - 1 fraction"
+state    real   albedo12m_gc   ijm      dyn_nmm      1     -     i1      "ALBEDO12M" "background albedo" "0 - 1 fraction"
+state    real   soilcbot_gc    ijs      misc         1     Z     i1      "SOILCBOT"      "description"  "units"
+state    real   soilctop_gc    ijs      misc         1     Z     i1      "SOILCTOP"      "description"  "units"
+state    real   tmn_gc         ij       dyn_nmm      1     -     i1      "SOILTEMP"  "annual mean deep soil temperature"  "K"
+state    real   htv_gc         ij       dyn_nmm      1     -     i1      "HGT_V" "wind point topography elevation" "m"
+state    real   ht_gc          ij       dyn_nmm      1     -     i1      "HGT_M" "mass point topography elevation" "m"
+state    real   landusef_gc    iju      misc         1     Z     i1      "LANDUSEF"      "description"  "units"
+state    real   vlon_gc        ij       dyn_nmm      1     -     i1      "XLONG_V" "longitude, positive east" "degrees"
+state    real   vlat_gc        ij       dyn_nmm      1     -     i1      "XLAT_V" "latitude, positive north" "degrees"
+state    real   hlon_gc        ij       dyn_nmm      1     -     i1      "XLONG_M" "longitude, positive east" "degrees"
+state    real   hlat_gc        ij       dyn_nmm      1     -     i1      "XLAT_M" "latitude, positive north" "degrees"
+
+##############################################################
 # Variables for nmm dynamics                                            
 #
 # module_BC
@@ -340,9 +374,9 @@ state integer iveg      q    dyn_nmm     1    -    -
 state integer ivwg      q    dyn_nmm     1    -    -
 dimspec    r      -     constant=2000             c  # a little crude right now
 state integer iradg     r    dyn_nmm     1    -    -
-dimspec    m      -     constant=(-3:3)            c
+dimspec    z      -     constant=(-3:3)            c
 dimspec    n      -     constant=(0:6)             c
-state integer indx3_wrk mqn  dyn_nmm     1    -    -      "INDX3_WRK"  "Array of 3rd (J) indices for local arrays"  ""
+state integer indx3_wrk zqn  dyn_nmm     1    -    -      "INDX3_WRK"  "Array of 3rd (J) indices for local arrays"  ""
 state integer n_iup_h   j    dyn_nmm     1    -    -      "N_IUP_H"    "# mass points needed in each row for upstream advection"  ""
 state integer n_iup_v   j    dyn_nmm     1    -    -      "N_IUP_V"    "# velocity points needed in each row for upstream advection"  ""
 state integer n_iup_adh j    dyn_nmm     1    -    -      "N_IUP_ADH"  "# mass points in each row of upstream advection"  ""
@@ -416,10 +450,10 @@ state   real   greenmax            ij    misc          1     -     i1      "GREE
 state   real   greenmin            ij    misc          1     -     i1      "GREENMIN"      "description"  "units"
 state   real   albedomx            ij    misc          1     -     i1      "ALBEDOMX"      "description"  "units"
 state   real   slopecat            ij    misc          1     -     i1      "SLOPECAT"      "description"  "units"
-state   real   toposoil            ij    misc          1     -     i1      "TOPOSOIL"      "description"  "units"
-state   real   landusef            iuj   misc          1     Z     i1      "LANDUSEF"      "description"  "units"
-state   real   soilctop            isj   misc          1     Z     i1      "SOILCTOP"      "description"  "units"
-state   real   soilcbot            isj   misc          1     Z     i1      "SOILCBOT"      "description"  "units"
+state   real   toposoil            ij    misc          1     -     i1      "SOILHGT"      "description"  "units"
+state   real   landusef            iuj   misc          1     Z     -       ""      "description"  "units"
+state   real   soilctop            isj   misc          1     Z     -      ""      "description"  "units"
+state   real   soilcbot            isj   misc          1     Z     -      ""      "description"  "units"
 
 #-------------------------------------------------------------------------------------------------------------------------------
 # SI - end variables from netCDF format from Standard Initialization
@@ -520,7 +554,7 @@ state    real   RAINCV          ij     misc        1         -      -       ""  
 #################################################################
 
 # added for surface_driver
-state    real   PSFC             ij     misc        1         -      rh       "PSFC"                 "SFC PRESSURE"
+state    real   PSFC             ij     misc        1         -      i1rh       "PSFC"                 "SFC PRESSURE"
 state    real   dtbc            -       misc     -         -      ir       "dtbc"                 "TIME SINCE BOUNDARY READ"         ""
 state    real   TH2              ij     misc        1         -     irh       "TH2"                  "POT TEMP at 2 M" ""
 state    real   T2               ij     misc        1         -     ir        "T2"                  "TEMP at 2 M" ""
@@ -562,6 +596,8 @@ state    real  QVG              ij      misc        1         -      r        "Q
 state    real  QCG              ij      misc        1         -      r        "QCG"                   "CLOUD WATER MIXING RATIO AT THE SURFACE"      "kg kg-1"
 state    real  SOILT1           ij      misc        1         -      r        "SOILT1"                "TEMPERATURE INSIDE SNOW "    "K"
 state    real  TSNAV            ij      misc        1         -      r        "TSNAV"                 "AVERAGE SNOW TEMPERATURE "                    "C"
+# added as state for HALO_NMM_MG2, mep
+state   real   psfc_out         ij    dyn_nmm        1         -     -
 # added as state for HALO_NMM_TURBL, jm
 state   real   UZ0h              ij     misc        1         -     -       
 state   real   VZ0h              ij     misc        1         -     -       
@@ -732,6 +768,12 @@ rconfig   logical   cycle_x         namelist,domains    max_domains    .false. r
 rconfig   logical   cycle_y         namelist,domains    max_domains    .false. rh    "cycle_y"            ""      ""
 rconfig   logical   reorder_mesh    namelist,domains    1              .false. rh    "reorder_mesh"       ""      ""
 rconfig   logical   perturb_input   namelist,domains    1              .false. h     "" "" ""
+# WPS related
+rconfig   real      eta_levels      namelist,domains    max_eta        -1.
+rconfig   real      ptsgm           namelist,domains    1       42000.
+rconfig   integer num_metgrid_levels      namelist,domains  1              43      irh    "num_metgrid_levels"                ""      ""
+rconfig   real    p_top_requested         namelist,domains      1              5000    irh    "p_top_requested" "Pa"      ""
+
 
 # Physics
 rconfig   integer     mp_physics          namelist,physics	max_domains    0       rh       "mp_physics"            ""      ""
@@ -1006,6 +1048,9 @@ halo      HALO_NMM_J_3  dyn_nmm 8:moist,scalar
 halo      HALO_NMM_K  dyn_nmm 8:q2;24:t,u,v,q,w,z
 halo      HALO_NMM_L  dyn_nmm 8:pd,t,q,cwm,q2                    
 halo      HALO_NMM_L_3  dyn_nmm 8:moist,scalar
+halo      HALO_NMM_MG dyn_nmm 8:ht_gc
+halo      HALO_NMM_MG2 dyn_nmm 8:pd,psfc_out
+halo      HALO_NMM_MG3 dyn_nmm 8:p_gc_xzy
 
 halo      HALO_NMM_TURBL_A  dyn_nmm 8:uz0h,vz0h,hbm2
 halo      HALO_NMM_TURBL_B  dyn_nmm 8:dudt,dvdt

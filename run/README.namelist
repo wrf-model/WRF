@@ -67,6 +67,8 @@ information on NMM specific settings (http://www.dtcenter.org/wrf-nmm/users)
 To choose between SI and WPS input to real for EM core:
  auxinput1_inname                    = "met_em.d<domain>.<date>"             ; Input to real from WPS
                                      = "wrf_real_input_em.d<domain>.<date>"  ; Input to real from SI
+                                     = "met_nmm.d<domain>.<date>"            ; Input to real from WPS (NMM)
+                                     = "wrf_real_input_nm.d<domain>.<date>"  ; Input to real from SI (NMM)
 
 To choose between SI and WPS input to real for NMM core:
  auxinput1_inname                    = "met_nm.d<domain>.<date>"             ; Input to real from WPS
@@ -153,6 +155,10 @@ Namelist variables specifically for the WPS input for real:
                                                 ; 0 = perform traditional trapping interpolation
                                                 ; n = first n eta levels directly use surface level
  p_top_requested                     = 5000     ; p_top (Pa) to use in the model
+ ptsgm                               = 42000.   ; FOR NMM:  defines the pressure interface dividing
+                                                ;           the terrain following portion of the hybrid vertical
+                                                ;           coordinate (p > ptsgm) and the purely
+                                                ;           isobaric portion of the vertical coordinate (p < ptsgm)
 
 Users may explicitly define full eta levels.  Given are two distributions for 28 and 35 levels.  The number
 of levels must agree with the number of eta surfaces allocated (e_vert).  Users may alternatively request 

@@ -1269,8 +1269,7 @@ cycle
 
       IF ( ( num_st_levels_input .LE. 0 ) .OR. & 
            ( num_sm_levels_input .LE. 0 ) ) THEN
-         write (message, FMT='(A)')&
-'No input soil level data (either temperature or moisture, or both are missing).  Required for RUC LSM.' 
+         write (message, FMT='(A)')'No input soil level data (either temperature or moisture, or both are missing).  Required for RUC LSM.' 
          CALL wrf_error_fatal ( message )
       ELSE
          IF ( flag_soilt000 .eq. 1 ) THEN
@@ -2371,6 +2370,7 @@ cycle
       INTEGER :: i , j , l , lout , lin , lwant , lhave , num
       REAL :: temp
       LOGICAL :: found_levels
+      CHARACTER(LEN=132) :: message
 
       !  Are there any soil temp and moisture levels - ya know, they are mandatory.
 
@@ -2400,24 +2400,31 @@ cycle
                END IF
             END DO innert
          END DO outert
+
+      IF ( flag_soilt000 .NE. 1 ) THEN
          DO j = jts , MIN(jde-1,jte)
             DO i = its , MIN(ide-1,ite)
                st_input(i,1,j) = tsk(i,j)
                st_input(i,num_st_levels_input+2,j) = tmn(i,j)
             END DO
          END DO
+      ENDIF
 
 
 #if ( NMM_CORE == 1 )
 !new
-!       write(0,*) 'st_input(1) in init_soil_2_real'
+!       write(message,*) 'st_input(1) in init_soil_2_real'
+!       CALL wrf_message(message)
 	DO J=MIN(jde-1,jte),JTS, -MIN(jde-1,jte)/15
-!       write(0,616) (st_input(I,1,J),I=its , MIN(ide-1,ite),MIN(ide-1,ite)/10)
+!       write(message,616) (st_input(I,1,J),I=its , MIN(ide-1,ite),MIN(ide-1,ite)/10)
+!       CALL wrf_message(message)
 	ENDDO
 
-!       write(0,*) 'st_input(2) in init_soil_2_real'
+!       write(message,*) 'st_input(2) in init_soil_2_real'
+!       CALL wrf_message(message)
 	DO J=MIN(jde-1,jte),JTS, -MIN(jde-1,jte)/15
-!       write(0,616) (st_input(I,2,J),I=its , MIN(ide-1,ite),MIN(ide-1,ite)/10)
+!       write(message,616) (st_input(I,2,J),I=its , MIN(ide-1,ite),MIN(ide-1,ite)/10)
+!       CALL wrf_message(message)
 	ENDDO
 
   616	format(20(f4.0,1x))
@@ -2493,11 +2500,18 @@ cycle
          !  Here are the levels that we have from the input for temperature.  The input levels plus
          !  two more: the skin temperature at 0 cm, and the annual mean temperature at 300 cm.
 
+	IF (flag_soilt000 .NE. 1) then
          zhave(1) = 0.
          DO l = 1 , num_st_levels_input
             zhave(l+1) = st_levels_input(l) / 100.
          END DO
          zhave(num_st_levels_input+2) = 300. / 100.
+        ELSE
+         DO l = 1 , num_st_levels_input
+            zhave(l) = st_levels_input(l) / 100.
+         END DO
+        ENDIF
+
    
          !  Interpolate between the layers we have (zhave) and those that we want (zs).
    

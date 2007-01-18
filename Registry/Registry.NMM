@@ -82,22 +82,22 @@ state    real  LU_MASK          ij      misc        1         -     i3h1     "LU
 ## WPS-specific Variables
 ################################
 
-state    real   p_gc           ijg      dyn_nmm      1     -     i1      "PRES"     "pressure"            "Pa"
-state    real   p_gc_xzy       igj      dyn_nmm      1     -     -       "PRES"   "pressure"            "Pa"   # for RSL_LITE halo_exchange
+state    real   p_gc           ijg      dyn_nmm      1     Z     i1      "PRES"     "pressure"            "Pa"
+state    real   p_gc_xzy       igj      dyn_nmm      1     Z     -       "PRES1"   "pressure"            "Pa"   # for RSL_LITE halo_exchange
 state    real   vegcat         ij       misc         1     -     i12     "VEGCAT"        "VEGETATION CAT DOMINANT TYPE" ""
 state    real   soilcat        ij       misc         1     -     i12     "SOILCAT"       "SOIL CAT DOMINANT TYPE" ""
 
 state    real   input_soil_cat ij       misc         1     -     i12     "SOIL_CAT"       "SOIL CAT DOMINANT TYPE" ""
 state    real   tsk_gc         ij       dyn_nmm      1     -     i1      "SKINTEMP"  "skin temperature"  "K"
 state    real   XICE_gc        ij       misc         1     -     i01r    "SEAICE"                 "SEA ICE"         ""
-state    real   ght_gc         ijg      dyn_nmm      1     -     i1      "GHT"   "geopotential height" "m"
-state    real   rh_gc          ijg      dyn_nmm      1     -     i1      "RH"    "relative humidity"   "%"
-state    real   v_gc           ijg      dyn_nmm      1     -     i1      "VV"     "y-wind component"    "m s-1"
-state    real   u_gc           ijg      dyn_nmm      1     -     i1      "UU"     "x-wind component"    "m s-1"
-state    real   t_gc           ijg      dyn_nmm      1     -     i1      "TT"     "temperature"         "K"
+state    real   ght_gc         ijg      dyn_nmm      1     Z     i1      "GHT"   "geopotential height" "m"
+state    real   rh_gc          ijg      dyn_nmm      1     Z     i1      "RH"    "relative humidity"   "%"
+state    real   v_gc           ijg      dyn_nmm      1     Z     i1      "VV"     "y-wind component"    "m s-1"
+state    real   u_gc           ijg      dyn_nmm      1     Z     i1      "UU"     "x-wind component"    "m s-1"
+state    real   t_gc           ijg      dyn_nmm      1     Z     i1      "TT"     "temperature"         "K"
 state    real   snoalb         ij        misc        1     -     i012r   "SNOALB"        "ANNUAL MAX SNOW ALBEDO IN FRACTION" ""
-state    real   greenfrac_gc   ijm      dyn_nmm      1     -     i1      "GREENFRAC" "monthly greenness fraction" "0 - 1 fraction"
-state    real   albedo12m_gc   ijm      dyn_nmm      1     -     i1      "ALBEDO12M" "background albedo" "0 - 1 fraction"
+state    real   greenfrac_gc   ijm      dyn_nmm      1     Z     i1      "GREENFRAC" "monthly greenness fraction" "0 - 1 fraction"
+state    real   albedo12m_gc   ijm      dyn_nmm      1     Z     i1      "ALBEDO12M" "background albedo" "0 - 1 fraction"
 state    real   soilcbot_gc    ijs      misc         1     Z     i1      "SOILCBOT"      "description"  "units"
 state    real   soilctop_gc    ijs      misc         1     Z     i1      "SOILCTOP"      "description"  "units"
 state    real   tmn_gc         ij       dyn_nmm      1     -     i1      "SOILTEMP"  "annual mean deep soil temperature"  "K"

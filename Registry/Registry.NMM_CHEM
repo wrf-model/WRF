@@ -1055,6 +1055,14 @@ state    real  xf_ens           ije     misc        1         Z      r        "X
 state    real  pr_ens           ije     misc        1         Z      r        "PR_ENS"                "PRECIP RATE PDF IN GRELL CUMULUS SCHEME"  "mb hour-1"
 state    real  GD_CLOUD        ikj      misc        1         -      rh      "GD_CLOUD"              "CLOUD WATER/ICE MIXING RAIO IN GD CLOUD"         "kg kg-1"
 state    real  GD_CLOUD2        ikj      misc        1         -      rh      "GD_CLOUD2"              "TEST for GD CLOUD"         "kg kg-1"
+# time averaged stuff
+state    real  RAINCV_A           ij      misc        1         -      r       "RAINCV_A"                "taveragd TIME-STEP CUMULUS PRECIPITATION"                         "mm"
+state    real  RAINCV_B           ij      misc        1         -      rh       "RAINCV_B"                "taveragd TIME-STEP CUMULUS PRECIPITATION"                         "mm"
+state    real  GD_CLOUD_A        ikj      misc        1         -      r      "GD_CLOUD_A"              "taveragd CLOUD WATER MIXING RAIO IN GD CLOUD"         "kg kg-1"
+state    real  GD_CLOUD2_A        ikj      misc        1         -      r      "GD_CLOUD2_A"              "taveragd cloud ice mix ratio in GD"         "kg kg-1"
+state    real  GD_CLOUD_B        ikj      misc        1         -      rh      "GD_CLOUD_B"              "taveragd CLOUD WATER MIXING RAIO IN GD CLOUD"         "kg kg-1"
+state    real  GD_CLOUD2_B        ikj      misc        1         -      rh      "GD_CLOUD2_B"              "taveragd cloud ice mix ratio in GD"         "kg kg-1"
+#
 state    real  RTHFTEN          ikj     misc        1         -      r       "RTHFTEN"               "TEMPERATURE TENDENCY USED IN GRELL CUMULUS SCHEME"         "K/sec"
 state    real  RQVFTEN          ikj     misc        1         -      r       "RQVFTEN"               "MOISTURE TENDENCY USED IN GRELL CUMULUS SCHEME"            "kg/sec"
 state integer  STEPBIOE          -      misc        1         -      r        "STEPBIOE"                "NUMBER OF FUN DAMENTAL TIMESTEPS BETWEEN BIOGENIC EMIS CALLS"             "NA"

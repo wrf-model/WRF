@@ -10,8 +10,8 @@
 !-----------------------------------------------------------------------
 #endif
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    subroutine chem_driver ( grid , config_flags  &
-!
+    subroutine chem_driver ( grid , config_flags   &
+ 
 #if ( EM_CORE == 1 )
 #include "em_dummy_new_args.inc"
 #endif
@@ -19,7 +19,7 @@
 #if ( NMM_CORE == 1 )
 #include "nmm_dummy_new_args.inc"
 #endif
-!
+ 
                  )
 !----------------------------------------------------------------------
   USE module_domain
@@ -44,6 +44,7 @@
   USE module_aerosols_sorgam
   USE module_chem_utilities
   USE module_ctrans_grell
+! USE module_wetscav_driver, only: wetscav_driver
   USE module_input_chem_data, only:                 &
 #if (defined(CHEM_DBG_I) && defined(CHEM_DBG_J) && defined(CHEM_DBG_K))
                                      chem_dbg,      &
@@ -91,7 +92,8 @@
       REAL,DIMENSION(grid%sm31:grid%em31,grid%sm32:grid%em32,grid%sm33:grid%em33) :: &
                                                               p_phy,u_phy,v_phy    &
                                                              ,t_phy,dz8w,t8w,p8w    &
-                                                             ,rho,rri,z_at_w
+                                                             ,rho,rri,z_at_w,vvel
+      REAL,DIMENSION(grid%sm31:grid%em31,grid%sm33:grid%em33) :: pbl_h
 #if ( NMM_CORE == 1 )
 !   met-variables needed when using NMM
 !
@@ -112,9 +114,13 @@
       INTEGER                         :: ij 
       INTEGER                         :: im , num_3d_m , ic , num_3d_c
       INTEGER                         :: ijds, ijde
-      INTEGER                         :: ksubt
+      INTEGER                         :: ksubt,stepave
 
       REAL :: chem_minval, dtstepc
+
+      INTEGER :: numgas_aqfrac = 0    ! last dimension of gas_aqfrac
+      REAL, ALLOCATABLE, DIMENSION(:,:,:,:) :: gas_aqfrac
+                                      ! fraction of gas that is in cloud water
 
       LOGICAL :: haveaer
 ! ..
@@ -134,12 +140,57 @@
 ! the model top.
   ksubt=0
 ! return
+  stepave=1800./grid%dt
    
   CALL get_ijk_from_grid (  grid ,                   &
                             ids, ide, jds, jde, kds, kde,    &
                             ims, ime, jms, jme, kms, kme,    &
                             ips, ipe, jps, jpe, kps, kpe    )
   ktau = grid%itimestep
+!
+!initialize
+!
+  if(ktau.le.1)then
+    grid%gd_cloud_a=0.
+    grid%gd_cloud2_a=0.
+    grid%raincv_a=0.
+  endif
+! if( config_flags%cu_physics>0 .and. config_flags%chem_conv_tr>0)then
+  if( config_flags%cu_physics>0 )then
+!
+! no time average available in first half hour
+!
+    if(ktau.le.stepave)then
+      grid%raincv_b=grid%raincv
+      grid%gd_cloud_b=grid%gd_cloud
+      grid%gd_cloud2_b=grid%gd_cloud2
+    endif
+!
+! build time average, and stored in raincv_b to be used by convective transport routine
+!
+    if(mod(ktau,stepave).ne.0)then
+      grid%raincv_a=grid%raincv_a+grid%raincv
+    else if(mod(ktau,stepave).eq.0)then
+      grid%raincv_b=grid%raincv_a/float(stepave)
+      grid%raincv_a=0.
+    endif
+  endif
+!
+! add for time averaging, used by photolysis
+!
+  if( config_flags%cu_physics == 3)then
+    if(mod(ktau,stepave).ne.0)then
+     grid%gd_cloud_a=grid%gd_cloud_a+grid%gd_cloud
+     grid%gd_cloud2_a=grid%gd_cloud2_a+grid%gd_cloud2
+    else if(mod(ktau,stepave).eq.0)then
+     grid%gd_cloud_b=grid%gd_cloud_a/float(stepave)
+     grid%gd_cloud_a=0.
+     grid%gd_cloud2_b=grid%gd_cloud2_a/float(stepave)
+     grid%gd_cloud2_a=0.
+  endif
+  endif
+!
+!
    
   k_start         = kps
   k_end           = kpe
@@ -182,10 +233,13 @@
        haveaer = .false.
      CASE (RADM2SORG)
        CALL wrf_debug(15,'calling radm2sorg aerosols driver from chem_driver')
-       haveaer = .false.
+       haveaer = .true.
      CASE (RADM2SORG_KPP)
        CALL wrf_debug(15,'calling radm2sorg aerosols driver from chem_driver')
        haveaer = .false.
+!    CASE (RADM2SORG_AQ)
+!      CALL wrf_debug(15,'calling radm2sorg_aq aerosols driver from chem_driver')
+!      haveaer = .true.
      CASE (RACM)
        CALL wrf_debug(15,'calling racm from chem_driver')
        haveaer = .false.
@@ -197,10 +251,13 @@
        haveaer = .false.
      CASE (RACMSORG)
        CALL wrf_debug(15,'calling racmsorg aerosols driver from chem_driver')
-       haveaer = .false.
+       haveaer = .true.
      CASE (RACMSORG_KPP)
        CALL wrf_debug(15,'calling racmsorg_kpp aerosols driver from chem_driver')
        haveaer = .false.
+!    CASE (RACMSORG_AQ)
+!      CALL wrf_debug(15,'calling racmsorg_aq aerosols driver from chem_driver')
+!      haveaer = .true.
      CASE (CBMZ)
        CALL wrf_debug(15,'calling cbmz from chem_driver')
        haveaer = .false.
@@ -208,15 +265,21 @@
        CALL wrf_debug(15,'calling cbmz_bb from chem_driver')
        haveaer = .false.
      CASE (CBMZ_MOSAIC_AA)
-       CALL wrf_debug(15,'calling cbmz_mosaic_aa aerosols driver from chem_driver')
+       CALL wrf_debug(15,'calling cbmz_mosaic_4bin aerosols driver from chem_driver')
        haveaer = .true.
      CASE (CBMZ_MOSAIC_BB)
-       CALL wrf_debug(15,'calling cbmz_mosaic_bb aerosols driver from chem_driver')
+       CALL wrf_debug(15,'calling cbmz_mosaic_8bin aerosols driver from chem_driver')
        haveaer = .true.
+!    CASE (CBMZ_MOSAIC_4BIN_AQ)
+!      CALL wrf_debug(15,'calling cbmz_mosaic_4bin_aq aerosols driver from chem_driver')
+!      haveaer = .true.
+!    CASE (CBMZ_MOSAIC_8BIN_AQ)
+!      CALL wrf_debug(15,'calling cbmz_mosaic_8bin_aq aerosols driver from chem_driver')
+!      haveaer = .true.
     CASE (CHEM_TRACER)
        CALL wrf_debug(15,'tracer mode: only doing emissions and dry dep in chem_driver')
      CASE DEFAULT
-       CALL wrf_debug(15,'calling chem_opt=??? from chem_driver')
+       CALL wrf_debug(15,'calling chem_opt=? from chem_driver')
    END SELECT chem_select                              
 
 !
@@ -225,45 +288,47 @@
 #if ( NMM_CORE == 1 )
 ! this should be in seperate routine!!!!!!
       GRID%SIGMA=1
-      HYDRO=.FALSE.
+      grid%nmm_HYDRO=.FALSE.
       its=max(its,MYIS1)
       jts=max(jts,MYJS2)
       ite=min(ite,MYIE1)
       jte=min(jte,MYJE2)
       DO J=jts,jte
       DO I=its,ite
+        pbl_h(i,j)=grid%nmm_pblh(i,j)
 !
 !       PDSL=PD(I,J)*RES(I,J)
 !-----------------------------------------------------------------------
 !*** LONG AND SHORTWAVE FLUX AT GROUND SURFACE
 !-----------------------------------------------------------------------
-        IF(grid%CZMEAN(I,J)>0.) THEN
-          FACTRS(I,J)=grid%CZEN(I,J)/grid%CZMEAN(I,J)
+        IF(grid%nmm_CZMEAN(I,J)>0.) THEN
+          FACTRS(I,J)=grid%nmm_CZEN(I,J)/grid%nmm_CZMEAN(I,J)
         ELSE
           FACTRS(I,J)=0.
         ENDIF
-        grid%GSW(I,J)=(grid%RSWIN(I,J)-grid%RSWOUT(I,J))*grid%HBM2(I,J)*FACTRS(I,J)
-        P8W(I,KTE+1,J)=grid%PT
-        grid%XLAT(I,J)=grid%GLAT(I,J)/DEGRAD
-        grid%XLONG(I,J)=grid%GLON(I,J)/DEGRAD
-        grid%XLAND(I,J)=grid%SM(I,J)+1.
-        PSFC(i,j)=grid%PD(I,J)+grid%PDTOP+grid%PT
-        grid%UST(I,J)=grid%USTAR(I,J)
-        REXNSFC(I,J)=(PSFC(i,j)*1.E-5)**CAPA
-        TSFC(I,J)=grid%THS(I,J)*REXNSFC(I,J)
+        grid%GSW(I,J)=(grid%nmm_RSWIN(I,J)-grid%nmm_RSWOUT(I,J))*grid%nmm_HBM2(I,J)*FACTRS(I,J)
+        P8W(I,KTE+1,J)=grid%nmm_PT
+        grid%XLAT(I,J)=grid%nmm_GLAT(I,J)/DEGRAD
+        grid%XLONG(I,J)=grid%nmm_GLON(I,J)/DEGRAD
+        grid%XLAND(I,J)=grid%nmm_SM(I,J)+1.
+        grid%PSFC(i,j)=grid%nmm_PD(I,J)+grid%nmm_PDTOP+grid%nmm_PT
+        grid%UST(I,J)=grid%nmm_USTAR(I,J)
+        REXNSFC(I,J)=(grid%PSFC(i,j)*1.E-5)**CAPA
+        TSFC(I,J)=grid%nmm_THS(I,J)*REXNSFC(I,J)
         grid%TSK(I,J)=TSFC(I,J)
-        T8W(I,1,J)=TSFC(I,J)
-        P8W(I,KTS,J)=grid%ETA1(KTS)*grid%PDTOP+grid%ETA2(KTS)*grid%PDSL(i,j)+grid%PT
-!
+        T8W(I,1,J)=TSFC(I,J) 
+        P8W(I,KTS,J)=grid%nmm_ETA1(KTS)*grid%nmm_PDTOP+grid%nmm_ETA2(KTS)*grid%nmm_PDSL(i,j)+grid%nmm_PT
+!       
 !-----------------------------------------------------------------------
 !***  FILL THE SINGLE-COLUMN INPUT
 !-----------------------------------------------------------------------
 !
         DO K=KTS,KTE
-           DPL=grid%DETA1(K)*grid%PDTOP+grid%DETA2(K)*grid%PDSL(i,j)
-          QL(K)=AMAX1(grid%Q(I,K,J),grid%EPSQ)
-          PLYR=grid%AETA1(K)*grid%PDTOP+grid%AETA2(K)*grid%PDSL(i,j)+grid%PT
-          TL(K)=grid%T(I,K,J)
+           vvel(i,k,j)=grid%nmm_w(i,k,j)
+           DPL=grid%nmm_DETA1(K)*grid%nmm_PDTOP+grid%nmm_DETA2(K)*grid%nmm_PDSL(i,j)
+          QL(K)=AMAX1(grid%nmm_Q(I,K,J),EPSQ)
+          PLYR=grid%nmm_AETA1(K)*grid%nmm_PDTOP+grid%nmm_AETA2(K)*grid%nmm_PDSL(i,j)+grid%nmm_PT
+          TL(K)=grid%nmm_T(I,K,J)
 !
 ! here rri is inverse density!
 !
@@ -271,23 +336,24 @@
           RRI(I,K,J)=1./RHO(i,k,j)
           T_PHY(I,K,J)=TL(K)
           moist(I,K,J,P_QV)=QL(K)/(1.-QL(K))
-          P8W(I,K+1,J)=grid%ETA1(K+1)*grid%PDTOP+grid%ETA2(K+1)*grid%PDSL(i,j)+grid%PT
+          P8W(I,K+1,J)=grid%nmm_ETA1(K+1)*grid%nmm_PDTOP+grid%nmm_ETA2(K+1)*grid%nmm_PDSL(i,j)+grid%nmm_PT
           P_PHY(I,K,J)=PLYR
           DZ8W(I,K,J)=TL(K)*(P608*QL(K)+1.)*R_D                           &
      &                 *(P8W(I,K,J)-P8W(I,K+1,J))                       &
      &                 /(P_PHY(I,K,J)*G)
 ! the z-level fix
-          IF(K<KTE)Z_NMM(I,K,J)=.5*(grid%Z(I,K,J)+grid%Z(I,K+1,J))
+          IF(K<KTE)Z_NMM(I,K,J)=.5*(grid%nmm_Z(I,K,J)+grid%nmm_Z(I,K+1,J))
          ENDDO
-! 
+!         
         DO K=KTS+1,KTE
           T8W(I,K,J)=0.5*(TL(K-1)+TL(K))
-        ENDDO
-        grid%T8W(I,KTE+1,J)=-1.E20
-        Z_NMM(I,KTE,J)=grid%Z(I,KTE,J)
-!
+        ENDDO 
+        T8W(I,KTE+1,J)=-1.E20
+        Z_NMM(I,KTE,J)=grid%nmm_Z(I,KTE,J)
+!         
       ENDDO
       ENDDO
+!-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
 !
 !***  COMPUTE VELOCITY COMPONENTS AT MASS POINTS
@@ -299,28 +365,28 @@
 !
         DO K=KTS,KTE
           DO I=MYIS_P1,MYIE_P1
-            WMSK=grid%VTM(I+IHE(J),K,J)+grid%VTM(I+IHW(J),K,J)                    &
-     &          +grid%VTM(I,K,J+1)+grid%VTM(I,K,J-1)
+            WMSK=grid%nmm_VTM(I+grid%nmm_IHE(J),K,J)+grid%nmm_VTM(I+grid%nmm_IHW(J),K,J)                    &
+     &          +grid%nmm_VTM(I,K,J+1)+grid%nmm_VTM(I,K,J-1)
             IF(WMSK>0.)THEN
               RWMSK=1./WMSK
-              U_PHY(I,K,J)=(grid%U(I+IHE(J),K,J)*grid%VTM(I+IHE(J),K,J)           &
-     &                         +grid%U(I+IHW(J),K,J)*grid%VTM(I+IHW(J),K,J)       &
-     &                         +grid%U(I,K,J+1)*grid%VTM(I,K,J+1)                 &
-     &                         +grid%U(I,K,J-1)*grid%VTM(I,K,J-1))*RWMSK
-              V_PHY(I,K,J)=(grid%V(I+IHE(J),K,J)*grid%VTM(I+IHE(J),K,J)           &
-     &                         +grid%V(I+IHW(J),K,J)*grid%VTM(I+IHW(J),K,J)       &
-     &                         +grid%V(I,K,J+1)*grid%VTM(I,K,J+1)                 &
-     &                         +grid%V(I,K,J-1)*grid%VTM(I,K,J-1))*RWMSK
+              U_PHY(I,K,J)=(grid%nmm_U(I+grid%nmm_IHE(J),K,J)*grid%nmm_VTM(I+grid%nmm_IHE(J),K,J)           &
+     &                     +grid%nmm_U(I+grid%nmm_IHW(J),K,J)*grid%nmm_VTM(I+grid%nmm_IHW(J),K,J)       &
+     &                     +grid%nmm_U(I,K,J+1)*grid%nmm_VTM(I,K,J+1)                 &
+     &                     +grid%nmm_U(I,K,J-1)*grid%nmm_VTM(I,K,J-1))*RWMSK
+              V_PHY(I,K,J)=(grid%nmm_V(I+grid%nmm_IHE(J),K,J)*grid%nmm_VTM(I+grid%nmm_IHE(J),K,J)           &
+     &                     +grid%nmm_V(I+grid%nmm_IHW(J),K,J)*grid%nmm_VTM(I+grid%nmm_IHW(J),K,J)       &
+     &                     +grid%nmm_V(I,K,J+1)*grid%nmm_VTM(I,K,J+1)                 &
+     &                     +grid%nmm_V(I,K,J-1)*grid%nmm_VTM(I,K,J-1))*RWMSK
             ELSE
               U_PHY(I,K,J)=0.
               V_PHY(I,K,J)=0.
             ENDIF
           ENDDO
         ENDDO
-      ENDDO
-
-
-
+      ENDDO     
+            
+              
+              
 #endif
 
       do nv=1,num_chem
@@ -359,7 +425,13 @@
          do k=kps,kpe
             do i=ips,min(ide-1,ipe)
               rri(i,k,j)=grid%em_alt(i,k,j)
+!             vvel(i,k,j)=grid%em_w_2(i,k,j)
             enddo
+         enddo
+      enddo
+      do j=jps,min(jde-1,jpe)
+         do i=ips,min(ide-1,ipe)
+            pbl_h(i,j)=grid%pblh(i,j)
          enddo
       enddo
 
@@ -408,35 +480,42 @@
 #endif
 
 !--- emissions
+    if(config_flags%emiss_inpt_opt > 0)then
       call wrf_debug(15,'calling emissions driver')
-      call emissions_driver(grid%id,ktau,grid%dt,grid%DX,                 &
+      call emissions_driver(grid%id,ktau,grid%dt,grid%DX,                      &
          config_flags, grid%stepbioe,                                          &
-         grid%gmt,grid%julday,rri,t_phy,moist,p8w,t8w,                    &
+         grid%gmt,grid%julday,rri,t_phy,moist,p8w,t8w,                         &
          grid%e_bio,p_phy,chem,rho,dz8w,grid%ne_area,                          &
-         grid%e_iso,grid%e_so2,grid%e_no,grid%e_co,grid%e_eth,grid%e_hc3,grid%e_hc5,grid%e_hc8,grid%e_xyl,grid%e_ol2,grid%e_olt, &
-         grid%e_oli,grid%e_tol,grid%e_csl,grid%e_hcho,grid%e_ald,grid%e_ket,grid%e_ora2,grid%e_pm25,grid%e_pm10,grid%e_nh3, &
-         grid%e_pm25i,grid%e_pm25j,grid%e_eci,grid%e_ecj,grid%e_orgi,grid%e_orgj,grid%e_no2,grid%e_ch3oh,         &
-         grid%e_c2h5oh,grid%e_so4j,grid%e_so4c,grid%e_no3j,grid%e_no3c,grid%e_orgc,grid%e_ecc,               &
-         grid%u10,grid%v10,grid%ivgtyp,grid%gsw,grid%vegfra,grid%rmol,grid%ust,grid%znt,                          &
-         grid%xland,grid%xlat,grid%xlong,                                                &
+         grid%e_iso,grid%e_so2,grid%e_no,grid%e_co,grid%e_eth,grid%e_hc3,      &
+         grid%e_hc5,grid%e_hc8,grid%e_xyl,grid%e_ol2,grid%e_olt,               &
+         grid%e_oli,grid%e_tol,grid%e_csl,grid%e_hcho,grid%e_ald,grid%e_ket,   &
+         grid%e_ora2,grid%e_pm25,grid%e_pm10,grid%e_nh3,                       &
+         grid%e_pm25i,grid%e_pm25j,grid%e_eci,grid%e_ecj,grid%e_orgi,          &
+         grid%e_orgj,grid%e_no2,grid%e_ch3oh,                                  &
+         grid%e_c2h5oh,grid%e_so4j,grid%e_so4c,grid%e_no3j,grid%e_no3c,        &
+         grid%e_orgc,grid%e_ecc,                                               &
+         grid%u10,grid%v10,grid%ivgtyp,grid%gsw,grid%vegfra,grid%rmol,         &
+         grid%ust,grid%znt,                                                    &
+         grid%xland,grid%xlat,grid%xlong,                                      &
 #if ( EM_CORE == 1 )
-         z_at_w,                                                          &
+         z_at_w,                                                               &
 #endif
 #if ( NMM_CORE == 1 )
-         grid%z,                                                               &
+         grid%nmm_z,                                                           &
 #endif
-         grid%sebio_iso,grid%sebio_oli,grid%sebio_api,grid%sebio_lim,grid%sebio_xyl,               &
-         grid%sebio_hc3,grid%sebio_ete,grid%sebio_olt,grid%sebio_ket,grid%sebio_ald,               &
-         grid%sebio_hcho,grid%sebio_eth,grid%sebio_ora2,grid%sebio_co,grid%sebio_nr,               &
-         grid%noag_grow,grid%noag_nongrow,grid%nononag,grid%slai,                             &
-         grid%ebio_iso,grid%ebio_oli,grid%ebio_api,grid%ebio_lim,grid%ebio_xyl,                    &
-         grid%ebio_hc3,grid%ebio_ete,grid%ebio_olt,grid%ebio_ket,grid%ebio_ald,                    &
-         grid%ebio_hcho,grid%ebio_eth,grid%ebio_ora2,grid%ebio_co,grid%ebio_nr,grid%ebio_no,            &
-         numgas,                                                          &
-         ids,ide, jds,jde, kds,kde,                                       &
-         ims,ime, jms,jme, kms,kme,                                       &
-         its,ite,jts,jte,                                                 &
-         k_start         , min(k_end,kde-ksubt)                           )
+         grid%sebio_iso,grid%sebio_oli,grid%sebio_api,grid%sebio_lim,          &
+         grid%sebio_xyl,grid%sebio_hc3,grid%sebio_ete,grid%sebio_olt,          &
+         grid%sebio_ket,grid%sebio_ald,grid%sebio_hcho,grid%sebio_eth,         &
+         grid%sebio_ora2,grid%sebio_co,grid%sebio_nr,                          &
+         grid%noag_grow,grid%noag_nongrow,grid%nononag,grid%slai,              &
+         grid%ebio_iso,grid%ebio_oli,grid%ebio_api,grid%ebio_lim,grid%ebio_xyl,&
+         grid%ebio_hc3,grid%ebio_ete,grid%ebio_olt,grid%ebio_ket,grid%ebio_ald,&
+         grid%ebio_hcho,grid%ebio_eth,grid%ebio_ora2,grid%ebio_co,grid%ebio_nr,&
+         grid%ebio_no,numgas,                                                  &
+         ids,ide, jds,jde, kds,kde,                                            &
+         ims,ime, jms,jme, kms,kme,                                            &
+         its,ite,jts,jte,                                                      &
+         k_start         , min(k_end,kde-ksubt)                                )
 
 #if (defined(CHEM_DBG_I) && defined(CHEM_DBG_J) && defined(CHEM_DBG_K))
        if( (its <= CHEM_DBG_I .and. ite >= CHEM_DBG_I) .and. &
@@ -458,6 +537,8 @@
                config_flags%kemit                                         )
        end if
 #endif
+      endif
+
 !
 ! calculate photolysis rates
 !
@@ -471,9 +552,9 @@
          z_at_w,                                                          &
 #endif
 #if ( NMM_CORE == 1 )
-         grid%z,                                                               &
+         grid%nmm_z,                                                               &
 #endif
-              grid%gd_cloud,grid%gd_cloud2,                                         &
+              grid%gd_cloud_b,grid%gd_cloud2_b,                                         &
               grid%ph_macr,grid%ph_o31d,grid%ph_o33p,grid%ph_no2,grid%ph_no3o2,grid%ph_no3o,grid%ph_hno2,    &
               grid%ph_hno3,grid%ph_hno4,grid%ph_h2o2,grid%ph_ch2or,grid%ph_ch2om,grid%ph_ch3cho,        &
               grid%ph_ch3coch3,grid%ph_ch3coc2h5,grid%ph_hcocho,grid%ph_ch3cocho,             &
@@ -485,7 +566,7 @@
               grid%pm2_5_dry,grid%pm2_5_water,grid%uvrad,                                &
               ids,ide, jds,jde, kds,kde,                                  &
               ims,ime, jms,jme, kms,kme,                                  &
-         its,ite,jts,jte,                                                 &
+              its,ite,jts,jte,                                                 &
               k_start         , min(k_end,kde-ksubt)                      )
    
 #if (defined(CHEM_DBG_I) && defined(CHEM_DBG_J) && defined(CHEM_DBG_K))
@@ -517,26 +598,30 @@
 #endif
       endif
 !
-! calculate dry deposition velocities
+! do vertical mixing with dry deposition
+! 28-jun-2005 rce - added vertmix_onoff to turn vertical mixing on/off
 !
+!     if (config_flags%vertmix_onoff>0) then
          if (ktau.gt.2) then
             call wrf_debug(15,'calling dry_deposition_driver')
             call dry_dep_driver(grid%id,ktau,grid%dt,config_flags,           &
-                 grid%gmt,grid%julday,t_phy,moist,p8w,t8w,                   &
+                 grid%gmt,grid%julday,t_phy,moist,p8w,t8w,vvel,        &
                  rri,p_phy,chem,rho,dz8w,grid%exch_h,                             &
-                 grid%ivgtyp,grid%tsk,grid%gsw,grid%vegfra,grid%pblh,grid%rmol,grid%ust,grid%znt,grid%xlat,grid%xlong,         &
+!                grid%cldfra, grid%cldfra_old,                                    &
+!                grid%ccn1, grid%ccn2, grid%ccn3, grid%ccn4, grid%ccn5, grid%ccn6, grid%qndropsource,           &
+                 grid%ivgtyp,grid%tsk,grid%gsw,grid%vegfra,pbl_h,grid%rmol,grid%ust,grid%znt,grid%xlat,grid%xlong,         &
 #if ( EM_CORE == 1 )
                  grid%em_z,z_at_w,&
 #endif
 #if ( NMM_CORE == 1 )
-                 z_nmm,grid%z,&
+                 z_nmm,grid%nmm_z,&
 #endif
                  grid%h2oaj,grid%h2oai,grid%nu3,grid%ac3,grid%cor3,grid%asulf,grid%ahno3,grid%anh3,grid%cvaro1,grid%cvaro2,    &
                  grid%cvalk1,grid%cvole1,grid%cvapi1,grid%cvapi2,grid%cvlim1,grid%cvlim2,grid%dep_vel_o3,       &
                  grid%e_co,config_flags%kemit,numgas,                             &
                  ids,ide, jds,jde, kds,kde,                                  &
                  ims,ime, jms,jme, kms,kme,                                  &
-         its,ite,jts,jte,                                                 &
+                 its,ite,jts,jte,                                                 &
                  k_start         , min(k_end,kde-ksubt)                      )
          end if
 
@@ -561,28 +646,33 @@
                                                                                       )
        end if
 #endif
+!     end if
+
+
 !
 !   convective transport/wet deposition
 !
-! Turn off for now - G. Grell 14 Dec 2005
 !
+!
+!    if( config_flags%cu_physics>0 .and. config_flags%chem_conv_tr>0)then
         call wrf_debug(15,'calling conv transport')
         call grelldrvct(grid%DT,ktau,grid%DX,grid%id,config_flags,       &
-             rho,grid%RAINCV,chem,                                            &
+             rho,grid%RAINCV_B,chem,                                            &
              U_phy,V_phy,t_phy,moist,dz8w,                               &
              p_phy,XLV,CP,G,r_v,                                         &
 #if ( EM_CORE == 1 )
              z_at_w,&
 #endif
 #if ( NMM_CORE == 1 )
-             grid%z,&
+             grid%nmm_z,&
 #endif
              grid%cu_co_ten,                            &
              num_chem,                                                     &
              ids,ide, jds,jde, kds,kde,                                  &
              ims,ime, jms,jme, kms,kme,                                  &
-         its,ite,jts,jte,                                                 &
+             its,ite,jts,jte,                                                 &
              k_start    , min(k_end,kde-1)                               )
+!    end if
 !
 !
 !
@@ -604,6 +694,7 @@ n2o5_het=0.
         dtstepc=grid%dt*float(grid%stepchem)
         ktauc=max(ktau/grid%stepchem,1)
         if(ktau.eq.1)dtstepc=grid%dt
+!       if(config_flags%gaschem_onoff>0)then
 !
 ! chemical mechanisms
 !
@@ -614,7 +705,7 @@ n2o5_het=0.
               grid%em_z,z_at_w,&
 #endif
 #if ( NMM_CORE == 1 )
-              z_nmm,grid%z,&
+              z_nmm,grid%nmm_z,&
 #endif
               vdrog3,vcsulf_old,             &
               grid%ph_macr,grid%ph_o31d,grid%ph_o33p,grid%ph_no2,grid%ph_no3o2,grid%ph_no3o,grid%ph_hno2,    &
@@ -684,17 +775,48 @@ CALL kpp_mechanism_driver (chem,                         &
                                                                                       )
        end if
 #endif
+!      endif
+
+
+
+!   allocate gas_aqfrac if either cldchem or wetscav is on
+!       if ( (config_flags%cldchem_onoff > 0) .or.   &
+!            (config_flags%wetscav_onoff > 0) ) then
+!           numgas_aqfrac = max( numgas, 1 )
+!           allocate( gas_aqfrac( grid%sm31:grid%em31, grid%sm32:grid%em32,   &
+!                                 grid%sm33:grid%em33, numgas_aqfrac ) )
+!           gas_aqfrac(:,:,:,:) = 0.0
+!       end if
+
+!
+!   now do cloud chemistry
+!
+!       if (config_flags%cldchem_onoff > 0) then
+
+!       call cloudchem_driver(                                       &
+!              grid%id, ktau, ktauc, grid%dt, dtstepc, config_flags, &
+!              t_phy, p_phy, rho, rri,                               &
+!              moist, grid%cldfra, grid%ph_no2,                      &
+!              chem, gas_aqfrac, numgas_aqfrac,                      &
+!              ids,ide, jds,jde, kds,kde,                            &
+!              ims,ime, jms,jme, kms,kme,                            &
+!              its,ite, jts,jte, kts,kte                             )
+       
+!      endif
+
+
 !
 !   now do aerosols
 !
-        call aerosols_driver (grid%id,ktau,grid%dt,ktauc,config_flags,dtstepc,        &
-              rri,t_phy,moist,grid%aerwrf,p8w,t8w,                &
-              p_phy,chem,rho,dz8w,                                     &
+!       if(config_flags%aerchem_onoff>0)then
+        call aerosols_driver (grid%id,ktau,grid%dt,ktauc,config_flags,dtstepc, &
+              rri,t_phy,moist,grid%aerwrf,p8w,t8w,                             &
+              p_phy,chem,rho,dz8w,                                        &
 #if ( EM_CORE == 1 )
               grid%em_z,z_at_w,                                                     &
 #endif
 #if ( NMM_CORE == 1 )
-              z_nmm,grid%z,                                                           &
+              z_nmm,grid%nmm_z,                                                           &
 #endif
               grid%h2oaj,grid%h2oai,grid%nu3,grid%ac3,grid%cor3,grid%asulf,           &
               grid%ahno3,grid%anh3,grid%cvaro1,grid%cvaro2,grid%cvalk1,grid%cvole1,   &
@@ -734,7 +856,36 @@ CALL kpp_mechanism_driver (chem,                         &
                                                                                       )
        end if
 #endif
-      end if !Chemistry time step check
+!      endif
+
+
+!
+!   now do wet removal
+!
+!if (config_flags%wetscav_onoff > 0) then
+!       call wetscav_driver (grid%id,ktau,grid%dt,ktauc,config_flags,dtstepc, &
+!             rri,t_phy,moist,p8w,t8w,                                    &
+!             p_phy,chem,rho,grid%cldfra,                                 &
+!             grid%qlsink,grid%precr,grid%preci,grid%precs,grid%precg,                             &
+!             gas_aqfrac, numgas_aqfrac,                                  &
+!             grid%h2oaj,grid%h2oai,grid%nu3,grid%ac3,grid%cor3,          &
+!             grid%asulf,grid%ahno3,grid%anh3,grid%cvaro1,grid%cvaro2,    &
+!             grid%cvalk1,grid%cvole1,grid%cvapi1,grid%cvapi2,            &
+!             grid%cvlim1,grid%cvlim2,                                    &
+!             ids,ide, jds,jde, kds,kde,                                  &
+!             ims,ime, jms,jme, kms,kme,                                  &
+!             grid%i_start(ij), min(grid%i_end(ij),ide-1),                &
+!             grid%j_start(ij), min(grid%j_end(ij),jde-1),                &
+!             k_start         , min(k_end,kde-ksubt)                      )
+!      
+!      endif
+
+!      if (numgas_aqfrac > 0) then
+!          deallocate( gas_aqfrac )
+!          numgas_aqfrac = 0
+!      end if
+
+end if !Chemistry time step check
 !
 ! Sum up the aerosol mass for radiation and diagnostic purposes. Unlike
 ! aerosol_driver, which is called every dtchem, this must be done every

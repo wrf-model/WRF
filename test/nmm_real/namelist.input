@@ -34,9 +34,9 @@
 /
 
  &domains
- time_step                           = 45,
- time_step_fract_num                 = 0,
- time_step_fract_den                 = 1,
+ time_step                           = 34,
+ time_step_fract_num                 = 2,
+ time_step_fract_den                 = 7,
  max_dom                             = 1,
  s_we                                = 1,
  e_we                                = 56,
@@ -44,9 +44,9 @@
  e_sn                                = 92,
  s_vert                              = 1,
  e_vert                              = 38,
- num_metgrid_levels                  = 43,
- dx                                  = .097500,
- dy                                  = .090600,
+ num_metgrid_levels                  = 40,
+ dx                                  = .096,
+ dy                                  = .095,
  grid_id                             = 1,
  p_top_requested                     = 5000.
  ptsgm                               = 42000.,
@@ -63,8 +63,8 @@
  ra_lw_physics                       = 99,
  ra_sw_physics                       = 99,
  radt                                = 60,
- nrads                               = 80, 
- nradl                               = 80,
+ nrads                               = 105, 
+ nradl                               = 105,
  co2tf                               = 1,
  sf_sfclay_physics                   = 2,
  sf_surface_physics                  = 99,

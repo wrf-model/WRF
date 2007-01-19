@@ -1165,14 +1165,14 @@ CONTAINS
         write(message,*) 'SM'
         CALL wrf_message(message)
 
-        DO J=min(jde-1,jte),jts,-(jte-jts)/15
+        DO J=min(jde-1,jte),jts,-((jte-jts)/15+1)
           write(message,635) (sm(i,J),I=its,ite,((ite-its)/10)+1)
           CALL wrf_message(message)
         END DO
 
         write(message,*) 'SST/NMM_TSK'
         CALL wrf_debug(10,message)
-        DO J=min(jde-1,jte),jts,-(jte-jts)/15
+        DO J=min(jde-1,jte),jts,-((jte-jts)/15+1)
           write(message,635) (SST(I,J)+NMM_TSK(I,J),I=ITS,min(ide-1,ite),((ite-its)/10)+1)
           CALL wrf_debug(10,message)
         END DO
@@ -1716,15 +1716,15 @@ CONTAINS
 
         write(message,*) 'STC(1)'
         CALL wrf_message(message)
-        DO J=min(jde-1,jte),jts,-(jte-jts)/15
-          write(message,635) (stc(I,1,J),I=its,min(ite,ide-1),(ite-its)/12)
+        DO J=min(jde-1,jte),jts,-((jte-jts)/15+1)
+          write(message,635) (stc(I,1,J),I=its,min(ite,ide-1),(ite-its)/12+1)
           CALL wrf_message(message)
         ENDDO
 
         write(message,*) 'SMC(1)'
         CALL wrf_message(message)
-        DO J=min(jde-1,jte),jts,-(jte-jts)/15
-          write(message,635) (smc(I,1,J),I=its,min(ite,ide-1),(ite-its)/12)
+        DO J=min(jde-1,jte),jts,-((jte-jts)/15+1)
+          write(message,635) (smc(I,1,J),I=its,min(ite,ide-1),(ite-its)/12+1)
           CALL wrf_message(message)
         ENDDO
 
@@ -1837,8 +1837,8 @@ CONTAINS
 
         write(message,*) 'Z0 over memory, leaving module_initialize_real'
         CALL wrf_message(message)
-        DO J=JME,JMS,-(JME-JMS)/20
-          write(message,635) (Z0(I,J),I=IMS,IME,(IME-IMS)/14)
+        DO J=JME,JMS,-((JME-JMS)/20+1)
+          write(message,635) (Z0(I,J),I=IMS,IME,(IME-IMS)/14+1)
           CALL wrf_message(message)
         ENDDO
 

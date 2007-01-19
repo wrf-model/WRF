@@ -128,7 +128,6 @@
       CALL wrf_debug ( 100, TRIM(wrf_err_message) )
     ENDIF
 
-#if (EM_CORE == 1)
 
     !  Test to make sure that the input data is the right size.  Do this for input from real/ideal into
     !  WRF, and from the standard initialization into real.
@@ -145,6 +144,7 @@
 !      IF ( ierr3 .NE. 0 ) CALL wrf_error_fatal( 'wrf_get_dom_ti_integer getting dimension information from dataset' )
        IF ( ierr3 .NE. 0 ) CALL wrf_debug( 'wrf_get_dom_ti_integer getting dimension information from dataset' )
    
+#if (EM_CORE == 1)
        !  Test to make sure that the grid distances are the right size.
    
        CALL wrf_get_dom_ti_real ( fid , 'DX' ,  dx_compare , 1 , icnt , ierr )
@@ -154,12 +154,10 @@
 print *,'dx_compare,dy_compare = ',dx_compare,dy_compare
           CALL wrf_error_fatal( 'DX and DY do not match from the namelist and the input file' )
        END IF
+#endif
     END IF
 
     ! do the check later (see check_if_dryrun below)
-
-#endif
-
 
     CALL nl_get_dyn_opt( 1, dyn_opt )
     CALL wrf_get_dom_ti_integer ( fid, 'DYN_OPT', dyn_opt_tmp, 1, icnt, ierr )
@@ -417,15 +415,6 @@ print *,'dx_compare,dy_compare = ',dx_compare,dy_compare
 #endif
 
 #if (NMM_CORE == 1)
-       ierr = 0
-       ierr3 = 0
-       CALL wrf_get_dom_ti_integer ( fid , 'WEST-EAST_GRID_DIMENSION' ,    ide_compare , 1 , icnt , ierr3 )
-       ierr = max( ierr, ierr3 )
-       CALL wrf_get_dom_ti_integer ( fid , 'SOUTH-NORTH_GRID_DIMENSION' ,  jde_compare , 1 , icnt , ierr3 )
-       ierr = max( ierr, ierr3 )
-       CALL wrf_get_dom_ti_integer ( fid , 'BOTTOM-TOP_GRID_DIMENSION' ,   kde_compare , 1 , icnt , ierr3 )
-       ierr = max( ierr, ierr3 )
-       IF ( ierr3 .NE. 0 ) CALL wrf_debug( 'wrf_get_dom_ti_integer getting dim information from dataset' )
 
     IF      ( ( switch .EQ. aux_model_input1_only  ) .AND. &
               ( config_flags%auxinput1_inname(1:8) .EQ. 'wrf_real' ) ) THEN

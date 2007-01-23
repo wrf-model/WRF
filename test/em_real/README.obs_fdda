@@ -54,10 +54,7 @@ After you have converted your obs data file to the proper format for WRF,
 you will need to rename it according to the naming convention for the WRF
 domain on which the obs-nudging is to be performed. For example, for
 observations to be used in Domain 1, use the naming convention OBS_DOMAIN101,
-for Domain 2, OBS_DOMAIN201, etc. Note that you may split your obs data into
-hourly input for each domain. For example, observations with timestamps in
-the first model hour can be listed in file OBS_DOMAIN101, those with
-timestamps in the second model hour in file OBS_DOMAIN102, etc.
+for Domain 2, OBS_DOMAIN201, etc. 
 
 These files must be present in your WRF run directory, along with the usual
 WRF input and boundary files.
@@ -85,7 +82,6 @@ while nudging is active on that domain.
 Below is an example of a namelist set up to activate obs-nudging on domains
 1, 2, and 3:
 
-
  &fdda
  obs_nudge_opt                       = 1,1,1,0,0   
  max_obs                             = 150000,
@@ -107,3 +103,8 @@ Below is an example of a namelist set up to activate obs-nudging on domains
  obs_ipf_errob                       = .true.
  obs_ipf_nudob                       = .true.
  obs_ipf_in4dob                      = .true.
+
+In addition, add the following in &time_control:
+
+ auxinput11_interval_s               = 180, 180, 180, 180, 180,
+ auxinput11_end_h                    = 6, 6, 6, 6, 6,

@@ -70,26 +70,9 @@ VI. Comparison between file formats.
             ------------------------------------
 
 VII. New namelist variables for Grib2 I/O:  
-  The following new namelist variables may be optionally used to control 
+  The grib2 namelist variables may be optionally used to control 
   Grib2 I/O.  They are defined in new namelist "&grib2".  Note that the 
   &grib2 namelist must be included in file "namelist.input" even if empty.  
   (This annoyance is ultimately due to problems with old OSF1 Fortran90 
-  compilers.)  
-
-  background_proc_id - Background generating process identifier, typically
-  defined by the originating center to identify the background data that
-  was used in creating the data.  This is octet 13 of Section 4 in the
-  grib2 message. Default is 255.
-
-  forecast_proc_id - Analysis or generating forecast process identifier,
-  typically defined by the originating center to identify the forecast
-  process that was used to generate the data.  This is octet 14 of Section
-  4 in the grib2 message.  Default is 255.
-
-  production_status - Production status of processed data in the grib2
-  message.  See Code Table 1.3 of the grib2 manual. This is octet 20 of
-  Section 1 in the grib2 record.  Default is 255.
-
-  compression - The compression method to encode the output grib2 message.
-  Only 40 for jpeg2000 or 41 for PNG are supported.  The default is 40.
-
+  compilers.)  Information on the variables is located in the WRFV2/run
+  directory: README.namelist.

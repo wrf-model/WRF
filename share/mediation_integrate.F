@@ -643,9 +643,10 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
 
      END SUBROUTINE BASE_STATE_PARENT
 
-     SUBROUTINE NEST_TERRAIN ( nest )
+     SUBROUTINE NEST_TERRAIN ( nest, config_flags )
        USE module_domain
        TYPE(domain) , POINTER                        :: nest
+       TYPE(grid_config_rec_type) , INTENT(IN)       :: config_flags
      END SUBROUTINE NEST_TERRAIN
 
     SUBROUTINE med_interp_domain ( parent , nest )
@@ -744,7 +745,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
     JTE = nest%ep33
 
 
-    CALL NEST_TERRAIN ( nest )
+    CALL NEST_TERRAIN ( nest, config_flags )
 
 !   Initialize some more constants required especially for terrain adjustment processes
 

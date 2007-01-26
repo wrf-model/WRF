@@ -51,7 +51,6 @@ main( int argc, char *argv[], char *env[] )
       if (!strncmp(*argv,"-D",2)) {
         char * p ;
         p = *argv ;
-fprintf(stderr,"%s\n", p+2) ;
         sym_add(p+2) ;
       }
    

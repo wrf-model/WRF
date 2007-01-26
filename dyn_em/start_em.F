@@ -83,6 +83,20 @@
                              ims, ime, jms, jme, kms, kme,    &
                              ips, ipe, jps, jpe, kps, kpe    )
 
+#ifdef TEST_FOR_IJK_IN_RSL_LITE
+  grid%xxx_1 = 0.
+  grid%xxx_2 = 1.
+  do k = kps, kpe
+  do j = MAX(jds+1,jps), MIN(jde-2,jpe)
+  do i = MAX(ids+1,ips), MIN(ide-2,ipe)
+      grid%xxx_2(i,j,k) = 0.
+  enddo
+  enddo
+  enddo
+  return
+#endif
+
+
    kts = kps ; kte = kpe     ! note that tile is entire patch
    its = ips ; ite = ipe     ! note that tile is entire patch
    jts = jps ; jte = jpe    ! note that tile is entire patch

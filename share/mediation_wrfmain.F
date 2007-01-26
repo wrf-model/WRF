@@ -118,7 +118,7 @@ SUBROUTINE med_initialdata_input ( grid , config_flags )
            CALL input_aux_model_input11 ( fid ,   grid , config_flags , ierr )
            CALL wrf_debug              ( 100 , 'med_initialdata_input: back from input_aux_model_input11' )
         ELSE
-           WRITE( message , '("med_initialdata_input: bad fine_input_stream = ",I4,")') config_flags%fine_input_stream
+           WRITE( message , '("med_initialdata_input: bad fine_input_stream = ",I4)') config_flags%fine_input_stream
            CALL WRF_ERROR_FATAL ( message )
         END IF
         CALL close_dataset ( fid , config_flags , "DATASET=INPUT" )

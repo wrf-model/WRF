@@ -177,6 +177,11 @@ MODULE module_domain
    PRIVATE domain_time_test_print
    PRIVATE test_adjust_io_timestr
 
+   INTERFACE get_ijk_from_grid
+     MODULE PROCEDURE get_ijk_from_grid1, get_ijk_from_grid2
+   END INTERFACE
+
+
 CONTAINS
 
    SUBROUTINE adjust_domain_dims_for_move( grid , dx, dy )
@@ -187,88 +192,88 @@ CONTAINS
 
     data_ordering : SELECT CASE ( model_data_order )
        CASE  ( DATA_ORDER_XYZ )
-            grid%sm31  =             grid%sm31 + dx
-            grid%em31  =             grid%em31 + dx
-            grid%sm32  =             grid%sm32 + dy
-            grid%em32  =             grid%em32 + dy
-            grid%sp31  =             grid%sp31 + dx
-            grid%ep31  =             grid%ep31 + dx
-            grid%sp32  =             grid%sp32 + dy
-            grid%ep32  =             grid%ep32 + dy
-            grid%sd31  =             grid%sd31 + dx
-            grid%ed31  =             grid%ed31 + dx
-            grid%sd32  =             grid%sd32 + dy
-            grid%ed32  =             grid%ed32 + dy
+            grid%sm31  = grid%sm31 + dx
+            grid%em31  = grid%em31 + dx
+            grid%sm32  = grid%sm32 + dy
+            grid%em32  = grid%em32 + dy
+            grid%sp31  = grid%sp31 + dx
+            grid%ep31  = grid%ep31 + dx
+            grid%sp32  = grid%sp32 + dy
+            grid%ep32  = grid%ep32 + dy
+            grid%sd31  = grid%sd31 + dx
+            grid%ed31  = grid%ed31 + dx
+            grid%sd32  = grid%sd32 + dy
+            grid%ed32  = grid%ed32 + dy
 
        CASE  ( DATA_ORDER_YXZ )
-            grid%sm31  =             grid%sm31 + dy
-            grid%em31  =             grid%em31 + dy
-            grid%sm32  =             grid%sm32 + dx
-            grid%em32  =             grid%em32 + dx
-            grid%sp31  =             grid%sp31 + dy
-            grid%ep31  =             grid%ep31 + dy
-            grid%sp32  =             grid%sp32 + dx
-            grid%ep32  =             grid%ep32 + dx
-            grid%sd31  =             grid%sd31 + dy
-            grid%ed31  =             grid%ed31 + dy
-            grid%sd32  =             grid%sd32 + dx
-            grid%ed32  =             grid%ed32 + dx
+            grid%sm31  = grid%sm31 + dy
+            grid%em31  = grid%em31 + dy
+            grid%sm32  = grid%sm32 + dx
+            grid%em32  = grid%em32 + dx
+            grid%sp31  = grid%sp31 + dy
+            grid%ep31  = grid%ep31 + dy
+            grid%sp32  = grid%sp32 + dx
+            grid%ep32  = grid%ep32 + dx
+            grid%sd31  = grid%sd31 + dy
+            grid%ed31  = grid%ed31 + dy
+            grid%sd32  = grid%sd32 + dx
+            grid%ed32  = grid%ed32 + dx
 
        CASE  ( DATA_ORDER_ZXY )
-            grid%sm32  =             grid%sm32 + dx
-            grid%em32  =             grid%em32 + dx
-            grid%sm33  =             grid%sm33 + dy
-            grid%em33  =             grid%em33 + dy
-            grid%sp32  =             grid%sp32 + dx
-            grid%ep32  =             grid%ep32 + dx
-            grid%sp33  =             grid%sp33 + dy
-            grid%ep33  =             grid%ep33 + dy
-            grid%sd32  =             grid%sd32 + dx
-            grid%ed32  =             grid%ed32 + dx
-            grid%sd33  =             grid%sd33 + dy
-            grid%ed33  =             grid%ed33 + dy
+            grid%sm32  = grid%sm32 + dx
+            grid%em32  = grid%em32 + dx
+            grid%sm33  = grid%sm33 + dy
+            grid%em33  = grid%em33 + dy
+            grid%sp32  = grid%sp32 + dx
+            grid%ep32  = grid%ep32 + dx
+            grid%sp33  = grid%sp33 + dy
+            grid%ep33  = grid%ep33 + dy
+            grid%sd32  = grid%sd32 + dx
+            grid%ed32  = grid%ed32 + dx
+            grid%sd33  = grid%sd33 + dy
+            grid%ed33  = grid%ed33 + dy
 
        CASE  ( DATA_ORDER_ZYX )
-            grid%sm32  =             grid%sm32 + dy
-            grid%em32  =             grid%em32 + dy
-            grid%sm33  =             grid%sm33 + dx
-            grid%em33  =             grid%em33 + dx
-            grid%sp32  =             grid%sp32 + dy
-            grid%ep32  =             grid%ep32 + dy
-            grid%sp33  =             grid%sp33 + dx
-            grid%ep33  =             grid%ep33 + dx
-            grid%sd32  =             grid%sd32 + dy
-            grid%ed32  =             grid%ed32 + dy
-            grid%sd33  =             grid%sd33 + dx
-            grid%ed33  =             grid%ed33 + dx
+            grid%sm32  = grid%sm32 + dy
+            grid%em32  = grid%em32 + dy
+            grid%sm33  = grid%sm33 + dx
+            grid%em33  = grid%em33 + dx
+            grid%sp32  = grid%sp32 + dy
+            grid%ep32  = grid%ep32 + dy
+            grid%sp33  = grid%sp33 + dx
+            grid%ep33  = grid%ep33 + dx
+            grid%sd32  = grid%sd32 + dy
+            grid%ed32  = grid%ed32 + dy
+            grid%sd33  = grid%sd33 + dx
+            grid%ed33  = grid%ed33 + dx
 
        CASE  ( DATA_ORDER_XZY )
-            grid%sm31  =             grid%sm31 + dx
-            grid%em31  =             grid%em31 + dx
-            grid%sm33  =             grid%sm33 + dy
-            grid%em33  =             grid%em33 + dy
-            grid%sp31  =             grid%sp31 + dx
-            grid%ep31  =             grid%ep31 + dx
-            grid%sp33  =             grid%sp33 + dy
-            grid%ep33  =             grid%ep33 + dy
-            grid%sd31  =             grid%sd31 + dx
-            grid%ed31  =             grid%ed31 + dx
-            grid%sd33  =             grid%sd33 + dy
-            grid%ed33  =             grid%ed33 + dy
+            grid%sm31  = grid%sm31 + dx
+            grid%em31  = grid%em31 + dx
+            grid%sm33  = grid%sm33 + dy
+            grid%em33  = grid%em33 + dy
+            grid%sp31  = grid%sp31 + dx
+            grid%ep31  = grid%ep31 + dx
+            grid%sp33  = grid%sp33 + dy
+            grid%ep33  = grid%ep33 + dy
+            grid%sd31  = grid%sd31 + dx
+            grid%ed31  = grid%ed31 + dx
+            grid%sd33  = grid%sd33 + dy
+            grid%ed33  = grid%ed33 + dy
 
        CASE  ( DATA_ORDER_YZX )
-            grid%sm31  =             grid%sm31 + dy
-            grid%em31  =             grid%em31 + dy
-            grid%sm33  =             grid%sm33 + dx
-            grid%em33  =             grid%em33 + dx
-            grid%sp31  =             grid%sp31 + dy
-            grid%ep31  =             grid%ep31 + dy
-            grid%sp33  =             grid%sp33 + dx
-            grid%ep33  =             grid%ep33 + dx
-            grid%sd31  =             grid%sd31 + dy
-            grid%ed31  =             grid%ed31 + dy
-            grid%sd33  =             grid%sd33 + dx
-            grid%ed33  =             grid%ed33 + dx
+            grid%sm31  = grid%sm31 + dy
+            grid%em31  = grid%em31 + dy
+            grid%sm33  = grid%sm33 + dx
+            grid%em33  = grid%em33 + dx
+            grid%sp31  = grid%sp31 + dy
+            grid%ep31  = grid%ep31 + dy
+            grid%sp33  = grid%sp33 + dx
+            grid%ep33  = grid%ep33 + dx
+            grid%sd31  = grid%sd31 + dy
+            grid%ed31  = grid%ed31 + dy
+            grid%sd33  = grid%sd33 + dx
+            grid%ed33  = grid%ed33 + dx
 
     END SELECT data_ordering
 
@@ -284,14 +289,69 @@ CONTAINS
 #endif
 
     RETURN
-
    END SUBROUTINE adjust_domain_dims_for_move
 
-
-   SUBROUTINE get_ijk_from_grid (  grid ,                   &
+   SUBROUTINE get_ijk_from_grid1 (  grid ,                   &
                            ids, ide, jds, jde, kds, kde,    &
                            ims, ime, jms, jme, kms, kme,    &
-                           ips, ipe, jps, jpe, kps, kpe    )
+                           ips, ipe, jps, jpe, kps, kpe,    &
+                           imsx, imex, jmsx, jmex, kmsx, kmex,    &
+                           ipsx, ipex, jpsx, jpex, kpsx, kpex,    &
+                           imsy, imey, jmsy, jmey, kmsy, kmey,    &
+                           ipsy, ipey, jpsy, jpey, kpsy, kpey )
+    IMPLICIT NONE
+    TYPE( domain ), INTENT (IN)  :: grid
+    INTEGER, INTENT(OUT) ::                                 &
+                           ids, ide, jds, jde, kds, kde,    &
+                           ims, ime, jms, jme, kms, kme,    &
+                           ips, ipe, jps, jpe, kps, kpe,    &
+                           imsx, imex, jmsx, jmex, kmsx, kmex,    &
+                           ipsx, ipex, jpsx, jpex, kpsx, kpex,    &
+                           imsy, imey, jmsy, jmey, kmsy, kmey,    &
+                           ipsy, ipey, jpsy, jpey, kpsy, kpey
+
+     CALL get_ijk_from_grid2 (  grid ,                   &
+                           ids, ide, jds, jde, kds, kde,    &
+                           ims, ime, jms, jme, kms, kme,    &
+                           ips, ipe, jps, jpe, kps, kpe )
+     data_ordering : SELECT CASE ( model_data_order )
+       CASE  ( DATA_ORDER_XYZ )
+           imsx = grid%sm31x ; imex = grid%em31x ; jmsx = grid%sm32x ; jmex = grid%em32x ; kmsx = grid%sm33x ; kmex = grid%em33x ;
+           ipsx = grid%sp31x ; ipex = grid%ep31x ; jpsx = grid%sp32x ; jpex = grid%ep32x ; kpsx = grid%sp33x ; kpex = grid%ep33x ;
+           imsy = grid%sm31y ; imey = grid%em31y ; jmsy = grid%sm32y ; jmey = grid%em32y ; kmsy = grid%sm33y ; kmey = grid%em33y ;
+           ipsy = grid%sp31y ; ipey = grid%ep31y ; jpsy = grid%sp32y ; jpey = grid%ep32y ; kpsy = grid%sp33y ; kpey = grid%ep33y ;
+       CASE  ( DATA_ORDER_YXZ )
+           imsx = grid%sm32x ; imex = grid%em32x ; jmsx = grid%sm31x ; jmex = grid%em31x ; kmsx = grid%sm33x ; kmex = grid%em33x ;
+           ipsx = grid%sp32x ; ipex = grid%ep32x ; jpsx = grid%sp31x ; jpex = grid%ep31x ; kpsx = grid%sp33x ; kpex = grid%ep33x ;
+           imsy = grid%sm32y ; imey = grid%em32y ; jmsy = grid%sm31y ; jmey = grid%em31y ; kmsy = grid%sm33y ; kmey = grid%em33y ;
+           ipsy = grid%sp32y ; ipey = grid%ep32y ; jpsy = grid%sp31y ; jpey = grid%ep31y ; kpsy = grid%sp33y ; kpey = grid%ep33y ;
+       CASE  ( DATA_ORDER_ZXY )
+           imsx = grid%sm32x ; imex = grid%em32x ; jmsx = grid%sm33x ; jmex = grid%em33x ; kmsx = grid%sm31x ; kmex = grid%em31x ;
+           ipsx = grid%sp32x ; ipex = grid%ep32x ; jpsx = grid%sp33x ; jpex = grid%ep33x ; kpsx = grid%sp31x ; kpex = grid%ep31x ;
+           imsy = grid%sm32y ; imey = grid%em32y ; jmsy = grid%sm33y ; jmey = grid%em33y ; kmsy = grid%sm31y ; kmey = grid%em31y ;
+           ipsy = grid%sp32y ; ipey = grid%ep32y ; jpsy = grid%sp33y ; jpey = grid%ep33y ; kpsy = grid%sp31y ; kpey = grid%ep31y ;
+       CASE  ( DATA_ORDER_ZYX )
+           imsx = grid%sm33x ; imex = grid%em33x ; jmsx = grid%sm32x ; jmex = grid%em32x ; kmsx = grid%sm31x ; kmex = grid%em31x ;
+           ipsx = grid%sp33x ; ipex = grid%ep33x ; jpsx = grid%sp32x ; jpex = grid%ep32x ; kpsx = grid%sp31x ; kpex = grid%ep31x ;
+           imsy = grid%sm33y ; imey = grid%em33y ; jmsy = grid%sm32y ; jmey = grid%em32y ; kmsy = grid%sm31y ; kmey = grid%em31y ;
+           ipsy = grid%sp33y ; ipey = grid%ep33y ; jpsy = grid%sp32y ; jpey = grid%ep32y ; kpsy = grid%sp31y ; kpey = grid%ep31y ;
+       CASE  ( DATA_ORDER_XZY )
+           imsx = grid%sm31x ; imex = grid%em31x ; jmsx = grid%sm33x ; jmex = grid%em33x ; kmsx = grid%sm32x ; kmex = grid%em32x ;
+           ipsx = grid%sp31x ; ipex = grid%ep31x ; jpsx = grid%sp33x ; jpex = grid%ep33x ; kpsx = grid%sp32x ; kpex = grid%ep32x ;
+           imsy = grid%sm31y ; imey = grid%em31y ; jmsy = grid%sm33y ; jmey = grid%em33y ; kmsy = grid%sm32y ; kmey = grid%em32y ;
+           ipsy = grid%sp31y ; ipey = grid%ep31y ; jpsy = grid%sp33y ; jpey = grid%ep33y ; kpsy = grid%sp32y ; kpey = grid%ep32y ;
+       CASE  ( DATA_ORDER_YZX )
+           imsx = grid%sm33x ; imex = grid%em33x ; jmsx = grid%sm31x ; jmex = grid%em31x ; kmsx = grid%sm32x ; kmex = grid%em32x ;
+           ipsx = grid%sp33x ; ipex = grid%ep33x ; jpsx = grid%sp31x ; jpex = grid%ep31x ; kpsx = grid%sp32x ; kpex = grid%ep32x ;
+           imsy = grid%sm33y ; imey = grid%em33y ; jmsy = grid%sm31y ; jmey = grid%em31y ; kmsy = grid%sm32y ; kmey = grid%em32y ;
+           ipsy = grid%sp33y ; ipey = grid%ep33y ; jpsy = grid%sp31y ; jpey = grid%ep31y ; kpsy = grid%sp32y ; kpey = grid%ep32y ;
+     END SELECT data_ordering
+   END SUBROUTINE get_ijk_from_grid1
+
+   SUBROUTINE get_ijk_from_grid2 (  grid ,                   &
+                           ids, ide, jds, jde, kds, kde,    &
+                           ims, ime, jms, jme, kms, kme,    &
+                           ips, ipe, jps, jpe, kps, kpe )
 
     IMPLICIT NONE
 
@@ -303,127 +363,31 @@ CONTAINS
 
     data_ordering : SELECT CASE ( model_data_order )
        CASE  ( DATA_ORDER_XYZ )
-           ids             = grid%sd31 
-           ide             = grid%ed31 
-           jds             = grid%sd32 
-           jde             = grid%ed32 
-           kds             = grid%sd33 
-           kde             = grid%ed33 
-           ims             = grid%sm31 
-           ime             = grid%em31 
-           jms             = grid%sm32 
-           jme             = grid%em32 
-           kms             = grid%sm33 
-           kme             = grid%em33 
-           ips             = grid%sp31 
-           ipe             = grid%ep31 
-           jps             = grid%sp32 
-           jpe             = grid%ep32 
-           kps             = grid%sp33 
-           kpe             = grid%ep33 
-
+           ids = grid%sd31 ; ide = grid%ed31 ; jds = grid%sd32 ; jde = grid%ed32 ; kds = grid%sd33 ; kde = grid%ed33 ;
+           ims = grid%sm31 ; ime = grid%em31 ; jms = grid%sm32 ; jme = grid%em32 ; kms = grid%sm33 ; kme = grid%em33 ;
+           ips = grid%sp31 ; ipe = grid%ep31 ; jps = grid%sp32 ; jpe = grid%ep32 ; kps = grid%sp33 ; kpe = grid%ep33 ; 
        CASE  ( DATA_ORDER_YXZ )
-           ids             = grid%sd32 
-           ide             = grid%ed32 
-           jds             = grid%sd31 
-           jde             = grid%ed31 
-           kds             = grid%sd33 
-           kde             = grid%ed33 
-           ims             = grid%sm32 
-           ime             = grid%em32 
-           jms             = grid%sm31 
-           jme             = grid%em31 
-           kms             = grid%sm33 
-           kme             = grid%em33 
-           ips             = grid%sp32 
-           ipe             = grid%ep32 
-           jps             = grid%sp31 
-           jpe             = grid%ep31 
-           kps             = grid%sp33 
-           kpe             = grid%ep33 
-
+           ids = grid%sd32  ; ide = grid%ed32  ; jds = grid%sd31  ; jde = grid%ed31  ; kds = grid%sd33  ; kde = grid%ed33  ; 
+           ims = grid%sm32  ; ime = grid%em32  ; jms = grid%sm31  ; jme = grid%em31  ; kms = grid%sm33  ; kme = grid%em33  ; 
+           ips = grid%sp32  ; ipe = grid%ep32  ; jps = grid%sp31  ; jpe = grid%ep31  ; kps = grid%sp33  ; kpe = grid%ep33  ; 
        CASE  ( DATA_ORDER_ZXY )
-           ids             = grid%sd32 
-           ide             = grid%ed32 
-           jds             = grid%sd33 
-           jde             = grid%ed33 
-           kds             = grid%sd31 
-           kde             = grid%ed31 
-           ims             = grid%sm32 
-           ime             = grid%em32 
-           jms             = grid%sm33 
-           jme             = grid%em33 
-           kms             = grid%sm31 
-           kme             = grid%em31 
-           ips             = grid%sp32 
-           ipe             = grid%ep32 
-           jps             = grid%sp33 
-           jpe             = grid%ep33 
-           kps             = grid%sp31 
-           kpe             = grid%ep31 
-
+           ids = grid%sd32  ; ide = grid%ed32  ; jds = grid%sd33  ; jde = grid%ed33  ; kds = grid%sd31  ; kde = grid%ed31  ; 
+           ims = grid%sm32  ; ime = grid%em32  ; jms = grid%sm33  ; jme = grid%em33  ; kms = grid%sm31  ; kme = grid%em31  ; 
+           ips = grid%sp32  ; ipe = grid%ep32  ; jps = grid%sp33  ; jpe = grid%ep33  ; kps = grid%sp31  ; kpe = grid%ep31  ; 
        CASE  ( DATA_ORDER_ZYX )
-           ids             = grid%sd33 
-           ide             = grid%ed33 
-           jds             = grid%sd32 
-           jde             = grid%ed32 
-           kds             = grid%sd31 
-           kde             = grid%ed31 
-           ims             = grid%sm33 
-           ime             = grid%em33 
-           jms             = grid%sm32 
-           jme             = grid%em32 
-           kms             = grid%sm31 
-           kme             = grid%em31 
-           ips             = grid%sp33 
-           ipe             = grid%ep33 
-           jps             = grid%sp32 
-           jpe             = grid%ep32 
-           kps             = grid%sp31 
-           kpe             = grid%ep31 
-
+           ids = grid%sd33  ; ide = grid%ed33  ; jds = grid%sd32  ; jde = grid%ed32  ; kds = grid%sd31  ; kde = grid%ed31  ; 
+           ims = grid%sm33  ; ime = grid%em33  ; jms = grid%sm32  ; jme = grid%em32  ; kms = grid%sm31  ; kme = grid%em31  ; 
+           ips = grid%sp33  ; ipe = grid%ep33  ; jps = grid%sp32  ; jpe = grid%ep32  ; kps = grid%sp31  ; kpe = grid%ep31  ; 
        CASE  ( DATA_ORDER_XZY )
-           ids             = grid%sd31 
-           ide             = grid%ed31 
-           jds             = grid%sd33 
-           jde             = grid%ed33 
-           kds             = grid%sd32 
-           kde             = grid%ed32 
-           ims             = grid%sm31 
-           ime             = grid%em31 
-           jms             = grid%sm33 
-           jme             = grid%em33 
-           kms             = grid%sm32 
-           kme             = grid%em32 
-           ips             = grid%sp31 
-           ipe             = grid%ep31 
-           jps             = grid%sp33 
-           jpe             = grid%ep33 
-           kps             = grid%sp32 
-           kpe             = grid%ep32 
-
+           ids = grid%sd31  ; ide = grid%ed31  ; jds = grid%sd33  ; jde = grid%ed33  ; kds = grid%sd32  ; kde = grid%ed32  ; 
+           ims = grid%sm31  ; ime = grid%em31  ; jms = grid%sm33  ; jme = grid%em33  ; kms = grid%sm32  ; kme = grid%em32  ; 
+           ips = grid%sp31  ; ipe = grid%ep31  ; jps = grid%sp33  ; jpe = grid%ep33  ; kps = grid%sp32  ; kpe = grid%ep32  ; 
        CASE  ( DATA_ORDER_YZX )
-           ids             = grid%sd33 
-           ide             = grid%ed33 
-           jds             = grid%sd31 
-           jde             = grid%ed31 
-           kds             = grid%sd32 
-           kde             = grid%ed32 
-           ims             = grid%sm33 
-           ime             = grid%em33 
-           jms             = grid%sm31 
-           jme             = grid%em31 
-           kms             = grid%sm32 
-           kme             = grid%em32 
-           ips             = grid%sp33 
-           ipe             = grid%ep33 
-           jps             = grid%sp31 
-           jpe             = grid%ep31 
-           kps             = grid%sp32 
-           kpe             = grid%ep32 
-
+           ids = grid%sd33  ; ide = grid%ed33  ; jds = grid%sd31  ; jde = grid%ed31  ; kds = grid%sd32  ; kde = grid%ed32  ; 
+           ims = grid%sm33  ; ime = grid%em33  ; jms = grid%sm31  ; jme = grid%em31  ; kms = grid%sm32  ; kme = grid%em32  ; 
+           ips = grid%sp33  ; ipe = grid%ep33  ; jps = grid%sp31  ; jpe = grid%ep31  ; kps = grid%sp32  ; kpe = grid%ep32  ; 
     END SELECT data_ordering
-   END SUBROUTINE get_ijk_from_grid
+   END SUBROUTINE get_ijk_from_grid2
 
 ! Default version ; Otherwise module containing interface to DM library will provide
 
@@ -576,6 +540,18 @@ CONTAINS
                                          sp2y , ep2y , sm2y , em2y , &
                                          sp3y , ep3y , sm3y , em3y , &
                              bdx , bdy )
+
+write(0,*)__FILE__,__LINE__
+write(0,*)'sd1 , ed1 , sp1 , ep1 , sm1 , em1 ',sd1 , ed1 , sp1 , ep1 , sm1 , em1
+write(0,*)'sd2 , ed2 , sp2 , ep2 , sm2 , em2 ',sd2 , ed2 , sp2 , ep2 , sm2 , em2
+write(0,*)'sd3 , ed3 , sp3 , ep3 , sm3 , em3 ',sd3 , ed3 , sp3 , ep3 , sm3 , em3
+write(0,*)'sp1x , ep1x , sm1x , em1x ',sp1x , ep1x , sm1x , em1x
+write(0,*)'sp2x , ep2x , sm2x , em2x ',sp2x , ep2x , sm2x , em2x
+write(0,*)'sp3x , ep3x , sm3x , em3x ',sp3x , ep3x , sm3x , em3x
+write(0,*)'sp1y , ep1y , sm1y , em1y ',sp1y , ep1y , sm1y , em1y
+write(0,*)'sp2y , ep2y , sm2y , em2y ',sp2y , ep2y , sm2y , em2y
+write(0,*)'sp3y , ep3y , sm3y , em3y ',sp3y , ep3y , sm3y , em3y
+write(0,*)__FILE__,__LINE__
 
    SELECT CASE ( model_data_order )
       CASE ( DATA_ORDER_XYZ )

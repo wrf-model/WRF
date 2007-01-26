@@ -125,12 +125,14 @@ SUBROUTINE med_feedback_domain ( parent_grid , nested_grid )
    IF ( config_flags%dyn_opt == DYN_EM ) THEN
      parent_grid%ht_coarse = parent_grid%ht
      grid => nested_grid%intermediate_grid
+#ifndef SGIALTIX
      CALL alloc_space_field ( grid, grid%id , 1 , 2 , .TRUE. ,     &
                               grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &
                               grid%sm31,  grid%em31,  grid%sm32,  grid%em32,  grid%sm33,  grid%em33, &
                               grid%sm31x, grid%em31x, grid%sm32x, grid%em32x, grid%sm33x, grid%em33x, &   ! x-xpose
                               grid%sm31y, grid%em31y, grid%sm32y, grid%em32y, grid%sm33y, grid%em33y  &   ! y-xpose
        )
+#endif
      grid => nested_grid%intermediate_grid
 #    include "deref_kludge.h"
      CALL feedback_domain_em_part1 ( grid, nested_grid, config_flags   &
@@ -154,7 +156,9 @@ SUBROUTINE med_feedback_domain ( parent_grid , nested_grid )
 !
                                    )
      grid => nested_grid%intermediate_grid
+#ifndef SGIALTIX
      CALL dealloc_space_field ( grid )
+#endif
    ENDIF
 #endif
 #endif
@@ -175,12 +179,14 @@ SUBROUTINE med_feedback_domain ( parent_grid , nested_grid )
 
      grid => nested_grid%intermediate_grid
 !dusan orig     CALL alloc_space_field ( grid, grid%id , 1 , 2 , .TRUE. ,     &
+#ifndef SGIALTIX
      CALL alloc_space_field ( grid, grid%id , 1 , 3 , .FALSE. ,     &
                               grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &
                               grid%sm31,  grid%em31,  grid%sm32,  grid%em32,  grid%sm33,  grid%em33, &
                               grid%sm31x, grid%em31x, grid%sm32x, grid%em32x, grid%sm33x, grid%em33x, &   ! x-xpose
                               grid%sm31y, grid%em31y, grid%sm32y, grid%em32y, grid%sm33y, grid%em33y  &   ! y-xpose
        )
+#endif
 
      grid => nested_grid%intermediate_grid
 #    include "deref_kludge.h"
@@ -199,7 +205,9 @@ SUBROUTINE med_feedback_domain ( parent_grid , nested_grid )
 !
                                    )
      grid => nested_grid%intermediate_grid
+#ifndef SGIALTIX
      CALL dealloc_space_field ( grid )
+#endif
    ENDIF
 #endif
 ! ------------------------------------------------------

@@ -2721,7 +2721,7 @@ subroutine ext_pnc_read_field(DataHandle,DateStr,Var,Field,FieldType,Comm,  &
 
     StoredStart = 1
     call GetIndices(NDim,MemoryStart,MemoryEnd,l1,l2,m1,m2,n1,n2)
-    call GetIndices(NDim,StoredStart,StoredLen,x1,x2,y1,y2,z1,z2)
+    call GetIndices(NDim,StoredStart,Length,x1,x2,y1,y2,z1,z2)
 !jm    call GetIndices(NDim,DomainStart,DomainEnd,i1,i2,j1,j2,k1,k2)
     call GetIndices(NDim,PatchStart,PatchEnd,i1,i2,j1,j2,k1,k2)
     

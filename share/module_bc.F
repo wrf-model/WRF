@@ -175,28 +175,6 @@ CONTAINS
        ENDIF
    ENDIF
 
-#ifdef RSL_LITE
-! add a check so that people do not try to specify peridic boundaries
-! if they have compiled with RSL_LITE. It does not support periodic bcs
-   CALL wrf_get_nprocx( nprocx )
-#if 0
-   IF ( nprocx .GT. 1 .AND. config_flags%periodic_x ) THEN
-     WRITE ( wrf_err_message , * ) 'RSL_LITE does not support periodic boundaries for decomposed X-dimension'
-     CALL wrf_message ( TRIM( wrf_err_message ) )
-   ENDIF
-#endif
-   CALL wrf_get_nprocy( nprocy )
-   IF ( nprocy .GT. 1 .AND. config_flags%periodic_y ) THEN
-     WRITE ( wrf_err_message , * ) 'RSL_LITE does not support periodic boundaries for decomposed Y-dimension'
-     CALL wrf_message ( TRIM( wrf_err_message ) )
-   ENDIF
-#if 0
-   IF ( (nprocy .GT. 1 .AND. config_flags%periodic_y) .OR. (nprocx .GT. 1 .AND. config_flags%periodic_x) ) THEN
-     CALL wrf_error_fatal ( 'Inappropriate selection of periodic bcs detected in boundary_condition_check' )
-   ENDIF
-#endif
-#endif
-
    CALL wrf_debug ( 100 , ' boundary conditions OK for grid ' )
 
    END subroutine boundary_condition_check

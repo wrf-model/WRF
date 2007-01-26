@@ -6,6 +6,7 @@ MODULE module_dm
    USE module_configure
    USE module_state_description
    USE module_wrf_error
+   USE module_driver_constants
    IMPLICIT NONE
 
 #if ( NMM_CORE == 1 ) || defined( WRF_CHEM ) 
@@ -18,6 +19,7 @@ MODULE module_dm
 
    INTEGER ntasks, ntasks_y, ntasks_x, mytask, mytask_x, mytask_y
    INTEGER local_communicator, local_communicator_periodic, local_iocommunicator
+   INTEGER local_communicator_x, local_communicator_y ! subcommunicators for rows and cols of mesh
    LOGICAL :: dm_debug_flag = .FALSE.
 
    INTERFACE wrf_dm_maxval
@@ -74,6 +76,7 @@ CONTAINS
       INCLUDE 'mpif.h'
       INTEGER :: local_comm, local_comm2, new_local_comm, group, newgroup, p, p1, ierr
       INTEGER, ALLOCATABLE, DIMENSION(:) :: ranks
+      INTEGER comdup
       INTEGER, DIMENSION(2) :: dims, coords
       LOGICAL, DIMENSION(2) :: isperiodic
       LOGICAL :: reorder_mesh
@@ -147,6 +150,18 @@ write(0,*)'reordering mesh'
       mytask_y = coords(1)   ! row task (y)
       CALL nl_set_nproc_x ( 1, ntasks_x )
       CALL nl_set_nproc_y ( 1, ntasks_y )
+
+! 20061228 set up subcommunicators for processors in X, Y coords of mesh
+! note that local_comm_x has all the processors in a row (X=0:nproc_x-1);
+! in other words, local_comm_x has all the processes with the same rank in Y
+      CALL MPI_Comm_dup( new_local_comm, comdup, ierr )
+      IF ( ierr .NE. 0 ) CALL wrf_error_fatal('MPI_Comm_dup fails in 20061228 mod')
+      CALL MPI_Comm_split(comdup,mytask_y,mytask,local_communicator_x,ierr)
+      IF ( ierr .NE. 0 ) CALL wrf_error_fatal('MPI_Comm_split fails for x in 20061228 mod')
+      CALL MPI_Comm_split(comdup,mytask_x,mytask,local_communicator_y,ierr)
+      IF ( ierr .NE. 0 ) CALL wrf_error_fatal('MPI_Comm_split fails for y in 20061228 mod')
+! end 20061228
+
       CALL wrf_set_dm_communicator ( local_communicator )
       RETURN
    END SUBROUTINE wrf_dm_initialize
@@ -155,6 +170,12 @@ write(0,*)'reordering mesh'
                                 sd1 , ed1 , sp1 , ep1 , sm1 , em1 ,        &
                                 sd2 , ed2 , sp2 , ep2 , sm2 , em2 ,        &
                                 sd3 , ed3 , sp3 , ep3 , sm3 , em3 ,        &
+                                      sp1x , ep1x , sm1x , em1x , &
+                                      sp2x , ep2x , sm2x , em2x , &
+                                      sp3x , ep3x , sm3x , em3x , &
+                                      sp1y , ep1y , sm1y , em1y , &
+                                      sp2y , ep2y , sm2y , em2y , &
+                                      sp3y , ep3y , sm3y , em3y , &
                                 bdx , bdy )
 
       USE module_domain
@@ -164,6 +185,10 @@ write(0,*)'reordering mesh'
       INTEGER, INTENT(IN)   :: sd1 , ed1 , sd2 , ed2 , sd3 , ed3 , bdx , bdy
       INTEGER, INTENT(OUT)  :: sp1 , ep1 , sp2 , ep2 , sp3 , ep3 , &
                                sm1 , em1 , sm2 , em2 , sm3 , em3
+      INTEGER, INTENT(OUT)  :: sp1x , ep1x , sp2x , ep2x , sp3x , ep3x , &
+                               sm1x , em1x , sm2x , em2x , sm3x , em3x
+      INTEGER, INTENT(OUT)  :: sp1y , ep1y , sp2y , ep2y , sp3y , ep3y , &
+                               sm1y , em1y , sm2y , em2y , sm3y , em3y
       INTEGER, INTENT(IN)   :: id, parent_id
       TYPE(domain),POINTER  :: parent
 
@@ -171,6 +196,10 @@ write(0,*)'reordering mesh'
       INTEGER               :: ids, ide, jds, jde, kds, kde
       INTEGER               :: ims, ime, jms, jme, kms, kme
       INTEGER               :: ips, ipe, jps, jpe, kps, kpe
+      INTEGER               :: imsx, imex, jmsx, jmex, kmsx, kmex
+      INTEGER               :: ipsx, ipex, jpsx, jpex, kpsx, kpex
+      INTEGER               :: imsy, imey, jmsy, jmey, kmsy, kmey
+      INTEGER               :: ipsy, ipey, jpsy, jpey, kpsy, kpey
 
       INTEGER               :: c_sd1 , c_ed1 , c_sd2 , c_ed2 , c_sd3 , c_ed3
       INTEGER               :: c_sp1 , c_ep1 , c_sp2 , c_ep2 , c_sp3 , c_ep3 , &
@@ -216,9 +245,13 @@ write(0,*)'reordering mesh'
       END SELECT
 
       CALL compute_memory_dims_rsl_lite ( 0 , bdx, bdy,   &
-                   ids, ide, jds, jde, kds, kde, &
-                   ims, ime, jms, jme, kms, kme, &
-                   ips, ipe, jps, jpe, kps, kpe )
+                   ids,  ide,  jds,  jde,  kds,  kde, &
+                   ims,  ime,  jms,  jme,  kms,  kme, &
+                   imsx, imex, jmsx, jmex, kmsx, kmex, &
+                   imsy, imey, jmsy, jmey, kmsy, kmey, &
+                   ips,  ipe,  jps,  jpe,  kps,  kpe, &
+                   ipsx, ipex, jpsx, jpex, kpsx, kpex, &
+                   ipsy, ipey, jpsy, jpey, kpsy, kpey )
 
      ! ensure that the every parent domain point has a full set of nested points under it
      ! even at the borders. Do this by making sure the number of nest points is a multiple of
@@ -232,26 +265,69 @@ write(0,*)'reordering mesh'
       ENDIF
 
       SELECT CASE ( model_data_order )
-         ! need to finish other cases
          CASE ( DATA_ORDER_ZXY )
             sp2 = ips ; ep2 = ipe ; sm2 = ims ; em2 = ime
             sp3 = jps ; ep3 = jpe ; sm3 = jms ; em3 = jme
             sp1 = kps ; ep1 = kpe ; sm1 = kms ; em1 = kme
+            sp2x = ipsx ; ep2x = ipex ; sm2x = imsx ; em2x = imex
+            sp3x = jpsx ; ep3x = jpex ; sm3x = jmsx ; em3x = jmex
+            sp1x = kpsx ; ep1x = kpex ; sm1x = kmsx ; em1x = kmex
+            sp2y = ipsy ; ep2y = ipey ; sm2y = imsy ; em2y = imey
+            sp3y = jpsy ; ep3y = jpey ; sm3y = jmsy ; em3y = jmey
+            sp1y = kpsy ; ep1y = kpey ; sm1y = kmsy ; em1y = kmey
+         CASE ( DATA_ORDER_ZYX )
+            sp3 = ips ; ep3 = ipe ; sm3 = ims ; em3 = ime
+            sp2 = jps ; ep2 = jpe ; sm2 = jms ; em2 = jme
+            sp1 = kps ; ep1 = kpe ; sm1 = kms ; em1 = kme
+            sp3x = ipsx ; ep3x = ipex ; sm3x = imsx ; em3x = imex
+            sp2x = jpsx ; ep2x = jpex ; sm2x = jmsx ; em2x = jmex
+            sp1x = kpsx ; ep1x = kpex ; sm1x = kmsx ; em1x = kmex
+            sp3y = ipsy ; ep3y = ipey ; sm3y = imsy ; em3y = imey
+            sp2y = jpsy ; ep2y = jpey ; sm2y = jmsy ; em2y = jmey
+            sp1y = kpsy ; ep1y = kpey ; sm1y = kmsy ; em1y = kmey
          CASE ( DATA_ORDER_XYZ )
             sp1 = ips ; ep1 = ipe ; sm1 = ims ; em1 = ime
             sp2 = jps ; ep2 = jpe ; sm2 = jms ; em2 = jme
             sp3 = kps ; ep3 = kpe ; sm3 = kms ; em3 = kme
-         CASE ( DATA_ORDER_XZY )
-            sp1 = ips ; ep1 = ipe ; sm1 = ims ; em1 = ime
-            sp3 = jps ; ep3 = jpe ; sm3 = jms ; em3 = jme
-            sp2 = kps ; ep2 = kpe ; sm2 = kms ; em2 = kme
+            sp1x = ipsx ; ep1x = ipex ; sm1x = imsx ; em1x = imex
+            sp2x = jpsx ; ep2x = jpex ; sm2x = jmsx ; em2x = jmex
+            sp3x = kpsx ; ep3x = kpex ; sm3x = kmsx ; em3x = kmex
+            sp1y = ipsy ; ep1y = ipey ; sm1y = imsy ; em1y = imey
+            sp2y = jpsy ; ep2y = jpey ; sm2y = jmsy ; em2y = jmey
+            sp3y = kpsy ; ep3y = kpey ; sm3y = kmsy ; em3y = kmey
          CASE ( DATA_ORDER_YXZ)
             sp2 = ips ; ep2 = ipe ; sm2 = ims ; em2 = ime
             sp1 = jps ; ep1 = jpe ; sm1 = jms ; em1 = jme
             sp3 = kps ; ep3 = kpe ; sm3 = kms ; em3 = kme
+            sp2x = ipsx ; ep2x = ipex ; sm2x = imsx ; em2x = imex
+            sp1x = jpsx ; ep1x = jpex ; sm1x = jmsx ; em1x = jmex
+            sp3x = kpsx ; ep3x = kpex ; sm3x = kmsx ; em3x = kmex
+            sp2y = ipsy ; ep2y = ipey ; sm2y = imsy ; em2y = imey
+            sp1y = jpsy ; ep1y = jpey ; sm1y = jmsy ; em1y = jmey
+            sp3y = kpsy ; ep3y = kpey ; sm3y = kmsy ; em3y = kmey
+         CASE ( DATA_ORDER_XZY )
+            sp1 = ips ; ep1 = ipe ; sm1 = ims ; em1 = ime
+            sp3 = jps ; ep3 = jpe ; sm3 = jms ; em3 = jme
+            sp2 = kps ; ep2 = kpe ; sm2 = kms ; em2 = kme
+            sp1x = ipsx ; ep1x = ipex ; sm1x = imsx ; em1x = imex
+            sp3x = jpsx ; ep3x = jpex ; sm3x = jmsx ; em3x = jmex
+            sp2x = kpsx ; ep2x = kpex ; sm2x = kmsx ; em2x = kmex
+            sp1y = ipsy ; ep1y = ipey ; sm1y = imsy ; em1y = imey
+            sp3y = jpsy ; ep3y = jpey ; sm3y = jmsy ; em3y = jmey
+            sp2y = kpsy ; ep2y = kpey ; sm2y = kmsy ; em2y = kmey
+         CASE ( DATA_ORDER_YZX )
+            sp3 = ips ; ep3 = ipe ; sm3 = ims ; em3 = ime
+            sp1 = jps ; ep1 = jpe ; sm1 = jms ; em1 = jme
+            sp2 = kps ; ep2 = kpe ; sm2 = kms ; em2 = kme
+            sp3x = ipsx ; ep3x = ipex ; sm3x = imsx ; em3x = imex
+            sp1x = jpsx ; ep1x = jpex ; sm1x = jmsx ; em1x = jmex
+            sp2x = kpsx ; ep2x = kpex ; sm2x = kmsx ; em2x = kmex
+            sp3y = ipsy ; ep3y = ipey ; sm3y = imsy ; em3y = imey
+            sp1y = jpsy ; ep1y = jpey ; sm1y = jmsy ; em1y = jmey
+            sp2y = kpsy ; ep2y = kpey ; sm2y = kmsy ; em2y = kmey
       END SELECT
 
-      if ( id.eq.1 ) then
+      IF ( id.EQ.1 ) THEN
          WRITE(wrf_err_message,*)'*************************************'
          CALL wrf_message( TRIM(wrf_err_message) )
          WRITE(wrf_err_message,*)'Parent domain'
@@ -264,7 +340,7 @@ write(0,*)'reordering mesh'
          CALL wrf_message( TRIM(wrf_err_message) )
          WRITE(wrf_err_message,*)'*************************************'
          CALL wrf_message( TRIM(wrf_err_message) )
-      endif
+      ENDIF
 
       IF ( id .GT. 1 ) THEN
 
@@ -274,23 +350,36 @@ write(0,*)'reordering mesh'
          CALL nl_get_parent_grid_ratio( id, parent_grid_ratio )
 
          SELECT CASE ( model_data_order )
-            ! need to finish other cases
             CASE ( DATA_ORDER_ZXY )
                idim = ed2-sd2+1
                jdim = ed3-sd3+1
                kdim = ed1-sd1+1
+               c_kds = sd1                ; c_kde = ed1
+            CASE ( DATA_ORDER_ZYX )
+               idim = ed3-sd3+1
+               jdim = ed2-sd2+1
+               kdim = ed1-sd1+1
+               c_kds = sd1                ; c_kde = ed1
             CASE ( DATA_ORDER_XYZ )
                idim = ed1-sd1+1
                jdim = ed2-sd2+1
                kdim = ed3-sd3+1
-            CASE ( DATA_ORDER_XZY )
-               idim = ed1-sd1+1
-               jdim = ed3-sd3+1
-               kdim = ed2-sd2+1
+               c_kds = sd3                ; c_kde = ed3
             CASE ( DATA_ORDER_YXZ)
                idim = ed2-sd2+1
                jdim = ed1-sd1+1
                kdim = ed3-sd3+1
+               c_kds = sd3                ; c_kde = ed3
+            CASE ( DATA_ORDER_XZY )
+               idim = ed1-sd1+1
+               jdim = ed3-sd3+1
+               kdim = ed2-sd2+1
+               c_kds = sd2                ; c_kde = ed2
+            CASE ( DATA_ORDER_YZX )
+               idim = ed3-sd3+1
+               jdim = ed1-sd1+1
+               kdim = ed2-sd2+1
+               c_kds = sd2                ; c_kde = ed2
          END SELECT
 
          idim_cd = idim / parent_grid_ratio + 1 + 2*shw + 1
@@ -298,16 +387,9 @@ write(0,*)'reordering mesh'
 
          c_ids = i_parent_start-shw ; c_ide = c_ids + idim_cd - 1
          c_jds = j_parent_start-shw ; c_jde = c_jds + jdim_cd - 1
-         c_kds = sd2                ; c_kde = ed2                   ! IKJ ONLY
 
          ! we want the intermediate domain to be decomposed the
          ! the same as the underlying nest. So try this:
-#if 0
-         CALL compute_memory_dims_rsl_lite ( shw, bdx, bdy,  &
-                      c_ids, c_ide, c_jds, c_jde, c_kds, c_kde, &
-                      c_ims, c_ime, c_jms, c_jme, c_kms, c_kme, &
-                      c_ips, c_ipe, c_jps, c_jpe, c_kps, c_kpe )
-#else
 
 ! At such time as NMM nesting is able to use RSL_LITE (would require
 ! a number of other mods to this file for that to happen), this should
@@ -335,8 +417,6 @@ write(0,*)'reordering mesh'
                IF ( c_jps .EQ. -1 ) c_jps = j
             ENDIF
          ENDDO
-
-#endif
 
 ! extend the patch dimensions out shw along edges of domain
          IF ( mytask_x .EQ. 0 ) THEN
@@ -386,23 +466,30 @@ write(0,*)'reordering mesh'
          CALL wrf_message( TRIM(wrf_err_message) )
 
          SELECT CASE ( model_data_order )
-            ! need to finish other cases
             CASE ( DATA_ORDER_ZXY )
                c_sd2 = c_ids ; c_ed2 = c_ide ; c_sp2 = c_ips ; c_ep2 = c_ipe ; c_sm2 = c_ims ; c_em2 = c_ime
                c_sd3 = c_jds ; c_ed3 = c_jde ; c_sp3 = c_jps ; c_ep3 = c_jpe ; c_sm3 = c_jms ; c_em3 = c_jme
+               c_sd1 = c_kds ; c_ed1 = c_kde ; c_sp1 = c_kps ; c_ep1 = c_kpe ; c_sm1 = c_kms ; c_em1 = c_kme
+            CASE ( DATA_ORDER_ZYX )
+               c_sd3 = c_ids ; c_ed3 = c_ide ; c_sp3 = c_ips ; c_ep3 = c_ipe ; c_sm3 = c_ims ; c_em3 = c_ime
+               c_sd2 = c_jds ; c_ed2 = c_jde ; c_sp2 = c_jps ; c_ep2 = c_jpe ; c_sm2 = c_jms ; c_em2 = c_jme
                c_sd1 = c_kds ; c_ed1 = c_kde ; c_sp1 = c_kps ; c_ep1 = c_kpe ; c_sm1 = c_kms ; c_em1 = c_kme
             CASE ( DATA_ORDER_XYZ )
                c_sd1 = c_ids ; c_ed1 = c_ide ; c_sp1 = c_ips ; c_ep1 = c_ipe ; c_sm1 = c_ims ; c_em1 = c_ime
                c_sd2 = c_jds ; c_ed2 = c_jde ; c_sp2 = c_jps ; c_ep2 = c_jpe ; c_sm2 = c_jms ; c_em2 = c_jme
                c_sd3 = c_kds ; c_ed3 = c_kde ; c_sp3 = c_kps ; c_ep3 = c_kpe ; c_sm3 = c_kms ; c_em3 = c_kme
-            CASE ( DATA_ORDER_XZY )
-               c_sd1 = c_ids ; c_ed1 = c_ide ; c_sp1 = c_ips ; c_ep1 = c_ipe ; c_sm1 = c_ims ; c_em1 = c_ime
-               c_sd3 = c_jds ; c_ed3 = c_jde ; c_sp3 = c_jps ; c_ep3 = c_jpe ; c_sm3 = c_jms ; c_em3 = c_jme
-               c_sd2 = c_kds ; c_ed2 = c_kde ; c_sp2 = c_kps ; c_ep2 = c_kpe ; c_sm2 = c_kms ; c_em2 = c_kme
             CASE ( DATA_ORDER_YXZ)
                c_sd2 = c_ids ; c_ed2 = c_ide ; c_sp2 = c_ips ; c_ep2 = c_ipe ; c_sm2 = c_ims ; c_em2 = c_ime
                c_sd1 = c_jds ; c_ed1 = c_jde ; c_sp1 = c_jps ; c_ep1 = c_jpe ; c_sm1 = c_jms ; c_em1 = c_jme
                c_sd3 = c_kds ; c_ed3 = c_kde ; c_sp3 = c_kps ; c_ep3 = c_kpe ; c_sm3 = c_kms ; c_em3 = c_kme
+            CASE ( DATA_ORDER_XZY )
+               c_sd1 = c_ids ; c_ed1 = c_ide ; c_sp1 = c_ips ; c_ep1 = c_ipe ; c_sm1 = c_ims ; c_em1 = c_ime
+               c_sd3 = c_jds ; c_ed3 = c_jde ; c_sp3 = c_jps ; c_ep3 = c_jpe ; c_sm3 = c_jms ; c_em3 = c_jme
+               c_sd2 = c_kds ; c_ed2 = c_kde ; c_sp2 = c_kps ; c_ep2 = c_kpe ; c_sm2 = c_kms ; c_em2 = c_kme
+            CASE ( DATA_ORDER_YZX )
+               c_sd3 = c_ids ; c_ed3 = c_ide ; c_sp3 = c_ips ; c_ep3 = c_ipe ; c_sm3 = c_ims ; c_em3 = c_ime
+               c_sd1 = c_jds ; c_ed1 = c_jde ; c_sp1 = c_jps ; c_ep1 = c_jpe ; c_sm1 = c_jms ; c_em1 = c_jme
+               c_sd2 = c_kds ; c_ed2 = c_kde ; c_sp2 = c_kps ; c_ep2 = c_kpe ; c_sm2 = c_kms ; c_em2 = c_kme
          END SELECT
 
          ALLOCATE ( intermediate_grid )
@@ -447,9 +534,9 @@ write(0,*)'reordering mesh'
          intermediate_grid%sm33y                           = c_sm3y
          intermediate_grid%em33y                           = c_em3y
 
-#if 0
+#ifdef SGIALTIX
          ! allocate space for the intermediate domain
-         CALL alloc_space_field ( intermediate_grid, id , 3 , .FALSE., &   ! use same id as nest
+         CALL alloc_space_field ( intermediate_grid, intermediate_grid%id , 1, 2 , .TRUE., &   ! use same id as nest
                                c_sd1, c_ed1, c_sd2, c_ed2, c_sd3, c_ed3,       &
                                c_sm1,  c_em1,  c_sm2,  c_em2,  c_sm3,  c_em3,  &
                                c_sm1x, c_em1x, c_sm2x, c_em2x, c_sm3x, c_em3x, &   ! x-xpose
@@ -485,112 +572,197 @@ write(0,*)'reordering mesh'
   END SUBROUTINE patch_domain_rsl_lite
 
   SUBROUTINE compute_memory_dims_rsl_lite  (      &
-                   shw , bdx, bdy ,              &
-                   ids, ide, jds, jde, kds, kde, &
-                   ims, ime, jms, jme, kms, kme, &
-                   ips, ipe, jps, jpe, kps, kpe )
+                   shw , bdx,  bdy ,              &
+                   ids,  ide,  jds,  jde,  kds,  kde, &
+                   ims,  ime,  jms,  jme,  kms,  kme, &
+                   imsx, imex, jmsx, jmex, kmsx, kmex, &
+                   imsy, imey, jmsy, jmey, kmsy, kmey, &
+                   ips,  ipe,  jps,  jpe,  kps,  kpe, &
+                   ipsx, ipex, jpsx, jpex, kpsx, kpex, &
+                   ipsy, ipey, jpsy, jpey, kpsy, kpey )
 
-        IMPLICIT NONE
-        INTEGER, INTENT(IN)    ::  shw, bdx, bdy
-        INTEGER, INTENT(IN)    ::  ids, ide, jds, jde, kds, kde
-        INTEGER, INTENT(OUT)    ::  ips, ipe, jps, jpe, kps, kpe
-        INTEGER, INTENT(OUT)    ::  ims, ime, jms, jme, kms, kme
+    USE module_machine
+    IMPLICIT NONE
+    INTEGER, INTENT(IN)               ::  shw, bdx, bdy
+    INTEGER, INTENT(IN)     ::  ids, ide, jds, jde, kds, kde
+    INTEGER, INTENT(OUT)    ::  ims, ime, jms, jme, kms, kme
+    INTEGER, INTENT(OUT)    ::  imsx, imex, jmsx, jmex, kmsx, kmex
+    INTEGER, INTENT(OUT)    ::  imsy, imey, jmsy, jmey, kmsy, kmey
+    INTEGER, INTENT(OUT)    ::  ips, ipe, jps, jpe, kps, kpe
+    INTEGER, INTENT(OUT)    ::  ipsx, ipex, jpsx, jpex, kpsx, kpex
+    INTEGER, INTENT(OUT)    ::  ipsy, ipey, jpsy, jpey, kpsy, kpey
 
-        INTEGER idim, jdim, kdim, rem, a, b
-        INTEGER Px, Py, P, i, j
+    INTEGER Px, Py, P, i, j, k
 
-        idim = ide-ids+1 - (2*shw)
-        jdim = jde-jds+1 - (2*shw)
-        kdim = kde-kds+1
+#if ( ! NMM_CORE == 1 )
 
-#if 0
-        rem = mod(idim,ntasks_x)
-        a = ( idim / ntasks_x + 1 ) * min( rem, mytask_x )
-        b = ( idim / ntasks_x     ) * max( 0, mytask_x - rem )
-        ips = max( 1, a + b + 1 ) + shw + ids-1
-        a = ( idim / ntasks_x + 1 ) * min( rem, mytask_x+1 )
-        b = ( idim / ntasks_x     ) * max( 0, mytask_x+1 - rem )
-        ipe = a + b + shw + ids-1
+! xy decomposition
 
-        rem = mod(jdim,ntasks_y)
-        a = ( jdim / ntasks_y + 1 ) * min( rem, mytask_y )
-        b = ( jdim / ntasks_y     ) * max( 0, mytask_y - rem )
-        jps = max( 1, a + b + 1 ) + shw  + jds-1
-        a = ( jdim / ntasks_y + 1 ) * min( rem, mytask_y+1 )
-        b = ( jdim / ntasks_y     ) * max( 0, mytask_y+1 - rem )
-        jpe = a + b + shw + jds-1
+    ips = -1
+    j = jds ;
+    DO i = ids, ide
+       CALL task_for_point ( i, j, ids, ide, jds, jde, ntasks_x, ntasks_y, Px, Py )
+       IF ( Px .EQ. mytask_x ) THEN
+          ipe = i
+          IF ( ips .EQ. -1 ) ips = i
+       ENDIF
+    ENDDO
+    jps = -1
+    i = ids ;
+    DO j = jds, jde
+       CALL task_for_point ( i, j, ids, ide, jds, jde, ntasks_x, ntasks_y, Px, Py )
+       IF ( Py .EQ. mytask_y ) THEN
+          jpe = j
+          IF ( jps .EQ. -1 ) jps = j
+       ENDIF
+    ENDDO
+
+! 
+! description of transpose decomposition strategy for RSL LITE. 20061231jm
+!
+! Here is the tranpose scheme that is implemented for RSL_LITE. Upper-case
+! XY corresponds to the dimension of the processor mesh, lower-case xyz
+! corresponds to grid dimension.
+! 
+!      xy        zy        zx
+! 
+!     XxYy <--> XzYy <--> XzYx <- note x decomposed over Y procs
+!       ^                  ^
+!       |                  |
+!       +------------------+  <- this edge is costly; see below
+! 
+! The aim is to avoid all-to-all communication over whole
+! communicator. Instead, when possible, use a transpose scheme that requires
+! all-to-all within dimensional communicators; that is, communicators
+! defined for the processes in a rank or column of the processor mesh. Note,
+! however, it is not possible to create a ring of transposes between
+! xy-yz-xz decompositions without at least one of the edges in the ring
+! being fully all-to-all (in other words, one of the tranpose edges must
+! rotate and not just transpose a plane of the model grid within the
+! processor mesh). The issue is then, where should we put this costly edge
+! in the tranpose scheme we chose? To avoid being completely arbitrary, 
+! we chose a scheme most natural for models that use parallel spectral
+! transforms, where the costly edge is the one that goes from the xz to
+! the xy decomposition.  (May be implemented as just a two step transpose
+! back through yz).
+!
+! Additional notational convention, below. The 'x' or 'y' appended to the
+! dimension start or end variable refers to which grid dimension is all
+! on-processor in the given decomposition. That is ipsx and ipex are the
+! start and end for the i-dimension in the zy decomposition where x is
+! on-processor. ('z' is assumed for xy decomposition and not appended to
+! the ips, ipe, etc. variable names).
+! 
+
+! XzYy decomposition
+
+    kpsx = -1
+    j = jds ;
+    DO k = kds, kde
+       CALL task_for_point ( k, j, kds, kde, jds, jde, ntasks_x, ntasks_y, Px, Py )
+       IF ( Px .EQ. mytask_x ) THEN
+          kpex = k
+          IF ( kpsx .EQ. -1 ) kpsx = k
+       ENDIF
+    ENDDO
+
+    jpsx = -1
+    k = kds ;
+    DO j = jds, jde
+       CALL task_for_point ( k, j, kds, kde, jds, jde, ntasks_x, ntasks_y, Px, Py )
+       IF ( Py .EQ. mytask_y ) THEN
+          jpex = j
+          IF ( jpsx .EQ. -1 ) jpsx = j
+       ENDIF
+    ENDDO
+
+! XzYx decomposition  (note, x grid dim is decomposed over Y processor dim)
+
+    kpsy = kpsx   ! same as above
+    kpey = kpex   ! same as above
+
+    ipsy = -1
+    k = kds ;
+    DO i = ids, ide
+       CALL task_for_point ( i, k, ids, ide, kds, kde, ntasks_y, ntasks_x, Py, Px ) ! x and y for proc mesh reversed
+       IF ( Py .EQ. mytask_y ) THEN
+          ipey = i
+          IF ( ipsy .EQ. -1 ) ipsy = i
+       ENDIF
+    ENDDO
+
+
 #else
-# if ( ! NMM_CORE == 1 )
-        ips = -1
-        j = jds ;
-        DO i = ids, ide
-           CALL task_for_point ( i, j, ids, ide, jds, jde, ntasks_x, ntasks_y, Px, Py )
-           IF ( Px .EQ. mytask_x ) THEN
-              ipe = i
-              IF ( ips .EQ. -1 ) ips = i
-           ENDIF
-        ENDDO
-
-        jps = -1
-        i = ids ;
-        DO j = jds, jde
-           CALL task_for_point ( i, j, ids, ide, jds, jde, ntasks_x, ntasks_y, Px, Py )
-           IF ( Py .EQ. mytask_y ) THEN
-              jpe = j
-              IF ( jps .EQ. -1 ) jps = j
-           ENDIF
-        ENDDO
-# else
 
 ! In case of NMM CORE, the domain only ever runs from ids..ide-1 and jds..jde-1 so
 ! adjust decomposition to reflect.  20051020 JM
-
-        ips = -1
-        j = jds ;
-        DO i = ids, ide-1
-           CALL task_for_point ( i, j, ids, ide-1, jds, jde-1, ntasks_x, ntasks_y, Px, Py )
-           IF ( Px .EQ. mytask_x ) THEN
-              ipe = i
-              IF ( Px .EQ. ntasks_x-1 ) ipe = ipe + 1
-              IF ( ips .EQ. -1 ) ips = i
-           ENDIF
-        ENDDO
-
-        jps = -1
-        i = ids ;
-        DO j = jds, jde-1
-           CALL task_for_point ( i, j, ids, ide-1, jds, jde-1, ntasks_x, ntasks_y, Px, Py )
-           IF ( Py .EQ. mytask_y ) THEN
-              jpe = j
-              IF ( Py .EQ. ntasks_y-1 ) jpe = jpe + 1
-              IF ( jps .EQ. -1 ) jps = j
-           ENDIF
-        ENDDO
-# endif
+    ips = -1
+    j = jds ;
+    DO i = ids, ide-1
+       CALL task_for_point ( i, j, ids, ide-1, jds, jde-1, ntasks_x, ntasks_y, Px, Py )
+       IF ( Px .EQ. mytask_x ) THEN
+          ipe = i
+          IF ( Px .EQ. ntasks_x-1 ) ipe = ipe + 1
+          IF ( ips .EQ. -1 ) ips = i
+       ENDIF
+    ENDDO
+    jps = -1
+    i = ids ;
+    DO j = jds, jde-1
+       CALL task_for_point ( i, j, ids, ide-1, jds, jde-1, ntasks_x, ntasks_y, Px, Py )
+       IF ( Py .EQ. mytask_y ) THEN
+          jpe = j
+          IF ( Py .EQ. ntasks_y-1 ) jpe = jpe + 1
+          IF ( jps .EQ. -1 ) jps = j
+       ENDIF
+    ENDDO
 #endif
 
 ! extend the patch dimensions out shw along edges of domain
-        IF ( mytask_x .EQ. 0 ) THEN
-           ips = ips - shw
-        ENDIF
-        IF ( mytask_x .EQ. ntasks_x-1 ) THEN
-           ipe = ipe + shw
-        ENDIF
-        IF ( mytask_y .EQ. 0 ) THEN
-           jps = jps - shw
-        ENDIF
-        IF ( mytask_y .EQ. ntasks_y-1 ) THEN
-           jpe = jpe + shw
-        ENDIF
+    IF ( mytask_x .EQ. 0 ) THEN
+       ips = ips - shw
+       ipsy = ipsy - shw
+    ENDIF
+    IF ( mytask_x .EQ. ntasks_x-1 ) THEN
+       ipe = ipe + shw
+       ipey = ipey + shw
+    ENDIF
+    IF ( mytask_y .EQ. 0 ) THEN
+       jps = jps - shw
+       jpsx = jpsx - shw
+    ENDIF
+    IF ( mytask_y .EQ. ntasks_y-1 ) THEN
+       jpe = jpe + shw
+       jpex = jpex + shw
+    ENDIF
 
-        kps = 1
-        kpe = kdim
-        ims = max( ips - max(shw,max_halo_width), ids - bdx ) - 1
-        ime = min( ipe + max(shw,max_halo_width), ide + bdx ) + 1
-        jms = max( jps - max(shw,max_halo_width), jds - bdy ) - 1
-        jme = min( jpe + max(shw,max_halo_width), jde + bdy ) + 1
-        kms = 1
-        kme = kdim
+    kps = 1
+    kpe = kde-kds+1
+
+    kms = 1
+    kme = kpe
+    kmsx = kpsx
+    kmex = kpex
+    kmsy = kpsy
+    kmey = kpey
+
+    ims = max( ips - max(shw,max_halo_width), ids - bdx ) - 1
+    ime = min( ipe + max(shw,max_halo_width), ide + bdx ) + 1
+    imsx = ids
+    imex = ide
+    ipsx = imsx
+    ipex = imex
+    imsy = ipsy
+    imey = ipey
+
+    jms = max( jps - max(shw,max_halo_width), jds - bdy ) - 1
+    jme = min( jpe + max(shw,max_halo_width), jde + bdy ) + 1
+    jmsx = jpsx
+    jmex = jpex
+    jmsy = jds
+    jmey = jde
+    jpsy = jmsy
+    jpey = jmey
 
   END SUBROUTINE compute_memory_dims_rsl_lite
 
@@ -1062,6 +1234,12 @@ SUBROUTINE wrf_dm_patch_domain ( id  , domdesc , parent_id , parent_domdesc , &
                            sd1 , ed1 , sp1 , ep1 , sm1 , em1 , & 
                            sd2 , ed2 , sp2 , ep2 , sm2 , em2 , &
                            sd3 , ed3 , sp3 , ep3 , sm3 , em3 , &
+                                      sp1x , ep1x , sm1x , em1x , &
+                                      sp2x , ep2x , sm2x , em2x , &
+                                      sp3x , ep3x , sm3x , em3x , &
+                                      sp1y , ep1y , sm1y , em1y , &
+                                      sp2y , ep2y , sm2y , em2y , &
+                                      sp3y , ep3y , sm3y , em3y , &
                            bdx , bdy )
 
    RETURN
@@ -2018,9 +2196,8 @@ END
     RETURN
   END SUBROUTINE all_sub_l
 
-
   SUBROUTINE outbuf_2_patch_r( inbuf, outbuf,         &
-                               DS1,DE1,DS2,DE2,DS3,DE3,&
+                               DS1,DE1,DS2,DE2,DS3,DE3, &
                                MS1, ME1, MS2, ME2, MS3, ME3 , &
                                GPATCH )
     USE module_dm

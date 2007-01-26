@@ -58,6 +58,12 @@ SUBROUTINE solve_em ( grid , config_flags  &
    INTEGER                         :: ids , ide , jds , jde , kds , kde , &
                                       ims , ime , jms , jme , kms , kme , &
                                       ips , ipe , jps , jpe , kps , kpe
+
+   INTEGER ::              imsx, imex, jmsx, jmex, kmsx, kmex,    &
+                           ipsx, ipex, jpsx, jpex, kpsx, kpex,    &
+                           imsy, imey, jmsy, jmey, kmsy, kmey,    &
+                           ipsy, ipey, jpsy, jpey, kpsy, kpey
+
    INTEGER                         :: ij , iteration
    INTEGER                         :: im , num_3d_m , ic , num_3d_c , is , num_3d_s
    INTEGER                         :: loop
@@ -142,10 +148,55 @@ SUBROUTINE solve_em ( grid , config_flags  &
    dynamics_option = config_flags%rk_ord
 
 !  Obtain dimension information stored in the grid data structure.
+#ifndef TEST_FOR_XPOSE_IN_RSL_LITE
   CALL get_ijk_from_grid (  grid ,                   &
                             ids, ide, jds, jde, kds, kde,    &
                             ims, ime, jms, jme, kms, kme,    &
                             ips, ipe, jps, jpe, kps, kpe    )
+#else
+  CALL get_ijk_from_grid (  grid ,                   &
+                           ids, ide, jds, jde, kds, kde,    &
+                           ims, ime, jms, jme, kms, kme,    &
+                           ips, ipe, jps, jpe, kps, kpe,    &
+                           imsx, imex, jmsx, jmex, kmsx, kmex,    &
+                           ipsx, ipex, jpsx, jpex, kpsx, kpex,    &
+                           imsy, imey, jmsy, jmey, kmsy, kmey,    &
+                           ipsy, ipey, jpsy, jpey, kpsy, kpey )
+
+write(0,*)'ids, ide, jds, jde, kds, kde ',ids, ide, jds, jde, kds, kde
+write(0,*)'ims, ime, jms, jme, kms, kme ',ims, ime, jms, jme, kms, kme
+write(0,*)'ips, ipe, jps, jpe, kps, kpe ',ips, ipe, jps, jpe, kps, kpe
+write(0,*)'imsx, imex, jmsx, jmex, kmsx, kmex ',imsx, imex, jmsx, jmex, kmsx, kmex
+write(0,*)'ipsx, ipex, jpsx, jpex, kpsx, kpex ',ipsx, ipex, jpsx, jpex, kpsx, kpex
+write(0,*)'imsy, imey, jmsy, jmey, kmsy, kmey ',imsy, imey, jmsy, jmey, kmsy, kmey
+write(0,*)'ipsy, ipey, jpsy, jpey, kpsy, kpey ',ipsy, ipey, jpsy, jpey, kpsy, kpey
+
+#endif
+
+#ifdef TEST_FOR_IJK_IN_RSL_LITE
+  do k = kps, kpe
+  do j = MAX(jds+1,jps), MIN(jde-2,jpe)
+  do i = MAX(ids+1,ips), MIN(ide-2,ipe)
+      grid%xxx_1(i,j,k) = 0.2 * ( &
+        grid%xxx_2(i,j,k) + grid%xxx_2(i+1,j,k) + grid%xxx_2(i-1,j,k) &
+      + grid%xxx_2(i,j+1,k) + grid%xxx_2(i,j-1,k) )
+  enddo
+  enddo
+  enddo
+
+#include "HALO_FLOOB.inc"
+
+  do k = kps, kpe
+  do j = MAX(jds+1,jps), MIN(jde-2,jpe)
+  do i = MAX(ids+1,ips), MIN(ide-2,ipe)
+      grid%xxx_2(i,j,k) = grid%xxx_1(i,j,k)
+  enddo
+  enddo
+  enddo
+
+  RETURN
+#endif
+
 
   k_start         = kps
   k_end           = kpe
@@ -163,6 +214,108 @@ SUBROUTINE solve_em ( grid , config_flags  &
 !print *,grid%julian,grid%julday,' grid%julian,grid%julday in solve'
 
   grid%itimestep = grid%itimestep + 1
+
+#ifdef TEST_FOR_XPOSE_IN_RSL_LITE
+       do j = jps, jpe
+       do k = kps, kpe
+       do i = ips, ipe
+         grid%em_floob(i,k,j) = 10000*j + 100*k + i
+       enddo
+       enddo
+       enddo
+
+write(0,*)'ids, ide, jds, jde, kds, kde ',ids, ide, jds, jde, kds, kde
+write(0,*)'ims, ime, jms, jme, kms, kme ',ims, ime, jms, jme, kms, kme
+write(0,*)'ips, ipe, jps, jpe, kps, kpe ',ips, ipe, jps, jpe, kps, kpe
+write(0,*)'imsx, imex, jmsx, jmex, kmsx, kmex ',imsx, imex, jmsx, jmex, kmsx, kmex
+write(0,*)'ipsx, ipex, jpsx, jpex, kpsx, kpex ',ipsx, ipex, jpsx, jpex, kpsx, kpex
+write(0,*)'imsy, imey, jmsy, jmey, kmsy, kmey ',imsy, imey, jmsy, jmey, kmsy, kmey
+write(0,*)'ipsy, ipey, jpsy, jpey, kpsy, kpey ',ipsy, ipey, jpsy, jpey, kpsy, kpey
+write(0,*) 'here is what it looks like in Z'
+       do k = kpe, kps, -1
+       do j = jpe, jps, -1
+         write(0,*) j,k,ips,grid%em_floob(ips:ipe,k,j)
+       enddo
+       write(0,*)
+       enddo
+
+       grid%em_floob_x = 0.
+
+#include "FLOOB_z2x.inc"
+
+write(0,*)'ids, ide, jds, jde, kds, kde ',ids, ide, jds, jde, kds, kde
+write(0,*)'ims, ime, jms, jme, kms, kme ',ims, ime, jms, jme, kms, kme
+write(0,*)'ips, ipe, jps, jpe, kps, kpe ',ips, ipe, jps, jpe, kps, kpe
+write(0,*)'imsx, imex, jmsx, jmex, kmsx, kmex ',imsx, imex, jmsx, jmex, kmsx, kmex
+write(0,*)'ipsx, ipex, jpsx, jpex, kpsx, kpex ',ipsx, ipex, jpsx, jpex, kpsx, kpex
+write(0,*)'imsy, imey, jmsy, jmey, kmsy, kmey ',imsy, imey, jmsy, jmey, kmsy, kmey
+write(0,*)'ipsy, ipey, jpsy, jpey, kpsy, kpey ',ipsy, ipey, jpsy, jpey, kpsy, kpey
+write(0,*) 'here is what it looks like in X'
+       do k = kpex, kpsx, -1
+       do j = jpex, jpsx, -1
+         write(0,*) j,k,ipsx,grid%em_floob_x(ipsx:ipex,k,j)
+       enddo
+       write(0,*)
+       enddo
+
+       grid%em_floob_y = 0.
+
+#include "FLOOB_x2y.inc"
+
+write(0,*)'ids, ide, jds, jde, kds, kde ',ids, ide, jds, jde, kds, kde
+write(0,*)'ims, ime, jms, jme, kms, kme ',ims, ime, jms, jme, kms, kme
+write(0,*)'ips, ipe, jps, jpe, kps, kpe ',ips, ipe, jps, jpe, kps, kpe
+write(0,*)'imsx, imex, jmsx, jmex, kmsx, kmex ',imsx, imex, jmsx, jmex, kmsx, kmex
+write(0,*)'ipsx, ipex, jpsx, jpex, kpsx, kpex ',ipsx, ipex, jpsx, jpex, kpsx, kpex
+write(0,*)'imsy, imey, jmsy, jmey, kmsy, kmey ',imsy, imey, jmsy, jmey, kmsy, kmey
+write(0,*)'ipsy, ipey, jpsy, jpey, kpsy, kpey ',ipsy, ipey, jpsy, jpey, kpsy, kpey
+write(0,*) 'here is what it looks like in Y'
+       do k = kpey, kpsy, -1
+       do j = jpey, jpsy, -1
+         write(0,*) j,k,ipsy,grid%em_floob_y(ipsy:ipey,k,j)
+       enddo
+       write(0,*)
+       enddo
+
+       grid%em_floob_x = 0.
+
+#include "FLOOB_y2x.inc"
+
+write(0,*)'ids, ide, jds, jde, kds, kde ',ids, ide, jds, jde, kds, kde
+write(0,*)'ims, ime, jms, jme, kms, kme ',ims, ime, jms, jme, kms, kme
+write(0,*)'ips, ipe, jps, jpe, kps, kpe ',ips, ipe, jps, jpe, kps, kpe
+write(0,*)'imsx, imex, jmsx, jmex, kmsx, kmex ',imsx, imex, jmsx, jmex, kmsx, kmex
+write(0,*)'ipsx, ipex, jpsx, jpex, kpsx, kpex ',ipsx, ipex, jpsx, jpex, kpsx, kpex
+write(0,*)'imsy, imey, jmsy, jmey, kmsy, kmey ',imsy, imey, jmsy, jmey, kmsy, kmey
+write(0,*)'ipsy, ipey, jpsy, jpey, kpsy, kpey ',ipsy, ipey, jpsy, jpey, kpsy, kpey
+write(0,*) 'here is what it looks like in X back from Y'
+       do k = kpex, kpsx, -1
+       do j = jpex, jpsx, -1
+         write(0,*) j,k,ipsx,grid%em_floob_x(ipsx:ipex,k,j)
+       enddo
+       write(0,*)
+       enddo
+
+       grid%em_floob = 0 
+
+#include "FLOOB_x2z.inc"
+
+write(0,*)'ids, ide, jds, jde, kds, kde ',ids, ide, jds, jde, kds, kde
+write(0,*)'ims, ime, jms, jme, kms, kme ',ims, ime, jms, jme, kms, kme
+write(0,*)'ips, ipe, jps, jpe, kps, kpe ',ips, ipe, jps, jpe, kps, kpe
+write(0,*)'imsx, imex, jmsx, jmex, kmsx, kmex ',imsx, imex, jmsx, jmex, kmsx, kmex
+write(0,*)'ipsx, ipex, jpsx, jpex, kpsx, kpex ',ipsx, ipex, jpsx, jpex, kpsx, kpex
+write(0,*)'imsy, imey, jmsy, jmey, kmsy, kmey ',imsy, imey, jmsy, jmey, kmsy, kmey
+write(0,*)'ipsy, ipey, jpsy, jpey, kpsy, kpey ',ipsy, ipey, jpsy, jpey, kpsy, kpey
+write(0,*) 'here is what it looks like in Z, back from X'
+       do k = kpe, kps, -1
+       do j = jpe, jps, -1
+         write(0,*) j,k,ips,grid%em_floob(ips:ipe,k,j)
+       enddo
+       write(0,*)
+       enddo
+#endif
+
 
 !**********************************************************************
 !

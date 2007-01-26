@@ -67,6 +67,14 @@ dimspec    v      -     constant=1                z          one
 ################################################################################
 ################################################################################
 
+#state    real   floob       ikjb     dyn_em      1         -    
+#state    real   floob_x     ikjx     dyn_em      1         -     
+#state    real   floob_y     ikjy     dyn_em      1         - 
+#xpose FLOOB dyn_em floob,floob_x,floob_y
+
+#state real xxx ijk misc 2 - h6ud
+#halo  HALO_FLOOB dyn_em  4:xxx_2
+
 # Lines that start with the word 'state' form a table that is                                           
 # used by the script use_registry to generate module_state_descript.F                                           
 # and other files.  Also see documentation in use_registry.                                             
@@ -115,6 +123,7 @@ state    real   qv_gc          igj      dyn_em      1        Z     i1  "QV"     
 #                                               
 # Variables for Eulerian mass coordinate dynamics                                            
 #                                               
+
 
 # Velocities
 #
@@ -879,7 +888,6 @@ rconfig   logical input_from_hires        namelist,time_control		max_domains    
 rconfig   character rsmas_data_path       namelist,time_control		1              "."     -    "rsmas_data_path"      ""  ""
 
 include registry.io_boilerplate
-include registry.io_boilerplate_EM
 
 rconfig   integer JULYR                   namelist,time_control		max_domains    0       h    "JULYR"                 ""      ""
 rconfig   integer JULDAY                  namelist,time_control		max_domains    1       h    "JULDAY"                ""      ""

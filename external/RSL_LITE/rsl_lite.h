@@ -22,7 +22,7 @@
 #      define RSL_LITE_INIT_PERIOD rsl_lite_init_period
 #      define RSL_LITE_EXCH_PERIOD_Y rsl_lite_exch_period_y
 #      define RSL_LITE_EXCH_PERIOD_X rsl_lite_exch_period_x
-#      define RSL_LITE_PACK_PERIOD_X  rsl_lite_pack_period_x
+#      define RSL_LITE_PACK_PERIOD  rsl_lite_pack_period
 #      define RSL_LITE_INIT_SWAP rsl_lite_init_swap
 #      define RSL_LITE_SWAP rsl_lite_swap
 #      define RSL_LITE_PACK_SWAP  rsl_lite_pack_swap
@@ -57,7 +57,7 @@
 #      define RSL_LITE_INIT_PERIOD rsl_lite_init_period__
 #      define RSL_LITE_EXCH_PERIOD_Y rsl_lite_exch_period_y__
 #      define RSL_LITE_EXCH_PERIOD_X rsl_lite_exch_period_x__
-#      define RSL_LITE_PACK_PERIOD_X  rsl_lite_pack_period_x__
+#      define RSL_LITE_PACK_PERIOD  rsl_lite_pack_period__
 #      define RSL_LITE_INIT_SWAP rsl_lite_init_swap__
 #      define RSL_LITE_SWAP rsl_lite_swap__
 #      define RSL_LITE_PACK_SWAP  rsl_lite_pack_swap__
@@ -91,7 +91,7 @@
 #      define RSL_LITE_INIT_PERIOD rsl_lite_init_period_
 #      define RSL_LITE_EXCH_PERIOD_Y rsl_lite_exch_period_y_
 #      define RSL_LITE_EXCH_PERIOD_X rsl_lite_exch_period_x_
-#      define RSL_LITE_PACK_PERIOD_X  rsl_lite_pack_period_x_
+#      define RSL_LITE_PACK_PERIOD  rsl_lite_pack_period_
 #      define RSL_LITE_INIT_SWAP rsl_lite_init_swap_
 #      define RSL_LITE_SWAP rsl_lite_swap_
 #      define RSL_LITE_PACK_SWAP rsl_lite_pack_swap_
@@ -111,6 +111,15 @@
 #define RSL_FREEBUF 3
 #define RSL_MAXPROC 10000
 #define RSL_INVALID -1
+
+/* this must be the same as defined in frame/module_driver_constants.F */
+#define   DATA_ORDER_XYZ   1
+#define   DATA_ORDER_YXZ   2
+#define   DATA_ORDER_ZXY   3
+#define   DATA_ORDER_ZYX   4
+#define   DATA_ORDER_XZY   5
+#define   DATA_ORDER_YZX   6
+
 
 #define RSL_MALLOC(T,N)  (T *)rsl_malloc(__FILE__,__LINE__,(sizeof(T))*(N))
 #define RSL_FREE(P)      rsl_free(P)

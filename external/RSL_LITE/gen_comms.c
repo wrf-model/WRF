@@ -304,7 +304,7 @@ gen_packs ( FILE *fp , node_t *p, int shw, int xy /* 0=y,1=x */ , int pu /* 0=pa
               {
                 set_mem_order( q->members, memord , NAMELEN) ;
 fprintf(fp,"DO itrace = PARAM_FIRST_SCALAR, num_%s\n",q->name ) ;
-fprintf(fp," CALL %s ( %s,%s ( grid%%sm31,grid%%sm32,grid%%sm33,itrace), %d, %s, %d, %d, '%s', %d, &\n",
+fprintf(fp," CALL %s ( %s,%s ( grid%%sm31,grid%%sm32,grid%%sm33,itrace), %d, %s, %d, %d, DATA_ORDER_%s, %d, &\n",
                        packname, commname, varref , shw, wordsize, xy, pu, memord, q->stag_x?1:0 ) ;
 fprintf(fp,"mytask, ntasks, ntasks_x, ntasks_y,       &\n") ;
 fprintf(fp,"ids, ide, jds, jde, kds, kde,             &\n") ;
@@ -346,7 +346,7 @@ fprintf(fp,"CALL wrf_debug(3,wrf_err_message)\n") ;
 fprintf(fp,"write(wrf_err_message,*)' p ',ips, ipe, jps, jpe, kps, kpe\n" ) ;
 fprintf(fp,"CALL wrf_debug(3,wrf_err_message)\n") ;
 #endif
-                    fprintf(fp,"CALL %s ( %s, %s, %d, %s, %d, %d, '%s', %d, &\n", packname, commname, varref, shw, wordsize, xy, pu, memord, q->stag_x?1:0 ) ;
+                    fprintf(fp,"CALL %s ( %s, %s, %d, %s, %d, %d, DATA_ORDER_%s, %d, &\n", packname, commname, varref, shw, wordsize, xy, pu, memord, q->stag_x?1:0 ) ;
                     fprintf(fp,"mytask, ntasks, ntasks_x, ntasks_y,       &\n") ;
                     fprintf(fp,"ids, ide, jds, jde, kds, kde,             &\n") ;
                     fprintf(fp,"ims, ime, jms, jme, kms, kme,             &\n") ;
@@ -369,7 +369,7 @@ fprintf(fp,"CALL wrf_debug(3,wrf_err_message)\n") ;
 fprintf(fp,"write(wrf_err_message,*)' p ',ips, ipe, jps, jpe, %s, %s\n",s,e ) ;
 fprintf(fp,"CALL wrf_debug(3,wrf_err_message)\n") ;
 #endif
-                    fprintf(fp,"CALL %s ( %s, %s, %d, %s, %d, %d, '%s', %d, &\n", packname, commname, varref, shw, wordsize, xy, pu, memord, q->stag_x?1:0 ) ;
+                    fprintf(fp,"CALL %s ( %s, %s, %d, %s, %d, %d, DATA_ORDER_%s, %d, &\n", packname, commname, varref, shw, wordsize, xy, pu, memord, q->stag_x?1:0 ) ;
                     fprintf(fp,"mytask, ntasks, ntasks_x, ntasks_y,       &\n") ;
                     fprintf(fp,"ids, ide, jds, jde, %s, %s,             &\n",s,e) ;
                     fprintf(fp,"ims, ime, jms, jme, %s, %s,             &\n",s,e) ;
@@ -385,7 +385,7 @@ fprintf(fp,"CALL wrf_debug(3,wrf_err_message)\n") ;
 fprintf(fp,"write(wrf_err_message,*)' p ',ips, ipe, jps, jpe, %d, %d\n",dimd->coord_start,dimd->coord_end ) ;
 fprintf(fp,"CALL wrf_debug(3,wrf_err_message)\n") ;
 #endif
-                    fprintf(fp,"CALL %s ( %s, %s, %d, %s, %d, %d, '%s', %d, &\n", packname, commname, varref, shw, wordsize, xy, pu, memord, q->stag_x?1:0 ) ;
+                    fprintf(fp,"CALL %s ( %s, %s, %d, %s, %d, %d, DATA_ORDER_%s, %d, &\n", packname, commname, varref, shw, wordsize, xy, pu, memord, q->stag_x?1:0 ) ;
                     fprintf(fp,"mytask, ntasks, ntasks_x, ntasks_y,       &\n") ;
                     fprintf(fp,"ids, ide, jds, jde, %d, %d,             &\n",dimd->coord_start,dimd->coord_end) ;
                     fprintf(fp,"ims, ime, jms, jme, %d, %d,             &\n",dimd->coord_start,dimd->coord_end) ;
@@ -401,7 +401,7 @@ fprintf(fp,"CALL wrf_debug(3,wrf_err_message)\n") ;
 fprintf(fp,"write(wrf_err_message,*)' p ',ips, ipe, jps, jpe, 1, 1\n" ) ;
 fprintf(fp,"CALL wrf_debug(3,wrf_err_message)\n") ;
 #endif
-                fprintf(fp,"CALL %s ( %s, %s, %d, %s, %d, %d, '%s', %d, &\n", packname, commname, varref, shw, wordsize, xy, pu, memord, q->stag_x?1:0 ) ;
+                fprintf(fp,"CALL %s ( %s, %s, %d, %s, %d, %d, DATA_ORDER_%s, %d, &\n", packname, commname, varref, shw, wordsize, xy, pu, memord, q->stag_x?1:0 ) ;
                 fprintf(fp,"mytask, ntasks, ntasks_x, ntasks_y,       &\n") ;
                 fprintf(fp,"ids, ide, jds, jde, 1  , 1  ,             &\n") ;
                 fprintf(fp,"ims, ime, jms, jme, 1  , 1  ,             &\n") ;
@@ -536,10 +536,8 @@ fprintf(fp,"CALL wrf_debug(2,'calling %s')\n",fname) ;
     }
 
     fprintf(fp,"IF ( config_flags%%periodic_x ) THEN\n") ;
-
-/* generate the stencil init statement for X transfer */
+/* generate the init statement for X transfer */
     fprintf(fp,"CALL RSL_LITE_INIT_PERIOD ( local_communicator_periodic, %d , &\n",maxperwidth) ;
-
     if ( n4d > 0 ) {
       fprintf(fp,  "     %d  &\n", n3dR ) ;
       for ( i = 0 ; i < n4d ; i++ ) {
@@ -549,19 +547,43 @@ fprintf(fp,"CALL wrf_debug(2,'calling %s')\n",fname) ;
     } else {
       fprintf(fp,"     %d, %d, RWORDSIZE, &\n", n3dR, n2dR ) ;
     }
-
     fprintf(fp,"     %d, %d, IWORDSIZE, &\n", n3dI, n2dI ) ;
     fprintf(fp,"     %d, %d, DWORDSIZE, &\n", n3dD, n2dD ) ;
     fprintf(fp,"      0,  0, LWORDSIZE, &\n" ) ;
     fprintf(fp,"      mytask, ntasks, ntasks_x, ntasks_y,   &\n" ) ;
     fprintf(fp,"      ips, ipe, jps, jpe, kps, kpe    )\n") ;
-/* generate packs prior to stencil exchange in X */
-    gen_packs( fp, p, maxperwidth, 1, 0, "RSL_LITE_PACK_PERIOD_X", "local_communicator_periodic" ) ;
-/* generate stencil exchange in X */
+/* generate packs prior to exchange in X */
+    gen_packs( fp, p, maxperwidth, 1, 0, "RSL_LITE_PACK_PERIOD", "local_communicator_periodic" ) ;
+/* generate exchange in X */
     fprintf(fp,"   CALL RSL_LITE_EXCH_PERIOD_X ( local_communicator_periodic , mytask, ntasks, ntasks_x, ntasks_y )\n") ;
-/* generate unpacks after stencil exchange in X */
-    gen_packs( fp, p, maxperwidth, 1, 1, "RSL_LITE_PACK_PERIOD_X", "local_communicator_periodic" ) ;
+/* generate unpacks after exchange in X */
+    gen_packs( fp, p, maxperwidth, 1, 1, "RSL_LITE_PACK_PERIOD", "local_communicator_periodic" ) ;
+    fprintf(fp,"END IF\n") ;
 
+
+    fprintf(fp,"IF ( config_flags%%periodic_y ) THEN\n") ;
+/* generate the init statement for Y transfer */
+    fprintf(fp,"CALL RSL_LITE_INIT_PERIOD ( local_communicator_periodic, %d , &\n",maxperwidth) ;
+    if ( n4d > 0 ) {
+      fprintf(fp,  "     %d  &\n", n3dR ) ;
+      for ( i = 0 ; i < n4d ; i++ ) {
+        fprintf(fp,"   + num_%s   &\n", name_4d[i] ) ;
+      }
+      fprintf(fp,"     , %d, RWORDSIZE, &\n", n2dR ) ;
+    } else {
+      fprintf(fp,"     %d, %d, RWORDSIZE, &\n", n3dR, n2dR ) ;
+    }
+    fprintf(fp,"     %d, %d, IWORDSIZE, &\n", n3dI, n2dI ) ;
+    fprintf(fp,"     %d, %d, DWORDSIZE, &\n", n3dD, n2dD ) ;
+    fprintf(fp,"      0,  0, LWORDSIZE, &\n" ) ;
+    fprintf(fp,"      mytask, ntasks, ntasks_x, ntasks_y,   &\n" ) ;
+    fprintf(fp,"      ips, ipe, jps, jpe, kps, kpe    )\n") ;
+/* generate packs prior to exchange in Y */
+    gen_packs( fp, p, maxperwidth, 0, 0, "RSL_LITE_PACK_PERIOD", "local_communicator_periodic" ) ;  
+/* generate exchange in Y */
+    fprintf(fp,"   CALL RSL_LITE_EXCH_PERIOD_Y ( local_communicator_periodic , mytask, ntasks, ntasks_x, ntasks_y )\n") ;
+/* generate unpacks after exchange in Y */
+    gen_packs( fp, p, maxperwidth, 0, 1, "RSL_LITE_PACK_PERIOD", "local_communicator_periodic" ) ;  
     fprintf(fp,"END IF\n") ;
 
     close_the_file(fp) ;
@@ -851,14 +873,17 @@ gen_xposes ( char * dirname )
   node_t * p, * q ;
   char commname[NAMELEN] ;
   char fname[NAMELEN] ;
-  char tmp[NAMELEN], tmp2[NAMELEN], tmp3[NAMELEN] ;
-  char commuse[NAMELEN] ;
+  char tmp[4096], tmp2[4096], tmp3[4096] ;
+  char commuse[4096] ;
   FILE * fp ;
   char * t1, * t2 ;
   char * pos1 , * pos2 ;
   char *xposedir[] = { "z2x" , "x2z" , "x2y" , "y2x" , "z2y" , "y2z" , 0L } ;
   char ** x ;
-  char indices[NAMELEN], post[NAMELEN] ;
+  char post[NAMELEN], varname[NAMELEN], memord[10] ;
+  char indices_z[NAMELEN], varref_z[NAMELEN] ;
+  char indices_x[NAMELEN], varref_x[NAMELEN] ;
+  char indices_y[NAMELEN], varref_y[NAMELEN] ;
 
   if ( dirname == NULL ) return(1) ;
 
@@ -877,6 +902,169 @@ gen_xposes ( char * dirname )
       }
 
       print_warning(fp,fname) ;
+
+      strcpy( tmp, p->comm_define ) ;
+      strcpy( commuse, p->use ) ;
+      t1 = strtok_rentr( tmp , ";" , &pos1 ) ;
+      while ( t1 != NULL )
+      {
+        strcpy( tmp2 , t1 ) ;
+
+/* Z array */
+        t2 = strtok_rentr(tmp2,",", &pos2) ;
+        if ((q = get_entry_r( t2, commuse, Domain.fields )) == NULL )    
+         { fprintf(stderr,"WARNING 3 : %s in xpose spec %s (%s) is not defined in registry.\n",t2,commname,commuse) ; goto skiperific ; }
+        strcpy( varref_z, t2 ) ;
+        if ( q->node_kind & FIELD  && ! (q->node_kind & I1) ) {
+           if ( !strncmp( q->use,  "dyn_", 4 )) {
+                char * core ;
+                core = q->use+4 ;
+                sprintf(varref_z,"grid%%%s_%s",core,t2) ;
+           } else {
+                sprintf(varref_z,"grid%%%s",t2) ;
+           }
+        }
+        if ( q->proc_orient != ALL_Z_ON_PROC ) 
+         { fprintf(stderr,"WARNING: %s in xpose spec %s is not ALL_Z_ON_PROC.\n",t2,commname) ; goto skiperific ; }
+        if ( q->ndims != 3 )
+         { fprintf(stderr,"WARNING: boundary array %s must be 3D to be member of xpose spec %s.\n",t2,commname) ; goto skiperific ; }
+        if ( q->boundary_array )
+         { fprintf(stderr,"WARNING: boundary array %s cannot be member of xpose spec %s.\n",t2,commname) ; goto skiperific ; }
+        strcpy (indices_z,"");
+        if ( sw_deref_kludge &&  strchr (t2, '%') != NULLCHARPTR )
+        {
+          sprintf(post,")") ;
+          sprintf(indices_z, "%s",index_with_firstelem("(","",tmp3,q,post)) ;
+        }
+
+/* X array */
+        t2 = strtok_rentr( NULL , "," , &pos2 ) ;
+        if ((q = get_entry_r( t2, commuse, Domain.fields )) == NULL )    
+         { fprintf(stderr,"WARNING 4 : %s in xpose spec %s (%s) is not defined in registry.\n",t2,commname,commuse) ; goto skiperific ; }
+        strcpy( varref_x, t2 ) ;
+        if ( q->node_kind & FIELD  && ! (q->node_kind & I1) ) {
+           if ( !strncmp( q->use,  "dyn_", 4 )) {
+                char * core ;
+                core = q->use+4 ;
+                sprintf(varref_x,"grid%%%s_%s",core,t2) ;
+           } else {
+                sprintf(varref_x,"grid%%%s",t2) ;
+           }
+        }
+        if ( q->proc_orient != ALL_X_ON_PROC ) 
+         { fprintf(stderr,"WARNING: %s in xpose spec %s is not ALL_X_ON_PROC.\n",t2,commname) ; goto skiperific ; }
+        if ( q->ndims != 3 )
+         { fprintf(stderr,"WARNING: boundary array %s must be 3D to be member of xpose spec %s.\n",t2,commname) ; goto skiperific ; }
+        if ( q->boundary_array )
+         { fprintf(stderr,"WARNING: boundary array %s cannot be member of xpose spec %s.\n",t2,commname) ; goto skiperific ; }
+        strcpy (indices_x,"");
+        if ( sw_deref_kludge &&  strchr (t2, '%') != NULLCHARPTR )
+        {
+          sprintf(post,")") ;
+          sprintf(indices_x, "%s",index_with_firstelem("(","",tmp3,q,post)) ;
+        }
+
+/* Y array */
+        t2 = strtok_rentr( NULL , "," , &pos2 ) ;
+        if ((q = get_entry_r( t2, commuse, Domain.fields )) == NULL )    
+         { fprintf(stderr,"WARNING 5 : %s in xpose spec %s (%s)is not defined in registry.\n",t2,commname,commuse) ; goto skiperific ; }
+        strcpy( varref_y, t2 ) ;
+        if ( q->node_kind & FIELD  && ! (q->node_kind & I1) ) {
+           if ( !strncmp( q->use,  "dyn_", 4 )) {
+                char * core ;
+                core = q->use+4 ;
+                sprintf(varref_y,"grid%%%s_%s",core,t2) ;
+           } else {
+                sprintf(varref_y,"grid%%%s",t2) ;
+           }
+        }
+        if ( q->proc_orient != ALL_Y_ON_PROC ) 
+         { fprintf(stderr,"WARNING: %s in xpose spec %s is not ALL_Y_ON_PROC.\n",t2,commname) ; goto skiperific ; }
+        if ( q->ndims != 3 )
+         { fprintf(stderr,"WARNING: boundary array %s must be 3D to be member of xpose spec %s.\n",t2,commname) ; goto skiperific ; }
+        if ( q->boundary_array )
+         { fprintf(stderr,"WARNING: boundary array %s cannot be member of xpose spec %s.\n",t2,commname) ; goto skiperific ; }
+        strcpy (indices_y,"");
+        if ( sw_deref_kludge &&  strchr (t2, '%') != NULLCHARPTR )
+        {
+          sprintf(post,")") ;
+          sprintf(indices_y, "%s",index_with_firstelem("(","",tmp3,q,post)) ;
+        }
+        t1 = strtok_rentr( NULL , ";" , &pos1 ) ;
+      }
+      set_mem_order( q, memord , NAMELEN) ;
+      if        ( !strcmp( *x , "z2x" ) ) {
+        fprintf(fp,"  call trans_z2x ( ntasks_x, local_communicator_x, 1, RWORDSIZE, IWORDSIZE, DATA_ORDER_%s , &\n", memord ) ;
+        fprintf(fp,"                   %s, &  ! variable in Z decomp\n" , varref_z  ) ;
+        fprintf(fp,"                   grid%%sd31, grid%%ed31, grid%%sd32, grid%%ed32, grid%%sd33, grid%%ed33, &\n"         ) ;
+        fprintf(fp,"                   grid%%sp31, grid%%ep31, grid%%sp32, grid%%ep32, grid%%sp33, grid%%ep33, &\n"         ) ;
+        fprintf(fp,"                   grid%%sm31, grid%%em31, grid%%sm32, grid%%em32, grid%%sm33, grid%%em33, &\n"         ) ;
+        fprintf(fp,"                   %s, &  ! variable in X decomp\n" , varref_x  ) ;
+        fprintf(fp,"                   grid%%sp31x, grid%%ep31x, grid%%sp32x, grid%%ep32x, grid%%sp33x, grid%%ep33x, &\n"   ) ;
+        fprintf(fp,"                   grid%%sm31x, grid%%em31x, grid%%sm32x, grid%%em32x, grid%%sm33x, grid%%em33x ) \n"   ) ;
+      } else if ( !strcmp( *x , "x2z" ) ) {
+        fprintf(fp,"  call trans_z2x ( ntasks_x, local_communicator_x, 0, RWORDSIZE, IWORDSIZE, DATA_ORDER_%s , &\n", memord ) ;
+        fprintf(fp,"                   %s, &  ! variable in Z decomp\n" , varref_z  ) ;
+        fprintf(fp,"                   grid%%sd31, grid%%ed31, grid%%sd32, grid%%ed32, grid%%sd33, grid%%ed33, &\n"         ) ;
+        fprintf(fp,"                   grid%%sp31, grid%%ep31, grid%%sp32, grid%%ep32, grid%%sp33, grid%%ep33, &\n"         ) ;
+        fprintf(fp,"                   grid%%sm31, grid%%em31, grid%%sm32, grid%%em32, grid%%sm33, grid%%em33, &\n"         ) ;
+        fprintf(fp,"                   %s, &  ! variable in X decomp\n" , varref_x  ) ;
+        fprintf(fp,"                   grid%%sp31x, grid%%ep31x, grid%%sp32x, grid%%ep32x, grid%%sp33x, grid%%ep33x, &\n"   ) ;
+        fprintf(fp,"                   grid%%sm31x, grid%%em31x, grid%%sm32x, grid%%em32x, grid%%sm33x, grid%%em33x ) \n"   ) ;
+      } else if ( !strcmp( *x , "x2y" ) ) {
+        fprintf(fp,"  call trans_x2y ( ntasks_y, local_communicator_y, 1, RWORDSIZE, IWORDSIZE, DATA_ORDER_%s , &\n", memord ) ;
+        fprintf(fp,"                   %s, &  ! variable in X decomp\n" , varref_x  ) ;
+        fprintf(fp,"                   grid%%sd31, grid%%ed31, grid%%sd32, grid%%ed32, grid%%sd33, grid%%ed33, &\n"         ) ;
+        fprintf(fp,"                   grid%%sp31x, grid%%ep31x, grid%%sp32x, grid%%ep32x, grid%%sp33x, grid%%ep33x, &\n"   ) ;
+        fprintf(fp,"                   grid%%sm31x, grid%%em31x, grid%%sm32x, grid%%em32x, grid%%sm33x, grid%%em33x, &\n"   ) ;
+        fprintf(fp,"                   %s, &  ! variable in Y decomp\n" , varref_y  ) ;
+        fprintf(fp,"                   grid%%sp31y, grid%%ep31y, grid%%sp32y, grid%%ep32y, grid%%sp33y, grid%%ep33y, &\n"   ) ;
+        fprintf(fp,"                   grid%%sm31y, grid%%em31y, grid%%sm32y, grid%%em32y, grid%%sm33y, grid%%em33y ) \n"   ) ;
+      } else if ( !strcmp( *x , "y2x" ) ) {
+        fprintf(fp,"  call trans_x2y ( ntasks_y, local_communicator_y, 0, RWORDSIZE, IWORDSIZE, DATA_ORDER_%s , &\n", memord ) ;
+        fprintf(fp,"                   %s, &  ! variable in X decomp\n" , varref_x  ) ;
+        fprintf(fp,"                   grid%%sd31, grid%%ed31, grid%%sd32, grid%%ed32, grid%%sd33, grid%%ed33, &\n"         ) ;
+        fprintf(fp,"                   grid%%sp31x, grid%%ep31x, grid%%sp32x, grid%%ep32x, grid%%sp33x, grid%%ep33x, &\n"   ) ;
+        fprintf(fp,"                   grid%%sm31x, grid%%em31x, grid%%sm32x, grid%%em32x, grid%%sm33x, grid%%em33x, &\n"   ) ;
+        fprintf(fp,"                   %s, &  ! variable in Y decomp\n" , varref_y  ) ;
+        fprintf(fp,"                   grid%%sp31y, grid%%ep31y, grid%%sp32y, grid%%ep32y, grid%%sp33y, grid%%ep33y, &\n"   ) ;
+        fprintf(fp,"                   grid%%sm31y, grid%%em31y, grid%%sm32y, grid%%em32y, grid%%sm33y, grid%%em33y ) \n"   ) ;
+      } else if ( !strcmp( *x , "y2z" ) ) {
+        fprintf(fp,"  call trans_x2y ( ntasks_y, local_communicator_y, 0, RWORDSIZE, IWORDSIZE, DATA_ORDER_%s , &\n", memord ) ;
+        fprintf(fp,"                   %s, &  ! variable in X decomp\n" , varref_x  ) ;
+        fprintf(fp,"                   grid%%sd31, grid%%ed31, grid%%sd32, grid%%ed32, grid%%sd33, grid%%ed33, &\n"         ) ;
+        fprintf(fp,"                   grid%%sp31x, grid%%ep31x, grid%%sp32x, grid%%ep32x, grid%%sp33x, grid%%ep33x, &\n"   ) ;
+        fprintf(fp,"                   grid%%sm31x, grid%%em31x, grid%%sm32x, grid%%em32x, grid%%sm33x, grid%%em33x, &\n"   ) ;
+        fprintf(fp,"                   %s, &  ! variable in Y decomp\n" , varref_y  ) ;
+        fprintf(fp,"                   grid%%sp31y, grid%%ep31y, grid%%sp32y, grid%%ep32y, grid%%sp33y, grid%%ep33y, &\n"   ) ;
+        fprintf(fp,"                   grid%%sm31y, grid%%em31y, grid%%sm32y, grid%%em32y, grid%%sm33y, grid%%em33y ) \n"   ) ;
+        fprintf(fp,"  call trans_z2x ( ntasks_x, local_communicator_x, 0, RWORDSIZE, IWORDSIZE, DATA_ORDER_%s , &\n", memord ) ;
+        fprintf(fp,"                   %s, &  ! variable in Z decomp\n" , varref_z  ) ;
+        fprintf(fp,"                   grid%%sd31, grid%%ed31, grid%%sd32, grid%%ed32, grid%%sd33, grid%%ed33, &\n"         ) ;
+        fprintf(fp,"                   grid%%sp31, grid%%ep31, grid%%sp32, grid%%ep32, grid%%sp33, grid%%ep33, &\n"         ) ;
+        fprintf(fp,"                   grid%%sm31, grid%%em31, grid%%sm32, grid%%em32, grid%%sm33, grid%%em33, &\n"         ) ;
+        fprintf(fp,"                   %s, &  ! variable in X decomp\n" , varref_x  ) ;
+        fprintf(fp,"                   grid%%sp31x, grid%%ep31x, grid%%sp32x, grid%%ep32x, grid%%sp33x, grid%%ep33x, &\n"   ) ;
+        fprintf(fp,"                   grid%%sm31x, grid%%em31x, grid%%sm32x, grid%%em32x, grid%%sm33x, grid%%em33x)\n"   ) ;
+      } else if ( !strcmp( *x , "z2y" ) ) {
+        fprintf(fp,"  call trans_z2x ( ntasks_x, local_communicator_x, 1, RWORDSIZE, IWORDSIZE, DATA_ORDER_%s , &\n", memord ) ;
+        fprintf(fp,"                   %s, &  ! variable in Z decomp\n" , varref_z  ) ;
+        fprintf(fp,"                   grid%%sd31, grid%%ed31, grid%%sd32, grid%%ed32, grid%%sd33, grid%%ed33, &\n"         ) ;
+        fprintf(fp,"                   grid%%sp31, grid%%ep31, grid%%sp32, grid%%ep32, grid%%sp33, grid%%ep33, &\n"         ) ;
+        fprintf(fp,"                   grid%%sm31, grid%%em31, grid%%sm32, grid%%em32, grid%%sm33, grid%%em33, &\n"         ) ;
+        fprintf(fp,"                   %s, &  ! variable in X decomp\n" , varref_x  ) ;
+        fprintf(fp,"                   grid%%sp31x, grid%%ep31x, grid%%sp32x, grid%%ep32x, grid%%sp33x, grid%%ep33x, &\n"   ) ;
+        fprintf(fp,"                   grid%%sm31x, grid%%em31x, grid%%sm32x, grid%%em32x, grid%%sm33x, grid%%em33x )\n"   ) ;
+        fprintf(fp,"  call trans_x2y ( ntasks_y, local_communicator_y, 1, RWORDSIZE, IWORDSIZE, DATA_ORDER_%s , &\n", memord ) ;
+        fprintf(fp,"                   %s, &  ! variable in X decomp\n" , varref_x  ) ;
+        fprintf(fp,"                   grid%%sd31, grid%%ed31, grid%%sd32, grid%%ed32, grid%%sd33, grid%%ed33, &\n"         ) ;
+        fprintf(fp,"                   grid%%sp31x, grid%%ep31x, grid%%sp32x, grid%%ep32x, grid%%sp33x, grid%%ep33x, &\n"   ) ;
+        fprintf(fp,"                   grid%%sm31x, grid%%em31x, grid%%sm32x, grid%%em32x, grid%%sm33x, grid%%em33x, &\n"   ) ;
+        fprintf(fp,"                   %s, &  ! variable in Y decomp\n" , varref_y  ) ;
+        fprintf(fp,"                   grid%%sp31y, grid%%ep31y, grid%%sp32y, grid%%ep32y, grid%%sp33y, grid%%ep33y, &\n"   ) ;
+        fprintf(fp,"                   grid%%sm31y, grid%%em31y, grid%%sm32y, grid%%em32y, grid%%sm33y, grid%%em33y ) \n"   ) ;
+      }
+
       close_the_file(fp) ;
     }
 skiperific:

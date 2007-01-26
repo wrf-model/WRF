@@ -141,7 +141,7 @@ RSL_LITE_INIT_EXCH (
   yp_curs = 0 ; ym_curs = 0 ; xp_curs = 0 ; xm_curs = 0 ;
 }
 
-RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 , int * typesize0 , int * xy0 , int * pu0 , char * memord , int * xstag0, /* not used */
+RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 , int * typesize0 , int * xy0 , int * pu0 , int * imemord , int * xstag0, /* not used */
            int *me0, int * np0 , int * np_x0 , int * np_y0 , 
            int * ids0 , int * ide0 , int * jds0 , int * jde0 , int * kds0 , int * kde0 ,
            int * ims0 , int * ime0 , int * jms0 , int * jme0 , int * kms0 , int * kme0 ,
@@ -202,90 +202,34 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 , int * typesize0 , int * 
 	  MPI_Abort(MPI_COMM_WORLD, 99) ;
         }
         if ( typesize == sizeof(long int) && sizeof( long int ) != sizeof(int) ) {
-          F_PACK_LINT ( buf, p+yp_curs, &js, &je, &ks, &ke, &is, &ie, 
+          F_PACK_LINT ( buf, p+yp_curs, imemord, &js, &je, &ks, &ke, &is, &ie, 
                                               &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
           yp_curs += wcount*typesize ;
         }
 	else if ( typesize == sizeof(int) ) {
-#ifdef F_PACK
-          F_PACK_INT ( buf, p+yp_curs, &js, &je, &ks, &ke, &is, &ie,
+          F_PACK_INT ( buf, p+yp_curs, imemord, &js, &je, &ks, &ke, &is, &ie,
                                              &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
           yp_curs += wcount*typesize ;
-#else
-          wcount = 0 ;
-          for ( j = jpe-shw+1 ; j <= jpe ; j++ ) {
-            for ( k = kps ; k <= kpe ; k++ ) {
-              pi = (int *)(p+yp_curs) ;
-              i = IMAX(ips-shw) ;
-              qi = (int *)((buf + typesize*( (i-ims) + (ime-ims+1)*(
-                                             (k-kms) + (j-jms)*(kme-kms+1))))) ;
-              for ( i = IMAX(ips-shw) ; i <= IMIN(ipe+shw) ; i++ ) {
-                *pi++ = *qi++ ;
-                wcount++ ;
-              }
-              yp_curs += (i-(ips-shw))*typesize ;
-            }
-          }
-#endif
 	}
 	else {
-          for ( j = jpe-shw+1 ; j <= jpe ; j++ ) {
-            for ( k = kps ; k <= kpe ; k++ ) {
-              for ( i = IMAX(ips-shw) ; i <= IMIN(ipe+shw) ; i++ ) {
-                for ( t = 0 ; t < typesize ; t++ ) {
-                  *(p+yp_curs) = 
-                                 *(buf + t + typesize*(
-                                        (i-ims) + (ime-ims+1)*(
-                                        (k-kms) + (j-jms)*(kme-kms+1))) ) ;
-                  yp_curs++ ;
-                }
-              }
-            }
-          }
+          fprintf(stderr,"internal error: %s %d\n",__FILE__,__LINE__) ;
         }
       } else {
         js = jpe+1         ; je = jpe+shw ;
         ks = kps           ; ke = kpe ;
         is = IMAX(ips-shw) ; ie = IMIN(ipe+shw) ;
         if ( typesize == sizeof(long int) && sizeof( long int ) != sizeof(int) ) {
-          F_UNPACK_LINT ( p+yp_curs, buf, &js, &je, &ks, &ke, &is, &ie,
+          F_UNPACK_LINT ( p+yp_curs, buf, imemord, &js, &je, &ks, &ke, &is, &ie,
                                              &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
           yp_curs += wcount*typesize ;
         }
 	else if ( typesize == sizeof(int) ) {
-#ifdef F_PACK
-          F_UNPACK_INT ( p+yp_curs, buf, &js, &je, &ks, &ke, &is, &ie,
+          F_UNPACK_INT ( p+yp_curs, buf, imemord, &js, &je, &ks, &ke, &is, &ie,
                                              &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
           yp_curs += wcount*typesize ;
-#else
-          for ( j = jpe+1 ; j <= jpe+shw ; j++ ) {
-            for ( k = kps ; k <= kpe ; k++ ) {
-              pi = (int *)(p+yp_curs) ;
-              i = IMAX(ips-shw) ;
-              qi = (int *)((buf + typesize*( (i-ims) + (ime-ims+1)*(
-                                             (k-kms) + (j-jms)*(kme-kms+1))))) ;
-              for ( i = IMAX(ips-shw) ; i <= IMIN(ipe+shw) ; i++ ) {
-                *qi++ = *pi++ ;
-              }
-              yp_curs += (i-(ips-shw))*typesize ;
-            }
-          }
-#endif
 	}
 	else {
-          for ( j = jpe+1 ; j <= jpe+shw ; j++ ) {
-            for ( k = kps ; k <= kpe ; k++ ) {
-              for ( i = IMAX(ips-shw) ; i <= IMIN(ipe+shw) ; i++ ) {
-                for ( t = 0 ; t < typesize ; t++ ) {
-                                 *(buf + t + typesize*(
-                                        (i-ims) + (ime-ims+1)*(
-                                        (k-kms) + (j-jms)*(kme-kms+1))) ) =
-                  *(p+yp_curs) ;
-                  yp_curs++ ;
-                }
-              }
-            }
-          }
+          fprintf(stderr,"internal error: %s %d\n",__FILE__,__LINE__) ;
 	}
       }
     }
@@ -302,90 +246,34 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 , int * typesize0 , int * 
 	  MPI_Abort(MPI_COMM_WORLD, 99) ;
         }
         if ( typesize == sizeof(long int) && sizeof( long int ) != sizeof(int) ) {
-          F_PACK_LINT ( buf, p+ym_curs, &js, &je, &ks, &ke, &is, &ie,
+          F_PACK_LINT ( buf, p+ym_curs, imemord, &js, &je, &ks, &ke, &is, &ie,
                                              &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
           ym_curs += wcount*typesize ;
         }
 	else if ( typesize == sizeof(int) ) {
-#ifdef F_PACK
-          F_PACK_INT ( buf, p+ym_curs, &js, &je, &ks, &ke, &is, &ie,
+          F_PACK_INT ( buf, p+ym_curs, imemord, &js, &je, &ks, &ke, &is, &ie,
                                              &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
           ym_curs += wcount*typesize ;
-#else
-          wcount = 0 ;
-          for ( j = jps ; j <= jps+shw-1 ; j++ ) {
-            for ( k = kps ; k <= kpe ; k++ ) {
-              pi = (int *)(p+ym_curs) ;
-              i = IMAX(ips-shw) ;
-              qi = (int *)((buf + typesize*( (i-ims) + (ime-ims+1)*(
-                                             (k-kms) + (j-jms)*(kme-kms+1))))) ;
-              for ( i = IMAX(ips-shw) ; i <= IMIN(ipe+shw) ; i++ ) {
-                *pi++ = *qi++ ;
-                wcount++ ;
-              }
-              ym_curs += (i-(ips-shw))*typesize ;
-            }
-          }
-#endif
 	}
 	else {
-          for ( j = jps ; j <= jps+shw-1 ; j++ ) {
-            for ( k = kps ; k <= kpe ; k++ ) {
-              for ( i = IMAX(ips-shw) ; i <= IMIN(ipe+shw) ; i++ ) {
-                for ( t = 0 ; t < typesize ; t++ ) {
-                  *(p+ym_curs) = 
-                                 *(buf + t + typesize*(
-                                        (i-ims) + (ime-ims+1)*(
-                                        (k-kms) + (j-jms)*(kme-kms+1))) ) ;
-                  ym_curs++ ;
-                }
-              }
-            }
-          }
+          fprintf(stderr,"internal error: %s %d\n",__FILE__,__LINE__) ;
 	}
       } else {
         js = jps-shw       ; je = jps-1 ;
         ks = kps           ; ke = kpe ;
         is = IMAX(ips-shw) ; ie = IMIN(ipe+shw) ;
         if ( typesize == sizeof(long int) && sizeof( long int ) != sizeof(int) ) {
-          F_UNPACK_LINT ( p+ym_curs, buf, &js, &je, &ks, &ke, &is, &ie,
+          F_UNPACK_LINT ( p+ym_curs, buf, imemord, &js, &je, &ks, &ke, &is, &ie,
                                                 &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
           ym_curs += wcount*typesize ;
         }
 	else if ( typesize == sizeof(int) ) {
-#ifdef F_PACK
-          F_UNPACK_INT ( p+ym_curs, buf, &js, &je, &ks, &ke, &is, &ie,
+          F_UNPACK_INT ( p+ym_curs, buf, imemord, &js, &je, &ks, &ke, &is, &ie,
                                                &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
           ym_curs += wcount*typesize ;
-#else
-         for ( j = jps-shw ; j <= jps-1 ; j++ ) {
-            for ( k = kps ; k <= kpe ; k++ ) {
-              pi = (int *)(p+ym_curs) ;
-              i = IMAX(ips-shw) ;
-              qi = (int *)((buf + typesize*( (i-ims) + (ime-ims+1)*(
-                                             (k-kms) + (j-jms)*(kme-kms+1))))) ;
-              for ( i = IMAX(ips-shw) ; i <= IMIN(ipe+shw) ; i++ ) {
-                *qi++ = *pi++ ;
-              }
-              ym_curs += (i-(ips-shw))*typesize ;
-            }
-          }
-#endif
 	}
 	else {
-          for ( j = jps-shw ; j <= jps-1 ; j++ ) {
-            for ( k = kps ; k <= kpe ; k++ ) {
-              for ( i = IMAX(ips-shw) ; i <= IMIN(ipe+shw) ; i++ ) {
-                for ( t = 0 ; t < typesize ; t++ ) {
-                                 *(buf + t + typesize*(
-                                        (i-ims) + (ime-ims+1)*(
-                                        (k-kms) + (j-jms)*(kme-kms+1))) ) =
-                  *(p+ym_curs)  ;
-                  ym_curs++ ;
-                }
-              }
-            }
-          }
+          fprintf(stderr,"internal error: %s %d\n",__FILE__,__LINE__) ;
         }
       }
     }
@@ -406,88 +294,34 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 , int * typesize0 , int * 
 	  MPI_Abort(MPI_COMM_WORLD, 99) ;
         }
         if ( typesize == sizeof(long int) && sizeof( long int ) != sizeof(int) ) {
-          F_PACK_LINT ( buf, p+xp_curs, &js, &je, &ks, &ke, &is, &ie,
+          F_PACK_LINT ( buf, p+xp_curs, imemord, &js, &je, &ks, &ke, &is, &ie,
                                               &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
           xp_curs += wcount*typesize ;
         }
 	else if ( typesize == sizeof(int) ) {
-#ifdef F_PACK
-          F_PACK_INT ( buf, p+xp_curs, &js, &je, &ks, &ke, &is, &ie,
+          F_PACK_INT ( buf, p+xp_curs, imemord, &js, &je, &ks, &ke, &is, &ie,
                                              &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
           xp_curs += wcount*typesize ;
-#else
-          for ( j = JMAX(jps-shw) ; j <= JMIN(jpe+shw) ; j++ ) {
-            for ( k = kps ; k <= kpe ; k++ ) {
-	      pi = (int *)(p+xp_curs) ;
-	      i = ipe-shw+1 ;
-	      qi = (int *)((buf + typesize*( (i-ims) + (ime-ims+1)*(
-                                             (k-kms) + (j-jms)*(kme-kms+1))))) ;
-              for ( i = ipe-shw+1 ; i <= ipe ; i++ ) {
-	        *pi++ = *qi++ ;
-	      }
-	      xp_curs += shw*typesize ;
-	    }
-	  }
-#endif
 	}
 	else {
-          for ( j = JMAX(jps-shw) ; j <= JMIN(jpe+shw) ; j++ ) {
-            for ( k = kps ; k <= kpe ; k++ ) {
-              for ( i = ipe-shw+1 ; i <= ipe ; i++ ) {
-                for ( t = 0 ; t < typesize ; t++ ) {
-                  *(p+xp_curs) = 
-                                 *(buf + t + typesize*(
-                                        (i-ims) + (ime-ims+1)*(
-                                        (k-kms) + (j-jms)*(kme-kms+1))) ) ;
-                  xp_curs++ ;
-                }
-              }
-            }
-          }
+          fprintf(stderr,"internal error: %s %d\n",__FILE__,__LINE__) ;
 	}
       } else {
         js = JMAX(jps-shw) ; je = JMIN(jpe+shw) ;
         ks = kps           ; ke = kpe ;
         is = ipe+1         ; ie = ipe+shw ;
         if ( typesize == sizeof(long int) && sizeof( long int ) != sizeof(int) ) {
-          F_UNPACK_LINT ( p+xp_curs, buf, &js, &je, &ks, &ke, &is, &ie,
+          F_UNPACK_LINT ( p+xp_curs, buf, imemord, &js, &je, &ks, &ke, &is, &ie,
                                                 &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
           xp_curs += wcount*typesize ;
         }
 	else if ( typesize == sizeof(int) ) {
-#ifdef F_PACK
-          F_UNPACK_INT ( p+xp_curs, buf, &js, &je, &ks, &ke, &is, &ie,
+          F_UNPACK_INT ( p+xp_curs, buf, imemord, &js, &je, &ks, &ke, &is, &ie,
                                                &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
           xp_curs += wcount*typesize ;
-#else
-          for ( j = JMAX(jps-shw) ; j <= JMIN(jpe+shw) ; j++ ) {
-            for ( k = kps ; k <= kpe ; k++ ) {
-	      pi = (int *)(p+xp_curs) ;
-	      i = ipe+1 ;
-	      qi = (int *)((buf + typesize*( (i-ims) + (ime-ims+1)*(
-                                             (k-kms) + (j-jms)*(kme-kms+1))))) ;
-              for ( i = ipe+1 ; i <= ipe+shw ; i++ ) {
-	        *qi++ = *pi++ ;
-	      }
-	      xp_curs += shw*typesize ;
-	    }
-	  }
-#endif
 	}
 	else {
-          for ( j = JMAX(jps-shw) ; j <= JMIN(jpe+shw) ; j++ ) {
-            for ( k = kps ; k <= kpe ; k++ ) {
-              for ( i = ipe+1 ; i <= ipe+shw ; i++ ) {
-                for ( t = 0 ; t < typesize ; t++ ) {
-                                 *(buf + t + typesize*(
-                                        (i-ims) + (ime-ims+1)*(
-                                        (k-kms) + (j-jms)*(kme-kms+1))) ) =
-                  *(p+xp_curs) ;
-                  xp_curs++ ;
-                }
-              }
-            }
-          }
+          fprintf(stderr,"internal error: %s %d\n",__FILE__,__LINE__) ;
         }
       }
     }
@@ -504,88 +338,34 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 , int * typesize0 , int * 
 	  MPI_Abort(MPI_COMM_WORLD, 99) ;
         }
         if ( typesize == sizeof(long int) && sizeof( long int ) != sizeof(int) ) {
-          F_PACK_LINT ( buf, p+xm_curs, &js, &je, &ks, &ke, &is, &ie,
+          F_PACK_LINT ( buf, p+xm_curs, imemord, &js, &je, &ks, &ke, &is, &ie,
                                               &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
           xm_curs += wcount*typesize ;
         }
 	else if ( typesize == sizeof(int) ) {
-#ifdef F_PACK
-          F_PACK_INT ( buf, p+xm_curs, &js, &je, &ks, &ke, &is, &ie,
+          F_PACK_INT ( buf, p+xm_curs, imemord, &js, &je, &ks, &ke, &is, &ie,
                                              &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
           xm_curs += wcount*typesize ;
-#else
-          for ( j = JMAX(jps-shw) ; j <= JMIN(jpe+shw) ; j++ ) {
-            for ( k = kps ; k <= kpe ; k++ ) {
-	      pi = (int *)(p+xm_curs) ;
-	      i = ips ;
-	      qi = (int *)((buf + typesize*( (i-ims) + (ime-ims+1)*(
-                                             (k-kms) + (j-jms)*(kme-kms+1))))) ;
-              for ( i = ips ; i <= ips+shw-1 ; i++ ) {
-	        *pi++ = *qi++ ;
-	      }
-	      xm_curs += shw*typesize ;
-	    }
-	  }
-#endif
 	}
 	else {
-          for ( j = JMAX(jps-shw) ; j <= JMIN(jpe+shw) ; j++ ) {
-            for ( k = kps ; k <= kpe ; k++ ) {
-              for ( i = ips ; i <= ips+shw-1 ; i++ ) {
-                for ( t = 0 ; t < typesize ; t++ ) {
-                  *(p+xm_curs) = 
-                                 *(buf + t + typesize*(
-                                        (i-ims) + (ime-ims+1)*(
-                                        (k-kms) + (j-jms)*(kme-kms+1))) ) ;
-                  xm_curs++ ;
-                }
-              }
-            }
-          }
+          fprintf(stderr,"internal error: %s %d\n",__FILE__,__LINE__) ;
         }
       } else {
         js = JMAX(jps-shw) ; je = JMIN(jpe+shw) ;
         ks = kps           ; ke = kpe ;
         is = ips-shw       ; ie = ips-1 ;
         if ( typesize == sizeof(long int) && sizeof( long int ) != sizeof(int) ) {
-          F_UNPACK_LINT ( p+xm_curs, buf, &js, &je, &ks, &ke, &is, &ie,
+          F_UNPACK_LINT ( p+xm_curs, buf, imemord, &js, &je, &ks, &ke, &is, &ie,
                                                 &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
           xm_curs += wcount*typesize ;
         } 
         else if ( typesize == sizeof(int) ) {
-#ifdef F_PACK
-          F_UNPACK_INT ( p+xm_curs, buf, &js, &je, &ks, &ke, &is, &ie,
+          F_UNPACK_INT ( p+xm_curs, buf, imemord, &js, &je, &ks, &ke, &is, &ie,
                                                &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
           xm_curs += wcount*typesize ;
-#else
-          for ( j = JMAX(jps-shw) ; j <= JMIN(jpe+shw) ; j++ ) {
-            for ( k = kps ; k <= kpe ; k++ ) {
-	      pi = (int *)(p+xm_curs) ;
-	      i = ips-shw ;
-	      qi = (int *)((buf + typesize*( (i-ims) + (ime-ims+1)*(
-                                             (k-kms) + (j-jms)*(kme-kms+1))))) ;
-              for ( i = ips-shw ; i <= ips-1 ; i++ ) {
-	        *qi++ = *pi++ ;
-	      }
-	      xm_curs += shw*typesize ;
-	    }
-	  }
-#endif
 	}
 	else {
-          for ( j = JMAX(jps-shw) ; j <= JMIN(jpe+shw) ; j++ ) {
-            for ( k = kps ; k <= kpe ; k++ ) {
-              for ( i = ips-shw ; i <= ips-1 ; i++ ) {
-                for ( t = 0 ; t < typesize ; t++ ) {
-                                 *(buf + t + typesize*(
-                                        (i-ims) + (ime-ims+1)*(
-                                        (k-kms) + (j-jms)*(kme-kms+1))) ) =
-                  *(p+xm_curs) ;
-                  xm_curs++ ;
-                }
-              }
-            }
-          }
+          fprintf(stderr,"internal error: %s %d\n",__FILE__,__LINE__) ;
         }
       }
     }

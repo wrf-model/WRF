@@ -327,7 +327,7 @@ CONTAINS
     INTEGER, INTENT(IN) :: fid
     INTEGER, INTENT(INOUT) :: ierr
     IF ( config_flags%io_form_auxhist6 .GT. 0 ) THEN
-      CALL output_wrf ( fid , grid , config_flags , aux_hist5_only , ierr )
+      CALL output_wrf ( fid , grid , config_flags , aux_hist6_only , ierr )
     ENDIF
     RETURN
   END SUBROUTINE output_aux_hist6

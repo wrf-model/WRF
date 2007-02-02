@@ -434,7 +434,7 @@ set IO_FORM_WHICH =( IO     IO        IO       IO       O        )
 if      ( ( $NESTED == TRUE ) && ( $RSL_LITE != TRUE ) ) then
 	set CORES = ( em_real em_b_wave em_quarter_ss          )
 else if ( ( $NESTED == TRUE ) && ( $RSL_LITE == TRUE ) ) then
-	set CORES = ( em_real )
+	set CORES = ( em_real em_b_wave em_quarter_ss          )
 else if ( ( $NESTED != TRUE ) && ( $RSL_LITE != TRUE ) ) then
 	set CORES = ( em_real em_b_wave em_quarter_ss nmm_real )
 	if ( $CHEM == TRUE ) then
@@ -450,7 +450,7 @@ else if ( ( $NESTED != TRUE ) && ( $RSL_LITE != TRUE ) ) then
 		set CORES = ( em_real )
 	endif
 else if ( ( $NESTED != TRUE ) && ( $RSL_LITE == TRUE ) ) then
-	set CORES = ( em_real em_quarter_ss nmm_real )
+	set CORES = ( em_real em_b_wave em_quarter_ss nmm_real )
 	if ( $CHEM == TRUE ) then
 		set CORES = ( em_real em_real )
 	endif
@@ -477,7 +477,7 @@ if      ( $REAL8 == TRUE ) then
 endif
 
 if      ( ( $CHEM != TRUE ) && ( $FDDA != TRUE ) && ( $NESTED != TRUE ) ) then
-	set PHYSOPTS =	( 1 2 3 4 )
+	set PHYSOPTS =	( 1 2 3 4 5 )
 else if ( ( $CHEM != TRUE ) && ( $FDDA != TRUE ) && ( $NESTED == TRUE ) ) then
 	set PHYSOPTS =	( 1 2 3 )
 else if ( ( $CHEM != TRUE ) && ( $FDDA == TRUE ) ) then
@@ -491,11 +491,9 @@ endif
 #	RSL_LITE (we are only doing em_quarter_ss), choose the first option only
 #	since it uses open boundaries.
 
-if      ( ( $NESTED == TRUE ) && ( $RSL_LITE != TRUE ) ) then
+if      ( $NESTED == TRUE ) then
 	set Max_Ideal_Physics_Options = 2
-else if   ( $RSL_LITE == TRUE )                          then
-	set Max_Ideal_Physics_Options = 1
-else if ( ( $NESTED != TRUE ) && ( $RSL_LITE != TRUE ) ) then
+else if ( $NESTED != TRUE ) then
 	set Max_Ideal_Physics_Options = 3
 endif
 
@@ -1179,7 +1177,7 @@ else if ( $ARCH[1] == OSF1 && $clrm == 0 ) then
 	else if ( ( $NESTED != TRUE ) && ( $RSL_LITE != TRUE ) ) then
 		set COMPOPTS    = ( 1 3 6 )
 	else if ( ( $NESTED == TRUE ) && ( $RSL_LITE == TRUE ) ) then
-		set COMPOPTS	= ( 2 4 11 )
+		set COMPOPTS	= ( 2 4 5 )
 	else if ( ( $NESTED != TRUE ) && ( $RSL_LITE == TRUE ) ) then
 		set COMPOPTS	= ( 1 3 5 )
 	endif
@@ -1600,7 +1598,7 @@ if ( $QUILT == TRUE ) then
 	echo " " >>! ${DEF_DIR}/wrftest.output
 endif
 if ( $FDDA == TRUE ) then
-	echo "Running FDDA tests" >>! ${DEF_DIR}/wrftest.output
+	echo "Running FDDA tests (grid=1, obs=2, grid+obs=3)" >>! ${DEF_DIR}/wrftest.output
 	echo " " >>! ${DEF_DIR}/wrftest.output
 endif
 if ( $GENERATE_BASELINE != FALSE ) then
@@ -2477,8 +2475,7 @@ banner 25
  		                                    -e '/^ io_form_history /,/^ io_form_boundary/d' -e '/^ restart_interval/r ./io_format'	\
 						    -e '/^ mp_physics/d' -e '/^ &physics/r ./phys_mp' 						\
 						    -e '/^ non_hydrostatic/d' -e '/^ epssm/r ./phys_nh' 					\
-						    -e '/^ periodic_x/d' -e '/^ open_xs/d' -e '/^ open_xe/d' 					\
-						    -e '/^ periodic_y/d' -e '/^ open_ys/d' -e '/^ open_ye/d' 					\
+						    -e '/^ periodic_x /,/^ open_ye/d'								\
 						    -e '/^ &bdy_control/r ./phys_bc' 								\
 						    -e '/^ max_dom/d' -e '/^ time_step_fract_den/r ./dom_ideal'					\
 						    ./namelist.input.template >! namelist.input

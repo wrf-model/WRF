@@ -340,7 +340,7 @@ real::t1,t2,t3,t4
       print *,' '
       print *,'-----------------------------------------------------------------------------'
       print *,' '
-      print '(A,I2,A,A,A,I2,A,I2)' , &
+      print '(A,I2,A,A,A,I4,A,I4)' , &
       ' Domain ',grid%id,': Current date being processed: ',current_date, ', which is loop #',loop,' out of ',time_loop_max
 
       !  After current_date has been set, fill in the julgmt stuff.
@@ -362,19 +362,17 @@ real::t1,t2,t3,t4
          WRITE ( wrf_err_message , FMT='(A,A)' )'med_sidata_input: calling open_r_dataset for ', &
                                                 TRIM(config_flags%auxinput1_inname)
          CALL wrf_debug ( 100 , wrf_err_message )
-         CALL construct_filename4a( si_inpname , config_flags%auxinput1_inname , grid%id , 2 , &
-                                    current_date_char , config_flags%io_form_auxinput1 )
+         IF ( config_flags%auxinput1_inname(1:8) .NE. 'wrf_real' ) THEN
+            CALL construct_filename4a( si_inpname , config_flags%auxinput1_inname , grid%id , 2 , &
+                                       current_date_char , config_flags%io_form_auxinput1 )
+         ELSE
+            CALL construct_filename2a( si_inpname , config_flags%auxinput1_inname , grid%id , 2 , &
+                                       current_date_char )
+         END IF
          CALL open_r_dataset ( idsi, TRIM(si_inpname) , grid , config_flags , "DATASET=AUXINPUT1", ierr )
          IF ( ierr .NE. 0 ) THEN
-            CALL wrf_debug( 1 , 'error opening ' // TRIM(si_inpname) // &
-                                ' for input; bad date in namelist or file not in directory' )
-            CALL wrf_debug( 1 , 'will try again without the extension' )
-            CALL construct_filename2a( si_inpname , config_flags%auxinput1_inname , grid%id , 2 , current_date_char )
-            CALL open_r_dataset ( idsi, TRIM(si_inpname) , grid , config_flags , "DATASET=AUXINPUT1", ierr )
-            IF ( ierr .NE. 0 ) THEN
-               CALL wrf_error_fatal( 'error opening ' // TRIM(si_inpname) // &
-                                     ' for input; bad date in namelist or file not in directory' )
-            ENDIF
+            CALL wrf_error_fatal( 'error opening ' // TRIM(si_inpname) // &
+                                  ' for input; bad date in namelist or file not in directory' )
          ENDIF
       END IF
 
@@ -410,7 +408,7 @@ real::t1,t2,t3,t4
       !  Close this file that is output from the SI and input to this pre-proc.
 
       CALL       wrf_debug ( 100 , 'med_sidata_input: back from init_domain' )
-      CALL close_dataset ( idsi , config_flags , "DATASET=INPUT" )
+      CALL close_dataset ( idsi , config_flags , "DATASET=AUXINPUT1" )
 
 !     CALL start_domain ( grid , .TRUE. )
 

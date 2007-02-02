@@ -327,18 +327,16 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
 
        WRITE ( wrf_err_message , FMT='(A,A)' )'med_sidata_input: calling open_r_dataset for ',TRIM(config_flags%auxinput1_inname)
        CALL wrf_debug ( 100 , wrf_err_message )
-       CALL construct_filename4a( si_inpname , config_flags%auxinput1_inname , grid%id , 2 , current_date_char , config_flags%io_form_auxinput1 )
+       IF ( config_flags%auxinput1_inname(1:8) .NE. 'wrf_real' ) THEN
+          CALL construct_filename4a( si_inpname , config_flags%auxinput1_inname , grid%id , 2 , current_date_char , &
+                                     config_flags%io_form_auxinput1 )
+       ELSE
+          CALL construct_filename2a( si_inpname , config_flags%auxinput1_inname , grid%id , 2 , current_date_char )
+       END IF
        CALL open_r_dataset ( idsi, TRIM(si_inpname) , grid , config_flags , "DATASET=AUXINPUT1", ierr )
-
-         IF ( ierr .NE. 0 ) THEN
-            CALL wrf_debug( 1 , 'error opening ' // TRIM(si_inpname) // ' for input; bad date in namelist or file not in directory' )
-            CALL wrf_debug( 1 , 'will try again without the extension' )
-            CALL construct_filename2a( si_inpname , config_flags%auxinput1_inname , grid%id , 2 , current_date_char )
-            CALL open_r_dataset ( idsi, TRIM(si_inpname) , grid , config_flags , "DATASET=AUXINPUT1", ierr )
-            IF ( ierr .NE. 0 ) THEN
-               CALL wrf_error_fatal( 'error opening ' // TRIM(si_inpname) // ' for input; bad date in namelist or file not in directory' )
-            ENDIF
-         ENDIF
+       IF ( ierr .NE. 0 ) THEN
+          CALL wrf_error_fatal( 'error opening ' // TRIM(si_inpname) // ' for input; bad date in namelist or file not in directory' )
+       ENDIF
 
 
       !  Input data.

@@ -2968,7 +2968,7 @@ i,j,all_x(1),target_x(target_loop)
             IF ( ( loc_center_left -(((n+1)/2)-1) .GE.       1 ) .AND. &
                  ( loc_center_right+(((n+1)/2)-1) .LE. all_dim ) ) THEN
                ist  = loc_center_left -(((n+1)/2)-1)
-               iend = iend + n
+               iend = ist + n
                CALL lagrange_interp ( all_x(ist:iend) , all_y(ist:iend) , n , target_x(target_loop) , target_y(target_loop) )
             ELSE
                IF ( .NOT. found_loc ) THEN

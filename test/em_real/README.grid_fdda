@@ -23,9 +23,9 @@ To run an fdda job
  gfdda_end_h (max_dom)               = 6        ; time (h) to stop nudging after start of forecast
  io_form_gfdda                       = 2        ; analysis data io format (2 = netCDF)
  fgdt (max_dom)                      = 0        ; calculation frequency (minutes) for grid-nudging (0=every step)
- if_no_pbl_nudging_uv (max_dom)      = 0        ; 0= no nudging of u and v in the pbl, 1=nudging in the pbl
- if_no_pbl_nudging_t (max_dom)       = 0        ; 0= no nudging of temp in the pbl, 1=nudging in the pbl
- if_no_pbl_nudging_q (max_dom)       = 0        ; 0= no nudging of qvapor in the pbl, 1=nudging in the pbl
+ if_no_pbl_nudging_uv (max_dom)      = 0        ; 1= no nudging of u and v in the pbl, 0=nudging in the pbl
+ if_no_pbl_nudging_t (max_dom)       = 0        ; 1= no nudging of temp in the pbl, 0=nudging in the pbl
+ if_no_pbl_nudging_q (max_dom)       = 0        ; 1= no nudging of qvapor in the pbl, 0=nudging in the pbl
  if_zfac_uv (max_dom)                = 0        ; 0= nudge u and v all layers, 1= limit nudging to levels above k_zfac_uv
   k_zfac_uv (max_dom)                = 10       ; 10=model level below which nudging is switched off for u and v
  if_zfac_t (max_dom)                 = 0        ; 0= nudge temp all layers, 1= limit nudging to levels above k_zfac_t

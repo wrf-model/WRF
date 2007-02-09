@@ -1737,6 +1737,7 @@ SUBROUTINE med_latbound_in ( grid , config_flags )
    CHARACTER (LEN=80)                     :: bdyname
    Type (WRFU_Time )                      :: startTime, stopTime, currentTime
    Type (WRFU_TimeInterval )              :: stepTime
+integer myproc,i,j,k
 
 #include <wrf_io_flags.h>
 
@@ -1799,10 +1800,7 @@ SUBROUTINE med_latbound_in ( grid , config_flags )
          WRITE ( message , FMT = '("processing lateral boundary for domain ",I8)' ) grid%id
          CALL end_timing ( TRIM(message) )
        ENDIF
-
-!#if 0
      ENDIF
-!#endif
    ENDIF
    RETURN
 END SUBROUTINE med_latbound_in

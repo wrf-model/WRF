@@ -522,10 +522,20 @@ fprintf(fp,"  IF (BTEST(%s_stream_table(grid%%id, itrace ) , switch )) THEN\n",p
                 if ( p->stag_y ) { ydomainend = "jde" ; } else { ydomainend = "(jde-1)" ; }
                 ds1 = "1" ; de1 = ydomainend ;
                 ms1 = "1" ; me1 = "MAX( ide , jde )" ;
-                if        ( sw_io == GEN_INPUT ) {
-                  ps1 = "1" ; pe1 = ydomainend ;
-                } else if ( sw_io == GEN_OUTPUT ) {
-                  ps1 = pdim[idx][0] ; pe1 = pdim[idx][1] ;
+                if ( sw_new_bdys ) {  /* 20070207 */
+                  if ( ! sw_new_with_old_bdys ) { ms1 = "jms" ; me1 = "jme" ; }
+                  if        ( sw_io == GEN_INPUT ) {
+                    ps1 = "MAX(jms,jds)" ;
+                    sprintf(t2,"MIN(jme,%s)",ydomainend) ; pe1 = t2 ;
+                  } else if ( sw_io == GEN_OUTPUT ) {
+                    ps1 = pdim[idx][0] ; pe1 = pdim[idx][1] ;
+                  }
+                } else {
+                  if        ( sw_io == GEN_INPUT ) {
+                    ps1 = "1" ; pe1 = ydomainend ;
+                  } else if ( sw_io == GEN_OUTPUT ) {
+                    ps1 = pdim[idx][0] ; pe1 = pdim[idx][1] ;
+                  }
                 }
                 if ( p->stag_y ) { sprintf( dimname[0] ,"%s_stag", dimnode->dim_data_name) ; }
                 else                   { strcpy( dimname[0], dimnode->dim_data_name) ; }
@@ -538,10 +548,20 @@ fprintf(fp,"  IF (BTEST(%s_stream_table(grid%%id, itrace ) , switch )) THEN\n",p
                 if ( p->stag_x ) { xdomainend = "ide" ; } else { xdomainend = "(ide-1)" ; }
                 ds1 = "1" ; de1 = xdomainend ;
                 ms1 = "1" ; me1 = "MAX( ide , jde )" ;
-                if        ( sw_io == GEN_INPUT ) {
-                  ps1 = "1" ; pe1 = xdomainend ;
-                } else if ( sw_io == GEN_OUTPUT ) {
-                  ps1 = pdim[idx][0] ; pe1 = pdim[idx][1] ;
+                if ( sw_new_bdys ) {  /* 20070207 */
+                  if ( ! sw_new_with_old_bdys ) { ms1 = "ims" ; me1 = "ime" ; }
+                  if        ( sw_io == GEN_INPUT ) {
+                    ps1 = "MAX(ims,ids)" ;
+                    sprintf(t2,"MIN(ime,%s)",xdomainend) ; pe1 = t2 ;
+                  } else if ( sw_io == GEN_OUTPUT ) {
+                    ps1 = pdim[idx][0] ; pe1 = pdim[idx][1] ;
+                  }
+                } else {
+                  if        ( sw_io == GEN_INPUT ) {
+                    ps1 = "1" ; pe1 = xdomainend ;
+                  } else if ( sw_io == GEN_OUTPUT ) {
+                    ps1 = pdim[idx][0] ; pe1 = pdim[idx][1] ;
+                  }
                 }
                 if ( p->stag_x ) { sprintf( dimname[0] ,"%s_stag", dimnode->dim_data_name) ; }
                 else             { strcpy( dimname[0], dimnode->dim_data_name) ; }
@@ -559,7 +579,11 @@ fprintf(fp,"                       globbuf_%s               , &  ! Field \n",p->
             } else {
               strcpy(bdytag2,"") ;
               strncat(bdytag2,bdytag, pass+2) ;
-fprintf(fp,"          grid%%%s%s(1,kds,1,%d,itrace)  , &  ! Field\n",p->name,bdytag2,ibdy) ;
+if ( sw_new_bdys && ! sw_new_with_old_bdys ) { /* 20070207 */
+  fprintf(fp,"          grid%%%s%s(%s,kds,1,itrace)  , &  ! Field\n",p->name,bdytag2, ms1) ;
+} else {
+  fprintf(fp,"          grid%%%s%s(1,kds,1,%d,itrace)  , &  ! Field\n",p->name,bdytag2, ibdy) ;
+}
             }
             if (!strncmp(p->members->type->name,"real",4)) {
               fprintf(fp,"                       WRF_FLOAT             , &  ! FieldType \n") ;
@@ -613,6 +637,7 @@ fprintf(fp, "ENDDO\n") ;
         int idx ;
         char *bdytag, *xdomainend, *ydomainend, *zdomainend ;
         char *ds1,*de1,*ds2,*de2,*ds3,*de3,*ms1,*me1,*ms2,*me2,*ms3,*me3,*ps1,*pe1,*ps2,*pe2,*ps3,*pe3 ;
+	char t1[64], t2[64] ;
 
         if (!strncmp( p->use, "dyn_", 4))
           sprintf(core,"%s_",p->use+4) ;
@@ -668,11 +693,21 @@ fprintf(fp, "ENDDO\n") ;
               if ( p->stag_y ) { ydomainend = "jde" ; } else { ydomainend = "(jde-1)" ; }
               ds1 = "1" ; de1 = ydomainend ;
               ms1 = "1" ; me1 = "MAX( ide , jde )" ;
-              if        ( sw_io == GEN_INPUT ) {
-                ps1 = "1" ; pe1 = ydomainend ;
-              } else if ( sw_io == GEN_OUTPUT ) {
-                ps1 = pdim[idx][0] ; pe1 = pdim[idx][1] ;
-              }
+	      if ( sw_new_bdys ) {  /* 20070207 */
+                if ( ! sw_new_with_old_bdys ) { ms1 = "jms" ; me1 = "jme" ; }
+                if        ( sw_io == GEN_INPUT ) {
+		  ps1 = "MAX(jms,jds)" ;
+		  sprintf(t2,"MIN(jme,%s)",ydomainend) ; pe1 = t2 ;
+                } else if ( sw_io == GEN_OUTPUT ) {
+                  ps1 = pdim[idx][0] ; pe1 = pdim[idx][1] ;
+                }
+	      } else {
+                if        ( sw_io == GEN_INPUT ) {
+                  ps1 = "1" ; pe1 = ydomainend ;
+                } else if ( sw_io == GEN_OUTPUT ) {
+                  ps1 = pdim[idx][0] ; pe1 = pdim[idx][1] ;
+                }
+	      }
               if ( p->stag_y ) { sprintf( dimname[0] ,"%s_stag", dimnode->dim_data_name) ; }
               else                   { strcpy( dimname[0], dimnode->dim_data_name) ; }
             }
@@ -684,11 +719,22 @@ fprintf(fp, "ENDDO\n") ;
               if ( p->stag_x ) { xdomainend = "ide" ; } else { xdomainend = "(ide-1)" ; }
               ds1 = "1" ; de1 = xdomainend ;
               ms1 = "1" ; me1 = "MAX( ide , jde )" ;
-              if        ( sw_io == GEN_INPUT ) {
-                ps1 = "1" ; pe1 = xdomainend ;
-              } else if ( sw_io == GEN_OUTPUT ) {
-                ps1 = pdim[idx][0] ; pe1 = pdim[idx][1] ;
-              }
+	      if ( sw_new_bdys ) {  /* 20070207 */
+                if ( ! sw_new_with_old_bdys ) { ms1 = "ims" ; me1 = "ime" ; }
+                if        ( sw_io == GEN_INPUT ) {
+		  ps1 = "MAX(ims,ids)" ;
+		  sprintf(t2,"MIN(ime,%s)",xdomainend) ; pe1 = t2 ;
+                } else if ( sw_io == GEN_OUTPUT ) {
+                  ps1 = pdim[idx][0] ; pe1 = pdim[idx][1] ;
+                }
+	      } else {
+                ms1 = "1" ; me1 = "MAX( ide , jde )" ;
+                if        ( sw_io == GEN_INPUT ) {
+                  ps1 = "1" ; pe1 = xdomainend ;
+                } else if ( sw_io == GEN_OUTPUT ) {
+                  ps1 = pdim[idx][0] ; pe1 = pdim[idx][1] ;
+                }
+	      }
               if ( p->stag_x ) { sprintf( dimname[0] ,"%s_stag", dimnode->dim_data_name) ; }
               else             { strcpy( dimname[0], dimnode->dim_data_name) ; }
             }
@@ -712,12 +758,20 @@ fprintf(fp, "ENDDO\n") ;
             fprintf(fp,"                       current_date(1:19) , &  ! DateStr \n" ) ;
             if ( fourdname == NULL ) {
               fprintf(fp,"                       '%s'               , &  ! Data Name \n", dname ) ;
-              fprintf(fp,"                       %s%s%s(1,kds,1,%d)     , &  ! Field \n" , structname , core , p->name, ibdy ) ;
+	      if ( sw_new_bdys && ! sw_new_with_old_bdys ) { /* 20070207 */
+                fprintf(fp,"                       %s%s%s(%s,kds,1)     , &  ! Field \n" , structname , core , p->name, ms1 ) ;
+	      } else {
+                fprintf(fp,"                       %s%s%s(1,kds,1,%d)     , &  ! Field \n" , structname , core , p->name, ibdy ) ;
+	      }
             } else {
               if ( strlen(p->dname)==0 || !strcmp(p->dname,"-") ) { sprintf(dname,"%s%s%s",p->name,tend_tag,bdytag)  ; }
               else                                                { sprintf(dname,"%s%s%s",p->dname,tend_tag,bdytag) ; }
               fprintf(fp,"                       '%s'               , &  ! Data Name \n", dname ) ;
-              fprintf(fp,"                       %s%s%s%s(1,kds,1,%d,P_%s)     , &  ! Field \n" , structname , core , fourdname, tend_tag, ibdy, p->name ) ;
+	      if ( sw_new_bdys && ! sw_new_with_old_bdys ) { /* 20070207 */
+                fprintf(fp,"                       %s%s%s%s(%s,kds,1,P_%s)     , &  ! Field \n" , structname , core , fourdname, tend_tag, ms1, p->name ) ;
+	      } else {
+                fprintf(fp,"                       %s%s%s%s(1,kds,1,%d,P_%s)     , &  ! Field \n" , structname , core , fourdname, tend_tag, ibdy, p->name ) ;
+	      }
             }
             if (!strncmp(p->type->name,"real",4)) {
               fprintf(fp,"                       WRF_FLOAT             , &  ! FieldType \n") ;
@@ -756,12 +810,20 @@ fprintf(fp, "ENDDO\n") ;
             fprintf(fp,"                       current_date(1:19) , &  ! DateStr \n" ) ;
             if ( fourdname == NULL ) {
               fprintf(fp,"                       '%s'               , &  ! Data Name \n", dname ) ;
-              fprintf(fp,"                       %s%s%s(1,kds,1,%d)     , &  ! Field \n" , structname , core , p->name, ibdy ) ;
+	      if ( sw_new_bdys && ! sw_new_with_old_bdys ) { /* 20070207 */
+                fprintf(fp,"                       %s%s%s(%s,kds,1)     , &  ! Field \n" , structname , core , p->name, ms1 ) ;
+              } else {
+                fprintf(fp,"                       %s%s%s(1,kds,1,%d)     , &  ! Field \n" , structname , core , p->name, ibdy ) ;
+	      }
             } else {
               if ( strlen(p->dname)==0 || !strcmp(p->dname,"-") ) { sprintf(dname,"%s%s%s",p->name,tend_tag,bdytag)  ; }
               else                                                { sprintf(dname,"%s%s%s",p->dname,tend_tag,bdytag) ; }
               fprintf(fp,"                       '%s'               , &  ! Data Name \n", dname ) ;
-              fprintf(fp,"                       %s%s%s%s(1,kds,1,%d,P_%s)     , &  ! Field \n" , structname , core , fourdname, tend_tag, ibdy, p->name ) ;
+	      if ( sw_new_bdys && ! sw_new_with_old_bdys ) { /* 20070207 */
+                fprintf(fp,"                       %s%s%s%s(%s,kds,1,P_%s)     , &  ! Field \n" , structname , core , fourdname, tend_tag, ms1, p->name ) ;
+              } else {
+                fprintf(fp,"                       %s%s%s%s(1,kds,1,%d,P_%s)     , &  ! Field \n" , structname , core , fourdname, tend_tag, ibdy, p->name ) ;
+	      }
             }
             if (!strncmp(p->type->name,"real",4)) {
               fprintf(fp,"                       WRF_FLOAT          , &  ! FieldType \n") ;

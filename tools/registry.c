@@ -36,6 +36,7 @@ main( int argc, char *argv[], char *env[] )
   sw_ifort_kludge          = 0 ;
   sw_dm_serial_in_only      = 0 ; /* input and bdy data set is distributed by node 0, 
                                      other data streams are written to file per process */
+  sw_new_bdys              = 0 ;
 
   strcpy( fname_in , "" ) ;
 
@@ -84,6 +85,12 @@ main( int argc, char *argv[], char *env[] )
       }
       if (!strcmp(*argv,"-DDM_PARALLEL")) {
         sw_dm_parallel = 1 ;
+      }
+      if (!strcmp(*argv,"-DNEW_BDYS")) {
+        sw_new_bdys = 1 ;
+      }
+      if (!strcmp(*argv,"-DNEW_WITH_OLD_BDYS")) {
+        sw_new_with_old_bdys = 1 ;
       }
       if (!strcmp(*argv,"-DDISTRIB_IO_LAYER")) {
 #if 0

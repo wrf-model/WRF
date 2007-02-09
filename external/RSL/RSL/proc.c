@@ -169,6 +169,13 @@ RSL_C_IAMCOMPUTE ( retval )
   return(0) ;
 }
 
+RSL_MONITOR_PROC ( retval )
+   int * retval ;
+{
+   *retval = RSL_C_MONITOR_PROC () ;
+}
+
+
 RSL_C_MONITOR_PROC ()
 {
 #if ( HOST_NODE == 0 )

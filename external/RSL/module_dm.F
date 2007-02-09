@@ -3844,6 +3844,15 @@ END
       RETURN
    END FUNCTION wrf_dm_on_monitor
 
+   INTEGER FUNCTION wrf_dm_monitor_rank()
+      USE module_dm
+      IMPLICIT NONE
+      INTEGER rsl_monitor_proc
+      EXTERNAL rsl_monitor_proc
+      wrf_dm_monitor_rank = rsl_monitor_proc() 
+      RETURN
+   END FUNCTION wrf_dm_monitor_rank
+
    SUBROUTINE wrf_get_dm_communicator ( communicator )
       IMPLICIT NONE
       INTEGER , INTENT(OUT) :: communicator

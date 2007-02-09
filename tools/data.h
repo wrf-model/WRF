@@ -120,6 +120,8 @@ EXTERN int sw_all_y_staggered ;
 EXTERN int sw_dm_serial_in_only ;
 EXTERN int sw_ifort_kludge ;
 EXTERN char sw_commpath[NAMELEN] ;
+EXTERN int sw_new_bdys ;  /* 20070207 JM support decomposed boundary arrays */
+EXTERN int sw_new_with_old_bdys ;  /* 20070207 JM for debugging interim phase, new comms w/ old data structs */
 
 EXTERN node_t * Type ;
 EXTERN node_t * Dim ;

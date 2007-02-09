@@ -25,13 +25,13 @@ SUBROUTINE med_initialdata_input ( grid , config_flags )
    USE module_domain
    USE module_io_domain
    USE module_timing
+use module_io
   ! Model layer
    USE module_configure
    USE module_bc_time_utilities
    USE module_utility
 
    IMPLICIT NONE
-
 
   ! Interface 
    INTERFACE
@@ -50,7 +50,6 @@ SUBROUTINE med_initialdata_input ( grid , config_flags )
    CHARACTER (LEN=80)     :: inpname , rstname, timestr
    CHARACTER (LEN=80)     :: message
    LOGICAL                :: restart
-
 
    CALL nl_get_restart( 1, restart )
    IF ( .NOT. restart ) THEN

@@ -63,6 +63,10 @@ LOGICAL FUNCTION wrf_dm_on_monitor()
   wrf_dm_on_monitor = .true.
 END FUNCTION wrf_dm_on_monitor
 
+INTEGER FUNCTION wrf_dm_monitor_rank()
+  wrf_dm_monitor_rank = 0
+END FUNCTION wrf_dm_monitor_rank
+
 SUBROUTINE wrf_get_myproc( myproc )
   IMPLICIT NONE
   INTEGER myproc

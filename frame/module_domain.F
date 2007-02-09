@@ -541,18 +541,6 @@ CONTAINS
                                          sp3y , ep3y , sm3y , em3y , &
                              bdx , bdy )
 
-write(0,*)__FILE__,__LINE__
-write(0,*)'sd1 , ed1 , sp1 , ep1 , sm1 , em1 ',sd1 , ed1 , sp1 , ep1 , sm1 , em1
-write(0,*)'sd2 , ed2 , sp2 , ep2 , sm2 , em2 ',sd2 , ed2 , sp2 , ep2 , sm2 , em2
-write(0,*)'sd3 , ed3 , sp3 , ep3 , sm3 , em3 ',sd3 , ed3 , sp3 , ep3 , sm3 , em3
-write(0,*)'sp1x , ep1x , sm1x , em1x ',sp1x , ep1x , sm1x , em1x
-write(0,*)'sp2x , ep2x , sm2x , em2x ',sp2x , ep2x , sm2x , em2x
-write(0,*)'sp3x , ep3x , sm3x , em3x ',sp3x , ep3x , sm3x , em3x
-write(0,*)'sp1y , ep1y , sm1y , em1y ',sp1y , ep1y , sm1y , em1y
-write(0,*)'sp2y , ep2y , sm2y , em2y ',sp2y , ep2y , sm2y , em2y
-write(0,*)'sp3y , ep3y , sm3y , em3y ',sp3y , ep3y , sm3y , em3y
-write(0,*)__FILE__,__LINE__
-
    SELECT CASE ( model_data_order )
       CASE ( DATA_ORDER_XYZ )
    bdy_mask( P_XSB ) = ( sp1 <= sd1 .AND. sd1 <= ep1 .AND. sp1 <= sd1+spec_bdy_width-1 .AND. sd1+spec_bdy_width-1 <= ep1 )

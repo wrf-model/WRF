@@ -197,6 +197,13 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
 #     include "nmm_actual_args.inc"
 !
                                 )
+
+    grid => nested_grid%intermediate_grid
+    CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
+#ifndef SGIALTIX
+    CALL dealloc_space_field ( grid )
+#endif
+
   ENDIF
 ! ------------------------------------------------------------
 !    End of gopal's doing

@@ -654,7 +654,7 @@ state    real  MOL              ij      misc        1         -     ir        "M
 state    real   tke_myj         ikj     misc        1         -     rh        "tke_myj"               "TKE FROM MELLOR-YAMADA-JANJIC"     "m2 s-2"
 state    real   EL_MYJ          ikj     misc        1         -      h        "el_myj"                "MIXING LENGTH FROM MELLOR-YAMADA-JANJIC"     "m"
 state    real   EXCH_H         ikj     misc        1         -     rh         "EXCH_H"               "EXCHANGE COEFFICIENTS FOR HEAT"               "m2 s-1"
-state   real   THZ0             ij     misc        1         -     irhd=(interp_h_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)       "THZ0"                  "POTENTIAL TEMPERATURE AT TOP OF VISC. SUBLYR"                 "K"
+state   real   THZ0             ij     misc        1         -     irhd=(interp_h_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)       "THZ0"                  "POT. TEMPERATURE AT TOP OF VISC. SUBLYR"                 "K"
 state   real   QZ0              ij     misc        1         -     irhd=(interp_h_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)       "QZ0"                   "SPECIFIC HUMIDITY AT TOP OF VISC. SUBLYR"                     "kg kg-1"
 state   real   UZ0              ij     misc        1         -     irhd=(interp_v_nmm:IIV,JJV,VBWGT1,VBWGT2,VBWGT3,VBWGT4)       "UZ0"                   "U WIND COMPONENT AT TOP OF VISC. SUBLYR"                      "m s-1"
 state   real   VZ0              ij     misc        1         -     irhd=(interp_v_nmm:IIV,JJV,VBWGT1,VBWGT2,VBWGT3,VBWGT4)       "VZ0"                   "V WIND COMPONENT AT TOP OF VISC. SUBLYR"                      "m s-1"

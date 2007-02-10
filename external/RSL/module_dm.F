@@ -3847,9 +3847,9 @@ END
    INTEGER FUNCTION wrf_dm_monitor_rank()
       USE module_dm
       IMPLICIT NONE
-      INTEGER rsl_monitor_proc
-      EXTERNAL rsl_monitor_proc
-      wrf_dm_monitor_rank = rsl_monitor_proc() 
+      INTEGER retval
+      CALL rsl_monitor_proc( retval ) 
+      wrf_dm_monitor_rank = retval 
       RETURN
    END FUNCTION wrf_dm_monitor_rank
 
@@ -4854,5 +4854,99 @@ END
                             ierr )
 
    END SUBROUTINE wrf_gatherv_double
+
+!new stuff 20070124
+   SUBROUTINE wrf_scatterv_real (                             &
+                                globbuf, glob_ofst ,          &    ! recvbuf
+                                counts                      , &    ! recvcounts
+                                Field, field_ofst,            &
+                                my_count ,                    &    ! sendcount
+                                displs                      , &    ! displs
+                                root                        , &    ! root
+                                communicator                , &    ! communicator
+                                ierr )
+   USE module_dm
+   IMPLICIT NONE
+   INCLUDE 'mpif.h'
+   INTEGER field_ofst, glob_ofst
+   INTEGER my_count, communicator, root, ierr
+   INTEGER , DIMENSION(*) :: counts, displs
+   REAL, DIMENSION(*) :: Field, globbuf
+
+           CALL mpi_scatterv(                                &
+                            globbuf( glob_ofst ) ,           &    ! recvbuf
+                            counts                         , &    ! recvcounts
+                            displs                         , &    ! displs
+                            getrealmpitype()               , &    ! recvtype
+                            Field( field_ofst ),             &    ! sendbuf
+                            my_count ,                       &    ! sendcount
+                            getrealmpitype() ,               &    ! sendtype
+                            root                           , &    ! root
+                            communicator                   , &    ! communicator
+                            ierr )
+
+   END SUBROUTINE wrf_scatterv_real
+
+   SUBROUTINE wrf_scatterv_double (                           &
+                                globbuf, glob_ofst ,          &    ! recvbuf
+                                counts                      , &    ! recvcounts
+                                Field, field_ofst,            &
+                                my_count ,                    &    ! sendcount
+                                displs                      , &    ! displs
+                                root                        , &    ! root
+                                communicator                , &    ! communicator
+                                ierr )
+   USE module_dm
+   IMPLICIT NONE
+   INCLUDE 'mpif.h'
+   INTEGER field_ofst, glob_ofst
+   INTEGER my_count, communicator, root, ierr
+   INTEGER , DIMENSION(*) :: counts, displs
+   DOUBLE PRECISION, DIMENSION(*) :: Field, globbuf
+
+           CALL mpi_scatterv(                                &
+                            globbuf( glob_ofst ) ,           &    ! recvbuf
+                            counts                         , &    ! recvcounts
+                            displs                         , &    ! displs
+                            MPI_DOUBLE_PRECISION           , &    ! recvtype
+                            Field( field_ofst ),             &    ! sendbuf
+                            my_count ,                       &    ! sendcount
+                            MPI_DOUBLE_PRECISION         ,   &    ! sendtype
+                            root                           , &    ! root
+                            communicator                   , &    ! communicator
+                            ierr )
+
+   END SUBROUTINE wrf_scatterv_double
+
+   SUBROUTINE wrf_scatterv_integer (                          &
+                                globbuf, glob_ofst ,          &    ! recvbuf
+                                counts                      , &    ! recvcounts
+                                Field, field_ofst,            &
+                                my_count ,                    &    ! sendcount
+                                displs                      , &    ! displs
+                                root                        , &    ! root
+                                communicator                , &    ! communicator
+                                ierr )
+   IMPLICIT NONE
+   INCLUDE 'mpif.h'
+   INTEGER field_ofst, glob_ofst
+   INTEGER my_count, communicator, root, ierr
+   INTEGER , DIMENSION(*) :: counts, displs
+   INTEGER, DIMENSION(*) :: Field, globbuf
+
+           CALL mpi_scatterv(                                &
+                            globbuf( glob_ofst ) ,           &    ! recvbuf
+                            counts                         , &    ! recvcounts
+                            displs                         , &    ! displs
+                            MPI_INTEGER                    , &    ! recvtype
+                            Field( field_ofst ),             &    ! sendbuf
+                            my_count ,                       &    ! sendcount
+                            MPI_INTEGER         ,            &    ! sendtype
+                            root                           , &    ! root
+                            communicator                   , &    ! communicator
+                            ierr )
+
+   END SUBROUTINE wrf_scatterv_integer
+! end new stuff 20070124
 
 #endif

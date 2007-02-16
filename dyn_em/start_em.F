@@ -168,7 +168,7 @@
 
    ENDIF
 
-!     IF ( grid%id .NE. 1 ) THEN
+   IF ( ( grid%id .NE. 1 ) .AND. ( .NOT. config_flags%input_from_file ) ) THEN
    
       !  Every time a domain starts or every time a domain moves, this routine is called.  We want
       !  the center (middle) lat/lon of the grid for the metacode.  The lat/lon values are
@@ -177,7 +177,9 @@
       !  Add to this, the need to make sure that we are on the correct patch to retrieve the
       !  value of the lat/lon, AND that the lat/lons (for an average) may not all be on the same
       !  patch.  Once we find the correct value for lat lon, we need to keep it around on all patches, 
-      !  which is where the wrf_dm_min_real calls come in.
+      !  which is where the wrf_dm_min_real calls come in.  
+      !  If this is the most coarse domain, we do not go in here.  Also, if there is an input file
+      !  (which has the right values for the middle lat/lon) we do not go in this IF test.
    
       IF      ( ( MOD(ide,2) .EQ. 0 ) .AND. ( MOD(jde,2) .EQ. 0 ) ) THEN
          num_points_lat_lon = 1
@@ -312,7 +314,7 @@
          CALL nl_set_cen_lat ( grid%id , ( lat1 + lat2 + lat3 + lat4 ) * 0.25 )
          CALL nl_set_cen_lon ( grid%id , ( lon1 + lon2 + lon3 + lon4 ) * 0.25 )
       END IF
-!  END IF
+   END IF
 
    IF ( .NOT. config_flags%restart .AND. &
         (( config_flags%input_from_hires ) .OR. ( config_flags%input_from_file ))) THEN

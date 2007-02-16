@@ -2095,7 +2095,7 @@ CONTAINS
        real :: dif1,dif2,dif3,dif4,dlnpdz,BOT_INPUT_HGT,BOT_INPUT_PRESS,dpdz,rhs
        real :: zin(generic),pin(generic)
 
-       character (len=132) :: message
+       character (len=256) :: message
 	
        logical :: DEFINED_PSFC(IMS:IME,JMS:JME), DEFINED_PSFCB(IMS:IME,JMS:JME)
 
@@ -3236,7 +3236,7 @@ CONTAINS
         integer :: IPS,IPE,JPS,JPE,KPS,KPE
         integer :: ihl, ihh, m2l, ibas,jmelin
         integer :: I,J,KS,IOFFSET,JSTART,JEND
-        character (len=132) :: message
+        character (len=256) :: message
 
 	ips=its
         ipe=ite

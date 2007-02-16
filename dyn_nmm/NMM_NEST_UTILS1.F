@@ -1970,10 +1970,10 @@ SUBROUTINE NEST_TERRAIN ( nest, config_flags )
 !
 
 #ifdef INTIO
-             if (io_form_input == IO_BIN) write(input_fname,"(A,I2.2,A)") "geo_nmm.n",level,".int"
+             if (io_form_input == IO_BIN) write(input_fname,"(A,I2.2,A)") "geo_nmm_nest.l",level,".int"
 #endif
 #ifdef NETCDF
-             if (io_form_input == IO_NET) write(input_fname,"(A,I2.2,A)") "geo_nmm.n",level,".nc"
+             if (io_form_input == IO_NET) write(input_fname,"(A,I2.2,A)") "geo_nmm_nest.l",level,".nc"
 #endif
 
              comm_1 = 1

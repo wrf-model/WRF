@@ -320,12 +320,14 @@ CONTAINS
 !
 
   flag_qv = .FALSE. ; IF ( PRESENT( F_QV ) ) flag_qv = F_QV
-  flag_qc = .FALSE. ; IF ( PRESENT( F_QC ) ) flag_qv = F_QC
-  flag_qr = .FALSE. ; IF ( PRESENT( F_QR ) ) flag_qv = F_QR
-  flag_qi = .FALSE. ; IF ( PRESENT( F_QI ) ) flag_qv = F_QI
-  flag_qs = .FALSE. ; IF ( PRESENT( F_QS ) ) flag_qv = F_QS
-  flag_qg = .FALSE. ; IF ( PRESENT( F_QG ) ) flag_qv = F_QG
+  flag_qc = .FALSE. ; IF ( PRESENT( F_QC ) ) flag_qc = F_QC
+  flag_qr = .FALSE. ; IF ( PRESENT( F_QR ) ) flag_qr = F_QR
+  flag_qi = .FALSE. ; IF ( PRESENT( F_QI ) ) flag_qi = F_QI
+  flag_qs = .FALSE. ; IF ( PRESENT( F_QS ) ) flag_qs = F_QS
+  flag_qg = .FALSE. ; IF ( PRESENT( F_QG ) ) flag_qg = F_QG
 
+!print *,flag_qv, flag_qc, flag_qr, flag_qi, flag_qs, flag_qg,' flag_qv, flag_qc, flag_qr, flag_qi, flag_qs, flag_qg'
+!print *,f_qv, f_qc, f_qr, f_qi, f_qs, f_qg,' f_qv, f_qc, f_qr, f_qi, f_qs, f_qg'
 
   if (bl_pbl_physics .eq. 0) return
 ! RAINBL in mm (Accumulation between PBL calls)
@@ -403,8 +405,7 @@ CONTAINS
                 PRESENT( qi_curr )                            .AND. &
                 PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
                 PRESENT( rqiblten )                           .AND. &
-                PRESENT( hol      )                           .AND. &
-                                                        .TRUE.  ) THEN
+                PRESENT( hol      ) ) THEN
              CALL ysu(                                              &
                U3D=u_phytmp,V3D=v_phytmp,TH3D=th_phy,T3D=t_phy      &
               ,QV3D=qv_curr,QC3D=qc_curr,QI3D=qi_curr               &
@@ -412,6 +413,7 @@ CONTAINS
               ,RUBLTEN=rublten,RVBLTEN=rvblten                      &
               ,RTHBLTEN=rthblten,RQVBLTEN=rqvblten                  &
               ,RQCBLTEN=rqcblten,RQIBLTEN=rqiblten                  &
+              ,FLAG_QI=flag_qi                                      &
               ,CP=cp,G=g,ROVCP=rcp,RD=r_D,ROVG=rovg                 &
               ,DZ8W=dz8w,Z=z,XLV=XLV,RV=r_v,PSFC=PSFC               &
               ,ZNT=znt,UST=ust,ZOL=zol,HOL=hol,HPBL=pblh            &

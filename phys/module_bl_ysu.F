@@ -9,7 +9,7 @@ contains
 !
    subroutine ysu(u3d,v3d,th3d,t3d,qv3d,qc3d,qi3d,p3d,pi3d,        &
                   rublten,rvblten,rthblten,                        &
-                  rqvblten,rqcblten,rqiblten,                      &
+                  rqvblten,rqcblten,rqiblten,flag_qi,              &
                   cp,g,rovcp,rd,rovg,                              &
                   dz8w,z,xlv,rv,psfc,                              &
                   znt,ust,zol,hol,hpbl,psim,psih,                  &
@@ -160,6 +160,8 @@ contains
 !
      integer,  dimension( ims:ime, jms:jme )                     , &
                 intent(out  )   ::                         kpbl2d
+!
+     logical, intent(in)        :: flag_qi
 !optional
       real,     dimension( ims:ime, jms:jme )                    , &
                 optional                                         , &
@@ -196,6 +198,7 @@ contains
               ,ep1=ep1,ep2=ep2,karman=karman,eomeg=eomeg           &
               ,stbolt=stbolt                                       &
               ,exch_hx=exch_h(ims,kms,j)                           &
+              ,flag_qi=flag_qi                                     &
               ,ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde   &
               ,ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme   &
               ,its=its,ite=ite, jts=jts,jte=jte, kts=kts,kte=kte   )
@@ -219,7 +222,7 @@ contains
                   xland,hfx,qfx,tsk,gz1oz0,wspd,br,                &
                   dt,dtmin,kpbl1d,                                 &
                   svp1,svp2,svp3,svpt0,ep1,ep2,karman,eomeg,stbolt,&
-                  exch_hx,                                         &
+                  exch_hx,flag_qi,                                 &
                   ids,ide, jds,jde, kds,kde,                       &
                   ims,ime, jms,jme, kms,kme,                       &
                   its,ite, jts,jte, kts,kte,                       &
@@ -335,6 +338,7 @@ contains
       real,     dimension( ims:ime ), intent(inout)   ::      zol
       integer,  dimension( ims:ime ), intent(out  )   ::   kpbl1d
 !
+      logical, intent(in)        :: flag_qi
 !
       real,     dimension( ims:ime, kms:kme )                    , &
                 intent(in   )   ::                             ux, &
@@ -1008,7 +1012,7 @@ contains
                 qctnp(i,k) = qctnp(i,k)+qctend
               elseif(ic.eq.3) then
                 qitend = (f3(i,k,ic)-qix(i,k))*rdt
-                qitnp(i,k) = qitnp(i,k)+qitend
+                if(flag_qi)qitnp(i,k) = qitnp(i,k)+qitend
               endif
             enddo
           enddo

@@ -3224,16 +3224,16 @@ CONTAINS
 
       TYPE (domain)          :: grid 
 
+        integer :: IDS,IDE,JDS,JDE,KDS,KDE
+        integer :: IMS,IME,JMS,JME,KMS,KME
+        integer :: ITS,ITE,JTS,JTE,KTS,KTE
+        integer :: IPS,IPE,JPS,JPE,KPS,KPE
         integer:: ihw(JDS:JDE-1),ihe(JDS:JDE-1),nsmth,nrow
         real::    h(IMS:IME,JMS:JME),landmask(IMS:IME,JMS:JME)
         real ::   h_old(IMS:IME,JMS:JME)
         real ::   hbms(IDS:IDE-1,JDS:JDE-1)
         real ::   hse(IDS:IDE-1,JDS:JDE-1)
         real ::   hne(IDS:IDE-1,JDS:JDE-1)
-        integer :: IDS,IDE,JDS,JDE,KDS,KDE
-        integer :: IMS,IME,JMS,JME,KMS,KME
-        integer :: ITS,ITE,JTS,JTE,KTS,KTE
-        integer :: IPS,IPE,JPS,JPE,KPS,KPE
         integer :: ihl, ihh, m2l, ibas,jmelin
         integer :: I,J,KS,IOFFSET,JSTART,JEND
         character (len=256) :: message

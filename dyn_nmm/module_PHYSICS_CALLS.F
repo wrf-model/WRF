@@ -1097,7 +1097,7 @@
      &               ,U_FRAME=U_FRAME,V_FRAME=V_FRAME                 &
      &               ,RUBLTEN=DUDT,RVBLTEN=DVDT,RTHBLTEN=RTHBLTEN     &
      &               ,RQVBLTEN=RQVBLTEN,RQCBLTEN=RQCBLTEN             &
-     &               ,RQSBLTEN=RQIBLTEN                               &
+     &               ,RQIBLTEN=RQIBLTEN                               &
      &               ,TSK=TSFC,XLAND=XLAND,ZNT=Z0,HT=SFCZ             &
      &               ,UST=USTAR, PBLH=PBLH                            &
      &               ,HFX=TWBS,QFX=QWBS,  GRDFLX=GRNFLX               &
@@ -1291,7 +1291,11 @@
           Q(I,K,J)=RATIOMX/(1.+RATIOMX)
 !         Q(I,K,J)=MAX(Q(I,K,J),EPSQ)
           QW=max(0.,MOIST(I,K,J,P_QC)+RQCBLTEN(I,K,J)*DTPHS )
-          QI=max(0.,MOIST(I,K,J,P_QS)+RQIBLTEN(I,K,J)*DTPHS )
+          IF(CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW)THEN
+            QI=max(0.,MOIST(I,K,J,P_QS)+RQIBLTEN(I,K,J)*DTPHS )
+          ELSE
+            QI=max(0.,MOIST(I,K,J,P_QI)+RQIBLTEN(I,K,J)*DTPHS )
+          ENDIF
           QR=max(0.,MOIST(I,K,J,P_QR) )
 !          CWM(I,K,J)=QW+QI+QR
           CWM(I,K,J)=0. 
@@ -1310,10 +1314,10 @@
           ENDDO
 !
           MOIST(I,K,J,P_QC)=QW
-          MOIST(I,K,J,P_QS)=QI
           MOIST(I,K,J,P_QR)=QR
 !
           IF(CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW)THEN
+          MOIST(I,K,J,P_QS)=QI
             IF(QI<=EPSQ)THEN  
               F_ICE(I,K,J)=0.
             ELSE
@@ -1325,6 +1329,8 @@
             ELSE
               F_RAIN(I,K,J)=QR/(QW+QR)
             ENDIF
+          ELSE
+          MOIST(I,K,J,P_QI)=QI
           ENDIF
 !
           Q2(I,K,J)=2.*TKE(I,K,J)
@@ -1956,8 +1962,14 @@
           cps_select: SELECT CASE(config_flags%cu_physics)
 !
           CASE (KFSCHEME,KFETASCHEME,GDSCHEME,SASSCHEME)
-             MOIST(I,K,J,P_QS)=MAX(0.,MOIST(I,K,J,P_QS)+RQICUTEN(I,K,J)*DTCNVC)
-             MOIST(I,K,J,P_QC)=MAX(0.,MOIST(I,K,J,P_QC)+RQCCUTEN(I,K,J)*DTCNVC)
+           IF(CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW)THEN
+             MOIST(I,K,J,P_QS)=MAX(0.,MOIST(I,K,J,P_QS)+RQICUTEN(I,K,J)*DTCNVC+RQSCUTEN(I,K,J)*DTCNVC)
+           ELSE
+             MOIST(I,K,J,P_QI)=MAX(0.,MOIST(I,K,J,P_QI)+RQICUTEN(I,K,J)*DTCNVC)
+             MOIST(I,K,J,P_QS)=MAX(0.,MOIST(I,K,J,P_QS)+RQSCUTEN(I,K,J)*DTCNVC)
+           ENDIF
+           MOIST(I,K,J,P_QR)=MAX(0.,MOIST(I,K,J,P_QR)+RQRCUTEN(I,K,J)*DTCNVC)
+           MOIST(I,K,J,P_QC)=MAX(0.,MOIST(I,K,J,P_QC)+RQCCUTEN(I,K,J)*DTCNVC)
           END SELECT cps_select
 !
           TCUCN(I,K,J)=TCUCN(I,K,J)+DTDT

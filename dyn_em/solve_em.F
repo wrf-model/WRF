@@ -1055,13 +1055,13 @@ BENCH_START(update_phy_ten_tim)
 
           CALL wrf_debug ( 200 , ' call update_phy_ten' )
         CALL update_phy_ten(t_tendf, ru_tendf, rv_tendf,moist_tend,        &
-                          mu_tendf,                                        &
+                          scalar_tend, mu_tendf,                                        &
                           grid%rthraten,grid%rthblten,grid%rthcuten,grid%rublten,grid%rvblten,      &
                           grid%rqvblten,grid%rqcblten,grid%rqiblten,                      &
                           grid%rqvcuten,grid%rqccuten,grid%rqrcuten,grid%rqicuten,grid%rqscuten,    &
                           grid%RUNDGDTEN,grid%RVNDGDTEN,grid%RTHNDGDTEN,grid%RQVNDGDTEN,       &
                           grid%RMUNDGDTEN,                                      &
-                          num_3d_m,config_flags,rk_step,                   &
+                          num_3d_m,num_3d_s,config_flags,rk_step,grid%adv_moist_cond,    &
                           ids, ide, jds, jde, kds, kde,                    &
                           ims, ime, jms, jme, kms, kme,                    &
                           grid%i_start(ij), grid%i_end(ij),                &

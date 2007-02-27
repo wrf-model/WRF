@@ -26,7 +26,7 @@ MODULE module_physics_addtendc
 CONTAINS
 
 SUBROUTINE update_phy_ten(rt_tendf,ru_tendf,rv_tendf,moist_tendf,  &
-                      mu_tendf,scalar_tendf,                       &
+                      scalar_tendf,mu_tendf,                       &
                       RTHRATEN,RTHBLTEN,RTHCUTEN,RUBLTEN,RVBLTEN,  &
                       RQVBLTEN,RQCBLTEN,RQIBLTEN,                  &
                       RQVCUTEN,RQCCUTEN,RQRCUTEN,RQICUTEN,RQSCUTEN,&

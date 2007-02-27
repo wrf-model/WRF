@@ -143,6 +143,13 @@ Namelist variables specifically for the WPS input for real:
  interp_type                         = 1        ; vertical interpolation
                                                 ; 1 = linear in pressure
                                                 ; 2 = linear in log(pressure)
+ extrap_type                         = 2        ; vertical extrapolation
+                                                ; 1 = extrapolate using the two lowest levels
+                                                ; 2 = use lowest level as constant below ground
+ t_extrap_type                       = 1        ; vertical extrapolation for potential temperature
+                                                ; 1 = extrapolate using the two lowest levels
+                                                ; 2 = use lowest level as constant below ground
+                                                ; 3 = -6.5 K/km lapse rate
  lagrange_order                      = 1        ; vertical interpolation order
                                                 ; 1 = linear
                                                 ; 2 = quadratic

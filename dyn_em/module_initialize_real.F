@@ -121,7 +121,7 @@ integer::oops1,oops2
 
       REAL    :: zap_close_levels
       INTEGER :: force_sfc_in_vinterp
-      INTEGER :: interp_type , lagrange_order
+      INTEGER :: interp_type , lagrange_order , extrap_type , t_extrap_type
       LOGICAL :: lowest_lev_from_sfc
       LOGICAL :: we_have_tavgsfc
 
@@ -532,10 +532,12 @@ endif
          lowest_lev_from_sfc = grid%lowest_lev_from_sfc
          zap_close_levels = grid%zap_close_levels
          force_sfc_in_vinterp = grid%force_sfc_in_vinterp
+         t_extrap_type = grid%t_extrap_type
+         extrap_type = grid%extrap_type
 
          CALL vert_interp ( grid%em_qv_gc , grid%em_pd_gc , moist(:,:,:,P_QV) , grid%em_pb , &
                             num_metgrid_levels , 'Q' , &
-                            interp_type , lagrange_order , lowest_lev_from_sfc , &
+                            interp_type , lagrange_order , extrap_type , lowest_lev_from_sfc , &
                             zap_close_levels , force_sfc_in_vinterp , &
                             ids , ide , jds , jde , kds , kde , &
                             ims , ime , jms , jme , kms , kme , &
@@ -543,7 +545,7 @@ endif
    
          CALL vert_interp ( grid%em_t_gc , grid%em_pd_gc , grid%em_t_2               , grid%em_pb , &
                             num_metgrid_levels , 'T' , &
-                            interp_type , lagrange_order , lowest_lev_from_sfc , &
+                            interp_type , lagrange_order , t_extrap_type , lowest_lev_from_sfc , &
                             zap_close_levels , force_sfc_in_vinterp , &
                             ids , ide , jds , jde , kds , kde , &
                             ims , ime , jms , jme , kms , kme , &
@@ -557,7 +559,7 @@ endif
                IF ( im .EQ. P_QR ) THEN
                   CALL vert_interp ( qr_gc , grid%em_pd_gc , moist(:,:,:,P_QR) , grid%em_pb , &
                                      num_metgrid_levels , 'Q' , &
-                                     interp_type , lagrange_order , lowest_lev_from_sfc , &
+                                     interp_type , lagrange_order , extrap_type , lowest_lev_from_sfc , &
                                      zap_close_levels , force_sfc_in_vinterp , &
                                      ids , ide , jds , jde , kds , kde , &
                                      ims , ime , jms , jme , kms , kme , &
@@ -571,7 +573,7 @@ endif
                IF ( im .EQ. P_QC ) THEN
                   CALL vert_interp ( qc_gc , grid%em_pd_gc , moist(:,:,:,P_QC) , grid%em_pb , &
                                      num_metgrid_levels , 'Q' , &
-                                     interp_type , lagrange_order , lowest_lev_from_sfc , &
+                                     interp_type , lagrange_order , extrap_type , lowest_lev_from_sfc , &
                                      zap_close_levels , force_sfc_in_vinterp , &
                                      ids , ide , jds , jde , kds , kde , &
                                      ims , ime , jms , jme , kms , kme , &
@@ -585,7 +587,7 @@ endif
                IF ( im .EQ. P_QI ) THEN
                   CALL vert_interp ( qi_gc , grid%em_pd_gc , moist(:,:,:,P_QI) , grid%em_pb , &
                                      num_metgrid_levels , 'Q' , &
-                                     interp_type , lagrange_order , lowest_lev_from_sfc , &
+                                     interp_type , lagrange_order , extrap_type , lowest_lev_from_sfc , &
                                      zap_close_levels , force_sfc_in_vinterp , &
                                      ids , ide , jds , jde , kds , kde , &
                                      ims , ime , jms , jme , kms , kme , &
@@ -599,7 +601,7 @@ endif
                IF ( im .EQ. P_QS ) THEN
                   CALL vert_interp ( qs_gc , grid%em_pd_gc , moist(:,:,:,P_QS) , grid%em_pb , &
                                      num_metgrid_levels , 'Q' , &
-                                     interp_type , lagrange_order , lowest_lev_from_sfc , &
+                                     interp_type , lagrange_order , extrap_type , lowest_lev_from_sfc , &
                                      zap_close_levels , force_sfc_in_vinterp , &
                                      ids , ide , jds , jde , kds , kde , &
                                      ims , ime , jms , jme , kms , kme , &
@@ -613,7 +615,7 @@ endif
                IF ( im .EQ. P_QG ) THEN
                   CALL vert_interp ( qg_gc , grid%em_pd_gc , moist(:,:,:,P_QG) , grid%em_pb , &
                                      num_metgrid_levels , 'Q' , &
-                                     interp_type , lagrange_order , lowest_lev_from_sfc , &
+                                     interp_type , lagrange_order , extrap_type , lowest_lev_from_sfc , &
                                      zap_close_levels , force_sfc_in_vinterp , &
                                      ids , ide , jds , jde , kds , kde , &
                                      ims , ime , jms , jme , kms , kme , &
@@ -637,7 +639,7 @@ endif
    
          CALL vert_interp ( grid%em_u_gc , grid%em_pd_gc , grid%em_u_2               , grid%em_pb , &
                             num_metgrid_levels , 'U' , &
-                            interp_type , lagrange_order , lowest_lev_from_sfc , &
+                            interp_type , lagrange_order , extrap_type , lowest_lev_from_sfc , &
                             zap_close_levels , force_sfc_in_vinterp , &
                             ids , ide , jds , jde , kds , kde , &
                             ims , ime , jms , jme , kms , kme , &
@@ -645,7 +647,7 @@ endif
    
          CALL vert_interp ( grid%em_v_gc , grid%em_pd_gc , grid%em_v_2               , grid%em_pb , &
                             num_metgrid_levels , 'V' , &
-                            interp_type , lagrange_order , lowest_lev_from_sfc , &
+                            interp_type , lagrange_order , extrap_type , lowest_lev_from_sfc , &
                             zap_close_levels , force_sfc_in_vinterp , &
                             ids , ide , jds , jde , kds , kde , &
                             ims , ime , jms , jme , kms , kme , &
@@ -2057,7 +2059,7 @@ end subroutine fillitup
 
    SUBROUTINE vert_interp ( fo , po , fnew , pnu , &
                             generic , var_type , &
-                            interp_type , lagrange_order , lowest_lev_from_sfc , &
+                            interp_type , lagrange_order , extrap_type , lowest_lev_from_sfc , &
                             zap_close_levels , force_sfc_in_vinterp , &
                             ids , ide , jds , jde , kds , kde , &
                             ims , ime , jms , jme , kms , kme , &
@@ -2068,7 +2070,7 @@ end subroutine fillitup
    
       IMPLICIT NONE
 
-      INTEGER , INTENT(IN)        :: interp_type , lagrange_order
+      INTEGER , INTENT(IN)        :: interp_type , lagrange_order , extrap_type
       LOGICAL , INTENT(IN)        :: lowest_lev_from_sfc
       REAL    , INTENT(IN)        :: zap_close_levels
       INTEGER , INTENT(IN)        :: force_sfc_in_vinterp
@@ -2452,11 +2454,11 @@ end subroutine fillitup
 
             IF ( interp_type .EQ. 1 ) THEN
                CALL lagrange_setup ( var_type , &
-                   ordered_porig                 , ordered_forig , generic-zap   , lagrange_order , &
+                   ordered_porig                 , ordered_forig , generic-zap   , lagrange_order , extrap_type , &
                    ordered_pnew                  , ordered_fnew  , kend-kstart+1 ,i,j)
             ELSE
                CALL lagrange_setup ( var_type , &
-               LOG(ordered_porig(1:generic-zap)) , ordered_forig , generic-zap   , lagrange_order , &
+               LOG(ordered_porig(1:generic-zap)) , ordered_forig , generic-zap   , lagrange_order , extrap_type , &
                LOG(ordered_pnew(kstart:kend))    , ordered_fnew  , kend-kstart+1 ,i,j)
             END IF
 
@@ -2484,7 +2486,7 @@ end subroutine fillitup
 
    SUBROUTINE vert_interp_old ( forig , po , fnew , pnu , &
                             generic , var_type , &
-                            interp_type , lagrange_order , lowest_lev_from_sfc , &
+                            interp_type , lagrange_order , extrap_type , lowest_lev_from_sfc , &
                             zap_close_levels , force_sfc_in_vinterp , &
                             ids , ide , jds , jde , kds , kde , &
                             ims , ime , jms , jme , kms , kme , &
@@ -2495,7 +2497,7 @@ end subroutine fillitup
    
       IMPLICIT NONE
 
-      INTEGER , INTENT(IN)        :: interp_type , lagrange_order
+      INTEGER , INTENT(IN)        :: interp_type , lagrange_order , extrap_type
       LOGICAL , INTENT(IN)        :: lowest_lev_from_sfc
       REAL    , INTENT(IN)        :: zap_close_levels
       INTEGER , INTENT(IN)        :: force_sfc_in_vinterp
@@ -2876,7 +2878,8 @@ print *,'VERT EXTRAP = ', vert_extrap
 
 !---------------------------------------------------------------------
 
-   SUBROUTINE lagrange_setup ( var_type , all_x , all_y , all_dim , n , target_x , target_y , target_dim ,i,j)
+   SUBROUTINE lagrange_setup ( var_type , all_x , all_y , all_dim , n , extrap_type , &
+                               target_x , target_y , target_dim ,i,j)
 
       !  We call a Lagrange polynomial interpolator.  The parallel concerns are put off as this
       !  is initially set up for vertical use.  The purpose is an input column of pressure (all_x),
@@ -2890,7 +2893,7 @@ print *,'VERT EXTRAP = ', vert_extrap
       IMPLICIT NONE
 
       CHARACTER (LEN=1) :: var_type
-      INTEGER , INTENT(IN) :: all_dim , n , target_dim
+      INTEGER , INTENT(IN) :: all_dim , n , extrap_type , target_dim
       REAL, DIMENSION(all_dim) , INTENT(IN) :: all_x , all_y
       REAL , DIMENSION(target_dim) , INTENT(IN) :: target_x
       REAL , DIMENSION(target_dim) , INTENT(OUT) :: target_y
@@ -2905,6 +2908,14 @@ print *,'VERT EXTRAP = ', vert_extrap
       REAL :: target_y_1 , target_y_2
       LOGICAL :: found_loc
       INTEGER :: loop , loc_center_left , loc_center_right , ist , iend , target_loop
+
+      !  Local vars for the problem of extrapolating theta below ground.
+
+      REAL :: depth_of_extrap_in_p , avg_of_extrap_p , temp_extrap_starting_point , dhdp , dh , dt
+      REAL , PARAMETER :: RovCp      = 287. / 1004.
+      REAL , PARAMETER :: CRC_const1 = 11880.516      ! m
+      REAL , PARAMETER :: CRC_const2 =     0.1902632  !
+      REAL , PARAMETER :: CRC_const3 =     0.0065     ! K/km
 
       IF ( all_dim .LT. n+1 ) THEN
 print *,'all_dim = ',all_dim
@@ -2937,18 +2948,39 @@ print *,'p target= ',target_x
          END DO find_trap
    
          IF ( ( .NOT. found_loc ) .AND. ( target_x(target_loop) .GT. all_x(1) ) ) THEN
-            IF ( var_type .EQ. 'T' ) THEN
-write(6,fmt='(A,2i5,2f11.3)') &
-' --> extrapolating TEMPERATURE near sfc: i,j,psfc, p target = ',&
-i,j,all_x(1),target_x(target_loop)
+
+            !  Use a constant value below ground.
+
+            IF      ( extrap_type .EQ. 1 ) THEN
+
+               target_y(target_loop) = all_y(1)
+
+            !  Wild extrapolation.
+
+            ELSE IF ( extrap_type .EQ. 2 ) THEN
+
                target_y(target_loop) = ( all_y(1) * ( target_x(target_loop) - all_x(2) ) + &
                                          all_y(2) * ( all_x(1) - target_x(target_loop) ) ) / &
                                        ( all_x(1) - all_x(2) ) 
-            ELSE 
-!write(6,fmt='(A,2i5,2f11.3)') &
-!' --> extrapolating zero gradient near sfc: i,j,psfc, p target = ',&
-!i,j,all_x(1),target_x(target_loop)
-               target_y(target_loop) = all_y(1)
+
+            !  The pressure is most likely coming in as dry pressure, so the computations
+            !  of temp <==> theta are not perfect, but they are better than the wild
+            !  extrapolation option above.  Basically: get the new temp with a 6.5 K/km
+            !  lapse rate.
+
+            ELSE IF ( ( extrap_type .EQ. 3 ) .AND. ( var_type .EQ. 'T' ) ) THEN
+
+               depth_of_extrap_in_p = target_x(target_loop) - all_x(1)
+               avg_of_extrap_p = ( target_x(target_loop) + all_x(1) ) * 0.5
+               temp_extrap_starting_point = all_y(1) * ( all_x(1) / 100000. ) ** RovCp
+               dhdp = CRC_const1 * CRC_const2 * ( avg_of_extrap_p / 100. ) ** ( CRC_const2 - 1. ) 
+               dh = dhdp * ( depth_of_extrap_in_p / 100. )
+               dt = dh * CRC_const3
+               target_y(target_loop) = ( temp_extrap_starting_point + dt ) * ( 100000. / target_x(target_loop) ) ** RovCp
+            
+            ELSE IF ( extrap_type .EQ. 3 ) THEN
+               CALL wrf_error_fatal ( 'You are not allowed to use extrap_option #3 for any var except for theta.' )
+
             END IF
             CYCLE
          ELSE IF ( .NOT. found_loc ) THEN

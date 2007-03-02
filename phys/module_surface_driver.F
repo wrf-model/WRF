@@ -819,6 +819,7 @@ CONTAINS
                 dz8w,p8w,t_phy,qv_curr,qc_curr,rho,             & !p8w in [pa]
                 glw,gsw,emiss,chklowq,                          &
                 flqc,flhc,mavail,canwat,vegfra,albedo,znt,      &
+                snoalb, albbck,                                 &   !new
                 qsfc,qsg,qvg,qcg,soilt1,tsnav,                  &
                 tmn,ivgtyp,isltyp,xland,xice,                   &
                 cp,g,xlv,stbolt,                                &

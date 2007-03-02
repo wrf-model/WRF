@@ -13,6 +13,7 @@ CONTAINS
                    Z3D,P8W,T3D,QV3D,QC3D,RHO3D,                  & !p8W in [PA]
                    GLW,GSW,EMISS,CHKLOWQ,                        & 
                    FLQC,FLHC,MAVAIL,CANWAT,VEGFRA,ALB,ZNT,       &
+                   SNOALB,ALBBCK,                                &  !new
                    QSFC,QSG,QVG,QCG,SOILT1,TSNAV,                &
                    TBOT,IVGTYP,ISLTYP,XLAND,XICE,                &
                    CP,G0,LV,STBOLT,                              &
@@ -29,6 +30,15 @@ CONTAINS
    IMPLICIT NONE
 !-----------------------------------------------------------------
 !
+! The RUC LSM model is described in:
+!  Smirnova, T.G., J.M. Brown, and S.G. Benjamin, 1997: 
+!     Performance of different soil model configurations in simulating 
+!     ground surface temperature and surface fluxes. 
+!     Mon. Wea. Rev. 125, 1870-1884.
+!  Smirnova, T.G., J.M. Brown, and D. Kim, 2000: Parameterization of 
+!     cold-season processes in the MAPS land-surface scheme. 
+!     J. Geophys. Res. 105, 4077-4086.
+!-----------------------------------------------------------------
 !-- DT            time step (second)
 !        ktau - number of time step
 !        NSL  - number of soil layers
@@ -54,6 +64,8 @@ CONTAINS
 !      CANWAT - CANOPY MOISTURE CONTENT (mm)
 !      VEGFRA - vegetation fraction (between 0 and 1)
 !         ALB - surface albedo (between 0 and 1)
+!      SNOALB - maximum snow albedo (between 0 and 1)
+!      ALBBCK - snow-free albedo (between 0 and 1)
 !         ZNT - roughness length [m]
 !-- TBOT        soil temperature at lower boundary (K)
 !      IVGTYP - USGS vegetation type (24 classes)
@@ -70,7 +82,7 @@ CONTAINS
 !-- QFX         upward moisture flux at the surface (kg/m^2/s)
 !-- LH          upward latent heat flux (W/m^2)
 !   SFCRUNOFF - ground surface runoff [mm]
-!    UDRUNOFF - underground runoff
+!    UDRUNOFF - underground runoff [mm]
 !      SFCEVP - total evaporation in [kg/m^2]
 !      GRDFLX - soil heat flux (W/m^2: negative, if downward from surface)
 !      ACSNOW - accumulation of snow water [m]   
@@ -107,10 +119,12 @@ CONTAINS
                INTENT(IN   )    ::                       RAINBL, &
                                                             GLW, &
                                                             GSW, &
+                                                         SNOALB, &
+                                                         ALBBCK, &
                                                            FLHC, &
                                                            FLQC, &
                                                           EMISS, &
-!                                                         MAVAIL, &
+!                                                        MAVAIL, &
                                                            XICE, &
                                                           XLAND, &
                                                          VEGFRA, &
@@ -201,6 +215,7 @@ CONTAINS
                                                             REF, &
                                                            WILT, &
                                                         CANWATR, &
+                                                       SNOWFRAC, &
                                                           SNHEI, &
                                                            SNWE
 
@@ -299,6 +314,8 @@ CONTAINS
 !       smfr3d  (i,k,j)=soilmois(i,k,j)/900.*1.e3
        keepfr3dflag(i,k,j)=0.
             enddo
+!--- initializing to zero snow fraction
+           snowc(i,j) = min(1.,snowh(i,j)/0.1)
 !--- initializing of snow temp
            soilt1(i,j)=soilt(i,j)
            tsnav(i,j) =0.5*(soilt(i,j)+tso(i,1,j))-273.
@@ -404,6 +421,7 @@ CONTAINS
          SNWE=SNOW(I,J)*1.E-3
          SNHEI=SNOWH(I,J)
          CANWATR=CANWAT(I,J)*1.E-3
+         SNOWFRAC=SNOWC(I,J)
 
 !-----
              zsmain(1)=0.
@@ -475,7 +493,8 @@ CONTAINS
 !***********************************************************************
 !--- Constants for snow density calculations C1SN and C2SN
 
-        c1sn=0.01
+        c1sn=0.026
+!        c1sn=0.01
         c2sn=21.
 
 !***********************************************************************
@@ -486,7 +505,7 @@ CONTAINS
        if(SNOWH(i,j).gt.0.) then
         RHOSN = SNOW(i,j)/SNOWH(i,j)
        else
-        RHOSN = 200.
+        RHOSN = 300.
        endif
 
 !--- initializing soil and surface properties
@@ -609,11 +628,12 @@ CONTAINS
 !--- input variables
                 nzs,nddzs,nroot,                                 &
                 iland,isoil,xland(i,j),ivgtyp(i,j),              &  
-                PRCPMS,NEWSNMS,SNWE,SNHEI,RHOSN,                 &
+                PRCPMS,NEWSNMS,SNWE,SNHEI,SNOWFRAC,RHOSN,        &
                 PATM,TABS,QVATM,QCATM,RHO,                       &
                 GLW(I,J),GSW(I,J),EMISSL(I,J),                   &
                 QKMS,TKMS,PC(I,J),LMAVAIL(I,J),                  &
                 canwatr,vegfra(I,J),alb(I,J),znt(I,J),           &
+                snoalb(i,j),albbck(i,j),                         &   !new
                 myj,                                             &
 !--- soil fixed fields
                 QWRTZ,                                           &
@@ -695,11 +715,13 @@ CONTAINS
        print *,' QFX after change, LH ', i,j, QFX(i,j),LH(I,J)
     ENDIF
 !--- SNOWC snow cover flag
-        IF(SNOWH(I,J).GT.0.02)THEN
-            SNOWC(I,J)=1.0
-        ELSE
-            SNOWC(I,J)=0.0
-        ENDIF
+       SNOWC(I,J)=SNOWFRAC
+
+!        IF(SNOWH(I,J).GT.0.02)THEN
+!            SNOWC(I,J)=1.0
+!        ELSE
+!            SNOWC(I,J)=0.0
+!        ENDIF
 
         INFILTR(I,J) = INFILTRP
 
@@ -738,10 +760,11 @@ CONTAINS
 !--- input variables
                 nzs,nddzs,nroot,                                 &
                 ILAND,ISOIL,XLAND,IVGTYP,                        &
-                PRCPMS,NEWSNMS,SNWE,SNHEI,RHOSN,                 &
+                PRCPMS,NEWSNMS,SNWE,SNHEI,SNOWFRAC,RHOSN,        &
                 PATM,TABS,QVATM,QCATM,rho,                       &
                 GLW,GSW,EMISS,QKMS,TKMS,PC,                      &
                 MAVAIL,CST,VEGFRA,ALB,ZNT,                       &
+                ALB_SNOW,ALB_SNOW_FREE,                          &
                 MYJ,                                             &
 !--- soil fixed fields
                 QWRTZ,rhocs,dqm,qmin,ref,wilt,psis,bclh,ksat,    &
@@ -779,6 +802,8 @@ CONTAINS
             INTENT(IN   )    ::                             GLW, &
                                                             GSW, &
                                                              PC, &
+                                                       ALB_SNOW, &
+                                                  ALB_SNOW_FREE, &
                                                          VEGFRA, &
                                                           XLAND, &
                                                             RHO, &
@@ -790,6 +815,7 @@ CONTAINS
    REAL                                                        , &
             INTENT(INOUT)    ::                           EMISS, &
                                                          MAVAIL, &
+                                                       SNOWFRAC, &
                                                             ALB, &
                                                             CST
 
@@ -883,8 +909,7 @@ CONTAINS
    REAL    ::  BSN, XSN, RHONEWSN                              , &
                RAINF, SNTH, NEWSN, PRCPMS, NEWSNMS             , &
                T3, UPFLUX, XINET
-   REAL    ::  alb_snow,alb_snow_free,snhei_crit               , &
-               keep_snow_albedo
+   REAL    ::  snhei_crit, keep_snow_albedo
 
    REAL    ::  RNET,GSWNEW,EMISSN,ALBSN,ZNTSN
    REAL    ::  VEGFRAC
@@ -936,7 +961,8 @@ CONTAINS
         BSN=delt/3600.*c1sn*exp(0.08*tsnav-c2sn*rhosn*1.e-3)
        if(bsn*snwe*100..lt.1.e-4) goto 777
         XSN=rhosn*(exp(bsn*snwe*100.)-1.)/(bsn*snwe*100.)
-        rhosn=MIN(MAX(50.,XSN),400.)
+        rhosn=MIN(MAX(100.,XSN),400.)
+!        rhosn=MIN(MAX(50.,XSN),400.)
  777   continue
 
       else
@@ -960,12 +986,14 @@ CONTAINS
       print *, 'THERE IS NEW SNOW, newsn', newsn
     ENDIF
         if(tabs.lt.258.15) then
-          rhonewsn=50.
-!          rhonewsn=100.
+!          rhonewsn=50.
+          rhonewsn=100.
 
         else
-          rhonewsn=1.e3*max((0.05+0.0017*(Tabs-273.15+15.)**1.5) &
-                                 , 0.05)
+          rhonewsn=1.e3*max((0.10+0.0017*(Tabs-273.15+15.)**1.5) &
+                                 , 0.10)
+!          rhonewsn=1.e3*max((0.05+0.0017*(Tabs-273.15+15.)**1.5) &
+!                                 , 0.05)
           rhonewsn=MIN(rhonewsn,400.)
 !          rhonewsn=100.
         endif
@@ -976,7 +1004,8 @@ CONTAINS
 !*** without snow melt )
          xsn=(rhosn*snwe+rhonewsn*newsn)/                         &
              (snwe+newsn)
-         rhosn=MIN(MAX(50.,XSN),400.)
+         rhosn=MIN(MAX(100.,XSN),400.)
+!         rhosn=MIN(MAX(50.,XSN),400.)
 
          snwe=snwe+newsn
          snhei=snwe*1.E3/rhosn
@@ -1008,38 +1037,41 @@ CONTAINS
 !         SNWE=0.
 !      ELSE
 
-        IF(SNHEI.GT.0.02) THEN
+        IF(SNHEI.GT.0.0) THEN
 !--- Set of surface parameters should be changed to snow values for grid
 !--- points where the snow cover exceeds snow threshold of 2 cm
-!              ALB    = 0.75
-
-!         ALB    = 0.7
          EMISS = 0.91
 
 !         GSWNEW = GSW
 ! The following lines compute albedo depending on snow
 ! depth. For now commented out.
-         alb_snow_free=0.2
-         alb_snow=0.70
-         SNHEI_CRIT=0.05
+!         alb_snow_free=0.2
+!         alb_snow=0.70
+!         SNHEI_CRIT=0.05
+
+         SNHEI_CRIT=0.01601*1.e3/rhosn
+         SNOWFRAC=MIN(1.,SNHEI/(2.*SNHEI_CRIT))
+
          KEEP_SNOW_ALBEDO = 0.
       IF (NEWSN.GT.0.) KEEP_SNOW_ALBEDO = 1.
 
 !---  GSW in-coming solar
-         gswnew=gsw/(1.-alb)
+         GSWNEW=GSW/(1.-ALB)
 
        ALB   = MAX(keep_snow_albedo*alb_snow,                   &
             MIN((alb_snow_free +                                &
            (alb_snow - alb_snow_free) *                         &
-           (snhei/SNHEI_CRIT)), alb_snow))
+           (snhei/(2.*SNHEI_CRIT))), alb_snow))
 !--- recompute absorbed solar radiation and net radiation
 !--- for new value of albedo
          gswnew=gswnew*(1.-alb)
+
+        XINET   = EMISS*(GLW-UPFLUX)
         RNET    = GSWnew + XINET
 
          CALL SNOWSOIL (                                        & !--- input variables
             i,j,isoil,delt,ktau,conflx,nzs,nddzs,nroot,         &
-            ILAND,PRCPMS,RAINF,NEWSN,snhei,SNWE,                &
+            ILAND,PRCPMS,RAINF,NEWSN,snhei,SNWE,snowfrac,       &
             RHOSN,PATM,QVATM,QCATM,                             &
             GLW,GSWnew,EMISS,RNET,IVGTYP,                       &
             QKMS,TKMS,PC,CST,                                   &
@@ -1059,10 +1091,12 @@ CONTAINS
             qfx,hfx,s,sublim,prcpl,runoff1,runoff2,             &
             mavail,soilice,soiliqw,infiltr                      )
 
-         if(snhei.le.2.e-2) then
+         if(snhei.eq.0.) then
+
+!         if(snhei.le.2.e-2) then
 !--- all snow is melted
 !           gswnew=gswnew/(1.-alb)
-           alb=alb_snow_free
+         alb=alb_snow_free
 !           gswnew=gswnew*(1.-alb)
          endif
 
@@ -1153,7 +1187,7 @@ CONTAINS
 !   without snow, heat diffusion amf Richards eqns. in
 !   soil
 !
-!     DELT - time step
+!     DELT - time step (s)
 !     ktau - numver of time step
 !     CONFLX - depth of constant flux layer (m)
 !     J,I - the location of grid point
@@ -1161,48 +1195,48 @@ CONTAINS
 !     NROOT - number of levels within the root zone
 !     PRCPMS - precipitation rate in m/s
 !     PATM - pressure [bar]
-!     QVATM,QCATM - cloud and water vapor mixing ratio
+!     QVATM,QCATM - cloud and water vapor mixing ratio (kg/kg)
 !                   at the first atm. level
 !     GLW, GSW - incoming longwave and absorbed shortwave
-!                radiation at the surface 
-!     EMISS,RNET - emissivity of the ground surface and net
-!                  radiation at the surface
+!                radiation at the surface (W/m^2)
+!     EMISS,RNET - emissivity of the ground surface (0-1) and net
+!                  radiation at the surface (W/m^2)
 !     QKMS - exchange coefficient for water vapor in the
 !              surface layer (m/s)
 !     TKMS - exchange coefficient for heat in the surface
 !              layer (m/s)
-!     PC - plant coefficient (resistance)
-!     RHO - density of atmosphere near sueface
+!     PC - plant coefficient (resistance) (0-1)
+!     RHO - density of atmosphere near sueface (kg/m^3)
 !     VEGFRAC - greeness fraction
 !     RHOCS - volumetric heat capacity of dry soil
-!     DQM, QMIN - porosity minus residual soil moisture QMIN
-!     REF, WILT - field capacity soil moisture and the 
-!                 wilting point
-!     PSIS - matrix potential at saturation
+!     DQM, QMIN - porosity minus residual soil moisture QMIN (m^3/m^3)
+!     REF, WILT - field capacity soil moisture and the
+!                 wilting point (m^3/m^3)
+!     PSIS - matrix potential at saturation (m)
 !     BCLH - exponent for Clapp-Hornberger parameterization
-!     KSAT - saturated hydraulic conductivity
-!     SAT - maximum value of water intercepted by canopy
+!     KSAT - saturated hydraulic conductivity (m/s)
+!     SAT - maximum value of water intercepted by canopy (m)
 !     CN - exponent for calculation of canopy water
-!     ZSMAIN - main levels in soil
-!     ZSHALF - middle of the soil layers
+!     ZSMAIN - main levels in soil (m)
+!     ZSHALF - middle of the soil layers (m)
 !     DTDZS,DTDZS2 - dt/(2.*dzshalf*dzmain) and dt/dzshalf in soil
 !     TBQ - table to define saturated mixing ration
 !           of water vapor for given temperature and pressure
-!     SOILMOIS,TSO - soil moisture and temperature
+!     SOILMOIS,TSO - soil moisture (m^3/m^3) and temperature (K)
 !     DEW -  dew in kg/m^2s
-!     SOILT - skin temperature
+!     SOILT - skin temperature (K)
 !     QSG,QVG,QCG - saturated mixing ratio, mixing ratio of
 !                   water vapor and cloud at the ground
-!                   surface, respectively
+!                   surface, respectively (kg/kg)
 !     EDIR1, EC1, ETT1, EETA - direct evaporation, evaporation of
 !            canopy water, transpiration in kg m-2 s-1 and total
 !            evaporation in m s-1.
-!     QFX, HFX - latent and sensible heat fluxes
-!     S - soil heat flux in the top layer 
+!     QFX, HFX - latent and sensible heat fluxes (W/m^2)
+!     S - soil heat flux in the top layer (W/m^2)
 !     RUNOFF - surface runoff (m/s)
 !     RUNOFF2 - underground runoff (m)
-!     MAVAIL - moisture availability in the top soil layer
-!     INFILTRP - infiltration flux from the top of soil domain
+!     MAVAIL - moisture availability in the top soil layer (0-1)
+!     INFILTRP - infiltration flux from the top of soil domain (m/s)
 !
 !*****************************************************************
         IMPLICIT NONE
@@ -1326,7 +1360,7 @@ CONTAINS
         XLMELT=3.335E+5
         cvw=cw
 
-        SAT=0.0004
+        SAT=0.0005
         prcpl=prcpms
 
 !--- Initializing local arrays
@@ -1441,12 +1475,14 @@ CONTAINS
                thdif,diffu,hydro,cap)
 
 !********************************************************************
-!--- CALCULATION OF CANOPY WATER (EQ.16) AND DEW 
+!--- CALCULATION OF CANOPY WATER (Smirnova et al., 1996, EQ.16) AND DEW 
  
         DRIP=0.
         DD1=0.
 
         FQ=QKMS
+
+        Q1=-QKMS*RAS*(QVATM - QSG)
 
         DEW=0.
         IF(QVATM.GE.QSG)THEN
@@ -1574,7 +1610,8 @@ CONTAINS
                INFMAX=0.
 
 !*************************************************************************
-! SOILMOIST solves moisture budget (EQ.22,28) and Richards eqn.
+! SOILMOIST solves moisture budget (Smirnova et al., 1996, EQ.22,28) 
+!           and Richards eqn.
 !*************************************************************************
           CALL SOILMOIST (                                     &
 !-- input
@@ -1656,7 +1693,8 @@ CONTAINS
         SUBROUTINE SNOWSOIL (                                  &
 !--- input variables
              i,j,isoil,delt,ktau,conflx,nzs,nddzs,nroot,       &
-             ILAND,PRCPMS,RAINF,NEWSNOW,snhei,SNWE,RHOSN,      &
+             ILAND,PRCPMS,RAINF,NEWSNOW,snhei,SNWE,SNOWFRAC,   &
+             RHOSN,                                            &
              PATM,QVATM,QCATM,                                 &
              GLW,GSW,EMISS,RNET,IVGTYP,                        &
              QKMS,TKMS,PC,cst,rho,vegfrac,alb,znt,             & 
@@ -1680,7 +1718,7 @@ CONTAINS
 !   Energy and moisture budget for snow, heat diffusion eqns.
 !   in snow and soil, Richards eqn. for soil covered with snow
 !
-!     DELT - time step
+!     DELT - time step (s)
 !     ktau - numver of time step
 !     CONFLX - depth of constant flux layer (m)
 !     J,I - the location of grid point
@@ -1689,58 +1727,58 @@ CONTAINS
 !     PRCPMS - precipitation rate in m/s
 !     NEWSNOW - pcpn in soilid form (m)
 !     SNHEI, SNWE - snow height and snow water equivalent (m)
-!     RHOSN - snow density
-!     PATM - pressure [bar]
+!     RHOSN - snow density (kg/m-3)
+!     PATM - pressure (bar)
 !     QVATM,QCATM - cloud and water vapor mixing ratio
-!                   at the first atm. level
+!                   at the first atm. level (kg/kg)
 !     GLW, GSW - incoming longwave and absorbed shortwave
-!                radiation at the surface
-!     EMISS,RNET - emissivity of the ground surface and net
-!                  radiation at the surface
+!                radiation at the surface (W/m^2)
+!     EMISS,RNET - emissivity (0-1) of the ground surface and net
+!                  radiation at the surface (W/m^2)
 !     QKMS - exchange coefficient for water vapor in the
 !              surface layer (m/s)
 !     TKMS - exchange coefficient for heat in the surface
 !              layer (m/s)
-!     PC - plant coefficient (resistance)
-!     RHO - density of atmosphere near sueface
-!     VEGFRAC - greeness fraction
-!     RHOCS - volumetric heat capacity of dry soil
-!     DQM, QMIN - porosity minus residual soil moisture QMIN
+!     PC - plant coefficient (resistance) (0-1)
+!     RHO - density of atmosphere near surface (kg/m^3)
+!     VEGFRAC - greeness fraction (0-1)
+!     RHOCS - volumetric heat capacity of dry soil (J/m^3/K)
+!     DQM, QMIN - porosity minus residual soil moisture QMIN (m^3/m^3)
 !     REF, WILT - field capacity soil moisture and the
-!                 wilting point
-!     PSIS - matrix potential at saturation
+!                 wilting point (m^3/m^3)
+!     PSIS - matrix potential at saturation (m)
 !     BCLH - exponent for Clapp-Hornberger parameterization
-!     KSAT - saturated hydraulic conductivity
-!     SAT - maximum value of water intercepted by canopy
+!     KSAT - saturated hydraulic conductivity (m/s)
+!     SAT - maximum value of water intercepted by canopy (m)
 !     CN - exponent for calculation of canopy water
-!     ZSMAIN - main levels in soil
-!     ZSHALF - middle of the soil layers
+!     ZSMAIN - main levels in soil (m)
+!     ZSHALF - middle of the soil layers (m)
 !     DTDZS,DTDZS2 - dt/(2.*dzshalf*dzmain) and dt/dzshalf in soil
 !     TBQ - table to define saturated mixing ration
 !           of water vapor for given temperature and pressure
 !     ilnb - number of layers in snow
 !     rsm - liquid water inside snow pack (m)
-!     SOILMOIS,TSO - soil moisture and temperature
-!     DEW -  dew in kg/m^2s
+!     SOILMOIS,TSO - soil moisture (m^3/m^3) and temperature (K)
+!     DEW -  dew in (kg/m^2 s)
 !     SOILT - skin temperature (K)
 !     SOILT1 - snow temperature at 7.5 cm depth (K)
 !     TSNAV - average temperature of snow pack (C)
 !     QSG,QVG,QCG - saturated mixing ratio, mixing ratio of
 !                   water vapor and cloud at the ground
-!                   surface, respectively
+!                   surface, respectively (kg/kg)
 !     EDIR1, EC1, ETT1, EETA - direct evaporation, evaporation of
-!            canopy water, transpiration in kg m-2 s-1 and total
-!            evaporation in m s-1.
-!     QFX, HFX - latent and sensible heat fluxes
-!     S - soil heat flux in the top layer
-!     SUBLIM - snow sublimation
+!            canopy water, transpiration (kg m-2 s-1) and total
+!            evaporation in (m s-1).
+!     QFX, HFX - latent and sensible heat fluxes (W/m^2)
+!     S - soil heat flux in the top layer (W/m^2)
+!     SUBLIM - snow sublimation (kg/m^2/s)
 !     RUNOFF1 - surface runoff (m/s)
 !     RUNOFF2 - underground runoff (m)
-!     MAVAIL - moisture availability in the top soil layer
-!     SOILICE - content of soil ice in soil layers
-!     SOILIQW - lliquid water in soil layers
-!     INFILTRP - infiltration flux from the top of soil domain
-!     XINET - net long-wave radiation
+!     MAVAIL - moisture availability in the top soil layer (0-1)
+!     SOILICE - content of soil ice in soil layers (m^3/m^3)
+!     SOILIQW - lliquid water in soil layers (m^3/m^3)
+!     INFILTRP - infiltration flux from the top of soil domain (m/s)
+!     XINET - net long-wave radiation (W/m^2)
 !
 !*******************************************************************
 
@@ -1849,6 +1887,7 @@ CONTAINS
                                                           SNFLX, &
                                                           SOILT, &
                                                          SOILT1, &
+                                                       SNOWFRAC, &
                                                           TSNAV
 
    INTEGER, INTENT(INOUT)    ::                            ILNB
@@ -1946,9 +1985,9 @@ CONTAINS
         DZSTOP=1./(zsmain(2)-zsmain(1))
 
 !----- THE CALCULATION OF THERMAL DIFFUSIVITY, DIFFUSIONAL AND ---
-!----- HYDRAULIC CONDUCTIVITY (SMIRNOVA ET AL. 1996? EQ.2,5,6) ---
+!----- HYDRAULIC CONDUCTIVITY (SMIRNOVA ET AL. 1996, EQ.2,5,6) ---
 !tgs - the following loop is added to define the amount of frozen
-!tgs - water in soil if ther is any
+!tgs - water in soil if there is any
          DO K=1,NZS
 
          tln=log(tso(k)/273.15)
@@ -2036,7 +2075,7 @@ CONTAINS
                thdif,diffu,hydro,cap)
 
 !******************************************************************** 
-!--- CALCULATION OF CANOPY WATER (EQ.16) AND DEW 
+!--- CALCULATION OF CANOPY WATER (Smirnova et al., 1996, EQ.16) AND DEW 
  
         DRIP=0.
         SMELT=0.
@@ -2060,12 +2099,15 @@ CONTAINS
        IF(EPOT.GE.0.) THEN
 ! Evaporation
          DD1=CST+(NEWSNOW*RHOSN*1.E-3                            &
-              -DELT*(-PRCPMS+RAS*EPOT                            &
+!-- need to think more if we want this change....
+              -DELT*(RAS*EPOT                            &
+!              -DELT*(-PRCPMS+RAS*EPOT                            &
               *(CST/SAT)**CN)) *vegfrac
         ELSE
 ! Sublimation
          DEW = - EPOT
-         DD1=CST+(NEWSNOW*RHOSN*1.E-3+delt*(PRCPMS               &
+         DD1=CST+(NEWSNOW*RHOSN*1.E-3+delt*(               &
+!         DD1=CST+(NEWSNOW*RHOSN*1.E-3+delt*(PRCPMS               &
                      +DEW*RAS)) *vegfrac
        ENDIF
 
@@ -2085,7 +2127,12 @@ CONTAINS
 !--- DRIP in the solid form will be added to SNOW cover.
 
    SNWE=(SNHEI-vegfrac*NEWSNOW)*RHOSN*1.E-3                      &
-                  + DRIP
+                  + DRIP                                         &
+! - 10% of liquid precip could be added to snow water
+! - this is based on SnowMIP2. 
+! - something more intelligent should be done to liquid water
+                  +0.10*prcpms*delt
+
 
        ENDIF
  
@@ -2133,7 +2180,7 @@ print *, 'TSO before calling SNOWTEMP: ', tso
 !--- input variables
              i,j,iland,isoil,                                 &
              delt,ktau,conflx,nzs,nddzs,nroot,                &
-             snwe,snwepr,snhei,newsnow,                       &
+             snwe,snwepr,snhei,newsnow,snowfrac,              &
              beta,deltsn,snth,rhosn,                          &
              PRCPMS,RAINF,                                    &
              PATM,TABS,QVATM,QCATM,                           &
@@ -2209,13 +2256,15 @@ print *, 'TSO before calling SNOWTEMP: ', tso
                INFMAX=0.
 
 !*************************************************************************
-!--- TQCAN FOR SOLUTION OF MOISTURE BALANCE EQ.22,28 AND TSO,ETA PROFILES
+!--- TQCAN FOR SOLUTION OF MOISTURE BALANCE (Smirnova et al. 1996, EQ.22,28)
+!    AND TSO,ETA PROFILES
 !*************************************************************************
                 CALL SOILMOIST (                                   &
 !-- input
                delt,nzs,nddzs,DTDZS,DTDZS2,                        &
                zsmain,zshalf,diffu,hydro,                          &
-               QSG,QVG,QCG,QCATM,QVATM,-PRCPMS,                    &
+               QSG,QVG,QCG,QCATM,QVATM,-0.9*PRCPMS/(1.-vegfrac),   &
+!               QSG,QVG,QCG,QCATM,QVATM,-PRCPMS,                   &
                0.,TRANSP,0.,                                       &
                0.,SMELT,soilice,vegfrac,                           &
 !-- soil properties
@@ -2225,11 +2274,12 @@ print *, 'TSO before calling SNOWTEMP: ', tso
                RUNOFF2,infiltrp) 
  
 !-- Restore land-use parameters if snow is less than threshold
-         IF(SNHEI.LE.2.E-2)  then
+         IF(SNHEI.EQ.0.)  then
           tsnav=soilt-273.15
           CALL SNOWFREE(ivgtyp,myj,emiss,                          & 
                         znt,iland)
           smelt=smelt+snwe/delt
+          rsm=0.
 !          snwe=0.
          ENDIF
 
@@ -2323,7 +2373,7 @@ print *, 'TSO before calling SNOWTEMP: ', tso
 !   Energy budget equation and heat diffusion eqn are 
 !   solved here and
 !
-!     DELT - time step
+!     DELT - time step (s)
 !     ktau - numver of time step
 !     CONFLX - depth of constant flux layer (m)
 !     IME, JME, KME, NZS - dimensions of the domain 
@@ -2331,39 +2381,39 @@ print *, 'TSO before calling SNOWTEMP: ', tso
 !     PRCPMS - precipitation rate in m/s
 !     COTSO, RHTSO - coefficients for implicit solution of
 !                     heat diffusion equation
-!     THDIF - thermal diffusivity
+!     THDIF - thermal diffusivity (m^2/s)
 !     QSG,QVG,QCG - saturated mixing ratio, mixing ratio of
 !                   water vapor and cloud at the ground
-!                   surface, respectively
+!                   surface, respectively (kg/kg)
 !     PATM -  pressure [baa]
 !     QC3D,QV3D - cloud and water vapor mixing ratio
-!                   at the first atm. level
-!     EMISS,RNET - emissivity of the ground surface and net
-!                  radiation at the surface
+!                   at the first atm. level (kg/kg)
+!     EMISS,RNET - emissivity (0-1) of the ground surface and net
+!                  radiation at the surface (W/m^2)
 !     QKMS - exchange coefficient for water vapor in the
 !              surface layer (m/s)
 !     TKMS - exchange coefficient for heat in the surface
 !              layer (m/s)
 !     PC - plant coefficient (resistance)
-!     RHO - density of atmosphere near sueface 
-!     VEGFRAC - greeness fraction
-!     CAP - volumetric heat capacity 
+!     RHO - density of atmosphere near surface (kg/m^3)
+!     VEGFRAC - greeness fraction (0-1)
+!     CAP - volumetric heat capacity (J/m^3/K)
 !     DRYCAN - dry fraction of vegetated area where
-!              transpiration may take place
+!              transpiration may take place (0-1)
 !     WETCAN - fraction of vegetated area covered by canopy
-!              water
+!              water (0-1)
 !     TRANSUM - transpiration function integrated over the 
-!               rooting zone
+!               rooting zone (m)
 !     DEW -  dew in kg/m^2s
 !     MAVAIL - fraction of maximum soil moisture in the top
-!               layer
-!     ZSMAIN - main levels in soil
-!     ZSHALF - middle of the soil layers
+!               layer (0-1)
+!     ZSMAIN - main levels in soil (m)
+!     ZSHALF - middle of the soil layers (m)
 !     DTDZS - dt/(2.*dzshalf*dzmain)
 !     TBQ - table to define saturated mixing ration
 !           of water vapor for given temperature and pressure
-!     TSO - soil temperature
-!     SOILT - skin temperature
+!     TSO - soil temperature (K)
+!     SOILT - skin temperature (K)
 !
 !****************************************************************
 
@@ -2483,7 +2533,7 @@ print *, 'TSO before calling SNOWTEMP: ', tso
    33  CONTINUE
 
 !************************************************************************
-!--- THE HEAT BALANCE EQUATION (EQ. 21,26)
+!--- THE HEAT BALANCE EQUATION (Smirnova et al., 1996, EQ. 21,26)
 
         RHCS=CAP(1)
         H=MAVAIL
@@ -2516,7 +2566,7 @@ print *, 'TSO before calling SNOWTEMP: ', tso
         BB=(D10*TABS+R21*TN+XLV*(QVATM*                               &
         (FKQ*UMVEG+C)                                                 & 
         +R210*QVG)+D11+D9*(D2+R22*TN)                                 &
-        +RAINF*CVW*PRCPMS*TABS                                        &
+        +RAINF*CVW*PRCPMS*max(273.15,TABS)                            &
          )/TDENOM
         AA1=AA+CC
         PP=PATM*1.E3
@@ -2585,7 +2635,7 @@ print *, 'TSO before calling SNOWTEMP: ', tso
 !--- input variables
            i,j,iland,isoil,                                        &
            delt,ktau,conflx,nzs,nddzs,nroot,                       &
-           snwe,snwepr,snhei,newsnow,                              &
+           snwe,snwepr,snhei,newsnow,snowfrac,                     &
            beta,deltsn,snth,rhosn,                                 &
            PRCPMS,RAINF,                                           &
            PATM,TABS,QVATM,QCATM,                                  &
@@ -2607,7 +2657,7 @@ print *, 'TSO before calling SNOWTEMP: ', tso
 !   Energy budget equation and heat diffusion eqn are 
 !   solved here to obtain snow and soil temperatures
 !
-!     DELT - time step
+!     DELT - time step (s)
 !     ktau - numver of time step
 !     CONFLX - depth of constant flux layer (m)
 !     IME, JME, KME, NZS - dimensions of the domain 
@@ -2615,39 +2665,39 @@ print *, 'TSO before calling SNOWTEMP: ', tso
 !     PRCPMS - precipitation rate in m/s
 !     COTSO, RHTSO - coefficients for implicit solution of
 !                     heat diffusion equation
-!     THDIF - thermal diffusivity
+!     THDIF - thermal diffusivity (W/m/K)
 !     QSG,QVG,QCG - saturated mixing ratio, mixing ratio of
 !                   water vapor and cloud at the ground
-!                   surface, respectively
+!                   surface, respectively (kg/kg)
 !     PATM - pressure [bar]
 !     QCATM,QVATM - cloud and water vapor mixing ratio
-!                   at the first atm. level
-!     EMISS,RNET - emissivity of the ground surface and net
-!                  radiation at the surface
+!                   at the first atm. level (kg/kg)
+!     EMISS,RNET - emissivity (0-1) of the ground surface and net
+!                  radiation at the surface (W/m^2)
 !     QKMS - exchange coefficient for water vapor in the
 !              surface layer (m/s)
 !     TKMS - exchange coefficient for heat in the surface
 !              layer (m/s)
 !     PC - plant coefficient (resistance)
-!     RHO - density of atmosphere near sueface 
-!     VEGFRAC - greeness fraction
-!     CAP - volumetric heat capacity 
+!     RHO - density of atmosphere near surface (kg/m^3)
+!     VEGFRAC - greeness fraction (0-1)
+!     CAP - volumetric heat capacity (J/m^3/K)
 !     DRYCAN - dry fraction of vegetated area where
-!              transpiration may take place
+!              transpiration may take place (0-1) 
 !     WETCAN - fraction of vegetated area covered by canopy
-!              water
+!              water (0-1)
 !     TRANSUM - transpiration function integrated over the 
-!               rooting zone
-!     DEW -  dew in kg/m^2s
+!               rooting zone (m)
+!     DEW -  dew in kg/m^2/s
 !     MAVAIL - fraction of maximum soil moisture in the top
-!               layer
-!     ZSMAIN - main levels in soil
-!     ZSHALF - middle of the soil layers
+!               layer (0-1)
+!     ZSMAIN - main levels in soil (m)
+!     ZSHALF - middle of the soil layers (m)
 !     DTDZS - dt/(2.*dzshalf*dzmain)
 !     TBQ - table to define saturated mixing ration
 !           of water vapor for given temperature and pressure
-!     TSO - soil temperature
-!     SOILT - skin temperature
+!     TSO - soil temperature (K)
+!     SOILT - skin temperature (K)
 !
 !*********************************************************************
 
@@ -2722,6 +2772,7 @@ print *, 'TSO before calling SNOWTEMP: ', tso
                                                             QCG, &
                                                            SNWE, &
                                                           SNHEI, &
+                                                       SNOWFRAC, &
                                                           SMELT, &
                                                            SNOH, &
                                                           SNFLX, &
@@ -2766,7 +2817,7 @@ print *, 'TSO before calling SNOWTEMP: ', tso
                                                             qfx, &
                                                             hfx
 
-   REAL                        ::                          RNET
+   REAL                        :: RNET,rsmfrac,soiltfrac,hsn
 
 !-----------------------------------------------------------------
 
@@ -2784,14 +2835,18 @@ print *, 'SNOWTEMP: SNHEI,SNTH,SOILT1: ',SNHEI,SNTH,SOILT1,soilt
         THDIFSN = 0.265/RHOCSN
         RAS=RHO*1.E-3
 
+        SOILTFRAC=SOILT
+
         SMELT=0.
         SOH=0.
         SMELTG=0.
         SNOHG=0.
         SNODIF=0.
         RSM = 0.
-        fsn=0.
-        fso=1.
+        RSMFRAC = 0.
+        fsn=1.
+        fso=0.
+        hsn=snhei
 
           NZS1=NZS-1
           NZS2=NZS-2
@@ -2898,7 +2953,7 @@ print *, 'SNOWTEMP: SNHEI,SNTH,SOILT1: ',SNHEI,SNTH,SOILT1,soilt
        ENDIF
 
 !************************************************************************
-!--- THE HEAT BALANCE EQUATION (EQ. 21,26)
+!--- THE HEAT BALANCE EQUATION (Smirnova et al. 1996, EQ. 21,26)
 
         ETT1=0.
         EPOT=-QKMS*(QVATM-QSG)
@@ -2974,8 +3029,8 @@ print *, 'SNOWTEMP: SNHEI,SNTH,SOILT1: ',SNHEI,SNTH,SOILT1,soilt
         BB=(D10*TABS+R21*TN+XLVM*(QVATM*                             &
         (BETA*FKQ*UMVEG+C)                                           &
         +R210*QVG)+D11+D9SN*(D2SN+R22SN*TN)                          &
-        +RAINF*CVW*PRCPMS*TABS                                       &
-        + RHOCSN*NEWSNOW/DELT*TABS                                   &
+        +RAINF*CVW*PRCPMS*max(273.15,TABS)                           &
+        + RHOCSN*NEWSNOW/DELT*min(273.15,TABS)                       &
          )/TDENOM
         AA1=AA+CC
         PP=PATM*1.E3
@@ -3036,13 +3091,17 @@ print *, 'SNOWTEMP: SNHEI,SNTH,SOILT1: ',SNHEI,SNTH,SOILT1,soilt
        if(SNHEI.LT.SNTH.AND.SNHEI.GT.0.)then
           tso(1)=tso(2)+(soilt-tso(2))*fso
           SOILT1=TSO(1)
-          tsob=tso(1)
+          tsob=tso(2)
+!!!          tsob=tso(1)
        endif
 
 !--- IF SOILT > 273.15 F then melting of snow can happen
    IF(SOILT.GE.273.15.AND.SNHEI.GT.0.) THEN
-         SOILT=273.15
-         QSG= QSN(273.15,TBQ)/PP
+!!!         SOILT=273.15
+        soiltfrac=snowfrac*273.15+(1.-snowfrac)*SOILT
+        soilt=soiltfrac
+         QSG= QSN(soilt,TBQ)/PP
+!!!         QSG= QSN(273.15,TBQ)/PP
          QVG=QSG
         T3      = STBOLT*SOILT*SOILT*SOILT
         UPFLUX  = T3 * SOILT
@@ -3080,45 +3139,57 @@ print *, 'SNOWTEMP: SNHEI,SNTH,SOILT1: ',SNHEI,SNTH,SOILT1,soilt
         QFX= - XLVM * EETA
        ENDIF
 
-         HFX=D10*(TABS-273.15)
+         HFX=D10*(TABS-soilt)
+!!!         HFX=D10*(TABS-273.15)
 
        IF(SNHEI.GE.SNTH)then
-         SOH=thdifsn*RHOCSN*(273.15-TSOB)/SNPRIM
+         SOH=thdifsn*RHOCSN*(soilt-TSOB)/SNPRIM
+!         SOH=thdifsn*RHOCSN*(273.15-TSOB)/SNPRIM
+         SNFLX=SOH
        ELSE
          SOH=(fsn*thdifsn*rhocsn+fso*thdif(1)*rhcs)*                  &
-              (273.15-TSOB)/snprim
+              (soilt-TSOB)/snprim
+!!!              (273.15-TSOB)/snprim
+         SNFLX=SOH
        ENDIF
 
-         X= (R21+D9SN*R22SN)*(273.15-TNOLD) +                         &
+         X= (R21+D9SN*R22SN)*(soilt-TNOLD) +                         &
+!!!         X= (R21+D9SN*R22SN)*(273.15-TNOLD) +                     &
             XLVM*R210*(QSG-QGOLD)
 !-- SNOH is energy flux of snow phase change
-        SNOH=AMAX1(0.,RNET+QFX                                        &
-                      +HFX                                            & 
-                  +RHOCSN*NEWSNOW/DELT*(TABS-273.15)                  &
-                  -SOH-X+RAINF*CVW*PRCPMS*                            &
-                  (TABS-273.15)) 
+        SNOH=RNET+QFX +HFX                                           & 
+                  +RHOCSN*NEWSNOW/DELT*(min(273.15,TABS)-TN)         &
+                  -SOH-X+RAINF*CVW*PRCPMS*                           &
+                  (max(273.15,TABS)-TN) 
+        SNOH=AMAX1(0.,SNOH)
 !-- SMELT is speed of melting in M/S
         SMELT= SNOH /XLMELT*1.E-3
 !        SMELT=AMIN1(SMELT,SNWEPR/DELT-BETA*EPOT*RAS)
         SMELT=AMIN1(SMELT,SNWEPR/DELT-BETA*EPOT*RAS*UMVEG)
 
         SNOHGNEW=SMELT*XLMELT*1.E3
-        SNODIF=AMAX1(0.,SNOH-SNOHGNEW)
+        SNODIF=AMAX1(0.,(SNOH-SNOHGNEW))
 
         SNOH=SNOHGNEW
 !       SNOHSMELT*XLMELT*1.E3
 
 !*** From Koren et al. (1999) 13% of snow melt stays in the snow pack
-        rsm=0.13*smelt*delt
+!!!        rsm=0.13*smelt*delt
+       if(snwe.gt.0.) then
+         rsmfrac=min(0.18,(max(0.08,0.10/snwe*0.13)))
+       else
+         rsmfrac=0.13
+       endif
 
+         rsm=rsmfrac*smelt*delt
         SMELT=SMELT-rsm/delt
 
 !-- correction of liquid equivalent of snow depth
 !-- due to evaporation and snow melt
-        SNWE = AMAX1(0.,SNWEPR-                                      &
+        SNWE = AMAX1(0.,(SNWEPR-                                      &
 !     1              (SMELT+BETA*EPOT*RAS)*DELT
                     (SMELT+BETA*EPOT*RAS*UMVEG)*DELT                 &
-                                          )
+                                         ) )
 
 !--- If all snow melts, then 13% of snow melt we kept in the
 !--- snow pack should be added back to snow melt and infiltrate
@@ -3128,7 +3199,9 @@ print *, 'SNOWTEMP: SNHEI,SNTH,SOILT1: ',SNHEI,SNTH,SOILT1,soilt
            snwe=0.
            rsm=0.
            SOILT=SNODIF*DELT/RHCS*ZSHALF(2)                          &  
-                   +273.15
+                   +soiltfrac
+!!!                   +273.15
+         SOILT=SOILTFRAC
         else
 !*** Correct snow density on effect of snow melt, melted
 !*** from the top of the snow. 13% of melted water
@@ -3149,8 +3222,9 @@ print *, 'SNOWTEMP: SNHEI,SNTH,SOILT1: ',SNHEI,SNTH,SOILT1,soilt
 !--- If there is no snow melting then just evaporation
 !--- or condensation cxhanges SNWE
       ELSE
-               SNWE = AMAX1(0.,SNWEPR-                               &
-                    BETA*EPOT*RAS*UMVEG*DELT)
+               EPOT=-QKMS*(QVATM-QSG)
+               SNWE = AMAX1(0.,(SNWEPR-                               &
+                    BETA*EPOT*RAS*UMVEG*DELT))
 
       ENDIF
 !*** Correct snow density on effect of snow melt, melted
@@ -3165,17 +3239,30 @@ print *, 'SNOWTEMP: SNHEI,SNTH,SOILT1: ',SNHEI,SNTH,SOILT1,soilt
 !--  piece of code will check if bottom melting is possible.
 
         IF(TSO(1).GE.273.15.AND.SNHEI.GT.0.) THEN
-        SNOHG=(TSO(1)-273.15)*(RHCS*zshalf(2)+                       &
+         soiltfrac=snowfrac*273.15+(1.-snowfrac)*TSO(1)
+
+        SNOHG=(TSO(1)-soiltfrac)*(RHCS*zshalf(2)+                       &
                RHOCSN*0.5*SNHEI) / DELT
+        SNOHG=AMAX1(0.,SNOHG)
         SNODIF=0. 
-          TSO(1)=273.15
+!          TSO(1)=273.15
         SMELTG=SNOHG/XLMELT*1.E-3
-        SMELTG=AMIN1(SMELTG,SNWE/DELT)
-        SNOHGNEW=SMELTG*XLMELT*1.e3
-        SNODIF=AMAX1(0.,SNOHG-SNOHGNEW)
+!        SMELTG=AMIN1(SMELTG,SNWE/DELT)
+       if(SNWE-SMELTG*DELT.ge.rsm) then
+!           SNWE = SNWE-SMELTG*DELT
         SNWE = AMAX1(0.,SNWE-SMELTG*DELT)
+       else
+           smeltg=snwe/delt
+           snwe=0.
+           rsm=0.
+       endif
+
+        SNOHGNEW=SMELTG*XLMELT*1.e3
+        SNODIF=AMAX1(0.,(SNOHG-SNOHGNEW))
+          TSO(1)=soiltfrac
          if(snwe.eq.0.)then
-        TSO(1)=SNODIF*DELT/RHCS*zshalf(2) + 273.15
+        TSO(1)=SNODIF*DELT/RHCS*zshalf(2) + soiltfrac
+!!!        TSO(1)=SNODIF*DELT/RHCS*zshalf(2) + 273.15
           endif
 
         SMELT=SMELT+SMELTG
@@ -3198,6 +3285,17 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
 !--- Compute flux in the top snow layer
       SNFLX=D9SN*(SOILT-TSOB)
 
+     if(snhei.gt.0.) then
+      if(ilnb.gt.1) then
+        tsnav=0.5/snhei*((soilt+soilt1)*deltsn                       &
+                    +(soilt1+tso(1))*(SNHEI-DELTSN))                 &
+                       -273.15
+      else
+        tsnav=0.5*(soilt+tso(1)) - 273.15
+      endif
+     else
+        tsnav=0.
+     endif                                                        !new line
 !        return
 !        end
 !------------------------------------------------------------------------
@@ -3220,34 +3318,34 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
 !   moisture balance equation and Richards eqn.
 !   are solved here 
 !   
-!     DELT - time step
+!     DELT - time step (s)
 !     IME,JME,NZS - dimensions of soil domain
-!     ZSMAIN - main levels in soil
-!     ZSHALF - middle of the soil layers
+!     ZSMAIN - main levels in soil (m)
+!     ZSHALF - middle of the soil layers (m)
 !     DTDZS -  dt/(2.*dzshalf*dzmain)
 !     DTDZS2 - dt/(2.*dzshalf)
-!     DIFFU - diffusional conductivity
-!     HYDRO - hydraulic conductivity
+!     DIFFU - diffusional conductivity (m^2/s)
+!     HYDRO - hydraulic conductivity (m/s)
 !     QSG,QVG,QCG - saturated mixing ratio, mixing ratio of
 !                   water vapor and cloud at the ground
-!                   surface, respectively
+!                   surface, respectively (kg/kg)
 !     QCATM,QVATM - cloud and water vapor mixing ratio
-!                   at the first atm. level
+!                   at the first atm. level (kg/kg)
 !     PRCP - precipitation rate in m/s
 !     QKMS - exchange coefficient for water vapor in the
 !              surface layer (m/s)
-!     TRANSP - transpiration from the soil layers
-!     DRIP - liquid water dripping from the canopy to soil
+!     TRANSP - transpiration from the soil layers (m/s)
+!     DRIP - liquid water dripping from the canopy to soil (m)
 !     DEW -  dew in kg/m^2s
 !     SMELT - melting rate in m/s
-!     SOILICE - volumetric content of ice in soil
-!     VEGFRAC - greeness fraction
+!     SOILICE - volumetric content of ice in soil (m^3/m^3)
+!     VEGFRAC - greeness fraction (0-1)
 !     RAS - ration of air density to soil density
-!     INFMAX - maximum infiltration rate
+!     INFMAX - maximum infiltration rate (kg/m^2/s)
 !    
-!     SOILMOIS - volumetric soil moisture, 6 levels
+!     SOILMOIS - volumetric soil moisture, 6 levels (m^3/m^3)
 !     MAVAIL - fraction of maximum soil moisture in the top
-!               layer
+!               layer (0-1)
 !     RUNOFF - surface runoff (m/s)
 !     RUNOFF2 - underground runoff (m)
 !     INFILTRP - point infiltration flux into soil (m/s)
@@ -3481,7 +3579,8 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
           END IF
 
 !--- FINAL SOLUTION FOR SOILMOIS 
-          DO K=2,NZS
+!          DO K=2,NZS
+          DO K=2,NZS-1
             KK=NZS-K+1
             QQ=COSMC(KK)*SOILMOIS(K-1)+RHSMC(KK)
 
@@ -3531,16 +3630,16 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
 !******************************************************************
 ! NX,NY,NZS - dimensions of soil domain
 ! FWSAT, LWSAT - volumetric content of frozen and liquid water
-!                for saturated condition at given temperatures
-! TAV - temperature averaged for soil layers
-! SOILMOIS - volumetric soil moisture at the main soil levels
-! SOILMOISM - volumetric soil moisture averaged for layers
-! SOILIQWM - volumetric liquid soil moisture averaged for layers
-! SOILICEM - volumetric content of soil ice averaged for layers
-! THDIF - thermal diffusivity for soil layers
-! DIFFU - diffusional conductivity 
-! HYDRO - hydraulic conductivity
-! CAP - volumetric heat capacity
+!                for saturated condition at given temperatures (m^3/m^3)
+! TAV - temperature averaged for soil layers (K)
+! SOILMOIS - volumetric soil moisture at the main soil levels (m^3/m^3)
+! SOILMOISM - volumetric soil moisture averaged for layers (m^3/m^3)
+! SOILIQWM - volumetric liquid soil moisture averaged for layers (m^3/m^3)
+! SOILICEM - volumetric content of soil ice averaged for layers (m^3/m^3)
+! THDIF - thermal diffusivity for soil layers (W/m/K)
+! DIFFU - diffusional conductivity (m^2/s)
+! HYDRO - hydraulic conductivity (m/s)
+! CAP - volumetric heat capacity (J/m^3/K)
 !
 !******************************************************************
 
@@ -3729,12 +3828,12 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
               tranf,transum)
 
 !-------------------------------------------------------------------
-!--- TRANF(K) - THE TRANSPIRATION FUNCTION (EQ. 18,19)
+!--- TRANF(K) - THE TRANSPIRATION FUNCTION (Smirnova et al. 1996, EQ. 18,19)
 !*******************************************************************
 ! NX,NY,NZS - dimensions of soil domain
-! SOILIQW - volumetric liquid soil moisture at the main levels
-! TRANF - the transpiration function at levels
-! TRANSUM - transpiration function integrated over the rooting zone
+! SOILIQW - volumetric liquid soil moisture at the main levels (m^3/m^3)
+! TRANF - the transpiration function at levels (m)
+! TRANSUM - transpiration function integrated over the rooting zone (m)
 !
 !*******************************************************************
         IMPLICIT NONE
@@ -3892,12 +3991,12 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
 !
 !
 !             Soil parameters:
-!               DQM: MAX soil moisture content - MIN
-!               REF:        Reference soil moisture
-!               WILT: Wilting PT soil moisture contents
-!               QMIN: Air dry soil moist content limits
-!               PSIS: SAT soil potential coefs.
-!               KSAT:  SAT soil diffusivity/conductivity coefs.
+!               DQM: MAX soil moisture content - MIN (m^3/m^3)
+!               REF:        Reference soil moisture (m^3/m^3)
+!               WILT: Wilting PT soil moisture contents (m^3/m^3)
+!               QMIN: Air dry soil moist content limits (m^3/m^3)
+!               PSIS: SAT soil potential coefs. (m)
+!               KSAT:  SAT soil diffusivity/conductivity coefs. (m/s)
 !               BCLH: Soil diffusivity/conductivity exponent.
 !
 ! ************************************************************************
@@ -3942,6 +4041,9 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
 !        DATA LQMA /0.417, 0.437, 0.453, 0.501, 0.486, 0.463, 0.398,
 !     &  0.471, 0.464, 0.430, 0.479, 0.475, 0.439, 1.0, 0.20, 0.401/
 !---
+!-- Clapp, R. and G. Hornberger, 1978: Empirical equations for some soil
+!   hydraulic properties, Water Resour. Res., 14, 601-604.
+
 !-- Clapp et al. [1978]
      DATA LQMA /0.395, 0.410, 0.435, 0.485, 0.485, 0.451, 0.420,      &
                 0.477, 0.476, 0.426, 0.492, 0.482, 0.451, 1.0,        &
@@ -4333,6 +4435,8 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
 !        DATA LQMA /0.417, 0.437, 0.453, 0.501, 0.486, 0.463, 0.398,
 !     &  0.471, 0.464, 0.430, 0.479, 0.475, 0.439, 1.0, 0.20, 0.401/
 !---
+!-- Clapp, R. and G. Hornberger, Empirical equations for some soil
+!   hydraulic properties, Water Resour. Res., 14,601-604,1978.
 !-- Clapp et al. [1978]
      DATA LQMA /0.395, 0.410, 0.435, 0.485, 0.485, 0.451, 0.420,      &
                 0.477, 0.476, 0.426, 0.492, 0.482, 0.451, 1.0,        &

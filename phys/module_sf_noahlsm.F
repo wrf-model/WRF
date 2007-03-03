@@ -1386,7 +1386,7 @@ CONTAINS
 !   SFCPRS     PRESSURE AT HEIGHT ZLVL ABOVE GROUND (PASCALS)                    
 !   PRCP       PRECIP RATE (KG M-2 S-1) (NOTE, THIS IS A RATE)                   
 !   SFCTMP     AIR TEMPERATURE (K) AT HEIGHT ZLVL ABOVE GROUND                   
-!   TH2        AIR POTENTIAL TEMPERATURE (K) AT HEIGHT ZLVL ABOVE GROUND         
+!   TH2        AIR TEMPERATURE (K) AT HEIGHT 2M ABOVE GROUND         
 !   Q2         MIXING RATIO AT HEIGHT ZLVL ABOVE GROUND (KG KG-1)                
 !   COSZ       Solar zenith angle (not used for now)                             
 !   PRCPRAIN   Liquid-precipitation rate (KG M-2 S-1) (not used)                 

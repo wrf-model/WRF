@@ -399,6 +399,8 @@ CONTAINS
 !       MOISTURE FLUX CALCULATED HERE (OVERWRITES SFC LAYER VALUE FOR LAND)
                 ESG=SVP1*EXP(SVP2*(TG0(I)-SVPT0)/(TG0(I)-SVP3))
                 QSG=EP2*ESG/(PSFC(I)-ESG)
+                THG=TSK(I)*(100./PSFC(I))**ROVCP
+                HFX(I)=FLHC(I)*(THG-THX(I))
                 QFX(I)=FLQC(I)*(QSG-QX(I))
                 LH(I)=QFX(I)*XLV
         QS(I)=HFX(I)+QFX(I)*XLV                                

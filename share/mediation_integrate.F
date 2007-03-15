@@ -242,7 +242,7 @@ SUBROUTINE med_pre_nest_initial ( parent , newid , config_flags )
    CALL domain_clock_get( parent, current_timestr=timestr, start_time=strt_time, current_time=cur_time )
    CALL construct_filename2a ( rstname , config_flags%rst_inname , newid , 2 , timestr )
 
-   IF ( config_flags%restart .AND. cur_time .EQ. start_time ) THEN
+   IF ( config_flags%restart .AND. cur_time .EQ. strt_time ) THEN
      WRITE(message,*)'RESTART: nest, opening ',TRIM(rstname),' for reading header information only'
      CALL wrf_message ( message )
   ! note that the parent pointer is not strictly correct, but nest is not allocated yet and

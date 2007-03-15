@@ -2570,7 +2570,7 @@ CONTAINS
                go to 9
              endif
            enddo
-           if(p_cup(i,ktop(i)).gt.pcrit(1))kclim=1
+           if(p_cup(i,ktop(i)).ge.pcrit(1))kclim=1
  9         continue
            kclim=max(kclim,1)
            k=max(kclim-1,1)
